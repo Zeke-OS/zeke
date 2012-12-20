@@ -2,6 +2,10 @@
 *.slo
 *.lo
 *.o
+*.pbi
+*.pbd
+*.browse
+*.cout
 
 # Compiled Dynamic libraries
 *.so
@@ -27,3 +31,12 @@
 # List files
 *.lst
 *.map
+
+# Simulation files
+*.sim
+
+# Binary dependecy map files
+*.dep
+
+# Windows cache and temp files
+Thumbs.db
