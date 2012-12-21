@@ -40,3 +40,6 @@
 
 # Windows cache and temp files
 Thumbs.db
+
+doc/
+/Libraries
