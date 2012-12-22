@@ -14,6 +14,11 @@
   * @{
   */
 
+#ifndef KERNEL_INTERNAL
+#define KERNEL_INTERNAL
+#endif
+
+
 #include "sched.h"
 #include "syscall.h"
 #include "kernel_config.h"
@@ -65,15 +70,15 @@ void SVC_Handler(void)
     int type;
     void * p;
 
-    asm volatile("MOV %0, r5\n"
-                 "MOV %1, r6\n"
+    asm volatile("MOV %0, r1\n"
+                 "MOV %1, r2\n"
                      : "=r" (type), "=r" (p));
 
     /* Call kernel internal syscall handler */
-    osStatus result = _intSyscall_handler(type, p);
+    uint32_t result = _intSyscall_handler(type, p);
 
     /* This is the return value */
-    asm volatile("MOV r7, %0\n"
+    asm volatile("MOV r3, %0\n"
                  : : "r" (result));
 }
 

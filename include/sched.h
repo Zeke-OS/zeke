@@ -34,6 +34,9 @@ typedef struct {
 void sched_init(void);
 void sched_start(void);
 void sched_handler(void * st);
+
+/* Functions used by syscalls */
+int sched_ThreadCreate(osThreadDef_t * thread_def);
 osStatus sched_threadDelay(uint32_t millisec);
 
 #endif /* SCHED_HPP */

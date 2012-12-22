@@ -36,12 +36,7 @@
 #include <stddef.h>
 
 #include "stm32f0xx.h"
-
 #include "kernel_config.h"
-
-
-
-
 
 // ==== Enumeration, structures, defines ====
 
@@ -93,8 +88,16 @@ typedef const struct os_thread_def {
     osPriority  tpriority;  ///< initial thread priority
     void *      stackAddr;  ///< Stack address
     size_t      stackSize;  ///< Size of stack reserved for the thread. (CMSIS-RTOS: stack size requirements in bytes; 0 is default stack size)
+    void *      argument;
 } osThreadDef_t;
 
+
+#ifndef KERNEL_INTERNAL /* prevent kernel internals from implementing these
+                         * as these should be implemented as syscall services.*/
+
+/* ==== Non-CMSIS-RTOS ==== */
+void kernel_init(void);
+void kernel_start(void);
 
 //  ==== Thread Management ====
 
@@ -139,17 +142,7 @@ osStatus osWait(uint32_t millisec);
 
 #endif  // Generic Wait available
 
-
-
-
-/**
-  * Thread enters to sleep
-  */
-
-
-/* Following functions are declared in kernel.c */
-void kernel_init(void);
-void kernel_start(void);
+#endif /* KERNEL_INTERNAL */
 
 #endif /* KERNEL_HPP */
 

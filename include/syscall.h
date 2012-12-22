@@ -12,7 +12,8 @@
 #ifndef SYSCALL_H
 #define SYSCALL_H
 
-#define KERNEL_SYSCALL_SCHED_DELAY  0
+#define KERNEL_SYSCALL_SCHED_THREAD_CREATE  1
+#define KERNEL_SYSCALL_SCHED_DELAY          2
 
 #include "sched.h"
 
@@ -21,9 +22,9 @@
   */
 inline osStatus syscall(int type, void * p)
 {
-    asm volatile("PUSH {r5-r7}\n"
-                 "MOV r5, %0\n"
-                 "MOV r6, %1\n"
+    asm volatile(
+                 "MOV r1, %0\n"
+                 "MOV r2, %1\n"
                  "SVC #0\n"
                  "DSB\n" /* Ensure write is completed
                           * (architecturally required, but not strictly
@@ -33,22 +34,24 @@ inline osStatus syscall(int type, void * p)
 
     /* Get return value */
     osStatus scratch;
-    asm volatile("MOV %0, r7\n"
-                 "POP {r4-r7}\n"
+    asm volatile("MOV %0, r3\n"
                  : "=r" (scratch));
 
     return scratch;
 }
 
-inline osStatus _intSyscall_handler(int type, void * p)
+#ifdef KERNEL_INTERNAL
+
+inline uint32_t _intSyscall_handler(int type, void * p)
 {
-    osStatus result;
+    uint32_t result;
 
     switch(type) {
-      case KERNEL_SYSCALL_SCHED_DELAY:
-        result = sched_threadDelay(*((uint32_t*)(p)));
+      case KERNEL_SYSCALL_SCHED_THREAD_CREATE:
+        result = (uint32_t)sched_ThreadCreate((osThreadDef_t *)(p));
         break;
-      case 1:
+      case KERNEL_SYSCALL_SCHED_DELAY:
+        result = (uint32_t)sched_threadDelay(*((uint32_t *)(p)));
         break;
       default:
         result = osErrorValue;
@@ -56,5 +59,7 @@ inline osStatus _intSyscall_handler(int type, void * p)
 
     return result;
 }
+
+#endif
 
 #endif /* SYSCALL_H */

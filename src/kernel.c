@@ -29,12 +29,27 @@ void kernel_start(void)
     while(1) { }
 }
 
-/** @todo Doesn't support other than osWaitForever atm */
+/** @todo doesn't pass argument now */
+int osThreadCreate(osThreadDef_t * thread_def, void * argument)
+{
+    int result;
+
+    result = (int)syscall(KERNEL_SYSCALL_SCHED_THREAD_CREATE, (void *)thread_def);
+    SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk; /* Set PendSV pending status */
+    asm volatile("DSB\n" /* Ensure write is completed
+                          * (architecturally required, but not strictly
+                          * required for existing Cortex-M processors) */
+                 "ISB\n" /* Ensure PendSV is executed */
+                 );
+
+    return result;
+}
+
 osStatus osDelay(uint32_t millisec)
 {
     osStatus result;
 
-    result = syscall(KERNEL_SYSCALL_SCHED_DELAY, &millisec);
+    result = (osStatus)syscall(KERNEL_SYSCALL_SCHED_DELAY, &millisec);
     SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk; /* Set PendSV pending status */
     asm volatile("DSB\n" /* Ensure write is completed
                           * (architecturally required, but not strictly

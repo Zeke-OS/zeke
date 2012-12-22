@@ -16,6 +16,10 @@
 #include <string.h>
 #include "stm32f0xx.h"
 
+#ifndef KERNEL_INTERNAL
+#define KERNEL_INTERNAL
+#endif
+
 #include "heap.h"
 #include "sched.h"
 #include "kernel_config.h"
@@ -89,8 +93,8 @@ void sched_init(void)
     current_thread = &(task_table[0]);
 
     /* Create idle task */
-    osThreadDef_t idle = { (os_pthread)(&idleTask), osPriorityIdle, sched_i_stack, sizeof(sched_i_stack)/sizeof(char) };
-    osThreadCreate(&idle, NULL);
+    osThreadDef_t idle = { (os_pthread)(&idleTask), osPriorityIdle, sched_i_stack, sizeof(sched_i_stack)/sizeof(char), NULL };
+    sched_ThreadCreate(&idle);
 }
 
 /**
@@ -128,50 +132,6 @@ void idleTask(void * arg)
                  );
             }
         }
-    }
-}
-
-/**
-  * Create a new thread
-  *
-  */
-int osThreadCreate(osThreadDef_t * thread_def, void * argument)
-{
-    int i;
-    hw_stack_frame_t * thread_frame;
-
-    /* Disable context switching to support multi-threaded calls to this fn */
-    __disable_interrupt();
-    for (i = 1; i < configSCHED_MAX_THREADS; i++) {
-        if (task_table[i].flags == 0) {
-            thread_frame = (hw_stack_frame_t *)((uint32_t)(thread_def->stackAddr) + thread_def->stackSize - sizeof(hw_stack_frame_t));
-            thread_frame->r0 = (uint32_t)argument;
-            thread_frame->r1 = 0;
-            thread_frame->r2 = 0;
-            thread_frame->r3 = 0;
-            thread_frame->r12 = 0;
-            thread_frame->pc = ((uint32_t)(thread_def->pthread));
-            thread_frame->lr = (uint32_t)del_thread;
-            thread_frame->psr = 0x21000000; /* Default PSR value */
-
-            task_table[i].flags = SCHED_IN_USE_FLAG | SCHED_EXEC_FLAG;
-            task_table[i].priority = thread_def->tpriority;
-            task_table[i].uCounter = 0;
-            task_table[i].sp = (void *)((uint32_t)(thread_def->stackAddr) +
-                               thread_def->stackSize -
-                               sizeof(hw_stack_frame_t) -
-                               sizeof(sw_stack_frame_t));
-
-            break;
-        }
-    }
-    __enable_interrupt(); /* Enable context switching */
-    if (i == configSCHED_MAX_THREADS) {
-        /* New thread could no be created */
-        return 0;
-    } else {
-        /* Return the id of the new thread */
-        return i;
     }
 }
 
@@ -340,6 +300,53 @@ void context_switcher(void)
 
     /* Write the value of the PSP for the next thread in run state */
     wr_thread_stack_ptr(current_thread->sp);
+}
+
+/**
+  * Create a new thread
+  *
+  */
+int sched_ThreadCreate(osThreadDef_t * thread_def)
+{
+    int i;
+    hw_stack_frame_t * thread_frame;
+
+    /* Disable context switching to support multi-threaded calls to this fn */
+    __istate_t s = __get_interrupt_state();
+    __disable_interrupt();
+
+    for (i = 1; i < configSCHED_MAX_THREADS; i++) {
+        if (task_table[i].flags == 0) {
+            thread_frame = (hw_stack_frame_t *)((uint32_t)(thread_def->stackAddr) + thread_def->stackSize - sizeof(hw_stack_frame_t));
+            thread_frame->r0 = (uint32_t)(thread_def->argument);
+            thread_frame->r1 = 0;
+            thread_frame->r2 = 0;
+            thread_frame->r3 = 0;
+            thread_frame->r12 = 0;
+            thread_frame->pc = ((uint32_t)(thread_def->pthread));
+            thread_frame->lr = (uint32_t)del_thread;
+            thread_frame->psr = 0x21000000; /* Default PSR value */
+
+            task_table[i].flags = SCHED_IN_USE_FLAG | SCHED_EXEC_FLAG;
+            task_table[i].priority = thread_def->tpriority;
+            task_table[i].uCounter = 0;
+            task_table[i].sp = (void *)((uint32_t)(thread_def->stackAddr) +
+                               thread_def->stackSize -
+                               sizeof(hw_stack_frame_t) -
+                               sizeof(sw_stack_frame_t));
+
+            break;
+        }
+    }
+    __set_interrupt_state(s); /* Restore interrupts */
+
+    if (i == configSCHED_MAX_THREADS) {
+        /* New thread could no be created */
+        return 0;
+    } else {
+        /* Return the id of the new thread */
+        return i;
+    }
 }
 
 /** @todo Doesn't support other than osWaitForever atm */
