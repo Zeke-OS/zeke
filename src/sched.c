@@ -59,7 +59,7 @@ volatile uint32_t sched_enabled = 0; /* If this is set to != 0 interrupt
                                       * switching. */
 
 threadInfo_t task_table[configSCHED_MAX_THREADS];
-static heap_t priority_queue = {{NULL}, 0};
+static heap_t priority_queue = {{NULL}, -1};
 volatile threadInfo_t * current_thread;
 
 /* Varibles for CPU Load Calculation */
@@ -95,7 +95,6 @@ void sched_init(void)
 
 /**
   * Start scheduler
-  * @todo idle task should be added as a last task
   */
 void sched_start(void)
 {
@@ -298,27 +297,36 @@ void sched_handler(void * st)
                      * the new task */
 }
 
-/* @todo fixme */
 void context_switcher(void)
 {
     /* Save the current task's stack pointer */
     current_thread->sp = rd_thread_stack_ptr();
-    //current_thread = NULL;
 
     /* Select next thread */
     do {
         /* Need to repopulate the priority queue? */
-        if (priority_queue.size == 0) {
+        if ((priority_queue.size < 0)) {
             calcCPULoad = 1; /* We should calculate the CPU load */
             for (int i = 1; i < configSCHED_MAX_THREADS; i++) {
-                if ((task_table[i].flags & SCHED_EXEC_FLAG) == 2) {
+                task_table[i].uCounter = 0;
+
+                if (task_table[i].flags & SCHED_EXEC_FLAG) {
                     (void)heap_insert(&priority_queue, &(task_table[i]));
+                }
+            }
+        } else {
+            /* Check if current thread can be removed from the queue */
+            if (current_thread == priority_queue.a[0]) {
+                if (((current_thread->flags & SCHED_EXEC_FLAG) == 0)
+                    || (current_thread->uCounter > configSCHED_MAX_CYCLES)
+                    || (current_thread->priority == osPriorityIdle)) {
+                    (void)heap_del_max(&priority_queue);
                 }
             }
         }
 
-        /* Pop next thread */
-        current_thread = heap_del_max(&priority_queue);
+        /* Next thread is the top one on the priority queue */
+        current_thread = *priority_queue.a;
 
         /* In the while loop condition we'll skip this thread if its EXEC flag
         * is disabled. */

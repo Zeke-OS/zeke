@@ -70,18 +70,13 @@ threadInfo_t * heap_del_max(heap_t * heap)
     return max;
 }
 
-int heap_insert(heap_t * heap, threadInfo_t * k)
+void heap_insert(heap_t * heap, threadInfo_t * k)
 {
-    //if ((heap->size + 1) == configSCHED_MAX_THREADS)
-    //    return -1;
-
     heap->size++;
     int i = heap->size;
-    while ((i > 1) && (heap->a[parent(i)]->priority < k->priority)) {
+    while ((i > 0) && (heap->a[parent(i)]->priority < k->priority)) {
         heap->a[i] = heap->a[parent(i)];
         i = parent(i);
     }
     heap->a[i] = k;
-
-    return 0;
 }
