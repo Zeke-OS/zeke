@@ -12,7 +12,7 @@ goal is to implement system services by using SVC calls which may open
 some very nice possibilities in the futur eg. loading code from SD
 card without static linkage etc.
 
-Copyright (c) 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+Copyright (c) 2012, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
