@@ -3,7 +3,7 @@
  * @file    heap.h
  * @author  Olli Vanhoja
  *
- * @brief   Header file for heap data structure (heap.c).
+ * @brief   Header file for heap data structure for threadInfo_t (heap.c).
  *
  *******************************************************************************
  */
@@ -13,16 +13,15 @@
 #define HEAP_H
 
 #include <stddef.h>
+#include "sched.h"
 
 typedef struct {
-    int * a;
+    threadInfo_t * a[configSCHED_MAX_THREADS];
     int size;
-    size_t max;
 } heap_t;
 
 void heapify(heap_t * heap, int i);
-int heap_del_max(heap_t * heap);
-int heap_insert(heap_t * heap, int k);
-void heap_inc_key(heap_t * heap, int i, int newk);
+threadInfo_t * heap_del_max(heap_t * heap);
+int heap_insert(heap_t * heap, threadInfo_t * k);
 
 #endif /* HEAP_H */

@@ -17,7 +17,6 @@
 #include "stm32f0xx.h"
 
 #include "heap.h"
-#include "kernel.h"
 #include "sched.h"
 #include "kernel_config.h"
 
@@ -27,12 +26,6 @@
 
 #define MAIN_RETURN     0xFFFFFFF9 /* Return using the MSP */
 #define THREAD_RETURN   0xFFFFFFFD /* Return using the PSP */
-
-typedef struct {
-    void * sp; /*!< Stack pointer */
-    int flags; /*!< Status flags */
-    osPriority priority; /*!< Task priority */
-} task_table_t;
 
 /* stack frame saved by the hardware */
 typedef struct {
@@ -65,11 +58,9 @@ volatile uint32_t sched_enabled = 0; /* If this is set to != 0 interrupt
                                       * handlers will be able to call context
                                       * switching. */
 
-task_table_t task_table[configSCHED_MAX_THREADS];
-static int heap_arr[configSCHED_MAX_THREADS];
-static heap_t priority_queue = {heap_arr, 0, configSCHED_MAX_THREADS};
-volatile int current_thread_ind;  /* Currently running thread */
-volatile int next_thread_ind;
+threadInfo_t task_table[configSCHED_MAX_THREADS];
+static heap_t priority_queue = {{NULL}, 0};
+volatile threadInfo_t * current_thread;
 
 /* Varibles for CPU Load Calculation */
 volatile uint32_t calcCPULoad = 1;
@@ -95,11 +86,11 @@ void context_switcher(void);
 void sched_init(void)
 {
     task_table[0].sp = m_stack + sizeof(sw_stack_frame_t);
-    current_thread_ind = 0;
-    next_thread_ind = 1;
+    current_thread = &(task_table[0]);
 
     /* Create idle task */
-    kernel_ThreadCreate(&idleTask, NULL, sched_i_stack, sizeof(sched_i_stack)/sizeof(char));
+    osThreadDef_t idle = { (os_pthread)(&idleTask), osPriorityIdle, sched_i_stack, sizeof(sched_i_stack)/sizeof(char) };
+    osThreadCreate(&idle, NULL);
 }
 
 /**
@@ -129,8 +120,14 @@ void idleTask(void * arg)
             sched_cpu_load = (r-v) / (r/100);
 
             calcCPULoad = 0;
-            if (countflag)
-                kernel_ThreadSleep();
+            if (countflag) {
+                SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk; /* Set PendSV pending status */
+                asm volatile("DSB\n" /* Ensure write is completed
+                                      * (architecturally required, but not strictly
+                                      * required for existing Cortex-M processors) */
+                             "ISB\n" /* Ensure PendSV is executed */
+                 );
+            }
         }
     }
 }
@@ -138,12 +135,8 @@ void idleTask(void * arg)
 /**
   * Create a new thread
   *
-  * @param p Pointer to the new task or task initializer function
-  * @param Argument
-  * @param stackAddr Stack allocation reserved by the task
-  * @param stackSize Size of stack reserved for the task
   */
-int kernel_ThreadCreate(void (*p)(void*), void const * arg, void * stackAddr, size_t stackSize)
+int osThreadCreate(osThreadDef_t * thread_def, void * argument)
 {
     int i;
     hw_stack_frame_t * thread_frame;
@@ -152,19 +145,21 @@ int kernel_ThreadCreate(void (*p)(void*), void const * arg, void * stackAddr, si
     __disable_interrupt();
     for (i = 1; i < configSCHED_MAX_THREADS; i++) {
         if (task_table[i].flags == 0) {
-            thread_frame = (hw_stack_frame_t *)((uint32_t)stackAddr + stackSize - sizeof(hw_stack_frame_t));
-            thread_frame->r0 = (uint32_t)arg;
+            thread_frame = (hw_stack_frame_t *)((uint32_t)(thread_def->stackAddr) + thread_def->stackSize - sizeof(hw_stack_frame_t));
+            thread_frame->r0 = (uint32_t)argument;
             thread_frame->r1 = 0;
             thread_frame->r2 = 0;
             thread_frame->r3 = 0;
             thread_frame->r12 = 0;
-            thread_frame->pc = ((uint32_t)p);
+            thread_frame->pc = ((uint32_t)(thread_def->pthread));
             thread_frame->lr = (uint32_t)del_thread;
             thread_frame->psr = 0x21000000; /* Default PSR value */
-            task_table[i].flags = SCHED_IN_USE_FLAG | SCHED_EXEC_FLAG;
 
-            task_table[i].sp = (void *)((uint32_t)stackAddr +
-                               stackSize -
+            task_table[i].flags = SCHED_IN_USE_FLAG | SCHED_EXEC_FLAG;
+            task_table[i].priority = thread_def->tpriority;
+            task_table[i].uCounter = 0;
+            task_table[i].sp = (void *)((uint32_t)(thread_def->stackAddr) +
+                               thread_def->stackSize -
                                sizeof(hw_stack_frame_t) -
                                sizeof(sw_stack_frame_t));
 
@@ -183,7 +178,7 @@ int kernel_ThreadCreate(void (*p)(void*), void const * arg, void * stackAddr, si
 
 void del_thread(void)
 {
-    task_table[current_thread_ind].flags = 0; /* Clear all the flags */
+    current_thread->flags = 0; /* Clear all the flags */
     SCB->ICSR |= (1<<28); /* Switch the context */
     while(1); /* Once the context changes, the program will no longer return to
                * this thread */
@@ -198,14 +193,16 @@ static inline void save_context(void)
 #if __CORE__ == __ARM6M__
     asm volatile ("MRS   %0,  psp\n"
                   "SUBS  %0,  %0, #32\n"
-                  "MSR   psp, %0\n"        /* This is the address that will use by rd_thread_stack_ptr(void) */
+                  "MSR   psp, %0\n"         /* This is the address that will use by rd_thread_stack_ptr(void) */
                   "ISB\n"
                   "STMIA %0!, {r4-r7}\n"
+                  "PUSH  {r4-r7}\n"         /* Push original register values so we don't lost them */
                   "MOV   r4,  r8\n"
                   "MOV   r5,  r9\n"
                   "MOV   r6,  r10\n"
                   "MOV   r7,  r11\n"
                   "STMIA %0!, {r4-r7}\n"
+                  "POP   {r4-r7}\n"         /* Pop them back */
                   : "=r" (scratch));
 #elif __CORE__ == __ARM7M__
     asm volatile ("MRS   %0,  psp\n"
@@ -285,16 +282,17 @@ static inline void wr_thread_stack_ptr(void * ptr)
   */
 void sched_handler(void * st)
 {
-    if (current_thread_ind == 0) {
+    stack = (uint32_t *)st;
+    if (current_thread == &(task_table[0])) {
         /* Copy MSP to PSP */
         volatile uint32_t scratch;
         asm volatile ("MRS %0,  msp\n"
                       "MSR psp, %0\n"
                       "ISB\n"
                       : "=r" (scratch));
+    } else {
+        save_context();
     }
-    stack = (uint32_t *)st;
-    save_context();
     context_switcher();
     load_context(); /* Since PSP has been updated, this loads the last state of
                      * the new task */
@@ -304,55 +302,44 @@ void sched_handler(void * st)
 void context_switcher(void)
 {
     /* Save the current task's stack pointer */
-    task_table[current_thread_ind].sp = rd_thread_stack_ptr();
+    current_thread->sp = rd_thread_stack_ptr();
+    //current_thread = NULL;
 
-    /* This is awful implementation of priority notifiers, please fix me! */
+    /* Select next thread */
     do {
-        if (next_thread_ind >= configSCHED_MAX_THREADS) {
-            uint32_t tmp = SysTick->CTRL; // Clear COUNTFLAG
-            calcCPULoad = 1;
-            next_thread_ind = 1;
+        /* Need to repopulate the priority queue? */
+        if (priority_queue.size == 0) {
+            calcCPULoad = 1; /* We should calculate the CPU load */
+            for (int i = 1; i < configSCHED_MAX_THREADS; i++) {
+                if ((task_table[i].flags & SCHED_EXEC_FLAG) == 2) {
+                    (void)heap_insert(&priority_queue, &(task_table[i]));
+                }
+            }
         }
 
-        /* @todo Wake-up threads if signaled etc. */
+        /* Pop next thread */
+        current_thread = heap_del_max(&priority_queue);
 
+        /* In the while loop condition we'll skip this thread if its EXEC flag
+        * is disabled. */
+    } while ((current_thread->flags & SCHED_EXEC_FLAG) == 0);
 
-        current_thread_ind = next_thread_ind;
-    } while ((task_table[next_thread_ind++].flags & SCHED_EXEC_FLAG) == 0);
+    /* The counter will help us to see how often the task is getting its turn to run */
+    current_thread->uCounter++;
 
     /* Use the thread stack upon handler return */
     *((uint32_t *)stack) = THREAD_RETURN;
 
     /* Write the value of the PSP for the next thread in run state */
-    wr_thread_stack_ptr(task_table[current_thread_ind].sp);
+    wr_thread_stack_ptr(current_thread->sp);
 }
 
-/** @todo temporary implementation of sleep */
-void kernel_ThreadSleep_ms(uint32_t delay)
+/** @todo Doesn't support other than osWaitForever atm */
+osStatus sched_threadDelay(uint32_t millisec)
 {
-    do {
-        delay--;
-        kernel_ThreadSleep();
-    } while (delay != 0);
+    if (millisec == osWaitForever) {
+        current_thread->flags &= ~SCHED_EXEC_FLAG;
+    }
 
-}
-
-/**
-  * Put thread in wait state
-  */
-void kernel_ThreadWait(void)
-{
-    __istate_t s = __get_interrupt_state();
-    __disable_interrupt();
-
-    task_table[current_thread_ind].flags &= ~SCHED_EXEC_FLAG; /* Disable exec flag */
-
-    __set_interrupt_state(s); /* Restore interrupts */
-
-    kernel_ThreadSleep(); /* Put thread in sleep */
-}
-
-/** @todo fixme */
-void kernel_ThreadNotify(int thread_id)
-{
+    return osOK;
 }

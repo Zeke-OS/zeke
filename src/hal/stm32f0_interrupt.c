@@ -14,12 +14,12 @@
   * @{
   */
 
-#include "stm32f0_interrupt.h"
 #include "sched.h"
+#include "syscall.h"
 #include "kernel_config.h"
+#include "stm32f0_interrupt.h"
 
 #define SYSTICK_DIVIDER         SystemCoreClock / configSCHED_FREQ
-
 
 int interrupt_init_module(void)
 {
@@ -59,9 +59,22 @@ void HardFault_Handler(void)
 /**
   * This function handles SVCall exception.
   */
+#pragma optimize = no_cse
 void SVC_Handler(void)
 {
-    /* @todo fixme */
+    int type;
+    void * p;
+
+    asm volatile("MOV %0, r5\n"
+                 "MOV %1, r6\n"
+                     : "=r" (type), "=r" (p));
+
+    /* Call kernel internal syscall handler */
+    osStatus result = _intSyscall_handler(type, p);
+
+    /* This is the return value */
+    asm volatile("MOV r7, %0\n"
+                 : : "r" (result));
 }
 
 /**

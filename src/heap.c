@@ -3,11 +3,12 @@
  * @file    heap.c
  * @author  Olli Vanhoja
  *
- * @brief   Heap data structure.
+ * @brief   Heap data structure for threadInfo_t.
  *
  *******************************************************************************
  */
 
+#include "sched.h"
 #include "heap.h"
 
 static int parent(int i);
@@ -32,9 +33,9 @@ static int right(int i)
 
 static inline void swap(heap_t * heap, int i, int j)
 {
-    int temp = heap->a[i];
-    heap->a[j] = heap->a[i];
-    heap->a[i] = temp;
+    threadInfo_t * temp = (threadInfo_t *)(heap->a[i]);
+    heap->a[i] = heap->a[j];
+    heap->a[j] = temp;
 }
 
 void heapify(heap_t * heap, int i)
@@ -45,22 +46,22 @@ void heapify(heap_t * heap, int i)
     if (r <= heap->size) {
         int largest;
 
-        if (heap->a[i] > heap->a[r])
+        if (heap->a[i]->priority > heap->a[r]->priority)
             largest = l;
         else
             largest = r;
-        if (heap->a[i] < heap->a[largest]) {
+        if (heap->a[i]->priority < heap->a[largest]->priority) {
             swap(heap, i, largest);
             heapify(heap, largest);
         }
-    } else if ((l == heap->size) && (heap->a[i] < heap->a[l])) {
+    } else if ((l == heap->size) && (heap->a[i]->priority < heap->a[l]->priority)) {
         swap(heap, i, l);
     }
 }
 
-int heap_del_max(heap_t * heap)
+threadInfo_t * heap_del_max(heap_t * heap)
 {
-    int max = heap->a[0];
+    threadInfo_t * max = *heap->a;
 
     heap->a[0] = heap->a[heap->size];
     heap->size--;
@@ -69,29 +70,18 @@ int heap_del_max(heap_t * heap)
     return max;
 }
 
-int heap_insert(heap_t * heap, int k)
+int heap_insert(heap_t * heap, threadInfo_t * k)
 {
-    if ((heap->size + 1) == heap->max)
-        return -1;
+    //if ((heap->size + 1) == configSCHED_MAX_THREADS)
+    //    return -1;
 
     heap->size++;
     int i = heap->size;
-    while ((i > 1) && (heap->a[parent(i)] < k)) {
+    while ((i > 1) && (heap->a[parent(i)]->priority < k->priority)) {
         heap->a[i] = heap->a[parent(i)];
         i = parent(i);
     }
     heap->a[i] = k;
 
     return 0;
-}
-
-void heap_inc_key(heap_t * heap, int i, int newk)
-{
-    if (newk > heap->a[i] && (i < heap->size)) {
-        heap->a[i] = newk;
-        while (i > 1 && heap->a[parent(i)] < heap->a[i]) {
-            swap(heap, i, heap->a[parent(i)]);
-            i = parent(i);
-        }
-    }
 }

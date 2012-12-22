@@ -1995,6 +1995,9 @@
   <file>
     <name>$PROJ_DIR$\..\src\sched.h</name>
   </file>
+  <file>
+    <name>$PROJ_DIR$\..\include\syscall.h</name>
+  </file>
 </project>
 
 

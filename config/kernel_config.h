@@ -12,7 +12,7 @@
 #ifndef KERNEL_CONFIG_H
 #define KERNEL_CONFIG_H
 
-#define configSCHED_MAX_THREADS 5u      /*!< Maximum number of threads */
+#define configSCHED_MAX_THREADS 10u     /*!< Maximum number of threads */
 #define configSCHED_FREQ        100u    /*!< Scheduler frequency in Hz */
 
 #endif
