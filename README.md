@@ -2,9 +2,11 @@ Zero Kernel    {#mainpage}
 ===========
 
 Zero Kernel is a very simple kernel implementation targeted for ARM
-Corex-M microcontrollers. Reason to start this project was that most of
-currently available RTOSes for M0 feels too bloat and another major reason
-was that I found ARMv6-M architecture to be quite challenging.
+Corex-M microcontrollers. Reasons to start this project was that most of
+currently available RTOSes for M0 feels too bloat and and secondary
+reason was that I found ARMv6-M architecture to be quite challenging
+platform for any kind of OS/kernel development eg. when compared to
+ARMv7-M architecture used in M4 core.
 
 One of the goals in the future is to make Zero Kernel CMSIS-RTOS compliant.
 At the moment CMSIS-RTOS we are not even near of compliance. Another nice
