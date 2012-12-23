@@ -24,12 +24,14 @@ static char main_Stack[200];
 
 int main(void)
 {
-    interrupt_init_module();
+    if (interrupt_init_module()) {
+		while (1);
+	}
     sched_init();
     {
         osThreadDef_t main_thread = { (os_pthread)(&app_main), osPriorityNormal, main_Stack, sizeof(main_Stack)/sizeof(char) };
         osThreadCreate(&main_thread, NULL);
     }
     sched_start();
-    while(1);
+    while (1);
 }
