@@ -16,16 +16,17 @@
 
 #include "kernel.h"
 
-#define SCHED_EXEC_FLAG     0x00000002u /*!< EXEC/SLEEP */
 #define SCHED_IN_USE_FLAG   0x00000001u /*!< IN USE FLAG */
-#define SCHED_SYSTASK_FLAG  0x00000004u /*!< System task flag, prevent killing */
+#define SCHED_EXEC_FLAG     0x00000002u /*!< EXEC = 1 / SLEEP = 0 */
+#define SCHED_NO_SIG_FLAG   0x00000004u /*!< Thread cannot be woken up by any signal. */
 
 extern volatile uint32_t sched_enabled;
 extern volatile uint32_t sched_cpu_load;
 
 typedef struct {
     void * sp;              /*!< Stack pointer */
-    int flags;              /*!< Status flags */
+    uint32_t flags;         /*!< Status flags */
+    osEvent event;          /*!< Event struct */
     osPriority priority;    /*!< Task priority */
     uint32_t uCounter;      /*!< Counter to calculate how much time this thread gets */
 } threadInfo_t;
@@ -38,6 +39,8 @@ void sched_handler(void * st);
 /* Functions used by syscalls */
 int sched_ThreadCreate(osThreadDef_t * thread_def);
 osStatus sched_threadDelay(uint32_t millisec);
+uint32_t sched_threadWait(uint32_t millisec);
+uint32_t sched_threadSetSignal(osThreadId thread_id, int32_t signal);
 
 #endif /* SCHED_HPP */
 

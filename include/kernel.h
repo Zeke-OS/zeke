@@ -24,7 +24,7 @@
 #define osKernelSystemId "KERNEL V1.00"   ///< RTOS identification string
 
 /// \note MUST REMAIN UNCHANGED: \b osFeature_xxx shall be consistent in every CMSIS-RTOS.
-#define osFeature_MainThread   0       ///< main thread      1=main can be thread, 0=not available
+#define osFeature_MainThread   1       ///< main thread      1=main can be thread, 0=not available
 #define osFeature_Pool         0       ///< Memory Pools:    1=available, 0=not available
 #define osFeature_MailQ        0       ///< Mail Queues:     1=available, 0=not available
 #define osFeature_MessageQ     0       ///< Message Queues:  1=available, 0=not available
@@ -81,6 +81,20 @@ typedef enum  {
 /// \note MUST REMAIN UNCHANGED: \b os_pthread shall be consistent in every CMSIS-RTOS.
 typedef void (*os_pthread) (void const * argument);
 
+// >>> the following data type definitions may shall adapted towards a specific RTOS
+
+/// Thread ID identifies the thread (pointer to a thread control block).
+/// \note CAN BE CHANGED: \b os_thread_cb is implementation specific in every CMSIS-RTOS.
+typedef int osThreadId;
+
+/// Message ID identifies the message queue (pointer to a message queue control block).
+/// \note CAN BE CHANGED: \b os_messageQ_cb is implementation specific in every CMSIS-RTOS.
+typedef struct os_messageQ_cb *osMessageQId;
+
+/// Mail ID identifies the mail queue (pointer to a mail queue control block).
+/// \note CAN BE CHANGED: \b os_mailQ_cb is implementation specific in every CMSIS-RTOS.
+typedef struct os_mailQ_cb *osMailQId;
+
 /// Thread Definition structure contains startup information of a thread.
 /// \note CAN BE CHANGED: \b os_thread_def is implementation specific in every CMSIS-RTOS.
 typedef const struct os_thread_def {
@@ -91,13 +105,36 @@ typedef const struct os_thread_def {
     void *      argument;
 } osThreadDef_t;
 
+/// Event structure contains detailed information about an event.
+/// \note MUST REMAIN UNCHANGED: \b os_event shall be consistent in every CMSIS-RTOS.
+///       However the struct may be extended at the end.
+typedef struct  {
+  osStatus                 status;     ///< status code: event or error information
+  union  {
+    uint32_t                    v;     ///< message as 32-bit value
+    void                       *p;     ///< message or mail as void pointer
+    int32_t               signals;     ///< signal flags
+  } value;                             ///< event value
+  union  {
+    osMailQId             mail_id;     ///< mail id obtained by \ref osMailCreate
+    osMessageQId       message_id;     ///< message id obtained by \ref osMessageCreate
+  } def;                               ///< event definition
+} osEvent;
+
 
 #ifndef KERNEL_INTERNAL /* prevent kernel internals from implementing these
                          * as these should be implemented as syscall services.*/
 
-/* ==== Non-CMSIS-RTOS ==== */
-void kernel_init(void);
-void kernel_start(void);
+/* ==== Non-CMSIS-RTOS functions ==== */
+/* none atm */
+
+
+//  ==== Kernel Control Functions ====
+
+/// Check if the RTOS kernel is already started.
+/// \note MUST REMAIN UNCHANGED: \b osKernelRunning shall be consistent in every CMSIS-RTOS.
+/// \return 0 RTOS is not started, 1 RTOS is started.
+int32_t osKernelRunning(void);
 
 //  ==== Thread Management ====
 
@@ -121,8 +158,8 @@ osThreadDef_t os_thread_def_##name = \
 /// \param[in]     thread_def    thread definition referenced with \ref osThread.
 /// \param[in]     argument      pointer that is passed to the thread function as start argument.
 /// \return thread ID for reference by other functions or NULL in case of error.
-/// \note Doesn't fulfill CMSIS-RTOS specification as return value is int here.
-int osThreadCreate(osThreadDef_t * thread_def, void * argument);
+/// \note MUST REMAIN UNCHANGED: \b osThreadCreate shall be consistent in every CMSIS-RTOS.
+osThreadId osThreadCreate(osThreadDef_t * thread_def, void * argument);
 
 
 //  ==== Generic Wait Functions ====
@@ -137,10 +174,45 @@ osStatus osDelay(uint32_t millisec);
 /// Wait for Signal, Message, Mail, or Timeout
 /// \param[in] millisec          timeout value or 0 in case of no time-out
 /// \return event that contains signal, message, or mail information or error code.
-/// \note Doesn't fulfill CMSIS-RTOS specification as return value is different.
-osStatus osWait(uint32_t millisec);
+/// \note MUST REMAIN UNCHANGED: \b osWait shall be consistent in every CMSIS-RTOS.
+osEvent osWait(uint32_t millisec);
 
 #endif  // Generic Wait available
+
+
+//  ==== Signal Management ====
+
+/// Set the specified Signal Flags of an active thread.
+/// \param[in]     thread_id     thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
+/// \param[in]     signals       specifies the signal flags of the thread that should be set.
+/// \return previous signal flags of the specified thread or 0x80000000 in case of incorrect parameters.
+/// \note MUST REMAIN UNCHANGED: \b osSignalSet shall be consistent in every CMSIS-RTOS.
+int32_t osSignalSet(osThreadId thread_id, int32_t signal);
+
+/// Clear the specified Signal Flags of an active thread.
+/// \param[in]     thread_id     thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
+/// \param[in]     signals       specifies the signal flags of the thread that shall be cleared.
+/// \return previous signal flags of the specified thread or 0x80000000 in case of incorrect parameters.
+/// \note MUST REMAIN UNCHANGED: \b osSignalClear shall be consistent in every CMSIS-RTOS.
+int32_t osSignalClear(osThreadId thread_id, int32_t signal);
+
+/// Get Signal Flags status of the current thread.
+/// \param[in]     thread_id     thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
+/// \return previous signal flags of the specified thread or 0x80000000 in case of incorrect parameters.
+int32_t osSignalGetCurrent(void);
+
+/// Get Signal Flags status of an active thread.
+/// \param[in]     thread_id     thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
+/// \return previous signal flags of the specified thread or 0x80000000 in case of incorrect parameters.
+/// \note MUST REMAIN UNCHANGED: \b osSignalGet shall be consistent in every CMSIS-RTOS.
+int32_t osSignalGet(osThreadId thread_id);
+
+/// Wait for one or more Signal Flags to become signaled for the current \b RUNNING thread.
+/// \param[in]     signals       wait until all specified signal flags set or 0 for any single signal flag.
+/// \param[in]     millisec      timeout value or 0 in case of no time-out.
+/// \return event flag information or error code.
+/// \note MUST REMAIN UNCHANGED: \b osSignalWait shall be consistent in every CMSIS-RTOS.
+osEvent osSignalWait(int32_t signals, uint32_t millisec);
 
 #endif /* KERNEL_INTERNAL */
 

@@ -2,7 +2,7 @@
  *******************************************************************************
  * @file    kernel.h
  * @author  Olli Vanhoja
- * @brief   Zero Kernel
+ * @brief   Zero Kernel user space code
  *
  *******************************************************************************
  */
@@ -12,29 +12,38 @@
   */
 
 #include "stm32f0_interrupt.h"
-
-#include "sched.h"
 #include "syscall.h"
 #include "kernel.h"
 
-void kernel_init(void)
+/* Kernel Control Functions */
+
+int32_t osKernelRunning(void)
 {
-    interrupt_init_module();
+      return 1;
 }
 
-void kernel_start(void)
-{
-    sched_init();
-    sched_start();
-    while(1) { }
-}
+/* Thread Management */
 
 /** @todo doesn't pass argument now */
-int osThreadCreate(osThreadDef_t * thread_def, void * argument)
+osThreadId osThreadCreate(osThreadDef_t * thread_def, void * argument)
 {
-    int result;
+    osThreadId result;
 
-    result = (int)syscall(KERNEL_SYSCALL_SCHED_THREAD_CREATE, (void *)thread_def);
+    result = (osThreadId)syscall(KERNEL_SYSCALL_SCHED_THREAD_CREATE, (void *)thread_def);
+
+    return result;
+}
+
+
+/* Generic Wait Functions */
+
+osStatus osDelay(uint32_t millisec)
+{
+    osStatus result;
+
+    result = (osStatus)syscall(KERNEL_SYSCALL_SCHED_DELAY, &millisec);
+
+    /* Request context switch */
     SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk; /* Set PendSV pending status */
     asm volatile("DSB\n" /* Ensure write is completed
                           * (architecturally required, but not strictly
@@ -45,17 +54,33 @@ int osThreadCreate(osThreadDef_t * thread_def, void * argument)
     return result;
 }
 
-osStatus osDelay(uint32_t millisec)
+osEvent osWait(uint32_t millisec)
 {
-    osStatus result;
+    osEvent * result;
 
-    result = (osStatus)syscall(KERNEL_SYSCALL_SCHED_DELAY, &millisec);
+    result = (osEvent *)syscall(KERNEL_SYSCALL_SCHED_WAIT, &millisec);
+
+    /* Request context switch */
     SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk; /* Set PendSV pending status */
     asm volatile("DSB\n" /* Ensure write is completed
                           * (architecturally required, but not strictly
                           * required for existing Cortex-M processors) */
                  "ISB\n" /* Ensure PendSV is executed */
                  );
+
+    /* Retrun a copy of the current state of the event structure */
+    return *result;
+}
+
+
+/*  ==== Signal Management ==== */
+
+int32_t osSignalSet(osThreadId thread_id, int32_t signal)
+{
+    ds_osSignalSet_t ds = { thread_id, signal };
+    int32_t result;
+
+    result = (int32_t)syscall(KERNEL_SYSCALL_SCHED_SETSIGNAL, &ds);
 
     return result;
 }

@@ -300,6 +300,7 @@
           <name>CCIncludePath2</name>
           <state>$PROJ_DIR$\..\Libraries\STM32F0xx\CMSIS</state>
           <state>$PROJ_DIR$\..\Libraries\STM32F0xx\Drivers\inc</state>
+          <state>$PROJ_DIR$\..\Libraries\Discovery</state>
           <state>$PROJ_DIR$\..\include</state>
           <state>$PROJ_DIR$\..\src\hal</state>
           <state>$PROJ_DIR$\..\config</state>
@@ -1866,6 +1867,15 @@
       </file>
     </group>
     <group>
+      <name>Discovery</name>
+      <file>
+        <name>$PROJ_DIR$\..\Libraries\Discovery\stm32f0_discovery.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Libraries\Discovery\stm32f0_discovery.h</name>
+      </file>
+    </group>
+    <group>
       <name>Drivers</name>
       <file>
         <name>$PROJ_DIR$\..\Libraries\STM32F0xx\Drivers\src\stm32f0xx_adc.c</name>
@@ -1905,9 +1915,6 @@
       </file>
       <file>
         <name>$PROJ_DIR$\..\Libraries\STM32F0xx\Drivers\src\stm32f0xx_exti.c</name>
-        <excluded>
-          <configuration>Debug</configuration>
-        </excluded>
       </file>
       <file>
         <name>$PROJ_DIR$\..\Libraries\STM32F0xx\Drivers\src\stm32f0xx_flash.c</name>
@@ -1987,13 +1994,22 @@
     <name>$PROJ_DIR$\..\include\kernel.h</name>
   </file>
   <file>
+    <name>$PROJ_DIR$\..\src\kernel_init.c</name>
+  </file>
+  <file>
     <name>$PROJ_DIR$\..\src\main.c</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\include\main.h</name>
   </file>
   <file>
     <name>$PROJ_DIR$\..\src\sched.c</name>
   </file>
   <file>
     <name>$PROJ_DIR$\..\src\sched.h</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\src\syscall.c</name>
   </file>
   <file>
     <name>$PROJ_DIR$\..\include\syscall.h</name>

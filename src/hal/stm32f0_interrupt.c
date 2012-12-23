@@ -2,7 +2,7 @@
  *******************************************************************************
  * @file    stm32f0_interrupt.c
  * @author  Olli Vanhoja
- * @brief Interrupt service routines.
+ * @brief   Interrupt service routines.
  *******************************************************************************
  */
 
@@ -24,14 +24,16 @@
 #include "kernel_config.h"
 #include "stm32f0_interrupt.h"
 
-#define SYSTICK_DIVIDER         SystemCoreClock / configSCHED_FREQ
-
 int interrupt_init_module(void)
 {
+    RCC_ClocksTypeDef RCC_Clocks;
+
     NVIC_SetPriority(PendSV_IRQn, 0x03); /* Set PendSV to lowest level */
 
-    /* Setup SysTick Timer for tLevel ms interrupts  */
-    if (SysTick_Config(SystemCoreClock / SYSTICK_DIVIDER))
+
+    /* Configure SysTick */
+    RCC_GetClocksFreq(&RCC_Clocks);
+    if (SysTick_Config(RCC_Clocks.HCLK_Frequency / configSCHED_FREQ))
     {
         /* Capture error */
         while (1);
@@ -70,15 +72,15 @@ void SVC_Handler(void)
     int type;
     void * p;
 
-    asm volatile("MOV %0, r1\n"
-                 "MOV %1, r2\n"
+    asm volatile("MOV %0, r2\n" /* Get first parameter (type) */
+                 "MOV %1, r3\n" /* Get second parameter (p) */
                      : "=r" (type), "=r" (p));
 
     /* Call kernel internal syscall handler */
     uint32_t result = _intSyscall_handler(type, p);
 
     /* This is the return value */
-    asm volatile("MOV r3, %0\n"
+    asm volatile("MOV r4, %0\n"
                  : : "r" (result));
 }
 

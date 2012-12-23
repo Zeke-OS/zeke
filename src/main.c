@@ -3,50 +3,67 @@
  * @file    main.c
  * @author  Olli Vanhoja
  *
- * @brief   Main
+ * @brief   Main entry point to the application
  *
  *******************************************************************************
  */
 
+#include "stm32f0_discovery.h"
 #include "kernel.h"
+#include "main.h"
 
 static char stack_1[200];
 static char stack_2[200];
 
 void createThreads(void);
-void thread_test(void const * arg);
+void thread_input(void const * arg);
+void thread_led(void const * arg);
 
 static int x = 5;
 static int y = 8;
+volatile int z;
 
-int main()
+osThreadId th1_id;
+osThreadId th2_id;
+
+/**
+  * main thread
+  */
+void app_main()
 {
-    kernel_init();
+    STM_EVAL_LEDInit(LED3);
+    STM_EVAL_PBInit(BUTTON_USER, BUTTON_MODE_GPIO);
+
     createThreads();
-    kernel_start();
-    while(1) {}
+    osDelay(osWaitForever);
 }
 
 void createThreads(void)
 {
-    osThreadDef_t th_1 = { (os_pthread)(&thread_test), osPriorityNormal, stack_1, sizeof(stack_1)/sizeof(char), &x };
-    osThreadDef_t th_2 = { (os_pthread)(&thread_test), osPriorityHigh, stack_2, sizeof(stack_2)/sizeof(char), &y };
+    osThreadDef_t th_1 = { (os_pthread)(&thread_input), osPriorityHigh, stack_1, sizeof(stack_1)/sizeof(char), &x };
+    osThreadDef_t th_2 = { (os_pthread)(&thread_led), osPriorityNormal, stack_2, sizeof(stack_2)/sizeof(char), &y };
 
-    osThreadCreate(&th_1, NULL);
+    th1_id = osThreadCreate(&th_1, NULL);
     asm volatile ("ADD sp, sp, #(0)\n"); /* Seems to help IAR EW to show stack usage correctly :) */
-    osThreadCreate(&th_2, NULL);
+    th2_id = osThreadCreate(&th_2, NULL);
 }
 
-
-
-void thread_test(void const * arg)
+void thread_input(void const * arg)
 {
-    volatile int i = 0;
-    while(1) {
-        i++;
-        volatile int n = 250000;
-        for (; n > 0; n--) {
+    while (1) {
+        if(STM_EVAL_PBGetState(BUTTON_USER)== SET)
+        {
+            osSignalSet(th2_id, 1);
         }
-        i = osDelay(osWaitForever);
+    }
+}
+
+void thread_led(void const * arg)
+{
+    volatile osEvent evnt;
+    while(1) {
+        STM_EVAL_LEDToggle(LED3);
+        evnt = osWait(osWaitForever);
+        z = evnt.status;
     }
 }

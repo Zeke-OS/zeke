@@ -25,7 +25,10 @@
 #include "kernel_config.h"
 
 #ifndef __ARM_PROFILE_M__
-    #error Only ARM Cortex-M profile is currently supported
+    #error Only ARM Cortex-M profile is currently supported.
+#endif
+#ifndef __CORE__
+    #error Core is not selected by the compiler.
 #endif
 
 #define MAIN_RETURN     0xFFFFFFF9 /* Return using the MSP */
@@ -129,7 +132,7 @@ void idleTask(void * arg)
                                       * (architecturally required, but not strictly
                                       * required for existing Cortex-M processors) */
                              "ISB\n" /* Ensure PendSV is executed */
-                 );
+                );
             }
         }
     }
@@ -170,7 +173,7 @@ static inline void save_context(void)
                   "ISB\n"
                   : "=r" (scratch));
 #else
-    #error Selected CORE is not supported
+    #error Selected CORE not supported
 #endif
 }
 
@@ -200,7 +203,7 @@ static inline void load_context(void)
                   "ISB\n"
                   : "=r" (scratch));
 #else
-    #error Selected CORE is not supported
+    #error Selected CORE not supported
 #endif
 }
 
@@ -306,7 +309,7 @@ void context_switcher(void)
   * Create a new thread
   *
   */
-int sched_ThreadCreate(osThreadDef_t * thread_def)
+osThreadId sched_ThreadCreate(osThreadDef_t * thread_def)
 {
     int i;
     hw_stack_frame_t * thread_frame;
@@ -329,6 +332,7 @@ int sched_ThreadCreate(osThreadDef_t * thread_def)
 
             task_table[i].flags = SCHED_IN_USE_FLAG | SCHED_EXEC_FLAG;
             task_table[i].priority = thread_def->tpriority;
+            memset(&(task_table[i].event), 0, sizeof(osEvent));
             task_table[i].uCounter = 0;
             task_table[i].sp = (void *)((uint32_t)(thread_def->stackAddr) +
                                thread_def->stackSize -
@@ -342,19 +346,49 @@ int sched_ThreadCreate(osThreadDef_t * thread_def)
 
     if (i == configSCHED_MAX_THREADS) {
         /* New thread could no be created */
-        return 0;
+        return NULL;
     } else {
         /* Return the id of the new thread */
-        return i;
+        return (osThreadId)i;
     }
 }
 
 /** @todo Doesn't support other than osWaitForever atm */
 osStatus sched_threadDelay(uint32_t millisec)
 {
-    if (millisec == osWaitForever) {
-        current_thread->flags &= ~SCHED_EXEC_FLAG;
+    if (millisec != osWaitForever) {
+        return osErrorParameter; /* Not supported yet */
     }
+    current_thread->flags &= ~SCHED_EXEC_FLAG;      /* Sleep */
+    current_thread->flags &= ~SCHED_NO_SIG_FLAG;    /* Shouldn't get woken up by signals */
+    current_thread->event.status = osOK;
 
     return osOK;
+}
+
+/** @todo Doesn't support other than osWaitForever atm */
+uint32_t sched_threadWait(uint32_t millisec)
+{
+    if (millisec != osWaitForever) {
+        current_thread->event.status = osErrorParameter;
+        return (uint32_t)(&current_thread->event);  /* Not supported yet */
+    }
+    current_thread->flags &= ~SCHED_EXEC_FLAG;      /* Sleep */
+
+    current_thread->event.status = osOK;
+    return (uint32_t)(&current_thread->event);
+}
+
+uint32_t sched_threadSetSignal(osThreadId thread_id, int32_t signal)
+{
+    uint32_t prev_signals = (uint32_t)task_table[thread_id].event.value.signals;
+
+    task_table[thread_id].event.value.signals = signal;
+    task_table[thread_id].event.status = osEventSignal;
+
+    if ((task_table[thread_id].flags & SCHED_NO_SIG_FLAG) == 0) {
+        task_table[thread_id].flags |= SCHED_EXEC_FLAG; /* Set EXEC flag */
+    }
+
+    return prev_signals;
 }
