@@ -96,8 +96,8 @@ void sched_init(void)
     current_thread = &(task_table[0]);
 
     /* Create idle task */
-    osThreadDef_t idle = { (os_pthread)(&idleTask), osPriorityIdle, sched_i_stack, sizeof(sched_i_stack)/sizeof(char), NULL };
-    sched_ThreadCreate(&idle);
+    osThreadDef_t idle = { (os_pthread)(&idleTask), osPriorityIdle, sched_i_stack, sizeof(sched_i_stack)/sizeof(char) };
+    sched_ThreadCreate(&idle, NULL);
 }
 
 /**
@@ -309,7 +309,7 @@ void context_switcher(void)
   * Create a new thread
   *
   */
-osThreadId sched_ThreadCreate(osThreadDef_t * thread_def)
+osThreadId sched_ThreadCreate(osThreadDef_t * thread_def, void * argument)
 {
     int i;
     hw_stack_frame_t * thread_frame;
@@ -321,7 +321,7 @@ osThreadId sched_ThreadCreate(osThreadDef_t * thread_def)
     for (i = 1; i < configSCHED_MAX_THREADS; i++) {
         if (task_table[i].flags == 0) {
             thread_frame = (hw_stack_frame_t *)((uint32_t)(thread_def->stackAddr) + thread_def->stackSize - sizeof(hw_stack_frame_t));
-            thread_frame->r0 = (uint32_t)(thread_def->argument);
+            thread_frame->r0 = (uint32_t)(argument);
             thread_frame->r1 = 0;
             thread_frame->r2 = 0;
             thread_frame->r3 = 0;

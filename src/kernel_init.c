@@ -27,7 +27,7 @@ int main(void)
     interrupt_init_module();
     sched_init();
     {
-        osThreadDef_t main_thread = { (os_pthread)(&app_main), osPriorityNormal, main_Stack, sizeof(main_Stack)/sizeof(char), NULL };
+        osThreadDef_t main_thread = { (os_pthread)(&app_main), osPriorityNormal, main_Stack, sizeof(main_Stack)/sizeof(char) };
         osThreadCreate(&main_thread, NULL);
     }
     sched_start();

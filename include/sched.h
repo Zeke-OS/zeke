@@ -37,7 +37,7 @@ void sched_start(void);
 void sched_handler(void * st);
 
 /* Functions used by syscalls */
-int sched_ThreadCreate(osThreadDef_t * thread_def);
+int sched_ThreadCreate(osThreadDef_t * thread_def, void * argument);
 osStatus sched_threadDelay(uint32_t millisec);
 uint32_t sched_threadWait(uint32_t millisec);
 uint32_t sched_threadSetSignal(osThreadId thread_id, int32_t signal);

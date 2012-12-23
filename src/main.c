@@ -40,12 +40,12 @@ void app_main()
 
 void createThreads(void)
 {
-    osThreadDef_t th_1 = { (os_pthread)(&thread_input), osPriorityHigh, stack_1, sizeof(stack_1)/sizeof(char), &x };
-    osThreadDef_t th_2 = { (os_pthread)(&thread_led), osPriorityNormal, stack_2, sizeof(stack_2)/sizeof(char), &y };
+    osThreadDef_t th_1 = { (os_pthread)(&thread_input), osPriorityHigh, stack_1, sizeof(stack_1)/sizeof(char) };
+    osThreadDef_t th_2 = { (os_pthread)(&thread_led), osPriorityNormal, stack_2, sizeof(stack_2)/sizeof(char) };
 
-    th1_id = osThreadCreate(&th_1, NULL);
+    th1_id = osThreadCreate(&th_1, &x);
     asm volatile ("ADD sp, sp, #(0)\n"); /* Seems to help IAR EW to show stack usage correctly :) */
-    th2_id = osThreadCreate(&th_2, NULL);
+    th2_id = osThreadCreate(&th_2, &y);
 }
 
 void thread_input(void const * arg)

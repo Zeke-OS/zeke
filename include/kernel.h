@@ -102,7 +102,6 @@ typedef const struct os_thread_def {
     osPriority  tpriority;  ///< initial thread priority
     void *      stackAddr;  ///< Stack address
     size_t      stackSize;  ///< Size of stack reserved for the thread. (CMSIS-RTOS: stack size requirements in bytes; 0 is default stack size)
-    void *      argument;
 } osThreadDef_t;
 
 /// Event structure contains detailed information about an event.

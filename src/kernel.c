@@ -27,9 +27,10 @@ int32_t osKernelRunning(void)
 /** @todo doesn't pass argument now */
 osThreadId osThreadCreate(osThreadDef_t * thread_def, void * argument)
 {
+    ds_osThreadCreate_t args = {thread_def, argument};
     osThreadId result;
 
-    result = (osThreadId)syscall(KERNEL_SYSCALL_SCHED_THREAD_CREATE, (void *)thread_def);
+    result = (osThreadId)syscall(KERNEL_SYSCALL_SCHED_THREAD_CREATE, &args);
 
     return result;
 }
