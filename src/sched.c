@@ -78,8 +78,8 @@ volatile threadInfo_t * current_thread;
 volatile uint32_t calcCPULoad = 1;
 volatile uint32_t sched_cpu_load;
 
-static char m_stack[sizeof(sw_stack_frame_t)]; /* Stack for main */
-static char sched_idle_stack[sizeof(sw_stack_frame_t) + sizeof(hw_stack_frame_t) + 100]; /* Stack for idle task */
+/* Stack for idle task */
+static char sched_idle_stack[sizeof(sw_stack_frame_t) + sizeof(hw_stack_frame_t) + 100];
 
 
 /* Private function prototypes -----------------------------------------------*/
