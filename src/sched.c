@@ -31,8 +31,13 @@
     #error Core is not selected by the compiler.
 #endif
 
-#define MAIN_RETURN     0xFFFFFFF9 /* Return using the MSP */
-#define THREAD_RETURN   0xFFFFFFFD /* Return using the PSP */
+/* Exception return values */
+#define HAND_RETURN     0xFFFFFFF1u /*!< Return to handler mode using the MSP. */
+#define MAIN_RETURN     0xFFFFFFF9u /*!< Return to thread mode using the MSP. */
+#define THREAD_RETURN   0xFFFFFFFDu /*!< Return to thread mode using the PSP. */
+
+#define DEFAULT_PSR     0x21000000u
+
 
 /* stack frame saved by the hardware */
 typedef struct {
@@ -74,7 +79,7 @@ volatile uint32_t calcCPULoad = 1;
 volatile uint32_t sched_cpu_load;
 
 static char m_stack[sizeof(sw_stack_frame_t)]; /* Stack for main */
-static char sched_i_stack[sizeof(sw_stack_frame_t) + sizeof(hw_stack_frame_t) + 100]; /* Stack for idle task */
+static char sched_idle_stack[sizeof(sw_stack_frame_t) + sizeof(hw_stack_frame_t) + 100]; /* Stack for idle task */
 
 
 /* Private function prototypes -----------------------------------------------*/
@@ -86,18 +91,22 @@ static inline void load_context(void);
 static inline void * rd_thread_stack_ptr(void);
 static inline void wr_thread_stack_ptr(void * ptr);
 void context_switcher(void);
+void sched_ThreadSet(int i, osThreadDef_t * thread_def, void * argument);
 
 /**
   * Initialize the scheduler
   */
 void sched_init(void)
 {
-    task_table[0].sp = m_stack + sizeof(sw_stack_frame_t);
+    /* Create the idle task as task 0 */
+    osThreadDef_t tdef_idle = { (os_pthread)(&idleTask), osPriorityIdle, sched_i_stack, sizeof(sched_idle_stack)/sizeof(char) };
+    sched_ThreadSet(0, tdef_idle, NULL);
     current_thread = &(task_table[0]);
 
-    /* Create idle task */
-    osThreadDef_t idle = { (os_pthread)(&idleTask), osPriorityIdle, sched_i_stack, sizeof(sched_i_stack)/sizeof(char) };
-    sched_ThreadCreate(&idle, NULL);
+    /* Set initial value for PSP */
+    asm volatile ("MSR psp, %0\n"
+                  "ISB\n"
+                  : : "r" (task_table[0].sp));
 }
 
 /**
@@ -238,23 +247,14 @@ static inline void wr_thread_stack_ptr(void * ptr)
 }
 
 /**
-  * sysTick interrupt handler
+  * Scheduler handler
   *
-  * This grabs the main stack value and then calls the context swither.
+  * Scheduler handler is mainly called by sysTick and PendSV
   */
 void sched_handler(void * st)
 {
     stack = (uint32_t *)st;
-    if (current_thread == &(task_table[0])) {
-        /* Copy MSP to PSP */
-        volatile uint32_t scratch;
-        asm volatile ("MRS %0,  msp\n"
-                      "MSR psp, %0\n"
-                      "ISB\n"
-                      : "=r" (scratch));
-    } else {
-        save_context();
-    }
+    save_context();
     context_switcher();
     load_context(); /* Since PSP has been updated, this loads the last state of
                      * the new task */
@@ -306,6 +306,36 @@ void context_switcher(void)
 }
 
 /**
+  * Set thread configuration
+  * @param i            Thread id
+  * @param thread_def   Thread definitions
+  * @param argument     Thread argument
+  */
+void sched_ThreadSet(int i, osThreadDef_t * thread_def, void * argument)
+{
+    hw_stack_frame_t * thread_frame;
+
+    thread_frame = (hw_stack_frame_t *)((uint32_t)(thread_def->stackAddr) + thread_def->stackSize - sizeof(hw_stack_frame_t));
+    thread_frame->r0 = (uint32_t)(argument);
+    thread_frame->r1 = 0;
+    thread_frame->r2 = 0;
+    thread_frame->r3 = 0;
+    thread_frame->r12 = 0;
+    thread_frame->pc = ((uint32_t)(thread_def->pthread));
+    thread_frame->lr = (uint32_t)del_thread;
+    thread_frame->psr = DEFAULT_PSR;
+
+    task_table[i].flags = SCHED_IN_USE_FLAG | SCHED_EXEC_FLAG;
+    task_table[i].priority = thread_def->tpriority;
+    memset(&(task_table[i].event), 0, sizeof(osEvent));
+    task_table[i].uCounter = 0;
+    task_table[i].sp = (void *)((uint32_t)(thread_def->stackAddr) +
+                       thread_def->stackSize -
+                       sizeof(hw_stack_frame_t) -
+                       sizeof(sw_stack_frame_t));
+}
+
+/**
   * Create a new thread
   *
   */
@@ -320,32 +350,14 @@ osThreadId sched_ThreadCreate(osThreadDef_t * thread_def, void * argument)
 
     for (i = 1; i < configSCHED_MAX_THREADS; i++) {
         if (task_table[i].flags == 0) {
-            thread_frame = (hw_stack_frame_t *)((uint32_t)(thread_def->stackAddr) + thread_def->stackSize - sizeof(hw_stack_frame_t));
-            thread_frame->r0 = (uint32_t)(argument);
-            thread_frame->r1 = 0;
-            thread_frame->r2 = 0;
-            thread_frame->r3 = 0;
-            thread_frame->r12 = 0;
-            thread_frame->pc = ((uint32_t)(thread_def->pthread));
-            thread_frame->lr = (uint32_t)del_thread;
-            thread_frame->psr = 0x21000000; /* Default PSR value */
-
-            task_table[i].flags = SCHED_IN_USE_FLAG | SCHED_EXEC_FLAG;
-            task_table[i].priority = thread_def->tpriority;
-            memset(&(task_table[i].event), 0, sizeof(osEvent));
-            task_table[i].uCounter = 0;
-            task_table[i].sp = (void *)((uint32_t)(thread_def->stackAddr) +
-                               thread_def->stackSize -
-                               sizeof(hw_stack_frame_t) -
-                               sizeof(sw_stack_frame_t));
-
+            sched_ThreadSet(thread_def, argument);
             break;
         }
     }
     __set_interrupt_state(s); /* Restore interrupts */
 
     if (i == configSCHED_MAX_THREADS) {
-        /* New thread could no be created */
+        /* New thread could not be created */
         return NULL;
     } else {
         /* Return the id of the new thread */
