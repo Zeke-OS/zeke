@@ -31,6 +31,12 @@ static int right(int i)
     return 2 * i + 1;
 }
 
+/**
+  * Swap two threadInfo_t pointers in a heap
+  * @param heap Pointer to a heap struct.
+  * @param i Index of a pointer in heap array.
+  * @param j Index of a pointer in heap array.
+  */
 static inline void swap(heap_t * heap, int i, int j)
 {
     threadInfo_t * temp = (threadInfo_t *)(heap->a[i]);
@@ -38,6 +44,11 @@ static inline void swap(heap_t * heap, int i, int j)
     heap->a[j] = temp;
 }
 
+/**
+  * Fix heap
+  * @param heap Pointer to a heap struct.
+  * @param i Current index in heap array.
+  */
 void heapify(heap_t * heap, int i)
 {
     int l = left(i);
@@ -59,15 +70,14 @@ void heapify(heap_t * heap, int i)
     }
 }
 
-threadInfo_t * heap_del_max(heap_t * heap)
+/** Removes the thread on top of a heap
+  * @param heap Pointer to a heap_t struct.
+  */
+void heap_del_max(heap_t * heap)
 {
-    threadInfo_t * max = *heap->a;
-
     heap->a[0] = heap->a[heap->size];
     heap->size--;
     heapify(heap, 0);
-
-    return max;
 }
 
 void heap_insert(heap_t * heap, threadInfo_t * k)
@@ -80,3 +90,34 @@ void heap_insert(heap_t * heap, threadInfo_t * k)
     }
     heap->a[i] = k;
 }
+
+/**
+  * Heap increment key
+  * @note Parameters are not asserted. If key is not actually biger than it
+  * previously was this operation might not work as expected.
+  * @param heap Pointer to a heap_t struct.
+  * @param i Index of the changed key in heap array.
+  */
+void heap_inc_key(heap_t * heap, int i)
+{
+    while ((i > 0 && (heap->a[parent(i)]->priority) < heap->a[i]->priority)) {
+        swap(heap, i, parent(i));
+        i = parent(i);
+    }
+}
+
+/**
+  * Heap decrement key
+  * @note Parameters are not asserted. If key is not actually smaller than it
+  * previously was this operation might not work as expected.
+  * @param heap Pointer to a heap_t struct.
+  * @param i Index of the changed key in heap array.
+  */
+void heap_dec_key(heap_t * heap, int i)
+{
+    /* Only heapify is actually needed priority is already set
+     * to its new value */
+    heapify(heap, i);
+}
+
+

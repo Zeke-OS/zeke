@@ -21,7 +21,9 @@ typedef struct {
 } heap_t;
 
 void heapify(heap_t * heap, int i);
-threadInfo_t * heap_del_max(heap_t * heap);
+void heap_del_max(heap_t * heap);
 void heap_insert(heap_t * heap, threadInfo_t * k);
+void heap_inc_key(heap_t * heap, int i);
+void heap_dec_key(heap_t * heap, int i);
 
 #endif /* HEAP_H */

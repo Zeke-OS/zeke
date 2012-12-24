@@ -2,7 +2,7 @@
  *******************************************************************************
  * @file    sched.h
  * @author  Olli Vanhoja
- * @brief   Kernel scheduler header.
+ * @brief   Kernel scheduler header file for sched.c.
  *******************************************************************************
  */
 
@@ -18,18 +18,39 @@
 
 #define SCHED_IN_USE_FLAG   0x00000001u /*!< IN USE FLAG */
 #define SCHED_EXEC_FLAG     0x00000002u /*!< EXEC = 1 / SLEEP = 0 */
-#define SCHED_NO_SIG_FLAG   0x00000004u /*!< Thread cannot be woken up by any signal. */
+#define SCHED_NO_SIG_FLAG   0x00000004u /*!< Thread cannot be woken up by a signal. */
 
 extern volatile uint32_t sched_enabled;
 extern volatile uint32_t sched_cpu_load;
 
 typedef struct {
-    void * sp;              /*!< Stack pointer */
-    uint32_t flags;         /*!< Status flags */
-    osEvent event;          /*!< Event struct */
-    osPriority priority;    /*!< Task priority */
-    uint32_t uCounter;      /*!< Counter to calculate how much time this thread gets */
+    void * sp;                  /*!< Stack pointer */
+    uint32_t flags;             /*!< Status flags */
+    osEvent event;              /*!< Event struct */
+    osPriority def_priority;    /*!< Thread priority */
+    osPriority priority;        /*!< Thread dynamic runtime priority */
+    uint32_t uCounter;          /*!< Time slice counter */
+    struct threadInheritance_t {
+        void * first_child;         /*!< Link to the first child thread */
+        void * parent;              /*!< Parent thread */
+        /* Doubly linked list of childs of the parent thread */
+        void * prev_child;          /*!< Previous child of the common parent */
+        void * next_child;          /*!< Next child of the common parent */
+    } inh;                      /*!< Thread inheritance; Parent and child thread pointers. */
 } threadInfo_t;
+
+/* Parent and child threads
+ * ========================
+ * + first_child is a parent thread attribute containing address to a first
+ *   child of the parent thread
+ * + parent is a child thread attribute containing address to a parent
+ *   thread of the child thread
+ * + prev_child is a child thread attribute containing address of
+ *   a previous child node of a common parent thread ie. sharing same
+ *   parent thread
+ * + next_child is a child thread attribute containing address of a next
+ *   child node of the common parent thread
+ */
 
 /* Public function prototypes ------------------------------------------------*/
 void sched_init(void);

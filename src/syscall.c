@@ -12,32 +12,11 @@
 #define KERNEL_INTERNAL 1
 #include "syscall.h"
 
-
-/**
-  * Make system call
-  */
-#pragma optimize=no_code_motion
-uint32_t syscall(int type, void * p)
-{
-    asm volatile(
-                 "MOV r2, %0\n" /* Put parameters to r2 & r3 */
-                 "MOV r3, %1\n"
-                 "MOV r1, r4\n" /* Preserve r4 by using hardware push */
-                 "SVC #0\n"
-                 "DSB\n" /* Ensure write is completed
-                          * (architecturally required, but not strictly
-                          * required for existing Cortex-M processors) */
-                 "ISB\n" /* Ensure PendSV is executed */
-                 : : "r" (type), "r" (p));
-
-    /* Get return value */
-    osStatus scratch;
-    asm volatile("MOV %0, r4\n"
-                 "MOV r4, r1\n" /* Read r4 back from r1 */
-                 : "=r" (scratch));
-
-    return scratch;
-}
+#ifdef __ARM_PROFILE_M__
+#include "cortex_m.h"
+#else
+    #error Selected ARM profile is not supported
+#endif
 
 #pragma optimize=no_code_motion
 uint32_t _intSyscall_handler(int type, void * p)

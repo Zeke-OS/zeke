@@ -20,7 +20,7 @@
     #error No hardware support for the selected MCU model.
 #endif
 
-static char main_Stack[200];
+static char main_Stack[configAPP_MAIN_SSIZE];
 
 int main(void)
 {
@@ -29,7 +29,8 @@ int main(void)
 	}
     sched_init();
     {
-        osThreadDef_t main_thread = { (os_pthread)(&app_main), osPriorityNormal, main_Stack, sizeof(main_Stack)/sizeof(char) };
+        /* Create app_main thread */
+        osThreadDef_t main_thread = { (os_pthread)(&app_main), configAPP_MAIN_PRI, main_Stack, sizeof(main_Stack)/sizeof(char) };
         osThreadCreate(&main_thread, NULL);
     }
     sched_start();

@@ -2,7 +2,7 @@
  *******************************************************************************
  * @file    sched.h
  * @author  Olli Vanhoja
- * @brief   Kernel scheduler header
+ * @brief   Kernel scheduler
  *******************************************************************************
  */
 
@@ -24,48 +24,19 @@
 #include "sched.h"
 #include "kernel_config.h"
 
-#ifndef __ARM_PROFILE_M__
-    #error Only ARM Cortex-M profile is currently supported.
+#ifdef __ARM_PROFILE_M__
+#include "cortex_m.h"
+#else
+    #error Selected ARM profile is not supported
 #endif
-#ifndef __CORE__
-    #error Core is not selected by the compiler.
-#endif
 
-/* Exception return values */
-#define HAND_RETURN     0xFFFFFFF1u /*!< Return to handler mode using the MSP. */
-#define MAIN_RETURN     0xFFFFFFF9u /*!< Return to thread mode using the MSP. */
-#define THREAD_RETURN   0xFFFFFFFDu /*!< Return to thread mode using the PSP. */
-
-#define DEFAULT_PSR     0x21000000u
+/* When these flags are both set for a it's ok to make a context switch to it. */
+#define SCHED_CSW_OK_FLAGS  (SCHED_EXEC_FLAG | SCHED_IN_USE_FLAG)
 
 
-/* stack frame saved by the hardware */
-typedef struct {
-    uint32_t r0;
-    uint32_t r1;
-    uint32_t r2;
-    uint32_t r3;
-    uint32_t r12;
-    uint32_t lr;
-    uint32_t pc;
-    uint32_t psr;
-} hw_stack_frame_t;
-
-/* Stack frame save by the software */
-typedef struct {
-    uint32_t r4;
-    uint32_t r5;
-    uint32_t r6;
-    uint32_t r7;
-    uint32_t r8;
-    uint32_t r9;
-    uint32_t r10;
-    uint32_t r11;
-} sw_stack_frame_t;
-
-static uint32_t * stack;    /* Position in MSP stack where special return codes
-                             * can be written. This is mainly in a memory space
-                             * of some interrupt handler. */
+static uint32_t * stack; /* Position in MSP stack where special return codes
+                          * can be written. This is mainly in a memory space
+                          * of some interrupt handler. */
 volatile uint32_t sched_enabled = 0; /* If this is set to != 0 interrupt
                                       * handlers will be able to call context
                                       * switching. */
@@ -85,13 +56,10 @@ static char sched_idle_stack[sizeof(sw_stack_frame_t) + sizeof(hw_stack_frame_t)
 /* Private function prototypes -----------------------------------------------*/
 void idleTask(void * arg);
 void del_thread(void);
-static inline void * rd_stack_ptr(void);
-static inline void save_context(void);
-static inline void load_context(void);
-static inline void * rd_thread_stack_ptr(void);
-static inline void wr_thread_stack_ptr(void * ptr);
 void context_switcher(void);
-void sched_ThreadSet(int i, osThreadDef_t * thread_def, void * argument);
+void sched_ThreadSet(int i, osThreadDef_t * thread_def, void * argument, threadInfo_t * parent);
+void sched_threadSetInherintance(osThreadId i, threadInfo_t * parent);
+void sched_threadSetExec(int thread_id, osPriority pri);
 
 /**
   * Initialize the scheduler
@@ -101,12 +69,12 @@ void sched_init(void)
     /* Create the idle task as task 0 */
     osThreadDef_t tdef_idle = { (os_pthread)(&idleTask), osPriorityIdle, sched_i_stack, sizeof(sched_idle_stack)/sizeof(char) };
     sched_ThreadSet(0, tdef_idle, NULL);
+
+    /* Set idle thread as currently running thread */
     current_thread = &(task_table[0]);
 
     /* Set initial value for PSP */
-    asm volatile ("MSR psp, %0\n"
-                  "ISB\n"
-                  : : "r" (task_table[0].sp));
+    wr_thread_stack_ptr(task_table[0].sp);
 }
 
 /**
@@ -121,9 +89,11 @@ void sched_start(void)
 
     __set_interrupt_state(s); /* Restore interrupts */
 
-    /* Scheduler should now start */
+    /* Scheduler should now start if interrupts are
+     * enabled */
 }
 
+/** @todo CPU load calculation is now totally broke */
 void idleTask(void * arg)
 {
     while(1) {
@@ -136,120 +106,34 @@ void idleTask(void * arg)
 
             calcCPULoad = 0;
             if (countflag) {
-                SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk; /* Set PendSV pending status */
-                asm volatile("DSB\n" /* Ensure write is completed
-                                      * (architecturally required, but not strictly
-                                      * required for existing Cortex-M processors) */
-                             "ISB\n" /* Ensure PendSV is executed */
-                );
+                req_context_switch();
             }
         }
     }
 }
 
+/** @todo remove childs when parent is deleted */
 void del_thread(void)
 {
     current_thread->flags = 0; /* Clear all the flags */
-    SCB->ICSR |= (1<<28); /* Switch the context */
+
+    /* There should be no need to clear events or anything else as those are
+     * not passed by pointer to anywhere and secondly they are cleared when
+     * new thread is created.
+     *
+     * After flags is set to 0 the thread should be automatically removed
+     * from the scheduler heap when it hits the top. */
+     */
+
+    req_context_switch();
     while(1); /* Once the context changes, the program will no longer return to
                * this thread */
 }
 
 /**
-  * Save the context on the PSP
-  */
-static inline void save_context(void)
-{
-    volatile uint32_t scratch;
-#if __CORE__ == __ARM6M__
-    asm volatile ("MRS   %0,  psp\n"
-                  "SUBS  %0,  %0, #32\n"
-                  "MSR   psp, %0\n"         /* This is the address that will use by rd_thread_stack_ptr(void) */
-                  "ISB\n"
-                  "STMIA %0!, {r4-r7}\n"
-                  "PUSH  {r4-r7}\n"         /* Push original register values so we don't lost them */
-                  "MOV   r4,  r8\n"
-                  "MOV   r5,  r9\n"
-                  "MOV   r6,  r10\n"
-                  "MOV   r7,  r11\n"
-                  "STMIA %0!, {r4-r7}\n"
-                  "POP   {r4-r7}\n"         /* Pop them back */
-                  : "=r" (scratch));
-#elif __CORE__ == __ARM7M__
-    asm volatile ("MRS   %0,  psp\n"
-                  "STMDB %0!, {r4-r11}\n"
-                  "MSR   psp, %0\n"
-                  "ISB\n"
-                  : "=r" (scratch));
-#else
-    #error Selected CORE not supported
-#endif
-}
-
-/**
-  * Load the context from the PSP
-  */
-static inline void load_context(void)
-{
-    volatile uint32_t scratch;
-#if __CORE__ == __ARM6M__
-    asm volatile ("MRS   %0,  psp\n"
-                  "ADDS  %0,  %0, #16\n"      /* Move to the high registers */
-                  "LDMIA %0!, {r4-r7}\n"
-                  "MOV   r8,  r4\n"
-                  "MOV   r9,  r5\n"
-                  "MOV   r10, r6\n"
-                  "MOV   r11, r7\n"
-                  "MSR   psp, %0\n"           /* Store the new top of the stack */
-                  "ISB\n"
-                  "SUBS  r0,  r0, #32\n"      /* Go back to the low registers */
-                  "LDMIA %0!, {r4-r7}\n"
-                  : "=r" (scratch));
-#elif __CORE__ == __ARM7M__
-    asm volatile ("MRS   %0,  psp\n"
-                  "LDMFD %0!, {r4-r11}\n"
-                  "MSR   psp, %0\n"
-                  "ISB\n"
-                  : "=r" (scratch));
-#else
-    #error Selected CORE not supported
-#endif
-}
-
-/**
-  * Read the main stack pointer
-  */
-static inline void * rd_stack_ptr(void)
-{
-    void * result = NULL;
-    asm volatile("MRS %0, msp\n"
-                 : "=r" (result));
-    return result;
-}
-
-/**
-  * Read the PSP so that it can be stored in the task table
-  */
-static inline void * rd_thread_stack_ptr(void)
-{
-    void * result = NULL;
-    asm volatile ("MRS %0, psp\n" : "=r" (result));
-    return(result);
-}
-
-/**
-  * Write stack pointer of the currentthread to the PSP
-  */
-static inline void wr_thread_stack_ptr(void * ptr)
-{
-    asm volatile ("MSR psp, %0\n"
-                  "ISB\n" : : "r" (ptr));
-}
-
-/**
   * Scheduler handler
   *
-  * Scheduler handler is mainly called by sysTick and PendSV
+  * Scheduler handler is mainly called by sysTick and PendSV.
   */
 void sched_handler(void * st)
 {
@@ -267,35 +151,59 @@ void context_switcher(void)
 
     /* Select next thread */
     do {
-        /* Need to repopulate the priority queue? */
+        /* TODO Remove re-populate code and move its functionality to the other functions!? */
+        /* Need to re-populate the priority queue? */
         if ((priority_queue.size < 0)) {
-            calcCPULoad = 1; /* We should calculate the CPU load */
-            for (int i = 1; i < configSCHED_MAX_THREADS; i++) {
+            for (int i = 0; i < configSCHED_MAX_THREADS; i++) {
                 task_table[i].uCounter = 0;
 
-                if (task_table[i].flags & SCHED_EXEC_FLAG) {
+                if ((task_table[i].flags & SCHED_CSW_OK_FLAGS) == SCHED_CSW_OK_FLAGS) {
                     (void)heap_insert(&priority_queue, &(task_table[i]));
                 }
             }
-        } else {
-            /* Check if current thread can be removed from the queue */
-            if (current_thread == priority_queue.a[0]) {
-                if (((current_thread->flags & SCHED_EXEC_FLAG) == 0)
-                    || (current_thread->uCounter > configSCHED_MAX_CYCLES)
-                    || (current_thread->priority == osPriorityIdle)) {
-                    (void)heap_del_max(&priority_queue);
-                }
+        }
+
+        /* We can only do some operations efficiently if the current thread is
+         * on the top of the heap. If some other thread has been added on the
+         * top while running the current thread it doesn't matter as sleeping
+         * or dead threads will be will be removed when there is no other
+         * threads prioritized above them. This actually means that garbage
+         * collection respects thread priorities and it  doesn't cause that
+         * much overhead for higher priority threads. */
+        if (current_thread == priority_queue.a[0]) {
+            /* Scaled maximum time slice count */
+            int tslice_n_max;
+            if ((int)current_thread->priority >= 0) { /* Positive priority */
+                tslice_n_max = configSCHED_MAX_SLICES * ((int)current_thread->priority + 1);
+            } else { /* Negative priority */
+                tslice_n_max = configSCHED_MAX_SLICES / (-1 * (int)current_thread->priority + 1);
+            }
+
+            if ((current_thread->flags & SCHED_EXEC_FLAG) == 0) {
+                /* Remove the current thread from the priority queue */
+                (void)heap_del_max(&priority_queue);
+                /* Thread is in sleep so revert back to its original priority */
+                current_thread->priority = current_thread->def_priority;
+                current_thread->uCounter = 0;
+            } else if ((current_thread->uCounter >= (uint32_t)tslice_n_max) /* if maximum slices for this thread */
+              && ((int)current_thread->priority > (int)osPriorityBelowNormal)) /* if priority is higher than this */
+            {
+                /* Give a penalty: Set lower priority and
+                 * perform heap decrement operation. */
+                current_thread->priority = osPriorityBelowNormal;
+                heap_dec_key(&priority_queue, 0);
             }
         }
 
         /* Next thread is the top one on the priority queue */
         current_thread = *priority_queue.a;
 
-        /* In the while loop condition we'll skip this thread if its EXEC flag
-        * is disabled. */
-    } while ((current_thread->flags & SCHED_EXEC_FLAG) == 0);
+        /* In the do...while loop condition we'll skip this thread
+         * if its EXEC or IN_USE flags are disabled. */
+    } while ((current_thread->flags & SCHED_CSW_OK_FLAGS) != SCHED_CSW_OK_FLAGS);
 
-    /* The counter will help us to see how often the task is getting its turn to run */
+    /* uCounter is used to determine how many time slices has been used
+     * by the process. */
     current_thread->uCounter++;
 
     /* Use the thread stack upon handler return */
@@ -306,34 +214,69 @@ void context_switcher(void)
 }
 
 /**
-  * Set thread configuration
+  * Set thread initial configuration
+  * @note This function should not be called for already initialized threads.
   * @param i            Thread id
   * @param thread_def   Thread definitions
   * @param argument     Thread argument
+  * @param parent       Parent thread id, NULL = doesn't have a parent
   */
-void sched_ThreadSet(int i, osThreadDef_t * thread_def, void * argument)
+void sched_ThreadSet(int i, osThreadDef_t * thread_def, void * argument, threadInfo_t * parent)
 {
-    hw_stack_frame_t * thread_frame;
+    /* This function should not be called for already initialized threads. */
+    if ((task_table[i].flags & SCHED_IN_USE_FLAG) != 0)
+        return;
 
-    thread_frame = (hw_stack_frame_t *)((uint32_t)(thread_def->stackAddr) + thread_def->stackSize - sizeof(hw_stack_frame_t));
-    thread_frame->r0 = (uint32_t)(argument);
-    thread_frame->r1 = 0;
-    thread_frame->r2 = 0;
-    thread_frame->r3 = 0;
-    thread_frame->r12 = 0;
-    thread_frame->pc = ((uint32_t)(thread_def->pthread));
-    thread_frame->lr = (uint32_t)del_thread;
-    thread_frame->psr = DEFAULT_PSR;
+    /* Init core specific stack frame */
+    init_hw_stack_frame(thread_def, argument, (uint32_t)del_thread);
 
-    task_table[i].flags = SCHED_IN_USE_FLAG | SCHED_EXEC_FLAG;
-    task_table[i].priority = thread_def->tpriority;
-    memset(&(task_table[i].event), 0, sizeof(osEvent));
-    task_table[i].uCounter = 0;
-    task_table[i].sp = (void *)((uint32_t)(thread_def->stackAddr) +
-                       thread_def->stackSize -
-                       sizeof(hw_stack_frame_t) -
-                       sizeof(sw_stack_frame_t));
+    /* Mark that this thread position is in use.
+     * EXEC flag is set later in sched_threadSetExec */
+    task_table[i].flags = SCHED_IN_USE_FLAG;
+    task_table[i].def_priority = thread_def->tpriority;
+    /* task_table[i].priority is set later in sched_threadSetExec */
+
+    memset(&(task_table[i].event), 0, sizeof(osEvent)); /* Clear events */
+    memset(&(task_table[i].inh), 0, sizeof(threadInheritance_t));
+
+    /* Set stack pointer */
+    task_table[i].sp = (void *)((uint32_t)(thread_def->stackAddr)
+                                         + thread_def->stackSize
+                                         - sizeof(hw_stack_frame_t)
+                                         - sizeof(sw_stack_frame_t));
+
+    /* Update parent and child pointers */
+    if (parent != NULL)
+        sched_threadSetInherintance(i, parent);
+
+    /* Put thread into execution */
+    sched_threadSetExec(i, thread_def->tpriority);
 }
+
+void sched_threadSetInherintance(osThreadId i, threadInfo_t * parent)
+{
+    //task_table[i].inh
+}
+
+/**
+  * Set thread into excetion mode
+  *
+  * Sets EXEC_FLAG and puts thread into the scheduler's priority queue.
+  * @param thread_id    Thread id
+  * @param pri          Priority
+  */
+void sched_threadSetExec(int thread_id, osPriority pri)
+{
+    /* Check that given thread is in use but not in execution */
+    if ((task_table[thread_id].flags & (SCHED_EXEC_FLAG | SCHED_IN_USE_FLAG)) == SCHED_IN_USE_FLAG) {
+        task_table[i].uCounter = 0;
+        task_table[thread_id].priority = pri;
+        task_table[thread_id].flags |= SCHED_EXEC_FLAG; /* Set EXEC flag */
+        (void)heap_insert(&priority_queue, &(task_table[thread_id]));
+    }
+}
+
+/* Functions defined in header file (and used mainly by syscalls) */
 
 /**
   * Create a new thread
@@ -342,7 +285,6 @@ void sched_ThreadSet(int i, osThreadDef_t * thread_def, void * argument)
 osThreadId sched_ThreadCreate(osThreadDef_t * thread_def, void * argument)
 {
     int i;
-    hw_stack_frame_t * thread_frame;
 
     /* Disable context switching to support multi-threaded calls to this fn */
     __istate_t s = __get_interrupt_state();
@@ -350,7 +292,12 @@ osThreadId sched_ThreadCreate(osThreadDef_t * thread_def, void * argument)
 
     for (i = 1; i < configSCHED_MAX_THREADS; i++) {
         if (task_table[i].flags == 0) {
-            sched_ThreadSet(thread_def, argument);
+            sched_ThreadSet(i,                  /* Index of created thread */
+                            thread_def,         /* Thread definition */
+                            argument,           /* Argument */
+                            current_thread);    /* Pointer to parent thread,
+                                                 * which is expected to be
+                                                 * the current thread */
             break;
         }
     }
@@ -386,6 +333,8 @@ uint32_t sched_threadWait(uint32_t millisec)
         return (uint32_t)(&current_thread->event);  /* Not supported yet */
     }
     current_thread->flags &= ~SCHED_EXEC_FLAG;      /* Sleep */
+    /* Note: Thread will be automatically removed from the priority queue when
+     *       it is next time on the top of the heap. */
 
     current_thread->event.status = osOK;
     return (uint32_t)(&current_thread->event);
@@ -393,13 +342,17 @@ uint32_t sched_threadWait(uint32_t millisec)
 
 uint32_t sched_threadSetSignal(osThreadId thread_id, int32_t signal)
 {
+    if ((task_table[thread_id].flags & SCHED_IN_USE_FLAG) == 0)
+        return 0x80000000;
+
     uint32_t prev_signals = (uint32_t)task_table[thread_id].event.value.signals;
 
     task_table[thread_id].event.value.signals = signal;
     task_table[thread_id].event.status = osEventSignal;
 
     if ((task_table[thread_id].flags & SCHED_NO_SIG_FLAG) == 0) {
-        task_table[thread_id].flags |= SCHED_EXEC_FLAG; /* Set EXEC flag */
+        /* Set the signaled thread back into execution */
+        sched_threadSetExec(thread_id, task_table[thread_id].def_priority);
     }
 
     return prev_signals;
