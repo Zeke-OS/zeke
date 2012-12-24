@@ -301,6 +301,7 @@
           <state>$PROJ_DIR$\..\Libraries\STM32F0xx\CMSIS</state>
           <state>$PROJ_DIR$\..\Libraries\STM32F0xx\Drivers\inc</state>
           <state>$PROJ_DIR$\..\Libraries\Discovery</state>
+          <state>$PROJ_DIR$\..\src</state>
           <state>$PROJ_DIR$\..\include</state>
           <state>$PROJ_DIR$\..\src\hal</state>
           <state>$PROJ_DIR$\..\config</state>
@@ -1985,7 +1986,7 @@
     <name>$PROJ_DIR$\..\src\heap.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\include\heap.h</name>
+    <name>$PROJ_DIR$\..\src\heap.h</name>
   </file>
   <file>
     <name>$PROJ_DIR$\..\src\kernel.c</name>
@@ -1997,7 +1998,7 @@
     <name>$PROJ_DIR$\..\src\kernel_init.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\src\main.c</name>
+    <name>$PROJ_DIR$\..\main.c</name>
   </file>
   <file>
     <name>$PROJ_DIR$\..\include\main.h</name>
