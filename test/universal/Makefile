@@ -31,7 +31,10 @@ all:  minunit $(OBJ) $(TEST_EXECUTABLES) run
 	@echo "'make all' done"
 
 minunit: ../minunit/minunit.c
+	@echo "Build unit test framework"
+	@echo "=================================================================="
 	$(CC) $(IDIR) $(CCFLAGS) -c $^ -o ./$(ODIR)/minunit.o
+	@echo "=================================================================="
 
 # Objs under test
 $(OBJ): $(SRC)
@@ -39,9 +42,12 @@ $(OBJ): $(SRC)
 
 # Tests
 bin/%: %.c ./$(ODIR)/minunit.o
+	@echo "Build test: $@"
+	@echo "=================================================================="
 	$(eval TESTS := $(filter-out test,$(subst _,$(space),$(basename $(notdir $@)))))
 	$(eval DEPS := $(foreach file,$(addsuffix .o, $(filter $(TESTS), $(SRC_MODULES))),./$(ODIR)/$(file)))
 	$(CC) $(CCFLAGS) $(IDIR) $^ $(DEPS) -o ./$@
+	@echo "=================================================================="
 
 # Run tests
 run: $(TEST_EXECUTABLES)
