@@ -1,5 +1,7 @@
+######## Universal unit tests for Zeke project ########
+
 #### Source code under test ####
-SRC = ../../src/heap.c
+SRC = $(wildcard ../../src/*.c)
 
 #### Tests ####
 TEST_SRC = $(wildcard *.c)
@@ -14,10 +16,15 @@ OBJ = $(patsubst %,./$(ODIR)/%,$(notdir $(SRC:.c=.o)))
 TEST_EXECUTABLES = $(TEST_SRC:%.c=$(BDIR)/%)
 
 space = $(empty) $(empty)
-SRC_MODULES = $(basename $(notdir $(SRC)))
 
-#print:
-#	echo $(SRC_MODULES)
+# There is a test for following modules
+TEST_MODS = $(filter-out test,$(subst _,$(space),$(basename $(notdir $(TEST_SRC)))))
+
+# All source modules
+SRC_MODULES = $(filter $(TEST_MODS),$(basename $(notdir $(SRC))))
+
+# Actual sources under test without untestable modules
+SRC := $(filter $(foreach file,$(TEST_MODS), %/$(file).c), $(SRC))
 
 #### Targets ####
 all:  minunit $(OBJ) $(TEST_EXECUTABLES) run
