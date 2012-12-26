@@ -33,8 +33,7 @@ typedef struct {
     struct threadInheritance_t {
         void * first_child;         /*!< Link to the first child thread */
         void * parent;              /*!< Parent thread */
-        /* Doubly linked list of childs of the parent thread */
-        void * prev_child;          /*!< Previous child of the common parent */
+        /* Circularly linked list of childs of the parent thread */
         void * next_child;          /*!< Next child of the common parent */
     } inh;                      /*!< Thread inheritance; Parent and child thread pointers. */
 } threadInfo_t;

@@ -42,7 +42,7 @@ volatile uint32_t sched_enabled = 0; /* If this is set to != 0 interrupt
                                       * switching. */
 
 threadInfo_t task_table[configSCHED_MAX_THREADS];
-static heap_t priority_queue = {{NULL}, -1};
+static heap_t priority_queue = HEAP_NEW_EMPTY;
 volatile threadInfo_t * current_thread;
 
 /* Varibles for CPU Load Calculation */
@@ -255,7 +255,20 @@ void sched_ThreadSet(int i, osThreadDef_t * thread_def, void * argument, threadI
 
 void sched_threadSetInherintance(osThreadId i, threadInfo_t * parent)
 {
-    //task_table[i].inh
+    task_table[i].inh.parent = parent;
+
+    if (parent->inh->first_child == NULL) {
+        /* This is the first child of this parent */
+        parent->inh->first_child = &(task_table[i]);
+        task_table[i].inh.prev_child = &(task_table[i]);
+        task_table[i].inh.next_child = &(task_table[i]);
+        return;
+    }
+
+    /* TODO singly linking circularly */
+    void * old_next = task_table[i].inh.next_child;
+    task_table[i].inh.next_child = &(task_table[i]);
+    old_next->next_child = &(task_table[i]);
 }
 
 /**

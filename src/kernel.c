@@ -11,25 +11,24 @@
   * @{
   */
 
+#ifdef __ARM_PROFILE_M__
+#include "cortex_m.h"
+#else
+    #error Selected ARM profile is not supported
+#endif
+
+#ifndef configMCU_MODEL
+    #error MCU model not selected.
+#endif
+
+#if configMCU_MODEL == MCU_MODEL_STM32F0
 #include "stm32f0_interrupt.h"
+#else
+    #error No hardware support for the selected MCU model.
+#endif
+
 #include "syscall.h"
 #include "kernel.h"
-
-static inline void req_context_switch(void);
-
-/**
-  * Request context switch immediately
-  */
-static inline void req_context_switch(void)
-{
-    SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk; /* Set PendSV pending status */
-    asm volatile("DSB\n" /* Ensure write is completed
-                          * (architecturally required, but not strictly
-                          * required for existing Cortex-M processors) */
-                 "ISB\n" /* Ensure PendSV is executed */
-                 );
-
-}
 
 /* Kernel Control Functions */
 

@@ -15,6 +15,8 @@
 #include <stddef.h>
 #include "sched.h"
 
+#define HEAP_NEW_EMPTY {{NULL}, -1}
+
 typedef struct {
     threadInfo_t * a[configSCHED_MAX_THREADS];
     int size;

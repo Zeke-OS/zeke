@@ -35,7 +35,9 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#ifndef MU_TEST_BUILD
 #include "stm32f0xx.h"
+#endif
 #include "kernel_config.h"
 
 // ==== Enumeration, structures, defines ====
