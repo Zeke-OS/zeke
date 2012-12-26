@@ -23,7 +23,7 @@ TEST_MODS = $(filter-out test,$(subst _,$(space),$(basename $(notdir $(TEST_SRC)
 # All source modules
 SRC_MODULES = $(filter $(TEST_MODS),$(basename $(notdir $(SRC))))
 
-# Actual sources under test without untestable modules
+# Source files of modules that are actually testable
 SRC := $(filter $(foreach file,$(TEST_MODS), %/$(file).c), $(SRC))
 
 #### Targets ####
