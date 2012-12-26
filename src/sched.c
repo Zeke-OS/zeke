@@ -11,10 +11,8 @@
   */
 
 #include <stdint.h>
-#include <intrinsics.h>
 #include <stddef.h>
 #include <string.h>
-#include "stm32f0xx.h"
 
 #ifndef KERNEL_INTERNAL
 #define KERNEL_INTERNAL
@@ -23,12 +21,7 @@
 #include "heap.h"
 #include "sched.h"
 #include "kernel_config.h"
-
-#ifdef __ARM_PROFILE_M__
-#include "cortex_m.h"
-#else
-    #error Selected ARM profile is not supported
-#endif
+#include "hal_core.h"
 
 /* When these flags are both set for a it's ok to make a context switch to it. */
 #define SCHED_CSW_OK_FLAGS  (SCHED_EXEC_FLAG | SCHED_IN_USE_FLAG)
@@ -57,9 +50,9 @@ static char sched_idle_stack[sizeof(sw_stack_frame_t) + sizeof(hw_stack_frame_t)
 void idleTask(void * arg);
 void del_thread(void);
 void context_switcher(void);
-void sched_ThreadSet(int i, osThreadDef_t * thread_def, void * argument, threadInfo_t * parent);
-void sched_threadSetInherintance(osThreadId i, threadInfo_t * parent);
-void sched_threadSetExec(int thread_id, osPriority pri);
+void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument, threadInfo_t * parent);
+void sched_thread_set_inherintance(osThreadId i, threadInfo_t * parent);
+void sched_thread_set_exec(int thread_id, osPriority pri);
 
 /**
   * Initialize the scheduler
@@ -67,8 +60,8 @@ void sched_threadSetExec(int thread_id, osPriority pri);
 void sched_init(void)
 {
     /* Create the idle task as task 0 */
-    osThreadDef_t tdef_idle = { (os_pthread)(&idleTask), osPriorityIdle, sched_i_stack, sizeof(sched_idle_stack)/sizeof(char) };
-    sched_ThreadSet(0, tdef_idle, NULL);
+    osThreadDef_t tdef_idle = { (os_pthread)(&idleTask), osPriorityIdle, sched_idle_stack, sizeof(sched_idle_stack)/sizeof(char) };
+    sched_thread_set(0, &tdef_idle, NULL, NULL);
 
     /* Set idle thread as currently running thread */
     current_thread = &(task_table[0]);
@@ -96,6 +89,7 @@ void sched_start(void)
 /** @todo CPU load calculation is now totally broke */
 void idleTask(void * arg)
 {
+#ifndef MU_TEST_BUILD
     while(1) {
         if (calcCPULoad) {
             /* CPU Load Calculation */
@@ -110,6 +104,7 @@ void idleTask(void * arg)
             }
         }
     }
+#endif
 }
 
 /** @todo remove childs when parent is deleted */
@@ -122,7 +117,7 @@ void del_thread(void)
      * new thread is created.
      *
      * After flags is set to 0 the thread should be automatically removed
-     * from the scheduler heap when it hits the top. */
+     * from the scheduler heap when it hits the top.
      */
 
     req_context_switch();
@@ -139,6 +134,7 @@ void sched_handler(void * st)
 {
     stack = (uint32_t *)st;
     save_context();
+    current_thread->sp = (void *)rd_thread_stack_ptr();
     context_switcher();
     load_context(); /* Since PSP has been updated, this loads the last state of
                      * the new task */
@@ -146,15 +142,14 @@ void sched_handler(void * st)
 
 void context_switcher(void)
 {
-    /* Save the current task's stack pointer */
-    current_thread->sp = rd_thread_stack_ptr();
+    int i;
 
     /* Select next thread */
     do {
         /* TODO Remove re-populate code and move its functionality to the other functions!? */
         /* Need to re-populate the priority queue? */
         if ((priority_queue.size < 0)) {
-            for (int i = 0; i < configSCHED_MAX_THREADS; i++) {
+            for (i = 0; i < configSCHED_MAX_THREADS; i++) {
                 task_table[i].uCounter = 0;
 
                 if ((task_table[i].flags & SCHED_CSW_OK_FLAGS) == SCHED_CSW_OK_FLAGS) {
@@ -221,7 +216,7 @@ void context_switcher(void)
   * @param argument     Thread argument
   * @param parent       Parent thread id, NULL = doesn't have a parent
   */
-void sched_ThreadSet(int i, osThreadDef_t * thread_def, void * argument, threadInfo_t * parent)
+void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument, threadInfo_t * parent)
 {
     /* This function should not be called for already initialized threads. */
     if ((task_table[i].flags & SCHED_IN_USE_FLAG) != 0)
@@ -231,13 +226,18 @@ void sched_ThreadSet(int i, osThreadDef_t * thread_def, void * argument, threadI
     init_hw_stack_frame(thread_def, argument, (uint32_t)del_thread);
 
     /* Mark that this thread position is in use.
-     * EXEC flag is set later in sched_threadSetExec */
+     * EXEC flag is set later in sched_thread_set_exec */
     task_table[i].flags = SCHED_IN_USE_FLAG;
     task_table[i].def_priority = thread_def->tpriority;
-    /* task_table[i].priority is set later in sched_threadSetExec */
+    /* task_table[i].priority is set later in sched_thread_set_exec */
 
-    memset(&(task_table[i].event), 0, sizeof(osEvent)); /* Clear events */
-    memset(&(task_table[i].inh), 0, sizeof(threadInheritance_t));
+    /* Clear events */
+    memset(&(task_table[i].event), 0, sizeof(osEvent));
+
+    /* Clear inherintance */
+    task_table[i].inh.parent = NULL;
+    task_table[i].inh.first_child = NULL;
+    task_table[i].inh.next_child = NULL;
 
     /* Set stack pointer */
     task_table[i].sp = (void *)((uint32_t)(thread_def->stackAddr)
@@ -247,28 +247,27 @@ void sched_ThreadSet(int i, osThreadDef_t * thread_def, void * argument, threadI
 
     /* Update parent and child pointers */
     if (parent != NULL)
-        sched_threadSetInherintance(i, parent);
+        sched_thread_set_inherintance(i, parent);
 
     /* Put thread into execution */
-    sched_threadSetExec(i, thread_def->tpriority);
+    sched_thread_set_exec(i, thread_def->tpriority);
 }
 
-void sched_threadSetInherintance(osThreadId i, threadInfo_t * parent)
+void sched_thread_set_inherintance(osThreadId i, threadInfo_t * parent)
 {
     task_table[i].inh.parent = parent;
 
-    if (parent->inh->first_child == NULL) {
+    if (parent->inh.first_child == NULL) {
         /* This is the first child of this parent */
-        parent->inh->first_child = &(task_table[i]);
-        task_table[i].inh.prev_child = &(task_table[i]);
+        parent->inh.first_child = &(task_table[i]);
         task_table[i].inh.next_child = &(task_table[i]);
         return;
     }
 
     /* TODO singly linking circularly */
-    void * old_next = task_table[i].inh.next_child;
-    task_table[i].inh.next_child = &(task_table[i]);
-    old_next->next_child = &(task_table[i]);
+    //void * old_next = task_table[i].inh.next_child;
+    //task_table[i].inh.next_child = &(task_table[i]);
+    //old_next->next_child = &(task_table[i]);
 }
 
 /**
@@ -278,11 +277,11 @@ void sched_threadSetInherintance(osThreadId i, threadInfo_t * parent)
   * @param thread_id    Thread id
   * @param pri          Priority
   */
-void sched_threadSetExec(int thread_id, osPriority pri)
+void sched_thread_set_exec(int thread_id, osPriority pri)
 {
     /* Check that given thread is in use but not in execution */
     if ((task_table[thread_id].flags & (SCHED_EXEC_FLAG | SCHED_IN_USE_FLAG)) == SCHED_IN_USE_FLAG) {
-        task_table[i].uCounter = 0;
+        task_table[thread_id].uCounter = 0;
         task_table[thread_id].priority = pri;
         task_table[thread_id].flags |= SCHED_EXEC_FLAG; /* Set EXEC flag */
         (void)heap_insert(&priority_queue, &(task_table[thread_id]));
@@ -305,10 +304,10 @@ osThreadId sched_ThreadCreate(osThreadDef_t * thread_def, void * argument)
 
     for (i = 1; i < configSCHED_MAX_THREADS; i++) {
         if (task_table[i].flags == 0) {
-            sched_ThreadSet(i,                  /* Index of created thread */
-                            thread_def,         /* Thread definition */
-                            argument,           /* Argument */
-                            current_thread);    /* Pointer to parent thread,
+            sched_thread_set(i,                  /* Index of created thread */
+                             thread_def,         /* Thread definition */
+                             argument,           /* Argument */
+                             current_thread);    /* Pointer to parent thread,
                                                  * which is expected to be
                                                  * the current thread */
             break;
@@ -318,7 +317,7 @@ osThreadId sched_ThreadCreate(osThreadDef_t * thread_def, void * argument)
 
     if (i == configSCHED_MAX_THREADS) {
         /* New thread could not be created */
-        return NULL;
+        return 0;
     } else {
         /* Return the id of the new thread */
         return (osThreadId)i;
@@ -365,7 +364,7 @@ uint32_t sched_threadSetSignal(osThreadId thread_id, int32_t signal)
 
     if ((task_table[thread_id].flags & SCHED_NO_SIG_FLAG) == 0) {
         /* Set the signaled thread back into execution */
-        sched_threadSetExec(thread_id, task_table[thread_id].def_priority);
+        sched_thread_set_exec(thread_id, task_table[thread_id].def_priority);
     }
 
     return prev_signals;

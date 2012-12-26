@@ -1,6 +1,6 @@
 /**
  * @file test_heap.c
- *
+ * @brief Test heap used for scheduling.
  */
 
 #include <stdio.h>

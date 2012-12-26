@@ -15,8 +15,8 @@
   */
 
 #pragma once
-#ifndef CORTEX_M_HPP
-#define CORTEX_M_HPP
+#ifndef CORTEX_M_H
+#define CORTEX_M_H
 
 #ifndef __ARM_PROFILE_M__
     #error Only ARM Cortex-M profile is currently supported.
@@ -170,7 +170,7 @@ inline void wr_thread_stack_ptr(void * ptr)
 #pragma optimize=no_code_motion
 uint32_t syscall(int type, void * p);
 
-#endif /* CORTEX_M_HPP */
+#endif /* CORTEX_M_H */
 
 /**
   * @}

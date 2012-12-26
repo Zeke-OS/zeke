@@ -9,16 +9,7 @@
 #include "kernel.h"
 #include "sched.h"
 #include "main.h"
-
-#ifndef configMCU_MODEL
-    #error MCU model not selected.
-#endif
-
-#if configMCU_MODEL == MCU_MODEL_STM32F0
-#include "stm32f0_interrupt.h"
-#else
-    #error No hardware support for the selected MCU model.
-#endif
+#include "hal_mcu.h"
 
 static char main_Stack[configAPP_MAIN_SSIZE];
 

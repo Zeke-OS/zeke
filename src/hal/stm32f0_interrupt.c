@@ -18,7 +18,6 @@
 #define KERNEL_INTERNAL
 #endif
 
-
 #include "sched.h"
 #include "syscall.h"
 #include "kernel_config.h"

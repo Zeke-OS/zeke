@@ -11,11 +11,7 @@
   * @{
   */
 
-#ifdef __ARM_PROFILE_M__
-#include "cortex_m.h"
-#else
-    #error Selected ARM profile is not supported
-#endif
+#include "hal_core.h"
 
 #ifndef configMCU_MODEL
     #error MCU model not selected.

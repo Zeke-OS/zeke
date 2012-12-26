@@ -12,11 +12,7 @@
 #define KERNEL_INTERNAL 1
 #include "syscall.h"
 
-#ifdef __ARM_PROFILE_M__
-#include "cortex_m.h"
-#else
-    #error Selected ARM profile is not supported
-#endif
+#include "hal_core.h"
 
 #pragma optimize=no_code_motion
 uint32_t _intSyscall_handler(int type, void * p)

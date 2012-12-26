@@ -6,7 +6,7 @@ SRC = $(wildcard ../../src/*.c)
 #### Tests ####
 TEST_SRC = $(wildcard *.c)
 
-IDIR = -I../minunit -I../../include -I../../src -I../../config
+IDIR = -I../minunit -I../../include -I../../src -I../../src/hal -I../../config
 ODIR = obj
 BDIR = bin
 CC = gcc
