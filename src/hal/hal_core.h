@@ -14,7 +14,7 @@
 #ifndef HAL_CORE_H
 #define HAL_CORE_H
 
-#ifndef MU_TEST_BUILD
+#ifndef PU_TEST_BUILD
 #include <intrinsics.h>
 #endif
 
@@ -26,8 +26,8 @@
 
 #ifdef __ARM_PROFILE_M__
 #include "cortex_m.h"
-#elif MU_TEST_BUILD == 1
-#include "mu_test_core.h"
+#elif PU_TEST_BUILD == 1
+#include "pu_test_core.h"
 #else
     #error Selected ARM profile is not supported
 #endif

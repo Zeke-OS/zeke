@@ -20,7 +20,7 @@
 #error kernel_config.h should be #included before hal_mcu.h
 #endif
 
-#ifdef MU_TEST_BUILD
+#ifdef PU_TEST_BUILD
 #undef configMCU_MODEL
 #endif
 

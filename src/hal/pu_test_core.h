@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    mu_test_core.h
+ * @file    pu_test_core.h
  * @author  Olli Vanhoja
  * @brief   HAL test core
  *******************************************************************************
@@ -15,11 +15,11 @@
   */
 
 #pragma once
-#ifndef MU_TEST_CORE_HPP
-#define MU_TEST_CORE_HPP
+#ifndef PU_TEST_CORE_HPP
+#define PU_TEST_CORE_HPP
 
-#ifndef MU_TEST_BUILD
-    #error mu_test_core.h should not be #included in production!
+#ifndef PU_TEST_BUILD
+    #error pu_test_core.h should not be #included in production!
 #endif
 
 /* Exception return values */
@@ -102,7 +102,7 @@ inline uint32_t syscall(int type, void * p)
     return 0;
 }
 
-#endif /* MU_TEST_CORE_HPP */
+#endif /* PU_TEST_CORE_HPP */
 
 /**
   * @}

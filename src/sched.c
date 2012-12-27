@@ -51,7 +51,7 @@ void idleTask(void * arg);
 void del_thread(void);
 void context_switcher(void);
 void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument, threadInfo_t * parent);
-void sched_thread_set_inherintance(osThreadId i, threadInfo_t * parent);
+void sched_thread_set_inheritance(osThreadId i, threadInfo_t * parent);
 void sched_thread_set_exec(int thread_id, osPriority pri);
 
 /**
@@ -89,7 +89,7 @@ void sched_start(void)
 /** @todo CPU load calculation is now totally broke */
 void idleTask(void * arg)
 {
-#ifndef MU_TEST_BUILD
+#ifndef PU_TEST_BUILD
     while(1) {
         if (calcCPULoad) {
             /* CPU Load Calculation */
@@ -215,6 +215,7 @@ void context_switcher(void)
   * @param thread_def   Thread definitions
   * @param argument     Thread argument
   * @param parent       Parent thread id, NULL = doesn't have a parent
+  * @todo what if parent is stopped before we call this?
   */
 void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument, threadInfo_t * parent)
 {
@@ -234,40 +235,48 @@ void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument, thread
     /* Clear events */
     memset(&(task_table[i].event), 0, sizeof(osEvent));
 
-    /* Clear inherintance */
-    task_table[i].inh.parent = NULL;
-    task_table[i].inh.first_child = NULL;
-    task_table[i].inh.next_child = NULL;
+    /* Update parent and child pointers */
+    sched_thread_set_inheritance(i, parent);
 
-    /* Set stack pointer */
+    /* Update stack pointer */
     task_table[i].sp = (void *)((uint32_t)(thread_def->stackAddr)
                                          + thread_def->stackSize
                                          - sizeof(hw_stack_frame_t)
                                          - sizeof(sw_stack_frame_t));
 
-    /* Update parent and child pointers */
-    if (parent != NULL)
-        sched_thread_set_inherintance(i, parent);
-
     /* Put thread into execution */
     sched_thread_set_exec(i, thread_def->tpriority);
 }
 
-void sched_thread_set_inherintance(osThreadId i, threadInfo_t * parent)
+void sched_thread_set_inheritance(osThreadId i, threadInfo_t * parent)
 {
+    /* Initial values for all threads */
     task_table[i].inh.parent = parent;
+    task_table[i].inh.first_child = NULL;
+    task_table[i].inh.next_child = NULL;
+
+    if (parent == NULL)
+        return;
 
     if (parent->inh.first_child == NULL) {
         /* This is the first child of this parent */
         parent->inh.first_child = &(task_table[i]);
-        task_table[i].inh.next_child = &(task_table[i]);
-        return;
+        task_table[i].inh.next_child = NULL;
+
+        return; /* All done */
     }
 
-    /* TODO singly linking circularly */
-    //void * old_next = task_table[i].inh.next_child;
-    //task_table[i].inh.next_child = &(task_table[i]);
-    //old_next->next_child = &(task_table[i]);
+    /* Find last child thread
+     * Assuming first_child is a valid thread pointer
+     */
+    threadInfo_t * last_node, * tmp;
+    tmp = (threadInfo_t *)(parent->inh.first_child);
+    do {
+        last_node = tmp;
+    } while ((tmp = last_node->inh.next_child) != NULL);
+
+    /* Set newly created thread as a last child */
+    last_node->inh.next_child = &(task_table[i]);
 }
 
 /**
@@ -354,10 +363,12 @@ uint32_t sched_threadWait(uint32_t millisec)
 
 uint32_t sched_threadSetSignal(osThreadId thread_id, int32_t signal)
 {
+    uint32_t prev_signals;
+
     if ((task_table[thread_id].flags & SCHED_IN_USE_FLAG) == 0)
         return 0x80000000;
 
-    uint32_t prev_signals = (uint32_t)task_table[thread_id].event.value.signals;
+    prev_signals = (uint32_t)task_table[thread_id].event.value.signals;
 
     task_table[thread_id].event.value.signals = signal;
     task_table[thread_id].event.status = osEventSignal;
