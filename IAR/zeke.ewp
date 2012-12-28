@@ -2027,6 +2027,12 @@
   <file>
     <name>$PROJ_DIR$\..\include\syscall.h</name>
   </file>
+  <file>
+    <name>$PROJ_DIR$\..\src\timers.c</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\src\timers.h</name>
+  </file>
 </project>
 
 

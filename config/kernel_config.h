@@ -34,5 +34,6 @@
                                          *        scaled = max_slices * pri */
 #define configAPP_MAIN_SSIZE    200u    /*!< Stack size for app_main thread */
 #define configAPP_MAIN_PRI      osPriorityNormal /*!< Priority of app_main thread */
+#define configTIMERS_MAX        4
 
 #endif

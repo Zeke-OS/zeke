@@ -54,6 +54,7 @@ void thread_input(void const * arg)
         {
             osSignalSet(th2_id, 1);
         }
+    osDelay(1000);
     }
 }
 

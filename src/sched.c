@@ -19,9 +19,9 @@
 #endif
 
 #include "heap.h"
-#include "sched.h"
-#include "kernel_config.h"
+#include "timers.h"
 #include "hal_core.h"
+#include "sched.h"
 
 /* When these flags are both set for a it's ok to make a context switch to it. */
 #define SCHED_CSW_OK_FLAGS  (SCHED_EXEC_FLAG | SCHED_IN_USE_FLAG)
@@ -40,6 +40,7 @@ volatile uint32_t sched_cpu_load;
 
 /* Stack for idle task */
 static char sched_idle_stack[sizeof(sw_stack_frame_t) + sizeof(hw_stack_frame_t) + 100];
+volatile int _first_switch = 1;
 
 
 /* Private function prototypes -----------------------------------------------*/
@@ -48,7 +49,8 @@ void del_thread(void);
 void context_switcher(void);
 void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument, threadInfo_t * parent);
 void sched_thread_set_inheritance(osThreadId i, threadInfo_t * parent);
-void sched_thread_set_exec(int thread_id, osPriority pri);
+static void _sched_thread_set_exec(int thread_id, osPriority pri);
+static void _sched_thread_sleep_current(void);
 
 /**
   * Initialize the scheduler
@@ -124,7 +126,9 @@ void del_thread(void)
   */
 void sched_handler(void)
 {
-    save_context();
+    if (!_first_switch) {
+        save_context();
+    } else _first_switch = 0;
     current_thread->sp = (void *)rd_thread_stack_ptr();
     context_switcher();
     load_context(); /* Since PSP has been updated, this loads the last state of
@@ -134,6 +138,8 @@ void sched_handler(void)
 void context_switcher(void)
 {
     int i;
+
+    timers_run();
 
     /* Select next thread */
     do {
@@ -216,8 +222,9 @@ void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument, thread
 
     /* Mark that this thread position is in use.
      * EXEC flag is set later in sched_thread_set_exec */
-    task_table[i].flags = SCHED_IN_USE_FLAG;
-    task_table[i].def_priority = thread_def->tpriority;
+    task_table[i].flags         = SCHED_IN_USE_FLAG;
+    task_table[i].id            = i;
+    task_table[i].def_priority  = thread_def->tpriority;
     /* task_table[i].priority is set later in sched_thread_set_exec */
 
     /* Clear events */
@@ -233,7 +240,7 @@ void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument, thread
                                          - sizeof(sw_stack_frame_t));
 
     /* Put thread into execution */
-    sched_thread_set_exec(i, thread_def->tpriority);
+    _sched_thread_set_exec(i, thread_def->tpriority);
 }
 
 void sched_thread_set_inheritance(osThreadId i, threadInfo_t * parent)
@@ -268,6 +275,11 @@ void sched_thread_set_inheritance(osThreadId i, threadInfo_t * parent)
     last_node->inh.next_child = &(task_table[i]);
 }
 
+void sched_thread_set_exec(int thread_id)
+{
+    _sched_thread_set_exec(thread_id, task_table[thread_id].def_priority);
+}
+
 /**
   * Set thread into excetion mode
   *
@@ -275,8 +287,9 @@ void sched_thread_set_inheritance(osThreadId i, threadInfo_t * parent)
   * @param thread_id    Thread id
   * @param pri          Priority
   */
-void sched_thread_set_exec(int thread_id, osPriority pri)
+static void _sched_thread_set_exec(int thread_id, osPriority pri)
 {
+    volatile uint32_t flags = task_table[thread_id].flags;
     /* Check that given thread is in use but not in execution */
     if ((task_table[thread_id].flags & (SCHED_EXEC_FLAG | SCHED_IN_USE_FLAG)) == SCHED_IN_USE_FLAG) {
         task_table[thread_id].uCounter = 0;
@@ -285,6 +298,31 @@ void sched_thread_set_exec(int thread_id, osPriority pri)
         (void)heap_insert(&priority_queue, &(task_table[thread_id]));
     }
 }
+
+/**
+ * @todo Plz
+ */
+static void _sched_thread_sleep_current(void)
+{
+    int i = 0;
+
+    /* Sleep flag */
+    current_thread->flags &= ~SCHED_EXEC_FLAG;
+
+    /* Following should remove the thread from heap immediately when context
+     * switch is called. */
+    current_thread->priority = osPriorityError;
+
+    /* Why oh why :'( */
+    for (i = 0; i < priority_queue.size; i++) {
+        if (priority_queue.a[i]->id == current_thread->id)
+            break;
+    }
+
+    heap_inc_key(&priority_queue, i);
+    heap_del_max(&priority_queue);
+}
+
 
 /* Functions defined in header file (and used mainly by syscalls) */
 
@@ -325,26 +363,29 @@ osThreadId sched_ThreadCreate(osThreadDef_t * thread_def, void * argument)
 /** @todo Doesn't support other than osWaitForever atm */
 osStatus sched_threadDelay(uint32_t millisec)
 {
-    if (millisec != osWaitForever) {
-        return osErrorParameter; /* Not supported yet */
+    if (millisec == osWaitForever) {
+        _sched_thread_sleep_current();              /* Sleep */
+        current_thread->flags |= SCHED_NO_SIG_FLAG; /* Shouldn't get woken up by signals */
+        current_thread->event.status = osOK;
+    } else {
+        if (timers_add(current_thread->id, millisec) == 0) {
+            _sched_thread_sleep_current();
+            current_thread->event.status = osOK;
+        } else {
+             current_thread->event.status = osErrorResource;
+        }
     }
-    current_thread->flags &= ~SCHED_EXEC_FLAG;      /* Sleep */
-    current_thread->flags &= ~SCHED_NO_SIG_FLAG;    /* Shouldn't get woken up by signals */
-    current_thread->event.status = osOK;
 
-    return osOK;
+    return current_thread->event.status;
 }
 
 /** @todo Doesn't support other than osWaitForever atm */
 uint32_t sched_threadWait(uint32_t millisec)
 {
-    if (millisec != osWaitForever) {
-        current_thread->event.status = osErrorParameter;
-        return (uint32_t)(&current_thread->event);  /* Not supported yet */
+    if (millisec == osWaitForever) {
+        current_thread->flags |= SCHED_NO_SIG_FLAG; /* Shouldn't get woken up by signals */
     }
-    current_thread->flags &= ~SCHED_EXEC_FLAG;      /* Sleep */
-    /* Note: Thread will be automatically removed from the priority queue when
-     *       it is next time on the top of the heap. */
+    _sched_thread_sleep_current();                  /* Sleep */
 
     current_thread->event.status = osOK;
     return (uint32_t)(&current_thread->event);
@@ -362,9 +403,9 @@ uint32_t sched_threadSetSignal(osThreadId thread_id, int32_t signal)
     task_table[thread_id].event.value.signals = signal;
     task_table[thread_id].event.status = osEventSignal;
 
-    if ((task_table[thread_id].flags & SCHED_NO_SIG_FLAG) == 0) {
+    if ((task_table[thread_id].flags & SCHED_NO_SIG_FLAG) == SCHED_NO_SIG_FLAG) {
         /* Set the signaled thread back into execution */
-        sched_thread_set_exec(thread_id, task_table[thread_id].def_priority);
+        _sched_thread_set_exec(thread_id, task_table[thread_id].def_priority);
     }
 
     return prev_signals;

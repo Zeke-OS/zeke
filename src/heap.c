@@ -75,6 +75,9 @@ void heapify(heap_t * heap, int i)
   */
 void heap_del_max(heap_t * heap)
 {
+    if (heap->size <= 0) {
+        while (1); /* Catch */
+    }
     heap->a[0] = heap->a[heap->size];
     heap->size--;
     heapify(heap, 0);
@@ -83,6 +86,9 @@ void heap_del_max(heap_t * heap)
 void heap_insert(heap_t * heap, threadInfo_t * k)
 {
     heap->size++;
+    if (heap->size > configSCHED_MAX_THREADS) {
+        while (1); /* Catch */
+    }
     int i = heap->size;
     while ((i > 0) && (heap->a[parent(i)]->priority < k->priority)) {
         heap->a[i] = heap->a[parent(i)];

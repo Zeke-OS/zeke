@@ -30,6 +30,7 @@ typedef struct {
     osPriority def_priority;    /*!< Thread priority */
     osPriority priority;        /*!< Thread dynamic runtime priority */
     uint32_t uCounter;          /*!< Time slice counter */
+    uint32_t id;
     struct threadInheritance_t {
         void * parent;              /*!< Parent thread */
         void * first_child;         /*!< Link to the first child thread */
@@ -55,6 +56,8 @@ typedef struct {
 void sched_init(void);
 void sched_start(void);
 void sched_handler(void);
+
+void sched_thread_set_exec(int thread_id);
 
 /* Functions used by syscalls */
 int sched_ThreadCreate(osThreadDef_t * thread_def, void * argument);
