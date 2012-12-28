@@ -302,8 +302,8 @@
           <state>$PROJ_DIR$\..\Libraries\STM32F0xx\Drivers\inc</state>
           <state>$PROJ_DIR$\..\Libraries\Discovery</state>
           <state>$PROJ_DIR$\..\src</state>
-          <state>$PROJ_DIR$\..\include</state>
           <state>$PROJ_DIR$\..\src\hal</state>
+          <state>$PROJ_DIR$\..\include</state>
           <state>$PROJ_DIR$\..\config</state>
         </option>
         <option>
@@ -1976,12 +1976,30 @@
       </file>
     </group>
     <file>
+      <name>$PROJ_DIR$\..\src\hal\cortex_m.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\src\hal\cortex_m.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\src\hal\hal_core.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\src\hal\hal_mcu.h</name>
+    </file>
+    <file>
       <name>$PROJ_DIR$\..\src\hal\stm32f0_interrupt.c</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\src\hal\stm32f0_interrupt.h</name>
     </file>
   </group>
+  <file>
+    <name>$PROJ_DIR$\..\app_main.c</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\include\app_main.h</name>
+  </file>
   <file>
     <name>$PROJ_DIR$\..\src\heap.c</name>
   </file>
@@ -1996,12 +2014,6 @@
   </file>
   <file>
     <name>$PROJ_DIR$\..\src\kernel_init.c</name>
-  </file>
-  <file>
-    <name>$PROJ_DIR$\..\main.c</name>
-  </file>
-  <file>
-    <name>$PROJ_DIR$\..\include\main.h</name>
   </file>
   <file>
     <name>$PROJ_DIR$\..\src\sched.c</name>

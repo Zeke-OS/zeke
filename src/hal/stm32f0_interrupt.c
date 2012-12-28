@@ -23,6 +23,14 @@
 #include "kernel_config.h"
 #include "stm32f0_interrupt.h"
 
+/**
+ * Magic value that tells how many 32-bit words should be discarded from the
+ * MSP before returning from context_switch.
+ * @note This mainly depends on optimization parameters, compiler, code changes
+ * in interrupt handler and current planetary positions during compile time.
+ */
+#define STM32F0_MAGIC_STACK_ADD_VALUE 1
+
 static inline void run_scheduler(void);
 
 int interrupt_init_module(void)
@@ -41,6 +49,8 @@ int interrupt_init_module(void)
     return 0; /* OK */
 }
 
+static inline void run_scheduler(void)
+{
     /* Run scheduler */
     if (sched_enabled) {
         void * result = NULL;
@@ -49,9 +59,12 @@ int interrupt_init_module(void)
 
         sched_handler(result);
         asm volatile ("POP {r0}\n"
-                      "ADD sp, sp, #(4)\n"
-                      "BX  r0");
+                      "ADD sp, sp, %0\n"
+                      "BX  r0"
+                          : : "i" (STM32F0_MAGIC_STACK_ADD_VALUE * 4)
+                     );
     }
+}
 
 /**
   * This function handles NMI exception.

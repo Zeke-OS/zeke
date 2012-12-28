@@ -12,17 +12,7 @@
   */
 
 #include "hal_core.h"
-
-#ifndef configMCU_MODEL
-    #error MCU model not selected.
-#endif
-
-#if configMCU_MODEL == MCU_MODEL_STM32F0
-#include "stm32f0_interrupt.h"
-#else
-    #error No hardware support for the selected MCU model.
-#endif
-
+#include "hal_mcu.h"
 #include "syscall.h"
 #include "kernel.h"
 
@@ -43,7 +33,7 @@ osThreadId osThreadCreate(osThreadDef_t * thread_def, void * argument)
 
     result = (osThreadId)syscall(KERNEL_SYSCALL_SCHED_THREAD_CREATE, &args);
 
-    /* Request context switch immediately */
+    /* Request immediate context switch */
     req_context_switch();
 
     return result;

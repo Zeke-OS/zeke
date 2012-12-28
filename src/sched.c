@@ -75,15 +75,11 @@ void sched_init(void)
   */
 void sched_start(void)
 {
-    __istate_t s = __get_interrupt_state();
     __disable_interrupt();
 
     sched_enabled = 1;
 
-    __set_interrupt_state(s); /* Restore interrupts */
-
-    /* Scheduler should now start if interrupts are
-     * enabled */
+    __enable_interrupt(); /* Enable interrupts */
 }
 
 /** @todo CPU load calculation is now totally broke */
@@ -93,7 +89,7 @@ void idleTask(void * arg)
     while(1) {
         if (calcCPULoad) {
             /* CPU Load Calculation */
-            uint32_t countflag = SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk;
+            /* uint32_t countflag = SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk;
             uint32_t r = SysTick->LOAD & SysTick_LOAD_RELOAD_Msk;
             uint32_t v = (countflag) ? 0 : SysTick->VAL;
             sched_cpu_load = (r-v) / (r/100);
@@ -101,7 +97,7 @@ void idleTask(void * arg)
             calcCPULoad = 0;
             if (countflag) {
                 req_context_switch();
-            }
+            } */
         }
     }
 #endif
@@ -317,9 +313,9 @@ osThreadId sched_ThreadCreate(osThreadDef_t * thread_def, void * argument)
             sched_thread_set(i,                  /* Index of created thread */
                              thread_def,         /* Thread definition */
                              argument,           /* Argument */
-                             current_thread);    /* Pointer to parent thread,
-                                                 * which is expected to be
-                                                 * the current thread */
+                             (void *)current_thread); /* Pointer to parent
+                                                  * thread, which is expected to
+                                                  * be the current thread */
             break;
         }
     }

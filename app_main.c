@@ -10,7 +10,7 @@
 
 #include "stm32f0_discovery.h"
 #include "kernel.h"
-#include "main.h"
+#include "app_main.h"
 
 static char stack_1[200];
 static char stack_2[200];
@@ -29,7 +29,7 @@ osThreadId th2_id;
 /**
   * main thread
   */
-void app_main()
+void app_main(void)
 {
     STM_EVAL_LEDInit(LED3);
     STM_EVAL_PBInit(BUTTON_USER, BUTTON_MODE_GPIO);
@@ -44,7 +44,6 @@ void createThreads(void)
     osThreadDef_t th_2 = { (os_pthread)(&thread_led), osPriorityNormal, stack_2, sizeof(stack_2)/sizeof(char) };
 
     th1_id = osThreadCreate(&th_1, &x);
-    asm volatile ("ADD sp, sp, #(0)\n"); /* Seems to help IAR EW to show stack usage correctly :) */
     th2_id = osThreadCreate(&th_2, &y);
 }
 
@@ -64,6 +63,6 @@ void thread_led(void const * arg)
     while(1) {
         STM_EVAL_LEDToggle(LED3);
         evnt = osWait(osWaitForever);
-        z = evnt.status;
+        //z = (uint32_t)evnt.status;
     }
 }

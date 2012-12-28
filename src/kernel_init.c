@@ -8,7 +8,7 @@
 
 #include "kernel.h"
 #include "sched.h"
-#include "main.h"
+#include "app_main.h"
 #include "hal_mcu.h"
 
 static char main_Stack[configAPP_MAIN_SSIZE];

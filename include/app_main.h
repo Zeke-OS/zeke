@@ -9,9 +9,9 @@
  */
 
  #pragma once
-#ifndef MAIN_H
-#define MAIN_H
+#ifndef APP_MAIN_H
+#define APP_MAIN_H
 
 void app_main(void);
 
- #endif /* MAIN_H */
+ #endif /* APP_MAIN_H */

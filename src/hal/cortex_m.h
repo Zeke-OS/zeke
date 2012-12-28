@@ -18,6 +18,8 @@
 #ifndef CORTEX_M_H
 #define CORTEX_M_H
 
+#include "kernel.h"
+
 #ifndef __ARM_PROFILE_M__
     #error Only ARM Cortex-M profile is currently supported.
 #endif
@@ -62,18 +64,24 @@ typedef struct {
   */
 void init_hw_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a_del_thread);
 
+inline void save_context(void);
+inline void load_context(void);
+inline void * rd_stack_ptr(void);
+inline void * rd_thread_stack_ptr(void);
+inline void wr_thread_stack_ptr(void * ptr);
+uint32_t syscall(int type, void * p);
+
+
 /**
   * Request immediate context switch
   */
-inline void req_context_switch(void)
-{
-    SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk; /* Switch the context */
+#define req_context_switch() do {                                          \
+    SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk; /* Switch the context */              \
     asm volatile("DSB\n" /* Ensure write is completed
                           * (architecturally required, but not strictly
-                          * required for existing Cortex-M processors) */
-                 "ISB\n" /* Ensure PendSV is executed */
-    );
-}
+                          * required for existing Cortex-M processors) */ \
+                 "ISB\n" /* Ensure PendSV is executed */                       \
+    ); } while (0)
 
 /**
   * Save the context on the PSP
@@ -166,9 +174,6 @@ inline void wr_thread_stack_ptr(void * ptr)
                   "ISB\n"
                   : : "r" (ptr));
 }
-
-#pragma optimize=no_code_motion
-uint32_t syscall(int type, void * p);
 
 #endif /* CORTEX_M_H */
 
