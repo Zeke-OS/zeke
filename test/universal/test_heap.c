@@ -93,12 +93,11 @@ heap_t heap = HEAP_NEW_EMPTY;
     return 0;
 }
 
-static char * all_tests() {
-    pu_run_test(test_heap_insert, "test_heap_insert");
-    pu_run_test(test_heap_del_max, "test_heap_del_max");
-    pu_run_test(test_heap_inc_key, "test_heap_inc_key");
-    pu_run_test(test_heap_dec_key, "test_heap_dec_key");
-    return 0;
+static void all_tests() {
+    pu_run_test(test_heap_insert);
+    pu_run_test(test_heap_del_max);
+    pu_run_test(test_heap_inc_key);
+    pu_run_test(test_heap_dec_key);
 }
 
 int main(int argc, char **argv)

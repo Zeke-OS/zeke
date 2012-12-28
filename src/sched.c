@@ -250,6 +250,8 @@ void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument, thread
 
 void sched_thread_set_inheritance(osThreadId i, threadInfo_t * parent)
 {
+    threadInfo_t * last_node, * tmp;
+
     /* Initial values for all threads */
     task_table[i].inh.parent = parent;
     task_table[i].inh.first_child = NULL;
@@ -269,7 +271,6 @@ void sched_thread_set_inheritance(osThreadId i, threadInfo_t * parent)
     /* Find last child thread
      * Assuming first_child is a valid thread pointer
      */
-    threadInfo_t * last_node, * tmp;
     tmp = (threadInfo_t *)(parent->inh.first_child);
     do {
         last_node = tmp;

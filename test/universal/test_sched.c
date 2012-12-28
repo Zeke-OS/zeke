@@ -30,24 +30,20 @@ void th2(void * arg);
 void th1(void * arg) { }
 void th2(void * arg) { }
 
+static char stack_1[20];
+static char stack_2[20];
+
 static void setup()
 {
+    memset(&task_table, 0, sizeof(threadInfo_t)*configSCHED_MAX_THREADS);
 }
 
 static void teardown()
 {
 }
 
-static void clear_task_table(void)
-{
-    memset(&task_table, 0, sizeof(threadInfo_t)*configSCHED_MAX_THREADS);
-}
-
 static char * test_sched_ThreadCreate(void)
 {
-    static char stack_1[20];
-    static char stack_2[20];
-
     osThreadDef_t thread_def1 = { (os_pthread)(&th1),
                                   osPriorityNormal,
                                   stack_1,
@@ -58,8 +54,6 @@ static char * test_sched_ThreadCreate(void)
                                   stack_2,
                                   sizeof(stack_2)/sizeof(char)
                                 };
-
-    clear_task_table();
 
     sched_ThreadCreate(&thread_def1, NULL);
     sched_ThreadCreate(&thread_def2, NULL);
@@ -115,8 +109,6 @@ static char * test_sched_thread_set_inheritance(void)
                                   sizeof(stack_1)/sizeof(char)
                                 };
 
-    clear_task_table();
-
     sched_thread_set(1, &thread_def1, NULL, NULL);
     sched_thread_set(2, &thread_def2, NULL, &(task_table[1]));
     sched_thread_set(3, &thread_def3, NULL, &(task_table[1]));
@@ -147,10 +139,53 @@ static char * test_sched_thread_set_inheritance(void)
     return 0;
 }
 
-static char * all_tests() {
-    pu_run_test(test_sched_ThreadCreate, "test_sched_ThreadCreate");
-    pu_run_test(test_sched_thread_set_inheritance, "test_sched_thread_set_inheritance");
-    return 0;
+static char * test_sched_threadDelay_positiveInput()
+{
+    osThreadDef_t thread_def1 = { (os_pthread)(&th1),
+                                  osPriorityNormal,
+                                  stack_1,
+                                  sizeof(stack_1)/sizeof(char)
+                                };
+
+    sched_thread_set(1, &thread_def1, NULL, NULL);
+    current_thread = &(task_table[1]);
+
+    pu_assert("Positive delay value should result osOK",
+              sched_threadDelay(15) == osOK);
+
+    pu_assert("Thread execution flag should be disable",
+              (current_thread->flags & SCHED_EXEC_FLAG) == 0);
+
+    pu_assert("Thread NO_SIG_FLAG should be set",
+              (current_thread->flags & SCHED_NO_SIG_FLAG) == SCHED_NO_SIG_FLAG);
+}
+
+static char * test_sched_threadDelay_infiniteInput()
+{
+    osThreadDef_t thread_def1 = { (os_pthread)(&th1),
+                                  osPriorityNormal,
+                                  stack_1,
+                                  sizeof(stack_1)/sizeof(char)
+                                };
+
+    sched_thread_set(1, &thread_def1, NULL, NULL);
+    current_thread = &(task_table[1]);
+
+    pu_assert("osWaitForever delay value should result osOK",
+              sched_threadDelay(osWaitForever) == osOK);
+
+    pu_assert("Thread execution flag should be disabled",
+              (current_thread->flags & SCHED_EXEC_FLAG) == 0);
+
+    pu_assert("Thread NO_SIG_FLAG should be set",
+              (current_thread->flags & SCHED_NO_SIG_FLAG) == SCHED_NO_SIG_FLAG);
+}
+
+static void all_tests() {
+    pu_run_test(test_sched_ThreadCreate);
+    pu_run_test(test_sched_thread_set_inheritance);
+    pu_run_test(test_sched_threadDelay_positiveInput);
+    pu_run_test(test_sched_threadDelay_infiniteInput);
 }
 
 int main(int argc, char **argv)

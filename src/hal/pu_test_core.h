@@ -33,7 +33,7 @@
 typedef uint32_t __istate_t;
 #define __get_interrupt_state() 0
 #define __disable_interrupt() do { } while(0)
-#define __set_interrupt_state(state) do { } while(0)
+#define __set_interrupt_state(state) do { state = state; } while(0)
 
 /* Stack frame saved by the hardware */
 typedef struct {
