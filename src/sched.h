@@ -54,7 +54,7 @@ typedef struct {
 /* Public function prototypes ------------------------------------------------*/
 void sched_init(void);
 void sched_start(void);
-void sched_handler(void * st);
+void sched_handler(void);
 
 /* Functions used by syscalls */
 int sched_ThreadCreate(osThreadDef_t * thread_def, void * argument);

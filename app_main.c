@@ -63,6 +63,6 @@ void thread_led(void const * arg)
     while(1) {
         STM_EVAL_LEDToggle(LED3);
         evnt = osWait(osWaitForever);
-        //z = (uint32_t)evnt.status;
+        z = (uint32_t)evnt.status;
     }
 }

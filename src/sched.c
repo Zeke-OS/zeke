@@ -26,10 +26,6 @@
 /* When these flags are both set for a it's ok to make a context switch to it. */
 #define SCHED_CSW_OK_FLAGS  (SCHED_EXEC_FLAG | SCHED_IN_USE_FLAG)
 
-
-static uint32_t * stack; /* Position in MSP stack where special return codes
-                          * can be written. This is mainly in a memory space
-                          * of some interrupt handler. */
 volatile uint32_t sched_enabled = 0; /* If this is set to != 0 interrupt
                                       * handlers will be able to call context
                                       * switching. */
@@ -126,9 +122,8 @@ void del_thread(void)
   *
   * Scheduler handler is mainly called by sysTick and PendSV.
   */
-void sched_handler(void * st)
+void sched_handler(void)
 {
-    stack = (uint32_t *)st;
     save_context();
     current_thread->sp = (void *)rd_thread_stack_ptr();
     context_switcher();
@@ -196,9 +191,6 @@ void context_switcher(void)
     /* uCounter is used to determine how many time slices has been used
      * by the process. */
     current_thread->uCounter++;
-
-    /* Use the thread stack upon handler return */
-    *((uint32_t *)stack) = THREAD_RETURN;
 
     /* Write the value of the PSP for the next thread in run state */
     wr_thread_stack_ptr(current_thread->sp);

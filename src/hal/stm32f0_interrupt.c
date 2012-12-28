@@ -21,6 +21,7 @@
 #include "sched.h"
 #include "syscall.h"
 #include "kernel_config.h"
+#include "cortex_m.h"
 #include "stm32f0_interrupt.h"
 
 /**
@@ -29,7 +30,7 @@
  * @note This mainly depends on optimization parameters, compiler, code changes
  * in interrupt handler and current planetary positions during compile time.
  */
-#define STM32F0_MAGIC_STACK_ADD_VALUE 1
+#define STM32F0_MAGIC_STACK_ADD_VALUE 2
 
 static inline void run_scheduler(void);
 
@@ -53,16 +54,11 @@ static inline void run_scheduler(void)
 {
     /* Run scheduler */
     if (sched_enabled) {
-        void * result = NULL;
-        asm volatile("MRS %0, msp\n"
-                     : "=r" (result));
-
-        sched_handler(result);
-        asm volatile ("POP {r0}\n"
-                      "ADD sp, sp, %0\n"
-                      "BX  r0"
-                          : : "i" (STM32F0_MAGIC_STACK_ADD_VALUE * 4)
-                     );
+        sched_handler();
+        asm volatile ("ADD sp, sp, %0\n"
+                      "BX %1\n"
+                      : : "i" (STM32F0_MAGIC_STACK_ADD_VALUE * 4), "r" (THREAD_RETURN)
+                      );
     }
 }
 
