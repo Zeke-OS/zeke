@@ -1,0 +1,8 @@
+-Implement inherintace; parent and child thread system
+-Implement delays to wait syscalls
+-implement real cpu load calculation by calculating wait states
+-implement cpu load (moving) averages
+-thread parenting to help killing and possibly improve responsiveness in multi tasking when parent is in exec at the same time with childs
+-implement own dlib
+...
+-binary loading to ram? (PE)
