@@ -4,26 +4,30 @@
  */
 
 #include <stdio.h>
+#include <stdint.h>
 #include "punit.h"
 
 #pragma GCC diagnostic ignored "-Wpointer-to-int-cast"
 
+/* Override timers_run */
+void my_timers_run(void);
+void my_timers_run(void) { }
+#define timers_run my_timers_run
+
+/* Override timers_add */
+int my_timers_add(int thread_id, uint32_t millisec);
+int my_timers_add(int thread_id, uint32_t millisec) { return 0; }
+#define timers_add my_timers_add
+
+
 /* NOTE: Included sched.c */
 #include "sched.c"
-
-/* Override sched_thread_set_exec with our own implementation */
-/*
-void my_sched_thread_set_exec(int thread_id, osPriority pri);
-void my_sched_thread_set_exec(int thread_id, osPriority pri)
-{
-}
-#define sched_thread_set_exec my_sched_thread_set_exec
-*/
 
 /* Override heap_insert with dummy function */
 void my_heap_insert(void * h, threadInfo_t * th);
 void my_heap_insert(void * h, threadInfo_t * th) { }
 #define heap_insert my_heap_insert
+
 
 void th1(void * arg);
 void th2(void * arg);
@@ -158,6 +162,8 @@ static char * test_sched_threadDelay_positiveInput()
 
     pu_assert("Thread NO_SIG_FLAG should be set",
               (current_thread->flags & SCHED_NO_SIG_FLAG) == SCHED_NO_SIG_FLAG);
+
+    return 0;
 }
 
 static char * test_sched_threadDelay_infiniteInput()
@@ -179,6 +185,8 @@ static char * test_sched_threadDelay_infiniteInput()
 
     pu_assert("Thread NO_SIG_FLAG should be set",
               (current_thread->flags & SCHED_NO_SIG_FLAG) == SCHED_NO_SIG_FLAG);
+
+    return 0;
 }
 
 static void all_tests() {

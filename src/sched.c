@@ -289,7 +289,6 @@ void sched_thread_set_exec(int thread_id)
   */
 static void _sched_thread_set_exec(int thread_id, osPriority pri)
 {
-    volatile uint32_t flags = task_table[thread_id].flags;
     /* Check that given thread is in use but not in execution */
     if ((task_table[thread_id].flags & (SCHED_EXEC_FLAG | SCHED_IN_USE_FLAG)) == SCHED_IN_USE_FLAG) {
         task_table[thread_id].uCounter = 0;
@@ -370,6 +369,7 @@ osStatus sched_threadDelay(uint32_t millisec)
     } else {
         if (timers_add(current_thread->id, millisec) == 0) {
             _sched_thread_sleep_current();
+            current_thread->flags |= SCHED_NO_SIG_FLAG; /* Shouldn't get woken up by signals */
             current_thread->event.status = osOK;
         } else {
              current_thread->event.status = osErrorResource;
