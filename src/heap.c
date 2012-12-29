@@ -11,6 +11,10 @@
 #include "sched.h"
 #include "heap.h"
 
+#if configHEAP_BOUNDS_CHECK == 1
+#define HEAP_BOUNDS_CHECK 1
+#endif
+
 static int parent(int i);
 static int left(int i);
 static int right(int i);
@@ -75,9 +79,12 @@ void heapify(heap_t * heap, int i)
   */
 void heap_del_max(heap_t * heap)
 {
+#ifdef HEAP_BOUNDS_CHECK
     if (heap->size <= 0) {
         while (1); /* Catch */
     }
+#endif
+
     heap->a[0] = heap->a[heap->size];
     heap->size--;
     heapify(heap, 0);
@@ -86,9 +93,13 @@ void heap_del_max(heap_t * heap)
 void heap_insert(heap_t * heap, threadInfo_t * k)
 {
     heap->size++;
+
+#ifdef HEAP_BOUNDS_CHECK
     if (heap->size > configSCHED_MAX_THREADS) {
         while (1); /* Catch */
     }
+#endif
+
     int i = heap->size;
     while ((i > 0) && (heap->a[parent(i)]->priority < k->priority)) {
         heap->a[i] = heap->a[parent(i)];

@@ -32,6 +32,7 @@
                                          *        scaled = max_slices / (|pri| + 1)
                                          *    if pri >= 0
                                          *        scaled = max_slices * pri */
+#define configHEAP_BOUNDS_CHECK 0       /*!< Enable or disable heap bounds check */
 #define configAPP_MAIN_SSIZE    200u    /*!< Stack size for app_main thread */
 #define configAPP_MAIN_PRI      osPriorityNormal /*!< Priority of app_main thread */
 #define configTIMERS_MAX        4
