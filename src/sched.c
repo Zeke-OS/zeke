@@ -104,15 +104,20 @@ void idleTask(void * arg)
 /** @todo remove childs when parent is deleted */
 void del_thread(void)
 {
+    int i;
+
     current_thread->flags = 0; /* Clear all the flags */
 
-    /* There should be no need to clear events or anything else as those are
-     * not passed by pointer to anywhere and secondly they are cleared when
-     * new thread is created.
-     *
-     * After flags is set to 0 the thread should be automatically removed
-     * from the scheduler heap when it hits the top.
-     */
+    /* Find thread from the priority queue and put it on top.
+     * This way we can be sure that this thread is not kept in the queue after
+     * context switch is executed. If priority is not incremented it's possible
+     * that we would fill the queue with garbage. */
+    for (i = 0; i < priority_queue.size; i++) {
+        if (priority_queue.a[i]->id == current_thread->id)
+            break;
+    }
+    current_thread->priority = osPriorityError;
+    heap_inc_key(&priority_queue, i);
 
     req_context_switch();
     while(1); /* Once the context changes, the program will no longer return to
@@ -130,6 +135,11 @@ void sched_handler(void)
         save_context();
     } else _first_switch = 0;
     current_thread->sp = (void *)rd_thread_stack_ptr();
+
+    /* Tasks before context switch */
+    timers_run();
+    /* End of tasks */
+
     context_switcher();
     load_context(); /* Since PSP has been updated, this loads the last state of
                      * the new task */
@@ -138,8 +148,6 @@ void sched_handler(void)
 void context_switcher(void)
 {
     int i;
-
-    timers_run();
 
     /* Select next thread */
     do {
@@ -172,11 +180,13 @@ void context_switcher(void)
             }
 
             if ((current_thread->flags & SCHED_EXEC_FLAG) == 0) {
-                /* Remove the current thread from the priority queue */
+                /* Remove the current thread from the priority queue this will also GC dead threads */
                 (void)heap_del_max(&priority_queue);
-                /* Thread is in sleep so revert back to its original priority */
-                current_thread->priority = current_thread->def_priority;
-                current_thread->uCounter = 0;
+                if ((current_thread->flags & SCHED_IN_USE_FLAG) == 0) {
+                    /* Thread is in sleep so revert back to its original priority */
+                    current_thread->priority = current_thread->def_priority;
+                    current_thread->uCounter = 0;
+                } // else thread is also deleted and no further action is needed
             } else if ((current_thread->uCounter >= (uint32_t)tslice_n_max) /* if maximum slices for this thread */
               && ((int)current_thread->priority > (int)osPriorityBelowNormal)) /* if priority is higher than this */
             {
@@ -308,18 +318,14 @@ static void _sched_thread_sleep_current(void)
     /* Sleep flag */
     current_thread->flags &= ~SCHED_EXEC_FLAG;
 
-    /* Following should remove the thread from heap immediately when context
-     * switch is called. */
-    current_thread->priority = osPriorityError;
-
-    /* Why oh why :'( */
+    /* Find index of the current thread in the priority queue and move it
+     * on top */
     for (i = 0; i < priority_queue.size; i++) {
         if (priority_queue.a[i]->id == current_thread->id)
             break;
     }
-
+    current_thread->priority = osPriorityError;
     heap_inc_key(&priority_queue, i);
-    heap_del_max(&priority_queue);
 }
 
 
