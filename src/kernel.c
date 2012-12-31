@@ -16,14 +16,14 @@
 #include "syscall.h"
 #include "kernel.h"
 
-/* Kernel Control Functions */
+/* Kernel Control Functions **************************************************/
 
 int32_t osKernelRunning(void)
 {
       return 1;
 }
 
-/* ==== Thread Management ==== */
+/* Thread Management *********************************************************/
 
 /** @todo doesn't pass argument now */
 osThreadId osThreadCreate(osThreadDef_t * thread_def, void * argument)
@@ -40,7 +40,7 @@ osThreadId osThreadCreate(osThreadDef_t * thread_def, void * argument)
 }
 
 
-/* ==== Generic Wait Functions ==== */
+/* Generic Wait Functions ****************************************************/
 
 osStatus osDelay(uint32_t millisec)
 {
@@ -68,7 +68,7 @@ osEvent osWait(uint32_t millisec)
 }
 
 
-/*  ==== Signal Management ==== */
+/* Signal Management *********************************************************/
 
 int32_t osSignalSet(osThreadId thread_id, int32_t signal)
 {
