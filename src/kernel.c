@@ -23,7 +23,7 @@ int32_t osKernelRunning(void)
       return 1;
 }
 
-/* Thread Management */
+/* ==== Thread Management ==== */
 
 /** @todo doesn't pass argument now */
 osThreadId osThreadCreate(osThreadDef_t * thread_def, void * argument)
@@ -40,7 +40,7 @@ osThreadId osThreadCreate(osThreadDef_t * thread_def, void * argument)
 }
 
 
-/* Generic Wait Functions */
+/* ==== Generic Wait Functions ==== */
 
 osStatus osDelay(uint32_t millisec)
 {
