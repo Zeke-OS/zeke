@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    kernel.h
+ * @file    kernel.c
  * @author  Olli Vanhoja
  * @brief   Zero Kernel user space code
  *

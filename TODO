@@ -1,8 +1,8 @@
 - Implement inherintace; parent and child thread system
-- Implement delays to wait syscalls
+- Implement wait forever for wait syscall
 - Implement real cpu load calculation by calculating wait states
 - Implement cpu load (moving) averages
-- thread parenting to help killing and possibly improve responsiveness in
+- Thread parenting to help killing and possibly improve responsiveness in
   multi-tasking when parent is in exec at the same time with childs
 - implement own dlib
 - Thread related functions and variables could be moved
