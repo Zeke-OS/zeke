@@ -92,6 +92,8 @@ void heap_del_max(heap_t * heap)
 
 void heap_insert(heap_t * heap, threadInfo_t * k)
 {
+    int i;
+
     heap->size++;
 
 #ifdef HEAP_BOUNDS_CHECK
@@ -100,7 +102,7 @@ void heap_insert(heap_t * heap, threadInfo_t * k)
     }
 #endif
 
-    int i = heap->size;
+    i = heap->size;
     while ((i > 0) && (heap->a[parent(i)]->priority < k->priority)) {
         heap->a[i] = heap->a[parent(i)];
         i = parent(i);

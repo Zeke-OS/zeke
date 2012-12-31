@@ -186,7 +186,7 @@ void context_switcher(void)
                     /* Thread is in sleep so revert back to its original priority */
                     current_thread->priority = current_thread->def_priority;
                     current_thread->uCounter = 0;
-                } // else thread is also deleted and no further action is needed
+                } /* else thread is also deleted and no further action is needed */
             } else if ((current_thread->uCounter >= (uint32_t)tslice_n_max) /* if maximum slices for this thread */
               && ((int)current_thread->priority > (int)osPriorityBelowNormal)) /* if priority is higher than this */
             {

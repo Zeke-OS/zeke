@@ -7,6 +7,7 @@
  */
 
 #include "kernel.h"
+#include "timers.h"
 #include "sched.h"
 #include "app_main.h"
 #include "hal_mcu.h"
@@ -18,6 +19,7 @@ int main(void)
     if (interrupt_init_module()) {
 		while (1);
 	}
+    timers_init();
     sched_init();
     {
         /* Create app_main thread */

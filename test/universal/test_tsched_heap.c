@@ -19,7 +19,6 @@ int my_timers_add(int thread_id, uint32_t millisec);
 int my_timers_add(int thread_id, uint32_t millisec) { return 0; }
 #define timers_add my_timers_add
 
-
 /* NOTE: Included sched.c */
 #include "sched.c"
 

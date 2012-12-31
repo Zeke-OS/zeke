@@ -12,20 +12,40 @@
 #include "sched.h"
 #include "timers.h"
 
-uint32_t timers_value = 0;
-volatile timer_alloc_data_t timers_array[configTIMERS_MAX] = { {-1, 0} };
+typedef struct {
+    int thread_id;
+    uint32_t expires;
+} timer_alloc_data_t;
+
+uint32_t timers_value;
+volatile timer_alloc_data_t timers_array[configTIMERS_MAX];
+
+void timers_init(void)
+{
+    int i;
+
+    timers_value = 0;
+    for (i = 0; i < configTIMERS_MAX; i++) {
+        timers_array[i].thread_id = -1;
+        timers_array[i].expires = 0;
+    }
+}
 
 void timers_run(void)
 {
-    timers_value++;
+    int i;
+    uint32_t value;
 
-    int i = 0;
-    uint32_t value = timers_value;
+    timers_value++;
+    value = timers_value;
+    i = 0;
     do {
         uint32_t exp = timers_array[i].expires;
-        if (timers_array[i].thread_id > 0) {
-            if ((exp == (value - 1)) || (exp == value) || (exp == value + 1)) {
+        if (timers_array[i].thread_id >= 0) {
+            if (exp == value) {
+                /* Return thread back to execution */
                 sched_thread_set_exec(timers_array[i].thread_id);
+
                 /* Release the timer */
                 timers_array[i].thread_id = -1;
                 timers_array[i].expires = 0;
@@ -47,6 +67,8 @@ int timers_add(int thread_id, uint32_t millisec)
         if (timers_array[i].thread_id == -1) {
             timers_array[i].thread_id = thread_id;
             timers_array[i].expires = value + (millisec / configSCHED_FREQ);
+            if (timers_array[i].expires == value)
+                timers_array[i].expires++;
             return 0;
         }
     } while (++i < configTIMERS_MAX);
@@ -55,7 +77,7 @@ int timers_add(int thread_id, uint32_t millisec)
 }
 
 /**
- * Remove all timer allocations for given thread
+ * Remove all timer allocations for a given thread
  */
 void timers_release(int thread_id)
 {
