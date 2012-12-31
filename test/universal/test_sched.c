@@ -46,6 +46,8 @@ static void teardown()
 {
 }
 
+/* THREAD CREATION ***********************************************************/
+
 static char * test_sched_ThreadCreate(void)
 {
     osThreadDef_t thread_def1 = { (os_pthread)(&th1),
@@ -143,6 +145,8 @@ static char * test_sched_thread_set_inheritance(void)
     return 0;
 }
 
+/* THREAD DELAY **************************************************************/
+
 static char * test_sched_threadDelay_positiveInput()
 {
     osThreadDef_t thread_def1 = { (os_pthread)(&th1),
@@ -189,11 +193,62 @@ static char * test_sched_threadDelay_infiniteInput()
     return 0;
 }
 
+/* THREAD WAIT ***************************************************************/
+
+static char * test_sched_threadWait_positiveInput()
+{
+    osThreadDef_t thread_def1 = { (os_pthread)(&th1),
+                                  osPriorityNormal,
+                                  stack_1,
+                                  sizeof(stack_1)/sizeof(char)
+                                };
+
+    sched_thread_set(1, &thread_def1, NULL, NULL);
+    current_thread = &(task_table[1]);
+
+    pu_assert("Positive wait timeout value should result osEventTimeout",
+              sched_threadWait(15)->status == osEventTimeout);
+
+    pu_assert("Thread execution flag should be disable",
+              (current_thread->flags & SCHED_EXEC_FLAG) == 0);
+
+    pu_assert("Thread NO_SIG_FLAG shouldn't be set",
+              (current_thread->flags & SCHED_NO_SIG_FLAG) == 0);
+    return 0;
+}
+
+static char * test_sched_threadWait_infiniteInput()
+{
+    osThreadDef_t thread_def1 = { (os_pthread)(&th1),
+                                  osPriorityNormal,
+                                  stack_1,
+                                  sizeof(stack_1)/sizeof(char)
+                                };
+
+    sched_thread_set(1, &thread_def1, NULL, NULL);
+    current_thread = &(task_table[1]);
+
+    pu_assert("osWaitForever timeout value should result osOK",
+              sched_threadWait(osWaitForever)->status == osOK);
+
+    pu_assert("Thread execution flag should be disabled",
+              (current_thread->flags & SCHED_EXEC_FLAG) == 0);
+
+    pu_assert("Thread NO_SIG_FLAG shouldn't be set",
+              (current_thread->flags & SCHED_NO_SIG_FLAG) == 0);
+
+    return 0;
+}
+
+/* ALL TESTS *****************************************************************/
+
 static void all_tests() {
     pu_run_test(test_sched_ThreadCreate);
     pu_run_test(test_sched_thread_set_inheritance);
     pu_run_test(test_sched_threadDelay_positiveInput);
     pu_run_test(test_sched_threadDelay_infiniteInput);
+    pu_run_test(test_sched_threadWait_positiveInput);
+    pu_run_test(test_sched_threadWait_infiniteInput);
 }
 
 int main(int argc, char **argv)
