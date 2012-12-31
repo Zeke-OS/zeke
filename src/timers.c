@@ -43,7 +43,6 @@ void timers_run(void)
         uint32_t exp = timers_array[i].expires;
         if (timers_array[i].thread_id >= 0) {
             if (exp == value) {
-                /* Return thread back to execution */
                 sched_thread_set_exec(timers_array[i].thread_id);
 
                 /* Release the timer */
