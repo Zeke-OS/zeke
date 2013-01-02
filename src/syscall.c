@@ -29,11 +29,15 @@ uint32_t _intSyscall_handler(int type, void * p)
       case KERNEL_SYSCALL_SCHED_WAIT:
         result = (uint32_t)sched_threadWait(*((uint32_t *)(p)));
         break;
-      case KERNEL_SYSCALL_SCHED_SETSIGNAL:
-        result = (uint32_t)sched_threadSetSignal(((ds_osSignalSet_t *)p)->thread_id, ((ds_osSignalSet_t *)p)->signal);
+      case KERNEL_SYSCALL_SCHED_SIGNAL_SET:
+        result = (uint32_t)sched_threadSignalSet(((ds_osSignal_t *)p)->thread_id, ((ds_osSignal_t *)p)->signal);
         break;
+      case KERNEL_SYSCALL_SCHED_SIGNAL_CLEAR:
+        result = (uint32_t)sched_threadSignalClear(((ds_osSignal_t *)p)->thread_id, ((ds_osSignal_t *)p)->signal);
+      case KERNEL_SYSCALL_SCHED_SIGNAL_GETCURR:
+        result = (uint32_t)sched_threadSignalGetCurrent();
       default:
-        result = osErrorValue;
+        result = NULL;
     }
 
     return result;

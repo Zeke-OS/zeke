@@ -11,8 +11,8 @@
   */
 
 #pragma once
-#ifndef KERNEL_HPP
-#define KERNEL_HPP
+#ifndef KERNEL_H
+#define KERNEL_H
 
 /// \note MUST REMAIN UNCHANGED: \b osCMSIS identifies the CMSIS-RTOS API version
 #define osCMSIS           0x00003      ///< API version (main [31:16] .sub [15:0])
@@ -217,7 +217,7 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec);
 
 #endif /* KERNEL_INTERNAL */
 
-#endif /* KERNEL_HPP */
+#endif /* KERNEL_H */
 
 /**
   * @}

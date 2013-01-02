@@ -16,7 +16,9 @@
 #define KERNEL_SYSCALL_SCHED_THREAD_CREATE  1
 #define KERNEL_SYSCALL_SCHED_DELAY          2
 #define KERNEL_SYSCALL_SCHED_WAIT           3
-#define KERNEL_SYSCALL_SCHED_SETSIGNAL      4
+#define KERNEL_SYSCALL_SCHED_SIGNAL_SET     4
+#define KERNEL_SYSCALL_SCHED_SIGNAL_CLEAR   5
+#define KERNEL_SYSCALL_SCHED_SIGNAL_GETCURR 6
 
 #include "sched.h"
 
@@ -28,7 +30,7 @@ typedef struct {
 typedef struct {
     osThreadId thread_id;
     int32_t signal;
-} ds_osSignalSet_t;
+} ds_osSignal_t;
 
 
 /**

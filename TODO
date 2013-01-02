@@ -1,7 +1,5 @@
 - Implement inherintace; parent and child thread system
-- Signals should be stored individually/separated from event struct to allow other types of events?
-- Events are not queued atm, ensure that events don't get overwritten or implement a queue for events per thread
-- Signal functions will mess event structure if event type is not signal!
+- Events are not queued atm, do we need queuing?
 - Implement wait forever for wait syscall
 - Implement real cpu load calculation by calculating wait states
 - Implement cpu load (moving) averages
