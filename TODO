@@ -1,4 +1,7 @@
 - Implement inherintace; parent and child thread system
+- Signals should be stored individually/separated from event struct to allow other types of events?
+- Events are not queued atm, ensure that events don't get overwritten or implement a queue for events per thread
+- Signal functions will mess event structure if event type is not signal!
 - Implement wait forever for wait syscall
 - Implement real cpu load calculation by calculating wait states
 - Implement cpu load (moving) averages
@@ -8,4 +11,4 @@
 - Thread related functions and variables could be moved
   from sched.c to thread.c, This would although require a lot of refactoring
 ...
-- Binary loading to ram? (PE)
+- Binary loading to ram?
