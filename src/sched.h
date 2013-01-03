@@ -11,8 +11,8 @@
   */
 
 #pragma once
-#ifndef SCHED_HPP
-#define SCHED_HPP
+#ifndef SCHED_H
+#define SCHED_H
 
 #include "kernel.h"
 
@@ -26,6 +26,8 @@ extern volatile uint32_t sched_cpu_load;
 typedef struct {
     void * sp;                  /*!< Stack pointer */
     uint32_t flags;             /*!< Status flags */
+    int32_t signals;            /*!< Signal flags */
+    int32_t sig_wait_mask;      /*!< Signal wait mask */
     osEvent event;              /*!< Event struct */
     osPriority def_priority;    /*!< Thread priority */
     osPriority priority;        /*!< Thread dynamic runtime priority */
@@ -63,9 +65,11 @@ void sched_thread_set_exec(int thread_id);
 int sched_ThreadCreate(osThreadDef_t * thread_def, void * argument);
 osStatus sched_threadDelay(uint32_t millisec);
 osEvent * sched_threadWait(uint32_t millisec);
-uint32_t sched_threadSetSignal(osThreadId thread_id, int32_t signal);
+int32_t sched_threadSignalSet(osThreadId thread_id, int32_t signal);
+int32_t sched_threadSignalClear(osThreadId thread_id, int32_t signal);
+int32_t sched_threadSignalGetCurrent(void);
 
-#endif /* SCHED_HPP */
+#endif /* SCHED_H */
 
 /**
   * @}

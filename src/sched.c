@@ -237,6 +237,10 @@ void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument, thread
     task_table[i].def_priority  = thread_def->tpriority;
     /* task_table[i].priority is set later in sched_thread_set_exec */
 
+    /* Clear signal flags & wait states */
+    task_table[i].signals = 0;
+    task_table[i].sig_wait_mask = 0x7fffffff;
+
     /* Clear events */
     memset(&(task_table[i].event), 0, sizeof(osEvent));
 
@@ -421,22 +425,46 @@ osEvent * sched_threadWait(uint32_t millisec)
     return &(current_thread->event);
 }
 
-uint32_t sched_threadSetSignal(osThreadId thread_id, int32_t signal)
+int32_t sched_threadSignalSet(osThreadId thread_id, int32_t signal)
 {
-    uint32_t prev_signals;
+    int32_t prev_signals;
 
     if ((task_table[thread_id].flags & SCHED_IN_USE_FLAG) == 0)
-        return 0x80000000;
+        return 0x80000000; /* Error code specified in CMSIS-RTOS */
 
-    prev_signals = (uint32_t)task_table[thread_id].event.value.signals;
+    prev_signals = (uint32_t)task_table[thread_id].signals;
 
-    task_table[thread_id].event.value.signals = signal;
+    task_table[thread_id].signals |= signal; /* OR with all signals */
+    task_table[thread_id].event.value.signals = signal; /* Only this signal as
+                                             * the event was calling of this */
     task_table[thread_id].event.status = osEventSignal;
 
-    if ((task_table[thread_id].flags & SCHED_NO_SIG_FLAG) == SCHED_NO_SIG_FLAG) {
+    if (((task_table[thread_id].flags & SCHED_NO_SIG_FLAG) == 0)
+        && ((task_table[thread_id].sig_wait_mask & signal) != 0)) {
+        /* Remove current signal from the mask */
+        task_table[thread_id].sig_wait_mask &= ~(signal & 0x7fffffff);
+
         /* Set the signaled thread back into execution */
         _sched_thread_set_exec(thread_id, task_table[thread_id].def_priority);
     }
 
     return prev_signals;
+}
+
+int32_t sched_threadSignalClear(osThreadId thread_id, int32_t signal)
+{
+    int32_t prev_signals;
+
+    if ((task_table[thread_id].flags & SCHED_IN_USE_FLAG) == 0)
+        return 0x80000000; /* Error code specified in CMSIS-RTOS */
+
+    prev_signals = (uint32_t)task_table[thread_id].signals;
+    task_table[thread_id].signals &= ~(signal & 0x7fffffff);
+
+    return prev_signals;
+}
+
+int32_t sched_threadSignalGetCurrent(void)
+{
+    return current_thread->signals;
 }
