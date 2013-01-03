@@ -28,4 +28,4 @@ NOTES
 =====
 
 - Some signal flags could be reserved for other event types in the future (while keeping kernel compact and simple)
-- SysTick configuration might be wrong as timers seem to run too fast
+- SysTick configuration might be wrong?
