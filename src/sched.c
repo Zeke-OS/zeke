@@ -46,6 +46,7 @@ volatile int _first_switch = 1;
 /* Private function prototypes -----------------------------------------------*/
 void idleTask(void * arg);
 void del_thread(void);
+static void sched_remove_thread(uint32_t id);
 void context_switcher(void);
 void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument, threadInfo_t * parent);
 void sched_thread_set_inheritance(osThreadId i, threadInfo_t * parent);
@@ -101,27 +102,51 @@ void idleTask(void * arg)
 #endif
 }
 
-/** @todo remove childs when parent is deleted */
+/**
+ * Deletes thread on exit
+ * @note This function is called while execution is in thread context.
+ * @todo thread deletion should invoke a syscall that actually removes the
+ * running thread from execution
+ */
 void del_thread(void)
+{
+    threadInfo_t * child;
+
+    /* Remove all childs from execution */
+    child = current_thread->inh.first_child;
+    do {
+        sched_remove_thread(child->id);
+    } while ((child = child->inh.next_child) != NULL);
+
+    /* Remove thread itself */
+    sched_remove_thread(current_thread->id);
+
+    req_context_switch();
+    while(1); /* Once the context changes, the program will no longer return to
+               * this thread */
+}
+
+/**
+ * Removes thread from execution
+ * @param tt_id Thread task table id
+ */
+static void sched_remove_thread(uint32_t tt_id)
 {
     int i;
 
-    current_thread->flags = 0; /* Clear all the flags */
+    task_table[tt_id].flags = 0; /* Clear all the flags */
 
     /* Find thread from the priority queue and put it on top.
      * This way we can be sure that this thread is not kept in the queue after
      * context switch is executed. If priority is not incremented it's possible
      * that we would fill the queue with garbage. */
     for (i = 0; i < priority_queue.size; i++) {
-        if (priority_queue.a[i]->id == current_thread->id)
+        if (priority_queue.a[i]->id == tt_id)
             break;
     }
-    current_thread->priority = osPriorityError;
-    heap_inc_key(&priority_queue, i);
 
-    req_context_switch();
-    while(1); /* Once the context changes, the program will no longer return to
-               * this thread */
+    task_table[tt_id].priority = osPriorityError;
+    heap_inc_key(&priority_queue, i);
 }
 
 /**

@@ -1,9 +1,11 @@
 TODO
 ====
 
-- Child nodes should be killed when parent exits
+- Thread deletion should invoke a syscall that actually removes the running
+  thread from execution
 - Events are not queued atm, do we need queuing?
-- Create kernel library and example program as their own projects (memory aligned mapping)
+- Create kernel library and example program as their own projects
+  (memory aligned mapping)
 - Implement real cpu load calculation by calculating wait states
 - Implement cpu load (moving) averages
 - Implement rest of Thread Management functions/syscalls
@@ -30,5 +32,6 @@ KNOWN ISSUES
 NOTES
 =====
 
-- Some signal flags could be reserved for other event types in the future (while keeping kernel compact and simple)
+- Some signal flags could be reserved for other event types in the future
+  (while keeping kernel compact and simple)
 - SysTick configuration might be wrong?

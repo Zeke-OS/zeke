@@ -32,7 +32,7 @@ typedef struct {
     osPriority def_priority;    /*!< Thread priority */
     osPriority priority;        /*!< Thread dynamic runtime priority */
     uint32_t uCounter;          /*!< Time slice counter */
-    uint32_t id;
+    uint32_t id;                /*!< Thread id (in task table) */
     struct threadInheritance_t {
         void * parent;              /*!< Parent thread */
         void * first_child;         /*!< Link to the first child thread */
