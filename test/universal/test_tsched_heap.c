@@ -19,6 +19,10 @@ int my_timers_add(int thread_id, uint32_t millisec);
 int my_timers_add(int thread_id, uint32_t millisec) { return 0; }
 #define timers_add my_timers_add
 
+/* Override del_thread */
+void del_thread(void);
+void del_thread(void) { }
+
 /* NOTE: Included sched.c */
 #include "sched.c"
 
@@ -227,8 +231,8 @@ static char * test_sched_threadWait_infiniteInput()
     sched_thread_set(1, &thread_def1, NULL, NULL);
     current_thread = &(task_table[1]);
 
-    pu_assert("osWaitForever timeout value should result osOK",
-              sched_threadWait(osWaitForever)->status == osOK);
+    pu_assert("osWaitForever timeout value should result osEventTimeout",
+              sched_threadWait(osWaitForever)->status == osEventTimeout);
 
     pu_assert("Thread execution flag should be disabled",
               (current_thread->flags & SCHED_EXEC_FLAG) == 0);

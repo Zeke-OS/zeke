@@ -409,15 +409,14 @@ osStatus sched_threadDelay(uint32_t millisec)
     current_thread->event.status = osOK;
 
     if (millisec != osWaitForever) {
-        if (timers_add(current_thread->id, millisec) == 0) {
-            /* This thread shouldn't get woken up by signals */
-            current_thread->flags |= SCHED_NO_SIG_FLAG;
-        } else {
+        if (timers_add(current_thread->id, millisec) != 0) {
              current_thread->event.status = osErrorResource;
         }
     }
 
     if (current_thread->event.status != osErrorResource) {
+        /* This thread shouldn't get woken up by signals */
+        current_thread->flags |= SCHED_NO_SIG_FLAG;
         _sched_thread_sleep_current();
     }
 
