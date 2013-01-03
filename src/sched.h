@@ -27,6 +27,7 @@ typedef struct {
     void * sp;                  /*!< Stack pointer */
     uint32_t flags;             /*!< Status flags */
     int32_t signals;            /*!< Signal flags */
+    int32_t sig_wait_mask;      /*!< Signal wait mask */
     osEvent event;              /*!< Event struct */
     osPriority def_priority;    /*!< Thread priority */
     osPriority priority;        /*!< Thread dynamic runtime priority */

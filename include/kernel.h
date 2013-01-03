@@ -28,7 +28,7 @@
 #define osFeature_Pool         0       ///< Memory Pools:    1=available, 0=not available
 #define osFeature_MailQ        0       ///< Mail Queues:     1=available, 0=not available
 #define osFeature_MessageQ     0       ///< Message Queues:  1=available, 0=not available
-#define osFeature_Signals      8       ///< maximum number of Signal Flags available per thread
+#define osFeature_Signals      31      ///< maximum number of Signal Flags available per thread
 #define osFeature_Semaphore    0       ///< maximum count for SemaphoreInit function
 #define osFeature_Wait         1       ///< osWait function: 1=available, 0=not available
 
