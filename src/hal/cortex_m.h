@@ -59,22 +59,17 @@ typedef struct {
 } sw_stack_frame_t;
 
 
-/**
-  * Init hw stack frame
-  */
-void init_hw_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a_del_thread);
-
+/* Inlined core functions */
 inline void save_context(void);
 inline void load_context(void);
 inline void * rd_stack_ptr(void);
 inline void * rd_thread_stack_ptr(void);
 inline void wr_thread_stack_ptr(void * ptr);
-uint32_t syscall(int type, void * p);
 
 
 /**
-  * Request immediate context switch
-  */
+ * Request immediate context switch
+ */
 #define req_context_switch() do {                                          \
     SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk; /* Switch the context */              \
     asm volatile("DSB\n" /* Ensure write is completed
@@ -84,8 +79,8 @@ uint32_t syscall(int type, void * p);
     ); } while (0)
 
 /**
-  * Save the context on the PSP
-  */
+ * Save the context on the PSP
+ */
 inline void save_context(void)
 {
     volatile uint32_t scratch;
@@ -115,8 +110,8 @@ inline void save_context(void)
 }
 
 /**
-  * Load the context from the PSP
-  */
+ * Load the context from the PSP
+ */
 inline void load_context(void)
 {
     volatile uint32_t scratch;
@@ -145,8 +140,8 @@ inline void load_context(void)
 }
 
 /**
-  * Read the main stack pointer
-  */
+ * Read the main stack pointer
+ */
 inline void * rd_stack_ptr(void)
 {
     void * result = NULL;
@@ -156,8 +151,8 @@ inline void * rd_stack_ptr(void)
 }
 
 /**
-  * Read the PSP so that it can be stored in the task table
-  */
+ * Read the PSP so that it can be stored in the task table
+ */
 inline void * rd_thread_stack_ptr(void)
 {
     void * result = NULL;
@@ -166,8 +161,8 @@ inline void * rd_thread_stack_ptr(void)
 }
 
 /**
-  * Write stack pointer of the currentthread to the PSP
-  */
+ * Write stack pointer of the currentthread to the PSP
+ */
 inline void wr_thread_stack_ptr(void * ptr)
 {
     asm volatile ("MSR psp, %0\n"

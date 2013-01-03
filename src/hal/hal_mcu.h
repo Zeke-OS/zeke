@@ -22,6 +22,13 @@
 
 #ifdef PU_TEST_BUILD
 #undef configMCU_MODEL
+#else /* Normal buil */
+
+/**
+ * Initializer for interrupt module
+ */
+int interrupt_init_module(void);
+
 #endif
 
 #ifndef configMCU_MODEL
@@ -29,6 +36,8 @@
 #endif
 
 #if configMCU_MODEL == MCU_MODEL_STM32F0
+#include "stm32f0xx.h" /* Library developed by ST
+                    (Licensed under MCD-ST Liberty SW License Agreement V2) */
 #include "stm32f0_interrupt.h"
 #else
     #error No hardware support for the selected MCU model.

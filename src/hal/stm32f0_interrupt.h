@@ -20,12 +20,8 @@
 
 #include <stddef.h>
 
-// Libraries from ST (Licensed under MCD-ST Liberty SW License Agreement V2)
-#include "stm32f0xx.h"
-
-int interrupt_init_module(void);
-
-// Interrupt handlers
+/* ==== Vendor specific interrupt handlers ====
+ * These are only referenced inside vendor specific code (mainly assembly) */
 void NMI_Handler(void);
 void HardFault_Handler(void);
 void SVC_Handler(void);
