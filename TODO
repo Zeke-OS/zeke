@@ -1,8 +1,7 @@
+- Implement wait for a signal syscall
 - Child nodes should be killed when parent exits
 - Events are not queued atm, do we need queuing?
 - Create kernel library and example program as their own projects (memory aligned mapping)
-- Implement wait forever for wait syscall
-- Implement wait for a signal syscall
 - Implement real cpu load calculation by calculating wait states
 - Implement cpu load (moving) averages
 - Implement rest of Thread Management functions/syscalls
