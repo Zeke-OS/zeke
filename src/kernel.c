@@ -48,8 +48,10 @@ osStatus osDelay(uint32_t millisec)
 
     result = (osStatus)syscall(KERNEL_SYSCALL_SCHED_DELAY, &millisec);
 
-    /* Request context switch */
-    req_context_switch();
+    if (result != osErrorResource) {
+        /* Request context switch */
+        req_context_switch();
+    }
 
     return result;
 }
@@ -60,8 +62,10 @@ osEvent osWait(uint32_t millisec)
 
     result = (osEvent *)syscall(KERNEL_SYSCALL_SCHED_WAIT, &millisec);
 
-    /* Request context switch */
-    req_context_switch();
+    if (result->status != osErrorResource) {
+        /* Request context switch */
+        req_context_switch();
+    }
 
     /* Retrun a copy of the current state of the event structure */
     return *result;

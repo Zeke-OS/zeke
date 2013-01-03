@@ -371,24 +371,22 @@ osThreadId sched_ThreadCreate(osThreadDef_t * thread_def, void * argument)
 
 osStatus sched_threadDelay(uint32_t millisec)
 {
-    if (millisec == osWaitForever) {
-        _sched_thread_sleep_current();              /* Sleep */
-        current_thread->flags |= SCHED_NO_SIG_FLAG; /* Shouldn't get woken up by signals */
-        current_thread->event.status = osOK;
-    } else {
-        if (timers_add(current_thread->id, millisec) == 0) {
-            _sched_thread_sleep_current();
+    /* osOK is always returned from delay syscall if everything went ok,
+     * where as threadWait returns a pointer which may change during
+     * wait time. */
+    current_thread->event.status = osOK;
 
+    if (millisec != osWaitForever) {
+        if (timers_add(current_thread->id, millisec) == 0) {
             /* This thread shouldn't get woken up by signals */
             current_thread->flags |= SCHED_NO_SIG_FLAG;
-
-            /* osOK is always returned from delay syscall if everything went ok,
-             * where as threadWait returns a pointer which may change during
-             * wait time. */
-            current_thread->event.status = osOK;
         } else {
              current_thread->event.status = osErrorResource;
         }
+    }
+
+    if (current_thread->event.status != osErrorResource) {
+        _sched_thread_sleep_current();
     }
 
     return current_thread->event.status;
@@ -403,17 +401,10 @@ osStatus sched_threadDelay(uint32_t millisec)
  */
 osEvent * sched_threadWait(uint32_t millisec)
 {
-    if (millisec == osWaitForever) {
-        /*_sched_thread_sleep_current();*/
-        current_thread->event.status = osErrorValue;
-    } else {
-        if (timers_add(current_thread->id, millisec) == 0) {
-            _sched_thread_sleep_current();
+    current_thread->event.status = osEventTimeout;
 
-            /* We should now set osEventTimeout as a return value and set it
-             * later to osOK if event signal is received */
-            current_thread->event.status = osEventTimeout;
-        } else {
+    if (millisec != osWaitForever) {
+        if (timers_add(current_thread->id, millisec) != 0) {
             /* Timer error will be most likely but not necessarily returned
              * as is. There is however a slight chance of event triggering
              * before control returns back to this thread. It is completely OK
@@ -422,7 +413,13 @@ osEvent * sched_threadWait(uint32_t millisec)
         }
     }
 
-    return &(current_thread->event);
+    if (current_thread->event.status != osErrorResource) {
+        _sched_thread_sleep_current();
+    }
+
+    /* Event status is now timeout but will be changed if any event occurs
+     * as event is returned as a pointer. */
+    return (osEvent *)(&(current_thread->event));
 }
 
 int32_t sched_threadSignalSet(osThreadId thread_id, int32_t signal)
@@ -441,9 +438,6 @@ int32_t sched_threadSignalSet(osThreadId thread_id, int32_t signal)
 
     if (((task_table[thread_id].flags & SCHED_NO_SIG_FLAG) == 0)
         && ((task_table[thread_id].sig_wait_mask & signal) != 0)) {
-        /* Remove current signal from the mask */
-        task_table[thread_id].sig_wait_mask &= ~(signal & 0x7fffffff);
-
         /* Set the signaled thread back into execution */
         _sched_thread_set_exec(thread_id, task_table[thread_id].def_priority);
     }
