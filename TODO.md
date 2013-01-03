@@ -13,14 +13,17 @@ TODO
 - Implement other messaging services
 - Thread parenting to help killing and possibly improve responsiveness in
   multi-tasking when parent is in exec at the same time with childs
-- implement own dlib
+- Implement threading support for DLIB
+- OR implement own DLIB and disable IAR's implementation on project settings
 - Thread related functions and variables could be moved
   from sched.c to thread.c, This would although require a lot of refactoring
+- Load ropi applications from storage to RAM and execute in a new thread
 
 
-KNOWN BUGS
-==========
+KNOWN ISSUES
+============
 
+- DLIB is not thread safe outside of kernel code
 - Signal wait mask is not always cleared after signal is received
 
 
