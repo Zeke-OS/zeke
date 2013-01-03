@@ -34,8 +34,16 @@ uint32_t _intSyscall_handler(int type, void * p)
         break;
       case KERNEL_SYSCALL_SCHED_SIGNAL_CLEAR:
         result = (uint32_t)sched_threadSignalClear(((ds_osSignal_t *)p)->thread_id, ((ds_osSignal_t *)p)->signal);
+        break;
       case KERNEL_SYSCALL_SCHED_SIGNAL_GETCURR:
         result = (uint32_t)sched_threadSignalGetCurrent();
+        break;
+      case KERNEL_SYSCALL_SCHED_SIGNAL_GET:
+        result = (uint32_t)sched_threadSignalGet(*((osThreadId *)p));
+        break;
+      case KERNEL_SYSCALL_SCHED_SIGNAL_WAIT:
+        result = (uint32_t)sched_threadSignalWait(((ds_osSignalWait_t *)p)->signals, ((ds_osSignalWait_t *)p)->millisec);
+        break;
       default:
         result = NULL;
     }

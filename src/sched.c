@@ -239,7 +239,7 @@ void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument, thread
 
     /* Clear signal flags & wait states */
     task_table[i].signals = 0;
-    task_table[i].sig_wait_mask = 0x7fffffff;
+    task_table[i].sig_wait_mask = 0x0;
 
     /* Clear events */
     memset(&(task_table[i].event), 0, sizeof(osEvent));
@@ -397,29 +397,10 @@ osStatus sched_threadDelay(uint32_t millisec)
  * millisec Event wait time in ms or osWaitForever.
  * @note This function returns a pointer to a thread event struct and its
  * contents is allowed to change before returning back to the caller thread.
- * @todo Doesn't support osWaitForever atm
  */
 osEvent * sched_threadWait(uint32_t millisec)
 {
-    current_thread->event.status = osEventTimeout;
-
-    if (millisec != osWaitForever) {
-        if (timers_add(current_thread->id, millisec) != 0) {
-            /* Timer error will be most likely but not necessarily returned
-             * as is. There is however a slight chance of event triggering
-             * before control returns back to this thread. It is completely OK
-             * to clear this error if that happens. */
-            current_thread->event.status = osErrorResource;
-        }
-    }
-
-    if (current_thread->event.status != osErrorResource) {
-        _sched_thread_sleep_current();
-    }
-
-    /* Event status is now timeout but will be changed if any event occurs
-     * as event is returned as a pointer. */
-    return (osEvent *)(&(current_thread->event));
+    sched_threadSignalWait(0x7fffffff, millisec);
 }
 
 int32_t sched_threadSignalSet(osThreadId thread_id, int32_t signal)
@@ -438,11 +419,22 @@ int32_t sched_threadSignalSet(osThreadId thread_id, int32_t signal)
 
     if (((task_table[thread_id].flags & SCHED_NO_SIG_FLAG) == 0)
         && ((task_table[thread_id].sig_wait_mask & signal) != 0)) {
+        /* Clear signal wait mask */
+        task_table[thread_id].sig_wait_mask = 0x0;
+
         /* Set the signaled thread back into execution */
         _sched_thread_set_exec(thread_id, task_table[thread_id].def_priority);
     }
 
     return prev_signals;
+}
+
+/**
+ * Clear signal wait mask of the current thread
+ */
+void sched_threadSignalWaitMaskClear(void)
+{
+    current_thread->sig_wait_mask = 0x0;
 }
 
 int32_t sched_threadSignalClear(osThreadId thread_id, int32_t signal)
@@ -462,3 +454,33 @@ int32_t sched_threadSignalGetCurrent(void)
 {
     return current_thread->signals;
 }
+
+int32_t sched_threadSignalGet(osThreadId thread_id)
+{
+    return task_table[thread_id].signals;
+}
+
+osEvent * sched_threadSignalWait(int32_t signals, uint32_t millisec)
+{
+    current_thread->event.status = osEventTimeout;
+
+    if (millisec != osWaitForever) {
+        if (timers_add(current_thread->id, millisec) != 0) {
+            /* Timer error will be most likely but not necessarily returned
+             * as is. There is however a slight chance of event triggering
+             * before control returns back to this thread. It is completely OK
+             * to clear this error if that happens. */
+            current_thread->event.status = osErrorResource;
+        }
+    }
+
+    if (current_thread->event.status != osErrorResource) {
+        current_thread->sig_wait_mask = signals;
+        _sched_thread_sleep_current();
+    }
+
+    /* Event status is now timeout but will be changed if any event occurs
+     * as event is returned as a pointer. */
+    return (osEvent *)(&(current_thread->event));
+}
+
