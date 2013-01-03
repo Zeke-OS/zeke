@@ -12,7 +12,19 @@ One of the goals in the future is to make Zero Kernel CMSIS-RTOS compliant.
 At the moment CMSIS-RTOS we are not even near of compliance. Another nice
 goal is to implement system services by using SVC calls which may open
 some very nice possibilities in the futur eg. loading code from SD
-card without static linkage etc.
+card without static linkage to the kernel itself etc.
+
+
+Key features
+------------
+
+- Fixed/dynamic priority pre-emptive scheduling with penalties to prevent starvation
+- Signal flag based notify/wake-up from sleep with event timeouts
+- System call based kernel services
+
+
+License
+-------
 
 Copyright (c) 2012, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
 All rights reserved.
