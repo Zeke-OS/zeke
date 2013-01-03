@@ -63,6 +63,8 @@ void sched_thread_set_exec(int thread_id);
 
 /* Functions used by syscalls */
 int sched_ThreadCreate(osThreadDef_t * thread_def, void * argument);
+osThreadId sched_thread_getId(void);
+osStatus sched_thread_terminate(osThreadId thread_id);
 osStatus sched_threadDelay(uint32_t millisec);
 osEvent * sched_threadWait(uint32_t millisec);
 int32_t sched_threadSignalSet(osThreadId thread_id, int32_t signal);

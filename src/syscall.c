@@ -23,6 +23,12 @@ uint32_t _intSyscall_handler(int type, void * p)
       case KERNEL_SYSCALL_SCHED_THREAD_CREATE:
         result = (uint32_t)sched_ThreadCreate(((ds_osThreadCreate_t *)(p))->def, ((ds_osThreadCreate_t *)(p))->argument);
         break;
+      case KERNEL_SYSCALL_SCHED_THREAD_GETID:
+         result = (uint32_t)sched_thread_getId();
+        break;
+      case KERNEL_SYSCALL_SCHED_THREAD_TERMINATE:
+        result = (uint32_t)sched_thread_terminate(*((osThreadId *)p));
+        break;
       case KERNEL_SYSCALL_SCHED_DELAY:
         result = (uint32_t)sched_threadDelay(*((uint32_t *)(p)));
         break;

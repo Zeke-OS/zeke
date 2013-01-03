@@ -25,7 +25,6 @@ int32_t osKernelRunning(void)
 
 /* Thread Management *********************************************************/
 
-/** @todo doesn't pass argument now */
 osThreadId osThreadCreate(osThreadDef_t * thread_def, void * argument)
 {
     ds_osThreadCreate_t args = {thread_def, argument};
@@ -37,6 +36,32 @@ osThreadId osThreadCreate(osThreadDef_t * thread_def, void * argument)
     req_context_switch();
 
     return result;
+}
+
+osThreadId osThreadGetId(void)
+{
+    osThreadId result;
+
+    result = (osThreadId)syscall(KERNEL_SYSCALL_SCHED_THREAD_GETID, NULL);
+
+    return result;
+}
+
+osStatus osThreadTerminate(osThreadId thread_id)
+{
+    osStatus result;
+
+    result = (osStatus)syscall(KERNEL_SYSCALL_SCHED_THREAD_TERMINATE, &thread_id);
+
+    return result;
+}
+
+osStatus osThreadYield(void)
+{
+    /* Request immediate context switch */
+    req_context_switch();
+
+    return (osStatus)osOK;
 }
 
 

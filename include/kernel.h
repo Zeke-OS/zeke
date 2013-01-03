@@ -130,12 +130,15 @@ typedef struct  {
 /* none atm */
 
 
+
 //  ==== Kernel Control Functions ====
 
 /// Check if the RTOS kernel is already started.
 /// \note MUST REMAIN UNCHANGED: \b osKernelRunning shall be consistent in every CMSIS-RTOS.
 /// \return 0 RTOS is not started, 1 RTOS is started.
 int32_t osKernelRunning(void);
+
+
 
 //  ==== Thread Management ====
 
@@ -162,6 +165,23 @@ osThreadDef_t os_thread_def_##name = \
 /// \note MUST REMAIN UNCHANGED: \b osThreadCreate shall be consistent in every CMSIS-RTOS.
 osThreadId osThreadCreate(osThreadDef_t * thread_def, void * argument);
 
+/// Return the thread ID of the current running thread.
+/// \return thread ID for reference by other functions or NULL in case of error.
+/// \note MUST REMAIN UNCHANGED: \b osThreadGetId shall be consistent in every CMSIS-RTOS.
+osThreadId osThreadGetId(void);
+
+/// Terminate execution of a thread and remove it from Active Threads.
+/// \param[in]     thread_id   thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
+/// \return status code that indicates the execution status of the function.
+/// \note MUST REMAIN UNCHANGED: \b osThreadTerminate shall be consistent in every CMSIS-RTOS.
+osStatus osThreadTerminate(osThreadId thread_id);
+
+/// Pass control to next thread that is in state \b READY.
+/// \return status code that indicates the execution status of the function.
+/// \note MUST REMAIN UNCHANGED: \b osThreadYield shall be consistent in every CMSIS-RTOS.
+osStatus osThreadYield(void);
+
+
 
 //  ==== Generic Wait Functions ====
 
@@ -179,6 +199,7 @@ osStatus osDelay(uint32_t millisec);
 osEvent osWait(uint32_t millisec);
 
 #endif  // Generic Wait available
+
 
 
 //  ==== Signal Management ====
