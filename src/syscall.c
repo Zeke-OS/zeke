@@ -21,34 +21,54 @@ uint32_t _intSyscall_handler(int type, void * p)
 
     switch(type) {
       case KERNEL_SYSCALL_SCHED_THREAD_CREATE:
-        result = (uint32_t)sched_ThreadCreate(((ds_osThreadCreate_t *)(p))->def, ((ds_osThreadCreate_t *)(p))->argument);
+        result =(uint32_t)sched_ThreadCreate(
+                    ((ds_osThreadCreate_t *)(p))->def,
+                    ((ds_osThreadCreate_t *)(p))->argument
+                );
         break;
       case KERNEL_SYSCALL_SCHED_THREAD_GETID:
-         result = (uint32_t)sched_thread_getId();
+         result =(uint32_t)sched_thread_getId();
         break;
       case KERNEL_SYSCALL_SCHED_THREAD_TERMINATE:
-        result = (uint32_t)sched_thread_terminate(*((osThreadId *)p));
+        result =(uint32_t)sched_thread_terminate(
+                    *((osThreadId *)p)
+                );
         break;
       case KERNEL_SYSCALL_SCHED_DELAY:
-        result = (uint32_t)sched_threadDelay(*((uint32_t *)(p)));
+        result =(uint32_t)sched_threadDelay(
+                    *((uint32_t *)(p))
+                );
         break;
       case KERNEL_SYSCALL_SCHED_WAIT:
-        result = (uint32_t)sched_threadWait(*((uint32_t *)(p)));
+        result =(uint32_t)sched_threadWait(
+                    *((uint32_t *)(p))
+                );
         break;
       case KERNEL_SYSCALL_SCHED_SIGNAL_SET:
-        result = (uint32_t)sched_threadSignalSet(((ds_osSignal_t *)p)->thread_id, ((ds_osSignal_t *)p)->signal);
+        result =(uint32_t)sched_threadSignalSet(
+                    ((ds_osSignal_t *)p)->thread_id,
+                    ((ds_osSignal_t *)p)->signal
+                );
         break;
       case KERNEL_SYSCALL_SCHED_SIGNAL_CLEAR:
-        result = (uint32_t)sched_threadSignalClear(((ds_osSignal_t *)p)->thread_id, ((ds_osSignal_t *)p)->signal);
+        result =(uint32_t)sched_threadSignalClear(
+                    ((ds_osSignal_t *)p)->thread_id,
+                    ((ds_osSignal_t *)p)->signal
+                );
         break;
       case KERNEL_SYSCALL_SCHED_SIGNAL_GETCURR:
-        result = (uint32_t)sched_threadSignalGetCurrent();
+        result =(uint32_t)sched_threadSignalGetCurrent();
         break;
       case KERNEL_SYSCALL_SCHED_SIGNAL_GET:
-        result = (uint32_t)sched_threadSignalGet(*((osThreadId *)p));
+        result =(uint32_t)sched_threadSignalGet(
+                    *((osThreadId *)p)
+                );
         break;
       case KERNEL_SYSCALL_SCHED_SIGNAL_WAIT:
-        result = (uint32_t)sched_threadSignalWait(((ds_osSignalWait_t *)p)->signals, ((ds_osSignalWait_t *)p)->millisec);
+        result =(uint32_t)sched_threadSignalWait(
+                    ((ds_osSignalWait_t *)p)->signals,
+                    ((ds_osSignalWait_t *)p)->millisec
+                );
         break;
       default:
         result = NULL;
