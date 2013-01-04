@@ -15,8 +15,10 @@ TODO
   multi-tasking when parent is in exec at the same time with childs
 - Implement threading support for DLIB
 - OR implement own DLIB and disable IAR's implementation on project settings
+- Add support for low power modes in idle taks
 - Thread related functions and variables could be moved
-  from sched.c to thread.c, This would although require a lot of refactoring
+  from sched.c to its own file, although this would although require
+  a lot of refactoring
 - Load ropi applications from storage to RAM and execute in a new thread
 
 

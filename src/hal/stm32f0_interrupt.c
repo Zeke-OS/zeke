@@ -39,7 +39,7 @@ int interrupt_init_module(void)
 
     /* Configure SysTick */
     RCC_GetClocksFreq(&RCC_Clocks);
-    if (SysTick_Config(10 * RCC_Clocks.HCLK_Frequency / configSCHED_FREQ)) {
+    if (SysTick_Config(RCC_Clocks.HCLK_Frequency / configSCHED_FREQ)) {
         return -1; /* Error */
     }
 

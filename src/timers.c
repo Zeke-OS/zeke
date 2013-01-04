@@ -36,7 +36,7 @@ void timers_run(void)
     int i;
     uint32_t value;
 
-    timers_value++;
+    timers_value++;;
     value = timers_value;
     i = 0;
     do {
@@ -65,7 +65,7 @@ int timers_add(int thread_id, uint32_t millisec)
     do {
         if (timers_array[i].thread_id == -1) {
             timers_array[i].thread_id = thread_id;
-            timers_array[i].expires = value + (millisec / configSCHED_FREQ);
+            timers_array[i].expires = value + ((millisec * configSCHED_FREQ) / 1000);
             if (timers_array[i].expires == value)
                 timers_array[i].expires++;
             return 0;

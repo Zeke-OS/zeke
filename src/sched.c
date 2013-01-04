@@ -29,25 +29,36 @@
 /* When these flags are both set for a it's ok to make a context switch to it. */
 #define SCHED_CSW_OK_FLAGS  (SCHED_EXEC_FLAG | SCHED_IN_USE_FLAG)
 
+/* Definitions for load average calculation */
+#define FSHIFT      11                      /* nr of bits of precision */
+#define LOAD_FREQ   (11 * configSCHED_FREQ) /* 11 sec intervals */
+#define FEXP_1      1704                    /* 1/exp(5sec/1min) */
+#define FEXP_5      1974                    /* 1/exp(5sec/5min) */
+#define FEXP_15     2023                    /* 1/exp(5sec/15min) */
+#define CALC_LOAD(load, exp, n)                        \
+                    load *= exp;                       \
+                    load += n * ((1 << FSHIFT) - exp); \
+                    load >>= FSHIFT;
+/* FEXP_N = 2^11/(2^(interval * log_2(e/N))) */
+
 volatile uint32_t sched_enabled = 0; /* If this is set to != 0 interrupt
                                       * handlers will be able to call context
                                       * switching. */
 
-threadInfo_t task_table[configSCHED_MAX_THREADS];
-static heap_t priority_queue = HEAP_NEW_EMPTY;
-volatile threadInfo_t * current_thread;
+/* Task containers */
+threadInfo_t task_table[configSCHED_MAX_THREADS]; /*!< Array of all threads */
+static heap_t priority_queue = HEAP_NEW_EMPTY; /*!< Priority queue of active
+                                                * threads */
 
-/* Varibles for CPU Load Calculation */
-volatile uint32_t calcCPULoad = 1;
-volatile uint32_t sched_cpu_load;
+volatile threadInfo_t * current_thread; /*!< Pointer to currently active thread */
+volatile uint32_t loadavg[3]; /*!< CPU load averages */
 
 /* Stack for idle task */
 static char sched_idle_stack[sizeof(sw_stack_frame_t) + sizeof(hw_stack_frame_t) + 100];
 volatile int _first_switch = 1;
 
-
-/* Private function prototypes -----------------------------------------------*/
 void idleTask(void * arg);
+static void calc_load(void);
 void context_switcher(void);
 void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument, threadInfo_t * parent);
 void sched_thread_set_inheritance(osThreadId i, threadInfo_t * parent);
@@ -77,9 +88,7 @@ void sched_init(void)
 void sched_start(void)
 {
     __disable_interrupt();
-
     sched_enabled = 1;
-
     __enable_interrupt(); /* Enable interrupts */
 }
 
@@ -87,23 +96,37 @@ void sched_start(void)
 void idleTask(void * arg)
 {
 #ifndef PU_TEST_BUILD
-    while(1) {
-        if (calcCPULoad) {
-            /* CPU Load Calculation */
-            /* uint32_t countflag = SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk;
-            uint32_t r = SysTick->LOAD & SysTick_LOAD_RELOAD_Msk;
-            uint32_t v = (countflag) ? 0 : SysTick->VAL;
-            sched_cpu_load = (r-v) / (r/100);
-
-            calcCPULoad = 0;
-            if (countflag) {
-                req_context_switch();
-            } */
-        }
-    }
+    while(1);
 #endif
 }
 
+/**
+ * Calculate load averages
+ *
+ * This function calculates unix-style load averages for the system.
+ * Algorithm used here is similar to algorithm used in Linux, although I'm not
+ * exactly sure if it's O(1) in current Linux implementation.
+ */
+static void calc_load(void)
+{
+    uint32_t active_threads; /* Fixed-point */
+    static int count = LOAD_FREQ;
+
+    count--;
+    if (count < 0) {
+        count = LOAD_FREQ;
+
+        /* size - 1 because we wan't to hide the idle thread */
+        active_threads = (priority_queue.size - 1) * FSHIFT;
+
+        /* Load averages */
+        CALC_LOAD(loadavg[0], FEXP_1, active_threads);
+        CALC_LOAD(loadavg[1], FEXP_5, active_threads);
+        CALC_LOAD(loadavg[2], FEXP_15, active_threads);
+    }
+}
+
+#ifndef PU_TEST_BUILD
 /**
   * Scheduler handler
   *
@@ -116,14 +139,18 @@ void sched_handler(void)
     } else _first_switch = 0;
     current_thread->sp = (void *)rd_thread_stack_ptr();
 
-    /* Tasks before context switch */
-    timers_run();
+    /* - Tasks before context switch - */
+    calc_load();
+    if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) { /* Run only if systick */
+        timers_run();
+    }
     /* End of tasks */
 
     context_switcher();
     load_context(); /* Since PSP has been updated, this loads the last state of
                      * the new task */
 }
+#endif
 
 void context_switcher(void)
 {

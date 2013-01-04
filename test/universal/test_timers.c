@@ -56,17 +56,15 @@ static char * test_timers_add_run_multiple()
     int err;
 
     call_timers_run();
-    call_timers_run();
-    err =  timers_add(2, 1);
-    err |= timers_add(1, 1);
-    err |= timers_add(3, 3 * 100 * configSCHED_FREQ);
+    err =  timers_add(2, 2);
+    err |= timers_add(1, 2);
+    err |= timers_add(3, 20 * configSCHED_FREQ);
     call_timers_run();
 
     pu_assert("timers_add shouldn't have returned error", err == 0);
     pu_assert("my_sched_thread_set_exec should have been called twice by now",
               my_sched_called == 2);
 
-    call_timers_run();
     call_timers_run();
 
     pu_assert("my_sched_thread_set_exec should have been called three times by now",
