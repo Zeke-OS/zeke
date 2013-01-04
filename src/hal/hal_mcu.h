@@ -24,11 +24,6 @@
 #undef configMCU_MODEL
 #else /* Normal buil */
 
-/**
- * Initializer for interrupt module
- */
-int interrupt_init_module(void);
-
 #endif
 
 #ifndef configMCU_MODEL

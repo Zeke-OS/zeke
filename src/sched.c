@@ -51,7 +51,7 @@ static heap_t priority_queue = HEAP_NEW_EMPTY; /*!< Priority queue of active
                                                 * threads */
 
 volatile threadInfo_t * current_thread; /*!< Pointer to currently active thread */
-volatile uint32_t loadavg[3]; /*!< CPU load averages */
+volatile uint32_t loadavg[3]  = { 0, 0, 0 }; /*!< CPU load averages */
 
 /* Stack for idle task */
 static char sched_idle_stack[sizeof(sw_stack_frame_t) + sizeof(hw_stack_frame_t) + 100];
@@ -115,9 +115,7 @@ static void calc_load(void)
     count--;
     if (count < 0) {
         count = LOAD_FREQ;
-
-        /* size - 1 because we wan't to hide the idle thread */
-        active_threads = (priority_queue.size - 1) * FSHIFT;
+        active_threads = priority_queue.size * FSHIFT;
 
         /* Load averages */
         CALC_LOAD(loadavg[0], FEXP_1, active_threads);
@@ -140,8 +138,8 @@ void sched_handler(void)
     current_thread->sp = (void *)rd_thread_stack_ptr();
 
     /* - Tasks before context switch - */
-    calc_load();
     if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) { /* Run only if systick */
+        calc_load();
         timers_run();
     }
     /* End of tasks */
@@ -158,18 +156,6 @@ void context_switcher(void)
 
     /* Select next thread */
     do {
-        /* TODO Remove re-populate code and move its functionality to the other functions!? */
-        /* Need to re-populate the priority queue? */
-        if ((priority_queue.size < 0)) {
-            for (i = 0; i < configSCHED_MAX_THREADS; i++) {
-                task_table[i].uCounter = 0;
-
-                if ((task_table[i].flags & SCHED_CSW_OK_FLAGS) == SCHED_CSW_OK_FLAGS) {
-                    (void)heap_insert(&priority_queue, &(task_table[i]));
-                }
-            }
-        }
-
         /* We can only do some operations efficiently if the current thread is
          * on the top of the heap. If some other thread has been added on the
          * top while running the current thread it doesn't matter as sleeping
@@ -187,20 +173,28 @@ void context_switcher(void)
             }
 
             if ((current_thread->flags & SCHED_EXEC_FLAG) == 0) {
-                /* Remove the current thread from the priority queue this will also GC dead threads */
+                /* Remove the current thread from the priority queue this will
+                 * also GC dead threads */
                 (void)heap_del_max(&priority_queue);
                 if ((current_thread->flags & SCHED_IN_USE_FLAG) == 0) {
-                    /* Thread is in sleep so revert back to its original priority */
+                    /* Thread is in sleep so revert back to its original
+                     * priority */
                     current_thread->priority = current_thread->def_priority;
                     current_thread->uCounter = 0;
-                } /* else thread is also deleted and no further action is needed */
-            } else if ((current_thread->uCounter >= (uint32_t)tslice_n_max) /* if maximum slices for this thread */
-              && ((int)current_thread->priority > (int)osPriorityBelowNormal)) /* if priority is higher than this */
+                } /* else thread is also deleted and no further action is
+                   * needed */
+            } else if ((current_thread->uCounter >= (uint32_t)tslice_n_max)
+                        /* if maximum slices for this thread */
+              && ((int)current_thread->priority > (int)osPriorityLow))
+                        /* if priority is higher than this */
             {
                 /* Give a penalty: Set lower priority and
                  * perform heap decrement operation. */
-                current_thread->priority = osPriorityBelowNormal;
+                current_thread->priority = osPriorityLow;
                 heap_dec_key(&priority_queue, 0);
+
+                /* WARNING: Starvation is still possible for other osPriorityLow
+                 *          threads. */
             }
         }
 
