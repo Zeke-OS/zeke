@@ -32,14 +32,16 @@
 /* Definitions for load average calculation */
 #define FSHIFT      11                      /* nr of bits of precision */
 #define LOAD_FREQ   (11 * configSCHED_FREQ) /* 11 sec intervals */
+/* FEXP_N = 2^11/(2^(interval * log_2(e/N))) */
 #define FEXP_1      1704                    /* 1/exp(5sec/1min) */
 #define FEXP_5      1974                    /* 1/exp(5sec/5min) */
 #define FEXP_15     2023                    /* 1/exp(5sec/15min) */
-#define CALC_LOAD(load, exp, n)                        \
-                    load *= exp;                       \
-                    load += n * ((1 << FSHIFT) - exp); \
+#define FIXED_1     (1 << FSHIFT)
+#define CALC_LOAD(load, exp, n)                  \
+                    load *= exp;                 \
+                    load += n * (FIXED_1 - exp); \
                     load >>= FSHIFT;
-/* FEXP_N = 2^11/(2^(interval * log_2(e/N))) */
+#define SCALE_LOAD(x) ((x + (FIXED_1/200) * 100) >> FSHIFT)
 
 volatile uint32_t sched_enabled = 0; /* If this is set to != 0 interrupt
                                       * handlers will be able to call context
@@ -58,7 +60,7 @@ static char sched_idle_stack[sizeof(sw_stack_frame_t) + sizeof(hw_stack_frame_t)
 int _first_switch = 1;
 
 void idleTask(void * arg);
-static void calc_load(void);
+static void calc_loads(void);
 static void context_switcher(void);
 static void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument, threadInfo_t * parent);
 static void sched_thread_set_inheritance(osThreadId i, threadInfo_t * parent);
@@ -136,7 +138,7 @@ void sched_handler(void)
  * Algorithm used here is similar to algorithm used in Linux, although I'm not
  * exactly sure if it's O(1) in current Linux implementation.
  */
-static void calc_load(void)
+static void calc_loads(void)
 {
     uint32_t active_threads; /* Fixed-point */
     static int count = LOAD_FREQ;
@@ -144,13 +146,23 @@ static void calc_load(void)
     count--;
     if (count < 0) {
         count = LOAD_FREQ;
-        active_threads = priority_queue.size * FSHIFT;
+        active_threads = priority_queue.size * FIXED_1;
 
         /* Load averages */
         CALC_LOAD(loadavg[0], FEXP_1, active_threads);
         CALC_LOAD(loadavg[1], FEXP_5, active_threads);
         CALC_LOAD(loadavg[2], FEXP_15, active_threads);
     }
+}
+
+/**
+ * Return load averages in integer format scaled to 100.
+ */
+sched_get_loads(uint32_t * loads)
+{
+    loads[0] = SCALE_LOAD(loadavg[0]);
+    loads[1] = SCALE_LOAD(loadavg[1]);
+    loads[2] = SCALE_LOAD(loadavg[2]);
 }
 
 static void context_switcher(void)
