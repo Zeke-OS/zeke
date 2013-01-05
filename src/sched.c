@@ -167,7 +167,7 @@ static void calc_loads(void)
 /**
  * Return load averages in integer format scaled to 100.
  */
-sched_get_loads(uint32_t * loads)
+void sched_get_loads(uint32_t * loads)
 {
     loads[0] = SCALE_LOAD(loadavg[0]);
     loads[1] = SCALE_LOAD(loadavg[1]);
@@ -176,8 +176,6 @@ sched_get_loads(uint32_t * loads)
 
 static void context_switcher(void)
 {
-    int i;
-
     /* Select next thread */
     do {
         /* We can only do some operations efficiently if the current thread is
