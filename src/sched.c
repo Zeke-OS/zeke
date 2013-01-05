@@ -77,7 +77,11 @@ static void sched_thread_remove(uint32_t id);
 void sched_init(void)
 {
     /* Create the idle task as task 0 */
-    osThreadDef_t tdef_idle = { (os_pthread)(&idleTask), osPriorityIdle, sched_idle_stack, sizeof(sched_idle_stack)/sizeof(char) };
+    osThreadDef_t tdef_idle = { (os_pthread)(&idleTask),
+                                osPriorityIdle,
+                                sched_idle_stack,
+                                sizeof(sched_idle_stack) / sizeof(char)
+                              };
     sched_thread_set(0, &tdef_idle, NULL, NULL);
 
     /* Set idle thread as currently running thread */
@@ -186,10 +190,11 @@ static void context_switcher(void)
         if (current_thread == priority_queue.a[0]) {
             /* Scaled maximum time slice count */
             int tslice_n_max;
+            tslice_n_max = configSCHED_MAX_SLICES;
             if ((int)current_thread->priority >= 0) { /* Positive priority */
-                tslice_n_max = configSCHED_MAX_SLICES * ((int)current_thread->priority + 1);
+                tslice_n_max *= ((int)current_thread->priority + 1);
             } else { /* Negative priority */
-                tslice_n_max = configSCHED_MAX_SLICES / (-1 * (int)current_thread->priority + 1);
+                tslice_n_max /= (-(int)current_thread->priority + 1);
             }
 
             if ((current_thread->flags & SCHED_EXEC_FLAG) == 0) {
