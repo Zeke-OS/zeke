@@ -29,7 +29,7 @@
 /* When these flags are both set for a it's ok to make a context switch to it. */
 #define SCHED_CSW_OK_FLAGS  (SCHED_EXEC_FLAG | SCHED_IN_USE_FLAG)
 
-/* Definitions for load average calculation */
+/* Definitions for load average calculation **********************************/
 #define FSHIFT      11                      /* nr of bits of precision */
 #define LOAD_FREQ   (11 * configSCHED_FREQ) /* 11 sec intervals */
 /* FEXP_N = 2^11/(2^(interval * log_2(e/N))) */
@@ -41,7 +41,9 @@
                     load *= exp;                 \
                     load += n * (FIXED_1 - exp); \
                     load >>= FSHIFT;
+/** Scales fixed-point load average value to a integer format scaled to 100 */
 #define SCALE_LOAD(x) ((x + (FIXED_1/200) * 100) >> FSHIFT)
+/* End of Definitions for load average calculation ***************************/
 
 volatile uint32_t sched_enabled = 0; /* If this is set to != 0 interrupt
                                       * handlers will be able to call context
@@ -120,7 +122,7 @@ void sched_handler(void)
 
     /* - Tasks before context switch - */
     if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) { /* Run only if systick */
-        calc_load();
+        calc_loads();
         timers_run();
     }
     /* End of tasks */

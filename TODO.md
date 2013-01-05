@@ -5,6 +5,8 @@ TODO
 - Implement mutex and semaphores
 - Implement memory pools
 - Timers and kernel time functions
+- Implement system that calculates actual number systicks consumed by
+  the scheduler (and compare with others as well like for example idle task)
 - Events are not queued atm, do we need queuing?
 - Create kernel library and example program as their own projects
   (memory aligned mapping)
