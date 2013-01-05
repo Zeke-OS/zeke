@@ -20,6 +20,9 @@
 #define SCHED_EXEC_FLAG     0x00000002u /*!< EXEC = 1 / SLEEP = 0 */
 #define SCHED_NO_SIG_FLAG   0x00000004u /*!< Thread cannot be woken up by a signal. */
 
+/* When these flags are both set for a it's ok to make a context switch to it. */
+#define SCHED_CSW_OK_FLAGS  (SCHED_EXEC_FLAG | SCHED_IN_USE_FLAG)
+
 extern volatile uint32_t sched_enabled;
 extern volatile uint32_t sched_cpu_load;
 

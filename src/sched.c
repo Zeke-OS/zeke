@@ -26,9 +26,6 @@
 #include "kernel.h"
 #include "sched.h"
 
-/* When these flags are both set for a it's ok to make a context switch to it. */
-#define SCHED_CSW_OK_FLAGS  (SCHED_EXEC_FLAG | SCHED_IN_USE_FLAG)
-
 /* Definitions for load average calculation **********************************/
 #define FSHIFT      11                      /* nr of bits of precision */
 #define LOAD_FREQ   (11 * configSCHED_FREQ) /* 11 sec intervals */
@@ -61,6 +58,7 @@ uint32_t loadavg[3]  = { 0, 0, 0 }; /*!< CPU load averages */
 static char sched_idle_stack[sizeof(sw_stack_frame_t) + sizeof(hw_stack_frame_t) + 100];
 int _first_switch = 1;
 
+/* Static function declarations **********************************************/
 void idleTask(void * arg);
 static void calc_loads(void);
 static void context_switcher(void);
@@ -69,6 +67,9 @@ static void sched_thread_set_inheritance(osThreadId i, threadInfo_t * parent);
 static void _sched_thread_set_exec(int thread_id, osPriority pri);
 static void _sched_thread_sleep_current(void);
 static void sched_thread_remove(uint32_t id);
+/* End of Static function declarations ***************************************/
+
+/* Functions called from outside of kernel context ***************************/
 
 /**
   * Initialize the scheduler
@@ -95,6 +96,8 @@ void sched_start(void)
     sched_enabled = 1;
     __enable_interrupt(); /* Enable interrupts */
 }
+
+/* End of Functions called from outside of kernel context ********************/
 
 /**
  * Kernel idle task
