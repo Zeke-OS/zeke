@@ -51,17 +51,17 @@ static heap_t priority_queue = HEAP_NEW_EMPTY; /*!< Priority queue of active
                                                 * threads */
 
 volatile threadInfo_t * current_thread; /*!< Pointer to currently active thread */
-volatile uint32_t loadavg[3]  = { 0, 0, 0 }; /*!< CPU load averages */
+uint32_t loadavg[3]  = { 0, 0, 0 }; /*!< CPU load averages */
 
 /* Stack for idle task */
 static char sched_idle_stack[sizeof(sw_stack_frame_t) + sizeof(hw_stack_frame_t) + 100];
-volatile int _first_switch = 1;
+int _first_switch = 1;
 
 void idleTask(void * arg);
 static void calc_load(void);
-void context_switcher(void);
-void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument, threadInfo_t * parent);
-void sched_thread_set_inheritance(osThreadId i, threadInfo_t * parent);
+static void context_switcher(void);
+static void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument, threadInfo_t * parent);
+static void sched_thread_set_inheritance(osThreadId i, threadInfo_t * parent);
 static void _sched_thread_set_exec(int thread_id, osPriority pri);
 static void _sched_thread_sleep_current(void);
 static void sched_thread_remove(uint32_t id);
@@ -92,36 +92,15 @@ void sched_start(void)
     __enable_interrupt(); /* Enable interrupts */
 }
 
-/** @todo CPU load calculation is now totally broke */
+/**
+ * Kernel idle task
+ * @todo Add support for low power modes when idling
+ */
 void idleTask(void * arg)
 {
 #ifndef PU_TEST_BUILD
     while(1);
 #endif
-}
-
-/**
- * Calculate load averages
- *
- * This function calculates unix-style load averages for the system.
- * Algorithm used here is similar to algorithm used in Linux, although I'm not
- * exactly sure if it's O(1) in current Linux implementation.
- */
-static void calc_load(void)
-{
-    uint32_t active_threads; /* Fixed-point */
-    static int count = LOAD_FREQ;
-
-    count--;
-    if (count < 0) {
-        count = LOAD_FREQ;
-        active_threads = priority_queue.size * FSHIFT;
-
-        /* Load averages */
-        CALC_LOAD(loadavg[0], FEXP_1, active_threads);
-        CALC_LOAD(loadavg[1], FEXP_5, active_threads);
-        CALC_LOAD(loadavg[2], FEXP_15, active_threads);
-    }
 }
 
 #ifndef PU_TEST_BUILD
@@ -150,7 +129,31 @@ void sched_handler(void)
 }
 #endif
 
-void context_switcher(void)
+/**
+ * Calculate load averages
+ *
+ * This function calculates unix-style load averages for the system.
+ * Algorithm used here is similar to algorithm used in Linux, although I'm not
+ * exactly sure if it's O(1) in current Linux implementation.
+ */
+static void calc_load(void)
+{
+    uint32_t active_threads; /* Fixed-point */
+    static int count = LOAD_FREQ;
+
+    count--;
+    if (count < 0) {
+        count = LOAD_FREQ;
+        active_threads = priority_queue.size * FSHIFT;
+
+        /* Load averages */
+        CALC_LOAD(loadavg[0], FEXP_1, active_threads);
+        CALC_LOAD(loadavg[1], FEXP_5, active_threads);
+        CALC_LOAD(loadavg[2], FEXP_15, active_threads);
+    }
+}
+
+static void context_switcher(void)
 {
     int i;
 
@@ -222,7 +225,7 @@ void context_switcher(void)
   * @param parent       Parent thread id, NULL = doesn't have a parent
   * @todo what if parent is stopped before we call this?
   */
-void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument, threadInfo_t * parent)
+static void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument, threadInfo_t * parent)
 {
     /* This function should not be called for already initialized threads. */
     if ((task_table[i].flags & SCHED_IN_USE_FLAG) != 0)
@@ -258,7 +261,7 @@ void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument, thread
     _sched_thread_set_exec(i, thread_def->tpriority);
 }
 
-void sched_thread_set_inheritance(osThreadId i, threadInfo_t * parent)
+static void sched_thread_set_inheritance(osThreadId i, threadInfo_t * parent)
 {
     threadInfo_t * last_node, * tmp;
 

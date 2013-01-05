@@ -1,8 +1,6 @@
 TODO
 ====
 
-- Implement real cpu load calculation by calculating wait states
-- Implement cpu load (moving) averages
 - Implement rest of Thread Management functions/syscalls
 - Implement mutex and semaphores
 - Implement memory pools
