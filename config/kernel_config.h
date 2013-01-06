@@ -40,7 +40,7 @@
 #define configAPP_MAIN_SSIZE    200u    /*!< Stack size for app_main thread */
 #define configAPP_MAIN_PRI      osPriorityNormal /*!< Priority of app_main thread */
 #define configTIMERS_MAX        4
-#define configSCHED_LAVG_PER    SCHED_LAVGPERIOD_5SEC
+#define configSCHED_LAVG_PER    SCHED_LAVGPERIOD_11SEC
 /* End of Kernel configuration */
 
 #endif

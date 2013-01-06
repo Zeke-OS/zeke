@@ -64,8 +64,8 @@ volatile threadInfo_t * current_thread; /*!< Pointer to currently active thread 
 uint32_t loadavg[3]  = { 0, 0, 0 }; /*!< CPU load averages */
 
 /* Stack for idle task */
-static char sched_idle_stack[sizeof(sw_stack_frame_t) + sizeof(hw_stack_frame_t) + 100];
-int _first_switch = 1;
+static char sched_idle_stack[sizeof(sw_stack_frame_t) + sizeof(hw_stack_frame_t) + 200];
+volatile int _first_switch = 1;
 
 /* Static function declarations **********************************************/
 void idleTask(void * arg);
@@ -131,10 +131,13 @@ void idleTask(void * arg)
   */
 void sched_handler(void)
 {
-    if (!_first_switch) {
-        save_context();
-    } else _first_switch = 0;
+    save_context();
     current_thread->sp = (void *)rd_thread_stack_ptr();
+
+    if (_first_switch) {
+        current_thread->sp = (uint32_t *)((uint32_t)(current_thread->sp) + sizeof(sw_stack_frame_t));
+        _first_switch = 0;
+    }
 
     /* - Tasks before context switch - */
     if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) { /* Run only if systick */
@@ -144,8 +147,6 @@ void sched_handler(void)
     /* End of tasks */
 
     context_switcher();
-    load_context(); /* Since PSP has been updated, this loads the last state of
-                     * the new task */
 }
 #endif
 

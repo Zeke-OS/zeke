@@ -70,11 +70,11 @@ inline void wr_thread_stack_ptr(void * ptr);
 /**
  * Request immediate context switch
  */
-#define req_context_switch() do {                                          \
+#define req_context_switch() do {                                              \
     SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk; /* Switch the context */              \
     asm volatile("DSB\n" /* Ensure write is completed
                           * (architecturally required, but not strictly
-                          * required for existing Cortex-M processors) */ \
+                          * required for existing Cortex-M processors) */      \
                  "ISB\n" /* Ensure PendSV is executed */                       \
     ); } while (0)
 
@@ -87,10 +87,13 @@ inline void save_context(void)
 #if __CORE__ == __ARM6M__
     asm volatile ("MRS   %0,  psp\n"
                   "SUBS  %0,  %0, #32\n"
-                  "MSR   psp, %0\n"         /* This is the address that will use by rd_thread_stack_ptr(void) */
+                  "MSR   psp, %0\n"         /* This is the address that will be
+                                             * used by rd_thread_stack_ptr(void)
+                                             */
                   "ISB\n"
                   "STMIA %0!, {r4-r7}\n"
-                  "PUSH  {r4-r7}\n"         /* Push original register values so we don't lost them */
+                  "PUSH  {r4-r7}\n"         /* Push original register values so
+                                             * we don't lost them */
                   "MOV   r4,  r8\n"
                   "MOV   r5,  r9\n"
                   "MOV   r6,  r10\n"

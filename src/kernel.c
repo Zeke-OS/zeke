@@ -113,7 +113,7 @@ osEvent osWait(uint32_t millisec)
         req_context_switch();
     }
 
-    /* Retrun a copy of the current state of the event structure */
+    /* Return a copy of the current state of the event structure */
     return *result;
 }
 

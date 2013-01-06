@@ -54,6 +54,8 @@ static inline void run_scheduler(void)
     /* Run scheduler */
     if (sched_enabled) {
         sched_handler();
+        load_context(); /* Since PSP has been updated, this loads the last state
+                         * of the resumed task */
         asm volatile ("ADD sp, sp, %0\n"
                       "BX %1\n"
                       : : "i" (STM32F0_MAGIC_STACK_ADD_VALUE * 4), "r" (THREAD_RETURN)

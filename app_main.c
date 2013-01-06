@@ -12,9 +12,9 @@
 #include "kernel.h"
 #include "app_main.h"
 
-static char stack_1[200];
-static char stack_2[200];
-static char stack_3[100];
+static char stack_1[300];
+static char stack_2[300];
+static char stack_3[200];
 
 void createThreads(void);
 void thread_input(void const * arg);
