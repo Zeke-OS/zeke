@@ -21,6 +21,7 @@ Key features
 - Fixed(/dynamic) priority pre-emptive scheduling with penalties to prevent starvation
 - Signal flag based notify/wake-up from sleep with event timeouts
 - System call based kernel services
+- Almost CMSIS-RTOS compliant
 
 
 License
