@@ -18,7 +18,7 @@ card without static linkage to the kernel itself etc.
 Key features
 ------------
 
-- Fixed/dynamic priority pre-emptive scheduling with penalties to prevent starvation
+- Fixed(/dynamic) priority pre-emptive scheduling with penalties to prevent starvation
 - Signal flag based notify/wake-up from sleep with event timeouts
 - System call based kernel services
 
