@@ -29,7 +29,7 @@
 /* Definitions for load average calculation **********************************/
 #define LOAD_FREQ   (configSCHED_LAVG_PER * configSCHED_FREQ)
 /* FEXP_N = 2^11/(2^(interval * log_2(e/N))) */
-#ifdef configSCHED_LAVG_PER == 5
+#if configSCHED_LAVG_PER == 5
 #define FSHIFT      11      /* nr of bits of precision */
 #define FEXP_1      1884    /* 1/exp(5sec/1min) */
 #define FEXP_5      2014    /* 1/exp(5sec/5min) */

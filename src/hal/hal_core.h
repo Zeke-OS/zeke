@@ -24,6 +24,8 @@
 #error kernel_config.h should be #included before hal_core.h
 #endif
 
+#include "kernel.h"
+
 /**
  * Init hw stack frame
  * @param thread_def Thread definitions
