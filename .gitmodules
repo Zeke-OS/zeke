@@ -1,0 +1,3 @@
+[submodule "test/punit"]
+	path = test/punit
+	url = git@github.com:Ninjaware/punit.git
