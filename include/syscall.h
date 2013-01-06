@@ -16,13 +16,16 @@
 #define KERNEL_SYSCALL_SCHED_THREAD_CREATE      1
 #define KERNEL_SYSCALL_SCHED_THREAD_GETID       2
 #define KERNEL_SYSCALL_SCHED_THREAD_TERMINATE   3
-#define KERNEL_SYSCALL_SCHED_DELAY              4
-#define KERNEL_SYSCALL_SCHED_WAIT               5
-#define KERNEL_SYSCALL_SCHED_SIGNAL_SET         6
-#define KERNEL_SYSCALL_SCHED_SIGNAL_CLEAR       7
-#define KERNEL_SYSCALL_SCHED_SIGNAL_GETCURR     8
-#define KERNEL_SYSCALL_SCHED_SIGNAL_GET         9
-#define KERNEL_SYSCALL_SCHED_SIGNAL_WAIT        10
+/* osThreadYield is not a syscall */
+#define KERNEL_SYSCALL_SCHED_THREAD_SETPRIORITY 4
+#define KERNEL_SYSCALL_SCHED_THREAD_GETPRIORITY 5
+#define KERNEL_SYSCALL_SCHED_DELAY              6
+#define KERNEL_SYSCALL_SCHED_WAIT               7
+#define KERNEL_SYSCALL_SCHED_SIGNAL_SET         8
+#define KERNEL_SYSCALL_SCHED_SIGNAL_CLEAR       9
+#define KERNEL_SYSCALL_SCHED_SIGNAL_GETCURR     10
+#define KERNEL_SYSCALL_SCHED_SIGNAL_GET         11
+#define KERNEL_SYSCALL_SCHED_SIGNAL_WAIT        12
 
 #include "sched.h"
 
@@ -41,6 +44,10 @@ typedef struct {
     uint32_t millisec;
 } ds_osSignalWait_t;
 
+typedef struct {
+    osThreadId thread_id;
+    osPriority priority;
+} ds_osSetPriority_t;
 
 /**
   * Make system call

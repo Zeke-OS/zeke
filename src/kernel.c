@@ -64,6 +64,27 @@ osStatus osThreadYield(void)
     return (osStatus)osOK;
 }
 
+osStatus osThreadSetPriority(osThreadId thread_id, osPriority priority)
+{
+    ds_osSetPriority_t ds;
+    osStatus result;
+
+    ds.thread_id = thread_id;
+    ds.priority = priority;
+    result = (osStatus)syscall(KERNEL_SYSCALL_SCHED_THREAD_SETPRIORITY, &ds);
+
+    return result;
+}
+
+osPriority osThreadGetPriority(osThreadId thread_id)
+{
+    osPriority result;
+
+    result = (osPriority)syscall(KERNEL_SYSCALL_SCHED_THREAD_GETPRIORITY, &thread_id);
+
+    return result;
+}
+
 
 /* Generic Wait Functions ****************************************************/
 

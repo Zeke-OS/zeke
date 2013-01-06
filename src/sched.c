@@ -362,7 +362,6 @@ static void _sched_thread_sleep_current(void)
     heap_inc_key(&priority_queue, i);
 }
 
-
 /**
  * Removes thread from execution
  * @param tt_id Thread task table id
@@ -426,6 +425,10 @@ osThreadId sched_ThreadCreate(osThreadDef_t * thread_def, void * argument)
     }
 }
 
+/**
+ * Get id of currently running thread
+ * @return Thread id of current thread
+ */
 osThreadId sched_thread_getId(void)
 {
     return (osThreadId)(current_thread->id);
@@ -449,6 +452,39 @@ osStatus sched_thread_terminate(osThreadId thread_id)
     sched_thread_remove(task_table[thread_id].id);
 
     return (osStatus)osOK;
+}
+
+/**
+ * Set thread priority
+ * @param thread_id Thread id
+ * @param priority New priority for thread referenced by thread_id
+ * @return osOK if thread exists
+ */
+osStatus sched_thread_setPriority(osThreadId thread_id, osPriority priority)
+{
+    if ((task_table[thread_id].flags & SCHED_IN_USE_FLAG) == 0) {
+        return (osStatus)osErrorParameter;
+    }
+
+    /* Only thread def_priority is updated to make this syscall O(1)
+     * Actual priority will be updated anyway some time later after one sleep
+     * cycle.
+     */
+    task_table[thread_id].def_priority = priority;
+
+    return (osStatus)osOK;
+}
+
+osPriority sched_thread_getPriority(osThreadId thread_id)
+{
+    if ((task_table[thread_id].flags & SCHED_IN_USE_FLAG) == 0) {
+        return (osPriority)osPriorityError;
+    }
+
+    /* Not sure if this function should return "dynamic" priority or
+     * default priorty.
+     */
+    return task_table[thread_id].def_priority;
 }
 
 

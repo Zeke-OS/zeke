@@ -181,6 +181,19 @@ osStatus osThreadTerminate(osThreadId thread_id);
 /// \note MUST REMAIN UNCHANGED: \b osThreadYield shall be consistent in every CMSIS-RTOS.
 osStatus osThreadYield(void);
 
+/// Change priority of an active thread.  
+/// \param[in]     thread_id     thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
+/// \param[in]     priority      new priority value for the thread function.
+/// \return status code that indicates the execution status of the function.
+/// \note MUST REMAIN UNCHANGED: \b osThreadSetPriority shall be consistent in every CMSIS-RTOS.
+osStatus osThreadSetPriority(osThreadId thread_id, osPriority priority);
+
+/// Get current priority of an active thread.
+/// \param[in]     thread_id     thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
+/// \return current priority value of the thread function.
+/// \note MUST REMAIN UNCHANGED: \b osThreadGetPriority shall be consistent in every CMSIS-RTOS.
+osPriority osThreadGetPriority(osThreadId thread_id);
+
 
 
 //  ==== Generic Wait Functions ====

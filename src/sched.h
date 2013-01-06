@@ -69,6 +69,8 @@ void sched_get_loads(uint32_t * loads);
 int sched_ThreadCreate(osThreadDef_t * thread_def, void * argument);
 osThreadId sched_thread_getId(void);
 osStatus sched_thread_terminate(osThreadId thread_id);
+osStatus sched_thread_setPriority(osThreadId thread_id, osPriority priority);
+osPriority sched_thread_getPriority(osThreadId thread_id);
 osStatus sched_threadDelay(uint32_t millisec);
 osEvent * sched_threadWait(uint32_t millisec);
 int32_t sched_threadSignalSet(osThreadId thread_id, int32_t signal);
