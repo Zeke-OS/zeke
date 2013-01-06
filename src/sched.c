@@ -64,7 +64,9 @@ volatile threadInfo_t * current_thread; /*!< Pointer to currently active thread 
 uint32_t loadavg[3]  = { 0, 0, 0 }; /*!< CPU load averages */
 
 /* Stack for idle task */
-static char sched_idle_stack[sizeof(sw_stack_frame_t) + sizeof(hw_stack_frame_t) + 200];
+static char sched_idle_stack[sizeof(sw_stack_frame_t)
+                             + sizeof(hw_stack_frame_t)
+                             + 200];
 volatile int _first_switch = 1;
 
 /* Static function declarations **********************************************/
@@ -135,7 +137,8 @@ void sched_handler(void)
     current_thread->sp = (void *)rd_thread_stack_ptr();
 
     if (_first_switch) {
-        current_thread->sp = (uint32_t *)((uint32_t)(current_thread->sp) + sizeof(sw_stack_frame_t));
+        current_thread->sp = (uint32_t *)((uint32_t)(current_thread->sp)
+                                          + sizeof(sw_stack_frame_t));
         _first_switch = 0;
     }
 
@@ -338,7 +341,8 @@ void sched_thread_set_exec(int thread_id)
 static void _sched_thread_set_exec(int thread_id, osPriority pri)
 {
     /* Check that given thread is in use but not in execution */
-    if ((task_table[thread_id].flags & (SCHED_EXEC_FLAG | SCHED_IN_USE_FLAG)) == SCHED_IN_USE_FLAG) {
+    if ((task_table[thread_id].flags & (SCHED_EXEC_FLAG | SCHED_IN_USE_FLAG))
+        == SCHED_IN_USE_FLAG) {
         task_table[thread_id].uCounter = 0;
         task_table[thread_id].priority = pri;
         task_table[thread_id].flags |= SCHED_EXEC_FLAG; /* Set EXEC flag */
@@ -457,9 +461,9 @@ osStatus sched_thread_terminate(osThreadId thread_id)
 
 /**
  * Set thread priority
- * @param thread_id Thread id
- * @param priority New priority for thread referenced by thread_id
- * @return osOK if thread exists
+ * @param   thread_id Thread id
+ * @param   priority New priority for thread referenced by thread_id
+ * @return  osOK if thread exists
  */
 osStatus sched_thread_setPriority(osThreadId thread_id, osPriority priority)
 {

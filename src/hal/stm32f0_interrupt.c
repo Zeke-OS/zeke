@@ -44,7 +44,8 @@ int interrupt_init_module(void)
     }
 
     NVIC_SetPriority(PendSV_IRQn, 0x03); /* Set PendSV to lowest level */
-    NVIC_SetPriority(SysTick_IRQn, 0x03); /* Configure the SysTick handler priority */
+    NVIC_SetPriority(SysTick_IRQn, 0x03); /* Configure the SysTick handler
+                                           * priority */
 
     return 0; /* OK */
 }
@@ -58,7 +59,9 @@ static inline void run_scheduler(void)
                          * of the resumed task */
         asm volatile ("ADD sp, sp, %0\n"
                       "BX %1\n"
-                      : : "i" (STM32F0_MAGIC_STACK_ADD_VALUE * 4), "r" (THREAD_RETURN)
+                      :
+                      : "i" (STM32F0_MAGIC_STACK_ADD_VALUE * 4),
+                        "r" (THREAD_RETURN)
                       );
     }
 }

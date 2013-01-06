@@ -41,7 +41,8 @@ typedef struct {
         void * first_child;         /*!< Link to the first child thread */
         /* Circularly linked list of childs of the parent thread */
         void * next_child;          /*!< Next child of the common parent */
-    } inh;                      /*!< Thread inheritance; Parent and child thread pointers. */
+    } inh;                      /*!< Thread inheritance; Parent and child thread
+                                 *   pointers. */
 } threadInfo_t;
 
 /* Parent and child threads
