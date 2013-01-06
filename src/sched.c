@@ -27,12 +27,21 @@
 #include "sched.h"
 
 /* Definitions for load average calculation **********************************/
-#define FSHIFT      11                      /* nr of bits of precision */
-#define LOAD_FREQ   (11 * configSCHED_FREQ) /* 11 sec intervals */
+#define LOAD_FREQ   (configSCHED_LAVG_PER * configSCHED_FREQ)
 /* FEXP_N = 2^11/(2^(interval * log_2(e/N))) */
-#define FEXP_1      1704                    /* 1/exp(5sec/1min) */
-#define FEXP_5      1974                    /* 1/exp(5sec/5min) */
-#define FEXP_15     2023                    /* 1/exp(5sec/15min) */
+#ifdef configSCHED_LAVG_PER == 5
+#define FSHIFT      11      /* nr of bits of precision */
+#define FEXP_1      1884    /* 1/exp(5sec/1min) */
+#define FEXP_5      2014    /* 1/exp(5sec/5min) */
+#define FEXP_15     2037    /* 1/exp(5sec/15min) */
+#elif configSCHED_LAVG_PER == 11
+#define FSHIFT      11
+#define FEXP_1      1704
+#define FEXP_5      1974
+#define FEXP_15     2023
+#else
+#error Incorrect value of kernel configuration configSCHED_LAVG_PER
+#endif
 #define FIXED_1     (1 << FSHIFT)
 #define CALC_LOAD(load, exp, n)                  \
                     load *= exp;                 \
