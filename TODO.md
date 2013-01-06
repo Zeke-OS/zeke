@@ -1,7 +1,6 @@
 TODO
 ====
 
-- Implement rest of Thread Management functions/syscalls
 - Implement mutex and semaphores
 - Implement memory pools
 - Timers and kernel time functions
@@ -9,16 +8,13 @@ TODO
   the scheduler (and compare with others as well like for example idle task)
 - Events are not queued atm, do we need queuing?
 - Create kernel library and example program as their own projects
-  (memory aligned mapping)
 - Implement other messaging services
-- Thread parenting to help killing and possibly improve responsiveness in
-  multi-tasking when parent is in exec at the same time with childs
+- Use thread parent<->client relationship to improve scheduling
 - Implement threading support for DLIB
 - OR implement own DLIB and disable IAR's implementation on project settings
-- Add support for low power modes in idle taks
-- Thread related functions and variables could be moved
-  from sched.c to its own file, although this would although require
-  a lot of refactoring
+- Add support for low power modes for idle taks
+- Thread related functions and variables could be moved from sched.c to its
+  own file, although this would although require a lot of refactoring
 - Load ropi applications from storage to RAM and execute in a new thread
 
 
@@ -34,4 +30,3 @@ NOTES
 
 - Some signal flags might be reserved for other event types in the future
   (while keeping kernel compact and simple)
-- SysTick configuration might be still wrong?
