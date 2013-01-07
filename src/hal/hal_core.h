@@ -26,6 +26,8 @@
 
 #include "kernel.h"
 
+extern uint32_t flag_kernel_tick;
+
 /**
  * Init hw stack frame
  * @param thread_def Thread definitions
@@ -49,8 +51,6 @@ uint32_t syscall(int type, void * p);
  * + inline void * rd_thread_stack_ptr(void);
  * + inline void wr_thread_stack_ptr(void * ptr);
  */
-
-extern uint32_t flag_kernel_tick;
 
 /* Select Core Implementation ************************************************/
 
