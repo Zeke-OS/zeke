@@ -33,7 +33,7 @@ typedef struct {
     osEvent event;              /*!< Event struct */
     osPriority def_priority;    /*!< Thread priority */
     osPriority priority;        /*!< Thread dynamic priority */
-    uint32_t ts_counter;        /*!< Time slice counter */
+    int ts_counter;             /*!< Time slice counter */
     osThreadId id;              /*!< Thread id (in task table) */
     struct threadInheritance_t {
         void * parent;              /*!< Parent thread */

@@ -77,6 +77,7 @@ static void sched_thread_set_inheritance(osThreadId i, threadInfo_t * parent);
 static void _sched_thread_set_exec(int thread_id, osPriority pri);
 static void _sched_thread_sleep_current(void);
 static void sched_thread_remove(uint32_t id);
+static int sched_calc_max_tslices(osPriority pri);
 /* End of Static function declarations ***************************************/
 
 /* Functions called from outside of kernel context ***************************/
@@ -192,22 +193,10 @@ void sched_get_loads(uint32_t * loads)
 
 static void context_switcher(void)
 {
-    int tslice_n_max;
-
     /* Select next thread */
     do {
         /* Get next thread from the priority queue */
         current_thread = *priority_queue.a;
-
-        /* Scaled maximum time slice count */
-        tslice_n_max = configSCHED_MAX_SLICES;
-        if ((int)current_thread->priority >= 0) {
-            /* For positive priority */
-            tslice_n_max *= ((int)current_thread->priority + 1);
-        } else {
-            /* For negative priority */
-            tslice_n_max /= (-(int)current_thread->priority + 1);
-        }
 
         if (   ((current_thread->flags & SCHED_EXEC_FLAG) == 0)
             || ((current_thread->flags & SCHED_IN_USE_FLAG) == 0)) {
@@ -215,8 +204,8 @@ static void context_switcher(void)
              * either in sleep or deleted */
             (void)heap_del_max(&priority_queue);
             continue; /* Select next thread */
-        } else if ( /* if maximum slices for this thread is used */
-            (current_thread->ts_counter >= (uint32_t)tslice_n_max)
+        } else if ( /* if maximum time slices for this thread is used */
+            (current_thread->ts_counter <= 0)
             /* and process is not a realtime process */
             && ((int)current_thread->priority < (int)osPriorityRealtime)
             /* and its priority is yet higher than low */
@@ -238,7 +227,7 @@ static void context_switcher(void)
 
     /* uCounter is used to determine how many time slices has been used
      * by the process between idle/sleep states. */
-    current_thread->ts_counter++;
+    current_thread->ts_counter--;
 
     /* Write the value of the PSP for the next thread in exec */
     wr_thread_stack_ptr(current_thread->sp);
@@ -338,7 +327,7 @@ static void _sched_thread_set_exec(int thread_id, osPriority pri)
     /* Check that given thread is in use but not in execution */
     if ((task_table[thread_id].flags & (SCHED_EXEC_FLAG | SCHED_IN_USE_FLAG))
         == SCHED_IN_USE_FLAG) {
-        task_table[thread_id].ts_counter = 0;
+        task_table[thread_id].ts_counter = sched_calc_max_tslices(pri);
         task_table[thread_id].priority = pri;
         task_table[thread_id].flags |= SCHED_EXEC_FLAG; /* Set EXEC flag */
         (void)heap_insert(&priority_queue, &(task_table[thread_id]));
@@ -383,6 +372,26 @@ static void sched_thread_remove(uint32_t tt_id)
 
     task_table[tt_id].priority = osPriorityError;
     heap_inc_key(&priority_queue, i);
+}
+
+/**
+ * Calculate a scaled maximum count of time slices
+ * @return maximum count of time slices for a given priority.
+ */
+static int sched_calc_max_tslices(osPriority priority)
+{
+    int tslice_n_max;
+
+    tslice_n_max = configSCHED_MAX_SLICES;
+    if ((int)priority >= 0) {
+        /* For positive priority */
+        tslice_n_max *= ((int)priority + 1);
+    } else {
+        /* For negative priority */
+        tslice_n_max /= (-(int)priority + 1);
+    }
+
+    return tslice_n_max;
 }
 
 
