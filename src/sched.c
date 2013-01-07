@@ -67,7 +67,6 @@ uint32_t loadavg[3]  = { 0, 0, 0 }; /*!< CPU load averages */
 static char sched_idle_stack[sizeof(sw_stack_frame_t)
                              + sizeof(hw_stack_frame_t)
                              + 200];
-volatile int _first_switch = 1;
 
 /* Static function declarations **********************************************/
 void idleTask(void * arg);
@@ -98,6 +97,12 @@ void sched_init(void)
     /* Set idle thread as currently running thread */
     current_thread = &(task_table[0]);
 
+    /* sw_stack_frame will be overwritten when scheduler is run for the first
+     * time. This also means that sw stacked registers are invalid when
+     * idle task executes for the first time. */
+    current_thread->sp = (uint32_t *)((uint32_t)(current_thread->sp)
+                                          + sizeof(sw_stack_frame_t));
+
     /* Set initial value for PSP */
     wr_thread_stack_ptr(task_table[0].sp);
 }
@@ -116,6 +121,8 @@ void sched_start(void)
 
 /**
  * Kernel idle task
+ * @note sw stacked registers are invalid when this thread executes for the
+ * first time.
  * @todo Add support for low power modes when idling
  */
 void idleTask(void * arg)
@@ -135,13 +142,6 @@ void sched_handler(void)
 {
     save_context(); /* Registers should remain untouched before this point */
     current_thread->sp = (void *)rd_thread_stack_ptr();
-
-    /* Discard the sw_stack_frame saved if this is the first time we are here */
-    if (_first_switch) {
-        current_thread->sp = (uint32_t *)((uint32_t)(current_thread->sp)
-                                          + sizeof(sw_stack_frame_t));
-        _first_switch = 0;
-    }
 
     eval_kernel_tick();
     if (flag_kernel_tick) { /* Run only if tick was set */
