@@ -24,7 +24,6 @@
 #define SCHED_CSW_OK_FLAGS  (SCHED_EXEC_FLAG | SCHED_IN_USE_FLAG)
 
 extern volatile uint32_t sched_enabled;
-extern volatile uint32_t sched_cpu_load;
 
 typedef struct {
     void * sp;                  /*!< Stack pointer */
@@ -35,7 +34,7 @@ typedef struct {
     osPriority def_priority;    /*!< Thread priority */
     osPriority priority;        /*!< Thread dynamic priority */
     uint32_t uCounter;          /*!< Time slice counter */
-    uint32_t id;                /*!< Thread id (in task table) */
+    osThreadId id;              /*!< Thread id (in task table) */
     struct threadInheritance_t {
         void * parent;              /*!< Parent thread */
         void * first_child;         /*!< Link to the first child thread */
@@ -63,7 +62,7 @@ void sched_thread_set_exec(int thread_id);
 void sched_get_loads(uint32_t * loads);
 
 /* Functions used by syscalls */
-int sched_ThreadCreate(osThreadDef_t * thread_def, void * argument);
+osThreadId sched_ThreadCreate(osThreadDef_t * thread_def, void * argument);
 osThreadId sched_thread_getId(void);
 osStatus sched_thread_terminate(osThreadId thread_id);
 osStatus sched_thread_setPriority(osThreadId thread_id, osPriority priority);

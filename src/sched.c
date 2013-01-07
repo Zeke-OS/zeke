@@ -217,7 +217,9 @@ static void context_switcher(void)
             continue; /* Select next thread */
         } else if ( /* if maximum slices for this thread is used */
             (current_thread->uCounter >= (uint32_t)tslice_n_max)
-            /* and if priority is higher than low */
+            /* and process is not a realtime process */
+            && ((int)current_thread->priority < (int)osPriorityRealtime)
+            /* and its priority is yet higher than low */
             && ((int)current_thread->priority > (int)osPriorityLow))
         {
             /* Give a penalty: Set lower priority
