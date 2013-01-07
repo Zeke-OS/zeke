@@ -133,23 +133,26 @@ void idleTask(void * arg)
   */
 void sched_handler(void)
 {
-    save_context();
+    save_context(); /* Registers should remain untouched before this point */
     current_thread->sp = (void *)rd_thread_stack_ptr();
 
+    /* Discard the sw_stack_frame saved if this is the first time we are here */
     if (_first_switch) {
         current_thread->sp = (uint32_t *)((uint32_t)(current_thread->sp)
                                           + sizeof(sw_stack_frame_t));
         _first_switch = 0;
     }
 
-    /* - Tasks before context switch - */
-    if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) { /* Run only if systick */
-        calc_loads();
+    eval_kernel_tick();
+    if (flag_kernel_tick) { /* Run only if tick was set */
         timers_run();
     }
-    /* End of tasks */
 
     context_switcher();
+
+    if (flag_kernel_tick) {
+        calc_loads();
+    }
 }
 #endif
 
@@ -189,63 +192,53 @@ void sched_get_loads(uint32_t * loads)
 
 static void context_switcher(void)
 {
+    int tslice_n_max;
+
     /* Select next thread */
     do {
-        /* We can only do some operations efficiently if the current thread is
-         * on the top of the heap. If some other thread has been added on the
-         * top while running the current thread it doesn't matter as sleeping
-         * or dead threads will be will be removed when there is no other
-         * threads prioritized above them. This actually means that garbage
-         * collection respects thread priorities and it  doesn't cause that
-         * much overhead for higher priority threads. */
-        if (current_thread == priority_queue.a[0]) {
-            /* Scaled maximum time slice count */
-            int tslice_n_max;
-            tslice_n_max = configSCHED_MAX_SLICES;
-            if ((int)current_thread->priority >= 0) { /* Positive priority */
-                tslice_n_max *= ((int)current_thread->priority + 1);
-            } else { /* Negative priority */
-                tslice_n_max /= (-(int)current_thread->priority + 1);
-            }
-
-            if ((current_thread->flags & SCHED_EXEC_FLAG) == 0) {
-                /* Remove the current thread from the priority queue this will
-                 * also GC dead threads */
-                (void)heap_del_max(&priority_queue);
-                if ((current_thread->flags & SCHED_IN_USE_FLAG) == 0) {
-                    /* Thread is in sleep so revert back to its original
-                     * priority */
-                    current_thread->priority = current_thread->def_priority;
-                    current_thread->uCounter = 0;
-                } /* else thread is also deleted and no further action is
-                   * needed */
-            } else if ((current_thread->uCounter >= (uint32_t)tslice_n_max)
-                        /* if maximum slices for this thread */
-              && ((int)current_thread->priority > (int)osPriorityLow))
-                        /* if priority is higher than this */
-            {
-                /* Give a penalty: Set lower priority and
-                 * perform heap decrement operation. */
-                current_thread->priority = osPriorityLow;
-                heap_dec_key(&priority_queue, 0);
-
-                /* WARNING: Starvation is still possible for other osPriorityLow
-                 *          threads. */
-            }
-        }
-
-        /* Next thread is the top one on the priority queue */
+        /* Get next thread from the priority queue */
         current_thread = *priority_queue.a;
 
-        /* In the do...while loop condition we'll skip this thread
-         * if its EXEC or IN_USE flags are disabled. */
+        /* Scaled maximum time slice count */
+        tslice_n_max = configSCHED_MAX_SLICES;
+        if ((int)current_thread->priority >= 0) {
+            /* For positive priority */
+            tslice_n_max *= ((int)current_thread->priority + 1);
+        } else {
+            /* For negative priority */
+            tslice_n_max /= (-(int)current_thread->priority + 1);
+        }
+
+        if (   ((current_thread->flags & SCHED_EXEC_FLAG) == 0)
+            || ((current_thread->flags & SCHED_IN_USE_FLAG) == 0)) {
+            /* Remove the top thread from the priority queue as it is
+             * either in sleep or deleted */
+            (void)heap_del_max(&priority_queue);
+            continue; /* Select next thread */
+        } else if ( /* if maximum slices for this thread is used */
+            (current_thread->uCounter >= (uint32_t)tslice_n_max)
+            /* and if priority is higher than low */
+            && ((int)current_thread->priority > (int)osPriorityLow))
+        {
+            /* Give a penalty: Set lower priority
+             * and perform heap decrement operation. */
+            current_thread->priority = osPriorityLow;
+            heap_dec_key(&priority_queue, 0);
+
+            /* WARNING: Starvation is still possible if there is other threads
+             * with priority set to osPriorityLow.
+             */
+            continue; /* Select next thread */
+        }
+
+        /* Thread is skipped if its EXEC or IN_USE flags are disabled. */
     } while ((current_thread->flags & SCHED_CSW_OK_FLAGS) != SCHED_CSW_OK_FLAGS);
 
     /* uCounter is used to determine how many time slices has been used
-     * by the process. */
+     * by the process between idle/sleep states. */
     current_thread->uCounter++;
 
-    /* Write the value of the PSP for the next thread in run state */
+    /* Write the value of the PSP for the next thread in exec */
     wr_thread_stack_ptr(current_thread->sp);
 }
 

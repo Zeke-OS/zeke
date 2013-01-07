@@ -21,6 +21,8 @@
 #include "kernel.h"
 #include "cortex_m.h"
 
+uint32_t flag_kernel_tick = 0;
+
 void init_hw_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a_del_thread)
 {
     hw_stack_frame_t * thread_frame;

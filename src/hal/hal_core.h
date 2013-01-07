@@ -42,12 +42,15 @@ void init_hw_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a
 uint32_t syscall(int type, void * p);
 
 /* Core Implementation must declare following inlined functions:
+ * + inline void eval_kernel_tick(void);
  * + inline void save_context(void);
  * + inline void load_context(void);
  * + inline void * rd_stack_ptr(void);
  * + inline void * rd_thread_stack_ptr(void);
  * + inline void wr_thread_stack_ptr(void * ptr);
  */
+
+extern uint32_t flag_kernel_tick;
 
 /* Select Core Implementation ************************************************/
 

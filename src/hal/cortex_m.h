@@ -58,14 +58,23 @@ typedef struct {
     uint32_t r11;
 } sw_stack_frame_t;
 
-
 /* Inlined core functions */
+inline void eval_kernel_tick(void);
 inline void save_context(void);
 inline void load_context(void);
 inline void * rd_stack_ptr(void);
 inline void * rd_thread_stack_ptr(void);
 inline void wr_thread_stack_ptr(void * ptr);
 
+
+inline void eval_kernel_tick(void)
+{
+    if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) {
+        flag_kernel_tick = 1;
+    } else {
+        flag_kernel_tick = 0;
+    }
+}
 
 /**
  * Request immediate context switch
