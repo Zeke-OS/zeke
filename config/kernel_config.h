@@ -23,14 +23,6 @@
 #define configMCU_MODEL         MCU_MODEL_STM32F0
 #define configSCHED_MAX_THREADS 10u     /*!< Maximum number of threads */
 #define configSCHED_FREQ        100u    /*!< Scheduler frequency in Hz */
-#define configSCHED_MAX_SLICES  8u      /*!< Maximum number of time slices for
-                                         *   normal priority thread.
-                                         *
-                                         *   Atfer all time slices are used the
-                                         *   thread is pre-empted and context
-                                         *   switch will be enforced.
-                                         *   This value is internally scaled for
-                                         *   other priorities. (min 8) */
 #define configHEAP_BOUNDS_CHECK 0       /*!< Enable or disable heap bounds check */
 #define configAPP_MAIN_SSIZE    200u    /*!< Stack size for app_main thread */
 #define configAPP_MAIN_PRI      osPriorityNormal /*!< Priority of app_main thread */
