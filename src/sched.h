@@ -33,13 +33,12 @@ typedef struct {
     int32_t sig_wait_mask;      /*!< Signal wait mask */
     osEvent event;              /*!< Event struct */
     osPriority def_priority;    /*!< Thread priority */
-    osPriority priority;        /*!< Thread dynamic runtime priority */
+    osPriority priority;        /*!< Thread dynamic priority */
     uint32_t uCounter;          /*!< Time slice counter */
     uint32_t id;                /*!< Thread id (in task table) */
     struct threadInheritance_t {
         void * parent;              /*!< Parent thread */
         void * first_child;         /*!< Link to the first child thread */
-        /* Circularly linked list of childs of the parent thread */
         void * next_child;          /*!< Next child of the common parent */
     } inh;                      /*!< Thread inheritance; Parent and child thread
                                  *   pointers. */
@@ -51,9 +50,6 @@ typedef struct {
  *   child of the parent thread
  * + parent is a child thread attribute containing address to a parent
  *   thread of the child thread
- * + prev_child is a child thread attribute containing address of
- *   a previous child node of a common parent thread ie. sharing same
- *   parent thread
  * + next_child is a child thread attribute containing address of a next
  *   child node of the common parent thread
  */
