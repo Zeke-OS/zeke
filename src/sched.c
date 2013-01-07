@@ -48,7 +48,7 @@
                     load += n * (FIXED_1 - exp); \
                     load >>= FSHIFT;
 /** Scales fixed-point load average value to a integer format scaled to 100 */
-#define SCALE_LOAD(x) ((x + (FIXED_1/200) * 100) >> FSHIFT)
+#define SCALE_LOAD(x) (((x + (FIXED_1/200)) * 100) >> FSHIFT)
 /* End of Definitions for load average calculation ***************************/
 
 volatile uint32_t sched_enabled = 0; /* If this is set to != 0 interrupt
@@ -57,8 +57,8 @@ volatile uint32_t sched_enabled = 0; /* If this is set to != 0 interrupt
 
 /* Task containers */
 threadInfo_t task_table[configSCHED_MAX_THREADS]; /*!< Array of all threads */
-static heap_t priority_queue = HEAP_NEW_EMPTY; /*!< Priority queue of active
-                                                * threads */
+static heap_t priority_queue = HEAP_NEW_EMPTY;   /*!< Priority queue of active
+                                                  * threads */
 
 volatile threadInfo_t * current_thread; /*!< Pointer to currently active thread */
 uint32_t loadavg[3]  = { 0, 0, 0 }; /*!< CPU load averages */
@@ -66,7 +66,8 @@ uint32_t loadavg[3]  = { 0, 0, 0 }; /*!< CPU load averages */
 /* Stack for idle task */
 static char sched_idle_stack[sizeof(sw_stack_frame_t)
                              + sizeof(hw_stack_frame_t)
-                             + 200];
+                             + 40]; /* Absolute minimum with current idle task
+                                     * implementation */
 
 /* Static function declarations **********************************************/
 void idleTask(void * arg);
@@ -225,8 +226,10 @@ static void context_switcher(void)
         /* Thread is skipped if its EXEC or IN_USE flags are disabled. */
     } while ((current_thread->flags & SCHED_CSW_OK_FLAGS) != SCHED_CSW_OK_FLAGS);
 
-    /* uCounter is used to determine how many time slices has been used
-     * by the process between idle/sleep states. */
+    /* ts_counter is used to determine how many time slices has been used
+     * by the process between idle/sleep states.
+     * We can assume that this measure is quite accurate even it's not confirmed
+     * that one tick has been elapsed before this line. */
     current_thread->ts_counter--;
 
     /* Write the value of the PSP for the next thread in exec */
