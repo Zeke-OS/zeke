@@ -216,7 +216,7 @@ static void context_switcher(void)
             (void)heap_del_max(&priority_queue);
             continue; /* Select next thread */
         } else if ( /* if maximum slices for this thread is used */
-            (current_thread->uCounter >= (uint32_t)tslice_n_max)
+            (current_thread->ts_counter >= (uint32_t)tslice_n_max)
             /* and process is not a realtime process */
             && ((int)current_thread->priority < (int)osPriorityRealtime)
             /* and its priority is yet higher than low */
@@ -238,7 +238,7 @@ static void context_switcher(void)
 
     /* uCounter is used to determine how many time slices has been used
      * by the process between idle/sleep states. */
-    current_thread->uCounter++;
+    current_thread->ts_counter++;
 
     /* Write the value of the PSP for the next thread in exec */
     wr_thread_stack_ptr(current_thread->sp);
@@ -338,7 +338,7 @@ static void _sched_thread_set_exec(int thread_id, osPriority pri)
     /* Check that given thread is in use but not in execution */
     if ((task_table[thread_id].flags & (SCHED_EXEC_FLAG | SCHED_IN_USE_FLAG))
         == SCHED_IN_USE_FLAG) {
-        task_table[thread_id].uCounter = 0;
+        task_table[thread_id].ts_counter = 0;
         task_table[thread_id].priority = pri;
         task_table[thread_id].flags |= SCHED_EXEC_FLAG; /* Set EXEC flag */
         (void)heap_insert(&priority_queue, &(task_table[thread_id]));
