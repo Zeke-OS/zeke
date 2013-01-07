@@ -385,10 +385,10 @@ static int sched_calc_max_tslices(osPriority priority)
     tslice_n_max = configSCHED_MAX_SLICES;
     if ((int)priority >= 0) {
         /* For positive priority */
-        tslice_n_max *= ((int)priority + 1);
+        tslice_n_max <<= (int)priority;
     } else {
         /* For negative priority */
-        tslice_n_max /= (-(int)priority + 1);
+        tslice_n_max >>= -((int)priority);
     }
 
     return tslice_n_max;
