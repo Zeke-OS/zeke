@@ -12,6 +12,8 @@
 #ifndef SYSCALL_H
 #define SYSCALL_H
 
+#include "kernel.h"
+
 /* List of syscalls */
 #define KERNEL_SYSCALL_SCHED_THREAD_CREATE      1
 #define KERNEL_SYSCALL_SCHED_THREAD_GETID       2
@@ -26,8 +28,6 @@
 #define KERNEL_SYSCALL_SCHED_SIGNAL_GETCURR     10
 #define KERNEL_SYSCALL_SCHED_SIGNAL_GET         11
 #define KERNEL_SYSCALL_SCHED_SIGNAL_WAIT        12
-
-#include "sched.h"
 
 typedef struct {
     osThreadDef_t * def;
@@ -49,15 +49,15 @@ typedef struct {
     osPriority priority;
 } ds_osSetPriority_t;
 
+#ifndef PU_TEST_BUILD
 /**
   * Make system call
   */
 uint32_t syscall(int type, void * p);
+#endif /* PU_TEST_BUILD*/
 
 #ifdef KERNEL_INTERNAL
-
 uint32_t _intSyscall_handler(int type, void * p);
-
-#endif
+#endif /* KERNEL_INTERNAL */
 
 #endif /* SYSCALL_H */

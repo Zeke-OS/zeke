@@ -18,7 +18,7 @@ typedef struct {
 } timer_alloc_data_t;
 
 uint32_t timers_value;
-volatile timer_alloc_data_t timers_array[configTIMERS_MAX];
+static volatile timer_alloc_data_t timers_array[configTIMERS_MAX];
 
 void timers_init(void)
 {

@@ -19,6 +19,7 @@ static int parent(int i);
 static int left(int i);
 static int right(int i);
 static inline void swap(heap_t * heap, int i, int j);
+static void heapify(heap_t * heap, int i);
 
 static int parent(int i)
 {
@@ -53,7 +54,7 @@ static inline void swap(heap_t * heap, int i, int j)
   * @param heap Pointer to a heap struct.
   * @param i Current index in heap array.
   */
-void heapify(heap_t * heap, int i)
+static void heapify(heap_t * heap, int i)
 {
     int l = left(i);
     int r = right(i);

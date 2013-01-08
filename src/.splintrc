@@ -1,0 +1,11 @@
+-predboolint
+-nullassign
+-nullstate
+-nullpass
+-nullret
+-mustfreeonly
+-DPU_TEST_BUILD
+-I./
+-I../include
+-I./hal
+-I../config

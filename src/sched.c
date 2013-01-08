@@ -27,7 +27,7 @@
 #include "sched.h"
 
 /* Definitions for load average calculation **********************************/
-#define LOAD_FREQ   (configSCHED_LAVG_PER * configSCHED_FREQ)
+#define LOAD_FREQ   (configSCHED_LAVG_PER * (int)configSCHED_FREQ)
 /* FEXP_N = 2^11/(2^(interval * log_2(e/N))) */
 #if configSCHED_LAVG_PER == 5
 #define FSHIFT      11      /* nr of bits of precision */
@@ -56,11 +56,13 @@ volatile uint32_t sched_enabled = 0; /* If this is set to != 0 interrupt
                                       * switching. */
 
 /* Task containers */
-threadInfo_t task_table[configSCHED_MAX_THREADS]; /*!< Array of all threads */
+static threadInfo_t task_table[configSCHED_MAX_THREADS]; /*!< Array of all
+                                                          *   threads */
 static heap_t priority_queue = HEAP_NEW_EMPTY;   /*!< Priority queue of active
                                                   * threads */
 
-volatile threadInfo_t * current_thread; /*!< Pointer to currently active thread */
+static volatile threadInfo_t * current_thread; /*!< Pointer to currently active
+                                                *   thread */
 uint32_t loadavg[3]  = { 0, 0, 0 }; /*!< CPU load averages */
 
 /* Stack for idle task */
@@ -77,7 +79,7 @@ static void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument,
 static void sched_thread_set_inheritance(osThreadId i, threadInfo_t * parent);
 static void _sched_thread_set_exec(int thread_id, osPriority pri);
 static void _sched_thread_sleep_current(void);
-static void sched_thread_remove(uint32_t id);
+static void sched_thread_remove(osThreadId id);
 /* End of Static function declarations ***************************************/
 
 /* Functions called from outside of kernel context ***************************/
@@ -126,7 +128,7 @@ void sched_start(void)
  * first time.
  * @todo Add support for low power modes when idling
  */
-void idleTask(void * arg)
+void idleTask(/*@unused@*/ void * arg)
 {
 #ifndef PU_TEST_BUILD
     while(1);
@@ -172,7 +174,7 @@ static void calc_loads(void)
     count--;
     if (count < 0) {
         count = LOAD_FREQ;
-        active_threads = priority_queue.size * FIXED_1;
+        active_threads = (uint32_t)(priority_queue.size * FIXED_1);
 
         /* Load averages */
         CALC_LOAD(loadavg[0], FEXP_1, active_threads);
@@ -247,7 +249,7 @@ static void context_switcher(void)
 static void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument, threadInfo_t * parent)
 {
     /* This function should not be called for already initialized threads. */
-    if ((task_table[i].flags & SCHED_IN_USE_FLAG) != 0)
+    if ((task_table[i].flags & (uint32_t)SCHED_IN_USE_FLAG) != 0)
         return;
 
     /* Init core specific stack frame */
@@ -255,7 +257,7 @@ static void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument,
 
     /* Mark that this thread position is in use.
      * EXEC flag is set later in sched_thread_set_exec */
-    task_table[i].flags         = SCHED_IN_USE_FLAG;
+    task_table[i].flags         = (uint32_t)SCHED_IN_USE_FLAG;
     task_table[i].id            = i;
     task_table[i].def_priority  = thread_def->tpriority;
     /* task_table[i].priority is set later in sched_thread_set_exec */
@@ -357,7 +359,7 @@ static void _sched_thread_sleep_current(void)
  * Removes thread from execution
  * @param tt_id Thread task table id
  */
-static void sched_thread_remove(uint32_t tt_id)
+static void sched_thread_remove(osThreadId tt_id)
 {
     int i;
 
@@ -488,7 +490,7 @@ osStatus sched_threadDelay(uint32_t millisec)
      * wait time. */
     current_thread->event.status = osOK;
 
-    if (millisec != osWaitForever) {
+    if (millisec != (uint32_t)osWaitForever) {
         if (timers_add(current_thread->id, millisec) != 0) {
              current_thread->event.status = osErrorResource;
         }
@@ -523,7 +525,7 @@ int32_t sched_threadSignalSet(osThreadId thread_id, int32_t signal)
     if ((task_table[thread_id].flags & SCHED_IN_USE_FLAG) == 0)
         return 0x80000000; /* Error code specified in CMSIS-RTOS */
 
-    prev_signals = (uint32_t)task_table[thread_id].signals;
+    prev_signals = task_table[thread_id].signals;
 
     task_table[thread_id].signals |= signal; /* OR with all signals */
     task_table[thread_id].event.value.signals = signal; /* Only this signal as
@@ -557,7 +559,7 @@ int32_t sched_threadSignalClear(osThreadId thread_id, int32_t signal)
     if ((task_table[thread_id].flags & SCHED_IN_USE_FLAG) == 0)
         return 0x80000000; /* Error code specified in CMSIS-RTOS */
 
-    prev_signals = (uint32_t)task_table[thread_id].signals;
+    prev_signals = task_table[thread_id].signals;
     task_table[thread_id].signals &= ~(signal & 0x7fffffff);
 
     return prev_signals;
@@ -577,7 +579,7 @@ osEvent * sched_threadSignalWait(int32_t signals, uint32_t millisec)
 {
     current_thread->event.status = osEventTimeout;
 
-    if (millisec != osWaitForever) {
+    if (millisec != (uint32_t)osWaitForever) {
         if (timers_add(current_thread->id, millisec) != 0) {
             /* Timer error will be most likely but not necessarily returned
              * as is. There is however a slight chance of event triggering

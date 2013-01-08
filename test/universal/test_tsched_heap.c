@@ -72,11 +72,11 @@ static char * test_sched_ThreadCreate(void)
     pu_assert("error, incorrect flags set for thread2",
               task_table[2].flags == (SCHED_EXEC_FLAG | SCHED_IN_USE_FLAG));
 
-    pu_assert("error, incorrect uCounter value for thread1",
-              task_table[1].uCounter == 0);
+    pu_assert("error, incorrect ts_counter value for thread1",
+              task_table[1].ts_counter == 0);
 
-    pu_assert("error, incorrect uCounter value for thread2",
-              task_table[2].uCounter == 0);
+    pu_assert("error, incorrect ts_counter value for thread2",
+              task_table[2].ts_counter == 0);
 
     pu_assert("error, incorrect priority for thread1",
               task_table[1].def_priority == thread_def1.tpriority);

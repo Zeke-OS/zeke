@@ -15,8 +15,8 @@
   */
 
 #pragma once
-#ifndef PU_TEST_CORE_HPP
-#define PU_TEST_CORE_HPP
+#ifndef PU_TEST_CORE_H
+#define PU_TEST_CORE_H
 
 #ifndef PU_TEST_BUILD
     #error pu_test_core.h should not be #included in production!
@@ -50,7 +50,7 @@ typedef struct {
 /**
   * Init hw stack frame
   */
-inline void init_hw_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a_del_thread)
+inline void init_hw_stack_frame(/*@unused@*/ osThreadDef_t * thread_def, /*@unused@*/ void * argument, /*@unused@*/ uint32_t a_del_thread)
 {
 }
 
@@ -94,16 +94,16 @@ inline void * rd_thread_stack_ptr(void)
 /**
   * Write stack pointer of the currentthread to the PSP
   */
-inline void wr_thread_stack_ptr(void * ptr)
+inline void wr_thread_stack_ptr(/*@unused@*/ void * ptr)
 {
 }
 
-inline uint32_t syscall(int type, void * p)
+inline uint32_t syscall(/*@unused@*/ int type, /*@unused@*/ void * p)
 {
     return 0;
 }
 
-#endif /* PU_TEST_CORE_HPP */
+#endif /* PU_TEST_CORE_H */
 
 /**
   * @}

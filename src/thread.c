@@ -25,8 +25,8 @@ void del_thread(void)
      * portability in the future.
      */
     osThreadId thread_id = osThreadGetId();
-    osThreadTerminate(thread_id);
-    osThreadYield();
+    (void)osThreadTerminate(thread_id);
+    (void)osThreadYield();
 
     while(1); /* Once the context changes, the program will no longer return to
                * this thread */

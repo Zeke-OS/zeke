@@ -27,9 +27,11 @@ int32_t osKernelRunning(void)
 
 osThreadId osThreadCreate(osThreadDef_t * thread_def, void * argument)
 {
-    ds_osThreadCreate_t args = {thread_def, argument};
+    ds_osThreadCreate_t args;
     osThreadId result;
 
+    args.def = thread_def;
+    args.argument = argument;
     result = (osThreadId)syscall(KERNEL_SYSCALL_SCHED_THREAD_CREATE, &args);
 
     /* Request immediate context switch */

@@ -43,8 +43,8 @@ typedef struct {
                                  *   pointers. */
 } threadInfo_t;
 
-/* Parent and child threads
- * ========================
+/* Parent and child thread relations
+ * =================================
  * + first_child is a parent thread attribute containing address to a first
  *   child of the parent thread
  * + parent is a child thread attribute containing address to a parent

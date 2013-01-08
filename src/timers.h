@@ -15,6 +15,8 @@
 #include <stdint.h>
 #include "kernel.h"
 
+extern uint32_t timers_value;
+
 void timers_init(void);
 void timers_run(void);
 int timers_add(int thread_id, uint32_t millisec);

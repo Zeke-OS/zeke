@@ -21,7 +21,7 @@
 
 /* Kernel configuration */
 #define configMCU_MODEL         MCU_MODEL_STM32F0
-#define configSCHED_MAX_THREADS 10u     /*!< Maximum number of threads */
+#define configSCHED_MAX_THREADS 10      /*!< Maximum number of threads */
 #define configSCHED_FREQ        100u    /*!< Scheduler frequency in Hz */
 #define configHEAP_BOUNDS_CHECK 0       /*!< Enable or disable heap bounds check */
 #define configAPP_MAIN_SSIZE    200u    /*!< Stack size for app_main thread */
