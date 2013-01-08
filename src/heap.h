@@ -17,9 +17,10 @@
 
 #define HEAP_NEW_EMPTY {{NULL}, -1}
 
+/** Heap data struct */
 typedef struct {
-    threadInfo_t * a[configSCHED_MAX_THREADS];
-    int size;
+    threadInfo_t * a[configSCHED_MAX_THREADS];  /*!< Heap array */
+    int size;                                   /*!< Current heap size */
 } heap_t;
 
 void heap_del_max(heap_t * heap);

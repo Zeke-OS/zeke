@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    main.c
+ * @file    app_main.c
  * @author  Olli Vanhoja
  *
  * @brief   Main entry point to the application

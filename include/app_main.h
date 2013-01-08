@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    main.h
+ * @file    app_main.h
  * @author  Olli Vanhoja
  *
  * @brief   Header file for main.c

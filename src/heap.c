@@ -21,16 +21,31 @@ static int right(int i);
 static inline void swap(heap_t * heap, int i, int j);
 static void heapify(heap_t * heap, int i);
 
+/**
+ * Returns index to the parent of the key i
+ * @param i Index to a key.
+ * @return Parent key index.
+ */
 static int parent(int i)
 {
     return i / 2;
 }
 
+/**
+ * Returns index to the key on the left side of the key i
+ * @param i Index to a key.
+ * @return Left side key index.
+ */
 static int left(int i)
 {
     return 2 * i;
 }
 
+/**
+ * Returns index to the key on the right side of the key i
+ * @param i Index to a key.
+ * @return Right side key index.
+ */
 static int right(int i)
 {
     return 2 * i + 1;

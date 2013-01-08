@@ -28,5 +28,8 @@ KNOWN ISSUES
 NOTES
 =====
 
+- CMSIS-RTOS specifies that osSignalSet can be called from ISR. This is
+  untested at the moment and I'm 99% sure it doesn't work without some
+  modifications.
 - Some signal flags might be reserved for other event types in the future
   (while keeping kernel compact and simple)

@@ -29,25 +29,30 @@
 #define KERNEL_SYSCALL_SCHED_SIGNAL_GET         11
 #define KERNEL_SYSCALL_SCHED_SIGNAL_WAIT        12
 
+/** Argument struct for KERNEL_SYSCALL_SCHED_THREAD_CREATE */
 typedef struct {
-    osThreadDef_t * def;
-    void * argument;
+    osThreadDef_t * def;    /*!< Thread definitions for a new thread */
+    void * argument;        /*!< Thread parameter(s) pointer */
 } ds_osThreadCreate_t;
 
+/** Argument struct for KERNEL_SYSCALL_SCHED_THREAD_SETPRIORITY */
 typedef struct {
-    osThreadId thread_id;
-    int32_t signal;
+    osThreadId thread_id;   /*!< Thread id */
+    osPriority priority;    /*!< Thread priority */
+} ds_osSetPriority_t;
+
+/** Argument struct for KERNEL_SYSCALL_SCHED_SIGNAL_SET
+ *  and KERNEL_SYSCALL_SCHED_SIGNAL_CLEAR */
+typedef struct {
+    osThreadId thread_id;   /*!< Thread id */
+    int32_t signal;         /*!< Thread signals to set */
 } ds_osSignal_t;
 
+/** Argument struct for KERNEL_SYSCALL_SCHED_SIGNAL_WAIT */
 typedef struct {
-    int32_t signals;
-    uint32_t millisec;
+    int32_t signals;        /*!< Thread signal(s) to wait */
+    uint32_t millisec;      /*!< Timeout in ms */
 } ds_osSignalWait_t;
-
-typedef struct {
-    osThreadId thread_id;
-    osPriority priority;
-} ds_osSetPriority_t;
 
 #ifndef PU_TEST_BUILD
 /**

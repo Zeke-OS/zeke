@@ -25,6 +25,7 @@
 
 extern volatile uint32_t sched_enabled;
 
+/** Thread info struct */
 typedef struct {
     void * sp;                  /*!< Stack pointer */
     uint32_t flags;             /*!< Status flags */

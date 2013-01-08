@@ -12,12 +12,13 @@
 #include "sched.h"
 #include "timers.h"
 
+/** Timer allocation struct */
 typedef struct {
-    int thread_id;
-    uint32_t expires;
+    int thread_id;      /*!< Thread id */
+    uint32_t expires;   /*!< Timer expiration time */
 } timer_alloc_data_t;
 
-uint32_t timers_value;
+uint32_t timers_value; /*!< Current tick value */
 static volatile timer_alloc_data_t timers_array[configTIMERS_MAX];
 
 void timers_init(void)

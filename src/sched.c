@@ -30,10 +30,10 @@
 #define LOAD_FREQ   (configSCHED_LAVG_PER * (int)configSCHED_FREQ)
 /* FEXP_N = 2^11/(2^(interval * log_2(e/N))) */
 #if configSCHED_LAVG_PER == 5
-#define FSHIFT      11      /* nr of bits of precision */
-#define FEXP_1      1884    /* 1/exp(5sec/1min) */
-#define FEXP_5      2014    /* 1/exp(5sec/5min) */
-#define FEXP_15     2037    /* 1/exp(5sec/15min) */
+#define FSHIFT      11      /*!< nr of bits of precision */
+#define FEXP_1      1884    /*!< 1/exp(5sec/1min) */
+#define FEXP_5      2014    /*!< 1/exp(5sec/5min) */
+#define FEXP_15     2037    /*!< 1/exp(5sec/15min) */
 #elif configSCHED_LAVG_PER == 11
 #define FSHIFT      11
 #define FEXP_1      1704
@@ -42,7 +42,7 @@
 #else
 #error Incorrect value of kernel configuration configSCHED_LAVG_PER
 #endif
-#define FIXED_1     (1 << FSHIFT)
+#define FIXED_1     (1 << FSHIFT) /*!< 1.0 in fixed-point */
 #define CALC_LOAD(load, exp, n)                  \
                     load *= exp;                 \
                     load += n * (FIXED_1 - exp); \
