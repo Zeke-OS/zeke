@@ -7,6 +7,8 @@
 #include <stdint.h>
 #include "punit.h"
 
+#include "kernel.h"
+
 #pragma GCC diagnostic ignored "-Wpointer-to-int-cast"
 
 /* Override timers_run */
@@ -15,9 +17,13 @@ void my_timers_run(void) { }
 #define timers_run my_timers_run
 
 /* Override timers_add */
-int my_timers_add(int thread_id, uint32_t millisec);
-int my_timers_add(int thread_id, uint32_t millisec) { return 0; }
+int my_timers_add(int thread_id, os_timer_type type, uint32_t millisec);
+int my_timers_add(int thread_id, os_timer_type type, uint32_t millisec) { return 0; }
 #define timers_add my_timers_add
+
+/* Override timers_release */
+void timers_release(int tim);
+void timers_release(int tim) { };
 
 /* Override del_thread */
 void del_thread(void);

@@ -39,12 +39,12 @@ static char * test_timers_add_run()
     int err;
 
     call_timers_run();
-    err = timers_add(0, 3);
+    err = timers_add(0, osTimerOnce, 3);
     call_timers_run();
     call_timers_run();
     call_timers_run();
 
-    pu_assert("timers_add shouldn't have returned error", err == 0);
+    pu_assert("timers_add shouldn't have returned error", err >= 0);
     pu_assert("my_sched_thread_set_exec should have been called once by now",
               my_sched_called == 1);
 
@@ -56,12 +56,12 @@ static char * test_timers_add_run_multiple()
     int err;
 
     call_timers_run();
-    err =  timers_add(2, 2);
-    err |= timers_add(1, 2);
-    err |= timers_add(3, 20 * configSCHED_FREQ);
+    err =  timers_add(2, osTimerOnce, 2);
+    err |= timers_add(1, osTimerOnce, 2);
+    err |= timers_add(3, osTimerOnce, 20 * configSCHED_FREQ);
     call_timers_run();
 
-    pu_assert("timers_add shouldn't have returned error", err == 0);
+    pu_assert("timers_add shouldn't have returned error", err >= 0);
     pu_assert("my_sched_thread_set_exec should have been called twice by now",
               my_sched_called == 2);
 
@@ -78,7 +78,7 @@ static char * test_timers_add_run_zero_delay()
     call_timers_run();
     call_timers_run();
     call_timers_run();
-    timers_add(1, 0);
+    timers_add(1, osTimerOnce, 0);
     call_timers_run();
 
     pu_assert("my_sched_thread_set_exec should have been called once by now",
