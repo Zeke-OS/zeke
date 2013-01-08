@@ -244,7 +244,7 @@ static void context_switcher(void)
   * @param thread_def   Thread definitions
   * @param argument     Thread argument
   * @param parent       Parent thread id, NULL = doesn't have a parent
-  * @todo what if parent is stopped before we call this?
+  * @todo what if parent is stopped before this function is called?
   */
 static void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument, threadInfo_t * parent)
 {
@@ -265,6 +265,7 @@ static void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument,
     /* Clear signal flags & wait states */
     task_table[i].signals = 0;
     task_table[i].sig_wait_mask = 0x0;
+    task_table[i].wait_tim = -1;
 
     /* Clear events */
     memset(&(task_table[i].event), 0, sizeof(osEvent));
@@ -364,6 +365,11 @@ static void sched_thread_remove(osThreadId tt_id)
     int i;
 
     task_table[tt_id].flags = 0; /* Clear all the flags */
+
+    /* Release wait timeout timer */
+    if (task_table[tt_id].wait_tim >= 0) {
+        timers_release(task_table[tt_id].wait_tim);
+    }
 
     /* Find thread from the priority queue and put it on top.
      * This way we can be sure that this thread is not kept in the queue after
@@ -495,7 +501,7 @@ osStatus sched_threadDelay(uint32_t millisec)
     current_thread->event.status = osOK;
 
     if (millisec != (uint32_t)osWaitForever) {
-        if (timers_add(current_thread->id, millisec) != 0) {
+        if (timers_add(current_thread->id, osTimerOnce, millisec) < 0) {
              current_thread->event.status = osErrorResource;
         }
     }
@@ -537,8 +543,14 @@ int32_t sched_threadSignalSet(osThreadId thread_id, int32_t signal)
 
     if (((task_table[thread_id].flags & SCHED_NO_SIG_FLAG) == 0)
         && ((task_table[thread_id].sig_wait_mask & signal) != 0)) {
+        /* Release wait timeout timer */
+        if (task_table[thread_id].wait_tim >= 0) {
+            timers_release(task_table[thread_id].wait_tim);
+        }
+
         /* Clear signal wait mask */
         task_table[thread_id].sig_wait_mask = 0x0;
+
 
         /* Set the signaled thread back into execution */
         _sched_thread_set_exec(thread_id, task_table[thread_id].def_priority);
@@ -600,16 +612,19 @@ int32_t sched_threadSignalGet(osThreadId thread_id)
  */
 osEvent * sched_threadSignalWait(int32_t signals, uint32_t millisec)
 {
+    int tim;
+
     current_thread->event.status = osEventTimeout;
 
     if (millisec != (uint32_t)osWaitForever) {
-        if (timers_add(current_thread->id, millisec) != 0) {
+        if ((tim = timers_add(current_thread->id, osTimerOnce, millisec)) < 0) {
             /* Timer error will be most likely but not necessarily returned
              * as is. There is however a slight chance of event triggering
              * before control returns back to this thread. It is completely OK
              * to clear this error if that happens. */
             current_thread->event.status = osErrorResource;
         }
+        current_thread->wait_tim = tim;
     }
 
     if (current_thread->event.status != osErrorResource) {

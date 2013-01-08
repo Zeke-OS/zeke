@@ -19,7 +19,8 @@ extern uint32_t timers_value;
 
 void timers_init(void);
 void timers_run(void);
-int timers_add(int thread_id, uint32_t millisec);
-void timers_release(int thread_id);
+int timers_add(osThreadId thread_id, os_timer_type type, uint32_t millisec);
+void timers_start(int tim);
+void timers_release(int tim);
 
 #endif /* TIMERS_H */

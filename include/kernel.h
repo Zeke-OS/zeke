@@ -79,6 +79,13 @@ typedef enum  {
     os_status_reserved      =  0x7FFFFFFF   ///< prevent from enum down-size compiler optimization.
 } osStatus;
 
+/// Timer type value for the timer definition
+/// \note MUST REMAIN UNCHANGED: \b os_timer_type shall be consistent in every CMSIS-RTOS.
+typedef enum  {
+  osTimerOnce             =     0,       ///< one-shot timer
+  osTimerPeriodic         =     1        ///< repeating timer
+} os_timer_type;
+
 /// Entry point of a thread.
 /// \note MUST REMAIN UNCHANGED: \b os_pthread shall be consistent in every CMSIS-RTOS.
 typedef void (*os_pthread) (void const * argument);
@@ -88,6 +95,10 @@ typedef void (*os_pthread) (void const * argument);
 /// Thread ID identifies the thread (pointer to a thread control block).
 /// \note CAN BE CHANGED: \b os_thread_cb is implementation specific in every CMSIS-RTOS.
 typedef int osThreadId;
+
+/// Timer ID identifies the timer (pointer to a timer control block).
+/// \note CAN BE CHANGED: \b os_timer_cb is implementation specific in every CMSIS-RTOS.
+typedef int osTimerId;
 
 /// Message ID identifies the message queue (pointer to a message queue control block).
 /// \note CAN BE CHANGED: \b os_messageQ_cb is implementation specific in every CMSIS-RTOS.

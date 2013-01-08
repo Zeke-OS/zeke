@@ -41,6 +41,7 @@ typedef struct {
     uint32_t flags;             /*!< Status flags */
     int32_t signals;            /*!< Signal flags */
     int32_t sig_wait_mask;      /*!< Signal wait mask */
+    int wait_tim;               /*!< Reference to a timeout timer */
     osEvent event;              /*!< Event struct */
     osPriority def_priority;    /*!< Thread priority */
     osPriority priority;        /*!< Thread dynamic priority */

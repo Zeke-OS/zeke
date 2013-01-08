@@ -14,12 +14,17 @@
 
 /** Timer allocation struct */
 typedef struct {
-    int thread_id;      /*!< Thread id */
-    uint32_t expires;   /*!< Timer expiration time */
+    uint32_t enabled;       /*!< Enable/Disable timer */
+    os_timer_type type;     /*!< One-shot or repeating timer */
+    osThreadId thread_id;   /*!< Thread id */
+    uint32_t reset_val;     /*!< Reset value for repeating timer */
+    uint32_t expires;       /*!< Timer expiration time */
 } timer_alloc_data_t;
 
 uint32_t timers_value; /*!< Current tick value */
 static volatile timer_alloc_data_t timers_array[configTIMERS_MAX];
+
+static int timers_calc_exp(int millisec);
 
 void timers_init(void)
 {
@@ -27,8 +32,8 @@ void timers_init(void)
 
     timers_value = 0;
     for (i = 0; i < configTIMERS_MAX; i++) {
+        timers_array[i].enabled = 0;
         timers_array[i].thread_id = -1;
-        timers_array[i].expires = 0;
     }
 }
 
@@ -42,13 +47,18 @@ void timers_run(void)
     i = 0;
     do {
         uint32_t exp = timers_array[i].expires;
-        if (timers_array[i].thread_id >= 0) {
+        if (timers_array[i].enabled) {
             if (exp == value) {
                 sched_thread_set_exec(timers_array[i].thread_id);
 
-                /* Release the timer */
-                timers_array[i].thread_id = -1;
-                timers_array[i].expires = 0;
+                if (timers_array[i].type == osTimerOnce) {
+                    /* Release the timer */
+                    timers_array[i].enabled = 0;
+                    timers_array[i].thread_id = -1;
+                } else {
+                    /* Repeating timer */
+                    timers_array[i].expires = timers_calc_exp(timers_array[i].reset_val);
+                }
             }
         }
     } while (++i < configTIMERS_MAX);
@@ -56,37 +66,53 @@ void timers_run(void)
 
 /**
  * Reserve a new timer
- * @return 0 if succeed or -1 if there is no free timers available
+ * @return Reference to a timer or -1 if allocation failed.
  */
-int timers_add(int thread_id, uint32_t millisec)
+int timers_add(osThreadId thread_id, os_timer_type type, uint32_t millisec)
 {
     int i = 0;
-    uint32_t value = timers_value;
 
     do {
         if (timers_array[i].thread_id == -1) {
             timers_array[i].thread_id = thread_id;
-            timers_array[i].expires = value + ((millisec * configSCHED_FREQ) / 1000);
-            if (timers_array[i].expires == value)
-                timers_array[i].expires++;
-            return 0;
+            timers_array[i].type = type;
+            if (type == osTimerPeriodic) {
+                timers_array[i].reset_val = millisec;
+            }
+
+            if (millisec > 0) {
+                timers_array[i].enabled = 1;
+                timers_array[i].expires = timers_calc_exp(millisec);
+            } /* else {
+                timers_array[i].enabled = 0;
+            } */
+            return i;
         }
     } while (++i < configTIMERS_MAX);
 
     return -1;
 }
 
-/**
- * Remove all timer allocations for a given thread
- */
-void timers_release(int thread_id)
+void timers_start(int tim)
 {
-    int i = 0;
-    do {
-        if (timers_array[i].thread_id == thread_id) {
-            /* Release the timer */
-            timers_array[i].thread_id = -1;
-            timers_array[i].expires = 0;
-        }
-    } while (++i < configTIMERS_MAX);
+    timers_array[tim].enabled = 1;
+}
+
+void timers_release(int tim)
+{
+    /* Release the timer */
+    timers_array[tim].enabled = 0;
+    timers_array[tim].thread_id = -1;
+}
+
+static int timers_calc_exp(int millisec)
+{
+    int exp;
+    uint32_t value = timers_value;
+
+    exp = value + ((millisec * configSCHED_FREQ) / 1000);
+    if (exp == value)
+        exp++;
+
+    return exp;
 }
