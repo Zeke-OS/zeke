@@ -23,6 +23,7 @@ KNOWN ISSUES
 
 - DLIB is not thread safe outside of kernel code
 - Signal wait mask is not always cleared after signal is received
+- Timeout timers are not released even if event occurs
 
 
 NOTES

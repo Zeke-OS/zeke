@@ -382,6 +382,10 @@ static void sched_thread_remove(osThreadId tt_id)
 /* Functions defined in header file (and used mainly by syscalls)
  ******************************************************************************/
 
+/** @addtogroup External_services
+  * @{
+  */
+
 /*  ==== Thread Management ==== */
 
 /**
@@ -507,7 +511,7 @@ osStatus sched_threadDelay(uint32_t millisec)
 
 /**
  * Thread wait syscall handler
- * millisec Event wait time in ms or osWaitForever.
+ * @param millisec Event wait time in ms or osWaitForever.
  * @note This function returns a pointer to a thread event struct and its
  * contents is allowed to change before returning back to the caller thread.
  */
@@ -528,8 +532,7 @@ int32_t sched_threadSignalSet(osThreadId thread_id, int32_t signal)
     prev_signals = task_table[thread_id].signals;
 
     task_table[thread_id].signals |= signal; /* OR with all signals */
-    task_table[thread_id].event.value.signals = signal; /* Only this signal as
-                                             * the event was calling of this */
+    task_table[thread_id].event.value.signals = signal; /* Only this signal */
     task_table[thread_id].event.status = osEventSignal;
 
     if (((task_table[thread_id].flags & SCHED_NO_SIG_FLAG) == 0)
@@ -552,6 +555,11 @@ void sched_threadSignalWaitMaskClear(void)
     current_thread->sig_wait_mask = 0x0;
 }
 
+/**
+ * Clear selected signals
+ * @param thread_id Thread id
+ * @param signal    Signals to be cleared.
+ */
 int32_t sched_threadSignalClear(osThreadId thread_id, int32_t signal)
 {
     int32_t prev_signals;
@@ -565,16 +573,31 @@ int32_t sched_threadSignalClear(osThreadId thread_id, int32_t signal)
     return prev_signals;
 }
 
+/**
+ * Get signals of the currently running thread
+ * @return Signals
+ */
 int32_t sched_threadSignalGetCurrent(void)
 {
     return current_thread->signals;
 }
 
+/**
+ * Get signals of a thread
+ * @param thread_id Thread id.
+ * @return          Signals of the selected thread.
+ */
 int32_t sched_threadSignalGet(osThreadId thread_id)
 {
     return task_table[thread_id].signals;
 }
 
+/**
+ * Wait for a signal(s)
+ * @param signals   Signals that can woke-up the suspended thread.
+ * @millisec        Timeout if selected signal is not invoken.
+ * @return          Event that triggered resume back to running state.
+ */
 osEvent * sched_threadSignalWait(int32_t signals, uint32_t millisec)
 {
     current_thread->event.status = osEventTimeout;
@@ -598,3 +621,11 @@ osEvent * sched_threadSignalWait(int32_t signals, uint32_t millisec)
      * as event is returned as a pointer. */
     return (osEvent *)(&(current_thread->event));
 }
+
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */

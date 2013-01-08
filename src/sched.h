@@ -25,7 +25,17 @@
 
 extern volatile uint32_t sched_enabled;
 
-/** Thread info struct */
+/** Thread info struct
+ *
+* inh : Parent and child thread relations
+ * --------------------------------------
+ * + first_child is a parent thread attribute containing address to a first
+ *   child of the parent thread
+ * + parent is a child thread attribute containing address to a parent
+ *   thread of the child thread
+ * + next_child is a child thread attribute containing address of a next
+ *   child node of the common parent thread
+ */
 typedef struct {
     void * sp;                  /*!< Stack pointer */
     uint32_t flags;             /*!< Status flags */
@@ -43,16 +53,6 @@ typedef struct {
     } inh;                      /*!< Thread inheritance; Parent and child thread
                                  *   pointers. */
 } threadInfo_t;
-
-/* Parent and child thread relations
- * =================================
- * + first_child is a parent thread attribute containing address to a first
- *   child of the parent thread
- * + parent is a child thread attribute containing address to a parent
- *   thread of the child thread
- * + next_child is a child thread attribute containing address of a next
- *   child node of the common parent thread
- */
 
 /* Public function prototypes ------------------------------------------------*/
 void sched_init(void);
