@@ -28,6 +28,11 @@
     #error Core is not selected by the compiler.
 #endif
 
+/** @todo SysTick should be wrapped by hal_mcu */
+#if configMCU_MODEL == MCU_MODEL_STM32F0
+#include "stm32f0xx.h"
+#endif
+
 /* Exception return values */
 #define HAND_RETURN         0xFFFFFFF1u /*!< Return to handler mode using the MSP. */
 #define MAIN_RETURN         0xFFFFFFF9u /*!< Return to thread mode using the MSP. */
