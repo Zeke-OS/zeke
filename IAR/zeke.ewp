@@ -30,7 +30,7 @@
         <option>
           <name>Variant</name>
           <version>20</version>
-          <state>34</state>
+          <state>14</state>
         </option>
         <option>
           <name>GEndianMode</name>
@@ -99,7 +99,7 @@
         </option>
         <option>
           <name>OGChipSelectEditMenu</name>
-          <state>STM32F051x8	ST STM32F051x8</state>
+          <state>STR912FAx44	ST STR912FAx44</state>
         </option>
         <option>
           <name>GenLowLevelInterface</name>
@@ -107,7 +107,7 @@
         </option>
         <option>
           <name>GEndianModeBE</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>OGBufferedTerminalOutput</name>
@@ -138,16 +138,16 @@
         <option>
           <name>GFPUCoreSlave</name>
           <version>20</version>
-          <state>34</state>
+          <state>14</state>
         </option>
         <option>
           <name>GBECoreSlave</name>
           <version>20</version>
-          <state>34</state>
+          <state>14</state>
         </option>
         <option>
           <name>OGUseCmsis</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>OGUseCmsisDspLib</name>
@@ -169,7 +169,6 @@
         <option>
           <name>CCDefines</name>
           <state>USE_STDPERIPH_DRIVER</state>
-          <state>STM32F0XX</state>
         </option>
         <option>
           <name>CCPreprocFile</name>
@@ -298,9 +297,6 @@
         </option>
         <option>
           <name>CCIncludePath2</name>
-          <state>$PROJ_DIR$\..\Libraries\STM32F0xx\CMSIS</state>
-          <state>$PROJ_DIR$\..\Libraries\STM32F0xx\Drivers\inc</state>
-          <state>$PROJ_DIR$\..\Libraries\Discovery</state>
           <state>$PROJ_DIR$\..\src</state>
           <state>$PROJ_DIR$\..\src\hal</state>
           <state>$PROJ_DIR$\..\include</state>
@@ -320,7 +316,7 @@
         </option>
         <option>
           <name>IProcessorMode2</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>CCOptLevel</name>
@@ -1851,129 +1847,9 @@
     <name>hal</name>
     <group>
       <name>CMSIS</name>
-      <file>
-        <name>$PROJ_DIR$\..\Libraries\STM32F0xx\CMSIS\startup_stm32f0xx.s</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Libraries\STM32F0xx\CMSIS\stm32f0xx.h</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Libraries\STM32F0xx\CMSIS\stm32f0xx_conf.h</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Libraries\STM32F0xx\CMSIS\system_stm32f0xx.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Libraries\STM32F0xx\CMSIS\system_stm32f0xx.h</name>
-      </file>
-    </group>
-    <group>
-      <name>Discovery</name>
-      <file>
-        <name>$PROJ_DIR$\..\Libraries\Discovery\stm32f0_discovery.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Libraries\Discovery\stm32f0_discovery.h</name>
-      </file>
     </group>
     <group>
       <name>Drivers</name>
-      <file>
-        <name>$PROJ_DIR$\..\Libraries\STM32F0xx\Drivers\src\stm32f0xx_adc.c</name>
-        <excluded>
-          <configuration>Debug</configuration>
-        </excluded>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Libraries\STM32F0xx\Drivers\src\stm32f0xx_cec.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Libraries\STM32F0xx\Drivers\src\stm32f0xx_comp.c</name>
-        <excluded>
-          <configuration>Debug</configuration>
-        </excluded>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Libraries\STM32F0xx\Drivers\src\stm32f0xx_crc.c</name>
-        <excluded>
-          <configuration>Debug</configuration>
-        </excluded>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Libraries\STM32F0xx\Drivers\src\stm32f0xx_dac.c</name>
-        <excluded>
-          <configuration>Debug</configuration>
-        </excluded>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Libraries\STM32F0xx\Drivers\src\stm32f0xx_dbgmcu.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Libraries\STM32F0xx\Drivers\src\stm32f0xx_dma.c</name>
-        <excluded>
-          <configuration>Debug</configuration>
-        </excluded>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Libraries\STM32F0xx\Drivers\src\stm32f0xx_exti.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Libraries\STM32F0xx\Drivers\src\stm32f0xx_flash.c</name>
-        <excluded>
-          <configuration>Debug</configuration>
-        </excluded>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Libraries\STM32F0xx\Drivers\src\stm32f0xx_gpio.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Libraries\STM32F0xx\Drivers\src\stm32f0xx_i2c.c</name>
-        <excluded>
-          <configuration>Debug</configuration>
-        </excluded>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Libraries\STM32F0xx\Drivers\src\stm32f0xx_iwdg.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Libraries\STM32F0xx\Drivers\src\stm32f0xx_misc.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Libraries\STM32F0xx\Drivers\src\stm32f0xx_pwr.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Libraries\STM32F0xx\Drivers\src\stm32f0xx_rcc.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Libraries\STM32F0xx\Drivers\src\stm32f0xx_rtc.c</name>
-        <excluded>
-          <configuration>Debug</configuration>
-        </excluded>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Libraries\STM32F0xx\Drivers\src\stm32f0xx_spi.c</name>
-        <excluded>
-          <configuration>Debug</configuration>
-        </excluded>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Libraries\STM32F0xx\Drivers\src\stm32f0xx_syscfg.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Libraries\STM32F0xx\Drivers\src\stm32f0xx_tim.c</name>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Libraries\STM32F0xx\Drivers\src\stm32f0xx_usart.c</name>
-        <excluded>
-          <configuration>Debug</configuration>
-        </excluded>
-      </file>
-      <file>
-        <name>$PROJ_DIR$\..\Libraries\STM32F0xx\Drivers\src\stm32f0xx_wwdg.c</name>
-        <excluded>
-          <configuration>Debug</configuration>
-        </excluded>
-      </file>
     </group>
     <file>
       <name>$PROJ_DIR$\..\src\hal\cortex_m.c</name>

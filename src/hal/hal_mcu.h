@@ -34,6 +34,8 @@
 #include "stm32f0xx.h" /* Library developed by ST
                     (Licensed under MCD-ST Liberty SW License Agreement V2) */
 #include "stm32f0_interrupt.h"
+#elif configMCU_MODEL == MCU_MODEL_STR912F
+#error Not yet implemented support for STR912F
 #else
     #error No hardware support for the selected MCU model.
 #endif

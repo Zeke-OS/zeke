@@ -56,6 +56,9 @@ uint32_t syscall(int type, void * p);
 
 #ifdef __ARM_PROFILE_M__
 #include "cortex_m.h"
+#elif __CPU_MODE__ == 2 /* ARM mode */
+/* Assuming ARM9 */
+#error Not yet implemented
 #elif PU_TEST_BUILD == 1
 #include "pu_test_core.h"
 #else
