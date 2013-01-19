@@ -24,6 +24,12 @@ Key features
 - Almost CMSIS-RTOS compliant
 
 
+News
+----
+
+- ARM9 port is under development and it is prioritized over other tasks
+
+
 License
 -------
 
