@@ -11,8 +11,8 @@
   */
 
 #pragma once
-#ifndef HAL_CORE_H
-#define HAL_CORE_H
+#ifndef HAL_MCU_H
+#define HAL_MCU_H
 
 #include "kernel_config.h"
 
@@ -26,6 +26,11 @@
 
 #endif
 
+/**
+ *  Set flag_kernel_tick to 1 if tick is now else 0.
+ */
+inline void eval_kernel_tick(void);
+
 #ifndef configMCU_MODEL
     #error MCU model not selected.
 #endif
@@ -34,13 +39,28 @@
 #include "stm32f0xx.h" /* Library developed by ST
                     (Licensed under MCD-ST Liberty SW License Agreement V2) */
 #include "stm32f0_interrupt.h"
+
+inline void eval_kernel_tick(void)
+{
+    if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) {
+        flag_kernel_tick = 1;
+    } else {
+        flag_kernel_tick = 0;
+    }
+}
+
 #elif configMCU_MODEL == MCU_MODEL_STR912F
+/** @todo Not implemented yet */
+inline void eval_kernel_tick(void)
+{
+}
+
 #error Not yet implemented support for STR912F
 #else
     #error No hardware support for the selected MCU model.
 #endif
 
-#endif /* HAL_CORE_H */
+#endif /* HAL_MCU_H */
 
 /**
   * @}

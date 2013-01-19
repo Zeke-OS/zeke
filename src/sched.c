@@ -23,6 +23,7 @@
 #include "heap.h"
 #include "timers.h"
 #include "hal_core.h"
+#include "hal_mcu.h"
 #include "kernel.h"
 #include "sched.h"
 

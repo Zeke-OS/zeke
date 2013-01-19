@@ -28,11 +28,6 @@
     #error Core is not selected by the compiler.
 #endif
 
-/** @todo SysTick should be wrapped by hal_mcu */
-#if configMCU_MODEL == MCU_MODEL_STM32F0
-#include "stm32f0xx.h"
-#endif
-
 /* Exception return values */
 #define HAND_RETURN         0xFFFFFFF1u /*!< Return to handler mode using the MSP. */
 #define MAIN_RETURN         0xFFFFFFF9u /*!< Return to thread mode using the MSP. */
@@ -65,22 +60,12 @@ typedef struct {
 } sw_stack_frame_t;
 
 /* Inlined core functions */
-inline void eval_kernel_tick(void);
 inline void save_context(void);
 inline void load_context(void);
 inline void * rd_stack_ptr(void);
 inline void * rd_thread_stack_ptr(void);
 inline void wr_thread_stack_ptr(void * ptr);
 
-
-inline void eval_kernel_tick(void)
-{
-    if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) {
-        flag_kernel_tick = 1;
-    } else {
-        flag_kernel_tick = 0;
-    }
-}
 
 /**
  * Request immediate context switch
