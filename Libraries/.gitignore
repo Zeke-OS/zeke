@@ -2,4 +2,4 @@
 
 # Whitelisted files
 !.gitignore
-!libraries.txt
+!README.md
