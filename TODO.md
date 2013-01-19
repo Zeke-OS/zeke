@@ -1,21 +1,22 @@
 TODO
 ====
 
-- Implement mutex and semaphores
-- Implement memory pools
-- Timers and kernel time functions
-- Implement system that calculates actual number systicks consumed by
+- [ ] ARM9 port
+- [ ] Implement mutex and semaphores
+- [ ] Implement memory pools
+- [ ] Timers and kernel time functions
+- [ ] Implement system that calculates actual number systicks consumed by
   the scheduler (and compare with others as well like for example idle task)
-- Events are not queued atm, do we need queuing?
-- Create kernel library and example program as their own projects
-- Implement other messaging services
-- Use thread parent<->client relationship to improve scheduling
-- Implement threading support for DLIB
-- OR implement own DLIB and disable IAR's implementation on project settings
-- Add support for low power modes for idle taks
-- Thread related functions and variables could be moved from sched.c to its
+- [ ] Events are not queued atm, do we need queuing?
+- [ ] Create kernel library and example program as their own projects
+- [ ] Implement other messaging services
+- [ ] Use thread parent<->client relationship to improve scheduling
+- [ ] Implement threading support for DLIB
+- [ ] OR implement own DLIB and disable IAR's implementation on project settings
+- [ ] Add support for low power modes for idle taks
+- [ ] Thread related functions and variables could be moved from sched.c to its
   own file, although this would although require a lot of refactoring
-- Load ropi applications from storage to RAM and execute in a new thread
+- [ ] Load ropi applications from storage to RAM and execute in a new thread
 
 
 KNOWN ISSUES
