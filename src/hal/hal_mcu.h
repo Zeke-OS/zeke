@@ -26,6 +26,8 @@
 
 #endif
 
+extern uint32_t flag_kernel_tick;
+
 /**
  *  Set flag_kernel_tick to 1 if tick is now else 0.
  */

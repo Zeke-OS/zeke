@@ -21,6 +21,7 @@
 #include "sched.h"
 #include "syscall.h"
 #include "hal_core.h"
+#include "stm32f0xx.h"
 #include "stm32f0_interrupt.h"
 
 /**

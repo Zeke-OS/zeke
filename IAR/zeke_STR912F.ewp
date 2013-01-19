@@ -1852,22 +1852,13 @@
       <name>Drivers</name>
     </group>
     <file>
-      <name>$PROJ_DIR$\..\src\hal\cortex_m.c</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\src\hal\cortex_m.h</name>
+      <name>$PROJ_DIR$\..\src\hal\arm9.h</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\src\hal\hal_core.h</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\src\hal\hal_mcu.h</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\src\hal\stm32f0_interrupt.c</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\src\hal\stm32f0_interrupt.h</name>
     </file>
   </group>
   <file>

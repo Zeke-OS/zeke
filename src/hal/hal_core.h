@@ -26,8 +26,6 @@
 
 #include "kernel.h"
 
-extern uint32_t flag_kernel_tick;
-
 /**
  * Init hw stack frame
  * @param thread_def Thread definitions
@@ -56,9 +54,8 @@ uint32_t syscall(int type, void * p);
 
 #ifdef __ARM_PROFILE_M__
 #include "cortex_m.h"
-#elif __CPU_MODE__ == 2 /* ARM mode */
-/* Assuming ARM9 */
-#error Not yet implemented
+#elif __CPU_MODE__ == 2 /* ARM mode: Assuming ARM9 */
+#include "arm9.h"
 #elif PU_TEST_BUILD == 1
 #include "pu_test_core.h"
 #else
