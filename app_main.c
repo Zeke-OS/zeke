@@ -8,7 +8,6 @@
  *******************************************************************************
  */
 
-#include "stm32f0_discovery.h"
 #include "kernel.h"
 #include "app_main.h"
 
@@ -33,9 +32,6 @@ osThreadId th2_id;
   */
 void app_main(void)
 {
-    STM_EVAL_LEDInit(LED3);
-    STM_EVAL_PBInit(BUTTON_USER, BUTTON_MODE_GPIO);
-
     createThreads();
     osDelay(osWaitForever);
 }
@@ -66,11 +62,11 @@ void createThreads(void)
 void thread_input(void const * arg)
 {
     while (1) {
-        if(STM_EVAL_PBGetState(BUTTON_USER)== SET)
+        /*if(STM_EVAL_PBGetState(BUTTON_USER)== SET)
         {
             osSignalSet(th2_id, 1);
             osDelay(1000);
-        }
+        }*/
     }
 }
 
@@ -78,7 +74,7 @@ void thread_led(void const * arg)
 {
     volatile osEvent evnt;
     while(1) {
-        STM_EVAL_LEDToggle(LED3);
+        //STM_EVAL_LEDToggle(LED3);
         evnt = osWait(osWaitForever);
         z = (uint32_t)evnt.status;
     }

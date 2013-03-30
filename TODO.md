@@ -1,9 +1,13 @@
 TODO
 ====
 
-- ARM9 port
+- ARM9/STM912F port
+-- startup file/interrupt vecor
+-- Interrupt controller specific code (STM912F)
+-- ARM9 specific port code neeeds to be updated
+-- Testing on target hardware
 - Implement mutex and semaphores
--Implement memory pools
+- Implement memory pools
 - Timers and kernel time functions
 - Implement system that calculates actual number systicks consumed by
   the scheduler (and compare with others as well like for example idle task)

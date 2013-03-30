@@ -2,7 +2,10 @@
 
 <workspace>
   <project>
-    <path>$WS_DIR$\zeke.ewp</path>
+    <path>$WS_DIR$\zeke_STM32F0.ewp</path>
+  </project>
+  <project>
+    <path>$WS_DIR$\zeke_STR912F.ewp</path>
   </project>
   <batchBuild/>
 </workspace>

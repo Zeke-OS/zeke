@@ -14,13 +14,14 @@
 
 /* Supported MCU models */
 #define MCU_MODEL_STM32F0       1
+#define MCU_MODEL_STR912F       2
 
 /* Supported load average calculation periods */
 #define SCHED_LAVGPERIOD_5SEC   5
 #define SCHED_LAVGPERIOD_11SEC  11
 
 /* Kernel configuration */
-#define configMCU_MODEL         MCU_MODEL_STM32F0
+#define configMCU_MODEL         MCU_MODEL_STR912F
 #define configSCHED_MAX_THREADS 10      /*!< Maximum number of threads */
 #define configSCHED_FREQ        100u    /*!< Scheduler frequency in Hz */
 #define configHEAP_BOUNDS_CHECK 0       /*!< Enable or disable heap bounds check */

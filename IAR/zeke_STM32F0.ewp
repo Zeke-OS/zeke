@@ -17,15 +17,15 @@
         <debug>1</debug>
         <option>
           <name>ExePath</name>
-          <state>Debug\Exe</state>
+          <state>Debug_Stmf0\Exe</state>
         </option>
         <option>
           <name>ObjPath</name>
-          <state>Debug\Obj</state>
+          <state>Debug_Stmf0\Obj</state>
         </option>
         <option>
           <name>ListPath</name>
-          <state>Debug\List</state>
+          <state>Debug_Stmf0\List</state>
         </option>
         <option>
           <name>Variant</name>
@@ -579,7 +579,7 @@
         </option>
         <option>
           <name>OOCOutputFile</name>
-          <state>zeke.srec</state>
+          <state>zeke_STM32F0.srec</state>
         </option>
         <option>
           <name>OOCCommandLineProducer</name>

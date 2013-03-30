@@ -2,7 +2,7 @@
  *******************************************************************************
  * @file    cortex_m.h
  * @author  Olli Vanhoja
- * @brief   Hardware Abstraction Layer for Cortex-M
+ * @brief   Hardware Abstraction Layer for ARM9
  *******************************************************************************
  */
 
@@ -15,17 +15,14 @@
   */
 
 #pragma once
-#ifndef CORTEX_M_H
-#define CORTEX_M_H
+#ifndef ARM9_H
+#define ARM9_H
 
 #include "kernel.h"
 #include "hal_core.h"
 
-#ifndef __ARM_PROFILE_M__
-    #error Only ARM Cortex-M profile is currently supported.
-#endif
-#ifndef __CORE__
-    #error Core is not selected by the compiler.
+#ifndef __CPU_MODE__ == 2
+    #error Thumb mode is not supported for ARM9 in zeke
 #endif
 
 /* Exception return values */
@@ -84,32 +81,12 @@ inline void wr_thread_stack_ptr(void * ptr);
 inline void save_context(void)
 {
     volatile uint32_t scratch;
-#if __CORE__ == __ARM6M__
-    asm volatile ("MRS   %0,  psp\n"
-                  "SUBS  %0,  %0, #32\n"
-                  "MSR   psp, %0\n"         /* This is the address that will be
-                                             * used by rd_thread_stack_ptr(void)
-                                             */
-                  "ISB\n"
-                  "STMIA %0!, {r4-r7}\n"
-                  "PUSH  {r4-r7}\n"         /* Push original register values so
-                                             * we don't lost them */
-                  "MOV   r4,  r8\n"
-                  "MOV   r5,  r9\n"
-                  "MOV   r6,  r10\n"
-                  "MOV   r7,  r11\n"
-                  "STMIA %0!, {r4-r7}\n"
-                  "POP   {r4-r7}\n"         /* Pop them back */
-                  : "=r" (scratch));
-#elif __CORE__ == __ARM7M__
+
     asm volatile ("MRS   %0,  psp\n"
                   "STMDB %0!, {r4-r11}\n"
                   "MSR   psp, %0\n"
                   "ISB\n"
                   : "=r" (scratch));
-#else
-    #error Selected CORE not supported
-#endif
 }
 
 /**
@@ -118,28 +95,12 @@ inline void save_context(void)
 inline void load_context(void)
 {
     volatile uint32_t scratch;
-#if __CORE__ == __ARM6M__
-    asm volatile ("MRS   %0,  psp\n"
-                  "ADDS  %0,  %0, #16\n"      /* Move to the high registers */
-                  "LDMIA %0!, {r4-r7}\n"
-                  "MOV   r8,  r4\n"
-                  "MOV   r9,  r5\n"
-                  "MOV   r10, r6\n"
-                  "MOV   r11, r7\n"
-                  "MSR   psp, %0\n"           /* Store the new top of the stack */
-                  "ISB\n"
-                  "SUBS  r0,  r0, #32\n"      /* Go back to the low registers */
-                  "LDMIA %0!, {r4-r7}\n"
-                  : "=r" (scratch));
-#elif __CORE__ == __ARM7M__
+
     asm volatile ("MRS   %0,  psp\n"
                   "LDMFD %0!, {r4-r11}\n"
                   "MSR   psp, %0\n"
                   "ISB\n"
                   : "=r" (scratch));
-#else
-    #error Selected CORE not supported
-#endif
 }
 
 /**
@@ -173,7 +134,7 @@ inline void wr_thread_stack_ptr(void * ptr)
                   : : "r" (ptr));
 }
 
-#endif /* CORTEX_M_H */
+#endif /* ARM9_H */
 
 /**
   * @}
