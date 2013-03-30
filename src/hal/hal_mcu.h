@@ -22,8 +22,6 @@
 
 #ifdef PU_TEST_BUILD
 #undef configMCU_MODEL
-#else /* Normal buil */
-
 #endif
 
 extern uint32_t flag_kernel_tick;
@@ -33,6 +31,7 @@ extern uint32_t flag_kernel_tick;
  */
 inline void eval_kernel_tick(void);
 
+#ifndef PU_TEST_BUILD
 #ifndef configMCU_MODEL
     #error MCU model not selected.
 #endif
@@ -62,6 +61,7 @@ inline void eval_kernel_tick(void)
     #error No hardware support for the selected MCU model.
 #endif
 
+#endif /* PU_TEST_BUILD */
 #endif /* HAL_MCU_H */
 
 /**

@@ -23,7 +23,7 @@ int my_timers_add(int thread_id, os_timer_type type, uint32_t millisec) { return
 
 /* Override timers_release */
 void timers_release(int tim);
-void timers_release(int tim) { };
+void timers_release(int tim) { }
 
 /* Override del_thread */
 void del_thread(void);
@@ -252,12 +252,12 @@ static char * test_sched_threadWait_infiniteInput()
 /* ALL TESTS *****************************************************************/
 
 static void all_tests() {
-    pu_run_test(test_sched_ThreadCreate);
-    pu_run_test(test_sched_thread_set_inheritance);
-    pu_run_test(test_sched_threadDelay_positiveInput);
-    pu_run_test(test_sched_threadDelay_infiniteInput);
-    pu_run_test(test_sched_threadWait_positiveInput);
-    pu_run_test(test_sched_threadWait_infiniteInput);
+    pu_def_test(test_sched_ThreadCreate, PU_RUN);
+    pu_def_test(test_sched_thread_set_inheritance, PU_RUN);
+    pu_def_test(test_sched_threadDelay_positiveInput, PU_RUN);
+    pu_def_test(test_sched_threadDelay_infiniteInput, PU_RUN);
+    pu_def_test(test_sched_threadWait_positiveInput, PU_RUN);
+    pu_def_test(test_sched_threadWait_infiniteInput, PU_RUN);
 }
 
 int main(int argc, char **argv)

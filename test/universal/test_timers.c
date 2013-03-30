@@ -90,9 +90,9 @@ static char * test_timers_add_run_zero_delay()
 /* ALL TESTS *****************************************************************/
 
 static void all_tests() {
-    pu_run_test(test_timers_add_run);
-    pu_run_test(test_timers_add_run_multiple);
-    pu_run_test(test_timers_add_run_zero_delay);
+    pu_def_test(test_timers_add_run, PU_RUN);
+    pu_def_test(test_timers_add_run_multiple, PU_RUN);
+    pu_def_test(test_timers_add_run_zero_delay, PU_RUN);
 }
 
 int main(int argc, char **argv)
