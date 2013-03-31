@@ -1,3 +1,6 @@
 [submodule "test/punit"]
 	path = test/punit
 	url = git@github.com:Ninjaware/punit.git
+[submodule "pttk91"]
+	path = pttk91
+	url = git@github.com:OlliV/pttk91.git

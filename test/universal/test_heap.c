@@ -22,7 +22,7 @@ static char * test_heap_insert(void)
     thread.priority = 1;
 
     heap_insert(&heap, &thread);
-    pu_assert("error, 1 not inserted", heap.a[0]->priority == 1);
+    pu_assert_equal("error, 1 not inserted", heap.a[0]->priority, 1);
 
     return 0;
 }
@@ -38,12 +38,12 @@ static char * test_heap_del_max(void)
 
     heap_insert(&heap, &thread1);
     heap_insert(&heap, &thread2);
-    pu_assert("error, heap doesn't sort inserts correctly",
-              heap.a[0]->priority == 2);
+    pu_assert_equal("error, heap doesn't sort inserts correctly",
+              heap.a[0]->priority, 2);
 
     heap_del_max(&heap);
-    pu_assert("error, wrong key was removed from the heap",
-              heap.a[0]->priority == 1);
+    pu_assert_equal("error, wrong key was removed from the heap",
+              heap.a[0]->priority, 1);
 
     return 0;
 }
@@ -66,8 +66,8 @@ heap_t heap = HEAP_NEW_EMPTY;
     thread3.priority = 15;
     heap_inc_key(&heap, 1);
 
-    pu_assert("error, wrong key on top after heap_inc_key",
-              heap.a[0]->priority == 15);
+    pu_assert_equal("error, wrong key on top after heap_inc_key",
+              heap.a[0]->priority, 15);
 
     return 0;
 }
@@ -87,8 +87,8 @@ heap_t heap = HEAP_NEW_EMPTY;
     thread2.priority = -1;
     heap_dec_key(&heap, 0);
 
-    pu_assert("error, wrong key on top after heap_dec_key",
-              heap.a[0]->priority == 5);
+    pu_assert_equal("error, wrong key on top after heap_dec_key",
+              heap.a[0]->priority, 5);
 
     return 0;
 }

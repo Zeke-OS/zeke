@@ -78,11 +78,12 @@ static char * test_sched_ThreadCreate(void)
     pu_assert("error, incorrect flags set for thread2",
               task_table[2].flags == (SCHED_EXEC_FLAG | SCHED_IN_USE_FLAG));
 
-    pu_assert("error, incorrect ts_counter value for thread1",
-              task_table[1].ts_counter == 0);
+    /* Time slices are now pre calculated to this test is deprecated. */
+    /*pu_assert_equal("error, incorrect ts_counter value for thread1",
+              task_table[1].ts_counter, 0);
 
-    pu_assert("error, incorrect ts_counter value for thread2",
-              task_table[2].ts_counter == 0);
+    pu_assert_equal("error, incorrect ts_counter value for thread2",
+              task_table[2].ts_counter, 0);*/
 
     pu_assert("error, incorrect priority for thread1",
               task_table[1].def_priority == thread_def1.tpriority);
@@ -90,11 +91,11 @@ static char * test_sched_ThreadCreate(void)
     pu_assert("error, incorrect priority for thread2",
               task_table[2].def_priority == thread_def2.tpriority);
 
-    pu_assert("error, priority and def_priority should be equal for thread1",
-              task_table[1].priority == task_table[0].def_priority);
+    pu_assert_equal("error, priority and def_priority should be equal for thread1",
+              task_table[1].priority, task_table[0].def_priority);
 
-    pu_assert("error, priority and def_priority should be equal for thread2",
-              task_table[2].priority == task_table[2].def_priority);
+    pu_assert_equal("error, priority and def_priority should be equal for thread2",
+              task_table[2].priority, task_table[2].def_priority);
 
     return 0;
 }
@@ -130,26 +131,26 @@ static char * test_sched_thread_set_inheritance(void)
     sched_thread_set(4, &thread_def4, NULL, &(task_table[2]));
 
     /* Test parent attributes */
-    pu_assert("error, thread1 should not have parent",
-              task_table[1].inh.parent == NULL);
-    pu_assert("error, thread2's parent should be thread1",
-              task_table[2].inh.parent == &(task_table[1]));
-    pu_assert("error, thread3's parent should be thread1",
-              task_table[3].inh.parent == &(task_table[1]));
-    pu_assert("error, thread4's parent should be thread2",
-              task_table[4].inh.parent == &(task_table[2]));
+    pu_assert_null("error, thread1 should not have parent",
+              task_table[1].inh.parent);
+    pu_assert_ptr_equal("error, thread2's parent should be thread1",
+              task_table[2].inh.parent, &(task_table[1]));
+    pu_assert_ptr_equal("error, thread3's parent should be thread1",
+              task_table[3].inh.parent, &(task_table[1]));
+    pu_assert_ptr_equal("error, thread4's parent should be thread2",
+              task_table[4].inh.parent, &(task_table[2]));
 
     /* Test first_child attributes */
-    pu_assert("error, thread1's first child should be thread2",
-              task_table[1].inh.first_child == &(task_table[2]));
-    pu_assert("error, thread2's first child should be thread4",
-              task_table[2].inh.first_child == &(task_table[4]));
+    pu_assert_ptr_equal("error, thread1's first child should be thread2",
+              task_table[1].inh.first_child, &(task_table[2]));
+    pu_assert_ptr_equal("error, thread2's first child should be thread4",
+              task_table[2].inh.first_child, &(task_table[4]));
 
     /* Test next_child attributes */
-    pu_assert("error, thread2 should have thread3 as a next_child",
-              task_table[2].inh.next_child == &(task_table[3]));
-    pu_assert("error, thread4 should have NULL as a next_child",
-              task_table[4].inh.next_child == NULL);
+    pu_assert_ptr_equal("error, thread2 should have thread3 as a next_child",
+              task_table[2].inh.next_child, &(task_table[3]));
+    pu_assert_null("error, thread4 should have NULL as a next_child",
+              task_table[4].inh.next_child);
 
     return 0;
 }
@@ -215,8 +216,8 @@ static char * test_sched_threadWait_positiveInput()
     sched_thread_set(1, &thread_def1, NULL, NULL);
     current_thread = &(task_table[1]);
 
-    pu_assert("Positive wait timeout value should result osEventTimeout",
-              sched_threadWait(15)->status == osEventTimeout);
+    pu_assert_equal("Positive wait timeout value should result osEventTimeout",
+              sched_threadWait(15)->status, osEventTimeout);
 
     pu_assert("Thread execution flag should be disable",
               (current_thread->flags & SCHED_EXEC_FLAG) == 0);
@@ -237,8 +238,8 @@ static char * test_sched_threadWait_infiniteInput()
     sched_thread_set(1, &thread_def1, NULL, NULL);
     current_thread = &(task_table[1]);
 
-    pu_assert("osWaitForever timeout value should result osEventTimeout",
-              sched_threadWait(osWaitForever)->status == osEventTimeout);
+    pu_assert_equal("osWaitForever timeout value should result osEventTimeout",
+              sched_threadWait(osWaitForever)->status, osEventTimeout);
 
     pu_assert("Thread execution flag should be disabled",
               (current_thread->flags & SCHED_EXEC_FLAG) == 0);
