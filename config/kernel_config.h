@@ -20,15 +20,22 @@
 #define SCHED_LAVGPERIOD_5SEC   5
 #define SCHED_LAVGPERIOD_11SEC  11
 
-/* Kernel configuration */
+/* Kernel configuration ******************************************************/
 #define configMCU_MODEL         MCU_MODEL_STM32F0
+
+/* Scheduler */
 #define configSCHED_MAX_THREADS 10      /*!< Maximum number of threads */
 #define configSCHED_FREQ        100u    /*!< Scheduler frequency in Hz */
+#define configSCHED_LAVG_PER    SCHED_LAVGPERIOD_11SEC
 #define configHEAP_BOUNDS_CHECK 0       /*!< Enable or disable heap bounds check */
+#define configTIMERS_MAX        4   /*!< Maximum number of timers available */
+
+/* APP Main */
 #define configAPP_MAIN_SSIZE    200u    /*!< Stack size for app_main thread */
 #define configAPP_MAIN_PRI      osPriorityNormal /*!< Priority of app_main thread */
-#define configTIMERS_MAX        4
-#define configSCHED_LAVG_PER    SCHED_LAVGPERIOD_11SEC
-/* End of Kernel configuration */
+
+/* Kernel Services */
+#define configPTTK91_VM         1       /*!< PTTK91 kernel virtual machine */
+/* End of Kernel configuration ***********************************************/
 
 #endif

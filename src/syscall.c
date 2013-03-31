@@ -11,7 +11,6 @@
 #include "sched.h"
 #define KERNEL_INTERNAL 1
 #include "syscall.h"
-
 #include "hal_core.h"
 
 #pragma optimize=no_code_motion

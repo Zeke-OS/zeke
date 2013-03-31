@@ -154,5 +154,3 @@ void heap_dec_key(heap_t * heap, int i)
      * to its new value */
     heapify(heap, i);
 }
-
-
