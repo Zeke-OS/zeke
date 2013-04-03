@@ -7,9 +7,13 @@
  *
  *******************************************************************************
  */
-
+#include <stdio.h>
+#include <stdlib.h> // Printing lavgs by using itoa
 #include "kernel.h"
 #include "app_main.h"
+#include "stm32f0_discovery.h"
+#include "lcd.h"
+#include "sched.h" // TODO Remove this
 
 static char stack_1[300];
 static char stack_2[300];
@@ -32,6 +36,9 @@ osThreadId th2_id;
   */
 void app_main(void)
 {
+    STM_EVAL_LEDInit(LED3);
+    STM_EVAL_PBInit(BUTTON_USER, BUTTON_MODE_GPIO);
+
     createThreads();
     osDelay(osWaitForever);
 }
@@ -61,20 +68,31 @@ void createThreads(void)
 
 void thread_input(void const * arg)
 {
+    uint32_t lavg[3];
+    char buff[80];
+
+    lcd_init();
+    lcd_write("Load avg:");
+
     while (1) {
-        /*if(STM_EVAL_PBGetState(BUTTON_USER)== SET)
+        sched_get_loads(lavg);
+        sprintf(buff, "%d %d %d", lavg[0], lavg[1], lavg[2]);
+        lcd_print(0x40, buff);
+
+        if(STM_EVAL_PBGetState(BUTTON_USER) == SET)
         {
             osSignalSet(th2_id, 1);
             osDelay(1000);
-        }*/
+        }
     }
 }
 
 void thread_led(void const * arg)
 {
     volatile osEvent evnt;
+
     while(1) {
-        //STM_EVAL_LEDToggle(LED3);
+        STM_EVAL_LEDToggle(LED3);
         evnt = osWait(osWaitForever);
         z = (uint32_t)evnt.status;
     }

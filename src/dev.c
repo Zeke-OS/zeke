@@ -15,6 +15,8 @@
 #include "dev_config.h"
 #include "dev.h"
 
+/** TODO dev syscalls */
+
 struct dev_driver dev_alloc_table[31];
 
 /**

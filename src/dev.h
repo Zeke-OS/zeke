@@ -23,12 +23,45 @@
 #define DEV_FLAG_NONLOCK    0x04 /*!< Device driver non-lockable. */
 #define DEV_FLAG_FAIL       0x08 /*!< Device driver has failed. */
 
-/* Some macros for use with flags */
+/* Some macros for use with flags *********************************************/
+/**
+ * Test act_flags for DEV_FLAG_INIT.
+ * @param act_flags actual flag values.
+ */
 #define DEV_TFLAG_INIT(act_flags)       ((act_flags & DEV_FLAG_INIT) != 0)
+
+/**
+ * Test act_flags for DEV_FLAG_LOCK.
+ * @param act_flags actual flag values.
+ */
 #define DEV_TFLAG_LOCK(act_flags)       ((act_flags & DEV_FLAG_LOCK) != 0)
+
+/**
+ * Test act_flags for DEV_FLAG_NONLOCK.
+ * @param act_flags actual flag values.
+ */
 #define DEV_TFLAG_NONLOCK(act_flags)    ((act_flags & DEV_FLAG_NONLOCK) != 0)
+
+/**
+ * Test act_flags for DEV_FLAG_FAIL.
+ * @param act_flags actual flag values.
+ */
 #define DEV_TFLAG_FAIL(act_flags)       ((act_flags & DEV_FLAG_FAIL) != 0)
-#define DEV_TFLAGS(act_flags, exp_flags) ((act_flags & exp_flags) != 0)
+
+/**
+ * Test act_flags for any of exp_flags.
+ * @param act_flags actual flag values.
+ * @param exp_flags expected flag values.
+ */
+#define DEV_TFLAGS_ANYOF(act_flags, exp_flags) ((act_flags & exp_flags) != 0)
+
+/**
+ * Test act_flags for all of exp_flags.
+ * @param act_flags actual flag values.
+ * @param exp_flags expected flag values.
+ */
+#define DEV_TFLAGS_ALLOF(act_flags, exp_flags) ((act_flags & exp_flags) == exp_flags)
+/* End of macros **************************************************************/
 
 /**
  * Device driver initialization.
@@ -40,12 +73,12 @@
  * @param bread a function pointer the block device read interface.
  * @param add_flags additional flags (eg. DEV_FLAG_NONLOCK).
  */
-#define DEV_INIT(major, cwrite, cread, bwrite, bread, add_flags) do {   \
-    dev_alloc_table[major].flags = DEV_FLAG_INIT | add_flags            \
-    dev_alloc_table[major].cwrite = cwrite;                             \
-    dev_alloc_table[major].cread = cread;                               \
-    dev_alloc_table[major].bwrite = bwrite;                             \
-    dev_alloc_table[major].bread = bread;                               \
+#define DEV_INIT(major, pcwrite, pcread, pbwrite, pbread, add_flags) do {   \
+    dev_alloc_table[major].flags = DEV_FLAG_INIT | add_flags;               \
+    dev_alloc_table[major].cwrite = pcwrite;                                \
+    dev_alloc_table[major].cread = pcread;                                  \
+    dev_alloc_table[major].bwrite = pbwrite;                                \
+    dev_alloc_table[major].bread = pbread;                                  \
 } while (0)
 
 /**

@@ -11,11 +11,17 @@
 #include "sched.h"
 #include "app_main.h"
 #include "hal_mcu.h"
+#include "dev.h"
 
 static char main_Stack[configAPP_MAIN_SSIZE];
 
 int main(void)
 {
+#if configDEVSUBSYS == 1
+    /* Initialize device drivers */
+    dev_init_all();
+#endif
+
     if (interrupt_init_module()) {
 		while (1);
 	}

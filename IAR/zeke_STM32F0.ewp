@@ -1860,6 +1860,12 @@
       <name>$PROJ_DIR$\..\src\dev.h</name>
     </file>
     <file>
+      <name>$PROJ_DIR$\..\src\dev\devnull.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\src\dev\devnull.h</name>
+    </file>
+    <file>
       <name>$PROJ_DIR$\..\include\devtypes.h</name>
     </file>
   </group>

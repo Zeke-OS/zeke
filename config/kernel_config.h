@@ -28,13 +28,14 @@
 #define configSCHED_FREQ        100u    /*!< Scheduler frequency in Hz */
 #define configSCHED_LAVG_PER    SCHED_LAVGPERIOD_11SEC
 #define configHEAP_BOUNDS_CHECK 0       /*!< Enable or disable heap bounds check */
-#define configTIMERS_MAX        4   /*!< Maximum number of timers available */
+#define configTIMERS_MAX        4       /*!< Maximum number of timers available */
 
 /* APP Main */
 #define configAPP_MAIN_SSIZE    200u    /*!< Stack size for app_main thread */
 #define configAPP_MAIN_PRI      osPriorityNormal /*!< Priority of app_main thread */
 
 /* Kernel Services */
+#define configDEVSUBSYS         1       /*!< Enable device driver subsystem */
 #define configPTTK91_VM         1       /*!< PTTK91 kernel virtual machine */
 /* End of Kernel configuration ***********************************************/
 

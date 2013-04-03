@@ -14,6 +14,9 @@
   * @{
   */
 
+#include "dev.h"
+#include "devnull.h"
+
 void devnull_init(int major)
 {
     DEV_INIT(major, &devnull_cwrite, &devnull_cread, 0, 0, 0);
