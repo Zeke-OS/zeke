@@ -172,7 +172,23 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec)
         req_context_switch();
     }
 
-    /* Retrun a copy of the current state of the event structure */
+    /* Return a copy of the current state of the event structure */
+    return *result;
+}
+
+osEvent osDevWait(dev_t dev, uint32_t millisec)
+{
+    ds_osDevWait_t ds = { dev, millisec };
+    osEvent * result;
+
+    result = (osEvent *)syscall(KERNEL_SYSCALL_SCHED_DEV_WAIT, &ds);
+
+    if (result->status != osErrorResource) {
+        /* Request context switch */
+        req_context_switch();
+    }
+
+    /* Return a copy of the current state of the event structure */
     return *result;
 }
 

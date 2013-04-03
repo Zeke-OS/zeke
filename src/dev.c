@@ -17,6 +17,8 @@
 
 /** TODO dev syscalls */
 /** TODO How can we wait for dev to unlock? osSignalWait? */
+/** TODO dev syscall should first try to access device and then go
+ *       to wait if desired so */
 
 struct dev_driver dev_alloc_table[31];
 

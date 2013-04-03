@@ -14,6 +14,10 @@
 #ifndef SCHED_H
 #define SCHED_H
 
+#if configDEVSUBSYS == 1
+#include "dev.h"
+#endif
+
 #include "kernel.h"
 
 #define SCHED_IN_USE_FLAG   0x00000001u /*!< IN USE FLAG */
@@ -22,6 +26,8 @@
 
 /* When these flags are both set for a it's ok to make a context switch to it. */
 #define SCHED_CSW_OK_FLAGS  (SCHED_EXEC_FLAG | SCHED_IN_USE_FLAG)
+
+#define SCHED_DEV_WAIT_BIT 0x40000000 /*!< Dev wait signal bit. */
 
 extern volatile uint32_t sched_enabled;
 
@@ -39,8 +45,12 @@ extern volatile uint32_t sched_enabled;
 typedef struct {
     void * sp;                  /*!< Stack pointer */
     uint32_t flags;             /*!< Status flags */
-    int32_t signals;            /*!< Signal flags */
+    int32_t signals;            /*!< Signal flags
+                                 * @note signal bit 30 is reserved for dev. */
     int32_t sig_wait_mask;      /*!< Signal wait mask */
+#if configDEVSUBSYS == 1
+    dev_t dev_wait;             /*!< Waiting for dev */
+#endif
     int wait_tim;               /*!< Reference to a timeout timer */
     osEvent event;              /*!< Event struct */
     osPriority def_priority;    /*!< Thread priority */
@@ -77,6 +87,9 @@ void sched_threadSignalWaitMaskClear(void);
 int32_t sched_threadSignalClear(osThreadId thread_id, int32_t signal);
 int32_t sched_threadSignalGetCurrent(void);
 int32_t sched_threadSignalGet(osThreadId thread_id);
+#if configDEVSUBSYS == 1
+osEvent * sched_threadDevWait(dev_t dev, uint32_t millisec);
+#endif
 osEvent * sched_threadSignalWait(int32_t signals, uint32_t millisec);
 
 #endif /* SCHED_H */

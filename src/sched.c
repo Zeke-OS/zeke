@@ -533,18 +533,24 @@ osEvent * sched_threadWait(uint32_t millisec)
  * Yield resource, by using signal, to the next waiting thread in the heap.
  * @param signal signal mask
  */
-void sched_threadSignalYield(int32_t signal)
+void sched_threadSignalYield(int32_t signal, dev_t dev)
 {
-    int i;
+    int i = 0;
 
     /* This is unfortunately O(n) :'(
+     *
      * Optimization possibilities
      * --------------------------
-     * + Create a seaparate and/or optional IO queue system
+     * + Create a seaparate and/or optional IO queue system for dev
      * + Those services using this function should know if any thread is waiting
      *   for the resource
+     *
+     * Problems
+     * --------
+     * + this doesn't always/ever/sometimes catch the hihghest priority thread
+     *   that is waiting for a resource.
      */
-    for (i = 0; i < priority_queue.size; i++) {
+    do {
         if (   ((priority_queue.a[i]->sig_wait_mask & signal)    != 0)
             && ((priority_queue.a[i]->flags & SCHED_IN_USE_FLAG) != 0)
             && ((priority_queue.a[i]->flags & SCHED_NO_SIG_FLAG) == 0)) {
@@ -552,12 +558,15 @@ void sched_threadSignalYield(int32_t signal)
              * prev_signals since no one cares... */
             sched_threadSignalSet(priority_queue.a[i]->id, signal);
             /* We also assume that the signaling was succeed, if it wasn't
-             * we are in deep trouble. But it will never happen! */
+             * we are in deep trouble. But it will never happen!
+             *
+             * NOTE priority_queue.a[i] is invalid by now!
+             */
 
-            return; /* Return from this thread so other threads will keep
-                     * waiting for their turn. */
+            return; /* Return now so other threads will keep waiting for their
+                     * turn. */
         }
-    }
+    } while (++i < priority_queue.size);
 
     return; /* Thre is no threads waiting for this signal,
              * so we wasted a lot of cpu time.             */
@@ -642,6 +651,23 @@ int32_t sched_threadSignalGet(osThreadId thread_id)
 {
     return task_table[thread_id].signals;
 }
+
+#if configDEVSUBSYS == 1
+/**
+ * Wait for device
+ * @param dev Device that should be waited for; 0 = reset;
+ */
+osEvent * sched_threadDevWait(dev_t dev, uint32_t millisec)
+{
+    task_table[thread_id].dev_wait = dev;
+
+    if (dev == 0) {
+        return;
+    }
+
+    return sched_threadSignalWait(SCHED_DEV_WAIT_BIT, millisec);
+}
+#endif
 
 /**
  * Wait for a signal(s)

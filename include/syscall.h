@@ -12,6 +12,10 @@
 #ifndef SYSCALL_H
 #define SYSCALL_H
 
+#if configDEVSUBSYS == 1
+#include "dev.h"
+#endif
+
 #include "kernel.h"
 
 /* List of syscalls */
@@ -28,7 +32,8 @@
 #define KERNEL_SYSCALL_SCHED_SIGNAL_GETCURR     10
 #define KERNEL_SYSCALL_SCHED_SIGNAL_GET         11
 #define KERNEL_SYSCALL_SCHED_SIGNAL_WAIT        12
-#define KERNEL_SYSCALL_SCHED_GET_LOADAVG        30
+#define KERNEL_SYSCALL_SCHED_DEV_WAIT           30
+#define KERNEL_SYSCALL_SCHED_GET_LOADAVG        31
 
 /** Argument struct for KERNEL_SYSCALL_SCHED_THREAD_CREATE */
 typedef struct {
@@ -54,6 +59,13 @@ typedef struct {
     int32_t signals;        /*!< Thread signal(s) to wait */
     uint32_t millisec;      /*!< Timeout in ms */
 } ds_osSignalWait_t;
+
+#if configDEVSUBSYS == 1
+typedef struct {
+    dev_t dev;              /*!< Device */
+    uint32_t millisec;      /*!< Timeout in ms */
+} ds_osDevWait_t;
+#endif
 
 #ifndef PU_TEST_BUILD
 /**
