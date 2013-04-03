@@ -536,6 +536,7 @@ osEvent * sched_threadWait(uint32_t millisec)
 void sched_threadSignalYield(int32_t signal, dev_t dev)
 {
     int i = 0;
+    dev_t temp_dev = (dev_t)DEV_MAJOR(dev);
 
     /* This is unfortunately O(n) :'(
      *
@@ -553,7 +554,9 @@ void sched_threadSignalYield(int32_t signal, dev_t dev)
     do {
         if (   ((priority_queue.a[i]->sig_wait_mask & signal)    != 0)
             && ((priority_queue.a[i]->flags & SCHED_IN_USE_FLAG) != 0)
-            && ((priority_queue.a[i]->flags & SCHED_NO_SIG_FLAG) == 0)) {
+            && ((priority_queue.a[i]->flags & SCHED_NO_SIG_FLAG) == 0)
+            && ((priority_queue.a[i]->dev_wait) == temp_dev)) {
+            priority_queue.a[i]->dev_wait = (dev_t)0;
             /* I feel this is bit wrong but we won't save and return
              * prev_signals since no one cares... */
             sched_threadSignalSet(priority_queue.a[i]->id, signal);
@@ -659,7 +662,7 @@ int32_t sched_threadSignalGet(osThreadId thread_id)
  */
 osEvent * sched_threadDevWait(dev_t dev, uint32_t millisec)
 {
-    task_table[thread_id].dev_wait = dev;
+    task_table[thread_id].dev_wait = (dev_t)DEV_MAJOR(dev);
 
     if (dev == 0) {
         return;

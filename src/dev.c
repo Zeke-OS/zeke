@@ -12,6 +12,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include "sched.h"
 #include "dev_config.h"
 #include "dev.h"
 
@@ -82,7 +83,10 @@ int dev_close(dev_t dev, osThreadId thread_id)
     if (!dev_check_res(dev, thread_id)) {
         return DEV_CERR_NLOCK;
     }
-     dev_alloc_table[DEV_MAJOR(dev)].flags ^= DEV_FLAG_LOCK;
+    dev_alloc_table[DEV_MAJOR(dev)].flags ^= DEV_FLAG_LOCK;
+
+    /* This is bit stupid but might be the easiest way to implement this :/ */
+    sched_threadSignalYield(SCHED_DEV_WAIT_BIT, dev);
 
     return DEV_CERR_OK;
 }
