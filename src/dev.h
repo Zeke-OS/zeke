@@ -73,12 +73,14 @@
  * @param bread a function pointer the block device read interface.
  * @param add_flags additional flags (eg. DEV_FLAG_NONLOCK).
  */
-#define DEV_INIT(major, pcwrite, pcread, pbwrite, pbread, add_flags) do {   \
-    dev_alloc_table[major].flags = DEV_FLAG_INIT | add_flags;               \
-    dev_alloc_table[major].cwrite = pcwrite;                                \
-    dev_alloc_table[major].cread = pcread;                                  \
-    dev_alloc_table[major].bwrite = pbwrite;                                \
-    dev_alloc_table[major].bread = pbread;                                  \
+#define DEV_INIT(major, pcwrite, pcread, pbwrite, pbread, pbseek, add_flags) do\
+{                                                                              \
+    dev_alloc_table[major].flags = DEV_FLAG_INIT | add_flags;                  \
+    dev_alloc_table[major].cwrite = pcwrite;                                   \
+    dev_alloc_table[major].cread = pcread;                                     \
+    dev_alloc_table[major].bwrite = pbwrite;                                   \
+    dev_alloc_table[major].bread = pbread;                                     \
+    dev_alloc_table[major].bseek = pbseek;                                     \
 } while (0)
 
 /**
@@ -94,6 +96,7 @@ struct dev_driver {
     int (*cread)(uint32_t * ch, dev_t dev);
     int (*bwrite)(void * buff, size_t size, size_t count, dev_t dev);
     int (*bread)(void * buff, size_t size, size_t count, dev_t dev);
+    int (*bseek)(int offset, int origin, size_t size, dev_t dev, osThreadId thread_id);
 };
 
 extern struct dev_driver dev_alloc_table[];
@@ -106,6 +109,7 @@ int dev_cwrite(uint32_t ch, dev_t dev, osThreadId thread_id);
 int dev_cread(uint32_t * ch, dev_t dev, osThreadId thread_id);
 int dev_bwrite(const void * buff, size_t size, size_t count, dev_t dev, osThreadId thread_id);
 int dev_bread(void * buff, size_t size, size_t count, dev_t dev, osThreadId thread_id);
+int dev_bseek(int offset, int origin, size_t size, dev_t dev, osThreadId thread_id);
 
 #endif /* DEV_H */
 

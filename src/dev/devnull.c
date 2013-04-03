@@ -19,7 +19,7 @@
 
 void devnull_init(int major)
 {
-    DEV_INIT(major, &devnull_cwrite, &devnull_cread, 0, 0, 0);
+    DEV_INIT(major, &devnull_cwrite, &devnull_cread, 0, 0, 0, DEV_FLAG_NONLOCK);
 }
 
 int devnull_cwrite(uint32_t ch, dev_t dev)

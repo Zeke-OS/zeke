@@ -156,7 +156,7 @@ int dev_cread(uint32_t * ch, dev_t dev, osThreadId thread_id)
  * @param size in bytes of each element to be written.
  * @param count number of elements, each one with a size of size bytes.
  * @param dev device to be written to.
- * @param thread_id id of the thread that is writing the block.
+ * @param thread_id id of the thread that is writing to the block device.
  */
 int dev_bwrite(const void * buff, size_t size, size_t count, dev_t dev, osThreadId thread_id)
 {
@@ -184,7 +184,7 @@ int dev_bwrite(const void * buff, size_t size, size_t count, dev_t dev, osThread
  * @param size in bytes, of each element to be read.
  * @param count number of elements, each one with a size of size bytes.
  * @param dev device to be read from.
- * @param thread_id id of the thread that is reading the block.
+ * @param thread_id id of the thread that is reading the block device.
  */
 int dev_bread(void * buff, size_t size, size_t count, dev_t dev, osThreadId thread_id)
 {
@@ -204,6 +204,19 @@ int dev_bread(void * buff, size_t size, size_t count, dev_t dev, osThreadId thre
     }
 
     return dev_al->bread((void *)buff, size, count, dev);
+}
+
+/**
+ * Seek block device.
+ * TODO Implementation
+ * @param Number of size units to offset from origin.
+ * @param origin Position used as reference for the offset.
+ * @param size in bytes, of each element.
+ * @param thread_id id of the thread that is seeking the block device.
+ */
+int dev_bseek(int offset, int origin, size_t size, dev_t dev, osThreadId thread_id)
+{
+    return DEV_BSK_INTERNAL;
 }
 
 /**

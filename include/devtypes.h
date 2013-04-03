@@ -87,6 +87,18 @@ typedef uint32_t dev_t; /*!< Device identifier */
 #define DEV_BRD_EOF         DEV_COME_EOF /*!< End of file */
 #define DEV_BRD_INTERNAL    DEV_COME_INTERNAL /*!< Device driver internal error */
 
+/* Block device seek error codes */
+#define DEV_BSK_OK          DEV_COME_OK /*!< No error, OK. */
+#define DEV_BSK_NLOCK       DEV_COME_NLOCK /*!< No lock acquired. */
+#define DEV_BSK_NOT         DEV_COME_NDEV /*!< Not a block device. */
+#define DEV_BSK_BUSY        DEV_COME_BUSY /*!< Device busy */
+#define DEV_BSK_EOF         DEV_COME_EOF /*!< End of file */
+#define DEV_BSK_INTERNAL    DEV_COME_INTERNAL /*!< Device driver internal error */
+
+/* Block device seek origin types */
+#define DEV_BSEEK_SET   0 /*!< Block device seek from beginning. */
+#define DEV_BSEEK_CUR   1 /*!< Block device seek from current position */
+
 #endif /* DEVTYPES_H */
 
 /**
