@@ -15,9 +15,8 @@
 #define DEV_H
 
 #include <stdlib.h>
+#include "kernel.h"
 #include "devtypes.h"
-
-extern dev_driver dev_alloc_table[];
 
 #define DEV_FLAG_INIT       0x01 /*!< Device driver initialized. */
 #define DEV_FLAG_LOCK       0x02 /*!< Device driver locked for thread_id_lock. */
@@ -55,22 +54,24 @@ extern dev_driver dev_alloc_table[];
  * at the same time.
  */
 struct dev_driver {
-    unsigned int flags, /*!< Device driver flags */
-    osThreadId thread_id_lock, /*!< Device locked for this thread if
+    unsigned int flags; /*!< Device driver flags */
+    osThreadId thread_id_lock; /*!< Device locked for this thread if
                                 * DEV_FLAG_LOCK is set. */
-    int (*cwrite)(uint32_t ch, dev_t dev),
-    int (*cread)(uint32_t * ch, dev_t dev),
-    int (*bwrite)(void * buff, size_t size, size_t count, dev_t dev),
-    int (*bread)(void * buff, size_t size, size_t count, dev_t dev)
+    int (*cwrite)(uint32_t ch, dev_t dev);
+    int (*cread)(uint32_t * ch, dev_t dev);
+    int (*bwrite)(void * buff, size_t size, size_t count, dev_t dev);
+    int (*bread)(void * buff, size_t size, size_t count, dev_t dev);
 };
 
-void dev_init_all();
+extern struct dev_driver dev_alloc_table[];
+
+void dev_init_all(void);
 int dev_open(dev_t dev, osThreadId thread_id);
 int dev_close(dev_t dev, osThreadId thread_id);
 int dev_check_res(dev_t dev, osThreadId thread_id);
 int dev_cwrite(uint32_t ch, dev_t dev, osThreadId thread_id);
 int dev_cread(uint32_t * ch, dev_t dev, osThreadId thread_id);
-int dev_bwrite(void * buff, size_t size, size_t count, dev_t dev, osThreadId thread_id);
+int dev_bwrite(const void * buff, size_t size, size_t count, dev_t dev, osThreadId thread_id);
 int dev_bread(void * buff, size_t size, size_t count, dev_t dev, osThreadId thread_id);
 
 #endif /* DEV_H */

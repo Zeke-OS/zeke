@@ -10,6 +10,7 @@
   * @{
   */
 
+#include <string.h>
 #include <stdlib.h>
 #include "dev_config.h"
 #include "dev.h"
@@ -19,12 +20,12 @@ struct dev_driver dev_alloc_table[31];
 /**
  * Init device drivers.
  */
-void dev_init_all()
+void dev_init_all(void)
 {
     memset(dev_alloc_table, 0, sizeof(dev_alloc_table));
 
     /* Call initializers */
-    #define DEV_DECLARE2(major, dname) dname##_init(major)
+    #define DEV_DECLARE2(major, dname) dname##_init(major);
     #define DEV_DECLARE(major, dname) DEV_DECLARE2(major, dname)
     #include "dev_config.h"
     #undef DEV_DECLARE
@@ -40,7 +41,7 @@ void dev_init_all()
  */
 int dev_open(dev_t dev, osThreadId thread_id)
 {
-    struct * dev_al = dev_alloc_table[DEV_MAJOR(dev)];
+    struct dev_driver * dev_al = &dev_alloc_table[DEV_MAJOR(dev)];
     unsigned int flags = dev_al->flags;
     unsigned int tmp;
 
@@ -51,7 +52,7 @@ int dev_open(dev_t dev, osThreadId thread_id)
     tmp = flags & (DEV_FLAG_LOCK | DEV_FLAG_NONLOCK | DEV_FLAG_FAIL);
     if (tmp) {
         if (tmp & DEV_FLAG_FAIL)
-            return DEV_ORERR_INTERNAL;
+            return DEV_OERR_INTERNAL;
         if (tmp & DEV_FLAG_NONLOCK)
             return DEV_OERR_NONLOCK;
         if (tmp & DEV_FLAG_LOCK)
@@ -76,7 +77,7 @@ int dev_close(dev_t dev, osThreadId thread_id)
     if (!dev_check_res(dev, thread_id)) {
         return DEV_CERR_NLOCK;
     }
-    dev_al->flags ^= DEV_FLAG_LOCK;
+     dev_alloc_table[DEV_MAJOR(dev)].flags ^= DEV_FLAG_LOCK;
 
     return DEV_CERR_OK;
 }
@@ -89,9 +90,9 @@ int dev_close(dev_t dev, osThreadId thread_id)
  */
 int dev_check_res(dev_t dev, osThreadId thread_id)
 {
-    struct * dev_al = dev_alloc_table[DEV_MAJOR(dev)];
+    struct dev_driver * dev_al = &dev_alloc_table[DEV_MAJOR(dev)];
 
-    return ((DEV_TFLAG_LOCK(dev_al->flags)
+    return (DEV_TFLAG_LOCK(dev_al->flags)
             && (dev_al->thread_id_lock == thread_id));
 }
 
@@ -103,7 +104,7 @@ int dev_check_res(dev_t dev, osThreadId thread_id)
  */
 int dev_cwrite(uint32_t ch, dev_t dev, osThreadId thread_id)
 {
-    struct * dev_al = dev_alloc_table[DEV_MAJOR(dev)];
+    struct dev_driver * dev_al = &dev_alloc_table[DEV_MAJOR(dev)];
 
     if (!dev_check_res(dev, thread_id)
         && !(DEV_TFLAG_NONLOCK(dev_al->flags))) {
@@ -129,7 +130,7 @@ int dev_cwrite(uint32_t ch, dev_t dev, osThreadId thread_id)
  */
 int dev_cread(uint32_t * ch, dev_t dev, osThreadId thread_id)
 {
-    struct * dev_al = dev_alloc_table[DEV_MAJOR(dev)];
+    struct dev_driver * dev_al = &dev_alloc_table[DEV_MAJOR(dev)];
 
     if (!dev_check_res(dev, thread_id)
         && !(DEV_TFLAG_NONLOCK(dev_al->flags))) {
@@ -155,9 +156,9 @@ int dev_cread(uint32_t * ch, dev_t dev, osThreadId thread_id)
  * @param dev device to be written to.
  * @param thread_id id of the thread that is writing the block.
  */
-int dev_bwrite(void * buff, size_t size, int count, dev_t dev, osThreadId thread_id)
+int dev_bwrite(const void * buff, size_t size, size_t count, dev_t dev, osThreadId thread_id)
 {
-    struct * dev_al = dev_alloc_table[DEV_MAJOR(dev)];
+    struct dev_driver * dev_al = &dev_alloc_table[DEV_MAJOR(dev)];
 
     if (!dev_check_res(dev, thread_id)
         && !(DEV_TFLAG_NONLOCK(dev_al->flags))) {
@@ -185,7 +186,7 @@ int dev_bwrite(void * buff, size_t size, int count, dev_t dev, osThreadId thread
  */
 int dev_bread(void * buff, size_t size, size_t count, dev_t dev, osThreadId thread_id)
 {
-    struct * dev_al = dev_alloc_table[DEV_MAJOR(dev)];
+    struct dev_driver * dev_al = &dev_alloc_table[DEV_MAJOR(dev)];
 
     if (!dev_check_res(dev, thread_id)
         && !(DEV_TFLAG_NONLOCK(dev_al->flags))) {

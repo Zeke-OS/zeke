@@ -1,4 +1,5 @@
 #ifndef DEV_CONFIG_H
+#define DEV_CONFIG_H
 /* Include device drivers here */
 #include "devnull.h"
 #else

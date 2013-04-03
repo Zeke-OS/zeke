@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    devnull.h
+ * @file    devnull.c
  * @author  Olli Vanhoja
  * @brief   Device driver for dev null.
  *******************************************************************************
@@ -14,17 +14,20 @@
   * @{
   */
 
-#pragma once
-#ifndef DEVNULL_H
-#define DEVNULL_H
+void devnull_init(int major)
+{
+    DEV_INIT(major, &devnull_cwrite, &devnull_cread, 0, 0, 0);
+}
 
-#include "dev.h"
+int devnull_cwrite(uint32_t ch, dev_t dev)
+{
+    return DEV_CWR_OK;
+}
 
-void devnull_init(int major);
-int devnull_cwrite(uint32_t ch, dev_t dev);
-int devnull_cread(uint32_t * ch, dev_t dev);
-
-#endif /* DEVNULL_H */
+int devnull_cread(uint32_t * ch, dev_t dev)
+{
+    return DEV_CRD_UNDERFLOW;
+}
 
 /**
   * @}
@@ -33,4 +36,3 @@ int devnull_cread(uint32_t * ch, dev_t dev);
 /**
   * @}
   */
-

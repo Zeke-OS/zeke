@@ -303,6 +303,7 @@
           <state>$PROJ_DIR$\..\Libraries\Discovery</state>
           <state>$PROJ_DIR$\..\src</state>
           <state>$PROJ_DIR$\..\src\hal</state>
+          <state>$PROJ_DIR$\..\src\dev</state>
           <state>$PROJ_DIR$\..\include</state>
           <state>$PROJ_DIR$\..\config</state>
         </option>
@@ -1844,7 +1845,22 @@
   <group>
     <name>Config</name>
     <file>
+      <name>$PROJ_DIR$\..\config\dev_config.h</name>
+    </file>
+    <file>
       <name>$PROJ_DIR$\..\config\kernel_config.h</name>
+    </file>
+  </group>
+  <group>
+    <name>dev</name>
+    <file>
+      <name>$PROJ_DIR$\..\src\dev.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\src\dev.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\include\devtypes.h</name>
     </file>
   </group>
   <group>
@@ -1986,6 +2002,12 @@
     </file>
     <file>
       <name>$PROJ_DIR$\..\src\hal\hal_mcu.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\src\hal\lcd.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\src\hal\lcd.h</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\src\hal\stm32f0_interrupt.c</name>

@@ -14,6 +14,8 @@
 #ifndef DEVTYPES_H
 #define DEVTYPES_H
 
+#include <stdint.h>
+
 typedef uint32_t dev_t; /*!< Device identifier */
 
 #define DEV_MINORBITS   27
@@ -22,17 +24,17 @@ typedef uint32_t dev_t; /*!< Device identifier */
 /**
  * Get major number from dev_t.
  */
-#define DEV_MAJOR(dev)  ((unsigned int)((dev) >> MINORBITS))
+#define DEV_MAJOR(dev)  ((unsigned int)((dev) >> DEV_MINORBITS))
 
 /**
  * Get minor number from dev_t.
  */
-#define DEV_MINOR(dev)  ((unsigned int)((dev) & MINORMASK))
+#define DEV_MINOR(dev)  ((unsigned int)((dev) & DEV_MINORMASK))
 
 /**
  * Convert major, minor pair into dev_t.
  */
-#define DEV_MMTODEV(ma, mi) (((ma) << MINORBITS) | (mi))
+#define DEV_MMTODEV(ma, mi) (((ma) << DEV_MINORBITS) | (mi))
 
 #define DEV_COME_OK         0x00
 #define DEV_COME_NLOCK      0x10
@@ -63,7 +65,7 @@ typedef uint32_t dev_t; /*!< Device identifier */
 
 /* Character device read error codes */
 #define DEV_CRD_OK          DEV_COME_OK
-#define DEV_CWR_NLOCK       DEV_COME_NLOCK /*!< No lock acquired. */
+#define DEV_CRD_NLOCK       DEV_COME_NLOCK /*!< No lock acquired. */
 #define DEV_CRD_NOT         DEV_COME_NDEV /*!< Not a character device. */
 #define DEV_CRD_UNDERFLOW   6 /*!< Buffer underflow */
 #define DEV_CRD_INTERNAL    DEV_COME_INTERNAL /*!< Device driver internal error */
