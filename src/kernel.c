@@ -176,6 +176,11 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec)
     return *result;
 }
 
+void osGetLoadAvg(uint32_t loads[3])
+{
+    syscall(KERNEL_SYSCALL_SCHED_GET_LOADAVG, loads);
+}
+
 /**
   * @}
   */

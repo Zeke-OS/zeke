@@ -3,7 +3,7 @@
  * @file    syscall.c
  * @author  Olli Vanhoja
  *
- * @brief   Syscall handler
+ * @brief   Kernel's internal Syscall handler that is called from kernel scope.
  *
  *******************************************************************************
  */
@@ -80,6 +80,9 @@ uint32_t _intSyscall_handler(int type, void * p)
                     ((ds_osSignalWait_t *)p)->millisec
                 );
         break;
+    case KERNEL_SYSCALL_SCHED_GET_LOADAVG:
+        result = NULL;
+        sched_get_loads((uint32_t *)p);
     default:
         result = NULL;
     }

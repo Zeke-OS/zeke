@@ -28,6 +28,7 @@
 #define KERNEL_SYSCALL_SCHED_SIGNAL_GETCURR     10
 #define KERNEL_SYSCALL_SCHED_SIGNAL_GET         11
 #define KERNEL_SYSCALL_SCHED_SIGNAL_WAIT        12
+#define KERNEL_SYSCALL_SCHED_GET_LOADAVG        30
 
 /** Argument struct for KERNEL_SYSCALL_SCHED_THREAD_CREATE */
 typedef struct {
@@ -59,7 +60,7 @@ typedef struct {
   * Make system call
   */
 uint32_t syscall(int type, void * p);
-#endif /* PU_TEST_BUILD*/
+#endif /* PU_TEST_BUILD */
 
 #ifdef KERNEL_INTERNAL
 uint32_t _intSyscall_handler(int type, void * p);

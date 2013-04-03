@@ -8,12 +8,10 @@
  *******************************************************************************
  */
 #include <stdio.h>
-#include <stdlib.h> // Printing lavgs by using itoa
 #include "kernel.h"
 #include "app_main.h"
 #include "stm32f0_discovery.h"
-#include "lcd.h"
-#include "sched.h" // TODO Remove this
+#include "lcd_ctrl.h" // TODO Remove this
 
 static char stack_1[300];
 static char stack_2[300];
@@ -71,13 +69,13 @@ void thread_input(void const * arg)
     uint32_t lavg[3];
     char buff[80];
 
-    lcd_init();
-    lcd_write("Load avg:");
+    lcdc_init();
+    lcdc_write("Load avg:");
 
     while (1) {
-        sched_get_loads(lavg);
+        osGetLoadAvg(lavg);
         sprintf(buff, "%d %d %d", lavg[0], lavg[1], lavg[2]);
-        lcd_print(0x40, buff);
+        lcdc_print(0x40, buff);
 
         if(STM_EVAL_PBGetState(BUTTON_USER) == SET)
         {

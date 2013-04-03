@@ -136,6 +136,7 @@ typedef struct  {
 
 /* ==== Non-CMSIS-RTOS functions ==== */
 /* none atm */
+void osGetLoadAvg(uint32_t loads[3]);
 
 
 
