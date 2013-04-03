@@ -538,6 +538,9 @@ void sched_threadSignalYield(int32_t signal, dev_t dev)
     int i = 0;
     unsigned int temp_dev = DEV_MAJOR(dev);
 
+    /** TODO BAD BAD BAD! sleeping thread is not in queue as expected in this
+     *  function! IO queue must be added! */
+
     /* This is unfortunately O(n) :'(
      *
      * Optimization possibilities
