@@ -61,7 +61,7 @@ void sched_start(void);
 void sched_handler(void);
 
 void sched_thread_set_exec(int thread_id);
-void sched_get_loads(uint32_t * loads);
+void sched_get_loads(uint32_t loads[3]);
 
 /* Functions used by syscalls */
 osThreadId sched_ThreadCreate(osThreadDef_t * thread_def, void * argument);

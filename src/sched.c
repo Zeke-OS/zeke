@@ -187,7 +187,7 @@ static void calc_loads(void)
 /**
  * Return load averages in integer format scaled to 100.
  */
-void sched_get_loads(uint32_t * loads)
+void sched_get_loads(uint32_t loads[3])
 {
     loads[0] = SCALE_LOAD(loadavg[0]);
     loads[1] = SCALE_LOAD(loadavg[1]);
