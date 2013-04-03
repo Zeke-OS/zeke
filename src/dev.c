@@ -16,6 +16,7 @@
 #include "dev.h"
 
 /** TODO dev syscalls */
+/** TODO How can we wait for dev to unlock? osSignalWait? */
 
 struct dev_driver dev_alloc_table[31];
 

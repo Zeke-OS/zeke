@@ -529,6 +529,43 @@ osEvent * sched_threadWait(uint32_t millisec)
 
 /* ==== Signal Management ==== */
 
+/**
+ * Yield resource, by using signal, to the next waiting thread in the heap.
+ * @param signal signal mask
+ */
+void sched_threadSignalYield(int32_t signal)
+{
+    int i;
+
+    /* This is unfortunately O(n) :'(
+     * Optimization possibilities
+     * --------------------------
+     * + Create a seaparate and/or optional IO queue system
+     * + Those services using this function should know if any thread is waiting
+     *   for the resource
+     */
+    for (i = 0; i < priority_queue.size; i++) {
+        if (   ((priority_queue.a[i]->sig_wait_mask & signal)    != 0)
+            && ((priority_queue.a[i]->flags & SCHED_IN_USE_FLAG) != 0)
+            && ((priority_queue.a[i]->flags & SCHED_NO_SIG_FLAG) == 0)) {
+            /* I feel this is bit wrong but we won't save and return
+             * prev_signals since no one cares... */
+            sched_threadSignalSet(priority_queue.a[i]->id, signal);
+            /* We also assume that the signaling was succeed, if it wasn't
+             * we are in deep trouble. But it will never happen! */
+
+            return; /* Return from this thread so other threads will keep
+                     * waiting for their turn. */
+        }
+    }
+
+    return; /* Thre is no threads waiting for this signal,
+             * so we wasted a lot of cpu time.             */
+}
+
+/**
+ * Set signal and wakeup the thread.
+ */
 int32_t sched_threadSignalSet(osThreadId thread_id, int32_t signal)
 {
     int32_t prev_signals;
@@ -539,6 +576,8 @@ int32_t sched_threadSignalSet(osThreadId thread_id, int32_t signal)
     prev_signals = task_table[thread_id].signals;
 
     task_table[thread_id].signals |= signal; /* OR with all signals */
+
+    /* Update event struct */
     task_table[thread_id].event.value.signals = signal; /* Only this signal */
     task_table[thread_id].event.status = osEventSignal;
 
@@ -551,7 +590,6 @@ int32_t sched_threadSignalSet(osThreadId thread_id, int32_t signal)
 
         /* Clear signal wait mask */
         task_table[thread_id].sig_wait_mask = 0x0;
-
 
         /* Set the signaled thread back into execution */
         _sched_thread_set_exec(thread_id, task_table[thread_id].def_priority);

@@ -20,6 +20,10 @@
 
 int lcd_bwrite(void * buff, size_t size, size_t count, dev_t dev);
 
+/**
+ * TODO lcd driver should use its own thread to commit slow write operations to
+ * keep kernel time small. Also lcd should be set busy while thread is executing.
+ */
 void lcd_init(int major)
 {
     lcdc_init();
