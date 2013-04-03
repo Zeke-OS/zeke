@@ -176,6 +176,7 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec)
     return *result;
 }
 
+#if configDEVSUBSYS == 1
 osEvent osDevWait(dev_t dev, uint32_t millisec)
 {
     ds_osDevWait_t ds = { dev, millisec };
@@ -191,6 +192,7 @@ osEvent osDevWait(dev_t dev, uint32_t millisec)
     /* Return a copy of the current state of the event structure */
     return *result;
 }
+#endif
 
 void osGetLoadAvg(uint32_t loads[3])
 {

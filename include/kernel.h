@@ -135,10 +135,12 @@ typedef struct  {
                          * as these should be implemented as syscall services.*/
 
 /* ==== Non-CMSIS-RTOS functions ==== */
+#if configDEVSUBSYS == 1
 /**
  * Wait for device.
  */
 osEvent osDevWait(dev_t dev, uint32_t millisec);
+#endif
 
 /**
  * Get load averages.
