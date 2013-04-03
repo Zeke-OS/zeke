@@ -15,8 +15,8 @@
   */
 
 #pragma once
-#ifndef LCD_H
-#define LCD_H
+#ifndef LCDCTRL_H
+#define LCDCTRL_H
 
 void lcdc_init(void);
 void lcdc_write(const char * c);
@@ -27,7 +27,7 @@ void lcdc_home(void);
 void lcdc_goto(char pos);
 void lcdc_print(char pos, const char * str);
 
-#endif /* LCD_H */
+#endif /* LCDCTRL_H */
 
 
 /**

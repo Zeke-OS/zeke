@@ -37,18 +37,6 @@
 #define  EN_HIGH        GPIO_HIGH(GPIOC, EN)
 #define  EN_LOW         GPIO_LOW(GPIOC, EN)
 #define  EN_TOGGLE      GPIO_TOGGLE(GPIOC, EN)
-#define  D4_HIGH        GPIO_HIGH(GPIOC, D4)
-#define  D4_LOW         GPIO_LOW(GPIOC, D4)
-#define  D4_TOGGLE      GPIO_TOGGLE(GPIOC, D4)
-#define  D5_HIGH        GPIO_HIGH(GPIOC, D5)
-#define  D5_LOW         GPIO_LOW(GPIOC, D5)
-#define  D5_TOGGLE      GPIO_TOGGLE(GPIOC, D5)
-#define  D6_HIGH        GPIO_HIGH(GPIOC, D6)
-#define  D6_LOW         GPIO_LOW(GPIOC, D6)
-#define  D6_TOGGLE      GPIO_TOGGLE(GPIOC, D6)
-#define  D7_HIGH        GPIO_HIGH(GPIOC, D7)
-#define  D7_LOW         GPIO_LOW(GPIOC, D7)
-#define  D7_TOGGLE      GPIO_TOGGLE(GPIOC, D7)
 
 static void lcdc_write_char(char c);
 
