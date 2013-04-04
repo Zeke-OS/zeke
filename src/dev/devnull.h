@@ -21,8 +21,8 @@
 #include "dev.h"
 
 void devnull_init(int major);
-int devnull_cwrite(uint32_t ch, dev_t dev);
-int devnull_cread(uint32_t * ch, dev_t dev);
+int devnull_cwrite(uint32_t ch, osDev_t dev);
+int devnull_cread(uint32_t * ch, osDev_t dev);
 
 #endif /* DEVNULL_H */
 

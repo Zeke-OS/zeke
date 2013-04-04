@@ -18,7 +18,7 @@
 #include "lcd_ctrl.h"
 #include "lcd.h"
 
-int lcd_bwrite(void * buff, size_t size, size_t count, dev_t dev);
+int lcd_bwrite(void * buff, size_t size, size_t count, osDev_t dev);
 
 /**
  * TODO lcd driver should use its own thread to commit slow write operations to
@@ -36,7 +36,7 @@ void lcd_init(int major)
  * - SET & CUR?
  * - Support size & count?
  */
-int lcd_bwrite(void * buff, size_t size, size_t count, dev_t dev)
+int lcd_bwrite(void * buff, size_t size, size_t count, osDev_t dev)
 {
     lcdc_write(buff);
 

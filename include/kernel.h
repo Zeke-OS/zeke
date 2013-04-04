@@ -34,7 +34,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-
+#include "devtypes.h"
 #include "kernel_config.h"
 
 // ==== Enumeration, structures, defines ====
@@ -139,7 +139,7 @@ typedef struct  {
 /**
  * Wait for device.
  */
-osEvent osDevWait(dev_t dev, uint32_t millisec);
+osEvent osDevWait(osDev_t dev, uint32_t millisec);
 #endif
 
 /**

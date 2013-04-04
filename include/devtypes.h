@@ -16,23 +16,23 @@
 
 #include <stdint.h>
 
-typedef uint32_t dev_t; /*!< Device identifier */
+typedef uint32_t osDev_t; /*!< Device identifier */
 
 #define DEV_MINORBITS   27
 #define DEV_MINORMASK   ((1u << MINORBITS) - 1)
 
 /**
- * Get major number from dev_t.
+ * Get major number from osDev_t.
  */
 #define DEV_MAJOR(dev)  ((unsigned int)((dev) >> DEV_MINORBITS))
 
 /**
- * Get minor number from dev_t.
+ * Get minor number from isDev_t.
  */
 #define DEV_MINOR(dev)  ((unsigned int)((dev) & DEV_MINORMASK))
 
 /**
- * Convert major, minor pair into dev_t.
+ * Convert major, minor pair into osDev_t.
  */
 #define DEV_MMTODEV(ma, mi) (((ma) << DEV_MINORBITS) | (mi))
 

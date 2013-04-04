@@ -45,7 +45,7 @@ void dev_init_all(void)
  * @return DEV_OERR_OK (0) if the lock acquired and device access was opened;
  * otherwise DEV_OERR_x
  */
-int dev_open(dev_t dev, osThreadId thread_id)
+int dev_open(osDev_t dev, osThreadId thread_id)
 {
     struct dev_driver * dev_al = &dev_alloc_table[DEV_MAJOR(dev)];
     unsigned int flags = dev_al->flags;
@@ -78,7 +78,7 @@ int dev_open(dev_t dev, osThreadId thread_id)
  * @return DEV_CERR_OK (0) if the device access was closed succesfully;
    otherwise DEV_CERR_x.
  */
-int dev_close(dev_t dev, osThreadId thread_id)
+int dev_close(osDev_t dev, osThreadId thread_id)
 {
     if (!dev_check_res(dev, thread_id)) {
         return DEV_CERR_NLOCK;
@@ -86,7 +86,7 @@ int dev_close(dev_t dev, osThreadId thread_id)
     dev_alloc_table[DEV_MAJOR(dev)].flags ^= DEV_FLAG_LOCK;
 
     /* This is bit stupid but might be the easiest way to implement this :/ */
-    sched_threadSignalYield(SCHED_DEV_WAIT_BIT, dev);
+    sched_threadDevSignal(SCHED_DEV_WAIT_BIT, dev);
 
     return DEV_CERR_OK;
 }
@@ -97,7 +97,7 @@ int dev_close(dev_t dev, osThreadId thread_id)
  * @param thread_id thread that may have the lock for the dev.
  * @return 0 if the device is not locked by thread_id.
  */
-int dev_check_res(dev_t dev, osThreadId thread_id)
+int dev_check_res(osDev_t dev, osThreadId thread_id)
 {
     struct dev_driver * dev_al = &dev_alloc_table[DEV_MAJOR(dev)];
 
@@ -111,7 +111,7 @@ int dev_check_res(dev_t dev, osThreadId thread_id)
  * @param dev device.
  * @param thread_id thread that is writing to the device.
  */
-int dev_cwrite(uint32_t ch, dev_t dev, osThreadId thread_id)
+int dev_cwrite(uint32_t ch, osDev_t dev, osThreadId thread_id)
 {
     struct dev_driver * dev_al = &dev_alloc_table[DEV_MAJOR(dev)];
 
@@ -137,7 +137,7 @@ int dev_cwrite(uint32_t ch, dev_t dev, osThreadId thread_id)
  * @param dev device.
  * @param thread_id thread that is reading the device.
  */
-int dev_cread(uint32_t * ch, dev_t dev, osThreadId thread_id)
+int dev_cread(uint32_t * ch, osDev_t dev, osThreadId thread_id)
 {
     struct dev_driver * dev_al = &dev_alloc_table[DEV_MAJOR(dev)];
 
@@ -165,7 +165,7 @@ int dev_cread(uint32_t * ch, dev_t dev, osThreadId thread_id)
  * @param dev device to be written to.
  * @param thread_id id of the thread that is writing to the block device.
  */
-int dev_bwrite(const void * buff, size_t size, size_t count, dev_t dev, osThreadId thread_id)
+int dev_bwrite(const void * buff, size_t size, size_t count, osDev_t dev, osThreadId thread_id)
 {
     struct dev_driver * dev_al = &dev_alloc_table[DEV_MAJOR(dev)];
 
@@ -193,7 +193,7 @@ int dev_bwrite(const void * buff, size_t size, size_t count, dev_t dev, osThread
  * @param dev device to be read from.
  * @param thread_id id of the thread that is reading the block device.
  */
-int dev_bread(void * buff, size_t size, size_t count, dev_t dev, osThreadId thread_id)
+int dev_bread(void * buff, size_t size, size_t count, osDev_t dev, osThreadId thread_id)
 {
     struct dev_driver * dev_al = &dev_alloc_table[DEV_MAJOR(dev)];
 
@@ -221,7 +221,7 @@ int dev_bread(void * buff, size_t size, size_t count, dev_t dev, osThreadId thre
  * @param size in bytes, of each element.
  * @param thread_id id of the thread that is seeking the block device.
  */
-int dev_bseek(int offset, int origin, size_t size, dev_t dev, osThreadId thread_id)
+int dev_bseek(int offset, int origin, size_t size, osDev_t dev, osThreadId thread_id)
 {
     return DEV_BSK_INTERNAL;
 }

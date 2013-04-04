@@ -92,24 +92,24 @@ struct dev_driver {
     unsigned int flags; /*!< Device driver flags */
     osThreadId thread_id_lock; /*!< Device locked for this thread if
                                 * DEV_FLAG_LOCK is set. */
-    int (*cwrite)(uint32_t ch, dev_t dev);
-    int (*cread)(uint32_t * ch, dev_t dev);
-    int (*bwrite)(void * buff, size_t size, size_t count, dev_t dev);
-    int (*bread)(void * buff, size_t size, size_t count, dev_t dev);
-    int (*bseek)(int offset, int origin, size_t size, dev_t dev, osThreadId thread_id);
+    int (*cwrite)(uint32_t ch, osDev_t dev);
+    int (*cread)(uint32_t * ch, osDev_t dev);
+    int (*bwrite)(void * buff, size_t size, size_t count, osDev_t dev);
+    int (*bread)(void * buff, size_t size, size_t count, osDev_t dev);
+    int (*bseek)(int offset, int origin, size_t size, osDev_t dev, osThreadId thread_id);
 };
 
 extern struct dev_driver dev_alloc_table[];
 
 void dev_init_all(void);
-int dev_open(dev_t dev, osThreadId thread_id);
-int dev_close(dev_t dev, osThreadId thread_id);
-int dev_check_res(dev_t dev, osThreadId thread_id);
-int dev_cwrite(uint32_t ch, dev_t dev, osThreadId thread_id);
-int dev_cread(uint32_t * ch, dev_t dev, osThreadId thread_id);
-int dev_bwrite(const void * buff, size_t size, size_t count, dev_t dev, osThreadId thread_id);
-int dev_bread(void * buff, size_t size, size_t count, dev_t dev, osThreadId thread_id);
-int dev_bseek(int offset, int origin, size_t size, dev_t dev, osThreadId thread_id);
+int dev_open(osDev_t dev, osThreadId thread_id);
+int dev_close(osDev_t dev, osThreadId thread_id);
+int dev_check_res(osDev_t dev, osThreadId thread_id);
+int dev_cwrite(uint32_t ch, osDev_t dev, osThreadId thread_id);
+int dev_cread(uint32_t * ch, osDev_t dev, osThreadId thread_id);
+int dev_bwrite(const void * buff, size_t size, size_t count, osDev_t dev, osThreadId thread_id);
+int dev_bread(void * buff, size_t size, size_t count, osDev_t dev, osThreadId thread_id);
+int dev_bseek(int offset, int origin, size_t size, osDev_t dev, osThreadId thread_id);
 
 #endif /* DEV_H */
 

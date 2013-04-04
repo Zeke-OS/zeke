@@ -62,7 +62,7 @@ typedef struct {
 
 #if configDEVSUBSYS == 1
 typedef struct {
-    dev_t dev;              /*!< Device */
+    osDev_t dev;            /*!< Device */
     uint32_t millisec;      /*!< Timeout in ms */
 } ds_osDevWait_t;
 #endif

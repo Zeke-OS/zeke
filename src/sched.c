@@ -530,55 +530,6 @@ osEvent * sched_threadWait(uint32_t millisec)
 /* ==== Signal Management ==== */
 
 /**
- * Yield resource, by using signal, to the next waiting thread in the heap.
- * @param signal signal mask
- */
-void sched_threadSignalYield(int32_t signal, dev_t dev)
-{
-    int i = 0;
-    unsigned int temp_dev = DEV_MAJOR(dev);
-
-    /** TODO BAD BAD BAD! sleeping thread is not in queue as expected in this
-     *  function! IO queue must be added! */
-
-    /* This is unfortunately O(n) :'(
-     *
-     * Optimization possibilities
-     * --------------------------
-     * + Create a seaparate and/or optional IO queue system for dev
-     * + Those services using this function should know if any thread is waiting
-     *   for the resource
-     *
-     * Problems
-     * --------
-     * + this doesn't always/ever/sometimes catch the hihghest priority thread
-     *   that is waiting for a resource.
-     */
-    do {
-        if (   ((priority_queue.a[i]->sig_wait_mask & signal)    != 0)
-            && ((priority_queue.a[i]->flags & SCHED_IN_USE_FLAG) != 0)
-            && ((priority_queue.a[i]->flags & SCHED_NO_SIG_FLAG) == 0)
-            && ((priority_queue.a[i]->dev_wait) == temp_dev)) {
-            priority_queue.a[i]->dev_wait = 0u;
-            /* I feel this is bit wrong but we won't save and return
-             * prev_signals since no one cares... */
-            sched_threadSignalSet(priority_queue.a[i]->id, signal);
-            /* We also assume that the signaling was succeed, if it wasn't
-             * we are in deep trouble. But it will never happen!
-             *
-             * NOTE priority_queue.a[i] is invalid by now!
-             */
-
-            return; /* Return now so other threads will keep waiting for their
-                     * turn. */
-        }
-    } while (++i < priority_queue.size);
-
-    return; /* Thre is no threads waiting for this signal,
-             * so we wasted a lot of cpu time.             */
-}
-
-/**
  * Set signal and wakeup the thread.
  */
 int32_t sched_threadSignalSet(osThreadId thread_id, int32_t signal)
@@ -612,6 +563,47 @@ int32_t sched_threadSignalSet(osThreadId thread_id, int32_t signal)
 
     return prev_signals;
 }
+
+#if configDEVSUBSYS == 1
+/**
+ * Send a signal that a dev resource is free now.
+ * @param signal signal mask
+ */
+void sched_threadDevSignal(int32_t signal, osDev_t dev)
+{
+    int i;
+    unsigned int temp_dev = DEV_MAJOR(dev);
+
+    /* This is unfortunately O(n) :'(
+     * TODO Some prioritizing would be very nice at least.
+     *      Possibly if we would just add waiting threads first to a
+     *      priority queue? Is it a waste of cpu time? It isn't actually
+     *      a quaranteed way to remove starvation so starvation would be
+     *      still there :/
+     */
+    i = 0;
+    do {
+        if (   ((task_table[i].sig_wait_mask & signal)    != 0)
+            && ((task_table[i].flags & SCHED_IN_USE_FLAG) != 0)
+            && ((task_table[i].flags & SCHED_NO_SIG_FLAG) == 0)
+            && ((task_table[i].dev_wait) == temp_dev)) {
+            task_table[i].dev_wait = 0u;
+            /* I feel this is bit wrong but we won't save and return
+             * prev_signals since no one cares... */
+            sched_threadSignalSet(task_table[i].id, signal);
+            /* We also assume that the signaling was succeed, if it wasn't we
+             * are in deep trouble. But it will never happen!
+             */
+
+            return; /* Return now so other threads will keep waiting for their
+                     * turn. */
+        }
+    } while (++i < configSCHED_MAX_THREADS);
+
+    return; /* Thre is no threads waiting for this signal,
+             * so we wasted a lot of cpu time.             */
+}
+#endif
 
 /**
  * Clear signal wait mask of the current thread
@@ -658,23 +650,6 @@ int32_t sched_threadSignalGet(osThreadId thread_id)
     return task_table[thread_id].signals;
 }
 
-#if configDEVSUBSYS == 1
-/**
- * Wait for device
- * @param dev Device that should be waited for; 0 = reset;
- */
-osEvent * sched_threadDevWait(dev_t dev, uint32_t millisec)
-{
-    task_table[thread_id].dev_wait = DEV_MAJOR(dev);
-
-    if (dev == 0) {
-        return;
-    }
-
-    return sched_threadSignalWait(SCHED_DEV_WAIT_BIT, millisec);
-}
-#endif
-
 /**
  * Wait for a signal(s)
  * @param signals   Signals that can woke-up the suspended thread.
@@ -707,6 +682,24 @@ osEvent * sched_threadSignalWait(int32_t signals, uint32_t millisec)
      * as event is returned as a pointer. */
     return (osEvent *)(&(current_thread->event));
 }
+
+#if configDEVSUBSYS == 1
+/**
+ * Wait for device
+ * @param dev Device that should be waited for; 0 = reset;
+ */
+osEvent * sched_threadDevWait(osDev_t dev, uint32_t millisec)
+{
+    current_thread->dev_wait = DEV_MAJOR(dev);
+
+    if (dev == 0) {
+        current_thread->event.status = osOK;
+        return (osEvent *)(&(current_thread->event));
+    }
+
+    return sched_threadSignalWait(SCHED_DEV_WAIT_BIT, millisec);
+}
+#endif
 
 /**
   * @}

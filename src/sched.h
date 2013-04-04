@@ -76,7 +76,7 @@ void sched_handler(void);
 
 void sched_thread_set_exec(int thread_id);
 void sched_get_loads(uint32_t loads[3]);
-void sched_threadSignalYield(int32_t signal);
+void sched_threadDevSignal(int32_t signal, osDev_t dev);
 
 /* Functions used by syscalls */
 osThreadId sched_ThreadCreate(osThreadDef_t * thread_def, void * argument);
@@ -92,7 +92,7 @@ int32_t sched_threadSignalClear(osThreadId thread_id, int32_t signal);
 int32_t sched_threadSignalGetCurrent(void);
 int32_t sched_threadSignalGet(osThreadId thread_id);
 #if configDEVSUBSYS == 1
-osEvent * sched_threadDevWait(dev_t dev, uint32_t millisec);
+osEvent * sched_threadDevWait(osDev_t dev, uint32_t millisec);
 #endif
 osEvent * sched_threadSignalWait(int32_t signals, uint32_t millisec);
 

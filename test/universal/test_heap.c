@@ -74,7 +74,7 @@ heap_t heap = HEAP_NEW_EMPTY;
 
 static char * test_heap_dec_key(void)
 {
-heap_t heap = HEAP_NEW_EMPTY;
+    heap_t heap = HEAP_NEW_EMPTY;
     threadInfo_t thread1;
     threadInfo_t thread2;
 
@@ -93,11 +93,37 @@ heap_t heap = HEAP_NEW_EMPTY;
     return 0;
 }
 
+static char * test_shuffled_heap(void)
+{
+    int i;
+
+    heap_t heap = HEAP_NEW_EMPTY;
+    threadInfo_t thread1;
+    threadInfo_t thread2;
+    threadInfo_t thread3;
+
+    thread1.priority = 5;
+    thread2.priority = 10;
+    thread3.priority = 11;
+
+    heap_insert(&heap, &thread1);
+    heap_insert(&heap, &thread2);
+    thread1.priority = 15;
+    heap_insert(&heap, &thread3);
+
+    /** TODO Do some tests with shuffled heap */
+
+    return 0;
+}
+
+    /** TODO test heap with multiple insertion of the same thread */
+
 static void all_tests() {
     pu_def_test(test_heap_insert, PU_RUN);
     pu_def_test(test_heap_del_max, PU_RUN);
     pu_def_test(test_heap_inc_key, PU_RUN);
     pu_def_test(test_heap_dec_key, PU_RUN);
+    pu_def_test(test_shuffled_heap, PU_SKIP);
 }
 
 int main(int argc, char **argv)

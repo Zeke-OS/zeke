@@ -177,7 +177,7 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec)
 }
 
 #if configDEVSUBSYS == 1
-osEvent osDevWait(dev_t dev, uint32_t millisec)
+osEvent osDevWait(osDev_t dev, uint32_t millisec)
 {
     ds_osDevWait_t ds = { dev, millisec };
     osEvent * result;
