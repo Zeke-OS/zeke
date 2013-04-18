@@ -74,6 +74,7 @@ typedef struct {
 uint32_t syscall(int type, void * p);
 #endif /* PU_TEST_BUILD */
 
+/* Kernel scope functions */
 #ifdef KERNEL_INTERNAL
 uint32_t _intSyscall_handler(int type, void * p);
 #endif /* KERNEL_INTERNAL */

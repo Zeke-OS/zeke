@@ -29,8 +29,6 @@
 
 #define SCHED_DEV_WAIT_BIT 0x40000000 /*!< Dev wait signal bit. */
 
-extern volatile uint32_t sched_enabled;
-
 /** Thread info struct
  *
  * Process Control Block structure.
@@ -73,7 +71,10 @@ typedef struct {
     } inh;
 } threadInfo_t;
 
-/* Public function prototypes ------------------------------------------------*/
+/* External variables **********************************************************/
+extern volatile uint32_t sched_enabled;
+
+/* Public function prototypes ***************************************************/
 void sched_init(void);
 void sched_start(void);
 void sched_handler(void);

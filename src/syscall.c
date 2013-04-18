@@ -14,7 +14,7 @@
 #include "hal_core.h"
 
 /**
- * Onternal Syscall handler
+ * Internal Syscall handler
  *
  * This function is called from interrupt handler. This function calls the
  * actual kernel function and returns result pointer to the interrupt handler
@@ -114,6 +114,7 @@ uint32_t _intSyscall_handler(int type, void * p)
         result = NULL;
         sched_get_loads((uint32_t *)p);
         break;
+
     default:
         result = NULL;
     }
