@@ -140,7 +140,8 @@ void idleTask(/*@unused@*/ void * arg)
 /**
   * Scheduler handler
   *
-  * Scheduler handler is mainly called by sysTick and PendSV.
+  * Scheduler handler is mainly called due to sysTick and PendSV
+  * interrupt and always by an interrupt handler.
   */
 void sched_handler(void)
 {
@@ -152,6 +153,8 @@ void sched_handler(void)
         timers_run();
     }
 
+    /* Call the actual context switcher function that schedules the next thread.
+     */
     context_switcher();
 
     if (flag_kernel_tick) {
@@ -194,9 +197,12 @@ void sched_get_loads(uint32_t loads[3])
     loads[2] = SCALE_LOAD(loadavg[2]);
 }
 
+/**
+ * Selects the next thread.
+ */
 static void context_switcher(void)
 {
-    /* Select next thread */
+    /* Select the next thread */
     do {
         /* Get next thread from the priority queue */
         current_thread = *priority_queue.a;
@@ -214,6 +220,13 @@ static void context_switcher(void)
             /* and its priority is yet higher than low */
             && ((int)current_thread->priority > (int)osPriorityLow))
         {
+            /* Penalties
+             * =========
+             * Penalties are given to CPU hog threads (CPU bound) to prevent
+             * starvation of other threads. This is done by dynamically lowering
+             * the priority (gives less CPU time in CMSIS RTOS) of a thread.
+             */
+
             /* Give a penalty: Set lower priority
              * and perform heap decrement operation. */
             current_thread->priority = osPriorityLow;
@@ -225,7 +238,7 @@ static void context_switcher(void)
             continue; /* Select next thread */
         }
 
-        /* Thread is skipped if its EXEC or IN_USE flags are disabled. */
+        /* Thread is skipped if its EXEC or IN_USE flags are unset. */
     } while ((current_thread->flags & SCHED_CSW_OK_FLAGS) != SCHED_CSW_OK_FLAGS);
 
     /* ts_counter is used to determine how many time slices has been used by the
@@ -284,22 +297,26 @@ static void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument,
     _sched_thread_set_exec(i, thread_def->tpriority);
 }
 
-static void sched_thread_set_inheritance(osThreadId i, threadInfo_t * parent)
+/**
+ * Set thread inheritance
+ * Sets linking from the parent thread to the thread id.
+ */
+static void sched_thread_set_inheritance(osThreadId id, threadInfo_t * parent)
 {
     threadInfo_t * last_node, * tmp;
 
     /* Initial values for all threads */
-    task_table[i].inh.parent = parent;
-    task_table[i].inh.first_child = NULL;
-    task_table[i].inh.next_child = NULL;
+    task_table[id].inh.parent = parent;
+    task_table[id].inh.first_child = NULL;
+    task_table[id].inh.next_child = NULL;
 
     if (parent == NULL)
         return;
 
     if (parent->inh.first_child == NULL) {
         /* This is the first child of this parent */
-        parent->inh.first_child = &(task_table[i]);
-        task_table[i].inh.next_child = NULL;
+        parent->inh.first_child = &(task_table[id]);
+        task_table[id].inh.next_child = NULL;
 
         return; /* All done */
     }
@@ -313,7 +330,7 @@ static void sched_thread_set_inheritance(osThreadId i, threadInfo_t * parent)
     } while ((tmp = last_node->inh.next_child) != NULL);
 
     /* Set newly created thread as a last child */
-    last_node->inh.next_child = &(task_table[i]);
+    last_node->inh.next_child = &(task_table[id]);
 }
 
 /**
