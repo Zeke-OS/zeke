@@ -64,7 +64,7 @@ static heap_t priority_queue = HEAP_NEW_EMPTY;   /*!< Priority queue of active
 
 static volatile threadInfo_t * current_thread; /*!< Pointer to currently active
                                                 *   thread */
-uint32_t loadavg[3]  = { 0, 0, 0 }; /*!< CPU load averages */
+static uint32_t loadavg[3]  = { 0, 0, 0 }; /*!< CPU load averages */
 
 /** Stack for idle task */
 static char sched_idle_stack[sizeof(sw_stack_frame_t)
