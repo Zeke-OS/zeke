@@ -66,7 +66,7 @@ static volatile threadInfo_t * current_thread; /*!< Pointer to currently active
                                                 *   thread */
 uint32_t loadavg[3]  = { 0, 0, 0 }; /*!< CPU load averages */
 
-/* Stack for idle task */
+/** Stack for idle task */
 static char sched_idle_stack[sizeof(sw_stack_frame_t)
                              + sizeof(hw_stack_frame_t)
                              + 40]; /* Absolute minimum with current idle task
@@ -228,10 +228,10 @@ static void context_switcher(void)
         /* Thread is skipped if its EXEC or IN_USE flags are disabled. */
     } while ((current_thread->flags & SCHED_CSW_OK_FLAGS) != SCHED_CSW_OK_FLAGS);
 
-    /* ts_counter is used to determine how many time slices has been used
-     * by the process between idle/sleep states.
-     * We can assume that this measure is quite accurate even it's not confirmed
-     * that one tick has been elapsed before this line. */
+    /* ts_counter is used to determine how many time slices has been used by the
+     * process between idle/sleep states. We can assume that this measure is
+     * quite accurate even it's not confirmed that one tick has been elapsed
+     * before this line. */
     current_thread->ts_counter--;
 
     /* Write the value of the PSP for the next thread in exec */
@@ -316,13 +316,17 @@ static void sched_thread_set_inheritance(osThreadId i, threadInfo_t * parent)
     last_node->inh.next_child = &(task_table[i]);
 }
 
+/**
+ * Set thread into execution mode/ready to run mode.
+ * @oaram thread_id Thread id.
+ */
 void sched_thread_set_exec(int thread_id)
 {
     _sched_thread_set_exec(thread_id, task_table[thread_id].def_priority);
 }
 
 /**
-  * Set thread into excetion mode
+  * Set thread into execution mode/ready to run mode
   *
   * Sets EXEC_FLAG and puts thread into the scheduler's priority queue.
   * @param thread_id    Thread id
@@ -340,49 +344,38 @@ static void _sched_thread_set_exec(int thread_id, osPriority pri)
     }
 }
 
+/**
+ * Put current thread into sleep.
+ */
 static void _sched_thread_sleep_current(void)
 {
-    int i = 0;
-
     /* Sleep flag */
     current_thread->flags &= ~SCHED_EXEC_FLAG;
 
     /* Find index of the current thread in the priority queue and move it
      * on top */
-    for (i = 0; i < priority_queue.size; i++) {
-        if (priority_queue.a[i]->id == current_thread->id)
-            break;
-    }
     current_thread->priority = osPriorityError;
-    heap_inc_key(&priority_queue, i);
+    heap_inc_key(&priority_queue, heap_find(&priority_queue, current_thread->id));
 }
 
 /**
- * Removes thread from execution
+ * Removes a thread from execution.
  * @param tt_id Thread task table id
  */
 static void sched_thread_remove(osThreadId tt_id)
 {
-    int i;
-
-    task_table[tt_id].flags = 0; /* Clear all the flags */
+    task_table[tt_id].flags = 0; /* Clear all flags */
 
     /* Release wait timeout timer */
     if (task_table[tt_id].wait_tim >= 0) {
         timers_release(task_table[tt_id].wait_tim);
     }
 
-    /* Find thread from the priority queue and put it on top.
-     * This way we can be sure that this thread is not kept in the queue after
-     * context switch is executed. If priority is not incremented it's possible
-     * that we would fill the queue with garbage. */
-    for (i = 0; i < priority_queue.size; i++) {
-        if (priority_queue.a[i]->id == tt_id)
-            break;
-    }
-
+    /* Increment the thread priority to the highest possible value so context
+     * switch will garbage collect it from the priority queue on the next run.
+     */
     task_table[tt_id].priority = osPriorityError;
-    heap_inc_key(&priority_queue, i);
+    heap_inc_key(&priority_queue, heap_find(&priority_queue, tt_id));
 }
 
 

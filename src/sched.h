@@ -33,14 +33,7 @@ extern volatile uint32_t sched_enabled;
 
 /** Thread info struct
  *
-* inh : Parent and child thread relations
- * --------------------------------------
- * + first_child is a parent thread attribute containing address to a first
- *   child of the parent thread
- * + parent is a child thread attribute containing address to a parent
- *   thread of the child thread
- * + next_child is a child thread attribute containing address of a next
- *   child node of the common parent thread
+ * Process Control Block structure.
  */
 typedef struct {
     void * sp;                  /*!< Stack pointer */
@@ -53,20 +46,31 @@ typedef struct {
                                   * major number (whole driver) level is used.
                                   * This means that optimal way to use device
                                   * drivers is to lock the whole driver for a
-                                  * short periods of time. */
+                                  * short period of time. */
 #endif
     int wait_tim;               /*!< Reference to a timeout timer */
     osEvent event;              /*!< Event struct */
     osPriority def_priority;    /*!< Thread priority */
     osPriority priority;        /*!< Thread dynamic priority */
     int ts_counter;             /*!< Time slice counter */
-    osThreadId id;              /*!< Thread id (in task table) */
+    osThreadId id;              /*!< Thread id in task table */
+    /**
+     * Thread inheritance; Parent and child thread pointers.
+     *
+     *  inh : Parent and child thread relations
+     *  ---------------------------------------
+     * + first_child is a parent thread attribute containing address to a first
+     *   child of the parent thread
+     * + parent is a child thread attribute containing address to a parent
+     *   thread of the child thread
+     * + next_child is a child thread attribute containing address of a next
+     *   child node of the common parent thread
+     */
     struct threadInheritance_t {
         void * parent;              /*!< Parent thread */
         void * first_child;         /*!< Link to the first child thread */
         void * next_child;          /*!< Next child of the common parent */
-    } inh;                      /*!< Thread inheritance; Parent and child thread
-                                 *   pointers. */
+    } inh;
 } threadInfo_t;
 
 /* Public function prototypes ------------------------------------------------*/

@@ -85,6 +85,8 @@ int dev_close(osDev_t dev, osThreadId thread_id)
     }
     dev_alloc_table[DEV_MAJOR(dev)].flags ^= DEV_FLAG_LOCK;
 
+    /* TODO wait for dev to be not busy? */
+
     /* This is bit stupid but might be the easiest way to implement this :/ */
     sched_threadDevSignal(SCHED_DEV_WAIT_BIT, dev);
 

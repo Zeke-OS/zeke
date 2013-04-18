@@ -154,3 +154,21 @@ void heap_dec_key(heap_t * heap, int i)
      * to its new value */
     heapify(heap, i);
 }
+
+/**
+ * Find thread from a heap array
+ * @param heap pointer to a heap_t struct.
+ * @param thread_id Thread id.
+ * @return Id of the thread in heap array if thread was found; Otherwise -1.
+ */
+int heap_find(heap_t * heap, osThreadId thread_id)
+{
+    int i;
+
+    for (i = 0; i < heap->size; i++) {
+        if (heap->a[i]->id == thread_id)
+            return i;
+    }
+
+    return -1;
+}
