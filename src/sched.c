@@ -132,7 +132,9 @@ void sched_start(void)
 void idleTask(/*@unused@*/ void * arg)
 {
 #ifndef PU_TEST_BUILD
-    while(1);
+    while(1) {
+        idle_sleep();
+    }
 #endif
 }
 

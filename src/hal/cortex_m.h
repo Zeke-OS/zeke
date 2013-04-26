@@ -66,7 +66,6 @@ inline void * rd_stack_ptr(void);
 inline void * rd_thread_stack_ptr(void);
 inline void wr_thread_stack_ptr(void * ptr);
 
-
 /**
  * Request immediate context switch
  */
@@ -172,6 +171,14 @@ inline void wr_thread_stack_ptr(void * ptr)
                   "ISB\n"
                   : : "r" (ptr));
 }
+
+/**
+ * Platform sepcific idle sleep mode
+ */
+#define idle_sleep() do {                                 \
+    asm volatile("WFI\n" /* Sleep until next interrupt */ \
+    ); } while (0)
+
 
 #endif /* CORTEX_M_H */
 
