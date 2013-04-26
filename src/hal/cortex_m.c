@@ -65,6 +65,19 @@ uint32_t syscall(int type, void * p)
     return scratch;
 }
 
+int test_and_set(int * lock) {
+    int old_value;
+
+    /* Ensure that all explicit memory accesses that appear in program order
+     * before the DMB instruction are observed before any explicit memory
+     * accesses. */
+    asm volatile("DMB");
+    old_value = *lock;
+    *lock = 1;
+
+    return old_value == 1;
+}
+
 /**
   * @}
   */

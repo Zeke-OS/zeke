@@ -41,6 +41,12 @@ void init_hw_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a
  */
 uint32_t syscall(int type, void * p);
 
+/**
+ * Test and set
+ * @param lock pointer to the lock variable.
+ */
+int test_and_set(int * lock);
+
 /* Core Implementation must declare following inlined functions:
  * + inline void eval_kernel_tick(void);
  * + inline void save_context(void);

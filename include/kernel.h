@@ -34,6 +34,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "mutex.h"
 #include "devtypes.h"
 #include "kernel_config.h"
 
@@ -97,6 +98,10 @@ typedef int osThreadId;
 /// \note CAN BE CHANGED: \b os_timer_cb is implementation specific in every CMSIS-RTOS.
 typedef int osTimerId;
 
+/// Mutex ID identifies the mutex (pointer to a mutex control block).
+/// \note CAN BE CHANGED: \b os_mutex_cb is implementation specific in every CMSIS-RTOS.
+typedef struct os_mutex_cb *osMutexId;
+
 /// Message ID identifies the message queue (pointer to a message queue control block).
 /// \note CAN BE CHANGED: \b os_messageQ_cb is implementation specific in every CMSIS-RTOS.
 typedef struct os_messageQ_cb *osMessageQId;
@@ -114,20 +119,26 @@ typedef const struct os_thread_def {
     size_t      stackSize;  ///< Size of stack reserved for the thread. (CMSIS-RTOS: stack size requirements in bytes; 0 is default stack size)
 } osThreadDef_t;
 
+/// Mutex Definition structure contains setup information for a mutex.
+/// \note CAN BE CHANGED: \b os_mutex_def is implementation specific in every CMSIS-RTOS.
+typedef const struct os_mutex_def  {
+    enum os_mutex_strategy strategy;
+} osMutexDef_t;
+
 /// Event structure contains detailed information about an event.
 /// \note MUST REMAIN UNCHANGED: \b os_event shall be consistent in every CMSIS-RTOS.
 ///       However the struct may be extended at the end.
 typedef struct  {
-  osStatus                 status;     ///< status code: event or error information
-  union  {
-    uint32_t                    v;     ///< message as 32-bit value
-    void                       *p;     ///< message or mail as void pointer
-    int32_t               signals;     ///< signal flags
-  } value;                             ///< event value
-  union  {
-    osMailQId             mail_id;     ///< mail id obtained by \ref osMailCreate
-    osMessageQId       message_id;     ///< message id obtained by \ref osMessageCreate
-  } def;                               ///< event definition
+    osStatus                 status;    ///< status code: event or error information
+    union  {
+        uint32_t                    v;  ///< message as 32-bit value
+        void                       *p;  ///< message or mail as void pointer
+        int32_t               signals;  ///< signal flags
+    } value;                            ///< event value
+    union  {
+        osMailQId             mail_id;  ///< mail id obtained by \ref osMailCreate
+        osMessageQId       message_id;  ///< message id obtained by \ref osMessageCreate
+    } def;                              ///< event definition
 } osEvent;
 
 
@@ -149,14 +160,12 @@ osEvent osDevWait(osDev_t dev, uint32_t millisec);
 void osGetLoadAvg(uint32_t loads[3]);
 
 
-
 //  ==== Kernel Control Functions ====
 
 /// Check if the RTOS kernel is already started.
 /// \note MUST REMAIN UNCHANGED: \b osKernelRunning shall be consistent in every CMSIS-RTOS.
 /// \return 0 RTOS is not started, 1 RTOS is started.
 int32_t osKernelRunning(void);
-
 
 
 //  ==== Thread Management ====
@@ -214,7 +223,6 @@ osStatus osThreadSetPriority(osThreadId thread_id, osPriority priority);
 osPriority osThreadGetPriority(osThreadId thread_id);
 
 
-
 //  ==== Generic Wait Functions ====
 
 /// Wait for Timeout (Time Delay)
@@ -231,7 +239,6 @@ osStatus osDelay(uint32_t millisec);
 osEvent osWait(uint32_t millisec);
 
 #endif  // Generic Wait available
-
 
 
 //  ==== Signal Management ====
@@ -267,6 +274,47 @@ int32_t osSignalGet(osThreadId thread_id);
 /// \return event flag information or error code.
 /// \note MUST REMAIN UNCHANGED: \b osSignalWait shall be consistent in every CMSIS-RTOS.
 osEvent osSignalWait(int32_t signals, uint32_t millisec);
+
+
+//  ==== Mutex Management ====
+
+/// Define a Mutex.
+/// \param         name          name of the mutex object.
+/// \note CAN BE CHANGED: The parameter to \b osMutexDef shall be consistent but the 
+///       macro body is implementation specific in every CMSIS-RTOS.
+#if defined (osObjectsExternal)  // object is external
+#define osMutexDef(name)  \
+extern osMutexDef_t os_mutex_def_##name
+#else                            // define the object
+#define osMutexDef(name)  \
+osMutexDef_t os_mutex_def_##name = { 0 }
+#endif
+
+/// Access a Mutex defintion.
+/// \param         name          name of the mutex object.
+/// \note CAN BE CHANGED: The parameter to \b osMutex shall be consistent but the 
+///       macro body is implementation specific in every CMSIS-RTOS.
+#define osMutex(name)  \
+&os_mutex_def_##name
+
+/// Create and Initialize a Mutex object
+/// \param[in]     mutex_def     mutex definition referenced with \ref osMutex.
+/// \return mutex ID for reference by other functions or NULL in case of error.
+/// \note MUST REMAIN UNCHANGED: \b osMutexCreate shall be consistent in every CMSIS-RTOS.
+osMutexId osMutexCreate(osMutexDef_t *mutex_def);
+
+/// Wait until a Mutex becomes available
+/// \param[in]     mutex_id      mutex ID obtained by \ref osMutexCreate.
+/// \param[in]     millisec      timeout value or 0 in case of no time-out.
+/// \return status code that indicates the execution status of the function.
+/// \note MUST REMAIN UNCHANGED: \b osMutexWait shall be consistent in every CMSIS-RTOS.
+osStatus osMutexWait(osMutexId mutex_id, uint32_t millisec);
+
+/// Release a Mutex that was obtained by \ref osMutexWait
+/// \param[in]     mutex_id      mutex ID obtained by \ref osMutexCreate.
+/// \return status code that indicates the execution status of the function.
+/// \note MUST REMAIN UNCHANGED: \b osMutexRelease shall be consistent in every CMSIS-RTOS.
+osStatus osMutexRelease(osMutexId mutex_id);
 
 #endif /* KERNEL_INTERNAL */
 

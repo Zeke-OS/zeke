@@ -179,7 +179,6 @@ inline void wr_thread_stack_ptr(void * ptr)
     asm volatile("WFI\n" /* Sleep until next interrupt */ \
     ); } while (0)
 
-
 #endif /* CORTEX_M_H */
 
 /**
