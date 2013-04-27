@@ -14,8 +14,6 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "thread.h"
-
 #ifndef KERNEL_INTERNAL
 #define KERNEL_INTERNAL
 #endif
@@ -25,6 +23,7 @@
 #include "hal_core.h"
 #include "hal_mcu.h"
 #include "kernel.h"
+#include "syscall.h"
 #include "sched.h"
 
 /* Definitions for load average calculation **********************************/
@@ -409,9 +408,9 @@ static void del_thread(void)
      * no separate privileged mode in Cortex-M0. This atleast improves
      * portability in the future.
      */
-    osThreadId thread_id = osThreadGetId();
-    (void)osThreadTerminate(thread_id);
-    (void)osThreadYield();
+    osThreadId thread_id = (osThreadId)syscall(KERNEL_SYSCALL_SCHED_THREAD_GETID, NULL);
+    (void)syscall(KERNEL_SYSCALL_SCHED_THREAD_TERMINATE, &thread_id);
+    req_context_switch();
 
     while(1); /* Once the context changes, the program will no longer return to
                * this thread */

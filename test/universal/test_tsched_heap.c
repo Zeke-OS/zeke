@@ -25,12 +25,13 @@ int my_timers_add(int thread_id, os_timer_type type, uint32_t millisec) { return
 void timers_release(int tim);
 void timers_release(int tim) { }
 
-/* Override del_thread */
-void del_thread(void);
-void del_thread(void) { }
-
 /* NOTE: Included sched.c */
 #include "sched.c"
+
+/* Override del_thread */
+void my_del_thread(void);
+void my_del_thread(void) { }
+#define del_thread my_del_thread
 
 /* Override heap_insert with dummy function */
 void my_heap_insert(void * h, threadInfo_t * th);
