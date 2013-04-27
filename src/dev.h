@@ -111,6 +111,9 @@ int dev_bwrite(const void * buff, size_t size, size_t count, osDev_t dev, osThre
 int dev_bread(void * buff, size_t size, size_t count, osDev_t dev, osThreadId thread_id);
 int dev_bseek(int offset, int origin, size_t size, osDev_t dev, osThreadId thread_id);
 
+/* Thread specific functions used mainly by Syscalls **************************/
+osEvent * dev_threadDevWait(osDev_t dev, uint32_t millisec);
+
 #endif /* DEV_H */
 
 /**

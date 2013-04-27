@@ -20,6 +20,8 @@
 /** TODO How can we wait for dev to unlock? osSignalWait? */
 /** TODO dev syscall should first try to access device and then go
  *       to wait if desired so */
+/** TODO Especially non-lockable devs could have message queues for
+ *  storing the data */
 
 struct dev_driver dev_alloc_table[31];
 
@@ -226,6 +228,24 @@ int dev_bread(void * buff, size_t size, size_t count, osDev_t dev, osThreadId th
 int dev_bseek(int offset, int origin, size_t size, osDev_t dev, osThreadId thread_id)
 {
     return DEV_BSK_INTERNAL;
+}
+
+/* Thread specific code used mainly by Syscalls *******************************/
+
+/**
+ * Wait for device
+ * @param dev Device that should be waited for; 0 = reset;
+ */
+osEvent * dev_threadDevWait(osDev_t dev, uint32_t millisec)
+{
+    current_thread->dev_wait = DEV_MAJOR(dev);
+
+    if (dev == 0) {
+        current_thread->event.status = osOK;
+        return (osEvent *)(&(current_thread->event));
+    }
+
+    return sched_threadSignalWait(SCHED_DEV_WAIT_BIT, millisec);
 }
 
 /**

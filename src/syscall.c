@@ -10,8 +10,9 @@
 
 #include "sched.h"
 #define KERNEL_INTERNAL 1
-#include "syscall.h"
+#include "dev.h"
 #include "hal_core.h"
+#include "syscall.h"
 
 /**
  * Internal Syscall handler/translator
@@ -104,7 +105,7 @@ uint32_t _intSyscall_handler(int type, void * p)
         break;
 
     case KERNEL_SYSCALL_SCHED_DEV_WAIT:
-          result =(uint32_t)sched_threadSignalWait(
+          result =(uint32_t)dev_threadSignalWait(
                     ((ds_osDevWait_t *)p)->dev,
                     ((ds_osDevWait_t *)p)->millisec
                 );

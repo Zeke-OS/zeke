@@ -73,6 +73,7 @@ typedef struct {
 
 /* External variables **********************************************************/
 extern volatile uint32_t sched_enabled;
+volatile threadInfo_t * current_thread;
 
 /* Public function prototypes ***************************************************/
 void sched_init(void);
@@ -96,9 +97,6 @@ void sched_threadSignalWaitMaskClear(void);
 int32_t sched_threadSignalClear(osThreadId thread_id, int32_t signal);
 int32_t sched_threadSignalGetCurrent(void);
 int32_t sched_threadSignalGet(osThreadId thread_id);
-#if configDEVSUBSYS == 1
-osEvent * sched_threadDevWait(osDev_t dev, uint32_t millisec);
-#endif
 osEvent * sched_threadSignalWait(int32_t signals, uint32_t millisec);
 
 #endif /* SCHED_H */

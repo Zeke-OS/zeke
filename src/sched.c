@@ -61,8 +61,8 @@ static threadInfo_t task_table[configSCHED_MAX_THREADS]; /*!< Array of all
 static heap_t priority_queue = HEAP_NEW_EMPTY;   /*!< Priority queue of active
                                                   * threads */
 
-static volatile threadInfo_t * current_thread; /*!< Pointer to currently active
-                                                *   thread */
+volatile threadInfo_t * current_thread; /*!< Pointer to currently active
+                                         *   thread */
 static uint32_t loadavg[3]  = { 0, 0, 0 }; /*!< CPU load averages */
 
 /** Stack for idle task */
@@ -420,7 +420,7 @@ static void del_thread(void)
 /* Functions defined in header file (and used mainly by syscalls)
  ******************************************************************************/
 
-/** @addtogroup External_services
+/** @addtogroup External_routines
   * @{
   */
 
@@ -713,24 +713,6 @@ osEvent * sched_threadSignalWait(int32_t signals, uint32_t millisec)
      * as event is returned as a pointer. */
     return (osEvent *)(&(current_thread->event));
 }
-
-#if configDEVSUBSYS == 1
-/**
- * Wait for device
- * @param dev Device that should be waited for; 0 = reset;
- */
-osEvent * sched_threadDevWait(osDev_t dev, uint32_t millisec)
-{
-    current_thread->dev_wait = DEV_MAJOR(dev);
-
-    if (dev == 0) {
-        current_thread->event.status = osOK;
-        return (osEvent *)(&(current_thread->event));
-    }
-
-    return sched_threadSignalWait(SCHED_DEV_WAIT_BIT, millisec);
-}
-#endif
 
 /**
   * @}
