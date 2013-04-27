@@ -44,11 +44,11 @@ osStatus osMutexWait(osMutexId mutex_id, uint32_t millisec)
         return osErrorParameter;
     }
 
-    while (test_and_set(mutex_id.lock)) {
+    while (syscall(KERNEL_SYSCALL_TEST_AND_SET, mutex_od.lock)) {
         /** TODO Should we lower the priority until lock is acquired
          *       osThreadGetPriority & osThreadSetPriority */
         /* Reschedule while waiting for lock */
-        req_context_switch();
+        req_context_switch(); /* This should be done in user space */
     }
 
     mutex_id->thread_id = osThreadGetId();

@@ -110,6 +110,10 @@ uint32_t _intSyscall_handler(int type, void * p)
                 );
         break;
 
+    case KERNEL_SYSCALL_TEST_AND_SET:
+        result = (int)test_and_set((int *)p);
+        break;
+
     case KERNEL_SYSCALL_SCHED_GET_LOADAVG:
         result = NULL;
         sched_get_loads((uint32_t *)p);
