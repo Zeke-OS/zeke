@@ -14,7 +14,7 @@
 #include "hal_core.h"
 
 /**
- * Internal Syscall handler
+ * Internal Syscall handler/translator
  *
  * This function is called from interrupt handler. This function calls the
  * actual kernel function and returns result pointer to the interrupt handler
@@ -111,7 +111,7 @@ uint32_t _intSyscall_handler(int type, void * p)
         break;
 
     case KERNEL_SYSCALL_TEST_AND_SET:
-        result = (int)test_and_set((int *)p);
+        result = (uint32_t)test_and_set((int *)p);
         break;
 
     case KERNEL_SYSCALL_SCHED_GET_LOADAVG:
@@ -121,6 +121,7 @@ uint32_t _intSyscall_handler(int type, void * p)
 
     default:
         result = NULL;
+        break;
     }
 
     return result;
