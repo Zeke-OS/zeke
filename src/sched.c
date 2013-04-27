@@ -81,6 +81,7 @@ static void sched_thread_set_inheritance(osThreadId i, threadInfo_t * parent);
 static void _sched_thread_set_exec(int thread_id, osPriority pri);
 static void _sched_thread_sleep_current(void);
 static void sched_thread_remove(osThreadId id);
+static void del_thread(void);
 /* End of Static function declarations ***************************************/
 
 /* Functions called from outside of kernel context ***************************/
@@ -395,6 +396,25 @@ static void sched_thread_remove(osThreadId tt_id)
      */
     task_table[tt_id].priority = osPriorityError;
     heap_inc_key(&priority_queue, heap_find(&priority_queue, tt_id));
+}
+
+/**
+ * Deletes thread on exit
+ * @note This function is called while execution is in thread context.
+ */
+static void del_thread(void)
+{
+    /* It's considered to be safer to call osThreadTerminate syscall here and
+     * terminate the running process while in kernel context even there is
+     * no separate privileged mode in Cortex-M0. This atleast improves
+     * portability in the future.
+     */
+    osThreadId thread_id = osThreadGetId();
+    (void)osThreadTerminate(thread_id);
+    (void)osThreadYield();
+
+    while(1); /* Once the context changes, the program will no longer return to
+               * this thread */
 }
 
 

@@ -16,11 +16,6 @@
 #include "hal_mcu.h"
 #include "syscall.h"
 #include "kernel.h"
-#include "thread.h"
-
-#ifdef KERNEL_INTERNAL
-    #error KERNEL_INTERNAL must not be defined in thread scope!
-#endif
 
 /** @addtogroup Thread_Management
   * @{
@@ -86,27 +81,6 @@ osPriority osThreadGetPriority(osThreadId thread_id)
     result = (osPriority)syscall(KERNEL_SYSCALL_SCHED_THREAD_GETPRIORITY, &thread_id);
 
     return result;
-}
-
-/* Functions that are referenced in kernel code but are called in thread scope */
-
-/**
- * Deletes thread on exit
- * @note This function is called while execution is in thread context.
- */
-void del_thread(void)
-{
-    /* It's considered to be safer to call osThreadTerminate syscall here and
-     * terminate the running process while in kernel context even there is
-     * no separate privileged mode in Cortex-M0. This atleast improves
-     * portability in the future.
-     */
-    osThreadId thread_id = osThreadGetId();
-    (void)osThreadTerminate(thread_id);
-    (void)osThreadYield();
-
-    while(1); /* Once the context changes, the program will no longer return to
-               * this thread */
 }
 
 /**
