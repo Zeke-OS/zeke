@@ -15,6 +15,7 @@
 #include "hal_mcu.h"
 #include "syscall.h"
 #include "kernel.h"
+#include "mutex.h"
 
 /** @addtogroup Mutex
   * @{
@@ -26,7 +27,7 @@
 
 /** TODO implement sleep strategy */
 
-osMutexCreate(osMutexDef_t *mutex_def)
+osMutex osMutexCreate(osMutexDef_t *mutex_def)
 {
     mutex_cb_t cb;
 
@@ -37,28 +38,28 @@ osMutexCreate(osMutexDef_t *mutex_def)
     return cb;
 }
 
-osStatus osMutexWait(osMutexId mutex_id, uint32_t millisec)
+osStatus osMutexWait(osMutex * mutex, uint32_t millisec)
 {
     if (millisec != 0) {
         /** TODO Only spinlock is supported at the moment; implement timeout */
         return osErrorParameter;
     }
 
-    while (syscall(KERNEL_SYSCALL_TEST_AND_SET, mutex_od.lock)) {
+    while (syscall(KERNEL_SYSCALL_MUTEX_TEST_AND_SET, (void*)(&(mutex->lock)))) {
         /** TODO Should we lower the priority until lock is acquired
          *       osThreadGetPriority & osThreadSetPriority */
         /* Reschedule while waiting for lock */
         req_context_switch(); /* This should be done in user space */
     }
 
-    mutex_id->thread_id = osThreadGetId();
+    mutex->thread_id = osThreadGetId();
     return osOK;
 }
 
-osStatus osMutexRelease(osMutexId mutex_id)
+osStatus osMutexRelease(osMutex * mutex)
 {
-    if (mutex_id->thread_id == osThreadGetId()) {
-        mutex_id->lock = 0;
+    if (mutex->thread_id == osThreadGetId()) {
+        mutex->lock = 0;
         return osOK;
     }
     return osErrorResource;

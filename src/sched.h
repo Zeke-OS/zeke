@@ -73,7 +73,7 @@ typedef struct {
 
 /* External variables **********************************************************/
 extern volatile uint32_t sched_enabled;
-volatile threadInfo_t * current_thread;
+extern volatile threadInfo_t * current_thread;
 
 /* Public function prototypes ***************************************************/
 void sched_init(void);
