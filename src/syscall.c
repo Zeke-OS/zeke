@@ -106,7 +106,7 @@ uint32_t _intSyscall_handler(int type, void * p)
 
 #if configDEVSUBSYS == 1
     case KERNEL_SYSCALL_SCHED_DEV_WAIT:
-          result =(uint32_t)dev_threadDevWait(
+        result =(uint32_t)dev_threadDevWait(
                     ((ds_osDevWait_t *)p)->dev,
                     ((ds_osDevWait_t *)p)->millisec
                 );
