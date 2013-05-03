@@ -179,6 +179,10 @@ inline void wr_thread_stack_ptr(void * ptr)
     asm volatile("WFI\n" /* Sleep until next interrupt */ \
     ); } while (0)
 
+
+void HardFault_Handler(void);
+void hard_fault_handler_c(uint32_t stack[]);
+
 #endif /* CORTEX_M_H */
 
 /**

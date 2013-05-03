@@ -18,10 +18,15 @@
 #define KERNEL_INTERNAL
 #endif
 
+#include <string.h>
 #include "kernel.h"
+#include "hal_mcu.h"
 #include "cortex_m.h"
 
 uint32_t flag_kernel_tick = 0;
+
+void stackDump(uint32_t stack[]);
+static void printErrorMsg(const char * errMsg);
 
 void init_hw_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a_del_thread)
 {
@@ -77,6 +82,66 @@ int test_and_set(int * lock) {
 
     return old_value == 1;
 }
+
+/* Fault Handling *************************************************************/
+
+void HardFault_Handler(void)
+{
+    asm volatile ("TST LR, #4\n"
+                  "MRSEQ R0, MSP\n"
+                  "MRSNE R0, PSP\n"
+                  "B hard_fault_handler_c");
+}
+
+/**
+  * This function handles Hard Fault exception.
+  */
+void hard_fault_handler_c(uint32_t stack[])
+{
+    static char msg[80];
+
+    /* TODO just kill the process if thread sp is in use (and fault is not fatal)
+     * and then continue operation */
+
+    printErrorMsg("In Hard Fault Handler\n");
+    sprintf(msg, "SCB->HFSR = 0x%08x\n", SCB->HFSR);
+    printErrorMsg(msg);
+
+    if ((SCB->HFSR & (1 << 30)) != 0) {
+        printErrorMsg("Forced Hard Fault\n");
+        sprintf(msg, "SCB->CFSR = 0x%08x\n", SCB->CFSR);
+        printErrorMsg(msg);
+        if((SCB->CFSR & 0xFFFF0000) != 0) {
+            stackDump(stack);
+        }
+    }
+    asm volatile("BKPT #01");
+    while(1);
+}
+
+static void stackDump(uint32_t stack[])
+{
+    static char msg[80];
+
+    sprintf(msg, "r0  = 0x%08x\n", stack[0]);  printErrorMsg(msg);
+    sprintf(msg, "r1  = 0x%08x\n", stack[1]);  printErrorMsg(msg);
+    sprintf(msg, "r2  = 0x%08x\n", stack[2]);  printErrorMsg(msg);
+    sprintf(msg, "r3  = 0x%08x\n", stack[3]);  printErrorMsg(msg);
+    sprintf(msg, "r12 = 0x%08x\n", stack[4]); printErrorMsg(msg);
+    sprintf(msg, "lr  = 0x%08x\n", stack[5]);  printErrorMsg(msg);
+    sprintf(msg, "pc  = 0x%08x\n", stack[6]);  printErrorMsg(msg);
+    sprintf(msg, "psr = 0x%08x\n", stack[7]); printErrorMsg(msg);
+}
+
+static void printErrorMsg(const char * errMsg)
+{
+    while (*errMsg != '') {
+        ITM_SendChar(*errMsg);
+        ++errMsg;
+    }
+}
+
+/* End of Fault Handling ******************************************************/
 
 /**
   * @}

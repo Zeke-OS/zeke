@@ -76,16 +76,6 @@ void NMI_Handler(void)
 }
 
 /**
-  * This function handles Hard Fault exception.
-  */
-void HardFault_Handler(void)
-{
-    /* @todo fixme */
-    while (1)
-    { }
-}
-
-/**
   * This function handles SVCall exception.
   */
 #pragma optimize = no_cse

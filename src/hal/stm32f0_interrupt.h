@@ -28,7 +28,7 @@ int interrupt_init_module(void);
 /* ==== Vendor specific interrupt handlers ====
  * These are only referenced inside vendor specific code (mainly assembly) */
 void NMI_Handler(void);
-void HardFault_Handler(void);
+/* Hard fault is handled in core specific code */
 void SVC_Handler(void);
 void PendSV_Handler(void);
 void SysTick_Handler(void);
