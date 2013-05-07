@@ -3,6 +3,7 @@ TODO
 
 Generic Tasks
 -------------
+- Optional auto-reset on failure instead of halt
 - Implement mutex and semaphores
 - Implement memory pools
 - Flags for optional dynmem "optimizations" and feature improvements
