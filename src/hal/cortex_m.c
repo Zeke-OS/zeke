@@ -22,7 +22,8 @@
 #include <stdio.h>
 #include <string.h>
 #endif
-#include "kernel.h"
+#include <stddef.h>
+#include "sched.h"
 #include "hal_mcu.h"
 #include "cortex_m.h"
 
@@ -100,7 +101,7 @@ void HardFault_Handler(void)
     asm volatile ("PUSH {LR}\n"
                   "POP {%0}\n"
                   : "=r" (scratch));
-    if (scratch == 4) {
+    if (scratch == HAND_RETURN) {
         asm volatile ("MRS R0, MSP\n"
         "B hard_fault_handler_armv6m\n");
     } else {
@@ -125,8 +126,29 @@ void HardFault_Handler(void)
   */
 void hard_fault_handler_armv6m(uint32_t stack[])
 {
-    asm volatile("BKPT #01");
-    while(1);
+    uint32_t thread_stack;
+
+    asm volatile("MRS %0, PSP\n"
+                 : "=r" (thread_stack));
+    if ((uint32_t)stack != thread_stack) {
+        /* Kernel fault */
+        asm volatile("BKPT #01");
+        while(1);
+    }
+
+    /* TODO it's possible to implement some kind of stack dump here.
+     *      If stack dump will not be implemented for ATMv6 then it would be
+     *      wise to "optimize" this code into the actual handler. */
+
+    /* Kill the current thread */
+    sched_thread_terminate(current_thread->id);
+
+    /* Return to the scheduler ASAP */
+    req_context_switch();
+    asm volatile ("BX %0\n"
+              :
+              : "r" (THREAD_RETURN)
+              );
 }
 
 #if __CORE__ == __ARM7M__ || __CORE__ == __ARM7EM__

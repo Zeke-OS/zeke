@@ -64,7 +64,7 @@ typedef struct {
      * + next_child is a child thread attribute containing address of a next
      *   child node of the common parent thread
      */
-    struct threadInheritance_t {
+    volatile struct threadInheritance_t {
         void * parent;              /*!< Parent thread */
         void * first_child;         /*!< Link to the first child thread */
         void * next_child;          /*!< Next child of the common parent */
@@ -84,7 +84,7 @@ void sched_thread_set_exec(int thread_id);
 void sched_get_loads(uint32_t loads[3]);
 void sched_threadDevSignal(int32_t signal, osDev_t dev);
 
-/* Functions used by syscalls */
+/* Functions used mainly by syscalls */
 osThreadId sched_ThreadCreate(osThreadDef_t * thread_def, void * argument);
 osThreadId sched_thread_getId(void);
 osStatus sched_thread_terminate(osThreadId thread_id);

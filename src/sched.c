@@ -479,9 +479,11 @@ osStatus sched_thread_terminate(osThreadId thread_id)
 
     /* Remove all childs from execution */
     child = task_table[thread_id].inh.first_child;
-    do {
-        sched_thread_remove(child->id);
-    } while ((child = child->inh.next_child) != NULL);
+    if (child != NULL) {
+        do {
+            sched_thread_remove(child->id);
+        } while ((child = child->inh.next_child) != NULL);
+    }
 
     /* Remove thread itself */
     sched_thread_remove(task_table[thread_id].id);
