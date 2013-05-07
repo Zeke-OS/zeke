@@ -29,6 +29,7 @@
 
 uint32_t flag_kernel_tick = 0;
 
+/* Core specific hard fault handlers */
 #if __CORE__ == __ARM6M__ || __CORE__ == __ARM6SM__
 void hard_fault_handler_armv6m(uint32_t stack[]);
 #elif __CORE__ == __ARM7M__ || __CORE__ == __ARM7EM__
@@ -92,10 +93,11 @@ int test_and_set(int * lock) {
     return old_value == 1;
 }
 
-/* Fault Handling *************************************************************/
+/* HardFault Handling *********************************************************/
 
 void HardFault_Handler(void)
 {
+    /* First call the core specific HardFault handler */
 #if __CORE__ == __ARM6M__ || __CORE__ == __ARM6SM__
     int scratch;
     asm volatile ("PUSH {LR}\n"
@@ -103,13 +105,13 @@ void HardFault_Handler(void)
                   : "=r" (scratch));
     if (scratch == HAND_RETURN) {
         asm volatile ("MRS R0, MSP\n"
-        "B hard_fault_handler_armv6m\n");
+                      "B hard_fault_handler_armv6m\n");
     } else {
         asm volatile ("MRS R0, PSP\n"
-        "B hard_fault_handler_armv6m\n");
+                      "B hard_fault_handler_armv6m\n");
     }
 #elif  __CORE__ == __ARM7M__ || __CORE__ == __ARM7EM__
-        /* Using IT */
+    /* Using IT */
     asm volatile ("TST LR, #4\n"
                   "ITE EQ\n"
                   "MRSEQ R0, MSP\n"
@@ -119,6 +121,15 @@ void HardFault_Handler(void)
 #else
 #error Support for this instruction set is not yet implemented.
 #endif
+
+    /* If core specific HardFault handler returns it means that we can safely
+     * kill the current thread and call the scheduler for reschedule. */
+
+    /* Kill the current thread */
+    sched_thread_terminate(current_thread->id);
+
+    /* Return to the scheduler ASAP */
+    req_context_switch();
 }
 
 /**
@@ -136,19 +147,7 @@ void hard_fault_handler_armv6m(uint32_t stack[])
         while(1);
     }
 
-    /* TODO it's possible to implement some kind of stack dump here.
-     *      If stack dump will not be implemented for ATMv6 then it would be
-     *      wise to "optimize" this code into the actual handler. */
-
-    /* Kill the current thread */
-    sched_thread_terminate(current_thread->id);
-
-    /* Return to the scheduler ASAP */
-    req_context_switch();
-    asm volatile ("BX %0\n"
-              :
-              : "r" (THREAD_RETURN)
-              );
+    /* TODO It's possible to implement a stack dump code here if desired so. */
 }
 
 #if __CORE__ == __ARM7M__ || __CORE__ == __ARM7EM__
