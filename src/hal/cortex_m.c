@@ -18,15 +18,23 @@
 #define KERNEL_INTERNAL
 #endif
 
+#if __CORE__ == __ARM7M__ || __CORE__ == __ARM7EM__
+#include <stdio.h>
 #include <string.h>
+#endif
 #include "kernel.h"
 #include "hal_mcu.h"
 #include "cortex_m.h"
 
 uint32_t flag_kernel_tick = 0;
 
+#if __CORE__ == __ARM6M__ || __CORE__ == __ARM6SM__
+void hard_fault_handler_armv6m(uint32_t stack[]);
+#elif __CORE__ == __ARM7M__ || __CORE__ == __ARM7EM__
+void hard_fault_handler_armv7m(uint32_t stack[]);
 void stackDump(uint32_t stack[]);
 static void printErrorMsg(const char * errMsg);
+#endif
 
 void init_hw_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a_del_thread)
 {
@@ -87,16 +95,47 @@ int test_and_set(int * lock) {
 
 void HardFault_Handler(void)
 {
+#if __CORE__ == __ARM6M__ || __CORE__ == __ARM6SM__
+    int scratch;
+    asm volatile ("PUSH {LR}\n"
+                  "POP {%0}\n"
+                  : "=r" (scratch));
+    if (scratch == 4) {
+        asm volatile ("MRS R0, MSP\n"
+        "B hard_fault_handler_armv6m\n");
+    } else {
+        asm volatile ("MRS R0, PSP\n"
+        "B hard_fault_handler_armv6m\n");
+    }
+#elif  __CORE__ == __ARM7M__ || __CORE__ == __ARM7EM__
+        /* Using IT */
     asm volatile ("TST LR, #4\n"
+                  "ITE EQ\n"
                   "MRSEQ R0, MSP\n"
                   "MRSNE R0, PSP\n"
-                  "B hard_fault_handler_c");
+                  "B hard_fault_handler_armv7m\n");
+
+#else
+#error Support for this instruction set is not yet implemented.
+#endif
 }
 
 /**
-  * This function handles Hard Fault exception.
+  * This function handles the Hard Fault exception on ARMv6M.
   */
-void hard_fault_handler_c(uint32_t stack[])
+void hard_fault_handler_armv6m(uint32_t stack[])
+{
+    asm volatile("BKPT #01");
+    while(1);
+}
+
+#if __CORE__ == __ARM7M__ || __CORE__ == __ARM7EM__
+/* There is no HFSR register or ITM at least on Cortex-M0 and M1 (ARMv6) */
+
+/**
+  * This function handles the Hard Fault exception on ARMv7M.
+  */
+void hard_fault_handler_armv7m(uint32_t stack[])
 {
     static char msg[80];
 
@@ -115,9 +154,15 @@ void hard_fault_handler_c(uint32_t stack[])
             stackDump(stack);
         }
     }
+    stackDump(stack);
+
     asm volatile("BKPT #01");
     while(1);
 }
+#endif
+
+#if __CORE__ == __ARM7M__ || __CORE__ == __ARM7EM__
+/* There is no ITM for Cortex-M0..1 */
 
 static void stackDump(uint32_t stack[])
 {
@@ -135,11 +180,12 @@ static void stackDump(uint32_t stack[])
 
 static void printErrorMsg(const char * errMsg)
 {
-    while (*errMsg != '') {
+    while (*errMsg != '\0') {
         ITM_SendChar(*errMsg);
         ++errMsg;
     }
 }
+#endif
 
 /* End of Fault Handling ******************************************************/
 
