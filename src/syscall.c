@@ -104,14 +104,16 @@ uint32_t _intSyscall_handler(int type, void * p)
                 );
         break;
 
+#if configDEVSUBSYS == 1
     case KERNEL_SYSCALL_SCHED_DEV_WAIT:
-          result =(uint32_t)dev_threadSignalWait(
+        result =(uint32_t)dev_threadDevWait(
                     ((ds_osDevWait_t *)p)->dev,
                     ((ds_osDevWait_t *)p)->millisec
                 );
         break;
+#endif
 
-    case KERNEL_SYSCALL_TEST_AND_SET:
+    case KERNEL_SYSCALL_MUTEX_TEST_AND_SET:
         result = (uint32_t)test_and_set((int *)p);
         break;
 

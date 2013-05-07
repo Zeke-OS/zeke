@@ -98,9 +98,9 @@ typedef int osThreadId;
 /// \note CAN BE CHANGED: \b os_timer_cb is implementation specific in every CMSIS-RTOS.
 typedef int osTimerId;
 
-/// Mutex ID identifies the mutex (pointer to a mutex control block).
-/// \note CAN BE CHANGED: \b os_mutex_cb is implementation specific in every CMSIS-RTOS.
-typedef struct os_mutex_cb *osMutexId;
+/// Mutex cb mutex.
+/// \note non-CMSIS-RTOS.
+typedef struct os_mutex_cb osMutex;
 
 /// Message ID identifies the message queue (pointer to a message queue control block).
 /// \note CAN BE CHANGED: \b os_messageQ_cb is implementation specific in every CMSIS-RTOS.
@@ -280,7 +280,7 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec);
 
 /// Define a Mutex.
 /// \param         name          name of the mutex object.
-/// \note CAN BE CHANGED: The parameter to \b osMutexDef shall be consistent but the 
+/// \note CAN BE CHANGED: The parameter to \b osMutexDef shall be consistent but the
 ///       macro body is implementation specific in every CMSIS-RTOS.
 #if defined (osObjectsExternal)  // object is external
 #define osMutexDef(name)  \
@@ -292,7 +292,7 @@ osMutexDef_t os_mutex_def_##name = { 0 }
 
 /// Access a Mutex defintion.
 /// \param         name          name of the mutex object.
-/// \note CAN BE CHANGED: The parameter to \b osMutex shall be consistent but the 
+/// \note CAN BE CHANGED: The parameter to \b osMutex shall be consistent but the
 ///       macro body is implementation specific in every CMSIS-RTOS.
 #define osMutex(name)  \
 &os_mutex_def_##name
@@ -301,20 +301,23 @@ osMutexDef_t os_mutex_def_##name = { 0 }
 /// \param[in]     mutex_def     mutex definition referenced with \ref osMutex.
 /// \return mutex ID for reference by other functions or NULL in case of error.
 /// \note MUST REMAIN UNCHANGED: \b osMutexCreate shall be consistent in every CMSIS-RTOS.
-osMutexId osMutexCreate(osMutexDef_t *mutex_def);
+/// \note NON-CMSIS-RTOS IMPLEMENTATION
+osMutex osMutexCreate(osMutexDef_t * mutex_def);
 
 /// Wait until a Mutex becomes available
 /// \param[in]     mutex_id      mutex ID obtained by \ref osMutexCreate.
 /// \param[in]     millisec      timeout value or 0 in case of no time-out.
 /// \return status code that indicates the execution status of the function.
 /// \note MUST REMAIN UNCHANGED: \b osMutexWait shall be consistent in every CMSIS-RTOS.
-osStatus osMutexWait(osMutexId mutex_id, uint32_t millisec);
+/// \note NON-CMSIS-RTOS IMPLEMENTATION
+osStatus osMutexWait(osMutex * mutex, uint32_t millisec);
 
 /// Release a Mutex that was obtained by \ref osMutexWait
 /// \param[in]     mutex_id      mutex ID obtained by \ref osMutexCreate.
 /// \return status code that indicates the execution status of the function.
 /// \note MUST REMAIN UNCHANGED: \b osMutexRelease shall be consistent in every CMSIS-RTOS.
-osStatus osMutexRelease(osMutexId mutex_id);
+/// \note NON-CMSIS-RTOS IMPLEMENTATION
+osStatus osMutexRelease(osMutex * mutex_id);
 
 #endif /* KERNEL_INTERNAL */
 

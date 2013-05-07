@@ -2025,6 +2025,27 @@
       <name>$PROJ_DIR$\..\src\hal\stm32f0_interrupt.h</name>
     </file>
   </group>
+  <group>
+    <name>thscope</name>
+    <file>
+      <name>$PROJ_DIR$\..\src\thscope\devsys.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\src\thscope\kernel.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\src\thscope\mutex.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\src\thscope\signal.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\src\thscope\thread.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\src\thscope\wait.c</name>
+    </file>
+  </group>
   <file>
     <name>$PROJ_DIR$\..\app_main.c</name>
   </file>
@@ -2038,13 +2059,10 @@
     <name>$PROJ_DIR$\..\src\heap.h</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\src\kernel.c</name>
-  </file>
-  <file>
-    <name>$PROJ_DIR$\..\include\kernel.h</name>
-  </file>
-  <file>
     <name>$PROJ_DIR$\..\src\kernel_init.c</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\include\mutex.h</name>
   </file>
   <file>
     <name>$PROJ_DIR$\..\src\sched.c</name>
@@ -2057,12 +2075,6 @@
   </file>
   <file>
     <name>$PROJ_DIR$\..\include\syscall.h</name>
-  </file>
-  <file>
-    <name>$PROJ_DIR$\..\src\thread.c</name>
-  </file>
-  <file>
-    <name>$PROJ_DIR$\..\src\thread.h</name>
   </file>
   <file>
     <name>$PROJ_DIR$\..\src\timers.c</name>
