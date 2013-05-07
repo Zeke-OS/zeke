@@ -1,17 +1,21 @@
 TODO
 ====
 
-- ARM9/STM912F port
--- startup file/interrupt vecor
--- Interrupt controller specific code (STM912F)
--- ARM9 specific port code neeeds to be updated
--- Testing on target hardware
+Generic Tasks
+-------------
 - Implement mutex and semaphores
 - Implement memory pools
+- Flags for optional dynmem "optimizations" and feature improvements
+    - Way to free dynamically allocated thread stacks etc.
+    - Optional dynamically allocating scheduler implementation?
 - Timers and kernel time functions
 - Implement system that calculates actual number systicks consumed by
   the scheduler (and compare with others as well like for example idle task)
+- Separately calculate time used by devs
+- Implement some priority reward metrics for IO bound processes?
 - Events are not queued atm, do we need queuing?
+- Implement a restart service that can restart service threads
+    - May need some changes in the scheduler
 - Create kernel library and example program as their own projects
 - Implement other messaging services
 - Use thread parent<->client relationship to improve scheduling
@@ -21,6 +25,22 @@ TODO
 - Thread related functions and variables could be moved from sched.c to its
   own file, although this would although require a lot of refactoring
 - Load ropi applications from storage to RAM and execute in a new thread
+
+ST F0 (& ARMv6M support)
+------------------------
+- Stack dump/Register dump on HardFault
+- HardFault handler optimizations?
+
+ST Cortex-M3 port (& ARMv7M support)
+------------------------------------
+- HardFault handler (is incomplete)
+
+ARM9/STR912F port (ARMv5TE)
+---------------------------
+- startup file/interrupt vecor
+- Interrupt controller specific code (STR912F)
+- ARM9 specific port code neeeds to be updated
+- Testing on target hardware
 
 
 KNOWN ISSUES
