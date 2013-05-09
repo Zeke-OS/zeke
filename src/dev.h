@@ -113,6 +113,7 @@ int dev_bseek(int offset, int origin, size_t size, osDev_t dev, osThreadId threa
 
 /* Thread specific functions used mainly by Syscalls **************************/
 osEvent * dev_threadDevWait(osDev_t dev, uint32_t millisec);
+void dev_threadDevSignal(int32_t signal, osDev_t dev);
 
 #endif /* DEV_H */
 

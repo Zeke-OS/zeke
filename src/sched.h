@@ -84,7 +84,6 @@ threadInfo_t * sched_get_pThreadInfo(int thread_id);
 void sched_thread_set_exec(int thread_id);
 void sched_thread_sleep_current(void);
 void sched_get_loads(uint32_t loads[3]);
-void sched_threadDevSignal(int32_t signal, osDev_t dev);
 
 /* Functions used mainly by syscalls */
 osThreadId sched_ThreadCreate(osThreadDef_t * thread_def, void * argument);
