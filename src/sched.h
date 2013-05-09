@@ -31,7 +31,7 @@
 
 /** Thread info struct
  *
- * Process Control Block structure.
+ * Thread Control Block structure.
  */
 typedef struct {
     void * sp;                  /*!< Stack pointer */
@@ -80,7 +80,9 @@ void sched_init(void);
 void sched_start(void);
 void sched_handler(void);
 
+threadInfo_t * sched_get_pThreadInfo(int thread_id);
 void sched_thread_set_exec(int thread_id);
+void sched_thread_sleep_current(void);
 void sched_get_loads(uint32_t loads[3]);
 void sched_threadDevSignal(int32_t signal, osDev_t dev);
 
@@ -92,12 +94,6 @@ osStatus sched_thread_setPriority(osThreadId thread_id, osPriority priority);
 osPriority sched_thread_getPriority(osThreadId thread_id);
 osStatus sched_threadDelay(uint32_t millisec);
 osEvent * sched_threadWait(uint32_t millisec);
-int32_t sched_threadSignalSet(osThreadId thread_id, int32_t signal);
-void sched_threadSignalWaitMaskClear(void);
-int32_t sched_threadSignalClear(osThreadId thread_id, int32_t signal);
-int32_t sched_threadSignalGetCurrent(void);
-int32_t sched_threadSignalGet(osThreadId thread_id);
-osEvent * sched_threadSignalWait(int32_t signals, uint32_t millisec);
 
 #endif /* SCHED_H */
 

@@ -27,6 +27,7 @@ void timers_release(int tim) { }
 
 /* NOTE: Included sched.c */
 #include "sched.c"
+#include "ksignal.c"
 
 /* Override del_thread */
 void my_del_thread(void);
