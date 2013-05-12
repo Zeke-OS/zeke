@@ -256,6 +256,7 @@ void dev_threadDevSignal(int32_t signal, osDev_t dev)
 {
     int i;
     unsigned int temp_dev = DEV_MAJOR(dev);
+    threadInfo_t * thread;
 
     /* This is unfortunately O(n) :'(
      * TODO Some prioritizing would be very nice at least.
@@ -266,14 +267,15 @@ void dev_threadDevSignal(int32_t signal, osDev_t dev)
      */
     i = 0;
     do {
-        if (   ((task_table[i].sig_wait_mask & signal)    != 0)
-            && ((task_table[i].flags & SCHED_IN_USE_FLAG) != 0)
-            && ((task_table[i].flags & SCHED_NO_SIG_FLAG) == 0)
-            && ((task_table[i].dev_wait) == temp_dev)) {
-            task_table[i].dev_wait = 0u;
+        thread = sched_get_pThreadInfo(i);
+        if (   ((thread->sig_wait_mask & signal)    != 0)
+            && ((thread->flags & SCHED_IN_USE_FLAG) != 0)
+            && ((thread->flags & SCHED_NO_SIG_FLAG) == 0)
+            && ((thread->dev_wait) == temp_dev)) {
+            thread->dev_wait = 0u;
             /* I feel this is bit wrong but we won't save and return
              * prev_signals since no one cares... */
-            ksignal_threadSignalSet(task_table[i].id, signal);
+            ksignal_threadSignalSet(i, signal);
             /* We also assume that the signaling was succeed, if it wasn't we
              * are in deep trouble. But it will never happen!
              */

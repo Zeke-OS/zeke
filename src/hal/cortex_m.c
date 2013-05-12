@@ -55,7 +55,7 @@ void init_hw_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a
 }
 
 /**
-  * Make a system call
+  * Make a system call (used in thread scope)
   */
 #pragma optimize=no_code_motion
 uint32_t syscall(int type, void * p)
@@ -63,7 +63,7 @@ uint32_t syscall(int type, void * p)
     asm volatile(
                  "MOV r2, %0\n" /* Put parameters to r2 & r3 */
                  "MOV r3, %1\n"
-                 "MOV r1, r4\n" /* Preserve r4 by using hardware push */
+                 "MOV r1, r4\n" /* Preserve r4 by using hardware push for it */
                  "SVC #0\n"
                  "DSB\n" /* Ensure write is completed
                           * (architecturally required, but not strictly
@@ -73,7 +73,7 @@ uint32_t syscall(int type, void * p)
 
     /* Get return value */
     osStatus scratch;
-    asm volatile("MOV %0, r4\n"
+    asm volatile("MOV %0, r4\n" /* Return value is now in r4 */
                  "MOV r4, r1\n" /* Read r4 back from r1 */
                  : "=r" (scratch));
 

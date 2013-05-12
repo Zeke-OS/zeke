@@ -10,6 +10,7 @@ Generic Tasks
     - Way to free dynamically allocated thread stacks etc.
     - Optional dynamically allocating scheduler implementation?
 - Timers and kernel time functions
+- Fast fork option by using fifo for finding next thread id (and add it to fifo when killed)
 - Implement system that calculates actual number systicks consumed by
   the scheduler (and compare with others as well like for example idle task)
 - Separately calculate time used by devs
