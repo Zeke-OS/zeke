@@ -11,6 +11,10 @@
   * @{
   */
 
+/** @addtogroup ThreadScope
+  * @{
+  */
+
 #include "hal_core.h"
 #include "syscall.h"
 #include "kernel.h"
@@ -63,6 +67,10 @@ osStatus osMutexRelease(osMutex * mutex)
     }
     return osErrorResource;
 }
+
+/**
+  * @}
+  */
 
 /**
   * @}

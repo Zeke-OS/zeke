@@ -85,6 +85,18 @@ void sched_thread_set_exec(int thread_id);
 void sched_thread_sleep_current(void);
 void sched_get_loads(uint32_t loads[3]);
 
+/**
+  * @}
+  */
+
+/** @addtogroup Kernel
+  * @{
+  */
+
+/** @addtogroup External_routines
+  * @{
+  */
+
 /* Functions that are mainly used by syscalls but can be also caleed by
  * other kernel source modules. */
 osThreadId sched_ThreadCreate(osThreadDef_t * thread_def, void * argument);
@@ -96,6 +108,10 @@ osStatus sched_threadDelay(uint32_t millisec);
 osEvent * sched_threadWait(uint32_t millisec);
 
 #endif /* SCHED_H */
+
+/**
+  * @}
+  */
 
 /**
   * @}

@@ -15,6 +15,10 @@
 #include "syscall.h"
 #include "kernel.h"
 
+/** @addtogroup ThreadScope
+  * @{
+  */
+
 /** @addtogroup Wait
   * @{
   */
@@ -49,6 +53,10 @@ osEvent osWait(uint32_t millisec)
     /* Return a copy of the current state of the event structure */
     return *result;
 }
+
+/**
+  * @}
+  */
 
 /**
   * @}

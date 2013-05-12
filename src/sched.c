@@ -18,13 +18,13 @@
 #define KERNEL_INTERNAL
 #endif
 
-#include "heap.h"
-#include "timers.h"
 #include "hal_core.h"
 #include "hal_mcu.h"
-#include "kernel.h"
+#include "heap.h"
+#include "timers.h"
 #include "ksignal.h"
 #include "syscall.h"
+#include "kernel.h"
 #include "sched.h"
 
 /* Definitions for load average calculation **********************************/
@@ -62,7 +62,7 @@ static threadInfo_t task_table[configSCHED_MAX_THREADS]; /*!< Array of all
 static heap_t priority_queue = HEAP_NEW_EMPTY;   /*!< Priority queue of active
                                                   * threads */
 
-volatile threadInfo_t * current_thread; /*!< Pointer to currently active
+volatile threadInfo_t * current_thread; /*!< Pointer to the currently active
                                          *   thread */
 static uint32_t loadavg[3]  = { 0, 0, 0 }; /*!< CPU load averages */
 
@@ -127,7 +127,6 @@ void sched_start(void)
  * Kernel idle task
  * @note sw stacked registers are invalid when this thread executes for the
  * first time.
- * @todo Add support for low power modes when idling
  */
 void idleTask(/*@unused@*/ void * arg)
 {
@@ -436,6 +435,14 @@ static void del_thread(void)
 
 /* Functions defined in header file (and used mainly by syscalls)
  ******************************************************************************/
+
+/**
+  * @}
+  */
+
+/** @addtogroup Kernel
+  * @{
+  */
 
 /** @addtogroup External_routines
   * @{

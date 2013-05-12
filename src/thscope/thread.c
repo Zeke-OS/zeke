@@ -16,6 +16,10 @@
 #include "syscall.h"
 #include "kernel.h"
 
+/** @addtogroup ThreadScope
+  * @{
+  */
+
 /** @addtogroup Thread_Management
   * @{
   */
@@ -81,6 +85,10 @@ osPriority osThreadGetPriority(osThreadId thread_id)
 
     return result;
 }
+
+/**
+  * @}
+  */
 
 /**
   * @}

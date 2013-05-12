@@ -115,6 +115,7 @@ int dev_check_res(osDev_t dev, osThreadId thread_id)
  * @param ch is written to the device.
  * @param dev device.
  * @param thread_id thread that is writing to the device.
+ * @return Error code.
  */
 int dev_cwrite(uint32_t ch, osDev_t dev, osThreadId thread_id)
 {
@@ -141,6 +142,7 @@ int dev_cwrite(uint32_t ch, osDev_t dev, osThreadId thread_id)
  * @param ch output is written here.
  * @param dev device.
  * @param thread_id thread that is reading the device.
+ * @return Error code.
  */
 int dev_cread(uint32_t * ch, osDev_t dev, osThreadId thread_id)
 {
@@ -169,6 +171,7 @@ int dev_cread(uint32_t * ch, osDev_t dev, osThreadId thread_id)
  * @param count number of elements, each one with a size of size bytes.
  * @param dev device to be written to.
  * @param thread_id id of the thread that is writing to the block device.
+ * @return Error code.
  */
 int dev_bwrite(const void * buff, size_t size, size_t count, osDev_t dev, osThreadId thread_id)
 {
@@ -197,6 +200,7 @@ int dev_bwrite(const void * buff, size_t size, size_t count, osDev_t dev, osThre
  * @param count number of elements, each one with a size of size bytes.
  * @param dev device to be read from.
  * @param thread_id id of the thread that is reading the block device.
+ * @return Error code.
  */
 int dev_bread(void * buff, size_t size, size_t count, osDev_t dev, osThreadId thread_id)
 {
@@ -225,6 +229,7 @@ int dev_bread(void * buff, size_t size, size_t count, osDev_t dev, osThreadId th
  * @param origin Position used as reference for the offset.
  * @param size in bytes, of each element.
  * @param thread_id id of the thread that is seeking the block device.
+ * @return Error code.
  */
 int dev_bseek(int offset, int origin, size_t size, osDev_t dev, osThreadId thread_id)
 {
@@ -236,6 +241,7 @@ int dev_bseek(int offset, int origin, size_t size, osDev_t dev, osThreadId threa
 /**
  * Wait for device
  * @param dev Device that should be waited for; 0 = reset;
+ * @return Event.
  */
 osEvent * dev_threadDevWait(osDev_t dev, uint32_t millisec)
 {

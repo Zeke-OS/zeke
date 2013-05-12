@@ -11,6 +11,10 @@
   * @{
   */
 
+/** @addtogroup ThreadScope
+  * @{
+  */
+
 #include "hal_core.h"
 #include "syscall.h"
 #include "kernel.h"
@@ -38,6 +42,10 @@ osEvent osDevWait(osDev_t dev, uint32_t millisec)
     return *result;
 }
 #endif
+
+/**
+  * @}
+  */
 
 /**
   * @}

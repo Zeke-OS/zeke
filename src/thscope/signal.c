@@ -16,6 +16,10 @@
 #include "ksignal.h"
 #include "kernel.h"
 
+/** @addtogroup ThreadScope
+  * @{
+  */
+
 /** @addtogroup Signal
   * @{
   */
@@ -75,6 +79,11 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec)
     /* Return a copy of the current state of the event structure */
     return *result;
 }
+
+/**
+  * @}
+  */
+
 
 /**
   * @}

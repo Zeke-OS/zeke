@@ -67,10 +67,10 @@
  * Device driver initialization.
  * This must be called by every drvname_init(int major).
  * @param major number of the device driver.
- * @param cwrite a function pointer the character device write interface.
- * @param cread a function pointer the character device read interface.
- * @param bwrite a function pointer the block device write interface.
- * @param bread a function pointer the block device read interface.
+ * @param pcwrite a function pointer the character device write interface.
+ * @param pcread a function pointer the character device read interface.
+ * @param pbwrite a function pointer the block device write interface.
+ * @param pbread a function pointer the block device read interface.
  * @param add_flags additional flags (eg. DEV_FLAG_NONLOCK).
  */
 #define DEV_INIT(major, pcwrite, pcread, pbwrite, pbread, pbseek, add_flags) do\

@@ -19,9 +19,9 @@
  * Internal Syscall handler/translator
  *
  * This function is called from interrupt handler. This function calls the
- * actual kernel function and returns result pointer to the interrupt handler
- * which returns it to the original caller, which is usually a library function
- * in kernel.c
+ * actual kernel function and returns a result pointer/data to the interrupt
+ * handler which returns it to the original caller, which is usually a library
+ * function in kernel.c
  * @param type syscall type.
  * @param p pointer to the parameter or parameter structure.
  * @return result value or pointer to the result.
