@@ -80,6 +80,9 @@ void thread_input(void const * arg)
         if(STM_EVAL_PBGetState(BUTTON_USER) == SET)
         {
             osSignalSet(th2_id, 1);
+            /* GENERATE HARDFAULT */
+            /*asm volatile ("MOVS R0, #0\n"
+                          "BX R0\n");*/
             osDelay(1000);
         }
     }
