@@ -249,5 +249,46 @@ osEvent * dev_threadDevWait(osDev_t dev, uint32_t millisec)
 }
 
 /**
+ * Send a signal that a dev resource is free now.
+ * @param signal signal mask
+ */
+void dev_threadDevSignal(int32_t signal, osDev_t dev)
+{
+    int i;
+    unsigned int temp_dev = DEV_MAJOR(dev);
+    threadInfo_t * thread;
+
+    /* This is unfortunately O(n) :'(
+     * TODO Some prioritizing would be very nice at least.
+     *      Possibly if we would just add waiting threads first to a
+     *      priority queue? Is it a waste of cpu time? It isn't actually
+     *      a quaranteed way to remove starvation so starvation would be
+     *      still there :/
+     */
+    i = 0;
+    do {
+        thread = sched_get_pThreadInfo(i);
+        if (   ((thread->sig_wait_mask & signal)    != 0)
+            && ((thread->flags & SCHED_IN_USE_FLAG) != 0)
+            && ((thread->flags & SCHED_NO_SIG_FLAG) == 0)
+            && ((thread->dev_wait) == temp_dev)) {
+            thread->dev_wait = 0u;
+            /* I feel this is bit wrong but we won't save and return
+             * prev_signals since no one cares... */
+            ksignal_threadSignalSet(i, signal);
+            /* We also assume that the signaling was succeed, if it wasn't we
+             * are in deep trouble. But it will never happen!
+             */
+
+            return; /* Return now so other threads will keep waiting for their
+                     * turn. */
+        }
+    } while (++i < configSCHED_MAX_THREADS);
+
+    return; /* Thre is no threads waiting for this signal,
+             * so we wasted a lot of cpu time.             */
+}
+
+/**
   * @}
   */

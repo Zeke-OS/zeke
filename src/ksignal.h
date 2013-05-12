@@ -1,0 +1,26 @@
+/**
+ *******************************************************************************
+ * @file    ksignal.h
+ * @author  Olli Vanhoja
+ *
+ * @brief   Header file for thread Signal Management in kernel (signal.c).
+ *
+ *******************************************************************************
+ */
+
+#pragma once
+#ifndef SIGNAL_H
+#define SIGNAL_H
+
+#include <stdint.h>
+#include "kernel.h"
+
+int32_t ksignal_threadSignalSet(osThreadId thread_id, int32_t signal);
+void ksignal_threadSignalWaitMaskClear(void);
+int32_t ksignal_threadSignalClear(osThreadId thread_id, int32_t signal);
+int32_t ksignal_threadSignalGetCurrent(void);
+int32_t ksignal_threadSignalGet(osThreadId thread_id);
+osEvent * ksignal_threadSignalWait(int32_t signals, uint32_t millisec);
+
+#endif /* SIGNAL_H */
+

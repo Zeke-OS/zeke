@@ -23,6 +23,7 @@
 #include "hal_core.h"
 #include "hal_mcu.h"
 #include "kernel.h"
+#include "ksignal.h"
 #include "syscall.h"
 #include "sched.h"
 
@@ -78,7 +79,6 @@ static void context_switcher(void);
 static void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument, threadInfo_t * parent);
 static void sched_thread_set_inheritance(osThreadId i, threadInfo_t * parent);
 static void _sched_thread_set_exec(int thread_id, osPriority pri);
-static void _sched_thread_sleep_current(void);
 static void sched_thread_remove(osThreadId id);
 static void del_thread(void);
 /* End of Static function declarations ***************************************/
@@ -254,6 +254,23 @@ static void context_switcher(void)
 }
 
 /**
+  * Get pointer to a threadInfo structure.
+  * @param thread_id id of a thread.
+  * @return Pointer to a threadInfo structure of a correspondig thread id
+  *         or NULL if thread does not exist.
+  */
+threadInfo_t * sched_get_pThreadInfo(int thread_id)
+{
+    if (thread_id > configSCHED_MAX_THREADS)
+        return NULL;
+
+    if ((task_table[thread_id].flags & (uint32_t)SCHED_IN_USE_FLAG) == 0)
+        return NULL;
+
+    return &(task_table[thread_id]);
+}
+
+/**
   * Set thread initial configuration
   * @note This function should not be called for already initialized threads.
   * @param i            Thread id
@@ -366,7 +383,7 @@ static void _sched_thread_set_exec(int thread_id, osPriority pri)
 /**
  * Put current thread into sleep.
  */
-static void _sched_thread_sleep_current(void)
+void sched_thread_sleep_current(void)
 {
     /* Sleep flag */
     current_thread->flags &= ~SCHED_EXEC_FLAG;
@@ -543,7 +560,7 @@ osStatus sched_threadDelay(uint32_t millisec)
     if (current_thread->event.status != osErrorResource) {
         /* This thread shouldn't get woken up by signals */
         current_thread->flags |= SCHED_NO_SIG_FLAG;
-        _sched_thread_sleep_current();
+        sched_thread_sleep_current();
     }
 
     return current_thread->event.status;
@@ -557,163 +574,7 @@ osStatus sched_threadDelay(uint32_t millisec)
  */
 osEvent * sched_threadWait(uint32_t millisec)
 {
-    return sched_threadSignalWait(0x7fffffff, millisec);
-}
-
-/* ==== Signal Management ==== */
-
-/**
- * Set signal and wakeup the thread.
- */
-int32_t sched_threadSignalSet(osThreadId thread_id, int32_t signal)
-{
-    int32_t prev_signals;
-
-    if ((task_table[thread_id].flags & SCHED_IN_USE_FLAG) == 0)
-        return 0x80000000; /* Error code specified in CMSIS-RTOS */
-
-    prev_signals = task_table[thread_id].signals;
-
-    task_table[thread_id].signals |= signal; /* OR with all signals */
-
-    /* Update event struct */
-    task_table[thread_id].event.value.signals = signal; /* Only this signal */
-    task_table[thread_id].event.status = osEventSignal;
-
-    if (((task_table[thread_id].flags & SCHED_NO_SIG_FLAG) == 0)
-        && ((task_table[thread_id].sig_wait_mask & signal) != 0)) {
-        /* Release wait timeout timer */
-        if (task_table[thread_id].wait_tim >= 0) {
-            timers_release(task_table[thread_id].wait_tim);
-        }
-
-        /* Clear signal wait mask */
-        task_table[thread_id].sig_wait_mask = 0x0;
-
-        /* Set the signaled thread back into execution */
-        _sched_thread_set_exec(thread_id, task_table[thread_id].def_priority);
-    }
-
-    return prev_signals;
-}
-
-#if configDEVSUBSYS == 1
-/**
- * Send a signal that a dev resource is free now.
- * @param signal signal mask
- */
-void sched_threadDevSignal(int32_t signal, osDev_t dev)
-{
-    int i;
-    unsigned int temp_dev = DEV_MAJOR(dev);
-
-    /* This is unfortunately O(n) :'(
-     * TODO Some prioritizing would be very nice at least.
-     *      Possibly if we would just add waiting threads first to a
-     *      priority queue? Is it a waste of cpu time? It isn't actually
-     *      a quaranteed way to remove starvation so starvation would be
-     *      still there :/
-     */
-    i = 0;
-    do {
-        if (   ((task_table[i].sig_wait_mask & signal)    != 0)
-            && ((task_table[i].flags & SCHED_IN_USE_FLAG) != 0)
-            && ((task_table[i].flags & SCHED_NO_SIG_FLAG) == 0)
-            && ((task_table[i].dev_wait) == temp_dev)) {
-            task_table[i].dev_wait = 0u;
-            /* I feel this is bit wrong but we won't save and return
-             * prev_signals since no one cares... */
-            sched_threadSignalSet(task_table[i].id, signal);
-            /* We also assume that the signaling was succeed, if it wasn't we
-             * are in deep trouble. But it will never happen!
-             */
-
-            return; /* Return now so other threads will keep waiting for their
-                     * turn. */
-        }
-    } while (++i < configSCHED_MAX_THREADS);
-
-    return; /* Thre is no threads waiting for this signal,
-             * so we wasted a lot of cpu time.             */
-}
-#endif
-
-/**
- * Clear signal wait mask of the current thread
- */
-void sched_threadSignalWaitMaskClear(void)
-{
-    current_thread->sig_wait_mask = 0x0;
-}
-
-/**
- * Clear selected signals
- * @param thread_id Thread id
- * @param signal    Signals to be cleared.
- */
-int32_t sched_threadSignalClear(osThreadId thread_id, int32_t signal)
-{
-    int32_t prev_signals;
-
-    if ((task_table[thread_id].flags & SCHED_IN_USE_FLAG) == 0)
-        return 0x80000000; /* Error code specified in CMSIS-RTOS */
-
-    prev_signals = task_table[thread_id].signals;
-    task_table[thread_id].signals &= ~(signal & 0x7fffffff);
-
-    return prev_signals;
-}
-
-/**
- * Get signals of the currently running thread
- * @return Signals
- */
-int32_t sched_threadSignalGetCurrent(void)
-{
-    return current_thread->signals;
-}
-
-/**
- * Get signals of a thread
- * @param thread_id Thread id.
- * @return          Signals of the selected thread.
- */
-int32_t sched_threadSignalGet(osThreadId thread_id)
-{
-    return task_table[thread_id].signals;
-}
-
-/**
- * Wait for a signal(s)
- * @param signals   Signals that can woke-up the suspended thread.
- * @millisec        Timeout if selected signal is not invoken.
- * @return          Event that triggered resume back to running state.
- */
-osEvent * sched_threadSignalWait(int32_t signals, uint32_t millisec)
-{
-    int tim;
-
-    current_thread->event.status = osEventTimeout;
-
-    if (millisec != (uint32_t)osWaitForever) {
-        if ((tim = timers_add(current_thread->id, osTimerOnce, millisec)) < 0) {
-            /* Timer error will be most likely but not necessarily returned
-             * as is. There is however a slight chance of event triggering
-             * before control returns back to this thread. It is completely OK
-             * to clear this error if that happens. */
-            current_thread->event.status = osErrorResource;
-        }
-        current_thread->wait_tim = tim;
-    }
-
-    if (current_thread->event.status != osErrorResource) {
-        current_thread->sig_wait_mask = signals;
-        _sched_thread_sleep_current();
-    }
-
-    /* Event status is now timeout but will be changed if any event occurs
-     * as event is returned as a pointer. */
-    return (osEvent *)(&(current_thread->event));
+    return ksignal_threadSignalWait(0x7fffffff, millisec);
 }
 
 /**

@@ -14,31 +14,25 @@ goal is to implement system services by using SVC calls which may open
 some very nice possibilities in the futur eg. loading code from SD
 card without static linkage to the kernel itself etc.
 
-
 Key features
 ------------
-
 - Fixed(/dynamic) priority pre-emptive scheduling with penalties to prevent
   starvation
 - Signal flag based notify/wake-up from sleep with event timeouts
 - System call based kernel services
-- Almost CMSIS-RTOS compliant
+- Almost (and will be mostly) CMSIS-RTOS compliant
+- Quite small footprint
+- Offers some protection even on Cortex-M0 without MMU (atm mainly angainst
+  stack polution and some hard faults)
 
 News
 ----
-
-- ARM9 port is under development and it is prioritized over other tasks
-
-
-News
-----
-
-- ARM9 port is under development and it is prioritized over other tasks
-
+- LCD support and new optional dev subsystem will be released
+- ST Cortex-M3 port will be released in the (near of far) future
+- ARM9 port is (slowly) under development
 
 License
 -------
-
 Copyright (c) 2012, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
 All rights reserved.
 
