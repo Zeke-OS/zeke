@@ -13,6 +13,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "sched.h"
+#include "ksignal.h"
 #include "dev_config.h"
 #include "dev.h"
 
@@ -90,7 +91,7 @@ int dev_close(osDev_t dev, osThreadId thread_id)
     /* TODO wait for dev to be not busy? */
 
     /* This is bit stupid but might be the easiest way to implement this :/ */
-    sched_threadDevSignal(SCHED_DEV_WAIT_BIT, dev);
+    dev_threadDevSignal(SCHED_DEV_WAIT_BIT, dev);
 
     return DEV_CERR_OK;
 }
@@ -245,7 +246,7 @@ osEvent * dev_threadDevWait(osDev_t dev, uint32_t millisec)
         return (osEvent *)(&(current_thread->event));
     }
 
-    return sched_threadSignalWait(SCHED_DEV_WAIT_BIT, millisec);
+    return ksignal_threadSignalWait(SCHED_DEV_WAIT_BIT, millisec);
 }
 
 /**

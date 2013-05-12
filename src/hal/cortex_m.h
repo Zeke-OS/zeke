@@ -19,6 +19,7 @@
 #define CORTEX_M_H
 
 #include "kernel.h"
+#include "hal_mcu.h" /* Needed for CMSIS */
 #include "hal_core.h"
 
 #ifndef __ARM_PROFILE_M__

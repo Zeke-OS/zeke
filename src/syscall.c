@@ -9,6 +9,7 @@
  */
 
 #include "sched.h"
+#include "ksignal.h"
 #define KERNEL_INTERNAL 1
 #include "dev.h"
 #include "hal_core.h"
@@ -74,31 +75,31 @@ uint32_t _intSyscall_handler(int type, void * p)
         break;
 
     case KERNEL_SYSCALL_SCHED_SIGNAL_SET:
-        result =(uint32_t)sched_threadSignalSet(
+        result =(uint32_t)ksignal_threadSignalSet(
                     ((ds_osSignal_t *)p)->thread_id,
                     ((ds_osSignal_t *)p)->signal
                 );
         break;
 
     case KERNEL_SYSCALL_SCHED_SIGNAL_CLEAR:
-        result =(uint32_t)sched_threadSignalClear(
+        result =(uint32_t)ksignal_threadSignalClear(
                     ((ds_osSignal_t *)p)->thread_id,
                     ((ds_osSignal_t *)p)->signal
                 );
         break;
 
     case KERNEL_SYSCALL_SCHED_SIGNAL_GETCURR:
-        result =(uint32_t)sched_threadSignalGetCurrent();
+        result =(uint32_t)ksignal_threadSignalGetCurrent();
         break;
 
     case KERNEL_SYSCALL_SCHED_SIGNAL_GET:
-        result =(uint32_t)sched_threadSignalGet(
+        result =(uint32_t)ksignal_threadSignalGet(
                     *((osThreadId *)p)
                 );
         break;
 
     case KERNEL_SYSCALL_SCHED_SIGNAL_WAIT:
-        result =(uint32_t)sched_threadSignalWait(
+        result =(uint32_t)ksignal_threadSignalWait(
                     ((ds_osSignalWait_t *)p)->signals,
                     ((ds_osSignalWait_t *)p)->millisec
                 );

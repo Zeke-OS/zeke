@@ -2062,6 +2062,12 @@
     <name>$PROJ_DIR$\..\src\kernel_init.c</name>
   </file>
   <file>
+    <name>$PROJ_DIR$\..\src\ksignal.c</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\src\ksignal.h</name>
+  </file>
+  <file>
     <name>$PROJ_DIR$\..\include\mutex.h</name>
   </file>
   <file>

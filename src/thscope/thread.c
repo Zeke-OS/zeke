@@ -13,7 +13,6 @@
   */
 
 #include "hal_core.h"
-#include "hal_mcu.h"
 #include "syscall.h"
 #include "kernel.h"
 

@@ -12,7 +12,6 @@
   */
 
 #include "hal_core.h"
-#include "hal_mcu.h"
 #include "syscall.h"
 #include "ksignal.h"
 #include "kernel.h"
