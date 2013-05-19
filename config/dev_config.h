@@ -2,7 +2,9 @@
 #define DEV_CONFIG_H
 /* Include device drivers here */
 #include "devnull.h"
+#include "lcd.h"
 #else
 /* Declare device drivers here */
 DEV_DECLARE(0, devnull)
+DEV_DECLARE(1, lcd)
 #endif

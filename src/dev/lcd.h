@@ -2,7 +2,7 @@
  *******************************************************************************
  * @file    lcd.h
  * @author  Olli Vanhoja
- * @brief   Device driver for lcd.
+ * @brief   Device driver "wrapper" for LCDs.
  *******************************************************************************
  */
 
@@ -15,14 +15,14 @@
   */
 
 #pragma once
-#ifndef DEVNULL_H
-#define DEVNULL_H
+#ifndef LCD_H
+#define LCD_H
 
 #include "dev.h"
 
 void lcd_init(int major);
 
-#endif /* DEVNULL_H */
+#endif /* LCD_H */
 
 /**
   * @}

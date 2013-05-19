@@ -185,11 +185,11 @@
         </option>
         <option>
           <name>CCListCFile</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CCListCMnemonics</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CCListCMessages</name>
@@ -1864,6 +1864,9 @@
     </file>
     <file>
       <name>$PROJ_DIR$\..\src\dev\lcd.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\src\dev\lcd.h</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\src\dev\lcd_ctrl.c</name>

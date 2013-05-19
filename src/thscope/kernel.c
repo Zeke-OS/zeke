@@ -265,6 +265,18 @@ osStatus osMutexRelease(osMutex * mutex)
 /* Non-CMSIS *****************************************************************/
 
 #if configDEVSUBSYS == 1
+/**
+ * TODO Add syscalls for:
+ * + int dev_open(osDev_t dev, osThreadId thread_id)
+ * + int dev_close(osDev_t dev, osThreadId thread_id)
+ * + int dev_check_res(osDev_t dev, osThreadId thread_id)
+ * + int dev_cwrite(uint32_t ch, osDev_t dev, osThreadId thread_id)
+ * + int dev_cread(uint32_t * ch, osDev_t dev, osThreadId thread_id)
+ * + int dev_bwrite(const void * buff, size_t size, size_t count, osDev_t dev, osThreadId thread_id)
+ * + int dev_bread(void * buff, size_t size, size_t count, osDev_t dev, osThreadId thread_id)
+ * + int dev_bseek(int offset, int origin, size_t size, osDev_t dev, osThreadId thread_id)
+ */
+
 osEvent osDevWait(osDev_t dev, uint32_t millisec)
 {
     ds_osDevWait_t ds = { dev, millisec };

@@ -79,7 +79,7 @@ int dev_open(osDev_t dev, osThreadId thread_id)
  * @param dev the device.
  * @param thread_id thread that tries to close this device.
  * @return DEV_CERR_OK (0) if the device access was closed succesfully;
-   otherwise DEV_CERR_x.
+ * otherwise DEV_CERR_x.
  */
 int dev_close(osDev_t dev, osThreadId thread_id)
 {
@@ -235,8 +235,6 @@ int dev_bseek(int offset, int origin, size_t size, osDev_t dev, osThreadId threa
 {
     return DEV_BSK_INTERNAL;
 }
-
-/* Thread specific code used mainly by Syscalls *******************************/
 
 /**
  * Wait for device
