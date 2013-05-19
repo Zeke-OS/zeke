@@ -1854,12 +1854,6 @@
   <group>
     <name>dev</name>
     <file>
-      <name>$PROJ_DIR$\..\src\dev.c</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\src\dev.h</name>
-    </file>
-    <file>
       <name>$PROJ_DIR$\..\src\dev\devnull.c</name>
     </file>
     <file>
@@ -2051,6 +2045,12 @@
   </file>
   <file>
     <name>$PROJ_DIR$\..\include\app_main.h</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\src\dev.c</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\src\dev.h</name>
   </file>
   <file>
     <name>$PROJ_DIR$\..\src\heap.c</name>
