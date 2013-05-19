@@ -2022,22 +2022,7 @@
   <group>
     <name>thscope</name>
     <file>
-      <name>$PROJ_DIR$\..\src\thscope\devsys.c</name>
-    </file>
-    <file>
       <name>$PROJ_DIR$\..\src\thscope\kernel.c</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\src\thscope\mutex.c</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\src\thscope\signal.c</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\src\thscope\thread.c</name>
-    </file>
-    <file>
-      <name>$PROJ_DIR$\..\src\thscope\wait.c</name>
     </file>
   </group>
   <file>
