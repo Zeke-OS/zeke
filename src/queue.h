@@ -26,5 +26,7 @@ int queue_push(queue_cb_t * cb, void * element);
 int queue_pop(queue_cb_t * cb, void * element);
 void queue_clearFromPushEnd(queue_cb_t * cb);
 void queue_clearFromPopEnd(queue_cb_t * cb);
+int queue_isEmpty(queue_cb_t * cb);
+int queue_isFull(queue_cb_t * cb);
 
 #endif /* QUEUE_H */

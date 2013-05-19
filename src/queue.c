@@ -102,3 +102,12 @@ void queue_clearFromPopEnd(queue_cb_t * cb)
     cb->m_read = cb->m_write;
 }
 
+int queue_isEmpty(queue_cb_t * cb)
+{
+    return cb->m_write == cb->m_read;
+}
+
+int queue_isFull(queue_cb_t * cb)
+{
+    return ((cb->m_write + 1) % cb->a_len) == cb->m_read;
+}
