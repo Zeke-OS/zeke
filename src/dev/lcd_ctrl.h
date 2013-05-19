@@ -18,6 +18,8 @@
 #ifndef LCDCTRL_H
 #define LCDCTRL_H
 
+extern volatile char lcdc_thread_stack[];
+
 void lcdc_init(void);
 void lcdc_write(const char * c);
 void lcdc_data_write(uint8_t data);

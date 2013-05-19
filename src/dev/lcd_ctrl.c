@@ -38,6 +38,8 @@
 #define  EN_LOW         GPIO_LOW(GPIOC, EN)
 #define  EN_TOGGLE      GPIO_TOGGLE(GPIOC, EN)
 
+volatile char lcdc_thread_stack[300];
+
 static void lcdc_write_char(char c);
 
 void  lcdc_init(void)
