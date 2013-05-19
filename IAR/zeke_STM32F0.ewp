@@ -2071,6 +2071,12 @@
     <name>$PROJ_DIR$\..\include\mutex.h</name>
   </file>
   <file>
+    <name>$PROJ_DIR$\..\src\queue.c</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\src\queue.h</name>
+  </file>
+  <file>
     <name>$PROJ_DIR$\..\src\sched.c</name>
   </file>
   <file>

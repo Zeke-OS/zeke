@@ -18,19 +18,13 @@
 #ifndef LCDCTRL_H
 #define LCDCTRL_H
 
-extern volatile char lcdc_thread_stack[];
+#include "queue.h"
+
+extern queue_cb_t lcdc_queue_cb;
 
 void lcdc_init(void);
-void lcdc_write(const char * c);
-void lcdc_data_write(uint8_t data);
-void lcdc_reg_write(uint8_t val);
-void lcdc_clear(void);
-void lcdc_home(void);
-void lcdc_goto(char pos);
-void lcdc_print(char pos, const char * str);
 
 #endif /* LCDCTRL_H */
-
 
 /**
   * @}

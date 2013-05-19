@@ -2,7 +2,9 @@
  *******************************************************************************
  * @file    lcd_ctrl.c
  * @author  Olli Vanhoja
- * @brief   LCD control library.
+ * @brief   Control library for 162B series LCD.
+ *
+ *          This part of the LCD control library is purely run in thread scope.
  *******************************************************************************
  */
 
@@ -15,6 +17,7 @@
   */
 
 #include "kernel.h"
+#include "queue.h"
 #include "stm32f0xx_conf.h"
 #include "lcd_ctrl.h"
 
@@ -38,25 +41,38 @@
 #define  EN_LOW         GPIO_LOW(GPIOC, EN)
 #define  EN_TOGGLE      GPIO_TOGGLE(GPIOC, EN)
 
-volatile char lcdc_thread_stack[300];
+static char lcdc_thread_stack[300];
+char lcdc_buff[80];
+queue_cb_t lcdc_queue_cb;
 
+static void lcdc_init_thread(void);
+void lcdc_thread(void const * arg);
+static void lcdc_tab(void);
 static void lcdc_write_char(char c);
+static void lcdc_write(const char * c);
+static void lcdc_data_write(uint8_t data);
+static void lcdc_reg_write(uint8_t val);
+static void lcdc_clear(void);
+static void lcdc_home(void);
+static void lcdc_goto(char pos);
+static void lcdc_print(char pos, const char * str);
 
-void  lcdc_init(void)
+
+void lcdc_init(void)
 {
     GPIO_InitTypeDef GPIO_InitStructure;
 
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
 
     /* Set RS and EN pins as output PUSH PULL pins */
-    GPIO_InitStructure.GPIO_Pin =  RS | EN ;
+    GPIO_InitStructure.GPIO_Pin = RS | EN;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
     GPIO_Init(GPIOC, &GPIO_InitStructure);
 
     /* Set data pins as output OPEN DRAIN pins */
-    GPIO_InitStructure.GPIO_Pin =  D4 | D5 | D6 | D7;
+    GPIO_InitStructure.GPIO_Pin = D4 | D5 | D6 | D7;
     GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
     GPIO_Init(GPIOC, &GPIO_InitStructure);
 
@@ -81,14 +97,116 @@ void  lcdc_init(void)
     osDelay(1); /* TODO 10us */
     EN_LOW;
     //lcd_write_char(0x20);
-    lcdc_write_char(0x08); // display off
-    lcdc_write_char(0x01); //LCD clear
-    lcdc_write_char(0x0F); // display on, blink curson on
-    lcdc_write_char(0x06); // entry mode
-    //lcd_write_char(0x01); //LCD clear
+    lcdc_write_char(0x08); /* display off */
+    lcdc_write_char(0x01); /* LCD clear */
+    lcdc_write_char(0x0F); /* display on, blink curson on */
+    lcdc_write_char(0x06); /* entry mode */
+    //lcd_write_char(0x01); /*LCD clear
     osDelay(10);
+
+    lcdc_queue_cb = queue_create(lcdc_buff, sizeof(char), sizeof(lcdc_buff) / sizeof(char));
+    lcdc_init_thread();
 }
 
+static void lcdc_init_thread(void)
+{
+    osThreadDef_t th = { (os_pthread)(&lcdc_thread),
+                         osPriorityBelowNormal,
+                         lcdc_thread_stack,
+                         sizeof(lcdc_thread_stack) / sizeof(char)
+                       };
+    osThreadCreate(&th, NULL);
+}
+
+void lcdc_thread(void const * arg)
+{
+    char ch;
+
+    while(1) {
+        osWait(osWaitForever);
+        while(queue_pop(&lcdc_queue_cb, &ch)) {
+            /* Was it a control character? */
+            if (ch <= 0x1f ||ch == 0x7f) {
+                switch (ch) {
+                case 0x02: /*Start of text */
+                    lcdc_clear();
+                case 0x08: /* BS (Backspace) */
+                    lcdc_reg_write(0x14);
+                    lcdc_data_write(' ');
+                    lcdc_reg_write(0x14);
+                    break;
+                case 0x09: /* TAB (Horizontal tab) */
+                    lcdc_tab();
+                    break;
+                case 0x0a: /* LF/NL (Line feed/New line) */
+                    lcdc_goto(0x40); /** TODO This is incorrect temp code */
+                    break;
+                case 0x0d: /* CR (Carriage return) */
+                    lcdc_home();
+                    break;
+                default:
+                    break;
+                }
+            } else {
+                lcdc_data_write((uint8_t)ch);
+            }
+        }
+    }
+}
+
+static void lcdc_write(const char * buff)
+{
+    int i = 0;
+
+    RS_HIGH; /* Write data */
+
+    while (buff[i] != 0) {
+        lcdc_write_char(buff[i]);
+        i++;
+    }
+}
+
+static void lcdc_data_write(uint8_t data)
+{
+    RS_HIGH; /* Write data */
+    lcdc_write_char(data);
+}
+
+static void lcdc_reg_write(uint8_t val)
+{
+    RS_LOW; /* Write Register */
+    lcdc_write_char(val);
+}
+
+static void lcdc_clear(void)
+{
+  lcdc_reg_write(0x01);
+}
+
+static void lcdc_home(void)
+{
+  lcdc_reg_write(0x02);
+}
+
+static void lcdc_tab(void)
+{
+    RS_LOW; /* Write Register */
+    lcdc_write_char(0x10);
+    lcdc_write_char(0x10);
+    lcdc_write_char(0x10);
+    lcdc_write_char(0x10);
+}
+
+static void lcdc_goto(char pos)
+{
+    lcdc_reg_write(0x80 + pos);
+}
+
+static void lcdc_print(char pos, const char * str)
+{
+    lcdc_goto(pos);
+    lcdc_write(str);
+}
 
 static void lcdc_write_char(char c)
 {
@@ -103,50 +221,6 @@ static void lcdc_write_char(char c)
     osDelay(1); /* TODO 10us */
     EN_LOW;
     osDelay(2);
-}
-
-void lcdc_write(const char * buff)
-{
-    int i = 0;
-
-    RS_HIGH; /* Write data */
-
-    while (buff[i] != 0) {
-        lcdc_write_char(buff[i]);
-        i++;
-    }
-}
-
-void lcdc_data_write(uint8_t data)
-{
-    RS_HIGH; /* Write data */
-    lcdc_write_char(data);
-}
-
-void lcdc_reg_write(uint8_t val)
-{
-    RS_LOW; /* Write Register */
-    lcdc_write_char(val);
-}
-
-void lcdc_clear(void)
-{
-  lcdc_reg_write(0x01);
-}
-
-void lcdc_home(void) {
-  lcdc_reg_write(0x02);
-}
-
-void lcdc_goto(char pos)
-{
-    lcdc_reg_write(0x80 + pos);
-}
-
-void lcdc_print(char pos, const char * str)
-{
-    lcdc_goto(pos);
-    lcdc_write(str);
 }
 
 /**

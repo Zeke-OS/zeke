@@ -70,12 +70,12 @@ void thread_input(void const * arg)
     char buff[80];
 
     lcdc_init();
-    lcdc_write("Load avg:");
+    //lcdc_write("Load avg:");
 
     while (1) {
         osGetLoadAvg(lavg);
         sprintf(buff, "%d %d %d", lavg[0], lavg[1], lavg[2]);
-        lcdc_print(0x40, buff);
+        //lcdc_print(0x40, buff);
 
         if(STM_EVAL_PBGetState(BUTTON_USER) == SET)
         {

@@ -33,12 +33,16 @@ void lcd_init(int major)
 /**
  * Write to lcd.
  * TODO
- * - SET & CUR?
  * - Support size & count?
  */
 int lcd_bwrite(void * buff, size_t size, size_t count, osDev_t dev)
 {
-    lcdc_write(buff);
+    if (!queue_push(&lcdc_queue_cb, buff)) {
+        // error? & set busy
+    }
+    if (queue_isFull(&lcdc_queue_cb)) {
+        // Set dev busy
+    }
 
     return DEV_CWR_OK;
 }
