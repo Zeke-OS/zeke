@@ -267,7 +267,6 @@ osStatus osMutexRelease(osMutex * mutex)
 #if configDEVSUBSYS == 1
 /**
  * TODO Add syscalls for:
- * + int dev_open(osDev_t dev, osThreadId thread_id)
  * + int dev_close(osDev_t dev, osThreadId thread_id)
  * + int dev_check_res(osDev_t dev, osThreadId thread_id)
  * + int dev_cwrite(uint32_t ch, osDev_t dev, osThreadId thread_id)
@@ -277,12 +276,22 @@ osStatus osMutexRelease(osMutex * mutex)
  * + int dev_bseek(int offset, int origin, size_t size, osDev_t dev, osThreadId thread_id)
  */
 
+int osDevOpen(osDev_t dev, osThreadId thread_id)
+{
+    ds_osDevOpen_t ds = { dev, thread_id };
+    int result;
+
+    result = (int)syscall(SYSCALL_DEV_OPEN, &ds);
+
+    return result;
+}
+
 osEvent osDevWait(osDev_t dev, uint32_t millisec)
 {
     ds_osDevWait_t ds = { dev, millisec };
     osEvent * result;
 
-    result = (osEvent *)syscall(SYSCALL_SCHED_DEV_WAIT, &ds);
+    result = (osEvent *)syscall(SYSCALL_DEV_WAIT, &ds);
 
     if (result->status != osErrorResource) {
         /* Request context switch */

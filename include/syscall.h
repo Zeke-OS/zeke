@@ -57,7 +57,8 @@
 #define SYSCALL_SCHED_SIGNAL_GETCURR        SYSCALL_MMTOTYPE(SYSCALL_GROUP_SCHED_SIGNAL, 0x03)
 #define SYSCALL_SCHED_SIGNAL_GET            SYSCALL_MMTOTYPE(SYSCALL_GROUP_SCHED_SIGNAL, 0x04)
 #define SYSCALL_SCHED_SIGNAL_WAIT           SYSCALL_MMTOTYPE(SYSCALL_GROUP_SCHED_SIGNAL, 0x05)
-#define SYSCALL_SCHED_DEV_WAIT              SYSCALL_MMTOTYPE(SYSCALL_GROUP_DEV, 0x01)
+#define SYSCALL_DEV_OPEN                    SYSCALL_MMTOTYPE(SYSCALL_GROUP_DEV, 0x01)
+#define SYSCALL_DEV_WAIT                    SYSCALL_MMTOTYPE(SYSCALL_GROUP_DEV, 0x02)
 #define SYSCALL_MUTEX_TEST_AND_SET          SYSCALL_MMTOTYPE(SYSCALL_GROUP_LOCKS, 0x01)
 
 /** Argument struct for KERNEL_SYSCALL_SCHED_THREAD_CREATE */
@@ -86,6 +87,11 @@ typedef struct {
 } ds_osSignalWait_t;
 
 #if configDEVSUBSYS == 1
+typedef struct {
+    osDev_t dev;            /*!< Device */
+    osThreadId thread_id;   /*!< Thread id */
+} ds_osDevOpen_t;
+
 typedef struct {
     osDev_t dev;            /*!< Device */
     uint32_t millisec;      /*!< Timeout in ms */
