@@ -424,8 +424,8 @@ static void del_thread(void)
      * no separate privileged mode in Cortex-M0. This atleast improves
      * portability in the future.
      */
-    osThreadId thread_id = (osThreadId)syscall(KERNEL_SYSCALL_SCHED_THREAD_GETID, NULL);
-    (void)syscall(KERNEL_SYSCALL_SCHED_THREAD_TERMINATE, &thread_id);
+    osThreadId thread_id = (osThreadId)syscall(SYSCALL_SCHED_THREAD_GETID, NULL);
+    (void)syscall(SYSCALL_SCHED_THREAD_TERMINATE, &thread_id);
     req_context_switch();
 
     while(1); /* Once the context changes, the program will no longer return to

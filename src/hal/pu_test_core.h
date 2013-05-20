@@ -98,7 +98,10 @@ inline void wr_thread_stack_ptr(/*@unused@*/ void * ptr)
 {
 }
 
-inline uint32_t syscall(/*@unused@*/ int type, /*@unused@*/ void * p)
+/**
+ * @todo could be actually call the syscalls here?
+ */
+inline uint32_t syscall(/*@unused@*/ uint32_t type, /*@unused@*/ void * p)
 {
     return 0;
 }
