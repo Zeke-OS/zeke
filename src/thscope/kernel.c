@@ -30,7 +30,7 @@ int32_t osKernelRunning(void)
 
 void osGetLoadAvg(uint32_t loads[3])
 {
-    syscall(KERNEL_SYSCALL_SCHED_GET_LOADAVG, loads);
+    syscall(SYSCALL_SCHED_GET_LOADAVG, loads);
 }
 
 /** @addtogroup Thread_Management
@@ -44,7 +44,7 @@ osThreadId osThreadCreate(osThreadDef_t * thread_def, void * argument)
 
     args.def = thread_def;
     args.argument = argument;
-    result = (osThreadId)syscall(KERNEL_SYSCALL_SCHED_THREAD_CREATE, &args);
+    result = (osThreadId)syscall(SYSCALL_SCHED_THREAD_CREATE, &args);
 
     /* Request immediate context switch */
     req_context_switch();
@@ -56,7 +56,7 @@ osThreadId osThreadGetId(void)
 {
     osThreadId result;
 
-    result = (osThreadId)syscall(KERNEL_SYSCALL_SCHED_THREAD_GETID, NULL);
+    result = (osThreadId)syscall(SYSCALL_SCHED_THREAD_GETID, NULL);
 
     return result;
 }
@@ -65,7 +65,7 @@ osStatus osThreadTerminate(osThreadId thread_id)
 {
     osStatus result;
 
-    result = (osStatus)syscall(KERNEL_SYSCALL_SCHED_THREAD_TERMINATE, &thread_id);
+    result = (osStatus)syscall(SYSCALL_SCHED_THREAD_TERMINATE, &thread_id);
 
     return result;
 }
@@ -85,7 +85,7 @@ osStatus osThreadSetPriority(osThreadId thread_id, osPriority priority)
 
     ds.thread_id = thread_id;
     ds.priority = priority;
-    result = (osStatus)syscall(KERNEL_SYSCALL_SCHED_THREAD_SETPRIORITY, &ds);
+    result = (osStatus)syscall(SYSCALL_SCHED_THREAD_SETPRIORITY, &ds);
 
     return result;
 }
@@ -94,7 +94,7 @@ osPriority osThreadGetPriority(osThreadId thread_id)
 {
     osPriority result;
 
-    result = (osPriority)syscall(KERNEL_SYSCALL_SCHED_THREAD_GETPRIORITY, &thread_id);
+    result = (osPriority)syscall(SYSCALL_SCHED_THREAD_GETPRIORITY, &thread_id);
 
     return result;
 }
@@ -113,7 +113,7 @@ osStatus osDelay(uint32_t millisec)
 {
     osStatus result;
 
-    result = (osStatus)syscall(KERNEL_SYSCALL_SCHED_DELAY, &millisec);
+    result = (osStatus)syscall(SYSCALL_SCHED_DELAY, &millisec);
 
     if (result != osErrorResource) {
         /* Request context switch */
@@ -127,7 +127,7 @@ osEvent osWait(uint32_t millisec)
 {
     osEvent * result;
 
-    result = (osEvent *)syscall(KERNEL_SYSCALL_SCHED_WAIT, &millisec);
+    result = (osEvent *)syscall(SYSCALL_SCHED_WAIT, &millisec);
 
     if (result->status != osErrorResource) {
         /* Request context switch */
@@ -153,7 +153,7 @@ int32_t osSignalSet(osThreadId thread_id, int32_t signal)
     ds_osSignal_t ds = { thread_id, signal };
     int32_t result;
 
-    result = (int32_t)syscall(KERNEL_SYSCALL_SCHED_SIGNAL_SET, &ds);
+    result = (int32_t)syscall(SYSCALL_SCHED_SIGNAL_SET, &ds);
 
     return result;
 }
@@ -163,7 +163,7 @@ int32_t osSignalClear(osThreadId thread_id, int32_t signal)
     ds_osSignal_t ds = { thread_id, signal };
     int32_t result;
 
-    result = (int32_t)syscall(KERNEL_SYSCALL_SCHED_SIGNAL_CLEAR, &ds);
+    result = (int32_t)syscall(SYSCALL_SCHED_SIGNAL_CLEAR, &ds);
 
     return result;
 }
@@ -172,7 +172,7 @@ int32_t osSignalGetCurrent(void)
 {
     int32_t result;
 
-    result = (int32_t)syscall(KERNEL_SYSCALL_SCHED_SIGNAL_GETCURR, NULL);
+    result = (int32_t)syscall(SYSCALL_SCHED_SIGNAL_GETCURR, NULL);
 
     return result;
 }
@@ -181,7 +181,7 @@ int32_t osSignalGet(osThreadId thread_id)
 {
     int32_t result;
 
-    result = (int32_t)syscall(KERNEL_SYSCALL_SCHED_SIGNAL_GET, &thread_id);
+    result = (int32_t)syscall(SYSCALL_SCHED_SIGNAL_GET, &thread_id);
 
     return result;
 }
@@ -191,7 +191,7 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec)
     ds_osSignalWait_t ds = { signals, millisec };
     osEvent * result;
 
-    result = (osEvent *)syscall(KERNEL_SYSCALL_SCHED_SIGNAL_WAIT, &ds);
+    result = (osEvent *)syscall(SYSCALL_SCHED_SIGNAL_WAIT, &ds);
 
     if (result->status != osErrorResource) {
         /* Request context switch */
@@ -234,7 +234,7 @@ osStatus osMutexWait(osMutex * mutex, uint32_t millisec)
         return osErrorParameter;
     }
 
-    while (syscall(KERNEL_SYSCALL_MUTEX_TEST_AND_SET, (void*)(&(mutex->lock)))) {
+    while (syscall(SYSCALL_MUTEX_TEST_AND_SET, (void*)(&(mutex->lock)))) {
         /** TODO Should we lower the priority until lock is acquired
          *       osThreadGetPriority & osThreadSetPriority */
         /* Reschedule while waiting for lock */
@@ -282,7 +282,7 @@ osEvent osDevWait(osDev_t dev, uint32_t millisec)
     ds_osDevWait_t ds = { dev, millisec };
     osEvent * result;
 
-    result = (osEvent *)syscall(KERNEL_SYSCALL_SCHED_DEV_WAIT, &ds);
+    result = (osEvent *)syscall(SYSCALL_SCHED_DEV_WAIT, &ds);
 
     if (result->status != osErrorResource) {
         /* Request context switch */
