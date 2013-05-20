@@ -36,7 +36,7 @@
 
 /* Kernel Services */
 #define configDEVSUBSYS         1       /*!< Enable device driver subsystem */
-#define configPTTK91_VM         1       /*!< PTTK91 kernel virtual machine */
+#define configPTTK91_VM         0       /*!< PTTK91 kernel virtual machine */
 /* End of Kernel configuration ***********************************************/
 
 #endif

@@ -24,7 +24,7 @@
 /** TODO Especially non-lockable devs could have message queues for
  *  storing the data */
 
-struct dev_driver dev_alloc_table[31];
+struct dev_driver dev_alloc_table[DEV_MAJORDEVS];
 
 /**
  * Init device drivers.

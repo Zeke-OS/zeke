@@ -10,8 +10,8 @@ File names
 + thscope/      Functions that are called and excecuted in thread scope;
                 This means mainly syscall wrappers
 
-Naming of functions
--------------------
+Function names
+--------------
 + module_compFunction   + module = name that also appears in filename
                         + comp   = component/functionality eg. thread
                                    components will change thread status
