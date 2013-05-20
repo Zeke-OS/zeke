@@ -27,7 +27,7 @@ typedef uint32_t osDev_t; /*!< Device identifier */
 #define DEV_MAJOR(dev)  ((unsigned int)((dev) >> DEV_MINORBITS))
 
 /**
- * Get minor number from isDev_t.
+ * Get minor number from osDev_t.
  */
 #define DEV_MINOR(dev)  ((unsigned int)((dev) & DEV_MINORMASK))
 

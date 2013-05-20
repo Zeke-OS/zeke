@@ -295,5 +295,24 @@ void dev_threadDevSignal(int32_t signal, osDev_t dev)
 }
 
 /**
+ * Dev syscall handler
+ * @param type Syscall type
+ * @param p Syscall parameters
+ */
+uint32_t dev_syscall(uint32_t type, void * p)
+{
+    switch(type) {
+    case SYSCALL_SCHED_DEV_WAIT:
+        return (uint32_t)dev_threadDevWait(
+                    ((ds_osDevWait_t *)p)->dev,
+                    ((ds_osDevWait_t *)p)->millisec
+               );
+
+    default:
+        return NULL;
+    }
+}
+
+/**
   * @}
   */

@@ -107,6 +107,11 @@ osPriority sched_thread_getPriority(osThreadId thread_id);
 osStatus sched_threadDelay(uint32_t millisec);
 osEvent * sched_threadWait(uint32_t millisec);
 
+/* Syscall handlers */
+uint32_t sched_syscall(uint32_t type, void * p);
+uint32_t sched_syscall_thread(uint32_t type, void * p);
+uint32_t sched_syscall_signal(uint32_t type, void * p);
+
 #endif /* SCHED_H */
 
 /**

@@ -588,6 +588,119 @@ osEvent * sched_threadWait(uint32_t millisec)
   * @}
   */
 
+/* Syscall handlers ***********************************************************/
+/** @addtogroup Syscall_handlers
+  * @{
+  */
+
+/**
+ * Scheduler generic syscall handler
+ * @param type Syscall type
+ * @param p Syscall parameters
+ */
+uint32_t sched_syscall(uint32_t type, void * p)
+{
+    switch(type) {
+    case SYSCALL_SCHED_DELAY:
+        return (uint32_t)sched_threadDelay(
+                    *((uint32_t *)(p))
+               );
+
+    case SYSCALL_SCHED_WAIT:
+        return (uint32_t)sched_threadWait(
+                    *((uint32_t *)(p))
+               );
+
+    case SYSCALL_SCHED_GET_LOADAVG:
+        sched_get_loads((uint32_t *)p);
+        return NULL; /* Note NULL is not an error here */
+
+    default:
+        return NULL;
+    }
+}
+
+/**
+ * Scheduler thread syscall handler
+ * @param type Syscall type
+ * @param p Syscall parameters
+ */
+uint32_t sched_syscall_thread(uint32_t type, void * p)
+{
+    switch(type) {
+    case SYSCALL_SCHED_THREAD_CREATE:
+        return (uint32_t)sched_ThreadCreate(
+                    ((ds_osThreadCreate_t *)(p))->def,
+                    ((ds_osThreadCreate_t *)(p))->argument
+               );
+
+    case SYSCALL_SCHED_THREAD_GETID:
+        return (uint32_t)sched_thread_getId();
+
+    case SYSCALL_SCHED_THREAD_TERMINATE:
+        return (uint32_t)sched_thread_terminate(
+                    *((osThreadId *)p)
+               );
+
+    case SYSCALL_SCHED_THREAD_SETPRIORITY:
+        return (uint32_t)sched_thread_setPriority(
+                    ((ds_osSetPriority_t *)(p))->thread_id,
+                    ((ds_osSetPriority_t *)(p))->priority
+               );
+
+    case SYSCALL_SCHED_THREAD_GETPRIORITY:
+        return (uint32_t)sched_thread_getPriority(
+                    *((osPriority *)(p))
+               );
+
+    default:
+        return NULL;
+    }
+}
+
+/**
+ * Scheduler signal syscall handler
+ * @param type Syscall type
+ * @param p Syscall parameters
+ */
+uint32_t sched_syscall_signal(uint32_t type, void * p)
+{
+    switch(type) {
+    case SYSCALL_SCHED_SIGNAL_SET:
+        return (uint32_t)ksignal_threadSignalSet(
+                    ((ds_osSignal_t *)p)->thread_id,
+                    ((ds_osSignal_t *)p)->signal
+               );
+
+    case SYSCALL_SCHED_SIGNAL_CLEAR:
+        return (uint32_t)ksignal_threadSignalClear(
+                    ((ds_osSignal_t *)p)->thread_id,
+                    ((ds_osSignal_t *)p)->signal
+               );
+
+    case SYSCALL_SCHED_SIGNAL_GETCURR:
+        return (uint32_t)ksignal_threadSignalGetCurrent();
+
+    case SYSCALL_SCHED_SIGNAL_GET:
+        return (uint32_t)ksignal_threadSignalGet(
+                    *((osThreadId *)p)
+               );
+
+    case SYSCALL_SCHED_SIGNAL_WAIT:
+        return (uint32_t)ksignal_threadSignalWait(
+                    ((ds_osSignalWait_t *)p)->signals,
+                    ((ds_osSignalWait_t *)p)->millisec
+               );
+
+    default:
+        return NULL;
+    }
+}
+
+/**
+  * @}
+  */
+
 /**
   * @}
   */

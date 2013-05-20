@@ -81,7 +81,7 @@ void NMI_Handler(void)
 #pragma optimize = no_cse
 void SVC_Handler(void)
 {
-    int type;
+    uint32_t type;
     void * p;
 
     asm volatile("MOV %0, r2\n" /* Read parameters from r2 & r3 */

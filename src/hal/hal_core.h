@@ -39,7 +39,7 @@ void init_hw_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a
  * @param type Syscall type/code
  * @param p Syscall parameter(s)
  */
-uint32_t syscall(int type, void * p);
+uint32_t syscall(unsigned int type, void * p);
 
 /**
  * Test and set

@@ -58,7 +58,7 @@ void init_hw_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a
   * Make a system call (used in thread scope)
   */
 #pragma optimize=no_code_motion
-uint32_t syscall(int type, void * p)
+uint32_t syscall(uint32_t type, void * p)
 {
     asm volatile(
                  "MOV r2, %0\n" /* Put parameters to r2 & r3 */
