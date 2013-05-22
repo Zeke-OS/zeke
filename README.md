@@ -1,39 +1,43 @@
 Zero Kernel    {#mainpage}
 ===========
 
-Zero Kernel is a very simple kernel implementation targeted for ARM
-Corex-M microcontrollers. Reasons to start this project was that most of
-currently available RTOSes for M0 feels too bloat and and secondary
-reason was that I found ARMv6-M architecture to be quite challenging
-platform for any kind of OS/kernel development especially when compared
-to ARMv7-M architecture used in M4 core or any Cortex-A core.
+Zero Kernel is a very simple kernel implementation targeted for ARM Corex-M
+microcontrollers. Reasons to start this project was that most of currently
+available RTOSes for M0 feels too bloat and and secondary reason was that I
+found ARMv6-M architecture to be quite challenging platform for any kind of
+OS/kernel development especially when compared to ARMv7-M architecture used in
+M4 core or any Cortex-A core.
 
-One of the goals in the future is to make Zero Kernel CMSIS-RTOS compliant.
-At the moment CMSIS-RTOS we are not even near of compliance. Another nice
-goal is to implement system services by using SVC calls which may open
-some very nice possibilities in the futur eg. loading code from SD
-card without static linkage to the kernel itself etc.
+One of the goals of Zero Kernel is to make it CMSIS-RTOS compliant where ever
+possible. This is a quite tought task as CMSIS is not actually designed for
+operating systems using system calls and other features not so commonly used on
+embedded platforms. Currently the core of Zeke is not even dependent of CMSIS at
+all, so it only provides CMSIS-RTOS-like interface.
+
 
 Key features
 ------------
-- Fixed(/dynamic) priority pre-emptive scheduling with penalties to prevent
+- Dynamic prioritizing pre-emptive scheduling with penalties to prevent
   starvation
 - Signal flag based notify/wake-up from sleep with event timeouts
 - System call based kernel services
-- Almost (and will be mostly) CMSIS-RTOS compliant
-- Quite small footprint
+- Mostly CMSIS-RTOS compliant
+- Highly configurable
+- Adjustable footprint
+- Completely static memory allocation strategy (memory usage can be analyzed
+  statically)
 - Offers some protection even on Cortex-M0 without MMU (atm mainly angainst
   stack polution and some hard faults)
 
 News
 ----
-- LCD support and new optional dev subsystem will be released
+- LCD support and new optional dev subsystem coming soon
 - ST Cortex-M3 port will be released in the (near of far) future
-- ARM9 port is (slowly) under development
+- ARM9 port is under development
 
 License
 -------
-Copyright (c) 2012, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
