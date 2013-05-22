@@ -149,7 +149,10 @@ void sched_handler(void)
     save_context(); /* Registers should remain untouched before this point */
     current_thread->sp = (void *)rd_thread_stack_ptr();
 
+    /* Ensure that this scheduler call was due to a systick */
     eval_kernel_tick();
+
+    /* Pre-scheduling tasks */
     if (flag_kernel_tick) { /* Run only if tick was set */
         timers_run();
     }
@@ -158,6 +161,7 @@ void sched_handler(void)
      */
     context_switcher();
 
+    /* Post-scheduling tasks */
     if (flag_kernel_tick) {
         calc_loads();
     }
