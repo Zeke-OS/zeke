@@ -99,7 +99,7 @@ void sched_get_loads(uint32_t loads[3]);
 
 /* Functions that are mainly used by syscalls but can be also caleed by
  * other kernel source modules. */
-osThreadId sched_ThreadCreate(osThreadDef_t * thread_def, void * argument);
+osThreadId sched_threadCreate(osThreadDef_t * thread_def, void * argument);
 osThreadId sched_thread_getId(void);
 osStatus sched_thread_terminate(osThreadId thread_id);
 osStatus sched_thread_setPriority(osThreadId thread_id, osPriority priority);

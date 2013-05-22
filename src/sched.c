@@ -195,6 +195,7 @@ static void calc_loads(void)
 
 /**
  * Return load averages in integer format scaled to 100.
+ * @param[out] loads load averages.
  */
 void sched_get_loads(uint32_t loads[3])
 {
@@ -459,7 +460,7 @@ static void del_thread(void)
   * Create a new thread
   *
   */
-osThreadId sched_ThreadCreate(osThreadDef_t * thread_def, void * argument)
+osThreadId sched_threadCreate(osThreadDef_t * thread_def, void * argument)
 {
     int i;
 
@@ -498,6 +499,11 @@ osThreadId sched_thread_getId(void)
     return (osThreadId)(current_thread->id);
 }
 
+/**
+ * Terminate thread and its childs.
+ * @param thread_id   thread ID obtained by \ref sched_threadCreate or \ref sched_thread_getId.
+ * @return status code that indicates the execution status of the function.
+ */
 osStatus sched_thread_terminate(osThreadId thread_id)
 {
     threadInfo_t * child;
@@ -634,7 +640,7 @@ uint32_t sched_syscall_thread(uint32_t type, void * p)
 {
     switch(type) {
     case SYSCALL_SCHED_THREAD_CREATE:
-        return (uint32_t)sched_ThreadCreate(
+        return (uint32_t)sched_threadCreate(
                     ((ds_osThreadCreate_t *)(p))->def,
                     ((ds_osThreadCreate_t *)(p))->argument
                 );

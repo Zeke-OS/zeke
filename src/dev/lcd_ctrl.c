@@ -22,28 +22,31 @@
 #include "lcd_ctrl.h"
 
 /* GPIO macros */
-#define GPIO_HIGH(a,b)      a->BSRR = b
-#define GPIO_LOW(a,b)		a->BRR = b
-#define GPIO_TOGGLE(a,b)    a->ODR ^= b
+#define GPIO_HIGH(a,b)      a->BSRR = b /*!< Set GPIO state to 1 */
+#define GPIO_LOW(a,b)		a->BRR = b  /*!< Set GPIO state to 0 */
+#define GPIO_TOGGLE(a,b)    a->ODR ^= b /*!< Toggle GPIO state. */
 
 /* GPIO Pin setting */
-#define RS              GPIO_Pin_4
-#define EN              GPIO_Pin_5
-#define D4              GPIO_Pin_0
-#define D5              GPIO_Pin_1
-#define D6              GPIO_Pin_2
-#define D7              GPIO_Pin_3
+#define RS              GPIO_Pin_4  /*!< RS pin position */
+#define EN              GPIO_Pin_5  /*!< EN pin position */
+#define D4              GPIO_Pin_0  /*!< D4 pin position */
+#define D5              GPIO_Pin_1  /*!< D5 pin position */
+#define D6              GPIO_Pin_2  /*!< D6 pin position */
+#define D7              GPIO_Pin_3  /*!< D7 pin position */
 
-#define  RS_HIGH        GPIO_HIGH(GPIOC, RS)
-#define  RS_LOW         GPIO_LOW(GPIOC, RS)
-#define  RS_TOGGLE      GPIO_TOGGLE(GPIOC, RS)
-#define  EN_HIGH        GPIO_HIGH(GPIOC, EN)
-#define  EN_LOW         GPIO_LOW(GPIOC, EN)
-#define  EN_TOGGLE      GPIO_TOGGLE(GPIOC, EN)
+#define  RS_HIGH        GPIO_HIGH(GPIOC, RS)    /*!< Set RS to 1 */
+#define  RS_LOW         GPIO_LOW(GPIOC, RS)     /*!< Set RS to 0 */
+#define  RS_TOGGLE      GPIO_TOGGLE(GPIOC, RS)  /*!< Toggle RS pin */
+#define  EN_HIGH        GPIO_HIGH(GPIOC, EN)    /*!< Set EN to 1 */
+#define  EN_LOW         GPIO_LOW(GPIOC, EN)     /*!< Set EN to 0 */
+#define  EN_TOGGLE      GPIO_TOGGLE(GPIOC, EN)  /*!< Toggle EN pin */
 
 static char lcdc_thread_stack[300];
+/**
+ * Buffer that is used between dev driver thread and syscall handler in kernel.
+ */
 char lcdc_buff[80];
-queue_cb_t lcdc_queue_cb;
+queue_cb_t lcdc_queue_cb; /*!< Control block for LCD buffer queue. */
 
 static void lcdc_init_thread(void);
 void lcdc_thread(void const * arg);
@@ -55,9 +58,10 @@ static void lcdc_reg_write(uint8_t val);
 static void lcdc_clear(void);
 static void lcdc_home(void);
 static void lcdc_goto(char pos);
-static void lcdc_print(char pos, const char * str);
 
-
+/**
+ * Initialize LCD control driver
+ */
 void lcdc_init(void)
 {
     GPIO_InitTypeDef GPIO_InitStructure;
@@ -108,6 +112,9 @@ void lcdc_init(void)
     lcdc_init_thread();
 }
 
+/**
+ * Initialize thread for async writes to the LCD
+ */
 static void lcdc_init_thread(void)
 {
     osThreadDef_t th = { (os_pthread)(&lcdc_thread),
@@ -118,6 +125,9 @@ static void lcdc_init_thread(void)
     osThreadCreate(&th, NULL);
 }
 
+/**
+ * Actual LCD driver thread code
+ */
 void lcdc_thread(void const * arg)
 {
     char ch;
@@ -154,6 +164,10 @@ void lcdc_thread(void const * arg)
     }
 }
 
+/**
+ * Write string of characters to the LCD.
+ * @param buff
+ */
 static void lcdc_write(const char * buff)
 {
     int i = 0;
@@ -166,28 +180,43 @@ static void lcdc_write(const char * buff)
     }
 }
 
+/**
+ * Write data character to the LCD.
+ */
 static void lcdc_data_write(uint8_t data)
 {
     RS_HIGH; /* Write data */
     lcdc_write_char(data);
 }
 
+/**
+ * Write command word to the LCD.
+ */
 static void lcdc_reg_write(uint8_t val)
 {
     RS_LOW; /* Write Register */
     lcdc_write_char(val);
 }
 
+/**
+ * Clear the LCD.
+ */
 static void lcdc_clear(void)
 {
   lcdc_reg_write(0x01);
 }
 
+/**
+ * Set the LCD cursor position to home.
+ */
 static void lcdc_home(void)
 {
   lcdc_reg_write(0x02);
 }
 
+/**
+ * Write tab character to the LCD.
+ */
 static void lcdc_tab(void)
 {
     RS_LOW; /* Write Register */
@@ -197,17 +226,18 @@ static void lcdc_tab(void)
     lcdc_write_char(0x10);
 }
 
+/**
+ * Move LCD cursor to the position given in pos.
+ * @param pos position.
+ */
 static void lcdc_goto(char pos)
 {
     lcdc_reg_write(0x80 + pos);
 }
 
-static void lcdc_print(char pos, const char * str)
-{
-    lcdc_goto(pos);
-    lcdc_write(str);
-}
-
+/**
+ * Write character to the LCD.
+ */
 static void lcdc_write_char(char c)
 {
     GPIOC->ODR &= 0xFFF0;

@@ -19,6 +19,7 @@
 #endif
 
 #if __CORE__ == __ARM7M__ || __CORE__ == __ARM7EM__
+/* Needed for debugging */
 #include <stdio.h>
 #include <string.h>
 #endif
@@ -55,8 +56,12 @@ void init_hw_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a
 }
 
 /**
-  * Make a system call (used in thread scope)
-  */
+ * Make a system call
+ * @param type syscall type.
+ * @param p pointer to the syscall parameter(s).
+ * @return return value of the called kernel function.
+ * @note Must be only used in thread scope.
+ */
 #pragma optimize=no_code_motion
 uint32_t syscall(uint32_t type, void * p)
 {
@@ -133,8 +138,9 @@ void HardFault_Handler(void)
 }
 
 /**
-  * This function handles the Hard Fault exception on ARMv6M.
-  */
+ * This function handles the Hard Fault exception on ARMv6M.
+ * @param stack top of the stack.
+ */
 void hard_fault_handler_armv6m(uint32_t stack[])
 {
     uint32_t thread_stack;
@@ -154,8 +160,9 @@ void hard_fault_handler_armv6m(uint32_t stack[])
 /* There is no HFSR register or ITM at least on Cortex-M0 and M1 (ARMv6) */
 
 /**
-  * This function handles the Hard Fault exception on ARMv7M.
-  */
+ * This function handles the Hard Fault exception on ARMv7M.
+ * @param stack top of the stack.
+ */
 void hard_fault_handler_armv7m(uint32_t stack[])
 {
     static char msg[80];
@@ -185,6 +192,10 @@ void hard_fault_handler_armv7m(uint32_t stack[])
 #if __CORE__ == __ARM7M__ || __CORE__ == __ARM7EM__
 /* There is no ITM for Cortex-M0..1 */
 
+/**
+ * Print stack dump for the debugger.
+ * @param stack top of the stack.
+ */
 static void stackDump(uint32_t stack[])
 {
     static char msg[80];
@@ -199,6 +210,10 @@ static void stackDump(uint32_t stack[])
     sprintf(msg, "psr = 0x%08x\n", stack[7]); printErrorMsg(msg);
 }
 
+/**
+ * Print user defined error message to the debugger.
+ * @param errMsg error message.
+ */
 static void printErrorMsg(const char * errMsg)
 {
     while (*errMsg != '\0') {

@@ -37,15 +37,16 @@ static kernel_syscall_handler_t syscall_callmap[] = {
 };
 
 /**
- * Internal Syscall handler/translator
+ * Kernel's internal Syscall handler/translator
  *
  * This function is called from interrupt handler. This function calls the
  * actual kernel function and returns a result pointer/data to the interrupt
  * handler which returns it to the original caller, which is usually a library
  * function in kernel.c
- * @param type syscall type.
- * @param p pointer to the parameter or parameter structure.
- * @return result value or pointer to the result.
+ * @param type  syscall type.
+ * @param p     pointer to the parameter or parameter structure.
+ * @return      result value or pointer to the result from the called kernel
+ *              function.
  */
 //#pragma optimize=no_code_motion
 uint32_t _intSyscall_handler(uint32_t type, void * p)
