@@ -147,6 +147,13 @@ typedef struct  {
 
 /* ==== Non-CMSIS-RTOS functions ==== */
 #if configDEVSUBSYS == 1
+/**
+ * Open and lock device access.
+ * @param dev the device accessed.
+ * @param thread_id that should get lock for the dev.
+ * @return DEV_OERR_OK (0) if the lock acquired and device access was opened;
+ * otherwise DEV_OERR_x
+ */
 int osDevOpen(osDev_t dev, osThreadId thread_id);
 
 /**

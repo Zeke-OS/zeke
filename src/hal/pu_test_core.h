@@ -99,7 +99,7 @@ inline void wr_thread_stack_ptr(/*@unused@*/ void * ptr)
 }
 
 /**
- * @todo could be actually call the syscalls here?
+ * @todo Could this actually call the syscall functions here on test environment?
  */
 inline uint32_t syscall(/*@unused@*/ uint32_t type, /*@unused@*/ void * p)
 {
