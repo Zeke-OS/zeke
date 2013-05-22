@@ -2056,6 +2056,12 @@
     <name>$PROJ_DIR$\..\src\ksignal.h</name>
   </file>
   <file>
+    <name>$PROJ_DIR$\..\src\locks.c</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\src\locks.h</name>
+  </file>
+  <file>
     <name>$PROJ_DIR$\..\include\mutex.h</name>
   </file>
   <file>

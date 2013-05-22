@@ -92,11 +92,11 @@ struct dev_driver {
     unsigned int flags; /*!< Device driver flags */
     osThreadId thread_id_lock; /*!< Device locked for this thread if
                                 * DEV_FLAG_LOCK is set. */
-    int (*cwrite)(uint32_t ch, osDev_t dev);
-    int (*cread)(uint32_t * ch, osDev_t dev);
-    int (*bwrite)(void * buff, size_t size, size_t count, osDev_t dev);
-    int (*bread)(void * buff, size_t size, size_t count, osDev_t dev);
-    int (*bseek)(int offset, int origin, size_t size, osDev_t dev, osThreadId thread_id);
+    int (*cwrite)(uint32_t ch, osDev_t dev); /*!< Character device write function */
+    int (*cread)(uint32_t * ch, osDev_t dev); /*!< Character device read function */
+    int (*bwrite)(void * buff, size_t size, size_t count, osDev_t dev); /*!< Block device write function */
+    int (*bread)(void * buff, size_t size, size_t count, osDev_t dev); /*!< Block device read function */
+    int (*bseek)(int offset, int origin, size_t size, osDev_t dev, osThreadId thread_id); /*!< Block device seek function */
 };
 
 extern struct dev_driver dev_alloc_table[];

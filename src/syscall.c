@@ -32,26 +32,27 @@ typedef uint32_t (*kernel_syscall_handler_t)(uint32_t type,  void * p);
 
 static kernel_syscall_handler_t syscall_callmap[] = {
     #define SYSCALL_MAP_X(major, function) function,
-    FOR_ALL_SYSCALLS(SYSCALL_MAP_X)
+    FOR_ALL_SYSCALL_GROUPS(SYSCALL_MAP_X)
     #undef SYSCALL_MAP_X
 };
 
 /**
- * Internal Syscall handler/translator
+ * Kernel's internal Syscall handler/translator
  *
  * This function is called from interrupt handler. This function calls the
  * actual kernel function and returns a result pointer/data to the interrupt
  * handler which returns it to the original caller, which is usually a library
  * function in kernel.c
- * @param type syscall type.
- * @param p pointer to the parameter or parameter structure.
- * @return result value or pointer to the result.
+ * @param type  syscall type.
+ * @param p     pointer to the parameter or parameter structure.
+ * @return      result value or pointer to the result from the called kernel
+ *              function.
  */
 //#pragma optimize=no_code_motion
 uint32_t _intSyscall_handler(uint32_t type, void * p)
 {
     kernel_syscall_handler_t fpt;
-    uint32_t major = KERNEL_SYSCALL_MAJOR(type);
+    uint32_t major = SYSCALL_MAJOR(type);
 
     if (major >= (sizeof(syscall_callmap) / sizeof(void *))) {
         /* NULL means usually ERROR, however there is some cases where NULL as

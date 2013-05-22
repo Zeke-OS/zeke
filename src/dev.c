@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include "sched.h"
 #include "ksignal.h"
+#include "syscall.h"
 #include "dev_config.h"
 #include "dev.h"
 
@@ -302,7 +303,7 @@ void dev_threadDevSignal(int32_t signal, osDev_t dev)
 uint32_t dev_syscall(uint32_t type, void * p)
 {
     switch(type) {
-    case SYSCALL_SCHED_DEV_WAIT:
+    case SYSCALL_DEV_WAIT:
         return (uint32_t)dev_threadDevWait(
                     ((ds_osDevWait_t *)p)->dev,
                     ((ds_osDevWait_t *)p)->millisec

@@ -14,13 +14,15 @@
 #ifndef KERNEL_H
 #define KERNEL_H
 
-/// \note MUST REMAIN UNCHANGED: \b osCMSIS identifies the CMSIS-RTOS API version
-#define osCMSIS           0x00003      ///< API version (main [31:16] .sub [15:0])
+/* Commented out as Zeke's scope has been changed to only partial compatibility
+ * with CMSIS specification.
+ */
+/* \note MUST REMAIN UNCHANGED: \b osCMSIS identifies the CMSIS-RTOS API version
+ *#define osCMSIS           0x00003      ///< API version (main [31:16] .sub [15:0])*/
 
 /// \note CAN BE CHANGED: \b osCMSIS_KERNEL identifies the underlaying RTOS kernel and version number.
 #define osCMSIS_KERNEL    0x10000	   ///< RTOS identification and version (main [31:16] .sub [15:0])
 
-/// \note MUST REMAIN UNCHANGED: \b osKernelSystemId shall be consistent in every CMSIS-RTOS.
 #define osKernelSystemId "KERNEL V1.00"   ///< RTOS identification string
 
 /// \note MUST REMAIN UNCHANGED: \b osFeature_xxx shall be consistent in every CMSIS-RTOS.
@@ -41,7 +43,6 @@
 // ==== Enumeration, structures, defines ====
 
 /// Priority used for thread control.
-/// \note MUST REMAIN UNCHANGED: \b osPriority shall be consistent in every CMSIS-RTOS.
 typedef enum {
     osPriorityIdle          = -3,       ///< priority: idle (lowest)
     osPriorityLow           = -2,       ///< priority: low
@@ -54,11 +55,9 @@ typedef enum {
 } osPriority;
 
 /// Timeout value
-/// \note MUST REMAIN UNCHANGED: \b osWaitForever shall be consistent in every CMSIS-RTOS.
 #define osWaitForever     0xFFFFFFFFu       ///< wait forever timeout value
 
 /// Status code values returned by CMSIS-RTOS functions
-/// \note MUST REMAIN UNCHANGED: \b osStatus shall be consistent in every CMSIS-RTOS.
 typedef enum  {
     osOK                    =     0,        ///< function completed; no event occurred.
     osEventSignal           =  0x08,        ///< function completed; signal event occurred.
@@ -78,24 +77,20 @@ typedef enum  {
 } osStatus;
 
 /// Timer type value for the timer definition
-/// \note MUST REMAIN UNCHANGED: \b os_timer_type shall be consistent in every CMSIS-RTOS.
 typedef enum  {
   osTimerOnce             =     0,       ///< one-shot timer
   osTimerPeriodic         =     1        ///< repeating timer
 } os_timer_type;
 
 /// Entry point of a thread.
-/// \note MUST REMAIN UNCHANGED: \b os_pthread shall be consistent in every CMSIS-RTOS.
 typedef void (*os_pthread) (void const * argument);
 
 // >>> the following data type definitions may shall adapted towards a specific RTOS
 
 /// Thread ID identifies the thread (pointer to a thread control block).
-/// \note CAN BE CHANGED: \b os_thread_cb is implementation specific in every CMSIS-RTOS.
 typedef int osThreadId;
 
 /// Timer ID identifies the timer (pointer to a timer control block).
-/// \note CAN BE CHANGED: \b os_timer_cb is implementation specific in every CMSIS-RTOS.
 typedef int osTimerId;
 
 /// Mutex cb mutex.
@@ -103,31 +98,25 @@ typedef int osTimerId;
 typedef struct os_mutex_cb osMutex;
 
 /// Message ID identifies the message queue (pointer to a message queue control block).
-/// \note CAN BE CHANGED: \b os_messageQ_cb is implementation specific in every CMSIS-RTOS.
 typedef struct os_messageQ_cb *osMessageQId;
 
 /// Mail ID identifies the mail queue (pointer to a mail queue control block).
-/// \note CAN BE CHANGED: \b os_mailQ_cb is implementation specific in every CMSIS-RTOS.
 typedef struct os_mailQ_cb *osMailQId;
 
 /// Thread Definition structure contains startup information of a thread.
-/// \note CAN BE CHANGED: \b os_thread_def is implementation specific in every CMSIS-RTOS.
 typedef const struct os_thread_def {
     os_pthread  pthread;    ///< start address of thread function
     osPriority  tpriority;  ///< initial thread priority
     void *      stackAddr;  ///< Stack address
-    size_t      stackSize;  ///< Size of stack reserved for the thread. (CMSIS-RTOS: stack size requirements in bytes; 0 is default stack size)
+    size_t      stackSize;  ///< Size of stack reserved for the thread.
 } osThreadDef_t;
 
 /// Mutex Definition structure contains setup information for a mutex.
-/// \note CAN BE CHANGED: \b os_mutex_def is implementation specific in every CMSIS-RTOS.
 typedef const struct os_mutex_def  {
     enum os_mutex_strategy strategy;
 } osMutexDef_t;
 
 /// Event structure contains detailed information about an event.
-/// \note MUST REMAIN UNCHANGED: \b os_event shall be consistent in every CMSIS-RTOS.
-///       However the struct may be extended at the end.
 typedef struct  {
     osStatus                 status;    ///< status code: event or error information
     union  {
@@ -148,7 +137,18 @@ typedef struct  {
 /* ==== Non-CMSIS-RTOS functions ==== */
 #if configDEVSUBSYS == 1
 /**
+ * Open and lock device access.
+ * @param dev the device accessed.
+ * @param thread_id that should get lock for the dev.
+ * @return DEV_OERR_OK (0) if the lock acquired and device access was opened;
+ * otherwise DEV_OERR_x
+ */
+int osDevOpen(osDev_t dev, osThreadId thread_id);
+
+/**
  * Wait for device.
+ * @param dev the device accessed.
+ * @param millisec timeout.
  */
 osEvent osDevWait(osDev_t dev, uint32_t millisec);
 #endif
@@ -163,7 +163,6 @@ void osGetLoadAvg(uint32_t loads[3]);
 //  ==== Kernel Control Functions ====
 
 /// Check if the RTOS kernel is already started.
-/// \note MUST REMAIN UNCHANGED: \b osKernelRunning shall be consistent in every CMSIS-RTOS.
 /// \return 0 RTOS is not started, 1 RTOS is started.
 int32_t osKernelRunning(void);
 
@@ -175,8 +174,6 @@ int32_t osKernelRunning(void);
 /// \param          priority    initial priority of the thread function.
 /// \param          stackaddr   Stack address.
 /// \param          stacksz     stack size.
-/// \note CAN BE CHANGED: The parameters to \b osThreadDef shall be consistent but the
-///       macro body is implementation specific in every CMSIS-RTOS.
 #if defined (osObjectsExternal)  // object is external
 #define osThreadDef(name, priority, stackaddr, stacksz)  \
 extern osThreadDef_t os_thread_def_##name
@@ -187,39 +184,33 @@ osThreadDef_t os_thread_def_##name = \
 #endif
 
 /// Create a thread and add it to Active Threads and set it to state READY.
-/// \param[in]     thread_def    thread definition referenced with \ref osThread.
+/// \param[in]     thread_def    thread definition.
 /// \param[in]     argument      pointer that is passed to the thread function as start argument.
 /// \return thread ID for reference by other functions or NULL in case of error.
-/// \note MUST REMAIN UNCHANGED: \b osThreadCreate shall be consistent in every CMSIS-RTOS.
 osThreadId osThreadCreate(osThreadDef_t * thread_def, void * argument);
 
 /// Return the thread ID of the current running thread.
 /// \return thread ID for reference by other functions or NULL in case of error.
-/// \note MUST REMAIN UNCHANGED: \b osThreadGetId shall be consistent in every CMSIS-RTOS.
 osThreadId osThreadGetId(void);
 
 /// Terminate execution of a thread and remove it from Active Threads.
 /// \param[in]     thread_id   thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
 /// \return status code that indicates the execution status of the function.
-/// \note MUST REMAIN UNCHANGED: \b osThreadTerminate shall be consistent in every CMSIS-RTOS.
 osStatus osThreadTerminate(osThreadId thread_id);
 
 /// Pass control to next thread that is in state \b READY.
 /// \return status code that indicates the execution status of the function.
-/// \note MUST REMAIN UNCHANGED: \b osThreadYield shall be consistent in every CMSIS-RTOS.
 osStatus osThreadYield(void);
 
 /// Change priority of an active thread.
 /// \param[in]     thread_id     thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
 /// \param[in]     priority      new priority value for the thread function.
 /// \return status code that indicates the execution status of the function.
-/// \note MUST REMAIN UNCHANGED: \b osThreadSetPriority shall be consistent in every CMSIS-RTOS.
 osStatus osThreadSetPriority(osThreadId thread_id, osPriority priority);
 
 /// Get current priority of an active thread.
 /// \param[in]     thread_id     thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
 /// \return current priority value of the thread function.
-/// \note MUST REMAIN UNCHANGED: \b osThreadGetPriority shall be consistent in every CMSIS-RTOS.
 osPriority osThreadGetPriority(osThreadId thread_id);
 
 
@@ -235,7 +226,6 @@ osStatus osDelay(uint32_t millisec);
 /// Wait for Signal, Message, Mail, or Timeout
 /// \param[in] millisec          timeout value or 0 in case of no time-out
 /// \return event that contains signal, message, or mail information or error code.
-/// \note MUST REMAIN UNCHANGED: \b osWait shall be consistent in every CMSIS-RTOS.
 osEvent osWait(uint32_t millisec);
 
 #endif  // Generic Wait available
@@ -245,34 +235,29 @@ osEvent osWait(uint32_t millisec);
 
 /// Set the specified Signal Flags of an active thread.
 /// \param[in]     thread_id     thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
-/// \param[in]     signals       specifies the signal flags of the thread that should be set.
+/// \param[in]     signal        specifies the signal flags of the thread that should be set.
 /// \return previous signal flags of the specified thread or 0x80000000 in case of incorrect parameters.
-/// \note MUST REMAIN UNCHANGED: \b osSignalSet shall be consistent in every CMSIS-RTOS.
 int32_t osSignalSet(osThreadId thread_id, int32_t signal);
 
 /// Clear the specified Signal Flags of an active thread.
 /// \param[in]     thread_id     thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
-/// \param[in]     signals       specifies the signal flags of the thread that shall be cleared.
+/// \param[in]     signal        specifies the signal flags of the thread that shall be cleared.
 /// \return previous signal flags of the specified thread or 0x80000000 in case of incorrect parameters.
-/// \note MUST REMAIN UNCHANGED: \b osSignalClear shall be consistent in every CMSIS-RTOS.
 int32_t osSignalClear(osThreadId thread_id, int32_t signal);
 
 /// Get Signal Flags status of the current thread.
-/// \param[in]     thread_id     thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
-/// \return previous signal flags of the specified thread or 0x80000000 in case of incorrect parameters.
+/// \return previous signal flags of the current thread.
 int32_t osSignalGetCurrent(void);
 
 /// Get Signal Flags status of an active thread.
 /// \param[in]     thread_id     thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
 /// \return previous signal flags of the specified thread or 0x80000000 in case of incorrect parameters.
-/// \note MUST REMAIN UNCHANGED: \b osSignalGet shall be consistent in every CMSIS-RTOS.
 int32_t osSignalGet(osThreadId thread_id);
 
 /// Wait for one or more Signal Flags to become signaled for the current \b RUNNING thread.
 /// \param[in]     signals       wait until all specified signal flags set or 0 for any single signal flag.
 /// \param[in]     millisec      timeout value or 0 in case of no time-out.
 /// \return event flag information or error code.
-/// \note MUST REMAIN UNCHANGED: \b osSignalWait shall be consistent in every CMSIS-RTOS.
 osEvent osSignalWait(int32_t signals, uint32_t millisec);
 
 
@@ -280,8 +265,6 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec);
 
 /// Define a Mutex.
 /// \param         name          name of the mutex object.
-/// \note CAN BE CHANGED: The parameter to \b osMutexDef shall be consistent but the
-///       macro body is implementation specific in every CMSIS-RTOS.
 #if defined (osObjectsExternal)  // object is external
 #define osMutexDef(name)  \
 extern osMutexDef_t os_mutex_def_##name
@@ -292,30 +275,24 @@ osMutexDef_t os_mutex_def_##name = { 0 }
 
 /// Access a Mutex defintion.
 /// \param         name          name of the mutex object.
-/// \note CAN BE CHANGED: The parameter to \b osMutex shall be consistent but the
-///       macro body is implementation specific in every CMSIS-RTOS.
 #define osMutex(name)  \
 &os_mutex_def_##name
 
 /// Create and Initialize a Mutex object
 /// \param[in]     mutex_def     mutex definition referenced with \ref osMutex.
 /// \return mutex ID for reference by other functions or NULL in case of error.
-/// \note MUST REMAIN UNCHANGED: \b osMutexCreate shall be consistent in every CMSIS-RTOS.
-/// \note NON-CMSIS-RTOS IMPLEMENTATION
 osMutex osMutexCreate(osMutexDef_t * mutex_def);
 
 /// Wait until a Mutex becomes available
-/// \param[in]     mutex_id      mutex ID obtained by \ref osMutexCreate.
+/// \param[in]     mutex         mutex ID obtained by \ref osMutexCreate.
 /// \param[in]     millisec      timeout value or 0 in case of no time-out.
 /// \return status code that indicates the execution status of the function.
-/// \note MUST REMAIN UNCHANGED: \b osMutexWait shall be consistent in every CMSIS-RTOS.
 /// \note NON-CMSIS-RTOS IMPLEMENTATION
 osStatus osMutexWait(osMutex * mutex, uint32_t millisec);
 
 /// Release a Mutex that was obtained by \ref osMutexWait
 /// \param[in]     mutex_id      mutex ID obtained by \ref osMutexCreate.
 /// \return status code that indicates the execution status of the function.
-/// \note MUST REMAIN UNCHANGED: \b osMutexRelease shall be consistent in every CMSIS-RTOS.
 /// \note NON-CMSIS-RTOS IMPLEMENTATION
 osStatus osMutexRelease(osMutex * mutex_id);
 
