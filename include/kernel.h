@@ -147,6 +147,8 @@ typedef struct  {
 
 /* ==== Non-CMSIS-RTOS functions ==== */
 #if configDEVSUBSYS == 1
+int osDevOpen(osDev_t dev, osThreadId thread_id);
+
 /**
  * Wait for device.
  */

@@ -40,7 +40,7 @@
 #define SYSCALL_GROUP_SCHED_THREAD  0x02
 #define SYSCALL_GROUP_SCHED_SIGNAL  0x03
 #define SYSCALL_GROUP_DEV           0x04
-#define SYSCALL_GROUP_LOCK          0x05
+#define SYSCALL_GROUP_LOCKS         0x05
 
 /* List of syscalls */
 #define SYSCALL_SCHED_THREAD_CREATE         SYSCALL_MMTOTYPE(SYSCALL_GROUP_SCHED_THREAD, 0x01)
@@ -102,12 +102,12 @@ typedef struct {
 /**
   * Make system call
   */
-uint32_t syscall(int type, void * p);
+uint32_t syscall(uint32_t type, void * p);
 #endif /* PU_TEST_BUILD */
 
 /* Kernel scope functions */
 #ifdef KERNEL_INTERNAL
-uint32_t _intSyscall_handler(int type, void * p);
+uint32_t _intSyscall_handler(uint32_t type, void * p);
 #endif /* KERNEL_INTERNAL */
 
 #endif /* SYSCALL_H */
