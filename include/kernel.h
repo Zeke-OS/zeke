@@ -139,11 +139,21 @@ typedef struct  {
 /**
  * Open and lock device access.
  * @param dev the device accessed.
- * @param thread_id that should get lock for the dev.
  * @return DEV_OERR_OK (0) if the lock acquired and device access was opened;
  * otherwise DEV_OERR_x
  */
-int osDevOpen(osDev_t dev, osThreadId thread_id);
+int osDevOpen(osDev_t dev);
+
+/**
+ * Close and release device access.
+ * @param dev the device.
+ */
+int osDevClose(osDev_t dev);
+
+/**
+ * Check if thread_id has locked the device given in dev.
+ */
+int osDevCheckRes(osDev_t dev, osThreadId thread_id);
 
 /**
  * Wait for device.

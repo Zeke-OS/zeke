@@ -29,7 +29,11 @@ int main(void)
     sched_init();
     {
         /* Create app_main thread */
-        osThreadDef_t main_thread = { (os_pthread)(&app_main), configAPP_MAIN_PRI, main_Stack, sizeof(main_Stack)/sizeof(char) };
+        osThreadDef_t main_thread = { (os_pthread)(&app_main),
+                                      configAPP_MAIN_PRI,
+                                      main_Stack,
+                                      sizeof(main_Stack)/sizeof(char)
+                                    };
         osThreadCreate(&main_thread, NULL);
     }
     sched_start();

@@ -54,20 +54,12 @@ osThreadId osThreadCreate(osThreadDef_t * thread_def, void * argument)
 
 osThreadId osThreadGetId(void)
 {
-    osThreadId result;
-
-    result = (osThreadId)syscall(SYSCALL_SCHED_THREAD_GETID, NULL);
-
-    return result;
+    return (osThreadId)syscall(SYSCALL_SCHED_THREAD_GETID, NULL);
 }
 
 osStatus osThreadTerminate(osThreadId thread_id)
 {
-    osStatus result;
-
-    result = (osStatus)syscall(SYSCALL_SCHED_THREAD_TERMINATE, &thread_id);
-
-    return result;
+    return (osStatus)syscall(SYSCALL_SCHED_THREAD_TERMINATE, &thread_id);
 }
 
 osStatus osThreadYield(void)
@@ -92,11 +84,7 @@ osStatus osThreadSetPriority(osThreadId thread_id, osPriority priority)
 
 osPriority osThreadGetPriority(osThreadId thread_id)
 {
-    osPriority result;
-
-    result = (osPriority)syscall(SYSCALL_SCHED_THREAD_GETPRIORITY, &thread_id);
-
-    return result;
+    return (osPriority)syscall(SYSCALL_SCHED_THREAD_GETPRIORITY, &thread_id);
 }
 
 /**
@@ -170,20 +158,12 @@ int32_t osSignalClear(osThreadId thread_id, int32_t signal)
 
 int32_t osSignalGetCurrent(void)
 {
-    int32_t result;
-
-    result = (int32_t)syscall(SYSCALL_SCHED_SIGNAL_GETCURR, NULL);
-
-    return result;
+    return (int32_t)syscall(SYSCALL_SCHED_SIGNAL_GETCURR, NULL);
 }
 
 int32_t osSignalGet(osThreadId thread_id)
 {
-    int32_t result;
-
-    result = (int32_t)syscall(SYSCALL_SCHED_SIGNAL_GET, &thread_id);
-
-    return result;
+    return (int32_t)syscall(SYSCALL_SCHED_SIGNAL_GET, &thread_id);
 }
 
 osEvent osSignalWait(int32_t signals, uint32_t millisec)
@@ -267,7 +247,6 @@ osStatus osMutexRelease(osMutex * mutex)
 #if configDEVSUBSYS == 1
 /**
  * TODO Add syscalls for:
- * + int dev_close(osDev_t dev, osThreadId thread_id)
  * + int dev_check_res(osDev_t dev, osThreadId thread_id)
  * + int dev_cwrite(uint32_t ch, osDev_t dev, osThreadId thread_id)
  * + int dev_cread(uint32_t * ch, osDev_t dev, osThreadId thread_id)
@@ -276,12 +255,22 @@ osStatus osMutexRelease(osMutex * mutex)
  * + int dev_bseek(int offset, int origin, size_t size, osDev_t dev, osThreadId thread_id)
  */
 
-int osDevOpen(osDev_t dev, osThreadId thread_id)
+int osDevOpen(osDev_t dev)
 {
-    ds_osDevOpen_t ds = { dev, thread_id };
+    return (int)syscall(SYSCALL_DEV_OPEN, &dev);
+}
+
+int osDevClose(osDev_t dev)
+{
+    return (int)syscall(SYSCALL_DEV_CLOSE, &dev);
+}
+
+int osDevCheckRes(osDev_t dev, osThreadId thread_id)
+{
+    ds_osDevHndl ds = { dev, thread_id };
     int result;
 
-    result = (int)syscall(SYSCALL_DEV_OPEN, &ds);
+    result = (int)syscall(SYSCALL_DEV_CHECK_RES, &ds);
 
     return result;
 }

@@ -303,6 +303,24 @@ void dev_threadDevSignal(int32_t signal, osDev_t dev)
 uint32_t dev_syscall(uint32_t type, void * p)
 {
     switch(type) {
+    case SYSCALL_DEV_OPEN:
+        return (uint32_t)dev_open(
+                    *((osDev_t *)p),
+                    (osThreadId)(current_thread->id)
+               );
+
+    case SYSCALL_DEV_CLOSE:
+        return (uint32_t)dev_close(
+                    *((osDev_t *)p),
+                    (osThreadId)(current_thread->id)
+               );
+
+    case SYSCALL_DEV_CHECK_RES:
+        return (uint32_t)dev_check_res(
+                    ((ds_osDevHndl_t *)p)->dev,
+                    ((ds_osDevHndl_t *)p)->thread_id
+               );
+
     case SYSCALL_DEV_WAIT:
         return (uint32_t)dev_threadDevWait(
                     ((ds_osDevWait_t *)p)->dev,
