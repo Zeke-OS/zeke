@@ -3,12 +3,7 @@ TODO
 
 Generic Tasks
 -------------
-- Syscall major, minor separation so the final syscall function call can be located in the same module with the actual kernel scope functions (sched, ksignal, dev etc.)
-	- Needs some neat way to easily configure the major switch..case
-	- This will definitely speed up syscalls as the compiler seems to use test & branch for the switch..case in syscall.c
 - Flag for kernel threads so they won't get killed
-- Move syscall ds typedefs to syscall_ds.h or similar header file
-- Move thscope wrappers into include dir
 - Optional auto-reset on failure instead of halt
 - Implement mutex and semaphores
 - Implement memory pools

@@ -63,51 +63,14 @@
 #define SYSCALL_DEV_WAIT                    SYSCALL_MMTOTYPE(SYSCALL_GROUP_DEV, 0x04)
 #define SYSCALL_MUTEX_TEST_AND_SET          SYSCALL_MMTOTYPE(SYSCALL_GROUP_LOCKS, 0x01)
 
-/** Argument struct for SYSCALL_SCHED_THREAD_CREATE */
-typedef struct {
-    osThreadDef_t * def;    /*!< Thread definitions for a new thread */
-    void * argument;        /*!< Thread parameter(s) pointer */
-} ds_osThreadCreate_t;
-
-/** Argument struct for SYSCALL_SCHED_THREAD_SETPRIORITY */
-typedef struct {
-    osThreadId thread_id;   /*!< Thread id */
-    osPriority priority;    /*!< Thread priority */
-} ds_osSetPriority_t;
-
-/** Argument struct for SYSCALL_SCHED_SIGNAL_SET
- *  and KERNEL_SYSCALL_SCHED_SIGNAL_CLEAR */
-typedef struct {
-    osThreadId thread_id;   /*!< Thread id */
-    int32_t signal;         /*!< Thread signals to set */
-} ds_osSignal_t;
-
-/** Argument struct for SYSCALL_SCHED_SIGNAL_WAIT */
-typedef struct {
-    int32_t signals;        /*!< Thread signal(s) to wait */
-    uint32_t millisec;      /*!< Timeout in ms */
-} ds_osSignalWait_t;
-
-#if configDEVSUBSYS == 1
-/** Argument struct for some dev syscalls */
-typedef struct {
-    osDev_t dev;            /*!< Device */
-    osThreadId thread_id;   /*!< Thread id */
-} ds_osDevHndl_t;
-
-/** Argument struct for SYSCALL_DEV_WAIT */
-typedef struct {
-    osDev_t dev;            /*!< Device */
-    uint32_t millisec;      /*!< Timeout in ms */
-} ds_osDevWait_t;
-#endif
-
 #ifndef PU_TEST_BUILD
 uint32_t syscall(uint32_t type, void * p);
 #endif /* PU_TEST_BUILD */
 
 /* Kernel scope functions */
 #ifdef KERNEL_INTERNAL
+#include "syscalldef.h"
+
 uint32_t _intSyscall_handler(uint32_t type, void * p);
 #endif /* KERNEL_INTERNAL */
 

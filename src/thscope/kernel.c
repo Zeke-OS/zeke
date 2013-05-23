@@ -16,6 +16,7 @@
   */
 
 #include "hal_core.h"
+#include "syscalldef.h"
 #include "syscall.h"
 #include "kernel.h"
 
@@ -267,7 +268,7 @@ int osDevClose(osDev_t dev)
 
 int osDevCheckRes(osDev_t dev, osThreadId thread_id)
 {
-    ds_osDevHndl ds = { dev, thread_id };
+    ds_osDevHndl_t ds = { dev, thread_id };
     int result;
 
     result = (int)syscall(SYSCALL_DEV_CHECK_RES, &ds);
