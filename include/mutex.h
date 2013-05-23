@@ -19,9 +19,9 @@ enum os_mutex_strategy {
  * Mutex control block
  */
 typedef struct os_mutex_cb {
-    volatile int thread_id;
-    volatile int lock;
-    enum os_mutex_strategy strategy;
+    volatile int thread_id; /*!< ID of the thread holding the lock */
+    volatile int lock; /*!< Lock variable */
+    enum os_mutex_strategy strategy; /*!< Locking strategy */
 } mutex_cb_t;
 
 #endif /* MUTEX_H */

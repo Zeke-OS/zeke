@@ -31,7 +31,7 @@
 typedef uint32_t (*kernel_syscall_handler_t)(uint32_t type,  void * p);
 
 static kernel_syscall_handler_t syscall_callmap[] = {
-    #define SYSCALL_MAP_X(major, function) function,
+    #define SYSCALL_MAP_X(major, function) [major] = function,
     FOR_ALL_SYSCALL_GROUPS(SYSCALL_MAP_X)
     #undef SYSCALL_MAP_X
 };

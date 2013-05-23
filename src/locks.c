@@ -17,7 +17,7 @@ uint32_t locks_syscall(uint32_t type, void * p)
         return (uint32_t)test_and_set((int *)p);
 
     default:
-        return NULL;
+        return (uint32_t)NULL;
     }
 }
 

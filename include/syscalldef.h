@@ -44,6 +44,12 @@ typedef struct {
     osThreadId thread_id;   /*!< Thread id */
 } ds_osDevHndl_t;
 
+/** Argument struct for dev write syscalls */
+typedef struct {
+    osDev_t dev;            /*!< Device */
+    void * data;               /*!< Data pointer */
+} ds_osDevData_t;
+
 /** Argument struct for SYSCALL_DEV_WAIT */
 typedef struct {
     osDev_t dev;            /*!< Device */

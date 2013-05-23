@@ -59,7 +59,7 @@ static void teardown()
 
 /* THREAD CREATION ***********************************************************/
 
-static char * test_sched_ThreadCreate(void)
+static char * test_sched_threadCreate(void)
 {
     osThreadDef_t thread_def1 = { (os_pthread)(&th1),
                                   osPriorityNormal,
@@ -72,8 +72,8 @@ static char * test_sched_ThreadCreate(void)
                                   sizeof(stack_2)/sizeof(char)
                                 };
 
-    sched_ThreadCreate(&thread_def1, NULL);
-    sched_ThreadCreate(&thread_def2, NULL);
+    sched_threadCreate(&thread_def1, NULL);
+    sched_threadCreate(&thread_def2, NULL);
 
     pu_assert("error, incorrect flags set for thread1",
               task_table[1].flags == (SCHED_EXEC_FLAG | SCHED_IN_USE_FLAG));
@@ -255,7 +255,7 @@ static char * test_sched_threadWait_infiniteInput()
 /* ALL TESTS *****************************************************************/
 
 static void all_tests() {
-    pu_def_test(test_sched_ThreadCreate, PU_RUN);
+    pu_def_test(test_sched_threadCreate, PU_RUN);
     pu_def_test(test_sched_thread_set_inheritance, PU_RUN);
     pu_def_test(test_sched_threadDelay_positiveInput, PU_RUN);
     pu_def_test(test_sched_threadDelay_infiniteInput, PU_RUN);

@@ -81,6 +81,7 @@ static void heapify(heap_t * heap, int i)
             largest = l;
         else
             largest = r;
+
         if (heap->a[i]->priority < heap->a[largest]->priority) {
             swap(heap, i, largest);
             heapify(heap, largest);
@@ -153,6 +154,17 @@ void heap_dec_key(heap_t * heap, int i)
     /* Only heapify is actually needed priority is already set
      * to its new value */
     heapify(heap, i);
+}
+
+void heap_reschedule_root(heap_t * heap, osPriority pri)
+{
+    int s = heap->size;
+
+    heap->a[0]->priority = (int)osPriorityIdle - 1;
+    swap(heap, 0, s);
+    heapify(heap, 0);
+    heap->a[s]->priority = pri;
+    heap_inc_key(heap, s);
 }
 
 /**

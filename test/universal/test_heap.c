@@ -93,6 +93,47 @@ static char * test_heap_dec_key(void)
     return 0;
 }
 
+static char * test_heap_reschedule(void)
+{
+    heap_t heap = HEAP_NEW_EMPTY;
+    threadInfo_t thread1, thread2, thread3, thread4, thread5;
+
+    thread1.priority = 2;
+    thread1.id = 1;
+    thread2.priority = 3;
+    thread2.id = 2;
+    thread3.priority = -1;
+    thread3.id = 3;
+    thread4.priority = -1;
+    thread4.id = 4;
+    thread5.priority = -2;
+    thread5.id = 5;
+
+    heap_insert(&heap, &thread1);
+    heap_insert(&heap, &thread2);
+    heap_insert(&heap, &thread3);
+    heap_insert(&heap, &thread4);
+    heap_insert(&heap, &thread5);
+
+    heap_reschedule_root(&heap, -1);
+
+    pu_assert_equal("error, wrong key on top after reschedule",
+        heap.a[0]->priority, 2);
+
+    heap_del_max(&heap);
+    pu_assert("error, thread2 should not pop at least as a second thread on the queue of threads with same priority",
+        heap.a[0]->id != 2);
+
+    heap_del_max(&heap);
+    heap_del_max(&heap);
+    heap_del_max(&heap);
+
+    pu_assert_equal("error, thread5 should be the last one to pop",
+        heap.a[0]->id, thread5.id);
+
+    return 0;
+}
+
 static char * test_shuffled_heap(void)
 {
     int i;
@@ -123,6 +164,7 @@ static void all_tests() {
     pu_def_test(test_heap_del_max, PU_RUN);
     pu_def_test(test_heap_inc_key, PU_RUN);
     pu_def_test(test_heap_dec_key, PU_RUN);
+    pu_def_test(test_heap_reschedule, PU_RUN);
     pu_def_test(test_shuffled_heap, PU_SKIP);
 }
 

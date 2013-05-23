@@ -235,13 +235,9 @@ static void context_switcher(void)
              */
 
             /* Give a penalty: Set lower priority
-             * and perform heap decrement operation. */
-            current_thread->priority = osPriorityLow;
-            heap_dec_key(&priority_queue, 0);
+             * and perform reschedule operation on heap. */
+            heap_reschedule_root(&priority_queue, osPriorityLow);
 
-            /* WARNING: Starvation is still possible if there is other threads
-             * with priority set to osPriorityLow.
-             */
             continue; /* Select next thread */
         }
 
@@ -624,10 +620,10 @@ uint32_t sched_syscall(uint32_t type, void * p)
 
     case SYSCALL_SCHED_GET_LOADAVG:
         sched_get_loads((uint32_t *)p);
-        return NULL; /* Note NULL is not an error here */
+        return (uint32_t)NULL; /* Note NULL is not an error here */
 
     default:
-        return NULL;
+        return (uint32_t)NULL;
     }
 }
 
@@ -665,7 +661,7 @@ uint32_t sched_syscall_thread(uint32_t type, void * p)
                 );
 
     default:
-        return NULL;
+        return (uint32_t)NULL;
     }
 }
 
@@ -704,7 +700,7 @@ uint32_t sched_syscall_signal(uint32_t type, void * p)
                 );
 
     default:
-        return NULL;
+        return (uint32_t)NULL;
     }
 }
 

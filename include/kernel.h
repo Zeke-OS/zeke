@@ -94,6 +94,8 @@ typedef int osThreadId;
 typedef int osTimerId;
 
 /// Mutex cb mutex.
+/// \note This data structure holds all the information related to a particular mutex,
+///       this means that it is DANGEROUS to edit its contents in thread context.
 /// \note non-CMSIS-RTOS.
 typedef struct os_mutex_cb osMutex;
 
@@ -147,13 +149,26 @@ int osDevOpen(osDev_t dev);
 /**
  * Close and release device access.
  * @param dev the device.
+ * @return DEV_CERR_OK (0) if the device access was closed succesfully;
+ * otherwise DEV_CERR_x.
  */
 int osDevClose(osDev_t dev);
 
 /**
  * Check if thread_id has locked the device given in dev.
+ * @param dev device that is checked for lock.
+ * @param thread_id thread that may have the lock for the dev.
+ * @return 0 if the device is not locked by thread_id.
  */
 int osDevCheckRes(osDev_t dev, osThreadId thread_id);
+
+/**
+ * Write to a character device.
+ * @param ch is written to the device.
+ * @param dev device.
+ * @return Error code.
+ */
+int dev_cwrite(uint32_t ch, osDev_t dev);
 
 /**
  * Wait for device.

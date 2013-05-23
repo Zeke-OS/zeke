@@ -81,7 +81,7 @@ int dev_open(osDev_t dev, osThreadId thread_id)
  * @param dev the device.
  * @param thread_id thread that tries to close this device.
  * @return DEV_CERR_OK (0) if the device access was closed succesfully;
- * otherwise DEV_CERR_x.
+ *         otherwise DEV_CERR_x.
  */
 int dev_close(osDev_t dev, osThreadId thread_id)
 {
@@ -322,6 +322,12 @@ uint32_t dev_syscall(uint32_t type, void * p)
                     ((ds_osDevHndl_t *)p)->thread_id
                );
 
+    case SYSCALL_DEV_CWRITE:
+        return (uint32_t)dev_cwrite(
+                    ((ds_osDevData_t *)p)->dev,
+                    *(((ds_osDevData_t *)p)->data)
+               );
+
     case SYSCALL_DEV_WAIT:
         return (uint32_t)dev_threadDevWait(
                     ((ds_osDevWait_t *)p)->dev,
@@ -329,7 +335,7 @@ uint32_t dev_syscall(uint32_t type, void * p)
                );
 
     default:
-        return NULL;
+        return (uint32_t)NULL;
     }
 }
 

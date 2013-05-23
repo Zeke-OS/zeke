@@ -85,6 +85,11 @@ uint32_t syscall(uint32_t type, void * p)
     return scratch;
 }
 
+/**
+ * Test & set function.
+ * @param lock pointer to the integer variable that will be set to 1.
+ * @return 0 if old value was previously other than 0.
+ */
 int test_and_set(int * lock) {
     int old_value;
 
