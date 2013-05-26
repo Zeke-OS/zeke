@@ -14,6 +14,9 @@ with a lower priority than some more relevant tasks. There is no significant
 overhead on this implementation as driver threading uses the same scheduler as a
 normal thread/user scope threads.
 
+Character devices use a character size of 4 bytes (uint32_t) while block devices
+can be configured to use any size on each write or read.
+
 Configuration
 -------------
 
