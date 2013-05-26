@@ -21,13 +21,13 @@
 #define SCHED_LAVGPERIOD_11SEC  11
 
 /* Kernel configuration ******************************************************/
-#define configMCU_MODEL         MCU_MODEL_STM32F0
+/*#define configMCU_MODEL         MCU_MODEL_STM32F0*/
 
 /* Scheduler */
 #define configSCHED_MAX_THREADS 10      /*!< Maximum number of threads */
 #define configSCHED_FREQ        100u    /*!< Scheduler frequency in Hz */
 #define configSCHED_LAVG_PER    SCHED_LAVGPERIOD_11SEC
-#define configHEAP_BOUNDS_CHECK 0       /*!< Enable or disable heap bounds check */
+#define configHEAP_BOUNDS_CHECK 1       /*!< Enable or disable heap bounds check */
 #define configTIMERS_MAX        4       /*!< Maximum number of timers available */
 
 /* APP Main */
