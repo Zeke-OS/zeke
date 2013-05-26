@@ -2083,6 +2083,9 @@
     <name>$PROJ_DIR$\..\include\syscall.h</name>
   </file>
   <file>
+    <name>$PROJ_DIR$\..\include\syscalldef.h</name>
+  </file>
+  <file>
     <name>$PROJ_DIR$\..\src\timers.c</name>
   </file>
   <file>
