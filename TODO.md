@@ -7,6 +7,9 @@ Generic Tasks
 - Optional auto-reset on failure instead of halt
 - Implement mutex and semaphores
 - Implement memory pools
+- Migrate to CMSIS-RTOS 1.02 on compatible features and remove possibly
+  problematic features from the current implementation if those does not
+  exist in the latest specification
 - Further optimization of syscalls by using syscalldef data types whenever
   possible (eg. dev)
 - Makefile(s) for automatic build with different configs & hardware
