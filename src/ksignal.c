@@ -33,13 +33,7 @@ int32_t ksignal_threadSignalSet(osThreadId thread_id, int32_t signal)
 
     if (((thread->flags & SCHED_NO_SIG_FLAG) == 0)
         && ((thread->sig_wait_mask & signal) != 0)) {
-        /* Release wait timeout timer */
-        if (thread->wait_tim >= 0) {
-            timers_release(thread->wait_tim);
-        }
-
-        /* Clear signal wait mask */
-        thread->sig_wait_mask = 0x0;
+        ksignal_threadSignalWaitMaskClear(thread);
 
         /* Set the signaled thread back into execution */
         sched_thread_set_exec(thread_id);
@@ -49,11 +43,17 @@ int32_t ksignal_threadSignalSet(osThreadId thread_id, int32_t signal)
 }
 
 /**
- * Clear signal wait mask of the current thread
+ * Clear signal wait mask of a given thread
  */
-void ksignal_threadSignalWaitMaskClear(void)
+void ksignal_threadSignalWaitMaskClear(threadInfo_t * thread)
 {
-    current_thread->sig_wait_mask = 0x0;
+    /* Release wait timeout timer */
+    if (thread->wait_tim >= 0) {
+        timers_release(thread->wait_tim);
+    }
+
+    /* Clear signal wait mask */
+    current_thread->sig_wait_mask = 0;
 }
 
 /**

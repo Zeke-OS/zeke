@@ -16,7 +16,7 @@
 #include "kernel.h"
 
 int32_t ksignal_threadSignalSet(osThreadId thread_id, int32_t signal);
-void ksignal_threadSignalWaitMaskClear(void);
+void ksignal_threadSignalWaitMaskClear(threadInfo_t * thread);
 int32_t ksignal_threadSignalClear(osThreadId thread_id, int32_t signal);
 int32_t ksignal_threadSignalGetCurrent(void);
 int32_t ksignal_threadSignalGet(osThreadId thread_id);
