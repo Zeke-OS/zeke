@@ -21,6 +21,9 @@
 #include "hal_core.h"
 #include "hal_mcu.h"
 #include "heap.h"
+#if configFAST_FORK != 0
+#include "queue.h"
+#endif
 #include "timers.h"
 #include "ksignal.h"
 #include "syscall.h"
@@ -61,6 +64,10 @@ static threadInfo_t task_table[configSCHED_MAX_THREADS]; /*!< Array of all
                                                           *   threads */
 static heap_t priority_queue = HEAP_NEW_EMPTY;   /*!< Priority queue of active
                                                   * threads */
+#if configFAST_FORK != 0
+static queue_cb_t next_threadId_queue_cb;
+static int next_threadId_queue[configSCHED_MAX_THREADS - 1];
+#endif
 
 volatile threadInfo_t * current_thread; /*!< Pointer to the currently active
                                          *   thread */
@@ -109,6 +116,17 @@ void sched_init(void)
 
     /* Set initial value for PSP */
     wr_thread_stack_ptr(task_table[0].sp);
+
+#if configFAST_FORK != 0
+    next_threadId_queue_cb = queue_create(next_threadId_queue, sizeof(int), sizeof(next_threadId_queue) / sizeof(int));
+
+    /* Fill the queue */
+    int i = 1, q_ok;
+    do {
+        q_ok = queue_push(&next_threadId_queue_cb, &i);
+        i++;
+    } while (q_ok);
+#endif
 }
 
 /**
@@ -401,6 +419,14 @@ void sched_thread_sleep_current(void)
  */
 static void sched_thread_remove(osThreadId tt_id)
 {
+    #if configFAST_FORK != 0
+    /* next_threadId_queue may break if this is not checked, otherwise it should
+     * be quite safe to remove a thread multiple times. */
+    if ((task_table[tt_id].flags & SCHED_IN_USE_FLAG) == 0) {
+        return;
+    }
+    #endif
+
     task_table[tt_id].flags = 0; /* Clear all flags */
 
     /* Release wait timeout timer */
@@ -413,6 +439,10 @@ static void sched_thread_remove(osThreadId tt_id)
      */
     task_table[tt_id].priority = osPriorityError;
     heap_inc_key(&priority_queue, heap_find(&priority_queue, tt_id));
+
+#if configFAST_FORK != 0
+    queue_push(&next_threadId_queue_cb, &tt_id);
+#endif
 }
 
 /**
@@ -464,17 +494,26 @@ osThreadId sched_threadCreate(osThreadDef_t * thread_def, void * argument)
     __istate_t s = __get_interrupt_state();
     __disable_interrupt();
 
+#if configFAST_FORK != 0
+    if (!queue_pop(&next_threadId_queue_cb, &i)) {
+        /* New thread could not be created */
+        return 0;
+    }
+#else
     for (i = 1; i < configSCHED_MAX_THREADS; i++) {
         if (task_table[i].flags == 0) {
+#endif
             sched_thread_set(i,                  /* Index of created thread */
                              thread_def,         /* Thread definition */
                              argument,           /* Argument */
                              (void *)current_thread); /* Pointer to parent
                                                   * thread, which is expected to
                                                   * be the current thread */
+#if configFAST_FORK == 0
             break;
         }
     }
+#endif
     __set_interrupt_state(s); /* Restore interrupts */
 
     if (i == configSCHED_MAX_THREADS) {

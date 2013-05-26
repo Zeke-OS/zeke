@@ -20,10 +20,8 @@
 #include "locks.h"
 #include "syscall.h"
 
+/* For all Syscall groups */
 #if configDEVSUBSYS == 1
-/** For all Syscall groups
- *  Must be in numeric order.
- */
 #define FOR_ALL_SYSCALL_GROUPS(apply)                       \
     apply(SYSCALL_GROUP_SCHED, sched_syscall)               \
     apply(SYSCALL_GROUP_SCHED_THREAD, sched_syscall_thread) \

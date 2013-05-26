@@ -5,7 +5,6 @@ Generic Tasks
 -------------
 - Flag for kernel threads so they won't get killed
 - Optional auto-reset on failure instead of halt
-- Better way to configure syscall groups eg. in config
 - Implement mutex and semaphores
 - Implement memory pools
 - Further optimization of syscalls by using syscalldef data types whenever possible (eg. dev)
@@ -13,10 +12,8 @@ Generic Tasks
     - Way to free dynamically allocated thread stacks etc.
     - Optional dynamically allocating scheduler implementation?
 - Timers and kernel time functions
-- Fast fork option by using fifo for finding next thread id (and add it to fifo when killed)
 - Implement system that calculates actual number systicks consumed by
   the scheduler (and compare with others as well like for example idle task)
-- Separately calculate time used by devs
 - Implement some priority reward metrics for IO bound processes?
 - Events are not queued atm, do we need queuing?
 - Implement a restart service that can restart service threads
@@ -26,18 +23,18 @@ Generic Tasks
 - Use thread parent<->client relationship to improve scheduling
 - Implement threading support for DLIB
 - OR implement own DLIB and disable IAR's implementation on project settings
-- Add support for low power modes for idle taks
+- Better way to configure syscall groups eg. in config
 - Thread related functions and variables could be moved from sched.c to its
   own file, although this would although require a lot of refactoring
 - Load ropi applications from storage to RAM and execute in a new thread
 
 ST F0 (& ARMv6M support)
 ------------------------
-- Stack dump/Register dump on HardFault
 - HardFault handler optimizations?
 
 ST Cortex-M3 port (& ARMv7M support)
 ------------------------------------
+- Stack dump/Register dump on HardFault
 - HardFault handler (is incomplete)
 
 ARM9/STR912F port (ARMv5TE)

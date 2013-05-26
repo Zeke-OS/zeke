@@ -25,6 +25,7 @@
 
 /* Scheduler */
 #define configSCHED_MAX_THREADS 10      /*!< Maximum number of threads */
+#define configFAST_FORK         0       /*!< Use a queue to find the next free threadId. */
 #define configSCHED_FREQ        100u    /*!< Scheduler frequency in Hz */
 #define configSCHED_LAVG_PER    SCHED_LAVGPERIOD_11SEC
 #define configHEAP_BOUNDS_CHECK 0       /*!< Enable or disable heap bounds check */
