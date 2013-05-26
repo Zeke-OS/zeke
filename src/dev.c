@@ -227,7 +227,7 @@ int dev_bread(void * buff, size_t size, size_t count, osDev_t dev, osThreadId th
 /**
  * Seek block device.
  * @TODO Implementation
- * @param Number of size units to offset from origin.
+ * @param offset Number of size units to offset from origin.
  * @param origin Position used as reference for the offset.
  * @param size in bytes, of each element.
  * @param dev device to be seeked from.

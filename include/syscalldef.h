@@ -46,22 +46,27 @@ typedef struct {
 
 /** Argument struct for dev write syscalls */
 typedef struct {
-    osDev_t dev;            /*!< Device */
-    void * data;            /*!< Data pointer */
+    osDev_t dev;            /*!< Device to be read from or written to. */
+    void * data;            /*!< Data pointer. */
 } ds_osDevCData_t;
 
+/** Generic argument struct for block functions in dev subsystem */
 typedef struct {
-    void * buff;
-    size_t size;
-    size_t count;
-    osDev_t dev;
+    void * buff;            /*!< pointer to a block of memory with a size of at
+                             *   least (size*count) bytes, converted to a
+                             *   void *. */
+    size_t size;            /*!< in bytes, of each element. */
+    size_t count;           /*!< number of elements, each one with a size of
+                             *   size bytes. */
+    osDev_t dev;            /*!< device to be read from or written to. */
 } ds_osDevBData_t;
 
+/** Argument struct for block seek function in dev subsystem */
 typedef struct {
-    int offset;
-    int origin;
-    size_t size;
-    osDev_t dev;
+    int offset;             /*!< Number of size units to offset from origin. */
+    int origin;             /*!< Position used as reference for the offset. */
+    size_t size;            /*!< in bytes, of each element. */
+    osDev_t dev;            /*!< device to be seeked from. */
 } ds_osDevBseekData_t;
 
 /** Argument struct for SYSCALL_DEV_WAIT */
