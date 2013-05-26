@@ -7,6 +7,7 @@ Generic Tasks
 - Optional auto-reset on failure instead of halt
 - Implement mutex and semaphores
 - Implement memory pools
+- Further optimization of syscalls by using syscalldef data types whenever possible (eg. dev)
 - Flags for optional dynmem "optimizations" and feature improvements
     - Way to free dynamically allocated thread stacks etc.
     - Optional dynamically allocating scheduler implementation?

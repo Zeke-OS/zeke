@@ -179,6 +179,37 @@ int osDevCwrite(uint32_t ch, osDev_t dev);
 int osDevCread(uint32_t * ch, osDev_t dev)
 
 /**
+ * Write to a block device.
+ * @param buff Pointer to the array of elements to be written.
+ * @param size in bytes of each element to be written.
+ * @param count number of elements, each one with a size of size bytes.
+ * @param dev device to be written to.
+ * @return Error code.
+ */
+int osDevBwrite(const void * buff, size_t size, size_t count, osDev_t dev);
+
+/**
+ * Read from a block device.
+ * @param buff pointer to a block of memory with a size of at least (size*count) bytes, converted to a void *.
+ * @param size in bytes, of each element to be read.
+ * @param count number of elements, each one with a size of size bytes.
+ * @param dev device to be read from.
+ * @return Error code.
+ */
+int osDevBread(void * buff, size_t size, size_t count, osDev_t dev);
+
+/**
+ * Seek block device.
+ * TODO Implementation
+ * @param Number of size units to offset from origin.
+ * @param origin Position used as reference for the offset.
+ * @param size in bytes, of each element.
+ * @param dev device to be seeked from.
+ * @return Error code.
+ */
+int osDevBseek(int offset, int origin, size_t size, osDev_t dev);
+
+/**
  * Wait for device.
  * @param dev the device accessed.
  * @param millisec timeout.

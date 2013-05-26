@@ -47,8 +47,22 @@ typedef struct {
 /** Argument struct for dev write syscalls */
 typedef struct {
     osDev_t dev;            /*!< Device */
-    void * data;               /*!< Data pointer */
-} ds_osDevData_t;
+    void * data;            /*!< Data pointer */
+} ds_osDevCData_t;
+
+typedef struct {
+    void * buff;
+    size_t size;
+    size_t count;
+    osDev_t dev;
+} ds_osDevBData_t;
+
+typedef struct {
+    int offset;
+    int origin;
+    size_t size;
+    osDev_t dev;
+} ds_osDevBseekData_t;
 
 /** Argument struct for SYSCALL_DEV_WAIT */
 typedef struct {

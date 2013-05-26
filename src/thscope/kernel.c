@@ -275,7 +275,7 @@ int osDevCheckRes(osDev_t dev, osThreadId thread_id)
 
 int osDevCwrite(uint32_t ch, osDev_t dev)
 {
-    ds_osDevData_t ds = { dev, &ch };
+    ds_osDevCData_t ds = { dev, &ch };
     int result;
 
     result = (int)syscall(SYSCALL_DEV_CWRITE, &ds);
@@ -285,10 +285,48 @@ int osDevCwrite(uint32_t ch, osDev_t dev)
 
 int osDevCread(uint32_t * ch, osDev_t dev)
 {
-    ds_osDevData_t ds = { dev, ch };
+    ds_osDevCData_t ds = { dev, ch };
     int result;
 
     result = (int)syscall(SYSCALL_DEV_CREAD, &ds);
+
+    return result;
+}
+
+int osDevBwrite(const void * buff, size_t size, size_t count, osDev_t dev)
+{
+    ds_osDevBData_t ds = { buff, size, count, dev };
+    int result;
+
+    result = (int)syscall(SYSCALL_DEV_BWRITE, &ds);
+
+    return result;
+}
+
+int osDevBread(void * buff, size_t size, size_t count, osDev_t dev)
+{
+    ds_osDevBData_t ds = { buff, size, count, dev };
+    int result;
+
+    result = (int)syscall(SYSCALL_DEV_BWRITE, &ds);
+
+    return result;
+}
+
+/**
+ * Seek block device.
+ * @param Number of size units to offset from origin.
+ * @param origin Position used as reference for the offset.
+ * @param size in bytes, of each element.
+ * @param dev device to be seeked from.
+ * @return Error code.
+ */
+int dev_bseek(int offset, int origin, size_t size, osDev_t dev)
+{
+    ds_osDevBseekData ds = { offset, origin, size, dev };
+    int result;
+
+    result = (int)syscall(SYSCALL_DEV_BSEEK, &ds);
 
     return result;
 }

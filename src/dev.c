@@ -226,10 +226,11 @@ int dev_bread(void * buff, size_t size, size_t count, osDev_t dev, osThreadId th
 
 /**
  * Seek block device.
- * TODO Implementation
+ * @TODO Implementation
  * @param Number of size units to offset from origin.
  * @param origin Position used as reference for the offset.
  * @param size in bytes, of each element.
+ * @param dev device to be seeked from.
  * @param thread_id id of the thread that is seeking the block device.
  * @return Error code.
  */
@@ -324,15 +325,42 @@ uint32_t dev_syscall(uint32_t type, void * p)
 
     case SYSCALL_DEV_CWRITE:
         return (uint32_t)dev_cwrite(
-                    *(((ds_osDevData_t *)p)->data,
-                    ((ds_osDevData_t *)p)->dev,
+                    *(((ds_osDevCData_t *)p)->data),
+                    ((ds_osDevCData_t *)p)->dev,
                     (osThreadId)(current_thread->id)
                );
 
     case SYSCALL_DEV_CREAD:
         return (uint32_t)dev_cread(
-                    (((ds_osDevData_t *)p)->data,
-                    ((ds_osDevData_t *)p)->dev,
+                    ((ds_osDevCData_t *)p)->data,
+                    ((ds_osDevCData_t *)p)->dev,
+                    (osThreadId)(current_thread->id)
+               );
+
+    case SYSCALL_DEV_BWRITE:
+        return (uint32_t)dev_bwrite(
+                    ((ds_osDevBData_t *)p)->buff,
+                    ((ds_osDevCData_t *)p)->size,
+                    ((ds_osDevCData_t *)p)->count,
+                    ((ds_osDevCData_t *)p)->dev,
+                    (osThreadId)(current_thread->id)
+               );
+
+    case SYSCALL_DEV_BREAD:
+        return (uint32_t)dev_bread(
+                    ((ds_osDevBData_t *)p)->buff,
+                    ((ds_osDevCData_t *)p)->size,
+                    ((ds_osDevCData_t *)p)->count,
+                    ((ds_osDevCData_t *)p)->dev,
+                    (osThreadId)(current_thread->id)
+               );
+
+    case SYSCALL_DEV_BSEEK:
+        return (uint32_t)dev_bseek(
+                    ((ds_osDevBseekData_t *)p)->offset,
+                    ((ds_osDevBseekData_t *)p)->origin,
+                    ((ds_osDevBseekData_t *)p)->size,
+                    ((ds_osDevBseekData_t *)p)->dev,
                     (osThreadId)(current_thread->id)
                );
 
