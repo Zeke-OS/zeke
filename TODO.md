@@ -5,6 +5,7 @@ Generic Tasks
 -------------
 - Flag for kernel threads so they won't get killed
 - Optional auto-reset on failure instead of halt
+- Better way to configure syscall groups eg. in config
 - Implement mutex and semaphores
 - Implement memory pools
 - Further optimization of syscalls by using syscalldef data types whenever possible (eg. dev)

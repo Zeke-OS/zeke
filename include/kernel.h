@@ -176,7 +176,7 @@ int osDevCwrite(uint32_t ch, osDev_t dev);
  * @param dev device.
  * @return Error code.
  */
-int osDevCread(uint32_t * ch, osDev_t dev)
+int osDevCread(uint32_t * ch, osDev_t dev);
 
 /**
  * Write to a block device.

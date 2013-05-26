@@ -22,6 +22,8 @@
     #error pu_test_core.h should not be #included in production!
 #endif
 
+#include "syscall.h"
+
 /* Exception return values */
 #define HAND_RETURN         0xFFFFFFF1u /*!< Return to handler mode using the MSP. */
 #define MAIN_RETURN         0xFFFFFFF9u /*!< Return to thread mode using the MSP. */
@@ -98,12 +100,12 @@ inline void wr_thread_stack_ptr(/*@unused@*/ void * ptr)
 {
 }
 
-/**
- * @todo Could this actually call the syscall functions here on test environment?
+/*
+ * Call syscalls directly as we can't use any SVC on universal test environment.
  */
-inline uint32_t syscall(/*@unused@*/ uint32_t type, /*@unused@*/ void * p)
+inline uint32_t syscall(uint32_t type, void * p)
 {
-    return 0;
+    return _intSyscall_handler(type, p);
 }
 
 #endif /* PU_TEST_CORE_H */

@@ -16,6 +16,7 @@
 
 #include <stdlib.h>
 #include "kernel.h"
+#include "syscalldef.h"
 #include "devtypes.h"
 
 #define DEV_FLAG_INIT       0x01 /*!< Device driver initialized. */
@@ -109,7 +110,7 @@ int dev_cwrite(uint32_t ch, osDev_t dev, osThreadId thread_id);
 int dev_cread(uint32_t * ch, osDev_t dev, osThreadId thread_id);
 int dev_bwrite(ds_osDevBData_t * args, osThreadId thread_id);
 int dev_bread(ds_osDevBData_t * args, osThreadId thread_id);
-int dev_bseek(ds_osDevBseekData_t * args, osThreadId thread_id);
+int dev_bseek(ds_osDevBSeekData_t * args, osThreadId thread_id);
 
 /* Thread specific functions used mainly by Syscalls **************************/
 osEvent * dev_threadDevWait(osDev_t dev, uint32_t millisec);

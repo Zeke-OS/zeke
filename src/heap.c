@@ -15,41 +15,26 @@
 #define HEAP_BOUNDS_CHECK 1
 #endif
 
-static int parent(int i);
-static int left(int i);
-static int right(int i);
 static inline void swap(heap_t * heap, int i, int j);
 static void heapify(heap_t * heap, int i);
 
 /**
  * Returns index to the parent of the key i
  * @param i Index to a key.
- * @return Parent key index.
  */
-static int parent(int i)
-{
-    return i / 2;
-}
+#define parent(i) (i / 2)
 
 /**
  * Returns index to the key on the left side of the key i
  * @param i Index to a key.
- * @return Left side key index.
  */
-static int left(int i)
-{
-    return 2 * i;
-}
+#define left(i) (2 * i)
 
 /**
  * Returns index to the key on the right side of the key i
  * @param i Index to a key.
- * @return Right side key index.
  */
-static int right(int i)
-{
-    return 2 * i + 1;
-}
+#define right(i) (2 * i + 1)
 
 /**
   * Swap two threadInfo_t pointers in a heap
@@ -136,7 +121,7 @@ void heap_insert(heap_t * heap, threadInfo_t * k)
   */
 void heap_inc_key(heap_t * heap, int i)
 {
-    while ((i > 0 && (heap->a[parent(i)]->priority) < heap->a[i]->priority)) {
+    while ((i > 0) && ((heap->a[parent(i)]->priority) < heap->a[i]->priority)) {
         swap(heap, i, parent(i));
         i = parent(i);
     }
@@ -160,11 +145,18 @@ void heap_reschedule_root(heap_t * heap, osPriority pri)
 {
     int s = heap->size;
 
+    /* Swap with the last one */
     heap->a[0]->priority = (int)osPriorityIdle - 1;
     swap(heap, 0, s);
     heapify(heap, 0);
+
+    /* Move upwards */
     heap->a[s]->priority = pri;
-    heap_inc_key(heap, s);
+    while ((s > 0) && ((heap->a[parent(s)]->priority) <= heap->a[s]->priority)) {
+        swap(heap, s, parent(s));
+        s = parent(s);
+    }
+
 }
 
 /**

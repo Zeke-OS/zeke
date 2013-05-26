@@ -7,6 +7,8 @@
 #include "punit.h"
 #include "heap.h"
 
+static void print_heap(heap_t heap);
+
 static void setup()
 {
 }
@@ -93,20 +95,29 @@ static char * test_heap_dec_key(void)
     return 0;
 }
 
+static void print_heap(heap_t heap)
+{
+    int i;
+
+    for (i = 0; i <= heap.size; i++)
+        printf("%i(%i), ", heap.a[i]->id, heap.a[i]->priority);
+    printf("\n");
+}
+
 static char * test_heap_reschedule(void)
 {
     heap_t heap = HEAP_NEW_EMPTY;
     threadInfo_t thread1, thread2, thread3, thread4, thread5;
 
-    thread1.priority = 2;
+    thread1.priority = osPriorityAboveNormal;
     thread1.id = 1;
-    thread2.priority = 3;
+    thread2.priority = osPriorityHigh;
     thread2.id = 2;
-    thread3.priority = -1;
+    thread3.priority = osPriorityLow;
     thread3.id = 3;
-    thread4.priority = -1;
+    thread4.priority = osPriorityLow;
     thread4.id = 4;
-    thread5.priority = -2;
+    thread5.priority = osPriorityIdle;
     thread5.id = 5;
 
     heap_insert(&heap, &thread1);
@@ -115,14 +126,24 @@ static char * test_heap_reschedule(void)
     heap_insert(&heap, &thread4);
     heap_insert(&heap, &thread5);
 
-    heap_reschedule_root(&heap, -1);
+    //print_heap(heap);
 
-    pu_assert_equal("error, wrong key on top after reschedule",
-        heap.a[0]->priority, 2);
+    heap_reschedule_root(&heap, osPriorityLow);
+
+    //print_heap(heap);
+
+    pu_assert_equal("error, root should be now thread1",
+        heap.a[0]->id, 1);
+
+    pu_assert_equal("error, thread1 priority is incorrect",
+        heap.a[0]->priority, osPriorityAboveNormal);
 
     heap_del_max(&heap);
+
+    //print_heap(heap);
+
     pu_assert("error, thread2 should not pop at least as a second thread on the queue of threads with same priority",
-        heap.a[0]->id != 2);
+        heap.a[0]->id != thread2.id);
 
     heap_del_max(&heap);
     heap_del_max(&heap);

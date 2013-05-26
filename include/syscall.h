@@ -64,13 +64,13 @@
 #define SYSCALL_DEV_CREAD                   SYSCALL_MMTOTYPE(SYSCALL_GROUP_DEV, 0x04)
 #define SYSCALL_DEV_BWRITE                  SYSCALL_MMTOTYPE(SYSCALL_GROUP_DEV, 0x05)
 #define SYSCALL_DEV_BREAD                   SYSCALL_MMTOTYPE(SYSCALL_GROUP_DEV, 0x06)
-#define SYSCALL_DEV_BSEEK                   SYSCALL_MMTOTYPE(SYSCALL_DEV_BSEEK, 0x07)
+#define SYSCALL_DEV_BSEEK                   SYSCALL_MMTOTYPE(SYSCALL_GROUP_DEV, 0x07)
 #define SYSCALL_DEV_WAIT                    SYSCALL_MMTOTYPE(SYSCALL_GROUP_DEV, 0x08)
 #define SYSCALL_MUTEX_TEST_AND_SET          SYSCALL_MMTOTYPE(SYSCALL_GROUP_LOCKS, 0x00)
 
-#ifndef PU_TEST_BUILD
+//#ifndef PU_TEST_BUILD
 uint32_t syscall(uint32_t type, void * p);
-#endif /* PU_TEST_BUILD */
+//#endif /* PU_TEST_BUILD */
 
 /* Kernel scope functions */
 #ifdef KERNEL_INTERNAL

@@ -10,7 +10,9 @@
 
 #include "sched.h"
 #define KERNEL_INTERNAL 1
+#ifndef PU_TEST_BUILD
 #include "hal_core.h"
+#endif
 #include "ksignal.h"
 #if configDEVSUBSYS == 1
 #include "dev.h"
@@ -18,6 +20,7 @@
 #include "locks.h"
 #include "syscall.h"
 
+#if configDEVSUBSYS == 1
 /** For all Syscall groups
  *  Must be in numeric order.
  */
@@ -27,6 +30,18 @@
     apply(SYSCALL_GROUP_SCHED_SIGNAL, sched_syscall_signal) \
     apply(SYSCALL_GROUP_DEV, dev_syscall)                   \
     apply(SYSCALL_GROUP_LOCKS, locks_syscall)
+#elif PU_TEST_BUILD == 1
+#define FOR_ALL_SYSCALL_GROUPS(apply)                       \
+    apply(SYSCALL_GROUP_SCHED, sched_syscall)               \
+    apply(SYSCALL_GROUP_SCHED_THREAD, sched_syscall_thread) \
+    apply(SYSCALL_GROUP_SCHED_SIGNAL, sched_syscall_signal)
+#else
+#define FOR_ALL_SYSCALL_GROUPS(apply)                       \
+    apply(SYSCALL_GROUP_SCHED, sched_syscall)               \
+    apply(SYSCALL_GROUP_SCHED_THREAD, sched_syscall_thread) \
+    apply(SYSCALL_GROUP_SCHED_SIGNAL, sched_syscall_signal) \
+    apply(SYSCALL_GROUP_LOCKS, locks_syscall)
+#endif
 
 typedef uint32_t (*kernel_syscall_handler_t)(uint32_t type,  void * p);
 

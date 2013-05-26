@@ -7,7 +7,9 @@
  */
 
 #include "syscall.h"
+#ifndef PU_TEST_BUILD
 #include "hal_core.h"
+#endif
 #include "locks.h"
 
 uint32_t locks_syscall(uint32_t type, void * p)

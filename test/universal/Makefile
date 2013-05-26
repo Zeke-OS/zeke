@@ -2,6 +2,6 @@
 
 # Source code under test
 SRCDIR = ../../src/
-IDIR = ../../include ../../src ../../src/hal ../../config
+IDIR = ../../include ../../src ../../src/hal ./config ../../src/dev
 
 include ../punit/Makefile.punit
