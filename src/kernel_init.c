@@ -11,13 +11,15 @@
 #include "sched.h"
 #include "app_main.h"
 #include "hal_mcu.h"
+#if configDEVSUBSYS != 0
 #include "dev.h"
+#endif
 
 static char main_Stack[configAPP_MAIN_SSIZE];
 
 int main(void)
 {
-#if configDEVSUBSYS == 1
+#if configDEVSUBSYS != 0
     /* Initialize device drivers */
     dev_init_all();
 #endif

@@ -13,7 +13,7 @@
 #define SYSCALL_H
 
 #include "kernel.h"
-#if configDEVSUBSYS == 1
+#if configDEVSUBSYS != 0
 #include "devtypes.h"
 #endif
 

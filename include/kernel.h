@@ -137,7 +137,7 @@ typedef struct  {
                          * as these should be implemented as syscall services.*/
 
 /* ==== Non-CMSIS-RTOS functions ==== */
-#if configDEVSUBSYS == 1
+#if configDEVSUBSYS != 0
 /**
  * Open and lock device access.
  * @param dev the device accessed.

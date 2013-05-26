@@ -245,8 +245,7 @@ osStatus osMutexRelease(osMutex * mutex)
 
 /* Non-CMSIS *****************************************************************/
 
-#if configDEVSUBSYS == 1
-
+#if configDEVSUBSYS != 0
 int osDevOpen(osDev_t dev)
 {
     return (int)syscall(SYSCALL_DEV_OPEN, &dev);

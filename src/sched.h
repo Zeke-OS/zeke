@@ -14,7 +14,7 @@
 #ifndef SCHED_H
 #define SCHED_H
 
-#if configDEVSUBSYS == 1
+#if configDEVSUBSYS != 0
 #include "dev.h"
 #endif
 
@@ -39,7 +39,7 @@ typedef struct {
     int32_t signals;            /*!< Signal flags
                                  * @note signal bit 30 is reserved for dev. */
     int32_t sig_wait_mask;      /*!< Signal wait mask */
-#if configDEVSUBSYS == 1
+#if configDEVSUBSYS != 0
     unsigned int dev_wait;       /*!< Waiting for (major) dev. Currently only
                                   * major number (whole driver) level is used.
                                   * This means that optimal way to use device

@@ -37,7 +37,7 @@ typedef struct {
     uint32_t millisec;      /*!< Timeout in ms */
 } ds_osSignalWait_t;
 
-#if configDEVSUBSYS == 1
+#if configDEVSUBSYS != 0
 /** Argument struct for some dev syscalls */
 typedef struct {
     osDev_t dev;            /*!< Device */

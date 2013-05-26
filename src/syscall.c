@@ -14,21 +14,21 @@
 #include "hal_core.h"
 #endif
 #include "ksignal.h"
-#if configDEVSUBSYS == 1
+#if configDEVSUBSYS != 0
 #include "dev.h"
 #endif
 #include "locks.h"
 #include "syscall.h"
 
 /* For all Syscall groups */
-#if configDEVSUBSYS == 1
+#if configDEVSUBSYS != 0
 #define FOR_ALL_SYSCALL_GROUPS(apply)                       \
     apply(SYSCALL_GROUP_SCHED, sched_syscall)               \
     apply(SYSCALL_GROUP_SCHED_THREAD, sched_syscall_thread) \
     apply(SYSCALL_GROUP_SCHED_SIGNAL, sched_syscall_signal) \
     apply(SYSCALL_GROUP_DEV, dev_syscall)                   \
     apply(SYSCALL_GROUP_LOCKS, locks_syscall)
-#elif PU_TEST_BUILD == 1
+#elif PU_TEST_BUILD != 0
 #define FOR_ALL_SYSCALL_GROUPS(apply)                       \
     apply(SYSCALL_GROUP_SCHED, sched_syscall)               \
     apply(SYSCALL_GROUP_SCHED_THREAD, sched_syscall_thread) \
