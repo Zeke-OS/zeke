@@ -246,12 +246,6 @@ osStatus osMutexRelease(osMutex * mutex)
 /* Non-CMSIS *****************************************************************/
 
 #if configDEVSUBSYS == 1
-/**
- * TODO Add syscalls for:
- * + int dev_bwrite(const void * buff, size_t size, size_t count, osDev_t dev, osThreadId thread_id)
- * + int dev_bread(void * buff, size_t size, size_t count, osDev_t dev, osThreadId thread_id)
- * + int dev_bseek(int offset, int origin, size_t size, osDev_t dev, osThreadId thread_id)
- */
 
 int osDevOpen(osDev_t dev)
 {
@@ -321,9 +315,9 @@ int osDevBread(void * buff, size_t size, size_t count, osDev_t dev)
  * @param dev device to be seeked from.
  * @return Error code.
  */
-int dev_bseek(int offset, int origin, size_t size, osDev_t dev)
+int osDevBseek(int offset, int origin, size_t size, osDev_t dev)
 {
-    ds_osDevBseekData ds = { offset, origin, size, dev };
+    ds_osDevBSeekData ds = { offset, origin, size, dev };
     int result;
 
     result = (int)syscall(SYSCALL_DEV_BSEEK, &ds);

@@ -107,9 +107,9 @@ int dev_close(osDev_t dev, osThreadId thread_id);
 int dev_check_res(osDev_t dev, osThreadId thread_id);
 int dev_cwrite(uint32_t ch, osDev_t dev, osThreadId thread_id);
 int dev_cread(uint32_t * ch, osDev_t dev, osThreadId thread_id);
-int dev_bwrite(const void * buff, size_t size, size_t count, osDev_t dev, osThreadId thread_id);
-int dev_bread(void * buff, size_t size, size_t count, osDev_t dev, osThreadId thread_id);
-int dev_bseek(int offset, int origin, size_t size, osDev_t dev, osThreadId thread_id);
+int dev_bwrite(ds_osDevBData_t * args, osThreadId thread_id);
+int dev_bread(ds_osDevBData_t * args, osThreadId thread_id);
+int dev_bseek(ds_osDevBseekData_t * args, osThreadId thread_id);
 
 /* Thread specific functions used mainly by Syscalls **************************/
 osEvent * dev_threadDevWait(osDev_t dev, uint32_t millisec);

@@ -168,15 +168,13 @@ int dev_cread(uint32_t * ch, osDev_t dev, osThreadId thread_id)
 
 /**
  * Write to a block device.
- * @param buff Pointer to the array of elements to be written.
- * @param size in bytes of each element to be written.
- * @param count number of elements, each one with a size of size bytes.
- * @param dev device to be written to.
+ * @param args function parameters in syscall data struct.
  * @param thread_id id of the thread that is writing to the block device.
  * @return Error code.
  */
-int dev_bwrite(const void * buff, size_t size, size_t count, osDev_t dev, osThreadId thread_id)
+int dev_bwrite(ds_osDevBData_t * args, osThreadId thread_id)
 {
+    osDev_t dev = args->dev;
     struct dev_driver * dev_al = &dev_alloc_table[DEV_MAJOR(dev)];
 
     if (!dev_check_res(dev, thread_id)
@@ -192,20 +190,18 @@ int dev_bwrite(const void * buff, size_t size, size_t count, osDev_t dev, osThre
         return DEV_BWR_NOT;
     }
 
-    return dev_al->bwrite((void *)buff, size, count, dev);
+    return dev_al->bwrite(args->buff, args->size, args->count, dev);
 }
 
 /**
  * Read from a block device.
- * @param buff pointer to a block of memory with a size of at least (size*count) bytes, converted to a void *.
- * @param size in bytes, of each element to be read.
- * @param count number of elements, each one with a size of size bytes.
- * @param dev device to be read from.
+ * @param args function parameters in syscall data struct.
  * @param thread_id id of the thread that is reading the block device.
  * @return Error code.
  */
-int dev_bread(void * buff, size_t size, size_t count, osDev_t dev, osThreadId thread_id)
+int dev_bread(ds_osDevBData_t * args, osThreadId thread_id)
 {
+    osDev_t dev = args->dev;
     struct dev_driver * dev_al = &dev_alloc_table[DEV_MAJOR(dev)];
 
     if (!dev_check_res(dev, thread_id)
@@ -221,21 +217,30 @@ int dev_bread(void * buff, size_t size, size_t count, osDev_t dev, osThreadId th
         return DEV_BRD_NOT;
     }
 
-    return dev_al->bread((void *)buff, size, count, dev);
+    return dev_al->bread(args->buff, args->size, args->count, dev);
 }
 
 /**
  * Seek block device.
  * @TODO Implementation
- * @param offset Number of size units to offset from origin.
- * @param origin Position used as reference for the offset.
- * @param size in bytes, of each element.
- * @param dev device to be seeked from.
+ * @param args function parameters in syscall data struct.
  * @param thread_id id of the thread that is seeking the block device.
  * @return Error code.
  */
-int dev_bseek(int offset, int origin, size_t size, osDev_t dev, osThreadId thread_id)
+int dev_bseek(ds_osDevBSeekData_t * args, osThreadId thread_id)
 {
+    /* NOTE dev driver system expects:
+     * int (*bseek)(int offset, int origin, size_t size, osDev_t dev, osThreadId thread_id);
+     * for the driver.
+     *
+     * dev_bseek(
+     *               ((ds_osDevBseekData_t *)p)->offset,
+     *               ((ds_osDevBseekData_t *)p)->origin,
+     *               ((ds_osDevBseekData_t *)p)->size,
+     *               ((ds_osDevBseekData_t *)p)->dev,
+     *               (osThreadId)(current_thread->id)
+     */
+
     return DEV_BSK_INTERNAL;
 }
 
@@ -339,28 +344,19 @@ uint32_t dev_syscall(uint32_t type, void * p)
 
     case SYSCALL_DEV_BWRITE:
         return (uint32_t)dev_bwrite(
-                    ((ds_osDevBData_t *)p)->buff,
-                    ((ds_osDevCData_t *)p)->size,
-                    ((ds_osDevCData_t *)p)->count,
-                    ((ds_osDevCData_t *)p)->dev,
+                    ((ds_osDevBData_t *)p),
                     (osThreadId)(current_thread->id)
                );
 
     case SYSCALL_DEV_BREAD:
         return (uint32_t)dev_bread(
-                    ((ds_osDevBData_t *)p)->buff,
-                    ((ds_osDevCData_t *)p)->size,
-                    ((ds_osDevCData_t *)p)->count,
-                    ((ds_osDevCData_t *)p)->dev,
+                    ((ds_osDevBData_t *)p),
                     (osThreadId)(current_thread->id)
                );
 
     case SYSCALL_DEV_BSEEK:
         return (uint32_t)dev_bseek(
-                    ((ds_osDevBseekData_t *)p)->offset,
-                    ((ds_osDevBseekData_t *)p)->origin,
-                    ((ds_osDevBseekData_t *)p)->size,
-                    ((ds_osDevBseekData_t *)p)->dev,
+                    ((ds_osDevBSeekData_t *)p),
                     (osThreadId)(current_thread->id)
                );
 

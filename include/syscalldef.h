@@ -67,7 +67,7 @@ typedef struct {
     int origin;             /*!< Position used as reference for the offset. */
     size_t size;            /*!< in bytes, of each element. */
     osDev_t dev;            /*!< device to be seeked from. */
-} ds_osDevBseekData_t;
+} ds_osDevBSeekData_t;
 
 /** Argument struct for SYSCALL_DEV_WAIT */
 typedef struct {
