@@ -113,57 +113,39 @@ int dev_check_res(osDev_t dev, osThreadId thread_id)
 }
 
 /**
- * Write to a character device.
- * @param ch is written to the device.
+ * Read/Write to a character device.
+ * @param ch buffer.
  * @param dev device.
- * @param thread_id thread that is writing to the device.
+ * @param thread_id thread that is reading/writing to the device.
  * @return Error code.
  */
-int dev_cwrite(uint32_t ch, osDev_t dev, osThreadId thread_id)
+int dev_crw(ds_osDevCData_t * args, int write, osThreadId thread_id)
 {
+    osDev_t dev = args->dev;
     struct dev_driver * dev_al = &dev_alloc_table[DEV_MAJOR(dev)];
 
     if (!dev_check_res(dev, thread_id)
         && !(DEV_TFLAG_NONLOCK(dev_al->flags))) {
-        return DEV_CWR_NLOCK;
+        return DEV_COME_NLOCK;
     }
 
     if (DEV_TFLAG_FAIL(dev_al->flags)) {
-        return DEV_CWR_INTERNAL;
+        return DEV_COME_INTERNAL;
     }
 
-    if (dev_al->cwrite == NULL) {
-        return DEV_CWR_NOT;
+    if (write) {
+        if (dev_al->cwrite == NULL) {
+            return DEV_COME_NDEV;
+        }
+
+        return dev_al->cwrite(*(uint32_t *)(args->data), dev);
+    } else {
+        if (dev_al->cread == NULL) {
+            return DEV_COME_NDEV;
+        }
+
+        return dev_al->cread(args->data, dev);
     }
-
-    return dev_al->cwrite(ch, dev);
-}
-
-/**
- * Read from a character device.
- * @param ch output is written here.
- * @param dev device.
- * @param thread_id thread that is reading the device.
- * @return Error code.
- */
-int dev_cread(uint32_t * ch, osDev_t dev, osThreadId thread_id)
-{
-    struct dev_driver * dev_al = &dev_alloc_table[DEV_MAJOR(dev)];
-
-    if (!dev_check_res(dev, thread_id)
-        && !(DEV_TFLAG_NONLOCK(dev_al->flags))) {
-        return DEV_CRD_NLOCK;
-    }
-
-    if (DEV_TFLAG_FAIL(dev_al->flags)) {
-        return DEV_CRD_INTERNAL;
-    }
-
-    if (dev_al->cread == NULL) {
-        return DEV_CRD_NOT;
-    }
-
-    return dev_al->cread(ch, dev);
 }
 
 /**
@@ -172,52 +154,33 @@ int dev_cread(uint32_t * ch, osDev_t dev, osThreadId thread_id)
  * @param thread_id id of the thread that is writing to the block device.
  * @return Error code.
  */
-int dev_bwrite(ds_osDevBData_t * args, osThreadId thread_id)
+int dev_brw(ds_osDevBData_t * args, int write, osThreadId thread_id)
 {
     osDev_t dev = args->dev;
     struct dev_driver * dev_al = &dev_alloc_table[DEV_MAJOR(dev)];
 
     if (!dev_check_res(dev, thread_id)
         && !(DEV_TFLAG_NONLOCK(dev_al->flags))) {
-        return DEV_BWR_NLOCK;
+        return DEV_COME_NLOCK;
     }
 
     if (DEV_TFLAG_FAIL(dev_al->flags)) {
-        return DEV_BWR_INTERNAL;
+        return DEV_COME_INTERNAL;
     }
 
-    if (dev_al->bwrite == NULL) {
-        return DEV_BWR_NOT;
+    if (write) {
+        if (dev_al->bwrite == NULL) {
+            return DEV_COME_NDEV;
+        }
+
+        return dev_al->bwrite(args->buff, args->size, args->count, dev);
+    } else {
+        if (dev_al->bread == NULL) {
+            return DEV_BRD_NOT;
+        }
+
+        return dev_al->bread(args->buff, args->size, args->count, dev);
     }
-
-    return dev_al->bwrite(args->buff, args->size, args->count, dev);
-}
-
-/**
- * Read from a block device.
- * @param args function parameters in syscall data struct.
- * @param thread_id id of the thread that is reading the block device.
- * @return Error code.
- */
-int dev_bread(ds_osDevBData_t * args, osThreadId thread_id)
-{
-    osDev_t dev = args->dev;
-    struct dev_driver * dev_al = &dev_alloc_table[DEV_MAJOR(dev)];
-
-    if (!dev_check_res(dev, thread_id)
-        && !(DEV_TFLAG_NONLOCK(dev_al->flags))) {
-        return DEV_BRD_NLOCK;
-    }
-
-    if (DEV_TFLAG_FAIL(dev_al->flags)) {
-        return DEV_BRD_INTERNAL;
-    }
-
-    if (dev_al->bread == NULL) {
-        return DEV_BRD_NOT;
-    }
-
-    return dev_al->bread(args->buff, args->size, args->count, dev);
 }
 
 /**
@@ -329,28 +292,30 @@ uint32_t dev_syscall(uint32_t type, void * p)
                );
 
     case SYSCALL_DEV_CWRITE:
-        return (uint32_t)dev_cwrite(
-                    *(uint32_t *)(((ds_osDevCData_t *)p)->data),
-                    ((ds_osDevCData_t *)p)->dev,
+        return (uint32_t)dev_crw(
+                    (((ds_osDevCData_t *)p)),
+                    1,
                     (osThreadId)(current_thread->id)
                );
 
     case SYSCALL_DEV_CREAD:
-        return (uint32_t)dev_cread(
-                    ((ds_osDevCData_t *)p)->data,
-                    ((ds_osDevCData_t *)p)->dev,
+        return (uint32_t)dev_crw(
+                    ((ds_osDevCData_t *)p),
+                    0,
                     (osThreadId)(current_thread->id)
                );
 
     case SYSCALL_DEV_BWRITE:
-        return (uint32_t)dev_bwrite(
+        return (uint32_t)dev_brw(
                     ((ds_osDevBData_t *)p),
+                    1,
                     (osThreadId)(current_thread->id)
                );
 
     case SYSCALL_DEV_BREAD:
-        return (uint32_t)dev_bread(
+        return (uint32_t)dev_brw(
                     ((ds_osDevBData_t *)p),
+                    0,
                     (osThreadId)(current_thread->id)
                );
 

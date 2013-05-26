@@ -106,10 +106,8 @@ void dev_init_all(void);
 int dev_open(osDev_t dev, osThreadId thread_id);
 int dev_close(osDev_t dev, osThreadId thread_id);
 int dev_check_res(osDev_t dev, osThreadId thread_id);
-int dev_cwrite(uint32_t ch, osDev_t dev, osThreadId thread_id);
-int dev_cread(uint32_t * ch, osDev_t dev, osThreadId thread_id);
-int dev_bwrite(ds_osDevBData_t * args, osThreadId thread_id);
-int dev_bread(ds_osDevBData_t * args, osThreadId thread_id);
+int dev_crw(ds_osDevCData_t * args, int write, osThreadId thread_id);
+int dev_brw(ds_osDevBData_t * args, int write, osThreadId thread_id);
 int dev_bseek(ds_osDevBSeekData_t * args, osThreadId thread_id);
 
 /* Thread specific functions used mainly by Syscalls **************************/
