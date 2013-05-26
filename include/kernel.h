@@ -168,7 +168,15 @@ int osDevCheckRes(osDev_t dev, osThreadId thread_id);
  * @param dev device.
  * @return Error code.
  */
-int dev_cwrite(uint32_t ch, osDev_t dev);
+int osDevCwrite(uint32_t ch, osDev_t dev);
+
+/**
+ * Read from a character device.
+ * @param ch output is written here.
+ * @param dev device.
+ * @return Error code.
+ */
+int osDevCread(uint32_t * ch, osDev_t dev)
 
 /**
  * Wait for device.

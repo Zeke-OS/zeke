@@ -248,8 +248,6 @@ osStatus osMutexRelease(osMutex * mutex)
 #if configDEVSUBSYS == 1
 /**
  * TODO Add syscalls for:
- * + int dev_cwrite(uint32_t ch, osDev_t dev, osThreadId thread_id)
- * + int dev_cread(uint32_t * ch, osDev_t dev, osThreadId thread_id)
  * + int dev_bwrite(const void * buff, size_t size, size_t count, osDev_t dev, osThreadId thread_id)
  * + int dev_bread(void * buff, size_t size, size_t count, osDev_t dev, osThreadId thread_id)
  * + int dev_bseek(int offset, int origin, size_t size, osDev_t dev, osThreadId thread_id)
@@ -275,12 +273,22 @@ int osDevCheckRes(osDev_t dev, osThreadId thread_id)
     return result;
 }
 
-int dev_cwrite(uint32_t ch, osDev_t dev)
+int osDevCwrite(uint32_t ch, osDev_t dev)
 {
     ds_osDevData_t ds = { dev, &ch };
     int result;
 
     result = (int)syscall(SYSCALL_DEV_CWRITE, &ds);
+
+    return result;
+}
+
+int osDevCread(uint32_t * ch, osDev_t dev)
+{
+    ds_osDevData_t ds = { dev, ch };
+    int result;
+
+    result = (int)syscall(SYSCALL_DEV_CREAD, &ds);
 
     return result;
 }

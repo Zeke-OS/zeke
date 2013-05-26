@@ -324,8 +324,16 @@ uint32_t dev_syscall(uint32_t type, void * p)
 
     case SYSCALL_DEV_CWRITE:
         return (uint32_t)dev_cwrite(
+                    *(((ds_osDevData_t *)p)->data,
                     ((ds_osDevData_t *)p)->dev,
-                    *(((ds_osDevData_t *)p)->data)
+                    (osThreadId)(current_thread->id)
+               );
+
+    case SYSCALL_DEV_CREAD:
+        return (uint32_t)dev_cread(
+                    (((ds_osDevData_t *)p)->data,
+                    ((ds_osDevData_t *)p)->dev,
+                    (osThreadId)(current_thread->id)
                );
 
     case SYSCALL_DEV_WAIT:
