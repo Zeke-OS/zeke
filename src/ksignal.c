@@ -25,8 +25,6 @@ int32_t ksignal_threadSignalSet(osThreadId thread_id, int32_t signal)
 
     prev_signals = thread->signals;
 
-    thread->signals |= signal; /* OR with all signals */
-
     /* Update event struct */
     thread->event.value.signals = signal; /* Only this signal */
     thread->event.status = osEventSignal;
@@ -37,6 +35,9 @@ int32_t ksignal_threadSignalSet(osThreadId thread_id, int32_t signal)
 
         /* Set the signaled thread back into execution */
         sched_thread_set_exec(thread_id);
+    } else {
+        /* Update signal flags if thread was not waiting for this signal */
+        thread->signals |= signal; /* OR with all signals */
     }
 
     return prev_signals;
