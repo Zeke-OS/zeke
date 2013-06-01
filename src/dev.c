@@ -28,6 +28,8 @@
 
 struct dev_driver dev_alloc_table[DEV_MAJORDEVS];
 
+static void dev_threadDevSignalSet(osDev_t dev);
+
 /**
  * Init device drivers.
  */
@@ -93,7 +95,7 @@ int dev_close(osDev_t dev, osThreadId thread_id)
     /* TODO wait for dev to be not busy? */
 
     /* This is bit stupid but might be the easiest way to implement this :/ */
-    dev_threadDevSignal(SCHED_DEV_WAIT_BIT, dev);
+    dev_threadDevSignalSet(dev);
 
     return DEV_CERR_OK;
 }
@@ -226,9 +228,9 @@ osEvent * dev_threadDevWait(osDev_t dev, uint32_t millisec)
 
 /**
  * Send a signal that a dev resource is free now.
- * @param signal signal mask
+ * @param dev dev
  */
-void dev_threadDevSignal(int32_t signal, osDev_t dev)
+static void dev_threadDevSignalSet(osDev_t dev)
 {
     int i;
     unsigned int temp_dev = DEV_MAJOR(dev);
@@ -244,14 +246,14 @@ void dev_threadDevSignal(int32_t signal, osDev_t dev)
     i = 0;
     do {
         thread = sched_get_pThreadInfo(i);
-        if (   ((thread->sig_wait_mask & signal)    != 0)
+        if (   ((thread->sig_wait_mask & SCHED_DEV_WAIT_BIT)    != 0)
             && ((thread->flags & SCHED_IN_USE_FLAG) != 0)
             && ((thread->flags & SCHED_NO_SIG_FLAG) == 0)
             && ((thread->dev_wait) == temp_dev)) {
             thread->dev_wait = 0u;
             /* I feel this is bit wrong but we won't save and return
              * prev_signals since no one cares... */
-            ksignal_threadSignalSet(i, signal);
+            ksignal_threadSignalSet(i, SCHED_DEV_WAIT_BIT);
             /* We also assume that the signaling was succeed, if it wasn't we
              * are in deep trouble. But it will never happen!
              */

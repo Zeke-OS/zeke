@@ -112,7 +112,6 @@ int dev_bseek(ds_osDevBSeekData_t * args, osThreadId thread_id);
 
 /* Thread specific functions used mainly by Syscalls **************************/
 osEvent * dev_threadDevWait(osDev_t dev, uint32_t millisec);
-void dev_threadDevSignal(int32_t signal, osDev_t dev);
 uint32_t dev_syscall(uint32_t type, void * p);
 
 #endif /* DEV_H */
