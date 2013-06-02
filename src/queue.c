@@ -21,13 +21,13 @@
  */
 queue_cb_t queue_create(void * data_array, size_t block_size, size_t array_size)
 {
-    queue_cb_t cb;
-
-    cb.data = data_array;
-    cb.b_size = block_size;
-    cb.a_len = array_size / block_size;
-    cb.m_read = 0;
-    cb.m_write = 0;
+    queue_cb_t cb = {
+        .data = data_array,
+        .b_size = block_size,
+        .a_len = array_size / block_size,
+        .m_read = 0,
+        .m_write = 0
+    };
 
     return cb;
 }
