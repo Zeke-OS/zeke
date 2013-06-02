@@ -38,6 +38,9 @@ int32_t ksignal_threadSignalSet(osThreadId thread_id, int32_t signal)
     } else {
         /* Update signal flags if thread was not waiting for this signal */
         thread->signals |= signal; /* OR with all signals */
+        /* However there is a slight chance that the thread misses the actual
+         * signal event if some other thread sets another signal for the same
+         * thread here. */
     }
 
     return prev_signals;
@@ -100,12 +103,15 @@ int32_t ksignal_threadSignalGet(osThreadId thread_id)
  * Wait for a signal(s)
  * @param signals   Signals that can woke-up the suspended thread.
  * @millisec        Timeout if selected signal is not invoken.
- * @return          Event that triggered resume back to running state.
+ * @return          osStatus.
  */
-osEvent * ksignal_threadSignalWait(int32_t signals, uint32_t millisec)
+osStatus ksignal_threadSignalWait(int32_t signals, uint32_t millisec)
 {
     int tim;
+    osStatus status = osOK;
 
+    /* Event status is now timeout but will be changed if any event occurs
+     * as event is returned as a pointer. */
     current_thread->event.status = osEventTimeout;
 
     if (millisec != (uint32_t)osWaitForever) {
@@ -115,6 +121,7 @@ osEvent * ksignal_threadSignalWait(int32_t signals, uint32_t millisec)
              * before control returns back to this thread. It is completely OK
              * to clear this error if that happens. */
             current_thread->event.status = osErrorResource;
+            status = osErrorResource;
         }
         current_thread->wait_tim = tim;
     }
@@ -124,7 +131,5 @@ osEvent * ksignal_threadSignalWait(int32_t signals, uint32_t millisec)
         sched_thread_sleep_current();
     }
 
-    /* Event status is now timeout but will be changed if any event occurs
-     * as event is returned as a pointer. */
-    return (osEvent *)(&(current_thread->event));
+    return status;
 }

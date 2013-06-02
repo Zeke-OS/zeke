@@ -207,6 +207,7 @@ static char * test_sched_threadDelay_infiniteInput()
 
 /* THREAD WAIT ***************************************************************/
 
+/*
 static char * test_sched_threadWait_positiveInput()
 {
     osThreadDef_t thread_def1 = { (os_pthread)(&th1),
@@ -251,7 +252,7 @@ static char * test_sched_threadWait_infiniteInput()
 
     return 0;
 }
-
+*/
 /* ALL TESTS *****************************************************************/
 
 static void all_tests() {
@@ -259,8 +260,8 @@ static void all_tests() {
     pu_def_test(test_sched_thread_set_inheritance, PU_RUN);
     pu_def_test(test_sched_threadDelay_positiveInput, PU_RUN);
     pu_def_test(test_sched_threadDelay_infiniteInput, PU_RUN);
-    pu_def_test(test_sched_threadWait_positiveInput, PU_RUN);
-    pu_def_test(test_sched_threadWait_infiniteInput, PU_RUN);
+    /*pu_def_test(test_sched_threadWait_positiveInput, PU_RUN);
+    pu_def_test(test_sched_threadWait_infiniteInput, PU_RUN);*/
 }
 
 int main(int argc, char **argv)

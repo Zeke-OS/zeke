@@ -237,26 +237,23 @@ static void dev_threadDevSignalSet(osDev_t dev)
     threadInfo_t * thread;
 
     /* This is unfortunately O(n) :'(
-     * TODO Some prioritizing would be very nice at least.
-     *      Possibly if we would just add waiting threads first to a
-     *      priority queue? Is it a waste of cpu time? It isn't actually
-     *      a quaranteed way to remove starvation so starvation would be
-     *      still there :/
      */
     i = 0;
     do {
         thread = sched_get_pThreadInfo(i);
-        if (   ((thread->sig_wait_mask & SCHED_DEV_WAIT_BIT)    != 0)
+        if (   ((thread->sig_wait_mask & SCHED_DEV_WAIT_BIT) != 0)
             && ((thread->flags & SCHED_IN_USE_FLAG) != 0)
             && ((thread->flags & SCHED_NO_SIG_FLAG) == 0)
-            && ((thread->dev_wait) == temp_dev)) {
+            && (thread->dev_wait == temp_dev)) {
+            /* Update event struct */
+            thread->event.value.signals = signal; /* Only this signal */
+            thread->event.status = osEventSignal;
+
             thread->dev_wait = 0u;
-            /* I feel this is bit wrong but we won't save and return
-             * prev_signals since no one cares... */
-            ksignal_threadSignalSet(i, SCHED_DEV_WAIT_BIT);
-            /* We also assume that the signaling was succeed, if it wasn't we
-             * are in deep trouble. But it will never happen!
-             */
+            ksignal_threadSignalWaitMaskClear(thread);
+
+            /* Set the signaled thread back into execution */
+            sched_thread_set_exec(thread->id);
 
             return; /* Return now so other threads will keep waiting for their
                      * turn. */

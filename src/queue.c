@@ -111,3 +111,27 @@ int queue_isFull(queue_cb_t * cb)
 {
     return ((cb->m_write + 1) % cb->a_len) == cb->m_read;
 }
+
+/**
+ * Seek queue.
+ */
+int seek(queue_cb_t * cb, int i, void * element)
+{
+    int read = cb->m_read;
+    int write = cb->m_write;
+
+    /* Check that queue is not empty */
+    if((read % cb->a_len) == write)
+        return 0;
+
+    int element_i = (read + i) % cb->a_len;
+
+    /* Check that we don't hit write position */
+    if(element_i == write)
+        return 0;
+
+    /* Copy from data array to the element */
+    memcpy(element, &((uint8_t *)(cb->data))[element_i * cb->b_size], cb->b_size);
+
+    return 1;
+}

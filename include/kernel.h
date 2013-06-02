@@ -23,9 +23,11 @@
 /// \note CAN BE CHANGED: \b osCMSIS_KERNEL identifies the underlaying RTOS kernel and version number.
 #define osCMSIS_KERNEL    0x10000	   ///< RTOS identification and version (main [31:16] .sub [15:0])
 
-#define osKernelSystemId "KERNEL V1.00"   ///< RTOS identification string
+#define osKernelSystemId "ZEKE   V1.00"   ///< RTOS identification string
 
-/// \note MUST REMAIN UNCHANGED: \b osFeature_xxx shall be consistent in every CMSIS-RTOS.
+/**
+ * CMSIS-RTOS features supported.
+ */
 #define osFeature_MainThread   1       ///< main thread      1=main can be thread, 0=not available
 #define osFeature_Pool         0       ///< Memory Pools:    1=available, 0=not available
 #define osFeature_MailQ        0       ///< Mail Queues:     1=available, 0=not available
@@ -42,7 +44,9 @@
 
 // ==== Enumeration, structures, defines ====
 
-/// Priority used for thread control.
+/**
+ * Priority used for thread control.
+ */
 typedef enum {
     osPriorityIdle          = -3,       ///< priority: idle (lowest)
     osPriorityLow           = -2,       ///< priority: low
@@ -54,8 +58,10 @@ typedef enum {
     osPriorityError         =  0x84     ///< system cannot determine priority or thread has illegal priority
 } osPriority;
 
-/// Timeout value
-#define osWaitForever     0xFFFFFFFFu       ///< wait forever timeout value
+/**
+ * Timeout value
+ */
+#define osWaitForever     0xFFFFFFFFu       /*!< wait forever timeout value */
 
 /// Status code values returned by CMSIS-RTOS functions
 typedef enum  {
@@ -93,11 +99,19 @@ typedef int osThreadId;
 /// Timer ID identifies the timer (pointer to a timer control block).
 typedef int osTimerId;
 
-/// Mutex cb mutex.
-/// \note This data structure holds all the information related to a particular mutex,
-///       this means that it is DANGEROUS to edit its contents in thread context.
-/// \note non-CMSIS-RTOS.
+/**
+ * Mutex cb mutex.
+ * @note All data related to the mutex is stored in user space structure and
+ *       it is DANGEROUS to edit its contents in thread context.
+ */
 typedef struct os_mutex_cb osMutex;
+
+/**
+ * Semaphore ID identifies the semaphore (pointer to a semaphore control block).
+ * @note All data related to the mutex is stored in user space structure and
+ *       it is DANGEROUS to edit its contents in thread context.
+ */
+typedef struct os_semaphore_cb osSemaphore;
 
 /// Message ID identifies the message queue (pointer to a message queue control block).
 typedef struct os_messageQ_cb *osMessageQId;
@@ -329,13 +343,8 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec);
 
 /// Define a Mutex.
 /// \param         name          name of the mutex object.
-#if defined (osObjectsExternal)  // object is external
-#define osMutexDef(name)  \
-extern osMutexDef_t os_mutex_def_##name
-#else                            // define the object
 #define osMutexDef(name)  \
 osMutexDef_t os_mutex_def_##name = { 0 }
-#endif
 
 /// Access a Mutex defintion.
 /// \param         name          name of the mutex object.
@@ -359,6 +368,47 @@ osStatus osMutexWait(osMutex * mutex, uint32_t millisec);
 /// \return status code that indicates the execution status of the function.
 /// \note NON-CMSIS-RTOS IMPLEMENTATION
 osStatus osMutexRelease(osMutex * mutex_id);
+
+//  ==== Semaphore Management Functions ====
+
+#if (defined (osFeature_Semaphore)  &&  (osFeature_Semaphore != 0))     // Semaphore available
+
+/// Define a Semaphore object.
+/// \param         name          name of the semaphore object.
+/// \note CAN BE CHANGED: The parameter to \b osSemaphoreDef shall be consistent but the
+///       macro body is implementation specific in every CMSIS-RTOS.
+#define osSemaphoreDef(name)  \
+osSemaphoreDef_t os_semaphore_def_##name = { 0 }
+
+/// Access a Semaphore definition.
+/// \param         name          name of the semaphore object.
+/// \note CAN BE CHANGED: The parameter to \b osSemaphore shall be consistent but the
+///       macro body is implementation specific in every CMSIS-RTOS.
+#define osSemaphore(name)  \
+&os_semaphore_def_##name
+
+/// Create and Initialize a Semaphore object used for managing resources
+/// \param[in]     semaphore_def semaphore definition referenced with \ref osSemaphore.
+/// \param[in]     count         number of available resources.
+/// \return semaphore ID for reference by other functions or NULL in case of error.
+/// \note MUST REMAIN UNCHANGED: \b osSemaphoreCreate shall be consistent in every CMSIS-RTOS.
+osSemaphoreId osSemaphoreCreate(osSemaphoreDef_t *semaphore_def, int32_t count);
+
+/// Wait until a Semaphore token becomes available
+/// \param[in]     semaphore_id  semaphore object referenced with \ref osSemaphore.
+/// \param[in]     millisec      timeout value or 0 in case of no time-out.
+/// \return number of available tokens, or -1 in case of incorrect parameters.
+/// \note MUST REMAIN UNCHANGED: \b osSemaphoreWait shall be consistent in every CMSIS-RTOS.
+int32_t osSemaphoreWait(osSemaphoreId semaphore_id, uint32_t millisec);
+
+/// Release a Semaphore token
+/// \param[in]     semaphore_id  semaphore object referenced with \ref osSemaphore.
+/// \return status code that indicates the execution status of the function.
+/// \note MUST REMAIN UNCHANGED: \b osSemaphoreRelease shall be consistent in every CMSIS-RTOS.
+osStatus osSemaphoreRelease(osSemaphoreId semaphore_id);
+
+#endif     // Semaphore available
+
 
 #endif /* KERNEL_INTERNAL */
 

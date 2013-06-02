@@ -625,7 +625,7 @@ osStatus sched_threadDelay(uint32_t millisec)
  * @note This function returns a pointer to a thread event struct and its
  * contents is allowed to change before returning back to the caller thread.
  */
-osEvent * sched_threadWait(uint32_t millisec)
+osStatus sched_threadWait(uint32_t millisec)
 {
     return ksignal_threadSignalWait(0x7fffffff, millisec);
 }
@@ -660,6 +660,10 @@ uint32_t sched_syscall(uint32_t type, void * p)
     case SYSCALL_SCHED_GET_LOADAVG:
         sched_get_loads((uint32_t *)p);
         return (uint32_t)NULL; /* Note NULL is not an error here */
+
+    case SYSCALL_SCHED_EVENT_GET:
+        *((osEvent *)(p)) = current_thread->event;
+        return (uint32_t)NULL;
 
     default:
         return (uint32_t)NULL;

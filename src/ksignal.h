@@ -20,7 +20,7 @@ void ksignal_threadSignalWaitMaskClear(threadInfo_t * thread);
 int32_t ksignal_threadSignalClear(osThreadId thread_id, int32_t signal);
 int32_t ksignal_threadSignalGetCurrent(void);
 int32_t ksignal_threadSignalGet(osThreadId thread_id);
-osEvent * ksignal_threadSignalWait(int32_t signals, uint32_t millisec);
+osStatus ksignal_threadSignalWait(int32_t signals, uint32_t millisec);
 
 #endif /* SIGNAL_H */
 

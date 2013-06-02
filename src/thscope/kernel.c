@@ -114,17 +114,18 @@ osStatus osDelay(uint32_t millisec)
 
 osEvent osWait(uint32_t millisec)
 {
-    osEvent * result;
+    osEvent result;
 
-    result = (osEvent *)syscall(SYSCALL_SCHED_WAIT, &millisec);
+    result.status = (osStatus)syscall(SYSCALL_SCHED_WAIT, &millisec);
 
-    if (result->status != osErrorResource) {
+    if (result.status != osErrorResource) {
         /* Request context switch */
         req_context_switch();
     }
 
     /* Return a copy of the current state of the event structure */
-    return *result;
+    syscall(SYSCALL_SCHED_GET_EVENT, &result);
+    return result;
 }
 
 /**
@@ -139,22 +140,22 @@ osEvent osWait(uint32_t millisec)
 
 int32_t osSignalSet(osThreadId thread_id, int32_t signal)
 {
-    ds_osSignal_t ds = { thread_id, signal };
-    int32_t result;
+    ds_osSignal_t ds = {
+        .thread_id = thread_id,
+        .signal    = signal
+    };
 
-    result = (int32_t)syscall(SYSCALL_SCHED_SIGNAL_SET, &ds);
-
-    return result;
+    return (int32_t)syscall(SYSCALL_SCHED_SIGNAL_SET, &ds);
 }
 
 int32_t osSignalClear(osThreadId thread_id, int32_t signal)
 {
-    ds_osSignal_t ds = { thread_id, signal };
-    int32_t result;
+    ds_osSignal_t ds = {
+        .thread_id = thread_id,
+        .signal    = signal
+    };
 
-    result = (int32_t)syscall(SYSCALL_SCHED_SIGNAL_CLEAR, &ds);
-
-    return result;
+    return (int32_t)syscall(SYSCALL_SCHED_SIGNAL_CLEAR, &ds);
 }
 
 int32_t osSignalGetCurrent(void)
@@ -169,18 +170,22 @@ int32_t osSignalGet(osThreadId thread_id)
 
 osEvent osSignalWait(int32_t signals, uint32_t millisec)
 {
-    ds_osSignalWait_t ds = { signals, millisec };
-    osEvent * result;
+    ds_osSignalWait_t ds = {
+        .signals = signals,
+        .millisec = millisec
+    };
+    osEvent result;
 
-    result = (osEvent *)syscall(SYSCALL_SCHED_SIGNAL_WAIT, &ds);
+    result.status = (osStatus)syscall(SYSCALL_SCHED_SIGNAL_WAIT, &ds);
 
-    if (result->status != osErrorResource) {
+    if (result.status != osErrorResource) {
         /* Request context switch */
         req_context_switch();
     }
 
     /* Return a copy of the current state of the event structure */
-    return *result;
+    syscall(SYSCALL_SCHED_GET_EVENT, &result);
+    return result;
 }
 
 /**
@@ -258,78 +263,88 @@ int osDevClose(osDev_t dev)
 
 int osDevCheckRes(osDev_t dev, osThreadId thread_id)
 {
-    ds_osDevHndl_t ds = { dev, thread_id };
-    int result;
+    ds_osDevHndl_t ds = {
+        .dev       = dev,
+        .thread_id = thread_id
+    };
 
-    result = (int)syscall(SYSCALL_DEV_CHECK_RES, &ds);
-
-    return result;
+    return (int)syscall(SYSCALL_DEV_CHECK_RES, &ds);
 }
 
 int osDevCwrite(uint32_t ch, osDev_t dev)
 {
-    ds_osDevCData_t ds = { dev, &ch };
-    int result;
+    ds_osDevCData_t ds = {
+        .dev  = dev,
+        .data = &ch
+    };
 
-    result = (int)syscall(SYSCALL_DEV_CWRITE, &ds);
-
-    return result;
+    return (int)syscall(SYSCALL_DEV_CWRITE, &ds);
 }
 
 int osDevCread(uint32_t * ch, osDev_t dev)
 {
-    ds_osDevCData_t ds = { dev, ch };
-    int result;
+    ds_osDevCData_t ds = {
+        .dev  = dev,
+        .data = ch
+    };
 
-    result = (int)syscall(SYSCALL_DEV_CREAD, &ds);
-
-    return result;
+    return (int)syscall(SYSCALL_DEV_CREAD, &ds);
 }
 
 int osDevBwrite(const void * buff, size_t size, size_t count, osDev_t dev)
 {
-    ds_osDevBData_t ds = { (void *)buff, size, count, dev };
-    int result;
+    ds_osDevBData_t ds = {
+        .buff  = (void *)buff,
+        .size  = size,
+        .count = count,
+        .dev   = dev
+    };
 
-    result = (int)syscall(SYSCALL_DEV_BWRITE, &ds);
-
-    return result;
+    return (int)syscall(SYSCALL_DEV_BWRITE, &ds);
 }
 
 int osDevBread(void * buff, size_t size, size_t count, osDev_t dev)
 {
-    ds_osDevBData_t ds = { buff, size, count, dev };
-    int result;
+    ds_osDevBData_t ds = {
+        .buff  = buff,
+        .size  = size,
+        .count = count,
+        .dev   = dev
+    };
 
-    result = (int)syscall(SYSCALL_DEV_BWRITE, &ds);
-
-    return result;
+    return (int)syscall(SYSCALL_DEV_BWRITE, &ds);
 }
 
 int osDevBseek(int offset, int origin, size_t size, osDev_t dev)
 {
-    ds_osDevBSeekData_t ds = { offset, origin, size, dev };
-    int result;
+    ds_osDevBSeekData_t ds = {
+        .offset = offset,
+        .origin = origin,
+        .size   = size,
+        .dev    = dev
+    };
 
-    result = (int)syscall(SYSCALL_DEV_BSEEK, &ds);
-
-    return result;
+    return (int)syscall(SYSCALL_DEV_BSEEK, &ds);
 }
 
 osEvent osDevWait(osDev_t dev, uint32_t millisec)
 {
-    ds_osDevWait_t ds = { dev, millisec };
-    osEvent * result;
+    ds_osDevWait_t ds = {
+        .dev      = dev,
+        .millisec = millisec
+    };
+    osEvent result;
 
-    result = (osEvent *)syscall(SYSCALL_DEV_WAIT, &ds);
+    result.status = (osStatus)syscall(SYSCALL_DEV_WAIT, &ds);
 
-    if (result->status != osErrorResource) {
+    if (result.status != osErrorResource) {
         /* Request context switch */
         req_context_switch();
     }
 
     /* Return a copy of the current state of the event structure */
-    return *result;
+    syscall(SYSCALL_SCHED_GET_EVENT, &result);
+    return result;
 }
 #endif
 
