@@ -40,11 +40,12 @@ void osGetLoadAvg(uint32_t loads[3])
 
 osThreadId osThreadCreate(osThreadDef_t * thread_def, void * argument)
 {
-    ds_osThreadCreate_t args;
+    ds_osThreadCreate_t args = {
+        .def      = thread_def,
+        .argument = argument
+    };
     osThreadId result;
 
-    args.def = thread_def;
-    args.argument = argument;
     result = (osThreadId)syscall(SYSCALL_SCHED_THREAD_CREATE, &args);
 
     /* Request immediate context switch */
@@ -73,14 +74,12 @@ osStatus osThreadYield(void)
 
 osStatus osThreadSetPriority(osThreadId thread_id, osPriority priority)
 {
-    ds_osSetPriority_t ds;
-    osStatus result;
+    ds_osSetPriority_t ds = {
+        .thread_id = thread_id,
+        .priority = priority
+    };
 
-    ds.thread_id = thread_id;
-    ds.priority = priority;
-    result = (osStatus)syscall(SYSCALL_SCHED_THREAD_SETPRIORITY, &ds);
-
-    return result;
+    return (osStatus)syscall(SYSCALL_SCHED_THREAD_SETPRIORITY, &ds);
 }
 
 osPriority osThreadGetPriority(osThreadId thread_id)
@@ -171,7 +170,7 @@ int32_t osSignalGet(osThreadId thread_id)
 osEvent osSignalWait(int32_t signals, uint32_t millisec)
 {
     ds_osSignalWait_t ds = {
-        .signals = signals,
+        .signals  = signals,
         .millisec = millisec
     };
     osEvent result;
@@ -204,11 +203,11 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec)
 
 osMutex osMutexCreate(osMutexDef_t *mutex_def)
 {
-    mutex_cb_t cb;
-
-    cb.thread_id = -1;
-    cb.lock = 0;
-    cb.strategy = mutex_def->strategy;
+    mutex_cb_t cb = {
+        .thread_id = -1,
+        .lock      = 0,
+        .strategy  = mutex_def->strategy
+    };
 
     return cb;
 }
