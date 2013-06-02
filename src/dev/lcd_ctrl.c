@@ -81,7 +81,14 @@ void lcdc_init(void)
     GPIO_Init(GPIOC, &GPIO_InitStructure);
 
     lcdc_queue_cb = queue_create(lcdc_buff, sizeof(char), sizeof(lcdc_buff) / sizeof(char));
-    lcdc_init_thread();
+
+    osThreadDef_t th = {
+        .pthread   = (os_pthread)(&lcdc_thread),
+        .tpriority = osPriorityBelowNormal,
+        .stackAddr = lcdc_thread_stack,
+        .stackSize = sizeof(lcdc_thread_stack) / sizeof(char)
+    };
+    osThreadCreate(&th, NULL);
 }
 
 static void lcdc_init_lcd(void)
@@ -113,19 +120,6 @@ static void lcdc_init_lcd(void)
     lcdc_write_char(0x06); /* entry mode */
     //lcd_write_char(0x01); /*LCD clear
     osDelay(10);
-}
-
-/**
- * Initialize thread for async writes to the LCD
- */
-void lcdc_init_thread(void)
-{
-    osThreadDef_t th = { (os_pthread)(&lcdc_thread),
-                         osPriorityBelowNormal,
-                         lcdc_thread_stack,
-                         sizeof(lcdc_thread_stack) / sizeof(char)
-                       };
-    osThreadCreate(&th, NULL);
 }
 
 /**

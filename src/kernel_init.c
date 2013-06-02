@@ -20,27 +20,28 @@ static char main_Stack[configAPP_MAIN_SSIZE];
 
 int main(void)
 {
-#if configDEVSUBSYS != 0
-    /* Initialize device drivers */
-    //dev_init_all();
-#endif
-
     if (interrupt_init_module()) {
 		while (1);
 	}
     timers_init();
     sched_init();
+
+#if configDEVSUBSYS != 0
+    /* Initialize device drivers */
+    dev_init_all();
+#endif
+
     {
         /* Create app_main thread */
-        osThreadDef_t main_thread = { (os_pthread)(&app_main),
-                                      configAPP_MAIN_PRI,
-                                      main_Stack,
-                                      sizeof(main_Stack)/sizeof(char)
-                                    };
+        osThreadDef_t main_thread = {
+            .pthread   = (os_pthread)(&app_main),
+            .tpriority = configAPP_MAIN_PRI,
+            .stackAddr = main_Stack,
+            .stackSize = sizeof(main_Stack)/sizeof(char)
+        };
         osThreadCreate(&main_thread, NULL);
-
-        //lcdc_init_thread();
     }
+
     sched_start();
     while (1);
 }

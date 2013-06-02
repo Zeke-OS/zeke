@@ -15,17 +15,16 @@
   */
 
 #pragma once
-#ifndef LCDCTRL_H
-#define LCDCTRL_H
+#ifndef LCD_CTRL_H
+#define LCD_CTRL_H
 
 #include "queue.h"
 
 extern queue_cb_t lcdc_queue_cb;
 
 void lcdc_init(void);
-void lcdc_init_thread(void);
 
-#endif /* LCDCTRL_H */
+#endif /* LCD_CTRL_H */
 
 /**
   * @}
