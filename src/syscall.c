@@ -25,19 +25,19 @@
 #define FOR_ALL_SYSCALL_GROUPS(apply)                       \
     apply(SYSCALL_GROUP_SCHED, sched_syscall)               \
     apply(SYSCALL_GROUP_SCHED_THREAD, sched_syscall_thread) \
-    apply(SYSCALL_GROUP_SCHED_SIGNAL, sched_syscall_signal) \
+    apply(SYSCALL_GROUP_SIGNAL, ksignal_syscall)            \
     apply(SYSCALL_GROUP_DEV, dev_syscall)                   \
     apply(SYSCALL_GROUP_LOCKS, locks_syscall)
 #elif PU_TEST_BUILD != 0
 #define FOR_ALL_SYSCALL_GROUPS(apply)                       \
     apply(SYSCALL_GROUP_SCHED, sched_syscall)               \
     apply(SYSCALL_GROUP_SCHED_THREAD, sched_syscall_thread) \
-    apply(SYSCALL_GROUP_SCHED_SIGNAL, sched_syscall_signal)
+    apply(SYSCALL_GROUP_SIGNAL, ksignal_syscall)
 #else
 #define FOR_ALL_SYSCALL_GROUPS(apply)                       \
     apply(SYSCALL_GROUP_SCHED, sched_syscall)               \
     apply(SYSCALL_GROUP_SCHED_THREAD, sched_syscall_thread) \
-    apply(SYSCALL_GROUP_SCHED_SIGNAL, sched_syscall_signal) \
+    apply(SYSCALL_GROUP_SIGNAL, ksignal_syscall)            \
     apply(SYSCALL_GROUP_LOCKS, locks_syscall)
 #endif
 

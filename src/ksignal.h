@@ -21,6 +21,7 @@ int32_t ksignal_threadSignalClear(osThreadId thread_id, int32_t signal);
 int32_t ksignal_threadSignalGetCurrent(void);
 int32_t ksignal_threadSignalGet(osThreadId thread_id);
 osStatus ksignal_threadSignalWait(int32_t signals, uint32_t millisec);
+uint32_t ksignal_syscall(uint32_t type, void * p);
 
 #endif /* SIGNAL_H */
 

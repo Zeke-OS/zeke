@@ -12,6 +12,10 @@
 #include "timers.h"
 #include "ksignal.h"
 
+/** @addtogroup Kernel
+  * @{
+  */
+
 /**
  * Set signal and wakeup the thread.
  */
@@ -133,3 +137,57 @@ osStatus ksignal_threadSignalWait(int32_t signals, uint32_t millisec)
 
     return status;
 }
+
+/* Syscall handlers ***********************************************************/
+/** @addtogroup Syscall_handlers
+  * @{
+  */
+
+
+/**
+ * Scheduler signal syscall handler
+ * @param type Syscall type
+ * @param p Syscall parameters
+ */
+uint32_t ksignal_syscall(uint32_t type, void * p)
+{
+    switch(type) {
+    case SYSCALL_SIGNAL_SET:
+        return (uint32_t)ksignal_threadSignalSet(
+                    ((ds_osSignal_t *)p)->thread_id,
+                    ((ds_osSignal_t *)p)->signal
+                );
+
+    case SYSCALL_SIGNAL_CLEAR:
+        return (uint32_t)ksignal_threadSignalClear(
+                    ((ds_osSignal_t *)p)->thread_id,
+                    ((ds_osSignal_t *)p)->signal
+                );
+
+    case SYSCALL_SIGNAL_GETCURR:
+        return (uint32_t)ksignal_threadSignalGetCurrent();
+
+    case SYSCALL_SIGNAL_GET:
+        return (uint32_t)ksignal_threadSignalGet(
+                    *((osThreadId *)p)
+                );
+
+    case SYSCALL_SIGNAL_WAIT:
+        return (uint32_t)ksignal_threadSignalWait(
+                    ((ds_osSignalWait_t *)p)->signals,
+                    ((ds_osSignalWait_t *)p)->millisec
+                );
+
+    default:
+        return (uint32_t)NULL;
+    }
+}
+
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */
+

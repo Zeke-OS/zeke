@@ -709,45 +709,6 @@ uint32_t sched_syscall_thread(uint32_t type, void * p)
 }
 
 /**
- * Scheduler signal syscall handler
- * @param type Syscall type
- * @param p Syscall parameters
- */
-uint32_t sched_syscall_signal(uint32_t type, void * p)
-{
-    switch(type) {
-    case SYSCALL_SCHED_SIGNAL_SET:
-        return (uint32_t)ksignal_threadSignalSet(
-                    ((ds_osSignal_t *)p)->thread_id,
-                    ((ds_osSignal_t *)p)->signal
-                );
-
-    case SYSCALL_SCHED_SIGNAL_CLEAR:
-        return (uint32_t)ksignal_threadSignalClear(
-                    ((ds_osSignal_t *)p)->thread_id,
-                    ((ds_osSignal_t *)p)->signal
-                );
-
-    case SYSCALL_SCHED_SIGNAL_GETCURR:
-        return (uint32_t)ksignal_threadSignalGetCurrent();
-
-    case SYSCALL_SCHED_SIGNAL_GET:
-        return (uint32_t)ksignal_threadSignalGet(
-                    *((osThreadId *)p)
-                );
-
-    case SYSCALL_SCHED_SIGNAL_WAIT:
-        return (uint32_t)ksignal_threadSignalWait(
-                    ((ds_osSignalWait_t *)p)->signals,
-                    ((ds_osSignalWait_t *)p)->millisec
-                );
-
-    default:
-        return (uint32_t)NULL;
-    }
-}
-
-/**
   * @}
   */
 
