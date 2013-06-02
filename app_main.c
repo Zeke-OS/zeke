@@ -77,6 +77,8 @@ void thread_input(void const * arg)
         sprintf(buff, "%d %d %d", lavg[0], lavg[1], lavg[2]);
         //lcdc_print(0x40, buff);
 
+        osDelay(5);
+
         if(STM_EVAL_PBGetState(BUTTON_USER) == SET)
         {
             osSignalSet(th2_id, 1);

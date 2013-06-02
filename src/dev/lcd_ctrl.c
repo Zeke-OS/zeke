@@ -41,14 +41,14 @@
 #define  EN_LOW         GPIO_LOW(GPIOC, EN)     /*!< Set EN to 0 */
 #define  EN_TOGGLE      GPIO_TOGGLE(GPIOC, EN)  /*!< Toggle EN pin */
 
-static char lcdc_thread_stack[300];
+static char lcdc_thread_stack[500];
 /**
  * Buffer that is used between dev driver thread and syscall handler in kernel.
  */
 char lcdc_buff[80];
 queue_cb_t lcdc_queue_cb; /*!< Control block for LCD buffer queue. */
 
-static void lcdc_init_thread(void);
+static void lcdc_init_lcd(void);
 void lcdc_thread(void const * arg);
 static void lcdc_tab(void);
 static void lcdc_write_char(char c);
@@ -80,6 +80,12 @@ void lcdc_init(void)
     GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
     GPIO_Init(GPIOC, &GPIO_InitStructure);
 
+    lcdc_queue_cb = queue_create(lcdc_buff, sizeof(char), sizeof(lcdc_buff) / sizeof(char));
+    lcdc_init_thread();
+}
+
+static void lcdc_init_lcd(void)
+{
     RS_LOW; /* Write control bytes */
     osDelay(15); /* power on delay */
     GPIOC->ODR |= 0x03;
@@ -107,15 +113,12 @@ void lcdc_init(void)
     lcdc_write_char(0x06); /* entry mode */
     //lcd_write_char(0x01); /*LCD clear
     osDelay(10);
-
-    lcdc_queue_cb = queue_create(lcdc_buff, sizeof(char), sizeof(lcdc_buff) / sizeof(char));
-    lcdc_init_thread();
 }
 
 /**
  * Initialize thread for async writes to the LCD
  */
-static void lcdc_init_thread(void)
+void lcdc_init_thread(void)
 {
     osThreadDef_t th = { (os_pthread)(&lcdc_thread),
                          osPriorityBelowNormal,
@@ -132,7 +135,9 @@ void lcdc_thread(void const * arg)
 {
     char ch;
 
-    while(1) {
+    lcdc_init_lcd();
+
+    while(0) {
         osWait(osWaitForever);
         while(queue_pop(&lcdc_queue_cb, &ch)) {
             /* Was it a control character? */

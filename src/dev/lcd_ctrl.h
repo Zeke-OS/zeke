@@ -23,6 +23,7 @@
 extern queue_cb_t lcdc_queue_cb;
 
 void lcdc_init(void);
+void lcdc_init_thread(void);
 
 #endif /* LCDCTRL_H */
 

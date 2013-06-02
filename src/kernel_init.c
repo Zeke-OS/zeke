@@ -13,6 +13,7 @@
 #include "hal_mcu.h"
 #if configDEVSUBSYS != 0
 #include "dev.h"
+#include "lcd_ctrl.h"
 #endif
 
 static char main_Stack[configAPP_MAIN_SSIZE];
@@ -21,7 +22,7 @@ int main(void)
 {
 #if configDEVSUBSYS != 0
     /* Initialize device drivers */
-    dev_init_all();
+    //dev_init_all();
 #endif
 
     if (interrupt_init_module()) {
@@ -37,6 +38,8 @@ int main(void)
                                       sizeof(main_Stack)/sizeof(char)
                                     };
         osThreadCreate(&main_thread, NULL);
+
+        //lcdc_init_thread();
     }
     sched_start();
     while (1);
