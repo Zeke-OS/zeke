@@ -214,13 +214,13 @@ int dev_bseek(ds_osDevBSeekData_t * args, osThreadId thread_id)
  * @param dev Device that should be waited for; 0 = reset;
  * @return Event.
  */
-osEvent * dev_threadDevWait(osDev_t dev, uint32_t millisec)
+osStatus dev_threadDevWait(osDev_t dev, uint32_t millisec)
 {
     current_thread->dev_wait = DEV_MAJOR(dev);
 
     if (dev == 0) {
         current_thread->event.status = osOK;
-        return (osEvent *)(&(current_thread->event));
+        return osOK;
     }
 
     return ksignal_threadSignalWait(SCHED_DEV_WAIT_BIT, millisec);
@@ -246,7 +246,7 @@ static void dev_threadDevSignalSet(osDev_t dev)
             && ((thread->flags & SCHED_NO_SIG_FLAG) == 0)
             && (thread->dev_wait == temp_dev)) {
             /* Update event struct */
-            thread->event.value.signals = signal; /* Only this signal */
+            thread->event.value.signals = SCHED_DEV_WAIT_BIT; /* Only this signal */
             thread->event.status = osEventSignal;
 
             thread->dev_wait = 0u;

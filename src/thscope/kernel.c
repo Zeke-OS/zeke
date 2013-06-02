@@ -123,7 +123,7 @@ osEvent osWait(uint32_t millisec)
     }
 
     /* Return a copy of the current state of the event structure */
-    syscall(SYSCALL_SCHED_GET_EVENT, &result);
+    syscall(SYSCALL_SCHED_EVENT_GET, &result);
     return result;
 }
 
@@ -144,7 +144,7 @@ int32_t osSignalSet(osThreadId thread_id, int32_t signal)
         .signal    = signal
     };
 
-    return (int32_t)syscall(SYSCALL_SCHED_SIGNAL_SET, &ds);
+    return (int32_t)syscall(SYSCALL_SIGNAL_SET, &ds);
 }
 
 int32_t osSignalClear(osThreadId thread_id, int32_t signal)
@@ -154,17 +154,17 @@ int32_t osSignalClear(osThreadId thread_id, int32_t signal)
         .signal    = signal
     };
 
-    return (int32_t)syscall(SYSCALL_SCHED_SIGNAL_CLEAR, &ds);
+    return (int32_t)syscall(SYSCALL_SIGNAL_CLEAR, &ds);
 }
 
 int32_t osSignalGetCurrent(void)
 {
-    return (int32_t)syscall(SYSCALL_SCHED_SIGNAL_GETCURR, NULL);
+    return (int32_t)syscall(SYSCALL_SIGNAL_GETCURR, NULL);
 }
 
 int32_t osSignalGet(osThreadId thread_id)
 {
-    return (int32_t)syscall(SYSCALL_SCHED_SIGNAL_GET, &thread_id);
+    return (int32_t)syscall(SYSCALL_SIGNAL_GET, &thread_id);
 }
 
 osEvent osSignalWait(int32_t signals, uint32_t millisec)
@@ -175,7 +175,7 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec)
     };
     osEvent result;
 
-    result.status = (osStatus)syscall(SYSCALL_SCHED_SIGNAL_WAIT, &ds);
+    result.status = (osStatus)syscall(SYSCALL_SIGNAL_WAIT, &ds);
 
     if (result.status != osErrorResource) {
         /* Request context switch */
@@ -183,7 +183,7 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec)
     }
 
     /* Return a copy of the current state of the event structure */
-    syscall(SYSCALL_SCHED_GET_EVENT, &result);
+    syscall(SYSCALL_SCHED_EVENT_GET, &result);
     return result;
 }
 
@@ -342,7 +342,7 @@ osEvent osDevWait(osDev_t dev, uint32_t millisec)
     }
 
     /* Return a copy of the current state of the event structure */
-    syscall(SYSCALL_SCHED_GET_EVENT, &result);
+    syscall(SYSCALL_SCHED_EVENT_GET, &result);
     return result;
 }
 #endif
