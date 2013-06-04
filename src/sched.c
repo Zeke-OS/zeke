@@ -105,7 +105,7 @@ void sched_init(void)
                               };
     sched_thread_set(0, &tdef_idle, NULL, NULL);
 
-    /* Set idle thread as currently running thread */
+    /* Set idle thread as a currently running thread */
     current_thread = &(task_table[0]);
 
     /* sw_stack_frame will be overwritten when scheduler is run for the first
@@ -118,7 +118,8 @@ void sched_init(void)
     wr_thread_stack_ptr(task_table[0].sp);
 
 #if configFAST_FORK != 0
-    next_threadId_queue_cb = queue_create(next_threadId_queue, sizeof(int), sizeof(next_threadId_queue) / sizeof(int));
+    next_threadId_queue_cb = queue_create(next_threadId_queue, sizeof(int),
+        sizeof(next_threadId_queue) / sizeof(int));
 
     /* Fill the queue */
     int i = 1, q_ok;
@@ -130,13 +131,13 @@ void sched_init(void)
 }
 
 /**
-  * Start scheduler
-  */
+ * Start scheduler
+ */
 void sched_start(void)
 {
     __disable_interrupt();
     sched_enabled = 1;
-    __enable_interrupt(); /* Enable interrupts */
+    __enable_interrupt();
 }
 
 /* End of Functions called from outside of kernel context ********************/
