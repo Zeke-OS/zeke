@@ -14,7 +14,7 @@
 #include "syscall.h"
 #include "ksignal.h"
 
-/** @addtogroup Kernel
+/** @addtogroup Signal
   * @{
   */
 
