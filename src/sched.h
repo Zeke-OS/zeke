@@ -23,6 +23,7 @@
 #define SCHED_IN_USE_FLAG   0x00000001u /*!< IN USE FLAG */
 #define SCHED_EXEC_FLAG     0x00000002u /*!< EXEC = 1 / SLEEP = 0 */
 #define SCHED_NO_SIG_FLAG   0x00000004u /*!< Thread cannot be woken up by a signal. */
+#define SCHED_INTERNAL_FLAG 0x00000008u /*!< Immortal internal kernel thread. */
 
 /* When these flags are both set for a it's ok to make a context switch to it. */
 #define SCHED_CSW_OK_FLAGS  (SCHED_EXEC_FLAG | SCHED_IN_USE_FLAG)
@@ -40,11 +41,11 @@ typedef struct {
                                  * @note signal bit 30 is reserved for dev. */
     int32_t sig_wait_mask;      /*!< Signal wait mask */
 #if configDEVSUBSYS != 0
-    unsigned int dev_wait;       /*!< Waiting for (major) dev. Currently only
-                                  * major number (whole driver) level is used.
-                                  * This means that optimal way to use device
-                                  * drivers is to lock the whole driver for a
-                                  * short period of time. */
+    unsigned int dev_wait;      /*!< Waiting for (major) dev. Currently only
+                                 * major number (whole driver) level is used.
+                                 * This means that optimal way to use device
+                                 * drivers is to lock the whole driver for a
+                                 * short period of time. */
 #endif
     int wait_tim;               /*!< Reference to a timeout timer */
     osEvent event;              /*!< Event struct */
