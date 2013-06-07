@@ -31,7 +31,7 @@ typedef struct {
     uint32_t expires;       /*!< Timer expiration time */
 } timer_alloc_data_t;
 
-uint32_t volatile timers_value; /*!< Current tick value */
+uint32_t timers_value; /*!< Current tick value */
 static volatile timer_alloc_data_t timers_array[configTIMERS_MAX];
 
 static int timers_calc_exp(int millisec);
@@ -75,9 +75,7 @@ void timers_run(void)
 }
 
 /**
- * Reserve a new timer
  * TODO Add enable argument OR take flags as an argument? At least enabled is needed for syscalls
- * @return Reference to a timer or -1 if allocation failed.
  */
 int timers_add(osThreadId thread_id, os_timer_type type, uint32_t millisec)
 {
@@ -86,7 +84,7 @@ int timers_add(osThreadId thread_id, os_timer_type type, uint32_t millisec)
     do {
         if (timers_array[i].thread_id == -1) {
             timers_array[i].thread_id = thread_id;
-            if (type == osTimerOnce) {
+            if (type == (os_timer_type)osTimerOnce) {
                 timers_array[i].flags &= ~TIMERS_FLAG_TYPE;
             } else { /* osTimerPeriodic */
                 timers_array[i].flags |= TIMERS_FLAG_TYPE;
@@ -106,14 +104,29 @@ int timers_add(osThreadId thread_id, os_timer_type type, uint32_t millisec)
 
 void timers_start(int tim)
 {
+    if (tim < configTIMERS_MAX && tim >= 0)
+        return;
+
     timers_array[tim].flags |= TIMERS_FLAG_ENABLED;
 }
 
+/* TODO should check that owner matches before relasing the timer
+ */
 void timers_release(int tim)
 {
+    if (tim < configTIMERS_MAX && tim >= 0)
+        return;
+
     /* Release the timer */
     timers_array[tim].flags = 0;
     timers_array[tim].thread_id = -1;
+}
+
+osThreadId timers_get_owner(int tim) {
+    if (tim < configTIMERS_MAX && tim >= 0)
+        return -1;
+
+    return timers_array[tim].thread_id;
 }
 
 static int timers_calc_exp(int millisec)

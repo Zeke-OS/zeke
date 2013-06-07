@@ -33,12 +33,13 @@
 #define osFeature_MailQ        0       ///< Mail Queues:     1=available, 0=not available
 #define osFeature_MessageQ     0       ///< Message Queues:  1=available, 0=not available
 #define osFeature_Signals      30      ///< maximum number of Signal Flags available per thread
-#define osFeature_Semaphore    0       ///< maximum count for SemaphoreInit function
+#define osFeature_Semaphore    100     ///< maximum count for SemaphoreInit function
 #define osFeature_Wait         1       ///< osWait function: 1=available, 0=not available
 
 #include <stdint.h>
 #include <stddef.h>
 #include "mutex.h"
+#include "semaphore.h"
 #include "devtypes.h"
 #include "kernel_config.h"
 
@@ -392,20 +393,20 @@ osSemaphoreDef_t os_semaphore_def_##name = { 0 }
 /// \param[in]     count         number of available resources.
 /// \return semaphore ID for reference by other functions or NULL in case of error.
 /// \note MUST REMAIN UNCHANGED: \b osSemaphoreCreate shall be consistent in every CMSIS-RTOS.
-osSemaphoreId osSemaphoreCreate(osSemaphoreDef_t *semaphore_def, int32_t count);
+//osSemaphore osSemaphoreCreate(osSemaphoreDef_t * semaphore_def, int32_t count);
 
 /// Wait until a Semaphore token becomes available
 /// \param[in]     semaphore_id  semaphore object referenced with \ref osSemaphore.
 /// \param[in]     millisec      timeout value or 0 in case of no time-out.
 /// \return number of available tokens, or -1 in case of incorrect parameters.
 /// \note MUST REMAIN UNCHANGED: \b osSemaphoreWait shall be consistent in every CMSIS-RTOS.
-int32_t osSemaphoreWait(osSemaphoreId semaphore_id, uint32_t millisec);
+int32_t osSemaphoreWait(osSemaphore * semaphore, uint32_t millisec);
 
 /// Release a Semaphore token
 /// \param[in]     semaphore_id  semaphore object referenced with \ref osSemaphore.
 /// \return status code that indicates the execution status of the function.
 /// \note MUST REMAIN UNCHANGED: \b osSemaphoreRelease shall be consistent in every CMSIS-RTOS.
-osStatus osSemaphoreRelease(osSemaphoreId semaphore_id);
+osStatus osSemaphoreRelease(osSemaphore * semaphore);
 
 #endif     // Semaphore available
 

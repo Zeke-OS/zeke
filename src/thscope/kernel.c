@@ -5,7 +5,7 @@
  * @brief   Zero Kernel user space code
  *
  *******************************************************************************
- */
+*/
 
 /** @addtogroup Kernel
   * @{
@@ -222,6 +222,7 @@ osStatus osMutexWait(osMutex * mutex, uint32_t millisec)
     while (syscall(SYSCALL_MUTEX_TEST_AND_SET, (void*)(&(mutex->lock)))) {
         /** TODO Should we lower the priority until lock is acquired
          *       osThreadGetPriority & osThreadSetPriority */
+        /* TODO reschedule call in kernel space? see semaphorewait */
         /* Reschedule while waiting for lock */
         req_context_switch(); /* This should be done in user space */
     }
@@ -237,6 +238,48 @@ osStatus osMutexRelease(osMutex * mutex)
         return osOK;
     }
     return osErrorResource;
+}
+
+/**
+  * @}
+  */
+
+/** @addtogroup Semaphore
+  * @{
+  */
+
+//osSemaphore osSemaphoreCreate(osSemaphoreDef_t * semaphore_def, int32_t count)
+//{
+    /* TODO Implementation */
+//}
+
+int32_t osSemaphoreWait(osSemaphore * semaphore, uint32_t millisec)
+{
+    ds_osSemaphoreWait_t ds = {
+        .s = &(semaphore->s),
+        .millisec = millisec
+    };
+    int retVal;
+
+    /* Loop between kernel mode and thread mode :) */
+    while ((retVal = syscall(SYSCALL_SEMAPHORE_WAIT, &ds)) < 0) {
+        if (retVal == OS_SEMAPHORE_THREAD_SPINWAIT_RES_ERROR) {
+            return -1;
+        }
+
+        /* TODO priority should be lowered or some resceduling should be done
+         * in the kernel so this loop would not waste time before automatic
+         * rescheduling. */
+        req_context_switch();
+    }
+
+    return retVal;
+}
+
+osStatus osSemaphoreRelease(osSemaphore * semaphore)
+{
+    syscall(SYSCALL_SEMAPHORE_RELEASE, semaphore);
+    return (osStatus)osOK;
 }
 
 /**

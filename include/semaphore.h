@@ -14,7 +14,8 @@
  * Semaphore control block
  */
 typedef struct os_semaphore_cb {
-    /** TODO */
+    uint32_t s;
+    uint32_t count;
 } os_semaphore_cb_t;
 
 #endif /* SEMAPHORE_H */
