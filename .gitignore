@@ -41,5 +41,8 @@
 # Windows cache and temp files
 Thumbs.db
 
+# Vim tmp files
+*.swp
+
 # Directiories
 doc/
