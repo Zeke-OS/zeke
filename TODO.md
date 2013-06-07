@@ -3,9 +3,10 @@ TODO
 
 Generic Tasks
 -------------
+- Timer syscalls
+- Implement mutex and semaphores
 - Flag for kernel threads so they won't get killed
 - Optional auto-reset on failure instead of halt
-- Implement mutex and semaphores
 - Implement memory pools
 - Migrate to CMSIS-RTOS 1.02 on compatible features and remove possibly
   problematic features from the current implementation if those does not
@@ -16,7 +17,6 @@ Generic Tasks
 - Flags for optional dynmem "optimizations" and feature improvements
     - Way to free dynamically allocated thread stacks etc.
     - Optional dynamically allocating scheduler implementation?
-- Timers and kernel time functions
 - Implement system that calculates actual number of systicks consumed by
   the scheduler (and compare with others as well like for example idle task)
 - Implement some priority reward metrics for IO bound processes?
