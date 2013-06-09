@@ -141,6 +141,7 @@ void lcdc_thread(void const * arg)
                 switch (ch) {
                 case 0x02: /*Start of text */
                     lcdc_clear();
+                    break;
                 case 0x08: /* BS (Backspace) */
                     lcdc_reg_write(0x14);
                     lcdc_data_write(' ');

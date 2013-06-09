@@ -76,9 +76,6 @@ static void heapify(heap_t * heap, int i)
     }
 }
 
-/** Removes the thread on top of a heap
-  * @param heap Pointer to a heap_t struct.
-  */
 void heap_del_max(heap_t * heap)
 {
 #ifdef HEAP_BOUNDS_CHECK
@@ -112,13 +109,6 @@ void heap_insert(heap_t * heap, threadInfo_t * k)
     heap->a[i] = k;
 }
 
-/**
-  * Heap increment key
-  * @note Parameters are not asserted. If key is not actually biger than it
-  * previously was this operation might not work as expected.
-  * @param heap Pointer to a heap_t struct.
-  * @param i Index of the changed key in heap array.
-  */
 void heap_inc_key(heap_t * heap, int i)
 {
     while ((i > 0) && ((heap->a[parent(i)]->priority) < heap->a[i]->priority)) {
@@ -127,13 +117,6 @@ void heap_inc_key(heap_t * heap, int i)
     }
 }
 
-/**
-  * Heap decrement key
-  * @note Parameters are not asserted. If key is not actually smaller than it
-  * previously was this operation might not work as expected.
-  * @param heap Pointer to a heap_t struct.
-  * @param i Index of the changed key in heap array.
-  */
 void heap_dec_key(heap_t * heap, int i)
 {
     /* Only heapify is actually needed priority is already set
@@ -159,12 +142,6 @@ void heap_reschedule_root(heap_t * heap, osPriority pri)
 
 }
 
-/**
- * Find thread from a heap array
- * @param heap pointer to a heap_t struct.
- * @param thread_id Thread id.
- * @return Id of the thread in heap array if thread was found; Otherwise -1.
- */
 int heap_find(heap_t * heap, osThreadId thread_id)
 {
     int i;
