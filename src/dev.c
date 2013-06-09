@@ -250,7 +250,7 @@ static void dev_threadDevSignalSet(osDev_t dev)
             thread->event.status = osEventSignal;
 
             thread->dev_wait = 0u;
-            ksignal_threadSignalWaitMaskClear(thread);
+            ksignal_threadSignalWaitMaskClear(thread->id);
 
             /* Set the signaled thread back into execution */
             sched_thread_set_exec(thread->id);

@@ -62,7 +62,7 @@ static void lcdc_goto(char pos);
 /**
  * Initialize LCD control driver
  */
-void lcdc_init(void)
+osThreadId lcdc_init(void)
 {
     GPIO_InitTypeDef GPIO_InitStructure;
 
@@ -88,7 +88,8 @@ void lcdc_init(void)
         .stackAddr = lcdc_thread_stack,
         .stackSize = sizeof(lcdc_thread_stack) / sizeof(char)
     };
-    osThreadCreate(&th, NULL);
+
+    return osThreadCreate(&th, NULL);
 }
 
 static void lcdc_init_lcd(void)
@@ -127,11 +128,12 @@ static void lcdc_init_lcd(void)
  */
 void lcdc_thread(void const * arg)
 {
+    /* Note: Prefer syscalls whenever possible */
     char ch;
 
     lcdc_init_lcd();
 
-    while(0) {
+    while(1) {
         osWait(osWaitForever);
         while(queue_pop(&lcdc_queue_cb, &ch)) {
             /* Was it a control character? */

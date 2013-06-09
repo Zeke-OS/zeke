@@ -37,7 +37,7 @@ int32_t ksignal_threadSignalSet(osThreadId thread_id, int32_t signal)
 
     if (((thread->flags & SCHED_NO_SIG_FLAG) == 0)
         && ((thread->sig_wait_mask & signal) != 0)) {
-        ksignal_threadSignalWaitMaskClear(thread);
+        ksignal_threadSignalWaitMaskClear(thread_id);
 
         /* Set the signaled thread back into execution */
         sched_thread_set_exec(thread_id);
@@ -55,8 +55,10 @@ int32_t ksignal_threadSignalSet(osThreadId thread_id, int32_t signal)
 /**
  * Clear signal wait mask of a given thread
  */
-void ksignal_threadSignalWaitMaskClear(threadInfo_t * thread)
+void ksignal_threadSignalWaitMaskClear(osThreadId thread_id)
 {
+    threadInfo_t * thread = sched_get_pThreadInfo(thread_id);
+
     /* Release wait timeout timer */
     if (thread->wait_tim >= 0) {
         timers_release(thread->wait_tim);
@@ -120,7 +122,7 @@ osStatus ksignal_threadSignalWait(int32_t signals, uint32_t millisec)
      * as event is returned as a pointer. */
     current_thread->event.status = osEventTimeout;
 
-    if (millisec != (uint32_t)osWaitForever) {
+    if (millisec != osWaitForever) {
         if ((tim = timers_add(current_thread->id, osTimerOnce, millisec)) < 0) {
             /* Timer error will be most likely but not necessarily returned
              * as is. There is however a slight chance of event triggering

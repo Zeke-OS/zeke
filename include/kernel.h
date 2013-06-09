@@ -62,7 +62,7 @@ typedef enum {
 /**
  * Timeout value
  */
-#define osWaitForever     0xFFFFFFFFu       /*!< wait forever timeout value */
+#define osWaitForever     0x0u       /*!< wait forever timeout value */
 
 /// Status code values returned by CMSIS-RTOS functions
 typedef enum  {

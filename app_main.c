@@ -11,7 +11,6 @@
 #include "kernel.h"
 #include "app_main.h"
 #include "stm32f0_discovery.h"
-#include "lcd_ctrl.h" // TODO Remove this
 
 static char stack_1[300];
 static char stack_2[300];
@@ -68,14 +67,22 @@ void thread_input(void const * arg)
 {
     uint32_t lavg[3];
     char buff[80];
+    int i;
+    osDev_t dev_lcd = DEV_MMTODEV(1, 0);
 
-    lcdc_init();
-    //lcdc_write("Load avg:");
+    if (osDevOpen(dev_lcd)) {
+        while (1);
+    }
 
     while (1) {
         osGetLoadAvg(lavg);
-        sprintf(buff, "%d %d %d", lavg[0], lavg[1], lavg[2]);
-        //lcdc_print(0x40, buff);
+        sprintf(buff, "\x0dLoad avg:\n%d %d %d", lavg[0], lavg[1], lavg[2]);
+        /* \x0d = CR := return to home position */
+
+        i = 0;
+        while (buff[i] != '\0') {
+            osDevCwrite(buff[i++], dev_lcd);
+        }
 
         osDelay(5);
 
@@ -88,6 +95,8 @@ void thread_input(void const * arg)
             osDelay(1000);
         }
     }
+
+    //osDevClose(dev_lcd);
 }
 
 void thread_led(void const * arg)
