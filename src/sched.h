@@ -77,13 +77,47 @@ extern volatile uint32_t sched_enabled;
 extern volatile threadInfo_t * current_thread;
 
 /* Public function prototypes ***************************************************/
+/**
+ * Initialize the scheduler
+ */
 void sched_init(void);
+
+/**
+ * Start the scheduler
+ */
 void sched_start(void);
+
+/**
+ * Scheduler handler
+ *
+ * Scheduler handler is mainly called due to sysTick and PendSV
+ * interrupt and always by an interrupt handler.
+ */
 void sched_handler(void);
 
+/**
+ * Get pointer to a threadInfo structure.
+ * @param thread_id id of a thread.
+ * @return Pointer to a threadInfo structure of a correspondig thread id
+ *         or NULL if thread does not exist.
+ */
 threadInfo_t * sched_get_pThreadInfo(int thread_id);
+
+/**
+ * Set thread into execution mode/ready to run mode.
+ * @oaram thread_id Thread id.
+ */
 void sched_thread_set_exec(int thread_id);
+
+/**
+ * Put the current thread into sleep.
+ */
 void sched_thread_sleep_current(void);
+
+/**
+ * Return load averages in integer format scaled to 100.
+ * @param[out] loads load averages.
+ */
 void sched_get_loads(uint32_t loads[3]);
 
 /**
@@ -100,12 +134,44 @@ void sched_get_loads(uint32_t loads[3]);
 
 /* Functions that are mainly used by syscalls but can be also caleed by
  * other kernel source modules. */
+
+/**
+ * Create a new thread
+ *
+ */
 osThreadId sched_threadCreate(osThreadDef_t * thread_def, void * argument);
+
+/**
+ * Get id of the currently running thread
+ * @return Thread id of the current thread
+ */
 osThreadId sched_thread_getId(void);
+
+/**
+ * Terminate a thread and its childs.
+ * @param thread_id   thread ID obtained by \ref sched_threadCreate or \ref sched_thread_getId.
+ * @return status code that indicates the execution status of the function.
+ */
 osStatus sched_thread_terminate(osThreadId thread_id);
+
+/**
+ * Set thread priority
+ * @param   thread_id Thread id
+ * @param   priority New priority for thread referenced by thread_id
+ * @return  osOK if thread exists
+ */
 osStatus sched_thread_setPriority(osThreadId thread_id, osPriority priority);
+
 osPriority sched_thread_getPriority(osThreadId thread_id);
+
 osStatus sched_threadDelay(uint32_t millisec);
+
+/**
+ * Thread wait syscall handler
+ * @param millisec Event wait time in ms or osWaitForever.
+ * @note This function returns a pointer to a thread event struct and its
+ * contents is allowed to change before returning back to the caller thread.
+ */
 osStatus sched_threadWait(uint32_t millisec);
 
 /* Syscall handlers */

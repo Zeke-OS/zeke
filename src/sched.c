@@ -92,9 +92,6 @@ static void del_thread(void);
 
 /* Functions called from outside of kernel context ***************************/
 
-/**
-  * Initialize the scheduler
-  */
 void sched_init(void)
 {
     /* Create the idle task as task 0 */
@@ -130,9 +127,6 @@ void sched_init(void)
 #endif
 }
 
-/**
- * Start scheduler
- */
 void sched_start(void)
 {
     __disable_interrupt();
@@ -157,12 +151,6 @@ void idleTask(/*@unused@*/ void * arg)
 }
 
 #ifndef PU_TEST_BUILD
-/**
-  * Scheduler handler
-  *
-  * Scheduler handler is mainly called due to sysTick and PendSV
-  * interrupt and always by an interrupt handler.
-  */
 void sched_handler(void)
 {
     /* Non-hw backed registers should remain untouched before this point */
@@ -212,10 +200,6 @@ static void calc_loads(void)
     }
 }
 
-/**
- * Return load averages in integer format scaled to 100.
- * @param[out] loads load averages.
- */
 void sched_get_loads(uint32_t loads[3])
 {
     loads[0] = SCALE_LOAD(loadavg[0]);
@@ -273,12 +257,6 @@ static void context_switcher(void)
     wr_thread_stack_ptr(current_thread->sp);
 }
 
-/**
-  * Get pointer to a threadInfo structure.
-  * @param thread_id id of a thread.
-  * @return Pointer to a threadInfo structure of a correspondig thread id
-  *         or NULL if thread does not exist.
-  */
 threadInfo_t * sched_get_pThreadInfo(int thread_id)
 {
     if (thread_id > configSCHED_MAX_THREADS)
@@ -372,10 +350,6 @@ static void sched_thread_set_inheritance(osThreadId id, threadInfo_t * parent)
     last_node->inh.next_child = &(task_table[id]);
 }
 
-/**
- * Set thread into execution mode/ready to run mode.
- * @oaram thread_id Thread id.
- */
 void sched_thread_set_exec(int thread_id)
 {
     _sched_thread_set_exec(thread_id, task_table[thread_id].def_priority);
@@ -400,9 +374,6 @@ static void _sched_thread_set_exec(int thread_id, osPriority pri)
     }
 }
 
-/**
- * Put current thread into sleep.
- */
 void sched_thread_sleep_current(void)
 {
     /* Sleep flag */
@@ -483,10 +454,6 @@ static void del_thread(void)
 
 /*  ==== Thread Management ==== */
 
-/**
-  * Create a new thread
-  *
-  */
 osThreadId sched_threadCreate(osThreadDef_t * thread_def, void * argument)
 {
     int i;
@@ -526,20 +493,11 @@ osThreadId sched_threadCreate(osThreadDef_t * thread_def, void * argument)
     }
 }
 
-/**
- * Get id of currently running thread
- * @return Thread id of current thread
- */
 osThreadId sched_thread_getId(void)
 {
     return (osThreadId)(current_thread->id);
 }
 
-/**
- * Terminate thread and its childs.
- * @param thread_id   thread ID obtained by \ref sched_threadCreate or \ref sched_thread_getId.
- * @return status code that indicates the execution status of the function.
- */
 osStatus sched_thread_terminate(osThreadId thread_id)
 {
     threadInfo_t * child;
@@ -562,12 +520,6 @@ osStatus sched_thread_terminate(osThreadId thread_id)
     return (osStatus)osOK;
 }
 
-/**
- * Set thread priority
- * @param   thread_id Thread id
- * @param   priority New priority for thread referenced by thread_id
- * @return  osOK if thread exists
- */
 osStatus sched_thread_setPriority(osThreadId thread_id, osPriority priority)
 {
     if ((task_table[thread_id].flags & SCHED_IN_USE_FLAG) == 0) {
@@ -620,12 +572,6 @@ osStatus sched_threadDelay(uint32_t millisec)
     return current_thread->event.status;
 }
 
-/**
- * Thread wait syscall handler
- * @param millisec Event wait time in ms or osWaitForever.
- * @note This function returns a pointer to a thread event struct and its
- * contents is allowed to change before returning back to the caller thread.
- */
 osStatus sched_threadWait(uint32_t millisec)
 {
     return ksignal_threadSignalWait(0x7fffffff, millisec);
@@ -640,11 +586,6 @@ osStatus sched_threadWait(uint32_t millisec)
   * @{
   */
 
-/**
- * Scheduler generic syscall handler
- * @param type Syscall type
- * @param p Syscall parameters
- */
 uint32_t sched_syscall(uint32_t type, void * p)
 {
     switch(type) {
@@ -671,11 +612,6 @@ uint32_t sched_syscall(uint32_t type, void * p)
     }
 }
 
-/**
- * Scheduler thread syscall handler
- * @param type Syscall type
- * @param p Syscall parameters
- */
 uint32_t sched_syscall_thread(uint32_t type, void * p)
 {
     switch(type) {

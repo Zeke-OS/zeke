@@ -24,6 +24,7 @@ Key features
 - Mostly CMSIS-RTOS compliant
 - Highly configurable
 - Adjustable footprint
+- Optional device driver subsystem with block/character device abstraction
 - Completely static memory allocation strategy (memory usage can be analyzed
   statically)
 - Offers some protection even on Cortex-M0 without MMU (atm mainly angainst
@@ -31,7 +32,7 @@ Key features
 
 News
 ----
-- LCD support and new optional dev subsystem coming soon
+- Support for "generic" 4-bit character mode LCDs
 - ST Cortex-M3 port will be released in the (near of far) future
 - ARM9 port is under development
 

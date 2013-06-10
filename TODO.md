@@ -34,7 +34,6 @@ Generic Tasks
 
 ST F0 (& ARMv6M support)
 ------------------------
-- HardFault handler optimizations?
 
 ST Cortex-M3 port (& ARMv7M support)
 ------------------------------------
@@ -43,7 +42,7 @@ ST Cortex-M3 port (& ARMv7M support)
 
 ARM9/STR912F port (ARMv5TE)
 ---------------------------
-- startup file/interrupt vecor
+- Startup file/interrupt vecor
 - Interrupt controller specific code (STR912F)
 - ARM9 specific port code neeeds to be updated
 - Testing on target hardware
@@ -54,6 +53,7 @@ KNOWN ISSUES
 
 - DLIB is not thread safe outside of kernel code
 - Signal wait mask is not always cleared after signal is received
+- There might be some fancy behaviour with signaling and wait states
 
 
 NOTES
