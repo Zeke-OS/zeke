@@ -20,6 +20,7 @@ void createThreads(void);
 void thread_input(void const * arg);
 void thread_led(void const * arg);
 void thread_load_test(void const * arg);
+static void print_loadAvg(void);
 
 static int x = 5;
 static int y = 8;
@@ -27,6 +28,8 @@ volatile int z;
 
 osThreadId th1_id;
 osThreadId th2_id;
+
+osDev_t dev_lcd = DEV_MMTODEV(1, 0);
 
 /**
   * main thread
@@ -65,25 +68,7 @@ void createThreads(void)
 
 void thread_input(void const * arg)
 {
-    uint32_t lavg[3];
-    char buff[80];
-    int i;
-    osDev_t dev_lcd = DEV_MMTODEV(1, 0);
-
-    if (osDevOpen(dev_lcd)) {
-        while (1);
-    }
-
     while (1) {
-        osGetLoadAvg(lavg);
-        sprintf(buff, "\x0dLoad avg:\n%d %d %d", lavg[0], lavg[1], lavg[2]);
-        /* \x0d = CR := return to home position */
-
-        i = 0;
-        while (buff[i] != '\0') {
-            osDevCwrite(buff[i++], dev_lcd);
-        }
-
         osDelay(5);
 
         if(STM_EVAL_PBGetState(BUTTON_USER) == SET)
@@ -103,8 +88,13 @@ void thread_led(void const * arg)
 {
     volatile osEvent evnt;
 
+    if (osDevOpen(dev_lcd)) {
+        while (1);
+    }
+
     while(1) {
         STM_EVAL_LEDToggle(LED3);
+        print_loadAvg();
         evnt = osWait(osWaitForever);
         z = (uint32_t)evnt.status;
     }
@@ -117,5 +107,21 @@ void thread_load_test(void const * arg)
         i++;
         if (i % 102400)
             osDelay(100);
+    }
+}
+
+static void print_loadAvg(void)
+{
+    uint32_t lavg[3];
+    char buff[80];
+    int i;
+
+    osGetLoadAvg(lavg);
+    sprintf(buff, "\x0dLoad avg:\n%d %d %d", lavg[0], lavg[1], lavg[2]);
+    /* \x0d = CR := return to home position */
+
+    i = 0;
+    while (buff[i] != '\0') {
+        osDevCwrite(buff[i++], dev_lcd);
     }
 }
