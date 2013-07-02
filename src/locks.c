@@ -71,7 +71,7 @@ static int locks_semaphore_thread_spinwait(uint32_t * s, uint32_t millisec)
         if (current_thread->wait_tim < 0) {
             /* Get a timer for timeout */
             if ((current_thread->wait_tim = timers_add(current_thread->id,
-                            (os_timer_type)osTimerOnce, millisec)) < 0) {
+                            TIMERS_FLAG_ENABLED, millisec)) < 0) {
                 /* Resource Error: No free timers */
                 return OS_SEMAPHORE_THREAD_SPINWAIT_RES_ERROR;
             }

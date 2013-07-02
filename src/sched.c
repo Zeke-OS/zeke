@@ -558,7 +558,7 @@ osStatus sched_threadDelay(uint32_t millisec)
     current_thread->event.status = osOK;
 
     if (millisec != (uint32_t)osWaitForever) {
-        if ((current_thread->wait_tim = timers_add(current_thread->id, (os_timer_type)osTimerOnce, millisec)) < 0) {
+        if ((current_thread->wait_tim = timers_add(current_thread->id, TIMERS_FLAG_ENABLED, millisec)) < 0) {
              current_thread->event.status = osErrorResource;
         }
     }

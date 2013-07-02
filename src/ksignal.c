@@ -123,7 +123,7 @@ osStatus ksignal_threadSignalWait(int32_t signals, uint32_t millisec)
     current_thread->event.status = osEventTimeout;
 
     if (millisec != osWaitForever) {
-        if ((tim = timers_add(current_thread->id, osTimerOnce, millisec)) < 0) {
+        if ((tim = timers_add(current_thread->id, TIMERS_FLAG_ENABLED, millisec)) < 0) {
             /* Timer error will be most likely but not necessarily returned
              * as is. There is however a slight chance of event triggering
              * before control returns back to this thread. It is completely OK

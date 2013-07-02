@@ -4,10 +4,10 @@ TODO
 Generic Tasks
 -------------
 - Timer syscalls
-- Implement mutex and semaphores
-- Flag for kernel threads so they won't get killed
+- Flag for kernel threads so they won't get killed by user scope thread
 - Optional auto-reset on failure instead of halt
 - Implement memory pools
+- Mutex & semaphore thread scope implementation (only partial now)
 - Migrate to CMSIS-RTOS 1.02 on compatible features and remove possibly
   problematic features from the current implementation if those does not
   exist in the latest specification

@@ -15,6 +15,13 @@
 #include <stdint.h>
 #include "kernel.h"
 
+/* User Flag Bits */
+#define TIMERS_FLAG_ENABLED     0x1 /* See for description: timer_alloc_data_t */
+#define TIMERS_FLAG_PERIODIC    0x2 /* See for description: timer_alloc_data_t */
+#define TIMERS_USER_FLAGS       (TIMERS_FLAG_ENABLED | TIMERS_FLAG_PERIODIC)
+
+typedef uint32_t timers_flags_t;
+
 extern uint32_t timers_value;
 
 void timers_init(void);
@@ -24,7 +31,7 @@ void timers_run(void);
  * Reserve a new timer
  * @return Reference to a timer or -1 if allocation failed.
  */
-int timers_add(osThreadId thread_id, os_timer_type type, uint32_t millisec);
+int timers_add(osThreadId thread_id, timers_flags_t flags, uint32_t millisec);
 
 void timers_start(int tim);
 void timers_release(int tim);
