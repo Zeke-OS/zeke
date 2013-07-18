@@ -1,3 +1,6 @@
+# LLVM bitcode
+*.bc
+
 # Object files
 *.slo
 *.lo
