@@ -10,10 +10,10 @@
 #include "timers.h"
 #include "sched.h"
 #include "app_main.h"
-#include "hal_mcu.h"
+#include "hal/hal_mcu.h"
 #if configDEVSUBSYS != 0
-#include "dev.h"
-#include "lcd_ctrl.h"
+#include "dev/dev.h"
+#include "dev/lcd_ctrl.h"
 #endif
 
 static char main_Stack[configAPP_MAIN_SSIZE];

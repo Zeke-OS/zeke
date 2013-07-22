@@ -11,11 +11,11 @@
 #include "sched.h"
 #define KERNEL_INTERNAL 1
 #ifndef PU_TEST_BUILD
-#include "hal_core.h"
+#include "hal/hal_core.h"
 #endif
 #include "ksignal.h"
 #if configDEVSUBSYS != 0
-#include "dev.h"
+#include "dev/dev.h"
 #endif
 #include "locks.h"
 #include "syscall.h"

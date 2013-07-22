@@ -68,14 +68,26 @@ inline void * rd_thread_stack_ptr(void);
 inline void wr_thread_stack_ptr(void * ptr);
 
 /**
+ * Disable all interrupts except NMI (set PRIMASK)
+ */
+#define disable_interrupt() do {                                               \
+    __asm__ volatile ("CPSID i\n"); } while (0)
+
+/**
+ * Enable interrupts (clear PRIMASK)
+ */
+#define enable_interrupt() do {                                                \
+    __asm__ volatile ("CPSIE i\n"); } while (0)
+
+/**
  * Request immediate context switch
  */
 #define req_context_switch() do {                                              \
     SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk; /* Switch the context */              \
-    asm volatile("DSB\n" /* Ensure write is completed
-                          * (architecturally required, but not strictly
-                          * required for existing Cortex-M processors) */      \
-                 "ISB\n" /* Ensure PendSV is executed */                       \
+    __asm__ volatile ("DSB\n" /* Ensure write is completed
+                               * (architecturally required, but not strictly
+                               * required for existing Cortex-M processors) */ \
+                      "ISB\n" /* Ensure PendSV is executed */                  \
     ); } while (0)
 
 /**
@@ -85,28 +97,28 @@ inline void save_context(void)
 {
     volatile uint32_t scratch;
 #if __CORE__ == __ARM6M__
-    asm volatile ("MRS   %0,  psp\n"
-                  "SUBS  %0,  %0, #32\n"
-                  "MSR   psp, %0\n"         /* This is the address that will be
-                                             * used by rd_thread_stack_ptr(void)
-                                             */
-                  "ISB\n"
-                  "STMIA %0!, {r4-r7}\n"
-                  "PUSH  {r4-r7}\n"         /* Push original register values so
-                                             * we don't lost them */
-                  "MOV   r4,  r8\n"
-                  "MOV   r5,  r9\n"
-                  "MOV   r6,  r10\n"
-                  "MOV   r7,  r11\n"
-                  "STMIA %0!, {r4-r7}\n"
-                  "POP   {r4-r7}\n"         /* Pop them back */
-                  : "=r" (scratch));
+    __asm__ volatile ("MRS   %0,  psp\n"
+                      "SUBS  %0,  %0, #32\n"
+                      "MSR   psp, %0\n"         /* This is the address that will
+                                                 * be used by rd_thread_stack_ptr(void)
+                                                 */
+                      "ISB\n"
+                      "STMIA %0!, {r4-r7}\n"
+                      "PUSH  {r4-r7}\n"         /* Push original register values
+                                                 * so we don't lost them */
+                      "MOV   r4,  r8\n"
+                      "MOV   r5,  r9\n"
+                      "MOV   r6,  r10\n"
+                      "MOV   r7,  r11\n"
+                      "STMIA %0!, {r4-r7}\n"
+                      "POP   {r4-r7}\n"         /* Pop them back */
+                      : "=r" (scratch));
 #elif __CORE__ == __ARM7M__
-    asm volatile ("MRS   %0,  psp\n"
-                  "STMDB %0!, {r4-r11}\n"
-                  "MSR   psp, %0\n"
-                  "ISB\n"
-                  : "=r" (scratch));
+    __asm__ volatile ("MRS   %0,  psp\n"
+                      "STMDB %0!, {r4-r11}\n"
+                      "MSR   psp, %0\n"
+                      "ISB\n"
+                      : "=r" (scratch));
 #else
     #error Selected CORE not supported
 #endif
@@ -119,24 +131,24 @@ inline void load_context(void)
 {
     volatile uint32_t scratch;
 #if __CORE__ == __ARM6M__
-    asm volatile ("MRS   %0,  psp\n"
-                  "ADDS  %0,  %0, #16\n"      /* Move to the high registers */
-                  "LDMIA %0!, {r4-r7}\n"
-                  "MOV   r8,  r4\n"
-                  "MOV   r9,  r5\n"
-                  "MOV   r10, r6\n"
-                  "MOV   r11, r7\n"
-                  "MSR   psp, %0\n"           /* Store the new top of the stack */
-                  "ISB\n"
-                  "SUBS  r0,  r0, #32\n"      /* Go back to the low registers */
-                  "LDMIA %0!, {r4-r7}\n"
-                  : "=r" (scratch));
+    __asm__ volatile ("MRS   %0,  psp\n"
+                      "ADDS  %0,  %0, #16\n"    /* Move to the high registers */
+                      "LDMIA %0!, {r4-r7}\n"
+                      "MOV   r8,  r4\n"
+                      "MOV   r9,  r5\n"
+                      "MOV   r10, r6\n"
+                      "MOV   r11, r7\n"
+                      "MSR   psp, %0\n"         /* Store the new top of the stack */
+                      "ISB\n"
+                      "SUBS  r0,  r0, #32\n"    /* Go back to the low registers */
+                      "LDMIA %0!, {r4-r7}\n"
+                      : "=r" (scratch));
 #elif __CORE__ == __ARM7M__
-    asm volatile ("MRS   %0,  psp\n"
-                  "LDMFD %0!, {r4-r11}\n"
-                  "MSR   psp, %0\n"
-                  "ISB\n"
-                  : "=r" (scratch));
+    __asm__ volatile ("MRS   %0,  psp\n"
+                      "LDMFD %0!, {r4-r11}\n"
+                      "MSR   psp, %0\n"
+                      "ISB\n"
+                      : "=r" (scratch));
 #else
     #error Selected CORE not supported
 #endif
@@ -148,8 +160,8 @@ inline void load_context(void)
 inline void * rd_stack_ptr(void)
 {
     void * result = NULL;
-    asm volatile("MRS %0, msp\n"
-                 : "=r" (result));
+    __asm__ volatile ("MRS %0, msp\n"
+                      : "=r" (result));
     return result;
 }
 
@@ -159,7 +171,8 @@ inline void * rd_stack_ptr(void)
 inline void * rd_thread_stack_ptr(void)
 {
     void * result = NULL;
-    asm volatile ("MRS %0, psp\n" : "=r" (result));
+    __asm__ volatile ("MRS %0, psp\n"
+                      : "=r" (result));
     return(result);
 }
 
@@ -168,17 +181,17 @@ inline void * rd_thread_stack_ptr(void)
  */
 inline void wr_thread_stack_ptr(void * ptr)
 {
-    asm volatile ("MSR psp, %0\n"
-                  "ISB\n"
-                  : : "r" (ptr));
+    __asm__ volatile ("MSR psp, %0\n"
+                      "ISB\n"
+                      : : "r" (ptr));
 }
 
 /**
  * Platform sepcific idle sleep mode
  */
 #define idle_sleep() do {                                 \
-    asm volatile("WFI\n" /* Sleep until next interrupt */ \
-    ); } while (0)
+    __asm__ volatile ("WFI\n" /* Sleep until next interrupt */ \
+                     ); } while (0)
 
 
 void HardFault_Handler(void);

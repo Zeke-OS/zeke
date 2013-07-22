@@ -8,7 +8,7 @@
 
 #include "syscall.h"
 #ifndef PU_TEST_BUILD
-#include "hal_core.h"
+#include "hal/hal_core.h"
 #endif
 #include "sched.h"
 #include "timers.h"

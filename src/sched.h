@@ -15,7 +15,7 @@
 #define SCHED_H
 
 #if configDEVSUBSYS != 0
-#include "dev.h"
+#include "dev/dev.h"
 #endif
 
 #include "kernel.h"

@@ -21,6 +21,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# Include kernel config
+include ./config/config.mk
+
 # Configuration files ##########################################################
 CONFIG_MK  = ./config/config.mk
 AUTOCONF_H = ./config/autoconf.h
@@ -32,16 +35,23 @@ VECTABLE_O = $(patsubst %.s, %.o, $(VECTABLE))
 # Compiler options #############################################################
 ARMGNU   = arm-none-eabi
 CCFLAGS  = -std=c99 -emit-llvm -Wall -ffreestanding -O2
-#CCFLAGS += -nostdlib -nostdinc -nobuiltininc
+# IAR Compatibility crap
+CCFLAGS += -D__ARM_PROFILE_M__=1 -D__ARM6M__=5 -D__CORE__=5 # TODO remove these
+CCFLAGS += -nostdlib -nostdinc #-nobuiltininc
 CCFLAGS += -m32 -ccc-host-triple $(ARMGNU)
 OFLAGS   = -std-compile-opts
 LLCFLAGS = -march=thumb -mtriple=$(ARMGNU)
 ################################################################################
 
 # Dirs #########################################################################
-IDIR = ./include ./config ./src/dev ./src/hal # TODO remove dev
-IDIR := $(patsubst %,-I%,$(subst :, ,$(IDIR)))
+IDIR = ./include ./config ./src
+
+# Target specific libraries
+ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
+	IDIR += ./Libraries/CMSIS/Include ./Libraries/STM32F0xx/CMSIS
+endif
 ################################################################################
+IDIR := $(patsubst %,-I%,$(subst :, ,$(IDIR)))
 
 # Source moduleus ##############################################################
 SRC-1 :=# Init
@@ -90,8 +100,8 @@ $(BCS): $(SRC-1)
 $(OBJS): $(BCS)
 	$(eval CUR_OPT := $*.opt.bc)
 	$(eval CUR_OPT_S := $*.opt.s)
-	opt $(OFLAGS) $*.bc -o $(CUR_OPT)
-	llc $(LLCFLAGS) $(CUR_OPT) -o $(CUR_OPT_S)
+	opt-3.0 $(OFLAGS) $*.bc -o $(CUR_OPT)
+	llc-3.0 $(LLCFLAGS) $(CUR_OPT) -o $(CUR_OPT_S)
 	$(ARMGNU)-as $(CUR_OPT_S) -o $@
 
 kernel.bin: $(MEMMAP) $(VECTABLE_O) $(OBJS)

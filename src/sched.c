@@ -12,14 +12,14 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <string.h>
+#include "string.h"
 
 #ifndef KERNEL_INTERNAL
 #define KERNEL_INTERNAL
 #endif
 
-#include "hal_core.h"
-#include "hal_mcu.h"
+#include "hal/hal_core.h"
+#include "hal/hal_mcu.h"
 #include "heap.h"
 #if configFAST_FORK != 0
 #include "queue.h"
@@ -129,9 +129,9 @@ void sched_init(void)
 
 void sched_start(void)
 {
-    __disable_interrupt();
+    disable_interrupt();
     sched_enabled = 1;
-    __enable_interrupt();
+    enable_interrupt();
 }
 
 /* End of Functions called from outside of kernel context ********************/
@@ -459,8 +459,8 @@ osThreadId sched_threadCreate(osThreadDef_t * thread_def, void * argument)
     int i;
 
     /* Disable context switching to support multi-threaded calls to this fn */
-    __istate_t s = __get_interrupt_state();
-    __disable_interrupt();
+    //__istate_t s = __get_interrupt_state();
+    //__disable_interrupt();
 
 #if configFAST_FORK != 0
     if (!queue_pop(&next_threadId_queue_cb, &i)) {
@@ -482,7 +482,7 @@ osThreadId sched_threadCreate(osThreadDef_t * thread_def, void * argument)
         }
     }
 #endif
-    __set_interrupt_state(s); /* Restore interrupts */
+    //__set_interrupt_state(s); /* Restore interrupts */
 
     if (i == configSCHED_MAX_THREADS) {
         /* New thread could not be created */

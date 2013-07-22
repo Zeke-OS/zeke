@@ -14,10 +14,6 @@
 #ifndef HAL_CORE_H
 #define HAL_CORE_H
 
-#ifndef PU_TEST_BUILD
-#include <intrinsics.h>
-#endif
-
 #include "kernel_config.h"
 
 #ifndef KERNEL_CONFIG_H

@@ -6,12 +6,10 @@
  *******************************************************************************
  */
 
-#include <stdio.h>
 #include <stdint.h>
-#include <string.h>
 #include "queue.h"
 
-queue_cb_t queue_create(void * data_array, size_t block_size, size_t array_size)
+queue_cb_t queue_create(void * data_array, ksize_t block_size, ksize_t array_size)
 {
     queue_cb_t cb = {
         .data = data_array,

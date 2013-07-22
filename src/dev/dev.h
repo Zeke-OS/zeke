@@ -14,7 +14,7 @@
 #ifndef DEV_H
 #define DEV_H
 
-#include <stdlib.h>
+//#include <stdlib.h>
 #include "kernel.h"
 #include "syscalldef.h"
 #include "devtypes.h"
