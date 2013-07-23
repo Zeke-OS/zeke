@@ -54,9 +54,9 @@ int test_and_set(int * lock);
 
 /* Select Core Implementation ************************************************/
 
-#ifdef __ARM_PROFILE_M__
+#ifdef configARM_PROFILE_M != 0
 #include "cortex_m.h"
-#elif __CPU_MODE__ == 2 /* ARM mode: Assuming ARM9 */
+#elif configCORE == __ARM4T__ /* ARM9 uses ARM4T arch */
 #include "arm9.h"
 #elif PU_TEST_BUILD == 1
 #include "pu_test_core.h"

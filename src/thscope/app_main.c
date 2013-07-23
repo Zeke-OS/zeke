@@ -7,7 +7,7 @@
  *
  *******************************************************************************
  */
-#include <stdio.h>
+//#include <stdio.h>
 #include "kernel.h"
 #include "app_main.h"
 #include "stm32f0_discovery.h"

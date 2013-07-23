@@ -68,9 +68,9 @@ uint32_t _intSyscall_handler(uint32_t type, void * p)
     uint32_t major = SYSCALL_MAJOR(type);
 
     if (major >= (sizeof(syscall_callmap) / sizeof(void *))) {
-        /* NULL means usually ERROR, however there is some cases where NULL as
+        /* 0/NULL means usually ERROR, however there is some cases where NULL as
          * a return value doesn't necessarily mean error. */
-        return NULL;
+        return 0; /* NULL */
     }
 
     fpt = syscall_callmap[major];

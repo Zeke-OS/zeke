@@ -35,12 +35,11 @@ VECTABLE_O = $(patsubst %.s, %.o, $(VECTABLE))
 # Compiler options #############################################################
 ARMGNU   = arm-none-eabi
 CCFLAGS  = -std=c99 -emit-llvm -Wall -ffreestanding -O2
-# IAR Compatibility crap
-CCFLAGS += -D__ARM_PROFILE_M__=1 -D__ARM6M__=5 -D__CORE__=5 # TODO remove these
-CCFLAGS += -nostdlib -nostdinc #-nobuiltininc
+CCFLAGS += -nostdlib -nostdinc
 CCFLAGS += -m32 -ccc-host-triple $(ARMGNU)
 OFLAGS   = -std-compile-opts
 LLCFLAGS = -march=thumb -mtriple=$(ARMGNU)
+ASFLAGS  = -mcpu=cortex-m0 -mthumb -EL
 ################################################################################
 
 # Dirs #########################################################################
@@ -48,7 +47,10 @@ IDIR = ./include ./config ./src
 
 # Target specific libraries
 ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
-	IDIR += ./Libraries/CMSIS/Include ./Libraries/STM32F0xx/CMSIS
+	IDIR += ./Libraries/CMSIS/Include ./Libraries/STM32F0xx/Drivers/inc
+	IDIR += ./Libraries/STM32F0xx/CMSIS/
+	IDIR += ./Libraries/STM32F0xx/Drivers/inc
+	#IDIR += ./Libraries/Discovery # TODO not always Discovery
 endif
 ################################################################################
 IDIR := $(patsubst %,-I%,$(subst :, ,$(IDIR)))
@@ -61,6 +63,31 @@ SRC-  :=# Init
 
 # Base system
 SRC-1 += $(wildcard src/*.c)
+SRC-$(configSCHED_TINY) += $(wildcard src/sched_tiny/*.c)
+#SRC-1 += $(wildcard src/thscope/*.c) # TODO thscope should be moved??
+SRC-1 += src/thscope/kernel.c
+# Target specific modules
+ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
+	SRC-1 += $(wildcard Libraries/STM32F0xx/CMSIS/*.c)
+	SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_cec.c
+	SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_dbgmcu.c
+	SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_exti.c
+	SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_gpio.c
+	SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_misc.c
+	SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_pwr.c
+	SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_rcc.c
+	SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_syscfg.c
+	SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_tim.c
+	#SRC-1 += $(wildcard Libraries/Discovery/*.c)
+	SRC-1 += src/hal/cortex_m.c # TODO This is actually more generic
+endif
+# HAL
+ifeq ($(configARM_PROFILE_M),1)
+	SRC-1 += src/hal/cortex_m.c
+#else
+#	ifeq ($(configCORE),__ARM4T__) # ARM9
+#	endif
+endif
 # Dev subsystem
 SRC-$(CONF_DEVSUBSYS) += $(wildcard src/dev/*.c)
 # PTTK91 VM
@@ -71,7 +98,16 @@ SRC-$(CONF_DEVSUBSYS) += $(wildcard src/dev/*.c)
 BCS  := $(patsubst %.c, %.bc, $(SRC-1))
 OBJS := $(patsubst %.c, %.o, $(SRC-1))
 
-# TODO use MCU_MODEL as a target specifier
+# Target specific CRT ##########################################################
+CRT =# Init
+ifeq ($(configARM_PROFILE_M),1)
+	CRT := Libraries/crt/libaebi-cortexm0/libaeabi-cortexm0.a
+else
+	ifeq ($(configCORE),__ARM6__)
+		 CRT := Libraries/crt/rpi-libgcc/libgcc.a
+	endif
+endif
+################################################################################
 
 .SUFFIXES:					# Delete the default suffixes
 .SUFFIXES: .c .bc .o .h		# Define our suffix list
@@ -102,9 +138,9 @@ $(OBJS): $(BCS)
 	$(eval CUR_OPT_S := $*.opt.s)
 	opt-3.0 $(OFLAGS) $*.bc -o $(CUR_OPT)
 	llc-3.0 $(LLCFLAGS) $(CUR_OPT) -o $(CUR_OPT_S)
-	$(ARMGNU)-as $(CUR_OPT_S) -o $@
+	$(ARMGNU)-as $(CUR_OPT_S) -o $@ $(ASFLAGS)
 
-kernel.bin: $(MEMMAP) $(VECTABLE_O) $(OBJS)
+kernel.bin: $(MEMMAP) $(VECTABLE_O) $(OBJS) $(CRT)
 	$(ARMGNU)-ld -o kernel.clang.thumb.opt.elf -T $^
 	$(ARMGNU)-objdump -D kernel.clang.thumb.opt.elf > kernel.clang.thumb.opt.list
 	$(ARMGNU)-objcopy kernel.clang.thumb.opt.elf kernel.clang.thumb.opt.bin -O binary
@@ -116,10 +152,12 @@ help:
 .PHONY: config kernel clean
 
 clean:
-	#rm -f *.bin
-	#rm -f *.o
-	#rm -f *.elf
-	#rm -f *.list
-	#rm -f *.bc
-	#rm -f *.opt.s
 	rm -f $(AUTOCONF_H)
+	rm -f $(OBJS) $(VECTABLE_O)
+	rm -f $(BCS)
+	find . -type f -name "*.bc" -exec rm -f {} \;
+	find . -type f -name "*.opt.bc" -exec rm -f {} \;
+	find . -type f -name "*.opt.s" -exec rm -f {} \;
+	rm -f *.bin
+	rm -f *.elf
+	rm -f *.list

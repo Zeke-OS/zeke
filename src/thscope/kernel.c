@@ -15,10 +15,10 @@
   * @{
   */
 
-#include "hal_core.h"
+#include <hal/hal_core.h>
 #include "syscalldef.h"
 #include "syscall.h"
-#include "kernel.h"
+#include <kernel.h>
 
 /* Kernel Control Functions **************************************************/
 

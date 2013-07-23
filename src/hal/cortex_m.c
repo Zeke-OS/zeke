@@ -18,10 +18,10 @@
 #define KERNEL_INTERNAL
 #endif
 
-#if __CORE__ == __ARM7M__ || __CORE__ == __ARM7EM__
+#if configCORE == __ARM7M__ || configCORE == __ARM7EM__
 /* Needed for debugging */
-#include <stdio.h>
-#include <string.h>
+//#include <stdio.h>
+#include "string.h"
 #endif
 #include <stddef.h>
 #include "sched.h"
@@ -31,9 +31,9 @@
 uint32_t flag_kernel_tick = 0;
 
 /* Core specific hard fault handlers */
-#if __CORE__ == __ARM6M__ || __CORE__ == __ARM6SM__
+#if configCORE == __ARM6M__ || configCORE == __ARM6SM__
 void hard_fault_handler_armv6m(uint32_t stack[]);
-#elif __CORE__ == __ARM7M__ || __CORE__ == __ARM7EM__
+#elif configCORE == __ARM7M__ || configCORE == __ARM7EM__
 void hard_fault_handler_armv7m(uint32_t stack[]);
 void stackDump(uint32_t stack[]);
 static void printErrorMsg(const char * errMsg);
@@ -65,22 +65,21 @@ void init_hw_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a
 #pragma optimize=no_code_motion
 uint32_t syscall(uint32_t type, void * p)
 {
-    asm volatile(
-                 "MOV r2, %0\n" /* Put parameters to r2 & r3 */
-                 "MOV r3, %1\n"
-                 "MOV r1, r4\n" /* Preserve r4 by using hardware push for it */
-                 "SVC #0\n"
-                 "DSB\n" /* Ensure write is completed
-                          * (architecturally required, but not strictly
-                          * required for existing Cortex-M processors) */
-                 "ISB\n" /* Ensure PendSV is executed */
-                 : : "r" (type), "r" (p));
+    __asm__ volatile ("MOV r2, %0\n" /* Put parameters to r2 & r3 */
+                      "MOV r3, %1\n"
+                      "MOV r1, r4\n" /* Preserve r4 by using hardware push for it */
+                      "SVC #0\n"
+                      "DSB\n" /* Ensure write is completed
+                               * (architecturally required, but not strictly
+                               * required for existing Cortex-M processors) */
+                      "ISB\n" /* Ensure PendSV is executed */
+                      : : "r" (type), "r" (p));
 
     /* Get return value */
     osStatus scratch;
-    asm volatile("MOV %0, r4\n" /* Return value is now in r4 */
-                 "MOV r4, r1\n" /* Read r4 back from r1 */
-                 : "=r" (scratch));
+    __asm__ volatile ("MOV %0, r4\n" /* Return value is now in r4 */
+                      "MOV r4, r1\n" /* Read r4 back from r1 */
+                      : "=r" (scratch));
 
     return scratch;
 }
@@ -96,7 +95,7 @@ int test_and_set(int * lock) {
     /* Ensure that all explicit memory accesses that appear in program order
      * before the DMB instruction are observed before any explicit memory
      * accesses. */
-    asm volatile("DMB");
+    __asm__ volatile ("DMB");
     old_value = *lock;
     *lock = 1;
 
@@ -108,25 +107,25 @@ int test_and_set(int * lock) {
 void HardFault_Handler(void)
 {
     /* First call the core specific HardFault handler */
-#if __CORE__ == __ARM6M__ || __CORE__ == __ARM6SM__
+#if configCORE == __ARM6M__ || configCORE == __ARM6SM__
     int scratch;
-    asm volatile ("PUSH {LR}\n"
-                  "POP {%0}\n"
-                  : "=r" (scratch));
+    __asm__ volatile ("PUSH {LR}\n"
+                      "POP {%0}\n"
+                      : "=r" (scratch));
     if (scratch == HAND_RETURN) {
-        asm volatile ("MRS R0, MSP\n"
-                      "B hard_fault_handler_armv6m\n");
+        __asm__ volatile ("MRS R0, MSP\n"
+                          "B hard_fault_handler_armv6m\n");
     } else {
-        asm volatile ("MRS R0, PSP\n"
-                      "B hard_fault_handler_armv6m\n");
+        __asm__ volatile ("MRS R0, PSP\n"
+                          "B hard_fault_handler_armv6m\n");
     }
-#elif  __CORE__ == __ARM7M__ || __CORE__ == __ARM7EM__
+#elif  configCORE == __ARM7M__ || configCORE == __ARM7EM__
     /* Using IT */
-    asm volatile ("TST LR, #4\n"
-                  "ITE EQ\n"
-                  "MRSEQ R0, MSP\n"
-                  "MRSNE R0, PSP\n"
-                  "B hard_fault_handler_armv7m\n");
+    __asm__ volatile ("TST LR, #4\n"
+                      "ITE EQ\n"
+                      "MRSEQ R0, MSP\n"
+                      "MRSNE R0, PSP\n"
+                      "B hard_fault_handler_armv7m\n");
 
 #else
 #error Support for this instruction set is not yet implemented.
@@ -150,18 +149,18 @@ void hard_fault_handler_armv6m(uint32_t stack[])
 {
     uint32_t thread_stack;
 
-    asm volatile("MRS %0, PSP\n"
-                 : "=r" (thread_stack));
+    __asm__ volatile ("MRS %0, PSP\n"
+                      : "=r" (thread_stack));
     if ((uint32_t)stack != thread_stack) {
         /* Kernel fault */
-        asm volatile("BKPT #01");
+        __asm__ volatile ("BKPT #01");
         while(1);
     }
 
     /* TODO It's possible to implement a stack dump code here if desired so. */
 }
 
-#if __CORE__ == __ARM7M__ || __CORE__ == __ARM7EM__
+#if configCORE == __ARM7M__ || configCORE == __ARM7EM__
 /* There is no HFSR register or ITM at least on Cortex-M0 and M1 (ARMv6) */
 
 /**
@@ -189,12 +188,12 @@ void hard_fault_handler_armv7m(uint32_t stack[])
     }
     stackDump(stack);
 
-    asm volatile("BKPT #01");
+    __asm__ volatile ("BKPT #01");
     while(1);
 }
 #endif
 
-#if __CORE__ == __ARM7M__ || __CORE__ == __ARM7EM__
+#if configCORE == __ARM7M__ || configCORE == __ARM7EM__
 /* There is no ITM for Cortex-M0..1 */
 
 /**

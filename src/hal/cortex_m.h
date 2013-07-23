@@ -22,10 +22,10 @@
 #include "hal_mcu.h" /* Needed for CMSIS */
 #include "hal_core.h"
 
-#ifndef __ARM_PROFILE_M__
+#ifndef configARM_PROFILE_M
     #error Only ARM Cortex-M profile is currently supported.
 #endif
-#ifndef __CORE__
+#ifndef configCORE
     #error Core is not selected by the compiler.
 #endif
 
@@ -96,7 +96,7 @@ inline void wr_thread_stack_ptr(void * ptr);
 inline void save_context(void)
 {
     volatile uint32_t scratch;
-#if __CORE__ == __ARM6M__
+#if configCORE == __ARM6M__
     __asm__ volatile ("MRS   %0,  psp\n"
                       "SUBS  %0,  %0, #32\n"
                       "MSR   psp, %0\n"         /* This is the address that will
@@ -113,7 +113,7 @@ inline void save_context(void)
                       "STMIA %0!, {r4-r7}\n"
                       "POP   {r4-r7}\n"         /* Pop them back */
                       : "=r" (scratch));
-#elif __CORE__ == __ARM7M__
+#elif configCORE == __ARM7M__
     __asm__ volatile ("MRS   %0,  psp\n"
                       "STMDB %0!, {r4-r11}\n"
                       "MSR   psp, %0\n"
@@ -130,7 +130,7 @@ inline void save_context(void)
 inline void load_context(void)
 {
     volatile uint32_t scratch;
-#if __CORE__ == __ARM6M__
+#if configCORE == __ARM6M__
     __asm__ volatile ("MRS   %0,  psp\n"
                       "ADDS  %0,  %0, #16\n"    /* Move to the high registers */
                       "LDMIA %0!, {r4-r7}\n"
@@ -143,7 +143,7 @@ inline void load_context(void)
                       "SUBS  r0,  r0, #32\n"    /* Go back to the low registers */
                       "LDMIA %0!, {r4-r7}\n"
                       : "=r" (scratch));
-#elif __CORE__ == __ARM7M__
+#elif configCORE == __ARM7M__
     __asm__ volatile ("MRS   %0,  psp\n"
                       "LDMFD %0!, {r4-r11}\n"
                       "MSR   psp, %0\n"

@@ -1,5 +1,9 @@
 # LLVM bitcode
 *.bc
+*.opt.bc
+
+# Optmized assembly
+*.opt.s
 
 # Object files
 *.slo

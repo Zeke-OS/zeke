@@ -4,28 +4,34 @@
 MCU_MODEL_STM32F0 = 1
 MCU_MODEL_STR912F = 2
 
-# TODO get rid of this IAR compatibility crap
 # Supported Cores
-#__ARM4TM__ = 1
-#__ARM5__   = 2
-#__ARM5E__  = 3
-#__ARM6__   = 4
-#__ARM6M__  = 5
-#__ARM6SM__ = 6
-#__ARM7M__  = 7
-#__ARM7EM__ = 8
-#__ARM7A__  = 9
-#__ARM7R__  = 10
+__ARM4T__  = 1
+#__ARM4TM__ = 2
+#__ARM5__   = 3
+#__ARM5E__  = 4
+__ARM6__    = 5
+__ARM6M__   = 6
+#__ARM6SM__ = 7
+#__ARM7M__  = 8
+#__ARM7EM__ = 9
+#__ARM7A__  = 10
+#__ARM7R__  = 11
 
 # Supported load average calculation periods
 SCHED_LAVGPERIOD_5SEC  = 5
 SCHED_LAVGPERIOD_11SEC = 11
 
+# User configurable part begins ################################################
+
 # Kernel configuration
 configMCU_MODEL = MCU_MODEL_STM32F0
-#__CORE__ = __ARM6M__
+configARM_PROFILE_M = 1
+configCORE = __ARM6M__
 
-# Scheduler
+# Scheduler Selection
+configSCHED_TINY = 1
+
+# Tiny Scheduler
 configSCHED_MAX_THREADS = 10      # Maximum number of threads
 configFAST_FORK = 0               # Use a queue to find the next free threadId.
 configSCHED_FREQ = 100u           # Scheduler frequency in Hz
