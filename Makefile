@@ -56,10 +56,10 @@ endif
 IDIR := $(patsubst %,-I%,$(subst :, ,$(IDIR)))
 
 # Source moduleus ##############################################################
-SRC-1 :=# Init
-SRC-0 :=# Init
-SRC-  :=# Init
-# SRC-0 and SRC - meaning module will not be compiled
+SRC-  =# Init
+SRC-0 =# Init
+SRC-1 =# Init
+# SRC- and SRC-0 meaning module will not be compiled
 
 # Base system
 SRC-1 += $(wildcard src/*.c)
@@ -79,6 +79,7 @@ ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
 	SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_syscfg.c
 	SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_tim.c
 	#SRC-1 += $(wildcard Libraries/Discovery/*.c)
+	SRC-1 += src/hal/stm32f0_interrupt.c
 endif
 # HAL
 ifeq ($(configARM_PROFILE_M),1)
@@ -88,7 +89,8 @@ ifeq ($(configARM_PROFILE_M),1)
 #	endif
 endif
 # Dev subsystem
-SRC-$(CONF_DEVSUBSYS) += $(wildcard src/dev/*.c)
+SRC-$(configKusiVittu) += fawfew
+SRC-$(configDEVSUBSYS) += $(wildcard src/dev/*.c)
 # PTTK91 VM
 # TODO should be built separately
 ################################################################################
@@ -113,6 +115,10 @@ endif
 
 # target: all - Make config and compile kernel
 all: config kernel
+
+# target: listsrc - List selected sources
+listsrc: config
+	@echo Selected: $(SRC-1)
 
 # target: config - Update configuration from $(CONFIG_MK)
 config: $(AUTOCONF_H)

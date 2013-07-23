@@ -11,12 +11,12 @@
   */
 
 #include <string.h>
-#include <stdlib.h>
+//#include <stdlib.h>
 #include "sched.h"
 #include "ksignal.h"
-#include "syscalldef.h"
-#include "syscall.h"
-#include "dev_config.h"
+#include <syscalldef.h>
+#include <syscall.h>
+#include <dev_config.h>
 #include "dev.h"
 
 /** TODO dev syscalls */

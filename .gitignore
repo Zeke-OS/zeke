@@ -1,3 +1,6 @@
+# Autoconf
+config/autoconf.h
+
 # LLVM bitcode
 *.bc
 *.opt.bc

@@ -21,7 +21,8 @@
 #include "sched.h"
 #include "syscall.h"
 #include "hal_core.h"
-#include "stm32f0xx.h"
+#include <stm32f0xx.h>
+#include <stm32f0xx_rcc.h>
 #include "stm32f0_interrupt.h"
 
 /**
@@ -58,12 +59,12 @@ static inline void run_scheduler(void)
         sched_handler();
         load_context(); /* Since PSP has been updated, this loads the last state
                          * of the resumed task */
-        asm volatile ("ADD sp, sp, %0\n"
-                      "BX %1\n"
-                      :
-                      : "i" (STM32F0_MAGIC_STACK_ADD_VALUE * 4),
-                        "r" (THREAD_RETURN)
-                      );
+        __asm__ volatile ("ADD sp, sp, %0\n"
+                          "BX %1\n"
+                          :
+                          : "i" (STM32F0_MAGIC_STACK_ADD_VALUE * 4),
+                          "r" (THREAD_RETURN)
+                         );
     }
 }
 
@@ -84,16 +85,16 @@ void SVC_Handler(void)
     uint32_t type;
     void * p;
 
-    asm volatile("MOV %0, r2\n" /* Read parameters from r2 & r3 */
-                 "MOV %1, r3\n"
+    __asm__ volatile("MOV %0, r2\n" /* Read parameters from r2 & r3 */
+                     "MOV %1, r3\n"
                      : "=r" (type), "=r" (p));
 
     /* Call kernel's internal syscall handler */
     uint32_t result = _intSyscall_handler(type, p);
 
     /* Return value is stored to r4 */
-    asm volatile("MOV r4, %0\n"
-                 : : "r" (result));
+    __asm__ volatile("MOV r4, %0\n"
+                     : : "r" (result));
 }
 
 /**

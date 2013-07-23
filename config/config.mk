@@ -32,17 +32,26 @@ configCORE = __ARM6M__
 configSCHED_TINY = 1
 
 # Tiny Scheduler
-configSCHED_MAX_THREADS = 10      # Maximum number of threads
-configFAST_FORK = 0               # Use a queue to find the next free threadId.
-configSCHED_FREQ = 100u           # Scheduler frequency in Hz
+# Maximum number of threads
+configSCHED_MAX_THREADS = 10
+# Use a queue to find the next free threadId.
+configFAST_FORK = 0
+# Scheduler frequency in Hz
+configSCHED_FREQ = 100u
 configSCHED_LAVG_PER = SCHED_LAVGPERIOD_11SEC
-configHEAP_BOUNDS_CHECK = 0       # Enable or disable heap bounds check
-configTIMERS_MAX = 4              # Maximum number of timers available
+
+# Enable or disable heap bounds check
+configHEAP_BOUNDS_CHECK = 0
+# Maximum number of timers available
+configTIMERS_MAX = 4
 
 # APP Main
-configAPP_MAIN_SSIZE = 200u    # Stack size for app_main thread
-configAPP_MAIN_PRI = osPriorityNormal # Priority of app_main thread
+# Stack size for app_main thread
+configAPP_MAIN_SSIZE = 200u
+# Priority of app_main thread
+configAPP_MAIN_PRI = osPriorityNormal
 
 # Kernel Services
-configDEVSUBSYS = 1       # Enable device driver subsystem
+# Enable device driver subsystem
+configDEVSUBSYS = 1
 configPTTK91_VM = 0
