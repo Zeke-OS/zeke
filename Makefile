@@ -89,7 +89,6 @@ ifeq ($(configARM_PROFILE_M),1)
 #	endif
 endif
 # Dev subsystem
-SRC-$(configKusiVittu) += fawfew
 SRC-$(configDEVSUBSYS) += $(wildcard src/dev/*.c)
 # PTTK91 VM
 # TODO should be built separately
@@ -115,10 +114,6 @@ endif
 
 # target: all - Make config and compile kernel
 all: config kernel
-
-# target: listsrc - List selected sources
-listsrc: config
-	@echo Selected: $(SRC-1)
 
 # target: config - Update configuration from $(CONFIG_MK)
 config: $(AUTOCONF_H)
