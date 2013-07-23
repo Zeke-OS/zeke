@@ -21,7 +21,7 @@ Configuration
 -------------
 
 Dev subsystem is enabled by configDEVSUBSYS definition in
-config/kernel_config.h.
+config/config.mk.
 
 Major modules are declared in config/dev_config.h by a
 `DEV_DECLARE(major_number, module)`.

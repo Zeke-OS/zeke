@@ -14,11 +14,7 @@
 #ifndef HAL_MCU_H
 #define HAL_MCU_H
 
-#include "kernel_config.h"
-
-#ifndef KERNEL_CONFIG_H
-#error kernel_config.h should be #included before hal_mcu.h
-#endif
+#include <autoconf.h>
 
 #ifdef PU_TEST_BUILD
 #undef configMCU_MODEL

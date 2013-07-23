@@ -79,7 +79,6 @@ ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
 	SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_syscfg.c
 	SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_tim.c
 	#SRC-1 += $(wildcard Libraries/Discovery/*.c)
-	SRC-1 += src/hal/cortex_m.c # TODO This is actually more generic
 endif
 # HAL
 ifeq ($(configARM_PROFILE_M),1)
@@ -91,8 +90,7 @@ endif
 # Dev subsystem
 SRC-$(CONF_DEVSUBSYS) += $(wildcard src/dev/*.c)
 # PTTK91 VM
-# TODO Include dir modification
-#SRC-$(CONF_PTTK91_VM) += $(wildcard pttk91/src/*.c)
+# TODO should be built separately
 ################################################################################
 # Obj files
 BCS  := $(patsubst %.c, %.bc, $(SRC-1))

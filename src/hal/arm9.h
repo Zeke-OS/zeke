@@ -21,9 +21,7 @@
 #include "kernel.h"
 #include "hal_core.h"
 
-#ifndef __CPU_MODE__ == 2
-    #error Thumb mode is not supported for ARM9 in zeke
-#endif
+#error wtf
 
 /* Exception return values */
 #define HAND_RETURN         0xFFFFFFF1u /*!< Return to handler mode using the MSP. */
@@ -69,10 +67,10 @@ inline void wr_thread_stack_ptr(void * ptr);
  */
 #define req_context_switch() do {                                              \
     SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk; /* Switch the context */              \
-    asm volatile("DSB\n" /* Ensure write is completed
-                          * (architecturally required, but not strictly
-                          * required for existing Cortex-M processors) */      \
-                 "ISB\n" /* Ensure PendSV is executed */                       \
+    __asm__ volatile ("DSB\n" /* Ensure write is completed
+                               * (architecturally required, but not strictly
+                               * required for existing Cortex-M processors) */ \
+                      "ISB\n" /* Ensure PendSV is executed */                  \
     ); } while (0)
 
 /**
@@ -82,11 +80,11 @@ inline void save_context(void)
 {
     volatile uint32_t scratch;
 
-    asm volatile ("MRS   %0,  psp\n"
-                  "STMDB %0!, {r4-r11}\n"
-                  "MSR   psp, %0\n"
-                  "ISB\n"
-                  : "=r" (scratch));
+    __asm__ volatile ("MRS   %0,  psp\n"
+                     "STMDB %0!, {r4-r11}\n"
+                     "MSR   psp, %0\n"
+                     "ISB\n"
+                     : "=r" (scratch));
 }
 
 /**
@@ -96,11 +94,11 @@ inline void load_context(void)
 {
     volatile uint32_t scratch;
 
-    asm volatile ("MRS   %0,  psp\n"
-                  "LDMFD %0!, {r4-r11}\n"
-                  "MSR   psp, %0\n"
-                  "ISB\n"
-                  : "=r" (scratch));
+    __asm__ volatile ("MRS   %0,  psp\n"
+                      "LDMFD %0!, {r4-r11}\n"
+                      "MSR   psp, %0\n"
+                      "ISB\n"
+                      : "=r" (scratch));
 }
 
 /**
@@ -109,8 +107,8 @@ inline void load_context(void)
 inline void * rd_stack_ptr(void)
 {
     void * result = NULL;
-    asm volatile("MRS %0, msp\n"
-                 : "=r" (result));
+    __asm__ volatile ("MRS %0, msp\n"
+                      : "=r" (result));
     return result;
 }
 
@@ -120,7 +118,7 @@ inline void * rd_stack_ptr(void)
 inline void * rd_thread_stack_ptr(void)
 {
     void * result = NULL;
-    asm volatile ("MRS %0, psp\n" : "=r" (result));
+    __asm__ volatile ("MRS %0, psp\n" : "=r" (result));
     return(result);
 }
 
@@ -129,9 +127,9 @@ inline void * rd_thread_stack_ptr(void)
  */
 inline void wr_thread_stack_ptr(void * ptr)
 {
-    asm volatile ("MSR psp, %0\n"
-                  "ISB\n"
-                  : : "r" (ptr));
+    __asm__ volatile ("MSR psp, %0\n"
+                      "ISB\n"
+                      : : "r" (ptr));
 }
 
 #endif /* ARM9_H */

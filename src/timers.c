@@ -8,7 +8,7 @@
  *******************************************************************************
  */
 
-#include "kernel_config.h"
+#include <autoconf.h>
 #include "sched.h"
 #include "timers.h"
 

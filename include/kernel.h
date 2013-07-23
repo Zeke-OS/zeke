@@ -38,10 +38,10 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include "mutex.h"
-#include "semaphore.h"
-#include "devtypes.h"
-#include "kernel_config.h"
+#include <mutex.h>
+#include <semaphore.h>
+#include <devtypes.h>
+#include <autoconf.h>
 
 // ==== Enumeration, structures, defines ====
 

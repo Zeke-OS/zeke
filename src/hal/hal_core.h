@@ -14,13 +14,8 @@
 #ifndef HAL_CORE_H
 #define HAL_CORE_H
 
-#include "kernel_config.h"
-
-#ifndef KERNEL_CONFIG_H
-#error kernel_config.h should be #included before hal_core.h
-#endif
-
-#include "kernel.h"
+#include <autoconf.h>
+#include <kernel.h>
 
 /**
  * Init hw stack frame
@@ -54,7 +49,7 @@ int test_and_set(int * lock);
 
 /* Select Core Implementation ************************************************/
 
-#ifdef configARM_PROFILE_M != 0
+#if configARM_PROFILE_M != 0
 #include "cortex_m.h"
 #elif configCORE == __ARM4T__ /* ARM9 uses ARM4T arch */
 #include "arm9.h"

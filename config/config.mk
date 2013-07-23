@@ -5,7 +5,7 @@ MCU_MODEL_STM32F0 = 1
 MCU_MODEL_STR912F = 2
 
 # Supported Cores
-__ARM4T__  = 1
+__ARM4T__   = 1
 #__ARM4TM__ = 2
 #__ARM5__   = 3
 #__ARM5E__  = 4
