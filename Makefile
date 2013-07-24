@@ -100,7 +100,13 @@ OBJS := $(patsubst %.c, %.o, $(SRC-1))
 # Target specific CRT ##########################################################
 CRT =# Init
 ifeq ($(configARM_PROFILE_M),1)
+	# TODO check which one is best choice
+	# libaeabi-cortexm0
 	CRT := Libraries/crt/libaebi-cortexm0/libaeabi-cortexm0.a
+	# libgcc for ARMv6-M
+	#ifeq ($(configCORE),__ARM6M__)
+	#CRT := Libraries/crt/armv6-m-libgcc/libgcc.a
+	#endif
 else
 	ifeq ($(configCORE),__ARM6__)
 		 CRT := Libraries/crt/rpi-libgcc/libgcc.a
@@ -139,8 +145,9 @@ $(OBJS): $(BCS)
 	llc-3.0 $(LLCFLAGS) $(CUR_OPT) -o $(CUR_OPT_S)
 	$(ARMGNU)-as $(CUR_OPT_S) -o $@ $(ASFLAGS)
 
+#--sysroot=/usr/lib/gcc/arm-none-eabi/4.7.4/armv6-m/
 kernel.bin: $(MEMMAP) $(VECTABLE_O) $(OBJS) $(CRT)
-	$(ARMGNU)-ld -o kernel.clang.thumb.opt.elf -T $^
+	$(ARMGNU)-ld -o kernel.clang.thumb.opt.elf -T $^ $(CRT)
 	$(ARMGNU)-objdump -D kernel.clang.thumb.opt.elf > kernel.clang.thumb.opt.list
 	$(ARMGNU)-objcopy kernel.clang.thumb.opt.elf kernel.clang.thumb.opt.bin -O binary
 
