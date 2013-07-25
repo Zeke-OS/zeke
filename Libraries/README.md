@@ -3,6 +3,7 @@ Put here the CMSIS (and other) libraries provided by the chip manufacturers.
 *Recommended directory structure:*
 
     .
+    |-crt
     |-Discovery
     |-STM32F0xx
     |---CMSIS
