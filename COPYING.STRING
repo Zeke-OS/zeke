@@ -21,5 +21,5 @@ permission of Red Hat, Inc.
 Modified source code from newlibc contributed by Red Hat is distributed
 in following files:
 
-src/memcpy.c
-src/memset.c
+src/string/emcpy.c
+src/string/memset.c
