@@ -63,6 +63,7 @@ SRC-1 =# Init
 
 # Base system
 SRC-1 += $(wildcard src/*.c)
+SRC-1 += $(wildcard src/string/*.c)
 SRC-$(configSCHED_TINY) += $(wildcard src/sched_tiny/*.c)
 #SRC-1 += $(wildcard src/thscope/*.c) # TODO thscope should be moved??
 SRC-1 += src/thscope/kernel.c
