@@ -17,5 +17,6 @@ typedef uint32_t ksize_t;
 void * memcpy(void * restrict destination, const void * source, ksize_t num);
 //void * memmove(void * destination, const void * source, ksize_t num);
 void * memset(void * ptr, int value, ksize_t num);
+int strcmp(const char * str1, const char * str2);
 
 #endif /* STRING_H */
