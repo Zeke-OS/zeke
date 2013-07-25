@@ -5,7 +5,11 @@
  *******************************************************************************
  */
 
-#include "string.h"
+#include <string.h>
+
+#ifndef configSTRING_OPT_SIZE
+#define configSTRING_OPT_SIZE = 0
+#endif
 
 /* Nonzero if either X or Y is not aligned on a "long" boundary.  */
 #define UNALIGNED(X, Y) \
@@ -22,6 +26,18 @@
 
 void * memcpy(void * restrict destination, const void * source, ksize_t num)
 {
+#if configSTRING_OPT_SIZE != 0
+    char * dst = (char *) destination;
+    char * src = (char *) source;
+
+    void * save = destination;
+
+    while (num--) {
+        *dst++ = *src++;
+    }
+
+    return save;
+#else
     char * dst = destination;
     const char * src = source;
     long * aligned_dst;
@@ -29,24 +45,21 @@ void * memcpy(void * restrict destination, const void * source, ksize_t num)
 
     /* If the size is small, or either SRC or DST is unaligned,
      * then punt into the byte copy loop.  This should be rare.  */
-    if (!TOO_SMALL(num) && !UNALIGNED (src, dst))
-    {
+    if (!TOO_SMALL(num) && !UNALIGNED (src, dst)) {
         aligned_dst = (long*)dst;
         aligned_src = (long*)src;
 
         /* Copy 4X long words at a time if possible.  */
-        while (num >= BIGBLOCKSIZE)
-        {
+        while (num >= BIGBLOCKSIZE) {
             *aligned_dst++ = *aligned_src++;
             *aligned_dst++ = *aligned_src++;
             *aligned_dst++ = *aligned_src++;
             *aligned_dst++ = *aligned_src++;
             num -= BIGBLOCKSIZE;
-            }
+        }
 
         /* Copy one long word at a time if possible.  */
-        while (num >= LITTLEBLOCKSIZE)
-        {
+        while (num >= LITTLEBLOCKSIZE) {
             *aligned_dst++ = *aligned_src++;
             num -= LITTLEBLOCKSIZE;
         }
@@ -60,4 +73,5 @@ void * memcpy(void * restrict destination, const void * source, ksize_t num)
         *dst++ = *src++;
 
     return destination;
+#endif
 }

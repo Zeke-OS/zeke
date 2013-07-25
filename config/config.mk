@@ -30,7 +30,7 @@ configCORE = __ARM6M__
 
 # Scheduler Selection
 configSCHED_TINY = 1
-
+#
 # Tiny Scheduler
 # Maximum number of threads
 configSCHED_MAX_THREADS = 10
@@ -42,8 +42,13 @@ configSCHED_LAVG_PER = SCHED_LAVGPERIOD_11SEC
 
 # Enable or disable heap bounds check
 configHEAP_BOUNDS_CHECK = 0
+
 # Maximum number of timers available
 configTIMERS_MAX = 4
+
+# String functions
+# Optimize string functions for speed
+configSTRING_OPT_SIZE = 1
 
 # APP Main
 # Stack size for app_main thread
