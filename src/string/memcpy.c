@@ -8,7 +8,7 @@
 #include <string.h>
 
 #ifndef configSTRING_OPT_SIZE
-#define configSTRING_OPT_SIZE = 0
+#define configSTRING_OPT_SIZE 0
 #endif
 
 /* Nonzero if either X or Y is not aligned on a "long" boundary.  */

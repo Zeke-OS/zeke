@@ -125,6 +125,11 @@ all: config kernel
 # target: config - Update configuration from $(CONFIG_MK)
 config: $(AUTOCONF_H)
 
+# target: test - Run alla universal unit tests
+test:
+	cd test\universal \
+	make
+
 $(AUTOCONF_H): $(CONFIG_MK)
 	./tools/aconf.sh $(CONFIG_MK) $(AUTOCONF_H)
 

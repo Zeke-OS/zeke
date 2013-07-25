@@ -8,7 +8,7 @@
 #include <string.h>
 
 #ifndef configSTRING_OPT_SIZE
-#define configSTRING_OPT_SIZE = 0
+#define configSTRING_OPT_SIZE 0
 #endif
 
 #define LBLOCKSIZE (sizeof(long))
