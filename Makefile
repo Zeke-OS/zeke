@@ -27,19 +27,48 @@ include ./config/config.mk
 # Configuration files ##########################################################
 CONFIG_MK  = ./config/config.mk
 AUTOCONF_H = ./config/autoconf.h
-MEMMAP = config/memmap_stm32f051x8
-VECTABLE = src/vectable.s
+
+# Memmap & vector table is set per mcu/cpu model
+ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
+	MEMMAP = config/memmap_stm32f051x8
+	VECTABLE = src/vectable.s
+endif
+# TODO rpi
 ################################################################################
 VECTABLE_O = $(patsubst %.s, %.o, $(VECTABLE))
 
-# Compiler options #############################################################
+# Generic Compiler Options #####################################################
 ARMGNU   = arm-none-eabi
 CCFLAGS  = -std=c99 -emit-llvm -Wall -ffreestanding -O2
 CCFLAGS += -nostdlib -nostdinc
 CCFLAGS += -m32 -ccc-host-triple $(ARMGNU)
 OFLAGS   = -std-compile-opts
-LLCFLAGS = -march=thumb -mtriple=$(ARMGNU)
-ASFLAGS  = -mcpu=cortex-m0 -mthumb -EL
+LLCFLAGS = -mtriple=$(ARMGNU)
+ASFLAGS  =#
+
+
+# Target Specific Compiler Options #############################################
+# Arch specific flags
+ifeq ($(configARCH),__ARM6M__)
+	LLCFLAGS += -march=thumb
+	ASFLAGS  += -mcpu=cortex-m0 -mthumb -EL
+	# or more generic with
+	#ASFLAGS  march=armv6-m -mthumb -EL
+endif
+ifeq ($(configARCH),__ARM6__)
+	LLCFLAGS += -march=thumb
+	ASFLAGS  += -march=armv6 -mthumb -EL
+endif
+
+# MCU specific flags
+ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
+	CCFLAGS  += -DUSE_STDPERIPH_DRIVER -DSTM32F0XX
+endif
+
+# Floating point hardware
+ifeq ($(configHFP),__HFP_VFP__)
+	ASFLAGS  += -mfpu=vfp
+endif
 ################################################################################
 
 # Dirs #########################################################################
@@ -48,14 +77,15 @@ IDIR = ./include ./config ./src
 # Target specific libraries
 ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
 	IDIR += ./Libraries/CMSIS/Include ./Libraries/STM32F0xx/Drivers/inc
-	IDIR += ./Libraries/STM32F0xx/CMSIS/
+	IDIR += ./Libraries/STM32F0xx/CMSIS
 	IDIR += ./Libraries/STM32F0xx/Drivers/inc
-	#IDIR += ./Libraries/Discovery # TODO not always Discovery
+	# TODO not always Discovery
+	IDIR += ./Libraries/Discovery
 endif
 ################################################################################
 IDIR := $(patsubst %,-I%,$(subst :, ,$(IDIR)))
 
-# Source moduleus ##############################################################
+# Source modules ###############################################################
 SRC-  =# Init
 SRC-0 =# Init
 SRC-1 =# Init
@@ -65,32 +95,35 @@ SRC-1 =# Init
 SRC-1 += $(wildcard src/*.c)
 SRC-1 += $(wildcard src/string/*.c)
 SRC-$(configSCHED_TINY) += $(wildcard src/sched_tiny/*.c)
-#SRC-1 += $(wildcard src/thscope/*.c) # TODO thscope should be moved??
-SRC-1 += src/thscope/kernel.c
+# TODO thscope should be moved??
+SRC-1 += $(wildcard src/thscope/*.c)
+
 # Target specific modules
 ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
 	SRC-1 += $(wildcard Libraries/STM32F0xx/CMSIS/*.c)
-	SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_cec.c
-	SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_dbgmcu.c
+	#SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_dbgmcu.c
 	SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_exti.c
 	SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_gpio.c
 	SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_misc.c
-	SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_pwr.c
+	#SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_pwr.c
 	SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_rcc.c
 	SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_syscfg.c
-	SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_tim.c
-	#SRC-1 += $(wildcard Libraries/Discovery/*.c)
+	#SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_tim.c
+	# TODO not always Discovery
+	SRC-1 += $(wildcard Libraries/Discovery/*.c)
 	SRC-1 += src/hal/stm32f0_interrupt.c
 endif
-# HAL
+# Select HAL
 ifeq ($(configARM_PROFILE_M),1)
 	SRC-1 += src/hal/cortex_m.c
 #else
-#	ifeq ($(configCORE),__ARM4T__) # ARM9
+#	ifeq ($(configARCH),__ARM4T__) # ARM9
 #	endif
 endif
+
 # Dev subsystem
 SRC-$(configDEVSUBSYS) += $(wildcard src/dev/*.c)
+
 # PTTK91 VM
 # TODO should be built separately
 ################################################################################
@@ -101,20 +134,21 @@ OBJS := $(patsubst %.c, %.o, $(SRC-1))
 # Target specific CRT ##########################################################
 CRT =# Init
 ifeq ($(configARM_PROFILE_M),1)
-	# TODO check which one is best choice
+	# TODO which one is the best choice
 	# libaeabi-cortexm0
 	CRT := Libraries/crt/libaebi-cortexm0/libaeabi-cortexm0.a
 	# libgcc for ARMv6-M
-	#ifeq ($(configCORE),__ARM6M__)
+	#ifeq ($(configARCH),__ARM6M__)
 	#CRT := Libraries/crt/armv6-m-libgcc/libgcc.a
 	#endif
 else
-	ifeq ($(configCORE),__ARM6__)
+	ifeq ($(configARCH),__ARM6__)
 		 CRT := Libraries/crt/rpi-libgcc/libgcc.a
 	endif
 endif
 ################################################################################
 
+# We use suffixes because those are funny
 .SUFFIXES:					# Delete the default suffixes
 .SUFFIXES: .c .bc .o .h		# Define our suffix list
 

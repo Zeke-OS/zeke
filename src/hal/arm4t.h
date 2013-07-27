@@ -1,8 +1,9 @@
 /**
  *******************************************************************************
- * @file    cortex_m.h
+ * @file    arm4t.h
  * @author  Olli Vanhoja
- * @brief   Hardware Abstraction Layer for ARM9
+ * @brief   Hardware Abstraction Layer for ARMv4T/ARM9
+ *          TODO THIS PORT IS NON-FUNCTIONAL SCRATC ATM TODO
  *******************************************************************************
  */
 
@@ -15,10 +16,10 @@
   */
 
 #pragma once
-#ifndef ARM9_H
-#define ARM9_H
+#ifndef ARM4T_H
+#define ARM4T_H
 
-#include "kernel.h"
+#include <kernel.h>
 #include "hal_core.h"
 
 #error wtf
@@ -132,7 +133,7 @@ inline void wr_thread_stack_ptr(void * ptr)
                       : : "r" (ptr));
 }
 
-#endif /* ARM9_H */
+#endif /* ARM4T_H */
 
 /**
   * @}

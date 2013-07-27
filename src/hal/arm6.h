@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    cortex_m.h
+ * @file    arm6.h
  * @author  Olli Vanhoja
- * @brief   Hardware Abstraction Layer for Cortex-M
+ * @brief   Hardware Abstraction Layer for ARMv6 architecture
  *******************************************************************************
  */
 
@@ -22,8 +22,8 @@
 #include "hal_mcu.h" /* Needed for CMSIS */
 #include "hal_core.h"
 
-#ifndef configARM_PROFILE_M
-    #error Only ARM Cortex-M profile is currently supported.
+#ifdef configARM_PROFILE_M
+    #error ARM Cortex-M profile is not supported by this layer.
 #endif
 #ifndef configARCH
     #error Core is not selected by the compiler.

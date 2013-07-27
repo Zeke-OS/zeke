@@ -18,7 +18,7 @@
 #define KERNEL_INTERNAL
 #endif
 
-#if configCORE == __ARM7M__ || configCORE == __ARM7EM__
+#if configARCH == __ARM7M__ || configARCH == __ARM7EM__
 /* Needed for debugging */
 //#include <stdio.h>
 #include "string.h"
@@ -31,9 +31,9 @@
 uint32_t flag_kernel_tick = 0;
 
 /* Core specific hard fault handlers */
-#if configCORE == __ARM6M__ || configCORE == __ARM6SM__
+#if configARCH == __ARM6M__ || configARCH == __ARM6SM__
 void hard_fault_handler_armv6m(uint32_t stack[]);
-#elif configCORE == __ARM7M__ || configCORE == __ARM7EM__
+#elif configARCH == __ARM7M__ || configARCH == __ARM7EM__
 void hard_fault_handler_armv7m(uint32_t stack[]);
 void stackDump(uint32_t stack[]);
 static void printErrorMsg(const char * errMsg);
@@ -107,7 +107,7 @@ int test_and_set(int * lock) {
 void HardFault_Handler(void)
 {
     /* First call the core specific HardFault handler */
-#if configCORE == __ARM6M__ || configCORE == __ARM6SM__
+#if configARCH == __ARM6M__ || configARCH == __ARM6SM__
     int scratch;
     __asm__ volatile ("PUSH {LR}\n"
                       "POP {%0}\n"
@@ -119,7 +119,7 @@ void HardFault_Handler(void)
         __asm__ volatile ("MRS R0, PSP\n"
                           "B hard_fault_handler_armv6m\n");
     }
-#elif  configCORE == __ARM7M__ || configCORE == __ARM7EM__
+#elif  configARCH == __ARM7M__ || configARCH == __ARM7EM__
     /* Using IT */
     __asm__ volatile ("TST LR, #4\n"
                       "ITE EQ\n"
@@ -160,7 +160,7 @@ void hard_fault_handler_armv6m(uint32_t stack[])
     /* TODO It's possible to implement a stack dump code here if desired so. */
 }
 
-#if configCORE == __ARM7M__ || configCORE == __ARM7EM__
+#if configARCH == __ARM7M__ || configARCH == __ARM7EM__
 /* There is no HFSR register or ITM at least on Cortex-M0 and M1 (ARMv6) */
 
 /**
@@ -193,7 +193,7 @@ void hard_fault_handler_armv7m(uint32_t stack[])
 }
 #endif
 
-#if configCORE == __ARM7M__ || configCORE == __ARM7EM__
+#if configARCH == __ARM7M__ || configARCH == __ARM7EM__
 /* There is no ITM for Cortex-M0..1 */
 
 /**

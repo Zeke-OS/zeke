@@ -3,8 +3,9 @@
 # Supported MCU models
 MCU_MODEL_STM32F0 = 1
 MCU_MODEL_STR912F = 2
+MCU_MODEL_ARM1176JZF_S = 3
 
-# Supported Cores
+# Supported architectures
 __ARM4T__   = 1
 #__ARM4TM__ = 2
 #__ARM5__   = 3
@@ -26,7 +27,8 @@ SCHED_LAVGPERIOD_11SEC = 11
 # Kernel configuration
 configMCU_MODEL = MCU_MODEL_STM32F0
 configARM_PROFILE_M = 1
-configCORE = __ARM6M__
+# Architecture of the core
+configARCH = __ARM6M__
 
 # Scheduler Selection
 configSCHED_TINY = 1

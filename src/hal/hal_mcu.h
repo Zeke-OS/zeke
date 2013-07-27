@@ -23,7 +23,7 @@
 extern uint32_t flag_kernel_tick;
 
 /**
- *  Set flag_kernel_tick to 1 if tick is now else 0.
+ *  Sets flag_kernel_tick to 1 if tick is now else 0.
  */
 inline void eval_kernel_tick(void);
 
@@ -52,7 +52,9 @@ inline void eval_kernel_tick(void)
 {
 }
 
-#error Not yet implemented support for STR912F
+#error Support for STR912F is not implemented yet.
+#elif configMCU_MODEL == MCU_MODEL_ARM1176JZF_S
+    #error Support for ARM1176JZF_S is not implemented yet.
 #else
     #error No hardware support for the selected MCU model.
 #endif

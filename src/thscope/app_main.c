@@ -8,9 +8,10 @@
  *******************************************************************************
  */
 //#include <stdio.h>
-#include "kernel.h"
+#include <kernel.h>
+#include <stm32f0xx_conf.h>
+#include <stm32f0_discovery.h>
 #include "app_main.h"
-#include "stm32f0_discovery.h"
 
 static char stack_1[300];
 static char stack_2[300];

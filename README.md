@@ -32,6 +32,9 @@ Key features
 
 News
 ----
+- LOL CMSIS drivers from ST seems to expect some non-standard behaviour from the
+  compiler
+- IAR => LLVM port ongoing
 - Support for "generic" 4-bit character mode LCDs
 - ST Cortex-M3 port will be released in the (near of far) future
 - ARM9 port is under development

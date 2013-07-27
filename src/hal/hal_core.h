@@ -2,7 +2,7 @@
  *******************************************************************************
  * @file    hal_core.h
  * @author  Olli Vanhoja
- * @brief   Hardware Abstraction Layer for core
+ * @brief   Hardware Abstraction Layer for the CPU core
  *******************************************************************************
  */
 
@@ -49,10 +49,12 @@ int test_and_set(int * lock);
 
 /* Select Core Implementation ************************************************/
 
-#if configARM_PROFILE_M != 0
+#if configARM_PROFILE_M != 0 /* All M profile cores are handled in one file. */
 #include "cortex_m.h"
-#elif configCORE == __ARM4T__ /* ARM9 uses ARM4T arch */
-#include "arm9.h"
+#elif configARCH == __ARM4T__ /* ARM9 uses ARM4T arch */
+#include "arm4t.h"
+#elif configARCH == __ARM6__
+#include "arm6.h"
 #elif PU_TEST_BUILD == 1
 #include "pu_test_core.h"
 #else
