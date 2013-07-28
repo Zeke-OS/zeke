@@ -31,11 +31,11 @@ AUTOCONF_H = ./config/autoconf.h
 # Memmap & vector table is set per mcu/cpu model
 ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
 	MEMMAP = config/memmap_stm32f051x8.ld
-	VECTABLE = src/hal/stm32f0/startup_stm32f0xx.s
+	STARTUP = src/hal/stm32f0/startup_stm32f0xx.s
 endif
 # TODO rpi
 ################################################################################
-VECTABLE_O = $(patsubst %.s, %.o, $(VECTABLE))
+STARTUP_O = $(patsubst %.s, %.o, $(STARTUP))
 
 # Generic Compiler Options #####################################################
 ARMGNU   = arm-none-eabi
@@ -131,7 +131,15 @@ SRC-$(configDEVSUBSYS) += $(wildcard src/dev/*.c)
 BCS  := $(patsubst %.c, %.bc, $(SRC-1))
 OBJS := $(patsubst %.c, %.o, $(SRC-1))
 
-# Target specific CRT ##########################################################
+# Target specific Startup code & CRT ###########################################
+# Memmap & vector table is set per MCU/CPU model
+ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
+	MEMMAP = config/memmap_stm32f051x8.ld
+	STARTUP = src/hal/stm32f0/startup_stm32f0xx.s
+endif
+# TODO rpi
+
+# CRT is compiled per instruction set or per core model
 CRT =# Init
 ifeq ($(configARM_PROFILE_M),1)
 	# TODO which one is the best choice
@@ -147,6 +155,7 @@ else
 	endif
 endif
 ################################################################################
+STARTUP_O = $(patsubst %.s, %.o, $(STARTUP))
 
 # We use suffixes because it's fun
 .SUFFIXES:					# Delete the default suffixes
@@ -172,8 +181,8 @@ $(CONFIG_MK):
 
 kernel: kernel.bin
 
-$(VECTABLE_O): $(VECTABLE)
-	$(ARMGNU)-as $< -o $(VECTABLE_O)
+$(STARTUP_O): $(STARTUP)
+	$(ARMGNU)-as $< -o $(STARTUP_O)
 
 $(BCS): $(SRC-1)
 	clang $(CCFLAGS) $(IDIR) -c $*.c -o $@
@@ -186,7 +195,7 @@ $(OBJS): $(BCS)
 	$(ARMGNU)-as $(CUR_OPT_S) -o $@ $(ASFLAGS)
 
 #--sysroot=/usr/lib/gcc/arm-none-eabi/4.7.4/armv6-m/
-kernel.bin: $(MEMMAP) $(VECTABLE_O) $(OBJS) $(CRT)
+kernel.bin: $(MEMMAP) $(STARTUP_O) $(OBJS) $(CRT)
 	$(ARMGNU)-ld -o kernel.elf -T $^ $(CRT)
 	$(ARMGNU)-objdump -D kernel.elf > kernel.list
 	$(ARMGNU)-objcopy kernel.elf kernel.bin -O binary
@@ -199,7 +208,7 @@ help:
 
 clean:
 	rm -f $(AUTOCONF_H)
-	rm -f $(OBJS) $(VECTABLE_O)
+	rm -f $(OBJS) $(STARTUP_O)
 	rm -f $(BCS)
 	find . -type f -name "*.bc" -exec rm -f {} \;
 	find . -type f -name "*.opt.bc" -exec rm -f {} \;

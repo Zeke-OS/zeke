@@ -4,14 +4,17 @@ Put here the CMSIS (and other) libraries provided by the chip manufacturers.
 
     .
     |-crt
+    |--armv6-m-libgcc
+    |--libaebi-cortexm0
+    |--rpi-libgcc
     |-Discovery
     |-STM32F0xx
-    |---CMSIS
-    |---Drivers
-    |-----STM32F0-Discovery
-    |-----inc
-    |-----src
+    |--CMSIS
+    |--Drivers
+    |---inc
+    |---src
+    |--Discovery
     |-STR912
-    |---stdlib
-    |-----inc
-    |-----src
+    |--stdlib
+    |---inc
+    |---src
