@@ -32,7 +32,6 @@
  * @note This mainly depends on optimization parameters, compiler, code changes
  * in interrupt handler and current planetary positions during compile time.
  */
-//#define STM32F0_MAGIC_STACK_ADD_VALUE 2
 #define STM32F0_MAGIC_STACK_ADD_VALUE 2
 
 static inline void run_scheduler(void);

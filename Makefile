@@ -30,7 +30,7 @@ AUTOCONF_H = ./config/autoconf.h
 
 # Memmap & vector table is set per mcu/cpu model
 ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
-	MEMMAP = config/memmap_stm32f051x8
+	MEMMAP = config/memmap_stm32f051x8.ld
 	VECTABLE = src/hal/stm32f0/startup_stm32f0xx.s
 endif
 # TODO rpi
