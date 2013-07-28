@@ -18,12 +18,12 @@
 #define KERNEL_INTERNAL
 #endif
 
-#include "sched.h"
-#include "syscall.h"
-#include "hal_core.h"
+#include <sched.h>
+#include <syscall.h>
 #include <stm32f0xx_conf.h>
 #include <stm32f0xx.h>
 #include <stm32f0xx_rcc.h>
+#include "../hal_core.h"
 #include "stm32f0_interrupt.h"
 
 /**
@@ -32,6 +32,7 @@
  * @note This mainly depends on optimization parameters, compiler, code changes
  * in interrupt handler and current planetary positions during compile time.
  */
+//#define STM32F0_MAGIC_STACK_ADD_VALUE 2
 #define STM32F0_MAGIC_STACK_ADD_VALUE 2
 
 static inline void run_scheduler(void);

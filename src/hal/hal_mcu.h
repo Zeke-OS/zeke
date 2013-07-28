@@ -35,7 +35,7 @@ inline void eval_kernel_tick(void);
 #if configMCU_MODEL == MCU_MODEL_STM32F0
 #include "stm32f0xx.h" /* Library developed by ST
                     (Licensed under MCD-ST Liberty SW License Agreement V2) */
-#include "stm32f0_interrupt.h"
+#include "stm32f0/stm32f0_interrupt.h"
 
 inline void eval_kernel_tick(void)
 {

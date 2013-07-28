@@ -50,11 +50,11 @@ int test_and_set(int * lock);
 /* Select Core Implementation ************************************************/
 
 #if configARM_PROFILE_M != 0 /* All M profile cores are handled in one file. */
-#include "cortex_m.h"
+#include "cortex_m/cortex_m.h"
 #elif configARCH == __ARM4T__ /* ARM9 uses ARM4T arch */
-#include "arm4t.h"
+#include "arm4t/arm4t.h"
 #elif configARCH == __ARM6__
-#include "arm6.h"
+#include "arm6/arm6.h"
 #elif PU_TEST_BUILD == 1
 #include "pu_test_core.h"
 #else

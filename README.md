@@ -32,8 +32,7 @@ Key features
 
 News
 ----
-- LOL CMSIS drivers from ST seems to expect some non-standard behaviour from the
-  compiler
+- CM0 port on LLVM seems to get stuck when calling syscalls
 - IAR => LLVM port ongoing
 - Support for "generic" 4-bit character mode LCDs
 - ST Cortex-M3 port will be released in the (near of far) future

@@ -20,7 +20,7 @@
 #define ARM4T_H
 
 #include <kernel.h>
-#include "hal_core.h"
+#include "../hal_core.h"
 
 #error wtf
 

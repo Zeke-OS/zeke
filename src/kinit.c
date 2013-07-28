@@ -6,10 +6,10 @@
  *******************************************************************************
  */
 
-#include "kernel.h"
+#include <kernel.h>
+#include <app_main.h>
 #include "timers.h"
 #include "sched.h"
-#include "app_main.h"
 #include "hal/hal_mcu.h"
 #if configDEVSUBSYS != 0
 #include "dev/dev.h"
@@ -18,7 +18,7 @@
 
 static char main_Stack[configAPP_MAIN_SSIZE];
 
-int main(void)
+int kinit(void)
 {
     if (interrupt_init_module()) {
 		while (1);
@@ -34,7 +34,7 @@ int main(void)
     {
         /* Create app_main thread */
         osThreadDef_t main_thread = {
-            .pthread   = (os_pthread)(&app_main),
+            .pthread   = (os_pthread)(&main),
             .tpriority = configAPP_MAIN_PRI,
             .stackAddr = main_Stack,
             .stackSize = sizeof(main_Stack)/sizeof(char)

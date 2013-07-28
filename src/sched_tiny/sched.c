@@ -12,23 +12,23 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include "string.h"
+#include <string.h>
 
 #ifndef KERNEL_INTERNAL
 #define KERNEL_INTERNAL
 #endif
 
-#include "hal/hal_core.h"
-#include "hal/hal_mcu.h"
-#include "heap.h"
+#include <hal/hal_core.h>
+#include <hal/hal_mcu.h>
+#include <heap.h>
 #if configFAST_FORK != 0
-#include "queue.h"
+#include <queue.h>
 #endif
-#include "timers.h"
-#include "ksignal.h"
-#include "syscall.h"
-#include "kernel.h"
-#include "sched.h"
+#include <timers.h>
+#include <ksignal.h>
+#include <syscall.h>
+#include <kernel.h>
+#include <sched.h>
 
 /* Definitions for load average calculation **********************************/
 #define LOAD_FREQ   (configSCHED_LAVG_PER * (int)configSCHED_FREQ)

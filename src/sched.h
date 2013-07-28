@@ -18,7 +18,7 @@
 #include "dev/dev.h"
 #endif
 
-#include "kernel.h"
+#include <kernel.h>
 
 #define SCHED_IN_USE_FLAG   0x00000001u /*!< IN USE FLAG */
 #define SCHED_EXEC_FLAG     0x00000002u /*!< EXEC = 1 / SLEEP = 0 */

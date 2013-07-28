@@ -19,13 +19,13 @@
 #endif
 
 #if configARCH == __ARM7M__ || configARCH == __ARM7EM__
-/* Needed for debugging */
+/* Needed for debugging if __ARM7M__ || configARCH == __ARM7EM__ */
 //#include <stdio.h>
-#include "string.h"
+#include <string.h>
 #endif
 #include <stddef.h>
-#include "sched.h"
-#include "hal_mcu.h"
+#include <sched.h>
+#include "../hal_mcu.h"
 #include "cortex_m.h"
 
 uint32_t flag_kernel_tick = 0;

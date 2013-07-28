@@ -8,10 +8,10 @@
  *******************************************************************************
  */
 
+#include <syscalldef.h>
+#include <syscall.h>
 #include "sched.h"
 #include "timers.h"
-#include "syscalldef.h"
-#include "syscall.h"
 #include "ksignal.h"
 
 /** @addtogroup Signal

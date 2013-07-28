@@ -18,7 +18,7 @@
 #include "dev/dev.h"
 #endif
 #include "locks.h"
-#include "syscall.h"
+#include <syscall.h>
 
 /* For all Syscall groups */
 #if configDEVSUBSYS != 0

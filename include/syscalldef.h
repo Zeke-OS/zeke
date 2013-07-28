@@ -12,6 +12,8 @@
 #ifndef SYSCALLDEF_H
 #define SYSCALLDEF_H
 
+#include <kernel.h>
+
 /** Thread must still wait for a semaphore token. */
 #define OS_SEMAPHORE_THREAD_SPINWAIT_WAITING    -1
 /** Can't get a timeout timer for the thread. */

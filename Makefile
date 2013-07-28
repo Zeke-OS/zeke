@@ -31,7 +31,7 @@ AUTOCONF_H = ./config/autoconf.h
 # Memmap & vector table is set per mcu/cpu model
 ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
 	MEMMAP = config/memmap_stm32f051x8
-	VECTABLE = src/vectable.s
+	VECTABLE = src/hal/stm32f0/startup_stm32f0xx.s
 endif
 # TODO rpi
 ################################################################################
@@ -111,11 +111,11 @@ ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
 	#SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_tim.c
 	# TODO not always Discovery
 	SRC-1 += $(wildcard Libraries/Discovery/*.c)
-	SRC-1 += src/hal/stm32f0_interrupt.c
+	SRC-1 += $(wildcard src/hal/stm32f0/*.c)
 endif
 # Select HAL
 ifeq ($(configARM_PROFILE_M),1)
-	SRC-1 += src/hal/cortex_m.c
+	SRC-1 += $(wildcard src/hal/cortex_m/*.c)
 #else
 #	ifeq ($(configARCH),__ARM4T__) # ARM9
 #	endif
@@ -139,16 +139,16 @@ ifeq ($(configARM_PROFILE_M),1)
 	CRT := Libraries/crt/libaebi-cortexm0/libaeabi-cortexm0.a
 	# libgcc for ARMv6-M
 	#ifeq ($(configARCH),__ARM6M__)
-	#CRT := Libraries/crt/armv6-m-libgcc/libgcc.a
+	#	CRT := Libraries/crt/armv6-m-libgcc/libgcc.a
 	#endif
 else
 	ifeq ($(configARCH),__ARM6__)
-		 CRT := Libraries/crt/rpi-libgcc/libgcc.a
+		CRT := Libraries/crt/rpi-libgcc/libgcc.a
 	endif
 endif
 ################################################################################
 
-# We use suffixes because those are funny
+# We use suffixes because it's fun
 .SUFFIXES:					# Delete the default suffixes
 .SUFFIXES: .c .bc .o .h		# Define our suffix list
 
@@ -187,9 +187,9 @@ $(OBJS): $(BCS)
 
 #--sysroot=/usr/lib/gcc/arm-none-eabi/4.7.4/armv6-m/
 kernel.bin: $(MEMMAP) $(VECTABLE_O) $(OBJS) $(CRT)
-	$(ARMGNU)-ld -o kernel.clang.thumb.opt.elf -T $^ $(CRT)
-	$(ARMGNU)-objdump -D kernel.clang.thumb.opt.elf > kernel.clang.thumb.opt.list
-	$(ARMGNU)-objcopy kernel.clang.thumb.opt.elf kernel.clang.thumb.opt.bin -O binary
+	$(ARMGNU)-ld -o kernel.elf -T $^ $(CRT)
+	$(ARMGNU)-objdump -D kernel.elf > kernel.list
+	$(ARMGNU)-objcopy kernel.elf kernel.bin -O binary
 
 # target: help - Display callable targets.
 help:
@@ -207,3 +207,4 @@ clean:
 	rm -f *.bin
 	rm -f *.elf
 	rm -f *.list
+

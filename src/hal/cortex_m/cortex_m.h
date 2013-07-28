@@ -18,9 +18,9 @@
 #ifndef CORTEX_M_H
 #define CORTEX_M_H
 
-#include "kernel.h"
-#include "hal_mcu.h" /* Needed for CMSIS */
-#include "hal_core.h"
+#include <kernel.h>
+#include "../hal_mcu.h" /* Needed for CMSIS */
+#include "../hal_core.h"
 
 #ifndef configARM_PROFILE_M
     #error Only ARM Cortex-M profile is currently supported.

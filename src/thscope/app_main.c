@@ -11,7 +11,7 @@
 #include <kernel.h>
 #include <stm32f0xx_conf.h>
 #include <stm32f0_discovery.h>
-#include "app_main.h"
+#include <app_main.h>
 
 static char stack_1[300];
 static char stack_2[300];
@@ -35,7 +35,7 @@ osDev_t dev_lcd = DEV_MMTODEV(1, 0);
 /**
   * main thread
   */
-void app_main(void)
+void main(void)
 {
     STM_EVAL_LEDInit(LED3);
     STM_EVAL_PBInit(BUTTON_USER, BUTTON_MODE_GPIO);
@@ -118,7 +118,7 @@ static void print_loadAvg(void)
     int i;
 
     osGetLoadAvg(lavg);
-    sprintf(buff, "\x0dLoad avg:\n%d %d %d", lavg[0], lavg[1], lavg[2]);
+    //sprintf(buff, "\x0dLoad avg:\n%d %d %d", lavg[0], lavg[1], lavg[2]);
     /* \x0d = CR := return to home position */
 
     i = 0;
