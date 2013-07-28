@@ -102,7 +102,6 @@ struct dev_driver {
 
 extern struct dev_driver dev_alloc_table[];
 
-void dev_init_all(void);
 int dev_open(osDev_t dev, osThreadId thread_id);
 int dev_close(osDev_t dev, osThreadId thread_id);
 int dev_check_res(osDev_t dev, osThreadId thread_id);

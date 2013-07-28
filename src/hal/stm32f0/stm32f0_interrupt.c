@@ -34,23 +34,22 @@
  */
 #define STM32F0_MAGIC_STACK_ADD_VALUE 2
 
+void interrupt_init_module() __attribute__((constructor));
 static inline void run_scheduler(void);
 
-int interrupt_init_module(void)
+void interrupt_init_module(void)
 {
     RCC_ClocksTypeDef RCC_Clocks;
 
     /* Configure SysTick */
     RCC_GetClocksFreq(&RCC_Clocks);
     if (SysTick_Config(RCC_Clocks.HCLK_Frequency / configSCHED_FREQ)) {
-        return -1; /* Error */
+        while (1); /* Error */
     }
 
     NVIC_SetPriority(PendSV_IRQn, 0x03); /* Set PendSV to lowest level */
     NVIC_SetPriority(SysTick_IRQn, 0x03); /* Configure the SysTick handler
                                            * priority */
-
-    return 0; /* OK */
 }
 
 static inline void run_scheduler(void)

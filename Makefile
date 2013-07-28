@@ -56,7 +56,6 @@ ifeq ($(configARCH),__ARM6K__)
 	ASFLAGS  += -march=armv6k -mthumb -EL
 endif
 
-
 # MCU specific flags
 ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
 	CCFLAGS  += -DUSE_STDPERIPH_DRIVER -DSTM32F0XX
@@ -71,7 +70,6 @@ endif
 # Dirs #########################################################################
 IDIR = ./include ./config ./src
 ################################################################################
-IDIR := $(patsubst %,-I%,$(subst :, ,$(IDIR)))
 
 # Select Modules ###############################################################
 SRC-  =# Init
@@ -157,6 +155,7 @@ else
 	endif
 endif
 ################################################################################
+IDIR := $(patsubst %,-I%,$(subst :, ,$(IDIR)))
 STARTUP_O = $(patsubst %.s, %.o, $(STARTUP))
 
 # We use suffixes because it's fun

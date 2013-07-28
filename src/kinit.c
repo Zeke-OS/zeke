@@ -20,16 +20,8 @@ static char main_Stack[configAPP_MAIN_SSIZE];
 
 int kinit(void)
 {
-    if (interrupt_init_module()) {
-		while (1);
-	}
     timers_init();
     sched_init();
-
-#if configDEVSUBSYS != 0
-    /* Initialize device drivers */
-    dev_init_all();
-#endif
 
     {
         /* Create app_main thread */
