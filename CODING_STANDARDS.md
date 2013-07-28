@@ -48,5 +48,7 @@ void end(void)
 { ... }
 
 Constructor prioritizing is not supported and constructors could be executed in
-any order.
+any order. Although LLVM should be able to detremine correct ordering of
+constructor access dependecies, so that modules depending each other are
+initialized in correct order.
 

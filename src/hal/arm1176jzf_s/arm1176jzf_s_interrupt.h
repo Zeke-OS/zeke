@@ -20,11 +20,6 @@
 
 #include <stddef.h>
 
-/**
- * Initializer for interrupt module
- */
-int interrupt_init_module(void);
-
 /* ==== Vendor specific interrupt handlers ====
  * These are only referenced inside vendor specific code (mainly assembly) */
 void NMI_Handler(void);

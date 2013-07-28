@@ -76,6 +76,10 @@ void * memcpy(void * restrict destination, const void * source, ksize_t num)
 #endif
 }
 
+void __aeabi_memcpy(void *destination, const void *source, ksize_t num) __attribute__ ((weak));
+void __aeabi_memcpy4(void *destination, const void *source, ksize_t num) __attribute__ ((weak));
+void __aeabi_memcpy8(void *destination, const void *source, ksize_t num) __attribute__ ((weak));
+
 void __aeabi_memcpy(void *destination, const void *source, ksize_t num)
 {
     memcpy(destination, source, num);

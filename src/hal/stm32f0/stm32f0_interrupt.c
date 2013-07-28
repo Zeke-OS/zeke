@@ -34,7 +34,7 @@
  */
 #define STM32F0_MAGIC_STACK_ADD_VALUE 2
 
-void interrupt_init_module() __attribute__((constructor));
+void interrupt_init_module(void) __attribute__((constructor));
 static inline void run_scheduler(void);
 
 void interrupt_init_module(void)
