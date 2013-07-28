@@ -62,7 +62,6 @@ void init_hw_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a
  * @return return value of the called kernel function.
  * @note Must be only used in thread scope.
  */
-#pragma optimize=no_code_motion
 uint32_t syscall(uint32_t type, void * p)
 {
     __asm__ volatile ("MOV r2, %0\n" /* Put parameters to r2 & r3 */

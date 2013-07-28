@@ -78,11 +78,6 @@ extern volatile threadInfo_t * current_thread;
 
 /* Public function prototypes ***************************************************/
 /**
- * Initialize the scheduler
- */
-void sched_init(void);
-
-/**
  * Start the scheduler
  */
 void sched_start(void);

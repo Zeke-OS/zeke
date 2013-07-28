@@ -24,7 +24,6 @@ typedef uint32_t timers_flags_t;
 
 extern uint32_t timers_value;
 
-void timers_init(void);
 void timers_run(void);
 
 /**

@@ -79,7 +79,6 @@ void NMI_Handler(void)
 /**
   * This function handles SVCall exception.
   */
-#pragma optimize = no_cse
 void SVC_Handler(void)
 {
     uint32_t type;

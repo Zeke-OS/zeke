@@ -47,3 +47,6 @@ void begin(void)
 void end(void)
 { ... }
 
+Constructor prioritizing is not supported and constructors could be executed in
+any order.
+

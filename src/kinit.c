@@ -8,21 +8,12 @@
 
 #include <kernel.h>
 #include <app_main.h>
-#include "timers.h"
 #include "sched.h"
-#include "hal/hal_mcu.h"
-#if configDEVSUBSYS != 0
-#include "dev/dev.h"
-#include "dev/lcd_ctrl.h"
-#endif
 
 static char main_Stack[configAPP_MAIN_SSIZE];
 
 int kinit(void)
 {
-    timers_init();
-    sched_init();
-
     {
         /* Create app_main thread */
         osThreadDef_t main_thread = {

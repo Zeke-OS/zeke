@@ -38,6 +38,7 @@ typedef struct {
 uint32_t timers_value; /*!< Current tick value */
 static volatile timer_alloc_data_t timers_array[configTIMERS_MAX];
 
+void timers_init(void) __attribute__((constructor));
 static int timers_calc_exp(int millisec);
 
 void timers_init(void)

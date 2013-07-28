@@ -79,6 +79,9 @@ static char sched_idle_stack[sizeof(sw_stack_frame_t)
                              + 40]; /* Absolute minimum with current idle task
                                      * implementation */
 
+/* Static init */
+void sched_init(void) __attribute__((constructor));
+
 /* Static function declarations **********************************************/
 void idleTask(void * arg);
 static void calc_loads(void);
@@ -92,6 +95,9 @@ static void del_thread(void);
 
 /* Functions called from outside of kernel context ***************************/
 
+/**
+ * Initialize the scheduler
+ */
 void sched_init(void)
 {
     /* Create the idle task as task 0 */
