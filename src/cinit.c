@@ -12,9 +12,8 @@
  */
 
 /* Handle ELF .{pre_init,init,fini}_array sections.  */
-#include <string.h>
 
-//#ifdef HAVE_INITFINI_ARRAY
+#include <string.h>
 
 /* These magic symbols are provided by the linker.  */
 extern void (*__preinit_array_start []) (void) __attribute__((weak));
@@ -29,9 +28,10 @@ extern void _fini (void);
 void _init(void) {}
 void _fini(void) {}*/
 
-/* Iterate over all the init routines.  */
-void
-__libc_init_array (void)
+/**
+ * Iterate over all the init routines.
+ */
+void __libc_init_array (void)
 {
   ksize_t count;
   ksize_t i;
@@ -47,9 +47,10 @@ __libc_init_array (void)
     __init_array_start[i] ();
 }
 
-/* Run all the cleanup routines.  */
-void
-__libc_fini_array (void)
+/**
+ *  Run all the cleanup routines.
+ */
+void __libc_fini_array (void)
 {
   ksize_t count;
   ksize_t i;
@@ -60,4 +61,3 @@ __libc_fini_array (void)
 
   /*_fini ();*/
 }
-//#endif
