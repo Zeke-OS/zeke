@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    arm6.h
+ * @file    arm11.h
  * @author  Olli Vanhoja
- * @brief   Hardware Abstraction Layer for ARMv6 architecture
+ * @brief   Hardware Abstraction Layer for ARMv6/ARM11
  *******************************************************************************
  */
 
@@ -10,19 +10,19 @@
   * @{
   */
 
-/** @addtogroup Cortex-M
+/** @addtogroup ARM11
   * @{
   */
 
 #pragma once
-#ifndef CORTEX_M_H
-#define CORTEX_M_H
+#ifndef ARM11_H
+#define ARM11_H
 
 #include <kernel.h>
 #include "../hal_mcu.h" /* Needed for CMSIS */
 #include "../hal_core.h"
 
-#ifdef configARM_PROFILE_M
+#if configARM_PROFILE_M != 0
     #error ARM Cortex-M profile is not supported by this layer.
 #endif
 #ifndef configARCH
@@ -96,7 +96,8 @@ inline void wr_thread_stack_ptr(void * ptr);
 inline void save_context(void)
 {
     volatile uint32_t scratch;
-#if configARCH == __ARM6M__
+
+#if configARCH == __ARM6__ || configARCH == __ARM6K__
     __asm__ volatile ("MRS   %0,  psp\n"
                       "SUBS  %0,  %0, #32\n"
                       "MSR   psp, %0\n"         /* This is the address that will
@@ -130,7 +131,7 @@ inline void save_context(void)
 inline void load_context(void)
 {
     volatile uint32_t scratch;
-#if configARCH == __ARM6M__
+#if configARCH == __ARM6__ || configARCH == __ARM6K__
     __asm__ volatile ("MRS   %0,  psp\n"
                       "ADDS  %0,  %0, #16\n"    /* Move to the high registers */
                       "LDMIA %0!, {r4-r7}\n"
@@ -196,7 +197,7 @@ inline void wr_thread_stack_ptr(void * ptr)
 
 void HardFault_Handler(void);
 
-#endif /* CORTEX_M_H */
+#endif /* ARM11_H */
 
 /**
   * @}

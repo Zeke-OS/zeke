@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    arm4t.h
+ * @file    arm9.h
  * @author  Olli Vanhoja
  * @brief   Hardware Abstraction Layer for ARMv4T/ARM9
  *          TODO THIS PORT IS NON-FUNCTIONAL SCRATC ATM TODO
@@ -11,18 +11,23 @@
   * @{
   */
 
-/** @addtogroup Cortex-M
+/** @addtogroup ARM4T
   * @{
   */
 
 #pragma once
-#ifndef ARM4T_H
-#define ARM4T_H
+#ifndef ARM9_H
+#define ARM9_H
 
 #include <kernel.h>
 #include "../hal_core.h"
 
-#error wtf
+#if configARM_PROFILE_M != 0
+    #error ARM Cortex-M profile is not supported by this layer.
+#endif
+#ifndef configARCH
+    #error Core is not selected by the compiler.
+#endif
 
 /* Exception return values */
 #define HAND_RETURN         0xFFFFFFF1u /*!< Return to handler mode using the MSP. */
@@ -133,7 +138,7 @@ inline void wr_thread_stack_ptr(void * ptr)
                       : : "r" (ptr));
 }
 
-#endif /* ARM4T_H */
+#endif /* ARM9 */
 
 /**
   * @}

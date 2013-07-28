@@ -54,7 +54,10 @@ inline void eval_kernel_tick(void)
 
 #error Support for STR912F is not implemented yet.
 #elif configMCU_MODEL == MCU_MODEL_ARM1176JZF_S
-    #error Support for ARM1176JZF_S is not implemented yet.
+inline void eval_kernel_tick(void)
+{
+}
+    //#error Support for ARM1176JZF_S is not implemented yet.
 #else
     #error No hardware support for the selected MCU model.
 #endif

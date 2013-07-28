@@ -27,15 +27,7 @@ include ./config/config.mk
 # Configuration files ##########################################################
 CONFIG_MK  = ./config/config.mk
 AUTOCONF_H = ./config/autoconf.h
-
-# Memmap & vector table is set per mcu/cpu model
-ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
-	MEMMAP = config/memmap_stm32f051x8.ld
-	STARTUP = src/hal/stm32f0/startup_stm32f0xx.s
-endif
-# TODO rpi
 ################################################################################
-STARTUP_O = $(patsubst %.s, %.o, $(STARTUP))
 
 # Generic Compiler Options #####################################################
 ARMGNU   = arm-none-eabi
@@ -45,7 +37,7 @@ CCFLAGS += -m32 -ccc-host-triple $(ARMGNU)
 OFLAGS   = -std-compile-opts
 LLCFLAGS = -mtriple=$(ARMGNU)
 ASFLAGS  =#
-
+################################################################################
 
 # Target Specific Compiler Options #############################################
 # Arch specific flags
@@ -59,6 +51,11 @@ ifeq ($(configARCH),__ARM6__)
 	LLCFLAGS += -march=thumb
 	ASFLAGS  += -march=armv6 -mthumb -EL
 endif
+ifeq ($(configARCH),__ARM6K__)
+	LLCFLAGS += -march=thumb
+	ASFLAGS  += -march=armv6k -mthumb -EL
+endif
+
 
 # MCU specific flags
 ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
@@ -73,19 +70,10 @@ endif
 
 # Dirs #########################################################################
 IDIR = ./include ./config ./src
-
-# Target specific libraries
-ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
-	IDIR += ./Libraries/CMSIS/Include ./Libraries/STM32F0xx/Drivers/inc
-	IDIR += ./Libraries/STM32F0xx/CMSIS
-	IDIR += ./Libraries/STM32F0xx/Drivers/inc
-	# TODO not always Discovery
-	IDIR += ./Libraries/Discovery
-endif
 ################################################################################
 IDIR := $(patsubst %,-I%,$(subst :, ,$(IDIR)))
 
-# Source modules ###############################################################
+# Select Modules ###############################################################
 SRC-  =# Init
 SRC-0 =# Init
 SRC-1 =# Init
@@ -98,8 +86,15 @@ SRC-$(configSCHED_TINY) += $(wildcard src/sched_tiny/*.c)
 # TODO thscope should be moved??
 SRC-1 += $(wildcard src/thscope/*.c)
 
-# Target specific modules
+# Targeti model specific modules
 ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
+	# Includes
+	IDIR += ./Libraries/CMSIS/Include ./Libraries/STM32F0xx/Drivers/inc
+	IDIR += ./Libraries/STM32F0xx/CMSIS
+	IDIR += ./Libraries/STM32F0xx/Drivers/inc
+	# TODO not always Discovery
+	IDIR += ./Libraries/Discovery
+	# Soúrces
 	SRC-1 += $(wildcard Libraries/STM32F0xx/CMSIS/*.c)
 	#SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_dbgmcu.c
 	SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_exti.c
@@ -113,12 +108,19 @@ ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
 	SRC-1 += $(wildcard Libraries/Discovery/*.c)
 	SRC-1 += $(wildcard src/hal/stm32f0/*.c)
 endif
+ifeq ($(configMCU_MODEL),MCU_MODEL_ARM1176JZF_S)
+	SRC-1 += $(wildcard src/hal/arm1176jzf_s/*.c)
+endif
+
 # Select HAL
 ifeq ($(configARM_PROFILE_M),1)
 	SRC-1 += $(wildcard src/hal/cortex_m/*.c)
-#else
+else
 #	ifeq ($(configARCH),__ARM4T__) # ARM9
 #	endif
+	ifeq ($(configARCH),__ARM6__) # ARM11
+	SRC-1 += $(wildcard src/hal/arm11/*.c)
+	endif
 endif
 
 # Dev subsystem
