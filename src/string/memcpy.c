@@ -7,6 +7,14 @@
 
 #include <string.h>
 
+/* It's ok to override thse functions by core specific optimized versions.
+ * Eg. ARMv7 adds possibility to use hardware memcpy which is around 30 times
+ * faster than this approach. */
+void * memcpy(void * restrict destination, const void * source, ksize_t num) __attribute__ ((weak));
+void __aeabi_memcpy(void *destination, const void *source, ksize_t num) __attribute__ ((weak));
+void __aeabi_memcpy4(void *destination, const void *source, ksize_t num) __attribute__ ((weak));
+void __aeabi_memcpy8(void *destination, const void *source, ksize_t num) __attribute__ ((weak));
+
 #ifndef configSTRING_OPT_SIZE
 #define configSTRING_OPT_SIZE 0
 #endif
@@ -75,10 +83,6 @@ void * memcpy(void * restrict destination, const void * source, ksize_t num)
     return destination;
 #endif
 }
-
-void __aeabi_memcpy(void *destination, const void *source, ksize_t num) __attribute__ ((weak));
-void __aeabi_memcpy4(void *destination, const void *source, ksize_t num) __attribute__ ((weak));
-void __aeabi_memcpy8(void *destination, const void *source, ksize_t num) __attribute__ ((weak));
 
 void __aeabi_memcpy(void *destination, const void *source, ksize_t num)
 {
