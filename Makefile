@@ -47,13 +47,14 @@ ifeq ($(configARCH),__ARM6M__)
 	# or more generic with
 	#ASFLAGS  march=armv6-m -mthumb -EL
 endif
+# TODO Enable thumb?
 ifeq ($(configARCH),__ARM6__)
-	LLCFLAGS += -march=thumb
-	ASFLAGS  += -march=armv6 -mthumb -EL
+	LLCFLAGS += -march=arm
+	ASFLAGS  += -march=armv6 -EL
 endif
 ifeq ($(configARCH),__ARM6K__)
-	LLCFLAGS += -march=thumb
-	ASFLAGS  += -march=armv6k -mthumb -EL
+	LLCFLAGS += -march=arm
+	ASFLAGS  += -march=armv6k -EL
 endif
 
 # MCU specific flags
