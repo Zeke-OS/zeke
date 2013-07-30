@@ -21,10 +21,10 @@ Key features
   starvation
 - Signal flag based notify/wake-up from sleep with event timeouts
 - System call based kernel services
-- Mostly CMSIS-RTOS compliant
-- Highly configurable
-- Adjustable footprint
-- Optional device driver subsystem with block/character device abstraction
+- Partly CMSIS-RTOS compliant
+- High configurability & Adjustable footprint
+- Optional device driver subsystem with unix-like block/character device
+  abstraction
 - Completely static memory allocation strategy (memory usage can be analyzed
   statically)
 - Offers some protection even on Cortex-M0 without MMU (atm mainly angainst
@@ -33,9 +33,8 @@ Key features
 News
 ----
 - CM0 port on LLVM seems to get stuck when calling syscalls
-- ARM11 port coming "soon"
+- ARM11/Raspberry Pi port ongoing
 - IAR => LLVM port ongoing
-- Support for "generic" 4-bit character mode LCDs
-- ST Cortex-M3 port will be released in the (near of far) future
-- ARM9 port is under development
+- Support for "generic" 4-bit character mode LCDs on CMSIS cores
+- ST Cortex-M3 and ARM9 port under development
 
