@@ -83,12 +83,9 @@ inline void wr_thread_stack_ptr(void * ptr);
  * Request immediate context switch
  */
 #define req_context_switch() do {                                              \
-    SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk; /* Switch the context */              \
-    __asm__ volatile ("DSB\n" /* Ensure write is completed
-                               * (architecturally required, but not strictly
-                               * required for existing Cortex-M processors) */ \
-                      "ISB\n" /* Ensure PendSV is executed */                  \
-    ); } while (0)
+    syscall(0, 0); /* TODO this is not ok but we have to implement this with
+                    * syscalls later */                                        \
+    } while (0)
 
 /**
  * Save the context on the PSP

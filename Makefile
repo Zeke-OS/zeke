@@ -107,8 +107,8 @@ ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
 	SRC-1 += $(wildcard Libraries/Discovery/*.c)
 	SRC-1 += $(wildcard src/hal/stm32f0/*.c)
 endif
-ifeq ($(configMCU_MODEL),MCU_MODEL_ARM1176JZF_S)
-	SRC-1 += $(wildcard src/hal/arm1176jzf_s/*.c)
+ifeq ($(configMCU_MODEL),MCU_MODEL_BCM2835)
+	SRC-1 += $(wildcard src/hal/bcm2835/*.c)
 endif
 
 # Select HAL
@@ -123,6 +123,7 @@ else
 endif
 
 # Dev subsystem
+# TODO dev selection from config file
 SRC-$(configDEVSUBSYS) += $(wildcard src/dev/*.c)
 
 # PTTK91 VM
@@ -138,7 +139,10 @@ ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
 	MEMMAP = config/memmap_stm32f051x8.ld
 	STARTUP = src/hal/stm32f0/startup_stm32f0xx.s
 endif
-# TODO rpi
+ifeq ($(configMCU_MODEL),MCU_MODEL_BCM2835)
+	MEMMAP = config/memmap_bcm2835.ld
+	STARTUP = src/hal/bcm2835/startup_bcm2835.s
+endif
 
 # CRT is compiled per instruction set or per core model
 CRT =# Init

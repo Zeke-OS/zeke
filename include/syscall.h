@@ -12,9 +12,10 @@
 #ifndef SYSCALL_H
 #define SYSCALL_H
 
-#include "kernel.h"
+#include <kernel.h>
+#include <syscalldef.h>
 #if configDEVSUBSYS != 0
-#include "devtypes.h"
+#include <devtypes.h>
 #endif
 
 #define SYSCALL_MINORBITS   27 /*!< Number of minor bits */

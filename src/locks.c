@@ -6,18 +6,14 @@
  *******************************************************************************
  */
 
-#include "syscall.h"
+#include <syscall.h>
+#include <semaphore.h>
 #ifndef PU_TEST_BUILD
 #include "hal/hal_core.h"
 #endif
 #include "sched.h"
 #include "timers.h"
 #include "locks.h"
-
-/** Thread must still wait for a semaphore token. */
-#define LOCKS_SEMAPHORE_THREAD_SPINWAIT_WAITING   -1
-/** Can't get a timeout timer for the thread. */
-#define LOCKS_SEMAPHORE_THREAD_SPINWAIT_RES_ERROR -2
 
 static int locks_semaphore_thread_spinwait(uint32_t * s, uint32_t millisec);
 

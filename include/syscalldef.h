@@ -14,12 +14,6 @@
 
 #include <kernel.h>
 
-/** Thread must still wait for a semaphore token. */
-#define OS_SEMAPHORE_THREAD_SPINWAIT_WAITING    -1
-/** Can't get a timeout timer for the thread. */
-#define OS_SEMAPHORE_THREAD_SPINWAIT_RES_ERROR  -2
-
-
 /** Argument struct for SYSCALL_SCHED_THREAD_CREATE */
 typedef struct {
     osThreadDef_t * def;    /*!< Thread definitions for a new thread */

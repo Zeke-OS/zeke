@@ -3,7 +3,7 @@
 # Supported MCU models
 MCU_MODEL_STM32F0 = 1
 MCU_MODEL_STR912F = 2
-MCU_MODEL_ARM1176JZF_S = 3
+MCU_MODEL_BCM2835 = 3
 
 # Supported architectures
 # -----------------------
@@ -27,7 +27,7 @@ __ARM6M__   = 7
 # Notes:
 # MCU_MODEL_STM32F0 = __ARM6M__
 # MCU_MODEL_STR912F = __ARM4T__
-# MCU_MODEL_ARM1176JZF_S = __ARM6__
+# MCU_MODEL_BCM2835 = __ARM6__
 
 # Supported load average calculation periods
 SCHED_LAVGPERIOD_5SEC  = 5
@@ -36,7 +36,7 @@ SCHED_LAVGPERIOD_11SEC = 11
 # User configurable part begins ################################################
 
 # Kernel configuration
-configMCU_MODEL = MCU_MODEL_ARM1176JZF_S
+configMCU_MODEL = MCU_MODEL_BCM2835
 #configARM_PROFILE_A = 0#Not supported
 #configARM_PROFILE_R = 0#Not supported
 configARM_PROFILE_M = 0
@@ -73,5 +73,5 @@ configAPP_MAIN_PRI = osPriorityNormal
 
 # Kernel Services
 # Enable device driver subsystem
-configDEVSUBSYS = 1
+configDEVSUBSYS = 0
 configPTTK91_VM = 0

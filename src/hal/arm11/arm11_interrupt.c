@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    arm1176jzf_s_interrupt.h
+ * @file    arm11_interrupt.h
  * @author  Olli Vanhoja
- * @brief   Header for arm1176jzf_s_interrupt.c module.
+ * @brief   Header for arm11_interrupt.c module.
  *******************************************************************************
  */
 
@@ -10,13 +10,13 @@
   * @{
   */
 
-/** @addtogroup MCU_MODEL_ARM1176JZF_S
+/** @addtogroup ARM11
   * @{
   */
 
 #pragma once
-#ifndef ARM1176JZF_S_INTERRUPT_H
-#define ARM1176JZF_S_INTERRUPT_H
+#ifndef ARM11_INTERRUPT_H
+#define ARM11_INTERRUPT_H
 
 #include <stddef.h>
 
@@ -28,7 +28,7 @@ void SVC_Handler(void);
 void PendSV_Handler(void);
 void SysTick_Handler(void);
 
-#endif /* ARM1176JZF_S_INTERRUPT_H */
+#endif /* ARM11_INTERRUPT_H */
 
 /**
   * @}

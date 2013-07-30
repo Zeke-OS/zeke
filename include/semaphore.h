@@ -10,6 +10,11 @@
 #ifndef SEMAPHORE_H
 #define SEMAPHORE_H
 
+/** Thread must still wait for a semaphore token. */
+#define OS_SEMAPHORE_THREAD_SPINWAIT_WAITING    -1
+/** Can't get a timeout timer for the thread. */
+#define OS_SEMAPHORE_THREAD_SPINWAIT_RES_ERROR  -2
+
 /**
  * Semaphore control block
  */
