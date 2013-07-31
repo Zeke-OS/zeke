@@ -124,7 +124,10 @@ endif
 
 # Dev subsystem
 # TODO dev selection from config file
-SRC-$(configDEVSUBSYS) += $(wildcard src/dev/*.c)
+SRC-$(configDEVSUBSYS) += $(wildcard src/dev/dev.c)
+SRC-$(configDEVSUBSYS_NULL) += $(wildcard src/dev/devnull.c)
+SRC-$(configDEVSUBSYS_LCD) += $(wildcard src/dev/lcd/lcd.c)
+SRC-$(configDEVSUBSYS_LCD) += $(wildcard src/dev/lcd/lcd_ctrl.c)
 
 # PTTK91 VM
 # TODO should be built separately

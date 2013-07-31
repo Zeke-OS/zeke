@@ -73,5 +73,11 @@ configAPP_MAIN_PRI = osPriorityNormal
 
 # Kernel Services
 # Enable device driver subsystem
-configDEVSUBSYS = 0
+configDEVSUBSYS = 1
 configPTTK91_VM = 0
+
+# Dev subsystem modules
+# These can be also commented out
+configDEVSUBSYS_NULL = 1
+configDEVSUBSYS_LCD = 0
+
