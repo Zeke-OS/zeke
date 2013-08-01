@@ -1,4 +1,10 @@
-/* memmap_bcm2835.ld - linker script for bcm2835 */
+/**
+ *******************************************************************************
+ * @file    memmap_bcm2835.ld
+ * @author  Olli Vanhoja
+ * @brief   linker script for BCM2835.
+ *******************************************************************************
+ */
 ENTRY(Start)
 
 /* TODO sections for cinit */

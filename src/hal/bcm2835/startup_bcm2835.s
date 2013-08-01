@@ -1,4 +1,10 @@
-/* startup_bcm2835.s - BCM2835 startup code */
+/**
+ *******************************************************************************
+ * @file    startup_bcm2835.s
+ * @author  Olli Vanhoja
+ * @brief   BCM2835 startup code.
+ *******************************************************************************
+ */
  
 /* To keep this in the first portion of the binary. */
 .section ".text.boot"
@@ -32,7 +38,11 @@ Start:
  
     /* TODO Call something to preserve r0-r2 for further use */
 
-    /* TODO Call init systems */
+    /* TODO init data sections? */
+
+    /* Call static constructors */
+    ldr r3, =__libc_init_array
+    blx r3
 
     /* Call kernel init */
     ldr r3, =kinit

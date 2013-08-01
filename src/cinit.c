@@ -1,4 +1,8 @@
-/*
+/**
+ *******************************************************************************
+ * @file    startup_bcm2835.
+ * @brief   Handle .{pre_init,init,fini}_array sections.
+ *
  * Copyright (C) 2013 Olli Vanhoja
  * Copyright (C) 2004 CodeSourcery, LLC
  *
@@ -9,11 +13,8 @@
  *
  * This file is distributed WITHOUT ANY WARRANTY; without even the implied
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *******************************************************************************
  */
-
-/* Handle ELF .{pre_init,init,fini}_array sections.  */
-
-#include <string.h>
 
 /* These magic symbols are provided by the linker.  */
 extern void (*__preinit_array_start []) (void) __attribute__((weak));
@@ -31,16 +32,17 @@ void _fini(void) {}*/
 /**
  * Iterate over all the init routines.
  */
-void __libc_init_array (void)
+void __libc_init_array(void)
 {
-  ksize_t count;
-  ksize_t i;
+  int count;
+  int i;
 
   count = __preinit_array_end - __preinit_array_start;
-  for (i = 0; i < count; i++)
+  for (i = 0; i < count; i++) {
     __preinit_array_start[i] ();
+  }
 
-  /*_init ();*/
+  /*_init();*/
 
   count = __init_array_end - __init_array_start;
   for (i = 0; i < count; i++)
@@ -50,14 +52,15 @@ void __libc_init_array (void)
 /**
  *  Run all the cleanup routines.
  */
-void __libc_fini_array (void)
+void __libc_fini_array(void)
 {
-  ksize_t count;
-  ksize_t i;
+  int count;
+  int i;
 
   count = __fini_array_end - __fini_array_start;
-  for (i = 0; i < count; i++)
+  for (i = 0; i < count; i++) {
     __fini_array_start[i] ();
+  }
 
-  /*_fini ();*/
+  /*_fini();*/
 }
