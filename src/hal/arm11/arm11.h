@@ -95,28 +95,7 @@ inline void save_context(void)
     volatile uint32_t scratch;
 
 #if configARCH == __ARM6__ || configARCH == __ARM6K__
-    __asm__ volatile ("MRS   %0,  psp\n"
-                      "SUBS  %0,  %0, #32\n"
-                      "MSR   psp, %0\n"         /* This is the address that will
-                                                 * be used by rd_thread_stack_ptr(void)
-                                                 */
-                      "ISB\n"
-                      "STMIA %0!, {r4-r7}\n"
-                      "PUSH  {r4-r7}\n"         /* Push original register values
-                                                 * so we don't lost them */
-                      "MOV   r4,  r8\n"
-                      "MOV   r5,  r9\n"
-                      "MOV   r6,  r10\n"
-                      "MOV   r7,  r11\n"
-                      "STMIA %0!, {r4-r7}\n"
-                      "POP   {r4-r7}\n"         /* Pop them back */
-                      : "=r" (scratch));
-#elif configARCH == __ARM7M__
-    __asm__ volatile ("MRS   %0,  psp\n"
-                      "STMDB %0!, {r4-r11}\n"
-                      "MSR   psp, %0\n"
-                      "ISB\n"
-                      : "=r" (scratch));
+    /* TODO push registers to thread stack */
 #else
     #error Selected CORE not supported
 #endif
@@ -129,24 +108,7 @@ inline void load_context(void)
 {
     volatile uint32_t scratch;
 #if configARCH == __ARM6__ || configARCH == __ARM6K__
-    __asm__ volatile ("MRS   %0,  psp\n"
-                      "ADDS  %0,  %0, #16\n"    /* Move to the high registers */
-                      "LDMIA %0!, {r4-r7}\n"
-                      "MOV   r8,  r4\n"
-                      "MOV   r9,  r5\n"
-                      "MOV   r10, r6\n"
-                      "MOV   r11, r7\n"
-                      "MSR   psp, %0\n"         /* Store the new top of the stack */
-                      "ISB\n"
-                      "SUBS  r0,  r0, #32\n"    /* Go back to the low registers */
-                      "LDMIA %0!, {r4-r7}\n"
-                      : "=r" (scratch));
-#elif configARCH == __ARM7M__
-    __asm__ volatile ("MRS   %0,  psp\n"
-                      "LDMFD %0!, {r4-r11}\n"
-                      "MSR   psp, %0\n"
-                      "ISB\n"
-                      : "=r" (scratch));
+        /* TODO Pop registers from thread stack */
 #else
     #error Selected CORE not supported
 #endif
@@ -158,8 +120,9 @@ inline void load_context(void)
 inline void * rd_stack_ptr(void)
 {
     void * result = NULL;
-    __asm__ volatile ("MRS %0, msp\n"
-                      : "=r" (result));
+    /* TODO There is no such special register in real ARM achs. */
+    /*__asm__ volatile ("MRS %0, msp\n"
+                      : "=r" (result));*/
     return result;
 }
 
@@ -169,23 +132,25 @@ inline void * rd_stack_ptr(void)
 inline void * rd_thread_stack_ptr(void)
 {
     void * result = NULL;
-    __asm__ volatile ("MRS %0, psp\n"
-                      : "=r" (result));
+    /* TODO There is no such special register in real ARM achs. */
+    /*__asm__ volatile ("MRS %0, psp\n"
+                      : "=r" (result));*/
     return(result);
 }
 
 /**
- * Write stack pointer of the currentthread to the PSP
+ * Write stack pointer of the current thread to the PSP
  */
 inline void wr_thread_stack_ptr(void * ptr)
 {
-    __asm__ volatile ("MSR psp, %0\n"
+    /* TODO */
+    /*__asm__ volatile ("MSR psp, %0\n"
                       "ISB\n"
-                      : : "r" (ptr));
+                      : : "r" (ptr));*/
 }
 
 /**
- * Platform sepcific idle sleep mode
+ * Platform sepcific idle sleep mode.
  */
 #define idle_sleep() do {                                 \
     __asm__ volatile ("WFI\n" /* Sleep until next interrupt */ \

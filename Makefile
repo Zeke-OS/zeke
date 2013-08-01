@@ -47,11 +47,11 @@ ifeq ($(configARCH),__ARM6M__)
 	# or more generic with
 	#ASFLAGS  march=armv6-m -mthumb -EL
 endif
-# TODO Enable thumb?
 ifeq ($(configARCH),__ARM6__)
 	LLCFLAGS += -march=arm
 	ASFLAGS  += -march=armv6 -EL
 endif
+# TODO Enable thumb?
 ifeq ($(configARCH),__ARM6K__)
 	LLCFLAGS += -march=arm
 	ASFLAGS  += -march=armv6k -EL
@@ -117,8 +117,9 @@ ifeq ($(configARM_PROFILE_M),1)
 else
 #	ifeq ($(configARCH),__ARM4T__) # ARM9
 #	endif
-	ifeq ($(configARCH),__ARM6__) # ARM11
-	SRC-1 += $(wildcard src/hal/arm11/*.c)
+	# ARM11
+	ifneq (,$(filter $(configARCH),__ARM6__ __ARM6K__)) # Logical OR
+		SRC-1 += $(wildcard src/hal/arm11/*.c)
 	endif
 endif
 
@@ -158,7 +159,7 @@ ifeq ($(configARM_PROFILE_M),1)
 	#	CRT := Libraries/crt/armv6-m-libgcc/libgcc.a
 	#endif
 else
-	ifeq ($(configARCH),__ARM6__)
+	ifeq ($(configARCH),__ARM6K__)
 		CRT := Libraries/crt/rpi-libgcc/libgcc.a
 	endif
 endif
