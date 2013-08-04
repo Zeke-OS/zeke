@@ -82,9 +82,9 @@ IDIR = ./include ./config ./src
 ################################################################################
 
 # Select Modules ###############################################################
-SRC-  =# Init
-SRC-0 =# Init
-SRC-1 =# Init
+SRC-  =#
+SRC-0 =#
+SRC-1 =#
 # SRC- and SRC-0 meaning module will not be compiled
 
 # Base system
