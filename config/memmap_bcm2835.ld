@@ -7,8 +7,6 @@
  */
 ENTRY(Start)
 
-/* TODO sections for cinit */
-
 SECTIONS
 {
     /* Execution starts at LOADER_ADDR. */
@@ -19,10 +17,39 @@ SECTIONS
     {
         KEEP(*(.text.boot))
         *(.text)
+
+        KEEP (*(.init))
+        KEEP (*(.fini))
     }
     . = ALIGN(4096); /* align to page size */
     _text_end = .;
- 
+
+    _cinit_data_start = .;
+    .preinit_array :
+    { 
+        PROVIDE_HIDDEN (__preinit_array_start = .);
+        KEEP (*(.preinit_array*))
+        PROVIDE_HIDDEN (__preinit_array_end = .);
+    }
+
+    .init_array :
+    { 
+        PROVIDE_HIDDEN (__init_array_start = .);
+        KEEP (*(SORT(.init_array.*)))
+        KEEP (*(.init_array*))
+        PROVIDE_HIDDEN (__init_array_end = .);
+    }
+
+    .fini_array :
+    { 
+        PROVIDE_HIDDEN (__fini_array_start = .);
+        KEEP (*(.fini_array*))
+        KEEP (*(SORT(.fini_array.*)))
+        PROVIDE_HIDDEN (__fini_array_end = .);
+    }
+    . = ALIGN(4096) /* align to page size */
+    _cinit_data_end = .;
+
     _rodata_start = .;
     .rodata :
     {
@@ -30,7 +57,7 @@ SECTIONS
     }
     . = ALIGN(4096); /* align to page size */
     _rodata_end = .;
- 
+
     _data_start = .;
     .data :
     {
@@ -38,7 +65,7 @@ SECTIONS
     }
     . = ALIGN(4096); /* align to page size */
     _data_end = .;
- 
+
     _bss_start = .;
     .bss :
     {

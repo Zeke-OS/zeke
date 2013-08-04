@@ -67,6 +67,9 @@ ifeq ($(configHFP),__HFP_VFP__)
 	ASFLAGS  += -mfpu=vfp
 endif
 ################################################################################
+ifndef ASFLAGS
+$(error Missing ASFLAGS! Wrong configARCH?)
+endif
 
 # Dirs #########################################################################
 IDIR = ./include ./config ./src
@@ -127,8 +130,8 @@ endif
 # TODO dev selection from config file
 SRC-$(configDEVSUBSYS) += $(wildcard src/dev/dev.c)
 SRC-$(configDEVSUBSYS_NULL) += $(wildcard src/dev/devnull.c)
-SRC-$(configDEVSUBSYS_LCD) += $(wildcard src/dev/lcd/lcd.c)
-SRC-$(configDEVSUBSYS_LCD) += $(wildcard src/dev/lcd/lcd_ctrl.c)
+SRC-$(configDEVSUBSYS_LCD)  += $(wildcard src/dev/lcd/lcd.c)
+SRC-$(configDEVSUBSYS_LCD)  += $(wildcard src/dev/lcd/lcd_ctrl.c)
 
 # PTTK91 VM
 # TODO should be built separately
