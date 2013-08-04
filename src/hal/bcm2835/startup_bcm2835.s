@@ -39,7 +39,7 @@ Start:
     /* TODO Call something to preserve r0-r2 for further use */
 
     /* Call static constructors */
-    ldr r3, =__libc_init_array
+    ldr r3, =exec_init_array
     blx r3
 
     /* Call kernel init */
