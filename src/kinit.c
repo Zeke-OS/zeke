@@ -24,7 +24,4 @@ int kinit(void)
         };
         osThreadCreate(&main_thread, NULL);
     }
-
-    sched_start();
-    while (1);
 }

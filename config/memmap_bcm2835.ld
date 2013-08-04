@@ -17,21 +17,11 @@ SECTIONS
     {
         KEEP(*(.text.boot))
         *(.text)
-
-        KEEP (*(.init))
-        KEEP (*(.fini))
     }
     . = ALIGN(4096); /* align to page size */
     _text_end = .;
 
     _cinit_data_start = .;
-    .preinit_array :
-    { 
-        PROVIDE_HIDDEN (__preinit_array_start = .);
-        KEEP (*(.preinit_array*))
-        PROVIDE_HIDDEN (__preinit_array_end = .);
-    }
-
     .init_array :
     { 
         PROVIDE_HIDDEN (__init_array_start = .);
