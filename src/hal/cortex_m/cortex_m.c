@@ -55,13 +55,6 @@ void init_hw_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a
     thread_frame->psr = DEFAULT_PSR;
 }
 
-/**
- * Make a system call
- * @param type syscall type.
- * @param p pointer to the syscall parameter(s).
- * @return return value of the called kernel function.
- * @note Must be only used in thread scope.
- */
 uint32_t syscall(uint32_t type, void * p)
 {
     __asm__ volatile ("MOV r2, %0\n" /* Put parameters to r2 & r3 */
@@ -83,11 +76,6 @@ uint32_t syscall(uint32_t type, void * p)
     return scratch;
 }
 
-/**
- * Test & set function.
- * @param lock pointer to the integer variable that will be set to 1.
- * @return 0 if old value was previously other than 0.
- */
 int test_and_set(int * lock) {
     int old_value;
 
@@ -98,7 +86,7 @@ int test_and_set(int * lock) {
     old_value = *lock;
     *lock = 1;
 
-    return old_value == 1;
+    return old_value;
 }
 
 /* HardFault Handling *********************************************************/

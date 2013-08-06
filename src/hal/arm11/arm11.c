@@ -44,23 +44,12 @@ void init_hw_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a
     thread_frame->psr = DEFAULT_PSR;
 }
 
-/**
- * Make a system call
- * @param type syscall type.
- * @param p pointer to the syscall parameter(s).
- * @return return value of the called kernel function.
- * @note Must be only used in thread scope.
- */
 uint32_t syscall(uint32_t type, void * p)
 {
     __asm__ volatile ("MOV r2, %0\n" /* Put parameters to r2 & r3 */
                       "MOV r3, %1\n"
                       "MOV r1, r4\n" /* Preserve r4 by using hardware push for it */
                       "SVC #0\n"
-                      "DSB\n" /* Ensure write is completed
-                               * (architecturally required, but not strictly
-                               * required for existing Cortex-M processors) */
-                      "ISB\n" /* Ensure PendSV is executed */
                       : : "r" (type), "r" (p));
 
     /* Get return value */
@@ -72,22 +61,22 @@ uint32_t syscall(uint32_t type, void * p)
     return scratch;
 }
 
-/**
- * Test & set function.
- * @param lock pointer to the integer variable that will be set to 1.
- * @return 0 if old value was previously other than 0.
- */
 int test_and_set(int * lock) {
-    int old_value;
+    int err = 2; /* Initial value of error meaning already locked */
 
-    /* Ensure that all explicit memory accesses that appear in program order
-     * before the DMB instruction are observed before any explicit memory
-     * accesses. */
-    __asm__ volatile ("DMB");
-    old_value = *lock;
-    *lock = 1;
+    __asm__ volatile ("LDR      r1, #1\n"           /* locked value to r1 */
+                      "LDREX    r0, [%[addr]]\n"    /* load value of lock */
+                      "CMP      r0, #1\n"           /* if already set */
+                      "STREXNE  %[res], r1, [%[addr]]\n" /* Sets err = 0 if store op ok */
+                      : [res]"+r" (err) /* + makes LLVM think that err is also
+                                         * read in the inline asm. Otherwise it
+                                         * would expand previous line to:
+                                         * strexne r2,r1,r2 */
+                      : [addr]"r" (lock)
+                      : "r0", "r1"
+                      );
 
-    return old_value == 1;
+    return err;
 }
 
 /* HardFault Handling *********************************************************/

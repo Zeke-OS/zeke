@@ -26,15 +26,18 @@
 void init_hw_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a_del_thread);
 
 /**
- * Make a system call from thread/user context
- * @param type Syscall type/code
- * @param p Syscall parameter(s)
+ * Make a system call
+ * @param type syscall type.
+ * @param p pointer to the syscall parameter(s).
+ * @return return value of the called kernel function.
+ * @note Must be only used in thread scope.
  */
 uint32_t syscall(uint32_t type, void * p);
 
 /**
  * Test and set
  * @param lock pointer to the lock variable.
+ * @return 0 if set succeeded.
  */
 int test_and_set(int * lock);
 
