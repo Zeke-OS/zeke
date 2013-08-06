@@ -46,17 +46,19 @@ void init_hw_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a
 
 uint32_t syscall(uint32_t type, void * p)
 {
-    __asm__ volatile ("MOV r2, %0\n" /* Put parameters to r2 & r3 */
-                      "MOV r3, %1\n"
-                      "MOV r1, r4\n" /* Preserve r4 by using hardware push for it */
-                      "SVC #0\n"
-                      : : "r" (type), "r" (p));
+    __asm__ volatile (
+            "MOV r2, %0\n" /* Put parameters to r2 & r3 */
+            "MOV r3, %1\n"
+            "MOV r1, r4\n" /* Preserve r4 by using hardware push for it */
+            "SVC #0\n"
+            : : "r" (type), "r" (p));
 
     /* Get return value */
     osStatus scratch;
-    __asm__ volatile ("MOV %0, r4\n" /* Return value is now in r4 */
-                      "MOV r4, r1\n" /* Read r4 back from r1 */
-                      : "=r" (scratch));
+    __asm__ volatile (
+            "MOV %0, r4\n" /* Return value is now in r4 */
+            "MOV r4, r1\n" /* Read r4 back from r1 */
+            : "=r" (scratch));
 
     return scratch;
 }
@@ -64,17 +66,17 @@ uint32_t syscall(uint32_t type, void * p)
 int test_and_set(int * lock) {
     int err = 2; /* Initial value of error meaning already locked */
 
-    __asm__ volatile ("LDR      r1, #1\n"           /* locked value to r1 */
-                      "LDREX    r0, [%[addr]]\n"    /* load value of lock */
-                      "CMP      r0, #1\n"           /* if already set */
-                      "STREXNE  %[res], r1, [%[addr]]\n" /* Sets err = 0 if store op ok */
-                      : [res]"+r" (err) /* + makes LLVM think that err is also
-                                         * read in the inline asm. Otherwise it
-                                         * would expand previous line to:
-                                         * strexne r2,r1,r2 */
-                      : [addr]"r" (lock)
-                      : "r0", "r1"
-                      );
+    __asm__ volatile (
+            "LDR      r1, #1\n"         /* locked value to r1 */
+            "LDREX    r0, [%[addr]]\n"  /* load value of lock */
+            "CMP      r0, #1\n"         /* if already set */
+            "STREXNE  %[res], r1, [%[addr]]\n" /* Sets err = 0 if store op ok */
+            : [res]"+r" (err)   /* + makes LLVM think that err is also read in
+                                 * the inline asm. Otherwise it would expand
+                                 * previous line to:  strexne r2,r1,r2 */
+            : [addr]"r" (lock)
+            : "r0", "r1"
+    );
 
     return err;
 }
@@ -83,11 +85,12 @@ int test_and_set(int * lock) {
 
 void HardFault_Handler(void)
 {
-    __asm__ volatile ("TST LR, #4\n"
-                      "ITE EQ\n"
-                      "MRSEQ R0, MSP\n"
-                      "MRSNE R0, PSP\n"
-                      "B hard_fault_handler_armv6\n");
+    __asm__ volatile (
+            "TST LR, #4\n"
+            "ITE EQ\n"
+            "MRSEQ R0, MSP\n"
+            "MRSNE R0, PSP\n"
+            "B hard_fault_handler_armv6\n" : : "r0");
 
     /* If core specific HardFault handler returns it means that we can safely
      * kill the current thread and call the scheduler for reschedule. */
@@ -108,7 +111,7 @@ void hard_fault_handler_armv6m(uint32_t stack[])
     uint32_t thread_stack;
 
     __asm__ volatile ("MRS %0, PSP\n"
-                      : "=r" (thread_stack));
+            : "=r" (thread_stack));
     if ((uint32_t)stack != thread_stack) {
         /* Kernel fault */
         __asm__ volatile ("BKPT #01");
