@@ -8,12 +8,8 @@ Generic Tasks
 - Optional auto-reset on failure instead of halt
 - Implement memory pools
 - Mutex & semaphore thread scope implementation (only partial now)
-- Migrate to CMSIS-RTOS 1.02 on compatible features and remove possibly
-  problematic features from the current implementation if those does not
-  exist in the latest specification
 - Further optimization of syscalls by using syscalldef data types whenever
   possible (eg. dev)
-- Makefile(s) for automatic build with different configs & hardware
 - Flags for optional dynmem "optimizations" and feature improvements
     - Way to free dynamically allocated thread stacks etc.
     - Optional dynamically allocating scheduler implementation?
@@ -23,14 +19,11 @@ Generic Tasks
 - Events are not queued atm, do we need queuing?
 - Implement a restart service that can restart service threads
     - May need some changes in the scheduler
-- Create kernel library and example program as their own projects
 - Implement other messaging services
 - Use thread parent<->client relationship to improve scheduling
-- Implement threading support for DLIB
-- OR implement own DLIB and disable IAR's implementation on project settings
 - Better way to configure syscall groups eg. in config
-- PTTK91 support (requires makefiles)
-- Load ropi applications from storage to RAM and execute in a new thread
+- PTTK91 support
+- elf supports
 
 ST F0 (& ARMv6M support)
 ------------------------
@@ -51,7 +44,6 @@ ARM9/STR912F port (ARMv5TE)
 KNOWN ISSUES
 ============
 
-- DLIB is not thread safe outside of kernel code
 - Signal wait mask is not always cleared after signal is received
 - There might be some fancy behaviour with signaling and wait states
 
