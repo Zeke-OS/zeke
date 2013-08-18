@@ -35,7 +35,7 @@
   * @{
   */
 
-/** @addtogroup ARM6
+/** @addtogroup ARM11
   * @{
   */
 
@@ -51,14 +51,16 @@
 uint32_t flag_kernel_tick = 0;
 
 /* Core specific hard fault handlers */
-void hard_fault_handler_armv6(uint32_t stack[]);
+void hard_fault_handler_arm11(uint32_t stack[]);
 
-void init_hw_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a_del_thread)
+void init_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a_del_thread)
 {
-    hw_stack_frame_t * thread_frame;
+    sw_stack_frame_t * thread_frame;
 
-    thread_frame = (hw_stack_frame_t *)((uint32_t)(thread_def->stackAddr)
-                    + thread_def->stackSize - sizeof(hw_stack_frame_t));
+    /* Pointer to the thread stack frame */
+    thread_frame = (sw_stack_frame_t *)((uint32_t)(thread_def->stackAddr)
+                    + thread_def->stackSize - sizeof(sw_stack_frame_t));
+
     thread_frame->r0 = (uint32_t)(argument);
     thread_frame->r1 = 0;
     thread_frame->r2 = 0;
@@ -113,7 +115,7 @@ void HardFault_Handler(void)
             "ITE EQ\n"
             "MRSEQ R0, MSP\n"
             "MRSNE R0, PSP\n"
-            "B hard_fault_handler_armv6\n" : : : "r0");
+            "B hard_fault_handler_arm11\n" : : : "r0");
 */
     /* If core specific HardFault handler returns it means that we can safely
      * kill the current thread and call the scheduler for reschedule. */
@@ -129,7 +131,7 @@ void HardFault_Handler(void)
  * This function handles the Hard Fault exception on ARMv6M.
  * @param stack top of the stack.
  */
-void hard_fault_handler_armv6m(uint32_t stack[])
+void hard_fault_handler_armv11(uint32_t stack[])
 {
     uint32_t thread_stack;
 /* TODO

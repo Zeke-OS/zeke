@@ -51,7 +51,7 @@
     #error ARM Cortex-M profile is not supported by this layer.
 #endif
 #ifndef configARCH
-    #error Core is not selected by the compiler.
+    #error Core is not selected.
 #endif
 
 /* Exception return values */
@@ -61,20 +61,16 @@
 
 #define DEFAULT_PSR         0x21000000u
 
-/* Stack frame saved by the hardware */
+/* Stack frame saved by the hardware (Left here for compatibility reasons) */
+typedef struct {
+} hw_stack_frame_t;
+
+/* Stack frame save by the software */
 typedef struct {
     uint32_t r0;
     uint32_t r1;
     uint32_t r2;
     uint32_t r3;
-    uint32_t r12;
-    uint32_t lr;
-    uint32_t pc;
-    uint32_t psr;
-} hw_stack_frame_t;
-
-/* Stack frame save by the software */
-typedef struct {
     uint32_t r4;
     uint32_t r5;
     uint32_t r6;
@@ -83,6 +79,10 @@ typedef struct {
     uint32_t r9;
     uint32_t r10;
     uint32_t r11;
+    uint32_t r12;
+    uint32_t lr;
+    uint32_t pc;
+    uint32_t psr;
 } sw_stack_frame_t;
 
 /* Inlined core functions */

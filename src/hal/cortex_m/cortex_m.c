@@ -64,12 +64,14 @@ void stackDump(uint32_t stack[]);
 static void printErrorMsg(const char * errMsg);
 #endif
 
-void init_hw_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a_del_thread)
+void init_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a_del_thread)
 {
     hw_stack_frame_t * thread_frame;
 
+    /* Pointer to the thread hw stack frame */
     thread_frame = (hw_stack_frame_t *)((uint32_t)(thread_def->stackAddr)
                     + thread_def->stackSize - sizeof(hw_stack_frame_t));
+
     thread_frame->r0 = (uint32_t)(argument);
     thread_frame->r1 = 0;
     thread_frame->r2 = 0;

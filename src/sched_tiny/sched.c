@@ -315,7 +315,7 @@ static void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument,
         return;
 
     /* Init core specific stack frame */
-    init_hw_stack_frame(thread_def, argument, (uint32_t)del_thread);
+    init_stack_frame(thread_def, argument, (uint32_t)del_thread);
 
     /* Mark that this thread position is in use.
      * EXEC flag is set later in sched_thread_set_exec */

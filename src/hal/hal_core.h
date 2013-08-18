@@ -43,12 +43,12 @@
 #include <kernel.h>
 
 /**
- * Init hw stack frame
+ * Init stack frame.
  * @param thread_def Thread definitions
  * @param argument Argument
  * @param a_del_thread Address of del_thread function
  */
-void init_hw_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a_del_thread);
+void init_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a_del_thread);
 
 /**
  * Make a system call
