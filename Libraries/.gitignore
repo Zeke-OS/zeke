@@ -1,5 +1,4 @@
-*
-
-# Whitelisted files
-!.gitignore
-!README.md
+CMSIS
+Discovery
+STM32F0xx
+STR912

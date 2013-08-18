@@ -156,6 +156,7 @@ ifeq ($(configMCU_MODEL),MCU_MODEL_BCM2835)
 	MEMMAP = config/memmap_bcm2835.ld
 	STARTUP = src/hal/bcm2835/startup_bcm2835.s
 endif
+# Check that MEMMAP and STARTUP are defined
 ifndef MEMMAP
 $(error Missing MEMMAP! Wrong configMCU_MODEL?)
 endif
@@ -165,18 +166,20 @@ endif
 
 # CRT is compiled per instruction set or per core model
 ifeq ($(configARM_PROFILE_M),1)
-	# TODO which one is the best choice
-	# libaeabi-cortexm0
-	CRT = Libraries/crt/libaebi-cortexm0/libaeabi-cortexm0.a
 	# libgcc for ARMv6-M
-	#ifeq ($(configARCH),__ARM6M__)
-	#	CRT := Libraries/crt/armv6-m-libgcc/libgcc.a
-	#endif
+	ifeq ($(configARCH),__ARM6M__)
+		CRT = Libraries/crt/libaeabi-armv6-m/libaeabi-armv6-m.a
+	endif
 else
 	ifeq ($(configARCH),__ARM6K__)
-		CRT = Libraries/crt/rpi-libgcc/libgcc.a
+		CRT = Libraries/crt/libaeabi-armv6k/libaeabi-armv6k.a
 	endif
 endif
+# Check that CRT is defined
+ifndef CRT
+	$(error Missing CRT! Wrong configMCU_MODEL or configARCH?)
+endif
+CRT_DIR = $(dir $(CRT))
 ################################################################################
 IDIR := $(patsubst %,-I%,$(subst :, ,$(IDIR)))
 STARTUP_O = $(patsubst %.s, %.o, $(STARTUP))
@@ -218,6 +221,9 @@ $(OBJS): $(BCS)
 	llc-3.0 $(LLCFLAGS) $(CUR_OPT) -o $(CUR_OPT_S)
 	$(ARMGNU)-as $(CUR_OPT_S) -o $@ $(ASFLAGS)
 
+$(CRT):
+	make -C $(CRT_DIR) all
+
 #--sysroot=/usr/lib/gcc/arm-none-eabi/4.7.4/armv6-m/
 kernel.bin: $(MEMMAP) $(STARTUP_O) $(OBJS) $(CRT)
 	$(ARMGNU)-ld -o kernel.elf -T $^ $(CRT)
@@ -228,7 +234,7 @@ kernel.bin: $(MEMMAP) $(STARTUP_O) $(OBJS) $(CRT)
 help:
 	@egrep "^# target:" [Mm]akefile|sed 's/^# target: //'
 
-.PHONY: config kernel clean
+.PHONY: config kernel $(CRT) clean
 
 clean:
 	rm -f $(AUTOCONF_H)
@@ -240,4 +246,4 @@ clean:
 	rm -f *.bin
 	rm -f *.elf
 	rm -f *.list
-
+	 $(MAKE) -C $(CRT_DIR) clean
