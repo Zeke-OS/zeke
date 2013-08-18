@@ -226,7 +226,7 @@ $(CRT):
 
 #--sysroot=/usr/lib/gcc/arm-none-eabi/4.7.4/armv6-m/
 kernel.bin: $(MEMMAP) $(STARTUP_O) $(OBJS) $(CRT)
-	$(ARMGNU)-ld -o kernel.elf -T $^ $(CRT)
+	$(ARMGNU)-ld -o kernel.elf -T $^
 	$(ARMGNU)-objdump -D kernel.elf > kernel.list
 	$(ARMGNU)-objcopy kernel.elf kernel.bin -O binary
 
