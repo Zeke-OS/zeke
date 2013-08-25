@@ -61,12 +61,13 @@
 
 #define DEFAULT_PSR         0x21000000u
 
-/* Stack frame saved by the hardware (Left here for compatibility reasons) */
+/** Stack frame saved by the hardware (Left here for compatibility reasons) */
 typedef struct {
 } hw_stack_frame_t;
 
-/* Stack frame save by the software */
+/** Stack frame save by the software */
 typedef struct {
+    uint32_t psr;   /*!< PSR */
     uint32_t r0;
     uint32_t r1;
     uint32_t r2;
@@ -80,9 +81,9 @@ typedef struct {
     uint32_t r10;
     uint32_t r11;
     uint32_t r12;
-    uint32_t lr;
-    uint32_t pc;
-    uint32_t psr;
+    uint32_t sp;    /*!< r13 */
+    uint32_t lr;    /*!< r14 */
+    uint32_t pc;    /*!< Not really pc but used as an entry point. */
 } sw_stack_frame_t;
 
 /* Inlined core functions */
@@ -113,31 +114,52 @@ inline void wr_thread_stack_ptr(void * ptr);
     } while (0)
 
 /**
- * Save the context on the PSP
+ * Save the context on the thread stack
  */
-inline void save_context(void)
-{
-    volatile uint32_t scratch;
-
-#if configARCH == __ARM6__ || configARCH == __ARM6K__
-    /* TODO push registers to thread stack */
-#else
-    #error Selected CORE not supported
-#endif
-}
+#define save_context() do {                         \
+    __asm__ volatile (                              \
+        /* Store the original value of r0 */        \
+        "STMDB  sp!, {r0}\n"                        \
+        /* Store thread sp to r0 */                 \
+        "STMDB  sp, {sp}^\n"                        \
+        "NOP\n"                                     \
+        "SUB    sp, sp, #4\n"                       \
+        "LDMIA  sp!, {r0}\n"                        \
+        /* Push lr to the thread stack */           \
+        "STMDB  r0!, {lr}\n"                        \
+        /* Use lr as thread stack pointer and
+         * restore the original value of r0 */      \
+        "MOV    lr, r0\n"                           \
+        "LDMIA  sp!, {r0}\n"                        \
+        /* Push usr mode registers to the thread
+         * stack */                                 \
+        "STMDB  lr!, {r0-r14}^\n"                   \
+        /* Push the SPSR to the thread stack */     \
+        "MRS    r0, spsr\n"                         \
+        "STMDB  lr!, {r0}\n"                        \
+        );                                          \
+} while (0)
 
 /**
- * Load the context from the PSP
+ * Load the context from the thread stack
  */
-inline void load_context(void)
-{
-    volatile uint32_t scratch;
-#if configARCH == __ARM6__ || configARCH == __ARM6K__
-        /* TODO Pop registers from thread stack */
-#else
-    #error Selected CORE not supported
-#endif
-}
+#define load_context(void) do {                     \
+    __asm__ volatile (                              \
+        /* Get the thread stack pointer */          \
+        "STMDB  sp, {sp}^\n"                        \
+        "NOP\n"                                     \
+        "SUB    sp, sp, #4\n"                       \
+        "LDMIA  sp!, {lr}\n"                        \
+        /* Get the SPSR from the thread stack */    \
+        "LDMFD  lr!, {r0}\n"                        \
+        "MSR    spsr, r0\n"                         \
+        /* Restore all registers */                 \
+        "LDMFD  lr, {r0-r14}^\n"                    \
+        "NOP\n"                                     \
+        /* Restore the return address */            \
+        "LDR    lr, [lr, #+60]\n"                   \
+    );                                              \
+} while (0)
 
 /**
  * Read the main stack pointer
@@ -145,33 +167,41 @@ inline void load_context(void)
 inline void * rd_stack_ptr(void)
 {
     void * result = NULL;
-    /* TODO There is no such special register in real ARM achs. */
-    /*__asm__ volatile ("MRS %0, msp\n"
-                      : "=r" (result));*/
+    __asm__ volatile (
+        "MOV    %0, sp\n"
+        : "=r" (result)
+    );
     return result;
 }
 
 /**
- * Read the PSP so that it can be stored in the task table
+ * Read the thread stack pointer
  */
 inline void * rd_thread_stack_ptr(void)
 {
     void * result = NULL;
-    /* TODO There is no such special register in real ARM achs. */
-    /*__asm__ volatile ("MRS %0, psp\n"
-                      : "=r" (result));*/
+    __asm__ volatile (
+        "STMDB  sp, {sp}^\n"
+        "NOP\n"
+        "SUB    sp, sp, #4\n"
+        "LDMIA  sp!, {%0}\n"
+        : "=r" (result)
+    );
     return(result);
 }
 
 /**
- * Write stack pointer of the current thread to the PSP
+ * Write stack pointer of the current thread
  */
 inline void wr_thread_stack_ptr(void * ptr)
 {
-    /* TODO */
-    /*__asm__ volatile ("MSR psp, %0\n"
-                      "ISB\n"
-                      : : "r" (ptr));*/
+    __asm__ volatile (
+            "STMDB  sp!, {%0}\n"
+            "LDMFD  sp, {sp}^\n"
+            "NOP\n"
+            "SUB    sp, sp, #4\n"
+            : : "r" (ptr)
+    );
 }
 
 /**

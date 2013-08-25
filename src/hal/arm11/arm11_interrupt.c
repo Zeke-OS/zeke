@@ -62,12 +62,10 @@ static inline void run_scheduler(void)
     /* Run scheduler */
     if (sched_enabled) {
         sched_handler();
-        load_context(); /* Since PSP has been updated, this loads the last state
-                         * of the resumed task */
-        __asm__ volatile (
-            "ADD sp, sp, %0\n"
-            :
-            : "r" (THREAD_RETURN));
+        load_context();
+
+        /* Return to the usr mode thread */
+        __asm__ volatile ("movs, pc, lr\n");
     }
 }
 
