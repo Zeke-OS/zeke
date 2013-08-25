@@ -32,9 +32,7 @@ Key features
 
 News
 ----
-- CM0 port on LLVM seems to get stuck when calling syscalls
+- CM0 port on LLVM seems to get stuck on syscalls
 - ARM11/Raspberry Pi port ongoing
-- IAR => LLVM port ongoing
 - Support for "generic" 4-bit character mode LCDs on CMSIS cores
 - ST Cortex-M3 and ARM9 port under development
-
