@@ -202,7 +202,7 @@ inline void * rd_thread_stack_ptr(void)
 }
 
 /**
- * Write stack pointer of the currentthread to the PSP
+ * Write stack pointer of the current thread to the PSP
  */
 inline void wr_thread_stack_ptr(void * ptr)
 {
