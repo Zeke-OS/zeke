@@ -65,7 +65,7 @@ static inline void run_scheduler(void)
         load_context();
 
         /* Return to the usr mode thread */
-        __asm__ volatile ("movs, pc, lr\n");
+        __asm__ volatile ("movs pc, lr\n");
     }
 }
 

@@ -96,21 +96,23 @@ inline void wr_thread_stack_ptr(void * ptr);
 /**
  * Disable all interrupts except NMI (set PRIMASK)
  */
-#define disable_interrupt() do {                                               \
-    __asm__ volatile ("CPSID i\n"); } while (0)
+#define disable_interrupt() do {    \
+    __asm__ volatile ("CPSID i\n"); \
+} while (0)
 
 /**
  * Enable interrupts (clear PRIMASK)
  */
-#define enable_interrupt() do {                                                \
-    __asm__ volatile ("CPSIE i\n"); } while (0)
+#define enable_interrupt() do {     \
+    __asm__ volatile ("CPSIE i\n"); \
+} while (0)
 
 /**
  * Request immediate context switch
  */
-#define req_context_switch() do {                                              \
-    syscall(0, 0); /* TODO this is not ok but we have to implement this with
-                    * syscalls later */                                        \
+#define req_context_switch() do {   \
+    /* TODO this is not ok and wont work, so we have to implement this with syscalls later */ \
+    syscall(0, 0);                  \
     } while (0)
 
 /**
@@ -207,9 +209,10 @@ inline void wr_thread_stack_ptr(void * ptr)
 /**
  * Platform sepcific idle sleep mode.
  */
-#define idle_sleep() do {                                 \
-    __asm__ volatile ("WFI\n" /* Sleep until next interrupt */ \
-                     ); } while (0)
+#define idle_sleep() do {               \
+    /* Sleep until next interrupt */    \
+    __asm__ volatile ("WFI\n");         \
+} while (0)
 
 
 void HardFault_Handler(void);
