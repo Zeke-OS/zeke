@@ -54,7 +54,6 @@ static inline void run_scheduler(void);
 void interrupt_init_module(void)
 {
     /* TODO */
-    return 0; /* OK */
 }
 
 static inline void run_scheduler(void)
@@ -65,7 +64,7 @@ static inline void run_scheduler(void)
         load_context();
 
         /* Return to the usr mode thread */
-        __asm__ volatile ("movs pc, lr\n");
+        __asm__ volatile ("MOVS pc, lr\n");
     }
 }
 
@@ -80,7 +79,6 @@ void NMI_Handler(void)
 /**
 * This function handles SVCall exception.
 */
-#pragma optimize = no_cse
 void SVC_Handler(void)
 {
     uint32_t type;

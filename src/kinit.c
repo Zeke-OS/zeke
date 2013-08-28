@@ -57,7 +57,7 @@ void exec_init_array(void)
 /**
  * Initialize main thread.
  */
-int kinit(void)
+void kinit(void)
 {
     /* Create app_main thread */
     osThreadDef_t main_thread = {

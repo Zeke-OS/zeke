@@ -50,8 +50,6 @@
 
 uint32_t flag_kernel_tick = 0;
 
-/* Core specific hard fault handlers */
-void hard_fault_handler_arm11(uint32_t stack[]);
 
 void init_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a_del_thread)
 {
@@ -109,41 +107,15 @@ int test_and_set(int * lock) {
 
 void HardFault_Handler(void)
 {
-    /* TODO
-    __asm__ volatile (
-            "TST LR, #4\n"
-            "ITE EQ\n"
-            "MRSEQ R0, MSP\n"
-            "MRSNE R0, PSP\n"
-            "B hard_fault_handler_arm11\n" : : : "r0");
-*/
-    /* If core specific HardFault handler returns it means that we can safely
-     * kill the current thread and call the scheduler for reschedule. */
+    /* TODO */
+
+    while (1) { }
 
     /* Kill the current thread */
-    sched_thread_terminate(current_thread->id);
+    //sched_thread_terminate(current_thread->id);
 
     /* Return to the scheduler ASAP */
-    req_context_switch();
-}
-
-/**
- * This function handles the Hard Fault exception on ARMv6M.
- * @param stack top of the stack.
- */
-void hard_fault_handler_armv11(uint32_t stack[])
-{
-    uint32_t thread_stack;
-/* TODO
-    __asm__ volatile ("MRS %0, PSP\n"
-            : "=r" (thread_stack)); */
-    if ((uint32_t)stack != thread_stack) {
-        /* Kernel fault */
-        __asm__ volatile ("BKPT #01");
-        while(1);
-    }
-
-    /* TODO It's possible to implement a stack dump code here if desired so. */
+    //req_context_switch();
 }
 
 /* End of Fault Handling ******************************************************/

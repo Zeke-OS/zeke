@@ -87,8 +87,6 @@ typedef struct {
 } sw_stack_frame_t;
 
 /* Inlined core functions */
-inline void save_context(void);
-inline void load_context(void);
 inline void * rd_stack_ptr(void);
 inline void * rd_thread_stack_ptr(void);
 inline void wr_thread_stack_ptr(void * ptr);
@@ -135,7 +133,9 @@ inline void wr_thread_stack_ptr(void * ptr);
         "LDMIA  sp!, {r0}\n"                        \
         /* Push usr mode registers to the thread
          * stack */                                 \
-        "STMDB  lr!, {r0-r14}^\n"                   \
+        "STMDB  lr, {r0-r14}^\n"                    \
+        "NOP\n"                                     \
+        "SUB lr, lr, #60\n"                         \
         /* Push the SPSR to the thread stack */     \
         "MRS    r0, spsr\n"                         \
         "STMDB  lr!, {r0}\n"                        \
