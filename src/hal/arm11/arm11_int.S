@@ -55,17 +55,23 @@ SVC_Handler:
     .type   SysTick_Handler,%function
 SysTick_Handler:
 @ Save context
+    @ Store the original value of r0
     STMDB   sp!, {r0}
+    @ Store thread sp to r0
     STMDB   sp, {sp}^
     NOP
     SUB     sp, sp, #4
     LDMIA   sp!, {r0}
+    @ Push lr to the thread stack
     STMDB   r0!, {lr}
+    @ Use lr as thread stack pointer and restore the original value of r0
     MOV     lr, r0
     LDMIA   sp!, {r0}
+    @ Push usr mode registers to the thread stack
     STMDB   lr, {r0-r14}^
     NOP
     SUB     lr, lr, #60
+    @ Push the SPSR to the thread stack
     MRS     r0, spsr
     STMDB   lr!, {r0}
 
@@ -78,14 +84,18 @@ SysTick_Handler:
 
 @ Load/Restore context
 L_load_context:
+    @ Get the thread stack pointer
     STMDB   sp, {sp}^
     NOP
     SUB     sp, sp, #4
     LDMIA   sp!, {lr}
+    @ Get the SPSR from the thread stack
     LDMFD   lr!, {r0}
     MSR     spsr, r0
+    @ Restore all registers
     LDMFD   lr, {r0-r14}^
     NOP
+    @ Restore the return address
     LDR     lr, [lr, #+60]
 
     @ Return back
