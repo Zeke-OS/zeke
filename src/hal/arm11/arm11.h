@@ -114,56 +114,6 @@ inline void wr_thread_stack_ptr(void * ptr);
     } while (0)
 
 /**
- * Save the context on the thread stack
- */
-#define save_context() do {                         \
-    __asm__ volatile (                              \
-        /* Store the original value of r0 */        \
-        "STMDB  sp!, {r0}\n"                        \
-        /* Store thread sp to r0 */                 \
-        "STMDB  sp, {sp}^\n"                        \
-        "NOP\n"                                     \
-        "SUB    sp, sp, #4\n"                       \
-        "LDMIA  sp!, {r0}\n"                        \
-        /* Push lr to the thread stack */           \
-        "STMDB  r0!, {lr}\n"                        \
-        /* Use lr as thread stack pointer and
-         * restore the original value of r0 */      \
-        "MOV    lr, r0\n"                           \
-        "LDMIA  sp!, {r0}\n"                        \
-        /* Push usr mode registers to the thread
-         * stack */                                 \
-        "STMDB  lr, {r0-r14}^\n"                    \
-        "NOP\n"                                     \
-        "SUB lr, lr, #60\n"                         \
-        /* Push the SPSR to the thread stack */     \
-        "MRS    r0, spsr\n"                         \
-        "STMDB  lr!, {r0}\n"                        \
-        );                                          \
-} while (0)
-
-/**
- * Load the context from the thread stack
- */
-#define load_context(void) do {                     \
-    __asm__ volatile (                              \
-        /* Get the thread stack pointer */          \
-        "STMDB  sp, {sp}^\n"                        \
-        "NOP\n"                                     \
-        "SUB    sp, sp, #4\n"                       \
-        "LDMIA  sp!, {lr}\n"                        \
-        /* Get the SPSR from the thread stack */    \
-        "LDMFD  lr!, {r0}\n"                        \
-        "MSR    spsr, r0\n"                         \
-        /* Restore all registers */                 \
-        "LDMFD  lr, {r0-r14}^\n"                    \
-        "NOP\n"                                     \
-        /* Restore the return address */            \
-        "LDR    lr, [lr, #+60]\n"                   \
-    );                                              \
-} while (0)
-
-/**
  * Read the main stack pointer
  */
 inline void * rd_stack_ptr(void)

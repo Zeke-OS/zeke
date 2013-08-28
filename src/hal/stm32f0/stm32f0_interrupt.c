@@ -81,6 +81,8 @@ static inline void run_scheduler(void)
 {
     /* Run scheduler */
     if (sched_enabled) {
+        /* Non-hw backed registers should remain untouched before this point */
+        save_context();
         sched_handler();
         load_context(); /* Since PSP has been updated, this loads the last state
                          * of the resumed task */

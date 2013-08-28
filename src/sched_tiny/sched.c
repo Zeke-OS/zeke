@@ -184,8 +184,6 @@ void idleTask(/*@unused@*/ void * arg)
 #ifndef PU_TEST_BUILD
 void sched_handler(void)
 {
-    /* Non-hw backed registers should remain untouched before this point */
-    save_context();
     current_thread->sp = (void *)rd_thread_stack_ptr();
 
     /* Ensure that this scheduler call was due to a systick */

@@ -82,9 +82,13 @@ IDIR = ./include ./config ./src
 ################################################################################
 
 # Select Modules ###############################################################
-SRC-  =#
-SRC-0 =#
-SRC-1 =#
+# Available selections:
+SRC-	=#
+SRC-0  	=#
+SRC-1  	=#
+ASRC-  	=#
+ASCR-0 	=#
+ASCR-1	=#
 # SRC- and SRC-0 meaning module will not be compiled
 
 # Base system
@@ -94,7 +98,7 @@ SRC-$(configSCHED_TINY) += $(wildcard src/sched_tiny/*.c)
 # TODO thscope should be moved??
 SRC-1 += $(wildcard src/thscope/*.c)
 
-# Targeti model specific modules
+# Target model specific modules
 ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
 	# Includes
 	IDIR += ./Libraries/CMSIS/Include ./Libraries/STM32F0xx/Drivers/inc
@@ -128,6 +132,7 @@ else
 #	endif
 	# ARM11
 	ifneq (,$(filter $(configARCH),__ARM6__ __ARM6K__)) # Logical OR
+		ASRC-1 += $(wildcard src/hal/arm11/*.S)
 		SRC-1 += $(wildcard src/hal/arm11/*.c)
 	endif
 endif
@@ -142,19 +147,21 @@ SRC-$(configDEVSUBSYS_LCD)  += $(wildcard src/dev/lcd/lcd_ctrl.c)
 # PTTK91 VM
 # TODO should be built separately
 ################################################################################
-# Obj files
-BCS  := $(patsubst %.c, %.bc, $(SRC-1))
-OBJS := $(patsubst %.c, %.o, $(SRC-1))
+# Assembly Obj files
+ASOBJS 	:= $(patsubst %.S, %.o, $(ASRC-1))
+# C Obj files
+BCS  	:= $(patsubst %.c, %.bc, $(SRC-1))
+OBJS 	:= $(patsubst %.c, %.o, $(SRC-1))
 
 # Target specific Startup code & CRT ###########################################
 # Memmap & vector table is set per MCU/CPU model
 ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
 	MEMMAP = config/memmap_stm32f051x8.ld
-	STARTUP = src/hal/stm32f0/startup_stm32f0xx.s
+	STARTUP = src/hal/stm32f0/startup_stm32f0xx.S
 endif
 ifeq ($(configMCU_MODEL),MCU_MODEL_BCM2835)
 	MEMMAP = config/memmap_bcm2835.ld
-	STARTUP = src/hal/bcm2835/startup_bcm2835.s
+	STARTUP = src/hal/bcm2835/startup_bcm2835.S
 endif
 # Check that MEMMAP and STARTUP are defined
 ifndef MEMMAP
@@ -182,7 +189,7 @@ endif
 CRT_DIR = $(dir $(CRT))
 ################################################################################
 IDIR := $(patsubst %,-I%,$(subst :, ,$(IDIR)))
-STARTUP_O = $(patsubst %.s, %.o, $(STARTUP))
+STARTUP_O = $(patsubst %.S, %.o, $(STARTUP))
 
 # We use suffixes because it's fun
 .SUFFIXES:					# Delete the default suffixes
@@ -211,6 +218,9 @@ kernel: kernel.bin
 $(STARTUP_O): $(STARTUP)
 	$(ARMGNU)-as $< -o $(STARTUP_O)
 
+$(ASOBJS): $(ASRC-1)
+	$(ARMGNU)-as $*.S -o $@
+
 $(BCS): $(SRC-1)
 	clang $(CCFLAGS) $(IDIR) -c $*.c -o $@
 
@@ -225,7 +235,7 @@ $(CRT):
 	make -C $(CRT_DIR) all
 
 #--sysroot=/usr/lib/gcc/arm-none-eabi/4.7.4/armv6-m/
-kernel.bin: $(MEMMAP) $(STARTUP_O) $(OBJS) $(CRT)
+kernel.bin: $(MEMMAP) $(STARTUP_O) $(ASOBJS) $(OBJS) $(CRT)
 	$(ARMGNU)-ld -o kernel.elf -T $^
 	$(ARMGNU)-objdump -D kernel.elf > kernel.list
 	$(ARMGNU)-objcopy kernel.elf kernel.bin -O binary
@@ -238,7 +248,7 @@ help:
 
 clean:
 	rm -f $(AUTOCONF_H)
-	rm -f $(OBJS) $(STARTUP_O)
+	rm -f $(AOBJS) $(OBJS) $(STARTUP_O)
 	rm -f $(BCS)
 	find . -type f -name "*.bc" -exec rm -f {} \;
 	find . -type f -name "*.opt.bc" -exec rm -f {} \;

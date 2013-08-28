@@ -74,10 +74,9 @@ uint32_t syscall(uint32_t type, void * p)
     uint32_t scratch;
 
     __asm__ volatile (
-            "MOV    r2, %[typ]\n" /* Put parameters to r2 & r3 */
-            "MOV    r3, %[arg]\n"
-            "SVC    #0\n"
-            "MOV    %[res], r4\n" /* Return value is now in r4 */
+            /* Lets expect that parameters are already in r0 & r1 */
+            "SVC    #0\n\t"
+            "MOV    %[res], r0\n\t"
             : [res]"=r" (scratch)
             : [typ]"r" (type), [arg]"r" (p)
             : "r2", "r3", "r4");

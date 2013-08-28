@@ -31,34 +31,66 @@
  *******************************************************************************
  */
 
-/** @addtogroup HAL
-* @{
-*/
 
-/** @addtogroup ARM1176JZF_S
-* @{
-*/
+    .syntax unified
+    .text
+    .arch armv6k
 
-#ifndef KERNEL_INTERNAL
-#define KERNEL_INTERNAL
-#endif
+@ void SVC_Handler(void)
+@
+    .globl  SVC_Handler
+    .type   SVC_Handler,%function
+SVC_Handler:
+    push    {r1-r12, lr}
 
-#include <sched.h>
-#include <syscall.h>
-#include "../hal_core.h"
-#include "arm11_interrupt.h"
+    @ Call kernel's internal syscall handler
+    bl  _intSyscall_handler
 
-void interrupt_init_module(void) __attribute__((constructor));
+    pop     {r1-r12, lr}
+    movs    pc, lr
 
-void interrupt_init_module(void)
-{
-    /* TODO */
-}
+@ void SysTick_Handler(void)
+@
+    .globl  SysTick_Handler
+    .type   SysTick_Handler,%function
+SysTick_Handler:
+@ Save context
+    STMDB   sp!, {r0}
+    STMDB   sp, {sp}^
+    NOP
+    SUB     sp, sp, #4
+    LDMIA   sp!, {r0}
+    STMDB   r0!, {lr}
+    MOV     lr, r0
+    LDMIA   sp!, {r0}
+    STMDB   lr, {r0-r14}^
+    NOP
+    SUB     lr, lr, #60
+    MRS     r0, spsr
+    STMDB   lr!, {r0}
 
-/**
-* @}
-*/
+    @ Check if scheduler is enabled
+    ldr     r0, .LCPI2_0
+    ldr     r0, [r0]
+    cmp     r0, #0
+    beq     L_load_context
+    bl      sched_handler   @ Run scheduler
 
-/**
-* @}
-*/
+@ Load/Restore context
+L_load_context:
+    STMDB   sp, {sp}^
+    NOP
+    SUB     sp, sp, #4
+    LDMIA   sp!, {lr}
+    LDMFD   lr!, {r0}
+    MSR     spsr, r0
+    LDMFD   lr, {r0-r14}^
+    NOP
+    LDR     lr, [lr, #+60]
+
+    @ Return back
+    SUBS    pc, lr, #4
+
+.LCPI2_0:
+    .long   sched_enabled
+
