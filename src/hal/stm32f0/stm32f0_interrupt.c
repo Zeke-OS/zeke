@@ -86,12 +86,13 @@ static inline void run_scheduler(void)
         sched_handler();
         load_context(); /* Since PSP has been updated, this loads the last state
                          * of the resumed task */
-        __asm__ volatile ("ADD sp, sp, %0\n"
-                          "BX %1\n"
-                          :
-                          : "i" (STM32F0_MAGIC_STACK_ADD_VALUE * 4),
-                          "r" (THREAD_RETURN)
-                         );
+        __asm__ volatile (
+            "ADD sp, sp, %0\n\t"
+            "BX %1\n"
+            :
+            : "i" (STM32F0_MAGIC_STACK_ADD_VALUE * 4),
+              "r" (THREAD_RETURN)
+        );
     }
 }
 
@@ -111,7 +112,7 @@ void SVC_Handler(void)
     uint32_t type;
     void * p;
 
-    __asm__ volatile("MOV %0, r2\n" /* Read parameters from r2 & r3 */
+    __asm__ volatile("MOV %0, r2\n\t" /* Read parameters from r2 & r3 */
                      "MOV %1, r3\n"
                      : "=r" (type), "=r" (p));
 
@@ -119,7 +120,7 @@ void SVC_Handler(void)
     uint32_t result = _intSyscall_handler(type, p);
 
     /* Return value is stored to r4 */
-    __asm__ volatile("MOV r4, %0\n"
+    __asm__ volatile("MOV r4, %0"
                      : : "r" (result));
 }
 

@@ -84,21 +84,23 @@ void init_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a_de
 
 uint32_t syscall(uint32_t type, void * p)
 {
-    __asm__ volatile ("MOV r2, %0\n" /* Put parameters to r2 & r3 */
-                      "MOV r3, %1\n"
-                      "MOV r1, r4\n" /* Preserve r4 by using hardware push for it */
-                      "SVC #0\n"
-                      "DSB\n" /* Ensure write is completed
-                               * (architecturally required, but not strictly
-                               * required for existing Cortex-M processors) */
-                      "ISB\n" /* Ensure PendSV is executed */
-                      : : "r" (type), "r" (p));
+    __asm__ volatile (
+        "MOV r2, %0\n\t"    /* Put parameters to r2 & r3 */
+        "MOV r3, %1\n\t"
+        "MOV r1, r4\n\t"    /* Preserve r4 by using hardware push for it */
+        "SVC #0\n\t"
+        "DSB\n\t"           /* Ensure write is completed (architecturally
+                             * required, but not strictly required for
+                             * existing Cortex-M processors) */
+        "ISB\n"             /* Ensure PendSV is executed */
+        : : "r" (type), "r" (p));
 
     /* Get return value */
     osStatus scratch;
-    __asm__ volatile ("MOV %0, r4\n" /* Return value is now in r4 */
-                      "MOV r4, r1\n" /* Read r4 back from r1 */
-                      : "=r" (scratch));
+    __asm__ volatile (
+        "MOV %0, r4\n\t"    /* Return value is now in r4 */
+        "MOV r4, r1\n"      /* Read r4 back from r1 */
+        : "=r" (scratch));
 
     return scratch;
 }
@@ -123,22 +125,22 @@ void HardFault_Handler(void)
     /* First call the core specific HardFault handler */
 #if configARCH == __ARM6M__ || configARCH == __ARM6SM__
     int scratch;
-    __asm__ volatile ("PUSH {LR}\n"
+    __asm__ volatile ("PUSH {LR}\n\t"
                       "POP {%0}\n"
                       : "=r" (scratch));
     if (scratch == HAND_RETURN) {
-        __asm__ volatile ("MRS R0, MSP\n"
+        __asm__ volatile ("MRS R0, MSP\n\t"
                           "B hard_fault_handler_armv6m\n");
     } else {
-        __asm__ volatile ("MRS R0, PSP\n"
+        __asm__ volatile ("MRS R0, PSP\n\t"
                           "B hard_fault_handler_armv6m\n");
     }
 #elif  configARCH == __ARM7M__ || configARCH == __ARM7EM__
     /* Using IT */
-    __asm__ volatile ("TST LR, #4\n"
-                      "ITE EQ\n"
-                      "MRSEQ R0, MSP\n"
-                      "MRSNE R0, PSP\n"
+    __asm__ volatile ("TST LR, #4\n\t"
+                      "ITE EQ\n\t"
+                      "MRSEQ R0, MSP\n\t"
+                      "MRSNE R0, PSP\n\t"
                       "B hard_fault_handler_armv7m\n");
 
 #else
@@ -163,7 +165,7 @@ void hard_fault_handler_armv6m(uint32_t stack[])
 {
     uint32_t thread_stack;
 
-    __asm__ volatile ("MRS %0, PSP\n"
+    __asm__ volatile ("MRS %0, PSP"
                       : "=r" (thread_stack));
     if ((uint32_t)stack != thread_stack) {
         /* Kernel fault */
@@ -189,12 +191,12 @@ void hard_fault_handler_armv7m(uint32_t stack[])
      * and then continue operation */
 
     printErrorMsg("In Hard Fault Handler\n");
-    sprintf(msg, "SCB->HFSR = 0x%08x\n", SCB->HFSR);
+    sprintf(msg, "SCB->HFSR = 0x%08x", SCB->HFSR);
     printErrorMsg(msg);
 
     if ((SCB->HFSR & (1 << 30)) != 0) {
         printErrorMsg("Forced Hard Fault\n");
-        sprintf(msg, "SCB->CFSR = 0x%08x\n", SCB->CFSR);
+        sprintf(msg, "SCB->CFSR = 0x%08x", SCB->CFSR);
         printErrorMsg(msg);
         if((SCB->CFSR & 0xFFFF0000) != 0) {
             stackDump(stack);

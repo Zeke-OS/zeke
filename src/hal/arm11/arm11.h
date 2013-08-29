@@ -44,7 +44,7 @@
 #define ARM11_H
 
 #include <kernel.h>
-#include "../hal_mcu.h" /* Needed for CMSIS */
+#include "../hal_mcu.h"
 #include "../hal_core.h"
 
 #if configARM_PROFILE_M != 0
@@ -95,14 +95,14 @@ inline void wr_thread_stack_ptr(void * ptr);
  * Disable all interrupts except NMI (set PRIMASK)
  */
 #define disable_interrupt() do {    \
-    __asm__ volatile ("CPSID i\n"); \
+    __asm__ volatile ("CPSID i");   \
 } while (0)
 
 /**
  * Enable interrupts (clear PRIMASK)
  */
 #define enable_interrupt() do {     \
-    __asm__ volatile ("CPSIE i\n"); \
+    __asm__ volatile ("CPSIE i");   \
 } while (0)
 
 /**
@@ -120,7 +120,7 @@ inline void * rd_stack_ptr(void)
 {
     void * result = NULL;
     __asm__ volatile (
-        "MOV    %0, sp\n"
+        "MOV    %0, sp"
         : "=r" (result)
     );
     return result;
@@ -133,9 +133,9 @@ inline void * rd_thread_stack_ptr(void)
 {
     void * result = NULL;
     __asm__ volatile (
-        "STMDB  sp, {sp}^\n"
-        "NOP\n"
-        "SUB    sp, sp, #4\n"
+        "STMDB  sp, {sp}^\n\t"
+        "NOP\n\t"
+        "SUB    sp, sp, #4\n\t"
         "LDMIA  sp!, {%0}\n"
         : "=r" (result)
     );
@@ -148,9 +148,9 @@ inline void * rd_thread_stack_ptr(void)
 inline void wr_thread_stack_ptr(void * ptr)
 {
     __asm__ volatile (
-            "STMDB  sp!, {%0}\n"
-            "LDMFD  sp, {sp}^\n"
-            "NOP\n"
+            "STMDB  sp!, {%0}\n\t"
+            "LDMFD  sp, {sp}^\n\t"
+            "NOP\n\t"
             "SUB    sp, sp, #4\n"
             : : "r" (ptr)
     );
@@ -161,7 +161,7 @@ inline void wr_thread_stack_ptr(void * ptr)
  */
 #define idle_sleep() do {               \
     /* Sleep until next interrupt */    \
-    __asm__ volatile ("WFI\n");         \
+    __asm__ volatile ("WFI");           \
 } while (0)
 
 

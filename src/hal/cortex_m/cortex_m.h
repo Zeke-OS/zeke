@@ -95,25 +95,28 @@ inline void wr_thread_stack_ptr(void * ptr);
 /**
  * Disable all interrupts except NMI (set PRIMASK)
  */
-#define disable_interrupt() do {                                               \
-    __asm__ volatile ("CPSID i\n"); } while (0)
+#define disable_interrupt() do {    \
+    __asm__ volatile ("CPSID i");   \
+} while (0)
 
 /**
  * Enable interrupts (clear PRIMASK)
  */
-#define enable_interrupt() do {                                                \
-    __asm__ volatile ("CPSIE i\n"); } while (0)
+#define enable_interrupt() do {     \
+    __asm__ volatile ("CPSIE i");   \
+} while (0)
 
 /**
  * Request immediate context switch
  */
 #define req_context_switch() do {                                              \
     SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk; /* Switch the context */              \
-    __asm__ volatile ("DSB\n" /* Ensure write is completed
+    __asm__ volatile ("DSB\n\t" /* Ensure write is completed
                                * (architecturally required, but not strictly
                                * required for existing Cortex-M processors) */ \
                       "ISB\n" /* Ensure PendSV is executed */                  \
-    ); } while (0)
+    );                                                                         \
+} while (0)
 
 /**
  * Save the context on the PSP
@@ -122,26 +125,26 @@ inline void save_context(void)
 {
     volatile uint32_t scratch;
 #if configARCH == __ARM6M__
-    __asm__ volatile ("MRS   %0,  psp\n"
-                      "SUBS  %0,  %0, #32\n"
-                      "MSR   psp, %0\n"         /* This is the address that will
+    __asm__ volatile ("MRS   %0,  psp\n\t"
+                      "SUBS  %0,  %0, #32\n\t"
+                      "MSR   psp, %0\n\t"       /* This is the address that will
                                                  * be used by rd_thread_stack_ptr(void)
                                                  */
-                      "ISB\n"
-                      "STMIA %0!, {r4-r7}\n"
-                      "PUSH  {r4-r7}\n"         /* Push original register values
+                      "ISB\n\t"
+                      "STMIA %0!, {r4-r7}\n\t"
+                      "PUSH  {r4-r7}\n\t"       /* Push original register values
                                                  * so we don't lost them */
-                      "MOV   r4,  r8\n"
-                      "MOV   r5,  r9\n"
-                      "MOV   r6,  r10\n"
-                      "MOV   r7,  r11\n"
-                      "STMIA %0!, {r4-r7}\n"
+                      "MOV   r4,  r8\n\t"
+                      "MOV   r5,  r9\n\t"
+                      "MOV   r6,  r10\n\t"
+                      "MOV   r7,  r11\n\t"
+                      "STMIA %0!, {r4-r7}\n\t"
                       "POP   {r4-r7}\n"         /* Pop them back */
                       : "=r" (scratch));
 #elif configARCH == __ARM7M__
-    __asm__ volatile ("MRS   %0,  psp\n"
-                      "STMDB %0!, {r4-r11}\n"
-                      "MSR   psp, %0\n"
+    __asm__ volatile ("MRS   %0,  psp\n\t"
+                      "STMDB %0!, {r4-r11}\n\t"
+                      "MSR   psp, %0\n\t"
                       "ISB\n"
                       : "=r" (scratch));
 #else
@@ -156,22 +159,22 @@ inline void load_context(void)
 {
     volatile uint32_t scratch;
 #if configARCH == __ARM6M__
-    __asm__ volatile ("MRS   %0,  psp\n"
-                      "ADDS  %0,  %0, #16\n"    /* Move to the high registers */
-                      "LDMIA %0!, {r4-r7}\n"
-                      "MOV   r8,  r4\n"
-                      "MOV   r9,  r5\n"
-                      "MOV   r10, r6\n"
-                      "MOV   r11, r7\n"
-                      "MSR   psp, %0\n"         /* Store the new top of the stack */
+    __asm__ volatile ("MRS   %0,  psp\n\t"
+                      "ADDS  %0,  %0, #16\n\t"  /* Move to the high registers */
+                      "LDMIA %0!, {r4-r7}\n\t"
+                      "MOV   r8,  r4\n\t"
+                      "MOV   r9,  r5\n\t"
+                      "MOV   r10, r6\n\t"
+                      "MOV   r11, r7\n\t"
+                      "MSR   psp, %0\n\t"       /* Store the new top of the stack */
                       "ISB\n"
-                      "SUBS  r0,  r0, #32\n"    /* Go back to the low registers */
+                      "SUBS  r0,  r0, #32\n\t"  /* Go back to the low registers */
                       "LDMIA %0!, {r4-r7}\n"
                       : "=r" (scratch));
 #elif configARCH == __ARM7M__
-    __asm__ volatile ("MRS   %0,  psp\n"
-                      "LDMFD %0!, {r4-r11}\n"
-                      "MSR   psp, %0\n"
+    __asm__ volatile ("MRS   %0,  psp\n\t"
+                      "LDMFD %0!, {r4-r11}\n\t"
+                      "MSR   psp, %0\n\t"
                       "ISB\n"
                       : "=r" (scratch));
 #else
@@ -185,7 +188,7 @@ inline void load_context(void)
 inline void * rd_stack_ptr(void)
 {
     void * result = NULL;
-    __asm__ volatile ("MRS %0, msp\n"
+    __asm__ volatile ("MRS %0, msp"
                       : "=r" (result));
     return result;
 }
@@ -196,7 +199,7 @@ inline void * rd_stack_ptr(void)
 inline void * rd_thread_stack_ptr(void)
 {
     void * result = NULL;
-    __asm__ volatile ("MRS %0, psp\n"
+    __asm__ volatile ("MRS %0, psp"
                       : "=r" (result));
     return(result);
 }
@@ -206,7 +209,7 @@ inline void * rd_thread_stack_ptr(void)
  */
 inline void wr_thread_stack_ptr(void * ptr)
 {
-    __asm__ volatile ("MSR psp, %0\n"
+    __asm__ volatile ("MSR psp, %0\n\t"
                       "ISB\n"
                       : : "r" (ptr));
 }
@@ -214,9 +217,10 @@ inline void wr_thread_stack_ptr(void * ptr)
 /**
  * Platform sepcific idle sleep mode
  */
-#define idle_sleep() do {                                 \
-    __asm__ volatile ("WFI\n" /* Sleep until next interrupt */ \
-                     ); } while (0)
+#define idle_sleep() do {               \
+    /* Sleep until next interrupt */    \
+    __asm__ volatile ("WFI");           \
+} while (0)
 
 
 void HardFault_Handler(void);
