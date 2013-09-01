@@ -107,11 +107,13 @@ inline void wr_thread_stack_ptr(void * ptr);
 
 /**
  * Request immediate context switch
+ *
+ * Called from thread context.
  */
-#define req_context_switch() do {   \
-    /* TODO this is not ok and wont work, so we have to implement this with syscalls later */ \
-    syscall(0, 0);                  \
-    } while (0)
+#define req_context_switch() do {           \
+    /* Simple and doesn't cause jitter: */  \
+    __asm__ volatile ("WFI");               \
+} while (0)
 
 /**
  * Read the main stack pointer
