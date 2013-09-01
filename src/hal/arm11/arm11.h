@@ -109,6 +109,7 @@ inline void wr_thread_stack_ptr(void * ptr);
  * Request immediate context switch
  *
  * Called from thread context.
+ * TODO Make this a common implementation for all ARM processors?
  */
 #define req_context_switch() do {           \
     /* Simple and doesn't cause jitter: */  \

@@ -90,6 +90,8 @@ osStatus osThreadTerminate(osThreadId thread_id)
 
 osStatus osThreadYield(void)
 {
+    /* TODO Should use temp reschedule before this */
+
     /* Request immediate context switch */
     req_context_switch();
 
