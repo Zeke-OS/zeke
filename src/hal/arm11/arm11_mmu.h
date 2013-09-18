@@ -38,13 +38,11 @@
   * @{
   */
 
-
 #pragma once
-#ifndef MMU_H
-#define MMU_H
+#ifndef ARM11_MMU_H
+#define ARM11_MMU_H
 
-typedef uint32_t paddr_t;   /*<! Physical address */
-typedef uint32_t vaddr_t;   /*<! Virtual address */
+#include "../mmu.h"
 
 /**
  * Number of section entries in L1 page table.
@@ -124,7 +122,7 @@ typedef struct {
 
 
 
-#endif /* MMU_H */
+#endif /* ARM11_MMU_H */
 
 /**
   * @}

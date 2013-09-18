@@ -1,11 +1,10 @@
 /**
  *******************************************************************************
- * @file    process.h
+ * @file    mmu.h
  * @author  Olli Vanhoja
- * @brief   Kernel process management header file.
+ * @brief   MMU headers.
  * @section LICENSE
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,31 +30,27 @@
  *******************************************************************************
  */
 
-/** @addtogroup Process
+/** @addtogroup HAL
   * @{
   */
 
 #pragma once
-#ifndef PROCESS_H
-#define PROCESS_H
+#ifndef MMU_H
+#define MMU_H
+#if configMMU != 0
 
-#include "sched.h" /* Needed for threadInfo_t and threading functions */
-#include "mmu.h"
+typedef uint32_t paddr_t;   /*<! Physical address */
+typedef uint32_t vaddr_t;   /*<! Virtual address */
 
-/**
- * Process Control Block or Process Descriptor Structure
- */
-typedef struct {
-    threadInfo_t * main_thread; /*!< Main thread of this process */
-    /* TODO - page table(s)
-     *      - memory allocations
-     *      - etc.
-     */
-} processInfo_t;
+#if configARCH == __ARM6__ || __ARM6K__ /* ARM11 uses ARMv6 arch */
+#include "arm11/arm11_mmu.h"
+#else
+    #error MMU for selected ARM profile/architecture is not supported
+#endif
 
-#endif /* PROCESS_H */
+#endif /* configMMU */
+#endif /* MMU_H */
 
 /**
   * @}
   */
-

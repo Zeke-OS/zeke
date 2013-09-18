@@ -132,8 +132,11 @@ else
 #	endif
 	# ARM11
 	ifneq (,$(filter $(configARCH),__ARM6__ __ARM6K__)) # Logical OR
-		ASRC-1 += $(wildcard src/hal/arm11/*.S)
-		SRC-1 += $(wildcard src/hal/arm11/*.c)
+		ASRC-1 += $(wildcard src/hal/arm11/arm11_int.S)
+		SRC-1 += $(wildcard src/hal/arm11/arm11_interrupt.c)
+		ifeq ($(configMMU),1)
+			SRC-1 += $(wildcard src/hal/arm11/arm11_mmu.c)
+		endif
 	endif
 endif
 

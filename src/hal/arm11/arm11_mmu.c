@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    mmu.c
+ * @file    arm11_mmu.c
  * @author  Olli Vanhoja
- * @brief   MMU control functions.
+ * @brief   MMU control functions for ARM11 ARMv6 instruction set.
  * @section LICENSE
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
