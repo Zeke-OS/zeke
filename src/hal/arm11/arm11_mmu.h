@@ -44,12 +44,6 @@
 
 #include "../mmu.h"
 
-/**
- * Number of section entries in L1 page table.
- * Page size of one section is 1MB
- */
-#define MMU_SECTIONS    4096
-
 /* Zeke Domains */
 #define MMU_DOM_KERNEL  0 /*!< Kernel domain */
 #define MMU_DOM_APP     1 /*!< Application/Process domain */
@@ -69,11 +63,32 @@
  * 7    32MB    128B        32
  */
 #define MMU_TTBCR_N     7
+/** TTBRn separation region offset */
+#define MMU_TTBR_ADDR   (1 << (32 - MMU_TTBCR_N))
 
 /* L1 Page Table Entry Types */
-#define MMU_L1_FAULT    0 /*!< Translation fault. */
-#define MMU_L1_COARSE   1 /*!< Coarse page table. */
-#define MMU_L1_MASTER   2 /*!< Section entry. */
+#define MMU_PTT_FAULT   0 /*!< Translation fault. */
+#define MMU_PTT_COARSE  1 /*!< Coarse page table. */
+#define MMU_PTT_MASTER  2 /*!< Section entry. */
+
+/* Page table sizes */
+#define MMU_PTSZ_FAULT  0x0000
+#define MMU_PTSZ_COARSE 0x1000
+#define MMU_PTSZ_MASTER 0x4000 /*!< L1 Master page table */
+#define MMU_PTSZ_PROC   0x0080 /*!< Process page table (TTBR0) */
+
+/* Access Permissions control
+ * NA = No Access, RO = Read Only, RW = Read/Write
+ * Note: Third bit is APX bit
+ */
+#define MMU_AP_NANA    0x00 /*!< All accesses generate a permission fault */
+#define MMU_AP_RWNA    0x01 /*!< Privileged access only */
+#define MMU_AP_RWRO    0x02 /*!< Writes in User mode generate permission faults
+                             * faults */
+#define MMU_AP_RWRW    0x03 /*!< Full access */
+#define MMU_AP_RONA    0x05 /*!< Privileged read-only and User no access */
+#define MMU_AP_RORO    0x06 /*!< Privileged and User read-only */
+
 
 /* Control bits
  * ============
@@ -89,10 +104,12 @@
 
 /* nG */
 #define MMU_CTRL_NG_OFFSET
+/** Not-Global, use ASID */
 #define MMU_CTRL_NG             (0x1 << MMU_CTRL_NG_OFFSET)
 
 /* S */
 #define MMU_CTRL_S_OFFSET       1
+/** Shared memory */
 #define MMU_CTRL_S              (0x1 << MMU_CTRL_S_OFFSET)
 
 /* MEMTYPE */
@@ -126,18 +143,6 @@ typedef struct {
     uint32_t type;      /*!< identifies the type of the page table. */
     uint32_t dom;       /*!< is the domain of the page table. */
 } mmu_pagetable_t;
-
-/* Access control specifiers
- * NA = No Access, RO = Read Only, RW = Read/Write
- * Note: Third bit is APX bit
- */
-#define MMU_RCB_NANA    0x00 /*!< All accesses generate a permission fault */
-#define MMU_RCB_RWNA    0x01 /*!< Privileged access only */
-#define MMU_RCB_RWRO    0x02 /*!< Writes in User mode generate permission
-                              * faults */
-#define MMU_RCB_RWRW    0x03 /*!< Full access */
-#define MMU_RCB_RONA    0x05 /*!< Privileged read-only and User no access */
-#define MMU_RCB_RORO    0x06 /*!< Privileged and User read-only */
 
 /**
  * Region Control Block - RCB

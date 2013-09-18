@@ -13,11 +13,35 @@ Naming Conventions
 + thscope/      Functions that are called and excecuted in thread scope;
                 This means mainly syscall wrappers
 
+### Global variables
+
+There should not be need for any global variables but since you'll be still
+declaring global variable please atleast use descriptive names.
+
+There has been both naming conventions used mixed case with underline between
+module name and rest of the name and everyting writen small with underlines.
+Third conventions is some very ugly that was inherited from CMSIS which
+we are now trying to get rid of.
+
+Following names are somewhat acceptable:
+
++ module_featureName
++ module_feature_name
+
 ### Function names
 
 + module_compFunction   + module = name that also appears in filename
                         + comp   = component/functionality eg. thread
                                    components will change thread status
++ module_comp_function
+
+
+Typedefs
+--------
+
+Typedefs are used in zeke for most of the structs and for some portability
+related things where we may want or have to change types for example between
+platforms.
 
 
 Kernel Initialization 
