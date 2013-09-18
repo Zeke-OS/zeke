@@ -37,7 +37,12 @@
 #pragma once
 #ifndef MMU_H
 #define MMU_H
-#if configMMU != 0
+#if configMMU == 0
+    #error MMU not enabled but header was included in some file.
+#endif
+
+#define MMU_DOM_KERNEL  0
+#define MMU_DOM_APP     1
 
 typedef uint32_t paddr_t;   /*<! Physical address */
 typedef uint32_t vaddr_t;   /*<! Virtual address */
@@ -48,7 +53,6 @@ typedef uint32_t vaddr_t;   /*<! Virtual address */
     #error MMU for selected ARM profile/architecture is not supported
 #endif
 
-#endif /* configMMU */
 #endif /* MMU_H */
 
 /**

@@ -40,7 +40,9 @@
 #define PROCESS_H
 
 #include "sched.h" /* Needed for threadInfo_t and threading functions */
+#if configMMU != 0
 #include "mmu.h"
+#endif
 
 /**
  * Process Control Block or Process Descriptor Structure
