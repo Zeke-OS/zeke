@@ -1,6 +1,9 @@
 Zeke Coding Standards & Generic Documentation
 =============================================
 
+Here is some misc documentation and generic guidelines on how to code for Zeke.
+
+
 Naming Conventions
 ------------------
 
@@ -36,12 +39,22 @@ Following names are somewhat acceptable:
 + module_comp_function
 
 
-Typedefs
---------
+Standard Data Types
+-------------------
+
+### Typedefs
 
 Typedefs are used in zeke for most of the structs and for some portability
 related things where we may want or have to change types for example between
 platforms.
+
+### Enums
+
+Avoid using enums in kernel space, they are ugly and don't behave nicely.
+Usually enums even seems to generate more code than using #defined values.
+
+Enums might be ok in user space and in interfaces between user space and
+kernel space.
 
 
 Kernel Initialization 
