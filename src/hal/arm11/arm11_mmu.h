@@ -136,8 +136,8 @@ typedef struct {
 #define MMU_RCB_RWRO    0x02 /*!< Writes in User mode generate permission
                               * faults */
 #define MMU_RCB_RWRW    0x03 /*!< Full access */
-#define MMU_RCB_PRONA   0x05 /*!< Privileged read-only and User no access */
-#define MMU_RCB_PRORO   0x06 /*!< Privileged and User read-only */
+#define MMU_RCB_RONA    0x05 /*!< Privileged read-only and User no access */
+#define MMU_RCB_RORO    0x06 /*!< Privileged and User read-only */
 
 /**
  * Region Control Block - RCB
