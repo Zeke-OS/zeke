@@ -43,6 +43,8 @@ configARM_PROFILE_M = 0
 # Architecture of the core
 configARCH = __ARM6K__
 
+configMMU = 1
+
 # Scheduler Selection
 configSCHED_TINY = 1
 #

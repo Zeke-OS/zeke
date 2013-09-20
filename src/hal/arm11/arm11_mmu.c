@@ -38,19 +38,19 @@
   * @{
   */
 
-#include "../mmu.h"
+#include "arm11_mmu.h"
 
 /** Base address of Page table region */
 #define MMU_PT_BASE MMU_TTBR_ADDR
 
 /** Size of static L1 tables */
-#define MMU_PT_L1TABLES (MMU_PTSZ_MASTER + MMU_PTSZ_PROC)
+#define MMU_PT_L1TABLES (MMU_PTSZ_MASTER + MMU_PTSZ_PMASTER)
 
 /**
  * A macro to calculate the address for statically allocated page table.
  *
- * Note: We assume that there is only one master table and all other tables
- * are equally sized.
+ * Note: We assume that there is only one static master table and all other
+ *       tables are equally sized coarse page tables.
  */
 #define MMU_PT_ADDR(index) (MMU_PT_BASE + MMU_PT_L1TABLES + index * MMU_PTSZ_COARSE)
 
@@ -65,75 +65,254 @@
 #define MMU_PT_FIRST_DYNPT MMU_PT_ADDR(MMU_PT_LAST_SINDEX + 1)
 
 /* TODO move to memmap */
-#define MMU_PT_SHARED_START 0x4000000
+#define MMU_SHARED_START 0x4000000
+
+
+int mmu_init_pagetable(mmu_pagetable_t * pt);
+int mmu_map_region(mmu_region_t * region);
+static void mmu_map_fault(mmu_region_t * region);
+static void mmu_map_section(mmu_region_t * region);
+static void mmu_map_coarse(mmu_region_t * region);
+int mmu_attach_pagetable(mmu_pagetable_t * pt);
 
 /* Fixed page tables */
 
 /* Master, allocated directly on L1 */
 mmu_pagetable_t mmu_pagetable_master = {
-    .vAddr          = MMU_PT_BASE,
-    .ptAddr         = MMU_PT_BASE,
-    .masterPtAddr   = MMU_PT_BASE,
+    .vaddr          = MMU_PT_BASE,
+    .pt_addr        = MMU_PT_BASE,
+    .master_pt_addr = MMU_PT_BASE,
     .type           = MMU_PTT_MASTER,
     .dom            = MMU_DOM_KERNEL
 };
 
 /* L1 TTBR0 Kernel page table */
 mmu_pagetable_t mmu_pagetable_kernel_master = {
-    .vAddr          = MMU_PT_BASE,
-    .ptAddr         = MMU_PT_BASE + MMU_PTSZ_MASTER,
-    .masterPtAddr   = MMU_PT_BASE,
-    .type           = MMU_PTT_MASTER,
+    .vaddr          = MMU_PT_BASE,
+    .pt_addr        = MMU_PT_BASE + MMU_PTSZ_MASTER,
+    .master_pt_addr = MMU_PT_BASE,
+    .type           = MMU_PTT_PMASTER,
     .dom            = MMU_DOM_KERNEL
 };
 
 /* Kernel page table */
 mmu_pagetable_t mmu_pagetable_kernel = {
-    .vAddr          = 0x0,
-    .ptAddr         = MMU_PT_ADDR(0),
-    .masterPtAddr   = MMU_PT_BASE + MMU_PTSZ_MASTER,
+    .vaddr          = 0x0,
+    .pt_addr        = MMU_PT_ADDR(0),
+    .master_pt_addr = MMU_PT_BASE + MMU_PTSZ_MASTER,
     .type           = MMU_PTT_COARSE,
     .dom            = MMU_DOM_KERNEL
 };
 
 mmu_pagetable_t mmu_pagetable_system = {
-    .vAddr          = 0x0,
-    .ptAddr         = MMU_PT_ADDR(1),
-    .masterPtAddr   = MMU_PT_BASE,
+    .vaddr          = 0x0,
+    .pt_addr        = MMU_PT_ADDR(1),
+    .master_pt_addr = MMU_PT_BASE,
     .type           = MMU_PTT_COARSE,
     .dom            = MMU_DOM_KERNEL
-}
+};
 
 
 /* Regions */
 
 mmu_region_t mmu_region_kernel = {
-    .vAddr          = 0x0,
-    .numPages       = 32, /* TODO Temporarily mapped as a one area */
+    .vaddr          = 0x0,
+    .num_pages      = 32, /* TODO Temporarily mapped as a one area */
     .ap             = MMU_AP_RWNA,
     .control        = MMU_CTRL_MEMTYPE_WB | MMU_CTRL_NG,
-    .pAddr          = 0x0,
+    .paddr          = 0x0,
     .pt             = &mmu_pagetable_kernel
-}
+};
 
 mmu_region_t mmu_region_page_tables = {
-    .vAddr          = MMU_PT_BASE,
-    .numPages       = 8, /* TODO 32 megs of page tables?? */
+    .vaddr          = MMU_PT_BASE,
+    .num_pages      = 8, /* TODO 32 megs of page tables?? */
     .ap             = MMU_AP_RWNA,
     .control        = MMU_CTRL_MEMTYPE_WT,
-    .pAddr          = MMU_PT_BASE,
+    .paddr          = MMU_PT_BASE,
     .pt             = &mmu_pagetable_master
-}
+};
 
 mmu_region_t mmu_region_shared = {
-    .vAddr          = MMU_PT_SHARED_START,
-    .numPages       = 4,
+    .vaddr          = MMU_SHARED_START,
+    .num_pages      = 4,
     .ap             = MMU_AP_RWRO,
     .control        = MMU_CTRL_MEMTYPE_WT,
-    .pAddr          = MMU_PT_SHARED_START,
+    .paddr          = MMU_SHARED_START,
     .pt             = &mmu_pagetable_master
+};
+
+
+/**
+ * Initialize the page table pt by filling it with FAULT entries.
+ * @param pt page table.
+ * @return 0 if page table was initialized; value other than zero if page table
+ * was not initialized successfully.
+ */
+int mmu_init_pagetable(mmu_pagetable_t * pt)
+{
+    int i;
+    uint32_t pte = MMU_PTE_FAULT;
+    uint32_t * p_pte = (uint32_t *)pt->pt_addr; /* points to page table entry in PT */
+
+    switch (pt->type) {
+        case MMU_PTT_COARSE:
+            i = MMU_PTSZ_COARSE/4/32; break;
+        case MMU_PTT_MASTER:
+            i = MMU_PTSZ_MASTER/4/32; break;
+        case MMU_PTT_PMASTER:
+            i = MMU_PTSZ_PMASTER/4/32; break;
+        default:
+            /* Error: Unknown page table type. */
+            return -1;
+    }
+
+    __asm__ volatile (
+           "MOV r4, %[pte]\n\t"
+           "MOV r5, %[pte]\n\t"
+           "MOV r6, %[pte]\n\t"
+           "MOV r7, %[pte]\n\t"
+           "init_pt_top%=:\n\t"             /* for (; i != 0; i--) */
+           "STMIA %[p_pte]!, {r4-r7}\n\t"   /* Write 32 entries to the table */
+           "STMIA %[p_pte]!, {r4-r7}\n\t"
+           "STMIA %[p_pte]!, {r4-r7}\n\t"
+           "STMIA %[p_pte]!, {r4-r7}\n\t"
+           "STMIA %[p_pte]!, {r4-r7}\n\t"
+           "STMIA %[p_pte]!, {r4-r7}\n\t"
+           "STMIA %[p_pte]!, {r4-r7}\n\t"
+           "STMIA %[p_pte]!, {r4-r7}\n\t"
+           "SUBS %[i], %[i], #1\n\t"
+           "BNE init_pt_top%=\n\t"
+           : [i]"+r" (i), [p_pte]"+r" (p_pte)
+           : [pte]"r" (pte)
+           : "r4", "r5", "r6", "r7"
+    );
+
+    return 0;
 }
 
+/**
+ * Map memory region.
+ * @param region structure that specifies the memory region.
+ * @return Zero if succeed; non-zero error code otherwise.
+ */
+int mmu_map_region(mmu_region_t * region)
+{
+    switch (region->pt->type) {
+        case MMU_PTE_SECTION:   /* Map section in L1 page table */
+            mmu_map_section(region);
+            break;
+        case MMU_PTE_COARSE:    /* Map PTE to point to coarse L2 page table */
+            mmu_map_coarse(region);
+            break;
+        case MMU_PTE_FAULT:
+            /* TODO clear entries & free memory if possible (remove tables too) */
+            /*break;*/
+        default:
+            return -1;
+    }
+
+    return 0;
+}
+
+/* static void mmu_map_fault(mmu_region_t * region)
+ * TODO */
+
+/**
+ * Map a 1 MB section.
+ * @param region structure that specifies the memory region.
+ */
+static void mmu_map_section(mmu_region_t * region)
+{
+    int i;
+    uint32_t * p_pte;
+    uint32_t pte;
+
+    p_pte = (uint32_t *)region->pt->pt_addr; /* Page table base address */
+    p_pte += region->vaddr >> 20; /* Set to first pte in region */
+    p_pte += region->num_pages - 1; /* Set to last pte in region */
+
+    pte = region->paddr & 0xfff00000;       /* Set physical address */
+    pte |= (region->ap & 0x3) << 10;        /* Set access permissions (AP) */
+    pte |= (region->ap & 0x4) << 13;        /* Set access permissions (APX) */
+    pte |= region->pt->dom << 5;            /* Set domain */
+    pte |= (region->control & 0x3) << 16;   /* Set nG & S bits */
+    pte |= (region->control & 0x4);         /* Set XN bit */
+    pte |= (region->control & 0x60) >> 3;   /* Set C & B bits */
+    pte |= (region->control & 0x380) << 3;  /* Set TEX bits */
+    pte |= MMU_PTE_SECTION;                 /* Set entry type */
+
+    for (i = region->num_pages - 1; i >= 0; i--) {
+        *p_pte-- = pte + (i << 20); /* i = 1 MB section */
+    }
+}
+
+/**
+ * Map a 1 MB section.
+ * @note xn bit an ap configuration is copied to all pages in this region.
+ * @param region structure that specifies the memory region.
+ */
+static void mmu_map_coarse(mmu_region_t * region)
+{
+    int i;
+    uint32_t * p_pte;
+    uint32_t pte;
+
+    p_pte = (uint32_t *)region->pt->pt_addr; /* Page table base address */
+    p_pte += (region->vaddr & 0x000ff000) >> 12;    /* First */
+    p_pte += region->num_pages -1;                  /* Last pte */
+
+    pte = region->paddr & 0xfffff000;       /* Set physical address */
+    pte |= (region->ap & 0x3) << 4;         /* Set access permissions (AP) */
+    pte |= (region->ap & 0x4) << 7;         /* Set access permissions (APX) */
+    pte |= (region->control & 0x3) << 10;   /* Set nG & S bits */
+    pte |= (region->control & 0x4) >> 2;    /* Set XN bit */
+    pte |= (region->control & 0x60) >> 3;   /* Set C & B bits */
+    pte |= (region->control & 0x380) >> 1;  /* Set TEX bits */
+    pte |= 0x2;                             /* Set entry type */
+
+    for (i = region->num_pages - 1; i >= 0; i--) {
+        *p_pte-- = pte + (i << 12); /* i = 4 KB small page */
+    }
+}
+
+/**
+ * Attach L2 page table to L1 master page table.
+ * @param pt page table descriptor structure.
+ * @return Zero if attach succeed; non-zero error code if invalid
+ *         page table type.
+ */
+int mmu_attach_pagetable(mmu_pagetable_t * pt)
+{
+    uint32_t * ttb;
+    uint32_t pte,  i;
+
+    ttb = (uint32_t *)pt->master_pt_addr;
+    i = pt->vaddr >> 20;
+
+    switch (pt->type) {
+        /* TODO this is wrong should set ttbr1, also add pmaster to set ttbr0 */
+        case MMU_PTT_MASTER:
+            /* TTB -> CP15:c2:c0 */
+            __asm__ volatile (
+                    "MCR p15, 0, %[ttb], c2, c0, 0"
+                    :
+                    : [ttb]"r" (ttb));
+            break;
+        case MMU_PTT_COARSE:
+            /* First level coarse page table entry */
+            pte = (pt->pt_addr & 0xfffffc00);
+            pte |= pt->dom << 5;
+            pte |= MMU_PTE_COARSE;
+
+            ttb[i] = pte;
+            break;
+        default:
+            return -1;
+    }
+
+    return 0;
+}
 
 /**
   * @}

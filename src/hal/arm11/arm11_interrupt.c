@@ -45,8 +45,16 @@
 
 #include <sched.h>
 #include <syscall.h>
-#include "../hal_core.h"
+#include <hal/hal_core.h>
+#include <hal/mmu.h>
 #include "arm11_interrupt.h"
+
+/**
+ * Interrupt vector address.
+ *
+ * This is 0 by default but it could be technically relocated on most ARM cores.
+ */
+paddr_t int_vect_addr;
 
 void interrupt_init_module(void) __attribute__((constructor));
 

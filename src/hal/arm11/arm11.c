@@ -88,10 +88,11 @@ int test_and_set(int * lock) {
     int err = 2; /* Initial value of error meaning already locked */
 
     __asm__ volatile (
-            "MOV      r1, #1\n"         /* locked value to r1 */
-            "LDREX    r2, [%[addr]]\n"  /* load value of lock */
-            "CMP      r2, #1\n"         /* if already set */
-            "STREXNE  %[res], r1, [%[addr]]\n" /* Sets err = 0 if store op ok */
+            "MOV      r1, #1\n\t"           /* locked value to r1 */
+            "LDREX    r2, [%[addr]]\n\t"    /* load value of lock */
+            "CMP      r2, #1\n\t"           /* if already set */
+            "STREXNE  %[res], r1, [%[addr]]\n\t" /* Sets err = 0
+                                                  * if store op ok */
             : [res]"+r" (err)   /* + makes LLVM think that err is also read in
                                  * the inline asm. Otherwise it would expand
                                  * previous line to:  strexne r2,r1,r2 */

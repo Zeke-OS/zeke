@@ -37,9 +37,12 @@
 #pragma once
 #ifndef MMU_H
 #define MMU_H
+#include <autoconf.h>
 #if configMMU == 0
     #error MMU not enabled but header was included in some file.
 #endif
+
+#include <stdint.h>
 
 #define MMU_DOM_KERNEL  0
 #define MMU_DOM_APP     1

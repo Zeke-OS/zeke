@@ -42,7 +42,7 @@
 #ifndef ARM11_MMU_H
 #define ARM11_MMU_H
 
-#include "../mmu.h"
+#include <hal/mmu.h>
 
 /* Zeke Domains */
 #define MMU_DOM_KERNEL  0 /*!< Kernel domain */
@@ -66,20 +66,33 @@
 /** TTBRn separation region offset */
 #define MMU_TTBR_ADDR   (1 << (32 - MMU_TTBCR_N))
 
-/* L1 Page Table Entry Types */
-#define MMU_PTT_FAULT   0 /*!< Translation fault. */
-#define MMU_PTT_COARSE  1 /*!< Coarse page table. */
-#define MMU_PTT_MASTER  2 /*!< Section entry. */
+/* L1 Page Table Entry Types
+ * These corresponds directly to the bits of first-level descriptor on ARMv6 */
+#define MMU_PTE_FAULT   0 /*!< Translation fault. */
+#define MMU_PTE_COARSE  1 /*!< Coarse page table. */
+#define MMU_PTE_SECTION 2 /*!< Section entry. */
 
-/* Page table sizes */
-#define MMU_PTSZ_FAULT  0x0000
-#define MMU_PTSZ_COARSE 0x1000
-#define MMU_PTSZ_MASTER 0x4000 /*!< L1 Master page table */
-#define MMU_PTSZ_PROC   0x0080 /*!< Process page table (TTBR0) */
+/* Page Table Types */
+#define MMU_PTT_COARSE  MMU_PTE_COARSE  /*!< Coarse page table type. */
+#define MMU_PTT_MASTER  MMU_PTE_SECTION /*!< Master page table type. */
+#define MMU_PTT_PMASTER 3 /*!< Process master page table type. */
+
+/* Page table sizes in bytes */
+#define MMU_PTSZ_FAULT      0x0000 /*!< Page table size for translation fault. */
+#define MMU_PTSZ_COARSE     0x0400 /*!< Coarse page table */
+#define MMU_PTSZ_MASTER     0x4000 /*!< L1 master page table size */
+#define MMU_PTSZ_PMASTER    0x0080 /*!< Process master page table size
+                                    * (L1 TTBR0) */
 
 /* Access Permissions control
  * NA = No Access, RO = Read Only, RW = Read/Write
- * Note: Third bit is APX bit
+ * +----+
+ * |2 10|
+ * +----+
+ * |A A |
+ * |P P |
+ * |X   |
+ * +----+
  */
 #define MMU_AP_NANA    0x00 /*!< All accesses generate a permission fault */
 #define MMU_AP_RWNA    0x01 /*!< Privileged access only */
@@ -93,24 +106,32 @@
 /* Control bits
  * ============
  *
- * 31         7       2   1    0
- * +-----------------------------+
- * | Not used | MEMTYPE | S | nG |
- * +-----------------------------+
- * nG = Determines if the translation is marked as global (0) or process
- * specific (1).
- * S = Shared
+ * |31        |9       5|   4|  2|   1|  0|
+ * +--------------------------------------+
+ * | Not used | MEMTYPE | XN | - | nG | S |
+ * +--------------------------------------+
+ * S        = Shared
+ * nG       = Determines if the translation is marked as global (0) or process
+ *            specific (1).
+ * XN       = Execute-Never, mark region not-executable.
+ * MEMTYPE  = TEX C B
+ *            987 6 5 b
  */
 
+/* S */
+#define MMU_CTRL_S_OFFSET       0
+/** Shared memory */
+#define MMU_CTRL_S              (0x1 << MMU_CTRL_S_OFFSET)
+
 /* nG */
-#define MMU_CTRL_NG_OFFSET
+#define MMU_CTRL_NG_OFFSET      1
 /** Not-Global, use ASID */
 #define MMU_CTRL_NG             (0x1 << MMU_CTRL_NG_OFFSET)
 
-/* S */
-#define MMU_CTRL_S_OFFSET       1
-/** Shared memory */
-#define MMU_CTRL_S              (0x1 << MMU_CTRL_S_OFFSET)
+/* XN */
+#define MMU_CTRL_XN_OFFSET      4
+/** Execute-Never */
+#define MMU_CTRL_XN             (0x1 << MMU_CTRL_XN_OFFSET)
 
 /* MEMTYPE */
 #define MMU_CTRL_MEMTYPE_OFFSET 2
@@ -132,14 +153,14 @@
  * Page Table Control Block - PTCB
  */
 typedef struct {
-    uint32_t vAddr;     /*!< identifies a starting address of a 1MB section of
+    vaddr_t vaddr;      /*!< identifies a starting address of a 1MB section of
                          * a virtual memory controlled by either a section
                          * entry or a L2 page table. */
-    uint32_t ptAddr;    /*!< is the address where the page table is located in
+    uint32_t pt_addr;   /*!< is the address where the page table is located in
                          * virtual memory. */
-    uint32_t masterPtAddr;  /*!< is the address of a parent master L1 page
-                             * table. If the table is an L1 table, then the
-                             * value is same as ptAddr. */
+    uint32_t master_pt_addr; /*!< is the address of a parent master L1 page
+                              * table. If the table is an L1 table, then the
+                              * value is same as pt_addr. */
     uint32_t type;      /*!< identifies the type of the page table. */
     uint32_t dom;       /*!< is the domain of the page table. */
 } mmu_pagetable_t;
@@ -148,16 +169,16 @@ typedef struct {
  * Region Control Block - RCB
  */
 typedef struct {
-    vaddr_t vAddr;      /*!< is the virtual starting address of the region in
+    vaddr_t vaddr;      /*!< is the virtual starting address of the region in
                          * virtual memory. */
-    uint32_t numPages;  /*!< is the number of pages in the region. */
+    uint32_t num_pages; /*!< is the number of pages in the region. */
     uint32_t ap;        /*!< selects the region access permissions. */
     uint32_t control;   /*!< selects the cache, write buffer, execution and
                          * sharing (nG, S) attributes. */
-    paddr_t pAddr;      /*!< is the physical starting address of the region in
+    paddr_t paddr;      /*!< is the physical starting address of the region in
                          * virtual memory. */
-    mmu_pagetable * pt; /*!< is a pointer to the page table in which the region
-                         * resides. */
+    mmu_pagetable_t * pt; /*!< is a pointer to the page table in which
+                           * the region resides. */
 } mmu_region_t;
 
 #endif /* ARM11_MMU_H */
