@@ -62,9 +62,7 @@
  * 6    64MB    256B        64
  * 7    32MB    128B        32
  */
-#define MMU_TTBCR_N     7
-/** TTBRn separation region offset */
-#define MMU_TTBR_ADDR   (1 << (32 - MMU_TTBCR_N))
+#define MMU_TTBCR_N     0
 
 /* L1 Page Table Entry Types
  * These corresponds directly to the bits of first-level descriptor on ARMv6 */
@@ -75,14 +73,11 @@
 /* Page Table Types */
 #define MMU_PTT_COARSE  MMU_PTE_COARSE  /*!< Coarse page table type. */
 #define MMU_PTT_MASTER  MMU_PTE_SECTION /*!< Master page table type. */
-#define MMU_PTT_PMASTER 3 /*!< Process master page table type. */
 
 /* Page table sizes in bytes */
 #define MMU_PTSZ_FAULT      0x0000 /*!< Page table size for translation fault. */
 #define MMU_PTSZ_COARSE     0x0400 /*!< Coarse page table */
 #define MMU_PTSZ_MASTER     0x4000 /*!< L1 master page table size */
-#define MMU_PTSZ_PMASTER    0x0080 /*!< Process master page table size
-                                    * (L1 TTBR0) */
 
 /* Access Permissions control
  * NA = No Access, RO = Read Only, RW = Read/Write

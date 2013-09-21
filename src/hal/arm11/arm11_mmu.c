@@ -40,11 +40,14 @@
 
 #include "arm11_mmu.h"
 
+/* TODO move to memmap */
 /** Base address of Page table region */
-#define MMU_PT_BASE MMU_TTBR_ADDR
+#define MMU_PT_BASE         0x00018000
+#define MMU_KERNEL_START    0x00000000
+#define MMU_SHARED_START    0x04000000
 
 /** Size of static L1 tables */
-#define MMU_PT_L1TABLES (MMU_PTSZ_MASTER + MMU_PTSZ_PMASTER)
+#define MMU_PT_L1TABLES (MMU_PTSZ_MASTER)
 
 /**
  * A macro to calculate the address for statically allocated page table.
@@ -63,9 +66,6 @@
  * First dynamic page table address.
  */
 #define MMU_PT_FIRST_DYNPT MMU_PT_ADDR(MMU_PT_LAST_SINDEX + 1)
-
-/* TODO move to memmap */
-#define MMU_SHARED_START 0x4000000
 
 
 int mmu_init_pagetable(mmu_pagetable_t * pt);
@@ -86,24 +86,6 @@ mmu_pagetable_t mmu_pagetable_master = {
     .dom            = MMU_DOM_KERNEL
 };
 
-/* L1 TTBR0 Kernel page table */
-mmu_pagetable_t mmu_pagetable_kernel_master = {
-    .vaddr          = MMU_PT_BASE,
-    .pt_addr        = MMU_PT_BASE + MMU_PTSZ_MASTER,
-    .master_pt_addr = MMU_PT_BASE,
-    .type           = MMU_PTT_PMASTER,
-    .dom            = MMU_DOM_KERNEL
-};
-
-/* Kernel page table */
-mmu_pagetable_t mmu_pagetable_kernel = {
-    .vaddr          = 0x0,
-    .pt_addr        = MMU_PT_ADDR(0),
-    .master_pt_addr = MMU_PT_BASE + MMU_PTSZ_MASTER,
-    .type           = MMU_PTT_COARSE,
-    .dom            = MMU_DOM_KERNEL
-};
-
 mmu_pagetable_t mmu_pagetable_system = {
     .vaddr          = 0x0,
     .pt_addr        = MMU_PT_ADDR(1),
@@ -121,7 +103,7 @@ mmu_region_t mmu_region_kernel = {
     .ap             = MMU_AP_RWNA,
     .control        = MMU_CTRL_MEMTYPE_WB | MMU_CTRL_NG,
     .paddr          = 0x0,
-    .pt             = &mmu_pagetable_kernel
+    .pt             = &mmu_pagetable_system
 };
 
 mmu_region_t mmu_region_page_tables = {
@@ -130,7 +112,7 @@ mmu_region_t mmu_region_page_tables = {
     .ap             = MMU_AP_RWNA,
     .control        = MMU_CTRL_MEMTYPE_WT,
     .paddr          = MMU_PT_BASE,
-    .pt             = &mmu_pagetable_master
+    .pt             = &mmu_pagetable_system
 };
 
 mmu_region_t mmu_region_shared = {
@@ -139,7 +121,7 @@ mmu_region_t mmu_region_shared = {
     .ap             = MMU_AP_RWRO,
     .control        = MMU_CTRL_MEMTYPE_WT,
     .paddr          = MMU_SHARED_START,
-    .pt             = &mmu_pagetable_master
+    .pt             = &mmu_pagetable_system
 };
 
 
@@ -160,8 +142,6 @@ int mmu_init_pagetable(mmu_pagetable_t * pt)
             i = MMU_PTSZ_COARSE/4/32; break;
         case MMU_PTT_MASTER:
             i = MMU_PTSZ_MASTER/4/32; break;
-        case MMU_PTT_PMASTER:
-            i = MMU_PTSZ_PMASTER/4/32; break;
         default:
             /* Error: Unknown page table type. */
             return -1;
@@ -285,13 +265,12 @@ static void mmu_map_coarse(mmu_region_t * region)
 int mmu_attach_pagetable(mmu_pagetable_t * pt)
 {
     uint32_t * ttb;
-    uint32_t pte,  i;
+    uint32_t pte, i;
 
     ttb = (uint32_t *)pt->master_pt_addr;
     i = pt->vaddr >> 20;
 
     switch (pt->type) {
-        /* TODO this is wrong should set ttbr1, also add pmaster to set ttbr0 */
         case MMU_PTT_MASTER:
             /* TTB -> CP15:c2:c0 */
             __asm__ volatile (
