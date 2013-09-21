@@ -171,8 +171,8 @@ int mmu_init_pagetable(mmu_pagetable_t * pt)
            "MOV r4, %[pte]\n\t"
            "MOV r5, %[pte]\n\t"
            "MOV r6, %[pte]\n\t"
-           "MOV r7, %[pte]\n\t"
-           "init_pt_top%=:\n\t"             /* for (; i != 0; i--) */
+           "MOV r7, %[pte]\n"
+           "L_init_pt_top%=:\n\t"           /* for (; i != 0; i--) */
            "STMIA %[p_pte]!, {r4-r7}\n\t"   /* Write 32 entries to the table */
            "STMIA %[p_pte]!, {r4-r7}\n\t"
            "STMIA %[p_pte]!, {r4-r7}\n\t"
@@ -182,7 +182,7 @@ int mmu_init_pagetable(mmu_pagetable_t * pt)
            "STMIA %[p_pte]!, {r4-r7}\n\t"
            "STMIA %[p_pte]!, {r4-r7}\n\t"
            "SUBS %[i], %[i], #1\n\t"
-           "BNE init_pt_top%=\n\t"
+           "BNE L_init_pt_top%=\n\t"
            : [i]"+r" (i), [p_pte]"+r" (p_pte)
            : [pte]"r" (pte)
            : "r4", "r5", "r6", "r7"
