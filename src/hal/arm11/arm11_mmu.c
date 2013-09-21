@@ -40,11 +40,13 @@
 
 #include "arm11_mmu.h"
 
+#define MMU_PT_BASE             0x00018000
+
 /* TODO move to memmap */
 /** Base address of Page table region */
-#define MMU_PT_BASE         0x00018000
-#define MMU_KERNEL_START    0x00000000
-#define MMU_SHARED_START    0x00010000
+#define MMU_VADDR_MASTER_PT     MMU_PT_BASE
+#define MMU_VADDR_KERNEL_START  0x00000000
+#define MMU_VADDR_SHARED_START  0x00010000
 
 /** Size of static L1 tables */
 #define MMU_PT_L1TABLES (MMU_PTSZ_MASTER)
@@ -89,7 +91,7 @@ mmu_pagetable_t mmu_pagetable_master = {
 mmu_pagetable_t mmu_pagetable_system = {
     .vaddr          = 0x0,
     .pt_addr        = MMU_PT_ADDR(1),
-    .master_pt_addr = MMU_PT_BASE,
+    .master_pt_addr = MMU_VADDR_MASTER_PT,
     .type           = MMU_PTT_COARSE,
     .dom            = MMU_DOM_KERNEL
 };
@@ -98,7 +100,7 @@ mmu_pagetable_t mmu_pagetable_system = {
 /* Regions */
 
 mmu_region_t mmu_region_kernel = {
-    .vaddr          = MMU_KERNEL_START,
+    .vaddr          = MMU_VADDR_KERNEL_START,
     .num_pages      = 32, /* TODO Temporarily mapped as a one area */
     .ap             = MMU_AP_RWNA,
     .control        = MMU_CTRL_MEMTYPE_WB | MMU_CTRL_NG,
@@ -107,11 +109,11 @@ mmu_region_t mmu_region_kernel = {
 };
 
 mmu_region_t mmu_region_shared = {
-    .vaddr          = MMU_SHARED_START,
+    .vaddr          = MMU_VADDR_SHARED_START,
     .num_pages      = 4,
     .ap             = MMU_AP_RWRO,
     .control        = MMU_CTRL_MEMTYPE_WT,
-    .paddr          = MMU_SHARED_START,
+    .paddr          = MMU_VADDR_SHARED_START,
     .pt             = &mmu_pagetable_system
 };
 

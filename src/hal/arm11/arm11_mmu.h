@@ -148,7 +148,7 @@
  * Page Table Control Block - PTCB
  */
 typedef struct {
-    vaddr_t vaddr;      /*!< identifies a starting address of a 1MB section of
+    uint32_t vaddr;     /*!< identifies a starting address of a 1MB section of
                          * a virtual memory controlled by either a section
                          * entry or a L2 page table. */
     uint32_t pt_addr;   /*!< is the address where the page table is located in
@@ -164,13 +164,13 @@ typedef struct {
  * Region Control Block - RCB
  */
 typedef struct {
-    vaddr_t vaddr;      /*!< is the virtual starting address of the region in
+    uint32_t vaddr;     /*!< is the virtual address that beginsthe region in
                          * virtual memory. */
     uint32_t num_pages; /*!< is the number of pages in the region. */
     uint32_t ap;        /*!< selects the region access permissions. */
     uint32_t control;   /*!< selects the cache, write buffer, execution and
                          * sharing (nG, S) attributes. */
-    paddr_t paddr;      /*!< is the physical starting address of the region in
+    uint32_t paddr;     /*!< is the physical starting address of the region in
                          * virtual memory. */
     mmu_pagetable_t * pt; /*!< is a pointer to the page table in which
                            * the region resides. */

@@ -47,9 +47,6 @@
 #define MMU_DOM_KERNEL  0
 #define MMU_DOM_APP     1
 
-typedef uint32_t paddr_t;   /*<! Physical address */
-typedef uint32_t vaddr_t;   /*<! Virtual address */
-
 #if configARCH == __ARM6__ || __ARM6K__ /* ARM11 uses ARMv6 arch */
 #include "arm11/arm11_mmu.h"
 #else

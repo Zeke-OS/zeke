@@ -50,11 +50,11 @@
 #include "arm11_interrupt.h"
 
 /**
- * Interrupt vector address.
+ * Physical address of the interrupt vector.
  *
  * This is 0 by default but it could be technically relocated on most ARM cores.
  */
-paddr_t int_vect_addr;
+uint32_t int_vect_addr;
 
 void interrupt_init_module(void) __attribute__((constructor));
 
