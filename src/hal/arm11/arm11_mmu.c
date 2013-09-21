@@ -44,7 +44,7 @@
 /** Base address of Page table region */
 #define MMU_PT_BASE         0x00018000
 #define MMU_KERNEL_START    0x00000000
-#define MMU_SHARED_START    0x04000000
+#define MMU_SHARED_START    0x00010000
 
 /** Size of static L1 tables */
 #define MMU_PT_L1TABLES (MMU_PTSZ_MASTER)
@@ -98,20 +98,11 @@ mmu_pagetable_t mmu_pagetable_system = {
 /* Regions */
 
 mmu_region_t mmu_region_kernel = {
-    .vaddr          = 0x0,
+    .vaddr          = MMU_KERNEL_START,
     .num_pages      = 32, /* TODO Temporarily mapped as a one area */
     .ap             = MMU_AP_RWNA,
     .control        = MMU_CTRL_MEMTYPE_WB | MMU_CTRL_NG,
     .paddr          = 0x0,
-    .pt             = &mmu_pagetable_system
-};
-
-mmu_region_t mmu_region_page_tables = {
-    .vaddr          = MMU_PT_BASE,
-    .num_pages      = 8, /* TODO 32 megs of page tables?? */
-    .ap             = MMU_AP_RWNA,
-    .control        = MMU_CTRL_MEMTYPE_WT,
-    .paddr          = MMU_PT_BASE,
     .pt             = &mmu_pagetable_system
 };
 
@@ -121,6 +112,15 @@ mmu_region_t mmu_region_shared = {
     .ap             = MMU_AP_RWRO,
     .control        = MMU_CTRL_MEMTYPE_WT,
     .paddr          = MMU_SHARED_START,
+    .pt             = &mmu_pagetable_system
+};
+
+mmu_region_t mmu_region_page_tables = {
+    .vaddr          = MMU_PT_BASE,
+    .num_pages      = 8, /* TODO 32 megs of page tables?? */
+    .ap             = MMU_AP_RWNA,
+    .control        = MMU_CTRL_MEMTYPE_WT,
+    .paddr          = MMU_PT_BASE,
     .pt             = &mmu_pagetable_system
 };
 
