@@ -252,7 +252,7 @@ help:
 
 clean:
 	rm -f $(AUTOCONF_H)
-	rm -f $(AOBJS) $(OBJS) $(STARTUP_O)
+	rm -f $(ASOBJS) $(OBJS) $(STARTUP_O)
 	rm -f $(BCS)
 	find . -type f -name "*.bc" -exec rm -f {} \;
 	find . -type f -name "*.opt.bc" -exec rm -f {} \;
