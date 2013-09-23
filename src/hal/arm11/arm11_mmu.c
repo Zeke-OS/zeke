@@ -70,12 +70,10 @@
 #define MMU_PT_FIRST_DYNPT MMU_PT_ADDR(MMU_PT_LAST_SINDEX + 1)
 
 
-int mmu_init_pagetable(mmu_pagetable_t * pt);
-int mmu_map_region(mmu_region_t * region);
 static void mmu_map_fault(mmu_region_t * region);
 static void mmu_map_section(mmu_region_t * region);
 static void mmu_map_coarse(mmu_region_t * region);
-int mmu_attach_pagetable(mmu_pagetable_t * pt);
+
 
 /* Fixed page tables */
 
@@ -293,6 +291,91 @@ int mmu_attach_pagetable(mmu_pagetable_t * pt)
     }
 
     return 0;
+}
+
+/**
+ * Read domain access bits.
+ */
+uint32_t mmu_domain_access_get(void)
+{
+    uint32_t acr;
+
+    __asm__ volatile (
+            "MRC p15, 0, %[acr], c3, c0, 0"
+            : [acr]"=r" (acr));
+
+    return acr;
+}
+
+/**
+ * Set access rights for selected domains.
+ *
+ * Mask is selected so that 0x3 = domain 1 and 0xC is domain 2 etc.
+ * @param value contains the configuration bit fields for changed domains.
+ * @param mask selects which domains are updated.
+ */
+void mmu_domain_access_set(uint32_t value, uint32_t mask)
+{
+    uint32_t acr, n;
+
+    /* Read domain access control register cp15:c3 */
+    __asm__ volatile (
+            "MRC p15, 0, %[acr], c3, c0, 0"
+            : [acr]"=r" (acr));
+
+    acr &= ~mask; /* Clear the bits that will be changed. */
+    acr |= value; /* Set new values */
+
+    /* Write domain access control register */
+    __asm__ volatile (
+            "MCR p15, 0, %[acr], c3, c0, 0"
+            : : [acr]"r" (acr));
+}
+
+/**
+ * Set MMU control bits.
+ * @param value control bits.
+ * @param mask control bits that will be changed.
+ */
+void mmu_control_set(uint32_t value, uint32_t mask)
+{
+    uint32_t reg;
+
+    __asm__ volatile (
+            "MRC p15, 0, %[reg], c1, c0, 0"
+            : [reg]"=r" (reg));
+
+    reg &= ~mask;
+    reg |= value;
+
+    __asm__ volatile (
+            "MCR p15, 0, %[reg], c1, c0, 0"
+            : : [reg]"r" (reg));
+}
+
+/**
+ * Initialize the MMU.
+ */
+void mmu_init(void)
+{
+    /* Initialize the fixed page tables */
+    mmu_init_pagetable(&mmu_pagetable_master);
+    mmu_init_pagetable(&mmu_pagetable_system);
+
+    /* Fill page tables with translations & attributes */
+    mmu_map_region(&mmu_region_kernel);
+    mmu_map_region(&mmu_region_shared);
+    mmu_map_region(&mmu_region_page_tables);
+
+    /* Activate page tables */
+    mmu_attach_pagetable(&mmu_pagetable_master); /* Load L1 TTB to cp15:c2:c0 */
+    mmu_attach_pagetable(&mmu_pagetable_system); /* Load L2 pte into L1 PT */
+
+    /* Set MMU_DOM_KERNEL as client and others to generate error. */
+    mmu_domain_access_set(MMU_DOMAC_TO(MMU_DOM_KERNEL, MMU_DOMAC_CL),
+            MMU_DOMAC_ALL);
+
+    mmu_control_set(MMU_ZEKE_DEF, MMU_ZEKE_DEF);
 }
 
 /**

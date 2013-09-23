@@ -45,8 +45,8 @@
 #include <hal/mmu.h>
 
 /* Zeke Domains */
-#define MMU_DOM_KERNEL  0 /*!< Kernel domain */
-#define MMU_DOM_APP     1 /*!< Application/Process domain */
+#define MMU_DOM_KERNEL  3 /*!< Kernel domain */
+#define MMU_DOM_APP     3 /*!< Application/Process domain */
 
 /**
  * Size of translation table pointed by TTBR0.
@@ -143,6 +143,54 @@
 
 /* End of Control bits */
 
+/* Domain Access Control Macros */
+
+#define MMU_DOMAC_NA    0x0 /*!< Any access generates a domain fault. */
+#define MMU_DOMAC_CL    0x1 /*!< Client. Access is checked against the ap bits in TLB. */
+#define MMU_DOMAC_MA    0x3 /*!< Manager. No access permission checks performed. */
+
+/**
+ * Domain number to domain mask.
+ * @param domain as a number.
+ * @return domain mask suitable for mmu_domain_access_set function.
+ */
+#define MMU_DOMAC_DOM2MASK(dom)     (0x3 << dom)
+
+/**
+ * Mask for all domains.
+ */
+#define MMU_DOMAC_ALL               0xffffffff
+
+/**
+ * Domain Access Control value for dom.
+ * @param dom domain.
+ * @param val access bits, MMU_DOMAC_NA, MMU_DOMAC_CL or MMU_DOMAC_MA.
+ * @return value that can be passed to mmu_domain_access_set function.
+ * */
+#define MMU_DOMAC_TO(dom, val)      ((val & 0x3) << dom)
+
+/**
+ * Get Domain Access Control value of dom from the return value of
+ * mmu_domain_access_get function.
+ * @param dom which domain.
+ * @param val retrun value from the mmu_domain_access_get function.
+ * @return MMU_DOMAC_NA, MMU_DOMAC_CL or MMU_DOMAC_MA.
+ */
+#define MMU_DOMAC_FROM(dom, val)    ((val >> dom) & 0x3)
+
+/* End of DAC Macros */
+
+/* MMU C1 Control bits
+ * This list contains only those settings that are usable with Zeke.
+ */
+#define MMU_C1_ENMMU    0x00000001 /*!< Enables the MMU. */
+#define MMU_C1_DCACHE   0x00000004 /*!< Enables the L1 data cache. */
+#define MMU_C1_ICACHE   0x00001000 /*!< Enables the L1 instruction cache. */
+#define MMU_C1_BPRED    0x00000800 /*!< Enables branch prediction. */
+#define MMU_C1_TR       0x10000000 /*!< Enables TEX remap. */
+/** Default MMU C1 configuration for Zeke */
+#define MMU_ZEKE_DEF    (MMU_C1_ENMMU | MMU_C1_DCACHE | MMU_C1_ICACHE | MMU_C1_TR)
+/* End of MMU C1 Control Bits */
 
 /**
  * Page Table Control Block - PTCB
@@ -175,6 +223,13 @@ typedef struct {
     mmu_pagetable_t * pt; /*!< is a pointer to the page table in which
                            * the region resides. */
 } mmu_region_t;
+
+int mmu_init_pagetable(mmu_pagetable_t * pt);
+int mmu_map_region(mmu_region_t * region);
+int mmu_attach_pagetable(mmu_pagetable_t * pt);
+uint32_t mmu_domain_access_get(void);
+void mmu_domain_access_set(uint32_t value, uint32_t mask);
+void mmu_control_set(uint32_t value, uint32_t mask);
 
 #endif /* ARM11_MMU_H */
 

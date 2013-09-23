@@ -44,9 +44,6 @@
 
 #include <stdint.h>
 
-#define MMU_DOM_KERNEL  0
-#define MMU_DOM_APP     1
-
 #if configARCH == __ARM6__ || __ARM6K__ /* ARM11 uses ARMv6 arch */
 #include "arm11/arm11_mmu.h"
 #else
