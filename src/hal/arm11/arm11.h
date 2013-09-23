@@ -54,6 +54,10 @@
     #error Core is not selected.
 #endif
 
+#if configMMU == 0
+    #error MMU must be enabled when compiling for ARM11.
+#endif
+
 /* Exception return values */
 #define HAND_RETURN         0xFFFFFFF1u /*!< Return to handler mode using the MSP. */
 #define MAIN_RETURN         0xFFFFFFF9u /*!< Return to thread mode using the MSP. */

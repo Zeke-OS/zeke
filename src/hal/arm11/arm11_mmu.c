@@ -358,6 +358,8 @@ void mmu_control_set(uint32_t value, uint32_t mask)
  */
 void mmu_init(void)
 {
+    uint32_t value, mask;
+
     /* Initialize the fixed page tables */
     mmu_init_pagetable(&mmu_pagetable_master);
     mmu_init_pagetable(&mmu_pagetable_system);
@@ -372,10 +374,13 @@ void mmu_init(void)
     mmu_attach_pagetable(&mmu_pagetable_system); /* Load L2 pte into L1 PT */
 
     /* Set MMU_DOM_KERNEL as client and others to generate error. */
-    mmu_domain_access_set(MMU_DOMAC_TO(MMU_DOM_KERNEL, MMU_DOMAC_CL),
-            MMU_DOMAC_ALL);
+    value = MMU_DOMAC_TO(MMU_DOM_KERNEL, MMU_DOMAC_CL);
+    mask = MMU_DOMAC_ALL;
+    mmu_domain_access_set(value, mask);
 
-    mmu_control_set(MMU_ZEKE_DEF, MMU_ZEKE_DEF);
+    value = MMU_ZEKE_DEF;
+    mask = MMU_ZEKE_DEF;
+    mmu_control_set(value, mask);
 }
 
 /**
