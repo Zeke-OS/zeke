@@ -199,7 +199,7 @@ int mmu_map_region(mmu_region_t * region)
  * TODO */
 
 /**
- * Map a 1 MB section.
+ * Map a <= 1 MB section of physical memory.
  * @param region structure that specifies the memory region.
  */
 static void mmu_map_section(mmu_region_t * region)
@@ -228,7 +228,7 @@ static void mmu_map_section(mmu_region_t * region)
 }
 
 /**
- * Map a 1 MB section.
+ * Map a <=1 MB section of physical memory to a page table.
  * @note xn bit an ap configuration is copied to all pages in this region.
  * @param region structure that specifies the memory region.
  */
@@ -257,8 +257,8 @@ static void mmu_map_coarse(mmu_region_t * region)
 }
 
 /**
- * Attach L2 page table to L1 master page table.
- * @param pt page table descriptor structure.
+ * Attach a L2 page table to a L1 master page table or attach a L1 page table.
+ * @param pt a page table descriptor structure.
  * @return Zero if attach succeed; non-zero error code if invalid
  *         page table type.
  */
@@ -289,6 +289,29 @@ int mmu_attach_pagetable(mmu_pagetable_t * pt)
         default:
             return -1;
     }
+
+    return 0;
+}
+
+/**
+ * Detach a L2 page table from a L1 master page table.
+ * @param pt a page table descriptor structure.
+ * @return Zero if attach succeed; value other than zero in case of error.
+ */
+int mmu_detach_pagetable(mmu_pagetable_t * pt)
+{
+    uint32_t * ttb;
+    uint32_t i;
+
+    if (pt->type == MMU_PTT_MASTER) {
+        /* Not possible to detach a master pt */
+        return -1;
+    }
+
+    /* Mark page table entry at i as translation fault */
+    ttb = (uint32_t *)pt->master_pt_addr;
+    i = pt->vaddr >> 20;
+    ttb[i] = MMU_PTE_FAULT;
 
     return 0;
 }
