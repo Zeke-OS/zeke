@@ -35,6 +35,13 @@
 #ifndef KERROR_LAST_H
 #define KERROR_LAST_H
 
+#define KERROR_LOG_SIZE     3
+#define KERROR_LOG_MSGSIZE  81
+#define KERROR_LOG_HLEN_MAX 15
+
+extern char kerror_log[KERROR_LOG_SIZE][KERROR_LOG_MSGSIZE];
+extern int kerror_log_last;
+
 #define _KERROR_FN(level, msg) kerror_last(level, where, msg)
 void kerror_last(char level, const char * where, const char * msg);
 

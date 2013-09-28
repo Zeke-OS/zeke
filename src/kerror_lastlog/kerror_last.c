@@ -34,11 +34,8 @@
 #include <string.h>
 #include "kerror.h"
 
-#define KERROR_LOG_SIZE     3
-#define KERROR_LOG_MSGSIZE  81
-#define KERROR_LOG_HLEN_MAX 15
-
 char kerror_log[KERROR_LOG_SIZE][KERROR_LOG_MSGSIZE];
+int kerror_log_last = 0;
 
 /**
  * Store last KERROR_LOG_SIZE amount of kerror messages.
@@ -48,8 +45,12 @@ char kerror_log[KERROR_LOG_SIZE][KERROR_LOG_MSGSIZE];
  */
 void kerror_last(char level, const char * where, const char * msg)
 {
-    static int i;
-    int j;
+    int i, j;
+
+    i = kerror_log_last;
+    if (++i >= KERROR_LOG_SIZE) {
+        i = 0;
+    }
 
     *kerror_log[i] = level;
     strncpy(kerror_log[i] + 1 * sizeof(char), where, KERROR_LOG_HLEN_MAX);
@@ -59,7 +60,5 @@ void kerror_last(char level, const char * where, const char * msg)
     }
     strncpy(kerror_log[i] + j * sizeof(char), msg, KERROR_LOG_MSGSIZE - j - 1);
 
-    if (++i >= KERROR_LOG_SIZE) {
-        i = 0;
-    }
+    kerror_log_last = i;
 }
