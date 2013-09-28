@@ -38,7 +38,7 @@
 #if configKERROR_LAST != 0
 #include "kerror_last/kerror_last.h"
 #else /* No kerner error logging */
-#define _KERROR_FN(level, msg) do {} while (0)
+#define _KERROR_FN(level, where, msg) do {} while (0)
 #endif
 
 /* Line number as a string */
@@ -47,7 +47,7 @@
 #define S__LINE__ _KERROR_S2(__LINE__)
 
 #define _KERROR_WHERESTR __FILE__ ":" S__LINE__ ": "
-#define _KERROR2(level, where, msg) _KERROR_FN(level, where msg)
+#define _KERROR2(level, where, msg) _KERROR_FN(level, where, msg)
 /**
  * KERROR macro for logging kernel errors.
  * Expect that storage space for messages may vary depending on selected logging

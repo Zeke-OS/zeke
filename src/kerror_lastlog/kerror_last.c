@@ -36,20 +36,28 @@
 
 #define KERROR_LOG_SIZE     3
 #define KERROR_LOG_MSGSIZE  81
+#define KERROR_LOG_HLEN_MAX 15
 
 char kerror_log[KERROR_LOG_SIZE][KERROR_LOG_MSGSIZE];
 
 /**
  * Store last KERROR_LOG_SIZE amount of kerror messages.
  * @param log level.
+ * @param where file and line number.
  * @param msg log message.
  */
-void kerror_last(char level, const char * msg)
+void kerror_last(char level, const char * where, const char * msg)
 {
-    int i;
+    static int i;
+    int j;
 
     *kerror_log[i] = level;
-    strncpy(kerror_log[i] + 1 * sizeof(char), msg, KERROR_LOG_MSGSIZE - 1);
+    strncpy(kerror_log[i] + 1 * sizeof(char), where, KERROR_LOG_HLEN_MAX);
+    for (j = 0; j < KERROR_LOG_HLEN_MAX; j++) {
+        if (kerror_log[i][j] == '\0')
+            break;
+    }
+    strncpy(kerror_log[i] + j * sizeof(char), msg, KERROR_LOG_MSGSIZE - j - 1);
 
     if (++i >= KERROR_LOG_SIZE) {
         i = 0;

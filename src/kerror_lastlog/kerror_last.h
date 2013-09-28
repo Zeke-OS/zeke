@@ -35,7 +35,7 @@
 #ifndef KERROR_LAST_H
 #define KERROR_LAST_H
 
-#define _KERROR_FN(level, msg) kerror_last(level, msg)
-void kerror_last(char level, const char * msg);
+#define _KERROR_FN(level, msg) kerror_last(level, where, msg)
+void kerror_last(char level, const char * where, const char * msg);
 
 #endif
