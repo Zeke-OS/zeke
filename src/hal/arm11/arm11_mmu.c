@@ -38,6 +38,7 @@
   * @{
   */
 
+#include <kerror.h>
 #include "arm11_mmu.h"
 
 #define MMU_PT_BASE             0x00018000
@@ -143,7 +144,7 @@ int mmu_init_pagetable(mmu_pagetable_t * pt)
         case MMU_PTT_MASTER:
             i = MMU_PTSZ_MASTER/4/32; break;
         default:
-            /* Error: Unknown page table type. */
+            KERROR(KERROR_ERR, "Unknown page table type.");
             return -1;
     }
 
@@ -304,7 +305,7 @@ int mmu_detach_pagetable(mmu_pagetable_t * pt)
     uint32_t i;
 
     if (pt->type == MMU_PTT_MASTER) {
-        /* Not possible to detach a master pt */
+        KERROR(KERROR_ERR, "Not possible to detach a master pt");
         return -1;
     }
 

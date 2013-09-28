@@ -42,8 +42,12 @@ configMCU_MODEL = MCU_MODEL_BCM2835
 configARM_PROFILE_M = 0
 # Architecture of the core
 configARCH = __ARM6K__
-
+# MMU support
 configMMU = 1
+
+# Kernel logging methods (Select one or none)
+# Store last n log messages in buffer
+configKERROR_LAST = 1
 
 # Scheduler Selection
 configSCHED_TINY = 1

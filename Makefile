@@ -95,6 +95,8 @@ ASCR-1	=#
 SRC-1 += $(wildcard src/*.c)
 SRC-1 += $(wildcard src/string/*.c)
 SRC-$(configSCHED_TINY) += $(wildcard src/sched_tiny/*.c)
+# Kernel logging
+SRC-$(configKERROR_LAST) += $(wildcard  src/kerror_last/*.c)
 # TODO thscope should be moved??
 SRC-1 += $(wildcard src/thscope/*.c)
 
