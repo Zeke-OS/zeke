@@ -35,7 +35,12 @@
 #ifndef QUEUE_H
 #define QUEUE_H
 
+#ifndef PU_TEST_BUILD
 #include <kstring.h>
+#else /* Test build */
+#include <string.h>
+typedef size_t ksize_t;
+#endif
 
 /**
  * Queue control block.

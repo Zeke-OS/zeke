@@ -4,8 +4,8 @@
  */
 
 #include <stdio.h>
-#include "punit.h"
-#include "heap.h"
+#include <punit.h>
+#include <heap.h>
 
 static void print_heap(heap_t heap);
 
