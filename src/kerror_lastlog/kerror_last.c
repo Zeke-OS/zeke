@@ -31,7 +31,7 @@
  *******************************************************************************
  */
 
-#include <string.h>
+#include <kstring.h>
 #include "kerror.h"
 
 char kerror_log[KERROR_LOG_SIZE][KERROR_LOG_MSGSIZE];

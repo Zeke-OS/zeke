@@ -35,8 +35,7 @@
   * @{
   */
 
-#include <string.h>
-//#include <stdlib.h>
+#include <kstring.h>
 #include "sched.h"
 #include "ksignal.h"
 #include <syscalldef.h>

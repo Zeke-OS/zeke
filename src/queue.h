@@ -35,7 +35,7 @@
 #ifndef QUEUE_H
 #define QUEUE_H
 
-#include "string.h"
+#include <kstring.h>
 
 /**
  * Queue control block.

@@ -30,7 +30,7 @@
  *******************************************************************************
  */
 
-#include <string.h>
+#include <kstring.h>
 
 /**
  * Copy characters from string.
@@ -47,7 +47,7 @@
  * @param n is the maximum number of characters to be copied from src.
  * @return dst.
  */
-char * strncpy(char * dst, const char * src, ksize_t n)
+char * kstrncpy(char * dst, const char * src, ksize_t n)
 {
     int end;
 

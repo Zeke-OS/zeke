@@ -37,7 +37,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <string.h>
+#include <kstring.h>
 
 #ifndef KERNEL_INTERNAL
 #define KERNEL_INTERNAL

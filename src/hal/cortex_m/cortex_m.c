@@ -45,8 +45,7 @@
 
 #if configARCH == __ARM7M__ || configARCH == __ARM7EM__
 /* Needed for debugging if __ARM7M__ || configARCH == __ARM7EM__ */
-//#include <stdio.h>
-#include <string.h>
+#include <kstring.h>
 #endif
 #include <stddef.h>
 #include <sched.h>

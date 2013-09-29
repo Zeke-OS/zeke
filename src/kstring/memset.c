@@ -1,11 +1,11 @@
 /**
  *******************************************************************************
  * @file    memset.c
- * @brief   memset (part of string.h)
+ * @brief   memset (part of kstring.h)
  *******************************************************************************
  */
 
-#include <string.h>
+#include <kstring.h>
 
 #ifndef configSTRING_OPT_SIZE
 #define configSTRING_OPT_SIZE 0

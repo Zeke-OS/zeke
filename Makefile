@@ -93,7 +93,7 @@ ASCR-1	=#
 
 # Base system
 SRC-1 += $(wildcard src/*.c)
-SRC-1 += $(wildcard src/string/*.c)
+SRC-1 += $(wildcard src/kstring/*.c)
 SRC-$(configSCHED_TINY) += $(wildcard src/sched_tiny/*.c)
 # Kernel logging
 SRC-$(configKERROR_LAST) += $(wildcard  src/kerror_last/*.c)

@@ -1,11 +1,11 @@
 /**
  *******************************************************************************
  * @file    memcpy.c
- * @brief   memcpy (part of string.h)
+ * @brief   memcpy (part of kstring.h)
  *******************************************************************************
  */
 
-#include <string.h>
+#include <kstring.h>
 
 /* It's ok to override thse functions by core specific optimized versions.
  * Eg. ARMv7 adds possibility to use hardware memcpy which is around 30 times
