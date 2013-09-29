@@ -40,16 +40,20 @@
 #define PROCESS_H
 
 #include "sched.h" /* Needed for threadInfo_t and threading functions */
-#if configMMU != 0
-#include "mmu.h"
+#if configMMU == 0
+#error Processes are not supported without MMU.
 #endif
+#include "mmu.h"
 
 /**
  * Process Control Block or Process Descriptor Structure
  */
 typedef struct {
     threadInfo_t * main_thread; /*!< Main thread of this process */
-    /* TODO - page table(s)
+
+
+    /* TODO - note: main_thread already has a lined list of child threads
+     *      - page table(s)
      *      - memory allocations
      *      - etc.
      */
