@@ -19,5 +19,6 @@ void * memcpy(void * restrict destination, const void * source, ksize_t num);
 void * memset(void * ptr, int value, ksize_t num);
 int strcmp(const char * str1, const char * str2);
 char * strncpy(char * dst, const char * src, ksize_t n);
+char * strnncat(char * dst, ksize_t ndst, char * src, ksize_t nsrc);
 
 #endif /* STRING_H */
