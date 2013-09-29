@@ -71,9 +71,10 @@
 #define MMU_PT_FIRST_DYNPT MMU_PT_ADDR(MMU_PT_LAST_SINDEX + 1)
 
 
-static void mmu_map_fault(mmu_region_t * region);
-static void mmu_map_section(mmu_region_t * region);
-static void mmu_map_coarse(mmu_region_t * region);
+static void mmu_map_section_region(mmu_region_t * region);
+static void mmu_map_coarse_region(mmu_region_t * region);
+static void mmu_unmap_section_region(mmu_region_t * region);
+static void mmu_unmap_coarse_region(mmu_region_t * region);
 
 
 /* Fixed page tables */
@@ -181,14 +182,11 @@ int mmu_map_region(mmu_region_t * region)
 {
     switch (region->pt->type) {
         case MMU_PTE_SECTION:   /* Map section in L1 page table */
-            mmu_map_section(region);
+            mmu_map_section_region(region);
             break;
         case MMU_PTE_COARSE:    /* Map PTE to point to coarse L2 page table */
-            mmu_map_coarse(region);
+            mmu_map_coarse_region(region);
             break;
-        case MMU_PTE_FAULT:
-            /* TODO clear entries & free memory if possible (remove tables too) */
-            /*break;*/
         default:
             return -1;
     }
@@ -196,14 +194,11 @@ int mmu_map_region(mmu_region_t * region)
     return 0;
 }
 
-/* static void mmu_map_fault(mmu_region_t * region)
- * TODO */
-
 /**
  * Map a <= 1 MB section of physical memory.
  * @param region structure that specifies the memory region.
  */
-static void mmu_map_section(mmu_region_t * region)
+static void mmu_map_section_region(mmu_region_t * region)
 {
     int i;
     uint32_t * p_pte;
@@ -233,7 +228,7 @@ static void mmu_map_section(mmu_region_t * region)
  * @note xn bit an ap configuration is copied to all pages in this region.
  * @param region structure that specifies the memory region.
  */
-static void mmu_map_coarse(mmu_region_t * region)
+static void mmu_map_coarse_region(mmu_region_t * region)
 {
     int i;
     uint32_t * p_pte;
@@ -251,6 +246,68 @@ static void mmu_map_coarse(mmu_region_t * region)
     pte |= (region->control & 0x60) >> 3;   /* Set C & B bits */
     pte |= (region->control & 0x380) >> 1;  /* Set TEX bits */
     pte |= 0x2;                             /* Set entry type */
+
+    for (i = region->num_pages - 1; i >= 0; i--) {
+        *p_pte-- = pte + (i << 12); /* i = 4 KB small page */
+    }
+}
+
+/**
+ * Unmap mapped memory region.
+ * @param region original descriptor structure for the region.
+ */
+int mmu_unmap_region(mmu_region_t * region)
+{
+    switch (region->pt->type) {
+        case MMU_PTE_SECTION:
+            mmu_unmap_section_region(region);
+            break;
+        case MMU_PTE_COARSE:
+            mmu_unmap_coarse_region(region);
+            break;
+        default:
+            return -1;
+    }
+
+    return 0;
+}
+
+/**
+ * Unmap section pt entry region.
+ * @param region original descriptor structure for the region.
+ */
+static void mmu_unmap_section_region(mmu_region_t * region)
+{
+    int i;
+    uint32_t * p_pte;
+    uint32_t pte;
+
+    p_pte = (uint32_t *)region->pt->pt_addr; /* Page table base address */
+    p_pte += region->vaddr >> 20; /* Set to first pte in region */
+    p_pte += region->num_pages - 1; /* Set to last pte in region */
+
+    pte = MMU_PTE_FAULT;
+
+    for (i = region->num_pages - 1; i >= 0; i--) {
+        *p_pte-- = pte + (i << 20); /* i = 1 MB section */
+    }
+}
+
+/**
+ * Unmap coarse pt entry region.
+ * @param region original descriptor structure for the region.
+ */
+static void mmu_unmap_coarse_region(mmu_region_t * region)
+{
+    int i;
+    uint32_t * p_pte;
+    uint32_t pte;
+
+    p_pte = (uint32_t *)region->pt->pt_addr; /* Page table base address */
+    p_pte += (region->vaddr & 0x000ff000) >> 12;    /* First */
+    p_pte += region->num_pages -1;                  /* Last pte */
+
+    pte = MMU_PTE_FAULT;
 
     for (i = region->num_pages - 1; i >= 0; i--) {
         *p_pte-- = pte + (i << 12); /* i = 4 KB small page */
