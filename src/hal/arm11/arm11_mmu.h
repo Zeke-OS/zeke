@@ -215,7 +215,7 @@ typedef struct {
  * Region Control Block - RCB
  */
 typedef struct {
-    uint32_t vaddr;     /*!< is the virtual address that beginsthe region in
+    uint32_t vaddr;     /*!< is the virtual address that begins the region in
                          * virtual memory. */
     uint32_t num_pages; /*!< is the number of pages in the region. */
     uint32_t ap;        /*!< selects the region access permissions. */
