@@ -58,10 +58,30 @@
  */
 uint32_t dynmemmap[DYNMEM_MAPSIZE];
 
+/**
+ * Internal for this module struct that is updated by dynmem_get_region and can
+ * be used when calling functions that use mmu_region_t structs.
+ */
+static mmu_pagetable_t dynmem_pt = {
+    .vaddr          = 0x0,
+    .pt_addr        = 0x0,
+    .master_pt_addr = MMU_PT_BASE, /* TODO fixme */
+    .type           = MMU_PTT_MASTER,
+    .dom            = MMU_DOM_USER
+};
+
+static mmu_region_t dynmem_region;
+
 /* TODO
  * - Init function that initializes dynmem page tables in pt region & maps them
  *   to master page table.
  */
+
+static void dynmem_free_region_r();
+static void update_dynmem_region(void * p);
+static void update_dynmem_pt();
+static uint32_t vaddr_to_pt_addr(uint32_t vaddr);
+
 
 void * dynmem_alloc_region(mmu_dregion_def refdef)
 {
@@ -73,24 +93,34 @@ void * dynmem_alloc_region(mmu_dregion_def refdef)
 
 void dynmem_free_region(void * address)
 {
-    /** Decrement ref count and if ref count = 0 => free the region by marking
+    /* TODO Decrement ref count and if ref count = 0 => free the region by marking
      * dynmemmap locations free and calling region free function, which marks
      * region as fault. */
+
+    update_dynmem_region(address);
+    dynmem_free_region_r();
 }
 
-void dynmem_free_region_r(mmu_region_t * region)
+/**
+ * Free region marked in dynmem_region
+ */
+static void dynmem_free_region_r()
 {
+    mmu_unmap_region(&dynmem_region);
 }
 
 /**
  * Get a region structure of a dynmem memory region.
+ * TODO convert to module local region struct?
+ * @param p pointer to the begining of the allocated dynmem section.
  */
-mmu_region_t dynmem_get_region(void * p)
+static void update_dynmem_region(void * p)
 {
-    mmu_region_t region;
     uint32_t i;
     uint32_t reg_start = (uint32_t)p;
     uint32_t reg_end;
+
+    /* TODO check if region begins before p? */
 
     i = reg_start;
     if (dynmemmap[i] & DYNMEM_RL_MASK) {
@@ -103,12 +133,23 @@ mmu_region_t dynmem_get_region(void * p)
     }
     reg_end = i;
 
-    region.vaddr = DYNMEM_START + reg_start; /* At least this according to spec */
-    region.num_pages = reg_end - reg_start;
-    region.ap = dynmemmap[reg_start] >> DYNMEM_AP_POS;
-    region.control = dynmemmap[reg_start] >> DYNMEM_CTRL_POS;
-    region.paddr = DYNMEM_START + reg_start; /* dynmem spec */
-    region.pt = 0; /* We don't have this entry for dynmem. */
+    dynmem_region.vaddr = DYNMEM_START + reg_start; /* At least this according to spec */
+    dynmem_region.num_pages = reg_end - reg_start;
+    dynmem_region.ap = dynmemmap[reg_start] >> DYNMEM_AP_POS;
+    dynmem_region.control = dynmemmap[reg_start] >> DYNMEM_CTRL_POS;
+    dynmem_region.paddr = DYNMEM_START + reg_start; /* dynmem spec */
+    dynmem_region.pt = 0; /* TODO We don't have this entry for dynmem atm. */
+}
 
-    return region;
+static void update_dynmem_pt()
+{
+}
+
+/**
+ * Convert virtual dynmem address to a page table address.
+ */
+static uint32_t vaddr_to_pt_addr(uint32_t vaddr)
+{
+    /* TODO */
+    /* MMU_PT_FIRST_DYNPT is the first dynamic page table */
 }

@@ -41,34 +41,24 @@
 #include <kerror.h>
 #include "arm11_mmu.h"
 
-#define MMU_PT_BASE             0x00018000
-
-/* TODO move to memmap */
-/** Base address of Page table region */
-#define MMU_VADDR_MASTER_PT     MMU_PT_BASE
-#define MMU_VADDR_KERNEL_START  0x00000000
-#define MMU_VADDR_SHARED_START  0x00010000
-
-/** Size of static L1 tables */
-#define MMU_PT_L1TABLES (MMU_PTSZ_MASTER)
-
-/**
- * A macro to calculate the address for statically allocated page table.
- *
- * Note: We assume that there is only one static master table and all other
- *       tables are equally sized coarse page tables.
+/* TODO
+ * - region to pt pointer null checks
  */
-#define MMU_PT_ADDR(index) (MMU_PT_BASE + MMU_PT_L1TABLES + index * MMU_PTSZ_COARSE)
 
-/**
- * Last static page table index.
+/* MMU C1 Control bits
+ * This list contains only those settings that are usable with Zeke.
  */
-#define MMU_PT_LAST_SINDEX 1
-
-/**
- * First dynamic page table address.
- */
-#define MMU_PT_FIRST_DYNPT MMU_PT_ADDR(MMU_PT_LAST_SINDEX + 1)
+#define MMU_C1_CR_ENMMU     0x00000001 /*!< Enables the MMU. */
+#define MMU_C1_CR_DCACHE    0x00000004 /*!< Enables the L1 data cache. */
+#define MMU_C1_CR_ICACHE    0x00001000 /*!< Enables the L1 instruction cache. */
+#define MMU_C1_CR_BPRED     0x00000800 /*!< Enables branch prediction. */
+#define MMU_C1_CR_XP        0x00800000 /*!< Disable AP subpages and enable ARMv6
+                                        * extensions */
+#define MMU_C1_CR_TR        0x10000000 /*!< Enables TEX remap. */
+/** Default MMU C1 configuration for Zeke */
+#define MMU_ZEKE_DEF    (MMU_C1_CR_ENMMU | MMU_C1_CR_DCACHE |\
+        MMU_C1_CR_ICACHE | MMU_C1_CR_XP | MMU_C1_CR_TR)
+/* End of MMU C1 Control Bits */
 
 
 static void mmu_map_section_region(mmu_region_t * region);

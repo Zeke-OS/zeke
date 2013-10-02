@@ -46,20 +46,20 @@
  * Dynmem area starts
  * TODO check if this is ok?
  */
-#define DYNMEM_START    0x00020000
+#define DYNMEM_START    MMU_VADDR_DYNMEM_START
 
 /**
  * Dynmem area end
  * TODO should match end of physical memory at least
  * (or higher if paging is allowed later)
  */
-#define DYNMEM_END      0x00050000
+#define DYNMEM_END      MMU_VADDR_DYNMEM_END
 
 /**
  * Dynmemmap size.
  * Dynmem memory space in 4kB blocks.
  */
-#define DYNMEM_MAPSIZE  ((DYNMEM_END-DYNMEM_START)/1024/4096)
+#define DYNMEM_MAPSIZE  ((DYNMEM_END - DYNMEM_START)/1024/4096)
 
 /**
  * Dynmem region definition used for allocating a region.
@@ -75,7 +75,5 @@ extern uint32_t dynmemmap[];
 /* TODO */
 void * dynmem_alloc_region(mmu_dregion_def refdef);
 void dynmem_free_region(void * address);
-void dynmem_free_region_r(mmu_region_t * region);
-mmu_region_t dynmem_get_region(void * p);
 
 #endif /* DYNMEM_H */
