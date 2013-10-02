@@ -93,7 +93,7 @@ mmu_region_t mmu_region_kernel = {
     .vaddr          = MMU_VADDR_KERNEL_START,
     .num_pages      = 32, /* TODO Temporarily mapped as a one area */
     .ap             = MMU_AP_RWNA,
-    .control        = MMU_CTRL_MEMTYPE_WB | MMU_CTRL_NG,
+    .control        = MMU_CTRL_MEMTYPE_WB,
     .paddr          = 0x0,
     .pt             = &mmu_pagetable_system
 };
