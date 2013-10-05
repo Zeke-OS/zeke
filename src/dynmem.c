@@ -85,7 +85,6 @@ static mmu_pagetable_t dynmem_pt = {
 
 static mmu_region_t dynmem_region;
 
-static void clear_dynmem_page_tables(void);
 static int update_dynmem_region(void * p);
 static uint32_t vaddr_to_pt_addr(uint32_t vaddr);
 
@@ -115,45 +114,6 @@ void dynmem_free_region(void * address)
 
     update_dynmem_region(address);
     mmu_unmap_region(&dynmem_region);
-}
-
-/**
- * Update kernel dynamic page table entries.
- * Fills dynmem page tables with 1:1 mapping.
- */
-void dynmem_update_kdpt()
-{
-    uint32_t i;
-
-    clear_dynmem_page_tables();
-
-    i = 0;
-    do {
-        if ((dynmemmap[i] & DYNMEM_RC_MASK) > 0) {
-            update_dynmem_region((void *)(DYNMEM_START + i * 4096));
-            /* Gives 1:1 mapping */
-            if (!mmu_map_region(&dynmem_region)) {
-                i += dynmem_region.num_pages;
-            } else { /* error */
-                i++;
-            }
-        } else { /* page unused */
-            i++;
-        }
-    } while (i < DYNMEM_MAPSIZE);
-}
-
-/**
- * Fill dynmem page tables with FAULT entries.
- */
-static void clear_dynmem_page_tables(void)
-{
-    uint32_t * pt = (uint32_t *)MMU_PT_FIRST_DYNPT;
-    uint32_t i;
-
-    for (i = 0; i < MMU_DYNMEM_PT_COUNT; i++) {
-        pt[i] = MMU_PTE_FAULT;
-    }
 }
 
 /**

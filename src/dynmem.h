@@ -80,8 +80,5 @@ extern uint32_t dynmemmap[];
 /* TODO */
 void * dynmem_alloc_region(mmu_dregion_def refdef);
 void dynmem_free_region(void * address);
-/* TODO */
-void dynmem_update_kdpt();
-void dynmem_update_pdpt(); /* TODO needs some array list as an argument */
 
 #endif /* DYNMEM_H */
