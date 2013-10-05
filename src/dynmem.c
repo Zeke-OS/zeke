@@ -96,7 +96,7 @@ static uint32_t vaddr_to_pt_addr(uint32_t vaddr);
  */
 void * dynmem_alloc_region(mmu_dregion_def refdef)
 {
-    /*TODO Find a continuous block of memory and allocate it by marking
+    /*TODO Find a contiguous block of memory and allocate it by marking
      * it used in dynmemmap and then call mmu functions to map it correctly. */
 
     return 0;
