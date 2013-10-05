@@ -44,7 +44,6 @@
 
 #include <stdint.h>
 
-
 /* Kernel memory map **********************************************************/
 #define MMU_PT_BASE             0x00018000
 
@@ -55,7 +54,7 @@
 #define MMU_VADDR_KERNEL_START  0x00000000
 //#define MMU_VADDR_KERNEL_END
 #define MMU_VADDR_SHARED_START  0x00010000
-//#define MMU_VADDR_SHARED_END
+#define MMU_VADDR_SHARED_END    0x00017FFF
 /**
  * Dynmem area starts
  * TODO check if this is ok?
@@ -102,6 +101,16 @@
 
 
 /* Access Permissions control
+ *      Priv    User
+ *      R W     R W
+ * NANA 0 0     0 0
+ * RONA 1 0     0 0
+ * RWNA 1 1     0 0
+ * RWRO 1 1     1 0
+ * RWRW 1 1     1 1
+ * RORO 1 0     1 0
+ *
+ * ARM ref:
  * NA = No Access, RO = Read Only, RW = Read/Write
  * +----+
  * |2 10|
@@ -112,11 +121,11 @@
  * +----+
  */
 #define MMU_AP_NANA    0x00 /*!< All accesses generate a permission fault */
+#define MMU_AP_RONA    0x05 /*!< Privileged read-only and User no access */
 #define MMU_AP_RWNA    0x01 /*!< Privileged access only */
 #define MMU_AP_RWRO    0x02 /*!< Writes in User mode generate permission faults
                              * faults */
 #define MMU_AP_RWRW    0x03 /*!< Full access */
-#define MMU_AP_RONA    0x05 /*!< Privileged read-only and User no access */
 #define MMU_AP_RORO    0x06 /*!< Privileged and User read-only */
 
 

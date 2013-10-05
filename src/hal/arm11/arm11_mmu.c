@@ -67,56 +67,6 @@ static void mmu_unmap_section_region(mmu_region_t * region);
 static void mmu_unmap_coarse_region(mmu_region_t * region);
 
 
-/* Fixed page tables */
-
-/* Master, allocated directly on L1 */
-mmu_pagetable_t mmu_pagetable_master = {
-    .vaddr          = MMU_PT_BASE,
-    .pt_addr        = MMU_PT_BASE,
-    .master_pt_addr = MMU_PT_BASE,
-    .type           = MMU_PTT_MASTER,
-    .dom            = MMU_DOM_KERNEL
-};
-
-mmu_pagetable_t mmu_pagetable_system = {
-    .vaddr          = 0x0,
-    .pt_addr        = MMU_PT_ADDR(1),
-    .master_pt_addr = MMU_VADDR_MASTER_PT,
-    .type           = MMU_PTT_COARSE,
-    .dom            = MMU_DOM_KERNEL
-};
-
-
-/* Regions */
-
-mmu_region_t mmu_region_kernel = {
-    .vaddr          = MMU_VADDR_KERNEL_START,
-    .num_pages      = 32, /* TODO Temporarily mapped as a one area */
-    .ap             = MMU_AP_RWNA,
-    .control        = MMU_CTRL_MEMTYPE_WB,
-    .paddr          = 0x0,
-    .pt             = &mmu_pagetable_system
-};
-
-mmu_region_t mmu_region_shared = {
-    .vaddr          = MMU_VADDR_SHARED_START,
-    .num_pages      = 4,
-    .ap             = MMU_AP_RWRO,
-    .control        = MMU_CTRL_MEMTYPE_WT,
-    .paddr          = MMU_VADDR_SHARED_START,
-    .pt             = &mmu_pagetable_system
-};
-
-mmu_region_t mmu_region_page_tables = {
-    .vaddr          = MMU_PT_BASE,
-    .num_pages      = 8, /* TODO 32 megs of page tables?? */
-    .ap             = MMU_AP_RWNA,
-    .control        = MMU_CTRL_MEMTYPE_WT,
-    .paddr          = MMU_PT_BASE,
-    .pt             = &mmu_pagetable_system
-};
-
-
 /**
  * Initialize the page table pt by filling it with FAULT entries.
  * @param pt page table.
@@ -352,7 +302,7 @@ int mmu_detach_pagetable(mmu_pagetable_t * pt)
     uint32_t i;
 
     if (pt->type == MMU_PTT_MASTER) {
-        KERROR(KERROR_ERR, "Not possible to detach a master pt");
+        KERROR(KERROR_ERR, "Cannot detach a master pt");
         return -1;
     }
 
@@ -422,36 +372,6 @@ void mmu_control_set(uint32_t value, uint32_t mask)
     __asm__ volatile (
             "MCR p15, 0, %[reg], c1, c0, 0"
             : : [reg]"r" (reg));
-}
-
-/**
- * Initialize the MMU.
- */
-void mmu_init(void)
-{
-    uint32_t value, mask;
-
-    /* Initialize the fixed page tables */
-    mmu_init_pagetable(&mmu_pagetable_master);
-    mmu_init_pagetable(&mmu_pagetable_system);
-
-    /* Fill page tables with translations & attributes */
-    mmu_map_region(&mmu_region_kernel);
-    mmu_map_region(&mmu_region_shared);
-    mmu_map_region(&mmu_region_page_tables);
-
-    /* Activate page tables */
-    mmu_attach_pagetable(&mmu_pagetable_master); /* Load L1 TTB to cp15:c2:c0 */
-    mmu_attach_pagetable(&mmu_pagetable_system); /* Load L2 pte into L1 PT */
-
-    /* Set MMU_DOM_KERNEL as client and others to generate error. */
-    value = MMU_DOMAC_TO(MMU_DOM_KERNEL, MMU_DOMAC_CL);
-    mask = MMU_DOMAC_ALL;
-    mmu_domain_access_set(value, mask);
-
-    value = MMU_ZEKE_DEF;
-    mask = MMU_ZEKE_DEF;
-    mmu_control_set(value, mask);
 }
 
 /**
