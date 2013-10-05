@@ -1,6 +1,11 @@
 Virtual Memory in Zeke
 ======================
 
+Every process has its own master page table while L2 page tables are shared.
+Kernel has its own master page table too. Static/fixed entries are copied to all
+master page tables created. Process shares its master page table with its
+childs.
+
 ARM note: Only 4 kB pages are used so XN (Execute-Never) bit is always supported
 also for L2 pages.
 
@@ -12,7 +17,7 @@ See MMU_DOM_xxx definitions.
 Memory regions
 --------------
 
-Table: Memory region placement
+Table: Static memory region placement
 
     Region      AP  Validity    Region  Virtual base    No. pages   Physical
                                 size    address                     base address

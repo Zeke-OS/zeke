@@ -72,10 +72,8 @@
 /** Last static page table index. */
 #define MMU_PT_LAST_SINDEX      1
 
-/**
- * Dynmem L2 page table count.
- */
-#define MMU_DYNMEM_PT_COUNT ((MMU_VADDR_DYNMEM_END - MMU_VADDR_DYNMEM_START) / 4096)
+/** Dynmem L2 page table count. */
+#define MMU_DYNMEM_PT_COUNT ((MMU_VADDR_DYNMEM_END - MMU_VADDR_DYNMEM_START) / 4096 + 1)
 
 /** Size of all static L1 tables combined. */
 #define MMU_PT_L1TABLES     (MMU_PTSZ_MASTER)
@@ -88,10 +86,10 @@
  */
 #define MMU_PT_ADDR(index)  (MMU_PT_BASE + MMU_PT_L1TABLES + index * MMU_PTSZ_COARSE)
 
-/** First dynmem page table address. */
+/** Address of the first dynmem page table address. */
 #define MMU_PT_FIRST_DYNPT  MMU_PT_ADDR(MMU_PT_LAST_SINDEX + 1)
 
-/** First process master page table. */
+/** Address of the first process master page table. */
 #define MMU_PT_FIRST_PMPT   (MMU_PT_FIRST_DYNPT + MMU_DYNMEM_PT_COUNT * MMU_PTSZ_COARSE)
 /* End of Page Table Region Macros ********************************************/
 

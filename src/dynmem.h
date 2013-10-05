@@ -66,19 +66,10 @@
  */
 #define DYNMEM_PT_SIZE  MMU_PTSZ_COARSE
 
-/**
- * Dynmem region definition used for allocating a region.
- */
-typedef struct {
-    uint32_t size;      /*!< region size in 4kB blocks. */
-    uint32_t ap;        /*!< access permission. */
-    uint32_t control;   /*!< control settings. */
-} mmu_dregion_def;
-
 extern uint32_t dynmemmap[];
 
 /* TODO */
-void * dynmem_alloc_region(mmu_dregion_def refdef);
+void * dynmem_alloc_region(uint32_t size, uint32_t ap, uint32_t control);
 void dynmem_free_region(void * address);
 
 #endif /* DYNMEM_H */

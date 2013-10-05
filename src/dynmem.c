@@ -56,7 +56,7 @@
 #define DYNMEM_RL_EL        (0x2 << DYNMEM_RL_POS)
 
 /**
- * Dynmemmap
+ * Dynmemmap allocation table.
  *
  * dynmemmap format
  * ----------------
@@ -70,6 +70,7 @@
  * AP = Access Permissions
  */
 uint32_t dynmemmap[DYNMEM_MAPSIZE];
+uint32_t dynmemmap_bitmap[DYNMEM_MAPSIZE / 32];
 
 /**
  * Internal for this module struct that is updated by dynmem_get_region and can
@@ -85,35 +86,128 @@ static mmu_pagetable_t dynmem_pt = {
 
 static mmu_region_t dynmem_region;
 
+static int bitmap_block_search(uint32_t * retval, uint32_t block_len, uint32_t * bitmap, uint32_t size);
+static void bitmap_block_update(uint32_t * bitmap, uint32_t mark, uint32_t start, uint32_t len);
 static int update_dynmem_region(void * p);
 static uint32_t vaddr_to_pt_addr(uint32_t vaddr);
 
 
 /**
  * Allocate and map a contiguous memory region from dynmem area.
- * @param refdef allocation definition.
+ * @param size region size in 4kB blocks.
+ * @param ap access permission.
+ * @param control control settings.
  * @return address to the allocated region. Returns 0 if out of memory.
  */
-void * dynmem_alloc_region(mmu_dregion_def refdef)
+void * dynmem_alloc_region(uint32_t size, uint32_t ap, uint32_t control)
 {
-    /*TODO Find a contiguous block of memory and allocate it by marking
-     * it used in dynmemmap and then call mmu functions to map it correctly. */
+    /* TODO update dynmemmap & map memory & return pointer */
+    uint32_t retval;
+    retval = bitmap_block_search(&retval, size, dynmemmap_bitmap, sizeof(dynmemmap_bitmap));
+    bitmap_block_update(dynmemmap_bitmap, 1, retval, size);
 
     return 0;
 }
 
 /**
- * Free a memory region allocated by dynmem interface.
- * @param address address of the region to be freed.
+ * Decrement dynmem region reference counter. If the final value of reference
+ * counter is zero then the dynmem region is freed and unmapped.
+ * @param address address of the dynmem region to be freed.
  */
 void dynmem_free_region(void * address)
 {
-    /* TODO Decrement ref count and if ref count = 0 => free the region by marking
-     * dynmemmap locations free and calling region free function, which marks
-     * region as fault. */
+    uint32_t i, j, rc;
 
-    update_dynmem_region(address);
+    i = (uint32_t)address - DYNMEM_START;
+    rc = dynmemmap[i] & DYNMEM_RC_MASK;
+
+    if (rc > 1) {
+        dynmemmap[i] = rc--;
+        return;
+    }
+
+    if (update_dynmem_region(address)) { /* error */
+        KERROR(KERROR_ERR, "Can't free dynmem region.");
+        return;
+    }
+
     mmu_unmap_region(&dynmem_region);
+
+    /* Mark the region as unused. */
+    for (j = i; j < dynmem_region.num_pages; j++) {
+        dynmemmap[j] = 0;
+    }
+    bitmap_block_update(dynmemmap_bitmap, 1, j, dynmem_region.num_pages);
+}
+
+/**
+ * Search for a contiguous block of block_len in bitmap.
+ * @param retval[out] index of the first contiguous block of requested length.
+ * @param block_len is the lenght of contiguous block searched for.
+ * @param bitmap is a bitmap of block reservations.
+ * @param size is the size of bitmap in bytes.
+ * @return Returns zero if a free block found; Value other than zero if there is no free
+ * contiguous block of requested length.
+ */
+static int bitmap_block_search(uint32_t * retval, uint32_t block_len, uint32_t * bitmap, uint32_t size)
+{
+    uint32_t i, j;
+    uint32_t * cur;
+    uint32_t start = 0, end = 0;
+
+    block_len--;
+    cur = &start;
+    for (i = 0; i < (size / sizeof(uint32_t)); i++) {
+        for(j = 0; j < 32; j++) {
+            if ((bitmap[i] & (1 << j)) == 0) {
+                *cur = i * 32 + j;
+                cur = &end;
+
+                if ((end - start >= block_len) && (end >= start)) {
+                    *retval = start;
+                    return 0;
+                }
+            } else {
+                start = 0;
+                end = 0;
+                cur = &start;
+            }
+        }
+    }
+
+    return 1;
+}
+
+/**
+ * Set or clear contiguous block of bits in bitmap.
+ * @param bitmap is the bitmap being changed.
+ * @param mark 0 = clear; 1 = set;
+ * @param start is the starting bit position in bitmap.
+ * @param len is the length of the block being updated.
+ */
+static void bitmap_block_update(uint32_t * bitmap, uint32_t mark, uint32_t start, uint32_t len)
+{
+    uint32_t i, j, n, tmp;
+    uint32_t k = (start - (start & 31)) / 32;
+    uint32_t max = k + len / 32 + 1;
+
+    mark &= 1;
+
+    /* start mod 32 */
+    n = start & 31;
+
+    j = 0;
+    for (i = k; i <= max; i++) {
+        while (n < 32) {
+            tmp = mark << n;
+            bitmap[i]  &= ~(1 << n);
+            bitmap[i] |= tmp;
+            n++;
+            if (++j >= len)
+                return;
+        }
+        n = 0;
+    }
 }
 
 /**
@@ -131,7 +225,7 @@ static int update_dynmem_region(void * p)
     uint32_t reg_end;
 
     if ((dynmemmap[reg_start] & DYNMEM_RC_MASK) == 0) {
-        KERROR(KERROR_ERR, "Unable to update dynmem_region.");
+        KERROR(KERROR_ERR, "Invalid dynmem region addr.");
         return -1;
     }
 
@@ -149,7 +243,7 @@ static int update_dynmem_region(void * p)
     reg_end = i;
 
     dynmem_region.vaddr = DYNMEM_START + reg_start; /* 1:1 mapping by default */
-    dynmem_region.num_pages = reg_end - reg_start;
+    dynmem_region.num_pages = reg_end - reg_start + 1;
     dynmem_region.ap = dynmemmap[reg_start] >> DYNMEM_AP_POS;
     dynmem_region.control = dynmemmap[reg_start] >> DYNMEM_CTRL_POS;
     dynmem_region.paddr = DYNMEM_START + reg_start; /* dynmem spec */
