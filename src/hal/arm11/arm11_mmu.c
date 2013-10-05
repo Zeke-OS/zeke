@@ -135,7 +135,7 @@ int mmu_map_region(mmu_region_t * region)
 }
 
 /**
- * Map a <= 1 MB section of physical memory.
+ * Map a section of physical memory in multiples of 1 MB.
  * @param region structure that specifies the memory region.
  */
 static void mmu_map_section_region(mmu_region_t * region)
@@ -164,8 +164,9 @@ static void mmu_map_section_region(mmu_region_t * region)
 }
 
 /**
- * Map a <=1 MB section of physical memory to a page table.
+ * Map a section of physical memory to a (contiguous set of) page table(s).
  * @note xn bit an ap configuration is copied to all pages in this region.
+ * @note One page table maps a 1MB of memory.
  * @param region structure that specifies the memory region.
  */
 static void mmu_map_coarse_region(mmu_region_t * region)
@@ -176,7 +177,7 @@ static void mmu_map_coarse_region(mmu_region_t * region)
 
     p_pte = (uint32_t *)region->pt->pt_addr; /* Page table base address */
     p_pte += (region->vaddr & 0x000ff000) >> 12;    /* First */
-    p_pte += region->num_pages -1;                  /* Last pte */
+    p_pte += region->num_pages - 1;                 /* Last pte */
 
     pte = region->paddr & 0xfffff000;       /* Set physical address */
     pte |= (region->ap & 0x3) << 4;         /* Set access permissions (AP) */
@@ -245,7 +246,7 @@ static void mmu_unmap_coarse_region(mmu_region_t * region)
 
     p_pte = (uint32_t *)region->pt->pt_addr; /* Page table base address */
     p_pte += (region->vaddr & 0x000ff000) >> 12;    /* First */
-    p_pte += region->num_pages -1;                  /* Last pte */
+    p_pte += region->num_pages - 1;                 /* Last pte */
 
     pte = MMU_PTE_FAULT;
 
@@ -337,7 +338,7 @@ uint32_t mmu_domain_access_get(void)
  */
 void mmu_domain_access_set(uint32_t value, uint32_t mask)
 {
-    uint32_t acr, n;
+    uint32_t acr;
 
     /* Read domain access control register cp15:c3 */
     __asm__ volatile (

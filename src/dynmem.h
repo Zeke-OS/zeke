@@ -59,7 +59,12 @@
  * Dynmemmap size.
  * Dynmem memory space in 4kB blocks.
  */
-#define DYNMEM_MAPSIZE  ((DYNMEM_END - DYNMEM_START)/1024/4096)
+#define DYNMEM_MAPSIZE  ((DYNMEM_END - DYNMEM_START) / 1024 / 4096)
+
+/**
+ * Size of dynmem page table in pt region.
+ */
+#define DYNMEM_PT_SIZE  MMU_PTSZ_COARSE
 
 /**
  * Dynmem region definition used for allocating a region.
@@ -75,5 +80,8 @@ extern uint32_t dynmemmap[];
 /* TODO */
 void * dynmem_alloc_region(mmu_dregion_def refdef);
 void dynmem_free_region(void * address);
+/* TODO */
+void dynmem_update_kdpt();
+void dynmem_update_pdpt(); /* TODO needs some array list as an argument */
 
 #endif /* DYNMEM_H */

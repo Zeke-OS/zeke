@@ -83,7 +83,6 @@ mmu_region_t mmu_region_page_tables = {
 };
 
 
-
 /**
  * Initialize the MMU and static regions.
  */

@@ -67,28 +67,34 @@
  */
 #define MMU_VADDR_DYNMEM_END    0x00050000
 
-/**
- * Last static page table index.
- */
+/* End of Kernel memory map ***************************************************/
+
+/* Page Table Region Macros ***************************************************/
+/** Last static page table index. */
 #define MMU_PT_LAST_SINDEX      1
 
 /**
- * First dynamic page table address.
+ * Dynmem L2 page table count.
  */
-#define MMU_PT_FIRST_DYNPT MMU_PT_ADDR(MMU_PT_LAST_SINDEX + 1)
+#define MMU_DYNMEM_PT_COUNT     ((MMU_VADDR_DYNMEM_END -\
+        MMU_VADDR_DYNMEM_START) / 4096)
 
-/* Memory map macros */
-/** Size of static L1 tables */
+/** Size of all static L1 tables combined. */
 #define MMU_PT_L1TABLES (MMU_PTSZ_MASTER)
 
 /**
- * A macro to calculate the address for statically allocated page table.
+ * A macro to calculate the address for statically allocated L2 page table.
  *
  * Note: We assume that there is only one static master table and all other
  *       tables are equally sized coarse page tables.
  */
 #define MMU_PT_ADDR(index) (MMU_PT_BASE + MMU_PT_L1TABLES + index * MMU_PTSZ_COARSE)
-/* End of Kernel memory map ***************************************************/
+
+/**
+ * First dynmem page table address.
+ */
+#define MMU_PT_FIRST_DYNPT MMU_PT_ADDR(MMU_PT_LAST_SINDEX + 1)
+/* End of Page Table Region Macros ********************************************/
 
 /* Zeke Domains */
 #define MMU_DOM_KERNEL  3 /*!< Kernel domain */
@@ -110,7 +116,7 @@
  * RWRW 1 1     1 1
  * RORO 1 0     1 0
  *
- * ARM ref:
+ * ARM specific note on mapping of these bits:
  * NA = No Access, RO = Read Only, RW = Read/Write
  * +----+
  * |2 10|

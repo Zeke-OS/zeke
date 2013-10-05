@@ -68,8 +68,8 @@
 
 /* Page table sizes in bytes */
 #define MMU_PTSZ_FAULT      0x0000 /*!< Page table size for translation fault. */
-#define MMU_PTSZ_COARSE     0x0400 /*!< Coarse page table */
-#define MMU_PTSZ_MASTER     0x4000 /*!< L1 master page table size */
+#define MMU_PTSZ_COARSE     0x0400 /*!< Coarse page table size. */
+#define MMU_PTSZ_MASTER     0x4000 /*!< L1 master page table size. */
 
 /* Domain Access Control Macros */
 
