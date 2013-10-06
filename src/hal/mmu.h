@@ -65,15 +65,12 @@
  * TODO should match end of physical memory at least
  * (or higher if paging is allowed later)
  */
-#define MMU_VADDR_DYNMEM_END    0x00050000
+#define MMU_VADDR_DYNMEM_END    0x02000000
 /* End of Kernel memory map ***************************************************/
 
 /* Page Table Region Macros ***************************************************/
 /** Last static page table index. */
 #define MMU_PT_LAST_SINDEX      1
-
-/** Dynmem L2 page table count. */
-#define MMU_DYNMEM_PT_COUNT ((MMU_VADDR_DYNMEM_END - MMU_VADDR_DYNMEM_START) / 4096 + 1)
 
 /** Size of all static L1 tables combined. */
 #define MMU_PT_L1TABLES     (MMU_PTSZ_MASTER)
@@ -83,14 +80,9 @@
  *
  * Note: We assume that there is only one static master table on the bottom and
  *       all other static tables are equally sized coarse page tables.
+ * @param index page table index.
  */
 #define MMU_PT_ADDR(index)  (MMU_PT_BASE + MMU_PT_L1TABLES + index * MMU_PTSZ_COARSE)
-
-/** Address of the first dynmem page table address. */
-#define MMU_PT_FIRST_DYNPT  MMU_PT_ADDR(MMU_PT_LAST_SINDEX + 1)
-
-/** Address of the first process master page table. */
-#define MMU_PT_FIRST_PMPT   (MMU_PT_FIRST_DYNPT + MMU_DYNMEM_PT_COUNT * MMU_PTSZ_COARSE)
 /* End of Page Table Region Macros ********************************************/
 
 /* Zeke Domains */
@@ -182,9 +174,8 @@
  * Page Table Control Block - PTCB
  */
 typedef struct {
-    uint32_t vaddr;     /*!< identifies a starting address of a 1MB section of
-                         * a virtual memory controlled by either a section
-                         * entry or a L2 page table. */
+    uint32_t vaddr;     /*!< identifies a starting virtual address of a 1MB
+                         * section. (Only meaningful with coarse tables) */
     uint32_t pt_addr;   /*!< is the address where the page table is located in
                          * virtual memory. */
     uint32_t master_pt_addr; /*!< is the address of a parent master L1 page
@@ -200,13 +191,14 @@ typedef struct {
 typedef struct {
     uint32_t vaddr;     /*!< is the virtual address that begins the region in
                          * virtual memory. */
-    uint32_t num_pages; /*!< is the number of pages in the region. */
+    uint32_t num_pages; /*!< is the number of pages in the region or region size
+                          in mega bytes if pt points to a master page table. */
     uint32_t ap;        /*!< selects the region access permissions. */
     uint32_t control;   /*!< selects the cache, write buffer, execution and
                          * sharing (nG, S) attributes. */
     uint32_t paddr;     /*!< is the physical starting address of the region in
                          * virtual memory. */
-    mmu_pagetable_t * pt; /*!< is a pointer to the page table in which
+    mmu_pagetable_t * pt; /*!< is a pointer to the page table struct in which
                            * the region resides. */
 } mmu_region_t;
 

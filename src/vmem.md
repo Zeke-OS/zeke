@@ -1,13 +1,15 @@
 Virtual Memory in Zeke
 ======================
 
-Every process has its own master page table while L2 page tables are shared.
-Kernel has its own master page table too. Static/fixed entries are copied to all
-master page tables created. Process shares its master page table with its
-childs.
+Every process has its own master page table and varying number of L2 page
+tables. Kernel has its own master page table too. Static/fixed entries are
+copied to all master page tables created. Process shares its master page
+table with its childs.
 
-ARM note: Only 4 kB pages are used so XN (Execute-Never) bit is always supported
-also for L2 pages.
+Process page tables are stored in dynmem area.
+
+ARM note: Only 4 kB pages are used with L2 page tables so XN (Execute-Never) bit
+is always usable also for L2 pages.
 
 Domains
 -------
@@ -60,3 +62,10 @@ Virtual memory abstraction levels
 + CPU specific MMU code is the module responsible of configuring the
   physical MMU layer and implementing the interface prodived by mmu.c
 
+
+dynmem
+------
+
+Dynmem allocates 1MB sections from L1 kernel master page table and always
+returns a physically contiguous memory region. If dynmem is passed for a thread
+it can be mapped either as a section entry or via L2 page table.

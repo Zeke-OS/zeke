@@ -108,6 +108,7 @@
 
 /* End of DAC Macros */
 
+extern mmu_pagetable_t mmu_pagetable_master;
 
 int mmu_init_pagetable(mmu_pagetable_t * pt);
 int mmu_map_region(mmu_region_t * region);

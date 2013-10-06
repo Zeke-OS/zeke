@@ -55,6 +55,8 @@
 /** End Link */
 #define DYNMEM_RL_EL        (0x2 << DYNMEM_RL_POS)
 
+/* TODO Is there any reason to store AP & Control here? */
+
 /**
  * Dynmemmap allocation table.
  *
@@ -72,18 +74,6 @@
 uint32_t dynmemmap[DYNMEM_MAPSIZE];
 uint32_t dynmemmap_bitmap[DYNMEM_MAPSIZE / 32];
 
-/**
- * Internal for this module struct that is updated by dynmem_get_region and can
- * be used when calling functions that use mmu_region_t structs.
- */
-static mmu_pagetable_t dynmem_pt = {
-    .vaddr          = 0x0,
-    .pt_addr        = 0x0,
-    .master_pt_addr = MMU_PT_BASE,
-    .type           = MMU_PTT_COARSE,
-    .dom            = MMU_DOM_USER
-};
-
 static mmu_region_t dynmem_region;
 
 static int bitmap_block_search(uint32_t * retval, uint32_t block_len, uint32_t * bitmap, uint32_t size);
@@ -94,14 +84,14 @@ static uint32_t vaddr_to_pt_addr(uint32_t vaddr);
 
 /**
  * Allocate and map a contiguous memory region from dynmem area.
- * @param size region size in 4kB blocks.
+ * @param size region size in 1MB blocks.
  * @param ap access permission.
  * @param control control settings.
  * @return address to the allocated region. Returns 0 if out of memory.
  */
 void * dynmem_alloc_region(uint32_t size, uint32_t ap, uint32_t control)
 {
-    /* TODO update dynmemmap & map memory & return pointer */
+    /* TODO update dynmemmap & update ap+control to the kernel master table & return pointer */
     uint32_t retval;
     retval = bitmap_block_search(&retval, size, dynmemmap_bitmap, sizeof(dynmemmap_bitmap));
     bitmap_block_update(dynmemmap_bitmap, 1, retval, size);
@@ -110,7 +100,7 @@ void * dynmem_alloc_region(uint32_t size, uint32_t ap, uint32_t control)
 }
 
 /**
- * Decrement dynmem region reference counter. If the final value of reference
+ * Decrement dynmem region reference counter. If the final value of a reference
  * counter is zero then the dynmem region is freed and unmapped.
  * @param address address of the dynmem region to be freed.
  */
@@ -211,10 +201,8 @@ static void bitmap_block_update(uint32_t * bitmap, uint32_t mark, uint32_t start
 }
 
 /**
- * Get a region structure and page table of a dynmem memory region.
- * Updates dynmem_pt and dynmem_region structures.
- * @note Region may map over several page tables but that's ok as dynmem
- * page tables are stored over contiguous memory space.
+ * Get a region structure of a dynmem memory region.
+ * Updates dynmem_region structures.
  * @param p pointer to the begining of the allocated dynmem section.
  * @return Error code.
  */
@@ -242,32 +230,12 @@ static int update_dynmem_region(void * p)
     }
     reg_end = i;
 
-    dynmem_region.vaddr = DYNMEM_START + reg_start; /* 1:1 mapping by default */
+    dynmem_region.vaddr = (uint32_t)p; /* 1:1 mapping by default */
+    dynmem_region.paddr = (uint32_t)p;
     dynmem_region.num_pages = reg_end - reg_start + 1;
     dynmem_region.ap = dynmemmap[reg_start] >> DYNMEM_AP_POS;
     dynmem_region.control = dynmemmap[reg_start] >> DYNMEM_CTRL_POS;
-    dynmem_region.paddr = DYNMEM_START + reg_start; /* dynmem spec */
-
-    /* Update single-use page table struct */
-    dynmem_pt.vaddr = dynmem_region.vaddr;
-    dynmem_pt.pt_addr = vaddr_to_pt_addr(dynmem_region.vaddr);
-    dynmem_region.pt = &dynmem_pt;
+    dynmem_region.pt = &mmu_pagetable_master;
 
     return 0;
-}
-
-/**
- * Convert a virtual dynmem address to a page table address in pt region.
- * @param vaddr any virtual address.
- * @return Returns a page table address in dynmem page table region.
- */
-static uint32_t vaddr_to_pt_addr(uint32_t vaddr)
-{
-    uint32_t index, pt_addr;
-
-    /* 1MB index stepping */
-    index = (vaddr - DYNMEM_START) >> 20;
-    pt_addr = MMU_PT_FIRST_DYNPT + index * DYNMEM_PT_SIZE;
-
-    return pt_addr;
 }

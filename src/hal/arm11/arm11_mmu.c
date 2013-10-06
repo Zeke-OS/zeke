@@ -121,10 +121,10 @@ int mmu_init_pagetable(mmu_pagetable_t * pt)
 int mmu_map_region(mmu_region_t * region)
 {
     switch (region->pt->type) {
-        case MMU_PTE_SECTION:   /* Map section in L1 page table */
+        case MMU_PTT_MASTER:    /* Map section in L1 page table */
             mmu_map_section_region(region);
             break;
-        case MMU_PTE_COARSE:    /* Map PTE to point to coarse L2 page table */
+        case MMU_PTT_COARSE:    /* Map PTE to point to coarse L2 page table */
             mmu_map_coarse_region(region);
             break;
         default:

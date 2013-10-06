@@ -57,9 +57,9 @@
 
 /**
  * Dynmemmap size.
- * Dynmem memory space in 4kB blocks.
+ * Dynmem memory space is allocated in 1MB sections.
  */
-#define DYNMEM_MAPSIZE  ((DYNMEM_END - DYNMEM_START) / 1024 / 4096)
+#define DYNMEM_MAPSIZE  ((DYNMEM_END - DYNMEM_START) / 1048576)
 
 /**
  * Size of dynmem page table in pt region.
@@ -71,5 +71,6 @@ extern uint32_t dynmemmap[];
 /* TODO */
 void * dynmem_alloc_region(uint32_t size, uint32_t ap, uint32_t control);
 void dynmem_free_region(void * address);
+void dynmem_init_kregion(); /* Initialize 1:1 sections in kernel L1 page table */
 
 #endif /* DYNMEM_H */
