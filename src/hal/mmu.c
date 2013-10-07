@@ -34,6 +34,8 @@
   * @{
   */
 
+#include "mmu.h"
+
 /* Fixed Page Tables */
 
 /* Master, allocated directly on L1 */
@@ -109,8 +111,8 @@ void mmu_init(void)
     mask = MMU_DOMAC_ALL;
     mmu_domain_access_set(value, mask);
 
-    value = MMU_ZEKE_DEF;
-    mask = MMU_ZEKE_DEF;
+    value = MMU_ZEKE_C1_DEFAULTS;
+    mask = MMU_ZEKE_C1_DEFAULTS;
     mmu_control_set(value, mask);
 }
 
