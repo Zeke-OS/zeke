@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    startup_bcm2835.s
+ * @file    startup_bcm2835.S
  * @author  Olli Vanhoja
  * @brief   BCM2835 startup code.
  * @section LICENSE
@@ -39,8 +39,32 @@
  * r15 should begin execution at 0x8000.
  */
 Start:
-    /* Setup the stack. */
-    mov sp, #0x8000
+    /* Setup the stacks:
+     * 0x2c00 - 0x3c00  User/system stack
+     * 0x2800 - 0x2c00  IRQ stack
+     * 0x2400 - 0x2800  Abort stack
+     * 0x2000 - 0x2400  Supervisor (SWI/SVC) stack
+     *
+     * Stack addresses are stored in the stack pointers as
+     * 0x80000000 + address, as this means the stack pointer doesn't have to
+     * change when the MMU is turned on.
+     */
+    mov r4, #0x80000000
+    cps #0x13   /* Change to supervisor (SVC) mode */
+    add sp, r4, #0x2400
+    cps #0x17   /* Change to Abort mode */
+    add sp, r4, #0x2800
+    cps #0x12   /* Change to IRQ mode */
+    add sp, r4, #0x2c00
+    cps #0x1f   /* Change to system mode */
+    add sp, r4, #0x3c00
+    /* Stay in system mode for now. */
+
+    /* Turn on unaligned memory access */
+    mrc p15, #0, r4, c1, c0, #0
+    orr r4, #0x400000 /* 1<22 */
+    mcr p15, #0, r4, c1, c0, #0
+
 
     /* Clear out bss. */
     ldr r4, =_bss_start
@@ -50,20 +74,25 @@ Start:
     mov r7, #0
     mov r8, #0
     b   2f
-
 1:
     /* Store multiple at r4. */
     stmia   r4!, {r5-r8}
-
     /* If we are still below bss_end, loop. */
 2:
     cmp r4, r9
     blo 1b
+    /* End of clear out bss. */
 
-    /* TODO Call something to preserve r0-r2 for further use */
+
+    /* Preserve r0-r2 for further use */
+    push {r0, r1, r2}
 
     /* Call static constructors */
     ldr r3, =exec_init_array
+    blx r3
+
+    /* Call MMU init */
+    ldr r3, =mmu_init
     blx r3
 
     /* Call kernel init */
@@ -74,7 +103,7 @@ Start:
     ldr r3, =sched_start
     blx r3
 
-/* Loop/wait here until scheduler kicks in. */
+    /* Wait here until scheduler kicks in. */
 3:
     b 3b
 

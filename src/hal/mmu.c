@@ -85,6 +85,7 @@ mmu_region_t mmu_region_page_tables = {
 
 /**
  * Initialize the MMU and static regions.
+ * @note This is called from startup.
  */
 void mmu_init(void)
 {

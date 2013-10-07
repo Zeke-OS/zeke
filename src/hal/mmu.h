@@ -86,8 +86,8 @@
 /* End of Page Table Region Macros ********************************************/
 
 /* Zeke Domains */
-#define MMU_DOM_KERNEL  3 /*!< Kernel domain */
-#define MMU_DOM_USER    3 /*!< User domain */
+#define MMU_DOM_KERNEL  0 /*!< Kernel domain */
+#define MMU_DOM_USER    0 /*!< User domain */
 
 
 /* Page Table Types */
@@ -177,7 +177,7 @@ typedef struct {
     uint32_t vaddr;     /*!< identifies a starting virtual address of a 1MB
                          * section. (Only meaningful with coarse tables) */
     uint32_t pt_addr;   /*!< is the address where the page table is located in
-                         * virtual memory. */
+                         * physical memory. */
     uint32_t master_pt_addr; /*!< is the address of a parent master L1 page
                               * table. If the table is an L1 table, then the
                               * value is same as pt_addr. */
