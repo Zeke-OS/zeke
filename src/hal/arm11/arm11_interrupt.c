@@ -49,18 +49,68 @@
 #include <hal/mmu.h>
 #include "arm11_interrupt.h"
 
-/**
- * Physical address of the interrupt vector.
- *
- * This is 0 by default but it could be technically relocated on most ARM cores.
- */
-uint32_t int_vect_addr;
+/* Peripheral Addresses */
+
+static volatile uint32_t * irq_enable1 = (uint32_t *)0x2000b210;
+static volatile uint32_t * irq_enable2 = (uint32_t *)0x2000b214;
+static volatile uint32_t * irq_enable_basic = (uint32_t *)0x2000b218;
+
+static volatile uint32_t * arm_timer_load = (uint32_t *)0x2000b400;
+static volatile uint32_t * arm_timer_value = (uint32_t *)0x2000b404;
+static volatile uint32_t * arm_timer_control = (uint32_t *)0x2000b408;
+static volatile uint32_t * arm_timer_irq_clear = (uint32_t *)0x2000b40c;
+/* End of Peripheral Addresses */
 
 void interrupt_init_module(void) __attribute__((constructor));
 
+/* Interrupt vectors.
+ *
+ * @ note This needs to be aligned to 32 bits as the bottom 5 bits of the vector
+ * address as set in the control coprocessor must be zero.
+ */
+__attribute__ ((naked, aligned(32))) static void interrupt_vectors(void)
+{
+    /* Processor will never jump to bad_exception when reset is hit because
+     * interrupt vector offset is set back to 0x0 on reset. */
+    asm volatile(
+        "b bad_exception\n\t"               /* RESET */
+        "b bad_exception\n\t"               /* UNDEF */
+        "b interrupt_svc\n\t"               /* SVC   */
+        "b bad_exception\n\t"               /* Prefetch abort */
+        "b bad_exception\n\t"               /* data abort */
+        "b bad_exception\n\t"               /* Unused vector */
+        "b bad_exception\n\t"               /* IRQ */
+        "b bad_exception\n\t"               /* FIQ */
+    );
+}
+
+/**
+ * Unhandled exception
+ */
+__attribute__ ((naked)) void bad_exception(void)
+{
+    while (1) {
+        __asm__ volatile ("wfe");
+    }
+}
+
 void interrupt_init_module(void)
 {
-    /* TODO */
+    /* Set interrupt base register */
+    asm volatile("mcr p15, 0, %[addr], c12, c0, 0"
+            : : [addr]"r" (&interrupt_vectors));
+    /* Turn on interrupts */
+    asm volatile("cpsie i");
+
+    /* Use the ARM timer - BCM 2832 peripherals doc, p.196 */
+    /* Enable ARM timer IRQ */
+    *irq_enable_basic = 0x00000001;
+
+    /* Interrupt every 1024 * 256 (prescaler) timer ticks */
+    *arm_timer_load = 0x00000400;
+
+    /* Timer enabled, interrupt enabled, prescale=256, 23 bit counter */
+    *arm_timer_control = 0x000000aa;
 }
 
 /**

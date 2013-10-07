@@ -36,11 +36,11 @@
     .text
     .arch armv6k
 
-@ void SVC_Handler(void)
+@ void interrupt_svc(void)
 @
-    .globl  SVC_Handler
-    .type   SVC_Handler,%function
-SVC_Handler:
+    .globl  interrupt_svc
+    .type   interrupt_svc,%function
+interrupt_svc:
     push    {r1-r12, lr}
 
     @ Call kernel's internal syscall handler
@@ -49,11 +49,11 @@ SVC_Handler:
     pop     {r1-r12, lr}
     movs    pc, lr
 
-@ void SysTick_Handler(void)
+@ void interrupt_systick(void)
 @
-    .globl  SysTick_Handler
-    .type   SysTick_Handler,%function
-SysTick_Handler:
+    .globl  interrupt_systick
+    .type   interrupt_systick,%function
+interrupt_systick:
 @ Save context
     @ Store the original value of r0
     STMDB   sp!, {r0}

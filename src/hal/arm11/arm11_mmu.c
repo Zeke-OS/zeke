@@ -56,7 +56,7 @@
                                         * extensions */
 #define MMU_C1_CR_TR        0x10000000 /*!< Enables TEX remap. */
 /** Default MMU C1 configuration for Zeke */
-#define MMU_ZEKE_DEF    (MMU_C1_CR_ENMMU | MMU_C1_CR_DCACHE |\
+#define MMU_ZEKE_C1_DEFAULTS    (MMU_C1_CR_ENMMU | MMU_C1_CR_DCACHE |\
         MMU_C1_CR_ICACHE | MMU_C1_CR_XP | MMU_C1_CR_TR)
 /* End of MMU C1 Control Bits */
 
