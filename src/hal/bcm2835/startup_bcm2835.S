@@ -39,17 +39,23 @@
  * r15 should begin execution at 0x8000.
  */
 Start:
-    /* Setup the stacks:
-     * 0x2c00 - 0x3c00  User/system stack
+    /*
+     * Physical memory map at this position
+     * ------------------------------------
+     * Interrupt vector: 
+     * 0x0000 -
+     * Priv Stacks:
+     * 0x2c00 - 0x3c00  System stack
      * 0x2800 - 0x2c00  IRQ stack
      * 0x2400 - 0x2800  Abort stack
      * 0x2000 - 0x2400  Supervisor (SWI/SVC) stack
      *
-     * Stack addresses are stored in the stack pointers as
-     * 0x80000000 + address, as this means the stack pointer doesn't have to
-     * change when the MMU is turned on.
+     * 0x4000-0x7fff    1MB of free memory
+     * 0x8000-          Kernel
      */
-    mov r4, #0x80000000
+
+    /* Init stack pointers */
+    mov r4, #0x0 /* Can be changed to something else if memmap is changed. */
     cps #0x13   /* Change to supervisor (SVC) mode */
     add sp, r4, #0x2400
     cps #0x17   /* Change to Abort mode */
@@ -58,15 +64,17 @@ Start:
     add sp, r4, #0x2c00
     cps #0x1f   /* Change to system mode */
     add sp, r4, #0x3c00
+    /* System mode stack is also tecnically used for user mode but we'll soon
+     * have new per thread stacks.  */
     /* Stay in system mode for now. */
 
     /* Turn on unaligned memory access */
     mrc p15, #0, r4, c1, c0, #0
-    orr r4, #0x400000 /* 1<22 */
+    orr r4, #0x400000           /* 1<22 */
     mcr p15, #0, r4, c1, c0, #0
 
 
-    /* Clear out bss. */
+    /* Clear the bss. */
     ldr r4, =_bss_start
     ldr r9, =_bss_end
     mov r5, #0
@@ -81,7 +89,7 @@ Start:
 2:
     cmp r4, r9
     blo 1b
-    /* End of clear out bss. */
+    /* End of Clear the bss. */
 
 
     /* Preserve r0-r2 for further use */
@@ -111,3 +119,4 @@ Start:
 halt:
     wfe
     b   halt
+

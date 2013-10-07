@@ -84,8 +84,6 @@ void begin(void)
 void end(void)
 { ... }
 
-Constructor prioritizing is not supported and constructors could be executed in
-any order. Although LLVM should be able to detremine correct ordering of
-constructor access dependecies, so that modules depending each other are
-initialized in correct order.
+Constructor prioritizing is not supported but constructor pointers are sorted
+by linker into ascending order by name.
 
