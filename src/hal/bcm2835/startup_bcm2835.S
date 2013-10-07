@@ -82,7 +82,16 @@ Start:
 
 
     /* Preserve r0-r2 for further use */
-    push {r0, r1, r2}
+    /* In the future we may want to have this information as it tells some
+     * things about the system we are booting on.
+     * r0 : rpi model/type/fw version?
+     * r1 : ARM Linux Machine Type (rpi is 3138 (0xc42) identifying the bcm2708 cpu)
+     *      http://www.arm.linux.org.uk/developer/machines/
+     * r2 : address of the ATAGs
+     *      ATAGs are especially iteresting because this data may change
+     *      depending on bootloader configuration etc.
+     *      http://www.simtec.co.uk/products/SWLINUX/files/booting_article.html
+    /* push {r0, r1, r2} */
 
     /* Call static constructors */
     ldr r3, =exec_init_array
