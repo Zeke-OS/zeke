@@ -39,19 +39,8 @@
  * r15 should begin execution at 0x8000.
  */
 Start:
-    /*
-     * Physical memory map at this position
-     * ------------------------------------
-     * Interrupt vector: 
-     * 0x0000 -
-     * Priv Stacks:
-     * 0x2c00 - 0x3c00  System stack
-     * 0x2800 - 0x2c00  IRQ stack
-     * 0x2400 - 0x2800  Abort stack
-     * 0x2000 - 0x2400  Supervisor (SWI/SVC) stack
-     *
-     * 0x4000-0x7fff    1MB of free memory
-     * 0x8000-          Kernel
+    /* See memory_map.md for explanation about physical memory layout on
+     * bcm2832.
      */
 
     /* Init stack pointers */

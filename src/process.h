@@ -5,7 +5,6 @@
  * @brief   Kernel process management header file.
  * @section LICENSE
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,16 +44,25 @@
 #endif
 #include "mmu.h"
 
+/* TODO 16 simultaneously active procesesss so ASID can be used to eliminate TLB
+ * flushes. This means that we must group processes to groups of 16 processes
+ * with each groups having overlapping ASIDs. */
+
 /**
  * Process Control Block or Process Descriptor Structure
  */
 typedef struct {
-    threadInfo_t * main_thread; /*!< Main thread of this process */
-
+    threadInfo_t * main_thread; /*!< Main thread of this process. */
+    mmu_pagetable_t * pptable;  /*!< Process master page table. */
+    mmu_region_t regions[3];    /*!< Standard regions of a process.
+                                 *   [0] = stack
+                                 *   [1] = heap/data
+                                 *   [2] = code
+                                 */
 
     /* TODO - note: main_thread already has a lined list of child threads
      *      - page table(s)
-     *      - memory allocations
+     *      - memory allocations (that should be freed automatically if process exits)
      *      - etc.
      */
 } processInfo_t;
