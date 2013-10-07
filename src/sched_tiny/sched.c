@@ -45,7 +45,7 @@
 
 #include <hal/hal_core.h>
 #include <hal/hal_mcu.h>
-#include <heap.h>
+#include "heap.h"
 #if configFAST_FORK != 0
 #include <queue.h>
 #endif
