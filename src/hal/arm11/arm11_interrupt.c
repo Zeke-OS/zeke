@@ -72,7 +72,7 @@ __attribute__ ((naked, aligned(32))) static void interrupt_vectors(void)
 {
     /* Processor will never jump to bad_exception when reset is hit because
      * interrupt vector offset is set back to 0x0 on reset. */
-    asm volatile(
+    __asm__ volatile (
         "b bad_exception\n\t"               /* RESET */
         "b bad_exception\n\t"               /* UNDEF */
         "b interrupt_svc\n\t"               /* SVC   */
@@ -97,10 +97,10 @@ __attribute__ ((naked)) void bad_exception(void)
 void interrupt_init_module(void)
 {
     /* Set interrupt base register */
-    asm volatile("mcr p15, 0, %[addr], c12, c0, 0"
+    __asm__ volatile ("mcr p15, 0, %[addr], c12, c0, 0"
             : : [addr]"r" (&interrupt_vectors));
     /* Turn on interrupts */
-    asm volatile("cpsie i");
+    __asm__ volatile ("cpsie i");
 
     /* Use the ARM timer - BCM 2832 peripherals doc, p.196 */
     /* Enable ARM timer IRQ */
