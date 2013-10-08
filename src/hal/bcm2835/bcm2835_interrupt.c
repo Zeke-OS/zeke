@@ -47,7 +47,7 @@
 #include <syscall.h>
 #include <hal/hal_core.h>
 #include <hal/mmu.h>
-#include "arm11_interrupt.h"
+#include "bcm2835_interrupt.h"
 
 /* Peripheral Addresses */
 

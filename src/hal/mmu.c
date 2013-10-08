@@ -36,6 +36,8 @@
 
 #include "mmu.h"
 
+void mmu_init(void) __attribute__((constructor));
+
 /* Fixed Page Tables */
 
 /* Master, allocated directly on L1 */

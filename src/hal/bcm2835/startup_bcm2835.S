@@ -97,10 +97,6 @@ Start:
     ldr r3, =exec_init_array
     blx r3
 
-    /* Call MMU init */
-    ldr r3, =mmu_init
-    blx r3
-
     /* Call kernel init */
     ldr r3, =kinit
     blx r3
