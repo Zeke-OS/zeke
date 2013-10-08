@@ -34,9 +34,11 @@
   * @{
   */
 
+#include <kinit.h>
 #include "mmu.h"
 
-void mmu_init(void) __attribute__((constructor));
+void mmu_init(void);
+SECT_HW_PREINIT(mmu_init);
 
 /* Fixed Page Tables */
 

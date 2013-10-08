@@ -62,28 +62,53 @@ Kernel Initialization
 
 Kernel initialization order is defined as follows:
 
+For Cortex-M:
 + SystemInit - the clock system intitialization and other mandatory hw inits
 + __libc_init_array - Static constructors
 + kinit - Kernel initialization and load user code
 
+For ARM11:
++ hw_preinit
++ constructors
++ hw_postinit
++ kinit
+
+After kinit scheduler will kick in and initialization continues in user space.
+
 ### Kernel module initializers
+
+There is four kind of initializers supported at the moment:
+
++ *hw_preinit* for mainly hardware related initializers
++ *hw_postinit* for hardware related initializers
++ *constructor* (or init) for generic initialization
 
 Optional kernel modules may use C static constructors and destructors to
 generate init and fini code that will be run before any user code is loaded.
+Constructors are also the preferred method to attach module with the kernel.
+
 Currently as there is no support for module unloading any fini functions will
 not be called in any case. Still this doesn't generate any compilation errors
 and array of fini functions is still generated and maybe supported later.
 
-Following example shows notation is supported by Zeke:
-void begin(void) __attribute__((constructor));
-void end(void) __attribute__((destructor));
+Following example shows constructor/intializer notation supported by Zeke:
+    void begin(void) __attribute__((constructor));
+    void end(void) __attribute__((destructor));
 
-void begin(void)
-{ ... }
+    void begin(void)
+    { ... }
 
-void end(void)
-{ ... }
+    void end(void)
+    { ... }
 
-Constructor prioritizing is not supported but constructor pointers are sorted
-by linker into ascending order by name.
+Constructor prioritizing is not supported for constructor pointers but however
+linker uses SORT.
+
+### hw_preinit and hw_postinit
+
+hw_preinit and hw_postinit can be used by including kinit.h header file and
+using following notation:
+
+    SECT_HW_POSTINIT(init1);
+    SECT_HW_POSTINIT(init2);
 

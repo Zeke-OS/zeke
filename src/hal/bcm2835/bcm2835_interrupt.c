@@ -45,6 +45,7 @@
 
 #include <sched.h>
 #include <syscall.h>
+#include <kinit.h>
 #include <hal/hal_core.h>
 #include <hal/mmu.h>
 #include "bcm2835_interrupt.h"
@@ -61,7 +62,9 @@ static volatile uint32_t * arm_timer_control = (uint32_t *)0x2000b408;
 static volatile uint32_t * arm_timer_irq_clear = (uint32_t *)0x2000b40c;
 /* End of Peripheral Addresses */
 
-void interrupt_init_module(void) __attribute__((constructor));
+
+void interrupt_init_module(void);
+SECT_HW_POSTINIT(interrupt_init_module);
 
 /**
  * Interrupt vectors.
@@ -80,7 +83,7 @@ __attribute__ ((naked, aligned(32))) static void interrupt_vectors(void)
         "b bad_exception\n\t"               /* Prefetch abort */
         "b bad_exception\n\t"               /* data abort */
         "b bad_exception\n\t"               /* Unused vector */
-        "b bad_exception\n\t"               /* IRQ */
+        "b interrupt_systick\n\t"           /* Timer IRQ */
         "b bad_exception\n\t"               /* FIQ */
     );
 }

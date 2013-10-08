@@ -80,12 +80,8 @@ interrupt_systick:
     mov     r1, #0
     str     r1, [r0, #0x40c]    @ IRQ Clear/Ack <- 0
 
-    @ Check if scheduler is enabled
-    ldr     r0, .LCPI2_0
-    ldr     r0, [r0]
-    cmp     r0, #0
-    beq     L_load_context
-    bl      sched_handler       @ Run scheduler
+    @ Run scheduler
+    bl      sched_handler
 
 @ Load/Restore context
 L_load_context:
@@ -106,5 +102,4 @@ L_load_context:
     @ Return back
     SUBS    pc, lr, #4
 
-.LCPI2_0:
-    .long   sched_enabled
+.end

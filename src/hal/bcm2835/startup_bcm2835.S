@@ -93,16 +93,12 @@ Start:
      *      http://www.simtec.co.uk/products/SWLINUX/files/booting_article.html
     /* push {r0, r1, r2} */
 
-    /* Call static constructors */
+    /* Call static constructors & initializers */
     ldr r3, =exec_init_array
     blx r3
 
     /* Call kernel init */
     ldr r3, =kinit
-    blx r3
-
-    /* Start scheduler */
-    ldr r3, =sched_start
     blx r3
 
     /* Wait here until scheduler kicks in. */

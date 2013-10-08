@@ -80,9 +80,6 @@
 #define SCALE_LOAD(x) (((x + (FIXED_1/200)) * 100) >> FSHIFT)
 /* End of Definitions for load average calculation ***************************/
 
-volatile uint32_t sched_enabled = 0; /* If this is set to != 0 interrupt
-                                      * handlers will be able to call context
-                                      * switching. */
 
 /* Task containers */
 static threadInfo_t task_table[configSCHED_MAX_THREADS]; /*!< Array of all
@@ -156,13 +153,6 @@ void sched_init(void)
         i++;
     } while (q_ok);
 #endif
-}
-
-void sched_start(void)
-{
-    disable_interrupt();
-    sched_enabled = 1;
-    enable_interrupt();
 }
 
 /* End of Functions called from outside of kernel context ********************/

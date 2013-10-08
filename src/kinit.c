@@ -32,7 +32,13 @@
 
 #include <kernel.h>
 #include <app_main.h>
-#include "sched.h"
+#include <sched.h>
+#include <kinit.h>
+
+extern void (*__hw_preinit_array_start[]) (void) __attribute__((weak));
+extern void (*__hw_preinit_array_end[]) (void) __attribute__((weak));
+extern void (*__hw_postinit_array_start[]) (void) __attribute__((weak));
+extern void (*__hw_postinit_array_end[]) (void) __attribute__((weak));
 
 extern void (*__init_array_start []) (void) __attribute__((weak));
 extern void (*__init_array_end []) (void) __attribute__((weak));
@@ -41,17 +47,32 @@ extern void (*__fini_array_end []) (void) __attribute__((weak));
 
 static char main_Stack[configAPP_MAIN_SSIZE];
 
+static void exec_array(void (*a []) (void), int n);
+
 /**
  * Run all kernel module initializers.
  */
 void exec_init_array(void)
 {
-    int n, i;
+    int n;
 
-    n = __init_array_end - __init_array_start;
-    for (i = 0; i < n; i++) {
-        __init_array_start[i] ();
-    }
+    n = __hw_preinit_array_end - __hw_preinit_array_start;
+    exec_array(__hw_preinit_array_start, n);
+
+    n  = __init_array_end - __init_array_start;
+    exec_array(__init_array_start, n);
+
+    n = __hw_postinit_array_end - __hw_postinit_array_start;
+    exec_array(__hw_postinit_array_start, n);
+}
+
+/**
+ * Run all kernel module finalizers.
+ */
+void exec_fini_array(void)
+{
+    int n = __fini_array_end - __fini_array_start;
+    exec_array(__fini_array_start, n);
 }
 
 /**
@@ -69,17 +90,12 @@ void kinit(void)
     osThreadCreate(&main_thread, NULL);
 }
 
-
-/**
- * Run all kernel module finalizers.
- */
-void exec_fini_array(void)
+static void exec_array(void (*a []) (void), int n)
 {
-    int n, i;
+    int i;
 
-    n = __fini_array_end - __fini_array_start;
     for (i = 0; i < n; i++) {
-        __fini_array_start[i] ();
+        a[i] ();
     }
 }
 

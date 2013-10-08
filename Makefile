@@ -260,4 +260,4 @@ clean:
 	rm -f *.bin
 	rm -f *.elf
 	rm -f *.list
-	 $(MAKE) -C $(CRT_DIR) clean
+	$(MAKE) -C $(CRT_DIR) clean
