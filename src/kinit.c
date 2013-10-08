@@ -90,11 +90,16 @@ void kinit(void)
     osThreadCreate(&main_thread, NULL);
 }
 
+/**
+ * Exec intializer/finalizer array created by the linker.
+ * @param pointer to the array.
+ * @param n number of entries -1.
+ */
 static void exec_array(void (*a []) (void), int n)
 {
     int i;
 
-    for (i = 0; i < n; i++) {
+    for (i = 0; i <= n; i++) {
         a[i] ();
     }
 }
