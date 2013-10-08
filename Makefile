@@ -123,6 +123,7 @@ ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
 	SRC-1 += $(wildcard src/hal/stm32f0/*.c)
 endif
 ifeq ($(configMCU_MODEL),MCU_MODEL_BCM2835)
+	ASRC-1 += $(wildcard src/hal/bcm2835/*.S)
 	SRC-1 += $(wildcard src/hal/bcm2835/*.c)
 endif
 

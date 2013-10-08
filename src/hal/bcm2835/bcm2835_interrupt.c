@@ -63,7 +63,8 @@ static volatile uint32_t * arm_timer_irq_clear = (uint32_t *)0x2000b40c;
 
 void interrupt_init_module(void) __attribute__((constructor));
 
-/* Interrupt vectors.
+/**
+ * Interrupt vectors.
  *
  * @ note This needs to be aligned to 32 bits as the bottom 5 bits of the vector
  * address as set in the control coprocessor must be zero.

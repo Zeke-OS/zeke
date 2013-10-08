@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file arm1176jzf_s_interrupt.c
+ * @file bcm2835_int_handlers.S
  * @author Olli Vanhoja
- * @brief Interrupt service routines.
+ * @brief Interrupt service routine handlers.
  * @section LICENSE
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
@@ -75,12 +75,17 @@ interrupt_systick:
     MRS     r0, spsr
     STMDB   lr!, {r0}
 
+    @ Clear Timer IRQ
+    ldr     r0, =0x2000b000     @ Timer register base
+    mov     r1, #0
+    str     r1, [r0, #0x40c]    @ IRQ Clear/Ack <- 0
+
     @ Check if scheduler is enabled
     ldr     r0, .LCPI2_0
     ldr     r0, [r0]
     cmp     r0, #0
     beq     L_load_context
-    bl      sched_handler   @ Run scheduler
+    bl      sched_handler       @ Run scheduler
 
 @ Load/Restore context
 L_load_context:
@@ -103,4 +108,3 @@ L_load_context:
 
 .LCPI2_0:
     .long   sched_enabled
-

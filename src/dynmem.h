@@ -71,6 +71,5 @@ extern uint32_t dynmemmap[];
 /* TODO */
 void * dynmem_alloc_region(uint32_t size, uint32_t ap, uint32_t control);
 void dynmem_free_region(void * address);
-void dynmem_init_kregion(); /* Initialize 1:1 sections in kernel L1 page table */
 
 #endif /* DYNMEM_H */
