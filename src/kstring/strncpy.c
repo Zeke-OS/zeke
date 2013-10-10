@@ -47,7 +47,7 @@
  * @param n is the maximum number of characters to be copied from src.
  * @return dst.
  */
-char * kstrncpy(char * dst, const char * src, ksize_t n)
+char * kstrncpy(char * dst, const char * src, size_t n)
 {
     int end;
 

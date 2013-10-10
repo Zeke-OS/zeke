@@ -15,7 +15,7 @@
 #define UNALIGNED(X)   ((long)X & (LBLOCKSIZE - 1))
 #define TOO_SMALL(LEN) ((LEN) < LBLOCKSIZE)
 
-void * memset(void * m, int c, ksize_t n)
+void * memset(void * m, int c, size_t n)
 {
     char *s = (char *) m;
 

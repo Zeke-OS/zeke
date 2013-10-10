@@ -35,11 +35,11 @@
 #ifndef QUEUE_H
 #define QUEUE_H
 
+#include <stddef.h>
 #ifndef PU_TEST_BUILD
 #include <kstring.h>
 #else /* Test build */
 #include <string.h>
-typedef size_t ksize_t;
 #endif
 
 /**
@@ -47,8 +47,8 @@ typedef size_t ksize_t;
  */
 typedef struct queue_cb {
     void * data;    /*!< Pointer to the data array used for queue. */
-    ksize_t b_size;  /*!< Block size in bytes. */
-    ksize_t a_len;   /*!< Array length. */
+    size_t b_size;  /*!< Block size in bytes. */
+    size_t a_len;   /*!< Array length. */
     int m_write;
     int m_read;
 } queue_cb_t;
@@ -61,7 +61,7 @@ typedef struct queue_cb {
  * @param arra_size the size of the data_array in bytes.
  * @return a new queue_cb_t queue control block structure.
  */
-queue_cb_t queue_create(void * data_array, ksize_t block_size, ksize_t array_size);
+queue_cb_t queue_create(void * data_array, size_t block_size, size_t array_size);
 
 /**
  * Push element to the queue.

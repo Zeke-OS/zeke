@@ -30,12 +30,7 @@
  *******************************************************************************
  */
 
-#ifndef PU_TEST_BUILD
 #include <kstring.h>
-#else /* Test build */
-#include <stddef.h>
-typedef size_t ksize_t;
-#endif
 
 /**
  * Concatenate strings.
@@ -45,7 +40,7 @@ typedef size_t ksize_t;
  * @param src is the source string array.
  * @param nsrc maximum number of characters to bo copied from src.
  */
-char * strnncat(char * dst, ksize_t ndst, char * src, ksize_t nsrc)
+char * strnncat(char * dst, size_t ndst, char * src, size_t nsrc)
 {
     int i, j, n1, n2;
 
