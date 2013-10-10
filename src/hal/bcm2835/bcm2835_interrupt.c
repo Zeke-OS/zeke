@@ -50,6 +50,13 @@
 #include <hal/mmu.h>
 #include "bcm2835_interrupt.h"
 
+#define ARM_TIMER_PRESCALE_1    0x0
+#define ARM_TIMER_PRESCALE_16   0x4
+#define ARM_TIMER_PRESCALE_256  0x8
+
+#define ARM_TIMER_EN            0x80
+#define ARM_TIMER_INT_EN        0x20
+
 /* Peripheral Addresses */
 
 static volatile uint32_t * irq_enable1 = (uint32_t *)0x2000b210;
@@ -110,11 +117,10 @@ void interrupt_init_module(void)
     /* Enable ARM timer IRQ */
     *irq_enable_basic = 0x00000001;
 
-    /* Interrupt every 1024 * 256 (prescaler) timer ticks */
+    /* Interrupt every (value * prescaler) timer ticks */
     *arm_timer_load = 0x00000400;
 
-    /* Timer enabled, interrupt enabled, prescale=256, 23 bit counter */
-    *arm_timer_control = 0x000000aa;
+    *arm_timer_control = (ARM_TIMER_PRESCALE_256 | ARM_TIMER_EN | ARM_TIMER_INT_EN);
 }
 
 /**

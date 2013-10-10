@@ -39,7 +39,7 @@ SECTIONS
     }
 
     .hw_postinit_array :
-    {  
+    {
         PROVIDE_HIDDEN (__hw_postinit_array_start = .);
         KEEP (*(SORT(.hw_postinit_array.*)))
         KEEP (*(.hw_postinit_array*))
