@@ -128,6 +128,7 @@ ifeq ($(configMCU_MODEL),MCU_MODEL_BCM2835)
 endif
 
 # Select HAL sources
+SRC-$(configATAG) += src/hal/atag.c
 SRC-$(configMMU) += src/hal/mmu.c
 ifeq ($(configARM_PROFILE_M),1)
 	SRC-1 += $(wildcard src/hal/cortex_m/*.c)

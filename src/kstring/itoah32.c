@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    strncpy.c
+ * @file    itoah32.c
  * @author  Olli Vanhoja
- * @brief   strncpy C standard function for internal use.
+ * @brief   itoah32 function.
  * @section LICENSE
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -33,33 +33,25 @@
 #include <kstring.h>
 
 /**
- * Copy characters from string.
- * Copies the first n characters of source to destination.
- * If the end of the source string (which is signaled by a null-character) is
- * found before n characters have been copied, destination is padded with
- * zeros until a total of num characters have been written to it.
- *
- * No null-character is implicitly appended at the end of destination if
- * source is longer than n. Thus, in this case, destination shall not
- * be considered a null terminated C string (reading it as such would overflow).
- * @param dst pointer to the destination array.
- * @param src string to be copied from.
- * @param n is the maximum number of characters to be copied from src.
- * @return dst.
+ * Convert uint32_t integer to hex string.
+ * @param str Array in memory where to store the resulting null-terminated
+ *            string.
+ * @param value Value to be converted to a string.
  */
-char * strncpy(char * dst, const char * src, size_t n)
+void itoah32(char * str, uint32_t value)
 {
-    int end;
+    int i = 2, n;
+    char c;
+    size_t mask = 0xF0000000;
 
-    for (end = 0; end < n; end++) {
-        if (src[end] == '\0')
-            break;
+    str[0] = '0';
+    str[1] = 'x';
+
+    for (n = 28; n >= 0; n -= 4) {
+        c = (value & mask) >> n;
+        c = (c < 10) ? '0' + c : 'a' + (c - 10);
+        str[i++] = c;
+        mask = mask >> 4;
     }
-
-    memcpy(dst, src, ++end);
-    if (end < n) {
-        memset(dst + end * sizeof(char), '\0', n - end);
-    }
-
-    return dst;
+    str[i] = '\0';
 }

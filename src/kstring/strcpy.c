@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    strncpy.c
+ * @file    strcpy.c
  * @author  Olli Vanhoja
- * @brief   strncpy C standard function for internal use.
+ * @brief   strcpy standard function.
  * @section LICENSE
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -33,33 +33,17 @@
 #include <kstring.h>
 
 /**
- * Copy characters from string.
- * Copies the first n characters of source to destination.
- * If the end of the source string (which is signaled by a null-character) is
- * found before n characters have been copied, destination is padded with
- * zeros until a total of num characters have been written to it.
- *
- * No null-character is implicitly appended at the end of destination if
- * source is longer than n. Thus, in this case, destination shall not
- * be considered a null terminated C string (reading it as such would overflow).
- * @param dst pointer to the destination array.
- * @param src string to be copied from.
- * @param n is the maximum number of characters to be copied from src.
- * @return dst.
+ * Copy string.
+ * @param dst Pointer to the destination string.
+ * @param src Pointer to the source string.
  */
-char * strncpy(char * dst, const char * src, size_t n)
+char * strcpy(char * dst, const char * src)
 {
-    int end;
+    int n = 0;
 
-    for (end = 0; end < n; end++) {
-        if (src[end] == '\0')
-            break;
-    }
+    while (src[n++] != '\0') ;
 
-    memcpy(dst, src, ++end);
-    if (end < n) {
-        memset(dst + end * sizeof(char), '\0', n - end);
-    }
+    memcpy(dst, src, n);
 
     return dst;
 }

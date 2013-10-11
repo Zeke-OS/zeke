@@ -38,11 +38,15 @@
 #ifndef MMU_H
 #define MMU_H
 #include <autoconf.h>
+#include <stdint.h>
+#include <stddef.h>
+
 #if configMMU == 0
     #error MMU not enabled but header was included in some file.
 #endif
-
-#include <stdint.h>
+#if configATAG == 0
+    #error No method to get memory area configuration.
+#endif
 
 /* Kernel memory map **********************************************************/
 #define MMU_PT_BASE             0x00018000
@@ -64,8 +68,11 @@
  * Dynmem area end
  * TODO should match end of physical memory at least
  * (or higher if paging is allowed later)
+ * We possibly should use mmu_memsize somewhere,
+ * but not here because this is used for some statical
+ * allocations.
  */
-#define MMU_VADDR_DYNMEM_END    0x02000000
+#define MMU_VADDR_DYNMEM_END    0x00200000
 /* End of Kernel memory map ***************************************************/
 
 /* Page Table Region Macros ***************************************************/
@@ -202,6 +209,9 @@ typedef struct {
                            * the region resides. */
 } mmu_region_t;
 
+/* Global variables */
+extern size_t mmu_memstart;
+extern size_t mmu_memsize;
 
 #if configARCH == __ARM6__ || __ARM6K__ /* ARM11 uses ARMv6 arch */
 #include "arm11/arm11_mmu.h"

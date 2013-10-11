@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    strncpy.c
+ * @file    strlen.c
  * @author  Olli Vanhoja
- * @brief   strncpy C standard function for internal use.
+ * @brief   String length counting.
  * @section LICENSE
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -33,33 +33,15 @@
 #include <kstring.h>
 
 /**
- * Copy characters from string.
- * Copies the first n characters of source to destination.
- * If the end of the source string (which is signaled by a null-character) is
- * found before n characters have been copied, destination is padded with
- * zeros until a total of num characters have been written to it.
- *
- * No null-character is implicitly appended at the end of destination if
- * source is longer than n. Thus, in this case, destination shall not
- * be considered a null terminated C string (reading it as such would overflow).
- * @param dst pointer to the destination array.
- * @param src string to be copied from.
- * @param n is the maximum number of characters to be copied from src.
- * @return dst.
+ * Get string lenght.
+ * @param str null terminated string.
+ * @param max Maximum lenght counted.
  */
-char * strncpy(char * dst, const char * src, size_t n)
+size_t strlenn(const char * str, size_t max)
 {
-    int end;
+    size_t len;
 
-    for (end = 0; end < n; end++) {
-        if (src[end] == '\0')
-            break;
-    }
+    while (str[len++] != '\0' && --max > 0) ;
 
-    memcpy(dst, src, ++end);
-    if (end < n) {
-        memset(dst + end * sizeof(char), '\0', n - end);
-    }
-
-    return dst;
+    return --len;
 }

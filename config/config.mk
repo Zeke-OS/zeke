@@ -44,6 +44,8 @@ configARM_PROFILE_M = 0
 configARCH = __ARM6K__
 # MMU support
 configMMU = 1
+# Support bootloader ATAGs
+configATAG = 1
 
 # Kernel logging methods (Select one or none)
 # Store last n log messages in buffer
