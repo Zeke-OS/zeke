@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    atag.c
+ * @file    sysinfo.h
  * @author  Olli Vanhoja
- * @brief   ATAG scanner.
+ * @brief   Header file for sysinfo.
  * @section LICENSE
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -34,7 +34,9 @@
   * @{
   */
 
-void atag_scan(uint32_t fw, uint32_t mtype, uint32_t * atag_addr);
+#include "sysinfo.h"
+
+sysinfo_t sysinfo;
 
 /**
   * @}

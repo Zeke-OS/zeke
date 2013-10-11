@@ -81,8 +81,9 @@ Start:
     /* End of Clear the bss. */
 
 
-    /* Preserve r0-r2 for further use */
-    /* In the future we may want to have this information as it tells some
+    /* Read information given by the bootloader
+     *
+     * In the future we may want to have this information as it tells some
      * things about the system we are booting on.
      * r0 : rpi model/type/fw version?
      * r1 : ARM Linux Machine Type (rpi is 3138 (0xc42) identifying the bcm2708 cpu)
@@ -91,7 +92,13 @@ Start:
      *      ATAGs are especially iteresting because this data may change
      *      depending on bootloader configuration etc.
      *      http://www.simtec.co.uk/products/SWLINUX/files/booting_article.html
-    /* push {r0, r1, r2} */
+     */
+    ldr r3, =3138
+    cmp r1, r3
+    bne halt
+
+    ldr r3, =atag_scan
+    blx r3
 
     /* Call static constructors & initializers */
     ldr r3, =exec_init_array
@@ -103,7 +110,7 @@ Start:
 
     /* Wait here until scheduler kicks in. */
 3:
-    b 3b
+    b   3b
 
     /* Halt */
 halt:

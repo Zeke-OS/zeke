@@ -209,10 +209,6 @@ typedef struct {
                            * the region resides. */
 } mmu_region_t;
 
-/* Global variables */
-extern size_t mmu_memstart;
-extern size_t mmu_memsize;
-
 #if configARCH == __ARM6__ || __ARM6K__ /* ARM11 uses ARMv6 arch */
 #include "arm11/arm11_mmu.h"
 #else

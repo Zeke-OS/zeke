@@ -36,6 +36,7 @@
 
 #include <kstring.h>
 #include <kerror.h>
+#include "sysinfo.h"
 #include "atag.h"
 
 /* ATAGs */
@@ -51,11 +52,17 @@
 #define ATAG_CMDLINE    0x54410009 /*!< Command line to pass to kernel. */
 
 
-void atag_scan(uint32_t * atag_addr)
+/**
+ * ATAG scanner.
+ * @note This function is called before intializers.
+ */
+void atag_scan(uint32_t fw, uint32_t mtype, uint32_t * atag_addr)
 {
     uint32_t tag_value;
     uint32_t * atags;
     char msg[120];
+
+    sysinfo.mtype = mtype;
 
     if (*atag_addr != ATAG_CORE) {
         KERROR(KERROR_WARN, "No ATAGs!");
@@ -88,10 +95,8 @@ void atag_scan(uint32_t * atag_addr)
                 atags += atags[0]-1;
 
                 KERROR(KERROR_LOG, msg);
-#if configMMU != 0
-                mmu_memstart = (size_t)atags[3];
-                mmu_memsize = (size_t)atags[2];
-#endif
+                sysinfo.mem.size = (size_t)atags[2];
+                sysinfo.mem.start = (size_t)atags[3];
                 break;
             case ATAG_VIDEOTEXT:
                 atags += atags[0]-1;

@@ -37,18 +37,6 @@
 #include <kinit.h>
 #include "mmu.h"
 
-/**
- * Physical memory start address.
- * @note This should be updated in startup.
- */
-size_t mmu_memstart;
-
-/**
- * Physical memory area size.
- * @note This should be updated in startup.
- */
-size_t mmu_memsize;
-
 void mmu_init(void);
 SECT_HW_PREINIT(mmu_init);
 
