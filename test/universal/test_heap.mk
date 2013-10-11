@@ -4,4 +4,4 @@
 TEST_SRC += test_heap.c
 
 # SRC files needed for this test
-SRC-heap += ../../src/heap.c
+SRC-heap += ../../src/sched_tiny/heap.c

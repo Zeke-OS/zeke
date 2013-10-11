@@ -30,7 +30,10 @@
  *******************************************************************************
  */
 
+#include <stddef.h>
+#ifndef PU_TEST_BUILD
 #include <kstring.h>
+#endif
 
 /**
  * Concatenate strings.
