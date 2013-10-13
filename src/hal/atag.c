@@ -36,8 +36,8 @@
 
 #include <kstring.h>
 #include <kerror.h>
-#include "sysinfo.h"
-#include "atag.h"
+#include <hal/sysinfo.h>
+#include <hal/atag.h>
 
 /* ATAGs */
 #define ATAG_NONE       0x00000000 /*!< End of list. */
