@@ -33,19 +33,19 @@
 #include <kerror.h>
 #include <dynmem.h>
 
-#define DYNMEM_RC_POS       0
-#define DYNMEM_RL_POS       18
-#define DYNMEM_CTRL_POS     20
-#define DYNMEM_AP_POS       30
+#define DYNMEM_RC_POS       16
+#define DYNMEM_RL_POS       13
+#define DYNMEM_AP_POS       10
+#define DYNMEM_CTRL_POS     0
 
-/** Ref Count mask */
-#define DYNMEM_RC_MASK      0x3FFFF
+/** Ref count mask */
+#define DYNMEM_RC_MASK      (0xFFFF0000)
 /** Region Link mask */
 #define DYNMEM_RL_MASK      (0x003 << DYNMEM_RL_POS)
 /** Region control mask */
 #define DYNMEM_CTRL_MASK    (0x3FF << DYNMEM_CTRL_POS)
 /** Region access permissions mask */
-#define DYNMEM_AP_MASK      (0x002 << DYNMEM_AP_POS)
+#define DYNMEM_AP_MASK      (0x007 << DYNMEM_AP_POS)
 
 /* Region Link bits */
 /** No Link */
@@ -57,66 +57,93 @@
 
 /* TODO Is there any reason to store AP & Control here? */
 
+#define FLAGS_TO_MAP(AP, CTRL)  ((AP << DYNMEM_AP_POS) | CTRL)
+#define MAP_TO_AP(VAL)          ((VAL & DYNMEM_AP_MASK) >> DYNMEM_AP_POS)
+#define MAP_TO_CTRL(VAL)        ((VAL & DYNMEM_CTRL_MASK) >> DYNMEM_CTRL_POS)
+
 /**
  * Dynmemmap allocation table.
  *
  * dynmemmap format
  * ----------------
  *
- * |31  30|29     20|19 18|17        0|
- * +------+---------+-----+-----------+
- * |  AP  | Control | RL  | ref count |
- * +------+---------+-----+-----------+
+ * |31       16|15|14 13|12 10|9       0|
+ * +-----------+--+-----+-----+---------+
+ * | ref count |X | RL  |  AP | Control |
+ * +-----------+--+-----+-----+---------+
  *
  * RL = Region link
  * AP = Access Permissions
+ * X  = Don't care
  */
 uint32_t dynmemmap[DYNMEM_MAPSIZE];
 uint32_t dynmemmap_bitmap[DYNMEM_MAPSIZE / 32];
 
 static mmu_region_t dynmem_region;
 
-static int bitmap_block_search(uint32_t * retval, uint32_t block_len, uint32_t * bitmap, uint32_t size);
+static int bitmap_block_search(uint32_t * retval, uint32_t block_len, uint32_t * bitmap, size_t size);
 static void bitmap_block_update(uint32_t * bitmap, uint32_t mark, uint32_t start, uint32_t len);
-static int update_dynmem_region(void * p);
-static uint32_t vaddr_to_pt_addr(uint32_t vaddr);
+static void * kmap_allocation(size_t pos, size_t size, uint32_t ap, uint32_t control);
+static int update_dynmem_region_struct(void * p);
 
 
 /**
- * Allocate and map a contiguous memory region from dynmem area.
+ * Allocate a contiguous memory region from dynmem area.
  * @param size region size in 1MB blocks.
  * @param ap access permission.
  * @param control control settings.
  * @return address to the allocated region. Returns 0 if out of memory.
  */
-void * dynmem_alloc_region(uint32_t size, uint32_t ap, uint32_t control)
+void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t control)
 {
     /* TODO update dynmemmap & update ap+control to the kernel master table & return pointer */
-    uint32_t retval;
-    retval = bitmap_block_search(&retval, size, dynmemmap_bitmap, sizeof(dynmemmap_bitmap));
-    bitmap_block_update(dynmemmap_bitmap, 1, retval, size);
+    uint32_t pos;
 
-    return 0;
+    if(bitmap_block_search(&pos, size, dynmemmap_bitmap, sizeof(dynmemmap_bitmap))) {
+        KERROR(KERROR_ERR, "Out of dynmem.");
+        return 0; /* Null */
+    }
+    bitmap_block_update(dynmemmap_bitmap, 1, pos, size);
+    return kmap_allocation((size_t)pos, size, ap, control);
+}
+
+/**
+ * Forces a new memory region allocation from the given address even if it's
+ * already reserved.
+ * This function will never fail, and might be destructive and may even
+ * corrupt the allocation table.
+ * @param addr address.
+ * @param size region size in 1MB blocks.
+ * @param ap access permission.
+ * @param control control settings.
+ * @return address to the allocated region.
+ */
+void * dynmem_alloc_force(void * addr, size_t size, uint32_t ap, uint32_t control)
+{
+    size_t pos = (uint32_t)addr - DYNMEM_START;
+
+    bitmap_block_update(dynmemmap_bitmap, 1, pos, size);
+    return kmap_allocation(pos, size, ap, control);
 }
 
 /**
  * Decrement dynmem region reference counter. If the final value of a reference
  * counter is zero then the dynmem region is freed and unmapped.
- * @param address address of the dynmem region to be freed.
+ * @param addr address of the dynmem region to be freed.
  */
-void dynmem_free_region(void * address)
+void dynmem_free_region(void * addr)
 {
     uint32_t i, j, rc;
 
-    i = (uint32_t)address - DYNMEM_START;
-    rc = dynmemmap[i] & DYNMEM_RC_MASK;
+    i = (uint32_t)addr - DYNMEM_START;
+    rc = (dynmemmap[i] & DYNMEM_RC_MASK) >> DYNMEM_RC_POS;
 
-    if (rc > 1) {
-        dynmemmap[i] = rc--;
+    if (--rc > 0) {
+        dynmemmap[i] = rc << DYNMEM_RC_POS;
         return;
     }
 
-    if (update_dynmem_region(address)) { /* error */
+    if (update_dynmem_region_struct(addr)) { /* error */
         KERROR(KERROR_ERR, "Can't free dynmem region.");
         return;
     }
@@ -139,7 +166,7 @@ void dynmem_free_region(void * address)
  * @return Returns zero if a free block found; Value other than zero if there is no free
  * contiguous block of requested length.
  */
-static int bitmap_block_search(uint32_t * retval, uint32_t block_len, uint32_t * bitmap, uint32_t size)
+static int bitmap_block_search(uint32_t * retval, uint32_t block_len, uint32_t * bitmap, size_t size)
 {
     uint32_t i, j;
     uint32_t * cur;
@@ -201,19 +228,50 @@ static void bitmap_block_update(uint32_t * bitmap, uint32_t mark, uint32_t start
 }
 
 /**
- * Get a region structure of a dynmem memory region.
+ * Updates dynmem allocation table and intially maps the memory region to the
+ * kernel memory space.
+ */
+static void * kmap_allocation(size_t pos, size_t size, uint32_t ap, uint32_t control)
+{
+    size_t i;
+    uint32_t mapflags = FLAGS_TO_MAP(ap, control);
+    uint32_t rlb = (size > 1) ? DYNMEM_RL_BL : DYNMEM_RL_NL;
+    uint32_t rle = (size > 1) ? DYNMEM_RL_EL : DYNMEM_RL_NL;
+    uint32_t rc = (1 << DYNMEM_RC_POS);
+    uint32_t addr = DYNMEM_START + pos;
+
+    for (i = pos; i < pos + size - 1; i++) {
+        dynmemmap[i] = rc | rlb | mapflags;
+    }
+    dynmemmap[i] = rc | rle | mapflags;
+
+    /* Map memory region to the kernel memory space */
+    dynmem_region.vaddr = addr;
+    dynmem_region.paddr = addr;
+    dynmem_region.num_pages = size;
+    dynmem_region.ap = ap;
+    dynmem_region.control = control;
+    dynmem_region.pt = &mmu_pagetable_master;
+    mmu_map_region(&dynmem_region);
+
+    return (void *)addr;
+}
+
+/**
+ * Update the region strucure to describe a already allocated dynmem region.
  * Updates dynmem_region structures.
  * @param p pointer to the begining of the allocated dynmem section.
  * @return Error code.
  */
-static int update_dynmem_region(void * p)
+static int update_dynmem_region_struct(void * p)
 {
-    uint32_t i;
+    uint32_t i, flags;
     uint32_t reg_start = (uint32_t)p - DYNMEM_START;
     uint32_t reg_end;
 
+    /** If ref count == 0 then there is no allocation. */
     if ((dynmemmap[reg_start] & DYNMEM_RC_MASK) == 0) {
-        KERROR(KERROR_ERR, "Invalid dynmem region addr.");
+        KERROR(KERROR_ERR, "Invalid dynmem region addr or not alloc.");
         return -1;
     }
 
@@ -227,14 +285,15 @@ static int update_dynmem_region(void * p)
                 break;
             }
         }
-    }
+    } /* else this was the only section in this region. */
     reg_end = i;
+    flags = dynmemmap[reg_start];
 
     dynmem_region.vaddr = (uint32_t)p; /* 1:1 mapping by default */
     dynmem_region.paddr = (uint32_t)p;
     dynmem_region.num_pages = reg_end - reg_start + 1;
-    dynmem_region.ap = dynmemmap[reg_start] >> DYNMEM_AP_POS;
-    dynmem_region.control = dynmemmap[reg_start] >> DYNMEM_CTRL_POS;
+    dynmem_region.ap = MAP_TO_AP(flags);
+    dynmem_region.control = MAP_TO_CTRL(flags);
     dynmem_region.pt = &mmu_pagetable_master;
 
     return 0;

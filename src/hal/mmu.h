@@ -111,16 +111,6 @@
  * RWRO 1 1     1 0
  * RWRW 1 1     1 1
  * RORO 1 0     1 0
- *
- * ARM specific note on mapping of these bits:
- * NA = No Access, RO = Read Only, RW = Read/Write
- * +----+
- * |2 10|
- * +----+
- * |A A |
- * |P P |
- * |X   |
- * +----+
  */
 #define MMU_AP_NANA    0x00 /*!< All accesses generate a permission fault */
 #define MMU_AP_RONA    0x05 /*!< Privileged read-only and User no access */
