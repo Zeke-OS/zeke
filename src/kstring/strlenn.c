@@ -39,7 +39,7 @@
  */
 size_t strlenn(const char * str, size_t max)
 {
-    size_t len;
+    size_t len = 0;
 
     while (str[len++] != '\0' && --max > 0) ;
 
