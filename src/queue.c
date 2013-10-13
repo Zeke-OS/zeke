@@ -49,8 +49,8 @@ queue_cb_t queue_create(void * data_array, size_t block_size, size_t array_size)
 
 int queue_push(queue_cb_t * cb, void * element)
 {
-    int nextElement = (cb->m_write + 1) % cb->a_len;
-    int b_size = cb->b_size;
+    size_t nextElement = (cb->m_write + 1) % cb->a_len;
+    size_t b_size = cb->b_size;
 
     /* Check that queue is not full */
     if(nextElement == cb->m_read)
@@ -65,10 +65,10 @@ int queue_push(queue_cb_t * cb, void * element)
 
 int queue_pop(queue_cb_t * cb, void * element)
 {
-    int read = cb->m_read;
-    int write = cb->m_write;
-    int b_size = cb->b_size;
-    int nextElement;
+    size_t read = cb->m_read;
+    size_t write = cb->m_write;
+    size_t b_size = cb->b_size;
+    size_t nextElement;
 
     /* Check that queue is not empty */
     if(read == write)
@@ -95,24 +95,24 @@ void queue_clearFromPopEnd(queue_cb_t * cb)
 
 int queue_isEmpty(queue_cb_t * cb)
 {
-    return cb->m_write == cb->m_read;
+    return (int)(cb->m_write == cb->m_read);
 }
 
 int queue_isFull(queue_cb_t * cb)
 {
-    return ((cb->m_write + 1) % cb->a_len) == cb->m_read;
+    return (int)(((cb->m_write + 1) % cb->a_len) == cb->m_read);
 }
 
-int seek(queue_cb_t * cb, int i, void * element)
+int seek(queue_cb_t * cb, size_t i, void * element)
 {
-    int read = cb->m_read;
-    int write = cb->m_write;
+    size_t read = cb->m_read;
+    size_t write = cb->m_write;
 
     /* Check that queue is not empty */
     if((read % cb->a_len) == write)
         return 0;
 
-    int element_i = (read + i) % cb->a_len;
+    size_t element_i = (read + i) % cb->a_len;
 
     /* Check that we don't hit write position */
     if(element_i == write)

@@ -107,7 +107,7 @@ static int locks_semaphore_thread_spinwait(uint32_t * s, uint32_t millisec)
         timers_release(current_thread->wait_tim);
     }
 
-    return *s;
+    return (int)*s;
 }
 
 /**
@@ -121,7 +121,7 @@ uint32_t locks_syscall(uint32_t type, void * p)
         return (uint32_t)test_and_set((int *)p);
 
     case SYSCALL_SEMAPHORE_WAIT:
-        return locks_semaphore_thread_spinwait(
+        return (uint32_t)locks_semaphore_thread_spinwait(
                 ((ds_osSemaphoreWait_t *)(p))->s,
                 ((ds_osSemaphoreWait_t *)(p))->millisec);
 

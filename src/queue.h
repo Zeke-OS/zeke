@@ -49,8 +49,8 @@ typedef struct queue_cb {
     void * data;    /*!< Pointer to the data array used for queue. */
     size_t b_size;  /*!< Block size in bytes. */
     size_t a_len;   /*!< Array length. */
-    int m_write;
-    int m_read;
+    size_t m_write; /*!< Write index. */
+    size_t m_read;  /*!< Read index. */
 } queue_cb_t;
 
 /**
@@ -116,6 +116,6 @@ int queue_isFull(queue_cb_t * cb);
  * @param[in] element returned element.
  * @return 0 if failed; otherwise succeed.
  */
-int seek(queue_cb_t * cb, int i, void * element);
+int seek(queue_cb_t * cb, size_t i, void * element);
 
 #endif /* QUEUE_H */
