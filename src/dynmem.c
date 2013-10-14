@@ -231,16 +231,16 @@ static void bitmap_block_update(uint32_t * bitmap, uint32_t mark, uint32_t start
  * Updates dynmem allocation table and intially maps the memory region to the
  * kernel memory space.
  */
-static void * kmap_allocation(size_t pos, size_t size, uint32_t ap, uint32_t control)
+static void * kmap_allocation(size_t base, size_t size, uint32_t ap, uint32_t control)
 {
     size_t i;
     uint32_t mapflags = FLAGS_TO_MAP(ap, control);
     uint32_t rlb = (size > 1) ? DYNMEM_RL_BL : DYNMEM_RL_NL;
     uint32_t rle = (size > 1) ? DYNMEM_RL_EL : DYNMEM_RL_NL;
     uint32_t rc = (1 << DYNMEM_RC_POS);
-    uint32_t addr = DYNMEM_START + pos;
+    uint32_t addr = DYNMEM_START + base;
 
-    for (i = pos; i < pos + size - 1; i++) {
+    for (i = base; i < base + size - 1; i++) {
         dynmemmap[i] = rc | rlb | mapflags;
     }
     dynmemmap[i] = rc | rle | mapflags;
@@ -263,16 +263,21 @@ static void * kmap_allocation(size_t pos, size_t size, uint32_t ap, uint32_t con
  * @param p pointer to the begining of the allocated dynmem section.
  * @return Error code.
  */
-static int update_dynmem_region_struct(void * p)
+static int update_dynmem_region_struct(void * base)
 {
     uint32_t i, flags;
-    uint32_t reg_start = (uint32_t)p - DYNMEM_START;
+    uint32_t reg_start = (uint32_t)base - DYNMEM_START;
     uint32_t reg_end;
+
+    if ((uint32_t)base < DYNMEM_START) {
+        KERROR(KERROR_ERR, "Invalid dynmem region addr.");
+        return -1;
+    }
 
     /** If ref count == 0 then there is no allocation. */
     if ((dynmemmap[reg_start] & DYNMEM_RC_MASK) == 0) {
         KERROR(KERROR_ERR, "Invalid dynmem region addr or not alloc.");
-        return -1;
+        return -2;
     }
 
     i = reg_start;
@@ -289,8 +294,8 @@ static int update_dynmem_region_struct(void * p)
     reg_end = i;
     flags = dynmemmap[reg_start];
 
-    dynmem_region.vaddr = (uint32_t)p; /* 1:1 mapping by default */
-    dynmem_region.paddr = (uint32_t)p;
+    dynmem_region.vaddr = (uint32_t)base; /* 1:1 mapping by default */
+    dynmem_region.paddr = (uint32_t)base;
     dynmem_region.num_pages = reg_end - reg_start + 1;
     dynmem_region.ap = MAP_TO_AP(flags);
     dynmem_region.control = MAP_TO_CTRL(flags);
