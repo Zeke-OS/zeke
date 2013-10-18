@@ -12,7 +12,6 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <stdarg.h>
 
 void * memcpy(void * restrict destination, const void * source, size_t num);
 //void * memmove(void * destination, const void * source, ksize_t num);

@@ -1,13 +1,12 @@
 /**
- * @file test_queue.c
- * @brief Test generic thread-safe queue implementation.
+ * @file test_strnncat.c
+ * @brief Test strnncat.
  */
 
 #include <stdio.h>
 #include <punit.h>
 
-typedef size_t ksize_t;
-char * strnncat(char * dst, ksize_t ndst, char * src, ksize_t nsrc);
+char * strnncat(char * dst, size_t ndst, char * src, size_t nsrc);
 
 static void setup()
 {

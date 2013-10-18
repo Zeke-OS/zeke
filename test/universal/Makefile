@@ -17,7 +17,7 @@ PU_REPORT_ORIENTED = 0
 # You can change CC here if you want
 #CC =
 
-CCFLAGS =
+CCFLAGS = -std=c99
 
 # Location of punit makefile
 # Do not touch

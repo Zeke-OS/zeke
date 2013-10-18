@@ -5,7 +5,7 @@
 
 #include <stdio.h>
 #include <punit.h>
-#include <heap.h>
+#include <sched_tiny/heap.h>
 
 static void print_heap(heap_t heap);
 
@@ -157,8 +157,6 @@ static char * test_heap_reschedule(void)
 
 static char * test_shuffled_heap(void)
 {
-    int i;
-
     heap_t heap = HEAP_NEW_EMPTY;
     threadInfo_t thread1;
     threadInfo_t thread2;

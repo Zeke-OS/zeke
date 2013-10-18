@@ -30,7 +30,12 @@
  *******************************************************************************
  */
 
+#include <stddef.h>
+#include <stdint.h>
+#include <stdarg.h>
+#ifndef PU_TEST_BUILD
 #include <kstring.h>
+#endif
 
 /**
  * Composes a string by using printf style format string and additional
