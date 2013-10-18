@@ -77,7 +77,7 @@ int mmu_init_pagetable(mmu_pagetable_t * pt)
 {
     int i;
     uint32_t pte = MMU_PTE_FAULT;
-    uint32_t * p_pte = (uint32_t *)pt->pt_addr; /* points to page table entry in PT */
+    uint32_t * p_pte = (uint32_t *)pt->pt_addr; /* points to a pt entry in PT */
 
     switch (pt->type) {
         case MMU_PTT_COARSE:

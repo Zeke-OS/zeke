@@ -96,13 +96,13 @@ static int update_dynmem_region_struct(void * p);
  */
 void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t control)
 {
-    /* TODO update dynmemmap & update ap+control to the kernel master table & return pointer */
     uint32_t pos;
 
     if(bitmap_block_search(&pos, size, dynmemmap_bitmap, sizeof(dynmemmap_bitmap))) {
         KERROR(KERROR_ERR, "Out of dynmem.");
         return 0; /* Null */
     }
+
     bitmap_block_update(dynmemmap_bitmap, 1, pos, size);
     return kmap_allocation((size_t)pos, size, ap, control);
 }
