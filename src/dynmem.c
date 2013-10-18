@@ -134,6 +134,7 @@ void * dynmem_alloc_force(void * addr, size_t size, uint32_t ap, uint32_t contro
 void dynmem_free_region(void * addr)
 {
     uint32_t i, j, rc;
+    char buf[40];
 
     i = (uint32_t)addr - DYNMEM_START;
     rc = (dynmemmap[i] & DYNMEM_RC_MASK) >> DYNMEM_RC_POS;
@@ -144,7 +145,9 @@ void dynmem_free_region(void * addr)
     }
 
     if (update_dynmem_region_struct(addr)) { /* error */
-        KERROR(KERROR_ERR, "Can't free dynmem region.");
+        ksprintf(buf, sizeof(buf), "Can't free dynmem region: %x",
+                (uint32_t)addr);
+        KERROR(KERROR_ERR, buf);
         return;
     }
 
@@ -268,13 +271,15 @@ static int update_dynmem_region_struct(void * base)
     uint32_t i, flags;
     uint32_t reg_start = (uint32_t)base - DYNMEM_START;
     uint32_t reg_end;
+    char buf[80];
 
     if ((uint32_t)base < DYNMEM_START) {
-        KERROR(KERROR_ERR, "Invalid dynmem region addr.");
+        ksprintf(buf, sizeof(buf), "Invalid dynmem region addr: %x", base);
+        KERROR(KERROR_ERR, buf);
         return -1;
     }
 
-    /** If ref count == 0 then there is no allocation. */
+    /* If ref count == 0 then there is no allocation. */
     if ((dynmemmap[reg_start] & DYNMEM_RC_MASK) == 0) {
         KERROR(KERROR_ERR, "Invalid dynmem region addr or not alloc.");
         return -2;
