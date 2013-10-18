@@ -58,7 +58,6 @@
  */
 void atag_scan(uint32_t fw, uint32_t mtype, uint32_t * atag_addr)
 {
-    uint32_t tag_value;
     uint32_t * atags;
     char msg[120];
 
@@ -72,29 +71,21 @@ void atag_scan(uint32_t fw, uint32_t mtype, uint32_t * atag_addr)
     for (atags = atag_addr; atags < (uint32_t *)0x8000; atags += 1) {
         switch(atags[1]) {
             case ATAG_CORE:
-                (void)strcpy(msg, "[ATAG_CORE] flags: ");
-                itoah32(msg + strlenn(msg, sizeof(msg)), atags[2]);
-
-                (void)strnncat(msg, sizeof(msg), ", page size: ", 40);
-                itoah32(msg + strlenn(msg, sizeof(msg)), atags[3]);
-
-                (void)strnncat(msg, sizeof(msg), ", rootdev: ", 40);
-                itoah32(msg + strlenn(msg, sizeof(msg)), atags[4]);
-
+                ksprintf(msg, sizeof(msg),
+                        "[ATAG_CORE] flags: %x, page size: %u, rootdev: %u\n",
+                        atags[2], atags[3], atags[4]);
                 KERROR(KERROR_LOG, msg);
 
                 atags += atags[0]-1;
                 break;
             case ATAG_MEM:
-                (void)strcpy(msg, "[ATAG_MEM] size: ");
-                itoah32(msg + strlenn(msg, sizeof(msg)), atags[2]);
-
-                (void)strnncat(msg, sizeof(msg), ", start: ", 40);
-                itoah32(msg + strlenn(msg, sizeof(msg)), atags[3]);
+                ksprintf(msg, sizeof(msg),
+                        "[ATAG_MEM] size: %x, start: %x\n",
+                        atags[2], atags[3]);
+                KERROR(KERROR_LOG, msg);
 
                 atags += atags[0]-1;
 
-                KERROR(KERROR_LOG, msg);
                 sysinfo.mem.size = (size_t)atags[2];
                 sysinfo.mem.start = (size_t)atags[3];
                 break;
@@ -119,8 +110,9 @@ void atag_scan(uint32_t fw, uint32_t mtype, uint32_t * atag_addr)
             case ATAG_CMDLINE:
                 atags += 2;
 
-                (void)strcpy(msg, "[ATAG_CMDLINE] : ");
-                (void)strnncat(msg, sizeof(msg), (char *)atags, 80);
+                ksprintf(msg, sizeof(msg),
+                        "[ATAG_CMDLINE] : %s\n", (char *)atags);
+                KERROR(KERROR_LOG, msg);
 
                 atags += atags[0]-1;
                 break;

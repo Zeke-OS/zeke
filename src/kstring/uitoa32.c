@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    itoah32.c
+ * @file    uitoa32.c
  * @author  Olli Vanhoja
- * @brief   itoah32 function.
+ * @brief   uitoa32 function.
  * @section LICENSE
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -33,25 +33,21 @@
 #include <kstring.h>
 
 /**
- * Convert uint32_t integer to hex string.
+ * Convert uint32_t integer to a decimal string.
  * @param str Array in memory where to store the resulting null-terminated
  *            string.
  * @param value Value to be converted to a string.
+ * @return number of characters inserted.
  */
-void itoah32(char * str, uint32_t value)
+int uitoa32(char * str, uint32_t value)
 {
-    int i = 2, n;
-    char c;
-    size_t mask = 0xF0000000;
+    size_t n = 0, div, digs;
 
-    str[0] = '0';
-    str[1] = 'x';
+    for (div = 1, digs = 1; value / div >= 10; div *= 10, digs++);
 
-    for (n = 28; n >= 0; n -= 4) {
-        c = (value & mask) >> n;
-        c = (c < 10) ? '0' + c : 'a' + (c - 10);
-        str[i++] = c;
-        mask = mask >> 4;
-    }
-    str[i] = '\0';
+    do {
+        str[n++] = ((value / div) % 10) + '0';
+    } while (div /= 10);
+
+    return (int)digs;
 }

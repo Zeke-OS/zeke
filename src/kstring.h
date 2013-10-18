@@ -7,11 +7,12 @@
  */
 
 #pragma once
-#ifndef STRING_H
-#define STRING_H
+#ifndef KSTRING_H
+#define KSTRING_H
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdarg.h>
 
 void * memcpy(void * restrict destination, const void * source, size_t num);
 //void * memmove(void * destination, const void * source, ksize_t num);
@@ -21,6 +22,8 @@ char * strcpy(char * dst, const char * src);
 char * strncpy(char * dst, const char * src, size_t n);
 char * strnncat(char * dst, size_t ndst, const char * src, size_t nsrc);
 size_t strlenn(const char * str, size_t max);
-void itoah32(char * str, uint32_t value);
+int uitoa32(char * str, uint32_t value);
+int uitoah32(char * str, uint32_t value);
+void ksprintf(char * str, size_t maxlen, const char * format, ...) __attribute__ ((format (printf, 3, 4)));
 
-#endif /* STRING_H */
+#endif /* KSTRING_H */
