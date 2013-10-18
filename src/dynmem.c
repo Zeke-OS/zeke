@@ -30,6 +30,7 @@
  *******************************************************************************
  */
 
+#include <kstring.h>
 #include <kerror.h>
 #include <dynmem.h>
 
@@ -274,7 +275,7 @@ static int update_dynmem_region_struct(void * base)
     char buf[80];
 
     if ((uint32_t)base < DYNMEM_START) {
-        ksprintf(buf, sizeof(buf), "Invalid dynmem region addr: %x", base);
+        ksprintf(buf, sizeof(buf), "Invalid dynmem region addr: %x", (uint32_t)base);
         KERROR(KERROR_ERR, buf);
         return -1;
     }
