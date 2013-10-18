@@ -63,7 +63,7 @@ mmu_pagetable_t mmu_pagetable_system = {
 
 mmu_region_t mmu_region_kernel = {
     .vaddr          = MMU_VADDR_KERNEL_START,
-    .num_pages      = 32, /* TODO Temporarily mapped as a one area */
+    .num_pages      = 32, /* TODO Temporarily mapped as one big area */
     .ap             = MMU_AP_RWNA,
     .control        = MMU_CTRL_MEMTYPE_WB,
     .paddr          = 0x0,

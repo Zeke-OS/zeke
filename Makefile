@@ -1,3 +1,7 @@
+
+# Zeke - Main Makefile
+#
+# Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
 # Copyright (c) 2012, 2013, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
 # All rights reserved.
 #
