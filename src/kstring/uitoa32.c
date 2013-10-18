@@ -49,5 +49,7 @@ int uitoa32(char * str, uint32_t value)
         str[n++] = ((value / div) % 10) + '0';
     } while (div /= 10);
 
+    str[n] = '\0';
+
     return (int)digs;
 }
