@@ -36,8 +36,8 @@
   */
 
 #include <kstring.h>
-#include "sched.h"
-#include "ksignal.h"
+#include <sched.h>
+#include <ksignal.h>
 #include <syscalldef.h>
 #include <syscall.h>
 #include <dev_config.h>
@@ -67,7 +67,7 @@ void dev_init_all(void)
     /* Call initializers */
     #define DEV_DECLARE2(major, dname) dname##_init(major);
     #define DEV_DECLARE(major, dname) DEV_DECLARE2(major, dname)
-    #include "dev_config.h"
+    #include <dev_config.h>
     #undef DEV_DECLARE
     #undef DEV_DECLARE2
 }
