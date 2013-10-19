@@ -118,6 +118,7 @@ static char * test_percent(void)
 }
 
 static void all_tests() {
+    pu_mod_description("Test kstring functions.");
     pu_def_test(test_uint, PU_RUN);
     pu_def_test(test_hex, PU_RUN);
     pu_def_test(test_char, PU_RUN);
