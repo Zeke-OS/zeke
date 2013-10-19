@@ -217,6 +217,11 @@ test:
 	cd test/universal && make
 	cd test/kstring && make
 
+# target: clean-test - Clean portable test targets
+clean-test:
+	cd test/universal && make clean
+	cd test/kstring && make clean
+
 $(AUTOCONF_H): $(CONFIG_MK)
 	./tools/aconf.sh $(CONFIG_MK) $(AUTOCONF_H)
 
@@ -255,7 +260,8 @@ help:
 
 .PHONY: config kernel $(CRT) test clean
 
-clean:
+# target: clean - Clean all targets
+clean: clean-test
 	rm -f $(AUTOCONF_H)
 	rm -f $(ASOBJS) $(OBJS) $(STARTUP_O)
 	rm -f $(BCS)
