@@ -212,10 +212,10 @@ all: config kernel
 # target: config - Update configuration from $(CONFIG_MK)
 config: $(AUTOCONF_H)
 
-# target: test - Run alla universal unit tests
+# target: test - Run all portable unit tests
 test:
-	cd test\universal \
-	make
+	cd test/universal && make
+	cd test/kstring && make
 
 $(AUTOCONF_H): $(CONFIG_MK)
 	./tools/aconf.sh $(CONFIG_MK) $(AUTOCONF_H)
@@ -253,7 +253,7 @@ kernel.bin: $(MEMMAP) $(STARTUP_O) $(ASOBJS) $(OBJS) $(CRT)
 help:
 	@egrep "^# target:" [Mm]akefile|sed 's/^# target: //'
 
-.PHONY: config kernel $(CRT) clean
+.PHONY: config kernel $(CRT) test clean
 
 clean:
 	rm -f $(AUTOCONF_H)
