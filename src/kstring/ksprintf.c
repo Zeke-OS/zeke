@@ -81,6 +81,7 @@ void ksprintf(char * str, size_t maxlen, const char * format, ...)
                         str[n++] = (char)(va_arg(args, int));
                         break;
                     case 's':
+                        str[n] = '\0';
                         strnncat(str, maxlen, va_arg(args, char *), maxlen - n);
                         n = strlenn(str, maxlen);
                         break;

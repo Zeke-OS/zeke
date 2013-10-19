@@ -11,6 +11,8 @@
 #define NTOSTR(s) _NTOSTR(s)
 #define _NTOSTR(s) #s
 
+#define JUNK "junkjunkjunkjunkjunkjunkjunkjunkjunkjunkjunkjunkjunkjunkjunkjunk"
+
 /* These are needed by ksprintf */
 int uitoa32(char * str, uint32_t value);
 int uitoah32(char * str, uint32_t value);
@@ -29,34 +31,36 @@ static void teardown()
 
 static char * test_uint(void)
 {
-#define TSTRING1    "string1"
-#define UINTVAL     13
-#define TSTRINGF TSTRING1 NTOSTR(UINTVAL)
-    char dest[80];
+#define TSTRING1    "string"
+#define UINTVAL     1337
+#define EXPECTED TSTRING1 NTOSTR(UINTVAL) TSTRING1
+    char actual[80] = JUNK;
 
-    ksprintf(dest, sizeof(dest), TSTRING1 "%u", (uint32_t)UINTVAL);
+    ksprintf(actual, sizeof(actual), TSTRING1 "%u" TSTRING1, (uint32_t)UINTVAL);
 
-    pu_assert_str_equal("String composed correctly.", dest, TSTRINGF);
+    pu_assert_str_equal("String composed correctly.", actual, EXPECTED);
 
 #undef TSTRING1
 #undef UINTVAL1
-#undef TSTRINGF
+#undef EXPECTED
+
+    return 0;
 }
 
 static char * test_hex(void)
 {
-#define TSTRING1    "string1"
+#define TSTRING1    "string"
 #define HEXVALUE    0x00000500
-#define TSTRINGF TSTRING1 NTOSTR(HEXVALUE)
-    char dest[80];
+#define EXPECTED TSTRING1 NTOSTR(HEXVALUE) TSTRING1
+    char actual[80] = JUNK;
 
-    ksprintf(dest, sizeof(dest), TSTRING1 "%x", (uint32_t)HEXVALUE);
+    ksprintf(actual, sizeof(actual), TSTRING1 "%x" TSTRING1, (uint32_t)HEXVALUE);
 
-    pu_assert_str_equal("String composed correctly.", dest, TSTRINGF);
+    pu_assert_str_equal("String composed correctly.", actual, EXPECTED);
 
 #undef TSTRING1
 #undef HEXVALUE
-#undef TSTRINGF
+#undef EXPECTED
 
     return 0;
 }
@@ -65,13 +69,13 @@ static char * test_char(void)
 {
 #define TSTRING     "TEXT1"
 #define TCHAR       'c'
-    char dest[80];
+    char actual[80] = JUNK;
     char final[] = TSTRING;
     final[strlen(final)] = TCHAR;
 
-    ksprintf(dest, sizeof(dest), TSTRING "%c", TCHAR);
+    ksprintf(actual, sizeof(actual), TSTRING "%c", TCHAR);
 
-    pu_assert_str_equal("Strings were concatenated correctly", dest, final);
+    pu_assert_str_equal("Strings were concatenated correctly", actual, final);
 
 #undef TSTRING
 #undef TCHAR
@@ -83,17 +87,17 @@ static char * test_string(void)
 {
 #define TSTRING1    "TEXT1"
 #define TSTRING2    "TEXT2"
-#define TSTRINGF TSTRING1 TSTRING2 TSTRING1
-    char dest[80];
-    char final[] = TSTRINGF;
+#define EXPECTED TSTRING1 TSTRING2 TSTRING1
+    char actual[80] = JUNK;
+    char expected[] = EXPECTED;
 
-    ksprintf(dest, sizeof(dest), TSTRING1 "%s" TSTRING1, TSTRING2);
+    ksprintf(actual, sizeof(actual), TSTRING1 "%s" TSTRING1, TSTRING2);
 
-    pu_assert_str_equal("Strings were concatenated correctly", dest, final);
+    pu_assert_str_equal("Strings were concatenated correctly", actual, expected);
 
 #undef TSTRING1
 #undef TSTRING2
-#undef TSTRINGF
+#undef EXPECTED
 
     return 0;
 }
@@ -101,18 +105,17 @@ static char * test_string(void)
 static char * test_percent(void)
 {
 #define TSTRING     "TEXT1"
-    char dest[80];
-    char final[] = "%" TSTRING "%";
+    char actual[80] = JUNK;
+    char expected[] = "%" TSTRING "%";
 
-    ksprintf(dest, sizeof(dest), "%%" TSTRING "%%");
+    ksprintf(actual, sizeof(actual), "%%" TSTRING "%%");
 
-    pu_assert_str_equal("Strings were concatenated correctly", dest, final);
+    pu_assert_str_equal("Strings were concatenated correctly", actual, expected);
 
 #undef TSTRING
 
     return 0;
 }
-
 
 static void all_tests() {
     pu_def_test(test_uint, PU_RUN);
