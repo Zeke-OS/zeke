@@ -69,9 +69,9 @@ static void mmu_unmap_coarse_region(mmu_region_t * region);
 
 /**
  * Initialize the page table pt by filling it with FAULT entries.
- * @param pt page table.
- * @return 0 if page table was initialized; value other than zero if page table
- * was not initialized successfully.
+ * @param pt    page table.
+ * @return  0 if page table was initialized; value other than zero if page table
+ *          was not initialized successfully.
  */
 int mmu_init_pagetable(mmu_pagetable_t * pt)
 {
@@ -115,8 +115,8 @@ int mmu_init_pagetable(mmu_pagetable_t * pt)
 
 /**
  * Map memory region.
- * @param region structure that specifies the memory region.
- * @return Zero if succeed; non-zero error code otherwise.
+ * @param region    Structure that specifies the memory region.
+ * @return  Zero if succeed; non-zero error code otherwise.
  */
 int mmu_map_region(mmu_region_t * region)
 {
@@ -136,7 +136,7 @@ int mmu_map_region(mmu_region_t * region)
 
 /**
  * Map a section of physical memory in multiples of 1 MB.
- * @param region structure that specifies the memory region.
+ * @param region    Structure that specifies the memory region.
  */
 static void mmu_map_section_region(mmu_region_t * region)
 {
@@ -167,7 +167,7 @@ static void mmu_map_section_region(mmu_region_t * region)
  * Map a section of physical memory to a (contiguous set of) page table(s).
  * @note xn bit an ap configuration is copied to all pages in this region.
  * @note One page table maps a 1MB of memory.
- * @param region structure that specifies the memory region.
+ * @param region    Structure that specifies the memory region.
  */
 static void mmu_map_coarse_region(mmu_region_t * region)
 {
@@ -195,7 +195,7 @@ static void mmu_map_coarse_region(mmu_region_t * region)
 
 /**
  * Unmap mapped memory region.
- * @param region original descriptor structure for the region.
+ * @param region    Original descriptor structure for the region.
  */
 int mmu_unmap_region(mmu_region_t * region)
 {
@@ -215,7 +215,7 @@ int mmu_unmap_region(mmu_region_t * region)
 
 /**
  * Unmap section pt entry region.
- * @param region original descriptor structure for the region.
+ * @param region    Original descriptor structure for the region.
  */
 static void mmu_unmap_section_region(mmu_region_t * region)
 {
@@ -236,7 +236,7 @@ static void mmu_unmap_section_region(mmu_region_t * region)
 
 /**
  * Unmap coarse pt entry region.
- * @param region original descriptor structure for the region.
+ * @param region    Original descriptor structure for the region.
  */
 static void mmu_unmap_coarse_region(mmu_region_t * region)
 {
@@ -257,9 +257,9 @@ static void mmu_unmap_coarse_region(mmu_region_t * region)
 
 /**
  * Attach a L2 page table to a L1 master page table or attach a L1 page table.
- * @param pt a page table descriptor structure.
- * @return Zero if attach succeed; non-zero error code if invalid
- *         page table type.
+ * @param pt    A page table descriptor structure.
+ * @return  Zero if attach succeed; non-zero error code if invalid page table
+ *          type.
  */
 int mmu_attach_pagetable(mmu_pagetable_t * pt)
 {
@@ -294,8 +294,8 @@ int mmu_attach_pagetable(mmu_pagetable_t * pt)
 
 /**
  * Detach a L2 page table from a L1 master page table.
- * @param pt a page table descriptor structure.
- * @return Zero if attach succeed; value other than zero in case of error.
+ * @param pt    A page table descriptor structure.
+ * @return  Zero if attach succeed; value other than zero in case of error.
  */
 int mmu_detach_pagetable(mmu_pagetable_t * pt)
 {
@@ -333,8 +333,8 @@ uint32_t mmu_domain_access_get(void)
  * Set access rights for selected domains.
  *
  * Mask is selected so that 0x3 = domain 1 and 0xC is domain 2 etc.
- * @param value contains the configuration bit fields for changed domains.
- * @param mask selects which domains are updated.
+ * @param value Contains the configuration bit fields for changed domains.
+ * @param mask  Selects which domains are updated.
  */
 void mmu_domain_access_set(uint32_t value, uint32_t mask)
 {
@@ -356,8 +356,8 @@ void mmu_domain_access_set(uint32_t value, uint32_t mask)
 
 /**
  * Set MMU control bits.
- * @param value control bits.
- * @param mask control bits that will be changed.
+ * @param value Control bits.
+ * @param mask  Control bits that will be changed.
  */
 void mmu_control_set(uint32_t value, uint32_t mask)
 {

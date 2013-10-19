@@ -1,8 +1,9 @@
 /**
  *******************************************************************************
- * @file    process.h
+ * @file    process.c
  * @author  Olli Vanhoja
- * @brief   Kernel process management header file.
+ * @brief   Kernel process management source file. This file is responsible for
+ *          thread creation and management.
  * @section LICENSE
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -34,44 +35,49 @@
   * @{
   */
 
-#pragma once
-#ifndef PROCESS_H
-#define PROCESS_H
+#include <process.h>
 
-#include "sched.h" /* Needed for threadInfo_t and threading functions */
-#if configMMU == 0
-#error Processes are not supported without MMU.
-#endif
-#include <hal/mmu.h>
-
-/* TODO 16 simultaneously active procesesss so ASID can be used to eliminate TLB
- * flushes. This means that we must group processes to groups of 16 processes
- * with each groups having overlapping ASIDs. */
-
-typedef int pid_t;
+int process_replace(pid_t pid, void * image, size_t size);
 
 /**
- * Process Control Block or Process Descriptor Structure
+ * Initialize a new process.
+ * @param image Process image to be loaded.
+ * @param size  Size of the image.
+ * @return  PID; -1 if unable to initialize.
  */
-typedef struct {
-    threadInfo_t * main_thread; /*!< Main thread of this process. */
-    mmu_pagetable_t * pptable;  /*!< Process master page table. */
-    mmu_region_t regions[3];    /*!< Standard regions of a process.
-                                 *   [0] = stack
-                                 *   [1] = heap/data
-                                 *   [2] = code
-                                 */
+pid_t process_init(void * image, size_t size)
+{
+    return -1;
+}
 
-    /* TODO - note: main_thread already has a lined list of child threads
-     *      - page table(s)
-     *      - memory allocations (that should be freed automatically if process exits)
-     *      - etc.
-     */
-} processInfo_t;
+/**
+ * Create a new process.
+ * @param pid   Process id.
+ * @return  New PID; -1 if unable to fork.
+ */
+pid_t process_fork(pid_t pid)
+{
+    return -1;
+}
 
-#endif /* PROCESS_H */
+int process_kill(void)
+{
+    return -1;
+}
+
+/**
+ * Replace the image of a given process with a new one.
+ * The new image must be mapped in kernel memory space.
+ * @param pid   Process id.
+ * @param image Process image to be loaded.
+ * @param size  Size of the image.
+ * @return  Value other than zero if unable to replace process.
+ */
+int process_replace(pid_t pid, void * image, size_t size)
+{
+    return -1;
+}
 
 /**
   * @}
   */
-

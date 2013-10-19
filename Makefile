@@ -91,8 +91,8 @@ SRC-	=#
 SRC-0  	=#
 SRC-1  	=#
 ASRC-  	=#
-ASCR-0 	=#
-ASCR-1	=#
+ASRC-0 	=#
+ASRC-1	=#
 # SRC- and SRC-0 meaning module will not be compiled
 
 # Base system
@@ -244,7 +244,6 @@ $(OBJS): $(BCS)
 $(CRT):
 	make -C $(CRT_DIR) all
 
-#--sysroot=/usr/lib/gcc/arm-none-eabi/4.7.4/armv6-m/
 kernel.bin: $(MEMMAP) $(STARTUP_O) $(ASOBJS) $(OBJS) $(CRT)
 	$(ARMGNU)-ld -o kernel.elf -T $^
 	$(ARMGNU)-objdump -D kernel.elf > kernel.list

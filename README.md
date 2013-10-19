@@ -14,13 +14,6 @@ designed for operating systems using system calls and other features not so
 commonly used on embedded platforms. Currently the core of Zeke is not even
 dependent of CMSIS at all, so it only provides CMSIS-RTOS-like interface.
 
-My current goal with Zeke is to expand it rapidly towards POSIX compliance
-and implementing real kernel features as much as possible. At the same time
-I'm trying to make it as modular as possible so that it's possible to shrink
-it under some 2 kB so it can be used with some cheap M0 cores but also at the
-same time make it possible to compile it with full feature se for real ARM
-cores.
-
 
 Key features
 ------------

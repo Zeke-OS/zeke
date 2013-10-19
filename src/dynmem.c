@@ -90,10 +90,10 @@ static int update_dynmem_region_struct(void * p);
 
 /**
  * Allocate a contiguous memory region from dynmem area.
- * @param size region size in 1MB blocks.
- * @param ap access permission.
- * @param control control settings.
- * @return address to the allocated region. Returns 0 if out of memory.
+ * @param size      Region size in 1MB blocks.
+ * @param ap        Access permission.
+ * @param control   Control settings.
+ * @return  Address to the allocated region. Returns 0 if out of memory.
  */
 void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t control)
 {
@@ -113,11 +113,11 @@ void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t control)
  * already reserved.
  * This function will never fail, and might be destructive and may even
  * corrupt the allocation table.
- * @param addr address.
- * @param size region size in 1MB blocks.
- * @param ap access permission.
- * @param control control settings.
- * @return address to the allocated region.
+ * @param addr  Address.
+ * @param size  Region size in 1MB blocks.
+ * @param ap    Access permission.
+ * @param control Control settings.
+ * @return  address to the allocated region.
  */
 void * dynmem_alloc_force(void * addr, size_t size, uint32_t ap, uint32_t control)
 {
@@ -130,7 +130,7 @@ void * dynmem_alloc_force(void * addr, size_t size, uint32_t ap, uint32_t contro
 /**
  * Decrement dynmem region reference counter. If the final value of a reference
  * counter is zero then the dynmem region is freed and unmapped.
- * @param addr address of the dynmem region to be freed.
+ * @param addr  Address of the dynmem region to be freed.
  */
 void dynmem_free_region(void * addr)
 {
@@ -163,12 +163,12 @@ void dynmem_free_region(void * addr)
 
 /**
  * Search for a contiguous block of block_len in bitmap.
- * @param retval[out] index of the first contiguous block of requested length.
- * @param block_len is the lenght of contiguous block searched for.
- * @param bitmap is a bitmap of block reservations.
- * @param size is the size of bitmap in bytes.
- * @return Returns zero if a free block found; Value other than zero if there is no free
- * contiguous block of requested length.
+ * @param retval[out]   Index of the first contiguous block of requested length.
+ * @param block_len     is the lenght of contiguous block searched for.
+ * @param bitmap        is a bitmap of block reservations.
+ * @param size          is the size of bitmap in bytes.
+ * @return  Returns zero if a free block found; Value other than zero if there
+ *          is no free contiguous block of requested length.
  */
 static int bitmap_block_search(uint32_t * retval, uint32_t block_len, uint32_t * bitmap, size_t size)
 {
@@ -201,10 +201,10 @@ static int bitmap_block_search(uint32_t * retval, uint32_t block_len, uint32_t *
 
 /**
  * Set or clear contiguous block of bits in bitmap.
- * @param bitmap is the bitmap being changed.
- * @param mark 0 = clear; 1 = set;
- * @param start is the starting bit position in bitmap.
- * @param len is the length of the block being updated.
+ * @param bitmap    is the bitmap being changed.
+ * @param mark      0 = clear; 1 = set;
+ * @param start     is the starting bit position in bitmap.
+ * @param len       is the length of the block being updated.
  */
 static void bitmap_block_update(uint32_t * bitmap, uint32_t mark, uint32_t start, uint32_t len)
 {
@@ -234,6 +234,10 @@ static void bitmap_block_update(uint32_t * bitmap, uint32_t mark, uint32_t start
 /**
  * Updates dynmem allocation table and intially maps the memory region to the
  * kernel memory space.
+ * @param base      is the base address.
+ * @param size      is the size of the memory region.
+ * @param ap        Access Permissions.
+ * @param control   Control bits.
  */
 static void * kmap_allocation(size_t base, size_t size, uint32_t ap, uint32_t control)
 {
@@ -264,8 +268,8 @@ static void * kmap_allocation(size_t base, size_t size, uint32_t ap, uint32_t co
 /**
  * Update the region strucure to describe a already allocated dynmem region.
  * Updates dynmem_region structures.
- * @param p pointer to the begining of the allocated dynmem section.
- * @return Error code.
+ * @param p Pointer to the begining of the allocated dynmem section.
+ * @return  Error code.
  */
 static int update_dynmem_region_struct(void * base)
 {
