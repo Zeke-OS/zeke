@@ -30,7 +30,7 @@ static char * test_uitoa32(void)
     retVal = uitoa32(actual, (uint32_t)UINTVAL);
 
     pu_assert_str_equal("Unsigned integer was converted to string.", actual, expected);
-    pu_assert_equal("return value is number of printable characters in the string.", retVal, sizeof(expected) - 1);
+    pu_assert_equal("return value is number of printable characters in the string.", (int)retVal, (int)(sizeof(expected) - 1));
 
 #undef UINTVAL
 
