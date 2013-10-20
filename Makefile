@@ -157,7 +157,6 @@ $(CRT):
 	make -C $(CRT_DIR) all
 
 $(MODAS): $(ASOBJS) $(OBJS)
-	@echo "Module: $@"
 	$(eval CUR_MODULE := $(basename $@))
 	$(eval CUR_OBJS := $(patsubst %.c, %.o, $($(CUR_MODULE)-SRC-1)))
 	$(eval CUR_OBJS += $(patsubst %.S, %.o, $($(CUR_MODULE)-ASRC-1)))
