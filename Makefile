@@ -39,6 +39,13 @@ ifndef configARCH
 $(error Missing configARCH!)
 endif
 
+# Makefiles for modules ########################################################
+# Atm for sake of simplicity we keep all makefiles on single level
+MODMKFILES = $(wildcard *.mk)
+include $(MODMKFILES)
+# Following will generate a list of module names
+MODULES = $(basename $(notdir $(MODMKFILES)))
+
 # Generic Compiler Options #####################################################
 ARMGNU   = arm-none-eabi
 CCFLAGS  = -std=c99 -emit-llvm -Wall -ffreestanding -O2
@@ -87,75 +94,18 @@ IDIR = ./include ./config ./src
 
 # Select Modules ###############################################################
 # Available selections:
-SRC-	=#
+SRC-	=# C sources
 SRC-0  	=#
 SRC-1  	=#
-ASRC-  	=#
+ASRC-  	=# Assembly sources
 ASRC-0 	=#
 ASRC-1	=#
 # SRC- and SRC-0 meaning module will not be compiled
 
-# Base system
-SRC-1 += $(wildcard src/*.c)
-SRC-1 += $(wildcard src/kstring/*.c)
-SRC-$(configSCHED_TINY) += $(wildcard src/sched_tiny/*.c)
-# Kernel logging
-SRC-$(configKERROR_LAST) += $(wildcard  src/kerror_last/*.c)
-# TODO thscope should be moved??
-SRC-1 += $(wildcard src/thscope/*.c)
+# Include sources from modules
+SRC-1 += $(foreach var,$(MODULES), $($(var)-SRC-1))
+ASRC-1 += $(foreach var,$(MODULES), $($(var)-ASRC-1))
 
-# Target model specific modules
-ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
-	# Includes
-	IDIR += ./Libraries/CMSIS/Include ./Libraries/STM32F0xx/Drivers/inc
-	IDIR += ./Libraries/STM32F0xx/CMSIS
-	IDIR += ./Libraries/STM32F0xx/Drivers/inc
-	# TODO not always Discovery
-	IDIR += ./Libraries/Discovery
-	# Soúrces
-	SRC-1 += $(wildcard Libraries/STM32F0xx/CMSIS/*.c)
-	#SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_dbgmcu.c
-	SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_exti.c
-	SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_gpio.c
-	SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_misc.c
-	#SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_pwr.c
-	SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_rcc.c
-	SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_syscfg.c
-	#SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_tim.c
-	# TODO not always Discovery
-	SRC-1 += $(wildcard Libraries/Discovery/*.c)
-	SRC-1 += $(wildcard src/hal/stm32f0/*.c)
-endif
-ifeq ($(configMCU_MODEL),MCU_MODEL_BCM2835)
-	ASRC-1 += $(wildcard src/hal/bcm2835/*.S)
-	SRC-1 += $(wildcard src/hal/bcm2835/*.c)
-endif
-
-# Select HAL sources
-SRC-1 += src/hal/sysinfo.c
-SRC-$(configATAG) += src/hal/atag.c
-SRC-$(configMMU) += src/hal/mmu.c
-ifeq ($(configARM_PROFILE_M),1)
-	SRC-1 += $(wildcard src/hal/cortex_m/*.c)
-else
-#	ifeq ($(configARCH),__ARM4T__) # ARM9
-#	endif
-	# ARM11
-	ifneq (,$(filter $(configARCH),__ARM6__ __ARM6K__)) # Logical OR
-		ASRC-1 += $(wildcard src/hal/arm11/*.S)
-		SRC-1 += $(wildcard src/hal/arm11/*.c)
-	endif
-endif
-
-# Dev subsystem
-# TODO dev selection from config file
-SRC-$(configDEVSUBSYS) += $(wildcard src/dev/dev.c)
-SRC-$(configDEVSUBSYS_NULL) += $(wildcard src/dev/devnull.c)
-SRC-$(configDEVSUBSYS_LCD)  += $(wildcard src/dev/lcd/lcd.c)
-SRC-$(configDEVSUBSYS_LCD)  += $(wildcard src/dev/lcd/lcd_ctrl.c)
-
-# PTTK91 VM
-# TODO should be built separately
 ################################################################################
 # Assembly Obj files
 ASOBJS 	:= $(patsubst %.S, %.o, $(ASRC-1))
@@ -201,10 +151,14 @@ CRT_DIR = $(dir $(CRT))
 IDIR := $(patsubst %,-I%,$(subst :, ,$(IDIR)))
 STARTUP_O = $(patsubst %.S, %.o, $(STARTUP))
 
+# A files for modules
+MODAS = $(addsuffix .a, $(MODULES))
+
 # We use suffixes because it's fun
 .SUFFIXES:					# Delete the default suffixes
 .SUFFIXES: .c .bc .o .h		# Define our suffix list
 
+# Targets ######################################################################
 
 # target: all - Make config and compile kernel
 all: config kernel
@@ -249,7 +203,14 @@ $(OBJS): $(BCS)
 $(CRT):
 	make -C $(CRT_DIR) all
 
-kernel.bin: $(MEMMAP) $(STARTUP_O) $(ASOBJS) $(OBJS) $(CRT)
+$(MODAS): $(ASOBJS) $(OBJS)
+	@echo "Module: $@"
+	$(eval CUR_MODULE := $(basename $@))
+	$(eval CUR_OBJS := $(patsubst %.c, %.o, $($(CUR_MODULE)-SRC-1)))
+	$(eval CUR_OBJS += $(patsubst %.S, %.o, $($(CUR_MODULE)-ASRC-1)))
+	ar rcs $@ $(CUR_OBJS)
+
+kernel.bin: $(MEMMAP) $(STARTUP_O) $(MODAS) $(CRT)
 	$(ARMGNU)-ld -o kernel.elf -T $^
 	$(ARMGNU)-objdump -D kernel.elf > kernel.list
 	$(ARMGNU)-objcopy kernel.elf kernel.bin -O binary
@@ -271,4 +232,5 @@ clean: clean-test
 	rm -f *.bin
 	rm -f *.elf
 	rm -f *.list
+	rm -f *.a
 	$(MAKE) -C $(CRT_DIR) clean
