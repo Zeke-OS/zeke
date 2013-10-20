@@ -21,7 +21,8 @@ ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
 	hal-SRC-1 += $(wildcard src/hal/stm32f0/*.c)
 endif
 ifeq ($(configMCU_MODEL),MCU_MODEL_BCM2835)
-	hal-ASRC-1 += $(wildcard src/hal/bcm2835/*.S)
+	# NOTE: We don't want to include STARTUP here!
+	hal-ASRC-1 += $(filter-out $(STARTUP), $(wildcard src/hal/bcm2835/*.S))
 	hal-SRC-1 += $(wildcard src/hal/bcm2835/*.c)
 endif
 

@@ -211,9 +211,9 @@ $(MODAS): $(ASOBJS) $(OBJS)
 	ar rcs $@ $(CUR_OBJS)
 
 kernel.bin: $(MEMMAP) $(STARTUP_O) $(MODAS) $(CRT)
-	$(ARMGNU)-ld -o kernel.elf -T $^
+	$(ARMGNU)-ld -o kernel.elf -T $(MEMMAP) $(STARTUP_O) --whole-archive $(MODAS) --no-whole-archive $(CRT)
 	$(ARMGNU)-objdump -D kernel.elf > kernel.list
-	$(ARMGNU)-objcopy kernel.elf kernel.bin -O binary
+	$(ARMGNU)-objcopy kernel.elf -O binary kernel.bin
 
 # target: help - Display callable targets.
 help:
