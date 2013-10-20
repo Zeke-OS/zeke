@@ -112,3 +112,34 @@ using following notation:
     SECT_HW_POSTINIT(init1);
     SECT_HW_POSTINIT(init2);
 
+
+Makefiles
+---------
+
+The main Makefile is responsible of parsing module makefiles and compiling the
+whole kernel. Module makefiles are named as `<module>.mk` in the root directory.
+
+Note that in context of Zeke there is two kinds of modules, the core/top
+level modules that are packed as static library files and then there is
+kind of submodules (often referred as modules too) that are optional
+compilation units or compilation unit groups. Latter are configured
+in the kernel configuration file where as the preceding can't be completely
+disabled (at least yet). However if all submodules of the top module are
+disabled in the configuration file then the static library file of the top
+module will be eventually empty.
+
+Module makefiles are parsed as normal makefiles but care should be taken when
+changing global variables. Mainly module makefiles are allowed to only apped
+IDIR variable and all other variables should be more or less specific to the
+module itself.
+
+Example of a module makefile (test.mk):
+    # Test module
+    # Mandatory file
+    test-SRC-1 += src/test/test.c
+    test-SRC-$(configTEST_CONFIGURABLE) += src/test/source.c
+
+Main makefile will automatically find `test-SRC-1` list and compile a new static
+library containing all compilation units specified in the list. Name of the
+library is from the makefile's name and so should be the first word of the source
+file listing.
