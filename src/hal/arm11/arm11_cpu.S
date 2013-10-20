@@ -48,8 +48,9 @@
 cpu_set_process:
     mcr     p15, 0, r0, c2, c0, 0   /* Set new TTB value. */
     /* Invalidate TLBs if dgrp != 0 */
+    mov     r0, #0
     cmp     r1, #0
-    mcrne   p15, 0, r0, c8, c7, 0   /* Invalidate I+D TLBs. */
+    mcrne   p15, 0, r0, c8, c7, 0   /* Invalidate all I+D TLBs. */
     mcrne   p15, 0, r0, c7, c10, 4  /* Drain write buffer. */
 
 .end
