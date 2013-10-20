@@ -40,11 +40,7 @@
 #include <ksignal.h>
 #include <syscalldef.h>
 #include <syscall.h>
-#include <dev_config.h>
 #include "dev.h"
-
-/* Mark dev_init_all as a constructor for dev subsystem */
-void dev_init_all(void) __attribute__((constructor));
 
 /** TODO dev syscalls */
 /** TODO How can we wait for dev to unlock? osSignalWait? */
@@ -56,21 +52,6 @@ void dev_init_all(void) __attribute__((constructor));
 struct dev_driver dev_alloc_table[DEV_MAJORDEVS];
 
 static void dev_threadDevSignalSet(osDev_t dev);
-
-/**
- * Init device drivers.
- */
-void dev_init_all(void)
-{
-    memset(dev_alloc_table, 0, sizeof(dev_alloc_table));
-
-    /* Call initializers */
-    #define DEV_DECLARE2(major, dname) dname##_init(major);
-    #define DEV_DECLARE(major, dname) DEV_DECLARE2(major, dname)
-    #include <dev_config.h>
-    #undef DEV_DECLARE
-    #undef DEV_DECLARE2
-}
 
 /**
  * Open and lock device access.

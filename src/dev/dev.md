@@ -23,8 +23,16 @@ Configuration
 Dev subsystem is enabled by configDEVSUBSYS definition in
 config/config.mk.
 
-Major modules are declared in config/dev_config.h by a
-`DEV_DECLARE(major_number, module)`.
-
 include/devtypes.h resevers 16 slots for major dev modules by default but it can
 be changed by updating `DEV_MAJORDEVS` and `DEV_MINORBITS` definitions.
+
+Major number mapping
+--------------------
+
+    +-------+---------------+--------------------------------------------------+
+    | Major | Device name   | Description                                      |
+    +-------+---------------+--------------------------------------------------+
+    | 0     | devnull       | Null device                                      |
+    | 1     | lcd           | Parallel IO LCD                                  |
+    +-------+---------------+--------------------------------------------------+
+

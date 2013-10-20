@@ -43,19 +43,20 @@
 #include "sched.h"
 #include "ksignal.h"
 #include "lcd_ctrl.h"
-#include "lcd.h"
 
 int lcd_cwrite(uint32_t ch, osDev_t dev);
 static osThreadId lcdc_thread_id;
+
+void lcd_init(void) __attribute__((constructor));
 
 /**
  * TODO lcd driver should use its own thread to commit slow write operations to
  * keep kernel time small. Also lcd should be set busy while thread is executing.
  */
-void lcd_init(int major)
+void lcd_init(void)
 {
     lcdc_thread_id = lcdc_init();
-    DEV_INIT(major, &lcd_cwrite, 0, 0, 0, 0, 0);
+    DEV_INIT(1, &lcd_cwrite, 0, 0, 0, 0, 0);
 }
 
 /**

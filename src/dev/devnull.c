@@ -40,11 +40,14 @@
   */
 
 #include "dev.h"
-#include "devnull.h"
 
-void devnull_init(int major)
+void devnull_init(void) __attribute__((constructor));
+int devnull_cwrite(uint32_t ch, osDev_t dev);
+int devnull_cread(uint32_t * ch, osDev_t dev);
+
+void devnull_init(void)
 {
-    DEV_INIT(major, &devnull_cwrite, &devnull_cread, 0, 0, 0, DEV_FLAG_NONLOCK);
+    DEV_INIT(1, &devnull_cwrite, &devnull_cread, 0, 0, 0, DEV_FLAG_NONLOCK);
 }
 
 int devnull_cwrite(uint32_t ch, osDev_t dev)

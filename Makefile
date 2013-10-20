@@ -41,10 +41,12 @@ endif
 
 # Makefiles for modules ########################################################
 # Atm for sake of simplicity we keep all makefiles on single level
-MODMKFILES = $(wildcard *.mk)
+MODMKFILES = $(wildcard ./modmakefiles/*.mk)
 include $(MODMKFILES)
 # Following will generate a list of module names
-MODULES = $(basename $(notdir $(MODMKFILES)))
+ALLMODULES = $(basename $(notdir $(MODMKFILES)))
+# Remove modules that do not contain any compilation units
+MODULES += $(foreach var, $(ALLMODULES), $(if $(strip $($(var)-SRC-1) $($(var)-ASRC-1)), $(var),))
 
 # Generic Compiler Options #####################################################
 ARMGNU   = arm-none-eabi
