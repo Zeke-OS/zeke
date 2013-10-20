@@ -143,3 +143,20 @@ Main makefile will automatically find `test-SRC-1` list and compile a new static
 library containing all compilation units specified in the list. Name of the
 library is from the makefile's name and so should be the first word of the source
 file listing.
+
+### Target specific compilation options and special files
+
+As we don't want to put anything target specific and possibly changing data to
+main makefile we are using a special makefile called `target.mak`. This special
+makefile won't be noticed by the module makefile search but it's included
+separately. `target.mak` doesn't need to be changed if Zeke is compiled to a
+different platform but it has to be updated if support for a new platform is to
+be added.
+
+`target.mak` should define at least following target specific variables:
++ `ASFLAGS`: Containing CPU architecture flags
++ `MEMMAP`: Specifying linker script for kernel image memory map
++ `STARTUP`: Specifying target specific startup assembly source code file
++ `CRT`: Specifying CRT library used with the target
+and optionally:
++ `LLCFLAGS`: containing some target specific flags
