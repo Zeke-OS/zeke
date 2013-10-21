@@ -12,6 +12,8 @@ Naming Conventions
 + module.c|h    Any module that implements some functionality
 + kmodule.c|h   Kernel scope source module that provides some external
                 sycallable functionality
++ lowlevel.S    Assembly source code; Note that capital S for user files as file
+                names ending with small s are reserved for compilation time files
 + dev/          Dev subsys modules
 + thscope/      Functions that are called and excecuted in thread scope;
                 This means mainly syscall wrappers
@@ -23,8 +25,8 @@ declaring global variable please atleast use descriptive names.
 
 There has been both naming conventions used mixed case with underline between
 module name and rest of the name and everyting writen small with underlines.
-Third conventions is some very ugly that was inherited from CMSIS which
-we are now trying to get rid of.
+Third conventions is some very ugly that was inherited from CMSIS which we are
+now trying to get rid of.
 
 Following names are somewhat acceptable:
 
@@ -117,32 +119,42 @@ Makefiles
 ---------
 
 The main Makefile is responsible of parsing module makefiles and compiling the
-whole kernel. Module makefiles are named as `<module>.mk` in the root directory.
+whole kernel. Module makefiles are named as `<module>.mk` and are located in the
+`modmakefiles` directory under the root.
 
-Note that in context of Zeke there is two kinds of modules, the core/top
-level modules that are packed as static library files and then there is
-kind of submodules (often referred as modules too) that are optional
-compilation units or compilation unit groups. Latter are configured
-in the kernel configuration file where as the preceding can't be completely
-disabled (at least yet). However if all submodules of the top module are
-disabled in the configuration file then the static library file of the top
-module will be eventually empty.
+Note that in context of Zeke there is two kinds of modules, the core/top level
+modules that are packed as static library files and then there is kind of
+submodules (often referred as modules too) that are optional compilation units
+or compilation unit groups. Both are configured in the kernel configuration.
+
+Disabling some submodules may disable the whole module while some are only a
+part of bigged top modules. So if for example `configDEVSUBSYS` is set to zero
+then only devsubsys related functionality/copilation units are dropped from the
+base system, but if `configDEVNULL` is set to zero then the whole module is
+dropped from the compilation.
 
 Module makefiles are parsed as normal makefiles but care should be taken when
-changing global variables. Mainly module makefiles are allowed to only apped
-IDIR variable and all other variables should be more or less specific to the
-module itself.
+changing global variables in makefiles. Module makefiles are mainly allowed to
+only apped IDIR variable and all other variables should be more or less specific
+to the module itself and should begin with the name of the module.
 
 Example of a module makefile (test.mk):
     # Test module
     # Mandatory file
+    # If any source files are declared like this the whole module becomes
+    # mandatory and won't be dropped even if its configuration is set to zero.
     test-SRC-1 += src/test/test.c
+    # Optional file
+    # If all files are declared like this then the module is optional and can be
+    # enabled or disabled in the `config.mk`.
     test-SRC-$(configTEST_CONFIGURABLE) += src/test/source.c
+    # Assembly file
+    test-ASRC$(configTEST_CONFIGURABLE) += src/test/lowlevel.S
 
-Main makefile will automatically find `test-SRC-1` list and compile a new static
-library containing all compilation units specified in the list. Name of the
-library is from the makefile's name and so should be the first word of the source
-file listing.
+Main makefile will automatically discover `test-SRC-1` list and will compile a
+new static library based on the compilation units in the list. Name of the
+library is derived from the makefile's name and so should be the first word of
+the source file list name.
 
 ### Target specific compilation options and special files
 
