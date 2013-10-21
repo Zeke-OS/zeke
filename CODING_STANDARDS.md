@@ -9,13 +9,13 @@ Naming Conventions
 
 ### File names
 
-+ module.c|h    Any module that implements some functionality
-+ kmodule.c|h   Kernel scope source module that provides some external
++ `module.c|h`  Any module that implements some functionality
++ `kmodule.c|h` Kernel scope source module that provides some external
                 sycallable functionality
-+ lowlevel.S    Assembly source code; Note that capital S for user files as file
++ `lowlevel.S`  Assembly source code; Note that capital S for user files as file
                 names ending with small s are reserved for compilation time files
-+ dev/          Dev subsys modules
-+ thscope/      Functions that are called and excecuted in thread scope;
++ `dev/`        Dev subsys modules
++ `thscope/`    Functions that are called and excecuted in thread scope;
                 This means mainly syscall wrappers
 
 ### Global variables
@@ -30,15 +30,15 @@ now trying to get rid of.
 
 Following names are somewhat acceptable:
 
-+ module_featureName
-+ module_feature_name
++ `module_featureName`
++ `module_feature_name`
 
 ### Function names
 
-+ module_compFunction   + module = name that also appears in filename
++ `module_compFunction` + module = name that also appears in filename
                         + comp   = component/functionality eg. thread
                                    components will change thread status
-+ module_comp_function
++ `module_comp_function`
 
 
 Standard Data Types
@@ -65,15 +65,15 @@ Kernel Initialization
 Kernel initialization order is defined as follows:
 
 For Cortex-M:
-+ SystemInit - the clock system intitialization and other mandatory hw inits
-+ __libc_init_array - Static constructors
-+ kinit - Kernel initialization and load user code
++ `SystemInit` - the clock system intitialization and other mandatory hw inits
++ `__libc_init_array` - Static constructors
++ `kinit` - Kernel initialization and load user code
 
 For ARM11:
-+ hw_preinit
-+ constructors
-+ hw_postinit
-+ kinit
++ `hw_preinit`
++ `constructors`
++ `hw_postinit`
++ `kinit`
 
 After kinit scheduler will kick in and initialization continues in user space.
 
@@ -94,6 +94,7 @@ not be called in any case. Still this doesn't generate any compilation errors
 and array of fini functions is still generated and maybe supported later.
 
 Following example shows constructor/intializer notation supported by Zeke:
+
     void begin(void) __attribute__((constructor));
     void end(void) __attribute__((destructor));
 
