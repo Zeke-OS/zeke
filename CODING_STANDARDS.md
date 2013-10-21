@@ -139,6 +139,7 @@ only apped IDIR variable and all other variables should be more or less specific
 to the module itself and should begin with the name of the module.
 
 Example of a module makefile (test.mk):
+
     # Test module
     # Mandatory file
     # If any source files are declared like this the whole module becomes
