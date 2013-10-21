@@ -82,6 +82,7 @@ CRT_DIR = $(dir $(CRT))
 # Include Dirs #################################################################
 IDIR = ./include ./config ./src
 ################################################################################
+IDIR := $(patsubst %,-I%,$(subst :, ,$(IDIR)))
 
 # Select & Include Modules #####################################################
 # Available selections for source code files:
@@ -97,17 +98,20 @@ ASRC-1	=#
 SRC-1 += $(foreach var,$(MODULES), $($(var)-SRC-1))
 ASRC-1 += $(foreach var,$(MODULES), $($(var)-ASRC-1))
 ################################################################################
+
+# Parse file names #############################################################
 # Assembly Obj files
 ASOBJS 	:= $(patsubst %.S, %.o, $(ASRC-1))
+
 # C Obj files
 BCS  	:= $(patsubst %.c, %.bc, $(SRC-1))
 OBJS 	:= $(patsubst %.c, %.o, $(SRC-1))
-################################################################################
-IDIR := $(patsubst %,-I%,$(subst :, ,$(IDIR)))
+
 STARTUP_O = $(patsubst %.S, %.o, $(STARTUP))
 
 # A files for modules
 MODAS = $(addsuffix .a, $(MODULES))
+################################################################################
 
 # We use suffixes because it's fun
 .SUFFIXES:					# Delete the default suffixes
