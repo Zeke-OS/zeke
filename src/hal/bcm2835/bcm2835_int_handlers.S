@@ -84,6 +84,8 @@ interrupt_systick:
     mov     r0, #0
     bl      cpu_set_cid
 
+/* TODO Is page table switch always needed? */
+
     @ Attach kernel master page table
     ldr     r0, =mmu_pagetable_master
     bl      mmu_attach_pagetable
@@ -93,15 +95,15 @@ interrupt_systick:
 
     @ Get PID
     ldr     r0, =current_process_id
-    ldr     r8, [r0]
+    ldr     r4, [r0]
 
     @ Attach process page table
-    mov     r0, r8
+    mov     r0, r4
     bl      process_get_pptable
     bl      mmu_attach_pagetable
 
     @ Set process Context ID
-    mov     r0, r8
+    mov     r0, r4
     bl      cpu_set_cid
 
 @ Load/Restore context
