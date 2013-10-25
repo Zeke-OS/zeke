@@ -103,6 +103,37 @@ int test_and_set(int * lock) {
     return err;
 }
 
+/**
+ * Invalidate all caches.
+ */
+void cpu_invalidate_caches(void)
+{
+    const uint32_t cop = 0; /* Cache operation. */
+
+    __asm__ volatile (
+        "MCR     p15, 0, %[cop], c7, c7, 0\n\t"     /* Invalidate I+D caches. */
+        "MCR     p15, 0, %[cop], c8, c7, 0\n\t"     /* Invalidate all I+D TLBs. */
+        "MCR     p15, 0, %[cop], c7, c10, 4\n\t"    /* Drain write buffer. */
+        : : [cop]"r" (cop)
+    );
+}
+
+/**
+ * Set Context ID.
+ * @param cid new Context ID.
+ */
+void cpu_set_cid(uint32_t cid)
+{
+    const int rd = 0;
+
+    __asm__ volatile (
+            "MCR    p15, 0, %[rd], c7, c10, 4\n\t"  /* DSB */
+            "MCR    p15, 0, %[cid], c13, c0, 1\n\t" /* Set CID */
+            "SVC    0xF00000\n\t"                   /* IMB */
+            : : [rd]"r" (rd), [cid]"r" (cid)
+   );
+}
+
 /* HardFault Handling *********************************************************/
 
 void HardFault_Handler(void)

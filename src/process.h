@@ -44,10 +44,6 @@
 #endif
 #include <hal/mmu.h>
 
-/* TODO 16 simultaneously active procesesss so ASID can be used to eliminate TLB
- * flushes. This means that we must group processes to groups of 16 processes
- * with each groups having overlapping ASIDs. */
-
 typedef int pid_t;
 
 /**
@@ -68,6 +64,8 @@ typedef struct {
      *      - etc.
      */
 } processInfo_t;
+
+extern volatile pid_t current_process_id;
 
 #endif /* PROCESS_H */
 

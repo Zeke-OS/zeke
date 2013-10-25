@@ -116,7 +116,7 @@
 #define MMU_C1_CR_ICACHE    0x00001000 /*!< Enables the L1 instruction cache. */
 #define MMU_C1_CR_BPRED     0x00000800 /*!< Enables branch prediction. */
 #define MMU_C1_CR_XP        0x00800000 /*!< Disable AP subpages and enable ARMv6
-                                                                                 * extensions */
+                                        * extensions */
 #define MMU_C1_CR_TR        0x10000000 /*!< Enables TEX remap. */
 /** Default MMU C1 configuration for Zeke */
 #define MMU_ZEKE_C1_DEFAULTS    (MMU_C1_CR_ENMMU | MMU_C1_CR_DCACHE |\

@@ -37,6 +37,8 @@
 
 #include <process.h>
 
+volatile pid_t current_process_id;
+
 int process_replace(pid_t pid, void * image, size_t size);
 
 /**
@@ -76,6 +78,24 @@ int process_kill(void)
 int process_replace(pid_t pid, void * image, size_t size)
 {
     return -1;
+}
+
+processInfo_t * process_get_struct(pid_t pid)
+{
+    return 0;
+}
+
+mmu_pagetable_t * process_get_pptable(pid_t pid)
+{
+    mmu_pagetable_t * pptable;
+
+    if (pid == 0) {
+        pptable = &mmu_pagetable_master;
+    } else {
+        pptable = process_get_struct(pid)->pptable;
+    }
+
+    return pptable;
 }
 
 /**

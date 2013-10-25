@@ -90,6 +90,9 @@ typedef struct {
     uint32_t pc;    /*!< Not really pc but used as an entry point. */
 } sw_stack_frame_t;
 
+void cpu_invalidate_caches(void);
+void cpu_set_cid(uint32_t cid);
+
 /* Inlined core functions */
 inline void * rd_stack_ptr(void);
 inline void * rd_thread_stack_ptr(void);
@@ -170,7 +173,6 @@ inline void wr_thread_stack_ptr(void * ptr)
     /* Sleep until next interrupt */    \
     __asm__ volatile ("WFI");           \
 } while (0)
-
 
 void HardFault_Handler(void);
 

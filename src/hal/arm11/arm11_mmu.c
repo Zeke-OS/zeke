@@ -39,6 +39,7 @@
   */
 
 #include <kerror.h>
+#include "arm11.h"
 #include "arm11_mmu.h"
 
 /* TODO
@@ -90,24 +91,24 @@ int mmu_init_pagetable(mmu_pagetable_t * pt)
     }
 
     __asm__ volatile (
-           "MOV r4, %[pte]\n\t"
-           "MOV r5, %[pte]\n\t"
-           "MOV r6, %[pte]\n\t"
-           "MOV r7, %[pte]\n"
-           "L_init_pt_top%=:\n\t"           /* for (; i != 0; i--) */
-           "STMIA %[p_pte]!, {r4-r7}\n\t"   /* Write 32 entries to the table */
-           "STMIA %[p_pte]!, {r4-r7}\n\t"
-           "STMIA %[p_pte]!, {r4-r7}\n\t"
-           "STMIA %[p_pte]!, {r4-r7}\n\t"
-           "STMIA %[p_pte]!, {r4-r7}\n\t"
-           "STMIA %[p_pte]!, {r4-r7}\n\t"
-           "STMIA %[p_pte]!, {r4-r7}\n\t"
-           "STMIA %[p_pte]!, {r4-r7}\n\t"
-           "SUBS %[i], %[i], #1\n\t"
-           "BNE L_init_pt_top%=\n\t"
-           : [i]"+r" (i), [p_pte]"+r" (p_pte)
-           : [pte]"r" (pte)
-           : "r4", "r5", "r6", "r7"
+            "MOV r4, %[pte]\n\t"
+            "MOV r5, %[pte]\n\t"
+            "MOV r6, %[pte]\n\t"
+            "MOV r7, %[pte]\n"
+            "L_init_pt_top%=:\n\t"          /* for (; i != 0; i--) */
+            "STMIA %[p_pte]!, {r4-r7}\n\t"  /* Write 32 entries to the table */
+            "STMIA %[p_pte]!, {r4-r7}\n\t"
+            "STMIA %[p_pte]!, {r4-r7}\n\t"
+            "STMIA %[p_pte]!, {r4-r7}\n\t"
+            "STMIA %[p_pte]!, {r4-r7}\n\t"
+            "STMIA %[p_pte]!, {r4-r7}\n\t"
+            "STMIA %[p_pte]!, {r4-r7}\n\t"
+            "STMIA %[p_pte]!, {r4-r7}\n\t"
+            "SUBS %[i], %[i], #1\n\t"
+            "BNE L_init_pt_top%=\n\t"
+            : [i]"+r" (i), [p_pte]"+r" (p_pte)
+            : [pte]"r" (pte)
+            : "r4", "r5", "r6", "r7"
     );
 
     return 0;
@@ -120,6 +121,8 @@ int mmu_init_pagetable(mmu_pagetable_t * pt)
  */
 int mmu_map_region(mmu_region_t * region)
 {
+    int retval = 0;
+
     switch (region->pt->type) {
         case MMU_PTT_MASTER:    /* Map section in L1 page table */
             mmu_map_section_region(region);
@@ -128,10 +131,11 @@ int mmu_map_region(mmu_region_t * region)
             mmu_map_coarse_region(region);
             break;
         default:
-            return -1;
+            retval = -1;
+            break;
     }
 
-    return 0;
+    return retval;
 }
 
 /**
@@ -199,6 +203,8 @@ static void mmu_map_coarse_region(mmu_region_t * region)
  */
 int mmu_unmap_region(mmu_region_t * region)
 {
+    int retval = 0;
+
     switch (region->pt->type) {
         case MMU_PTE_SECTION:
             mmu_unmap_section_region(region);
@@ -207,10 +213,10 @@ int mmu_unmap_region(mmu_region_t * region)
             mmu_unmap_coarse_region(region);
             break;
         default:
-            return -1;
+            retval = -1;
     }
 
-    return 0;
+    return retval;
 }
 
 /**
@@ -264,10 +270,11 @@ static void mmu_unmap_coarse_region(mmu_region_t * region)
 int mmu_attach_pagetable(mmu_pagetable_t * pt)
 {
     uint32_t * ttb;
-    uint32_t pte, i;
+    uint32_t pte;
+    size_t i;
+    int retval = 0;
 
     ttb = (uint32_t *)pt->master_pt_addr;
-    i = pt->vaddr >> 20;
 
     switch (pt->type) {
         case MMU_PTT_MASTER:
@@ -276,6 +283,7 @@ int mmu_attach_pagetable(mmu_pagetable_t * pt)
                     "MCR p15, 0, %[ttb], c2, c0, 0"
                     :
                     : [ttb]"r" (ttb));
+
             break;
         case MMU_PTT_COARSE:
             /* First level coarse page table entry */
@@ -283,13 +291,17 @@ int mmu_attach_pagetable(mmu_pagetable_t * pt)
             pte |= pt->dom << 5;
             pte |= MMU_PTE_COARSE;
 
+            i = pt->vaddr >> 20;
             ttb[i] = pte;
+
             break;
         default:
-            return -1;
+            retval = -1;
+            break;
     }
 
-    return 0;
+    cpu_invalidate_caches();
+    return retval;
 }
 
 /**

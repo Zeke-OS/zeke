@@ -42,7 +42,7 @@ SECT_HW_PREINIT(mmu_init);
 
 /* Fixed Page Tables */
 
-/* Master, allocated directly on L1 */
+/* Kernel master page table (L1) */
 mmu_pagetable_t mmu_pagetable_master = {
     .vaddr          = MMU_PT_BASE,
     .pt_addr        = MMU_PT_BASE,

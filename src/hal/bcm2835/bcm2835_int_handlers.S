@@ -80,8 +80,29 @@ interrupt_systick:
     mov     r1, #0
     str     r1, [r0, #0x40c]    @ IRQ Clear/Ack <- 0
 
+    @ Set Context ID to 0 (as we need ASID to be 0)
+    mov     r0, #0
+    bl      cpu_set_cid
+
+    @ Attach kernel master page table
+    ldr     r0, =mmu_pagetable_master
+    bl      mmu_attach_pagetable
+
     @ Run scheduler
     bl      sched_handler
+
+    @ Get PID
+    ldr     r0, =current_process_id
+    ldr     r8, [r0]
+
+    @ Attach process page table
+    mov     r0, r8
+    bl      process_get_pptable
+    bl      mmu_attach_pagetable
+
+    @ Set process Context ID
+    mov     r0, r8
+    bl      cpu_set_cid
 
 @ Load/Restore context
 L_load_context:
