@@ -127,8 +127,8 @@ config: $(AUTOCONF_H)
 
 # target: test - Run all portable unit tests
 test:
-	cd test/universal && make
-	cd test/kstring && make
+	-cd test/universal && make
+	-cd test/kstring && make
 
 # target: clean-test - Clean portable test targets
 clean-test:
