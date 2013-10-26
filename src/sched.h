@@ -39,8 +39,9 @@
 #ifndef SCHED_H
 #define SCHED_H
 
+#include <autoconf.h>
 #if configDEVSUBSYS != 0
-#include "dev/dev.h"
+#include <dev/dev.h>
 #endif
 
 #include <kernel.h>
@@ -77,7 +78,11 @@ typedef struct {
     osPriority def_priority;    /*!< Thread priority */
     osPriority priority;        /*!< Thread dynamic priority */
     int ts_counter;             /*!< Time slice counter */
-    osThreadId id;              /*!< Thread id in task table */
+    osThreadId id;              /*!< Thread id */
+#if configPROCESSSCHED != 0
+    pid_t pid_owner;            /*!< Owner process of this thread */
+#endif
+
     /**
      * Thread inheritance; Parent and child thread pointers.
      *

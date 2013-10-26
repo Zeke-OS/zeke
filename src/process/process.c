@@ -85,6 +85,11 @@ processInfo_t * process_get_struct(pid_t pid)
     return 0;
 }
 
+/**
+ * Get page table descriptor of a process.
+ * @param pid Process ID.
+ * @return Page table descriptor.
+ */
 mmu_pagetable_t * process_get_pptable(pid_t pid)
 {
     mmu_pagetable_t * pptable;
@@ -96,6 +101,15 @@ mmu_pagetable_t * process_get_pptable(pid_t pid)
     }
 
     return pptable;
+}
+
+/**
+ * Update process system state.
+ * @note Updates current_process_id.
+ */
+void process_update(void)
+{
+    current_process_id = current_thread->pid_owner;
 }
 
 /**

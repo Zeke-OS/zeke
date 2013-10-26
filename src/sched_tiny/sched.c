@@ -346,8 +346,14 @@ static void sched_thread_set_inheritance(osThreadId id, threadInfo_t * parent)
     task_table[id].inh.first_child = NULL;
     task_table[id].inh.next_child = NULL;
 
-    if (parent == NULL)
+    if (parent == NULL) {
+        task_table[id].pid_owner = 0;
         return;
+    }
+
+#if configPROCESSSCHED != 0
+        task_table[id].pid_owner = parent->pid_owner;
+#endif
 
     if (parent->inh.first_child == NULL) {
         /* This is the first child of this parent */
@@ -357,7 +363,7 @@ static void sched_thread_set_inheritance(osThreadId id, threadInfo_t * parent)
         return; /* All done */
     }
 
-    /* Find last child thread
+    /* Find the last child thread
      * Assuming first_child is a valid thread pointer
      */
     tmp = (threadInfo_t *)(parent->inh.first_child);
@@ -365,7 +371,7 @@ static void sched_thread_set_inheritance(osThreadId id, threadInfo_t * parent)
         last_node = tmp;
     } while ((tmp = last_node->inh.next_child) != NULL);
 
-    /* Set newly created thread as a last child */
+    /* Set newly created thread as the last child in chaini. */
     last_node->inh.next_child = &(task_table[id]);
 }
 
@@ -475,11 +481,7 @@ static void del_thread(void)
 
 osThreadId sched_threadCreate(osThreadDef_t * thread_def, void * argument)
 {
-    int i;
-
-    /* Disable context switching to support multi-threaded calls to this fn */
-    //__istate_t s = __get_interrupt_state();
-    //__disable_interrupt();
+    unsigned int i;
 
 #if configFAST_FORK != 0
     if (!queue_pop(&next_threadId_queue_cb, &i)) {
@@ -501,7 +503,6 @@ osThreadId sched_threadCreate(osThreadDef_t * thread_def, void * argument)
         }
     }
 #endif
-    //__set_interrupt_state(s); /* Restore interrupts */
 
     if (i == configSCHED_MAX_THREADS) {
         /* New thread could not be created */

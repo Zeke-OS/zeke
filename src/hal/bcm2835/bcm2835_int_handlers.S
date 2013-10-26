@@ -56,73 +56,84 @@ interrupt_svc:
 interrupt_systick:
 @ Save context
     @ Store the original value of r0
-    STMDB   sp!, {r0}
+    stmdb   sp!, {r0}
     @ Store thread sp to r0
-    STMDB   sp, {sp}^
-    NOP
-    SUB     sp, sp, #4
-    LDMIA   sp!, {r0}
+    stmdb   sp, {sp}^
+    nop
+    sub     sp, sp, #4
+    ldmia   sp!, {r0}
     @ Push lr to the thread stack
-    STMDB   r0!, {lr}
+    stmdb   r0!, {lr}
     @ Use lr as thread stack pointer and restore the original value of r0
-    MOV     lr, r0
-    LDMIA   sp!, {r0}
+    mov     lr, r0
+    ldmia   sp!, {r0}
     @ Push usr mode registers to the thread stack
-    STMDB   lr, {r0-r14}^
-    NOP
-    SUB     lr, lr, #60
+    stmdb   lr, {r0-r14}^
+    nop
+    sub     lr, lr, #60
     @ Push the SPSR to the thread stack
-    MRS     r0, spsr
-    STMDB   lr!, {r0}
+    mrs     r0, spsr
+    stmdb   lr!, {r0}
 
     @ Clear Timer IRQ
     ldr     r0, =0x2000b000     @ Timer register base
     mov     r1, #0
     str     r1, [r0, #0x40c]    @ IRQ Clear/Ack <- 0
 
-    @ Set Context ID to 0 (as we need ASID to be 0)
+    @ Set Context ID to 0 (as we need ASID to be 0 in kernel mode)
     mov     r0, #0
     bl      cpu_set_cid
-
-/* TODO Is page table switch always needed? */
 
     @ Attach kernel master page table
     ldr     r0, =mmu_pagetable_master
     bl      mmu_attach_pagetable
 
+    @ Get current PID
+    ldr     r4, =current_process_id
+    ldr     r4, [r4]
+
     @ Run scheduler
     bl      sched_handler
 
-    @ Get PID
+    @ Update process system state
+    bl      process_update
+
+    @ Get newly selected PID
     ldr     r0, =current_process_id
-    ldr     r4, [r0]
+    ldr     r5, [r0]
+
+    @ Jump over page table update and CID update if not needed.
+    @ This will slightly improve performance for kernel threads as caches are
+    @ not flushed twice.
+    cmp     r4, r5
+    b       L_load_context
 
     @ Attach process page table
-    mov     r0, r4
+    mov     r0, r5
     bl      process_get_pptable
     bl      mmu_attach_pagetable
 
-    @ Set process Context ID
-    mov     r0, r4
+    @ Set process Context ID to the value of current PID
+    mov     r0, r5
     bl      cpu_set_cid
 
 @ Load/Restore context
 L_load_context:
     @ Get the thread stack pointer
-    STMDB   sp, {sp}^
-    NOP
-    SUB     sp, sp, #4
-    LDMIA   sp!, {lr}
+    stmdb   sp, {sp}^
+    nop
+    sub     sp, sp, #4
+    ldmia   sp!, {lr}
     @ Get the SPSR from the thread stack
-    LDMFD   lr!, {r0}
-    MSR     spsr, r0
+    ldmfd   lr!, {r0}
+    msr     spsr, r0
     @ Restore all registers
-    LDMFD   lr, {r0-r14}^
-    NOP
+    ldmfd   lr, {r0-r14}^
+    nop
     @ Restore the return address
-    LDR     lr, [lr, #+60]
+    ldr     lr, [lr, #+60]
 
     @ Return back
-    SUBS    pc, lr, #4
+    subs    pc, lr, #4
 
 .end

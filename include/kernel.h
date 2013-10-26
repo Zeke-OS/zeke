@@ -89,6 +89,9 @@ typedef enum  {
   osTimerPeriodic         =     1        ///< repeating timer
 } os_timer_type;
 
+/* Process ID */
+typedef int pid_t;
+
 /// Entry point of a thread.
 typedef void (*os_pthread) (void const * argument);
 

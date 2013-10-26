@@ -125,13 +125,22 @@ void cpu_invalidate_caches(void)
 void cpu_set_cid(uint32_t cid)
 {
     const int rd = 0;
+    uint32_t curr_cid;
 
     __asm__ volatile (
+        "MRC    p15, 0, %[cid], c13, c0, 1" /* Read CID */
+         : [cid]"=r" (curr_cid)
+    );
+
+    if (curr_cid != cid) {
+        __asm__ volatile (
             "MCR    p15, 0, %[rd], c7, c10, 4\n\t"  /* DSB */
             "MCR    p15, 0, %[cid], c13, c0, 1\n\t" /* Set CID */
             "SVC    0xF00000\n\t"                   /* IMB */
+            "MCR    p15, 0, %[rd], c7, c5, 0\n\t"   /* Flush I cache & BTAC */
             : : [rd]"r" (rd), [cid]"r" (cid)
-   );
+        );
+    }
 }
 
 /* HardFault Handling *********************************************************/

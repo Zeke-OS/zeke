@@ -38,18 +38,20 @@
 #ifndef PROCESS_H
 #define PROCESS_H
 
-#include "sched.h" /* Needed for threadInfo_t and threading functions */
+#include <autoconf.h>
+#include <kernel.h>
+#include <sched.h> /* Needed for threadInfo_t and threading functions */
+
 #if configMMU == 0
 #error Processes are not supported without MMU.
 #endif
 #include <hal/mmu.h>
 
-typedef int pid_t;
-
 /**
  * Process Control Block or Process Descriptor Structure
  */
 typedef struct {
+    pid_t pid;
     threadInfo_t * main_thread; /*!< Main thread of this process. */
     mmu_pagetable_t * pptable;  /*!< Process master page table. */
     mmu_region_t regions[3];    /*!< Standard regions of a process.
@@ -64,6 +66,7 @@ typedef struct {
      *      - etc.
      */
 } processInfo_t;
+
 
 extern volatile pid_t current_process_id;
 

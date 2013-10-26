@@ -47,6 +47,9 @@ configMMU = 1
 # Support bootloader ATAGs
 configATAG = 1
 
+# Process scheduling support (needs MMU)
+configPROCESSSCHED = 1
+
 # Kernel logging methods (Select one or none)
 # Store last n log messages in buffer
 configKERROR_LAST = 1
@@ -54,7 +57,7 @@ configKERROR_LAST = 1
 # Scheduler Selection
 configSCHED_TINY = 1
 #
-# Tiny Scheduler
+# SCHED_TINY Config
 # Maximum number of threads
 configSCHED_MAX_THREADS = 10
 # Use a queue to find the next free threadId.
