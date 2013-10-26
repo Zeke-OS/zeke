@@ -15,7 +15,7 @@ Basic Concepts
                         | inh.parent = NULL |   +---------------------------+
                         | inh.first_child   |-->| child_1                   |
                         | inh.next_child    |   +---------------------------+
-                        +-------------------+   | id = tid_b                |
+                        +--------^----------+   | id = tid_b                |
                                  |              | pid_owner = pid_a         |
                                  +--------------| inh.parent                |
                                  |              | inh.first_child = NULL    |
