@@ -20,8 +20,8 @@ can be configured to use any size on each write or read.
 Configuration
 -------------
 
-Dev subsystem is enabled by configDEVSUBSYS definition in
-config/config.mk.
+Dev subsystem is enabled by configDEVSUBSYS definition in `config/config.mk`
+file.
 
 include/devtypes.h resevers 16 slots for major dev modules by default but it can
 be changed by updating `DEV_MAJORDEVS` and `DEV_MINORBITS` definitions.
@@ -29,10 +29,11 @@ be changed by updating `DEV_MAJORDEVS` and `DEV_MINORBITS` definitions.
 Major number mapping
 --------------------
 
-    +-------+---------------+--------------------------------------------------+
-    | Major | Device name   | Description                                      |
-    +-------+---------------+--------------------------------------------------+
-    | 0     | devnull       | Null device                                      |
-    | 1     | lcd           | Parallel IO LCD                                  |
-    +-------+---------------+--------------------------------------------------+
+    +-------+---------------+-----------------------------------------------+
+    | Major | Device name   | Description                                   |
+    +-------+---------------+-----------------------------------------------+
+    | 0     | devnull       | Null device                                   |
+    | 1     | lcd           | Parallel IO LCD                               |
+    | 2     | tty           | Serial teletype                               |
+    +-------+---------------+-----------------------------------------------+
 
