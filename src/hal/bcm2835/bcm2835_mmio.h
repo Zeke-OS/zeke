@@ -43,6 +43,8 @@
 
 #include <stdint.h>
 
+/* TODO Initialize memory region with MMU */
+
 /* mmio_start & mmio_end are related to out-of-order AXI bus system in
  * BCM2835. See p. 7 in BCM2835-ARM-Peripherals.pdf */
 

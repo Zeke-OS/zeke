@@ -2,7 +2,7 @@
  *******************************************************************************
  * @file    uart.c
  * @author  Olli Vanhoja
- * @brief   Headers for BCM2835 UART.
+ * @brief   UART source code for BCM2835.
  * @section LICENSE
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -39,8 +39,8 @@
 */
 
 #include <kerror.h>
-#include "mmio.h"
-#include "uart.h"
+#include "bcm2835_mmio.h"
+#include <hal/uart.h>
 
 /* TODO Maybe GPIO should be somewhere else? */
 #define GPIO_BASE       0x20200000
@@ -69,20 +69,23 @@
 #define UART0_ITOP      (UART0_BASE + 0x88)
 #define UART0_TDR       (UART0_BASE + 0x8C)
 
+static void delay(int32_t count);
+static void set_baudrate(unsigned int baud_rate);
+
+
 /**
  * Idiotic delay function.
  * @param count delay time.
  */
-static void delay(int32_t count) {
+static void delay(int32_t count)
+{
     __asm__ volatile("__delay_%=: subs %[count], %[count], #1; bne __delay_%=\n"
     : : [count]"r"(count) : "cc");
 }
 
-/**
- * Initialize UART.
- * @param port Port number.
- */
-void uart_init(int port)
+/* TODO Support for stop_bits, parity and flowctrl */
+
+void uart_init(int port, const uart_init_t * conf)
 {
     if (port != 0) {
         KERROR(KERROR_ERR, "We can only init UART0!");
@@ -109,17 +112,8 @@ void uart_init(int port)
     /* Clear pending interrupts. */
     mmio_write(UART0_ICR, 0x7FF);
 
-    /* Set integer & fractional part of baud rate.
-     * Divider = UART_CLOCK/(16 * Baud)
-     * Fraction part register = (Fractional part * 64) + 0.5
-     * UART_CLOCK = 3000000; Baud = 115200.
-     */
-
-    /* Divider = 3000000/(16 * 115200) = 1.627 = ~1.
-     * Fractional part register = (.627 * 64) + 0.5 = 40.6 = ~40.
-     */
-    mmio_write(UART0_IBRD, 1);
-    mmio_write(UART0_FBRD, 40);
+    /* Set baud rate */
+    set_baudrate(conf->baud_rate);
 
     /* Enable FIFO & 8 bit data transmissio (1 stop bit, no parity). */
     mmio_write(UART0_LCRH, (1 << 4) | (1 << 5) | (1 << 6));
@@ -133,10 +127,22 @@ void uart_init(int port)
     mmio_write(UART0_CR, (1 << 0) | (1 << 8) | (1 << 9));
 }
 
-/*
- * Transmit a byte via UARTx.
- * @param byte Byte to send.
- */
+
+static void set_baudrate(unsigned int baud_rate)
+{
+    /* Integer & fractional part of baud rate.
+     * divider = UART_CLOCK / (16 * 115200)
+     * fraction = (divider mod 1 * 64) + 0.5
+     * UART_CLOCK = 3000000
+     */
+    uint32_t tmp = 3000000/(16 * ((uint32_t)baud_rate >> 6));
+    uint32_t divider = tmp >> 6;
+    uint32_t fraction = tmp - (divider << 6);
+
+    mmio_write(UART0_IBRD, divider);
+    mmio_write(UART0_FBRD, fraction);
+}
+
 void uart_putc(int port, uint8_t byte)
 {
     mmio_start();

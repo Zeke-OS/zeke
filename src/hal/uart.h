@@ -2,7 +2,7 @@
  *******************************************************************************
  * @file    uart.h
  * @author  Olli Vanhoja
- * @brief   Headers for BCM2835 UART HAL.
+ * @brief   Headers for UART HAL.
  * @section LICENSE
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -34,24 +34,61 @@
 * @{
 */
 
-/** @addtogroup BCM2835
-* @{
-*/
-
 #pragma once
 #ifndef UART_H
 #define UART_H
 
 #include <stdint.h>
 
-void uart_init(int port);
+/**
+ * UART stop bits selection enum type.
+ */
+enum uart_stopbits {
+    UART_STOPBITS_ONE = 1,  /*!< One stop bit */
+    UART_STOPBITS_TWO = 2   /*!< Two stop bits */
+};
+
+/**
+ * UART parity bit generation and detection.
+ */
+enum uart_parity {
+    UART_PARITY_EVEN,       /*!< Even parity. */
+    UART_PARITY_ODD,        /*!< Odd parity. */
+    UART_PARITY_NO          /*!< No parity bit generation and detection. */
+};
+
+/**
+ * UART flow control.
+ */
+enum uart_flowcontrol {
+    UART_FLOWCTRL_CTS,
+    UART_FLOWCTRL_RTS
+};
+
+/* List of mandatory baud rates. */
+#define UART_BAUDRATE_9600      9600
+#define UART_BAUDRATE_115200    115200
+
+typedef struct {
+    unsigned int baud_rate;         /*!< Baud rate selection. */
+    enum uart_stopbits stop_bits;   /*!< One or Two stop bits. */
+    enum uart_parity parity;        /*!< Parity. */
+    enum uart_flowcontrol flowctrl; /*!< Flow control. */
+} uart_init_t;
+
+/**
+ * Initialize UART.
+ * @param port Port number.
+ */
+void uart_init(int port, const uart_init_t * conf);
+
+/*
+ * Transmit a byte via UARTx.
+ * @param byte Byte to send.
+ */
 void uart_putc(int port, uint8_t byte);
 
 #endif /* UART_H */
-
-/**
-* @}
-*/
 
 /**
 * @}

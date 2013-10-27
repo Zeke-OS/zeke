@@ -48,7 +48,7 @@
 #include <kinit.h>
 #include <hal/hal_core.h>
 #include <hal/mmu.h>
-#include "mmio.h"
+#include "bcm2835_mmio.h"
 #include "bcm2835_interrupt.h"
 
 #define ARM_TIMER_PRESCALE_1    0x0
