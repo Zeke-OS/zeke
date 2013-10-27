@@ -35,7 +35,7 @@
 * @{
 */
 
-/** @addtogroup ARM1176JZF_S
+/** @addtogroup BCM2835
 * @{
 */
 
@@ -48,6 +48,7 @@
 #include <kinit.h>
 #include <hal/hal_core.h>
 #include <hal/mmu.h>
+#include "mmio.h"
 #include "bcm2835_interrupt.h"
 
 #define ARM_TIMER_PRESCALE_1    0x0
@@ -58,15 +59,14 @@
 #define ARM_TIMER_INT_EN        0x20
 
 /* Peripheral Addresses */
+#define IRQ_ENABLE1         0x2000b210
+#define IRQ_ENABLE2         0x2000b214
+#define IRQ_ENABLE_BASIC    0x2000b218
 
-static volatile uint32_t * irq_enable1 = (uint32_t *)0x2000b210;
-static volatile uint32_t * irq_enable2 = (uint32_t *)0x2000b214;
-static volatile uint32_t * irq_enable_basic = (uint32_t *)0x2000b218;
-
-static volatile uint32_t * arm_timer_load = (uint32_t *)0x2000b400;
-static volatile uint32_t * arm_timer_value = (uint32_t *)0x2000b404;
-static volatile uint32_t * arm_timer_control = (uint32_t *)0x2000b408;
-static volatile uint32_t * arm_timer_irq_clear = (uint32_t *)0x2000b40c;
+#define ARM_TIMER_LOAD      0x2000b400
+#define ARM_TIMER_VALUE     0x2000b404
+#define ARM_TIMER_CONTROL   0x2000b408
+#define ARM_TIMER_IRQ_CLEAR 0x2000b40c
 /* End of Peripheral Addresses */
 
 
@@ -113,14 +113,17 @@ void interrupt_init_module(void)
     /* Turn on interrupts */
     __asm__ volatile ("cpsie i");
 
+    mmio_start();
+
     /* Use the ARM timer - BCM 2832 peripherals doc, p.196 */
     /* Enable ARM timer IRQ */
-    *irq_enable_basic = 0x00000001;
+    mmio_write(IRQ_ENABLE_BASIC, 0x00000001);
 
     /* Interrupt every (value * prescaler) timer ticks */
-    *arm_timer_load = 0x00000400;
+    mmio_write(ARM_TIMER_LOAD, 0x00000400);
 
-    *arm_timer_control = (ARM_TIMER_PRESCALE_256 | ARM_TIMER_EN | ARM_TIMER_INT_EN);
+    mmio_write(ARM_TIMER_CONTROL,
+            (ARM_TIMER_PRESCALE_256 | ARM_TIMER_EN | ARM_TIMER_INT_EN));
 }
 
 /**

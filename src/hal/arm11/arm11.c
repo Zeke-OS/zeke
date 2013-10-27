@@ -114,7 +114,6 @@ void cpu_invalidate_caches(void)
         "MCR     p15, 0, %[rd], c7, c7, 0\n\t"  /* Invalidate I+D caches. */
         "MCR     p15, 0, %[rd], c8, c7, 0\n\t"  /* Invalidate all I+D TLBs. */
         "MCR     p15, 0, %[rd], c7, c10, 4\n\t" /* Drain write buffer. */
-        "MCR     p15, 0, %[rd], c7, c10, 4\n\t" /* DSB */
         : : [rd]"r" (rd)
     );
 }

@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    process.h
+ * @file    mmio.h
  * @author  Olli Vanhoja
- * @brief   Kernel process management header file.
+ * @brief   Access to MMIO registers on BCM2835.
  * @section LICENSE
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,57 +30,84 @@
  *******************************************************************************
  */
 
-/** @addtogroup Process
-  * @{
-  */
+/** @addtogroup HAL
+* @{
+*/
 
-#pragma once
-#ifndef PROCESS_H
-#define PROCESS_H
+/** @addtogroup BCM2835
+* @{
+*/
 
-#include <autoconf.h>
+#ifndef MMIO_H
+#define MMIO_H
 
-#ifndef KERNEL_INTERNAL
-#define KERNEL_INTERNAL
-#endif
+#include <stdint.h>
 
-#include <kernel.h>
-#include <sched.h> /* Needed for threadInfo_t and threading functions */
-
-#if configMMU == 0
-#error Processes are not supported without MMU.
-#endif
-#include <hal/mmu.h>
+/* mmio_start & mmio_end are related to out-of-order AXI bus system in
+ * BCM2835. See p. 7 in BCM2835-ARM-Peripherals.pdf */
 
 /**
- * Process Control Block or Process Descriptor Structure
+ * Start MMIO (write) access to a new peripheral.
  */
-typedef struct {
-    pid_t pid;
-    threadInfo_t * main_thread; /*!< Main thread of this process. */
-    mmu_pagetable_t * pptable;  /*!< Process master page table. */
-    mmu_region_t regions[3];    /*!< Standard regions of a process.
-                                 *   [0] = stack
-                                 *   [1] = heap/data
-                                 *   [2] = code
-                                 */
+static inline void mmio_start(void)
+{
+    const uint32_t rd = 0;
 
-    /* TODO - note: main_thread already has a liked list of child threads
-     *      - page table(s)
-     *      - memory allocations (that should be freed automatically if process exits)
-     *      - etc.
-     */
-} processInfo_t;
+    __asm__ volatile (
+        "MCR    p15, 0, %[rd], c7, c10, 4\n\t" /* Drain write buffer. */
+        "MCR    p15, 0, %[rd], c7, c10, 5\n\t" /* DMB */
+        : : [rd]"r" (rd));
+}
 
+/**
+ * End MMIO (read) access.
+ */
+static inline void mmio_end(void)
+{
+    const uint32_t rd = 0;
 
-extern volatile pid_t current_process_id;
+    __asm__ volatile (
+        "MCR    p15, 0, %[rd], c7, c10, 5\n\t" /* DMB */
+        : : [rd]"r" (rd));
+}
 
+/**
+ *  Write to MMIO register.
+ *  @param reg  Register address.
+ *  @param data Data to write.
+ */
+static inline void mmio_write(uint32_t reg, uint32_t data)
+{
+    uint32_t *ptr = (uint32_t*)reg;
 
-mmu_pagetable_t * process_get_pptable(pid_t pid);
+    __asm__ volatile (
+        "str    %[data], [%[reg]]"
+        : : [reg]"r"(ptr), [data]"r"(data));
+}
 
-#endif /* PROCESS_H */
+/**
+ * Read from MMIO register.
+ * @param reg   Register address.
+ * @return      Data read from MMIO register.
+ */
+static inline uint32_t mmio_read(uint32_t reg)
+{
+    uint32_t *ptr = (uint32_t*)reg;
+    uint32_t data;
+
+    __asm__ volatile (
+        "ldr    %[data], [%[reg]]"
+        : [data]"=r"(data) : [reg]"r"(ptr));
+
+    return data;
+}
+
+#endif /* MMIO_H */
 
 /**
   * @}
   */
 
+/**
+  * @}
+  */
