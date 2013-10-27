@@ -1,5 +1,10 @@
 # Autoconf
-config/autoconf.h
+autoconf.h
+
+# Kernel out files
+kernel.bin
+kernel.elf
+kernel.list
 
 # LLVM bitcode
 *.bc
