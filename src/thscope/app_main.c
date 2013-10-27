@@ -30,14 +30,42 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************
  */
-//#include <stdio.h>
+
 #include <kernel.h>
 #include <app_main.h>
 
+osDev_t dev_tty0 = DEV_MMTODEV(2, 0);
+
+char banner[] = "\
+|'''''||                    \n\
+    .|'   ...'||            \n\
+   ||   .|...|||  ..  ....  \n\
+ .|'    ||    || .' .|...|| \n\
+||......|'|...||'|. ||      \n\
+             .||. ||.'|...'\n\n\
+";
+
+static void print_message(const char * message);
+
 /**
-  * main thread
-  */
+ * main thread.
+ */
 void main(void)
 {
+    if (osDevOpen(dev_tty0)) {
+        while (1);
+    }
+
+    print_message(banner);
     osDelay(50);
+    print_message("System READY");
+}
+
+static void print_message(const char * message)
+{
+    size_t i = 0;
+
+    while (banner[i] != '\0') {
+        osDevCwrite(banner[i++], dev_tty0);
+    }
 }
