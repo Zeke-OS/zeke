@@ -91,4 +91,4 @@ configPTTK91_VM = 0
 # These can be also commented out
 configDEVSUBSYS_NULL = 1
 configDEVSUBSYS_LCD = 0
-
+configDEVSUBSYS_TTY = 1

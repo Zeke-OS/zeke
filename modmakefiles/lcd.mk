@@ -1,4 +1,4 @@
 # Dev LCD
-lcd-SRC-$(configDEVSUBSYS_LCD)  += src/dev/lcd/lcd.c
-lcd-SRC-$(configDEVSUBSYS_LCD)  += src/dev/lcd/lcd_ctrl.c
+lcd-SRC-$(configDEVSUBSYS_LCD)  += src/dev/lcd.c
+lcd-SRC-$(configDEVSUBSYS_LCD)  += src/dev/lcd_ctrl.c
 

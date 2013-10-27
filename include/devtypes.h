@@ -45,7 +45,7 @@ typedef uint32_t osDev_t; /*!< Device identifier */
 
 #define DEV_MAJORDEVS   16 /*!< Number of major devs 2^nbr_of_marjor_bits */
 #define DEV_MINORBITS   28 /*!< Number of minor bits */
-#define DEV_MINORMASK   ((1u << MINORBITS) - 1) /*!< Minor bits mask */
+#define DEV_MINORMASK   ((1u << DEV_MINORBITS) - 1) /*!< Minor bits mask */
 
 /**
  * Get major number from osDev_t.

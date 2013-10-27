@@ -38,6 +38,7 @@
   * @{
   */
 
+#include <hal/uart.h>
 #include "dev.h"
 
 void devtty_init(void) __attribute__((constructor));
@@ -46,11 +47,24 @@ int devtty_cread(uint32_t * ch, osDev_t dev);
 
 void devtty_init(void)
 {
+    uart_init_t uart_conf = {
+        .baud_rate  = UART_BAUDRATE_9600,
+        .stop_bits  = UART_STOPBITS_ONE,
+        .parity     = UART_PARITY_NO,
+        .flowctrl   = 0
+    };
+
+    uart_init(0, &uart_conf);
+
     DEV_INIT(2, &devtty_cwrite, &devtty_cread, 0, 0, 0, 0);
 }
 
 int devtty_cwrite(uint32_t ch, osDev_t dev)
 {
+    int port = (int)DEV_MINOR(dev);
+
+    uart_putc(port, (uint8_t)ch);
+
     return DEV_CWR_OK;
 }
 
