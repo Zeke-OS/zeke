@@ -127,7 +127,7 @@ int mmu_map_region(mmu_region_t * region)
         case MMU_PTT_MASTER:    /* Map section in L1 page table */
             mmu_map_section_region(region);
             break;
-        case MMU_PTT_COARSE:    /* Map PTE to point to coarse L2 page table */
+        case MMU_PTT_COARSE:    /* Map PTE to point to a L2 coarse page table */
             mmu_map_coarse_region(region);
             break;
         default:
@@ -139,7 +139,7 @@ int mmu_map_region(mmu_region_t * region)
 }
 
 /**
- * Map a section of physical memory in multiples of 1 MB.
+ * Map a section of physical memory in multiples of 1 MB in virtual memory.
  * @param region    Structure that specifies the memory region.
  */
 static void mmu_map_section_region(mmu_region_t * region)
@@ -168,7 +168,7 @@ static void mmu_map_section_region(mmu_region_t * region)
 }
 
 /**
- * Map a section of physical memory to a (contiguous set of) page table(s).
+ * Map a section of physical memory over a (contiguous set of) page table(s).
  * @note xn bit an ap configuration is copied to all pages in this region.
  * @note One page table maps a 1MB of memory.
  * @param region    Structure that specifies the memory region.

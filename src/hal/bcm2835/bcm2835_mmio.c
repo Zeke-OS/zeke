@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    bcm2835_mmio.h
+ * @file    bcm2835_mmio.c
  * @author  Olli Vanhoja
  * @brief   Access to MMIO registers on BCM2835.
  * @section LICENSE
@@ -38,71 +38,24 @@
 * @{
 */
 
-#ifndef MMIO_H
-#define MMIO_H
+#include <hal/mmu.h>
+#include "bcm2835_mmio.h"
 
-#include <stdint.h>
+void bcm2835_mmio_init(void) __attribute__((constructor));
 
-/* mmio_start & mmio_end are related to out-of-order AXI bus system in
- * BCM2835. See p. 7 in BCM2835-ARM-Peripherals.pdf */
+mmu_region_t bcm2835_mmio_region = {
+    .vaddr      = 0x20000000,
+    .num_pages  = 16,
+    .ap         = MMU_AP_RWNA,
+    .control    = (MMU_CTRL_MEMTYPE_DEV | MMU_CTRL_XN),
+    .paddr      = 0x20000000,
+    .pt         = &mmu_pagetable_master
+};
 
-/**
- * Start MMIO (write) access to a new peripheral.
- */
-static inline void mmio_start(void)
+void bcm2835_mmio_init(void)
 {
-    const uint32_t rd = 0;
-
-    __asm__ volatile (
-        "MCR    p15, 0, %[rd], c7, c10, 4\n\t" /* Drain write buffer. */
-        "MCR    p15, 0, %[rd], c7, c10, 5\n\t" /* DMB */
-        : : [rd]"r" (rd));
+    mmu_map_region(&bcm2835_mmio_region);
 }
-
-/**
- * End MMIO (read) access.
- */
-static inline void mmio_end(void)
-{
-    const uint32_t rd = 0;
-
-    __asm__ volatile (
-        "MCR    p15, 0, %[rd], c7, c10, 5\n\t" /* DMB */
-        : : [rd]"r" (rd));
-}
-
-/**
- *  Write to MMIO register.
- *  @param reg  Register address.
- *  @param data Data to write.
- */
-static inline void mmio_write(uint32_t reg, uint32_t data)
-{
-    uint32_t *ptr = (uint32_t*)reg;
-
-    __asm__ volatile (
-        "str    %[data], [%[reg]]"
-        : : [reg]"r"(ptr), [data]"r"(data));
-}
-
-/**
- * Read from MMIO register.
- * @param reg   Register address.
- * @return      Data read from MMIO register.
- */
-static inline uint32_t mmio_read(uint32_t reg)
-{
-    uint32_t *ptr = (uint32_t*)reg;
-    uint32_t data;
-
-    __asm__ volatile (
-        "ldr    %[data], [%[reg]]"
-        : [data]"=r"(data) : [reg]"r"(ptr));
-
-    return data;
-}
-
-#endif /* MMIO_H */
 
 /**
   * @}
