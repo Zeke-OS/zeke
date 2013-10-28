@@ -71,7 +71,7 @@
 
 static void delay(int32_t count);
 static void set_baudrate(unsigned int baud_rate);
-static void set_lcrh(uart_init_t * conf);
+static void set_lcrh(const uart_init_t * conf);
 
 /**
  * Idiotic delay function.
@@ -116,7 +116,7 @@ void uart_init(int port, const uart_init_t * conf)
     set_baudrate(conf->baud_rate);
 
     /* Configure UART */
-    set_lcrh(&conf);
+    set_lcrh(conf);
 
     /* Mask all interrupts. */
     mmio_write(UART0_IMSC, (1 << 1) | (1 << 4) | (1 << 5) |
@@ -143,14 +143,14 @@ static void set_baudrate(unsigned int baud_rate)
     mmio_write(UART0_FBRD, fraction);
 }
 
-static void set_lcrh(uart_init_t * conf)
+static void set_lcrh(const uart_init_t * conf)
 {
     uint32_t tmp = 0;
 
     /* Enable FIFOs */
     tmp |= 0x1 << 4;
 
-    switch (conf-data_bits) {
+    switch (conf->data_bits) {
         case UART_DATABITS_5:
             /* NOP */
             break;

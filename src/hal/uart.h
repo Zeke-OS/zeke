@@ -41,6 +41,16 @@
 #include <stdint.h>
 
 /**
+ * UART data bits.
+ */
+enum uart_databits {
+    UART_DATABITS_5,        /*!< 5 data bits. */
+    UART_DATABITS_6,        /*!< 6 data bits. */
+    UART_DATABITS_7,        /*!< 7 data bits. */
+    UART_DATABITS_8         /*!< 8 data bits. */
+};
+
+/**
  * UART stop bits selection enum type.
  */
 enum uart_stopbits {
@@ -69,6 +79,7 @@ enum uart_parity {
 
 typedef struct {
     unsigned int baud_rate;         /*!< Baud rate selection. */
+    enum uart_databits data_bits;   /*!< Data bits. */
     enum uart_stopbits stop_bits;   /*!< One or Two stop bits. */
     enum uart_parity parity;        /*!< Parity. */
     unsigned int flowctrl;          /*!< Flow control. Zero if none. */
