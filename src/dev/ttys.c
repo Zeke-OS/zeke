@@ -51,7 +51,6 @@ void devttys_init(void)
         .baud_rate  = UART_BAUDRATE_9600,
         .stop_bits  = UART_STOPBITS_ONE,
         .parity     = UART_PARITY_NO,
-        .flowctrl   = 0
     };
 
     uart_init(0, &uart_conf);
@@ -70,7 +69,14 @@ int devttys_cwrite(uint32_t ch, osDev_t dev)
 
 int devttys_cread(uint32_t * ch, osDev_t dev)
 {
-    return DEV_CRD_UNDERFLOW;
+    int port, data;
+
+    port = (int)DEV_MINOR(dev);
+    data = uart_getc(port);
+    if (data == -1)
+        data = DEV_CRD_UNDERFLOW;
+
+    return data;
 }
 
 /**
