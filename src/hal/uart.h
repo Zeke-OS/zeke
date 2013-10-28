@@ -67,12 +67,6 @@ enum uart_parity {
     UART_PARITY_NO          /*!< No parity bit generation and detection. */
 };
 
-/**
- * UART flow control options.
- */
-#define UART_FLOWCTRL_CTS 1
-#define UART_FLOWCTRL_RTS 2
-
 /* List of mandatory baud rates. */
 #define UART_BAUDRATE_9600      9600
 #define UART_BAUDRATE_115200    115200
@@ -82,7 +76,6 @@ typedef struct {
     enum uart_databits data_bits;   /*!< Data bits. */
     enum uart_stopbits stop_bits;   /*!< One or Two stop bits. */
     enum uart_parity parity;        /*!< Parity. */
-    unsigned int flowctrl;          /*!< Flow control. Zero if none. */
 } uart_init_t;
 
 /**

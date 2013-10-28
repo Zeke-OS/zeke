@@ -51,7 +51,6 @@ void devttys_init(void)
         .baud_rate  = UART_BAUDRATE_9600,
         .stop_bits  = UART_STOPBITS_ONE,
         .parity     = UART_PARITY_NO,
-        .flowctrl   = 0
     };
 
     uart_init(0, &uart_conf);

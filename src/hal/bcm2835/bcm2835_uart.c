@@ -83,8 +83,6 @@ static void delay(int32_t count)
     : : [count]"r"(count) : "cc");
 }
 
-/* TODO Support for flowctrl */
-
 void uart_init(int port, const uart_init_t * conf)
 {
     if (port != 0) {
