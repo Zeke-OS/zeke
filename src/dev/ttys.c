@@ -38,12 +38,17 @@
   * @{
   */
 
+#include <kinit.h>
 #include <hal/uart.h>
 #include "dev.h"
 
-void devttys_init(void) __attribute__((constructor));
+void devttys_init(void);
 int devttys_cwrite(uint32_t ch, osDev_t dev);
 int devttys_cread(uint32_t * ch, osDev_t dev);
+
+/* Doing this makes it possible to use UART during boot time to print kerror
+ * messages before devsubsystem is initalized. */
+SECT_HW_POSTINIT(devttys_init);
 
 void devttys_init(void)
 {
