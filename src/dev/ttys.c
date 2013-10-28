@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    tty.c
+ * @file    ttys.c
  * @author  Olli Vanhoja
- * @brief   Device driver for dev tty.
+ * @brief   Device driver for dev ttyS (serial teletype device).
  * @section LICENSE
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -41,11 +41,11 @@
 #include <hal/uart.h>
 #include "dev.h"
 
-void devtty_init(void) __attribute__((constructor));
-int devtty_cwrite(uint32_t ch, osDev_t dev);
-int devtty_cread(uint32_t * ch, osDev_t dev);
+void devttys_init(void) __attribute__((constructor));
+int devttys_cwrite(uint32_t ch, osDev_t dev);
+int devttys_cread(uint32_t * ch, osDev_t dev);
 
-void devtty_init(void)
+void devttys_init(void)
 {
     uart_init_t uart_conf = {
         .baud_rate  = UART_BAUDRATE_9600,
@@ -56,10 +56,10 @@ void devtty_init(void)
 
     uart_init(0, &uart_conf);
 
-    DEV_INIT(2, &devtty_cwrite, &devtty_cread, 0, 0, 0, 0);
+    DEV_INIT(2, &devttys_cwrite, &devttys_cread, 0, 0, 0, 0);
 }
 
-int devtty_cwrite(uint32_t ch, osDev_t dev)
+int devttys_cwrite(uint32_t ch, osDev_t dev)
 {
     int port = (int)DEV_MINOR(dev);
 
@@ -68,7 +68,7 @@ int devtty_cwrite(uint32_t ch, osDev_t dev)
     return DEV_CWR_OK;
 }
 
-int devtty_cread(uint32_t * ch, osDev_t dev)
+int devttys_cread(uint32_t * ch, osDev_t dev)
 {
     return DEV_CRD_UNDERFLOW;
 }
