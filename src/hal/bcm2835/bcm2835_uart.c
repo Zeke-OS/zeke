@@ -71,7 +71,7 @@
 
 static void delay(int32_t count);
 static void set_baudrate(unsigned int baud_rate);
-
+static void set_lcrh(uart_init_t * conf);
 
 /**
  * Idiotic delay function.
@@ -83,7 +83,7 @@ static void delay(int32_t count)
     : : [count]"r"(count) : "cc");
 }
 
-/* TODO Support for stop_bits, parity and flowctrl */
+/* TODO Support for flowctrl */
 
 void uart_init(int port, const uart_init_t * conf)
 {
@@ -115,8 +115,8 @@ void uart_init(int port, const uart_init_t * conf)
     /* Set baud rate */
     set_baudrate(conf->baud_rate);
 
-    /* Enable FIFO & 8 bit data transmissio (1 stop bit, no parity). */
-    mmio_write(UART0_LCRH, (1 << 4) | (1 << 5) | (1 << 6));
+    /* Configure UART */
+    set_lcrh(&conf);
 
     /* Mask all interrupts. */
     mmio_write(UART0_IMSC, (1 << 1) | (1 << 4) | (1 << 5) |
@@ -141,6 +141,43 @@ static void set_baudrate(unsigned int baud_rate)
 
     mmio_write(UART0_IBRD, divider);
     mmio_write(UART0_FBRD, fraction);
+}
+
+static void set_lcrh(uart_init_t * conf)
+{
+    uint32_t tmp = 0;
+
+    /* Enable FIFOs */
+    tmp |= 0x1 << 4;
+
+    switch (conf-data_bits) {
+        case UART_DATABITS_5:
+            /* NOP */
+            break;
+        case UART_DATABITS_6:
+            tmp |= 0x1 << 5;
+            break;
+        case UART_DATABITS_7:
+            tmp |= 0x2 << 5;
+            break;
+        case UART_DATABITS_8:
+            tmp |= 0x3 << 5;
+            break;
+    }
+
+    switch (conf->parity) {
+        case UART_PARITY_NO:
+            /* NOP */
+            break;
+        case UART_PARITY_EVEN:
+            tmp |= 0x3 << 1;
+            break;
+        case UART_PARITY_ODD:
+            tmp |= 0x1 << 1;
+            break;
+    }
+
+    mmio_write(UART0_LCRH, tmp);
 }
 
 void uart_putc(int port, uint8_t byte)
