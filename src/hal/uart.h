@@ -84,11 +84,17 @@ typedef struct {
  */
 void uart_init(int port, const uart_init_t * conf);
 
-/*
+/**
  * Transmit a byte via UARTx.
  * @param byte Byte to send.
  */
 void uart_putc(int port, uint8_t byte);
+
+/**
+ * Receive a byte via UARTx.
+ * @return A byte read from UARTx or -1 if undeflow.
+ */
+int uart_getc(int port);
 
 #endif /* UART_H */
 

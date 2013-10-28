@@ -117,9 +117,10 @@ void uart_init(int port, const uart_init_t * conf)
     set_lcrh(conf);
 
     /* Mask all interrupts. */
-    mmio_write(UART0_IMSC, (1 << 1) | (1 << 4) | (1 << 5) |
+    /*mmio_write(UART0_IMSC, (1 << 1) | (1 << 4) | (1 << 5) |
             (1 << 6) | (1 << 7) | (1 << 8) |
             (1 << 9) | (1 << 10));
+     */
 
     /* Enable UART0, receive & transfer part of UART.*/
     mmio_write(UART0_CR, (1 << 0) | (1 << 8) | (1 << 9));
@@ -176,6 +177,7 @@ static void set_lcrh(const uart_init_t * conf)
     }
 
     mmio_write(UART0_LCRH, tmp);
+    mmio_end();
 }
 
 void uart_putc(int port, uint8_t byte)
@@ -183,14 +185,27 @@ void uart_putc(int port, uint8_t byte)
     mmio_start();
 
     /* Wait for UART to become ready to transmit. */
-    while (1) {
-        if (!(mmio_read(UART0_FR) & (1 << 5))) {
-            break;
-        }
-    }
+    while (mmio_read(UART0_FR) & (1 << 5));
     mmio_write(UART0_DR, byte);
 
     mmio_end();
+}
+
+int uart_getc(int port)
+{
+    uint32_t tmp;
+    int byte = -1;
+
+    mmio_start();
+
+    /* Check that receive FIFO/register is not empty. */
+    if(!(mmio_read(UART0_FR) & 0x10)) {
+        /* TODO check errors (parity) */
+        byte = mmio_read(UART0_DR);
+    }
+
+    mmio_end();
+    return byte;
 }
 
 /**
