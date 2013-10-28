@@ -37,58 +37,47 @@ SCHED_LAVGPERIOD_11SEC = 11
 
 # Kernel configuration
 configMCU_MODEL = MCU_MODEL_BCM2835
-#configARM_PROFILE_A = 0#Not supported
-#configARM_PROFILE_R = 0#Not supported
-configARM_PROFILE_M = 0
-# Architecture of the core
-configARCH = __ARM6K__
-# MMU support
-configMMU = 1
-# Support bootloader ATAGs
-configATAG = 1
+#configARM_PROFILE_A = 0# Not supported
+#configARM_PROFILE_R = 0# Not supported
+configARM_PROFILE_M = 0#
+configARCH = __ARM6K__# Architecture of the core
+configMMU = 1# MMU support
+configATAG = 1# Support bootloader ATAGs
 
 # Process scheduling support (needs MMU)
-configPROCESSSCHED = 1
+configPROCESSSCHED = 1#
 
 # Kernel logging methods (Select one or none)
-# Store last n log messages in buffer
-configKERROR_LAST = 1
+configKERROR_LAST = 1# Store last n log messages in buffer
 
 # Scheduler Selection
-configSCHED_TINY = 1
+configSCHED_TINY = 1#
 #
 # SCHED_TINY Config
-# Maximum number of threads
-configSCHED_MAX_THREADS = 10
-# Use a queue to find the next free threadId.
-configFAST_FORK = 0
-# Scheduler frequency in Hz
-configSCHED_FREQ = 100u
-configSCHED_LAVG_PER = SCHED_LAVGPERIOD_11SEC
+configSCHED_MAX_THREADS = 10# Maximum number of threads
+configFAST_FORK = 0# Use a queue to find the next free threadId.
+configSCHED_FREQ = 100u# Scheduler frequency in Hz
+configSCHED_LAVG_PER = SCHED_LAVGPERIOD_11SEC#
 
 # Enable or disable heap bounds check
-configHEAP_BOUNDS_CHECK = 0
+configHEAP_BOUNDS_CHECK = 0#
 
 # Maximum number of timers available
-configTIMERS_MAX = 4
+configTIMERS_MAX = 4#
 
 # String functions
-# Optimize string functions for speed
-configSTRING_OPT_SIZE = 1
+configSTRING_OPT_SIZE = 1# Optimize string functions for speed or size
 
 # APP Main
-# Stack size for app_main thread
-configAPP_MAIN_SSIZE = 200u
-# Priority of app_main thread
-configAPP_MAIN_PRI = osPriorityNormal
+configAPP_MAIN_SSIZE = 200u# Stack size for app_main thread
+configAPP_MAIN_PRI = osPriorityNormal# Priority of app_main thread
 
 # Kernel Services
-# Enable device driver subsystem
-configDEVSUBSYS = 1
-configPTTK91_VM = 0
+configDEVSUBSYS = 1# Enable device driver subsystem
+configPTTK91_VM = 0#
 
 # Dev subsystem modules
 # These can be also commented out
-configDEVSUBSYS_NULL = 1
-configDEVSUBSYS_LCD = 0
-configDEVSUBSYS_TTY = 1
+configDEVSUBSYS_NULL = 1#
+configDEVSUBSYS_LCD = 0#
+configDEVSUBSYS_TTYS = 1#
