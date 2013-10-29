@@ -1,5 +1,8 @@
-# Common to all
-hal-SRC-1 += src/hal/uart.c
+# Common to all platforms
+hal-SRC-1 += src/hal/sysinfo.c
+hal-SRC-$(configATAG) += src/hal/atag.c
+hal-SRC-$(configMMU) += src/hal/mmu.c
+hal-SRC-$(configUART) += src/hal/uart.c
 
 # Target model specific modules
 ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
@@ -29,10 +32,7 @@ ifeq ($(configMCU_MODEL),MCU_MODEL_BCM2835)
 	hal-SRC-1 += $(wildcard src/hal/bcm2835/*.c)
 endif
 
-# Select HAL sources
-hal-SRC-1 += src/hal/sysinfo.c
-hal-SRC-$(configATAG) += src/hal/atag.c
-hal-SRC-$(configMMU) += src/hal/mmu.c
+# Arhitecture and Profile specific sources
 ifeq ($(configARM_PROFILE_M),1)
 	hal-SRC-1 += $(wildcard src/hal/cortex_m/*.c)
 else
@@ -44,4 +44,3 @@ else
 		hal-SRC-1 += $(wildcard src/hal/arm11/*.c)
 	endif
 endif
-

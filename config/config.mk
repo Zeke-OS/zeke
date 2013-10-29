@@ -42,6 +42,7 @@ configMCU_MODEL = MCU_MODEL_BCM2835
 configARM_PROFILE_M = 0#
 configARCH = __ARM6K__# Architecture of the core
 configMMU = 1# MMU support
+configUART = 1#
 configATAG = 1# Support bootloader ATAGs
 
 # Process scheduling support (needs MMU)
