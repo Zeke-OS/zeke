@@ -123,18 +123,6 @@
                 MMU_C1_CR_ICACHE | MMU_C1_CR_XP | MMU_C1_CR_TR)
 /* End of MMU C1 Control Bits */
 
-
-extern mmu_pagetable_t mmu_pagetable_master;
-
-int mmu_init_pagetable(mmu_pagetable_t * pt);
-int mmu_map_region(mmu_region_t * region);
-int mmu_unmap_region(mmu_region_t * region);
-int mmu_attach_pagetable(mmu_pagetable_t * pt);
-int mmu_detach_pagetable(mmu_pagetable_t * pt);
-uint32_t mmu_domain_access_get(void);
-void mmu_domain_access_set(uint32_t value, uint32_t mask);
-void mmu_control_set(uint32_t value, uint32_t mask);
-
 #endif /* ARM11_MMU_H */
 
 /**
