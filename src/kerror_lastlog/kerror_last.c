@@ -32,7 +32,11 @@
  */
 
 #include <kstring.h>
-#include "kerror.h"
+#include <kerror.h>
+
+#define KERROR_LOG_SIZE 5
+#define KERROR_LOG_MSGSIZE 80
+#define KERROR_LOG_HLEN_MAX 20
 
 char kerror_log[KERROR_LOG_SIZE][KERROR_LOG_MSGSIZE];
 int kerror_log_last = 0;
