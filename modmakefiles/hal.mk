@@ -1,3 +1,6 @@
+# Common to all
+hal-SRC-1 += src/hal/uart.c
+
 # Target model specific modules
 ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
 	# Includes

@@ -112,7 +112,7 @@ linker uses SORT.
 hw_preinit and hw_postinit can be used by including kinit.h header file and
 using following notation:
 
-    SECT_HW_POSTINIT(init1);
+    SECT_HW_PREINIT(init1);
     SECT_HW_POSTINIT(init2);
 
 

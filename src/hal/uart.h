@@ -40,6 +40,10 @@
 
 #include <stdint.h>
 
+/*/ TODO Make configurable from the gloal conf file */
+/* UART HAL Configuration */
+#define UART_PORTS_MAX 2
+
 /**
  * UART data bits.
  */
@@ -76,25 +80,33 @@ typedef struct {
     enum uart_databits data_bits;   /*!< Data bits. */
     enum uart_stopbits stop_bits;   /*!< One or Two stop bits. */
     enum uart_parity parity;        /*!< Parity. */
-} uart_init_t;
+} uart_port_init_t;
 
 /**
- * Initialize UART.
- * @param port Port number.
+ *
  */
-void uart_init(int port, const uart_init_t * conf);
+typedef struct {
+    /**
+     * Initialize UART.
+     */
+    void (* init)(const uart_port_init_t * conf);
 
-/**
- * Transmit a byte via UARTx.
- * @param byte Byte to send.
- */
-void uart_putc(int port, uint8_t byte);
+    /**
+     * Transmit a byte via UARTx.
+     * @param byte Byte to send.
+     */
+    void (* uputc)(uint8_t byte);
 
-/**
- * Receive a byte via UARTx.
- * @return A byte read from UARTx or -1 if undeflow.
- */
-int uart_getc(int port);
+    /**
+     * Receive a byte via UART.
+     * @return A byte read from UART or -1 if undeflow.
+     */
+    int (* ugetc)(void);
+} uart_port_t;
+
+int uart_register_port(uart_port_t * port);
+int uart_nports(void);
+uart_port_t * uart_getport(int port);
 
 #endif /* UART_H */
 

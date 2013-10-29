@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    mmu.h
+ * @file    uart.c
  * @author  Olli Vanhoja
- * @brief   MMU headers.
+ * @brief   UART HAL.
  * @section LICENSE
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,25 +30,44 @@
  *******************************************************************************
  */
 
-#ifndef KINIT_H
-#define KINIT_H
+/** @addtogroup HAL
+* @{
+*/
+
+#include "uart.h"
+
+static uart_port_t uart_ports[UART_PORTS_MAX];
+static int uart_no_ports;
+
+int uart_register_port(uart_port_t * port)
+{
+    int i, retval = -1;
+
+    i = uart_no_ports;
+    if (i < UART_PORTS_MAX) {
+        uart_ports[i] = *port;
+        uart_no_ports++;
+        retval = i;
+    }
+
+    return retval;
+}
+
+int uart_nports(void)
+{
+    return uart_no_ports;
+}
+
+uart_port_t * uart_getport(int port)
+{
+    uart_port_t * retval = 0;
+
+    if (port < uart_no_ports)
+        retval = &uart_ports[port];
+
+    return retval;
+}
 
 /**
- * hw_preinit initializer functions are run before any other kernel initializer
- * functions.
- */
-#define SECT_HW_PREINIT( fn ) void (*fp_##fn)(void) __attribute__ ((section (".hw_preinit_array"))) = fn;
-
-/**
- * hal_preinit initializer functions are run before normal kernel module
- * constructors.
- */
-#define SECT_HAL_PREINIT( fn ) void (*fp_##fn)(void) __attribute__ ((section (".hal_preinit_array"))) = fn;
-
-/**
- * hw_post_init initializer are run after all other kernel initializer so post
- * init is ideal for example initializing hw timers and interrupts.
- */
-#define SECT_HW_POSTINIT( fn ) void (*fp_##fn)(void) __attribute__ ((section (".hw_postinit_array"))) = fn;
-
-#endif
+* @}
+*/

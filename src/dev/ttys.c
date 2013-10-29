@@ -47,32 +47,44 @@ int devttys_cread(uint32_t * ch, osDev_t dev);
 
 void devttys_init(void)
 {
-    uart_init_t uart_conf = {
+    int i, ports;
+    uart_port_init_t uart_conf = {
         .baud_rate  = UART_BAUDRATE_9600,
         .stop_bits  = UART_STOPBITS_ONE,
         .parity     = UART_PARITY_NO,
     };
 
-    uart_init(0, &uart_conf);
+    ports = uart_nports();
+    for (i = 0; i < ports; i++)
+        uart_getport(i)->init(&uart_conf);
 
     DEV_INIT(2, &devttys_cwrite, &devttys_cread, 0, 0, 0, 0);
 }
 
 int devttys_cwrite(uint32_t ch, osDev_t dev)
 {
-    int port = (int)DEV_MINOR(dev);
+    uart_port_t * port;
 
-    uart_putc(port, (uint8_t)ch);
+    if ((port = uart_getport((int)DEV_MINOR(dev))) == 0) {
+        return DEV_CWR_NOT;
+    }
+
+    port->uputc((uint8_t)ch);
 
     return DEV_CWR_OK;
 }
 
 int devttys_cread(uint32_t * ch, osDev_t dev)
 {
-    int port, data;
+    int data;
+    uart_port_t * port;
 
-    port = (int)DEV_MINOR(dev);
-    data = uart_getc(port);
+    if ((port = uart_getport((int)DEV_MINOR(dev))) == 0) {
+        return DEV_CWR_NOT;
+    }
+
+
+    data = port->ugetc();
     if (data == -1)
         data = DEV_CRD_UNDERFLOW;
 

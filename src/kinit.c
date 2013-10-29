@@ -37,6 +37,10 @@
 
 extern void (*__hw_preinit_array_start[]) (void) __attribute__((weak));
 extern void (*__hw_preinit_array_end[]) (void) __attribute__((weak));
+
+extern void (*__hal_preinit_array_start[]) (void) __attribute__((weak));
+extern void (*__hal_preinit_array_end[]) (void) __attribute__((weak));
+
 extern void (*__hw_postinit_array_start[]) (void) __attribute__((weak));
 extern void (*__hw_postinit_array_end[]) (void) __attribute__((weak));
 
@@ -58,6 +62,9 @@ void exec_init_array(void)
 
     n = __hw_preinit_array_end - __hw_preinit_array_start;
     exec_array(__hw_preinit_array_start, n);
+
+    n = __hal_preinit_array_end - __hal_preinit_array_start;
+    exec_array(__hal_preinit_array_start, n);
 
     n  = __init_array_end - __init_array_start;
     exec_array(__init_array_start, n);

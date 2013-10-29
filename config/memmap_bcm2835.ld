@@ -21,6 +21,7 @@ SECTIONS
     . = ALIGN(4096); /* align to page size */
     _text_end = .;
 
+    _cinit_data_start = .;
     .hw_preinit_array :
     {  
         PROVIDE_HIDDEN (__hw_preinit_array_start = .);
@@ -29,7 +30,14 @@ SECTIONS
         PROVIDE_HIDDEN (__hw_preinit_array_end = .);
     }
 
-    _cinit_data_start = .;
+    .hal_preinit_array :
+    {  
+        PROVIDE_HIDDEN (__hal_preinit_array_start = .);
+        KEEP (*(SORT(.hal_preinit_array.*)))
+        KEEP (*(.hal_preinit_array*))
+        PROVIDE_HIDDEN (__hal_preinit_array_end = .);
+    }
+
     .init_array :
     { 
         PROVIDE_HIDDEN (__init_array_start = .);

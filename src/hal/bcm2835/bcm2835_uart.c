@@ -38,6 +38,10 @@
 * @{
 */
 
+/* TODO Register with UART HAL? */
+/* TODO Create a access struct */
+
+#include <kinit.h>
 #include <kerror.h>
 #include "bcm2835_mmio.h"
 #include <hal/uart.h>
@@ -69,26 +73,27 @@
 #define UART0_ITOP      (UART0_BASE + 0x88)
 #define UART0_TDR       (UART0_BASE + 0x8C)
 
-static void delay(int32_t count);
+void bcm2835_init(const uart_port_init_t * conf);
 static void set_baudrate(unsigned int baud_rate);
-static void set_lcrh(const uart_init_t * conf);
+static void set_lcrh(const uart_port_init_t * conf);
+void bcm2835_uputc(uint8_t byte);
+int bcm2835_ugetc(void);
+static void delay(int32_t count);
 
-/**
- * Idiotic delay function.
- * @param count delay time.
- */
-static void delay(int32_t count)
+
+void bcm2835_register(void)
 {
-    __asm__ volatile("__delay_%=: subs %[count], %[count], #1; bne __delay_%=\n"
-    : : [count]"r"(count) : "cc");
+    uart_port_t port = {
+        .init = bcm2835_init,
+        .uputc = bcm2835_uputc,
+        .ugetc = bcm2835_ugetc
+    };
+    uart_register_port(&port);
 }
+SECT_HAL_PREINIT(bcm2835_register);
 
-void uart_init(int port, const uart_init_t * conf)
+void bcm2835_init(const uart_port_init_t * conf)
 {
-    if (port != 0) {
-        KERROR(KERROR_ERR, "We can only init UART0!");
-    }
-
     mmio_start();
 
     /* Disable UART0. */
@@ -142,7 +147,7 @@ static void set_baudrate(unsigned int baud_rate)
     mmio_write(UART0_FBRD, fraction);
 }
 
-static void set_lcrh(const uart_init_t * conf)
+static void set_lcrh(const uart_port_init_t * conf)
 {
     uint32_t tmp = 0;
 
@@ -180,7 +185,7 @@ static void set_lcrh(const uart_init_t * conf)
     mmio_end();
 }
 
-void uart_putc(int port, uint8_t byte)
+void bcm2835_uputc(uint8_t byte)
 {
     mmio_start();
 
@@ -191,9 +196,8 @@ void uart_putc(int port, uint8_t byte)
     mmio_end();
 }
 
-int uart_getc(int port)
+int bcm2835_ugetc()
 {
-    uint32_t tmp;
     int byte = -1;
 
     mmio_start();
@@ -206,6 +210,16 @@ int uart_getc(int port)
 
     mmio_end();
     return byte;
+}
+
+/**
+ * Idiotic delay function.
+ * @param count delay time.
+ */
+static void delay(int32_t count)
+{
+    __asm__ volatile("__delay_%=: subs %[count], %[count], #1; bne __delay_%=\n"
+    : : [count]"r"(count) : "cc");
 }
 
 /**
