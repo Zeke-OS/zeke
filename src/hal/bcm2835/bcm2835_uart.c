@@ -90,7 +90,7 @@ void bcm2835_register(void)
     };
     uart_register_port(&port);
 }
-SECT_HAL_PREINIT(bcm2835_register);
+SECT_HW_PREINIT(bcm2835_register);
 
 void bcm2835_init(const uart_port_init_t * conf)
 {

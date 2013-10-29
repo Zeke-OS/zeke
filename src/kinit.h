@@ -40,12 +40,6 @@
 #define SECT_HW_PREINIT( fn ) void (*fp_##fn)(void) __attribute__ ((section (".hw_preinit_array"))) = fn;
 
 /**
- * hal_preinit initializer functions are run before normal kernel module
- * constructors.
- */
-#define SECT_HAL_PREINIT( fn ) void (*fp_##fn)(void) __attribute__ ((section (".hal_preinit_array"))) = fn;
-
-/**
  * hw_post_init initializer are run after all other kernel initializer so post
  * init is ideal for example initializing hw timers and interrupts.
  */

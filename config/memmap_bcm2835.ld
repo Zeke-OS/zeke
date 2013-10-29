@@ -30,14 +30,6 @@ SECTIONS
         PROVIDE_HIDDEN (__hw_preinit_array_end = .);
     }
 
-    .hal_preinit_array :
-    {  
-        PROVIDE_HIDDEN (__hal_preinit_array_start = .);
-        KEEP (*(SORT(.hal_preinit_array.*)))
-        KEEP (*(.hal_preinit_array*))
-        PROVIDE_HIDDEN (__hal_preinit_array_end = .);
-    }
-
     .init_array :
     { 
         PROVIDE_HIDDEN (__init_array_start = .);
