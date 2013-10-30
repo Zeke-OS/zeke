@@ -109,19 +109,23 @@
 /* End of DAC Macros */
 
 /* MMU C1 Control bits
- *  * This list contains only those settings that are usable with Zeke.
- *   */
+ * This list contains only those settings that are usable with Zeke.
+ */
 #define MMU_C1_CR_ENMMU     0x00000001 /*!< Enables the MMU. */
 #define MMU_C1_CR_DCACHE    0x00000004 /*!< Enables the L1 data cache. */
 #define MMU_C1_CR_ICACHE    0x00001000 /*!< Enables the L1 instruction cache. */
 #define MMU_C1_CR_BPRED     0x00000800 /*!< Enables branch prediction. */
 #define MMU_C1_CR_XP        0x00800000 /*!< Disable AP subpages and enable ARMv6
                                         * extensions */
+#define MMU_C1_CR_U         0x00400000 /*!< Unaligned data access operations. */
+#define MMU_C1_CR_VE        0x01000000 /*!< Enables the VIC interface */
 #define MMU_C1_CR_TR        0x10000000 /*!< Enables TEX remap. */
+#define MMU_C1_CR_FA        0x20000000 /*!< Force AP bits */ /* TODO? */
 /** Default MMU C1 configuration for Zeke */
 #define MMU_ZEKE_C1_DEFAULTS    (MMU_C1_CR_ENMMU | MMU_C1_CR_DCACHE |\
-                MMU_C1_CR_ICACHE | MMU_C1_CR_XP | MMU_C1_CR_TR)
+        MMU_C1_CR_ICACHE | MMU_C1_CR_XP | MMU_C1_CR_U | MMU_C1_CR_TR)
 /* End of MMU C1 Control Bits */
+
 
 #endif /* ARM11_MMU_H */
 

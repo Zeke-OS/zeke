@@ -44,7 +44,7 @@ interrupt_svc:
     push    {r1-r12, lr}
 
     @ Call kernel's internal syscall handler
-    bl  _intSyscall_handler
+    bl      _intSyscall_handler
 
     pop     {r1-r12, lr}
     movs    pc, lr

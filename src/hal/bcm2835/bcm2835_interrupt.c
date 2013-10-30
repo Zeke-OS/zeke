@@ -43,6 +43,8 @@
 #define KERNEL_INTERNAL
 #endif
 
+#include <kstring.h>
+
 #include <sched.h>
 #include <syscall.h>
 #include <kinit.h>
@@ -70,8 +72,11 @@
 /* End of Peripheral Addresses */
 
 
-void interrupt_init_module(void);
-SECT_HW_POSTINIT(interrupt_init_module);
+void interrupt_preinit(void);
+void interrupt_postinit(void);
+
+SECT_HW_PREINIT(interrupt_preinit);
+SECT_HW_POSTINIT(interrupt_postinit);
 
 /**
  * Interrupt vectors.
@@ -105,14 +110,17 @@ __attribute__ ((naked)) void bad_exception(void)
     }
 }
 
-void interrupt_init_module(void)
+void interrupt_preinit(void)
 {
     /* Set interrupt base register */
     __asm__ volatile ("mcr p15, 0, %[addr], c12, c0, 0"
             : : [addr]"r" (&interrupt_vectors));
     /* Turn on interrupts */
     __asm__ volatile ("cpsie i");
+}
 
+void interrupt_postinit(void)
+{
     mmio_start();
 
     /* Use the ARM timer - BCM 2832 peripherals doc, p.196 */

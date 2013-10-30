@@ -96,7 +96,6 @@ mmu_region_t mmu_region_page_tables = {
 void mmu_init(void)
 {
     uint32_t value, mask;
-
     /* Initialize the fixed page tables */
     mmu_init_pagetable(&mmu_pagetable_master);
     mmu_init_pagetable(&mmu_pagetable_system);
@@ -117,7 +116,8 @@ void mmu_init(void)
 
     value = MMU_ZEKE_C1_DEFAULTS;
     mask = MMU_ZEKE_C1_DEFAULTS;
-    mmu_control_set(value, mask);
+    // TODO BROKEN FUNCTION
+    //mmu_control_set(value, mask);
 }
 
 /**

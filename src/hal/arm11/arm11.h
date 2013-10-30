@@ -145,7 +145,7 @@ inline void * rd_thread_stack_ptr(void)
     __asm__ volatile (
         "STMDB  sp, {sp}^\n\t"
         "NOP\n\t"
-        "SUB    sp, sp, #4\n\t"
+        "ADD    sp, sp, #4\n\t"
         "LDMIA  sp!, {%0}\n"
         : "=r" (result)
     );
@@ -161,7 +161,7 @@ inline void wr_thread_stack_ptr(void * ptr)
             "STMDB  sp!, {%0}\n\t"
             "LDMFD  sp, {sp}^\n\t"
             "NOP\n\t"
-            "SUB    sp, sp, #4\n"
+            "ADD    sp, sp, #4\n"
             : : "r" (ptr)
     );
 }

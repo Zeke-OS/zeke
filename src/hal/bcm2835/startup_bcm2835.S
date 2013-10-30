@@ -71,12 +71,10 @@ Start:
     mov r7, #0
     mov r8, #0
     b   2f
-1:
-    /* Store multiple at r4. */
+1:  /* Store multiple at r4. */
     stmia   r4!, {r5-r8}
     /* If we are still below bss_end, loop. */
-2:
-    cmp r4, r9
+2:  cmp r4, r9
     blo 1b
     /* End of Clear the bss. */
 
@@ -95,7 +93,8 @@ Start:
      */
     ldr r3, =3138
     cmp r1, r3
-    bne halt
+    /* TODO */
+    @bne halt
 
     ldr r3, =atag_scan
     blx r3
@@ -109,8 +108,7 @@ Start:
     blx r3
 
     /* Wait here until scheduler kicks in. */
-3:
-    b   3b
+3:  b   3b
 
     /* Halt */
 halt:
