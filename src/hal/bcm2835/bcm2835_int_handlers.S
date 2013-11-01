@@ -74,15 +74,16 @@ interrupt_systick:
     @ Push the SPSR to the thread stack
     mrs     r0, spsr
     stmdb   lr!, {r0}
+    mov     r0, lr
+    bl      wr_thread_stack_ptr @ Update thread stack pointer
+
 
     @ Clear Timer IRQ
-    ldr     r0, =0x2000b000     @ Timer register base
-    mov     r1, #0
-    str     r1, [r0, #0x40c]    @ IRQ Clear/Ack <- 0
+    bl      interrupt_clear_timer
 
     @ Set Context ID to 0 (as we need ASID to be 0 in kernel mode)
-    mov     r0, #0
-    bl      cpu_set_cid
+    @mov     r0, #0
+    @bl      cpu_set_cid
 
     @ Attach kernel master page table
     ldr     r0, =mmu_pagetable_master
@@ -101,14 +102,14 @@ interrupt_systick:
     bl      process_update
 
     @ Get newly selected PID
-    ldr     r0, =current_process_id
-    ldr     r5, [r0]
+    @ldr     r0, =current_process_id
+    @ldr     r5, [r0]
 
     @ Jump over page table update and CID update if not needed.
     @ This will slightly improve performance for kernel threads as caches are
     @ not flushed twice.
-    cmp     r4, r5
-    b       L_load_context
+    @cmp     r4, r5
+    @b       L_load_context
 
     @ Attach process page table
     mov     r0, r5
@@ -117,7 +118,7 @@ interrupt_systick:
 
     @ Set process Context ID to the value of current PID
     mov     r0, r5
-    bl      cpu_set_cid
+    @bl      cpu_set_cid
 
 @ Load/Restore context
 L_load_context:

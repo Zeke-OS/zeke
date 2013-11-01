@@ -106,9 +106,10 @@ Start:
     /* Call kernel init */
     ldr r3, =kinit
     blx r3
+    CPS #16 @ enter User mode
 
     /* Wait here until scheduler kicks in. */
-3:  b   3b
+__wloop:  b   __wloop
 
     /* Halt */
 halt:

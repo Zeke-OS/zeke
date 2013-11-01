@@ -45,7 +45,7 @@
 #undef configMCU_MODEL
 #endif
 
-extern uint32_t flag_kernel_tick;
+extern volatile uint32_t flag_kernel_tick;
 
 /**
  *  Sets flag_kernel_tick to 1 if tick is now else 0.
@@ -70,7 +70,7 @@ inline void eval_kernel_tick(void)
         flag_kernel_tick = 0;
     }
 }
-
+#error Deprecated code which is not used by scheduler and must be moved!
 #elif configMCU_MODEL == MCU_MODEL_STR912F
 /** @todo Not implemented yet */
 inline void eval_kernel_tick(void)
@@ -79,10 +79,7 @@ inline void eval_kernel_tick(void)
 
 #error Support for STR912F is not implemented yet.
 #elif configMCU_MODEL == MCU_MODEL_BCM2835
-inline void eval_kernel_tick(void)
-{
-}
-    //#error Support for BCM2835 is not implemented yet.
+    /* Implemented in bcm2835/bcm2835_interrupt.c */
 #else
     #error No hardware support for the selected MCU model.
 #endif

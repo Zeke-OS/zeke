@@ -57,15 +57,18 @@ void main(void)
     }
 
     print_message(banner);
-    osDelay(50);
-    print_message("System READY");
+    //osDelay(50);
+    while(1) {
+        print_message("System READY");
+        osDelay(1);
+    }
 }
 
 static void print_message(const char * message)
 {
     size_t i = 0;
 
-    while (banner[i] != '\0') {
-        osDevCwrite(banner[i++], dev_tty0);
+    while (message[i] != '\0') {
+        osDevCwrite(message[i++], dev_tty0);
     }
 }

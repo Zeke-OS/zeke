@@ -93,10 +93,11 @@ typedef struct {
 void cpu_invalidate_caches(void);
 void cpu_set_cid(uint32_t cid);
 
+void * rd_thread_stack_ptr(void);
+void wr_thread_stack_ptr(void * ptr);
+
 /* Inlined core functions */
 inline void * rd_stack_ptr(void);
-inline void * rd_thread_stack_ptr(void);
-inline void wr_thread_stack_ptr(void * ptr);
 
 /**
  * Disable all interrupts except NMI (set PRIMASK)
@@ -135,9 +136,6 @@ inline void wr_thread_stack_ptr(void * ptr);
     );
     return result;
 }*/
-
-void * rd_thread_stack_ptr(void);
-void wr_thread_stack_ptr(void * ptr);
 
 /**
  * Platform sepcific idle sleep mode.

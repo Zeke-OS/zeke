@@ -176,9 +176,6 @@ void * sched_handler(void * tsp)
 {
     current_thread->sp = tsp;  //= (void *)rd_thread_stack_ptr();
 
-    /* Ensure that this scheduler call was due to a systick */
-    eval_kernel_tick();
-
     /* Pre-scheduling tasks */
     if (flag_kernel_tick) { /* Run only if tick was set */
         timers_run();
@@ -192,6 +189,8 @@ void * sched_handler(void * tsp)
     if (flag_kernel_tick) {
         calc_loads();
     }
+
+    flag_kernel_tick = 0;
 
     return current_thread->sp;
 }

@@ -52,6 +52,7 @@ void NMI_Handler(void);
 void SVC_Handler(void);
 void PendSV_Handler(void);
 void SysTick_Handler(void);
+void interrupt_clear_timer(void);
 
 #endif /* ARM11_INTERRUPT_H */
 

@@ -44,11 +44,11 @@
 #endif
 
 #include <kstring.h>
-
 #include <sched.h>
 #include <syscall.h>
 #include <kinit.h>
 #include <hal/hal_core.h>
+#include <hal/hal_mcu.h>
 #include <hal/mmu.h>
 #include "bcm2835_mmio.h"
 #include "bcm2835_interrupt.h"
@@ -73,7 +73,6 @@
 #define ARM_TIMER_CONTROL   0x2000b408
 #define ARM_TIMER_IRQ_CLEAR 0x2000b40c
 /* End of Peripheral Addresses */
-
 
 void interrupt_preinit(void);
 void interrupt_postinit(void);
@@ -113,6 +112,14 @@ __attribute__ ((naked)) void bad_exception(void)
     }
 }
 
+void interrupt_clear_timer(void)
+{
+    mmio_start();
+    mmio_write(ARM_TIMER_IRQ_CLEAR, 0);
+    flag_kernel_tick = 1;
+    bcm2835_uputc('C'); /* TODO Timer debug print */
+}
+
 void interrupt_preinit(void)
 {
     /* Set interrupt base register */
@@ -131,10 +138,10 @@ void interrupt_postinit(void)
     mmio_write(IRQ_ENABLE_BASIC, 0x00000001);
 
     /* Interrupt every (value * prescaler) timer ticks */
-    mmio_write(ARM_TIMER_LOAD, 0x00000400);
+    mmio_write(ARM_TIMER_LOAD, 0x100);
 
     mmio_write(ARM_TIMER_CONTROL,
-            (ARM_TIMER_PRESCALE_256 | ARM_TIMER_EN | ARM_TIMER_INT_EN | ARM_TIMER_23BIT));
+            (ARM_TIMER_PRESCALE_16 | ARM_TIMER_EN | ARM_TIMER_INT_EN | ARM_TIMER_23BIT));
 }
 
 /**
