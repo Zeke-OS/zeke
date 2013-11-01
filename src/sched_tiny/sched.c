@@ -172,9 +172,9 @@ void idleTask(/*@unused@*/ void * arg)
 }
 
 #ifndef PU_TEST_BUILD
-void sched_handler(void)
+void * sched_handler(void * tsp)
 {
-    current_thread->sp = (void *)rd_thread_stack_ptr();
+    current_thread->sp = tsp;  //= (void *)rd_thread_stack_ptr();
 
     /* Ensure that this scheduler call was due to a systick */
     eval_kernel_tick();
@@ -192,6 +192,8 @@ void sched_handler(void)
     if (flag_kernel_tick) {
         calc_loads();
     }
+
+    return current_thread->sp;
 }
 #endif
 
@@ -271,9 +273,6 @@ static void context_switcher(void)
      * quite accurate even it's not confirmed that one tick has been elapsed
      * before this line. */
     current_thread->ts_counter--;
-
-    /* Write the value of the PSP for the next thread in exec */
-    wr_thread_stack_ptr(current_thread->sp);
 }
 
 threadInfo_t * sched_get_pThreadInfo(int thread_id)

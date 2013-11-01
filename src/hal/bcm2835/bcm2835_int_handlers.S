@@ -93,7 +93,9 @@ interrupt_systick:
     ldr     r4, [r4]
 
     @ Run scheduler
+    bl      rd_thread_stack_ptr
     bl      sched_handler
+    bl      wr_thread_stack_ptr
 
     @ Update process system state
     bl      process_update

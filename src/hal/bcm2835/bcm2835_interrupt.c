@@ -57,6 +57,9 @@
 #define ARM_TIMER_PRESCALE_16   0x4
 #define ARM_TIMER_PRESCALE_256  0x8
 
+#define ARM_TIMER_16BIT         0x0
+#define ARM_TIMER_23BIT         0x2
+
 #define ARM_TIMER_EN            0x80
 #define ARM_TIMER_INT_EN        0x20
 
@@ -131,7 +134,7 @@ void interrupt_postinit(void)
     mmio_write(ARM_TIMER_LOAD, 0x00000400);
 
     mmio_write(ARM_TIMER_CONTROL,
-            (ARM_TIMER_PRESCALE_256 | ARM_TIMER_EN | ARM_TIMER_INT_EN));
+            (ARM_TIMER_PRESCALE_256 | ARM_TIMER_EN | ARM_TIMER_INT_EN | ARM_TIMER_23BIT));
 }
 
 /**

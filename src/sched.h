@@ -117,8 +117,10 @@ void sched_start(void);
  *
  * Scheduler handler is mainly called due to sysTick and PendSV
  * interrupt and always by an interrupt handler.
+ * @param tsp Current thread stack pointer.
+ * @return    Next thread stack pointer.
  */
-void sched_handler(void);
+void * sched_handler(void * tsp);
 
 /**
  * Get pointer to a threadInfo structure.

@@ -44,8 +44,8 @@
 #define ARM11_H
 
 #include <kernel.h>
-#include "../hal_mcu.h"
-#include "../hal_core.h"
+#include <hal/hal_mcu.h>
+#include <hal/hal_core.h>
 
 #if configARM_PROFILE_M != 0
     #error ARM Cortex-M profile is not supported by this layer.
@@ -126,7 +126,7 @@ inline void wr_thread_stack_ptr(void * ptr);
 /**
  * Read the main stack pointer
  */
-inline void * rd_stack_ptr(void)
+/*inline void * rd_stack_ptr(void)
 {
     void * result = NULL;
     __asm__ volatile (
@@ -134,37 +134,10 @@ inline void * rd_stack_ptr(void)
         : "=r" (result)
     );
     return result;
-}
+}*/
 
-/**
- * Read the thread stack pointer
- */
-inline void * rd_thread_stack_ptr(void)
-{
-    void * result = NULL;
-    __asm__ volatile (
-        "STMDB  sp, {sp}^\n\t"
-        "NOP\n\t"
-        "ADD    sp, sp, #4\n\t"
-        "LDMIA  sp!, {%0}\n"
-        : "=r" (result)
-    );
-    return(result);
-}
-
-/**
- * Write stack pointer of the current thread
- */
-inline void wr_thread_stack_ptr(void * ptr)
-{
-    __asm__ volatile (
-            "STMDB  sp!, {%0}\n\t"
-            "LDMFD  sp, {sp}^\n\t"
-            "NOP\n\t"
-            "ADD    sp, sp, #4\n"
-            : : "r" (ptr)
-    );
-}
+void * rd_thread_stack_ptr(void);
+void wr_thread_stack_ptr(void * ptr);
 
 /**
  * Platform sepcific idle sleep mode.

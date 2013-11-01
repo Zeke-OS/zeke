@@ -103,11 +103,11 @@ void bcm2835_init(const uart_port_init_t * conf)
 
     /* Disable pull up/down for all GPIO pins & delay for 150 cycles. */
     mmio_write(GPPUD, 0x00000000);
-    delay(150);
+    //delay(150);
 
     /* Disable pull up/down for pin 14, 15 and delay for 150 cycles. */
     mmio_write(GPPUDCLK0, (1 << 14) | (1 << 15));
-    delay(150);
+    //delay(150);
 
     /* Write 0 to GPPUDCLK0 to make it take effect. */
     mmio_write(GPPUDCLK0, 0x00000000);

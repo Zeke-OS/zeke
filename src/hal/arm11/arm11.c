@@ -51,6 +51,37 @@
 uint32_t flag_kernel_tick = 0;
 
 
+/**
+ * Read the thread stack pointer
+ */
+void * rd_thread_stack_ptr(void)
+{
+    void * result = NULL;
+    __asm__ volatile (
+        "STMDB  sp!, {sp}^\n\t"
+        "NOP\n\t"
+        //"ADD    sp, sp, #4\n\t"
+        "LDMIA  sp!, {%0}\n"
+        : "=r" (result)
+    );
+    return result;
+}
+
+/**
+ * Write stack pointer of the current thread
+ */
+void wr_thread_stack_ptr(void * ptr)
+{
+    __asm__ volatile (
+        "STMDB  sp!, {%0}\n\t"
+        "LDMFD  sp, {sp}^\n\t"
+        "NOP\n\t"
+        "ADD    sp, sp, #4\n"
+        : : "r" (ptr)
+    );
+}
+
+
 void init_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a_del_thread)
 {
     sw_stack_frame_t * thread_frame;
