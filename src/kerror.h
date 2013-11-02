@@ -34,9 +34,13 @@
 #ifndef KERROR_H
 #define KERROR_H
 
+#include <autoconf.h>
+
 /* Store few last kernel error messages in memory */
 #if configKERROR_LAST != 0
-#include "kerror_last/kerror_last.h"
+#include <kerror_lastlog/kerror_last.h>
+#elif configKERROR_TTYS != 0
+#include <kerror_ttys/kerror_ttys.h>
 #else /* No kerner error logging */
 #define _KERROR_FN(level, where, msg) do {} while (0)
 #endif

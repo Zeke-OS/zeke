@@ -49,7 +49,8 @@ configATAG = 1# Support bootloader ATAGs
 configPROCESSSCHED = 1#
 
 # Kernel logging methods (Select one or none)
-configKERROR_LAST = 1# Store last n log messages in buffer
+configKERROR_LAST = 0# Store last n log messages in buffer
+configKERROR_TTYS = 1#
 
 # Scheduler Selection
 configSCHED_TINY = 1#

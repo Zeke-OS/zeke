@@ -42,7 +42,7 @@
 extern char kerror_log[KERROR_LOG_SIZE][KERROR_LOG_MSGSIZE];
 extern int kerror_log_last;
 
-#define _KERROR_FN(level, msg) kerror_last(level, where, msg)
+#define _KERROR_FN(level, where, msg) kerror_last(level, where, msg)
 void kerror_last(char level, const char * where, const char * msg);
 
-#endif
+#endif /* KERROR_LAST_H */

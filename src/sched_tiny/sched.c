@@ -345,7 +345,9 @@ static void sched_thread_set_inheritance(osThreadId id, threadInfo_t * parent)
     task_table[id].inh.next_child = NULL;
 
     if (parent == NULL) {
+#if configPROCESSSCHED != 0
         task_table[id].pid_owner = 0;
+#endif
         return;
     }
 
