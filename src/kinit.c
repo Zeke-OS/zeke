@@ -87,7 +87,7 @@ void kinit(void)
         .pthread   = (os_pthread)(&main),
         .tpriority = configAPP_MAIN_PRI,
         .stackAddr = main_Stack,
-        .stackSize = sizeof(main_Stack)/sizeof(char)
+        .stackSize = sizeof(main_Stack)
     };
     osThreadCreate(&main_thread, NULL);
 }

@@ -123,24 +123,16 @@ static void del_thread(void);
 void sched_init(void)
 {
     /* Create the idle task as task 0 */
-    osThreadDef_t tdef_idle = { (os_pthread)(&idleTask),
-                                osPriorityIdle,
-                                sched_idle_stack,
-                                sizeof(sched_idle_stack) / sizeof(char)
-                              };
+    osThreadDef_t tdef_idle = {
+        .pthread    = (os_pthread)(&idleTask),
+        .tpriority  = osPriorityIdle,
+        .stackAddr  = sched_idle_stack,
+        .stackSize  = sizeof(sched_idle_stack)
+    };
     sched_thread_set(0, &tdef_idle, NULL, NULL);
 
     /* Set idle thread as a currently running thread */
     current_thread = &(task_table[0]);
-
-    /* sw_stack_frame will be overwritten when scheduler is run for the first
-     * time. This also means that sw stacked registers are invalid when
-     * idle task executes for the first time. */
-    current_thread->sp = (uint32_t *)((uint32_t)(current_thread->sp)
-                                          + sizeof(sw_stack_frame_t));
-
-    /* Set initial value for PSP */
-    wr_thread_stack_ptr(task_table[0].sp);
 
 #if configFAST_FORK != 0
     next_threadId_queue_cb = queue_create(next_threadId_queue, sizeof(int),
@@ -174,7 +166,9 @@ void idleTask(/*@unused@*/ void * arg)
 #ifndef PU_TEST_BUILD
 void * sched_handler(void * tsp)
 {
-    current_thread->sp = tsp;  //= (void *)rd_thread_stack_ptr();
+    if (tsp != 0) {
+        current_thread->sp = tsp;
+    }
 
     /* Pre-scheduling tasks */
     if (flag_kernel_tick) { /* Run only if tick was set */
@@ -189,8 +183,6 @@ void * sched_handler(void * tsp)
     if (flag_kernel_tick) {
         calc_loads();
     }
-
-    flag_kernel_tick = 0;
 
     return current_thread->sp;
 }
@@ -303,7 +295,7 @@ static void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument,
     /* Init core specific stack frame */
     init_stack_frame(thread_def, argument, (uint32_t)del_thread);
 
-    /* Mark that this thread position is in use.
+    /* Mark this thread index as used.
      * EXEC flag is set later in sched_thread_set_exec */
     task_table[i].flags         = (uint32_t)SCHED_IN_USE_FLAG;
     task_table[i].id            = i;

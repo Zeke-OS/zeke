@@ -58,12 +58,8 @@
     #error MMU must be enabled when compiling for ARM11.
 #endif
 
-/* Exception return values */
-#define HAND_RETURN         0xFFFFFFF1u /*!< Return to handler mode using the MSP. */
-#define MAIN_RETURN         0xFFFFFFF9u /*!< Return to thread mode using the MSP. */
-#define THREAD_RETURN       0xFFFFFFFDu /*!< Return to thread mode using the PSP. */
-
-#define DEFAULT_PSR         0x21000000u
+/* 2.10 The program status registers in ARM1176JZF-S Technical Reference Manual */
+#define DEFAULT_PSR         0x40000010u
 
 /** Stack frame saved by the hardware (Left here for compatibility reasons) */
 typedef struct {
@@ -87,7 +83,7 @@ typedef struct {
     uint32_t r12;
     uint32_t sp;    /*!< r13 */
     uint32_t lr;    /*!< r14 */
-    uint32_t pc;    /*!< Not really pc but used as an entry point. */
+    uint32_t pc;    /*!< r15/lr return point */
 } sw_stack_frame_t;
 
 void cpu_invalidate_caches(void);

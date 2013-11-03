@@ -44,38 +44,38 @@ Start:
      */
 
     /* Init stack pointers */
-    mov r4, #0x0 /* Can be changed to something else if memmap is changed. */
-    cps #0x13   /* Change to supervisor (SVC) mode */
-    add sp, r4, #0x2400
-    cps #0x17   /* Change to Abort mode */
-    add sp, r4, #0x2800
-    cps #0x12   /* Change to IRQ mode */
-    add sp, r4, #0x2c00
-    cps #0x1f   /* Change to system mode */
-    add sp, r4, #0x3c00
+    mov     r4, #0x0 /* Can be changed to something else if memmap is changed. */
+    cps     #0x13   /* Change to supervisor (SVC) mode */
+    add     sp, r4, #0x2400
+    cps     #0x17   /* Change to Abort mode */
+    add     sp, r4, #0x2800
+    cps     #0x12   /* Change to IRQ mode */
+    add     sp, r4, #0x2c00
+    cps     #0x1f   /* Change to system mode */
+    add     sp, r4, #0x3c00
     /* System mode stack is also tecnically used for user mode but we'll soon
      * have new per thread stacks.  */
     /* Stay in system mode for now. */
 
     /* Turn on unaligned memory access */
-    mrc p15, #0, r4, c1, c0, #0
-    orr r4, #0x400000           /* 1<22 */
-    mcr p15, #0, r4, c1, c0, #0
+    mrc     p15, #0, r4, c1, c0, #0
+    orr     r4, #0x400000           /* 1<22 */
+    mcr     p15, #0, r4, c1, c0, #0
 
 
     /* Clear the bss. */
-    ldr r4, =_bss_start
-    ldr r9, =_bss_end
-    mov r5, #0
-    mov r6, #0
-    mov r7, #0
-    mov r8, #0
-    b   2f
+    ldr     r4, =_bss_start
+    ldr     r9, =_bss_end
+    mov     r5, #0
+    mov     r6, #0
+    mov     r7, #0
+    mov     r8, #0
+    b       2f
 1:  /* Store multiple at r4. */
     stmia   r4!, {r5-r8}
     /* If we are still below bss_end, loop. */
-2:  cmp r4, r9
-    blo 1b
+2:  cmp     r4, r9
+    blo     1b
     /* End of Clear the bss. */
 
 
@@ -91,28 +91,32 @@ Start:
      *      depending on bootloader configuration etc.
      *      http://www.simtec.co.uk/products/SWLINUX/files/booting_article.html
      */
-    ldr r3, =3138
-    cmp r1, r3
+    ldr     r3, =3138
+    cmp     r1, r3
     /* TODO */
     @bne halt
 
-    ldr r3, =atag_scan
-    blx r3
+    ldr     r3, =atag_scan
+    blx     r3
 
     /* Call static constructors & initializers */
-    ldr r3, =exec_init_array
-    blx r3
+    ldr     r3, =exec_init_array
+    blx     r3
 
     /* Call kernel init */
-    ldr r3, =kinit
-    blx r3
-    CPS #16 @ enter User mode
+    ldr     r3, =kinit
+    blx     r3
+    @cps     #16 @ enter User mode
+
+    /* TODO ensure that we enter the idle task */
+    @bl      rd_thread_stack_ptr
+    @bl      load_context
 
     /* Wait here until scheduler kicks in. */
-__wloop:  b   __wloop
+__wloop:  b __wloop
 
     /* Halt */
 halt:
     wfe
-    b   halt
+    b       halt
 

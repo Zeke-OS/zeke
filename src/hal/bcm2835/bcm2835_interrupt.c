@@ -44,6 +44,7 @@
 #endif
 
 #include <kstring.h>
+#include <kerror.h>
 #include <sched.h>
 #include <syscall.h>
 #include <kinit.h>
@@ -116,8 +117,7 @@ void interrupt_clear_timer(void)
 {
     mmio_start();
     mmio_write(ARM_TIMER_IRQ_CLEAR, 0);
-    flag_kernel_tick = 1;
-    bcm2835_uputc('C'); /* TODO Timer debug print */
+    //bcm2835_uputc('C'); /* TODO Timer debug print */
 }
 
 void interrupt_preinit(void)

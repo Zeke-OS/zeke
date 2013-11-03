@@ -60,7 +60,7 @@ void main(void)
     //osDelay(50);
     while(1) {
         print_message("System READY");
-        osDelay(1);
+        osDelay(500);
     }
 }
 

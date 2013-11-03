@@ -45,7 +45,7 @@
 
 #include <stddef.h>
 #include <sched.h>
-#include "../hal_mcu.h"
+#include <hal/hal_mcu.h>
 #include "arm11.h"
 
 volatile uint32_t flag_kernel_tick = 0;
@@ -94,7 +94,8 @@ void init_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a_de
     thread_frame->r2 = 0;
     thread_frame->r3 = 0;
     thread_frame->r12 = 0;
-    thread_frame->pc = ((uint32_t)(thread_def->pthread));
+    thread_frame->sp = (uint32_t)thread_frame;
+    thread_frame->pc = ((uint32_t)(thread_def->pthread)) + 4;
     thread_frame->lr = a_del_thread;
     thread_frame->psr = DEFAULT_PSR;
 }
