@@ -38,9 +38,6 @@
 * @{
 */
 
-/* TODO Register with UART HAL? */
-/* TODO Create a access struct */
-
 #include <kinit.h>
 #include <kerror.h>
 #include "bcm2835_mmio.h"
