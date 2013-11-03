@@ -16,17 +16,6 @@ Domains
 
 See MMU_DOM_xxx definitions.
 
-Memory regions
---------------
-
-Table: Static memory region placement
-
-    Region      AP  Validity    Region  Virtual base    No. pages   Physical
-                                size    address                     base address
-    ----------------------------------------------------------------------------
-    Kernel          fixed       32MB    0x0                         0x0
-    Page table      fixed               0x2000000                   0x2000000
-
 
 Virtual memory abstraction levels
 ---------------------------------
