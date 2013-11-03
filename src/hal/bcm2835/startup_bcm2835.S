@@ -106,11 +106,6 @@ Start:
     /* Call kernel init */
     ldr     r3, =kinit
     blx     r3
-    @cps     #16 @ enter User mode
-
-    /* TODO ensure that we enter the idle task */
-    @bl      rd_thread_stack_ptr
-    @bl      load_context
 
     /* Wait here until scheduler kicks in. */
 __wloop:  b __wloop
