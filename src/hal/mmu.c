@@ -61,9 +61,10 @@ mmu_pagetable_t mmu_pagetable_system = {
 
 /* Fixed Regions */
 
+/* TODO Temporarily mapped as one big area */
 mmu_region_t mmu_region_kernel = {
     .vaddr          = MMU_VADDR_KERNEL_START,
-    .num_pages      = 32, /* TODO Temporarily mapped as one big area */
+    .num_pages      = (MMU_VADDR_KERNEL_END - MMU_VADDR_KERNEL_START) / 4096 * 2,
     .ap             = MMU_AP_RWRW, /* Todo this must be changed later to RWNA */
     .control        = MMU_CTRL_MEMTYPE_WB,
     .paddr          = 0x0,
@@ -72,7 +73,7 @@ mmu_region_t mmu_region_kernel = {
 
 mmu_region_t mmu_region_shared = {
     .vaddr          = MMU_VADDR_SHARED_START,
-    .num_pages      = 4,
+    .num_pages      = (MMU_VADDR_SHARED_END - MMU_VADDR_SHARED_START) / 4096,
     .ap             = MMU_AP_RWRO,
     .control        = MMU_CTRL_MEMTYPE_WT,
     .paddr          = MMU_VADDR_SHARED_START,
@@ -81,9 +82,9 @@ mmu_region_t mmu_region_shared = {
 
 mmu_region_t mmu_region_page_tables = {
     .vaddr          = MMU_PT_BASE,
-    .num_pages      = 2, /* TODO 32 megs of page tables?? */
+    .num_pages      = 2, /* TODO is 2 megs enough for everyone? */
     .ap             = MMU_AP_RWNA,
-    .control        = MMU_CTRL_MEMTYPE_WT,
+    .control        = MMU_CTRL_MEMTYPE_WT | MMU_CTRL_XN,
     .paddr          = MMU_PT_BASE,
     .pt             = &mmu_pagetable_master
 };
