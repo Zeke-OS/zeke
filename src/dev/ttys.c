@@ -50,6 +50,7 @@ void devttys_init(void)
     int i, ports;
     uart_port_init_t uart_conf = {
         .baud_rate  = UART_BAUDRATE_9600,
+        .data_bits  = UART_DATABITS_8,
         .stop_bits  = UART_STOPBITS_ONE,
         .parity     = UART_PARITY_NO,
     };

@@ -32,8 +32,15 @@
  */
 
 #include <kstring.h>
+#include <hal/uart.h>
 #include <kerror.h>
 #include "kerror_ttys.h"
+
+/* Due to current limitations in initialization we must directly use specific
+ * hw functions to implement ttyS kerror. Hope this changes some day...
+ * This will also cause a compiler warning because these things are
+ * technically hidden even inside the kernel. */
+#define KERROR_TTYS_UART_UPUTC_FN bcm2835_uputc
 
 /**
  * @param log level.
@@ -48,6 +55,6 @@ void kerror_ttys(char level, const char * where, const char * msg)
     ksprintf(buff, sizeof(buff), "%u:%s%s\n", level, where, msg);
 
     while (buff[i] != '\0') {
-        bcm2835_uputc(buff[i++]);
+        KERROR_TTYS_UART_UPUTC_FN(buff[i++]);
     }
 }
