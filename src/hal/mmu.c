@@ -52,8 +52,8 @@ mmu_pagetable_t mmu_pagetable_master = {
 };
 
 mmu_pagetable_t mmu_pagetable_system = {
-    .vaddr          = 0x0,
-    .pt_addr        = MMU_PT_ADDR(1),
+    .vaddr          = MMU_VADDR_KERNEL_START,
+    .pt_addr        = MMU_PT_ADDR(0),
     .master_pt_addr = MMU_VADDR_MASTER_PT,
     .type           = MMU_PTT_COARSE,
     .dom            = MMU_DOM_KERNEL
@@ -64,7 +64,7 @@ mmu_pagetable_t mmu_pagetable_system = {
 mmu_region_t mmu_region_kernel = {
     .vaddr          = MMU_VADDR_KERNEL_START,
     .num_pages      = 32, /* TODO Temporarily mapped as one big area */
-    .ap             = MMU_AP_RWNA,
+    .ap             = MMU_AP_RWRW, /* Todo this must be changed later to RWNA */
     .control        = MMU_CTRL_MEMTYPE_WB,
     .paddr          = 0x0,
     .pt             = &mmu_pagetable_system
@@ -81,11 +81,11 @@ mmu_region_t mmu_region_shared = {
 
 mmu_region_t mmu_region_page_tables = {
     .vaddr          = MMU_PT_BASE,
-    .num_pages      = 8, /* TODO 32 megs of page tables?? */
+    .num_pages      = 2, /* TODO 32 megs of page tables?? */
     .ap             = MMU_AP_RWNA,
     .control        = MMU_CTRL_MEMTYPE_WT,
     .paddr          = MMU_PT_BASE,
-    .pt             = &mmu_pagetable_system
+    .pt             = &mmu_pagetable_master
 };
 
 
@@ -96,6 +96,7 @@ mmu_region_t mmu_region_page_tables = {
 void mmu_init(void)
 {
     uint32_t value, mask;
+
     /* Initialize the fixed page tables */
     mmu_init_pagetable(&mmu_pagetable_master);
     mmu_init_pagetable(&mmu_pagetable_system);
@@ -116,8 +117,7 @@ void mmu_init(void)
 
     value = MMU_ZEKE_C1_DEFAULTS;
     mask = MMU_ZEKE_C1_DEFAULTS;
-    // TODO BROKEN FUNCTION
-    //mmu_control_set(value, mask);
+    mmu_control_set(value, mask);
 }
 
 /**

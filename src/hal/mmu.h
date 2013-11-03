@@ -49,7 +49,7 @@
 #endif
 
 /* Kernel memory map **********************************************************/
-#define MMU_PT_BASE             0x00018000
+#define MMU_PT_BASE             0x00200000
 
 /* TODO can we put these to memmap file? */
 
@@ -63,7 +63,7 @@
  * Dynmem area starts
  * TODO check if this is ok?
  */
-#define MMU_VADDR_DYNMEM_START  0x00020000
+#define MMU_VADDR_DYNMEM_START  0x00400000
 /**
  * Dynmem area end
  * TODO should match end of physical memory at least
@@ -72,12 +72,12 @@
  * but not here because this is used for some statical
  * allocations.
  */
-#define MMU_VADDR_DYNMEM_END    0x00200000
+#define MMU_VADDR_DYNMEM_END    0x00800000
 /* End of Kernel memory map ***************************************************/
 
 /* Page Table Region Macros ***************************************************/
 /** Last static page table index. */
-#define MMU_PT_LAST_SINDEX      1
+#define MMU_PT_LAST_SINDEX  1
 
 /** Size of all static L1 tables combined. */
 #define MMU_PT_L1TABLES     (MMU_PTSZ_MASTER)

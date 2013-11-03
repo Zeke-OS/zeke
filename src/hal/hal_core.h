@@ -67,12 +67,14 @@ uint32_t syscall(uint32_t type, void * p);
 int test_and_set(int * lock);
 
 /* Core Implementation must declare following inlined functions:
- * + inline void eval_kernel_tick(void);
- * + inline void save_context(void);
- * + inline void load_context(void);
- * + inline void * rd_stack_ptr(void);
- * + inline void * rd_thread_stack_ptr(void);
- * + inline void wr_thread_stack_ptr(void * ptr);
+ * + inline void eval_kernel_tick(void)             (Depends on hw)
+ * + inline void * rd_thread_stack_ptr(void)
+ * + inline void wr_thread_stack_ptr(void * ptr)
+ * and these can be done as either inlined functions or macros:
+ * + disable_interrupt()
+ * + enable_interrupt()
+ * + req_context_switch()
+ * + idle_sleep()
  */
 
 /* Select Core Implementation ************************************************/

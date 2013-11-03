@@ -58,13 +58,13 @@
  * 6    64MB    256B        64
  * 7    32MB    128B        32
  */
-#define MMU_TTBCR_N     0
+#define MMU_TTBCR_N         0
 
 /* L1 Page Table Entry Types
  * These corresponds directly to the bits of first-level descriptor on ARMv6 */
-#define MMU_PTE_FAULT   0 /*!< Translation fault. */
-#define MMU_PTE_COARSE  1 /*!< Coarse page table. */
-#define MMU_PTE_SECTION 2 /*!< Section entry. */
+#define MMU_PTE_FAULT       0 /*!< Translation fault. */
+#define MMU_PTE_COARSE      1 /*!< Coarse page table. */
+#define MMU_PTE_SECTION     2 /*!< Section entry. */
 
 /* Page table sizes in bytes */
 #define MMU_PTSZ_FAULT      0x0000 /*!< Page table size for translation fault. */
@@ -73,9 +73,9 @@
 
 /* Domain Access Control Macros */
 
-#define MMU_DOMAC_NA    0x0 /*!< Any access generates a domain fault. */
-#define MMU_DOMAC_CL    0x1 /*!< Client. Access is checked against the ap bits in TLB. */
-#define MMU_DOMAC_MA    0x3 /*!< Manager. No access permission checks performed. */
+#define MMU_DOMAC_NA        0x0 /*!< Any access generates a domain fault. */
+#define MMU_DOMAC_CL        0x1 /*!< Client. Access is checked against the ap bits in TLB. */
+#define MMU_DOMAC_MA        0x3 /*!< Manager. No access permission checks performed. */
 
 /**
  * Domain number to domain mask.
@@ -101,7 +101,7 @@
  * Get Domain Access Control value of dom from the return value of
  * mmu_domain_access_get function.
  * @param dom which domain.
- * @param val retrun value from the mmu_domain_access_get function.
+ * @param val return value from the mmu_domain_access_get function.
  * @return MMU_DOMAC_NA, MMU_DOMAC_CL or MMU_DOMAC_MA.
  */
 #define MMU_DOMAC_FROM(dom, val)    ((val >> dom) & 0x3)

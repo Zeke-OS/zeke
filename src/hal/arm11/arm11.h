@@ -92,9 +92,6 @@ void cpu_set_cid(uint32_t cid);
 void * rd_thread_stack_ptr(void);
 void wr_thread_stack_ptr(void * ptr);
 
-/* Inlined core functions */
-inline void * rd_stack_ptr(void);
-
 /**
  * Disable all interrupts except NMI (set PRIMASK)
  */
@@ -119,19 +116,6 @@ inline void * rd_stack_ptr(void);
     /* Simple and doesn't cause jitter: */  \
     __asm__ volatile ("WFI");               \
 } while (0)
-
-/**
- * Read the main stack pointer
- */
-/*inline void * rd_stack_ptr(void)
-{
-    void * result = NULL;
-    __asm__ volatile (
-        "MOV    %0, sp"
-        : "=r" (result)
-    );
-    return result;
-}*/
 
 /**
  * Platform sepcific idle sleep mode.

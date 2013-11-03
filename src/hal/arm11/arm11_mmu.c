@@ -66,33 +66,33 @@ int mmu_init_pagetable(mmu_pagetable_t * pt)
 
     switch (pt->type) {
         case MMU_PTT_COARSE:
-            i = MMU_PTSZ_COARSE/4/32; break;
+            i = MMU_PTSZ_COARSE / 4 / 32; break;
         case MMU_PTT_MASTER:
-            i = MMU_PTSZ_MASTER/4/32; break;
+            i = MMU_PTSZ_MASTER / 4 / 32; break;
         default:
             KERROR(KERROR_ERR, "Unknown page table type.");
             return -1;
     }
 
     __asm__ volatile (
-            "MOV r4, %[pte]\n\t"
-            "MOV r5, %[pte]\n\t"
-            "MOV r6, %[pte]\n\t"
-            "MOV r7, %[pte]\n"
-            "L_init_pt_top%=:\n\t"          /* for (; i != 0; i--) */
-            "STMIA %[p_pte]!, {r4-r7}\n\t"  /* Write 32 entries to the table */
-            "STMIA %[p_pte]!, {r4-r7}\n\t"
-            "STMIA %[p_pte]!, {r4-r7}\n\t"
-            "STMIA %[p_pte]!, {r4-r7}\n\t"
-            "STMIA %[p_pte]!, {r4-r7}\n\t"
-            "STMIA %[p_pte]!, {r4-r7}\n\t"
-            "STMIA %[p_pte]!, {r4-r7}\n\t"
-            "STMIA %[p_pte]!, {r4-r7}\n\t"
-            "SUBS %[i], %[i], #1\n\t"
-            "BNE L_init_pt_top%=\n\t"
-            : [i]"+r" (i), [p_pte]"+r" (p_pte)
-            : [pte]"r" (pte)
-            : "r4", "r5", "r6", "r7"
+        "MOV r4, %[pte]\n\t"
+        "MOV r5, %[pte]\n\t"
+        "MOV r6, %[pte]\n\t"
+        "MOV r7, %[pte]\n"
+        "L_init_pt_top%=:\n\t"          /* for (; i != 0; i--) */
+        "STMIA %[p_pte]!, {r4-r7}\n\t"  /* Write 32 entries to the table */
+        "STMIA %[p_pte]!, {r4-r7}\n\t"
+        "STMIA %[p_pte]!, {r4-r7}\n\t"
+        "STMIA %[p_pte]!, {r4-r7}\n\t"
+        "STMIA %[p_pte]!, {r4-r7}\n\t"
+        "STMIA %[p_pte]!, {r4-r7}\n\t"
+        "STMIA %[p_pte]!, {r4-r7}\n\t"
+        "STMIA %[p_pte]!, {r4-r7}\n\t"
+        "SUBS %[i], %[i], #1\n\t"
+        "BNE L_init_pt_top%=\n\t"
+        : [i]"+r" (i), [p_pte]"+r" (p_pte)
+        : [pte]"r" (pte)
+        : "r4", "r5", "r6", "r7"
     );
 
     return 0;
@@ -141,7 +141,7 @@ static void mmu_map_section_region(mmu_region_t * region)
     pte |= (region->ap & 0x4) << 13;        /* Set access permissions (APX) */
     pte |= region->pt->dom << 5;            /* Set domain */
     pte |= (region->control & 0x3) << 16;   /* Set nG & S bits */
-    pte |= (region->control & 0x4);         /* Set XN bit */
+    pte |= (region->control & 0x10);        /* Set XN bit */
     pte |= (region->control & 0x60) >> 3;   /* Set C & B bits */
     pte |= (region->control & 0x380) << 3;  /* Set TEX bits */
     pte |= MMU_PTE_SECTION;                 /* Set entry type */
@@ -171,7 +171,7 @@ static void mmu_map_coarse_region(mmu_region_t * region)
     pte |= (region->ap & 0x3) << 4;         /* Set access permissions (AP) */
     pte |= (region->ap & 0x4) << 7;         /* Set access permissions (APX) */
     pte |= (region->control & 0x3) << 10;   /* Set nG & S bits */
-    pte |= (region->control & 0x4) >> 2;    /* Set XN bit */
+    pte |= (region->control & 0x10) >> 2;    /* Set XN bit */
     pte |= (region->control & 0x60) >> 3;   /* Set C & B bits */
     pte |= (region->control & 0x380) >> 1;  /* Set TEX bits */
     pte |= 0x2;                             /* Set entry type */
@@ -264,9 +264,9 @@ int mmu_attach_pagetable(mmu_pagetable_t * pt)
         case MMU_PTT_MASTER:
             /* TTB -> CP15:c2:c0 */
             __asm__ volatile (
-                    "MCR p15, 0, %[ttb], c2, c0, 0"
-                    :
-                    : [ttb]"r" (ttb));
+                "MCR p15, 0, %[ttb], c2, c0, 0"
+                 :
+                 : [ttb]"r" (ttb));
 
             break;
         case MMU_PTT_COARSE:
@@ -338,16 +338,16 @@ void mmu_domain_access_set(uint32_t value, uint32_t mask)
 
     /* Read domain access control register cp15:c3 */
     __asm__ volatile (
-            "MRC p15, 0, %[acr], c3, c0, 0"
-            : [acr]"=r" (acr));
+        "MRC p15, 0, %[acr], c3, c0, 0"
+        : [acr]"=r" (acr));
 
     acr &= ~mask; /* Clear the bits that will be changed. */
     acr |= value; /* Set new values */
 
     /* Write domain access control register */
     __asm__ volatile (
-            "MCR p15, 0, %[acr], c3, c0, 0"
-            : : [acr]"r" (acr));
+        "MCR p15, 0, %[acr], c3, c0, 0"
+        : : [acr]"r" (acr));
 }
 
 /**
@@ -360,15 +360,15 @@ void mmu_control_set(uint32_t value, uint32_t mask)
     uint32_t reg;
 
     __asm__ volatile (
-            "MRC p15, 0, %[reg], c1, c0, 0"
-            : [reg]"=r" (reg));
+        "MRC p15, 0, %[reg], c1, c0, 0"
+        : [reg]"=r" (reg));
 
     reg &= ~mask;
     reg |= value;
 
     __asm__ volatile (
-            "MCR p15, 0, %[reg], c1, c0, 0"
-            : : [reg]"r" (reg));
+        "MCR p15, 0, %[reg], c1, c0, 0"
+        : : [reg]"r" (reg));
 }
 
 /**
