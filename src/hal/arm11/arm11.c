@@ -174,13 +174,15 @@ void cpu_set_cid(uint32_t cid)
     }
 }
 
-/* HardFault Handling *********************************************************/
+/* Fault Handling *************************************************************/
 
-void HardFault_Handler(void)
+__attribute__ ((naked)) void undef_handler(void)
 {
     /* TODO */
 
-    while (1) { }
+    while (1) {
+        __asm__ volatile ("wfe");
+    }
 
     /* Kill the current thread */
     //sched_thread_terminate(current_thread->id);

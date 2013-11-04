@@ -40,6 +40,9 @@ ARM9/STR912F port (ARMv5TE)
 - ARM9 specific port code neeeds to be updated
 - Testing on target hardware
 
+BCM2835
+-------
+- Use system timer instead of ARM timer for more accurate scheduler timing
 
 KNOWN ISSUES
 ============

@@ -75,6 +75,9 @@
 #define ARM_TIMER_IRQ_CLEAR 0x2000b40c
 /* End of Peripheral Addresses */
 
+#define SYS_CLOCK       700000 /* kHz */
+#define ARM_TIMER_FREQ  configSCHED_FREQ
+
 void interrupt_preinit(void);
 void interrupt_postinit(void);
 
@@ -93,7 +96,7 @@ __attribute__ ((naked, aligned(32))) static void interrupt_vectors(void)
      * interrupt vector offset is set back to 0x0 on reset. */
     __asm__ volatile (
         "b bad_exception\n\t"               /* RESET */
-        "b bad_exception\n\t"               /* UNDEF */
+        "b undef_handler\n\t"               /* UNDEF */
         "b interrupt_svc\n\t"               /* SVC   */
         "b bad_exception\n\t"               /* Prefetch abort */
         "b bad_exception\n\t"               /* data abort */
@@ -117,7 +120,7 @@ void interrupt_clear_timer(void)
 {
     mmio_start();
     mmio_write(ARM_TIMER_IRQ_CLEAR, 0);
-    //bcm2835_uputc('C'); /* TODO Timer debug print */
+    //bcm2835_uputc('C'); /* Timer debug print */
 }
 
 void interrupt_preinit(void)
@@ -138,7 +141,7 @@ void interrupt_postinit(void)
     mmio_write(IRQ_ENABLE_BASIC, 0x00000001);
 
     /* Interrupt every (value * prescaler) timer ticks */
-    mmio_write(ARM_TIMER_LOAD, 0x100);
+    mmio_write(ARM_TIMER_LOAD, (SYS_CLOCK / (ARM_TIMER_FREQ * 16)));
 
     mmio_write(ARM_TIMER_CONTROL,
             (ARM_TIMER_PRESCALE_16 | ARM_TIMER_EN | ARM_TIMER_INT_EN | ARM_TIMER_23BIT));

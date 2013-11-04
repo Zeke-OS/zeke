@@ -125,7 +125,7 @@ void wr_thread_stack_ptr(void * ptr);
     __asm__ volatile ("WFI");           \
 } while (0)
 
-void HardFault_Handler(void);
+__attribute__ ((naked)) void undef_handler(void);
 
 #endif /* ARM11_H */
 
