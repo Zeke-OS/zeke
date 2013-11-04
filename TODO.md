@@ -7,12 +7,8 @@ Generic Tasks
 - Flag for kernel threads so they won't get killed by user scope thread
 - Optional auto-reset on failure instead of halt
 - Implement memory pools
-- Mutex & semaphore thread scope implementation (only partial now)
 - Further optimization of syscalls by using syscalldef data types whenever
   possible (eg. dev)
-- Flags for optional dynmem "optimizations" and feature improvements
-    - Way to free dynamically allocated thread stacks etc.
-    - Optional dynamically allocating scheduler implementation?
 - Implement system that calculates actual number of systicks consumed by
   the scheduler (and compare with others as well like for example idle task)
 - Implement some priority reward metrics for IO bound processes?
@@ -21,7 +17,6 @@ Generic Tasks
     - May need some changes in the scheduler
 - Implement other messaging services
 - Use thread parent<->client relationship to improve scheduling
-- Better way to configure syscall groups eg. in config
 - PTTK91 support
 - elf supports
 
