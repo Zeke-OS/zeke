@@ -2,7 +2,7 @@ BCM2835 Physical Memory Map
 ===========================
 
 Following table explains the physical memory layout of BCM2835 as well as its
-usage on Zeke.
+usage on Zeke. Some of these mappings are common to all ARM11 implementations.
 
     Address             | Z | Description
     ----------------------------------------------------------------------------
@@ -15,7 +15,11 @@ usage on Zeke.
     0x2c01 - 0x3c00     | x | System stack
     -                   |   |
     0x3c01 - 0x7fff     |   | Free space
-    0x8000 -            |   | Kernel (boot address)
+    0x8000 - 0xfffff    | x | Kernel area (boot address)
+    0x00100000-         | x | Page Aable
+    0x002FFFFF          |   | Area
+    0x00300000          | x | Dynmem
+    0x00FFFFFF          |   | Area
     -                   |   |
     Peripherals:        |   |
     0x20000000 -        |   |

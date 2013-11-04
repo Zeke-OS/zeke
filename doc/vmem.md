@@ -47,9 +47,9 @@ Virtual memory abstraction levels
 + kmalloc - is a kernel level memory allocation service.
 + dynmem - is a dynamic memory allocation system that allocates & frees
   contiguous blocks of physical memory.
-+ mmu HAL - is the abract MMU interface provided by mmu.h & mmu.c
++ mmu HAL - is the abract MMU interface provided by `mmu.h` & `mmu.c`
 + CPU specific MMU code is the module responsible of configuring the
-  physical MMU layer and implementing the interface prodived by mmu.c
+  physical MMU layer and implementing the interface prodived by `mmu.c`
 
 
 dynmem

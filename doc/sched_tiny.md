@@ -1,7 +1,12 @@
 SCHED_TINY
 ==========
 
-A tiny scheduler for zeke.
+A tiny thread oriented scheduler for zeke.
+Sched_tiny is solely based on priority queue and penalties and it doesn't make
+a difference between threads belongin to the current process or some other
+process, so it can't optimize on changing process context (eg. changing memory
+map).
+
 
 +----------+        +------------------+
 | Inactive |---+--->| Ready            |-------------+
