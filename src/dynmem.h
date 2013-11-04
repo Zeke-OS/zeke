@@ -34,6 +34,7 @@
 #ifndef DYNMEM_H
 #define DYNMEM_H
 #include <stddef.h>
+#include <ptmapper.h>
 #include <hal/mmu.h>
 
 /* TODO

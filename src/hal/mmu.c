@@ -35,6 +35,7 @@
   */
 
 #include <kinit.h>
+#include <ptmapper.h>
 #include "mmu.h"
 
 void mmu_init(void);
