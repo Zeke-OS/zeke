@@ -82,8 +82,6 @@ uint32_t dynmemmap_bitmap[DYNMEM_MAPSIZE / 32];
 
 static mmu_region_t dynmem_region;
 
-static int bitmap_block_search(uint32_t * retval, uint32_t block_len, uint32_t * bitmap, size_t size);
-static void bitmap_block_update(uint32_t * bitmap, uint32_t mark, uint32_t start, uint32_t len);
 static void * kmap_allocation(size_t pos, size_t size, uint32_t ap, uint32_t control);
 static int update_dynmem_region_struct(void * p);
 
@@ -159,76 +157,6 @@ void dynmem_free_region(void * addr)
         dynmemmap[j] = 0;
     }
     bitmap_block_update(dynmemmap_bitmap, 1, j, dynmem_region.num_pages);
-}
-
-/**
- * Search for a contiguous block of block_len in bitmap.
- * @param retval[out]   Index of the first contiguous block of requested length.
- * @param block_len     is the lenght of contiguous block searched for.
- * @param bitmap        is a bitmap of block reservations.
- * @param size          is the size of bitmap in bytes.
- * @return  Returns zero if a free block found; Value other than zero if there
- *          is no free contiguous block of requested length.
- */
-static int bitmap_block_search(uint32_t * retval, uint32_t block_len, uint32_t * bitmap, size_t size)
-{
-    uint32_t i, j;
-    uint32_t * cur;
-    uint32_t start = 0, end = 0;
-
-    block_len--;
-    cur = &start;
-    for (i = 0; i < (size / sizeof(uint32_t)); i++) {
-        for(j = 0; j < 32; j++) {
-            if ((bitmap[i] & (1 << j)) == 0) {
-                *cur = i * 32 + j;
-                cur = &end;
-
-                if ((end - start >= block_len) && (end >= start)) {
-                    *retval = start;
-                    return 0;
-                }
-            } else {
-                start = 0;
-                end = 0;
-                cur = &start;
-            }
-        }
-    }
-
-    return 1;
-}
-
-/**
- * Set or clear contiguous block of bits in bitmap.
- * @param bitmap    is the bitmap being changed.
- * @param mark      0 = clear; 1 = set;
- * @param start     is the starting bit position in bitmap.
- * @param len       is the length of the block being updated.
- */
-static void bitmap_block_update(uint32_t * bitmap, uint32_t mark, uint32_t start, uint32_t len)
-{
-    uint32_t i, j, n, tmp;
-    uint32_t k = (start - (start & 31)) / 32;
-    uint32_t max = k + len / 32 + 1;
-
-    mark &= 1;
-
-    /* start mod 32 */
-    n = start & 31;
-
-    j = 0;
-    for (i = k; i <= max; i++) {
-        while (n < 32) {
-            tmp = mark << n;
-            bitmap[i]  &= ~(1 << n);
-            bitmap[i] |= tmp;
-            n++;
-            if (++j >= len)
-                return;
-        }
-        n = 0;
-    }
 }
 
 /**
