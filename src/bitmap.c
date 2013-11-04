@@ -30,8 +30,6 @@
  *******************************************************************************
  */
 
-#include <stdint.h>
-#include <stddef.h>
 #include <bitmap.h>
 
 /**
@@ -43,18 +41,18 @@
  * @return  Returns zero if a free block found; Value other than zero if there
  *          is no free contiguous block of requested length.
  */
-int bitmap_block_search(uint32_t * retval, uint32_t block_len, uint32_t * bitmap, size_t size)
+int bitmap_block_search(size_t * retval, size_t block_len, bitmap_t * bitmap, size_t size)
 {
     size_t i, j;
-    uint32_t * cur;
-    uint32_t start = 0, end = 0;
+    bitmap_t * cur;
+    size_t start = 0, end = 0;
 
     block_len--;
     cur = &start;
-    for (i = 0; i < (size / sizeof(uint32_t)); i++) {
-        for(j = 0; j < 32; j++) {
+    for (i = 0; i < (size / sizeof(bitmap_t)); i++) {
+        for(j = 0; j < SIZEOF_BITMAP_T; j++) {
             if ((bitmap[i] & (1 << j)) == 0) {
-                *cur = i * 32 + j;
+                *cur = i * SIZEOF_BITMAP_T + j;
                 cur = &end;
 
                 if ((end - start >= block_len) && (end >= start)) {
@@ -79,21 +77,21 @@ int bitmap_block_search(uint32_t * retval, uint32_t block_len, uint32_t * bitmap
  * @param start     is the starting bit position in bitmap.
  * @param len       is the length of the block being updated.
  */
-void bitmap_block_update(uint32_t * bitmap, uint32_t mark, uint32_t start, uint32_t len)
+void bitmap_block_update(bitmap_t * bitmap, unsigned int mark, size_t start, size_t len)
 {
     size_t i, j, n;
     uint32_t  tmp;
-    uint32_t k = (start - (start & 31)) / 32;
-    uint32_t max = k + len / 32 + 1;
+    uint32_t k = (start - (start & (SIZEOF_BITMAP_T - 1))) / SIZEOF_BITMAP_T;
+    uint32_t max = k + len / SIZEOF_BITMAP_T + 1;
 
     mark &= 1;
 
-    /* start mod 32 */
-    n = start & 31;
+    /* start mod size of bitmap_t in bits */
+    n = start & (SIZEOF_BITMAP_T - 1);
 
     j = 0;
     for (i = k; i <= max; i++) {
-        while (n < 32) {
+        while (n < SIZEOF_BITMAP_T) {
             tmp = mark << n;
             bitmap[i]  &= ~(1 << n);
             bitmap[i] |= tmp;

@@ -32,6 +32,7 @@
 
 #include <kstring.h>
 #include <kerror.h>
+#include <bitmap.h>
 #include <dynmem.h>
 
 #define DYNMEM_RC_POS       16
@@ -78,7 +79,7 @@
  * X  = Don't care
  */
 uint32_t dynmemmap[DYNMEM_MAPSIZE];
-uint32_t dynmemmap_bitmap[DYNMEM_MAPSIZE / 32];
+uint32_t dynmemmap_bitmap[E2BITMAP_SIZE(DYNMEM_MAPSIZE)];
 
 static mmu_region_t dynmem_region;
 

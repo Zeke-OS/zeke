@@ -30,5 +30,26 @@
  *******************************************************************************
  */
 
-int bitmap_block_search(uint32_t * retval, uint32_t block_len, uint32_t * bitmap, size_t size);
-void bitmap_block_update(uint32_t * bitmap, uint32_t mark, uint32_t start, uint32_t len);
+#include <stdint.h>
+#include <stddef.h>
+
+typedef uint32_t bitmap_t;
+
+/**
+ * Returns size of static bitmap in bits.
+ * @param bmap Bitmap.
+ * @return Size of given bitmap in bits.
+ */
+#define SIZEOF_BITMAP(bmap) (sizeof(bmap) * 8)
+
+#define SIZEOF_BITMAP_T (sizeof(bitmap_t) * 8)
+
+/**
+ * Convert from number of entries to bitmap size.
+ * @param entries Number of entries needed.
+ * @return Correct size for a bitmap_t array.
+ */
+#define E2BITMAP_SIZE(entries) (entries / SIZEOF_BITMAP_T)
+
+int bitmap_block_search(size_t * retval, size_t block_len, bitmap_t * bitmap, size_t size);
+void bitmap_block_update(bitmap_t * bitmap, unsigned int mark, size_t start, size_t len);
