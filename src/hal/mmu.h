@@ -90,6 +90,23 @@
  * @param index page table index.
  */
 #define MMU_PT_ADDR(index)  (MMU_PT_BASE + MMU_PT_L1TABLES + index * MMU_PTSZ_COARSE)
+
+/**
+ * Page count by size of region.
+ * @param size  Size of region.
+ * @param psize Page size. 1 = 1 MB sections, 4096 = 4096 KB small pages
+ * @return Region size in pages.
+ */
+#define MMU_PAGE_CNT_BY_SIZE(size, psize)           ((size)/(psize))
+
+/**
+ * Page count by address range.
+ * @param begin Region start address.
+ * @param end   Region end address.
+ * @param psize Page size. 1 = 1 MB sections, 4096 = 4096 KB small pages
+ * @return Region size in pages.
+ */
+#define MMU_PAGE_CNT_BY_RANGE(begin, end, psize)    (((end)-(begin)+1)/(psize))
 /* End of Page Table Region Macros ********************************************/
 
 /* Zeke Domains */
