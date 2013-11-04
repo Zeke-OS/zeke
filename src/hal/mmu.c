@@ -38,58 +38,9 @@
 #include <ptmapper.h>
 #include "mmu.h"
 
+extern void ptmapper_init(void); /* form ptmapper */
 void mmu_init(void);
 SECT_HW_PREINIT(mmu_init);
-
-/* Fixed Page Tables */
-
-/* Kernel master page table (L1) */
-mmu_pagetable_t mmu_pagetable_master = {
-    .vaddr          = MMU_PT_BASE,
-    .pt_addr        = MMU_PT_BASE,
-    .master_pt_addr = MMU_PT_BASE,
-    .type           = MMU_PTT_MASTER,
-    .dom            = MMU_DOM_KERNEL
-};
-
-mmu_pagetable_t mmu_pagetable_system = {
-    .vaddr          = MMU_VADDR_KERNEL_START,
-    .pt_addr        = MMU_PT_ADDR(0),
-    .master_pt_addr = MMU_VADDR_MASTER_PT,
-    .type           = MMU_PTT_COARSE,
-    .dom            = MMU_DOM_KERNEL
-};
-
-/* Fixed Regions */
-
-/* TODO Temporarily mapped as one big area */
-mmu_region_t mmu_region_kernel = {
-    .vaddr          = MMU_VADDR_KERNEL_START,
-    .num_pages      = MMU_PAGE_CNT_BY_RANGE(MMU_VADDR_KERNEL_START, MMU_VADDR_KERNEL_END, 4096),
-    .ap             = MMU_AP_RWRW, /* Todo this must be changed later to RWNA */
-    .control        = MMU_CTRL_MEMTYPE_WB,
-    .paddr          = 0x0,
-    .pt             = &mmu_pagetable_system
-};
-
-mmu_region_t mmu_region_shared = {
-    .vaddr          = MMU_VADDR_SHARED_START,
-    .num_pages      = MMU_PAGE_CNT_BY_RANGE(MMU_VADDR_SHARED_START, MMU_VADDR_SHARED_END, 4096),
-    .ap             = MMU_AP_RWRO,
-    .control        = MMU_CTRL_MEMTYPE_WT,
-    .paddr          = MMU_VADDR_SHARED_START,
-    .pt             = &mmu_pagetable_system
-};
-
-mmu_region_t mmu_region_page_tables = {
-    .vaddr          = MMU_PT_BASE,
-    .num_pages      = 2, /* TODO is 2 megs enough for everyone? */
-    .ap             = MMU_AP_RWNA,
-    .control        = MMU_CTRL_MEMTYPE_WT | MMU_CTRL_XN,
-    .paddr          = MMU_PT_BASE,
-    .pt             = &mmu_pagetable_master
-};
-
 
 /**
  * Initialize the MMU and static regions.
@@ -99,18 +50,7 @@ void mmu_init(void)
 {
     uint32_t value, mask;
 
-    /* Initialize the fixed page tables */
-    mmu_init_pagetable(&mmu_pagetable_master);
-    mmu_init_pagetable(&mmu_pagetable_system);
-
-    /* Fill page tables with translations & attributes */
-    mmu_map_region(&mmu_region_kernel);
-    mmu_map_region(&mmu_region_shared);
-    mmu_map_region(&mmu_region_page_tables);
-
-    /* Activate page tables */
-    mmu_attach_pagetable(&mmu_pagetable_master); /* Load L1 TTB to cp15:c2:c0 */
-    mmu_attach_pagetable(&mmu_pagetable_system); /* Load L2 pte into L1 PT */
+    ptmapper_init();
 
     /* Set MMU_DOM_KERNEL as client and others to generate error. */
     value = MMU_DOMAC_TO(MMU_DOM_KERNEL, MMU_DOMAC_CL);

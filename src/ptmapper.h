@@ -1,11 +1,10 @@
 /**
  *******************************************************************************
- * @file    ptmapper
+ * @file    ptmapper.h
  * @author  Olli Vanhoja
  * @brief   Page table mapper.
  * @section LICENSE
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -93,3 +92,4 @@
  */
 #define MMU_PAGE_CNT_BY_RANGE(begin, end, psize)    (((end)-(begin)+1)/(psize))
 /* End of Page Table Region Macros ********************************************/
+
