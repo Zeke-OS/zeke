@@ -45,3 +45,18 @@ News
 - CM0 port on LLVM seems to get stuck on syscalls
 - ARM11/Raspberry Pi port ongoing
 - ST Cortex-M3 and ARM9 port under development
+
+Port status
+-----------
+
+    +-----------+-----------------------+
+    | HAL       | Status                |
+    +-----------+-----------------------+
+    | ARM9      | Not fully implemented |
+    | ARM11     | OK                    |
+    | Cortex-M  | Won't compile         |
+    +-----------+-----------------------+
+    | BCM2835   | OK                    |
+    | STM32F0   | Won't compile         |
+    +-----------+-----------------------+
+
