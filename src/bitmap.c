@@ -80,9 +80,9 @@ int bitmap_block_search(size_t * retval, size_t block_len, bitmap_t * bitmap, si
 void bitmap_block_update(bitmap_t * bitmap, unsigned int mark, size_t start, size_t len)
 {
     size_t i, j, n;
-    uint32_t  tmp;
-    uint32_t k = (start - (start & (SIZEOF_BITMAP_T - 1))) / SIZEOF_BITMAP_T;
-    uint32_t max = k + len / SIZEOF_BITMAP_T + 1;
+    bitmap_t  tmp;
+    size_t k = (start - (start & (SIZEOF_BITMAP_T - 1))) / SIZEOF_BITMAP_T;
+    size_t max = k + len / SIZEOF_BITMAP_T + 1;
 
     mark &= 1;
 
