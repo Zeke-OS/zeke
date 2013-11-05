@@ -78,3 +78,4 @@
 #define MMU_PAGE_CNT_BY_RANGE(begin, end, psize)    (((end)-(begin)+1)/(psize))
 /* End of Page Table Region Macros ********************************************/
 
+int ptmapper_alloc(mmu_pagetable_t * pt);

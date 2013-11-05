@@ -31,7 +31,7 @@
  */
 
 #include <kernel.h>
-#include <app_main.h>
+#include <usrscope/usrinit.h>
 #include <sched.h>
 #include <kinit.h>
 
@@ -47,7 +47,7 @@ extern void (*__init_array_end []) (void) __attribute__((weak));
 extern void (*__fini_array_start []) (void) __attribute__((weak));
 extern void (*__fini_array_end []) (void) __attribute__((weak));
 
-static char main_Stack[configAPP_MAIN_SSIZE];
+static char main_stack[configUSRINIT_SSIZE];
 
 static void exec_array(void (*a []) (void), int n);
 
@@ -85,9 +85,9 @@ void kinit(void)
     /* Create app_main thread */
     osThreadDef_t main_thread = {
         .pthread   = (os_pthread)(&main),
-        .tpriority = configAPP_MAIN_PRI,
-        .stackAddr = main_Stack,
-        .stackSize = sizeof(main_Stack)
+        .tpriority = configUSRINIT_PRI,
+        .stackAddr = main_stack,
+        .stackSize = sizeof(main_stack)
     };
     osThreadCreate(&main_thread, NULL);
 }

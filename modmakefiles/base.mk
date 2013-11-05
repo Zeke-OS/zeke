@@ -7,5 +7,5 @@ base-SRC-$(configKERROR_LAST) += $(wildcard src/kerror_lastlog/*.c)
 base-SRC-$(configKERROR_TTYS) += $(wildcard src/kerror_ttys/*.c)
 #dev subsystem
 base-SRC-$(configDEVSUBSYS) += src/dev/dev.c
-# TODO thscope should be moved??
-base-SRC-1 += $(wildcard src/thscope/*.c)
+# usrinit
+base-SRC-1 += $(wildcard src/usrscope/*.c)

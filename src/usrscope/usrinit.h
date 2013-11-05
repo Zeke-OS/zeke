@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    app_main.h
+ * @file    usrinit.h
  * @author  Olli Vanhoja
- * @brief   Header file for main.c
+ * @brief   First user scope process.
  * @section LICENSE
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
@@ -32,9 +32,9 @@
  */
 
  #pragma once
-#ifndef APP_MAIN_H
-#define APP_MAIN_H
+#ifndef USRINIT_H
+#define USRINIT_H
 
 void main(void);
 
- #endif /* APP_MAIN_H */
+ #endif /* USRINIT_H */

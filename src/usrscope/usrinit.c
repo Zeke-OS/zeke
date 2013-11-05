@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    app_main.c
+ * @file    usrinit.c
  * @author  Olli Vanhoja
- * @brief   Main entry point to the application
+ * @brief   First user scope process.
  * @section LICENSE
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
@@ -32,7 +32,7 @@
  */
 
 #include <kernel.h>
-#include <app_main.h>
+#include "usrinit.h"
 
 osDev_t dev_tty0 = DEV_MMTODEV(2, 0);
 
@@ -48,7 +48,7 @@ char banner[] = "\
 static void print_message(const char * message);
 
 /**
- * main thread.
+ * main thread; main process.
  */
 void main(void)
 {

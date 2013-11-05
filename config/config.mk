@@ -70,9 +70,9 @@ configTIMERS_MAX = 4#
 # String functions
 configSTRING_OPT_SIZE = 1# Optimize string functions for speed or size
 
-# APP Main
-configAPP_MAIN_SSIZE = 200u# Stack size for app_main thread
-configAPP_MAIN_PRI = osPriorityNormal# Priority of app_main thread
+# usrinit
+configUSRINIT_SSIZE = 200u# Stack size for usrinit thread
+configUSRINIT_PRI = osPriorityNormal# Priority of usrinit thread
 
 # Kernel Services
 configDEVSUBSYS = 1# Enable device driver subsystem
