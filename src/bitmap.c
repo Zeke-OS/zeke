@@ -103,3 +103,23 @@ void bitmap_block_update(bitmap_t * bitmap, unsigned int mark, size_t start, siz
     }
 }
 
+/**
+ * Set a contiguous block of zeroed bits to ones and return starting index.
+ * @param start     is the starting bit (index) of newly allocated area.
+ * @param len       is the length of zeroed area to be set.
+ * @param bitmap    is the bitmap being changed.
+ * @param size      is the size of the bitmap in bytes.
+ * @return  Returns zero if a free block found; Value other than zero if there
+ *          is no free contiguous block of requested length.
+ */
+int bitmap_block_alloc(size_t * start, size_t len, bitmap_t * bitmap, size_t size)
+{
+    int retval = 0;
+
+    retval = bitmap_block_search(start, len, bitmap, size);
+    if (retval == 0) {
+        bitmap_block_update(bitmap, 1, *start, len);
+    }
+
+    return retval;
+}

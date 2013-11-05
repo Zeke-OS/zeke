@@ -33,12 +33,11 @@
 #include <hal/mmu.h>
 
 /* Kernel memory map **********************************************************/
-#define MMU_PT_BASE             0x00100000
+#define PTMAPPER_BASE           0x00100000
 
 /* TODO can we put these to memmap file? */
 
 /** Base address of Page table region */
-#define MMU_VADDR_MASTER_PT     MMU_PT_BASE
 #define MMU_VADDR_KERNEL_START  0x00000000
 #define MMU_VADDR_KERNEL_END    0x0007FFFF
 #define MMU_VADDR_SHARED_START  0x00080000
@@ -60,20 +59,6 @@
 /* End of Kernel memory map ***************************************************/
 
 /* Page Table Region Macros ***************************************************/
-/** Last static page table index. */
-#define MMU_PT_LAST_SINDEX  1
-
-/** Size of all static L1 tables combined. */
-#define MMU_PT_L1TABLES     (MMU_PTSZ_MASTER)
-
-/**
- * A macro to calculate the address for statically allocated L2 page table.
- *
- * Note: We assume that there is only one static master table on the bottom and
- *       all other static tables are equally sized coarse page tables.
- * @param index page table index.
- */
-#define MMU_PT_ADDR(index)  (MMU_PT_BASE + MMU_PT_L1TABLES + index * MMU_PTSZ_COARSE)
 
 /**
  * Page count by size of region.

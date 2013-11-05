@@ -53,3 +53,4 @@ typedef uint32_t bitmap_t;
 
 int bitmap_block_search(size_t * retval, size_t block_len, bitmap_t * bitmap, size_t size);
 void bitmap_block_update(bitmap_t * bitmap, unsigned int mark, size_t start, size_t len);
+int bitmap_block_alloc(size_t * start, size_t len, bitmap_t * bitmap, size_t size);
