@@ -40,11 +40,12 @@ Key features
 
 News
 ----
+- Dynamic memory allocation for page tables is working. Dynmem allocation is
+  still untested but I'll be working on it next. 
 - Coming "soon": Optional support for process scheduling & process memory space
   when MMU is enabled
 - CM0 port on LLVM seems to get stuck on syscalls
 - ARM11/Raspberry Pi port ongoing
-- ST Cortex-M3 and ARM9 port under development
 
 Port status
 -----------
