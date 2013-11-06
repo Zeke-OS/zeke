@@ -47,7 +47,6 @@ int bitmap_block_search(size_t * retval, size_t block_len, bitmap_t * bitmap, si
     bitmap_t * cur;
     size_t start = 0, end = 0;
 
-    block_len--;
     cur = &start;
     for (i = 0; i < (size / sizeof(bitmap_t)); i++) {
         for(j = 0; j < SIZEOF_BITMAP_T; j++) {
@@ -81,26 +80,25 @@ void bitmap_block_update(bitmap_t * bitmap, unsigned int mark, size_t start, siz
 {
     size_t i, j, n;
     bitmap_t  tmp;
-    size_t k = (start - (start & (SIZEOF_BITMAP_T - 1))) / SIZEOF_BITMAP_T;
-    size_t max = k + len / SIZEOF_BITMAP_T + 1;
+    size_t k;
 
     mark &= 1;
-
-    /* start mod size of bitmap_t in bits */
-    n = start & (SIZEOF_BITMAP_T - 1);
+    k = (start - (start & (SIZEOF_BITMAP_T - 1))) / SIZEOF_BITMAP_T;
+    n = start & (SIZEOF_BITMAP_T - 1); /* start mod size of bitmap_t in bits */
 
     j = 0;
-    for (i = k; i <= max; i++) {
+    i = k;
+    do {
         while (n < SIZEOF_BITMAP_T) {
             tmp = mark << n;
-            bitmap[i]  &= ~(1 << n);
+            bitmap[i] &= ~(1 << n);
             bitmap[i] |= tmp;
             n++;
             if (++j >= len)
                 return;
         }
         n = 0;
-    }
+    } while (i++);
 }
 
 /**
