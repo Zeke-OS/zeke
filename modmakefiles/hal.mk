@@ -7,23 +7,23 @@ hal-SRC-$(configUART) += src/hal/uart.c
 # Target model specific modules
 ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
 	# Includes
-	IDIR += ./Libraries/CMSIS/Include ./Libraries/STM32F0xx/Drivers/inc
-	IDIR += ./Libraries/STM32F0xx/CMSIS
-	IDIR += ./Libraries/STM32F0xx/Drivers/inc
+	IDIR += ./lib/CMSIS/Include ./lib/STM32F0xx/Drivers/inc
+	IDIR += ./lib/STM32F0xx/CMSIS
+	IDIR += ./lib/STM32F0xx/Drivers/inc
 	# TODO not always Discovery
-	IDIR += ./Libraries/Discovery
+	IDIR += ./lib/Discovery
 	# Soúrces
-	hal-SRC-1 += $(wildcard Libraries/STM32F0xx/CMSIS/*.c)
-	#hal-SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_dbgmcu.c
-	hal-SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_exti.c
-	hal-SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_gpio.c
-	hal-SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_misc.c
-	#hal-SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_pwr.c
-	hal-SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_rcc.c
-	hal-SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_syscfg.c
-	#hal-SRC-1 += Libraries/STM32F0xx/Drivers/src/stm32f0xx_tim.c
+	hal-SRC-1 += $(wildcard lib/STM32F0xx/CMSIS/*.c)
+	#hal-SRC-1 += lib/STM32F0xx/Drivers/src/stm32f0xx_dbgmcu.c
+	hal-SRC-1 += lib/STM32F0xx/Drivers/src/stm32f0xx_exti.c
+	hal-SRC-1 += lib/STM32F0xx/Drivers/src/stm32f0xx_gpio.c
+	hal-SRC-1 += lib/STM32F0xx/Drivers/src/stm32f0xx_misc.c
+	#hal-SRC-1 += lib/STM32F0xx/Drivers/src/stm32f0xx_pwr.c
+	hal-SRC-1 += lib/STM32F0xx/Drivers/src/stm32f0xx_rcc.c
+	hal-SRC-1 += lib/STM32F0xx/Drivers/src/stm32f0xx_syscfg.c
+	#hal-SRC-1 += lib/STM32F0xx/Drivers/src/stm32f0xx_tim.c
 	# TODO not always Discovery
-	hal-SRC-1 += $(wildcard Libraries/Discovery/*.c)
+	hal-SRC-1 += $(wildcard lib/Discovery/*.c)
 	hal-SRC-1 += $(wildcard src/hal/stm32f0/*.c)
 endif
 ifeq ($(configMCU_MODEL),MCU_MODEL_BCM2835)

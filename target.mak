@@ -50,10 +50,10 @@ endif
 ifeq ($(configARM_PROFILE_M),1)
 	# libgcc for ARMv6-M
 	ifeq ($(configARCH),__ARM6M__)
-		CRT = Libraries/crt/libaeabi-armv6-m/libaeabi-armv6-m.a
+		CRT = lib/crt/libaeabi-armv6-m/libaeabi-armv6-m.a
 	endif
 else
 	ifeq ($(configARCH),__ARM6K__)
-		CRT = Libraries/crt/libaeabi-armv6k/libaeabi-armv6k.a
+		CRT = lib/crt/libaeabi-armv6k/libaeabi-armv6k.a
 	endif
 endif
