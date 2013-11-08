@@ -81,8 +81,8 @@
 void interrupt_preinit(void);
 void interrupt_postinit(void);
 
-SECT_HW_PREINIT(interrupt_preinit);
-SECT_HW_POSTINIT(interrupt_postinit);
+HW_PREINIT_ENTRY(interrupt_preinit);
+HW_POSTINIT_ENTRY(interrupt_postinit);
 
 /**
  * Interrupt vectors.

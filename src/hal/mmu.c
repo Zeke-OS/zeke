@@ -39,14 +39,14 @@
 #include "mmu.h"
 
 extern void ptmapper_init(void); /* form ptmapper */
-void mmu_init(void);
-SECT_HW_PREINIT(mmu_init);
+static void mmu_init(void);
+HW_PREINIT_ENTRY(mmu_init);
 
 /**
  * Initialize the MMU and static regions.
  * @note This is called from startup.
  */
-void mmu_init(void)
+static void mmu_init(void)
 {
     uint32_t value, mask;
 

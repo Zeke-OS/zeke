@@ -37,12 +37,12 @@
  * hw_preinit initializer functions are run before any other kernel initializer
  * functions.
  */
-#define SECT_HW_PREINIT( fn ) void (*fp_##fn)(void) __attribute__ ((section (".hw_preinit_array"))) = fn;
+#define HW_PREINIT_ENTRY(fn) static void (*fp_##fn)(void) __attribute__ ((section (".hw_preinit_array"), __used__)) = fn;
 
 /**
  * hw_post_init initializer are run after all other kernel initializer so post
  * init is ideal for example initializing hw timers and interrupts.
  */
-#define SECT_HW_POSTINIT( fn ) void (*fp_##fn)(void) __attribute__ ((section (".hw_postinit_array"))) = fn;
+#define HW_POSTINIT_ENTRY(fn) static void (*fp_##fn)(void) __attribute__ ((section (".hw_postinit_array"), __used__)) = fn;
 
 #endif
