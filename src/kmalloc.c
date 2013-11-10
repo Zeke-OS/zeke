@@ -285,12 +285,20 @@ void kfree(void * p)
         if (b->next) {
             merge(b);
         } else {
-            /* Free the end of the heap. */
+            /* Free the last block. */
             if (b->prev)
                 b->prev->next = 0;
-            else
+            else /* All freed, no more memory allocated by kmalloc. */
                 kmalloc_base = 0;
-            /* TODO try to free pages that have no references */
+            /* This should work as b should be pointing to a begining of
+             * a region allocated with dynmem.
+             *
+             * Note: kfree is not bullet proof with non-contiguous dynmem
+             * regions because it doesn't do any traversal to find older
+             * allocations that are now free. Hopefully this doesn't matter
+             * and it might even give some performance boost in certain
+             * situations. */
+            dynmem_free_region(b);
         }
     }
 }
