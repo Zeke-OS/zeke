@@ -2,7 +2,7 @@
  *******************************************************************************
  * @file    kmalloc.h
  * @author  Olli Vanhoja
- * @brief   Kernel malloc functions.
+ * @brief   Generic kernel memory allocator.
  * @section LICENSE
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -36,3 +36,4 @@ void * kmalloc(size_t size);
 void * kcalloc(size_t nelem, size_t elsize);
 void kfree(void * p);
 void * krealloc(void * p, size_t size);
+void * kpalloc(void * p);
