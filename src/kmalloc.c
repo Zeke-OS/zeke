@@ -298,7 +298,9 @@ void kfree(void * p)
              * allocations that are now free. Hopefully this doesn't matter
              * and it might even give some performance boost in certain
              * situations. */
+#ifndef PU_TEST_BUILD
             dynmem_free_region(b);
+#endif
         }
     }
 }
