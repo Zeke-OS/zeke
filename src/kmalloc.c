@@ -70,7 +70,7 @@ static mblock_t * extend(mblock_t * last, size_t s)
 {
     mblock_t * b;
     mblock_t * bl;
-    size_t s_m; /* Size floored to MBytes */
+    size_t s_m; /* Size rounded to MBytes */
     size_t memfree_b; /* Bytes free after allocating b. */
 
     s += MBLOCK_SIZE; /* Need some space for the header. */

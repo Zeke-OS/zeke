@@ -32,7 +32,7 @@ suboptimal also in this area.
 
 When kmalloc is out of (large enough) memory blocks it will expand its memory
 usage by allocating a new region of memory from dynmem. Allocation is done in
-1 MB blocks (naturally) and always floored to a next 1 MB.
+1 MB blocks (naturally) and always rounded  to a next 1 MB.
 
     +-+------+-+---------+-+-------+
     |d|      |d|         |d|       |
