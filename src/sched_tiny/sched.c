@@ -652,6 +652,9 @@ uint32_t sched_syscall_thread(uint32_t type, void * p)
                     *((osPriority *)(p))
                 );
 
+    case SYSCALL_SCHED_THREAD_GETERRNO:
+        return (uint32_t)(current_thread->errno);
+
     default:
         return (uint32_t)NULL;
     }

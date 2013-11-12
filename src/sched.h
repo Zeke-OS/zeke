@@ -66,13 +66,7 @@ typedef struct {
     int32_t signals;            /*!< Signal flags
                                  * @note signal bit 30 is reserved for dev. */
     int32_t sig_wait_mask;      /*!< Signal wait mask */
-#if configDEVSUBSYS != 0
-    unsigned int dev_wait;      /*!< Waiting for (major) dev. Currently only
-                                 * major number (whole driver) level is used.
-                                 * This means that optimal way to use device
-                                 * drivers is to lock the whole driver for a
-                                 * short period of time. */
-#endif
+    int errno;                  /*!< Thread local errno */
     int wait_tim;               /*!< Reference to a timeout timer */
     osEvent event;              /*!< Event struct */
     osPriority def_priority;    /*!< Thread priority */
