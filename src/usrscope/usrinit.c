@@ -34,7 +34,7 @@
 #include <kernel.h>
 #include "usrinit.h"
 
-osDev_t dev_tty0 = DEV_MMTODEV(2, 0);
+dev_t dev_tty0 = DEV_MMTODEV(2, 0);
 
 char banner[] = "\
 |'''''||                    \n\
@@ -52,7 +52,7 @@ static void print_message(const char * message);
  */
 void main(void)
 {
-    if (osDevOpen(dev_tty0)) {
+/*    if (osDevOpen(dev_tty0)) {
         while (1);
     }
 
@@ -61,7 +61,7 @@ void main(void)
     while(1) {
         print_message("System READY");
         osDelay(500);
-    }
+    }*/
 }
 
 static void print_message(const char * message)
@@ -69,6 +69,6 @@ static void print_message(const char * message)
     size_t i = 0;
 
     while (message[i] != '\0') {
-        osDevCwrite(message[i++], dev_tty0);
+        //osDevCwrite(message[i++], dev_tty0);
     }
 }

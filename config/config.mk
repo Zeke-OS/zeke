@@ -74,12 +74,14 @@ configSTRING_OPT_SIZE = 1# Optimize string functions for speed or size
 configUSRINIT_SSIZE = 200u# Stack size for usrinit thread
 configUSRINIT_PRI = osPriorityNormal# Priority of usrinit thread
 
+# Virtual file system config
+configFS_MAX = 5# Maximum number of registered file systems
+
 # Kernel Services
-configDEVSUBSYS = 1# Enable device driver subsystem
 configPTTK91_VM = 0#
 
-# Dev subsystem modules
+# Dev driver modules
 # These can be also commented out
-configDEVSUBSYS_NULL = 1#
-configDEVSUBSYS_LCD = 0#
-configDEVSUBSYS_TTYS = 1#
+configDEV_NULL = 1#
+configDEV_LCD = 0#
+configDEV_TTYS = 1#

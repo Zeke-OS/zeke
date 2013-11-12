@@ -83,6 +83,11 @@ osThreadId osThreadGetId(void)
     return (osThreadId)syscall(SYSCALL_SCHED_THREAD_GETID, NULL);
 }
 
+osThreadId __error(void)
+{
+    return (osThreadId)syscall(SYSCALL_SCHED_THREAD_GETERRNO, NULL);
+}
+
 osStatus osThreadTerminate(osThreadId thread_id)
 {
     return (osStatus)syscall(SYSCALL_SCHED_THREAD_TERMINATE, &thread_id);
