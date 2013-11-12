@@ -31,20 +31,15 @@ Key features
 - System call based kernel services
 - Partly CMSIS-RTOS compliant / CMSIS-RTOS-like API
 - High configurability & Adjustable footprint (between 2 kB and < 30 kB)
-- Optional device driver subsystem with unix-like block/character device
-  abstraction
-- Completely static memory allocation strategy (memory usage can be analyzed
-  statically)
-- Offers some protection even on Cortex-M0 without MMU (atm mainly angainst
-  stack polution and some hard faults)
 
 News
 ----
+- Dev subsys removed and will be soon replaced with devfs and
+  virtual file system
 - Dynamic memory allocation for page tables is working. Dynmem allocation is
   still untested but I'll be working on it next. 
 - Coming "soon": Optional support for process scheduling & process memory space
   when MMU is enabled
-- CM0 port on LLVM seems to get stuck on syscalls
 - ARM11/Raspberry Pi port ongoing
 
 Port status
