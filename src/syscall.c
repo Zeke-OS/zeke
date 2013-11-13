@@ -90,6 +90,7 @@ uint32_t _intSyscall_handler(uint32_t type, void * p)
         return 0; /* NULL */
     }
 
+    current_thread->errno = 0; /* Default value for errno */
     fpt = syscall_callmap[major];
     return fpt(type, p);
 }
