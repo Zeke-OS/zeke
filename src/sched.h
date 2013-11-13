@@ -70,9 +70,7 @@ typedef struct {
     osPriority priority;        /*!< Thread dynamic priority */
     int ts_counter;             /*!< Time slice counter */
     pthread_t id;               /*!< Thread id */
-#if configPROCESSSCHED != 0
     pid_t pid_owner;            /*!< Owner process of this thread */
-#endif
 
     /**
      * Thread inheritance; Parent and child thread pointers.

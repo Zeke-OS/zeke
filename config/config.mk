@@ -45,9 +45,6 @@ configMMU = 1# MMU support
 configUART = 1#
 configATAG = 1# Support bootloader ATAGs
 
-# Process scheduling support (needs MMU)
-configPROCESSSCHED = 1#
-
 # Kernel logging methods (Select one or none)
 configKERROR_LAST = 0# Store last n log messages in buffer
 configKERROR_TTYS = 1#

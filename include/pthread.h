@@ -36,19 +36,17 @@
 /* TODO Missing most of standard declarations */
 
 /**
- * get calling thread's ID
+ * Get calling thread's ID.
  *
  * The pthread_self() function returns the thread ID of the calling thread.
  * @return The thread ID of the calling thread.
  */
 pthread_t pthread_self(void);
 
-/* TODO Legacy */
-
 /**
  * Create a thread and add it to Active Threads and set it to state READY.
  * @param thread[out] returns ID of the new thread.
- * @param attr thread creation attrubutes.
+ * @param attr thread creation attributes.
  * @param start_routine
  * @param arg
  * @return If successful, the pthread_create() function returns zero. Otherwise,
@@ -56,6 +54,8 @@ pthread_t pthread_self(void);
  */
 int pthread_create(pthread_t * thread, const pthread_attr_t * attr,
         void * (*start_routine)(void *), void * arg);
+
+/* TODO Legacy */
 
 /// Terminate execution of a thread and remove it from Active Threads.
 /// \param[in]     thread_id   thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
