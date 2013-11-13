@@ -333,6 +333,7 @@ static void sched_thread_set(int i, ds_pthread_create_t * thread_def, threadInfo
 /**
  * Set thread inheritance
  * Sets linking from the parent thread to the thread id.
+ * TODO "The signal mask is inherited from the creating thread."
  */
 static void sched_thread_set_inheritance(pthread_t id, threadInfo_t * parent)
 {
@@ -633,10 +634,13 @@ uint32_t sched_syscall(uint32_t type, void * p)
 uint32_t sched_syscall_thread(uint32_t type, void * p)
 {
     switch(type) {
+    /* TODO pthread_create is allowed to throw errors and we definitely should
+     *      use those. */
     case SYSCALL_SCHED_THREAD_CREATE:
-        return (uint32_t)sched_threadCreate(
+        sched_threadCreate(
                     ((ds_pthread_create_t *)(p))
                 );
+        return 0;
 
     case SYSCALL_SCHED_THREAD_GETTID:
         return (uint32_t)sched_thread_getId();

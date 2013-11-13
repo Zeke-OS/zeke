@@ -47,11 +47,12 @@ pthread_t pthread_self(void);
 
 /**
  * Create a thread and add it to Active Threads and set it to state READY.
- * @param thread[out]
- * @param attr
+ * @param thread[out] returns ID of the new thread.
+ * @param attr thread creation attrubutes.
  * @param start_routine
  * @param arg
- * @return
+ * @return If successful, the pthread_create() function returns zero. Otherwise,
+ *         an error number is returned to indicate the error.
  */
 int pthread_create(pthread_t * thread, const pthread_attr_t * attr,
         void * (*start_routine)(void *), void * arg);
