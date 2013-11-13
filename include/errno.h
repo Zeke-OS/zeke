@@ -111,7 +111,8 @@
 #define EWOULDBLOCK     6   /*!< Operation would block */
 #define EXDEV           80  /*!< Cross-device link. */
 
+#ifndef KERNEL_INTERNAL
 /* Thread local errno function */
 int __error(void);
 #define errno (__error())
-
+#endif
