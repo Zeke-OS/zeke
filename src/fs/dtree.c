@@ -51,6 +51,7 @@
 #define DESTROY_PREFIX void
 #endif
 DESTROY_PREFIX dtree_destroy_node(dtree_node_t * node);
+static size_t hash_fname(char * fname, size_t len);
 
 dtree_node_t dtree_root = {
     .fname = "/", /* Special case, any other fname should not contain '/'. */
@@ -106,8 +107,7 @@ dtree_node_t * dtree_create_node(dtree_node_t * parent, char * fname, int persis
         }
         parent->persist++;
     } else {
-        /* TODO larger hash space if DTREE_HTABLE_SIZE > sizeof char */
-        size_t hash = (fname[0] ^ fname[nlen - 1]) & (DTREE_HTABLE_SIZE - 1);
+        size_t hash = hash_fname(fname, nlen);
         parent->child[hash] = nnode;
     }
 
@@ -195,7 +195,8 @@ size_t path_compare(char * fname, char * path, size_t offset)
 
 dtree_node_t * dtree_lookup(char * path)
 {
-    size_t i, k;
+    size_t i, k, prev_k;
+    size_t hash;
     dtree_node_t * retval = 0;
 
     if (path[0] != '/')
@@ -204,6 +205,22 @@ dtree_node_t * dtree_lookup(char * path)
     retval = &dtree_root;
     k = 1;
     while (path[k] != '\0') {
+        prev_k = k;
+
+        /* First look from child htable */
+        i = k;
+        while (path[i] != '\0' && path[i] != '/') { i++; }
+        hash = hash_fname(&(path[k]), i - 1);
+        if (retval->child[hash] != 0) {
+            size_t j;
+            j = path_compare(retval->child[hash]->fname, path, k);
+            if (j != 0) {
+                retval = retval->child[hash];
+                k = j + 1;
+            }
+        }
+
+        /* if no hit, then from pchild array */
         for (i = 0; i < DTREE_HTABLE_SIZE; i++) {
             if (retval->pchild[i] != 0) {
                 k = path_compare(retval->pchild[i]->fname, path, k);
@@ -212,21 +229,22 @@ dtree_node_t * dtree_lookup(char * path)
                     break;
                 }
             }
-            if (retval->child[i] != 0) {
-                k = path_compare(retval->child[i]->fname, path, k);
-                if (k != 0) {
-                    retval = retval->child[i];
-                    break;
-                }
-            }
         }
-        if (k == 0) {
+        if (k == 0 || k == prev_k) {
             break;
         } else k++;
     }
 
 out:
     return retval;
+}
+
+static size_t hash_fname(char * fname, size_t len)
+{
+    /* TODO larger hash space if DTREE_HTABLE_SIZE > sizeof char */
+    size_t hash = (fname[0] ^ fname[len - 1]) & (DTREE_HTABLE_SIZE - 1);
+
+    return hash;
 }
 
 /**
