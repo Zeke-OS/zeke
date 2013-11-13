@@ -72,6 +72,7 @@ dtree_node_t * dtree_create_node(dtree_node_t * parent, char * fname, int persis
     dtree_node_t * nnode = 0;
     char * nname;
     int nlen;
+    size_t i;
 
     if (parent == 0) {
         goto out;
@@ -98,7 +99,11 @@ dtree_node_t * dtree_create_node(dtree_node_t * parent, char * fname, int persis
 
     /* Add as a child of parent */
     if (persist) {
-        parent->pchild[parent->persist] = nnode;
+        for (i = 0; i < DTREE_HTABLE_SIZE; i++) {
+            if (parent->pchild[i] == 0) {
+                parent->pchild[i] = nnode;
+            }
+        }
         parent->persist++;
     } else {
         /* TODO larger hash space if DTREE_HTABLE_SIZE > sizeof char */
