@@ -31,6 +31,10 @@
  *******************************************************************************
  */
 
+#pragma once
+#ifndef ERRNO_H
+#define ERRNO_H
+
 #define E2BIG           1   /*!< Argument list too long. */
 #define EACCES          2   /*!< Permission denied. */
 #define EADDRINUSE      3   /*!< Address in use. */
@@ -116,3 +120,5 @@
 int __error(void);
 #define errno (__error())
 #endif
+
+#endif /* ERRNO */

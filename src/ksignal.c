@@ -45,7 +45,7 @@
 /**
  * Set signal and wakeup the thread.
  */
-int32_t ksignal_threadSignalSet(osThreadId thread_id, int32_t signal)
+int32_t ksignal_threadSignalSet(pthread_t thread_id, int32_t signal)
 {
     int32_t prev_signals;
     threadInfo_t * thread = sched_get_pThreadInfo(thread_id);
@@ -79,7 +79,7 @@ int32_t ksignal_threadSignalSet(osThreadId thread_id, int32_t signal)
 /**
  * Clear signal wait mask of a given thread
  */
-void ksignal_threadSignalWaitMaskClear(osThreadId thread_id)
+void ksignal_threadSignalWaitMaskClear(pthread_t thread_id)
 {
     threadInfo_t * thread = sched_get_pThreadInfo(thread_id);
 
@@ -97,7 +97,7 @@ void ksignal_threadSignalWaitMaskClear(osThreadId thread_id)
  * @param thread_id Thread id
  * @param signal    Signals to be cleared.
  */
-int32_t ksignal_threadSignalClear(osThreadId thread_id, int32_t signal)
+int32_t ksignal_threadSignalClear(pthread_t thread_id, int32_t signal)
 {
     int32_t prev_signals;
     threadInfo_t * thread = sched_get_pThreadInfo(thread_id);
@@ -125,7 +125,7 @@ int32_t ksignal_threadSignalGetCurrent(void)
  * @param thread_id Thread id.
  * @return          Signals of the selected thread.
  */
-int32_t ksignal_threadSignalGet(osThreadId thread_id)
+int32_t ksignal_threadSignalGet(pthread_t thread_id)
 {
     threadInfo_t * thread = sched_get_pThreadInfo(thread_id);
     return thread->signals;
@@ -197,7 +197,7 @@ uint32_t ksignal_syscall(uint32_t type, void * p)
 
     case SYSCALL_SIGNAL_GET:
         return (uint32_t)ksignal_threadSignalGet(
-                    *((osThreadId *)p)
+                    *((pthread_t *)p)
                 );
 
     case SYSCALL_SIGNAL_WAIT:

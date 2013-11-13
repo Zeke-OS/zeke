@@ -99,7 +99,7 @@ typedef struct file_ops {
     int (*cread)(vfile_t * file, uint32_t * ch); /*!< Character read function */
     int (*bwrite)(vfile_t * file, void * buff, size_t size, size_t count); /*!< Block write function */
     int (*bread)(vfile_t * file, void * buff, size_t size, size_t count); /*!< Block read function */
-    int (*bseek)(vfile_t * file, int offset, int origin, size_t size, osThreadId thread_id); /*!< Block seek function */
+    int (*bseek)(vfile_t * file, int offset, int origin, size_t size, pthread_t thread_id); /*!< Block seek function */
 } file_ops_t;
 
 extern fs_t fs_alloc_table[];

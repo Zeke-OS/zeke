@@ -35,6 +35,11 @@
   * @{
   */
 
+#define KERNEL_INTERNAL 1
+#include <sched.h>
+#include <syscalldef.h>
+#include <syscall.h>
+#include <errno.h>
 #include <process.h>
 
 volatile pid_t current_process_id;
@@ -110,6 +115,70 @@ mmu_pagetable_t * process_get_pptable(pid_t pid)
 void process_update(void)
 {
     current_process_id = current_thread->pid_owner;
+}
+
+uint32_t proc_syscall(uint32_t type, void * p)
+{
+    switch(type) {
+    case SYSCALL_PROC_EXEC:
+        current_thread->errno = ENOSYS;
+        return -1;
+
+    case SYSCALL_PROC_FORK:
+        current_thread->errno = ENOSYS;
+        return -2;
+
+    case SYSCALL_PROC_WAIT:
+        current_thread->errno = ENOSYS;
+        return -3;
+
+    case SYSCALL_PROC_EXIT:
+        current_thread->errno = ENOSYS;
+        return -4;
+
+    case SYSCALL_PROC_GETUID:
+        current_thread->errno = ENOSYS;
+        return -5;
+
+    case SYSCALL_PROC_GETEUID:
+        current_thread->errno = ENOSYS;
+        return -6;
+
+    case SYSCALL_PROC_GETGID:
+        current_thread->errno = ENOSYS;
+        return -7;
+
+    case SYSCALL_PROC_GETEGID:
+        current_thread->errno = ENOSYS;
+        return -8;
+
+    case SYSCALL_PROC_GETPID:
+        current_thread->errno = ENOSYS;
+        return -9;
+
+    case SYSCALL_PROC_GETPPID:
+        current_thread->errno = ENOSYS;
+        return -10;
+
+    case SYSCALL_PROC_SIGNAL:
+        current_thread->errno = ENOSYS;
+        return -11;
+
+    case SYSCALL_PROC_KILL:
+        current_thread->errno = ENOSYS;
+        return -12;
+
+    case SYSCALL_PROC_ALARM:
+        current_thread->errno = ENOSYS;
+        return -13;
+
+    case SYSCALL_PROC_CHDIR:
+        current_thread->errno = ENOSYS;
+        return -14;
+
+    default:
+        return (uint32_t)NULL;
+    }
 }
 
 /**

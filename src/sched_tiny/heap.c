@@ -166,7 +166,7 @@ void heap_reschedule_root(heap_t * heap, osPriority pri)
 
 }
 
-int heap_find(heap_t * heap, osThreadId thread_id)
+int heap_find(heap_t * heap, pthread_t thread_id)
 {
     int i;
 

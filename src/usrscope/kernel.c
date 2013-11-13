@@ -62,15 +62,15 @@ void osGetLoadAvg(uint32_t loads[3])
   * @{
   */
 
-osThreadId osThreadCreate(osThreadDef_t * thread_def, void * argument)
+pthread_t osThreadCreate(osThreadDef_t * thread_def, void * argument)
 {
     ds_osThreadCreate_t args = {
         .def      = thread_def,
         .argument = argument
     };
-    osThreadId result;
+    pthread_t result;
 
-    result = (osThreadId)syscall(SYSCALL_SCHED_THREAD_CREATE, &args);
+    result = (pthread_t)syscall(SYSCALL_SCHED_THREAD_CREATE, &args);
 
     /* Request immediate context switch */
     req_context_switch();
@@ -78,12 +78,12 @@ osThreadId osThreadCreate(osThreadDef_t * thread_def, void * argument)
     return result;
 }
 
-osThreadId osThreadGetId(void)
+pthread_t pthread_self(void)
 {
-    return (osThreadId)syscall(SYSCALL_SCHED_THREAD_GETID, NULL);
+    return (pthread_t)syscall(SYSCALL_SCHED_THREAD_GETTID, NULL);
 }
 
-osStatus osThreadTerminate(osThreadId thread_id)
+osStatus osThreadTerminate(pthread_t thread_id)
 {
     return (osStatus)syscall(SYSCALL_SCHED_THREAD_TERMINATE, &thread_id);
 }
@@ -98,7 +98,7 @@ osStatus osThreadYield(void)
     return (osStatus)osOK;
 }
 
-osStatus osThreadSetPriority(osThreadId thread_id, osPriority priority)
+osStatus osThreadSetPriority(pthread_t thread_id, osPriority priority)
 {
     ds_osSetPriority_t ds = {
         .thread_id = thread_id,
@@ -108,7 +108,7 @@ osStatus osThreadSetPriority(osThreadId thread_id, osPriority priority)
     return (osStatus)syscall(SYSCALL_SCHED_THREAD_SETPRIORITY, &ds);
 }
 
-osPriority osThreadGetPriority(osThreadId thread_id)
+osPriority osThreadGetPriority(pthread_t thread_id)
 {
     return (osPriority)syscall(SYSCALL_SCHED_THREAD_GETPRIORITY, &thread_id);
 }
@@ -169,7 +169,7 @@ osEvent osWait(uint32_t millisec)
 
 /* Signal Management *********************************************************/
 
-int32_t osSignalSet(osThreadId thread_id, int32_t signal)
+int32_t osSignalSet(pthread_t thread_id, int32_t signal)
 {
     ds_osSignal_t ds = {
         .thread_id = thread_id,
@@ -179,7 +179,7 @@ int32_t osSignalSet(osThreadId thread_id, int32_t signal)
     return (int32_t)syscall(SYSCALL_SIGNAL_SET, &ds);
 }
 
-int32_t osSignalClear(osThreadId thread_id, int32_t signal)
+int32_t osSignalClear(pthread_t thread_id, int32_t signal)
 {
     ds_osSignal_t ds = {
         .thread_id = thread_id,
@@ -194,7 +194,7 @@ int32_t osSignalGetCurrent(void)
     return (int32_t)syscall(SYSCALL_SIGNAL_GETCURR, NULL);
 }
 
-int32_t osSignalGet(osThreadId thread_id)
+int32_t osSignalGet(pthread_t thread_id)
 {
     return (int32_t)syscall(SYSCALL_SIGNAL_GET, &thread_id);
 }
@@ -259,13 +259,13 @@ osStatus osMutexWait(osMutex * mutex, uint32_t millisec)
         req_context_switch(); /* This should be done in user space */
     }
 
-    mutex->thread_id = osThreadGetId();
+    mutex->thread_id = pthread_self();
     return osOK;
 }
 
 osStatus osMutexRelease(osMutex * mutex)
 {
-    if (mutex->thread_id == osThreadGetId()) {
+    if (mutex->thread_id == pthread_self()) {
         mutex->lock = 0;
         return osOK;
     }
@@ -335,7 +335,7 @@ int osDevClose(osDev_t dev)
     return (int)syscall(SYSCALL_DEV_CLOSE, &dev);
 }
 
-int osDevCheckRes(osDev_t dev, osThreadId thread_id)
+int osDevCheckRes(osDev_t dev, pthread_t thread_id)
 {
     ds_osDevHndl_t ds = {
         .dev       = dev,

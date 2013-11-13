@@ -72,7 +72,7 @@ typedef struct {
     osPriority def_priority;    /*!< Thread priority */
     osPriority priority;        /*!< Thread dynamic priority */
     int ts_counter;             /*!< Time slice counter */
-    osThreadId id;              /*!< Thread id */
+    pthread_t id;               /*!< Thread id */
 #if configPROCESSSCHED != 0
     pid_t pid_owner;            /*!< Owner process of this thread */
 #endif
@@ -160,20 +160,20 @@ void sched_get_loads(uint32_t loads[3]);
  * Create a new thread
  *
  */
-osThreadId sched_threadCreate(osThreadDef_t * thread_def, void * argument);
+pthread_t sched_threadCreate(osThreadDef_t * thread_def, void * argument);
 
 /**
  * Get id of the currently running thread
  * @return Thread id of the current thread
  */
-osThreadId sched_thread_getId(void);
+pthread_t sched_thread_getId(void);
 
 /**
  * Terminate a thread and its childs.
  * @param thread_id   thread ID obtained by \ref sched_threadCreate or \ref sched_thread_getId.
  * @return status code that indicates the execution status of the function.
  */
-osStatus sched_thread_terminate(osThreadId thread_id);
+osStatus sched_thread_terminate(pthread_t thread_id);
 
 /**
  * Set thread priority
@@ -181,9 +181,9 @@ osStatus sched_thread_terminate(osThreadId thread_id);
  * @param   priority New priority for thread referenced by thread_id
  * @return  osOK if thread exists
  */
-osStatus sched_thread_setPriority(osThreadId thread_id, osPriority priority);
+osStatus sched_thread_setPriority(pthread_t thread_id, osPriority priority);
 
-osPriority sched_thread_getPriority(osThreadId thread_id);
+osPriority sched_thread_getPriority(pthread_t thread_id);
 
 osStatus sched_threadDelay(uint32_t millisec);
 

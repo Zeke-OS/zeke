@@ -1,12 +1,10 @@
 /**
  *******************************************************************************
- * @file    timers.h
+ * @file    unistd.h
  * @author  Olli Vanhoja
- *
- * @brief   Header file for kernel timers (timers.c).
+ * @brief   Standard symbolic constants and types.
  * @section LICENSE
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,39 +31,17 @@
  */
 
 #pragma once
-#ifndef TIMERS_H
-#define TIMERS_H
+#ifndef UNISTD_H
+#define UNISTD_H
 
-#include <stdint.h>
-#include "kernel.h"
+/* Block device seek origin types */
+#ifndef SEEK_SET
+#define SEEK_SET    0 /*!< Beginning of file. */
+#define SEEK_CUR    1 /*!< Current position */
+#define SEEK_END    2 /*!< End of file. */
+#endif
 
-/* User Flag Bits */
-#define TIMERS_FLAG_ENABLED     0x1 /* See for description: timer_alloc_data_t */
-#define TIMERS_FLAG_PERIODIC    0x2 /* See for description: timer_alloc_data_t */
-#define TIMERS_USER_FLAGS       (TIMERS_FLAG_ENABLED | TIMERS_FLAG_PERIODIC)
+int brk(void *);
+void * sbrk(intptr_t incr);
 
-typedef uint32_t timers_flags_t;
-
-extern uint32_t timers_value;
-
-void timers_run(void);
-
-/**
- * Reserve a new timer
- * @return Reference to a timer or -1 if allocation failed.
- */
-int timers_add(pthread_t thread_id, timers_flags_t flags, uint32_t millisec);
-
-void timers_start(int tim);
-void timers_release(int tim);
-pthread_t timers_get_owner(int tim);
-
-/**
- * Get owner of the timer
- * @param tim timer id
- * @return thread id or -1 if out of bounds or timer is currently in released
- *         state
- */
-pthread_t timers_get_owner(int tim);
-
-#endif /* TIMERS_H */
+#endif /* UNISTD_H */

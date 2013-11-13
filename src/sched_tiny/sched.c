@@ -109,9 +109,9 @@ void idleTask(void * arg);
 static void calc_loads(void);
 static void context_switcher(void);
 static void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument, threadInfo_t * parent);
-static void sched_thread_set_inheritance(osThreadId i, threadInfo_t * parent);
+static void sched_thread_set_inheritance(pthread_t i, threadInfo_t * parent);
 static void _sched_thread_set_exec(int thread_id, osPriority pri);
-static void sched_thread_remove(osThreadId id);
+static void sched_thread_remove(pthread_t id);
 static void del_thread(void);
 /* End of Static function declarations ***************************************/
 
@@ -327,7 +327,7 @@ static void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument,
  * Set thread inheritance
  * Sets linking from the parent thread to the thread id.
  */
-static void sched_thread_set_inheritance(osThreadId id, threadInfo_t * parent)
+static void sched_thread_set_inheritance(pthread_t id, threadInfo_t * parent)
 {
     threadInfo_t * last_node, * tmp;
 
@@ -406,7 +406,7 @@ void sched_thread_sleep_current(void)
  * Removes a thread from execution.
  * @param tt_id Thread task table id
  */
-static void sched_thread_remove(osThreadId tt_id)
+static void sched_thread_remove(pthread_t tt_id)
 {
     #if configFAST_FORK != 0
     /* next_threadId_queue may break if this is not checked, otherwise it should
@@ -445,7 +445,7 @@ static void del_thread(void)
      * no separate privileged mode in Cortex-M0. This atleast improves
      * portability in the future.
      */
-    osThreadId thread_id = (osThreadId)syscall(SYSCALL_SCHED_THREAD_GETID, NULL);
+    pthread_t thread_id = (pthread_t)syscall(SYSCALL_SCHED_THREAD_GETTID, NULL);
     (void)syscall(SYSCALL_SCHED_THREAD_TERMINATE, &thread_id);
     req_context_switch();
 
@@ -471,7 +471,7 @@ static void del_thread(void)
 
 /*  ==== Thread Management ==== */
 
-osThreadId sched_threadCreate(osThreadDef_t * thread_def, void * argument)
+pthread_t sched_threadCreate(osThreadDef_t * thread_def, void * argument)
 {
     unsigned int i;
 
@@ -501,16 +501,16 @@ osThreadId sched_threadCreate(osThreadDef_t * thread_def, void * argument)
         return 0;
     } else {
         /* Return the id of the new thread */
-        return (osThreadId)i;
+        return (pthread_t)i;
     }
 }
 
-osThreadId sched_thread_getId(void)
+pthread_t sched_thread_getId(void)
 {
-    return (osThreadId)(current_thread->id);
+    return (pthread_t)(current_thread->id);
 }
 
-osStatus sched_thread_terminate(osThreadId thread_id)
+osStatus sched_thread_terminate(pthread_t thread_id)
 {
     threadInfo_t * child;
 
@@ -532,7 +532,7 @@ osStatus sched_thread_terminate(osThreadId thread_id)
     return (osStatus)osOK;
 }
 
-osStatus sched_thread_setPriority(osThreadId thread_id, osPriority priority)
+osStatus sched_thread_setPriority(pthread_t thread_id, osPriority priority)
 {
     if ((task_table[thread_id].flags & SCHED_IN_USE_FLAG) == 0) {
         return (osStatus)osErrorParameter;
@@ -547,7 +547,7 @@ osStatus sched_thread_setPriority(osThreadId thread_id, osPriority priority)
     return (osStatus)osOK;
 }
 
-osPriority sched_thread_getPriority(osThreadId thread_id)
+osPriority sched_thread_getPriority(pthread_t thread_id)
 {
     if ((task_table[thread_id].flags & SCHED_IN_USE_FLAG) == 0) {
         return (osPriority)osPriorityError;
@@ -633,12 +633,12 @@ uint32_t sched_syscall_thread(uint32_t type, void * p)
                     ((ds_osThreadCreate_t *)(p))->argument
                 );
 
-    case SYSCALL_SCHED_THREAD_GETID:
+    case SYSCALL_SCHED_THREAD_GETTID:
         return (uint32_t)sched_thread_getId();
 
     case SYSCALL_SCHED_THREAD_TERMINATE:
         return (uint32_t)sched_thread_terminate(
-                    *((osThreadId *)p)
+                    *((pthread_t *)p)
                 );
 
     case SYSCALL_SCHED_THREAD_SETPRIORITY:

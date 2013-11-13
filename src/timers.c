@@ -54,7 +54,7 @@ typedef struct {
                              *     + 0 = one-shot
                              *     + 1 = periodic
                              */
-    osThreadId thread_id;   /*!< Thread id */
+    pthread_t thread_id;   /*!< Thread id */
     uint32_t reset_val;     /*!< Reset value for repeating timer */
     uint32_t expires;       /*!< Timer expiration time */
 } timer_alloc_data_t;
@@ -110,7 +110,7 @@ void timers_run(void)
  * @param millisec delay to trigger from the time when enabled.
  * @param return -1 if allocation failed.
  */
-int timers_add(osThreadId thread_id, timers_flags_t flags, uint32_t millisec)
+int timers_add(pthread_t thread_id, timers_flags_t flags, uint32_t millisec)
 {
     int i = 0;
     flags &= TIMERS_USER_FLAGS; /* Allow only user flags to be set */
@@ -154,7 +154,7 @@ void timers_release(int tim)
     timers_array[tim].thread_id = TIMERS_POS_FREE;
 }
 
-osThreadId timers_get_owner(int tim) {
+pthread_t timers_get_owner(int tim) {
     if (tim < configTIMERS_MAX && tim >= 0)
         return -1;
 
