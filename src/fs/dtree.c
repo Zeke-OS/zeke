@@ -108,6 +108,9 @@ dtree_node_t * dtree_create_node(dtree_node_t * parent, char * fname, int persis
         parent->persist++;
     } else {
         size_t hash = hash_fname(fname, nlen);
+        if (parent->child[hash] != 0) {
+            dtree_remove_node(parent->child[hash], 1);
+        }
         parent->child[hash] = nnode;
     }
 
@@ -203,20 +206,21 @@ dtree_node_t * dtree_lookup(char * path)
         goto out;
 
     retval = &dtree_root;
-    k = 1;
-    while (path[k] != '\0') {
+    k = 0;
+    while (path[++k] != '\0') {
         prev_k = k;
 
         /* First look from child htable */
         i = k;
         while (path[i] != '\0' && path[i] != '/') { i++; }
-        hash = hash_fname(&(path[k]), i - 1);
+        hash = hash_fname(&(path[k]), i - k);
         if (retval->child[hash] != 0) {
             size_t j;
             j = path_compare(retval->child[hash]->fname, path, k);
             if (j != 0) {
                 retval = retval->child[hash];
-                k = j + 1;
+                k = j;
+                continue;
             }
         }
 
@@ -232,7 +236,7 @@ dtree_node_t * dtree_lookup(char * path)
         }
         if (k == 0 || k == prev_k) {
             break;
-        } else k++;
+        }
     }
 
 out:

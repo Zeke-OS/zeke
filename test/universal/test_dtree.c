@@ -68,6 +68,9 @@ static char * test_remove()
     node2 = dtree_create_node(node1, "ab", 1);
     node3 = dtree_create_node(node1, "cd", 0);
 
+    retval = dtree_lookup("/usr/cd");
+    pu_assert_ptr_equal("Got cd node", retval, node3);
+
     for (i = 0; i < 2; i++) {
         retval = dtree_lookup("/usr/ab");
         pu_assert_ptr_equal("Got ab node", retval, node2);
@@ -83,10 +86,36 @@ static char * test_remove()
     return 0;
 }
 
+static char * test_collision()
+{
+    dtree_node_t * node1;
+    dtree_node_t * node2;
+    dtree_node_t * node3;
+    dtree_node_t * retval;
+    int i;
+
+    node1 = dtree_create_node(&dtree_root, "usr", 0);
+    node2 = dtree_create_node(node1, "ab", 0);
+
+    retval = dtree_lookup("/usr/ab");
+    pu_assert_ptr_equal("Got ab node", retval, node2);
+
+    node3 = dtree_create_node(node1, "aab", 0);
+
+    retval = dtree_lookup("/usr/ab");
+    pu_assert("No more ab node", retval != node2);
+
+    retval = dtree_lookup("/usr/aab");
+    pu_assert_ptr_equal("Got aab node", retval, node3);
+
+    return 0;
+}
+
 static void all_tests() {
     pu_def_test(test_create, PU_RUN);
     pu_def_test(test_path_compare, PU_RUN);
     pu_def_test(test_remove, PU_RUN);
+    pu_def_test(test_collision, PU_RUN);
 }
 
 int main(int argc, char **argv)
