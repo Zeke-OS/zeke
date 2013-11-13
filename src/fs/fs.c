@@ -30,9 +30,9 @@
  *******************************************************************************
  */
 
-/** @addtogroup Dev
-  * @{
-  */
+/** @addtogroup fs
+ * @{
+ */
 
 #include <kstring.h>
 #include <sched.h>
@@ -124,5 +124,5 @@ uint32_t fs_syscall(uint32_t type, void * p)
 }
 
 /**
-  * @}
-  */
+ * @}
+ */
