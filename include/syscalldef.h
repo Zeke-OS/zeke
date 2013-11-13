@@ -39,9 +39,11 @@
 
 /** Argument struct for SYSCALL_SCHED_THREAD_CREATE */
 typedef struct {
-    osThreadDef_t * def;    /*!< Thread definitions for a new thread */
+    pthread_t * thread;
+    start_routine start;
+    pthread_attr_t * def;    /*!< Thread def attributes */
     void * argument;        /*!< Thread parameter(s) pointer */
-} ds_osThreadCreate_t;
+} ds_pthread_create_t;
 
 /** Argument struct for SYSCALL_SCHED_THREAD_SETPRIORITY */
 typedef struct {

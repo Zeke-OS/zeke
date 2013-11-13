@@ -33,13 +33,7 @@
 
 #include <types.h>
 
-/// Thread Definition structure contains startup information of a thread.
-typedef const struct os_thread_def {
-    os_pthread  pthread;    ///< start address of thread function
-    osPriority  tpriority;  ///< initial thread priority
-    void *      stackAddr;  ///< Stack address
-    size_t      stackSize;  ///< Size of stack reserved for the thread.
-} osThreadDef_t;
+/* TODO Missing most of standard declarations */
 
 /**
  * get calling thread's ID
@@ -49,11 +43,18 @@ typedef const struct os_thread_def {
  */
 pthread_t pthread_self(void);
 
-/// Create a thread and add it to Active Threads and set it to state READY.
-/// \param[in]     thread_def    thread definition.
-/// \param[in]     argument      pointer that is passed to the thread function as start argument.
-/// \return thread ID for reference by other functions or NULL in case of error.
-pthread_t osThreadCreate(osThreadDef_t * thread_def, void * argument);
+/* TODO Legacy */
+
+/**
+ * Create a thread and add it to Active Threads and set it to state READY.
+ * @param thread[out]
+ * @param attr
+ * @param start_routine
+ * @param arg
+ * @return
+ */
+int pthread_create(pthread_t * thread, const pthread_attr_t * attr,
+        void * (*start_routine)(void *), void * arg);
 
 /// Terminate execution of a thread and remove it from Active Threads.
 /// \param[in]     thread_id   thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.

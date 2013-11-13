@@ -83,13 +83,13 @@ void exec_fini_array(void)
 void kinit(void)
 {
     /* Create app_main thread */
-    osThreadDef_t main_thread = {
-        .pthread   = (os_pthread)(&main),
+    pthread_attr_t main_thread = {
         .tpriority = configUSRINIT_PRI,
         .stackAddr = main_stack,
         .stackSize = sizeof(main_stack)
     };
-    osThreadCreate(&main_thread, NULL);
+    pthread_t tid;
+    pthread_create(&tid, &main_thread, &main, NULL);
 }
 
 /**

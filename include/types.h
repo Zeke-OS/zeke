@@ -45,17 +45,14 @@ typedef int pthread_t;
 /**
  * Entry point of a thread.
  */
-typedef void (*os_pthread) (void const * argument);
+typedef void * (*start_routine)(void *);
 
 /* Process ID */
 typedef int pid_t;
 
-/* TODO Below this is some legacy */
-
-#include <mutex.h>
-
 /**
  * Priority used for thread control.
+ * TODO Legacy
  */
 typedef enum {
     osPriorityIdle          = -3,       ///< priority: idle (lowest)
@@ -67,6 +64,19 @@ typedef enum {
     osPriorityRealtime      = +3,       ///< priority: realtime (highest)
     osPriorityError         =  0x84     ///< system cannot determine priority or thread has illegal priority
 } osPriority;
+
+/**
+ * Thread Definition structure contains startup information of a thread.
+ */
+typedef const struct pthread_attr {
+    osPriority      tpriority;  /*!< initial thread priority */
+    void *          stackAddr;  /*!< Stack address */
+    size_t          stackSize;  /*!< Size of stack reserved for the thread. */
+} pthread_attr_t;
+
+/* TODO Below this is some legacy */
+
+#include <mutex.h>
 
 /// Status code values returned by CMSIS-RTOS functions
 typedef enum  {

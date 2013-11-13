@@ -62,15 +62,18 @@ void osGetLoadAvg(uint32_t loads[3])
   * @{
   */
 
-pthread_t osThreadCreate(osThreadDef_t * thread_def, void * argument)
+int pthread_create(pthread_t * thread, const pthread_attr_t * attr,
+                void * (*start_routine)(void *), void * arg)
 {
-    ds_osThreadCreate_t args = {
-        .def      = thread_def,
-        .argument = argument
+    ds_pthread_create_t args = {
+        .thread     = thread,
+        .start      = start_routine,
+        .def        = attr,
+        .argument   = arg
     };
-    pthread_t result;
+    int result;
 
-    result = (pthread_t)syscall(SYSCALL_SCHED_THREAD_CREATE, &args);
+    result = (int)syscall(SYSCALL_SCHED_THREAD_CREATE, &args);
 
     /* Request immediate context switch */
     req_context_switch();

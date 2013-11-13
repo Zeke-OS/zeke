@@ -40,10 +40,7 @@
 #define SCHED_H
 
 #include <autoconf.h>
-#if configDEVSUBSYS != 0
-#include <dev/dev.h>
-#endif
-
+#include <syscalldef.h>
 #include <kernel.h>
 
 #define SCHED_IN_USE_FLAG   0x00000001u /*!< IN USE FLAG */
@@ -160,7 +157,7 @@ void sched_get_loads(uint32_t loads[3]);
  * Create a new thread
  *
  */
-pthread_t sched_threadCreate(osThreadDef_t * thread_def, void * argument);
+pthread_t sched_threadCreate(ds_pthread_create_t * thread_def);
 
 /**
  * Get id of the currently running thread

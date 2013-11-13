@@ -35,6 +35,6 @@
 #ifndef USRINIT_H
 #define USRINIT_H
 
-void main(void);
+void * main(void * arg);
 
  #endif /* USRINIT_H */

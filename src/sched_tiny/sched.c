@@ -105,10 +105,10 @@ static char sched_idle_stack[sizeof(sw_stack_frame_t)
 void sched_init(void) __attribute__((constructor));
 
 /* Static function declarations **********************************************/
-void idleTask(void * arg);
+void * idleTask(void * arg);
 static void calc_loads(void);
 static void context_switcher(void);
-static void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument, threadInfo_t * parent);
+static void sched_thread_set(int i, ds_pthread_create_t * thread_def, threadInfo_t * parent);
 static void sched_thread_set_inheritance(pthread_t i, threadInfo_t * parent);
 static void _sched_thread_set_exec(int thread_id, osPriority pri);
 static void sched_thread_remove(pthread_t id);
@@ -122,14 +122,20 @@ static void del_thread(void);
  */
 void sched_init(void)
 {
-    /* Create the idle task as task 0 */
-    osThreadDef_t tdef_idle = {
-        .pthread    = (os_pthread)(&idleTask),
+    pthread_t tid;
+    pthread_attr_t attr = {
         .tpriority  = osPriorityIdle,
         .stackAddr  = sched_idle_stack,
         .stackSize  = sizeof(sched_idle_stack)
     };
-    sched_thread_set(0, &tdef_idle, NULL, NULL);
+    /* Create the idle task as task 0 */
+    ds_pthread_create_t tdef_idle = {
+        .thread   = &tid,
+        .start    = idleTask,
+        .def      = &attr,
+        .argument = NULL
+    };
+    sched_thread_set(0, &tdef_idle, NULL);
 
     /* Set idle thread as a currently running thread */
     current_thread = &(task_table[0]);
@@ -154,7 +160,7 @@ void sched_init(void)
  * @note sw stacked registers are invalid when this thread executes for the
  * first time.
  */
-void idleTask(/*@unused@*/ void * arg)
+void * idleTask(/*@unused@*/ void * arg)
 {
 #ifndef PU_TEST_BUILD
     while(1) {
@@ -282,24 +288,25 @@ threadInfo_t * sched_get_pThreadInfo(int thread_id)
   * @note This function should not be called for already initialized threads.
   * @param i            Thread id
   * @param thread_def   Thread definitions
-  * @param argument     Thread argument
   * @param parent       Parent thread id, NULL = doesn't have a parent
   * @todo what if parent is stopped before this function is called?
   */
-static void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument, threadInfo_t * parent)
+static void sched_thread_set(int i, ds_pthread_create_t * thread_def, threadInfo_t * parent)
 {
     /* This function should not be called for already initialized threads. */
     if ((task_table[i].flags & (uint32_t)SCHED_IN_USE_FLAG) != 0)
         return;
 
+    *(thread_def->thread) = (pthread_t)i;
+
     /* Init core specific stack frame */
-    init_stack_frame(thread_def, argument, (uint32_t)del_thread);
+    init_stack_frame(thread_def, (uint32_t)del_thread);
 
     /* Mark this thread index as used.
      * EXEC flag is set later in sched_thread_set_exec */
     task_table[i].flags         = (uint32_t)SCHED_IN_USE_FLAG;
     task_table[i].id            = i;
-    task_table[i].def_priority  = thread_def->tpriority;
+    task_table[i].def_priority  = thread_def->def->tpriority;
     /* task_table[i].priority is set later in sched_thread_set_exec */
 
     /* Clear signal flags & wait states */
@@ -314,13 +321,13 @@ static void sched_thread_set(int i, osThreadDef_t * thread_def, void * argument,
     sched_thread_set_inheritance(i, parent);
 
     /* Update stack pointer */
-    task_table[i].sp = (void *)((uint32_t)(thread_def->stackAddr)
-                                         + thread_def->stackSize
+    task_table[i].sp = (void *)((uint32_t)(thread_def->def->stackAddr)
+                                         + thread_def->def->stackSize
                                          - sizeof(hw_stack_frame_t)
                                          - sizeof(sw_stack_frame_t));
 
     /* Put thread into execution */
-    _sched_thread_set_exec(i, thread_def->tpriority);
+    _sched_thread_set_exec(i, thread_def->def->tpriority);
 }
 
 /**
@@ -471,7 +478,7 @@ static void del_thread(void)
 
 /*  ==== Thread Management ==== */
 
-pthread_t sched_threadCreate(osThreadDef_t * thread_def, void * argument)
+pthread_t sched_threadCreate(ds_pthread_create_t * thread_def)
 {
     unsigned int i;
 
@@ -486,7 +493,6 @@ pthread_t sched_threadCreate(osThreadDef_t * thread_def, void * argument)
 #endif
             sched_thread_set(i,                  /* Index of created thread */
                              thread_def,         /* Thread definition */
-                             argument,           /* Argument */
                              (void *)current_thread); /* Pointer to parent
                                                   * thread, which is expected to
                                                   * be the current thread */
@@ -629,8 +635,7 @@ uint32_t sched_syscall_thread(uint32_t type, void * p)
     switch(type) {
     case SYSCALL_SCHED_THREAD_CREATE:
         return (uint32_t)sched_threadCreate(
-                    ((ds_osThreadCreate_t *)(p))->def,
-                    ((ds_osThreadCreate_t *)(p))->argument
+                    ((ds_pthread_create_t *)(p))
                 );
 
     case SYSCALL_SCHED_THREAD_GETTID:

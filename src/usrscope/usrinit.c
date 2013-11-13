@@ -50,7 +50,7 @@ static void print_message(const char * message);
 /**
  * main thread; main process.
  */
-void main(void)
+void * main(void * arg)
 {
 /*    if (osDevOpen(dev_tty0)) {
         while (1);
@@ -58,10 +58,11 @@ void main(void)
 
     print_message(banner);
     //osDelay(50);
+*/
     while(1) {
-        print_message("System READY");
+        //print_message("System READY");
         osDelay(500);
-    }*/
+    }
 }
 
 static void print_message(const char * message)

@@ -40,15 +40,15 @@
 #define HAL_CORE_H
 
 #include <autoconf.h>
+#include <syscalldef.h>
 #include <kernel.h>
 
 /**
  * Init stack frame.
  * @param thread_def Thread definitions
- * @param argument Argument
  * @param a_del_thread Address of del_thread function
  */
-void init_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a_del_thread);
+void init_stack_frame(ds_pthread_create_t * thread_def, uint32_t a_del_thread);
 
 /**
  * Make a system call

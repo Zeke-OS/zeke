@@ -81,21 +81,21 @@ void wr_thread_stack_ptr(void * ptr)
     );
 }
 
-void init_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a_del_thread)
+void init_stack_frame(ds_pthread_create_t * thread_def, uint32_t a_del_thread)
 {
     sw_stack_frame_t * thread_frame;
 
     /* Pointer to the thread stack frame */
-    thread_frame = (sw_stack_frame_t *)((uint32_t)(thread_def->stackAddr)
-                    + thread_def->stackSize - sizeof(sw_stack_frame_t));
+    thread_frame = (sw_stack_frame_t *)((uint32_t)(thread_def->def->stackAddr)
+                    + thread_def->def->stackSize - sizeof(sw_stack_frame_t));
 
-    thread_frame->r0 = (uint32_t)(argument);
+    thread_frame->r0 = (uint32_t)(thread_def->argument);
     thread_frame->r1 = 0;
     thread_frame->r2 = 0;
     thread_frame->r3 = 0;
     thread_frame->r12 = 0;
     thread_frame->sp = (uint32_t)thread_frame;
-    thread_frame->pc = ((uint32_t)(thread_def->pthread)) + 4;
+    thread_frame->pc = ((uint32_t)(thread_def->start)) + 4;
     thread_frame->lr = a_del_thread;
     thread_frame->psr = DEFAULT_PSR;
 }
