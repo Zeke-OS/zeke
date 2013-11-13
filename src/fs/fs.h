@@ -75,8 +75,8 @@
 /* End of macros **************************************************************/
 
 typedef struct {
-    size_t inode;   /*!< inode number. (Can be ignored if irrelevant) */
-    dev_t dev;      /*!< Device identifier. */
+    size_t inode_num;   /*!< inode number. (Can be ignored if irrelevant) */
+    dev_t dev;          /*!< Device identifier. */
     struct file_ops * file_ops;
 } vfile_t;
 
