@@ -220,7 +220,6 @@ dtree_node_t * dtree_lookup(char * path)
             }
         }
         if (k == 0) {
-            retval = 0;
             break;
         } else k++;
     }

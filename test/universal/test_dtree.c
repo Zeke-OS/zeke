@@ -72,6 +72,10 @@ static char * test_remove()
         retval = dtree_lookup("/usr/ab");
         pu_assert_ptr_equal("Got ab node", retval, node2);
         pu_assert_str_equal("Name equals expected", retval->fname, "ab");
+
+        retval = dtree_lookup("/usr/cd");
+        pu_assert("Got some node for non-persistent cache entry", retval != 0);
+
         dtree_remove_node(node1, 0);
         printf("\tPass %i\n", i);
     }
