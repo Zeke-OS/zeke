@@ -101,12 +101,13 @@ dtree_node_t * dtree_create_node(dtree_node_t * parent, char * fname, int persis
         for (i = 0; i < DTREE_HTABLE_SIZE; i++) {
             if (parent->pchild[i] == 0) {
                 parent->pchild[i] = nnode;
+                break;
             }
         }
         parent->persist++;
     } else {
         /* TODO larger hash space if DTREE_HTABLE_SIZE > sizeof char */
-        size_t hash = (fname[0] ^ fname[nlen - 1]) & (DTREE_HTABLE_SIZE -1);
+        size_t hash = (fname[0] ^ fname[nlen - 1]) & (DTREE_HTABLE_SIZE - 1);
         parent->child[hash] = nnode;
     }
 
