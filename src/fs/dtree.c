@@ -52,6 +52,14 @@
 #endif
 DESTROY_PREFIX dtree_destroy_node(dtree_node_t * node);
 static size_t hash_fname(char * fname, size_t len);
+static void cond_truncate(void);
+
+#ifndef PU_TEST_BUILD
+#define DT_SIZE_MAX configFS_CACHE_MAX
+#else
+#define DT_SIZE_MAX 200
+#endif
+static int dt_size = 0; /*!< Size of dtree ignoring fnames. */
 
 dtree_node_t dtree_root = {
     .fname = "/", /* Special case, any other fname should not contain '/'. */
@@ -89,6 +97,8 @@ dtree_node_t * dtree_create_node(dtree_node_t * parent, char * fname, int persis
     nname = kmalloc(nlen);
     if (nname == 0)
         goto free_nnode;
+
+    cond_truncate();
 
     /* Initialize the new node */
     memcpy(nname, fname, nlen);
@@ -133,27 +143,27 @@ int dtree_remove_node(dtree_node_t * node, int dpers)
 {
     size_t i;
     dtree_node_t * parent;
-    int retval = -1;
+    int retval = 0;
 
-    if (node == 0)
+    if (node == 0) {
         goto out;
+    }
 
     for (i = 0; i < DTREE_HTABLE_SIZE; i++) {
         if (dpers) dtree_remove_node(node->child[i], 1);
-        dtree_remove_node(node->child[i], dpers);
+        retval = dtree_remove_node(node->child[i], dpers);
     }
 
-    if (node->persist > 0) {
+    if (node->persist > 0 || retval != 0) {
         retval = 2;
         goto out;
     }
 
-    retval = 0;
     parent = node->parent;
     for (i = 0; i < DTREE_HTABLE_SIZE; i++) {
         if (parent->pchild[i] == node) {
             if (dpers) {
-                parent->pchild[i] = 0;
+                retval = parent->pchild[i] = 0;
             } else retval = 1;
         }
         if (parent->child[i] == node) {
@@ -180,6 +190,8 @@ DESTROY_PREFIX dtree_destroy_node(dtree_node_t * node)
     if (node->fname != 0)
         kfree(node->fname);
     kfree(node);
+
+    dt_size -= sizeof(dtree_node_t);
 }
 
 size_t path_compare(char * fname, char * path, size_t offset)
@@ -249,6 +261,14 @@ static size_t hash_fname(char * fname, size_t len)
     size_t hash = (fname[0] ^ fname[len - 1]) & (DTREE_HTABLE_SIZE - 1);
 
     return hash;
+}
+
+static void cond_truncate(void)
+{
+    dt_size += sizeof(dtree_node_t);
+    if (dt_size > DT_SIZE_MAX) {
+        dtree_remove_node(&dtree_root, 0);
+    }
 }
 
 /**
