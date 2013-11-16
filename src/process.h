@@ -68,6 +68,7 @@ typedef struct {
     /* TODO - note: main_thread already has a liked list of child threads
      *      - page table(s)
      *      - memory allocations (that should be freed automatically if process exits)
+     *      - file_t fd's
      *      - etc.
      */
 } processInfo_t;

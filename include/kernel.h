@@ -29,7 +29,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <types.h>
+#include <sys/types.h>
 #include <pthread.h>
 #include <mutex.h>
 #include <semaphore.h>

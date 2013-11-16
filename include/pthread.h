@@ -39,7 +39,7 @@
 #ifndef PTHREAD_H
 #define PTHREAD_H
 
-#include <types.h>
+#include <sys/types.h>
 
 /** @addtogroup Threads
   * @{

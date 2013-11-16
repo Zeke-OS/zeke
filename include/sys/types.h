@@ -37,18 +37,16 @@
 
 #include <stddef.h>
 
-/**
- * Thread id.
- */
-typedef int pthread_t;
+typedef uint32_t dev_t; /*!< Device identifier */
+typedef uint32_t mode_t; /*!< Used for some file attributes. */
+typedef int nlink_t; /*!< Used for link counts. */
+typedef int pid_t; /*!< Process ID. */
+typedef int pthread_t; /*!< Thread ID. */
 
 /**
  * Entry point of a thread.
  */
 typedef void * (*start_routine)(void *);
-
-/* Process ID */
-typedef int pid_t;
 
 /**
  * Priority used for thread control.
