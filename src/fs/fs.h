@@ -40,6 +40,7 @@
 #define FS_H
 
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <syscalldef.h>
 #include <devtypes.h>
 
@@ -126,16 +127,16 @@ typedef struct file_ops {
     int (*release)(vnode_t * file);
     int (*write)(vnode_t * file, int offset, const void * buf, int count);
     int (*read)(vnode_t * file, int offset, void * buf, int count);
-    int (*mmap)(vnode_t * file, struct vm_area * vma);
+    //int (*mmap)(vnode_t * file, !mem area!);
     /* Directory file operations */
-    int (*create)(vnode_t * dir, const char * name, int name_len, struct vnode ** result);
+    int (*create)(vnode_t * dir, const char * name, int name_len, vnode_t ** result);
     int (*mknod)(vnode_t * dir, const char * name, int name_len, int mode, dev_t dev);
-    int (*lookup)(vnode_t * dir, const char * name, int name_len, struct vnode ** result);
-    int (*link)(vnode_t * oldvnode, struct vnode * dir, const char * name, int name_len);
+    int (*lookup)(vnode_t * dir, const char * name, int name_len, vnode_t ** result);
+    int (*link)(vnode_t * oldvnode, vnode_t * dir, const char * name, int name_len);
     int (*unlink)(vnode_t * dir, const char * name, int name_len);
     int (*mkdir)(vnode_t * dir,  const char * name, int name_len);
     int (*rmdir) (vnode_t * dir,  const char * name, int name_len);
-    int (*readdir)(vnode_t * dir, int offset, struct dirent * d);
+    //int (*readdir)(vnode_t * dir, int offset, struct dirent * d);
     /* Operations specified for any file type */
     int (*stat)(vnode_t * vnode, struct stat * buf);
 } vnode_ops_t;

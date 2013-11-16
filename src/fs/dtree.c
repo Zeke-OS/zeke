@@ -163,7 +163,8 @@ int dtree_remove_node(dtree_node_t * node, int dpers)
     for (i = 0; i < DTREE_HTABLE_SIZE; i++) {
         if (parent->pchild[i] == node) {
             if (dpers) {
-                retval = parent->pchild[i] = 0;
+                retval = 0;
+                parent->pchild[i] = 0;
             } else retval = 1;
         }
         if (parent->child[i] == node) {

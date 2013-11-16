@@ -36,12 +36,58 @@
 #define TYPES_H
 
 #include <stddef.h>
+#include <stdint.h>
 
+typedef size_t blkcnt_t; /*!< Used for file block counts. */
+typedef int blksize_t; /*!< Used for block sizes. */
+typedef uint32_t clock_t; /*!< Used for system times in clock ticks
+                            or CLOCKS_PER_SEC. */
+typedef int clockid_t; /*!< Used for clock ID type in the clock and
+                         timer functions. */
 typedef uint32_t dev_t; /*!< Device identifier */
-typedef uint32_t mode_t; /*!< Used for some file attributes. */
+typedef size_t fsblkcnt_t; /*!< Used for file system block counts. */
+typedef size_t fsfilcnt_t; /*!< Used for file system file counts. */
+typedef int uid_t; /*!< Used for user IDs. */
+typedef int gid_t; /*!< Used for group IDs. */
+typedef int id_t; /*!< Used as a general identifier; can be used to contain at
+                    least a pid_t, uid_t, or gid_t. */
+typedef uint64_t ino_t; /*!< Used for file serial numbers.*/
+typedef uint32_t key_t; /*!< Used for XSI interprocess communication. */
+typedef int mode_t; /*!< Used for some file attributes. */
 typedef int nlink_t; /*!< Used for link counts. */
+typedef size_t off_t; /*!< Used for file sizes. */
 typedef int pid_t; /*!< Process ID. */
 typedef int pthread_t; /*!< Thread ID. */
+#ifndef ssize_t
+#ifndef SSIZE_MAX
+#define SSIZE_MAX INT32_MAX
+typedef int32_t ssize_t; /*!< Used for a count of bytes or an error indication. */
+#endif
+#endif
+typedef uint64_t time_t; /*!< Used for time in seconds. */
+typedef uint64_t useconds_t; /*!< Used for time in microseconds. */
+typedef uint64_t suseconds_t; /*!< Used for time in microseconds */
+typedef int timer_t; /*!< Used for timer ID returned by timer_create(). */
+
+
+/* TODO Missing types:
+ * - pthread_barrier_t
+ * - pthread_barrierattr_t
+ * - pthread_cond_t
+ * - pthread_condattr_t
+ * - pthread_key_t
+ * - pthread_mutex_t
+ * - pthread_mutexattr_t
+ * - pthread_once_t
+ * - pthread_rwlock_t
+ * - pthread_rwlockattr_t
+ * - pthread_spinlock_t
+ * - trace_attr_t
+ * - trace_event_id_t
+ * - trace_event_set_t
+ * - trace_id_t
+ * -
+ */
 
 /**
  * Entry point of a thread.
