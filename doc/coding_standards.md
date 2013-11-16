@@ -18,6 +18,9 @@ Naming Conventions
 + `thscope/`    Functions that are called and excecuted in thread scope;
                 This means mainly syscall wrappers
 
+*Warning:* Assembly sources with small suffix (.s) might be removed by
+`make clean` as those are considered as automatically generated files.
+
 ### Global variables
 
 There should not be need for any global variables but since you'll be still
@@ -30,15 +33,17 @@ now trying to get rid of.
 
 Following names are somewhat acceptable:
 
-+ `module_featureName`
 + `module_feature_name`
+
+*Note:* `module_featureName` is obsoleted.
 
 ### Function names
 
-+ `module_compFunction` + module = name that also appears in filename
++ `module_comp_function` + module = name that also appears in filename
                         + comp   = component/functionality eg. thread
                                    components will change thread status
-+ `module_comp_function`
+
+*Note:* `module_compFunction` is obsoleted.
 
 
 Standard Data Types
@@ -56,7 +61,7 @@ Avoid using enums in kernel space, they are ugly and don't behave nicely.
 Usually enums even seems to generate more code than using #defined values.
 
 Enums might be ok in user space and in interfaces between user space and
-kernel space.
+kernel space. Some standard things may even require using enums.
 
 
 Kernel Initialization 
@@ -105,7 +110,7 @@ Following example shows constructor/intializer notation supported by Zeke:
     { ... }
 
 Constructor prioritizing is not supported for constructor pointers but however
-linker uses SORT.
+linker uses SORT, which may or may not work as expected.
 
 ### hw_preinit and hw_postinit
 
