@@ -35,6 +35,7 @@
  */
 
 #include <kstring.h>
+#include <kmalloc.h>
 #include <sched.h>
 #include <ksignal.h>
 #include <syscalldef.h>
@@ -43,8 +44,53 @@
 #include <errno.h>
 #include "fs.h"
 
-fs_t fs_alloc_table[configFS_MAX];
+/**
+ * fs list type.
+ */
+typedef struct fs_list {
+    fs_t * fs;
+    struct fs_list * next;
+} fs_list_t;
 
+/**
+ * Linked list of registered file systems.
+ */
+static fs_list_t * fsl_head;
+
+/**
+ * Register a new file system driver.
+ * @param fs file system control struct.
+ */
+int fs_register(fs_t * fs)
+{
+    fs_list_t * new;
+    int retval = -1;
+
+    if (fsl_head == 0) { /* First entry */
+        fsl_head = kmalloc(sizeof(fs_list_t));
+        new = fsl_head;
+    } else {
+        new = kmalloc(sizeof(fs_list_t));
+    }
+    if (new == 0)
+        goto out;
+
+    new->fs = fs;
+    if (fsl_head == new) { /* First entry */
+        new->next = 0;
+    } else {
+        fs_list_t * node = fsl_head;
+
+        while (node->next != 0) {
+            node = node->next;
+        }
+        node->next = new;
+    }
+    retval = 0;
+
+out:
+    return retval;
+}
 
 /**
  * fs syscall handler

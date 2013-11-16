@@ -39,9 +39,9 @@
 #ifndef FS_H
 #define FS_H
 
-#include "kernel.h"
-#include "syscalldef.h"
-#include "devtypes.h"
+#include <sys/types.h>
+#include <syscalldef.h>
+#include <devtypes.h>
 
 #define FS_FLAG_INIT       0x01 /*!< Filse system initialized. */
 #define FS_FLAG_FAIL       0x08 /*!< File system has failed. */
@@ -75,34 +75,72 @@
 /* End of macros **************************************************************/
 
 typedef struct {
-    size_t inode_num;   /*!< inode number. (Can be ignored if irrelevant) */
-    dev_t dev;          /*!< Device identifier. */
-    struct file_ops * file_ops;
-} vfile_t;
+    size_t vnode_num;   /*!< vnode number. */
+    dev_t dev;
+    int refcount;
+    size_t len;         /*!< Length of file. */
+    size_t mutex;
+    mode_t mode;        /*!< File type part of st_mode sys/stat.h */
+    struct fs_superblock_t;
+    struct vnode_ops * vnode_ops;
+    /* TODO wait queue here */
+} vnode_t;
 
 /**
- * File system
+ * File descriptor.
+ */
+typedef struct file {
+    int pos;        /*!< Seek pointer. */
+    mode_t mode;    /*!< Access mode. */
+    int refcount;   /*!< Reference count. */
+    vnode_t * vnode;
+} file_t;
+
+/**
+ * File system.
  */
 typedef struct {
-    unsigned int flags; /*!< Flags */
-    int (*mount)(vfile_t * file, char * mpoint, uint32_t mode);
-    int (*lookup)(vfile_t * file, char * str);
+    char fsname[8];
+    struct fs_superblock * (*mount)(vnode_t * vnode, char * mpoint, uint32_t mode);
+    int (*umount)(struct fs_superblock * fs);
 } fs_t;
 
 /**
- * File operations struct.
+ * File system superblock.
+ */
+typedef struct fs_superblock {
+    char fsname[8];
+    uint32_t mode_flags;
+    vnode_t * root; /*!< Root of this fs mount. */
+    int (*lookup_vnode)(vnode_t * vnode, char * str);
+    int (*lookup_file)(char * str, vnode_t * file);
+    int (*delete_vnode)(vnode_t * vnode);
+} fs_superblock_t;
+
+/**
+ * vnode operations struct.
  */
 typedef struct file_ops {
-    int (*lock)(vfile_t * file);
-    int (*release)(vfile_t * file);
-    int (*cwrite)(vfile_t * file, uint32_t ch); /*!< Character write function */
-    int (*cread)(vfile_t * file, uint32_t * ch); /*!< Character read function */
-    int (*bwrite)(vfile_t * file, void * buff, size_t size, size_t count); /*!< Block write function */
-    int (*bread)(vfile_t * file, void * buff, size_t size, size_t count); /*!< Block read function */
-    int (*bseek)(vfile_t * file, int offset, int origin, size_t size, pthread_t thread_id); /*!< Block seek function */
-} file_ops_t;
+    /* Normal file operations */
+    int (*lock)(vnode_t * file);
+    int (*release)(vnode_t * file);
+    int (*write)(vnode_t * file, int offset, const void * buf, int count);
+    int (*read)(vnode_t * file, int offset, void * buf, int count);
+    int (*mmap)(vnode_t * file, struct vm_area * vma);
+    /* Directory file operations */
+    int (*create)(vnode_t * dir, const char * name, int name_len, struct vnode ** result);
+    int (*mknod)(vnode_t * dir, const char * name, int name_len, int mode, dev_t dev);
+    int (*lookup)(vnode_t * dir, const char * name, int name_len, struct vnode ** result);
+    int (*link)(vnode_t * oldvnode, struct vnode * dir, const char * name, int name_len);
+    int (*unlink)(vnode_t * dir, const char * name, int name_len);
+    int (*mkdir)(vnode_t * dir,  const char * name, int name_len);
+    int (*rmdir) (vnode_t * dir,  const char * name, int name_len);
+    int (*readdir)(vnode_t * dir, int offset, struct dirent * d);
+    /* Operations specified for any file type */
+    int (*stat)(vnode_t * vnode, struct stat * buf);
+} vnode_ops_t;
 
-extern fs_t fs_alloc_table[];
+int fs_register(fs_t * fs);
 
 /* Thread specific functions used mainly by Syscalls **************************/
 uint32_t fs_syscall(uint32_t type, void * p);

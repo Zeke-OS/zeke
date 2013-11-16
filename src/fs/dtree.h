@@ -45,7 +45,7 @@
 
 typedef struct dtree_node {
     char * fname; /*!< Pointer to the name of this node. */
-    inode_t inode;
+    vnode_t vnode;
     struct dtree_node * parent;
     struct dtree_node * pchild[DTREE_HTABLE_SIZE]; /*< Persistent children. */
     struct dtree_node * child[DTREE_HTABLE_SIZE]; /*!< Children of this node,
