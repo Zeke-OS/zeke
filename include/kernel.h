@@ -14,15 +14,6 @@
 #ifndef KERNEL_H
 #define KERNEL_H
 
-/* Commented out as Zeke's scope has been changed to only partial compatibility
- * with CMSIS specification.
- */
-/* \note MUST REMAIN UNCHANGED: \b osCMSIS identifies the CMSIS-RTOS API version
- *#define osCMSIS           0x00003      ///< API version (main [31:16] .sub [15:0])*/
-
-/// \note CAN BE CHANGED: \b osCMSIS_KERNEL identifies the underlaying RTOS kernel and version number.
-#define osCMSIS_KERNEL    0x10000	   ///< RTOS identification and version (main [31:16] .sub [15:0])
-
 #define osKernelSystemId "ZEKE   V1.00"   ///< RTOS identification string
 
 /**
@@ -54,14 +45,6 @@
  * @param loads array where load averages will be stored.
  */
 void osGetLoadAvg(uint32_t loads[3]);
-
-
-//  ==== Kernel Control Functions ====
-
-/// Check if the RTOS kernel is already started.
-/// \return 0 RTOS is not started, 1 RTOS is started.
-int32_t osKernelRunning(void);
-
 
 //  ==== Generic Wait Functions ====
 
@@ -157,13 +140,6 @@ osSemaphoreDef_t os_semaphore_def_##name = { 0 }
 ///       macro body is implementation specific in every CMSIS-RTOS.
 #define osSemaphore(name)  \
 &os_semaphore_def_##name
-
-/// Create and Initialize a Semaphore object used for managing resources
-/// \param[in]     semaphore_def semaphore definition referenced with \ref osSemaphore.
-/// \param[in]     count         number of available resources.
-/// \return semaphore ID for reference by other functions or NULL in case of error.
-/// \note MUST REMAIN UNCHANGED: \b osSemaphoreCreate shall be consistent in every CMSIS-RTOS.
-//osSemaphore osSemaphoreCreate(osSemaphoreDef_t * semaphore_def, int32_t count);
 
 /// Wait until a Semaphore token becomes available
 /// \param[in]     semaphore_id  semaphore object referenced with \ref osSemaphore.

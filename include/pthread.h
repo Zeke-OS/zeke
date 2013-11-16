@@ -31,9 +31,21 @@
  *******************************************************************************
  */
 
+/** @addtogroup Library_Functions
+  * @{
+  */
+
+#pragma once
+#ifndef PTHREAD_H
+#define PTHREAD_H
+
 #include <types.h>
 
-/* TODO Missing most of standard declarations */
+/** @addtogroup Threads
+  * @{
+  */
+
+/* TODO Missing most of the standard declarations */
 
 /**
  * Get calling thread's ID.
@@ -77,3 +89,12 @@ osStatus osThreadSetPriority(pthread_t thread_id, osPriority priority);
 /// \return current priority value of the thread function.
 osPriority osThreadGetPriority(pthread_t thread_id);
 
+#endif /* PTHREAD_H */
+
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */

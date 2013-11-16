@@ -31,11 +31,7 @@
  *******************************************************************************
 */
 
-/** @addtogroup Kernel
-  * @{
-  */
-
-/** @addtogroup ThreadScope
+/** @addtogroup Library_Functions
   * @{
   */
 
@@ -43,15 +39,6 @@
 #include "syscalldef.h"
 #include "syscall.h"
 #include <kernel.h>
-
-/* Kernel Control Functions **************************************************/
-
-int32_t osKernelRunning(void)
-{
-      return 1;
-}
-
-/* Non-CMSIS *****************************************************************/
 
 void osGetLoadAvg(uint32_t loads[3])
 {
@@ -61,30 +48,6 @@ void osGetLoadAvg(uint32_t loads[3])
 /** @addtogroup Thread_Management
   * @{
   */
-
-int pthread_create(pthread_t * thread, const pthread_attr_t * attr,
-                void * (*start_routine)(void *), void * arg)
-{
-    ds_pthread_create_t args = {
-        .thread     = thread,
-        .start      = start_routine,
-        .def        = attr,
-        .argument   = arg
-    };
-    int result;
-
-    result = (int)syscall(SYSCALL_SCHED_THREAD_CREATE, &args);
-
-    /* Request immediate context switch */
-    req_context_switch();
-
-    return result;
-}
-
-pthread_t pthread_self(void)
-{
-    return (pthread_t)syscall(SYSCALL_SCHED_THREAD_GETTID, NULL);
-}
 
 osStatus osThreadTerminate(pthread_t thread_id)
 {
@@ -316,10 +279,6 @@ osStatus osSemaphoreRelease(osSemaphore * semaphore)
     syscall(SYSCALL_SEMAPHORE_RELEASE, semaphore);
     return (osStatus)osOK;
 }
-
-/**
-  * @}
-  */
 
 /**
   * @}
