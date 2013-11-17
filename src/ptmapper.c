@@ -31,7 +31,7 @@
  */
 
 #include <kerror.h>
-#include <bitmap.h>
+#include <generic/bitmap.h>
 #include <ptmapper.h>
 
 void ptmapper_init(void);

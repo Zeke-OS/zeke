@@ -30,7 +30,7 @@
  *******************************************************************************
  */
 
-#include <bitmap.h>
+#include "bitmap.h"
 
 /**
  * Search for a contiguous block of block_len in bitmap.

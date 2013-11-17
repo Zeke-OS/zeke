@@ -32,7 +32,7 @@
 
 #include <kstring.h>
 #include <kerror.h>
-#include <bitmap.h>
+#include <generic/bitmap.h>
 #include <dynmem.h>
 
 #define DYNMEM_RC_POS       16

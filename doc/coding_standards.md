@@ -3,6 +3,23 @@ Zeke Coding Standards & Generic Documentation
 
 Here is some misc documentation and generic guidelines on how to code for Zeke.
 
+Directory Structure
+-------------------
+
++ src/          Most of kernel code.
++ src/generic   Generic data structures.
++ src/kstring   String functions.
++ src/hal       Harware abstraction layer.
++ src/fs        Virtual file system and other file systems.
++ src/kerror_X  Kernel logger implementations.
++ src/sched_X   Thread scheduler implementations.
++ src/usrscope  User scope libary source files.
++ include/      User scope library headers.
++ lib/          C runtime libraries.
++ config/       Build config.
++ modmakefiles/ Per module makefiles.
++ test/         Unit tests.
+
 
 Naming Conventions
 ------------------
