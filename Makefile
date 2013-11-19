@@ -118,19 +118,24 @@ MODAS = $(addsuffix .a, $(MODULES))
 .SUFFIXES: .c .bc .o .h		# Define our suffix list
 
 # Targets ######################################################################
+# Help lines
+# '# target: '		Generic target
+# '# target_comp'	Generic target
+# '# target_test'	Testing target
+# '# target_clean'	Cleaning target
 
-# target: all - Make config and compile kernel
+# target_comp: all - Make config and compile kernel
 all: config kernel
 
-# target: config - Update configuration from $(CONFIG_MK)
+# target_comp: config - Update configuration from $(CONFIG_MK)
 config: $(AUTOCONF_H)
 
-# target: test - Run all portable unit tests
+# target_test: test - Run all portable unit tests
 test:
 	-cd test/universal && make
 	-cd test/kstring && make
 
-# target: clean-test - Clean portable test targets
+# target_clean: clean-test - Clean portable test targets
 clean-test:
 	cd test/universal && make clean
 	cd test/kstring && make clean
@@ -175,11 +180,11 @@ kernel.bin: $(MEMMAP) $(STARTUP_O) $(MODAS) $(CRT)
 
 # target: help - Display callable targets.
 help:
-	@egrep "^# target:" [Mm]akefile|sed 's/^# target: //'
+	./tools/help.sh
 
 .PHONY: config kernel $(CRT) test clean
 
-# target: clean - Clean all targets
+# target_clean: clean - Clean all targets
 clean: clean-test
 	rm -f $(AUTOCONF_H)
 	rm -f $(ASOBJS) $(OBJS) $(STARTUP_O)
