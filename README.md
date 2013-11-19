@@ -36,10 +36,9 @@ News
 ----
 - Dev subsys removed and will be soon replaced with devfs and
   virtual file system
+- Coming "soon": Full POSIX process & thread support
 - Dynamic memory allocation for page tables is working. Dynmem allocation is
   still untested but I'll be working on it next. 
-- Coming "soon": Optional support for process scheduling & process memory space
-  when MMU is enabled
 - ARM11/Raspberry Pi port ongoing
 
 Port status
