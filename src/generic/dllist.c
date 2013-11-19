@@ -178,5 +178,7 @@ void dllist_remove(struct llist * lst, void * node)
         lst->tail = dsc->prev;
     else
         LISTDSC(dsc->next)->prev = dsc->prev;
+
     kfree(node);
+     lst->count += 1;
 }
