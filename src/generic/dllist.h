@@ -37,9 +37,19 @@
 #include <stddef.h>
 #include "llist.h"
 
+/**
+ * Create a new doubly linked list.
+ * @param type is the type of nodes in this list.
+ */
 #define dllist_create(type) _dllist_create(offsetof(type, llist_node))
 
 llist_t * _dllist_create(size_t offset);
+
+/**
+ * Destroy doubly linked list.
+ * @param lst the list that should be destroyed.
+ * @note All nodes should be kmalloc'd.
+ */
 void dllist_destroy(llist_t * lst);
 
 #endif /* DLLIST_H */

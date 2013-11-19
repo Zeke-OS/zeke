@@ -42,16 +42,17 @@ typedef struct {
 
 /**
  * Generic linked list.
+ * @note All nodes should be kmalloc'd.
  */
 typedef struct llist {
     size_t offset; /*!< Offset of node descriptor. */
-    void * head;
-    void * tail;
-    int count;
+    void * head; /*!< Head node. */
+    void * tail; /*!< Tail node. */
+    int count; /*!< Node count. */
     /* Functions */
     void * (*get)(struct llist *, int i);
-    void (*insert_head)(struct llist * lst, void * new_node);
-    void (*insert_tail)(struct llist * lst, void * new_node);
+    void (*insert_head)(struct llist *, void * new_node);
+    void (*insert_tail)(struct llist *, void * new_node);
     void (*insert_before)(struct llist *, void * node, void * new_node);
     void (*insert_after)(struct llist *, void * node, void * new_node);
     void (*remove)(struct llist *, void * node);
