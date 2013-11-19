@@ -9,7 +9,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <punit.h>
-#include <bitmap.h>
+#include <generic/bitmap.h>
 
 static void rnd_allocs(int n);
 int unirand(int n);

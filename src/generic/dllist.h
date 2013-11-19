@@ -34,9 +34,12 @@
 #ifndef DLLIST_H
 #define DLLIST_H
 
+#include <stddef.h>
 #include "llist.h"
 
-llist_t * dllist_create(size_t offset);
+#define dllist_create(type) _dllist_create(offsetof(type, llist_node))
+
+llist_t * _dllist_create(size_t offset);
 void dllist_destroy(llist_t * lst);
 
 #endif /* DLLIST_H */

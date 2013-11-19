@@ -30,10 +30,17 @@
  *******************************************************************************
  */
 
+#ifndef PU_TEST_BUILD
 #include <kmalloc.h>
+#else
+#include <stdlib.h>
+#define kmalloc malloc
+#define kfree free
+#endif
+#include <stdint.h>
 #include "llist.h"
 
-#define LISTDSC(node) ((llist_nodedsc_t *)(node + lst->offset))
+#define LISTDSC(node) ((llist_nodedsc_t *)(((uint8_t *)node) + lst->offset))
 
 llist_t * dllist_create(size_t offset);
 void dllist_destroy(llist_t * lst);
@@ -47,7 +54,7 @@ void dllist_remove(struct llist * lst, void * node);
 /**
  * Create a doubly linked list.
  */
-llist_t * dllist_create(size_t offset)
+llist_t * _dllist_create(size_t offset)
 {
     llist_t * lst;
 
@@ -78,11 +85,12 @@ out:
  */
 void dllist_destroy(llist_t * lst)
 {
+    if (lst == 0)
+        return;
+
     if (lst->head != 0) {
         void * node;
-        void * node_next;
-
-        node_next = lst->head;
+        void * node_next = lst->head;
         do {
             node = node_next;
             node_next = LISTDSC(node)->next;

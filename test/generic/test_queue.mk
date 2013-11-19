@@ -1,7 +1,7 @@
 # This is a per test module makefile
 
 # Test source file
-TEST_SRC += test_bitmap.c
+TEST_SRC += test_queue.c
 
 # SRC files needed for this test
-SRC-bitmap += ../../src/bitmap.c
+SRC-queue += ../../src/generic/queue.c
