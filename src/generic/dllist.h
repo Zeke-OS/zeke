@@ -2,7 +2,7 @@
  *******************************************************************************
  * @file    llist.h
  * @author  Olli Vanhoja
- * @brief   Generic linked list.
+ * @brief   Generic doubly linked list.
  * @section LICENSE
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -31,30 +31,12 @@
  */
 
 #pragma once
-#ifndef LLIST_H
-#define LLIST_H
+#ifndef DLLIST_H
+#define DLLIST_H
 
-typedef struct {
-    struct llist * lst;
-    void * next;
-    void * prev;
-} llist_nodedsc_t;
+#include "llist.h"
 
-/**
- * Generic linked list.
- */
-typedef struct llist {
-    size_t offset; /*!< Offset of node descriptor. */
-    void * head;
-    void * tail;
-    int count;
-    /* Functions */
-    void * (*get)(struct llist *, int i);
-    void (*insert_head)(struct llist * lst, void * new_node);
-    void (*insert_tail)(struct llist * lst, void * new_node);
-    void (*insert_before)(struct llist *, void * node, void * new_node);
-    void (*insert_after)(struct llist *, void * node, void * new_node);
-    void (*remove)(struct llist *, void * node);
-} llist_t;
+llist_t * dllist_create(size_t offset);
+void dllist_destroy(llist_t * lst);
 
-#endif /* LLIST_H */
+#endif /* DLLIST_H */
