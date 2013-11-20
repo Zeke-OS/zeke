@@ -57,7 +57,6 @@ typedef int mode_t; /*!< Used for some file attributes. */
 typedef int nlink_t; /*!< Used for link counts. */
 typedef size_t off_t; /*!< Used for file sizes. */
 typedef int pid_t; /*!< Process ID. */
-typedef int pthread_t; /*!< Thread ID. */
 #ifndef ssize_t
 #ifndef SSIZE_MAX
 #define SSIZE_MAX INT32_MAX
@@ -71,17 +70,6 @@ typedef int timer_t; /*!< Used for timer ID returned by timer_create(). */
 
 
 /* TODO Missing types:
- * - pthread_barrier_t
- * - pthread_barrierattr_t
- * - pthread_cond_t
- * - pthread_condattr_t
- * - pthread_key_t
- * - pthread_mutex_t
- * - pthread_mutexattr_t
- * - pthread_once_t
- * - pthread_rwlock_t
- * - pthread_rwlockattr_t
- * - pthread_spinlock_t
  * - trace_attr_t
  * - trace_event_id_t
  * - trace_event_set_t
@@ -89,39 +77,9 @@ typedef int timer_t; /*!< Used for timer ID returned by timer_create(). */
  * -
  */
 
-/**
- * Entry point of a thread.
- */
-typedef void * (*start_routine)(void *);
-
-/**
- * Priority used for thread control.
- * TODO Legacy
- */
-typedef enum {
-    osPriorityIdle          = -3,       ///< priority: idle (lowest)
-    osPriorityLow           = -2,       ///< priority: low
-    osPriorityBelowNormal   = -1,       ///< priority: below normal
-    osPriorityNormal        =  0,       ///< priority: normal (default)
-    osPriorityAboveNormal   = +1,       ///< priority: above normal
-    osPriorityHigh          = +2,       ///< priority: high
-    osPriorityRealtime      = +3,       ///< priority: realtime (highest)
-    osPriorityError         =  0x84     ///< system cannot determine priority or thread has illegal priority
-} osPriority;
-
-/**
- * Thread Definition structure contains startup information of a thread.
- */
-typedef const struct pthread_attr {
-    osPriority      tpriority;  /*!< initial thread priority */
-    void *          stackAddr;  /*!< Stack address */
-    size_t          stackSize;  /*!< Size of stack reserved for the thread. */
-} pthread_attr_t;
-
 /* TODO Below this is some legacy */
 
-#include <mutex.h>
-
+/* TODO This should be internal to kernel */
 /// Status code values returned by CMSIS-RTOS functions
 typedef enum  {
     osOK                    =     0,        ///< function completed; no event occurred.
@@ -156,13 +114,6 @@ typedef enum  {
 typedef int osTimerId;
 
 /**
- * Mutex cb mutex.
- * @note All data related to the mutex is stored in user space structure and
- *       it is DANGEROUS to edit its contents in thread context.
- */
-typedef struct os_mutex_cb osMutex;
-
-/**
  * Semaphore ID identifies the semaphore (pointer to a semaphore control block).
  * @note All data related to the mutex is stored in user space structure and
  *       it is DANGEROUS to edit its contents in thread context.
@@ -174,11 +125,6 @@ typedef struct os_messageQ_cb *osMessageQId;
 
 /// Mail ID identifies the mail queue (pointer to a mail queue control block).
 typedef struct os_mailQ_cb *osMailQId;
-
-/// Mutex Definition structure contains setup information for a mutex.
-typedef const struct os_mutex_def  {
-    enum os_mutex_strategy strategy;
-} osMutexDef_t;
 
 /// Event structure contains detailed information about an event.
 typedef struct  {

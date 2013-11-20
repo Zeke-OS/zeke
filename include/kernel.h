@@ -31,7 +31,6 @@
 #include <stddef.h>
 #include <sys/types.h>
 #include <pthread.h>
-#include <mutex.h>
 #include <semaphore.h>
 #include <devtypes.h>
 #include <autoconf.h>

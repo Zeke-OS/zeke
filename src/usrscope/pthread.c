@@ -83,13 +83,13 @@ pthread_t pthread_self(void)
 
 /* Mutex Management ***********************************************************
  * NOTE: osMutexId/mutex_id is a direct pointer to a os_mutex_cb structure.
- * POSIX compliant functions for mutex are: 
+ * POSIX compliant functions for mutex are:
  * pthread_mutex_init(mutex,attr)
  * pthread_mutex_destroy(mutex)
- * 
+ *
  * pthread_mutexattr_init(attr)
  * pthread_mutexattr_destroy(attr)
- * 
+ *
  * pthread_mutex_lock(mutex) - Thread will become blocked
  * pthread_mutex_unlock(mutex)
  * pthread_mutex_trylock(mutex) - Thread will not be blocked
@@ -98,36 +98,33 @@ pthread_t pthread_self(void)
 
 /** TODO Add headers to pthreads.h! */
 
-mutex_cb_t pthread_mutex_init(mutex_cb_t * mutex)
+int pthread_mutex_init(pthread_mutex_t * mutex, const pthread_mutexattr_t * attr)
 {
-    /*TODO What about the parameter osMutexDef_t?*/
-    mutex_cb_t cb = {
-        .mutex     = mutex
-        .thread_id = pthread_self,
-        .lock      = 0,
-        .strategy  = mutex_def->strategy
-    };
+    /*TODO What if attr is not set?*/
+    mutex->thread_id    = pthread_self();
+    mutex->lock         = 0;
+    mutex->strategy     = attr->strategy;
 
-    return cb;
+    return 0;
 }
 
-int pthread_mutex_lock(mutex_cb_t * mutex) 
+int pthread_mutex_lock(pthread_mutex_t * mutex)
 {
     /*If not succesful, we switch context. Should be posix compliant.*/
-    while((int)syscall(SYSCALL_MUTEX_TEST_AND_SET, (void*)(&(mutex->lock))) !=0)
+    while((int)syscall(SYSCALL_MUTEX_TEST_AND_SET, (void*)(&(mutex->lock))) != 0)
     {
         req_context_switch();
     }
     return 0;
-    
+
 }
 
-int pthread_mutex_trylock(mutex_cb_t * mutex)
+int pthread_mutex_trylock(pthread_mutex_t * mutex)
 {
     int result;
 
     result = (int)syscall(SYSCALL_MUTEX_TEST_AND_SET, (void*)(&(mutex->lock)));
-    if (result == 0) 
+    if (result == 0)
     {
         mutex->thread_id = pthread_self();
         return 0;
@@ -136,9 +133,9 @@ int pthread_mutex_trylock(mutex_cb_t * mutex)
     return 1;
 }
 
-int pthread_mutex_unlock(mutex_cb_t * mutex)
+int pthread_mutex_unlock(pthread_mutex_t * mutex)
 {
-    if (mutex->thread_id == pthread_self()) 
+    if (mutex->thread_id == pthread_self())
     {
         mutex->lock = 0;
         return 0;

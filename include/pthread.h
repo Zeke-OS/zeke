@@ -40,13 +40,14 @@
 #ifndef PTHREAD_H
 #define PTHREAD_H
 
-#include <sys/types.h>
+#include <sys/types_pthread.h>
 
 /** @addtogroup Threads
   * @{
   */
 
 /* TODO Missing most of the standard declarations */
+/* TODO errnos */
 
 /**
  * Get calling thread's ID.
@@ -68,23 +69,40 @@ pthread_t pthread_self(void);
 int pthread_create(pthread_t * thread, const pthread_attr_t * attr,
         void * (*start_routine)(void *), void * arg);
 
-/*TODO Add comments to mutex headers*/
-enum os_mutex_strategy {
-    os_mutex_str_reschedule,
-    os_mutex_str_sleep
-};
+/**
+ * Initialises the mutex referenced by mutex with attributes specified by attr.
+ * If attr is NULL, the default mutex attributes are used.
+ * @param mutex is a pointer to the mutex control block.
+ * @param attr is a struct containing mutex attributes.
+ * @return If successful return zero; Otherwise value other than zero.
+ */
+int pthread_mutex_init(pthread_mutex_t * mutex, const pthread_mutexattr_t * attr);
 
-typedef struct os_mutex_cb {
-    mutex_cb_t * mutex; /*Pointer to the mutex address. IS THIS LEGAL?*/
-    volatile int thread_id; /*!< ID of the thread holding the lock */
-    volatile int lock; /*!< Lock variable */
-    enum os_mutex_strategy strategy; /*!< Locking strategy */
-} mutex_cb_t;
+/**
+ * Lock mutex.
+ * If the mutex is already locked, the calling thread blocks until the mutex
+ * becomes available. This operation returns with the mutex object referenced by
+ * mutex in the locked state with the calling thread as its owner.
+ * @param mutex is the mutex control block.
+ * @return If successful return zero; Otherwise value other than zero.
+ */
+int pthread_mutex_lock(pthread_mutex_t * mutex);
 
-mutex_cb_t pthread_mutex_init(mutex_cb_t * mutex);
-int pthread_mutex_lock(mutex_cb_t * mutex);
-int pthread_mutex_trylock(mutex_cb_t * mutex);
-int pthread_mutex_unlock(mutex_cb_t * mutex);
+/**
+ * Try to lock mutex and return if can't acquire lock due to it is locked by
+ * any thread including the current thread.
+ * @param mutex is the mutex control block.
+ * @return If successful return zero; Otherwise value other than zero.
+ * @exception EBUSY The mutex could not be acquired because it was already locked.
+ */
+int pthread_mutex_trylock(pthread_mutex_t * mutex);
+
+/**
+ * Release the mutex object.
+ * @param mutex is the mutex control block.
+ * @return If successful return zero; Otherwise value other than zero.
+ */
+int pthread_mutex_unlock(pthread_mutex_t * mutex);
 
 
 /* TODO Legacy */

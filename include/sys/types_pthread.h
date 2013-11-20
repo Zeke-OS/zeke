@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    mutex.h
+ * @file    pthread.h
  * @author  Olli Vanhoja
- * @brief   Mutex.
+ * @brief   Threads.
  * @section LICENSE
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
@@ -32,8 +32,56 @@
  */
 
 #pragma once
-#ifndef MUTEX_H
-#define MUTEX_H
+#ifndef TYPES_PTHREAD_H
+#define TYPES_PTHREAD_H
+
+#include <stddef.h>
+#include <stdint.h>
+
+typedef int pthread_t; /*!< Thread ID. */
+
+/* TODO Missing types:
+ * - pthread_barrier_t
+ * - pthread_barrierattr_t
+ * - pthread_cond_t
+ * - pthread_condattr_t
+ * - pthread_key_t
+ * - pthread_mutex_t
+ * - pthread_mutexattr_t
+ * - pthread_once_t
+ * - pthread_rwlock_t
+ * - pthread_rwlockattr_t
+ * - pthread_spinlock_t
+ */
+
+/**
+ * Entry point of a thread.
+ */
+typedef void * (*start_routine)(void *);
+
+/**
+ * Priority used for thread control.
+ * TODO Legacy
+ */
+typedef enum {
+    osPriorityIdle          = -3,       ///< priority: idle (lowest)
+    osPriorityLow           = -2,       ///< priority: low
+    osPriorityBelowNormal   = -1,       ///< priority: below normal
+    osPriorityNormal        =  0,       ///< priority: normal (default)
+    osPriorityAboveNormal   = +1,       ///< priority: above normal
+    osPriorityHigh          = +2,       ///< priority: high
+    osPriorityRealtime      = +3,       ///< priority: realtime (highest)
+    osPriorityError         =  0x84     ///< system cannot determine priority or thread has illegal priority
+} osPriority;
+
+/**
+ * Thread Definition structure contains startup information of a thread.
+ */
+typedef const struct pthread_attr {
+    osPriority      tpriority;  /*!< initial thread priority */
+    void *          stackAddr;  /*!< Stack address */
+    size_t          stackSize;  /*!< Size of stack reserved for the thread. */
+} pthread_attr_t;
 
 enum os_mutex_strategy {
     os_mutex_str_reschedule,
@@ -41,13 +89,16 @@ enum os_mutex_strategy {
 };
 
 /**
- * Mutex control block
+ * Mutex Definition structure contains setup information for a mutex.
  */
-typedef struct os_mutex_cb {
-    mutex_cb_t * mutex; /*Pointer to the mutex address. IS THIS LEGAL?*/
-    volatile int thread_id; /*!< ID of the thread holding the lock */
+typedef struct {
+    enum os_mutex_strategy strategy;
+} pthread_mutexattr_t;
+
+typedef struct {
+    volatile pthread_t thread_id; /*!< ID of the thread holding the lock */
     volatile int lock; /*!< Lock variable */
     enum os_mutex_strategy strategy; /*!< Locking strategy */
-} mutex_cb_t;
+} pthread_mutex_t;
 
-#endif /* MUTEX_H */
+#endif /* TYPES_PTHREAD_H */

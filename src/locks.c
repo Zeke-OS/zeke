@@ -31,13 +31,15 @@
  *******************************************************************************
  */
 
+#define KERNEL_INTERNAL
 #include <syscall.h>
 #include <semaphore.h>
 #ifndef PU_TEST_BUILD
-#include "hal/hal_core.h"
+#include <hal/hal_core.h>
 #endif
-#include "sched.h"
-#include "timers.h"
+#include <sched.h>
+#include <timers.h>
+#include <errno.h>
 #include "locks.h"
 
 static int locks_semaphore_thread_spinwait(uint32_t * s, uint32_t millisec);
@@ -116,9 +118,15 @@ static int locks_semaphore_thread_spinwait(uint32_t * s, uint32_t millisec)
 
 uint32_t locks_syscall(uint32_t type, void * p)
 {
+    uint32_t retval;
+
     switch(type) {
     case SYSCALL_MUTEX_TEST_AND_SET:
-        return (uint32_t)test_and_set((int *)p);
+        retval = (uint32_t)test_and_set((int *)p);
+        if (retval) {
+            current_thread->errno = EBUSY;
+        }
+        return retval;
 
     case SYSCALL_SEMAPHORE_WAIT:
         return (uint32_t)locks_semaphore_thread_spinwait(
