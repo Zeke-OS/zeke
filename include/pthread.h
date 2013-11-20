@@ -67,6 +67,21 @@ pthread_t pthread_self(void);
 int pthread_create(pthread_t * thread, const pthread_attr_t * attr,
         void * (*start_routine)(void *), void * arg);
 
+/*TODO Add comments to mutex headers*/
+
+typedef struct os_mutex_cb {
+    mutex_cb_t * mutex; /*Pointer to the mutex address. IS THIS LEGAL?*/
+    volatile int thread_id; /*!< ID of the thread holding the lock */
+    volatile int lock; /*!< Lock variable */
+    enum os_mutex_strategy strategy; /*!< Locking strategy */
+} mutex_cb_t;
+
+mutex_cb_t pthread_mutex_init(mutex_cb_t * mutex);
+int pthread_mutex_lock(mutex_cb_t * mutex);
+int pthread_mutex_trylock(mutex_cb_t * mutex);
+int pthread_mutex_unlock(mutex_cb_t * mutex);
+
+
 /* TODO Legacy */
 
 /// Terminate execution of a thread and remove it from Active Threads.

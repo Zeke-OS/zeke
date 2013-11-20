@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Zero Kernel user space code
  * @section LICENSE
+ * Copyright (c) 2013 Joni Hauhia <joni.hauhia@cs.helsinki.fi>
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -97,7 +98,7 @@ pthread_t pthread_self(void)
 
 /** TODO Add headers to pthreads.h! */
 
-mutex_cb_t pthread_mutex_init(mutex_cb_t * mutex, osMutexDef_t *mutex_def)
+mutex_cb_t pthread_mutex_init(mutex_cb_t * mutex)
 {
     /*TODO What about the parameter osMutexDef_t?*/
     mutex_cb_t cb = {
@@ -112,21 +113,18 @@ mutex_cb_t pthread_mutex_init(mutex_cb_t * mutex, osMutexDef_t *mutex_def)
 
 int pthread_mutex_lock(mutex_cb_t * mutex) 
 {
-    if (mutex->lock == 0)
+    /*If not succesful, we switch context. Should be posix compliant.*/
+    while((int)syscall(SYSCALL_MUTEX_TEST_AND_SET, (void*)(&(mutex->lock))) !=0)
     {
-        mutex->lock = 1;
-        mutex->thread_id = pthread_self();
-        return 0;
+        req_context_switch();
     }
-    /*Should we request context switch if not succesful?*/
-    return 1;
+    return 0;
     
 }
 
 int pthread_mutex_trylock(mutex_cb_t * mutex)
 {
     int result;
-    /*TODO Check if this really works like this!*/
 
     result = (int)syscall(SYSCALL_MUTEX_TEST_AND_SET, (void*)(&(mutex->lock)));
     if (result == 0) 
