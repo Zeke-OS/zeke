@@ -93,36 +93,6 @@ int32_t osSignalGet(pthread_t thread_id);
 osEvent osSignalWait(int32_t signals, uint32_t millisec);
 
 
-//  ==== Mutex Management ====
-
-/// Define a Mutex.
-/// \param         name          name of the mutex object.
-#define osMutexDef(name)  \
-osMutexDef_t os_mutex_def_##name = { 0 }
-
-/// Access a Mutex defintion.
-/// \param         name          name of the mutex object.
-#define osMutex(name)  \
-&os_mutex_def_##name
-
-/// Create and Initialize a Mutex object
-/// \param[in]     mutex_def     mutex definition referenced with \ref osMutex.
-/// \return mutex ID for reference by other functions or NULL in case of error.
-osMutex osMutexCreate(osMutexDef_t * mutex_def);
-
-/// Wait until a Mutex becomes available
-/// \param[in]     mutex         mutex ID obtained by \ref osMutexCreate.
-/// \param[in]     millisec      timeout value or 0 in case of no time-out.
-/// \return status code that indicates the execution status of the function.
-/// \note NON-CMSIS-RTOS IMPLEMENTATION
-osStatus osMutexWait(osMutex * mutex, uint32_t millisec);
-
-/// Release a Mutex that was obtained by \ref osMutexWait
-/// \param[in]     mutex_id      mutex ID obtained by \ref osMutexCreate.
-/// \return status code that indicates the execution status of the function.
-/// \note NON-CMSIS-RTOS IMPLEMENTATION
-osStatus osMutexRelease(osMutex * mutex_id);
-
 //  ==== Semaphore Management Functions ====
 
 #if (defined (osFeature_Semaphore)  &&  (osFeature_Semaphore != 0))     // Semaphore available
