@@ -1,0 +1,600 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configurationDescriptor version="89">
+  <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
+    <df root="." name="zeke">
+      <df name="config">
+        <in>autoconf.h</in>
+      </df>
+      <df name="include">
+        <in>devtypes.h</in>
+        <in>errno.h</in>
+        <in>kernel.h</in>
+        <in>mutex.h</in>
+        <in>pthread.h</in>
+        <in>semaphore.h</in>
+        <in>syscall.h</in>
+        <in>syscalldef.h</in>
+        <in>types.h</in>
+        <in>unistd.h</in>
+      </df>
+      <df name="lib">
+        <df name="crt">
+          <df name="libaeabi-armv6-m">
+            <in>crt.S</in>
+            <in>divdi3.S</in>
+            <in>idiv.S</in>
+            <in>idivmod.S</in>
+            <in>lasr.S</in>
+            <in>ldivmod.S</in>
+            <in>llsl.S</in>
+            <in>llsr.S</in>
+            <in>lmul.S</in>
+            <in>memset.S</in>
+            <in>moddi3.S</in>
+            <in>modsi3.S</in>
+            <in>uidivmod.S</in>
+            <in>uldivmod.S</in>
+            <in>umoddi3.S</in>
+            <in>umodsi3.S</in>
+          </df>
+          <df name="libaeabi-armv6k">
+            <in>crt.S</in>
+            <in>divdi3.S</in>
+            <in>idiv.S</in>
+            <in>idivmod.S</in>
+            <in>lasr.S</in>
+            <in>ldivmod.S</in>
+            <in>llsl.S</in>
+            <in>llsr.S</in>
+            <in>lmul.S</in>
+            <in>memset.S</in>
+            <in>moddi3.S</in>
+            <in>modsi3.S</in>
+            <in>uidivmod.S</in>
+            <in>uldivmod.S</in>
+            <in>umoddi3.S</in>
+            <in>umodsi3.S</in>
+          </df>
+        </df>
+      </df>
+      <df name="src">
+        <df name="fs">
+          <in>dtree.c</in>
+          <in>dtree.h</in>
+          <in>fs.c</in>
+          <in>fs.h</in>
+        </df>
+        <df name="hal">
+          <df name="arm11">
+            <in>arm11.c</in>
+            <in>arm11.h</in>
+            <in>arm11_mmu.c</in>
+            <in>arm11_mmu.h</in>
+          </df>
+          <df name="arm9">
+            <in>arm9.h</in>
+          </df>
+          <df name="bcm2835">
+            <in>bcm2835_int_handlers.S</in>
+            <in>bcm2835_interrupt.c</in>
+            <in>bcm2835_interrupt.h</in>
+            <in>bcm2835_mmio.c</in>
+            <in>bcm2835_mmio.h</in>
+            <in>bcm2835_uart.c</in>
+            <in>startup_bcm2835.S</in>
+          </df>
+          <df name="cortex_m">
+            <in>cortex_m.c</in>
+            <in>cortex_m.h</in>
+          </df>
+          <df name="stm32f0">
+            <in>stm32f0_interrupt.c</in>
+            <in>stm32f0_interrupt.h</in>
+          </df>
+          <in>91x_conf.h</in>
+          <in>atag.c</in>
+          <in>atag.h</in>
+          <in>hal_core.h</in>
+          <in>hal_mcu.h</in>
+          <in>mmu.c</in>
+          <in>mmu.h</in>
+          <in>pu_test_core.h</in>
+          <in>sysinfo.c</in>
+          <in>sysinfo.h</in>
+          <in>uart.c</in>
+          <in>uart.h</in>
+        </df>
+        <df name="kerror_lastlog">
+          <in>kerror_last.c</in>
+          <in>kerror_last.h</in>
+        </df>
+        <df name="kerror_ttys">
+          <in>kerror_ttys.c</in>
+          <in>kerror_ttys.h</in>
+        </df>
+        <df name="kstring">
+          <in>ksprintf.c</in>
+          <in>memcpy.c</in>
+          <in>memset.c</in>
+          <in>strcmp.c</in>
+          <in>strcpy.c</in>
+          <in>strlenn.c</in>
+          <in>strncpy.c</in>
+          <in>strnncat.c</in>
+          <in>uitoa32.c</in>
+          <in>uitoah32.c</in>
+        </df>
+        <df name="sched_tiny">
+          <in>heap.c</in>
+          <in>heap.h</in>
+          <in>sched.c</in>
+        </df>
+        <df name="usrscope">
+          <in>kernel.c</in>
+          <in>usrinit.c</in>
+          <in>usrinit.h</in>
+        </df>
+        <in>bitmap.c</in>
+        <in>bitmap.h</in>
+        <in>dynmem.c</in>
+        <in>dynmem.h</in>
+        <in>kerror.h</in>
+        <in>kinit.c</in>
+        <in>kinit.h</in>
+        <in>kmalloc.c</in>
+        <in>kmalloc.h</in>
+        <in>ksignal.c</in>
+        <in>ksignal.h</in>
+        <in>kstring.h</in>
+        <in>locks.c</in>
+        <in>locks.h</in>
+        <in>process.c</in>
+        <in>process.h</in>
+        <in>ptmapper.c</in>
+        <in>ptmapper.h</in>
+        <in>queue.c</in>
+        <in>queue.h</in>
+        <in>sched.h</in>
+        <in>syscall.c</in>
+        <in>timers.c</in>
+        <in>timers.h</in>
+      </df>
+      <df name="test">
+        <df name="kstring">
+          <in>test_ksprintf.c</in>
+          <in>test_strnncat.c</in>
+          <in>test_uitoa32.c</in>
+          <in>test_uitoah32.c</in>
+        </df>
+        <df name="universal">
+          <df name="config">
+            <in>dev_config.h</in>
+          </df>
+          <in>test_bitmap.c</in>
+          <in>test_dtree.c</in>
+          <in>test_heap.c</in>
+          <in>test_kmalloc.c</in>
+          <in>test_queue.c</in>
+          <in>test_timers.c</in>
+          <in>test_tsched.c</in>
+        </df>
+      </df>
+    </df>
+    <logicalFolder name="ExternalFiles"
+                   displayName="Important Files"
+                   projectFiles="false"
+                   kind="IMPORTANT_FILES_FOLDER">
+      <itemPath>Makefile</itemPath>
+    </logicalFolder>
+  </logicalFolder>
+  <sourceFolderFilter>^(nbproject)$</sourceFolderFilter>
+  <sourceRootList>
+    <Elem>.</Elem>
+  </sourceRootList>
+  <projectmakefile>Makefile</projectmakefile>
+  <confs>
+    <conf name="Default" type="0">
+      <toolsSet>
+        <remote-sources-mode>LOCAL_SOURCES</remote-sources-mode>
+        <compilerSet>default</compilerSet>
+        <dependencyChecking>false</dependencyChecking>
+        <rebuildPropChanged>false</rebuildPropChanged>
+      </toolsSet>
+      <codeAssistance>
+      </codeAssistance>
+      <makefileType>
+        <makeTool>
+          <buildCommandWorkingDir>.</buildCommandWorkingDir>
+          <buildCommand>${MAKE} -f Makefile</buildCommand>
+          <cleanCommand>${MAKE} -f Makefile clean</cleanCommand>
+          <executablePath></executablePath>
+        </makeTool>
+      </makefileType>
+      <item path="config/autoconf.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/devtypes.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/errno.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/kernel.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/mutex.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/pthread.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/semaphore.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/syscall.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/syscalldef.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/types.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/unistd.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6-m/crt.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6-m/divdi3.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6-m/idiv.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6-m/idivmod.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6-m/lasr.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6-m/ldivmod.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6-m/llsl.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6-m/llsr.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6-m/lmul.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6-m/memset.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6-m/moddi3.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6-m/modsi3.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6-m/uidivmod.S"
+            ex="false"
+            tool="4"
+            flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6-m/uldivmod.S"
+            ex="false"
+            tool="4"
+            flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6-m/umoddi3.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6-m/umodsi3.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6k/crt.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6k/divdi3.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6k/idiv.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6k/idivmod.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6k/lasr.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6k/ldivmod.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6k/llsl.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6k/llsr.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6k/lmul.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6k/memset.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6k/moddi3.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6k/modsi3.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6k/uidivmod.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6k/uldivmod.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6k/umoddi3.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="lib/crt/libaeabi-armv6k/umodsi3.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="src/bitmap.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/bitmap.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/dynmem.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/dynmem.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/fs/dtree.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/fs/dtree.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/fs/fs.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/fs/fs.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/hal/91x_conf.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/hal/arm11/arm11.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/hal/arm11/arm11.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/hal/arm11/arm11_mmu.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/hal/arm11/arm11_mmu.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/hal/arm9/arm9.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/hal/atag.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/hal/atag.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/hal/bcm2835/bcm2835_int_handlers.S"
+            ex="false"
+            tool="4"
+            flavor2="0">
+      </item>
+      <item path="src/hal/bcm2835/bcm2835_interrupt.c"
+            ex="false"
+            tool="0"
+            flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/hal/bcm2835/bcm2835_interrupt.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="src/hal/bcm2835/bcm2835_mmio.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/hal/bcm2835/bcm2835_mmio.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/hal/bcm2835/bcm2835_uart.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/hal/bcm2835/startup_bcm2835.S" ex="false" tool="4" flavor2="0">
+      </item>
+      <item path="src/hal/cortex_m/cortex_m.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/hal/cortex_m/cortex_m.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/hal/hal_core.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/hal/hal_mcu.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/hal/mmu.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/hal/mmu.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/hal/pu_test_core.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/hal/stm32f0/stm32f0_interrupt.c"
+            ex="false"
+            tool="0"
+            flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/hal/stm32f0/stm32f0_interrupt.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="src/hal/sysinfo.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/hal/sysinfo.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/hal/uart.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/hal/uart.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/kerror.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/kerror_lastlog/kerror_last.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/kerror_lastlog/kerror_last.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/kerror_ttys/kerror_ttys.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/kerror_ttys/kerror_ttys.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/kinit.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/kinit.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/kmalloc.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/kmalloc.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/ksignal.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/ksignal.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/kstring.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/kstring/ksprintf.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/kstring/memcpy.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/kstring/memset.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/kstring/strcmp.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/kstring/strcpy.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/kstring/strlenn.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/kstring/strncpy.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/kstring/strnncat.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/kstring/uitoa32.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/kstring/uitoah32.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/locks.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/locks.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/process.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/process.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/ptmapper.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/ptmapper.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/queue.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/queue.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/sched.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/sched_tiny/heap.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/sched_tiny/heap.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/sched_tiny/sched.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/syscall.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/timers.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/timers.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/usrscope/kernel.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/usrscope/usrinit.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="src/usrscope/usrinit.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="test/kstring/test_ksprintf.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="test/kstring/test_strnncat.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="test/kstring/test_uitoa32.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="test/kstring/test_uitoah32.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="test/universal/config/dev_config.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="test/universal/test_bitmap.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="test/universal/test_dtree.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="test/universal/test_heap.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="test/universal/test_kmalloc.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="test/universal/test_queue.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="test/universal/test_timers.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+      <item path="test/universal/test_tsched.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+        </cTool>
+      </item>
+    </conf>
+  </confs>
+</configurationDescriptor>

@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configurationDescriptor version="89">
+  <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
+    <df root="." name="zeke">
+      <df name="config">
+        <in>autoconf.h</in>
+      </df>
+      <df name="doc">
+      </df>
+      <df name="include">
+        <in>devtypes.h</in>
+        <in>errno.h</in>
+        <in>kernel.h</in>
+        <in>mutex.h</in>
+        <in>pthread.h</in>
+        <in>semaphore.h</in>
+        <in>syscall.h</in>
+        <in>syscalldef.h</in>
+        <in>types.h</in>
+        <in>unistd.h</in>
+      </df>
+      <df name="lib">
+        <df name="crt">
+          <df name="libaeabi-armv6-m">
+            <in>crt.S</in>
+            <in>divdi3.S</in>
+            <in>idiv.S</in>
+            <in>idivmod.S</in>
+            <in>lasr.S</in>
+            <in>ldivmod.S</in>
+            <in>llsl.S</in>
+            <in>llsr.S</in>
+            <in>lmul.S</in>
+            <in>memset.S</in>
+            <in>moddi3.S</in>
+            <in>modsi3.S</in>
+            <in>uidivmod.S</in>
+            <in>uldivmod.S</in>
+            <in>umoddi3.S</in>
+            <in>umodsi3.S</in>
+          </df>
+          <df name="libaeabi-armv6k">
+            <in>crt.S</in>
+            <in>divdi3.S</in>
+            <in>idiv.S</in>
+            <in>idivmod.S</in>
+            <in>lasr.S</in>
+            <in>ldivmod.S</in>
+            <in>llsl.S</in>
+            <in>llsr.S</in>
+            <in>lmul.S</in>
+            <in>memset.S</in>
+            <in>moddi3.S</in>
+            <in>modsi3.S</in>
+            <in>uidivmod.S</in>
+            <in>uldivmod.S</in>
+            <in>umoddi3.S</in>
+            <in>umodsi3.S</in>
+          </df>
+        </df>
+      </df>
+      <df name="modmakefiles">
+      </df>
+      <df name="pttk91">
+      </df>
+      <df name="src">
+        <df name="fs">
+          <in>dtree.c</in>
+          <in>dtree.h</in>
+          <in>fs.c</in>
+          <in>fs.h</in>
+        </df>
+        <df name="hal">
+          <df name="arm11">
+            <in>arm11.c</in>
+            <in>arm11.h</in>
+            <in>arm11_mmu.c</in>
+            <in>arm11_mmu.h</in>
+          </df>
+          <df name="arm9">
+            <in>arm9.h</in>
+          </df>
+          <df name="bcm2835">
+            <in>bcm2835_int_handlers.S</in>
+            <in>bcm2835_interrupt.c</in>
+            <in>bcm2835_interrupt.h</in>
+            <in>bcm2835_mmio.c</in>
+            <in>bcm2835_mmio.h</in>
+            <in>bcm2835_uart.c</in>
+            <in>startup_bcm2835.S</in>
+          </df>
+          <df name="cortex_m">
+            <in>cortex_m.c</in>
+            <in>cortex_m.h</in>
+          </df>
+          <df name="stm32f0">
+            <in>stm32f0_interrupt.c</in>
+            <in>stm32f0_interrupt.h</in>
+          </df>
+          <in>91x_conf.h</in>
+          <in>atag.c</in>
+          <in>atag.h</in>
+          <in>hal_core.h</in>
+          <in>hal_mcu.h</in>
+          <in>mmu.c</in>
+          <in>mmu.h</in>
+          <in>pu_test_core.h</in>
+          <in>sysinfo.c</in>
+          <in>sysinfo.h</in>
+          <in>uart.c</in>
+          <in>uart.h</in>
+        </df>
+        <df name="kerror_lastlog">
+          <in>kerror_last.c</in>
+          <in>kerror_last.h</in>
+        </df>
+        <df name="kerror_ttys">
+          <in>kerror_ttys.c</in>
+          <in>kerror_ttys.h</in>
+        </df>
+        <df name="kstring">
+          <in>ksprintf.c</in>
+          <in>memcpy.c</in>
+          <in>memset.c</in>
+          <in>strcmp.c</in>
+          <in>strcpy.c</in>
+          <in>strlenn.c</in>
+          <in>strncpy.c</in>
+          <in>strnncat.c</in>
+          <in>uitoa32.c</in>
+          <in>uitoah32.c</in>
+        </df>
+        <df name="sched_tiny">
+          <in>heap.c</in>
+          <in>heap.h</in>
+          <in>sched.c</in>
+        </df>
+        <df name="usrscope">
+          <in>kernel.c</in>
+          <in>usrinit.c</in>
+          <in>usrinit.h</in>
+        </df>
+        <in>bitmap.c</in>
+        <in>bitmap.h</in>
+        <in>dynmem.c</in>
+        <in>dynmem.h</in>
+        <in>kerror.h</in>
+        <in>kinit.c</in>
+        <in>kinit.h</in>
+        <in>kmalloc.c</in>
+        <in>kmalloc.h</in>
+        <in>ksignal.c</in>
+        <in>ksignal.h</in>
+        <in>kstring.h</in>
+        <in>locks.c</in>
+        <in>locks.h</in>
+        <in>process.c</in>
+        <in>process.h</in>
+        <in>ptmapper.c</in>
+        <in>ptmapper.h</in>
+        <in>queue.c</in>
+        <in>queue.h</in>
+        <in>sched.h</in>
+        <in>syscall.c</in>
+        <in>timers.c</in>
+        <in>timers.h</in>
+      </df>
+      <df name="test">
+        <df name="kstring">
+          <in>test_ksprintf.c</in>
+          <in>test_strnncat.c</in>
+          <in>test_uitoa32.c</in>
+          <in>test_uitoah32.c</in>
+        </df>
+        <df name="punit">
+        </df>
+        <df name="universal">
+          <df name="config">
+            <in>dev_config.h</in>
+          </df>
+          <in>test_bitmap.c</in>
+          <in>test_dtree.c</in>
+          <in>test_heap.c</in>
+          <in>test_kmalloc.c</in>
+          <in>test_queue.c</in>
+          <in>test_timers.c</in>
+          <in>test_tsched.c</in>
+        </df>
+      </df>
+      <df name="tools">
+      </df>
+    </df>
+  </logicalFolder>
+  <projectmakefile>Makefile</projectmakefile>
+  <confs>
+    <conf name="Default" type="0">
+      <toolsSet>
+        <developmentServer>localhost</developmentServer>
+        <platform>2</platform>
+      </toolsSet>
+      <compile>
+        <compiledirpicklist>
+          <compiledirpicklistitem>.</compiledirpicklistitem>
+          <compiledirpicklistitem>${AUTO_FOLDER}</compiledirpicklistitem>
+        </compiledirpicklist>
+        <compiledir>${AUTO_FOLDER}</compiledir>
+        <compilecommandpicklist>
+          <compilecommandpicklistitem>${MAKE} ${ITEM_NAME}.o</compilecommandpicklistitem>
+          <compilecommandpicklistitem>${AUTO_COMPILE}</compilecommandpicklistitem>
+        </compilecommandpicklist>
+        <compilecommand>${AUTO_COMPILE}</compilecommand>
+      </compile>
+      <dbx_gdbdebugger version="1">
+        <gdb_pathmaps>
+        </gdb_pathmaps>
+        <gdb_interceptlist>
+          <gdbinterceptoptions gdb_all="false" gdb_unhandled="true" gdb_unexpected="true"/>
+        </gdb_interceptlist>
+        <gdb_options>
+          <DebugOptions>
+          </DebugOptions>
+        </gdb_options>
+        <gdb_buildfirst gdb_buildfirst_overriden="false" gdb_buildfirst_old="false"/>
+      </dbx_gdbdebugger>
+      <nativedebugger version="1">
+        <engine>gdb</engine>
+      </nativedebugger>
+      <runprofile version="9">
+        <runcommandpicklist>
+          <runcommandpicklistitem>"${OUTPUT_PATH}"</runcommandpicklistitem>
+        </runcommandpicklist>
+        <runcommand>"${OUTPUT_PATH}"</runcommand>
+        <rundir>.</rundir>
+        <buildfirst>false</buildfirst>
+        <terminal-type>0</terminal-type>
+        <remove-instrumentation>0</remove-instrumentation>
+        <environment>
+        </environment>
+      </runprofile>
+    </conf>
+  </confs>
+</configurationDescriptor>

@@ -232,7 +232,18 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec)
 
 /* Mutex Management ***********************************************************
  * NOTE: osMutexId/mutex_id is a direct pointer to a os_mutex_cb structure.
+ * POSIX compliant functions for mutex are: 
+ * pthread_mutex_init(mutex,attr)
+ * pthread_mutex_destroy(mutex)
+ * 
+ * pthread_mutexattr_init(attr)
+ * pthread_mutexattr_destroy(attr)
+ * 
+ * pthread_mutex_lock(mutex) - Thread will become blocked
+ * pthread_mutex_unlock(mutex)
+ * pthread_mutex_trylock(mutex) - Thread will not be blocked
  */
+/** TODO Should these functions be renamed?*/
 
 /** TODO implement sleep strategy */
 
