@@ -44,6 +44,7 @@ enum os_mutex_strategy {
  * Mutex control block
  */
 typedef struct os_mutex_cb {
+    mutex_cb_t * mutex; /*Pointer to the mutex address. IS THIS LEGAL?*/
     volatile int thread_id; /*!< ID of the thread holding the lock */
     volatile int lock; /*!< Lock variable */
     enum os_mutex_strategy strategy; /*!< Locking strategy */

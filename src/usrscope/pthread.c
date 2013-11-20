@@ -75,3 +75,79 @@ pthread_t pthread_self(void)
 /**
   * @}
   */
+
+/** @addtogroup Mutex
+  * @{
+  */
+
+/* Mutex Management ***********************************************************
+ * NOTE: osMutexId/mutex_id is a direct pointer to a os_mutex_cb structure.
+ * POSIX compliant functions for mutex are: 
+ * pthread_mutex_init(mutex,attr)
+ * pthread_mutex_destroy(mutex)
+ * 
+ * pthread_mutexattr_init(attr)
+ * pthread_mutexattr_destroy(attr)
+ * 
+ * pthread_mutex_lock(mutex) - Thread will become blocked
+ * pthread_mutex_unlock(mutex)
+ * pthread_mutex_trylock(mutex) - Thread will not be blocked
+ */
+/** TODO Should these functions be renamed?*/
+
+/** TODO Add headers to pthreads.h! */
+
+mutex_cb_t pthread_mutex_init(mutex_cb_t * mutex, osMutexDef_t *mutex_def)
+{
+    /*TODO What about the parameter osMutexDef_t?*/
+    mutex_cb_t cb = {
+        .mutex     = mutex
+        .thread_id = pthread_self,
+        .lock      = 0,
+        .strategy  = mutex_def->strategy
+    };
+
+    return cb;
+}
+
+int pthread_mutex_lock(mutex_cb_t * mutex) 
+{
+    if (mutex->lock == 0)
+    {
+        mutex->lock = 1;
+        mutex->thread_id = pthread_self();
+        return 0;
+    }
+    /*Should we request context switch if not succesful?*/
+    return 1;
+    
+}
+
+int pthread_mutex_trylock(mutex_cb_t * mutex)
+{
+    int result;
+    /*TODO Check if this really works like this!*/
+
+    result = (int)syscall(SYSCALL_MUTEX_TEST_AND_SET, (void*)(&(mutex->lock)));
+    if (result == 0) 
+    {
+        mutex->thread_id = pthread_self();
+        return 0;
+    }
+    /*Should we request context switch if not succesful?*/
+    return 1;
+}
+
+int pthread_mutex_unlock(mutex_cb_t * mutex)
+{
+    if (mutex->thread_id == pthread_self()) 
+    {
+        mutex->lock = 0;
+        return 0;
+    }
+    return 1;
+}
+
+/**
+  * @}
+  */
