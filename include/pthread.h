@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Threads.
  * @section LICENSE
+ * Copyright (c) 2013 Joni Hauhia <joni.hauhia@cs.helsinki.fi>
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -68,6 +69,10 @@ int pthread_create(pthread_t * thread, const pthread_attr_t * attr,
         void * (*start_routine)(void *), void * arg);
 
 /*TODO Add comments to mutex headers*/
+enum os_mutex_strategy {
+    os_mutex_str_reschedule,
+    os_mutex_str_sleep
+};
 
 typedef struct os_mutex_cb {
     mutex_cb_t * mutex; /*Pointer to the mutex address. IS THIS LEGAL?*/
