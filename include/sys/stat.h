@@ -58,6 +58,24 @@ struct stat {
                                 may vary from file to file. */
     blkcnt_t  st_blocks;  /*!< Number of blocks allocated for this object. */
 };
+
+/*
+int chmod(const char *, mode_t);
+int fchmod(int, mode_t);
+int fstat(int, struct stat *);
+int lstat(const char *restrict, struct stat *restrict);
+int mkdir(const char *, mode_t);
+int mkfifo(const char *, mode_t);
+int mknod(const char *, mode_t, dev_t);
+int stat(const char *restrict, struct stat *restrict);
+mode_t umask(mode_t);
+*/
+
+/* Extensions to POSIX */
+
+int mount(const char * mount_point, const char * fsname, uint32_t mode,
+        int parm_len, char * parm);
+
 #endif /* STAT_H */
 
 /**

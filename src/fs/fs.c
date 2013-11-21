@@ -164,6 +164,10 @@ uint32_t fs_syscall(uint32_t type, void * p)
         current_thread->errno = ENOSYS;
         return -16;
 
+    case SYSCALL_FS_MOUNT:
+        current_thread->errno = ENOSYS;
+        return -17;
+
     default:
         return (uint32_t)NULL;
     }

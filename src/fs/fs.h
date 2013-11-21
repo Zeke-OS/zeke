@@ -102,15 +102,16 @@ typedef struct file {
  */
 typedef struct {
     char fsname[8];
-    struct fs_superblock * (*mount)(vnode_t * vnode, char * mpoint, uint32_t mode);
-    int (*umount)(struct fs_superblock * fs);
+    struct fs_superblock * (*mount)(char * mpoint, uint32_t mode,
+            int parm_len, char * parm);
+    int (*umount)(struct fs_superblock * fs_sb);
 } fs_t;
 
 /**
  * File system superblock.
  */
 typedef struct fs_superblock {
-    char fsname[8];
+    fs_t * fs;
     uint32_t mode_flags; /*!< Mount mode flags */
     vnode_t * root; /*!< Root of this fs mount. */
     int (*lookup_vnode)(vnode_t * vnode, char * str);
