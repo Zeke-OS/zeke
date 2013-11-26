@@ -68,15 +68,15 @@ static char * test_remove()
     node2 = dtree_create_node(node1, "ab", 1);
     node3 = dtree_create_node(node1, "cd", 0);
 
-    retval = dtree_lookup("/usr/cd");
+    retval = dtree_lookup("/usr/cd", DTREE_LOOKUP_MATCH);
     pu_assert_ptr_equal("Got cd node", retval, node3);
 
     for (i = 0; i < 2; i++) {
-        retval = dtree_lookup("/usr/ab");
+        retval = dtree_lookup("/usr/ab", DTREE_LOOKUP_MATCH);
         pu_assert_ptr_equal("Got ab node", retval, node2);
         pu_assert_str_equal("Name equals expected", retval->fname, "ab");
 
-        retval = dtree_lookup("/usr/cd");
+        retval = dtree_lookup("/usr/cd", DTREE_LOOKUP_ANY);
         pu_assert("Got some node for non-persistent cache entry", retval != 0);
 
         dtree_remove_node(node1, 0);
@@ -97,15 +97,18 @@ static char * test_collision()
     node1 = dtree_create_node(&dtree_root, "usr", 0);
     node2 = dtree_create_node(node1, "ab", 0);
 
-    retval = dtree_lookup("/usr/ab");
+    retval = dtree_lookup("/usr/ab", DTREE_LOOKUP_MATCH);
     pu_assert_ptr_equal("Got ab node", retval, node2);
 
     node3 = dtree_create_node(node1, "aab", 0);
 
-    retval = dtree_lookup("/usr/ab");
-    pu_assert("No more ab node", retval != node2);
+    retval = dtree_lookup("/usr/ab", DTREE_LOOKUP_ANY);
+    pu_assert("Lookup doesn't return ab node anymore", retval != node2);
 
-    retval = dtree_lookup("/usr/aab");
+    retval = dtree_lookup("/usr/ab", DTREE_LOOKUP_MATCH);
+    pu_assert_ptr_equal("Lookup should return zero", retval, 0);
+
+    retval = dtree_lookup("/usr/aab", DTREE_LOOKUP_ANY);
     pu_assert_ptr_equal("Got aab node", retval, node3);
 
     return 0;

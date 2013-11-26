@@ -43,6 +43,14 @@
 
 #define DTREE_HTABLE_SIZE   16 /*!< Node hash table size, should be 2^n. */
 
+/* Node persist params */
+#define DTREE_NODE_NORM     0
+#define DTREE_NODE_PERS     1
+
+/* Lookup match params */
+#define DTREE_LOOKUP_ANY    0
+#define DTREE_LOOKUP_MATCH  1
+
 typedef struct dtree_node {
     char * fname; /*!< Pointer to the name of this node. */
     vnode_t vnode;
@@ -59,6 +67,7 @@ extern dtree_node_t dtree_root;
 
 dtree_node_t * dtree_create_node(dtree_node_t * parent, char * fname, int persist);
 int dtree_remove_node(dtree_node_t * node, int dpers);
+dtree_node_t * dtree_lookup(char * path, int match);
 
 #endif /* DTREE_H */
 

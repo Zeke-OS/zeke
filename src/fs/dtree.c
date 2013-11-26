@@ -209,7 +209,7 @@ size_t path_compare(char * fname, char * path, size_t offset)
     return 0;
 }
 
-dtree_node_t * dtree_lookup(char * path)
+dtree_node_t * dtree_lookup(char * path, int match)
 {
     size_t i, k, prev_k;
     size_t hash;
@@ -220,10 +220,12 @@ dtree_node_t * dtree_lookup(char * path)
 
     retval = &dtree_root;
     k = 0;
-    while (path[++k] != '\0') {
+    while (path[k] != '\0') {
+        if (path[++k] == '\0')
+            break;
         prev_k = k;
 
-        /* First look from child htable */
+        /* First lookup from child htable */
         i = k;
         while (path[i] != '\0' && path[i] != '/') { i++; }
         hash = hash_fname(&(path[k]), i - k);
@@ -237,7 +239,7 @@ dtree_node_t * dtree_lookup(char * path)
             }
         }
 
-        /* if no hit, then from pchild array */
+        /* if no hit, then lookup from pchild array */
         for (i = 0; i < DTREE_HTABLE_SIZE; i++) {
             if (retval->pchild[i] != 0) {
                 k = path_compare(retval->pchild[i]->fname, path, k);
@@ -247,7 +249,11 @@ dtree_node_t * dtree_lookup(char * path)
                 }
             }
         }
+
+        /* No exact match */
         if (k == 0 || k == prev_k) {
+            if (match == DTREE_LOOKUP_MATCH)
+                retval = 0; /* Requested exact match. */
             break;
         }
     }
