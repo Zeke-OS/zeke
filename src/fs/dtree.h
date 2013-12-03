@@ -67,7 +67,8 @@ extern dtree_node_t dtree_root;
 
 dtree_node_t * dtree_create_node(dtree_node_t * parent, char * fname, int persist);
 int dtree_remove_node(dtree_node_t * node, int dpers);
-dtree_node_t * dtree_lookup(char * path, int match);
+dtree_node_t * dtree_lookup(const char * path, int match);
+char * dtree_getpath(const dtree_node_t * dnode);
 
 #endif /* DTREE_H */
 

@@ -41,23 +41,29 @@
 #include <stdlib.h>
 #define kmalloc malloc
 #define kfree free
+#define krealloc realloc
+#define strnncat(dst, dsz, src, ssz) strcat(dst, src)
+#define ksprintf(dest, max, fmt, ...) sprintf(dest, fmt, __VA_ARGS__)
 #endif
 #include <kstring.h>
 #include "dtree.h"
 
 #ifndef PU_TEST_BUILD
 #define DESTROY_PREFIX static void
+#define PATHCOMP_PREFIX static size_t
 #else
 #define DESTROY_PREFIX void
+#define PATHCOMP_PREFIX size_t
 #endif
 DESTROY_PREFIX dtree_destroy_node(dtree_node_t * node);
-static size_t hash_fname(char * fname, size_t len);
+static size_t hash_fname(const char * fname, size_t len);
+PATHCOMP_PREFIX path_compare(const char * fname, const char * path, size_t offset);
 static void cond_truncate(void);
 
 #ifndef PU_TEST_BUILD
 #define DT_SIZE_MAX configFS_CACHE_MAX
 #else
-#define DT_SIZE_MAX 200
+#define DT_SIZE_MAX 4096
 #endif
 static int dt_size = 0; /*!< Size of dtree ignoring fnames. */
 
@@ -80,7 +86,6 @@ dtree_node_t * dtree_create_node(dtree_node_t * parent, char * fname, int persis
     dtree_node_t * nnode = 0;
     char * nname;
     int nlen;
-    size_t i;
 
     if (parent == 0) {
         goto out;
@@ -93,7 +98,7 @@ dtree_node_t * dtree_create_node(dtree_node_t * parent, char * fname, int persis
     if (nnode == 0)
         goto out;
 
-    nlen = strlenn(fname, 255);
+    nlen = strlenn(fname, FS_FILENAME_MAX);
     nname = kmalloc(nlen);
     if (nname == 0)
         goto free_nnode;
@@ -109,6 +114,8 @@ dtree_node_t * dtree_create_node(dtree_node_t * parent, char * fname, int persis
 
     /* Add as a child of parent */
     if (persist) {
+        size_t i;
+        /* TODO relallocatable persist table */
         for (i = 0; i < DTREE_HTABLE_SIZE; i++) {
             if (parent->pchild[i] == 0) {
                 parent->pchild[i] = nnode;
@@ -195,7 +202,7 @@ DESTROY_PREFIX dtree_destroy_node(dtree_node_t * node)
     dt_size -= sizeof(dtree_node_t);
 }
 
-size_t path_compare(char * fname, char * path, size_t offset)
+PATHCOMP_PREFIX path_compare(const char * fname, const char * path, size_t offset)
 {
     size_t i = 0;
 
@@ -209,7 +216,12 @@ size_t path_compare(char * fname, char * path, size_t offset)
     return 0;
 }
 
-dtree_node_t * dtree_lookup(char * path, int match)
+/**
+ * Lookup for cached directory entry.
+ * @param path       Lookup for this path.
+ * @param match      DTREE_LOOKUP_MATCH or DTREE_LOOKUP_ANY
+ */
+dtree_node_t * dtree_lookup(const char * path, int match)
 {
     size_t i, k, prev_k;
     size_t hash;
@@ -262,7 +274,69 @@ out:
     return retval;
 }
 
-static size_t hash_fname(char * fname, size_t len)
+/**
+ * Get full path name of dnode.
+ * @param dnode is the node to be resolved.
+ * @return kmalloced string or zero in case of OOM.
+ */
+char * dtree_getpath(const dtree_node_t * dnode)
+{
+    char * path = 0;
+    char * tmp_path = 0;
+    static char tmp_fname[FS_FILENAME_MAX];
+    dtree_node_t * node = dnode;
+    size_t len = 0;
+    size_t i;
+
+    if (dnode == 0)
+        goto out;
+
+    do {
+        len += strlenn(node->fname, FS_FILENAME_MAX) + 1;
+        tmp_path = krealloc(tmp_path, len + 2);
+        if (tmp_path == 0) {
+            goto out;
+        }
+
+        ksprintf(tmp_fname, FS_FILENAME_MAX, "%s/", node->fname);
+        strnncat(tmp_path, FS_FILENAME_MAX, tmp_fname, FS_FILENAME_MAX);
+
+        node = node->parent;
+    } while (strcmp(node->fname, "/"));
+
+    tmp_path[len] = '\0';
+    path = kmalloc(len + 1);
+    if (path == 0) {
+        kfree(tmp_path);
+        goto out;
+    }
+
+    path[0] = '/';
+    if (len == 2) { /* If path is root */
+        path[1] = '\0';
+        goto fr_tmp_path;
+    }
+    i = len - 1;
+    len = 1;
+    do {
+        size_t k;
+        size_t n = 0;
+
+        do {
+            n++;
+        } while (tmp_path[--i] != '/' && i != 0);
+        k = (tmp_path[i] == '/') ? i + 1 : i;
+        strncpy(path + len, tmp_path + k, n);
+        len += n;
+    } while (i != 0);
+
+fr_tmp_path:
+    kfree(tmp_path);
+out:
+    return path;
+}
+
+static size_t hash_fname(const char * fname, size_t len)
 {
     /* TODO larger hash space if DTREE_HTABLE_SIZE > sizeof char */
     size_t hash = (fname[0] ^ fname[len - 1]) & (DTREE_HTABLE_SIZE - 1);

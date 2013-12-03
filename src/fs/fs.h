@@ -44,8 +44,10 @@
 #include <syscalldef.h>
 #include <devtypes.h>
 
-#define FS_FLAG_INIT       0x01 /*!< Filse system initialized. */
-#define FS_FLAG_FAIL       0x08 /*!< File system has failed. */
+#define FS_FLAG_INIT        0x01 /*!< Filse system initialized. */
+#define FS_FLAG_FAIL        0x08 /*!< File system has failed. */
+
+#define FS_FILENAME_MAX     255 /*!< Maximum file name length. */
 
 /* Some macros for use with flags *********************************************/
 /**
@@ -102,7 +104,7 @@ typedef struct file {
  */
 typedef struct {
     char fsname[8];
-    struct fs_superblock * (*mount)(char * mpoint, uint32_t mode,
+    struct fs_superblock * (*mount)(const char * mpoint, uint32_t mode,
             int parm_len, char * parm);
     int (*umount)(struct fs_superblock * fs_sb);
 } fs_t;
@@ -136,7 +138,7 @@ typedef struct file_ops {
     int (*link)(vnode_t * oldvnode, vnode_t * dir, const char * name, int name_len);
     int (*unlink)(vnode_t * dir, const char * name, int name_len);
     int (*mkdir)(vnode_t * dir,  const char * name, int name_len);
-    int (*rmdir) (vnode_t * dir,  const char * name, int name_len);
+    int (*rmdir)(vnode_t * dir,  const char * name, int name_len);
     //int (*readdir)(vnode_t * dir, int offset, struct dirent * d);
     /* Operations specified for any file type */
     int (*stat)(vnode_t * vnode, struct stat * buf);

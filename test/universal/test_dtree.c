@@ -23,8 +23,6 @@ static void teardown()
 
 static char * test_path_compare(void)
 {
-    //size_t path_compare(char * fname, char * path, size_t offset)
-
     pu_assert("Path equals", path_compare("base", "/base/node", 1) != 0);
     pu_assert("Path equals", path_compare("child", "/base/node/child", 11) != 0);
 
@@ -52,6 +50,48 @@ static char * test_create(void)
     pu_assert_ptr_equal("New node is a child of root", tnode, node);
 
     dtree_destroy_node(node);
+
+    return 0;
+}
+
+static char * test_getpath()
+{
+    dtree_node_t * node1;
+    dtree_node_t * node2;
+    char * path;
+
+    node1 = dtree_create_node(&dtree_root, "usr", 1);
+    node2 = dtree_create_node(node1, "ab", 1);
+
+    path = dtree_getpath(node2);
+    pu_assert_str_equal("Path equals expected", path, "/usr/ab");
+    free(path);
+
+    path = dtree_getpath(&dtree_root);
+    pu_assert_str_equal("Path equals expected", path, "/");
+    free(path);
+
+    return 0;
+}
+
+static char * test_lookup()
+{
+    dtree_node_t * node1;
+    dtree_node_t * node2;
+    dtree_node_t * retval;
+    const char path[] = "/usr/ab";
+
+    node1 = dtree_create_node(&dtree_root, "usr", 0);
+    node2 = dtree_create_node(node1, "ab", 1);
+
+    retval = dtree_lookup("/", DTREE_LOOKUP_MATCH);
+    pu_assert_str_equal("Got / node", retval->fname, "/");
+
+    retval = dtree_lookup(path, DTREE_LOOKUP_MATCH);
+    pu_assert_ptr_equal("Got ab node", retval, node2);
+    pu_assert_str_equal("Name equals expected", retval->fname, "ab");
+
+    dtree_remove_node(node1, DTREE_NODE_PERS);
 
     return 0;
 }
@@ -117,6 +157,8 @@ static char * test_collision()
 static void all_tests() {
     pu_def_test(test_create, PU_RUN);
     pu_def_test(test_path_compare, PU_RUN);
+    pu_def_test(test_getpath, PU_RUN);
+    pu_def_test(test_lookup, PU_RUN);
     pu_def_test(test_remove, PU_RUN);
     pu_def_test(test_collision, PU_RUN);
 }
