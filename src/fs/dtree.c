@@ -43,7 +43,7 @@
 #define kfree free
 #define krealloc realloc
 #define strnncat(dst, dsz, src, ssz) strcat(dst, src)
-#define ksprintf(dest, max, fmt, ...) sprintf(dest, fmt, __VA_ARGS__)
+#define ksprintf(dest, max, fmt, ...) snprintf(dest, max, fmt, __VA_ARGS__)
 #endif
 #include <kstring.h>
 #include "dtree.h"
@@ -58,7 +58,7 @@
 DESTROY_PREFIX dtree_destroy_node(dtree_node_t * node);
 static size_t hash_fname(const char * fname, size_t len);
 PATHCOMP_PREFIX path_compare(const char * fname, const char * path, size_t offset);
-static void cond_truncate(void);
+static void cond_truncate(int change);
 
 #ifndef PU_TEST_BUILD
 #define DT_SIZE_MAX configFS_CACHE_MAX
@@ -85,7 +85,7 @@ dtree_node_t * dtree_create_node(dtree_node_t * parent, char * fname, int persis
 {
     dtree_node_t * nnode = 0;
     char * nname;
-    int nlen;
+    size_t nsize;
 
     if (parent == 0) {
         goto out;
@@ -98,15 +98,15 @@ dtree_node_t * dtree_create_node(dtree_node_t * parent, char * fname, int persis
     if (nnode == 0)
         goto out;
 
-    nlen = strlenn(fname, FS_FILENAME_MAX);
-    nname = kmalloc(nlen);
+    nsize = strlenn(fname, FS_FILENAME_MAX) + 1;
+    nname = kmalloc(nsize);
     if (nname == 0)
         goto free_nnode;
 
-    cond_truncate();
+    cond_truncate(sizeof(dtree_node_t) + nsize);
 
     /* Initialize the new node */
-    memcpy(nname, fname, nlen);
+    memcpy(nname, fname, nsize);
     nnode->fname = nname;
     nnode->parent = parent;
     memset(nnode->pchild, 0, DTREE_HTABLE_SIZE);
@@ -124,7 +124,7 @@ dtree_node_t * dtree_create_node(dtree_node_t * parent, char * fname, int persis
         }
         parent->persist++;
     } else {
-        size_t hash = hash_fname(fname, nlen);
+        size_t hash = hash_fname(fname, nsize - 1);
         if (parent->child[hash] != 0) {
             dtree_remove_node(parent->child[hash], 1);
         }
@@ -157,7 +157,7 @@ int dtree_remove_node(dtree_node_t * node, int dpers)
     }
 
     for (i = 0; i < DTREE_HTABLE_SIZE; i++) {
-        if (dpers) dtree_remove_node(node->child[i], 1);
+        if (dpers) (void)dtree_remove_node(node->child[i], 1);
         retval = dtree_remove_node(node->child[i], dpers);
     }
 
@@ -192,14 +192,18 @@ out:
  */
 DESTROY_PREFIX dtree_destroy_node(dtree_node_t * node)
 {
+    size_t nsize = 0;
+
     if (node == 0)
         return;
 
-    if (node->fname != 0)
+    if (node->fname != 0) {
+        nsize = strlenn(node->fname, FS_FILENAME_MAX) + 1;
         kfree(node->fname);
+    }
     kfree(node);
 
-    dt_size -= sizeof(dtree_node_t);
+    cond_truncate(-(sizeof(dtree_node_t) + nsize));
 }
 
 PATHCOMP_PREFIX path_compare(const char * fname, const char * path, size_t offset)
@@ -230,8 +234,8 @@ dtree_node_t * dtree_lookup(const char * path, int match)
     if (path[0] != '/')
         goto out;
 
-    retval = &dtree_root;
     k = 0;
+    retval = &dtree_root;
     while (path[k] != '\0') {
         if (path[++k] == '\0')
             break;
@@ -240,7 +244,7 @@ dtree_node_t * dtree_lookup(const char * path, int match)
         /* First lookup from child htable */
         i = k;
         while (path[i] != '\0' && path[i] != '/') { i++; }
-        hash = hash_fname(&(path[k]), i - k);
+        hash = hash_fname(path + k, i - k);
         if (retval->child[hash] != 0) {
             size_t j;
             j = path_compare(retval->child[hash]->fname, path, k);
@@ -298,7 +302,7 @@ char * dtree_getpath(const dtree_node_t * dnode)
             goto out;
         }
 
-        ksprintf(tmp_fname, FS_FILENAME_MAX, "%s/", node->fname);
+        (void)ksprintf(tmp_fname, FS_FILENAME_MAX, "%s/", node->fname);
         strnncat(tmp_path, FS_FILENAME_MAX, tmp_fname, FS_FILENAME_MAX);
 
         node = node->parent;
@@ -339,16 +343,24 @@ out:
 static size_t hash_fname(const char * fname, size_t len)
 {
     /* TODO larger hash space if DTREE_HTABLE_SIZE > sizeof char */
-    size_t hash = (fname[0] ^ fname[len - 1]) & (DTREE_HTABLE_SIZE - 1);
+    size_t hash = (size_t)(fname[0] ^ fname[len - 1]) & (size_t)(DTREE_HTABLE_SIZE - 1);
 
     return hash;
 }
 
-static void cond_truncate(void)
+static void cond_truncate(int change)
 {
-    dt_size += sizeof(dtree_node_t);
-    if (dt_size > DT_SIZE_MAX) {
-        dtree_remove_node(&dtree_root, 0);
+    if (change > 0) {
+        dt_size += change;
+    }
+    if (change >= 0) {
+#ifndef PU_TEST_BUILD
+        if (dt_size > DT_SIZE_MAX) {
+            dtree_remove_node(&dtree_root, 0);
+        }
+#endif
+    } else if (change < 0) {
+        dt_size -= change;
     }
 }
 

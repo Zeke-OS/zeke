@@ -87,6 +87,9 @@ static char * test_lookup()
     retval = dtree_lookup("/", DTREE_LOOKUP_MATCH);
     pu_assert_str_equal("Got / node", retval->fname, "/");
 
+    retval = dtree_lookup("/usr", DTREE_LOOKUP_MATCH);
+    pu_assert_str_equal("Got usr node", retval->fname, "usr");
+
     retval = dtree_lookup(path, DTREE_LOOKUP_MATCH);
     pu_assert_ptr_equal("Got ab node", retval, node2);
     pu_assert_str_equal("Name equals expected", retval->fname, "ab");
