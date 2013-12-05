@@ -67,6 +67,9 @@ static void cond_truncate(int change);
 #endif
 static int dt_size = 0; /*!< Size of dtree ignoring fnames. */
 
+/**
+ * Root node.
+ */
 dtree_node_t dtree_root = {
     .fname = "/", /* Special case, any other fname should not contain '/'. */
     .parent = &dtree_root, /* In POSIX "/" is parent of itself. */
@@ -206,6 +209,13 @@ DESTROY_PREFIX dtree_destroy_node(dtree_node_t * node)
     cond_truncate(-(sizeof(dtree_node_t) + nsize));
 }
 
+/**
+ * Compare if fname equals substring of path marked by offset and '/'.
+ * @param fname is a normal null terminated string.
+ * @param path  is a full slash separated path string.
+ * @param offset is the comparison offset.
+ * @return Returns next offset value or 0 if strings differ.
+ */
 PATHCOMP_PREFIX path_compare(const char * fname, const char * path, size_t offset)
 {
     size_t i = 0;
@@ -283,7 +293,7 @@ out:
  * @param dnode is the node to be resolved.
  * @return kmalloced string or zero in case of OOM.
  */
-char * dtree_getpath(const dtree_node_t * dnode)
+char * dtree_getpath(dtree_node_t * dnode)
 {
     char * path = 0;
     char * tmp_path = 0;
@@ -340,14 +350,26 @@ out:
     return path;
 }
 
-static size_t hash_fname(const char * fname, size_t len)
+/**
+ * Hash function.
+ * @param str is the string to be hashed.
+ * @param len is the length of str without '\0'.
+ * @return Hash value.
+ */
+static size_t hash_fname(const char * str, size_t len)
 {
     /* TODO larger hash space if DTREE_HTABLE_SIZE > sizeof char */
-    size_t hash = (size_t)(fname[0] ^ fname[len - 1]) & (size_t)(DTREE_HTABLE_SIZE - 1);
+    size_t hash = (size_t)(str[0] ^ str[len - 1]) & (size_t)(DTREE_HTABLE_SIZE - 1);
 
     return hash;
 }
 
+/**
+ * Calculate new cache total memory usage and check if cache needs to be
+ * truncated.
+ * @TODO usage stats based discard...
+ * @param change is the change in bytes to total cache size.
+ */
 static void cond_truncate(int change)
 {
     if (change > 0) {
