@@ -48,8 +48,8 @@
 #define DTREE_NODE_PERS     1
 
 /* Lookup match params */
-#define DTREE_LOOKUP_ANY    0
-#define DTREE_LOOKUP_MATCH  1
+#define DTREE_LOOKUP_MATCH_ANY      0
+#define DTREE_LOOKUP_MATCH_EXACT    1
 
 typedef struct dtree_node {
     char * fname; /*!< Pointer to the name of this node. */
@@ -60,12 +60,14 @@ typedef struct dtree_node {
                                                    *   in a hash table. */
     size_t persist; /*!< Number of persisted entries. If 0 this node can be
                      * discarded freely if necessary. Can be increment by one
-                     * to make sure the node is always pesisted. (eg. root) */
+                     * to make sure the node is always pesisted. (eg. root)
+                     * This value can be also used as a refcount. */
 } dtree_node_t;
 
 extern dtree_node_t dtree_root;
 
 dtree_node_t * dtree_create_node(dtree_node_t * parent, char * fname, int persist);
+void dtree_discard_node(dtree_node_t * node);
 int dtree_remove_node(dtree_node_t * node, int dpers);
 dtree_node_t * dtree_lookup(const char * path, int match);
 char * dtree_getpath(dtree_node_t * dnode);

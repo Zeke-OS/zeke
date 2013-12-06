@@ -118,7 +118,7 @@ dtree_node_t * dtree_create_node(dtree_node_t * parent, char * fname, int persis
     /* Add as a child of parent */
     if (persist) {
         size_t i;
-        /* TODO relallocatable persist table */
+        /* TODO reallocatable persist table */
         for (i = 0; i < DTREE_HTABLE_SIZE; i++) {
             if (parent->pchild[i] == 0) {
                 parent->pchild[i] = nnode;
@@ -141,6 +141,23 @@ free_nnode:
     nnode = 0;
 out:
     return nnode;
+}
+
+/**
+ * Discards a dtree node reference.
+ * @param node is a dtree node reference.
+ */
+void dtree_discard_node(dtree_node_t * node)
+{
+    /* Decrement persist count */
+    if (node->persist <= 1) {
+        node->persist = 0;
+        /* This can be safely done, however it's not the most clever way to
+         * truncate. */
+        //dtree_remove_node(node, DTREE_NODE_NORM);
+    } else {
+        node->persist--;
+    }
 }
 
 /**
@@ -278,13 +295,15 @@ dtree_node_t * dtree_lookup(const char * path, int match)
 
         /* No exact match */
         if (k == 0 || k == prev_k) {
-            if (match == DTREE_LOOKUP_MATCH)
+            if (match == DTREE_LOOKUP_MATCH_EXACT)
                 retval = 0; /* Requested exact match. */
             break;
         }
     }
 
 out:
+    if (retval != 0)
+        retval->persist++; /* refcount */
     return retval;
 }
 
