@@ -84,7 +84,7 @@ typedef struct {
     size_t len;         /*!< Length of file. */
     size_t mutex;
     mode_t mode;        /*!< File type part of st_mode sys/stat.h */
-    struct fs_superblock_t;
+    struct fs_superblock * sb;
     struct vnode_ops * vnode_ops;
     /* TODO wait queue here */
 } vnode_t;
@@ -117,7 +117,7 @@ typedef struct fs_superblock {
     uint32_t mode_flags; /*!< Mount mode flags */
     vnode_t * root; /*!< Root of this fs mount. */
     int (*lookup_vnode)(vnode_t * vnode, char * str);
-    int (*lookup_file)(char * str, vnode_t * file);
+    int (*lookup_file)(char * str, vnode_t * vnode);
     int (*delete_vnode)(vnode_t * vnode);
 } fs_superblock_t;
 
