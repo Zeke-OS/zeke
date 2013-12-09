@@ -169,7 +169,7 @@ void dllist_insert_after(struct llist * lst, void * node, void * new_node)
         lst->tail = new_node;
     else
         LISTDSC(old_dsc->next)->prev = new_node;
-    old_dsc->next = node;
+    old_dsc->next = new_node;
 
     lst->count += 1;
 }

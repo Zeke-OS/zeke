@@ -41,7 +41,7 @@
  * Create a new doubly linked list.
  * @param type is the type of nodes in this list.
  */
-#define dllist_create(type) _dllist_create(offsetof(type, llist_node))
+#define dllist_create(type, llist) _dllist_create(offsetof(type, llist))
 
 llist_t * _dllist_create(size_t offset);
 
