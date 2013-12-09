@@ -280,7 +280,7 @@ PATHCOMP_PREFIX path_compare(const char * fname, const char * path, size_t offse
 /**
  * Lookup for cached directory entry.
  * @param path       Lookup for this path.
- * @param match      DTREE_LOOKUP_MATCH or DTREE_LOOKUP_ANY
+ * @param match      DTREE_LOOKUP_MATCH_EXACT or DTREE_LOOKUP_MATCH_ANY
  */
 dtree_node_t * dtree_lookup(const char * path, int match)
 {
@@ -349,7 +349,7 @@ char * dtree_getpath(dtree_node_t * dnode)
 
     do {
         len += strlenn(node->fname, FS_FILENAME_MAX) + 1;
-        /* TODO Optimize */
+        /* TODO Optimize memory allocations. */
         tmp_path = krealloc(tmp_path, len + 2);
         if (tmp_path == 0) {
             goto out;
@@ -402,7 +402,11 @@ out:
 static size_t hash_fname(const char * str, size_t len)
 {
     /* TODO larger hash space if DTREE_HTABLE_SIZE > sizeof char */
+#if DTREE_HTABLE_SIZE == 16
     size_t hash = (size_t)(str[0] ^ str[len - 1]) & (size_t)(DTREE_HTABLE_SIZE - 1);
+#else
+#error No suitable hash function for selected DTREE_HTABLE_SIZE.
+#endif
 
     return hash;
 }
