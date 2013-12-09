@@ -40,6 +40,7 @@
 #define DTREE_H
 
 #include <fs/fs.h>
+#include <generic/dllist.h>
 
 #define DTREE_HTABLE_SIZE   16 /*!< Node hash table size, should be 2^n. */
 
@@ -55,13 +56,13 @@ typedef struct dtree_node {
     char * fname; /*!< Pointer to the name of this node. */
     vnode_t vnode;
     struct dtree_node * parent;
-    struct dtree_node * pchild[DTREE_HTABLE_SIZE]; /*< Persistent children. */
-    struct dtree_node * child[DTREE_HTABLE_SIZE]; /*!< Children of this node,
+    llist_t * child[DTREE_HTABLE_SIZE]; /*!< Children of this node,
                                                    *   in a hash table. */
-    size_t persist; /*!< Number of persisted entries. If 0 this node can be
-                     * discarded freely if necessary. Can be increment by one
-                     * to make sure the node is always pesisted. (eg. root)
-                     * This value can be also used as a refcount. */
+    size_t persist; /*!< If this is set to a value greater than zero this node
+                     *   is persisted. This value is used as a refcount and if
+                     *   value is zero the node can be removed as it's
+                     *   considered as unused. */
+    llist_nodedsc_t list_node;
 } dtree_node_t;
 
 extern dtree_node_t dtree_root;

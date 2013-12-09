@@ -38,7 +38,7 @@
  * @param str2 String 2.
  * @return A zero value indicates that both strings are equal.
  */
-int kstrcmp(const char * str1, const char * str2)
+int strcmp(const char * str1, const char * str2)
 {
     while (*str1 != '\0' && *str1 == *str2) {
         str1++;

@@ -88,7 +88,7 @@ void dllist_destroy(llist_t * lst)
     if (lst == 0)
         return;
 
-    if (lst->head != 0) {
+    /*if (lst->head != 0) {
         void * node;
         void * node_next = lst->head;
         do {
@@ -96,7 +96,7 @@ void dllist_destroy(llist_t * lst)
             node_next = LISTDSC(node)->next;
             kfree(node);
         } while (node_next != 0);
-    }
+    }*/
 
     kfree(lst);
 }
@@ -187,6 +187,5 @@ void dllist_remove(struct llist * lst, void * node)
     else
         LISTDSC(dsc->next)->prev = dsc->prev;
 
-    kfree(node);
-     lst->count += 1;
+    lst->count -= 1;
 }

@@ -11,9 +11,7 @@ void dtree_destroy_node(dtree_node_t * node);
 
 static void setup()
 {
-    dtree_root.fname = "/";
-    dtree_root.parent = &dtree_root;
-    dtree_root.persist = 1;
+    dtree_init();
 }
 
 static void teardown()
@@ -32,24 +30,21 @@ static char * test_path_compare(void)
 static char * test_create(void)
 {
     dtree_node_t * node;
-    dtree_node_t * tnode;
-    int i;
+    dtree_node_t * tnode = 0;
+    size_t i;
 
     node = dtree_create_node(&dtree_root, "var", 0);
 
     pu_assert_ptr_equal("Correct node parent.", node->parent, &dtree_root);
     pu_assert_str_equal("Correct name.", node->fname, "var");
     for (i = 0; i < DTREE_HTABLE_SIZE; i++) {
-        if (dtree_root.child[i] != 0) {
-            tnode = dtree_root.child[i];
-        }
-        if (dtree_root.pchild[i] != 0 && i > 0) {
-            pu_assert_fail("There should be no persisted childs yet.");
+        if (dtree_root.child[i]->head != 0) {
+            tnode = dtree_root.child[i]->head;
         }
     }
     pu_assert_ptr_equal("New node is a child of root", tnode, node);
 
-    dtree_destroy_node(node);
+    node = dtree_remove_node(node, DTREE_NODE_PERS);
 
     return 0;
 }
@@ -166,7 +161,6 @@ static char * test_collision()
     dtree_node_t * node2;
     dtree_node_t * node3;
     dtree_node_t * retval;
-    int i;
 
     node1 = dtree_create_node(&dtree_root, "usr", 0);
     node2 = dtree_create_node(node1, "ab", 0);
@@ -177,20 +171,17 @@ static char * test_collision()
     node3 = dtree_create_node(node1, "aab", 0);
 
     retval = dtree_lookup("/usr/ab", DTREE_LOOKUP_MATCH_ANY);
-    pu_assert("Lookup doesn't return ab node anymore", retval != node2);
-
-    retval = dtree_lookup("/usr/ab", DTREE_LOOKUP_MATCH_EXACT);
-    pu_assert_ptr_equal("Lookup should return zero", retval, 0);
+    pu_assert_ptr_equal("Lookup still returns ab node", retval, node2);
 
     retval = dtree_lookup("/usr/aab", DTREE_LOOKUP_MATCH_ANY);
-    pu_assert_ptr_equal("Got aab node", retval, node3);
+    pu_assert_ptr_equal("Got usr node", retval, node3);
 
     return 0;
 }
 
 static void all_tests() {
-    pu_def_test(test_create, PU_RUN);
     pu_def_test(test_path_compare, PU_RUN);
+    pu_def_test(test_create, PU_RUN);
     pu_def_test(test_getpath, PU_RUN);
     pu_def_test(test_lookup, PU_RUN);
     pu_def_test(test_remove, PU_RUN);

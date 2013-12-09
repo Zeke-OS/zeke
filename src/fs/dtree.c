@@ -49,16 +49,19 @@
 #include "dtree.h"
 
 #ifndef PU_TEST_BUILD
-#define DESTROY_PREFIX static void
+#define DESTROY_PREFIX static dtree_node_t *
 #define PATHCOMP_PREFIX static size_t
 #else
-#define DESTROY_PREFIX void
+#define DESTROY_PREFIX dtree_node_t *
 #define PATHCOMP_PREFIX size_t
 #endif
+static int dtree_init_child_lists(llist_t * table[DTREE_HTABLE_SIZE]);
+static void dtree_add_child(dtree_node_t * parent, dtree_node_t * node);
+static void dtree_del_child(dtree_node_t * parent, dtree_node_t * node);
 DESTROY_PREFIX dtree_destroy_node(dtree_node_t * node);
 static size_t hash_fname(const char * fname, size_t len);
 PATHCOMP_PREFIX path_compare(const char * fname, const char * path, size_t offset);
-static void cond_truncate(int change);
+static void dtree_truncate(int change);
 
 #ifndef PU_TEST_BUILD
 #define DT_SIZE_MAX configFS_CACHE_MAX
@@ -70,12 +73,17 @@ static int dt_size = 0; /*!< Size of dtree ignoring fnames. */
 /**
  * Root node.
  */
-dtree_node_t dtree_root = {
-    .fname = "/", /* Special case, any other fname should not contain '/'. */
-    .parent = &dtree_root, /* In POSIX "/" is parent of itself. */
-    .pchild[0] = &dtree_root,
-    .persist = 1
-};
+dtree_node_t dtree_root;
+
+void dtree_init(void) __attribute__((constructor));
+void dtree_init(void)
+{
+    dtree_root.fname = "/"; /* Special case, any other fname should not
+                               contain '/'. */
+    dtree_root.parent = &dtree_root; /* In POSIX "/" is parent of itself. */
+    dtree_root.persist = 1;
+    (void)dtree_init_child_lists(dtree_root.child); /* Assume no error. */
+}
 
 /**
  * Create a new dtree node.
@@ -106,41 +114,59 @@ dtree_node_t * dtree_create_node(dtree_node_t * parent, char * fname, int persis
     if (nname == 0)
         goto free_nnode;
 
-    cond_truncate(sizeof(dtree_node_t) + nsize);
+    dtree_truncate(sizeof(dtree_node_t) + nsize
+            + DTREE_HTABLE_SIZE * sizeof(llist_t));
 
     /* Initialize the new node */
     memcpy(nname, fname, nsize);
     nnode->fname = nname;
     nnode->parent = parent;
-    memset(nnode->pchild, 0, DTREE_HTABLE_SIZE);
-    memset(nnode->child, 0, DTREE_HTABLE_SIZE);
+    memset(&(nnode->list_node), 0, sizeof(llist_nodedsc_t));
+    if(dtree_init_child_lists(nnode->child))
+        goto free_nnode; /* Malloc Error! */
+    nnode->persist = (persist) ? 1 : 0;
 
-    /* Add as a child of parent */
-    if (persist) {
-        size_t i;
-        /* TODO reallocatable persist table */
-        for (i = 0; i < DTREE_HTABLE_SIZE; i++) {
-            if (parent->pchild[i] == 0) {
-                parent->pchild[i] = nnode;
-                break;
-            }
-        }
-        parent->persist++;
-    } else {
-        size_t hash = hash_fname(fname, nsize - 1);
-        if (parent->child[hash] != 0) {
-            dtree_remove_node(parent->child[hash], 1);
-        }
-        parent->child[hash] = nnode;
-    }
+    /* Add the new node as a child of its parent. */
+    dtree_add_child(parent, nnode);
 
-    goto out; /* Ready */
+    goto out; /* Ready. */
 
 free_nnode:
-    kfree(nnode);
-    nnode = 0;
+    nnode = dtree_destroy_node(nnode);
 out:
     return nnode;
+}
+
+static int dtree_init_child_lists(llist_t * table[DTREE_HTABLE_SIZE])
+{
+    size_t i;
+
+    memset(table, 0, DTREE_HTABLE_SIZE);
+
+    for (i = 0; i < DTREE_HTABLE_SIZE; i ++) {
+        /* Create a child node lists. */
+        table[i] = dllist_create(dtree_node_t, list_node);
+        if (table[i] == 0)
+            return -1;
+    }
+
+    return 0;
+}
+
+static void dtree_add_child(dtree_node_t * parent, dtree_node_t * node)
+{
+    size_t hash = hash_fname(node->fname, strlenn(node->fname, FS_FILENAME_MAX));
+    llist_t * parent_list = parent->child[hash];
+
+    parent_list->insert_tail(parent_list, node);
+}
+
+static void dtree_del_child(dtree_node_t * parent, dtree_node_t * node)
+{
+    size_t hash = hash_fname(node->fname, strlenn(node->fname, FS_FILENAME_MAX));
+    llist_t * parent_list = parent->child[hash];
+
+    parent_list->remove(parent_list, node);
 }
 
 /**
@@ -152,9 +178,6 @@ void dtree_discard_node(dtree_node_t * node)
     /* Decrement persist count */
     if (node->persist <= 1) {
         node->persist = 0;
-        /* This can be safely done, however it's not the most clever way to
-         * truncate. */
-        //dtree_remove_node(node, DTREE_NODE_NORM);
     } else {
         node->persist--;
     }
@@ -169,7 +192,6 @@ void dtree_discard_node(dtree_node_t * node)
 int dtree_remove_node(dtree_node_t * node, int dpers)
 {
     size_t i;
-    dtree_node_t * parent;
     int retval = 0;
 
     if (node == 0) {
@@ -177,30 +199,23 @@ int dtree_remove_node(dtree_node_t * node, int dpers)
     }
 
     for (i = 0; i < DTREE_HTABLE_SIZE; i++) {
-        if (dpers) (void)dtree_remove_node(node->child[i], 1);
-        retval = dtree_remove_node(node->child[i], dpers);
+        dtree_node_t * curr = node->child[i]->head;
+        dtree_node_t * next;
+        if (curr == 0)
+            continue;
+        do {
+            next = curr->list_node.next;
+            retval |= dtree_remove_node(curr, dpers);
+        } while ((curr = next) != 0);
     }
 
-    if (node->persist > 0 || retval != 0) {
-        retval = 2;
-        goto out;
-    }
-
-    parent = node->parent;
-    for (i = 0; i < DTREE_HTABLE_SIZE; i++) {
-        if (parent->pchild[i] == node) {
-            if (dpers) {
-                retval = 0;
-                parent->pchild[i] = 0;
-            } else retval = 1;
-        }
-        if (parent->child[i] == node) {
-            parent->child[i] = 0;
-        }
-    }
+    if (dpers == DTREE_NODE_PERS)
+        retval = 0;
+    else if (node->persist > 0)
+        retval = 1;
 
     if (retval == 0)
-        dtree_destroy_node(node);
+        node = dtree_destroy_node(node);
 
 out:
     return retval;
@@ -209,21 +224,36 @@ out:
 /**
  * Destroy dtree node.
  * @note Removes also persisted nodes.
+ * @param node is the node to be destroyed.
+ * @return Always returns null pointer.
  */
 DESTROY_PREFIX dtree_destroy_node(dtree_node_t * node)
 {
     size_t nsize = 0;
+    size_t i;
 
     if (node == 0)
         return;
 
+    dtree_del_child(node->parent, node);
+
     if (node->fname != 0) {
         nsize = strlenn(node->fname, FS_FILENAME_MAX) + 1;
         kfree(node->fname);
+        //node->fname = 0;
     }
+
+    /* Drestroy child lists */
+    for (i = 0; i < DTREE_HTABLE_SIZE; i++) {
+        dllist_destroy(node->child[i]);
+    }
+
     kfree(node);
 
-    cond_truncate(-(sizeof(dtree_node_t) + nsize));
+    dtree_truncate(-(sizeof(dtree_node_t) + nsize
+                + DTREE_HTABLE_SIZE * sizeof(llist_t)));
+
+    return (dtree_node_t *)0;
 }
 
 /**
@@ -256,6 +286,7 @@ dtree_node_t * dtree_lookup(const char * path, int match)
 {
     size_t i, k, prev_k;
     size_t hash;
+    dtree_node_t * curr;
     dtree_node_t * retval = 0;
 
     if (path[0] != '/')
@@ -268,29 +299,21 @@ dtree_node_t * dtree_lookup(const char * path, int match)
             break;
         prev_k = k;
 
-        /* First lookup from child htable */
+        /* Lookup from child htable */
         i = k;
         while (path[i] != '\0' && path[i] != '/') { i++; }
         hash = hash_fname(path + k, i - k);
-        if (retval->child[hash] != 0) {
+        curr = (dtree_node_t *)(retval->child[hash]->head);
+        if (curr != 0) {
             size_t j;
-            j = path_compare(retval->child[hash]->fname, path, k);
-            if (j != 0) {
-                retval = retval->child[hash];
-                k = j;
-                continue;
-            }
-        }
-
-        /* if no hit, then lookup from pchild array */
-        for (i = 0; i < DTREE_HTABLE_SIZE; i++) {
-            if (retval->pchild[i] != 0) {
-                k = path_compare(retval->pchild[i]->fname, path, k);
-                if (k != 0) {
-                    retval = retval->pchild[i];
+            do {
+                j = path_compare(curr->fname, path, k);
+                if (j != 0) {
+                    retval = curr;
+                    k = j;
                     break;
                 }
-            }
+            } while ((curr = (dtree_node_t *)(curr->list_node.next)) != 0);
         }
 
         /* No exact match */
@@ -326,6 +349,7 @@ char * dtree_getpath(dtree_node_t * dnode)
 
     do {
         len += strlenn(node->fname, FS_FILENAME_MAX) + 1;
+        /* TODO Optimize */
         tmp_path = krealloc(tmp_path, len + 2);
         if (tmp_path == 0) {
             goto out;
@@ -389,12 +413,10 @@ static size_t hash_fname(const char * str, size_t len)
  * @TODO usage stats based discard...
  * @param change is the change in bytes to total cache size.
  */
-static void cond_truncate(int change)
+static void dtree_truncate(int change)
 {
-    if (change > 0) {
-        dt_size += change;
-    }
     if (change >= 0) {
+        dt_size += change;
 #ifndef PU_TEST_BUILD
         if (dt_size > DT_SIZE_MAX) {
             dtree_remove_node(&dtree_root, 0);
