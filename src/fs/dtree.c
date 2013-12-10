@@ -257,7 +257,7 @@ DESTROY_PREFIX dtree_destroy_node(dtree_node_t * node)
 }
 
 /**
- * Compare if fname equals substring of path marked by offset and '/'.
+ * Compare if fname is a substring of path between offset and '/'.
  * @param fname is a normal null terminated string.
  * @param path  is a full slash separated path string.
  * @param offset is the comparison offset.
@@ -284,7 +284,7 @@ PATHCOMP_PREFIX path_compare(const char * fname, const char * path, size_t offse
  */
 dtree_node_t * dtree_lookup(const char * path, int match)
 {
-    size_t i, k, prev_k;
+    size_t i, j, k, prev_k;
     size_t hash;
     dtree_node_t * curr;
     dtree_node_t * retval = 0;
@@ -302,10 +302,17 @@ dtree_node_t * dtree_lookup(const char * path, int match)
         /* Lookup from child htable */
         i = k;
         while (path[i] != '\0' && path[i] != '/') { i++; }
+        if (j = path_compare("..", path, k)) { /* Goto parent */
+            retval = retval->parent;
+            k = j;
+            continue;
+        } else if (j = path_compare(".", path, k)) { /* Ifnore dot */
+            k = j;
+            continue;
+        }
         hash = hash_fname(path + k, i - k);
         curr = (dtree_node_t *)(retval->child[hash]->head);
         if (curr != 0) {
-            size_t j;
             do {
                 j = path_compare(curr->fname, path, k);
                 if (j != 0) {
