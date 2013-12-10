@@ -63,9 +63,9 @@ typedef int pid_t; /*!< Process ID. */
 typedef int32_t ssize_t; /*!< Used for a count of bytes or an error indication. */
 #endif
 #endif
-typedef uint64_t time_t; /*!< Used for time in seconds. */
-typedef uint64_t useconds_t; /*!< Used for time in microseconds. */
-typedef uint64_t suseconds_t; /*!< Used for time in microseconds */
+typedef int64_t time_t; /*!< Used for time in seconds. */
+typedef int64_t useconds_t; /*!< Used for time in microseconds. */
+typedef int64_t suseconds_t; /*!< Used for time in microseconds */
 typedef int timer_t; /*!< Used for timer ID returned by timer_create(). */
 
 
