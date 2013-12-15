@@ -42,20 +42,24 @@
 #include <syscall.h>
 #define KERNEL_INTERNAL 1
 #include <errno.h>
+#include <fs/dtree.h>
 #include "fs.h"
 
 /**
  * fs list type.
  */
-typedef struct fs_list {
+typedef struct fsl_node {
     fs_t * fs;
-    struct fs_list * next;
-} fs_list_t;
+    struct fsl_node * next;
+} fsl_node_t;
 
 /**
  * Linked list of registered file systems.
  */
-static fs_list_t * fsl_head;
+static fsl_node_t * fsl_head;
+
+
+static fs_t * find_fs(const char * fsname);
 
 /**
  * Register a new file system driver.
@@ -63,14 +67,14 @@ static fs_list_t * fsl_head;
  */
 int fs_register(fs_t * fs)
 {
-    fs_list_t * new;
+    fsl_node_t * new;
     int retval = -1;
 
     if (fsl_head == 0) { /* First entry */
-        fsl_head = kmalloc(sizeof(fs_list_t));
+        fsl_head = kmalloc(sizeof(fsl_node_t));
         new = fsl_head;
     } else {
-        new = kmalloc(sizeof(fs_list_t));
+        new = kmalloc(sizeof(fsl_node_t));
     }
     if (new == 0)
         goto out;
@@ -79,7 +83,7 @@ int fs_register(fs_t * fs)
     if (fsl_head == new) { /* First entry */
         new->next = 0;
     } else {
-        fs_list_t * node = fsl_head;
+        fsl_node_t * node = fsl_head;
 
         while (node->next != 0) {
             node = node->next;
@@ -90,6 +94,86 @@ int fs_register(fs_t * fs)
 
 out:
     return retval;
+}
+
+/**
+ * Lookup for vnode by path.
+ * @param[out]  vnode   is the target where vnode struct is stored.
+ * @param       str     is the path.
+ * @return Returns zero if vnode was found or error code.
+ */
+int lookup_vnode(vnode_t * vnode, const char * str)
+{
+    int retval = 0;
+    dtree_node_t * dtnode;
+    char * p;
+    size_t offset;
+
+    dtnode = dtree_lookup(str, DTREE_LOOKUP_MATCH_ANY);
+    if (dtnode != 0) {
+        retval = -1;
+        goto out;
+    }
+
+    p = dtree_getpath(dtnode);
+    offset = strlenn(p, SIZE_MAX);
+    retval = dtnode->vnode.sb->lookup_vnode(vnode, str + offset);
+
+    /* TODO Add to cache */
+
+    dtree_discard_node(dtnode);
+
+out:
+    return retval;
+}
+
+int fs_mount(const char * mount_point, const char * fsname, uint32_t mode,
+        int parm_len, char * parm)
+{
+    vnode_t vnode_mp;
+    fs_t * fs;
+    fs_superblock_t * sb;
+    int retval = 0;
+
+    /* TODO handle dot & dot-dot so that mount point is always fqp? */
+
+    /* Find the mount point and accept if found */
+    if (lookup_vnode(&vnode_mp, mount_point)) {
+        retval = -1;
+        goto out;
+    }
+
+    fs = find_fs(fsname);
+    if (fs == 0) {
+        retval = -2;
+        goto out;
+    }
+
+    /* TODO validate parm */
+    sb = fs->mount(mount_point, mode, parm_len, parm);
+
+    /* TODO */
+    dtree_create_node(&dtree_root, "path", DTREE_NODE_PERS);
+
+out:
+    return retval;
+}
+
+/**
+ * Find registered file system by name.
+ * @param fsname is the name of the file system.
+ * @return The file system structure.
+ */
+static fs_t * find_fs(const char * fsname)
+{
+    fsl_node_t * node = fsl_head;
+
+    do {
+        if (strcmp(node->fs->fsname, fsname))
+            break;
+    } while ((node = node->next) != 0);
+
+    return (node != 0) ? node->fs : 0;
 }
 
 /**

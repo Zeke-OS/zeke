@@ -116,7 +116,7 @@ typedef struct fs_superblock {
     fs_t * fs;
     uint32_t mode_flags; /*!< Mount mode flags */
     vnode_t * root; /*!< Root of this fs mount. */
-    int (*lookup_vnode)(vnode_t * vnode, char * str);
+    int (*lookup_vnode)(vnode_t * vnode, const char * str);
     int (*lookup_file)(char * str, vnode_t * vnode);
     int (*delete_vnode)(vnode_t * vnode);
 } fs_superblock_t;
