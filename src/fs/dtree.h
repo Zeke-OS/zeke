@@ -57,7 +57,7 @@ typedef struct dtree_node {
     vnode_t vnode;
     struct dtree_node * parent;
     llist_t * child[DTREE_HTABLE_SIZE]; /*!< Children of this node,
-                                                   *   in a hash table. */
+                                         *   in a hash table. */
     size_t persist; /*!< If this is set to a value greater than zero this node
                      *   is persisted. This value is used as a refcount and if
                      *   value is zero the node can be removed as it's

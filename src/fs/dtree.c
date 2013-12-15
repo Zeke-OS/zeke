@@ -158,7 +158,9 @@ static void dtree_add_child(dtree_node_t * parent, dtree_node_t * node)
     size_t hash = hash_fname(node->fname, strlenn(node->fname, FS_FILENAME_MAX));
     llist_t * parent_list = parent->child[hash];
 
-    parent_list->insert_tail(parent_list, node);
+    /* By inserting to the head we will always found last mount point instead of
+     * an older cached directory entry. */
+    parent_list->insert_head(parent_list, node);
 }
 
 static void dtree_del_child(dtree_node_t * parent, dtree_node_t * node)
@@ -233,7 +235,7 @@ DESTROY_PREFIX dtree_destroy_node(dtree_node_t * node)
     size_t i;
 
     if (node == 0)
-        return;
+        return (dtree_node_t *)0;
 
     dtree_del_child(node->parent, node);
 
@@ -302,11 +304,11 @@ dtree_node_t * dtree_lookup(const char * path, int match)
         /* Lookup from child htable */
         i = k;
         while (path[i] != '\0' && path[i] != '/') { i++; }
-        if (j = path_compare("..", path, k)) { /* Goto parent */
+        if ((j = path_compare("..", path, k))) { /* Goto parent */
             retval = retval->parent;
             k = j;
             continue;
-        } else if (j = path_compare(".", path, k)) { /* Ifnore dot */
+        } else if ((j = path_compare(".", path, k))) { /* Ifnore dot */
             k = j;
             continue;
         }
