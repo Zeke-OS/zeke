@@ -92,7 +92,7 @@ void dtree_init(void)
  * @param persist != 0 to make this node persistent.
  * @return Returns a pointer to the new node; 0 if failed.
  */
-dtree_node_t * dtree_create_node(dtree_node_t * parent, char * fname, int persist)
+dtree_node_t * dtree_create_node(dtree_node_t * parent, const char * fname, int persist)
 {
     dtree_node_t * nnode = 0;
     char * nname;

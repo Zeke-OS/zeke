@@ -105,6 +105,9 @@ static char * test_remove()
     node1 = dtree_create_node(&dtree_root, "usr", 0);
     node2 = dtree_create_node(node1, "ab", 1);
     node3 = dtree_create_node(node1, "cd", 0);
+    dtree_discard_node(node1);
+    dtree_discard_node(node2);
+    dtree_discard_node(node3);
 
     retval = dtree_lookup("/usr/cd", DTREE_LOOKUP_MATCH_EXACT);
     pu_assert_ptr_equal("Got cd node", retval, node3);
@@ -133,6 +136,7 @@ static char * test_dicard()
     pu_test_description("Test if non persistent dtree node is flushed only after all references are discarded.");
 
     node1 = dtree_create_node(&dtree_root, "usr", 0);
+    dtree_discard_node(node1);
 
     retval = dtree_lookup("/usr", DTREE_LOOKUP_MATCH_EXACT);
     pu_assert_ptr_equal("Got usr node", retval, node1);
@@ -164,11 +168,14 @@ static char * test_collision()
 
     node1 = dtree_create_node(&dtree_root, "usr", 0);
     node2 = dtree_create_node(node1, "ab", 0);
+    dtree_discard_node(node1);
+    dtree_discard_node(node2);
 
     retval = dtree_lookup("/usr/ab", DTREE_LOOKUP_MATCH_EXACT);
     pu_assert_ptr_equal("Got ab node", retval, node2);
 
     node3 = dtree_create_node(node1, "aab", 0);
+    dtree_discard_node(node3);
 
     retval = dtree_lookup("/usr/ab", DTREE_LOOKUP_MATCH_ANY);
     pu_assert_ptr_equal("Lookup still returns ab node", retval, node2);

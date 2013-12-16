@@ -46,14 +46,6 @@
 #include "fs.h"
 
 /**
- * fs list type.
- */
-typedef struct fsl_node {
-    fs_t * fs;
-    struct fsl_node * next;
-} fsl_node_t;
-
-/**
  * Linked list of registered file systems.
  */
 static fsl_node_t * fsl_head;
@@ -133,27 +125,32 @@ int fs_mount(const char * mount_point, const char * fsname, uint32_t mode,
     vnode_t vnode_mp;
     fs_t * fs;
     fs_superblock_t * sb;
+    dtree_node_t * dtnode;
     int retval = 0;
 
-    /* TODO handle dot & dot-dot so that mount point is always fqp? */
+    /* TODO handle dot & dot-dot so that mount point is always fqp
+     * or should we return error if mp is not a fqp already? */
+
+    /* TODO We should not allow multiple mounts on same mp? */
 
     /* Find the mount point and accept if found */
     if (lookup_vnode(&vnode_mp, mount_point)) {
-        retval = -1;
+        retval = -1; /* Path doesn't exist. */
         goto out;
     }
 
     fs = find_fs(fsname);
     if (fs == 0) {
-        retval = -2;
+        retval = -2; /* fs doesn't exist. */
         goto out;
     }
 
-    /* TODO validate parm */
     sb = fs->mount(mount_point, mode, parm_len, parm);
 
-    /* TODO */
-    dtree_create_node(&dtree_root, "path", DTREE_NODE_PERS);
+    /* TODO Add back old submounts */
+    dtnode = dtree_create_node(&dtree_root, mount_point, DTREE_NODE_PERS);
+    dtnode->vnode = *(sb->root);
+    dtree_discard_node(dtnode);
 
 out:
     return retval;
@@ -174,6 +171,45 @@ static fs_t * find_fs(const char * fsname)
     } while ((node = node->next) != 0);
 
     return (node != 0) ? node->fs : 0;
+}
+
+/**
+ * Initialize a file system superblock iterator.
+ * Iterator is used to iterate over all superblocks of mounted file systems.
+ * @param it is an untilitialized superblock iterator struct.
+ */
+void fs_init_sb_iterator(sb_iterator_t * it)
+{
+    it->curr_fs = fsl_head;
+    it->curr_sb = fsl_head->fs->sbl_head;
+}
+
+/**
+ * Iterate over superblocks of mounted file systems.
+ * @param it is the iterator struct.
+ * @return The next superblock or 0.
+ */
+fs_superblock_t * fs_next_sb(sb_iterator_t * it)
+{
+    fs_superblock_t * retval = (it->curr_sb != 0) ? &(it->curr_sb->sb) : 0;
+
+    if (retval == 0)
+        goto out;
+
+    it->curr_sb = it->curr_sb->next;
+    if (it->curr_sb == 0) {
+        while(1) {
+            it->curr_fs = it->curr_fs->next;
+            if (it->curr_fs == 0)
+                break;
+            it->curr_sb = it->curr_fs->fs->sbl_head;
+            if (it->curr_sb != 0)
+                break;
+        }
+    }
+
+out:
+    return retval;
 }
 
 /**

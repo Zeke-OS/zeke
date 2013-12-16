@@ -150,7 +150,27 @@ typedef struct file_ops {
     int (*stat)(vnode_t * vnode, struct stat * buf);
 } vnode_ops_t;
 
+
+
+/**
+ * fs list type.
+ */
+typedef struct fsl_node {
+    fs_t * fs;
+    struct fsl_node * next;
+} fsl_node_t;
+
+/**
+ * Sperblock iterator.
+ */
+typedef struct {
+    fsl_node_t * curr_fs;
+    superblock_lnode_t * curr_sb;
+} sb_iterator_t;
+
 int fs_register(fs_t * fs);
+void fs_init_sb_iterator(sb_iterator_t * it);
+fs_superblock_t * fs_next_sb(sb_iterator_t * it);
 
 /* Thread specific functions used mainly by Syscalls **************************/
 uint32_t fs_syscall(uint32_t type, void * p);
