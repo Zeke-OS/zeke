@@ -124,7 +124,7 @@ dtree_node_t * dtree_create_node(dtree_node_t * parent, char * fname, int persis
     memset(&(nnode->list_node), 0, sizeof(llist_nodedsc_t));
     if(dtree_init_child_lists(nnode->child))
         goto free_nnode; /* Malloc Error! */
-    nnode->persist = (persist) ? 1 : 0;
+    nnode->persist = (persist) ? 2 : 1;
 
     /* Add the new node as a child of its parent. */
     dtree_add_child(parent, nnode);
@@ -143,7 +143,7 @@ static int dtree_init_child_lists(llist_t * table[DTREE_HTABLE_SIZE])
 
     memset(table, 0, DTREE_HTABLE_SIZE);
 
-    for (i = 0; i < DTREE_HTABLE_SIZE; i ++) {
+    for (i = 0; i < DTREE_HTABLE_SIZE; i++) {
         /* Create a child node lists. */
         table[i] = dllist_create(dtree_node_t, list_node);
         if (table[i] == 0)
@@ -158,8 +158,8 @@ static void dtree_add_child(dtree_node_t * parent, dtree_node_t * node)
     size_t hash = hash_fname(node->fname, strlenn(node->fname, FS_FILENAME_MAX));
     llist_t * parent_list = parent->child[hash];
 
-    /* By inserting to the head we will always found last mount point instead of
-     * an older cached directory entry. */
+    /* By inserting to the head we will always find the last mount point instead
+     * of an older cached directory entry. */
     parent_list->insert_head(parent_list, node);
 }
 
