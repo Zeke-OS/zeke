@@ -107,6 +107,7 @@ typedef struct {
     struct fs_superblock * (*mount)(const char * mpoint, uint32_t mode,
             int parm_len, char * parm);
     int (*umount)(struct fs_superblock * fs_sb);
+    struct superblock_lnode * sbl_head; /*!< List of all mounts. */
 } fs_t;
 
 /**
@@ -120,6 +121,11 @@ typedef struct fs_superblock {
     int (*lookup_file)(char * str, vnode_t * vnode);
     int (*delete_vnode)(vnode_t * vnode);
 } fs_superblock_t;
+
+typedef struct superblock_lnode {
+    fs_superblock_t sb;
+    struct superblock_lnode * next;
+} superblock_lnode_t;
 
 /**
  * vnode operations struct.
