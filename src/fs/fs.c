@@ -93,7 +93,7 @@ out:
  * @param       str     is the path.
  * @return Returns zero if vnode was found or error code.
  */
-int lookup_vnode(vnode_t * vnode, const char * str)
+int lookup_vnode(vnode_t ** vnode, const char * str)
 {
     sb_iterator_t it;
     fs_superblock_t * tmp_sb;
@@ -107,8 +107,8 @@ int lookup_vnode(vnode_t * vnode, const char * str)
      * vnode we are looking for. */
     while ((tmp_sb = fs_next_sb(&it))) {
         size_t i = 0;
-        while (tmp_sb->mount_point[i] == str[i] &&
-                (tmp_sb->mount_point[i] != '\0' || str[i] != '\0')) {
+        while (tmp_sb->mtpt_path[i] == str[i] &&
+                (tmp_sb->mtpt_path[i] != '\0' || str[i] != '\0')) {
             i++;
         }
         if (i > offset) {
@@ -127,14 +127,12 @@ int lookup_vnode(vnode_t * vnode, const char * str)
 int fs_mount(const char * mount_point, const char * fsname, uint32_t mode,
         int parm_len, char * parm)
 {
-    vnode_t vnode_mp;
+    vnode_t * vnode_mp;
     fs_t * fs;
     int retval = 0;
 
     /* TODO handle dot & dot-dot so that mount point is always fqp
      * or should we return error if mp is not a fqp already? */
-
-    /* TODO We should not allow multiple mounts on same mp? */
 
     /* Find the mount point and accept if found */
     if (lookup_vnode(&vnode_mp, mount_point)) {
@@ -149,6 +147,7 @@ int fs_mount(const char * mount_point, const char * fsname, uint32_t mode,
     }
 
     fs->mount(mount_point, mode, parm_len, parm);
+
 out:
     return retval;
 }
@@ -206,6 +205,18 @@ fs_superblock_t * fs_next_sb(sb_iterator_t * it)
     }
 
 out:
+    return retval;
+}
+
+/**
+ * Get next free pseudo fs minor code.
+ */
+unsigned int fs_get_pfs_minor(void)
+{
+    unsigned int static pfs_minor = 0;
+    unsigned int retval = pfs_minor;
+
+    pfs_minor++;
     return retval;
 }
 

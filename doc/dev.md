@@ -33,7 +33,8 @@ Major number mapping
     | Major | Device name   | Description                                   |
     +-------+---------------+-----------------------------------------------+
     | 0     | devnull       | Null device                                   |
-    | 1     | lcd           | Parallel IO LCD                               |
-    | 2     | tty           | Serial teletype                               |
+    | 1     | pfs           | Pseudo fs: ramfs, rootfs, sysfs, procfs etc.  |
+    | 10    | tty           | Serial teletype                               |
+    | 11    | lcd           | Parallel IO LCD                               |
     +-------+---------------+-----------------------------------------------+
 

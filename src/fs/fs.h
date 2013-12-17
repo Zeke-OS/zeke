@@ -118,17 +118,12 @@ typedef struct fs_superblock {
     fs_t * fs;
     uint32_t mode_flags; /*!< Mount mode flags */
     vnode_t * root; /*!< Root of this fs mount. */
-    char * mount_point; /*!< Mount point path */
+    char * mtpt_path; /*!< Mount point path */
 
-    int (*lookup_vnode)(vnode_t * vnode, const char * str);
+    int (*lookup_vnode)(vnode_t ** vnode, const char * str);
     int (*lookup_file)(char * str, vnode_t * vnode);
     int (*delete_vnode)(vnode_t * vnode);
 } fs_superblock_t;
-
-typedef struct superblock_lnode {
-    fs_superblock_t sb;
-    struct superblock_lnode * next;
-} superblock_lnode_t;
 
 /**
  * vnode operations struct.
@@ -154,6 +149,10 @@ typedef struct file_ops {
 } vnode_ops_t;
 
 
+typedef struct superblock_lnode {
+    fs_superblock_t sb;
+    struct superblock_lnode * next;
+} superblock_lnode_t;
 
 /**
  * fs list type.
@@ -174,6 +173,7 @@ typedef struct {
 int fs_register(fs_t * fs);
 void fs_init_sb_iterator(sb_iterator_t * it);
 fs_superblock_t * fs_next_sb(sb_iterator_t * it);
+unsigned int fs_get_pfs_minor(void);
 
 /* Thread specific functions used mainly by Syscalls **************************/
 uint32_t fs_syscall(uint32_t type, void * p);
