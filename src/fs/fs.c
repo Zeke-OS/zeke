@@ -42,7 +42,6 @@
 #include <syscall.h>
 #define KERNEL_INTERNAL 1
 #include <errno.h>
-#include <fs/dtree.h>
 #include "fs.h"
 
 /**
@@ -97,23 +96,13 @@ out:
 int lookup_vnode(vnode_t * vnode, const char * str)
 {
     int retval = 0;
-    dtree_node_t * dtnode;
-    char * p;
     size_t offset;
 
-    dtnode = dtree_lookup(str, DTREE_LOOKUP_MATCH_ANY);
-    if (dtnode != 0) {
-        retval = -1;
-        goto out;
-    }
-
-    p = dtree_getpath(dtnode);
-    offset = strlenn(p, SIZE_MAX);
-    retval = dtnode->vnode.sb->lookup_vnode(vnode, str + offset);
+    /* TODO get sb and call lookup */
+    //offset = strlenn(p, SIZE_MAX);
+    //retval = dtnode->vnode.sb->lookup_vnode(vnode, str + offset);
 
     /* TODO Add to cache */
-
-    dtree_discard_node(dtnode);
 
 out:
     return retval;
@@ -124,8 +113,6 @@ int fs_mount(const char * mount_point, const char * fsname, uint32_t mode,
 {
     vnode_t vnode_mp;
     fs_t * fs;
-    fs_superblock_t * sb;
-    dtree_node_t * dtnode;
     int retval = 0;
 
     /* TODO handle dot & dot-dot so that mount point is always fqp
@@ -145,13 +132,7 @@ int fs_mount(const char * mount_point, const char * fsname, uint32_t mode,
         goto out;
     }
 
-    sb = fs->mount(mount_point, mode, parm_len, parm);
-
-    /* TODO Add back old submounts */
-    dtnode = dtree_create_node(&dtree_root, mount_point, DTREE_NODE_PERS);
-    dtnode->vnode = *(sb->root);
-    dtree_discard_node(dtnode);
-
+    fs->mount(mount_point, mode, parm_len, parm);
 out:
     return retval;
 }

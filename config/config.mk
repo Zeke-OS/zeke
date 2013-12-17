@@ -72,7 +72,6 @@ configUSRINIT_SSIZE = 200u# Stack size for usrinit thread
 configUSRINIT_PRI = osPriorityNormal# Priority of usrinit thread
 
 # Virtual file system config
-configFS_CACHE_MAX = 1024# Maximum cache size in bytes
 
 # Kernel Services
 configPTTK91_VM = 0#
