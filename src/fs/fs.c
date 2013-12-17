@@ -95,16 +95,32 @@ out:
  */
 int lookup_vnode(vnode_t * vnode, const char * str)
 {
+    sb_iterator_t it;
+    fs_superblock_t * tmp_sb;
+    fs_superblock_t * sb;
+    size_t offset = 0;
     int retval = 0;
-    size_t offset;
 
-    /* TODO get sb and call lookup */
-    //offset = strlenn(p, SIZE_MAX);
-    //retval = dtnode->vnode.sb->lookup_vnode(vnode, str + offset);
+    fs_init_sb_iterator(&it);
 
-    /* TODO Add to cache */
+    /* Find longest common path and assume that it must be the correct
+     * superblock. */
+    while ((tmp_sb = fs_next_sb(&it))) {
+        size_t i = 0;
+        while (tmp_sb->mount_point[i] == str[i] &&
+                (tmp_sb->mount_point[i] != '\0' || str[i] != '\0')) {
+            i++;
+        }
+        if (i > offset) {
+            offset = i;
+            sb = tmp_sb;
+        }
+    }
 
-out:
+    if (sb != 0) {
+        retval = sb->lookup_vnode(vnode, str + offset);
+    } else retval = -1;
+
     return retval;
 }
 
