@@ -103,8 +103,8 @@ int lookup_vnode(vnode_t * vnode, const char * str)
 
     fs_init_sb_iterator(&it);
 
-    /* Find longest common path and assume that it must be the correct
-     * superblock. */
+    /* Find longest common path with superblock and assume that it must know the
+     * vnode we are looking for. */
     while ((tmp_sb = fs_next_sb(&it))) {
         size_t i = 0;
         while (tmp_sb->mount_point[i] == str[i] &&
