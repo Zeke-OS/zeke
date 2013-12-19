@@ -8,27 +8,27 @@ process, so it can't optimize on changing process context (eg. changing memory
 map).
 
 
-+----------+        +------------------+
-| Inactive |---+--->| Ready            |-------------+
-+----------+   |    +------------------+             |
-               |    | - task_table     |            \ /
-               |    | - priority_queue |    +------------------+
-               |    +------------------+    | Running          |
-               |                            +------------------+
-               |                            | - task_table     |
-               |                            | - current_thread |
-               |                            +------------------+
-               |    +--------------+                 |
-               +----| Sleeping     |<----------------+
-               |    +--------------+                 |
-               |    | - task_table |                 |
-               |    +--------------+                 |
-               |                                     |
-               |    +--------------+                 |
-               +----| Waiting IO   |<----------------+
-                    +--------------+
-                    | - task_table |
-                    +--------------+
+    +----------+        +------------------+
+    | Inactive |---+--->| Ready            |-------------+
+    +----------+   |    +------------------+             |
+                   |    | - task_table     |            \ /
+                   |    | - priority_queue |    +------------------+
+                   |    +------------------+    | Running          |
+                   |                            +------------------+
+                   |                            | - task_table     |
+                   |                            | - current_thread |
+                   |                            +------------------+
+                   |    +--------------+                 |
+                   +----| Sleeping     |<----------------+
+                   |    +--------------+                 |
+                   |    | - task_table |                 |
+                   |    +--------------+                 |
+                   |                                     |
+                   |    +--------------+                 |
+                   +----| Waiting IO   |<----------------+
+                        +--------------+
+                        | - task_table |
+                        +--------------+
 
 Figure 1: Scheduler states and storage locations of thread information/id at
 different thread states.
