@@ -1,0 +1,181 @@
+/**
+ * @file test_dehtable.c
+ * @brief Test directory entry hash table.
+ */
+
+#include <punit.h>
+#include "sim_heap.h"
+#include <kmalloc.h>
+#include <fs/fs.h>
+#include <fs/dehtable.h>
+
+#define get_dirent(dea, offset) ((dh_dirent_t *)((size_t)(dea) + (offset)))
+
+dh_table_t table;
+
+static void setup()
+{
+    setup_kmalloc();
+    memset(table, 0, sizeof(dh_table_t));
+}
+
+static void teardown()
+{
+    teardown_kmalloc();
+}
+
+static char * test_link(void)
+{
+#define str "test"
+    size_t i;
+    vnode_t vnode;
+    dh_dirent_t * dea;
+
+    pu_test_description("Test that dh_link works correctly.");
+
+    vnode.vnode_num = 10;
+    dh_link(&table, &vnode, str, sizeof(str) - 1);
+
+    for (i = 0; i < DEHTABLE_SIZE; i++) {
+        if ((dea = table[i]) != 0) break;
+    }
+    pu_assert("Created chain found.", dea != 0);
+
+    pu_assert_equal("Entry has a correct vnode number.", (int)dea[0].dh_ino, (int)vnode.vnode_num);
+
+#undef str
+    return 0;
+}
+
+static char * test_link_chain(void)
+{
+#define str1 "test"
+#define str2 "teest"
+    size_t i;
+    int res;
+    vnode_t vnode1;
+    vnode_t vnode2;
+    dh_dirent_t * dea;
+    size_t offset;
+
+    pu_test_description("Test that dh_link chaining works correctly.");
+
+    vnode1.vnode_num = 10;
+    vnode2.vnode_num = 11;
+
+    res = dh_link(&table, &vnode1, str1, sizeof(str1) - 1);
+    pu_assert_equal("Insert succeeded.", res, 0);
+    res = dh_link(&table, &vnode2, str2, sizeof(str2) - 1);
+    pu_assert_equal("Insert succeeded.", res, 0);
+
+    for (i = 0; i < DEHTABLE_SIZE; i++) {
+        if ((dea = table[i]) != 0) break;
+    }
+    pu_assert("Created chain found.", dea != 0);
+
+    pu_assert_equal("First entry has a correct vnode number.", (int)get_dirent(dea, 0)->dh_ino, (int)vnode1.vnode_num);
+    offset = get_dirent(dea, 0)->dh_size;
+    pu_assert_equal("Second entry has a correct vnode number.", (int)get_dirent(dea, offset)->dh_ino, (int)vnode2.vnode_num);
+
+#undef str1
+#undef str2
+    return 0;
+}
+
+static char * test_lookup(void)
+{
+#define str1 "dest"
+#define str2 "deest"
+    int res;
+    vnode_t vnode1;
+    vnode_t vnode2;
+    ino_t nnum;
+
+    pu_test_description("Test that dh_lookup can locate the correct link.");
+
+    vnode1.vnode_num = 10;
+    vnode2.vnode_num = 11;
+
+    res = dh_link(&table, &vnode1, str1, sizeof(str1) - 1);
+    pu_assert_equal("Insert succeeded.", res, 0);
+    res = dh_link(&table, &vnode2, str2, sizeof(str2) - 1);
+    pu_assert_equal("Insert succeeded.", res, 0);
+
+    pu_assert_equal("No error",
+            dh_lookup(&table, str2, sizeof(str2) - 1, &nnum), 0);
+    pu_assert_equal("vnode num equal.", (int)nnum, (int)vnode2.vnode_num);
+
+#undef str1
+#undef str2
+    return 0;
+}
+
+static char * test_iterator(void)
+{
+#define str1 "ff"
+#define str2 "fff"
+#define str3 "file1"
+#define str4 "file2"
+
+    vnode_t vnode1;
+    vnode_t vnode2;
+    vnode_t vnode3;
+    vnode_t vnode4;
+
+    pu_test_description("Test that dirent hash table iterator works correctly.");
+
+    /* Some vnodes */
+    vnode1.vnode_num = 0;
+    vnode2.vnode_num = 1;
+    vnode3.vnode_num = 2;
+    vnode4.vnode_num = 3;
+
+    /* Insert entries */
+    pu_assert_equal("Insert OK.",
+            dh_link(&table, &vnode1, str1, sizeof(str1) - 1), 0);
+    pu_assert_equal("Insert OK.",
+            dh_link(&table, &vnode2, str2, sizeof(str2) - 1), 0);
+    pu_assert_equal("Insert OK.",
+            dh_link(&table, &vnode3, str3, sizeof(str3) - 1), 0);
+    pu_assert_equal("Insert OK.",
+            dh_link(&table, &vnode4, str4, sizeof(str4) - 1), 0);
+
+    /* Actual test */
+    {
+        dh_dir_iter_t it; /* dirent hash table iterator. */
+        size_t i;
+        dh_dirent_t * entry;
+        ino_t fnd_inodes[4] = {0, 0, 0, 0};
+
+        /* Get an iterator */
+        it = dh_get_iter(&table);
+
+        /* Loop the iterator */
+        for (i = 0; i < DEHTABLE_SIZE; i++) {
+            entry = dh_iter_next(&it);
+            if (entry == 0)
+                break;
+            pu_assert("inode number is not larger than largest given inode number.",
+                    entry->dh_ino < 4);
+            fnd_inodes[entry->dh_ino]++;
+        }
+        pu_assert_equal("Found 4 entries with the iterator.", i, 4);
+        for (i = 0; i < 4; i++) {
+            pu_assert_equal("Found every inode once.", fnd_inodes[i], 1);
+        }
+    }
+
+    return 0;
+}
+
+static void all_tests() {
+    pu_def_test(test_link, PU_RUN);
+    pu_def_test(test_link_chain, PU_RUN);
+    pu_def_test(test_lookup, PU_RUN);
+    pu_def_test(test_iterator, PU_RUN);
+}
+
+int main(int argc, char **argv)
+{
+    return pu_run_tests(&all_tests);
+}

@@ -22,11 +22,12 @@ int strncmp(const char * str1, const char * str2, size_t n);
 char * strcpy(char * dst, const char * src);
 char * strncpy(char * dst, const char * src, size_t n);
 const char * strstr(const char * str1, const char * str2);
-char * strnncat(char * dst, size_t ndst, const char * src, size_t nsrc);
+#endif
 size_t strlenn(const char * str, size_t max);
+char * strnncat(char * dst, size_t ndst, const char * src, size_t nsrc);
 int uitoa32(char * str, uint32_t value);
 int uitoah32(char * str, uint32_t value);
+char * kstrdup(const char * src, size_t max);
 void ksprintf(char * str, size_t maxlen, const char * format, ...) __attribute__ ((format (printf, 3, 4)));
-#endif
 
 #endif /* KSTRING_H */

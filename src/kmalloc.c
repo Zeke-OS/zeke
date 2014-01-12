@@ -35,33 +35,72 @@
 #include <kstring.h>
 #ifndef PU_TEST_BUILD
 #include <dynmem.h>
+#else
+void * malloc(size_t size);
 #endif
+
+#define KM_SIGNATURE_VALID      0XBAADF00D /*!< Signature for valid mblock
+                                            *   entry. */
+#define KM_SIGNATURE_INVALID    0xDEADF00D /*!< Signature for invalid mblock
+                                            *   entry. */
+
+struct kmalloc_stat {
+    size_t kms_mem;         /*!< Amount of memory reserved for kmalloc. */
+    size_t kms_mem_max;     /*!< Maximum amount of reserved memory. */
+    size_t kms_mem_alloc;   /*!< Amount of currectly allocated memory. */
+    size_t kms_mem_alloc_max; /*!< Maximum amount of allocated memory. */
+};
+struct kmalloc_stat kmalloc_stat;
+
 
 /**
  * Memory block descriptor.
  */
 typedef struct mblock {
+    int signature;          /* Magic number for extra security. */
     size_t size;            /* Size of data area of this block. */
     struct mblock * next;   /* Pointer to the next memory block desc. */
     struct mblock * prev;   /* Pointer to the previous memory block desc. */
     int refcount;           /*!< Ref count. */
-    void * ptr;             /*!< Memory block descriptor validation.
-                             *   This should point to the data. */
+    void * ptr;             /*!< Memory block desc validatation. ptr should
+                             * point to the data section of this mblock. */
     char data[1];
 } mblock_t;
 
-#define MBLOCK_SIZE (sizeof(mblock_t) - 4)
+/**
+ * Size base MBLOCK entry.
+ */
+#define MBLOCK_SIZE (sizeof(mblock_t) - sizeof(void *))
 
+/**
+ * kmalloc base address.
+ */
 void * kmalloc_base = 0;
 
-#define align4(x) (((((x)-1)>>2)<<2)+4)
+/**
+ * Get pointer to a memory block descriptor by memory block pointer.
+ * @param p is the memory block address.
+ * @return Address to the memory block descriptor of memory block p.
+ */
+#define get_mblock(p) ((mblock_t *)((uint8_t *)p - MBLOCK_SIZE))
+
+/**
+ * Convert MBytes to Bytes
+ * @param v is a size in MBytes.
+ * @return v in bytes.
+ */
+#define MB_TO_BYTES(v) ((v) * 1024 * 1024)
 
 static mblock_t * extend(mblock_t * last, size_t size);
-static mblock_t * get_mblock(void * p);
 static mblock_t * find_mblock(mblock_t ** last, size_t size);
 static void split_mblock(mblock_t * b, size_t s);
 static mblock_t * merge(mblock_t * b);
+static size_t memalign(size_t size);
 static int valid_addr(void * p);
+/* Stat functions */
+static void update_stat_up(size_t * stat_act, size_t amount);
+static void update_stat_down(size_t * stat_act, size_t amount);
+static void update_stat_set(size_t * stat_act, size_t value);
 
 
 /**
@@ -70,23 +109,29 @@ static int valid_addr(void * p);
 static mblock_t * extend(mblock_t * last, size_t s)
 {
     mblock_t * b;
-    mblock_t * bl;
-    size_t s_m; /* Size rounded to MBytes */
+    size_t s_mbytes; /* Size rounded to MBytes */
     size_t memfree_b; /* Bytes free after allocating b. */
 
     s += MBLOCK_SIZE; /* Need some space for the header. */
 
-    s_m = s >> 20; /* Full Mbytes. */
-    s_m += (0xfffff & s) ? 1 : 0; /* Add one MB if there is any extra. */
+    s_mbytes = s >> 20; /* Full Mbytes. */
+    s_mbytes += (0xfffff & s) ? 1 : 0; /* Add one MB if there is any extra. */
 
 #ifndef PU_TEST_BUILD
-    b = dynmem_alloc_region(s_m, MMU_AP_RWNA, MMU_CTRL_NG);
+    b = dynmem_alloc_region(s_mbytes, MMU_AP_RWNA, MMU_CTRL_NG);
+#else
+    /* TEST BUILD ONLY
+     * Get some memory by using malloc */
+    b = malloc(MB_TO_BYTES(s_mbytes));
 #endif
+    if (b == 0) {
+        goto out;
+    }
 
-    if (!b) return 0;
+    update_stat_up(&(kmalloc_stat.kms_mem), MB_TO_BYTES(s_mbytes));
 
     /* First mblock in the newly allocated section.
-     * Data section of block will be returned by kmalloc.
+     * Data section of the block will be returned by kmalloc.
      */
     b->size = s - MBLOCK_SIZE;
     b->next = 0;
@@ -94,43 +139,53 @@ static mblock_t * extend(mblock_t * last, size_t s)
     if (last) {
         last->next = b;
     }
+    b->signature = KM_SIGNATURE_VALID;
     b->ptr = b->data;
-    b->refcount = 1;
+    b->refcount = 0;
 
     /* If there is still space left in the new region it has to be
-     * mapped now. */
-    memfree_b = (1024*1024 * s_m) - s;
+     * marked as a block now. */
+    memfree_b = (MB_TO_BYTES(s_mbytes)) - s;
     if (memfree_b) {
-        bl = (mblock_t *)((size_t)b + s);
-        bl->size = memfree_b;
-        bl->next = 0;
+        mblock_t * bl;
+
+        bl = (mblock_t *)((size_t)b + s); /* Get pointer to the new block. */
+        bl->size = memfree_b - MBLOCK_SIZE;
+        bl->signature = KM_SIGNATURE_VALID;
         bl->ptr = bl->data;
         bl->refcount = 0;
+        bl->next = 0;
         bl->prev = b;
+
         b->next = bl;
     }
 
+out:
     return b;
 }
 
 /**
- * Get pointer to a memory block descriptor by memory block pointer.
- * @param p is the memory block address.
- * @areturn Address to the memory block descriptor of memory block p.
+ * Find a free mblock.
+ * @param[out] last is the last block in chain if no sufficient block found.
+ * @param[in] size  is the minimum size of a block needed.
+ * @return Returns a suffiently large block or null if not found.
  */
-static mblock_t * get_mblock(void * p)
-{
-    return (p - MBLOCK_SIZE);
-}
-
 static mblock_t * find_mblock(mblock_t ** last, size_t size)
 {
     mblock_t * b = kmalloc_base;
 
-    while (b && !((b->refcount == 0) && b->size >= size)) {
+    do {
+#ifdef PU_TEST_BUILD
+        if (b->ptr == 0) {
+            printf("Invalid mblock: p = %p sign = %x\n", b->ptr, b->signature);
+            b = 0;
+            break;
+        }
+#endif
         *last = b;
-        b = b->next;
-    }
+        if ((b->refcount == 0) && b->size >= size)
+            break;
+    } while ((b = b->next) != 0);
 
     return b;
 }
@@ -138,16 +193,17 @@ static mblock_t * find_mblock(mblock_t ** last, size_t size)
 /**
  * Split a memory block in to two halves.
  * @param b is a pointer to the memory block descriptor.
- * @param s is the size of a new block of left side.
+ * @param s is the new size of a the block b.
  */
 static void split_mblock(mblock_t * b, size_t s)
 {
-    mblock_t * nb = (mblock_t *)(b->data + s);
+    mblock_t * nb = (mblock_t *)((size_t)b->data + s); /* New block. */
 
     nb->size = b->size - s - MBLOCK_SIZE;
     nb->next = b->next;
     nb->prev = b;
     nb->refcount = 0;
+    nb->signature = KM_SIGNATURE_VALID;
     nb->ptr = nb->data;
 
     b->size = s;
@@ -167,10 +223,15 @@ static mblock_t * merge(mblock_t * b) {
     if (b->next && (b->next->refcount == 0)) {
         /* Don't merge if these blocks are not in contiguous memory space.
          * If they aren't it means that they are from diffent areas of dynmem */
-        if ((void *)(b->next->data) != (void *)((size_t)(b->data) + b->size))
+        if ((void *)((size_t)(b->data) + b->size) != (void *)(b->next))
             goto out;
 
+        /* Mark signature of the next block invalid. */
+        b->next->signature = KM_SIGNATURE_INVALID;
+
         b->size += MBLOCK_SIZE + b->next->size;
+
+        /* Update link pointers */
         b->next = b->next->next;
         if (b->next) {
             b->next->prev = b;
@@ -181,24 +242,52 @@ out:
 }
 
 /**
- * Validate a given memory block address.
- * @param p is a pointer to a memory block.
- * @return value other than 0 if given pointer is valid.
+ * Return word aligned size of size.
+ * @param size is a size of a memory block requested.
+ * @returns Returns size aligned to the word size of the current system.
  */
-static int valid_addr(void * p)
+static size_t memalign(size_t size)
 {
-    int retval = 0;
+#define ALIGN (sizeof(void *))
+#define MOD_AL(x) ((x) & (ALIGN - 1)) /* x % ALIGN */
+    size_t padding = MOD_AL((ALIGN - (MOD_AL(size))));
 
-    if (kmalloc_base) { /* If base is not set it's impossible that we would have
-                         * any allocated blocks. */
-        retval = (p == (get_mblock(p)->ptr)); /* Validation. */
-    }
-
-    return retval;
+    return size + padding;
+#undef MOD_AL
+#undef ALIGN
 }
 
 /**
- * Allocate memory block
+ * Validate a given memory block address.
+ * @param p is a pointer to a memory block.
+ * @return Returns value other than 0 if given pointer is valid.
+ */
+static int valid_addr(void * p)
+{
+#define PRINT_VALID 0
+#define ADDR_VALIDATION (p == (get_mblock(p)->ptr) \
+        && get_mblock(p)->signature == KM_SIGNATURE_VALID)
+    int retval = 0;
+
+    /* TODO what if get_mblock returns invalid address? */
+    if (kmalloc_base) { /* If base is not set it's impossible that we would have
+                         * any allocated blocks. */
+#if defined(PU_TEST_BUILD) && (PRINT_VALID != 0)
+        if((retval = ADDR_VALIDATION)) /* Validation. */
+            printf("VALID\n");
+        else printf("INVALID %p\n", p);
+#else
+        retval = ADDR_VALIDATION; /* Validation. */
+#endif
+    }
+
+    return retval;
+#undef ADDR_VALIDATION
+#undef PRINT_VALID
+}
+
+/**
+ * Allocate memory block.
  * @param size is the size of memory block in bytes.
  * @return A pointer to the memory block allocated; 0 if failed to allocate.
  */
@@ -206,27 +295,27 @@ void * kmalloc(size_t size)
 {
     mblock_t * b;
     mblock_t * last;
-    size_t s = align4(size);
+    size_t s = memalign(size);
 
     if (kmalloc_base) {
-        /* Find a mblock */
+        /* Find a mblock. */
         last = kmalloc_base;
         b = find_mblock(&last, s);
-
         if (b) {
-            /* Can we split this mblock */
-            if ((b->size - s) >= (MBLOCK_SIZE + 4)) {
+            /* Can we split this mblock.
+             * Note that b->size >= s
+             */
+            if ((b->size - s) >= (MBLOCK_SIZE + sizeof(void *))) {
                 split_mblock(b, s);
             }
-            b->refcount = 1;
         } else {
-            /* No fitting block, allocate more memory */
+            /* No fitting block, allocate more memory. */
             b = extend(last, s);
             if (!b) {
                 return 0;
             }
         }
-    } else { /* First kmalloc call or no pages allocated */
+    } else { /* First kmalloc call or no pages allocated. */
         b = extend(0, s);
         if (!b) {
             return 0;
@@ -234,13 +323,16 @@ void * kmalloc(size_t size)
         kmalloc_base = b;
     }
 
+    update_stat_up(&(kmalloc_stat.kms_mem_alloc), s);
+
+    b->refcount = 1;
     return b->data;
 }
 
 /**
- * Allocate and zero-intialize array
+ * Allocate and zero-intialize array.
  * @param nelem is the number of elements to allocate.
- * @param size is the of each element.
+ * @param size  is the of each element.
  * @return A pointer to the memory block allocted; 0 if failed to allocate.
  */
 void * kcalloc(size_t nelem, size_t elsize)
@@ -250,7 +342,7 @@ void * kcalloc(size_t nelem, size_t elsize)
 
     p = kmalloc(nelem * elsize);
     if (p) {
-        s4 = align4(nelem * elsize);
+        s4 = memalign(nelem * elsize);
         memset(p, 0, s4);
     }
 
@@ -258,8 +350,7 @@ void * kcalloc(size_t nelem, size_t elsize)
 }
 
 /**
- * Deallocate memory block
- *
+ * Deallocate memory block.
  * Deallocates a memory block previously allocted with kmalloc, kcalloc or
  * krealloc.
  * @param p is a pointer to a previously allocated memory block.
@@ -270,18 +361,22 @@ void kfree(void * p)
 
     if (valid_addr(p)) {
         b = get_mblock(p);
-        if (b->refcount <= 0) {
+        if (b->refcount <= 0) { /* Already freed. */
             b->refcount = 0;
             return;
         }
+
         b->refcount--;
         if (b->refcount > 0)
             return;
 
+        update_stat_down(&(kmalloc_stat.kms_mem_alloc), b->size);
+
         /* Try merge with previous mblock if possible. */
-        if (b->prev &&  (b->prev->refcount == 0)) {
+        if (b->prev && (b->prev->refcount == 0)) {
             b = merge(b->prev);
         }
+
         /* Then try merge with next. */
         if (b->next) {
             merge(b);
@@ -292,6 +387,7 @@ void kfree(void * p)
                 b->prev->next = 0;
             else /* All freed, no more memory allocated by kmalloc. */
                 kmalloc_base = 0;
+
             /* This should work as b should be pointing to a begining of
              * a region allocated with dynmem.
              *
@@ -301,29 +397,29 @@ void kfree(void * p)
              * and it might even give some performance boost in certain
              * situations. */
             dynmem_free_region(b);
+            /* TODO Update stat */
 #endif
         }
     }
 }
 
 /**
- * Reallocate memory block
- *
+ * Reallocate memory block.
  * Changes the size of the memory block pointed to by p.
  * @note This function behaves like C99 realloc.
- * @param p is a pointer to a memory block previously allocated with kmalloc,
- *          kcalloc or krealloc.
- * @param size is the new size for the memory block, in bytes.
- * @return  A pointer to the reallocated memory block, which may be either the
- *          same as p or a new location. 0 indicates that the function failed to
- *          allocate memory, and p was not modified.
+ * @param p     is a pointer to a memory block previously allocated with
+ *              kmalloc, kcalloc or krealloc.
+ * @param size  is the new size for the memory block, in bytes.
+ * @return  Returns a pointer to the reallocated memory block, which may be
+ *          either the same as p or a new location. 0 indicates that the
+ *          function failed to allocate memory, and p was not modified.
  */
 void * krealloc(void * p, size_t size)
 {
-    size_t s;
-    mblock_t * b;
-    mblock_t * nb;
-    void * np;
+    size_t s; /* Aligned size. */
+    mblock_t * b; /* Old block. */
+    mblock_t * nb; /* New block. */
+    void * np; /* Pointer to the data section of the new block. */
     void * retval = 0;
 
     if(!p) {
@@ -333,30 +429,47 @@ void * krealloc(void * p, size_t size)
     }
 
     if (valid_addr(p)) {
-        s = align4(size);
+        s = memalign(size);
         b = get_mblock(p);
 
-        if (b->size >= s) {
-            if (b->size - s >= (MBLOCK_SIZE + 4)) {
+        if (b->size >= s) { /* Requested to shrink. */
+            if (b->size - s >= (MBLOCK_SIZE + sizeof(void *))) {
                 split_mblock(b, s);
-            }
-        } else {
-            /* Try merge with next block */
+            } /* else don't split. */
+        } else { /* new size is larger. */
+            /* Try to merge with next block. */
             if (b->next && (b->next->refcount == 0) &&
                     ((b->size + MBLOCK_SIZE + b->next->size) >= s)) {
+                size_t old_size = b->size;
+
                 merge(b);
-                if (b->size - s >= (MBLOCK_SIZE + 4)) {
+                if (b->size < s) {
+                    /* Goto alloc_new_block if merge failed. */
+                    goto alloc_new_block;
+                }
+
+                /* Substract from stat */
+                update_stat_down(&(kmalloc_stat.kms_mem_alloc), old_size);
+
+                /* Split new block if it's larger than needed */
+                if (b->size - s >= (MBLOCK_SIZE + sizeof(void *))) {
                     split_mblock(b, s);
                 }
-            } else { /* realloc with a new mblock. */
+
+                /* Add new size to stat */
+                update_stat_up(&(kmalloc_stat.kms_mem_alloc), b->size);
+            } else { /* realloc with a new mblock.
+                      * kmalloc & free will handle stat updates. */
+alloc_new_block:
                 np = kmalloc(s);
-                if (!np) {
+                if (!np) { /* Allocating new block failed,
+                            * don't touch the old one. */
                     retval = 0;
                     goto out;
                 }
 
                 nb = get_mblock(np);
-                memcpy(b->data, nb->data, b->size);
+                memcpy(nb->data, b->data, b->size);
                 /* Free the old mblock. */
                 kfree(p);
                 retval = np;
@@ -370,13 +483,55 @@ out:
 }
 
 /**
- * Memory block reference
- *
- * Pass kmalloc'd pointer to a block to somewhere else and increment refcount.
- * @param p is a pointer to the kmalloc'd block of data.
+ * New memory block reference.
+ * Pass kmalloc'd pointer to a block and increment refcount.
+ * @param p is a pointer to a kmalloc'd block of data.
+ * @return Same as p.
  */
 void * kpalloc(void * p)
 {
-    get_mblock(p)->refcount += 1;
+    if (valid_addr(p)) {
+        get_mblock(p)->refcount += 1;
+    }
     return p;
+}
+
+/**
+ * Updates stat actual value by adding amount to it.
+ * This function will also update related max value.
+ * @param stat_act  is a pointer to a stat actual value.
+ * @param amount    is the value to be added.
+ */
+static void update_stat_up(size_t * stat_act, size_t amount)
+{
+    size_t * stat_max = stat_act + sizeof(size_t);
+
+    *stat_act += amount;
+    if (*stat_act > *stat_max)
+        *stat_max = *stat_act;
+}
+
+/**
+ * Updates stat current value by substracting amount from it.
+ * @param stat_act  is a pointer to a stat actual value.
+ * @param amount    is the value to be substracted.
+ */
+static void update_stat_down(size_t * stat_act, size_t amount)
+{
+    *stat_act -= amount;
+}
+
+/**
+ * Set stat current value.
+ * This function will also update related max value.
+ * @param stat_act  is a pointer to a stat actual value.
+ * @param value     is the to value to be set to selected stat.
+ */
+static void update_stat_set(size_t * stat_act, size_t value)
+{
+    size_t * stat_max = stat_act + sizeof(size_t);
+
+    *stat_act = value;
+    if (*stat_act > *stat_max)
+        *stat_max = *stat_act;
 }

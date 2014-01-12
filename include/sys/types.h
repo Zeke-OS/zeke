@@ -55,7 +55,7 @@ typedef uint64_t ino_t; /*!< Used for file serial numbers.*/
 typedef uint32_t key_t; /*!< Used for XSI interprocess communication. */
 typedef int mode_t; /*!< Used for some file attributes. */
 typedef int nlink_t; /*!< Used for link counts. */
-typedef size_t off_t; /*!< Used for file sizes. */
+typedef int64_t off_t; /*!< Used for file sizes. */
 typedef int pid_t; /*!< Process ID. */
 #ifndef ssize_t
 #ifndef SSIZE_MAX

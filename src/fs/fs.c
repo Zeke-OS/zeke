@@ -48,6 +48,10 @@
  * Linked list of registered file systems.
  */
 static fsl_node_t * fsl_head;
+/* TODO fsl as an array with:
+ * struct { size_t count; fst_t * fs_array; };
+ * Then iterator can just iterate over fs_array
+ */
 
 
 static fs_t * find_fs(const char * fsname);
@@ -95,31 +99,7 @@ out:
  */
 int lookup_vnode(vnode_t ** vnode, const char * str)
 {
-    sb_iterator_t it;
-    fs_superblock_t * tmp_sb;
-    fs_superblock_t * sb;
-    size_t offset = 0;
     int retval = 0;
-
-    fs_init_sb_iterator(&it);
-
-    /* Find longest common path with superblock and assume that it must know the
-     * vnode we are looking for. */
-    while ((tmp_sb = fs_next_sb(&it))) {
-        size_t i = 0;
-        while (tmp_sb->mtpt_path[i] == str[i] &&
-                (tmp_sb->mtpt_path[i] != '\0' || str[i] != '\0')) {
-            i++;
-        }
-        if (i > offset) {
-            offset = i;
-            sb = tmp_sb;
-        }
-    }
-
-    if (sb != 0) {
-        retval = sb->lookup_vnode(vnode, str + offset);
-    } else retval = -1;
 
     return retval;
 }
@@ -187,7 +167,7 @@ void fs_init_sb_iterator(sb_iterator_t * it)
  */
 fs_superblock_t * fs_next_sb(sb_iterator_t * it)
 {
-    fs_superblock_t * retval = (it->curr_sb != 0) ? &(it->curr_sb->sb) : 0;
+    fs_superblock_t * retval = (it->curr_sb != 0) ? &(it->curr_sb->sbl_sb) : 0;
 
     if (retval == 0)
         goto out;

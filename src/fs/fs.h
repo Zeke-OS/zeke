@@ -40,9 +40,9 @@
 #define FS_H
 
 #include <sys/types.h>
+#include <time.h>
 #include <sys/stat.h>
-#include <syscalldef.h>
-#include <devtypes.h>
+#include <dirent.h>
 
 #define FS_FLAG_INIT        0x01 /*!< Filse system initialized. */
 #define FS_FLAG_FAIL        0x08 /*!< File system has failed. */
@@ -75,16 +75,16 @@
  * @param exp_flags expected flag values.
  */
 #define FS_TFLAGS_ALLOF(act_flags, exp_flags) ((act_flags & exp_flags) == exp_flags)
+
 /* End of macros **************************************************************/
 
-typedef struct {
-    size_t vnode_num;   /*!< vnode number. */
-    dev_t dev;
+typedef struct vnode {
+    ino_t vnode_num;    /*!< vnode number. */
     int refcount;
-    size_t len;         /*!< Length of file. */
+    off_t len;          /*!< Length of file. */
     size_t mutex;
     mode_t mode;        /*!< File type part of st_mode sys/stat.h */
-    struct fs_superblock * sb;
+    struct fs_superblock * sb; /*!< Pointer to the super block of this vnode. */
     struct vnode_ops * vnode_ops;
     /* TODO wait queue here */
 } vnode_t;
@@ -93,7 +93,7 @@ typedef struct {
  * File descriptor.
  */
 typedef struct file {
-    int pos;        /*!< Seek pointer. */
+    off_t seek_pos; /*!< Seek pointer. */
     mode_t mode;    /*!< Access mode. */
     int refcount;   /*!< Reference count. */
     vnode_t * vnode;
@@ -102,7 +102,7 @@ typedef struct file {
 /**
  * File system.
  */
-typedef struct {
+typedef struct fs {
     char fsname[8];
 
     struct fs_superblock * (*mount)(const char * mpoint, uint32_t mode,
@@ -116,60 +116,87 @@ typedef struct {
  */
 typedef struct fs_superblock {
     fs_t * fs;
+    dev_t dev;
     uint32_t mode_flags; /*!< Mount mode flags */
     vnode_t * root; /*!< Root of this fs mount. */
     char * mtpt_path; /*!< Mount point path */
 
-    int (*lookup_vnode)(vnode_t ** vnode, const char * str);
-    int (*lookup_file)(char * str, vnode_t * vnode);
+    /**
+     * Get the vnode struct linked to a vnode number.
+     * @param[in]  sb is the superblock.
+     * @param[in]  vnode_num is the vnode number.
+     * @param[out] vnode is a pointer to the vnode.
+     * @return Returns 0 if no error; Otherwise value other than zero.
+     */
+    int (*get_vnode)(struct fs_superblock * sb, ino_t * vnode_num, vnode_t ** vnode);
+
+    /**
+     * Delete a vnode reference.
+     * Deletes a reference to a vnode and destroys the inode corresponding to the
+     * inode if there is no more links and references to it.
+     * @param[in] vnode is the vnode.
+     * @return Returns 0 if no error; Otherwise value other than zero.
+     */
     int (*delete_vnode)(vnode_t * vnode);
 } fs_superblock_t;
 
 /**
  * vnode operations struct.
  */
-typedef struct file_ops {
-    /* Normal file operations */
+typedef struct vnode_ops {
+    /* Normal file operations
+     * ---------------------- */
     int (*lock)(vnode_t * file);
     int (*release)(vnode_t * file);
-    int (*write)(vnode_t * file, int offset, const void * buf, int count);
-    int (*read)(vnode_t * file, int offset, void * buf, int count);
+    size_t (*write)(vnode_t * file, const off_t * offset,
+            const void * buf, size_t count);
+    size_t (*read)(vnode_t * file, const off_t * offset,
+            void * buf, size_t count);
     //int (*mmap)(vnode_t * file, !mem area!);
-    /* Directory file operations */
-    int (*create)(vnode_t * dir, const char * name, int name_len, vnode_t ** result);
-    int (*mknod)(vnode_t * dir, const char * name, int name_len, int mode, dev_t dev);
-    int (*lookup)(vnode_t * dir, const char * name, int name_len, vnode_t ** result);
-    int (*link)(vnode_t * oldvnode, vnode_t * dir, const char * name, int name_len);
-    int (*unlink)(vnode_t * dir, const char * name, int name_len);
-    int (*mkdir)(vnode_t * dir,  const char * name, int name_len);
-    int (*rmdir)(vnode_t * dir,  const char * name, int name_len);
-    //int (*readdir)(vnode_t * dir, int offset, struct dirent * d);
+    /* Directory file operations
+     * ------------------------- */
+    int (*create)(vnode_t * dir, const char * name, size_t name_len,
+            vnode_t ** result);
+    int (*mknod)(vnode_t * dir, const char * name, size_t name_len, int mode,
+            dev_t dev);
+    int (*lookup)(vnode_t * dir, const char * name, size_t name_len,
+            vnode_t ** result);
+    int (*link)(vnode_t * dir, vnode_t * vnode, const char * name,
+            size_t name_len);
+    int (*unlink)(vnode_t * dir, const char * name, size_t name_len);
+    int (*mkdir)(vnode_t * dir,  const char * name, size_t name_len);
+    int (*rmdir)(vnode_t * dir,  const char * name, size_t name_len);
+    int (*readdir)(vnode_t * dir, struct dirent * d);
     /* Operations specified for any file type */
     int (*stat)(vnode_t * vnode, struct stat * buf);
 } vnode_ops_t;
 
 
+/**
+ * Superblock list type.
+ */
 typedef struct superblock_lnode {
-    fs_superblock_t sb;
-    struct superblock_lnode * next;
+    fs_superblock_t sbl_sb; /*!< Superblock struct. */
+    struct superblock_lnode * next; /*!< Pointer to the next super block. */
 } superblock_lnode_t;
 
 /**
  * fs list type.
  */
 typedef struct fsl_node {
-    fs_t * fs;
-    struct fsl_node * next;
+    fs_t * fs; /*!< Pointer to the file system struct. */
+    struct fsl_node * next; /*!< Pointer to the next fs list node. */
 } fsl_node_t;
 
 /**
  * Sperblock iterator.
  */
-typedef struct {
-    fsl_node_t * curr_fs;
-    superblock_lnode_t * curr_sb;
+typedef struct sb_iterator {
+    fsl_node_t * curr_fs; /*!< Current fs list node. */
+    superblock_lnode_t * curr_sb; /*!< Current superblock of curr_fs. */
 } sb_iterator_t;
 
+/* VFS Function Prototypes */
 int fs_register(fs_t * fs);
 void fs_init_sb_iterator(sb_iterator_t * it);
 fs_superblock_t * fs_next_sb(sb_iterator_t * it);
