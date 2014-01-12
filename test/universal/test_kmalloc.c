@@ -10,7 +10,7 @@
 #include_next <time.h>
 #include <punit.h>
 #include <kmalloc.h>
-#include "sim_heap.h"
+#include "sim_kmheap.h"
 
 static void rnd_allocs(int n);
 static int unirand(int n);

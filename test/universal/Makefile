@@ -12,7 +12,7 @@ PU_UU = 0
 
 # Report oriented mode prints more additional information like test module and
 # test case descriptions. 0 = disabled; 1 = enabled.
-PU_REPORT_ORIENTED = 0
+PU_REPORT_ORIENTED = 1
 
 # You can change CC here if you want
 #CC =

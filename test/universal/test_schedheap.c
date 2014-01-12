@@ -1,5 +1,5 @@
 /**
- * @file test_heap.c
+ * @file test_schedheap.c
  * @brief Test heap used for scheduling.
  */
 

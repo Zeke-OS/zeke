@@ -1,6 +1,6 @@
 #include <string.h>
 #include <kmalloc.h>
-#include "sim_heap.h"
+#include "sim_kmheap.h"
 
 /**
  * Small simulated heap mainly for kmalloc testing.

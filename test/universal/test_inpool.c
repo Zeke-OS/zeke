@@ -4,7 +4,7 @@
  */
 
 #include <punit.h>
-#include "sim_heap.h"
+#include "sim_kmheap.h"
 #include <containers.h>
 #include <kmalloc.h>
 #include <fs/fs.h>

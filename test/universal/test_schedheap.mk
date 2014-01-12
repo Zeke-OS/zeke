@@ -1,7 +1,7 @@
 # This is a per test module makefile
 
 # Test source file
-TEST_SRC += test_heap.c
+TEST_SRC += test_schedheap.c
 
 # SRC files needed for this test
-SRC-heap += ../../src/sched_tiny/heap.c
+SRC-schedheap += ../../src/sched_tiny/heap.c

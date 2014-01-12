@@ -1,2 +1,2 @@
 # punit add-ons
-PU_SRC += ./sim_heap.c
+PU_SRC += ./sim_kmheap.c

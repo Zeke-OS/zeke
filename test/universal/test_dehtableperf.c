@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include_next <time.h>
 #include <sys/time.h>
-#include "sim_heap.h"
+#include "sim_kmheap.h"
 #include <kmalloc.h>
 #include <fs/fs.h>
 #include <fs/dehtable.h>

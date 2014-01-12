@@ -7,7 +7,7 @@
 #include <kmalloc.h>
 #include <dirent.h> /* NOTE: This includes our own implementation of dirent.h
                      *       and types.h and this might be bit hazardous. */
-#include "sim_heap.h"
+#include "sim_kmheap.h"
 #include <fs/fs.h>
 
 /**

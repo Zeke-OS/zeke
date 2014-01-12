@@ -7,7 +7,7 @@
 #include <sys/time.h>
 #include <punit.h>
 #include <kmalloc.h>
-#include "sim_heap.h"
+#include "sim_kmheap.h"
 #include <fs/fs.h>
 
 #define GET_TIME(tvar, tv)  (gettimeofday(&tv, NULL), tvar = tv.tv_sec * 1000 + tv.tv_usec / 1000)

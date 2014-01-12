@@ -13,7 +13,7 @@ typedef struct mblock {
     char data[1];
 } mblock_t;
 #define MBLOCK_SIZE (sizeof(mblock_t) - sizeof(void *))
-extern void * kmalloc_base;
+extern void * kmalloc_base __attribute__((weak));
 
 typedef struct {
     char a[1024];
