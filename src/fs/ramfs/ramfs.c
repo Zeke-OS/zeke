@@ -46,7 +46,7 @@
 #include <kmalloc.h>
 #include <fs/fs.h>
 #include <fs/dehtable.h>
-#include "inpool.h"
+#include <fs/inpool.h>
 
 #define RAMFS_FSNAME            "ramfs"
 

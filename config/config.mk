@@ -71,7 +71,8 @@ configSTRING_OPT_SIZE = 1# Optimize string functions for speed or size
 configUSRINIT_SSIZE = 200u# Stack size for usrinit thread
 configUSRINIT_PRI = osPriorityNormal# Priority of usrinit thread
 
-# Virtual file system config
+# Virtual file system and file systems
+configRAMFS = 1# Compile ramfs with Zeke base
 
 # Kernel Services
 configPTTK91_VM = 0#
