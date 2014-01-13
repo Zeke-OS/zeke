@@ -276,7 +276,8 @@ static chain_info_t find_last_node(dh_dirent_t * chain)
     do {
         node = get_dirent(chain, chinfo.i_size);
         if (if_invalid_offset(node)) {
-            /* TODO Error message */
+            /* Error */
+            KERROR(KERROR_ERR, "Invalid offset in deh node");
             break;
         }
         chinfo.i_size += node->dh_size;
@@ -304,7 +305,8 @@ static dh_dirent_t * find_node(dh_dirent_t * chain, const char * name,
     do {
         node = get_dirent(chain, offset);
         if (if_invalid_offset(node)) {
-            /* TODO Error message */
+            /* Error */
+            KERROR(KERROR_ERR, "Invalid offset in deh node");
             break;
         }
 
