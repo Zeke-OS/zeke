@@ -190,6 +190,14 @@ const vnode_ops_t ramfs_vnode_ops = {
     .readdir = ramfs_readdir
 };
 
+void ramfs_init(void) __attribute__((constructor));
+void ramfs_init(void)
+{
+    /* Register ramfs with vfs. */
+    fs_register(&ramfs_fs);
+}
+
+
 /**
  * Mount a new ramfs.
  * @param mpoint    is the mountpoint path.
