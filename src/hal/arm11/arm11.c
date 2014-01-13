@@ -44,6 +44,7 @@
 #endif
 
 #include <stddef.h>
+#include <kerror.h>
 #include <sched.h>
 #include <hal/hal_mcu.h>
 #include "arm11.h"
@@ -181,6 +182,7 @@ __attribute__ ((naked)) void undef_handler(void)
     /* TODO */
 
     while (1) {
+        KERROR(KERROR_CRIT, "Undefined handler");
         __asm__ volatile ("wfe");
     }
 
