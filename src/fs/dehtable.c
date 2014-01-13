@@ -34,6 +34,7 @@
   * @{
   */
 
+#include <kerror.h>
 #include <kmalloc.h>
 #include <kstring.h>
 #include <fs/fs.h>
