@@ -60,9 +60,7 @@
 typedef struct {
     void * sp;                  /*!< Stack pointer */
     uint32_t flags;             /*!< Status flags */
-    int32_t signals;            /*!< Signal flags
-                                 * @note signal bit 30 is reserved for dev. */
-    //int32_t sig_wait_mask;      /*!< Signal wait mask */
+    int32_t signals;            /*!< Signal flags */
     int errno;                  /*!< Thread local errno */
     int wait_tim;               /*!< Reference to a timeout timer */
     osEvent event;              /*!< Event struct */

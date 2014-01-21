@@ -101,6 +101,8 @@ int lookup_vnode(vnode_t ** vnode, const char * str)
 {
     int retval = 0;
 
+    /* TODO */
+
     return retval;
 }
 
