@@ -50,7 +50,6 @@
 #include <queue.h>
 #endif
 #include <timers.h>
-#include <ksignal.h>
 #include <syscall.h>
 #include <kernel.h>
 #include <sched.h>
@@ -311,7 +310,6 @@ static void sched_thread_set(int i, ds_pthread_create_t * thread_def, threadInfo
 
     /* Clear signal flags & wait states */
     task_table[i].signals = 0;
-    task_table[i].sig_wait_mask = 0x0;
     task_table[i].wait_tim = -1;
 
     /* Clear events */
@@ -333,7 +331,6 @@ static void sched_thread_set(int i, ds_pthread_create_t * thread_def, threadInfo
 /**
  * Set thread inheritance
  * Sets linking from the parent thread to the thread id.
- * TODO "The signal mask is inherited from the creating thread."
  */
 static void sched_thread_set_inheritance(pthread_t id, threadInfo_t * parent)
 {
@@ -591,11 +588,6 @@ osStatus sched_threadDelay(uint32_t millisec)
     return current_thread->event.status;
 }
 
-osStatus sched_threadWait(uint32_t millisec)
-{
-    return ksignal_threadSignalWait(0x7fffffff, millisec);
-}
-
 /**
   * @}
   */
@@ -610,11 +602,6 @@ uint32_t sched_syscall(uint32_t type, void * p)
     switch(type) {
     case SYSCALL_SCHED_DELAY:
         return (uint32_t)sched_threadDelay(
-                    *((uint32_t *)(p))
-                );
-
-    case SYSCALL_SCHED_WAIT:
-        return (uint32_t)sched_threadWait(
                     *((uint32_t *)(p))
                 );
 
