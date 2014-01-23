@@ -160,14 +160,6 @@ uint32_t proc_syscall(uint32_t type, void * p)
         current_thread->errno = ENOSYS;
         return -10;
 
-    case SYSCALL_PROC_SIGNAL:
-        current_thread->errno = ENOSYS;
-        return -11;
-
-    case SYSCALL_PROC_KILL:
-        current_thread->errno = ENOSYS;
-        return -12;
-
     case SYSCALL_PROC_ALARM:
         current_thread->errno = ENOSYS;
         return -13;

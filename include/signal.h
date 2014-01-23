@@ -47,6 +47,35 @@
 
 #include <signal_num.h>
 
+int kill(pid_t pid, int sig);
+/*
+int killpg(pid_t pgrp, int sig);
+void psiginfo(const siginfo_t * pinfo, const char * message);
+void psignal(int signum, const char * message);
+int pthread_kill(pthread_t thread, int sig);
+int pthread_sigmask(int how, const sigset_t * restrict set,
+        sigset_t * restrict oset);
+*/
+int raise(int sig);
+/*
+int sigaction(int sig, const struct sigaction * restrict act,
+        struct sigaction * restrict oact);
+int sigaddset(sigset_t * set, int signo);
+int sigdelset(sigset_t * set, int signo);
+int sigemptyset(sigset_t * set);
+int sigfillset(sigset_t * set);
+int sigismember(const sigset_t * set, int signo);
+int sigpending(sigset_t * set);
+int sigprocmask(int how, const sigset_t * restrict set,
+        sigset_t * restrict oset);
+int sigqueue(pid_t pid, int signo, const union sigval value);
+int sigsuspend(const sigset_t * sigmask);
+int sigtimedwait(const sigset_t * restrict set, siginfo_t * restrict info,
+        const struct timespec * restrict timeout);
+int sigwait(const sigset_t * restrict set, int * restrict sig);
+int sigwaitinfo(const sigset_t * restrict set, siginfo_t *restrict info);
+*/
+
 #endif /* SIGNAL_H */
 
 /**

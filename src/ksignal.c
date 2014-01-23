@@ -50,9 +50,17 @@
 uint32_t ksignal_syscall(uint32_t type, void * p)
 {
     switch(type) {
-    default:
-        current_thread->errno = ENOSYS;
-        return -1;
+        case SYSCALL_SIGNAL_KILL:
+            current_thread->errno = ENOSYS;
+            return -2;
+
+        case SYSCALL_SIGNAL_RAISE:
+            current_thread->errno = ENOSYS;
+            return -2;
+
+        default:
+            current_thread->errno = ENOSYS;
+            return -1;
     }
 }
 

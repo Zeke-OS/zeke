@@ -77,6 +77,8 @@
 #define SIGSYS  ((int)22)   /*!< (A) Bad system call. */
 #define SIGURG  ((int)23)   /*!< (I) High bandwidth data is available at a
                              *   socket. */
+#define SIGINFO ((int)24)   /*!< (I) Info request. */
+#define SIGPWR  ((int)25)   /*!< (T) System power failure. */
 
 #endif /* SIGNAL_NUM_H */
 

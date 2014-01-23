@@ -5,7 +5,7 @@
  *
  * @brief   Header file for thread Signal Management in kernel (ksignal.c).
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
@@ -38,6 +38,21 @@
 
 #include <stdint.h>
 #include "kernel.h"
+
+/**
+ * Get signal boolean value from signals variable.
+ * @param signals   is a signals variable.
+ * @param signum    is the signal number.
+ * @return Rerturns 0 if signal is not set; 1 if signal is set.
+ */
+#define KSIGNAL_GET_VALUE(signals, signum) ((signals >> signum) & 0x1)
+
+/**
+ * Get signal mask.
+ * @param signum is a signal number.
+ * @return Returns a bit mask for signals variable.
+ */
+#define KSIGNAL_GET_MASK(signum) (0x1 << signum)
 
 uint32_t ksignal_syscall(uint32_t type, void * p);
 

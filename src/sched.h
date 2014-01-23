@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Kernel scheduler header file for sched.c.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
@@ -53,14 +53,15 @@
 
 #define SCHED_DEV_WAIT_BIT 0x40000000 /*!< Dev wait signal bit. */
 
-/** Thread info struct
- *
+/**
+ * Thread info struct.
  * Thread Control Block structure.
  */
 typedef struct {
     void * sp;                  /*!< Stack pointer */
     uint32_t flags;             /*!< Status flags */
-    int32_t signals;            /*!< Signal flags */
+    unsigned int signals;       /*!< Signal flags */
+    unsigned int sig_wait;      /*!< Signal wait mask */
     int errno;                  /*!< Thread local errno */
     int wait_tim;               /*!< Reference to a timeout timer */
     osEvent event;              /*!< Event struct */
@@ -100,7 +101,7 @@ extern volatile threadInfo_t * current_thread;
 void sched_start(void);
 
 /**
- * Scheduler handler
+ * Scheduler handler.
  *
  * Scheduler handler is mainly called due to sysTick and PendSV
  * interrupt and always by an interrupt handler.
@@ -150,8 +151,7 @@ void sched_get_loads(uint32_t loads[3]);
  * other kernel source modules. */
 
 /**
- * Create a new thread
- *
+ * Create a new thread.
  */
 pthread_t sched_threadCreate(ds_pthread_create_t * thread_def);
 
@@ -169,10 +169,10 @@ pthread_t sched_thread_getId(void);
 osStatus sched_thread_terminate(pthread_t thread_id);
 
 /**
- * Set thread priority
- * @param   thread_id Thread id
- * @param   priority New priority for thread referenced by thread_id
- * @return  osOK if thread exists
+ * Set thread priority.
+ * @param   thread_id Thread id.
+ * @param   priority New priority for thread referenced by thread_id.
+ * @return osOK if thread exists.
  */
 osStatus sched_thread_setPriority(pthread_t thread_id, osPriority priority);
 
@@ -181,7 +181,7 @@ osPriority sched_thread_getPriority(pthread_t thread_id);
 osStatus sched_threadDelay(uint32_t millisec);
 
 /**
- * Thread wait syscall handler
+ * Thread wait syscall handler.
  * @param millisec Event wait time in ms or osWaitForever.
  * @note This function returns a pointer to a thread event struct and its
  * contents is allowed to change before returning back to the caller thread.
