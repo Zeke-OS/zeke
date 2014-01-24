@@ -64,13 +64,13 @@ typedef struct mblock {
     int refcount;           /*!< Ref count. */
     void * ptr;             /*!< Memory block desc validatation. ptr should
                              * point to the data section of this mblock. */
-    char data[1];
+    char data[];
 } mblock_t;
 
 /**
  * Size base MBLOCK entry.
  */
-#define MBLOCK_SIZE (sizeof(mblock_t) - sizeof(void *))
+#define MBLOCK_SIZE (sizeof(mblock_t))
 
 /**
  * kmalloc base address.
