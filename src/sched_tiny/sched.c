@@ -309,7 +309,9 @@ static void sched_thread_set(int i, ds_pthread_create_t * thread_def, threadInfo
     /* task_table[i].priority is set later in sched_thread_set_exec */
 
     /* Clear signal flags & wait states */
-    task_table[i].signals = 0;
+    task_table[i].sig.sig_block = 0;
+    task_table[i].sig.sig_wait = 0;
+    task_table[i].sig.sig_pending = 0;
     task_table[i].wait_tim = -1;
 
     /* Clear events */

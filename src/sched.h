@@ -41,6 +41,7 @@
 
 #include <autoconf.h>
 #include <syscalldef.h>
+#include <ksignal.h>
 #include <kernel.h>
 
 #define SCHED_IN_USE_FLAG   0x00000001u /*!< IN USE FLAG */
@@ -58,18 +59,21 @@
  * Thread Control Block structure.
  */
 typedef struct {
-    void * sp;                  /*!< Stack pointer */
-    uint32_t flags;             /*!< Status flags */
-    unsigned int signals;       /*!< Signal flags */
-    unsigned int sig_wait;      /*!< Signal wait mask */
-    int errno;                  /*!< Thread local errno */
-    int wait_tim;               /*!< Reference to a timeout timer */
-    osEvent event;              /*!< Event struct */
-    osPriority def_priority;    /*!< Thread priority */
-    osPriority priority;        /*!< Thread dynamic priority */
-    int ts_counter;             /*!< Time slice counter */
-    pthread_t id;               /*!< Thread id */
-    pid_t pid_owner;            /*!< Owner process of this thread */
+    void * sp;                  /*!< Stack pointer. */
+    uint32_t flags;             /*!< Status flags. */
+    struct {
+        ksig_t sig_block;       /*!< List of blocked signals. */
+        ksig_t sig_wait;        /*!< Signal wait mask. */
+        ksig_t sig_pending;     /*!< Signals pending for handling. */
+    } sig; /*!< Signals. */
+    int errno;                  /*!< Thread local errno. */
+    int wait_tim;               /*!< Reference to a timeout timer. */
+    osEvent event;              /*!< Event struct. */
+    osPriority def_priority;    /*!< Thread priority. */
+    osPriority priority;        /*!< Thread dynamic priority. */
+    int ts_counter;             /*!< Time slice counter. */
+    pthread_t id;               /*!< Thread id. */
+    pid_t pid_owner;            /*!< Owner process of this thread. */
 
     /**
      * Thread inheritance; Parent and child thread pointers.

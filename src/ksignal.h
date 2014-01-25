@@ -39,6 +39,8 @@
 #include <stdint.h>
 #include "kernel.h"
 
+typedef uint32_t ksig_t;
+
 /**
  * Get signal boolean value from signals variable.
  * @param signals   is a signals variable.
