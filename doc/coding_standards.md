@@ -111,9 +111,10 @@ Optional kernel modules may use C static constructors and destructors to
 generate init and fini code that will be run before any user code is loaded.
 Constructors are also the preferred method to attach module with the kernel.
 
-Currently as there is no support for module unloading any fini functions will
-not be called in any case. Still this doesn't generate any compilation errors
-and array of fini functions is still generated and maybe supported later.
+Currently there is no support for module unloading and any fini functions will
+not be called in any case. Still decalaring destructors doesn't generate
+compilation error and array of fini functions is still generated and might be
+supported in the future.
 
 Following example shows constructor/intializer notation supported by Zeke:
 
