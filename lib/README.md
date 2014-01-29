@@ -1,3 +1,8 @@
+lib
+===
+
+User and kernel space libraries.
+
 Put here the CMSIS (and other) libraries provided by the chip manufacturers.
 
 *Recommended directory structure:*
