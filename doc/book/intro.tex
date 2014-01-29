@@ -1,0 +1,22 @@
+\part{Introduction}
+
+Zeke is a portable operating system for ARM processors.\footnote{Zeke is
+portable to at least in a sense of portability between different ARM cores
+and architectures.} Figure \ref{figure:zeke} illustrates architectural layers
+of Zeke. Scope of Zeke project is to implement a portable
+Unix-like\footnote{Project is aiming to implement the core set of kernel
+features specified in \ac{POSIX} standard.} operating system from scratch that
+is optimized for ARM architectures and is free of legacy.
+
+In addition to portability another goal has been configurability and adjustable
+footprint. This is achieved by modular kernel architecture and compile time
+configuration.
+
+\begin{figure}
+  \input{pics/zeke}
+  \centering
+  \caption{Zeke: a Portable Operating System.}
+  \label{figure:zeke}
+\end{figure}
+
+\input{abbrv.tex}

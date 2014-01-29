@@ -1,0 +1,13 @@
+\newcommand{\colorbitbox}[3]{%
+\rlap{\bitbox{#2}{\color{#1}\rule{\width}{\height}}}%
+\bitbox{#2}{#3}}
+
+\definecolor{lightgreen}{rgb}{0.64,1,0.71}
+\definecolor{lightred}{rgb}{1,0.7,0.71}
+
+\begin{bytefield}[boxformatting={\centering\small},bitwidth=\widthof{Kernel~}]{4}
+  \bitheader[endianness=little]{0-3} \\
+  \colorbitbox{lightred}{1}{Kernel} &
+  \colorbitbox{lightgreen}{1}{} &
+  \colorbitbox{lightred}{2}{User} &
+\end{bytefield}

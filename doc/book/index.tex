@@ -1,0 +1,84 @@
+\documentclass[11pt,oneside,a4paper]{book}
+\usepackage[a4paper]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{datetime}
+\usepackage{textcomp}
+%\usepackage{amsmath}
+%\usepackage{amsfonts}
+%\usepackage{amssymb}
+%\usepackage[dvips]{graphicx}
+\usepackage{lastpage}
+%\usepackage{pst-node}
+%\usepackage{bigdelim}
+%\usepackage{multirow}
+\usepackage{url}
+\usepackage[printonlyused]{acronym}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{tikz}
+%\usepackage{tikz-timing}
+\usepackage{bytefield}
+\usepackage{srclist}
+\usetikzlibrary{calc,trees,positioning,arrows,chains,shapes.geometric,%
+    decorations.pathreplacing,decorations.pathmorphing,shapes,%
+    matrix,shapes.symbols,fit}
+
+\tikzset{
+>=stealth',
+  punktchain/.style={
+    rectangle, 
+    rounded corners, 
+    % fill=black!10,
+    draw=black, very thick,
+    text width=10em, 
+    minimum height=3em, 
+    text centered, 
+    on chain},
+  line/.style={draw, thick, <-},
+  element/.style={
+    tape,
+    top color=white,
+    bottom color=blue!50!black!60!,
+    minimum width=8em,
+    draw=blue!40!black!90, very thick,
+    text width=10em, 
+    minimum height=3.5em, 
+    text centered, 
+    on chain},
+  every join/.style={->, thick,shorten >=1pt},
+  decoration={brace},
+  tuborg/.style={decorate},
+  tubnode/.style={midway, right=2pt},
+}
+
+\pgfdeclarelayer{background}
+\pgfsetlayers{background,main}
+
+
+\title{%
+  Zeke\\
+  A kernel for ARM processors
+}
+\author{% 
+  Olli Vanhoja\\
+  \texttt{olli.vanhoja@cs.helsinki.fi}
+}
+\date{%
+\today
+}
+
+\pagestyle{plain}
+\begin{document}
+  \maketitle
+  \tableofcontents
+  
+  \include{intro}
+  \input{mem/mem}
+  \input{fs/fs}
+  
+  \bibliography{ramfs.bib}{}
+  \bibliographystyle{plain}
+
+\end{document}
