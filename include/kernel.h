@@ -61,37 +61,6 @@ osEvent osWait(uint32_t millisec);
 
 #endif  // Generic Wait available
 
-
-//  ==== Signal Management ====
-
-/// Set the specified Signal Flags of an active thread.
-/// \param[in]     thread_id     thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
-/// \param[in]     signal        specifies the signal flags of the thread that should be set.
-/// \return previous signal flags of the specified thread or 0x80000000 in case of incorrect parameters.
-int32_t osSignalSet(pthread_t thread_id, int32_t signal);
-
-/// Clear the specified Signal Flags of an active thread.
-/// \param[in]     thread_id     thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
-/// \param[in]     signal        specifies the signal flags of the thread that shall be cleared.
-/// \return previous signal flags of the specified thread or 0x80000000 in case of incorrect parameters.
-int32_t osSignalClear(pthread_t thread_id, int32_t signal);
-
-/// Get Signal Flags status of the current thread.
-/// \return previous signal flags of the current thread.
-int32_t osSignalGetCurrent(void);
-
-/// Get Signal Flags status of an active thread.
-/// \param[in]     thread_id     thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
-/// \return previous signal flags of the specified thread or 0x80000000 in case of incorrect parameters.
-int32_t osSignalGet(pthread_t thread_id);
-
-/// Wait for one or more Signal Flags to become signaled for the current \b RUNNING thread.
-/// \param[in]     signals       wait until all specified signal flags set or 0 for any single signal flag.
-/// \param[in]     millisec      timeout value or 0 in case of no time-out.
-/// \return event flag information or error code.
-osEvent osSignalWait(int32_t signals, uint32_t millisec);
-
-
 //  ==== Semaphore Management Functions ====
 
 #if (defined (osFeature_Semaphore)  &&  (osFeature_Semaphore != 0))     // Semaphore available
