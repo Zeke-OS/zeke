@@ -20,9 +20,7 @@
 
 	.syntax unified
 	.text
-	.thumb
-	.cpu cortex-m0
-
+    .arch armv6k
 
 
 @ int __divsi3(int num, int denom)
