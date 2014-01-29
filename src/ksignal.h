@@ -37,9 +37,18 @@
 #define KSIGNAL_H
 
 #include <stdint.h>
+#include <signal.h>
+#include <sys/signalvar.h>
 #include "kernel.h"
 
 typedef uint32_t ksig_t;
+
+typedef struct {
+    ksig_t ps_block;       /*!< List of blocked signals. */
+    ksig_t ps_wait;        /*!< Signal wait mask. */
+    ksig_t ps_pending;     /*!< Signals pending for handling. */
+} sigs_t;
+
 
 /**
  * Get signal boolean value from signals variable.

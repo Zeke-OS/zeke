@@ -64,6 +64,7 @@ typedef struct {
                                  *   [1] = heap/data
                                  *   [2] = code
                                  */
+    sigs_t sigs;                /*!< Signals. */
 
     /* TODO - note: main_thread already has a liked list of child threads
      *      - page table(s)

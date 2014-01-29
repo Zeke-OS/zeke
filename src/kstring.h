@@ -13,6 +13,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#define _TO_STR(x) #x
+#define TO_STR(x) _TO_STR(x)
+
 #ifndef PU_TEST_BUILD
 void * memcpy(void * restrict destination, const void * source, size_t num);
 //void * memmove(void * destination, const void * source, ksize_t num);

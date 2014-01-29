@@ -38,7 +38,105 @@
 #include <errno.h>
 #include <sched.h>
 #include <timers.h>
+#include <kmalloc.h>
 #include "ksignal.h"
+
+/**
+ * Signal names.
+ */
+static char * signames[] = {
+    "SIGHUP",
+    "SIGINT",
+    "SIGQUIT",
+    "SIGILL",
+    "SIGTRAP",
+    "SIGABRT",
+    "SIGCHLD",
+    "SIGFPE",
+    "SIGKILL",
+    "SIGBUS",
+    "SIGSEGV",
+    "SIGCONT",
+    "SIGPIPE",
+    "SIGALRM",
+    "SIGTERM",
+    "SIGSTOP",
+    "SIGTSTP",
+    "SIGTTIN",
+    "SIGTTOU",
+    "SIGUSR1",
+    "SIGUSR2",
+    "SIGSYS",
+    "SIGURG",
+    "SIGINFO",
+    "SIGPWR"
+};
+
+/*
+ * Signal properties and actions.
+ * The array below categorizes the signals and their default actions
+ * according to the following properties:
+ */
+#define SA_KILL     0x01    /*!< Terminates process by default. */
+#define SA_CORE     0x02    /*!< ditto and coredumps. */
+#define SA_STOP     0x04    /*!< suspend process. */
+#define SA_TTYSTOP  0x08    /*!< ditto, from tty. */
+#define SA_IGNORE   0x10    /*!< ignore by default. */
+#define SA_CONT     0x20    /*!< continue if suspended. */
+#define SA_CANTMASK 0x40    /*!< non-maskable, catchable. */
+
+static int sigproptbl[] = {
+    SA_KILL,            /*!< SIGHUP */
+    SA_KILL,            /*!< SIGINT */
+    SA_KILL|SA_CORE,    /*!< SIGQUIT */
+    SA_KILL|SA_CORE,    /*!< SIGILL */
+    SA_KILL|SA_CORE,    /*!< SIGTRAP */
+    SA_KILL|SA_CORE,    /*!< SIGABRT */
+    SA_IGNORE,          /*!< SIGCHLD */
+    SA_KILL|SA_CORE,    /*!< SIGFPE */
+    SA_KILL,            /*!< SIGKILL */
+    SA_KILL|SA_CORE,    /*!< SIGBUS */
+    SA_KILL|SA_CORE,    /*!< SIGSEGV */
+    SA_IGNORE|SA_CONT,  /*!< SIGCONT */
+    SA_KILL,            /*!< SIGPIPE */
+    SA_KILL,            /*!< SIGALRM */
+    SA_KILL,            /*!< SIGTERM */
+    SA_STOP,            /*!< SIGSTOP */
+    SA_STOP|SA_TTYSTOP, /*!< SIGTSTP */
+    SA_STOP|SA_TTYSTOP, /*!< SIGTTIN */
+    SA_STOP|SA_TTYSTOP, /*!< SIGTTOU */
+    SA_KILL,            /*!< SIGUSR1 */
+    SA_KILL,            /*!< SIGUSR2 */
+    SA_KILL|SA_CORE,    /*!< SIGSYS */
+    SA_IGNORE,          /*!< SIGURG */
+    SA_IGNORE,          /*!< SIGINFO */
+    SA_KILL             /*!< SIGPWR */
+};
+
+ksiginfo_t * ksiginfo_alloc(int wait)
+{
+    return (ksiginfo_t *)kmalloc(sizeof(ksiginfo_t));
+}
+
+void ksiginfo_free(ksiginfo_t * ksi)
+{
+    kfree(ksi);
+}
+
+static inline int ksiginfo_tryfree(ksiginfo_t * ksi)
+{
+    int retval = 0;
+
+    if (!(ksi->ksi_flags & KSI_EXT)) {
+        kfree(ksi);
+        retval = 1;
+        goto out;
+    }
+
+out:
+    return retval;
+}
+
 
 /* Syscall handlers ***********************************************************/
 
