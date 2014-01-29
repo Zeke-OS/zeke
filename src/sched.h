@@ -61,11 +61,6 @@
 typedef struct {
     void * sp;                  /*!< Stack pointer. */
     uint32_t flags;             /*!< Status flags. */
-    struct {
-        ksig_t sig_block;       /*!< List of blocked signals. */
-        ksig_t sig_wait;        /*!< Signal wait mask. */
-        ksig_t sig_pending;     /*!< Signals pending for handling. */
-    } sig; /*!< Signals. */
     int errno;                  /*!< Thread local errno. */
     int wait_tim;               /*!< Reference to a timeout timer. */
     osEvent event;              /*!< Event struct. */
