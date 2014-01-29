@@ -33,6 +33,7 @@
 #include <kernel.h>
 #include <usrscope/usrinit.h>
 #include <sched.h>
+#include <libkern.h>
 #include <kinit.h>
 
 extern void (*__hw_preinit_array_start[]) (void) __attribute__((weak));
@@ -90,6 +91,13 @@ void kinit(void)
     };
     pthread_t tid;
     pthread_create(&tid, &main_thread, &main, NULL);
+}
+
+static void random_init(void) __attribute__((constructor));
+static void random_init(void)
+{
+    /* TODO Add some randomness ;) */
+    ksrandom(1);
 }
 
 /**

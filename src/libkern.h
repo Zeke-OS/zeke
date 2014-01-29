@@ -99,7 +99,7 @@ static inline long labs(long a) { return (a < 0 ? -a : a); }
 
 void ksrandom(unsigned long seed);
 unsigned long krandom(void);
-static long kunirand(long n);
+long kunirand(long n);
 
 #endif /* LIBKERN_H */
 
