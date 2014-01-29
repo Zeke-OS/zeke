@@ -38,6 +38,7 @@
 #include "libkern.h"
 
 #define NSHUFF 50 /* to drop some "seed -> 1st value" linearity */
+#define RAND_MAX 0x7fffffff
 
 static unsigned long randseed = 937186357; /* after srandom(1), NSHUFF counted */
 
@@ -85,7 +86,7 @@ unsigned long krandom(void)
 
 static long kunirand(long n)
 {
-    long partSize = (n == LONG_MAX) ? 1 : 1 + (LONG_MAX - n)/(n + 1);
+    long partSize = (n == RAND_MAX) ? 1 : 1 + (RAND_MAX - n)/(n + 1);
     long maxUsefull = partSize * n + (partSize - 1);
     long draw;
 
