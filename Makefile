@@ -123,9 +123,21 @@ MODAS = $(addsuffix .a, $(MODULES))
 # '# target_comp'	Generic target
 # '# target_test'	Testing target
 # '# target_clean'	Cleaning target
+# '# target_doc'	Documentation target
 
 # target_comp: all - Make config and compile kernel
 all: config kernel
+
+# target_doc: doc - Compile all documentation.
+doc: doc-doxy doc-book
+
+# target_doc: doc-doxy - Compile doxygen documentation.
+doc-doxy:
+	doxygen
+
+# target_doc: doc-book - Compile Zeke book.
+doc-book:
+	@echo TODO
 
 # target_comp: config - Update configuration from $(CONFIG_MK)
 config: $(AUTOCONF_H)
