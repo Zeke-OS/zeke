@@ -1,10 +1,12 @@
 /**
  *******************************************************************************
- * @file    containers.h
+ * @file    libkern.h
  * @author  Olli Vanhoja
- * @brief   Generic macros for use with structs and arrays.
+ * @brief   Generic functions and macros for use in kernel.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 1992, 1993
+ *      The Regents of the University of California.  All rights reserved.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,10 +33,11 @@
  */
 
 #pragma once
-#ifndef CONTAINERS_H
-#define CONTAINERS_H
+#ifndef LIBKERN_H
+#define LIBKERN_H
 
 #include <stddef.h>
+#include <sys/types.h>
 
 /**
  * Returns a container of ptr, which is a element in some struct.
@@ -61,5 +64,42 @@
  */
 #define num_elem(x) (sizeof(x) / sizeof(*(x)))
 
-#endif /* CONTAINERS_H */
+static inline int imax(int a, int b)
+{ return (a > b ? a : b); }
+
+static inline int imin(int a, int b)
+{ return (a < b ? a : b); }
+
+static inline long lmax(long a, long b)
+{ return (a > b ? a : b); }
+
+static inline long lmin(long a, long b)
+{ return (a < b ? a : b); }
+
+static inline unsigned int max(unsigned int a, unsigned int b)
+{ return (a > b ? a : b); }
+
+static inline unsigned int min(unsigned int a, unsigned int b)
+{ return (a < b ? a : b); }
+
+static inline unsigned long ulmax(unsigned long a, unsigned long b)
+{ return (a > b ? a : b); }
+
+static inline unsigned long ulmin(unsigned long a, unsigned long b)
+{ return (a < b ? a : b); }
+
+static inline off_t omax(off_t a, off_t b)
+{ return (a > b ? a : b); }
+
+static inline off_t omin(off_t a, off_t b)
+{ return (a < b ? a : b); }
+
+static inline int abs(int a) { return (a < 0 ? -a : a); }
+static inline long labs(long a) { return (a < 0 ? -a : a); }
+
+void ksrandom(unsigned long seed);
+unsigned long krandom(void);
+static long kunirand(long n);
+
+#endif /* LIBKERN_H */
 
