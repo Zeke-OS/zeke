@@ -34,6 +34,7 @@ Key features
 
 News
 ----
+- Merging some things from freebsd (signal handling, sysctl)
 - Dev subsys removed and will be soon replaced with devfs and
   virtual file system
 - Coming "soon": Full POSIX process & thread support
