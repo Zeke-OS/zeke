@@ -34,8 +34,7 @@
 #ifndef _SYS_LINKER_SET_H_
 #define _SYS_LINKER_SET_H_
 
-#define __GLOBL1(sym)   __asm__(".globl " #sym)
-#define __GLOBL(sym)    __GLOBL1(sym)
+#include <sys/cdefs.h>
 
 /*
  * The following macros are used to declare global sets of objects, which
