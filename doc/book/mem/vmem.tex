@@ -16,7 +16,7 @@ See \verb+MMU_DOM_xxx+ definitions.
 
 \subsection{Virtual memory abstraction levels}
 
-
+\begin{verbatim}
     U                      +---------------+
     S                      |    malloc     |
     R                      +---------------+
@@ -40,12 +40,12 @@ See \verb+MMU_DOM_xxx+ definitions.
         +-------------------+
         | MMU & coProcessor |
         +-------------------+
-
+\end{verbatim}
 
 \begin{itemize}
   \item \verb+kmalloc+ - is a kernel level memory allocation service.
-  \item \verb+dynmem+ - is a dynamic memory allocation system that allocates & frees
-        contiguous blocks of physical memory.
+  \item \verb+dynmem+ - is a dynamic memory allocation system that allocates \&
+        frees contiguous blocks of physical memory.
   \item  mmu HAL - is the abract MMU interface provided by \verb+mmu.h+
          and \verb+mmu.c+.
   \item CPU specific MMU code is the module responsible of configuring the
