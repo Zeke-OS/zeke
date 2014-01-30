@@ -1,9 +1,8 @@
-Processes and Threads in Zeke
-=============================
+\part{Process and Thread Management}
 
-Basic Concepts
---------------
+\section{Basic Concepts}
 
+\begin{verbatim}
     +-------------+
     | process_a   |
     +-------------+
@@ -41,31 +40,35 @@ Basic Concepts
                                                 | inh.first_child = NULL    |
                                                 | inh.next_child = NULL     |
                                                 +---------------------------+
+\end{verbatim}
 
-+ `tid_X` = Thread ID
-+ `pid_a` = Process ID
+\begin{itemize}
+  \item \verb+tid_X+ = Thread ID
+  \item \verb+pid_a+ = Process ID
+\end{itemize}
 
-`process_a` a has a main thread called `main`. Thread `main` has two child
-thread called `child_1` and `child_2`. `child_2` has created one child thread
-called `child_2_1`.
+\verb+process_a+ a has a main thread called \verb+main+. Thread \verb+main+ has
+two child thread called \verb+child_1+ and \verb+child_2+. \verb+child_2+ has
+created one child thread called \verb+child_2_1+.
 
-`main` owns all the threads it has created and at the same time child threads
+\verb+main+ owns all the threads it has created and at the same time child threads
 may own their own threads. If parent thread is killed then the children of the
 parent are killed first in somewhat reverse order.
 
-+ `parent` = Parent thread of the current thread if any
-+ `first_child` = First child created by the current thread
-+ `next_child` = Next child in chain of childer created by the parent thread
+\begin{itemize}
+  \item \verb+parent+ = Parent thread of the current thread if any
+  \item \verb+first_child+ = First child created by the current thread
+  \item \verb+next_child+ = Next child in chain of childer created by the parent thread
+\end{itemize}
 
-### Cases
+\subsection{Cases}
+\subparagraph*{process_a is killed}
 
-*process_a is killed*
+Before \verb+process_a+ can be killed \verb+main+ thread must be killed,
+because it has child threads its children has to be resolved and killed in
+reverse order of creation.
 
-Before `process_a` can be killed `main` thread must be killed, because it has
-child threads its children has to be resolved and killed in reverse order of
-creation.
+\subparagraph*{child_2 is killed}
 
-*child_2 is killed*
-
-Killing of `child_2` causes `child_2_1` to be killed first.
+Killing of \verb+child_2+ causes \verb+child_2_1+ to be killed first.
 
