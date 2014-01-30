@@ -5,8 +5,8 @@ User scope stub wrappers are located in \verb+src/usrscope+ directory.
 \verb+hal_core.h+ can be included to provide core specific system call
 functions.
 
-User scope syscall code is allowed to call following functions in \verb+hal_core+ to
-implement syscall functionality:
+User scope syscall code is allowed to call the following functions in
+\verb+hal_core+ to implement syscall functionality:
 
 \begin{itemize}
   \item \verb+uint32_t syscall(int type, void * p)+
@@ -27,7 +27,7 @@ implement syscall functionality:
       resolved according to \verb+syscall_callmap+.
 
 \item Execution enters to compilation unit specific \verb+XXX_syscall()+
-      function where it is handled any way wanted, usually by switch...case
+      function where it is handled any way wanted, usually by switch\ldots case
       structure and a function call.
 
 \item \verb+XXX_syscall()+ returns a \verb+uint32_t+ value which is, after

@@ -6,11 +6,11 @@ storage medium available on some embedded platform. In addition to storage
 for temporary files in user scope ramfs could be useful to store kernel files
 as well, e.g. init can be unpacked from kernel to ramfs and then executed.
 
-In the future ramfs code might be also useful for \acs{VFS} caching, so that
+In the future ramfs code might be also useful for \acs{vfs} caching, so that
 changes to a slow medium could be stored in ramfs-like structure and synced
 later.
 
-Ramfs should implement the same \acs{VFS} interface as any other regular
+Ramfs should implement the same \acs{vfs} interface as any other regular
 file system for Zeke. This ensures that the same POSIX compliant file
 descriptor interface\footnote{POSIX file API is not actually yet implemented.}
 can be used for files stored to ramfs as well as to any other file system.
