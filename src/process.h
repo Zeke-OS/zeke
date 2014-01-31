@@ -47,10 +47,13 @@
 #include <kernel.h>
 #include <sched.h> /* Needed for threadInfo_t and threading functions */
 
-#if configMMU == 0
+#if configMMU == 0 && !defined(PU_TEST_BUILD)
 #error Processes are not supported without MMU.
-#endif
+#elif defined(PU_TEST_BUILD)
+/* Test build */
+#else /* Normal build with MMU */
 #include <hal/mmu.h>
+#endif
 
 /**
  * Process Control Block or Process Descriptor Structure
@@ -58,12 +61,14 @@
 typedef struct {
     pid_t pid;
     threadInfo_t * main_thread; /*!< Main thread of this process. */
+#ifndef PU_TEST_BUILD
     mmu_pagetable_t * pptable;  /*!< Process master page table. */
     mmu_region_t regions[3];    /*!< Standard regions of a process.
                                  *   [0] = stack
                                  *   [1] = heap/data
                                  *   [2] = code
                                  */
+#endif
     sigs_t sigs;                /*!< Signals. */
 
     /* TODO - note: main_thread already has a liked list of child threads
