@@ -49,6 +49,8 @@
 /* TODO Missing most of the standard declarations */
 /* TODO errnos */
 
+#ifndef KERNEL_INTERNAL
+
 /**
  * Get calling thread's ID.
  *
@@ -127,7 +129,21 @@ osStatus osThreadSetPriority(pthread_t thread_id, osPriority priority);
 /// \return current priority value of the thread function.
 osPriority osThreadGetPriority(pthread_t thread_id);
 
+#endif /* KERNEL_INTERNAL */
 #endif /* PTHREAD_H */
+
+
+/*
+ * Declare functions internal to kernel (like syscall handler).
+ */
+#ifdef KERNEL_INTERNAL
+#ifndef _KINT_PTHREAD_H
+#define _KINT_PTHREAD_H
+
+uint32_t ulocks_syscall(uint32_t type, void * p);
+
+#endif /* _KINT_PTHREAD_H */
+#endif /* KERNEL_INTERNAL */
 
 /**
   * @}

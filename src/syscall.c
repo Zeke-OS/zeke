@@ -40,8 +40,10 @@
 #include <errno.h>
 #include <ksignal.h>
 #include <fs/fs.h>
-#include <locks.h>
+#include <pthread.h>
 #include <syscall.h>
+
+uint32_t ulocks_syscall(uint32_t type, void * p);
 
 /* For all Syscall groups */
 #if PU_TEST_BUILD == 0
@@ -50,7 +52,7 @@
     apply(SYSCALL_GROUP_SCHED_THREAD, sched_syscall_thread) \
     apply(SYSCALL_GROUP_SIGNAL, ksignal_syscall)            \
     apply(SYSCALL_GROUP_FS, fs_syscall)                     \
-    apply(SYSCALL_GROUP_LOCKS, locks_syscall)
+    apply(SYSCALL_GROUP_LOCKS, ulocks_syscall)
 #else
 #define FOR_ALL_SYSCALL_GROUPS(apply)                       \
     apply(SYSCALL_GROUP_SCHED, sched_syscall)               \

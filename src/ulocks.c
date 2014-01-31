@@ -2,7 +2,7 @@
  *******************************************************************************
  * @file    locks.c
  * @author  Olli Vanhoja
- * @brief   User sapce locks and Syscall handlers for locks.
+ * @brief   User space locks and Syscall handlers for locks.
  * @section LICENSE
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
@@ -40,8 +40,9 @@
 #include <sched.h>
 #include <timers.h>
 #include <errno.h>
-#include "locks.h"
 
+static void locks_semaphore_v(uint32_t * s);
+static int locks_semaphore_p(uint32_t * s);
 static int locks_semaphore_thread_spinwait(uint32_t * s, uint32_t millisec);
 
 /** @addtogroup Internal_Locks
@@ -56,7 +57,7 @@ static int locks_semaphore_thread_spinwait(uint32_t * s, uint32_t millisec);
  * Increment a semaphore
  * @param s a semaphore.
  */
-void locks_semaphore_v(uint32_t * s)
+static void locks_semaphore_v(uint32_t * s)
 {
     *s += 1;
 }
@@ -66,7 +67,7 @@ void locks_semaphore_v(uint32_t * s)
  * @param s a semaphore.
  * @return 0 if decrease failed; otherwise succeed.
  */
-int locks_semaphore_p(uint32_t * s)
+static int locks_semaphore_p(uint32_t * s)
 {
     if (*s > 0) {
         *s -= 1;
@@ -116,7 +117,7 @@ static int locks_semaphore_thread_spinwait(uint32_t * s, uint32_t millisec)
   * @}
   */
 
-uint32_t locks_syscall(uint32_t type, void * p)
+uint32_t ulocks_syscall(uint32_t type, void * p)
 {
     uint32_t retval;
 
@@ -139,6 +140,7 @@ uint32_t locks_syscall(uint32_t type, void * p)
         return (uint32_t)NULL;
 
     default:
+        current_thread->errno = ENOSYS;
         return (uint32_t)NULL;
     }
 }
