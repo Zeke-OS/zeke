@@ -44,8 +44,8 @@ SYSCTL_INT(_security, OID_AUTO, suser_enabled, CTLFLAG_RW,
 //TUNABLE_INT("security.suser_enabled", &suser_enabled);
 
 static int  unprivileged_mlock = 1;
-SYSCTL_INT(_security, OID_AUTO, unprivileged_mlock, CTLFLAG_RW|CTLFLAG_TUN,
-        &unprivileged_mlock, 0, "Allow non-root users to call mlock(2)");
+//SYSCTL_INT(_security, OID_AUTO, unprivileged_mlock, CTLFLAG_RW|CTLFLAG_TUN,
+//        &unprivileged_mlock, 0, "Allow non-root users to call mlock(2)");
 //TUNABLE_INT("security.unprivileged_mlock", &unprivileged_mlock);
 
 int securelevel_gt(struct ucred * cr, int level)

@@ -118,7 +118,13 @@ struct ctlname {
  * be implemented.
  * e.g. SYSCTL_INT(_parent, OID_AUTO, name, CTLFLAG_RW, &variable, 0, "");
  */
-#define OID_AUTO    (-1)
+#define OID_AUTO (-1)
+
+/*
+ * The starting number for dynamically-assigned entries.  WARNING!
+ * ALL static sysctl entries should have numbers LESS than this!
+ */
+#define CTL_AUTO_START 0x100
 
 #ifdef KERNEL_INTERNAL
 #include <sys/linker_set.h>
@@ -451,27 +457,27 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
 /*
  * KERN_PROC subtypes
  */
-#define        KERN_PROC_ALL                0        /* everything */
-#define        KERN_PROC_PID                1        /* by process id */
-#define        KERN_PROC_PGRP                2        /* by process group id */
-#define        KERN_PROC_SESSION        3        /* by session of pid */
-#define        KERN_PROC_TTY                4        /* by controlling tty */
-#define        KERN_PROC_UID                5        /* by effective uid */
-#define        KERN_PROC_RUID                6        /* by real uid */
-#define        KERN_PROC_ARGS                7        /* get/set arguments/proctitle */
-#define        KERN_PROC_PROC                8        /* only return procs */
-#define        KERN_PROC_SV_NAME        9        /* get syscall vector name */
-#define        KERN_PROC_RGID                10        /* by real group id */
-#define        KERN_PROC_GID                11        /* by effective group id */
-#define        KERN_PROC_PATHNAME        12        /* path to executable */
-#define        KERN_PROC_OVMMAP        13        /* Old VM map entries for process */
-#define        KERN_PROC_OFILEDESC        14        /* Old file descriptors for process */
-#define        KERN_PROC_KSTACK        15        /* Kernel stacks for process */
-#define        KERN_PROC_INC_THREAD        0x10        /*
-                                         * modifier for pid, pgrp, tty,
-                                         * uid, ruid, gid, rgid and proc
-                                         * This effectively uses 16-31
-                                         */
+#define        KERN_PROC_ALL        0   /* everything */
+#define        KERN_PROC_PID        1   /* by process id */
+#define        KERN_PROC_PGRP       2   /* by process group id */
+#define        KERN_PROC_SESSION    3   /* by session of pid */
+#define        KERN_PROC_TTY        4   /* by controlling tty */
+#define        KERN_PROC_UID        5   /* by effective uid */
+#define        KERN_PROC_RUID       6   /* by real uid */
+#define        KERN_PROC_ARGS       7   /* get/set arguments/proctitle */
+#define        KERN_PROC_PROC       8   /* only return procs */
+#define        KERN_PROC_SV_NAME    9   /* get syscall vector name */
+#define        KERN_PROC_RGID       10  /* by real group id */
+#define        KERN_PROC_GID        11  /* by effective group id */
+#define        KERN_PROC_PATHNAME   12  /* path to executable */
+#define        KERN_PROC_OVMMAP     13  /* Old VM map entries for process */
+#define        KERN_PROC_OFILEDESC  14  /* Old file descriptors for process */
+#define        KERN_PROC_KSTACK     15  /* Kernel stacks for process */
+#define        KERN_PROC_INC_THREAD 0x10 /*
+                                          * modifier for pid, pgrp, tty,
+                                          * uid, ruid, gid, rgid and proc
+                                          * This effectively uses 16-31
+                                          */
 #define        KERN_PROC_VMMAP                32        /* VM map entries for process */
 #define        KERN_PROC_FILEDESC        33        /* File descriptors for process */
 #define        KERN_PROC_GROUPS        34      ne        KERN_PROC_ENV                35        /* get environment */
@@ -541,13 +547,20 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
  * Declare oids.
  */
 extern struct sysctl_oid_list sysctl__children;
+
 SYSCTL_DECL(_kern);
 SYSCTL_DECL(_security);
 
-#else /* !KERNEL_INTERNAL */
-int        sysctl(const int *, unsigned int, void *, size_t *, const void *, size_t);
-int        sysctlbyname(const char *, void *, size_t *, const void *, size_t);
-int        sysctlnametomib(const char *, int *, size_t *);
+void sysctl_register_oid(struct sysctl_oid * oidp);
+void sysctl_unregister_oid(struct sysctl_oid * oidp);
+int sysctl_find_oid(int * name, unsigned int namelen, struct sysctl_oid ** noid,
+        int * nindx, struct sysctl_req * req);
+int kernel_sysctlbyname(threadInfo_t * td, char * name, void * old, size_t * oldlenp,
+        void * new, size_t newlen, size_t * retval, int flags);
+int sysctl_wire_old_buffer(struct sysctl_req * req, size_t len);
+int kernel_sysctl(threadInfo_t * td, int * name, unsigned int namelen, void * old,
+    size_t * oldlenp, void * new, size_t newlen, size_t * retval, int flags);
+
 #endif /* KERNEL_INTERNAL */
 
 #endif /* _SYS_SYSCTL_H_ */

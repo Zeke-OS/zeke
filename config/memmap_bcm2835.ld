@@ -53,6 +53,14 @@ SECTIONS
         KEEP (*(SORT(.fini_array.*)))
         PROVIDE_HIDDEN (__fini_array_end = .);
     }
+
+    /* linker sets */
+    .robsdsets :
+    {
+        PROVIDE_HIDDEN (__start_set_sysctl_set = .);
+        KEEP (*(set_sysctl_*))
+        PROVIDE_HIDDEN (__stop_set_sysctl_set = .);
+    }
     . = ALIGN(4096); /* align to page size */
     _cinit_data_end = .;
 

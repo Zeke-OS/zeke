@@ -74,7 +74,7 @@ int _mtx_spinlock(mtx_t * mtx, char * whr)
         goto out;
     }
 
-    while(test_and_set(&(mtx->mtx_lock)));
+    while(test_and_set((int *)(&(mtx->mtx_lock))));
 #ifdef LOCK_DEBUG
     mtx->mtx_ldebug = whr;
 #endif
@@ -96,7 +96,7 @@ int _mtx_trylock(mtx_t * mtx, char * whr)
 {
     int retval;
 
-    retval = test_and_set(&(mtx->mtx_lock));
+    retval = test_and_set((int *)(&(mtx->mtx_lock)));
 #ifdef LOCK_DEBUG
     mtx->mtx_ldebug = whr;
 #endif

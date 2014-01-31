@@ -51,11 +51,12 @@ MODULES += $(foreach var, $(ALLMODULES), $(if $(strip $($(var)-SRC-1) $($(var)-A
 # Generic Compiler Options #####################################################
 ARMGNU   = arm-none-eabi
 CCFLAGS  = -std=c99 -emit-llvm -Wall -ffreestanding -O2
-CCFLAGS += -nostdlib -nostdinc -nostdsysteminc 
+CCFLAGS += -nostdlib -nostdinc 
 CCFLAGS += -m32 -ccc-host-triple $(ARMGNU)
 OFLAGS   = -std-compile-opts
 LLCFLAGS = -mtriple=$(ARMGNU)
 ASFLAGS  =#
+LDFLAGS  =#
 ################################################################################
 
 # Target Specific Compiler Options & Special files #############################
@@ -186,7 +187,7 @@ $(MODAS): $(ASOBJS) $(OBJS)
 	ar rcs $@ $(CUR_OBJS)
 
 kernel.bin: $(MEMMAP) $(STARTUP_O) $(MODAS) $(CRT)
-	$(ARMGNU)-ld -o kernel.elf -T $(MEMMAP) $(STARTUP_O) --whole-archive $(MODAS) --no-whole-archive $(CRT)
+	$(ARMGNU)-ld -o kernel.elf -T $(MEMMAP) $(LDFLAGS) $(STARTUP_O) --whole-archive $(MODAS) --no-whole-archive $(CRT)
 	$(ARMGNU)-objdump -D kernel.elf > kernel.list
 	$(ARMGNU)-objcopy kernel.elf -O binary kernel.bin
 
