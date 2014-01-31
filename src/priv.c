@@ -48,11 +48,27 @@ SYSCTL_INT(_security, OID_AUTO, unprivileged_mlock, CTLFLAG_RW|CTLFLAG_TUN,
         &unprivileged_mlock, 0, "Allow non-root users to call mlock(2)");
 //TUNABLE_INT("security.unprivileged_mlock", &unprivileged_mlock);
 
+/**
+ * Test active securelevel.
+ * Test whether or not the active security level is greater than the
+ * supplied level.
+ * @param cr    is the calling credential.
+ * @param level is the needed security level.
+ * @return  Returns EPERM if condition evaluated to true; Otherwise zero.
+ */
 int securelevel_gt(struct ucred * cr, int level)
 {
     return (cr->pr_securelevel > level ? EPERM : 0);
 }
 
+/**
+ * Test active securelevel.
+ * Test whether or not the active security level is greater than or equal to
+ * the supplied level.
+ * @param cr    is the calling credential.
+ * @param level is the needed security level.
+ * @return  Returns EPERM if condition evaluated to true; Otherwise zero.
+ */
 int securelevel_ge(struct ucred * cr, int level)
 {
     return (cr->pr_securelevel >= level ? EPERM : 0);

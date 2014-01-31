@@ -61,19 +61,19 @@
  * privileges, such as the ability to reboot, and then loosely by
  * subsystem, indicated by a subsystem name.
  */
-#define _PRIV_ROOT      1   /* Removed. */
-#define PRIV_ACCT       2   /* Manage process accounting. */
+#define _PRIV_ROOT          1   /* Removed. */
+#define PRIV_ACCT           2   /* Manage process accounting. */
 #define PRIV_MAXFILES       3   /* Exceed system open files limit. */
 #define PRIV_MAXPROC        4   /* Exceed system processes limit. */
-#define PRIV_KTRACE     5   /* Set/clear KTRFAC_ROOT on ktrace. */
+#define PRIV_KTRACE         5   /* Set/clear KTRFAC_ROOT on ktrace. */
 #define PRIV_SETDUMPER      6   /* Configure dump device. */
-#define PRIV_REBOOT     8   /* Can reboot system. */
-#define PRIV_SWAPON     9   /* Can swapon(). */
+#define PRIV_REBOOT         8   /* Can reboot system. */
+#define PRIV_SWAPON         9   /* Can swapon(). */
 #define PRIV_SWAPOFF        10  /* Can swapoff(). */
-#define PRIV_MSGBUF     11  /* Can read kernel message buffer. */
-#define PRIV_IO         12  /* Can perform low-level I/O. */
+#define PRIV_MSGBUF         11  /* Can read kernel message buffer. */
+#define PRIV_IO             12  /* Can perform low-level I/O. */
 #define PRIV_KEYBOARD       13  /* Reprogram keyboard. */
-#define PRIV_DRIVER     14  /* Low-level driver privilege. */
+#define PRIV_DRIVER         14  /* Low-level driver privilege. */
 #define PRIV_ADJTIME        15  /* Set time adjustment. */
 #define PRIV_NTP_ADJTIME    16  /* Set NTP time adjustment. */
 #define PRIV_CLOCK_SETTIME  17  /* Can call clock_settime. */
@@ -113,23 +113,9 @@
 #define PRIV_DEBUG_UNPRIV   82  /* Exempt unprivileged debug limit. */
 
 /*
- * Dtrace privileges.
- */
-#define PRIV_DTRACEKERNEL_INTERNAL  90  /* Allow use of DTrace on the kernel. */
-#define PRIV_DTRACE_PROC    91  /* Allow attaching DTrace to process. */
-#define PRIV_DTRACE_USER    92  /* Process may submit DTrace events. */
-
-/*
  * Firmware privilegs.
  */
 #define PRIV_FIRMWARE_LOAD  100 /* Can load firmware. */
-
-/*
- * Jail privileges.
- */
-#define PRIV_JAIL_ATTACH    110 /* Attach to a jail. */
-#define PRIV_JAIL_SET       111 /* Set jail parameters. */
-#define PRIV_JAIL_REMOVE    112 /* Remove a jail. */
 
 /*
  * Kernel environment priveleges.
@@ -205,7 +191,6 @@
  */
 #define PRIV_SYSCTL_DEBUG   240 /* Can invoke sysctl.debug. */
 #define PRIV_SYSCTL_WRITE   241 /* Can write sysctls. */
-#define PRIV_SYSCTL_WRITEJAIL   242 /* Can write sysctls, jail permitted. */
 
 /*
  * TTY privileges.
@@ -400,12 +385,12 @@
 /*
  * NCP privileges.
  */
-#define PRIV_NETNCP     530 /* Use another user's connection. */
+#define PRIV_NETNCP         530 /* Use another user's connection. */
 
 /*
  * SMB privileges.
  */
-#define PRIV_NETSMB     540 /* Use another user's connection. */
+#define PRIV_NETSMB         540 /* Use another user's connection. */
 
 /*
  * VM86 privileges.

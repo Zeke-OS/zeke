@@ -954,15 +954,7 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
     if (req->newptr && !(oid->oid_kind & CTLFLAG_ANYBODY)) {
         int priv;
 
-        if (oid->oid_kind & CTLFLAG_PRISON)
-            priv = PRIV_SYSCTL_WRITEJAIL;
-#ifdef VIMAGE
-        else if ((oid->oid_kind & CTLFLAG_VNET) &&
-             prison_owns_vnet(req->td->td_ucred))
-            priv = PRIV_SYSCTL_WRITEJAIL;
-#endif
-        else
-            priv = PRIV_SYSCTL_WRITE;
+        priv = PRIV_SYSCTL_WRITE;
         error = priv_check(req->td, priv);
         if (error)
             return (error);
