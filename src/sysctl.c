@@ -757,49 +757,49 @@ out:
 int kernel_sysctl(threadInfo_t * td, int * name, unsigned int namelen, void * old,
     size_t * oldlenp, void * new, size_t newlen, size_t * retval, int flags)
 {
-        int error = 0;
-        struct sysctl_req req;
+    int error = 0;
+    struct sysctl_req req;
 
-        memset(&req, 0, sizeof req);
+    memset(&req, 0, sizeof req);
 
-        req.td = td;
-        req.flags = flags;
+    req.td = td;
+    req.flags = flags;
 
-        if (oldlenp) {
-                req.oldlen = *oldlenp;
-        }
-        req.validlen = req.oldlen;
+    if (oldlenp) {
+        req.oldlen = *oldlenp;
+    }
+    req.validlen = req.oldlen;
 
-        if (old) {
-                req.oldptr= old;
-        }
+    if (old) {
+        req.oldptr= old;
+    }
 
-        if (new != NULL) {
-                req.newlen = newlen;
-                req.newptr = new;
-        }
+    if (new != NULL) {
+        req.newlen = newlen;
+        req.newptr = new;
+    }
 
-        req.oldfunc = sysctl_old_kernel;
-        req.newfunc = sysctl_new_kernel;
-        req.lock = REQ_UNWIRED;
+    req.oldfunc = sysctl_old_kernel;
+    req.newfunc = sysctl_new_kernel;
+    req.lock = REQ_UNWIRED;
 
-        SYSCTL_LOCK();
-        error = sysctl_root(0, name, namelen, &req);
-        SYSCTL_UNLOCK();
+    SYSCTL_LOCK();
+    error = sysctl_root(0, name, namelen, &req);
+    SYSCTL_UNLOCK();
 
-        //if (req.lock == REQ_WIRED && req.validlen > 0)
-        //        vsunlock(req.oldptr, req.validlen);
+    //if (req.lock == REQ_WIRED && req.validlen > 0)
+    //        vsunlock(req.oldptr, req.validlen);
 
-        if (error && error != ENOMEM)
-                return (error);
+    if (error && error != ENOMEM)
+        return error;
 
-        if (retval) {
-                if (req.oldptr && req.oldidx > req.validlen)
-                        *retval = req.validlen;
-                else
-                        *retval = req.oldidx;
-        }
-        return (error);
+    if (retval) {
+        if (req.oldptr && req.oldidx > req.validlen)
+            *retval = req.validlen;
+        else
+            *retval = req.oldidx;
+    }
+    return error;
 }
 
 int kernel_sysctlbyname(threadInfo_t * td, char * name, void * old, size_t * oldlenp,
