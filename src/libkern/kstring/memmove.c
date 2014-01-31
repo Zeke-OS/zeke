@@ -30,7 +30,7 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
+#include <sys/cdefs_zeke.h>
 #include <sys/types.h>
 #include <kstring.h>
 

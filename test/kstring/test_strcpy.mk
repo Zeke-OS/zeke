@@ -4,4 +4,4 @@
 TEST_SRC += test_strcpy.c
 
 # SRC files needed for this test
-SRC-strcpy += ../../src/kstring/strcpy.c
+SRC-strcpy += ../../src/libkern/kstring/strcpy.c

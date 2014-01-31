@@ -51,7 +51,7 @@ MODULES += $(foreach var, $(ALLMODULES), $(if $(strip $($(var)-SRC-1) $($(var)-A
 # Generic Compiler Options #####################################################
 ARMGNU   = arm-none-eabi
 CCFLAGS  = -std=c99 -emit-llvm -Wall -ffreestanding -O2
-CCFLAGS += -nostdlib -nostdinc
+CCFLAGS += -nostdlib -nostdinc -nostdsysteminc 
 CCFLAGS += -m32 -ccc-host-triple $(ARMGNU)
 OFLAGS   = -std-compile-opts
 LLCFLAGS = -mtriple=$(ARMGNU)

@@ -77,7 +77,7 @@ typedef struct {
 /**
   * Init hw stack frame
   */
-inline void init_hw_stack_frame(/*@unused@*/ osThreadDef_t * thread_def, /*@unused@*/ void * argument, /*@unused@*/ uint32_t a_del_thread)
+inline void init_hw_stack_frame(/*@unused@*/ ds_pthread_create_t * thread_def, /*@unused@*/ uint32_t a_del_thread)
 {
 }
 
@@ -125,6 +125,14 @@ inline void wr_thread_stack_ptr(/*@unused@*/ void * ptr)
 {
 }
 
+int test_and_set(int * lock)
+{
+    int old;
+    old = *lock;
+    return old;
+}
+
+#ifdef PU_TEST_SYSCALLS
 /*
  * Call syscalls directly as we can't use any SVC on universal test environment.
  */
@@ -132,6 +140,7 @@ inline uint32_t syscall(uint32_t type, void * p)
 {
     return _intSyscall_handler(type, p);
 }
+#endif
 
 #endif /* PU_TEST_CORE_H */
 

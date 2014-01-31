@@ -34,7 +34,7 @@
 #ifndef _SYS_LINKER_SET_H_
 #define _SYS_LINKER_SET_H_
 
-#include <sys/cdefs.h>
+#include <sys/cdefs_zeke.h>
 
 /*
  * The following macros are used to declare global sets of objects, which

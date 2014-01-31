@@ -4,4 +4,4 @@
 TEST_SRC += test_strnncat.c
 
 # SRC files needed for this test
-SRC-strnncat += ../../src/kstring/strnncat.c
+SRC-strnncat += ../../src/libkern/kstring/strnncat.c

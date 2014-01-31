@@ -40,8 +40,6 @@
 #define _SYS_SIGNALVAR_H_
 
 #include <sys/queue.h>
-#include <sys/_lock.h>
-#include <sys/_mutex.h>
 #include <sys/_sigset.h>
 #include <sys/signal.h>
 
@@ -70,7 +68,6 @@ struct sigacts {
         sigset_t ps_usertramp;                /* SunOS compat; libc sigtramp. XXX */
         int        ps_flag;
         int        ps_refcnt;
-        struct mtx ps_mtx;
 };
 
 #define        PS_NOCLDWAIT        0x0001        /* No zombies if child dies */
@@ -311,18 +308,6 @@ struct pgrp;
 struct proc;
 struct sigio;
 struct thread;
-
-/*
- * Lock the pointers for a sigio object in the underlying objects of
- * a file descriptor.
- */
-#define        SIGIO_LOCK()        mtx_lock(&sigio_lock)
-#define        SIGIO_TRYLOCK()        mtx_trylock(&sigio_lock)
-#define        SIGIO_UNLOCK()        mtx_unlock(&sigio_lock)
-#define        SIGIO_LOCKED()        mtx_owned(&sigio_lock)
-#define        SIGIO_ASSERT(type)        mtx_assert(&sigio_lock, type)
-
-extern struct mtx        sigio_lock;
 
 /* Flags for kern_sigprocmask(). */
 #define        SIGPROCMASK_OLD                0x0001

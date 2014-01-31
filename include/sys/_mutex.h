@@ -35,7 +35,7 @@
 
 #ifndef _SYS__MUTEX_H_
 #define _SYS__MUTEX_H_
-
+#ifdef KERNEL_INTERNAL
 
 /*
  * Sleep/spin mutex.
@@ -46,9 +46,15 @@
  * If this rule needs to change, the bits in the mutex implementation must
  * be modified appropriately.
  */
-struct mtx {
-    lock_obj_t lock_object; /*!< Common lock properties. */
-    volatile uintptr_t mtx_lock; /*!< Owner and flags. */
-};
+typedef struct mtx {
+    volatile void * mtx_owner;  /*!< Pointer to optional owner information. */
+    volatile int mtx_lock;      /*!< Flags. */
+} mtx_t;
 
+void mtx_init(mtx_t * mtx);
+int mtx_lock_spin(mtx_t * mtx);
+int mtx_trylock(mtx_t * mtx);
+void mtx_unlock(mtx_t * mtx);
+
+#endif
 #endif /* !_SYS__MUTEX_H_ */

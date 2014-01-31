@@ -5,7 +5,7 @@
 
 #include <punit.h>
 #include "sim_kmheap.h"
-#include <containers.h>
+#include <libkern.h>
 #include <kmalloc.h>
 #include <fs/fs.h>
 #include <fs/inpool.h>

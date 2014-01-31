@@ -2,7 +2,7 @@
  *******************************************************************************
  * @file    locks.c
  * @author  Olli Vanhoja
- * @brief   Locks and Syscall handlers for locks
+ * @brief   User sapce locks and Syscall handlers for locks.
  * @section LICENSE
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>

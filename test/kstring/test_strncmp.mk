@@ -4,4 +4,4 @@
 TEST_SRC += test_strncmp.c
 
 # SRC files needed for this test
-SRC-strncmp += ../../src/kstring/strncmp.c
+SRC-strncmp += ../../src/libkern/kstring/strncmp.c

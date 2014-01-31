@@ -4,4 +4,4 @@
 TEST_SRC += test_uitoa32.c
 
 # SRC files needed for this test
-SRC-uitoa32 += ../../src/kstring/uitoa32.c
+SRC-uitoa32 += ../../src/libkern/kstring/uitoa32.c
