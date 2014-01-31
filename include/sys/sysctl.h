@@ -176,6 +176,7 @@ struct sysctl_oid {
 
 int sysctl_handle_int(SYSCTL_HANDLER_ARGS);
 int sysctl_handle_long(SYSCTL_HANDLER_ARGS);
+int sysctl_handle_32(SYSCTL_HANDLER_ARGS);
 int sysctl_handle_64(SYSCTL_HANDLER_ARGS);
 int sysctl_handle_string(SYSCTL_HANDLER_ARGS);
 

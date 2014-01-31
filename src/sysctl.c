@@ -45,6 +45,8 @@
 #define KERNEL_INTERNAL
 #include <stdint.h>
 #include <errno.h>
+#include <kstring.h>
+#include <kmalloc.h>
 #include <sys/sysctl.h>
 
 struct sysctl_oid_list sysctl__children; /* root list */
@@ -85,3 +87,147 @@ out:
     return error;
 }
 
+/*
+ * Long handler.
+ * Handle a long, signed or unsigned.
+ * Two cases:
+ *     a variable:  point arg1 at it.
+ *     a constant:  pass it in arg2.
+ */
+int sysctl_handle_long(SYSCTL_HANDLER_ARGS)
+{
+    int error = 0;
+    long tmplong;
+
+    /*
+     * Attempt to get a coherent snapshot by making a copy of the data.
+     */
+    if (arg1)
+        tmplong = *(long *)arg1;
+    else
+        tmplong = arg2;
+
+    error = SYSCTL_OUT(req, &tmplong, sizeof(long));
+
+    if (error || !req->newptr)
+        goto out;
+
+    if (!arg1)
+        error = EPERM;
+    else
+        error = SYSCTL_IN(req, arg1, sizeof(long));
+
+out:
+    return error;
+}
+
+/**
+ * uint32_t handler.
+ * Handle a 32 bit int, signed or unsigned.
+ * Two cases:
+ *     a variable:  point arg1 at it.
+ *     a constant:  pass it in arg2.
+ */
+int sysctl_handle_32(SYSCTL_HANDLER_ARGS)
+{
+    int error = 0;
+    uint32_t tmpout;
+
+    /*
+     * Attempt to get a coherent snapshot by making a copy of the data.
+     */
+    if (arg1)
+        tmpout = *(uint32_t *)arg1;
+    else
+        tmpout = arg2;
+    error = SYSCTL_OUT(req, &tmpout, sizeof(uint32_t));
+
+    if (error || !req->newptr)
+        goto out;
+
+    if (!arg1)
+        error = EPERM;
+    else
+        error = SYSCTL_IN(req, arg1, sizeof(uint32_t));
+
+out:
+    return error;
+}
+
+/**
+ * uint64_t handler.
+ * Handle a 64 bit int, signed or unsigned.
+ * Two cases:
+ *     a variable:  point arg1 at it.
+ *     a constant:  pass it in arg2.
+ */
+int sysctl_handle_64(SYSCTL_HANDLER_ARGS)
+{
+    int error = 0;
+    uint64_t tmpout;
+
+    /*
+     * Attempt to get a coherent snapshot by making a copy of the data.
+     */
+    if (arg1)
+        tmpout = *(uint64_t *)arg1;
+    else
+        tmpout = arg2;
+    error = SYSCTL_OUT(req, &tmpout, sizeof(uint64_t));
+
+    if (error || !req->newptr)
+        goto out;
+
+    if (!arg1)
+        error = EPERM;
+    else
+        error = SYSCTL_IN(req, arg1, sizeof(uint64_t));
+
+out:
+    return error;
+}
+
+/*
+ * Handle our generic '\0' terminated 'C' string.
+ * Two cases:
+ *         a variable string:  point arg1 at it, arg2 is max length.
+ *         a constant string:  point arg1 at it, arg2 is zero.
+ */
+
+int sysctl_handle_string(SYSCTL_HANDLER_ARGS)
+{
+    int error=0;
+    char *tmparg;
+    size_t outlen;
+
+    /*
+     * Attempt to get a coherent snapshot by copying to a
+     * temporary kernel buffer.
+     */
+retry:
+    outlen = strlenn((char *)arg1, 80) + 1; /* TODO hardcoding this here is
+                                             *      not very clever. */
+    tmparg = kmalloc(outlen);
+
+    if (strlcpy(tmparg, (char *)arg1, outlen) >= outlen) {
+        kfree(tmparg);
+        goto retry;
+    }
+
+    error = SYSCTL_OUT(req, tmparg, outlen);
+    kfree(tmparg);
+
+    if (error || !req->newptr)
+        goto out;
+
+    if ((req->newlen - req->newidx) >= arg2) {
+        error = EINVAL;
+    } else {
+        arg2 = (req->newlen - req->newidx);
+        error = SYSCTL_IN(req, arg1, arg2);
+        ((char *)arg1)[arg2] = '\0';
+    }
+
+out:
+    return error;
+}
