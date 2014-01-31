@@ -128,7 +128,10 @@ inline void wr_thread_stack_ptr(/*@unused@*/ void * ptr)
 int test_and_set(int * lock)
 {
     int old;
+
     old = *lock;
+    *lock = 1;
+
     return old;
 }
 

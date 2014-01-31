@@ -52,7 +52,7 @@ typedef struct mtx {
 } mtx_t;
 
 void mtx_init(mtx_t * mtx);
-int mtx_lock_spin(mtx_t * mtx);
+int mtx_spinlock(mtx_t * mtx);
 int mtx_trylock(mtx_t * mtx);
 void mtx_unlock(mtx_t * mtx);
 

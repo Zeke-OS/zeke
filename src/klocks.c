@@ -41,6 +41,7 @@
 
 /**
  * Initialize a kernel mutex.
+ * @param mtx is a mutex struct.
  */
 void mtx_init(mtx_t * mtx)
 {
@@ -54,9 +55,10 @@ void mtx_init(mtx_t * mtx)
  * @param mtx is a mutex struct.
  * @return Returns 0 if lock achieved.
  */
-int mtx_lock_spin(mtx_t * mtx)
+int mtx_spinlock(mtx_t * mtx)
 {
-    while(test_and_set(mtx->mtx_lock));
+    while(test_and_set(&(mtx->mtx_lock)));
+
     return 0;
 }
 
@@ -67,7 +69,7 @@ int mtx_lock_spin(mtx_t * mtx)
  */
 int mtx_trylock(mtx_t * mtx)
 {
-    return test_and_set(mtx->mtx_lock);
+    return test_and_set(&(mtx->mtx_lock));
 }
 
 /**
