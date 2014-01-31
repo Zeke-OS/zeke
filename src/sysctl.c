@@ -48,10 +48,29 @@
 #include <kstring.h>
 #include <kmalloc.h>
 #include <process.h>
+#include <sys/_mutex.h>
 #include <sys/priv.h>
 #include <sys/sysctl.h>
 
 struct sysctl_oid_list sysctl__children; /* root list */
+
+/**
+ * The sysctllock protects the MIB tree.  It also protects sysctl contexts used
+ * with dynamic sysctls.  The sysctl_register_oid() and sysctl_unregister_oid()
+ * routines require the sysctllock to already be held, so the sysctl_lock() and
+ * sysctl_unlock() routines are provided for the few places in the kernel which
+ * need to use that API rather than using the dynamic API. Use of the dynamic
+ * API is strongly encouraged for most code.
+ *
+ * The sysctlmemlock is used to limit the amount of user memory wired for sysctl
+ * requests. This is implemented by serializing any userland sysctl requests
+ * larger than a single page via an exclusive lock.
+ */
+static mtx_t sysctllock;
+static mtx_t sysctlmemlock;
+
+#define SYSCTL_LOCK() mtx_spinlock(&sysctllock);
+#define SYSCTL_UNLOCK() mtx_unlock(&sysctlmemlock);
 
 static int sysctl_old_kernel(struct sysctl_req *req, const void *p, size_t l);
 static int sysctl_new_kernel(struct sysctl_req *req, void *p, size_t l);
@@ -311,9 +330,9 @@ int kernel_sysctl(threadInfo_t * td, int * name, unsigned int namelen, void * ol
         req.newfunc = sysctl_new_kernel;
         req.lock = REQ_UNWIRED;
 
-        //SYSCTL_XLOCK();
+        SYSCTL_LOCK();
         error = sysctl_root(0, name, namelen, &req);
-        //SYSCTL_XUNLOCK();
+        SYSCTL_UNLOCK();
 
         //if (req.lock == REQ_WIRED && req.validlen > 0)
         //        vsunlock(req.oldptr, req.validlen);
@@ -392,8 +411,7 @@ static int sysctl_new_user(struct sysctl_req * req, void * p, size_t l)
                 return (0);
         if (req->newlen - req->newidx < l)
                 return (EINVAL);
-        //WITNESS_WARN(WARN_GIANTOK | WARN_SLEEPOK, NULL,
-        //    "sysctl_new_user()");
+
         error = copyin((char *)req->newptr + req->newidx, p, l);
         req->newidx += l;
         return (error);
@@ -550,14 +568,9 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
         arg1 = oid->oid_arg1;
         arg2 = oid->oid_arg2;
     }
-#ifdef MAC
-    error = mac_system_check_sysctl(req->td->td_ucred, oid, arg1, arg2,
-            req);
-    if (error != 0)
-        return (error);
-#endif
+
     oid->oid_running++;
-    //SYSCTL_XUNLOCK();
+    SYSCTL_UNLOCK();
 
     //if (!(oid->oid_kind & CTLFLAG_MPSAFE))
     //        mtx_lock(&Giant);
@@ -567,7 +580,7 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
 
     //KFAIL_POINT_ERROR(_debug_fail_point, sysctl_running, error);
 
-    //SYSCTL_XLOCK();
+    SYSCTL_LOCK();
     oid->oid_running--;
     // TODO
     //if (oid->oid_running == 0 && (oid->oid_kind & CTLFLAG_DYING) != 0)
