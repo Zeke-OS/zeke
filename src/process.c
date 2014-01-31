@@ -37,6 +37,7 @@
 
 #define KERNEL_INTERNAL 1
 #include <sched.h>
+#include <kstring.h>
 #include <syscalldef.h>
 #include <syscall.h>
 #include <errno.h>
@@ -128,14 +129,9 @@ void process_update(void)
  */
 int copyin(const void * uaddr, void * kaddr, size_t len)
 {
-    int retval;
+    memcpy(kaddr, uaddr, len);
 
-    retval = memcpy(kaddr, uaddr, len);
-
-    if (retval)
-        retval = EFAULT;
-
-    return retval;
+    return 0;
 }
 
 /**
@@ -149,14 +145,9 @@ int copyin(const void * uaddr, void * kaddr, size_t len)
  */
 int copyout(const void * kaddr, void * uaddr, size_t len)
 {
-    int retval;
+    memcpy(uaddr, kaddr, len);
 
-    retval = memcpy(uaddr, kaddr, len);
-
-    if (retval)
-        retval = EFAULT;
-
-    return retval;
+    return 0;
 }
 
 /**
@@ -178,9 +169,12 @@ int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done)
 
     retval_cpy = strlcpy(kaddr, uaddr, len);
     if (retval_cpy >= len) {
-        *done = len;
+        if (done != 0)
+            *done = len;
         retval = ENAMETOOLONG;
-    } else *done = retval_cpy;
+    } else if (done != 0) {
+        *done = retval_cpy;
+    }
 
     return retval;
 }

@@ -46,7 +46,6 @@
 #include <stdint.h>
 #include <sys/queue.h>
 
-struct thread;
 /*
  * Definitions for sysctl call.  The sysctl call uses a hierarchical name
  * for objects that can be examined or modified.  The name is expressed as
@@ -123,6 +122,7 @@ struct ctlname {
 
 #ifdef KERNEL_INTERNAL
 #include <sys/linker_set.h>
+#include <sched.h>
 
 #define SYSCTL_HANDLER_ARGS struct sysctl_oid * oidp, void *arg1, \
     intptr_t arg2, struct sysctl_req * req
@@ -136,7 +136,7 @@ struct ctlname {
  * so that we can use the interface from the kernel or from user-space.
  */
 struct sysctl_req {
-    struct thread * td; /* used for access checking */
+    threadInfo_t * td;  /* used for access checking */
     int lock;           /* wiring state */
     void * oldptr;
     size_t oldlen;
@@ -395,17 +395,17 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
 /*
  * Top-level identifiers
  */
-#define CTL_UNSPEC        0                /* unused */
+#define CTL_UNSPEC      0                /* unused */
 #define CTL_KERN        1                /* "high kernel": proc, limits */
-#define CTL_VM                2                /* virtual memory */
-#define CTL_VFS                3                /* filesystem, mount type is next */
-#define CTL_NET                4                /* network, see socket.h */
-#define CTL_DEBUG        5                /* debugging parameters */
-#define CTL_HW                6                /* generic cpu/io */
-#define CTL_MACHDEP        7                /* machine dependent */
+#define CTL_VM          2                /* virtual memory */
+#define CTL_VFS         3                /* filesystem, mount type is next */
+#define CTL_NET         4                /* network, see socket.h */
+#define CTL_DEBUG       5                /* debugging parameters */
+#define CTL_HW          6                /* generic cpu/io */
+#define CTL_MACHDEP     7                /* machine dependent */
 #define CTL_USER        8                /* user-level */
-#define CTL_P1003_1B        9                /* POSIX 1003.1B */
-#define CTL_MAXID        10                /* number of valid top-level ids */
+#define CTL_P1003_1B    9                /* POSIX 1003.1B */
+#define CTL_MAXID       10                /* number of valid top-level ids */
 
 /*
  * CTL_KERN identifiers
@@ -542,6 +542,7 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
  */
 extern struct sysctl_oid_list sysctl__children;
 SYSCTL_DECL(_kern);
+SYSCTL_DECL(_security);
 
 #else /* !KERNEL_INTERNAL */
 int        sysctl(const int *, unsigned int, void *, size_t *, const void *, size_t);

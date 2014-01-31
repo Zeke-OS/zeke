@@ -47,8 +47,8 @@
  * be modified appropriately.
  */
 struct mtx {
-    lock_obj_t lock_object;        /* Common lock properties. */
-    volatile uintptr_t mtx_lock;        /* Owner and flags. */
+    lock_obj_t lock_object; /*!< Common lock properties. */
+    volatile uintptr_t mtx_lock; /*!< Owner and flags. */
 };
 
 #endif /* !_SYS__MUTEX_H_ */

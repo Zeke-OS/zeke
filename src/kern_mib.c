@@ -37,5 +37,7 @@ SYSCTL_NODE(, 0, sysctl, CTLFLAG_RW, 0,
         "Sysctl internal magic");
 SYSCTL_NODE(, CTL_KERN, kern, CTLFLAG_RW|CTLFLAG_CAPRD, 0,
         "High kernel, proc, limits &c");
+SYSCTL_NODE(, OID_AUTO, security, CTLFLAG_RW, 0,
+         "Security");
 
 SYSCTL_NODE(_kern, OID_AUTO, features, CTLFLAG_RD, 0, "Kernel Features");

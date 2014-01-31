@@ -47,9 +47,16 @@
 #include <errno.h>
 #include <kstring.h>
 #include <kmalloc.h>
+#include <process.h>
+#include <sys/priv.h>
 #include <sys/sysctl.h>
 
 struct sysctl_oid_list sysctl__children; /* root list */
+
+static int sysctl_old_kernel(struct sysctl_req *req, const void *p, size_t l);
+static int sysctl_new_kernel(struct sysctl_req *req, void *p, size_t l);
+static int sysctl_root(SYSCTL_HANDLER_ARGS);
+
 
 /*
  * Default "handler" functions.
@@ -230,4 +237,340 @@ retry:
 
 out:
     return error;
+}
+
+/*
+ * Transfer functions to/from kernel space.
+ * XXX: rather untested at this point
+ */
+static int sysctl_old_kernel(struct sysctl_req * req, const void * p, size_t l)
+{
+    size_t i = 0;
+    int retval = 0;
+
+    if (req->oldptr) {
+        i = l;
+        if (req->oldlen <= req->oldidx)
+            i = 0;
+        else if (i > req->oldlen - req->oldidx)
+            i = req->oldlen - req->oldidx;
+        if (i > 0)
+            memmove((char *)req->oldptr + req->oldidx, p, i);
+    }
+    req->oldidx += l;
+    if (req->oldptr && i != l)
+        retval = ENOMEM;
+
+    return retval;
+}
+
+static int sysctl_new_kernel(struct sysctl_req * req, void * p, size_t l)
+{
+    int retval = 0;
+
+    if (!req->newptr)
+        goto out;
+
+    if (req->newlen - req->newidx < l) {
+        retval = EINVAL;
+        goto out;
+    }
+    memmove(p, (char *)req->newptr + req->newidx, l);
+    req->newidx += l;
+
+out:
+    return retval;
+}
+
+int kernel_sysctl(threadInfo_t * td, int * name, unsigned int namelen, void * old,
+    size_t * oldlenp, void * new, size_t newlen, size_t * retval, int flags)
+{
+        int error = 0;
+        struct sysctl_req req;
+
+        memset(&req, 0, sizeof req);
+
+        req.td = td;
+        req.flags = flags;
+
+        if (oldlenp) {
+                req.oldlen = *oldlenp;
+        }
+        req.validlen = req.oldlen;
+
+        if (old) {
+                req.oldptr= old;
+        }
+
+        if (new != NULL) {
+                req.newlen = newlen;
+                req.newptr = new;
+        }
+
+        req.oldfunc = sysctl_old_kernel;
+        req.newfunc = sysctl_new_kernel;
+        req.lock = REQ_UNWIRED;
+
+        //SYSCTL_XLOCK();
+        error = sysctl_root(0, name, namelen, &req);
+        //SYSCTL_XUNLOCK();
+
+        //if (req.lock == REQ_WIRED && req.validlen > 0)
+        //        vsunlock(req.oldptr, req.validlen);
+
+        if (error && error != ENOMEM)
+                return (error);
+
+        if (retval) {
+                if (req.oldptr && req.oldidx > req.validlen)
+                        *retval = req.validlen;
+                else
+                        *retval = req.oldidx;
+        }
+        return (error);
+}
+
+int kernel_sysctlbyname(threadInfo_t * td, char * name, void * old, size_t * oldlenp,
+    void * new, size_t newlen, size_t * retval, int flags)
+{
+        int oid[CTL_MAXNAME];
+        size_t oidlen, plen;
+        int error;
+
+        oid[0] = 0;                /* sysctl internal magic */
+        oid[1] = 3;                /* name2oid */
+        oidlen = sizeof(oid);
+
+        error = kernel_sysctl(td, oid, 2, oid, &oidlen,
+            (void *)name, strlenn(name, 80), &plen, flags); /* TODO hardcoded limit */
+        if (error)
+                return (error);
+
+        error = kernel_sysctl(td, oid, plen / sizeof(int), old, oldlenp,
+            new, newlen, retval, flags);
+        return (error);
+}
+
+/*
+ * Transfer function to/from user space.
+ */
+static int sysctl_old_user(struct sysctl_req * req, const void * p, size_t l)
+{
+        size_t i, len, origidx;
+        int error;
+
+        origidx = req->oldidx;
+        req->oldidx += l;
+        if (req->oldptr == NULL)
+                return (0);
+
+        i = l;
+        len = req->validlen;
+        if (len <= origidx)
+                i = 0;
+        else {
+                if (i > len - origidx)
+                        i = len - origidx;
+                if (req->lock == REQ_WIRED) {
+                        error = copyout(p, (char *)req->oldptr +
+                            origidx, i);
+                } else
+                        error = copyout(p, (char *)req->oldptr + origidx, i);
+                if (error != 0)
+                        return (error);
+        }
+        if (i < l)
+                return (ENOMEM);
+        return (0);
+}
+
+static int sysctl_new_user(struct sysctl_req * req, void * p, size_t l)
+{
+        int error;
+
+        if (!req->newptr)
+                return (0);
+        if (req->newlen - req->newidx < l)
+                return (EINVAL);
+        //WITNESS_WARN(WARN_GIANTOK | WARN_SLEEPOK, NULL,
+        //    "sysctl_new_user()");
+        error = copyin((char *)req->newptr + req->newidx, p, l);
+        req->newidx += l;
+        return (error);
+}
+
+/*
+ * Wire the user space destination buffer.  If set to a value greater than
+ * zero, the len parameter limits the maximum amount of wired memory.
+ */
+int sysctl_wire_old_buffer(struct sysctl_req * req, size_t len)
+{
+        int ret;
+        size_t wiredlen;
+
+        wiredlen = (len > 0 && len < req->oldlen) ? len : req->oldlen;
+        ret = 0;
+        if (req->lock != REQ_WIRED && req->oldptr &&
+            req->oldfunc == sysctl_old_user) {
+                /*if (wiredlen != 0) {
+                        ret = vslock(req->oldptr, wiredlen);
+                        if (ret != 0) {
+                                if (ret != ENOMEM)
+                                        return (ret);
+                                wiredlen = 0;
+                        }
+                }*/
+                req->lock = REQ_WIRED;
+                req->validlen = wiredlen;
+        }
+        return (0);
+}
+
+int sysctl_find_oid(int * name, unsigned int namelen, struct sysctl_oid ** noid,
+    int * nindx, struct sysctl_req * req)
+{
+        struct sysctl_oid_list *lsp;
+        struct sysctl_oid *oid;
+        int indx;
+
+        //SYSCTL_ASSERT_XLOCKED();
+        lsp = &sysctl__children;
+        indx = 0;
+        while (indx < CTL_MAXNAME) {
+                SLIST_FOREACH(oid, lsp, oid_link) {
+                        if (oid->oid_number == name[indx])
+                                break;
+                }
+                if (oid == NULL)
+                        return (ENOENT);
+
+                indx++;
+                if ((oid->oid_kind & CTLTYPE) == CTLTYPE_NODE) {
+                        if (oid->oid_handler != NULL || indx == namelen) {
+                                *noid = oid;
+                                if (nindx != NULL)
+                                        *nindx = indx;
+                                //KASSERT((oid->oid_kind & CTLFLAG_DYING) == 0,
+                                //    ("%s found DYING node %p", __func__, oid));
+                                return (0);
+                        }
+                        lsp = SYSCTL_CHILDREN(oid);
+                } else if (indx == namelen) {
+                        *noid = oid;
+                        if (nindx != NULL)
+                                *nindx = indx;
+                        //KASSERT((oid->oid_kind & CTLFLAG_DYING) == 0,
+                        //    ("%s found DYING node %p", __func__, oid));
+                        return (0);
+                } else {
+                        return (ENOTDIR);
+                }
+        }
+        return (ENOENT);
+}
+
+/*
+ * Traverse our tree, and find the right node, execute whatever it points
+ * to, and return the resulting error code.
+ */
+
+static int sysctl_root(SYSCTL_HANDLER_ARGS)
+{
+    struct sysctl_oid *oid;
+    int error, indx, lvl;
+
+    //SYSCTL_ASSERT_XLOCKED();
+
+    error = sysctl_find_oid(arg1, arg2, &oid, &indx, req);
+    if (error)
+        return (error);
+
+    if ((oid->oid_kind & CTLTYPE) == CTLTYPE_NODE) {
+        /*
+         * You can't call a sysctl when it's a node, but has
+         * no handler.  Inform the user that it's a node.
+         * The indx may or may not be the same as namelen.
+         */
+        if (oid->oid_handler == NULL)
+            return (EISDIR);
+        }
+
+    /* Is this sysctl writable? */
+    if (req->newptr && !(oid->oid_kind & CTLFLAG_WR))
+        return (EPERM);
+
+    //KASSERT(req->td != NULL, ("sysctl_root(): req->td == NULL"));
+
+#ifdef CAPABILITY_MODE
+    /*
+     * If the process is in capability mode, then don't permit reading or
+     * writing unless specifically granted for the node.
+     */
+    if (IN_CAPABILITY_MODE(req->td)) {
+        if (req->oldptr && !(oid->oid_kind & CTLFLAG_CAPRD))
+            return (EPERM);
+        if (req->newptr && !(oid->oid_kind & CTLFLAG_CAPWR))
+            return (EPERM);
+    }
+#endif
+
+    /* Is this sysctl sensitive to securelevels? */
+    if (req->newptr && (oid->oid_kind & CTLFLAG_SECURE)) {
+        lvl = (oid->oid_kind & CTLMASK_SECURE) >> CTLSHIFT_SECURE;
+        error = securelevel_gt(req->td->td_ucred, lvl);
+        if (error)
+            return (error);
+    }
+
+    /* Is this sysctl writable by only privileged users? */
+    if (req->newptr && !(oid->oid_kind & CTLFLAG_ANYBODY)) {
+        int priv;
+
+        if (oid->oid_kind & CTLFLAG_PRISON)
+            priv = PRIV_SYSCTL_WRITEJAIL;
+#ifdef VIMAGE
+        else if ((oid->oid_kind & CTLFLAG_VNET) &&
+             prison_owns_vnet(req->td->td_ucred))
+            priv = PRIV_SYSCTL_WRITEJAIL;
+#endif
+        else
+            priv = PRIV_SYSCTL_WRITE;
+        error = priv_check(req->td, priv);
+        if (error)
+            return (error);
+    }
+
+    if (!oid->oid_handler)
+        return (EINVAL);
+
+    if ((oid->oid_kind & CTLTYPE) == CTLTYPE_NODE) {
+        arg1 = (int *)arg1 + indx;
+        arg2 -= indx;
+    } else {
+        arg1 = oid->oid_arg1;
+        arg2 = oid->oid_arg2;
+    }
+#ifdef MAC
+    error = mac_system_check_sysctl(req->td->td_ucred, oid, arg1, arg2,
+            req);
+    if (error != 0)
+        return (error);
+#endif
+    oid->oid_running++;
+    //SYSCTL_XUNLOCK();
+
+    //if (!(oid->oid_kind & CTLFLAG_MPSAFE))
+    //        mtx_lock(&Giant);
+    error = oid->oid_handler(oid, arg1, arg2, req);
+    //if (!(oid->oid_kind & CTLFLAG_MPSAFE))
+    //        mtx_unlock(&Giant);
+
+    //KFAIL_POINT_ERROR(_debug_fail_point, sysctl_running, error);
+
+    //SYSCTL_XLOCK();
+    oid->oid_running--;
+    // TODO
+    //if (oid->oid_running == 0 && (oid->oid_kind & CTLFLAG_DYING) != 0)
+    //    wakeup(&oid->oid_running);
+    return (error);
 }

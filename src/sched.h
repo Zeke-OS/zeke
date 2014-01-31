@@ -70,6 +70,8 @@ typedef struct {
     pthread_t id;               /*!< Thread id. */
     pid_t pid_owner;            /*!< Owner process of this thread. */
 
+    struct ucred * td_ucred;    /*!< Reference to credentials. */
+
     /**
      * Thread inheritance; Parent and child thread pointers.
      *
