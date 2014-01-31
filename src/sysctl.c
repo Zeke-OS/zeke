@@ -146,7 +146,8 @@ void sysctl_register_oid(struct sysctl_oid * oidp)
 
         oidp->oid_number = newoid++;
         if (newoid == 0x7fffffff) {
-            KERROR(KERROR_ERR, "out of oids");
+            panic("out of oids");
+            //KERROR(KERROR_ERR, "out of oids");
         }
     }
 #if 0

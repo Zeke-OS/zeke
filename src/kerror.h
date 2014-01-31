@@ -35,6 +35,7 @@
 #define KERROR_H
 
 #include <autoconf.h>
+#include <hal/hal_core.h>
 
 /* Store few last kernel error messages in memory */
 #if configKERROR_LAST != 0
@@ -60,6 +61,15 @@
  * @param msg Message to be logged.
  */
 #define KERROR(level, msg) _KERROR2(level, _KERROR_WHERESTR, msg)
+
+/**
+ * Kernel panic with message.
+ * @param msg is a message to be logged before halt.
+ */
+#define panic(msg) KERROR(KERROR_CRIT, "Oops, Kernel panic");   \
+    do { disable_interrupt();                                   \
+         idle_sleep();                                          \
+    } while(1)
 
 /* Log levels */
 #define KERROR_CRIT     '0' /*!< Critical error system is halted. */
