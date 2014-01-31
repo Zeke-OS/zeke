@@ -42,11 +42,13 @@
 /**
  * Initialize a kernel mutex.
  * @param mtx is a mutex struct.
+ * @param type is the type of the mutex.
  */
-void mtx_init(mtx_t * mtx)
+void mtx_init(mtx_t * mtx, unsigned int type)
 {
     mtx->mtx_owner = 0;
     mtx->mtx_lock = 0;
+    mtx->mtx_tflags = type;
 #ifdef LOCK_DEBUG
     mtx->mtx_ldebug = 0;
 #endif
@@ -56,7 +58,8 @@ void mtx_init(mtx_t * mtx)
  * Get kernel mtx lock.
  * mtx lock spins until lock is achieved.
  * @param mtx is a mutex struct.
- * @return Returns 0 if lock achieved.
+ * @return  Returns 0 if lock achieved; 3 if not allowed; Otherwise value other
+ *          than zero.
  */
 #ifndef LOCK_DEBUG
 int mtx_spinlock(mtx_t * mtx)
@@ -64,12 +67,20 @@ int mtx_spinlock(mtx_t * mtx)
 int _mtx_spinlock(mtx_t * mtx, char * whr)
 #endif
 {
+    int retval = 0;
+
+    if ((mtx->mtx_tflags & MTX_SPIN) == 0) {
+        retval = 3; /* Not allowed */
+        goto out;
+    }
+
     while(test_and_set(&(mtx->mtx_lock)));
 #ifdef LOCK_DEBUG
     mtx->mtx_ldebug = whr;
 #endif
 
-    return 0;
+out:
+    return retval;
 }
 
 /**

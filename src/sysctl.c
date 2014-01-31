@@ -67,15 +67,20 @@ struct sysctl_oid_list sysctl__children; /* root list */
  * larger than a single page via an exclusive lock.
  */
 static mtx_t sysctllock;
-static mtx_t sysctlmemlock;
+//static mtx_t sysctlmemlock;
 
-#define SYSCTL_LOCK() mtx_spinlock(&sysctllock);
-#define SYSCTL_UNLOCK() mtx_unlock(&sysctlmemlock);
-
+#define SYSCTL_LOCK()       mtx_spinlock(&sysctllock);
+#define SYSCTL_UNLOCK()     mtx_unlock(&sysctllock);
+#define SYSCTL_LOCK_INIT()  mtx_init(&sysctllock, MTX_DEF | MTX_SPIN);
 static int sysctl_old_kernel(struct sysctl_req *req, const void *p, size_t l);
 static int sysctl_new_kernel(struct sysctl_req *req, void *p, size_t l);
 static int sysctl_root(SYSCTL_HANDLER_ARGS);
 
+void sysctl_init(void) __attribute__((constructor));
+void sysctl_init(void)
+{
+    SYSCTL_LOCK_INIT();
+}
 
 /*
  * Default "handler" functions.

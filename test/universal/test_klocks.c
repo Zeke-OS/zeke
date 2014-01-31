@@ -13,7 +13,7 @@ static mtx_t mtx;
 
 static void setup()
 {
-    mtx_init(&mtx);
+    mtx_init(&mtx, MTX_DEF | MTX_SPIN);
 }
 
 static void teardown()
@@ -29,18 +29,21 @@ static char * test_mtx_init()
 
 static char * test_mtx_spinlock()
 {
-    pu_assert("", mtx_spinlock(&mtx) == 0);
-    pu_assert("", mtx.mtx_lock != 0);
+    pu_assert("Spinlock achieved", mtx_spinlock(&mtx) == 0);
+    pu_assert("Lock value is correct", mtx.mtx_lock != 0);
+
+    mtx_init(&mtx, MTX_DEF);
+    pu_assert("Spinlock is not allowed", mtx_spinlock(&mtx) == 3);
 
     return 0;
 }
 
 static char * test_mtx_unlock()
 {
-    pu_assert("", mtx_spinlock(&mtx) == 0);
-    pu_assert("", mtx.mtx_lock != 0);
+    pu_assert("Spinlock achieved", mtx_spinlock(&mtx) == 0);
+    pu_assert("Lock value is correct", mtx.mtx_lock != 0);
     mtx_unlock(&mtx);
-    pu_assert_equal("", mtx.mtx_lock, 0);
+    pu_assert_equal("Lock value is correct", mtx.mtx_lock, 0);
 
     return 0;
 }

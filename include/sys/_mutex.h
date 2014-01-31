@@ -43,6 +43,10 @@
 #include <kerror.h>
 #endif
 
+/* Mutex types */
+#define MTX_DEF     0x00000000  /*!< DEFAULT (sleep) lock */
+#define MTX_SPIN    0x00000001  /*!< Spin lock */
+
 /*
  * Sleep/spin mutex.
  *
@@ -57,7 +61,8 @@ typedef struct mtx {
 #ifdef LOCK_DEBUG
     char * mtx_ldebug;
 #endif
-    volatile int mtx_lock;      /*!< Flags. */
+    unsigned int mtx_tflags;    /*!< Type flags. */
+    volatile int mtx_lock;      /*!< Lock value. */
 } mtx_t;
 
 #ifndef LOCK_DEBUG
@@ -70,8 +75,8 @@ int _mtx_spinlock(mtx_t * mtx, char * whr);
 int _mtx_trylock(mtx_t * mtx, char * whr);
 #endif
 
-void _mtx_init(mtx_t * mtx);
-void _mtx_unlock(mtx_t * mtx);
+void mtx_init(mtx_t * mtx, unsigned int type);
+void mtx_unlock(mtx_t * mtx);
 
 #endif
 #endif /* !_SYS__MUTEX_H_ */
