@@ -240,12 +240,12 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
 #endif
 #define        _SYSCTL_ASSERT_TYPE(t, p, l, id)                \
     __SYSCTL_ASSERT_TYPE(t, p, l, id)
-#define        __SYSCTL_ASSERT_TYPE(type, ptr, line, id)                        \
-    static inline void                                                \
-    sysctl_assert_##line##_##id(void)                                \
-    {                                                                \
-        (void)__sysctl_assert_##type(ptr);                        \
-    }                                                                \
+#define __SYSCTL_ASSERT_TYPE(type, ptr, line, id)   \
+    static inline void                              \
+    sysctl_assert_##line##_##id(void)               \
+    {                                               \
+        (void)__sysctl_assert_##type(ptr);          \
+    }                                               \
     struct __hack
 
 #ifndef NO_SYSCTL_DESCR
@@ -255,21 +255,21 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
 #endif
 
 /* This constructs a "raw" MIB oid. */
-#define        SYSCTL_OID(parent, nbr, name, kind, a1, a2, handler, fmt, descr)\
-    static struct sysctl_oid sysctl__##parent##_##name = {                \
-        &sysctl_##parent##_children,                                \
-        { NULL },                                                \
-        nbr,                                                        \
-        kind,                                                        \
-        a1,                                                        \
-        a2,                                                        \
-        #name,                                                        \
-        handler,                                                \
-        fmt,                                                        \
-        0,                                                        \
-        0,                                                        \
-        __DESCR(descr)                                                \
-    };                                                        \
+#define SYSCTL_OID(parent, nbr, name, kind, a1, a2, handler, fmt, descr)    \
+    static struct sysctl_oid sysctl__##parent##_##name = {                  \
+        &sysctl_##parent##_children,                                        \
+        { NULL },                                                           \
+        nbr,                                                                \
+        kind,                                                               \
+        a1,                                                                 \
+        a2,                                                                 \
+        #name,                                                              \
+        handler,                                                            \
+        fmt,                                                                \
+        0,                                                                  \
+        0,                                                                  \
+        __DESCR(descr)                                                      \
+    };                                                                  \
     DATA_SET(sysctl_set, sysctl__##parent##_##name)
 
 #define SYSCTL_ADD_OID(ctx, parent, nbr, name, kind, a1, a2, handler, fmt, descr) \

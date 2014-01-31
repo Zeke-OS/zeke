@@ -217,7 +217,7 @@ int sysctl_find_oid(int * name, unsigned int namelen, struct sysctl_oid ** noid,
                 break;
         }
         if (oid == NULL)
-            return (ENOENT);
+            return ENOENT;
 
         indx++;
         if ((oid->oid_kind & CTLTYPE) == CTLTYPE_NODE) {
@@ -227,7 +227,7 @@ int sysctl_find_oid(int * name, unsigned int namelen, struct sysctl_oid ** noid,
                     *nindx = indx;
                 //KASSERT((oid->oid_kind & CTLFLAG_DYING) == 0,
                 //    ("%s found DYING node %p", __func__, oid));
-                return (0);
+                return 0;
             }
             lsp = SYSCTL_CHILDREN(oid);
         } else if (indx == namelen) {
@@ -238,10 +238,10 @@ int sysctl_find_oid(int * name, unsigned int namelen, struct sysctl_oid ** noid,
             //    ("%s found DYING node %p", __func__, oid));
             return (0);
         } else {
-            return (ENOTDIR);
+            return ENOTDIR;
         }
     }
-    return (ENOENT);
+    return ENOENT;
 }
 
 static struct sysctl_oid * sysctl_find_oidname(const char * name,
@@ -379,7 +379,7 @@ static int sysctl_sysctl_next_ls(struct sysctl_oid_list * lsp, int * name,
     emptynode:
         *len = level;
     }
-    return (1);
+    return 1;
 }
 
 static int sysctl_sysctl_next(SYSCTL_HANDLER_ARGS)
@@ -395,8 +395,8 @@ static int sysctl_sysctl_next(SYSCTL_HANDLER_ARGS)
     i = sysctl_sysctl_next_ls(lsp, name, namelen, newoid, &j, 1, &oid);
     SYSCTL_UNLOCK();
     if (i)
-        return (ENOENT);
-    error = SYSCTL_OUT(req, newoid, j * sizeof (int));
+        return ENOENT;
+    error = SYSCTL_OUT(req, newoid, j * sizeof(int));
     return error;
 }
 
