@@ -72,8 +72,6 @@ int _mtx_spinlock(mtx_t * mtx, char * whr)
     return 0;
 }
 
-
-
 /**
  * Try to get kernel mtx lock.
  * @param mtx is a mutex struct.
