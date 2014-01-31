@@ -37,6 +37,12 @@
 #define _SYS__MUTEX_H_
 #ifdef KERNEL_INTERNAL
 
+//#define LOCK_DEBUG 1
+
+#ifdef LOCK_DEBUG
+#include <kerror.h>
+#endif
+
 /*
  * Sleep/spin mutex.
  *
@@ -48,13 +54,24 @@
  */
 typedef struct mtx {
     volatile void * mtx_owner;  /*!< Pointer to optional owner information. */
+#ifdef LOCK_DEBUG
+    char * mtx_ldebug;
+#endif
     volatile int mtx_lock;      /*!< Flags. */
 } mtx_t;
 
-void mtx_init(mtx_t * mtx);
+#ifndef LOCK_DEBUG
 int mtx_spinlock(mtx_t * mtx);
 int mtx_trylock(mtx_t * mtx);
-void mtx_unlock(mtx_t * mtx);
+#else /* Debug versions */
+#define mtx_spinlock(mtx)   _mtx_spinlock(mtx, _KERROR_WHERESTR)
+#define mtx_trylock(mtx)    _mtx_trylock(mtx, _KERROR_WHERESTR)
+int _mtx_spinlock(mtx_t * mtx, char * whr);
+int _mtx_trylock(mtx_t * mtx, char * whr);
+#endif
+
+void _mtx_init(mtx_t * mtx);
+void _mtx_unlock(mtx_t * mtx);
 
 #endif
 #endif /* !_SYS__MUTEX_H_ */

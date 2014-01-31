@@ -47,6 +47,9 @@ void mtx_init(mtx_t * mtx)
 {
     mtx->mtx_owner = 0;
     mtx->mtx_lock = 0;
+#ifdef LOCK_DEBUG
+    mtx->mtx_ldebug = 0;
+#endif
 }
 
 /**
@@ -55,21 +58,41 @@ void mtx_init(mtx_t * mtx)
  * @param mtx is a mutex struct.
  * @return Returns 0 if lock achieved.
  */
+#ifndef LOCK_DEBUG
 int mtx_spinlock(mtx_t * mtx)
+#else
+int _mtx_spinlock(mtx_t * mtx, char * whr)
+#endif
 {
     while(test_and_set(&(mtx->mtx_lock)));
+#ifdef LOCK_DEBUG
+    mtx->mtx_ldebug = whr;
+#endif
 
     return 0;
 }
+
+
 
 /**
  * Try to get kernel mtx lock.
  * @param mtx is a mutex struct.
  * @return Returns 0 if lock achieved.
  */
+#ifndef LOCK_DEBUG
 int mtx_trylock(mtx_t * mtx)
+#else
+int _mtx_trylock(mtx_t * mtx, char * whr)
+#endif
 {
-    return test_and_set(&(mtx->mtx_lock));
+    int retval;
+
+    retval = test_and_set(&(mtx->mtx_lock));
+#ifdef LOCK_DEBUG
+    mtx->mtx_ldebug = whr;
+#endif
+
+    return retval;
 }
 
 /**
