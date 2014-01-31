@@ -80,6 +80,10 @@ extern volatile pid_t current_process_id;
 
 mmu_pagetable_t * process_get_pptable(pid_t pid);
 
+int copyin(const void * uaddr, void * kaddr, size_t len);
+int copyout(const void * kaddr, void * uaddr, size_t len);
+int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done);
+
 #endif /* PROCESS_H */
 
 /**
