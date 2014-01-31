@@ -77,10 +77,10 @@
 #include "ksignal.h"
 
 static int kern_logsigexit = 1;
-/*SYSCTL_INT(_kern, KERN_LOGSIGEXIT, logsigexit, CTLFLAG_RW,
+SYSCTL_INT(_kern, KERN_LOGSIGEXIT, logsigexit, CTLFLAG_RW,
         &kern_logsigexit, 0,
         "Log processes quitting on abnormal signals to syslog(3)");
-*/
+
 /**
  * Signal names.
  */
