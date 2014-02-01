@@ -14,19 +14,6 @@
 #ifndef KERNEL_H
 #define KERNEL_H
 
-#define osKernelSystemId "ZEKE   V1.00"   ///< RTOS identification string
-
-/**
- * CMSIS-RTOS features supported.
- */
-#define osFeature_MainThread   1       ///< main thread      1=main can be thread, 0=not available
-#define osFeature_Pool         0       ///< Memory Pools:    1=available, 0=not available
-#define osFeature_MailQ        0       ///< Mail Queues:     1=available, 0=not available
-#define osFeature_MessageQ     0       ///< Message Queues:  1=available, 0=not available
-#define osFeature_Signals      30      ///< maximum number of Signal Flags available per thread
-#define osFeature_Semaphore    100     ///< maximum count for SemaphoreInit function
-#define osFeature_Wait         1       ///< osWait function: 1=available, 0=not available
-
 #include <stdint.h>
 #include <stddef.h>
 #include <sys/types.h>

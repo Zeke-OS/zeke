@@ -5,7 +5,7 @@
  * @brief   Hardware Abstraction Layer for ARMv4T/ARM9
  *          TODO THIS PORT IS NON-FUNCTIONAL SCRATC ATM TODO
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
