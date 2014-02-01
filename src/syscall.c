@@ -81,6 +81,9 @@ static kernel_syscall_handler_t syscall_callmap[] = {
  * @param p     pointer to the parameter or parameter structure.
  * @return      result value or pointer to the result from the called kernel
  *              function.
+ *              In addition to syscall return value this function also returns
+ *              a second value indicating if syscall was blocking. This is
+ *              implemented in architecture dependent manner.
  */
 uint32_t _intSyscall_handler(uint32_t type, void * p)
 {
