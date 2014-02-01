@@ -134,10 +134,10 @@ void wr_thread_stack_ptr(void * ptr);
 } while (0)
 
 #define eval_syscall_block() do {                   \
-    if (!SCHED_TEST_CSW_OK(current_thread->flags))  \
-        __asm__ volatile ("mov r1, #1");            \
-    else                                            \
+    if (SCHED_TEST_CSW_OK(current_thread->flags))   \
         __asm__ volatile ("mov r1, #0");            \
+    else                                            \
+        __asm__ volatile ("mov r1, #1");            \
 } while (0)
 
 __attribute__ ((naked)) void undef_handler(void);
