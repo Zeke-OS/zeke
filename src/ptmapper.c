@@ -61,18 +61,20 @@ mmu_pagetable_t mmu_pagetable_system = {
 mmu_region_t mmu_region_kernel = {
     .vaddr          = MMU_VADDR_KERNEL_START,
     .num_pages      = MMU_PAGE_CNT_BY_RANGE(MMU_VADDR_KERNEL_START, MMU_VADDR_KERNEL_END, 4096),
-    .ap             = MMU_AP_RWRW, /* Todo this must be changed later to RWNA */
+    .ap             = MMU_AP_RWRW, /* TODO this must be changed later to RWNA */
     .control        = MMU_CTRL_MEMTYPE_WB,
     .paddr          = 0x0,
     .pt             = &mmu_pagetable_system
 };
 
+uintptr_t __text_shared_start __attribute__((weak));
+uintptr_t __text_shared_end __attribute__((weak));
 mmu_region_t mmu_region_shared = {
     .vaddr          = MMU_VADDR_SHARED_START,
     .num_pages      = MMU_PAGE_CNT_BY_RANGE(MMU_VADDR_SHARED_START, MMU_VADDR_SHARED_END, 4096),
     .ap             = MMU_AP_RWRO,
     .control        = MMU_CTRL_MEMTYPE_WT,
-    .paddr          = MMU_VADDR_SHARED_START,
+    .paddr          = 0, /* Will be set later. */
     .pt             = &mmu_pagetable_system
 };
 
@@ -138,6 +140,11 @@ void ptmapper_init(void)
     /* Initialize system page tables */
     mmu_init_pagetable(&mmu_pagetable_master);
     mmu_init_pagetable(&mmu_pagetable_system);
+
+    /* Calculate real address space for shared region. */
+    mmu_region_shared.paddr = __text_shared_start;
+    mmu_region_shared.num_pages =
+        MMU_PAGE_CNT_BY_RANGE(__text_shared_start, __text_shared_end, 4096);
 
     /* Fill page tables with translations & attributes */
     mmu_map_region(&mmu_region_kernel);

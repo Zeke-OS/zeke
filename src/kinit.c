@@ -31,7 +31,7 @@
  */
 
 #include <kernel.h>
-#include <usrscope/usrinit.h>
+#include <usrinit.h>
 #include <sched.h>
 #include <libkern.h>
 #include <kinit.h>

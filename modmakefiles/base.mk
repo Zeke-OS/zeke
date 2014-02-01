@@ -16,5 +16,3 @@ base-SRC-1 += $(wildcard src/fs/*.c)
 # ramfs
 base-SRC-$(configRAMFS) += src/fs/ramfs/*.c
 
-# usrinit
-base-SRC-1 += $(wildcard src/usrscope/*.c)
