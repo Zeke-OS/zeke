@@ -68,7 +68,7 @@
  */
 #define panic(msg) KERROR(KERROR_CRIT, "Oops, Kernel panic");   \
     do { disable_interrupt();                                   \
-         idle_sleep();                                          \
+         panic_halt();                                          \
     } while(1)
 
 /* Log levels */

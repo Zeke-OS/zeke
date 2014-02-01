@@ -105,6 +105,13 @@ inline void wr_thread_stack_ptr(void * ptr);
     ); } while (0)
 
 /**
+ * Halt due to kernel panic.
+ */
+#define panic_halt() do {               \
+    __asm__ volatile ("BKPT #01");      \
+} while (0)
+
+/**
  * Save the context on the PSP
  */
 inline void save_context(void)
