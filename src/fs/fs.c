@@ -207,7 +207,7 @@ unsigned int fs_get_pfs_minor(void)
  * @param type Syscall type
  * @param p Syscall parameters
  */
-uint32_t fs_syscall(uint32_t type, void * p)
+uintptr_t fs_syscall(uint32_t type, void * p)
 {
     switch(type) {
     case SYSCALL_FS_CREAT:

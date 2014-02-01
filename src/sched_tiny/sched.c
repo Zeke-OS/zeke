@@ -656,7 +656,7 @@ osStatus sched_threadDelay(uint32_t millisec)
   * @{
   */
 
-uint32_t sched_syscall(uint32_t type, void * p)
+uintptr_t sched_syscall(uint32_t type, void * p)
 {
     switch(type) {
     case SYSCALL_SCHED_DELAY:
@@ -677,7 +677,7 @@ uint32_t sched_syscall(uint32_t type, void * p)
     }
 }
 
-uint32_t sched_syscall_thread(uint32_t type, void * p)
+uintptr_t sched_syscall_thread(uint32_t type, void * p)
 {
     switch(type) {
     /* TODO pthread_create is allowed to throw errors and we definitely should

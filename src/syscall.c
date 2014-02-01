@@ -62,8 +62,6 @@
 FOR_ALL_SYSCALL_GROUPS(DECLARE_SCHANDLER)
 #undef DECLARE_SCHANDLER
 
-typedef uint32_t (*kernel_syscall_handler_t)(uint32_t type,  void * p);
-
 static kernel_syscall_handler_t syscall_callmap[] = {
     #define SYSCALL_MAP_X(major, function) [major] = function,
     FOR_ALL_SYSCALL_GROUPS(SYSCALL_MAP_X)
@@ -85,7 +83,7 @@ static kernel_syscall_handler_t syscall_callmap[] = {
  *              a second value indicating if syscall was blocking. This is
  *              implemented in architecture dependent manner.
  */
-uint32_t _intSyscall_handler(uint32_t type, void * p)
+uintptr_t _intSyscall_handler(uint32_t type, void * p)
 {
     kernel_syscall_handler_t fpt;
     uint32_t major = SYSCALL_MAJOR(type);
@@ -100,7 +98,7 @@ uint32_t _intSyscall_handler(uint32_t type, void * p)
     current_thread->errno = 0; /* Default value for errno */
     fpt = syscall_callmap[major];
     {
-        uint32_t retval;
+        uintptr_t retval;
         retval = fpt(type, p);
         eval_syscall_block(); /* This will set mach dep block flag to 1 if
                                * was blocking. Eg. in ARM11 R1 is set to 0/1.

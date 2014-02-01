@@ -179,7 +179,7 @@ int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done)
     return retval;
 }
 
-uint32_t proc_syscall(uint32_t type, void * p)
+uintptr_t proc_syscall(uint32_t type, void * p)
 {
     switch(type) {
     case SYSCALL_PROC_EXEC:

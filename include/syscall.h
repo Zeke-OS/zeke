@@ -127,14 +127,16 @@
 #define SYSCALL_SEMAPHORE_RELEASE           SYSCALL_MMTOTYPE(SYSCALL_GROUP_LOCKS, 0x02)
 
 //#ifndef PU_TEST_BUILD
-uint32_t syscall(uint32_t type, void * p);
+uintptr_t syscall(uint32_t type, void * p);
 //#endif /* PU_TEST_BUILD */
 
 /* Kernel scope functions */
 #ifdef KERNEL_INTERNAL
 #include "syscalldef.h"
 
-uint32_t _intSyscall_handler(uint32_t type, void * p);
+typedef uintptr_t (*kernel_syscall_handler_t)(uint32_t type,  void * p);
+
+uintptr_t _intSyscall_handler(uint32_t type, void * p);
 #endif /* KERNEL_INTERNAL */
 
 #endif /* SYSCALL_H */
