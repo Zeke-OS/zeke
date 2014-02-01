@@ -65,7 +65,5 @@ typedef struct {
  */
 #define KSIGNAL_GET_MASK(signum) (0x1 << signum)
 
-uint32_t ksignal_syscall(uint32_t type, void * p);
-
 #endif /* KSIGNAL_H */
 

@@ -202,9 +202,6 @@ void fs_init_sb_iterator(sb_iterator_t * it);
 fs_superblock_t * fs_next_sb(sb_iterator_t * it);
 unsigned int fs_get_pfs_minor(void);
 
-/* Thread specific functions used mainly by Syscalls **************************/
-uint32_t fs_syscall(uint32_t type, void * p);
-
 #endif /* FS_H */
 
 /**

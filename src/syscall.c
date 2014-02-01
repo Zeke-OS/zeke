@@ -38,12 +38,18 @@
 #include <hal/hal_core.h>
 #endif
 #include <errno.h>
-#include <ksignal.h>
-#include <fs/fs.h>
-#include <pthread.h>
 #include <syscall.h>
 
-uint32_t ulocks_syscall(uint32_t type, void * p);
+/*
+ * Declare function prototypes of syscall handlers here to avoid bloat and to
+ * speed up compilation.
+ */
+extern uint32_t sched_syscall(uint32_t type, void * p);
+extern uint32_t sched_syscall_thread(uint32_t type, void * p);
+extern uint32_t sched_syscall_signal(uint32_t type, void * p);
+extern uint32_t ksignal_syscall(uint32_t type, void * p);
+extern uint32_t fs_syscall(uint32_t type, void * p);
+extern uint32_t ulocks_syscall(uint32_t type, void * p);
 
 /* For all Syscall groups */
 #if PU_TEST_BUILD == 0
