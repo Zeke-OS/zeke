@@ -410,9 +410,9 @@ static SYSCTL_NODE(, 2, next, CTLFLAG_RD | CTLFLAG_CAPRD,
 
 static int name2oid(char * name, int * oid, int * len, struct sysctl_oid ** oidpp)
 {
-    struct sysctl_oid *oidp;
-    struct sysctl_oid_list *lsp = &sysctl__children;
-    char *p;
+    struct sysctl_oid * oidp;
+    struct sysctl_oid_list * lsp = &sysctl__children;
+    char * p;
 
     //SYSCTL_ASSERT_XLOCKED();
 

@@ -57,18 +57,18 @@ SYSCTL_NODE(, OID_AUTO, security, CTLFLAG_RW, 0,
 #endif
 static const char osrelease[] = KERNEL_VERSION;
 SYSCTL_STRING(_kern, KERN_OSRELEASE, osrelease, CTLFLAG_RD|CTLFLAG_MPSAFE,
-        osrelease, 0, "Operating system release");
+        (char *)osrelease, 0, "Operating system release");
 
 /* TODO */
 static const char version[] = __XSTRING(configARCH) " " __DATE__;
 SYSCTL_STRING(_kern, KERN_VERSION, version, CTLFLAG_RD|CTLFLAG_MPSAFE,
-        version, 0, "Kernel version");
+        (char *)version, 0, "Kernel version");
 
 static const char compiler_version[] =  __VERSION__;
 SYSCTL_STRING(_kern, OID_AUTO, compiler_version, CTLFLAG_RD|CTLFLAG_MPSAFE,
-        compiler_version, 0, "Version of compiler used to compile kernel");
+        (char *)compiler_version, 0, "Version of compiler used to compile kernel");
 
 static const char ostype[] = "Zeke";
 SYSCTL_STRING(_kern, KERN_OSTYPE, ostype, CTLFLAG_RD|CTLFLAG_MPSAFE,
-        ostype, 0, "Operating system type");
+        (char *)ostype, 0, "Operating system type");
 
