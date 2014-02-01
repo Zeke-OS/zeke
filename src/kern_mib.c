@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Kernel Management information base (MIB).
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,38 @@ SYSCTL_NODE(, 0, sysctl, CTLFLAG_RW, 0,
         "Sysctl internal magic");
 SYSCTL_NODE(, CTL_KERN, kern, CTLFLAG_RW|CTLFLAG_CAPRD, 0,
         "High kernel, proc, limits &c");
+SYSCTL_NODE(, CTL_VM, vm, CTLFLAG_RW, 0,
+        "Virtual memory");
+SYSCTL_NODE(, CTL_VFS, vfs, CTLFLAG_RW, 0,
+        "File system");
+SYSCTL_NODE(, CTL_DEBUG, debug, CTLFLAG_RW, 0,
+        "Debugging");
+SYSCTL_NODE(, CTL_HW, hw, CTLFLAG_RW, 0,
+        "hardware");
+SYSCTL_NODE(, CTL_MACHDEP, machdep, CTLFLAG_RW, 0,
+        "machine dependent");
+SYSCTL_NODE(, CTL_USER, user, CTLFLAG_RW, 0,
+        "user-level");
 SYSCTL_NODE(, OID_AUTO, security, CTLFLAG_RW, 0,
-         "Security");
+        "Security");
 
-SYSCTL_NODE(_kern, OID_AUTO, features, CTLFLAG_RD, 0, "Kernel Features");
+#ifndef KERNEL_VERSION
+#define KERNEL_VERSION "0.0.0"
+#endif
+static const char osrelease[] = KERNEL_VERSION;
+SYSCTL_STRING(_kern, KERN_OSRELEASE, osrelease, CTLFLAG_RD|CTLFLAG_MPSAFE,
+        osrelease, 0, "Operating system release");
+
+/* TODO */
+static const char version[] = __XSTRING(configARCH) " " __DATE__;
+SYSCTL_STRING(_kern, KERN_VERSION, version, CTLFLAG_RD|CTLFLAG_MPSAFE,
+        version, 0, "Kernel version");
+
+static const char compiler_version[] =  __VERSION__;
+SYSCTL_STRING(_kern, OID_AUTO, compiler_version, CTLFLAG_RD|CTLFLAG_MPSAFE,
+        compiler_version, 0, "Version of compiler used to compile kernel");
+
+static const char ostype[] = "Zeke";
+SYSCTL_STRING(_kern, KERN_OSTYPE, ostype, CTLFLAG_RD|CTLFLAG_MPSAFE,
+        ostype, 0, "Operating system type");
+
