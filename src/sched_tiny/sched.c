@@ -452,6 +452,8 @@ pthread_t sched_create_kworker(ds_pthread_create_t * thread_def)
          * difference other than privileged mode. */
         task_table[tt_id].flags |= SCHED_KWORKER_FLAG;
     }
+
+    return tt_id;
 }
 
 /**
