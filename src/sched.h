@@ -44,15 +44,66 @@
 #include <ksignal.h>
 #include <kernel.h>
 
+/*
+ * Scheduler flags
+ * ===============
+ *
+ * SCHED_IN_USE_FLAG
+ * 1 = Thread is in use and can be rescheduled to execute at some point.
+ * 0 = Thread is in zombie state or already removed from the system.
+ *
+ * SCHED_WAIT_FLAG
+ * Only the kworker that has been assigned for this thread can remove this flag.
+ * kworker is added as a child of the thread. If kworker parent is 0 then the
+ * parent is killed and kworker should terminate as soon as possible.
+ * kworker can use SCHED_INTERNAL_FLAG as a semi-critical section flag if
+ * necessary.
+ * 0 = Thread is not wating for kworker.
+ * 1 = Thread is waiting for kworker to complete.
+ *
+ * SCHED_NO_SIG_FLAG
+ * Thread cannot be woken up by a signal if this flag is set.
+ *
+ * SCHED_INTERNAL_FLAG
+ * Thread cannot be killed if this flag is set.
+ */
 #define SCHED_IN_USE_FLAG   0x00000001u /*!< IN USE FLAG */
 #define SCHED_EXEC_FLAG     0x00000002u /*!< EXEC = 1 / SLEEP = 0 */
-#define SCHED_NO_SIG_FLAG   0x00000004u /*!< Thread cannot be woken up by a signal. */
-#define SCHED_INTERNAL_FLAG 0x00000008u /*!< Immortal internal kernel thread. */
+#define SCHED_WAIT_FLAG     0x00000004u /*!< Waiting for kworker to complete. */
+#define SCHED_NO_SIG_FLAG   0x00000008u /*!< Thread cannot be woken up by a
+                                         *   signal. */
+#define SCHED_KWORKER_FLAG  0x40000000u /*!< Thread is a kworker. */
+#define SCHED_INTERNAL_FLAG 0x80000000u /*!< Immortal internal kernel thread. */
 
-/* When these flags are both set for a it's ok to make a context switch to it. */
+/**
+ * Context switch ok flags.
+ * When these flags are set for a thread it's ok to make a context switch to it.
+ */
 #define SCHED_CSW_OK_FLAGS  (SCHED_EXEC_FLAG | SCHED_IN_USE_FLAG)
 
-#define SCHED_DEV_WAIT_BIT 0x40000000 /*!< Dev wait signal bit. */
+/**
+ * Test if context switch to a thread is ok based on flags.
+ * @param x is the flags of the thread tested.
+ */
+#define SCHED_TEST_CSW_OK(x) \
+    (((x) & SCHED_CSW_OK_FLAGS) == SCHED_CSW_OK_FLAGS)
+
+/**
+ * Test if waking up a thread is ok based on flags.
+ * This also tests that SCHED_EXEC_FLAG is not set as scheduling may break if
+ * same thread is put on exection twice.
+ * @param x is the flags of the thread tested.
+ */
+#define SCHED_TEST_WAKEUP_OK(x)                                             \
+    (((x) & (SCHED_IN_USE_FLAG | SCHED_EXEC_FLAG                            \
+             | SCHED_NO_SIG_FLAG | SCHED_WAIT_FLAG)) == SCHED_IN_USE_FLAG)
+
+/**
+ * Test if it is ok to terminate.
+ * @param x is the flags of the thread tested.
+ */
+#define SCHED_TEST_TERMINATE_OK(x) \
+    (((x) & (SCHED_IN_USE_FLAG | SCHED_INTERNAL_FLAG)) == SCHED_IN_USE_FLAG)
 
 /**
  * Thread info struct.
@@ -69,7 +120,6 @@ typedef struct {
     int ts_counter;             /*!< Time slice counter. */
     pthread_t id;               /*!< Thread id. */
     pid_t pid_owner;            /*!< Owner process of this thread. */
-
     struct ucred * td_ucred;    /*!< Reference to credentials. */
 
     /**
@@ -135,6 +185,10 @@ void sched_thread_sleep_current(void);
  * @param[out] loads load averages.
  */
 void sched_get_loads(uint32_t loads[3]);
+
+void sched_syscall_block(void);
+void sched_syscall_unblock(void);
+pthread_t sched_create_kworker(ds_pthread_create_t * thread_def);
 
 /**
   * @}

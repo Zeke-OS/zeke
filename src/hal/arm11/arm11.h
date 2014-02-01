@@ -44,6 +44,7 @@
 #define ARM11_H
 
 #include <kernel.h>
+#include <sched.h>
 #include <hal/hal_mcu.h>
 #include <hal/hal_core.h>
 
@@ -130,6 +131,13 @@ void wr_thread_stack_ptr(void * ptr);
  */
 #define panic_halt() do {               \
     __asm__ volatile ("BKPT #01");      \
+} while (0)
+
+#define eval_syscall_block() do {                   \
+    if (!SCHED_TEST_CSW_OK(current_thread->flags))  \
+        __asm__ volatile ("mov r1, #1");            \
+    else                                            \
+        __asm__ volatile ("mov r1, #0");            \
 } while (0)
 
 __attribute__ ((naked)) void undef_handler(void);

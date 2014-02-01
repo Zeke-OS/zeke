@@ -46,7 +46,10 @@ interrupt_svc:
     @ Call kernel's internal syscall handler
     bl      _intSyscall_handler
 
+    cmp     r1, #1              @ On ARM11 r1 is set to 1 if syscall was
+                                @ blocking and otherwise 0.
     pop     {r1-r12, lr}
+    beq     interrupt_systick   @ Jump if thread was blocked
     movs    pc, lr
 
 @ void interrupt_systick(void)

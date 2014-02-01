@@ -107,7 +107,7 @@ void sched_init(void) __attribute__((constructor));
 void * idleTask(void * arg);
 static void calc_loads(void);
 static void context_switcher(void);
-static void sched_thread_set(int i, ds_pthread_create_t * thread_def, threadInfo_t * parent);
+static void sched_thread_init(int i, ds_pthread_create_t * thread_def, threadInfo_t * parent);
 static void sched_thread_set_inheritance(pthread_t i, threadInfo_t * parent);
 static void _sched_thread_set_exec(int thread_id, osPriority pri);
 static void sched_thread_remove(pthread_t id);
@@ -134,7 +134,7 @@ void sched_init(void)
         .def      = &attr,
         .argument = NULL
     };
-    sched_thread_set(0, &tdef_idle, NULL);
+    sched_thread_init(0, &tdef_idle, NULL);
 
     /* Set idle thread as a currently running thread */
     current_thread = &(task_table[0]);
@@ -234,8 +234,7 @@ static void context_switcher(void)
         /* Get next thread from the priority queue */
         current_thread = *priority_queue.a;
 
-        if (   ((current_thread->flags & SCHED_EXEC_FLAG) == 0)
-            || ((current_thread->flags & SCHED_IN_USE_FLAG) == 0)) {
+        if (!SCHED_TEST_CSW_OK(current_thread->flags)) {
             /* Remove the top thread from the priority queue as it is
              * either in sleep or deleted */
             (void)heap_del_max(&priority_queue);
@@ -262,7 +261,7 @@ static void context_switcher(void)
         }
 
         /* Thread is skipped if its EXEC or IN_USE flags are unset. */
-    } while ((current_thread->flags & SCHED_CSW_OK_FLAGS) != SCHED_CSW_OK_FLAGS);
+    } while (!SCHED_TEST_CSW_OK(current_thread->flags));
 
     /* ts_counter is used to determine how many time slices has been used by the
      * process between idle/sleep states. We can assume that this measure is
@@ -290,12 +289,15 @@ threadInfo_t * sched_get_pThreadInfo(int thread_id)
   * @param parent       Parent thread id, NULL = doesn't have a parent
   * @todo what if parent is stopped before this function is called?
   */
-static void sched_thread_set(int i, ds_pthread_create_t * thread_def, threadInfo_t * parent)
+static void sched_thread_init(int i, ds_pthread_create_t * thread_def, threadInfo_t * parent)
 {
     /* This function should not be called for already initialized threads. */
     if ((task_table[i].flags & (uint32_t)SCHED_IN_USE_FLAG) != 0)
         return;
 
+    memset(&(task_table[i]), 0, sizeof(threadInfo_t));
+
+    /* Return thread id */
     *(thread_def->thread) = (pthread_t)i;
 
     /* Init core specific stack frame */
@@ -386,8 +388,7 @@ void sched_thread_set_exec(int thread_id)
 static void _sched_thread_set_exec(int thread_id, osPriority pri)
 {
     /* Check that given thread is in use but not in execution */
-    if ((task_table[thread_id].flags & (SCHED_EXEC_FLAG | SCHED_IN_USE_FLAG))
-        == SCHED_IN_USE_FLAG) {
+    if (SCHED_TEST_WAKEUP_OK(task_table[thread_id].flags)) {
         task_table[thread_id].ts_counter = 4 + (int)pri;
         task_table[thread_id].priority = pri;
         task_table[thread_id].flags |= SCHED_EXEC_FLAG; /* Set EXEC flag */
@@ -404,6 +405,53 @@ void sched_thread_sleep_current(void)
      * on top */
     current_thread->priority = osPriorityError;
     heap_inc_key(&priority_queue, heap_find(&priority_queue, current_thread->id));
+}
+
+/**
+ * Syscall was blocking.
+ * Indicate that currently executing syscall is blocking and scheduler should
+ * reschedule to a next thread.
+ */
+void sched_syscall_block(void)
+{
+    sched_thread_sleep_current();
+    current_thread->flags |= SCHED_WAIT_FLAG;
+}
+
+/**
+ * Blocking syscall is returning.
+ * Reschedule a thread that was blocked by a syscall.
+ * @note This function should be only called by a kworker thread.
+ */
+void sched_syscall_unblock(void)
+{
+    threadInfo_t * th;
+
+    if (current_thread->inh.parent) {
+        th = current_thread->inh.parent;
+
+        th->flags &= ~SCHED_WAIT_FLAG;
+        sched_thread_set_exec(th->id); /* Try to wakeup */
+    } /* else thread was killed */
+}
+
+/**
+ * Create a kworker thread that executes in privileged mode.
+ * @note Immortal bit is not set by default but thread can
+ *      set it by itself.
+ * @param thread_def Thread defs.
+ * @return thread id; Or if failed 0.
+ */
+pthread_t sched_create_kworker(ds_pthread_create_t * thread_def)
+{
+    pthread_t tt_id;
+
+    tt_id = sched_threadCreate(thread_def);
+    if (tt_id) {
+        /* Just that user can see that this is a kworker, no functional
+         * difference other than privileged mode. */
+        task_table[tt_id].flags |= SCHED_KWORKER_FLAG;
+    }
 }
 
 /**
@@ -431,7 +479,12 @@ static void sched_thread_remove(pthread_t tt_id)
      * switch will garbage collect it from the priority queue on the next run.
      */
     task_table[tt_id].priority = osPriorityError;
-    heap_inc_key(&priority_queue, heap_find(&priority_queue, tt_id));
+    {
+        int i;
+        i = heap_find(&priority_queue, tt_id);
+        if (i != -1)
+            heap_inc_key(&priority_queue, i);
+    }
 
 #if configFAST_FORK != 0
     queue_push(&next_threadId_queue_cb, &tt_id);
@@ -441,6 +494,7 @@ static void sched_thread_remove(pthread_t tt_id)
 /**
  * Deletes thread on exit
  * @note This function is called while execution is in thread context.
+ * TODO This is obsolete and will not work for user space!!!
  */
 static void del_thread(void)
 {
@@ -488,7 +542,7 @@ pthread_t sched_threadCreate(ds_pthread_create_t * thread_def)
     for (i = 1; i < configSCHED_MAX_THREADS; i++) {
         if (task_table[i].flags == 0) {
 #endif
-            sched_thread_set(i,                  /* Index of created thread */
+            sched_thread_init(i,                 /* Index of the thread created */
                              thread_def,         /* Thread definition */
                              (void *)current_thread); /* Pointer to parent
                                                   * thread, which is expected to
@@ -517,7 +571,7 @@ osStatus sched_thread_terminate(pthread_t thread_id)
 {
     threadInfo_t * child;
 
-    if ((task_table[thread_id].flags & SCHED_IN_USE_FLAG) == 0) {
+    if (!SCHED_TEST_TERMINATE_OK(task_table[thread_id].flags)) {
         return (osStatus)osErrorParameter;
     }
 
@@ -525,7 +579,11 @@ osStatus sched_thread_terminate(pthread_t thread_id)
     child = task_table[thread_id].inh.first_child;
     if (child != NULL) {
         do {
-            sched_thread_terminate(child->id);
+            if (sched_thread_terminate(child->id) != (osStatus)osOK) {
+                child->inh.parent = 0; /* Thread is now parentles, it was
+                                        * possibly a kworker that couldn't be
+                                        * killed. */
+            }
         } while ((child = child->inh.next_child) != NULL);
     }
 

@@ -96,5 +96,12 @@ uint32_t _intSyscall_handler(uint32_t type, void * p)
 
     current_thread->errno = 0; /* Default value for errno */
     fpt = syscall_callmap[major];
-    return fpt(type, p);
+    {
+        uint32_t retval;
+        retval = fpt(type, p);
+        eval_syscall_block(); /* This will set mach dep block flag to 1 if
+                               * was blocking. Eg. in ARM11 R1 is set to 0/1.
+                               */
+        return retval;
+    }
 }
