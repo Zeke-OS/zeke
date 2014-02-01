@@ -40,17 +40,6 @@
 #include <errno.h>
 #include <syscall.h>
 
-/*
- * Declare function prototypes of syscall handlers here to avoid bloat and to
- * speed up compilation.
- */
-extern uint32_t sched_syscall(uint32_t type, void * p);
-extern uint32_t sched_syscall_thread(uint32_t type, void * p);
-extern uint32_t sched_syscall_signal(uint32_t type, void * p);
-extern uint32_t ksignal_syscall(uint32_t type, void * p);
-extern uint32_t fs_syscall(uint32_t type, void * p);
-extern uint32_t ulocks_syscall(uint32_t type, void * p);
-
 /* For all Syscall groups */
 #if PU_TEST_BUILD == 0
 #define FOR_ALL_SYSCALL_GROUPS(apply)                       \
@@ -65,6 +54,13 @@ extern uint32_t ulocks_syscall(uint32_t type, void * p);
     apply(SYSCALL_GROUP_SCHED_THREAD, sched_syscall_thread) \
     apply(SYSCALL_GROUP_SIGNAL, ksignal_syscall)
 #endif
+
+/*
+ * Declare prototypes of syscall handlers.
+ */
+#define DECLARE_SCHANDLER(major, function) extern uint32_t function(uint32_t type, void * p);
+FOR_ALL_SYSCALL_GROUPS(DECLARE_SCHANDLER)
+#undef DECLARE_SCHANDLER
 
 typedef uint32_t (*kernel_syscall_handler_t)(uint32_t type,  void * p);
 
