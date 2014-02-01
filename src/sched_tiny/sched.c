@@ -52,6 +52,7 @@
 #include <timers.h>
 #include <syscall.h>
 #include <kernel.h>
+#include <pthread.h>
 #include <sched.h>
 
 /* Definitions for load average calculation **********************************/
@@ -111,7 +112,6 @@ static void sched_thread_init(int i, ds_pthread_create_t * thread_def, threadInf
 static void sched_thread_set_inheritance(pthread_t i, threadInfo_t * parent);
 static void _sched_thread_set_exec(int thread_id, osPriority pri);
 static void sched_thread_remove(pthread_t id);
-static void del_thread(void);
 /* End of Static function declarations ***************************************/
 
 /* Functions called from outside of kernel context ***************************/
@@ -301,7 +301,7 @@ static void sched_thread_init(int i, ds_pthread_create_t * thread_def, threadInf
     *(thread_def->thread) = (pthread_t)i;
 
     /* Init core specific stack frame */
-    init_stack_frame(thread_def, (uint32_t)del_thread);
+    init_stack_frame(thread_def, pthread_exit);
 
     /* Mark this thread index as used.
      * EXEC flag is set later in sched_thread_set_exec */
@@ -492,27 +492,6 @@ static void sched_thread_remove(pthread_t tt_id)
     queue_push(&next_threadId_queue_cb, &tt_id);
 #endif
 }
-
-/**
- * Deletes thread on exit
- * @note This function is called while execution is in thread context.
- * TODO This is obsolete and will not work for user space!!!
- */
-static void del_thread(void)
-{
-    /* It's considered to be safer to call osThreadTerminate syscall here and
-     * terminate the running process while in kernel context even there is
-     * no separate privileged mode in Cortex-M0. This atleast improves
-     * portability in the future.
-     */
-    pthread_t thread_id = (pthread_t)syscall(SYSCALL_SCHED_THREAD_GETTID, NULL);
-    (void)syscall(SYSCALL_SCHED_THREAD_TERMINATE, &thread_id);
-    req_context_switch();
-
-    while(1); /* Once the context changes, the program will no longer return to
-               * this thread */
-}
-
 
 /* Functions defined in header file (and used mainly by syscalls)
  ******************************************************************************/

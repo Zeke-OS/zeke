@@ -48,7 +48,7 @@
  * @param thread_def Thread definitions
  * @param a_del_thread Address of del_thread function
  */
-void init_stack_frame(ds_pthread_create_t * thread_def, uint32_t a_del_thread);
+void init_stack_frame(ds_pthread_create_t * thread_def, void (*a_del_thread)(void *));
 
 /**
  * Make a system call

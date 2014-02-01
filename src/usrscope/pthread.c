@@ -5,7 +5,7 @@
  * @brief   Zero Kernel user space code
  * @section LICENSE
  * Copyright (c) 2013 Joni Hauhia <joni.hauhia@cs.helsinki.fi>
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
@@ -68,6 +68,17 @@ pthread_t pthread_self(void)
 {
     return (pthread_t)syscall(SYSCALL_SCHED_THREAD_GETTID, NULL);
 }
+
+void pthread_exit(void * retval)
+{
+    pthread_t thread_id = (pthread_t)syscall(SYSCALL_SCHED_THREAD_GETTID, NULL);
+    (void)syscall(SYSCALL_SCHED_THREAD_TERMINATE, &thread_id);
+    req_context_switch();
+
+    while(1); /* Once the context changes, the program will no longer return to
+               * this thread */
+}
+
 
 /**
   * @}
