@@ -518,6 +518,12 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
 extern struct sysctl_oid_list sysctl__children;
 
 SYSCTL_DECL(_kern);
+SYSCTL_DECL(_vm);
+SYSCTL_DECL(_vfs);
+SYSCTL_DECL(_debug);
+SYSCTL_DECL(_hw);
+SYSCTL_DECL(_machdep);
+SYSCTL_DECL(_user);
 SYSCTL_DECL(_security);
 
 void sysctl_register_oid(struct sysctl_oid * oidp);

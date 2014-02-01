@@ -30,10 +30,12 @@
  *******************************************************************************
  */
 
+#define KERNEL_INTERNAL
 #include <stdint.h>
 #include <stddef.h>
 #include <kstring.h>
 #ifndef PU_TEST_BUILD
+#include <sys/sysctl.h>
 #include <dynmem.h>
 #else
 void * malloc(size_t size);
@@ -45,13 +47,27 @@ void * malloc(size_t size);
                                             *   entry. */
 
 struct kmalloc_stat {
-    size_t kms_mem;         /*!< Amount of memory reserved for kmalloc. */
+    size_t kms_mem_res;     /*!< Amount of memory reserved for kmalloc. */
     size_t kms_mem_max;     /*!< Maximum amount of reserved memory. */
     size_t kms_mem_alloc;   /*!< Amount of currectly allocated memory. */
     size_t kms_mem_alloc_max; /*!< Maximum amount of allocated memory. */
 };
 struct kmalloc_stat kmalloc_stat;
 
+#ifndef PU_TEST_BUILD
+SYSCTL_UINT(_vm, OID_AUTO, kmalloc_res, CTLFLAG_RDTUN,
+        ((unsigned int *)&(kmalloc_stat.kms_mem_res)), 0,
+        "Amount of memory currently reserved for kmalloc.");
+SYSCTL_UINT(_vm, OID_AUTO, kmalloc_max, CTLFLAG_RDTUN,
+        ((unsigned int *)&(kmalloc_stat.kms_mem_max)), 0,
+        "Maximum peak amount of memory reserved for kmalloc.");
+SYSCTL_UINT(_vm, OID_AUTO, kmalloc_alloc, CTLFLAG_RDTUN,
+        ((unsigned int *)&(kmalloc_stat.kms_mem_alloc)), 0,
+        "Amount of memory currectly allocated with kmalloc.");
+SYSCTL_UINT(_vm, OID_AUTO, kmalloc_alloc_max, CTLFLAG_RDTUN,
+        ((unsigned int *)&(kmalloc_stat.kms_mem_alloc_max)), 0,
+        "Maximum peak amount of memory allocated with kmalloc");
+#endif
 
 /**
  * Memory block descriptor.
@@ -128,7 +144,7 @@ static mblock_t * extend(mblock_t * last, size_t s)
         goto out;
     }
 
-    update_stat_up(&(kmalloc_stat.kms_mem), MB_TO_BYTES(s_mbytes));
+    update_stat_up(&(kmalloc_stat.kms_mem_res), MB_TO_BYTES(s_mbytes));
 
     /* First mblock in the newly allocated section.
      * Data section of the block will be returned by kmalloc.
