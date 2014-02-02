@@ -55,16 +55,16 @@ struct kmalloc_stat {
 struct kmalloc_stat kmalloc_stat;
 
 #ifndef PU_TEST_BUILD
-SYSCTL_UINT(_vm, OID_AUTO, kmalloc_res, CTLFLAG_RDTUN,
+SYSCTL_UINT(_vm, OID_AUTO, kmalloc_res, CTLFLAG_RD,
         ((unsigned int *)&(kmalloc_stat.kms_mem_res)), 0,
         "Amount of memory currently reserved for kmalloc.");
-SYSCTL_UINT(_vm, OID_AUTO, kmalloc_max, CTLFLAG_RDTUN,
+SYSCTL_UINT(_vm, OID_AUTO, kmalloc_max, CTLFLAG_RD,
         ((unsigned int *)&(kmalloc_stat.kms_mem_max)), 0,
         "Maximum peak amount of memory reserved for kmalloc.");
-SYSCTL_UINT(_vm, OID_AUTO, kmalloc_alloc, CTLFLAG_RDTUN,
+SYSCTL_UINT(_vm, OID_AUTO, kmalloc_alloc, CTLFLAG_RD,
         ((unsigned int *)&(kmalloc_stat.kms_mem_alloc)), 0,
         "Amount of memory currectly allocated with kmalloc.");
-SYSCTL_UINT(_vm, OID_AUTO, kmalloc_alloc_max, CTLFLAG_RDTUN,
+SYSCTL_UINT(_vm, OID_AUTO, kmalloc_alloc_max, CTLFLAG_RD,
         ((unsigned int *)&(kmalloc_stat.kms_mem_alloc_max)), 0,
         "Maximum peak amount of memory allocated with kmalloc");
 #endif

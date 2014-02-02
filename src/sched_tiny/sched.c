@@ -108,7 +108,8 @@ void sched_init(void) __attribute__((constructor));
 void * idleTask(void * arg);
 static void calc_loads(void);
 static void context_switcher(void);
-static void sched_thread_init(int i, ds_pthread_create_t * thread_def, threadInfo_t * parent);
+static void sched_thread_init(int i, ds_pthread_create_t * thread_def,
+        threadInfo_t * parent);
 static void sched_thread_set_inheritance(pthread_t i, threadInfo_t * parent);
 static void _sched_thread_set_exec(int thread_id, osPriority pri);
 static void sched_thread_remove(pthread_t id);
