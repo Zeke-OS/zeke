@@ -124,6 +124,26 @@ struct ctlname {
  */
 #define CTL_AUTO_START 0x100
 
+/* User space functions. */
+
+/**
+ * Get system information by MIB style name.
+ * Retrieves system information and allows processes with appropriate privileges
+ * to set system information.
+ * @param name      is the MIB style name list.
+ * @param namelen   length of array of integers in name.
+ * @param oldp      is the target buffer where old value is copied to.
+ * @param oldlenp   is the length of oldp and after the call it is the length
+ *                  of data copied to oldp
+ * @param newp      is set to null if no write request is intended; Otherwise
+ *                  newp is set to point to a buffer that contains the new
+ *                  value to be written.
+ * @param newlen    is the lenght of newp or 0.
+ */
+int sysctl(int * name, unsigned int namelen, void * oldp, size_t * oldlenp,
+        void * newp, size_t newlen);
+
+
 #ifdef KERNEL_INTERNAL
 #include <sys/linker_set.h>
 #include <sched.h>
