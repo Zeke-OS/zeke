@@ -32,6 +32,7 @@
  */
 
 #include <kernel.h>
+#include <sys/_kservices.h>
 #include "usrinit.h"
 
 dev_t dev_tty0 = DEV_MMTODEV(2, 0);
@@ -61,7 +62,7 @@ void * main(void * arg)
 */
     while(1) {
         //print_message("System READY");
-        osDelay(500);
+        //osDelay(500);
     }
 }
 

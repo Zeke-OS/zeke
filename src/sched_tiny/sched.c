@@ -645,7 +645,7 @@ uintptr_t sched_syscall(uint32_t type, void * p)
 
     case SYSCALL_SCHED_GET_LOADAVG:
         sched_get_loads((uint32_t *)p);
-        return (uint32_t)NULL; /* Note NULL is not an error here */
+        return (uint32_t)NULL;
 
     case SYSCALL_SCHED_EVENT_GET:
         *((osEvent *)(p)) = current_thread->event;

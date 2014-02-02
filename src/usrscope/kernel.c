@@ -40,9 +40,22 @@
 #include "syscall.h"
 #include <kernel.h>
 
-void osGetLoadAvg(uint32_t loads[3])
+int getloadavg(double loadavg[3], int nelem)
 {
-    syscall(SYSCALL_SCHED_GET_LOADAVG, loads);
+    uint32_t loads[3];
+    size_t i;
+
+    if (nelem > 3)
+        return -1;
+
+    if(syscall(SYSCALL_SCHED_GET_LOADAVG, loads))
+        return -1;
+
+    /* TODO After float div support */
+    for (i = 0; i < nelem; i++)
+        loadavg[i] = (double)(loads[i]); // 100.0;
+
+    return nelem;
 }
 
 /** @addtogroup Thread_Management
