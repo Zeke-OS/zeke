@@ -86,6 +86,9 @@ static mmu_region_t dynmem_region;
 static void * kmap_allocation(size_t pos, size_t size, uint32_t ap, uint32_t control);
 static int update_dynmem_region_struct(void * p);
 
+/*
+ * TODO Add variables for sysctl
+ */
 
 /**
  * Allocate a contiguous memory region from dynmem area.
@@ -120,7 +123,7 @@ void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t control)
  */
 void * dynmem_alloc_force(void * addr, size_t size, uint32_t ap, uint32_t control)
 {
-    size_t pos = (uint32_t)addr - DYNMEM_START;
+    size_t pos = (size_t)addr - DYNMEM_START;
 
     bitmap_block_update(dynmemmap_bitmap, 1, pos, size);
     return kmap_allocation(pos, size, ap, control);
@@ -241,4 +244,39 @@ static int update_dynmem_region_struct(void * base)
     dynmem_region.pt = &mmu_pagetable_master;
 
     return 0;
+}
+
+/**
+ * Test for dynmem access.
+ * Return value format:
+ * 3  2    0
+ * +--+----+
+ * |XN| AP |
+ * +--+----+
+ * @param addr  is the base address.
+ * @param len   is the size of block tested.
+ * @return Returns 0 if addr is invalid; Otherwise returns ap flags + xn bit.
+ */
+uint32_t dynmem_acc(void * addr, size_t len)
+{
+    size_t i;
+
+    if (addr < DYNMEM_START || addr > DYNMEM_END)
+        return 0; /* Address out of bounds. */
+
+    i = (size_t)addr - DYNMEM_START;
+
+    if (((dynmemmap[i] & DYNMEM_RC_MASK) >> DYNMEM_RC_POS) == 0)
+        return 0; /* Not reserved. */
+
+    if (update_dynmem_region_struct(addr)) { /* error */
+        char buf[80];
+        ksprintf(buf, sizeof(buf), "dynmem_acc() check failed for: %x",
+            (uint32_t)addr);
+        KERROR(KERROR_ERR, buf);
+        return 0;
+    }
+
+    return dynmem_region.ap |
+        (((dynmem_region.control & MMU_CTRL_XN) >> MMU_CTRL_XN_OFFSET) << 3);
 }

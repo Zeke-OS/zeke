@@ -2,7 +2,7 @@
  *******************************************************************************
  * @file    vm.h
  * @author  Olli Vanhoja
- * @brief   VM BSD compatibility.
+ * @brief   VM functions.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.

@@ -2,7 +2,7 @@
  *******************************************************************************
  * @file    vm.c
  * @author  Olli Vanhoja
- * @brief   VM.
+ * @brief   VM functions.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,12 +30,15 @@
  *******************************************************************************
  */
 
+#define KERNEL_INTERNAL
 #include <hal/mmu.h>
 #include <ptmapper.h>
 #include <kerror.h>
 #include <vm/vm.h>
 
 extern mmu_region_t mmu_region_kernel;
+
+static int test_ap_priv(uint32_t rw, uint32_t ap);
 
 /**
  * Check kernel space memory region for accessibility.
@@ -48,6 +51,7 @@ extern mmu_region_t mmu_region_kernel;
 int kernacc(void * addr, int len, int rw)
 {
     size_t reg_start, reg_size;
+    uint32_t ap;
 
     reg_start = mmu_region_kernel.vaddr;
     reg_size = mmu_sizeof_region(&mmu_region_kernel);
@@ -55,9 +59,56 @@ int kernacc(void * addr, int len, int rw)
         return (1 == 1);
 
     /* TODO Check other regions somehow */
-    KERROR(KERROR_WARN, "Cant' verify address in kernacc()");
+    if ((ap = dynmem_acc(addr, len))) {
+        if (test_ap_priv(rw, ap))
+            return (1 == 1);
+        else
+            goto out;
+    }
 
-    return (1 == 1); /* TODO change to 0 */
+    //KERROR(KERROR_WARN, "Can't fully verify address in kernacc()");
+
+out:
+    return 0;
+}
+
+/**
+ * Test for priv mode access permissions.
+ *
+ * AP format for this function:
+ * 3  2    0
+ * +--+----+
+ * |XN| AP |
+ * +--+----+
+ */
+static int test_ap_priv(uint32_t rw, uint32_t ap)
+{
+    if (rw & VM_PROT_EXECUTE) {
+        if(ap & 0x8)
+            return 0; /* XN bit set. */
+    }
+    ap &= 0x7; /* Discard XN bit. */
+
+    if (rw & VM_PROT_WRITE) { /* Test for RWxx */
+        switch (ap) {
+            case MMU_AP_RWNA:
+            case MMU_AP_RWRO:
+            case MMU_AP_RWRW:
+                return (1 == 1);
+            default:
+                return 0; /* No write access. */
+        }
+    } else if (rw & VM_PROT_READ) { /* Test for ROxx */
+        switch (ap) {
+            case MMU_AP_RONA:
+            case MMU_AP_RORO:
+                return (1 == 1);
+            default:
+                return 0; /* No read access. */
+        }
+    }
+
+    return 0;
 }
 
 /**

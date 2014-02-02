@@ -74,5 +74,6 @@ extern uint32_t dynmemmap[];
 void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t control);
 void * dynmem_alloc_force(void * addr, size_t size, uint32_t ap, uint32_t control);
 void dynmem_free_region(void * addr);
+uint32_t dynmem_acc(void * addr, size_t len);
 
 #endif /* DYNMEM_H */
