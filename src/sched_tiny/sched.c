@@ -53,6 +53,7 @@
 #include <syscall.h>
 #include <kernel.h>
 #include <pthread.h>
+#include <errno.h>
 #include <sched.h>
 
 /* Definitions for load average calculation **********************************/
@@ -645,11 +646,15 @@ uintptr_t sched_syscall(uint32_t type, void * p)
                 );
 
     case SYSCALL_SCHED_GET_LOADAVG:
-        sched_get_loads((uint32_t *)p);
+        {
+        uint32_t arr[3];
+        sched_get_loads(arr);
+        copyout(arr, p, sizeof(arr));
+        }
         return (uint32_t)NULL;
 
     case SYSCALL_SCHED_EVENT_GET:
-        *((osEvent *)(p)) = current_thread->event;
+        copyout(current_thread->event, p, sizeof(osEvent));
         return (uint32_t)NULL;
 
     default:
@@ -663,34 +668,43 @@ uintptr_t sched_syscall_thread(uint32_t type, void * p)
     /* TODO pthread_create is allowed to throw errors and we definitely should
      *      use those. */
     case SYSCALL_SCHED_THREAD_CREATE:
-        sched_threadCreate(
-                    ((ds_pthread_create_t *)(p))
-                );
+        {
+        ds_pthread_create_t ds;
+        copyin(p, &ds, sizeof(ds_pthread_create_t));
+        sched_threadCreate(&ds);
+        copyout(&ds, p, sizeof(ds_pthread_create_t));
+        }
         return 0;
 
     case SYSCALL_SCHED_THREAD_GETTID:
         return (uint32_t)sched_thread_getId();
 
     case SYSCALL_SCHED_THREAD_TERMINATE:
-        return (uint32_t)sched_thread_terminate(
-                    *((pthread_t *)p)
-                );
+        {
+        pthread_t thread_id;
+        copyin(p, &thread_id, sizeof(pthread_t));
+        return (uint32_t)sched_thread_terminate(thread_id);
+        }
 
     case SYSCALL_SCHED_THREAD_SETPRIORITY:
-        return (uint32_t)sched_thread_setPriority(
-                    ((ds_osSetPriority_t *)(p))->thread_id,
-                    ((ds_osSetPriority_t *)(p))->priority
-                );
+        {
+        ds_osSetPriority_t ds;
+        copyin(p, &ds, sizeof(ds_osSetPriority_t));
+        return (uint32_t)sched_thread_setPriority( ds.thread_id, ds.priority);
+        }
 
     case SYSCALL_SCHED_THREAD_GETPRIORITY:
-        return (uint32_t)sched_thread_getPriority(
-                    *((osPriority *)(p))
-                );
+        {
+        osPriority pri;
+        copyin(p, &pri, sizeof(osPriority));
+        return (uint32_t)sched_thread_getPriority(pri);
+        }
 
     case SYSCALL_SCHED_THREAD_GETERRNO:
         return (uint32_t)(current_thread->errno);
 
     default:
+        current_thread->errno = ENOSYS;
         return (uint32_t)NULL;
     }
 }

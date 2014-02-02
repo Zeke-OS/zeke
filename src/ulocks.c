@@ -122,7 +122,8 @@ uint32_t ulocks_syscall(uint32_t type, void * p)
     uint32_t retval;
 
     switch(type) {
-    case SYSCALL_MUTEX_TEST_AND_SET:
+    case SYSCALL_MUTEX_TEST_AND_SET: /* TODO User space to kernel space address
+                                      *      translation? */
         retval = (uint32_t)test_and_set((int *)p);
         if (retval) {
             current_thread->errno = EBUSY;
