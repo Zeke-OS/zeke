@@ -117,6 +117,7 @@ static int locks_semaphore_thread_spinwait(uint32_t * s, uint32_t millisec)
   * @}
   */
 
+/* TODO vm translation and usracc checking */
 uint32_t ulocks_syscall(uint32_t type, void * p)
 {
     uint32_t retval;

@@ -52,6 +52,7 @@
 #include <timers.h>
 #include <syscall.h>
 #include <kernel.h>
+#include <vm/vm.h>
 #include <process.h> /* copyin & copyout */
 #include <pthread.h>
 #include <errno.h>
@@ -642,19 +643,39 @@ uintptr_t sched_syscall(uint32_t type, void * p)
 {
     switch(type) {
     case SYSCALL_SCHED_DELAY:
-        return (uint32_t)sched_threadDelay(
-                    *((uint32_t *)(p))
-                );
+        {
+        uint32_t val;
+        if (!useracc(p, sizeof(uint32_t), VM_PROT_READ)) {
+            /* No permission to read/write */
+            /* TODO Signal/Kill? */
+            current_thread->errno = EFAULT;
+            return -1;
+        }
+        copyin(p, &val, sizeof(uint32_t));
+        return (uint32_t)sched_threadDelay(val);
+        }
 
     case SYSCALL_SCHED_GET_LOADAVG:
         {
         uint32_t arr[3];
+        if (!useracc(p, sizeof(arr), VM_PROT_WRITE)) {
+            /* No permission to write */
+            /* TODO Signal/Kill? */
+            current_thread->errno = EFAULT;
+            return -1;
+        }
         sched_get_loads(arr);
         copyout(arr, p, sizeof(arr));
         }
         return (uint32_t)NULL;
 
     case SYSCALL_SCHED_EVENT_GET:
+        if (!useracc(p, sizeof(osEvent), VM_PROT_WRITE)) {
+            /* No permission to write */
+            /* TODO Signal/Kill? */
+            current_thread->errno = EFAULT;
+            return -1;
+        }
         copyout((void *)(&(current_thread->event)), p, sizeof(osEvent));
         return (uint32_t)NULL;
 
@@ -672,6 +693,12 @@ uintptr_t sched_syscall_thread(uint32_t type, void * p)
     case SYSCALL_SCHED_THREAD_CREATE:
         {
         ds_pthread_create_t ds;
+        if (!useracc(p, sizeof(ds_pthread_create_t), VM_PROT_WRITE)) {
+            /* No permission to read/write */
+            /* TODO Signal/Kill? */
+            current_thread->errno = EFAULT;
+            return -1;
+        }
         copyin(p, &ds, sizeof(ds_pthread_create_t));
         sched_threadCreate(&ds);
         copyout(&ds, p, sizeof(ds_pthread_create_t));
@@ -684,6 +711,12 @@ uintptr_t sched_syscall_thread(uint32_t type, void * p)
     case SYSCALL_SCHED_THREAD_TERMINATE:
         {
         pthread_t thread_id;
+        if (!useracc(p, sizeof(pthread_t), VM_PROT_READ)) {
+            /* No permission to read */
+            /* TODO Signal/Kill? */
+            current_thread->errno = EFAULT;
+            return -1;
+        }
         copyin(p, &thread_id, sizeof(pthread_t));
         return (uint32_t)sched_thread_terminate(thread_id);
         }
@@ -691,6 +724,12 @@ uintptr_t sched_syscall_thread(uint32_t type, void * p)
     case SYSCALL_SCHED_THREAD_SETPRIORITY:
         {
         ds_osSetPriority_t ds;
+        if (!useracc(p, sizeof(pthread_t), VM_PROT_READ)) {
+            /* No permission to read */
+            /* TODO Signal/Kill? */
+            current_thread->errno = EFAULT;
+            return -1;
+        }
         copyin(p, &ds, sizeof(ds_osSetPriority_t));
         return (uint32_t)sched_thread_setPriority( ds.thread_id, ds.priority);
         }
@@ -698,6 +737,12 @@ uintptr_t sched_syscall_thread(uint32_t type, void * p)
     case SYSCALL_SCHED_THREAD_GETPRIORITY:
         {
         osPriority pri;
+        if (!useracc(p, sizeof(pthread_t), VM_PROT_READ)) {
+            /* No permission to read */
+            /* TODO Signal/Kill? */
+            current_thread->errno = EFAULT;
+            return -1;
+        }
         copyin(p, &pri, sizeof(osPriority));
         return (uint32_t)sched_thread_getPriority(pri);
         }
