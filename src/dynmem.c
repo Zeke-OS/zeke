@@ -164,7 +164,7 @@ void dynmem_free_region(void * addr)
  * Updates dynmem allocation table and intially maps the memory region to the
  * kernel memory space.
  * @param base      is the base address.
- * @param size      is the size of the memory region.
+ * @param size      is the size of the memory region in MB.
  * @param ap        Access Permissions.
  * @param control   Control bits.
  */

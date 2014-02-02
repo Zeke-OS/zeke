@@ -173,6 +173,9 @@ uint32_t mmu_domain_access_get(void);
 void mmu_domain_access_set(uint32_t value, uint32_t mask);
 void mmu_control_set(uint32_t value, uint32_t mask);
 
+/* Generic for all */
+size_t mmu_sizeof_region(mmu_region_t * region);
+
 #endif /* MMU_H */
 
 /**

@@ -30,7 +30,12 @@
  *******************************************************************************
  */
 
+#include <hal/mmu.h>
+#include <ptmapper.h>
+#include <kerror.h>
 #include <vm/vm.h>
+
+extern mmu_region_t mmu_region_kernel;
 
 /**
  * Check kernel space memory region for accessibility.
@@ -42,7 +47,17 @@
  */
 int kernacc(void * addr, int len, int rw)
 {
-    return (1 == 1);
+    size_t reg_start, reg_size;
+
+    reg_start = mmu_region_kernel.vaddr;
+    reg_size = mmu_sizeof_region(&mmu_region_kernel);
+    if ((addr >= reg_start) && (addr <= reg_start + reg_size))
+        return (1 == 1);
+
+    /* TODO Check other regions somehow */
+    KERROR(KERROR_WARN, "Cant' verify address in kernacc()");
+
+    return (1 == 1); /* TODO change to 0 */
 }
 
 /**

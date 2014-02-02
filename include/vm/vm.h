@@ -35,7 +35,7 @@
 #ifdef KERNEL_INTERNAL
 
 #define VM_PROT_READ    0x1
-#define VM_PROT_WRITE   0x3
+#define VM_PROT_WRITE   0x2
 #define VM_PROT_EXECUTE 0x4
 
 int kernacc(void * addr, int len, int rw);
