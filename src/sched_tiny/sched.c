@@ -52,6 +52,7 @@
 #include <timers.h>
 #include <syscall.h>
 #include <kernel.h>
+#include <process.h> /* copyin & copyout */
 #include <pthread.h>
 #include <errno.h>
 #include <sched.h>
@@ -654,10 +655,11 @@ uintptr_t sched_syscall(uint32_t type, void * p)
         return (uint32_t)NULL;
 
     case SYSCALL_SCHED_EVENT_GET:
-        copyout(current_thread->event, p, sizeof(osEvent));
+        copyout((void *)(&(current_thread->event)), p, sizeof(osEvent));
         return (uint32_t)NULL;
 
     default:
+        current_thread->errno = ENOSYS;
         return (uint32_t)NULL;
     }
 }

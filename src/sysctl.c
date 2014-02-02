@@ -52,6 +52,8 @@
 #include <process.h>
 #include <sys/_mutex.h>
 #include <sys/priv.h>
+#include <vm/vm.h>
+#include <syscalldef.h>
 #include <sys/sysctl.h>
 
 
@@ -988,5 +990,111 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
     // TODO
     //if (oid->oid_running == 0 && (oid->oid_kind & CTLFLAG_DYING) != 0)
     //    wakeup(&oid->oid_running);
+    return (error);
+}
+
+int sys___sysctl(threadInfo_t * td, struct _sysctl_args * uap)
+{
+    int error, i, name[CTL_MAXNAME];
+    size_t j;
+
+    if (uap->namelen > CTL_MAXNAME || uap->namelen < 2)
+        return (EINVAL);
+
+    error = copyin(uap->name, &name, uap->namelen * sizeof(int));
+    if (error)
+        return (error);
+
+    error = userland_sysctl(td, name, uap->namelen,
+        uap->old, uap->oldlenp, 0,
+        uap->new, uap->newlen, &j, 0);
+    if (error && error != ENOMEM)
+        return (error);
+    if (uap->oldlenp) {
+        i = copyout(&j, uap->oldlenp, sizeof(j));
+        if (i)
+            return (i);
+    }
+    return (error);
+}
+
+/*
+ * This is used from various compatibility syscalls too.  That's why name
+ * must be in kernel space.
+ */
+int userland_sysctl(threadInfo_t * td, int * name, unsigned int namelen, void * old,
+    size_t * oldlenp, int inkernel, void * new, size_t newlen, size_t * retval,
+    int flags)
+{
+    int error = 0; //, memlocked;
+    struct sysctl_req req;
+
+    memset(&req, 0, sizeof req);
+
+    req.td = td;
+    req.flags = flags;
+
+    if (oldlenp) {
+        if (inkernel) {
+            req.oldlen = *oldlenp;
+        } else {
+            error = copyin(oldlenp, &req.oldlen, sizeof(*oldlenp));
+            if (error)
+                return (error);
+        }
+    }
+    req.validlen = req.oldlen;
+
+    if (old) {
+        if (!useracc(old, req.oldlen, VM_PROT_WRITE))
+            return (EFAULT);
+        req.oldptr= old;
+    }
+
+    if (new != NULL) {
+        if (!useracc(new, newlen, VM_PROT_READ))
+            return (EFAULT);
+        req.newlen = newlen;
+        req.newptr = new;
+    }
+
+    req.oldfunc = sysctl_old_user;
+    req.newfunc = sysctl_new_user;
+    req.lock = REQ_UNWIRED;
+
+    // TODO?
+    //if (req.oldlen > PAGE_SIZE) {
+    //    memlocked = 1;
+    //    sx_xlock(&sysctlmemlock);
+    //} else
+    //    memlocked = 0;
+
+    // TODO
+    //for (;;) {
+        req.oldidx = 0;
+        req.newidx = 0;
+        SYSCTL_LOCK();
+        error = sysctl_root(0, name, namelen, &req);
+        SYSCTL_UNLOCK();
+    //    if (error != EAGAIN)
+    //        break;
+    //    kern_yield(PRI_USER);
+    //}
+
+
+    //if (req.lock == REQ_WIRED && req.validlen > 0)
+    //    vsunlock(req.oldptr, req.validlen);
+    //if (memlocked)
+    //    sx_xunlock(&sysctlmemlock);
+
+    if (error && error != ENOMEM)
+        return (error);
+
+    if (retval) {
+        if (req.oldptr && req.oldidx > req.validlen)
+            *retval = req.validlen;
+        else
+            *retval = req.oldidx;
+    }
     return (error);
 }

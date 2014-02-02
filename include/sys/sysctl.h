@@ -535,6 +535,10 @@ int kernel_sysctlbyname(threadInfo_t * td, char * name, void * old, size_t * old
 int sysctl_wire_old_buffer(struct sysctl_req * req, size_t len);
 int kernel_sysctl(threadInfo_t * td, int * name, unsigned int namelen, void * old,
     size_t * oldlenp, void * new, size_t newlen, size_t * retval, int flags);
+int sys___sysctl(threadInfo_t * td, struct _sysctl_args * uap);
+int userland_sysctl(threadInfo_t * td, int * name, unsigned int namelen, void * old,
+            size_t * oldlenp, int inkernel, void * new, size_t newlen, size_t * retval,
+                int flags);
 
 #endif /* KERNEL_INTERNAL */
 

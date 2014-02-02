@@ -41,9 +41,12 @@
 #include <syscalldef.h>
 #include <syscall.h>
 #include <errno.h>
+#include <vm/vm.h>
 #include <process.h>
 
-volatile pid_t current_process_id;
+volatile pid_t current_process_id; /*!< PID of current process. */
+/* BSD compatibility */
+#define curproc current_process_id
 
 int process_replace(pid_t pid, void * image, size_t size);
 

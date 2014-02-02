@@ -44,6 +44,7 @@
 #if PU_TEST_BUILD == 0
 #define FOR_ALL_SYSCALL_GROUPS(apply)                       \
     apply(SYSCALL_GROUP_SCHED, sched_syscall)               \
+    apply(SYSCALL_GROUP_SYSCTL, sysctl_syscall)             \
     apply(SYSCALL_GROUP_SCHED_THREAD, sched_syscall_thread) \
     apply(SYSCALL_GROUP_SIGNAL, ksignal_syscall)            \
     apply(SYSCALL_GROUP_FS, fs_syscall)                     \
@@ -90,8 +91,6 @@ uintptr_t _intSyscall_handler(uint32_t type, void * p)
 
     if (major >= (sizeof(syscall_callmap) / sizeof(void *))) {
         current_thread->errno = ENOSYS; /* Not supported. */
-        /* 0/NULL means usually ERROR, however there is some cases where NULL as
-         * a return value doesn't necessarily mean error. */
         return 0; /* NULL */
     }
 

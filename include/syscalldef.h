@@ -70,4 +70,13 @@ typedef struct {
     uint32_t millisec;      /*!< Timeout in ms */
 } ds_osSemaphoreWait_t;
 
+struct _sysctl_args {
+    int * name;
+    unsigned int namelen;
+    void * old;
+    size_t * oldlenp;
+    void * new;
+    size_t newlen;
+};
+
 #endif /* SYSCALLDEF_H */
