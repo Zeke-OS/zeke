@@ -21,7 +21,6 @@
 
 #include <stdint.h>
 #include <limits.h>
-//#include <stdio.h> /* TODO REMOVE */
 
 #define clz_64(x) (__builtin_clzl(x))
 #define clz_32(x) (__builtin_clzl(x)-32)
@@ -30,11 +29,6 @@
 typedef uint16_t float16;
 typedef float float32;
 typedef double float64;
-
-typedef union {
-    uint16_t u;
-    float16 f;
-} uf16_t;
 
 typedef union {
     uint32_t u;
@@ -47,7 +41,6 @@ typedef union {
 } uf64_t;
 
 
-#define F16_MANT_WIDTH      10
 #define F32_MANT_WIDTH      23
 #define F64_MANT_WIDTH      52
 #define F128_MANT_WIDTH     112
@@ -79,6 +72,11 @@ typedef union {
 
 #define EXP_TYPE(width)     int16_t
 
+/**
+ *  shift right the value v by s and round to nearest or even
+ */
+#define SHR_NEAREST_EVEN(v, s) (((v) + (1L<<((s)-1))-1 + (((v)>>((s)))&1))>>(s))
+
 
 double __aeabi_ui2d(unsigned i);
 double __aeabi_l2d(long long i);
@@ -87,20 +85,15 @@ float __aeabi_i2f(int i);
 float __aeabi_ui2f(unsigned i);
 float __aeabi_l2f(long long i);
 
-
-/**
- *  shift right the value v by s and round to nearest or even
- */
-#define SHR_NEAREST_EVEN(v, s) (((v) + (1L<<((s)-1))-1 + (((v)>>((s)))&1))>>(s))
-
 /*
  * Standard double precision floating-point arithmetic helper functions
  */
+
 #if 0
 /**
  * double-precision addition.
  */
-double __aeabi_dadd(double, double)
+double __aeabi_dadd(double a, double b)
 {
 }
 
@@ -114,7 +107,7 @@ double __aeabi_ddiv(double n, double d)
 /**
  * double-precision multiplication.
  */
-double __aeabi_dmul(double, double)
+double __aeabi_dmul(double a, double b)
 {
 }
 
@@ -131,7 +124,6 @@ double __aeabi_drsub(double x, double y)
 double __aeabi_dsub(double x, double y)
 {
 }
-
 
 /*
  * double precision floating-point comparison helper functions
