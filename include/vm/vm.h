@@ -38,6 +38,9 @@
 #define VM_PROT_WRITE   0x2
 #define VM_PROT_EXECUTE 0x4
 
+int copyin(const void * uaddr, void * kaddr, size_t len);
+int copyout(const void * kaddr, void * uaddr, size_t len);
+int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done);
 int kernacc(void * addr, int len, int rw);
 int useracc(void * addr, int len, int rw);
 

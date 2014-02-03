@@ -267,7 +267,7 @@ uint32_t dynmem_acc(void * addr, size_t len)
     size_t size;
     uint32_t retval = 0;
 
-    if (addr < DYNMEM_START || addr > DYNMEM_END)
+    if ((size_t)addr < DYNMEM_START || (size_t)addr > DYNMEM_END)
         goto out; /* Address out of bounds. */
 
     i = (size_t)addr - DYNMEM_START;
@@ -290,7 +290,7 @@ uint32_t dynmem_acc(void * addr, size_t len)
         KERROR(KERROR_ERR, buf);
         goto out; /* Error in size calculation. */
     }
-    if (addr < dynmem_region.vaddr || addr > (dynmem_region.vaddr + size))
+    if ((size_t)addr < dynmem_region.vaddr || (size_t)addr > (dynmem_region.vaddr + size))
         goto out; /* Not in region range. */
 
     /* Acc seems to be ok.

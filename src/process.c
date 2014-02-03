@@ -121,67 +121,6 @@ void process_update(void)
     current_process_id = current_thread->pid_owner;
 }
 
-/**
- * Copy data from user-space to kernel-space.
- * Copy len bytes of data from the user-space address uaddr to the kernel-space
- * address kaddr.
- * @param[in]   uaddr is the source address.
- * @param[out]  kaddr is the target address.
- * @param       len  is the length of source.
- * @return 0 if succeeded; otherwise EFAULT.
- */
-int copyin(const void * uaddr, void * kaddr, size_t len)
-{
-    memcpy(kaddr, uaddr, len);
-
-    return 0;
-}
-
-/**
- * Copy data from kernel-space to user-space.
- * Copy len bytes of data from the kernel-space address kaddr to the user-space
- * address uaddr.
- * @param[in]   kaddr is the source address.
- * @param[out]  uaddr is the target address.
- * @param       len is the length of source.
- * @return 0 if succeeded; otherwise EFAULT.
- */
-int copyout(const void * kaddr, void * uaddr, size_t len)
-{
-    memcpy(uaddr, kaddr, len);
-
-    return 0;
-}
-
-/**
- * Copy a string from user-space to kernel-space.
- * Copy a NUL-terminated string, at most len bytes long, from user-space address
- * uaddr to kernel-space address kaddr.
- * @param[in]   uaddr is the source address.
- * @param[out]  kaddr is the target address.
- * @param       len is the length of string in uaddr.
- * @param[out]  done is the number of bytes actually copied, including the
- *                   terminating NUL, if done is non-NULL.
- * @return  0 if succeeded; or ENAMETOOLONG if the string is longer than len
- *          bytes.
- */
-int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done)
-{
-    size_t retval_cpy;
-    int retval = 0;
-
-    retval_cpy = strlcpy(kaddr, uaddr, len);
-    if (retval_cpy >= len) {
-        if (done != 0)
-            *done = len;
-        retval = ENAMETOOLONG;
-    } else if (done != 0) {
-        *done = retval_cpy;
-    }
-
-    return retval;
-}
-
 uintptr_t proc_syscall(uint32_t type, void * p)
 {
     switch(type) {

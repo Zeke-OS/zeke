@@ -31,15 +31,80 @@
  */
 
 #define KERNEL_INTERNAL
+#include <kstring.h>
 #include <hal/mmu.h>
 #include <ptmapper.h>
+#include <dynmem.h>
 #include <kerror.h>
+#include <errno.h>
 #include <vm/vm.h>
 
 extern mmu_region_t mmu_region_kernel;
 
 static int test_ap_priv(uint32_t rw, uint32_t ap);
 static int test_ap_user(uint32_t rw, uint32_t ap);
+
+
+/**
+ * Copy data from user-space to kernel-space.
+ * Copy len bytes of data from the user-space address uaddr to the kernel-space
+ * address kaddr.
+ * @param[in]   uaddr is the source address.
+ * @param[out]  kaddr is the target address.
+ * @param       len  is the length of source.
+ * @return 0 if succeeded; otherwise EFAULT.
+ */
+int copyin(const void * uaddr, void * kaddr, size_t len)
+{
+    memcpy(kaddr, uaddr, len);
+
+    return 0;
+}
+
+/**
+ * Copy data from kernel-space to user-space.
+ * Copy len bytes of data from the kernel-space address kaddr to the user-space
+ * address uaddr.
+ * @param[in]   kaddr is the source address.
+ * @param[out]  uaddr is the target address.
+ * @param       len is the length of source.
+ * @return 0 if succeeded; otherwise EFAULT.
+ */
+int copyout(const void * kaddr, void * uaddr, size_t len)
+{
+    memcpy(uaddr, kaddr, len);
+
+    return 0;
+}
+
+/**
+ * Copy a string from user-space to kernel-space.
+ * Copy a NUL-terminated string, at most len bytes long, from user-space address
+ * uaddr to kernel-space address kaddr.
+ * @param[in]   uaddr is the source address.
+ * @param[out]  kaddr is the target address.
+ * @param       len is the length of string in uaddr.
+ * @param[out]  done is the number of bytes actually copied, including the
+ *                   terminating NUL, if done is non-NULL.
+ * @return  0 if succeeded; or ENAMETOOLONG if the string is longer than len
+ *          bytes.
+ */
+int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done)
+{
+    size_t retval_cpy;
+    int retval = 0;
+
+    retval_cpy = strlcpy(kaddr, uaddr, len);
+    if (retval_cpy >= len) {
+        if (done != 0)
+            *done = len;
+        retval = ENAMETOOLONG;
+    } else if (done != 0) {
+        *done = retval_cpy;
+    }
+
+    return retval;
+}
 
 /**
  * Check kernel space memory region for accessibility.
@@ -56,7 +121,7 @@ int kernacc(void * addr, int len, int rw)
 
     reg_start = mmu_region_kernel.vaddr;
     reg_size = mmu_sizeof_region(&mmu_region_kernel);
-    if ((addr >= reg_start) && (addr <= reg_start + reg_size))
+    if (((size_t)addr >= reg_start) && ((size_t)addr <= reg_start + reg_size))
         return (1 == 1);
 
     /* TODO Check other static regions as well */
