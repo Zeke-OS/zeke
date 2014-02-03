@@ -41,6 +41,8 @@
 int copyin(const void * uaddr, void * kaddr, size_t len);
 int copyout(const void * kaddr, void * uaddr, size_t len);
 int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done);
+
+/* Not sure if these should be actually in vm_extern.h for BSD compatibility */
 int kernacc(void * addr, int len, int rw);
 int useracc(void * addr, int len, int rw);
 
