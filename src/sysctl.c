@@ -60,9 +60,11 @@
 struct sysctl_oid_list sysctl__children; /* root list */
 
 /*
- *  * Register the kernel's oids on startup.
- *   */
+ * Register the kernel's oids on startup.
+ */
 SET_DECLARE(sysctl_set, struct sysctl_oid);
+
+SYSCTL_DECL(_sysctl);
 
 /**
  * The sysctllock protects the MIB tree. It also protects sysctl contexts used
@@ -322,7 +324,7 @@ static int sysctl_sysctl_name(SYSCTL_HANDLER_ARGS)
  * XXXRW/JA: Shouldn't return name data for nodes that we don't permit in
  * capability mode.
  */
-static SYSCTL_NODE(, 1, name, CTLFLAG_RD | CTLFLAG_CAPRD,
+static SYSCTL_NODE(_sysctl, 1, name, CTLFLAG_RD | CTLFLAG_CAPRD,
     sysctl_sysctl_name, "");
 
 static int sysctl_sysctl_next_ls(struct sysctl_oid_list * lsp, int * name,
@@ -407,7 +409,7 @@ static int sysctl_sysctl_next(SYSCTL_HANDLER_ARGS)
  * XXXRW/JA: Shouldn't return next data for nodes that we don't permit in
  * capability mode.
  */
-static SYSCTL_NODE(, 2, next, CTLFLAG_RD | CTLFLAG_CAPRD,
+static SYSCTL_NODE(_sysctl, 2, next, CTLFLAG_RD | CTLFLAG_CAPRD,
     sysctl_sysctl_next, "");
 
 static int name2oid(char * name, int * oid, int * len, struct sysctl_oid ** oidpp)
@@ -486,6 +488,9 @@ static int sysctl_sysctl_name2oid(SYSCTL_HANDLER_ARGS)
  * XXXRW/JA: Shouldn't return name2oid data for nodes that we don't permit in
  * capability mode.
  */
+SYSCTL_PROC(_sysctl, 3, name2oid,
+    CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_ANYBODY | CTLFLAG_MPSAFE
+    | CTLFLAG_CAPRW, 0, 0, sysctl_sysctl_name2oid, "I", "");
 
 static int sysctl_sysctl_oidfmt(SYSCTL_HANDLER_ARGS)
 {
@@ -511,7 +516,7 @@ static int sysctl_sysctl_oidfmt(SYSCTL_HANDLER_ARGS)
 }
 
 
-static SYSCTL_NODE(, 4, oidfmt, CTLFLAG_RD|CTLFLAG_MPSAFE|CTLFLAG_CAPRD,
+static SYSCTL_NODE(_sysctl, 4, oidfmt, CTLFLAG_RD|CTLFLAG_MPSAFE|CTLFLAG_CAPRD,
     sysctl_sysctl_oidfmt, "");
 
 static int
@@ -535,7 +540,7 @@ sysctl_sysctl_oiddescr(SYSCTL_HANDLER_ARGS)
     return error;
 }
 
-static SYSCTL_NODE(, 5, oiddescr, CTLFLAG_RD|CTLFLAG_CAPRD,
+static SYSCTL_NODE(_sysctl, 5, oiddescr, CTLFLAG_RD|CTLFLAG_CAPRD,
     sysctl_sysctl_oiddescr, "");
 
 /**
