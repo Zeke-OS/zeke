@@ -39,6 +39,7 @@
 extern mmu_region_t mmu_region_kernel;
 
 static int test_ap_priv(uint32_t rw, uint32_t ap);
+static int test_ap_user(uint32_t rw, uint32_t ap);
 
 /**
  * Check kernel space memory region for accessibility.
@@ -58,7 +59,7 @@ int kernacc(void * addr, int len, int rw)
     if ((addr >= reg_start) && (addr <= reg_start + reg_size))
         return (1 == 1);
 
-    /* TODO Check other regions somehow */
+    /* TODO Check other static regions as well */
     if ((ap = dynmem_acc(addr, len))) {
         if (test_ap_priv(rw, ap))
             return (1 == 1);
@@ -87,7 +88,7 @@ static int test_ap_priv(uint32_t rw, uint32_t ap)
         if(ap & 0x8)
             return 0; /* XN bit set. */
     }
-    ap &= 0x7; /* Discard XN bit. */
+    ap &= ~0x8; /* Discard XN bit. */
 
     if (rw & VM_PROT_WRITE) { /* Test for RWxx */
         switch (ap) {
@@ -124,4 +125,41 @@ static int test_ap_priv(uint32_t rw, uint32_t ap)
 int useracc(void * addr, int len, int rw)
 {
     return (1 == 1);
+}
+
+/**
+ * Test for user mode access permissions.
+ *
+ * AP format for this function:
+ * 3  2    0
+ * +--+----+
+ * |XN| AP |
+ * +--+----+
+ */
+static int test_ap_user(uint32_t rw, uint32_t ap)
+{
+    if (rw & VM_PROT_EXECUTE) {
+        if(ap & 0x8)
+            return 0; /* XN bit set. */
+    }
+    ap &= ~0x8; /* Discard XN bit. */
+
+    if (rw & VM_PROT_WRITE) { /* Test for xxRW */
+        switch (ap) {
+            case MMU_AP_RWRW:
+                return (1 == 1);
+            default:
+                return 0; /* No write access. */
+        }
+    } else if (rw & VM_PROT_READ) { /* Test for xxRO */
+        switch (ap) {
+            case MMU_AP_RWRO:
+            case MMU_AP_RORO:
+                return (1 == 1);
+            default:
+                return 0; /* No read access. */
+        }
+    }
+
+    return 0;
 }
