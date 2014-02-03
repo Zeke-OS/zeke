@@ -81,6 +81,10 @@
 uint32_t dynmemmap[DYNMEM_MAPSIZE];
 uint32_t dynmemmap_bitmap[E2BITMAP_SIZE(DYNMEM_MAPSIZE)];
 
+/**
+ * Struct for temporary storage.
+ * @todo TODO Add locks for MP/preempt.
+ */
 static mmu_region_t dynmem_region;
 
 static void * kmap_allocation(size_t pos, size_t size, uint32_t ap, uint32_t control);
@@ -260,23 +264,40 @@ static int update_dynmem_region_struct(void * base)
 uint32_t dynmem_acc(void * addr, size_t len)
 {
     size_t i;
+    size_t size;
+    uint32_t retval = 0;
 
     if (addr < DYNMEM_START || addr > DYNMEM_END)
-        return 0; /* Address out of bounds. */
+        goto out; /* Address out of bounds. */
 
     i = (size_t)addr - DYNMEM_START;
 
     if (((dynmemmap[i] & DYNMEM_RC_MASK) >> DYNMEM_RC_POS) == 0)
-        return 0; /* Not reserved. */
+        goto out; /* Not reserved. */
 
     if (update_dynmem_region_struct(addr)) { /* error */
         char buf[80];
         ksprintf(buf, sizeof(buf), "dynmem_acc() check failed for: %x",
             (uint32_t)addr);
         KERROR(KERROR_ERR, buf);
-        return 0;
+        goto out;
     }
 
-    return dynmem_region.ap |
+    /* Get size */
+    if(!(size = mmu_sizeof_region(&dynmem_region))) {
+        char buf[80];ksprintf(buf, sizeof(buf), "Possible dynmem corruption at: %x",
+                (uint32_t)addr);
+        KERROR(KERROR_ERR, buf);
+        goto out; /* Error in size calculation. */
+    }
+    if (addr < dynmem_region.vaddr || addr > (dynmem_region.vaddr + size))
+        goto out; /* Not in region range. */
+
+    /* Acc seems to be ok.
+     * Calc ap + xn as a return value for further testing.
+     */
+    retval = dynmem_region.ap |
         (((dynmem_region.control & MMU_CTRL_XN) >> MMU_CTRL_XN_OFFSET) << 3);
+out:
+    return retval;
 }
