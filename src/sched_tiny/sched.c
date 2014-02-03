@@ -55,6 +55,7 @@
 #include <vm/vm.h>
 #include <process.h> /* copyin & copyout */
 #include <pthread.h>
+#include <sys/sysctl.h>
 #include <errno.h>
 #include <sched.h>
 
@@ -83,7 +84,6 @@
 #define SCALE_LOAD(x) (((x + (FIXED_1/200)) * 100) >> FSHIFT)
 /* End of Definitions for load average calculation ***************************/
 
-
 /* Task containers */
 static threadInfo_t task_table[configSCHED_MAX_THREADS]; /*!< Array of all
                                                           *   threads */
@@ -103,6 +103,10 @@ static char sched_idle_stack[sizeof(sw_stack_frame_t)
                              + sizeof(hw_stack_frame_t)
                              + 40]; /* Absolute minimum with current idle task
                                      * implementation */
+
+/* sysctl node for scheduler */
+SYSCTL_NODE(_kern, 0, sched, CTLFLAG_RW, 0,
+                "Scheduler");
 
 /* Static init */
 void sched_init(void) __attribute__((constructor));
