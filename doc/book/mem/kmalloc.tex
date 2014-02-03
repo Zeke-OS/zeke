@@ -1,3 +1,5 @@
+\chapter{kmalloc}
+
 The current implementation of the generic kernel memory allocator is largely
 based on tutorial written by Marwan Burrelle\cite{Burelle:malloc}.
 
@@ -26,6 +28,7 @@ When kmalloc is out of (large enough) memory blocks it will expand its memory
 usage by allocating a new region of memory from dynmem. Allocation is done in
 1 MB blocks (naturally) and always rounded  to a next 1 MB.
 
+\begin{figure}
 \begin{verbatim}
     +-+------+-+---------+-+-------+
     |d|      |d|         |d|       |
@@ -34,6 +37,9 @@ usage by allocating a new region of memory from dynmem. Allocation is done in
     |c|      |c|         |c|       |
     +-+------+-+---------+-+-------+
 \end{verbatim}
+\caption{Kmalloc blocks.}
+\label{figure:kmalloc_blocks}
+\end{figure}
 
 Descriptors are used to store the size of the data block, reference counters and
 pointers to neighbouring block descriptors.
