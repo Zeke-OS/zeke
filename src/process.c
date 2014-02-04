@@ -45,8 +45,7 @@
 #include <process.h>
 
 volatile pid_t current_process_id; /*!< PID of current process. */
-/* BSD compatibility */
-#define curproc current_process_id
+volatile proc_info_t * curproc; /*!< Pointer to the PCB of current process. */
 
 int process_replace(pid_t pid, void * image, size_t size);
 
@@ -89,7 +88,7 @@ int process_replace(pid_t pid, void * image, size_t size)
     return -1;
 }
 
-processInfo_t * process_get_struct(pid_t pid)
+proc_info_t * process_get_struct(pid_t pid)
 {
     return 0;
 }
@@ -103,9 +102,9 @@ mmu_pagetable_t * process_get_pptable(pid_t pid)
 {
     mmu_pagetable_t * pptable;
 
-    if (pid == 0) {
+    if (pid == 0) { /* Kernel master page table requested. */
         pptable = &mmu_pagetable_master;
-    } else {
+    } else { /* Get the process master page table */
         pptable = process_get_struct(pid)->pptable;
     }
 
@@ -114,11 +113,12 @@ mmu_pagetable_t * process_get_pptable(pid_t pid)
 
 /**
  * Update process system state.
- * @note Updates current_process_id.
+ * @note Updates current_process_id and curproc.
  */
 void process_update(void)
 {
     current_process_id = current_thread->pid_owner;
+    /* TODO Updated curproc */
 }
 
 uintptr_t proc_syscall(uint32_t type, void * p)

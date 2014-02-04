@@ -77,11 +77,11 @@ typedef struct {
      *      - file_t fd's
      *      - etc.
      */
-} processInfo_t;
+} proc_info_t;
 
 
 extern volatile pid_t current_process_id;
-
+extern volatile proc_info_t * curproc;
 
 mmu_pagetable_t * process_get_pptable(pid_t pid);
 

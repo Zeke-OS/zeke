@@ -37,6 +37,7 @@
 #include <dynmem.h>
 #include <kerror.h>
 #include <errno.h>
+#include <process.h>
 #include <vm/vm.h>
 
 extern mmu_region_t mmu_region_kernel;
@@ -196,6 +197,9 @@ static int test_ap_priv(uint32_t rw, uint32_t ap)
  */
 int useracc(void * addr, int len, int rw)
 {
+    /* TODO */
+    if (curproc == 0)
+        return 0;
     return (1 == 1);
 }
 

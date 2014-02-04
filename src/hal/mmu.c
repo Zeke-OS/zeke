@@ -35,7 +35,9 @@
   */
 
 #include <kinit.h>
-#include <ptmapper.h>
+#include <kstring.h>
+#include <kerror.h>
+//#include <ptmapper.h>
 #include "mmu.h"
 
 extern void ptmapper_init(void); /* form ptmapper */
@@ -63,6 +65,29 @@ static void mmu_init(void)
 }
 
 /**
+ * Get size of a page table.
+ * @param pt is the page table.
+ * @return Return the size of the page table or zero in case of error.
+ */
+size_t mmu_sizeof_pt(mmu_pagetable_t * pt)
+{
+    size_t size;
+
+    switch (pt->type) {
+        case MMU_PTT_MASTER:
+            size = MMU_PTSZ_MASTER;
+            break;
+        case MMU_PTT_COARSE:
+            size = MMU_PTSZ_COARSE;
+            break;
+        default:
+            size = 0;
+    }
+
+    return size;
+}
+
+/**
  * Calculate size of a vm region.
  * @param region is a pointer to the region control block.
  * @return Returns the size of the region in bytes.
@@ -80,6 +105,39 @@ size_t mmu_sizeof_region(mmu_region_t * region)
         default:
             return 0;
     }
+}
+
+/**
+ * Clone contents of src page table to dest page table.
+ * @param dest  is the destination page table descriptor.
+ * @param src   is the source page table descriptor.
+ * @return      Zero if cloning succeeded; Otherwise value other than zero.
+ */
+int mmu_clone_pt(mmu_pagetable_t * dest, mmu_pagetable_t * src)
+{
+    size_t len_src;
+    size_t len_dest;
+
+    len_src = mmu_sizeof_pt(src);
+    if (len_src == 0) {
+        KERROR(KERROR_ERR, "Attemp to clone an source invalid page table.");
+        return 1;
+    }
+
+    len_dest = mmu_sizeof_pt(dest);
+    if (len_dest == 0) {
+        KERROR(KERROR_ERR, "Invalid destination page table.");
+        return 1;
+    }
+
+    if (len_src != len_dest) {
+        KERROR(KERROR_ERR, "Destination and source pts differ in size");
+        return 2;
+    }
+
+    memcpy((void *)(dest->pt_addr), (void *)(src->pt_addr), len_src);
+
+    return 0;
 }
 
 /**
