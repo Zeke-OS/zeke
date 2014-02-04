@@ -61,7 +61,8 @@ See figure \ref{figure:vmsubsys}.
   \item \verb+dynmem+   - is a dynamic memory allocation system that allocates
                         \& frees contiguous blocks of physical memory.
   \item \verb+ptmapper+ - owns the statically created page tables (particularly
-                        the master page table) and regions.
+                        the master page table) and regions, and is also used to
+                        allocate new page tables from the page table region.
   \item \verb+vm+       - vm runs various checks on virtual memory access,
                         copies data between user land and kernel space and
                         allocates memory for processes etc. vm is basically
