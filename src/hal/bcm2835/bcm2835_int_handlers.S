@@ -125,12 +125,6 @@ interrupt_systick:
     ldr     r0, =current_process_id
     ldr     r5, [r0]
 
-    @ Jump over page table update and CID update if not needed.
-    @ This will slightly improve performance for kernel threads as caches are
-    @ not flushed twice.
-    cmp     r4, r5
-    beq     load_context
-
     @ Attach process page table
     mov     r0, r5
     bl      process_get_pptable
