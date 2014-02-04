@@ -116,7 +116,7 @@ void * idleTask(void * arg);
 static void calc_loads(void);
 static void context_switcher(void);
 static void sched_thread_init(int i, ds_pthread_create_t * thread_def,
-        threadInfo_t * parent);
+        threadInfo_t * parent, int priv);
 static void sched_thread_set_inheritance(pthread_t i, threadInfo_t * parent);
 static void _sched_thread_set_exec(int thread_id, osPriority pri);
 static void sched_thread_remove(pthread_t id);
@@ -142,7 +142,7 @@ void sched_init(void)
         .def      = &attr,
         .argument = NULL
     };
-    sched_thread_init(0, &tdef_idle, NULL);
+    sched_thread_init(0, &tdef_idle, NULL, 1);
 
     /* Set idle thread as a currently running thread */
     current_thread = &(task_table[0]);
@@ -295,9 +295,12 @@ threadInfo_t * sched_get_pThreadInfo(int thread_id)
   * @param i            Thread id
   * @param thread_def   Thread definitions
   * @param parent       Parent thread id, NULL = doesn't have a parent
+  * @param priv         If set thread is initialized as a kernel mode thread
+  *                     (kworker).
   * @todo what if parent is stopped before this function is called?
   */
-static void sched_thread_init(int i, ds_pthread_create_t * thread_def, threadInfo_t * parent)
+static void sched_thread_init(int i, ds_pthread_create_t * thread_def,
+        threadInfo_t * parent, int priv)
 {
     /* This function should not be called for already initialized threads. */
     if ((task_table[i].flags & (uint32_t)SCHED_IN_USE_FLAG) != 0)
@@ -309,7 +312,7 @@ static void sched_thread_init(int i, ds_pthread_create_t * thread_def, threadInf
     *(thread_def->thread) = (pthread_t)i;
 
     /* Init core specific stack frame */
-    init_stack_frame(thread_def, pthread_exit);
+    init_stack_frame(thread_def, pthread_exit, priv);
 
     /* Mark this thread index as used.
      * EXEC flag is set later in sched_thread_set_exec */
@@ -317,6 +320,12 @@ static void sched_thread_init(int i, ds_pthread_create_t * thread_def, threadInf
     task_table[i].id            = i;
     task_table[i].def_priority  = thread_def->def->tpriority;
     /* task_table[i].priority is set later in sched_thread_set_exec */
+
+    if (priv) {
+        /* Just that user can see that this is a kworker, no functional
+         * difference other than privileged mode. */
+         task_table[i].flags |= SCHED_KWORKER_FLAG;
+    }
 
     /* Clear signal flags & wait states */
     task_table[i].wait_tim = -1;
@@ -444,27 +453,6 @@ void sched_syscall_unblock(void)
 }
 
 /**
- * Create a kworker thread that executes in privileged mode.
- * @note Immortal bit is not set by default but thread can
- *      set it by itself.
- * @param thread_def Thread defs.
- * @return thread id; Or if failed 0.
- */
-pthread_t sched_create_kworker(ds_pthread_create_t * thread_def)
-{
-    pthread_t tt_id;
-
-    tt_id = sched_threadCreate(thread_def);
-    if (tt_id) {
-        /* Just that user can see that this is a kworker, no functional
-         * difference other than privileged mode. */
-        task_table[tt_id].flags |= SCHED_KWORKER_FLAG;
-    }
-
-    return tt_id;
-}
-
-/**
  * Removes a thread from execution.
  * @param tt_id Thread task table id
  */
@@ -501,7 +489,7 @@ static void sched_thread_remove(pthread_t tt_id)
 #endif
 }
 
-/* Functions defined in header file (and used mainly by syscalls)
+/* Functions defined in header file
  ******************************************************************************/
 
 /**
@@ -518,7 +506,7 @@ static void sched_thread_remove(pthread_t tt_id)
 
 /*  ==== Thread Management ==== */
 
-pthread_t sched_threadCreate(ds_pthread_create_t * thread_def)
+pthread_t sched_threadCreate(ds_pthread_create_t * thread_def, int priv)
 {
     unsigned int i;
 
@@ -532,10 +520,11 @@ pthread_t sched_threadCreate(ds_pthread_create_t * thread_def)
         if (task_table[i].flags == 0) {
 #endif
             sched_thread_init(i,                 /* Index of the thread created */
-                             thread_def,         /* Thread definition */
-                             (void *)current_thread); /* Pointer to parent
+                             thread_def,         /* Thread definition. */
+                             (void *)current_thread, /* Pointer to parent
                                                   * thread, which is expected to
-                                                  * be the current thread */
+                                                  * be the current thread. */
+                             priv);              /* kworker flag. */
 #if configFAST_FORK == 0
             break;
         }
@@ -704,7 +693,7 @@ uintptr_t sched_syscall_thread(uint32_t type, void * p)
             return -1;
         }
         copyin(p, &ds, sizeof(ds_pthread_create_t));
-        sched_threadCreate(&ds);
+        sched_threadCreate(&ds, 0);
         copyout(&ds, p, sizeof(ds_pthread_create_t));
         }
         return 0;

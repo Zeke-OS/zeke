@@ -187,7 +187,6 @@ void sched_get_loads(uint32_t loads[3]);
 
 void sched_syscall_block(void);
 void sched_syscall_unblock(void);
-pthread_t sched_create_kworker(ds_pthread_create_t * thread_def);
 
 /**
   * @}
@@ -206,8 +205,11 @@ pthread_t sched_create_kworker(ds_pthread_create_t * thread_def);
 
 /**
  * Create a new thread.
+ * @param thread_def    Thread definitions.
+ * @param priv          If set thread is created as a kernel mode thread aka
+ *                      kworker; Otherwise user mode is selected.
  */
-pthread_t sched_threadCreate(ds_pthread_create_t * thread_def);
+pthread_t sched_threadCreate(ds_pthread_create_t * thread_def, int priv);
 
 /**
  * Get id of the currently running thread

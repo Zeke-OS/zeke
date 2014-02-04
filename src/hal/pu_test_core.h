@@ -77,7 +77,8 @@ typedef struct {
 /**
   * Init hw stack frame
   */
-inline void init_hw_stack_frame(/*@unused@*/ ds_pthread_create_t * thread_def, /*@unused@*/ uint32_t a_del_thread)
+inline void init_stack_frame(/*@unused@*/ ds_pthread_create_t * thread_def,
+        /*@unused@*/ uint32_t a_del_thread, /*@unused@*/ int priv)
 {
 }
 
