@@ -121,17 +121,46 @@ void wr_thread_stack_ptr(void * ptr);
 
 /**
  * Platform sepcific idle sleep mode.
+ * Clock is stopped until one of the following events take place:
+ * + An IRQ interrupt
+ * + An FIQ interrupt
+ * + A Debug Entry request made to the processor.
  */
-#define idle_sleep() do {               \
-    /* Sleep until next interrupt */    \
-    __asm__ volatile ("WFI");           \
+#define idle_sleep() do {                   \
+    /* Sleep until next interrupt */        \
+    __asm__ volatile ("WFI");               \
 } while (0)
+
+#ifdef configMP
+
+/**
+ * Wait for event.
+ * Clock is stopped until one of the following events take place:
+ * + An IRQ interrupt, unless masked by the CPSR I Bit
+ * + An FIQ interrupt, unless masked by the CPSR F Bit
+ * + A Debug Entry request made to the processor and Debug is enabled
+ * + An event is signaled by another processor using Send Event.
+ * + Another MP11 CPU return from exception.
+ */
+#define cpu_wfe() do {                      \
+    __asm__ volatile ("WFE");               \
+} while (0)
+
+/**
+ * Send event.
+ * Causes an event to be signaled to all CPUs within a multi-processor system.
+ */
+#define cpu_sev() do {                      \
+    __asm__ volatile ("SEV");               \
+} while (0)
+
+#endif /* configMP */
 
 /**
  * Halt due to kernel panic.
  */
-#define panic_halt() do {               \
-    __asm__ volatile ("BKPT #01");      \
+#define panic_halt() do {                   \
+    __asm__ volatile ("BKPT #01");          \
 } while (0)
 
 /**
