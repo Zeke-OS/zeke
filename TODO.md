@@ -4,7 +4,6 @@ TODO
 Generic Tasks
 -------------
 - Timer syscalls
-- Flag for kernel threads so they won't get killed by user scope thread
 - Optional auto-reset on failure instead of halt
 - Implement memory pools
 - Further optimization of syscalls by using syscalldef data types whenever
@@ -49,8 +48,3 @@ KNOWN ISSUES
 NOTES
 =====
 
-- CMSIS-RTOS specifies that osSignalSet can be called from ISR. This is
-  untested at the moment and I'm 99% sure it doesn't work without some
-  modifications.
-- Some signal flags might be reserved for other event types in the future
-  (while keeping kernel compact and simple)
