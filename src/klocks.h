@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    _mutex.h
+ * @file    klocks.h
  * @author  Olli Vanhoja
  *
  * @brief   -
@@ -35,7 +35,6 @@
 
 #ifndef _SYS__MUTEX_H_
 #define _SYS__MUTEX_H_
-#ifdef KERNEL_INTERNAL
 
 //#define LOCK_DEBUG 1
 
@@ -78,5 +77,4 @@ int _mtx_trylock(mtx_t * mtx, char * whr);
 void mtx_init(mtx_t * mtx, unsigned int type);
 void mtx_unlock(mtx_t * mtx);
 
-#endif
 #endif /* !_SYS__MUTEX_H_ */

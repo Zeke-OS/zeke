@@ -37,7 +37,7 @@
 
 #define KERNEL_INTERNAL
 #include <hal/hal_core.h>
-#include <sys/_mutex.h>
+#include <klocks.h>
 
 /**
  * Initialize a kernel mutex.

@@ -50,7 +50,7 @@
 #include <kerror.h>
 #include <sys/queue.h>
 #include <process.h>
-#include <sys/_mutex.h>
+#include <klocks.h>
 #include <sys/priv.h>
 #include <vm/vm.h>
 #include <syscalldef.h>
