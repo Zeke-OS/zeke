@@ -129,17 +129,19 @@ int kernacc(void * addr, int len, int rw)
         return (1 == 1);
 
     /* TODO Check other static regions as well */
+
     if ((ap = dynmem_acc(addr, len))) {
         if (test_ap_priv(rw, ap))
             return (1 == 1);
-        else
-            goto out;
+        //else
+        //    goto out;
     }
 
-    //KERROR(KERROR_WARN, "Can't fully verify address in kernacc()");
+    KERROR(KERROR_WARN, "Can't fully verify access to address in kernacc()");
 
-out:
-    return 0;
+    return (1 == 1); /* TODO */
+//out:
+//    return 0;
 }
 
 /**
