@@ -82,7 +82,8 @@ void wr_thread_stack_ptr(void * ptr)
     );
 }
 
-void init_stack_frame(ds_pthread_create_t * thread_def, void (*a_del_thread)(void *))
+void init_stack_frame(ds_pthread_create_t * thread_def,
+        void (*a_del_thread)(void *), int priv)
 {
     sw_stack_frame_t * thread_frame;
 
@@ -98,7 +99,7 @@ void init_stack_frame(ds_pthread_create_t * thread_def, void (*a_del_thread)(voi
     thread_frame->sp = (uint32_t)thread_frame;
     thread_frame->pc = ((uint32_t)(thread_def->start)) + 4;
     thread_frame->lr = (uint32_t)a_del_thread;
-    thread_frame->psr = DEFAULT_PSR;
+    thread_frame->psr = priv ? KERNELM_PSR : DEFAULT_PSR;
 }
 
 uint32_t syscall(uint32_t type, void * p)

@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    locks.c
+ * @file    ulocks.c
  * @author  Olli Vanhoja
  * @brief   User space locks and Syscall handlers for locks.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
@@ -37,13 +37,14 @@
 #ifndef PU_TEST_BUILD
 #include <hal/hal_core.h>
 #endif
+#include <vm/vm.h>
 #include <sched.h>
 #include <timers.h>
 #include <errno.h>
 
-static void locks_semaphore_v(uint32_t * s);
-static int locks_semaphore_p(uint32_t * s);
-static int locks_semaphore_thread_spinwait(uint32_t * s, uint32_t millisec);
+static void ulocks_semaphore_v(uint32_t * s);
+static int ulocks_semaphore_p(uint32_t * s);
+static int ulocks_semaphore_thread_spinwait(uint32_t * s, uint32_t millisec);
 
 /** @addtogroup Internal_Locks
   * @{
@@ -57,7 +58,7 @@ static int locks_semaphore_thread_spinwait(uint32_t * s, uint32_t millisec);
  * Increment a semaphore
  * @param s a semaphore.
  */
-static void locks_semaphore_v(uint32_t * s)
+static void ulocks_semaphore_v(uint32_t * s)
 {
     *s += 1;
 }
@@ -67,7 +68,7 @@ static void locks_semaphore_v(uint32_t * s)
  * @param s a semaphore.
  * @return 0 if decrease failed; otherwise succeed.
  */
-static int locks_semaphore_p(uint32_t * s)
+static int ulocks_semaphore_p(uint32_t * s)
 {
     if (*s > 0) {
         *s -= 1;
@@ -81,7 +82,7 @@ static int locks_semaphore_p(uint32_t * s)
  * @param s semaphore.
  * @return number of available tokens, or error code defined above.
  */
-static int locks_semaphore_thread_spinwait(uint32_t * s, uint32_t millisec)
+static int ulocks_semaphore_thread_spinwait(uint32_t * s, uint32_t millisec)
 {
     if (current_thread->wait_tim >= 0) {
         if (timers_get_owner(current_thread->wait_tim) < 0) {
@@ -91,7 +92,7 @@ static int locks_semaphore_thread_spinwait(uint32_t * s, uint32_t millisec)
     }
 
     /* Try */
-    if (!locks_semaphore_p(s)) {
+    if (!ulocks_semaphore_p(s)) {
         if (current_thread->wait_tim < 0) {
             /* Get a timer for timeout */
             if ((current_thread->wait_tim = timers_add(current_thread->id,
@@ -117,7 +118,10 @@ static int locks_semaphore_thread_spinwait(uint32_t * s, uint32_t millisec)
   * @}
   */
 
-/* TODO vm translation and usracc checking */
+/* TODO vm translation and usracc checking
+ * TODO Atleast semaphores could be made blocking
+ */
+
 uint32_t ulocks_syscall(uint32_t type, void * p)
 {
     uint32_t retval;
@@ -125,21 +129,39 @@ uint32_t ulocks_syscall(uint32_t type, void * p)
     switch(type) {
     case SYSCALL_MUTEX_TEST_AND_SET: /* TODO User space to kernel space address
                                       *      translation? */
-        retval = (uint32_t)test_and_set((int *)p);
-        if (retval) {
-            current_thread->errno = EBUSY;
+        if (useracc(p, sizeof(int), VM_PROT_WRITE)) {
+            retval = (uint32_t)test_and_set((int *)p);
+            if (retval) {
+                current_thread->errno = EBUSY;
+            }
+        } else { /* No permission to read/write */
+            /* TODO Kill? */
+            current_thread->errno = EFAULT;
+            return -1;
         }
         return retval;
 
     case SYSCALL_SEMAPHORE_WAIT:
-        return (uint32_t)locks_semaphore_thread_spinwait(
-                ((ds_osSemaphoreWait_t *)(p))->s,
-                ((ds_osSemaphoreWait_t *)(p))->millisec);
+        if (useracc(p, sizeof(ds_osSemaphoreWait_t), VM_PROT_WRITE)) {
+            return (uint32_t)ulocks_semaphore_thread_spinwait(
+                    ((ds_osSemaphoreWait_t *)(p))->s,
+                    ((ds_osSemaphoreWait_t *)(p))->millisec);
+        } else { /* No permission to read/write */
+            /* TODO Kill? */
+            current_thread->errno = EFAULT;
+            return -1;
+        }
 
     case SYSCALL_SEMAPHORE_RELEASE:
-        if (((os_semaphore_cb_t *)(p))->s < ((os_semaphore_cb_t *)(p))->count)
-            locks_semaphore_v(&(((os_semaphore_cb_t *)(p))->s));
-        return (uint32_t)NULL;
+        if (useracc(p, sizeof(os_semaphore_cb_t), VM_PROT_WRITE)) {
+            if (((os_semaphore_cb_t *)(p))->s < ((os_semaphore_cb_t *)(p))->count)
+                ulocks_semaphore_v(&(((os_semaphore_cb_t *)(p))->s));
+            return (uint32_t)NULL;
+        } else { /* No permission to read/write */
+            /* TODO Kill? */
+            current_thread->errno = EFAULT;
+            return -1;
+        }
 
     default:
         current_thread->errno = ENOSYS;

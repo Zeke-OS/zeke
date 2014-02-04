@@ -29,6 +29,7 @@ const char * strstr(const char * str1, const char * str2);
 #endif
 size_t strlenn(const char * str, size_t max);
 char * strnncat(char * dst, size_t ndst, const char * src, size_t nsrc);
+char * strsep(char ** stringp, const char * delim);
 int strvalid(const char * buf, size_t len);
 int uitoa32(char * str, uint32_t value);
 int uitoah32(char * str, uint32_t value);

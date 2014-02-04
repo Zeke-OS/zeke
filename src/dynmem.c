@@ -30,8 +30,10 @@
  *******************************************************************************
  */
 
+#define KERNEL_INTERNAL
 #include <kstring.h>
 #include <kerror.h>
+#include <sys/sysctl.h>
 #include <generic/bitmap.h>
 #include <dynmem.h>
 
@@ -87,6 +89,16 @@ uint32_t dynmemmap_bitmap[E2BITMAP_SIZE(DYNMEM_MAPSIZE)];
  */
 static mmu_region_t dynmem_region;
 
+/* Some sysctl stat variables.
+ */
+static size_t dynmem_free = (DYNMEM_END - DYNMEM_START);
+SYSCTL_UINT(_vm, OID_AUTO, dynmem_free, CTLFLAG_RD, (void *)(&dynmem_free), 0,
+    "Amount of free dynmem");
+
+static const size_t dynmem_tot = (DYNMEM_END - DYNMEM_START);
+SYSCTL_UINT(_vm, OID_AUTO, dynmem_tot, CTLFLAG_RD, (void *)(&dynmem_tot), 0,
+    "Total amount of dynmem.");
+
 static void * kmap_allocation(size_t pos, size_t size, uint32_t ap, uint32_t control);
 static int update_dynmem_region_struct(void * p);
 
@@ -109,6 +121,9 @@ void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t control)
         KERROR(KERROR_ERR, "Out of dynmem.");
         return 0; /* Null */
     }
+
+    /* Update sysctl stats */
+    dynmem_free -= size * 1048576;
 
     bitmap_block_update(dynmemmap_bitmap, 1, pos, size);
     return kmap_allocation((size_t)pos, size, ap, control);
@@ -165,6 +180,9 @@ void dynmem_free_region(void * addr)
         dynmemmap[j] = 0;
     }
     bitmap_block_update(dynmemmap_bitmap, 1, j, dynmem_region.num_pages);
+
+    /* Update sysctl stats */
+    dynmem_free += dynmem_region.num_pages * 1048576;
 }
 
 /**

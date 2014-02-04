@@ -46,6 +46,10 @@
 #include <stdint.h>
 #include <sys/queue.h>
 
+#ifndef CTASSERT        /* Allow lint to override */
+#define CTASSERT(x)     _Static_assert(x, "compile-time assertion failed")
+#endif
+
 /*
  * Definitions for sysctl call.  The sysctl call uses a hierarchical name
  * for objects that can be examined or modified.  The name is expressed as
@@ -376,6 +380,16 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
             CTLTYPE_U64 | CTLFLAG_MPSAFE | (access),                        \
             SYSCTL_ADD_ASSERT_TYPE(UINT64, ptr), 0,                         \
             sysctl_handle_counter_u64, "QU", __DESCR(descr))
+
+/* Oid for a procedure.  Specified by a pointer and an arg. */
+#define SYSCTL_PROC(parent, nbr, name, access, ptr, arg, handler, fmt, descr) \
+    CTASSERT(((access) & CTLTYPE) != 0);                \
+    SYSCTL_OID(parent, nbr, name, (access), \
+        ptr, arg, handler, fmt, descr)
+
+#define SYSCTL_ADD_PROC(ctx, parent, nbr, name, access, ptr, arg, handler, fmt, descr) \
+    sysctl_add_oid(ctx, parent, nbr, name, (access),                \
+    ptr, arg, handler, fmt, __DESCR(descr))
 
 /*
  * A macro to generate a read-only sysctl to indicate the presense of optional

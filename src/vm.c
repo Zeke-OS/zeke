@@ -49,6 +49,7 @@ static int test_ap_user(uint32_t rw, uint32_t ap);
  * Copy data from user-space to kernel-space.
  * Copy len bytes of data from the user-space address uaddr to the kernel-space
  * address kaddr.
+ * @remark Compatible with BSD.
  * @param[in]   uaddr is the source address.
  * @param[out]  kaddr is the target address.
  * @param       len  is the length of source.
@@ -65,6 +66,7 @@ int copyin(const void * uaddr, void * kaddr, size_t len)
  * Copy data from kernel-space to user-space.
  * Copy len bytes of data from the kernel-space address kaddr to the user-space
  * address uaddr.
+ * @remark Compatible with BSD.
  * @param[in]   kaddr is the source address.
  * @param[out]  uaddr is the target address.
  * @param       len is the length of source.
@@ -81,6 +83,7 @@ int copyout(const void * kaddr, void * uaddr, size_t len)
  * Copy a string from user-space to kernel-space.
  * Copy a NUL-terminated string, at most len bytes long, from user-space address
  * uaddr to kernel-space address kaddr.
+ * @remark Compatible with BSD.
  * @param[in]   uaddr is the source address.
  * @param[out]  kaddr is the target address.
  * @param       len is the length of string in uaddr.
@@ -111,6 +114,7 @@ int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done)
  * Check whether operations of the type specified in rw are permitted in the
  * range of virtual addresses given by addr and len.
  * @todo Not implemented properly!
+ * @remark Compatible with BSD.
  * @return  Boolean true if the type of access specified by rw is permitted;
  *          Otherwise boolean false.
  */
@@ -125,17 +129,19 @@ int kernacc(void * addr, int len, int rw)
         return (1 == 1);
 
     /* TODO Check other static regions as well */
+
     if ((ap = dynmem_acc(addr, len))) {
         if (test_ap_priv(rw, ap))
             return (1 == 1);
-        else
-            goto out;
+        //else
+        //    goto out;
     }
 
-    //KERROR(KERROR_WARN, "Can't fully verify address in kernacc()");
+    KERROR(KERROR_WARN, "Can't fully verify access to address in kernacc()");
 
-out:
-    return 0;
+    return (1 == 1); /* TODO */
+//out:
+//    return 0;
 }
 
 /**
@@ -184,6 +190,7 @@ static int test_ap_priv(uint32_t rw, uint32_t ap)
  * This function considers addr to represent an user space address. The process
  * context to use for this operation is taken from the global variable curproc.
  * @todo Not implemented properly!
+ * @remark Compatible with BSD.
  * @return  Boolean true if the type of access specified by rw is permitted;
  *          Otherwise boolean false.
  */

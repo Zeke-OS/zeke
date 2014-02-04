@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Page table mapper.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,11 +33,10 @@
 #include <hal/mmu.h>
 
 /* Kernel memory map **********************************************************/
-#define PTMAPPER_BASE           0x00100000
+/* page table area */
+#define PTMAPPER_PT_START       0x00100000
+#define PTMAPPER_PT_END         0x002FFFFF
 
-/* TODO can we put these to memmap file? */
-
-/** Base address of Page table region */
 #define MMU_VADDR_KERNEL_START  0x00000000
 #define MMU_VADDR_KERNEL_END    0x0007FFFF
 #define MMU_VADDR_SHARED_START  0x00080000
@@ -79,3 +78,4 @@
 /* End of Page Table Region Macros ********************************************/
 
 int ptmapper_alloc(mmu_pagetable_t * pt);
+void ptmapper_free(mmu_pagetable_t * pt);

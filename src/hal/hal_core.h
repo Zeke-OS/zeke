@@ -47,8 +47,10 @@
  * Init stack frame.
  * @param thread_def Thread definitions
  * @param a_del_thread Address of del_thread function
+ * @param priv set thread as privileged/kernel mode thread.
  */
-void init_stack_frame(ds_pthread_create_t * thread_def, void (*a_del_thread)(void *));
+void init_stack_frame(ds_pthread_create_t * thread_def,
+        void (*a_del_thread)(void *), int priv);
 
 /**
  * Make a system call
