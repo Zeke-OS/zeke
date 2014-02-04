@@ -66,9 +66,11 @@
  * Kernel panic with message.
  * @param msg is a message to be logged before halt.
  */
-#define panic(msg) KERROR(KERROR_CRIT, "Oops, Kernel panic");   \
-    do { disable_interrupt();                                   \
-         panic_halt();                                          \
+#define panic(msg)                              \
+    KERROR(KERROR_CRIT, "Oops, Kernel panic");  \
+    KERROR(KERROR_CRIT, msg);                   \
+    do { disable_interrupt();                   \
+         panic_halt();                          \
     } while(1)
 
 /* Log levels */

@@ -92,7 +92,7 @@ static int ulocks_semaphore_thread_spinwait(uint32_t * s, uint32_t millisec)
     }
 
     /* Try */
-    if (!locks_semaphore_p(s)) {
+    if (!ulocks_semaphore_p(s)) {
         if (current_thread->wait_tim < 0) {
             /* Get a timer for timeout */
             if ((current_thread->wait_tim = timers_add(current_thread->id,
@@ -155,7 +155,7 @@ uint32_t ulocks_syscall(uint32_t type, void * p)
     case SYSCALL_SEMAPHORE_RELEASE:
         if (useracc(p, sizeof(os_semaphore_cb_t), VM_PROT_WRITE)) {
             if (((os_semaphore_cb_t *)(p))->s < ((os_semaphore_cb_t *)(p))->count)
-                semaphore_v(&(((os_semaphore_cb_t *)(p))->s));
+                ulocks_semaphore_v(&(((os_semaphore_cb_t *)(p))->s));
             return (uint32_t)NULL;
         } else { /* No permission to read/write */
             /* TODO Kill? */
