@@ -173,6 +173,9 @@ static int test_ap_priv(uint32_t rw, uint32_t ap)
         }
     } else if (rw & VM_PROT_READ) { /* Test for ROxx */
         switch (ap) {
+            case MMU_AP_RWNA:
+            case MMU_AP_RWRO:
+            case MMU_AP_RWRW: /* I guess it's ok to accept if we have rw. */
             case MMU_AP_RONA:
             case MMU_AP_RORO:
                 return (1 == 1);
@@ -229,6 +232,7 @@ static int test_ap_user(uint32_t rw, uint32_t ap)
         }
     } else if (rw & VM_PROT_READ) { /* Test for xxRO */
         switch (ap) {
+            case MMU_AP_RWRW: /* I guess rw is ok too. */
             case MMU_AP_RWRO:
             case MMU_AP_RORO:
                 return (1 == 1);
