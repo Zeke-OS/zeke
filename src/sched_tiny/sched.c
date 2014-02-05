@@ -367,7 +367,7 @@ static void sched_thread_set_inheritance(pthread_t id, threadInfo_t * parent)
     }
 
 #if configPROCESSSCHED != 0
-        task_table[id].pid_owner = parent->pid_owner;
+    task_table[id].pid_owner = parent->pid_owner;
 #endif
 
     if (parent->inh.first_child == NULL) {
@@ -386,7 +386,7 @@ static void sched_thread_set_inheritance(pthread_t id, threadInfo_t * parent)
         last_node = tmp;
     } while ((tmp = last_node->inh.next_child) != NULL);
 
-    /* Set newly created thread as the last child in chaini. */
+    /* Set newly created thread as the last child in chain. */
     last_node->inh.next_child = &(task_table[id]);
 }
 
@@ -437,7 +437,8 @@ void sched_syscall_block(void)
 
 /**
  * Blocking syscall is returning.
- * Reschedule a thread that was blocked by a syscall.
+ * Reschedule a thread that was blocked by a syscall, the blocked thread should be
+ * set as the parent of for the kworker thread.
  * @note This function should be only called by a kworker thread.
  */
 void sched_syscall_unblock(void)
@@ -521,7 +522,7 @@ pthread_t sched_threadCreate(ds_pthread_create_t * thread_def, int priv)
 #endif
             sched_thread_init(i,                 /* Index of the thread created */
                              thread_def,         /* Thread definition. */
-                             (void *)current_thread, /* Pointer to parent
+                             (void *)current_thread, /* Pointer toi the parent
                                                   * thread, which is expected to
                                                   * be the current thread. */
                              priv);              /* kworker flag. */

@@ -42,12 +42,14 @@
 #include <syscall.h>
 #include <errno.h>
 #include <vm/vm.h>
+#include <ptmapper.h>
+#include <kmalloc.h>
 #include <process.h>
 
 volatile pid_t current_process_id; /*!< PID of current process. */
 volatile proc_info_t * curproc; /*!< Pointer to the PCB of current process. */
 
-int process_replace(pid_t pid, void * image, size_t size);
+static void set_process_inher(proc_info_t * old_proc, proc_info_t * new_proc);
 
 /**
  * Initialize a new process.
@@ -67,7 +69,85 @@ pid_t process_init(void * image, size_t size)
  */
 pid_t process_fork(pid_t pid)
 {
-    return -1;
+    /*
+     * http://pubs.opengroup.org/onlinepubs/9699919799/functions/fork.html
+     */
+    proc_info_t * old_proc;
+    proc_info_t * new_proc;
+    pid_t retval = -1;
+
+    old_proc = process_get_struct(pid);
+    if (!old_proc) {
+        retval = -EINVAL;
+        goto out;
+    }
+
+    /* Allocate PCB. */
+    new_proc = kmalloc(sizeof(proc_info_t));
+    if (!new_proc) {
+        retval = -ENOMEM;
+        goto out;
+    }
+
+    /* Allocate actual page table. */
+    if(ptmapper_alloc(&(new_proc->pptable))) {
+        retval = -ENOMEM;
+        goto free_new_proc;
+    }
+
+    /* Clone page table. */
+    if(mmu_clone_pt(&(new_proc->pptable), &(new_proc->pptable))) {
+        retval = -EINVAL;
+        goto free_pptable;
+    }
+
+    /* A process shall be created with a single thread. If a multi-threaded
+     * process calls fork(), the new process shall contain a replica of the
+     * calling thread
+     */
+    new_proc->main_thread = (threadInfo_t *)current_thread;
+
+    /* Update inheritance attributes */
+    set_process_inher(old_proc, new_proc);
+
+    /* TODO Insert to proc data structure */
+
+    goto out; /* Fork created. */
+free_pptable:
+    ptmapper_free(&(new_proc->pptable));
+free_new_proc:
+    kfree(new_proc);
+out:
+    return retval;
+}
+
+static void set_process_inher(proc_info_t * old_proc, proc_info_t * new_proc)
+{
+    proc_info_t * last_node, * tmp;
+
+    /* Initial values */
+    new_proc->inh.parent = old_proc;
+    new_proc->inh.first_child = NULL;
+    new_proc->inh.next_child = NULL;
+
+    if (old_proc->inh.first_child == NULL) {
+        /* This is the first child of this parent */
+        old_proc->inh.first_child = new_proc;
+        new_proc->inh.next_child = NULL;
+
+        return; /* All done */
+    }
+
+    /* Find the last child process
+     * Assuming first_child is a valid pointer
+     */
+    tmp = (proc_info_t *)(old_proc->inh.first_child);
+    do {
+        last_node = tmp;
+    } while ((tmp = last_node->inh.next_child) != NULL);
+
+    /* Set newly forked thread as the last child in chain. */
+    last_node->inh.next_child = new_proc;
 }
 
 int process_kill(void)
@@ -90,7 +170,7 @@ int process_replace(pid_t pid, void * image, size_t size)
 
 proc_info_t * process_get_struct(pid_t pid)
 {
-    return 0;
+    return (proc_info_t *)0;
 }
 
 /**
@@ -105,7 +185,7 @@ mmu_pagetable_t * process_get_pptable(pid_t pid)
     if (pid == 0) { /* Kernel master page table requested. */
         pptable = &mmu_pagetable_master;
     } else { /* Get the process master page table */
-        pptable = process_get_struct(pid)->pptable;
+        pptable = &(process_get_struct(pid)->pptable);
     }
 
     return pptable;
@@ -124,7 +204,7 @@ void process_update(void)
 uintptr_t proc_syscall(uint32_t type, void * p)
 {
     switch(type) {
-    case SYSCALL_PROC_EXEC:
+    case SYSCALL_PROC_EXEC: /* note: can only return EAGAIN or ENOMEM */
         current_thread->errno = ENOSYS;
         return -1;
 

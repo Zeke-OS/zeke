@@ -62,11 +62,12 @@ typedef struct {
     pid_t pid;
     threadInfo_t * main_thread; /*!< Main thread of this process. */
 #ifndef PU_TEST_BUILD
-    mmu_pagetable_t * pptable;  /*!< Process master page table. */
-    mmu_region_t regions[3];    /*!< Standard regions of a process.
+    mmu_pagetable_t pptable;    /*!< Process master page table. */
+    mmu_region_t * pregions;    /*!< Memory regions of a process.
                                  *   [0] = stack
                                  *   [1] = heap/data
                                  *   [2] = code
+                                 *   [n] = allocs
                                  */
 #endif
     sigs_t sigs;                /*!< Signals. */
@@ -77,12 +78,37 @@ typedef struct {
      *      - file_t fd's
      *      - etc.
      */
+
+    /**
+     * Process inheritance; Parent and child thread pointers.
+     * inh : Parent and child process relations
+     * ----------------------------------------
+     * + first_child is a parent process attribute containing address to a first
+     *   child of the parent process
+     * + parent is a child process attribute containing address of the parent
+     *   process of the child thread
+     * + next_child is a child thread attribute containing address of a next
+     *   child node of the common parent thread
+     */
+    struct {
+        void * parent;      /*!< Parent thread. */
+        void * first_child; /*!< Link to the first child thread. */
+        void * next_child;  /*!< Next child of the common parent. */
+    } inh;
+#if 0
+    mtx_t plock;
+#endif
 } proc_info_t;
 
 
 extern volatile pid_t current_process_id;
 extern volatile proc_info_t * curproc;
 
+pid_t process_init(void * image, size_t size);
+pid_t process_fork(pid_t pid);
+int process_kill(void);
+int process_replace(pid_t pid, void * image, size_t size);
+proc_info_t * process_get_struct(pid_t pid);
 mmu_pagetable_t * process_get_pptable(pid_t pid);
 
 #endif /* PROCESS_H */
