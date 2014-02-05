@@ -50,17 +50,18 @@ configMP = 0# Enable multi-processing support
 configKERROR_LAST = 0# Store last n log messages in buffer
 configKERROR_TTYS = 1#
 
+# Processes
+configMAXPROC = 512# maxproc, default maximum number of processes.
+
 # Scheduler Selection
 configSCHED_TINY = 1#
 #
 # SCHED_TINY Config
 configSCHED_MAX_THREADS = 10# Maximum number of threads
 configFAST_FORK = 0# Use a queue to find the next free threadId.
-configSCHED_FREQ = 100u# Scheduler frequency in Hz
+configSCHED_HZ = 100u# Scheduler frequency in Hz
 configSCHED_LAVG_PER = SCHED_LAVGPERIOD_11SEC#
-
-# Enable or disable heap bounds check
-configHEAP_BOUNDS_CHECK = 0#
+configHEAP_BOUNDS_CHECK = 0# Enable or disable heap bounds check
 
 # Maximum number of timers available
 configTIMERS_MAX = 4#

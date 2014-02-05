@@ -82,9 +82,9 @@ SYSCTL_DECL(_sysctl);
  */
 static mtx_t sysctllock;
 
-#define SYSCTL_LOCK()       mtx_spinlock(&sysctllock);
-#define SYSCTL_UNLOCK()     mtx_unlock(&sysctllock);
-#define SYSCTL_LOCK_INIT()  mtx_init(&sysctllock, MTX_DEF | MTX_SPIN);
+#define SYSCTL_LOCK()       mtx_spinlock(&sysctllock)
+#define SYSCTL_UNLOCK()     mtx_unlock(&sysctllock)
+#define SYSCTL_LOCK_INIT()  mtx_init(&sysctllock, MTX_DEF | MTX_SPIN)
 
 #else /* No MP support, so no locks needed */
 

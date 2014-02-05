@@ -43,14 +43,54 @@
 #include <errno.h>
 #include <vm/vm.h>
 #include <ptmapper.h>
+#include <kerror.h>
 #include <kmalloc.h>
 #include <process.h>
 
+static proc_info_t ** _procarr;
+int maxproc = configMAXPROC; /*!< Maximum number of processes. */
+static int _cur_maxproc;
 volatile pid_t current_process_id; /*!< PID of current process. */
 volatile proc_info_t * curproc; /*!< Pointer to the PCB of current process. */
 
+#if configMP != 0
+static mtx_t proclock;
+#define PROCARR_LOCK()      mtx_spinlock(&proclock)
+#define PROCARR_UNLOCK()    mtx_unlock(&proclock)
+#define PROCARR_LOCK_INIT() mtx_init(&proclock, MTX_DEF | MTX_SPIN)
+#else /* No MP support */
+#define PROCARR_LOCK()
+#define PROCARR_UNLOCK()
+#define PROCARR_LOCK_INIT()
+#endif
+
+static void realloc__procarr(void);
 static void set_process_inher(proc_info_t * old_proc, proc_info_t * new_proc);
 
+/**
+ * Init process handling subsystem.
+ */
+void process_init(void) __attribute__((constructor));
+void process_init(void)
+{
+    PROCARR_LOCK_INIT();
+    realloc__procarr();
+}
+
+static void realloc__procarr(void)
+{
+    proc_info_t ** tmp;
+
+    PROCARR_LOCK();
+    tmp = krealloc(_procarr, maxproc);
+    if ((tmp == 0) && (_procarr == 0))
+        panic("Unable to allocate _procarr.");
+    _procarr = tmp;
+    _cur_maxproc = maxproc;
+    PROCARR_UNLOCK();
+}
+
+#if 0
 /**
  * Initialize a new process.
  * @param image Process image to be loaded.
@@ -61,6 +101,7 @@ pid_t process_init(void * image, size_t size)
 {
     return -1;
 }
+#endif
 
 /**
  * Create a new process.
@@ -72,9 +113,12 @@ pid_t process_fork(pid_t pid)
     /*
      * http://pubs.opengroup.org/onlinepubs/9699919799/functions/fork.html
      */
+
     proc_info_t * old_proc;
     proc_info_t * new_proc;
-    pid_t retval = -1;
+    pid_t retval = -EAGAIN;
+
+    realloc__procarr();
 
     old_proc = process_get_struct(pid);
     if (!old_proc) {
@@ -82,14 +126,14 @@ pid_t process_fork(pid_t pid)
         goto out;
     }
 
-    /* Allocate PCB. */
+    /* Allocate a PCB. */
     new_proc = kmalloc(sizeof(proc_info_t));
     if (!new_proc) {
         retval = -ENOMEM;
         goto out;
     }
 
-    /* Allocate actual page table. */
+    /* Allocate the actual page table. */
     if(ptmapper_alloc(&(new_proc->pptable))) {
         retval = -ENOMEM;
         goto free_new_proc;

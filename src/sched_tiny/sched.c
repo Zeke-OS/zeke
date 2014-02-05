@@ -60,7 +60,7 @@
 #include <sched.h>
 
 /* Definitions for load average calculation **********************************/
-#define LOAD_FREQ   (configSCHED_LAVG_PER * (int)configSCHED_FREQ)
+#define LOAD_FREQ   (configSCHED_LAVG_PER * (int)configSCHED_HZ)
 /* FEXP_N = 2^11/(2^(interval * log_2(e/N))) */
 #if configSCHED_LAVG_PER == 5
 #define FSHIFT      11      /*!< nr of bits of precision */
@@ -360,15 +360,10 @@ static void sched_thread_set_inheritance(pthread_t id, threadInfo_t * parent)
     task_table[id].inh.next_child = NULL;
 
     if (parent == NULL) {
-#if configPROCESSSCHED != 0
         task_table[id].pid_owner = 0;
-#endif
         return;
     }
-
-#if configPROCESSSCHED != 0
     task_table[id].pid_owner = parent->pid_owner;
-#endif
 
     if (parent->inh.first_child == NULL) {
         /* This is the first child of this parent */

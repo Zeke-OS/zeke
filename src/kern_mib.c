@@ -72,3 +72,10 @@ static const char ostype[] = "Zeke";
 SYSCTL_STRING(_kern, KERN_OSTYPE, ostype, CTLFLAG_RD|CTLFLAG_MPSAFE,
         (char *)ostype, 0, "Operating system type");
 
+SYSCTL_INT(_kern, OID_AUTO, mib_hz, CTLFLAG_RD, 0, configSCHED_HZ,
+        "Number of kernel clock ticks per second");
+
+extern int maxproc;
+SYSCTL_INT(_kern, KERN_MAXPROC, maxproc, CTLFLAG_RWTUN,
+        &maxproc, 0, "Maximum number of processes");
+

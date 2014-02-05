@@ -95,16 +95,15 @@ typedef struct {
         void * first_child; /*!< Link to the first child thread. */
         void * next_child;  /*!< Next child of the common parent. */
     } inh;
-#if 0
+#if configMP != 0
     mtx_t plock;
 #endif
 } proc_info_t;
 
-
+int maxproc;
 extern volatile pid_t current_process_id;
 extern volatile proc_info_t * curproc;
 
-pid_t process_init(void * image, size_t size);
 pid_t process_fork(pid_t pid);
 int process_kill(void);
 int process_replace(pid_t pid, void * image, size_t size);

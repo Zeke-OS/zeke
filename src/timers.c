@@ -166,7 +166,7 @@ static int timers_calc_exp(int millisec)
     int exp;
     uint32_t value = timers_value;
 
-    exp = value + ((millisec * configSCHED_FREQ) / 1000);
+    exp = value + ((millisec * configSCHED_HZ) / 1000);
     if (exp == value)
         exp++;
 

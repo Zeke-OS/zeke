@@ -76,7 +76,7 @@
 /* End of Peripheral Addresses */
 
 #define SYS_CLOCK       700000 /* kHz */
-#define ARM_TIMER_FREQ  configSCHED_FREQ
+#define ARM_TIMER_FREQ  configSCHED_HZ
 
 void interrupt_preinit(void);
 void interrupt_postinit(void);
