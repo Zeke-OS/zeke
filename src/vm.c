@@ -203,6 +203,7 @@ int useracc(void * addr, int len, int rw)
     /* TODO */
     if (curproc == 0)
         return 0;
+
     return (1 == 1);
 }
 

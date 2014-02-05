@@ -43,6 +43,9 @@ KNOWN ISSUES
 
 - Signal wait mask is not always cleared after signal is received
 - There might be some fancy behaviour with signaling and wait states
+- Calling functions that uses locks from kworker may cause deadlock if
+  another thread calls the same function via syscall, as syscalls are not
+  pre-emptible
 
 
 NOTES
