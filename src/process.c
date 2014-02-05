@@ -42,16 +42,18 @@
 #include <syscall.h>
 #include <errno.h>
 #include <vm/vm.h>
+#include <sys/sysctl.h>
 #include <ptmapper.h>
 #include <kerror.h>
 #include <kmalloc.h>
 #include <process.h>
 
 static proc_info_t ** _procarr;
-int maxproc = configMAXPROC; /*!< Maximum number of processes. */
+int maxproc = configMAXPROC;        /*!< Maximum # of processes. */
 static int _cur_maxproc;
+int nprocs;                         /* Current # of procs. */
 volatile pid_t current_process_id; /*!< PID of current process. */
-volatile proc_info_t * curproc; /*!< Pointer to the PCB of current process. */
+volatile proc_info_t * curproc;     /*!< PCB of the current process. */
 
 #if configMP != 0
 static mtx_t proclock;
@@ -63,6 +65,11 @@ static mtx_t proclock;
 #define PROCARR_UNLOCK()
 #define PROCARR_LOCK_INIT()
 #endif
+
+SYSCTL_INT(_kern, KERN_MAXPROC, maxproc, CTLFLAG_RWTUN,
+    &maxproc, 0, "Maximum number of processes");
+SYSCTL_INT(_kern, KERN_MAXPROC, nprocs, CTLFLAG_RD,
+    &nprocs, 0, "Current number of processes");
 
 static void realloc__procarr(void);
 static void set_process_inher(proc_info_t * old_proc, proc_info_t * new_proc);
