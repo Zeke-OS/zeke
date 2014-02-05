@@ -69,7 +69,7 @@
 #define panic(msg)                              \
     KERROR(KERROR_CRIT, "Oops, Kernel panic");  \
     KERROR(KERROR_CRIT, msg);                   \
-    do { disable_interrupt();                   \
+    do {                                        \
          panic_halt();                          \
     } while(1)
 
