@@ -75,7 +75,7 @@ int _mtx_spinlock(mtx_t * mtx, char * whr)
     }
 
     while(test_and_set((int *)(&(mtx->mtx_lock)))) {
-#ifdef configMP
+#if configMP != 0
         cpu_wfe(); /* Sleep until event. */
 #endif
     }
@@ -116,7 +116,7 @@ int _mtx_trylock(mtx_t * mtx, char * whr)
 void mtx_unlock(mtx_t * mtx)
 {
     mtx->mtx_lock = 0;
-#ifdef configMP
+#if configMP != 0
     cpu_sev(); /* Wakeup cores possible waiting for lock. */
 #endif
 }

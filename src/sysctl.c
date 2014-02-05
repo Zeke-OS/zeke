@@ -66,6 +66,8 @@ SET_DECLARE(sysctl_set, struct sysctl_oid);
 
 SYSCTL_DECL(_sysctl);
 
+#if configMP != 0
+
 /**
  * The sysctllock protects the MIB tree. It also protects sysctl contexts used
  * with dynamic sysctls. The sysctl_register_oid() and sysctl_unregister_oid()
@@ -83,6 +85,14 @@ static mtx_t sysctllock;
 #define SYSCTL_LOCK()       mtx_spinlock(&sysctllock);
 #define SYSCTL_UNLOCK()     mtx_unlock(&sysctllock);
 #define SYSCTL_LOCK_INIT()  mtx_init(&sysctllock, MTX_DEF | MTX_SPIN);
+
+#else /* No MP support, so no locks needed */
+
+#define SYSCTL_LOCK()
+#define SYSCTL_UNLOCK()
+#define SYSCTL_LOCK_INIT()
+
+#endif
 
 static struct sysctl_oid * sysctl_find_oidname(const char * name,
         struct sysctl_oid_list * list);
@@ -241,7 +251,7 @@ int sysctl_find_oid(int * name, unsigned int namelen, struct sysctl_oid ** noid,
                 *nindx = indx;
             //KASSERT((oid->oid_kind & CTLFLAG_DYING) == 0,
             //    ("%s found DYING node %p", __func__, oid));
-            return (0);
+            return 0;
         } else {
             return ENOTDIR;
         }
@@ -257,10 +267,10 @@ static struct sysctl_oid * sysctl_find_oidname(const char * name,
     //SYSCTL_ASSERT_XLOCKED();
     SLIST_FOREACH(oidp, list, oid_link) {
         if (strcmp(oidp->oid_name, name) == 0) {
-            return (oidp);
+            return oidp;
         }
     }
-    return (NULL);
+    return NULL;
 }
 
 
@@ -344,14 +354,14 @@ static int sysctl_sysctl_next_ls(struct sysctl_oid_list * lsp, int * name,
 
         if (!namelen) {
             if ((oidp->oid_kind & CTLTYPE) != CTLTYPE_NODE)
-                return (0);
+                return 0;
             if (oidp->oid_handler)
                 /* We really should call the handler here...*/
-                return (0);
+                return 0;
             lsp = SYSCTL_CHILDREN(oidp);
             if (!sysctl_sysctl_next_ls(lsp, 0, 0, next+1,
                 len, level+1, oidpp))
-                return (0);
+                return 0;
             goto emptynode;
         }
 
@@ -360,13 +370,13 @@ static int sysctl_sysctl_next_ls(struct sysctl_oid_list * lsp, int * name,
 
         if (oidp->oid_number > *name) {
             if ((oidp->oid_kind & CTLTYPE) != CTLTYPE_NODE)
-                return (0);
+                return 0;
             if (oidp->oid_handler)
-                return (0);
+                return 0;
             lsp = SYSCTL_CHILDREN(oidp);
             if (!sysctl_sysctl_next_ls(lsp, name+1, namelen-1,
                 next+1, len, level+1, oidpp))
-                return (0);
+                return 0;
             goto next;
         }
         if ((oidp->oid_kind & CTLTYPE) != CTLTYPE_NODE)
@@ -378,7 +388,7 @@ static int sysctl_sysctl_next_ls(struct sysctl_oid_list * lsp, int * name,
         lsp = SYSCTL_CHILDREN(oidp);
         if (!sysctl_sysctl_next_ls(lsp, name+1, namelen-1, next+1,
             len, level+1, oidpp))
-            return (0);
+            return 0;
     next:
         namelen = 1;
     emptynode:
@@ -426,7 +436,7 @@ static int name2oid(char * name, int * oid, int * len, struct sysctl_oid ** oidp
         oidp = SLIST_FIRST(lsp);
         for (;; oidp = SLIST_NEXT(oidp, oid_link)) {
             if (oidp == NULL)
-                return (ENOENT);
+                return ENOENT;
             if (strcmp(p, oidp->oid_name) == 0)
                 break;
         }
@@ -436,7 +446,7 @@ static int name2oid(char * name, int * oid, int * len, struct sysctl_oid ** oidp
         if (name == NULL || *name == '\0') {
             if (oidpp)
                 *oidpp = oidp;
-            return (0);
+            return 0;
         }
 
         if ((oidp->oid_kind & CTLTYPE) != CTLTYPE_NODE)
@@ -447,7 +457,7 @@ static int name2oid(char * name, int * oid, int * len, struct sysctl_oid ** oidp
 
         lsp = SYSCTL_CHILDREN(oidp);
     }
-    return (ENOENT);
+    return ENOENT;
 }
 
 static int sysctl_sysctl_name2oid(SYSCTL_HANDLER_ARGS)
@@ -457,9 +467,9 @@ static int sysctl_sysctl_name2oid(SYSCTL_HANDLER_ARGS)
     struct sysctl_oid *op = 0;
 
     if (!req->newlen)
-        return (ENOENT);
+        return ENOENT;
     if (req->newlen >= 80)  /* XXX arbitrary, undocumented */
-        return (ENAMETOOLONG);
+        return ENAMETOOLONG;
 
     p = kmalloc(req->newlen + 1);
 
@@ -807,28 +817,30 @@ int kernel_sysctl(threadInfo_t * td, int * name, unsigned int namelen, void * ol
         else
             *retval = req.oldidx;
     }
+
     return error;
 }
 
 int kernel_sysctlbyname(threadInfo_t * td, char * name, void * old, size_t * oldlenp,
         void * new, size_t newlen, size_t * retval, int flags)
 {
-        int oid[CTL_MAXNAME];
-        size_t oidlen, plen;
-        int error;
+    int oid[CTL_MAXNAME];
+    size_t oidlen, plen;
+    int error;
 
-        oid[0] = 0;                /* sysctl internal magic */
-        oid[1] = 3;                /* name2oid */
-        oidlen = sizeof(oid);
+    oid[0] = 0;                /* sysctl internal magic */
+    oid[1] = 3;                /* name2oid */
+    oidlen = sizeof(oid);
 
-        error = kernel_sysctl(td, oid, 2, oid, &oidlen,
+    error = kernel_sysctl(td, oid, 2, oid, &oidlen,
             (void *)name, strlenn(name, 80), &plen, flags); /* TODO hardcoded limit */
-        if (error)
-                return (error);
+    if (error)
+        return error;
 
-        error = kernel_sysctl(td, oid, plen / sizeof(int), old, oldlenp,
+    error = kernel_sysctl(td, oid, plen / sizeof(int), old, oldlenp,
             new, newlen, retval, flags);
-        return (error);
+
+    return error;
 }
 
 /*
@@ -836,46 +848,47 @@ int kernel_sysctlbyname(threadInfo_t * td, char * name, void * old, size_t * old
  */
 static int sysctl_old_user(struct sysctl_req * req, const void * p, size_t l)
 {
-        size_t i, len, origidx;
-        int error;
+    size_t i, len, origidx;
+    int error;
 
-        origidx = req->oldidx;
-        req->oldidx += l;
-        if (req->oldptr == NULL)
-                return (0);
+    origidx = req->oldidx;
+    req->oldidx += l;
+    if (req->oldptr == NULL)
+        return 0;
 
-        i = l;
-        len = req->validlen;
-        if (len <= origidx)
-                i = 0;
-        else {
-                if (i > len - origidx)
-                        i = len - origidx;
-                if (req->lock == REQ_WIRED) {
-                        error = copyout(p, (char *)req->oldptr +
-                            origidx, i);
-                } else
-                        error = copyout(p, (char *)req->oldptr + origidx, i);
-                if (error != 0)
-                        return (error);
-        }
-        if (i < l)
-                return (ENOMEM);
-        return (0);
+    i = l;
+    len = req->validlen;
+    if (len <= origidx) {
+        i = 0;
+    } else {
+        if (i > len - origidx)
+            i = len - origidx;
+        if (req->lock == REQ_WIRED) {
+            error = copyout(p, (char *)req->oldptr +
+                    origidx, i);
+        } else
+            error = copyout(p, (char *)req->oldptr + origidx, i);
+        if (error != 0)
+            return error;
+    }
+    if (i < l)
+        return ENOMEM;
+    return 0;
 }
 
 static int sysctl_new_user(struct sysctl_req * req, void * p, size_t l)
 {
-        int error;
+    int error;
 
-        if (!req->newptr)
-                return (0);
-        if (req->newlen - req->newidx < l)
-                return (EINVAL);
+    if (!req->newptr)
+        return 0;
+    if (req->newlen - req->newidx < l)
+        return EINVAL;
 
-        error = copyin((char *)req->newptr + req->newidx, p, l);
-        req->newidx += l;
-        return (error);
+    error = copyin((char *)req->newptr + req->newidx, p, l);
+    req->newidx += l;
+
+    return error;
 }
 
 /**
@@ -891,14 +904,17 @@ int sysctl_wire_old_buffer(struct sysctl_req * req, size_t len)
     ret = 0;
     if (req->lock != REQ_WIRED && req->oldptr &&
         req->oldfunc == sysctl_old_user) {
-        /*if (wiredlen != 0) {
+        /* TODO Check if needed */
+#if 0
+        if (wiredlen != 0) {
             ret = vslock(req->oldptr, wiredlen);
             if (ret != 0) {
                 if (ret != ENOMEM)
-                    return (ret);
+                    return ret;
                     wiredlen = 0;
                 }
-        }*/
+        }
+#endif
         req->lock = REQ_WIRED;
         req->validlen = wiredlen;
     }
@@ -919,7 +935,7 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
 
     error = sysctl_find_oid(arg1, arg2, &oid, &indx, req);
     if (error)
-        return (error);
+        return error;
 
     if ((oid->oid_kind & CTLTYPE) == CTLTYPE_NODE) {
         /*
@@ -928,12 +944,12 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
          * The indx may or may not be the same as namelen.
          */
         if (oid->oid_handler == NULL)
-            return (EISDIR);
+            return EISDIR;
         }
 
     /* Is this sysctl writable? */
     if (req->newptr && !(oid->oid_kind & CTLFLAG_WR))
-        return (EPERM);
+        return EPERM;
 
     //KASSERT(req->td != NULL, ("sysctl_root(): req->td == NULL"));
 
@@ -942,7 +958,7 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
         lvl = (oid->oid_kind & CTLMASK_SECURE) >> CTLSHIFT_SECURE;
         error = securelevel_gt(req->td->td_ucred, lvl);
         if (error)
-            return (error);
+            return error;
     }
 
     /* Is this sysctl writable by only privileged users? */
@@ -952,11 +968,11 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
         priv = PRIV_SYSCTL_WRITE;
         error = priv_check(req->td, priv);
         if (error)
-            return (error);
+            return error;
     }
 
     if (!oid->oid_handler)
-        return (EINVAL);
+        return EINVAL;
 
     if ((oid->oid_kind & CTLTYPE) == CTLTYPE_NODE) {
         arg1 = (int *)arg1 + indx;
@@ -970,19 +986,25 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
     SYSCTL_UNLOCK();
 
     // TODO
-    //if (!(oid->oid_kind & CTLFLAG_MPSAFE))
-    //    mtx_lock(&Giant);
+#if 0
+    if (!(oid->oid_kind & CTLFLAG_MPSAFE))
+        mtx_lock(&Giant);
+#endif
     error = oid->oid_handler(oid, arg1, arg2, req);
-    //if (!(oid->oid_kind & CTLFLAG_MPSAFE))
-    //    mtx_unlock(&Giant);
+#if 0
+    if (!(oid->oid_kind & CTLFLAG_MPSAFE))
+        mtx_unlock(&Giant);
+#endif
 
     //KFAIL_POINT_ERROR(_debug_fail_point, sysctl_running, error);
 
     SYSCTL_LOCK();
     oid->oid_running--;
     // TODO
-    //if (oid->oid_running == 0 && (oid->oid_kind & CTLFLAG_DYING) != 0)
-    //    wakeup(&oid->oid_running);
+#if 0
+    if (oid->oid_running == 0 && (oid->oid_kind & CTLFLAG_DYING) != 0)
+        wakeup(&oid->oid_running);
+#endif
     return error;
 }
 
@@ -992,23 +1014,23 @@ int sys___sysctl(threadInfo_t * td, struct _sysctl_args * uap)
     size_t j;
 
     if (uap->namelen > CTL_MAXNAME || uap->namelen < 2)
-        return (EINVAL);
+        return EINVAL;
 
     error = copyin(uap->name, &name, uap->namelen * sizeof(int));
     if (error)
-        return (error);
+        return error;
 
     error = userland_sysctl(td, name, uap->namelen,
         uap->old, uap->oldlenp, 0,
         uap->new, uap->newlen, &j, 0);
     if (error && error != ENOMEM)
-        return (error);
+        return error;
     if (uap->oldlenp) {
         i = copyout(&j, uap->oldlenp, sizeof(j));
         if (i)
-            return (i);
+            return i;
     }
-    return (error);
+    return error;
 }
 
 /*
@@ -1033,20 +1055,20 @@ int userland_sysctl(threadInfo_t * td, int * name, unsigned int namelen, void * 
         } else {
             error = copyin(oldlenp, &req.oldlen, sizeof(*oldlenp));
             if (error)
-                return (error);
+                return error;
         }
     }
     req.validlen = req.oldlen;
 
     if (old) {
         if (!useracc(old, req.oldlen, VM_PROT_WRITE))
-            return (EFAULT);
+            return EFAULT;
         req.oldptr= old;
     }
 
     if (new != NULL) {
         if (!useracc(new, newlen, VM_PROT_READ))
-            return (EFAULT);
+            return EFAULT;
         req.newlen = newlen;
         req.newptr = new;
     }
@@ -1081,7 +1103,7 @@ int userland_sysctl(threadInfo_t * td, int * name, unsigned int namelen, void * 
     //    sx_xunlock(&sysctlmemlock);
 
     if (error && error != ENOMEM)
-        return (error);
+        return error;
 
     if (retval) {
         if (req.oldptr && req.oldidx > req.validlen)
@@ -1089,5 +1111,5 @@ int userland_sysctl(threadInfo_t * td, int * name, unsigned int namelen, void * 
         else
             *retval = req.oldidx;
     }
-    return (error);
+    return error;
 }

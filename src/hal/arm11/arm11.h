@@ -131,7 +131,7 @@ void wr_thread_stack_ptr(void * ptr);
     __asm__ volatile ("WFI");               \
 } while (0)
 
-#ifdef configMP
+#if configMP != 0
 
 /**
  * Wait for event.
