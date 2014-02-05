@@ -294,27 +294,16 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
     };                                                                      \
     DATA_SET(sysctl_set, sysctl__##parent##_##name)
 
-#define SYSCTL_ADD_OID(ctx, parent, nbr, name, kind, a1, a2, handler, fmt, descr) \
-        sysctl_add_oid(ctx, parent, nbr, name, kind, a1, a2, handler, fmt, __DESCR(descr))
-
 /* This constructs a node from which other oids can hang. */
 #define SYSCTL_NODE(parent, nbr, name, access, handler, descr)          \
     struct sysctl_oid_list SYSCTL_NODE_CHILDREN(parent, name);          \
     SYSCTL_OID(parent, nbr, name, CTLTYPE_NODE|(access),                \
     (void*)&SYSCTL_NODE_CHILDREN(parent, name), 0, handler, "N", descr)
 
-#define SYSCTL_ADD_NODE(ctx, parent, nbr, name, access, handler, descr) \
-    sysctl_add_oid(ctx, parent, nbr, name, CTLTYPE_NODE|(access),       \
-            NULL, 0, handler, "N", __DESCR(descr))
-
 /* Oid for a string.  len can be 0 to indicate '\0' termination. */
 #define SYSCTL_STRING(parent, nbr, name, access, arg, len, descr)   \
         SYSCTL_OID(parent, nbr, name, CTLTYPE_STRING|(access),      \
                 arg, len, sysctl_handle_string, "A", descr)
-
-#define SYSCTL_ADD_STRING(ctx, parent, nbr, name, access, arg, len, descr)  \
-        sysctl_add_oid(ctx, parent, nbr, name, CTLTYPE_STRING|(access),     \
-        arg, len, sysctl_handle_string, "A", __DESCR(descr))
 
 /* Oid for an int.  If ptr is NULL, val is returned. */
 #define SYSCTL_INT(parent, nbr, name, access, ptr, val, descr)  \
@@ -323,24 +312,12 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
             CTLTYPE_INT | CTLFLAG_MPSAFE | (access),            \
             ptr, val, sysctl_handle_int, "I", descr)
 
-#define SYSCTL_ADD_INT(ctx, parent, nbr, name, access, ptr, val, descr) \
-        sysctl_add_oid(ctx, parent, nbr, name,                          \
-            CTLTYPE_INT | CTLFLAG_MPSAFE | (access),                    \
-            SYSCTL_ADD_ASSERT_TYPE(INT, ptr), val,                      \
-            sysctl_handle_int, "I", __DESCR(descr))
-
 /* Oid for an unsigned int.  If ptr is NULL, val is returned. */
 #define SYSCTL_UINT(parent, nbr, name, access, ptr, val, descr) \
         SYSCTL_ASSERT_TYPE(UINT, ptr, parent, name);            \
         SYSCTL_OID(parent, nbr, name,                           \
             CTLTYPE_UINT | CTLFLAG_MPSAFE | (access),           \
             ptr, val, sysctl_handle_int, "IU", descr)
-
-#define SYSCTL_ADD_UINT(ctx, parent, nbr, name, access, ptr, val, descr)    \
-        sysctl_add_oid(ctx, parent, nbr, name,                              \
-            CTLTYPE_UINT | CTLFLAG_MPSAFE | (access),                       \
-            SYSCTL_ADD_ASSERT_TYPE(UINT, ptr), val,                         \
-            sysctl_handle_int, "IU", __DESCR(descr))
 
 /* Oid for a long.  The pointer must be non NULL. */
 #define SYSCTL_LONG(parent, nbr, name, access, ptr, val, descr) \
@@ -349,24 +326,12 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
             CTLTYPE_LONG | CTLFLAG_MPSAFE | (access),           \
             ptr, val, sysctl_handle_long, "L", descr)
 
-#define SYSCTL_ADD_LONG(ctx, parent, nbr, name, access, ptr, descr) \
-        sysctl_add_oid(ctx, parent, nbr, name,                      \
-            CTLTYPE_LONG | CTLFLAG_MPSAFE | (access),               \
-            SYSCTL_ADD_ASSERT_TYPE(LONG, ptr), 0,                   \
-            sysctl_handle_long,        "L", __DESCR(descr))
-
 /* Oid for an unsigned long.  The pointer must be non NULL. */
 #define SYSCTL_ULONG(parent, nbr, name, access, ptr, val, descr)    \
         SYSCTL_ASSERT_TYPE(ULONG, ptr, parent, name);               \
         SYSCTL_OID(parent, nbr, name,                               \
             CTLTYPE_ULONG | CTLFLAG_MPSAFE | (access),              \
             ptr, val, sysctl_handle_long, "LU", descr)
-
-#define SYSCTL_ADD_ULONG(ctx, parent, nbr, name, access, ptr, descr)    \
-        sysctl_add_oid(ctx, parent, nbr, name,                          \
-            CTLTYPE_ULONG | CTLFLAG_MPSAFE | (access),                  \
-            SYSCTL_ADD_ASSERT_TYPE(ULONG, ptr), 0,                      \
-            sysctl_handle_long, "LU", __DESCR(descr))
 
 /* Oid for a 64-bit unsigned counter(9).  The pointer must be non NULL. */
 #define SYSCTL_COUNTER_U64(parent, nbr, name, access, ptr, val, descr)  \
@@ -375,21 +340,11 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
             CTLTYPE_U64 | CTLFLAG_MPSAFE | (access),                    \
             ptr, val, sysctl_handle_counter_u64, "QU", descr)
 
-#define SYSCTL_ADD_COUNTER_U64(ctx, parent, nbr, name, access, ptr, descr)  \
-        sysctl_add_oid(ctx, parent, nbr, name,                              \
-            CTLTYPE_U64 | CTLFLAG_MPSAFE | (access),                        \
-            SYSCTL_ADD_ASSERT_TYPE(UINT64, ptr), 0,                         \
-            sysctl_handle_counter_u64, "QU", __DESCR(descr))
-
 /* Oid for a procedure.  Specified by a pointer and an arg. */
 #define SYSCTL_PROC(parent, nbr, name, access, ptr, arg, handler, fmt, descr) \
     CTASSERT(((access) & CTLTYPE) != 0);                \
     SYSCTL_OID(parent, nbr, name, (access), \
         ptr, arg, handler, fmt, descr)
-
-#define SYSCTL_ADD_PROC(ctx, parent, nbr, name, access, ptr, arg, handler, fmt, descr) \
-    sysctl_add_oid(ctx, parent, nbr, name, (access),                \
-    ptr, arg, handler, fmt, __DESCR(descr))
 
 /*
  * A macro to generate a read-only sysctl to indicate the presense of optional

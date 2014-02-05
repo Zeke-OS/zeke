@@ -937,19 +937,6 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
 
     //KASSERT(req->td != NULL, ("sysctl_root(): req->td == NULL"));
 
-#ifdef CAPABILITY_MODE
-    /*
-     * If the process is in capability mode, then don't permit reading or
-     * writing unless specifically granted for the node.
-     */
-    if (IN_CAPABILITY_MODE(req->td)) {
-        if (req->oldptr && !(oid->oid_kind & CTLFLAG_CAPRD))
-            return (EPERM);
-        if (req->newptr && !(oid->oid_kind & CTLFLAG_CAPWR))
-            return (EPERM);
-    }
-#endif
-
     /* Is this sysctl sensitive to securelevels? */
     if (req->newptr && (oid->oid_kind & CTLFLAG_SECURE)) {
         lvl = (oid->oid_kind & CTLMASK_SECURE) >> CTLSHIFT_SECURE;
@@ -982,11 +969,12 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
     oid->oid_running++;
     SYSCTL_UNLOCK();
 
+    // TODO
     //if (!(oid->oid_kind & CTLFLAG_MPSAFE))
-    //        mtx_lock(&Giant);
+    //    mtx_lock(&Giant);
     error = oid->oid_handler(oid, arg1, arg2, req);
     //if (!(oid->oid_kind & CTLFLAG_MPSAFE))
-    //        mtx_unlock(&Giant);
+    //    mtx_unlock(&Giant);
 
     //KFAIL_POINT_ERROR(_debug_fail_point, sysctl_running, error);
 
@@ -995,7 +983,7 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
     // TODO
     //if (oid->oid_running == 0 && (oid->oid_kind & CTLFLAG_DYING) != 0)
     //    wakeup(&oid->oid_running);
-    return (error);
+    return error;
 }
 
 int sys___sysctl(threadInfo_t * td, struct _sysctl_args * uap)
