@@ -141,22 +141,27 @@ pid_t process_fork(pid_t pid)
     }
 
     /* Allocate the actual page table. */
-    if(ptmapper_alloc(&(new_proc->pptable))) {
+    if(ptmapper_alloc(&(new_proc->mm.pptable))) {
         retval = -ENOMEM;
         goto free_new_proc;
     }
 
     /* Clone page table. */
-    if(mmu_clone_pt(&(new_proc->pptable), &(new_proc->pptable))) {
+    if(mmu_clone_pt(&(new_proc->mm.pptable), &(new_proc->mm.pptable))) {
         retval = -EINVAL;
         goto free_pptable;
     }
 
+    /* TODO Incr refcount for inherited regions in dynmem
+     *      - dynmem_ref()
+     */
+
     /* A process shall be created with a single thread. If a multi-threaded
      * process calls fork(), the new process shall contain a replica of the
-     * calling thread
+     * calling thread.
      */
-    new_proc->main_thread = (threadInfo_t *)current_thread;
+    /* TODO make a clone of current_thread */
+    //new_proc->main_thread = (threadInfo_t *)current_thread;
 
     /* Update inheritance attributes */
     set_process_inher(old_proc, new_proc);
@@ -165,7 +170,7 @@ pid_t process_fork(pid_t pid)
 
     goto out; /* Fork created. */
 free_pptable:
-    ptmapper_free(&(new_proc->pptable));
+    ptmapper_free(&(new_proc->mm.pptable));
 free_new_proc:
     kfree(new_proc);
 out:
@@ -236,7 +241,7 @@ mmu_pagetable_t * process_get_pptable(pid_t pid)
     if (pid == 0) { /* Kernel master page table requested. */
         pptable = &mmu_pagetable_master;
     } else { /* Get the process master page table */
-        pptable = &(process_get_struct(pid)->pptable);
+        pptable = &(process_get_struct(pid)->mm.pptable);
     }
 
     return pptable;

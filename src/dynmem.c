@@ -101,6 +101,7 @@ SYSCTL_UINT(_vm, OID_AUTO, dynmem_tot, CTLFLAG_RD, (void *)(&dynmem_tot), 0,
 
 static void * kmap_allocation(size_t pos, size_t size, uint32_t ap, uint32_t control);
 static int update_dynmem_region_struct(void * p);
+static validate_addr(void * addr);
 
 /*
  * TODO Add variables for sysctl
@@ -144,8 +145,36 @@ void * dynmem_alloc_force(void * addr, size_t size, uint32_t ap, uint32_t contro
 {
     size_t pos = (size_t)addr - DYNMEM_START;
 
+    if (!validate_addr(addr)) {
+        char buf[80];
+        ksprintf(buf, sizeof(buf), "Invalid address; dynmem_alloc_force(): %x",
+                (uint32_t)addr);
+        return 0;
+    }
+
     bitmap_block_update(dynmemmap_bitmap, 1, pos, size);
     return kmap_allocation(pos, size, ap, control);
+}
+
+/**
+ * Add reference to the already allocated region.
+ * @return Address to the allocated region; Otherwise 0.
+ */
+int dynmem_ref(void * addr)
+{
+    size_t i = (size_t)addr - DYNMEM_START;
+
+    if (!validate_addr(addr)) {
+        char buf[80];
+        ksprintf(buf, sizeof(buf), "Invalid address; dynmem_alloc_force(): %x",
+                (uint32_t)addr);
+        return 0;
+    }
+    if ((dynmemmap[i] & DYNMEM_RC_MASK) == 0)
+        return 0;
+
+    dynmemmap[i] += 1 << DYNMEM_RC_POS;
+    return addr;
 }
 
 /**
@@ -156,17 +185,26 @@ void * dynmem_alloc_force(void * addr, size_t size, uint32_t ap, uint32_t contro
 void dynmem_free_region(void * addr)
 {
     uint32_t i, j, rc;
-    char buf[40];
+
+    if (!validate_addr(addr)) {
+        char buf[80];
+        ksprintf(buf, sizeof(buf), "Invalid address; dynmem_free_region(): %x",
+                (uint32_t)addr);
+        KERROR(KERROR_ERR, buf);
+        return;
+    }
 
     i = (uint32_t)addr - DYNMEM_START;
     rc = (dynmemmap[i] & DYNMEM_RC_MASK) >> DYNMEM_RC_POS;
 
-    if (--rc > 0) {
-        dynmemmap[i] = rc << DYNMEM_RC_POS;
+    /* Check if there is any references */
+    if (rc > 1) {
+        dynmemmap[i] -= 1 << DYNMEM_RC_POS;
         return;
     }
 
     if (update_dynmem_region_struct(addr)) { /* error */
+        char buf[80];
         ksprintf(buf, sizeof(buf), "Can't free dynmem region: %x",
                 (uint32_t)addr);
         KERROR(KERROR_ERR, buf);
@@ -232,7 +270,7 @@ static int update_dynmem_region_struct(void * base)
     uint32_t reg_end;
     char buf[80];
 
-    if ((uint32_t)base < DYNMEM_START) {
+    if (!validate_addr(base)) {
         ksprintf(buf, sizeof(buf), "Invalid dynmem region addr: %x", (uint32_t)base);
         KERROR(KERROR_ERR, buf);
         return -1;
@@ -285,7 +323,7 @@ uint32_t dynmem_acc(void * addr, size_t len)
     size_t size;
     uint32_t retval = 0;
 
-    if ((size_t)addr < DYNMEM_START || (size_t)addr > DYNMEM_END)
+    if (!validate_addr(addr))
         goto out; /* Address out of bounds. */
 
     i = (size_t)addr - DYNMEM_START;
@@ -318,4 +356,16 @@ uint32_t dynmem_acc(void * addr, size_t len)
         (((dynmem_region.control & MMU_CTRL_XN) >> MMU_CTRL_XN_OFFSET) << 3);
 out:
     return retval;
+}
+
+/**
+ * Check that the given address is in dynmem range.
+ * @param addr is the address.
+ * @return Boolean true if valid; Otherwise false/0.
+ */
+static validate_addr(void * addr)
+{
+    if ((size_t)addr < DYNMEM_START || (size_t)addr > DYNMEM_END)
+        return 0;
+    return (1 == 1);
 }
