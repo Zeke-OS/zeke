@@ -34,16 +34,23 @@
 
 /**
  * Copy string.
- * @param dst Pointer to the destination string.
- * @param src Pointer to the source string.
+ * @param destination Pointer to the destination string.
+ * @param source Pointer to the source string.
  */
-char * strcpy(char * dst, const char * src)
+char * strcpy(char * destination, const char * source)
 {
+#if configSTRING_OPT_SIZE != 0
+    char * src = (char *)source;
+    char * dest = destination;
+
+    while (*dest++ = *src++);
+#else /* Optimize for speed, if this speeds up it at all */
+    /* Better option would be trying to detect null chars in word. */
     int n = 0;
 
-    while (src[n++] != '\0') ;
+    while (source[n++] != '\0');
+    memcpy(destination, source, n);
+#endif
 
-    memcpy(dst, src, n);
-
-    return dst;
+    return destination;
 }

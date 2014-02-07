@@ -4,7 +4,7 @@
  * @author Olli Vanhoja
  * @brief Interrupt service routines.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
@@ -95,14 +95,14 @@ __attribute__ ((naked, aligned(32))) static void interrupt_vectors(void)
     /* Processor will never jump to bad_exception when reset is hit because
      * interrupt vector offset is set back to 0x0 on reset. */
     __asm__ volatile (
-        "b bad_exception\n\t"               /* RESET */
-        "b undef_handler\n\t"               /* UNDEF */
-        "b interrupt_svc\n\t"               /* SVC   */
-        "b bad_exception\n\t"               /* Prefetch abort */
-        "b bad_exception\n\t"               /* data abort */
-        "b bad_exception\n\t"               /* Unused vector */
-        "b interrupt_systick\n\t"           /* Timer IRQ */
-        "b bad_exception\n\t"               /* FIQ */
+        "b bad_exception\n\t"   /* RESET */
+        "b undef_handler\n\t"   /* UNDEF */
+        "b interrupt_svc\n\t"   /* SVC   */
+        "b bad_exception\n\t"   /* Prefetch abort */
+        "b interrupt_dta\n\t"   /* data abort */
+        "b bad_exception\n\t"   /* Unused vector */
+        "b interrupt_sys\n\t"   /* Timer IRQ */
+        "b bad_exception\n\t"   /* FIQ */
     );
 }
 
@@ -111,20 +111,31 @@ __attribute__ ((naked, aligned(32))) static void interrupt_vectors(void)
  */
 __attribute__ ((naked)) void bad_exception(void)
 {
+    KERROR(KERROR_CRIT, "This is like panic but unexpected.");
     while (1) {
         __asm__ volatile ("wfe");
     }
 }
 
+extern volatile uint32_t flag_kernel_tick;
 void interrupt_clear_timer(void)
 {
+    uint32_t val;
+
     mmio_start();
-    mmio_write(ARM_TIMER_IRQ_CLEAR, 0);
-    //bcm2835_uputc('C'); /* Timer debug print */
+    val = mmio_read(ARM_TIMER_VALUE);
+    if (val == 0) {
+        mmio_write(ARM_TIMER_IRQ_CLEAR, 0);
+        mmio_end();
+        //bcm2835_uputc('C'); /* Timer debug print */
+        flag_kernel_tick = 1;
+    } else mmio_end();
 }
 
 void interrupt_preinit(void)
 {
+    KERROR(KERROR_LOG, "Enabling interrupts");
+
     /* Set interrupt base register */
     __asm__ volatile ("mcr p15, 0, %[addr], c12, c0, 0"
             : : [addr]"r" (&interrupt_vectors));
@@ -134,6 +145,8 @@ void interrupt_preinit(void)
 
 void interrupt_postinit(void)
 {
+    KERROR(KERROR_LOG, "Starting ARM timer");
+
     mmio_start();
 
     /* Use the ARM timer - BCM 2832 peripherals doc, p.196 */
@@ -145,6 +158,8 @@ void interrupt_postinit(void)
 
     mmio_write(ARM_TIMER_CONTROL,
             (ARM_TIMER_PRESCALE_16 | ARM_TIMER_EN | ARM_TIMER_INT_EN | ARM_TIMER_23BIT));
+
+    KERROR(KERROR_DEBUG, "OK");
 }
 
 /**

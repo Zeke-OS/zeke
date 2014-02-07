@@ -31,6 +31,7 @@
  */
 
 #include <kernel.h>
+#include <kerror.h>
 #include <usrinit.h>
 #include <sched.h>
 #include <libkern.h>
@@ -59,6 +60,8 @@ void exec_init_array(void)
 {
     int n;
 
+    KERROR(KERROR_LOG, "ZeKe PreInit");
+
     n = __hw_preinit_array_end - __hw_preinit_array_start;
     exec_array(__hw_preinit_array_start, n);
 
@@ -83,6 +86,7 @@ void exec_fini_array(void)
  */
 void kinit(void)
 {
+    KERROR(KERROR_LOG, "Starting init");
     /* Create app_main thread */
     pthread_attr_t main_thread = {
         .tpriority = configUSRINIT_PRI,
@@ -97,6 +101,7 @@ static void random_init(void) __attribute__((constructor));
 static void random_init(void)
 {
     /* TODO Add some randomness ;) */
+    KERROR(KERROR_LOG, "Seed random number generator");
     ksrandom(1);
 }
 

@@ -65,6 +65,12 @@
 #define MAP_TO_AP(VAL)          ((VAL & DYNMEM_AP_MASK) >> DYNMEM_AP_POS)
 #define MAP_TO_CTRL(VAL)        ((VAL & DYNMEM_CTRL_MASK) >> DYNMEM_CTRL_POS)
 
+#if E2BITMAP_SIZE(DYNMEM_MAPSIZE) > 0
+#define DYNMEM_BITMAPSIZE       E2BITMAP_SIZE(DYNMEM_MAPSIZE)
+#else
+#define DYNMEM_BITMAPSIZE       1
+#endif
+
 /**
  * Dynmemmap allocation table.
  *
@@ -81,7 +87,7 @@
  * X  = Don't care
  */
 uint32_t dynmemmap[DYNMEM_MAPSIZE];
-uint32_t dynmemmap_bitmap[E2BITMAP_SIZE(DYNMEM_MAPSIZE)];
+uint32_t dynmemmap_bitmap[DYNMEM_BITMAPSIZE];
 
 /**
  * Struct for temporary storage.
@@ -91,17 +97,17 @@ static mmu_region_t dynmem_region;
 
 /* Some sysctl stat variables.
  */
-static size_t dynmem_free = (DYNMEM_END - DYNMEM_START);
+static size_t dynmem_free = DYNMEM_END - DYNMEM_START + 1;
 SYSCTL_UINT(_vm, OID_AUTO, dynmem_free, CTLFLAG_RD, (void *)(&dynmem_free), 0,
     "Amount of free dynmem");
 
-static const size_t dynmem_tot = (DYNMEM_END - DYNMEM_START);
+static const size_t dynmem_tot = DYNMEM_END - DYNMEM_START + 1;
 SYSCTL_UINT(_vm, OID_AUTO, dynmem_tot, CTLFLAG_RD, (void *)(&dynmem_tot), 0,
     "Total amount of dynmem.");
 
 static void * kmap_allocation(size_t pos, size_t size, uint32_t ap, uint32_t control);
 static int update_dynmem_region_struct(void * p);
-static validate_addr(void * addr);
+static int validate_addr(void * addr);
 
 /*
  * TODO Add variables for sysctl
@@ -119,12 +125,16 @@ void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t control)
     uint32_t pos;
 
     if(bitmap_block_search(&pos, size, dynmemmap_bitmap, sizeof(dynmemmap_bitmap))) {
-        KERROR(KERROR_ERR, "Out of dynmem.");
+        char buf[80];
+        ksprintf(buf, sizeof(buf), "Out of dynmem, free %u of %u, tried %u, %u", dynmem_free, dynmem_tot, size * 1048576, sizeof(dynmemmap_bitmap));
+        KERROR(KERROR_DEBUG, buf);
+        for (int i = 0; i < sizeof(dynmemmap_bitmap); i++)
+            bcm2835_uputc(dynmemmap_bitmap[i]);
         return 0; /* Null */
     }
 
     /* Update sysctl stats */
-    dynmem_free -= size * 1048576;
+    dynmem_free -= size * DYNMEM_PAGE_SIZE;
 
     bitmap_block_update(dynmemmap_bitmap, 1, pos, size);
     return kmap_allocation((size_t)pos, size, ap, control);
@@ -149,6 +159,7 @@ void * dynmem_alloc_force(void * addr, size_t size, uint32_t ap, uint32_t contro
         char buf[80];
         ksprintf(buf, sizeof(buf), "Invalid address; dynmem_alloc_force(): %x",
                 (uint32_t)addr);
+        KERROR(KERROR_ERR, buf);
         return 0;
     }
 
@@ -160,7 +171,7 @@ void * dynmem_alloc_force(void * addr, size_t size, uint32_t ap, uint32_t contro
  * Add reference to the already allocated region.
  * @return Address to the allocated region; Otherwise 0.
  */
-int dynmem_ref(void * addr)
+void * dynmem_ref(void * addr)
 {
     size_t i = (size_t)addr - DYNMEM_START;
 
@@ -168,6 +179,7 @@ int dynmem_ref(void * addr)
         char buf[80];
         ksprintf(buf, sizeof(buf), "Invalid address; dynmem_alloc_force(): %x",
                 (uint32_t)addr);
+        KERROR(KERROR_ERR, buf);
         return 0;
     }
     if ((dynmemmap[i] & DYNMEM_RC_MASK) == 0)
@@ -180,7 +192,7 @@ int dynmem_ref(void * addr)
 /**
  * Decrement dynmem region reference counter. If the final value of a reference
  * counter is zero then the dynmem region is freed and unmapped.
- * @param addr  Address of the dynmem region to be freed.
+ * @param addr  Physical address of the dynmem region to be freed.
  */
 void dynmem_free_region(void * addr)
 {
@@ -200,7 +212,7 @@ void dynmem_free_region(void * addr)
     /* Check if there is any references */
     if (rc > 1) {
         dynmemmap[i] -= 1 << DYNMEM_RC_POS;
-        return;
+        return; /* Do not free yet. */
     }
 
     if (update_dynmem_region_struct(addr)) { /* error */
@@ -220,7 +232,7 @@ void dynmem_free_region(void * addr)
     bitmap_block_update(dynmemmap_bitmap, 1, j, dynmem_region.num_pages);
 
     /* Update sysctl stats */
-    dynmem_free += dynmem_region.num_pages * 1048576;
+    dynmem_free += dynmem_region.num_pages * DYNMEM_PAGE_SIZE;
 }
 
 /**
@@ -260,7 +272,7 @@ static void * kmap_allocation(size_t base, size_t size, uint32_t ap, uint32_t co
 /**
  * Update the region strucure to describe a already allocated dynmem region.
  * Updates dynmem_region structures.
- * @param p Pointer to the begining of the allocated dynmem section.
+ * @param p Pointer to the begining of the allocated dynmem section (physical).
  * @return  Error code.
  */
 static int update_dynmem_region_struct(void * base)
@@ -313,7 +325,7 @@ static int update_dynmem_region_struct(void * base)
  * +--+----+
  * |XN| AP |
  * +--+----+
- * @param addr  is the base address.
+ * @param addr  is the physical base address.
  * @param len   is the size of block tested.
  * @return Returns 0 if addr is invalid; Otherwise returns ap flags + xn bit.
  */
@@ -335,7 +347,7 @@ uint32_t dynmem_acc(void * addr, size_t len)
         char buf[80];
         ksprintf(buf, sizeof(buf), "dynmem_acc() check failed for: %x",
             (uint32_t)addr);
-        KERROR(KERROR_ERR, buf);
+        KERROR(KERROR_DEBUG, buf);
         goto out;
     }
 
@@ -346,7 +358,7 @@ uint32_t dynmem_acc(void * addr, size_t len)
         KERROR(KERROR_ERR, buf);
         goto out; /* Error in size calculation. */
     }
-    if ((size_t)addr < dynmem_region.vaddr || (size_t)addr > (dynmem_region.vaddr + size))
+    if ((size_t)addr < dynmem_region.paddr || (size_t)addr > (dynmem_region.paddr + size))
         goto out; /* Not in region range. */
 
     /* Acc seems to be ok.
@@ -363,7 +375,7 @@ out:
  * @param addr is the address.
  * @return Boolean true if valid; Otherwise false/0.
  */
-static validate_addr(void * addr)
+static int validate_addr(void * addr)
 {
     if ((size_t)addr < DYNMEM_START || (size_t)addr > DYNMEM_END)
         return 0;

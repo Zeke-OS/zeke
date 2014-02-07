@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    process.c
+ * @file    proc.c
  * @author  Olli Vanhoja
  * @brief   Kernel process management source file. This file is responsible for
  *          thread creation and management.
@@ -38,22 +38,27 @@
 #define KERNEL_INTERNAL 1
 #include <sched.h>
 #include <kstring.h>
+#include <libkern.h>
+#include <kerror.h>
 #include <syscalldef.h>
 #include <syscall.h>
 #include <errno.h>
 #include <vm/vm.h>
 #include <sys/sysctl.h>
 #include <ptmapper.h>
-#include <kerror.h>
+#include <dynmem.h>
 #include <kmalloc.h>
-#include <process.h>
+#include <proc.h>
 
 static proc_info_t ** _procarr;
 int maxproc = configMAXPROC;        /*!< Maximum # of processes. */
 static int _cur_maxproc;
 int nprocs;                         /* Current # of procs. */
-volatile pid_t current_process_id; /*!< PID of current process. */
+volatile pid_t current_process_id;  /*!< PID of current process. */
 volatile proc_info_t * curproc;     /*!< PCB of the current process. */
+static pid_t _lastpid;              /*!< last allocated pid. */
+
+#define SIZEOF_PROCARR      ((maxproc + 1) * sizeof(proc_info_t *))
 
 #if configMP != 0
 static mtx_t proclock;
@@ -72,16 +77,18 @@ SYSCTL_INT(_kern, KERN_MAXPROC, nprocs, CTLFLAG_RD,
     &nprocs, 0, "Current number of processes");
 
 static void realloc__procarr(void);
-static void set_process_inher(proc_info_t * old_proc, proc_info_t * new_proc);
+static pid_t get_random_pid(void);
+static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc);
 
 /**
  * Init process handling subsystem.
  */
-void process_init(void) __attribute__((constructor));
-void process_init(void)
+void proc_init(void) __attribute__((constructor));
+void proc_init(void)
 {
     PROCARR_LOCK_INIT();
     realloc__procarr();
+    memset(&_procarr, 0, SIZEOF_PROCARR);
 }
 
 static void realloc__procarr(void)
@@ -89,9 +96,11 @@ static void realloc__procarr(void)
     proc_info_t ** tmp;
 
     PROCARR_LOCK();
-    tmp = krealloc(_procarr, maxproc);
-    if ((tmp == 0) && (_procarr == 0))
+    //tmp = krealloc(&_procarr, SIZEOF_PROCARR);
+    tmp = krealloc(_procarr, (3) * sizeof(proc_info_t *));
+    if ((tmp == 0) && (_procarr == 0)) {
         panic("Unable to allocate _procarr.");
+    }
     _procarr = tmp;
     _cur_maxproc = maxproc;
     PROCARR_UNLOCK();
@@ -115,7 +124,7 @@ pid_t process_init(void * image, size_t size)
  * @param pid   Process id.
  * @return  New PID; -1 if unable to fork.
  */
-pid_t process_fork(pid_t pid)
+pid_t proc_fork(pid_t pid)
 {
     /*
      * http://pubs.opengroup.org/onlinepubs/9699919799/functions/fork.html
@@ -127,7 +136,7 @@ pid_t process_fork(pid_t pid)
 
     realloc__procarr();
 
-    old_proc = process_get_struct(pid);
+    old_proc = proc_get_struct(pid);
     if (!old_proc) {
         retval = -EINVAL;
         goto out;
@@ -140,21 +149,30 @@ pid_t process_fork(pid_t pid)
         goto out;
     }
 
-    /* Allocate the actual page table. */
+    /* Allocate a master page table for the new process. */
     if(ptmapper_alloc(&(new_proc->mm.pptable))) {
         retval = -ENOMEM;
         goto free_new_proc;
     }
 
-    /* Clone page table. */
-    if(mmu_clone_pt(&(new_proc->mm.pptable), &(new_proc->mm.pptable))) {
+    /* Allocate an array for regions. */
+    new_proc->mm.regions =
+        kmalloc(old_proc->mm.nr_regions * sizeof(mmu_region_t *));
+    if(!new_proc->mm.regions) {
+        retval = -ENOMEM;
+        goto free_pptable_arr;
+    }
+    new_proc->mm.nr_regions = old_proc->mm.nr_regions;
+
+    /* Clone master page table. */
+    if(mmu_ptcpy(&(new_proc->mm.pptable), &(new_proc->mm.pptable))) {
         retval = -EINVAL;
-        goto free_pptable;
+        goto free_regions_arr;
     }
 
-    /* TODO Incr refcount for inherited regions in dynmem
-     *      - dynmem_ref()
-     */
+    /* Mark pages as rw and do lazy copy/copy on write later. */
+
+    new_proc->pid = get_random_pid();
 
     /* A process shall be created with a single thread. If a multi-threaded
      * process calls fork(), the new process shall contain a replica of the
@@ -164,12 +182,14 @@ pid_t process_fork(pid_t pid)
     //new_proc->main_thread = (threadInfo_t *)current_thread;
 
     /* Update inheritance attributes */
-    set_process_inher(old_proc, new_proc);
+    set_proc_inher(old_proc, new_proc);
 
     /* TODO Insert to proc data structure */
 
     goto out; /* Fork created. */
-free_pptable:
+free_regions_arr:
+    kfree(new_proc->mm.regions);
+free_pptable_arr:
     ptmapper_free(&(new_proc->mm.pptable));
 free_new_proc:
     kfree(new_proc);
@@ -177,7 +197,25 @@ out:
     return retval;
 }
 
-static void set_process_inher(proc_info_t * old_proc, proc_info_t * new_proc)
+/**
+ * Get a random PID for a new process.
+ * @return Returns a random PID.
+ */
+static pid_t get_random_pid(void)
+{
+    pid_t newpid = maxproc + 1;
+
+    /* The new PID will be "randomly" selected between _lastpid and maxproc */
+    do {
+        if (newpid > maxproc)
+            newpid = _lastpid + kunirand(maxproc - _lastpid - 1) + 1;
+        newpid++;
+    } while (proc_get_struct(newpid));
+
+    return newpid;
+}
+
+static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc)
 {
     proc_info_t * last_node, * tmp;
 
@@ -206,7 +244,7 @@ static void set_process_inher(proc_info_t * old_proc, proc_info_t * new_proc)
     last_node->inh.next_child = new_proc;
 }
 
-int process_kill(void)
+int proc_kill(void)
 {
     return -1;
 }
@@ -219,12 +257,12 @@ int process_kill(void)
  * @param size  Size of the image.
  * @return  Value other than zero if unable to replace process.
  */
-int process_replace(pid_t pid, void * image, size_t size)
+int proc_replace(pid_t pid, void * image, size_t size)
 {
     return -1;
 }
 
-proc_info_t * process_get_struct(pid_t pid)
+proc_info_t * proc_get_struct(pid_t pid)
 {
     return (proc_info_t *)0;
 }
@@ -234,14 +272,14 @@ proc_info_t * process_get_struct(pid_t pid)
  * @param pid Process ID.
  * @return Page table descriptor.
  */
-mmu_pagetable_t * process_get_pptable(pid_t pid)
+mmu_pagetable_t * proc_get_pptable(pid_t pid)
 {
     mmu_pagetable_t * pptable;
 
     if (pid == 0) { /* Kernel master page table requested. */
         pptable = &mmu_pagetable_master;
     } else { /* Get the process master page table */
-        pptable = &(process_get_struct(pid)->mm.pptable);
+        pptable = &(proc_get_struct(pid)->mm.pptable);
     }
 
     return pptable;
@@ -249,12 +287,13 @@ mmu_pagetable_t * process_get_pptable(pid_t pid)
 
 /**
  * Update process system state.
- * @note Updates current_process_id and curproc.
+ * Updates current_process_id and curproc.
+ * @note This function is called by interrupt handler(s).
  */
-void process_update(void)
+void proc_update(void)
 {
     current_process_id = current_thread->pid_owner;
-    /* TODO Updated curproc */
+    proc_get_struct(current_process_id);
 }
 
 uintptr_t proc_syscall(uint32_t type, void * p)

@@ -35,6 +35,7 @@
 #include <stddef.h>
 #include <kstring.h>
 #ifndef PU_TEST_BUILD
+#include <kerror.h>
 #include <sys/sysctl.h>
 #include <dynmem.h>
 #else
@@ -141,6 +142,7 @@ static mblock_t * extend(mblock_t * last, size_t s)
     b = malloc(MB_TO_BYTES(s_mbytes));
 #endif
     if (b == 0) {
+        KERROR(KERROR_DEBUG, "We didn't get new region from dynmem.");
         goto out;
     }
 

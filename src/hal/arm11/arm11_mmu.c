@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   MMU control functions for ARM11 ARMv6 instruction set.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -369,6 +369,29 @@ void mmu_control_set(uint32_t value, uint32_t mask)
     __asm__ volatile (
         "MCR p15, 0, %[reg], c1, c0, 0"
         : : [reg]"r" (reg));
+}
+
+/**
+ * Data abort handler
+ * @param sp    is the thread stack pointer.
+ * @param spsr  is the spsr from the thread context.
+ */
+void mmu_data_abort_handler(uint32_t sp, uint32_t spsr)
+{
+    uint32_t far; /*!< Fault address */
+    uint32_t fsr; /*!< Fault status */
+
+    __asm__ volatile (
+        "MRC p15, 0, %[reg], c0, c0, 1"
+        : [reg]"=r" (far));
+    __asm__ volatile (
+        "MRC p15, 0, %[reg], c5, c0, 0"
+        : [reg]"=r" (fsr));
+
+    KERROR(KERROR_DEBUG, "Can't handle data aborts yet");
+
+    while (1);
+    /* TODO */
 }
 
 /**

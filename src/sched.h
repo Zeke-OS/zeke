@@ -166,13 +166,15 @@ void * sched_handler(void * tsp);
  * @return Pointer to a threadInfo structure of a correspondig thread id
  *         or NULL if thread does not exist.
  */
-threadInfo_t * sched_get_pThreadInfo(int thread_id);
+threadInfo_t * sched_get_pThreadInfo(pthread_t thread_id);
+
+threadInfo_t * sched_thread_clone(pthread_t thread_id);
 
 /**
  * Set thread into execution mode/ready to run mode.
  * @oaram thread_id Thread id.
  */
-void sched_thread_set_exec(int thread_id);
+void sched_thread_set_exec(pthread_t thread_id);
 
 /**
  * Put the current thread into sleep.

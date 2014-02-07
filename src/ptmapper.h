@@ -40,7 +40,7 @@
 #define MMU_VADDR_KERNEL_START  0x00000000
 #define MMU_VADDR_KERNEL_END    0x0007FFFF
 #define MMU_VADDR_SHARED_START  0x00080000
-#define MMU_VADDR_SHARED_END    0x000FFFFF
+#define MMU_VADDR_SHARED_END    0x000FFFFF /* 1M; End of system page table */
 /**
  * Dynmem area starts
  * TODO check if this is ok?

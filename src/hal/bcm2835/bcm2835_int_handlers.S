@@ -31,10 +31,10 @@
  *******************************************************************************
  */
 
-
     .syntax unified
     .text
     .arch armv6k
+    .include "arm11.inc"
 
 @ void interrupt_svc(void)
 @
@@ -49,53 +49,28 @@ interrupt_svc:
     cmp     r1, #1              @ On ARM11 r1 is set to 1 if syscall was
                                 @ blocking and otherwise 0.
     pop     {r1-r12, lr}
-    beq     interrupt_systick   @ Jump if thread was blocked
+    beq     interrupt_sys       @ Jump if thread was blocked
     movs    pc, lr
 
-@ void interrupt_systick(void)
+@ void interrupt_sys(void)
+@ Systick handler
 @
-    .globl  interrupt_systick
-    .type   interrupt_systick,%function
-interrupt_systick:
+    .globl  interrupt_sys
+    .type   interrupt_sys,%function
+interrupt_sys:
 @ Save context
-    @ Store the original value of r0
-    stmdb   sp!, {r0}
-    @ Store thread sp to r0
-    stmdb   sp, {sp}^
-    nop
-    sub     sp, sp, #4
-    ldmia   sp!, {r0}
-    @ Push lr to the thread stack
-    stmdb   r0!, {lr}
-    @ Use lr as thread stack pointer and restore the original value of r0
-    mov     lr, r0
-    ldmia   sp!, {r0}
-    @ Push usr mode registers to the thread stack
-    stmdb   lr, {r0-r14}^
-    nop
-    sub     lr, lr, #60
-    @ Push the SPSR to the thread stack
-    mrs     r1, spsr
-    stmdb   lr!, {r1}
- 
-    @ Thread sp to r0
-    mov     r0, lr
+    pushcontext
 
     @ Check if we are here just after kinit
-    and     r2, r1, #0x1f
+    and     r2, r1, #0x1f   @ 0x1f == system mode
     cmp     r2, #0x1f
     moveq   r0, #0
     bleq    sched_handler   @ Get initial value for thread sp
     @ Update thread stack pointer
     bl      wr_thread_stack_ptr
 
-    @ Clear Timer IRQ
+    /* Handle kernel_tick & Clear Timer IRQ if this is a real tick */
     bl      interrupt_clear_timer
-
-    @ This is a kernel tick
-    ldr     r5, =flag_kernel_tick
-    mov     r0, #1
-    str     r0, [r5]
 
     @ Set Context ID to 0 (as we need ASID to be 0 in kernel mode)
     mov     r0, #0
@@ -119,7 +94,7 @@ interrupt_systick:
     str     r0, [r5]
 
     @ Update process system state
-    bl      process_update
+    bl      proc_update
 
     @ Get newly selected PID
     ldr     r0, =current_process_id
@@ -127,32 +102,16 @@ interrupt_systick:
 
     @ Attach process page table
     mov     r0, r5
-    bl      process_get_pptable
+    bl      proc_get_pptable
     bl      mmu_attach_pagetable
 
     @ Set process Context ID to the value of current PID
     mov     r0, r5
     bl      cpu_set_cid
 
-@ Load/Restore context
-    .globl  load_context
-    .type   load_context,%function
-load_context:
-    @ Get the thread stack pointer
-    stmdb   sp, {sp}^
-    nop
-    sub     sp, sp, #4
-    ldmia   sp!, {lr}
+/* Load/Restore context */
+    popcontext
 
-    @ Get the SPSR from the thread stack
-    ldmia   lr!, {r0}
-    msr     spsr, r0
-
-    @ Restore all registers
-    ldmia   lr, {r0-r14}^
-    nop
-
-    ldr     lr, [lr, #+60]  @ Restore the return address
 /*  For debuging
     stmdb   sp!, {r0}
     ldr     r0, =main
@@ -160,6 +119,16 @@ load_context:
 tag: bne    tag
     ldmia   sp!, {r0}
 */
-    subs    pc, lr, #4      @ Return back
+    subs    pc, lr, #4      /* Return back (SWI return address is PC+4) */
+
+
+@ Data Abort handler
+    .globl  interrupt_dta
+    .type   interrupt_dta,%function
+interrupt_dta:
+    pushcontext    
+    bl      mmu_data_abort_handler
+    popcontext
+    subs    pc, lr, 0x8     /* Return back */
 
 .end

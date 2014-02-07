@@ -32,8 +32,8 @@
  *******************************************************************************
  */
 
-#include <sched.h>
 #define KERNEL_INTERNAL 1
+#include <sched.h>
 #ifndef PU_TEST_BUILD
 #include <hal/hal_core.h>
 #endif

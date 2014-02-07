@@ -157,6 +157,8 @@ SYSCTL_UINT(_vm, OID_AUTO, ptm_mem_tot, CTLFLAG_RD,
  */
 void ptmapper_init(void)
 {
+    KERROR(KERROR_DEBUG, "ptmapper init");
+
     /* Allocate memory for mmu_pagetable_master */
     if (ptmapper_alloc(&mmu_pagetable_master)) {
         panic("Can't allocate memory for master page table.");
@@ -183,7 +185,9 @@ void ptmapper_init(void)
 
     /* Activate page tables */
     mmu_attach_pagetable(&mmu_pagetable_master); /* Load L1 TTB */
+    KERROR(KERROR_DEBUG, "Attached TTB mmu_pagetable_master");
     mmu_attach_pagetable(&mmu_pagetable_system); /* Add L2 pte into L1 master pt */
+    KERROR(KERROR_DEBUG, "Attached mmu_pagetable_system");
 }
 
 /**

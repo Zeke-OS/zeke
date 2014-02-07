@@ -52,7 +52,7 @@ void kerror_ttys(char level, const char * where, const char * msg)
     size_t i = 0;
     char buff[120];
 
-    ksprintf(buff, sizeof(buff), "%u:%s%s\n", level, where, msg);
+    ksprintf(buff, sizeof(buff), "%c:%s%s\n", level, where, msg);
 
     while (buff[i] != '\0') {
         KERROR_TTYS_UART_UPUTC_FN(buff[i++]);

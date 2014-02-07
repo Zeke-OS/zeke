@@ -40,6 +40,7 @@ else
 #	endif
 	# ARM11
 	ifneq (,$(filter $(configARCH),__ARM6__ __ARM6K__)) # Logical OR
+		AIDIR += src/hal/arm11/
 		hal-ASRC-1 += $(wildcard src/hal/arm11/*.S)
 		hal-SRC-1 += $(wildcard src/hal/arm11/*.c)
 	endif

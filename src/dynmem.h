@@ -46,6 +46,11 @@
  */
 
 /**
+ * Dynmem page/region size in bytes.
+ */
+#define DYNMEM_PAGE_SIZE 1048576
+
+/**
  * Dynmem area starts
  * TODO check if this is ok?
  */
@@ -62,7 +67,7 @@
  * Dynmemmap size.
  * Dynmem memory space is allocated in 1MB sections.
  */
-#define DYNMEM_MAPSIZE  ((DYNMEM_END - DYNMEM_START) / 1048576)
+#define DYNMEM_MAPSIZE  ((DYNMEM_END - DYNMEM_START + 1) / 1048576)
 
 /**
  * Size of dynmem page table in pt region.
@@ -73,7 +78,7 @@ extern uint32_t dynmemmap[];
 
 void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t control);
 void * dynmem_alloc_force(void * addr, size_t size, uint32_t ap, uint32_t control);
-int dynmem_ref(void * addr);
+void * dynmem_ref(void * addr);
 void dynmem_free_region(void * addr);
 uint32_t dynmem_acc(void * addr, size_t len);
 

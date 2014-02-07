@@ -22,7 +22,7 @@ void * memmove(void * destination, const void * source, size_t num);
 void * memset(void * ptr, int value, size_t num);
 int strcmp(const char * str1, const char * str2);
 int strncmp(const char * str1, const char * str2, size_t n);
-char * strcpy(char * dst, const char * src);
+char * strcpy(char * destination, const char * source);
 char * strncpy(char * dst, const char * src, size_t n);
 size_t strlcpy(char * dst, const char * src, size_t siz);
 const char * strstr(const char * str1, const char * str2);

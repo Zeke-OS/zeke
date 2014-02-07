@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    process.h
+ * @file    proc.h
  * @author  Olli Vanhoja
  * @brief   Kernel process management header file.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,8 +35,8 @@
   */
 
 #pragma once
-#ifndef PROCESS_H
-#define PROCESS_H
+#ifndef PROC_H
+#define PROC_H
 
 #include <autoconf.h>
 
@@ -60,16 +60,20 @@
  */
 typedef struct {
     pid_t pid;
+#if 0
+    char * command;
+#endif
     threadInfo_t * main_thread; /*!< Main thread of this process. */
 #ifndef PU_TEST_BUILD
-    struct {
+    struct mm {
         mmu_pagetable_t pptable;    /*!< Process master page table. */
-        mmu_region_t * pregions;    /*!< Memory regions of a process.
-                                     *   [0] = stack
-                                     *   [1] = heap/data
-                                     *   [2] = code
+        mmu_region_t * regions;   /*!< Memory regions of a process.
+                                     *   [0] = code
+                                     *   [1] = stack
+                                     *   [2] = heap/data
                                      *   [n] = allocs
                                      */
+        int nr_regions;             /* Number of regions allocated. */
     } mm;
 #endif
     sigs_t sigs;                /*!< Signals. */
@@ -91,7 +95,7 @@ typedef struct {
      * + next_child is a child thread attribute containing address of a next
      *   child node of the common parent thread
      */
-    struct {
+    struct inh {
         void * parent;      /*!< Parent thread. */
         void * first_child; /*!< Link to the first child thread. */
         void * next_child;  /*!< Next child of the common parent. */
@@ -105,11 +109,11 @@ int maxproc;
 extern volatile pid_t current_process_id;
 extern volatile proc_info_t * curproc;
 
-pid_t process_fork(pid_t pid);
-int process_kill(void);
-int process_replace(pid_t pid, void * image, size_t size);
-proc_info_t * process_get_struct(pid_t pid);
-mmu_pagetable_t * process_get_pptable(pid_t pid);
+pid_t proc_fork(pid_t pid);
+int proc_kill(void);
+int proc_replace(pid_t pid, void * image, size_t size);
+proc_info_t * proc_get_struct(pid_t pid);
+mmu_pagetable_t * pr_get_pptable(pid_t pid);
 
 #endif /* PROCESS_H */
 

@@ -52,6 +52,8 @@ static void mmu_init(void)
 {
     uint32_t value, mask;
 
+    KERROR(KERROR_LOG, "MMU init");
+
     ptmapper_init();
 
     /* Set MMU_DOM_KERNEL as client and others to generate error. */
@@ -59,9 +61,13 @@ static void mmu_init(void)
     mask = MMU_DOMAC_ALL;
     mmu_domain_access_set(value, mask);
 
+    KERROR(KERROR_DEBUG, "Enabling MMU");
     value = MMU_ZEKE_C1_DEFAULTS;
     mask = MMU_ZEKE_C1_DEFAULTS;
     mmu_control_set(value, mask);
+    // TODO There still seems to be some bug :'(
+
+    KERROR(KERROR_LOG, "MMU init OK");
 }
 
 /**
@@ -113,7 +119,7 @@ size_t mmu_sizeof_region(mmu_region_t * region)
  * @param src   is the source page table descriptor.
  * @return      Zero if cloning succeeded; Otherwise value other than zero.
  */
-int mmu_clone_pt(mmu_pagetable_t * dest, mmu_pagetable_t * src)
+int mmu_ptcpy(mmu_pagetable_t * dest, mmu_pagetable_t * src)
 {
     size_t len_src;
     size_t len_dest;

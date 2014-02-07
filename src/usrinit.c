@@ -61,6 +61,7 @@ void * main(void * arg)
     //osDelay(50);
 */
     while(1) {
+        bcm2835_uputc('T');
         //print_message("System READY");
         //osDelay(500);
     }

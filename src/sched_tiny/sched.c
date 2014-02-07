@@ -53,7 +53,7 @@
 #include <syscall.h>
 #include <kernel.h>
 #include <vm/vm.h>
-#include <process.h> /* copyin & copyout */
+#include <proc.h> /* copyin & copyout */
 #include <pthread.h>
 #include <sys/sysctl.h>
 #include <errno.h>
@@ -115,10 +115,10 @@ void sched_init(void) __attribute__((constructor));
 void * idleTask(void * arg);
 static void calc_loads(void);
 static void context_switcher(void);
-static void sched_thread_init(int i, ds_pthread_create_t * thread_def,
+static void sched_thread_init(pthread_t i, ds_pthread_create_t * thread_def,
         threadInfo_t * parent, int priv);
 static void sched_thread_set_inheritance(pthread_t i, threadInfo_t * parent);
-static void _sched_thread_set_exec(int thread_id, osPriority pri);
+static void _sched_thread_set_exec(pthread_t thread_id, osPriority pri);
 static void sched_thread_remove(pthread_t id);
 /* End of Static function declarations ***************************************/
 
@@ -278,7 +278,7 @@ static void context_switcher(void)
     current_thread->ts_counter--;
 }
 
-threadInfo_t * sched_get_pThreadInfo(int thread_id)
+threadInfo_t * sched_get_pThreadInfo(pthread_t thread_id)
 {
     if (thread_id > configSCHED_MAX_THREADS)
         return NULL;
@@ -299,7 +299,7 @@ threadInfo_t * sched_get_pThreadInfo(int thread_id)
   *                     (kworker).
   * @todo what if parent is stopped before this function is called?
   */
-static void sched_thread_init(int i, ds_pthread_create_t * thread_def,
+static void sched_thread_init(pthread_t i, ds_pthread_create_t * thread_def,
         threadInfo_t * parent, int priv)
 {
     /* This function should not be called for already initialized threads. */
@@ -385,7 +385,35 @@ static void sched_thread_set_inheritance(pthread_t id, threadInfo_t * parent)
     last_node->inh.next_child = &(task_table[id]);
 }
 
-void sched_thread_set_exec(int thread_id)
+/* TODO */
+#if 0
+threadInfo_t * sched_thread_clone(pthread_t thread_id)
+{
+    threadInfo_t * old_th;
+    pthread_attr_t th_attr;
+    ds_pthread_create_t ds;
+
+    old_th = sched_get_pThreadInfo(thread_id);
+    if (!old_th)
+        return 0;
+
+    th_attr.tpriority
+    th_attr.stackAddr
+    th_attr.stackSize
+    ds.thread = 0;
+    ds.start = ;
+    ds.def = &th_attr;
+    ds.argument = 0;
+
+    pthread_t sched_threadCreate(ds_pthread_create_t * thread_def, 0);
+}
+#endif
+
+/**
+ * Set thread into execution with its default priority.
+ * @param thread_id is the thread id.
+ */
+void sched_thread_set_exec(pthread_t thread_id)
 {
     _sched_thread_set_exec(thread_id, task_table[thread_id].def_priority);
 }
@@ -397,7 +425,7 @@ void sched_thread_set_exec(int thread_id)
   * @param thread_id    Thread id
   * @param pri          Priority
   */
-static void _sched_thread_set_exec(int thread_id, osPriority pri)
+static void _sched_thread_set_exec(pthread_t thread_id, osPriority pri)
 {
     /* Check that given thread is in use but not in execution */
     if (SCHED_TEST_WAKEUP_OK(task_table[thread_id].flags)) {

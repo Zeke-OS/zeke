@@ -85,7 +85,10 @@ void bcm2835_register(void)
         .uputc = bcm2835_uputc,
         .ugetc = bcm2835_ugetc
     };
+
     uart_register_port(&port);
+
+    KERROR(KERROR_LOG, "BCM2835 UART Registered");
 }
 HW_PREINIT_ENTRY(bcm2835_register);
 

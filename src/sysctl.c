@@ -49,7 +49,7 @@
 #include <kmalloc.h>
 #include <kerror.h>
 #include <sys/queue.h>
-#include <process.h>
+#include <proc.h>
 #include <klocks.h>
 #include <sys/priv.h>
 #include <vm/vm.h>

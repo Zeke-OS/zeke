@@ -50,10 +50,13 @@ MODULES += $(foreach var, $(ALLMODULES), $(if $(strip $($(var)-SRC-1) $($(var)-A
 
 # Generic Compiler Options #####################################################
 ARMGNU   = arm-none-eabi
+CC       = clang
 CCFLAGS  = -std=c99 -emit-llvm -Wall -ffreestanding -O2
 CCFLAGS += -nostdlib -nostdinc 
 CCFLAGS += -m32 -ccc-host-triple $(ARMGNU)
+OPT      = opt-3.0
 OFLAGS   = -std-compile-opts
+LLC      = llc-3.0
 LLCFLAGS = -mtriple=$(ARMGNU)
 ASFLAGS  =#
 LDFLAGS  =#
@@ -81,9 +84,10 @@ endif
 CRT_DIR = $(dir $(CRT))
 
 # Include Dirs #################################################################
-IDIR = ./include ./config ./src
+IDIR  = ./include ./config ./src
 ################################################################################
 IDIR := $(patsubst %,-I%,$(subst :, ,$(IDIR)))
+AIDIR := $(patsubst %,-I%,$(subst :, ,$(AIDIR)))
 
 # Select & Include Modules #####################################################
 # Available selections for source code files:
@@ -165,16 +169,16 @@ $(STARTUP_O): $(STARTUP)
 	$(ARMGNU)-as $< -o $(STARTUP_O)
 
 $(ASOBJS): $(ASRC-1)
-	$(ARMGNU)-as $*.S -o $@
+	$(ARMGNU)-as $(AIDIR) $*.S -o $@
 
 $(BCS): $(SRC-1)
-	clang $(CCFLAGS) $(IDIR) -c $*.c -o $@
+	$(CC) $(CCFLAGS) $(IDIR) -c $*.c -o $@
 
 $(OBJS): $(BCS)
 	$(eval CUR_OPT := $*.opt.bc)
 	$(eval CUR_OPT_S := $*.opt.s)
-	opt-3.0 $(OFLAGS) $*.bc -o $(CUR_OPT)
-	llc-3.0 $(LLCFLAGS) $(CUR_OPT) -o $(CUR_OPT_S)
+	$(OPT) $(OFLAGS) $*.bc -o $(CUR_OPT)
+	$(LLC) $(LLCFLAGS) $(CUR_OPT) -o $(CUR_OPT_S)
 	$(ARMGNU)-as $(CUR_OPT_S) -o $@ $(ASFLAGS)
 
 $(CRT):

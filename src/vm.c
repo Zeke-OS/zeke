@@ -37,7 +37,7 @@
 #include <dynmem.h>
 #include <kerror.h>
 #include <errno.h>
-#include <process.h>
+#include <proc.h>
 #include <vm/vm.h>
 
 extern mmu_region_t mmu_region_kernel;
