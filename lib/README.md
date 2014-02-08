@@ -12,13 +12,6 @@ Put here the CMSIS (and other) libraries provided by the chip manufacturers.
     |--armv6-m-libgcc
     |--libaebi-cortexm0
     |--rpi-libgcc
-    |-Discovery
-    |-STM32F0xx
-    |--CMSIS
-    |--Drivers
-    |---inc
-    |---src
-    |--Discovery
     |-STR912
     |--stdlib
     |---inc

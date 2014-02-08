@@ -1,7 +1,6 @@
 # Kernel config
 
 # Supported MCU models
-MCU_MODEL_STM32F0 = 1
 MCU_MODEL_STR912F = 2
 MCU_MODEL_BCM2835 = 3
 
