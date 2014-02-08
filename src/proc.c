@@ -96,6 +96,7 @@ static void realloc__procarr(void)
     proc_info_t ** tmp;
 
     PROCARR_LOCK();
+    /* TODO */
     //tmp = krealloc(&_procarr, SIZEOF_PROCARR);
     tmp = krealloc(_procarr, (3) * sizeof(proc_info_t *));
     if ((tmp == 0) && (_procarr == 0)) {

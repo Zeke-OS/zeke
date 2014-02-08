@@ -46,10 +46,10 @@ interrupt_svc:
     @ Call kernel's internal syscall handler
     bl      _intSyscall_handler
 
-    cmp     r1, #1              @ On ARM11 r1 is set to 1 if syscall was
-                                @ blocking and otherwise 0.
+    cmp     r1, #1              /* On ARM11 r1 is set to 1 if syscall was */
+                                /* blocking and otherwise 0. */
     pop     {r1-r12, lr}
-    beq     interrupt_sys       @ Jump if thread was blocked
+    beq     interrupt_sys       /* Jump if thread was blocked */
     movs    pc, lr
 
 @ void interrupt_sys(void)
@@ -58,54 +58,53 @@ interrupt_svc:
     .globl  interrupt_sys
     .type   interrupt_sys,%function
 interrupt_sys:
-@ Save context
     pushcontext
 
-    @ Check if we are here just after kinit
-    and     r2, r1, #0x1f   @ 0x1f == system mode
+    /* Check if we are here just after kinit */
+    and     r2, r1, #0x1f   /* 0x1f == system mode */
     cmp     r2, #0x1f
     moveq   r0, #0
-    bleq    sched_handler   @ Get initial value for thread sp
-    @ Update thread stack pointer
+    bleq    sched_handler   /* Get initial value for thread sp */
+    /* Update thread stack pointer */
     bl      wr_thread_stack_ptr
 
     /* Handle kernel_tick & Clear Timer IRQ if this is a real tick */
     bl      interrupt_clear_timer
 
-    @ Set Context ID to 0 (as we need ASID to be 0 in kernel mode)
+    /* Set Context ID to 0 (as we need ASID to be 0 in kernel mode) */
     mov     r0, #0
     bl      cpu_set_cid
 
-    @ Attach kernel master page table
+    /* Attach kernel master page table */
     ldr     r0, =mmu_pagetable_master
     bl      mmu_attach_pagetable
 
-    @ Get current PID
+    /* Get current PID */
     ldr     r4, =current_process_id
     ldr     r4, [r4]
 
-    @ Run scheduler
+    /* Run scheduler */
     bl      rd_thread_stack_ptr
     bl      sched_handler
     bl      wr_thread_stack_ptr
 
-    @ End of kernel tick
+    /* End of kernel tick */
     mov     r0, #0
     str     r0, [r5]
 
-    @ Update process system state
+    /* Update process system state */
     bl      proc_update
 
-    @ Get newly selected PID
+    /* Get newly selected PID */
     ldr     r0, =current_process_id
     ldr     r5, [r0]
 
-    @ Attach process page table
+    /* Attach process page table */
     mov     r0, r5
     bl      proc_get_pptable
     bl      mmu_attach_pagetable
 
-    @ Set process Context ID to the value of current PID
+    /* Set process Context ID to the value of current PID */
     mov     r0, r5
     bl      cpu_set_cid
 
@@ -129,6 +128,6 @@ interrupt_dta:
     pushcontext    
     bl      mmu_data_abort_handler
     popcontext
-    subs    pc, lr, 0x8     /* Return back */
+    subs    pc, lr, #0x8    /* Return back */
 
 .end

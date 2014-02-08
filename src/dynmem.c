@@ -124,10 +124,14 @@ void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t control)
 {
     uint32_t pos;
 
-    if(bitmap_block_search(&pos, size, dynmemmap_bitmap, sizeof(dynmemmap_bitmap))) {
+    if(bitmap_block_search(&pos, size, dynmemmap_bitmap,
+                sizeof(dynmemmap_bitmap))) {
+#if configDEBUG != 0
         char buf[80];
-        ksprintf(buf, sizeof(buf), "Out of dynmem, free %u of %u, tried %u, %u", dynmem_free, dynmem_tot, size * 1048576, sizeof(dynmemmap_bitmap));
+        ksprintf(buf, sizeof(buf), "Out of dynmem, free %u of %u, tried %u, %u",
+                dynmem_free, dynmem_tot, size * 1048576, sizeof(dynmemmap_bitmap));
         KERROR(KERROR_DEBUG, buf);
+#endif
         for (int i = 0; i < sizeof(dynmemmap_bitmap); i++)
             bcm2835_uputc(dynmemmap_bitmap[i]);
         return 0; /* Null */
@@ -344,10 +348,12 @@ uint32_t dynmem_acc(void * addr, size_t len)
         goto out; /* Not reserved. */
 
     if (update_dynmem_region_struct(addr)) { /* error */
+#if configDEBUG
         char buf[80];
         ksprintf(buf, sizeof(buf), "dynmem_acc() check failed for: %x",
             (uint32_t)addr);
         KERROR(KERROR_DEBUG, buf);
+#endif
         goto out;
     }
 

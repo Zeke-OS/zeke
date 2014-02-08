@@ -50,6 +50,9 @@ configMP = 0# Enable multi-processing support
 configKERROR_LAST = 0# Store last n log messages in buffer
 configKERROR_TTYS = 1#
 
+# Kernel logging options
+configDEBUG = 1#Additional debug messages
+
 # Processes
 configMAXPROC = 512# maxproc, default maximum number of processes.
 

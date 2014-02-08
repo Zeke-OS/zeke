@@ -224,7 +224,15 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
 
     /* Try to allocate a new page table */
     if ((size == 0) ? 0 : !PTM_ALLOC(&block, size)) {
+#if configDEBUG != 0
+        char buf[80];
+#endif
+
         addr = PTM_BLOCK2ADDR(block);
+#if configDEBUG != 0
+        ksprintf(buf, sizeof(buf), "Page table allocated @ %x of size %u bytes", addr, bsize);
+        KERROR(KERROR_DEBUG, buf);
+#endif
         pt->pt_addr = addr;
         if (pt->type == MMU_PTT_MASTER) {
             pt->master_pt_addr = addr;
@@ -234,6 +242,7 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
         ptm_nr_pt++;
         ptm_mem_free -= bsize;
     } else {
+        KERROR(KERROR_ERR, "Out of page memory");
         retval = -1;
     }
 
