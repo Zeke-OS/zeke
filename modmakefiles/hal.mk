@@ -15,8 +15,6 @@ endif
 ifeq ($(configARM_PROFILE_M),1)
 	hal-SRC-1 += $(wildcard src/hal/cortex_m/*.c)
 else
-#	ifeq ($(configARCH),__ARM4T__) # ARM9
-#	endif
 	# ARM11
 	ifneq (,$(filter $(configARCH),__ARM6__ __ARM6K__)) # Logical OR
 		AIDIR += src/hal/arm11/
