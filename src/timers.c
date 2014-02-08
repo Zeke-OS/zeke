@@ -5,7 +5,7 @@
  *
  * @brief   Kernel timers
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
@@ -33,7 +33,8 @@
  */
 
 #include <autoconf.h>
-#include "sched.h"
+#include <kinit.h>
+#include <sched.h>
 #include "timers.h"
 
 /* Internal Flag Bits */
@@ -68,6 +69,8 @@ static int timers_calc_exp(int millisec);
 void timers_init(void)
 {
     int i;
+
+    SUBSYS_INIT();
 
     timers_value = 0;
     for (i = 0; i < configTIMERS_MAX; i++) {

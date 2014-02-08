@@ -40,6 +40,7 @@
 #include <kstring.h>
 #include <libkern.h>
 #include <kerror.h>
+#include <kinit.h>
 #include <syscalldef.h>
 #include <syscall.h>
 #include <errno.h>
@@ -86,6 +87,7 @@ static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc);
 void proc_init(void) __attribute__((constructor));
 void proc_init(void)
 {
+    SUBSYS_INIT();
     PROCARR_LOCK_INIT();
     realloc__procarr();
     memset(&_procarr, 0, SIZEOF_PROCARR);

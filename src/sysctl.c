@@ -48,6 +48,7 @@
 #include <kstring.h>
 #include <kmalloc.h>
 #include <kerror.h>
+#include <kinit.h>
 #include <sys/queue.h>
 #include <proc.h>
 #include <klocks.h>
@@ -116,6 +117,7 @@ void sysctl_init(void)
 {
     struct sysctl_oid ** oidp;
 
+    SUBSYS_INIT();
     SYSCTL_LOCK_INIT();
     SYSCTL_LOCK();
     SET_FOREACH(oidp, sysctl_set)

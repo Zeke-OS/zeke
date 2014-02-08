@@ -31,12 +31,15 @@
  */
 
 #define KERNEL_INTERNAL
+#include <kinit.h>
+#include <kstring.h>
 #include <kerror.h>
 #include <generic/bitmap.h>
 #include <sys/sysctl.h>
 #include <ptmapper.h>
 
 void ptmapper_init(void);
+HW_PREINIT_ENTRY(ptmapper_init);
 
 /* Fixed Page Tables */
 
@@ -151,12 +154,14 @@ SYSCTL_UINT(_vm, OID_AUTO, ptm_mem_tot, CTLFLAG_RD,
 #define PTM_FREE(block, len) \
     bitmap_block_update(ptm_alloc_map, 0, block, len)
 
+
 /**
  * Page table mapper init function.
  * @note This function should be called by mmu init.
  */
 void ptmapper_init(void)
 {
+    SUBSYS_INIT();
     KERROR(KERROR_DEBUG, "ptmapper init");
 
     /* Allocate memory for mmu_pagetable_master */

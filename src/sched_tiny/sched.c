@@ -38,6 +38,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <kstring.h>
+#include <kinit.h>
 
 #ifndef KERNEL_INTERNAL
 #define KERNEL_INTERNAL
@@ -129,6 +130,8 @@ static void sched_thread_remove(pthread_t id);
  */
 void sched_init(void)
 {
+    SUBSYS_INIT();
+
     pthread_t tid;
     pthread_attr_t attr = {
         .tpriority  = osPriorityIdle,
@@ -142,6 +145,7 @@ void sched_init(void)
         .def      = &attr,
         .argument = NULL
     };
+
     sched_thread_init(0, &tdef_idle, NULL, 1);
 
     /* Set idle thread as a currently running thread */

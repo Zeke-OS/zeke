@@ -86,6 +86,8 @@ void exec_fini_array(void)
  */
 void kinit(void)
 {
+    SUBSYS_INIT();
+
     KERROR(KERROR_LOG, "Starting init");
     /* Create app_main thread */
     pthread_attr_t main_thread = {

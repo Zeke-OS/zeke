@@ -40,21 +40,21 @@
 //#include <ptmapper.h>
 #include "mmu.h"
 
-extern void ptmapper_init(void); /* form ptmapper */
-static void mmu_init(void);
+void mmu_init(void);
 HW_PREINIT_ENTRY(mmu_init);
 
 /**
  * Initialize the MMU and static regions.
  * @note This is called from startup.
  */
-static void mmu_init(void)
+void mmu_init(void)
 {
     uint32_t value, mask;
 
-    KERROR(KERROR_LOG, "MMU init");
+    SUBSYS_INIT();
+    SUBSYS_DEP(ptmapper_init);
 
-    ptmapper_init();
+    KERROR(KERROR_LOG, "MMU init");
 
     /* Set MMU_DOM_KERNEL as client and others to generate error. */
     value = MMU_DOMAC_TO(MMU_DOM_KERNEL, MMU_DOMAC_CL);
