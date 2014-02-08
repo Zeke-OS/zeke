@@ -42,12 +42,12 @@
 //#define MMU_VADDR_SHARED_START  0x00080000
 //#define MMU_VADDR_SHARED_END    0x000FFFFF /* 1M; End of system page table */
 /**
- * Dynmem area starts
+ * Begining of dynmem area.
  * TODO check if this is ok?
  */
 #define MMU_VADDR_DYNMEM_START  0x00300000
 /**
- * Dynmem area end
+ * End of dynmem area.
  * TODO should match end of physical memory at least
  * (or higher if paging is allowed later)
  * We possibly should use mmu_memsize somewhere,
@@ -55,6 +55,10 @@
  * allocations.
  */
 #define MMU_VADDR_DYNMEM_END    0x00FFFFFF
+
+/* TODO These shouldn't be here actually */
+#define MMU_VADDR_RPIHW_START   0x20000000
+#define MMU_VADDR_RPIHW_END     0x20FFFFFF
 /* End of Kernel memory map ***************************************************/
 
 /* Page Table Region Macros ***************************************************/

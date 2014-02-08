@@ -175,6 +175,7 @@ void * idleTask(/*@unused@*/ void * arg)
 {
 #ifndef PU_TEST_BUILD
     while(1) {
+        bcm2835_uputc('I');
         idle_sleep();
     }
 #endif

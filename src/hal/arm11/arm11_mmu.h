@@ -72,7 +72,6 @@
 #define MMU_PTSZ_MASTER     0x4000 /*!< L1 master page table size. */
 
 /* Domain Access Control Macros */
-
 #define MMU_DOMAC_NA        0x0 /*!< Any access generates a domain fault. */
 #define MMU_DOMAC_CL        0x1 /*!< Client. Access is checked against the ap bits in TLB. */
 #define MMU_DOMAC_MA        0x3 /*!< Manager. No access permission checks performed. */
@@ -125,7 +124,6 @@
 #define MMU_ZEKE_C1_DEFAULTS    (MMU_C1_CR_ENMMU | MMU_C1_CR_DCACHE |\
         MMU_C1_CR_ICACHE | MMU_C1_CR_XP | MMU_C1_CR_U | MMU_C1_CR_VE | MMU_C1_CR_TR)
 /* End of MMU C1 Control Bits */
-
 
 #endif /* ARM11_MMU_H */
 

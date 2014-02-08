@@ -61,7 +61,7 @@
 
 /* 2.10 The program status registers in ARM1176JZF-S Technical Reference Manual */
 #define DEFAULT_PSR         0x40000010u /*!< User mode. */
-#define KERNELM_PSR         0x40000013u /*!< Kernel mode. (Supervisor) */
+#define KERNELM_PSR         0x4000001fu /*!< Kernel mode. (Sysytem) */
 
 /** Stack frame saved by the hardware (Left here for compatibility reasons) */
 typedef struct {

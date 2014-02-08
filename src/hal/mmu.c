@@ -49,11 +49,11 @@ HW_PREINIT_ENTRY(mmu_init);
  */
 void mmu_init(void)
 {
-    uint32_t value, mask;
-
     SUBSYS_INIT();
     SUBSYS_DEP(interrupt_preinit);
     SUBSYS_DEP(ptmapper_init);
+
+    uint32_t value, mask;
 
     KERROR(KERROR_LOG, "MMU init");
 
@@ -62,12 +62,22 @@ void mmu_init(void)
     mask = MMU_DOMAC_ALL;
     mmu_domain_access_set(value, mask);
 
+#if configDEBUG != 0
     KERROR(KERROR_DEBUG, "Enabling MMU");
+#endif
     value = MMU_ZEKE_C1_DEFAULTS;
     mask = MMU_ZEKE_C1_DEFAULTS;
     mmu_control_set(value, mask);
 
+    __asm__ volatile (
+        "nop\n\t"
+        "nop\n\t"
+        "nop\n\t"
+        "nop");
+
+#if configDEBUG != 0
     KERROR(KERROR_LOG, "MMU init OK");
+#endif
 }
 
 /**

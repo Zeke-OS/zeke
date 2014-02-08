@@ -122,6 +122,9 @@ int mmu_map_region(mmu_region_t * region)
             mmu_map_coarse_region(region);
             break;
         default:
+#if configDEBUG
+            KERROR(KERROR_ERR, "Invalid mmu_region struct.");
+#endif
             retval = -1;
             break;
     }

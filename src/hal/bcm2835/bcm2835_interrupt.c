@@ -94,15 +94,15 @@ __attribute__ ((naked, aligned(32))) static void interrupt_vectors(void)
 {
     /* Processor will never jump to bad_exception when reset is hit because
      * interrupt vector offset is set back to 0x0 on reset. */
-    __asm__ volatile (
-        "b bad_exception\n\t"   /* RESET */
-        "b undef_handler\n\t"   /* UNDEF */
-        "b interrupt_svc\n\t"   /* SVC   */
-        "b bad_exception\n\t"   /* Prefetch abort */
-        "b interrupt_dta\n\t"   /* data abort */
-        "b bad_exception\n\t"   /* Unused vector */
-        "b interrupt_sys\n\t"   /* Timer IRQ */
-        "b bad_exception\n\t"   /* FIQ */
+    __asm__ volatile (          /* Event                    Pri LnAddr Mode */
+        "b bad_exception\n\t"   /* Reset                    1   8      abt  */
+        "b undef_handler\n\t"   /* Undefined instruction    6   0      und  */
+        "b interrupt_svc\n\t"   /* Software interrupt       6   0      svc  */
+        "b interrupt_pabt\n\t"  /* Prefetch abort           5   4      abt  */
+        "b interrupt_dabt\n\t"  /* Data abort               2   8      abt  */
+        "b bad_exception\n\t"   /* Unused vector                            */
+        "b interrupt_sys\n\t"   /* IRQ                      4   4      irq  */
+        "b bad_exception\n\t"   /* FIQ                      3   4      fiq  */
     );
 }
 
@@ -127,7 +127,7 @@ void interrupt_clear_timer(void)
     if (val == 0) {
         mmio_write(ARM_TIMER_IRQ_CLEAR, 0);
         mmio_end();
-        //bcm2835_uputc('C'); /* Timer debug print */
+        bcm2835_uputc('C'); /* Timer debug print */
         flag_kernel_tick = 1;
     } else mmio_end();
 }

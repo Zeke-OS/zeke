@@ -65,12 +65,16 @@ mmu_pagetable_t mmu_pagetable_system = {
 /* TODO Temporarily mapped as one big area */
 mmu_region_t mmu_region_kernel = {
     .vaddr          = MMU_VADDR_KERNEL_START,
+#if 0
     .num_pages      = MMU_PAGE_CNT_BY_RANGE(MMU_VADDR_KERNEL_START, \
                         MMU_VADDR_KERNEL_END, 4096),
+#endif
+    .num_pages      = 1,
     .ap             = MMU_AP_RWRW, /* TODO this must be changed later to RWNA */
     .control        = MMU_CTRL_MEMTYPE_WB,
     .paddr          = 0x0,
-    .pt             = &mmu_pagetable_system
+    //.pt             = &mmu_pagetable_system
+    .pt             = &mmu_pagetable_master
 };
 
 #if 0
@@ -86,6 +90,16 @@ mmu_region_t mmu_region_shared = {
     .pt             = &mmu_pagetable_system
 };
 #endif
+
+mmu_region_t mmu_region_rpihw = {
+    .vaddr          = MMU_VADDR_RPIHW_START,
+    .num_pages      = MMU_PAGE_CNT_BY_RANGE(MMU_VADDR_RPIHW_START, \
+                        MMU_VADDR_RPIHW_END, 1048576),
+    .ap             = MMU_AP_RWRW, /* TODO */
+    .control        = MMU_CTRL_MEMTYPE_WT|MMU_CTRL_MEMTYPE_SDEV, /* TODO not sure about these... */
+    .paddr          = MMU_VADDR_RPIHW_START,
+    .pt             = &mmu_pagetable_master
+};
 
 #define PTREGION_SIZE \
     MMU_PAGE_CNT_BY_RANGE(PTMAPPER_PT_START, PTMAPPER_PT_END, 1048576) /* MB */
@@ -180,8 +194,8 @@ void ptmapper_init(void)
     mmu_init_pagetable(&mmu_pagetable_master);
     mmu_init_pagetable(&mmu_pagetable_system);
 
-    /* Calculate physical address space of the shared region. */
 #if 0
+    /* Calculate physical address space of the shared region. */
     mmu_region_shared.paddr = __text_shared_start;
     mmu_region_shared.num_pages =
         MMU_PAGE_CNT_BY_RANGE((intptr_t)(__text_shared_start), (intptr_t)(__text_shared_end), 4096);
@@ -208,13 +222,15 @@ void ptmapper_init(void)
         //PRINTMAPREG(mmu_region_shared);
         mmu_map_region(&mmu_region_page_tables);
         PRINTMAPREG(mmu_region_page_tables);
+        mmu_map_region(&mmu_region_rpihw);
+        PRINTMAPREG(mmu_region_rpihw);
     }
 
     /* Activate page tables */
     mmu_attach_pagetable(&mmu_pagetable_master); /* Load L1 TTB */
     KERROR(KERROR_DEBUG, "Attached TTB mmu_pagetable_master");
-    mmu_attach_pagetable(&mmu_pagetable_system); /* Add L2 pte into L1 master pt */
-    KERROR(KERROR_DEBUG, "Attached mmu_pagetable_system");
+    //mmu_attach_pagetable(&mmu_pagetable_system); /* Add L2 pte into L1 master pt */
+    //KERROR(KERROR_DEBUG, "Attached mmu_pagetable_system");
 }
 
 /**

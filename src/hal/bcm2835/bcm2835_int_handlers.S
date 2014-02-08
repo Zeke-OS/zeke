@@ -52,6 +52,7 @@ interrupt_svc:
     beq     interrupt_sys       /* Jump if thread was blocked */
     movs    pc, lr
 
+
 @ void interrupt_sys(void)
 @ Systick handler
 @
@@ -121,10 +122,21 @@ tag: bne    tag
     subs    pc, lr, #4      /* Return back (SWI return address is PC+4) */
 
 
+@ Prefetch Abort handler
+    .globl  interrupt_pabt
+    .type   interrupt_pabt,%function
+interrupt_pabt:
+    pushcontext
+_tag:                       /* TODO */
+    b       _tag
+    popcontext
+    subs    pc, lr, #0x4
+
+
 @ Data Abort handler
-    .globl  interrupt_dta
-    .type   interrupt_dta,%function
-interrupt_dta:
+    .globl  interrupt_dabt
+    .type   interrupt_dabt,%function
+interrupt_dabt:
     pushcontext    
     bl      mmu_data_abort_handler
     popcontext
