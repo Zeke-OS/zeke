@@ -16,7 +16,7 @@ SECTIONS
     .text :
     {
         KEEP(*(.text.boot))
-        *(EXCLUDE_FILE (user.a) .text)
+        *(.text)
     }
     . = ALIGN(4096); /* align to page size */
     _text_end = .;
@@ -75,7 +75,7 @@ SECTIONS
     _data_start = .;
     .data :
     {
-        *(EXCLUDE_FILE (user.a) .data)
+        *(.data)
     }
     . = ALIGN(4096); /* align to page size */
     _data_end = .;
@@ -84,19 +84,9 @@ SECTIONS
     .bss :
     {
         bss = .;
-        *(EXCLUDE_FILE (user.a) .bss)
+        *(.bss)
     }
     . = ALIGN(4096); /* align to page size */
     _bss_end = .;
-
-    /* Put all text that should be shared with user space in the following
-     * section. */
-    .text_shared :
-    {
-        PROVIDE_HIDDEN (__text_shared_start = .);
-        user.a
-        PROVIDE_HIDDEN (__text_shared_end = .);
-    }
-    . = ALIGN(4096); /* align to page size */
     _end = .;
 }

@@ -134,6 +134,7 @@ void interrupt_clear_timer(void)
 
 void interrupt_preinit(void)
 {
+    SUBSYS_INIT();
     KERROR(KERROR_LOG, "Enabling interrupts");
 
     /* Set interrupt base register */

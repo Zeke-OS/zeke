@@ -54,8 +54,8 @@ mmu_pagetable_t mmu_pagetable_master = {
 
 mmu_pagetable_t mmu_pagetable_system = {
     .vaddr          = MMU_VADDR_KERNEL_START,
-    .pt_addr        = 0,
-    .master_pt_addr = 0,
+    .pt_addr        = 0, /* Set later */
+    .master_pt_addr = 0, /* Set later */
     .type           = MMU_PTT_COARSE,
     .dom            = MMU_DOM_KERNEL
 };
@@ -73,8 +73,9 @@ mmu_region_t mmu_region_kernel = {
     .pt             = &mmu_pagetable_system
 };
 
-uintptr_t __text_shared_start __attribute__((weak));
-uintptr_t __text_shared_end __attribute__((weak));
+#if 0
+extern void (*__text_shared_start[]) (void) __attribute__((weak));
+extern void (*__text_shared_end[]) (void) __attribute__((weak));
 mmu_region_t mmu_region_shared = {
     .vaddr          = MMU_VADDR_SHARED_START,
     .num_pages      = MMU_PAGE_CNT_BY_RANGE(MMU_VADDR_SHARED_START, \
@@ -84,6 +85,7 @@ mmu_region_t mmu_region_shared = {
     .paddr          = 0, /* Will be set later. */
     .pt             = &mmu_pagetable_system
 };
+#endif
 
 #define PTREGION_SIZE \
     MMU_PAGE_CNT_BY_RANGE(PTMAPPER_PT_START, PTMAPPER_PT_END, 1048576) /* MB */
@@ -162,7 +164,7 @@ SYSCTL_UINT(_vm, OID_AUTO, ptm_mem_tot, CTLFLAG_RD,
 void ptmapper_init(void)
 {
     SUBSYS_INIT();
-    KERROR(KERROR_DEBUG, "ptmapper init");
+    KERROR(KERROR_LOG, "ptmapper init");
 
     /* Allocate memory for mmu_pagetable_master */
     if (ptmapper_alloc(&mmu_pagetable_master)) {
@@ -179,14 +181,34 @@ void ptmapper_init(void)
     mmu_init_pagetable(&mmu_pagetable_system);
 
     /* Calculate physical address space of the shared region. */
+#if 0
     mmu_region_shared.paddr = __text_shared_start;
     mmu_region_shared.num_pages =
-        MMU_PAGE_CNT_BY_RANGE(__text_shared_start, __text_shared_end, 4096);
+        MMU_PAGE_CNT_BY_RANGE((intptr_t)(__text_shared_start), (intptr_t)(__text_shared_end), 4096);
+    {
+        char buf[80];
+        ksprintf(buf, sizeof(buf), "%x, %x", &__text_shared_start, &__text_shared_end);
+        KERROR(KERROR_LOG, buf);
+    }
+#endif
 
     /* Fill page tables with translations & attributes */
-    mmu_map_region(&mmu_region_kernel);
-    mmu_map_region(&mmu_region_shared);
-    mmu_map_region(&mmu_region_page_tables);
+    {
+#if configDEBUG != 0
+        char buf[80];
+#define PRINTMAPREG(region) \
+        ksprintf(buf, sizeof(buf), "Mapped %s: %u pages/sections", #region, region.num_pages); \
+        KERROR(KERROR_DEBUG, buf);
+#else
+#define PRINTMAPREG(region)
+#endif
+        mmu_map_region(&mmu_region_kernel);
+        PRINTMAPREG(mmu_region_kernel);
+        //mmu_map_region(&mmu_region_shared);
+        //PRINTMAPREG(mmu_region_shared);
+        mmu_map_region(&mmu_region_page_tables);
+        PRINTMAPREG(mmu_region_page_tables);
+    }
 
     /* Activate page tables */
     mmu_attach_pagetable(&mmu_pagetable_master); /* Load L1 TTB */
@@ -247,7 +269,7 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
         ptm_nr_pt++;
         ptm_mem_free -= bsize;
     } else {
-        KERROR(KERROR_ERR, "Out of page memory");
+        KERROR(KERROR_ERR, "Out of page table memory");
         retval = -1;
     }
 

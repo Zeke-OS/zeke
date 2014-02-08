@@ -52,6 +52,7 @@ void mmu_init(void)
     uint32_t value, mask;
 
     SUBSYS_INIT();
+    SUBSYS_DEP(interrupt_preinit);
     SUBSYS_DEP(ptmapper_init);
 
     KERROR(KERROR_LOG, "MMU init");
@@ -65,7 +66,6 @@ void mmu_init(void)
     value = MMU_ZEKE_C1_DEFAULTS;
     mask = MMU_ZEKE_C1_DEFAULTS;
     mmu_control_set(value, mask);
-    // TODO There still seems to be some bug :'(
 
     KERROR(KERROR_LOG, "MMU init OK");
 }

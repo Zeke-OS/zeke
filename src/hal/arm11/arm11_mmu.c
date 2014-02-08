@@ -64,6 +64,13 @@ int mmu_init_pagetable(mmu_pagetable_t * pt)
     uint32_t pte = MMU_PTE_FAULT;
     uint32_t * p_pte = (uint32_t *)pt->pt_addr; /* points to a pt entry in PT */
 
+#if config_DEBUG != 0
+    if (p_pte == 0) {
+        KERROR(KERROR_ERR, "Page table address can't be null.");
+        return -1;
+    }
+#endif
+
     switch (pt->type) {
         case MMU_PTT_COARSE:
             i = MMU_PTSZ_COARSE / 4 / 32; break;
@@ -71,7 +78,7 @@ int mmu_init_pagetable(mmu_pagetable_t * pt)
             i = MMU_PTSZ_MASTER / 4 / 32; break;
         default:
             KERROR(KERROR_ERR, "Unknown page table type.");
-            return -1;
+            return -2;
     }
 
     __asm__ volatile (
@@ -260,9 +267,15 @@ int mmu_attach_pagetable(mmu_pagetable_t * pt)
 
     ttb = (uint32_t *)pt->master_pt_addr;
 
+#if configDEBUG != 0
+    if (ttb == 0)
+        KERROR(KERROR_ERR, "pt->master_pt_addr can't be null");
+#endif
+
+
     switch (pt->type) {
         case MMU_PTT_MASTER:
-            /* TTB -> CP15:c2:c0 */
+            /* TTB -> CP15:c2:c0,0 : TTBR0 */
             __asm__ volatile (
                 "MCR p15, 0, %[ttb], c2, c0, 0"
                  :
