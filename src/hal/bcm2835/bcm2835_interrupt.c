@@ -127,7 +127,7 @@ void interrupt_clear_timer(void)
     if (val == 0) {
         mmio_write(ARM_TIMER_IRQ_CLEAR, 0);
         mmio_end();
-        bcm2835_uputc('C'); /* Timer debug print */
+        //bcm2835_uputc('C'); /* Timer debug print */
         flag_kernel_tick = 1;
     } else mmio_end();
 }
