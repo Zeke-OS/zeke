@@ -131,10 +131,6 @@ static void sched_thread_remove(pthread_t id);
 void sched_init(void)
 {
     SUBSYS_INIT("Init scheduler: tiny");
-    static int num = 0;
-    char buf[80];
-    ksprintf(buf, sizeof(buf), "fuu %u", num);
-    KERROR(KERROR_DEBUG, buf);
 
     pthread_t tid;
     pthread_attr_t attr = {
