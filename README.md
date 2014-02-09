@@ -48,11 +48,8 @@ Port status
     +-----------+-----------------------+
     | HAL       | Status                |
     +-----------+-----------------------+
-    | ARM9      | Not fully implemented |
     | ARM11     | OK                    |
-    | Cortex-M  | Won't compile         |
     +-----------+-----------------------+
-    | BCM2835   | OK                    |
-    | STM32F0   | Won't compile         |
+    | BCM2835   | Boots                 |
     +-----------+-----------------------+
 
