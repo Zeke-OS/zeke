@@ -44,9 +44,9 @@
 #endif
 
 #include <stddef.h>
+#include <autoconf.h>
 #include <kerror.h>
 #include <sched.h>
-#include <hal/hal_mcu.h>
 #include "arm11.h"
 
 volatile uint32_t flag_kernel_tick = 0;

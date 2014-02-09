@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Hardware Abstraction Layer for the CPU core
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
@@ -43,6 +43,8 @@
 #include <syscalldef.h>
 #include <kernel.h>
 
+extern volatile uint32_t flag_kernel_tick;
+
 /**
  * Init stack frame.
  * @param thread_def Thread definitions
@@ -69,7 +71,6 @@ uint32_t syscall(uint32_t type, void * p);
 int test_and_set(int * lock);
 
 /* Core Implementation must declare following inlined functions:
- * + inline void eval_kernel_tick(void)             (Depends on hw)
  * + inline void * rd_thread_stack_ptr(void)
  * + inline void wr_thread_stack_ptr(void * ptr)
  * and these can be done as either inlined functions or macros:
@@ -83,8 +84,6 @@ int test_and_set(int * lock);
 
 #if configARM_PROFILE_M != 0 /* All M profile cores are handled in one file. */
 #include "cortex_m/cortex_m.h"
-#elif configARCH == __ARM4T__ /* ARM9 uses ARM4T arch */
-#include "arm9/arm9.h"
 #elif configARCH == __ARM6__ || __ARM6K__ /* ARM11 uses ARMv6 arch */
 #include "arm11/arm11.h"
 #elif PU_TEST_BUILD == 1

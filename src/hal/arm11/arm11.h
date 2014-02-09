@@ -43,9 +43,9 @@
 #ifndef ARM11_H
 #define ARM11_H
 
+#include <autoconf.h>
 #include <kernel.h>
 #include <sched.h>
-#include <hal/hal_mcu.h>
 #include <hal/hal_core.h>
 
 #if configARM_PROFILE_M != 0

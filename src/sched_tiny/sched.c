@@ -35,17 +35,16 @@
   * @{
   */
 
-#include <stdint.h>
-#include <stddef.h>
-#include <kstring.h>
-#include <kinit.h>
-
 #ifndef KERNEL_INTERNAL
 #define KERNEL_INTERNAL
 #endif
 
+#include <stdint.h>
+#include <stddef.h>
+#include <autoconf.h>
+#include <kstring.h>
+#include <kinit.h>
 #include <hal/hal_core.h>
-#include <hal/hal_mcu.h>
 #include "heap.h"
 #if configFAST_FORK != 0
 #include <queue.h>
