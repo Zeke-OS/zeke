@@ -35,7 +35,7 @@
 * @{
 */
 
-/** @addtogroup BCM2835
+/** @addtogroup ARM11
 * @{
 */
 
@@ -45,77 +45,52 @@
 
 #include <kinit.h>
 #include <kerror.h>
-#include "bcm2835_mmio.h"
-#include "bcm2835_interrupt.h"
 
-#define ARM_TIMER_PRESCALE_1    0x0
-#define ARM_TIMER_PRESCALE_16   0x4
-#define ARM_TIMER_PRESCALE_256  0x8
+void arm_interrupt_preinit(void);
 
-#define ARM_TIMER_16BIT         0x0
-#define ARM_TIMER_23BIT         0x2
+HW_PREINIT_ENTRY(arm_interrupt_preinit);
 
-#define ARM_TIMER_EN            0x80
-#define ARM_TIMER_INT_EN        0x20
-
-/* Peripheral Addresses */
-#define IRQ_ENABLE1             0x2000b210
-#define IRQ_ENABLE2             0x2000b214
-#define IRQ_ENABLE_BASIC        0x2000b218
-
-#define ARM_TIMER_LOAD          0x2000b400
-#define ARM_TIMER_VALUE         0x2000b404
-#define ARM_TIMER_CONTROL       0x2000b408
-#define ARM_TIMER_IRQ_CLEAR     0x2000b40c
-/* End of Peripheral Addresses */
-
-#define SYS_CLOCK       700000 /* kHz */
-#define ARM_TIMER_FREQ  configSCHED_HZ
-
-void interrupt_clear_timer(void);
-void bcm_interrupt_postinit(void);
-
-HW_POSTINIT_ENTRY(bcm_interrupt_postinit);
-
-
-extern volatile uint32_t flag_kernel_tick;
-void interrupt_clear_timer(void)
+/**
+ * Interrupt vectors.
+ *
+ * @ note This needs to be aligned to 32 bits as the bottom 5 bits of the vector
+ * address as set in the control coprocessor must be zero.
+ */
+__attribute__ ((naked, aligned(32))) static void interrupt_vectors(void)
 {
-    uint32_t val;
-
-    mmio_start();
-    val = mmio_read(ARM_TIMER_VALUE);
-    if (val == 0) {
-        mmio_write(ARM_TIMER_IRQ_CLEAR, 0);
-        mmio_end();
-        //bcm2835_uputc('C'); /* Timer debug print */
-        flag_kernel_tick = 1;
-    } else mmio_end();
-}
-
-void bcm_interrupt_postinit(void)
-{
-    KERROR(KERROR_LOG, "Starting ARM timer");
-
-    mmio_start();
-
-    /* Use the ARM timer - BCM 2832 peripherals doc, p.196 */
-    /* Enable ARM timer IRQ */
-    mmio_write(IRQ_ENABLE_BASIC, 0x00000001);
-
-    /* Interrupt every (value * prescaler) timer ticks */
-    mmio_write(ARM_TIMER_LOAD, (SYS_CLOCK / (ARM_TIMER_FREQ * 16)));
-
-    mmio_write(ARM_TIMER_CONTROL,
-            (ARM_TIMER_PRESCALE_16 | ARM_TIMER_EN | ARM_TIMER_INT_EN | ARM_TIMER_23BIT));
-
-    KERROR(KERROR_DEBUG, "OK");
+    /* Processor will never jump to bad_exception when reset is hit because
+     * interrupt vector offset is set back to 0x0 on reset. */
+    __asm__ volatile (          /* Event                    Pri LnAddr Mode */
+        "b bad_exception\n\t"   /* Reset                    1   8      abt  */
+        "b undef_handler\n\t"   /* Undefined instruction    6   0      und  */
+        "b interrupt_svc\n\t"   /* Software interrupt       6   0      svc  */
+        "b interrupt_pabt\n\t"  /* Prefetch abort           5   4      abt  */
+        "b interrupt_dabt\n\t"  /* Data abort               2   8      abt  */
+        "b bad_exception\n\t"   /* Unused vector                            */
+        "b interrupt_sys\n\t"   /* IRQ                      4   4      irq  */
+        "b bad_exception\n\t"   /* FIQ                      3   4      fiq  */
+    );
 }
 
 /**
-* @}
-*/
+ * Unhandled exception
+ */
+__attribute__ ((naked)) void bad_exception(void)
+{
+    KERROR(KERROR_CRIT, "This is like panic but unexpected.");
+    while (1) {
+        __asm__ volatile ("wfe");
+    }
+}
 
-/**
-* @}
-*/
+void arm_interrupt_preinit(void)
+{
+    SUBSYS_INIT();
+    KERROR(KERROR_LOG, "Enabling interrupts");
+
+    /* Set interrupt base register */
+    __asm__ volatile ("mcr p15, 0, %[addr], c12, c0, 0"
+            : : [addr]"r" (&interrupt_vectors));
+    /* Turn on interrupts */
+    __asm__ volatile ("cpsie i");
+}

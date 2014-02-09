@@ -58,6 +58,7 @@
 #include <pthread.h>
 #include <sys/sysctl.h>
 #include <errno.h>
+#include <kerror.h> /* TODO remove this? */
 #include <sched.h>
 
 /* Definitions for load average calculation **********************************/
@@ -175,7 +176,7 @@ void * idleTask(/*@unused@*/ void * arg)
 {
 #ifndef PU_TEST_BUILD
     while(1) {
-        //bcm2835_uputc('I');
+        bcm2835_uputc('I');
         idle_sleep();
     }
 #endif
@@ -314,7 +315,8 @@ static void sched_thread_init(pthread_t i, ds_pthread_create_t * thread_def,
     memset(&(task_table[i]), 0, sizeof(threadInfo_t));
 
     /* Return thread id */
-    *(thread_def->thread) = (pthread_t)i;
+    if (thread_def->thread)
+        *(thread_def->thread) = (pthread_t)i;
 
     /* Init core specific stack frame */
     init_stack_frame(thread_def, pthread_exit, priv);

@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    startup_bcm2835.S
+ * @file    arm11_startup.S
  * @author  Olli Vanhoja
- * @brief   BCM2835 startup code.
+ * @brief   Startup code for ARM11.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,25 +36,25 @@
 .globl Start
 
 /* Entry point for the kernel.
- * r15 should begin execution at 0x8000.
  */
 Start:
-    /* See memory_map.md for explanation about physical memory layout on
-     * bcm2832.
-     */
-
     /* Init stack pointers */
     mov     r4, #0x0 /* Can be changed to something else if memmap is changed. */
     cps     #0x13   /* Change to supervisor (SVC) mode */
-    add     sp, r4, #0x2400
+    ldr     r5, =0x2fff
+    add     sp, r4, r5
     cps     #0x17   /* Change to Abort mode */
-    add     sp, r4, #0x2800
+    ldr     r5, =0x4fff
+    add     sp, r4, r5
     cps     #0x12   /* Change to IRQ mode */
-    add     sp, r4, #0x2c00
+    ldr     r5, =0x6fff
+    add     sp, r4, r5
     cps     #0x1f   /* Change to system mode */
-    add     sp, r4, #0x3c00
-    /* System mode stack is also tecnically used for user mode but we'll soon
-     * have new per thread stacks.  */
+    ldr     r5, =0x7fff
+    add     sp, r4, r5
+    /* System mode stack is also technically used for user mode but we'll soon
+     * have new per thread stacks. Additionally some of the stacks will overlap
+     * with ATAGs so we must read ATAGs out before using those stacks. */
     /* Stay in system mode for now. */
 
     /* Turn on unaligned memory access */
@@ -91,9 +91,9 @@ Start:
      *      depending on bootloader configuration etc.
      *      http://www.simtec.co.uk/products/SWLINUX/files/booting_article.html
      */
-    ldr     r3, =3138
-    cmp     r1, r3
-    /* TODO */
+    @ldr     r3, =3138
+    @cmp     r1, r3
+    /* TODO Store this number */
     @bne halt
 
     ldr     r3, =atag_scan
@@ -101,10 +101,6 @@ Start:
 
     /* Call static constructors & initializers */
     ldr     r3, =exec_init_array
-    blx     r3
-
-    /* Call kernel init */
-    ldr     r3, =kinit
     blx     r3
 
     /* Wait here until scheduler kicks in. */

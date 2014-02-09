@@ -18,11 +18,6 @@ ifeq ($(configARCH),__ARM6K__)
 	ASFLAGS  += -march=armv6k -EL
 endif
 
-# MCU specific flags
-ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
-	CCFLAGS  += -DUSE_STDPERIPH_DRIVER -DSTM32F0XX
-endif
-
 # Floating point hardware
 ifeq ($(configHFP),__HFP_VFP__)
 	ASFLAGS  += -mfpu=vfp
@@ -30,13 +25,10 @@ endif
 
 # Target specific Startup code & CRT ###########################################
 # Memmap & vector table is set per MCU/CPU model
-ifeq ($(configMCU_MODEL),MCU_MODEL_STM32F0)
-	MEMMAP = config/memmap_stm32f051x8.ld
-	STARTUP = src/hal/stm32f0/startup_stm32f0xx.S
-endif
 ifeq ($(configMCU_MODEL),MCU_MODEL_BCM2835)
 	MEMMAP = config/memmap_bcm2835.ld
-	STARTUP = src/hal/bcm2835/startup_bcm2835.S
+	# We may wan't to move this line to some where else
+	STARTUP = src/hal/arm11/arm11_startup.S
 endif
 # Check that MEMMAP and STARTUP are defined
 ifndef MEMMAP

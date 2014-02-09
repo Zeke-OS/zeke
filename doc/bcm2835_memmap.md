@@ -7,16 +7,17 @@ usage on Zeke. Some of these mappings are common to all ARM11 implementations.
     Address             | Z | Description
     ----------------------------------------------------------------------------
     Interrupt Vectors:  |   |
-    0x0000 -            |   | Default, Not used by Zeke
+    0x0 - 0xff          |   | Not used by Zeke
+    0x100  - 0x4000     |   | Typical placement of ATAGs
     Priv Stacks:        |   |
-    0x2000 - 0x2400     | x | Supervisor (SWI/SVC) stack
-    0x2401 - 0x2800     | x | Abort stack
-    0x2801 - 0x2c00     | x | IRQ stack
-    0x2c01 - 0x3c00     | x | System stack
+    0x1000 - 0x2fff     | x | Supervisor (SWI/SVC) stack
+    0x3000 - 0x4fff     | x | Abort stack
+    0x5000 - 0x6fff     | x | IRQ stack
+    0x7000 - 0x7fff     | x | System stack
     -                   |   |
     0x3c01 - 0x7fff     |   | Free space
     0x8000 - 0xfffff    | x | Kernel area (boot address)
-    0x00100000-         | x | Page Aable
+    0x00100000-         | x | Page Table
     0x002FFFFF          |   | Area
     0x00300000          | x | Dynmem
     0x00FFFFFF          |   | Area

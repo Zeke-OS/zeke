@@ -50,7 +50,7 @@ HW_PREINIT_ENTRY(mmu_init);
 void mmu_init(void)
 {
     SUBSYS_INIT();
-    SUBSYS_DEP(interrupt_preinit);
+    SUBSYS_DEP(arm_interrupt_preinit);
     SUBSYS_DEP(ptmapper_init);
 
     uint32_t value, mask;

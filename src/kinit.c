@@ -35,6 +35,7 @@
 #include <usrinit.h>
 #include <sched.h>
 #include <libkern.h>
+#include <kstring.h>
 #include <kinit.h>
 
 extern void (*__hw_preinit_array_start[]) (void) __attribute__((weak));
@@ -52,6 +53,8 @@ extern void (*__fini_array_end []) (void) __attribute__((weak));
 static char main_stack[configUSRINIT_SSIZE];
 
 static void exec_array(void (*a []) (void), int n);
+
+void kinit(void) __attribute__((constructor));
 
 /**
  * Run all kernel module initializers.
@@ -87,16 +90,28 @@ void exec_fini_array(void)
 void kinit(void)
 {
     SUBSYS_INIT();
+    SUBSYS_DEP(sched_init);
 
-    KERROR(KERROR_LOG, "Starting init");
+    KERROR(KERROR_LOG, "Load init");
     /* Create app_main thread */
-    pthread_attr_t main_thread = {
-        .tpriority = configUSRINIT_PRI,
-        .stackAddr = main_stack,
-        .stackSize = sizeof(main_stack)
+    pthread_attr_t init_attr = {
+        .tpriority  = configUSRINIT_PRI,
+        .stackAddr  = main_stack,
+        .stackSize  = sizeof(main_stack)
+    };
+    ds_pthread_create_t init_ds = {
+        .thread     = 0,
+        .start      = main,
+        .def        = &init_attr,
+        .argument   = 0
     };
     pthread_t tid;
-    pthread_create(&tid, &main_thread, &main, NULL);
+    char buf[80];
+
+    tid = sched_threadCreate(&init_ds, 1);
+
+    ksprintf(buf, sizeof(buf), "Init created with thread id: %u", tid);
+    KERROR(KERROR_DEBUG, buf);
 }
 
 static void random_init(void) __attribute__((constructor));
