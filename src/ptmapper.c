@@ -65,16 +65,12 @@ mmu_pagetable_t mmu_pagetable_system = {
 /* TODO Temporarily mapped as one big area */
 mmu_region_t mmu_region_kernel = {
     .vaddr          = MMU_VADDR_KERNEL_START,
-#if 0
     .num_pages      = MMU_PAGE_CNT_BY_RANGE(MMU_VADDR_KERNEL_START, \
                         MMU_VADDR_KERNEL_END, 4096),
-#endif
-    .num_pages      = 1,
     .ap             = MMU_AP_RWRW, /* TODO this must be changed later to RWNA */
     .control        = MMU_CTRL_MEMTYPE_WB,
     .paddr          = 0x0,
-    //.pt             = &mmu_pagetable_system
-    .pt             = &mmu_pagetable_master
+    .pt             = &mmu_pagetable_system
 };
 
 #if 0
@@ -229,8 +225,8 @@ void ptmapper_init(void)
     /* Activate page tables */
     mmu_attach_pagetable(&mmu_pagetable_master); /* Load L1 TTB */
     KERROR(KERROR_DEBUG, "Attached TTB mmu_pagetable_master");
-    //mmu_attach_pagetable(&mmu_pagetable_system); /* Add L2 pte into L1 master pt */
-    //KERROR(KERROR_DEBUG, "Attached mmu_pagetable_system");
+    mmu_attach_pagetable(&mmu_pagetable_system); /* Add L2 pte into L1 master pt */
+    KERROR(KERROR_DEBUG, "Attached mmu_pagetable_system");
 }
 
 /**

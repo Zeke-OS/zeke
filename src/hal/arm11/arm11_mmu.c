@@ -177,6 +177,12 @@ static void mmu_map_coarse_region(mmu_region_t * region)
     p_pte += (region->vaddr & 0x000ff000) >> 12;    /* First */
     p_pte += region->num_pages - 1;                 /* Last pte */
 
+#if configDEBUG
+        if (p_pte == 0)
+            KERROR(KERROR_ERR, "p_pte is null");
+#endif
+
+
     pte = region->paddr & 0xfffff000;       /* Set physical address */
     pte |= (region->ap & 0x3) << 4;         /* Set access permissions (AP) */
     pte |= (region->ap & 0x4) << 7;         /* Set access permissions (APX) */
