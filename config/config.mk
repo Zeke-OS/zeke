@@ -52,7 +52,7 @@ configKERROR_TTYS = 1#
 configDEBUG = 1#Additional debug messages
 
 # Processes
-configMAXPROC = 512# maxproc, default maximum number of processes.
+configMAXPROC = 5# maxproc, default maximum number of processes.
 
 # Scheduler Selection
 configSCHED_TINY = 1#

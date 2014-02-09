@@ -49,13 +49,11 @@ HW_PREINIT_ENTRY(mmu_init);
  */
 void mmu_init(void)
 {
-    SUBSYS_INIT();
+    SUBSYS_INIT("MMU init");
     SUBSYS_DEP(arm_interrupt_preinit);
     SUBSYS_DEP(ptmapper_init);
 
     uint32_t value, mask;
-
-    KERROR(KERROR_LOG, "MMU init");
 
     /* Set MMU_DOM_KERNEL as client and others to generate error. */
     value = MMU_DOMAC_TO(MMU_DOM_KERNEL, MMU_DOMAC_CL);

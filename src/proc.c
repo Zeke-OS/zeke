@@ -87,7 +87,7 @@ static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc);
 void proc_init(void) __attribute__((constructor));
 void proc_init(void)
 {
-    SUBSYS_INIT();
+    SUBSYS_INIT("Proc init");
     PROCARR_LOCK_INIT();
     realloc__procarr();
     memset(&_procarr, 0, SIZEOF_PROCARR);
@@ -98,11 +98,11 @@ static void realloc__procarr(void)
     proc_info_t ** tmp;
 
     PROCARR_LOCK();
-    /* TODO */
-    //tmp = krealloc(&_procarr, SIZEOF_PROCARR);
-    tmp = krealloc(_procarr, (3) * sizeof(proc_info_t *));
+    tmp = krealloc(_procarr, SIZEOF_PROCARR);
     if ((tmp == 0) && (_procarr == 0)) {
-        panic("Unable to allocate _procarr.");
+        char buf[80];
+        ksprintf(buf, sizeof(buf), "Unable to allocate _procarr (%u bytes)", SIZEOF_PROCARR);
+        panic(buf);
     }
     _procarr = tmp;
     _cur_maxproc = maxproc;

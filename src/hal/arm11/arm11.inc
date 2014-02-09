@@ -33,7 +33,7 @@
 
 /**
  * Save thread context.
- * Returns thread sp in r0 and spsr in r1.
+ * @return Returns thread sp in r0 and spsr in r1.
  */
 .macro pushcontext
     /* Store the original value of r0 */
@@ -62,7 +62,7 @@
 
 /**
  * Load thread context.
- * Returns thread lr in lr.
+ * @return Returns thread lr in lr.
  */
 .macro popcontext
     /* Get the thread stack pointer */
@@ -82,3 +82,21 @@
     /* Restore the return address */
     ldr     lr, [lr, #+60]
 .endm
+
+/**
+ * Attach process master page table.
+ * @param r0 process id.
+ */
+.macro attach_proc_mptable
+    bl      proc_get_pptable
+    bl      mmu_attach_pagetable
+.endm
+
+/**
+ * Attach kernel master page table.
+ */
+.macro attach_kernel_mptable
+    ldr     r0, =mmu_pagetable_master
+    bl      mmu_attach_pagetable
+.endm
+

@@ -70,7 +70,7 @@ void timers_init(void)
 {
     int i;
 
-    SUBSYS_INIT();
+    SUBSYS_INIT("Kernel timers init");
 
     timers_value = 0;
     for (i = 0; i < configTIMERS_MAX; i++) {

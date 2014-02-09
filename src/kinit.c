@@ -89,10 +89,9 @@ void exec_fini_array(void)
  */
 void kinit(void)
 {
-    SUBSYS_INIT();
+    SUBSYS_INIT("Load init");
     SUBSYS_DEP(sched_init);
 
-    KERROR(KERROR_LOG, "Load init");
     /* Create app_main thread */
     pthread_attr_t init_attr = {
         .tpriority  = configUSRINIT_PRI,

@@ -117,7 +117,7 @@ void sysctl_init(void)
 {
     struct sysctl_oid ** oidp;
 
-    SUBSYS_INIT();
+    SUBSYS_INIT("Sysctl init");
     SYSCTL_LOCK_INIT();
     SYSCTL_LOCK();
     SET_FOREACH(oidp, sysctl_set)

@@ -33,22 +33,28 @@
 #ifndef KINIT_H
 #define KINIT_H
 
+#include <kerror.h>
+
 /**
  * Subsystem initializer prologue.
+ * @todo TODO Fix order of init messages
  */
-#define SUBSYS_INIT()               \
+#define SUBSYS_INIT(msg)            \
     static int __subsys_init = 0;   \
     do {                            \
-    if (__subsys_init) return;      \
-    else __subsys_init = 1;         \
-    } while (0)
+    if (__subsys_init != 0) return; \
+    else { __subsys_init = 1;       \
+           KERROR(KERROR_LOG, msg); \
+    } } while (0)
 
 /**
  * Subsystem initializer dependency.
  * Mark that subsystem initializer depends on dep.
  * @param dep is a name of an intializer function.
  */
-#define SUBSYS_DEP(dep) extern void dep(void); dep()
+#define SUBSYS_DEP(dep)             \
+    extern void dep(void);          \
+    dep()
 
 /**
  * hw_preinit initializer functions are run before any other kernel initializer

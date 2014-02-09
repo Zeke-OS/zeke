@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file bcm2835_int_handlers.S
+ * @file arm11_int_handlers.S
  * @author Olli Vanhoja
  * @brief Interrupt service routine handlers.
  * @section LICENSE
@@ -43,13 +43,27 @@
 interrupt_svc:
     push    {r1-r12, lr}
 
+    /* Attach kernel master page table */
+    push    {r0-r3}
+    attach_kernel_mptable
+    /* We could actually panic here if attach failed */
+    pop     {r0-r3}
+
     @ Call kernel's internal syscall handler
     bl      _intSyscall_handler
 
     cmp     r1, #1              /* On ARM11 r1 is set to 1 if syscall was */
                                 /* blocking and otherwise 0. */
+    bne     Lret_svc            /* Syscall was not blocking so we can return. */    
     pop     {r1-r12, lr}
-    beq     interrupt_sys       /* Jump if thread was blocked */
+    add     lr, lr, #4          /* interrupt_sys will expect this... */
+    b       interrupt_sys       /* Syscall was blocking. */
+Lret_svc:
+    /* Attach process master page table */
+    ldr     r0, =current_process_id
+    ldr     r0, [r0]
+    attach_proc_mptable
+
     movs    pc, lr
 
 
@@ -77,12 +91,11 @@ interrupt_sys:
     bl      cpu_set_cid
 
     /* Attach kernel master page table */
-    ldr     r0, =mmu_pagetable_master
-    bl      mmu_attach_pagetable
+    attach_kernel_mptable
 
     /* Get current PID */
-    ldr     r4, =current_process_id
-    ldr     r4, [r4]
+    ldr     r5, =current_process_id
+    ldr     r5, [r5]
 
     /* Run scheduler */
     bl      rd_thread_stack_ptr
@@ -90,6 +103,7 @@ interrupt_sys:
     bl      wr_thread_stack_ptr
 
     /* End of kernel tick */
+    ldr     r5, =flag_kernel_tick
     mov     r0, #0
     str     r0, [r5]
 
@@ -102,8 +116,7 @@ interrupt_sys:
 
     /* Attach process page table */
     mov     r0, r5
-    bl      proc_get_pptable
-    bl      mmu_attach_pagetable
+    attach_proc_mptable
 
     /* Set process Context ID to the value of current PID */
     mov     r0, r5

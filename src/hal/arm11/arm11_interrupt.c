@@ -85,8 +85,7 @@ __attribute__ ((naked)) void bad_exception(void)
 
 void arm_interrupt_preinit(void)
 {
-    SUBSYS_INIT();
-    KERROR(KERROR_LOG, "Enabling interrupts");
+    SUBSYS_INIT("Enabling interrupts");
 
     /* Set interrupt base register */
     __asm__ volatile ("mcr p15, 0, %[addr], c12, c0, 0"
