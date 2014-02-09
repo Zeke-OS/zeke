@@ -129,11 +129,6 @@ osStatus osDelay(uint32_t millisec)
 
     result = (osStatus)syscall(SYSCALL_SCHED_DELAY, &millisec);
 
-    if (result != osErrorResource) {
-        /* Request context switch */
-        req_context_switch();
-    }
-
     return result;
 }
 

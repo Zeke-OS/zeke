@@ -99,7 +99,7 @@ void init_stack_frame(ds_pthread_create_t * thread_def,
     thread_frame->sp = (uint32_t)thread_frame;
     thread_frame->pc = ((uint32_t)(thread_def->start)) + 4;
     thread_frame->lr = (uint32_t)a_del_thread;
-    thread_frame->psr = priv ? KERNELM_PSR : DEFAULT_PSR;
+    thread_frame->psr = priv ? SUPERVISOR_PSR : USER_PSR;
 }
 
 uint32_t syscall(uint32_t type, void * p)

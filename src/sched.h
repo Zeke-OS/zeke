@@ -188,7 +188,8 @@ void sched_thread_sleep_current(void);
 void sched_get_loads(uint32_t loads[3]);
 
 void sched_syscall_block(void);
-void sched_syscall_unblock(void);
+void sched_syscall_unblock(pthread_t id);
+void sched_syscall_unblock_parent(void);
 
 /**
   * @}

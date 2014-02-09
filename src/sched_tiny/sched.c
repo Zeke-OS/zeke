@@ -175,7 +175,7 @@ void * idleTask(/*@unused@*/ void * arg)
 {
 #ifndef PU_TEST_BUILD
     while(1) {
-        bcm2835_uputc('I');
+        //bcm2835_uputc('I');
         idle_sleep();
     }
 #endif
@@ -464,13 +464,19 @@ void sched_syscall_block(void)
     current_thread->flags |= SCHED_WAIT_FLAG;
 }
 
+void sched_syscall_unblock(pthread_t id)
+{
+    task_table[id].flags &= ~SCHED_WAIT_FLAG;
+    sched_thread_set_exec(id);
+}
+
 /**
  * Blocking syscall is returning.
  * Reschedule a thread that was blocked by a syscall, the blocked thread should be
  * set as the parent of for the kworker thread.
  * @note This function should be only called by a kworker thread.
  */
-void sched_syscall_unblock(void)
+void sched_syscall_unblock_parent(void)
 {
     threadInfo_t * th;
 
@@ -645,9 +651,7 @@ osStatus sched_threadDelay(uint32_t millisec)
     }
 
     if (current_thread->event.status != osErrorResource) {
-        /* This thread shouldn't get woken up by signals */
-        current_thread->flags |= SCHED_NO_SIG_FLAG;
-        sched_thread_sleep_current();
+        sched_syscall_block(); /* TODO Move this line to timers_add()? */
     }
 
     return current_thread->event.status;
@@ -672,7 +676,7 @@ uintptr_t sched_syscall(uint32_t type, void * p)
             /* No permission to read/write */
             /* TODO Signal/Kill? */
             current_thread->errno = EFAULT;
-            return -1;
+            return -EFAULT;
         }
         copyin(p, &val, sizeof(uint32_t));
         return (uint32_t)sched_threadDelay(val);

@@ -44,7 +44,7 @@ interrupt_svc:
     push    {r1-r12, lr}
 
     /* Attach kernel master page table */
-    push    {r0-r3}
+    push    {r0-r3}             /* Preserve syscall argument(s) */
     attach_kernel_mptable
     /* We could actually panic here if attach failed */
     pop     {r0-r3}
@@ -54,16 +54,19 @@ interrupt_svc:
 
     cmp     r1, #1              /* On ARM11 r1 is set to 1 if syscall was */
                                 /* blocking and otherwise 0. */
-    bne     Lret_svc            /* Syscall was not blocking so we can return. */    
+    bne     Lret_svc            /* Syscall was not blocking so we can return. */  
     pop     {r1-r12, lr}
     add     lr, lr, #4          /* interrupt_sys will expect this... */
     b       interrupt_sys       /* Syscall was blocking. */
 Lret_svc:
+    mov     r4, r0              /* Preserve syscall retval */
     /* Attach process master page table */
     ldr     r0, =current_process_id
     ldr     r0, [r0]
     attach_proc_mptable
 
+    mov     r0, r4              /* Restore syscall retval */
+    pop     {r1-r12, lr}
     movs    pc, lr
 
 

@@ -94,7 +94,9 @@ uintptr_t _intSyscall_handler(uint32_t type, void * p)
         return 0; /* NULL */
     }
 
-    current_thread->errno = 0; /* Default value for errno */
+    /* TODO This is not the smartest solution here... */
+    if (type != SYSCALL_SCHED_THREAD_GETERRNO)
+        current_thread->errno = 0; /* Default value for errno */
     fpt = syscall_callmap[major];
     {
         uintptr_t retval;

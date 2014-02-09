@@ -91,7 +91,10 @@ void timers_run(void)
         uint32_t exp = timers_array[i].expires;
         if (timers_array[i].flags & TIMERS_FLAG_ENABLED) {
             if (exp == value) {
-                sched_thread_set_exec(timers_array[i].thread_id);
+                sched_syscall_unblock(timers_array[i].thread_id);
+#if 0
+                KERROR(KERROR_DEBUG, "DING");
+#endif
 
                 if (!(timers_array[i].flags & TIMERS_FLAG_PERIODIC)) {
                     /* Release the timer */

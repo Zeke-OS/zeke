@@ -201,8 +201,8 @@ static int test_ap_priv(uint32_t rw, uint32_t ap)
 int useracc(void * addr, int len, int rw)
 {
     /* TODO */
-    if (curproc == 0)
-        return 0;
+    //if (curproc == 0)
+    //    return 0;
 
     return (1 == 1);
 }

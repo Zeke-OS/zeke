@@ -163,7 +163,6 @@ void sysctl_register_oid(struct sysctl_oid * oidp)
         oidp->oid_number = newoid++;
         if (newoid == 0x7fffffff) {
             panic("out of oids");
-            //KERROR(KERROR_ERR, "out of oids");
         }
     }
 #if 0
@@ -866,8 +865,7 @@ static int sysctl_old_user(struct sysctl_req * req, const void * p, size_t l)
         if (i > len - origidx)
             i = len - origidx;
         if (req->lock == REQ_WIRED) {
-            error = copyout(p, (char *)req->oldptr +
-                    origidx, i);
+            error = copyout(p, (char *)req->oldptr + origidx, i);
         } else
             error = copyout(p, (char *)req->oldptr + origidx, i);
         if (error != 0)
@@ -893,6 +891,7 @@ static int sysctl_new_user(struct sysctl_req * req, void * p, size_t l)
     return error;
 }
 
+#if 0
 /**
  * Wire the user space destination buffer.  If set to a value greater than
  * zero, the len parameter limits the maximum amount of wired memory.
@@ -920,8 +919,10 @@ int sysctl_wire_old_buffer(struct sysctl_req * req, size_t len)
         req->lock = REQ_WIRED;
         req->validlen = wiredlen;
     }
+
     return 0;
 }
+#endif
 
 /*
  * Traverse our tree, and find the right node, execute whatever it points

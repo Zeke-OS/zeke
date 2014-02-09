@@ -33,6 +33,10 @@
 
 #include <kernel.h>
 #include <sys/_kservices.h>
+#include <syscall.h>
+#include <kerror.h> /* Strictly kernel space thing */
+#include <kstring.h> /* -"- */
+#include <sys/sysctl.h>
 #include "usrinit.h"
 
 dev_t dev_tty0 = DEV_MMTODEV(2, 0);
@@ -47,23 +51,40 @@ char banner[] = "\
 ";
 
 static void print_message(const char * message);
+static int usr_name2oid(char * name, int * oidp);
 
 /**
  * main thread; main process.
  */
 void * main(void * arg)
 {
-/*    if (osDevOpen(dev_tty0)) {
-        while (1);
-    }
+    int mib_tot[10];
+    int mib_free[10];
+    int len;
+    int old_value_tot, old_value_free;
+    int old_len = sizeof(old_value_tot);
+    char buf[80];
 
-    print_message(banner);
-    //osDelay(50);
-*/
+    KERROR(KERROR_DEBUG, "Init v0.0.1");
+    len = usr_name2oid("vm.dynmem_tot", mib_tot);
+    usr_name2oid("vm.dynmem_free", mib_free);
+
     while(1) {
         bcm2835_uputc('T');
-        //print_message("System READY");
-        //osDelay(500);
+        if(sysctl(mib_tot, len, &old_value_tot, &old_len, 0, 0)) {
+            ksprintf(buf, sizeof(buf), "Error: %u",
+                    (int)syscall(SYSCALL_SCHED_THREAD_GETERRNO, NULL));
+            KERROR(KERROR_ERR, buf);
+        }
+        if(sysctl(mib_free, len, &old_value_free, &old_len, 0, 0)) {
+            ksprintf(buf, sizeof(buf), "Error: %u",
+                    (int)syscall(SYSCALL_SCHED_THREAD_GETERRNO, NULL));
+            KERROR(KERROR_ERR, buf);
+        }
+        ksprintf(buf, sizeof(buf), "dynmem used: %u/%u",
+                old_value_tot - old_value_free, old_value_tot);
+        KERROR(KERROR_LOG, buf);
+        osDelay(5000);
     }
 }
 
@@ -74,4 +95,21 @@ static void print_message(const char * message)
     while (message[i] != '\0') {
         //osDevCwrite(message[i++], dev_tty0);
     }
+}
+
+static int usr_name2oid(char * name, int * oidp)
+{
+    int oid[2];
+    int i;
+    size_t j;
+
+    oid[0] = 0;
+    oid[1] = 3;
+
+    j = CTL_MAXNAME * sizeof(int);
+    i = sysctl(oid, 2, oidp, &j, name, strlenn(name, 80));
+    if (i < 0)
+        return (i);
+    j /= sizeof(int);
+    return (j);
 }
