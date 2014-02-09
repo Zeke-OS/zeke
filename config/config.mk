@@ -43,13 +43,14 @@ configMMU = 1# MMU support
 configUART = 1#
 configATAG = 1# Support bootloader ATAGs
 configMP = 0# Enable multi-processing support
+configREEMPT = 0# Reservation for full pre-emptible kernel
 
 # Kernel logging methods (Select one or none)
-configKERROR_LAST = 0# Store last n log messages in buffer
-configKERROR_TTYS = 1#
+configKERROR_LAST = 0# Store last n log messages in buffer.
+configKERROR_TTYS = 1# Print kernel messages to serial tty.
 
 # Kernel logging options
-configDEBUG = 1#Additional debug messages
+configDEBUG = 1#Additional debug messages and asserts.
 
 # Processes
 configMAXPROC = 5# maxproc, default maximum number of processes.
@@ -62,7 +63,6 @@ configSCHED_MAX_THREADS = 10# Maximum number of threads
 configFAST_FORK = 0# Use a queue to find the next free threadId.
 configSCHED_HZ = 100u# Scheduler frequency in Hz
 configSCHED_LAVG_PER = SCHED_LAVGPERIOD_11SEC#
-configHEAP_BOUNDS_CHECK = 0# Enable or disable heap bounds check
 
 # Maximum number of timers available
 configTIMERS_MAX = 4#

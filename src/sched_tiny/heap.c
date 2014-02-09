@@ -35,7 +35,7 @@
 #include "sched.h"
 #include "heap.h"
 
-#if configHEAP_BOUNDS_CHECK == 1
+#if configDEBUG != 0
 #define HEAP_BOUNDS_CHECK 1
 #endif
 
