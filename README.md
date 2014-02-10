@@ -27,19 +27,18 @@ Key features
 ------------
 - Dynamic prioritizing pre-emptive scheduling with penalties to prevent
   starvation
-- Signal flag based notify/wake-up from sleep with event timeouts
 - System call based kernel services
-- Partly CMSIS-RTOS compliant / CMSIS-RTOS-like API
-- High configurability & Adjustable footprint (between 2 kB and < 30 kB)
+- High configurability & Adjustable footprint
+- BSD-like sysctl interface
+- Kernel threads
 
 News
 ----
+- There will be optional support for full pre-emption of kernel mode
 - Merging some things from freebsd (signal handling, sysctl)
 - Dev subsys removed and will be soon replaced with devfs and
   virtual file system
 - Coming "soon": Full POSIX process & thread support
-- Dynamic memory allocation for page tables is working. Dynmem allocation is
-  still untested but I'll be working on it next. 
 - ARM11/Raspberry Pi port ongoing
 
 Port status
