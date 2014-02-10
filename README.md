@@ -53,3 +53,37 @@ Port status
     | BCM2835   | Boots                 |
     +-----------+-----------------------+
 
+Prerequisites
+-------------
+
+To successfully compile Zeke, you'll need the following packages/tools:
+
+- make
+- gcc-arm-none-eabi
+- llvm-3.0
+- clang 3.0
+- binutils
+- bash
+
+Compiling
+---------
+
+Run make help for latests information about targets and compilation flags.
+
+Run Zeke in emulator
+--------------------
+
+Qemu from rpi branch of git@github.com:Torlus/qemu.git repository seems to work
+best for BCM2835/Raspberry Pi version of Zeke.
+
+    ../src/configure --prefix=[PATH TO BIN] --target-list=arm-softmmu,arm-linux-user,armeb-linux-user --enable-sdl
+    make -j4 && sudo make install
+
+Run Zeke on real hw
+-------------------
+
+Zeke should boot just fine with practically any bootloader that is capable of
+loading linux image. However Zeke only supports ATAGs so some older bootloader
+(like found in Raspbian is better) but ATAGs are just extra so basically any
+bootloader should work.
+
