@@ -63,6 +63,7 @@ To successfully compile Zeke, you'll need the following packages/tools:
 - llvm-3.0
 - clang 3.0
 - binutils
+- unifdef
 - bash
 
 Compiling
