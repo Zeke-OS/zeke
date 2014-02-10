@@ -182,8 +182,8 @@ __attribute__ ((naked)) void undef_handler(void)
 {
     /* TODO */
 
+    panic("Undefined handler");
     while (1) {
-        KERROR(KERROR_CRIT, "Undefined handler");
         __asm__ volatile ("wfe");
     }
 

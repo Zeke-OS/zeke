@@ -50,8 +50,10 @@ char banner[] = "\
              .||. ||.'|...'\n\n\
 ";
 
+static void test_thread(void *);
 static void print_message(const char * message);
 static int usr_name2oid(char * name, int * oidp);
+static void thread_stat(void);
 
 /**
  * main thread; main process.
@@ -64,13 +66,19 @@ void * main(void * arg)
     int old_value_tot, old_value_free;
     int old_len = sizeof(old_value_tot);
     char buf[80];
+    pthread_attr_t attr = {
+    };
+    pthread_t thread_id;
+
+    //pthread_create(&thread_id, &attr, test_thread, 0);
 
     KERROR(KERROR_DEBUG, "Init v0.0.1");
     len = usr_name2oid("vm.dynmem_tot", mib_tot);
     usr_name2oid("vm.dynmem_free", mib_free);
 
     while(1) {
-        bcm2835_uputc('T');
+        //bcm2835_uputc('T');
+        thread_stat();
         if(sysctl(mib_tot, len, &old_value_tot, &old_len, 0, 0)) {
             ksprintf(buf, sizeof(buf), "Error: %u",
                     (int)syscall(SYSCALL_SCHED_THREAD_GETERRNO, NULL));
@@ -85,6 +93,15 @@ void * main(void * arg)
                 old_value_tot - old_value_free, old_value_tot);
         KERROR(KERROR_LOG, buf);
         osDelay(5000);
+    }
+}
+
+static void test_thread(void * arg)
+{
+    while(1) {
+        /* TODO Nicely any call seems to cause data abort :) */
+        osDelay(2000);
+        thread_stat();
     }
 }
 
@@ -112,4 +129,17 @@ static int usr_name2oid(char * name, int * oidp)
         return (i);
     j /= sizeof(int);
     return (j);
+}
+
+static void thread_stat(void)
+{
+    /* Print thread id & cpu mode */
+    int id;
+    uint32_t mode;
+    char buf[80];
+
+    id = (int)syscall(SYSCALL_SCHED_THREAD_GETTID, NULL);
+    __asm__ volatile ("mrs     %0, cpsr" : "=r" (mode));
+    ksprintf(buf, sizeof(buf), "My id: %u, my mode: %x", id, mode);
+    KERROR(KERROR_LOG, buf);
 }

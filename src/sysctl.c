@@ -67,7 +67,7 @@ SET_DECLARE(sysctl_set, struct sysctl_oid);
 
 SYSCTL_DECL(_sysctl);
 
-#if configMP != 0
+#if (configPREEMPT != 0) || (configMP != 0)
 
 /**
  * The sysctllock protects the MIB tree. It also protects sysctl contexts used
@@ -520,7 +520,7 @@ static int sysctl_sysctl_oidfmt(SYSCTL_HANDLER_ARGS)
     error = SYSCTL_OUT(req, &oid->oid_kind, sizeof(oid->oid_kind));
     if (error)
         goto out;
-    error = SYSCTL_OUT(req, oid->oid_fmt, strlenn(oid->oid_fmt, 80) + 1); /* TODO */
+    error = SYSCTL_OUT(req, oid->oid_fmt, strlenn(oid->oid_fmt, 80) + 1); /* TODO don't hard code it here */
  out:
     SYSCTL_UNLOCK();
     return error;
@@ -545,7 +545,7 @@ sysctl_sysctl_oiddescr(SYSCTL_HANDLER_ARGS)
         error = ENOENT;
         goto out;
     }
-    error = SYSCTL_OUT(req, oid->oid_descr, strlenn(oid->oid_descr, 80) + 1); /* TODO */
+    error = SYSCTL_OUT(req, oid->oid_descr, strlenn(oid->oid_descr, 80) + 1); /* TODO ... */
  out:
     SYSCTL_UNLOCK();
     return error;
@@ -1080,26 +1080,29 @@ int userland_sysctl(threadInfo_t * td, int * name, unsigned int namelen, void * 
     req.newfunc = sysctl_new_user;
     req.lock = REQ_UNWIRED;
 
-    // TODO?
+    // TODO ?
     //if (req.oldlen > PAGE_SIZE) {
     //    memlocked = 1;
     //    sx_xlock(&sysctlmemlock);
     //} else
     //    memlocked = 0;
 
-    // TODO
-    //for (;;) {
+#if configPREEMPT != 0
+    for (;;) {
+#endif
         req.oldidx = 0;
         req.newidx = 0;
         SYSCTL_LOCK();
         error = sysctl_root(0, name, namelen, &req);
         SYSCTL_UNLOCK();
-    //    if (error != EAGAIN)
-    //        break;
-    //    kern_yield(PRI_USER);
-    //}
+#if configPREEMPT != 0
+        if (error != EAGAIN)
+            break;
+    //    kern_yield(PRI_USER); /* TODO Should we yield here? */
+    }
+#endif
 
-
+    /* TODO ?? */
     //if (req.lock == REQ_WIRED && req.validlen > 0)
     //    vsunlock(req.oldptr, req.validlen);
     //if (memlocked)

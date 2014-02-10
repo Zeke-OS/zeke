@@ -40,7 +40,7 @@
 
 #include <stdint.h>
 
-/*/ TODO Make configurable from the gloal conf file */
+/*/ TODO Make configurable from the global conf file */
 /* UART HAL Configuration */
 #define UART_PORTS_MAX 2
 
