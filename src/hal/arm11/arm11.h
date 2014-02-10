@@ -62,6 +62,7 @@
 /* 2.10 The program status registers in ARM1176JZF-S Technical Reference Manual */
 #define USER_PSR        0x40000010u /*!< User mode. */
 #define SYSTEM_PSR      0x4000001fu /*!< Kernel mode. (System) */
+#define UNDEFINED_PSR   0x4000001bu /*!< Kernel startup mode. (Undefined) */
 #define SUPERVISOR_PSR  0x40000013u /*!< Kernel mode. (Supervisor) */
 
 /** Stack frame saved by the hardware (Left here for compatibility reasons) */
@@ -99,14 +100,14 @@ void wr_thread_stack_ptr(void * ptr);
  * Disable all interrupts except NMI (set PRIMASK)
  */
 #define disable_interrupt() do {    \
-    __asm__ volatile ("CPSID i");   \
+    __asm__ volatile ("CPSID aif");   \
 } while (0)
 
 /**
  * Enable interrupts (clear PRIMASK)
  */
 #define enable_interrupt() do {     \
-    __asm__ volatile ("CPSIE i");   \
+    __asm__ volatile ("CPSIE aif");   \
 } while (0)
 
 /**

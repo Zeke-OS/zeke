@@ -149,7 +149,8 @@ void sched_init(void)
     sched_thread_init(0, &tdef_idle, NULL, 1);
 
     /* Set idle thread as a currently running thread */
-    current_thread = &(task_table[0]);
+    //current_thread = &(task_table[0]);
+    current_thread = 0;
 
 #if configFAST_FORK != 0
     next_threadId_queue_cb = queue_create(next_threadId_queue, sizeof(int),
@@ -184,8 +185,10 @@ void * idleTask(/*@unused@*/ void * arg)
 #ifndef PU_TEST_BUILD
 void * sched_handler(void * tsp)
 {
-    if (tsp != 0) {
+    if (tsp != 0 && current_thread != 0) {
         current_thread->sp = tsp;
+    } else {
+        current_thread = &(task_table[0]);
     }
 
     /* Pre-scheduling tasks */

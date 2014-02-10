@@ -171,7 +171,7 @@ $(STARTUP_O): $(STARTUP)
 	$(ARMGNU)-as $< -o $(STARTUP_O)
 
 $(ASOPRE): $(ASRC-1)
-	unifdefall $(AIDIR) $*.S -o $@
+	unifdefall $(AIDIR) $*.S > $@ || true
 
 $(ASOBJS): $(ASOPRE)
 	$(ARMGNU)-as $(AIDIR) $*._S -o $@

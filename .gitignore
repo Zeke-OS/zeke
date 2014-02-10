@@ -10,6 +10,9 @@ kernel.list
 *.bc
 *.opt.bc
 
+# Preprocessed assembly
+*._S
+
 # Optmized assembly
 *.opt.s
 

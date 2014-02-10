@@ -47,11 +47,15 @@ Start:
     ldr     r5, =0x4fff
     add     sp, r4, r5
     cps     #0x12   /* Change to IRQ mode */
+    ldr     r5, =0x5fff
+    add     sp, r4, r5
+    cps     #0x1b   /* Change to Undef mode */
     ldr     r5, =0x6fff
     add     sp, r4, r5
     cps     #0x1f   /* Change to system mode */
     ldr     r5, =0x7fff
     add     sp, r4, r5
+    
     /* System mode stack is also technically used for user mode but we'll soon
      * have new per thread stacks. Additionally some of the stacks will overlap
      * with ATAGs so we must read ATAGs out before using those stacks. */

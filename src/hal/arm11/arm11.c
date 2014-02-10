@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Hardware Abstraction Layer for ARMv6/ARM11
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
@@ -99,7 +99,7 @@ void init_stack_frame(ds_pthread_create_t * thread_def,
     thread_frame->sp = (uint32_t)thread_frame;
     thread_frame->pc = ((uint32_t)(thread_def->start)) + 4;
     thread_frame->lr = (uint32_t)a_del_thread;
-    thread_frame->psr = priv ? SUPERVISOR_PSR : USER_PSR;
+    thread_frame->psr = priv ? SYSTEM_PSR : USER_PSR;
 }
 
 uint32_t syscall(uint32_t type, void * p)

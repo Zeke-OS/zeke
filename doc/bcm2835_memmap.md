@@ -12,7 +12,8 @@ usage on Zeke. Some of these mappings are common to all ARM11 implementations.
     Priv Stacks:        |   |
     0x1000 - 0x2fff     | x | Supervisor (SWI/SVC) stack
     0x3000 - 0x4fff     | x | Abort stack
-    0x5000 - 0x6fff     | x | IRQ stack
+    0x5000 - 0x5fff     | x | IRQ stack
+    0x6000 - 0x6fff     | x | Undef stack
     0x7000 - 0x7fff     | x | System stack
     -                   |   |
     0x3c01 - 0x7fff     |   | Free space

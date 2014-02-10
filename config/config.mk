@@ -42,8 +42,8 @@ configARCH = __ARM6K__# Architecture of the core
 configMMU = 1# MMU support
 configUART = 1#
 configATAG = 1# Support bootloader ATAGs
-configMP = 0# Enable multi-processing support
-configREEMPT = 0# Reservation for full pre-emptible kernel
+configPREEMPT = 0# Reservation for full pre-emptible kernel
+configMP = 0# Enable multi-processing support Requires: configREEMPT
 
 # Kernel logging methods (Select one or none)
 configKERROR_LAST = 0# Store last n log messages in buffer.

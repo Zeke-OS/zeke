@@ -43,7 +43,28 @@
     .globl  interrupt_svc
     .type   interrupt_svc,%function
 interrupt_svc:
-    push    {r1-r12, lr}
+#if configPREEMPT != 0
+    /* In Pre-empt mode we use thread stack also in syscalls to allow syscalls
+     * to be pre-empted at almost any time. So next up we'll swap back to thread
+     * stack pointer and restore svc sp later after the call.
+     * TODO We may wan't to update frame pointer here to help debugging.
+     */
+    /* Store thread sp to r4 as we know for sure that it's safe to use
+     * r4 for anything in syscall due to our special ABI.
+     * TODO This could be actually optimized to use r3 and remove clobber from
+     *      syscall. */
+    cps     #0x1f               /* Change to system mode to use thread stack. */
+
+    /* Store spsr to allow nested swi.
+     * We don't encourage to use nested swi calls but oh well... */
+    mrs     r4, spsr
+    push    {r4}
+ 
+    cpsie   aif                 /* Enable interrupts */    
+#endif
+
+    push    {r1-r12, lr}        /* Thread registers, we store some
+                                 * extra just in case */
 
     /* Attach kernel master page table */
     push    {r0-r3}             /* Preserve syscall argument(s) */
@@ -54,14 +75,22 @@ interrupt_svc:
     /* Call kernel's internal syscall handler */
     bl      _intSyscall_handler
 
-    cmp     r1, #1              /* On ARM11 r1 is set to 1 if syscall was */
-                                /* blocking and otherwise 0. */
+    cmp     r1, #1              /* On ARM11 r1 is set to 1 if syscall was
+                                 * blocking and otherwise 0. */
     bne     Lret_svc            /* Syscall was not blocking so we can return. */  
     pop     {r1-r12, lr}
+#if configPREEMPT != 0
+    cpsid   aif                 /* Disable interrupts to prevent stack */
+                                /* corruption */
+    pop     {r4}                /* Restore spsr */
+    msr     spsr, r4
+#endif
     add     lr, lr, #4          /* interrupt_sys will expect this... */
     b       interrupt_sys       /* Syscall was blocking. */
+
 Lret_svc:
     mov     r4, r0              /* Preserve syscall retval */
+
     /* Attach process master page table */
     ldr     r0, =current_process_id
     ldr     r0, [r0]
@@ -69,6 +98,12 @@ Lret_svc:
 
     mov     r0, r4              /* Restore syscall retval */
     pop     {r1-r12, lr}
+#if configPREEMPT != 0
+    cpsid   aif                 /* Disable interrupts to prevent stack */
+                                /* corruption */
+    pop     {r4}                /* Restore spsr */
+    msr     spsr, r4
+#endif
     movs    pc, lr
 
 
@@ -80,11 +115,13 @@ Lret_svc:
 interrupt_sys:
     pushcontext
 
+#if 0
     /* Check if we are here just after kinit */
     and     r2, r1, #0x1f   /* 0x1f == system mode */
     cmp     r2, #0x1f
     moveq   r0, #0
     bleq    sched_handler   /* Get initial value for thread sp */
+#endif
     /* Update thread stack pointer */
     bl      wr_thread_stack_ptr
 
