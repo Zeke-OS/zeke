@@ -31,6 +31,8 @@
  *******************************************************************************
  */
 
+#include <autoconf.h>
+
     .syntax unified
     .text
     .arch armv6k
@@ -49,7 +51,7 @@ interrupt_svc:
     /* We could actually panic here if attach failed */
     pop     {r0-r3}
 
-    @ Call kernel's internal syscall handler
+    /* Call kernel's internal syscall handler */
     bl      _intSyscall_handler
 
     cmp     r1, #1              /* On ARM11 r1 is set to 1 if syscall was */

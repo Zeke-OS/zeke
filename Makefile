@@ -84,9 +84,10 @@ endif
 CRT_DIR = $(dir $(CRT))
 
 # Include Dirs #################################################################
-IDIR  = ./include ./config ./src
+IDIR   = ./include ./config ./src
+AIDIR += ./config
 ################################################################################
-IDIR := $(patsubst %,-I%,$(subst :, ,$(IDIR)))
+IDIR  := $(patsubst %,-I%,$(subst :, ,$(IDIR)))
 AIDIR := $(patsubst %,-I%,$(subst :, ,$(AIDIR)))
 
 # Select & Include Modules #####################################################
@@ -106,6 +107,7 @@ ASRC-1 += $(foreach var,$(MODULES), $($(var)-ASRC-1))
 
 # Parse file names #############################################################
 # Assembly Obj files
+ASOPRE  := $(patsubst %.S, %._S, $(ASRC-1))
 ASOBJS 	:= $(patsubst %.S, %.o, $(ASRC-1))
 
 # C Obj files
@@ -119,8 +121,8 @@ MODAS = $(addsuffix .a, $(MODULES))
 ################################################################################
 
 # We use suffixes because it's fun
-.SUFFIXES:					# Delete the default suffixes
-.SUFFIXES: .c .bc .o .h		# Define our suffix list
+.SUFFIXES:						# Delete the default suffixes
+.SUFFIXES: .c .bc .o .h .S ._S	# Define our suffix list
 
 # Targets ######################################################################
 # Help lines
@@ -168,8 +170,11 @@ kernel: kernel.bin
 $(STARTUP_O): $(STARTUP)
 	$(ARMGNU)-as $< -o $(STARTUP_O)
 
-$(ASOBJS): $(ASRC-1)
-	$(ARMGNU)-as $(AIDIR) $*.S -o $@
+$(ASOPRE): $(ASRC-1)
+	unifdefall $(AIDIR) $*.S -o $@
+
+$(ASOBJS): $(ASOPRE)
+	$(ARMGNU)-as $(AIDIR) $*._S -o $@
 
 $(BCS): $(SRC-1)
 	$(CC) $(CCFLAGS) $(IDIR) -c $*.c -o $@
@@ -204,7 +209,7 @@ help:
 # target_clean: clean - Clean all targets
 clean: clean-test
 	rm -f $(AUTOCONF_H)
-	rm -f $(ASOBJS) $(OBJS) $(STARTUP_O)
+	rm -f $(ASOPRE) $(ASOBJS) $(OBJS) $(STARTUP_O)
 	rm -f $(BCS)
 	find . -type f -name "*.bc" -exec rm -f {} \;
 	find . -type f -name "*.opt.bc" -exec rm -f {} \;
