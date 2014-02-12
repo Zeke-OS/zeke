@@ -62,7 +62,7 @@ interrupt_svc:
     mrs     r4, spsr
     push    {r4}
  
-    /*cpsie   aif*/                 /* Enable interrupts */
+    cpsie   aif                 /* Enable interrupts */
 #endif
 
     push    {r1-r12, lr}
