@@ -1,7 +1,7 @@
 
 # Zeke - Main Makefile
 #
-# Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+# Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
 # Copyright (c) 2012, 2013, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
 # All rights reserved.
 #
@@ -107,7 +107,6 @@ ASRC-1 += $(foreach var,$(MODULES), $($(var)-ASRC-1))
 
 # Parse file names #############################################################
 # Assembly Obj files
-ASOPRE  := $(patsubst %.S, %._S, $(ASRC-1))
 ASOBJS 	:= $(patsubst %.S, %.o, $(ASRC-1))
 
 # C Obj files
@@ -168,15 +167,12 @@ $(CONFIG_MK):
 kernel: kernel.bin
 
 $(STARTUP_O): $(STARTUP)
-	$(ARMGNU)-as $< -o $(STARTUP_O)
-
-$(ASOPRE): $(ASRC-1)
-	@echo "PP $*.S > $*._S"
-	@unifdefall $(AIDIR) $*.S > $@ || true
-
-$(ASOBJS): $(ASOPRE)
 	@echo "AS $@"
-	@$(ARMGNU)-as $(AIDIR) $*._S -o $@
+	@$(ARMGNU)-as $< -o $(STARTUP_O)
+
+$(ASOBJS): $(ASRC-1)
+	@echo "AS $@"
+	@unifdefall $(AIDIR) $*.S | $(ARMGNU)-as -am $(AIDIR) -o $@
 
 $(BCS): $(SRC-1)
 	@echo "CC $@"
@@ -214,7 +210,7 @@ help:
 # target_clean: clean - Clean all targets
 clean: clean-test
 	rm -f $(AUTOCONF_H)
-	rm -f $(ASOPRE) $(ASOBJS) $(OBJS) $(STARTUP_O)
+	rm -f $(ASOBJS) $(OBJS) $(STARTUP_O)
 	rm -f $(BCS)
 	find . -type f -name "*.bc" -exec rm -f {} \;
 	find . -type f -name "*.opt.bc" -exec rm -f {} \;
