@@ -45,7 +45,7 @@
 
 #include <kinit.h>
 #include <kerror.h>
-#include <kerror.h>
+#include <kstring.h>
 
 void arm_interrupt_preinit(void);
 

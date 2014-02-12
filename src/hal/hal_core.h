@@ -43,7 +43,12 @@
 #include <syscalldef.h>
 #include <kernel.h>
 
-extern volatile uint32_t flag_kernel_tick;
+/**
+ * Type for storing interrupt state.
+ */
+typedef size_t istate_t;
+
+extern volatile size_t flag_kernel_tick;
 
 /**
  * Init stack frame.
@@ -70,6 +75,22 @@ uint32_t syscall(uint32_t type, void * p);
  */
 int test_and_set(int * lock);
 
+/**
+ * Get interrupt disable state.
+ * This function can be called before calling disable_interrupt() to preserve
+ * current state of interrupt flags.
+ * @return Returns interrupt state.
+ */
+istate_t get_interrupt_state(void);
+
+/**
+ * Set interrupt state.
+ * Sets interrupt state flags previously preserved with get_interrupt_state().
+ * @param state is the interrupt state variable.
+ */
+void set_interrupt_state(istate_t state);
+
+
 /* Core Implementation must declare following inlined functions:
  * + inline void * rd_thread_stack_ptr(void)
  * + inline void wr_thread_stack_ptr(void * ptr)
@@ -78,6 +99,9 @@ int test_and_set(int * lock);
  * + enable_interrupt()
  * + req_context_switch()
  * + idle_sleep()
+ * and the following types:
+ * + hw_stack_frame_t - is a struct that describes hardware backed stack frame.
+ * + sw_stack_frame_t - is a struct that describes software backed stack frame.
  */
 
 /* Select Core Implementation ************************************************/

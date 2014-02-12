@@ -59,7 +59,8 @@
     #error MMU must be enabled when compiling for ARM11.
 #endif
 
-/* 2.10 The program status registers in ARM1176JZF-S Technical Reference Manual */
+/* Possible PSR start values for threads.
+ * 2.10 The program status registers in ARM1176JZF-S Technical Reference Manual */
 #define USER_PSR        0x40000010u /*!< User mode. */
 #define SYSTEM_PSR      0x4000001fu /*!< Kernel mode. (System) */
 #define UNDEFINED_PSR   0x4000001bu /*!< Kernel startup mode. (Undefined) */
@@ -100,14 +101,14 @@ void wr_thread_stack_ptr(void * ptr);
  * Disable all interrupts except NMI (set PRIMASK)
  */
 #define disable_interrupt() do {    \
-    __asm__ volatile ("CPSID aif");   \
+    __asm__ volatile ("CPSID aif"); \
 } while (0)
 
 /**
  * Enable interrupts (clear PRIMASK)
  */
 #define enable_interrupt() do {     \
-    __asm__ volatile ("CPSIE aif");   \
+    __asm__ volatile ("CPSIE aif"); \
 } while (0)
 
 /**
@@ -177,8 +178,6 @@ void wr_thread_stack_ptr(void * ptr);
             :                                                           \
             : [value]"r" (csw_ok) : "r1");                              \
 } while (0)
-
-__attribute__ ((naked)) void undef_handler(void);
 
 #endif /* ARM11_H */
 

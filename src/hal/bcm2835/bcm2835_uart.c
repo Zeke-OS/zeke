@@ -75,8 +75,9 @@ static void set_baudrate(unsigned int baud_rate);
 static void set_lcrh(const uart_port_init_t * conf);
 void bcm2835_uputc(uint8_t byte);
 int bcm2835_ugetc(void);
+#if 0
 static void delay(int32_t count);
-
+#endif
 
 void bcm2835_register(void)
 {
@@ -212,6 +213,7 @@ int bcm2835_ugetc()
     return byte;
 }
 
+#if 0
 /**
  * Idiotic delay function.
  * @param count delay time.
@@ -221,6 +223,7 @@ static void delay(int32_t count)
     __asm__ volatile("__delay_%=: subs %[count], %[count], #1; bne __delay_%=\n"
     : : [count]"r"(count) : "cc");
 }
+#endif
 
 /**
 * @}

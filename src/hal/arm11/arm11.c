@@ -117,7 +117,33 @@ uint32_t syscall(uint32_t type, void * p)
     return scratch;
 }
 
-int test_and_set(int * lock) {
+istate_t get_interrupt_state(void)
+{
+    istate_t state;
+
+    __asm__ volatile (
+        "MRS %[reg], cpsr\n\t"
+        "AND %[reg], %[reg], #0x1C0"
+        : [reg] "=r" (state));
+
+    return state;
+}
+
+void set_interrupt_state(istate_t state)
+{
+    uint32_t scratch;
+
+    __asm__ volatile (
+        "MRS %[nstate], cpsr\n\t"
+        "BIC %[nstate], %[nstate], #0x1C0\n\t"
+        "ORR %[nstate], %[nstate], %[ostate]\n\t"
+        "MSR cpsr, %[nstate]"
+        : [nstate] "+r" (scratch)
+        : [ostate] "r" (state));
+}
+
+int test_and_set(int * lock)
+{
     int err = 2; /* Initial value of error meaning already locked */
 
     __asm__ volatile (

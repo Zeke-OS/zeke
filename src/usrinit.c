@@ -50,7 +50,9 @@ char banner[] = "\
              .||. ||.'|...'\n\n\
 ";
 
+#if 0
 static void test_thread(void *);
+#endif
 static void print_message(const char * message);
 static int usr_name2oid(char * name, int * oidp);
 static void thread_stat(void);
@@ -64,13 +66,15 @@ void * main(void * arg)
     int mib_free[10];
     int len;
     int old_value_tot, old_value_free;
-    int old_len = sizeof(old_value_tot);
+    size_t old_len = sizeof(old_value_tot);
     char buf[80];
+#if 0
     pthread_attr_t attr = {
     };
     pthread_t thread_id;
 
-    //pthread_create(&thread_id, &attr, test_thread, 0);
+    pthread_create(&thread_id, &attr, test_thread, 0);
+#endif
 
     KERROR(KERROR_DEBUG, "Init v0.0.1");
     len = usr_name2oid("vm.dynmem_tot", mib_tot);
@@ -96,6 +100,7 @@ void * main(void * arg)
     }
 }
 
+#if 0
 static void test_thread(void * arg)
 {
     while(1) {
@@ -104,6 +109,7 @@ static void test_thread(void * arg)
         thread_stat();
     }
 }
+#endif
 
 static void print_message(const char * message)
 {
