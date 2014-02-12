@@ -410,9 +410,8 @@ void mmu_data_abort_handler(uint32_t sp, uint32_t spsr)
         "MRC p15, 0, %[reg], c5, c0, 0"
         : [reg]"=r" (fsr));
 
-    KERROR(KERROR_DEBUG, "Can't handle data aborts yet");
+    panic("Can't handle data aborts yet");
 
-    while (1);
     /* TODO */
 }
 

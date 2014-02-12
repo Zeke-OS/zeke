@@ -45,6 +45,7 @@
 
 #include <kinit.h>
 #include <kerror.h>
+#include <kerror.h>
 
 void arm_interrupt_preinit(void);
 
@@ -72,15 +73,31 @@ __attribute__ ((naked, aligned(32))) static void interrupt_vectors(void)
     );
 }
 
+__attribute__ ((naked)) void undef_handler(void)
+{
+    /* TODO */
+    size_t addr;
+    char buf[80];
+
+    __asm__ volatile (
+        "subs %[reg], r14, #2" : [reg] "=r" (addr));
+
+    ksprintf(buf, sizeof(buf), "Undefined instruction @ %x", addr);
+    panic(buf);
+
+    /* Kill the current thread */
+    //sched_thread_terminate(current_thread->id);
+
+    /* Return to the scheduler ASAP */
+    //req_context_switch();
+}
+
 /**
  * Unhandled exception
  */
 __attribute__ ((naked)) void bad_exception(void)
 {
-    KERROR(KERROR_CRIT, "This is like panic but unexpected.");
-    while (1) {
-        __asm__ volatile ("wfe");
-    }
+    panic("This is like panic but unexpected.");
 }
 
 void arm_interrupt_preinit(void)

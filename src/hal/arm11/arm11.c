@@ -176,26 +176,6 @@ void cpu_set_cid(uint32_t cid)
     }
 }
 
-/* Fault Handling *************************************************************/
-
-__attribute__ ((naked)) void undef_handler(void)
-{
-    /* TODO */
-
-    panic("Undefined handler");
-    while (1) {
-        __asm__ volatile ("wfe");
-    }
-
-    /* Kill the current thread */
-    //sched_thread_terminate(current_thread->id);
-
-    /* Return to the scheduler ASAP */
-    //req_context_switch();
-}
-
-/* End of Fault Handling ******************************************************/
-
 /**
   * @}
   */

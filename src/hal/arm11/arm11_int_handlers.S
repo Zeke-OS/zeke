@@ -53,18 +53,19 @@ interrupt_svc:
      * r4 for anything in syscall due to our special ABI.
      * TODO This could be actually optimized to use r3 and remove clobber from
      *      syscall. */
+    mov     r4, lr              /* Preserve link register. */
     cps     #0x1f               /* Change to system mode to use thread stack. */
+    mov     lr, r4              /* Restore link register. */
 
     /* Store spsr to allow nested swi.
      * We don't encourage to use nested swi calls but oh well... */
     mrs     r4, spsr
     push    {r4}
  
-    cpsie   aif                 /* Enable interrupts */    
+    /*cpsie   aif*/                 /* Enable interrupts */
 #endif
 
-    push    {r1-r12, lr}        /* Thread registers, we store some
-                                 * extra just in case */
+    push    {r1-r12, lr}
 
     /* Attach kernel master page table */
     push    {r0-r3}             /* Preserve syscall argument(s) */
@@ -77,13 +78,17 @@ interrupt_svc:
 
     cmp     r1, #1              /* On ARM11 r1 is set to 1 if syscall was
                                  * blocking and otherwise 0. */
-    bne     Lret_svc            /* Syscall was not blocking so we can return. */  
+    bne     Lret_svc            /* Syscall was not blocking so we can return. */
     pop     {r1-r12, lr}
 #if configPREEMPT != 0
-    cpsid   aif                 /* Disable interrupts to prevent stack */
-                                /* corruption */
+    cpsid   aif                 /* Disable interrupts to prevent stack
+                                 * corruption */
     pop     {r4}                /* Restore spsr */
     msr     spsr, r4
+
+    mov     r4, lr
+    cps     #0x12               /* Change to IRQ mode. */
+    mov     lr, r4
 #endif
     add     lr, lr, #4          /* interrupt_sys will expect this... */
     b       interrupt_sys       /* Syscall was blocking. */
@@ -98,6 +103,7 @@ Lret_svc:
 
     mov     r0, r4              /* Restore syscall retval */
     pop     {r1-r12, lr}
+
 #if configPREEMPT != 0
     cpsid   aif                 /* Disable interrupts to prevent stack */
                                 /* corruption */
