@@ -171,20 +171,24 @@ $(STARTUP_O): $(STARTUP)
 	$(ARMGNU)-as $< -o $(STARTUP_O)
 
 $(ASOPRE): $(ASRC-1)
-	unifdefall $(AIDIR) $*.S > $@ || true
+	@echo "PP $*.S > $*._S"
+	@unifdefall $(AIDIR) $*.S > $@ || true
 
 $(ASOBJS): $(ASOPRE)
-	$(ARMGNU)-as $(AIDIR) $*._S -o $@
+	@echo "AS $@"
+	@$(ARMGNU)-as $(AIDIR) $*._S -o $@
 
 $(BCS): $(SRC-1)
-	$(CC) $(CCFLAGS) $(IDIR) -c $*.c -o $@
+	@echo "CC $@"
+	@$(CC) $(CCFLAGS) $(IDIR) -c $*.c -o $@
 
 $(OBJS): $(BCS)
 	$(eval CUR_OPT := $*.opt.bc)
 	$(eval CUR_OPT_S := $*.opt.s)
-	$(OPT) $(OFLAGS) $*.bc -o $(CUR_OPT)
-	$(LLC) $(LLCFLAGS) $(CUR_OPT) -o $(CUR_OPT_S)
-	$(ARMGNU)-as $(CUR_OPT_S) -o $@ $(ASFLAGS)
+	@echo "AS $@"
+	@$(OPT) $(OFLAGS) $*.bc -o $(CUR_OPT)
+	@$(LLC) $(LLCFLAGS) $(CUR_OPT) -o $(CUR_OPT_S)
+	@$(ARMGNU)-as $(CUR_OPT_S) -o $@ $(ASFLAGS)
 
 $(CRT):
 	make -C $(CRT_DIR) all
@@ -193,7 +197,8 @@ $(MODAS): $(ASOBJS) $(OBJS)
 	$(eval CUR_MODULE := $(basename $@))
 	$(eval CUR_OBJS := $(patsubst %.c, %.o, $($(CUR_MODULE)-SRC-1)))
 	$(eval CUR_OBJS += $(patsubst %.S, %.o, $($(CUR_MODULE)-ASRC-1)))
-	ar rcs $@ $(CUR_OBJS)
+	@echo "AR $@"
+	@ar rcs $@ $(CUR_OBJS)
 
 kernel.bin: $(MEMMAP) $(STARTUP_O) $(MODAS) $(CRT)
 	$(ARMGNU)-ld -o kernel.elf -T $(MEMMAP) $(LDFLAGS) $(STARTUP_O) --whole-archive $(MODAS) --no-whole-archive $(CRT)

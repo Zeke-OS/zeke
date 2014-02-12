@@ -9,10 +9,12 @@ SRC_C_FILES = $(wildcard *.c)
 OBJ_FILES   = $(SRC_S_FILES:%.S=%.o) $(SRC_C_FILES:%.c=%.o)
 
 %.o: %.S
-	$(AS) $< -o $@
+	@echo "AS $@"
+	@$(AS) $< -o $@
 
 %.o: %.c
-	$(CC) $(CCFLAGS) $< -o $@
+	@echo "CC $@"
+	@$(CC) $(CCFLAGS) $< -o $@
 
 libaeabi-armv6k.a: $(OBJ_FILES)
 	ar rcs libaeabi-armv6k.a $(OBJ_FILES)
