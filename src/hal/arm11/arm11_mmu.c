@@ -46,6 +46,8 @@
  * - region to pt pointer null checks
  */
 
+#define mmu_disable_ints() __asm__ volatile ("cpsid if")
+
 static void mmu_map_section_region(mmu_region_t * region);
 static void mmu_map_coarse_region(mmu_region_t * region);
 static void mmu_unmap_section_region(mmu_region_t * region);
@@ -61,7 +63,7 @@ static void mmu_unmap_coarse_region(mmu_region_t * region);
 int mmu_init_pagetable(mmu_pagetable_t * pt)
 {
     int i;
-    uint32_t pte = MMU_PTE_FAULT;
+    const uint32_t pte = MMU_PTE_FAULT;
     uint32_t * p_pte = (uint32_t *)pt->pt_addr; /* points to a pt entry in PT */
 
 #if config_DEBUG != 0
@@ -141,6 +143,7 @@ static void mmu_map_section_region(mmu_region_t * region)
     int i;
     uint32_t * p_pte;
     uint32_t pte;
+    istate_t s;
 
     p_pte = (uint32_t *)region->pt->pt_addr; /* Page table base address */
     p_pte += region->vaddr >> 20; /* Set to first pte in region */
@@ -156,9 +159,15 @@ static void mmu_map_section_region(mmu_region_t * region)
     pte |= (region->control & 0x380) << 3;  /* Set TEX bits */
     pte |= MMU_PTE_SECTION;                 /* Set entry type */
 
+    s = get_interrupt_state();
+    mmu_disable_ints();
+
     for (i = region->num_pages - 1; i >= 0; i--) {
         *p_pte-- = pte + (i << 20); /* i = 1 MB section */
     }
+
+    cpu_invalidate_caches();
+    set_interrupt_state(s);
 }
 
 /**
@@ -172,6 +181,7 @@ static void mmu_map_coarse_region(mmu_region_t * region)
     int i;
     uint32_t * p_pte;
     uint32_t pte;
+    istate_t s;
 
     p_pte = (uint32_t *)region->pt->pt_addr; /* Page table base address */
     p_pte += (region->vaddr & 0x000ff000) >> 12;    /* First */
@@ -192,9 +202,15 @@ static void mmu_map_coarse_region(mmu_region_t * region)
     pte |= (region->control & 0x380) >> 1;  /* Set TEX bits */
     pte |= 0x2;                             /* Set entry type */
 
+    s = get_interrupt_state();
+    mmu_disable_ints();
+
     for (i = region->num_pages - 1; i >= 0; i--) {
         *p_pte-- = pte + (i << 12); /* i = 4 KB small page */
     }
+
+    cpu_invalidate_caches();
+    set_interrupt_state(s);
 }
 
 /**
@@ -227,17 +243,22 @@ static void mmu_unmap_section_region(mmu_region_t * region)
 {
     int i;
     uint32_t * p_pte;
-    uint32_t pte;
+    const uint32_t pte = MMU_PTE_FAULT;
+    istate_t s;
 
     p_pte = (uint32_t *)region->pt->pt_addr; /* Page table base address */
     p_pte += region->vaddr >> 20; /* Set to first pte in region */
     p_pte += region->num_pages - 1; /* Set to last pte in region */
 
-    pte = MMU_PTE_FAULT;
+    s = get_interrupt_state();
+    mmu_disable_ints();
 
     for (i = region->num_pages - 1; i >= 0; i--) {
         *p_pte-- = pte + (i << 20); /* i = 1 MB section */
     }
+
+    cpu_invalidate_caches();
+    set_interrupt_state(s);
 }
 
 /**
@@ -248,17 +269,22 @@ static void mmu_unmap_coarse_region(mmu_region_t * region)
 {
     int i;
     uint32_t * p_pte;
-    uint32_t pte;
+    const uint32_t pte = MMU_PTE_FAULT;
+    istate_t s;
 
     p_pte = (uint32_t *)region->pt->pt_addr; /* Page table base address */
     p_pte += (region->vaddr & 0x000ff000) >> 12;    /* First */
     p_pte += region->num_pages - 1;                 /* Last pte */
 
-    pte = MMU_PTE_FAULT;
+    s = get_interrupt_state();
+    mmu_disable_ints();
 
     for (i = region->num_pages - 1; i >= 0; i--) {
         *p_pte-- = pte + (i << 12); /* i = 4 KB small page */
     }
+
+    cpu_invalidate_caches();
+    set_interrupt_state(s);
 }
 
 /**
@@ -272,6 +298,7 @@ int mmu_attach_pagetable(mmu_pagetable_t * pt)
     uint32_t * ttb;
     uint32_t pte;
     size_t i;
+    istate_t s;
     int retval = 0;
 
     ttb = (uint32_t *)pt->master_pt_addr;
@@ -281,9 +308,12 @@ int mmu_attach_pagetable(mmu_pagetable_t * pt)
         KERROR(KERROR_ERR, "pt->master_pt_addr can't be null");
 #endif
 
+    s = get_interrupt_state();
+    mmu_disable_ints();
 
     switch (pt->type) {
         case MMU_PTT_MASTER:
+
             /* TTB -> CP15:c2:c0,0 : TTBR0 */
             __asm__ volatile (
                 "MCR p15, 0, %[ttb], c2, c0, 0"
@@ -307,6 +337,8 @@ int mmu_attach_pagetable(mmu_pagetable_t * pt)
     }
 
     cpu_invalidate_caches();
+    set_interrupt_state(s);
+
     return retval;
 }
 
@@ -319,6 +351,7 @@ int mmu_detach_pagetable(mmu_pagetable_t * pt)
 {
     uint32_t * ttb;
     uint32_t i;
+    istate_t s;
 
     if (pt->type == MMU_PTT_MASTER) {
         KERROR(KERROR_ERR, "Cannot detach a master pt");
@@ -328,7 +361,14 @@ int mmu_detach_pagetable(mmu_pagetable_t * pt)
     /* Mark page table entry at i as translation fault */
     ttb = (uint32_t *)pt->master_pt_addr;
     i = pt->vaddr >> 20;
+
+    s = get_interrupt_state();
+    mmu_disable_ints();
+
     ttb[i] = MMU_PTE_FAULT;
+
+    cpu_invalidate_caches();
+    set_interrupt_state(s);
 
     return 0;
 }

@@ -138,8 +138,7 @@ void set_interrupt_state(istate_t state)
         "BIC %[nstate], %[nstate], #0x1C0\n\t"
         "ORR %[nstate], %[nstate], %[ostate]\n\t"
         "MSR cpsr, %[nstate]"
-        : [nstate] "+r" (scratch)
-        : [ostate] "r" (state));
+        : [nstate] "+r" (scratch), [ostate] "+r" (state));
 }
 
 int test_and_set(int * lock)
