@@ -48,11 +48,12 @@ interrupt_svc:
      * to be pre-empted at almost any time. So next up we'll swap back to thread
      * stack pointer and restore svc sp later after the call.
      * TODO We may wan't to update frame pointer here to help debugging.
+     *
+     * We use r4 as a scratch register for much of the magic in this exception
+     * hanlder. R4 is marked as a clobber register in syscall() so we can do
+     * pretty much anything with r4 without breaking userspace.
      */
-    /* Store thread sp to r4 as we know for sure that it's safe to use
-     * r4 for anything in syscall due to our special ABI.
-     * TODO This could be actually optimized to use r3 and remove clobber from
-     *      syscall. */
+
     mov     r4, lr              /* Preserve link register. */
     cps     #0x1f               /* Change to system mode to use thread stack. */
     mov     lr, r4              /* Restore link register. */
@@ -110,7 +111,7 @@ Lret_svc:
     pop     {r4}                /* Restore spsr */
     msr     spsr, r4
 #endif
-    movs    pc, lr
+    movs    pc, lr              /* Regular exit from svc */
 
 
 @ void interrupt_sys(void)
