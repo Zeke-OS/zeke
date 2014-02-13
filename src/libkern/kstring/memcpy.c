@@ -23,11 +23,17 @@ void __aeabi_memcpy8(void *destination, const void *source, size_t num) __attrib
 #define UNALIGNED(X, Y) \
   (((long)X & (sizeof (long) - 1)) | ((long)Y & (sizeof (long) - 1)))
 
+/* TODO Check in which platforms this optimization is valid */
+#if configARCH == __ARM6K__
+#define ARM_OPTIMIZATION 1
+#define BIGBLOCKSIZE    (sizeof(size_t) << 2)
+#else /* No ARM optimization */
 /* How many bytes are copied each iteration of the 4X unrolled loop.  */
-#define BIGBLOCKSIZE    (sizeof (long) << 2)
+#define BIGBLOCKSIZE    (sizeof(long) << 2)
+#endif
 
 /* How many bytes are copied each iteration of the word copy loop.  */
-#define LITTLEBLOCKSIZE (sizeof (long))
+#define LITTLEBLOCKSIZE (sizeof(long))
 
 /* Threshold for punting to the byte copier.  */
 #define TOO_SMALL(LEN)  ((LEN) < BIGBLOCKSIZE)
@@ -57,6 +63,16 @@ void * memcpy(void * restrict destination, const void * source, size_t num)
         aligned_dst = (long*)dst;
         aligned_src = (long*)src;
 
+#ifdef ARM_OPTIMIZATION
+        while (num >= BIGBLOCKSIZE) {
+            __asm__ volatile (
+                "ldmia      %[src]!, {r4-r7}\n\t"
+                "stmia      %[dst]!, {r4-r7}\n\t"
+                : [src]"+r" (aligned_src), [dst]"+r" (aligned_dst)
+                : : "r4", "r5", "r6", "r7", "memory");
+            num -= BIGBLOCKSIZE;
+        }
+#else
         /* Copy 4X long words at a time if possible.  */
         while (num >= BIGBLOCKSIZE) {
             *aligned_dst++ = *aligned_src++;
@@ -65,6 +81,7 @@ void * memcpy(void * restrict destination, const void * source, size_t num)
             *aligned_dst++ = *aligned_src++;
             num -= BIGBLOCKSIZE;
         }
+#endif
 
         /* Copy one long word at a time if possible.  */
         while (num >= LITTLEBLOCKSIZE) {
