@@ -40,6 +40,7 @@
 //#include <ptmapper.h>
 #include "mmu.h"
 
+extern void mmu_lock_init();
 void mmu_init(void);
 HW_PREINIT_ENTRY(mmu_init);
 
@@ -55,6 +56,10 @@ void mmu_init(void)
 
     uint32_t value, mask;
 
+#if configMP != 0
+    mmu_lock_init();
+#endif
+
     /* Set MMU_DOM_KERNEL as client and others to generate error. */
     value = MMU_DOMAC_TO(MMU_DOM_KERNEL, MMU_DOMAC_CL);
     mask = MMU_DOMAC_ALL;
@@ -66,12 +71,6 @@ void mmu_init(void)
     value = MMU_ZEKE_C1_DEFAULTS;
     mask = MMU_ZEKE_C1_DEFAULTS;
     mmu_control_set(value, mask);
-
-    __asm__ volatile (
-        "nop\n\t"
-        "nop\n\t"
-        "nop\n\t"
-        "nop");
 
 #if configDEBUG != 0
     KERROR(KERROR_LOG, "MMU init OK");

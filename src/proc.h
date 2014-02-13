@@ -55,6 +55,10 @@
 #include <hal/mmu.h>
 #endif
 
+#if configMP != 0
+#include <klocks.h>
+#endif
+
 /**
  * Process Control Block or Process Descriptor Structure
  */

@@ -43,6 +43,10 @@
 #include <syscalldef.h>
 #include <kernel.h>
 
+#if configMP != 0 && configPREEMPT == 0
+#error configMP requires configPREEMPT
+#endif
+
 /**
  * Type for storing interrupt state.
  */

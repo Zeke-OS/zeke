@@ -33,8 +33,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _SYS__MUTEX_H_
-#define _SYS__MUTEX_H_
+#ifndef KLOCKS_H_
+#define KLOCKS_H_
 
 //#define LOCK_DEBUG 1
 
@@ -77,4 +77,4 @@ int _mtx_trylock(mtx_t * mtx, char * whr);
 void mtx_init(mtx_t * mtx, unsigned int type);
 void mtx_unlock(mtx_t * mtx);
 
-#endif /* !_SYS__MUTEX_H_ */
+#endif /* !_KLOCKS_H_ */
