@@ -81,8 +81,44 @@ Enums might be ok in user space and in interfaces between user space and
 kernel space. Some standard things may even require using enums.
 
 
+ABI and Calling Convention
+--------------------------
+
+Zeke uses, naturally, mainly the default calling convention defined by GCC and
+Clang, which is a bit different than the standard calling convention. Here is
+a brief description of ABI and calling convention used in Zeke.
+
+    +----------+------+-----------------------------------------------------+
+    | Register | Alt. | Usage                                               |
+    +----------+------+-----------------------------------------------------+
+    | r0       |      | First function arg./Return value for sizeof(size_t) |
+    |          |      | return values.                                      |
+    | r1       |      | Second function argument.                           |
+    | r2       |      | Third function argument.                            |
+    | r3       |      | Fourth function argument.                           |
+    | r4       |      | Local variable. (non stacked scratch for syscalls)  |
+    | r5 - r8  |      | Local variables.                                    |
+    | r9       | rfp  | Local variable/Real frame pointer?                  |
+    | r10      | sl   | Stack limit?                                        |
+    | r11      |      | Argument pointer.                                   |
+    | r12      | ip   | Temporary workspace?                                |
+    | r13      | sp   | Stack pointer.                                      |
+    | r14      | lr   | Link register.                                      |
+    | r15      | pc   | Program counter.                                    |
+    +----------+------+-----------------------------------------------------+
+
+Table partially based on:
+http://en.wikipedia.org/wiki/Calling_convention
+http://www.ethernut.de/en/documents/arm-inline-asm.html
+
+If return value is a pointer or otherwise too large to be returned by pointer
+stored in r0.
+
+Stack is always full-descending.
+
+
 Kernel Initialization 
-----------------------
+---------------------
 
 Kernel initialization order is defined as follows:
 
@@ -97,7 +133,12 @@ For ARM11:
 + `hw_postinit`
 + `kinit`
 
-After kinit scheduler will kick in and initialization continues in user space.
+After kinit scheduler will kick in and initialization continues in a special
+init thread.
+
+Every initializer function should contain `SUBSYS_INIT("XXXX init");` as a first
+line of the function and optionally `SUBSYS_DEP(YYYY_init);` lines declaring
+subsystem initialization dependencies.
 
 ### Kernel module initializers
 
