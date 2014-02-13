@@ -117,7 +117,9 @@ static int valid_addr(void * p);
 /* Stat functions */
 static void update_stat_up(size_t * stat_act, size_t amount);
 static void update_stat_down(size_t * stat_act, size_t amount);
+#if 0
 static void update_stat_set(size_t * stat_act, size_t value);
+#endif
 
 
 /**
@@ -541,6 +543,7 @@ static void update_stat_down(size_t * stat_act, size_t amount)
     *stat_act -= amount;
 }
 
+#if 0
 /**
  * Set stat current value.
  * This function will also update related max value.
@@ -555,3 +558,4 @@ static void update_stat_set(size_t * stat_act, size_t value)
     if (*stat_act > *stat_max)
         *stat_max = *stat_act;
 }
+#endif

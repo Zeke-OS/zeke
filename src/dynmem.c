@@ -132,8 +132,6 @@ void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t control)
                 dynmem_free, dynmem_tot, size * 1048576, sizeof(dynmemmap_bitmap));
         KERROR(KERROR_DEBUG, buf);
 #endif
-        for (int i = 0; i < sizeof(dynmemmap_bitmap); i++)
-            bcm2835_uputc(dynmemmap_bitmap[i]);
         return 0; /* Null */
     }
 

@@ -52,8 +52,8 @@ char banner[] = "\
 
 #if 0
 static void test_thread(void *);
-#endif
 static void print_message(const char * message);
+#endif
 static int usr_name2oid(char * name, int * oidp);
 static void thread_stat(void);
 
@@ -111,6 +111,7 @@ static void test_thread(void * arg)
 }
 #endif
 
+#if 0
 static void print_message(const char * message)
 {
     size_t i = 0;
@@ -119,6 +120,7 @@ static void print_message(const char * message)
         //osDevCwrite(message[i++], dev_tty0);
     }
 }
+#endif
 
 static int usr_name2oid(char * name, int * oidp)
 {
