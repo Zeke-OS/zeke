@@ -2,6 +2,7 @@ ARMGNU   = arm-none-eabi
 AS       = $(ARMGNU)-as
 CC       = clang
 CCFLAGS  = -c -std=c99 -Wall -ffreestanding -O2 -nostdlib -nostdinc
+CCFLAGS += -Wno-shift-count-overflow
 CCFLAGS += -m32 -ccc-host-triple $(ARMGNU)
 
 SRC_S_FILES = $(wildcard *.S)
