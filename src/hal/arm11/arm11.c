@@ -58,6 +58,7 @@ volatile uint32_t flag_kernel_tick = 0;
 void * rd_thread_stack_ptr(void)
 {
     void * result = NULL;
+
     __asm__ volatile (
         "STMDB  sp, {sp}^\n\t"
         "NOP\n\t"
@@ -107,12 +108,12 @@ uint32_t syscall(uint32_t type, void * p)
     uint32_t scratch;
 
     __asm__ volatile (
-            /* Lets expect that parameters are already in r0 & r1 */
-            "SVC    #0\n\t"
-            "MOV    %[res], r0\n\t"
-            : [res]"=r" (scratch)
-            : [typ]"r" (type), [arg]"r" (p)
-            : "r2", "r3", "r4");
+        /* Lets expect that parameters are already in r0 & r1 */
+        "SVC    #0\n\t"
+        "MOV    %[res], r0\n\t"
+        : [res]"=r" (scratch)
+        : [typ]"r" (type), [arg]"r" (p)
+        : "r2", "r3", "r4");
 
     return scratch;
 }
@@ -131,8 +132,6 @@ istate_t get_interrupt_state(void)
 
 void set_interrupt_state(istate_t state)
 {
-    uint32_t scratch;
-
     __asm__ volatile (
         "MRS r1, cpsr\n\t"
         "BIC r1, r1, #0x1C0\n\t"
@@ -146,16 +145,17 @@ int test_and_set(int * lock)
     int err = 2; /* Initial value of error meaning already locked */
 
     __asm__ volatile (
-            "MOV      r1, #1\n\t"           /* locked value to r1 */
-            "LDREX    r2, [%[addr]]\n\t"    /* load value of lock */
-            "CMP      r2, #1\n\t"           /* if already set */
-            "STREXNE  %[res], r1, [%[addr]]\n\t" /* Sets err = 0
-                                                  * if store op ok */
-            : [res]"+r" (err)   /* + makes LLVM think that err is also read in
-                                 * the inline asm. Otherwise it would expand
-                                 * previous line to:  strexne r2,r1,r2 */
-            : [addr]"r" (lock)
-            : "r1", "r2"
+        "MOV        r1, #1\n\t"             /* locked value to r1 */
+        "1:\n\t"
+        "LDREX      r2, [%[addr]]\n\t"      /* load value of lock */
+        "CMP        r2, #1\n\t"             /* if already set */
+        "STREXNE    %[res], r1, [%[addr]]\n\t" /* Sets err = 0
+                                                * if store op ok */
+        "CMPEQ      %[res], #0\n\t"         /* Try again if strex failed */
+        "BNE        1b"
+        : [res]"+r" (err)
+        : [addr]"r" (lock)
+        : "r1", "r2"
     );
 
     return err;
