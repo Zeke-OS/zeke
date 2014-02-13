@@ -134,11 +134,11 @@ void set_interrupt_state(istate_t state)
     uint32_t scratch;
 
     __asm__ volatile (
-        "MRS %[nstate], cpsr\n\t"
-        "BIC %[nstate], %[nstate], #0x1C0\n\t"
-        "ORR %[nstate], %[nstate], %[ostate]\n\t"
-        "MSR cpsr, %[nstate]"
-        : [nstate] "+r" (scratch), [ostate] "+r" (state));
+        "MRS r1, cpsr\n\t"
+        "BIC r1, r1, #0x1C0\n\t"
+        "ORR r1, r1, %[ostate]\n\t"
+        "MSR cpsr, r1"
+        : : [ostate] "r" (state) : "r1");
 }
 
 int test_and_set(int * lock)
