@@ -203,6 +203,7 @@ void * sched_handler(void * tsp)
     /* Post-scheduling tasks */
     if (flag_kernel_tick) {
         calc_loads();
+        mmu_calc_pfcps();
     }
 
     return current_thread->sp;
@@ -213,8 +214,7 @@ void * sched_handler(void * tsp)
  * Calculate load averages
  *
  * This function calculates unix-style load averages for the system.
- * Algorithm used here is similar to algorithm used in Linux, although I'm not
- * exactly sure if it's O(1) in current Linux implementation.
+ * Algorithm used here is similar to algorithm used in Linux.
  */
 static void calc_loads(void)
 {

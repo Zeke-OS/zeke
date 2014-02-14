@@ -34,11 +34,34 @@
   * @{
   */
 
+#define KERNEL_INTERNAL
 #include <kinit.h>
 #include <kstring.h>
 #include <kerror.h>
-//#include <ptmapper.h>
+#include <klocks.h>
+#include <sys/sysctl.h>
 #include "mmu.h"
+
+/* Definitions for Page fault counter *****************************************/
+#define PFC_FREQ    (int)configSCHED_HZ
+#define FSHIFT      11              /*!< nr of bits of precision */
+#define FEXP_1      753             /*!< 1 sec */
+#define FIXED_1     (1 << FSHIFT)   /*!< 1.0 in fixed-point */
+#define CALC_PFC(avg, n)                           \
+                    avg *= FEXP_1;                 \
+                    avg += n * (FIXED_1 - FEXP_1); \
+                    avg >>= FSHIFT;
+/** Scales fixed-point pfc/s average value to a integer format scaled to 100 */
+//#define SCALE_PFC(x) (((x + (FIXED_1/200)) * 100) >> FSHIFT)
+/* End of Definitions for Page fault counter **********************************/
+
+static unsigned long _pf_raw_count;
+#if configMP != 0
+static mtx_t _pfrc_lock; /*!< Mutex for _pf_raw_count */
+#endif
+unsigned long mmu_pfps; /* Page faults per second average. Fixed point, 11 bits. */
+SYSCTL_UINT(_vm, OID_AUTO, pfps, CTLFLAG_RD, (&mmu_pfps), 0,
+    "Page faults per second average.");
 
 extern void mmu_lock_init();
 void mmu_init(void);
@@ -58,6 +81,7 @@ void mmu_init(void)
 
 #if configMP != 0
     mmu_lock_init();
+    mtx_init(&_pfrc_lock, MTX_DEF | MTX_SPIN);
 #endif
 
     /* Set MMU_DOM_KERNEL as client and others to generate error. */
@@ -151,6 +175,43 @@ int mmu_ptcpy(mmu_pagetable_t * dest, mmu_pagetable_t * src)
     memcpy((void *)(dest->pt_addr), (void *)(src->pt_addr), len_src);
 
     return 0;
+}
+
+static unsigned long _pf_raw_count;
+static mtx_t _pfrc_mtx;
+
+/**
+ * Signal a page fault event for the pf/s counter.
+ */
+void mmu_pf_event(void)
+{
+#if configMP != 0
+    mtx_spinlock(&_pfrc_lock);
+#endif
+
+    _pf_raw_count++;
+
+#if configMP != 0
+    mtx_unlock(&_pfrc_lock);
+#endif
+}
+
+/**
+ * Calculate pf/s average.
+ * This function should be called periodically by the scheduler.
+ */
+void mmu_calc_pfcps(void)
+{
+    static int count = PFC_FREQ;
+    unsigned long pfc;
+
+    count--;
+    if (count < 0) {
+        count = PFC_FREQ;
+        pfc = (_pf_raw_count * FIXED_1);
+        CALC_PFC(mmu_pfps, pfc);
+        _pf_raw_count = 0;
+    }
 }
 
 /**

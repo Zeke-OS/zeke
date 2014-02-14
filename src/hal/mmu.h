@@ -173,7 +173,9 @@ uint32_t mmu_domain_access_get(void);
 void mmu_domain_access_set(uint32_t value, uint32_t mask);
 void mmu_control_set(uint32_t value, uint32_t mask);
 
-/* Generic for all */
+/* Generic for all, implemented in mmu.c */
+void mmu_pf_event(void);
+void mmu_calc_pfcps(void);
 size_t mmu_sizeof_pt(mmu_pagetable_t * region);
 size_t mmu_sizeof_region(mmu_region_t * region);
 int mmu_ptcpy(mmu_pagetable_t * dest, mmu_pagetable_t * src);

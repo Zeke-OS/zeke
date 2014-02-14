@@ -469,6 +469,8 @@ void mmu_data_abort_handler(uint32_t sp, uint32_t spsr)
     uint32_t far; /*!< Fault address */
     uint32_t fsr; /*!< Fault status */
 
+    mmu_pf_event();
+
     __asm__ volatile (
         "MRC p15, 0, %[reg], c0, c0, 1"
         : [reg]"=r" (far));
