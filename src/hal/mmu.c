@@ -179,9 +179,6 @@ int mmu_ptcpy(mmu_pagetable_t * dest, mmu_pagetable_t * src)
     return 0;
 }
 
-static unsigned long _pf_raw_count;
-static mtx_t _pfrc_mtx;
-
 /**
  * Signal a page fault event for the pf/s counter.
  */
