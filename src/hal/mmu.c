@@ -43,7 +43,8 @@
 #include "mmu.h"
 
 /* Definitions for Page fault counter *****************************************/
-#define PFC_FREQ    (int)configSCHED_HZ
+#define PFC_FREQ    (int)configSCHED_HZ /* We wan't to compute pf/s once per
+                                         * second. */
 #define FSHIFT      11              /*!< nr of bits of precision */
 #define FEXP_1      753             /*!< 1 sec */
 #define FIXED_1     (1 << FSHIFT)   /*!< 1.0 in fixed-point */
@@ -55,11 +56,12 @@
 //#define SCALE_PFC(x) (((x + (FIXED_1/200)) * 100) >> FSHIFT)
 /* End of Definitions for Page fault counter **********************************/
 
-static unsigned long _pf_raw_count;
+static unsigned long _pf_raw_count; /*!< Raw page fault counter. */
 #if configMP != 0
 static mtx_t _pfrc_lock; /*!< Mutex for _pf_raw_count */
 #endif
-unsigned long mmu_pfps; /* Page faults per second average. Fixed point, 11 bits. */
+unsigned long mmu_pfps; /*!< Page faults per second average. Fixed point, 11
+                         *   bits. */
 SYSCTL_UINT(_vm, OID_AUTO, pfps, CTLFLAG_RD, (&mmu_pfps), 0,
     "Page faults per second average.");
 
@@ -186,6 +188,11 @@ static mtx_t _pfrc_mtx;
 void mmu_pf_event(void)
 {
 #if configMP != 0
+    /* By using spinlock here there should be no risk of deadlock because even
+     * that this event is basically called only when one core is in interrupts
+     * disabled state the call should not ever nest. If it nests something
+     * is badly broken anyway. E.g. it could nest if this function would cause
+     * another abort. */
     mtx_spinlock(&_pfrc_lock);
 #endif
 
@@ -204,6 +211,12 @@ void mmu_calc_pfcps(void)
 {
     static int count = PFC_FREQ;
     unsigned long pfc;
+
+    /* Tanenbaum suggests in one of his books that pf/s count could be first
+     * averaged and then on each iteration summed with the current value and
+     * divided by two. We do only the averaging here by the same method used
+     * for loadavg.
+     */
 
     count--;
     if (count < 0) {
