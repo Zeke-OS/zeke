@@ -1,8 +1,8 @@
-Arm EABI code included as a library in this project is licensed under following
-ICS license.
+Arm EABI crt code included as a library in this project is licensed under
+following ICS license.
 
 
-Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
 Copyright (c) 2012 Jörg Mische <bobbl@gmx.de>
 
 Permission to use, copy, modify, and/or distribute this software for any purpose
