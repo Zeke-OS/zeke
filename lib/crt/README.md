@@ -1,9 +1,12 @@
-ARM Run-Time ABI for the Cortex-M0 processor
-============================================
+ARM Run-Time ABI
+================
 
 This library implements the Run-Time ABI for the ARM architecture as defined
-in document ARM IHI 0043C (http://infocenter.arm.com) for the Thumb-2 ISA
-subset of the Cortex-M0.
+in documents provided by ARM.
+
+- Cortex-M0/ARMv6-m - ARM IHI 0043C (http://infocenter.arm.com) for the Thumb-2
+  ISA subset of the Cortex-M0.
+- ARMv6k 
 
 
 So Far Implemented
@@ -87,7 +90,11 @@ $ sudo make install
 
 ### clang / LLVM
 
+TODO
+
 
 License
 -------
+
 Licensed under the ISC licence (similar to the MIT/Expat license).
+See file COPYING.
