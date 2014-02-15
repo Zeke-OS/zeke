@@ -46,6 +46,7 @@
 #include <kstring.h>
 #include <kinit.h>
 #include <hal/hal_core.h>
+#include <klocks.h>
 #include "heap.h"
 #if configFAST_FORK != 0
 #include <queue.h>
@@ -98,6 +99,7 @@ static int next_threadId_queue[configSCHED_MAX_THREADS - 1];
 
 volatile threadInfo_t * current_thread; /*!< Pointer to the currently active
                                          *   thread */
+static rwlock_t loadavg_lock;
 static uint32_t loadavg[3]  = { 0, 0, 0 }; /*!< CPU load averages */
 
 /** Stack for idle task */
@@ -151,10 +153,10 @@ void sched_init(void)
     };
 
     sched_thread_init(0, &tdef_idle, NULL, 1);
+    current_thread = 0; /* To initialize it later on sched_handler. */
 
-    /* Set idle thread as a currently running thread */
-    //current_thread = &(task_table[0]);
-    current_thread = 0;
+    /* Initialize locks */
+    rwlock_init(&loadavg_lock);
 
 #if configFAST_FORK != 0
     next_threadId_queue_cb = queue_create(next_threadId_queue, sizeof(int),
@@ -227,21 +229,35 @@ static void calc_loads(void)
 
     count--;
     if (count < 0) {
-        count = LOAD_FREQ;
-        active_threads = (uint32_t)(priority_queue.size * FIXED_1);
+        if (rwlock_trywrlock(&loadavg_lock) == 0) {
+            count = LOAD_FREQ; /* Count is only reset if we get write lock so
+                                * we can try again each time. */
+            active_threads = (uint32_t)(priority_queue.size * FIXED_1);
 
-        /* Load averages */
-        CALC_LOAD(loadavg[0], FEXP_1, active_threads);
-        CALC_LOAD(loadavg[1], FEXP_5, active_threads);
-        CALC_LOAD(loadavg[2], FEXP_15, active_threads);
+            /* Load averages */
+            CALC_LOAD(loadavg[0], FEXP_1, active_threads);
+            CALC_LOAD(loadavg[1], FEXP_5, active_threads);
+            CALC_LOAD(loadavg[2], FEXP_15, active_threads);
+
+            rwlock_wrunlock(&loadavg_lock);
+
+            /* On the following lines we cheat a little bit to get the write
+             * lock faster. This should be ok as we know that this function
+             * is the only one trying to write. */
+            loadavg_lock.wr_waiting = 0;
+        } else if (loadavg_lock.wr_waiting == 0) {
+            loadavg_lock.wr_waiting = 1;
+        }
     }
 }
 
 void sched_get_loads(uint32_t loads[3])
 {
+    rwlock_rdlock(&loadavg_lock);
     loads[0] = SCALE_LOAD(loadavg[0]);
     loads[1] = SCALE_LOAD(loadavg[1]);
     loads[2] = SCALE_LOAD(loadavg[2]);
+    rwlock_rdunlock(&loadavg_lock);
 }
 
 /**

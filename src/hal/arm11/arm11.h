@@ -134,6 +134,20 @@ void wr_thread_stack_ptr(void * ptr);
     __asm__ volatile ("WFI");               \
 } while (0)
 
+#define load_ex(result, addr)                   \
+    __asm__ volatile ("LDREX %[res], %[addr]"   \
+        : [res]"=r" (result), [addr]"+r" (addr) \
+        : : "memory")
+
+#define store_ex(addr, value)                   \
+    __asm__ volatile (                          \
+        "1: STREX r3, %[val], %[addr]\n\t"      \
+        "CMPEQ r3, #0\n\t"                      \
+        "BNE 1b"                                \
+        : : [val]"r" (value), [addr]"r" (addr)  \
+        : "r3", "cc", "memory")
+
+
 #if configMP != 0
 
 /**

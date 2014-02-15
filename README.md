@@ -27,7 +27,8 @@ Key features
 - System call based kernel services
 - High configurability & Adjustable footprint
 - BSD-like sysctl interface
-- Kernel threads
+- Threading implemented at kernel level
+- Pre-emptible kernel mode
 
 News
 ----

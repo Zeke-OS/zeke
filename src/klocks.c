@@ -2,7 +2,7 @@
  *******************************************************************************
  * @file    klocks.h
  * @author  Olli Vanhoja
- * @brief   Kernel space locks
+ * @brief   Kernel space locks.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -46,7 +46,6 @@
  */
 void mtx_init(mtx_t * mtx, unsigned int type)
 {
-    mtx->mtx_owner = 0;
     mtx->mtx_lock = 0;
     mtx->mtx_tflags = type;
 #ifdef LOCK_DEBUG
@@ -119,4 +118,145 @@ void mtx_unlock(mtx_t * mtx)
 #if configMP != 0
     cpu_sev(); /* Wakeup cores possible waiting for lock. */
 #endif
+}
+
+/**
+ * Init rwlock.
+ * @param l is the rwlock.
+ */
+void rwlock_init(rwlock_t * l)
+{
+    l->state = 0;
+    l->wr_waiting = 0;
+    mtx_init(&(l->lock), MTX_DEF | MTX_SPIN);
+}
+
+/**
+ * Get write lock to rwlock.
+ * @param l is the rwlock.
+ */
+void rwlock_wrlock(rwlock_t * l)
+{
+    mtx_spinlock(&(l->lock));
+    if (l->state == 0) {
+        goto get_wrlock;
+    } else {
+        l->wr_waiting++;
+    }
+    mtx_unlock(&(l->lock));
+
+    /* Try to minimize locked time. */
+    while (1) {
+        if (l->state == 0) {
+            mtx_spinlock(&(l->lock));
+            if (l->state == 0) {
+                l->wr_waiting--;
+                goto get_wrlock;
+            }
+            mtx_unlock(&(l->lock));
+        }
+    }
+
+get_wrlock:
+    l->state = -1;
+    mtx_unlock(&(l->lock));
+}
+
+/**
+ * Try to get writer lock.
+ * @param l is the rwlock.
+ * @return Returns 0 if lock achieved; Otherwise value other than zero.
+ */
+int rwlock_trywrlock(rwlock_t * l)
+{
+    int retval = 1;
+
+    if (mtx_trylock(&(l->lock)))
+        goto out;
+
+    if (l->state == 0) {
+        l->state = -1;
+        retval = 0;
+    }
+    mtx_unlock(&(l->lock));
+
+out:
+    return retval;
+}
+
+/**
+ * Release write lock.
+ * @param l is the rwlock.
+ */
+void rwlock_wrunlock(rwlock_t * l)
+{
+    mtx_spinlock(&(l->lock));
+    if (l->state == -1) {
+        l->state = 0;
+    }
+    mtx_unlock(&(l->lock));
+}
+
+/**
+ * Get readers lock.
+ * @param l is the rwlock.
+ */
+void rwlock_rdlock(rwlock_t * l)
+{
+    mtx_spinlock(&(l->lock));
+    /* Don't take lock if any writer is waiting. */
+    if (l->wr_waiting == 0 && l->state >= 0) {
+        goto get_rdlock;
+    }
+    mtx_unlock(&(l->lock));
+
+    /* Try to minimize locked time. */
+    while (1) {
+        if (l->wr_waiting == 0 && l->state >= 0) {
+            mtx_spinlock(&(l->lock));
+            if (l->wr_waiting == 0 && l->state >= 0) {
+                goto get_rdlock;
+            }
+            mtx_unlock(&(l->lock));
+        }
+    }
+
+get_rdlock:
+    l->state++;
+    mtx_unlock(&(l->lock));
+}
+
+/**
+ * Try to get readers lock.
+ * @param is the rwlock.
+ * @return Returns 0 if lock achieved; Otherwise value other than zero.
+ */
+int rwlock_tryrdlock(rwlock_t * l)
+{
+    int retval = 1;
+
+    if (mtx_trylock(&(l->lock)))
+        goto out;
+
+    if (l->wr_waiting == 0 && l->state >= 0) {
+        l->state++;
+        retval = 0;
+    }
+    mtx_unlock(&(l->lock));
+
+out:
+    return retval;
+}
+
+/**
+ * Release reders lock.
+ * @param l is the rwlock.
+ */
+void rwlock_rdunlock(rwlock_t * l)
+{
+    mtx_spinlock(&(l->lock));
+    if (l->state > 0) {
+        l->state--;
+    }
+    mtx_unlock(&(l->lock));
 }

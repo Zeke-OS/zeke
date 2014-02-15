@@ -43,8 +43,8 @@
 #endif
 
 /* Mutex types */
-#define MTX_DEF     0x00000000  /*!< DEFAULT (sleep) lock */
-#define MTX_SPIN    0x00000001  /*!< Spin lock */
+#define MTX_DEF     0x00 /*!< DEFAULT (sleep) lock */
+#define MTX_SPIN    0x01 /*!< Spin lock. */
 
 /*
  * Sleep/spin mutex.
@@ -56,14 +56,24 @@
  * be modified appropriately.
  */
 typedef struct mtx {
-    volatile void * mtx_owner;  /*!< Pointer to optional owner information. */
+    intptr_t _alignment_bytes;
+    unsigned int mtx_tflags;    /*!< Type flags. */
+    volatile int mtx_lock;      /*!< Lock value. */
 #ifdef LOCK_DEBUG
     char * mtx_ldebug;
 #endif
-    unsigned int mtx_tflags;    /*!< Type flags. */
-    volatile int mtx_lock;      /*!< Lock value. */
 } mtx_t;
 
+/**
+ * RW Lock.
+ */
+typedef struct rwlock {
+    int state; /*!< Lock state. 0 = no lock, -1 = wrlock and 0 < rdlock. */
+    int wr_waiting; /*!< writers waiting. */
+    struct mtx lock; /*!< Mutex protecting attributes. */
+} rwlock_t;
+
+/* Mutex functions */
 #ifndef LOCK_DEBUG
 int mtx_spinlock(mtx_t * mtx);
 int mtx_trylock(mtx_t * mtx);
@@ -76,5 +86,14 @@ int _mtx_trylock(mtx_t * mtx, char * whr);
 
 void mtx_init(mtx_t * mtx, unsigned int type);
 void mtx_unlock(mtx_t * mtx);
+
+/* Rwlock functions */
+void rwlock_init(rwlock_t * l);
+void rwlock_wrlock(rwlock_t * l);
+int rwlock_trywrlock(rwlock_t * l);
+void rwlock_wrunlock(rwlock_t * l);
+void rwlock_rdlock(rwlock_t * l);
+int rwlock_tryrdlock(rwlock_t * l);
+void rwlock_rdunlock(rwlock_t * l);
 
 #endif /* !_KLOCKS_H_ */
