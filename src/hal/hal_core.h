@@ -43,10 +43,6 @@
 #include <syscalldef.h>
 #include <kernel.h>
 
-#if configMP != 0 && configPREEMPT == 0
-#error configMP requires configPREEMPT
-#endif
-
 /**
  * Type for storing interrupt state.
  */
@@ -60,8 +56,7 @@ extern volatile size_t flag_kernel_tick;
  * @param a_del_thread Address of del_thread function
  * @param priv set thread as privileged/kernel mode thread.
  */
-void init_stack_frame(ds_pthread_create_t * thread_def,
-        void (*a_del_thread)(void *), int priv);
+void init_stack_frame(ds_pthread_create_t * thread_def, int priv);
 
 /**
  * Make a system call

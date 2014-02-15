@@ -77,6 +77,15 @@ int pthread_create(pthread_t * thread, const pthread_attr_t * attr,
 void pthread_exit(void * retval);
 
 /**
+ * Indicate that storage for the thread thread can be reclaimed when that
+ * thread terminates.
+ * Calling this function will not terminate the thread if it's not already
+ * terminated.
+ */
+int pthread_detach(pthread_t thread);
+
+
+/**
  * Initialises the mutex referenced by mutex with attributes specified by attr.
  * If attr is NULL, the default mutex attributes are used.
  * @param mutex is a pointer to the mutex control block.

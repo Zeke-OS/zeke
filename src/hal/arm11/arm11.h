@@ -166,19 +166,6 @@ void wr_thread_stack_ptr(void * ptr);
     __asm__ volatile ("BKPT #01");          \
 } while (0)
 
-/**
- * Test if current syscall was blocking.
- * If current syscall blocked the current_thread by setting it to wait
- * state r1 is set to 1; Otherwise r1 is set to 0.
- */
-#define eval_syscall_block() do {                                       \
-    uint32_t csw_ok = SCHED_TEST_CSW_OK(current_thread->flags) ? 1 : 0; \
-    __asm__ volatile (                                                  \
-        "MOV r1, %[value]"                                              \
-        :                                                               \
-        : [value]"r" (csw_ok) : "r1");                                  \
-} while (0)
-
 #endif /* ARM11_H */
 
 /**

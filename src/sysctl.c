@@ -67,8 +67,6 @@ SET_DECLARE(sysctl_set, struct sysctl_oid);
 
 SYSCTL_DECL(_sysctl);
 
-#if (configPREEMPT != 0) || (configMP != 0)
-
 /**
  * The sysctllock protects the MIB tree. It also protects sysctl contexts used
  * with dynamic sysctls. The sysctl_register_oid() and sysctl_unregister_oid()
@@ -87,13 +85,6 @@ static mtx_t sysctllock;
 #define SYSCTL_UNLOCK()     mtx_unlock(&sysctllock)
 #define SYSCTL_LOCK_INIT()  mtx_init(&sysctllock, MTX_DEF | MTX_SPIN)
 
-#else /* No MP support, so no locks needed */
-
-#define SYSCTL_LOCK()
-#define SYSCTL_UNLOCK()
-#define SYSCTL_LOCK_INIT()
-
-#endif
 
 static struct sysctl_oid * sysctl_find_oidname(const char * name,
         struct sysctl_oid_list * list);
@@ -1087,20 +1078,16 @@ int userland_sysctl(threadInfo_t * td, int * name, unsigned int namelen, void * 
     //} else
     //    memlocked = 0;
 
-#if configPREEMPT != 0
     for (;;) {
-#endif
         req.oldidx = 0;
         req.newidx = 0;
         SYSCTL_LOCK();
         error = sysctl_root(0, name, namelen, &req);
         SYSCTL_UNLOCK();
-#if configPREEMPT != 0
         if (error != EAGAIN)
             break;
     //    kern_yield(PRI_USER); /* TODO Should we yield here? */
     }
-#endif
 
     /* TODO ?? */
     //if (req.lock == REQ_WIRED && req.validlen > 0)

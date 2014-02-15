@@ -37,6 +37,7 @@
 #include <kerror.h> /* Strictly kernel space thing */
 #include <kstring.h> /* -"- */
 #include <sys/sysctl.h>
+#include <unistd.h>
 #include "usrinit.h"
 
 dev_t dev_tty0 = DEV_MMTODEV(2, 0);
@@ -96,7 +97,7 @@ void * main(void * arg)
         ksprintf(buf, sizeof(buf), "dynmem used: %u/%u",
                 old_value_tot - old_value_free, old_value_tot);
         KERROR(KERROR_LOG, buf);
-        osDelay(5000);
+        sleep(5);
     }
 }
 
@@ -105,7 +106,7 @@ static void test_thread(void * arg)
 {
     while(1) {
         /* TODO Nicely any call seems to cause data abort :) */
-        osDelay(2000);
+        sleep(5);
         thread_stat();
     }
 }

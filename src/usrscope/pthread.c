@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    kernel.c
+ * @file    pthread.c
  * @author  Olli Vanhoja
  * @brief   Zero Kernel user space code
  * @section LICENSE
@@ -52,7 +52,8 @@ int pthread_create(pthread_t * thread, const pthread_attr_t * attr,
         .thread     = thread,
         .start      = start_routine,
         .def        = attr,
-        .argument   = arg
+        .argument   = arg,
+        .del_thread = pthread_exit
     };
     int result;
 
@@ -71,12 +72,13 @@ pthread_t pthread_self(void)
 
 void pthread_exit(void * retval)
 {
-    pthread_t thread_id = (pthread_t)syscall(SYSCALL_SCHED_THREAD_GETTID, NULL);
-    (void)syscall(SYSCALL_SCHED_THREAD_TERMINATE, &thread_id);
-    req_context_switch();
+    (void)syscall(SYSCALL_SCHED_THREAD_DIE, retval);
+    /* Syscall will not return */
+}
 
-    while(1); /* Once the context changes, the program will no longer return to
-               * this thread */
+int pthread_detach(pthread_t thread)
+{
+    return syscall(SYSCALL_SCHED_THREAD_DETACH, &thread);
 }
 
 

@@ -120,24 +120,4 @@ typedef int osTimerId;
  */
 typedef struct os_semaphore_cb osSemaphore;
 
-/// Message ID identifies the message queue (pointer to a message queue control block).
-typedef struct os_messageQ_cb *osMessageQId;
-
-/// Mail ID identifies the mail queue (pointer to a mail queue control block).
-typedef struct os_mailQ_cb *osMailQId;
-
-/// Event structure contains detailed information about an event.
-typedef struct  {
-    osStatus                 status;    ///< status code: event or error information
-    union  {
-        uint32_t                    v;  ///< message as 32-bit value
-        void                       *p;  ///< message or mail as void pointer
-        int32_t               signals;  ///< signal flags
-    } value;                            ///< event value
-    union  {
-        osMailQId             mail_id;  ///< mail id obtained by \ref osMailCreate
-        osMessageQId       message_id;  ///< message id obtained by \ref osMessageCreate
-    } def;                              ///< event definition
-} osEvent;
-
 #endif /* TYPES_H */

@@ -42,6 +42,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <autoconf.h>
+#include <kmalloc.h>
 #include <kstring.h>
 #include <kinit.h>
 #include <hal/hal_core.h>
@@ -121,6 +122,9 @@ static void sched_thread_init(pthread_t i, ds_pthread_create_t * thread_def,
 static void sched_thread_set_inheritance(pthread_t i, threadInfo_t * parent);
 static void _sched_thread_set_exec(pthread_t thread_id, osPriority pri);
 static void sched_thread_remove(pthread_t id);
+static void sched_thread_die(intptr_t retval);
+static int sched_thread_detach(pthread_t id);
+static void sched_thread_sleep(long millisec);
 /* End of Static function declarations ***************************************/
 
 /* Functions called from outside of kernel context ***************************/
@@ -254,6 +258,11 @@ static void context_switcher(void)
             /* Remove the top thread from the priority queue as it is
              * either in sleep or deleted */
             (void)heap_del_max(&priority_queue);
+
+            if (SCHED_TEST_DETACHED_ZOMBIE(current_thread->flags)) {
+                sched_thread_terminate(current_thread->id);
+                current_thread = 0;
+            }
             continue; /* Select next thread */
         } else if ( /* if maximum time slices for this thread is used */
             (current_thread->ts_counter <= 0)
@@ -320,8 +329,17 @@ static void sched_thread_init(pthread_t i, ds_pthread_create_t * thread_def,
     if (thread_def->thread)
         *(thread_def->thread) = (pthread_t)i;
 
-    /* Init core specific stack frame */
-    init_stack_frame(thread_def, pthread_exit, priv);
+    /* Init core specific stack frame for user space */
+    init_stack_frame(thread_def, priv);
+
+#if 0
+    /* Allocate kernel mode stack (used for syscalls) */
+    task_table[i].kstack = kmalloc(configTHREAD_KSP_SIZE);
+    if (!(task_table[i].kstack)) {
+        panic("Can't allocate kernel stack for a new thread.");
+    }
+    task_table[i].ksp = task_table[i].kstack;
+#endif
 
     /* Mark this thread index as used.
      * EXEC flag is set later in sched_thread_set_exec */
@@ -338,9 +356,6 @@ static void sched_thread_init(pthread_t i, ds_pthread_create_t * thread_def,
 
     /* Clear signal flags & wait states */
     task_table[i].wait_tim = -1;
-
-    /* Clear events */
-    memset(&(task_table[i].event), 0, sizeof(osEvent));
 
     /* Update parent and child pointers */
     sched_thread_set_inheritance(i, parent);
@@ -418,6 +433,16 @@ threadInfo_t * sched_thread_clone(pthread_t thread_id)
 }
 #endif
 
+#if 0
+/**
+ * Get kernel mode stack pointer.
+ */
+void * sched_get_ksp(void)
+{
+    return current_thread->ksp;
+}
+#endif
+
 /**
  * Set thread into execution with its default priority.
  * @param thread_id is the thread id.
@@ -436,59 +461,39 @@ void sched_thread_set_exec(pthread_t thread_id)
   */
 static void _sched_thread_set_exec(pthread_t thread_id, osPriority pri)
 {
+    istate_t s;
+
     /* Check that given thread is in use but not in execution */
     if (SCHED_TEST_WAKEUP_OK(task_table[thread_id].flags)) {
+        s = get_interrupt_state();
+        disable_interrupt(); /* TODO Not MP safe! */
+
         task_table[thread_id].ts_counter = 4 + (int)pri;
         task_table[thread_id].priority = pri;
         task_table[thread_id].flags |= SCHED_EXEC_FLAG; /* Set EXEC flag */
         (void)heap_insert(&priority_queue, &(task_table[thread_id]));
+
+        set_interrupt_state(s);
     }
 }
 
 void sched_thread_sleep_current(void)
 {
+    istate_t s;
+
+    s = get_interrupt_state();
+    disable_interrupt(); /* TODO Not MP safe! */
+
     /* Sleep flag */
     current_thread->flags &= ~SCHED_EXEC_FLAG;
 
     /* Find index of the current thread in the priority queue and move it
      * on top */
     current_thread->priority = osPriorityError;
+
     heap_inc_key(&priority_queue, heap_find(&priority_queue, current_thread->id));
-}
 
-/**
- * Syscall was blocking.
- * Indicate that currently executing syscall is blocking and scheduler should
- * reschedule to a next thread.
- */
-void sched_syscall_block(void)
-{
-    sched_thread_sleep_current();
-    current_thread->flags |= SCHED_WAIT_FLAG;
-}
-
-void sched_syscall_unblock(pthread_t id)
-{
-    task_table[id].flags &= ~SCHED_WAIT_FLAG;
-    sched_thread_set_exec(id);
-}
-
-/**
- * Blocking syscall is returning.
- * Reschedule a thread that was blocked by a syscall, the blocked thread should be
- * set as the parent of for the kworker thread.
- * @note This function should be only called by a kworker thread.
- */
-void sched_syscall_unblock_parent(void)
-{
-    threadInfo_t * th;
-
-    if (current_thread->inh.parent) {
-        th = current_thread->inh.parent;
-
-        th->flags &= ~SCHED_WAIT_FLAG;
-        sched_thread_set_exec(th->id); /* Try to wakeup */
-    } /* else thread was killed */
+    set_interrupt_state(s);
 }
 
 /**
@@ -497,13 +502,25 @@ void sched_syscall_unblock_parent(void)
  */
 static void sched_thread_remove(pthread_t tt_id)
 {
-    #if configFAST_FORK != 0
+    istate_t s;
+
+#if configFAST_FORK != 0
     /* next_threadId_queue may break if this is not checked, otherwise it should
      * be quite safe to remove a thread multiple times. */
     if ((task_table[tt_id].flags & SCHED_IN_USE_FLAG) == 0) {
         return;
     }
-    #endif
+#endif
+
+    s = get_interrupt_state();
+    disable_interrupt();
+
+#if 0
+    /* Free kernel mode stack */
+    if (task_table[tt_id].kstack) {
+        kfree(task_table[tt_id].kstack);
+    }
+#endif
 
     task_table[tt_id].flags = 0; /* Clear all flags */
 
@@ -526,6 +543,68 @@ static void sched_thread_remove(pthread_t tt_id)
 #if configFAST_FORK != 0
     queue_push(&next_threadId_queue_cb, &tt_id);
 #endif
+
+    set_interrupt_state(s);
+}
+
+/**
+ * Terminate current thread.
+ * This makes current_thread a zombie that should be either killed by the
+ * parent thread or will be killed at least when the parent is killed.
+ * @param retval is a return value from the thread.
+ */
+static void sched_thread_die(intptr_t retval)
+{
+    current_thread->flags |= SCHED_ZOMBIE_FLAG;
+    sched_thread_sleep_current();
+    current_thread->retval = retval;
+    /* Thread will now block and next thread will be scheduled in. */
+}
+
+/**
+ * Mark thread as detached so it wont be turned into zombie on exit.
+ * @param id is a thread id.
+ * @return Return -EINVAL if invalid thread id was given; Otherwise zero.
+ */
+static int sched_thread_detach(pthread_t id)
+{
+    if ((task_table[id].flags & SCHED_IN_USE_FLAG) == 0) {
+        return -EINVAL;
+    }
+
+    task_table[id].flags |= SCHED_DETACH_FLAG;
+
+    if (SCHED_TEST_DETACHED_ZOMBIE(task_table[id].flags)) {
+        /* Workaround to remove the thread without locking the system now
+         * because we don't want to disable interrupts here for a long tome
+         * and we have no other proctection in the scheduler right now. */
+        istate_t s;
+        int i;
+
+        /* TODO This part is not quite clever nor MP safe. */
+        s = get_interrupt_state();
+        disable_interrupt();
+
+        i = heap_find(&priority_queue, id);
+
+        if (i < 0)
+            (void)heap_insert(&priority_queue, &(task_table[id]));
+        /* It will be now definitely gc'ed at some point. */
+        set_interrupt_state(s);
+    }
+
+    return 0;
+}
+
+static void sched_thread_sleep(long millisec)
+{
+    while ((current_thread->wait_tim = timers_add(current_thread->id,
+                    TIMERS_FLAG_ENABLED, millisec)) < 0);
+    sched_thread_sleep_current();
+    idle_sleep();
+    while (current_thread->wait_tim >= 0); /* We may want to do someting in this
+                                            * loop if thread is woken up but
+                                            * timer is not released. */
 }
 
 /* Functions defined in header file
@@ -548,10 +627,15 @@ static void sched_thread_remove(pthread_t tt_id)
 pthread_t sched_threadCreate(ds_pthread_create_t * thread_def, int priv)
 {
     unsigned int i;
+    istate_t s;
+
+    s = get_interrupt_state();
+    disable_interrupt();
 
 #if configFAST_FORK != 0
     if (!queue_pop(&next_threadId_queue_cb, &i)) {
         /* New thread could not be created */
+        set_interrupt_state(s);
         return 0;
     }
 #else
@@ -570,6 +654,8 @@ pthread_t sched_threadCreate(ds_pthread_create_t * thread_def, int priv)
     }
 #endif
 
+    set_interrupt_state(s);
+
     if (i == configSCHED_MAX_THREADS) {
         /* New thread could not be created */
         return 0;
@@ -584,16 +670,19 @@ pthread_t sched_thread_getId(void)
     return (pthread_t)(current_thread->id);
 }
 
+/* TODO Might be unsafe to call from multiple threads for the same tree! */
 osStatus sched_thread_terminate(pthread_t thread_id)
 {
     threadInfo_t * child;
+    threadInfo_t * prev_child;
 
     if (!SCHED_TEST_TERMINATE_OK(task_table[thread_id].flags)) {
         return (osStatus)osErrorParameter;
     }
 
-    /* Remove all childs from execution */
+    /* Remove all child threads from execution */
     child = task_table[thread_id].inh.first_child;
+    prev_child = NULL;
     if (child != NULL) {
         do {
             if (sched_thread_terminate(child->id) != (osStatus)osOK) {
@@ -601,11 +690,38 @@ osStatus sched_thread_terminate(pthread_t thread_id)
                                         * possibly a kworker that couldn't be
                                         * killed. */
             }
+
+            /* Fix child list */
+            if (child->flags &&
+                    (((threadInfo_t *)(task_table[thread_id].inh.first_child))->flags == 0)) {
+                task_table[thread_id].inh.first_child = child;
+                prev_child = child;
+            } else if (child->flags && prev_child) {
+                prev_child->inh.next_child = child;
+                prev_child = child;
+            } else if (child->flags) {
+                prev_child = child;
+            }
         } while ((child = child->inh.next_child) != NULL);
     }
 
-    /* Remove thread itself */
-    sched_thread_remove(task_table[thread_id].id);
+    /* We set this thread as a zombie. If detach is also set then
+     * sched_thread_remove() will remove this thread immediately but usually
+     * it's not, then it will release some resourses but left the thread
+     * struct mostly intact. */
+    task_table[thread_id].flags |= SCHED_ZOMBIE_FLAG;
+    task_table[thread_id].flags &= ~SCHED_EXEC_FLAG;
+
+    /* Remove thread completely if it is a detached zombie, its parent is a
+     * detached zombie thread or the thread is parentles for any reason.
+     * Otherwise we left the thread struct intact for now.
+     */
+    if (SCHED_TEST_DETACHED_ZOMBIE(task_table[thread_id].flags) ||
+            (task_table[thread_id].inh.parent == 0)             ||
+            ((task_table[thread_id].inh.parent != 0) &&
+            SCHED_TEST_DETACHED_ZOMBIE(((threadInfo_t *)(task_table[thread_id].inh.parent))->flags))) {
+        sched_thread_remove(task_table[thread_id].id);
+    }
 
     return (osStatus)osOK;
 }
@@ -637,29 +753,6 @@ osPriority sched_thread_getPriority(pthread_t thread_id)
     return task_table[thread_id].def_priority;
 }
 
-
-/* ==== Generic Wait Functions ==== */
-
-osStatus sched_threadDelay(uint32_t millisec)
-{
-    /* osOK is always returned from delay syscall if everything went ok,
-     * where as threadWait returns a pointer which may change during
-     * wait time. */
-    current_thread->event.status = osOK;
-
-    if (millisec != (uint32_t)osWaitForever) {
-        if ((current_thread->wait_tim = timers_add(current_thread->id, TIMERS_FLAG_ENABLED, millisec)) < 0) {
-             current_thread->event.status = osErrorResource;
-        }
-    }
-
-    if (current_thread->event.status != osErrorResource) {
-        sched_syscall_block(); /* TODO Move this line to timers_add()? */
-    }
-
-    return current_thread->event.status;
-}
-
 /**
   * @}
   */
@@ -672,7 +765,7 @@ osStatus sched_threadDelay(uint32_t millisec)
 uintptr_t sched_syscall(uint32_t type, void * p)
 {
     switch(type) {
-    case SYSCALL_SCHED_DELAY:
+    case SYSCALL_SCHED_SLEEP_MS:
         {
         uint32_t val;
         if (!useracc(p, sizeof(uint32_t), VM_PROT_READ)) {
@@ -682,7 +775,8 @@ uintptr_t sched_syscall(uint32_t type, void * p)
             return -EFAULT;
         }
         copyin(p, &val, sizeof(uint32_t));
-        return (uint32_t)sched_threadDelay(val);
+        sched_thread_sleep(val);
+        return 0; /* TODO Return value might be incorrect */
         }
 
     case SYSCALL_SCHED_GET_LOADAVG:
@@ -697,16 +791,6 @@ uintptr_t sched_syscall(uint32_t type, void * p)
         sched_get_loads(arr);
         copyout(arr, p, sizeof(arr));
         }
-        return (uint32_t)NULL;
-
-    case SYSCALL_SCHED_EVENT_GET:
-        if (!useracc(p, sizeof(osEvent), VM_PROT_WRITE)) {
-            /* No permission to write */
-            /* TODO Signal/Kill? */
-            current_thread->errno = EFAULT;
-            return -1;
-        }
-        copyout((void *)(&(current_thread->event)), p, sizeof(osEvent));
         return (uint32_t)NULL;
 
     default:
@@ -736,7 +820,7 @@ uintptr_t sched_syscall_thread(uint32_t type, void * p)
         return 0;
 
     case SYSCALL_SCHED_THREAD_GETTID:
-        return (uint32_t)sched_thread_getId();
+        return (uintptr_t)sched_thread_getId();
 
     case SYSCALL_SCHED_THREAD_TERMINATE:
         {
@@ -748,7 +832,30 @@ uintptr_t sched_syscall_thread(uint32_t type, void * p)
             return -1;
         }
         copyin(p, &thread_id, sizeof(pthread_t));
-        return (uint32_t)sched_thread_terminate(thread_id);
+        return (uintptr_t)sched_thread_terminate(thread_id);
+        }
+
+    case SYSCALL_SCHED_THREAD_DIE:
+        /* We don't care about validity of a possible pointer returned as a
+         * return value because we don't touch it in the kernel. */
+        sched_thread_die((intptr_t)p); /* Thread will eventually block now... */
+        return 0;
+
+    case SYSCALL_SCHED_THREAD_DETACH:
+        {
+        pthread_t thread_id;
+        if (!useracc(p, sizeof(pthread_t), VM_PROT_READ)) {
+            /* No permission to read */
+            /* TODO Signal/Kill? */
+            current_thread->errno = EFAULT;
+            return -1;
+        }
+        copyin(p, &thread_id, sizeof(pthread_t));
+        if ((uintptr_t)sched_thread_detach(thread_id)) {
+            current_thread->errno = EINVAL;
+            return -1;
+        }
+        return 0;
         }
 
     case SYSCALL_SCHED_THREAD_SETPRIORITY:
@@ -761,7 +868,7 @@ uintptr_t sched_syscall_thread(uint32_t type, void * p)
             return -1;
         }
         copyin(p, &ds, sizeof(ds_osSetPriority_t));
-        return (uint32_t)sched_thread_setPriority( ds.thread_id, ds.priority);
+        return (uintptr_t)sched_thread_setPriority( ds.thread_id, ds.priority);
         }
 
     case SYSCALL_SCHED_THREAD_GETPRIORITY:
@@ -774,15 +881,15 @@ uintptr_t sched_syscall_thread(uint32_t type, void * p)
             return -1;
         }
         copyin(p, &pri, sizeof(osPriority));
-        return (uint32_t)sched_thread_getPriority(pri);
+        return (uintptr_t)sched_thread_getPriority(pri);
         }
 
     case SYSCALL_SCHED_THREAD_GETERRNO:
-        return (uint32_t)(current_thread->errno);
+        return (uintptr_t)(current_thread->errno);
 
     default:
         current_thread->errno = ENOSYS;
-        return (uint32_t)NULL;
+        return (uintptr_t)NULL;
     }
 }
 

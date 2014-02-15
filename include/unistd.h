@@ -43,5 +43,6 @@
 
 int brk(void *);
 void * sbrk(intptr_t incr);
+unsigned sleep(unsigned seconds);
 
 #endif /* UNISTD_H */

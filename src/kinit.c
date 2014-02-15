@@ -102,7 +102,8 @@ void kinit(void)
         .thread     = 0,
         .start      = main,
         .def        = &init_attr,
-        .argument   = 0
+        .argument   = 0,
+        .del_thread = pthread_exit
     };
     pthread_t tid;
     char buf[80];

@@ -69,9 +69,12 @@
  */
 #define SCHED_IN_USE_FLAG   0x00000001u /*!< IN USE FLAG */
 #define SCHED_EXEC_FLAG     0x00000002u /*!< EXEC = 1 / SLEEP = 0 */
-#define SCHED_WAIT_FLAG     0x00000004u /*!< Waiting for kworker to complete. */
+#define SCHED_WAIT_FLAG     0x00000004u /*!< Waiting for kworker or IO. */
 #define SCHED_NO_SIG_FLAG   0x00000008u /*!< Thread cannot be woken up by a
                                          *   signal. */
+#define SCHED_ZOMBIE_FLAG   0x00000010u /*!< Zombie waiting for parent. */
+#define SCHED_DETACH_FLAG   0x00000020u /*!< Detached thread. If thread exits
+                                         *   it will be immediately destroyed. */
 #define SCHED_KWORKER_FLAG  0x40000000u /*!< Thread is a kworker. */
 #define SCHED_INTERNAL_FLAG 0x80000000u /*!< Immortal internal kernel thread. */
 
@@ -79,14 +82,23 @@
  * Context switch ok flags.
  * When these flags are set for a thread it's ok to make a context switch to it.
  */
-#define SCHED_CSW_OK_FLAGS  (SCHED_EXEC_FLAG | SCHED_IN_USE_FLAG)
+#define SCHED_CSW_OK_FLAGS \
+    (SCHED_EXEC_FLAG | SCHED_IN_USE_FLAG)
+
+/**
+ * Flags marking that a thread is a detached zombie and can be killed
+ * without parent's intervention.
+ */
+#define SCHED_DETACHED_ZOMBIE_FLAGS \
+    (SCHED_IN_USE_FLAG | SCHED_ZOMBIE_FLAG | SCHED_DETACH_FLAG)
 
 /**
  * Test if context switch to a thread is ok based on flags.
  * @param x is the flags of the thread tested.
  */
-#define SCHED_TEST_CSW_OK(x) \
-    (((x) & SCHED_CSW_OK_FLAGS) == SCHED_CSW_OK_FLAGS)
+#define SCHED_TEST_CSW_OK(x)                                            \
+    (((x) & (SCHED_CSW_OK_FLAGS | SCHED_WAIT_FLAG | SCHED_ZOMBIE_FLAG)) \
+     == SCHED_CSW_OK_FLAGS)
 
 /**
  * Test if waking up a thread is ok based on flags.
@@ -95,7 +107,7 @@
  * @param x is the flags of the thread tested.
  */
 #define SCHED_TEST_WAKEUP_OK(x)                                             \
-    (((x) & (SCHED_IN_USE_FLAG | SCHED_EXEC_FLAG                            \
+    (((x) & (SCHED_IN_USE_FLAG | SCHED_EXEC_FLAG | SCHED_ZOMBIE_FLAG        \
              | SCHED_NO_SIG_FLAG | SCHED_WAIT_FLAG)) == SCHED_IN_USE_FLAG)
 
 /**
@@ -106,15 +118,28 @@
     (((x) & (SCHED_IN_USE_FLAG | SCHED_INTERNAL_FLAG)) == SCHED_IN_USE_FLAG)
 
 /**
+ * Test if thread is a detached zombie.
+ * If thread is a detached zombie it can be killed without parent's
+ * intervention.
+ * @param x is the flags of the thread tested.
+ */
+#define SCHED_TEST_DETACHED_ZOMBIE(x) \
+    (((x) & SCHED_DETACHED_ZOMBIE_FLAGS) == SCHED_DETACHED_ZOMBIE_FLAGS)
+
+/**
  * Thread info struct.
  * Thread Control Block structure.
  */
 typedef struct {
     void * sp;                  /*!< Stack pointer. */
+#if 0
+    void * kstack;              /*!< Pointer to the kernel mode stack. */
+    void * ksp;                 /*!< Kernel mode stack pointer. */
+#endif
     uint32_t flags;             /*!< Status flags. */
     int errno;                  /*!< Thread local errno. */
+    intptr_t retval;            /*!< Return value of the thread. */
     int wait_tim;               /*!< Reference to a timeout timer. */
-    osEvent event;              /*!< Event struct. */
     osPriority def_priority;    /*!< Thread priority. */
     osPriority priority;        /*!< Thread dynamic priority. */
     int ts_counter;             /*!< Time slice counter. */

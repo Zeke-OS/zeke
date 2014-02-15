@@ -43,22 +43,6 @@
  */
 int getloadavg(double loadavg[3], int nelem);
 
-//  ==== Generic Wait Functions ====
-
-/// Wait for Timeout (Time Delay)
-/// \param[in]     millisec      time delay value
-/// \return status code that indicates the execution status of the function.
-osStatus osDelay(uint32_t millisec);
-
-#if (defined (osFeature_Wait)  &&  (osFeature_Wait != 0))     // Generic Wait available
-
-/// Wait for Signal, Message, Mail, or Timeout
-/// \param[in] millisec          timeout value or 0 in case of no time-out
-/// \return event that contains signal, message, or mail information or error code.
-osEvent osWait(uint32_t millisec);
-
-#endif  // Generic Wait available
-
 //  ==== Semaphore Management Functions ====
 
 #if (defined (osFeature_Semaphore)  &&  (osFeature_Semaphore != 0))     // Semaphore available

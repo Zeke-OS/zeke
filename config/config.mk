@@ -42,7 +42,6 @@ configARCH = __ARM6K__# Architecture of the core
 configMMU = 1# MMU support
 configUART = 1#
 configATAG = 1# Support bootloader ATAGs
-configPREEMPT = 0# Reservation for full pre-emptible kernel
 configMP = 0# Enable multi-processing support Requires: configREEMPT
 
 # Kernel logging methods (Select one or none)
@@ -59,16 +58,16 @@ configMAXPROC = 5# maxproc, default maximum number of processes.
 configSCHED_TINY = 1#
 #
 # SCHED_TINY Config
-configSCHED_MAX_THREADS = 10# Maximum number of threads
+configSCHED_MAX_THREADS = 10# Maximum number of threads.
 configFAST_FORK = 0# Use a queue to find the next free threadId.
-configSCHED_HZ = 100u# Scheduler frequency in Hz
+configSCHED_HZ = 100u# Scheduler frequency in Hz.
 configSCHED_LAVG_PER = SCHED_LAVGPERIOD_11SEC#
 
 # Maximum number of timers available
 configTIMERS_MAX = 4#
 
 # String functions
-configSTRING_OPT_SIZE = 1# Optimize string functions for speed or size
+configSTRING_OPT_SIZE = 0# Optimize string functions for speed or size
 
 # usrinit
 configUSRINIT_SSIZE = 200u# Stack size for usrinit thread

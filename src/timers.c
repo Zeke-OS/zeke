@@ -91,7 +91,13 @@ void timers_run(void)
         uint32_t exp = timers_array[i].expires;
         if (timers_array[i].flags & TIMERS_FLAG_ENABLED) {
             if (exp == value) {
-                sched_syscall_unblock(timers_array[i].thread_id);
+                //sched_syscall_unblock(timers_array[i].thread_id);
+                threadInfo_t * thread;
+                thread = sched_get_pThreadInfo(timers_array[i].thread_id);
+                if (thread) {
+                    thread->wait_tim = -1;
+                    sched_thread_set_exec(thread->id);
+                }
 #if 0
                 KERROR(KERROR_DEBUG, "DING");
 #endif

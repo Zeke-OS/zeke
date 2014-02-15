@@ -43,7 +43,6 @@
     .globl  interrupt_svc
     .type   interrupt_svc,%function
 interrupt_svc:
-#if configPREEMPT != 0
     /* In Pre-empt mode we use thread stack also in syscalls to allow syscalls
      * to be pre-empted at almost any time. So next up we'll swap back to thread
      * stack pointer and restore svc sp later after the call.
@@ -64,7 +63,6 @@ interrupt_svc:
     push    {r4}
  
     cpsie   aif                 /* Enable interrupts */
-#endif
 
     push    {r1-r12, lr}
 
@@ -76,25 +74,6 @@ interrupt_svc:
 
     /* Call kernel's internal syscall handler */
     bl      _intSyscall_handler
-
-    cmp     r1, #1              /* On ARM11 r1 is set to 1 if syscall was
-                                 * blocking and otherwise 0. */
-    bne     Lret_svc            /* Syscall was not blocking so we can return. */
-    pop     {r1-r12, lr}
-#if configPREEMPT != 0
-    cpsid   aif                 /* Disable interrupts to prevent stack
-                                 * corruption */
-    pop     {r4}                /* Restore spsr */
-    msr     spsr, r4
-
-    mov     r4, lr
-    cps     #0x12               /* Change to IRQ mode. */
-    mov     lr, r4
-#endif
-    add     lr, lr, #4          /* interrupt_sys will expect this... */
-    b       interrupt_sys       /* Syscall was blocking. */
-
-Lret_svc:
     mov     r4, r0              /* Preserve syscall retval */
 
     /* Attach process master page table */
@@ -105,12 +84,10 @@ Lret_svc:
     mov     r0, r4              /* Restore syscall retval */
     pop     {r1-r12, lr}
 
-#if configPREEMPT != 0
     cpsid   aif                 /* Disable interrupts to prevent stack */
                                 /* corruption */
     pop     {r4}                /* Restore spsr */
     msr     spsr, r4
-#endif
     movs    pc, lr              /* Regular exit from svc */
 
 
@@ -122,13 +99,6 @@ Lret_svc:
 interrupt_sys:
     pushcontext
 
-#if 0
-    /* Check if we are here just after kinit */
-    and     r2, r1, #0x1f   /* 0x1f == system mode */
-    cmp     r2, #0x1f
-    moveq   r0, #0
-    bleq    sched_handler   /* Get initial value for thread sp */
-#endif
     /* Update thread stack pointer */
     bl      wr_thread_stack_ptr
 

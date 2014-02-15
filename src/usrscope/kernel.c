@@ -73,6 +73,14 @@ int sysctl(int * name, unsigned int namelen, void * oldp, size_t * oldlenp,
     return (int)syscall(SYSCALL_SYSCTL_SYSCTL, &args);
 }
 
+unsigned sleep(unsigned seconds)
+{
+    unsigned int millisec = seconds * 1000;
+
+    return (unsigned)syscall(SYSCALL_SCHED_SLEEP_MS, &millisec);
+}
+
+
 /** @addtogroup Thread_Management
   * @{
   */
@@ -112,25 +120,6 @@ int __error(void)
     return (int)syscall(SYSCALL_SCHED_THREAD_GETERRNO, NULL);
 }
 
-
-/**
-  * @}
-  */
-
-/** @addtogroup Wait
-  * @{
-  */
-
-/* Generic Wait Functions ****************************************************/
-
-osStatus osDelay(uint32_t millisec)
-{
-    osStatus result;
-
-    result = (osStatus)syscall(SYSCALL_SCHED_DELAY, &millisec);
-
-    return result;
-}
 
 /**
   * @}

@@ -83,8 +83,7 @@ void wr_thread_stack_ptr(void * ptr)
     );
 }
 
-void init_stack_frame(ds_pthread_create_t * thread_def,
-        void (*a_del_thread)(void *), int priv)
+void init_stack_frame(ds_pthread_create_t * thread_def, int priv)
 {
     sw_stack_frame_t * thread_frame;
 
@@ -99,7 +98,7 @@ void init_stack_frame(ds_pthread_create_t * thread_def,
     thread_frame->r12 = 0;
     thread_frame->sp = (uint32_t)thread_frame;
     thread_frame->pc = ((uint32_t)(thread_def->start)) + 4;
-    thread_frame->lr = (uint32_t)a_del_thread;
+    thread_frame->lr = (uint32_t)(thread_def->del_thread);
     thread_frame->psr = priv ? SYSTEM_PSR : USER_PSR;
 }
 

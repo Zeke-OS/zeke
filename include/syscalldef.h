@@ -43,6 +43,7 @@ typedef struct {
     start_routine start;    /*!< Thread start routine. */
     pthread_attr_t * def;   /*!< Thread def attributes. */
     void * argument;        /*!< Thread parameter(s) pointer. */
+    void (*del_thread)(void *); /*!< Thread exit function. */
 } ds_pthread_create_t;
 
 /** Argument struct for SYSCALL_SCHED_THREAD_SETPRIORITY */
