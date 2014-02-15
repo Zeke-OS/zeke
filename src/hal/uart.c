@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   UART HAL.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,16 +37,16 @@
 #include "uart.h"
 
 static uart_port_t uart_ports[UART_PORTS_MAX];
-static int uart_no_ports;
+static int uart_nr_ports;
 
 int uart_register_port(uart_port_t * port)
 {
     int i, retval = -1;
 
-    i = uart_no_ports;
+    i = uart_nr_ports;
     if (i < UART_PORTS_MAX) {
         uart_ports[i] = *port;
-        uart_no_ports++;
+        uart_nr_ports++;
         retval = i;
     }
 
@@ -55,14 +55,14 @@ int uart_register_port(uart_port_t * port)
 
 int uart_nports(void)
 {
-    return uart_no_ports;
+    return uart_nr_ports;
 }
 
 uart_port_t * uart_getport(int port)
 {
     uart_port_t * retval = 0;
 
-    if (port < uart_no_ports)
+    if (port < uart_nr_ports)
         retval = &uart_ports[port];
 
     return retval;
