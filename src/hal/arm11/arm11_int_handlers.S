@@ -61,7 +61,7 @@ interrupt_svc:
      * We don't encourage to use nested swi calls but oh well... */
     mrs     r4, spsr
     push    {r4}
- 
+
     cpsie   aif                 /* Enable interrupts */
 
     push    {r1-r12, lr}
@@ -70,18 +70,31 @@ interrupt_svc:
     push    {r0-r3}             /* Preserve syscall argument(s) */
     attach_kernel_mptable
     /* We could actually panic here if attach failed */
-    pop     {r0-r3}
+
+    /* Change to kernel stack to protect kernel data.
+     * RFE This breaks nested syscalls. */
+    bl      sched_get_current_kstack
+    pop     {r5-r8}
+    mov     r4, sp              /* Preserve user sp. */
+    mov     sp, r0              /* Change to kernel sp. */
+    mov     r0, r5              /* Restore arguments */
+    mov     r1, r6
+    mov     r2, r7
+    mov     r3, r8
+
+    /*pop     {r0-r3}/
 
     /* Call kernel's internal syscall handler */
     bl      _intSyscall_handler
-    mov     r4, r0              /* Preserve syscall retval */
+    mov     r5, r0              /* Preserve syscall retval */
 
     /* Attach process master page table */
     ldr     r0, =current_process_id
     ldr     r0, [r0]
     attach_proc_mptable
 
-    mov     r0, r4              /* Restore syscall retval */
+    mov     sp, r4              /* Restore user sp. */
+    mov     r0, r5              /* Restore syscall retval */
     pop     {r1-r12, lr}
 
     cpsid   aif                 /* Disable interrupts to prevent stack */

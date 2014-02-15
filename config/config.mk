@@ -60,6 +60,7 @@ configSCHED_TINY = 1#
 # SCHED_TINY Config
 configSCHED_MAX_THREADS = 10# Maximum number of threads.
 configFAST_FORK = 0# Use a queue to find the next free threadId.
+configKSTACK_SIZE = 4096# Size of per thread kernel stack in multiples of 4kB.
 configSCHED_HZ = 100u# Scheduler frequency in Hz.
 configSCHED_LAVG_PER = SCHED_LAVGPERIOD_11SEC#
 
@@ -70,7 +71,7 @@ configTIMERS_MAX = 4#
 configSTRING_OPT_SIZE = 0# Optimize string functions for speed or size
 
 # usrinit
-configUSRINIT_SSIZE = 200u# Stack size for usrinit thread
+configUSRINIT_SSIZE = 8192# Stack size for usrinit thread
 configUSRINIT_PRI = osPriorityNormal# Priority of usrinit thread
 
 # Virtual file system and file systems

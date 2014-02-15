@@ -116,6 +116,7 @@ extern volatile proc_info_t * curproc;
 pid_t proc_fork(pid_t pid);
 int proc_kill(void);
 int proc_replace(pid_t pid, void * image, size_t size);
+void proc_thread_removed(pid_t pid, pthread_t thread_id);
 proc_info_t * proc_get_struct(pid_t pid);
 mmu_pagetable_t * pr_get_pptable(pid_t pid);
 

@@ -132,10 +132,7 @@
  */
 typedef struct {
     void * sp;                  /*!< Stack pointer. */
-#if 0
-    void * kstack;              /*!< Pointer to the kernel mode stack. */
-    void * ksp;                 /*!< Kernel mode stack pointer. */
-#endif
+    void * kstack_start;        /*!< Stack start address. */
     uint32_t flags;             /*!< Status flags. */
     int errno;                  /*!< Thread local errno. */
     intptr_t retval;            /*!< Return value of the thread. */
@@ -171,11 +168,6 @@ extern volatile threadInfo_t * current_thread;
 
 /* Public function prototypes ***************************************************/
 /**
- * Start the scheduler
- */
-void sched_start(void);
-
-/**
  * Scheduler handler.
  *
  * Scheduler handler is mainly called due to sysTick and PendSV
@@ -185,13 +177,9 @@ void sched_start(void);
  */
 void * sched_handler(void * tsp);
 
-/**
- * Get pointer to a threadInfo structure.
- * @param thread_id id of a thread.
- * @return Pointer to a threadInfo structure of a correspondig thread id
- *         or NULL if thread does not exist.
- */
+pthread_t sched_get_current_tid(void);
 threadInfo_t * sched_get_pThreadInfo(pthread_t thread_id);
+void * sched_get_current_kstack(void);
 
 threadInfo_t * sched_thread_clone(pthread_t thread_id);
 
@@ -211,10 +199,6 @@ void sched_thread_sleep_current(void);
  * @param[out] loads load averages.
  */
 void sched_get_loads(uint32_t loads[3]);
-
-void sched_syscall_block(void);
-void sched_syscall_unblock(pthread_t id);
-void sched_syscall_unblock_parent(void);
 
 /**
   * @}
@@ -238,12 +222,6 @@ void sched_syscall_unblock_parent(void);
  *                      kworker; Otherwise user mode is selected.
  */
 pthread_t sched_threadCreate(ds_pthread_create_t * thread_def, int priv);
-
-/**
- * Get id of the currently running thread
- * @return Thread id of the current thread
- */
-pthread_t sched_thread_getId(void);
 
 /**
  * Terminate a thread and its childs.

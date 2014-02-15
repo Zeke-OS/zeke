@@ -105,12 +105,10 @@ static uint32_t loadavg[3]  = { 0, 0, 0 }; /*!< CPU load averages */
 /** Stack for idle task */
 static char sched_idle_stack[sizeof(sw_stack_frame_t)
                              + sizeof(hw_stack_frame_t)
-                             + 40]; /* Absolute minimum with current idle task
-                                     * implementation */
+                             + configKSTACK_SIZE + 40];
 
 /* sysctl node for scheduler */
-SYSCTL_NODE(_kern, 0, sched, CTLFLAG_RW, 0,
-                "Scheduler");
+SYSCTL_NODE(_kern, 0, sched, CTLFLAG_RW, 0, "Scheduler");
 
 /* Static init */
 void sched_init(void) __attribute__((constructor));
@@ -311,6 +309,20 @@ static void context_switcher(void)
     current_thread->ts_counter--;
 }
 
+/**
+ * Get thread id of the current thread.
+ */
+pthread_t sched_get_current_tid(void)
+{
+    return (pthread_t)(current_thread->id);
+}
+
+/**
+ * Get pointer to a threadInfo structure.
+ * @param thread_id id of a thread.
+ * @return Pointer to a threadInfo structure of a correspondig thread id
+ *         or NULL if thread does not exist.
+ */
 threadInfo_t * sched_get_pThreadInfo(pthread_t thread_id)
 {
     if (thread_id > configSCHED_MAX_THREADS)
@@ -320,6 +332,14 @@ threadInfo_t * sched_get_pThreadInfo(pthread_t thread_id)
         return NULL;
 
     return &(task_table[thread_id]);
+}
+
+/**
+ * Get kstack of the current thread.
+ */
+void * sched_get_current_kstack(void)
+{
+    return current_thread->kstack_start;
 }
 
 /**
@@ -348,15 +368,6 @@ static void sched_thread_init(pthread_t i, ds_pthread_create_t * thread_def,
     /* Init core specific stack frame for user space */
     init_stack_frame(thread_def, priv);
 
-#if 0
-    /* Allocate kernel mode stack (used for syscalls) */
-    task_table[i].kstack = kmalloc(configTHREAD_KSP_SIZE);
-    if (!(task_table[i].kstack)) {
-        panic("Can't allocate kernel stack for a new thread.");
-    }
-    task_table[i].ksp = task_table[i].kstack;
-#endif
-
     /* Mark this thread index as used.
      * EXEC flag is set later in sched_thread_set_exec */
     task_table[i].flags         = (uint32_t)SCHED_IN_USE_FLAG;
@@ -381,6 +392,8 @@ static void sched_thread_init(pthread_t i, ds_pthread_create_t * thread_def,
                                          + thread_def->def->stackSize
                                          - sizeof(hw_stack_frame_t)
                                          - sizeof(sw_stack_frame_t));
+    task_table[i].kstack_start = (void *)((uint32_t)(thread_def->def->stackAddr)
+                                         + configKSTACK_SIZE);
 
     /* Put thread into execution */
     _sched_thread_set_exec(i, thread_def->def->tpriority);
@@ -449,16 +462,6 @@ threadInfo_t * sched_thread_clone(pthread_t thread_id)
 }
 #endif
 
-#if 0
-/**
- * Get kernel mode stack pointer.
- */
-void * sched_get_ksp(void)
-{
-    return current_thread->ksp;
-}
-#endif
-
 /**
  * Set thread into execution with its default priority.
  * @param thread_id is the thread id.
@@ -513,30 +516,24 @@ void sched_thread_sleep_current(void)
 }
 
 /**
- * Removes a thread from execution.
+ * Removes a thread from scheduling.
  * @param tt_id Thread task table id
  */
 static void sched_thread_remove(pthread_t tt_id)
 {
     istate_t s;
 
-#if configFAST_FORK != 0
-    /* next_threadId_queue may break if this is not checked, otherwise it should
-     * be quite safe to remove a thread multiple times. */
     if ((task_table[tt_id].flags & SCHED_IN_USE_FLAG) == 0) {
         return;
     }
-#endif
+
+    /* Notify the owner about removal of a thread. */
+    if (task_table[tt_id].pid_owner != 0) {
+        proc_thread_removed(task_table[tt_id].pid_owner, tt_id);
+    }
 
     s = get_interrupt_state();
     disable_interrupt();
-
-#if 0
-    /* Free kernel mode stack */
-    if (task_table[tt_id].kstack) {
-        kfree(task_table[tt_id].kstack);
-    }
-#endif
 
     task_table[tt_id].flags = 0; /* Clear all flags */
 
@@ -679,11 +676,6 @@ pthread_t sched_threadCreate(ds_pthread_create_t * thread_def, int priv)
         /* Return the id of the new thread */
         return (pthread_t)i;
     }
-}
-
-pthread_t sched_thread_getId(void)
-{
-    return (pthread_t)(current_thread->id);
 }
 
 /* TODO Might be unsafe to call from multiple threads for the same tree! */
@@ -836,7 +828,7 @@ uintptr_t sched_syscall_thread(uint32_t type, void * p)
         return 0;
 
     case SYSCALL_SCHED_THREAD_GETTID:
-        return (uintptr_t)sched_thread_getId();
+        return (uintptr_t)sched_get_current_tid();
 
     case SYSCALL_SCHED_THREAD_TERMINATE:
         {

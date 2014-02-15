@@ -271,6 +271,19 @@ proc_info_t * proc_get_struct(pid_t pid)
 }
 
 /**
+ * Remove thread from a process.
+ * @param pid       is a process id of the thread owner process.
+ * @param thread_id is a thread if of the removed thread.
+ */
+void proc_thread_removed(pid_t pid, pthread_t thread_id)
+{
+    /* TODO
+     * + Free stack area
+     * + Remove thread pointer
+     */
+}
+
+/**
  * Get page table descriptor of a process.
  * @param pid Process ID.
  * @return Page table descriptor.
