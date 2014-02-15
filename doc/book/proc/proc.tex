@@ -77,3 +77,27 @@ reverse order of creation.
 
 Killing of \verb+child_2+ causes \verb+child_2_1+ to be killed first.
 
+
+\section{Threads}
+
+\subsection{Thread Stack}
+
+\begin{figure}
+\begin{verbatim}
++-------------------+ stackAddr + size of stack
+| usr stack begins  |
+| first stack frame | sp at the beginning
+|                   |
+|                   |
+|                   |
+|                   |
++-------------------+ stackAddr + 4kB by default
+| kstack begins     | kstack_start
+|                   |
+|                   |
+|                   |
++-------------------+ stackAddr + 0
+\end{verbatim}
+\caption{Thread stack.}
+\label{figure:thread_stack}
+\end{figure}
