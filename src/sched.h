@@ -200,18 +200,6 @@ void sched_thread_sleep_current(void);
  */
 void sched_get_loads(uint32_t loads[3]);
 
-/**
-  * @}
-  */
-
-/** @addtogroup Kernel
-  * @{
-  */
-
-/** @addtogroup External_routines
-  * @{
-  */
-
 /* Functions that are mainly used by syscalls but can be also caleed by
  * other kernel source modules. */
 
@@ -238,13 +226,9 @@ int sched_thread_terminate(pthread_t thread_id);
  */
 int sched_thread_set_priority(pthread_t thread_id, osPriority priority);
 
-osPriority sched_thread_getPriority(pthread_t thread_id);
+osPriority sched_thread_get_priority(pthread_t thread_id);
 
 #endif /* SCHED_H */
-
-/**
-  * @}
-  */
 
 /**
   * @}
