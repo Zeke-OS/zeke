@@ -679,13 +679,13 @@ pthread_t sched_threadCreate(ds_pthread_create_t * thread_def, int priv)
 }
 
 /* TODO Might be unsafe to call from multiple threads for the same tree! */
-osStatus sched_thread_terminate(pthread_t thread_id)
+int sched_thread_terminate(pthread_t thread_id)
 {
     threadInfo_t * child;
     threadInfo_t * prev_child;
 
     if (!SCHED_TEST_TERMINATE_OK(task_table[thread_id].flags)) {
-        return (osStatus)osErrorParameter;
+        return -EPERM;
     }
 
     /* Remove all child threads from execution */
@@ -693,7 +693,7 @@ osStatus sched_thread_terminate(pthread_t thread_id)
     prev_child = NULL;
     if (child != NULL) {
         do {
-            if (sched_thread_terminate(child->id) != (osStatus)osOK) {
+            if (sched_thread_terminate(child->id) != 0) {
                 child->inh.parent = 0; /* Thread is now parentles, it was
                                         * possibly a kworker that couldn't be
                                         * killed. */
@@ -731,13 +731,13 @@ osStatus sched_thread_terminate(pthread_t thread_id)
         sched_thread_remove(task_table[thread_id].id);
     }
 
-    return (osStatus)osOK;
+    return 0;
 }
 
-osStatus sched_thread_setPriority(pthread_t thread_id, osPriority priority)
+int sched_thread_set_priority(pthread_t thread_id, osPriority priority)
 {
     if ((task_table[thread_id].flags & SCHED_IN_USE_FLAG) == 0) {
-        return (osStatus)osErrorParameter;
+        return -EINVAL;
     }
 
     /* Only thread def_priority is updated to make this syscall O(1)
@@ -746,10 +746,10 @@ osStatus sched_thread_setPriority(pthread_t thread_id, osPriority priority)
      */
     task_table[thread_id].def_priority = priority;
 
-    return (osStatus)osOK;
+    return 0;
 }
 
-osPriority sched_thread_getPriority(pthread_t thread_id)
+osPriority sched_thread_get_priority(pthread_t thread_id)
 {
     if ((task_table[thread_id].flags & SCHED_IN_USE_FLAG) == 0) {
         return (osPriority)osPriorityError;
@@ -876,7 +876,7 @@ uintptr_t sched_syscall_thread(uint32_t type, void * p)
             return -1;
         }
         copyin(p, &ds, sizeof(ds_osSetPriority_t));
-        return (uintptr_t)sched_thread_setPriority( ds.thread_id, ds.priority);
+        return (uintptr_t)sched_thread_set_priority( ds.thread_id, ds.priority);
         }
 
     case SYSCALL_SCHED_THREAD_GETPRIORITY:
@@ -889,7 +889,7 @@ uintptr_t sched_syscall_thread(uint32_t type, void * p)
             return -1;
         }
         copyin(p, &pri, sizeof(osPriority));
-        return (uintptr_t)sched_thread_getPriority(pri);
+        return (uintptr_t)sched_thread_get_priority(pri);
         }
 
     case SYSCALL_SCHED_THREAD_GETERRNO:

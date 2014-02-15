@@ -126,17 +126,13 @@ int pthread_mutex_unlock(pthread_mutex_t * mutex);
 /// Terminate execution of a thread and remove it from Active Threads.
 /// \param[in]     thread_id   thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
 /// \return status code that indicates the execution status of the function.
-osStatus osThreadTerminate(pthread_t thread_id);
-
-/// Pass control to next thread that is in state \b READY.
-/// \return status code that indicates the execution status of the function.
-osStatus osThreadYield(void);
+int osThreadTerminate(pthread_t thread_id);
 
 /// Change priority of an active thread.
 /// \param[in]     thread_id     thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
 /// \param[in]     priority      new priority value for the thread function.
 /// \return status code that indicates the execution status of the function.
-osStatus osThreadSetPriority(pthread_t thread_id, osPriority priority);
+int osThreadSetPriority(pthread_t thread_id, osPriority priority);
 
 /// Get current priority of an active thread.
 /// \param[in]     thread_id     thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.

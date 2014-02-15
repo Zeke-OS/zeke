@@ -85,29 +85,19 @@ unsigned sleep(unsigned seconds)
   * @{
   */
 
-osStatus osThreadTerminate(pthread_t thread_id)
+int osThreadTerminate(pthread_t thread_id)
 {
-    return (osStatus)syscall(SYSCALL_SCHED_THREAD_TERMINATE, &thread_id);
+    return (int)syscall(SYSCALL_SCHED_THREAD_TERMINATE, &thread_id);
 }
 
-osStatus osThreadYield(void)
-{
-    /* TODO Should use temp reschedule before this */
-
-    /* Request immediate context switch */
-    req_context_switch();
-
-    return (osStatus)osOK;
-}
-
-osStatus osThreadSetPriority(pthread_t thread_id, osPriority priority)
+int osThreadSetPriority(pthread_t thread_id, osPriority priority)
 {
     ds_osSetPriority_t ds = {
         .thread_id = thread_id,
         .priority = priority
     };
 
-    return (osStatus)syscall(SYSCALL_SCHED_THREAD_SETPRIORITY, &ds);
+    return (int)syscall(SYSCALL_SCHED_THREAD_SETPRIORITY, &ds);
 }
 
 osPriority osThreadGetPriority(pthread_t thread_id)
@@ -157,10 +147,10 @@ int32_t osSemaphoreWait(osSemaphore * semaphore, uint32_t millisec)
     return retVal;
 }
 
-osStatus osSemaphoreRelease(osSemaphore * semaphore)
+int osSemaphoreRelease(osSemaphore * semaphore)
 {
     syscall(SYSCALL_SEMAPHORE_RELEASE, semaphore);
-    return (osStatus)osOK;
+    return 0;
 }
 
 /**

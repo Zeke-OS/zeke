@@ -226,29 +226,19 @@ pthread_t sched_threadCreate(ds_pthread_create_t * thread_def, int priv);
 /**
  * Terminate a thread and its childs.
  * @param thread_id   thread ID obtained by \ref sched_threadCreate or \ref sched_thread_getId.
- * @return status code that indicates the execution status of the function.
+ * @return 0 if succeed; Otherwise -EPERM.
  */
-osStatus sched_thread_terminate(pthread_t thread_id);
+int sched_thread_terminate(pthread_t thread_id);
 
 /**
  * Set thread priority.
  * @param   thread_id Thread id.
  * @param   priority New priority for thread referenced by thread_id.
- * @return osOK if thread exists.
+ * @return  0; -EINVAL.
  */
-osStatus sched_thread_setPriority(pthread_t thread_id, osPriority priority);
+int sched_thread_set_priority(pthread_t thread_id, osPriority priority);
 
 osPriority sched_thread_getPriority(pthread_t thread_id);
-
-osStatus sched_threadDelay(uint32_t millisec);
-
-/**
- * Thread wait syscall handler.
- * @param millisec Event wait time in ms or osWaitForever.
- * @note This function returns a pointer to a thread event struct and its
- * contents is allowed to change before returning back to the caller thread.
- */
-osStatus sched_threadWait(uint32_t millisec);
 
 #endif /* SCHED_H */
 
