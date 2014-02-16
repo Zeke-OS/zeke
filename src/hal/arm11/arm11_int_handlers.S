@@ -215,7 +215,7 @@ interrupt_dabt:
     eor     r0, r0, sp
     eor     r0, r0, sp
     mov     r1, r8          /* spsr to r1 */
-    mov     r2, #0          /* Dont skip restoring of thread context */
+    mov     r2, #0          /* Dont skip restoring of the thread context */
     /* by now usr sp in r0 and spsr in r1 */
 
 1:  bl      mmu_data_abort_handler

@@ -38,6 +38,7 @@
   * @{
   */
 
+#include <kstring.h>
 #include <kerror.h>
 #include <klocks.h>
 #include "arm11.h"
@@ -491,14 +492,14 @@ void mmu_control_set(uint32_t value, uint32_t mask)
  * @param spsr      is the spsr from the thread context.
  * @param retval    is a preset return value that is used by the caller.
  */
-void mmu_data_abort_handler(uint32_t sp, uint32_t spsr, uint32_t retval)
+uint32_t mmu_data_abort_handler(uint32_t sp, uint32_t spsr, uint32_t retval)
 {
     uint32_t far; /*!< Fault address */
     uint32_t fsr; /*!< Fault status */
     const istate_t s_old = spsr & 0x1C0; /*!< Old interrupt state */
     istate_t s_entry; /*!< Int state in handler entry. */
     const uint32_t mode_old = spsr & 0x1f;
-    threadInfo_t * const thread = current_thread;
+    threadInfo_t * const thread = (threadInfo_t *)current_thread;
 
     __asm__ volatile (
         "MRC p15, 0, %[reg], c0, c0, 1"
@@ -508,6 +509,8 @@ void mmu_data_abort_handler(uint32_t sp, uint32_t spsr, uint32_t retval)
         : [reg]"=r" (fsr));
 
     mmu_pf_event();
+
+    /* TODO We might wan't to block the process owning this thread */
 
     /* Handle this data abort in pre-emptible mode if possible. */
     //if (mode_old == 0x1f || mode_old == 0x10) {
@@ -535,7 +538,7 @@ out:
 
 static int dab_fatal(uint32_t fsr, uint32_t far, threadInfo_t * thread)
 {
-    char * buf[80];
+    char buf[80];
 
     ksprintf(buf, sizeof(buf), "Can't handle %x data abort", fsr);
     panic(buf);
