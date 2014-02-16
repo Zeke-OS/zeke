@@ -171,10 +171,8 @@ tag: bne    tag
     .globl  interrupt_pabt
     .type   interrupt_pabt,%function
 interrupt_pabt:
-    pushcontext
 _tag:                       /* TODO */
     b       _tag
-    popcontext
     subs    pc, lr, #0x4
 
 
@@ -182,9 +180,60 @@ _tag:                       /* TODO */
     .globl  interrupt_dabt
     .type   interrupt_dabt,%function
 interrupt_dabt:
-    pushcontext    
-    bl      mmu_data_abort_handler
-    popcontext
-    subs    pc, lr, #0x8    /* Return back */
+    push    {r0-r3}
+    mrs     r0, spsr
+    push    {r0}
+    and     r0, r0, #0x1f   /* Get only the mode part. */
+    tst     r0, #0x10       /* User mode */
+#if 0 /* TODO How to resolve if we came from a syscall or sys thread?
+    tstne   r0, #0x1f       /* System mode */
+#endif
+    movne   r0, #1          /* Skip restoring of thread context */
+    bne     1f              /* DAB came possibly from an interrupt handler. */
+
+    /* Store thread context */
+    mov     r1, sp
+    mov     r2, lr
+    bl      sched_get_current_kstack /* Hope it doesn't use stack... */
+    add     sp, sp, #16     /* Reset stack pointer */
+    cps     #0x1f           /* Change to system mode. */
+    mov     r3, sp          /* Preserve usr sp */
+    /* At this point we have:
+     * r0 = thread specific kernel stack
+     * r1 = irq stack
+     * r2 = original link register value
+     * sp = usr stack
+     */
+    stmdb   r0!, {sp}       /* Store usr sp to the kstack */
+    stmdb   r0!, {r4-r12}   /* Store r4-r12 to the kstack */
+    ldmia   r1!, {r8}       /* Pop spsr */
+    ldmia   r1!, {r4-r7}    /* Pop r0-r3 TODO remove ! if not needed */
+    stmdb   r0!, {r4-r7}    /* Store original values of r0-r3 to the kstack */
+    stmdb   r0!, {r8}       /* Store spsr to kstack */
+    stmdb   r0!, {r2}       /* Store link register to the kstack */
+    eor     r0, r0, sp      /* Swap r0 <-> sp */
+    eor     r0, r0, sp
+    eor     r0, r0, sp
+    mov     r1, r8          /* spsr to r1 */
+    mov     r2, #0          /* Dont skip restoring of thread context */
+    /* by now usr sp in r0 and spsr in r1 */
+
+1:  bl      mmu_data_abort_handler
+    tst     r4, #1 /* Skip? */
+    beq     2f
+
+    /* Restore thread user context, Lets assume that we are still in sys mode */
+    ldmia   sp!, {lr}
+    ldmia   sp!, {r0}
+    mov     spsr, r0
+    ldmia   sp!, {r0-r3}
+    ldmia   sp!, {r4-r12}
+    mov     sp, sp          /* Get usr sp, state of kstack is irrelevant after
+                             * this interrupt handler returns. */
+    subs    pc, lr, #0x8
+2:  pop {r0}                /* Just return as we were not in sys mode */
+    msr     spsr, r0
+    pop {r0-r3}
+    subs    pc, lr, #0x8
 
 .end

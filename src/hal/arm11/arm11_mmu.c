@@ -50,14 +50,40 @@ static mtx_t mmu_lock;
 #else /* !configMP */
 #define MMU_LOCK()
 #define MMU_UNLOCK()
-#endif
+#endif /* configMP */
 
 #define mmu_disable_ints() __asm__ volatile ("cpsid if")
+
+#define FSR_MASK 0x0f
+
+typedef int (*dab_handler)(uint32_t fsr, uint32_t far, threadInfo_t * thread);
 
 static void mmu_map_section_region(mmu_region_t * region);
 static void mmu_map_coarse_region(mmu_region_t * region);
 static void mmu_unmap_section_region(mmu_region_t * region);
 static void mmu_unmap_coarse_region(mmu_region_t * region);
+
+/* Data abort handlers */
+static int dab_fatal(uint32_t fsr, uint32_t far, threadInfo_t * thread);
+
+static const dab_handler data_aborts[] = {
+    dab_fatal,  /* no function, reset value */
+    dab_fatal,  /* Alignment fault */
+    dab_fatal,  /* Instruction debug event */
+    dab_fatal,  /* Access bit fault on Section */
+    dab_fatal,  /* no function */
+    dab_fatal,  /* Translation Section Fault */
+    dab_fatal,  /* Access bit fault on Page */
+    dab_fatal,  /* Translation Page fault */
+    dab_fatal,  /* Precise external abort */
+    dab_fatal,  /* Domain Section fault */
+    dab_fatal,  /* no function */
+    dab_fatal,  /* Domain Page fault */
+    dab_fatal,  /* External abort on translation, first level */
+    dab_fatal,  /* Permission Section fault */
+    dab_fatal,  /* External abort on translation, second level */
+    dab_fatal   /* Permission Page fault */
+};
 
 #if configMP != 0
 void mmu_lock_init(void);
@@ -461,15 +487,18 @@ void mmu_control_set(uint32_t value, uint32_t mask)
 
 /**
  * Data abort handler
- * @param sp    is the thread stack pointer.
- * @param spsr  is the spsr from the thread context.
+ * @param sp        is the thread stack pointer.
+ * @param spsr      is the spsr from the thread context.
+ * @param retval    is a preset return value that is used by the caller.
  */
-void mmu_data_abort_handler(uint32_t sp, uint32_t spsr)
+void mmu_data_abort_handler(uint32_t sp, uint32_t spsr, uint32_t retval)
 {
     uint32_t far; /*!< Fault address */
     uint32_t fsr; /*!< Fault status */
-
-    mmu_pf_event();
+    const istate_t s_old = spsr & 0x1C0; /*!< Old interrupt state */
+    istate_t s_entry; /*!< Int state in handler entry. */
+    const uint32_t mode_old = spsr & 0x1f;
+    threadInfo_t * const thread = current_thread;
 
     __asm__ volatile (
         "MRC p15, 0, %[reg], c0, c0, 1"
@@ -478,9 +507,38 @@ void mmu_data_abort_handler(uint32_t sp, uint32_t spsr)
         "MRC p15, 0, %[reg], c5, c0, 0"
         : [reg]"=r" (fsr));
 
-    panic("Can't handle data aborts yet");
+    mmu_pf_event();
 
-    /* TODO */
+    /* Handle this data abort in pre-emptible mode if possible. */
+    //if (mode_old == 0x1f || mode_old == 0x10) {
+    if (mode_old == 0x10) {
+        s_entry = get_interrupt_state();
+        set_interrupt_state(s_old);
+    }
+
+    if (data_aborts[fsr & FSR_MASK] != 0) {
+        if (data_aborts[fsr & FSR_MASK](fsr, far, thread)) {
+            /* TODO Handle this nicer... signal? */
+            panic("DAB handling failed");
+        }
+        goto out;
+    } /* else normal vm related page fault */
+
+    //if (mode_old == 0x1f || mode_old == 0x10) {
+    if (mode_old == 0x10) {
+        set_interrupt_state(s_entry);
+    }
+
+out:
+    return retval;
+}
+
+static int dab_fatal(uint32_t fsr, uint32_t far, threadInfo_t * thread)
+{
+    char * buf[80];
+
+    ksprintf(buf, sizeof(buf), "Can't handle %x data abort", fsr);
+    panic(buf);
 }
 
 /**
