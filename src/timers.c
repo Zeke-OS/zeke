@@ -70,13 +70,12 @@ void timers_init(void)
 {
     int i;
 
-    SUBSYS_INIT("Kernel timers init");
-
     timers_value = 0;
     for (i = 0; i < configTIMERS_MAX; i++) {
         timers_array[i].flags = 0;
         timers_array[i].thread_id = TIMERS_POS_FREE;
     }
+    SUBSYS_INITFINI("Kernel timers init OK");
 }
 
 void timers_run(void)

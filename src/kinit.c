@@ -89,7 +89,7 @@ void exec_fini_array(void)
  */
 void kinit(void)
 {
-    SUBSYS_INIT("Load init");
+    SUBSYS_INIT();
     SUBSYS_DEP(sched_init);
 
     /* Create app_main thread */
@@ -112,6 +112,7 @@ void kinit(void)
 
     ksprintf(buf, sizeof(buf), "Init created with thread id: %u", tid);
     KERROR(KERROR_DEBUG, buf);
+    SUBSYS_INITFINI("Load init");
 }
 
 static void random_init(void) __attribute__((constructor));

@@ -134,7 +134,7 @@ static void sched_thread_sleep(long millisec);
  */
 void sched_init(void)
 {
-    SUBSYS_INIT("Init scheduler: tiny");
+    SUBSYS_INIT();
 
     pthread_t tid;
     pthread_attr_t attr = {
@@ -167,6 +167,8 @@ void sched_init(void)
         i++;
     } while (q_ok);
 #endif
+
+    SUBSYS_INITFINI("Init scheduler: tiny");
 }
 
 /* End of Functions called from outside of kernel context ********************/

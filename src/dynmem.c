@@ -31,8 +31,10 @@
  */
 
 #define KERNEL_INTERNAL
+#include <kinit.h>
 #include <kstring.h>
 #include <kerror.h>
+#include <klocks.h>
 #include <sys/sysctl.h>
 #include <generic/bitmap.h>
 #include <dynmem.h>
@@ -91,9 +93,14 @@ uint32_t dynmemmap_bitmap[DYNMEM_BITMAPSIZE];
 
 /**
  * Struct for temporary storage.
- * @todo TODO Add locks for MP/preempt.
  */
 static mmu_region_t dynmem_region;
+
+/**
+ * Lock used to protect dynmem_region struct, dynmem_bitmap and dynmemmap
+ * access.
+ */
+static mtx_t dynmem_region_lock;
 
 /* Some sysctl stat variables.
  */
@@ -107,11 +114,18 @@ SYSCTL_UINT(_vm, OID_AUTO, dynmem_tot, CTLFLAG_RD, (void *)(&dynmem_tot), 0,
 
 static void * kmap_allocation(size_t pos, size_t size, uint32_t ap, uint32_t control);
 static int update_dynmem_region_struct(void * p);
-static int validate_addr(void * addr);
+static int validate_addr(void * addr, int test);
 
-/*
- * TODO Add variables for sysctl
- */
+HW_PREINIT_ENTRY(dynmem_init);
+void dynmem_init(void)
+{
+    SUBSYS_INIT();
+    SUBSYS_DEP(mmu_init);
+
+    mtx_init(&dynmem_region_lock, MTX_DEF | MTX_SPIN);
+
+    SUBSYS_INITFINI("dynmem init OK");
+}
 
 /**
  * Allocate a contiguous memory region from dynmem area.
@@ -123,6 +137,9 @@ static int validate_addr(void * addr);
 void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t control)
 {
     uint32_t pos;
+    void * retval = 0;
+
+    mtx_spinlock(&dynmem_region_lock);
 
     if(bitmap_block_search(&pos, size, dynmemmap_bitmap,
                 sizeof(dynmemmap_bitmap))) {
@@ -132,14 +149,18 @@ void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t control)
                 dynmem_free, dynmem_tot, size * 1048576, sizeof(dynmemmap_bitmap));
         KERROR(KERROR_DEBUG, buf);
 #endif
-        return 0; /* Null */
+        goto out;
     }
 
     /* Update sysctl stats */
     dynmem_free -= size * DYNMEM_PAGE_SIZE;
 
     bitmap_block_update(dynmemmap_bitmap, 1, pos, size);
-    return kmap_allocation((size_t)pos, size, ap, control);
+    retval = kmap_allocation((size_t)pos, size, ap, control);
+
+out:
+    mtx_unlock(&dynmem_region_lock);
+    return retval;
 }
 
 /**
@@ -156,8 +177,9 @@ void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t control)
 void * dynmem_alloc_force(void * addr, size_t size, uint32_t ap, uint32_t control)
 {
     size_t pos = (size_t)addr - DYNMEM_START;
+    void * retval;
 
-    if (!validate_addr(addr)) {
+    if (!validate_addr(addr, 0)) {
         char buf[80];
         ksprintf(buf, sizeof(buf), "Invalid address; dynmem_alloc_force(): %x",
                 (uint32_t)addr);
@@ -165,8 +187,12 @@ void * dynmem_alloc_force(void * addr, size_t size, uint32_t ap, uint32_t contro
         return 0;
     }
 
+    mtx_spinlock(&dynmem_region_lock);
     bitmap_block_update(dynmemmap_bitmap, 1, pos, size);
-    return kmap_allocation(pos, size, ap, control);
+    retval = kmap_allocation(pos, size, ap, control);
+    mtx_unlock(&dynmem_region_lock);
+
+    return retval;
 }
 
 /**
@@ -177,9 +203,9 @@ void * dynmem_ref(void * addr)
 {
     size_t i = (size_t)addr - DYNMEM_START;
 
-    if (!validate_addr(addr)) {
+    if (!validate_addr(addr, 1)) {
         char buf[80];
-        ksprintf(buf, sizeof(buf), "Invalid address; dynmem_alloc_force(): %x",
+        ksprintf(buf, sizeof(buf), "Invalid address: %x",
                 (uint32_t)addr);
         KERROR(KERROR_ERR, buf);
         return 0;
@@ -187,7 +213,9 @@ void * dynmem_ref(void * addr)
     if ((dynmemmap[i] & DYNMEM_RC_MASK) == 0)
         return 0;
 
+    mtx_spinlock(&dynmem_region_lock);
     dynmemmap[i] += 1 << DYNMEM_RC_POS;
+    mtx_unlock(&dynmem_region_lock);
     return addr;
 }
 
@@ -200,7 +228,7 @@ void dynmem_free_region(void * addr)
 {
     uint32_t i, j, rc;
 
-    if (!validate_addr(addr)) {
+    if (!validate_addr(addr, 1)) {
         char buf[80];
         ksprintf(buf, sizeof(buf), "Invalid address; dynmem_free_region(): %x",
                 (uint32_t)addr);
@@ -211,10 +239,13 @@ void dynmem_free_region(void * addr)
     i = (uint32_t)addr - DYNMEM_START;
     rc = (dynmemmap[i] & DYNMEM_RC_MASK) >> DYNMEM_RC_POS;
 
+    /* Get lock to dynmem_region */
+    mtx_spinlock(&dynmem_region_lock);
+
     /* Check if there is any references */
     if (rc > 1) {
         dynmemmap[i] -= 1 << DYNMEM_RC_POS;
-        return; /* Do not free yet. */
+        goto out; /* Do not free yet. */
     }
 
     if (update_dynmem_region_struct(addr)) { /* error */
@@ -222,7 +253,7 @@ void dynmem_free_region(void * addr)
         ksprintf(buf, sizeof(buf), "Can't free dynmem region: %x",
                 (uint32_t)addr);
         KERROR(KERROR_ERR, buf);
-        return;
+        goto out;
     }
 
     mmu_unmap_region(&dynmem_region);
@@ -235,11 +266,15 @@ void dynmem_free_region(void * addr)
 
     /* Update sysctl stats */
     dynmem_free += dynmem_region.num_pages * DYNMEM_PAGE_SIZE;
+
+out:
+    mtx_unlock(&dynmem_region_lock);
 }
 
 /**
  * Updates dynmem allocation table and intially maps the memory region to the
  * kernel memory space.
+ * @note dynmem_region_lock must be held before entering this function.
  * @param base      is the base address.
  * @param size      is the size of the memory region in MB.
  * @param ap        Access Permissions.
@@ -274,6 +309,7 @@ static void * kmap_allocation(size_t base, size_t size, uint32_t ap, uint32_t co
 /**
  * Update the region strucure to describe a already allocated dynmem region.
  * Updates dynmem_region structures.
+ * @note dynmem_region_lock must be held before calling this function.
  * @param p Pointer to the begining of the allocated dynmem section (physical).
  * @return  Error code.
  */
@@ -284,16 +320,10 @@ static int update_dynmem_region_struct(void * base)
     uint32_t reg_end;
     char buf[80];
 
-    if (!validate_addr(base)) {
+    if (!validate_addr(base, 1)) {
         ksprintf(buf, sizeof(buf), "Invalid dynmem region addr: %x", (uint32_t)base);
         KERROR(KERROR_ERR, buf);
         return -1;
-    }
-
-    /* If ref count == 0 then there is no allocation. */
-    if ((dynmemmap[reg_start] & DYNMEM_RC_MASK) == 0) {
-        KERROR(KERROR_ERR, "Invalid dynmem region addr or not alloc.");
-        return -2;
     }
 
     i = reg_start;
@@ -321,6 +351,62 @@ static int update_dynmem_region_struct(void * base)
 }
 
 /**
+ * Clones a dynemem region.
+ * Makes 1:1 copy of a given dynmem region to a new location in memory.
+ * @param addr is the dynmem region address.
+ * @return  Returns pointer to a clone of the dynmem area; Otherwise 0 in case
+ *          of cloning failed.
+ */
+void * dynmem_clone(void * addr)
+{
+    mmu_region_t cln;
+    void * new_region;
+
+    /* Take a reference to protect clone operation from concurrent
+     * dynmem_free_region() call. */
+    if (dynmem_ref(addr)) {
+#if configDEBUG
+        char buf[80];
+        ksprintf(buf, sizeof(buf), "Can't clone given dynmem area @ %x",
+                (uint32_t)addr);
+        KERROR(KERROR_ERR, buf);
+#endif
+        return 0;
+    }
+
+    /* Take a copy of dynmem_region struct for this region. */
+    mtx_spinlock(&dynmem_region_lock);
+    if (update_dynmem_region_struct(addr)) { /* error */
+#if configDEBUG
+        char buf[80];
+        ksprintf(buf, sizeof(buf), "Clone failed @ %x", (uint32_t)addr);
+        KERROR(KERROR_ERR, buf);
+#endif
+        mtx_unlock(&dynmem_region_lock);
+        return 0;
+    }
+    cln = dynmem_region;
+    mtx_unlock(&dynmem_region_lock);
+
+    /* Allocate a new region. */
+    new_region = dynmem_alloc_region(cln.num_pages, cln.ap, cln.control);
+    if (new_region == 0) {
+#if configDEBUG
+        char buf[80];
+        ksprintf(buf, sizeof(buf), "Out of dynmem while cloning @ %x",
+                (uint32_t)addr);
+#endif
+        return 0;
+    }
+
+    /* NOTE: We don't need lock here as dynmem_ref quarantees that the region is
+     * not removed during copy operation. */
+    memcpy(new_region, cln.paddr, cln.num_pages * 1048576);
+
+    dynmem_free_region(addr);
+}
+
+/**
  * Test for dynmem access.
  * Return value format:
  * 3  2    0
@@ -333,18 +419,13 @@ static int update_dynmem_region_struct(void * base)
  */
 uint32_t dynmem_acc(void * addr, size_t len)
 {
-    size_t i;
     size_t size;
     uint32_t retval = 0;
 
-    if (!validate_addr(addr))
+    if (!validate_addr(addr, 1))
         goto out; /* Address out of bounds. */
 
-    i = (size_t)addr - DYNMEM_START;
-
-    if (((dynmemmap[i] & DYNMEM_RC_MASK) >> DYNMEM_RC_POS) == 0)
-        goto out; /* Not reserved. */
-
+    mtx_spinlock(&dynmem_region_lock);
     if (update_dynmem_region_struct(addr)) { /* error */
 #if configDEBUG
         char buf[80];
@@ -357,12 +438,14 @@ uint32_t dynmem_acc(void * addr, size_t len)
 
     /* Get size */
     if(!(size = mmu_sizeof_region(&dynmem_region))) {
-        char buf[80];ksprintf(buf, sizeof(buf), "Possible dynmem corruption at: %x",
+        char buf[80];
+        ksprintf(buf, sizeof(buf), "Possible dynmem corruption at: %x",
                 (uint32_t)addr);
         KERROR(KERROR_ERR, buf);
         goto out; /* Error in size calculation. */
     }
-    if ((size_t)addr < dynmem_region.paddr || (size_t)addr > (dynmem_region.paddr + size))
+    if ((size_t)addr < dynmem_region.paddr
+            || (size_t)addr > (dynmem_region.paddr + size))
         goto out; /* Not in region range. */
 
     /* Acc seems to be ok.
@@ -370,18 +453,27 @@ uint32_t dynmem_acc(void * addr, size_t len)
      */
     retval = dynmem_region.ap |
         (((dynmem_region.control & MMU_CTRL_XN) >> MMU_CTRL_XN_OFFSET) << 3);
+    mtx_unlock(&dynmem_region_lock);
 out:
     return retval;
 }
 
 /**
  * Check that the given address is in dynmem range.
- * @param addr is the address.
+ * @param addr  is the address.
+ * @param test  if 1 tests if actually allocted; Otherwise only tests validity
+ *              of addr.
  * @return Boolean true if valid; Otherwise false/0.
  */
-static int validate_addr(void * addr)
+static int validate_addr(void * addr, int test)
 {
+    const size_t i = (size_t)addr - DYNMEM_START;
+
     if ((size_t)addr < DYNMEM_START || (size_t)addr > DYNMEM_END)
-        return 0;
+        return 0; /* Not in range */
+
+    if (test && (((dynmemmap[i] & DYNMEM_RC_MASK) >> DYNMEM_RC_POS) == 0))
+        return 0; /* Not allocated */
+
     return (1 == 1);
 }

@@ -173,7 +173,8 @@ SYSCTL_UINT(_vm, OID_AUTO, ptm_mem_tot, CTLFLAG_RD,
  */
 void ptmapper_init(void)
 {
-    SUBSYS_INIT("ptmapper init");
+    SUBSYS_INIT();
+    KERROR(KERROR_LOG, "ptmapper init started");
 
     /* Allocate memory for mmu_pagetable_master */
     if (ptmapper_alloc(&mmu_pagetable_master)) {
@@ -226,6 +227,8 @@ void ptmapper_init(void)
     KERROR(KERROR_DEBUG, "Attached TTB mmu_pagetable_master");
     mmu_attach_pagetable(&mmu_pagetable_system); /* Add L2 pte into L1 master pt */
     KERROR(KERROR_DEBUG, "Attached mmu_pagetable_system");
+
+    SUBSYS_INITFINI("ptmapper init OK");
 }
 
 /**

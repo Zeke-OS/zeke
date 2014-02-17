@@ -66,16 +66,11 @@ SYSCTL_UINT(_vm, OID_AUTO, pfps, CTLFLAG_RD, (&mmu_pfps), 0,
     "Page faults per second average.");
 
 extern void mmu_lock_init();
-void mmu_init(void);
-HW_PREINIT_ENTRY(mmu_init);
 
-/**
- * Initialize the MMU and static regions.
- * @note This is called from startup.
- */
+HW_PREINIT_ENTRY(mmu_init);
 void mmu_init(void)
 {
-    SUBSYS_INIT("MMU init");
+    SUBSYS_INIT();
     SUBSYS_DEP(arm_interrupt_preinit);
     SUBSYS_DEP(ptmapper_init);
 
@@ -98,9 +93,7 @@ void mmu_init(void)
     mask = MMU_ZEKE_C1_DEFAULTS;
     mmu_control_set(value, mask);
 
-#if configDEBUG != 0
-    KERROR(KERROR_LOG, "MMU init OK");
-#endif
+    SUBSYS_INITFINI("MMU init OK");
 }
 
 /**

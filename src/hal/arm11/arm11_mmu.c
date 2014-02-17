@@ -510,9 +510,11 @@ uint32_t mmu_data_abort_handler(uint32_t sp, uint32_t spsr, uint32_t retval)
 
     mmu_pf_event();
 
-    /* TODO We might wan't to block the process owning this thread */
+    /* TODO We may want to block the process owning this thread and possibly
+     * make sure that this instance is the only one handling page fault of the
+     * same kind. */
 
-    /* Handle this data abort in pre-emptible mode if possible. */
+    /* Handle this data abort in pre-emptible state if possible. */
     //if (mode_old == 0x1f || mode_old == 0x10) {
     if (mode_old == 0x10) {
         s_entry = get_interrupt_state();
@@ -526,6 +528,8 @@ uint32_t mmu_data_abort_handler(uint32_t sp, uint32_t spsr, uint32_t retval)
         }
         goto out;
     } /* else normal vm related page fault */
+
+
 
     //if (mode_old == 0x1f || mode_old == 0x10) {
     if (mode_old == 0x10) {

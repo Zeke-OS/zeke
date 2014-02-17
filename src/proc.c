@@ -87,10 +87,11 @@ static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc);
 void proc_init(void) __attribute__((constructor));
 void proc_init(void)
 {
-    SUBSYS_INIT("Proc init");
+    SUBSYS_INIT();
     PROCARR_LOCK_INIT();
     realloc__procarr();
     memset(&_procarr, 0, SIZEOF_PROCARR);
+    SUBSYS_INITFINI("Proc init");
 }
 
 static void realloc__procarr(void)

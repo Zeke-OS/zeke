@@ -39,13 +39,15 @@
  * Subsystem initializer prologue.
  * @todo TODO Fix order of init messages
  */
-#define SUBSYS_INIT(msg)            \
+#define SUBSYS_INIT()               \
     static int __subsys_init = 0;   \
     do {                            \
     if (__subsys_init != 0) return; \
-    else { __subsys_init = 1;       \
-           KERROR(KERROR_LOG, msg); \
-    } } while (0)
+    else __subsys_init = 1;         \
+    } while (0)
+
+#define SUBSYS_INITFINI(msg)        \
+    KERROR(KERROR_LOG, msg)
 
 /**
  * Subsystem initializer dependency.

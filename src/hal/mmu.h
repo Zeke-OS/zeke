@@ -163,6 +163,8 @@ typedef struct {
 
 extern mmu_pagetable_t mmu_pagetable_master;
 
+void mmu_init(void);
+
 /* "Generic" MMU interface */
 int mmu_init_pagetable(mmu_pagetable_t * pt);
 int mmu_map_region(mmu_region_t * region);
