@@ -128,17 +128,6 @@ int pthread_mutex_unlock(pthread_mutex_t * mutex);
 /// \return status code that indicates the execution status of the function.
 int osThreadTerminate(pthread_t thread_id);
 
-/// Change priority of an active thread.
-/// \param[in]     thread_id     thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
-/// \param[in]     priority      new priority value for the thread function.
-/// \return status code that indicates the execution status of the function.
-int osThreadSetPriority(pthread_t thread_id, osPriority priority);
-
-/// Get current priority of an active thread.
-/// \param[in]     thread_id     thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
-/// \return current priority value of the thread function.
-osPriority osThreadGetPriority(pthread_t thread_id);
-
 #endif /* PTHREAD_H */
 
 /**

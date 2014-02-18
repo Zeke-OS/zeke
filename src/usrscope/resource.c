@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    kernel.c
+ * @file    resource.c
  * @author  Olli Vanhoja
  * @brief   Zero Kernel user space code
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
@@ -39,89 +39,52 @@
 #include "syscalldef.h"
 #include "syscall.h"
 #include <kernel.h>
+#include <sys/resource.h>
 
-int sysctl(int * name, unsigned int namelen, void * oldp, size_t * oldlenp,
-        void * newp, size_t newlen)
+int getloadavg(double loadavg[3], int nelem)
 {
-    struct _sysctl_args args = {
-        .name = name,
-        .namelen = namelen,
-        .old = oldp,
-        .oldlenp = oldlenp,
-        .new = newp,
-        .newlen = newlen
-    };
+    uint32_t loads[3];
+    size_t i;
 
-    return (int)syscall(SYSCALL_SYSCTL_SYSCTL, &args);
+    if (nelem > 3)
+        return -1;
+
+    if(syscall(SYSCALL_SCHED_GET_LOADAVG, loads))
+        return -1;
+
+    /* TODO After float div support */
+    for (i = 0; i < nelem; i++)
+        loadavg[i] = (double)(loads[i]); // 100.0;
+
+    return nelem;
 }
 
-unsigned sleep(unsigned seconds)
+int setpriority(int which, id_t who, int prio)
 {
-    unsigned int millisec = seconds * 1000;
+    switch (which) {
+    case PRIO_THREAD:
+        {
+            ds_osSetPriority_t ds = {
+                .thread_id = who,
+                .priority = prio
+            };
 
-    return (unsigned)syscall(SYSCALL_SCHED_SLEEP_MS, &millisec);
-}
-
-/** @addtogroup Thread_Management
-  * @{
-  */
-
-int osThreadTerminate(pthread_t thread_id)
-{
-    return (int)syscall(SYSCALL_SCHED_THREAD_TERMINATE, &thread_id);
-}
-
-int __error(void)
-{
-    return (int)syscall(SYSCALL_SCHED_THREAD_GETERRNO, NULL);
-}
-
-
-/**
-  * @}
-  */
-
-/** @addtogroup Semaphore
-  * @{
-  */
-
-//osSemaphore osSemaphoreCreate(osSemaphoreDef_t * semaphore_def, int32_t count)
-//{
-    /* TODO Implementation */
-//}
-
-int32_t osSemaphoreWait(osSemaphore * semaphore, uint32_t millisec)
-{
-    ds_osSemaphoreWait_t ds = {
-        .s = &(semaphore->s),
-        .millisec = millisec
-    };
-    int retVal;
-
-    /* Loop between kernel mode and thread mode :) */
-    while ((retVal = syscall(SYSCALL_SEMAPHORE_WAIT, &ds)) < 0) {
-        if (retVal == OS_SEMAPHORE_THREAD_SPINWAIT_RES_ERROR) {
-            return -1;
+        return (int)syscall(SYSCALL_SCHED_THREAD_SETPRIORITY, &ds);
         }
-
-        /* TODO priority should be lowered or some resceduling should be done
-         * in the kernel so this loop would not waste time before automatic
-         * rescheduling. */
-        req_context_switch();
+    default:
+        return -1; /* Can't set errno from here :( */
     }
-
-    return retVal;
 }
 
-int osSemaphoreRelease(osSemaphore * semaphore)
+int  getpriority(int which, id_t who)
 {
-    syscall(SYSCALL_SEMAPHORE_RELEASE, semaphore);
-    return 0;
+    switch (which) {
+    case PRIO_THREAD:
+        return (int)syscall(SYSCALL_SCHED_THREAD_GETPRIORITY, &who);
+    default:
+        return -1; /* Can't set errno from here :( */
+    }
 }
-
-/**
-  * @}
-  */
 
 /**
   * @}
