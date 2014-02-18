@@ -739,7 +739,7 @@ int sched_thread_terminate(pthread_t thread_id)
 int sched_thread_set_priority(pthread_t thread_id, osPriority priority)
 {
     if ((task_table[thread_id].flags & SCHED_IN_USE_FLAG) == 0) {
-        return -EINVAL;
+        return -ESRCH;
     }
 
     /* Only thread def_priority is updated to make this syscall O(1)
@@ -872,26 +872,31 @@ uintptr_t sched_syscall_thread(uint32_t type, void * p)
         {
         ds_osSetPriority_t ds;
         if (!useracc(p, sizeof(pthread_t), VM_PROT_READ)) {
-            /* No permission to read */
-            /* TODO Signal/Kill? */
-            current_thread->errno = EFAULT;
+            current_thread->errno = ESRCH;
             return -1;
         }
         copyin(p, &ds, sizeof(ds_osSetPriority_t));
-        return (uintptr_t)sched_thread_set_priority( ds.thread_id, ds.priority);
+        current_thread->errno = (uintptr_t)sched_thread_set_priority(ds.thread_id, ds.priority);
+        return ((current_thread->errno == 0) ? 0 : -1);
         }
 
     case SYSCALL_SCHED_THREAD_GETPRIORITY:
         {
         osPriority pri;
+        pthread_t thread_id;
         if (!useracc(p, sizeof(pthread_t), VM_PROT_READ)) {
             /* No permission to read */
             /* TODO Signal/Kill? */
-            current_thread->errno = EFAULT;
+            current_thread->errno = ESRCH;
             return -1;
         }
-        copyin(p, &pri, sizeof(osPriority));
-        return (uintptr_t)sched_thread_get_priority(pri);
+        copyin(p, &thread_id, sizeof(pthread_t));
+        pri = (uintptr_t)sched_thread_get_priority(thread_id);
+        if (pri == osPriorityError) {
+            current_thread->errno = ESRCH;
+            pri = -1; /* Note: -1 might be also legitimate prio value. */
+        }
+        return pri;
         }
 
     case SYSCALL_SCHED_THREAD_GETERRNO:
