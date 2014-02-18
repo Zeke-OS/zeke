@@ -30,6 +30,10 @@
  *******************************************************************************
  */
 
+#pragma once
+#ifndef _SYS_RESOURCES_H
+#define _SYS_RESOURCES_H
+
 /* TODO Missing sys/time.h */
 //#include <sys/time.h>
 
@@ -161,3 +165,5 @@ int setrlimit(int, const struct rlimit *);
  *          Otherwise, the number of samples actually retrieved is returned.
  */
 int getloadavg(double loadavg[3], int nelem);
+
+#endif /* _SYS_RESOURCES_H */

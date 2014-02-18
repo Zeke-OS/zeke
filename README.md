@@ -60,8 +60,8 @@ To successfully compile Zeke, you'll need the following packages/tools:
 
 - make
 - gcc-arm-none-eabi
-- llvm-3.0
-- clang 3.0
+- llvm-3.3
+- clang 3.3
 - binutils
 - unifdef
 - bash
