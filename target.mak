@@ -14,6 +14,7 @@ ifeq ($(configARCH),__ARM6__)
 endif
 # TODO Enable thumb?
 ifeq ($(configARCH),__ARM6K__)
+	CCFLAGS  += -target armv6k-none-eabi
 	LLCFLAGS += -march=arm
 	ASFLAGS  += -march=armv6k -EL
 endif

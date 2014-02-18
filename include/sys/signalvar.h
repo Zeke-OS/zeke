@@ -41,7 +41,7 @@
 
 #include <sys/queue.h>
 #include <sys/_sigset.h>
-#include <sys/signal.h>
+#include <signal.h>
 
 /*
  * Kernel signal definitions and data structures.

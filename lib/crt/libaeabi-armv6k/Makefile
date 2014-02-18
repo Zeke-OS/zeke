@@ -3,26 +3,30 @@ AS       = $(ARMGNU)-as
 CC       = clang
 CCFLAGS  = -c -std=c99 -Wall -ffreestanding -O2 -nostdlib -nostdinc
 CCFLAGS += -Wno-shift-count-overflow
-CCFLAGS += -m32 -ccc-host-triple $(ARMGNU)
+CCFLAGS += -m32 -target armv6k-none-eabi
+ASFLAGS  = -march=armv6k -EL
 
 SRC_S_FILES = $(wildcard *.S)
 SRC_C_FILES = $(wildcard *.c)
-OBJ_FILES   = $(SRC_S_FILES:%.S=%.o) $(SRC_C_FILES:%.c=%.o)
-
-%.o: %.S
-	@echo "AS $@"
-	@$(AS) $< -o $@
-
-%.o: %.c
-	@echo "CC $@"
-	@$(CC) $(CCFLAGS) $< -o $@
-
-libaeabi-armv6k.a: $(OBJ_FILES)
-	ar rcs libaeabi-armv6k.a $(OBJ_FILES)
-
-.PHONY: all clean
+S_FILES     = $(SRC_C_FILES:%.c=%.s)
+OBJ_C       = $(SRC_C_FILES:%.c=%.o)
+OBJ_S       = $(SRC_S_FILES:%.S=%.o)
 
 all: libaeabi-armv6k.a
 
+$(OBJ_C): $(SRC_C_FILES)
+	@echo "CC $@"
+	@$(CC) $(CCFLAGS) $*.c -S -o $*.s
+	@$(AS) $(ASFLAGS) $*.s -o $@
+
+$(OBJ_S): $(SRC_S_FILES)
+	@echo "AS $@"
+	@$(AS) $(ASFLAGS) $*.S -o $@
+
+libaeabi-armv6k.a: $(OBJ_C) $(OBJ_S)
+	ar rcs libaeabi-armv6k.a $(OBJ_C) $(OBJ_S)
+
+.PHONY: all clean
+
 clean:
-	-rm -f *.o *.a
+	-rm -f *.o *.a *.s

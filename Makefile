@@ -52,11 +52,11 @@ MODULES += $(foreach var, $(ALLMODULES), $(if $(strip $($(var)-SRC-1) $($(var)-A
 ARMGNU   = arm-none-eabi
 CC       = clang
 CCFLAGS  = -std=c99 -emit-llvm -Wall -ffreestanding -O2
-CCFLAGS += -nostdlib -nostdinc 
-CCFLAGS += -m32 -ccc-host-triple $(ARMGNU)
-OPT      = opt-3.0
+CCFLAGS += -nostdlib -nostdinc -v
+CCFLAGS += -m32
+OPT      = opt-3.3
 OFLAGS   = -std-compile-opts
-LLC      = llc-3.0
+LLC      = llc-3.3
 LLCFLAGS = -mtriple=$(ARMGNU)
 ASFLAGS  =#
 LDFLAGS  =#
