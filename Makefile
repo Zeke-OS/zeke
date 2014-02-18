@@ -52,7 +52,7 @@ MODULES += $(foreach var, $(ALLMODULES), $(if $(strip $($(var)-SRC-1) $($(var)-A
 ARMGNU   = arm-none-eabi
 CC       = clang
 CCFLAGS  = -std=c99 -emit-llvm -Wall -ffreestanding -O2
-CCFLAGS += -nostdlib -nostdinc -v
+CCFLAGS += -nostdlib -nostdinc
 CCFLAGS += -m32
 OPT      = opt-3.3
 OFLAGS   = -std-compile-opts
