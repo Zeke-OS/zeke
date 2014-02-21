@@ -51,6 +51,7 @@ typedef int uid_t; /*!< Used for user IDs. */
 typedef int gid_t; /*!< Used for group IDs. */
 typedef int id_t; /*!< Used as a general identifier; can be used to contain at
                     least a pid_t, uid_t, or gid_t. */
+#define id_t id_t
 typedef uint64_t ino_t; /*!< Used for file serial numbers.*/
 typedef uint32_t key_t; /*!< Used for XSI interprocess communication. */
 typedef int mode_t; /*!< Used for some file attributes. */

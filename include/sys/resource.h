@@ -103,9 +103,8 @@
 #define PRIO_THREAD     4 /*!< Identifies the who argument as a thread id. */
 
 typedef int rlim_t;
-
 #ifndef id_t
-#define typedef int id_t;
+typedef int id_t;
 #endif
 
 /**

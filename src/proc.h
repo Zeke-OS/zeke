@@ -5,6 +5,7 @@
  * @brief   Kernel process management header file.
  * @section LICENSE
  * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 Joni Hauhia <joni.hauhia@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -46,18 +47,10 @@
 
 #include <kernel.h>
 #include <sched.h> /* Needed for threadInfo_t and threading functions */
-
-#if configMMU == 0 && !defined(PU_TEST_BUILD)
-#error Processes are not supported without MMU.
-#elif defined(PU_TEST_BUILD)
-/* Test build */
-#else /* Normal build with MMU */
 #include <hal/mmu.h>
-#endif
-
-#if configMP != 0
+#include <fs/fs.h>
 #include <klocks.h>
-#endif
+#include <sys/resource.h>
 
 /* Process Management Notes
  * ========================
@@ -77,14 +70,43 @@
 /**
  * Process Control Block or Process Descriptor Structure
  */
+
+#define PROC_RUNNING    0
+#define PROC_RUNNABLE   1       /* Can be woken up, ready to run */
+#define PROC_WAITING    2       /* Can't be woken up */
+#define PROC_ZOMBIE     4
+#define PROC_STOPPED    8
+
+#define PROC_NAME_LEN   10 /*TODO Remove after tests! */
+
+
+/**
+ * Process Control Block.
+ */
 typedef struct {
     pid_t pid;
-#if 0
-    char * command;
-#endif
-    threadInfo_t * main_thread; /*!< Main thread of this process. */
-#ifndef PU_TEST_BUILD
-    struct mm {
+    char name[PROC_NAME_LEN]; /*!< process name */
+    long state; /*!< 0 - running, >0 stopped */
+    long priority; /*!< We might want to prioritize prosesses too */
+    long counter; /*!< Counter for process running time */
+    unsigned long blocked; /*!< bitmap of masked signals */
+    int exit_code, exit_signal;
+    uid_t uid, euid, suid, fsuid;
+    gid_t gid, egid, sgid, fsgid;
+    unsigned long timeout; /*!< Used to kill processes with absolute timeout */
+    long utime, stime, cutime, cstime, start_time; /*!< For performance statistics */
+    struct rlimit rlim; /*!< hard and soft limit for filesize TODO: own struct or just pointer? */
+    /* open file information */
+    struct vnode * cwd; /*!< current working dir */
+    struct file * files;
+
+    struct tty_struct *tty; /* NULL if no tty */
+
+    /*!< memory management info */
+    struct mm_struct {
+        void * brk;
+        void * brk_start;
+        void * brk_stop;
         mmu_pagetable_t mptable;    /*!< Process master page table. */
         mmu_region_t * regions;     /*!< Memory regions of a process.
                                      *   [0] = code
@@ -95,13 +117,12 @@ typedef struct {
                                      */
         int nr_regions;             /*!< Number of regions allocated. */
     } mm;
-#endif
-    sigs_t sigs;                /*!< Signals. */
 
-    /* TODO - note: main_thread already has a liked list of child threads
-     *      - file_t fd's
-     *      - tty
-     *      - etc.
+    /* notes:
+     * - main_thread already has a linked list of child threads
+     * - file_t fd's
+     * - tty
+     * - etc.
      */
 
     /**
@@ -120,9 +141,10 @@ typedef struct {
         void * first_child; /*!< Link to the first child thread. */
         void * next_child;  /*!< Next child of the common parent. */
     } inh;
-#if configMP != 0
-    mtx_t plock;
-#endif
+
+    threadInfo_t * main_thread; /*!< Main thread of this process. */
+    /* signal handlers */
+    sigs_t sigs;                /*!< Signals. */
 } proc_info_t;
 
 int maxproc;
@@ -137,7 +159,7 @@ proc_info_t * proc_get_struct(pid_t pid);
 mmu_pagetable_t * pr_get_mptable(pid_t pid);
 int proc_cow_handler(pid_t pid, void * vaddr);
 
-#endif /* PROCESS_H */
+#endif /* PROC_H */
 
 /**
   * @}
