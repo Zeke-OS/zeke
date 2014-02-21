@@ -34,9 +34,10 @@
 #define _VM_VM_H
 #ifdef KERNEL_INTERNAL
 
-#define VM_PROT_READ    0x1
-#define VM_PROT_WRITE   0x2
-#define VM_PROT_EXECUTE 0x4
+#define VM_PROT_READ    0x1 /*!< Read. */
+#define VM_PROT_WRITE   0x2 /*!< Write. */
+#define VM_PROT_EXECUTE 0x4 /*!< Execute. */
+#define VM_PROT_COW     0x8 /*!< Copy-on-write. */
 
 int copyin(const void * uaddr, void * kaddr, size_t len);
 int copyout(const void * kaddr, void * uaddr, size_t len);

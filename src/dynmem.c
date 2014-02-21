@@ -401,9 +401,11 @@ void * dynmem_clone(void * addr)
 
     /* NOTE: We don't need lock here as dynmem_ref quarantees that the region is
      * not removed during copy operation. */
-    memcpy(new_region, cln.paddr, cln.num_pages * 1048576);
+    memcpy(new_region, (void *)(cln.paddr), cln.num_pages * 1048576);
 
     dynmem_free_region(addr);
+
+    return new_region;
 }
 
 /**

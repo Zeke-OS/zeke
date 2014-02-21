@@ -53,14 +53,13 @@ interrupt_svc:
      * pretty much anything with r4 without breaking userspace.
      */
 
+    mrs     r3, spsr
     mov     r4, lr              /* Preserve link register. */
     cps     #0x1f               /* Change to system mode to use thread stack. */
     mov     lr, r4              /* Restore link register. */
 
-    /* Store spsr to allow nested swi.
-     * We don't encourage to use nested swi calls but oh well... */
-    mrs     r4, spsr
-    push    {r4}
+    /* Store spsr to allow nested swi. */
+    push    {r3}
 
     cpsie   aif                 /* Enable interrupts */
 
@@ -82,8 +81,6 @@ interrupt_svc:
     mov     r2, r7
     mov     r3, r8
 
-    /*pop     {r0-r3}/
-
     /* Call kernel's internal syscall handler */
     bl      _intSyscall_handler
     mov     r5, r0              /* Preserve syscall retval */
@@ -99,8 +96,8 @@ interrupt_svc:
 
     cpsid   aif                 /* Disable interrupts to prevent stack */
                                 /* corruption */
-    pop     {r4}                /* Restore spsr */
-    msr     spsr, r4
+    pop     {r3}                /* Restore spsr */
+    msr     spsr, r3
     movs    pc, lr              /* Regular exit from svc */
 
 
