@@ -529,7 +529,10 @@ uint32_t mmu_data_abort_handler(uint32_t sp, uint32_t spsr, uint32_t retval)
         goto out;
     } /* else normal vm related page fault */
 
-
+    if (proc_pf_handler(thread->pid_owner, far)) {
+        /* TODO We want to send a signal here */
+        panic("SEGFAULT");
+    }
 
     //if (mode_old == 0x1f || mode_old == 0x10) {
     if (mode_old == 0x10) {

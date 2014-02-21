@@ -42,7 +42,6 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <autoconf.h>
-#include <kmalloc.h>
 #include <kstring.h>
 #include <kinit.h>
 #include <hal/hal_core.h>

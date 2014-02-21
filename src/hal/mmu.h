@@ -153,6 +153,19 @@ typedef struct {
                          * virtual memory. */
     mmu_pagetable_t * pt; /*!< is a pointer to the page table struct in which
                            * the region resides. */
+    struct reg_vm {
+        int usr_rw; /*!< Actual user permissions on this data. Sometimes we want
+                     *   to set ap read-only to easily make copy-on-write or to
+                     *   pass control to MMU exception handler for some other
+                     *   reason. */
+        /**
+         * Pointer to a 1:1 region cloning function.
+         * This function if set clones contents of the region to another
+         * physical locatation.
+         * @param paddr is the physical address of the begining of the region.
+         */
+        void * (*rclone)(size_t paddr);
+    } vm;
 } mmu_region_t;
 
 #if configARCH == __ARM6__ || __ARM6K__ /* ARM11 uses ARMv6 arch */
