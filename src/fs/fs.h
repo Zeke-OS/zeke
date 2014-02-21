@@ -100,6 +100,19 @@ typedef struct file {
 } file_t;
 
 /**
+ * Files that a process has open.
+ */
+typedef struct files_struct {
+        int count;
+        struct file * fd[0]; /*!< Open files.
+                              *   Thre should be at least following files:
+                              *   [0] = stdin
+                              *   [1] = stdout
+                              *   [2] = stderr
+                              */
+} files_t;
+
+/**
  * File system.
  */
 typedef struct fs {

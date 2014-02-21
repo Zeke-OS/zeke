@@ -80,4 +80,12 @@ struct _sysctl_args {
     size_t newlen;
 };
 
+/** Arguments struct for SYSCALL_FS_WRITE */
+struct _fs_write_args {
+    int fildes;
+    void * buf;
+    size_t nbyte;
+    off_t offset;
+};
+
 #endif /* SYSCALLDEF_H */

@@ -59,18 +59,18 @@ volatile pid_t current_process_id;  /*!< PID of current process. */
 volatile proc_info_t * curproc;     /*!< PCB of the current process. */
 static pid_t _lastpid;              /*!< last allocated pid. */
 
+extern vnode_t kerror_vnode;
+static proc_info_t _kernel_proc_info = {
+    .pid = 0,
+    .name = "kernel"
+};
+
 #define SIZEOF_PROCARR      ((maxproc + 1) * sizeof(proc_info_t *))
 
-#if configMP != 0
 static mtx_t proclock;
 #define PROCARR_LOCK()      mtx_spinlock(&proclock)
 #define PROCARR_UNLOCK()    mtx_unlock(&proclock)
 #define PROCARR_LOCK_INIT() mtx_init(&proclock, MTX_DEF | MTX_SPIN)
-#else /* No MP support */
-#define PROCARR_LOCK()
-#define PROCARR_UNLOCK()
-#define PROCARR_LOCK_INIT()
-#endif
 
 SYSCTL_INT(_kern, KERN_MAXPROC, maxproc, CTLFLAG_RWTUN,
     &maxproc, 0, "Maximum number of processes");
@@ -91,6 +91,14 @@ void proc_init(void)
     PROCARR_LOCK_INIT();
     realloc__procarr();
     memset(&_procarr, 0, SIZEOF_PROCARR);
+
+    _procarr[0] = &_kernel_proc_info;
+    _kernel_proc_info.files = kmalloc(sizeof(files_t) + 3);
+    _kernel_proc_info.files->count = 3;
+    /* TODO Create this correctly */
+    _kernel_proc_info.files->fd[2] = kcalloc(1, sizeof(file_t)); /* stderr */
+    _kernel_proc_info.files->fd[2]->vnode = &kerror_vnode;
+
     SUBSYS_INITFINI("Proc init");
 }
 
@@ -174,7 +182,7 @@ pid_t proc_fork(pid_t pid)
         goto free_regions_arr;
     }
 
-    /* TODO Allocate othet page tables */
+    /* TODO Allocate other page tables needed */
 
     /* Mark pages as rw and do lazy copy/copy on write later. */
 
@@ -270,7 +278,8 @@ int proc_replace(pid_t pid, void * image, size_t size)
 
 proc_info_t * proc_get_struct(pid_t pid)
 {
-    return (proc_info_t *)0;
+    /* TODO Checks! */
+    return _procarr[pid];
 }
 
 /**
@@ -333,7 +342,7 @@ int proc_cow_handler(pid_t pid, void * vaddr)
 void proc_update(void)
 {
     current_process_id = current_thread->pid_owner;
-    proc_get_struct(current_process_id);
+    curproc = proc_get_struct(current_process_id);
 }
 
 uintptr_t proc_syscall(uint32_t type, void * p)

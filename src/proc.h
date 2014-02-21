@@ -86,8 +86,8 @@
 typedef struct {
     pid_t pid;
     char name[PROC_NAME_LEN]; /*!< process name */
-    long state; /*!< 0 - running, >0 stopped */
-    long priority; /*!< We might want to prioritize prosesses too */
+    int state; /*!< 0 - running, >0 stopped */
+    int priority; /*!< We might want to prioritize processes too */
     long counter; /*!< Counter for process running time */
     unsigned long blocked; /*!< bitmap of masked signals */
     int exit_code, exit_signal;
@@ -97,10 +97,9 @@ typedef struct {
     long utime, stime, cutime, cstime, start_time; /*!< For performance statistics */
     struct rlimit rlim; /*!< hard and soft limit for filesize TODO: own struct or just pointer? */
     /* open file information */
-    struct vnode * cwd; /*!< current working dir */
-    struct file * files;
-
-    struct tty_struct *tty; /* NULL if no tty */
+    struct vnode * cwd; /*!< Current working dir. */
+    files_t * files; /*!< Open files */
+    struct tty_struct * tty; /* NULL if no tty */
 
     /*!< memory management info */
     struct mm_struct {

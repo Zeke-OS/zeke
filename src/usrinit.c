@@ -34,7 +34,6 @@
 #include <kernel.h>
 #include <sys/_kservices.h>
 #include <syscall.h>
-#include <kerror.h> /* Strictly kernel space thing */
 #include <kstring.h> /* -"- */
 #include <sys/sysctl.h>
 #include <unistd.h>
@@ -53,8 +52,8 @@ char banner[] = "\
 
 #if 0
 static void test_thread(void *);
-static void print_message(const char * message);
 #endif
+static void print_message(const char * message);
 static int usr_name2oid(char * name, int * oidp);
 static void thread_stat(void);
 
@@ -77,7 +76,8 @@ void * main(void * arg)
     pthread_create(&thread_id, &attr, test_thread, 0);
 #endif
 
-    KERROR(KERROR_DEBUG, "Init v0.0.1");
+    print_message("Init v0.0.1");
+
     len = usr_name2oid("vm.dynmem_tot", mib_tot);
     usr_name2oid("vm.dynmem_free", mib_free);
 
@@ -87,16 +87,16 @@ void * main(void * arg)
         if(sysctl(mib_tot, len, &old_value_tot, &old_len, 0, 0)) {
             ksprintf(buf, sizeof(buf), "Error: %u",
                     (int)syscall(SYSCALL_SCHED_THREAD_GETERRNO, NULL));
-            KERROR(KERROR_ERR, buf);
+            print_message(buf);
         }
         if(sysctl(mib_free, len, &old_value_free, &old_len, 0, 0)) {
             ksprintf(buf, sizeof(buf), "Error: %u",
                     (int)syscall(SYSCALL_SCHED_THREAD_GETERRNO, NULL));
-            KERROR(KERROR_ERR, buf);
+            print_message(buf);
         }
         ksprintf(buf, sizeof(buf), "dynmem used: %u/%u",
                 old_value_tot - old_value_free, old_value_tot);
-        KERROR(KERROR_LOG, buf);
+        print_message(buf);
         sleep(5);
     }
 }
@@ -112,16 +112,10 @@ static void test_thread(void * arg)
 }
 #endif
 
-#if 0
 static void print_message(const char * message)
 {
-    size_t i = 0;
-
-    while (message[i] != '\0') {
-        //osDevCwrite(message[i++], dev_tty0);
-    }
+    write(2, message, strlenn(message, 80));
 }
-#endif
 
 static int usr_name2oid(char * name, int * oidp)
 {
@@ -150,5 +144,5 @@ static void thread_stat(void)
     id = (int)syscall(SYSCALL_SCHED_THREAD_GETTID, NULL);
     __asm__ volatile ("mrs     %0, cpsr" : "=r" (mode));
     ksprintf(buf, sizeof(buf), "My id: %u, my mode: %x", id, mode);
-    KERROR(KERROR_LOG, buf);
+    print_message(buf);
 }

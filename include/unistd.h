@@ -34,12 +34,29 @@
 #ifndef UNISTD_H
 #define UNISTD_H
 
+/* Options and option groups */
+#define _POSIX_THREAD_ATTR_STACKADDR    200809L
+#define _POSIX_THREAD_ATTR_STACKSIZE    200809L
+#define _POSIX_THREADS                  200809L
+
+#ifndef NULL
+#define NULL ((void*)0)
+#endif
+
 /* Block device seek origin types */
 #ifndef SEEK_SET
 #define SEEK_SET    0 /*!< Beginning of file. */
 #define SEEK_CUR    1 /*!< Current position */
 #define SEEK_END    2 /*!< End of file. */
 #endif
+
+#define STDIN_FILENO    0 /*!< File number of stdin. */
+#define STDOUT_FILENO   1 /*!< File number of stdout. */
+#define STDERR_FILENO   2 /*!< File number of stderr. */
+
+ssize_t pwrite(int fildes, const void *buf, size_t nbyte,
+    off_t offset);
+ssize_t write(int fildes, const void * buf, size_t nbyte);
 
 int brk(void *);
 void * sbrk(intptr_t incr);

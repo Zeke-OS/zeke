@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Zero Kernel user space code
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
@@ -38,6 +38,7 @@
 #include <hal/hal_core.h>
 #include "syscalldef.h"
 #include "syscall.h"
+#include <unistd.h>
 #include <kernel.h>
 
 int sysctl(int * name, unsigned int namelen, void * oldp, size_t * oldlenp,
@@ -61,6 +62,39 @@ unsigned sleep(unsigned seconds)
 
     return (unsigned)syscall(SYSCALL_SCHED_SLEEP_MS, &millisec);
 }
+
+/** @addtogroup unistd
+ *  @{
+ */
+
+ssize_t pwrite(int fildes, const void * buf, size_t nbyte,
+        off_t offset)
+{
+    struct _fs_write_args args = {
+        .fildes = fildes,
+        .buf = (void *)buf,
+        .nbyte = nbyte,
+        .offset = offset
+    };
+
+    return (ssize_t)syscall(SYSCALL_FS_WRITE, &args);
+}
+
+ssize_t write(int fildes, const void * buf, size_t nbyte)
+{
+    struct _fs_write_args args = {
+        .fildes = fildes,
+        .buf = (void *)buf,
+        .nbyte = nbyte,
+        .offset = SEEK_CUR
+    };
+
+    return (ssize_t)syscall(SYSCALL_FS_WRITE, &args);
+}
+
+/**
+  * @}
+  */
 
 /** @addtogroup Thread_Management
   * @{

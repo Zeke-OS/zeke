@@ -108,7 +108,7 @@ void kinit(void)
     pthread_t tid;
     char buf[80];
 
-    tid = sched_threadCreate(&init_ds, 1);
+    tid = sched_threadCreate(&init_ds, 0);
 
     ksprintf(buf, sizeof(buf), "Init created with thread id: %u", tid);
     KERROR(KERROR_DEBUG, buf);

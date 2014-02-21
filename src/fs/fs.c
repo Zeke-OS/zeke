@@ -34,13 +34,16 @@
  * @{
  */
 
+#define KERNEL_INTERNAL 1
+#include <kerror.h>
 #include <kstring.h>
 #include <kmalloc.h>
+#include <vm/vm.h>
+#include <proc.h>
 #include <sched.h>
 #include <ksignal.h>
 #include <syscalldef.h>
 #include <syscall.h>
-#define KERNEL_INTERNAL 1
 #include <errno.h>
 #include "fs.h"
 
@@ -55,6 +58,8 @@ static fsl_node_t * fsl_head;
 
 
 static fs_t * find_fs(const char * fsname);
+static ssize_t fs_write_cproc(int fildes, const void * buf, size_t nbyte,
+        off_t * offset);
 
 /**
  * Register a new file system driver.
@@ -203,6 +208,48 @@ unsigned int fs_get_pfs_minor(void)
 }
 
 /**
+ * Write to a open file of the current process.
+ * Error code is written to the errno of the current thread.
+ * @param fildes    is the file descriptor.
+ * @param buf       is the buffer.
+ * @param nbytes    is the amount of bytes to be writted.
+ * @return  Return the number of bytes actually written to the file associated
+ *          with fildes; Otherwise, -1 is returned and errno set to indicate the
+ *          error.
+ * @throws EBADF    The fildes argument is not a valid file descriptor open for
+ *                  writing.
+ * @throws ENOSPC   There was no free space remaining on the device containing
+ *                  the file.
+ */
+static ssize_t fs_write_cproc(int fildes, const void * buf, size_t nbyte,
+        off_t * offset)
+{
+    proc_info_t * cpr = (proc_info_t *)curproc;
+    threadInfo_t * t = (threadInfo_t *)current_thread;
+    vnode_t * vnode;
+    size_t retval = -1;
+
+    /* Check that fildes exists */
+    if (fildes > cpr->files->count && !(cpr->files->fd[fildes])) {
+        t->errno = EBADF;
+        goto out;
+    }
+
+    vnode = cpr->files->fd[fildes]->vnode;
+    /* Check if there is a vnode linked with the file and it can be written. */
+    if (!vnode || !(vnode->vnode_ops) || !(vnode->vnode_ops->write)) {
+        t->errno = EBADF;
+        goto out;
+    }
+
+    retval = vnode->vnode_ops->write(vnode, offset, buf, nbyte);
+    if (retval < nbyte) /* TODO How to determine other errno types? */
+        t->errno = ENOSPC;
+out:
+    return retval;
+}
+
+/**
  * fs syscall handler
  * @param type Syscall type
  * @param p Syscall parameters
@@ -227,8 +274,30 @@ uintptr_t fs_syscall(uint32_t type, void * p)
         return -4;
 
     case SYSCALL_FS_WRITE:
-        current_thread->errno = ENOSYS;
-        return -5;
+        {
+        struct _fs_write_args fswa;
+        char * buf;
+
+        /* Args */
+        if (!useracc(p, sizeof(struct _fs_write_args), VM_PROT_READ)) {
+            /* No permission to read/write */
+            /* TODO Signal/Kill? */
+            current_thread->errno = EFAULT;
+        }
+        copyin(p, &fswa, sizeof(struct _fs_write_args));
+
+        /* Buffer */
+        if (!useracc(fswa.buf, fswa.nbyte, VM_PROT_READ)) {
+            /* No permission to read/write */
+            /* TODO Signal/Kill? */
+            current_thread->errno = EFAULT;
+        }
+        buf = kmalloc(fswa.nbyte);
+        copyin(fswa.buf, buf, fswa.nbyte);
+
+        return (uintptr_t)fs_write_cproc(fswa.fildes, buf, fswa.nbyte,
+                &(fswa.offset));
+        }
 
     case SYSCALL_FS_LSEEK:
         current_thread->errno = ENOSYS;
