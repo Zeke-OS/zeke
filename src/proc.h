@@ -58,7 +58,7 @@
 #define PROC_RUNNING    0
 #define PROC_RUNNABLE   1       /* Can be woken up, ready to run */
 #define PROC_WAITING    2       /* Can't be woken up */
-#define PROC_ZOMBIE     4       
+#define PROC_ZOMBIE     4
 #define PROC_STOPPED    8
 
 #define PROC_NAME_LEN   10 /*TODO Remove after tests! */
@@ -101,7 +101,7 @@ typedef struct {
                                      */
         int nr_regions;             /* Number of regions allocated. */
     } mm;
-    
+
 /* note: main_thread already has a linked list of child threads
      *      - file_t fd's
      *      - tty
@@ -127,7 +127,7 @@ typedef struct {
 
     threadInfo_t * main_thread; /*!< Main thread of this process. */
     /* signal handlers */
-    sigs_t sigs;                /*!< Signals. */    
+    sigs_t sigs;                /*!< Signals. */
 } proc_info_t;
 
 int maxproc;
