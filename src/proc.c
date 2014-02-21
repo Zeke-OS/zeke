@@ -154,7 +154,7 @@ pid_t proc_fork(pid_t pid)
     }
 
     /* Allocate a master page table for the new process. */
-    if(ptmapper_alloc(&(new_proc->mm.pptable))) {
+    if(ptmapper_alloc(&(new_proc->mm.mptable))) {
         retval = -ENOMEM;
         goto free_new_proc;
     }
@@ -169,10 +169,12 @@ pid_t proc_fork(pid_t pid)
     new_proc->mm.nr_regions = old_proc->mm.nr_regions;
 
     /* Clone master page table. */
-    if(mmu_ptcpy(&(new_proc->mm.pptable), &(new_proc->mm.pptable))) {
+    if(mmu_ptcpy(&(new_proc->mm.mptable), &(new_proc->mm.mptable))) {
         retval = -EINVAL;
         goto free_regions_arr;
     }
+
+    /* TODO Allocate othet page tables */
 
     /* Mark pages as rw and do lazy copy/copy on write later. */
 
@@ -194,7 +196,7 @@ pid_t proc_fork(pid_t pid)
 free_regions_arr:
     kfree(new_proc->mm.regions);
 free_pptable_arr:
-    ptmapper_free(&(new_proc->mm.pptable));
+    ptmapper_free(&(new_proc->mm.mptable));
 free_new_proc:
     kfree(new_proc);
 out:
@@ -296,10 +298,31 @@ mmu_pagetable_t * proc_get_pptable(pid_t pid)
     if (pid == 0) { /* Kernel master page table requested. */
         pptable = &mmu_pagetable_master;
     } else { /* Get the process master page table */
-        pptable = &(proc_get_struct(pid)->mm.pptable);
+        pptable = &(proc_get_struct(pid)->mm.mptable);
     }
 
     return pptable;
+}
+
+/**
+ * Try to handler page fault caused by a process.
+ * Usually this handler is executed because of cow page table.
+ * @param pid  is a process id of the process that caused a page fault.
+ * @param vaddr is the page faulted address.
+ */
+int proc_cow_handler(pid_t pid, void * vaddr)
+{
+    /* TODO
+     * - lookup for region
+     * - if region found, clone dynmem and fix possible region groups spanning
+     *   over dynmem region
+     * - else return -1
+     *
+     *   Clone: if (region->reg_vm.usr_rw == VM_PROT_COW)
+     *              region->reg_vm.rclone(region->paddr);
+     */
+
+    return -1;
 }
 
 /**

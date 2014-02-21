@@ -59,6 +59,21 @@
 #include <klocks.h>
 #endif
 
+/* Process Management Notes
+ * ========================
+ *
+ * Regions
+ * -------
+ * Code region must be allocated globally and stored separately from processes
+ * allow processes to share the same code without copying its dynmem area on
+ * copy-on-write.
+ *
+ * Stack & heap can be allocated as a single 1 MB dynmem allocation split in
+ * three sections on their own page table.
+ *
+ * When region is freed its page tables must be also freed.
+ */
+
 /**
  * Process Control Block or Process Descriptor Structure
  */
@@ -70,14 +85,15 @@ typedef struct {
     threadInfo_t * main_thread; /*!< Main thread of this process. */
 #ifndef PU_TEST_BUILD
     struct mm {
-        mmu_pagetable_t pptable;    /*!< Process master page table. */
-        mmu_region_t * regions;   /*!< Memory regions of a process.
+        mmu_pagetable_t mptable;    /*!< Process master page table. */
+        mmu_region_t * regions;     /*!< Memory regions of a process.
                                      *   [0] = code
-                                     *   [1] = stack
-                                     *   [2] = heap/data
+                                     *   [1] = kstack
+                                     *   [2] = stack
+                                     *   [3] = heap/data
                                      *   [n] = allocs
                                      */
-        int nr_regions;             /* Number of regions allocated. */
+        int nr_regions;             /*!< Number of regions allocated. */
     } mm;
 #endif
     sigs_t sigs;                /*!< Signals. */
@@ -118,7 +134,8 @@ int proc_kill(void);
 int proc_replace(pid_t pid, void * image, size_t size);
 void proc_thread_removed(pid_t pid, pthread_t thread_id);
 proc_info_t * proc_get_struct(pid_t pid);
-mmu_pagetable_t * pr_get_pptable(pid_t pid);
+mmu_pagetable_t * pr_get_mptable(pid_t pid);
+int proc_cow_handler(pid_t pid, void * vaddr);
 
 #endif /* PROCESS_H */
 
