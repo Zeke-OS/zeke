@@ -48,6 +48,7 @@
 #include <kernel.h>
 #include <sched.h> /* Needed for threadInfo_t and threading functions */
 #include <hal/mmu.h>
+#include <vm/vm.h>
 #include <fs/fs.h>
 #include <klocks.h>
 #include <sys/resource.h>
@@ -107,7 +108,7 @@ typedef struct {
         void * brk_start;
         void * brk_stop;
         mmu_pagetable_t mptable;    /*!< Process master page table. */
-        mmu_region_t * regions;     /*!< Memory regions of a process.
+        vm_region_t * (*regions)[]; /*!< Memory regions of a process.
                                      *   [0] = code
                                      *   [1] = kstack
                                      *   [2] = stack

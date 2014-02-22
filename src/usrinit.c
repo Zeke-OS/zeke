@@ -50,12 +50,12 @@ char banner[] = "\
              .||. ||.'|...'\n\n\
 ";
 
-#if 0
-static void test_thread(void *);
-#endif
+static void * test_thread(void *);
 static void print_message(const char * message);
 static int usr_name2oid(char * name, int * oidp);
 static void thread_stat(void);
+
+static char main_stack2[8192];
 
 /**
  * main thread; main process.
@@ -68,13 +68,16 @@ void * main(void * arg)
     int old_value_tot, old_value_free;
     size_t old_len = sizeof(old_value_tot);
     char buf[80];
-#if 0
+
+
     pthread_attr_t attr = {
+        .tpriority  = configUSRINIT_PRI,
+        .stackAddr  = main_stack2,
+        .stackSize  = sizeof(main_stack2)
     };
     pthread_t thread_id;
 
     pthread_create(&thread_id, &attr, test_thread, 0);
-#endif
 
     print_message("Init v0.0.1");
 
@@ -82,7 +85,6 @@ void * main(void * arg)
     usr_name2oid("vm.dynmem_free", mib_free);
 
     while(1) {
-        //bcm2835_uputc('T');
         thread_stat();
         if(sysctl(mib_tot, len, &old_value_tot, &old_len, 0, 0)) {
             ksprintf(buf, sizeof(buf), "Error: %u",
@@ -94,23 +96,20 @@ void * main(void * arg)
                     (int)syscall(SYSCALL_SCHED_THREAD_GETERRNO, NULL));
             print_message(buf);
         }
-        ksprintf(buf, sizeof(buf), "dynmem used: %u/%u",
+        ksprintf(buf, sizeof(buf), "dynmem allocated: %u/%u",
                 old_value_tot - old_value_free, old_value_tot);
         print_message(buf);
         sleep(5);
     }
 }
 
-#if 0
-static void test_thread(void * arg)
+static void * test_thread(void * arg)
 {
     while(1) {
-        /* TODO Nicely any call seems to cause data abort :) */
-        sleep(5);
+        sleep(10);
         thread_stat();
     }
 }
-#endif
 
 static void print_message(const char * message)
 {

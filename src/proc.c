@@ -49,6 +49,7 @@
 #include <ptmapper.h>
 #include <dynmem.h>
 #include <kmalloc.h>
+#include <vralloc.h>
 #include <proc.h>
 
 static proc_info_t ** _procarr;
@@ -90,6 +91,8 @@ void proc_init(void) __attribute__((constructor));
 void proc_init(void)
 {
     SUBSYS_INIT();
+    SUBSYS_DEP(vralloc_init);
+
     PROCARR_LOCK_INIT();
     realloc__procarr();
     memset(&_procarr, 0, SIZEOF_PROCARR);
@@ -326,8 +329,8 @@ mmu_pagetable_t * proc_get_pptable(pid_t pid)
 int proc_cow_handler(pid_t pid, intptr_t vaddr)
 {
     proc_info_t * pcb;
-    mmu_region_t * region;
-    mmu_region_t new_region;
+    vm_region_t * region;
+    vm_region_t * new_region;
 
     pcb = proc_get_struct(pid);
     if (!pcb) {
@@ -335,26 +338,28 @@ int proc_cow_handler(pid_t pid, intptr_t vaddr)
     }
 
     for (int i = 0; i < pcb->mm.nr_regions; i++) {
-        region = &(pcb->mm.regions[i]);
+        region = ((*pcb->mm.regions)[i]);
 
-        if (vaddr >= region->vaddr &&
-                vaddr <= (region->vaddr + MMU_SIZEOF_REGION(region))) {
+        if (vaddr >= region->mmu.vaddr &&
+                vaddr <= (region->mmu.vaddr + MMU_SIZEOF_REGION(&(region->mmu)))) {
             /* Test for COW flag. */
-            if ((region->vm.usr_rw & VM_PROT_COW) != VM_PROT_COW) {
+            if ((region->usr_rw & VM_PROT_COW) != VM_PROT_COW) {
                 return 2; /* Memory protection error. */
             }
 
-            if(region->vm.rclone(region, &new_region) == 0) {
-                return -2; /* Can't clone region; COW clone failed. */
+            if(!(region->vm_ops->rclone)
+                    || !(new_region = region->vm_ops->rclone(region))) {
+                return -3; /* Can't clone region; COW clone failed. */
             }
 
             /* Free the old region as this process no longer uses it.
              * (Usually decrements some internal refcount) */
-            region->vm.rfree(region);
+            if (region->vm_ops->rfree)
+                region->vm_ops->rfree(region);
 
-            new_region.vm.usr_rw &= ~VM_PROT_COW; /* No more COW. */
-            pcb->mm.regions[i] = new_region; /* Replace old region. */
-            mmu_map_region(&new_region); /* Map it to the page table. */
+            new_region->usr_rw &= ~VM_PROT_COW; /* No more COW. */
+            (*pcb->mm.regions)[i] = new_region; /* Replace old region. */
+            mmu_map_region(&(new_region->mmu)); /* Map it to the page table. */
 
             return 0; /* COW done. */
         }

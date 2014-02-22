@@ -110,7 +110,7 @@ SYSCTL_UINT(_vm, OID_AUTO, dynmem_free, CTLFLAG_RD, (void *)(&dynmem_free), 0,
 
 static const size_t dynmem_tot = DYNMEM_END - DYNMEM_START + 1;
 SYSCTL_UINT(_vm, OID_AUTO, dynmem_tot, CTLFLAG_RD, (void *)(&dynmem_tot), 0,
-    "Total amount of dynmem.");
+    "Total amount of dynmem");
 
 static void * kmap_allocation(size_t pos, size_t size, uint32_t ap, uint32_t control);
 static int update_dynmem_region_struct(void * p);

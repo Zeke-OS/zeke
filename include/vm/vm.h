@@ -33,11 +33,63 @@
 #ifndef _VM_VM_H
 #define _VM_VM_H
 #ifdef KERNEL_INTERNAL
+#include <hal/mmu.h>
+#include <klocks.h>
 
 #define VM_PROT_READ    0x1 /*!< Read. */
 #define VM_PROT_WRITE   0x2 /*!< Write. */
 #define VM_PROT_EXECUTE 0x4 /*!< Execute. */
 #define VM_PROT_COW     0x8 /*!< Copy-on-write. */
+
+/**
+ * VM management structure.
+ * This struct type is used to manage memory regions in vm.
+ * This struct is always a member of mmu_region struct.
+ */
+typedef struct vm_region {
+    mmu_region_t mmu;
+    int usr_rw; /*!< Actual user mode permissions on this data. Sometimes we
+                 * want to set ap read-only to easily make copy-on-write or to
+                 * pass control to MMU exception handler for some other reason
+                 */
+
+    /* Allocator specific data */
+#if configDEBUG != 0
+    unsigned int allocator_id; /*!< Optional allocator identifier. Allocator
+                                * can use this to check that a given
+                                * region is actually allocated with it. */
+#endif
+    void * allocator_data;      /*!< Optional allocator specific data. */
+    struct vm_ops * vm_ops;
+    int refcount;
+    mtx_t lock;
+} vm_region_t;
+
+/**
+ * VM operations.
+ */
+typedef struct vm_ops {
+    /**
+     * Increment region reference count.
+     */
+    void (*rref)(struct vm_region * this);
+
+    /**
+     * Pointer to a 1:1 region cloning function.
+     * This function if set clones contents of the region to another
+     * physical locatation.
+     * @note Can be null.
+     * @param cur_region    is a pointer to the current region.
+     */
+    struct vm_region * (*rclone)(struct vm_region * cur_region);
+
+    /**
+     * Free this region.
+     * @note Can be null.
+     * @param this is the current region.
+     */
+    void (*rfree)(struct vm_region * this);
+} vm_ops_t;
 
 int copyin(const void * uaddr, void * kaddr, size_t len);
 int copyout(const void * kaddr, void * uaddr, size_t len);
