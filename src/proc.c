@@ -80,6 +80,7 @@ SYSCTL_INT(_kern, KERN_MAXPROC, nprocs, CTLFLAG_RD,
 static void realloc__procarr(void);
 static pid_t get_random_pid(void);
 static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc);
+void proc_update(void);
 
 /**
  * Init process handling subsystem.
@@ -98,6 +99,8 @@ void proc_init(void)
     /* TODO Create this correctly */
     _kernel_proc_info.files->fd[2] = kcalloc(1, sizeof(file_t)); /* stderr */
     _kernel_proc_info.files->fd[2]->vnode = &kerror_vnode;
+
+    proc_update();
 
     SUBSYS_INITFINI("Proc init");
 }
