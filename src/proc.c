@@ -176,7 +176,7 @@ pid_t proc_fork(pid_t pid)
 
     /* Allocate an array for regions. */
     new_proc->mm.regions =
-        kmalloc(old_proc->mm.nr_regions * sizeof(mmu_region_t *));
+        kmalloc(old_proc->mm.nr_regions * sizeof(vm_region_t *));
     if(!new_proc->mm.regions) {
         retval = -ENOMEM;
         goto free_pptable_arr;
@@ -190,6 +190,7 @@ pid_t proc_fork(pid_t pid)
     }
 
     /* TODO Allocate other page tables needed */
+    /* TODO Copy region pointers */
 
     /* Mark pages as rw and do lazy copy/copy on write later. */
 
