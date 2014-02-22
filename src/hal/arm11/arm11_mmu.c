@@ -41,6 +41,7 @@
 #include <kstring.h>
 #include <kerror.h>
 #include <klocks.h>
+#include <proc.h>
 #include "arm11.h"
 #include "arm11_mmu.h"
 
@@ -527,9 +528,11 @@ uint32_t mmu_data_abort_handler(uint32_t sp, uint32_t spsr, uint32_t retval)
             panic("DAB handling failed");
         }
         goto out;
-    } /* else normal vm related page fault */
+    } /* else normal vm related page fault. */
 
-    if (proc_pf_handler(thread->pid_owner, far)) {
+    /* proc should handle this page fault as it has the knowledge of how memory
+     * regions are used in processes. */
+    if (proc_cow_handler(thread->pid_owner, far)) {
         /* TODO We want to send a signal here */
         panic("SEGFAULT");
     }

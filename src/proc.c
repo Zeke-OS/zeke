@@ -59,6 +59,7 @@ volatile pid_t current_process_id;  /*!< PID of current process. */
 volatile proc_info_t * curproc;     /*!< PCB of the current process. */
 static pid_t _lastpid;              /*!< last allocated pid. */
 
+/* PCB for kernel process. */
 extern vnode_t kerror_vnode;
 static proc_info_t _kernel_proc_info = {
     .pid = 0,
@@ -80,7 +81,7 @@ SYSCTL_INT(_kern, KERN_MAXPROC, nprocs, CTLFLAG_RD,
 static void realloc__procarr(void);
 static pid_t get_random_pid(void);
 static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc);
-void proc_update(void);
+void proc_update(void); /* Used in HAL, so not static */
 
 /**
  * Init process handling subsystem.
@@ -322,19 +323,44 @@ mmu_pagetable_t * proc_get_pptable(pid_t pid)
  * @param pid  is a process id of the process that caused a page fault.
  * @param vaddr is the page faulted address.
  */
-int proc_cow_handler(pid_t pid, void * vaddr)
+int proc_cow_handler(pid_t pid, intptr_t vaddr)
 {
-    /* TODO
-     * - lookup for region
-     * - if region found, clone dynmem and fix possible region groups spanning
-     *   over dynmem region
-     * - else return -1
-     *
-     *   Clone: if (region->reg_vm.usr_rw == VM_PROT_COW)
-     *              region->reg_vm.rclone(region->paddr);
-     */
+    proc_info_t * pcb;
+    mmu_region_t * region;
+    mmu_region_t new_region;
 
-    return -1;
+    pcb = proc_get_struct(pid);
+    if (!pcb) {
+        return -1; /* Process doesn't exist. */
+    }
+
+    for (int i = 0; i < pcb->mm.nr_regions; i++) {
+        region = &(pcb->mm.regions[i]);
+
+        if (vaddr >= region->vaddr &&
+                vaddr <= (region->vaddr + MMU_SIZEOF_REGION(region))) {
+            /* Test for COW flag. */
+            if ((region->vm.usr_rw & VM_PROT_COW) != VM_PROT_COW) {
+                return 2; /* Memory protection error. */
+            }
+
+            if(region->vm.rclone(region, &new_region) == 0) {
+                return -2; /* Can't clone region; COW clone failed. */
+            }
+
+            /* Free the old region as this process no longer uses it.
+             * (Usually decrements some internal refcount) */
+            region->vm.rfree(region);
+
+            new_region.vm.usr_rw &= ~VM_PROT_COW; /* No more COW. */
+            pcb->mm.regions[i] = new_region; /* Replace old region. */
+            mmu_map_region(&new_region); /* Map it to the page table. */
+
+            return 0; /* COW done. */
+        }
+    }
+
+    return 1; /* Not found */
 }
 
 /**

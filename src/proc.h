@@ -156,7 +156,7 @@ int proc_replace(pid_t pid, void * image, size_t size);
 void proc_thread_removed(pid_t pid, pthread_t thread_id);
 proc_info_t * proc_get_struct(pid_t pid);
 mmu_pagetable_t * pr_get_mptable(pid_t pid);
-int proc_cow_handler(pid_t pid, void * vaddr);
+int proc_cow_handler(pid_t pid, intptr_t vaddr);
 
 #endif /* PROC_H */
 

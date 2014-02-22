@@ -141,7 +141,7 @@ typedef struct {
 /**
  * Region Control Block - RCB
  */
-typedef struct {
+typedef struct mmu_region {
     uint32_t vaddr;     /*!< is the virtual address that begins the region in
                          * virtual memory. */
     uint32_t num_pages; /*!< is the number of pages in the region or region size
@@ -154,19 +154,40 @@ typedef struct {
     mmu_pagetable_t * pt; /*!< is a pointer to the page table struct in which
                            * the region resides. */
     struct reg_vm {
-        int usr_rw; /*!< Actual user permissions on this data. Sometimes we want
-                     *   to set ap read-only to easily make copy-on-write or to
-                     *   pass control to MMU exception handler for some other
-                     *   reason. */
+        unsigned int allocator_id; /*!< Optional allocator identifier. Allocator
+                                    * can use this to check that a given
+                                    * region is actually allocated with it. */
+        int usr_rw; /*!< Actual user mode permissions on this data. Sometimes we
+                     * want to set ap read-only to easily make copy-on-write or
+                     * to pass control to MMU exception handler for some other
+                     * reason. */
         /**
          * Pointer to a 1:1 region cloning function.
          * This function if set clones contents of the region to another
          * physical locatation.
-         * @param paddr is the physical address of the begining of the region.
+         * Can be null.
+         * @param cur_region    is a pointer to the current region.
+         * @param new_region    is a pointer to an emptry struct where a new
+         *                      region descriptor will be written.
+         * @return Returns the vaddr of the newly created region.
          */
-        void * (*rclone)(size_t paddr);
+        void * (*rclone)(struct mmu_region * cur_region, struct mmu_region * new_region);
+        /**
+         * Free this region.
+         * Can be null.
+         * @param this is the current region.
+         */
+        void (*rfree)(struct mmu_region * this);
     } vm;
 } mmu_region_t;
+
+/**
+ * Calculate the size of a given region reg.
+ * @param reg is the region.
+ * @return Size of the region in bytes.
+ */
+#define MMU_SIZEOF_REGION(reg) \
+    ((reg->num_pages * (reg->pt->type == MMU_PTE_COARSE)) ? 4096 : 1048576)
 
 #if configARCH == __ARM6__ || __ARM6K__ /* ARM11 uses ARMv6 arch */
 #include "arm11/arm11_mmu.h"

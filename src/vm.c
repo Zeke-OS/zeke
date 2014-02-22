@@ -75,6 +75,8 @@ int copyin(const void * uaddr, void * kaddr, size_t len)
  */
 int copyout(const void * kaddr, void * uaddr, size_t len)
 {
+    /* TODO Handle possible cow flag. */
+
     memcpy(uaddr, kaddr, len);
 
     return 0;
@@ -200,6 +202,7 @@ static int test_ap_priv(uint32_t rw, uint32_t ap)
  */
 int useracc(void * addr, int len, int rw)
 {
+    /* TODO We may wan't to handle cow here */
     /* TODO */
     //if (curproc == 0)
     //    return 0;
