@@ -37,6 +37,7 @@
 #include <dynmem.h>
 #include <kmalloc.h>
 #include <kerror.h>
+#include <sys/sysctl.h>
 #include <vralloc.h>
 
 struct vregion {
@@ -51,6 +52,14 @@ struct vregion {
 
 static llist_t * vrlist; /*!< List of all allocations. */
 static struct vregion * last_vreg; /*!< Last node that contained empty pages. */
+
+static size_t vralloc_tot;
+SYSCTL_UINT(_vm, OID_AUTO, vralloc_tot, CTLFLAG_RD, &vralloc_tot, 0,
+    "Amount of memory currently allocated for vralloc");
+
+static size_t vralloc_used;
+SYSCTL_UINT(_vm, OID_AUTO, vralloc_used, CTLFLAG_RD, &vralloc_used, 0,
+    "Amount of vralloc memory used");
 
 static struct vregion * vreg_alloc_node(size_t count);
 static void vreg_free_node(struct vregion * reg);
@@ -100,8 +109,11 @@ static struct vregion * vreg_alloc_node(size_t count)
         return 0;
     }
 
-    vreg->size = VREG_SIZE(count) * sizeof(uint32_t);
+    vreg->size = E2BITMAP_SIZE(count);
     vrlist->insert_head(vrlist, vreg);
+
+    /* Update stats */
+    vralloc_tot += count * 4096;
 
     return vreg;
 }
@@ -111,6 +123,10 @@ static struct vregion * vreg_alloc_node(size_t count)
  */
 static void vreg_free_node(struct vregion * vreg)
 {
+    /* Update stats */
+    vralloc_tot += vreg->size * (4 * 8) * 4096;
+
+    /* Free node */
     vrlist->remove(vrlist, vreg);
     dynmem_free_region((void *)vreg->paddr);
     kfree(vreg);
@@ -175,6 +191,7 @@ retry_vra:
         goto retry_vra;
     }
 
+    vralloc_used += size; /* Update stats */
     last_vreg = vreg;
     return retval;
 }
@@ -211,6 +228,7 @@ void vrfree(struct vm_region * region)
 
     bitmap_block_update(vreg->map, 0, iblock, region->mmu.num_pages);
     vreg->count -= region->mmu.num_pages;
+    vralloc_used -= region->mmu.num_pages * 4096; /* Update stats */
 
     kfree(region);
 
