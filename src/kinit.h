@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   MMU headers.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,7 +40,7 @@
  * @todo TODO Fix order of init messages
  */
 #define SUBSYS_INIT()               \
-    static int __subsys_init = 0;   \
+    static char __subsys_init = 0;  \
     do {                            \
     if (__subsys_init != 0) return; \
     else __subsys_init = 1;         \

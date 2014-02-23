@@ -102,21 +102,11 @@ typedef struct {
     files_t * files; /*!< Open files */
     struct tty_struct * tty; /* NULL if no tty */
 
-    /*!< memory management info */
-    struct mm_struct {
-        void * brk;
-        void * brk_start;
-        void * brk_stop;
-        mmu_pagetable_t mptable;    /*!< Process master page table. */
-        vm_region_t * (*regions)[]; /*!< Memory regions of a process.
-                                     *   [0] = code
-                                     *   [1] = kstack
-                                     *   [2] = stack
-                                     *   [3] = heap/data
-                                     *   [n] = allocs
-                                     */
-        int nr_regions;             /*!< Number of regions allocated. */
-    } mm;
+    /* Memory Management */
+    struct vm_mm_struct mm;
+    void * brk;
+    void * brk_start;
+    void * brk_stop;
 
     /* notes:
      * - main_thread already has a linked list of child threads

@@ -91,6 +91,22 @@ typedef struct vm_ops {
     void (*rfree)(struct vm_region * this);
 } vm_ops_t;
 
+/**
+ * MM struct for processes.
+ */
+struct vm_mm_struct {
+    mmu_pagetable_t mptable;    /*!< Process master page table. */
+    /* TODO btree of page tables */
+    vm_region_t * (*regions)[]; /*!< Memory regions of a process.
+                                 *   [0] = code
+                                 *   [1] = kstack
+                                 *   [2] = stack
+                                 *   [3] = heap/data
+                                 *   [n] = allocs
+                                 */
+    int nr_regions;             /*!< Number of regions allocated. */
+};
+
 int copyin(const void * uaddr, void * kaddr, size_t len);
 int copyout(const void * kaddr, void * uaddr, size_t len);
 int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done);

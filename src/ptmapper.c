@@ -251,16 +251,16 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
     int retval = 0;
 
     switch (pt->type) {
-        case MMU_PTT_MASTER:
-            size = PTM_MASTER;
-            bsize = MMU_PTSZ_MASTER;
-            break;
-        case MMU_PTT_COARSE:
-            size = PTM_COARSE;
-            bsize = MMU_PTSZ_COARSE;
-            break;
-        default:
-            break;
+    case MMU_PTT_MASTER:
+        size = PTM_MASTER;
+        bsize = MMU_PTSZ_MASTER;
+        break;
+    case MMU_PTT_COARSE:
+        size = PTM_COARSE;
+        bsize = MMU_PTSZ_COARSE;
+        break;
+    default:
+        break;
     }
 
     /* Try to allocate a new page table */
@@ -305,17 +305,17 @@ void ptmapper_free(mmu_pagetable_t * pt)
     size_t bsize = 0; /* Size in bytes */
 
     switch (pt->type) {
-        case MMU_PTT_MASTER:
-            size = PTM_MASTER;
-            bsize = MMU_PTSZ_MASTER;
-            break;
-        case MMU_PTT_COARSE:
-            size = PTM_COARSE;
-            bsize = MMU_PTSZ_COARSE;
-            break;
-        default:
-            KERROR(KERROR_ERR, "Attemp to free an invalid page table.");
-            return;
+    case MMU_PTT_MASTER:
+        size = PTM_MASTER;
+        bsize = MMU_PTSZ_MASTER;
+        break;
+    case MMU_PTT_COARSE:
+        size = PTM_COARSE;
+        bsize = MMU_PTSZ_COARSE;
+        break;
+    default:
+        KERROR(KERROR_ERR, "Attemp to free an invalid page table.");
+        return;
     }
 
     block = PTM_ADDR2BLOCK(pt->pt_addr);
