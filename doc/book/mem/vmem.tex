@@ -23,28 +23,30 @@ See \verb+MMU_DOM_xxx+ definitions.
 U                      +---------------+
 S                      |    malloc     |
 R                      +---------------+
--------------------------------|-------------
+-------------------------------|-----------------
 K   +---------------+  +---------------+
 E   |    kmalloc    |  |    process    |
 R   +---------------+  +---------------+
-N           |                     |
-E           |                   +----+
-L           |   ----------------| vm |
-            |   |               +----+
-            |   |                 |
-           \/  \/                \/
-    +---------------+       +----------+
-    |    dynmem     |-------| ptmapper |
-    +---------------+       +----------+
-           \/                    |
-    +---------------+            |
-    |    mmu HAL    |<------------
+N           |     /\    |      |
+E           |     |    \/      |
+L           |  +--------+   +----+
+            |  |vralloc |---| vm |
+            |  +--------+   +----+
+            |     |            |
+           \/    \/           \/
+    +---------------+     +----------+
+    |    dynmem     |-----| ptmapper |
+    +---------------+     +----------+
+            |                  |
+           \/                  |
+    +---------------+          |
+    |    mmu HAL    |<----------
     +---------------+
             |
     +-----------------------+
     | CPU specific MMU code |
     +-----------------------+
-------------|--------------------------------
+------------|------------------------------------
     +-------------------+
     | MMU & coProcessor |
     +-------------------+
@@ -58,6 +60,10 @@ See figure \ref{figure:vmsubsys}.
 \begin{itemize}
   \item \verb+kmalloc+  - is a kernel level memory allocation service, used
                         solely for memory allocations in kernel space.
+  \item \verb+vralloc+  - VRAlloc is a special memory allocator targetted to
+                        allocate blocks of memory that will be mapped in virtual
+                        address space of processes, it returns \verb+vm_region+
+                        structs instead of just base address of the allocation.
   \item \verb+dynmem+   - is a dynamic memory allocation system that allocates
                         \& frees contiguous blocks of physical memory.
   \item \verb+ptmapper+ - owns the statically created page tables (particularly
@@ -65,8 +71,7 @@ See figure \ref{figure:vmsubsys}.
                         allocate new page tables from the page table region.
   \item \verb+vm+       - vm runs various checks on virtual memory access,
                         copies data between user land and kernel space and
-                        allocates memory for processes etc. vm is basically
-                        a wrapper and doesn't own anything.
+                        allocates memory for processes.
   \item mmu HAL -       is the abract MMU interface provided by \verb+mmu.h+
                         and \verb+mmu.c+.
   \item CPU specific MMU code is the module responsible of configuring the
