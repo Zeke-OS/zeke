@@ -32,7 +32,6 @@
  */
 
 #include <kernel.h>
-#include <sys/_kservices.h>
 #include <syscall.h>
 #include <kstring.h> /* -"- */
 #include <sys/sysctl.h>

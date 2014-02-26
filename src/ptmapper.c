@@ -41,7 +41,7 @@
 void ptmapper_init(void);
 HW_PREINIT_ENTRY(ptmapper_init);
 
-/* Fixed Page Tables */
+/* Fixed Page Tables **********************************************************/
 
 /* Kernel master page table (L1) */
 mmu_pagetable_t mmu_pagetable_master = {
@@ -60,16 +60,33 @@ mmu_pagetable_t mmu_pagetable_system = {
     .dom            = MMU_DOM_KERNEL
 };
 
-/* Fixed Regions */
+/* Fixed Regions **************************************************************/
 
 /* TODO Temporarily mapped as one big area */
+extern void *  _rodata_end __attribute__((weak));
 mmu_region_t mmu_region_kernel = {
     .vaddr          = MMU_VADDR_KERNEL_START,
-    .num_pages      = MMU_PAGE_CNT_BY_RANGE(MMU_VADDR_KERNEL_START, \
-                        MMU_VADDR_KERNEL_END, 4096),
+    .num_pages      = 0, /* Set in init */
     .ap             = MMU_AP_RWRW, /* TODO this must be changed later to RWNA */
     .control        = MMU_CTRL_MEMTYPE_WB,
     .paddr          = 0x0,
+    .pt             = &mmu_pagetable_system
+};
+
+/** Start of the kernel rw region. */
+extern void * _data_start __attribute__((weak));
+/** Last static variable in bss. */
+extern void * __bss_break __attribute__((weak));
+/** End of kernel memory region by linker.
+ * This variable is not actually very useful for anything as we'll anyway
+ * end at full mega byte. */
+extern void * _end __attribute__((weak));
+mmu_region_t mmu_region_kdata = {
+    .vaddr          = 0, /* Set in init */
+    .num_pages      = 0, /* Set in init */
+    .ap             = MMU_AP_RWRW, /* TODO */
+    .control        = MMU_CTRL_MEMTYPE_WB,
+    .paddr          = 0, /* Set in init */
     .pt             = &mmu_pagetable_system
 };
 
@@ -166,7 +183,6 @@ SYSCTL_UINT(_vm, OID_AUTO, ptm_mem_tot, CTLFLAG_RD,
 #define PTM_FREE(block, len) \
     bitmap_block_update(ptm_alloc_map, 0, block, len)
 
-
 /**
  * Page table mapper init function.
  * @note This function should be called by mmu init.
@@ -175,6 +191,9 @@ void ptmapper_init(void)
 {
     SUBSYS_INIT();
     KERROR(KERROR_LOG, "ptmapper init started");
+    char buf[80];
+    ksprintf(buf, sizeof(buf), "_end : %x, %x", (ptrdiff_t)(&_rodata_end), (ptrdiff_t)(&__bss_break));
+    KERROR(KERROR_LOG, buf);
 
     /* Allocate memory for mmu_pagetable_master */
     if (ptmapper_alloc(&mmu_pagetable_master)) {
@@ -190,32 +209,34 @@ void ptmapper_init(void)
     mmu_init_pagetable(&mmu_pagetable_master);
     mmu_init_pagetable(&mmu_pagetable_system);
 
-#if 0
-    /* Calculate physical address space of the shared region. */
-    mmu_region_shared.paddr = __text_shared_start;
-    mmu_region_shared.num_pages =
-        MMU_PAGE_CNT_BY_RANGE((intptr_t)(__text_shared_start), (intptr_t)(__text_shared_end), 4096);
-    {
-        char buf[80];
-        ksprintf(buf, sizeof(buf), "%x, %x", &__text_shared_start, &__text_shared_end);
-        KERROR(KERROR_LOG, buf);
-    }
-#endif
+    /* Init regions */
+    /* Kernel ro region */
+    mmu_region_kernel.num_pages  = MMU_PAGE_CNT_BY_RANGE(
+            MMU_VADDR_KERNEL_START, (intptr_t)(&_rodata_end) - 1, 4096);
+    /* Kernel rw data region */
+    mmu_region_kdata.vaddr      = (intptr_t)(&_data_start);
+    mmu_region_kdata.num_pages  = MMU_PAGE_CNT_BY_RANGE(
+            (intptr_t)(&_data_start), MMU_VADDR_KERNEL_END, 4096);
+    mmu_region_kdata.paddr      = (intptr_t)(&_data_start);
 
     /* Fill page tables with translations & attributes */
     {
 #if configDEBUG != 0
         char buf[80];
+        char str_type[2][9] = {"sections", "pages"};
 #define PRINTMAPREG(region) \
-        ksprintf(buf, sizeof(buf), "Mapped %s: %u pages/sections", #region, region.num_pages); \
+        ksprintf(buf, sizeof(buf), "Mapped %s: %u %s", \
+            #region, region.num_pages, \
+            (region.pt->type == MMU_PTT_MASTER) ? \
+                str_type[0] : str_type[1]); \
         KERROR(KERROR_DEBUG, buf);
 #else
 #define PRINTMAPREG(region)
 #endif
         mmu_map_region(&mmu_region_kernel);
         PRINTMAPREG(mmu_region_kernel);
-        //mmu_map_region(&mmu_region_shared);
-        //PRINTMAPREG(mmu_region_shared);
+        mmu_map_region(&mmu_region_kdata);
+        PRINTMAPREG(mmu_region_kdata);
         mmu_map_region(&mmu_region_page_tables);
         PRINTMAPREG(mmu_region_page_tables);
         mmu_map_region(&mmu_region_rpihw);

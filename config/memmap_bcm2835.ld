@@ -86,6 +86,7 @@ SECTIONS
         bss = .;
         *(.bss)
     }
+    __bss_break = .;
     . = ALIGN(4096); /* align to page size */
     _bss_end = .;
     _end = .;
