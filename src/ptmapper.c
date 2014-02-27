@@ -53,7 +53,7 @@ mmu_pagetable_t mmu_pagetable_master = {
 };
 
 mmu_pagetable_t mmu_pagetable_system = {
-    .vaddr          = MMU_VADDR_KERNEL_START,
+    .vaddr          = 0,
     .pt_addr        = 0, /* Set later */
     .master_pt_addr = 0, /* Set later */
     .type           = MMU_PTT_COARSE,
@@ -62,14 +62,25 @@ mmu_pagetable_t mmu_pagetable_system = {
 
 /* Fixed Regions **************************************************************/
 
-/* TODO Temporarily mapped as one big area */
+/** Kernel mode stacks. */
+mmu_region_t mmu_region_kstack = {
+    .vaddr          = 0,
+    .num_pages      = MMU_PAGE_CNT_BY_RANGE(
+                        MMU_VADDR_KSTACK_START, MMU_VADDR_KSTACK_END, 4096),
+    .ap             = MMU_AP_RWNA,
+    .control        = MMU_CTRL_XN,
+    .paddr          = MMU_VADDR_KSTACK_START,
+    .pt             = &mmu_pagetable_system
+};
+
 extern void *  _rodata_end __attribute__((weak));
+/** Read-only kernel code & data */
 mmu_region_t mmu_region_kernel = {
     .vaddr          = MMU_VADDR_KERNEL_START,
     .num_pages      = 0, /* Set in init */
-    .ap             = MMU_AP_RWRW, /* TODO this must be changed later to RWNA */
-    .control        = MMU_CTRL_MEMTYPE_WB,
-    .paddr          = 0x0,
+    .ap             = MMU_AP_RORO, /* TODO this must be changed later to RONA */
+    .control        = 0,
+    .paddr          = MMU_VADDR_KERNEL_START,
     .pt             = &mmu_pagetable_system
 };
 
@@ -191,9 +202,6 @@ void ptmapper_init(void)
 {
     SUBSYS_INIT();
     KERROR(KERROR_LOG, "ptmapper init started");
-    char buf[80];
-    ksprintf(buf, sizeof(buf), "_end : %x, %x", (ptrdiff_t)(&_rodata_end), (ptrdiff_t)(&__bss_break));
-    KERROR(KERROR_LOG, buf);
 
     /* Allocate memory for mmu_pagetable_master */
     if (ptmapper_alloc(&mmu_pagetable_master)) {
@@ -223,7 +231,7 @@ void ptmapper_init(void)
     {
 #if configDEBUG != 0
         char buf[80];
-        char str_type[2][9] = {"sections", "pages"};
+        const char str_type[2][9] = {"sections", "pages"};
 #define PRINTMAPREG(region) \
         ksprintf(buf, sizeof(buf), "Mapped %s: %u %s", \
             #region, region.num_pages, \
@@ -233,6 +241,8 @@ void ptmapper_init(void)
 #else
 #define PRINTMAPREG(region)
 #endif
+        mmu_map_region(&mmu_region_kstack);
+        PRINTMAPREG(mmu_region_kstack);
         mmu_map_region(&mmu_region_kernel);
         PRINTMAPREG(mmu_region_kernel);
         mmu_map_region(&mmu_region_kdata);
@@ -241,6 +251,7 @@ void ptmapper_init(void)
         PRINTMAPREG(mmu_region_page_tables);
         mmu_map_region(&mmu_region_rpihw);
         PRINTMAPREG(mmu_region_rpihw);
+#undef PRINTMAPREG
     }
 
     /* Activate page tables */

@@ -15,8 +15,6 @@ usage on Zeke. Some of these mappings are common to all ARM11 implementations.
     0x5000 - 0x5fff     | x | IRQ stack
     0x6000 - 0x6fff     | x | Undef stack
     0x7000 - 0x7fff     | x | System stack
-    -                   |   |
-    0x3c01 - 0x7fff     |   | Free space
     0x8000 - 0xfffff    | x | Kernel area (boot address)
     0x00100000-         | x | Page Table
     0x002FFFFF          |   | Area
