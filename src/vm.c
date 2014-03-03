@@ -46,6 +46,30 @@ static int test_ap_priv(uint32_t rw, uint32_t ap);
 static int test_ap_user(uint32_t rw, uint32_t ap);
 
 
+RB_GENERATE(ptlist, vm_pt, entry_, vm_pt_compare);
+
+/**
+ * Compare vmp_pt rb tree nodes.
+ * Compares virtual addresses of two page tables.
+ * @param a is the left node.
+ * @param b is the right node.
+ * @return  If the first argument is smaller than the second, the function
+ *          returns a value smaller than zero;
+ *          If they are equal, the  function returns zero;
+ *          Otherwise, value greater than zero is returned.
+ */
+int vm_pt_compare(struct vm_pt * a, struct vm_pt * b)
+{
+    ssize_t vaddr_a = 0, vaddr_b = 0;
+
+    if (!a)
+        vaddr_a = (ssize_t)(a->pt.vaddr);
+    if (!b)
+        vaddr_b = (ssize_t)(b->pt.vaddr);
+
+    return (int)(a - b);
+}
+
 /**
  * Copy data from user-space to kernel-space.
  * Copy len bytes of data from the user-space address uaddr to the kernel-space

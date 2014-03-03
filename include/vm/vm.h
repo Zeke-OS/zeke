@@ -35,6 +35,7 @@
 #ifdef KERNEL_INTERNAL
 #include <hal/mmu.h>
 #include <klocks.h>
+#include <sys/tree.h>
 
 #define VM_PROT_READ    0x1 /*!< Read. */
 #define VM_PROT_WRITE   0x2 /*!< Write. */
@@ -42,9 +43,16 @@
 #define VM_PROT_COW     0x8 /*!< Copy-on-write. */
 
 /**
- * VM management structure.
- * This struct type is used to manage memory regions in vm.
- * This struct is always a member of mmu_region struct.
+ * VM page table structure.
+ */
+struct vm_pt {
+    RB_ENTRY(vm_pt) entry_;
+    mmu_pagetable_t pt;
+};
+
+/**
+ * VM memory region management structure.
+ * This struct type is used to manage memory regions in vm system.
  */
 typedef struct vm_region {
     mmu_region_t mmu;
@@ -91,21 +99,27 @@ typedef struct vm_ops {
     void (*rfree)(struct vm_region * this);
 } vm_ops_t;
 
+RB_HEAD(ptlist, vm_pt);
+
 /**
  * MM struct for processes.
  */
 struct vm_mm_struct {
     mmu_pagetable_t mptable;    /*!< Process master page table. */
-    /* TODO btree of page tables */
+    /** RB tree of page tables */
+    struct ptlist ptlist_head;
     vm_region_t * (*regions)[]; /*!< Memory regions of a process.
-                                 *   [0] = code
-                                 *   [1] = kstack
-                                 *   [2] = stack
-                                 *   [3] = heap/data
+                                 *   [0] = code         RORO
+                                 *   [1] = kstack       RWNA
+                                 *   [2] = stack        RWRW
+                                 *   [3] = heap/data    RWRW
                                  *   [n] = allocs
                                  */
     int nr_regions;             /*!< Number of regions allocated. */
 };
+
+int vm_pt_compare(struct vm_pt * a, struct vm_pt * b);
+RB_PROTOTYPE(ptlist, vm_pt, entry_, vm_pt_compare);
 
 int copyin(const void * uaddr, void * kaddr, size_t len);
 int copyout(const void * kaddr, void * uaddr, size_t len);
