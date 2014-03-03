@@ -60,7 +60,7 @@ typedef struct vm_region {
                                 * region is actually allocated with it. */
 #endif
     void * allocator_data;      /*!< Optional allocator specific data. */
-    struct vm_ops * vm_ops;
+    const struct vm_ops * vm_ops;
     int refcount;
     mtx_t lock;
 } vm_region_t;
@@ -81,7 +81,7 @@ typedef struct vm_ops {
      * @note Can be null.
      * @param cur_region    is a pointer to the current region.
      */
-    struct vm_region * (*rclone)(struct vm_region * cur_region);
+    struct vm_region * (*rclone)(struct vm_region * old_region);
 
     /**
      * Free this region.
@@ -110,6 +110,8 @@ struct vm_mm_struct {
 int copyin(const void * uaddr, void * kaddr, size_t len);
 int copyout(const void * kaddr, void * uaddr, size_t len);
 int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done);
+
+void vm_updateusr_ap(struct vm_region * region);
 
 /* Not sure if these should be actually in vm_extern.h for BSD compatibility */
 int kernacc(void * addr, int len, int rw);

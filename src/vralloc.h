@@ -42,6 +42,7 @@
 
 void vralloc_init(void) __attribute__((constructor));
 vm_region_t * vralloc(size_t size);
+struct vm_region * vr_rclone(struct vm_region * old_region);
 void vrfree(struct vm_region * region);
 
 #endif /* VRALLOC_H */

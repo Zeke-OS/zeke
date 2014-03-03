@@ -113,6 +113,61 @@ int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done)
 }
 
 /**
+ * Update usr access permissions based on region->usr_rw.
+ * @param region is the region to be updated.
+ */
+void vm_updateusr_ap(struct vm_region * region)
+{
+    int usr_rw;
+    unsigned ap;
+
+    mtx_spinlock(&(region->lock));
+    usr_rw = region->usr_rw;
+    ap = region->mmu.ap;
+
+#define _COWRD (VM_PROT_COW | VM_PROT_READ)
+    if ((usr_rw & _COWRD) == _COWRD) {
+        region->mmu.ap = MMU_AP_RORO;
+    } else if (usr_rw & VM_PROT_WRITE) {
+        region->mmu.ap = MMU_AP_RWRW;
+    } else if (usr_rw & VM_PROT_READ) {
+        switch (ap) {
+            case MMU_AP_NANA:
+            case MMU_AP_RONA:
+                region->mmu.ap = MMU_AP_RORO;
+                break;
+            case MMU_AP_RWNA:
+                region->mmu.ap = MMU_AP_RWRO;
+                break;
+            case MMU_AP_RWRO:
+                break;
+            case MMU_AP_RWRW:
+                region->mmu.ap = MMU_AP_RWRO;
+                break;
+            case MMU_AP_RORO:
+                break;
+        }
+    } else {
+        switch (ap) {
+            case MMU_AP_NANA:
+            case MMU_AP_RONA:
+            case MMU_AP_RWNA:
+                break;
+            case MMU_AP_RWRO:
+            case MMU_AP_RWRW:
+                region->mmu.ap = MMU_AP_RWNA;
+                break;
+            case MMU_AP_RORO:
+                region->mmu.ap = MMU_AP_RONA;
+                break;
+        }
+    }
+#undef _COWRD
+
+    mtx_unlock(&(region->lock));
+}
+
+/**
  * Check kernel space memory region for accessibility.
  * Check whether operations of the type specified in rw are permitted in the
  * range of virtual addresses given by addr and len.

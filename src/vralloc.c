@@ -36,6 +36,7 @@
 #include <generic/dllist.h>
 #include <dynmem.h>
 #include <kmalloc.h>
+#include <kstring.h>
 #include <kerror.h>
 #include <sys/sysctl.h>
 #include <vralloc.h>
@@ -66,13 +67,16 @@ static void vreg_free_node(struct vregion * reg);
 static size_t pagealign(size_t size, size_t bytes);
 static void vrref(struct vm_region * region);
 
-static vm_ops_t vra_ops = {
-    .rref = vrref, /* TODO */
-    .rclone = 0, /* TODO */
+static const vm_ops_t vra_ops = {
+    .rref = vrref,
+    .rclone = vr_rclone,
     .rfree = vrfree
 };
 
 
+/**
+ * Initializes vregion allocator data structures.
+ */
 void vralloc_init(void)
 {
     SUBSYS_INIT();
@@ -119,7 +123,8 @@ static struct vregion * vreg_alloc_node(size_t count)
 }
 
 /**
- * Free allocated vregion.
+ * Free vregion node.
+ * @param vreg is a pointer to vregion.
  */
 static void vreg_free_node(struct vregion * vreg)
 {
@@ -148,8 +153,12 @@ static size_t pagealign(size_t size, size_t bytes)
 }
 
 /**
- * Allocate vregion.
+ * Allocate a virtual memory region.
+ * Usr has a write permission by default.
+ * @note Page table and virtual address is not set.
  * @param size is the size of new region in bytes.
+ * @return  Returns vm_region struct if allocated was successful;
+ *          Otherwise function return 0.
  */
 vm_region_t * vralloc(size_t size)
 {
@@ -177,6 +186,8 @@ retry_vra:
             retval->refcount = 1;
             retval->allocator_data = vreg;
             retval->vm_ops = &vra_ops;
+            retval->usr_rw = VM_PROT_READ | VM_PROT_WRITE;
+            vm_updateusr_ap(retval);
 
             vreg->count += pcount;
             bitmap_block_update(vreg->map, 1, iblock, pcount);
@@ -196,6 +207,10 @@ retry_vra:
     return retval;
 }
 
+/**
+ * Increment reference count of a vr allocated vm_region.
+ * @param region is a vregion.
+ */
 static void vrref(struct vm_region * region)
 {
     mtx_spinlock(&(region->lock));
@@ -203,6 +218,53 @@ static void vrref(struct vm_region * region)
     mtx_unlock(&(region->lock));
 }
 
+/**
+ * Clone a vregion.
+ * @param old_region is the old region to be cloned.
+ * @return  Returns pointer to the new vregion if operation was successful;
+ *          Otherwise zero.
+ */
+struct vm_region * vr_rclone(struct vm_region * old_region)
+{
+    vm_region_t * new_region;
+    size_t rsize = MMU_SIZEOF_REGION(&(old_region->mmu));
+
+#if configDEBUG != 0
+    if (old_region->allocator_id != VRALLOC_ALLOCATOR_ID) {
+        KERROR(KERROR_ERR, "Invalid allocator_id");
+        return 0;
+    }
+#endif
+    vrref(old_region);
+
+    new_region = vralloc(rsize);
+    if (!new_region) {
+        KERROR(KERROR_ERR, "Out of memory");
+        return 0;
+    }
+
+    /* Copy data and attributes */
+    memcpy((void *)(new_region->mmu.paddr), (void *)(old_region->mmu.paddr),
+            rsize);
+    new_region->usr_rw = ~VM_PROT_COW & old_region->usr_rw;
+    new_region->mmu.vaddr = old_region->mmu.vaddr;
+    /* num_pages already set */
+    new_region->mmu.ap = old_region->mmu.ap;
+    new_region->mmu.control = old_region->mmu.control;
+    /* paddr already set */
+    new_region->mmu.pt = old_region->mmu.pt;
+    vm_updateusr_ap(new_region);
+
+    vrfree(old_region);
+
+    return new_region;
+}
+
+/**
+ * Free allocated vregion.
+ * Dereferences a vregion.
+ * @param region is a vregion to be derefenced/freed.
+ */
 void vrfree(struct vm_region * region)
 {
     struct vregion * vreg;
