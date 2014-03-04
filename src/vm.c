@@ -35,6 +35,7 @@
 #include <hal/mmu.h>
 #include <ptmapper.h>
 #include <dynmem.h>
+#include <kmalloc.h>
 #include <kerror.h>
 #include <errno.h>
 #include <proc.h>
@@ -46,7 +47,7 @@ static int test_ap_priv(uint32_t rw, uint32_t ap);
 static int test_ap_user(uint32_t rw, uint32_t ap);
 
 
-RB_GENERATE(ptlist, vm_pt, entry_, vm_pt_compare);
+RB_GENERATE(ptlist, vm_pt, entry_, ptlist_compare);
 
 /**
  * Compare vmp_pt rb tree nodes.
@@ -58,7 +59,7 @@ RB_GENERATE(ptlist, vm_pt, entry_, vm_pt_compare);
  *          If they are equal, the  function returns zero;
  *          Otherwise, value greater than zero is returned.
  */
-int vm_pt_compare(struct vm_pt * a, struct vm_pt * b)
+int ptlist_compare(struct vm_pt * a, struct vm_pt * b)
 {
     ssize_t vaddr_a = 0, vaddr_b = 0;
 
@@ -68,6 +69,50 @@ int vm_pt_compare(struct vm_pt * a, struct vm_pt * b)
         vaddr_b = (ssize_t)(b->pt.vaddr);
 
     return (int)(a - b);
+}
+
+/**
+ * Get a page table for given virtual address.
+ * @param ptlist_heas is a structure containing all page tables.
+ * @param mpt   is a master page table.
+ * @param vaddr is the virtual address that will be mapped into a returned page
+ *              table.
+ * @return Returs a page table where vaddr can be mapped.
+ */
+struct vm_pt * ptlist_get_pt(struct ptlist * ptlist_head, mmu_pagetable_t * mpt, intptr_t vaddr)
+{
+    struct vm_pt * vpt = 0;
+    struct vm_pt filter; /* Used as a search filter */
+
+    if (!RB_EMPTY(ptlist_head)) {
+        filter.pt.vaddr = MMU_CPT_VADDR(vaddr);
+
+        /* Look for existing page table. */
+        vpt = RB_FIND(ptlist, ptlist_head, &filter);
+    }
+    if (vpt == 0) { /* Create a new pt if a sufficient pt not found. */
+        vpt = kmalloc(sizeof(struct vm_pt));
+        if (vpt == 0) {
+            return 0;
+        }
+
+        vpt->pt.vaddr = filter.pt.vaddr;
+        vpt->pt.master_pt_addr = mpt->pt_addr;
+        vpt->pt.type = MMU_PTT_COARSE;
+        vpt->pt.dom = MMU_DOM_USER;
+
+        /* Allocate the actual page table, this will also set pt_addr. */
+        if(ptmapper_alloc(&(vpt->pt))) {
+            kfree(vpt);
+            return 0;
+        }
+
+        /* Insert vpt (L2 page table) to the new new process. */
+        RB_INSERT(ptlist, ptlist_head, vpt);
+        mmu_attach_pagetable(&(vpt->pt));
+    }
+
+    return vpt;
 }
 
 /**
@@ -189,6 +234,31 @@ void vm_updateusr_ap(struct vm_region * region)
 #undef _COWRD
 
     mtx_unlock(&(region->lock));
+}
+
+/**
+ * Map a VM region with the given page table.
+ * @note vm_region->mmu.pt is not respected and is considered as invalid.
+ * @param vm_region is a vm region.
+ * @param vm_pt is a vm page table.
+ * @return Zero if succeed; non-zero error code otherwise.
+ */
+int vm_map_region(vm_region_t * vm_region, struct vm_pt * pt)
+{
+    mmu_region_t mmu_region;
+
+    /* TODO debug mode null checks */
+
+    mtx_spinlock(&(vm_region->lock));
+
+    vm_updateusr_ap(vm_region);
+
+    mmu_region = vm_region->mmu; /* Make a copy of mmu region struct */
+    mmu_region.pt = &(pt->pt);
+
+    mtx_unlock(&(vm_region->lock));
+
+    return mmu_map_region(&mmu_region);
 }
 
 /**

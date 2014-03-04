@@ -48,6 +48,7 @@
 struct vm_pt {
     RB_ENTRY(vm_pt) entry_;
     mmu_pagetable_t pt;
+    int linkcount; /*!< Links to this page table */
 };
 
 /**
@@ -55,7 +56,7 @@ struct vm_pt {
  * This struct type is used to manage memory regions in vm system.
  */
 typedef struct vm_region {
-    mmu_region_t mmu;
+    mmu_region_t mmu; /*!< MMU struct. @note pt pointer might be invalid. */
     int usr_rw; /*!< Actual user mode permissions on this data. Sometimes we
                  * want to set ap read-only to easily make copy-on-write or to
                  * pass control to MMU exception handler for some other reason
@@ -99,6 +100,7 @@ typedef struct vm_ops {
     void (*rfree)(struct vm_region * this);
 } vm_ops_t;
 
+/* struct ptlist */
 RB_HEAD(ptlist, vm_pt);
 
 /**
@@ -118,14 +120,17 @@ struct vm_mm_struct {
     int nr_regions;             /*!< Number of regions allocated. */
 };
 
-int vm_pt_compare(struct vm_pt * a, struct vm_pt * b);
-RB_PROTOTYPE(ptlist, vm_pt, entry_, vm_pt_compare);
+int ptlist_compare(struct vm_pt * a, struct vm_pt * b);
+RB_PROTOTYPE(ptlist, vm_pt, entry_, ptlist_compare);
+struct vm_pt * ptlist_get_pt(struct ptlist * ptlist_head, mmu_pagetable_t * mpt,
+        intptr_t vaddr);
 
 int copyin(const void * uaddr, void * kaddr, size_t len);
 int copyout(const void * kaddr, void * uaddr, size_t len);
 int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done);
 
 void vm_updateusr_ap(struct vm_region * region);
+int vm_map_region(vm_region_t * vm_region, struct vm_pt * pt);
 
 /* Not sure if these should be actually in vm_extern.h for BSD compatibility */
 int kernacc(void * addr, int len, int rw);

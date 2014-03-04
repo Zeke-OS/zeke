@@ -161,7 +161,7 @@ pid_t proc_fork(pid_t pid)
         goto out;
     }
 
-    /* Allocate a PCB. */
+    /* Allocate a new PCB. */
     new_proc = kmalloc(sizeof(proc_info_t));
     if (!new_proc) {
         retval = -ENOMEM;
@@ -169,7 +169,7 @@ pid_t proc_fork(pid_t pid)
     }
 
     /* Allocate a master page table for the new process. */
-    if(ptmapper_alloc(&(new_proc->mm.mptable))) {
+    if (ptmapper_alloc(&(new_proc->mm.mptable))) {
         retval = -ENOMEM;
         goto free_new_proc;
     }
@@ -177,22 +177,87 @@ pid_t proc_fork(pid_t pid)
     /* Allocate an array for regions. */
     new_proc->mm.regions =
         kmalloc(old_proc->mm.nr_regions * sizeof(vm_region_t *));
-    if(!new_proc->mm.regions) {
+    if (!new_proc->mm.regions) {
         retval = -ENOMEM;
         goto free_pptable_arr;
     }
     new_proc->mm.nr_regions = old_proc->mm.nr_regions;
 
     /* Clone master page table. */
-    if(mmu_ptcpy(&(new_proc->mm.mptable), &(new_proc->mm.mptable))) {
+    if (mmu_ptcpy(&(new_proc->mm.mptable), &(new_proc->mm.mptable))) {
         retval = -EINVAL;
         goto free_regions_arr;
     }
 
-    /* TODO Allocate other page tables needed */
-    /* TODO Copy region pointers */
+    /* Clone L2 page tables. */
+    RB_INIT(&(new_proc->mm.ptlist_head));
+    if (!RB_EMPTY(&(old_proc->mm.ptlist_head))) {
+        struct vm_pt * old_vpt;
+        struct vm_pt * new_vpt;
 
-    /* Mark pages as rw and do lazy copy/copy on write later. */
+        RB_FOREACH(old_vpt, ptlist, &(old_proc->mm.ptlist_head)) {
+            if (old_vpt->linkcount <= 0)
+                continue; /* Skip unused page tables; ie. page tables that are
+                           * not referenced by any region. */
+
+            new_vpt = kmalloc(sizeof(struct vm_pt));
+            if (!new_vpt) {
+                retval = -ENOMEM;
+                goto free_vpt_rb;
+            }
+
+            new_vpt->pt.vaddr = old_vpt->pt.vaddr;
+            new_vpt->pt.master_pt_addr = new_proc->mm.mptable.pt_addr;
+            new_vpt->pt.type = MMU_PTT_COARSE;
+            new_vpt->pt.dom = old_vpt->pt.dom;
+
+            /* Allocate the actual page table, this will also set pt_addr. */
+            if(ptmapper_alloc(&(new_vpt->pt))) {
+                retval = -ENOMEM;
+                goto free_vpt_rb;
+            }
+
+            /* Insert vpt (L2 page table) to the new new process. */
+            RB_INSERT(ptlist, &(new_proc->mm.ptlist_head), new_vpt);
+            mmu_attach_pagetable(&(new_vpt->pt));
+        }
+    }
+
+    /* Copy region pointers.
+     * As an iteresting sidenote, what we are doing here and earlier when L1
+     * page table was cloned is that we are losing link between the region
+     * structs and the actual L1 page table of this process. However it
+     * doesn't matter at all because we are doing COW anyway so no information
+     * is ever completely lost but we have to just keep in mind that COW regions
+     * are bit incomplete and L1 is not completely reconstructable by using just
+     * vm_region struct.
+     *
+     * Many BSD variants have fully reconstructable L1 tables but we don't have
+     * it directly that way because shared regions can't properly point to more
+     * than one page table struct.
+     */
+    for (int i = 0; i < new_proc->mm.nr_regions; i++) {
+        struct vm_pt * vpt;
+
+        (*new_proc->mm.regions)[i] = (*old_proc->mm.regions)[i];
+        /* Sets the region as COW */
+        (*new_proc->mm.regions)[i]->usr_rw |= VM_PROT_COW;
+#if 0
+        /* Unnecessary as vm_map_region() will do this too. */
+        vm_updateusr_ap((*new_proc->mm.regions)[i]);
+#endif
+        vpt = ptlist_get_pt(
+                &(new_proc->mm.ptlist_head),
+                &(new_proc->mm.mptable),
+                (*new_proc->mm.regions)[i]->mmu.vaddr);
+        if (vpt == 0) {
+            goto free_vpt_rb;
+        }
+
+        /* Attach region with page table owned by the new process. */
+        vm_map_region((*new_proc->mm.regions)[i], vpt);
+    }
+
 
     new_proc->pid = get_random_pid();
 
@@ -209,6 +274,15 @@ pid_t proc_fork(pid_t pid)
     /* TODO Insert to proc data structure */
 
     goto out; /* Fork created. */
+free_vpt_rb:
+    if (!RB_EMPTY(&(new_proc->mm.ptlist_head))) {
+        struct vm_pt * var, * nxt;
+
+        for (var = RB_MIN(ptlist, &(new_proc->mm.ptlist_head)); var != 0; var = nxt) {
+            nxt = RB_NEXT(ptlist, &(new_proc->mm.ptlist_head), var);
+            kfree(var);
+        }
+    }
 free_regions_arr:
     kfree(new_proc->mm.regions);
 free_pptable_arr:

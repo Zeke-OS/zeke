@@ -162,6 +162,11 @@ typedef struct mmu_region {
 #define MMU_SIZEOF_REGION(reg) \
     (((reg)->num_pages * ((reg)->pt->type == MMU_PTE_COARSE)) ? 4096 : 1048576)
 
+/**
+ * Calc coarse page table virtual address from virtual address x.
+ */
+#define MMU_CPT_VADDR(x) ((x) & 0xFFF00000)
+
 #if configARCH == __ARM6__ || __ARM6K__ /* ARM11 uses ARMv6 arch */
 #include "arm11/arm11_mmu.h"
 #else
