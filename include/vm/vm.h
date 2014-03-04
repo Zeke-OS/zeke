@@ -110,6 +110,10 @@ struct vm_mm_struct {
     mmu_pagetable_t mptable;    /*!< Process master page table. */
     /** RB tree of page tables */
     struct ptlist ptlist_head;
+#define MM_CODE_START   0
+#define MM_KSTACK_START 1
+#define MM_STACK_START  2
+#define MM_HEAP_START   3
     vm_region_t * (*regions)[]; /*!< Memory regions of a process.
                                  *   [0] = code         RORO
                                  *   [1] = kstack       RWNA

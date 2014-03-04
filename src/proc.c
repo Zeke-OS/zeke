@@ -223,7 +223,37 @@ pid_t proc_fork(pid_t pid)
         }
     }
 
-    /* Copy region pointers.
+    /* Variables for cloning and referencing regions. */
+    struct vm_pt * vpt;
+    vm_region_t * vm_reg_tmp;
+
+    /* Copy code region pointer. */
+    vm_reg_tmp = (*old_proc->mm.regions)[MM_CODE_START];
+    vm_reg_tmp->vm_ops->rref(vm_reg_tmp);
+    (*new_proc->mm.regions)[MM_CODE_START] = vm_reg_tmp;
+
+    /* Clone stacks. */
+    for (int i = MM_KSTACK_START; i < MM_HEAP_START; i++) {
+        vm_reg_tmp = (*old_proc->mm.regions)[i];
+        vm_reg_tmp = vm_reg_tmp->vm_ops->rclone(vm_reg_tmp);
+        if (vm_reg_tmp == 0) {
+            retval = -ENOMEM;
+            goto free_regions;
+        }
+
+        vpt = ptlist_get_pt(
+                &(new_proc->mm.ptlist_head),
+                &(new_proc->mm.mptable),
+                vm_reg_tmp->mmu.vaddr);
+        if (vpt == 0) {
+            retval = -ENOMEM;
+            goto free_regions;
+        }
+
+        vm_map_region((*new_proc->mm.regions)[i], vpt);
+    }
+
+    /* Copy other region pointers.
      * As an iteresting sidenote, what we are doing here and earlier when L1
      * page table was cloned is that we are losing link between the region
      * structs and the actual L1 page table of this process. However it
@@ -236,22 +266,27 @@ pid_t proc_fork(pid_t pid)
      * it directly that way because shared regions can't properly point to more
      * than one page table struct.
      */
-    for (int i = 0; i < new_proc->mm.nr_regions; i++) {
-        struct vm_pt * vpt;
+    for (int i = MM_HEAP_START; i < new_proc->mm.nr_regions; i++) {
+        vm_reg_tmp = (*old_proc->mm.regions)[i];
+        vm_reg_tmp->vm_ops->rref(vm_reg_tmp);
+        (*new_proc->mm.regions)[i] = vm_reg_tmp;
 
-        (*new_proc->mm.regions)[i] = (*old_proc->mm.regions)[i];
-        /* Sets the region as COW */
-        (*new_proc->mm.regions)[i]->usr_rw |= VM_PROT_COW;
+        /* Set COW bit */
+        if ((*new_proc->mm.regions)[i]->usr_rw & VM_PROT_WRITE) {
+            (*new_proc->mm.regions)[i]->usr_rw |= VM_PROT_COW;
 #if 0
-        /* Unnecessary as vm_map_region() will do this too. */
-        vm_updateusr_ap((*new_proc->mm.regions)[i]);
+            /* Unnecessary as vm_map_region() will do this too. */
+            vm_updateusr_ap((*new_proc->mm.regions)[i]);
 #endif
+        }
+
         vpt = ptlist_get_pt(
                 &(new_proc->mm.ptlist_head),
                 &(new_proc->mm.mptable),
                 (*new_proc->mm.regions)[i]->mmu.vaddr);
         if (vpt == 0) {
-            goto free_vpt_rb;
+            retval = -ENOMEM;
+            goto free_regions;
         }
 
         /* Attach region with page table owned by the new process. */
@@ -274,6 +309,8 @@ pid_t proc_fork(pid_t pid)
     /* TODO Insert to proc data structure */
 
     goto out; /* Fork created. */
+free_regions:
+    /* TODO */
 free_vpt_rb:
     if (!RB_EMPTY(&(new_proc->mm.ptlist_head))) {
         struct vm_pt * var, * nxt;
