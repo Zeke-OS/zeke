@@ -300,8 +300,12 @@ pid_t proc_fork(pid_t pid)
      * process calls fork(), the new process shall contain a replica of the
      * calling thread.
      */
-    /* TODO make a clone of current_thread */
-    //new_proc->main_thread = (threadInfo_t *)current_thread;
+    pthread_t main_tid = sched_thread_clone(current_thread->id);
+    if (main_tid <= 0) {
+        retval = -EAGAIN; /* TODO ?? */
+        goto free_regions;
+    }
+    new_proc->main_thread = sched_get_pThreadInfo(main_tid);
 
     /* Update inheritance attributes */
     set_proc_inher(old_proc, new_proc);
@@ -310,16 +314,12 @@ pid_t proc_fork(pid_t pid)
 
     goto out; /* Fork created. */
 free_regions:
-    /* TODO */
-free_vpt_rb:
-    if (!RB_EMPTY(&(new_proc->mm.ptlist_head))) {
-        struct vm_pt * var, * nxt;
-
-        for (var = RB_MIN(ptlist, &(new_proc->mm.ptlist_head)); var != 0; var = nxt) {
-            nxt = RB_NEXT(ptlist, &(new_proc->mm.ptlist_head), var);
-            kfree(var);
-        }
+    for (int i = 0; i < new_proc->mm.nr_regions; i++) {
+        (*new_proc->mm.regions)[i]->vm_ops->rfree((*new_proc->mm.regions)[i]);
     }
+    new_proc->mm.nr_regions = 0;
+free_vpt_rb:
+    ptlist_free(&(new_proc->mm.ptlist_head));
 free_regions_arr:
     kfree(new_proc->mm.regions);
 free_pptable_arr:

@@ -116,6 +116,24 @@ struct vm_pt * ptlist_get_pt(struct ptlist * ptlist_head, mmu_pagetable_t * mpt,
 }
 
 /**
+ * Free ptlist and its page tables.
+ */
+void ptlist_free(struct ptlist * ptlist_head)
+{
+    struct vm_pt * var, * nxt;
+
+    if (!RB_EMPTY(ptlist_head)) {
+
+        for (var = RB_MIN(ptlist, ptlist_head); var != 0;
+                var = nxt) {
+            nxt = RB_NEXT(ptlist, ptlist_head, var);
+            ptmapper_free(&(var->pt));
+            kfree(var);
+        }
+    }
+}
+
+/**
  * Copy data from user-space to kernel-space.
  * Copy len bytes of data from the user-space address uaddr to the kernel-space
  * address kaddr.
@@ -127,6 +145,7 @@ struct vm_pt * ptlist_get_pt(struct ptlist * ptlist_head, mmu_pagetable_t * mpt,
  */
 int copyin(const void * uaddr, void * kaddr, size_t len)
 {
+    /* TODO translate uaddr to phys addr existing in kernel space */
     memcpy(kaddr, uaddr, len);
 
     return 0;
@@ -144,6 +163,7 @@ int copyin(const void * uaddr, void * kaddr, size_t len)
  */
 int copyout(const void * kaddr, void * uaddr, size_t len)
 {
+    /* TODO translate uaddr to phys addr existing in kernel space */
     /* TODO Handle possible cow flag. */
 
     memcpy(uaddr, kaddr, len);

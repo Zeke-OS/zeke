@@ -366,8 +366,10 @@ static void sched_thread_init(pthread_t i, ds_pthread_create_t * thread_def,
     if (thread_def->thread)
         *(thread_def->thread) = (pthread_t)i;
 
+    /* TODO copyin() stack */
     /* Init core specific stack frame for user space */
     init_stack_frame(thread_def, priv);
+    /* TODO copyout() stack */
 
     /* Mark this thread index as used.
      * EXEC flag is set later in sched_thread_set_exec */
@@ -439,29 +441,28 @@ static void sched_thread_set_inheritance(pthread_t id, threadInfo_t * parent)
     last_node->inh.next_child = &(task_table[id]);
 }
 
-/* TODO */
-#if 0
 threadInfo_t * sched_thread_clone(pthread_t thread_id)
 {
     threadInfo_t * old_th;
     pthread_attr_t th_attr;
     ds_pthread_create_t ds;
+    pthread_t * returned_thread_id;
 
     old_th = sched_get_pThreadInfo(thread_id);
     if (!old_th)
         return 0;
 
-    th_attr.tpriority
-    th_attr.stackAddr
-    th_attr.stackSize
-    ds.thread = 0;
-    ds.start = ;
+    th_attr.tpriority = old_td->priority;
+    th_attr.stackAddr = sp;
+    th_attr.stackSize = SIZE_MAX; /* TODO */
+    ds.thread = &returned_thread_id;
+    ds.start = 0;
     ds.def = &th_attr;
     ds.argument = 0;
 
-    pthread_t sched_threadCreate(ds_pthread_create_t * thread_def, 0);
+    return sched_threadCreate(ds_pthread_create_t * thread_def, 0);
+    /* TODO Should we do something for stack to allow return? */
 }
-#endif
 
 /**
  * Set thread into execution with its default priority.
