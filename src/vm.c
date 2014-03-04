@@ -145,7 +145,16 @@ void ptlist_free(struct ptlist * ptlist_head)
  */
 int copyin(const void * uaddr, void * kaddr, size_t len)
 {
+    struct vm_pt * vpt;
+
     /* TODO translate uaddr to phys addr existing in kernel space */
+    /* By now we believe existence of the requested address is asserted and we
+     * can just do the page table translation and copy data. */
+
+    /* TODO following doesn't give us any paddresses */
+    vpt = ptlist_get_pt(&(curproc->mm.ptlist_head), &(curproc->mm.mptable),
+            uaddr);
+
     memcpy(kaddr, uaddr, len);
 
     return 0;

@@ -164,6 +164,7 @@ typedef struct mmu_region {
 
 /**
  * Calc coarse page table virtual address from virtual address x.
+ * Returned address is a possible start vaddr of a coarse page table.
  */
 #define MMU_CPT_VADDR(x) ((x) & 0xFFF00000)
 
@@ -186,6 +187,7 @@ int mmu_detach_pagetable(mmu_pagetable_t * pt);
 uint32_t mmu_domain_access_get(void);
 void mmu_domain_access_set(uint32_t value, uint32_t mask);
 void mmu_control_set(uint32_t value, uint32_t mask);
+void * mmu_translate_vaddr(mmu_pagetable_t * pt, intptr_t vaddr);
 
 /* Generic for all, implemented in mmu.c */
 void mmu_pf_event(void);

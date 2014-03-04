@@ -116,13 +116,13 @@ int mmu_init_pagetable(mmu_pagetable_t * pt)
 #endif
 
     switch (pt->type) {
-        case MMU_PTT_COARSE:
-            i = MMU_PTSZ_COARSE / 4 / 32; break;
-        case MMU_PTT_MASTER:
-            i = MMU_PTSZ_MASTER / 4 / 32; break;
-        default:
-            KERROR(KERROR_ERR, "Unknown page table type.");
-            return -2;
+    case MMU_PTT_COARSE:
+        i = MMU_PTSZ_COARSE / 4 / 32; break;
+    case MMU_PTT_MASTER:
+        i = MMU_PTSZ_MASTER / 4 / 32; break;
+    default:
+        KERROR(KERROR_ERR, "Unknown page table type.");
+        return -2;
     }
 
     __asm__ volatile (
@@ -159,18 +159,18 @@ int mmu_map_region(mmu_region_t * region)
     int retval = 0;
 
     switch (region->pt->type) {
-        case MMU_PTT_MASTER:    /* Map section in L1 page table */
-            mmu_map_section_region(region);
-            break;
-        case MMU_PTT_COARSE:    /* Map PTE to point to a L2 coarse page table */
-            mmu_map_coarse_region(region);
-            break;
-        default:
+    case MMU_PTT_MASTER:    /* Map section in L1 page table */
+        mmu_map_section_region(region);
+        break;
+    case MMU_PTT_COARSE:    /* Map PTE to point to a L2 coarse page table */
+        mmu_map_coarse_region(region);
+        break;
+    default:
 #if configDEBUG
-            KERROR(KERROR_ERR, "Invalid mmu_region struct.");
+        KERROR(KERROR_ERR, "Invalid mmu_region struct.");
 #endif
-            retval = -1;
-            break;
+        retval = -1;
+        break;
     }
 
     return retval;
@@ -268,14 +268,14 @@ int mmu_unmap_region(mmu_region_t * region)
     int retval = 0;
 
     switch (region->pt->type) {
-        case MMU_PTE_SECTION:
-            mmu_unmap_section_region(region);
-            break;
-        case MMU_PTE_COARSE:
-            mmu_unmap_coarse_region(region);
-            break;
-        default:
-            retval = -1;
+    case MMU_PTE_SECTION:
+        mmu_unmap_section_region(region);
+        break;
+    case MMU_PTE_COARSE:
+        mmu_unmap_coarse_region(region);
+        break;
+    default:
+        retval = -1;
     }
 
     return retval;
@@ -363,28 +363,28 @@ int mmu_attach_pagetable(mmu_pagetable_t * pt)
     mmu_disable_ints();
 
     switch (pt->type) {
-        case MMU_PTT_MASTER:
+    case MMU_PTT_MASTER:
 
-            /* TTB -> CP15:c2:c0,0 : TTBR0 */
-            __asm__ volatile (
-                "MCR p15, 0, %[ttb], c2, c0, 0"
-                 :
-                 : [ttb]"r" (ttb));
+        /* TTB -> CP15:c2:c0,0 : TTBR0 */
+        __asm__ volatile (
+            "MCR p15, 0, %[ttb], c2, c0, 0"
+            :
+            : [ttb]"r" (ttb));
 
-            break;
-        case MMU_PTT_COARSE:
-            /* First level coarse page table entry */
-            pte = (pt->pt_addr & 0xfffffc00);
-            pte |= pt->dom << 5;
-            pte |= MMU_PTE_COARSE;
+        break;
+    case MMU_PTT_COARSE:
+        /* First level coarse page table entry */
+        pte = (pt->pt_addr & 0xfffffc00);
+        pte |= pt->dom << 5;
+        pte |= MMU_PTE_COARSE;
 
-            i = pt->vaddr >> 20;
-            ttb[i] = pte;
+        i = pt->vaddr >> 20;
+        ttb[i] = pte;
 
-            break;
-        default:
-            retval = -1;
-            break;
+        break;
+    default:
+        retval = -1;
+        break;
     }
 
     cpu_invalidate_caches();
@@ -485,6 +485,45 @@ void mmu_control_set(uint32_t value, uint32_t mask)
     __asm__ volatile (
         "MCR p15, 0, %[reg], c1, c0, 0"
         : : [reg]"r" (reg));
+}
+
+/**
+ * Translate vaddr to physical address.
+ */
+void * mmu_translate_vaddr(mmu_pagetable_t * pt, intptr_t vaddr)
+{
+    void * retval = 0;
+    uint32_t * p_pte;
+    uint32_t mask;
+    size_t ptsize;
+    const size_t offset = vaddr - pt->vaddr;
+
+    switch (pt->type) {
+    case MMU_PTT_MASTER:
+        ptsize = MMU_PTSZ_MASTER;
+        mask   = 0xfff00000;
+        p_pte  = (uint32_t *)pt->pt_addr; /* Page table base address */
+        p_pte += vaddr >> 20; /* Set to the first pte */
+        break;
+    case MMU_PTT_COARSE:
+        ptsize = MMU_PTSZ_COARSE;
+        mask   = 0xfffff000;
+        p_pte  = (uint32_t *)pt->pt_addr;
+        p_pte += (vaddr & 0x000ff000) >> 12;
+        break;
+    default:
+#if configDEBUG
+        KERROR(KERROR_ERR, "Invalid pt type.");
+#endif
+        goto out;
+    }
+
+    if (offset > ptsize)
+        goto out;
+    else retval = (*p_pte & mask) + offset;
+
+out:
+    return retval;
 }
 
 /**

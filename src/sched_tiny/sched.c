@@ -444,23 +444,25 @@ static void sched_thread_set_inheritance(pthread_t id, threadInfo_t * parent)
 threadInfo_t * sched_thread_clone(pthread_t thread_id)
 {
     threadInfo_t * old_th;
-    pthread_attr_t th_attr;
-    ds_pthread_create_t ds;
     pthread_t * returned_thread_id;
 
     old_th = sched_get_pThreadInfo(thread_id);
     if (!old_th)
         return 0;
 
-    th_attr.tpriority = old_td->priority;
-    th_attr.stackAddr = sp;
-    th_attr.stackSize = SIZE_MAX; /* TODO */
-    ds.thread = &returned_thread_id;
-    ds.start = 0;
-    ds.def = &th_attr;
-    ds.argument = 0;
+    pthread_attr_t th_attr = {
+        .tpriority = old_th->priority,
+        .stackAddr = old_th->sp,
+        .stackSize = SIZE_MAX /* TODO */
+    };
+    ds_pthread_create_t ds = {
+        .thread = &returned_thread_id,
+        .start = 0,
+        .def = &th_attr,
+        .argument = 0
+    };
 
-    return sched_threadCreate(ds_pthread_create_t * thread_def, 0);
+    return sched_threadCreate(&ds, 0);
     /* TODO Should we do something for stack to allow return? */
 }
 
