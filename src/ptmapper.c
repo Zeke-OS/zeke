@@ -63,7 +63,7 @@ mmu_pagetable_t mmu_pagetable_system = {
 /* Fixed Regions **************************************************************/
 
 /** Kernel mode stacks. */
-mmu_region_t mmu_region_kstack = {
+const mmu_region_t mmu_region_kstack = {
     .vaddr          = MMU_VADDR_KSTACK_START,
     .num_pages      = MMU_PAGE_CNT_BY_RANGE(
                         MMU_VADDR_KSTACK_START, MMU_VADDR_KSTACK_END, 4096),

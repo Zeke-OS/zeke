@@ -60,10 +60,10 @@ static mtx_t mmu_lock;
 
 typedef int (*dab_handler)(uint32_t fsr, uint32_t far, threadInfo_t * thread);
 
-static void mmu_map_section_region(mmu_region_t * region);
-static void mmu_map_coarse_region(mmu_region_t * region);
-static void mmu_unmap_section_region(mmu_region_t * region);
-static void mmu_unmap_coarse_region(mmu_region_t * region);
+static void mmu_map_section_region(const mmu_region_t * region);
+static void mmu_map_coarse_region(const mmu_region_t * region);
+static void mmu_unmap_section_region(const mmu_region_t * region);
+static void mmu_unmap_coarse_region(const mmu_region_t * region);
 
 /* Data abort handlers */
 static int dab_fatal(uint32_t fsr, uint32_t far, threadInfo_t * thread);
@@ -154,7 +154,7 @@ int mmu_init_pagetable(const mmu_pagetable_t * pt)
  * @param region    Structure that specifies the memory region.
  * @return  Zero if succeed; non-zero error code otherwise.
  */
-int mmu_map_region(mmu_region_t * region)
+int mmu_map_region(const mmu_region_t * region)
 {
     int retval = 0;
 
@@ -180,7 +180,7 @@ int mmu_map_region(mmu_region_t * region)
  * Map a section of physical memory in multiples of 1 MB in virtual memory.
  * @param region    Structure that specifies the memory region.
  */
-static void mmu_map_section_region(mmu_region_t * region)
+static void mmu_map_section_region(const mmu_region_t * region)
 {
     int i;
     uint32_t * p_pte;
@@ -220,7 +220,7 @@ static void mmu_map_section_region(mmu_region_t * region)
  * @note One page table maps a 1MB of memory.
  * @param region    Structure that specifies the memory region.
  */
-static void mmu_map_coarse_region(mmu_region_t * region)
+static void mmu_map_coarse_region(const mmu_region_t * region)
 {
     int i;
     uint32_t * p_pte;
@@ -263,7 +263,7 @@ static void mmu_map_coarse_region(mmu_region_t * region)
  * Unmap mapped memory region.
  * @param region    Original descriptor structure for the region.
  */
-int mmu_unmap_region(mmu_region_t * region)
+int mmu_unmap_region(const mmu_region_t * region)
 {
     int retval = 0;
 
@@ -285,7 +285,7 @@ int mmu_unmap_region(mmu_region_t * region)
  * Unmap section pt entry region.
  * @param region    Original descriptor structure for the region.
  */
-static void mmu_unmap_section_region(mmu_region_t * region)
+static void mmu_unmap_section_region(const mmu_region_t * region)
 {
     int i;
     uint32_t * p_pte;
@@ -313,7 +313,7 @@ static void mmu_unmap_section_region(mmu_region_t * region)
  * Unmap coarse pt entry region.
  * @param region    Original descriptor structure for the region.
  */
-static void mmu_unmap_coarse_region(mmu_region_t * region)
+static void mmu_unmap_coarse_region(const mmu_region_t * region)
 {
     int i;
     uint32_t * p_pte;
@@ -404,7 +404,7 @@ int mmu_attach_pagetable(const mmu_pagetable_t * pt)
  * @param pt    A page table descriptor structure.
  * @return  Zero if attach succeed; value other than zero in case of error.
  */
-int mmu_detach_pagetable(mmu_pagetable_t * pt)
+int mmu_detach_pagetable(const mmu_pagetable_t * pt)
 {
     uint32_t * ttb;
     uint32_t i;
