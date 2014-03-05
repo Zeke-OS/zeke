@@ -72,7 +72,7 @@ interrupt_svc:
 
     /* Change to kernel stack to protect kernel data.
      * RFE This breaks nested syscalls. */
-    bl      sched_get_current_kstack
+    ldr     r0, =0x00000fff     /* vaddr of tkstack. */
     pop     {r5-r8}
     mov     r4, sp              /* Preserve user sp. */
     mov     sp, r0              /* Change to kernel sp. */

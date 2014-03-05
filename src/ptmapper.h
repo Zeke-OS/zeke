@@ -37,13 +37,13 @@
 #define PTMAPPER_PT_START       0x00100000
 #define PTMAPPER_PT_END         0x002FFFFF
 
-#define MMU_VADDR_KSTACK_START  0x00000000
-#define MMU_VADDR_KSTACK_END    0x00006fff
+#define MMU_VADDR_KSTACK_START  0x00001000
+#define MMU_VADDR_KSTACK_END    0x00007fff
 
-/* TKSTACK is a thread local kernel mode stack but it's first mapped 1:1 until
- * first thread kicks in. */
-#define MMU_VADDR_TKSTACK_START 0x00007000
-#define MMU_VADDR_TKSTACK_END   0x00007fff
+/* TKSTACK is a thread local kernel mode stack and its NOT mapped 1:1 unlike
+ * other regions defined here. */
+#define MMU_VADDR_TKSTACK_START 0x00000000
+#define MMU_VADDR_TKSTACK_END   0x00000fff
 
 #define MMU_VADDR_KERNEL_START  0x00008000
 #define MMU_VADDR_KERNEL_END    0x000FFFFF
@@ -88,6 +88,9 @@
  */
 #define MMU_PAGE_CNT_BY_RANGE(begin, end, psize)    (((end)-(begin)+1)/(psize))
 /* End of Page Table Region Macros ********************************************/
+
+extern mmu_pagetable_t mmu_pagetable_master;
+extern mmu_pagetable_t mmu_pagetable_system;
 
 int ptmapper_alloc(mmu_pagetable_t * pt);
 void ptmapper_free(mmu_pagetable_t * pt);

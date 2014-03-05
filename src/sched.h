@@ -39,10 +39,14 @@
 #ifndef SCHED_H
 #define SCHED_H
 
+#ifndef KERNEL_INTERNAL
+#define KERNEL_INTERNAL
+#endif
 #include <autoconf.h>
 #include <syscalldef.h>
 #include <ksignal.h>
 #include <kernel.h>
+#include <vm/vm.h>
 
 /*
  * Scheduler flags
@@ -132,7 +136,8 @@
  */
 typedef struct {
     void * sp;                  /*!< Stack pointer. */
-    void * kstack_start;        /*!< Stack start address. */
+    //void * kstack_start;        /*!< Stack start address. */
+    vm_region_t * kstack_region; /*!< Thread kernel stack region. */
     uint32_t flags;             /*!< Status flags. */
     int errno;                  /*!< Thread local errno. */
     intptr_t retval;            /*!< Return value of the thread. */
@@ -179,7 +184,7 @@ void * sched_handler(void * tsp);
 
 pthread_t sched_get_current_tid(void);
 threadInfo_t * sched_get_pThreadInfo(pthread_t thread_id);
-void * sched_get_current_kstack(void);
+//void * sched_get_current_kstack(void);
 
 threadInfo_t * sched_thread_clone(pthread_t thread_id);
 

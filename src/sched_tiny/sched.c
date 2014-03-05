@@ -53,6 +53,8 @@
 #include <timers.h>
 #include <syscall.h>
 #include <kernel.h>
+#include <ptmapper.h>
+#include <vralloc.h>
 #include <vm/vm.h>
 #include <proc.h> /* copyin & copyout */
 #include <pthread.h>
@@ -104,7 +106,7 @@ static uint32_t loadavg[3]  = { 0, 0, 0 }; /*!< CPU load averages */
 /** Stack for idle task */
 static char sched_idle_stack[sizeof(sw_stack_frame_t)
                              + sizeof(hw_stack_frame_t)
-                             + configKSTACK_SIZE + 40];
+                             + 40];
 
 /* sysctl node for scheduler */
 SYSCTL_NODE(_kern, 0, sched, CTLFLAG_RW, 0, "Scheduler");
@@ -134,6 +136,7 @@ static void sched_thread_sleep(long millisec);
 void sched_init(void)
 {
     SUBSYS_INIT();
+    SUBSYS_DEP(vralloc_init);
 
     pthread_t tid;
     pthread_attr_t attr = {
@@ -190,6 +193,8 @@ void * idleTask(/*@unused@*/ void * arg)
 #ifndef PU_TEST_BUILD
 void * sched_handler(void * tsp)
 {
+    threadInfo_t * prev_thread = (threadInfo_t *)current_thread;
+
     if (tsp != 0 && current_thread != 0) {
         current_thread->sp = tsp;
     } else {
@@ -204,6 +209,14 @@ void * sched_handler(void * tsp)
     /* Call the actual context switcher function that schedules the next thread.
      */
     context_switcher();
+    if (current_thread != prev_thread) {
+        //char buf[80];
+        //ksprintf(buf, sizeof(buf), "%x %x", mmu_region_tkstack.paddr, current_thread->kstack_start - 4096);
+        //KERROR(KERROR_DEBUG, buf);
+        /* Update tkstack page table entry */
+        //mmu_region_tkstack.paddr = (intptr_t)current_thread->kstack_start - 4096;
+        mmu_map_region(&(current_thread->kstack_region->mmu));
+    }
 
     /* Post-scheduling tasks */
     if (flag_kernel_tick) {
@@ -336,14 +349,6 @@ threadInfo_t * sched_get_pThreadInfo(pthread_t thread_id)
 }
 
 /**
- * Get kstack of the current thread.
- */
-void * sched_get_current_kstack(void)
-{
-    return current_thread->kstack_start;
-}
-
-/**
   * Set thread initial configuration
   * @note This function should not be called for already initialized threads.
   * @param i            Thread id
@@ -395,8 +400,15 @@ static void sched_thread_init(pthread_t i, ds_pthread_create_t * thread_def,
                                          + thread_def->def->stackSize
                                          - sizeof(hw_stack_frame_t)
                                          - sizeof(sw_stack_frame_t));
-    task_table[i].kstack_start = (void *)((uint32_t)(thread_def->def->stackAddr)
-                                         + configKSTACK_SIZE);
+
+    /* Create kstack */
+    task_table[i].kstack_region = vralloc(4096);
+    if (!task_table[i].kstack_region) {
+        panic("OOM during thread creation");
+    }
+    task_table[i].kstack_region->usr_rw = 0;
+    task_table[i].kstack_region->mmu.vaddr = 0x0; /* TODO Don't hard-code this */
+    task_table[i].kstack_region->mmu.pt = &mmu_pagetable_system;
 
     /* Put thread into execution */
     _sched_thread_set_exec(i, thread_def->def->tpriority);
@@ -452,6 +464,8 @@ threadInfo_t * sched_thread_clone(pthread_t thread_id)
     old_th = sched_get_pThreadInfo(thread_id);
     if (!old_th)
         return 0;
+
+    /* TODO Clone kstack */
 
     pthread_attr_t th_attr = {
         .tpriority = old_th->priority,

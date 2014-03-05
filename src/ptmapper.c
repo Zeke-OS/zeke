@@ -73,16 +73,19 @@ const mmu_region_t mmu_region_kstack = {
     .pt             = &mmu_pagetable_system
 };
 
-/* Kernel mode system stack. */
+#if 0
+/* Kernel mode system/thread stack. */
 mmu_region_t mmu_region_tkstack = {
     .vaddr          = MMU_VADDR_TKSTACK_START,
     .num_pages      = MMU_PAGE_CNT_BY_RANGE(
                         MMU_VADDR_TKSTACK_START, MMU_VADDR_TKSTACK_END, 4096),
     .ap             = MMU_AP_RWNA,
     .control        = MMU_CTRL_XN,
-    .paddr          = MMU_VADDR_TKSTACK_START, /* Temporarily 1:1 */
+    .paddr          = MMU_VADDR_TKSTACK_START, /* Temporarily 1:1 but this *
+                                                * mapping is never used.   */
     .pt             = &mmu_pagetable_system
 };
+#endif
 
 extern void *  _rodata_end __attribute__((weak));
 /** Read-only kernel code & data */
@@ -256,8 +259,8 @@ void ptmapper_init(void)
         mmu_map_region(&reg); \
         PRINTMAPREG(reg)
 
+        //MAP_REGION(mmu_region_tkstack);
         MAP_REGION(mmu_region_kstack);
-        MAP_REGION(mmu_region_tkstack);
         MAP_REGION(mmu_region_kernel);
         MAP_REGION(mmu_region_kdata);
         MAP_REGION(mmu_region_page_tables);

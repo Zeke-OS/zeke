@@ -95,17 +95,20 @@ void proc_init(void)
 
     PROCARR_LOCK_INIT();
     realloc__procarr();
-    memset(&_procarr, 0, SIZEOF_PROCARR);
+    memset(_procarr, 0, SIZEOF_PROCARR);
 
     _procarr[0] = &_kernel_proc_info;
-    _kernel_proc_info.files = kmalloc(sizeof(files_t) + 3);
+    _kernel_proc_info.files = kmalloc(sizeof(files_t) + 3 * sizeof(file_t *));
+    if (!_kernel_proc_info.files) {
+        panic("Can't init kernel process");
+    }
     _kernel_proc_info.files->count = 3;
+
     /* TODO Create this correctly */
     _kernel_proc_info.files->fd[2] = kcalloc(1, sizeof(file_t)); /* stderr */
     _kernel_proc_info.files->fd[2]->vnode = &kerror_vnode;
 
     proc_update();
-
     SUBSYS_INITFINI("Proc init");
 }
 
@@ -486,7 +489,7 @@ int proc_cow_handler(pid_t pid, intptr_t vaddr)
  */
 void proc_update(void)
 {
-    current_process_id = current_thread->pid_owner;
+    current_process_id = (current_thread != 0) ? current_thread->pid_owner : 0;
     curproc = proc_get_struct(current_process_id);
 }
 

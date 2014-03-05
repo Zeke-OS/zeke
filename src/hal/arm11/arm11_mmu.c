@@ -349,7 +349,13 @@ int mmu_attach_pagetable(const mmu_pagetable_t * pt)
     uint32_t pte;
     size_t i;
     istate_t s;
+    intptr_t caller;
     int retval = 0;
+
+#if configDEBUG != 0
+    __asm__ volatile ("mov %[tmp], lr" : [tmp]"=r" (caller));
+    caller -= 4;
+#endif
 
     ttb = (uint32_t *)(pt->master_pt_addr);
     if (ttb == 0) {
@@ -357,7 +363,13 @@ int mmu_attach_pagetable(const mmu_pagetable_t * pt)
 
         ksprintf(buf, sizeof(buf),
                 "pt->master_pt_addr can't be null.\n"
+#if configDEBUG != 0
+                "Caller %x\n"
+#endif
                 "pt->vaddr = %x\npt->type = %s\npt->pt_addr = %x",
+#if configDEBUG != 0
+                caller,
+#endif
                 pt->vaddr,
                 (pt->type == MMU_PTT_MASTER) ? "master" : "coarse",
                 pt->pt_addr);
