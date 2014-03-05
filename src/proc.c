@@ -64,6 +64,7 @@ static pid_t _lastpid;              /*!< last allocated pid. */
 extern vnode_t kerror_vnode;
 static proc_info_t _kernel_proc_info = {
     .pid = 0,
+    .state = 1, /* TODO Assign some correct state? */
     .name = "kernel"
 };
 
@@ -397,9 +398,20 @@ int proc_replace(pid_t pid, void * image, size_t size)
     return -1;
 }
 
+/**
+ * Get pointer to a internal proc_info structure.
+ */
 proc_info_t * proc_get_struct(pid_t pid)
 {
-    /* TODO Checks! */
+    /* TODO do state check properly */
+    if (pid > _cur_maxproc || _procarr[pid]->state == 0) {
+#if configDEBUG != 0
+        char buf[80];
+        ksprintf(buf, sizeof(buf), "Invalid PID : %u", pid);
+        KERROR(KERROR_DEBUG, buf);
+#endif
+        return 0;
+    }
     return _procarr[pid];
 }
 
@@ -428,7 +440,15 @@ mmu_pagetable_t * proc_get_pptable(pid_t pid)
     if (pid == 0) { /* Kernel master page table requested. */
         pptable = &mmu_pagetable_master;
     } else { /* Get the process master page table */
-        pptable = &(proc_get_struct(pid)->mm.mptable);
+        proc_info_t * p;
+
+        p = proc_get_struct(pid);
+#if configDEBUG != 0
+        if (!p) {
+            panic("Invalid PID");
+        }
+#endif
+        pptable = &(p->mm.mptable);
     }
 
     return pptable;

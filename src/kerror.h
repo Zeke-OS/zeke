@@ -67,6 +67,7 @@
  * @param msg is a message to be logged before halt.
  */
 #define panic(msg)                              \
+    disable_interrupt();                        \
     KERROR(KERROR_CRIT, "Oops, Kernel panic");  \
     KERROR(KERROR_CRIT, msg);                   \
     do {                                        \

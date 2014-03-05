@@ -364,11 +364,11 @@ int mmu_attach_pagetable(const mmu_pagetable_t * pt)
         ksprintf(buf, sizeof(buf),
                 "pt->master_pt_addr can't be null.\n"
 #if configDEBUG != 0
-                "Caller %x\n"
+                "Caller: %x, pt: %x\n"
 #endif
                 "pt->vaddr = %x\npt->type = %s\npt->pt_addr = %x",
 #if configDEBUG != 0
-                caller,
+                caller,(intptr_t)pt,
 #endif
                 pt->vaddr,
                 (pt->type == MMU_PTT_MASTER) ? "master" : "coarse",
