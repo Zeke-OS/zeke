@@ -56,7 +56,7 @@ static proc_info_t ** _procarr;
 int maxproc = configMAXPROC;        /*!< Maximum # of processes. */
 static int _cur_maxproc;
 int nprocs;                         /* Current # of procs. */
-volatile pid_t current_process_id;  /*!< PID of current process. */
+pid_t current_process_id;           /*!< PID of current process. */
 proc_info_t * curproc;              /*!< PCB of the current process. */
 static pid_t _lastpid;              /*!< last allocated pid. */
 
@@ -83,7 +83,7 @@ SYSCTL_INT(_kern, KERN_MAXPROC, nprocs, CTLFLAG_RD,
 static void realloc__procarr(void);
 static pid_t get_random_pid(void);
 static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc);
-void proc_update(void); /* Used in HAL, so not static */
+pid_t proc_update(void); /* Used in HAL, so not static */
 
 /**
  * Init process handling subsystem.
@@ -109,7 +109,10 @@ void proc_init(void)
     _kernel_proc_info.files->fd[2] = kcalloc(1, sizeof(file_t)); /* stderr */
     _kernel_proc_info.files->fd[2]->vnode = &kerror_vnode;
 
-    proc_update();
+    /* Do here same as proc_update() would do when running. */
+    current_process_id = 0;
+    curproc = &_kernel_proc_info;
+
     SUBSYS_INITFINI("Proc init");
 }
 
@@ -407,7 +410,7 @@ proc_info_t * proc_get_struct(pid_t pid)
     if (pid > _cur_maxproc || _procarr[pid]->state == 0) {
 #if configDEBUG != 0
         char buf[80];
-        ksprintf(buf, sizeof(buf), "Invalid PID : %u", pid);
+        ksprintf(buf, sizeof(buf), "Invalid PID : %u, %u", pid, current_process_id);
         KERROR(KERROR_DEBUG, buf);
 #endif
         return 0;
@@ -507,10 +510,12 @@ int proc_cow_handler(pid_t pid, intptr_t vaddr)
  * Updates current_process_id and curproc.
  * @note This function is called by interrupt handler(s).
  */
-void proc_update(void)
+pid_t proc_update(void)
 {
-    current_process_id = (current_thread != 0) ? current_thread->pid_owner : 0;
+    current_process_id  = current_thread->pid_owner;
     curproc = proc_get_struct(current_process_id);
+
+    return current_process_id;
 }
 
 uintptr_t proc_syscall(uint32_t type, void * p)

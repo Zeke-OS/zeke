@@ -160,13 +160,24 @@ void wr_thread_stack_ptr(void * ptr);
 #endif /* configMP */
 
 /**
+ * Data memory barrier.
+ * The purpose of the DMB op is to ensure that all outstanding explicit memory
+ * transactions are complete before following explicit memory transactions
+ * begin.
+ */
+#define cpu_dmb() do {                      \
+    int tmp = 0;                            \
+    __asm__ volatile (                      \
+        "MCR p15, 0, %[tmp], c7, c10, 5"    \
+        : [tmp]"+r" (tmp));                \
+} while (0)
+
+/**
  * Halt due to kernel panic.
  */
 #define panic_halt() do {                   \
     __asm__ volatile ("BKPT #01");          \
 } while (0)
-
-#endif /* ARM11_H */
 
 #define DEBUG_PRINT_CALLER() do {                           \
     intptr_t tmp;                                           \
@@ -175,6 +186,8 @@ void wr_thread_stack_ptr(void * ptr);
     ksprintf(buf, sizeof(buf), "caller = %x", tmp - 4);     \
     KERROR(KERROR_DEBUG, buf);                              \
 } while (0)
+
+#endif /* ARM11_H */
 
 /**
   * @}

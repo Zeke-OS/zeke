@@ -138,13 +138,9 @@ interrupt_sys:
 
     /* Update process system state */
     bl      proc_update
-
-    /* Get newly selected PID */
-    ldr     r0, =current_process_id
-    ldr     r5, [r0]
+    mov     r5, r0              /* New PID is in r0 */
 
     /* Attach process page table */
-    mov     r0, r5
     attach_proc_mptable
 
     /* Set process Context ID to the value of current PID */

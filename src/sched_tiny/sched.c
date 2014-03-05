@@ -402,7 +402,8 @@ static void sched_thread_init(pthread_t i, ds_pthread_create_t * thread_def,
                                          - sizeof(sw_stack_frame_t));
 
     /* Create kstack */
-    task_table[i].kstack_region = vralloc(4096);
+    task_table[i].kstack_region = vralloc(
+            (MMU_VADDR_TKSTACK_END - MMU_VADDR_TKSTACK_START) + 1);
     if (!task_table[i].kstack_region) {
         panic("OOM during thread creation");
     }
