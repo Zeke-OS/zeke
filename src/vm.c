@@ -151,9 +151,13 @@ int copyin(const void * uaddr, void * kaddr, size_t len)
     /* By now we believe existence of the requested address is asserted and we
      * can just do the page table translation and copy data. */
 
+#if 0
     /* TODO following doesn't give us any paddresses */
-    vpt = ptlist_get_pt(&(curproc->mm.ptlist_head), &(curproc->mm.mptable),
-            uaddr);
+    vpt = ptlist_get_pt(
+            &(curproc->mm.ptlist_head),
+            &(curproc->mm.mptable),
+            (intptr_t)uaddr);
+#endif
 
     memcpy(kaddr, uaddr, len);
 

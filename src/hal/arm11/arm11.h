@@ -168,6 +168,14 @@ void wr_thread_stack_ptr(void * ptr);
 
 #endif /* ARM11_H */
 
+#define DEBUG_PRINT_CALLER() do {                           \
+    intptr_t tmp;                                           \
+    char buf[80];                                           \
+    __asm__ volatile ("mov %[tmp], lr" : [tmp]"=r" (tmp));  \
+    ksprintf(buf, sizeof(buf), "caller = %x", tmp);         \
+    KERROR(KERROR_DEBUG, buf);                              \
+} while (0)
+
 /**
   * @}
   */

@@ -57,7 +57,7 @@ int maxproc = configMAXPROC;        /*!< Maximum # of processes. */
 static int _cur_maxproc;
 int nprocs;                         /* Current # of procs. */
 volatile pid_t current_process_id;  /*!< PID of current process. */
-volatile proc_info_t * curproc;     /*!< PCB of the current process. */
+proc_info_t * curproc;              /*!< PCB of the current process. */
 static pid_t _lastpid;              /*!< last allocated pid. */
 
 /* PCB for kernel process. */
@@ -300,12 +300,11 @@ pid_t proc_fork(pid_t pid)
      * process calls fork(), the new process shall contain a replica of the
      * calling thread.
      */
-    pthread_t main_tid = sched_thread_clone(current_thread->id);
-    if (main_tid <= 0) {
+    new_proc->main_thread = sched_thread_clone(current_thread->id);
+    if (new_proc->main_thread == 0) {
         retval = -EAGAIN; /* TODO ?? */
         goto free_regions;
     }
-    new_proc->main_thread = sched_get_pThreadInfo(main_tid);
 
     /* Update inheritance attributes */
     set_proc_inher(old_proc, new_proc);

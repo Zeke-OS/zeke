@@ -64,12 +64,23 @@ mmu_pagetable_t mmu_pagetable_system = {
 
 /** Kernel mode stacks. */
 mmu_region_t mmu_region_kstack = {
-    .vaddr          = 0,
+    .vaddr          = MMU_VADDR_KSTACK_START,
     .num_pages      = MMU_PAGE_CNT_BY_RANGE(
                         MMU_VADDR_KSTACK_START, MMU_VADDR_KSTACK_END, 4096),
     .ap             = MMU_AP_RWNA,
     .control        = MMU_CTRL_XN,
     .paddr          = MMU_VADDR_KSTACK_START,
+    .pt             = &mmu_pagetable_system
+};
+
+/* Kernel mode system stack. */
+mmu_region_t mmu_region_tkstack = {
+    .vaddr          = MMU_VADDR_TKSTACK_START,
+    .num_pages      = MMU_PAGE_CNT_BY_RANGE(
+                        MMU_VADDR_TKSTACK_START, MMU_VADDR_TKSTACK_END, 4096),
+    .ap             = MMU_AP_RWNA,
+    .control        = MMU_CTRL_XN,
+    .paddr          = MMU_VADDR_TKSTACK_START, /* Temporarily 1:1 */
     .pt             = &mmu_pagetable_system
 };
 
@@ -241,16 +252,17 @@ void ptmapper_init(void)
 #else
 #define PRINTMAPREG(region)
 #endif
-        mmu_map_region(&mmu_region_kstack);
-        PRINTMAPREG(mmu_region_kstack);
-        mmu_map_region(&mmu_region_kernel);
-        PRINTMAPREG(mmu_region_kernel);
-        mmu_map_region(&mmu_region_kdata);
-        PRINTMAPREG(mmu_region_kdata);
-        mmu_map_region(&mmu_region_page_tables);
-        PRINTMAPREG(mmu_region_page_tables);
-        mmu_map_region(&mmu_region_rpihw);
-        PRINTMAPREG(mmu_region_rpihw);
+#define MAP_REGION(reg) \
+        mmu_map_region(&reg); \
+        PRINTMAPREG(reg)
+
+        MAP_REGION(mmu_region_kstack);
+        MAP_REGION(mmu_region_tkstack);
+        MAP_REGION(mmu_region_kernel);
+        MAP_REGION(mmu_region_kdata);
+        MAP_REGION(mmu_region_page_tables);
+        MAP_REGION(mmu_region_rpihw);
+#undef MAP_REGION
 #undef PRINTMAPREG
     }
 
@@ -282,6 +294,10 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
     size_t bsize = 0; /* Size in bytes */
     int retval = 0;
 
+#if 0
+    DEBUG_PRINT_CALLER();
+#endif
+
     switch (pt->type) {
     case MMU_PTT_MASTER:
         size = PTM_MASTER;
@@ -292,11 +308,11 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
         bsize = MMU_PTSZ_COARSE;
         break;
     default:
-        break;
+        panic("pt size can't be zero");
     }
 
     /* Try to allocate a new page table */
-    if ((size == 0) ? 0 : !PTM_ALLOC(&block, size)) {
+    if (!PTM_ALLOC(&block, size)) {
 #if configDEBUG != 0
         char buf[80];
 #endif

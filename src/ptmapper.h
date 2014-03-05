@@ -38,7 +38,12 @@
 #define PTMAPPER_PT_END         0x002FFFFF
 
 #define MMU_VADDR_KSTACK_START  0x00000000
-#define MMU_VADDR_KSTACK_END    0x00007fff
+#define MMU_VADDR_KSTACK_END    0x00006fff
+
+/* TKSTACK is a thread local kernel mode stack but it's first mapped 1:1 until
+ * first thread kicks in. */
+#define MMU_VADDR_TKSTACK_START 0x00007000
+#define MMU_VADDR_TKSTACK_END   0x00007fff
 
 #define MMU_VADDR_KERNEL_START  0x00008000
 #define MMU_VADDR_KERNEL_END    0x000FFFFF

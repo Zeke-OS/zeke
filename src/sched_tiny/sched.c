@@ -441,10 +441,13 @@ static void sched_thread_set_inheritance(pthread_t id, threadInfo_t * parent)
     last_node->inh.next_child = &(task_table[id]);
 }
 
+/**
+ * Clone given thread.
+ */
 threadInfo_t * sched_thread_clone(pthread_t thread_id)
 {
     threadInfo_t * old_th;
-    pthread_t * returned_thread_id;
+    pthread_t new_tid;
 
     old_th = sched_get_pThreadInfo(thread_id);
     if (!old_th)
@@ -456,13 +459,13 @@ threadInfo_t * sched_thread_clone(pthread_t thread_id)
         .stackSize = SIZE_MAX /* TODO */
     };
     ds_pthread_create_t ds = {
-        .thread = &returned_thread_id,
+        .thread = &new_tid,
         .start = 0,
         .def = &th_attr,
         .argument = 0
     };
 
-    return sched_threadCreate(&ds, 0);
+    return ((sched_threadCreate(&ds, 0) > 0) ? sched_get_pThreadInfo(new_tid) : 0);
     /* TODO Should we do something for stack to allow return? */
 }
 

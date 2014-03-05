@@ -50,7 +50,7 @@
 void kerror_ttys(char level, const char * where, const char * msg)
 {
     size_t i = 0;
-    char buff[120];
+    char buff[200];
 
     ksprintf(buff, sizeof(buff), "%c:%s%s\n", level, where, msg);
 

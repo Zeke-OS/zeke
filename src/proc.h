@@ -139,7 +139,7 @@ typedef struct {
 
 int maxproc;
 extern volatile pid_t current_process_id;
-extern volatile proc_info_t * curproc;
+extern proc_info_t * curproc;
 
 pid_t proc_fork(pid_t pid);
 int proc_kill(void);
