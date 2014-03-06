@@ -526,7 +526,7 @@ void * kpalloc(void * p)
  */
 static void update_stat_up(size_t * stat_act, size_t amount)
 {
-    size_t * stat_max = stat_act + sizeof(size_t);
+    size_t * stat_max = stat_act + 1;
 
     *stat_act += amount;
     if (*stat_act > *stat_max)

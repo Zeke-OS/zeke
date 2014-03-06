@@ -512,7 +512,7 @@ int proc_cow_handler(pid_t pid, intptr_t vaddr)
  */
 pid_t proc_update(void)
 {
-    current_process_id  = current_thread->pid_owner;
+    current_process_id = current_thread->pid_owner;
     curproc = proc_get_struct(current_process_id);
 
     return current_process_id;

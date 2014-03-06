@@ -368,7 +368,7 @@ int mmu_attach_pagetable(const mmu_pagetable_t * pt)
 #endif
                 "pt->vaddr = %x\npt->type = %s\npt->pt_addr = %x",
 #if configDEBUG != 0
-                caller,(intptr_t)pt,
+                caller, (intptr_t)pt,
 #endif
                 pt->vaddr,
                 (pt->type == MMU_PTT_MASTER) ? "master" : "coarse",
