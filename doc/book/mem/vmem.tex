@@ -60,10 +60,11 @@ See figure \ref{figure:vmsubsys}.
 \begin{itemize}
   \item \verb+kmalloc+  - is a kernel level memory allocation service, used
                         solely for memory allocations in kernel space.
-  \item \verb+vralloc+  - VRAlloc is a special memory allocator targetted to
+  \item \verb+vralloc+  - VRAlloc is a special memory allocator targeted to
                         allocate blocks of memory that will be mapped in virtual
-                        address space of processes, it returns \verb+vm_region+
-                        structs instead of just base address of the allocation.
+                        address space of a processes, it returns
+                        \verb+vm_region+ structs instead of just base address of
+                        the allocation.
   \item \verb+dynmem+   - is a dynamic memory allocation system that allocates
                         \& frees contiguous blocks of physical memory.
   \item \verb+ptmapper+ - owns the statically created page tables (particularly
