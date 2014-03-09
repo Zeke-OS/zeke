@@ -306,12 +306,14 @@ pid_t proc_fork(pid_t pid)
     /* A process shall be created with a single thread. If a multi-threaded
      * process calls fork(), the new process shall contain a replica of the
      * calling thread.
-     */
-    new_proc->main_thread = sched_thread_clone(current_thread->id);
+     */ /* TODO */
+#if 0
+    new_proc->main_thread = sched_thread_clone(current_thread->id, 0);
     if (new_proc->main_thread == 0) {
         retval = -EAGAIN; /* TODO ?? */
         goto free_regions;
     }
+#endif
 
     /* Update inheritance attributes */
     set_proc_inher(old_proc, new_proc);

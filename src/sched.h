@@ -189,7 +189,7 @@ pthread_t sched_get_current_tid(void);
 threadInfo_t * sched_get_pThreadInfo(pthread_t thread_id);
 //void * sched_get_current_kstack(void);
 
-threadInfo_t * sched_thread_clone(pthread_t thread_id);
+pthread_t sched_thread_clone(pthread_t thread_id, void * stack_addr);
 
 /**
  * Set thread into execution mode/ready to run mode.
