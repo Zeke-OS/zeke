@@ -47,9 +47,7 @@
 #include <hal/hal_core.h>
 #include <klocks.h>
 #include "heap.h"
-#if configFAST_FORK != 0
-#include <queue.h>
-#endif
+#include <generic/queue.h>
 #include <timers.h>
 #include <syscall.h>
 #include <kernel.h>
@@ -93,14 +91,13 @@
 /* Task containers */
 static threadInfo_t task_table[configSCHED_MAX_THREADS]; /*!< Array of all
                                                           *   threads */
-static heap_t priority_queue = HEAP_NEW_EMPTY;   /*!< Priority queue of active
-                                                  * threads */
-#if configFAST_FORK != 0
-static queue_cb_t next_threadId_queue_cb;
-static int next_threadId_queue[configSCHED_MAX_THREADS - 1];
-#endif
+static heap_t priority_queue = HEAP_NEW_EMPTY; /*!< Priority queue of active
+                                                * threads */
+/* Next thread_id queue */
+static queue_cb_t next_thread_id_queue_cb;
+static pthread_t next_thread_id_queue[configSCHED_MAX_THREADS - 1];
 
-volatile threadInfo_t * current_thread; /*!< Pointer to the currently active
+threadInfo_t * current_thread; /*!< Pointer to the currently active
                                          *   thread */
 static rwlock_t loadavg_lock;
 static uint32_t loadavg[3]  = { 0, 0, 0 }; /*!< CPU load averages */
@@ -117,6 +114,7 @@ SYSCTL_NODE(_kern, 0, sched, CTLFLAG_RW, 0, "Scheduler");
 void sched_init(void) __attribute__((constructor));
 
 /* Static function declarations **********************************************/
+static void init_thread_id_queue(void);
 void * idleTask(void * arg);
 static void calc_loads(void);
 static void context_switcher(void);
@@ -161,19 +159,28 @@ void sched_init(void)
     /* Initialize locks */
     rwlock_init(&loadavg_lock);
 
-#if configFAST_FORK != 0
-    next_threadId_queue_cb = queue_create(next_threadId_queue, sizeof(int),
-        sizeof(next_threadId_queue) / sizeof(int));
-
-    /* Fill the queue */
-    int i = 1, q_ok;
-    do {
-        q_ok = queue_push(&next_threadId_queue_cb, &i);
-        i++;
-    } while (q_ok);
-#endif
+    /* Initialize threadID queue */
+    init_thread_id_queue();
 
     SUBSYS_INITFINI("Init scheduler: tiny");
+}
+
+/**
+ * Initialize threadId queue.
+ */
+static void init_thread_id_queue(void)
+{
+    pthread_t i = 1;
+    int q_ok;
+
+    next_thread_id_queue_cb = queue_create(next_thread_id_queue, sizeof(pthread_t),
+            sizeof(next_thread_id_queue));
+
+    /* Fill the queue */
+    do {
+        q_ok = queue_push(&next_thread_id_queue_cb, &i);
+        i++;
+    } while (q_ok);
 }
 
 /* End of Functions called from outside of kernel context ********************/
@@ -196,7 +203,7 @@ void * idleTask(/*@unused@*/ void * arg)
 #ifndef PU_TEST_BUILD
 void * sched_handler(void * tsp)
 {
-    threadInfo_t * prev_thread = (threadInfo_t *)current_thread;
+    threadInfo_t * const prev_thread = current_thread;
 
     if (tsp != 0 && current_thread != 0) {
         current_thread->sp = tsp;
@@ -483,6 +490,16 @@ static void init_kstack(threadInfo_t * th)
  */
 pthread_t sched_thread_clone(pthread_t thread_id, void * stack_addr)
 {
+#if 0
+    threadInfo_t * const old_thread = sched_get_pThreadInfo(thread_id);
+    threadInfo_t * new_thread;
+    pthread_t new_id;
+
+    if (!queue_pop(&next_thread_id_queue_cb, &new_id)) {
+        return -1;
+    }
+#endif
+
     return -1;
 }
 
@@ -577,9 +594,8 @@ static void sched_thread_remove(pthread_t tt_id)
             heap_inc_key(&priority_queue, i);
     }
 
-#if configFAST_FORK != 0
-    queue_push(&next_threadId_queue_cb, &tt_id);
-#endif
+    /* Release thread id */
+    queue_push(&next_thread_id_queue_cb, &tt_id);
 
     set_interrupt_state(s);
 }
@@ -664,34 +680,30 @@ static void sched_thread_sleep(long millisec)
 pthread_t sched_threadCreate(ds_pthread_create_t * thread_def, int priv)
 {
     unsigned int i;
+#if 0
     istate_t s;
 
     s = get_interrupt_state();
     disable_interrupt();
+#endif
 
-#if configFAST_FORK != 0
-    if (!queue_pop(&next_threadId_queue_cb, &i)) {
+    if (!queue_pop(&next_thread_id_queue_cb, &i)) {
         /* New thread could not be created */
+#if 0
         set_interrupt_state(s);
+#endif
         return 0;
     }
-#else
-    for (i = 1; i < configSCHED_MAX_THREADS; i++) {
-        if (task_table[i].flags == 0) {
-#endif
-            sched_thread_init(i,                 /* Index of the thread created */
-                             thread_def,         /* Thread definition. */
-                             (void *)current_thread, /* Pointer toi the parent
-                                                  * thread, which is expected to
-                                                  * be the current thread. */
-                             priv);              /* kworker flag. */
-#if configFAST_FORK == 0
-            break;
-        }
-    }
-#endif
+    sched_thread_init(
+            i,                      /* Index of the thread created */
+            thread_def,             /* Thread definition. */
+            (void *)current_thread, /* Pointer toi the parent thread, which is
+                                     * expected to be the current thread. */
+            priv);                  /* kworker flag. */
 
-    set_interrupt_state(s);
+#if 0
+        set_interrupt_state(s);
+#endif
 
     if (i == configSCHED_MAX_THREADS) {
         /* New thread could not be created */

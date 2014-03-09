@@ -164,7 +164,7 @@ typedef struct {
      * + next_child is a child thread attribute containing address of a next
      *   child node of the common parent thread
      */
-    volatile struct threadInheritance_t {
+    struct threadInheritance_t {
         void * parent;              /*!< Parent thread */
         void * first_child;         /*!< Link to the first child thread */
         void * next_child;          /*!< Next child of the common parent */
@@ -172,7 +172,7 @@ typedef struct {
 } threadInfo_t;
 
 /* External variables **********************************************************/
-extern volatile threadInfo_t * current_thread;
+extern threadInfo_t * current_thread;
 
 /* Public function prototypes ***************************************************/
 /**
@@ -187,7 +187,6 @@ void * sched_handler(void * tsp);
 
 pthread_t sched_get_current_tid(void);
 threadInfo_t * sched_get_pThreadInfo(pthread_t thread_id);
-//void * sched_get_current_kstack(void);
 
 pthread_t sched_thread_clone(pthread_t thread_id, void * stack_addr);
 

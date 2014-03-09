@@ -59,7 +59,6 @@ configSCHED_TINY = 1#
 #
 # SCHED_TINY Config
 configSCHED_MAX_THREADS = 10# Maximum number of threads.
-configFAST_FORK = 0# Use a queue to find the next free threadId.
 configSCHED_HZ = 100u# Scheduler frequency in Hz.
 configSCHED_LAVG_PER = SCHED_LAVGPERIOD_11SEC#
 
