@@ -40,7 +40,7 @@
 #define MMU_VADDR_KSTACK_START  0x00001000
 #define MMU_VADDR_KSTACK_END    0x00007fff
 
-/* TKSTACK is a thread local kernel mode stack and its NOT mapped 1:1 unlike
+/** TKSTACK is a thread local kernel mode stack and its NOT mapped 1:1 unlike
  * other regions defined here. */
 #define MMU_VADDR_TKSTACK_START 0x00000000
 #define MMU_VADDR_TKSTACK_END   0x00000fff

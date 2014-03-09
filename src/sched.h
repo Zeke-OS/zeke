@@ -136,7 +136,10 @@
  */
 typedef struct {
     void * sp;                  /*!< Stack pointer. */
-    //void * kstack_start;        /*!< Stack start address. */
+#if 0
+    void * stack_start;         /*!< Stack start address. */
+    void * stack_size;
+#endif
     vm_region_t * kstack_region; /*!< Thread kernel stack region. */
     uint32_t flags;             /*!< Status flags. */
     int errno;                  /*!< Thread local errno. */

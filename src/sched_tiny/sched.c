@@ -88,6 +88,8 @@
 #define SCALE_LOAD(x) (((x + (FIXED_1/200)) * 100) >> FSHIFT)
 /* End of Definitions for load average calculation ***************************/
 
+#define KSTACK_SIZE ((MMU_VADDR_TKSTACK_END - MMU_VADDR_TKSTACK_START) + 1)
+
 /* Task containers */
 static threadInfo_t task_table[configSCHED_MAX_THREADS]; /*!< Array of all
                                                           *   threads */
@@ -121,6 +123,7 @@ static void context_switcher(void);
 static void sched_thread_init(pthread_t i, ds_pthread_create_t * thread_def,
         threadInfo_t * parent, int priv);
 static void sched_thread_set_inheritance(pthread_t i, threadInfo_t * parent);
+static void init_kstack(threadInfo_t * th);
 static void _sched_thread_set_exec(pthread_t thread_id, osPriority pri);
 static void sched_thread_remove(pthread_t id);
 static void sched_thread_die(intptr_t retval);
@@ -396,20 +399,17 @@ static void sched_thread_init(pthread_t i, ds_pthread_create_t * thread_def,
     sched_thread_set_inheritance(i, parent);
 
     /* Update stack pointer */
+#if 0
+    task_table[i].stack_start = thread_def->def->stackAddr;
+    task_table[i].stack_size = thread_def->def->stackSize;
+#endif
     task_table[i].sp = (void *)((uint32_t)(thread_def->def->stackAddr)
                                          + thread_def->def->stackSize
                                          - sizeof(hw_stack_frame_t)
                                          - sizeof(sw_stack_frame_t));
 
     /* Create kstack */
-    task_table[i].kstack_region = vralloc(
-            (MMU_VADDR_TKSTACK_END - MMU_VADDR_TKSTACK_START) + 1);
-    if (!task_table[i].kstack_region) {
-        panic("OOM during thread creation");
-    }
-    task_table[i].kstack_region->usr_rw = 0;
-    task_table[i].kstack_region->mmu.vaddr = 0x0; /* TODO Don't hard-code this */
-    task_table[i].kstack_region->mmu.pt = &mmu_pagetable_system;
+    init_kstack(&(task_table[i]));
 
     /* Put thread into execution */
     _sched_thread_set_exec(i, thread_def->def->tpriority);
@@ -455,33 +455,35 @@ static void sched_thread_set_inheritance(pthread_t id, threadInfo_t * parent)
 }
 
 /**
- * Clone given thread.
+ * Initialize thread kernel mode stack.
+ * @param th is a pointer to the thread.
  */
-threadInfo_t * sched_thread_clone(pthread_t thread_id)
+static void init_kstack(threadInfo_t * th)
 {
-    threadInfo_t * old_th;
-    pthread_t new_tid;
+    /* Create kstack */
+    th->kstack_region = vralloc(KSTACK_SIZE);
+    if (!th->kstack_region) {
+        panic("OOM during thread creation");
+    }
 
-    old_th = sched_get_pThreadInfo(thread_id);
-    if (!old_th)
-        return 0;
+    th->kstack_region->usr_rw = 0;
+    th->kstack_region->mmu.vaddr = 0x0; /* TODO Don't hard-code this */
+    th->kstack_region->mmu.pt = &mmu_pagetable_system;
+}
 
-    /* TODO Clone kstack */
-
-    pthread_attr_t th_attr = {
-        .tpriority = old_th->priority,
-        .stackAddr = old_th->sp,
-        .stackSize = SIZE_MAX /* TODO */
-    };
-    ds_pthread_create_t ds = {
-        .thread = &new_tid,
-        .start = 0,
-        .def = &th_attr,
-        .argument = 0
-    };
-
-    return ((sched_threadCreate(&ds, 0) > 0) ? sched_get_pThreadInfo(new_tid) : 0);
-    /* TODO Should we do something for stack to allow return? */
+/**
+ * Clone given thread.
+ * @note Cloned thread is set to sleep state and caller of this function should
+ * set it to exec state.
+ * @param thread_id is the id of the thread to be cloned.
+ * @param stack_addr is a kernel accessible address of the thread stack.
+ * @return  0 clone succeed, this is the new thread executing;
+ *          < 0 error;
+ *          > 0 clone succeed and return value is the id of the new thread.
+ */
+pthread_t sched_thread_clone(pthread_t thread_id, void * stack_addr)
+{
+    return -1;
 }
 
 /**
