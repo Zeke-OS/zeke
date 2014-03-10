@@ -136,10 +136,8 @@
  */
 typedef struct {
     void * sp;                  /*!< Stack pointer. */
-#if 0
     void * stack_start;         /*!< Stack start address. */
-    void * stack_size;
-#endif
+    size_t stack_size;
     vm_region_t * kstack_region; /*!< Thread kernel stack region. */
     uint32_t flags;             /*!< Status flags. */
     int errno;                  /*!< Thread local errno. */
@@ -188,7 +186,7 @@ void * sched_handler(void * tsp);
 pthread_t sched_get_current_tid(void);
 threadInfo_t * sched_get_pThreadInfo(pthread_t thread_id);
 
-pthread_t sched_thread_clone(pthread_t thread_id, void * stack_addr);
+pthread_t sched_thread_fork(void * stack_addr);
 
 /**
  * Set thread into execution mode/ready to run mode.

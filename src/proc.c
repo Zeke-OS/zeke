@@ -235,12 +235,12 @@ pid_t proc_fork(pid_t pid)
     vm_region_t * vm_reg_tmp;
 
     /* Copy code region pointer. */
-    vm_reg_tmp = (*old_proc->mm.regions)[MM_CODE_START];
+    vm_reg_tmp = (*old_proc->mm.regions)[MM_CODE_REGION];
     vm_reg_tmp->vm_ops->rref(vm_reg_tmp);
-    (*new_proc->mm.regions)[MM_CODE_START] = vm_reg_tmp;
+    (*new_proc->mm.regions)[MM_CODE_REGION] = vm_reg_tmp;
 
     /* Clone stacks. */
-    for (int i = MM_KSTACK_START; i < MM_HEAP_START; i++) {
+    for (int i = MM_STACK_REGION; i < MM_HEAP_REGION; i++) {
         vm_reg_tmp = (*old_proc->mm.regions)[i];
         vm_reg_tmp = vm_reg_tmp->vm_ops->rclone(vm_reg_tmp);
         if (vm_reg_tmp == 0) {
@@ -273,7 +273,7 @@ pid_t proc_fork(pid_t pid)
      * it directly that way because shared regions can't properly point to more
      * than one page table struct.
      */
-    for (int i = MM_HEAP_START; i < new_proc->mm.nr_regions; i++) {
+    for (int i = MM_HEAP_REGION; i < new_proc->mm.nr_regions; i++) {
         vm_reg_tmp = (*old_proc->mm.regions)[i];
         vm_reg_tmp->vm_ops->rref(vm_reg_tmp);
         (*new_proc->mm.regions)[i] = vm_reg_tmp;
@@ -307,19 +307,24 @@ pid_t proc_fork(pid_t pid)
      * process calls fork(), the new process shall contain a replica of the
      * calling thread.
      */ /* TODO */
-#if 0
-    new_proc->main_thread = sched_thread_clone(current_thread->id, 0);
-    if (new_proc->main_thread == 0) {
+    pthread_t new_tid = sched_thread_fork(
+            (*new_proc->mm.regions)[MM_STACK_REGION]->mmu.paddr);
+    if (new_tid < 0) {
         retval = -EAGAIN; /* TODO ?? */
         goto free_regions;
+    } else if (new_tid > 0) {
+        new_proc->main_thread = sched_get_pThreadInfo(new_tid);
+    } else { /* 0, new thread returning */
+        retval = 0;
+        goto out;
     }
-#endif
 
     /* Update inheritance attributes */
     set_proc_inher(old_proc, new_proc);
 
     /* TODO Insert to proc data structure */
 
+    sched_thread_set_exec(new_proc->main_thread->id);
     goto out; /* Fork created. */
 free_regions:
     for (int i = 0; i < new_proc->mm.nr_regions; i++) {

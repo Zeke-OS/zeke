@@ -120,7 +120,7 @@ static void calc_loads(void);
 static void context_switcher(void);
 static void sched_thread_init(pthread_t i, ds_pthread_create_t * thread_def,
         threadInfo_t * parent, int priv);
-static void sched_thread_set_inheritance(pthread_t i, threadInfo_t * parent);
+static void sched_thread_set_inheritance(threadInfo_t * new_child, threadInfo_t * parent);
 static void init_kstack(threadInfo_t * th);
 static void _sched_thread_set_exec(pthread_t thread_id, osPriority pri);
 static void sched_thread_remove(pthread_t id);
@@ -403,13 +403,11 @@ static void sched_thread_init(pthread_t i, ds_pthread_create_t * thread_def,
     task_table[i].wait_tim = -1;
 
     /* Update parent and child pointers */
-    sched_thread_set_inheritance(i, parent);
+    sched_thread_set_inheritance(&(task_table[i]), parent);
 
     /* Update stack pointer */
-#if 0
     task_table[i].stack_start = thread_def->def->stackAddr;
     task_table[i].stack_size = thread_def->def->stackSize;
-#endif
     task_table[i].sp = (void *)((uint32_t)(thread_def->def->stackAddr)
                                          + thread_def->def->stackSize
                                          - sizeof(hw_stack_frame_t)
@@ -426,25 +424,25 @@ static void sched_thread_init(pthread_t i, ds_pthread_create_t * thread_def,
  * Set thread inheritance
  * Sets linking from the parent thread to the thread id.
  */
-static void sched_thread_set_inheritance(pthread_t id, threadInfo_t * parent)
+static void sched_thread_set_inheritance(threadInfo_t * new_child, threadInfo_t * parent)
 {
     threadInfo_t * last_node, * tmp;
 
     /* Initial values for all threads */
-    task_table[id].inh.parent = parent;
-    task_table[id].inh.first_child = NULL;
-    task_table[id].inh.next_child = NULL;
+    new_child->inh.parent = parent;
+    new_child->inh.first_child = NULL;
+    new_child->inh.next_child = NULL;
 
     if (parent == NULL) {
-        task_table[id].pid_owner = 0;
+        new_child->pid_owner = 0;
         return;
     }
-    task_table[id].pid_owner = parent->pid_owner;
+    new_child->pid_owner = parent->pid_owner;
 
     if (parent->inh.first_child == NULL) {
         /* This is the first child of this parent */
-        parent->inh.first_child = &(task_table[id]);
-        task_table[id].inh.next_child = NULL;
+        parent->inh.first_child = new_child;
+        new_child->inh.next_child = NULL;
 
         return; /* All done */
     }
@@ -458,7 +456,7 @@ static void sched_thread_set_inheritance(pthread_t id, threadInfo_t * parent)
     } while ((tmp = last_node->inh.next_child) != NULL);
 
     /* Set newly created thread as the last child in chain. */
-    last_node->inh.next_child = &(task_table[id]);
+    last_node->inh.next_child = new_child;
 }
 
 /**
@@ -479,28 +477,66 @@ static void init_kstack(threadInfo_t * th)
 }
 
 /**
- * Clone given thread.
+ * Fork current thread.
  * @note Cloned thread is set to sleep state and caller of this function should
  * set it to exec state.
- * @param thread_id is the id of the thread to be cloned.
  * @param stack_addr is a kernel accessible address of the thread stack.
- * @return  0 clone succeed, this is the new thread executing;
+ * @return  0 clone succeed and this is the new thread executing;
  *          < 0 error;
  *          > 0 clone succeed and return value is the id of the new thread.
  */
-pthread_t sched_thread_clone(pthread_t thread_id, void * stack_addr)
+pthread_t sched_thread_fork(void * stack_addr)
 {
-#if 0
-    threadInfo_t * const old_thread = sched_get_pThreadInfo(thread_id);
-    threadInfo_t * new_thread;
+    threadInfo_t * const old_thread = current_thread;
+    threadInfo_t tmp;
     pthread_t new_id;
 
-    if (!queue_pop(&next_thread_id_queue_cb, &new_id)) {
+    if (old_thread == 0) {
         return -1;
     }
-#endif
 
-    return -1;
+    if (!queue_pop(&next_thread_id_queue_cb, &new_id)) {
+        return -2;
+    }
+
+    /* New thread is kept in tmp until it's ready for execution. */
+    memcpy(&tmp, old_thread, sizeof(threadInfo_t));
+    tmp.flags = ~SCHED_EXEC_FLAG; /* Disable exec for now. */
+    tmp.id = new_id;
+    sched_thread_set_inheritance(&tmp, old_thread);
+
+    /* Initialize a new kstack & copy data from old kstack. */
+    init_kstack(&tmp);
+    memcpy((void *)(tmp.kstack_region->mmu.paddr),
+            (void *)(old_thread->kstack_region->mmu.paddr),
+            MMU_SIZEOF_REGION(&(old_thread->kstack_region->mmu)));
+
+    /* Copy usr stack */
+    memcpy(stack_addr, old_thread->stack_start, old_thread->stack_size);
+
+    /* Set return value for the caller */
+    register int retval __asm__ ("r0"); /* TODO */
+    retval = new_id;
+
+    /* Init stack for context switch */
+    pthread_attr_t def_fake = {
+        .stackAddr = (void *)(tmp.kstack_region->mmu.paddr),
+        .stackSize = ((size_t)rd_thread_stack_ptr() - (size_t)old_thread->kstack_region->mmu.paddr)
+    };
+    ds_pthread_create_t ds_fake = {
+        .def = &def_fake,
+        .start = &&out, /* pc */
+        .del_thread = 0, /* lr, don't care */
+        .argument = 0 /* retval variable of the new thread. */
+    };
+    init_stack_frame(&ds_fake, 1);
+
+    /* TODO Increment resource refcounters(?) */
+
+    memcpy(&(task_table[new_id]), &tmp, sizeof(threadInfo_t));
+
+out:
+    return retval;
 }
 
 /**
