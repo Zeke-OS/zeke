@@ -280,11 +280,13 @@ int vm_map_region(vm_region_t * vm_region, struct vm_pt * pt)
 {
     mmu_region_t mmu_region;
 
-    /* TODO debug mode null checks */
-
-    mtx_spinlock(&(vm_region->lock));
+#if configDEBUG != 0
+    if (vm_region == 0)
+        panic("vm_region can't be null");
+#endif
 
     vm_updateusr_ap(vm_region);
+    mtx_spinlock(&(vm_region->lock));
 
     mmu_region = vm_region->mmu; /* Make a copy of mmu region struct */
     mmu_region.pt = &(pt->pt);

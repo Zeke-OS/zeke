@@ -80,7 +80,7 @@ __attribute__ ((naked)) void undef_handler(void)
     char buf[80];
 
     __asm__ volatile (
-        "subs %[reg], r14, #2" : [reg] "=r" (addr));
+        "subs %[reg], r14, #4" : [reg] "=r" (addr) :: "r14");
 
     ksprintf(buf, sizeof(buf), "Undefined instruction @ %x", addr);
     panic(buf);

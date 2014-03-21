@@ -164,7 +164,7 @@ $(AUTOCONF_H): $(CONFIG_MK)
 $(CONFIG_MK):
 # End of config
 
-kernel: kernel.bin
+kernel: kernel.bin config
 
 $(STARTUP_O): $(STARTUP)
 	@echo "AS $@"

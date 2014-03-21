@@ -62,17 +62,18 @@
  */
 #define KERROR(level, msg) _KERROR2(level, _KERROR_WHERESTR, msg)
 
+const char _kernel_panic_msg[19];
+
 /**
  * Kernel panic with message.
  * @param msg is a message to be logged before halt.
  */
-#define panic(msg)                              \
-    disable_interrupt();                        \
-    KERROR(KERROR_CRIT, "Oops, Kernel panic");  \
-    KERROR(KERROR_CRIT, msg);                   \
-    do {                                        \
-         panic_halt();                          \
-    } while(1)
+#define panic(msg) do {                     \
+    disable_interrupt();                    \
+    KERROR(KERROR_CRIT, _kernel_panic_msg); \
+    KERROR(KERROR_CRIT, msg);               \
+    panic_halt();                           \
+} while(1)
 
 /* Log levels */
 #define KERROR_CRIT     '0' /*!< Critical error system is halted. */

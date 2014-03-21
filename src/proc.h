@@ -141,6 +141,8 @@ int maxproc;
 extern pid_t current_process_id;
 extern proc_info_t * curproc;
 
+void proc_init(void) __attribute__((constructor));
+
 pid_t proc_fork(pid_t pid);
 int proc_kill(void);
 int proc_replace(pid_t pid, void * image, size_t size);

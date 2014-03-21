@@ -275,7 +275,7 @@ out:
  * Updates dynmem allocation table and intially maps the memory region to the
  * kernel memory space.
  * @note dynmem_region_lock must be held before entering this function.
- * @param base      is the base address.
+ * @param base      is the base address index.
  * @param size      is the size of the memory region in MB.
  * @param ap        Access Permissions.
  * @param control   Control bits.
@@ -287,7 +287,7 @@ static void * kmap_allocation(size_t base, size_t size, uint32_t ap, uint32_t co
     uint32_t rlb = (size > 1) ? DYNMEM_RL_BL : DYNMEM_RL_NL;
     uint32_t rle = (size > 1) ? DYNMEM_RL_EL : DYNMEM_RL_NL;
     uint32_t rc = (1 << DYNMEM_RC_POS);
-    uint32_t addr = DYNMEM_START + base;
+    uint32_t addr = DYNMEM_START + base * 1048576;
 
     for (i = base; i < base + size - 1; i++) {
         dynmemmap[i] = rc | rlb | mapflags;

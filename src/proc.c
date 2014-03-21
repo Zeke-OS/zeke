@@ -52,10 +52,10 @@
 #include <vralloc.h>
 #include <proc.h>
 
-static proc_info_t ** _procarr;
-int maxproc = configMAXPROC;        /*!< Maximum # of processes. */
-static int _cur_maxproc;
-int nprocs;                         /* Current # of procs. */
+static proc_info_t *(*_procarr)[];  /*!< processes indexed by pid */
+int maxproc = configMAXPROC;        /*!< Maximum # of processes, set. */
+static int _cur_maxproc;            /*!< Effective maxproc. */
+int nprocs = 1;                     /*!< Current # of procs. */
 pid_t current_process_id;           /*!< PID of current process. */
 proc_info_t * curproc;              /*!< PCB of the current process. */
 static pid_t _lastpid;              /*!< last allocated pid. */
@@ -68,8 +68,9 @@ static proc_info_t _kernel_proc_info = {
     .name = "kernel"
 };
 
-#define SIZEOF_PROCARR      ((maxproc + 1) * sizeof(proc_info_t *))
+#define SIZEOF_PROCARR()    ((maxproc + 1) * sizeof(proc_info_t *))
 
+/* proclock - Protects procarray and variables in proc. */
 static mtx_t proclock;
 #define PROCARR_LOCK()      mtx_spinlock(&proclock)
 #define PROCARR_UNLOCK()    mtx_unlock(&proclock)
@@ -80,6 +81,11 @@ SYSCTL_INT(_kern, KERN_MAXPROC, maxproc, CTLFLAG_RWTUN,
 SYSCTL_INT(_kern, KERN_MAXPROC, nprocs, CTLFLAG_RD,
     &nprocs, 0, "Current number of processes");
 
+static vm_region_t kprocvm_code;
+static vm_region_t kprocvm_stack;
+static vm_region_t kprocvm_heap;
+
+static void init_kernel_proc(void);
 static void realloc__procarr(void);
 static pid_t get_random_pid(void);
 static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc);
@@ -88,7 +94,6 @@ pid_t proc_update(void); /* Used in HAL, so not static */
 /**
  * Init process handling subsystem.
  */
-void proc_init(void) __attribute__((constructor));
 void proc_init(void)
 {
     SUBSYS_INIT();
@@ -96,18 +101,9 @@ void proc_init(void)
 
     PROCARR_LOCK_INIT();
     realloc__procarr();
-    memset(_procarr, 0, SIZEOF_PROCARR);
+    memset(_procarr, 0, SIZEOF_PROCARR());
 
-    _procarr[0] = &_kernel_proc_info;
-    _kernel_proc_info.files = kmalloc(sizeof(files_t) + 3 * sizeof(file_t *));
-    if (!_kernel_proc_info.files) {
-        panic("Can't init kernel process");
-    }
-    _kernel_proc_info.files->count = 3;
-
-    /* TODO Create this correctly */
-    _kernel_proc_info.files->fd[2] = kcalloc(1, sizeof(file_t)); /* stderr */
-    _kernel_proc_info.files->fd[2]->vnode = &kerror_vnode;
+    init_kernel_proc();
 
     /* Do here same as proc_update() would do when running. */
     current_process_id = 0;
@@ -116,15 +112,63 @@ void proc_init(void)
     SUBSYS_INITFINI("Proc init");
 }
 
+static void init_kernel_proc(void)
+{
+    const char panic_msg[] = "Can't init kernel process";
+
+    (*_procarr)[0] = &_kernel_proc_info;
+
+    _kernel_proc_info.files = kmalloc(sizeof(files_t) + 3 * sizeof(file_t *));
+    if (!_kernel_proc_info.files) {
+        panic(panic_msg);
+    }
+    _kernel_proc_info.files->count = 3;
+
+    /* TODO Create this correctly */
+    _kernel_proc_info.files->fd[2] = kcalloc(1, sizeof(file_t)); /* stderr */
+    _kernel_proc_info.files->fd[2]->vnode = &kerror_vnode;
+
+    /* Create regions */
+    _kernel_proc_info.mm.regions = kcalloc(3, sizeof(void *));
+    _kernel_proc_info.mm.nr_regions = 3;
+    if (!_kernel_proc_info.mm.regions)
+        panic(panic_msg);
+
+    /* Copy regions */
+    kprocvm_code.mmu = mmu_region_kernel;
+    kprocvm_stack.mmu = mmu_region_kstack;
+    kprocvm_heap.mmu = mmu_region_kdata;
+
+    mtx_init(&(kprocvm_code.lock), MTX_DEF | MTX_SPIN);
+    mtx_init(&(kprocvm_stack.lock), MTX_DEF | MTX_SPIN);
+    mtx_init(&(kprocvm_heap.lock), MTX_DEF | MTX_SPIN);
+
+    (*_kernel_proc_info.mm.regions)[MM_CODE_REGION] = &kprocvm_code;
+    (*_kernel_proc_info.mm.regions)[MM_STACK_REGION] = &kprocvm_stack;
+    (*_kernel_proc_info.mm.regions)[MM_HEAP_REGION] = &kprocvm_heap;
+}
+
+/**
+ * Realloc procarr.
+ * Realloc _procarr based on maxproc sysctl variable if necessary.
+ * @note    This should be generally called before selecting next pid
+ *          from the array.
+ */
 static void realloc__procarr(void)
 {
-    proc_info_t ** tmp;
+    proc_info_t * (*tmp)[];
+
+    /* Skip if size is not changed */
+    if (maxproc == _cur_maxproc)
+        return;
 
     PROCARR_LOCK();
-    tmp = krealloc(_procarr, SIZEOF_PROCARR);
+    tmp = krealloc(_procarr, SIZEOF_PROCARR());
     if ((tmp == 0) && (_procarr == 0)) {
         char buf[80];
-        ksprintf(buf, sizeof(buf), "Unable to allocate _procarr (%u bytes)", SIZEOF_PROCARR);
+        ksprintf(buf, sizeof(buf),
+                "Unable to allocate _procarr (%u bytes)",
+                SIZEOF_PROCARR());
         panic(buf);
     }
     _procarr = tmp;
@@ -176,6 +220,9 @@ pid_t proc_fork(pid_t pid)
     }
 
     /* Allocate a master page table for the new process. */
+    new_proc->mm.mptable.vaddr = 0;
+    new_proc->mm.mptable.type = MMU_PTT_MASTER;
+    new_proc->mm.mptable.dom = MMU_DOM_USER;
     if (ptmapper_alloc(&(new_proc->mm.mptable))) {
         retval = -ENOMEM;
         goto free_new_proc;
@@ -236,29 +283,54 @@ pid_t proc_fork(pid_t pid)
 
     /* Copy code region pointer. */
     vm_reg_tmp = (*old_proc->mm.regions)[MM_CODE_REGION];
-    vm_reg_tmp->vm_ops->rref(vm_reg_tmp);
+    if (!vm_reg_tmp) {
+        panic("Old proc code region can't be null");
+    }
+    /* TODO Following ifs can be optimized if region would be properly
+     * created for proc 0. */
+    if (old_proc->pid != 0 && vm_reg_tmp->vm_ops)
+        vm_reg_tmp->vm_ops->rref(vm_reg_tmp);
     (*new_proc->mm.regions)[MM_CODE_REGION] = vm_reg_tmp;
 
-    /* Clone stacks. */
-    for (int i = MM_STACK_REGION; i < MM_HEAP_REGION; i++) {
-        vm_reg_tmp = (*old_proc->mm.regions)[i];
+    /* Clone stack. */
+    vm_reg_tmp = (*old_proc->mm.regions)[MM_STACK_REGION];
+    if (old_proc->pid != 0 && vm_reg_tmp->vm_ops) { /* Only if vmp_ops are defined. */
+        if (!vm_reg_tmp->vm_ops->rclone)
+            panic("No clone operation");
         vm_reg_tmp = vm_reg_tmp->vm_ops->rclone(vm_reg_tmp);
         if (vm_reg_tmp == 0) {
             retval = -ENOMEM;
             goto free_regions;
         }
+    } else { /* Try to clone the stack manually. */
+        vm_region_t * old_region = vm_reg_tmp;
+        size_t rsize = MMU_SIZEOF_REGION(&(vm_reg_tmp->mmu));
 
-        vpt = ptlist_get_pt(
-                &(new_proc->mm.ptlist_head),
-                &(new_proc->mm.mptable),
-                vm_reg_tmp->mmu.vaddr);
-        if (vpt == 0) {
-            retval = -ENOMEM;
-            goto free_regions;
-        }
+        vm_reg_tmp = vralloc(rsize);
+        if (!vm_reg_tmp)
+            panic("OOM during fork()");
 
-        vm_map_region((*new_proc->mm.regions)[i], vpt);
+        memcpy((void *)(vm_reg_tmp->mmu.paddr), (void *)(old_region->mmu.paddr),
+                rsize);
+        vm_reg_tmp->usr_rw = VM_PROT_READ | VM_PROT_WRITE;
+        vm_reg_tmp->mmu.vaddr = old_region->mmu.vaddr;
+        vm_reg_tmp->mmu.ap = old_region->mmu.ap;
+        vm_reg_tmp->mmu.control = old_region->mmu.control;
+        /* paddr already set */
+        vm_reg_tmp->mmu.pt = old_region->mmu.pt;
+        vm_updateusr_ap(vm_reg_tmp);
     }
+
+    if ((vpt = ptlist_get_pt(
+            &(new_proc->mm.ptlist_head),
+            &(new_proc->mm.mptable),
+            vm_reg_tmp->mmu.vaddr)) == 0) {
+        retval = -ENOMEM;
+        goto free_regions;
+    }
+    (*new_proc->mm.regions)[MM_STACK_REGION] = vm_reg_tmp;
+
+    vm_map_region((*new_proc->mm.regions)[MM_STACK_REGION], vpt);
 
     /* Copy other region pointers.
      * As an iteresting sidenote, what we are doing here and earlier when L1
@@ -275,7 +347,8 @@ pid_t proc_fork(pid_t pid)
      */
     for (int i = MM_HEAP_REGION; i < new_proc->mm.nr_regions; i++) {
         vm_reg_tmp = (*old_proc->mm.regions)[i];
-        vm_reg_tmp->vm_ops->rref(vm_reg_tmp);
+        if (vm_reg_tmp->vm_ops && vm_reg_tmp->vm_ops->rref)
+            vm_reg_tmp->vm_ops->rref(vm_reg_tmp);
         (*new_proc->mm.regions)[i] = vm_reg_tmp;
 
         /* Set COW bit */
@@ -300,35 +373,51 @@ pid_t proc_fork(pid_t pid)
         vm_map_region((*new_proc->mm.regions)[i], vpt);
     }
 
-
-    new_proc->pid = get_random_pid();
+    PROCARR_LOCK();
+    if (nprocs != 1) {
+        new_proc->pid = get_random_pid();
+    } else { /* Proc is init */
+        new_proc->pid = 1;
+    }
+    PROCARR_UNLOCK();
 
     /* A process shall be created with a single thread. If a multi-threaded
      * process calls fork(), the new process shall contain a replica of the
      * calling thread.
-     */ /* TODO */
-    pthread_t new_tid = sched_thread_fork(
-            (*new_proc->mm.regions)[MM_STACK_REGION]->mmu.paddr);
-    if (new_tid < 0) {
-        retval = -EAGAIN; /* TODO ?? */
-        goto free_regions;
-    } else if (new_tid > 0) {
-        new_proc->main_thread = sched_get_pThreadInfo(new_tid);
-    } else { /* 0, new thread returning */
-        retval = 0;
-        goto out;
+     * We left main_thread null if calling process has no main thread.
+     */
+    if (old_proc->main_thread != 0) {
+        pthread_t new_tid = sched_thread_fork(
+            (void *)((*new_proc->mm.regions)[MM_STACK_REGION]->mmu.paddr));
+        if (new_tid < 0) {
+            retval = -EAGAIN; /* TODO ?? */
+            goto free_regions;
+        } else if (new_tid > 0) {
+            new_proc->main_thread = sched_get_pThreadInfo(new_tid);
+        } else { /* 0, new thread returning */
+            retval = 0;
+            goto out;
+        }
+        panic("FRE");
     }
 
     /* Update inheritance attributes */
     set_proc_inher(old_proc, new_proc);
 
-    /* TODO Insert to proc data structure */
+    /* Insert new process to _procarr */
+    (*_procarr)[new_proc->pid] = new_proc;
+    PROCARR_LOCK();
+    nprocs++;
+    PROCARR_UNLOCK();
 
-    sched_thread_set_exec(new_proc->main_thread->id);
+    if (new_proc->main_thread != 0) {
+        sched_thread_set_exec(new_proc->main_thread->id);
+    }
     goto out; /* Fork created. */
 free_regions:
     for (int i = 0; i < new_proc->mm.nr_regions; i++) {
-        (*new_proc->mm.regions)[i]->vm_ops->rfree((*new_proc->mm.regions)[i]);
+        if ((*new_proc->mm.regions)[i]->vm_ops->rfree)
+            (*new_proc->mm.regions)[i]->vm_ops->rfree((*new_proc->mm.regions)[i]);
     }
     new_proc->mm.nr_regions = 0;
 free_vpt_rb:
@@ -414,15 +503,17 @@ int proc_replace(pid_t pid, void * image, size_t size)
 proc_info_t * proc_get_struct(pid_t pid)
 {
     /* TODO do state check properly */
-    if (pid > _cur_maxproc || _procarr[pid]->state == 0) {
+    if (pid > _cur_maxproc || (*_procarr)[pid]->state == 0) {
 #if configDEBUG != 0
         char buf[80];
-        ksprintf(buf, sizeof(buf), "Invalid PID : %u, %u", pid, current_process_id);
+        ksprintf(buf, sizeof(buf),
+                "Invalid PID : %u, %u, %i, %i",
+                pid, current_process_id, (*_procarr)[pid], _cur_maxproc);
         KERROR(KERROR_DEBUG, buf);
 #endif
         return 0;
     }
-    return _procarr[pid];
+    return (*_procarr)[pid];
 }
 
 /**

@@ -1,7 +1,7 @@
 # Universal unit tests for Zeke project
 
 # Add here one or more include directories.
-IDIR_TEST = ../../include ../../src ./config
+IDIR_TEST = ../../src ./config
 
 # Set this to 1 if you will use asserts that compares floats or doubles;
 # or 0 disable

@@ -33,6 +33,8 @@
 #include <fs/fs.h>
 #include <kerror.h>
 
+const char _kernel_panic_msg[19] = "Oops, Kernel panic";
+
 static size_t kerror_fdwrite(vnode_t * file, const off_t * offset,
         const void * buf, size_t count);
 

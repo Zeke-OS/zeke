@@ -22,6 +22,20 @@ static void teardown()
 {
 }
 
+static char * test_search(void)
+{
+    bitmap_t bmap[32/4];
+    size_t retval, err;
+
+    memset(bmap, 0, sizeof(bmap));
+
+    err = bitmap_block_search(&retval, 256, bmap, sizeof(bmap));
+    pu_assert_equal("No error", err, 0);
+    pu_assert_equal("retval ok", retval, 0);
+
+    return 0;
+}
+
 static char * test_alloc(void)
 {
     bitmap_t bmap[64];
@@ -110,8 +124,9 @@ int unirand(int n)
 }
 
 static void all_tests() {
-    pu_def_test(perf_test, PU_RUN);
+    pu_def_test(test_search, PU_RUN);
     pu_def_test(test_alloc, PU_RUN);
+    pu_def_test(perf_test, PU_RUN);
 }
 
 int main(int argc, char **argv)

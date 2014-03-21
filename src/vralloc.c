@@ -49,7 +49,7 @@ struct vregion {
     bitmap_t map[0]; /*!< Bitmap of reserved pages. */
 };
 
-#define VREG_SIZE(count) (sizeof(struct vregion) + E2BITMAP_SIZE(count))
+#define VREG_SIZE(count) (sizeof(struct vregion) + E2BITMAP_SIZE(count) * sizeof(bitmap_t))
 
 static llist_t * vrlist; /*!< List of all allocations. */
 static struct vregion * last_vreg; /*!< Last node that contained empty pages. */
@@ -113,7 +113,7 @@ static struct vregion * vreg_alloc_node(size_t count)
         return 0;
     }
 
-    vreg->size = E2BITMAP_SIZE(count);
+    vreg->size = E2BITMAP_SIZE(count) * sizeof(bitmap_t);
     vrlist->insert_head(vrlist, vreg);
 
     /* Update stats */
@@ -170,7 +170,7 @@ vm_region_t * vralloc(size_t size)
 
 retry_vra:
     do {
-        if(!bitmap_block_search(&iblock, pcount, vreg->map, vreg->size)) {
+        if (bitmap_block_search(&iblock, pcount, vreg->map, vreg->size) == 0) {
             /* Found block */
             retval = kcalloc(1, sizeof(vm_region_t));
             if (!retval)
@@ -201,6 +201,10 @@ retry_vra:
             return 0;
         goto retry_vra;
     }
+
+    char buf[80];
+    ksprintf(buf, sizeof(buf), "%p, %x, %u", retval, retval->mmu.paddr, retval->mmu.num_pages);
+    KERROR(KERROR_DEBUG, buf);
 
     vralloc_used += size; /* Update stats */
     last_vreg = vreg;

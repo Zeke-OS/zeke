@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Function to compose a string by using printf style formatter.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,10 +38,13 @@
  * arguments.
  *
  * This function supports following format specifiers:
- *     %u   Unsigned decimal integer
- *     %x   Unsigned hexadecimal integer
- *     %c   Character
- *     %%   Replaced with a single %
+ *      %d or i Signed decimal integer
+ *      %u      Unsigned decimal integer
+ *      %x      Unsigned hexadecimal integer
+ *      %c      Character
+ *      %s      String of characters
+ *      %s      Pointer address
+ *      %%      Replaced with a single %
  *
  * @param str Pointer to a buffer where the resulting string is stored.
  * @param maxlen Maximum lenght of str. Replacements may cause writing of more
@@ -67,9 +70,22 @@ void ksprintf(char * str, size_t maxlen, const char * format, ...)
                     break;
 
                 switch (c) {
+                    case 'd':
+                    case 'i':
+                        {
+                            int x = va_arg(args, uint32_t);
+                            if (x < 0) {
+                                x *= -1;
+                                str[n++] = '-';
+                            }
+                            n += uitoa32(str + n, x);
+                        }
+                        break;
                     case 'u':
                         n += uitoa32(str + n, va_arg(args, uint32_t));
                         break;
+                    case 'p':
+                        str[n++] = 'b';
                     case 'x':
                         n += uitoah32(str + n, va_arg(args, uint32_t));
                         break;

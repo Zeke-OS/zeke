@@ -715,7 +715,7 @@ static void sched_thread_sleep(long millisec)
 
 pthread_t sched_threadCreate(ds_pthread_create_t * thread_def, int priv)
 {
-    unsigned int i;
+    pthread_t i;
 #if 0
     istate_t s;
 
@@ -728,12 +728,13 @@ pthread_t sched_threadCreate(ds_pthread_create_t * thread_def, int priv)
 #if 0
         set_interrupt_state(s);
 #endif
-        return 0;
+        return -1;
     }
+
     sched_thread_init(
             i,                      /* Index of the thread created */
             thread_def,             /* Thread definition. */
-            (void *)current_thread, /* Pointer toi the parent thread, which is
+            (void *)current_thread, /* Pointer to the parent thread, which is
                                      * expected to be the current thread. */
             priv);                  /* kworker flag. */
 
@@ -743,10 +744,10 @@ pthread_t sched_threadCreate(ds_pthread_create_t * thread_def, int priv)
 
     if (i == configSCHED_MAX_THREADS) {
         /* New thread could not be created */
-        return 0;
+        return -2;
     } else {
         /* Return the id of the new thread */
-        return (pthread_t)i;
+        return i;
     }
 }
 

@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    kernel_init.c
+ * @file    kinit.c
  * @author  Olli Vanhoja
  * @brief   System init for Zero Kernel.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,6 +34,7 @@
 #include <kerror.h>
 #include <usrinit.h>
 #include <sched.h>
+#include <proc.h>
 #include <libkern.h>
 #include <kstring.h>
 #include <kinit.h>
@@ -50,10 +51,10 @@ extern void (*__init_array_end []) (void) __attribute__((weak));
 extern void (*__fini_array_start []) (void) __attribute__((weak));
 extern void (*__fini_array_end []) (void) __attribute__((weak));
 
+/* Stack for init */
 static char main_stack[configUSRINIT_SSIZE];
 
 static void exec_array(void (*a []) (void), int n);
-
 void kinit(void) __attribute__((constructor));
 
 /**
@@ -91,6 +92,7 @@ void kinit(void)
 {
     SUBSYS_INIT();
     SUBSYS_DEP(sched_init);
+    SUBSYS_DEP(proc_init);
 
     /* Create app_main thread */
     pthread_attr_t init_attr = {
@@ -105,12 +107,30 @@ void kinit(void)
         .argument   = 0,
         .del_thread = pthread_exit
     };
-    pthread_t tid;
+    pthread_t tid; /* thread id of init main() */
+    pid_t     pid; /* pid of init */
+    threadInfo_t * init_thread;
     char buf[80];
+    proc_info_t * init_proc;
 
     tid = sched_threadCreate(&init_ds, 0);
+    if (tid <= 0) {
+        ksprintf(buf, sizeof(buf), "Can't create init. %i", tid);
+        panic(buf);
+    }
+    pid = proc_fork(0);
+    if (pid <= 0) {
+        ksprintf(buf, sizeof(buf), "Can't fork a process for init. %i", pid);
+        panic(buf);
+    }
 
-    ksprintf(buf, sizeof(buf), "Init created with thread id: %u", tid);
+    init_thread = sched_get_pThreadInfo(tid);
+    init_thread->pid_owner = pid;
+    init_proc = proc_get_struct(pid);
+
+    init_proc->main_thread = init_thread;
+
+    ksprintf(buf, sizeof(buf), "Init created with pid: %u & tid: %u", pid, tid);
     KERROR(KERROR_DEBUG, buf);
     SUBSYS_INITFINI("Load init");
 }

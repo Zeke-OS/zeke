@@ -92,5 +92,9 @@
 extern mmu_pagetable_t mmu_pagetable_master;
 extern mmu_pagetable_t mmu_pagetable_system;
 
+extern const mmu_region_t mmu_region_kstack;
+extern mmu_region_t mmu_region_kernel;
+extern mmu_region_t mmu_region_kdata;
+
 int ptmapper_alloc(mmu_pagetable_t * pt);
 void ptmapper_free(mmu_pagetable_t * pt);

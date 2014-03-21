@@ -49,7 +49,7 @@ int bitmap_block_search(size_t * retval, size_t block_len, bitmap_t * bitmap, si
 
     cur = &start;
     for (i = 0; i < (size / sizeof(bitmap_t)); i++) {
-        for(j = 0; j < SIZEOF_BITMAP_T; j++) {
+        for(j = 0; j <= SIZEOF_BITMAP_T; j++) {
             if ((bitmap[i] & (1 << j)) == 0) {
                 *cur = i * SIZEOF_BITMAP_T + j;
                 cur = &end;

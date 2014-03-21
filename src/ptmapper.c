@@ -297,10 +297,6 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
     size_t bsize = 0; /* Size in bytes */
     int retval = 0;
 
-#if 0
-    DEBUG_PRINT_CALLER();
-#endif
-
     switch (pt->type) {
     case MMU_PTT_MASTER:
         size = PTM_MASTER;
