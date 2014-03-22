@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   bitmap allocation functions.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,9 +32,16 @@
 
 #include "bitmap.h"
 
+#define BIT2WORDI(i)    ((i - (i & (SIZEOF_BITMAP_T - 1))) / SIZEOF_BITMAP_T)
+#define BIT2WBITOFF(i)  (i & (SIZEOF_BITMAP_T - 1))
+
+static int _bitmap_block_search(size_t start, size_t * retval, size_t block_len,
+        bitmap_t * bitmap, size_t size);
+
 /**
  * Search for a contiguous block of block_len in bitmap.
- * @param retval[out]   Index of the first contiguous block of requested length.
+ * @param[out] retval   is the index of the first contiguous block of requested
+ *                      length.
  * @param block_len     is the lenght of contiguous block searched for.
  * @param bitmap        is a bitmap of block reservations.
  * @param size          is the size of bitmap in bytes.
@@ -70,6 +77,47 @@ int bitmap_block_search(size_t * retval, size_t block_len, bitmap_t * bitmap, si
 }
 
 /**
+ * Search for a contiguous block of block_len in bitmap.
+ * @parami[out] retval  is the index of the first contiguous block of requested
+ *                      length.
+ * @param block_len     is the lenght of contiguous block searched for.
+ * @param bitmap        is a bitmap of block reservations.
+ * @param size          is the size of bitmap in bytes.
+ * @return  Returns zero if a free block found; Value other than zero if there
+ *          is no free contiguous block of requested length.
+ */
+static int _bitmap_block_search(size_t start, size_t * retval, size_t block_len,
+        bitmap_t * bitmap, size_t size)
+{
+    size_t i, j;
+    bitmap_t * cur;
+    size_t end = 0;
+
+    j = BIT2WBITOFF(start);
+    cur = &start;
+    for (i = BIT2WORDI(start); i < (size / sizeof(bitmap_t)); i++) {
+        for(; j <= SIZEOF_BITMAP_T; j++) {
+            if ((bitmap[i] & (1 << j)) == 0) {
+                *cur = i * SIZEOF_BITMAP_T + j;
+                cur = &end;
+
+                if ((end - start >= block_len) && (end >= start)) {
+                    *retval = start;
+                    return 0;
+                }
+            } else {
+                start = 0;
+                end = 0;
+                cur = &start;
+            }
+        }
+        j = 0;
+    }
+
+    return 1;
+}
+
+/**
  * Set or clear contiguous block of bits in bitmap.
  * @param bitmap    is the bitmap being changed.
  * @param mark      0 = clear; 1 = set;
@@ -83,8 +131,8 @@ void bitmap_block_update(bitmap_t * bitmap, unsigned int mark, size_t start, siz
     size_t k;
 
     mark &= 1;
-    k = (start - (start & (SIZEOF_BITMAP_T - 1))) / SIZEOF_BITMAP_T;
-    n = start & (SIZEOF_BITMAP_T - 1); /* start mod size of bitmap_t in bits */
+    k = BIT2WORDI(start);
+    n = BIT2WBITOFF(start); /* start mod size of bitmap_t in bits */
 
     j = 0;
     i = k;
@@ -103,21 +151,54 @@ void bitmap_block_update(bitmap_t * bitmap, unsigned int mark, size_t start, siz
 
 /**
  * Set a contiguous block of zeroed bits to ones and return starting index.
- * @param start     is the starting bit (index) of newly allocated area.
- * @param len       is the length of zeroed area to be set.
- * @param bitmap    is the bitmap being changed.
- * @param size      is the size of the bitmap in bytes.
+ * @param[out] start    is the starting bit (index) of the newly allocated area.
+ * @param len           is the length of zeroed area to be set.
+ * @param bitmap        is the bitmap being changed.
+ * @param size          is the size of the bitmap in bytes.
  * @return  Returns zero if a free block found; Value other than zero if there
  *          is no free contiguous block of requested length.
  */
 int bitmap_block_alloc(size_t * start, size_t len, bitmap_t * bitmap, size_t size)
 {
-    int retval = 0;
+    int retval;
 
     retval = bitmap_block_search(start, len, bitmap, size);
     if (retval == 0) {
         bitmap_block_update(bitmap, 1, *start, len);
     }
 
+    return retval;
+}
+
+/**
+ * Allocate a contiguous aligned block of bits from bitmap.
+ * @param[out] start    is the starting bit (index) of the newly allocated area.
+ * @param len           is the length of zeroed area to be set.
+ * @param bitmap        is the bitmap being changed.
+ * @param size          is the size of the bitmap in bytes.
+ * @return  Returns zero if a free block found; Value other than zero if there
+ *          is no free contiguous block of requested length.
+ */
+int bitmap_block_align_alloc(size_t * start, size_t len,
+        bitmap_t * bitmap, size_t size, size_t balign)
+{
+    size_t begin = 0;
+    int retval;
+
+    do {
+        if (begin >= size * 8) {
+            retval = -1;
+            goto out;
+        }
+
+        retval = _bitmap_block_search(begin, start, len, bitmap, size);
+        if (retval != 0)
+            goto out;
+        begin = *start + (10 - (*start % balign));
+    } while (*start % balign);
+
+    bitmap_block_update(bitmap, 1, *start, len);
+
+out:
     return retval;
 }

@@ -197,8 +197,9 @@ SYSCTL_UINT(_vm, OID_AUTO, ptm_mem_tot, CTLFLAG_RD,
  * @return Returns zero if a free block found; Value other than zero if there
  *         is no free contiguous block of requested length.
  */
-#define PTM_ALLOC(retval, len) \
-    bitmap_block_alloc(retval, len, ptm_alloc_map, PTM_SIZEOF_MAP)
+#define PTM_ALLOC(retval, len, balign) \
+    bitmap_block_align_alloc(retval, len, ptm_alloc_map, PTM_SIZEOF_MAP, \
+            balign)
 
 /**
  * Free a block that has been previously allocated.
@@ -295,30 +296,34 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
     size_t addr;
     size_t size = 0; /* Size in bitmap */
     size_t bsize = 0; /* Size in bytes */
+    size_t balign;
     int retval = 0;
 
     switch (pt->type) {
     case MMU_PTT_MASTER:
         size = PTM_MASTER;
         bsize = MMU_PTSZ_MASTER;
+        balign = 10;
         break;
     case MMU_PTT_COARSE:
         size = PTM_COARSE;
         bsize = MMU_PTSZ_COARSE;
+        balign = 1;
         break;
     default:
         panic("pt size can't be zero");
     }
 
     /* Try to allocate a new page table */
-    if (!PTM_ALLOC(&block, size)) {
+    if (!PTM_ALLOC(&block, size, balign)) {
 #if configDEBUG != 0
         char buf[80];
 #endif
 
         addr = PTM_BLOCK2ADDR(block);
 #if configDEBUG != 0
-        ksprintf(buf, sizeof(buf), "Page table allocated @ %x of size %u bytes", addr, bsize);
+        ksprintf(buf, sizeof(buf),
+                "Page table allocated @ %x of size %u bytes", addr, bsize);
         KERROR(KERROR_DEBUG, buf);
 #endif
         pt->pt_addr = addr;

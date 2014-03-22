@@ -78,7 +78,7 @@ int ptlist_compare(struct vm_pt * a, struct vm_pt * b)
 struct vm_pt * ptlist_get_pt(struct ptlist * ptlist_head, mmu_pagetable_t * mpt, intptr_t vaddr)
 {
     struct vm_pt * vpt = 0;
-    const struct vm_pt filter = {
+    struct vm_pt filter = {
         .pt.vaddr = MMU_CPT_VADDR(vaddr)
     }; /* Used as a search filter */
 
