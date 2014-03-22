@@ -252,7 +252,7 @@ pid_t proc_fork(pid_t pid)
     new_proc->mm.nr_regions = old_proc->mm.nr_regions;
 
     /* Clone master page table. */
-    if (mmu_ptcpy(&(new_proc->mm.mptable), &(new_proc->mm.mptable))) {
+    if (mmu_ptcpy(&(new_proc->mm.mptable), &(old_proc->mm.mptable))) {
         retval = -EINVAL;
         goto free_regions_arr;
     }

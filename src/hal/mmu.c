@@ -147,24 +147,22 @@ size_t mmu_sizeof_region(mmu_region_t * region)
  */
 int mmu_ptcpy(mmu_pagetable_t * dest, mmu_pagetable_t * src)
 {
-    size_t len_src;
-    size_t len_dest;
+    const size_t len_src = mmu_sizeof_pt(src);
+    const size_t len_dest = mmu_sizeof_pt(dest);
 
-    len_src = mmu_sizeof_pt(src);
     if (len_src == 0) {
         KERROR(KERROR_ERR, "Attemp to clone an source invalid page table.");
         return -1;
     }
 
-    len_dest = mmu_sizeof_pt(dest);
     if (len_dest == 0) {
         KERROR(KERROR_ERR, "Invalid destination page table.");
-        return -1;
+        return -2;
     }
 
     if (len_src != len_dest) {
         KERROR(KERROR_ERR, "Destination and source pts differ in size");
-        return -2;
+        return -3;
     }
 
     memcpy((void *)(dest->pt_addr), (void *)(src->pt_addr), len_src);
