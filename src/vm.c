@@ -61,14 +61,10 @@ RB_GENERATE(ptlist, vm_pt, entry_, ptlist_compare);
  */
 int ptlist_compare(struct vm_pt * a, struct vm_pt * b)
 {
-    ssize_t vaddr_a = 0, vaddr_b = 0;
+    const ssize_t vaddr_a = (a) ? (ssize_t)(a->pt.vaddr) : 0;
+    const ssize_t vaddr_b = (b) ? (ssize_t)(b->pt.vaddr) : 0;
 
-    if (!a)
-        vaddr_a = (ssize_t)(a->pt.vaddr);
-    if (!b)
-        vaddr_b = (ssize_t)(b->pt.vaddr);
-
-    return (int)(a - b);
+    return (int)(vaddr_a - vaddr_b);
 }
 
 /**
@@ -82,7 +78,9 @@ int ptlist_compare(struct vm_pt * a, struct vm_pt * b)
 struct vm_pt * ptlist_get_pt(struct ptlist * ptlist_head, mmu_pagetable_t * mpt, intptr_t vaddr)
 {
     struct vm_pt * vpt = 0;
-    struct vm_pt filter; /* Used as a search filter */
+    const struct vm_pt filter = {
+        .pt.vaddr = MMU_CPT_VADDR(vaddr)
+    }; /* Used as a search filter */
 
 #if configDEBUG != 0
     if (!mpt)
@@ -90,8 +88,6 @@ struct vm_pt * ptlist_get_pt(struct ptlist * ptlist_head, mmu_pagetable_t * mpt,
 #endif
 
     if (!RB_EMPTY(ptlist_head)) {
-        filter.pt.vaddr = MMU_CPT_VADDR(vaddr);
-
         /* Look for existing page table. */
         vpt = RB_FIND(ptlist, ptlist_head, &filter);
     }
@@ -100,11 +96,6 @@ struct vm_pt * ptlist_get_pt(struct ptlist * ptlist_head, mmu_pagetable_t * mpt,
         if (vpt == 0) {
             return 0;
         }
-
-        char buf[80];
-        ksprintf(buf, sizeof(buf), "%x filt %x, mpt %x",
-                vaddr, filter.pt.vaddr, mpt->pt_addr);
-        KERROR(KERROR_DEBUG, buf);
 
         vpt->pt.vaddr = filter.pt.vaddr;
         vpt->pt.master_pt_addr = mpt->pt_addr;
