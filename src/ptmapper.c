@@ -303,12 +303,12 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
     case MMU_PTT_MASTER:
         size = PTM_MASTER;
         bsize = MMU_PTSZ_MASTER;
-        balign = 10;
+        balign = 0x10; /* TODO Depends on HW */
         break;
     case MMU_PTT_COARSE:
         size = PTM_COARSE;
         bsize = MMU_PTSZ_COARSE;
-        balign = 1;
+        balign = 0x1;
         break;
     default:
         panic("pt size can't be zero");
