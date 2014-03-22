@@ -68,7 +68,6 @@ void * main(void * arg)
     size_t old_len = sizeof(old_value_tot);
     char buf[80];
 
-
     pthread_attr_t attr = {
         .tpriority  = configUSRINIT_PRI,
         .stackAddr  = main_stack2,

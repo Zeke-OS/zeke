@@ -121,11 +121,13 @@ static void init_kernel_proc(void)
             sizeof(mmu_pagetable_t));
 
     /* Insert page tables */
+#if 0
     struct vm_pt * vpt;
     vpt = kmalloc(sizeof(struct vm_pt));
     vpt->pt = mmu_pagetable_system;
     vpt->linkcount = 1;
     RB_INSERT(ptlist, &(kernel_proc->mm.ptlist_head), vpt);
+#endif
 
     /* Create regions */
     kernel_proc->mm.regions = kcalloc(3, sizeof(void *));
@@ -387,6 +389,8 @@ pid_t proc_fork(pid_t pid)
 #endif
         }
 
+        if ((*new_proc->mm.regions)[i]->mmu.vaddr <= MMU_VADDR_KERNEL_END)
+            continue; /* Skip for regions in system page table */
         vpt = ptlist_get_pt(
                 &(new_proc->mm.ptlist_head),
                 &(new_proc->mm.mptable),

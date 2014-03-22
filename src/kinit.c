@@ -92,7 +92,7 @@ void kinit(void)
     SUBSYS_DEP(sched_init);
     SUBSYS_DEP(proc_init);
 
-    /* Stack for init */
+    /* User stack for init */
     vm_region_t * init_vmstack = vralloc(configUSRINIT_SSIZE);
     if (!init_vmstack)
         panic("Can't allocate stack for init");
@@ -114,6 +114,7 @@ void kinit(void)
         .argument   = 0,
         .del_thread = pthread_exit
     };
+
     pthread_t tid; /* thread id of init main() */
     pid_t     pid; /* pid of init */
     threadInfo_t * init_thread;
@@ -141,11 +142,23 @@ void kinit(void)
         panic("Failed to get proc struct");
     }
 
-    init_vmstack->mmu.pt = &(init_proc->mm.mptable);
-    (*init_proc->mm.regions)[MM_CODE_REGION] = init_vmstack;
+    /* Do some tricks to map user stack for init process correctly. */
+    (*init_proc->mm.regions)[MM_STACK_REGION] = init_vmstack;
+    vm_updateusr_ap(init_vmstack);
+    struct vm_pt * vpt = ptlist_get_pt(
+            &(init_proc->mm.ptlist_head),
+            &(init_proc->mm.mptable),
+            init_vmstack->mmu.vaddr);
+    if (vpt == 0)
+        panic("Couldn't get vpt for init stack");
+    init_vmstack->mmu.pt = &(vpt->pt);
+    vm_map_region(init_vmstack, vpt);
+
+    mmu_map_region(&(init_thread->kstack_region->mmu)); /* map tkstack */
     init_proc->main_thread = init_thread;
 
-    ksprintf(buf, sizeof(buf), "Init created with pid: %u & tid: %u", pid, tid);
+    ksprintf(buf, sizeof(buf), "Init created with pid: %u, tid: %u, stack: %x",
+            pid, tid, init_vmstack->mmu.vaddr);
     KERROR(KERROR_DEBUG, buf);
     SUBSYS_INITFINI("Load init");
 }
