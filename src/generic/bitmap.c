@@ -50,30 +50,7 @@ static int _bitmap_block_search(size_t start, size_t * retval, size_t block_len,
  */
 int bitmap_block_search(size_t * retval, size_t block_len, bitmap_t * bitmap, size_t size)
 {
-    size_t i, j;
-    bitmap_t * cur;
-    size_t start = 0, end = 0;
-
-    cur = &start;
-    for (i = 0; i < (size / sizeof(bitmap_t)); i++) {
-        for(j = 0; j <= SIZEOF_BITMAP_T; j++) {
-            if ((bitmap[i] & (1 << j)) == 0) {
-                *cur = i * SIZEOF_BITMAP_T + j;
-                cur = &end;
-
-                if ((end - start >= block_len) && (end >= start)) {
-                    *retval = start;
-                    return 0;
-                }
-            } else {
-                start = 0;
-                end = 0;
-                cur = &start;
-            }
-        }
-    }
-
-    return 1;
+    return _bitmap_block_search(0, retval, block_len, bitmap, size);
 }
 
 /**
