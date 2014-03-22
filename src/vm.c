@@ -84,6 +84,11 @@ struct vm_pt * ptlist_get_pt(struct ptlist * ptlist_head, mmu_pagetable_t * mpt,
     struct vm_pt * vpt = 0;
     struct vm_pt filter; /* Used as a search filter */
 
+#if configDEBUG != 0
+    if (!mpt)
+        panic("mpt can't be null");
+#endif
+
     if (!RB_EMPTY(ptlist_head)) {
         filter.pt.vaddr = MMU_CPT_VADDR(vaddr);
 
@@ -91,10 +96,15 @@ struct vm_pt * ptlist_get_pt(struct ptlist * ptlist_head, mmu_pagetable_t * mpt,
         vpt = RB_FIND(ptlist, ptlist_head, &filter);
     }
     if (vpt == 0) { /* Create a new pt if a sufficient pt not found. */
-        vpt = kmalloc(sizeof(struct vm_pt));
+        vpt = kcalloc(1, sizeof(struct vm_pt));
         if (vpt == 0) {
             return 0;
         }
+
+        char buf[80];
+        ksprintf(buf, sizeof(buf), "%x filt %x, mpt %x",
+                vaddr, filter.pt.vaddr, mpt->pt_addr);
+        KERROR(KERROR_DEBUG, buf);
 
         vpt->pt.vaddr = filter.pt.vaddr;
         vpt->pt.master_pt_addr = mpt->pt_addr;

@@ -60,13 +60,7 @@ pid_t current_process_id;           /*!< PID of current process. */
 proc_info_t * curproc;              /*!< PCB of the current process. */
 static pid_t _lastpid;              /*!< last allocated pid. */
 
-/* PCB for kernel process. */
 extern vnode_t kerror_vnode;
-static proc_info_t _kernel_proc_info = {
-    .pid = 0,
-    .state = 1, /* TODO Assign some correct state? */
-    .name = "kernel"
-};
 
 #define SIZEOF_PROCARR()    ((maxproc + 1) * sizeof(proc_info_t *))
 
@@ -80,10 +74,6 @@ SYSCTL_INT(_kern, KERN_MAXPROC, maxproc, CTLFLAG_RWTUN,
     &maxproc, 0, "Maximum number of processes");
 SYSCTL_INT(_kern, KERN_MAXPROC, nprocs, CTLFLAG_RD,
     &nprocs, 0, "Current number of processes");
-
-static vm_region_t kprocvm_code;
-static vm_region_t kprocvm_stack;
-static vm_region_t kprocvm_heap;
 
 static void init_kernel_proc(void);
 static void realloc__procarr(void);
@@ -107,7 +97,7 @@ void proc_init(void)
 
     /* Do here same as proc_update() would do when running. */
     current_process_id = 0;
-    curproc = &_kernel_proc_info;
+    curproc = (*_procarr)[0];
 
     SUBSYS_INITFINI("Proc init");
 }
@@ -115,37 +105,62 @@ void proc_init(void)
 static void init_kernel_proc(void)
 {
     const char panic_msg[] = "Can't init kernel process";
+    proc_info_t * kernel_proc;
 
-    (*_procarr)[0] = &_kernel_proc_info;
+    (*_procarr)[0] = kmalloc(sizeof(proc_info_t));
+    kernel_proc = (*_procarr)[0];
 
-    _kernel_proc_info.files = kmalloc(sizeof(files_t) + 3 * sizeof(file_t *));
-    if (!_kernel_proc_info.files) {
-        panic(panic_msg);
-    }
-    _kernel_proc_info.files->count = 3;
+    kernel_proc->pid = 0;
+    kernel_proc->state = 1; /* TODO */
+    strcpy(kernel_proc->name, "kernel");
 
-    /* TODO Create this correctly */
-    _kernel_proc_info.files->fd[2] = kcalloc(1, sizeof(file_t)); /* stderr */
-    _kernel_proc_info.files->fd[2]->vnode = &kerror_vnode;
+    RB_INIT(&(kernel_proc->mm.ptlist_head));
+
+    /* Copy master page table descriptor */
+    memcpy(&(kernel_proc->mm.mptable), &mmu_pagetable_master,
+            sizeof(mmu_pagetable_t));
+
+    /* Insert page tables */
+    struct vm_pt * vpt;
+    vpt = kmalloc(sizeof(struct vm_pt));
+    vpt->pt = mmu_pagetable_system;
+    vpt->linkcount = 1;
+    RB_INSERT(ptlist, &(kernel_proc->mm.ptlist_head), vpt);
 
     /* Create regions */
-    _kernel_proc_info.mm.regions = kcalloc(3, sizeof(void *));
-    _kernel_proc_info.mm.nr_regions = 3;
-    if (!_kernel_proc_info.mm.regions)
+    kernel_proc->mm.regions = kcalloc(3, sizeof(void *));
+    kernel_proc->mm.nr_regions = 3;
+    if (!kernel_proc->mm.regions) {
         panic(panic_msg);
+    }
 
-    /* Copy regions */
-    kprocvm_code.mmu = mmu_region_kernel;
-    kprocvm_stack.mmu = mmu_region_kstack;
-    kprocvm_heap.mmu = mmu_region_kdata;
+    /* Copy region descriptors */
+    vm_region_t * kprocvm_code = kcalloc(1, sizeof(vm_region_t));
+    vm_region_t * kprocvm_heap = kcalloc(1, sizeof(vm_region_t));
+    if (!(kprocvm_code && kprocvm_heap)) {
+        panic(panic_msg);
+    }
 
-    mtx_init(&(kprocvm_code.lock), MTX_DEF | MTX_SPIN);
-    mtx_init(&(kprocvm_stack.lock), MTX_DEF | MTX_SPIN);
-    mtx_init(&(kprocvm_heap.lock), MTX_DEF | MTX_SPIN);
+    kprocvm_code->mmu = mmu_region_kernel;
+    kprocvm_heap->mmu = mmu_region_kdata;
 
-    (*_kernel_proc_info.mm.regions)[MM_CODE_REGION] = &kprocvm_code;
-    (*_kernel_proc_info.mm.regions)[MM_STACK_REGION] = &kprocvm_stack;
-    (*_kernel_proc_info.mm.regions)[MM_HEAP_REGION] = &kprocvm_heap;
+    mtx_init(&(kprocvm_code->lock), MTX_DEF | MTX_SPIN);
+    mtx_init(&(kprocvm_heap->lock), MTX_DEF | MTX_SPIN);
+
+    (*kernel_proc->mm.regions)[MM_CODE_REGION] = kprocvm_code;
+    (*kernel_proc->mm.regions)[MM_STACK_REGION] = 0;
+    (*kernel_proc->mm.regions)[MM_HEAP_REGION] = kprocvm_heap;
+
+    /* File descriptors */
+    kernel_proc->files = kmalloc(sizeof(files_t) + 3 * sizeof(file_t *));
+    if (!kernel_proc->files) {
+        panic(panic_msg);
+    }
+    kernel_proc->files->count = 3;
+
+    /* TODO Do this correctly */
+    kernel_proc->files->fd[2] = kcalloc(1, sizeof(file_t)); /* stderr */
+    kernel_proc->files->fd[2]->vnode = &kerror_vnode;
 }
 
 /**
@@ -200,20 +215,19 @@ pid_t proc_fork(pid_t pid)
      * http://pubs.opengroup.org/onlinepubs/9699919799/functions/fork.html
      */
 
-    proc_info_t * old_proc;
-    proc_info_t * new_proc;
+    proc_info_t * const old_proc = proc_get_struct(pid);
+    proc_info_t * const new_proc = kmalloc(sizeof(proc_info_t));
     pid_t retval = -EAGAIN;
 
     realloc__procarr();
 
-    old_proc = proc_get_struct(pid);
+    /* Check that the old PID was valid. */
     if (!old_proc) {
         retval = -EINVAL;
         goto out;
     }
 
-    /* Allocate a new PCB. */
-    new_proc = kmalloc(sizeof(proc_info_t));
+    /* Check that a new PCB was allocated. */
     if (!new_proc) {
         retval = -ENOMEM;
         goto out;
@@ -260,6 +274,7 @@ pid_t proc_fork(pid_t pid)
                 goto free_vpt_rb;
             }
 
+            new_vpt->linkcount = 1;
             new_vpt->pt.vaddr = old_vpt->pt.vaddr;
             new_vpt->pt.master_pt_addr = new_proc->mm.mptable.pt_addr;
             new_vpt->pt.type = MMU_PTT_COARSE;
@@ -270,6 +285,8 @@ pid_t proc_fork(pid_t pid)
                 retval = -ENOMEM;
                 goto free_vpt_rb;
             }
+
+            mmu_ptcpy(&(new_vpt->pt), &(old_vpt->pt));
 
             /* Insert vpt (L2 page table) to the new new process. */
             RB_INSERT(ptlist, &(new_proc->mm.ptlist_head), new_vpt);
@@ -286,15 +303,16 @@ pid_t proc_fork(pid_t pid)
     if (!vm_reg_tmp) {
         panic("Old proc code region can't be null");
     }
-    /* TODO Following ifs can be optimized if region would be properly
-     * created for proc 0. */
-    if (old_proc->pid != 0 && vm_reg_tmp->vm_ops)
+    if (vm_reg_tmp->vm_ops)
         vm_reg_tmp->vm_ops->rref(vm_reg_tmp);
     (*new_proc->mm.regions)[MM_CODE_REGION] = vm_reg_tmp;
 
-    /* Clone stack. */
+    /* Clone stack region. */
     vm_reg_tmp = (*old_proc->mm.regions)[MM_STACK_REGION];
-    if (old_proc->pid != 0 && vm_reg_tmp->vm_ops) { /* Only if vmp_ops are defined. */
+    if (vm_reg_tmp && vm_reg_tmp->vm_ops) { /* Only if vmp_ops are defined. */
+#if configDEBUG != 0
+        KERROR(KERROR_DEBUG, "Cloning stack");
+#endif
         if (!vm_reg_tmp->vm_ops->rclone)
             panic("No clone operation");
         vm_reg_tmp = vm_reg_tmp->vm_ops->rclone(vm_reg_tmp);
@@ -302,7 +320,10 @@ pid_t proc_fork(pid_t pid)
             retval = -ENOMEM;
             goto free_regions;
         }
-    } else { /* Try to clone the stack manually. */
+    } else if (vm_reg_tmp) { /* Try to clone the stack manually. */
+#if configDEBUG != 0
+        KERROR(KERROR_DEBUG, "Cloning stack manually");
+#endif
         vm_region_t * old_region = vm_reg_tmp;
         size_t rsize = MMU_SIZEOF_REGION(&(vm_reg_tmp->mmu));
 
@@ -319,18 +340,24 @@ pid_t proc_fork(pid_t pid)
         /* paddr already set */
         vm_reg_tmp->mmu.pt = old_region->mmu.pt;
         vm_updateusr_ap(vm_reg_tmp);
+    } else { /* else: NO STACK */
+#if configDEBUG != 0
+        KERROR(KERROR_DEBUG, "No stack created");
+#endif
     }
 
-    if ((vpt = ptlist_get_pt(
-            &(new_proc->mm.ptlist_head),
-            &(new_proc->mm.mptable),
-            vm_reg_tmp->mmu.vaddr)) == 0) {
-        retval = -ENOMEM;
-        goto free_regions;
-    }
-    (*new_proc->mm.regions)[MM_STACK_REGION] = vm_reg_tmp;
+    if (vm_reg_tmp) {
+        if ((vpt = ptlist_get_pt(
+                &(new_proc->mm.ptlist_head),
+                &(new_proc->mm.mptable),
+                vm_reg_tmp->mmu.vaddr)) == 0) {
+            retval = -ENOMEM;
+            goto free_regions;
+        }
+        (*new_proc->mm.regions)[MM_STACK_REGION] = vm_reg_tmp;
 
-    vm_map_region((*new_proc->mm.regions)[MM_STACK_REGION], vpt);
+        vm_map_region((*new_proc->mm.regions)[MM_STACK_REGION], vpt);
+    }
 
     /* Copy other region pointers.
      * As an iteresting sidenote, what we are doing here and earlier when L1
@@ -345,7 +372,7 @@ pid_t proc_fork(pid_t pid)
      * it directly that way because shared regions can't properly point to more
      * than one page table struct.
      */
-    for (int i = MM_HEAP_REGION; i < new_proc->mm.nr_regions; i++) {
+    for (int i = MM_HEAP_REGION; i < old_proc->mm.nr_regions; i++) {
         vm_reg_tmp = (*old_proc->mm.regions)[i];
         if (vm_reg_tmp->vm_ops && vm_reg_tmp->vm_ops->rref)
             vm_reg_tmp->vm_ops->rref(vm_reg_tmp);
@@ -378,6 +405,7 @@ pid_t proc_fork(pid_t pid)
         new_proc->pid = get_random_pid();
     } else { /* Proc is init */
         new_proc->pid = 1;
+        retval = 1;
     }
     PROCARR_UNLOCK();
 
@@ -387,8 +415,11 @@ pid_t proc_fork(pid_t pid)
      * We left main_thread null if calling process has no main thread.
      */
     if (old_proc->main_thread != 0) {
-        pthread_t new_tid = sched_thread_fork(
-            (void *)((*new_proc->mm.regions)[MM_STACK_REGION]->mmu.paddr));
+        pthread_t new_tid;
+        void * stack;
+
+        stack = (void *)((*new_proc->mm.regions)[MM_STACK_REGION]->mmu.paddr);
+        new_tid = sched_thread_fork(stack);
         if (new_tid < 0) {
             retval = -EAGAIN; /* TODO ?? */
             goto free_regions;
@@ -398,11 +429,13 @@ pid_t proc_fork(pid_t pid)
             retval = 0;
             goto out;
         }
-        panic("FRE");
     }
 
     /* Update inheritance attributes */
     set_proc_inher(old_proc, new_proc);
+
+    /* TODO state */
+    new_proc->state = 1;
 
     /* Insert new process to _procarr */
     (*_procarr)[new_proc->pid] = new_proc;
@@ -506,9 +539,10 @@ proc_info_t * proc_get_struct(pid_t pid)
     if (pid > _cur_maxproc || (*_procarr)[pid]->state == 0) {
 #if configDEBUG != 0
         char buf[80];
+
         ksprintf(buf, sizeof(buf),
-                "Invalid PID : %u, %u, %i, %i",
-                pid, current_process_id, (*_procarr)[pid], _cur_maxproc);
+                "Invalid PID : %u, currpid : %u, maxproc : %i",
+                pid, current_process_id, _cur_maxproc);
         KERROR(KERROR_DEBUG, buf);
 #endif
         return 0;

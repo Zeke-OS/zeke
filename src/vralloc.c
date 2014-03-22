@@ -202,10 +202,6 @@ retry_vra:
         goto retry_vra;
     }
 
-    char buf[80];
-    ksprintf(buf, sizeof(buf), "%p, %x, %u", retval, retval->mmu.paddr, retval->mmu.num_pages);
-    KERROR(KERROR_DEBUG, buf);
-
     vralloc_used += size; /* Update stats */
     last_vreg = vreg;
     return retval;

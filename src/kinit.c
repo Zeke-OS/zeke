@@ -37,6 +37,7 @@
 #include <proc.h>
 #include <libkern.h>
 #include <kstring.h>
+#include <vralloc.h>
 #include <kinit.h>
 
 extern void (*__hw_preinit_array_start[]) (void) __attribute__((weak));
@@ -50,9 +51,6 @@ extern void (*__init_array_end []) (void) __attribute__((weak));
 
 extern void (*__fini_array_start []) (void) __attribute__((weak));
 extern void (*__fini_array_end []) (void) __attribute__((weak));
-
-/* Stack for init */
-static char main_stack[configUSRINIT_SSIZE];
 
 static void exec_array(void (*a []) (void), int n);
 void kinit(void) __attribute__((constructor));
@@ -94,11 +92,20 @@ void kinit(void)
     SUBSYS_DEP(sched_init);
     SUBSYS_DEP(proc_init);
 
+    /* Stack for init */
+    vm_region_t * init_vmstack = vralloc(configUSRINIT_SSIZE);
+    if (!init_vmstack)
+        panic("Can't allocate stack for init");
+    init_vmstack->usr_rw = VM_PROT_READ | VM_PROT_WRITE;
+    init_vmstack->mmu.vaddr = init_vmstack->mmu.paddr;
+    init_vmstack->mmu.ap = MMU_AP_RWRW;
+    init_vmstack->mmu.control = MMU_CTRL_XN;
+
     /* Create app_main thread */
     pthread_attr_t init_attr = {
         .tpriority  = configUSRINIT_PRI,
-        .stackAddr  = main_stack,
-        .stackSize  = sizeof(main_stack)
+        .stackAddr  = (void *)(init_vmstack->mmu.vaddr),
+        .stackSize  = configUSRINIT_SSIZE
     };
     ds_pthread_create_t init_ds = {
         .thread     = 0,
@@ -115,7 +122,7 @@ void kinit(void)
 
     tid = sched_threadCreate(&init_ds, 0);
     if (tid <= 0) {
-        ksprintf(buf, sizeof(buf), "Can't create init. %i", tid);
+        ksprintf(buf, sizeof(buf), "Can't create a thread for init. %i", tid);
         panic(buf);
     }
     pid = proc_fork(0);
@@ -125,9 +132,17 @@ void kinit(void)
     }
 
     init_thread = sched_get_pThreadInfo(tid);
+    if (!init_thread) {
+        panic("Can't get init thread descriptor!");
+    }
     init_thread->pid_owner = pid;
     init_proc = proc_get_struct(pid);
+    if (!init_proc) {
+        panic("Failed to get proc struct");
+    }
 
+    init_vmstack->mmu.pt = &(init_proc->mm.mptable);
+    (*init_proc->mm.regions)[MM_CODE_REGION] = init_vmstack;
     init_proc->main_thread = init_thread;
 
     ksprintf(buf, sizeof(buf), "Init created with pid: %u & tid: %u", pid, tid);
