@@ -171,7 +171,7 @@ int bitmap_block_align_alloc(size_t * start, size_t len,
         retval = _bitmap_block_search(begin, start, len, bitmap, size);
         if (retval != 0)
             goto out;
-        begin = *start + (10 - (*start % balign));
+        begin = *start + (balign - (*start % balign));
     } while (*start % balign);
 
     bitmap_block_update(bitmap, 1, *start, len);
