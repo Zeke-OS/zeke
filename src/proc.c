@@ -161,6 +161,8 @@ static void init_kernel_proc(void)
     kernel_proc->files->count = 3;
 
     /* TODO Do this correctly */
+    kernel_proc->files->fd[0] = 0;
+    kernel_proc->files->fd[1] = 0;
     kernel_proc->files->fd[2] = kcalloc(1, sizeof(file_t)); /* stderr */
     kernel_proc->files->fd[2]->vnode = &kerror_vnode;
 }
@@ -404,6 +406,19 @@ pid_t proc_fork(pid_t pid)
         vm_map_region((*new_proc->mm.regions)[i], vpt);
     }
 
+    /* Copy file descriptors */
+    new_proc->files = kmalloc(sizeof(files_t) + old_proc->files->count * sizeof(file_t *));
+    if (!new_proc->files) {
+        retval = -ENOMEM;
+        goto free_regions;
+    }
+    new_proc->files->count = old_proc->files->count;
+    for (int i = 0; i < old_proc->files->count; i++) {
+        new_proc->files->fd[i] = old_proc->files->fd[i];
+        if (new_proc->files->fd[i]) /* TODO Lock? */
+            new_proc->files->fd[i]->refcount++;
+    }
+
     PROCARR_LOCK();
     if (nprocs != 1) {
         new_proc->pid = get_random_pid();
@@ -426,7 +441,7 @@ pid_t proc_fork(pid_t pid)
         new_tid = sched_thread_fork(stack);
         if (new_tid < 0) {
             retval = -EAGAIN; /* TODO ?? */
-            goto free_regions;
+            goto free_files;
         } else if (new_tid > 0) {
             new_proc->main_thread = sched_get_pThreadInfo(new_tid);
         } else { /* 0, new thread returning */
@@ -451,6 +466,8 @@ pid_t proc_fork(pid_t pid)
         sched_thread_set_exec(new_proc->main_thread->id);
     }
     goto out; /* Fork created. */
+free_files:
+    /* TODO */
 free_regions:
     for (int i = 0; i < new_proc->mm.nr_regions; i++) {
         if ((*new_proc->mm.regions)[i]->vm_ops->rfree)

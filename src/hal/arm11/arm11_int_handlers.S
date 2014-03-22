@@ -149,14 +149,6 @@ interrupt_sys:
 
 /* Load/Restore context */
     popcontext
-
-/*  For debuging
-    stmdb   sp!, {r0}
-    ldr     r0, =main
-    cmp     lr, r0
-tag: bne    tag
-    ldmia   sp!, {r0}
-*/
     subs    pc, lr, #4      /* Return back (SWI return address is PC+4) */
 
 

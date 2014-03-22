@@ -75,9 +75,9 @@ void * main(void * arg)
     };
     pthread_t thread_id;
 
-    pthread_create(&thread_id, &attr, test_thread, 0);
-
     print_message("Init v0.0.1");
+
+    pthread_create(&thread_id, &attr, test_thread, 0);
 
     len = usr_name2oid("vm.dynmem_tot", mib_tot);
     usr_name2oid("vm.dynmem_free", mib_free);
