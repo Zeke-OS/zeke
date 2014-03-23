@@ -62,7 +62,7 @@ void exec_init_array(void)
 {
     int n;
 
-    KERROR(KERROR_LOG, "ZeKe PreInit");
+    KERROR(KERROR_INFO, "ZeKe PreInit");
 
     n = __hw_preinit_array_end - __hw_preinit_array_start;
     exec_array(__hw_preinit_array_start, n);
@@ -157,9 +157,11 @@ void kinit(void)
     mmu_map_region(&(init_thread->kstack_region->mmu)); /* map tkstack */
     init_proc->main_thread = init_thread;
 
+#if configDEBUG >= KERROR_INFO
     ksprintf(buf, sizeof(buf), "Init created with pid: %u, tid: %u, stack: %x",
             pid, tid, init_vmstack->mmu.vaddr);
     KERROR(KERROR_DEBUG, buf);
+#endif
     SUBSYS_INITFINI("Load init");
 }
 
@@ -167,7 +169,7 @@ static void random_init(void) __attribute__((constructor));
 static void random_init(void)
 {
     /* TODO Add some randomness ;) */
-    KERROR(KERROR_LOG, "Seed random number generator");
+    KERROR(KERROR_INFO, "Seed random number generator");
     ksrandom(1);
 }
 

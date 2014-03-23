@@ -47,7 +47,7 @@
     } while (0)
 
 #define SUBSYS_INITFINI(msg)        \
-    KERROR(KERROR_LOG, msg)
+    KERROR(KERROR_INFO, msg)
 
 /**
  * Subsystem initializer dependency.

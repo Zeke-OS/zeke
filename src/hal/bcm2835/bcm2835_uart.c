@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   UART source code for BCM2835.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -89,7 +89,7 @@ void bcm2835_register(void)
 
     uart_register_port(&port);
 
-    KERROR(KERROR_LOG, "BCM2835 UART Registered");
+    KERROR(KERROR_INFO, "BCM2835 UART Registered");
 }
 HW_PREINIT_ENTRY(bcm2835_register);
 

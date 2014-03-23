@@ -144,7 +144,7 @@ static mblock_t * extend(mblock_t * last, size_t s)
     b = malloc(MB_TO_BYTES(s_mbytes));
 #endif
     if (b == 0) {
-#if configDEBUG != 0
+#if configDEBUG >= KERROR_WARN
         KERROR(KERROR_DEBUG, "We didn't get new region from dynmem.");
 #endif
         goto out;

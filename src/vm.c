@@ -82,7 +82,7 @@ struct vm_pt * ptlist_get_pt(struct ptlist * ptlist_head, mmu_pagetable_t * mpt,
         .pt.vaddr = MMU_CPT_VADDR(vaddr)
     }; /* Used as a search filter */
 
-#if configDEBUG != 0
+#if configDEBUG >= KERROR_ERR
     if (!mpt)
         panic("mpt can't be null");
 #endif
@@ -281,7 +281,7 @@ int vm_map_region(vm_region_t * vm_region, struct vm_pt * pt)
 {
     mmu_region_t mmu_region;
 
-#if configDEBUG != 0
+#if configDEBUG >= KERROR_ERR
     if (vm_region == 0)
         panic("vm_region can't be null");
 #endif

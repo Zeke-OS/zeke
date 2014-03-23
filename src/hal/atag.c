@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   ATAG scanner.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -74,7 +74,7 @@ void atag_scan(uint32_t fw, uint32_t mtype, uint32_t * atag_addr)
                 ksprintf(msg, sizeof(msg),
                         "[ATAG_CORE] flags: %x, page size: %u, rootdev: %u\n",
                         atags[2], atags[3], atags[4]);
-                KERROR(KERROR_LOG, msg);
+                KERROR(KERROR_INFO, msg);
 
                 atags += atags[0]-1;
                 break;
@@ -82,7 +82,7 @@ void atag_scan(uint32_t fw, uint32_t mtype, uint32_t * atag_addr)
                 ksprintf(msg, sizeof(msg),
                         "[ATAG_MEM] size: %x, start: %x\n",
                         atags[2], atags[3]);
-                KERROR(KERROR_LOG, msg);
+                KERROR(KERROR_INFO, msg);
 
                 atags += atags[0]-1;
 
@@ -112,7 +112,7 @@ void atag_scan(uint32_t fw, uint32_t mtype, uint32_t * atag_addr)
 
                 ksprintf(msg, sizeof(msg),
                         "[ATAG_CMDLINE] : %s\n", (char *)atags);
-                KERROR(KERROR_LOG, msg);
+                KERROR(KERROR_INFO, msg);
 
                 atags += atags[0]-1;
                 break;

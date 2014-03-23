@@ -95,7 +95,7 @@ void interrupt_clear_timer(void)
 
 void bcm_interrupt_postinit(void)
 {
-    KERROR(KERROR_LOG, "Starting ARM timer");
+    KERROR(KERROR_INFO, "Starting ARM timer");
 
     mmio_start();
 

@@ -216,7 +216,7 @@ SYSCTL_UINT(_vm, OID_AUTO, ptm_mem_tot, CTLFLAG_RD,
 void ptmapper_init(void)
 {
     SUBSYS_INIT();
-    KERROR(KERROR_LOG, "ptmapper init started");
+    KERROR(KERROR_INFO, "ptmapper init started");
 
     /* Allocate memory for mmu_pagetable_master */
     if (ptmapper_alloc(&mmu_pagetable_master)) {
@@ -244,7 +244,7 @@ void ptmapper_init(void)
 
     /* Fill page tables with translations & attributes */
     {
-#if configDEBUG != 0
+#if configDEBUG >= KERROR_DEBUG
         char buf[80];
         const char str_type[2][9] = {"sections", "pages"};
 #define PRINTMAPREG(region) \
@@ -272,9 +272,13 @@ void ptmapper_init(void)
 
     /* Activate page tables */
     mmu_attach_pagetable(&mmu_pagetable_master); /* Load L1 TTB */
+#if configDEBUG >= KERROR_DEBUG
     KERROR(KERROR_DEBUG, "Attached TTB mmu_pagetable_master");
-    mmu_attach_pagetable(&mmu_pagetable_system); /* Add L2 pte into L1 master pt */
+#endif
+    mmu_attach_pagetable(&mmu_pagetable_system); /* Add L2 pte into L1 mpt */
+#if configDEBUG >= KERROR_DEBUG
     KERROR(KERROR_DEBUG, "Attached mmu_pagetable_system");
+#endif
 
     SUBSYS_INITFINI("ptmapper init OK");
 }
@@ -321,7 +325,7 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
 #endif
 
         addr = PTM_BLOCK2ADDR(block);
-#if configDEBUG != 0
+#if configDEBUG >= KERROR_DEBUG
         ksprintf(buf, sizeof(buf),
                 "Page table allocated @ %x of size %u bytes", addr, bsize);
         KERROR(KERROR_DEBUG, buf);

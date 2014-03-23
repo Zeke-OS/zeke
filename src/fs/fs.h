@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Virtual file system headers.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
@@ -111,6 +111,11 @@ typedef struct files_struct {
                               *   [2] = stderr
                               */
 } files_t;
+/**
+ * Size of files struct in bytes.
+ * @param n is a file count.
+ */
+#define SIZEOF_FILES(n) (sizeof(files_t) + (n) * sizeof(file_t *))
 
 /**
  * File system.

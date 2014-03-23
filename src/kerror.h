@@ -79,7 +79,7 @@ const char _kernel_panic_msg[19];
 #define KERROR_CRIT     '0' /*!< Critical error system is halted. */
 #define KERROR_ERR      '1' /*!< Fatal error. */
 #define KERROR_WARN     '2' /*!< Unexpected condition. */
-#define KERROR_LOG      '3' /*!< Normal informational message. */
+#define KERROR_INFO     '3' /*!< Normal informational message. */
 #define KERROR_DEBUG    '4' /*!< Debug message. */
 
 #endif /* KERROR_H */

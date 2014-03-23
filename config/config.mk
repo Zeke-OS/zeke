@@ -49,7 +49,15 @@ configKERROR_LAST = 0# Store last n log messages in buffer.
 configKERROR_TTYS = 1# Print kernel messages to serial tty.
 
 # Kernel logging options
-configDEBUG = 1#Additional debug messages and asserts.
+# Additional log messages and asserts.
+# These are one to one with KERROR message levels.
+# 4 - All debug messages and asserts.
+# 3 . Additional info messages.
+# 2 - Additional warnings.
+# 1 - Additional error messages and asserts for serious errors that should not
+#     occur in normal operation.
+# 0 - Normal build
+configDEBUG = '4'#Additional debug messages and asserts.
 
 # Processes
 configMAXPROC = 5# maxproc, default maximum number of processes.

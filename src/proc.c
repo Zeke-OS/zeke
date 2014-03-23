@@ -154,7 +154,7 @@ static void init_kernel_proc(void)
     (*kernel_proc->mm.regions)[MM_HEAP_REGION] = kprocvm_heap;
 
     /* File descriptors */
-    kernel_proc->files = kmalloc(sizeof(files_t) + 3 * sizeof(file_t *));
+    kernel_proc->files = kmalloc(SIZEOF_FILES(3));
     if (!kernel_proc->files) {
         panic(panic_msg);
     }
@@ -314,7 +314,7 @@ pid_t proc_fork(pid_t pid)
     /* Clone stack region. */
     vm_reg_tmp = (*old_proc->mm.regions)[MM_STACK_REGION];
     if (vm_reg_tmp && vm_reg_tmp->vm_ops) { /* Only if vmp_ops are defined. */
-#if configDEBUG != 0
+#if configDEBUG >= KERROR_DEBUG
         KERROR(KERROR_DEBUG, "Cloning stack");
 #endif
         if (!vm_reg_tmp->vm_ops->rclone)
@@ -325,7 +325,7 @@ pid_t proc_fork(pid_t pid)
             goto free_regions;
         }
     } else if (vm_reg_tmp) { /* Try to clone the stack manually. */
-#if configDEBUG != 0
+#if configDEBUG >= KERROR_DEBUG
         KERROR(KERROR_DEBUG, "Cloning stack manually");
 #endif
         vm_region_t * old_region = vm_reg_tmp;
@@ -345,7 +345,7 @@ pid_t proc_fork(pid_t pid)
         vm_reg_tmp->mmu.pt = old_region->mmu.pt;
         vm_updateusr_ap(vm_reg_tmp);
     } else { /* else: NO STACK */
-#if configDEBUG != 0
+#if configDEBUG >= KERROR_DEBUG
         KERROR(KERROR_DEBUG, "No stack created");
 #endif
     }
@@ -407,7 +407,7 @@ pid_t proc_fork(pid_t pid)
     }
 
     /* Copy file descriptors */
-    new_proc->files = kmalloc(sizeof(files_t) + old_proc->files->count * sizeof(file_t *));
+    new_proc->files = kmalloc(SIZEOF_FILES(old_proc->files->count));
     if (!new_proc->files) {
         retval = -ENOMEM;
         goto free_regions;

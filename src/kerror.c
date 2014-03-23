@@ -55,6 +55,6 @@ vnode_t kerror_vnode = {
 static size_t kerror_fdwrite(vnode_t * file, const off_t * offset,
         const void * buf, size_t count)
 {
-    KERROR(KERROR_LOG, buf);
+    KERROR(KERROR_INFO, buf);
     return count;
 }
