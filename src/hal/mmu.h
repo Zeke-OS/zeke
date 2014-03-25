@@ -192,9 +192,9 @@ void * mmu_translate_vaddr(const mmu_pagetable_t * pt, intptr_t vaddr);
 /* Generic for all, implemented in mmu.c */
 void mmu_pf_event(void);
 void mmu_calc_pfcps(void);
-size_t mmu_sizeof_pt(mmu_pagetable_t * region);
-size_t mmu_sizeof_region(mmu_region_t * region);
-int mmu_ptcpy(mmu_pagetable_t * dest, mmu_pagetable_t * src);
+size_t mmu_sizeof_pt(const mmu_pagetable_t * region);
+size_t mmu_sizeof_region(const mmu_region_t * region);
+int mmu_ptcpy(mmu_pagetable_t * dest, const mmu_pagetable_t * src);
 #endif /* MMU_H */
 
 /**

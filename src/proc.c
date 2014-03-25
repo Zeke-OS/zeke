@@ -77,8 +77,12 @@ SYSCTL_INT(_kern, KERN_MAXPROC, nprocs, CTLFLAG_RD,
 
 static void init_kernel_proc(void);
 static void realloc__procarr(void);
+
+/* Functions used by fork() */
+static int clone_L2_pt(proc_info_t * const new_proc, proc_info_t * const old_proc);
 static pid_t get_random_pid(void);
 static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc);
+
 pid_t proc_update(void); /* Used in HAL, so not static */
 
 /**
@@ -262,40 +266,8 @@ pid_t proc_fork(pid_t pid)
     }
 
     /* Clone L2 page tables. */
-    RB_INIT(&(new_proc->mm.ptlist_head));
-    if (!RB_EMPTY(&(old_proc->mm.ptlist_head))) {
-        struct vm_pt * old_vpt;
-        struct vm_pt * new_vpt;
-
-        RB_FOREACH(old_vpt, ptlist, &(old_proc->mm.ptlist_head)) {
-            if (old_vpt->linkcount <= 0)
-                continue; /* Skip unused page tables; ie. page tables that are
-                           * not referenced by any region. */
-
-            new_vpt = kmalloc(sizeof(struct vm_pt));
-            if (!new_vpt) {
-                retval = -ENOMEM;
-                goto free_vpt_rb;
-            }
-
-            new_vpt->linkcount = 1;
-            new_vpt->pt.vaddr = old_vpt->pt.vaddr;
-            new_vpt->pt.master_pt_addr = new_proc->mm.mptable.pt_addr;
-            new_vpt->pt.type = MMU_PTT_COARSE;
-            new_vpt->pt.dom = old_vpt->pt.dom;
-
-            /* Allocate the actual page table, this will also set pt_addr. */
-            if(ptmapper_alloc(&(new_vpt->pt))) {
-                retval = -ENOMEM;
-                goto free_vpt_rb;
-            }
-
-            mmu_ptcpy(&(new_vpt->pt), &(old_vpt->pt));
-
-            /* Insert vpt (L2 page table) to the new new process. */
-            RB_INSERT(ptlist, &(new_proc->mm.ptlist_head), new_vpt);
-            mmu_attach_pagetable(&(new_vpt->pt));
-        }
+    if (clone_L2_pt(new_proc, old_proc) < 0) {
+        goto free_vpt_rb;
     }
 
     /* Variables for cloning and referencing regions. */
@@ -482,6 +454,62 @@ free_pptable_arr:
     ptmapper_free(&(new_proc->mm.mptable));
 free_new_proc:
     kfree(new_proc);
+out:
+    return retval;
+}
+
+/**
+ * Clone L2 page tables of a process.
+ * @param new_proc is the target process.
+ * @param old_proc is a the source process.
+ * @return  Returns positive value indicating number of copied page tables;
+ *          Zero idicating that no page tables were copied;
+ *          Negative value idicating that copying page tables failed.
+ */
+static int clone_L2_pt(proc_info_t * const new_proc, proc_info_t * const old_proc)
+{
+    struct vm_pt * old_vpt;
+    struct vm_pt * new_vpt;
+    int retval = 0;
+
+    /* Clone L2 page tables. */
+    RB_INIT(&(new_proc->mm.ptlist_head));
+    if (RB_EMPTY(&(old_proc->mm.ptlist_head))) {
+        goto out;
+    }
+    RB_FOREACH(old_vpt, ptlist, &(old_proc->mm.ptlist_head)) {
+        if (old_vpt->linkcount <= 0) {
+            continue; /* Skip unused page tables; ie. page tables that are
+                       * not referenced by any region. */
+        }
+
+        new_vpt = kmalloc(sizeof(struct vm_pt));
+        if (!new_vpt) {
+            retval = -ENOMEM;
+            goto out;
+        }
+
+        new_vpt->linkcount = 1;
+        new_vpt->pt.vaddr = old_vpt->pt.vaddr;
+        new_vpt->pt.master_pt_addr = new_proc->mm.mptable.pt_addr;
+        new_vpt->pt.type = MMU_PTT_COARSE;
+        new_vpt->pt.dom = old_vpt->pt.dom;
+
+        /* Allocate the actual page table, this will also set pt_addr. */
+        if(ptmapper_alloc(&(new_vpt->pt))) {
+            retval = -ENOMEM;
+            goto out;
+        }
+
+        mmu_ptcpy(&(new_vpt->pt), &(old_vpt->pt));
+
+        /* Insert vpt (L2 page table) to the new new process. */
+        RB_INSERT(ptlist, &(new_proc->mm.ptlist_head), new_vpt);
+        mmu_attach_pagetable(&(new_vpt->pt));
+
+        retval++; /* Increment vpt copied count. */
+    }
+
 out:
     return retval;
 }

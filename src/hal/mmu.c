@@ -101,7 +101,7 @@ void mmu_init(void)
  * @param pt is the page table.
  * @return Return the size of the page table or zero in case of error.
  */
-size_t mmu_sizeof_pt(mmu_pagetable_t * pt)
+size_t mmu_sizeof_pt(const mmu_pagetable_t * pt)
 {
     size_t size;
 
@@ -124,7 +124,7 @@ size_t mmu_sizeof_pt(mmu_pagetable_t * pt)
  * @param region is a pointer to the region control block.
  * @return Returns the size of the region in bytes.
  */
-size_t mmu_sizeof_region(mmu_region_t * region)
+size_t mmu_sizeof_region(const mmu_region_t * region)
 {
     if (!region->pt)
         return 0;
@@ -145,7 +145,7 @@ size_t mmu_sizeof_region(mmu_region_t * region)
  * @param src   is the source page table descriptor.
  * @return      Zero if cloning succeeded; Otherwise value other than zero.
  */
-int mmu_ptcpy(mmu_pagetable_t * dest, mmu_pagetable_t * src)
+int mmu_ptcpy(mmu_pagetable_t * dest, const mmu_pagetable_t * src)
 {
     const size_t len_src = mmu_sizeof_pt(src);
     const size_t len_dest = mmu_sizeof_pt(dest);
