@@ -67,6 +67,7 @@ static void mmu_unmap_coarse_region(const mmu_region_t * region);
 
 /* Data abort handlers */
 static int dab_fatal(uint32_t fsr, uint32_t far, threadInfo_t * thread);
+static char * get_dab_strerror(uint32_t fsr);
 
 static const dab_handler data_aborts[] = {
     dab_fatal,  /* no function, reset value */
@@ -604,11 +605,59 @@ out:
 
 static int dab_fatal(uint32_t fsr, uint32_t far, threadInfo_t * thread)
 {
-    char buf[80];
+    char buf[120];
 
     ksprintf(buf, sizeof(buf), "Can't handle data abort\n"
-            "fsr : %x\nfar : %x\nThread id : %x", fsr, far, thread->id);
+            "fsr : %x (%s)\nfar : %x\nCurr tid : %x",
+            fsr, get_dab_strerror(fsr), far, thread->id);
     panic(buf);
+}
+
+static const char * dab_fsr_strerr[] = {
+    /* String                       FSR[10,3:0] */
+    "TLB Miss",                     /* 0x000 */
+    "Alignment",                    /* 0x001 */
+    "Instruction debug event",      /* 0x002 */
+    "Section AP fault",             /* 0x003 */
+    "Icache maintenance op fault",  /* 0x004 */
+    "Section translation",          /* 0x005 */
+    "Page AP fault",                /* 0x006 */
+    "Page translation",             /* 0x007 */
+    "Precise external abort",       /* 0x008 */
+    "Domain section fault",         /* 0x009 */
+    "",                             /* 0x00A */
+    "Domain page fault",            /* 0x00B */
+    "Extrenal first-level abort",   /* 0x00C */
+    "Section permission fault",     /* 0x00D */
+    "External second-evel abort",   /* 0x00E */
+    "Page permission fault",        /* 0x00F */
+    "",                             /* 0x010 */
+    "",                             /* 0x011 */
+    "",                             /* 0x012 */
+    "",                             /* 0x013 */
+    "",                             /* 0x014 */
+    "",                             /* 0x015 */
+    "Imprecise external abort",     /* 0x406 */
+    "",                             /* 0x017 */
+    "Parity error exception, ns",   /* 0x408 */
+    "",                             /* 0x019 */
+    "",                             /* 0x01A */
+    "",                             /* 0x01B */
+    "",                             /* 0x01C */
+    "",                             /* 0x01D */
+    "",                             /* 0x01E */
+    ""                              /* 0x01F */
+};
+
+
+static char * get_dab_strerror(uint32_t fsr)
+{
+    uint32_t tmp;
+
+    tmp = fsr & 0xf;
+    tmp |= (fsr & 0x400) >> 6;
+
+    return dab_fsr_strerr[tmp];
 }
 
 /**
