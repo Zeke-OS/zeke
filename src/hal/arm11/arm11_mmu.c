@@ -575,7 +575,7 @@ uint32_t mmu_data_abort_handler(uint32_t sp, uint32_t spsr, uint32_t retval)
     //if (mode_old == 0x1f || mode_old == 0x10) {
     if (mode_old == 0x10) {
         s_entry = get_interrupt_state();
-        set_interrupt_state(s_old);
+        //set_interrupt_state(s_old); TODO
     }
 
     if (data_aborts[fsr & FSR_MASK] != 0) {
@@ -606,7 +606,8 @@ static int dab_fatal(uint32_t fsr, uint32_t far, threadInfo_t * thread)
 {
     char buf[80];
 
-    ksprintf(buf, sizeof(buf), "Can't handle %x data abort", fsr);
+    ksprintf(buf, sizeof(buf), "Can't handle data abort\n"
+            "fsr : %x\nfar : %x\nThread id : %x", fsr, far, thread->id);
     panic(buf);
 }
 

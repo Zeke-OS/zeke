@@ -170,16 +170,16 @@ interrupt_dabt:
     push    {r0}
     and     r0, r0, #0x1f   /* Get only the mode part. */
     tst     r0, #0x10       /* User mode */
-#if 0 /* TODO How to resolve if we came from a syscall or sys thread?
+#if 0 /* TODO How to resolve if we came from a syscall or sys thread? */
     tstne   r0, #0x1f       /* System mode */
 #endif
-    movne   r0, #1          /* Skip restoring of thread context */
+    movne   r0, #1          /* 1 = Skip restoring of thread context */
     bne     1f              /* DAB came possibly from an interrupt handler. */
 
     /* Store thread context */
     mov     r1, sp
     mov     r2, lr
-    bl      sched_get_current_kstack /* Hope it doesn't use stack... */
+    ldr     r0, =0x00000fff /* vaddr of tkstack. */
     add     sp, sp, #16     /* Reset stack pointer */
     cps     #0x1f           /* Change to system mode. */
     mov     r3, sp          /* Preserve usr sp */
@@ -200,25 +200,25 @@ interrupt_dabt:
     eor     r0, r0, sp
     eor     r0, r0, sp
     mov     r1, r8          /* spsr to r1 */
-    mov     r2, #0          /* Dont skip restoring of the thread context */
+    mov     r2, #0          /* #0 = Dont skip restoring of the thread context */
     /* by now usr sp in r0 and spsr in r1 */
 
 1:  bl      mmu_data_abort_handler
-    tst     r4, #1 /* Skip? */
+    tst     r0, #1 /* Skip? */
     beq     2f
 
     /* Restore thread user context, Lets assume that we are still in sys mode */
     ldmia   sp!, {lr}
     ldmia   sp!, {r0}
-    mov     spsr, r0
+    msr     spsr, r0
     ldmia   sp!, {r0-r3}
     ldmia   sp!, {r4-r12}
-    mov     sp, sp          /* Get usr sp, state of kstack is irrelevant after
+    mov     sp, sp          /* Get usr sp. State of kstack is irrelevant after
                              * this interrupt handler returns. */
     subs    pc, lr, #0x8
-2:  pop {r0}                /* Just return as we were not in sys mode */
+2:  pop     {r0}            /* Return */
     msr     spsr, r0
-    pop {r0-r3}
+    pop     {r0-r3}
     subs    pc, lr, #0x8
 
 .end

@@ -72,9 +72,9 @@
  * Process Control Block or Process Descriptor Structure
  */
 
-#define PROC_RUNNING    0
-#define PROC_RUNNABLE   1       /* Can be woken up, ready to run */
-#define PROC_WAITING    2       /* Can't be woken up */
+#define PROC_RUNNING    1
+#define PROC_RUNNABLE   2       /* Can be woken up, ready to run */
+#define PROC_WAITING    3       /* Can't be woken up */
 #define PROC_ZOMBIE     4
 #define PROC_STOPPED    8
 
@@ -137,11 +137,17 @@ typedef struct {
     sigs_t sigs;                /*!< Signals. */
 } proc_info_t;
 
-int maxproc;
+extern int maxproc;
+extern int nprocs;
 extern pid_t current_process_id;
 extern proc_info_t * curproc;
 
 void proc_init(void) __attribute__((constructor));
+
+/* Functions that are more or less internal to proc subsys */
+void procarr_realloc(void);
+void procarr_insert(proc_info_t * new_proc);
+pid_t proc_get_random_pid(void);
 
 pid_t proc_fork(pid_t pid);
 int proc_kill(void);

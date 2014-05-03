@@ -134,7 +134,7 @@ mmu_region_t mmu_region_rpihw = {
     .num_pages      = MMU_PAGE_CNT_BY_RANGE(MMU_VADDR_RPIHW_START, \
                         MMU_VADDR_RPIHW_END, 1048576),
     .ap             = MMU_AP_RWRW, /* TODO */
-    .control        = MMU_CTRL_MEMTYPE_WT|MMU_CTRL_MEMTYPE_SDEV, /* TODO not sure about these... */
+    .control        = MMU_CTRL_MEMTYPE_WT | MMU_CTRL_MEMTYPE_SDEV, /* TODO not sure about these... */
     .paddr          = MMU_VADDR_RPIHW_START,
     .pt             = &mmu_pagetable_master
 };

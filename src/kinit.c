@@ -95,30 +95,30 @@ void kinit(void)
     /* User stack for init */
     vm_region_t * init_vmstack = vralloc(configUSRINIT_SSIZE);
     if (!init_vmstack)
-        panic("Can't allocate stack for init");
+        panic("Can't allocate a stack for init");
     init_vmstack->usr_rw = VM_PROT_READ | VM_PROT_WRITE;
     init_vmstack->mmu.vaddr = init_vmstack->mmu.paddr;
     init_vmstack->mmu.ap = MMU_AP_RWRW;
     init_vmstack->mmu.control = MMU_CTRL_XN;
 
-    /* Create app_main thread */
+    /* Create a thread for init */
     pthread_attr_t init_attr = {
         .tpriority  = configUSRINIT_PRI,
         .stackAddr  = (void *)(init_vmstack->mmu.vaddr),
         .stackSize  = configUSRINIT_SSIZE
     };
     ds_pthread_create_t init_ds = {
-        .thread     = 0,
+        .thread     = 0, /* return value */
         .start      = main,
         .def        = &init_attr,
         .argument   = 0,
         .del_thread = pthread_exit
     };
 
-    pthread_t tid; /* thread id of init main() */
-    pid_t     pid; /* pid of init */
+    pthread_t   tid; /* thread id of init main() */
+    pid_t       pid; /* pid of init */
     threadInfo_t * init_thread;
-    char buf[80];
+    char buf[80]; /* Buffer for panic messages. */
     proc_info_t * init_proc;
 
     tid = sched_threadCreate(&init_ds, 0);
@@ -126,6 +126,7 @@ void kinit(void)
         ksprintf(buf, sizeof(buf), "Can't create a thread for init. %i", tid);
         panic(buf);
     }
+
     pid = proc_fork(0);
     if (pid <= 0) {
         ksprintf(buf, sizeof(buf), "Can't fork a process for init. %i", pid);
@@ -134,7 +135,7 @@ void kinit(void)
 
     init_thread = sched_get_pThreadInfo(tid);
     if (!init_thread) {
-        panic("Can't get init thread descriptor!");
+        panic("Can't get thread descriptor of init_thread!");
     }
     init_thread->pid_owner = pid;
     init_proc = proc_get_struct(pid);
@@ -143,16 +144,20 @@ void kinit(void)
     }
 
     /* Do some tricks to map user stack for init process correctly. */
-    (*init_proc->mm.regions)[MM_STACK_REGION] = init_vmstack;
-    vm_updateusr_ap(init_vmstack);
-    struct vm_pt * vpt = ptlist_get_pt(
-            &(init_proc->mm.ptlist_head),
-            &(init_proc->mm.mptable),
-            init_vmstack->mmu.vaddr);
-    if (vpt == 0)
-        panic("Couldn't get vpt for init stack");
-    init_vmstack->mmu.pt = &(vpt->pt);
-    vm_map_region(init_vmstack, vpt);
+    {
+        struct vm_pt * vpt;
+
+        (*init_proc->mm.regions)[MM_STACK_REGION] = init_vmstack;
+        vm_updateusr_ap(init_vmstack);
+        vpt = ptlist_get_pt(
+                &(init_proc->mm.ptlist_head),
+                &(init_proc->mm.mptable),
+                init_vmstack->mmu.vaddr);
+        if (vpt == 0)
+            panic("Couldn't get vpt for init stack");
+        init_vmstack->mmu.pt = &(vpt->pt);
+        vm_map_region(init_vmstack, vpt);
+    }
 
     mmu_map_region(&(init_thread->kstack_region->mmu)); /* map tkstack */
     init_proc->main_thread = init_thread;
