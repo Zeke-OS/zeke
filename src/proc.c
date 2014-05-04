@@ -324,7 +324,7 @@ mmu_pagetable_t * proc_get_pptable(pid_t pid)
 }
 
 /**
- * Try to handler page fault caused by a process.
+ * Handle page fault caused by a process.
  * Usually this handler is executed because of cow page table.
  * @param pid  is a process id of the process that caused a page fault.
  * @param vaddr is the page faulted address.

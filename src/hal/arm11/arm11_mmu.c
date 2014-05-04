@@ -73,19 +73,19 @@ static const dab_handler data_aborts[] = {
     dab_fatal,  /* no function, reset value */
     dab_fatal,  /* Alignment fault */
     dab_fatal,  /* Instruction debug event */
-    dab_fatal,  /* Access bit fault on Section */
+    0,          /* Access bit fault on Section */
     dab_fatal,  /* no function */
     dab_fatal,  /* Translation Section Fault */
-    dab_fatal,  /* Access bit fault on Page */
+    0,          /* Access bit fault on Page */
     dab_fatal,  /* Translation Page fault */
     dab_fatal,  /* Precise external abort */
     dab_fatal,  /* Domain Section fault */
     dab_fatal,  /* no function */
     dab_fatal,  /* Domain Page fault */
     dab_fatal,  /* External abort on translation, first level */
-    dab_fatal,  /* Permission Section fault */
+    0,          /* Permission Section fault */
     dab_fatal,  /* External abort on translation, second level */
-    dab_fatal   /* Permission Page fault */
+    0           /* Permission Page fault */
 };
 
 #if configMP != 0
@@ -571,11 +571,13 @@ uint32_t mmu_data_abort_handler(uint32_t sp, uint32_t spsr, const uint32_t lr)
      * make sure that this instance is the only one handling page fault of the
      * same kind. */
 
+    /* TODO We may wan't to panic if dab came from kernel mode? */
+
     /* Handle this data abort in pre-emptible state if possible. */
     //if (mode_old == 0x1f || mode_old == 0x10) {
     if (mode_old == 0x10) {
         s_entry = get_interrupt_state();
-        //set_interrupt_state(s_old); TODO
+        set_interrupt_state(s_old);
     }
 
     if (data_aborts[fsr & FSR_MASK] != 0) {

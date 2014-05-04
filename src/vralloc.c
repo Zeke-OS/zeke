@@ -41,17 +41,22 @@
 #include <sys/sysctl.h>
 #include <vralloc.h>
 
+/**
+ * vralloc region struct.
+ * Struct describing a single dynmem alloc block of vrallocated memory.
+ */
 struct vregion {
     llist_nodedsc_t node;
-    intptr_t paddr; /*!< Physical address allocated from dynmem. */
-    size_t count; /*!< Count of reserved pages */
-    size_t size; /*!< Size of bitmap in bytes. */
+    intptr_t paddr; /*!< Physical address of the block allocated from dynmem. */
+    size_t count; /*!< Reserved pages count. */
+    size_t size; /*!< Size of allocation bitmap in bytes. */
     bitmap_t map[0]; /*!< Bitmap of reserved pages. */
 };
 
-#define VREG_SIZE(count) (sizeof(struct vregion) + E2BITMAP_SIZE(count) * sizeof(bitmap_t))
+#define VREG_SIZE(count) \
+    (sizeof(struct vregion) + E2BITMAP_SIZE(count) * sizeof(bitmap_t))
 
-static llist_t * vrlist; /*!< List of all allocations. */
+static llist_t * vrlist; /*!< List of all allocations done by vralloc. */
 static struct vregion * last_vreg; /*!< Last node that contained empty pages. */
 
 static size_t vralloc_tot;
@@ -67,6 +72,9 @@ static void vreg_free_node(struct vregion * reg);
 static size_t pagealign(size_t size, size_t bytes);
 static void vrref(struct vm_region * region);
 
+/**
+ * VRA specific operations for allocated vm regions.
+ */
 static const vm_ops_t vra_ops = {
     .rref = vrref,
     .rclone = vr_rclone,
