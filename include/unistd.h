@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Standard symbolic constants and types.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,6 +54,7 @@
 #define STDOUT_FILENO   1 /*!< File number of stdout. */
 #define STDERR_FILENO   2 /*!< File number of stderr. */
 
+pid_t fork(void);
 ssize_t pwrite(int fildes, const void *buf, size_t nbyte,
     off_t offset);
 ssize_t write(int fildes, const void * buf, size_t nbyte);

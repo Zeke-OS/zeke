@@ -58,7 +58,7 @@ static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc);
 /**
  * Create a new process.
  * @param pid   Process id.
- * @return  New PID; -1 if unable to fork.
+ * @return  New PID; 0 if returning fork; -1 if unable to fork.
  */
 pid_t proc_fork(pid_t pid)
 {
@@ -104,7 +104,7 @@ pid_t proc_fork(pid_t pid)
 
     /* Clone master page table. */
     if (mmu_ptcpy(&(new_proc->mm.mptable), &(old_proc->mm.mptable))) {
-        retval = -EINVAL;
+        retval = -EAGAIN; // Actually more like -EINVAL
         goto free_regions_arr;
     }
 

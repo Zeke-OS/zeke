@@ -67,6 +67,11 @@ unsigned sleep(unsigned seconds)
  *  @{
  */
 
+pid_t fork(void)
+{
+    return (pid_t)syscall(SYSCALL_PROC_FORK, NULL);
+}
+
 ssize_t pwrite(int fildes, const void * buf, size_t nbyte,
         off_t offset)
 {

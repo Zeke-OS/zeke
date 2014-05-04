@@ -392,8 +392,13 @@ uintptr_t proc_syscall(uint32_t type, void * p)
         return -1;
 
     case SYSCALL_PROC_FORK:
-        current_thread->errno = ENOSYS;
-        return -2;
+        {
+            pid_t pid = proc_fork(current_process_id);
+            if (pid < 0)
+                return -1;
+            else
+                return pid;
+        }
 
     case SYSCALL_PROC_WAIT:
         current_thread->errno = ENOSYS;
