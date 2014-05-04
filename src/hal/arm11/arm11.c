@@ -193,7 +193,7 @@ void cpu_set_cid(uint32_t cid)
         __asm__ volatile (
             "MCR    p15, 0, %[rd], c7, c10, 4\n\t"  /* DSB */
             "MCR    p15, 0, %[cid], c13, c0, 1\n\t" /* Set CID */
-            "SVC    0xF00000\n\t"                   /* IMB */
+            /*"SVC    0xF00000\n\t"*/                   /* IMB */
             "MCR    p15, 0, %[rd], c7, c5, 0\n\t"   /* Flush I cache & BTAC */
             : : [rd]"r" (rd), [cid]"r" (cid)
         );

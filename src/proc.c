@@ -109,7 +109,7 @@ static void init_kernel_proc(void)
     kernel_proc = (*_procarr)[0];
 
     kernel_proc->pid = 0;
-    kernel_proc->state = 1; /* TODO */
+    kernel_proc->state = PROC_RUNNING; /* TODO */
     strcpy(kernel_proc->name, "kernel");
 
     RB_INIT(&(kernel_proc->mm.ptlist_head));
@@ -227,6 +227,8 @@ pid_t proc_get_random_pid(void)
             newpid = _lastpid + kunirand(last_maxproc - _lastpid - 1) + 1;
         newpid++;
     } while (proc_get_struct(newpid));
+
+    _lastpid = newpid;
 
     return newpid;
 }

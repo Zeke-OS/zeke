@@ -92,10 +92,13 @@ void kinit(void)
     SUBSYS_DEP(sched_init);
     SUBSYS_DEP(proc_init);
 
+    char buf[80]; /* Buffer for panic messages. */
+
     /* User stack for init */
     vm_region_t * init_vmstack = vralloc(configUSRINIT_SSIZE);
     if (!init_vmstack)
         panic("Can't allocate a stack for init");
+
     init_vmstack->usr_rw = VM_PROT_READ | VM_PROT_WRITE;
     init_vmstack->mmu.vaddr = init_vmstack->mmu.paddr;
     init_vmstack->mmu.ap = MMU_AP_RWRW;
@@ -115,51 +118,52 @@ void kinit(void)
         .del_thread = pthread_exit
     };
 
-    pthread_t   tid; /* thread id of init main() */
-    pid_t       pid; /* pid of init */
-    threadInfo_t * init_thread;
-    char buf[80]; /* Buffer for panic messages. */
-    proc_info_t * init_proc;
-
-    tid = sched_threadCreate(&init_ds, 0);
+    /* thread id of init main() */
+    const pthread_t tid = sched_threadCreate(&init_ds, 0);
     if (tid <= 0) {
         ksprintf(buf, sizeof(buf), "Can't create a thread for init. %i", tid);
         panic(buf);
     }
 
-    pid = proc_fork(0);
+    /* pid of init */
+    const pid_t pid = proc_fork(0);
     if (pid <= 0) {
         ksprintf(buf, sizeof(buf), "Can't fork a process for init. %i", pid);
         panic(buf);
     }
 
-    init_thread = sched_get_pThreadInfo(tid);
+    threadInfo_t * const init_thread = sched_get_pThreadInfo(tid);
     if (!init_thread) {
         panic("Can't get thread descriptor of init_thread!");
     }
-    init_thread->pid_owner = pid;
-    init_proc = proc_get_struct(pid);
+
+    proc_info_t * const init_proc = proc_get_struct(pid);
     if (!init_proc) {
         panic("Failed to get proc struct");
     }
 
-    /* Do some tricks to map user stack for init process correctly. */
+    init_thread->pid_owner = pid;
+
+    /* Map previously created user stack with init process page table. */
     {
         struct vm_pt * vpt;
 
         (*init_proc->mm.regions)[MM_STACK_REGION] = init_vmstack;
         vm_updateusr_ap(init_vmstack);
+
         vpt = ptlist_get_pt(
                 &(init_proc->mm.ptlist_head),
                 &(init_proc->mm.mptable),
                 init_vmstack->mmu.vaddr);
         if (vpt == 0)
             panic("Couldn't get vpt for init stack");
+
         init_vmstack->mmu.pt = &(vpt->pt);
         vm_map_region(init_vmstack, vpt);
     }
 
-    mmu_map_region(&(init_thread->kstack_region->mmu)); /* map tkstack */
+    /* Map tkstack of init with mmu_pagetable_system */
+    mmu_map_region(&(init_thread->kstack_region->mmu));
     init_proc->main_thread = init_thread;
 
 #if configDEBUG >= KERROR_INFO

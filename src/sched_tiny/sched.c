@@ -219,14 +219,8 @@ void * sched_handler(void * tsp)
     /* Call the actual context switcher function that schedules the next thread.
      */
     context_switcher();
-    if (current_thread != prev_thread) {
-        //char buf[80];
-        //ksprintf(buf, sizeof(buf), "%x %x", mmu_region_tkstack.paddr, current_thread->kstack_start - 4096);
-        //KERROR(KERROR_DEBUG, buf);
-        /* Update tkstack page table entry */
-        //mmu_region_tkstack.paddr = (intptr_t)current_thread->kstack_start - 4096;
+    if (current_thread != prev_thread)
         mmu_map_region(&(current_thread->kstack_region->mmu));
-    }
 
     /* Post-scheduling tasks */
     if (flag_kernel_tick) {

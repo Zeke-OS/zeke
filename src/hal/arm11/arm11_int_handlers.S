@@ -166,19 +166,21 @@ _tag:                       /* TODO */
     .type   interrupt_dabt,%function
 interrupt_dabt:
     push    {r0-r3}
-    mrs     r0, spsr
-    push    {r0}
-    and     r0, r0, #0x1f   /* Get only the mode part. */
+    mrs     r1, spsr
+    push    {r1}
+    and     r0, r1, #0x1f   /* Get only the mode part. */
     tst     r0, #0x10       /* User mode */
 #if 0 /* TODO How to resolve if we came from a syscall or sys thread? */
     tstne   r0, #0x1f       /* System mode */
 #endif
-    movne   r0, #1          /* 1 = Skip restoring of thread context */
+    movne   r4, #1          /* 1 = Skip restoring of thread context */
+    movne   r0, sp          /* arg0 = sp TODO Incorrect as this is not the stack
+                             * of the trouble maker. */
+    movne   r2, lr          /* arg2 = lr */
     bne     1f              /* DAB came possibly from an interrupt handler. */
 
     /* Store thread context */
     mov     r1, sp
-    mov     r2, lr
     ldr     r0, =0x00000fff /* vaddr of tkstack. */
     add     sp, sp, #16     /* Reset stack pointer */
     cps     #0x1f           /* Change to system mode. */
@@ -195,20 +197,18 @@ interrupt_dabt:
     ldmia   r1!, {r4-r7}    /* Pop r0-r3 TODO remove ! if not needed */
     stmdb   r0!, {r4-r7}    /* Store original values of r0-r3 to the kstack */
     stmdb   r0!, {r8}       /* Store spsr to kstack */
-    stmdb   r0!, {r2}       /* Store link register to the kstack */
+    mov     r1, r8          /* spsr to r1 */
+    mov     r4, #0          /* #0 = Dont skip restoring of the thread context */
     eor     r0, r0, sp      /* Swap r0 <-> sp */
     eor     r0, r0, sp
     eor     r0, r0, sp
-    mov     r1, r8          /* spsr to r1 */
-    mov     r2, #0          /* #0 = Dont skip restoring of the thread context */
-    /* by now usr sp in r0 and spsr in r1 */
-
+    /* by now usr sp in r0, spsr in r1 and lr in r2 */
 1:  bl      mmu_data_abort_handler
-    tst     r0, #1 /* Skip? */
+    mov     lr, r0          /* Restore lr */
+    tst     r4, #1          /* Skip? */
     beq     2f
 
     /* Restore thread user context, Lets assume that we are still in sys mode */
-    ldmia   sp!, {lr}
     ldmia   sp!, {r0}
     msr     spsr, r0
     ldmia   sp!, {r0-r3}

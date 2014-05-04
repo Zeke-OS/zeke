@@ -78,7 +78,7 @@
 #define PROC_ZOMBIE     4
 #define PROC_STOPPED    8
 
-#define PROC_NAME_LEN   10 /*TODO Remove after tests! */
+#define PROC_NAME_LEN   10
 
 
 /**

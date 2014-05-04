@@ -67,7 +67,7 @@ static void mmu_unmap_coarse_region(const mmu_region_t * region);
 
 /* Data abort handlers */
 static int dab_fatal(uint32_t fsr, uint32_t far, threadInfo_t * thread);
-static char * get_dab_strerror(uint32_t fsr);
+static const char * get_dab_strerror(uint32_t fsr);
 
 static const dab_handler data_aborts[] = {
     dab_fatal,  /* no function, reset value */
@@ -548,9 +548,8 @@ out:
  * Data abort handler
  * @param sp        is the thread stack pointer.
  * @param spsr      is the spsr from the thread context.
- * @param retval    is a preset return value that is used by the caller.
  */
-uint32_t mmu_data_abort_handler(uint32_t sp, uint32_t spsr, uint32_t retval)
+uint32_t mmu_data_abort_handler(uint32_t sp, uint32_t spsr, const uint32_t lr)
 {
     uint32_t far; /*!< Fault address */
     uint32_t fsr; /*!< Fault status */
@@ -565,6 +564,10 @@ uint32_t mmu_data_abort_handler(uint32_t sp, uint32_t spsr, uint32_t retval)
     __asm__ volatile (
         "MRC p15, 0, %[reg], c5, c0, 0"
         : [reg]"=r" (fsr));
+
+    char buf[80];
+    ksprintf(buf, sizeof(buf), "lr %x", lr);
+    KERROR(KERROR_DEBUG, buf);
 
     mmu_pf_event();
 
@@ -600,7 +603,7 @@ uint32_t mmu_data_abort_handler(uint32_t sp, uint32_t spsr, uint32_t retval)
     }
 
 out:
-    return retval;
+    return lr;
 }
 
 static int dab_fatal(uint32_t fsr, uint32_t far, threadInfo_t * thread)
@@ -650,7 +653,7 @@ static const char * dab_fsr_strerr[] = {
 };
 
 
-static char * get_dab_strerror(uint32_t fsr)
+static const char * get_dab_strerror(uint32_t fsr)
 {
     uint32_t tmp;
 
