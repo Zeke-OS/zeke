@@ -565,10 +565,6 @@ uint32_t mmu_data_abort_handler(uint32_t sp, uint32_t spsr, const uint32_t lr)
         "MRC p15, 0, %[reg], c5, c0, 0"
         : [reg]"=r" (fsr));
 
-    char buf[80];
-    ksprintf(buf, sizeof(buf), "lr %x", lr);
-    KERROR(KERROR_DEBUG, buf);
-
     mmu_pf_event();
 
     /* TODO We may want to block the process owning this thread and possibly
