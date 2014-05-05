@@ -495,7 +495,7 @@ pthread_t sched_thread_fork(void * stack_addr)
 
     /* New thread is kept in tmp until it's ready for execution. */
     memcpy(&tmp, old_thread, sizeof(threadInfo_t));
-    tmp.flags = ~SCHED_EXEC_FLAG; /* Disable exec for now. */
+    tmp.flags &= ~SCHED_EXEC_FLAG; /* Disable exec for now. */
     tmp.id = new_id;
     sched_thread_set_inheritance(&tmp, old_thread);
 

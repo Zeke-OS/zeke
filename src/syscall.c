@@ -44,9 +44,10 @@
 #if PU_TEST_BUILD == 0
 #define FOR_ALL_SYSCALL_GROUPS(apply)                       \
     apply(SYSCALL_GROUP_SCHED, sched_syscall)               \
-    apply(SYSCALL_GROUP_SYSCTL, sysctl_syscall)             \
     apply(SYSCALL_GROUP_SCHED_THREAD, sched_syscall_thread) \
+    apply(SYSCALL_GROUP_SYSCTL, sysctl_syscall)             \
     apply(SYSCALL_GROUP_SIGNAL, ksignal_syscall)            \
+    apply(SYSCALL_GROUP_PROC, proc_syscall)                 \
     apply(SYSCALL_GROUP_FS, fs_syscall)                     \
     apply(SYSCALL_GROUP_LOCKS, ulocks_syscall)
 #else
@@ -89,7 +90,8 @@ uintptr_t _intSyscall_handler(uint32_t type, void * p)
     kernel_syscall_handler_t fpt;
     uint32_t major = SYSCALL_MAJOR(type);
 
-    if (major >= (sizeof(syscall_callmap) / sizeof(void *))) {
+    if ((major >= (sizeof(syscall_callmap) / sizeof(void *))) ||
+        !syscall_callmap[major]) {
         current_thread->errno = ENOSYS; /* Not supported. */
         return 0; /* NULL */
     }

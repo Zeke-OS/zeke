@@ -109,7 +109,7 @@ static void init_kernel_proc(void)
     kernel_proc = (*_procarr)[0];
 
     kernel_proc->pid = 0;
-    kernel_proc->state = PROC_RUNNING; /* TODO */
+    kernel_proc->state = PROC_STATE_RUNNING; /* TODO */
     strcpy(kernel_proc->name, "kernel");
 
     RB_INIT(&(kernel_proc->mm.ptlist_head));
@@ -270,13 +270,13 @@ int proc_replace(pid_t pid, void * image, size_t size)
 proc_info_t * proc_get_struct(pid_t pid)
 {
     /* TODO do state check properly */
-    if (pid > _cur_maxproc || (*_procarr)[pid]->state == 0) {
+    if (pid > _cur_maxproc || (*_procarr)[pid]->state == PROC_STATE_INITIAL) {
 #if configDEBUG != 0
         char buf[80];
 
         ksprintf(buf, sizeof(buf),
-                "Invalid PID : %u, currpid : %u, maxproc : %i",
-                pid, current_process_id, _cur_maxproc);
+                "Invalid PID : %u\ncurrpid : %u\nmaxproc : %i\nstate %x",
+                pid, current_process_id, _cur_maxproc, (*_procarr)[pid]->state);
         KERROR(KERROR_DEBUG, buf);
 #endif
         return 0;
@@ -329,7 +329,7 @@ mmu_pagetable_t * proc_get_pptable(pid_t pid)
  * @param pid  is a process id of the process that caused a page fault.
  * @param vaddr is the page faulted address.
  */
-int proc_cow_handler(pid_t pid, intptr_t vaddr)
+int proc_dab_handler(pid_t pid, intptr_t vaddr)
 {
     proc_info_t * pcb;
     vm_region_t * region;
@@ -392,13 +392,13 @@ uintptr_t proc_syscall(uint32_t type, void * p)
         return -1;
 
     case SYSCALL_PROC_FORK:
-        {
-            pid_t pid = proc_fork(current_process_id);
-            if (pid < 0)
-                return -1;
-            else
-                return pid;
-        }
+    {
+        pid_t pid = proc_fork(current_process_id);
+        if (pid < 0)
+            return -1;
+        else
+            return pid;
+    }
 
     case SYSCALL_PROC_WAIT:
         current_thread->errno = ENOSYS;

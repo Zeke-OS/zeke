@@ -243,6 +243,8 @@ struct vm_region * vr_rclone(struct vm_region * old_region)
         return 0;
     }
 #endif
+
+    /* "Lock", ensure that the region is not freed during the operation. */
     vrref(old_region);
 
     new_region = vralloc(rsize);
@@ -250,6 +252,10 @@ struct vm_region * vr_rclone(struct vm_region * old_region)
         KERROR(KERROR_ERR, "Out of memory");
         return 0;
     }
+
+    char buf[80];
+    ksprintf(buf, sizeof(buf), "clone %x -> %x", old_region->mmu.paddr, new_region->mmu.paddr);
+    KERROR(KERROR_DEBUG, buf);
 
     /* Copy data and attributes */
     memcpy((void *)(new_region->mmu.paddr), (void *)(old_region->mmu.paddr),

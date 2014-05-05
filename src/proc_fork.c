@@ -65,6 +65,9 @@ pid_t proc_fork(pid_t pid)
     /*
      * http://pubs.opengroup.org/onlinepubs/9699919799/functions/fork.html
      */
+#if configDEBUG >= KERROR_DEBUG
+    KERROR(KERROR_DEBUG, "fork() called");
+#endif
 
     proc_info_t * const old_proc = proc_get_struct(pid);
     proc_info_t * const new_proc = kmalloc(sizeof(proc_info_t));
@@ -132,7 +135,7 @@ pid_t proc_fork(pid_t pid)
 #if configDEBUG >= KERROR_DEBUG
         KERROR(KERROR_DEBUG, "Cloning stack");
 #endif
-        if (!vm_reg_tmp->vm_ops->rclone)
+        if (!vm_reg_tmp->vm_ops || !vm_reg_tmp->vm_ops->rclone)
             panic("No clone operation");
         vm_reg_tmp = vm_reg_tmp->vm_ops->rclone(vm_reg_tmp);
         if (vm_reg_tmp == 0) {
@@ -243,7 +246,6 @@ pid_t proc_fork(pid_t pid)
         new_proc->pid = proc_get_random_pid();
     } else { /* Proc is init */
         new_proc->pid = 1;
-        retval = 1;
     }
 
     /* A process shall be created with a single thread. If a multi-threaded
@@ -267,12 +269,13 @@ pid_t proc_fork(pid_t pid)
             goto out;
         }
     }
+    retval = new_proc->pid;
 
     /* Update inheritance attributes */
     set_proc_inher(old_proc, new_proc);
 
     /* TODO state */
-    new_proc->state = PROC_STOPPED;
+    new_proc->state = PROC_STATE_STOPPED;
 
     /* Insert the new process to _procarr */
     procarr_insert(new_proc);
@@ -280,6 +283,9 @@ pid_t proc_fork(pid_t pid)
     if (new_proc->main_thread != 0) {
         sched_thread_set_exec(new_proc->main_thread->id);
     }
+#if configDEBUG >= KERROR_DEBUG
+            KERROR(KERROR_DEBUG, "Fork created");
+#endif
     goto out; /* Fork created. */
 
 free_files:

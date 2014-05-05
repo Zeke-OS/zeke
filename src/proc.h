@@ -72,13 +72,14 @@
  * Process Control Block or Process Descriptor Structure
  */
 
-#define PROC_RUNNING    1
-#define PROC_RUNNABLE   2       /* Can be woken up, ready to run */
-#define PROC_WAITING    3       /* Can't be woken up */
-#define PROC_ZOMBIE     4
-#define PROC_STOPPED    8
+#define PROC_STATE_INITIAL  0
+#define PROC_STATE_RUNNING  1
+#define PROC_STATE_RUNNABLE 2   /* Can be woken up, ready to run */
+#define PROC_STATE_WAITING  3   /* Can't be woken up */
+#define PROC_STATE_ZOMBIE   4
+#define PROC_STATE_STOPPED  8
 
-#define PROC_NAME_LEN   10
+#define PROC_NAME_LEN       10
 
 
 /**
@@ -155,7 +156,7 @@ int proc_replace(pid_t pid, void * image, size_t size);
 void proc_thread_removed(pid_t pid, pthread_t thread_id);
 proc_info_t * proc_get_struct(pid_t pid);
 mmu_pagetable_t * pr_get_mptable(pid_t pid);
-int proc_cow_handler(pid_t pid, intptr_t vaddr);
+int proc_dab_handler(pid_t pid, intptr_t vaddr);
 
 #endif /* PROC_H */
 
