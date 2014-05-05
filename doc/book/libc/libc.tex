@@ -1,0 +1,30 @@
+\part{C Library Functions}
+
+This part describes library function wrappers provided by the kernel syscall
+interface.
+
+Zeke implements the most of the userland services by providing a shared memory
+region in virtual memory that contains libc wrappers to be used by user space
+code. These functions can be called like any library function and they will
+make the actual syscall.
+
+The library interface can be further wrapped with another layer of
+"abstraction", specifically a libc library, or libc implementation may just
+make direct syscalls if desired so.
+
+\section{sysctl}
+
+Top level sysctl name spaces:
+
+\begin{description}
+\item[debug]    debugging information.
+\item[hw]       hardware and device driver information.
+\item[kern]     Kernel behavior tuning.
+\item[machdep]  machine-dependent configuration parameters.
+\item[net]      network subsystem. (Not implemented)
+\item[security] security and security-policy configuration and information.
+\item[sysctl]   reserved name space for the implementation of sysctl.
+\item[user]     configuration parameters affecting to user applications.
+\item[vfs]      virtual file system configuration.
+\item[vm]       virtual memory.
+\end{description}

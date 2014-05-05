@@ -2,15 +2,13 @@
 
 \section{Introduction to vmem in Zeke}
 
-Every process has its own master page table and varying number of L2 page
-tables. Kernel has its own master page table too. Static/fixed entries are
-copied to all master page tables created. Process shares its master page
-table with its childs.
+Each process has its own master page table and varying number of L2 page
+tables. Kernel (also abstracted as proc 0) has its own master page table
+too. Static/fixed entries are copied to all master page tables created.
+Process shares its master page table with its childs.
 
-Process page tables are stored in dynmem area.
-
-ARM note: Only 4 kB pages are used with L2 page tables so XN (Execute-Never) bit
-is always usable also for L2 pages.
+\textbf{ARM note:} Only 4 kB pages are used with L2 page tables so
+XN (Execute-Never) bit is always usable also for L2 pages.
 
 \subsection{Domains}
 
@@ -54,6 +52,19 @@ L           |  +--------+   +----+
 \caption{Virtual memory related subsystems in Zeke.}
 \label{figure:vmsubsys}
 \end{figure}
+
+Virtual memory is managed as virtual memory regions (\verb+vm_region_t+) that
+are abstractions of \verb+mmu_region_t+ embedded with memory allocator
+information. Goal of this arrangement is to allow copy-on-write as well as
+support schemes where part of the memory is stored on secondary storage
+(i.e. paging).
+
+Due to the fact that \verb+vm_region_t+ structures are used by multiple
+allocators there is no global knowledge of the actual state of a particular
+allocation, instead each allocator should/may keep track of allocation structs
+if desired so. Ideally the same struct can be reused when moving data from a
+secondary storage allocator to vralloc memory (physical memory).
+
 
 See figure \ref{figure:vmsubsys}.
 
