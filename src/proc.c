@@ -335,6 +335,10 @@ int proc_dab_handler(pid_t pid, intptr_t vaddr)
     vm_region_t * region;
     vm_region_t * new_region;
 
+#if configDEBUG >= KERROR_DEBUG
+    KERROR(KERROR_DEBUG, "proc_dab_handler(): MOO");
+#endif
+
     pcb = proc_get_struct(pid);
     if (!pcb) {
         return -1; /* Process doesn't exist. */

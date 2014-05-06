@@ -147,6 +147,36 @@ struct ctlname {
 int sysctl(int * name, unsigned int namelen, void * oldp, size_t * oldlenp,
         void * newp, size_t newlen);
 
+/**
+ * Lookup for a MIB node by ASCII name.
+ * Size of the array pointer by oidp should be at least CTL_MAXNAME.
+ * @param[in]  name is the ASCII representation of a MIB node.
+ * @param[out] oid  is a pointer to the array where returned OID is written.
+ */
+int sysctlnametomib(char * name, int * oidp);
+
+/**
+ * Get type of MIB entry.
+ * @param[in]  oid
+ * @param[in]  len is the length of oid name.
+ * @param[out] fmt is a format string of the entry, usually string
+ *             representation of the type.
+ * @param[out] kind is the CTL type of the entry.
+ * @return 0 if succeed; Value other than zero if failed.
+ * @throws Same errnos as sysctl().
+ */
+int sysctloidfmt(int * oid, int len, char * fmt, unsigned int * kind);
+
+/**
+ * Get the next variable from MIB tree.
+ * @param[in]  oid is the OID of a MIB node. Can be null;
+ * @param[in]  len is the length of oid.
+ * @param[out] oidn is the next oid.
+ * @param[out] lenn is the length of oidn.
+ * @return Same as sysctl().
+ * @throws Same as sysctl().
+ */
+int sysctlgetnext(int * oid, int len, int * oidn, size_t * lenn);
 
 #ifdef KERNEL_INTERNAL
 #include <sys/linker_set.h>
