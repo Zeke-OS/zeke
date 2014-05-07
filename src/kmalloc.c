@@ -40,6 +40,8 @@
 #include <dynmem.h>
 #else
 void * malloc(size_t size);
+void * memcpy(void * destination, const void * source, size_t num);
+#define KERROR(l, s) printf("%s\n", s)
 #endif
 
 #define KM_SIGNATURE_VALID      0XBAADF00D /*!< Signature for valid mblock

@@ -1,5 +1,5 @@
 #include <string.h>
-#include <kmalloc.h>
+#include "../../src/kmalloc.h"
 #include "sim_kmheap.h"
 
 /**

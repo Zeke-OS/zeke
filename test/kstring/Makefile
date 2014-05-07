@@ -1,7 +1,7 @@
 # Kstring unit tests for Zeke project
 
 # Add here one or more include directories.
-IDIR = ../../include ../../src
+IDIR = ../../src
 
 # Set this to 1 if you will use asserts that compares floats or doubles;
 # or 0 disable

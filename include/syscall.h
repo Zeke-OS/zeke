@@ -130,9 +130,14 @@
 #define SYSCALL_SEMAPHORE_WAIT              SYSCALL_MMTOTYPE(SYSCALL_GROUP_LOCKS, 0x01)
 #define SYSCALL_SEMAPHORE_RELEASE           SYSCALL_MMTOTYPE(SYSCALL_GROUP_LOCKS, 0x02)
 
-//#ifndef PU_TEST_BUILD
+/**
+ * Make a system call
+ * @param type syscall type.
+ * @param p pointer to the syscall parameter(s).
+ * @return return value of the called kernel function.
+ * @note Must be only used in thread scope.
+ */
 uintptr_t syscall(uint32_t type, void * p);
-//#endif /* PU_TEST_BUILD */
 
 /* Kernel scope functions */
 #ifdef KERNEL_INTERNAL

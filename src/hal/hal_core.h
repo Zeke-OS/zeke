@@ -40,8 +40,8 @@
 #define HAL_CORE_H
 
 #include <autoconf.h>
-#include <syscalldef.h>
-#include <kernel.h>
+#include "../../include/syscalldef.h"
+#include "../../include/kernel.h"
 
 /**
  * Type for storing interrupt state.
@@ -57,15 +57,6 @@ extern volatile size_t flag_kernel_tick;
  * @param priv set thread as privileged/kernel mode thread.
  */
 void init_stack_frame(ds_pthread_create_t * thread_def, int priv);
-
-/**
- * Make a system call
- * @param type syscall type.
- * @param p pointer to the syscall parameter(s).
- * @return return value of the called kernel function.
- * @note Must be only used in thread scope.
- */
-uint32_t syscall(uint32_t type, void * p);
 
 /**
  * Test and set

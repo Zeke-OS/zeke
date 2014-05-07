@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include "punit.h"
 #define KERNEL_INTERNAL
-#include <sys/_mutex.h>
+#include <klocks.h>
 
 static mtx_t mtx;
 

@@ -41,10 +41,10 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#if configMMU == 0
+#if configMMU == 0 && !defined(PU_TEST_BUILD)
     #error MMU not enabled but header was included in some file.
 #endif
-#if configATAG == 0
+#if configATAG == 0 && !defined(PU_TEST_BUILD)
     #error No method to get memory area configuration.
 #endif
 
@@ -170,6 +170,7 @@ typedef struct mmu_region {
 
 #if configARCH == __ARM6__ || __ARM6K__ /* ARM11 uses ARMv6 arch */
 #include "arm11/arm11_mmu.h"
+#elif defined(PU_TEST_BUILD)
 #else
     #error MMU for selected ARM profile/architecture is not supported
 #endif

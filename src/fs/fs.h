@@ -39,9 +39,15 @@
 #ifndef FS_H
 #define FS_H
 
+#include <stdint.h>
 #include <sys/types.h>
 #include <time.h>
+#if !defined(PU_TEST_BUILD)
 #include <sys/stat.h>
+#else
+#define STAT_H
+#include "../../include/sys/stat.h"
+#endif
 #include <dirent.h>
 
 #define FS_FLAG_INIT        0x01 /*!< Filse system initialized. */
