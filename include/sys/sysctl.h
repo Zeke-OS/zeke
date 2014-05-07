@@ -59,8 +59,11 @@
  * respective subsystem header files.
  */
 
-#define CTL_MAXNAME     24 /* largest number of components supported
+#define CTL_MAXNAME     24 /*! Largest number of components supported
                             * (n * sizeof(int)). */
+
+#define CTL_MAXSTRNAME  80 /*! Maximum length of a string name for a sysctl
+                            *  node. */
 
 /*
  * Each subsystem defined by sysctl defines a list of variables
