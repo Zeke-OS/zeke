@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    usrinit.c
+ * @file    init.c
  * @author  Olli Vanhoja
  * @brief   First user scope process.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
@@ -36,7 +36,7 @@
 #include <kstring.h> /* -"- */
 #include <sys/sysctl.h>
 #include <unistd.h>
-#include "usrinit.h"
+#include "init.h"
 
 dev_t dev_tty0 = DEV_MMTODEV(2, 0);
 
@@ -55,9 +55,6 @@ static void thread_stat(void);
 
 static char main_stack2[8192];
 
-/**
- * main thread; main process.
- */
 void * main(void * arg)
 {
     int mib_tot[3];
