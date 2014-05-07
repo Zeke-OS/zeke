@@ -53,7 +53,6 @@ extern void (*__fini_array_start []) (void) __attribute__((weak));
 extern void (*__fini_array_end []) (void) __attribute__((weak));
 
 static void exec_array(void (*a []) (void), int n);
-void kinit(void) __attribute__((constructor));
 
 /**
  * Run all kernel module initializers.
@@ -84,8 +83,9 @@ void exec_fini_array(void)
 }
 
 /**
- * Initialize main thread.
+ * Create init process.
  */
+void kinit(void) __attribute__((constructor));
 void kinit(void)
 {
     SUBSYS_INIT();
@@ -177,9 +177,12 @@ void kinit(void)
 static void random_init(void) __attribute__((constructor));
 static void random_init(void)
 {
+    SUBSYS_INIT();
+
     /* TODO Add some randomness ;) */
-    KERROR(KERROR_INFO, "Seed random number generator");
     ksrandom(1);
+
+    SUBSYS_INITFINI("Seed random number generator");
 }
 
 /**

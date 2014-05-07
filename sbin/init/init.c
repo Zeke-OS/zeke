@@ -59,6 +59,7 @@ void * main(void * arg)
 {
     int mib_tot[3];
     int mib_free[3];
+    int mib_klog[3];
     int len;
     int old_value_tot, old_value_free;
     size_t old_len = sizeof(old_value_tot);
@@ -71,18 +72,18 @@ void * main(void * arg)
     };
     pthread_t thread_id;
 
-    print_message("Init v0.0.1");
+    print_message("Init v0.0.1\n");
 
 #if 0
     pid_t pid = fork();
     if (pid == -1) {
-        print_message("Failed");
+        print_message("Failed\n");
         while(1);
     } else if (pid == 0) {
-        print_message("Hello");
+        print_message("Hello\n");
         while(1);
     } else {
-        print_message("original");
+        print_message("original\n");
     }
 #endif
 
@@ -90,20 +91,27 @@ void * main(void * arg)
 
     len = sysctlnametomib("vm.dynmem_tot", mib_tot, 3);
     sysctlnametomib("vm.dynmem_free", mib_free, 3);
+    sysctlnametomib("kern.klogger", mib_klog, 3);
+
+#if 0
+    /* Disable logging */
+    int new_klog = 0;
+    sysctl(mib_klog, len, 0, 0, &new_klog, sizeof(new_klog));
+#endif
 
     while(1) {
         thread_stat();
         if(sysctl(mib_tot, len, &old_value_tot, &old_len, 0, 0)) {
-            ksprintf(buf, sizeof(buf), "Error: %u",
+            ksprintf(buf, sizeof(buf), "Error: %u\n",
                     (int)syscall(SYSCALL_SCHED_THREAD_GETERRNO, NULL));
             print_message(buf);
         }
         if(sysctl(mib_free, len, &old_value_free, &old_len, 0, 0)) {
-            ksprintf(buf, sizeof(buf), "Error: %u",
+            ksprintf(buf, sizeof(buf), "Error: %u\n",
                     (int)syscall(SYSCALL_SCHED_THREAD_GETERRNO, NULL));
             print_message(buf);
         }
-        ksprintf(buf, sizeof(buf), "dynmem allocated: %u/%u",
+        ksprintf(buf, sizeof(buf), "dynmem allocated: %u/%u\n",
                 old_value_tot - old_value_free, old_value_tot);
         print_message(buf);
         sleep(5);
@@ -132,6 +140,6 @@ static void thread_stat(void)
 
     id = (int)syscall(SYSCALL_SCHED_THREAD_GETTID, NULL);
     __asm__ volatile ("mrs     %0, cpsr" : "=r" (mode));
-    ksprintf(buf, sizeof(buf), "My id: %u, my mode: %x", id, mode);
+    ksprintf(buf, sizeof(buf), "My id: %u, my mode: %x\n", id, mode);
     print_message(buf);
 }

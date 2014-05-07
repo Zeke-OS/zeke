@@ -37,20 +37,16 @@
 #include <autoconf.h>
 #include <hal/hal_core.h>
 
-/* Store few last kernel error messages in memory */
-#if configKERROR_LAST != 0
-#include <kerror_lastlog/kerror_last.h>
-#elif configKERROR_TTYS != 0
-#include <kerror_ttys/kerror_ttys.h>
-#else /* No kernel error logging */
-#define _KERROR_FN(level, where, msg) do {} while (0)
-#endif
+#define KERROR_NOLOG    0
+#define KERROR_LASTLOG  1
+#define KERROR_UARTLOG  2
 
 /* Line number as a string */
 #define _KERROR_S(x) #x
 #define _KERROR_S2(x) _KERROR_S(x)
 #define S__LINE__ _KERROR_S2(__LINE__)
 
+#define _KERROR_FN(level, where, msg) kerror_print_macro(level, where, msg)
 #define _KERROR_WHERESTR __FILE__ ":" S__LINE__ ": "
 #define _KERROR2(level, where, msg) _KERROR_FN(level, where, msg)
 /**
@@ -81,5 +77,8 @@ const char _kernel_panic_msg[19];
 #define KERROR_WARN     '2' /*!< Unexpected condition. */
 #define KERROR_INFO     '3' /*!< Normal informational message. */
 #define KERROR_DEBUG    '4' /*!< Debug message. */
+
+void kerror_print_macro(char level, const char * where, const char * msg);
+void (*kputs)(const char *);
 
 #endif /* KERROR_H */
