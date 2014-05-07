@@ -65,19 +65,19 @@ int sysctl(int * name, unsigned int namelen, void * oldp, size_t * oldlenp,
     return (int)syscall(SYSCALL_SYSCTL_SYSCTL, &args);
 }
 
-int sysctlnametomib(char * name, int * oidp)
+int sysctlnametomib(char * name, int * oidp, int lenp)
 {
     int qoid[2] = {0, 3}; /* Magic: name2oid lookup */
     int i;
     size_t j;
 
-    j = CTL_MAXNAME * sizeof(int);
+    j = lenp * sizeof(int);
     i = sysctl(qoid, 2, oidp, &j, name, strlenn(name, 80));
     if (i < 0)
         return (i);
     j /= sizeof(int);
 
-    return (j);
+    return j;
 }
 
 int sysctloidfmt(int * oid, int len, char * fmt, unsigned int * kind)

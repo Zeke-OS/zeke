@@ -60,8 +60,8 @@ static char main_stack2[8192];
  */
 void * main(void * arg)
 {
-    int mib_tot[10];
-    int mib_free[10];
+    int mib_tot[3];
+    int mib_free[3];
     int len;
     int old_value_tot, old_value_free;
     size_t old_len = sizeof(old_value_tot);
@@ -91,8 +91,8 @@ void * main(void * arg)
 
     pthread_create(&thread_id, &attr, test_thread, 0);
 
-    len = sysctlnametomib("vm.dynmem_tot", mib_tot);
-    sysctlnametomib("vm.dynmem_free", mib_free);
+    len = sysctlnametomib("vm.dynmem_tot", mib_tot, 3);
+    sysctlnametomib("vm.dynmem_free", mib_free, 3);
 
     while(1) {
         thread_stat();
