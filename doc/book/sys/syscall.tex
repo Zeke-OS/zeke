@@ -38,8 +38,61 @@ User scope syscall code is allowed to call the following functions in
 
 \subsection{Syscall Major and Minor codes}
 
-Syscalls are divided to major and minor codes so that major codes represents a
-set of functions related to each other, usually all the syscall functions in a
+System calls are divided to major and minor codes so that major codes represents
+a set of functions related to each other, usually all the syscall functions in a
 single compilation unit. Major number sets are internally called groups. Both
 numbers are defined in \verb+syscall.h+ file.
 
+
+\section{Adding new syscalls and handlers}
+
+\subsection{A New syscall}
+
+\begin{itemize}
+\item \verb+include/syscall.h+ contains syscall number definitions
+\item \verb+include/syscalldef.h+ contains some useful structures that can be used when
+      creating a new syscall
+\item Add the new syscall under a syscall group handler
+\end{itemize}
+
+\subsection{A New syscall handler}
+
+\begin{itemize}
+\item Create a new syscall group into \verb+include/syscall.h+
+\item Create syscall number definitions into the previous file
+\item Add the new syscall group to the list of syscall groups in \verb+syscall.c+
+\item Create a new syscall group handler
+\end{itemize}
+
+
+\section{sysctl}
+
+The Zeke sysctl mechanism uses hierarchically organized \ac{MIB} tree as a
+debugging and online configuration interface to the kernel. This is extremely
+useful for example when testing scheduling parameters. Instead of recompiling
+after every parameter change it is possible to change kernel's internal
+parameters at run time by using sysctl interface.
+
+There is only one syscall for sysctl which handles both reading/writing a
+\ac{MIB} variable and queries to the MIB.
+
+\subsection{Magic names}
+
+There is some magic OID's that begins with \verb+{0,...}+ that are used for
+queries and other special purposes. Particularly all OID's begin with 0 are
+magic names. Currently allocated magic names are described in table
+\ref{table:sysctlmagic}.
+
+\begin{table}
+\caption{sysctl magic names.}
+\label{table:sysctlmagic}
+\begin{tabular}{lll}
+Name                & Internal function        & Purpose\\
+\hline
+\verb+{0,1,<iname>}+ & \verb+sysctl_sysctl_name()+     & Get the name of a MIB variable.\\
+\verb+{0,2,<iname>}+ & \verb+sysctl_sysctl_next()+     & Get the next variable from MIB tree.\\
+\verb+{0,3}+            & \verb+sysctl_sysctl_name2oid()+ & String name to integer name of the variable.\\
+\verb+{0,4,<iname>}+ & \verb+sysctl_sysctl_oidfmt()+   & Get format and type of a MIB variable.\\
+\verb+{0,5,<iname>}+ & \verb+sysctl_sysctl_oiddescr()+ & Get description string of a MIB variable.
+\end{tabular}
+\end{table}

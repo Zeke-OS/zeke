@@ -254,7 +254,7 @@ int sysctl_find_oid(int * name, unsigned int namelen, struct sysctl_oid ** noid,
 static struct sysctl_oid * sysctl_find_oidname(const char * name,
         struct sysctl_oid_list * list)
 {
-    struct sysctl_oid *oidp;
+    struct sysctl_oid * oidp;
 
     //SYSCTL_ASSERT_XLOCKED();
     SLIST_FOREACH(oidp, list, oid_link) {
@@ -282,7 +282,7 @@ static int sysctl_sysctl_name(SYSCTL_HANDLER_ARGS)
             if (req->oldidx)
                 error = SYSCTL_OUT(req, ".", 1);
             if (!error)
-                error = SYSCTL_OUT(req, buf, strlenn(buf, 80)); /* TODO */
+                error = SYSCTL_OUT(req, buf, strlenn(buf, CTL_MAXSTRNAME));
             if (error)
                 goto out;
             namelen--;
@@ -298,7 +298,7 @@ static int sysctl_sysctl_name(SYSCTL_HANDLER_ARGS)
                 error = SYSCTL_OUT(req, ".", 1);
             if (!error)
                 error = SYSCTL_OUT(req, oid->oid_name,
-                    strlenn(oid->oid_name, 80)); /* TODO */
+                    strlenn(oid->oid_name, CTL_MAXSTRNAME));
             if (error)
                 goto out;
 
@@ -394,7 +394,7 @@ static int sysctl_sysctl_next(SYSCTL_HANDLER_ARGS)
     int * name = (int *) arg1;
     unsigned int namelen = arg2;
     int i, j, error;
-    struct sysctl_oid *oid;
+    struct sysctl_oid * oid;
     struct sysctl_oid_list *lsp = &sysctl__children;
     int newoid[CTL_MAXNAME];
 
@@ -454,13 +454,13 @@ static int name2oid(char * name, int * oid, int * len, struct sysctl_oid ** oidp
 
 static int sysctl_sysctl_name2oid(SYSCTL_HANDLER_ARGS)
 {
-    char *p;
+    char * p;
     int error, oid[CTL_MAXNAME], len = 0;
-    struct sysctl_oid *op = 0;
+    struct sysctl_oid * op = 0;
 
     if (!req->newlen)
         return ENOENT;
-    if (req->newlen >= 80)  /* XXX arbitrary, undocumented */
+    if (req->newlen >= CTL_MAXSTRNAME)
         return ENAMETOOLONG;
 
     p = kmalloc(req->newlen + 1);
@@ -496,7 +496,7 @@ SYSCTL_PROC(_sysctl, 3, name2oid,
 
 static int sysctl_sysctl_oidfmt(SYSCTL_HANDLER_ARGS)
 {
-    struct sysctl_oid *oid;
+    struct sysctl_oid * oid;
     int error;
 
     SYSCTL_LOCK();
@@ -511,7 +511,7 @@ static int sysctl_sysctl_oidfmt(SYSCTL_HANDLER_ARGS)
     error = SYSCTL_OUT(req, &oid->oid_kind, sizeof(oid->oid_kind));
     if (error)
         goto out;
-    error = SYSCTL_OUT(req, oid->oid_fmt, strlenn(oid->oid_fmt, 80) + 1); /* TODO don't hard code it here */
+    error = SYSCTL_OUT(req, oid->oid_fmt, strlenn(oid->oid_fmt, CTL_MAXSTRNAME) + 1);
  out:
     SYSCTL_UNLOCK();
     return error;
@@ -536,7 +536,7 @@ sysctl_sysctl_oiddescr(SYSCTL_HANDLER_ARGS)
         error = ENOENT;
         goto out;
     }
-    error = SYSCTL_OUT(req, oid->oid_descr, strlenn(oid->oid_descr, 80) + 1); /* TODO ... */
+    error = SYSCTL_OUT(req, oid->oid_descr, strlenn(oid->oid_descr, CTL_MAXSTRNAME) + 1);
  out:
     SYSCTL_UNLOCK();
     return error;
@@ -686,8 +686,8 @@ out:
 
 int sysctl_handle_string(SYSCTL_HANDLER_ARGS)
 {
-    int error=0;
-    char *tmparg;
+    int error = 0;
+    char * tmparg;
     size_t outlen;
 
     /*
@@ -695,8 +695,8 @@ int sysctl_handle_string(SYSCTL_HANDLER_ARGS)
      * temporary kernel buffer.
      */
 retry:
-    outlen = strlenn((char *)arg1, 80) + 1; /* TODO hardcoding this here is
-                                             *      not very clever. */
+    outlen = strlenn((char *)arg1, CTL_MAXSTRNAME) + 1;
+
     tmparg = kmalloc(outlen);
 
     if (strlcpy(tmparg, (char *)arg1, outlen) >= outlen) {
@@ -825,7 +825,7 @@ int kernel_sysctlbyname(threadInfo_t * td, char * name, void * old, size_t * old
     oidlen = sizeof(oid);
 
     error = kernel_sysctl(td, oid, 2, oid, &oidlen,
-            (void *)name, strlenn(name, 80), &plen, flags); /* TODO hardcoded limit */
+            (void *)name, strlenn(name, CTL_MAXSTRNAME), &plen, flags);
     if (error)
         return error;
 
