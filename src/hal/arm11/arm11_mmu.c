@@ -588,6 +588,11 @@ uint32_t mmu_data_abort_handler(uint32_t sp, uint32_t spsr, const uint32_t lr)
         goto out;
     } /* else normal vm related page fault. */
 
+    /* TODO In the future we may wan't to support copy on write too
+     * (ie. page swaping). To suppor cor, and actually anyway, we should test
+     * if error appeared during reading or writing etc.
+     */
+
     /* proc should handle this page fault as it has the knowledge of how memory
      * regions are used in processes. */
     if (proc_cow_handler(thread->pid_owner, far)) {

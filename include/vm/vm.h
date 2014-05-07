@@ -59,7 +59,7 @@ typedef struct vm_region {
     mmu_region_t mmu; /*!< MMU struct. @note pt pointer might be invalid. */
     int usr_rw; /*!< Actual user mode permissions on this data. Sometimes we
                  * want to set ap read-only to easily make copy-on-write or to
-                 * pass control to MMU exception handler for some other reason
+                 * pass control to MMU exception handler for some other reason.
                  */
 
     /* Allocator specific data */
