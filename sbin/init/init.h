@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    usrinit.h
+ * @file    init.h
  * @author  Olli Vanhoja
  * @brief   First user scope process.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
@@ -32,9 +32,9 @@
  */
 
  #pragma once
-#ifndef USRINIT_H
-#define USRINIT_H
+#ifndef INIT_H_
+#define INIT_H_
 
 void * main(void * arg);
 
- #endif /* USRINIT_H */
+ #endif /* INIT_H_ */

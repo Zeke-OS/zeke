@@ -59,6 +59,16 @@
     #error MMU must be enabled when compiling for ARM11.
 #endif
 
+/** PSR interrupt bits mask */
+#define PSR_INT_MASK    0x1C0u
+
+/* PSR Mode bits */
+#define PSR_MODE_MASK   0x1fu
+#define PSR_MODE_USER   0x10u
+#define PSR_MODE_SYS    0x1fu
+#define PSR_MODE_UNDEF  0x1bu
+#define PSR_MODE_SUP    0x13u
+
 /* Possible PSR start values for threads.
  * 2.10 The program status registers in ARM1176JZF-S Technical Reference Manual */
 #define USER_PSR        0x40000010u /*!< User mode. */

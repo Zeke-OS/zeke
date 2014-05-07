@@ -41,21 +41,6 @@
 #include <unistd.h>
 #include <kernel.h>
 
-int sysctl(int * name, unsigned int namelen, void * oldp, size_t * oldlenp,
-        void * newp, size_t newlen)
-{
-    struct _sysctl_args args = {
-        .name = name,
-        .namelen = namelen,
-        .old = oldp,
-        .oldlenp = oldlenp,
-        .new = newp,
-        .newlen = newlen
-    };
-
-    return (int)syscall(SYSCALL_SYSCTL_SYSCTL, &args);
-}
-
 unsigned sleep(unsigned seconds)
 {
     unsigned int millisec = seconds * 1000;

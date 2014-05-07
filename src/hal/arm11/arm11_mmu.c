@@ -56,9 +56,15 @@ static mtx_t mmu_lock;
 
 #define mmu_disable_ints() __asm__ volatile ("cpsid if")
 
-#define FSR_MASK 0x0f
+#define FSR_MASK                0x0f
 
-typedef int (*dab_handler)(uint32_t fsr, uint32_t far, threadInfo_t * thread);
+/**
+ * Test if DAB came from user mode.
+ */
+#define DAB_WAS_USERMODE(psr)   (((psr) & PSR_MODE_MASK) == PSR_MODE_USER)
+
+typedef int (*dab_handler)(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
+        threadInfo_t * thread);
 
 static void mmu_map_section_region(const mmu_region_t * region);
 static void mmu_map_coarse_region(const mmu_region_t * region);
@@ -66,25 +72,31 @@ static void mmu_unmap_section_region(const mmu_region_t * region);
 static void mmu_unmap_coarse_region(const mmu_region_t * region);
 
 /* Data abort handlers */
-static int dab_fatal(uint32_t fsr, uint32_t far, threadInfo_t * thread);
+static int dab_align(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
+        threadInfo_t * thread);
+static int dab_buserr(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
+        threadInfo_t * thread);
+static int dab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
+        threadInfo_t * thread);
+
 static const char * get_dab_strerror(uint32_t fsr);
 
 static const dab_handler data_aborts[] = {
     dab_fatal,  /* no function, reset value */
-    dab_fatal,  /* Alignment fault */
+    dab_align,  /* Alignment fault */
     dab_fatal,  /* Instruction debug event */
     0,          /* Access bit fault on Section */
-    dab_fatal,  /* no function */
-    dab_fatal,  /* Translation Section Fault */
+    dab_buserr, /* ICache maintanance op fault */
+    dab_buserr,  /* Translation Section Fault */ /* TODO not really buserr */
     0,          /* Access bit fault on Page */
-    dab_fatal,  /* Translation Page fault */
-    dab_fatal,  /* Precise external abort */
-    dab_fatal,  /* Domain Section fault */
+    dab_buserr,  /* Translation Page fault */ /* TODO not really buserr */
+    dab_buserr, /* Precise external abort */
+    dab_buserr,  /* Domain Section fault */ /* TODO not really buserr */
     dab_fatal,  /* no function */
-    dab_fatal,  /* Domain Page fault */
-    dab_fatal,  /* External abort on translation, first level */
+    dab_buserr,  /* Domain Page fault */ /* TODO Not really buserr */
+    dab_buserr, /* External abort on translation, first level */
     0,          /* Permission Section fault */
-    dab_fatal,  /* External abort on translation, second level */
+    dab_buserr, /* External abort on translation, second level */
     0           /* Permission Page fault */
 };
 
@@ -553,9 +565,8 @@ uint32_t mmu_data_abort_handler(uint32_t sp, uint32_t spsr, const uint32_t lr)
 {
     uint32_t far; /*!< Fault address */
     uint32_t fsr; /*!< Fault status */
-    const istate_t s_old = spsr & 0x1C0; /*!< Old interrupt state */
+    const istate_t s_old = spsr & PSR_INT_MASK; /*!< Old interrupt state */
     istate_t s_entry; /*!< Int state in handler entry. */
-    const uint32_t mode_old = spsr & 0x1f;
     threadInfo_t * const thread = (threadInfo_t *)current_thread;
 
     __asm__ volatile (
@@ -571,17 +582,14 @@ uint32_t mmu_data_abort_handler(uint32_t sp, uint32_t spsr, const uint32_t lr)
      * make sure that this instance is the only one handling page fault of the
      * same kind. */
 
-    /* TODO We may wan't to panic if dab came from kernel mode? */
-
     /* Handle this data abort in pre-emptible state if possible. */
-    //if (mode_old == 0x1f || mode_old == 0x10) {
-    if (mode_old == 0x10) {
+    if (DAB_WAS_USERMODE(spsr)) {
         s_entry = get_interrupt_state();
         set_interrupt_state(s_old);
     }
 
-    if (data_aborts[fsr & FSR_MASK] != 0) {
-        if (data_aborts[fsr & FSR_MASK](fsr, far, thread)) {
+    if (data_aborts[fsr & FSR_MASK]) {
+        if (data_aborts[fsr & FSR_MASK](fsr, far, spsr, lr, thread)) {
             /* TODO Handle this nicer... signal? */
             panic("DAB handling failed");
         }
@@ -595,13 +603,16 @@ uint32_t mmu_data_abort_handler(uint32_t sp, uint32_t spsr, const uint32_t lr)
 
     /* proc should handle this page fault as it has the knowledge of how memory
      * regions are used in processes. */
-    if (proc_cow_handler(thread->pid_owner, far)) {
-        /* TODO We want to send a signal here */
-        panic("SEGFAULT");
+    if (proc_dab_handler(thread->pid_owner, far)) {
+        /* TODO We want to send a signal here instead of panic */
+        char buf[80];
+
+        ksprintf(buf, sizeof(buf), "SEGFAULT @ %x", lr);
+        KERROR(KERROR_CRIT, buf);
+        dab_fatal(fsr, far, spsr, lr, thread);
     }
 
-    //if (mode_old == 0x1f || mode_old == 0x10) {
-    if (mode_old == 0x10) {
+    if (DAB_WAS_USERMODE(spsr)) {
         set_interrupt_state(s_entry);
     }
 
@@ -609,13 +620,43 @@ out:
     return lr;
 }
 
-static int dab_fatal(uint32_t fsr, uint32_t far, threadInfo_t * thread)
+/**
+ * DAB handler for alignment aborts.
+ */
+static int dab_align(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
+        threadInfo_t * thread)
+{
+    /* Kernel mode alignment fault is fatal. */
+    if (!DAB_WAS_USERMODE(psr)) {
+        dab_fatal(fsr, far, psr, lr, thread);
+    }
+
+    /* TODO Deliver SIGBUS */
+    return -1;
+}
+
+static int dab_buserr(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
+        threadInfo_t * thread)
+{
+    if (!DAB_WAS_USERMODE(psr)) {
+        dab_fatal(fsr, far, psr, lr, thread);
+    }
+
+    /* TODO Deliver SIGBUS */
+    return -1;
+}
+
+/**
+ * DAB handler for fatal aborts.
+ */
+static int dab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
+        threadInfo_t * thread)
 {
     char buf[120];
 
     ksprintf(buf, sizeof(buf), "Can't handle data abort\n"
-            "fsr : %x (%s)\nfar : %x\nCurr tid : %x",
-            fsr, get_dab_strerror(fsr), far, thread->id);
+            "pc  : %x\nfsr : %x (%s)\nfar : %x\nCurr tid : %x",
+            lr, fsr, get_dab_strerror(fsr), far, thread->id);
     panic(buf);
 }
 

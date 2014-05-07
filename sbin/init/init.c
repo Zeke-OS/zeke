@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    usrinit.c
+ * @file    init.c
  * @author  Olli Vanhoja
  * @brief   First user scope process.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
@@ -36,7 +36,7 @@
 #include <kstring.h> /* -"- */
 #include <sys/sysctl.h>
 #include <unistd.h>
-#include "usrinit.h"
+#include "init.h"
 
 dev_t dev_tty0 = DEV_MMTODEV(2, 0);
 
@@ -51,18 +51,14 @@ char banner[] = "\
 
 static void * test_thread(void *);
 static void print_message(const char * message);
-static int usr_name2oid(char * name, int * oidp);
 static void thread_stat(void);
 
 static char main_stack2[8192];
 
-/**
- * main thread; main process.
- */
 void * main(void * arg)
 {
-    int mib_tot[10];
-    int mib_free[10];
+    int mib_tot[3];
+    int mib_free[3];
     int len;
     int old_value_tot, old_value_free;
     size_t old_len = sizeof(old_value_tot);
@@ -77,10 +73,23 @@ void * main(void * arg)
 
     print_message("Init v0.0.1");
 
+#if 0
+    pid_t pid = fork();
+    if (pid == -1) {
+        print_message("Failed");
+        while(1);
+    } else if (pid == 0) {
+        print_message("Hello");
+        while(1);
+    } else {
+        print_message("original");
+    }
+#endif
+
     pthread_create(&thread_id, &attr, test_thread, 0);
 
-    len = usr_name2oid("vm.dynmem_tot", mib_tot);
-    usr_name2oid("vm.dynmem_free", mib_free);
+    len = sysctlnametomib("vm.dynmem_tot", mib_tot, 3);
+    sysctlnametomib("vm.dynmem_free", mib_free, 3);
 
     while(1) {
         thread_stat();
@@ -112,23 +121,6 @@ static void * test_thread(void * arg)
 static void print_message(const char * message)
 {
     write(2, message, strlenn(message, 80));
-}
-
-static int usr_name2oid(char * name, int * oidp)
-{
-    int oid[2];
-    int i;
-    size_t j;
-
-    oid[0] = 0;
-    oid[1] = 3;
-
-    j = CTL_MAXNAME * sizeof(int);
-    i = sysctl(oid, 2, oidp, &j, name, strlenn(name, 80));
-    if (i < 0)
-        return (i);
-    j /= sizeof(int);
-    return (j);
 }
 
 static void thread_stat(void)

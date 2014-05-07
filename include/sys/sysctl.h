@@ -59,7 +59,11 @@
  * respective subsystem header files.
  */
 
-#define CTL_MAXNAME     24 /* largest number of components supported */
+#define CTL_MAXNAME     24 /*! Largest number of components supported
+                            * (n * sizeof(int)). */
+
+#define CTL_MAXSTRNAME  80 /*! Maximum length of a string name for a sysctl
+                            *  node. */
 
 /*
  * Each subsystem defined by sysctl defines a list of variables
@@ -138,7 +142,7 @@ struct ctlname {
  * @param namelen   length of array of integers in name.
  * @param oldp      is the target buffer where old value is copied to.
  * @param oldlenp   is the length of oldp and after the call it is the length
- *                  of data copied to oldp
+ *                  of data copied to oldp.
  * @param newp      is set to null if no write request is intended; Otherwise
  *                  newp is set to point to a buffer that contains the new
  *                  value to be written.
@@ -147,6 +151,37 @@ struct ctlname {
 int sysctl(int * name, unsigned int namelen, void * oldp, size_t * oldlenp,
         void * newp, size_t newlen);
 
+/**
+ * Lookup for a MIB node by ASCII name.
+ * @param[in]  name is the ASCII representation of a MIB node.
+ * @param[out] oidp is a pointer to the array where returned OID is written.
+ * @param[in]  lenp is the size of the oidp array in elements.
+ * @return length of oidp.
+ */
+int sysctlnametomib(char * name, int * oidp, int lenp);
+
+/**
+ * Get type of MIB entry.
+ * @param[in]  oid
+ * @param[in]  len is the length of oid name.
+ * @param[out] fmt is a format string of the entry, usually string
+ *             representation of the type.
+ * @param[out] kind is the CTL type of the entry.
+ * @return 0 if succeed; Value other than zero if failed.
+ * @throws Same errnos as sysctl().
+ */
+int sysctloidfmt(int * oid, int len, char * fmt, unsigned int * kind);
+
+/**
+ * Get the next variable from MIB tree.
+ * @param[in]  oid is the OID of a MIB node. Can be null;
+ * @param[in]  len is the length of oid.
+ * @param[out] oidn is the next oid.
+ * @param[out] lenn is the length of oidn.
+ * @return Same as sysctl().
+ * @throws Same as sysctl().
+ */
+int sysctlgetnext(int * oid, int len, int * oidn, size_t * lenn);
 
 #ifdef KERNEL_INTERNAL
 #include <sys/linker_set.h>
