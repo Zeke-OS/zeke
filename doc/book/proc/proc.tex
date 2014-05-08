@@ -1,6 +1,6 @@
 \part{Process and Thread Management}
 
-\section{Thread Management Concept}
+\chapter{Thread Management Concept}
 
 \begin{figure}
 \begin{verbatim}
@@ -66,7 +66,7 @@ children of the parent are killed first in somewhat reverse order.
         parent thread
 \end{itemize}
 
-\subsection{Cases}
+\section{Cases}
 \subparagraph*{process\_a is killed}
 
 Before \verb+process_a+ can be killed \verb+main+ thread must be killed,
@@ -76,3 +76,8 @@ reverse order of creation.
 \subparagraph*{child\_2 is killed}
 
 Killing of \verb+child_2+ causes \verb+child_2_1+ to be killed first.
+
+
+\chapter{Thread Scheduler}
+
+% TODO
