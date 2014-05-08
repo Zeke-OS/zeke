@@ -1,4 +1,4 @@
-PUnit   {#mainpage}
+KUnit
 =====
 
 KUnit is a PUnit based portable unit testing framework that is modified to allow
