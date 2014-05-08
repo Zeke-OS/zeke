@@ -1,6 +1,6 @@
 \part{System Calls}
 
-\section{Introduction}
+\chapter{Introduction}
 User scope stub wrappers are located in \verb+src/usrscope+ directory.
 \verb+hal_core.h+ can be included to provide core specific system call
 functions.
@@ -13,7 +13,7 @@ User scope syscall code is allowed to call the following functions in
   \item \verb+req_context_switch()+
 \end{itemize}
 
-\subsection{Syscall flow}
+\section{Syscall flow}
 
 \begin{enumerate}
 \item User scope thread makes a syscall by calling:
@@ -36,7 +36,7 @@ User scope syscall code is allowed to call the following functions in
 \end{enumerate}
 
 
-\subsection{Syscall Major and Minor codes}
+\section{Syscall Major and Minor codes}
 
 System calls are divided to major and minor codes so that major codes represents
 a set of functions related to each other, usually all the syscall functions in a
@@ -44,9 +44,9 @@ single compilation unit. Major number sets are internally called groups. Both
 numbers are defined in \verb+syscall.h+ file.
 
 
-\section{Adding new syscalls and handlers}
+\chapter{Adding new syscalls and handlers}
 
-\subsection{A New syscall}
+\section{A New syscall}
 
 \begin{itemize}
 \item \verb+include/syscall.h+ contains syscall number definitions
@@ -55,7 +55,7 @@ numbers are defined in \verb+syscall.h+ file.
 \item Add the new syscall under a syscall group handler
 \end{itemize}
 
-\subsection{A New syscall handler}
+\section{A New syscall handler}
 
 \begin{itemize}
 \item Create a new syscall group into \verb+include/syscall.h+
@@ -65,7 +65,7 @@ numbers are defined in \verb+syscall.h+ file.
 \end{itemize}
 
 
-\section{sysctl}
+\chapter{sysctl}
 
 The Zeke sysctl mechanism uses hierarchically organized \ac{MIB} tree as a
 debugging and online configuration interface to the kernel. This is extremely
@@ -76,7 +76,7 @@ parameters at run time by using sysctl interface.
 There is only one syscall for sysctl which handles both reading/writing a
 \ac{MIB} variable and queries to the MIB.
 
-\subsection{Magic names}
+\section{Magic names}
 
 There is some magic OID's that begins with \verb+{0,...}+ that are used for
 queries and other special purposes. Particularly all OID's begin with 0 are
@@ -96,3 +96,33 @@ Name                & Internal function        & Purpose\\
 \verb+{0,5,<iname>}+ & \verb+sysctl_sysctl_oiddescr()+ & Get description string of a MIB variable.
 \end{tabular}
 \end{table}
+
+\section{Adding new sysctl entries}
+
+\subparagraph{Nodes}
+New nodes containing sub-entries can be created with \verb+SYSCTL_NODE+ macro
+like shown in listing \ref{list:sysctl_node}.
+
+\lstinputlisting[label=list:sysctl_node,caption=Sysctl node macro.]{sys/sysctl_node.c}
+
+In order to populate variables and nodes under newly created node the node
+should be declared with \verb+SYSCTL_DECL(<name>);+, this can be done either in
+\verb+sysctl.h+, in the header file of the subsystem/mode or locally in the
+source code file. In the latter case the new node won't be available in
+global scope.
+
+\subparagraph{Variables}
+\begin{itemize}
+\item \verb+SYSCTL_STRING+
+\item \verb+SYSCTL_INT+
+\item \verb+SYSCTL_UINT+
+\item \verb+SYSCTL_LONG+
+\item \verb+SYSCTL_ULONG+
+\item \verb+SYSCTL_COUNTER_U64+
+\end{itemize}
+
+\subparagraph{Procedures}
+\lstinputlisting[label=list:sysctl_proc,caption=Adding a sysctl prodedure.]{sys/sysctl_proc.c}
+
+\subparagraph{Feature test variables}
+\verb+FEATURE(name, desc)+
