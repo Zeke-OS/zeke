@@ -108,6 +108,7 @@ int sysctloidfmt(int * oid, int len, char * fmt, unsigned int * kind)
 int sysctlgetnext(int * oid, int len, int * oidn, size_t * lenn)
 {
     int name[CTL_MAXNAME + 2];
+    int err;
 
     name[0] = 0;
     name[1] = 2;
@@ -119,7 +120,9 @@ int sysctlgetnext(int * oid, int len, int * oidn, size_t * lenn)
         len = 3;
     }
 
-    return sysctl(name, len, oidn, lenn, 0, 0);
+    err = sysctl(name, len, oidn, lenn, 0, 0);
+    *lenn = *lenn / sizeof(int);
+    return err;
 }
 
 /**

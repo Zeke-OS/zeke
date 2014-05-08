@@ -59,7 +59,7 @@ static void kputs_uart(const char * buf);
 void (*kputs)(const char *) = &kputs_uart; /* Boot value */
 static int curr_klogger = KERROR_UARTLOG;
 /** Array of klogger functions */
-static (*kputs_arr[])(const char *) = {
+static void (*kputs_arr[])(const char *) = {
     [KERROR_NOLOG] = &kputs_nolog,
     [KERROR_LASTLOG] = &kputs_nolog, /* TODO */
     [KERROR_UARTLOG] = &kputs_uart

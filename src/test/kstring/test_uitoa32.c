@@ -3,14 +3,13 @@
  * @brief Test uitoa32.
  */
 
-#include <stdio.h>
 #include <stdint.h>
-#include <punit.h>
+#include <kunit.h>
+#include <test/ktest_mib.h>
+#include <kstring.h>
 
 #define NTOSTR(s) _NTOSTR(s)
 #define _NTOSTR(s) #s
-
-int uitoa32(char * str, uint32_t value);
 
 static void setup()
 {
@@ -29,8 +28,9 @@ static char * test_uitoa32(void)
 
     retVal = uitoa32(actual, (uint32_t)UINTVAL);
 
-    pu_assert_str_equal("Unsigned integer was converted to string.", actual, expected);
-    pu_assert_equal("return value is number of printable characters in the string.", (int)retVal, (int)(sizeof(expected) - 1));
+    ku_assert_str_equal("Unsigned integer was converted to string.", actual, expected);
+    ku_assert_equal("return value is number of printable characters in the string.", \
+            (int)retVal, (int)(sizeof(expected) - 1));
 
 #undef UINTVAL
 
@@ -38,11 +38,7 @@ static char * test_uitoa32(void)
 }
 
 static void all_tests() {
-    pu_def_test(test_uitoa32, PU_RUN);
+    ku_def_test(test_uitoa32, KU_RUN);
 }
 
-int main(int argc, char **argv)
-{
-    return pu_run_tests(&all_tests);
-}
-
+SYSCTL_TEST(kstring, uitoa32);

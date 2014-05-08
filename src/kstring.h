@@ -16,7 +16,6 @@
 #define _TO_STR(x) #x
 #define TO_STR(x) _TO_STR(x)
 
-#ifndef PU_TEST_BUILD
 void * memcpy(void * restrict destination, const void * source, size_t num);
 void * memmove(void * destination, const void * source, size_t num);
 void * memset(void * ptr, int value, size_t num);
@@ -26,7 +25,6 @@ char * strcpy(char * destination, const char * source);
 char * strncpy(char * dst, const char * src, size_t n);
 size_t strlcpy(char * dst, const char * src, size_t siz);
 const char * strstr(const char * str1, const char * str2);
-#endif
 size_t strlenn(const char * str, size_t max);
 char * strnncat(char * dst, size_t ndst, const char * src, size_t nsrc);
 char * strsep(char ** stringp, const char * delim);

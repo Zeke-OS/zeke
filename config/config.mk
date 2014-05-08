@@ -81,8 +81,8 @@ configUSRINIT_PRI = osPriorityNormal# Priority of usrinit thread
 # Virtual file system and file systems
 configRAMFS = 1# Compile ramfs with Zeke base
 
-# Kernel Services
-configPTTK91_VM = 0#
+# In-Kernel Unit Tests
+configKUNIT = 1#
 
 # Dev driver modules
 # These can be also commented out

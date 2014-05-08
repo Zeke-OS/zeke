@@ -3,10 +3,9 @@
  * @brief Test strncmp.
  */
 
-#include <stdio.h>
-#include <punit.h>
-
-int strncmp(const char * str1, const char * str2, size_t n);
+#include <kunit.h>
+#include <test/ktest_mib.h>
+#include <kstring.h>
 
 static void setup()
 {
@@ -27,7 +26,7 @@ static char * test_strncmp(void)
 
     retval = strncmp(str1, str2, sizeof(str1) - 1);
 
-    pu_assert_equal("Strings are equal", retval, 0);
+    ku_assert_equal("Strings are equal", retval, 0);
 
 #undef TSTRING1
 #undef TSTRING2
@@ -37,11 +36,7 @@ static char * test_strncmp(void)
 }
 
 static void all_tests() {
-    pu_def_test(test_strncmp, PU_RUN);
+    ku_def_test(test_strncmp, KU_RUN);
 }
 
-int main(int argc, char **argv)
-{
-    return pu_run_tests(&all_tests);
-}
-
+SYSCTL_TEST(kstring, strncmp);

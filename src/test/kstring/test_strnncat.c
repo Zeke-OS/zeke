@@ -3,10 +3,9 @@
  * @brief Test strnncat.
  */
 
-#include <stdio.h>
-#include <punit.h>
-
-char * strnncat(char * dst, size_t ndst, char * src, size_t nsrc);
+#include <kunit.h>
+#include <test/ktest_mib.h>
+#include <kstring.h>
 
 static void setup()
 {
@@ -26,7 +25,7 @@ static char * test_strnncat_two_strings(void)
 
     strnncat(str1, 40, str2, 10);
 
-    pu_assert_str_equal("Strings were concatenated correctly", str1, TCSTRING);
+    ku_assert_str_equal("Strings were concatenated correctly", str1, TCSTRING);
 
 #undef TSTRING1
 #undef TSTRING2
@@ -43,7 +42,7 @@ static char * test_strnncat_same_array(void)
 
     strnncat(str, 20, str, 20);
 
-    pu_assert_str_equal("String can be concatenated with it self.", str, TCSTRING);
+    ku_assert_str_equal("String can be concatenated with it self.", str, TCSTRING);
 
 #undef TSTRING
 #undef TCSTRING
@@ -60,7 +59,7 @@ static char * test_strnncat_limit1(void)
 
     strnncat(str1, 8, str2, 7);
 
-    pu_assert_str_equal("Strings were concatenated correctly", str1, TSTRING1);
+    ku_assert_str_equal("Strings were concatenated correctly", str1, TSTRING1);
 
 #undef TSTRING1
 #undef TSTRING2
@@ -79,7 +78,7 @@ static char * test_strnncat_limit2(void)
 
     strnncat(str1, 11, str2, 4);
 
-    pu_assert_str_equal("Strings were concatenated correctly", str1, TCSTRING);
+    ku_assert_str_equal("Strings were concatenated correctly", str1, TCSTRING);
 
 #undef TSTRING1
 #undef TSTRING2
@@ -89,14 +88,10 @@ static char * test_strnncat_limit2(void)
 }
 
 static void all_tests() {
-    pu_def_test(test_strnncat_two_strings, PU_RUN);
-    pu_def_test(test_strnncat_same_array, PU_RUN);
-    pu_def_test(test_strnncat_limit1, PU_RUN);
-    pu_def_test(test_strnncat_limit2, PU_RUN);
+    ku_def_test(test_strnncat_two_strings, KU_RUN);
+    ku_def_test(test_strnncat_same_array, KU_RUN);
+    ku_def_test(test_strnncat_limit1, KU_RUN);
+    ku_def_test(test_strnncat_limit2, KU_RUN);
 }
 
-int main(int argc, char **argv)
-{
-    return pu_run_tests(&all_tests);
-}
-
+SYSCTL_TEST(kstring, strnncat);

@@ -3,10 +3,9 @@
  * @brief Test strcpy.
  */
 
-#include <stdio.h>
-#include <punit.h>
-
-char * strcpy(char * dst, const char * src);
+#include <kunit.h>
+#include <test/ktest_mib.h>
+#include <kstring.h>
 
 static void setup()
 {
@@ -26,7 +25,7 @@ static char * test_strcpy(void)
 
     strncpy(str2, str1, sizeof(str1));
 
-    pu_assert_str_equal("String was copied correctly", str2, str1);
+    ku_assert_str_equal("String was copied correctly", str2, str1);
 
 #undef TSTRING1
 #undef TSTRING2
@@ -36,11 +35,7 @@ static char * test_strcpy(void)
 }
 
 static void all_tests() {
-    pu_def_test(test_strcpy, PU_RUN);
+    ku_def_test(test_strcpy, KU_RUN);
 }
 
-int main(int argc, char **argv)
-{
-    return pu_run_tests(&all_tests);
-}
-
+SYSCTL_TEST(kstring, strcpy);
