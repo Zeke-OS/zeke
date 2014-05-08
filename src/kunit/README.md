@@ -1,37 +1,24 @@
 PUnit   {#mainpage}
 =====
 
-PUnit, a portable unit testing framework for C.
-Inspired by: http://www.jera.com/techinfo/jtns/jtn002.html
+KUnit is a PUnit based portable unit testing framework that is modified to allow
+running unit tests in kernel space, called in-kernel unit testing.
+
+When kunit is compiled with the kernel tests are exposed in sysctl MIB tree
+under debug.test. Any test can be invoked by writing a value other than zero
+to the corresponding variable in MIB. While test is executing the user thread
+is blocked until test tests have been run. Test results are written at
+"realtime" to the kernel logger.
+
+PUnit was originally inspired by: http://www.jera.com/techinfo/jtns/jtn002.html
 
 Complete documentation: http://ninjaware.github.com/punit/
 
-Setting up the directory tree
------------------------------
 
-    .
-    |-example_prj_target1   (Your test suite)
-    |---bin
-    |---obj
-    |-example_prj_target2
-    |---bin
-    |---obj
-    |-punit                 (PUnit)
-
-
-How to implement a new test suite
+How to implement a new test group
 ---------------------------------
 
-1. `cp -R example_prj name_of_your_project`
-2. Update Makefile in your new project directory according to instructions in
-   the file
-3. Write new tests and name the test files in following manner:
-   `test_<name>.c`
-4. Write a per test makefile `test_<name>.mk` which specifies source file for
-   the test.
-5. Run `make`. If everything went well PUnit should automatically determine
-   and build all needed source modules, build the tests and finally run the
-   tests.
+TODO
 
 
 Assertions
@@ -43,8 +30,6 @@ Assertions
   pointers are equal
 + `pu_assert_str_equal(message, left, right)` - Checks if left and right
   strings are equal (strcmp)
-+ `pu_assert_double_equal(message, left, right, delta)` - Checks if left and
-  right doubles are appoximately equal
 + `pu_assert_array_equal(message, left, right, size)` - Asserts that each
   integer element i of two arrays are equal (strcmp).
 + `pu_assert_str_array_equal(message, left, right, size)` - Asserts that each
@@ -53,29 +38,11 @@ Assertions
 + `pu_assert_not_null(message, ptr)` - Asserts that a pointer isn't null.
 + `pu_assert_fail(message)` - Always fails
 
-See examples in: `examples/example_prj`
-
-
-Mock functions
---------------
-
-Mock functions can be quite useful especially when testing some OS modules or
-embedded software.
-
-    /* Override func */
-    void my_func(void);
-    void my_func(void) { }
-    #define func my_func
-
-    #include "func.h"
-
-Note: Do not build func.c i.e. do not add it to the name of the test module.
-
 
 License 
 -------
 
-Copyright (c) 2013, Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+Copyright (c) 2013, 2014, Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
 Copyright (c) 2012, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
 All rights reserved.
 
