@@ -32,7 +32,6 @@ Key features
 
 News
 ----
-- There will be optional support for full pre-emption of kernel mode
 - Merging some things from freebsd (signal handling, sysctl)
 - Dev subsys removed and will be soon replaced with devfs and
   virtual file system
@@ -65,6 +64,7 @@ To successfully compile Zeke, you'll need the following packages/tools:
 - binutils
 - unifdef
 - bash
+- cloc (for stats)
 
 ### Compiling
 

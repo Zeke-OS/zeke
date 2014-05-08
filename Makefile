@@ -201,6 +201,10 @@ kernel.bin: $(MEMMAP) $(STARTUP_O) $(MODAS) $(CRT)
 	$(ARMGNU)-objdump -D kernel.elf > kernel.list
 	$(ARMGNU)-objcopy kernel.elf -O binary kernel.bin
 
+# target_doc: stats - Calculate some stats.
+stats: clean
+	cloc --exclude-dir=.git,doc .
+
 # target: help - Display callable targets.
 help:
 	./tools/help.sh

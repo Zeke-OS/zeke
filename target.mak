@@ -41,7 +41,6 @@ endif
 
 # CRT is compiled per instruction set or per core model
 ifeq ($(configARM_PROFILE_M),1)
-	# libgcc for ARMv6-M
 	ifeq ($(configARCH),__ARM6M__)
 		CRT = lib/crt/libaeabi-armv6-m/libaeabi-armv6-m.a
 	endif
