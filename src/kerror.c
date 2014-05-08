@@ -53,10 +53,17 @@ vnode_t kerror_vnode = {
 };
 
 /* kputs functions */
+static void kputs_nolog(const char * buf);
 static void kputs_uart(const char * buf);
 
-void (*kputs)(const char *) = &kputs_uart;
+void (*kputs)(const char *) = &kputs_uart; /* Boot value */
 static int curr_klogger = KERROR_UARTLOG;
+/** Array of klogger functions */
+static (*kputs_arr[])(const char *) = {
+    [KERROR_NOLOG] = &kputs_nolog,
+    [KERROR_LASTLOG] = &kputs_nolog, /* TODO */
+    [KERROR_UARTLOG] = &kputs_uart
+};
 
 /**
  * Kernel fake fd write function to print kerror messages from usr mode threads.
@@ -90,25 +97,15 @@ static void kputs_uart(const char * buf)
 }
 
 /**
- * sysctl function to select klogger.
+ * sysctl function to read current klogger and change it.
  */
 static int sysctl_kern_klogger(SYSCTL_HANDLER_ARGS)
 {
     int error;
-    int sel;
 
-    error = sysctl_handle_int(oidp, &sel, sizeof(sel), req);
+    error = sysctl_handle_int(oidp, &curr_klogger, sizeof(curr_klogger), req);
     if (!error && req->newptr) {
-        switch (sel) {
-        case KERROR_NOLOG:
-            kputs = &kputs_nolog;
-            break;
-        case KERROR_LASTLOG:
-            kputs = &kputs_nolog; /* TODO */
-            break;
-        case KERROR_UARTLOG:
-            kputs = &kputs_uart;
-        }
+        kputs = kputs_arr[curr_klogger];
     }
 
     return error;

@@ -44,9 +44,7 @@ configUART = 1#
 configATAG = 1# Support bootloader ATAGs
 configMP = 0# Enable multi-processing support Requires: configREEMPT
 
-# Kernel logging methods (Select one or none)
-configKERROR_LAST = 0# Store last n log messages in buffer.
-configKERROR_TTYS = 1# Print kernel messages to serial tty.
+# TODO Select boot time logger
 
 # Kernel logging options
 # Additional log messages and asserts.
