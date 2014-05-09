@@ -51,6 +51,8 @@ char banner[] = "\
              .||. ||.'|...'\n\n\
 ";
 
+extern int tish(void);
+
 static void run_ikut(void);
 static void print_mib_name(int * mib, int len);
 static void * test_thread(void *);
@@ -91,7 +93,9 @@ void * main(void * arg)
     }
 #endif
 
-    run_ikut();
+    while (1)
+        tish();
+    //run_ikut();
 
     pthread_create(&thread_id, &attr, test_thread, 0);
 
@@ -143,9 +147,9 @@ static void run_ikut(void)
 
     while ((len_next = sizeof(mib_next)),
             (err = sysctlgetnext(mib_next, len_next, mib_next, &len_next)) == 0) {
-        if (mib_next[0] != mib_test[0] || mib_next[1] != mib_test[1]) {
+        if (!sysctltstmib(mib_next, mib_test, len)) {
             print_message("End of tests\n");
-            break; /* EOF debug.teset */
+            break; /* EOF debug.test */
         }
 
         print_mib_name(mib_next, len_next);
@@ -158,14 +162,22 @@ static void run_ikut(void)
 
 static void print_mib_name(int * mib, int len)
 {
-    char buf[80] = "MIB: ";
+    char buf[80];
     char buf2[80];
+    char strname[40];
+    char strdesc[40];
+    size_t strname_len = sizeof(strname);
+    size_t strdesc_len = sizeof(strdesc);
 
     for (int i = 0; i < len; i++) {
         ksprintf(buf2, sizeof(buf2), "%s.%u", buf, mib[i]);
         memcpy(buf, buf2, sizeof(buf));
     }
-    ksprintf(buf2, sizeof(buf2), "%s\n", buf);
+    sysctlmibtoname(mib, len, strname, &strname_len);
+    sysctlgetdesc(mib, len, strdesc, &strdesc_len);
+    strname[sizeof(strname) - 1] = '\0';
+    strdesc[sizeof(strdesc) - 1] = '\0';
+    ksprintf(buf2, sizeof(buf2), "MIB:%s: %s : %s\n", buf + 1, strname, strdesc);
     print_message(buf2);
 }
 

@@ -33,5 +33,6 @@ int uitoa32(char * str, uint32_t value);
 int uitoah32(char * str, uint32_t value);
 char * kstrdup(const char * src, size_t max);
 void ksprintf(char * str, size_t maxlen, const char * format, ...) __attribute__ ((format (printf, 3, 4)));
+char * kstrtok(char * s, const char * delim, char ** lasts);
 
 #endif /* KSTRING_H */
