@@ -52,7 +52,8 @@ static void cd(char ** args);
 
 struct builtin cmdarr[] = {
         {cd, "cd"},
-        {sysctl_cmd, "sysctl"}
+        {sysctl_cmd, "sysctl"},
+        {run_ikut, "ikut"}
 };
 
 /* Static functions */
@@ -96,7 +97,7 @@ prompt:
 
 static void cd(char ** args)
 {
-    char * arg = kstrtok(0, DELIMS, args);
+    //char * arg = kstrtok(0, DELIMS, args);
     puts("cd not implemented\n");
 #if 0
     if (!arg)

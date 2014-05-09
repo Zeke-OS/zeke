@@ -151,6 +151,10 @@ static void set_baudrate(unsigned int baud_rate)
 static void set_lcrh(const uart_port_init_t * conf)
 {
     uint32_t tmp = 0;
+    istate_t s_entry;
+
+    s_entry = get_interrupt_state();
+    disable_interrupt();
 
     /* Enable FIFOs */
     tmp |= 0x1 << 4;
@@ -184,10 +188,15 @@ static void set_lcrh(const uart_port_init_t * conf)
 
     mmio_write(UART0_LCRH, tmp);
     mmio_end();
+    set_interrupt_state(s_entry);
 }
 
 void bcm2835_uputc(uint8_t byte)
 {
+    istate_t s_entry;
+
+    s_entry = get_interrupt_state();
+    disable_interrupt();
     mmio_start();
 
     /* Wait for UART to become ready to transmit. */
@@ -195,12 +204,16 @@ void bcm2835_uputc(uint8_t byte)
     mmio_write(UART0_DR, byte);
 
     mmio_end();
+    set_interrupt_state(s_entry);
 }
 
 int bcm2835_ugetc()
 {
     int byte = -1;
+    istate_t s_entry;
 
+    s_entry = get_interrupt_state();
+    disable_interrupt();
     mmio_start();
 
     /* Check that receive FIFO/register is not empty. */
@@ -210,6 +223,8 @@ int bcm2835_ugetc()
     }
 
     mmio_end();
+    set_interrupt_state(s_entry);
+
     return byte;
 }
 

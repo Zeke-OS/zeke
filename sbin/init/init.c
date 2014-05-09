@@ -52,8 +52,6 @@ char banner[] = "\
              .||. ||.'|...'\n\n\
 ";
 
-static void run_ikut(void);
-static void print_mib_name(int * mib, int len);
 static void * test_thread(void *);
 static void print_message(const char * message);
 static void thread_stat(void);
@@ -94,7 +92,6 @@ void * main(void * arg)
 
     while (1)
         tish();
-    //run_ikut();
 
     pthread_create(&thread_id, &attr, test_thread, 0);
 
@@ -125,59 +122,6 @@ void * main(void * arg)
         print_message(buf);
         sleep(5);
     }
-}
-
-static void run_ikut(void)
-{
-    char buf[80];
-    int mib_test[5];
-    int mib_next[5];
-    size_t len, len_next;
-    int  err;
-    const int one = 1;
-
-    len = sysctlnametomib("debug.test", mib_test, num_elem(mib_test));
-
-    print_message("     \n"); /* Hack */
-    print_mib_name(mib_test, len);
-
-    memcpy(mib_next, mib_test, len * sizeof(int));
-    len_next = len;
-
-    while ((len_next = sizeof(mib_next)),
-            (err = sysctlgetnext(mib_next, len_next, mib_next, &len_next)) == 0) {
-        if (!sysctltstmib(mib_next, mib_test, len)) {
-            print_message("End of tests\n");
-            break; /* EOF debug.test */
-        }
-
-        print_mib_name(mib_next, len_next);
-        sysctl(mib_next, len_next, 0, 0, (void *)(&one), sizeof(one));
-    }
-
-    ksprintf(buf, sizeof(buf), "errno = %i\n", errno);
-    print_message(buf);
-}
-
-static void print_mib_name(int * mib, int len)
-{
-    char buf[80];
-    char buf2[80];
-    char strname[40];
-    char strdesc[40];
-    size_t strname_len = sizeof(strname);
-    size_t strdesc_len = sizeof(strdesc);
-
-    for (int i = 0; i < len; i++) {
-        ksprintf(buf2, sizeof(buf2), "%s.%u", buf, mib[i]);
-        memcpy(buf, buf2, sizeof(buf));
-    }
-    sysctlmibtoname(mib, len, strname, &strname_len);
-    sysctlgetdesc(mib, len, strdesc, &strdesc_len);
-    strname[sizeof(strname) - 1] = '\0';
-    strdesc[sizeof(strdesc) - 1] = '\0';
-    ksprintf(buf2, sizeof(buf2), "MIB:%s: %s : %s\n", buf + 1, strname, strdesc);
-    print_message(buf2);
 }
 
 static void * test_thread(void * arg)

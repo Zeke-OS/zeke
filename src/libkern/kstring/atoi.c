@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    tish.h
+ * @file    atoi.c
  * @author  Olli Vanhoja
- * @brief   Tiny Init Shell for debugging in init.
+ * @brief   atoi function.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,15 +30,26 @@
  *******************************************************************************
  */
 
-#pragma once
-#ifndef TISH_H
-#define TISH_H
+int atoi(char * str)
+{
+    int n = 0;
+    int f = 0;
 
-#define MAX_LEN 80
-#define DELIMS  " \t\r\n"
+    for (;; *str++) {
+        switch (*str) {
+        case ' ':
+        case '\t':
+            continue;
+        case '-':
+            f++;
+        case '+':
+            str++;
+        }
+        break;
+    }
 
-int tish(void);
-void sysctl_cmd(char ** args);
-void run_ikut(void);
+    while (*str >= '0' && *str <= '9')
+        n = n * 10 + *str++ - '0';
 
-#endif /* TISH_H */
+    return f ? -n : n;
+}
