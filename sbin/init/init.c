@@ -38,6 +38,7 @@
 #include <sys/sysctl.h>
 #include <unistd.h>
 #include <errno.h>
+#include "tish.h"
 #include "init.h"
 
 dev_t dev_tty0 = DEV_MMTODEV(2, 0);
@@ -50,8 +51,6 @@ char banner[] = "\
 ||......|'|...||'|. ||      \n\
              .||. ||.'|...'\n\n\
 ";
-
-extern int tish(void);
 
 static void run_ikut(void);
 static void print_mib_name(int * mib, int len);

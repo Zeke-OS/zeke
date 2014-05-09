@@ -35,10 +35,9 @@
 #include <libkern.h>
 #include <errno.h>
 #include <unistd.h>
+#include "tish.h"
 
-#define MAX_LEN 80
-#define DELIMS " \t\r\n"
-
+/* TODO Remove */
 #define fprintf(stream, str) write(2, str, strlenn(str, MAX_LEN))
 #define puts(str) fprintf(stderr, str)
 
@@ -47,12 +46,17 @@ struct builtin {
     char name[10];
 };
 
+/* Builtins */
+
 static void cd(char ** args);
-static char * gline(char * str, int num);
 
 struct builtin cmdarr[] = {
-        {cd, "cd"}
+        {cd, "cd"},
+        {sysctl_cmd, "sysctl"}
 };
+
+/* Static functions */
+static char * gline(char * str, int num);
 
 int tish(void)
 {
