@@ -83,6 +83,7 @@ configRAMFS = 1# Compile ramfs with Zeke base
 
 # In-Kernel Unit Tests
 configKUNIT = 1#
+KU_REPORT_ORIENTED = 0#
 
 # Dev driver modules
 # These can be also commented out

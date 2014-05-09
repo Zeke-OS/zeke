@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    ktest.h
+ * @file    ktest_mib.h
  * @author  Olli Vanhoja
  * @brief   MIB decls for unit tests.
  * @section LICENSE
@@ -36,6 +36,8 @@
 
 #include <sys/sysctl.h>
 
+SYSCTL_DECL(_debug_test_generic);
 SYSCTL_DECL(_debug_test_kstring);
+SYSCTL_DECL(_debug_test_fs);
 
 #endif /* KTEST_MIB_H */

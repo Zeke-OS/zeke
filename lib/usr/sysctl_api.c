@@ -75,9 +75,20 @@ int sysctlnametomib(char * name, int * oidp, int lenp)
     i = sysctl(qoid, 2, oidp, &j, name, strlenn(name, CTL_MAXSTRNAME));
     if (i < 0)
         return (i);
-    j /= sizeof(int);
+    return j / sizeof(int);
+}
 
-    return j;
+int sysctlmibtoname(int * oid, int len, char * strname, size_t * strname_len)
+{
+    int qoid[len + 2];
+    int i;
+
+    qoid[0] = 0; /* Magic:       */
+    qoid[1] = 1; /* Get str name */
+    memcpy(qoid + 2, oid, len * sizeof(int));
+
+    i = sysctl(qoid, len + 2, strname, strname_len, 0, 0);
+    return i / sizeof(int);
 }
 
 int sysctloidfmt(int * oid, int len, char * fmt, unsigned int * kind)
@@ -105,6 +116,19 @@ int sysctloidfmt(int * oid, int len, char * fmt, unsigned int * kind)
     return 0;
 }
 
+int sysctlgetdesc(int * oid, int len, char * str, size_t * str_len)
+{
+int qoid[len + 2];
+    int i;
+
+    qoid[0] = 0; /* Magic:       */
+    qoid[1] = 5; /* Get str name */
+    memcpy(qoid + 2, oid, len * sizeof(int));
+
+    i = sysctl(qoid, len + 2, str, str_len, 0, 0);
+    return i / sizeof(int);
+}
+
 int sysctlgetnext(int * oid, int len, int * oidn, size_t * lenn)
 {
     int name[CTL_MAXNAME + 2];
@@ -123,6 +147,15 @@ int sysctlgetnext(int * oid, int len, int * oidn, size_t * lenn)
     err = sysctl(name, len, oidn, lenn, 0, 0);
     *lenn = *lenn / sizeof(int);
     return err;
+}
+
+int sysctltstmib(int * left, int * right, int len)
+{
+    for (int i = 0; i < len; i++) {
+        if (left[i] != right[i])
+            return 0;
+    }
+    return (1 == 1);
 }
 
 /**

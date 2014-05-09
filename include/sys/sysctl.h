@@ -161,8 +161,19 @@ int sysctl(int * name, unsigned int namelen, void * oldp, size_t * oldlenp,
 int sysctlnametomib(char * name, int * oidp, int lenp);
 
 /**
+ * @param[in]  oid      is the interger name of an MIB entry.
+ * @param[in]  len      is the length of the oid.
+ * @param[out] strname  is the string name of the entry returned.
+ * @param  strname_len  is the length of the strname, returns final length of
+ *                      the string.
+ * @return Same as sysctl().
+ * @throws Same os sysctl().
+ */
+int sysctlmibtoname(int * oid, int len, char * strname, size_t * strname_len);
+
+/**
  * Get type of MIB entry.
- * @param[in]  oid
+ * @param[in]  oid is the integer name of the entry.
  * @param[in]  len is the length of oid name.
  * @param[out] fmt is a format string of the entry, usually string
  *             representation of the type.
@@ -171,6 +182,17 @@ int sysctlnametomib(char * name, int * oidp, int lenp);
  * @throws Same errnos as sysctl().
  */
 int sysctloidfmt(int * oid, int len, char * fmt, unsigned int * kind);
+
+/**
+ * @param[in]  oid      is the interger name of an MIB entry.
+ * @param[in]  len      is the length of the oid.
+ * @param[out] strname  is the string description of the entry returned.
+ * @param  strname_len  is the length of the strname, returns final length of
+ *                      the string.
+ * @return Same as sysctl().
+ * @throws Same os sysctl().
+ */
+int sysctlgetdesc(int * oid, int len, char * str, size_t * str_len);
 
 /**
  * Get the next variable from MIB tree.
@@ -182,6 +204,14 @@ int sysctloidfmt(int * oid, int len, char * fmt, unsigned int * kind);
  * @throws Same as sysctl().
  */
 int sysctlgetnext(int * oid, int len, int * oidn, size_t * lenn);
+
+/**
+ * Test if MIBs are equal to the len.
+ * @return  Returns true if MIBs are equl to the len;
+ *          Returns false if MIBs differ between indexes 0..len-1.
+ */
+int sysctltstmib(int * left, int * right, int len);
+
 
 #ifdef KERNEL_INTERNAL
 #include <sys/linker_set.h>

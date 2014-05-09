@@ -191,8 +191,8 @@
  * Always fails.
  * @param message that is shown.
  */
-#define ku_assert_fail(message) do { printf("FAILED: Assert fail\n"); \
-    return message;                                                   \
+#define ku_assert_fail(message) do { kputs("FAILED: Assert fail\n");    \
+    return message;                                                     \
 } while (0)
 
 #define KU_RUN  1 /*!< Marks that a particular test should be run. */
@@ -244,7 +244,7 @@ SYSCTL_DECL(_debug_test);
     return error;                                                           \
 }                                                                           \
 SYSCTL_PROC(_debug_test_##group, OID_AUTO, tname, CTLTYPE_INT | CTLFLAG_RW, \
-        NULL, 0, sysctl_test_##group_##tname, "I", "Unit test.")
+        NULL, 0, sysctl_test_##group_##tname, "I", "Unit test for " #tname ".")
 
 extern int ku_tests_passed; /*!< Global tests passed counter. */
 extern int ku_tests_skipped; /*! Global tests skipped counter */
