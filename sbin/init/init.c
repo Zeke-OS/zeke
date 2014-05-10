@@ -134,7 +134,7 @@ static void * test_thread(void * arg)
 
 static void print_message(const char * message)
 {
-    write(2, message, strlenn(message, 80));
+    write(2, message, strlenn(message, 80) + 1);
 }
 
 static void thread_stat(void)
