@@ -72,6 +72,8 @@ static void (*kputs_arr[])(const char *) = {
 void kerror_init(void) __attribute__((constructor));
 void kerror_init(void)
 {
+    SUBSYS_INIT();
+
     uart_port_init_t uart_conf = {
         .baud_rate  = UART_BAUDRATE_115200,
         .data_bits  = UART_DATABITS_8,
@@ -82,7 +84,7 @@ void kerror_init(void)
     kerror_uart = uart_getport(0);
     kerror_uart->init(&uart_conf);
 
-    KERROR(KERROR_INFO, "Kerror logger initialized");
+    SUBSYS_INITFINI("Kerror logger OK");
 }
 
 /**
@@ -110,7 +112,7 @@ static void kputs_nolog(const char * str)
 static void kputs_uart(const char * str)
 {
     size_t i = 0;
-    static char kbuf[1024] = "";
+    static char kbuf[2048] = "";
 
     /* TODO static buffering, lock etc. */
     strnncat(kbuf, sizeof(kbuf), str, sizeof(kbuf));

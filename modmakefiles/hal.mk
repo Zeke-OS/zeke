@@ -9,6 +9,8 @@ ifeq ($(configMCU_MODEL),MCU_MODEL_BCM2835)
 	# NOTE: We don't want to include STARTUP here!
 	hal-ASRC-1 += $(wildcard src/hal/bcm2835/*.S)
 	hal-SRC-1 += $(wildcard src/hal/bcm2835/*.c)
+	#should have raspi flag
+	hal-SRC-1 += $(wildcard src/hal/raspi/*.c)
 endif
 
 # Arhitecture and Profile specific sources

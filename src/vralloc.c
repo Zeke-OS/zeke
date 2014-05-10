@@ -98,7 +98,7 @@ void vralloc_init(void)
 
     last_vreg = reg;
 
-    SUBSYS_INITFINI("vralloc init");
+    SUBSYS_INITFINI("vralloc OK");
 }
 
 /**

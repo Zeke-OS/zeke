@@ -69,9 +69,6 @@ static void set_baudrate(unsigned int baud_rate);
 static void set_lcrh(const uart_port_init_t * conf);
 void bcm2835_uart_uputc(uint8_t byte);
 int bcm2835_uart_ugetc(void);
-#if 0
-static void delay(int32_t count);
-#endif
 
 void bcm2835_uart_register(void)
 {
@@ -97,15 +94,16 @@ void bcm2835_uart_init(const uart_port_init_t * conf)
     /* Setup the GPIO pin 14 & 15. */
 
     /* Disable pull up/down for all GPIO pins & delay for 150 cycles. */
-    mmio_write(GPPUD, 0x00000000);
+    mmio_write(GPIO_GPPUD, 0x00000000);
+    bcm2835_gpio_delay(5);
 
     /* Disable pull up/down for pin 14, 15 and delay for 150 cycles. */
-    mmio_write(GPPUDCLK0, (1 << 14) | (1 << 15));
-    //delay(10);
+    mmio_write(GPIO_PUDCLK0, (1 << 14) | (1 << 15));
+    bcm2835_gpio_delay(5);
 
     /* Write 0 to GPPUDCLK0 to make it take effect.
      * (only affects to pins 14 & 15) */
-    mmio_write(GPPUDCLK0, 0x00000000);
+    mmio_write(GPIO_PUDCLK0, 0x00000000);
 
     /* Clear pending interrupts. */
     mmio_write(UART0_ICR, 0x7FF);
@@ -220,18 +218,6 @@ int bcm2835_uart_ugetc()
 
     return byte;
 }
-
-#if 0
-/**
- * Idiotic delay function.
- * @param count delay time.
- */
-static void delay(int32_t count)
-{
-    __asm__ volatile("__delay_%=: subs %[count], %[count], #1; bne __delay_%=\n"
-    : : [count]"r"(count) : "cc");
-}
-#endif
 
 /**
 * @}

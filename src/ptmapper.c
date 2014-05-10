@@ -280,7 +280,7 @@ void ptmapper_init(void)
     KERROR(KERROR_DEBUG, "Attached mmu_pagetable_system");
 #endif
 
-    SUBSYS_INITFINI("ptmapper init OK");
+    SUBSYS_INITFINI("ptmapper OK");
 }
 
 /**
