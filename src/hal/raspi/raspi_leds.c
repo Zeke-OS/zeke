@@ -75,12 +75,12 @@ void raspi_leds_init(void) {
     /* Enable pull-up control, then wait for some cycles.
      */
     mmio_write(GPIO_GPPUD, 2);
-    bcm2835_gpio_delay(5);
+    bcm2835_gpio_delay(150);
 
     /* Set the pull up/down clock for pin 14 */
     mmio_write(GPIO_PUDCLK0, 1 << 14);
     mmio_write(GPIO_PUDCLK1, 0);
-    bcm2835_gpio_delay(5);
+    bcm2835_gpio_delay(150);
 
     /* Disable pull-up control and reset the clock registers. */
     mmio_write(GPIO_GPPUD, 0);
@@ -89,7 +89,7 @@ void raspi_leds_init(void) {
 
     for (int i = 0; i < 100; i++) {
         raspi_led_invert();
-        bcm2835_gpio_delay(200);
+        bcm2835_gpio_delay(2000000);
     }
 
     mmio_end();

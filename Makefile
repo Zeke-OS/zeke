@@ -154,7 +154,7 @@ $(AUTOCONF_H): $(CONFIG_MK)
 $(CONFIG_MK):
 # End of config
 
-kernel: kernel.bin config
+kernel: kernel.img config
 
 $(STARTUP_O): $(STARTUP)
 	@echo "AS $@"
@@ -186,10 +186,10 @@ $(MODAS): $(ASOBJS) $(OBJS)
 	@echo "AR $@"
 	@ar rcs $@ $(CUR_OBJS)
 
-kernel.bin: $(MEMMAP) $(STARTUP_O) $(MODAS) $(CRT)
+kernel.img: $(MEMMAP) $(STARTUP_O) $(MODAS) $(CRT)
 	$(ARMGNU)-ld -o kernel.elf -T $(MEMMAP) $(LDFLAGS) $(STARTUP_O) --whole-archive $(MODAS) --no-whole-archive $(CRT)
 	$(ARMGNU)-objdump -D kernel.elf > kernel.list
-	$(ARMGNU)-objcopy kernel.elf -O binary kernel.bin
+	$(ARMGNU)-objcopy kernel.elf -O binary kernel.img
 
 # target_doc: stats - Calculate some stats.
 stats: clean
@@ -210,6 +210,7 @@ clean:
 	find . -type f -name "*.opt.bc" -exec rm -f {} \;
 	find . -type f -name "*.opt.s" -exec rm -f {} \;
 	rm -f *.bin
+	rm -f *.img
 	rm -f *.elf
 	rm -f *.list
 	rm -f *.a

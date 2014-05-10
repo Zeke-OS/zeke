@@ -222,28 +222,31 @@ void tish_ikut(char ** arg)
 {
     char buf[80];
     int mib_test[5];
+    int mib_cur[5];
     int mib_next[5];
-    size_t len, len_next;
+    size_t len_cur, len_next;
     int  err;
     const int one = 1;
 
-    len = sysctlnametomib("debug.test", mib_test, num_elem(mib_test));
+    const size_t len_test = sysctlnametomib("debug.test", mib_test, num_elem(mib_test));
 
     puts("     \n"); /* Hack */
-    print_mib_name(mib_test, len);
+    print_mib_name(mib_test, len_test);
 
-    memcpy(mib_next, mib_test, len * sizeof(int));
-    len_next = len;
+    memcpy(mib_cur, mib_test, len_test * sizeof(int));
+    len_cur = len_test;
 
     while ((len_next = sizeof(mib_next)),
-            (err = sysctlgetnext(mib_next, len_next, mib_next, &len_next)) == 0) {
-        if (!sysctltstmib(mib_next, mib_test, len)) {
+            (err = sysctlgetnext(mib_cur, len_cur, mib_next, &len_next)) == 0) {
+        if (!sysctltstmib(mib_next, mib_test, len_test)) {
             puts("End of tests\n");
             break; /* EOF debug.test */
         }
+        memcpy(mib_cur, mib_next, len_next * sizeof(int));
+        len_cur = len_next;
 
-        print_mib_name(mib_next, len_next);
-        sysctl(mib_next, len_next, 0, 0, (void *)(&one), sizeof(one));
+        print_mib_name(mib_cur, len_cur);
+        sysctl(mib_cur, len_cur, 0, 0, (void *)(&one), sizeof(one));
     }
 
     ksprintf(buf, sizeof(buf), "errno = %i\n", errno);
