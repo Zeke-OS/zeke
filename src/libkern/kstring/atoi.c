@@ -30,18 +30,21 @@
  *******************************************************************************
  */
 
-int atoi(char * str)
+#include <kstring.h>
+
+int atoi(const char * str)
 {
     int n = 0;
     int f = 0;
 
-    for (;; *str++) {
+    for (;; str++) {
         switch (*str) {
         case ' ':
         case '\t':
             continue;
         case '-':
             f++;
+            /*@fallthrough@*/
         case '+':
             str++;
         }
@@ -49,7 +52,7 @@ int atoi(char * str)
     }
 
     while (*str >= '0' && *str <= '9')
-        n = n * 10 + *str++ - '0';
+        n = n * 10 + (int)(*str++) - '0';
 
     return f ? -n : n;
 }

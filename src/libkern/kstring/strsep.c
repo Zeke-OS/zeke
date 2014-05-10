@@ -51,7 +51,7 @@ char * strsep(char ** stringp, const char * delim)
     if ((s = *stringp) == NULL)
         return (NULL);
     for (tok = s;;) {
-        c = *s++;
+        c = (int)(*s++);
         spanp = delim;
         do {
             if ((sc = *spanp++) == c) {

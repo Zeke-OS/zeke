@@ -1,4 +1,5 @@
 /*-
+ * Copyright (c) 2014, Olli Vanhoja
  * Copyright (c) 1990, 1993
  *  The Regents of the University of California.  All rights reserved.
  *
@@ -43,12 +44,12 @@ typedef int word;       /* "word" used for optimal copy speed */
 #define wsize   sizeof(word)
 #define wmask   (wsize - 1)
 
-void * __aeabi_memmove(void *dst0, const void *src0, size_t length) __attribute__ ((weak));
+void * __aeabi_memmove(void * dst0, const void * src0, size_t length) __attribute__ ((weak));
 
-void * memmove(void *dst0, const void *src0, size_t length)
+void * memmove(void * dst0, const void * src0, size_t length)
 {
-    char *dst = dst0;
-    const char *src = src0;
+    char * dst = dst0;
+    const char * src = src0;
     size_t t;
 
     if (length == 0 || dst == src)      /* nothing to do */

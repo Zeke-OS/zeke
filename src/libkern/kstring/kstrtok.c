@@ -53,7 +53,7 @@ char * kstrtok(char * s, const char * delim, char ** lasts)
      * Skip (span) leading delimiters (s += strspn(s, delim), sort of).
      */
 cont:
-    c = *s++;
+    c = (int)(*s++);
     for (spanp = delim; (sc = *spanp++) != 0;) {
         if (c == sc)
             goto cont;
@@ -70,7 +70,7 @@ cont:
      * Note that delim must have one NUL; we stop if we see that, too.
      */
     for (;;) {
-        c = *s++;
+        c = (int)(*s++);
         spanp = delim;
         do {
             if ((sc = *spanp++) == c) {

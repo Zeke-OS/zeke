@@ -46,7 +46,7 @@ char * strcpy(char * destination, const char * source)
     while (*dest++ = *src++);
 #else /* Optimize for speed, if this speeds up it at all */
     /* Better option would be trying to detect null chars in word. */
-    int n = 0;
+    size_t n = 0;
 
     while (source[n++] != '\0');
     memcpy(destination, source, n);

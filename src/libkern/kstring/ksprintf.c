@@ -73,29 +73,39 @@ void ksprintf(char * str, size_t maxlen, const char * format, ...)
                     case 'd':
                     case 'i':
                         {
-                            int x = va_arg(args, uint32_t);
+                            int x = va_arg(args, int);
                             if (x < 0) {
                                 x *= -1;
                                 str[n++] = '-';
                             }
-                            n += uitoa32(str + n, x);
+                            n += uitoa32(str + n, (uint32_t)x);
                         }
                         break;
                     case 'u':
-                        n += uitoa32(str + n, va_arg(args, uint32_t));
+                        n += uitoa32(str + n,
+                                (uint32_t)(va_arg(args, unsigned int)));
                         break;
                     case 'p':
                         str[n++] = 'b';
+                        /*@fallthrough@*/
                     case 'x':
-                        n += uitoah32(str + n, va_arg(args, uint32_t));
+                        n += uitoah32(str + n,
+                                (uint32_t)(va_arg(args, unsigned int)));
                         break;
                     case 'c':
                         str[n++] = (char)(va_arg(args, int));
                         break;
                     case 's':
                         str[n] = '\0';
-                        strnncat(str, maxlen, va_arg(args, char *), maxlen - n);
-                        n = strlenn(str, maxlen);
+                        {
+                            size_t j = 0;
+                            char * buf = va_arg(args, char *);
+                            for (; n < maxlen; n++) {
+                                if (buf[j] == '\0')
+                                    break;
+                                str[n] = buf[j++];
+                            }
+                        }
                         break;
                     case '%':
                         str[n++] = c;

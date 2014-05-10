@@ -42,7 +42,7 @@
  */
 char * strnncat(char * dst, size_t ndst, const char * src, size_t nsrc)
 {
-    int i, j, n1, n2;
+    size_t i, j, n1, n2;
 
     for (n1 = 0; n1 < ndst; n1++) {
         if (dst[n1] == '\0')

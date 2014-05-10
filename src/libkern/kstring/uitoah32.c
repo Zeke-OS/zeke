@@ -49,8 +49,8 @@ int uitoah32(char * str, uint32_t value)
     str[1] = 'x';
 
     for (n = 28; n >= 0; n -= 4) {
-        c = (value & mask) >> n;
-        c = (c < 10) ? '0' + c : 'a' + (c - 10);
+        c = (char)((value & mask) >> n);
+        c = (c < (char)10) ? '0' + c : 'a' + (c - (char)10);
         str[i++] = c;
         mask = mask >> 4;
     }
