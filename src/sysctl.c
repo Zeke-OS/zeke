@@ -1072,11 +1072,13 @@ int userland_sysctl(threadInfo_t * td, int * name, unsigned int namelen, void * 
     req.lock = REQ_UNWIRED;
 
     // TODO ?
-    //if (req.oldlen > PAGE_SIZE) {
-    //    memlocked = 1;
-    //    sx_xlock(&sysctlmemlock);
-    //} else
-    //    memlocked = 0;
+#if 0
+    if (req.oldlen > PAGE_SIZE) {
+        memlocked = 1;
+        sx_xlock(&sysctlmemlock);
+    } else
+        memlocked = 0;
+#endif
 
     for (;;) {
         req.oldidx = 0;
@@ -1086,7 +1088,9 @@ int userland_sysctl(threadInfo_t * td, int * name, unsigned int namelen, void * 
         SYSCTL_UNLOCK();
         if (error != EAGAIN)
             break;
-    //    kern_yield(PRI_USER); /* TODO Should we yield here? */
+#if 0
+        kern_yield(PRI_USER); /* TODO Should we yield here? */
+#endif
     }
 
     /* TODO ?? */

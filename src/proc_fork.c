@@ -66,7 +66,11 @@ pid_t proc_fork(pid_t pid)
      * http://pubs.opengroup.org/onlinepubs/9699919799/functions/fork.html
      */
 #if configDEBUG >= KERROR_DEBUG
-    KERROR(KERROR_DEBUG, "fork() called");
+    {
+    char buf[40];
+    ksprintf(buf, sizeof(buf), "fork(%u)", pid);
+    KERROR(KERROR_DEBUG, buf);
+    }
 #endif
 
     proc_info_t * const old_proc = proc_get_struct(pid);
@@ -253,7 +257,7 @@ pid_t proc_fork(pid_t pid)
      * calling thread.
      * We left main_thread null if calling process has no main thread.
      */
-    if (old_proc->main_thread != 0) {
+    if (old_proc->main_thread) {
         pthread_t new_tid;
         void * stack;
 
@@ -268,7 +272,8 @@ pid_t proc_fork(pid_t pid)
             retval = 0;
             goto out;
         }
-    }
+    } else
+        new_proc->main_thread = 0;
     retval = new_proc->pid;
 
     /* Update inheritance attributes */
@@ -280,7 +285,7 @@ pid_t proc_fork(pid_t pid)
     /* Insert the new process to _procarr */
     procarr_insert(new_proc);
 
-    if (new_proc->main_thread != 0) {
+    if (new_proc->main_thread) {
         sched_thread_set_exec(new_proc->main_thread->id);
     }
 #if configDEBUG >= KERROR_DEBUG

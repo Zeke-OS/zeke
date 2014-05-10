@@ -327,7 +327,7 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
         addr = PTM_BLOCK2ADDR(block);
 #if configDEBUG >= KERROR_DEBUG
         ksprintf(buf, sizeof(buf),
-                "Page table allocated @ %x of size %u bytes", addr, bsize);
+                "Alloc pt %u bytes @ %x", bsize, addr);
         KERROR(KERROR_DEBUG, buf);
 #endif
         pt->pt_addr = addr;
@@ -339,7 +339,7 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
         ptm_nr_pt++;
         ptm_mem_free -= bsize;
     } else {
-        KERROR(KERROR_ERR, "Out of page table memory");
+        KERROR(KERROR_ERR, "Out of pt memory");
         retval = -1;
     }
 

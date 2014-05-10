@@ -189,7 +189,7 @@ $(MODAS): $(ASOBJS) $(OBJS)
 kernel.img: $(MEMMAP) $(STARTUP_O) $(MODAS) $(CRT)
 	$(ARMGNU)-ld -o kernel.elf -T $(MEMMAP) $(LDFLAGS) $(STARTUP_O) --whole-archive $(MODAS) --no-whole-archive $(CRT)
 	$(ARMGNU)-objdump -D kernel.elf > kernel.list
-	$(ARMGNU)-objcopy kernel.elf -O binary kernel.img
+	$(ARMGNU)-objcopy -O binary kernel.elf kernel.img
 
 # target_doc: stats - Calculate some stats.
 stats: clean

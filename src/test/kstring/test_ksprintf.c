@@ -63,8 +63,9 @@ static char * test_char(void)
 #define TSTRING     "TEXT1"
 #define TCHAR       'c'
     char actual[80] = JUNK;
-    char final[] = TSTRING;
+    char final[sizeof(TSTRING) + 1] = TSTRING;
     final[sizeof(TSTRING) - 1] = TCHAR;
+    final[sizeof(TSTRING)] = '\0';
 
     ksprintf(actual, sizeof(actual), TSTRING "%c", TCHAR);
 

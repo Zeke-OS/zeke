@@ -658,6 +658,8 @@ static int dab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
             "pc  : %x\nfsr : %x (%s)\nfar : %x\nCurr tid : %x",
             lr, fsr, get_dab_strerror(fsr), far, thread->id);
     panic(buf);
+
+    return -1; /* XXX Doesn't return yet as we panic but this makes split happy */
 }
 
 static const char * dab_fsr_strerr[] = {

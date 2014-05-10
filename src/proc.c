@@ -105,7 +105,7 @@ static void init_kernel_proc(void)
     const char panic_msg[] = "Can't init kernel process";
     proc_info_t * kernel_proc;
 
-    (*_procarr)[0] = kmalloc(sizeof(proc_info_t));
+    (*_procarr)[0] = kcalloc(1, sizeof(proc_info_t));
     kernel_proc = (*_procarr)[0];
 
     kernel_proc->pid = 0;

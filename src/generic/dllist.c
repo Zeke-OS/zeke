@@ -30,13 +30,7 @@
  *******************************************************************************
  */
 
-#ifndef PU_TEST_BUILD
 #include <kmalloc.h>
-#else
-#include <stdlib.h>
-#define kmalloc malloc
-#define kfree free
-#endif
 #include <stdint.h>
 #include "llist.h"
 

@@ -146,9 +146,16 @@ int test_and_set(int * lock)
 {
     int err = 2; /* Initial value of error meaning already locked */
 
+    istate_t s_entry = get_interrupt_state();
+    disable_interrupt();
+
+#if configMP == 0
+    err = *lock != 0 ? 2 : 0;
+    *lock = 1;
+#else
     __asm__ volatile (
         "MOV        r1, #1\n\t"             /* locked value to r1 */
-        "1:\n\t"
+        //"1:\n\t"
         "LDREX      r2, [%[addr]]\n\t"      /* load value of lock */
         "CMP        r2, #1\n\t"             /* if already set */
         "STREXNE    %[res], r1, [%[addr]]\n\t" /* Sets err = 0
@@ -159,6 +166,9 @@ int test_and_set(int * lock)
         : [addr]"r" (lock)
         : "r1", "r2"
     );
+#endif
+
+    set_interrupt_state(s_entry);
 
     return err;
 }

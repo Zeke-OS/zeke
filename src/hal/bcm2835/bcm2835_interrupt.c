@@ -77,7 +77,6 @@ void bcm_interrupt_postinit(void);
 
 HW_POSTINIT_ENTRY(bcm_interrupt_postinit);
 
-
 extern volatile uint32_t flag_kernel_tick;
 void interrupt_clear_timer(void)
 {
@@ -88,7 +87,9 @@ void interrupt_clear_timer(void)
     if (val == 0) {
         mmio_write(ARM_TIMER_IRQ_CLEAR, 0);
         mmio_end();
-        //bcm2835_uputc('C'); /* Timer debug print */
+#if 0
+        bcm2835_uart_uputc('C'); /* Timer debug print */
+#endif
         flag_kernel_tick = 1;
     } else mmio_end();
 }

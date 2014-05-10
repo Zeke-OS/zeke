@@ -40,8 +40,8 @@
 #define HAL_CORE_H
 
 #include <autoconf.h>
-#include "../../include/syscalldef.h"
-#include "../../include/kernel.h"
+#include <syscalldef.h>
+#include <kernel.h>
 
 /**
  * Type for storing interrupt state.

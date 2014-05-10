@@ -60,8 +60,9 @@ void ksprintf(char * str, size_t maxlen, const char * format, ...)
     size_t i = 0, n = 0;
     char c;
 
+    maxlen--;
     va_start(args, format);
-    while ((c = format[i++]) != '\0' && n < maxlen) {
+    while ((c = format[i++]) != '\0' && n <= maxlen) {
         switch (c) {
             case '%':
                 c = format[i++];
@@ -96,7 +97,7 @@ void ksprintf(char * str, size_t maxlen, const char * format, ...)
                         str[n++] = (char)(va_arg(args, int));
                         break;
                     case 's':
-                        str[n] = '\0';
+                        //str[n] = '\0';
                         {
                             size_t j = 0;
                             char * buf = va_arg(args, char *);
@@ -120,6 +121,6 @@ void ksprintf(char * str, size_t maxlen, const char * format, ...)
         }
     }
 
-    va_end(args);
     str[n] = '\0';
+    va_end(args);
 }

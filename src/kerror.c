@@ -99,10 +99,11 @@ static size_t kerror_fdwrite(vnode_t * file, const off_t * offset,
 
 void kerror_print_macro(char level, const char * where, const char * msg)
 {
-    char buf[200];
-
-    ksprintf(buf, sizeof(buf), "%c:%s%s\n", level, where, msg);
-    kputs(buf);
+    kputs_uart(where);
+    kputs_uart(msg);
+    bcm2835_uart_uputc('\r');
+    bcm2835_uart_uputc('\n');
+    //ksprintf(buf, sizeof(buf), "%c:%s%s\n", level, where, msg);
 }
 
 static void kputs_nolog(const char * str)
@@ -112,6 +113,13 @@ static void kputs_nolog(const char * str)
 static void kputs_uart(const char * str)
 {
     size_t i = 0;
+
+    while (str[i] != '\0') {
+        if (str[i] == '\n')
+            bcm2835_uart_uputc('\r');
+        bcm2835_uart_uputc(str[i++]); /* TODO Shouldn't be done like this! */
+    }
+#if 0
     static char kbuf[2048] = "";
 
     /* TODO static buffering, lock etc. */
@@ -126,6 +134,7 @@ static void kputs_uart(const char * str)
         kerror_uart->uputc(kbuf[i++]);
     }
     kbuf[0] = '\0';
+#endif
 }
 
 /**

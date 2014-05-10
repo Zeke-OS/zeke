@@ -41,30 +41,25 @@ Start:
     /* Init stack pointers */
     mov     r4, #0x0 /* Can be changed to something else if memmap is changed. */
     cps     #0x13   /* Change to supervisor (SVC) mode */
-    ldr     r5, =0x2fff
+    ldr     r5, =0x3000
     add     sp, r4, r5
     cps     #0x17   /* Change to Abort mode */
-    ldr     r5, =0x4fff
+    ldr     r5, =0x5000
     add     sp, r4, r5
     cps     #0x12   /* Change to IRQ mode */
-    ldr     r5, =0x5fff
+    ldr     r5, =0x6000
     add     sp, r4, r5
     cps     #0x1b   /* Change to Undef mode */
-    ldr     r5, =0x6fff
+    ldr     r5, =0x7000
     add     sp, r4, r5
     cps     #0x1f   /* Change to system mode */
-    ldr     r5, =0x7fff
+    ldr     r5, =0x8000
     add     sp, r4, r5
-    
+ 
     /* System mode stack is also technically used for user mode but we'll soon
      * have new per thread stacks. Additionally some of the stacks will overlap
      * with ATAGs so we must read ATAGs out before using those stacks. */
     /* Stay in system mode for now. */
-
-    /* Turn on unaligned memory access */
-    mrc     p15, #0, r4, c1, c0, #0
-    orr     r4, #0x400000           /* 1<22 */
-    mcr     p15, #0, r4, c1, c0, #0
 
 
     /* Clear the bss. */

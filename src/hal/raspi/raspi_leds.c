@@ -87,12 +87,12 @@ void raspi_leds_init(void) {
     mmio_write(GPIO_GPPUD, 0);
     mmio_write(GPIO_PUDCLK1, 0);
 
-    for (int i = 0; i < 100; i++) {
-        raspi_led_invert();
-        bcm2835_gpio_delay(2000000);
-    }
-
     mmio_end();
+
+    for (int i = 0; i < 4; i++) {
+        raspi_led_invert();
+        bcm2835_gpio_delay(20000);
+    }
 
     SUBSYS_INITFINI("raspi leds");
 }

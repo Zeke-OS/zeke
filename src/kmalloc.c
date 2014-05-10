@@ -34,15 +34,9 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <kstring.h>
-#ifndef PU_TEST_BUILD
 #include <kerror.h>
 #include <sys/sysctl.h>
 #include <dynmem.h>
-#else
-void * malloc(size_t size);
-void * memcpy(void * destination, const void * source, size_t num);
-#define KERROR(l, s) printf("%s\n", s)
-#endif
 
 #define KM_SIGNATURE_VALID      0XBAADF00D /*!< Signature for valid mblock
                                             *   entry. */
@@ -57,7 +51,6 @@ struct kmalloc_stat {
 };
 struct kmalloc_stat kmalloc_stat;
 
-#ifndef PU_TEST_BUILD
 SYSCTL_UINT(_vm, OID_AUTO, kmalloc_res, CTLFLAG_RD,
         ((unsigned int *)&(kmalloc_stat.kms_mem_res)), 0,
         "Amount of memory currently reserved for kmalloc.");
@@ -70,7 +63,6 @@ SYSCTL_UINT(_vm, OID_AUTO, kmalloc_alloc, CTLFLAG_RD,
 SYSCTL_UINT(_vm, OID_AUTO, kmalloc_alloc_max, CTLFLAG_RD,
         ((unsigned int *)&(kmalloc_stat.kms_mem_alloc_max)), 0,
         "Maximum peak amount of memory allocated with kmalloc");
-#endif
 
 /**
  * Memory block descriptor.
@@ -138,13 +130,7 @@ static mblock_t * extend(mblock_t * last, size_t s)
     s_mbytes = s >> 20; /* Full Mbytes. */
     s_mbytes += (0xfffff & s) ? 1 : 0; /* Add one MB if there is any extra. */
 
-#ifndef PU_TEST_BUILD
     b = dynmem_alloc_region(s_mbytes, MMU_AP_RWNA, MMU_CTRL_NG);
-#else
-    /* TEST BUILD ONLY
-     * Get some memory by using malloc */
-    b = malloc(MB_TO_BYTES(s_mbytes));
-#endif
     if (b == 0) {
 #if configDEBUG >= KERROR_WARN
         KERROR(KERROR_DEBUG, "We didn't get new region from dynmem.");
@@ -199,7 +185,7 @@ static mblock_t * find_mblock(mblock_t ** last, size_t size)
     mblock_t * b = kmalloc_base;
 
     do {
-#ifdef PU_TEST_BUILD
+#if 0
         if (b->ptr == 0) {
             printf("Invalid mblock: p = %p sign = %x\n", b->ptr, b->signature);
             b = 0;
@@ -296,7 +282,7 @@ static int valid_addr(void * p)
     /* TODO what if get_mblock returns invalid address? */
     if (kmalloc_base) { /* If base is not set it's impossible that we would have
                          * any allocated blocks. */
-#if defined(PU_TEST_BUILD) && (PRINT_VALID != 0)
+#if PRINT_VALID != 0
         if((retval = ADDR_VALIDATION)) /* Validation. */
             printf("VALID\n");
         else printf("INVALID %p\n", p);
@@ -405,7 +391,6 @@ void kfree(void * p)
         if (b->next) {
             merge(b);
         } else {
-#ifndef PU_TEST_BUILD
             /* Free the last block. */
             if (b->prev)
                 b->prev->next = 0;
@@ -422,7 +407,6 @@ void kfree(void * p)
              * situations. */
             dynmem_free_region(b);
             /* TODO Update stat */
-#endif
         }
     }
 }

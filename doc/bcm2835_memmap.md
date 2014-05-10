@@ -10,11 +10,11 @@ usage on Zeke. Some of these mappings are common to all ARM11 implementations.
     0x0 - 0xff          |   | Not used by Zeke
     0x100  - 0x4000     |   | Typical placement of ATAGs
     Priv Stacks:        |   |
-    0x1000 - 0x2fff     | x | Supervisor (SWI/SVC) stack
-    0x3000 - 0x4fff     | x | Abort stack
-    0x5000 - 0x5fff     | x | IRQ stack
-    0x6000 - 0x6fff     | x | Undef stack
-    0x7000 - 0x7fff     | x | System stack
+    0x1000 - 0x3000     | x | Supervisor (SWI/SVC) stack
+    0x2fff - 0x5000     | x | Abort stack
+    0x4fff - 0x6000     | x | IRQ stack
+    0x5fff - 0x7000     | x | Undef stack
+    0x6fff - 0x8000     | x | System stack
     0x8000 - 0xfffff    | x | Kernel area (boot address)
     0x00100000-         | x | Page Table
     0x002FFFFF          |   | Area

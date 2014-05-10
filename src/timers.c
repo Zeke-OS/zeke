@@ -68,6 +68,7 @@ static int timers_calc_exp(int millisec);
 
 void timers_init(void)
 {
+    SUBSYS_INIT();
     int i;
 
     timers_value = 0;
@@ -75,6 +76,7 @@ void timers_init(void)
         timers_array[i].flags = 0;
         timers_array[i].thread_id = TIMERS_POS_FREE;
     }
+
     SUBSYS_INITFINI("Kernel timers init OK");
 }
 
