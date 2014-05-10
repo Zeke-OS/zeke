@@ -69,6 +69,7 @@ static void (*kputs_arr[])(const char *) = {
     [KERROR_UARTLOG] = &kputs_uart
 };
 
+void kerror_init(void) __attribute__((constructor));
 void kerror_init(void)
 {
     uart_port_init_t uart_conf = {
@@ -83,8 +84,6 @@ void kerror_init(void)
 
     KERROR(KERROR_INFO, "Kerror logger initialized");
 }
-//HW_PREINIT_ENTRY(kerror_init);
-
 
 /**
  * Kernel fake fd write function to print kerror messages from usr mode threads.

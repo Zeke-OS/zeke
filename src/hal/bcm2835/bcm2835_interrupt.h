@@ -35,7 +35,7 @@
   * @{
   */
 
-/** @addtogroup ARM11
+/** @addtogroup BCM2835
   * @{
   */
 
@@ -54,7 +54,7 @@ void PendSV_Handler(void);
 void SysTick_Handler(void);
 void interrupt_clear_timer(void);
 
-#endif /* ARM11_INTERRUPT_H */
+#endif /* BCM2835 */
 
 /**
   * @}

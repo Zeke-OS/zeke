@@ -41,14 +41,8 @@
 #include <kinit.h>
 #include <kerror.h>
 #include "bcm2835_mmio.h"
+#include "bcm2835_gpio.h"
 #include <hal/uart.h>
-
-/* TODO Maybe GPIO should be somewhere else? */
-#define GPIO_BASE       0x20200000
-/** Pull up/down control of ALL GPIO pins. */
-#define GPPUD           (GPIO_BASE + 0x94)
-/** Pull up/down control for specific GPIO pin. */
-#define GPPUDCLK0       (GPIO_BASE + 0x98)
 
 #define UART0_BASE      0x20201000
 #define UART0_DR        (UART0_BASE + 0x00)
@@ -104,13 +98,13 @@ void bcm2835_uart_init(const uart_port_init_t * conf)
 
     /* Disable pull up/down for all GPIO pins & delay for 150 cycles. */
     mmio_write(GPPUD, 0x00000000);
-    //delay(10);
 
     /* Disable pull up/down for pin 14, 15 and delay for 150 cycles. */
     mmio_write(GPPUDCLK0, (1 << 14) | (1 << 15));
     //delay(10);
 
-    /* Write 0 to GPPUDCLK0 to make it take effect. */
+    /* Write 0 to GPPUDCLK0 to make it take effect.
+     * (only affects to pins 14 & 15) */
     mmio_write(GPPUDCLK0, 0x00000000);
 
     /* Clear pending interrupts. */

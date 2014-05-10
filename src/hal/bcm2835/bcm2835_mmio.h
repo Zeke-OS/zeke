@@ -38,8 +38,8 @@
 * @{
 */
 
-#ifndef MMIO_H
-#define MMIO_H
+#ifndef BMC2835_MMIO_H
+#define BMC2835_MMIO_H
 
 #include <stdint.h>
 
@@ -102,7 +102,7 @@ static inline uint32_t mmio_read(uint32_t reg)
     return data;
 }
 
-#endif /* MMIO_H */
+#endif /* BMC2835_MMIO_H */
 
 /**
   * @}

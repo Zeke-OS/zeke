@@ -66,8 +66,6 @@ void exec_init_array(void)
     n = __hw_preinit_array_end - __hw_preinit_array_start;
     exec_array(__hw_preinit_array_start, n);
 
-    kerror_init();
-
     n  = __init_array_end - __init_array_start;
     exec_array(__init_array_start, n);
 
