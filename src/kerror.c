@@ -31,9 +31,11 @@
  */
 
 #define KERNEL_INTERNAL
+#include <kinit.h>
 #include <kstring.h>
 #include <fs/fs.h>
 #include <sys/sysctl.h>
+#include <hal/uart.h>
 #include <kerror.h>
 
 const char _kernel_panic_msg[19] = "Oops, Kernel panic";
@@ -52,9 +54,11 @@ vnode_t kerror_vnode = {
     .vnode_ops = &kerror_vops
 };
 
+static uart_port_t * kerror_uart;
+
 /* kputs functions */
-static void kputs_nolog(const char * buf);
-static void kputs_uart(const char * buf);
+static void kputs_nolog(const char * str);
+static void kputs_uart(const char * str);
 
 void (*kputs)(const char *) = &kputs_uart; /* Boot value */
 static int curr_klogger = KERROR_UARTLOG;
@@ -64,6 +68,23 @@ static void (*kputs_arr[])(const char *) = {
     [KERROR_LASTLOG] = &kputs_nolog, /* TODO */
     [KERROR_UARTLOG] = &kputs_uart
 };
+
+void kerror_init(void)
+{
+    uart_port_init_t uart_conf = {
+        .baud_rate  = UART_BAUDRATE_115200,
+        .data_bits  = UART_DATABITS_8,
+        .stop_bits  = UART_STOPBITS_ONE,
+        .parity     = UART_PARITY_NO,
+    };
+
+    kerror_uart = uart_getport(0);
+    kerror_uart->init(&uart_conf);
+
+    KERROR(KERROR_INFO, "Kerror logger initialized");
+}
+//HW_PREINIT_ENTRY(kerror_init);
+
 
 /**
  * Kernel fake fd write function to print kerror messages from usr mode threads.
@@ -83,17 +104,27 @@ void kerror_print_macro(char level, const char * where, const char * msg)
     kputs(buf);
 }
 
-static void kputs_nolog(const char * buf)
+static void kputs_nolog(const char * str)
 {
 }
 
-static void kputs_uart(const char * buf)
+static void kputs_uart(const char * str)
 {
     size_t i = 0;
+    static char kbuf[1024] = "";
 
-    while (buf[i] != '\0') {
-        bcm2835_uputc(buf[i++]); /* TODO Shouldn't be done like this! */
+    /* TODO static buffering, lock etc. */
+    strnncat(kbuf, sizeof(kbuf), str, sizeof(kbuf));
+    if (!kerror_uart) {
+        return;
     }
+
+    while (kbuf[i] != '\0') {
+        if (kbuf[i] == '\n')
+            kerror_uart->uputc('\r');
+        kerror_uart->uputc(kbuf[i++]);
+    }
+    kbuf[0] = '\0';
 }
 
 /**

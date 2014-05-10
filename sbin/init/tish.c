@@ -52,8 +52,9 @@ static void cd(char ** args);
 
 struct builtin cmdarr[] = {
         {cd, "cd"},
-        {sysctl_cmd, "sysctl"},
-        {run_ikut, "ikut"}
+        {tish_sysctl_cmd, "sysctl"},
+        {tish_uname, "uname"},
+        {tish_ikut, "ikut"}
 };
 
 /* Static functions */
@@ -109,13 +110,13 @@ static void cd(char ** args)
 
 /* TODO Until we have some actual standard IO subsystem working the following
  * is the best hack I can think of. */
-#define _ugetc() bcm2835_ugetc()
-#define _uputc(c) bcm2835_uputc(c)
+#define _ugetc() bcm2835_uart_ugetc()
 
 static char * gline(char * str, int num)
 {
     int c;
     int i = 0;
+    char buf[2] = {'\0', '\0'};
 
     while (1) {
         c = _ugetc();
@@ -127,9 +128,7 @@ static char * gline(char * str, int num)
         if (c == 127) {
             if (i > 0) {
                 i--;
-                _uputc('\b');
-                _uputc(' ');
-                _uputc('\b');
+                puts("\b \b");
             }
             continue;
         }
@@ -139,13 +138,15 @@ static char * gline(char * str, int num)
         /* Handle return */
         if (c == '\n' || c == '\r' || i == num) {
             str[i] = '\0';
-            _uputc('\n');
+            buf[0] = '\n';
+            puts(buf);
             return str;
         } else {
             str[i] = (char)c;
         }
 
-        _uputc(c);
+        buf[0] = c;
+        puts(buf);
         i++;
     }
 }

@@ -38,7 +38,8 @@
 #define DELIMS  " \t\r\n"
 
 int tish(void);
-void sysctl_cmd(char ** args);
-void run_ikut(void);
+void tish_sysctl_cmd(char ** args);
+void tish_uname(char ** args);
+void tish_ikut(char ** args);
 
 #endif /* TISH_H */

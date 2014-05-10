@@ -70,30 +70,30 @@
 #define UART0_ITOP      (UART0_BASE + 0x88)
 #define UART0_TDR       (UART0_BASE + 0x8C)
 
-void bcm2835_init(const uart_port_init_t * conf);
+static void bcm2835_uart_init(const uart_port_init_t * conf);
 static void set_baudrate(unsigned int baud_rate);
 static void set_lcrh(const uart_port_init_t * conf);
-void bcm2835_uputc(uint8_t byte);
-int bcm2835_ugetc(void);
+void bcm2835_uart_uputc(uint8_t byte);
+int bcm2835_uart_ugetc(void);
 #if 0
 static void delay(int32_t count);
 #endif
 
-void bcm2835_register(void)
+void bcm2835_uart_register(void)
 {
     uart_port_t port = {
-        .init = bcm2835_init,
-        .uputc = bcm2835_uputc,
-        .ugetc = bcm2835_ugetc
+        .init = bcm2835_uart_init,
+        .uputc = bcm2835_uart_uputc,
+        .ugetc = bcm2835_uart_ugetc
     };
 
     uart_register_port(&port);
 
     KERROR(KERROR_INFO, "BCM2835 UART Registered");
 }
-HW_PREINIT_ENTRY(bcm2835_register);
+HW_PREINIT_ENTRY(bcm2835_uart_register);
 
-void bcm2835_init(const uart_port_init_t * conf)
+void bcm2835_uart_init(const uart_port_init_t * conf)
 {
     mmio_start();
 
@@ -104,11 +104,11 @@ void bcm2835_init(const uart_port_init_t * conf)
 
     /* Disable pull up/down for all GPIO pins & delay for 150 cycles. */
     mmio_write(GPPUD, 0x00000000);
-    //delay(150);
+    //delay(10);
 
     /* Disable pull up/down for pin 14, 15 and delay for 150 cycles. */
     mmio_write(GPPUDCLK0, (1 << 14) | (1 << 15));
-    //delay(150);
+    //delay(10);
 
     /* Write 0 to GPPUDCLK0 to make it take effect. */
     mmio_write(GPPUDCLK0, 0x00000000);
@@ -125,8 +125,7 @@ void bcm2835_init(const uart_port_init_t * conf)
     /* Mask all interrupts. */
     /*mmio_write(UART0_IMSC, (1 << 1) | (1 << 4) | (1 << 5) |
             (1 << 6) | (1 << 7) | (1 << 8) |
-            (1 << 9) | (1 << 10));
-     */
+            (1 << 9) | (1 << 10));*/
 
     /* Enable UART0, receive & transfer part of UART.*/
     mmio_write(UART0_CR, (1 << 0) | (1 << 8) | (1 << 9));
@@ -191,7 +190,7 @@ static void set_lcrh(const uart_port_init_t * conf)
     set_interrupt_state(s_entry);
 }
 
-void bcm2835_uputc(uint8_t byte)
+void bcm2835_uart_uputc(uint8_t byte)
 {
     istate_t s_entry;
 
@@ -207,7 +206,7 @@ void bcm2835_uputc(uint8_t byte)
     set_interrupt_state(s_entry);
 }
 
-int bcm2835_ugetc()
+int bcm2835_uart_ugetc()
 {
     int byte = -1;
     istate_t s_entry;
