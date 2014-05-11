@@ -75,6 +75,7 @@ void * main(void * arg)
     };
     pthread_t thread_id;
 
+    write(2, banner, sizeof(banner));
     print_message("Init v0.0.1\n");
 
 #if 0

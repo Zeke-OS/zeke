@@ -1,0 +1,10 @@
+-predboolint
+-nullassign
+-nullstate
+-nullpass
+-nullret
+-mustfreeonly
+-I../../
+-I../../../include
+-I../.././hal
+-I../../../config

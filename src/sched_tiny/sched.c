@@ -108,7 +108,7 @@ static char sched_idle_stack[sizeof(sw_stack_frame_t)
                              + 40];
 
 /* sysctl node for scheduler */
-SYSCTL_NODE(_kern, 0, sched, CTLFLAG_RW, 0, "Scheduler");
+SYSCTL_NODE(_kern, OID_AUTO, sched, CTLFLAG_RW, 0, "Scheduler");
 
 /* Static init */
 void sched_init(void) __attribute__((constructor));

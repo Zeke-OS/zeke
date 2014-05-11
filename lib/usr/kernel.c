@@ -48,6 +48,11 @@ unsigned sleep(unsigned seconds)
     return (unsigned)syscall(SYSCALL_SCHED_SLEEP_MS, &millisec);
 }
 
+unsigned msleep(unsigned millisec)
+{
+    return (unsigned)syscall(SYSCALL_SCHED_SLEEP_MS, &millisec);
+}
+
 /** @addtogroup unistd
  *  @{
  */

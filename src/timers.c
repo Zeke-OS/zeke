@@ -63,16 +63,19 @@ typedef struct {
 uint32_t timers_value; /*!< Current tick value */
 static volatile timer_alloc_data_t timers_array[configTIMERS_MAX];
 
+static mtx_t timers_lock;
+
 void timers_init(void) __attribute__((constructor));
 static int timers_calc_exp(int millisec);
 
 void timers_init(void)
 {
     SUBSYS_INIT();
-    int i;
+
+    mtx_init(&timers_lock, MTX_DEF | MTX_SPIN);
 
     timers_value = 0;
-    for (i = 0; i < configTIMERS_MAX; i++) {
+    for (int i = 0; i < configTIMERS_MAX; i++) {
         timers_array[i].flags = 0;
         timers_array[i].thread_id = TIMERS_POS_FREE;
     }
@@ -92,16 +95,12 @@ void timers_run(void)
         uint32_t exp = timers_array[i].expires;
         if (timers_array[i].flags & TIMERS_FLAG_ENABLED) {
             if (exp == value) {
-                //sched_syscall_unblock(timers_array[i].thread_id);
                 threadInfo_t * thread;
                 thread = sched_get_pThreadInfo(timers_array[i].thread_id);
                 if (thread) {
                     thread->wait_tim = -1;
                     sched_thread_set_exec(thread->id);
                 }
-#if 0
-                KERROR(KERROR_DEBUG, "DING");
-#endif
 
                 if (!(timers_array[i].flags & TIMERS_FLAG_PERIODIC)) {
                     /* Release the timer */
@@ -128,10 +127,10 @@ int timers_add(pthread_t thread_id, timers_flags_t flags, uint32_t millisec)
     int i = 0;
     flags &= TIMERS_USER_FLAGS; /* Allow only user flags to be set */
 
+    mtx_spinlock(&timers_lock);
     do { /* Locate first free timer */
         if (timers_array[i].thread_id == TIMERS_POS_FREE) {
-            timers_array[i].thread_id = thread_id;
-            timers_array[i].flags = flags;
+            timers_array[i].thread_id = thread_id; /* reserve */
 
             if (flags & TIMERS_FLAG_PERIODIC) { /* Periodic timer */
                 timers_array[i].reset_val = millisec;
@@ -140,9 +139,13 @@ int timers_add(pthread_t thread_id, timers_flags_t flags, uint32_t millisec)
             if (millisec > 0) {
                 timers_array[i].expires = timers_calc_exp(millisec);
             }
+
+            timers_array[i].flags = flags; /* enable */
+            mtx_unlock(&timers_lock);
             return i;
         }
     } while (++i < configTIMERS_MAX);
+    mtx_unlock(&timers_lock);
 
     return -1;
 }
@@ -168,10 +171,16 @@ void timers_release(int tim)
 }
 
 pthread_t timers_get_owner(int tim) {
+    pthread_t retval;
+
     if (tim < configTIMERS_MAX && tim >= 0)
         return -1;
 
-    return timers_array[tim].thread_id;
+    mtx_spinlock(&timers_lock);
+    retval = timers_array[tim].thread_id;
+    mtx_unlock(&timers_lock);
+
+    return retval;
 }
 
 static int timers_calc_exp(int millisec)

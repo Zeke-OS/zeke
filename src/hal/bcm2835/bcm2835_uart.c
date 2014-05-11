@@ -72,6 +72,9 @@ int bcm2835_uart_ugetc(void);
 
 void bcm2835_uart_register(void)
 {
+    SUBSYS_INIT();
+    SUBSYS_DEP(arm_interrupt_preinit);
+
     uart_port_t port = {
         .init = bcm2835_uart_init,
         .uputc = bcm2835_uart_uputc,
@@ -80,7 +83,7 @@ void bcm2835_uart_register(void)
 
     uart_register_port(&port);
 
-    KERROR(KERROR_INFO, "BCM2835 UART Registered");
+    SUBSYS_INITFINI("BCM2835 UART Registered");
 }
 HW_PREINIT_ENTRY(bcm2835_uart_register);
 

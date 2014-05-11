@@ -2,6 +2,7 @@
 autoconf.h
 
 # Kernel out files
+kernel.img
 kernel.bin
 kernel.elf
 kernel.list

@@ -33,8 +33,10 @@
 #define KERNEL_INTERNAL
 #include <kinit.h>
 #include <kstring.h>
+#include <libkern.h>
 #include <fs/fs.h>
 #include <sys/sysctl.h>
+#include <errno.h>
 #include <hal/uart.h>
 #include <kerror.h>
 
@@ -54,35 +56,71 @@ vnode_t kerror_vnode = {
     .vnode_ops = &kerror_vops
 };
 
-static uart_port_t * kerror_uart;
+struct kerror_logger {
+    /**
+     * Initialize the klogger.
+     * @remarks Can be called multiple times.
+     */
+    void (*init)(void);
 
-/* kputs functions */
-static void kputs_nolog(const char * str);
-static void kputs_uart(const char * str);
+    /**
+     * Insert a line to the logger.
+     * @param str is the line.
+     */
+    void (*puts)(const char * str);
 
-void (*kputs)(const char *) = &kputs_uart; /* Boot value */
-static int curr_klogger = KERROR_UARTLOG;
-/** Array of klogger functions */
-static void (*kputs_arr[])(const char *) = {
-    [KERROR_NOLOG] = &kputs_nolog,
-    [KERROR_LASTLOG] = &kputs_nolog, /* TODO */
-    [KERROR_UARTLOG] = &kputs_uart
+    void (*read)(char * str, size_t len);
+
+    /**
+     * Flush contents of the logger to the current kputs.
+     * This can be used to flush old logger to the new logger
+     * when changing klogger.
+     */
+    void (*flush)(void);
 };
+
+/* klogger init functions */
+extern void kerror_lastlog_init(void);
+extern void kerror_uart_init(void);
+
+/* klogger puts functions */
+static void nolog_puts(const char * str);
+extern void kerror_lastlog_puts(const char * str);
+extern void kerror_uart_puts(const char * str);
+
+/* klogger flush functions */
+extern void kerror_lastlog_flush(void);
+
+void (*kputs)(const char *) = &kerror_lastlog_puts; /* Boot value */
+static size_t curr_klogger = KERROR_LASTLOG; /* Boot value */
+
+/** Array of kloggers */
+static struct kerror_logger klogger_arr[] = {
+    [KERROR_NOLOG] = {
+        .init   = 0,
+        .puts   = &nolog_puts,
+        .read   = 0,
+        .flush  = 0},
+    [KERROR_LASTLOG] = {
+        .init   = &kerror_lastlog_init,
+        .puts   = &kerror_lastlog_puts,
+        .read   = 0,
+        .flush = &kerror_lastlog_flush},
+    [KERROR_UARTLOG] = {
+        .init   = &kerror_uart_init,
+        .puts   = &kerror_uart_puts,
+        .read   = 0,
+        .flush  = 0}
+};
+
+static int klogger_change(size_t new_klogger, size_t old_klogger);
 
 void kerror_init(void) __attribute__((constructor));
 void kerror_init(void)
 {
     SUBSYS_INIT();
 
-    uart_port_init_t uart_conf = {
-        .baud_rate  = UART_BAUDRATE_115200,
-        .data_bits  = UART_DATABITS_8,
-        .stop_bits  = UART_STOPBITS_ONE,
-        .parity     = UART_PARITY_NO,
-    };
-
-    kerror_uart = uart_getport(0);
-    kerror_uart->init(&uart_conf);
+    klogger_change(configDEF_KLOGGER, curr_klogger);
 
     SUBSYS_INITFINI("Kerror logger OK");
 }
@@ -99,42 +137,14 @@ static size_t kerror_fdwrite(vnode_t * file, const off_t * offset,
 
 void kerror_print_macro(char level, const char * where, const char * msg)
 {
-    kputs_uart(where);
-    kputs_uart(msg);
-    bcm2835_uart_uputc('\r');
-    bcm2835_uart_uputc('\n');
-    //ksprintf(buf, sizeof(buf), "%c:%s%s\n", level, where, msg);
+    char buf[configKERROR_MAXLEN];
+
+    ksprintf(buf, sizeof(buf), "%c:%s%s\n", level, where, msg);
+    kputs(buf);
 }
 
-static void kputs_nolog(const char * str)
+static void nolog_puts(const char * str)
 {
-}
-
-static void kputs_uart(const char * str)
-{
-    size_t i = 0;
-
-    while (str[i] != '\0') {
-        if (str[i] == '\n')
-            bcm2835_uart_uputc('\r');
-        bcm2835_uart_uputc(str[i++]); /* TODO Shouldn't be done like this! */
-    }
-#if 0
-    static char kbuf[2048] = "";
-
-    /* TODO static buffering, lock etc. */
-    strnncat(kbuf, sizeof(kbuf), str, sizeof(kbuf));
-    if (!kerror_uart) {
-        return;
-    }
-
-    while (kbuf[i] != '\0') {
-        if (kbuf[i] == '\n')
-            kerror_uart->uputc('\r');
-        kerror_uart->uputc(kbuf[i++]);
-    }
-    kbuf[0] = '\0';
-#endif
 }
 
 /**
@@ -143,13 +153,33 @@ static void kputs_uart(const char * str)
 static int sysctl_kern_klogger(SYSCTL_HANDLER_ARGS)
 {
     int error;
+    size_t new_klogger = curr_klogger;
+    size_t old_klogger = curr_klogger;
 
-    error = sysctl_handle_int(oidp, &curr_klogger, sizeof(curr_klogger), req);
+    error = sysctl_handle_int(oidp, &new_klogger, sizeof(new_klogger), req);
     if (!error && req->newptr) {
-        kputs = kputs_arr[curr_klogger];
+        error = klogger_change(new_klogger, old_klogger);
     }
 
     return error;
+}
+
+static int klogger_change(size_t new_klogger, size_t old_klogger)
+{
+    if (new_klogger > num_elem(klogger_arr))
+        return EINVAL;
+
+    if (klogger_arr[new_klogger].init)
+        klogger_arr[new_klogger].init();
+
+    kputs = klogger_arr[new_klogger].puts;
+
+    if (klogger_arr[old_klogger].flush)
+        klogger_arr[old_klogger].flush();
+
+    curr_klogger = new_klogger;
+
+    return 0;
 }
 
 SYSCTL_PROC(_kern, OID_AUTO, klogger, CTLTYPE_INT | CTLFLAG_RW,

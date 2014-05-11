@@ -33,8 +33,10 @@
 #include <sys/types.h>
 #include <kstring.h>
 #include <libkern.h>
+#include <kernel.h>
 #include <errno.h>
 #include <unistd.h>
+#include <syscall.h>
 #include "tish.h"
 
 /* TODO Remove */
@@ -49,6 +51,7 @@ struct builtin {
 /* Builtins */
 
 static void cd(char ** args);
+static void uptime(char ** args);
 static void reg(char ** args);
 
 struct builtin cmdarr[] = {
@@ -56,6 +59,7 @@ struct builtin cmdarr[] = {
         {tish_sysctl_cmd, "sysctl"},
         {tish_uname, "uname"},
         {tish_ikut, "ikut"},
+        {uptime, "uptime"},
         {reg, "reg"}
 };
 
@@ -110,6 +114,17 @@ static void cd(char ** args)
 #endif
 }
 
+static void uptime(char ** args)
+{
+    uint32_t loads[3];
+    char buf[40];
+
+    syscall(SYSCALL_SCHED_GET_LOADAVG, loads);
+
+    ksprintf(buf, sizeof(buf), "load average: %u, %u, %u\n", loads[0], loads[1], loads[2]);
+    puts(buf);
+}
+
 static void reg(char ** args)
 {
     char * arg = kstrtok(0, DELIMS, args);
@@ -141,8 +156,9 @@ static char * gline(char * str, int num)
     char buf[2] = {'\0', '\0'};
 
     while (1) {
-        c = _ugetc();
-        if (c < 0) {
+        c = _ugetc();   /* Instead of sleeping  we should*/
+        if (c < 0) {    /* actually wait for input, */
+            msleep(50); /* not poll for it. */
             continue;
         }
 

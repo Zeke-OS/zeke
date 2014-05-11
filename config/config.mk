@@ -44,9 +44,13 @@ configUART = 1#
 configATAG = 1# Support bootloader ATAGs
 configMP = 0# Enable multi-processing support Requires: configREEMPT
 
-# TODO Select boot time logger
-
 # Kernel logging options
+# 0 = No logger
+# 1 = Lastlog
+# 2 = UART0
+configDEF_KLOGGER = 2
+
+# loglevel
 # Additional log messages and asserts.
 # These are one to one with KERROR message levels.
 # 4 - All debug messages and asserts.
@@ -56,6 +60,10 @@ configMP = 0# Enable multi-processing support Requires: configREEMPT
 #     occur in normal operation.
 # 0 - Normal build
 configDEBUG = '4'#Additional debug messages and asserts.
+
+# Max kerror line length
+configKERROR_MAXLEN = 200
+# end of logging options
 
 # Processes
 configMAXPROC = 5# maxproc, default maximum number of processes.
@@ -79,10 +87,10 @@ configUSRINIT_SSIZE = 8192# Stack size for usrinit thread
 configUSRINIT_PRI = osPriorityNormal# Priority of usrinit thread
 
 # Virtual file system and file systems
-configRAMFS = 1# Compile ramfs with Zeke base
+configRAMFS = 0# Compile ramfs with Zeke base
 
 # In-Kernel Unit Tests
-configKUNIT = 1#
+configKUNIT = 0#
 KU_REPORT_ORIENTED = 0#
 
 # Dev driver modules
