@@ -72,7 +72,7 @@ interrupt_svc:
 
     /* Change to kernel stack to protect kernel data.
      * RFE This breaks nested syscalls. */
-    ldr     r0, =0x00000fff     /* vaddr of tkstack. */
+    ldr     r0, =0x00001000     /* vaddr of tkstack. */
     pop     {r5-r8}
     mov     r4, sp              /* Preserve user sp. */
     mov     sp, r0              /* Change to kernel sp. */
@@ -181,7 +181,7 @@ interrupt_dabt:
 
     /* Store thread context */
     mov     r1, sp
-    ldr     r0, =0x00000fff /* vaddr of tkstack. */
+    ldr     r0, =0x00001000 /* vaddr of tkstack. */
     add     sp, sp, #16     /* Reset stack pointer */
     cps     #0x1f           /* Change to system mode. */
     mov     r3, sp          /* Preserve usr sp */

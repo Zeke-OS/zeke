@@ -49,12 +49,14 @@ struct builtin {
 /* Builtins */
 
 static void cd(char ** args);
+static void reg(char ** args);
 
 struct builtin cmdarr[] = {
         {cd, "cd"},
         {tish_sysctl_cmd, "sysctl"},
         {tish_uname, "uname"},
-        {tish_ikut, "ikut"}
+        {tish_ikut, "ikut"},
+        {reg, "reg"}
 };
 
 /* Static functions */
@@ -106,6 +108,26 @@ static void cd(char ** args)
     else
         chdir(arg);
 #endif
+}
+
+static void reg(char ** args)
+{
+    char * arg = kstrtok(0, DELIMS, args);
+    char buf[40] = "Invalid argument\n";
+
+    if (!strcmp(arg, "sp")) {
+        void * sp;
+
+        __asm__ ("mov %[result], sp" : [result] "=r" (sp));
+        ksprintf(buf, sizeof(buf), "sp = %p\n", sp);
+    } else if (!strcmp(arg, "cpsr")) {
+        uint32_t mode;
+
+        __asm__ ("mrs     %0, cpsr" : "=r" (mode));
+        ksprintf(buf, sizeof(buf), "cpsr = %x\n", mode);
+    }
+
+    puts(buf);
 }
 
 /* TODO Until we have some actual standard IO subsystem working the following
