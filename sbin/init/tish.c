@@ -53,6 +53,7 @@ struct builtin {
 static void cd(char ** args);
 static void uptime(char ** args);
 static void reg(char ** args);
+static void help(char ** args);
 
 struct builtin cmdarr[] = {
         {cd, "cd"},
@@ -60,7 +61,8 @@ struct builtin cmdarr[] = {
         {tish_uname, "uname"},
         {tish_ikut, "ikut"},
         {uptime, "uptime"},
-        {reg, "reg"}
+        {reg, "reg"},
+        {help, "help"}
 };
 
 /* Static functions */
@@ -143,6 +145,17 @@ static void reg(char ** args)
     }
 
     puts(buf);
+}
+
+static void help(char ** args)
+{
+    char buf[20];
+
+    for (int i = 0; i < num_elem(cmdarr); i++) {
+        ksprintf(buf, sizeof(buf), "%s ", cmdarr[i].name);
+        puts(buf);
+    }
+    puts("\n");
 }
 
 /* TODO Until we have some actual standard IO subsystem working the following
