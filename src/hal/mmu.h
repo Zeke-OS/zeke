@@ -188,7 +188,7 @@ int mmu_detach_pagetable(const mmu_pagetable_t * pt);
 uint32_t mmu_domain_access_get(void);
 void mmu_domain_access_set(uint32_t value, uint32_t mask);
 void mmu_control_set(uint32_t value, uint32_t mask);
-void * mmu_translate_vaddr(const mmu_pagetable_t * pt, intptr_t vaddr);
+void * mmu_translate_vaddr(const mmu_pagetable_t * pt, uintptr_t vaddr);
 
 /* Generic for all, implemented in mmu.c */
 void mmu_pf_event(void);

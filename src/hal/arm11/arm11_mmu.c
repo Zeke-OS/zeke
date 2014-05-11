@@ -362,7 +362,7 @@ int mmu_attach_pagetable(const mmu_pagetable_t * pt)
     uint32_t pte;
     size_t i;
     istate_t s;
-    intptr_t caller;
+    uintptr_t caller;
     int retval = 0;
 
 #if configDEBUG != 0
@@ -381,7 +381,7 @@ int mmu_attach_pagetable(const mmu_pagetable_t * pt)
 #endif
                 "pt->vaddr = %x\npt->type = %s\npt->pt_addr = %x",
 #if configDEBUG != 0
-                caller, (intptr_t)pt,
+                caller, (uintptr_t)pt,
 #endif
                 pt->vaddr,
                 (pt->type == MMU_PTT_MASTER) ? "master" : "coarse",
@@ -520,13 +520,13 @@ void mmu_control_set(uint32_t value, uint32_t mask)
 /**
  * Translate vaddr to physical address.
  */
-void * mmu_translate_vaddr(const mmu_pagetable_t * pt, intptr_t vaddr)
+void * mmu_translate_vaddr(const mmu_pagetable_t * pt, uintptr_t vaddr)
 {
     void * retval = 0;
     uint32_t * p_pte;
     uint32_t mask;
     size_t ptsize;
-    const size_t offset = vaddr - (intptr_t)(pt->vaddr);
+    const size_t offset = (size_t)(vaddr - (uintptr_t)(pt->vaddr));
 
     switch (pt->type) {
     case MMU_PTT_MASTER:
@@ -550,7 +550,7 @@ void * mmu_translate_vaddr(const mmu_pagetable_t * pt, intptr_t vaddr)
 
     if (offset > ptsize)
         goto out;
-    else retval = (void *)(((intptr_t)(*p_pte) & mask) + offset);
+    else retval = (void *)(((uintptr_t)(*p_pte) & mask) + offset);
 
 out:
     return retval;
@@ -570,7 +570,7 @@ uint32_t mmu_data_abort_handler(uint32_t sp, uint32_t spsr, const uint32_t lr)
     threadInfo_t * const thread = (threadInfo_t *)current_thread;
 
     __asm__ volatile (
-        "MRC p15, 0, %[reg], c0, c0, 1"
+        "MRC p15, 0, %[reg], c6, c0, 0"
         : [reg]"=r" (far));
     __asm__ volatile (
         "MRC p15, 0, %[reg], c5, c0, 0"
