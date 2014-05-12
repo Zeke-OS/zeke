@@ -31,7 +31,7 @@
  */
 
 #define KERNEL_INTERNAL
-#include <kunit.h>
+#include <kunit/kunit.h>
 #include "ktest_mib.h"
 
 SYSCTL_NODE(_debug_test, OID_AUTO, generic, CTLFLAG_RW, 0,

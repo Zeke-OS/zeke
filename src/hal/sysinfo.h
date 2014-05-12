@@ -41,7 +41,8 @@
 #include <stdint.h>
 
 typedef struct {
-    unsigned int mtype;
+    unsigned int fw; /*!< Firmware version on platforms like rpi. */
+    unsigned int mtype; /*!< ARM Linux Machine Type. */
     struct meminfo {
         size_t start;
         size_t size;

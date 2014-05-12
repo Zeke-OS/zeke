@@ -3,7 +3,7 @@
  * @brief Test bitmap functions.
  */
 
-#include <limits.h>
+#include <kunit/limits.h>
 #if 0
 #include <time.h>
 #endif

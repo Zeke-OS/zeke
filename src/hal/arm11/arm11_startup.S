@@ -90,10 +90,6 @@ Start:
      *      depending on bootloader configuration etc.
      *      http://www.simtec.co.uk/products/SWLINUX/files/booting_article.html
      */
-    @ldr     r3, =3138
-    @cmp     r1, r3
-    /* TODO Store this number */
-    @bne halt
 
     ldr     r3, =atag_scan
     blx     r3

@@ -3,7 +3,7 @@
  * @brief Test ramfs.
  */
 
-#include <kunit.h>
+#include <kunit/kunit.h>
 #include <test/ktest_mib.h>
 #include <kmalloc.h>
 #include <dirent.h> /* NOTE: This includes our own implementation of dirent.h

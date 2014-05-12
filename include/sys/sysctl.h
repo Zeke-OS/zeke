@@ -437,6 +437,13 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
 #define CTL_MAXID               10  /* number of valid top-level ids */
 
 /*
+ * Identifiers here are mostly compatible with BSD but we don't support structs
+ * so those identifiers are left out.
+ * XXX Many of these identifiers are not yet actually mapped but these are left
+ * here as a reservations for future use.
+ */
+
+/*
  * CTL_KERN identifiers
  */
 #define KERN_OSTYPE             1   /* string: system version */
@@ -450,17 +457,11 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
 #define KERN_SECURELVL          9   /* int: system security level */
 #define KERN_HOSTNAME           10  /* string: hostname */
 #define KERN_HOSTID             11  /* int: host identifier */
-#define KERN_CLOCKRATE          12  /* struct: struct clockrate */
-#define KERN_VNODE              13  /* struct: vnode structures */
-#define KERN_PROC               14  /* struct: process entries */
-#define KERN_FILE               15  /* struct: file entries */
 #define KERN_PROF               16  /* node: kernel profiling info */
 #define KERN_POSIX1             17  /* int: POSIX.1 version */
 #define KERN_NGROUPS            18  /* int: # of supplemental group ids */
 #define KERN_JOB_CONTROL        19  /* int: is job control available */
 #define KERN_SAVED_IDS          20  /* int: saved set-user/group-ID */
-#define KERN_BOOTTIME           21  /* struct: time kernel was booted */
-#define KERN_NISDOMAINNAME      22  /* string: YP domain name */
 #define KERN_UPDATEINTERVAL     23  /* int: update process sleep time */
 #define KERN_OSRELDATE          24  /* int: kernel release date */
 #define KERN_NTP_PLL            25  /* node: NTP PLL control */
@@ -533,7 +534,6 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
 #define HW_USERMEM              6   /* int: non-kernel memory */
 #define HW_PAGESIZE             7   /* int: software page size */
 #define HW_DISKNAMES            8   /* strings: disk drive names */
-#define HW_DISKSTATS            9   /* struct: diskstats[] */
 #define HW_FLOATINGPT           10  /* int: has HW floating point? */
 #define HW_MACHINE_ARCH         11  /* string: machine architecture */
 #define HW_REALMEM              12  /* int: 'real' memory */

@@ -3,7 +3,7 @@
  * @brief Test generic thread-safe queue implementation.
  */
 
-#include <kunit.h>
+#include <kunit/kunit.h>
 #include <test/ktest_mib.h>
 #include <generic/queue.h>
 

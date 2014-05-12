@@ -3,7 +3,7 @@
  * @brief Test directory entry hash table.
  */
 
-#include <kunit.h>
+#include <kunit/kunit.h>
 #include <test/ktest_mib.h>
 #include <kmalloc.h>
 #include <fs/fs.h>

@@ -3,7 +3,7 @@
  * @brief Test inode pool.
  */
 
-#include <kunit.h>
+#include <kunit/kunit.h>
 #include <test/ktest_mib.h>
 #include <libkern.h>
 #include <kmalloc.h>
