@@ -71,7 +71,7 @@ static kernel_syscall_handler_t syscall_callmap[] = {
 };
 
 /**
- * Kernel's internal Syscall handler/translator
+ * Kernel's internal Syscall handler/translator.
  *
  * This function is called from interrupt handler. This function calls the
  * actual kernel function and returns a result pointer/data to the interrupt
@@ -79,11 +79,7 @@ static kernel_syscall_handler_t syscall_callmap[] = {
  * function in kernel.c
  * @param type  syscall type.
  * @param p     pointer to the parameter or parameter structure.
- * @return      result value or pointer to the result from the called kernel
- *              function.
- *              In addition to syscall return value this function also returns
- *              a second value indicating if syscall was blocking. This is
- *              implemented in architecture dependent manner.
+ * @return      Result value or pointer to the result in user space.
  */
 uintptr_t _intSyscall_handler(uint32_t type, void * p)
 {
@@ -96,13 +92,6 @@ uintptr_t _intSyscall_handler(uint32_t type, void * p)
         return 0; /* NULL */
     }
 
-    /* TODO This is not the smartest solution here... */
-    if (type != SYSCALL_SCHED_THREAD_GETERRNO)
-        current_thread->errno = 0; /* Default value for errno */
     fpt = syscall_callmap[major];
-    {
-        uintptr_t retval;
-        retval = fpt(type, p);
-        return retval;
-    }
+    return fpt(type, p);
 }

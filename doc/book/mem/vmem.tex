@@ -87,7 +87,15 @@ See figure \ref{figure:vmsubsys}.
   \item mmu HAL -       is the abract MMU interface provided by \verb+mmu.h+
                         and \verb+mmu.c+.
   \item CPU specific MMU code is the module responsible of configuring the
-        physical MMU layer and implementing the interface prodived by
+        physical MMU layer and implementing the interface provided by
         \verb+mmu.c+
 \end{itemize}
 
+
+\section{Page Fault handling and VM Region virtualization}
+
+\begin{enumerate}
+\item DAB exception transfers execution to \verb+interrupt_dabt+ in \verb+XXX_int_handlers.S+
+\item \verb+mmu_data_abort_handler()+ (\verb+XXX_mmu.c+) gets called
+\item to be completed...
+\end{enumerate}

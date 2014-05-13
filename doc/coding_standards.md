@@ -1,24 +1,29 @@
 Zeke Coding Standards & Generic Documentation
 =============================================
 
-Here is some misc documentation and generic guidelines on how to code for Zeke.
+Here is some misc documentation and generic guidelines on how to write code for
+Zeke.
 
 Directory Structure
 -------------------
 
-+ src/          Most of kernel code.
-+ src/generic   Generic data structures.
-+ src/kstring   String functions.
-+ src/hal       Harware abstraction layer.
-+ src/fs        Virtual file system and other file systems.
-+ src/kerror_X  Kernel logger implementations.
-+ src/sched_X   Thread scheduler implementations.
-+ src/usrscope  User scope libary source files.
-+ include/      User scope library headers.
-+ lib/          C runtime libraries.
-+ config/       Build config.
-+ modmakefiles/ Per module makefiles.
-+ test/         Unit tests.
++ src/                  Most of the kernel code.
++ src/generic/          Generic data structures.
++ src/libkern/          Kernel "standard" library.
++ src/libkern/kstring/  String functions.
++ src/hal/              Harware abstraction layer.
++ src/fs/               Virtual file system abstraction and other file systems.
++ src/sched_X/          Thread scheduler implementations.
++ src/test/             Kernel space unit tests.
++ src/kunit/            In-kernel unit test framework.
++ include/              User space library headers.
++ lib/                  C runtime libraries and user space libraries.
++ config/               Kernel build config.
++ modmakefiles/         Kernel module makefiles.
++ sbin/                 System utilities.
++ tools/                Build tools/scripts.
++ test/                 User space unit tests.
++ test/punit/           User space unt test framework.
 
 
 Naming Conventions
@@ -30,7 +35,8 @@ Naming Conventions
 + `kmodule.c|h` Kernel scope source module that provides some external
                 sycallable functionality
 + `lowlevel.S`  Assembly source code; Note that capital S for user files as file
-                names ending with small s are reserved for compilation time files
+                names ending with small s are reserved for compilation time
+                files
 + `dev/`        Dev subsys modules
 + `thscope/`    Functions that are called and excecuted in thread scope;
                 This means mainly syscall wrappers
@@ -188,20 +194,15 @@ whole kernel. Module makefiles are named as `<module>.mk` and are located in the
 `modmakefiles` directory under the root.
 
 Note that in context of Zeke there is two kinds of modules, the core/top level
-modules that are packed as static library files and then there is kind of
+subsystems that are packed as static library files and then there is kind of
 submodules (often referred as modules too) that are optional compilation units
 or compilation unit groups. Both are configured in the kernel configuration.
 
-Disabling some submodules may disable the whole module while some are only a
-part of bigged top modules. So if for example `configDEVSUBSYS` is set to zero
-then only devsubsys related functionality/copilation units are dropped from the
-base system, but if `configDEVNULL` is set to zero then the whole module is
-dropped from the compilation.
-
-Module makefiles are parsed as normal makefiles but care should be taken when
-changing global variables in makefiles. Module makefiles are mainly allowed to
-only apped IDIR variable and all other variables should be more or less specific
-to the module itself and should begin with the name of the module.
+Module makefiles are parsed like normal makefiles but care should be taken when
+changing global variables in these makefiles. Module makefiles are mainly
+allowed to only append IDIR variable and all other variables should be more or
+less specific to the module makefile itself and should begin with the name of
+the module.
 
 Example of a module makefile (test.mk):
 
@@ -217,24 +218,25 @@ Example of a module makefile (test.mk):
     # Assembly file
     test-ASRC$(configTEST_CONFIGURABLE) += src/test/lowlevel.S
 
-Main makefile will automatically discover `test-SRC-1` list and will compile a
-new static library based on the compilation units in the list. Name of the
+The main makefile will automatically discover `test-SRC-1` list and will compile
+a new static library based on the compilation units in the list. Name of the
 library is derived from the makefile's name and so should be the first word of
 the source file list name.
 
 ### Target specific compilation options and special files
 
 As we don't want to put anything target specific and possibly changing data to
-main makefile we are using a special makefile called `target.mak`. This special
-makefile won't be noticed by the module makefile search but it's included
-separately. `target.mak` doesn't need to be changed if Zeke is compiled to a
+the main makefile we are using another makefile called `target.mak`. This file
+contains the targer specific compilation options for different phases of
+compilation. `target.mak` doesn't need to be changed if Zeke is compiled for a
 different platform but it has to be updated if support for a new platform is to
-be added.
+be implemented.
 
 `target.mak` should define at least following target specific variables:
-+ `ASFLAGS`: Containing CPU architecture flags
-+ `MEMMAP`: Specifying linker script for kernel image memory map
-+ `STARTUP`: Specifying target specific startup assembly source code file
-+ `CRT`: Specifying CRT library used with the target
++ `ASFLAGS`:    Containing CPU architecture flags
++ `MEMMAP`:     Specifying linker script for kernel image memory map
++ `STARTUP`:    Specifying target specific startup assembly source code file
++ `CRT`:        Specifying CRT library used with the target
+
 and optionally:
-+ `LLCFLAGS`: containing some target specific flags
++ `LLCFLAGS`: containing any target specific flags
