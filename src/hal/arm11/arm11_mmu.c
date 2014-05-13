@@ -518,28 +518,30 @@ void mmu_control_set(uint32_t value, uint32_t mask)
 }
 
 /**
- * Translate vaddr to physical address.
+ * Translate a vaddr to a physical address.
  */
 void * mmu_translate_vaddr(const mmu_pagetable_t * pt, uintptr_t vaddr)
 {
     void * retval = 0;
     uint32_t * p_pte;
     uint32_t mask;
-    size_t ptsize;
-    const size_t offset = (size_t)(vaddr - (uintptr_t)(pt->vaddr));
+    size_t page_size;
+    size_t offset = (size_t)(vaddr - (uintptr_t)(pt->vaddr));
 
     switch (pt->type) {
     case MMU_PTT_MASTER:
-        ptsize = MMU_PTSZ_MASTER;
-        mask   = 0xfff00000;
-        p_pte  = (uint32_t *)pt->pt_addr; /* Page table base address */
-        p_pte += vaddr >> 20; /* Set to the first pte */
+        page_size = MMU_PGSIZE_SECTION;
+        mask    = 0xfff00000;
+        offset &= 0x000fffff;
+        p_pte   = (uint32_t *)pt->pt_addr; /* Page table base address */
+        p_pte  += vaddr >> 20; /* Set to the corresponding pte */
         break;
     case MMU_PTT_COARSE:
-        ptsize = MMU_PTSZ_COARSE;
-        mask   = 0xfffff000;
-        p_pte  = (uint32_t *)pt->pt_addr;
-        p_pte += (vaddr & 0x000ff000) >> 12;
+        page_size = MMU_PGSIZE_COARSE;
+        mask    = 0xfffff000;
+        offset &= 0x00000fff;
+        p_pte   = (uint32_t *)pt->pt_addr;
+        p_pte  += (vaddr & 0x000ff000) >> 12;
         break;
     default:
 #if configDEBUG
@@ -548,9 +550,11 @@ void * mmu_translate_vaddr(const mmu_pagetable_t * pt, uintptr_t vaddr)
         goto out;
     }
 
-    if (offset > ptsize)
+    if (offset > page_size) {
         goto out;
-    else retval = (void *)(((uintptr_t)(*p_pte) & mask) + offset);
+    } else {
+        retval = (void *)(((uintptr_t)(*p_pte) & mask) + offset);
+    }
 
 out:
     return retval;

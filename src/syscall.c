@@ -73,6 +73,7 @@ static kernel_syscall_handler_t syscall_callmap[] = {
 
 /**
  * Set errno of the current thread.
+ * @param new_value is the new value of errno for the current_thread.
  */
 void set_errno(int new_value)
 {

@@ -47,8 +47,9 @@
 
 /**
  * Dynmem page/region size in bytes.
+ * TODO Not sure if this works with any other size than 1 MB.
  */
-#define DYNMEM_PAGE_SIZE 1048576
+#define DYNMEM_PAGE_SIZE MMU_PGSIZE_SECTION
 
 /**
  * Dynmem area starts

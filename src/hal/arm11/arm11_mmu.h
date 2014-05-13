@@ -71,6 +71,10 @@
 #define MMU_PTSZ_COARSE     0x0400 /*!< Coarse page table size. */
 #define MMU_PTSZ_MASTER     0x4000 /*!< L1 master page table size. */
 
+/* Page sizes in bytes */
+#define MMU_PGSIZE_COARSE   4096    /*!< Size of a coarse page table page. */
+#define MMU_PGSIZE_SECTION  1048576 /*!< Size of a master page table section. */
+
 /* Domain Access Control Macros */
 #define MMU_DOMAC_NA        0x0 /*!< Any access generates a domain fault. */
 #define MMU_DOMAC_CL        0x1 /*!< Client. Access is checked against the ap bits in TLB. */

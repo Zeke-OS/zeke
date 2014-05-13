@@ -271,7 +271,7 @@ int proc_replace(pid_t pid, void * image, size_t size)
 proc_info_t * proc_get_struct(pid_t pid)
 {
     /* TODO do state check properly */
-    if (pid > _cur_maxproc || (*_procarr)[pid]->state == PROC_STATE_INITIAL) {
+    if (pid > _cur_maxproc) {
 #if configDEBUG != 0
         char buf[80];
 

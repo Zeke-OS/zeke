@@ -153,7 +153,6 @@ void ptlist_free(struct ptlist * ptlist_head)
  */
 int copyin(const void * uaddr, void * kaddr, size_t len)
 {
-#if 0
     struct vm_pt * vpt;
     void * phys_uaddr;
 
@@ -165,17 +164,15 @@ int copyin(const void * uaddr, void * kaddr, size_t len)
             &(curproc->mm.mptable),
             (uintptr_t)uaddr);
 
-    KERROR(KERROR_DEBUG, "Blaa1");
     if (!vpt)
         panic("Can't copyin()");
 
     phys_uaddr = mmu_translate_vaddr(&(vpt->pt), (uintptr_t)uaddr);
-    if (!phys_uaddr)
+    if (!phys_uaddr) {
         return EFAULT;
-#endif
+    }
 
-    //memcpy(kaddr, phys_uaddr, len);
-    memcpy(kaddr, uaddr, len);
+    memcpy(kaddr, phys_uaddr, len);
     return 0;
 }
 
@@ -191,7 +188,6 @@ int copyin(const void * uaddr, void * kaddr, size_t len)
  */
 int copyout(const void * kaddr, void * uaddr, size_t len)
 {
-#if 0
     /* TODO Handle possible cow flag? */
     struct vm_pt * vpt;
     void * phys_uaddr;
@@ -201,17 +197,14 @@ int copyout(const void * kaddr, void * uaddr, size_t len)
             &(curproc->mm.mptable),
             (uintptr_t)uaddr);
 
-    KERROR(KERROR_DEBUG, "Blaa2");
     if (!vpt)
         panic("Can't copyout()");
 
     phys_uaddr = mmu_translate_vaddr(&(vpt->pt), (uintptr_t)uaddr);
     if (!phys_uaddr)
         return EFAULT;
-#endif
 
-    //memcpy(phys_uaddr, kaddr, len);
-    memcpy(uaddr, kaddr, len);
+    memcpy(phys_uaddr, kaddr, len);
     return 0;
 }
 
