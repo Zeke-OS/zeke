@@ -130,9 +130,7 @@ static void getset_svalue(int * oid, int len, size_t oval_len,
     char buf[40 + oval_len];
 
     if(sysctl(oid, len, ovalbuf, &oval_len, (void *)nval, nval_len)) {
-        ksprintf(buf, sizeof(buf), "Error: %u\n",
-                (int)syscall(SYSCALL_SCHED_THREAD_GETERRNO, NULL));
-        puts(buf);
+        /* Failed, errno set */
         return;
     }
     ksprintf(buf, sizeof(buf), "%s\n", ovalbuf);
@@ -148,9 +146,7 @@ static void getset_ivalue(int * oid, int len, size_t oval_len,
 
     /* Get value */
     if(sysctl(oid, len, &x, &x_len, 0, 0)) {
-        ksprintf(buf, sizeof(buf), "Error: %u\n",
-                (int)syscall(SYSCALL_SCHED_THREAD_GETERRNO, NULL));
-        puts(buf);
+        /* Failed, errno set */
         return;
     }
     ksprintf(buf, sizeof(buf), "%u\n", x);

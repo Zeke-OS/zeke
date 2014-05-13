@@ -87,10 +87,10 @@ configUSRINIT_SSIZE = 8192# Stack size for usrinit thread
 configUSRINIT_PRI = osPriorityNormal# Priority of usrinit thread
 
 # Virtual file system and file systems
-configRAMFS = 0# Compile ramfs with Zeke base
+configRAMFS = 1# Compile ramfs with Zeke base
 
 # In-Kernel Unit Tests
-configKUNIT = 0#
+configKUNIT = 1 #
 KU_REPORT_ORIENTED = 0#
 
 # Dev driver modules

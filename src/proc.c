@@ -119,6 +119,7 @@ static void init_kernel_proc(void)
             sizeof(mmu_pagetable_t));
 
     /* Insert page tables */
+    /* TODO Remove following lines completely? */
 #if 0
     struct vm_pt * vpt;
     vpt = kmalloc(sizeof(struct vm_pt));
@@ -392,7 +393,7 @@ uintptr_t proc_syscall(uint32_t type, void * p)
 {
     switch(type) {
     case SYSCALL_PROC_EXEC: /* note: can only return EAGAIN or ENOMEM */
-        current_thread->errno = ENOSYS;
+        set_errno(ENOSYS);
         return -1;
 
     case SYSCALL_PROC_FORK:
@@ -405,43 +406,43 @@ uintptr_t proc_syscall(uint32_t type, void * p)
     }
 
     case SYSCALL_PROC_WAIT:
-        current_thread->errno = ENOSYS;
+        set_errno(ENOSYS);
         return -3;
 
     case SYSCALL_PROC_EXIT:
-        current_thread->errno = ENOSYS;
+        set_errno(ENOSYS);
         return -4;
 
     case SYSCALL_PROC_GETUID:
-        current_thread->errno = ENOSYS;
+        set_errno(ENOSYS);
         return -5;
 
     case SYSCALL_PROC_GETEUID:
-        current_thread->errno = ENOSYS;
+        set_errno(ENOSYS);
         return -6;
 
     case SYSCALL_PROC_GETGID:
-        current_thread->errno = ENOSYS;
+        set_errno(ENOSYS);
         return -7;
 
     case SYSCALL_PROC_GETEGID:
-        current_thread->errno = ENOSYS;
+        set_errno(ENOSYS);
         return -8;
 
     case SYSCALL_PROC_GETPID:
-        current_thread->errno = ENOSYS;
+        set_errno(ENOSYS);
         return -9;
 
     case SYSCALL_PROC_GETPPID:
-        current_thread->errno = ENOSYS;
+        set_errno(ENOSYS);
         return -10;
 
     case SYSCALL_PROC_ALARM:
-        current_thread->errno = ENOSYS;
+        set_errno(ENOSYS);
         return -13;
 
     case SYSCALL_PROC_CHDIR:
-        current_thread->errno = ENOSYS;
+        set_errno(ENOSYS);
         return -14;
 
     default:

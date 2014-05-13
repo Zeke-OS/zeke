@@ -39,14 +39,12 @@
   * @{
   */
 
-#ifndef KERNEL_INTERNAL
 #define KERNEL_INTERNAL
-#endif
-
 #include <stddef.h>
 #include <autoconf.h>
 #include <kerror.h>
 #include <sched.h>
+#include <errno.h>
 #include "arm11.h"
 
 volatile uint32_t flag_kernel_tick = 0;
@@ -89,7 +87,9 @@ void init_stack_frame(ds_pthread_create_t * thread_def, int priv)
 
     /* Pointer to the thread stack frame */
     thread_frame = (sw_stack_frame_t *)((uint32_t)(thread_def->def->stackAddr)
-                    + thread_def->def->stackSize - sizeof(sw_stack_frame_t));
+                    + thread_def->def->stackSize
+                    - sizeof(sw_stack_frame_t)
+                    - sizeof(errno_t));
 
     thread_frame->r0 = (uint32_t)(thread_def->argument);
     thread_frame->r1 = 0;

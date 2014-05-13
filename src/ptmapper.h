@@ -30,7 +30,12 @@
  *******************************************************************************
  */
 
+#pragma once
+#ifndef PTMAPPER_H
+#define PTMAPPER_H
+
 #include <hal/mmu.h>
+#include <vm/vm.h>
 
 /* Kernel memory map **********************************************************/
 /* page table area */
@@ -93,6 +98,7 @@
 
 extern mmu_pagetable_t mmu_pagetable_master;
 extern mmu_pagetable_t mmu_pagetable_system;
+struct vm_pt vm_pagetable_system;
 
 extern const mmu_region_t mmu_region_kstack;
 extern mmu_region_t mmu_region_kernel;
@@ -100,3 +106,5 @@ extern mmu_region_t mmu_region_kdata;
 
 int ptmapper_alloc(mmu_pagetable_t * pt);
 void ptmapper_free(mmu_pagetable_t * pt);
+
+#endif /* PTMAPPER_H */

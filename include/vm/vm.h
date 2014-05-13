@@ -125,7 +125,7 @@ struct vm_mm_struct {
 int ptlist_compare(struct vm_pt * a, struct vm_pt * b);
 RB_PROTOTYPE(ptlist, vm_pt, entry_, ptlist_compare);
 struct vm_pt * ptlist_get_pt(struct ptlist * ptlist_head, mmu_pagetable_t * mpt,
-        intptr_t vaddr);
+        uintptr_t vaddr);
 void ptlist_free(struct ptlist * ptlist_head);
 
 int copyin(const void * uaddr, void * kaddr, size_t len);

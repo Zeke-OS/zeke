@@ -146,6 +146,7 @@ uintptr_t syscall(uint32_t type, void * p);
 typedef uintptr_t (*kernel_syscall_handler_t)(uint32_t type,  void * p);
 
 uintptr_t _intSyscall_handler(uint32_t type, void * p);
+void set_errno(int new_value);
 #endif /* KERNEL_INTERNAL */
 
 #endif /* SYSCALL_H */

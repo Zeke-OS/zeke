@@ -140,7 +140,7 @@ typedef struct {
     size_t stack_size;
     vm_region_t * kstack_region; /*!< Thread kernel stack region. */
     uint32_t flags;             /*!< Status flags. */
-    int errno;                  /*!< Thread local errno. */
+    void * errno_uaddr;         /*!< Address of the thread local errno. */
     intptr_t retval;            /*!< Return value of the thread. */
     int wait_tim;               /*!< Reference to a timeout timer. */
     osPriority def_priority;    /*!< Thread priority. */

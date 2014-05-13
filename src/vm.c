@@ -75,7 +75,7 @@ int ptlist_compare(struct vm_pt * a, struct vm_pt * b)
  *              table.
  * @return Returs a page table where vaddr can be mapped.
  */
-struct vm_pt * ptlist_get_pt(struct ptlist * ptlist_head, mmu_pagetable_t * mpt, intptr_t vaddr)
+struct vm_pt * ptlist_get_pt(struct ptlist * ptlist_head, mmu_pagetable_t * mpt, uintptr_t vaddr)
 {
     struct vm_pt * vpt = 0;
     struct vm_pt filter = {
@@ -87,13 +87,20 @@ struct vm_pt * ptlist_get_pt(struct ptlist * ptlist_head, mmu_pagetable_t * mpt,
         panic("mpt can't be null");
 #endif
 
+    /* Check if system page table is needed. */
+    /* TODO I'm not sure if we have this one MB boundary as some fancy constant
+     * somewhere but this should be quite stable thing though. */
+    if (vaddr <= 0x000FFFFF) {
+        return &vm_pagetable_system;
+    }
+
+    /* Look for existing page table. */
     if (!RB_EMPTY(ptlist_head)) {
-        /* Look for existing page table. */
         vpt = RB_FIND(ptlist, ptlist_head, &filter);
     }
-    if (vpt == 0) { /* Create a new pt if a sufficient pt not found. */
+    if (!vpt) { /* Create a new pt if a sufficient pt not found. */
         vpt = kcalloc(1, sizeof(struct vm_pt));
-        if (vpt == 0) {
+        if (!vpt) {
             return 0;
         }
 
@@ -146,22 +153,29 @@ void ptlist_free(struct ptlist * ptlist_head)
  */
 int copyin(const void * uaddr, void * kaddr, size_t len)
 {
-    struct vm_pt * vpt;
-
-    /* TODO translate uaddr to phys addr existing in kernel space */
-    /* By now we believe existence of the requested address is asserted and we
-     * can just do the page table translation and copy data. */
-
 #if 0
-    /* TODO following doesn't give us any paddresses */
+    struct vm_pt * vpt;
+    void * phys_uaddr;
+
+    /* By now we believe existence of the requested address is already asserted
+     * and we can just do the page table translation and copy data. */
+
     vpt = ptlist_get_pt(
             &(curproc->mm.ptlist_head),
             &(curproc->mm.mptable),
-            (intptr_t)uaddr);
+            (uintptr_t)uaddr);
+
+    KERROR(KERROR_DEBUG, "Blaa1");
+    if (!vpt)
+        panic("Can't copyin()");
+
+    phys_uaddr = mmu_translate_vaddr(&(vpt->pt), (uintptr_t)uaddr);
+    if (!phys_uaddr)
+        return EFAULT;
 #endif
 
+    //memcpy(kaddr, phys_uaddr, len);
     memcpy(kaddr, uaddr, len);
-
     return 0;
 }
 
@@ -177,11 +191,27 @@ int copyin(const void * uaddr, void * kaddr, size_t len)
  */
 int copyout(const void * kaddr, void * uaddr, size_t len)
 {
-    /* TODO translate uaddr to phys addr existing in kernel space */
-    /* TODO Handle possible cow flag. */
+#if 0
+    /* TODO Handle possible cow flag? */
+    struct vm_pt * vpt;
+    void * phys_uaddr;
 
+    vpt = ptlist_get_pt(
+            &(curproc->mm.ptlist_head),
+            &(curproc->mm.mptable),
+            (uintptr_t)uaddr);
+
+    KERROR(KERROR_DEBUG, "Blaa2");
+    if (!vpt)
+        panic("Can't copyout()");
+
+    phys_uaddr = mmu_translate_vaddr(&(vpt->pt), (uintptr_t)uaddr);
+    if (!phys_uaddr)
+        return EFAULT;
+#endif
+
+    //memcpy(phys_uaddr, kaddr, len);
     memcpy(uaddr, kaddr, len);
-
     return 0;
 }
 

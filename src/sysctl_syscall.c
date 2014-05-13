@@ -38,14 +38,20 @@
 
 uintptr_t sysctl_syscall(uint32_t type, void * p)
 {
+    int err;
+
     switch(type) {
     case SYSCALL_SYSCTL_SYSCTL:
         /* sysctl will handle copyin for p. */
-        current_thread->errno = sys___sysctl((threadInfo_t *)current_thread, p);
-        return (uint32_t)(current_thread->errno ? -1 : 0);
+        err = sys___sysctl((threadInfo_t *)current_thread, p);
+        if (err) {
+            set_errno(err);
+            return -1;
+        }
+        return 0;
 
     default:
-        current_thread->errno = ENOSYS;
-        return (uint32_t)NULL;
+        set_errno(ENOSYS);
+        return (uintptr_t)NULL;
     }
 }

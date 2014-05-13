@@ -60,6 +60,8 @@ mmu_pagetable_t mmu_pagetable_system = {
     .dom            = MMU_DOM_KERNEL
 };
 
+struct vm_pt vm_pagetable_system;
+
 /* Fixed Regions **************************************************************/
 
 /** Kernel mode stacks. */
@@ -269,6 +271,12 @@ void ptmapper_init(void)
 #undef MAP_REGION
 #undef PRINTMAPREG
     }
+
+    /* Copy system page table to vm version of it, this is the only easy way to
+     * solve some issues now. TODO Maybe we'd like to do some major refactoring
+     * some day. */
+    vm_pagetable_system.pt = mmu_pagetable_system;
+    vm_pagetable_system.linkcount = 1;
 
     /* Activate page tables */
     mmu_attach_pagetable(&mmu_pagetable_master); /* Load L1 TTB */

@@ -403,9 +403,15 @@ static void sched_thread_init(pthread_t i, ds_pthread_create_t * thread_def,
     task_table[i].stack_start = thread_def->def->stackAddr;
     task_table[i].stack_size = thread_def->def->stackSize;
     task_table[i].sp = (void *)((uint32_t)(thread_def->def->stackAddr)
-                                         + thread_def->def->stackSize
-                                         - sizeof(hw_stack_frame_t)
-                                         - sizeof(sw_stack_frame_t));
+                                        + thread_def->def->stackSize
+                                        - sizeof(hw_stack_frame_t)
+                                        - sizeof(sw_stack_frame_t)
+                                        - sizeof(errno_t));
+
+    /* So errno is at the last address of stack area. */
+    task_table[i].errno_uaddr = (void *)((uint32_t)(thread_def->def->stackAddr)
+                                        + thread_def->def->stackSize
+                                        - sizeof(errno_t));
 
     /* Create kstack */
     init_kstack(&(task_table[i]));
@@ -846,7 +852,7 @@ uintptr_t sched_syscall(uint32_t type, void * p)
         if (!useracc(p, sizeof(uint32_t), VM_PROT_READ)) {
             /* No permission to read/write */
             /* TODO Signal/Kill? */
-            current_thread->errno = EFAULT;
+            set_errno(EFAULT);
             return -EFAULT;
         }
         copyin(p, &val, sizeof(uint32_t));
@@ -860,17 +866,17 @@ uintptr_t sched_syscall(uint32_t type, void * p)
         if (!useracc(p, sizeof(arr), VM_PROT_WRITE)) {
             /* No permission to write */
             /* TODO Signal/Kill? */
-            current_thread->errno = EFAULT;
+            set_errno(EFAULT);
             return -1;
         }
         sched_get_loads(arr);
         copyout(arr, p, sizeof(arr));
         }
-        return (uint32_t)NULL;
+        return (uintptr_t)NULL;
 
     default:
-        current_thread->errno = ENOSYS;
-        return (uint32_t)NULL;
+        set_errno(ENOSYS);
+        return (uintptr_t)NULL;
     }
 }
 
@@ -879,36 +885,36 @@ uintptr_t sched_syscall_thread(uint32_t type, void * p)
     switch(type) {
     /* TODO pthread_create is allowed to throw errors and we definitely should
      *      use those. */
-    case SYSCALL_SCHED_THREAD_CREATE:
-        {
+    case SYSCALL_SCHED_THREAD_CREATE: {
         ds_pthread_create_t ds;
         if (!useracc(p, sizeof(ds_pthread_create_t), VM_PROT_WRITE)) {
             /* No permission to read/write */
             /* TODO Signal/Kill? */
-            current_thread->errno = EFAULT;
+            set_errno(EFAULT);
             return -1;
         }
         copyin(p, &ds, sizeof(ds_pthread_create_t));
         sched_threadCreate(&ds, 0);
         copyout(&ds, p, sizeof(ds_pthread_create_t));
-        }
+
         return 0;
+    }
 
     case SYSCALL_SCHED_THREAD_GETTID:
         return (uintptr_t)sched_get_current_tid();
 
-    case SYSCALL_SCHED_THREAD_TERMINATE:
-        {
+    case SYSCALL_SCHED_THREAD_TERMINATE: {
         pthread_t thread_id;
         if (!useracc(p, sizeof(pthread_t), VM_PROT_READ)) {
             /* No permission to read */
             /* TODO Signal/Kill? */
-            current_thread->errno = EFAULT;
+            set_errno(EFAULT);
             return -1;
         }
         copyin(p, &thread_id, sizeof(pthread_t));
+
         return (uintptr_t)sched_thread_terminate(thread_id);
-        }
+    }
 
     case SYSCALL_SCHED_THREAD_DIE:
         /* We don't care about validity of a possible pointer returned as a
@@ -916,59 +922,61 @@ uintptr_t sched_syscall_thread(uint32_t type, void * p)
         sched_thread_die((intptr_t)p); /* Thread will eventually block now... */
         return 0;
 
-    case SYSCALL_SCHED_THREAD_DETACH:
-        {
+    case SYSCALL_SCHED_THREAD_DETACH: {
         pthread_t thread_id;
         if (!useracc(p, sizeof(pthread_t), VM_PROT_READ)) {
             /* No permission to read */
             /* TODO Signal/Kill? */
-            current_thread->errno = EFAULT;
+            set_errno(EFAULT);
             return -1;
         }
         copyin(p, &thread_id, sizeof(pthread_t));
         if ((uintptr_t)sched_thread_detach(thread_id)) {
-            current_thread->errno = EINVAL;
+            set_errno(EINVAL);
             return -1;
         }
         return 0;
-        }
+    }
 
-    case SYSCALL_SCHED_THREAD_SETPRIORITY:
-        {
+    case SYSCALL_SCHED_THREAD_SETPRIORITY: {
+        int err;
         ds_osSetPriority_t ds;
         if (!useracc(p, sizeof(pthread_t), VM_PROT_READ)) {
-            current_thread->errno = ESRCH;
+            set_errno(ESRCH);
             return -1;
         }
         copyin(p, &ds, sizeof(ds_osSetPriority_t));
-        current_thread->errno = (uintptr_t)sched_thread_set_priority(ds.thread_id, ds.priority);
-        return ((current_thread->errno == 0) ? 0 : -1);
+        err = (uintptr_t)sched_thread_set_priority(ds.thread_id, ds.priority);
+        if (err) {
+            set_errno(-err);
+            return -1;
         }
+        return 0;
+    }
 
-    case SYSCALL_SCHED_THREAD_GETPRIORITY:
-        {
+    case SYSCALL_SCHED_THREAD_GETPRIORITY: {
         osPriority pri;
         pthread_t thread_id;
         if (!useracc(p, sizeof(pthread_t), VM_PROT_READ)) {
             /* No permission to read */
             /* TODO Signal/Kill? */
-            current_thread->errno = ESRCH;
+            set_errno(ESRCH);
             return -1;
         }
         copyin(p, &thread_id, sizeof(pthread_t));
         pri = (uintptr_t)sched_thread_get_priority(thread_id);
         if (pri == osPriorityError) {
-            current_thread->errno = ESRCH;
+            set_errno(ESRCH);
             pri = -1; /* Note: -1 might be also legitimate prio value. */
         }
         return pri;
-        }
+    }
 
     case SYSCALL_SCHED_THREAD_GETERRNO:
-        return (uintptr_t)(current_thread->errno);
+        return (uintptr_t)(current_thread->errno_uaddr);
 
     default:
-        current_thread->errno = ENOSYS;
+        set_errno(ENOSYS);
         return (uintptr_t)NULL;
     }
 }

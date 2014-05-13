@@ -76,26 +76,25 @@ int tish(void)
     int err;
 
     while (1) {
-prompt:
         puts("# ");
         if (!gline(line, MAX_LEN))
             break;
 
         if ((cmd = kstrtok(line, DELIMS, &strtok_lasts))) {
-            /* TODO Clear errno */
+            errno = 0;
 
             for (int i = 0; i < num_elem(cmdarr); i++) {
                 if (!strcmp(cmd, cmdarr[i].name)) {
                     cmdarr[i].fn(&strtok_lasts);
-                    goto prompt;
+                    goto get_errno;
                 }
             }
 
             puts("I don't know how to execute\n");
 
+get_errno:
             if ((err = errno)) {
-                /*perror("Failed");*/
-                ksprintf(line, sizeof(line), "\nerrno: %u\n", err);
+                ksprintf(line, sizeof(line), "\nFailed, errno: %u\n", err);
                 puts(line);
             }
         }

@@ -116,9 +116,22 @@
 #define EXDEV           80  /*!< Cross-device link. */
 
 #ifndef KERNEL_INTERNAL
-/* Thread local errno function */
-int __error(void);
-#define errno (__error())
+/**
+ * Get pointer to the thread local errno.
+ */
+int * __error(void);
+#define errno (*__error())
+#else
+/**
+ * A type for errno.
+ * Even this is a type definition it doesn't mean that type of errno is subject
+ * to change but this just makes some parts of the code easier to read.
+ * According to ISO C standard errno should be a modifiable lvalue of
+ * type int, and must not be explicitly declared; errno may be a macro.
+ * POSIX then suggests that errno should be thread local, which is why we have
+ * that __erno() defined.
+ */
+typedef int errno_t;
 #endif
 
 #endif /* ERRNO */

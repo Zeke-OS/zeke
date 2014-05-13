@@ -225,26 +225,25 @@ static ssize_t fs_write_cproc(int fildes, const void * buf, size_t nbyte,
         off_t * offset)
 {
     proc_info_t * cpr = (proc_info_t *)curproc;
-    threadInfo_t * t = (threadInfo_t *)current_thread;
     vnode_t * vnode;
     size_t retval = -1;
 
     /* Check that fildes exists */
     if (fildes > cpr->files->count && !(cpr->files->fd[fildes])) {
-        t->errno = EBADF;
+        set_errno(EBADF);
         goto out;
     }
 
     vnode = cpr->files->fd[fildes]->vnode;
     /* Check if there is a vnode linked with the file and it can be written. */
     if (!vnode || !(vnode->vnode_ops) || !(vnode->vnode_ops->write)) {
-        t->errno = EBADF;
+        set_errno(EBADF);
         goto out;
     }
 
     retval = vnode->vnode_ops->write(vnode, offset, buf, nbyte);
     if (retval < nbyte) /* TODO How to determine other errno types? */
-        t->errno = ENOSPC;
+        set_errno(ENOSPC);
 out:
     return retval;
 }
@@ -258,19 +257,19 @@ uintptr_t fs_syscall(uint32_t type, void * p)
 {
     switch(type) {
     case SYSCALL_FS_CREAT:
-        current_thread->errno = ENOSYS;
+        set_errno(ENOSYS);
         return -1;
 
     case SYSCALL_FS_OPEN:
-        current_thread->errno = ENOSYS;
+        set_errno(ENOSYS);
         return -2;
 
     case SYSCALL_FS_CLOSE:
-        current_thread->errno = ENOSYS;
+        set_errno(ENOSYS);
         return -3;
 
     case SYSCALL_FS_READ:
-        current_thread->errno = ENOSYS;
+        set_errno(ENOSYS);
         return -4;
 
     case SYSCALL_FS_WRITE:
@@ -282,7 +281,7 @@ uintptr_t fs_syscall(uint32_t type, void * p)
         if (!useracc(p, sizeof(struct _fs_write_args), VM_PROT_READ)) {
             /* No permission to read/write */
             /* TODO Signal/Kill? */
-            current_thread->errno = EFAULT;
+            set_errno(EFAULT);
         }
         copyin(p, &fswa, sizeof(struct _fs_write_args));
 
@@ -290,7 +289,7 @@ uintptr_t fs_syscall(uint32_t type, void * p)
         if (!useracc(fswa.buf, fswa.nbyte, VM_PROT_READ)) {
             /* No permission to read/write */
             /* TODO Signal/Kill? */
-            current_thread->errno = EFAULT;
+            set_errno(EFAULT);
         }
         buf = kmalloc(fswa.nbyte);
         copyin(fswa.buf, buf, fswa.nbyte);
@@ -300,55 +299,56 @@ uintptr_t fs_syscall(uint32_t type, void * p)
         }
 
     case SYSCALL_FS_LSEEK:
-        current_thread->errno = ENOSYS;
+        set_errno(ENOSYS);
         return -6;
 
     case SYSCALL_FS_DUP:
-        current_thread->errno = ENOSYS;
+        set_errno(ENOSYS);
         return -7;
 
     case SYSCALL_FS_LINK:
-        current_thread->errno = ENOSYS;
+        set_errno(ENOSYS);
         return -8;
 
     case SYSCALL_FS_UNLINK:
-        current_thread->errno = ENOSYS;
+        set_errno(ENOSYS);
         return -9;
 
     case SYSCALL_FS_STAT:
-        current_thread->errno = ENOSYS;
+        set_errno(ENOSYS);
         return -10;
 
     case SYSCALL_FS_FSTAT:
-        current_thread->errno = ENOSYS;
+        set_errno(ENOSYS);
         return -11;
 
     case SYSCALL_FS_ACCESS:
-        current_thread->errno = ENOSYS;
+        set_errno(ENOSYS);
         return -12;
 
     case SYSCALL_FS_CHMOD:
-        current_thread->errno = ENOSYS;
+        set_errno(ENOSYS);
         return -13;
 
     case SYSCALL_FS_CHOWN:
-        current_thread->errno = ENOSYS;
+        set_errno(ENOSYS);
         return -14;
 
     case SYSCALL_FS_UMASK:
-        current_thread->errno = ENOSYS;
+        set_errno(ENOSYS);
         return -15;
 
     case SYSCALL_FS_IOCTL:
-        current_thread->errno = ENOSYS;
+        set_errno(ENOSYS);
         return -16;
 
     case SYSCALL_FS_MOUNT:
-        current_thread->errno = ENOSYS;
+        set_errno(ENOSYS);
         return -17;
 
     default:
-        return (uint32_t)NULL;
+        set_errno(ENOSYS);
+        return (uintptr_t)NULL;
     }
 }
 

@@ -122,7 +122,7 @@ static int ulocks_semaphore_thread_spinwait(uint32_t * s, uint32_t millisec)
  * TODO Atleast semaphores could be made blocking
  */
 
-uint32_t ulocks_syscall(uint32_t type, void * p)
+uintptr_t ulocks_syscall(uint32_t type, void * p)
 {
     uint32_t retval;
 
@@ -132,11 +132,11 @@ uint32_t ulocks_syscall(uint32_t type, void * p)
         if (useracc(p, sizeof(int), VM_PROT_WRITE)) {
             retval = (uint32_t)test_and_set((int *)p);
             if (retval) {
-                current_thread->errno = EBUSY;
+                set_errno(EBUSY);
             }
         } else { /* No permission to read/write */
             /* TODO Kill? */
-            current_thread->errno = EFAULT;
+            set_errno(EFAULT);
             return -1;
         }
         return retval;
@@ -148,7 +148,7 @@ uint32_t ulocks_syscall(uint32_t type, void * p)
                     ((ds_osSemaphoreWait_t *)(p))->millisec);
         } else { /* No permission to read/write */
             /* TODO Kill? */
-            current_thread->errno = EFAULT;
+            set_errno(EFAULT);
             return -1;
         }
 
@@ -159,13 +159,13 @@ uint32_t ulocks_syscall(uint32_t type, void * p)
             return (uint32_t)NULL;
         } else { /* No permission to read/write */
             /* TODO Kill? */
-            current_thread->errno = EFAULT;
+            set_errno(EFAULT);
             return -1;
         }
 
     default:
-        current_thread->errno = ENOSYS;
-        return (uint32_t)NULL;
+        set_errno(ENOSYS);
+        return (uintptr_t)NULL;
     }
 }
 

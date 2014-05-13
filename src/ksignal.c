@@ -67,7 +67,6 @@
  */
 
 #define KERNEL_INTERNAL 1
-#include <syscalldef.h>
 #include <syscall.h>
 #include <errno.h>
 #include <sched.h>
@@ -197,23 +196,23 @@ uintptr_t ksignal_syscall(uint32_t type, void * p)
 {
     switch(type) {
         case SYSCALL_SIGNAL_KILL:
-            current_thread->errno = ENOSYS;
+            set_errno(ENOSYS);
             return -3;
 
         case SYSCALL_SIGNAL_RAISE:
-            current_thread->errno = ENOSYS;
+            set_errno(ENOSYS);
             return -4;
 
         case SYSCALL_SIGNAL_ACTION:
-            current_thread->errno = ENOSYS;
+            set_errno(ENOSYS);
             return -5;
 
         case SYSCALL_SIGNAL_ALTSTACK:
-            current_thread->errno = ENOSYS;
+            set_errno(ENOSYS);
             return -6;
 
         default:
-            current_thread->errno = ENOSYS;
+            set_errno(ENOSYS);
             return -1;
     }
 }
