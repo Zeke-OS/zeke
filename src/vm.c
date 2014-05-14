@@ -161,7 +161,7 @@ int copyin(const void * uaddr, void * kaddr, size_t len)
 
     vpt = ptlist_get_pt(
             &(curproc->mm.ptlist_head),
-            &(curproc->mm.mptable),
+            &(curproc->mm.mpt),
             (uintptr_t)uaddr);
 
     if (!vpt)
@@ -194,7 +194,7 @@ int copyout(const void * kaddr, void * uaddr, size_t len)
 
     vpt = ptlist_get_pt(
             &(curproc->mm.ptlist_head),
-            &(curproc->mm.mptable),
+            &(curproc->mm.mpt),
             (uintptr_t)uaddr);
 
     if (!vpt)

@@ -47,6 +47,7 @@
 #include <ksignal.h>
 #include <kernel.h>
 #include <vm/vm.h>
+#include <hal/hal_core.h>
 
 /*
  * Scheduler flags
@@ -135,20 +136,20 @@
  * Thread Control Block structure.
  */
 typedef struct {
-    void * sp;                  /*!< Stack pointer. */
-    void * stack_start;         /*!< Stack start address. */
-    size_t stack_size;
-    vm_region_t * kstack_region; /*!< Thread kernel stack region. */
-    uint32_t flags;             /*!< Status flags. */
-    void * errno_uaddr;         /*!< Address of the thread local errno. */
-    intptr_t retval;            /*!< Return value of the thread. */
-    int wait_tim;               /*!< Reference to a timeout timer. */
-    osPriority def_priority;    /*!< Thread priority. */
-    osPriority priority;        /*!< Thread dynamic priority. */
-    int ts_counter;             /*!< Time slice counter. */
-    pthread_t id;               /*!< Thread id. */
-    pid_t pid_owner;            /*!< Owner process of this thread. */
-    struct ucred * td_ucred;    /*!< Reference to credentials. */
+    void * stack_start;             /*!< Stack start address. */
+    size_t stack_size;              /*!< Size of the user stack. */
+    sw_stack_frame_t stack_frame;   /*!< Thread stack frame. */
+    vm_region_t * kstack_region;    /*!< Thread kernel stack region. */
+    uint32_t flags;                 /*!< Status flags. */
+    void * errno_uaddr;             /*!< Address of the thread local errno. */
+    intptr_t retval;                /*!< Return value of the thread. */
+    int wait_tim;                   /*!< Reference to a timeout timer. */
+    osPriority def_priority;        /*!< Thread priority. */
+    osPriority priority;            /*!< Thread dynamic priority. */
+    int ts_counter;                 /*!< Time slice counter. */
+    pthread_t id;                   /*!< Thread id. */
+    pid_t pid_owner;                /*!< Owner process of this thread. */
+    struct ucred * td_ucred;        /*!< Reference to credentials. */
 
     /**
      * Thread inheritance; Parent and child thread pointers.
@@ -175,17 +176,14 @@ extern threadInfo_t * current_thread;
 /* Public function prototypes ***************************************************/
 /**
  * Scheduler handler.
- *
- * Scheduler handler is mainly called due to sysTick and PendSV
- * interrupt and always by an interrupt handler.
- * @param tsp Current thread stack pointer.
- * @return    Next thread stack pointer.
+ * This is mainly called when timer ticks.
  */
-void * sched_handler(void * tsp);
+void sched_handler(void);
 
 pthread_t sched_get_current_tid(void);
 threadInfo_t * sched_get_pThreadInfo(pthread_t thread_id);
 
+void * thread_get_curr_stackframe(void);
 pthread_t sched_thread_fork(void * stack_addr);
 
 /**

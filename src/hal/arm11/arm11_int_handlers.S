@@ -54,51 +54,49 @@ interrupt_svc:
      */
 
     mrs     r3, spsr
-    mov     r4, lr              /* Preserve link register. */
-    cps     #0x1f               /* Change to system mode to use thread stack. */
-    mov     lr, r4              /* Restore link register. */
+    mov     r4, lr          /* Preserve link register. */
+    cps     #0x1f           /* Change to system mode to use thread stack. */
+    mov     lr, r4          /* Restore link register. */
 
     /* Store spsr to allow nested swi. */
     push    {r3}
 
-    cpsie   aif                 /* Enable interrupts */
+    cpsie   aif             /* Enable interrupts */
 
     push    {r1-r12, lr}
 
     /* Attach kernel master page table */
-    push    {r0-r3}             /* Preserve syscall argument(s) */
-    attach_kernel_mptable
+    push    {r0-r3}         /* Preserve syscall argument(s) */
+    enter_kernel
     /* We could actually panic here if attach failed */
 
     /* Change to kernel stack to protect kernel data.
      * RFE This breaks nested syscalls. */
-    ldr     r0, =0x00001000     /* vaddr of tkstack. */
+    ldr     r0, =0x00001000 /* vaddr of tkstack. */
     pop     {r5-r8}
-    mov     r4, sp              /* Preserve user sp. */
-    mov     sp, r0              /* Change to kernel sp. */
-    mov     r0, r5              /* Restore arguments */
+    mov     r4, sp          /* Preserve user sp. */
+    mov     sp, r0          /* Change to kernel sp. */
+    mov     r0, r5          /* Restore arguments */
     mov     r1, r6
     mov     r2, r7
     mov     r3, r8
 
     /* Call kernel's internal syscall handler */
     bl      _intSyscall_handler
-    mov     r5, r0              /* Preserve syscall retval */
+    mov     r5, r0          /* Preserve syscall retval */
 
     /* Attach process master page table */
-    ldr     r0, =current_process_id
-    ldr     r0, [r0]
-    attach_proc_mptable
+    exit_kernel
 
-    mov     sp, r4              /* Restore user sp. */
-    mov     r0, r5              /* Restore syscall retval */
+    mov     sp, r4          /* Restore user sp. */
+    mov     r0, r5          /* Restore syscall retval */
     pop     {r1-r12, lr}
 
-    cpsid   aif                 /* Disable interrupts to prevent stack */
-                                /* corruption */
-    pop     {r3}                /* Restore spsr */
+    cpsid   aif             /* Disable interrupts to prevent stack */
+                            /* corruption */
+    pop     {r3}            /* Restore spsr */
     msr     spsr, r3
-    movs    pc, lr              /* Regular exit from svc */
+    movs    pc, lr          /* Regular exit from svc */
 
 
 @ void interrupt_sys(void)
@@ -109,9 +107,6 @@ interrupt_svc:
 interrupt_sys:
     pushcontext
 
-    /* Update thread stack pointer */
-    bl      wr_thread_stack_ptr
-
     /* Handle kernel_tick & Clear Timer IRQ if this is a real tick */
     bl      interrupt_clear_timer
 
@@ -119,17 +114,16 @@ interrupt_sys:
     mov     r0, #0
     bl      cpu_set_cid
 
-    /* Attach kernel master page table */
+    /* Suspend process and attach kernel master page table */
+    bl      proc_suspend
     attach_kernel_mptable
 
     /* Get current PID */
-    ldr     r5, =current_process_id
-    ldr     r5, [r5]
+    /*ldr     r5, =current_process_id
+    ldr     r5, [r5]*/
 
     /* Run scheduler */
-    bl      rd_thread_stack_ptr
     bl      sched_handler
-    bl      wr_thread_stack_ptr
 
     /* End of kernel tick */
     ldr     r5, =flag_kernel_tick
@@ -138,10 +132,11 @@ interrupt_sys:
 
     /* Update process system state */
     bl      proc_update
-    mov     r5, r0              /* New PID is in r0 */
+    mov     r5, r0          /* New PID is into r5 */
 
-    /* Attach process page table */
-    attach_proc_mptable
+    /* Resume process and attach process page table */
+    bl      proc_resume
+    bl      mmu_attach_pagetable
 
     /* Set process Context ID to the value of current PID */
     mov     r0, r5

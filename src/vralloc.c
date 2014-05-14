@@ -102,7 +102,7 @@ void vralloc_init(void)
 }
 
 /**
- * Allocate a new vregion node and memory for the region.
+ * Allocate a new vregion node/chunk and memory for the region.
  * @param count is the page count (4kB pages). Should be multiple of 256.
  * @return Rerturns a pointer to the newly allocated region; Otherwise 0.
  */
@@ -137,7 +137,7 @@ static struct vregion * vreg_alloc_node(size_t count)
 static void vreg_free_node(struct vregion * vreg)
 {
     /* Update stats */
-    vralloc_tot += vreg->size * (4 * 8) * 4096;
+    vralloc_tot -= vreg->size * (4 * 8) * 4096;
 
     /* Free node */
     vrlist->remove(vrlist, vreg);

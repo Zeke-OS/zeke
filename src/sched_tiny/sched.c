@@ -192,24 +192,23 @@ static void init_thread_id_queue(void)
  */
 void * idleTask(/*@unused@*/ void * arg)
 {
-#ifndef PU_TEST_BUILD
     while(1) {
-        //bcm2835_uputc('I');
+        //bcm2835_uart_uputc('I');
         idle_sleep();
     }
-#endif
 }
 
-#ifndef PU_TEST_BUILD
-void * sched_handler(void * tsp)
+void sched_handler(void)
 {
     threadInfo_t * const prev_thread = current_thread;
 
-    if (tsp != 0 && current_thread != 0) {
-        current_thread->sp = tsp;
-    } else {
+    if (!current_thread) {
         current_thread = &(task_table[0]);
     }
+
+#if 0
+    bcm2835_uart_uputc('.');
+#endif
 
     /* Pre-scheduling tasks */
     if (flag_kernel_tick) { /* Run only if tick was set */
@@ -227,10 +226,7 @@ void * sched_handler(void * tsp)
         calc_loads();
         mmu_calc_pfcps();
     }
-
-    return current_thread->sp;
 }
-#endif
 
 /**
  * Calculate load averages
@@ -375,10 +371,8 @@ static void sched_thread_init(pthread_t i, ds_pthread_create_t * thread_def,
     if (thread_def->thread)
         *(thread_def->thread) = (pthread_t)i;
 
-    /* TODO copyin() stack */
     /* Init core specific stack frame for user space */
-    init_stack_frame(thread_def, priv);
-    /* TODO copyout() stack */
+    init_stack_frame(thread_def, &(task_table[i].stack_frame), priv);
 
     /* Mark this thread index as used.
      * EXEC flag is set later in sched_thread_set_exec */
@@ -399,14 +393,9 @@ static void sched_thread_init(pthread_t i, ds_pthread_create_t * thread_def,
     /* Update parent and child pointers */
     sched_thread_set_inheritance(&(task_table[i]), parent);
 
-    /* Update stack pointer */
+    /* Update stack info */
     task_table[i].stack_start = thread_def->def->stackAddr;
     task_table[i].stack_size = thread_def->def->stackSize;
-    task_table[i].sp = (void *)((uint32_t)(thread_def->def->stackAddr)
-                                        + thread_def->def->stackSize
-                                        - sizeof(hw_stack_frame_t)
-                                        - sizeof(sw_stack_frame_t)
-                                        - sizeof(errno_t));
 
     /* So errno is at the last address of stack area. */
     task_table[i].errno_uaddr = (void *)((uint32_t)(thread_def->def->stackAddr)
@@ -477,6 +466,16 @@ static void init_kstack(threadInfo_t * th)
 }
 
 /**
+ * Get stack frame of the current thread.
+ * @return  Returns an address to the stack frame of the current thread;
+ *          Or NULL if current_thread is not set.
+ */
+void * thread_get_curr_stackframe(void)
+{
+    return current_thread ? &(current_thread->stack_frame) : NULL;
+}
+
+/**
  * Fork current thread.
  * @note Cloned thread is set to sleep state and caller of this function should
  * set it to exec state.
@@ -491,12 +490,14 @@ pthread_t sched_thread_fork(void * stack_addr)
     threadInfo_t tmp;
     pthread_t new_id;
 
+#if configDEBUG >= KERROR_DEBUG
     if (old_thread == 0) {
-        return -1;
+        panic("current_thread not set");
     }
+#endif
 
     if (!queue_pop(&next_thread_id_queue_cb, &new_id)) {
-        return -2;
+        return -ENOMEM;
     }
 
     /* New thread is kept in tmp until it's ready for execution. */
@@ -521,7 +522,7 @@ pthread_t sched_thread_fork(void * stack_addr)
     /* Init stack for context switch */
     pthread_attr_t def_fake = {
         .stackAddr = (void *)(tmp.kstack_region->mmu.paddr),
-        .stackSize = ((size_t)rd_thread_stack_ptr() - (size_t)old_thread->kstack_region->mmu.paddr)
+        .stackSize = 1337 /* Don't care. */
     };
     ds_pthread_create_t ds_fake = {
         .def = &def_fake,
@@ -529,7 +530,9 @@ pthread_t sched_thread_fork(void * stack_addr)
         .del_thread = 0, /* lr, don't care */
         .argument = 0 /* retval variable of the new thread. */
     };
-    init_stack_frame(&ds_fake, 1);
+    init_stack_frame(&ds_fake, &tmp.stack_frame, 1);
+    /* Reset usr sp, this is most likely redundant. */
+    tmp.stack_frame.sp = old_thread->stack_frame.sp;
 
     /* TODO Increment resource refcounters(?) */
 
@@ -894,7 +897,9 @@ uintptr_t sched_syscall_thread(uint32_t type, void * p)
             return -1;
         }
         copyin(p, &ds, sizeof(ds_pthread_create_t));
+        /* TODO Create a fake stack */
         sched_threadCreate(&ds, 0);
+        /* TODO copyout() the stack */
         copyout(&ds, p, sizeof(ds_pthread_create_t));
 
         return 0;

@@ -45,18 +45,17 @@
 
 #include <autoconf.h>
 #include <kernel.h>
-#include <sched.h>
 #include <hal/hal_core.h>
 
 #if configARM_PROFILE_M != 0
-    #error ARM Cortex-M profile is not supported by this layer.
+#error ARM Cortex-M profile is not supported by this layer.
 #endif
 #ifndef configARCH
-    #error Core is not selected.
+#error Core is not selected.
 #endif
 
 #if configMMU == 0
-    #error MMU must be enabled when compiling for ARM11.
+#error MMU must be enabled when compiling for ARM11.
 #endif
 
 /** PSR interrupt bits mask */

@@ -107,7 +107,8 @@ RB_HEAD(ptlist, vm_pt);
  * MM struct for processes.
  */
 struct vm_mm_struct {
-    mmu_pagetable_t mptable;    /*!< Process master page table. */
+    mmu_pagetable_t mpt;        /*!< Process master page table. */
+    mmu_pagetable_t * curr_mpt; /*!< Current master page table. */
     /** RB tree of page tables */
     struct ptlist ptlist_head;
 #define MM_CODE_REGION  0

@@ -564,6 +564,7 @@ out:
  * Data abort handler
  * @param sp        is the thread stack pointer.
  * @param spsr      is the spsr from the thread context.
+ * @TODO            Instead of sp we'd like to possibly have stack frame updated
  */
 uint32_t mmu_data_abort_handler(uint32_t sp, uint32_t spsr, const uint32_t lr)
 {
@@ -582,6 +583,8 @@ uint32_t mmu_data_abort_handler(uint32_t sp, uint32_t spsr, const uint32_t lr)
 
     mmu_pf_event();
 
+    /* TODO Change master page table */
+
     /* TODO We may want to block the process owning this thread and possibly
      * make sure that this instance is the only one handling page fault of the
      * same kind. */
@@ -589,7 +592,7 @@ uint32_t mmu_data_abort_handler(uint32_t sp, uint32_t spsr, const uint32_t lr)
     /* Handle this data abort in pre-emptible state if possible. */
     if (DAB_WAS_USERMODE(spsr)) {
         s_entry = get_interrupt_state();
-        set_interrupt_state(s_old);
+        //set_interrupt_state(s_old);
     }
 
     if (data_aborts[fsr & FSR_MASK]) {
@@ -600,7 +603,7 @@ uint32_t mmu_data_abort_handler(uint32_t sp, uint32_t spsr, const uint32_t lr)
         goto out;
     } /* else normal vm related page fault. */
 
-    /* TODO In the future we may wan't to support copy on write too
+    /* TODO In the future we may wan't to support copy on read too
      * (ie. page swaping). To suppor cor, and actually anyway, we should test
      * if error appeared during reading or writing etc.
      */
@@ -656,11 +659,17 @@ static int dab_buserr(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
 static int dab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
         threadInfo_t * thread)
 {
-    char buf[120];
+    char buf[140];
 
     ksprintf(buf, sizeof(buf), "Can't handle data abort\n"
-            "pc  : %x\nfsr : %x (%s)\nfar : %x\nCurr tid : %x",
-            lr, fsr, get_dab_strerror(fsr), far, thread->id);
+            "pc  : %x\n"
+            "fsr : %x (%s)\n"
+            "far : %x\n"
+            "proc info:\n"
+            "pid : %x\n"
+            "tid : %x",
+            lr, fsr, get_dab_strerror(fsr), far,
+            current_process_id, thread->id);
     panic(buf);
 
     return -1; /* XXX Doesn't return yet as we panic but this makes split happy */

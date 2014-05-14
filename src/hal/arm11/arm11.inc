@@ -33,70 +33,67 @@
 
 /**
  * Save thread context.
- * @return Returns thread sp in r0 and spsr in r1.
  */
 .macro pushcontext
-    /* Store the original value of r0 */
-    stmdb   sp!, {r0} 
-    /* Store thread sp to r0 */
-    stmdb   sp, {sp}^
+    stmdb   sp, {r0-r14}^
     nop
-    sub     sp, sp, #4
-    ldmia   sp!, {r0}
-    /* Push lr to the thread stack */
-    stmdb   r0!, {lr}
-    /* Use lr as thread stack pointer and restore the original value of r0 */
-    mov     lr, r0
-    ldmia   sp!, {r0}
-    /* Push usr mode registers to the thread stack */
-    stmdb   lr, {r0-r14}^
-    nop
-    sub     lr, lr, #60
-    /* Push the SPSR to the thread stack */
-    mrs     r1, spsr
-    stmdb   lr!, {r1}
-
-    /* Thread sp to r0 */
-    mov     r0, lr
+    sub     sp, sp, #60
+    mrs     r5, spsr        /* Preserve SPSR */
+    mov     r6, lr          /* Preserve lr */
+    bl      thread_get_curr_stackframe
+    cmp     r0, #0
+    addeq   sp, sp, #60     /* Clear stack as we are skipping... */
+    beq     1f              /* push if there is no stack frame. */
+    str     r5, [r0]        /* Store SPSR */
+    add     r0, r0, #68     /* to the begining of the frame. */
+    stmdb   r0!, {r6}       /* Push lr */
+    ldmia   sp!, {r1-r11}
+    sub     r0, r0, #16
+    stmdb   r0, {r1-r11}
+    add     r0, r0, #16
+    ldmia   sp!, {r1-r4}
+    stmdb   r0!, {r1-r4}
+1:  nop
 .endm
 
 /**
  * Load thread context.
- * @return Returns thread lr in lr.
+ * @return Returns original lr in lr.
  */
 .macro popcontext
-    /* Get the thread stack pointer */
-    stmdb   sp, {sp}^
-    nop
-    sub     sp, sp, #4
-    ldmia   sp!, {lr}
+    bl      thread_get_curr_stackframe
+    mov     lr, r0
 
-    /* Get the SPSR from the thread stack */
+    /* Restore SPSR */
     ldmia   lr!, {r0}
     msr     spsr, r0
 
     /* Restore all registers */
     ldmia   lr, {r0-r14}^
     nop
-
-    /* Restore the return address */
-    ldr     lr, [lr, #+60]
+    ldr     lr, [lr, #+60]  /* Restore lr */
 .endm
 
 /**
- * Attach process master page table.
- * @param r0 process id.
- */
-.macro attach_proc_mptable
-    bl      proc_get_pptable
-    bl      mmu_attach_pagetable
-.endm
-
-/**
- * Attach kernel master page table.
- */
+* Attach kernel master page table.
+*/
 .macro attach_kernel_mptable
     ldr     r0, =mmu_pagetable_master
     bl      mmu_attach_pagetable
 .endm
 
+/**
+ * Enter to kernel mode (syscall).
+ */
+.macro enter_kernel
+    bl      proc_enter_kernel
+    bl      mmu_attach_pagetable
+.endm
+
+/**
+ * Exit from kernel mode (syscall)-
+ */
+.macro exit_kernel
+    bl      proc_exit_kernel
+    bl      mmu_attach_pagetable
+.endm

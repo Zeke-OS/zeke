@@ -80,7 +80,7 @@ pid_t proc_fork(pid_t pid)
     procarr_realloc();
 
     /* Check that the old PID was valid. */
-    if (!old_proc) {
+    if (!old_proc || (old_proc->state == PROC_STATE_INITIAL)) {
         retval = -EINVAL;
         goto out;
     }
@@ -92,13 +92,14 @@ pid_t proc_fork(pid_t pid)
     }
 
     /* Allocate a master page table for the new process. */
-    new_proc->mm.mptable.vaddr = 0;
-    new_proc->mm.mptable.type = MMU_PTT_MASTER;
-    new_proc->mm.mptable.dom = MMU_DOM_USER;
-    if (ptmapper_alloc(&(new_proc->mm.mptable))) {
+    new_proc->mm.mpt.vaddr = 0;
+    new_proc->mm.mpt.type = MMU_PTT_MASTER;
+    new_proc->mm.mpt.dom = MMU_DOM_USER;
+    if (ptmapper_alloc(&(new_proc->mm.mpt))) {
         retval = -ENOMEM;
         goto free_new_proc;
     }
+    new_proc->mm.curr_mpt = &new_proc->mm.mpt;
 
     /* Allocate an array for regions. */
     new_proc->mm.regions =
@@ -110,7 +111,7 @@ pid_t proc_fork(pid_t pid)
     new_proc->mm.nr_regions = old_proc->mm.nr_regions;
 
     /* Clone master page table. */
-    if (mmu_ptcpy(&(new_proc->mm.mptable), &(old_proc->mm.mptable))) {
+    if (mmu_ptcpy(&(new_proc->mm.mpt), &(old_proc->mm.mpt))) {
         retval = -EAGAIN; // Actually more like -EINVAL
         goto free_regions_arr;
     }
@@ -139,10 +140,11 @@ pid_t proc_fork(pid_t pid)
 #if configDEBUG >= KERROR_DEBUG
         KERROR(KERROR_DEBUG, "Cloning stack");
 #endif
-        if (!vm_reg_tmp->vm_ops || !vm_reg_tmp->vm_ops->rclone)
+        if (!vm_reg_tmp->vm_ops->rclone)
             panic("No clone operation");
+
         vm_reg_tmp = vm_reg_tmp->vm_ops->rclone(vm_reg_tmp);
-        if (vm_reg_tmp == 0) {
+        if (!vm_reg_tmp) {
             retval = -ENOMEM;
             goto free_regions;
         }
@@ -175,7 +177,7 @@ pid_t proc_fork(pid_t pid)
     if (vm_reg_tmp) {
         if ((vpt = ptlist_get_pt(
                 &(new_proc->mm.ptlist_head),
-                &(new_proc->mm.mptable),
+                &(new_proc->mm.mpt),
                 vm_reg_tmp->mmu.vaddr)) == 0) {
             retval = -ENOMEM;
             goto free_regions;
@@ -220,7 +222,7 @@ pid_t proc_fork(pid_t pid)
 
         vpt = ptlist_get_pt(
                 &(new_proc->mm.ptlist_head),
-                &(new_proc->mm.mptable),
+                &(new_proc->mm.mpt),
                 (*new_proc->mm.regions)[i]->mmu.vaddr);
         if (vpt == 0) {
             retval = -ENOMEM;
@@ -261,13 +263,15 @@ pid_t proc_fork(pid_t pid)
         pthread_t new_tid;
         void * stack;
 
+        /* Note: No need to copyin()/copyout() here */
         stack = (void *)((*new_proc->mm.regions)[MM_STACK_REGION]->mmu.paddr);
         new_tid = sched_thread_fork(stack);
         if (new_tid < 0) {
             retval = -EAGAIN; /* TODO ?? */
             goto free_files;
-        } else if (new_tid > 0) {
+        } else if (new_tid > 0) { /* thread of the forking process returning */
             new_proc->main_thread = sched_get_pThreadInfo(new_tid);
+            new_proc->main_thread->pid_owner = new_proc->pid;
         } else { /* 0, new thread returning */
             retval = 0;
             goto out;
@@ -306,7 +310,7 @@ free_vpt_rb:
 free_regions_arr:
     kfree(new_proc->mm.regions);
 free_pptable_arr:
-    ptmapper_free(&(new_proc->mm.mptable));
+    ptmapper_free(&(new_proc->mm.mpt));
 free_new_proc:
     kfree(new_proc);
 out:
@@ -346,7 +350,7 @@ static int clone_L2_pt(proc_info_t * const new_proc, proc_info_t * const old_pro
 
         new_vpt->linkcount = 1;
         new_vpt->pt.vaddr = old_vpt->pt.vaddr;
-        new_vpt->pt.master_pt_addr = new_proc->mm.mptable.pt_addr;
+        new_vpt->pt.master_pt_addr = new_proc->mm.mpt.pt_addr;
         new_vpt->pt.type = MMU_PTT_COARSE;
         new_vpt->pt.dom = old_vpt->pt.dom;
 

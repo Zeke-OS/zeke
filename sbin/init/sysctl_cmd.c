@@ -169,6 +169,8 @@ static void list_all(void)
         len = len_next;
         print_mib_name(mib, len);
     }
+    if (errno == ENOENT)
+        errno = 0;
 }
 
 static void print_mib_name(int * mib, int len)

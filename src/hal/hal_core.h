@@ -43,6 +43,16 @@
 #include <syscalldef.h>
 #include <kernel.h>
 
+/* Select Core Implementation ************************************************/
+#if configARM_PROFILE_M != 0 /* All M profile cores are handled in one file. */
+#include "cortex_m/cortex_m.h"
+#elif configARCH == __ARM6__ || __ARM6K__ /* ARM11 uses ARMv6 arch */
+#include "arm11/arm11.h"
+#else
+#error Selected ARM profile/architecture is not supported
+#endif
+
+
 /**
  * Type for storing interrupt state.
  */
@@ -56,7 +66,8 @@ extern volatile size_t flag_kernel_tick;
  * @param a_del_thread Address of del_thread function
  * @param priv set thread as privileged/kernel mode thread.
  */
-void init_stack_frame(ds_pthread_create_t * thread_def, int priv);
+void init_stack_frame(ds_pthread_create_t * thread_def,
+        sw_stack_frame_t * sframe, int priv);
 
 /**
  * Test and set
@@ -80,11 +91,9 @@ istate_t get_interrupt_state(void);
  */
 void set_interrupt_state(istate_t state);
 
-
-/* Core Implementation must declare following inlined functions:
- * + inline void * rd_thread_stack_ptr(void)
- * + inline void wr_thread_stack_ptr(void * ptr)
- * and these can be done as either inlined functions or macros:
+/*
+ * Core Implementation must provide following either as inlined functions or
+ * macros:
  * + disable_interrupt()
  * + enable_interrupt()
  * + req_context_switch()
@@ -93,18 +102,6 @@ void set_interrupt_state(istate_t state);
  * + hw_stack_frame_t - is a struct that describes hardware backed stack frame.
  * + sw_stack_frame_t - is a struct that describes software backed stack frame.
  */
-
-/* Select Core Implementation ************************************************/
-
-#if configARM_PROFILE_M != 0 /* All M profile cores are handled in one file. */
-#include "cortex_m/cortex_m.h"
-#elif configARCH == __ARM6__ || __ARM6K__ /* ARM11 uses ARMv6 arch */
-#include "arm11/arm11.h"
-#elif PU_TEST_BUILD == 1
-#include "pu_test_core.h"
-#else
-    #error Selected ARM profile/architecture is not supported
-#endif
 
 #endif /* HAL_CORE_H */
 

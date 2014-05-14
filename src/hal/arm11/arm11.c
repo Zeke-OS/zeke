@@ -43,63 +43,27 @@
 #include <stddef.h>
 #include <autoconf.h>
 #include <kerror.h>
-#include <sched.h>
 #include <errno.h>
 #include "arm11.h"
 
 volatile uint32_t flag_kernel_tick = 0;
 
-
-/**
- * Read the thread stack pointer
- */
-void * rd_thread_stack_ptr(void)
+void init_stack_frame(ds_pthread_create_t * thread_def,
+        sw_stack_frame_t * sframe, int priv)
 {
-    void * result = NULL;
+    uint32_t stack_start = ((uint32_t)(thread_def->def->stackAddr)
+            + thread_def->def->stackSize
+            - sizeof(errno_t));
 
-    __asm__ volatile (
-        "STMDB  sp, {sp}^\n\t"
-        "NOP\n\t"
-        "SUB    sp, sp, #4\n\t"
-        "LDMIA  sp!, {%0}\n"
-        : "=r" (result)
-    );
-    return result;
-}
-
-/**
- * Write stack pointer of the current thread
- */
-void wr_thread_stack_ptr(void * ptr)
-{
-    __asm__ volatile (
-        "STMDB  sp!, {%0}\n\t"
-        "LDMFD  sp, {sp}^\n\t"
-        "NOP\n\t"
-        "ADD    sp, sp, #4\n"
-        : : "r" (ptr)
-    );
-}
-
-void init_stack_frame(ds_pthread_create_t * thread_def, int priv)
-{
-    sw_stack_frame_t * thread_frame;
-
-    /* Pointer to the thread stack frame */
-    thread_frame = (sw_stack_frame_t *)((uint32_t)(thread_def->def->stackAddr)
-                    + thread_def->def->stackSize
-                    - sizeof(sw_stack_frame_t)
-                    - sizeof(errno_t));
-
-    thread_frame->r0 = (uint32_t)(thread_def->argument);
-    thread_frame->r1 = 0;
-    thread_frame->r2 = 0;
-    thread_frame->r3 = 0;
-    thread_frame->r12 = 0;
-    thread_frame->sp = (uint32_t)thread_frame;
-    thread_frame->pc = ((uint32_t)(thread_def->start)) + 4;
-    thread_frame->lr = (uint32_t)(thread_def->del_thread);
-    thread_frame->psr = priv ? SYSTEM_PSR : USER_PSR;
+    sframe->r0  = (uint32_t)(thread_def->argument);
+    sframe->r1  = 0;
+    sframe->r2  = 0;
+    sframe->r3  = 0;
+    sframe->r12 = 0;
+    sframe->sp  = stack_start;
+    sframe->pc  = ((uint32_t)(thread_def->start)) + 4;
+    sframe->lr  = (uint32_t)(thread_def->del_thread);
+    sframe->psr = priv ? SYSTEM_PSR : USER_PSR;
 }
 
 uint32_t syscall(uint32_t type, void * p)

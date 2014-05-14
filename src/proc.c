@@ -115,8 +115,9 @@ static void init_kernel_proc(void)
     RB_INIT(&(kernel_proc->mm.ptlist_head));
 
     /* Copy master page table descriptor */
-    memcpy(&(kernel_proc->mm.mptable), &mmu_pagetable_master,
+    memcpy(&(kernel_proc->mm.mpt), &mmu_pagetable_master,
             sizeof(mmu_pagetable_t));
+    kernel_proc->mm.curr_mpt = &(kernel_proc->mm.mpt);
 
     /* Insert page tables */
     /* TODO Remove following lines completely? */
@@ -299,29 +300,62 @@ void proc_thread_removed(pid_t pid, pthread_t thread_id)
 }
 
 /**
- * Get page table descriptor of a process.
- * @param pid Process ID.
- * @return Page table descriptor.
+ * A process enters kernel mode.
+ * This function shall be called when a process enters kernel mode and
+ * interrupts will be enabled.
+ * @return Next master page table.
  */
-mmu_pagetable_t * proc_get_pptable(pid_t pid)
+mmu_pagetable_t * proc_enter_kernel(void)
 {
-    mmu_pagetable_t * pptable;
-
-    if (pid == 0) { /* Kernel master page table requested. */
-        pptable = &mmu_pagetable_master;
-    } else { /* Get the process master page table */
-        proc_info_t * p;
-
-        p = proc_get_struct(pid);
 #if configDEBUG != 0
-        if (!p) {
-            panic("Invalid PID");
-        }
+    if (!curproc)
+        panic("No current process set");
 #endif
-        pptable = &(p->mm.mptable);
-    }
+    curproc->mm.curr_mpt = &mmu_pagetable_master;
+    return curproc->mm.curr_mpt;
+}
 
-    return pptable;
+/**
+ * A process exits kernel mode.
+ * This function shall be called when a process exits kernel mode.
+ * @return Next master page table.
+ */
+mmu_pagetable_t * proc_exit_kernel(void)
+{
+#if configDEBUG != 0
+    if (!curproc)
+        panic("No current proces set");
+#endif
+    curproc->mm.curr_mpt = &curproc->mm.mpt;
+    return curproc->mm.curr_mpt;
+}
+
+/**
+ * Suspend process.
+ */
+void proc_suspend(void)
+{
+#if configDEBUG != 0
+    if (!curproc)
+        panic("No current proces set");
+#endif
+    /* TODO set state */
+    //curproc->state
+}
+
+/**
+ * Resume process.
+ * A process is begin resumed from suspended state.
+ * @return Next master page table.
+ */
+mmu_pagetable_t * proc_resume(void)
+{
+#if configDEBUG != 0
+    if (!curproc)
+        panic("No current proces set");
+#endif
+    /* TODO set state */
+    return curproc->mm.curr_mpt;
 }
 
 /**
@@ -341,7 +375,7 @@ int proc_dab_handler(pid_t pid, intptr_t vaddr)
 #endif
 
     pcb = proc_get_struct(pid);
-    if (!pcb) {
+    if (!pcb || (pcb->state == PROC_STATE_INITIAL)) {
         return -1; /* Process doesn't exist. */
     }
 

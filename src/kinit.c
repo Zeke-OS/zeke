@@ -107,7 +107,7 @@ void kinit(void)
     /* Create a thread for init */
     pthread_attr_t init_attr = {
         .tpriority  = configUSRINIT_PRI,
-        .stackAddr  = (void *)(init_vmstack->mmu.vaddr),
+        .stackAddr  = (void *)(init_vmstack->mmu.paddr),
         .stackSize  = configUSRINIT_SSIZE
     };
     ds_pthread_create_t init_ds = {
@@ -138,8 +138,8 @@ void kinit(void)
     }
 
     proc_info_t * const init_proc = proc_get_struct(pid);
-    if (!init_proc) {
-        panic("Failed to get proc struct");
+    if (!init_proc || (init_proc->state == PROC_STATE_INITIAL)) {
+        panic("Failed to get proc struct or invalid struct");
     }
 
     init_thread->pid_owner = pid;
@@ -153,7 +153,7 @@ void kinit(void)
 
         vpt = ptlist_get_pt(
                 &(init_proc->mm.ptlist_head),
-                &(init_proc->mm.mptable),
+                &(init_proc->mm.mpt),
                 init_vmstack->mmu.vaddr);
         if (vpt == 0)
             panic("Couldn't get vpt for init stack");
