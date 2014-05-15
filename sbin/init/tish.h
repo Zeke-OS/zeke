@@ -41,5 +41,6 @@ int tish(void);
 void tish_sysctl_cmd(char ** args);
 void tish_uname(char ** args);
 void tish_ikut(char ** args);
+void tish_debug(char ** args);
 
 #endif /* TISH_H */

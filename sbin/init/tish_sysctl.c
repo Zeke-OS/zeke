@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    tish.c
+ * @file    tish_sysctl.c
  * @author  Olli Vanhoja
  * @brief   Tiny Init Shell for debugging in init.
  * @section LICENSE

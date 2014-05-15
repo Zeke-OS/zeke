@@ -35,6 +35,7 @@
 #include <hal/hal_core.h>
 #include <hal/mmu.h>
 #include <ptmapper.h>
+#include <vralloc.h>
 #include <syscall.h>
 #include <kerror.h>
 #include <errno.h>

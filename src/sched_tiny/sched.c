@@ -112,7 +112,6 @@ void sched_init(void) __attribute__((constructor));
 /* Static function declarations **********************************************/
 static void init_thread_id_queue(void);
 void * idleTask(void * arg);
-static void context_switcher(void);
 static void sched_thread_init(pthread_t i, ds_pthread_create_t * thread_def,
         threadInfo_t * parent, int priv);
 static void sched_thread_set_inheritance(threadInfo_t * new_child, threadInfo_t * parent);

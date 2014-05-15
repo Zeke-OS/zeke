@@ -1,11 +1,10 @@
 /**
  *******************************************************************************
- * @file    init.c
+ * @file    tish_debug.c
  * @author  Olli Vanhoja
- * @brief   First user scope process.
+ * @brief   Various debug tools for tish/Zeke.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+ * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,43 +30,64 @@
  *******************************************************************************
  */
 
-#include <kernel.h>
-#include <kstring.h> /* TODO remove */
-#include <libkern.h> /* TODO */
-#include <sys/sysctl.h>
+#include <sys/types.h>
+#include <kstring.h>
 #include <unistd.h>
+#include <libkern.h>
 #include <errno.h>
+#include <pthread.h>
 #include "tish.h"
-#include "init.h"
 
-char banner[] = "\
-|'''''||                    \n\
-    .|'   ...'||            \n\
-   ||   .|...|||  ..  ....  \n\
- .|'    ||    || .' .|...|| \n\
-||......|'|...||'|. ||      \n\
-             .||. ||.'|...'\n\n\
-";
+static void * test_thread(void * arg);
+static void thread_stat(void);
 
-void * main(void * arg)
+static char test_stack[4096];
+static pthread_t test_tid;
+
+/* TODO Remove */
+#define fprintf(stream, str) write(2, str, strlenn(str, MAX_LEN) + 1)
+#define puts(str) fprintf(stderr, str)
+
+void tish_debug(char ** args)
 {
-    write(2, banner, sizeof(banner));
-    write(2, "Init v0.0.1\n", 13);
+    char * arg = kstrtok(0, DELIMS, args);
 
-#if 0
-    pid_t pid = fork();
-    if (pid == -1) {
-        print_message("Failed\n");
-        while(1);
-    } else if (pid == 0) {
-        print_message("Hello\n");
-        while(1)
-            msleep(500);
+    if (!strcmp(arg, "create")) {
+        if (test_tid != 0) {
+            puts("We already have a debug thread");
+            errno = EBUSY;
+            return;
+        }
+
+        pthread_attr_t attr = {
+            .tpriority  = 0,
+            .stackAddr  = test_stack,
+            .stackSize  = sizeof(test_stack)
+        };
+
+        pthread_create(&test_tid, &attr, test_thread, 0);
     } else {
-        print_message("original\n");
+        puts("Invalid command");
+        errno = EINVAL;
     }
-#endif
+}
 
-    while (1)
-        tish();
+static void * test_thread(void * arg)
+{
+    while(1) {
+        sleep(10);
+        thread_stat();
+    }
+}
+
+static void thread_stat(void)
+{
+    /* Print thread id & cpu mode */
+    char buf[80];
+    uint32_t mode;
+    pthread_t id = pthread_self();
+
+    __asm__ volatile ("mrs     %0, cpsr" : "=r" (mode));
+    ksprintf(buf, sizeof(buf), "My id: %u, my mode: %x\n", id, mode);
+    puts(buf);
 }
