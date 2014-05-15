@@ -35,16 +35,13 @@
   * @{
   */
 
-#ifndef KERNEL_INTERNAL
 #define KERNEL_INTERNAL
-#endif
-
 #include <stdint.h>
 #include <stddef.h>
 #include <autoconf.h>
 #include <kstring.h>
 #include <kinit.h>
-#include <hal/hal_core.h>
+#include <hal/hal_core.h> /* TODO Could be removed? */
 #include <klocks.h>
 #include "heap.h"
 #include <generic/queue.h>
@@ -54,11 +51,12 @@
 #include <ptmapper.h>
 #include <vralloc.h>
 #include <vm/vm.h>
-#include <proc.h> /* copyin & copyout */
+#include <proc.h>
 #include <pthread.h>
 #include <sys/sysctl.h>
 #include <errno.h>
-#include <kerror.h> /* TODO remove this? */
+#include <kerror.h>
+#include <thread.h>
 #include <sched.h>
 
 /* Definitions for load average calculation **********************************/
@@ -85,8 +83,6 @@
 /** Scales fixed-point load average value to a integer format scaled to 100 */
 #define SCALE_LOAD(x) (((x + (FIXED_1/200)) * 100) >> FSHIFT)
 /* End of Definitions for load average calculation ***************************/
-
-#define KSTACK_SIZE ((MMU_VADDR_TKSTACK_END - MMU_VADDR_TKSTACK_START) + 1)
 
 /* Task containers */
 static threadInfo_t task_table[configSCHED_MAX_THREADS]; /*!< Array of all
@@ -116,12 +112,10 @@ void sched_init(void) __attribute__((constructor));
 /* Static function declarations **********************************************/
 static void init_thread_id_queue(void);
 void * idleTask(void * arg);
-static void calc_loads(void);
 static void context_switcher(void);
 static void sched_thread_init(pthread_t i, ds_pthread_create_t * thread_def,
         threadInfo_t * parent, int priv);
 static void sched_thread_set_inheritance(threadInfo_t * new_child, threadInfo_t * parent);
-static void init_kstack(threadInfo_t * th);
 static void _sched_thread_set_exec(pthread_t thread_id, osPriority pri);
 static void sched_thread_remove(pthread_t id);
 static void sched_thread_die(intptr_t retval);
@@ -198,43 +192,13 @@ void * idleTask(/*@unused@*/ void * arg)
     }
 }
 
-void sched_handler(void)
-{
-    threadInfo_t * const prev_thread = current_thread;
-
-    if (!current_thread) {
-        current_thread = &(task_table[0]);
-    }
-
-#if 0
-    bcm2835_uart_uputc('.');
-#endif
-
-    /* Pre-scheduling tasks */
-    if (flag_kernel_tick) { /* Run only if tick was set */
-        timers_run();
-    }
-
-    /* Call the actual context switcher function that schedules the next thread.
-     */
-    context_switcher();
-    if (current_thread != prev_thread)
-        mmu_map_region(&(current_thread->kstack_region->mmu));
-
-    /* Post-scheduling tasks */
-    if (flag_kernel_tick) {
-        calc_loads();
-        mmu_calc_pfcps();
-    }
-}
-
 /**
  * Calculate load averages
  *
  * This function calculates unix-style load averages for the system.
  * Algorithm used here is similar to algorithm used in Linux.
  */
-static void calc_loads(void)
+void sched_calc_loads(void)
 {
     uint32_t active_threads; /* Fixed-point */
     static int count = LOAD_FREQ;
@@ -263,6 +227,10 @@ static void calc_loads(void)
     }
 }
 
+/**
+ * Return load averages in integer format scaled to 100.
+ * @param[out] loads load averages.
+ */
 void sched_get_loads(uint32_t loads[3])
 {
     rwlock_rdlock(&loadavg_lock);
@@ -273,9 +241,9 @@ void sched_get_loads(uint32_t loads[3])
 }
 
 /**
- * Selects the next thread.
+ * Schedule next thread.
  */
-static void context_switcher(void)
+void sched_context_switcher(void)
 {
     /* Select the next thread */
     do {
@@ -321,14 +289,6 @@ static void context_switcher(void)
      * quite accurate even it's not confirmed that one tick has been elapsed
      * before this line. */
     current_thread->ts_counter--;
-}
-
-/**
- * Get thread id of the current thread.
- */
-pthread_t sched_get_current_tid(void)
-{
-    return (pthread_t)(current_thread->id);
 }
 
 /**
@@ -403,7 +363,7 @@ static void sched_thread_init(pthread_t i, ds_pthread_create_t * thread_def,
                                         - sizeof(errno_t));
 
     /* Create kstack */
-    init_kstack(&(task_table[i]));
+    thread_init_kstack(&(task_table[i]));
 
     /* Put thread into execution */
     _sched_thread_set_exec(i, thread_def->def->tpriority);
@@ -449,33 +409,6 @@ static void sched_thread_set_inheritance(threadInfo_t * new_child, threadInfo_t 
 }
 
 /**
- * Initialize thread kernel mode stack.
- * @param th is a pointer to the thread.
- */
-static void init_kstack(threadInfo_t * th)
-{
-    /* Create kstack */
-    th->kstack_region = vralloc(KSTACK_SIZE);
-    if (!th->kstack_region) {
-        panic("OOM during thread creation");
-    }
-
-    th->kstack_region->usr_rw = 0;
-    th->kstack_region->mmu.vaddr = 0x0; /* TODO Don't hard-code this */
-    th->kstack_region->mmu.pt = &mmu_pagetable_system;
-}
-
-/**
- * Get stack frame of the current thread.
- * @return  Returns an address to the stack frame of the current thread;
- *          Or NULL if current_thread is not set.
- */
-void * thread_get_curr_stackframe(void)
-{
-    return current_thread ? &(current_thread->stack_frame) : NULL;
-}
-
-/**
  * Fork current thread.
  * @note Cloned thread is set to sleep state and caller of this function should
  * set it to exec state.
@@ -507,7 +440,7 @@ pthread_t sched_thread_fork(void * stack_addr)
     sched_thread_set_inheritance(&tmp, old_thread);
 
     /* Initialize a new kstack & copy data from old kstack. */
-    init_kstack(&tmp);
+    thread_init_kstack(&tmp);
     memcpy((void *)(tmp.kstack_region->mmu.paddr),
             (void *)(old_thread->kstack_region->mmu.paddr),
             MMU_SIZEOF_REGION(&(old_thread->kstack_region->mmu)));
@@ -530,9 +463,12 @@ pthread_t sched_thread_fork(void * stack_addr)
         .del_thread = 0, /* lr, don't care */
         .argument = 0 /* retval variable of the new thread. */
     };
-    init_stack_frame(&ds_fake, &tmp.stack_frame, 1);
+    /* TODO We want to make a stack frame such that child redirects to here
+     * but with pc at out and registers exactly like in the parent.
+     */
+    //init_stack_frame(&ds_fake, &tmp.stack_frame, 1);
     /* Reset usr sp, this is most likely redundant. */
-    tmp.stack_frame.sp = old_thread->stack_frame.sp;
+    //tmp.stack_frame.sp = old_thread->stack_frame.sp;
 
     /* TODO Increment resource refcounters(?) */
 
@@ -576,6 +512,9 @@ static void _sched_thread_set_exec(pthread_t thread_id, osPriority pri)
     }
 }
 
+/**
+ * Put the current thread into sleep.
+ */
 void sched_thread_sleep_current(void)
 {
     istate_t s;
@@ -849,6 +788,65 @@ osPriority sched_thread_get_priority(pthread_t thread_id)
 uintptr_t sched_syscall(uint32_t type, void * p)
 {
     switch(type) {
+    case SYSCALL_SCHED_DIE:
+        /* We don't care about validity of a possible pointer returned as a
+         * return value because we don't touch it in the kernel. */
+        sched_thread_die((intptr_t)p); /* Thread will eventually block now... */
+        return 0;
+
+    case SYSCALL_SCHED_DETACH:
+        {
+        pthread_t thread_id;
+        if (!useracc(p, sizeof(pthread_t), VM_PROT_READ)) {
+            /* No permission to read */
+            /* TODO Signal/Kill? */
+            set_errno(EFAULT);
+            return -1;
+        }
+        copyin(p, &thread_id, sizeof(pthread_t));
+        if ((uintptr_t)sched_thread_detach(thread_id)) {
+            set_errno(EINVAL);
+            return -1;
+        }
+        return 0;
+        }
+
+    case SYSCALL_SCHED_SETPRIORITY:
+        {
+        int err;
+        ds_osSetPriority_t ds;
+        if (!useracc(p, sizeof(pthread_t), VM_PROT_READ)) {
+            set_errno(ESRCH);
+            return -1;
+        }
+        copyin(p, &ds, sizeof(ds_osSetPriority_t));
+        err = (uintptr_t)sched_thread_set_priority(ds.thread_id, ds.priority);
+        if (err) {
+            set_errno(-err);
+            return -1;
+        }
+        return 0;
+        }
+
+    case SYSCALL_SCHED_GETPRIORITY:
+        {
+        osPriority pri;
+        pthread_t thread_id;
+        if (!useracc(p, sizeof(pthread_t), VM_PROT_READ)) {
+            /* No permission to read */
+            /* TODO Signal/Kill? */
+            set_errno(ESRCH);
+            return -1;
+        }
+        copyin(p, &thread_id, sizeof(pthread_t));
+        pri = (uintptr_t)sched_thread_get_priority(thread_id);
+        if (pri == osPriorityError) {
+            set_errno(ESRCH);
+            pri = -1; /* Note: -1 might be also legitimate prio value. */
+        }
+        return pri;
+        }
+
     case SYSCALL_SCHED_SLEEP_MS:
         {
         uint32_t val;
@@ -876,109 +874,6 @@ uintptr_t sched_syscall(uint32_t type, void * p)
         copyout(arr, p, sizeof(arr));
         }
         return (uintptr_t)NULL;
-
-    default:
-        set_errno(ENOSYS);
-        return (uintptr_t)NULL;
-    }
-}
-
-uintptr_t sched_syscall_thread(uint32_t type, void * p)
-{
-    switch(type) {
-    /* TODO pthread_create is allowed to throw errors and we definitely should
-     *      use those. */
-    case SYSCALL_SCHED_THREAD_CREATE: {
-        ds_pthread_create_t ds;
-        if (!useracc(p, sizeof(ds_pthread_create_t), VM_PROT_WRITE)) {
-            /* No permission to read/write */
-            /* TODO Signal/Kill? */
-            set_errno(EFAULT);
-            return -1;
-        }
-        copyin(p, &ds, sizeof(ds_pthread_create_t));
-        /* TODO Create a fake stack */
-        sched_threadCreate(&ds, 0);
-        /* TODO copyout() the stack */
-        copyout(&ds, p, sizeof(ds_pthread_create_t));
-
-        return 0;
-    }
-
-    case SYSCALL_SCHED_THREAD_GETTID:
-        return (uintptr_t)sched_get_current_tid();
-
-    case SYSCALL_SCHED_THREAD_TERMINATE: {
-        pthread_t thread_id;
-        if (!useracc(p, sizeof(pthread_t), VM_PROT_READ)) {
-            /* No permission to read */
-            /* TODO Signal/Kill? */
-            set_errno(EFAULT);
-            return -1;
-        }
-        copyin(p, &thread_id, sizeof(pthread_t));
-
-        return (uintptr_t)sched_thread_terminate(thread_id);
-    }
-
-    case SYSCALL_SCHED_THREAD_DIE:
-        /* We don't care about validity of a possible pointer returned as a
-         * return value because we don't touch it in the kernel. */
-        sched_thread_die((intptr_t)p); /* Thread will eventually block now... */
-        return 0;
-
-    case SYSCALL_SCHED_THREAD_DETACH: {
-        pthread_t thread_id;
-        if (!useracc(p, sizeof(pthread_t), VM_PROT_READ)) {
-            /* No permission to read */
-            /* TODO Signal/Kill? */
-            set_errno(EFAULT);
-            return -1;
-        }
-        copyin(p, &thread_id, sizeof(pthread_t));
-        if ((uintptr_t)sched_thread_detach(thread_id)) {
-            set_errno(EINVAL);
-            return -1;
-        }
-        return 0;
-    }
-
-    case SYSCALL_SCHED_THREAD_SETPRIORITY: {
-        int err;
-        ds_osSetPriority_t ds;
-        if (!useracc(p, sizeof(pthread_t), VM_PROT_READ)) {
-            set_errno(ESRCH);
-            return -1;
-        }
-        copyin(p, &ds, sizeof(ds_osSetPriority_t));
-        err = (uintptr_t)sched_thread_set_priority(ds.thread_id, ds.priority);
-        if (err) {
-            set_errno(-err);
-            return -1;
-        }
-        return 0;
-    }
-
-    case SYSCALL_SCHED_THREAD_GETPRIORITY: {
-        osPriority pri;
-        pthread_t thread_id;
-        if (!useracc(p, sizeof(pthread_t), VM_PROT_READ)) {
-            /* No permission to read */
-            /* TODO Signal/Kill? */
-            set_errno(ESRCH);
-            return -1;
-        }
-        copyin(p, &thread_id, sizeof(pthread_t));
-        pri = (uintptr_t)sched_thread_get_priority(thread_id);
-        if (pri == osPriorityError) {
-            set_errno(ESRCH);
-            pri = -1; /* Note: -1 might be also legitimate prio value. */
-        }
-        return pri;
-    }
-
-    case SYSCALL_SCHED_THREAD_GETERRNO:
-        return (uintptr_t)(current_thread->errno_uaddr);
 
     default:
         set_errno(ENOSYS);

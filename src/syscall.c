@@ -34,29 +34,20 @@
 
 #define KERNEL_INTERNAL 1
 #include <sched.h>
-#ifndef PU_TEST_BUILD
 #include <hal/hal_core.h>
-#endif
 #include <errno.h>
 #include <vm/vm.h>
 #include <syscall.h>
 
 /* For all Syscall groups */
-#if PU_TEST_BUILD == 0
-#define FOR_ALL_SYSCALL_GROUPS(apply)                       \
-    apply(SYSCALL_GROUP_SCHED, sched_syscall)               \
-    apply(SYSCALL_GROUP_SCHED_THREAD, sched_syscall_thread) \
-    apply(SYSCALL_GROUP_SYSCTL, sysctl_syscall)             \
-    apply(SYSCALL_GROUP_SIGNAL, ksignal_syscall)            \
-    apply(SYSCALL_GROUP_PROC, proc_syscall)                 \
-    apply(SYSCALL_GROUP_FS, fs_syscall)                     \
+#define FOR_ALL_SYSCALL_GROUPS(apply)               \
+    apply(SYSCALL_GROUP_SCHED, sched_syscall)       \
+    apply(SYSCALL_GROUP_THREAD, thread_syscall)     \
+    apply(SYSCALL_GROUP_SYSCTL, sysctl_syscall)     \
+    apply(SYSCALL_GROUP_SIGNAL, ksignal_syscall)    \
+    apply(SYSCALL_GROUP_PROC, proc_syscall)         \
+    apply(SYSCALL_GROUP_FS, fs_syscall)             \
     apply(SYSCALL_GROUP_LOCKS, ulocks_syscall)
-#else
-#define FOR_ALL_SYSCALL_GROUPS(apply)                       \
-    apply(SYSCALL_GROUP_SCHED, sched_syscall)               \
-    apply(SYSCALL_GROUP_SCHED_THREAD, sched_syscall_thread) \
-    apply(SYSCALL_GROUP_SIGNAL, ksignal_syscall)
-#endif
 
 /*
  * Declare prototypes of syscall handlers.

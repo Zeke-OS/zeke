@@ -57,7 +57,7 @@ int pthread_create(pthread_t * thread, const pthread_attr_t * attr,
     };
     int result;
 
-    result = (int)syscall(SYSCALL_SCHED_THREAD_CREATE, &args);
+    result = (int)syscall(SYSCALL_THREAD_CREATE, &args);
 
     /* Request immediate context switch */
     req_context_switch();
@@ -67,18 +67,18 @@ int pthread_create(pthread_t * thread, const pthread_attr_t * attr,
 
 pthread_t pthread_self(void)
 {
-    return (pthread_t)syscall(SYSCALL_SCHED_THREAD_GETTID, NULL);
+    return (pthread_t)syscall(SYSCALL_THREAD_GETTID, NULL);
 }
 
 void pthread_exit(void * retval)
 {
-    (void)syscall(SYSCALL_SCHED_THREAD_DIE, retval);
+    (void)syscall(SYSCALL_SCHED_DIE, retval);
     /* Syscall will not return */
 }
 
 int pthread_detach(pthread_t thread)
 {
-    return syscall(SYSCALL_SCHED_THREAD_DETACH, &thread);
+    return syscall(SYSCALL_SCHED_DETACH, &thread);
 }
 
 

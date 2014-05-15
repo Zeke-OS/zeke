@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    resource.c
+ * @file    thread.h
  * @author  Olli Vanhoja
- * @brief   Zero Kernel user space code
+ * @brief   Generic thread management and scheduling functions.
  * @section LICENSE
  * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
@@ -29,63 +29,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************
-*/
+ */
 
-/** @addtogroup Library_Functions
-  * @{
-  */
+#pragma once
+#ifndef THREAD_H
+#define THREAD_H
 
-#include <hal/hal_core.h>
-#include "syscalldef.h"
-#include "syscall.h"
-#include <kernel.h>
-#include <sys/resource.h>
+void sched_handler(void);
+void thread_init_kstack(threadInfo_t * th);
+pthread_t get_current_tid(void);
+void * thread_get_curr_stackframe(void);
 
-int getloadavg(double loadavg[3], int nelem)
-{
-    uint32_t loads[3];
-    size_t i;
-
-    if (nelem > 3)
-        return -1;
-
-    if(syscall(SYSCALL_SCHED_GET_LOADAVG, loads))
-        return -1;
-
-    /* TODO After float div support */
-    for (i = 0; i < nelem; i++)
-        loadavg[i] = (double)(loads[i]); // 100.0;
-
-    return nelem;
-}
-
-int setpriority(int which, id_t who, int prio)
-{
-    switch (which) {
-    case PRIO_THREAD:
-        {
-            ds_osSetPriority_t ds = {
-                .thread_id = who,
-                .priority = prio
-            };
-
-        return (int)syscall(SYSCALL_SCHED_SETPRIORITY, &ds);
-        }
-    default:
-        return -1; /* Can't set errno from here :( */
-    }
-}
-
-int  getpriority(int which, id_t who)
-{
-    switch (which) {
-    case PRIO_THREAD:
-        return (int)syscall(SYSCALL_SCHED_GETPRIORITY, &who);
-    default:
-        return -1; /* Can't set errno from here :( */
-    }
-}
-
-/**
-  * @}
-  */
+#endif /* THREAD_H */

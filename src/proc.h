@@ -145,17 +145,27 @@ extern proc_info_t * curproc;
 
 void proc_init(void) __attribute__((constructor));
 
+/* proc.c */
 /* Functions that are more or less internal to proc subsys */
 void procarr_realloc(void);
 void procarr_insert(proc_info_t * new_proc);
 pid_t proc_get_random_pid(void);
 
-pid_t proc_fork(pid_t pid);
+/* Process scheduling and sys level management */
+mmu_pagetable_t * proc_enter_kernel(void);
+mmu_pagetable_t * proc_exit_kernel(void);
+void proc_suspend(void);
+mmu_pagetable_t * proc_resume(void);
+int proc_dab_handler(pid_t pid, intptr_t vaddr);
+pid_t proc_update(void);
+
 int proc_kill(void);
 int proc_replace(pid_t pid, void * image, size_t size);
-void proc_thread_removed(pid_t pid, pthread_t thread_id);
 proc_info_t * proc_get_struct(pid_t pid);
-int proc_dab_handler(pid_t pid, intptr_t vaddr);
+void proc_thread_removed(pid_t pid, pthread_t thread_id);
+
+/* proc_fork.c */
+pid_t proc_fork(pid_t pid);
 
 #endif /* PROC_H */
 

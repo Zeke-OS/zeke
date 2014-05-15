@@ -136,9 +136,9 @@
  * Thread Control Block structure.
  */
 typedef struct {
-    void * stack_start;             /*!< Stack start address. */
+    void * stack_start;             /*!< User stack start address. */
     size_t stack_size;              /*!< Size of the user stack. */
-    sw_stack_frame_t stack_frame;   /*!< Thread stack frame. */
+    sw_stack_frame_t stack_frame;   /*!< Stack frame used for task switch. */
     vm_region_t * kstack_region;    /*!< Thread kernel stack region. */
     uint32_t flags;                 /*!< Status flags. */
     void * errno_uaddr;             /*!< Address of the thread local errno. */
@@ -174,34 +174,16 @@ typedef struct {
 extern threadInfo_t * current_thread;
 
 /* Public function prototypes ***************************************************/
-/**
- * Scheduler handler.
- * This is mainly called when timer ticks.
- */
-void sched_handler(void);
-
-pthread_t sched_get_current_tid(void);
+void sched_get_loads(uint32_t loads[3]);
 threadInfo_t * sched_get_pThreadInfo(pthread_t thread_id);
-
-void * thread_get_curr_stackframe(void);
 pthread_t sched_thread_fork(void * stack_addr);
-
-/**
- * Set thread into execution mode/ready to run mode.
- * @oaram thread_id Thread id.
- */
 void sched_thread_set_exec(pthread_t thread_id);
-
-/**
- * Put the current thread into sleep.
- */
 void sched_thread_sleep_current(void);
 
-/**
- * Return load averages in integer format scaled to 100.
- * @param[out] loads load averages.
- */
-void sched_get_loads(uint32_t loads[3]);
+/* TODO Following shouldn't be extern'd and there should be better way to export
+ * these for thread.h */
+void sched_calc_loads(void);
+void sched_context_switcher(void);
 
 /* Functions that are mainly used by syscalls but can be also caleed by
  * other kernel source modules. */

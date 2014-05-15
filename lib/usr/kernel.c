@@ -97,12 +97,12 @@ ssize_t write(int fildes, const void * buf, size_t nbyte)
 
 int osThreadTerminate(pthread_t thread_id)
 {
-    return (int)syscall(SYSCALL_SCHED_THREAD_TERMINATE, &thread_id);
+    return (int)syscall(SYSCALL_THREAD_TERMINATE, &thread_id);
 }
 
 int * __error(void)
 {
-    return (int *)syscall(SYSCALL_SCHED_THREAD_GETERRNO, NULL);
+    return (int *)syscall(SYSCALL_THREAD_GETERRNO, NULL);
 }
 
 

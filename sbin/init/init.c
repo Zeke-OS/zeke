@@ -85,14 +85,17 @@ void * main(void * arg)
         while(1);
     } else if (pid == 0) {
         print_message("Hello\n");
-        while(1);
+        while(1)
+            msleep(500);
     } else {
         print_message("original\n");
     }
 #endif
 
+#if 0
     while (1)
         tish();
+#endif
 
     pthread_create(&thread_id, &attr, test_thread, 0);
 
@@ -109,13 +112,11 @@ void * main(void * arg)
     while(1) {
         thread_stat();
         if(sysctl(mib_tot, len, &old_value_tot, &old_len, 0, 0)) {
-            ksprintf(buf, sizeof(buf), "Error: %u\n",
-                    (int)syscall(SYSCALL_SCHED_THREAD_GETERRNO, NULL));
+            ksprintf(buf, sizeof(buf), "Error: %u\n", errno);
             print_message(buf);
         }
         if(sysctl(mib_free, len, &old_value_free, &old_len, 0, 0)) {
-            ksprintf(buf, sizeof(buf), "Error: %u\n",
-                    (int)syscall(SYSCALL_SCHED_THREAD_GETERRNO, NULL));
+            ksprintf(buf, sizeof(buf), "Error: %u\n", errno);
             print_message(buf);
         }
         ksprintf(buf, sizeof(buf), "dynmem allocated: %u/%u\n",
@@ -145,7 +146,7 @@ static void thread_stat(void)
     uint32_t mode;
     char buf[80];
 
-    id = (int)syscall(SYSCALL_SCHED_THREAD_GETTID, NULL);
+    id = (int)syscall(SYSCALL_THREAD_GETTID, NULL);
     __asm__ volatile ("mrs     %0, cpsr" : "=r" (mode));
     ksprintf(buf, sizeof(buf), "My id: %u, my mode: %x\n", id, mode);
     print_message(buf);
