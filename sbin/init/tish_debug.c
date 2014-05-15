@@ -54,7 +54,7 @@ void tish_debug(char ** args)
 
     if (!strcmp(arg, "create")) {
         if (test_tid != 0) {
-            puts("We already have a debug thread");
+            puts("We already have a debug thread\n");
             errno = EBUSY;
             return;
         }
@@ -66,8 +66,20 @@ void tish_debug(char ** args)
         };
 
         pthread_create(&test_tid, &attr, test_thread, 0);
+    } else if (!strcmp(arg, "fork")) {
+        pid_t pid = fork();
+        if (pid == -1) {
+            puts("fork() failed\n");
+            while(1);
+        } else if (pid == 0) {
+            puts("Hello from the child process\n");
+            while(1)
+                msleep(500);
+        } else {
+            puts("original\n");
+        }
     } else {
-        puts("Invalid command");
+        puts("Invalid command\n");
         errno = EINVAL;
     }
 }

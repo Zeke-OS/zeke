@@ -156,7 +156,8 @@ mmu_pagetable_t * proc_enter_kernel(void);
 mmu_pagetable_t * proc_exit_kernel(void);
 void proc_suspend(void);
 mmu_pagetable_t * proc_resume(void);
-int proc_dab_handler(pid_t pid, intptr_t vaddr);
+int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
+        threadInfo_t * thread);
 pid_t proc_update(void);
 
 int proc_kill(void);

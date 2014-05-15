@@ -361,11 +361,12 @@ mmu_pagetable_t * proc_resume(void)
 /**
  * Handle page fault caused by a process.
  * Usually this handler is executed because of cow page table.
- * @param pid  is a process id of the process that caused a page fault.
- * @param vaddr is the page faulted address.
  */
-int proc_dab_handler(pid_t pid, intptr_t vaddr)
+int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
+        threadInfo_t * thread)
 {
+    const pid_t pid = thread->pid_owner;
+    const uintptr_t vaddr = far;
     proc_info_t * pcb;
     vm_region_t * region;
     vm_region_t * new_region;

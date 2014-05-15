@@ -85,19 +85,19 @@ static const dab_handler data_aborts[] = {
     dab_fatal,  /* no function, reset value */
     dab_align,  /* Alignment fault */
     dab_fatal,  /* Instruction debug event */
-    0,          /* Access bit fault on Section */
+    proc_dab_handler,          /* Access bit fault on Section */
     dab_buserr, /* ICache maintanance op fault */
-    dab_buserr,  /* Translation Section Fault */ /* TODO not really buserr */
-    0,          /* Access bit fault on Page */
-    dab_buserr,  /* Translation Page fault */ /* TODO not really buserr */
+    proc_dab_handler,  /* Translation Section Fault */ /* TODO not really buserr */
+    proc_dab_handler,          /* Access bit fault on Page */
+    proc_dab_handler,  /* Translation Page fault */ /* TODO not really buserr */
     dab_buserr, /* Precise external abort */
     dab_buserr,  /* Domain Section fault */ /* TODO not really buserr */
     dab_fatal,  /* no function */
     dab_buserr,  /* Domain Page fault */ /* TODO Not really buserr */
     dab_buserr, /* External abort on translation, first level */
-    0,          /* Permission Section fault */
+    proc_dab_handler,          /* Permission Section fault */
     dab_buserr, /* External abort on translation, second level */
-    0           /* Permission Page fault */
+    proc_dab_handler           /* Permission Page fault */
 };
 
 #if configMP != 0
@@ -573,6 +573,7 @@ uint32_t mmu_data_abort_handler(uint32_t sp, uint32_t spsr, const uint32_t lr)
     const istate_t s_old = spsr & PSR_INT_MASK; /*!< Old interrupt state */
     istate_t s_entry; /*!< Int state in handler entry. */
     threadInfo_t * const thread = (threadInfo_t *)current_thread;
+    int err;
 
     __asm__ volatile (
         "MRC p15, 0, %[reg], c6, c0, 0"
@@ -596,28 +597,25 @@ uint32_t mmu_data_abort_handler(uint32_t sp, uint32_t spsr, const uint32_t lr)
     }
 
     if (data_aborts[fsr & FSR_MASK]) {
-        if (data_aborts[fsr & FSR_MASK](fsr, far, spsr, lr, thread)) {
+        if ((err = data_aborts[fsr & FSR_MASK](fsr, far, spsr, lr, thread))) {
             /* TODO Handle this nicer... signal? */
-            panic("DAB handling failed");
+            char buf[80];
+            ksprintf(buf, sizeof(buf), "DAB handling failed: %i", err);
+            KERROR(KERROR_CRIT, buf);
+            dab_fatal(fsr, far, spsr, lr, thread);
         }
         goto out;
-    } /* else normal vm related page fault. */
+    } else {
+       char buf[80];
+       ksprintf(buf, sizeof(buf), "DAB handling failed, no sufficient handler found.\n");
+       KERROR(KERROR_CRIT, buf);
+       dab_fatal(fsr, far, spsr, lr, thread);
+    }
 
     /* TODO In the future we may wan't to support copy on read too
      * (ie. page swaping). To suppor cor, and actually anyway, we should test
      * if error appeared during reading or writing etc.
      */
-
-    /* proc should handle this page fault as it has the knowledge of how memory
-     * regions are used in processes. */
-    if (proc_dab_handler(thread->pid_owner, far)) {
-        /* TODO We want to send a signal here instead of panic */
-        char buf[80];
-
-        ksprintf(buf, sizeof(buf), "SEGFAULT @ %x", lr);
-        KERROR(KERROR_CRIT, buf);
-        dab_fatal(fsr, far, spsr, lr, thread);
-    }
 
     if (DAB_WAS_USERMODE(spsr)) {
         set_interrupt_state(s_entry);

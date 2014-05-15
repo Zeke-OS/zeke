@@ -54,20 +54,6 @@ void * main(void * arg)
     write(2, banner, sizeof(banner));
     write(2, "Init v0.0.1\n", 13);
 
-#if 0
-    pid_t pid = fork();
-    if (pid == -1) {
-        print_message("Failed\n");
-        while(1);
-    } else if (pid == 0) {
-        print_message("Hello\n");
-        while(1)
-            msleep(500);
-    } else {
-        print_message("original\n");
-    }
-#endif
-
     while (1)
         tish();
 }
