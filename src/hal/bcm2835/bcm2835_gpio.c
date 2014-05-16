@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    time.h
+ * @file    bcm2835_gpio.c
  * @author  Olli Vanhoja
- * @brief   time types.
+ * @brief   BVM2835 gpio.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,45 +30,31 @@
  *******************************************************************************
  */
 
-/** @addtogroup Library_Functions
-  * @{
+/** @addtogroup HAL
+* @{
+*/
+
+/** @addtogroup BCM2835
+* @{
+*/
+
+#include "bcm2835_gpio.h"
+
+/**
+ * Insert delay.
+ * Delay function is needed for some clock manipulation.
+ * @param count delay time.
+ */
+void bcm2835_gpio_delay(int32_t count)
+{
+    __asm__ volatile("__delay_%=: subs %[count], %[count], #1; bne __delay_%=\n"
+            : : [count]"r"(count) : "cc");
+}
+
+
+/**
+  * @}
   */
-
-#pragma once
-#ifndef TIME_H
-#define TIME_H
-
-#include <sys/cdefs.h>
-#include "sys/types.h" /* TODO Not OK, instead of this only needed types should be defined */
-
-struct tm {
-    int tm_sec;     /*!< Seconds [0,60]. */
-    int tm_min;     /*!< Minutes [0,59]. */
-    int tm_hour;    /*!< Hour [0,23]. */
-    int tm_mday;    /*!< Day of month [1,31]. */
-    int tm_mon;     /*!< Month of year [0,11]. */
-    int tm_year;    /*!< Years since 1900. */
-    int tm_wday;    /*!< Day of week [0,6] (Sunday =0). */
-    int tm_yday;    /*!< Day of year [0,365]. */
-    int tm_isdst;   /*!< Daylight Savings flag. */
-};
-
-struct timespec {
-    time_t tv_sec;  /*!< Seconds. */
-    long tv_nsec;   /*!< Nanoseconds. */
-};
-
-struct itimerspec {
-    struct timespec it_interval;    /*!< Timer period.  */
-    struct timespec it_value;       /*!< Timer expiration. */
-};
-
-/* TODO Add POSIX test macro:
- * http://pubs.opengroup.org/onlinepubs/9699919799/functions/V2_chap02.html#tag_15_02 */
-
-/* TODO http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/time.h.html */
-
-#endif /* TIME_H */
 
 /**
   * @}

@@ -106,6 +106,8 @@ struct stat {
 /** Test for a socked. */
 #define S_ISSOCK(m) (((m) & S_IFMT) == S_IFSOCK)
 
+#ifndef KERNEL_INTERNAL
+__BEGIN_DECLS
 /*
 int chmod(const char *, mode_t);
 int fchmod(int, mode_t);
@@ -122,6 +124,8 @@ mode_t umask(mode_t);
 
 int mount(const char * mount_point, const char * fsname, uint32_t mode,
         int parm_len, char * parm);
+__END_DECLS
+#endif /* KERNEL_INTERNAL */
 
 #endif /* STAT_H */
 

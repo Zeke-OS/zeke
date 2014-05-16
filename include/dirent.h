@@ -38,6 +38,7 @@
 #ifndef DIRENT_H
 #define DIRENT_H
 
+#include <sys/cdefs.h>
 #include <stdint.h>
 #include <sys/types.h>
 

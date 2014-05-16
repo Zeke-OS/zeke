@@ -116,6 +116,8 @@
 #define EXDEV           80  /*!< Cross-device link. */
 
 #ifndef KERNEL_INTERNAL
+#include <sys/cdefs.h>
+
 /**
  * Get pointer to the thread local errno.
  */

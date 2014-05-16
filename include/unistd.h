@@ -34,6 +34,8 @@
 #ifndef UNISTD_H
 #define UNISTD_H
 
+#include <sys/cdefs.h>
+
 /* Options and option groups */
 #define _POSIX_THREAD_ATTR_STACKADDR    200809L
 #define _POSIX_THREAD_ATTR_STACKSIZE    200809L
@@ -54,6 +56,7 @@
 #define STDOUT_FILENO   1 /*!< File number of stdout. */
 #define STDERR_FILENO   2 /*!< File number of stderr. */
 
+__BEGIN_DECLS
 /**
  * Set the break value.
  * @param addr is the new break addr.
@@ -81,5 +84,6 @@ ssize_t pwrite(int fildes, const void *buf, size_t nbyte,
 ssize_t write(int fildes, const void * buf, size_t nbyte);
 
 unsigned sleep(unsigned seconds);
+__END_DECLS
 
 #endif /* UNISTD_H */

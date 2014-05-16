@@ -40,6 +40,7 @@
 #ifndef PTHREAD_H
 #define PTHREAD_H
 
+#include <sys/cdefs.h>
 #include <sys/types_pthread.h>
 
 /** @addtogroup Threads
@@ -49,6 +50,7 @@
 /* TODO Missing most of the standard declarations */
 /* TODO errnos */
 
+__BEGIN_DECLS
 /**
  * Get calling thread's ID.
  *
@@ -127,6 +129,7 @@ int pthread_mutex_unlock(pthread_mutex_t * mutex);
 /// \param[in]     thread_id   thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
 /// \return status code that indicates the execution status of the function.
 int osThreadTerminate(pthread_t thread_id);
+__END_DECLS
 
 #endif /* PTHREAD_H */
 
