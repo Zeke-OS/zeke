@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    kernel.c
+ * @file    unistd.c
  * @author  Olli Vanhoja
  * @brief   Zero Kernel user space code
  * @section LICENSE
@@ -35,71 +35,50 @@
   * @{
   */
 
-#include <hal/hal_core.h>
 #include <syscall.h>
-#include <kernel.h>
+#include <unistd.h>
 
-unsigned msleep(unsigned millisec)
+/** @addtogroup unistd
+ *  @{
+ */
+
+pid_t fork(void)
 {
+    return (pid_t)syscall(SYSCALL_PROC_FORK, NULL);
+}
+
+ssize_t pwrite(int fildes, const void * buf, size_t nbyte,
+        off_t offset)
+{
+    struct _fs_write_args args = {
+        .fildes = fildes,
+        .buf = (void *)buf,
+        .nbyte = nbyte,
+        .offset = offset
+    };
+
+    return (ssize_t)syscall(SYSCALL_FS_WRITE, &args);
+}
+
+ssize_t write(int fildes, const void * buf, size_t nbyte)
+{
+    struct _fs_write_args args = {
+        .fildes = fildes,
+        .buf = (void *)buf,
+        .nbyte = nbyte,
+        .offset = SEEK_CUR
+    };
+
+    return (ssize_t)syscall(SYSCALL_FS_WRITE, &args);
+}
+
+unsigned sleep(unsigned seconds)
+{
+    unsigned int millisec = seconds * 1000;
+
     return (unsigned)syscall(SYSCALL_SCHED_SLEEP_MS, &millisec);
 }
 
-/** @addtogroup Thread_Management
-  * @{
-  */
-
-int osThreadTerminate(pthread_t thread_id)
-{
-    return (int)syscall(SYSCALL_THREAD_TERMINATE, &thread_id);
-}
-
-int * __error(void)
-{
-    return (int *)syscall(SYSCALL_THREAD_GETERRNO, NULL);
-}
-
-
-/**
-  * @}
-  */
-
-/** @addtogroup Semaphore
-  * @{
-  */
-
-//osSemaphore osSemaphoreCreate(osSemaphoreDef_t * semaphore_def, int32_t count)
-//{
-    /* TODO Implementation */
-//}
-
-int32_t osSemaphoreWait(osSemaphore * semaphore, uint32_t millisec)
-{
-    struct _ds_semaphore_wait ds = {
-        .s = &(semaphore->s),
-        .millisec = millisec
-    };
-    int retVal;
-
-    /* Loop between kernel mode and thread mode :) */
-    while ((retVal = syscall(SYSCALL_SEMAPHORE_WAIT, &ds)) < 0) {
-        if (retVal == OS_SEMAPHORE_THREAD_SPINWAIT_RES_ERROR) {
-            return -1;
-        }
-
-        /* TODO priority should be lowered or some resceduling should be done
-         * in the kernel so this loop would not waste time before automatic
-         * rescheduling. */
-        req_context_switch();
-    }
-
-    return retVal;
-}
-
-int osSemaphoreRelease(osSemaphore * semaphore)
-{
-    syscall(SYSCALL_SEMAPHORE_RELEASE, semaphore);
-    return 0;
-}
 
 /**
   * @}

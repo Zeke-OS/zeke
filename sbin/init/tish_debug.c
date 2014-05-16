@@ -36,6 +36,7 @@
 #include <libkern.h>
 #include <errno.h>
 #include <pthread.h>
+#include <kernel.h>
 #include "tish.h"
 
 static void * test_thread(void * arg);

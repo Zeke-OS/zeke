@@ -105,9 +105,8 @@ typedef struct {
 
     /* Memory Management */
     struct vm_mm_struct mm;
-    void * brk;
-    void * brk_start;
-    void * brk_stop;
+    void * brk_start;   /*!< Break start address. (end of heap data) */
+    void * brk_stop;    /*!< Break stop address. (end of heap region) */
 
     /* notes:
      * - main_thread already has a linked list of child threads

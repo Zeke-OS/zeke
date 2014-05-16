@@ -1,11 +1,10 @@
 /**
  *******************************************************************************
- * @file    kernel.c
+ * @file    brk.c
  * @author  Olli Vanhoja
- * @brief   Zero Kernel user space code
+ * @brief   Change space allocation.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+ * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,70 +34,74 @@
   * @{
   */
 
-#include <hal/hal_core.h>
 #include <syscall.h>
-#include <kernel.h>
+#include <errno.h>
+#include <unistd.h>
 
-unsigned msleep(unsigned millisec)
+/** @addtogroup unistd
+ *  @{
+ */
+
+static struct _ds_getbreak ds_brk;
+static void * curr_break;
+
+static int getbrk(void)
 {
-    return (unsigned)syscall(SYSCALL_SCHED_SLEEP_MS, &millisec);
-}
+    /* Following syscall just gets the start and stop limits for the brk
+     * functionality. Actual brk operation is solely implemented in
+     * userland.
+     */
 
-/** @addtogroup Thread_Management
-  * @{
-  */
-
-int osThreadTerminate(pthread_t thread_id)
-{
-    return (int)syscall(SYSCALL_THREAD_TERMINATE, &thread_id);
-}
-
-int * __error(void)
-{
-    return (int *)syscall(SYSCALL_THREAD_GETERRNO, NULL);
-}
-
-
-/**
-  * @}
-  */
-
-/** @addtogroup Semaphore
-  * @{
-  */
-
-//osSemaphore osSemaphoreCreate(osSemaphoreDef_t * semaphore_def, int32_t count)
-//{
-    /* TODO Implementation */
-//}
-
-int32_t osSemaphoreWait(osSemaphore * semaphore, uint32_t millisec)
-{
-    struct _ds_semaphore_wait ds = {
-        .s = &(semaphore->s),
-        .millisec = millisec
-    };
-    int retVal;
-
-    /* Loop between kernel mode and thread mode :) */
-    while ((retVal = syscall(SYSCALL_SEMAPHORE_WAIT, &ds)) < 0) {
-        if (retVal == OS_SEMAPHORE_THREAD_SPINWAIT_RES_ERROR) {
+    if (ds_brk.start == 0) {
+        if (syscall(SYSCALL_PROC_GETBREAK, &ds_brk)) {
+            /* This should never happen unles user is trying to do something
+             * fancy. */
+            errno = EAGAIN;
             return -1;
         }
-
-        /* TODO priority should be lowered or some resceduling should be done
-         * in the kernel so this loop would not waste time before automatic
-         * rescheduling. */
-        req_context_switch();
     }
 
-    return retVal;
+    return 0;
 }
 
-int osSemaphoreRelease(osSemaphore * semaphore)
+int brk(void * addr)
 {
-    syscall(SYSCALL_SEMAPHORE_RELEASE, semaphore);
+    intptr_t alloc_size;
+
+    if (getbrk())
+        return -1;
+
+    if ((ds_brk.start < addr) && (addr > ds_brk.stop)) {
+        errno = ENOMEM;
+        return -1;
+    }
+
+    alloc_size = ((intptr_t)addr - (intptr_t)curr_break);
+    if (alloc_size > 0)
+        memset(curr_break, 0, (size_t)alloc_size);
+
+    curr_break = addr;
     return 0;
+}
+
+void * sbrk(intptr_t incr)
+{
+    void * old_break = curr_break;
+    void * new_break = (void *)((char *)curr_break + incr);
+
+    if (getbrk())
+        return (void *)-1;
+
+    if ((ds_brk.start < new_break) && (new_break > ds_brk.stop)) {
+        errno = ENOMEM;
+        return (void *)-1;
+    }
+
+    if (incr > 0)
+        memset(old_break, 0, (size_t)incr);
+
+    curr_break = new_break;
+    return old_break;
 }
 
 /**

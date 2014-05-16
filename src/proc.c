@@ -480,6 +480,31 @@ uintptr_t proc_syscall(uint32_t type, void * p)
         set_errno(ENOSYS);
         return -14;
 
+    case SYSCALL_PROC_SETPRIORITY:
+        set_errno(ENOSYS);
+        return -15;
+
+    case SYSCALL_PROC_GETPRIORITY:
+        set_errno(ENOSYS);
+        return -15;
+
+    case SYSCALL_PROC_GETBREAK:
+        {
+        struct _ds_getbreak ds;
+
+        if (!useracc(p, sizeof(struct _ds_getbreak), VM_PROT_WRITE)) {
+            /* No permission to read/write */
+            /* TODO Signal/Kill? */
+            set_errno(EFAULT);
+            return -1;
+        }
+        copyin(p, &ds, sizeof(struct _ds_getbreak));
+        ds.start = curproc->brk_start;
+        ds.stop = curproc->brk_stop;
+        copyout(&ds, p, sizeof(struct _ds_getbreak));
+        }
+        return 0;
+
     default:
         return (uint32_t)NULL;
     }

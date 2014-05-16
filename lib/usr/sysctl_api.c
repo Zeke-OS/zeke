@@ -41,8 +41,7 @@
   */
 
 #include <hal/hal_core.h>
-#include "syscalldef.h"
-#include "syscall.h"
+#include <syscall.h>
 #include <kstring.h> /* TODO Should include string.h if compiling for user space */
 #include <sys/sysctl.h>
 

@@ -66,7 +66,7 @@ extern volatile size_t flag_kernel_tick;
  * @param a_del_thread Address of del_thread function
  * @param priv set thread as privileged/kernel mode thread.
  */
-void init_stack_frame(ds_pthread_create_t * thread_def,
+void init_stack_frame(struct _ds_pthread_create * thread_def,
         sw_stack_frame_t * sframe, int priv);
 
 /**

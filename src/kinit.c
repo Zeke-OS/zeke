@@ -110,7 +110,7 @@ void kinit(void)
         .stackAddr  = (void *)(init_vmstack->mmu.paddr),
         .stackSize  = configUSRINIT_SSIZE
     };
-    ds_pthread_create_t init_ds = {
+    struct _ds_pthread_create init_ds = {
         .thread     = 0, /* return value */
         .start      = main,
         .def        = &init_attr,

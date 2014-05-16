@@ -36,9 +36,8 @@
   */
 
 #include <hal/hal_core.h>
-#include "syscalldef.h"
-#include "syscall.h"
-#include <kernel.h>
+#include <syscall.h>
+#include <errno.h>
 #include <sys/resource.h>
 
 int getloadavg(double loadavg[3], int nelem)
@@ -64,7 +63,7 @@ int setpriority(int which, id_t who, int prio)
     switch (which) {
     case PRIO_THREAD:
         {
-            ds_osSetPriority_t ds = {
+            struct _ds_set_priority ds = {
                 .thread_id = who,
                 .priority = prio
             };
@@ -72,7 +71,8 @@ int setpriority(int which, id_t who, int prio)
         return (int)syscall(SYSCALL_SCHED_SETPRIORITY, &ds);
         }
     default:
-        return -1; /* Can't set errno from here :( */
+        errno = EINVAL;
+        return -1;
     }
 }
 
@@ -82,7 +82,8 @@ int  getpriority(int which, id_t who)
     case PRIO_THREAD:
         return (int)syscall(SYSCALL_SCHED_GETPRIORITY, &who);
     default:
-        return -1; /* Can't set errno from here :( */
+        errno = EINVAL;
+        return -1;
     }
 }
 

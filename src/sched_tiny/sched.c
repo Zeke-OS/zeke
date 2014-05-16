@@ -112,8 +112,8 @@ void sched_init(void) __attribute__((constructor));
 /* Static function declarations **********************************************/
 static void init_thread_id_queue(void);
 void * idleTask(void * arg);
-static void sched_thread_init(pthread_t i, ds_pthread_create_t * thread_def,
-        threadInfo_t * parent, int priv);
+static void sched_thread_init(pthread_t i,
+        struct _ds_pthread_create * thread_def, threadInfo_t * parent, int priv);
 static void sched_thread_set_inheritance(threadInfo_t * new_child, threadInfo_t * parent);
 static void _sched_thread_set_exec(pthread_t thread_id, osPriority pri);
 static void sched_thread_remove(pthread_t id);
@@ -139,7 +139,7 @@ void sched_init(void)
         .stackSize  = sizeof(sched_idle_stack)
     };
     /* Create the idle task as task 0 */
-    ds_pthread_create_t tdef_idle = {
+    struct _ds_pthread_create tdef_idle = {
         .thread   = &tid,
         .start    = idleTask,
         .def      = &attr,
@@ -317,8 +317,8 @@ threadInfo_t * sched_get_pThreadInfo(pthread_t thread_id)
   *                     (kworker).
   * @todo what if parent is stopped before this function is called?
   */
-static void sched_thread_init(pthread_t i, ds_pthread_create_t * thread_def,
-        threadInfo_t * parent, int priv)
+static void sched_thread_init(pthread_t i,
+        struct _ds_pthread_create * thread_def, threadInfo_t * parent, int priv)
 {
     /* This function should not be called for already initialized threads. */
     if ((task_table[i].flags & (uint32_t)SCHED_IN_USE_FLAG) != 0)
@@ -356,7 +356,9 @@ static void sched_thread_init(pthread_t i, ds_pthread_create_t * thread_def,
     task_table[i].stack_start = thread_def->def->stackAddr;
     task_table[i].stack_size = thread_def->def->stackSize;
 
-    /* So errno is at the last address of stack area. */
+    /* So errno is at the last address of stack area.
+     * Note that this should also agree with core specific
+     * init_stack_frame() function. */
     task_table[i].errno_uaddr = (void *)((uint32_t)(thread_def->def->stackAddr)
                                         + thread_def->def->stackSize
                                         - sizeof(errno_t));
@@ -456,7 +458,7 @@ pthread_t sched_thread_fork(void * stack_addr)
         .stackAddr = (void *)(tmp.kstack_region->mmu.paddr),
         .stackSize = 1337 /* Don't care. */
     };
-    ds_pthread_create_t ds_fake = {
+    struct _ds_pthread_create ds_fake = {
         .def = &def_fake,
         .start = &&out, /* pc */
         .del_thread = 0, /* lr, don't care */
@@ -654,7 +656,7 @@ static void sched_thread_sleep(long millisec)
 
 /*  ==== Thread Management ==== */
 
-pthread_t sched_threadCreate(ds_pthread_create_t * thread_def, int priv)
+pthread_t sched_threadCreate(struct _ds_pthread_create * thread_def, int priv)
 {
     pthread_t i;
 #if 0
@@ -813,12 +815,12 @@ uintptr_t sched_syscall(uint32_t type, void * p)
     case SYSCALL_SCHED_SETPRIORITY:
         {
         int err;
-        ds_osSetPriority_t ds;
-        if (!useracc(p, sizeof(pthread_t), VM_PROT_READ)) {
+        struct _ds_set_priority ds;
+        if (!useracc(p, sizeof(struct _ds_set_priority), VM_PROT_READ)) {
             set_errno(ESRCH);
             return -1;
         }
-        copyin(p, &ds, sizeof(ds_osSetPriority_t));
+        copyin(p, &ds, sizeof(struct _ds_set_priority));
         err = (uintptr_t)sched_thread_set_priority(ds.thread_id, ds.priority);
         if (err) {
             set_errno(-err);

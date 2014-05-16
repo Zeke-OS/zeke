@@ -38,38 +38,38 @@
 #include <kernel.h>
 
 /** Argument struct for SYSCALL_SCHED_THREAD_CREATE */
-typedef struct {
+struct _ds_pthread_create {
     pthread_t * thread;     /*!< Returned thread id. */
     start_routine start;    /*!< Thread start routine. */
     pthread_attr_t * def;   /*!< Thread def attributes. */
     void * argument;        /*!< Thread parameter(s) pointer. */
     void (*del_thread)(void *); /*!< Thread exit function. */
-} ds_pthread_create_t;
+};
 
 /** Argument struct for SYSCALL_SCHED_THREAD_SETPRIORITY */
-typedef struct {
+struct _ds_set_priority {
     pthread_t thread_id;    /*!< Thread id */
     osPriority priority;    /*!< Thread priority */
-} ds_osSetPriority_t;
+};
 
 /** Argument struct for SYSCALL_SCHED_SIGNAL_SET
  *  and KERNEL_SYSCALL_SCHED_SIGNAL_CLEAR */
-typedef struct {
+struct ds_signal {
     pthread_t thread_id;   /*!< Thread id */
     int32_t signal;         /*!< Thread signals to set */
-} ds_osSignal_t;
+};
 
 /** Argument struct for SYSCALL_SCHED_SIGNAL_WAIT */
-typedef struct {
+struct _ds_signal_wait_t {
     int32_t signals;        /*!< Thread signal(s) to wait */
     uint32_t millisec;      /*!< Timeout in ms */
-} ds_osSignalWait_t;
+};
 
 /** Argument struct for SYSCALL_SEMAPHORE_WAIT */
-typedef struct {
+struct _ds_semaphore_wait {
     uint32_t * s;           /*!< Pointer to the semaphore */
     uint32_t millisec;      /*!< Timeout in ms */
-} ds_osSemaphoreWait_t;
+};
 
 struct _sysctl_args {
     int * name;
@@ -86,6 +86,12 @@ struct _fs_write_args {
     void * buf;
     size_t nbyte;
     off_t offset;
+};
+
+/** Arguments struct for SYSCALL_PROC_GETBREAK */
+struct _ds_getbreak {
+    void * start;
+    void * stop;
 };
 
 #endif /* SYSCALLDEF_H */

@@ -142,10 +142,10 @@ uintptr_t ulocks_syscall(uint32_t type, void * p)
         return retval;
 
     case SYSCALL_SEMAPHORE_WAIT:
-        if (useracc(p, sizeof(ds_osSemaphoreWait_t), VM_PROT_WRITE)) {
+        if (useracc(p, sizeof(struct _ds_semaphore_wait), VM_PROT_WRITE)) {
             return (uint32_t)ulocks_semaphore_thread_spinwait(
-                    ((ds_osSemaphoreWait_t *)(p))->s,
-                    ((ds_osSemaphoreWait_t *)(p))->millisec);
+                    ((struct _ds_semaphore_wait *)(p))->s,
+                    ((struct _ds_semaphore_wait *)(p))->millisec);
         } else { /* No permission to read/write */
             /* TODO Kill? */
             set_errno(EFAULT);

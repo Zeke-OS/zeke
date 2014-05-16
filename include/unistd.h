@@ -54,13 +54,32 @@
 #define STDOUT_FILENO   1 /*!< File number of stdout. */
 #define STDERR_FILENO   2 /*!< File number of stderr. */
 
+/**
+ * Set the break value.
+ * @param addr is the new break addr.
+ * @return  Returns 0 on succesful completion;
+ *          Returns -1 and sets errno on error.
+ * @throws  ENOMEM = The requested change would be impossible,
+ *          EAGAIN = Temporary failure.
+ */
+int brk(void * addr);
+
+/**
+ * Increment or decrement the break value.
+ * @param incr is the amount of allocated space in bytes. Negative value
+ * decrements the break value.
+ * @return  Returns the prior break value on succesful operation;
+ *          Returns (void *)-1 if failed.
+ * @throws  ENOMEM = The requested change would be impossible,
+ *          EAGAIN = Temporary failure.
+ */
+void * sbrk(intptr_t incr);
+
 pid_t fork(void);
 ssize_t pwrite(int fildes, const void *buf, size_t nbyte,
     off_t offset);
 ssize_t write(int fildes, const void * buf, size_t nbyte);
 
-int brk(void *);
-void * sbrk(intptr_t incr);
 unsigned sleep(unsigned seconds);
 
 #endif /* UNISTD_H */

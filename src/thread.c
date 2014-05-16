@@ -122,18 +122,16 @@ uintptr_t thread_syscall(uint32_t type, void * p)
         /* TODO pthread_create is allowed to throw errors and we definitely should
          *      use those. */
 
-        ds_pthread_create_t ds;
-        if (!useracc(p, sizeof(ds_pthread_create_t), VM_PROT_WRITE)) {
+        struct _ds_pthread_create ds;
+        if (!useracc(p, sizeof(struct _ds_pthread_create), VM_PROT_WRITE)) {
             /* No permission to read/write */
             /* TODO Signal/Kill? */
             set_errno(EFAULT);
             return -1;
         }
-        copyin(p, &ds, sizeof(ds_pthread_create_t));
-        /* TODO Create a fake stack */
+        copyin(p, &ds, sizeof(struct _ds_pthread_create));
         sched_threadCreate(&ds, 0);
-        /* TODO copyout() the stack */
-        copyout(&ds, p, sizeof(ds_pthread_create_t));
+        copyout(&ds, p, sizeof(struct _ds_pthread_create));
 
         return 0;
         }

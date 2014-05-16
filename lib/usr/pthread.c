@@ -37,7 +37,6 @@
   */
 
 #include <hal/hal_core.h>
-#include <syscalldef.h>
 #include <syscall.h>
 #include <pthread.h>
 
@@ -48,7 +47,7 @@
 int pthread_create(pthread_t * thread, const pthread_attr_t * attr,
                 void * (*start_routine)(void *), void * arg)
 {
-    ds_pthread_create_t args = {
+    struct _ds_pthread_create args = {
         .thread     = thread,
         .start      = start_routine,
         .def        = attr,

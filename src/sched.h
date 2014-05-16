@@ -194,7 +194,7 @@ void sched_context_switcher(void);
  * @param priv          If set thread is created as a kernel mode thread aka
  *                      kworker; Otherwise user mode is selected.
  */
-pthread_t sched_threadCreate(ds_pthread_create_t * thread_def, int priv);
+pthread_t sched_threadCreate(struct _ds_pthread_create * thread_def, int priv);
 
 /**
  * Terminate a thread and its childs.
