@@ -1,9 +1,12 @@
 lib
 ===
 
-User and kernel space libraries.
+User space libraries and crt that is used for both user psace programs and for
+kernel. In particular this directory contains Zeke libc library that is needed
+for user space work with Zeke.
 
-Put here the CMSIS (and other) libraries provided by the chip manufacturers.
+Put here the CMSIS (and other) libraries provided by the chip manufacturers,
+basically what ever you need.
 
 *Recommended directory structure:*
 
@@ -16,3 +19,4 @@ Put here the CMSIS (and other) libraries provided by the chip manufacturers.
     |--stdlib
     |---inc
     |---src
+    |-libc
