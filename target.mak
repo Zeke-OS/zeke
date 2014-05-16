@@ -29,7 +29,7 @@ endif
 ifeq ($(configMCU_MODEL),MCU_MODEL_BCM2835)
 	MEMMAP = config/memmap_bcm2835.ld
 	# We may wan't to move this line to some where else
-	STARTUP = src/hal/arm11/arm11_startup.S
+	STARTUP = kern/hal/arm11/arm11_startup.S
 endif
 # Check that MEMMAP and STARTUP are defined
 ifndef MEMMAP

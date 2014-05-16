@@ -1,4 +1,3 @@
-
 # Zeke - Main Makefile
 #
 # Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
@@ -41,7 +40,7 @@ endif
 
 # Makefiles for modules ########################################################
 # Atm for sake of simplicity we keep all makefiles on single level
-MODMKFILES = $(wildcard ./modmakefiles/*.mk)
+MODMKFILES = $(wildcard ./kern/kmodmakefiles/*.mk)
 include $(MODMKFILES)
 # Following will generate a list of module names
 ALLMODULES = $(basename $(notdir $(MODMKFILES)))
@@ -84,7 +83,7 @@ endif
 CRT_DIR = $(dir $(CRT))
 
 # Include Dirs #################################################################
-IDIR   = ./include ./config ./src
+IDIR   = ./include ./config ./kern
 AIDIR += ./config
 ################################################################################
 IDIR  := $(patsubst %,-I%,$(subst :, ,$(IDIR)))
