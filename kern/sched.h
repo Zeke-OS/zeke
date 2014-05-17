@@ -136,8 +136,6 @@
  * Thread Control Block structure.
  */
 typedef struct {
-    void * stack_start;             /*!< User stack start address. */
-    size_t stack_size;              /*!< Size of the user stack. */
     sw_stack_frame_t stack_frame;   /*!< Stack frame used for task switch. */
     vm_region_t * kstack_region;    /*!< Thread kernel stack region. */
     uint32_t flags;                 /*!< Status flags. */
@@ -176,7 +174,7 @@ extern threadInfo_t * current_thread;
 /* Public function prototypes ***************************************************/
 void sched_get_loads(uint32_t loads[3]);
 threadInfo_t * sched_get_pThreadInfo(pthread_t thread_id);
-pthread_t sched_thread_fork(void * stack_addr);
+pthread_t sched_thread_fork();
 void sched_thread_set_exec(pthread_t thread_id);
 void sched_thread_sleep_current(void);
 

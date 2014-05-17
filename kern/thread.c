@@ -101,6 +101,8 @@ void thread_init_kstack(threadInfo_t * th)
  */
 pthread_t get_current_tid(void)
 {
+    if (!current_thread)
+        return 0;
     return (pthread_t)(current_thread->id);
 }
 

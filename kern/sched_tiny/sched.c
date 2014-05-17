@@ -352,10 +352,6 @@ static void sched_thread_init(pthread_t i,
     /* Update parent and child pointers */
     sched_thread_set_inheritance(&(task_table[i]), parent);
 
-    /* Update stack info */
-    task_table[i].stack_start = thread_def->def->stackAddr;
-    task_table[i].stack_size = thread_def->def->stackSize;
-
     /* So errno is at the last address of stack area.
      * Note that this should also agree with core specific
      * init_stack_frame() function. */
@@ -412,17 +408,19 @@ static void sched_thread_set_inheritance(threadInfo_t * new_child, threadInfo_t 
 /**
  * Fork current thread.
  * @note Cloned thread is set to sleep state and caller of this function should
- * set it to exec state.
- * @param stack_addr is a kernel accessible address of the thread stack.
+ * set it to exec state. Caller is also expected to handle user stack issues as
+ * as well. The new thread is exact clone of the current thread but with a new
+ * kernel stack.
  * @return  0 clone succeed and this is the new thread executing;
  *          < 0 error;
  *          > 0 clone succeed and return value is the id of the new thread.
  */
-pthread_t sched_thread_fork(void * stack_addr)
+pthread_t sched_thread_fork(void)
 {
     threadInfo_t * const old_thread = current_thread;
     threadInfo_t tmp;
     pthread_t new_id;
+    pthread_t retval = 0;
 
 #if configDEBUG >= KERROR_DEBUG
     if (old_thread == 0) {
@@ -446,35 +444,22 @@ pthread_t sched_thread_fork(void * stack_addr)
             (void *)(old_thread->kstack_region->mmu.paddr),
             MMU_SIZEOF_REGION(&(old_thread->kstack_region->mmu)));
 
-    /* Copy usr stack */
-    memcpy(stack_addr, old_thread->stack_start, old_thread->stack_size);
-
-    /* Set return value for the caller */
-    register int retval __asm__ ("r0"); /* TODO */
-    retval = new_id;
-
-    /* Init stack for context switch */
-    pthread_attr_t def_fake = {
-        .stackAddr = (void *)(tmp.kstack_region->mmu.paddr),
-        .stackSize = 1337 /* Don't care. */
-    };
-    struct _ds_pthread_create ds_fake = {
-        .def = &def_fake,
-        .start = &&out, /* pc */
-        .del_thread = 0, /* lr, don't care */
-        .argument = 0 /* retval variable of the new thread. */
-    };
     /* TODO We want to make a stack frame such that child redirects to here
      * but with pc at out and registers exactly like in the parent.
      */
-    //init_stack_frame(&ds_fake, &tmp.stack_frame, 1);
-    /* Reset usr sp, this is most likely redundant. */
-    //tmp.stack_frame.sp = old_thread->stack_frame.sp;
-
-    /* TODO Increment resource refcounters(?) */
 
     memcpy(&(task_table[new_id]), &tmp, sizeof(threadInfo_t));
 
+    //uintptr_t link = (size_t)(&&out) + sizeof(void *);
+    uintptr_t link = 0xf0404000;
+    void * sfp = &tmp.stack_frame + sizeof(sw_stack_frame_t);
+    clone_stack_frame(link, sfp);
+
+    /* TODO Increment resource refcounters(?) */
+
+    //memcpy(&(task_table[new_id]), &tmp, sizeof(threadInfo_t));
+
+    retval = new_id;
 out:
     return retval;
 }

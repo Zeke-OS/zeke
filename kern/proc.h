@@ -137,6 +137,12 @@ typedef struct {
     sigs_t sigs;                /*!< Signals. */
 } proc_info_t;
 
+/* Proc dab handling error codes */
+#define PROC_DABERR_NOPROC  1
+#define PROC_DABERR_INVALID 2
+#define PROC_DABERR_PROT    3
+#define PROC_DABERR_ENOMEM  4
+
 extern int maxproc;
 extern int nprocs;
 extern pid_t current_process_id;

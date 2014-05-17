@@ -260,12 +260,8 @@ pid_t proc_fork(pid_t pid)
      * We left main_thread null if calling process has no main thread.
      */
     if (old_proc->main_thread) {
-        pthread_t new_tid;
-        void * stack;
-
-        /* Note: No need to copyin()/copyout() here */
-        stack = (void *)((*new_proc->mm.regions)[MM_STACK_REGION]->mmu.paddr);
-        new_tid = sched_thread_fork(stack);
+        pthread_t old_tid = get_current_tid();
+        pthread_t new_tid = sched_thread_fork();
         if (new_tid < 0) {
             retval = -EAGAIN; /* TODO ?? */
             goto free_files;
@@ -273,11 +269,13 @@ pid_t proc_fork(pid_t pid)
             new_proc->main_thread = sched_get_pThreadInfo(new_tid);
             new_proc->main_thread->pid_owner = new_proc->pid;
         } else { /* 0, new thread returning */
+            panic("XXX"); /* TODO Remove */
             retval = 0;
             goto out;
         }
-    } else
+    } else {
         new_proc->main_thread = 0;
+    }
     retval = new_proc->pid;
 
     /* Update inheritance attributes */
@@ -290,10 +288,15 @@ pid_t proc_fork(pid_t pid)
     procarr_insert(new_proc);
 
     if (new_proc->main_thread) {
+        /* TODO Should be enabled */
         sched_thread_set_exec(new_proc->main_thread->id);
     }
 #if configDEBUG >= KERROR_DEBUG
-            KERROR(KERROR_DEBUG, "Fork created");
+    {
+        char buf[80];
+        ksprintf(buf, sizeof(buf), "Fork created: %u", get_current_tid());
+        KERROR(KERROR_DEBUG, buf);
+    }
 #endif
     goto out; /* Fork created. */
 
@@ -337,10 +340,13 @@ static int clone_L2_pt(proc_info_t * const new_proc, proc_info_t * const old_pro
         goto out;
     }
     RB_FOREACH(old_vpt, ptlist, &(old_proc->mm.ptlist_head)) {
+        /* TODO for some reason linkcount might be invalid! */
+#if 0
         if (old_vpt->linkcount <= 0) {
             continue; /* Skip unused page tables; ie. page tables that are
                        * not referenced by any region. */
         }
+#endif
 
         new_vpt = kmalloc(sizeof(struct vm_pt));
         if (!new_vpt) {

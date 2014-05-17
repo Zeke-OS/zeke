@@ -253,10 +253,11 @@ struct vm_region * vr_rclone(struct vm_region * old_region)
         return 0;
     }
 
-#if configDEBUG != 0
+#if configDEBUG >= KERROR_DEBUG
     {
     char buf[80];
-    ksprintf(buf, sizeof(buf), "clone %x -> %x", old_region->mmu.paddr, new_region->mmu.paddr);
+    ksprintf(buf, sizeof(buf), "clone %x -> %x, %u bytes",
+            old_region->mmu.paddr, new_region->mmu.paddr, rsize);
     KERROR(KERROR_DEBUG, buf);
     }
 #endif

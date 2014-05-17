@@ -377,22 +377,26 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
 
     pcb = proc_get_struct(pid);
     if (!pcb || (pcb->state == PROC_STATE_INITIAL)) {
-        return -1; /* Process doesn't exist. */
+        return PROC_DABERR_NOPROC; /* Process doesn't exist. */
     }
 
     for (int i = 0; i < pcb->mm.nr_regions; i++) {
         region = ((*pcb->mm.regions)[i]);
+        char buf[80];
+        ksprintf(buf, sizeof(buf), "vaddr %x, reg_vaddr %x, reg_end %x", vaddr, region->mmu.vaddr, region->mmu.vaddr + MMU_SIZEOF_REGION(&(region->mmu)));
+        KERROR(KERROR_DEBUG, buf);
 
         if (vaddr >= region->mmu.vaddr &&
                 vaddr <= (region->mmu.vaddr + MMU_SIZEOF_REGION(&(region->mmu)))) {
             /* Test for COW flag. */
             if ((region->usr_rw & VM_PROT_COW) != VM_PROT_COW) {
-                return 2; /* Memory protection error. */
+                return PROC_DABERR_PROT; /* Memory protection error. */
             }
 
             if(!(region->vm_ops->rclone)
                     || !(new_region = region->vm_ops->rclone(region))) {
-                return -3; /* Can't clone region; COW clone failed. */
+                /* Can't clone region; COW clone failed. */
+                return PROC_DABERR_ENOMEM;
             }
 
             /* Free the old region as this process no longer uses it.
@@ -408,7 +412,7 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
         }
     }
 
-    return 1; /* Not found */
+    return PROC_DABERR_INVALID; /* Not found */
 }
 
 /**
