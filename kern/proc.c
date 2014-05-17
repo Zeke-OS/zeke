@@ -62,6 +62,8 @@ static pid_t _lastpid;              /*!< last allocated pid. */
 
 extern vnode_t kerror_vnode;
 
+extern void * __bss_break __attribute__((weak));
+
 #define SIZEOF_PROCARR()    ((maxproc + 1) * sizeof(proc_info_t *))
 
 /* proclock - Protects procarray and variables in proc. */
@@ -152,6 +154,11 @@ static void init_kernel_proc(void)
     (*kernel_proc->mm.regions)[MM_CODE_REGION] = kprocvm_code;
     (*kernel_proc->mm.regions)[MM_STACK_REGION] = 0;
     (*kernel_proc->mm.regions)[MM_HEAP_REGION] = kprocvm_heap;
+
+    /* Break values */
+    kernel_proc->brk_start = __bss_break;
+    kernel_proc->brk_stop = kprocvm_heap->mmu.vaddr
+        + mmu_sizeof_region(&(kprocvm_heap->mmu)) - 1;
 
     /* File descriptors */
     kernel_proc->files = kmalloc(SIZEOF_FILES(3));

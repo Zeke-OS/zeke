@@ -233,6 +233,10 @@ pid_t proc_fork(pid_t pid)
         vm_map_region((*new_proc->mm.regions)[i], vpt);
     }
 
+    /* Break values */
+    new_proc->brk_start = old_proc->brk_start;
+    new_proc->brk_stop = old_proc->brk_stop;
+
     /* Copy file descriptors */
     new_proc->files = kmalloc(SIZEOF_FILES(old_proc->files->count));
     if (!new_proc->files) {

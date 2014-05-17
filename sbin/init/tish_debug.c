@@ -39,11 +39,9 @@
 #include <kernel.h>
 #include "tish.h"
 
+static void create_debug_thread(void);
 static void * test_thread(void * arg);
 static void thread_stat(void);
-
-static char test_stack[4096];
-static pthread_t test_tid;
 
 /* TODO Remove */
 #define fprintf(stream, str) write(2, str, strlenn(str, MAX_LEN) + 1)
@@ -53,20 +51,8 @@ void tish_debug(char ** args)
 {
     char * arg = kstrtok(0, DELIMS, args);
 
-    if (!strcmp(arg, "create")) {
-        if (test_tid != 0) {
-            puts("We already have a debug thread\n");
-            errno = EBUSY;
-            return;
-        }
-
-        pthread_attr_t attr = {
-            .tpriority  = 0,
-            .stackAddr  = test_stack,
-            .stackSize  = sizeof(test_stack)
-        };
-
-        pthread_create(&test_tid, &attr, test_thread, 0);
+    if (!strcmp(arg, "thread")) {
+        create_debug_thread();
     } else if (!strcmp(arg, "fork")) {
         pid_t pid = fork();
         if (pid == -1) {
@@ -83,6 +69,31 @@ void tish_debug(char ** args)
         puts("Invalid command\n");
         errno = EINVAL;
     }
+}
+
+static void create_debug_thread(void)
+{
+    static pthread_t test_tid;
+    char buf[80];
+    char * newstack;
+
+    if ((newstack = sbrk(1024)) == (void *)-1) {
+        puts("Failed to create a stack\n");
+        return;
+    }
+
+    pthread_attr_t attr = {
+        .tpriority  = 0,
+        .stackAddr  = newstack,
+        .stackSize  = 1024
+    };
+
+    if (pthread_create(&test_tid, &attr, test_thread, 0)) {
+        puts("Thread creation failed\n");
+        return;
+    }
+    ksprintf(buf, sizeof(buf), "Thread created with id: %u\n", test_tid);
+    puts(buf);
 }
 
 static void * test_thread(void * arg)
