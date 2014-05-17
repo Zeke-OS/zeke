@@ -604,7 +604,6 @@ uint32_t mmu_data_abort_handler(uint32_t sp, uint32_t spsr, const uint32_t lr)
             KERROR(KERROR_CRIT, buf);
             dab_fatal(fsr, far, spsr, lr, thread);
         }
-        goto out;
     } else {
        char buf[80];
        ksprintf(buf, sizeof(buf), "DAB handling failed, no sufficient handler found.\n");
@@ -621,7 +620,6 @@ uint32_t mmu_data_abort_handler(uint32_t sp, uint32_t spsr, const uint32_t lr)
         set_interrupt_state(s_entry);
     }
 
-out:
     return lr;
 }
 

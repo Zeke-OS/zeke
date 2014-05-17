@@ -47,26 +47,49 @@ static void thread_stat(void);
 #define fprintf(stream, str) write(2, str, strlenn(str, MAX_LEN) + 1)
 #define puts(str) fprintf(stderr, str)
 
+static char invalid_arg[] = "Invalid argument\n";
+
 void tish_debug(char ** args)
 {
     char * arg = kstrtok(0, DELIMS, args);
 
+    /* Thread debug commands */
     if (!strcmp(arg, "thread")) {
-        create_debug_thread();
-    } else if (!strcmp(arg, "fork")) {
-        pid_t pid = fork();
-        if (pid == -1) {
-            puts("fork() failed\n");
-            while(1);
-        } else if (pid == 0) {
-            puts("Hello from the child process\n");
-            while(1)
-                msleep(500);
+        arg = kstrtok(0, DELIMS, args);
+        if (!strcmp(arg, "create")) {
+            create_debug_thread();
         } else {
-            puts("original\n");
+            puts(invalid_arg);
+        }
+    /* Process debug commands */
+    } else if (!strcmp(arg, "proc")) {
+        arg = kstrtok(0, DELIMS, args);
+        if (!strcmp(arg, "fork")) {
+            pid_t pid = fork();
+            if (pid == -1) {
+                puts("fork() failed\n");
+            } else if (pid == 0) {
+                puts("Hello from the child process\n");
+                while(1)
+                    msleep(500);
+            } else {
+                puts("original\n");
+            }
+        } else {
+            puts(invalid_arg);
+        }
+    /* Data Abort Commands */
+    } else if (!strcmp(arg, "dab")) {
+        arg = kstrtok(0, DELIMS, args);
+        if (!strcmp(arg, "fatal")) {
+            puts("Trying fatal DAB\n");
+            int * x = 0xffffffff;
+            *x = 1;
+        } else {
+            puts(invalid_arg);
         }
     } else {
-        puts("Invalid command\n");
+        puts("Invalid subcommand\n");
         errno = EINVAL;
     }
 }

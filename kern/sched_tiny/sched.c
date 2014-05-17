@@ -450,14 +450,12 @@ pthread_t sched_thread_fork(void)
 
     memcpy(&(task_table[new_id]), &tmp, sizeof(threadInfo_t));
 
-    //uintptr_t link = (size_t)(&&out) + sizeof(void *);
-    uintptr_t link = 0xf0404000;
-    void * sfp = &tmp.stack_frame + sizeof(sw_stack_frame_t);
-    clone_stack_frame(link, sfp);
-
     /* TODO Increment resource refcounters(?) */
 
-    //memcpy(&(task_table[new_id]), &tmp, sizeof(threadInfo_t));
+    //uintptr_t link = (size_t)(&&out) + sizeof(void *);
+    uintptr_t link = 0xffffffff;
+    void * sfp = &tmp.stack_frame + sizeof(sw_stack_frame_t);
+    clone_stack_frame(link, sfp);
 
     retval = new_id;
 out:

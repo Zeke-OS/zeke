@@ -379,7 +379,9 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
     vm_region_t * new_region;
 
 #if configDEBUG >= KERROR_DEBUG
-    KERROR(KERROR_DEBUG, "proc_dab_handler(): MOO");
+    char buf[80];
+    ksprintf(buf, sizeof(buf), "proc_dab_handler(): MOO, %x", vaddr);
+    KERROR(KERROR_DEBUG, buf);
 #endif
 
     pcb = proc_get_struct(pid);
@@ -389,8 +391,7 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
 
     for (int i = 0; i < pcb->mm.nr_regions; i++) {
         region = ((*pcb->mm.regions)[i]);
-        char buf[80];
-        ksprintf(buf, sizeof(buf), "vaddr %x, reg_vaddr %x, reg_end %x", vaddr, region->mmu.vaddr, region->mmu.vaddr + MMU_SIZEOF_REGION(&(region->mmu)));
+        ksprintf(buf, sizeof(buf), "reg_vaddr %x, reg_end %x", region->mmu.vaddr, region->mmu.vaddr + MMU_SIZEOF_REGION(&(region->mmu)));
         KERROR(KERROR_DEBUG, buf);
 
         if (vaddr >= region->mmu.vaddr &&
