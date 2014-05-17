@@ -77,6 +77,7 @@ static void create_debug_thread(void)
     char buf[80];
     char * newstack;
 
+    errno = 0;
     if ((newstack = sbrk(1024)) == (void *)-1) {
         puts("Failed to create a stack\n");
         return;
@@ -88,6 +89,7 @@ static void create_debug_thread(void)
         .stackSize  = 1024
     };
 
+    errno = 0;
     if (pthread_create(&test_tid, &attr, test_thread, 0)) {
         puts("Thread creation failed\n");
         return;

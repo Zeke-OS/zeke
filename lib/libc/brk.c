@@ -71,7 +71,7 @@ int brk(void * addr)
     if (getbrk())
         return -1;
 
-    if ((ds_brk.start < addr) && (addr > ds_brk.stop)) {
+    if ((ds_brk.start > addr) || (addr > ds_brk.stop)) {
         errno = ENOMEM;
         return -1;
     }
@@ -92,7 +92,7 @@ void * sbrk(intptr_t incr)
     if (getbrk())
         return (void *)-1;
 
-    if ((ds_brk.start < new_break) && (new_break > ds_brk.stop)) {
+    if ((ds_brk.start > new_break) || (new_break > ds_brk.stop)) {
         errno = ENOMEM;
         return (void *)-1;
     }
