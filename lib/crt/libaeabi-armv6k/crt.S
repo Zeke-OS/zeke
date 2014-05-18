@@ -1,7 +1,7 @@
 /* Runtime ABI for the ARM Cortex-M0  
  * crt.S: C runtime environment
  *
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012 Jörg Mische <bobbl@gmx.de>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
@@ -29,28 +29,7 @@
     .global _start
 _start:
 	bl main
-	@ fallthrough to exit()	
-
-
-	
-@ void exit(int status)
-@
-@ Exit from program: breakpoint 0
-@
-    .global exit
-exit:
-	bkpt	#0
-
-
-
-@ void abort(void)
-@
-@ Abnormal program termination: breakpoint 1
-@
-    .global abort
-abort:
-	bkpt	#1
-
+    bl exit
 
 
 @ int __aeabi_idiv0(int r)

@@ -31,32 +31,10 @@
         .global _start
 _start:
 	bl main
+    bl exit
 	@ fallthrough to exit()	
 
-
 	
-@ void exit(int status)
-@
-@ Exit from program: breakpoint 0
-@
-	.thumb_func
-        .global exit
-exit:
-	bkpt	#0
-
-
-
-@ void abort(void)
-@
-@ Abnormal program termination: breakpoint 1
-@
-	.thumb_func
-        .global abort
-abort:
-	bkpt	#1
-
-
-
 @ int __aeabi_idiv0(int r)
 @
 @ Handler for 32 bit division by zero

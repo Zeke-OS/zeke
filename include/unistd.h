@@ -35,15 +35,12 @@
 #define UNISTD_H
 
 #include <sys/cdefs.h>
+#include <sys/_null.h>
 
 /* Options and option groups */
 #define _POSIX_THREAD_ATTR_STACKADDR    200809L
 #define _POSIX_THREAD_ATTR_STACKSIZE    200809L
 #define _POSIX_THREADS                  200809L
-
-#ifndef NULL
-#define NULL ((void*)0)
-#endif
 
 /* Block device seek origin types */
 #ifndef SEEK_SET
