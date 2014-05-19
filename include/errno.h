@@ -32,9 +32,13 @@
  */
 
 /** @addtogroup LIBC
-  * @{
-  */
+ * @{
+ */
 
+/** @addtogroup errno
+ * Number of last error.
+ * @{
+ */
 
 #pragma once
 #ifndef ERRNO_H
@@ -142,6 +146,10 @@ typedef int errno_t;
 #endif
 
 #endif /* ERRNO */
+
+/**
+ * @}
+ */
 
 /**
  * @}

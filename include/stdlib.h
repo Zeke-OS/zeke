@@ -35,6 +35,7 @@
  */
 
 /** @addtogroup LIBC
+ * Zeke libc, a standard C library.
  * @{
  */
 
