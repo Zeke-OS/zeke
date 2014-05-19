@@ -66,6 +66,12 @@ To successfully compile Zeke, you'll need the following packages/tools:
 - bash
 - cloc (for stats)
 
+For doc-book target:
+
+- latex + some packages
+- latexmk
+- gnuplot
+
 ### Compiling
 
 + `make` - Compile the kernel

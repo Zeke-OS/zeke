@@ -22,3 +22,9 @@ index.ps
 *.mtc
 *.mtc1
 *.out
+
+plots/*.eps
+
+book.fdb_latexmk
+book.fls
+book.pdf

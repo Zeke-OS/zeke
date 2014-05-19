@@ -142,7 +142,7 @@ doc-doxy:
 
 # target_doc: doc-book - Compile Zeke book.
 doc-book:
-	@echo TODO
+	make -C doc/book all
 
 # target_comp: config - Update configuration from $(CONFIG_MK)
 config: $(AUTOCONF_H)
