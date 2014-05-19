@@ -44,7 +44,7 @@
 #include <hal/hal_core.h> /* TODO Could be removed? */
 #include <klocks.h>
 #include "heap.h"
-#include <generic/queue.h>
+#include <libkern/queue.h>
 #include <timers.h>
 #include <syscall.h>
 #include <kernel.h>

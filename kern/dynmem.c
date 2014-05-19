@@ -36,7 +36,7 @@
 #include <kerror.h>
 #include <klocks.h>
 #include <sys/sysctl.h>
-#include <generic/bitmap.h>
+#include <libkern/bitmap.h>
 #include <dynmem.h>
 
 #define DYNMEM_RC_POS       16

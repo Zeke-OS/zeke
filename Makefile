@@ -202,7 +202,7 @@ stats: clean
 help:
 	./tools/help.sh
 
-.PHONY: config kernel $(CRT) test clean
+.PHONY: config kernel $(CRT) test clean clean-doc
 
 # target_clean: clean - Clean all targets
 clean:
@@ -218,5 +218,8 @@ clean:
 	rm -f *.list
 	rm -f *.a
 	$(MAKE) -C $(CRT_DIR) clean
+
+# target_clean: clean-doc - Clean documenation targets.
+clean-doc:
 	rm -rf doc/man/*
 	make -C doc/book clean

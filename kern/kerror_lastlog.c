@@ -33,7 +33,7 @@
 #define KERNEL_INTERNAL
 #include <kstring.h>
 #include <kerror.h>
-#include <generic/strcbuf.h>
+#include <libkern/strcbuf.h>
 
 static char strbuf[1024];
 static struct strcbuf klogbuf = {

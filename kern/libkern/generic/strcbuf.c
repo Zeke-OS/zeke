@@ -30,8 +30,8 @@
  *******************************************************************************
  */
 
-#include "strcbuf.h"
 #include <kstring.h>
+#include <libkern/strcbuf.h>
 
 /**
  * Insert line to a buffer.
