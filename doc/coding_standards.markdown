@@ -7,15 +7,15 @@ Zeke.
 Directory Structure
 -------------------
 
-+ src/                  Most of the kernel code.
-+ src/generic/          Generic data structures.
-+ src/libkern/          Kernel "standard" library.
-+ src/libkern/kstring/  String functions.
-+ src/hal/              Harware abstraction layer.
-+ src/fs/               Virtual file system abstraction and other file systems.
-+ src/sched_X/          Thread scheduler implementations.
-+ src/test/             Kernel space unit tests.
-+ src/kunit/            In-kernel unit test framework.
++ kern/                 Most of the kernel code.
++ kern/libkern/         Kernel "standard" library.
++ kern/libkern/kstring/ String functions.
++ kern/libkern/generic/ Generic data structures.
++ kern/hal/             Harware abstraction layer.
++ kern/fs/              Virtual file system abstraction and other file systems.
++ kern/sched_X/         Thread scheduler implementations.
++ kern/test/            Kernel space unit tests.
++ kern/kunit/           In-kernel unit test framework (KUnit).
 + include/              User space library headers.
 + lib/                  C runtime libraries and user space libraries.
 + config/               Kernel build config.
@@ -23,7 +23,7 @@ Directory Structure
 + sbin/                 System utilities.
 + tools/                Build tools/scripts.
 + test/                 User space unit tests.
-+ test/punit/           User space unt test framework.
++ test/punit/           User space unit test framework (PUnit).
 
 
 Naming Conventions
