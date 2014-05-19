@@ -31,6 +31,11 @@
  *******************************************************************************
  */
 
+/** @addtogroup LIBC
+ * @{
+ */
+
+
 #pragma once
 #ifndef SEMAPHORE_H
 #define SEMAPHORE_H
@@ -49,3 +54,7 @@ typedef struct os_semaphore_cb {
 } os_semaphore_cb_t;
 
 #endif /* SEMAPHORE_H */
+
+/**
+  * @}
+  */

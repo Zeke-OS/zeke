@@ -31,6 +31,11 @@
  *******************************************************************************
  */
 
+/** @addtogroup LIBC
+ * @{
+ */
+
+
 #pragma once
 #ifndef SYSCALL_H
 #define SYSCALL_H
@@ -151,3 +156,8 @@ void set_errno(int new_value);
 #endif /* KERNEL_INTERNAL */
 
 #endif /* SYSCALL_H */
+
+/**
+ * @}
+ */
+

@@ -1,4 +1,8 @@
-/*-
+/**
+ * @file    string.h
+ * @author  Olli Vanhoja
+ * @brief   String functions.
+ * @section LICENSE
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -27,6 +31,10 @@
  * SUCH DAMAGE.
  *
  *	@(#)string.h	8.1 (Berkeley) 6/2/93
+ */
+
+/** @addtogroup LIBC
+ * @{
  */
 
 #ifndef _STRING_H_
@@ -133,3 +141,7 @@ void	 swab(const void * __restrict, void * __restrict, ssize_t);
 __END_DECLS
 
 #endif /* _STRING_H_ */
+
+/**
+ * @}
+ */

@@ -138,7 +138,11 @@ doc: doc-doxy doc-book
 
 # target_doc: doc-doxy - Compile doxygen documentation.
 doc-doxy:
-	doxygen
+	doxygen Doxyfile.kern
+
+# target_doc: doc-man - Generate man pages.
+doc-man:
+	doxygen Doxyfile.libc
 
 # target_doc: doc-book - Compile Zeke book.
 doc-book:
@@ -214,3 +218,5 @@ clean:
 	rm -f *.list
 	rm -f *.a
 	$(MAKE) -C $(CRT_DIR) clean
+	rm -rf doc/man/*
+	make -C doc/book clean

@@ -30,6 +30,11 @@
  *******************************************************************************
  */
 
+/** @addtogroup LIBC
+ * @{
+ */
+
+
 #pragma once
 #ifndef UNISTD_H
 #define UNISTD_H
@@ -84,3 +89,7 @@ unsigned sleep(unsigned seconds);
 __END_DECLS
 
 #endif /* UNISTD_H */
+
+/**
+ * @}
+ */

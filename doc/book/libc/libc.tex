@@ -1,16 +1,10 @@
 \part{C Library Functions}
 
-This part describes library function wrappers provided by the kernel syscall
-interface.
+\chapter{Introduction to Zeke libc}
 
-Zeke implements the most of the userland services by providing a shared memory
-region in virtual memory that contains libc wrappers to be used by user space
-code. These functions can be called like any library function and they will
-make the actual syscall.
-
-The library interface can be further wrapped with another layer of
-"abstraction", specifically a libc library, or libc implementation may just
-make direct syscalls if desired so.
+Zeke libc is a partially BSD compatible C standard library tailored for Zeke.
+This part describes library functions and functionality currently available for
+user space programs.
 
 \chapter{Kernel}
 \section{sysctl}

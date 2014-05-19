@@ -1,4 +1,8 @@
-/*-
+/**
+ * @file    stdlib.h
+ * @author  Olli Vanhoja
+ * @brief   Standard General Utilities Library.
+ * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -28,7 +32,10 @@
  * SUCH DAMAGE.
  *
  *	@(#)stdlib.h	8.5 (Berkeley) 5/19/95
- * $FreeBSD$
+ */
+
+/** @addtogroup LIBC
+ * @{
  */
 
 /* TODO Lot og stuff is missing! */
@@ -48,3 +55,7 @@ void exit(int status);
 __END_DECLS
 
 #endif /* _STDLIB_H_ */
+
+/**
+ * @}
+ */
