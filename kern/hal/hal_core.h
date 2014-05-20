@@ -70,7 +70,14 @@ void init_stack_frame(struct _ds_pthread_create * thread_def,
         sw_stack_frame_t * sframe, int priv);
 
 /**
- * Test and set
+ * Test if locked.
+ * @param lock is pointer to a lock variable.
+ * @return Lock value.
+ */
+int test_lock(int * lock);
+
+/**
+ * Test and set.
  * @param lock is pointer to a lock variable.
  * @return 0 if set succeeded.
  */

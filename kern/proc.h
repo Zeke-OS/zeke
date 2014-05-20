@@ -144,9 +144,17 @@ typedef struct {
 #define PROC_DABERR_ENOMEM  4
 
 extern int maxproc;
+extern int act_maxproc;
 extern int nprocs;
 extern pid_t current_process_id;
 extern proc_info_t * curproc;
+
+/* proclock - Protects proc array, data structures and variables in proc. */
+extern mtx_t proclock;
+#define PROC_LOCK()         mtx_spinlock(&proclock)
+#define PROC_UNLOCK()       mtx_unlock(&proclock)
+#define PROC_TESTLOCK()     mtx_test(&proclock)
+#define PROC_LOCK_INIT()    mtx_init(&proclock, MTX_DEF | MTX_SPIN)
 
 void proc_init(void) __attribute__((constructor));
 

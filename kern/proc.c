@@ -53,11 +53,11 @@
 
 static proc_info_t *(*_procarr)[];  /*!< processes indexed by pid */
 int maxproc = configMAXPROC;        /*!< Maximum # of processes, set. */
-static int _cur_maxproc;            /*!< Effective maxproc. */
+int act_maxproc;                    /*!< Effective maxproc. */
 int nprocs = 1;                     /*!< Current # of procs. */
 pid_t current_process_id;           /*!< PID of current process. */
 proc_info_t * curproc;              /*!< PCB of the current process. */
-static pid_t _lastpid;              /*!< last allocated pid. */
+static pid_t proc_lastpid;              /*!< last allocated pid. */
 
 extern vnode_t kerror_vnode;
 
@@ -65,11 +65,11 @@ extern void * __bss_break __attribute__((weak));
 
 #define SIZEOF_PROCARR()    ((maxproc + 1) * sizeof(proc_info_t *))
 
-/* proclock - Protects procarray and variables in proc. */
-static mtx_t proclock;
-#define PROCARR_LOCK()      mtx_spinlock(&proclock)
-#define PROCARR_UNLOCK()    mtx_unlock(&proclock)
-#define PROCARR_LOCK_INIT() mtx_init(&proclock, MTX_DEF | MTX_SPIN)
+/** proclock.
+ * Protects proc array, data structures and variables in proc.
+ * This should be only touched by using macros defined in proc.h file.
+ */
+mtx_t proclock;
 
 SYSCTL_INT(_kern, KERN_MAXPROC, maxproc, CTLFLAG_RWTUN,
     &maxproc, 0, "Maximum number of processes");
@@ -77,7 +77,6 @@ SYSCTL_INT(_kern, KERN_MAXPROC, nprocs, CTLFLAG_RD,
     &nprocs, 0, "Current number of processes");
 
 static void init_kernel_proc(void);
-
 pid_t proc_update(void); /* Used in HAL, so not static */
 
 /**
@@ -88,7 +87,7 @@ void proc_init(void)
     SUBSYS_INIT();
     SUBSYS_DEP(vralloc_init);
 
-    PROCARR_LOCK_INIT();
+    PROC_LOCK_INIT();
     procarr_realloc();
     memset(_procarr, 0, SIZEOF_PROCARR());
 
@@ -184,10 +183,10 @@ void procarr_realloc(void)
     proc_info_t * (*tmp)[];
 
     /* Skip if size is not changed */
-    if (maxproc == _cur_maxproc)
+    if (maxproc == act_maxproc)
         return;
 
-    PROCARR_LOCK();
+    PROC_LOCK();
     tmp = krealloc(_procarr, SIZEOF_PROCARR());
     if ((tmp == 0) && (_procarr == 0)) {
         char buf[80];
@@ -197,8 +196,8 @@ void procarr_realloc(void)
         panic(buf);
     }
     _procarr = tmp;
-    _cur_maxproc = maxproc;
-    PROCARR_UNLOCK();
+    act_maxproc = maxproc;
+    PROC_UNLOCK();
 }
 
 /**
@@ -207,38 +206,11 @@ void procarr_realloc(void)
  */
 void procarr_insert(proc_info_t * new_proc)
 {
-    PROCARR_LOCK();
+    PROC_LOCK();
     /* TODO Bound check */
     (*_procarr)[new_proc->pid] = new_proc;
     nprocs++;
-    PROCARR_UNLOCK();
-}
-
-/**
- * Get a random PID for a new process.
- * @return Returns a random PID.
- */
-pid_t proc_get_random_pid(void)
-{
-    pid_t newpid;
-    pid_t last_maxproc;
-
-    PROCARR_LOCK();
-    last_maxproc = _cur_maxproc;
-    PROCARR_UNLOCK();
-
-    newpid = last_maxproc + 1;
-
-    /* The new PID will be "randomly" selected between _lastpid and maxproc */
-    do {
-        if (newpid > last_maxproc)
-            newpid = _lastpid + kunirand(last_maxproc - _lastpid - 1) + 1;
-        newpid++;
-    } while (proc_get_struct(newpid));
-
-    _lastpid = newpid;
-
-    return newpid;
+    PROC_UNLOCK();
 }
 
 #if 0
@@ -277,14 +249,21 @@ int proc_replace(pid_t pid, void * image, size_t size)
  */
 proc_info_t * proc_get_struct(pid_t pid)
 {
+    /* TODO We actually want to require proclock */
+#if 0
+    if (!PROC_TESTLOCK()) {
+        KERROR(KERROR_WARN, "proclock is required before entering proc_get_struct()");
+    }
+#endif
+
     /* TODO do state check properly */
-    if (pid > _cur_maxproc) {
+    if (pid > act_maxproc) {
 #if configDEBUG != 0
         char buf[80];
 
         ksprintf(buf, sizeof(buf),
                 "Invalid PID : %u\ncurrpid : %u\nmaxproc : %i\nstate %x",
-                pid, current_process_id, _cur_maxproc, (*_procarr)[pid]->state);
+                pid, current_process_id, act_maxproc, (*_procarr)[pid]->state);
         KERROR(KERROR_DEBUG, buf);
 #endif
         return 0;

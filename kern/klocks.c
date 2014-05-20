@@ -132,6 +132,15 @@ void mtx_unlock(mtx_t * mtx)
 }
 
 /**
+ * Test if locked.
+ * @param mtx is a mutex struct.
+ */
+int mtx_test(mtx_t * mtx)
+{
+    return test_lock((int *)(&(mtx->mtx_lock)));
+}
+
+/**
  * @}
  */
 

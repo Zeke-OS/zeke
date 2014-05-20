@@ -52,6 +52,8 @@
 #include <vralloc.h>
 #include <proc.h>
 
+static pid_t proc_lastpid;  /*!< last allocated pid. */
+
 static int clone_L2_pt(proc_info_t * const new_proc, proc_info_t * const old_proc);
 static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc);
 
@@ -410,6 +412,35 @@ static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc)
 
     /* Set newly forked thread as the last child in chain. */
     last_node->inh.next_child = new_proc;
+}
+
+/**
+ * Get a random PID for a new process.
+ * @return Returns a random PID.
+ */
+pid_t proc_get_random_pid(void)
+{
+    const pid_t last_maxproc = act_maxproc;
+    pid_t newpid;
+
+    newpid = last_maxproc + 1;
+
+    /* Locking here shouldn't be strictly necessary but better safe than
+     * sorry. */
+    PROC_LOCK();
+
+    /* The new PID will be "randomly" selected between proc_lastpid and maxproc */
+    do {
+        if (newpid > last_maxproc)
+            newpid = proc_lastpid + kunirand(last_maxproc - proc_lastpid - 1) + 1;
+        newpid++;
+    } while (proc_get_struct(newpid));
+
+    proc_lastpid = newpid;
+
+    PROC_UNLOCK();
+
+    return newpid;
 }
 
 /**
