@@ -31,18 +31,23 @@
  */
 
 /** @addtogroup HAL
-* @{
-*/
+ * @{
+ */
+
+/** @addtogroup UART
+ * @{
+ */
+
 
 #pragma once
 #ifndef UART_H
 #define UART_H
 
+#include <autoconf.h>
 #include <stdint.h>
 
-/*/ TODO Make configurable from the global conf file */
 /* UART HAL Configuration */
-#define UART_PORTS_MAX 2
+#define UART_PORTS_MAX configUART_MAX_PORTS
 
 /**
  * UART data bits.
@@ -111,5 +116,9 @@ uart_port_t * uart_getport(int port);
 #endif /* UART_H */
 
 /**
-* @}
-*/
+ * @}
+ */
+
+/**
+ * @}
+ */

@@ -31,8 +31,12 @@
  */
 
 /** @addtogroup HAL
-* @{
-*/
+ * @{
+ */
+
+/** @addtogroup UART
+ * @{
+ */
 
 #include "uart.h"
 
@@ -69,5 +73,10 @@ uart_port_t * uart_getport(int port)
 }
 
 /**
-* @}
-*/
+ * @}
+ */
+
+
+/**
+ * @}
+ */

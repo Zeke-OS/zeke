@@ -31,12 +31,17 @@
  */
 
 /** @addtogroup HAL
-  * @{
-  */
+ * @{
+ */
+
+/** @addtogroup MMU
+ * @{
+ */
+
 
 /** @addtogroup ARM11
-  * @{
-  */
+ * @{
+ */
 
 #include <kstring.h>
 #include <kerror.h>
@@ -719,9 +724,14 @@ static const char * get_dab_strerror(uint32_t fsr)
 }
 
 /**
-  * @}
-  */
+ * @}
+ */
+
 
 /**
-  * @}
-  */
+ * @}
+ */
+
+/**
+ * @}
+ */

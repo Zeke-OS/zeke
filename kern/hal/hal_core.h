@@ -32,8 +32,8 @@
  */
 
 /** @addtogroup HAL
-  * @{
-  */
+ * @{
+ */
 
 #pragma once
 #ifndef HAL_CORE_H
@@ -62,16 +62,16 @@ extern volatile size_t flag_kernel_tick;
 
 /**
  * Init stack frame.
- * @param thread_def Thread definitions
- * @param a_del_thread Address of del_thread function
- * @param priv set thread as privileged/kernel mode thread.
+ * @param thread_def    contains the thread definitions.
+ * @param sframe        is the stack frame used when the thread is put to sleep.
+ * @param priv          set thread as privileged/kernel mode thread.
  */
 void init_stack_frame(struct _ds_pthread_create * thread_def,
         sw_stack_frame_t * sframe, int priv);
 
 /**
  * Test and set
- * @param lock pointer to the lock variable.
+ * @param lock is pointer to a lock variable.
  * @return 0 if set succeeded.
  */
 int test_and_set(int * lock);
@@ -106,6 +106,5 @@ void set_interrupt_state(istate_t state);
 #endif /* HAL_CORE_H */
 
 /**
-  * @}
-  */
-
+ * @}
+ */

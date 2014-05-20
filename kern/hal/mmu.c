@@ -31,8 +31,9 @@
  */
 
 /** @addtogroup HAL
-  * @{
-  */
+ * Kernel hardware abstraction layer interface.
+ * @{
+ */
 
 #define KERNEL_INTERNAL
 #include <kinit.h>
@@ -216,5 +217,5 @@ void mmu_calc_pfcps(void)
 }
 
 /**
-  * @}
-  */
+ * @}
+ */

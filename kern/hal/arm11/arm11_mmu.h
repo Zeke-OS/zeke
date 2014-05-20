@@ -31,12 +31,16 @@
  */
 
 /** @addtogroup HAL
-  * @{
-  */
+ * @{
+ */
+
+/** @addtogroup MMU
+ * @{
+ */
 
 /** @addtogroup ARM11
-  * @{
-  */
+ * @{
+ */
 
 #pragma once
 #ifndef ARM11_MMU_H
@@ -132,9 +136,14 @@
 #endif /* ARM11_MMU_H */
 
 /**
-  * @}
-  */
+ * @}
+ */
+
 
 /**
-  * @}
-  */
+ * @}
+ */
+
+/**
+ * @}
+ */

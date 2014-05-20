@@ -34,6 +34,11 @@
   * @{
   */
 
+/** @addtogroup MMU
+ * @{
+ */
+
+
 #pragma once
 #ifndef MMU_H
 #define MMU_H
@@ -199,5 +204,10 @@ int mmu_ptcpy(mmu_pagetable_t * dest, const mmu_pagetable_t * src);
 #endif /* MMU_H */
 
 /**
-  * @}
-  */
+ * @}
+ */
+
+
+/**
+ * @}
+ */

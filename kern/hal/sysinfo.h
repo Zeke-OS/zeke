@@ -31,8 +31,8 @@
  */
 
 /** @addtogroup HAL
-  * @{
-  */
+ * @{
+ */
 
 #ifndef SYSINFO_H
 #define SYSINFO_H
@@ -54,5 +54,5 @@ extern sysinfo_t sysinfo;
 #endif /* SYSINFO_H */
 
 /**
-  * @}
-  */
+ * @}
+ */
