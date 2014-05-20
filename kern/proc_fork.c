@@ -36,12 +36,12 @@
   */
 
 #define KERNEL_INTERNAL 1
-#include <sched.h>
 #include <kstring.h>
 #include <libkern.h>
+#include <sched.h>
+#include <thread.h>
 #include <kerror.h>
 #include <kinit.h>
-#include <syscalldef.h>
 #include <syscall.h>
 #include <errno.h>
 #include <vm/vm.h>

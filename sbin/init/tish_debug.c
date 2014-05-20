@@ -83,7 +83,7 @@ void tish_debug(char ** args)
         arg = kstrtok(0, DELIMS, args);
         if (!strcmp(arg, "fatal")) {
             puts("Trying fatal DAB\n");
-            int * x = 0xffffffff;
+            int * x = (void *)0xfffffff;
             *x = 1;
         } else {
             puts(invalid_arg);

@@ -458,7 +458,6 @@ pthread_t sched_thread_fork(void)
     clone_stack_frame(link, sfp);
 
     retval = new_id;
-out:
     return retval;
 }
 

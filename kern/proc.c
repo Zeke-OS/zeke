@@ -41,7 +41,6 @@
 #include <libkern.h>
 #include <kerror.h>
 #include <kinit.h>
-#include <syscalldef.h>
 #include <syscall.h>
 #include <errno.h>
 #include <vm/vm.h>
@@ -157,8 +156,8 @@ static void init_kernel_proc(void)
 
     /* Break values */
     kernel_proc->brk_start = __bss_break;
-    kernel_proc->brk_stop = kprocvm_heap->mmu.vaddr
-        + mmu_sizeof_region(&(kprocvm_heap->mmu)) - 1;
+    kernel_proc->brk_stop = (void *)(kprocvm_heap->mmu.vaddr
+        + mmu_sizeof_region(&(kprocvm_heap->mmu)) - 1);
 
     /* File descriptors */
     kernel_proc->files = kmalloc(SIZEOF_FILES(3));

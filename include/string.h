@@ -42,12 +42,6 @@
 
 #include <sys/cdefs.h>
 #include <sys/_null.h>
-#include <sys/_types.h>
-
-#ifndef _SIZE_T_DECLARED
-typedef	__size_t	size_t;
-#define	_SIZE_T_DECLARED
-#endif
 
 __BEGIN_DECLS
 #if __XSI_VISIBLE >= 600
@@ -124,20 +118,11 @@ size_t	 strxfrm(char * __restrict, const char * __restrict, size_t);
 
 #ifndef _SWAB_DECLARED
 #define _SWAB_DECLARED
-
-#ifndef _SSIZE_T_DECLARED
-typedef	__ssize_t	ssize_t;
-#define	_SSIZE_T_DECLARED
-#endif /* _SIZE_T_DECLARED */
-
 void	 swab(const void * __restrict, void * __restrict, ssize_t);
 #endif /* _SWAB_DECLARED */
 
 #endif /* __BSD_VISIBLE */
 
-#if __POSIX_VISIBLE >= 200809 || defined(_XLOCALE_H_)
-#include <xlocale/_string.h>
-#endif
 __END_DECLS
 
 #endif /* _STRING_H_ */
