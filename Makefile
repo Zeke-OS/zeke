@@ -122,6 +122,10 @@ MODAS = $(addsuffix .a, $(MODULES))
 .SUFFIXES:						# Delete the default suffixes
 .SUFFIXES: .c .bc .o .h .S ._S	# Define our suffix list
 
+# Tools
+UNIFDEF = ./tools/unifdef/unifdef
+UNIFDEFALL = ./tools/unifdef/zunifdefall.sh
+
 # Targets ######################################################################
 # Help lines
 # '# target: '		Generic target
@@ -130,8 +134,9 @@ MODAS = $(addsuffix .a, $(MODULES))
 # '# target_clean'	Cleaning target
 # '# target_doc'	Documentation target
 
-# target_comp: all - Make config and compile kernel
-all: config kernel
+# target_comp: all - Make config and compile kernel.
+all: tools config kernel
+
 
 # target_doc: doc - Compile all documentation.
 doc: doc-book doc-man
@@ -145,7 +150,16 @@ doc-man: clean-man
 doc-book:
 	make -C doc/book all
 
-# target_comp: config - Update configuration from $(CONFIG_MK)
+
+# target_comp: tools - Compilation helper tools.
+tools: $(UNIFDEF)
+	@echo Compiling tools
+
+$(UNIFDEF):
+	make -C tools/unifdef unifdef
+
+
+# target_comp: config - Update configuration from config file.
 config: $(AUTOCONF_H)
 
 $(AUTOCONF_H): $(CONFIG_MK)
@@ -154,15 +168,16 @@ $(AUTOCONF_H): $(CONFIG_MK)
 $(CONFIG_MK):
 # End of config
 
+# Kernel
 kernel: kernel.img config
 
 $(STARTUP_O): $(STARTUP)
 	@echo "AS $@"
 	@$(ARMGNU)-as $< -o $(STARTUP_O)
 
-$(ASOBJS): $(ASRC-1)
+$(ASOBJS): $(ASRC-1) $(UNIFDEF)
 	@echo "AS $@"
-	@unifdefall $(AIDIR) $*.S | $(ARMGNU)-as -am $(AIDIR) -o $@
+	@$(UNIFDEFALL) $(AIDIR) $*.S | $(ARMGNU)-as -am $(AIDIR) -o $@
 
 $(BCS): $(SRC-1)
 	@echo "CC $@"
@@ -190,6 +205,8 @@ kernel.img: $(MEMMAP) $(STARTUP_O) $(MODAS) $(CRT)
 	$(ARMGNU)-ld -o kernel.elf -T $(MEMMAP) $(LDFLAGS) $(STARTUP_O) --whole-archive $(MODAS) --no-whole-archive $(CRT)
 	$(ARMGNU)-objdump -D kernel.elf > kernel.list
 	$(ARMGNU)-objcopy -O binary kernel.elf kernel.img
+# End of Kernel
+
 
 # target_doc: stats - Calculate some stats.
 stats: clean
@@ -199,9 +216,9 @@ stats: clean
 help:
 	./tools/help.sh
 
-.PHONY: config kernel $(CRT) test clean clean-doc
+.PHONY: config tools kernel $(CRT) test clean clean-doc
 
-# target_clean: clean - Clean all targets
+# target_clean: clean - Clean all targets.
 clean:
 	rm -f $(AUTOCONF_H)
 	rm -f $(ASOBJS) $(OBJS) $(STARTUP_O)
@@ -215,6 +232,10 @@ clean:
 	rm -f *.list
 	rm -f *.a
 	$(MAKE) -C $(CRT_DIR) clean
+
+# target_clean: clean-tools - Clean all tools.
+clean-tools:
+	make -C tools/unifdef clean
 
 # target_clean: clean-doc - Clean documenation targets.
 clean-doc:
