@@ -30,6 +30,10 @@
  *******************************************************************************
  */
 
+/** @addtogroup LIBC
+ * @{
+ */
+
 #define KERNEL_INTERNAL
 #include <kstring.h>
 #include <hal/mmu.h>
@@ -141,6 +145,14 @@ void ptlist_free(struct ptlist * ptlist_head)
     }
 }
 
+/** @addtogroup copy copyin, copyout, copyinstr
+ * Kernel copy functions.
+ *
+ * The copy functions are designed to copy contiguous data from one address
+ * to another from user-space to kernel-space and vice-versa.
+ * @{
+ */
+
 /**
  * Copy data from user-space to kernel-space.
  * Copy len bytes of data from the user-space address uaddr to the kernel-space
@@ -226,6 +238,7 @@ int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done)
     size_t retval_cpy;
     int retval = 0;
 
+    /* TODO Translation */
     retval_cpy = strlcpy(kaddr, uaddr, len);
     if (retval_cpy >= len) {
         if (done != 0)
@@ -237,6 +250,10 @@ int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done)
 
     return retval;
 }
+
+/**
+ * @}
+ */
 
 /**
  * Update usr access permissions based on region->usr_rw.
@@ -455,3 +472,7 @@ static int test_ap_user(uint32_t rw, uint32_t ap)
 
     return 0;
 }
+
+/**
+ * @}
+ */

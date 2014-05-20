@@ -134,15 +134,12 @@ MODAS = $(addsuffix .a, $(MODULES))
 all: config kernel
 
 # target_doc: doc - Compile all documentation.
-doc: doc-doxy doc-book
-
-# target_doc: doc-doxy - Compile doxygen documentation.
-doc-doxy:
-	doxygen Doxyfile.kern
+doc: doc-book doc-man
 
 # target_doc: doc-man - Generate man pages.
-doc-man:
+doc-man: clean-man
 	doxygen Doxyfile.libc
+	doxygen Doxyfile.kern
 
 # target_doc: doc-book - Compile Zeke book.
 doc-book:
@@ -221,5 +218,8 @@ clean:
 
 # target_clean: clean-doc - Clean documenation targets.
 clean-doc:
-	rm -rf doc/man/*
 	make -C doc/book clean
+
+# target_clean: clean-man - Clean man pages.
+clean-man:
+	rm -rf doc/man/*
