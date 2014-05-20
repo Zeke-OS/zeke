@@ -30,6 +30,10 @@
  *******************************************************************************
  */
 
+/** @addtogroup Kernel
+ * @{
+ */
+
 /*
  * This implementation of kernel locks is intended for handling mutex on
  * multithreaded/pre-emptive kernel.
@@ -38,6 +42,13 @@
 #define KERNEL_INTERNAL
 #include <hal/hal_core.h>
 #include <klocks.h>
+
+/**
+ * @addtogroup mtx mtx_init, mtx_spinlock, mtx_trylock
+ * Kernel mutex lock functions.
+ * @sa rwlock
+ * @{
+ */
 
 /**
  * Initialize a kernel mutex.
@@ -121,7 +132,18 @@ void mtx_unlock(mtx_t * mtx)
 }
 
 /**
- * Init rwlock.
+ * @}
+ */
+
+/**
+ * @addtogroup rwlock rwlocks
+ * Readers-writer lock implementation for in-kernel usage.
+ * @sa mtx
+ * @{
+ */
+
+/**
+ * Initialize rwlock object.
  * @param l is the rwlock.
  */
 void rwlock_init(rwlock_t * l)
@@ -163,7 +185,7 @@ get_wrlock:
 }
 
 /**
- * Try to get writer lock.
+ * Try to get write lock.
  * @param l is the rwlock.
  * @return Returns 0 if lock achieved; Otherwise value other than zero.
  */
@@ -198,7 +220,7 @@ void rwlock_wrunlock(rwlock_t * l)
 }
 
 /**
- * Get readers lock.
+ * Get reader's lock.
  * @param l is the rwlock.
  */
 void rwlock_rdlock(rwlock_t * l)
@@ -227,7 +249,7 @@ get_rdlock:
 }
 
 /**
- * Try to get readers lock.
+ * Try to get reader's lock.
  * @param is the rwlock.
  * @return Returns 0 if lock achieved; Otherwise value other than zero.
  */
@@ -249,7 +271,7 @@ out:
 }
 
 /**
- * Release reders lock.
+ * Release reader's lock.
  * @param l is the rwlock.
  */
 void rwlock_rdunlock(rwlock_t * l)
@@ -260,3 +282,11 @@ void rwlock_rdunlock(rwlock_t * l)
     }
     mtx_unlock(&(l->lock));
 }
+
+/**
+ * @}
+ */
+
+/**
+ * @}
+ */
