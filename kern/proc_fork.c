@@ -408,14 +408,14 @@ static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc)
 
 pid_t proc_get_random_pid(void)
 {
-    const pid_t last_maxproc = act_maxproc;
+
+    pid_t last_maxproc;
     pid_t newpid;
 
-    newpid = last_maxproc + 1;
 
-    /* Locking here shouldn't be strictly necessary but better safe than
-     * sorry. */
     PROC_LOCK();
+    last_maxproc = act_maxproc;
+    newpid = last_maxproc + 1;
 
     /* The new PID will be "randomly" selected between proc_lastpid and maxproc */
     do {
