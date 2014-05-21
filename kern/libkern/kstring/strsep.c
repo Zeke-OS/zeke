@@ -1,4 +1,9 @@
-/*-
+/**
+ *******************************************************************************
+ * @file    strsep.c
+ * @author  Olli Vanhoja
+ * @brief
+ * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1990, 1993
  *  The Regents of the University of California.  All rights reserved.
@@ -30,17 +35,6 @@
 
 #include <kstring.h>
 
-/*
- * Get next token from string *stringp, where tokens are possibly-empty
- * strings separated by characters from delim.
- *
- * Writes NULs into the string at *stringp to end tokens.
- * delim need not remain constant from call to call.
- * On return, *stringp points past the last NUL written (if there might
- * be further tokens), or is NULL (if there are definitely no more tokens).
- *
- * If *stringp is NULL, strsep returns NULL.
- */
 char * strsep(char ** stringp, const char * delim)
 {
     char * s;

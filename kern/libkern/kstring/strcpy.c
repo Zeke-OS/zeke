@@ -32,11 +32,6 @@
 
 #include <kstring.h>
 
-/**
- * Copy string.
- * @param destination Pointer to the destination string.
- * @param source Pointer to the source string.
- */
 char * strcpy(char * destination, const char * source)
 {
 #if configSTRING_OPT_SIZE != 0

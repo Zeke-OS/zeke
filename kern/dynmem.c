@@ -127,13 +127,6 @@ void dynmem_init(void)
     SUBSYS_INITFINI("dynmem init OK");
 }
 
-/**
- * Allocate a contiguous memory region from dynmem area.
- * @param size      Region size in 1MB blocks.
- * @param ap        Access permission.
- * @param control   Control settings.
- * @return  Address to the allocated region. Returns 0 if out of memory.
- */
 void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t control)
 {
     uint32_t pos;
@@ -163,17 +156,6 @@ out:
     return retval;
 }
 
-/**
- * Forces a new memory region allocation from the given address even if it's
- * already reserved.
- * This function will never fail, and might be destructive and may even
- * corrupt the allocation table.
- * @param addr  Address.
- * @param size  Region size in 1MB blocks.
- * @param ap    Access permission.
- * @param control Control settings.
- * @return  address to the allocated region.
- */
 void * dynmem_alloc_force(void * addr, size_t size, uint32_t ap, uint32_t control)
 {
     size_t pos = (size_t)addr - DYNMEM_START;
@@ -195,10 +177,6 @@ void * dynmem_alloc_force(void * addr, size_t size, uint32_t ap, uint32_t contro
     return retval;
 }
 
-/**
- * Add reference to the already allocated region.
- * @return Address to the allocated region; Otherwise 0.
- */
 void * dynmem_ref(void * addr)
 {
     size_t i = (size_t)addr - DYNMEM_START;
@@ -219,11 +197,6 @@ void * dynmem_ref(void * addr)
     return addr;
 }
 
-/**
- * Decrement dynmem region reference counter. If the final value of a reference
- * counter is zero then the dynmem region is freed and unmapped.
- * @param addr  Physical address of the dynmem region to be freed.
- */
 void dynmem_free_region(void * addr)
 {
     uint32_t i, j, rc;
@@ -350,13 +323,6 @@ static int update_dynmem_region_struct(void * base)
     return 0;
 }
 
-/**
- * Clones a dynemem region.
- * Makes 1:1 copy of a given dynmem region to a new location in memory.
- * @param addr is the dynmem region address.
- * @return  Returns pointer to a clone of the dynmem area; Otherwise 0 in case
- *          of cloning failed.
- */
 void * dynmem_clone(void * addr)
 {
     mmu_region_t cln;
@@ -408,17 +374,6 @@ void * dynmem_clone(void * addr)
     return new_region;
 }
 
-/**
- * Test for dynmem access.
- * Return value format:
- * 3  2    0
- * +--+----+
- * |XN| AP |
- * +--+----+
- * @param addr  is the physical base address.
- * @param len   is the size of block tested.
- * @return Returns 0 if addr is invalid; Otherwise returns ap flags + xn bit.
- */
 uint32_t dynmem_acc(void * addr, size_t len)
 {
     size_t size;

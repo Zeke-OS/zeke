@@ -30,10 +30,6 @@
  *******************************************************************************
  */
 
-/** @addtogroup fs
- * @{
- */
-
 #define KERNEL_INTERNAL 1
 #include <kerror.h>
 #include <kstring.h>
@@ -156,22 +152,12 @@ static fs_t * find_fs(const char * fsname)
     return (node != 0) ? node->fs : 0;
 }
 
-/**
- * Initialize a file system superblock iterator.
- * Iterator is used to iterate over all superblocks of mounted file systems.
- * @param it is an untilitialized superblock iterator struct.
- */
 void fs_init_sb_iterator(sb_iterator_t * it)
 {
     it->curr_fs = fsl_head;
     it->curr_sb = fsl_head->fs->sbl_head;
 }
 
-/**
- * Iterate over superblocks of mounted file systems.
- * @param it is the iterator struct.
- * @return The next superblock or 0.
- */
 fs_superblock_t * fs_next_sb(sb_iterator_t * it)
 {
     fs_superblock_t * retval = (it->curr_sb != 0) ? &(it->curr_sb->sbl_sb) : 0;
@@ -195,9 +181,6 @@ out:
     return retval;
 }
 
-/**
- * Get next free pseudo fs minor code.
- */
 unsigned int fs_get_pfs_minor(void)
 {
     unsigned int static pfs_minor = 0;
@@ -351,7 +334,3 @@ uintptr_t fs_syscall(uint32_t type, void * p)
         return (uintptr_t)NULL;
     }
 }
-
-/**
- * @}
- */

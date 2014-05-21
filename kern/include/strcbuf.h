@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    llist.h
+ * @file    strcbuf.h
  * @author  Olli Vanhoja
- * @brief   Generic doubly linked list.
+ * @brief   Generic circular buffer for strings.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,26 +30,40 @@
  *******************************************************************************
  */
 
+/** @addtogroup strcbuf
+ * @{
+ */
+
 #pragma once
-#ifndef DLLIST_H
-#define DLLIST_H
+#ifndef STRCBUF_H
+#define STRCBUF_H
 
 #include <stddef.h>
-#include "llist.h"
+
+struct strcbuf {
+    size_t start;
+    size_t end;
+    size_t len;
+    char * data;
+};
 
 /**
- * Create a new doubly linked list.
- * @param type is the type of nodes in this list.
+ * Insert line to a buffer.
+ * @param buf is the buffer.
+ * @param[in] msg is a zero terminated string.
+ * @param len is the length of msg.
  */
-#define dllist_create(type, llist) _dllist_create(offsetof(type, llist))
-
-llist_t * _dllist_create(size_t offset);
+void strcbuf_insert(struct strcbuf * buf, const char * msg, size_t len);
 
 /**
- * Destroy doubly linked list.
- * @param lst the list that should be destroyed.
- * @note All nodes should be kmalloc'd.
+ * Remove one line from a buffer.
+ * @param[out]  dst is the destination array.
+ * @param       len is the size of dst.
  */
-void dllist_destroy(llist_t * lst);
+size_t strcbuf_getline(struct strcbuf * buf, char * dst, size_t len);
 
-#endif /* DLLIST_H */
+#endif /* STRCBUF_H */
+
+/**
+ * @}
+ */

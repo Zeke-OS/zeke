@@ -45,10 +45,6 @@
 
 #define KSTACK_SIZE ((MMU_VADDR_TKSTACK_END - MMU_VADDR_TKSTACK_START) + 1)
 
-/**
- * Scheduler handler.
- * This is mainly called when timer ticks.
- */
 void sched_handler(void)
 {
     threadInfo_t * const prev_thread = current_thread;
@@ -79,10 +75,6 @@ void sched_handler(void)
     }
 }
 
-/**
- * Initialize thread kernel mode stack.
- * @param th is a pointer to the thread.
- */
 void thread_init_kstack(threadInfo_t * th)
 {
     /* Create kstack */
@@ -96,9 +88,6 @@ void thread_init_kstack(threadInfo_t * th)
     th->kstack_region->mmu.pt = &mmu_pagetable_system;
 }
 
-/**
- * Get thread id of the current thread.
- */
 pthread_t get_current_tid(void)
 {
     if (!current_thread)
@@ -106,11 +95,6 @@ pthread_t get_current_tid(void)
     return (pthread_t)(current_thread->id);
 }
 
-/**
- * Get stack frame of the current thread.
- * @return  Returns an address to the stack frame of the current thread;
- *          Or NULL if current_thread is not set.
- */
 void * thread_get_curr_stackframe(void)
 {
     return current_thread ? &(current_thread->stack_frame) : NULL;

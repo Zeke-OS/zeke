@@ -38,12 +38,6 @@
 
 #include <kstring.h>
 
-/**
- * Validate null terminated string.
- * Return (1) if the buffer pointed to by kernel pointer 'buffer' and
- * of length 'bufferlen' contains a valid NUL-terminated string.
- * @param buffer
- */
 int strvalid(const char * buf, size_t len)
 {
     size_t i;

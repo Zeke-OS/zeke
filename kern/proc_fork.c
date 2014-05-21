@@ -31,10 +31,6 @@
  *******************************************************************************
  */
 
-/** @addtogroup Process
-  * @{
-  */
-
 #define KERNEL_INTERNAL 1
 #include <kstring.h>
 #include <libkern.h>
@@ -51,17 +47,13 @@
 #include <kmalloc.h>
 #include <vralloc.h>
 #include <proc.h>
+#include "_proc.h"
 
 static pid_t proc_lastpid;  /*!< last allocated pid. */
 
 static int clone_L2_pt(proc_info_t * const new_proc, proc_info_t * const old_proc);
 static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc);
 
-/**
- * Create a new process.
- * @param pid   Process id.
- * @return  New PID; 0 if returning fork; -1 if unable to fork.
- */
 pid_t proc_fork(pid_t pid)
 {
     /*
@@ -414,10 +406,6 @@ static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc)
     last_node->inh.next_child = new_proc;
 }
 
-/**
- * Get a random PID for a new process.
- * @return Returns a random PID.
- */
 pid_t proc_get_random_pid(void)
 {
     const pid_t last_maxproc = act_maxproc;
@@ -442,7 +430,3 @@ pid_t proc_get_random_pid(void)
 
     return newpid;
 }
-
-/**
-  * @}
-  */

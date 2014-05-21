@@ -32,13 +32,6 @@
 
 #include <kstring.h>
 
-/**
- * Convert uint32_t integer to a hex string.
- * @param str Array in memory where to store the resulting null-terminated
- *            string.
- * @param value Value to be converted to a string.
- * @return number of characters inserted.
- */
 int uitoah32(char * str, uint32_t value)
 {
     int i = 2, n;

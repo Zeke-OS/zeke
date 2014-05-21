@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    vralloc.h
+ * @file    atag.c
  * @author  Olli Vanhoja
- * @brief   Virtual Region Allocator.
+ * @brief   ATAG scanner.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,35 +30,18 @@
  *******************************************************************************
  */
 
-/** @addtogroup Kernel
- * @{
- */
+/** @addtogroup HAL
+  * @{
+  */
 
-/** @addtogroup vralloc
- * @{
- */
+#pragma once
+#ifndef ATAG_H
+#define ATAG_H
 
-#ifndef VRALLOC_H
-#define VRALLOC_H
-#ifndef KERNEL_INTERNAL
-#define KERNEL_INTERNAL
-#endif
-#include <stdint.h>
-#include <vm/vm.h>
+void atag_scan(uint32_t fw, uint32_t mtype, uint32_t * atag_addr);
 
-#define VRALLOC_ALLOCATOR_ID 0xBE57
-
-void vralloc_init(void) __attribute__((constructor));
-vm_region_t * vralloc(size_t size);
-struct vm_region * vr_rclone(struct vm_region * old_region);
-void vrfree(struct vm_region * region);
-
-#endif /* VRALLOC_H */
+#endif /* ATAG_H */
 
 /**
- * @}
- */
-
-/**
- * @}
- */
+  * @}
+  */

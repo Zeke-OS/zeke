@@ -221,9 +221,30 @@ typedef struct sb_iterator {
 } sb_iterator_t;
 
 /* VFS Function Prototypes */
+
+/**
+ * Register a new file system driver.
+ * @param fs file system control struct.
+ */
 int fs_register(fs_t * fs);
+
+/**
+ * Initialize a file system superblock iterator.
+ * Iterator is used to iterate over all superblocks of mounted file systems.
+ * @param it is an untilitialized superblock iterator struct.
+ */
 void fs_init_sb_iterator(sb_iterator_t * it);
+
+/**
+ * Iterate over superblocks of mounted file systems.
+ * @param it is the iterator struct.
+ * @return The next superblock or 0.
+ */
 fs_superblock_t * fs_next_sb(sb_iterator_t * it);
+
+/**
+ * Get next free pseudo fs minor code.
+ */
 unsigned int fs_get_pfs_minor(void);
 
 #endif /* FS_H */

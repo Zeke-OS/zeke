@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    queue.h
+ * @file    queue_r.h
  * @author  Olli Vanhoja
  * @brief   Thread-safe queue
  * @section LICENSE
@@ -29,6 +29,10 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************
+ */
+
+/** @addtogroup queue_r
+ * @{
  */
 
 #pragma once
@@ -119,3 +123,7 @@ int queue_isFull(queue_cb_t * cb);
 int seek(queue_cb_t * cb, size_t i, void * element);
 
 #endif /* QUEUE_H */
+
+/**
+ * @}
+ */

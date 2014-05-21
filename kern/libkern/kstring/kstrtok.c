@@ -2,7 +2,7 @@
  *******************************************************************************
  * @file    kstrtok.c
  * @author  Olli Vanhoja
- * @brief   Tiny Init Shell for debugging in init.
+ * @brief   String tokenizer.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1988 Regents of the University of California.

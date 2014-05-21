@@ -2,10 +2,9 @@
  *******************************************************************************
  * @file    krandom.h
  * @author  Olli Vanhoja
- *
  * @brief   Kernel random.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja
+ * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1992, 1993
  *        The Regents of the University of California.  All rights reserved.
  *
@@ -51,13 +50,6 @@ void ksrandom(unsigned long seed)
         (void)krandom();
 }
 
-/**
- * Pseudo-random number generator.
- * Pseudo-random number generator for randomizing the profiling clock,
- * and whatever else we might use it for.  The result is uniform on
- * [0, 2^31 - 1].
- * @return Returns a pseudo-random number.
- */
 unsigned long krandom(void)
 {
     long x, hi, lo, t;

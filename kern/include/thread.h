@@ -1,10 +1,11 @@
 /**
  *******************************************************************************
- * @file    bitmap.h
+ * @file    thread.h
  * @author  Olli Vanhoja
- * @brief   Bitmap allocation functions.
+ * @brief   Generic thread management and scheduling functions.
  * @section LICENSE
  * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,31 +31,32 @@
  *******************************************************************************
  */
 
-#include <stdint.h>
-#include <stddef.h>
-
-typedef uint32_t bitmap_t;
-
-/**
- * Returns size of static bitmap in bits.
- * @param bmap Bitmap.
- * @return Size of given bitmap in bits.
- */
-#define SIZEOF_BITMAP(bmap) (sizeof(bmap) * 8)
-
-#define SIZEOF_BITMAP_T (sizeof(bitmap_t) * 8)
+#pragma once
+#ifndef THREAD_H
+#define THREAD_H
 
 /**
- * Convert from number of entries to bitmap size.
- * Unfortunately SIZEOF_BITMAP_T must be hard coded in this macro to make it
- * work it with #ifs.
- * @param entries Number of entries needed.
- * @return Correct size for a bitmap_t array.
+ * Scheduler handler.
+ * This is mainly called when timer ticks.
  */
-#define E2BITMAP_SIZE(entries) ((entries) / (4*8))
+void sched_handler(void);
 
-int bitmap_block_search(size_t * retval, size_t block_len, bitmap_t * bitmap, size_t size);
-void bitmap_block_update(bitmap_t * bitmap, unsigned int mark, size_t start, size_t len);
-int bitmap_block_alloc(size_t * start, size_t len, bitmap_t * bitmap, size_t size);
-int bitmap_block_align_alloc(size_t * start, size_t len,
-        bitmap_t * bitmap, size_t size, size_t balign);
+/**
+ * Initialize thread kernel mode stack.
+ * @param th is a pointer to the thread.
+ */
+void thread_init_kstack(threadInfo_t * th);
+
+/**
+ * Get thread id of the current thread.
+ */
+pthread_t get_current_tid(void);
+
+/**
+ * Get stack frame of the current thread.
+ * @return  Returns an address to the stack frame of the current thread;
+ *          Or NULL if current_thread is not set.
+ */
+void * thread_get_curr_stackframe(void);
+
+#endif /* THREAD_H */

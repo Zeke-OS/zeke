@@ -30,20 +30,6 @@
  *******************************************************************************
  */
 
-/** @addtogroup Kernel
- * @{
- */
-
-/** @addtogroup kmalloc
- * Malloc for kernel's internal use.
- * Kmalloc should be used for in-kernel dynamic memory allocations that doesn't
- * need to be directly accessible from used space at any point. This includes
- * eg. process control blocks, file system control blocks and cached data,
- * thread control etc.
- * @sa vralloc
- * @{
- */
-
 #define KERNEL_INTERNAL
 #include <stdint.h>
 #include <stddef.h>
@@ -313,11 +299,6 @@ static int valid_addr(void * p)
 #undef PRINT_VALID
 }
 
-/**
- * Allocate memory block.
- * @param size is the size of memory block in bytes.
- * @return A pointer to the memory block allocated; 0 if failed to allocate.
- */
 void * kmalloc(size_t size)
 {
     mblock_t * b;
@@ -356,12 +337,6 @@ void * kmalloc(size_t size)
     return b->data;
 }
 
-/**
- * Allocate and zero-intialize array.
- * @param nelem is the number of elements to allocate.
- * @param size  is the of each element.
- * @return A pointer to the memory block allocted; 0 if failed to allocate.
- */
 void * kcalloc(size_t nelem, size_t elsize)
 {
     size_t * p;
@@ -376,12 +351,6 @@ void * kcalloc(size_t nelem, size_t elsize)
     return p;
 }
 
-/**
- * Deallocate memory block.
- * Deallocates a memory block previously allocted with kmalloc, kcalloc or
- * krealloc.
- * @param p is a pointer to a previously allocated memory block.
- */
 void kfree(void * p)
 {
     mblock_t * b;
@@ -428,17 +397,6 @@ void kfree(void * p)
     }
 }
 
-/**
- * Reallocate memory block.
- * Changes the size of the memory block pointed to by p.
- * @note This function behaves like C99 realloc.
- * @param p     is a pointer to a memory block previously allocated with
- *              kmalloc, kcalloc or krealloc.
- * @param size  is the new size for the memory block, in bytes.
- * @return  Returns a pointer to the reallocated memory block, which may be
- *          either the same as p or a new location. 0 indicates that the
- *          function failed to allocate memory, and p was not modified.
- */
 void * krealloc(void * p, size_t size)
 {
     size_t s; /* Aligned size. */
@@ -507,12 +465,6 @@ out:
     return retval;
 }
 
-/**
- * New memory block reference.
- * Pass kmalloc'd pointer to a block and increment refcount.
- * @param p is a pointer to a kmalloc'd block of data.
- * @return Same as p.
- */
 void * kpalloc(void * p)
 {
     if (valid_addr(p)) {
@@ -562,11 +514,3 @@ static void update_stat_set(size_t * stat_act, size_t value)
         *stat_max = *stat_act;
 }
 #endif
-
-/**
- * @}
- */
-
-/**
- * @}
- */

@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    queue.c
+ * @file    queue_r.c
  * @author  Olli Vanhoja
- * @brief   Thread-safe queue
+ * @brief   Thread-safe queue.
  * @section LICENSE
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
@@ -32,7 +32,7 @@
  */
 
 #include <stdint.h>
-#include <libkern/queue.h>
+#include <libkern/queue_r.h>
 
 queue_cb_t queue_create(void * data_array, size_t block_size, size_t array_size)
 {

@@ -32,11 +32,6 @@
 
 #include <kstring.h>
 
-/**
- * Get string lenght.
- * @param str null terminated string.
- * @param max Maximum lenght counted.
- */
 size_t strlenn(const char * str, size_t max)
 {
     size_t len = 0;

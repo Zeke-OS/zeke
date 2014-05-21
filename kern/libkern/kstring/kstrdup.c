@@ -33,12 +33,6 @@
 #include <kmalloc.h>
 #include <kstring.h>
 
-/**
- * Duplicate a string.
- * @param src is a pointer to the source string.
- * @param max is the maximum length of the src string.
- * @return A kmalloc'd pointer to the copied string.
- */
 char * kstrdup(const char * src, size_t max)
 {
     char * dst;

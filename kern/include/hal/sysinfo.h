@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    mmu.h
+ * @file    sysinfo.h
  * @author  Olli Vanhoja
- * @brief   MMU headers.
+ * @brief   Header file for sysinfo.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,44 +30,30 @@
  *******************************************************************************
  */
 
-#ifndef KINIT_H
-#define KINIT_H
+/** @addtogroup HAL
+ * @{
+ */
 
-#include <kerror.h>
+#pragma once
+#ifndef SYSINFO_H
+#define SYSINFO_H
+
+#include <stddef.h>
+#include <stdint.h>
+
+typedef struct {
+    unsigned int fw; /*!< Firmware version on platforms like rpi. */
+    unsigned int mtype; /*!< ARM Linux Machine Type. */
+    struct meminfo {
+        size_t start;
+        size_t size;
+    } mem;
+} sysinfo_t;
+
+extern sysinfo_t sysinfo;
+
+#endif /* SYSINFO_H */
 
 /**
- * Subsystem initializer prologue.
- * @todo TODO Fix order of init messages
+ * @}
  */
-#define SUBSYS_INIT()               \
-    static char __subsys_init = 0;  \
-    do {                            \
-    if (__subsys_init != 0) return; \
-    else __subsys_init = 1;         \
-    } while (0)
-
-#define SUBSYS_INITFINI(msg)        \
-    KERROR(KERROR_INFO, msg)
-
-/**
- * Subsystem initializer dependency.
- * Mark that subsystem initializer depends on dep.
- * @param dep is a name of an intializer function.
- */
-#define SUBSYS_DEP(dep)             \
-    extern void dep(void);          \
-    dep()
-
-/**
- * hw_preinit initializer functions are run before any other kernel initializer
- * functions.
- */
-#define HW_PREINIT_ENTRY(fn) static void (*fp_##fn)(void) __attribute__ ((section (".hw_preinit_array"), __used__)) = fn;
-
-/**
- * hw_post_init initializer are run after all other kernel initializer so post
- * init is ideal for example initializing hw timers and interrupts.
- */
-#define HW_POSTINIT_ENTRY(fn) static void (*fp_##fn)(void) __attribute__ ((section (".hw_postinit_array"), __used__)) = fn;
-
-#endif

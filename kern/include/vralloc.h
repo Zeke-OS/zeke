@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    strcbuf.c
+ * @file    vralloc.h
  * @author  Olli Vanhoja
- * @brief   Generic circular buffer for strings.
+ * @brief   Virtual Region Allocator.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,75 +30,57 @@
  *******************************************************************************
  */
 
-#include <kstring.h>
-#include <libkern/strcbuf.h>
+/** @addtogroup vralloc
+ * Virtual region memory allocator.
+ * Vralloc is used to allocate memory regions that can be mapped into user
+ * space as well as kernel space. This is usually done by using physical
+ * memory layout in kernel mode and using vaddr as a user space mapping.
+ * @sa kmalloc
+ * @{
+ */
+
+#ifndef VRALLOC_H
+#define VRALLOC_H
+#ifndef KERNEL_INTERNAL
+#define KERNEL_INTERNAL
+#endif
+#include <stdint.h>
+#include <vm/vm.h>
+
+#define VRALLOC_ALLOCATOR_ID 0xBE57
 
 /**
- * Insert line to a buffer.
- * @param buf is the buffer.
- * @param[in] msg is a zero terminated string.
- * @param len is the length of msg.
+ * Initializes vregion allocator data structures.
  */
-void strcbuf_insert(struct strcbuf * buf, const char * line, size_t len)
-{
-    int i = 0;
-    size_t end = buf->end;
-    size_t next;
-    const size_t blen = buf->len;
-
-    if (len > blen)
-        return;
-
-    while (1) {
-        next = (end + 1) % blen;
-
-        /* Check that queue is not full */
-        if (next == buf->start)
-            strcbuf_getline(buf, NULL, buf->len);
-
-        buf->data[end] = line[i++];
-
-        if (buf->data[end] == '\0')
-            break;
-        if (i >= len)
-            break;
-
-        end = next;
-    }
-    buf->data[end] = '\0';
-    buf->end = next;
-}
+void vralloc_init(void) __attribute__((constructor));
 
 /**
- * Remove one line from a buffer.
- * @param[out]  dst is the destination array.
- * @param       len is the size of dst.
+ * Allocate a virtual memory region.
+ * Usr has a write permission by default.
+ * @note Page table and virtual address is not set.
+ * @param size is the size of new region in bytes.
+ * @return  Returns vm_region struct if allocated was successful;
+ *          Otherwise function return 0.
  */
-size_t strcbuf_getline(struct strcbuf * buf, char * dst, size_t len)
-{
-    size_t i = 0;
-    size_t start = buf->start;
-    const size_t end = buf->end;
-    const size_t blen = buf->len;
-    size_t next;
+vm_region_t * vralloc(size_t size);
 
-    if (start == end)
-        return 0;
+/**
+ * Clone a vregion.
+ * @param old_region is the old region to be cloned.
+ * @return  Returns pointer to the new vregion if operation was successful;
+ *          Otherwise zero.
+ */
+struct vm_region * vr_rclone(struct vm_region * old_region);
 
-    if (strlenn(&(buf->data[buf->start]), len) >= len)
-        return 0;
+/**
+ * Free allocated vregion.
+ * Dereferences a vregion.
+ * @param region is a vregion to be derefenced/freed.
+ */
+void vrfree(struct vm_region * region);
 
-    while (start != end) {
-        next = (start + 1) % blen;
-        if (dst)
-            dst[i++] = buf->data[start];
-        else
-            i++;
-        if (buf->data[start] == '\0')
-            break;
-        start = next;
-    }
+#endif /* VRALLOC_H */
 
-    buf->start = next;
-    return i;
-}
+/**
+ * @}
+ */

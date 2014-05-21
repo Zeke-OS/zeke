@@ -33,6 +33,11 @@
  * SUCH DAMAGE.
  */
 
+/**
+ * @addtogroup klocks
+ * @{
+ */
+
 #ifndef KLOCKS_H_
 #define KLOCKS_H_
 
@@ -42,11 +47,26 @@
 #include <kerror.h>
 #endif
 
+/**
+ * @addtogroup mtx mtx_init, mtx_spinlock, mtx_trylock
+ * Kernel mutex lock functions.
+ * This implementation of kernel locks is intended for handling mutex on
+ * multithreaded/pre-emptive kernel.
+ *
+ * mtx_lock() spins until lock is achieved and returns 0 if lock achieved;
+ * 3 if not allowed; Otherwise value other than zero.
+ *
+ * mtx_trylock() tries to achieve lock and returns 0 if lock is achieved
+ * but doesn't ever block or spin.
+ * @sa rwlock
+ * @{
+ */
+
 /* Mutex types */
 #define MTX_DEF     0x00 /*!< DEFAULT (sleep) lock */
 #define MTX_SPIN    0x01 /*!< Spin lock. */
 
-/*
+/**
  * Sleep/spin mutex.
  *
  * All mutex implementations must always have a member called mtx_lock.
@@ -64,15 +84,6 @@ typedef struct mtx {
 #endif
 } mtx_t;
 
-/**
- * RW Lock.
- */
-typedef struct rwlock {
-    int state; /*!< Lock state. 0 = no lock, -1 = wrlock and 0 < rdlock. */
-    int wr_waiting; /*!< writers waiting. */
-    struct mtx lock; /*!< Mutex protecting attributes. */
-} rwlock_t;
-
 /* Mutex functions */
 #ifndef LOCK_DEBUG
 int mtx_spinlock(mtx_t * mtx);
@@ -84,16 +95,97 @@ int _mtx_spinlock(mtx_t * mtx, char * whr);
 int _mtx_trylock(mtx_t * mtx, char * whr);
 #endif
 
+/**
+ * Initialize a kernel mutex.
+ * @param mtx is a mutex struct.
+ * @param type is the type of the mutex.
+ */
 void mtx_init(mtx_t * mtx, unsigned int type);
+
+/**
+ * Release kernel mtx lock.
+ * @param mtx is a mutex struct.
+ */
 void mtx_unlock(mtx_t * mtx);
 
+/**
+ * Test if locked.
+ * @param mtx is a mutex struct.
+ */
+int mtx_test(mtx_t * mtx);
+
+/**
+ * @}
+ */
+
+/**
+ * @addtogroup rwlock rwlocks
+ * Readers-writer lock implementation for in-kernel usage.
+ * @sa mtx
+ * @{
+ */
+
+/**
+ * RW Lock.
+ */
+typedef struct rwlock {
+    int state; /*!< Lock state. 0 = no lock, -1 = wrlock and 0 < rdlock. */
+    int wr_waiting; /*!< writers waiting. */
+    struct mtx lock; /*!< Mutex protecting attributes. */
+} rwlock_t;
+
 /* Rwlock functions */
+
+/**
+ * Initialize rwlock object.
+ * @param l is the rwlock.
+ */
 void rwlock_init(rwlock_t * l);
+
+/**
+ * Get write lock to rwlock.
+ * @param l is the rwlock.
+ */
 void rwlock_wrlock(rwlock_t * l);
+
+/**
+ * Try to get write lock.
+ * @param l is the rwlock.
+ * @return Returns 0 if lock achieved; Otherwise value other than zero.
+ */
 int rwlock_trywrlock(rwlock_t * l);
+
+/**
+ * Release write lock.
+ * @param l is the rwlock.
+ */
 void rwlock_wrunlock(rwlock_t * l);
+
+/**
+ * Get reader's lock.
+ * @param l is the rwlock.
+ */
 void rwlock_rdlock(rwlock_t * l);
+
+/**
+ * Try to get reader's lock.
+ * @param is the rwlock.
+ * @return Returns 0 if lock achieved; Otherwise value other than zero.
+ */
 int rwlock_tryrdlock(rwlock_t * l);
+
+/**
+ * Release reader's lock.
+ * @param l is the rwlock.
+ */
 void rwlock_rdunlock(rwlock_t * l);
 
 #endif /* !_KLOCKS_H_ */
+
+/**
+ * @}
+ */
+
+/**
+ * @}
+ */

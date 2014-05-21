@@ -30,31 +30,10 @@
  *******************************************************************************
  */
 
-/** @addtogroup Kernel
- * @{
- */
-
-/*
- * This implementation of kernel locks is intended for handling mutex on
- * multithreaded/pre-emptive kernel.
- */
-
 #define KERNEL_INTERNAL
 #include <hal/hal_core.h>
 #include <klocks.h>
 
-/**
- * @addtogroup mtx mtx_init, mtx_spinlock, mtx_trylock
- * Kernel mutex lock functions.
- * @sa rwlock
- * @{
- */
-
-/**
- * Initialize a kernel mutex.
- * @param mtx is a mutex struct.
- * @param type is the type of the mutex.
- */
 void mtx_init(mtx_t * mtx, unsigned int type)
 {
     mtx->mtx_lock = 0;
@@ -64,13 +43,6 @@ void mtx_init(mtx_t * mtx, unsigned int type)
 #endif
 }
 
-/**
- * Get kernel mtx lock.
- * mtx lock spins until lock is achieved.
- * @param mtx is a mutex struct.
- * @return  Returns 0 if lock achieved; 3 if not allowed; Otherwise value other
- *          than zero.
- */
 #ifndef LOCK_DEBUG
 int mtx_spinlock(mtx_t * mtx)
 #else
@@ -98,11 +70,6 @@ out:
     return retval;
 }
 
-/**
- * Try to get kernel mtx lock.
- * @param mtx is a mutex struct.
- * @return Returns 0 if lock achieved.
- */
 #ifndef LOCK_DEBUG
 int mtx_trylock(mtx_t * mtx)
 #else
@@ -119,10 +86,6 @@ int _mtx_trylock(mtx_t * mtx, char * whr)
     return retval;
 }
 
-/**
- * Release kernel mtx lock.
- * @param mtx is a mutex struct.
- */
 void mtx_unlock(mtx_t * mtx)
 {
     mtx->mtx_lock = 0;
@@ -131,30 +94,11 @@ void mtx_unlock(mtx_t * mtx)
 #endif
 }
 
-/**
- * Test if locked.
- * @param mtx is a mutex struct.
- */
 int mtx_test(mtx_t * mtx)
 {
     return test_lock((int *)(&(mtx->mtx_lock)));
 }
 
-/**
- * @}
- */
-
-/**
- * @addtogroup rwlock rwlocks
- * Readers-writer lock implementation for in-kernel usage.
- * @sa mtx
- * @{
- */
-
-/**
- * Initialize rwlock object.
- * @param l is the rwlock.
- */
 void rwlock_init(rwlock_t * l)
 {
     l->state = 0;
@@ -162,10 +106,6 @@ void rwlock_init(rwlock_t * l)
     mtx_init(&(l->lock), MTX_DEF | MTX_SPIN);
 }
 
-/**
- * Get write lock to rwlock.
- * @param l is the rwlock.
- */
 void rwlock_wrlock(rwlock_t * l)
 {
     mtx_spinlock(&(l->lock));
@@ -193,11 +133,6 @@ get_wrlock:
     mtx_unlock(&(l->lock));
 }
 
-/**
- * Try to get write lock.
- * @param l is the rwlock.
- * @return Returns 0 if lock achieved; Otherwise value other than zero.
- */
 int rwlock_trywrlock(rwlock_t * l)
 {
     int retval = 1;
@@ -215,10 +150,6 @@ out:
     return retval;
 }
 
-/**
- * Release write lock.
- * @param l is the rwlock.
- */
 void rwlock_wrunlock(rwlock_t * l)
 {
     mtx_spinlock(&(l->lock));
@@ -228,10 +159,6 @@ void rwlock_wrunlock(rwlock_t * l)
     mtx_unlock(&(l->lock));
 }
 
-/**
- * Get reader's lock.
- * @param l is the rwlock.
- */
 void rwlock_rdlock(rwlock_t * l)
 {
     mtx_spinlock(&(l->lock));
@@ -257,11 +184,6 @@ get_rdlock:
     mtx_unlock(&(l->lock));
 }
 
-/**
- * Try to get reader's lock.
- * @param is the rwlock.
- * @return Returns 0 if lock achieved; Otherwise value other than zero.
- */
 int rwlock_tryrdlock(rwlock_t * l)
 {
     int retval = 1;
@@ -279,10 +201,6 @@ out:
     return retval;
 }
 
-/**
- * Release reader's lock.
- * @param l is the rwlock.
- */
 void rwlock_rdunlock(rwlock_t * l)
 {
     mtx_spinlock(&(l->lock));

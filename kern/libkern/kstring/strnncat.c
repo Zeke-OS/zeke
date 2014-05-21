@@ -32,14 +32,6 @@
 
 #include <kstring.h>
 
-/**
- * Concatenate strings.
- * Appends a copy of the src to the dst string.
- * @param dst is the destination array.
- * @param ndst maximum length of dst.
- * @param src is the source string array.
- * @param nsrc maximum number of characters to bo copied from src.
- */
 char * strnncat(char * dst, size_t ndst, const char * src, size_t nsrc)
 {
     size_t i, j, n1, n2;

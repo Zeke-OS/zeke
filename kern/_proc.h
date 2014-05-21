@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    atag.c
+ * @file    _proc.h
  * @author  Olli Vanhoja
- * @brief   ATAG scanner.
+ * @brief   Header file shared between proc_XXX.c
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,12 +30,28 @@
  *******************************************************************************
  */
 
-/** @addtogroup HAL
-  * @{
-  */
-
-void atag_scan(uint32_t fw, uint32_t mtype, uint32_t * atag_addr);
+#pragma once
+#ifndef _PROC_H
+#define _PROC_H
 
 /**
-  * @}
-  */
+ * Realloc procarr.
+ * Realloc _procarr based on maxproc sysctl variable if necessary.
+ * @note    This should be generally called before selecting next pid
+ *          from the array.
+ */
+void procarr_realloc(void);
+
+/**
+ * Insert a new process to _procarr.
+ * @param proc is a pointer to the new process.
+ */
+void procarr_insert(proc_info_t * new_proc);
+
+/**
+ * Get a random PID for a new process.
+ * @return Returns a random PID.
+ */
+pid_t proc_get_random_pid(void);
+
+#endif /* _PROC_H */

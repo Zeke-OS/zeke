@@ -30,6 +30,10 @@
  *******************************************************************************
  */
 
+/** @addtogroup ptmapper
+ * @{
+ */
+
 #pragma once
 #ifndef PTMAPPER_H
 #define PTMAPPER_H
@@ -104,7 +108,31 @@ extern const mmu_region_t mmu_region_kstack;
 extern mmu_region_t mmu_region_kernel;
 extern mmu_region_t mmu_region_kdata;
 
+/**
+ * Allocate memory for a page table.
+ * Allocate memory for a page table from the page table region. This function
+ * will not activate the page table or do anything besides updating necessary
+ * varibles in pt and reserve a block of memory from the area.
+ * @note master_pt_addr will be only set for a page table struct if allocated
+ * page table is a master page table.
+ * @param pt    is the page table struct without page table address pt_addr.
+ * @return  Returns zero if succeed; Otherwise value other than zero indicating
+ *          that the page table allocation has failed.
+ */
 int ptmapper_alloc(mmu_pagetable_t * pt);
+
+/**
+ * Free page table.
+ * Frees a page table that has been previously allocated with ptmapper_alloc.
+ * @note    Page table pt should be detached properly before calling this
+ *          function and it is usually good idea to unmap any regions still
+ *          mapped with the page table before removing it completely.
+ * @param pt is the page table to be freed.
+ */
 void ptmapper_free(mmu_pagetable_t * pt);
 
 #endif /* PTMAPPER_H */
+
+/**
+ * @}
+ */

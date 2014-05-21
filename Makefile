@@ -83,7 +83,7 @@ endif
 CRT_DIR = $(dir $(CRT))
 
 # Include Dirs #################################################################
-IDIR   = ./include ./config ./kern
+IDIR   = ./include ./config ./kern/include
 AIDIR += ./config
 ################################################################################
 IDIR  := $(patsubst %,-I%,$(subst :, ,$(IDIR)))

@@ -1,10 +1,11 @@
 /**
  *******************************************************************************
- * @file    sysinfo.h
+ * @file    timers.h
  * @author  Olli Vanhoja
- * @brief   Header file for sysinfo.
+ * @brief   Header file for kernel timers (timers.c).
  * @section LICENSE
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,28 +31,50 @@
  *******************************************************************************
  */
 
-/** @addtogroup HAL
+/** @addtogroup timers
  * @{
  */
 
-#ifndef SYSINFO_H
-#define SYSINFO_H
+#pragma once
+#ifndef TIMERS_H
+#define TIMERS_H
 
-#include <stddef.h>
 #include <stdint.h>
+#include "kernel.h"
 
-typedef struct {
-    unsigned int fw; /*!< Firmware version on platforms like rpi. */
-    unsigned int mtype; /*!< ARM Linux Machine Type. */
-    struct meminfo {
-        size_t start;
-        size_t size;
-    } mem;
-} sysinfo_t;
+/* User Flag Bits */
+#define TIMERS_FLAG_ENABLED     0x1 /* See for description: timer_alloc_data_t */
+#define TIMERS_FLAG_PERIODIC    0x2 /* See for description: timer_alloc_data_t */
+#define TIMERS_USER_FLAGS       (TIMERS_FLAG_ENABLED | TIMERS_FLAG_PERIODIC)
 
-extern sysinfo_t sysinfo;
+typedef uint32_t timers_flags_t;
 
-#endif /* SYSINFO_H */
+extern uint32_t timers_value;
+
+void timers_run(void);
+
+/**
+ * Allocate a new timer
+ * @param thread_id thread id to add this timer for.
+ * @param flags User modifiable flags (see: TIMERS_USER_FLAGS)-
+ * @param millisec delay to trigger from the time when enabled.
+ * @param return -1 if allocation failed.
+ */
+int timers_add(pthread_t thread_id, timers_flags_t flags, uint32_t millisec);
+
+void timers_start(int tim);
+void timers_release(int tim);
+pthread_t timers_get_owner(int tim);
+
+/**
+ * Get owner of the timer
+ * @param tim timer id
+ * @return thread id or -1 if out of bounds or timer is currently in released
+ *         state
+ */
+pthread_t timers_get_owner(int tim);
+
+#endif /* TIMERS_H */
 
 /**
  * @}

@@ -41,19 +41,6 @@
 #include <sys/sysctl.h>
 #include <vralloc.h>
 
-/** @addtogroup Kernel
- * @{
- */
-
-/** @addtogroup vralloc
- * Virtual region memory allocator.
- * Vralloc is used to allocate memory regions that can be mapped into user
- * space as well as kernel space. This is usually done by using physical
- * memory layout in kernel mode and using vaddr as a user space mapping.
- * @sa kmalloc
- * @{
- */
-
 /**
  * vralloc region struct.
  * Struct describing a single dynmem alloc block of vrallocated memory.
@@ -95,9 +82,6 @@ static const vm_ops_t vra_ops = {
 };
 
 
-/**
- * Initializes vregion allocator data structures.
- */
 void vralloc_init(void)
 {
     SUBSYS_INIT();
@@ -173,14 +157,6 @@ static size_t pagealign(size_t size, size_t bytes)
 #undef MOD_AL
 }
 
-/**
- * Allocate a virtual memory region.
- * Usr has a write permission by default.
- * @note Page table and virtual address is not set.
- * @param size is the size of new region in bytes.
- * @return  Returns vm_region struct if allocated was successful;
- *          Otherwise function return 0.
- */
 vm_region_t * vralloc(size_t size)
 {
     size_t iblock;
@@ -239,12 +215,6 @@ static void vrref(struct vm_region * region)
     mtx_unlock(&(region->lock));
 }
 
-/**
- * Clone a vregion.
- * @param old_region is the old region to be cloned.
- * @return  Returns pointer to the new vregion if operation was successful;
- *          Otherwise zero.
- */
 struct vm_region * vr_rclone(struct vm_region * old_region)
 {
     vm_region_t * new_region;
@@ -292,11 +262,6 @@ struct vm_region * vr_rclone(struct vm_region * old_region)
     return new_region;
 }
 
-/**
- * Free allocated vregion.
- * Dereferences a vregion.
- * @param region is a vregion to be derefenced/freed.
- */
 void vrfree(struct vm_region * region)
 {
     struct vregion * vreg;
@@ -331,11 +296,3 @@ void vrfree(struct vm_region * region)
             vreg_free_node(vreg);
     }
 }
-
-/**
- * @}
- */
-
-/**
- * @}
- */

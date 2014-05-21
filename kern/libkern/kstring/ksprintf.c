@@ -33,27 +33,6 @@
 #include <stdarg.h>
 #include <kstring.h>
 
-/**
- * Composes a string by using printf style format string and additional
- * arguments.
- *
- * This function supports following format specifiers:
- *      %d or i Signed decimal integer
- *      %u      Unsigned decimal integer
- *      %x      Unsigned hexadecimal integer
- *      %c      Character
- *      %s      String of characters
- *      %s      Pointer address
- *      %%      Replaced with a single %
- *
- * @param str Pointer to a buffer where the resulting string is stored.
- * @param maxlen Maximum lenght of str. Replacements may cause writing of more
- *               than maxlen characters!
- * @param format String that contains a format string.
- * @param ... Depending on the format string, a sequence of additional
- *            arguments, each containing a value to be used to replace
- *            a format specifier in the format string.
- */
 void ksprintf(char * str, size_t maxlen, const char * format, ...)
 {
     va_list args;

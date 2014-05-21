@@ -12,8 +12,9 @@ Generic Tasks
     - May need some changes in the scheduler
 - Implement other messaging services
 - Use thread parent<->client relationship to improve scheduling
-- PTTK91 support
 - elf supports
+- man pages are not generated for some kernel functions that are declared in
+  `include/` instead of `kern/include`
 
 BCM2835
 -------

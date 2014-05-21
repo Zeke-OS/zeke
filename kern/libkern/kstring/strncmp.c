@@ -32,13 +32,6 @@
 
 #include <kstring.h>
 
-/**
- * Compares the C string str1 to the C string str2.
- * @param str1 String 1.
- * @param str2 String 2.
- * @param Maximum number of characters to compare.
- * @return A zero value indicates that both strings are equal.
- */
 int strncmp(const char * str1, const char * str2, size_t n)
 {
     while ((*str1 != '\0' && *str1 == *str2) && --n > 0) {

@@ -32,7 +32,7 @@
  *******************************************************************************
  */
 
-#include "sched.h"
+#include <sched.h>
 #include "heap.h"
 
 #if configDEBUG != 0

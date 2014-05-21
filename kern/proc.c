@@ -31,10 +31,6 @@
  *******************************************************************************
  */
 
-/** @addtogroup Process
-  * @{
-  */
-
 #define KERNEL_INTERNAL 1
 #include <sched.h>
 #include <kstring.h>
@@ -50,6 +46,7 @@
 #include <kmalloc.h>
 #include <vralloc.h>
 #include <proc.h>
+#include "_proc.h"
 
 static proc_info_t *(*_procarr)[];  /*!< processes indexed by pid */
 int maxproc = configMAXPROC;        /*!< Maximum # of processes, set. */
@@ -57,7 +54,7 @@ int act_maxproc;                    /*!< Effective maxproc. */
 int nprocs = 1;                     /*!< Current # of procs. */
 pid_t current_process_id;           /*!< PID of current process. */
 proc_info_t * curproc;              /*!< PCB of the current process. */
-static pid_t proc_lastpid;              /*!< last allocated pid. */
+static pid_t proc_lastpid;          /*!< last allocated pid. */
 
 extern vnode_t kerror_vnode;
 
@@ -77,11 +74,8 @@ SYSCTL_INT(_kern, KERN_MAXPROC, nprocs, CTLFLAG_RD,
     &nprocs, 0, "Current number of processes");
 
 static void init_kernel_proc(void);
-pid_t proc_update(void); /* Used in HAL, so not static */
+pid_t proc_update(void); /* Used in HAL, so not static but not in headeaders. */
 
-/**
- * Init process handling subsystem.
- */
 void proc_init(void)
 {
     SUBSYS_INIT();
@@ -100,6 +94,9 @@ void proc_init(void)
     SUBSYS_INITFINI("Proc OK");
 }
 
+/**
+ * Initialize kernel process 0.
+ */
 static void init_kernel_proc(void)
 {
     const char panic_msg[] = "Can't init kernel process";
@@ -172,12 +169,6 @@ static void init_kernel_proc(void)
     kernel_proc->files->fd[2]->vnode = &kerror_vnode;
 }
 
-/**
- * Realloc procarr.
- * Realloc _procarr based on maxproc sysctl variable if necessary.
- * @note    This should be generally called before selecting next pid
- *          from the array.
- */
 void procarr_realloc(void)
 {
     proc_info_t * (*tmp)[];
@@ -200,10 +191,6 @@ void procarr_realloc(void)
     PROC_UNLOCK();
 }
 
-/**
- * Insert a new process to _procarr.
- * @param proc is a pointer to the new process.
- */
 void procarr_insert(proc_info_t * new_proc)
 {
     PROC_LOCK();
@@ -231,22 +218,11 @@ int proc_kill(void)
     return -1;
 }
 
-/**
- * Replace the image of a given process with a new one.
- * The new image must be mapped in kernel memory space.
- * @param pid   Process id.
- * @param image Process image to be loaded.
- * @param size  Size of the image.
- * @return  Value other than zero if unable to replace process.
- */
 int proc_replace(pid_t pid, void * image, size_t size)
 {
     return -1;
 }
 
-/**
- * Get pointer to a internal proc_info structure.
- */
 proc_info_t * proc_get_struct(pid_t pid)
 {
     /* TODO We actually want to require proclock */
@@ -271,11 +247,6 @@ proc_info_t * proc_get_struct(pid_t pid)
     return (*_procarr)[pid];
 }
 
-/**
- * Remove thread from a process.
- * @param pid       is a process id of the thread owner process.
- * @param thread_id is a thread if of the removed thread.
- */
 void proc_thread_removed(pid_t pid, pthread_t thread_id)
 {
     /* TODO
@@ -284,12 +255,6 @@ void proc_thread_removed(pid_t pid, pthread_t thread_id)
      */
 }
 
-/**
- * A process enters kernel mode.
- * This function shall be called when a process enters kernel mode and
- * interrupts will be enabled.
- * @return Next master page table.
- */
 mmu_pagetable_t * proc_enter_kernel(void)
 {
 #if configDEBUG != 0
@@ -300,11 +265,6 @@ mmu_pagetable_t * proc_enter_kernel(void)
     return curproc->mm.curr_mpt;
 }
 
-/**
- * A process exits kernel mode.
- * This function shall be called when a process exits kernel mode.
- * @return Next master page table.
- */
 mmu_pagetable_t * proc_exit_kernel(void)
 {
 #if configDEBUG != 0
@@ -315,9 +275,6 @@ mmu_pagetable_t * proc_exit_kernel(void)
     return curproc->mm.curr_mpt;
 }
 
-/**
- * Suspend process.
- */
 void proc_suspend(void)
 {
 #if configDEBUG != 0
@@ -328,11 +285,6 @@ void proc_suspend(void)
     //curproc->state
 }
 
-/**
- * Resume process.
- * A process is begin resumed from suspended state.
- * @return Next master page table.
- */
 mmu_pagetable_t * proc_resume(void)
 {
 #if configDEBUG != 0
@@ -343,10 +295,6 @@ mmu_pagetable_t * proc_resume(void)
     return curproc->mm.curr_mpt;
 }
 
-/**
- * Handle page fault caused by a process.
- * Usually this handler is executed because of cow page table.
- */
 int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
         threadInfo_t * thread)
 {
@@ -401,11 +349,6 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
     return PROC_DABERR_INVALID; /* Not found */
 }
 
-/**
- * Update process system state.
- * Updates current_process_id and curproc.
- * @note This function is called by interrupt handler(s).
- */
 pid_t proc_update(void)
 {
     current_process_id = current_thread->pid_owner;
@@ -499,7 +442,3 @@ uintptr_t proc_syscall(uint32_t type, void * p)
         return (uint32_t)NULL;
     }
 }
-
-/**
-  * @}
-  */

@@ -1,11 +1,10 @@
 /**
  *******************************************************************************
- * @file    thread.h
+ * @file    strcbuf.c
  * @author  Olli Vanhoja
- * @brief   Generic thread management and scheduling functions.
+ * @brief   Generic circular buffer for strings.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+ * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,13 +30,64 @@
  *******************************************************************************
  */
 
-#pragma once
-#ifndef THREAD_H
-#define THREAD_H
+#include <kstring.h>
+#include <libkern/strcbuf.h>
 
-void sched_handler(void);
-void thread_init_kstack(threadInfo_t * th);
-pthread_t get_current_tid(void);
-void * thread_get_curr_stackframe(void);
+void strcbuf_insert(struct strcbuf * buf, const char * line, size_t len)
+{
+    int i = 0;
+    size_t end = buf->end;
+    size_t next;
+    const size_t blen = buf->len;
 
-#endif /* THREAD_H */
+    if (len > blen)
+        return;
+
+    while (1) {
+        next = (end + 1) % blen;
+
+        /* Check that queue is not full */
+        if (next == buf->start)
+            strcbuf_getline(buf, NULL, buf->len);
+
+        buf->data[end] = line[i++];
+
+        if (buf->data[end] == '\0')
+            break;
+        if (i >= len)
+            break;
+
+        end = next;
+    }
+    buf->data[end] = '\0';
+    buf->end = next;
+}
+
+size_t strcbuf_getline(struct strcbuf * buf, char * dst, size_t len)
+{
+    size_t i = 0;
+    size_t start = buf->start;
+    const size_t end = buf->end;
+    const size_t blen = buf->len;
+    size_t next;
+
+    if (start == end)
+        return 0;
+
+    if (strlenn(&(buf->data[buf->start]), len) >= len)
+        return 0;
+
+    while (start != end) {
+        next = (start + 1) % blen;
+        if (dst)
+            dst[i++] = buf->data[start];
+        else
+            i++;
+        if (buf->data[start] == '\0')
+            break;
+        start = next;
+    }
+
+    buf->start = next;
+    return i;
+}

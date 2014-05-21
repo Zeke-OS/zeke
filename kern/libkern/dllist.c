@@ -45,9 +45,6 @@ void dllist_insert_before(struct llist * lst, void * node, void * new_node);
 void dllist_insert_after(struct llist * lst, void * node, void * new_node);
 void dllist_remove(struct llist * lst, void * node);
 
-/**
- * Create a doubly linked list.
- */
 llist_t * _dllist_create(size_t offset)
 {
     llist_t * lst;
@@ -74,9 +71,6 @@ out:
     return lst;
 }
 
-/**
- * Destroy a doubly linked list.
- */
 void dllist_destroy(llist_t * lst)
 {
     if (lst == 0)

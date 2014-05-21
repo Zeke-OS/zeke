@@ -1,12 +1,10 @@
 /**
  *******************************************************************************
- * @file    timers.h
+ * @file    llist.h
  * @author  Olli Vanhoja
- *
- * @brief   Header file for kernel timers (timers.c).
+ * @brief   Generic doubly linked list.
  * @section LICENSE
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,39 +31,28 @@
  */
 
 #pragma once
-#ifndef TIMERS_H
-#define TIMERS_H
+#ifndef DLLIST_H
+#define DLLIST_H
 
-#include <stdint.h>
-#include "kernel.h"
-
-/* User Flag Bits */
-#define TIMERS_FLAG_ENABLED     0x1 /* See for description: timer_alloc_data_t */
-#define TIMERS_FLAG_PERIODIC    0x2 /* See for description: timer_alloc_data_t */
-#define TIMERS_USER_FLAGS       (TIMERS_FLAG_ENABLED | TIMERS_FLAG_PERIODIC)
-
-typedef uint32_t timers_flags_t;
-
-extern uint32_t timers_value;
-
-void timers_run(void);
+#include <stddef.h>
+#include "llist.h"
 
 /**
- * Reserve a new timer
- * @return Reference to a timer or -1 if allocation failed.
+ * Create a new doubly linked list.
+ * @param type is the type of nodes in this list.
  */
-int timers_add(pthread_t thread_id, timers_flags_t flags, uint32_t millisec);
-
-void timers_start(int tim);
-void timers_release(int tim);
-pthread_t timers_get_owner(int tim);
+#define dllist_create(type, llist) _dllist_create(offsetof(type, llist))
 
 /**
- * Get owner of the timer
- * @param tim timer id
- * @return thread id or -1 if out of bounds or timer is currently in released
- *         state
+ * Create a doubly linked list.
  */
-pthread_t timers_get_owner(int tim);
+llist_t * _dllist_create(size_t offset);
 
-#endif /* TIMERS_H */
+/**
+ * Destroy doubly linked list.
+ * @param lst the list that should be destroyed.
+ * @note All nodes should be kmalloc'd.
+ */
+void dllist_destroy(llist_t * lst);
+
+#endif /* DLLIST_H */

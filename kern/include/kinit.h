@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    kmalloc.h
+ * @file    mmu.h
  * @author  Olli Vanhoja
- * @brief   Generic kernel memory allocator.
+ * @brief   Kernel initialization.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,25 +30,53 @@
  *******************************************************************************
  */
 
-/** @addtogroup Kernel
+/** @addtogroup kinit
+ * Kernel initialization.
  * @{
  */
 
-/** @addtogroup kmalloc
- * @}
- */
 
-#include <stddef.h>
+#ifndef KINIT_H
+#define KINIT_H
 
-void * kmalloc(size_t size);
-void * kcalloc(size_t nelem, size_t elsize);
-void kfree(void * p);
-void * krealloc(void * p, size_t size);
-void * kpalloc(void * p);
+#include <kerror.h>
 
 /**
- * @}
+ * Subsystem initializer prologue.
+ * @todo TODO Fix order of init messages
  */
+#define SUBSYS_INIT()               \
+    static char __subsys_init = 0;  \
+    do {                            \
+    if (__subsys_init != 0) return; \
+    else __subsys_init = 1;         \
+    } while (0)
+
+#define SUBSYS_INITFINI(msg)        \
+    KERROR(KERROR_INFO, msg)
+
+/**
+ * Subsystem initializer dependency.
+ * Mark that subsystem initializer depends on dep.
+ * @param dep is a name of an intializer function.
+ */
+#define SUBSYS_DEP(dep)             \
+    extern void dep(void);          \
+    dep()
+
+/**
+ * hw_preinit initializer functions are run before any other kernel initializer
+ * functions.
+ */
+#define HW_PREINIT_ENTRY(fn) static void (*fp_##fn)(void) __attribute__ ((section (".hw_preinit_array"), __used__)) = fn;
+
+/**
+ * hw_post_init initializer are run after all other kernel initializer so post
+ * init is ideal for example initializing hw timers and interrupts.
+ */
+#define HW_POSTINIT_ENTRY(fn) static void (*fp_##fn)(void) __attribute__ ((section (".hw_postinit_array"), __used__)) = fn;
+
+#endif /* KINIT_H */
 
 /**
  * @}

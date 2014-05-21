@@ -115,13 +115,6 @@ void timers_run(void)
     } while (++i < configTIMERS_MAX);
 }
 
-/**
- * Allocate a new timer
- * @param thread_id thread id to add this timer for.
- * @param flags User modifiable flags (see: TIMERS_USER_FLAGS)-
- * @param millisec delay to trigger from the time when enabled.
- * @param return -1 if allocation failed.
- */
 int timers_add(pthread_t thread_id, timers_flags_t flags, uint32_t millisec)
 {
     int i = 0;

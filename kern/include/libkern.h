@@ -32,6 +32,11 @@
  *******************************************************************************
  */
 
+/** @addtogroup libkern
+ * Generic functions and macros for use in kernel.
+ * @{
+ */
+
 #pragma once
 #ifndef LIBKERN_H
 #define LIBKERN_H
@@ -97,9 +102,28 @@ static inline off_t omin(off_t a, off_t b)
 static inline int abs(int a) { return (a < 0 ? -a : a); }
 static inline long labs(long a) { return (a < 0 ? -a : a); }
 
+/** @addtogroup krandom krandom, ksrandom, kunirandom
+ * @{
+ */
+
 void ksrandom(unsigned long seed);
+
+/**
+ * Pseudo-random number generator.
+ * Pseudo-random number generator for randomizing the profiling clock,
+ * and whatever else we might use it for.  The result is uniform on
+ * [0, 2^31 - 1].
+ * @return Returns a pseudo-random number.
+ */
 unsigned long krandom(void);
 long kunirand(long n);
 
+/**
+ * @}
+ */
+
 #endif /* LIBKERN_H */
 
+/**
+ * @}
+ */
