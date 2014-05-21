@@ -31,10 +31,6 @@
  *******************************************************************************
  */
 
-/** @addtogroup Dev
-  * @{
-  */
-
 #pragma once
 #ifndef DEVTYPES_H
 #define DEVTYPES_H
@@ -62,7 +58,3 @@
 #define DEV_MMTODEV(ma, mi) (((ma) << DEV_MINORBITS) | (mi))
 
 #endif /* DEVTYPES_H */
-
-/**
-  * @}
-  */

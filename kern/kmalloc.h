@@ -30,6 +30,14 @@
  *******************************************************************************
  */
 
+/** @addtogroup Kernel
+ * @{
+ */
+
+/** @addtogroup kmalloc
+ * @}
+ */
+
 #include <stddef.h>
 
 void * kmalloc(size_t size);
@@ -37,3 +45,11 @@ void * kcalloc(size_t nelem, size_t elsize);
 void kfree(void * p);
 void * krealloc(void * p, size_t size);
 void * kpalloc(void * p);
+
+/**
+ * @}
+ */
+
+/**
+ * @}
+ */

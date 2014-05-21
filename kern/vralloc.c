@@ -41,6 +41,19 @@
 #include <sys/sysctl.h>
 #include <vralloc.h>
 
+/** @addtogroup Kernel
+ * @{
+ */
+
+/** @addtogroup vralloc
+ * Virtual region memory allocator.
+ * Vralloc is used to allocate memory regions that can be mapped into user
+ * space as well as kernel space. This is usually done by using physical
+ * memory layout in kernel mode and using vaddr as a user space mapping.
+ * @sa kmalloc
+ * @{
+ */
+
 /**
  * vralloc region struct.
  * Struct describing a single dynmem alloc block of vrallocated memory.
@@ -318,3 +331,11 @@ void vrfree(struct vm_region * region)
             vreg_free_node(vreg);
     }
 }
+
+/**
+ * @}
+ */
+
+/**
+ * @}
+ */

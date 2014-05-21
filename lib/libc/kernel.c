@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    kernel.c
+ * @file    zeke.c
  * @author  Olli Vanhoja
- * @brief   Zero Kernel user space code
+ * @brief   Zero Kernel user space code.
  * @section LICENSE
  * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
@@ -31,7 +31,7 @@
  *******************************************************************************
 */
 
-/** @addtogroup Library_Functions
+/** @addtogroup libc
   * @{
   */
 
@@ -44,7 +44,7 @@ unsigned msleep(unsigned millisec)
     return (unsigned)syscall(SYSCALL_SCHED_SLEEP_MS, &millisec);
 }
 
-/** @addtogroup Thread_Management
+/** @addtogroup thread
   * @{
   */
 

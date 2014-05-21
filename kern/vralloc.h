@@ -30,6 +30,14 @@
  *******************************************************************************
  */
 
+/** @addtogroup Kernel
+ * @{
+ */
+
+/** @addtogroup vralloc
+ * @{
+ */
+
 #ifndef VRALLOC_H
 #define VRALLOC_H
 #ifndef KERNEL_INTERNAL
@@ -46,3 +54,11 @@ struct vm_region * vr_rclone(struct vm_region * old_region);
 void vrfree(struct vm_region * region);
 
 #endif /* VRALLOC_H */
+
+/**
+ * @}
+ */
+
+/**
+ * @}
+ */

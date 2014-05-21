@@ -30,6 +30,20 @@
  *******************************************************************************
  */
 
+/** @addtogroup Kernel
+ * @{
+ */
+
+/** @addtogroup kmalloc
+ * Malloc for kernel's internal use.
+ * Kmalloc should be used for in-kernel dynamic memory allocations that doesn't
+ * need to be directly accessible from used space at any point. This includes
+ * eg. process control blocks, file system control blocks and cached data,
+ * thread control etc.
+ * @sa vralloc
+ * @{
+ */
+
 #define KERNEL_INTERNAL
 #include <stdint.h>
 #include <stddef.h>
@@ -43,6 +57,9 @@
 #define KM_SIGNATURE_INVALID    0xDEADF00D /*!< Signature for invalid mblock
                                             *   entry. */
 
+/**
+ * kmalloc statistics strcut.
+ */
 struct kmalloc_stat {
     size_t kms_mem_res;     /*!< Amount of memory reserved for kmalloc. */
     size_t kms_mem_max;     /*!< Maximum amount of reserved memory. */
@@ -545,3 +562,11 @@ static void update_stat_set(size_t * stat_act, size_t value)
         *stat_max = *stat_act;
 }
 #endif
+
+/**
+ * @}
+ */
+
+/**
+ * @}
+ */
