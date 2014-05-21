@@ -32,7 +32,7 @@
 
 #include <kmalloc.h>
 #include <stdint.h>
-#include <libkern/llist.h>
+#include <llist.h>
 
 #define LISTDSC(node) ((llist_nodedsc_t *)(((uint8_t *)node) + lst->offset))
 

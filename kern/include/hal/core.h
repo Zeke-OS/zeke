@@ -41,7 +41,6 @@
 
 #include <autoconf.h>
 #include <syscalldef.h>
-#include <kernel.h>
 
 /* Select Core Implementation ************************************************/
 #if configARM_PROFILE_M != 0 /* All M profile cores are handled in one file. */

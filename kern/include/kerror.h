@@ -35,7 +35,6 @@
 #define KERROR_H
 
 #include <autoconf.h>
-#include <hal/hal_core.h>
 
 #define KERROR_NOLOG    0
 #define KERROR_LASTLOG  1

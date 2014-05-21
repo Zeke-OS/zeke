@@ -31,7 +31,7 @@
  */
 
 #define KERNEL_INTERNAL
-#include <hal/hal_core.h>
+#include <hal/core.h>
 #include <klocks.h>
 
 void mtx_init(mtx_t * mtx, unsigned int type)

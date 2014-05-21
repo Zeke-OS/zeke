@@ -173,7 +173,7 @@ typedef struct mmu_region {
 #define MMU_CPT_VADDR(x) ((x) & 0xFFF00000)
 
 #if configARCH == __ARM6__ || __ARM6K__ /* ARM11 uses ARMv6 arch */
-#include "arm11/arm11_mmu.h"
+#include "../../hal/arm11/arm11_mmu.h"
 #elif defined(PU_TEST_BUILD)
 #else
     #error MMU for selected ARM profile/architecture is not supported

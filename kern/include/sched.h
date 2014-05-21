@@ -47,7 +47,7 @@
 #include <ksignal.h>
 #include <kernel.h>
 #include <vm/vm.h>
-#include <hal/hal_core.h>
+#include <hal/core.h>
 
 /*
  * Scheduler flags

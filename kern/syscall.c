@@ -34,7 +34,7 @@
 
 #define KERNEL_INTERNAL 1
 #include <sched.h>
-#include <hal/hal_core.h>
+#include <hal/core.h>
 #include <errno.h>
 #include <vm/vm.h>
 #include <syscall.h>

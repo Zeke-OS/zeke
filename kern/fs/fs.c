@@ -41,7 +41,7 @@
 #include <syscalldef.h>
 #include <syscall.h>
 #include <errno.h>
-#include "fs.h"
+#include <fs/fs.h>
 
 /**
  * Linked list of registered file systems.

@@ -54,7 +54,6 @@ int act_maxproc;                    /*!< Effective maxproc. */
 int nprocs = 1;                     /*!< Current # of procs. */
 pid_t current_process_id;           /*!< PID of current process. */
 proc_info_t * curproc;              /*!< PCB of the current process. */
-static pid_t proc_lastpid;          /*!< last allocated pid. */
 
 extern vnode_t kerror_vnode;
 

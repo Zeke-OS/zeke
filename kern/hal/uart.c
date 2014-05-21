@@ -30,15 +30,7 @@
  *******************************************************************************
  */
 
-/** @addtogroup HAL
- * @{
- */
-
-/** @addtogroup UART
- * @{
- */
-
-#include "uart.h"
+#include <hal/uart.h>
 
 static uart_port_t uart_ports[UART_PORTS_MAX];
 static int uart_nr_ports;
@@ -71,12 +63,3 @@ uart_port_t * uart_getport(int port)
 
     return retval;
 }
-
-/**
- * @}
- */
-
-
-/**
- * @}
- */

@@ -32,7 +32,7 @@
  */
 
 #define KERNEL_INTERNAL
-#include <hal/hal_core.h>
+#include <hal/core.h>
 #include <hal/mmu.h>
 #include <ptmapper.h>
 #include <vralloc.h>

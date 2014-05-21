@@ -41,10 +41,10 @@
 #include <autoconf.h>
 #include <kstring.h>
 #include <kinit.h>
-#include <hal/hal_core.h> /* TODO Could be removed? */
+#include <hal/core.h> /* TODO Could be removed? */
 #include <klocks.h>
 #include "heap.h"
-#include <libkern/queue.h>
+#include <queue_r.h>
 #include <timers.h>
 #include <syscall.h>
 #include <kernel.h>

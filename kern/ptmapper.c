@@ -34,7 +34,7 @@
 #include <kinit.h>
 #include <kstring.h>
 #include <kerror.h>
-#include <libkern/bitmap.h>
+#include <bitmap.h>
 #include <sys/sysctl.h>
 #include <ptmapper.h>
 

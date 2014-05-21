@@ -35,7 +35,7 @@
   * @{
   */
 
-#include <hal/hal_core.h>
+#include <hal/core.h>
 #include <syscall.h>
 #include <errno.h>
 #include <sys/resource.h>

@@ -31,7 +31,7 @@
  */
 
 #include <kstring.h>
-#include <libkern/strcbuf.h>
+#include <strcbuf.h>
 
 void strcbuf_insert(struct strcbuf * buf, const char * line, size_t len)
 {

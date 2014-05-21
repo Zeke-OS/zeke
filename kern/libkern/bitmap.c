@@ -30,7 +30,7 @@
  *******************************************************************************
  */
 
-#include <libkern/bitmap.h>
+#include <bitmap.h>
 
 #define BIT2WORDI(i)    ((i - (i & (SIZEOF_BITMAP_T - 1))) / SIZEOF_BITMAP_T)
 #define BIT2WBITOFF(i)  (i & (SIZEOF_BITMAP_T - 1))

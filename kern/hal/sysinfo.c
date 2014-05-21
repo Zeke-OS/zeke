@@ -34,7 +34,7 @@
   * @{
   */
 
-#include "sysinfo.h"
+#include <hal/sysinfo.h>
 
 sysinfo_t sysinfo;
 

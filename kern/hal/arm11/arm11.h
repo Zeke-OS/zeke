@@ -45,7 +45,7 @@
 
 #include <autoconf.h>
 #include <kernel.h>
-#include <hal/hal_core.h>
+#include <hal/core.h>
 
 #if configARM_PROFILE_M != 0
 #error ARM Cortex-M profile is not supported by this layer.

@@ -41,7 +41,7 @@
 #include <kerror.h>
 #include <klocks.h>
 #include <sys/sysctl.h>
-#include "mmu.h"
+#include <hal/mmu.h>
 
 /* Definitions for Page fault counter *****************************************/
 #define PFC_FREQ    (int)configSCHED_HZ /* We wan't to compute pf/s once per

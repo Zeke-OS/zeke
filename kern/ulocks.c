@@ -34,9 +34,7 @@
 #define KERNEL_INTERNAL
 #include <syscall.h>
 #include <semaphore.h>
-#ifndef PU_TEST_BUILD
-#include <hal/hal_core.h>
-#endif
+#include <hal/core.h>
 #include <vm/vm.h>
 #include <sched.h>
 #include <timers.h>

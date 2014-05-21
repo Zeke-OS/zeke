@@ -42,6 +42,7 @@
 #include <kerror.h>
 #include "bcm2835_mmio.h"
 #include "bcm2835_gpio.h"
+#include <hal/core.h>
 #include <hal/uart.h>
 
 #define UART0_BASE      0x20201000

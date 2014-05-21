@@ -44,7 +44,7 @@
 #include <autoconf.h>
 #include <kerror.h>
 #include <errno.h>
-#include "arm11.h"
+#include <hal/core.h>
 
 volatile uint32_t flag_kernel_tick = 0;
 

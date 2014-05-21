@@ -36,7 +36,7 @@
   * @{
   */
 
-#include <hal/hal_core.h>
+#include <hal/core.h>
 #include <syscall.h>
 #include <pthread.h>
 

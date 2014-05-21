@@ -32,8 +32,8 @@
 
 #define KERNEL_INTERNAL
 #include <kinit.h>
-#include <libkern/bitmap.h>
-#include <libkern/dllist.h>
+#include <bitmap.h>
+#include <dllist.h>
 #include <dynmem.h>
 #include <kmalloc.h>
 #include <kstring.h>
