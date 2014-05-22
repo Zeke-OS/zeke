@@ -59,12 +59,11 @@ pid_t proc_fork(pid_t pid)
     /*
      * http://pubs.opengroup.org/onlinepubs/9699919799/functions/fork.html
      */
+
 #if configDEBUG >= KERROR_DEBUG
-    {
-    char buf[40];
+    char buf[80];
     ksprintf(buf, sizeof(buf), "fork(%u)", pid);
     KERROR(KERROR_DEBUG, buf);
-    }
 #endif
 
     proc_info_t * const old_proc = proc_get_struct(pid);
@@ -286,15 +285,11 @@ pid_t proc_fork(pid_t pid)
     procarr_insert(new_proc);
 
     if (new_proc->main_thread) {
-        /* TODO Should be enabled */
         sched_thread_set_exec(new_proc->main_thread->id);
     }
 #if configDEBUG >= KERROR_DEBUG
-    {
-        char buf[80];
-        ksprintf(buf, sizeof(buf), "Fork created: %u", get_current_tid());
-        KERROR(KERROR_DEBUG, buf);
-    }
+    ksprintf(buf, sizeof(buf), "Fork created: %u", get_current_tid());
+    KERROR(KERROR_DEBUG, buf);
 #endif
     goto out; /* Fork created. */
 

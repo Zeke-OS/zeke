@@ -31,10 +31,6 @@
  *******************************************************************************
  */
 
-/** @addtogroup Scheduler
-  * @{
-  */
-
 #define KERNEL_INTERNAL
 #include <stdint.h>
 #include <stddef.h>
@@ -226,10 +222,6 @@ void sched_calc_loads(void)
     }
 }
 
-/**
- * Return load averages in integer format scaled to 100.
- * @param[out] loads load averages.
- */
 void sched_get_loads(uint32_t loads[3])
 {
     rwlock_rdlock(&loadavg_lock);
@@ -290,12 +282,6 @@ void sched_context_switcher(void)
     current_thread->ts_counter--;
 }
 
-/**
- * Get pointer to a threadInfo structure.
- * @param thread_id id of a thread.
- * @return Pointer to a threadInfo structure of a correspondig thread id
- *         or NULL if thread does not exist.
- */
 threadInfo_t * sched_get_pThreadInfo(pthread_t thread_id)
 {
     if (thread_id > configSCHED_MAX_THREADS)
@@ -405,16 +391,6 @@ static void sched_thread_set_inheritance(threadInfo_t * new_child, threadInfo_t 
     last_node->inh.next_child = new_child;
 }
 
-/**
- * Fork current thread.
- * @note Cloned thread is set to sleep state and caller of this function should
- * set it to exec state. Caller is also expected to handle user stack issues as
- * as well. The new thread is exact clone of the current thread but with a new
- * kernel stack.
- * @return  0 clone succeed and this is the new thread executing;
- *          < 0 error;
- *          > 0 clone succeed and return value is the id of the new thread.
- */
 pthread_t sched_thread_fork(void)
 {
     threadInfo_t * const old_thread = current_thread;
@@ -461,10 +437,6 @@ pthread_t sched_thread_fork(void)
     return retval;
 }
 
-/**
- * Set thread into execution with its default priority.
- * @param thread_id is the thread id.
- */
 void sched_thread_set_exec(pthread_t thread_id)
 {
     _sched_thread_set_exec(thread_id, task_table[thread_id].def_priority);
@@ -495,9 +467,6 @@ static void _sched_thread_set_exec(pthread_t thread_id, osPriority pri)
     }
 }
 
-/**
- * Put the current thread into sleep.
- */
 void sched_thread_sleep_current(void)
 {
     istate_t s;
@@ -624,18 +593,6 @@ static void sched_thread_sleep(long millisec)
 /* Functions defined in header file
  ******************************************************************************/
 
-/**
-  * @}
-  */
-
-/** @addtogroup Kernel
-  * @{
-  */
-
-/** @addtogroup External_routines
-  * @{
-  */
-
 /*  ==== Thread Management ==== */
 
 pthread_t sched_threadCreate(struct _ds_pthread_create * thread_def, int priv)
@@ -759,14 +716,7 @@ osPriority sched_thread_get_priority(pthread_t thread_id)
     return task_table[thread_id].def_priority;
 }
 
-/**
-  * @}
-  */
-
 /* Syscall handlers ***********************************************************/
-/** @addtogroup Syscall_handlers
-  * @{
-  */
 
 uintptr_t sched_syscall(uint32_t type, void * p)
 {
@@ -863,11 +813,3 @@ uintptr_t sched_syscall(uint32_t type, void * p)
         return (uintptr_t)NULL;
     }
 }
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */

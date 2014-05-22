@@ -31,7 +31,7 @@
  *******************************************************************************
  */
 
-/** @addtogroup Scheduler
+/** @addtogroup sched
   * @{
   */
 
@@ -172,10 +172,42 @@ typedef struct {
 extern threadInfo_t * current_thread;
 
 /* Public function prototypes ***************************************************/
+
+/**
+ * Return load averages in integer format scaled to 100.
+ * @param[out] loads load averages.
+ */
 void sched_get_loads(uint32_t loads[3]);
+
+/**
+ * Get pointer to a threadInfo structure.
+ * @param thread_id id of a thread.
+ * @return Pointer to a threadInfo structure of a correspondig thread id
+ *         or NULL if thread does not exist.
+ */
 threadInfo_t * sched_get_pThreadInfo(pthread_t thread_id);
+
+/**
+ * Fork current thread.
+ * @note Cloned thread is set to sleep state and caller of this function should
+ * set it to exec state. Caller is also expected to handle user stack issues as
+ * as well. The new thread is exact clone of the current thread but with a new
+ * kernel stack.
+ * @return  0 clone succeed and this is the new thread executing;
+ *          < 0 error;
+ *          > 0 clone succeed and return value is the id of the new thread.
+ */
 pthread_t sched_thread_fork();
+
+/**
+ * Set thread into execution with its default priority.
+ * @param thread_id is the thread id.
+ */
 void sched_thread_set_exec(pthread_t thread_id);
+
+/**
+ * Put the current thread into sleep.
+ */
 void sched_thread_sleep_current(void);
 
 /* TODO Following shouldn't be extern'd and there should be better way to export
