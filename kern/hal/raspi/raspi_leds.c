@@ -52,12 +52,13 @@ void raspi_leds_init(void) {
     SUBSYS_INIT();
 
     unsigned int sel;
-
-    mmio_start();
+    istate_t s_entry;
 
     /* Each GPIO has 3 bits which determine its function
      * GPIO 14 and 16 are in GPFSEL1
      */
+
+    s_entry = mmio_start();
 
     /* Read current value of GPFSEL1 */
     sel = mmio_read(GPIO_GPFSEL1);
@@ -75,19 +76,22 @@ void raspi_leds_init(void) {
     /* Enable pull-up control, then wait for some cycles.
      */
     mmio_write(GPIO_GPPUD, 2);
+    mmio_end(s_entry);
     bcm2835_gpio_delay(150);
 
     /* Set the pull up/down clock for pin 14 */
+    s_entry = mmio_start();
     mmio_write(GPIO_PUDCLK0, 1 << 14);
     mmio_write(GPIO_PUDCLK1, 0);
+    mmio_end(s_entry);
     bcm2835_gpio_delay(150);
 
     /* Disable pull-up control and reset the clock registers. */
+    s_entry = mmio_start();
     mmio_write(GPIO_GPPUD, 0);
     mmio_write(GPIO_GPPUD, 0);
     mmio_write(GPIO_PUDCLK1, 0);
-
-    mmio_end();
+    mmio_end(s_entry);
 
     for (int i = 0; i < 4; i++) {
         raspi_led_invert();
@@ -101,9 +105,10 @@ static unsigned int led_status;
 
 void raspi_led_invert(void)
 {
-    led_status = !led_status;
+    istate_t s_entry;
 
-    mmio_start();
+    led_status = !led_status;
+    s_entry = mmio_start();
 
     if(led_status) {
         mmio_write(GPIO_GPCLR0, RASPI_LED_POS); /* on */
@@ -111,7 +116,7 @@ void raspi_led_invert(void)
         mmio_write(GPIO_GPSET0, RASPI_LED_POS); /* off */
     }
 
-    mmio_end();
+    mmio_end(s_entry);
 }
 
 /**

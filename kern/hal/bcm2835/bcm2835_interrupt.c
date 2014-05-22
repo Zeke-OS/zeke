@@ -81,24 +81,27 @@ extern volatile uint32_t flag_kernel_tick;
 void interrupt_clear_timer(void)
 {
     uint32_t val;
+    istate_t s_entry;
 
-    mmio_start();
+    s_entry = mmio_start();
     val = mmio_read(ARM_TIMER_VALUE);
     if (val == 0) {
         mmio_write(ARM_TIMER_IRQ_CLEAR, 0);
-        mmio_end();
+        mmio_end(s_entry);
 #if 0
         bcm2835_uart_uputc('C'); /* Timer debug print */
 #endif
         flag_kernel_tick = 1;
-    } else mmio_end();
+    } else mmio_end(s_entry);
 }
 
 void bcm_interrupt_postinit(void)
 {
     KERROR(KERROR_INFO, "Starting ARM timer");
 
-    mmio_start();
+    istate_t s_entry;
+
+    s_entry = mmio_start();
 
     /* Use the ARM timer - BCM 2832 peripherals doc, p.196 */
     /* Enable ARM timer IRQ */
@@ -109,6 +112,8 @@ void bcm_interrupt_postinit(void)
 
     mmio_write(ARM_TIMER_CONTROL,
             (ARM_TIMER_PRESCALE_16 | ARM_TIMER_EN | ARM_TIMER_INT_EN | ARM_TIMER_23BIT));
+
+    mmio_end(s_entry);
 
     KERROR(KERROR_DEBUG, "OK");
 }

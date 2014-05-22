@@ -42,33 +42,42 @@
 #define BMC2835_MMIO_H
 
 #include <stdint.h>
+#include <hal/core.h>
 
 /* mmio_start & mmio_end are related to out-of-order AXI bus system in
  * BCM2835. See p. 7 in BCM2835-ARM-Peripherals.pdf */
 
 /**
- * Start MMIO (write) access to a new peripheral.
+ * Begin MMIO access.
  */
-static inline void mmio_start(void)
+static inline istate_t mmio_start(void)
 {
     const uint32_t rd = 0;
+    istate_t s_entry;
+
+    s_entry = get_interrupt_state();
+    disable_interrupt();
 
     __asm__ volatile (
         "MCR    p15, 0, %[rd], c7, c10, 4\n\t" /* Drain write buffer. */
         "MCR    p15, 0, %[rd], c7, c10, 5\n\t" /* DMB */
         : : [rd]"r" (rd));
+
+    return s_entry;
 }
 
 /**
- * End MMIO (read) access.
+ * End MMIO access.
  */
-static inline void mmio_end(void)
+static inline void mmio_end(istate_t s_entry)
 {
     const uint32_t rd = 0;
 
     __asm__ volatile (
         "MCR    p15, 0, %[rd], c7, c10, 5\n\t" /* DMB */
         : : [rd]"r" (rd));
+
+    set_interrupt_state(s_entry);
 }
 
 /**
