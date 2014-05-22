@@ -1,2 +1,2 @@
 #!/bin/sh
-man -M ./man $1
+man -M ./man $1 $2
