@@ -84,7 +84,7 @@ void bcm2835_uart_init(const uart_port_init_t * conf)
 {
     istate_t s_entry;
 
-    s_entry = mmio_start();
+    mmio_start(&s_entry);
 
     /* Disable UART0. */
     mmio_write(UART0_CR, 0x00000000);
@@ -106,12 +106,12 @@ void bcm2835_uart_init(const uart_port_init_t * conf)
     /* Clear pending interrupts. */
     mmio_write(UART0_ICR, 0x7FF);
 
-    mmio_end(s_entry);
+    mmio_end(&s_entry);
 
     set_baudrate(conf->baud_rate); /* Set baud rate */
     set_lcrh(conf); /* Configure UART */
 
-    s_entry = mmio_start();
+     mmio_start(&s_entry);
 
     /* Mask all interrupts. */
     /*mmio_write(UART0_IMSC, (1 << 1) | (1 << 4) | (1 << 5) |
@@ -121,7 +121,7 @@ void bcm2835_uart_init(const uart_port_init_t * conf)
     /* Enable UART0, receive & transfer part of UART.*/
     mmio_write(UART0_CR, (1 << 0) | (1 << 8) | (1 << 9));
 
-    mmio_end(s_entry);
+    mmio_end(&s_entry);
 }
 
 
@@ -137,10 +137,10 @@ static void set_baudrate(unsigned int baud_rate)
     uint32_t fraction = tmp - (divider << 6);
     istate_t s_entry;
 
-    s_entry = mmio_start();
+    mmio_start(&s_entry);
     mmio_write(UART0_IBRD, divider);
     mmio_write(UART0_FBRD, fraction);
-    mmio_end(s_entry);
+    mmio_end(&s_entry);
 }
 
 static void set_lcrh(const uart_port_init_t * conf)
@@ -178,22 +178,23 @@ static void set_lcrh(const uart_port_init_t * conf)
             break;
     }
 
-    s_entry = mmio_start();
+    mmio_start(&s_entry);
     mmio_write(UART0_LCRH, tmp);
-    mmio_end(s_entry);
+    mmio_end(&s_entry);
 }
 
 void bcm2835_uart_uputc(uint8_t byte)
 {
     istate_t s_entry;
 
-    s_entry = mmio_start();
+    mmio_start(&s_entry);
 
+    /* TODO We may don't want to block everything if UART is blocked. */
     /* Wait for UART to become ready to transmit. */
     while (mmio_read(UART0_FR) & (1 << 5));
     mmio_write(UART0_DR, byte);
 
-    mmio_end(s_entry);
+    mmio_end(&s_entry);
 }
 
 int bcm2835_uart_ugetc()
@@ -201,7 +202,7 @@ int bcm2835_uart_ugetc()
     int byte = -1;
     istate_t s_entry;
 
-    s_entry = mmio_start();
+    mmio_start(&s_entry);
 
     /* Check that receive FIFO/register is not empty. */
     if(!(mmio_read(UART0_FR) & 0x10)) {
@@ -209,7 +210,7 @@ int bcm2835_uart_ugetc()
         byte = mmio_read(UART0_DR);
     }
 
-    mmio_end(s_entry);
+    mmio_end(&s_entry);
 
     return byte;
 }

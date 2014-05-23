@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    bcm2835_mmio.c
+ * @file    fonteng.h
  * @author  Olli Vanhoja
- * @brief   Access to MMIO registers on BCM2835.
+ * @brief   Font engine for frame buffer.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,20 +30,15 @@
  *******************************************************************************
  */
 
-#include <hal/mmu.h>
-#include "bcm2835_mmio.h"
+#pragma once
+#ifndef HAL_FB_FONTENG_H
+#define HAL_FB_FONTENG_H
 
-mmu_region_t bcm2835_mmio_region = {
-    .vaddr      = 0x20000000,
-    .num_pages  = 16,
-    .ap         = MMU_AP_RWNA,
-    .control    = (MMU_CTRL_MEMTYPE_DEV | MMU_CTRL_XN),
-    .paddr      = 0x20000000,
-    .pt         = &mmu_pagetable_master
-};
+#include <stdint.h>
 
-void bcm2835_mmio_init(void) __attribute__((constructor));
-void bcm2835_mmio_init(void)
-{
-    mmu_map_region(&bcm2835_mmio_region);
-}
+#define CHARSIZE_X 8
+#define CHARSIZE_Y 8
+
+const char * fonteng_getglyph(uint16_t ch);
+
+#endif /* HAL_FB_FONTENG_H */

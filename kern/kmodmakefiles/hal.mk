@@ -3,6 +3,7 @@ hal-SRC-1 += kern/hal/sysinfo.c
 hal-SRC-$(configATAG) += kern/hal/atag.c
 hal-SRC-$(configMMU) += kern/hal/mmu.c
 hal-SRC-$(configUART) += kern/hal/uart.c
+hal-SRC-$(configFB) += $(wildcard kern/hal/fb/*.c)
 
 # Target model specific modules
 ifeq ($(configMCU_MODEL),MCU_MODEL_BCM2835)

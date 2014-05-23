@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    bcm2835_mmio.c
+ * @file    bcm2835_fb.h
  * @author  Olli Vanhoja
- * @brief   Access to MMIO registers on BCM2835.
+ * @brief   BCM2835 frame buffer driver.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,20 +30,12 @@
  *******************************************************************************
  */
 
-#include <hal/mmu.h>
-#include "bcm2835_mmio.h"
+#pragma once
+#ifndef BCM2835_FB_H
+#define BCM2835_FV_H
 
-mmu_region_t bcm2835_mmio_region = {
-    .vaddr      = 0x20000000,
-    .num_pages  = 16,
-    .ap         = MMU_AP_RWNA,
-    .control    = (MMU_CTRL_MEMTYPE_DEV | MMU_CTRL_XN),
-    .paddr      = 0x20000000,
-    .pt         = &mmu_pagetable_master
-};
+#include <stdint.h>
 
-void bcm2835_mmio_init(void) __attribute__((constructor));
-void bcm2835_mmio_init(void)
-{
-    mmu_map_region(&bcm2835_mmio_region);
-}
+void bcm2835_fb_init(void);
+
+#endif /* BCM2835_FB_H */

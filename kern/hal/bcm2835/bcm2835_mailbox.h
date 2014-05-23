@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    bcm2835_mmio.c
+ * @file    bcm2835_mailbox.h
  * @author  Olli Vanhoja
- * @brief   Access to MMIO registers on BCM2835.
+ * @brief   Access to BCM2835 mailboxes.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,20 +30,34 @@
  *******************************************************************************
  */
 
-#include <hal/mmu.h>
-#include "bcm2835_mmio.h"
+#pragma once
+#ifndef BCM2835_MAILBOX_H
+#define BCM2835_MAILBOX_H
 
-mmu_region_t bcm2835_mmio_region = {
-    .vaddr      = 0x20000000,
-    .num_pages  = 16,
-    .ap         = MMU_AP_RWNA,
-    .control    = (MMU_CTRL_MEMTYPE_DEV | MMU_CTRL_XN),
-    .paddr      = 0x20000000,
-    .pt         = &mmu_pagetable_master
-};
+#include <stdint.h>
 
-void bcm2835_mmio_init(void) __attribute__((constructor));
-void bcm2835_mmio_init(void)
-{
-    mmu_map_region(&bcm2835_mmio_region);
-}
+/* Mailbox channels */
+#define BCM2835_MBCH_PM         0   /*!< Power management interface */
+#define BCM2835_MBCH_FB         1   /*!< Frame Buffer */
+#define BCM2835_MBCH_VUART      2   /*!< Virtual UART */
+#define BCM2835_MBCH_VCHIQ      3   /*!< VCHIQ interface */
+#define BCM2835_MBCH_LEDS       4   /*!< LEDs interface */
+#define BCM2835_MBCH_BUTTONS    5   /*!< Buttons interface */
+#define BCM2835_MBCH_TOUCH      6   /*!< Touch screen interface */
+
+/**
+ * Read from BCM2835 mailbox.
+ * @param channel is a channel number.
+ * @return  Returns received mailbox value;
+ *          If no data is received 0xffffffff is returned.
+ */
+uint32_t bcm2835_readmailbox(unsigned int channel);
+
+/**
+ * Write to BCM2835 mailbox.
+ * @param channel   is a channel number.
+ * @param data      is the data to be written.
+ */
+void bcm2835_writemailbox(unsigned int channel, uint32_t data);
+
+#endif /* BCM2835_MAILBOX_H */

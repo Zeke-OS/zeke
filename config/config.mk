@@ -42,6 +42,7 @@ configARCH = __ARM6K__# Architecture of the core
 configMMU = 1# MMU support
 configUART = 1#
 configUART_MAX_PORTS = 2# Maximum number of UART ports
+configFB = 1# Enable Frame Buffer support
 configATAG = 1# Support bootloader ATAGs
 configMP = 0# Enable multi-processing support Requires: configREEMPT
 
