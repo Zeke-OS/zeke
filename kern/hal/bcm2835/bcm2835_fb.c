@@ -90,6 +90,7 @@ void bcm2835_fb_init(void)
 
     /* TODO Remove this test code */
     console_write(" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~");
+    console_write("AB\bC");
 
     SUBSYS_INITFINI("BCM2835_fb OK");
 }

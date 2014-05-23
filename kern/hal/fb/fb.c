@@ -38,27 +38,24 @@
 /*
  * TODO Array or list?
  */
-struct fb_conf fb_main;
-
-/* Current console text cursor position (ie. where the next character will
- * be written
- */
-static int consx = 0;
-static int consy = 0;
+struct fb_conf * fb_main;
 
 /* Current fg/bg colour */
-static unsigned short int fgcolour = 0xff;
-static unsigned short int bgcolour = 0;
-
-/* A small stack to allow temporary colour changes in text */
-static unsigned int colour_stack[] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-static unsigned int colour_sp = 8;
+const uint32_t def_fg_color = 0xffffff;
+const uint32_t def_bg_color = 0x000000;
 
 void fb_register(struct fb_conf * fb)
 {
-    fb_main = *fb;
-    fb_main.cons.max_cols = 80;
-    fb_main.cons.max_rows = 25;
+    fb_main = kmalloc(sizeof(struct fb_conf));
+
+    memcpy(fb_main, fb, sizeof(struct fb_conf));
+    fb_main->cons.max_cols = 80;
+    fb_main->cons.max_rows = 25;
+
+    fb_main->cons.state.consx = 0;
+    fb_main->cons.state.consy = 0;
+    fb_main->cons.state.fg_color = def_fg_color;
+    fb_main->cons.state.bg_color = def_bg_color;
 }
 
 /*
@@ -72,12 +69,14 @@ static void newline(void)
 {
     int * source;
     /* Number of bytes in a character row */
-    unsigned int rowbytes = CHARSIZE_Y * fb_main.pitch;
-    const size_t max_rows = fb_main.cons.max_rows;
+    unsigned int rowbytes = CHARSIZE_Y * fb_main->pitch;
+    const size_t max_rows = fb_main->cons.max_rows;
+    size_t *const consx = &fb_main->cons.state.consx;
+    size_t *const consy = &fb_main->cons.state.consy;
 
-    consx = 0;
-    if(consy < (max_rows - 1)) {
-        consy++;
+    *consx = 0;
+    if(*consy < (max_rows - 1)) {
+        (*consy)++;
         return;
     }
 
@@ -86,11 +85,11 @@ static void newline(void)
      */
 
     /* Calculate the address to copy the screen data from */
-    source = (int *)(fb_main.base + rowbytes);
-    memmove((void *)fb_main.base, source, (max_rows - 1) * rowbytes);
+    source = (int *)(fb_main->base + rowbytes);
+    memmove((void *)fb_main->base, source, (max_rows - 1) * rowbytes);
 
     /* Clear last line on screen */
-    memset((void *)(fb_main.base + (max_rows - 1) * rowbytes), 0, rowbytes);
+    memset((void *)(fb_main->base + (max_rows - 1) * rowbytes), 0, rowbytes);
 }
 
 /*
@@ -100,78 +99,68 @@ static void newline(void)
  */
 void console_write(char * text)
 {
+    size_t *const consx = &fb_main->cons.state.consx;
+    size_t *const consy = &fb_main->cons.state.consy;
+    size_t pitch = fb_main->pitch;
     unsigned int row, addr;
     int col;
-    char ch;
+    uint16_t ch;
     const char * font_glyph;
 
-    while((ch = *text)) {
+    while ((ch = *text)) {
         text++;
 
         /* Deal with control codes */
-        switch(ch)
-        {
-            case 1: fgcolour = 0b1111100000000000; continue;
-            case 2: fgcolour = 0b0000011111100000; continue;
-            case 3: fgcolour = 0b0000000000011111; continue;
-            case 4: fgcolour = 0b1111111111100000; continue;
-            case 5: fgcolour = 0b1111100000011111; continue;
-            case 6: fgcolour = 0b0000011111111111; continue;
-            case 7: fgcolour = 0b1111111111111111; continue;
-            case 8: fgcolour = 0b0000000000000000; continue;
-                /* Half brightness */
-            case 9: fgcolour = (fgcolour >> 1) & 0b0111101111101111; continue;
-            case 10: newline(); continue;
-            case 11: /* Colour stack push */
-                if(colour_sp)
-                    colour_sp--;
-                colour_stack[colour_sp] =
-                    fgcolour | (bgcolour<<16);
-                continue;
-            case 12: /* Colour stack pop */
-                fgcolour = colour_stack[colour_sp] & 0xffff;
-                bgcolour = colour_stack[colour_sp] >> 16;
-                if(colour_sp<8)
-                    colour_sp++;
-                continue;
-            case 17: bgcolour = 0b1111100000000000; continue;
-            case 18: bgcolour = 0b0000011111100000; continue;
-            case 19: bgcolour = 0b0000000000011111; continue;
-            case 20: bgcolour = 0b1111111111100000; continue;
-            case 21: bgcolour = 0b1111100000011111; continue;
-            case 22: bgcolour = 0b0000011111111111; continue;
-            case 23: bgcolour = 0b1111111111111111; continue;
-            case 24: bgcolour = 0b0000000000000000; continue;
-                /* Half brightness */
-            case 25: bgcolour = (bgcolour >> 1) & 0b0111101111101111; continue;
+        switch (ch) {
+        case 0x5: /* ENQ */
+            continue;
+        case 0x8: /* BS */
+            if (*consx > 0)
+                (*consx)--;
+            continue;
+        case 0x9: /* TAB */
+            console_write("        ");
+        case 0xd: /* CR */
+            *consx = 0;
+            continue;
+        case 0xa: /* FF */
+        case 0xb: /* VT */
+        case 0xc: /* LF */
+            {
+            int tmp = *consx;
+            newline();
+            *consx = tmp;
+            }
+            continue;
         }
 
-        if(ch<32)
-            ch=0;
+        if (ch < 32)
+            ch = 0;
 
         font_glyph = fonteng_getglyph(ch);
-        for(row = 0; row < CHARSIZE_Y; row++) {
+        for (row = 0; row < CHARSIZE_Y; row++) {
             int glyph_x = 0;
 
-            for(col = 0; col < CHARSIZE_X - 1; col++) {
-                int dcolor;
-                addr = (row + consy * CHARSIZE_Y) * fb_main.pitch
-                        + (consx * CHARSIZE_X + glyph_x) * 3;
+            for (col = 0; col < CHARSIZE_X - 1; col++) {
+                uint32_t dcolor;
+                addr = fb_main->base
+                        + ((row + *consy * CHARSIZE_Y) * pitch
+                        + (*consx * CHARSIZE_X + glyph_x) * 3);
 
-                if(row < (CHARSIZE_Y - 1) && (font_glyph[row] & (1 << col)))
-                    dcolor = fgcolour;
+                if (row < (CHARSIZE_Y - 1) && (font_glyph[row] & (1 << col)))
+                    dcolor = fb_main->cons.state.fg_color;
                 else
-                    dcolor = bgcolour;
+                    dcolor = fb_main->cons.state.bg_color;
 
-                *(unsigned short int *)(fb_main.base + addr + 0) = dcolor;
-                *(unsigned short int *)(fb_main.base + addr + 1) = dcolor;
-                *(unsigned short int *)(fb_main.base + addr + 2) = dcolor;
+                *(char *)(addr + 0) = (dcolor >> 16) & 0xff;
+                *(char *)(addr + 1) = (dcolor >> 8) & 0xff;
+                *(char *)(addr + 2) = dcolor & 0xff;
 
                 glyph_x++;
             }
         }
 
-        if(++consx >= fb_main.cons.max_cols)
+        if(++(*consx) >= fb_main->cons.max_cols)
             newline();
     }
 }

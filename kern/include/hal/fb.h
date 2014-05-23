@@ -42,6 +42,12 @@ struct fb_conf {
     struct cons {
         size_t max_cols;
         size_t max_rows;
+        struct cons_state {
+            size_t consx;
+            size_t consy;
+            uint32_t fg_color; /*!< Current fg color. */
+            uint32_t bg_color; /*!< Current bg color. */
+        } state;
     } cons;
 };
 
