@@ -78,7 +78,7 @@ void bcm2835_fb_init(void)
     bcm2835_fb_region.paddr = fb_bcm.fb_paddr;
     mmu_map_region(&bcm2835_fb_region);
 
-    /* TODO Remove this test code */
+    /* Register new frame buffer */
     struct fb_conf fb_gen = {
         .width  = fb_bcm.width,
         .height = fb_bcm.height,
@@ -87,6 +87,8 @@ void bcm2835_fb_init(void)
         .base = fb_bcm.fb_paddr
     };
     fb_register(&fb_gen);
+
+    /* TODO Remove this test code */
     console_write(" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~");
 
     SUBSYS_INITFINI("BCM2835_fb OK");
@@ -110,9 +112,9 @@ static void commit_fb_config(struct bcm2835_fb_config * fb)
     char buf[120];
 
     bcm2835_writemailbox(BCM2835_MBCH_FB, (uint32_t)fb);
-    if (bcm2835_readmailbox(BCM2835_MBCH_FB)) {
+    if (!bcm2835_readmailbox(BCM2835_MBCH_FB)) {
         /* TODO */
-        KERROR(KERROR_DEBUG, "GPU returned 0?");
+        KERROR(KERROR_DEBUG, "GPU init failed?");
     }
 
     ksprintf(buf, sizeof(buf), "BCM_FB: addr = %p, width = %u, height = %u, bpp = %u, pitch = %u, size = %u",
