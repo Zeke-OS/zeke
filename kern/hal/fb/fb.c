@@ -32,6 +32,7 @@
 
 #include <stddef.h>
 #include <kstring.h>
+#include <kmalloc.h>
 #include <hal/fb.h>
 #include "fonteng.h"
 
