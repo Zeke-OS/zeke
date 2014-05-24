@@ -34,6 +34,7 @@
 #include <kerror.h>
 #include "bcm2835_mmio.h"
 #include "bcm2835_gpio.h"
+#include "bcm2835_timers.h"
 #include <hal/core.h>
 #include <hal/uart.h>
 
@@ -93,11 +94,11 @@ void bcm2835_uart_init(const uart_port_init_t * conf)
 
     /* Disable pull up/down for all GPIO pins & delay for 150 cycles. */
     mmio_write(GPIO_GPPUD, 0x00000000);
-    bcm2835_gpio_delay(150);
+    bcm_udelay(150); /* Not 150 cycles anymore but it should work anyway. */
 
     /* Disable pull up/down for pin 14, 15 and delay for 150 cycles. */
     mmio_write(GPIO_PUDCLK0, (1 << 14) | (1 << 15));
-    bcm2835_gpio_delay(150);
+    bcm_udelay(150);
 
     /* Write 0 to GPPUDCLK0 to make it take effect.
      * (only affects to pins 14 & 15) */
@@ -111,7 +112,7 @@ void bcm2835_uart_init(const uart_port_init_t * conf)
     set_baudrate(conf->baud_rate); /* Set baud rate */
     set_lcrh(conf); /* Configure UART */
 
-     mmio_start(&s_entry);
+    mmio_start(&s_entry);
 
     /* Mask all interrupts. */
     /*mmio_write(UART0_IMSC, (1 << 1) | (1 << 4) | (1 << 5) |

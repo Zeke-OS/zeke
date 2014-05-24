@@ -1,5 +1,6 @@
 # Common to all platforms
 hal-SRC-1 += kern/hal/sysinfo.c
+hal-SRC-1 += kern/hal/hw_timers.c
 hal-SRC-$(configATAG) += kern/hal/atag.c
 hal-SRC-$(configMMU) += kern/hal/mmu.c
 hal-SRC-$(configUART) += kern/hal/uart.c

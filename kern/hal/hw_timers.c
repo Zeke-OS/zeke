@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    bcm2835_gpio.c
- * @author  Olli Vanhoja
- * @brief   BVM2835 gpio.
+ * @file hw_timers.c
+ * @author Olli Vanhoja
+ * @brief HW timer services.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,32 +30,16 @@
  *******************************************************************************
  */
 
-/** @addtogroup HAL
-* @{
-*/
+#include <hal/hw_timers.h>
 
-/** @addtogroup BCM2835
-* @{
-*/
+void (*_schedtimer_clear)();
 
-#include "bcm2835_gpio.h"
-
-/**
- * Insert delay.
- * Delay function is needed for some clock manipulation.
- * @param count delay time.
- */
-void bcm2835_gpio_delay(int32_t count)
+void register_schedtimer_clear(void (*clear)(void))
 {
-    __asm__ volatile("__delay_%=: subs %[count], %[count], #1; bne __delay_%=\n"
-            : : [count]"r"(count) : "cc");
+    _schedtimer_clear = clear;
 }
 
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
+void schedtimer_clear(void)
+{
+    _schedtimer_clear();
+}

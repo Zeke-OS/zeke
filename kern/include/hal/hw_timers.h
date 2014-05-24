@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    bcm2835_gpio.h
- * @author  Olli Vanhoja
- * @brief   BVM2835 gpio.
+ * @file hw_timers.h
+ * @author Olli Vanhoja
+ * @brief HW timer services.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,36 +30,11 @@
  *******************************************************************************
  */
 
-/** @addtogroup HAL
-* @{
-*/
+#pragma once
+#ifndef HW_TIMERS_H
+#define HW_TIMERS_H
 
-/** @addtogroup BCM2835
-* @{
-*/
+void register_schedtimer_clear(void (*clear)(void));
+void schedtimer_clear(void);
 
-#ifndef BCM2835_GPIO_H
-#define BCM2835_GPIO_H
-
-#include <stdint.h>
-
-#define GPIO_BASE       0x20200000
-#define GPIO_GPFSEL1    (GPIO_BASE + 0x04)
-#define GPIO_GPSET0     (GPIO_BASE + 0x1c)
-#define GPIO_GPCLR0     (GPIO_BASE + 0x28)
-#define GPIO_GPLEV0     (GPIO_BASE + 0x34)
-/** Pull up/down control of ALL GPIO pins. */
-#define GPIO_GPPUD      (GPIO_BASE + 0x94)
-/** Pull up/down control for specific GPIO pin. */
-#define GPIO_PUDCLK0  (GPIO_BASE + 0x98)
-#define GPIO_PUDCLK1  (GPIO_BASE + 0x9c)
-
-#endif /* BCM2835_GPIO_H */
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
+#endif /* HW_TIMERS_H */

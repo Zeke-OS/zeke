@@ -108,7 +108,7 @@ interrupt_sys:
     pushcontext
 
     /* Handle kernel_tick & Clear Timer IRQ if this is a real tick */
-    bl      interrupt_clear_timer
+    bl      schedtimer_clear
 
     /* Set Context ID to 0 (as we need ASID to be 0 in kernel mode) */
     mov     r0, #0

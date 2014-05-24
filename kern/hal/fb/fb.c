@@ -37,13 +37,15 @@
 #include "splash.h"
 #include "fonteng.h"
 
-/*
+/**
+ * Set rgb pixel.
  * addr = y * pitch + x * 3
  */
-#define set_pixel(addr, rgb) do {                           \
-            *(char *)((addr) + 0) = ((rgb) >> 16) & 0xff;   \
-            *(char *)((addr) + 1) = ((rgb) >> 8) & 0xff;    \
-            *(char *)((addr) + 2) = (rgb) & 0xff;           \
+#define set_pixel(base, x, y, rgb) do {                         \
+            const uintptr_t addr = base + y * pitch + x * 3;    \
+            *(char *)((addr) + 0) = ((rgb) >> 16) & 0xff;       \
+            *(char *)((addr) + 1) = ((rgb) >> 8) & 0xff;        \
+            *(char *)((addr) + 2) = (rgb) & 0xff;               \
 } while (0)
 
 
@@ -60,6 +62,7 @@ static void draw_splash(void);
 static void newline(void);
 static void draw_glyph(const char * font_glyph, size_t * consx, size_t * consy);
 
+/* TODO Should support multiple frame buffers or fail */
 void fb_register(struct fb_conf * fb)
 {
     fb_main = kmalloc(sizeof(struct fb_conf));
@@ -79,18 +82,13 @@ void fb_register(struct fb_conf * fb)
 
 static void draw_splash(void)
 {
+    const size_t pitch = fb_main->pitch;
+    const size_t base = fb_main->base;
     size_t col = 0;
     size_t row = 0;
-    size_t pitch = fb_main->pitch;
 
     for (int i = 0; i < splash_width * splash_height; i++) {
         uint32_t pxl[3];
-        uint32_t rgb;
-        size_t screen_width = fb_main->width;
-        uintptr_t addr;
-
-        SPLASH_PIXEL(splash_data, pxl);
-        rgb = (pxl[0] << 16) | (pxl[1] << 8) | pxl[2];
 
         if (i % splash_width == 0) {
             col = 0;
@@ -99,8 +97,8 @@ static void draw_splash(void)
             col++;
         }
 
-        addr = fb_main->base + row * pitch + col * 3;
-        set_pixel(addr, rgb);
+        SPLASH_PIXEL(splash_data, pxl);
+        set_pixel(base, col, row, (pxl[0] << 16) | (pxl[1] << 8) | pxl[2]);
     }
 }
 
@@ -115,7 +113,7 @@ static void newline(void)
 {
     int * source;
     /* Number of bytes in a character row */
-    unsigned int rowbytes = CHARSIZE_Y * fb_main->pitch;
+    const unsigned int rowbytes = CHARSIZE_Y * fb_main->pitch;
     const size_t max_rows = fb_main->cons.max_rows;
     size_t *const consx = &fb_main->cons.state.consx;
     size_t *const consy = &fb_main->cons.state.consy;
@@ -194,28 +192,25 @@ void fb_console_write(char * text)
  */
 static void draw_glyph(const char * font_glyph, size_t * consx, size_t * consy)
 {
-    uintptr_t addr;
     size_t col, row;
-    size_t pitch = fb_main->pitch;
-    uintptr_t base = fb_main->base;
-    uint32_t fg_color = fb_main->cons.state.fg_color;
-    uint32_t bg_color =fb_main->cons.state.bg_color;
+    const size_t pitch = fb_main->pitch;
+    const uintptr_t base = fb_main->base;
+    const uint32_t fg_color = fb_main->cons.state.fg_color;
+    const uint32_t bg_color = fb_main->cons.state.bg_color;
 
     for (row = 0; row < CHARSIZE_Y; row++) {
         int glyph_x = 0;
 
         for (col = 0; col < CHARSIZE_X; col++) {
             uint32_t rgb;
-            addr = base
-                    + ((row + *consy * CHARSIZE_Y) * pitch
-                    + (*consx * CHARSIZE_X + glyph_x) * 3);
 
             if (row < (CHARSIZE_Y) && (font_glyph[row] & (1 << col)))
                 rgb = fg_color;
             else
                 rgb = bg_color;
 
-            set_pixel(addr, rgb);
+            set_pixel(base, (*consx * CHARSIZE_X + glyph_x),
+                            (row + *consy * CHARSIZE_Y), rgb);
 
             glyph_x++;
         }

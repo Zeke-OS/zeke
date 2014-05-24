@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file arm1176jzf_s_interrupt.c
+ * @file bcm2835_timers.c
  * @author Olli Vanhoja
  * @brief Interrupt service routines.
  * @section LICENSE
@@ -34,8 +34,9 @@
 #define KERNEL_INTERNAL
 #include <kinit.h>
 #include <kerror.h>
+#include <hal/hw_timers.h>
 #include "bcm2835_mmio.h"
-#include "bcm2835_interrupt.h"
+#include "bcm2835_timers.h"
 
 #define ARM_TIMER_PRESCALE_1    0x0
 #define ARM_TIMER_PRESCALE_16   0x4
@@ -56,18 +57,25 @@
 #define ARM_TIMER_VALUE         0x2000b404
 #define ARM_TIMER_CONTROL       0x2000b408
 #define ARM_TIMER_IRQ_CLEAR     0x2000b40c
+
+#define SYS_TIMER_BASE          0x20003000
+#define SYS_TIMER_STATUS        (SYS_TIMER_BASE + 0x0)
+#define SYS_TIMER_CLO           (SYS_TIMER_BASE + 0x4)
+#define SYS_TIMER_CHI           (SYS_TIMER_BASE + 0x8)
+#define SYS_TIMER_C0            (SYS_TIMER_BASE + 0xc)
+#define SYS_TIMER_C1            (SYS_TIMER_BASE + 0x10)
+#define SYS_TIMER_C2            (SYS_TIMER_BASE + 0x14)
+#define SYS_TIMER_C3            (SYS_TIMER_BASE + 0x18)
 /* End of Peripheral Addresses */
 
 #define SYS_CLOCK       700000 /* kHz */
 #define ARM_TIMER_FREQ  configSCHED_HZ
 
-void interrupt_clear_timer(void);
-void bcm_interrupt_postinit(void);
-
-HW_POSTINIT_ENTRY(bcm_interrupt_postinit);
-
 extern volatile uint32_t flag_kernel_tick;
-void interrupt_clear_timer(void)
+
+static void enable_arm_timer(void);
+
+void bcm2835_timers_arm_clear(void)
 {
     uint32_t val;
     istate_t s_entry;
@@ -84,25 +92,39 @@ void interrupt_clear_timer(void)
     } else mmio_end(&s_entry);
 }
 
-void bcm_interrupt_postinit(void)
+static void enable_arm_timer(void)
 {
-    KERROR(KERROR_INFO, "Starting ARM timer");
-
     istate_t s_entry;
-
-    mmio_start(&s_entry);
 
     /* Use the ARM timer - BCM 2832 peripherals doc, p.196 */
     /* Enable ARM timer IRQ */
+    mmio_start(&s_entry);
     mmio_write(IRQ_ENABLE_BASIC, 0x00000001);
-
     /* Interrupt every (value * prescaler) timer ticks */
     mmio_write(ARM_TIMER_LOAD, (SYS_CLOCK / (ARM_TIMER_FREQ * 16)));
-
     mmio_write(ARM_TIMER_CONTROL,
-            (ARM_TIMER_PRESCALE_16 | ARM_TIMER_EN | ARM_TIMER_INT_EN | ARM_TIMER_23BIT));
-
+            (ARM_TIMER_PRESCALE_16 | ARM_TIMER_EN |
+             ARM_TIMER_INT_EN | ARM_TIMER_23BIT));
     mmio_end(&s_entry);
+}
+
+void bcm_udelay(uint32_t delay)
+{
+    volatile uint64_t * ts = (uint64_t *)SYS_TIMER_CLO;
+    uint64_t stop = * ts + delay;
+
+    while (*ts < stop)
+        __asm__ volatile ("nop");
+}
+
+void bcm_interrupt_postinit(void)
+{
+    SUBSYS_INIT();
+    KERROR(KERROR_INFO, "Starting ARM timer");
+
+    enable_arm_timer();
+    register_schedtimer_clear(bcm2835_timers_arm_clear);
 
     KERROR(KERROR_DEBUG, "OK");
 }
+HW_POSTINIT_ENTRY(bcm_interrupt_postinit);

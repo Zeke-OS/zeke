@@ -30,8 +30,8 @@
  *******************************************************************************
  */
 
-static unsigned int splash_width = 94;
-static unsigned int splash_height = 27;
+static const unsigned int splash_width = 94;
+static const unsigned int splash_height = 27;
 
 #define SPLASH_PIXEL(data, pixel) {\
 pixel[0] = (((data[0] - 33) << 2) | ((data[1] - 33) >> 4)); \

@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    arm11_interrupt.h
+ * @file    arm11_timers.h
  * @author  Olli Vanhoja
- * @brief   Header for arm11_interrupt.c module.
+ * @brief   Header for arm11_timers.c module.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
@@ -40,21 +40,15 @@
   */
 
 #pragma once
-#ifndef ARM11_INTERRUPT_H
-#define ARM11_INTERRUPT_H
+#ifndef BCM2835_TIMERS_H
+#define BCM2835_TIMERS_H
 
-#include <stddef.h>
+#include <stdint.h>
 
-/* ==== Vendor specific interrupt handlers ====
- * These are only referenced inside vendor specific code (mainly assembly) */
-void NMI_Handler(void);
-/* Hard fault is handled in core specific code */
-void SVC_Handler(void);
-void PendSV_Handler(void);
-void SysTick_Handler(void);
-void interrupt_clear_timer(void);
+void bcm2835_timers_arm_clear(void);
+void bcm_udelay(uint32_t delay);
 
-#endif /* BCM2835 */
+#endif /* BCM2835_TIMERS_H */
 
 /**
   * @}
