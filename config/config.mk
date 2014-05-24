@@ -39,10 +39,14 @@ configMCU_MODEL = MCU_MODEL_BCM2835
 #configARM_PROFILE_R = 0# Not supported
 configARM_PROFILE_M = 0#
 configARCH = __ARM6K__# Architecture of the core
+configATAG = 1# Support bootloader ATAGs
 configMMU = 1# MMU support
 configUART = 1#
 configUART_MAX_PORTS = 2# Maximum number of UART ports
 configFB = 1# Enable Frame Buffer support
+configFB_FONT_LATIN = 0# Latin extension
+configFB_FONT_GREEK = 0# Greek extension
+configFB_FONT_HIRAGANA = 0# Hiragana extension
 configATAG = 1# Support bootloader ATAGs
 configMP = 0# Enable multi-processing support Requires: configREEMPT
 

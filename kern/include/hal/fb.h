@@ -52,6 +52,6 @@ struct fb_conf {
 };
 
 void fb_register(struct fb_conf * fb);
-void console_write(char *text);
+void fb_console_write(char *text);
 
 #endif /* FB_H */
