@@ -80,25 +80,27 @@
 typedef struct {
     pid_t pid;
     char name[PROC_NAME_LEN]; /*!< process name */
-    int state; /*!< 0 - running, >0 stopped */
-    int priority; /*!< We might want to prioritize processes too */
-    long counter; /*!< Counter for process running time */
-    unsigned long blocked; /*!< bitmap of masked signals */
+    int state;                  /*!< 0 - running, >0 stopped */
+    int priority;               /*!< We might want to prioritize processes too */
+    long counter;               /*!< Counter for process running time */
+    unsigned long blocked;      /*!< bitmap of masked signals */
     int exit_code, exit_signal;
     uid_t uid, euid, suid, fsuid;
     gid_t gid, egid, sgid, fsgid;
-    unsigned long timeout; /*!< Used to kill processes with absolute timeout */
+    unsigned long timeout;      /*!< Used to kill processes with absolute timeout */
     long utime, stime, cutime, cstime, start_time; /*!< For performance statistics */
     struct rlimit rlim; /*!< hard and soft limit for filesize TODO: own struct or just pointer? */
+
     /* open file information */
-    struct vnode * cwd; /*!< Current working dir. */
-    files_t * files; /*!< Open files */
-    struct tty_struct * tty; /* NULL if no tty */
+    struct vnode * croot;       /*!< Current root dir. */
+    struct vnode * cwd;         /*!< Current working dir. */
+    files_t * files;            /*!< Open files */
+    struct tty_struct * tty;    /* NULL if no tty */
 
     /* Memory Management */
     struct vm_mm_struct mm;
-    void * brk_start;   /*!< Break start address. (end of heap data) */
-    void * brk_stop;    /*!< Break stop address. (end of heap region) */
+    void * brk_start;           /*!< Break start address. (end of heap data) */
+    void * brk_stop;            /*!< Break stop address. (end of heap region) */
 
     /* notes:
      * - main_thread already has a linked list of child threads

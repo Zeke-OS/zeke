@@ -3,10 +3,10 @@
  * @brief Test generic thread-safe queue implementation.
  */
 
-#include <kunit/kunit.h>
-#include <test/ktest_mib.h>
+#include <kunit.h>
+#include <ktest_mib.h>
 #include <kmalloc.h>
-#include <generic/dllist.h>
+#include <dllist.h>
 
 typedef struct {
     int a;

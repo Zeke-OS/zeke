@@ -3,14 +3,13 @@
  * @brief Test bitmap functions.
  */
 
-#include <kunit/limits.h>
 #if 0
 #include <time.h>
 #endif
 #include <libkern.h>
 #include <kunit.h>
-#include <test/ktest_mib.h>
-#include <generic/bitmap.h>
+#include <ktest_mib.h>
+#include <bitmap.h>
 
 #if 0
 static void rnd_allocs(int n);

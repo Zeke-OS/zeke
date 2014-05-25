@@ -3,12 +3,12 @@
  * @brief Test inode pool.
  */
 
-#include <kunit/kunit.h>
-#include <test/ktest_mib.h>
+#include <kunit.h>
+#include <ktest_mib.h>
 #include <libkern.h>
 #include <kmalloc.h>
 #include <fs/fs.h>
-#include <fs/inpool.h>
+#include "../../fs/inpool.h"
 
 typedef struct inode {
     vnode_t in_vnode;

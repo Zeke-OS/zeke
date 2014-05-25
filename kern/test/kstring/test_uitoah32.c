@@ -5,7 +5,7 @@
 
 #include <stdint.h>
 #include <kunit.h>
-#include <test/ktest_mib.h>
+#include <ktest_mib.h>
 #include <kstring.h>
 
 #define NTOSTR(s) _NTOSTR(s)

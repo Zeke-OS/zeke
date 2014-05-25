@@ -3,9 +3,9 @@
  * @brief Test generic thread-safe queue implementation.
  */
 
-#include <kunit/kunit.h>
-#include <test/ktest_mib.h>
-#include <generic/queue.h>
+#include <kunit.h>
+#include <ktest_mib.h>
+#include <queue_r.h>
 
 int tarr[5];
 queue_cb_t queue;

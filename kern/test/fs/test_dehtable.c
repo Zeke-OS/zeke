@@ -3,11 +3,11 @@
  * @brief Test directory entry hash table.
  */
 
-#include <kunit/kunit.h>
-#include <test/ktest_mib.h>
+#include <kunit.h>
+#include <ktest_mib.h>
 #include <kmalloc.h>
 #include <fs/fs.h>
-#include <fs/dehtable.h>
+#include "../../fs/dehtable.h"
 
 #define get_dirent(dea, offset) ((dh_dirent_t *)((size_t)(dea) + (offset)))
 

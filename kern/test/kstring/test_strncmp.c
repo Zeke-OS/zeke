@@ -4,7 +4,7 @@
  */
 
 #include <kunit.h>
-#include <test/ktest_mib.h>
+#include <ktest_mib.h>
 #include <kstring.h>
 
 static void setup()
