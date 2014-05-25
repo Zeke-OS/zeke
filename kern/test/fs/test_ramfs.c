@@ -390,7 +390,7 @@ static void walk_dirtree(vnode_t * vnode, int ind)
 
 static void all_tests() {
     ku_def_test(test_mount, KU_RUN);
-    ku_def_test(test_lookup, KU_SKIP);
+    ku_def_test(test_lookup, KU_RUN);
     ku_def_test(test_create_inode, KU_RUN);
     ku_def_test(test_create_multiple, KU_RUN);
     ku_def_test(test_write_read_reg, KU_RUN);

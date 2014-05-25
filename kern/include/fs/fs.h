@@ -50,10 +50,11 @@
 #endif
 #include <dirent.h>
 
-#define FS_FLAG_INIT        0x01 /*!< Filse system initialized. */
+#define FS_FLAG_INIT        0x01 /*!< File system initialized. */
 #define FS_FLAG_FAIL        0x08 /*!< File system has failed. */
 
 #define FS_FILENAME_MAX     255 /*!< Maximum file name length. */
+#define PATH_DELIMS "/"
 
 /* Some macros for use with flags *********************************************/
 /**

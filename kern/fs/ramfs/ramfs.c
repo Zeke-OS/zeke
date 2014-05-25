@@ -190,15 +190,12 @@ const vnode_ops_t ramfs_vnode_ops = {
     .readdir = ramfs_readdir
 };
 
-#ifndef PU_TEST_BUILD
 void ramfs_init(void) __attribute__((constructor));
 void ramfs_init(void)
 {
     /* Register ramfs with vfs. */
     fs_register(&ramfs_fs);
 }
-#endif
-
 
 /**
  * Mount a new ramfs.
@@ -635,8 +632,8 @@ static void init_sbn(ramfs_sb_t * ramfs_sb, const char * mpoint, uint32_t mode)
 
     sb->fs = &ramfs_fs;
     sb->mode_flags = mode;
-    sb->root = 0; /* Temorarily cleared */
-    sb->mtpt_path = kstrdup((void *)mpoint, FS_FILENAME_MAX);
+    sb->root = 0; /* Cleared temporarily */
+    sb->mtpt_path = kstrdup(mpoint, FS_FILENAME_MAX);
 
     /* Function pointers to superblock methods: */
     sb->get_vnode = ramfs_get_vnode;
