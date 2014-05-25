@@ -97,6 +97,12 @@ istate_t get_interrupt_state(void);
  */
 void set_interrupt_state(istate_t state);
 
+/**
+ * Get us timestamp.
+ * @return Returns us timestamp.
+ */
+uint64_t get_utime(void);
+
 /*
  * Core Implementation must provide following either as inlined functions or
  * macros:

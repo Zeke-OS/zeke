@@ -117,6 +117,11 @@ void bcm_udelay(uint32_t delay)
         __asm__ volatile ("nop");
 }
 
+uint64_t get_utime(void)
+{
+    return *((uint64_t *)SYS_TIMER_CLO);
+}
+
 void bcm_interrupt_postinit(void)
 {
     SUBSYS_INIT();
