@@ -43,11 +43,11 @@
 
 typedef uint32_t ksig_t;
 
-typedef struct {
+struct signals {
     ksig_t ps_block;       /*!< List of blocked signals. */
     ksig_t ps_wait;        /*!< Signal wait mask. */
     ksig_t ps_pending;     /*!< Signals pending for handling. */
-} sigs_t;
+};
 
 
 /**

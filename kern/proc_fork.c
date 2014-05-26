@@ -84,6 +84,14 @@ pid_t proc_fork(pid_t pid)
         goto out;
     }
 
+    /* First copy everything in the proc struct... */
+    memcpy(new_proc, old_proc, sizeof(proc_info_t));
+    /* Clear some things required to be zeroed at this point */
+    new_proc->state = PROC_STATE_INITIAL;
+    new_proc->files = 0;
+    new_proc->sigs.ps_pending = 0;
+    /* ..and then start to fix things. */
+
     /* Allocate a master page table for the new process. */
     new_proc->mm.mpt.vaddr = 0;
     new_proc->mm.mpt.type = MMU_PTT_MASTER;
@@ -101,7 +109,7 @@ pid_t proc_fork(pid_t pid)
         retval = -ENOMEM;
         goto free_pptable_arr;
     }
-    new_proc->mm.nr_regions = old_proc->mm.nr_regions;
+    /* new_proc->mm.nr_regions = old_proc->mm.nr_regions; Already done */
 
     /* Clone master page table. */
     if (mmu_ptcpy(&(new_proc->mm.mpt), &(old_proc->mm.mpt))) {
@@ -226,17 +234,13 @@ pid_t proc_fork(pid_t pid)
         vm_map_region((*new_proc->mm.regions)[i], vpt);
     }
 
-    /* Break values */
-    new_proc->brk_start = old_proc->brk_start;
-    new_proc->brk_stop = old_proc->brk_stop;
-
     /* Copy file descriptors */
     new_proc->files = kmalloc(SIZEOF_FILES(old_proc->files->count));
     if (!new_proc->files) {
         retval = -ENOMEM;
         goto free_regions;
     }
-    new_proc->files->count = old_proc->files->count;
+    /* new_proc->files->count = old_proc->files->count; Already done */
     for (int i = 0; i < old_proc->files->count; i++) {
         new_proc->files->fd[i] = old_proc->files->fd[i];
         if (new_proc->files->fd[i]) /* TODO Lock? */
@@ -277,7 +281,7 @@ pid_t proc_fork(pid_t pid)
     set_proc_inher(old_proc, new_proc);
 
     /* TODO state */
-    new_proc->state = PROC_STATE_STOPPED;
+    new_proc->state = PROC_STATE_READY;
 
     /* Insert the new process to _procarr */
     procarr_insert(new_proc);

@@ -66,7 +66,7 @@
 
 #define PROC_STATE_INITIAL  0
 #define PROC_STATE_RUNNING  1
-#define PROC_STATE_RUNNABLE 2   /* Can be woken up, ready to run */
+#define PROC_STATE_READY    2   /* Can be woken up, ready to run */
 #define PROC_STATE_WAITING  3   /* Can't be woken up */
 #define PROC_STATE_ZOMBIE   4
 #define PROC_STATE_STOPPED  8
@@ -128,7 +128,7 @@ typedef struct {
 
     threadInfo_t * main_thread; /*!< Main thread of this process. */
     /* signal handlers */
-    sigs_t sigs;                /*!< Signals. */
+    struct signals sigs;        /*!< Signals. */
 } proc_info_t;
 
 /* Proc dab handling error codes */
