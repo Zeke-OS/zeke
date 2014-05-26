@@ -8,9 +8,9 @@ Directory Structure
 -------------------
 
 + kern/                 Most of the kernel code.
++ /kern/include/        Most of the shared kernel header files.
 + kern/libkern/         Kernel "standard" library.
 + kern/libkern/kstring/ String functions.
-+ kern/libkern/generic/ Generic data structures.
 + kern/hal/             Harware abstraction layer.
 + kern/fs/              Virtual file system abstraction and other file systems.
 + kern/sched_X/         Thread scheduler implementations.
@@ -21,7 +21,7 @@ Directory Structure
 + config/               Kernel build config.
 + modmakefiles/         Kernel module makefiles.
 + sbin/                 System utilities.
-+ tools/                Build tools/scripts.
++ tools/                Build tools and scripts.
 + test/                 User space unit tests.
 + test/punit/           User space unit test framework (PUnit).
 
@@ -37,28 +37,19 @@ Naming Conventions
 + `lowlevel.S`  Assembly source code; Note that capital S for user files as file
                 names ending with small s are reserved for compilation time
                 files
-+ `dev/`        Dev subsys modules
-+ `thscope/`    Functions that are called and excecuted in thread scope;
-                This means mainly syscall wrappers
 
 *Warning:* Assembly sources with small suffix (.s) might be removed by
 `make clean` as those are considered as automatically generated files.
 
 ### Global variables
 
-There should not be need for any global variables but since you'll be still
-declaring global variable please atleast use descriptive names.
-
-There has been both naming conventions used mixed case with underline between
-module name and rest of the name and everyting writen small with underlines.
-Third conventions is some very ugly that was inherited from CMSIS which we are
-now trying to get rid of.
-
-Following names are somewhat acceptable:
+Historically there has been both naming conventions in use mixed case with
+underline between module name and rest of the name and everyting writen small
+with underlines. Third conventions is some very ugly that was inherited from
+CMSIS which we are now trying to get rid of. All new source code should use
+following naming convention:
 
 + `module_feature_name`
-
-*Note:* `module_featureName` is obsoleted.
 
 ### Function names
 
@@ -66,33 +57,33 @@ Following names are somewhat acceptable:
                         + comp   = component/functionality eg. thread
                                    components will change thread status
 
-*Note:* `module_compFunction` is obsoleted.
-
 
 Standard Data Types
 -------------------
 
 ### Typedefs
 
-Typedefs are used in zeke for most of the structs and for some portability
-related things where we may want or have to change types for example between
-platforms.
+Typedefs are historically used in Zeke for most of the structs and for some
+portability where we may want or have to change the actual type on different
+hardware platforms. Usually there should be no need to use typedef for structs.
 
 ### Enums
 
-Avoid using enums in kernel space, they are ugly and don't behave nicely.
-Usually enums even seems to generate more code than using #defined values.
+Avoid using enums in kernel space, they are ugly, doesn't behave nicely and
+doesn't add any additional protection. Usually enums even seems to generate
+more code than using #defined values.
 
-Enums might be ok in user space and in interfaces between user space and
-kernel space. Some standard things may even require using enums.
+Enums are ok in user space and in interfaces between user space and kernel
+space. Some standard things may even require using enums. Especially some
+POSIX interfaces requires use of enums.
 
 
 ABI and Calling Convention
 --------------------------
 
-Zeke uses, naturally, mainly the default calling convention defined by GCC and
-Clang, which is a bit different than the standard calling convention. Here is
-a brief description of ABI and calling convention used in Zeke.
+Zeke uses mainly the default calling convention defined by GCC and Clang, which
+is a bit different than the standard calling convention for ARM. Here is a brief
+description of ABI and calling convention used in Zeke.
 
     +----------+------+-----------------------------------------------------+
     | Register | Alt. | Usage                                               |
@@ -139,8 +130,8 @@ For ARM11:
 + `hw_postinit`
 + `kinit`
 
-After kinit scheduler will kick in and initialization continues in a special
-init thread.
+After kinit, scheduler will kick in and initialization continues in a special
+init process.
 
 Every initializer function should contain `SUBSYS_INIT("XXXX init");` as a first
 line of the function and optionally `SUBSYS_DEP(YYYY_init);` lines declaring
@@ -165,13 +156,18 @@ supported in the future.
 
 Following example shows constructor/intializer notation supported by Zeke:
 
-    void begin(void) __attribute__((constructor));
-    void end(void) __attribute__((destructor));
+    void mod_init(void) __attribute__((constructor));
+    void mod_deinit(void) __attribute__((destructor));
 
-    void begin(void)
-    { ... }
+    void mod_init(void)
+    {
+    SUBSYS_INIT();
+    SUBSYS_DEP(modx_init); /* Module dependency */
+    ...
+    SUBSYS_INITFINI("mod OK");
+    }
 
-    void end(void)
+    void mod_deinit(void)
     { ... }
 
 Constructor prioritizing is not supported for constructor pointers but however
@@ -182,8 +178,17 @@ linker uses SORT, which may or may not work as expected.
 hw_preinit and hw_postinit can be used by including kinit.h header file and
 using following notation:
 
-    HW_PREINIT_ENTRY(init1);
-    HW_POSTINIT_ENTRY(init2);
+    void mod_preinit(void)
+    {
+    SUBSYS_INIT();
+    ...
+    SUBSYS_INITFINI("mod preinit OK");
+    }
+    HW_PREINIT_ENTRY(mod_preinit);
+
+    void mod_postinit(void)
+    { ... }
+    HW_POSTINIT_ENTRY(mod_postinit);
 
 
 Makefiles
@@ -191,7 +196,7 @@ Makefiles
 
 The main Makefile is responsible of parsing module makefiles and compiling the
 whole kernel. Module makefiles are named as `<module>.mk` and are located in the
-`modmakefiles` directory under the root.
+`kmodmakefiles` directory under `kern` directory.
 
 Note that in context of Zeke there is two kinds of modules, the core/top level
 subsystems that are packed as static library files and then there is kind of
