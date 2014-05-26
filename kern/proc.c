@@ -69,7 +69,7 @@ mtx_t proclock;
 
 SYSCTL_INT(_kern, KERN_MAXPROC, maxproc, CTLFLAG_RWTUN,
     &maxproc, 0, "Maximum number of processes");
-SYSCTL_INT(_kern, KERN_MAXPROC, nprocs, CTLFLAG_RD,
+SYSCTL_INT(_kern, OID_AUTO, nprocs, CTLFLAG_RD,
     &nprocs, 0, "Current number of processes");
 
 static void init_kernel_proc(void);

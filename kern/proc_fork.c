@@ -265,10 +265,8 @@ pid_t proc_fork(pid_t pid)
         } else if (new_tid > 0) { /* thread of the forking process returning */
             new_proc->main_thread = sched_get_pThreadInfo(new_tid);
             new_proc->main_thread->pid_owner = new_proc->pid;
-        } else { /* 0, new thread returning */
-            panic("XXX"); /* TODO Remove */
-            retval = 0;
-            goto out;
+        } else {
+            panic("Thread forking failed");
         }
     } else {
         new_proc->main_thread = 0;
@@ -288,7 +286,7 @@ pid_t proc_fork(pid_t pid)
         sched_thread_set_exec(new_proc->main_thread->id);
     }
 #if configDEBUG >= KERROR_DEBUG
-    ksprintf(buf, sizeof(buf), "Fork created: %u", get_current_tid());
+    ksprintf(buf, sizeof(buf), "Fork created.");
     KERROR(KERROR_DEBUG, buf);
 #endif
     goto out; /* Fork created. */

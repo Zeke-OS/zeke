@@ -396,7 +396,6 @@ pthread_t sched_thread_fork(void)
     threadInfo_t * const old_thread = current_thread;
     threadInfo_t tmp;
     pthread_t new_id;
-    pthread_t retval = 0;
 
 #if configDEBUG >= KERROR_DEBUG
     if (old_thread == 0) {
@@ -420,21 +419,13 @@ pthread_t sched_thread_fork(void)
             (void *)(old_thread->kstack_region->mmu.paddr),
             MMU_SIZEOF_REGION(&(old_thread->kstack_region->mmu)));
 
-    /* TODO We want to make a stack frame such that child redirects to here
-     * but with pc at out and registers exactly like in the parent.
-     */
-
+    memcpy(&tmp.stack_frame, &old_thread->stack_frame, sizeof(sw_stack_frame_t));
+    tmp.stack_frame.r0 = new_id;
     memcpy(&(task_table[new_id]), &tmp, sizeof(threadInfo_t));
 
     /* TODO Increment resource refcounters(?) */
 
-    //uintptr_t link = (size_t)(&&out) + sizeof(void *);
-    uintptr_t link = 0xffffffff;
-    void * sfp = &tmp.stack_frame + sizeof(sw_stack_frame_t);
-    clone_stack_frame(link, sfp);
-
-    retval = new_id;
-    return retval;
+    return new_id;
 }
 
 void sched_thread_set_exec(pthread_t thread_id)

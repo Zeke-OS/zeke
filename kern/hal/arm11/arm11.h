@@ -143,26 +143,6 @@ void wr_thread_stack_ptr(void * ptr);
     __asm__ volatile ("WFI");               \
 } while (0)
 
-/**
- * Clone state of current thread to a stack frame.
- * r0 will always 0
- * @param link  is the return address for the stack frame.
- * @param sfp   is the stack frame, stack_frame_start + sizeof(sw_stack_frame_t)
- */
-#define clone_stack_frame(link, sfp) do {   \
-    __asm__ volatile (                      \
-        "stmdb  %[sf]!, {%[link]}\n\t"      \
-        "stmdb  %[sf], {r1-r14}\n\t"        \
-        "nop\n\t"                           \
-        "sub    %[sf], %[sf], #56\n\t"      \
-        "mov    r1, #0\n\t"                 \
-        "stmdb  %[sf]!, {r1}\n\t"           \
-        "mrs    r1, cpsr\n\t"               \
-        "stmdb  %[sf], {r1}\n\t"            \
-        : : [link]"r" (link), [sf]"r" (sfp) \
-        : "r0", "r1");                      \
-} while (0)
-
 
 #if configMP != 0
 
