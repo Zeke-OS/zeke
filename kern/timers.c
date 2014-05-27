@@ -35,10 +35,10 @@
 #include <autoconf.h>
 #include <kinit.h>
 #include <sched.h>
-#include "timers.h"
+#include <timers.h>
 
-/* Internal Flag Bits */
-/* NONE */
+/* TODO this should be revised and possibly converted to support us level
+ * timings by using hw timer. */
 
 /**
  * Indicates a free timer position on thread_id of allocation entry.
@@ -56,13 +56,17 @@ typedef struct {
                              *     + 1 = periodic
                              */
     pthread_t thread_id;   /*!< Thread id */
-    uint32_t reset_val;     /*!< Reset value for repeating timer */
-    uint32_t expires;       /*!< Timer expiration time */
+    uint32_t reset_val;    /*!< Reset value for repeating timer */
+    uint32_t expires;      /*!< Timer expiration time */
 } timer_alloc_data_t;
 
 uint32_t timers_value; /*!< Current tick value */
 static volatile timer_alloc_data_t timers_array[configTIMERS_MAX];
 
+/**
+ * Lock to be used between threads accessing timer data structures. Scheduler
+ * should not try to spin on this lock as it would hang the kernel.
+ */
 static mtx_t timers_lock;
 
 void timers_init(void) __attribute__((constructor));
@@ -85,16 +89,12 @@ void timers_init(void)
 
 void timers_run(void)
 {
-    int i;
-    uint32_t value;
+    int i = 0;
 
     timers_value++;
-    value = timers_value;
-    i = 0;
     do {
-        uint32_t exp = timers_array[i].expires;
         if (timers_array[i].flags & TIMERS_FLAG_ENABLED) {
-            if (exp == value) {
+            if (timers_array[i].expires <= timers_value) {
                 threadInfo_t * thread;
                 thread = sched_get_pThreadInfo(timers_array[i].thread_id);
                 if (thread) {
