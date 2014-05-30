@@ -317,7 +317,7 @@ static void sched_thread_init(pthread_t i,
         *(thread_def->thread) = (pthread_t)i;
 
     /* Init core specific stack frame for user space */
-    init_stack_frame(thread_def, &(task_table[i].stack_frame), priv);
+    init_stack_frame(thread_def, &(task_table[i].sframe[SCHED_SFRAME_SYS]), priv);
 
     /* Mark this thread index as used.
      * EXEC flag is set later in sched_thread_set_exec */
@@ -419,8 +419,13 @@ pthread_t sched_thread_fork(void)
             (void *)(old_thread->kstack_region->mmu.paddr),
             MMU_SIZEOF_REGION(&(old_thread->kstack_region->mmu)));
 
-    memcpy(&tmp.stack_frame, &old_thread->stack_frame, sizeof(sw_stack_frame_t));
-    tmp.stack_frame.r0 = new_id;
+    /* TODO old_thread->stack_frame is actually invalid and we can't actually
+     * update it because we can't get the state of the caller by updating it
+     * because scheduling may invalidate it :( */
+    /* TODO Memcpy of sframe not needed */
+    memcpy(&tmp.sframe[SCHED_SFRAME_SYS], &old_thread->sframe[SCHED_SFRAME_SYS],
+            sizeof(sw_stack_frame_t));
+    tmp.sframe[SCHED_SFRAME_SYS].r0 = new_id;
     memcpy(&(task_table[new_id]), &tmp, sizeof(threadInfo_t));
 
     /* TODO Increment resource refcounters(?) */

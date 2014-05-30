@@ -43,59 +43,29 @@
     .globl  interrupt_svc
     .type   interrupt_svc,%function
 interrupt_svc:
-    /* In Pre-empt mode we use thread stack also in syscalls to allow syscalls
-     * to be pre-empted at almost any time. So next up we'll swap back to thread
-     * stack pointer and restore svc sp later after the call.
-     * TODO We may wan't to update frame pointer here to help debugging.
-     *
-     * We use r4 as a scratch register for much of the magic in this exception
-     * hanlder. R4 is marked as a clobber register in syscall() so we can do
-     * pretty much anything with r4 without breaking userspace.
-     */
-
-    mrs     r3, spsr
-    mov     r4, lr          /* Preserve link register. */
-    cps     #0x1f           /* Change to system mode to use thread stack. */
-    mov     lr, r4          /* Restore link register. */
-
-    /* Store spsr to allow nested swi. */
-    push    {r3}
-
-    cpsie   aif             /* Enable interrupts */
-
-    push    {r1-r12, lr}
+    pushcontext #1          /* Push context to SCHED_SFRAME_SVC */
 
     /* Attach kernel master page table */
-    push    {r0-r3}         /* Preserve syscall argument(s) */
     enter_kernel
     /* We could actually panic here if attach failed */
 
-    /* Change to kernel stack to protect kernel data.
+    cps     #0x1f           /* Change to system mode */
+
+    /* Change to a kernel stack of the process to protect kernel data.
      * RFE This breaks nested syscalls. */
-    ldr     r0, =0x00001000 /* vaddr of tkstack. */
-    pop     {r5-r8}
-    mov     r4, sp          /* Preserve user sp. */
-    mov     sp, r0          /* Change to kernel sp. */
-    mov     r0, r5          /* Restore arguments */
-    mov     r1, r6
-    mov     r2, r7
-    mov     r3, r8
+    ldr     sp, =0x00001000 /* vaddr of tkstack. */
 
-    /* Call kernel's internal syscall handler */
-    bl      _intSyscall_handler
-    mov     r5, r0          /* Preserve syscall retval */
+    cpsie   aif             /* Enable interrupts */
 
-    /* Attach process master page table */
-    exit_kernel
+    /* Call syscall handler.
+     * This will also set the correct return value. */
+    bl      syscall_handler
 
-    mov     sp, r4          /* Restore user sp. */
-    mov     r0, r5          /* Restore syscall retval */
-    pop     {r1-r12, lr}
-
+    exit_kernel             /* Attach process master page table */
     cpsid   aif             /* Disable interrupts to prevent stack */
                             /* corruption */
-    pop     {r3}            /* Restore spsr */
-    msr     spsr, r3
+    cps     #0x12           /* Back to IRQ mode */
+    popcontext #1           /* Pop context from SCHED_SFRAME_SVC */
     movs    pc, lr          /* Regular exit from svc */
 
 
@@ -105,7 +75,7 @@ interrupt_svc:
     .globl  interrupt_sys
     .type   interrupt_sys,%function
 interrupt_sys:
-    pushcontext
+    pushcontext #0          /* Push context to SCHED_SFRAME_SYS */
 
     /* Handle kernel_tick & Clear Timer IRQ if this is a real tick */
     bl      schedtimer_clear
@@ -143,8 +113,8 @@ interrupt_sys:
     bl      cpu_set_cid
 
 /* Load/Restore context */
-    popcontext
-    subs    pc, lr, #4      /* Return back (SWI return address is PC+4) */
+    popcontext #0           /* Pop context from SCHED_SFRAME_SYS */
+    subs    pc, lr, #4      /* Return back (return address is PC+4) */
 
 
 @ Prefetch Abort handler

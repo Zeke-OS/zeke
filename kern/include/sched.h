@@ -131,14 +131,18 @@
 #define SCHED_TEST_DETACHED_ZOMBIE(x) \
     (((x) & SCHED_DETACHED_ZOMBIE_FLAGS) == SCHED_DETACHED_ZOMBIE_FLAGS)
 
+#define SCHED_SFRAME_SYS        0   /*!< Sys int/Scheduling stack frame. */
+#define SCHED_SFRAME_SVC        1   /*!< Syscall stack frame. */
+#define SCHED_SFRAME_ARR_SIZE   2
+
 /**
  * Thread info struct.
  * Thread Control Block structure.
  */
 typedef struct {
-    sw_stack_frame_t stack_frame;   /*!< Stack frame used for task switch. */
-    vm_region_t * kstack_region;    /*!< Thread kernel stack region. */
     uint32_t flags;                 /*!< Status flags. */
+    sw_stack_frame_t sframe[SCHED_SFRAME_ARR_SIZE];
+    vm_region_t * kstack_region;    /*!< Thread kernel stack region. */
     void * errno_uaddr;             /*!< Address of the thread local errno. */
     intptr_t retval;                /*!< Return value of the thread. */
     int wait_tim;                   /*!< Reference to a timeout timer. */

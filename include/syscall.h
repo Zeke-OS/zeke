@@ -42,6 +42,7 @@
 
 #include <kernel.h>
 #include <syscalldef.h>
+#include <../kern/include/hal/core.h>
 #if configDEVSUBSYS != 0
 #include <devtypes.h>
 #endif
@@ -136,6 +137,15 @@
 #define SYSCALL_SEMAPHORE_WAIT      SYSCALL_MMTOTYPE(SYSCALL_GROUP_LOCKS, 0x01)
 #define SYSCALL_SEMAPHORE_RELEASE   SYSCALL_MMTOTYPE(SYSCALL_GROUP_LOCKS, 0x02)
 
+/* Kernel scope functions */
+#ifdef KERNEL_INTERNAL
+#include "syscalldef.h"
+
+typedef uintptr_t (*kernel_syscall_handler_t)(uint32_t type,  void * p);
+
+void syscall_handler(void);
+void set_errno(int new_value);
+#else
 /**
  * Make a system call
  * @param type syscall type.
@@ -143,17 +153,8 @@
  * @return return value of the called kernel function.
  * @note Must be only used in thread scope.
  */
-uintptr_t syscall(uint32_t type, void * p);
-
-/* Kernel scope functions */
-#ifdef KERNEL_INTERNAL
-#include "syscalldef.h"
-
-typedef uintptr_t (*kernel_syscall_handler_t)(uint32_t type,  void * p);
-
-uintptr_t _intSyscall_handler(uint32_t type, void * p);
-void set_errno(int new_value);
-#endif /* KERNEL_INTERNAL */
+uint32_t syscall(uint32_t type, void * p);
+#endif
 
 #endif /* SYSCALL_H */
 
