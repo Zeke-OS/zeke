@@ -90,8 +90,8 @@ void syscall_handler(void)
     kernel_syscall_handler_t fpt;
 
     if ((major >= num_elem(syscall_callmap)) || !syscall_callmap[major]) {
-        char buf[80];
-        ksprintf(buf, sizeof(buf), "syscall %u not supported, %p, %u", major, p);
+        char buf[30];
+        ksprintf(buf, sizeof(buf), "syscall %u not supported", major);
         KERROR(KERROR_WARN, buf);
 
         set_errno(ENOSYS); /* Not supported. */
