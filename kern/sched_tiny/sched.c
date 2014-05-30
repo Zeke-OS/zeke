@@ -415,17 +415,16 @@ pthread_t sched_thread_fork(void)
 
     /* Initialize a new kstack & copy data from old kstack. */
     thread_init_kstack(&tmp);
+#if 0
     memcpy((void *)(tmp.kstack_region->mmu.paddr),
             (void *)(old_thread->kstack_region->mmu.paddr),
             MMU_SIZEOF_REGION(&(old_thread->kstack_region->mmu)));
+#endif
 
-    /* TODO old_thread->stack_frame is actually invalid and we can't actually
-     * update it because we can't get the state of the caller by updating it
-     * because scheduling may invalidate it :( */
-    /* TODO Memcpy of sframe not needed */
-    memcpy(&tmp.sframe[SCHED_SFRAME_SYS], &old_thread->sframe[SCHED_SFRAME_SYS],
+    memcpy(&tmp.sframe[SCHED_SFRAME_SYS], &old_thread->sframe[SCHED_SFRAME_SVC],
             sizeof(sw_stack_frame_t));
-    tmp.sframe[SCHED_SFRAME_SYS].r0 = new_id;
+    tmp.sframe[SCHED_SFRAME_SYS].r0 = 0;
+    tmp.sframe[SCHED_SFRAME_SYS].pc += 4; /* TODO This is too hw specific */
     memcpy(&(task_table[new_id]), &tmp, sizeof(threadInfo_t));
 
     /* TODO Increment resource refcounters(?) */
