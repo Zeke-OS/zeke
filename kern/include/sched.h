@@ -211,8 +211,9 @@ void sched_thread_set_exec(pthread_t thread_id);
 
 /**
  * Put the current thread into sleep.
+ * @param permanent sets wait flag to keep thread in permanent sleep.
  */
-void sched_thread_sleep_current(void);
+void sched_thread_sleep_current(int permanent);
 
 /* TODO Following shouldn't be extern'd and there should be better way to export
  * these for thread.h */

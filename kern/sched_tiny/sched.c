@@ -499,7 +499,7 @@ static void _sched_thread_set_exec(pthread_t thread_id, osPriority pri)
     }
 }
 
-void sched_thread_sleep_current(void)
+void sched_thread_sleep_current(int permanent)
 {
     istate_t s;
 
@@ -508,6 +508,9 @@ void sched_thread_sleep_current(void)
 
     /* Sleep flag */
     current_thread->flags &= ~SCHED_EXEC_FLAG;
+    if (permanent) {
+        current_thread->flags |= SCHED_WAIT_FLAG;
+    }
 
     /* Find index of the current thread in the priority queue and move it
      * on top */
@@ -577,7 +580,7 @@ static void sched_thread_remove(pthread_t tt_id)
 static void sched_thread_die(intptr_t retval)
 {
     current_thread->flags |= SCHED_ZOMBIE_FLAG;
-    sched_thread_sleep_current();
+    sched_thread_sleep_current(1);
     current_thread->retval = retval;
     /* Thread will now block and next thread will be scheduled in. */
 }
@@ -619,8 +622,8 @@ static int sched_thread_detach(pthread_t id)
 
 static void sched_thread_sleep(long millisec)
 {
-    int timer_id;
     istate_t s;
+    int timer_id;
 
     do {
         timer_id = timers_add(thread_event_timer, current_thread,
@@ -629,11 +632,10 @@ static void sched_thread_sleep(long millisec)
     current_thread->wait_tim = timer_id;
 
     s = get_interrupt_state();
-    disable_interrupt();
-
+    disable_interrupt(); /* TODO Not MP safe! */
+    /* This should prevent anyone from waking up this thread for a while. */
     timers_start(timer_id);
-    sched_thread_sleep_current();
-
+    sched_thread_sleep_current(0); /* TODO Should work with 1 */
     set_interrupt_state(s);
 
     do {

@@ -81,6 +81,7 @@ void thread_event_timer(void * event_arg)
 
     timers_release(thread->wait_tim);
     thread->wait_tim = -1;
+    current_thread->flags &= ~SCHED_WAIT_FLAG;
     sched_thread_set_exec(thread->id);
 }
 
