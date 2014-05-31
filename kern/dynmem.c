@@ -124,7 +124,7 @@ void dynmem_init(void)
 
     mtx_init(&dynmem_region_lock, MTX_DEF | MTX_SPIN);
 
-    SUBSYS_INITFINI("dynmem init OK");
+    SUBSYS_INITFINI("dynmem OK");
 }
 
 void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t control)

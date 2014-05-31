@@ -37,6 +37,7 @@
 #include <hal/core.h>
 #include <vm/vm.h>
 #include <sched.h>
+#include <thread.h>
 #include <timers.h>
 #include <errno.h>
 
@@ -83,18 +84,22 @@ static int ulocks_semaphore_p(uint32_t * s)
 static int ulocks_semaphore_thread_spinwait(uint32_t * s, uint32_t millisec)
 {
     if (current_thread->wait_tim >= 0) {
+        /* To be fixed, there is no timers_get_owner() anymore */
+#if 0
         if (timers_get_owner(current_thread->wait_tim) < 0) {
             /* Timeout */
             return OS_SEMAPHORE_THREAD_SPINWAIT_RES_ERROR;
         }
+#endif
     }
 
     /* Try */
     if (!ulocks_semaphore_p(s)) {
         if (current_thread->wait_tim < 0) {
             /* Get a timer for timeout */
-            if ((current_thread->wait_tim = timers_add(current_thread->id,
-                            TIMERS_FLAG_ENABLED, millisec)) < 0) {
+            if ((current_thread->wait_tim =
+                        timers_add(thread_event_timer, current_thread,
+                        TIMERS_FLAG_ENABLED, millisec)) < 0) {
                 /* Resource Error: No free timers */
                 return OS_SEMAPHORE_THREAD_SPINWAIT_RES_ERROR;
             }

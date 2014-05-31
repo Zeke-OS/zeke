@@ -97,18 +97,23 @@ void raspi_leds_init(void) {
 
 static unsigned int led_status;
 
+void raspi_led_set(int state)
+{
+    istate_t s_entry;
+
+    mmio_start(&s_entry);
+    if (state) {
+        mmio_write(GPIO_GPCLR0, RASPI_LED_POS); /* on */
+    } else {
+        mmio_write(GPIO_GPSET0, RASPI_LED_POS); /* off */
+    }
+    mmio_end(&s_entry);
+}
+
 void raspi_led_invert(void)
 {
     istate_t s_entry;
 
     led_status = !led_status;
-    mmio_start(&s_entry);
-
-    if(led_status) {
-        mmio_write(GPIO_GPCLR0, RASPI_LED_POS); /* on */
-    } else {
-        mmio_write(GPIO_GPSET0, RASPI_LED_POS); /* off */
-    }
-
-    mmio_end(&s_entry);
+    raspi_led_set(led_status);
 }

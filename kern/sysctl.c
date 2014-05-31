@@ -113,7 +113,7 @@ void sysctl_init(void)
     SET_FOREACH(oidp, sysctl_set)
             sysctl_register_oid(*oidp);
     SYSCTL_UNLOCK();
-    SUBSYS_INITFINI("Sysctl OK");
+    SUBSYS_INITFINI("sysctl OK");
 }
 
 void sysctl_register_oid(struct sysctl_oid * oidp)

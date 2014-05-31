@@ -63,7 +63,6 @@ Start:
      * with ATAGs so we must read ATAGs out before using those stacks. */
     /* Stay in system mode for now. */
 
-
     /* Clear the bss. */
     ldr     r4, =_bss_start
     ldr     r9, =_bss_end
@@ -78,7 +77,6 @@ Start:
 2:  cmp     r4, r9
     blo     1b
     /* End of Clear the bss. */
-
 
 #if configATAG
     /* Read information given by the bootloader
@@ -108,4 +106,3 @@ __wloop:  b __wloop
 halt:
     wfe
     b       halt
-

@@ -94,7 +94,7 @@ void mmu_init(void)
     mask = MMU_ZEKE_C1_DEFAULTS;
     mmu_control_set(value, mask);
 
-    SUBSYS_INITFINI("MMU init OK");
+    SUBSYS_INITFINI("MMU OK");
 }
 
 /**

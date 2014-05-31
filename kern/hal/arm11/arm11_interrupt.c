@@ -66,7 +66,10 @@ __attribute__ ((naked, aligned(32))) static void interrupt_vectors(void)
         "b bad_exception\n\t"   /* Reset                    1   8      abt  */
         "b undef_handler\n\t"   /* Undefined instruction    6   0      und  */
         "b interrupt_svc\n\t"   /* Software interrupt       6   0      svc  */
+#if 0
         "b interrupt_pabt\n\t"  /* Prefetch abort           5   4      abt  */
+#endif
+        "b bad_exception\n\t"   /* Prefetch abort           5   4      abt  */
         "b interrupt_dabt\n\t"  /* Data abort               2   8      abt  */
         "b bad_exception\n\t"   /* Unused vector                            */
         "b interrupt_sys\n\t"   /* IRQ                      4   4      irq  */
@@ -86,11 +89,13 @@ __attribute__ ((naked)) void undef_handler(void)
     ksprintf(buf, sizeof(buf), "Undefined instruction @ %x", addr);
     panic(buf);
 
+#if 0
     /* Kill the current thread */
-    //sched_thread_terminate(current_thread->id);
+    sched_thread_terminate(current_thread->id);
 
     /* Return to the scheduler ASAP */
-    //req_context_switch();
+    req_context_switch();
+#endif
 }
 
 /**
@@ -98,7 +103,7 @@ __attribute__ ((naked)) void undef_handler(void)
  */
 __attribute__ ((naked)) void bad_exception(void)
 {
-    panic("This is like panic but unexpected.");
+    panic("bad_exception.");
 }
 
 void arm_interrupt_preinit(void)
@@ -110,7 +115,7 @@ void arm_interrupt_preinit(void)
     __asm__ volatile ("mcr p15, 0, %[addr], c12, c0, 0"
             : : [addr]"r" (&interrupt_vectors));
     /* Turn on interrupts */
-    __asm__ volatile ("cpsie i");
+    __asm__ volatile ("cpsie aif");
 
     SUBSYS_INITFINI("arm_interrupt_preinit OK");
 }

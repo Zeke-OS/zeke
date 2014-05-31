@@ -391,6 +391,19 @@ static void sched_thread_set_inheritance(threadInfo_t * new_child, threadInfo_t 
     last_node->inh.next_child = new_child;
 }
 
+void * idleTask2(/*@unused@*/ void * arg)
+{
+    char buf[30];
+    uint32_t mode;
+    while(1) {
+        __asm__ volatile ("mrs     %0, cpsr" : "=r" (mode));
+        ksprintf(buf, sizeof(buf), "mode: %x\n", mode);
+        //write(2, buf,  sizeof(buf));
+        KERROR(KERROR_DEBUG, buf);
+        idle_sleep();
+    }
+}
+
 pthread_t sched_thread_fork(void)
 {
     threadInfo_t * const old_thread = current_thread;
@@ -420,11 +433,16 @@ pthread_t sched_thread_fork(void)
             (void *)(old_thread->kstack_region->mmu.paddr),
             MMU_SIZEOF_REGION(&(old_thread->kstack_region->mmu)));
 #endif
+    char buf[80];
 
     memcpy(&tmp.sframe[SCHED_SFRAME_SYS], &old_thread->sframe[SCHED_SFRAME_SVC],
             sizeof(sw_stack_frame_t));
     tmp.sframe[SCHED_SFRAME_SYS].r0 = 0;
     tmp.sframe[SCHED_SFRAME_SYS].pc += 4; /* TODO This is too hw specific */
+
+    ksprintf(buf, 80, "pc = %x, psr = %x", tmp.sframe[SCHED_SFRAME_SYS].pc, tmp.sframe[SCHED_SFRAME_SYS].psr);
+    KERROR(KERROR_DEBUG, buf);
+
     memcpy(&(task_table[new_id]), &tmp, sizeof(threadInfo_t));
 
     /* TODO Increment resource refcounters(?) */
@@ -576,8 +594,14 @@ static int sched_thread_detach(pthread_t id)
 
 static void sched_thread_sleep(long millisec)
 {
-    while ((current_thread->wait_tim = timers_add(current_thread->id,
-                    TIMERS_FLAG_ENABLED, millisec)) < 0);
+    int timer_id;
+
+    do {
+        timers_add(thread_event_timer, current_thread,
+                TIMERS_FLAG_ENABLED, millisec);
+    } while (timer_id < 0);
+    current_thread->wait_tim = timer_id;
+
     sched_thread_sleep_current();
     idle_sleep();
     while (current_thread->wait_tim >= 0); /* We may want to do someting in this

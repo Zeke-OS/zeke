@@ -67,15 +67,16 @@
     mov     r0, \ind
     bl      thread_get_curr_stackframe
     mov     lr, r0
+    add     lr, #4
 
     /* Restore SPSR */
-    ldmia   lr!, {r0}
+    ldr     r0, [r0]
     msr     spsr, r0
 
     /* Restore all registers */
     ldmia   lr, {r0-r14}^
     nop
-    ldr     lr, [lr, #+60]  /* Restore lr */
+    ldr     lr, [lr, #60]  /* Restore lr */
 .endm
 
 /**

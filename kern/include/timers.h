@@ -58,19 +58,11 @@ void timers_run(void);
  * @param usec delay to trigger from the time when enabled.
  * @param return -1 if allocation failed.
  */
-int timers_add(pthread_t thread_id, timers_flags_t flags, uint64_t usec);
+int timers_add(void (*event_fn)(void *), void * event_arg,
+        timers_flags_t flags, uint64_t usec);
 
 void timers_start(int tim);
 void timers_release(int tim);
-pthread_t timers_get_owner(int tim);
-
-/**
- * Get owner of the timer
- * @param tim timer id
- * @return thread id or -1 if out of bounds or timer is currently in released
- *         state
- */
-pthread_t timers_get_owner(int tim);
 
 #endif /* TIMERS_H */
 

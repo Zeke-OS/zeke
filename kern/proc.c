@@ -90,7 +90,7 @@ void proc_init(void)
     current_process_id = 0;
     curproc = (*_procarr)[0];
 
-    SUBSYS_INITFINI("Proc OK");
+    SUBSYS_INITFINI("proc OK");
 }
 
 /**

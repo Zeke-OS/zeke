@@ -37,13 +37,8 @@
 #include <sched.h>
 #include <timers.h>
 
-/**
- * Indicates a free timer position on thread_id of allocation entry.
- */
-#define TIMERS_POS_FREE -1
-
 /** Timer allocation struct */
-typedef struct timer_cb {
+struct timer_cb {
     timers_flags_t flags;       /*!< Timer flags:
                                  * + 0 = Timer state
                                  *     + 0 = disabled
@@ -73,13 +68,12 @@ void timers_init(void)
 
     mtx_init(&timers_lock, MTX_DEF | MTX_SPIN);
 
-    timers_value = 0;
     for (int i = 0; i < configTIMERS_MAX; i++) {
         timers_array[i].flags = 0;
-        timers_array[i].thread_id = TIMERS_POS_FREE;
+        timers_array[i].event_fn = 0;
     }
 
-    SUBSYS_INITFINI("Kernel timers init OK");
+    SUBSYS_INITFINI("timers OK");
 }
 
 void timers_run(void)
@@ -91,20 +85,11 @@ void timers_run(void)
         if (timers_array[i].flags & TIMERS_FLAG_ENABLED) {
             if ((now - timers_array[i].start) >= timers_array[i].interval) {
                 timers_array[i].event_fn(timers_array[i].event_arg);
-                /* TODO Instead of this, a generic event interface is needed */
-#if 0
-                threadInfo_t * thread;
-                thread = sched_get_pThreadInfo(timers_array[i].thread_id);
-                if (thread) {
-                    thread->wait_tim = -1;
-                    sched_thread_set_exec(thread->id);
-                }
-#endif
 
                 if (!(timers_array[i].flags & TIMERS_FLAG_PERIODIC)) {
                     /* Release the timer */
                     timers_array[i].flags &= ~TIMERS_FLAG_ENABLED;
-                    timers_array[i].thread_id = TIMERS_POS_FREE;
+                    timers_array[i].event_fn = 0;
                 } else {
                     /* Repeating timer */
                     timers_array[i].start = get_utime();
@@ -114,7 +99,8 @@ void timers_run(void)
     } while (++i < configTIMERS_MAX);
 }
 
-int timers_add(pthread_t thread_id, timers_flags_t flags, uint64_t usec)
+int timers_add(void (*event_fn)(void *), void * event_arg,
+        timers_flags_t flags, uint64_t usec)
 {
     size_t i = 0;
     int retval = -1;
@@ -123,8 +109,9 @@ int timers_add(pthread_t thread_id, timers_flags_t flags, uint64_t usec)
 
     mtx_spinlock(&timers_lock);
     do { /* Locate first free timer */
-        if (timers_array[i].thread_id == TIMERS_POS_FREE) {
-            timers_array[i].thread_id = thread_id; /* reserve */
+        if (timers_array[i].event_fn == 0) {
+            timers_array[i].event_fn = event_fn; /* reserve */
+            timers_array[i].event_arg = event_arg;
             timers_array[i].interval = usec;
             timers_array[i].start = get_utime();
             timers_array[i].flags = flags; /* enable */
@@ -134,8 +121,8 @@ int timers_add(pthread_t thread_id, timers_flags_t flags, uint64_t usec)
             break;
         }
     } while (++i < configTIMERS_MAX);
-
     mtx_unlock(&timers_lock);
+
     return retval;
 }
 
@@ -156,18 +143,5 @@ void timers_release(int tim)
 
     /* Release the timer */
     timers_array[tim].flags = 0;
-    timers_array[tim].thread_id = TIMERS_POS_FREE;
-}
-
-pthread_t timers_get_owner(int tim) {
-    pthread_t retval;
-
-    if (tim < configTIMERS_MAX && tim >= 0)
-        return -1;
-
-    mtx_spinlock(&timers_lock);
-    retval = timers_array[tim].thread_id;
-    mtx_unlock(&timers_lock);
-
-    return retval;
+    timers_array[tim].event_fn = 0;
 }

@@ -52,7 +52,10 @@ interrupt_svc:
     cps     #0x1f           /* Change to system mode */
 
     /* Change to a kernel stack of the process to protect kernel data.
-     * RFE This breaks nested syscalls. */
+     * RFE This breaks nested syscalls.
+     * Solution: Check if earlier mode was other than usr and don't change
+     * stack address if so.
+     */
     ldr     sp, =0x00001000 /* vaddr of tkstack. */
 
     cpsie   aif             /* Enable interrupts */

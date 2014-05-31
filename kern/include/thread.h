@@ -41,6 +41,8 @@
  */
 void sched_handler(void);
 
+void thread_event_timer(void * event_arg);
+
 /**
  * Initialize thread kernel mode stack.
  * @param th is a pointer to the thread.
