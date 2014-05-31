@@ -34,6 +34,10 @@
   * @{
   */
 
+#if configKUNIT == 0
+#error kunit is required for tests
+#endif
+
 #pragma once
 #ifndef KUNIT_H
 #define KUNIT_H
