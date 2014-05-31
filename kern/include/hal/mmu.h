@@ -48,9 +48,6 @@
 #if configMMU == 0 && !defined(PU_TEST_BUILD)
     #error MMU not enabled but header was included in some file.
 #endif
-#if configATAG == 0 && !defined(PU_TEST_BUILD)
-    #error No method to get memory area configuration.
-#endif
 
 /* Zeke Domains */
 #define MMU_DOM_KERNEL  0 /*!< Kernel domain */

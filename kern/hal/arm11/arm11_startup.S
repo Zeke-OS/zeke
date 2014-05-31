@@ -30,6 +30,8 @@
  *******************************************************************************
  */
 
+#include <autoconf.h>
+
 /* To keep this in the first portion of the binary. */
 .section ".text.boot"
 
@@ -78,6 +80,7 @@ Start:
     /* End of Clear the bss. */
 
 
+#if configATAG
     /* Read information given by the bootloader
      *
      * In the future we may want to have this information as it tells some
@@ -90,9 +93,9 @@ Start:
      *      depending on bootloader configuration etc.
      *      http://www.simtec.co.uk/products/SWLINUX/files/booting_article.html
      */
-
     ldr     r3, =atag_scan
     blx     r3
+#endif
 
     /* Call static constructors & initializers */
     ldr     r3, =exec_init_array

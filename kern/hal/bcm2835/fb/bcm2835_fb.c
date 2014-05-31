@@ -36,8 +36,8 @@
 #include <hal/mmu.h>
 #include <ptmapper.h>
 #include <hal/fb.h>
-#include "bcm2835_mailbox.h"
-#include "bcm2835_mmio.h"
+#include "../bcm2835_mailbox.h"
+#include "../bcm2835_mmio.h"
 #include "bcm2835_fb.h"
 
 struct bcm2835_fb_config {

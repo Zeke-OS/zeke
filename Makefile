@@ -174,7 +174,7 @@ kernel: kernel.img config
 
 $(STARTUP_O): $(STARTUP)
 	@echo "AS $@"
-	@$(ARMGNU)-as $< -o $(STARTUP_O)
+	@$(UNIFDEFALL) $(AIDIR) $< | $(ARMGNU)-as -o $(STARTUP_O)
 
 $(ASOBJS): $(ASRC-1) $(UNIFDEF)
 	@echo "AS $@"
