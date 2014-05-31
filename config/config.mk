@@ -39,6 +39,7 @@ configMCU_MODEL = MCU_MODEL_BCM2835
 #configARM_PROFILE_R = 0# Not supported
 configARM_PROFILE_M = 0#
 configARCH = __ARM6K__# Architecture of the core
+configMP = 0# Enable MP support
 configATAG = 0# Support bootloader ATAGs
 configMMU = 1# MMU support
 configUART = 1# UART support
@@ -47,7 +48,7 @@ configFB = 0# Enable Frame Buffer support
 configFB_FONT_LATIN = 0# Latin extension
 configFB_FONT_GREEK = 0# Greek extension
 configFB_FONT_HIRAGANA = 0# Hiragana extension
-configMP = 0# Enable MP support
+configBCM_JTAG = 0# BCM2835 JTAG support
 
 # Kernel logging options
 # 0 = No logger
