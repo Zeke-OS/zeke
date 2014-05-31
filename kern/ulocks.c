@@ -83,8 +83,9 @@ static int ulocks_semaphore_p(uint32_t * s)
  */
 static int ulocks_semaphore_thread_spinwait(uint32_t * s, uint32_t millisec)
 {
+    /* TODO This function doesn't make much sense */
     if (current_thread->wait_tim >= 0) {
-        /* To be fixed, there is no timers_get_owner() anymore */
+        /* TODO To be fixed, there is no timers_get_owner() anymore */
 #if 0
         if (timers_get_owner(current_thread->wait_tim) < 0) {
             /* Timeout */
@@ -99,7 +100,7 @@ static int ulocks_semaphore_thread_spinwait(uint32_t * s, uint32_t millisec)
             /* Get a timer for timeout */
             if ((current_thread->wait_tim =
                         timers_add(thread_event_timer, current_thread,
-                        TIMERS_FLAG_ENABLED, millisec)) < 0) {
+                        TIMERS_FLAG_ENABLED, millisec * 1000)) < 0) {
                 /* Resource Error: No free timers */
                 return OS_SEMAPHORE_THREAD_SPINWAIT_RES_ERROR;
             }

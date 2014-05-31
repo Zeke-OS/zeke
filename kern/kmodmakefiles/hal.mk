@@ -12,6 +12,7 @@ ifeq ($(configMCU_MODEL),MCU_MODEL_BCM2835)
 	hal-ASRC-1 += $(wildcard kern/hal/bcm2835/*.S)
 	hal-SRC-1 += kern/hal/bcm2835/bcm2835_mailbox.c
 	hal-SRC-1 += kern/hal/bcm2835/bcm2835_mmio.c
+	hal-SRC-1 += kern/hal/bcm2835/bcm2835_gpio.c
 	hal-SRC-1 += kern/hal/bcm2835/bcm2835_timers.c
 	hal-SRC-$(configUART) += kern/hal/bcm2835/bcm2835_uart.c
 	hal-SRC-$(configFB) += kern/hal/bcm2835/bcm2835_fb.c

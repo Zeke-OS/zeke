@@ -84,12 +84,12 @@ void bcm2835_timers_arm_clear(void)
     val = mmio_read(ARM_TIMER_VALUE);
     if (val == 0) {
         mmio_write(ARM_TIMER_IRQ_CLEAR, 0);
-        mmio_end(&s_entry);
 #if 0
         bcm2835_uart_uputc('C'); /* Timer debug print */
 #endif
         flag_kernel_tick = 1;
-    } else mmio_end(&s_entry);
+    }
+    mmio_end(&s_entry);
 }
 
 static void enable_arm_timer(void)
@@ -120,10 +120,13 @@ void bcm_udelay(uint32_t delay)
 uint64_t get_utime(void)
 {
     istate_t s_entry;
+    uint64_t now;
 
     mmio_start(&s_entry);
-    return *((uint64_t *)SYS_TIMER_CLO);
+    now = *((uint64_t *)SYS_TIMER_CLO);
     mmio_end(&s_entry);
+
+    return now;
 }
 
 void bcm_interrupt_postinit(void)

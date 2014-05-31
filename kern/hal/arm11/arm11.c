@@ -80,8 +80,8 @@ istate_t get_interrupt_state(void)
     __asm__ volatile (
         "MRS %[reg], cpsr\n\t"
         "AND %[reg], %[reg], %[mask]"
-        : [reg] "=r" (state)
-        : [mask] "I" (PSR_INT_MASK));
+        : [reg]"=r" (state)
+        : [mask]"I" (PSR_INT_MASK));
 
     return state;
 }
@@ -94,7 +94,7 @@ void set_interrupt_state(istate_t state)
         "ORR r1, r1, %[ostate]\n\t"
         "MSR cpsr, r1"
         :
-        : [mask] "I" (PSR_INT_MASK), [ostate] "r" (state)
+        : [mask]"I" (PSR_INT_MASK), [ostate]"r" (state)
         : "r1");
 }
 

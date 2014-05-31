@@ -59,6 +59,7 @@ struct timer_cb {
  */
 static mtx_t timers_lock;
 static volatile struct timer_cb timers_array[configTIMERS_MAX];
+#define VALID_TIMER_ID(x) ((x) < configTIMERS_MAX && (x) >= 0)
 
 void timers_init(void) __attribute__((constructor));
 
@@ -68,11 +69,6 @@ void timers_init(void)
 
     mtx_init(&timers_lock, MTX_DEF | MTX_SPIN);
 
-    for (int i = 0; i < configTIMERS_MAX; i++) {
-        timers_array[i].flags = 0;
-        timers_array[i].event_fn = 0;
-    }
-
     SUBSYS_INITFINI("timers OK");
 }
 
@@ -81,15 +77,15 @@ void timers_run(void)
     size_t i = 0;
     uint64_t now = get_utime();
 
+    /* TODO Not MP safe? */
     do {
         if (timers_array[i].flags & TIMERS_FLAG_ENABLED) {
             if ((now - timers_array[i].start) >= timers_array[i].interval) {
                 timers_array[i].event_fn(timers_array[i].event_arg);
 
                 if (!(timers_array[i].flags & TIMERS_FLAG_PERIODIC)) {
-                    /* Release the timer */
+                    /* Stop the timer */
                     timers_array[i].flags &= ~TIMERS_FLAG_ENABLED;
-                    timers_array[i].event_fn = 0;
                 } else {
                     /* Repeating timer */
                     timers_array[i].start = get_utime();
@@ -115,7 +111,6 @@ int timers_add(void (*event_fn)(void *), void * event_arg,
             timers_array[i].interval = usec;
             timers_array[i].start = get_utime();
             timers_array[i].flags = flags; /* enable */
-            mtx_unlock(&timers_lock);
 
             retval = i;
             break;
@@ -128,17 +123,15 @@ int timers_add(void (*event_fn)(void *), void * event_arg,
 
 void timers_start(int tim)
 {
-    if (tim < configTIMERS_MAX && tim >= 0)
+    if (!VALID_TIMER_ID(tim))
         return;
 
     timers_array[tim].flags |= TIMERS_FLAG_ENABLED;
 }
 
-/* TODO should check that owner matches before relasing the timer
- */
 void timers_release(int tim)
 {
-    if (tim < configTIMERS_MAX && tim >= 0)
+    if (!VALID_TIMER_ID(tim))
         return;
 
     /* Release the timer */

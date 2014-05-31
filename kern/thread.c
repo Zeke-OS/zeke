@@ -78,6 +78,8 @@ void sched_handler(void)
 void thread_event_timer(void * event_arg)
 {
     threadInfo_t * thread = (threadInfo_t *)event_arg;
+
+    timers_release(thread->wait_tim);
     thread->wait_tim = -1;
     sched_thread_set_exec(thread->id);
 }

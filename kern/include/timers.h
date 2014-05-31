@@ -43,8 +43,9 @@
 #include <kernel.h>
 
 /* User Flag Bits */
-#define TIMERS_FLAG_ENABLED     0x1 /* See for description: timer_alloc_data_t */
-#define TIMERS_FLAG_PERIODIC    0x2 /* See for description: timer_alloc_data_t */
+#define TIMERS_FLAG_ENABLED     0x1
+#define TIMERS_FLAG_ONESHOT     0x0
+#define TIMERS_FLAG_PERIODIC    0x2
 #define TIMERS_EXT_FLAGS        (TIMERS_FLAG_ENABLED | TIMERS_FLAG_PERIODIC)
 
 typedef uint32_t timers_flags_t;

@@ -127,7 +127,6 @@ void wr_thread_stack_ptr(void * ptr);
  * TODO Make this a common implementation for all ARM processors?
  */
 #define req_context_switch() do {           \
-    /* Simple and doesn't cause jitter: */  \
     __asm__ volatile ("WFI");               \
 } while (0)
 

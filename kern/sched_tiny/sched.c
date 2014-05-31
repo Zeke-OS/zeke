@@ -183,6 +183,7 @@ void * idleTask(/*@unused@*/ void * arg)
 {
     while(1) {
         //bcm2835_uart_uputc('I');
+        raspi_led_invert();
         idle_sleep();
     }
 }
@@ -438,7 +439,9 @@ pthread_t sched_thread_fork(void)
     memcpy(&tmp.sframe[SCHED_SFRAME_SYS], &old_thread->sframe[SCHED_SFRAME_SVC],
             sizeof(sw_stack_frame_t));
     tmp.sframe[SCHED_SFRAME_SYS].r0 = 0;
+    tmp.sframe[SCHED_SFRAME_SYS].pc = (uint32_t)idleTask2; /* TODO REMOVE */
     tmp.sframe[SCHED_SFRAME_SYS].pc += 4; /* TODO This is too hw specific */
+    tmp.sframe[SCHED_SFRAME_SYS].psr = 0x40000010u; /* TODO REMOVE */
 
     ksprintf(buf, 80, "pc = %x, psr = %x", tmp.sframe[SCHED_SFRAME_SYS].pc, tmp.sframe[SCHED_SFRAME_SYS].psr);
     KERROR(KERROR_DEBUG, buf);
@@ -505,7 +508,9 @@ void sched_thread_sleep_current(void)
  */
 static void sched_thread_remove(pthread_t tt_id)
 {
+#if 0
     istate_t s;
+#endif
 
     if ((task_table[tt_id].flags & SCHED_IN_USE_FLAG) == 0) {
         return;
@@ -516,8 +521,10 @@ static void sched_thread_remove(pthread_t tt_id)
         proc_thread_removed(task_table[tt_id].pid_owner, tt_id);
     }
 
+#if 0
     s = get_interrupt_state();
     disable_interrupt();
+#endif
 
     task_table[tt_id].flags = 0; /* Clear all flags */
 
@@ -540,7 +547,9 @@ static void sched_thread_remove(pthread_t tt_id)
     /* Release thread id */
     queue_push(&next_thread_id_queue_cb, &tt_id);
 
+#if 0
     set_interrupt_state(s);
+#endif
 }
 
 /**
@@ -595,18 +604,25 @@ static int sched_thread_detach(pthread_t id)
 static void sched_thread_sleep(long millisec)
 {
     int timer_id;
+    istate_t s;
 
     do {
-        timers_add(thread_event_timer, current_thread,
-                TIMERS_FLAG_ENABLED, millisec);
+        timer_id = timers_add(thread_event_timer, current_thread,
+                TIMERS_FLAG_ONESHOT, millisec * 1000);
     } while (timer_id < 0);
     current_thread->wait_tim = timer_id;
 
+    s = get_interrupt_state();
+    disable_interrupt();
+
+    timers_start(timer_id);
     sched_thread_sleep_current();
-    idle_sleep();
-    while (current_thread->wait_tim >= 0); /* We may want to do someting in this
-                                            * loop if thread is woken up but
-                                            * timer is not released. */
+
+    set_interrupt_state(s);
+
+    do {
+        idle_sleep();
+    } while (current_thread->wait_tim >= 0);
 }
 
 /* Functions defined in header file

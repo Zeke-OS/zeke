@@ -112,8 +112,6 @@ void raspi_led_set(int state)
 
 void raspi_led_invert(void)
 {
-    istate_t s_entry;
-
     led_status = !led_status;
     raspi_led_set(led_status);
 }

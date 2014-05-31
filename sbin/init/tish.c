@@ -171,7 +171,7 @@ static char * gline(char * str, int num)
     while (1) {
         c = _ugetc();   /* Instead of sleeping  we should*/
         if (c < 0) {    /* actually wait for input, */
-            msleep(100); /* not poll for it. */
+            msleep(2);  /* not poll for it. */
             continue;
         }
 

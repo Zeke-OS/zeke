@@ -54,6 +54,17 @@
 #define GPIO_PUDCLK0  (GPIO_BASE + 0x98)
 #define GPIO_PUDCLK1  (GPIO_BASE + 0x9c)
 
+#define GPIO_FSEL_INPUT     0b000
+#define GPIO_FSEL_OUTPUT    0b001
+#define GPIO_FSEL_ALTFN0    0b100
+#define GPIO_FSEL_ALTFN1    0b101
+#define GPIO_FSEL_ALTFN2    0b110
+#define GPIO_FSEL_ALTFN3    0b111
+#define GPIO_FSEL_ALTFN4    0b011
+#define GPIO_FSEL_ALTFN5    0b010
+
+void bcm2835_set_gpio_func(int gpio, int func_code);
+
 #endif /* BCM2835_GPIO_H */
 
 /**
