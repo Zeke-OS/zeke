@@ -31,14 +31,6 @@
  *******************************************************************************
  */
 
-/** @addtogroup HAL
-  * @{
-  */
-
-/** @addtogroup ARM11
-  * @{
-  */
-
 #define KERNEL_INTERNAL
 #include <stddef.h>
 #include <autoconf.h>
@@ -187,10 +179,32 @@ void cpu_set_cid(uint32_t cid)
     }
 }
 
-/**
-  * @}
-  */
+void stack_dump(sw_stack_frame_t frame)
+{
+    const char sdump[] = {
+        "psr = %x\n"
+        "r0  = %x\n"
+        "r1  = %x\n"
+        "r2  = %x\n"
+        "r3  = %x\n"
+        "r4  = %x\n"
+        "r5  = %x\n"
+        "r6  = %x\n"
+        "r7  = %x\n"
+        "r8  = %x\n"
+        "r9  = %x\n"
+        "r10 = %x\n"
+        "r11 = %x\n"
+        "r12 = %x\n"
+        "sp  = %x\n"
+        "lr  = %x\n"
+        "pc  = %x"
+    };
+    char buf[sizeof(sdump) + 17 * 10];
 
-/**
-  * @}
-  */
+    ksprintf(buf, sizeof(buf), sdump,
+            frame.psr, frame.r0, frame.r1, frame.r2, frame.r3, frame.r4,
+            frame.r5, frame.r6, frame.r7, frame.r8, frame.r9, frame.r10,
+            frame.r11, frame.r12, frame.sp, frame.lr, frame.pc);
+    KERROR(KERROR_ERR, buf);
+}

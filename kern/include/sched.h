@@ -133,7 +133,8 @@
 
 #define SCHED_SFRAME_SYS        0   /*!< Sys int/Scheduling stack frame. */
 #define SCHED_SFRAME_SVC        1   /*!< Syscall stack frame. */
-#define SCHED_SFRAME_ARR_SIZE   2
+#define SCHED_SFRAME_ABO        2   /*!< Stack frame for aborts. */
+#define SCHED_SFRAME_ARR_SIZE   3
 
 /**
  * Thread info struct.

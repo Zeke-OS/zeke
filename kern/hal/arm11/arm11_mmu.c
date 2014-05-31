@@ -567,14 +567,13 @@ out:
 
 /**
  * Data abort handler
- * @param sp        is the thread stack pointer.
- * @param spsr      is the spsr from the thread context.
- * @TODO            Instead of sp we'd like to possibly have stack frame updated
  */
-uint32_t mmu_data_abort_handler(uint32_t sp, uint32_t spsr, const uint32_t lr)
+uint32_t mmu_data_abort_handler(void)
 {
     uint32_t far; /*!< Fault address */
     uint32_t fsr; /*!< Fault status */
+    const uint32_t spsr = current_thread->sframe[SCHED_SFRAME_ABO].psr;
+    const uint32_t lr = current_thread->sframe[SCHED_SFRAME_ABO].pc;
     const istate_t s_old = spsr & PSR_INT_MASK; /*!< Old interrupt state */
     istate_t s_entry; /*!< Int state in handler entry. */
     threadInfo_t * const thread = (threadInfo_t *)current_thread;
@@ -607,6 +606,7 @@ uint32_t mmu_data_abort_handler(uint32_t sp, uint32_t spsr, const uint32_t lr)
             char buf[80];
             ksprintf(buf, sizeof(buf), "DAB handling failed: %i", err);
             KERROR(KERROR_CRIT, buf);
+            stack_dump(current_thread->sframe[SCHED_SFRAME_ABO]);
             dab_fatal(fsr, far, spsr, lr, thread);
         }
     } else {
@@ -624,8 +624,6 @@ uint32_t mmu_data_abort_handler(uint32_t sp, uint32_t spsr, const uint32_t lr)
     if (DAB_WAS_USERMODE(spsr)) {
         set_interrupt_state(s_entry);
     }
-
-    return lr;
 }
 
 /**

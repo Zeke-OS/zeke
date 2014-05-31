@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    brk.c
- * @author  Olli Vanhoja
- * @brief   Change space allocation.
+ * @file bcm2835_jtag.c
+ * @author Olli Vanhoja
+ * @brief Interrupt service routines.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -28,71 +28,26 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************
-*/
+ */
 
-#include <syscall.h>
-#include <errno.h>
-#include <string.h>
-#include <unistd.h>
+#define KERNEL_INTERNAL
+#include <kinit.h>
+#include <kerror.h>
+#include "bcm2835_gpio.h"
+#include "bcm2835_mmio.h"
 
-static struct _ds_getbreak ds_brk;
-static void * curr_break;
 
-static int getbrk(void)
+void bcm_jtag_preinit(void)
 {
-    /* Following syscall just gets the start and stop limits for the brk
-     * functionality. Actual brk operation is solely implemented in
-     * userland.
-     */
+    SUBSYS_INIT();
 
-    if (ds_brk.start == 0) {
-        if (syscall(SYSCALL_PROC_GETBREAK, &ds_brk)) {
-            /* This should never happen unles user is trying to do something
-             * fancy. */
-            errno = EAGAIN;
-            return -1;
-        }
-    }
+    bcm2835_set_gpio_func(22, GPIO_FSEL_ALTFN4);
+    bcm2835_set_gpio_func(4, GPIO_FSEL_ALTFN5);
+    bcm2835_set_gpio_func(27, GPIO_FSEL_ALTFN4);
+    bcm2835_set_gpio_func(25, GPIO_FSEL_ALTFN4);
+    bcm2835_set_gpio_func(23, GPIO_FSEL_ALTFN4);
+    bcm2835_set_gpio_func(24, GPIO_FSEL_ALTFN4);
 
-    return 0;
+    KERROR(KERROR_DEBUG, "BCM2835 JTAG OK");
 }
-
-int brk(void * addr)
-{
-    intptr_t alloc_size;
-
-    if (getbrk())
-        return -1;
-
-    if ((ds_brk.start > addr) || (addr > ds_brk.stop)) {
-        errno = ENOMEM;
-        return -1;
-    }
-
-    alloc_size = ((intptr_t)addr - (intptr_t)curr_break);
-    if (alloc_size > 0)
-        memset(curr_break, 0, (size_t)alloc_size);
-
-    curr_break = addr;
-    return 0;
-}
-
-void * sbrk(intptr_t incr)
-{
-    void * old_break = curr_break;
-    void * new_break = (void *)((char *)curr_break + incr);
-
-    if (getbrk())
-        return (void *)-1;
-
-    if ((ds_brk.start > new_break) || (new_break > ds_brk.stop)) {
-        errno = ENOMEM;
-        return (void *)-1;
-    }
-
-    if (incr > 0)
-        memset(old_break, 0, (size_t)incr);
-
-    curr_break = new_break;
-    return old_break;
-}
+HW_POSTINIT_ENTRY(bcm_jtag_preinit);

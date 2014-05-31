@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    brk.c
+ * @file    bcm2835_gpio.c
  * @author  Olli Vanhoja
- * @brief   Change space allocation.
+ * @brief   BCM2835 gpio.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -28,71 +28,26 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************
-*/
+ */
 
-#include <syscall.h>
-#include <errno.h>
-#include <string.h>
-#include <unistd.h>
+#include <stddef.h>
+#include <hal/core.h>
+#include "bcm2835_mmio.h"
+#include "bcm2835_gpio.h"
 
-static struct _ds_getbreak ds_brk;
-static void * curr_break;
-
-static int getbrk(void)
+void bcm2835_set_gpio_func(int gpio, int func_code)
 {
-    /* Following syscall just gets the start and stop limits for the brk
-     * functionality. Actual brk operation is solely implemented in
-     * userland.
-     */
+    istate_t s_entry;
+    const size_t reg_ind = gpio / 10;
+    const int bit = (gpio % 10) * 3;
+    const uint32_t mask = 0b111 << bit;
+    uint32_t mmio_addr = (uint32_t)(((uint32_t *)GPIO_BASE)[reg_ind]);
+    uint32_t old;
+    uint32_t new = ((func_code << bit) & mask);
 
-    if (ds_brk.start == 0) {
-        if (syscall(SYSCALL_PROC_GETBREAK, &ds_brk)) {
-            /* This should never happen unles user is trying to do something
-             * fancy. */
-            errno = EAGAIN;
-            return -1;
-        }
-    }
-
-    return 0;
-}
-
-int brk(void * addr)
-{
-    intptr_t alloc_size;
-
-    if (getbrk())
-        return -1;
-
-    if ((ds_brk.start > addr) || (addr > ds_brk.stop)) {
-        errno = ENOMEM;
-        return -1;
-    }
-
-    alloc_size = ((intptr_t)addr - (intptr_t)curr_break);
-    if (alloc_size > 0)
-        memset(curr_break, 0, (size_t)alloc_size);
-
-    curr_break = addr;
-    return 0;
-}
-
-void * sbrk(intptr_t incr)
-{
-    void * old_break = curr_break;
-    void * new_break = (void *)((char *)curr_break + incr);
-
-    if (getbrk())
-        return (void *)-1;
-
-    if ((ds_brk.start > new_break) || (new_break > ds_brk.stop)) {
-        errno = ENOMEM;
-        return (void *)-1;
-    }
-
-    if (incr > 0)
-        memset(old_break, 0, (size_t)incr);
-
-    curr_break = new_break;
-    return old_break;
+    mmio_start(&s_entry);
+    old = mmio_read(mmio_addr);
+    new |= (old & ~mask);
+    mmio_write(mmio_addr, new);
+    mmio_end(&s_entry);
 }

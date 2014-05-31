@@ -105,6 +105,8 @@ void set_interrupt_state(istate_t state);
  */
 uint64_t get_utime(void);
 
+void stack_dump(sw_stack_frame_t frame);
+
 /*
  * Core Implementation must provide following either as inlined functions or
  * macros:

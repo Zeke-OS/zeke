@@ -627,16 +627,16 @@ static void sched_thread_sleep(long millisec)
 
     do {
         timer_id = timers_add(thread_event_timer, current_thread,
-                TIMERS_FLAG_ONESHOT, millisec * 1000);
+            TIMERS_FLAG_ONESHOT, millisec * 1000);
     } while (timer_id < 0);
     current_thread->wait_tim = timer_id;
 
-    s = get_interrupt_state();
-    disable_interrupt(); /* TODO Not MP safe! */
+    //s = get_interrupt_state();
+    //disable_interrupt(); /* TODO Not MP safe! */
     /* This should prevent anyone from waking up this thread for a while. */
     timers_start(timer_id);
     sched_thread_sleep_current(0); /* TODO Should work with 1 */
-    set_interrupt_state(s);
+    //set_interrupt_state(s);
 
     do {
         idle_sleep();

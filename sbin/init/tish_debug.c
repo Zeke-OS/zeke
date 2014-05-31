@@ -124,7 +124,7 @@ static void create_debug_thread(void)
 static void * test_thread(void * arg)
 {
     while(1) {
-        sleep(10);
+        sleep(1);
         thread_stat();
     }
 }
@@ -133,10 +133,13 @@ static void thread_stat(void)
 {
     /* Print thread id & cpu mode */
     char buf[80];
-    uint32_t mode;
+    uint32_t mode, sp;
     pthread_t id = pthread_self();
 
-    __asm__ volatile ("mrs     %0, cpsr" : "=r" (mode));
-    ksprintf(buf, sizeof(buf), "My id: %u, my mode: %x\n", id, mode);
+    __asm__ volatile (
+        "mrs     %0, cpsr\n\t"
+        "mov     %1, sp"
+        : "=r" (mode), "=r" (sp));
+    ksprintf(buf, sizeof(buf), "My id: %u, sp: %u, my mode: %x\n", id, sp, mode);
     puts(buf);
 }

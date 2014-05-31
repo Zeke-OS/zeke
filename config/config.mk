@@ -48,7 +48,7 @@ configFB = 0# Enable Frame Buffer support
 configFB_FONT_LATIN = 0# Latin extension
 configFB_FONT_GREEK = 0# Greek extension
 configFB_FONT_HIRAGANA = 0# Hiragana extension
-configBCM_JTAG = 0# BCM2835 JTAG support
+configBCM_JTAG = 1# BCM2835 JTAG support
 
 # Kernel logging options
 # 0 = No logger
@@ -66,7 +66,7 @@ configDEF_KLOGGER = 2
 #     occur in normal operation.
 # 0 - Normal build
 configDEBUG = '4'#Additional debug messages and asserts.
-configKERROR_MAXLEN = 200# Max kerror line length
+configKERROR_MAXLEN = 400# Max kerror line length
 # end of logging options
 
 # Processes

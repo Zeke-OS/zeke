@@ -66,10 +66,7 @@ __attribute__ ((naked, aligned(32))) static void interrupt_vectors(void)
         "b bad_exception\n\t"   /* Reset                    1   8      abt  */
         "b undef_handler\n\t"   /* Undefined instruction    6   0      und  */
         "b interrupt_svc\n\t"   /* Software interrupt       6   0      svc  */
-#if 0
         "b interrupt_pabt\n\t"  /* Prefetch abort           5   4      abt  */
-#endif
-        "b bad_exception\n\t"   /* Prefetch abort           5   4      abt  */
         "b interrupt_dabt\n\t"  /* Data abort               2   8      abt  */
         "b bad_exception\n\t"   /* Unused vector                            */
         "b interrupt_sys\n\t"   /* IRQ                      4   4      irq  */

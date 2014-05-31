@@ -91,10 +91,6 @@ interrupt_sys:
     bl      proc_suspend
     attach_kernel_mptable
 
-    /* Get current PID */
-    /*ldr     r5, =current_process_id
-    ldr     r5, [r5]*/
-
     /* Run scheduler */
     bl      sched_handler
 
@@ -133,60 +129,11 @@ _tag:                       /* TODO */
     .globl  interrupt_dabt
     .type   interrupt_dabt,%function
 interrupt_dabt:
-    push    {r0-r3}
-    mrs     r1, spsr
-    push    {r1}
-    and     r0, r1, #0x1f   /* Get only the mode part. */
-    tst     r0, #0x10       /* User mode */
-#if 0 /* TODO How to resolve if we came from a syscall or sys thread? */
-    tstne   r0, #0x1f       /* System mode */
-#endif
-    movne   r4, #1          /* 1 = Skip restoring of thread context */
-    movne   r0, sp          /* arg0 = sp TODO Incorrect as this is not the stack
-                             * of the trouble maker. */
-    movne   r2, lr          /* arg2 = lr */
-    bne     1f              /* DAB came possibly from an interrupt handler. */
+    pushcontext #2          /* Push context to SCHED_SFRAME_ABO */
+    
+    bl      mmu_data_abort_handler
 
-    /* Store thread context */
-    mov     r1, sp
-    ldr     r0, =0x00001000 /* vaddr of tkstack. */
-    add     sp, sp, #16     /* Reset stack pointer */
-    cps     #0x1f           /* Change to system mode. */
-    mov     r3, sp          /* Preserve usr sp */
-    /* At this point we have:
-     * r0 = thread specific kernel stack
-     * r1 = irq stack
-     * r2 = original link register value
-     * sp = usr stack
-     */
-    stmdb   r0!, {sp}       /* Store usr sp to the kstack */
-    stmdb   r0!, {r4-r12}   /* Store r4-r12 to the kstack */
-    ldmia   r1!, {r8}       /* Pop spsr */
-    ldmia   r1!, {r4-r7}    /* Pop r0-r3 TODO remove ! if not needed */
-    stmdb   r0!, {r4-r7}    /* Store original values of r0-r3 to the kstack */
-    stmdb   r0!, {r8}       /* Store spsr to kstack */
-    mov     r1, r8          /* spsr to r1 */
-    mov     r4, #0          /* #0 = Dont skip restoring of the thread context */
-    eor     r0, r0, sp      /* Swap r0 <-> sp */
-    eor     r0, r0, sp
-    eor     r0, r0, sp
-    /* by now usr sp in r0, spsr in r1 and lr in r2 */
-1:  bl      mmu_data_abort_handler
-    mov     lr, r0          /* Restore lr */
-    tst     r4, #1          /* Skip? */
-    beq     2f
-
-    /* Restore thread user context, Lets assume that we are still in sys mode */
-    ldmia   sp!, {r0}
-    msr     spsr, r0
-    ldmia   sp!, {r0-r3}
-    ldmia   sp!, {r4-r12}
-    mov     sp, sp          /* Get usr sp. State of kstack is irrelevant after
-                             * this interrupt handler returns. */
-    subs    pc, lr, #0x8
-2:  pop     {r0}            /* Return */
-    msr     spsr, r0
-    pop     {r0-r3}
+    popcontext #2           /* Pop context from SCHED_SFRAME_ABO */
     subs    pc, lr, #0x8
 
 .end
