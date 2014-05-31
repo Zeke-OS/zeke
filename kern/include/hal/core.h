@@ -68,6 +68,8 @@ extern volatile size_t flag_kernel_tick;
 void init_stack_frame(struct _ds_pthread_create * thread_def,
         sw_stack_frame_t * sframe, int priv);
 
+void svc_setretval(uintptr_t retval);
+
 /**
  * Test if locked.
  * @param lock is pointer to a lock variable.

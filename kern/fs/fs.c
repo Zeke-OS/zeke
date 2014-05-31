@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Virtual file system.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -181,6 +181,9 @@ out:
     return retval;
 }
 
+/**
+ * Get next pfs minor number.
+ */
 unsigned int fs_get_pfs_minor(void)
 {
     unsigned int static pfs_minor = 0;
@@ -188,6 +191,39 @@ unsigned int fs_get_pfs_minor(void)
 
     pfs_minor++;
     return retval;
+}
+
+/**
+ * Walks the file system for a process and tries to locate and lock vnode
+ * corresponding to a given path.
+ */
+struct vnode * fs_namei_proc(char * path)
+{
+    char * _path = kstrdup(path, 1024); /* TODO max ok? */
+    char * lasts;
+    char * name;
+    vnode_t * cur = curproc->croot;
+    vnode_t * res;
+
+    if (!(name = kstrtok(_path, PATH_DELIMS, &lasts))) {
+        kfree(_path);
+        return 0;
+    }
+
+    do {
+        if (cur->vnode_ops->lookup(cur, name, FS_FILENAME_MAX, &res)) {
+            kfree(_path);
+            return 0; /* vnode not found */
+        }
+        /* TODO Check if vnode is dir or symlink and there is yet path left.
+         * - if file is a link to a next dir then continue by setting a new value to cur
+         * - if file is not a link and there is still path left we'll exit by the next iteration
+         * - decrement refcount of cur
+         */
+    } while ((name = kstrtok(0, PATH_DELIMS, &lasts)));
+    kfree(_path);
+
+    return res;
 }
 
 /**

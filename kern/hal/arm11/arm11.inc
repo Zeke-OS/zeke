@@ -33,13 +33,15 @@
 
 /**
  * Save thread context.
+ * @param ind is the stack frame index.
  */
-.macro pushcontext
+.macro pushcontext ind
     stmdb   sp, {r0-r14}^
     nop
     sub     sp, sp, #60
     mrs     r5, spsr        /* Preserve SPSR */
     mov     r6, lr          /* Preserve lr */
+    mov     r0, \ind
     bl      thread_get_curr_stackframe
     cmp     r0, #0
     addeq   sp, sp, #60     /* Clear stack as we are skipping... */
@@ -58,9 +60,11 @@
 
 /**
  * Load thread context.
+ * @param ind is the stack frame index.
  * @return Returns original lr in lr.
  */
-.macro popcontext
+.macro popcontext ind
+    mov     r0, \ind
     bl      thread_get_curr_stackframe
     mov     lr, r0
 

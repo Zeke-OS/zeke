@@ -33,8 +33,11 @@
  */
 
 #define KERNEL_INTERNAL 1
+#include <libkern.h>
+#include <kstring.h>
 #include <sched.h>
 #include <hal/core.h>
+#include <kerror.h>
 #include <errno.h>
 #include <vm/vm.h>
 #include <syscall.h>
@@ -78,21 +81,24 @@ void set_errno(int new_value)
  * actual kernel function and returns a result pointer/data to the interrupt
  * handler which returns it to the original caller, which is usually a library
  * function in kernel.c
- * @param type  syscall type.
- * @param p     pointer to the parameter or parameter structure.
- * @return      Result value or pointer to the result in user space.
  */
-uintptr_t _intSyscall_handler(uint32_t type, void * p)
+void syscall_handler(void)
 {
-    kernel_syscall_handler_t fpt;
+    const uint32_t type = (uint32_t)current_thread->sframe[SCHED_SFRAME_SVC].r0;
+    void * p = (void *)current_thread->sframe[SCHED_SFRAME_SVC].r1;
     uint32_t major = SYSCALL_MAJOR(type);
+    kernel_syscall_handler_t fpt;
 
-    if ((major >= (sizeof(syscall_callmap) / sizeof(void *))) ||
-        !syscall_callmap[major]) {
+    if ((major >= num_elem(syscall_callmap)) || !syscall_callmap[major]) {
+        char buf[30];
+        ksprintf(buf, sizeof(buf), "syscall %u not supported", major);
+        KERROR(KERROR_WARN, buf);
+
         set_errno(ENOSYS); /* Not supported. */
-        return 0; /* NULL */
+        svc_setretval(0);
+        return;
     }
 
     fpt = syscall_callmap[major];
-    return fpt(type, p);
+    svc_setretval(fpt(type, p));
 }

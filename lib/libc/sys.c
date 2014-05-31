@@ -1,8 +1,9 @@
 /**
  *******************************************************************************
- * @file    thread.h
+ * @file    sys.c
  * @author  Olli Vanhoja
- * @brief   Generic thread management and scheduling functions.
+ *
+ * @brief   System API.
  * @section LICENSE
  * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
@@ -31,33 +32,24 @@
  *******************************************************************************
  */
 
-#pragma once
-#ifndef THREAD_H
-#define THREAD_H
+#include <syscall.h>
 
-/**
- * Scheduler handler.
- * This is mainly called when timer ticks.
- */
-void sched_handler(void);
+#if configARCH == __ARM6__ || __ARM6K__
+uint32_t syscall(uint32_t type, void * p)
+{
+    uint32_t scratch;
 
-/**
- * Initialize thread kernel mode stack.
- * @param th is a pointer to the thread.
- */
-void thread_init_kstack(threadInfo_t * th);
+    /* Lets expect that parameters are already in r0 & r1 */
+    __asm__ volatile (
+        "SVC    #0\n\t"
+        "MOV    %[res], r0\n\t"
+        : [res]"=r" (scratch)
+        : [typ]"r" (type), [arg]"r" (p)
+        : "r2", "r3", "r4");
 
-/**
- * Get thread id of the current thread.
- */
-pthread_t get_current_tid(void);
+    return scratch;
+}
+#else
+#error Selected core is not suported by this libc
+#endif
 
-/**
- * Get a stack frame of the current thread.
- * @param ind is the stack frame index.
- * @return  Returns an address to the stack frame of the current thread;
- *          Or NULL if current_thread is not set.
- */
-void * thread_get_curr_stackframe(size_t ind);
-
-#endif /* THREAD_H */

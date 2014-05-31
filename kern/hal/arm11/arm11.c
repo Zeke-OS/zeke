@@ -44,6 +44,7 @@
 #include <autoconf.h>
 #include <kerror.h>
 #include <errno.h>
+#include <sched.h>
 #include <hal/core.h>
 
 volatile uint32_t flag_kernel_tick = 0;
@@ -67,19 +68,9 @@ void init_stack_frame(struct _ds_pthread_create * thread_def,
     sframe->psr = priv ? SYSTEM_PSR : USER_PSR;
 }
 
-uint32_t syscall(uint32_t type, void * p)
+void svc_setretval(uintptr_t retval)
 {
-    uint32_t scratch;
-
-    __asm__ volatile (
-        /* Lets expect that parameters are already in r0 & r1 */
-        "SVC    #0\n\t"
-        "MOV    %[res], r0\n\t"
-        : [res]"=r" (scratch)
-        : [typ]"r" (type), [arg]"r" (p)
-        : "r2", "r3", "r4");
-
-    return scratch;
+    current_thread->sframe[SCHED_SFRAME_SVC].r0 = retval;
 }
 
 istate_t get_interrupt_state(void)

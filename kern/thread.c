@@ -97,14 +97,16 @@ void thread_init_kstack(threadInfo_t * th)
 
 pthread_t get_current_tid(void)
 {
-    if (!current_thread)
-        return 0;
-    return (pthread_t)(current_thread->id);
+    if (current_thread)
+        return (pthread_t)(current_thread->id);
+    return 0;
 }
 
-void * thread_get_curr_stackframe(void)
+void * thread_get_curr_stackframe(size_t ind)
 {
-    return current_thread ? &(current_thread->stack_frame) : NULL;
+    if (current_thread && (ind < SCHED_SFRAME_ARR_SIZE))
+        return &(current_thread->sframe[ind]);
+    return NULL;
 }
 
 uintptr_t thread_syscall(uint32_t type, void * p)
