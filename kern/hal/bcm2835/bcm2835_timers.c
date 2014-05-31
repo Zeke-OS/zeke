@@ -119,7 +119,11 @@ void bcm_udelay(uint32_t delay)
 
 uint64_t get_utime(void)
 {
+    istate_t s_entry;
+
+    mmio_start(&s_entry);
     return *((uint64_t *)SYS_TIMER_CLO);
+    mmio_end(&s_entry);
 }
 
 void bcm_interrupt_postinit(void)

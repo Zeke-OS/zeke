@@ -75,6 +75,13 @@ void sched_handler(void)
     }
 }
 
+void thread_event_timer(void * event_arg)
+{
+    thread->wait_tim = -1;
+                        sched_thread_set_exec(thread->id);
+
+}
+
 void thread_init_kstack(threadInfo_t * th)
 {
     /* Create kstack */

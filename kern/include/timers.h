@@ -40,16 +40,14 @@
 #define TIMERS_H
 
 #include <stdint.h>
-#include "kernel.h"
+#include <kernel.h>
 
 /* User Flag Bits */
 #define TIMERS_FLAG_ENABLED     0x1 /* See for description: timer_alloc_data_t */
 #define TIMERS_FLAG_PERIODIC    0x2 /* See for description: timer_alloc_data_t */
-#define TIMERS_USER_FLAGS       (TIMERS_FLAG_ENABLED | TIMERS_FLAG_PERIODIC)
+#define TIMERS_EXT_FLAGS        (TIMERS_FLAG_ENABLED | TIMERS_FLAG_PERIODIC)
 
 typedef uint32_t timers_flags_t;
-
-extern uint32_t timers_value;
 
 void timers_run(void);
 
@@ -57,10 +55,10 @@ void timers_run(void);
  * Allocate a new timer
  * @param thread_id thread id to add this timer for.
  * @param flags User modifiable flags (see: TIMERS_USER_FLAGS)-
- * @param millisec delay to trigger from the time when enabled.
+ * @param usec delay to trigger from the time when enabled.
  * @param return -1 if allocation failed.
  */
-int timers_add(pthread_t thread_id, timers_flags_t flags, uint32_t millisec);
+int timers_add(pthread_t thread_id, timers_flags_t flags, uint64_t usec);
 
 void timers_start(int tim);
 void timers_release(int tim);

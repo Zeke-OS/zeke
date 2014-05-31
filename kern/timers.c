@@ -37,40 +37,35 @@
 #include <sched.h>
 #include <timers.h>
 
-/* TODO this should be revised and possibly converted to support us level
- * timings by using hw timer. */
-
 /**
  * Indicates a free timer position on thread_id of allocation entry.
  */
 #define TIMERS_POS_FREE -1
 
 /** Timer allocation struct */
-typedef struct {
-    timers_flags_t flags;   /*!< Timer flags
-                             * + 0 = Timer state
-                             *     + 0 = disabled
-                             *     + 1 = enabled
-                             * + 1 = Timer type
-                             *     + 0 = one-shot
-                             *     + 1 = periodic
-                             */
-    pthread_t thread_id;   /*!< Thread id */
-    uint32_t reset_val;    /*!< Reset value for repeating timer */
-    uint32_t expires;      /*!< Timer expiration time */
-} timer_alloc_data_t;
+typedef struct timer_cb {
+    timers_flags_t flags;       /*!< Timer flags:
+                                 * + 0 = Timer state
+                                 *     + 0 = disabled
+                                 *     + 1 = enabled
+                                 * + 1 = Timer type
+                                 *     + 0 = one-shot
+                                 *     + 1 = periodic
+                                 */
+    void (*event_fn)(void *);   /*!< Event handler for the timer. */
+    void * event_arg;           /*!< Argument for event handler. */
+    uint64_t interval;          /*!< Timer interval. */
+    uint64_t start;             /*!< Timer start value. */
+};
 
-uint32_t timers_value; /*!< Current tick value */
-static volatile timer_alloc_data_t timers_array[configTIMERS_MAX];
-
-/**
+/*
  * Lock to be used between threads accessing timer data structures. Scheduler
  * should not try to spin on this lock as it would hang the kernel.
  */
 static mtx_t timers_lock;
+static volatile struct timer_cb timers_array[configTIMERS_MAX];
 
 void timers_init(void) __attribute__((constructor));
-static int timers_calc_exp(int millisec);
 
 void timers_init(void)
 {
@@ -89,18 +84,22 @@ void timers_init(void)
 
 void timers_run(void)
 {
-    int i = 0;
+    size_t i = 0;
+    uint64_t now = get_utime();
 
-    timers_value++;
     do {
         if (timers_array[i].flags & TIMERS_FLAG_ENABLED) {
-            if (timers_array[i].expires <= timers_value) {
+            if ((now - timers_array[i].start) >= timers_array[i].interval) {
+                timers_array[i].event_fn(timers_array[i].event_arg);
+                /* TODO Instead of this, a generic event interface is needed */
+#if 0
                 threadInfo_t * thread;
                 thread = sched_get_pThreadInfo(timers_array[i].thread_id);
                 if (thread) {
                     thread->wait_tim = -1;
                     sched_thread_set_exec(thread->id);
                 }
+#endif
 
                 if (!(timers_array[i].flags & TIMERS_FLAG_PERIODIC)) {
                     /* Release the timer */
@@ -108,39 +107,36 @@ void timers_run(void)
                     timers_array[i].thread_id = TIMERS_POS_FREE;
                 } else {
                     /* Repeating timer */
-                    timers_array[i].expires = timers_calc_exp(timers_array[i].reset_val);
+                    timers_array[i].start = get_utime();
                 }
             }
         }
     } while (++i < configTIMERS_MAX);
 }
 
-int timers_add(pthread_t thread_id, timers_flags_t flags, uint32_t millisec)
+int timers_add(pthread_t thread_id, timers_flags_t flags, uint64_t usec)
 {
-    int i = 0;
-    flags &= TIMERS_USER_FLAGS; /* Allow only user flags to be set */
+    size_t i = 0;
+    int retval = -1;
+
+    flags &= TIMERS_EXT_FLAGS; /* Allow only external flags to be set */
 
     mtx_spinlock(&timers_lock);
     do { /* Locate first free timer */
         if (timers_array[i].thread_id == TIMERS_POS_FREE) {
             timers_array[i].thread_id = thread_id; /* reserve */
-
-            if (flags & TIMERS_FLAG_PERIODIC) { /* Periodic timer */
-                timers_array[i].reset_val = millisec;
-            }
-
-            if (millisec > 0) {
-                timers_array[i].expires = timers_calc_exp(millisec);
-            }
-
+            timers_array[i].interval = usec;
+            timers_array[i].start = get_utime();
             timers_array[i].flags = flags; /* enable */
             mtx_unlock(&timers_lock);
-            return i;
+
+            retval = i;
+            break;
         }
     } while (++i < configTIMERS_MAX);
-    mtx_unlock(&timers_lock);
 
-    return -1;
+    mtx_unlock(&timers_lock);
+    return retval;
 }
 
 void timers_start(int tim)
@@ -174,16 +170,4 @@ pthread_t timers_get_owner(int tim) {
     mtx_unlock(&timers_lock);
 
     return retval;
-}
-
-static int timers_calc_exp(int millisec)
-{
-    int exp;
-    uint32_t value = timers_value;
-
-    exp = value + ((millisec * configSCHED_HZ) / 1000);
-    if (exp == value)
-        exp++;
-
-    return exp;
 }
