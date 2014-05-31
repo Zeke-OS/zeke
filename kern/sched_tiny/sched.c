@@ -79,6 +79,9 @@
 /** Scales fixed-point load average value to a integer format scaled to 100 */
 #define SCALE_LOAD(x) (((x + (FIXED_1/200)) * 100) >> FSHIFT)
 /* End of Definitions for load average calculation ***************************/
+/* sysctl node for scheduler */
+SYSCTL_DECL(_kern_sched);
+SYSCTL_NODE(_kern, OID_AUTO, sched, CTLFLAG_RW, 0, "Scheduler");
 
 /* Task containers */
 static threadInfo_t task_table[configSCHED_MAX_THREADS]; /*!< Array of all
@@ -88,6 +91,12 @@ static heap_t priority_queue = HEAP_NEW_EMPTY; /*!< Priority queue of active
 /* Next thread_id queue */
 static queue_cb_t next_thread_id_queue_cb;
 static pthread_t next_thread_id_queue[configSCHED_MAX_THREADS - 1];
+static unsigned max_threads = configSCHED_MAX_THREADS;
+SYSCTL_UINT(_kern_sched, OID_AUTO, max_threads, CTLFLAG_RD,
+    &max_threads, 0, "Max no. of threads.");
+static unsigned no_threads;
+SYSCTL_UINT(_kern_sched, OID_AUTO, no_threads, CTLFLAG_RD,
+    &no_threads, 0, "Number of threads.");
 
 threadInfo_t * current_thread; /*!< Pointer to the currently active
                                          *   thread */
@@ -98,9 +107,6 @@ static uint32_t loadavg[3]  = { 0, 0, 0 }; /*!< CPU load averages */
 static char sched_idle_stack[sizeof(sw_stack_frame_t)
                              + sizeof(hw_stack_frame_t)
                              + 40];
-
-/* sysctl node for scheduler */
-SYSCTL_NODE(_kern, OID_AUTO, sched, CTLFLAG_RW, 0, "Scheduler");
 
 /* Static init */
 void sched_init(void) __attribute__((constructor));
@@ -182,8 +188,18 @@ static void init_thread_id_queue(void)
 void * idleTask(/*@unused@*/ void * arg)
 {
     while(1) {
+        unsigned tmp_no_threads = 0;
         //bcm2835_uart_uputc('I');
-        raspi_led_invert();
+        //raspi_led_invert();
+
+        /* Update no_threads */
+        for (int i = 0; i < configSCHED_MAX_THREADS; i++) {
+            if (task_table[i].flags & SCHED_IN_USE_FLAG) {
+                tmp_no_threads++;
+            }
+            no_threads = tmp_no_threads;
+        }
+
         idle_sleep();
     }
 }
