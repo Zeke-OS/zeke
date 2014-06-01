@@ -37,7 +37,7 @@
 #include <sys/sysctl.h>
 #include <unistd.h>
 #include <errno.h>
-#include "tish.h"
+#include "tish/tish.h"
 #include "init.h"
 
 char banner[] = "\
@@ -54,7 +54,9 @@ void * main(void * arg)
     write(2, banner, sizeof(banner));
     write(2, "Init v0.0.1\n", 13);
 
+#if configTISH != 0
     tish();
+#endif
     while(1) {
         write(2, "init\n", 5);
         sleep(10);

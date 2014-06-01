@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    tish.h
+ * @file    kerror_uart.c
  * @author  Olli Vanhoja
- * @brief   Tiny Init Shell for debugging in init.
+ * @brief   UART klogger.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,17 +30,35 @@
  *******************************************************************************
  */
 
-#pragma once
-#ifndef TISH_H
-#define TISH_H
+#define KERNEL_INTERNAL
+#include <autoconf.h>
+#include <kstring.h>
+#include <kerror.h>
+#include <strcbuf.h>
 
-#define MAX_LEN 80
-#define DELIMS  " \t\r\n"
+static char strbuf[configLASTLOG_BUF];
+static struct strcbuf klogbuf = {
+    .start = 0,
+    .end = 0,
+    .len = sizeof(strbuf),
+    .data = strbuf
+};
 
-int tish(void);
-void tish_sysctl_cmd(char ** args);
-void tish_uname(char ** args);
-void tish_ikut(char ** args);
-void tish_debug(char ** args);
+void kerror_lastlog_init(void)
+{
+    klogbuf.start = 0;
+    klogbuf.end = 0;
+}
 
-#endif /* TISH_H */
+void kerror_lastlog_puts(const char * str)
+{
+    strcbuf_insert(&klogbuf, str, configKERROR_MAXLEN);
+}
+
+void kerror_lastlog_flush(void)
+{
+    char buf[configKERROR_MAXLEN];
+
+    while (strcbuf_getline(&klogbuf, buf, sizeof(buf)))
+        kputs(buf);
+}

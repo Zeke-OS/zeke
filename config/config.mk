@@ -51,10 +51,13 @@ configFB_FONT_HIRAGANA = 0# Hiragana extension
 configBCM_JTAG = 0# BCM2835 JTAG support
 
 # Kernel logging options
+configKLOGGER = 1# Enable KERROR as kernel logger
+configLASTLOG_BUF = 1024# Lastlog buf size
+configKERROR_UART = 1# Option to output kernel logs directly to UART0
 # 0 = No logger
 # 1 = Lastlog
 # 2 = UART0
-configDEF_KLOGGER = 2
+configDEF_KLOGGER = 2# Select default logger (options above)
 
 # loglevel
 # Additional log messages and asserts.
@@ -98,3 +101,7 @@ KU_REPORT_ORIENTED = 0#
 configKUNIT_GENERIC = 0# Tests for generic data structures
 configKUNIT_KSTRING = 0# Tests for kstring library
 configKUNIT_FS = 0# Tests for vfs and filesystems
+
+# User space
+# TODO This should be possibly somewhere else
+configTISH = 0# Debug console in init

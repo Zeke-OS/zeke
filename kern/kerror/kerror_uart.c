@@ -32,32 +32,38 @@
 
 #define KERNEL_INTERNAL
 #include <kstring.h>
+#include <hal/uart.h>
 #include <kerror.h>
-#include <strcbuf.h>
 
-static char strbuf[1024];
-static struct strcbuf klogbuf = {
-    .start = 0,
-    .end = 0,
-    .len = sizeof(strbuf),
-    .data = strbuf
-};
+#if configUART == 0
+#error configUART must be enabled
+#endif
 
-void kerror_lastlog_init(void)
+static uart_port_t * kerror_uart;
+
+/**
+ * Kerror logger init function called by kerror_init.
+ */
+void kerror_uart_init(void)
 {
-    klogbuf.start = 0;
-    klogbuf.end = 0;
+    uart_port_init_t uart_conf = {
+        .baud_rate  = UART_BAUDRATE_115200,
+        .data_bits  = UART_DATABITS_8,
+        .stop_bits  = UART_STOPBITS_ONE,
+        .parity     = UART_PARITY_NO,
+    };
+
+    kerror_uart = uart_getport(0);
+    kerror_uart->init(&uart_conf);
 }
 
-void kerror_lastlog_puts(const char * str)
+void kerror_uart_puts(const char * str)
 {
-    strcbuf_insert(&klogbuf, str, configKERROR_MAXLEN);
-}
+    size_t i = 0;
 
-void kerror_lastlog_flush(void)
-{
-    char buf[configKERROR_MAXLEN];
-
-    while (strcbuf_getline(&klogbuf, buf, sizeof(buf)))
-        kputs(buf);
+    while (str[i] != '\0') {
+        if (str[i] == '\n')
+            kerror_uart->uputc('\r');
+        kerror_uart->uputc(str[i++]);
+    }
 }

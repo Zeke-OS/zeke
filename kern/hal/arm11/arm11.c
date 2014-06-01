@@ -34,6 +34,7 @@
 #define KERNEL_INTERNAL
 #include <stddef.h>
 #include <autoconf.h>
+#include <kstring.h>
 #include <kerror.h>
 #include <errno.h>
 #include <sched.h>

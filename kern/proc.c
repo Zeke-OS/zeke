@@ -164,8 +164,12 @@ static void init_kernel_proc(void)
     /* TODO Do this correctly */
     kernel_proc->files->fd[0] = 0;
     kernel_proc->files->fd[1] = 0;
+#if configKLOGGER != 0
     kernel_proc->files->fd[2] = kcalloc(1, sizeof(file_t)); /* stderr */
     kernel_proc->files->fd[2]->vnode = &kerror_vnode;
+#else
+    kernel_proc->files->fd[2] = 0;
+#endif
 }
 
 void procarr_realloc(void)

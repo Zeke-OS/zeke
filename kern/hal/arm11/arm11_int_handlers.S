@@ -134,6 +134,9 @@ _tag:                       /* TODO */
     .type   interrupt_dabt,%function
 interrupt_dabt:
     pushcontext #2          /* Push context to SCHED_SFRAME_ABO */
+
+    cps     #0x1f           /* Change to system mode */
+    ldr     sp, =0x00001000 /* vaddr of tkstack. */
     
     bl      mmu_data_abort_handler
 

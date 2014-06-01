@@ -568,7 +568,7 @@ out:
 /**
  * Data abort handler
  */
-uint32_t mmu_data_abort_handler(void)
+void mmu_data_abort_handler(void)
 {
     uint32_t far; /*!< Fault address */
     uint32_t fsr; /*!< Fault status */

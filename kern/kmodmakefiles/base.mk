@@ -6,8 +6,9 @@ base-SRC-$(configSCHED_TINY) += $(wildcard kern/sched_tiny/*.c)
 base-SRC-1 += $(wildcard kern/generic/*.c)
 
 # Kernel logging
-base-SRC-$(configKERROR_LAST) += $(wildcard kern/kerror_lastlog/*.c)
-base-SRC-$(configKERROR_TTYS) += $(wildcard kern/kerror_ttys/*.c)
+base-SRC-$(configKLOGGER) += kern/kerror/kerror.c
+base-SRC-$(configKLOGGER) += kern/kerror/kerror_lastlog.c
+base-SRC-$(configKERROR_UART) += kern/kerror/kerror_uart.c
 
 # Virtual file system
 base-SRC-1 += $(wildcard kern/fs/*.c)

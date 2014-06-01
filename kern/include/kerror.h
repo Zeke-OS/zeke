@@ -45,6 +45,10 @@
 #define _KERROR_S2(x) _KERROR_S(x)
 #define S__LINE__ _KERROR_S2(__LINE__)
 
+#if configKLOGGER == 0
+#define kerror_print_macro(level, where, msg)
+#endif
+
 #define _KERROR_FN(level, where, msg) kerror_print_macro(level, where, msg)
 #define _KERROR_WHERESTR __FILE__ ":" S__LINE__ ": "
 #define _KERROR2(level, where, msg) _KERROR_FN(level, where, msg)
@@ -77,7 +81,9 @@ const char _kernel_panic_msg[19];
 #define KERROR_INFO     '3' /*!< Normal informational message. */
 #define KERROR_DEBUG    '4' /*!< Debug message. */
 
+#if configKLOGGER != 0
 void kerror_print_macro(char level, const char * where, const char * msg);
 void (*kputs)(const char *);
+#endif
 
 #endif /* KERROR_H */

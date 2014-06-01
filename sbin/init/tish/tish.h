@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    kerror_uart.c
+ * @file    tish.h
  * @author  Olli Vanhoja
- * @brief   UART klogger.
+ * @brief   Tiny Init Shell for debugging in init.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,36 +30,19 @@
  *******************************************************************************
  */
 
-#define KERNEL_INTERNAL
-#include <kstring.h>
-#include <hal/uart.h>
-#include <kerror.h>
+#ifdef configTISH
+#pragma once
+#ifndef TISH_H
+#define TISH_H
 
-static uart_port_t * kerror_uart;
+#define MAX_LEN 80
+#define DELIMS  " \t\r\n"
 
-/**
- * Kerror logger init function called by kerror_init.
- */
-void kerror_uart_init(void)
-{
-    uart_port_init_t uart_conf = {
-        .baud_rate  = UART_BAUDRATE_115200,
-        .data_bits  = UART_DATABITS_8,
-        .stop_bits  = UART_STOPBITS_ONE,
-        .parity     = UART_PARITY_NO,
-    };
+int tish(void);
+void tish_sysctl_cmd(char ** args);
+void tish_uname(char ** args);
+void tish_ikut(char ** args);
+void tish_debug(char ** args);
 
-    kerror_uart = uart_getport(0);
-    kerror_uart->init(&uart_conf);
-}
-
-void kerror_uart_puts(const char * str)
-{
-    size_t i = 0;
-
-    while (str[i] != '\0') {
-        if (str[i] == '\n')
-            kerror_uart->uputc('\r');
-        kerror_uart->uputc(str[i++]);
-    }
-}
+#endif /* TISH_H */
+#endif /* configTISH */

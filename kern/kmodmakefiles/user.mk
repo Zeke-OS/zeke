@@ -4,3 +4,4 @@
 user-SRC-1 += $(wildcard lib/libc/*.c)
 user-SRC-1 += $(wildcard lib/libc/stdlib/*.c)
 user-SRC-1 += $(wildcard sbin/init/*.c)
+user-SRC-$(configTISH) += $(wildcard sbin/init/tish/*.c)

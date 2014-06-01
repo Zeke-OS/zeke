@@ -106,11 +106,13 @@ static struct kerror_logger klogger_arr[] = {
         .puts   = &kerror_lastlog_puts,
         .read   = 0,
         .flush = &kerror_lastlog_flush},
+#if configKERROR_UART != 0
     [KERROR_UARTLOG] = {
         .init   = &kerror_uart_init,
         .puts   = &kerror_uart_puts,
         .read   = 0,
         .flush  = 0}
+#endif
 };
 
 static int klogger_change(size_t new_klogger, size_t old_klogger);
