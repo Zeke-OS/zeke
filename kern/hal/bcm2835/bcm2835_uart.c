@@ -38,6 +38,7 @@
 #include <hal/core.h>
 #include <hal/uart.h>
 
+/* Addresses */
 #define UART0_BASE      0x20201000
 #define UART0_DR        (UART0_BASE + 0x00)
 #define UART0_RSRECR    (UART0_BASE + 0x04)
@@ -57,6 +58,15 @@
 #define UART0_ITIP      (UART0_BASE + 0x84)
 #define UART0_ITOP      (UART0_BASE + 0x88)
 #define UART0_TDR       (UART0_BASE + 0x8C)
+
+/* Bit offsets and masks */
+#define UART0_LCRH_SPS_OFFSET   7
+#define UART0_LCRH_WLEN_OFFSET  5
+#define UART0_LCRH_FEN_OFFSET   4
+#define UART0_LCRH_STP2_OFFSET  3
+#define UART0_LCRH_EPS_OFFSET   2
+#define UART0_LCRH_PEN_OFFSET   1
+#define UART0_LCRH_BRK_OFFSET   0
 
 static void bcm2835_uart_init(const uart_port_init_t * conf);
 static void set_baudrate(unsigned int baud_rate);
@@ -150,7 +160,7 @@ static void set_lcrh(const uart_port_init_t * conf)
     istate_t s_entry;
 
     /* Enable FIFOs */
-    tmp |= 0x1 << 4;
+    tmp |= 1 << UART0_LCRH_FEN_OFFSET;
 
     switch (conf->data_bits) {
         case UART_DATABITS_5:
@@ -188,13 +198,18 @@ void bcm2835_uart_uputc(uint8_t byte)
 {
     istate_t s_entry;
 
-    mmio_start(&s_entry);
-
-    /* TODO We may don't want to block everything if UART is blocked. */
     /* Wait for UART to become ready to transmit. */
-    while (mmio_read(UART0_FR) & (1 << 5));
-    mmio_write(UART0_DR, byte);
+    while (1) {
+        mmio_start(&s_entry);
+        if (!(mmio_read(UART0_FR) & (1 << 5))) {
+            mmio_end(&s_entry);
+            break;
+        }
+        mmio_end(&s_entry);
+    }
 
+    mmio_start(&s_entry);
+    mmio_write(UART0_DR, byte);
     mmio_end(&s_entry);
 }
 
@@ -207,7 +222,6 @@ int bcm2835_uart_ugetc()
 
     /* Check that receive FIFO/register is not empty. */
     if(!(mmio_read(UART0_FR) & 0x10)) {
-        /* TODO check errors (parity) */
         byte = mmio_read(UART0_DR);
     }
 

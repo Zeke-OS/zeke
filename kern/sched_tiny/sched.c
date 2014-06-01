@@ -121,7 +121,6 @@ static void _sched_thread_set_exec(pthread_t thread_id, osPriority pri);
 static void sched_thread_remove(pthread_t id);
 static void sched_thread_die(intptr_t retval);
 static int sched_thread_detach(pthread_t id);
-static void sched_thread_sleep(long millisec);
 /* End of Static function declarations ***************************************/
 
 /* Functions called from outside of kernel context ***************************/
@@ -618,29 +617,6 @@ static int sched_thread_detach(pthread_t id)
     }
 
     return 0;
-}
-
-static void sched_thread_sleep(long millisec)
-{
-    istate_t s;
-    int timer_id;
-
-    do {
-        timer_id = timers_add(thread_event_timer, current_thread,
-            TIMERS_FLAG_ONESHOT, millisec * 1000);
-    } while (timer_id < 0);
-    current_thread->wait_tim = timer_id;
-
-    //s = get_interrupt_state();
-    //disable_interrupt(); /* TODO Not MP safe! */
-    /* This should prevent anyone from waking up this thread for a while. */
-    timers_start(timer_id);
-    sched_thread_sleep_current(0); /* TODO Should work with 1 */
-    //set_interrupt_state(s);
-
-    do {
-        idle_sleep();
-    } while (current_thread->wait_tim >= 0);
 }
 
 /* Functions defined in header file

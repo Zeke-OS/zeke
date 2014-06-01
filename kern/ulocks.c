@@ -76,6 +76,7 @@ static int ulocks_semaphore_p(uint32_t * s)
     return 0;
 }
 
+#if 0
 /**
  * Wait until a Semaphore token becomes available
  * @param s semaphore.
@@ -117,6 +118,7 @@ static int ulocks_semaphore_thread_spinwait(uint32_t * s, uint32_t millisec)
 
     return (int)*s;
 }
+#endif
 
 /**
   * @}
@@ -145,6 +147,7 @@ uintptr_t ulocks_syscall(uint32_t type, void * p)
         }
         return retval;
 
+#if 0
     case SYSCALL_SEMAPHORE_WAIT:
         if (useracc(p, sizeof(struct _ds_semaphore_wait), VM_PROT_WRITE)) {
             return (uint32_t)ulocks_semaphore_thread_spinwait(
@@ -155,6 +158,7 @@ uintptr_t ulocks_syscall(uint32_t type, void * p)
             set_errno(EFAULT);
             return -1;
         }
+#endif
 
     case SYSCALL_SEMAPHORE_RELEASE:
         if (useracc(p, sizeof(os_semaphore_cb_t), VM_PROT_WRITE)) {

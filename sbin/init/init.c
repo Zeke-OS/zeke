@@ -54,6 +54,9 @@ void * main(void * arg)
     write(2, banner, sizeof(banner));
     write(2, "Init v0.0.1\n", 13);
 
-    while (1)
-        tish();
+    tish();
+    while(1) {
+        write(2, "init\n", 5);
+        sleep(10);
+    }
 }

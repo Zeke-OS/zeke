@@ -58,9 +58,11 @@ void sched_handler(void)
 #endif
 
     /* Pre-scheduling tasks */
+#if 0
     if (flag_kernel_tick) { /* Run only if tick was set */
-        timers_run();
     }
+#endif
+    timers_run();
 
     /* Call the actual context switcher function that schedules the next thread.
      */
@@ -75,7 +77,7 @@ void sched_handler(void)
     }
 }
 
-void thread_event_timer(void * event_arg)
+static void thread_event_timer(void * event_arg)
 {
     threadInfo_t * thread = (threadInfo_t *)event_arg;
 
@@ -83,6 +85,29 @@ void thread_event_timer(void * event_arg)
     thread->wait_tim = -1;
     current_thread->flags &= ~SCHED_WAIT_FLAG;
     sched_thread_set_exec(thread->id);
+}
+
+void sched_thread_sleep(long millisec)
+{
+    istate_t s;
+    int timer_id;
+
+    do {
+        timer_id = timers_add(thread_event_timer, current_thread,
+            TIMERS_FLAG_ONESHOT, millisec * 1000);
+    } while (timer_id < 0);
+    current_thread->wait_tim = timer_id;
+
+    //s = get_interrupt_state();
+    //disable_interrupt(); /* TODO Not MP safe! */
+    /* This should prevent anyone from waking up this thread for a while. */
+    timers_start(timer_id);
+    sched_thread_sleep_current(0); /* TODO Should work with 1 */
+    //set_interrupt_state(s);
+
+    do {
+        idle_sleep();
+    } while (current_thread->wait_tim >= 0);
 }
 
 void thread_init_kstack(threadInfo_t * th)

@@ -37,7 +37,7 @@
 #include "bcm2835_mmio.h"
 
 
-void bcm_jtag_preinit(void)
+void bcm_jtag_init(void)
 {
     SUBSYS_INIT();
 
@@ -50,4 +50,4 @@ void bcm_jtag_preinit(void)
 
     KERROR(KERROR_DEBUG, "BCM2835 JTAG OK");
 }
-HW_POSTINIT_ENTRY(bcm_jtag_preinit);
+HW_POSTINIT_ENTRY(bcm_jtag_init);

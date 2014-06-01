@@ -30,6 +30,7 @@
  *******************************************************************************
  */
 
+#include <hal/core.h>
 #include <hal/hw_timers.h>
 
 void (*_schedtimer_clear)();
@@ -39,7 +40,8 @@ void register_schedtimer_clear(void (*clear)(void))
     _schedtimer_clear = clear;
 }
 
-void schedtimer_clear(void)
+int schedtimer_clear(void)
 {
     _schedtimer_clear();
+    return flag_kernel_tick;
 }

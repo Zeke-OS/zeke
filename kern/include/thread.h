@@ -41,13 +41,13 @@
  */
 void sched_handler(void);
 
-void thread_event_timer(void * event_arg);
-
 /**
  * Initialize thread kernel mode stack.
  * @param th is a pointer to the thread.
  */
 void thread_init_kstack(threadInfo_t * th);
+
+void sched_thread_sleep(long millisec);
 
 /**
  * Get thread id of the current thread.

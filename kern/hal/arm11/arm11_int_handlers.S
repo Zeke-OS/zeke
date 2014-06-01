@@ -73,18 +73,22 @@ interrupt_svc:
 
 
 @ void interrupt_sys(void)
-@ Systick handler
+@ IRQ handler.
 @
     .globl  interrupt_sys
     .type   interrupt_sys,%function
 interrupt_sys:
     pushcontext #0          /* Push context to SCHED_SFRAME_SYS */
 
-    /* Handle kernel_tick & Clear Timer IRQ if this is a real tick */
-    bl      schedtimer_clear
+    /* Handler IRQ */
+    bl      schedtimer_clear /* if kernel_tick */
+    cmp     r0, #0
+    bne     1f
+    /* TODO Other interrupts */
+    b       2f
 
     /* Set Context ID to 0 (as we need ASID to be 0 in kernel mode) */
-    mov     r0, #0
+1:  mov     r0, #0
     bl      cpu_set_cid
 
     /* Suspend process and attach kernel master page table */
@@ -112,7 +116,7 @@ interrupt_sys:
     bl      cpu_set_cid
 
 /* Load/Restore context */
-    popcontext #0           /* Pop context from SCHED_SFRAME_SYS */
+2:  popcontext #0           /* Pop context from SCHED_SFRAME_SYS */
     subs    pc, lr, #4      /* Return back (return address is PC+4) */
 
 

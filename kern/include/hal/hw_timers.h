@@ -35,6 +35,6 @@
 #define HW_TIMERS_H
 
 void register_schedtimer_clear(void (*clear)(void));
-void schedtimer_clear(void);
+int schedtimer_clear(void);
 
 #endif /* HW_TIMERS_H */

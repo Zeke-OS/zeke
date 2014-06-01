@@ -53,6 +53,7 @@ struct builtin {
 static void cd(char ** args);
 static void uptime(char ** args);
 static void reg(char ** args);
+static void tish_exit(char ** args);
 static void help(char ** args);
 
 struct builtin cmdarr[] = {
@@ -63,8 +64,11 @@ struct builtin cmdarr[] = {
         {uptime, "uptime"},
         {reg, "reg"},
         {tish_debug, "debug"},
+        {tish_exit, "exit"},
         {help, "help"}
 };
+
+int tish_eof;
 
 /* Static functions */
 static char * gline(char * str, int num);
@@ -98,6 +102,9 @@ get_errno:
                 ksprintf(line, sizeof(line), "\nFailed, errno: %u\n", err);
                 puts(line);
             }
+
+            if (tish_eof)
+                return 0;
         }
     }
 
@@ -145,6 +152,11 @@ static void reg(char ** args)
     }
 
     puts(buf);
+}
+
+static void tish_exit(char ** args)
+{
+    tish_eof = 1;
 }
 
 static void help(char ** args)
