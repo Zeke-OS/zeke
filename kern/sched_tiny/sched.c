@@ -37,6 +37,7 @@
 #include <autoconf.h>
 #include <kstring.h>
 #include <kinit.h>
+#include <sys/linker_set.h>
 #include <hal/core.h> /* TODO Could be removed? */
 #include <klocks.h>
 #include "heap.h"
@@ -209,10 +210,14 @@ void * idleTask(/*@unused@*/ void * arg)
  * This function calculates unix-style load averages for the system.
  * Algorithm used here is similar to algorithm used in Linux.
  */
-void sched_calc_loads(void)
+static void sched_calc_loads(void)
 {
-    uint32_t active_threads; /* Fixed-point */
     static int count = LOAD_FREQ;
+    uint32_t active_threads; /* Fixed-point */
+
+    /* Run only on kernel tick */
+    if (!flag_kernel_tick)
+        return;
 
     count--;
     if (count < 0) {
@@ -237,6 +242,7 @@ void sched_calc_loads(void)
         }
     }
 }
+DATA_SET(post_sched_tasks, sched_calc_loads);
 
 void sched_get_loads(uint32_t loads[3])
 {

@@ -34,6 +34,7 @@
 
 #include <autoconf.h>
 #include <kinit.h>
+#include <sys/linker_set.h>
 #include <sched.h>
 #include <timers.h>
 
@@ -94,6 +95,7 @@ void timers_run(void)
         }
     } while (++i < configTIMERS_MAX);
 }
+DATA_SET(pre_sched_tasks, timers_run);
 
 int timers_add(void (*event_fn)(void *), void * event_arg,
         timers_flags_t flags, uint64_t usec)

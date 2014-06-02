@@ -38,6 +38,7 @@
 #define KERNEL_INTERNAL
 #include <kinit.h>
 #include <kstring.h>
+#include <sys/linker_set.h>
 #include <kerror.h>
 #include <klocks.h>
 #include <sys/sysctl.h>
@@ -196,10 +197,14 @@ void mmu_pf_event(void)
  * Calculate pf/s average.
  * This function should be called periodically by the scheduler.
  */
-void mmu_calc_pfcps(void)
+static void mmu_calc_pfcps(void)
 {
     static int count = PFC_FREQ;
     unsigned long pfc;
+
+    /* Run only on kernel tick */
+    if (!flag_kernel_tick)
+        return;
 
     /* Tanenbaum suggests in one of his books that pf/s count could be first
      * averaged and then on each iteration summed with the current value and
@@ -215,6 +220,7 @@ void mmu_calc_pfcps(void)
         _pf_raw_count = 0;
     }
 }
+DATA_SET(post_sched_tasks, mmu_calc_pfcps);
 
 /**
  * @}
