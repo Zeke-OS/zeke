@@ -68,6 +68,13 @@
 #define UART0_LCRH_PEN_OFFSET   1
 #define UART0_LCRH_BRK_OFFSET   0
 
+#define UART0_FR_TXFE_OFFSET    7
+#define UART0_FR_RXFF_OFFSET    6
+#define UART0_FR_TXFF_OFFSET    5
+#define UART0_FR_RXFE_OFFSET    4
+#define UART0_FR_BUSY_OFFSET    3
+#define UART0_FR_CTS_OFFSET     0
+
 static void bcm2835_uart_init(const uart_port_init_t * conf);
 static void set_baudrate(unsigned int baud_rate);
 static void set_lcrh(const uart_port_init_t * conf);
@@ -119,8 +126,10 @@ void bcm2835_uart_init(const uart_port_init_t * conf)
 
     mmio_end(&s_entry);
 
+
     set_baudrate(conf->baud_rate); /* Set baud rate */
     set_lcrh(conf); /* Configure UART */
+
 
     mmio_start(&s_entry);
 
@@ -163,30 +172,30 @@ static void set_lcrh(const uart_port_init_t * conf)
     tmp |= 1 << UART0_LCRH_FEN_OFFSET;
 
     switch (conf->data_bits) {
-        case UART_DATABITS_5:
-            /* NOP */
-            break;
-        case UART_DATABITS_6:
-            tmp |= 0x1 << 5;
-            break;
-        case UART_DATABITS_7:
-            tmp |= 0x2 << 5;
-            break;
-        case UART_DATABITS_8:
-            tmp |= 0x3 << 5;
-            break;
+    case UART_DATABITS_5:
+        /* NOP */
+        break;
+    case UART_DATABITS_6:
+        tmp |= (0x1 << UART0_LCRH_WLEN_OFFSET);
+        break;
+    case UART_DATABITS_7:
+        tmp |= (0x2 << UART0_LCRH_WLEN_OFFSET);
+        break;
+    case UART_DATABITS_8:
+        tmp |= (0x3 << UART0_LCRH_WLEN_OFFSET);
+        break;
     }
 
     switch (conf->parity) {
-        case UART_PARITY_NO:
-            /* NOP */
-            break;
-        case UART_PARITY_EVEN:
-            tmp |= 0x3 << 1;
-            break;
-        case UART_PARITY_ODD:
-            tmp |= 0x1 << 1;
-            break;
+    case UART_PARITY_NO:
+        /* NOP */
+        break;
+    case UART_PARITY_EVEN:
+        tmp |= (1 << UART0_LCRH_EPS_OFFSET);
+        break;
+    case UART_PARITY_ODD:
+        tmp |= (1 << UART0_LCRH_PEN_OFFSET);
+        break;
     }
 
     mmio_start(&s_entry);
@@ -200,15 +209,14 @@ void bcm2835_uart_uputc(uint8_t byte)
 
     /* Wait for UART to become ready to transmit. */
     while (1) {
+        bcm_udelay(100); /* Seems to work slightly better with this */
         mmio_start(&s_entry);
-        if (!(mmio_read(UART0_FR) & (1 << 5))) {
-            mmio_end(&s_entry);
+        if (!(mmio_read(UART0_FR) & (1 << UART0_FR_TXFF_OFFSET))) {
             break;
         }
         mmio_end(&s_entry);
     }
 
-    mmio_start(&s_entry);
     mmio_write(UART0_DR, byte);
     mmio_end(&s_entry);
 }
@@ -221,7 +229,7 @@ int bcm2835_uart_ugetc()
     mmio_start(&s_entry);
 
     /* Check that receive FIFO/register is not empty. */
-    if(!(mmio_read(UART0_FR) & 0x10)) {
+    if(!(mmio_read(UART0_FR) & (1 << UART0_FR_RXFE_OFFSET))) {
         byte = mmio_read(UART0_DR);
     }
 
