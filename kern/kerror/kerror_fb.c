@@ -35,13 +35,24 @@
 #include <kerror.h>
 #include <sys/linker_set.h>
 
-#if configUART == 0
+#if configFB == 0
 #error configFB must be enabled
 #endif
 
 static void kerror_fb_puts(const char * str)
 {
-    fb_console_write(str);
+    size_t i = 0;
+    char buf[2] = {'\0', '\0'};
+
+    while (str[i] != '\0') {
+        if (str[i] == '\n') {
+            fb_console_write("\r\n");
+        } else {
+            buf[0] = str[i];
+            fb_console_write(buf);
+        }
+        i++;
+    }
 }
 
 static const struct kerror_klogger klogger_fb = {

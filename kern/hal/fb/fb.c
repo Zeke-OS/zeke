@@ -77,7 +77,7 @@ void fb_register(struct fb_conf * fb)
     fb_main->cons.state.bg_color = def_bg_color;
 
     draw_splash();
-    fb_console_write("FB ready\n");
+    fb_console_write("FB ready\r\n");
 }
 
 static void draw_splash(void)

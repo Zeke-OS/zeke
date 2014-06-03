@@ -33,6 +33,9 @@
 #pragma once
 #ifndef FB_H
 
+#include <stddef.h>
+#include <stdint.h>
+
 struct fb_conf {
     size_t width;
     size_t height;
