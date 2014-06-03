@@ -7,7 +7,7 @@ base-SRC-1 += $(wildcard kern/generic/*.c)
 
 # Kernel logging
 base-SRC-$(configKLOGGER) += kern/kerror/kerror.c
-base-SRC-$(configKLOGGER) += kern/kerror/kerror_lastlog.c
+base-SRC-$(configKLOGGER) += kern/kerror/kerror_buf.c
 base-SRC-$(configKERROR_UART) += kern/kerror/kerror_uart.c
 
 # Virtual file system

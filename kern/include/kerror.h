@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Kernel error logging.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,8 +37,9 @@
 #include <autoconf.h>
 
 #define KERROR_NOLOG    0
-#define KERROR_LASTLOG  1
+#define KERROR_BUF      1
 #define KERROR_UARTLOG  2
+#define KERROR_FB       3
 
 /* Line number as a string */
 #define _KERROR_S(x) #x
@@ -80,6 +81,29 @@ const char _kernel_panic_msg[19];
 #define KERROR_WARN     '2' /*!< Unexpected condition. */
 #define KERROR_INFO     '3' /*!< Normal informational message. */
 #define KERROR_DEBUG    '4' /*!< Debug message. */
+
+struct kerror_klogger {
+    /**
+     * Initialize the klogger.
+     * @remarks Can be called multiple times.
+     */
+    void (*init)(void);
+
+    /**
+     * Insert a line to the logger.
+     * @param str is the line.
+     */
+    void (*puts)(const char * str);
+
+    void (*read)(char * str, size_t len);
+
+    /**
+     * Flush contents of the logger to the current kputs.
+     * This can be used to flush old logger to the new logger
+     * when changing klogger.
+     */
+    void (*flush)(void);
+};
 
 #if configKLOGGER != 0
 void kerror_print_macro(char level, const char * where, const char * msg);

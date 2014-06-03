@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    kerror_uart.c
+ * @file    kerror_buf.c
  * @author  Olli Vanhoja
- * @brief   UART klogger.
+ * @brief   Kernel buffer error message logger.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -36,7 +36,7 @@
 #include <kerror.h>
 #include <strcbuf.h>
 
-static char strbuf[configLASTLOG_BUF];
+static char strbuf[configKERROR_BUF];
 static struct strcbuf klogbuf = {
     .start = 0,
     .end = 0,
@@ -44,21 +44,29 @@ static struct strcbuf klogbuf = {
     .data = strbuf
 };
 
-void kerror_lastlog_init(void)
+static void kerror_buf_init(void)
 {
     klogbuf.start = 0;
     klogbuf.end = 0;
 }
 
-void kerror_lastlog_puts(const char * str)
+static void kerror_buf_puts(const char * str)
 {
     strcbuf_insert(&klogbuf, str, configKERROR_MAXLEN);
 }
 
-void kerror_lastlog_flush(void)
+static void kerror_buf_flush(void)
 {
     char buf[configKERROR_MAXLEN];
 
     while (strcbuf_getline(&klogbuf, buf, sizeof(buf)))
         kputs(buf);
 }
+
+static const struct kerror_klogger klogger_buf = {
+    .init   = &kerror_buf_init,
+    .puts   = &kerror_buf_puts,
+    .read   = 0,
+    .flush  = &kerror_buf_flush
+};
+DATA_SET(klogger_set, klogger_buf);
