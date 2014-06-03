@@ -35,6 +35,7 @@
 #define KERROR_H
 
 #include <autoconf.h>
+#include <stddef.h>
 
 #define KERROR_NOLOG    0
 #define KERROR_BUF      1
@@ -83,6 +84,8 @@ const char _kernel_panic_msg[19];
 #define KERROR_DEBUG    '4' /*!< Debug message. */
 
 struct kerror_klogger {
+    size_t id;
+
     /**
      * Initialize the klogger.
      * @remarks Can be called multiple times.

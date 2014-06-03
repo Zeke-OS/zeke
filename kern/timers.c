@@ -63,7 +63,6 @@ static volatile struct timer_cb timers_array[configTIMERS_MAX];
 #define VALID_TIMER_ID(x) ((x) < configTIMERS_MAX && (x) >= 0)
 
 void timers_init(void) __attribute__((constructor));
-
 void timers_init(void)
 {
     SUBSYS_INIT();

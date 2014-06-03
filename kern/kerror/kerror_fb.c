@@ -33,6 +33,7 @@
 #define KERNEL_INTERNAL
 #include <hal/fb.h>
 #include <kerror.h>
+#include <sys/linker_set.h>
 
 #if configUART == 0
 #error configFB must be enabled

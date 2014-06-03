@@ -34,9 +34,10 @@
 #include <autoconf.h>
 #include <kstring.h>
 #include <kerror.h>
+#include <sys/linker_set.h>
 #include <strcbuf.h>
 
-static char strbuf[configKERROR_BUF];
+static char strbuf[configKERROR_BUF_SIZE];
 static struct strcbuf klogbuf = {
     .start = 0,
     .end = 0,
@@ -50,7 +51,11 @@ static void kerror_buf_init(void)
     klogbuf.end = 0;
 }
 
-static void kerror_buf_puts(const char * str)
+/*
+ * This is extern in purpose as kerror.c is using this before kerror is
+ * initialized properly.
+ */
+void kerror_buf_puts(const char * str)
 {
     strcbuf_insert(&klogbuf, str, configKERROR_MAXLEN);
 }
@@ -64,6 +69,7 @@ static void kerror_buf_flush(void)
 }
 
 static const struct kerror_klogger klogger_buf = {
+    .id     = KERROR_BUF,
     .init   = &kerror_buf_init,
     .puts   = &kerror_buf_puts,
     .read   = 0,

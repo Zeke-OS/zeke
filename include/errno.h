@@ -132,7 +132,9 @@
  */
 int * __error(void);
 #define errno (*__error())
-#else
+#else /* KERNEL_INTERNAL */
+#include <sched.h>
+
 /**
  * A type for errno.
  * Even this is a type definition it doesn't mean that type of errno is subject
@@ -143,8 +145,6 @@ int * __error(void);
  * that __erno() defined.
  */
 typedef int errno_t;
-#else /* KERNEL_INTERNAL */
-#include <sched.h>
 
 /**
  * Set errno of the current thread.

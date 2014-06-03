@@ -38,6 +38,7 @@
 #include <sys/sysctl.h>
 #include <errno.h>
 #include <hal/uart.h>
+#include <sys/linker_set.h>
 #include <kerror.h>
 
 const char _kernel_panic_msg[19] = "Oops, Kernel panic";
@@ -58,8 +59,7 @@ vnode_t kerror_vnode = {
 
 SET_DECLARE(klogger_set, struct kerror_klogger);
 
-static void nolog_puts(const char * str);
-
+extern void kerror_buf_puts(const char * str);
 void (*kputs)(const char *) = &kerror_buf_puts; /* Boot value */
 static size_t curr_klogger_id = KERROR_BUF; /* Boot value */
 
@@ -97,13 +97,22 @@ static void nolog_puts(const char * str)
 {
 }
 
+static const struct kerror_klogger klogger_nolog = {
+    .id     = KERROR_NOLOG,
+    .init   = 0,
+    .puts   = &nolog_puts,
+    .read   = 0,
+    .flush  = 0
+};
+DATA_SET(klogger_set, klogger_nolog);
+
 static struct kerror_klogger * get_klogger(size_t id)
 {
-    struct kerror_klogger * logger;
+    struct kerror_klogger ** klogger;
 
     SET_FOREACH(klogger, klogger_set) {
-        if (klogger->id == id)
-            return klogger;
+        if ((*klogger)->id == id)
+            return *klogger;
     }
 
     return 0;
@@ -114,13 +123,13 @@ static int klogger_change(size_t new_id, size_t old_id)
     struct kerror_klogger * new = get_klogger(new_id);
     struct kerror_klogger * old = get_klogger(old_id);
 
-    if (new == 0 || old == 0)
+    if (new == 0 || old == 0)
         return EINVAL;
 
     if (new->init)
         new->init();
 
-    kputs = klogger_arr[new_klogger].puts;
+    kputs = new->puts;
 
     if (old->flush)
         old->flush();

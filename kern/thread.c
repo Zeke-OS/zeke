@@ -47,14 +47,15 @@
 #define KSTACK_SIZE ((MMU_VADDR_TKSTACK_END - MMU_VADDR_TKSTACK_START) + 1)
 
 /* Linker sets for pre- and post-scheduling tasks */
-typedef (*sched_task)(void);
-SET_DECLARE(pre_sched_tasks, sched_task);
-SET_DECLARE(post_sched_tasks, sched_task);
+typedef void (*sched_task)();
+SET_DECLARE(pre_sched_tasks, void);
+SET_DECLARE(post_sched_tasks, void);
 
 void sched_handler(void)
 {
     threadInfo_t * const prev_thread = current_thread;
-    sched_task ** task;
+    void ** task_p;
+    sched_task task;
 
     if (!current_thread) {
         current_thread = sched_get_pThreadInfo(0);
@@ -65,8 +66,10 @@ void sched_handler(void)
 #endif
 
     /* Pre-scheduling tasks */
-    SET_FOREACH(task, pre_sched_tasks)
+    SET_FOREACH(task_p, pre_sched_tasks) {
+        task = *(sched_task *)task_p;
         (*task)();
+    }
 
     /*
      * Call the actual context switcher function that schedules the next thread.
@@ -76,8 +79,10 @@ void sched_handler(void)
         mmu_map_region(&(current_thread->kstack_region->mmu));
 
     /* Post-scheduling tasks */
-    SET_FOREACH(task, post_sched_tasks)
+    SET_FOREACH(task_p, post_sched_tasks) {
+        task = *(sched_task *)task_p;
         (*task)();
+    }
 }
 
 static void thread_event_timer(void * event_arg)

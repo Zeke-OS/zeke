@@ -45,6 +45,8 @@
 interrupt_svc:
     pushcontext #1          /* Push context to SCHED_SFRAME_SVC */
 
+    /* TODO Check if mp table should be attached earlier to allow dynamic
+     * allocation of kernel structures, e.g. just after pushcontext */
     /* Attach kernel master page table */
     enter_kernel
     /* We could actually panic here if attach failed */
@@ -91,6 +93,8 @@ interrupt_sys:
 1:  mov     r0, #0
     bl      cpu_set_cid
 
+    /* TODO Check if mp table should be attached earlier to allow dynamic
+     * allocation of kernel structures, e.g. just after pushcontext */
     /* Suspend process and attach kernel master page table */
     bl      proc_suspend
     attach_kernel_mptable
@@ -134,6 +138,9 @@ _tag:                       /* TODO */
     .type   interrupt_dabt,%function
 interrupt_dabt:
     pushcontext #2          /* Push context to SCHED_SFRAME_ABO */
+
+    /* TODO Check if mp table should be attached earlier to allow dynamic
+     * allocation of kernel structures, e.g. just after pushcontext */
 
     cps     #0x1f           /* Change to system mode */
     ldr     sp, =0x00001000 /* vaddr of tkstack. */

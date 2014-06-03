@@ -52,7 +52,7 @@ configBCM_JTAG = 0# BCM2835 JTAG support
 
 # Kernel logging options
 configKLOGGER = 1# Enable KERROR as kernel logger
-configKERROR_BUF_SIZE = 1024# Log buf size
+configKERROR_BUF_SIZE = 2048# Lastlog buf size
 configKERROR_UART = 1# Option to output kernel logs directly to UART0
 configKERROR_FB = 0
 # 0 = No logger

@@ -109,9 +109,6 @@ static char sched_idle_stack[sizeof(sw_stack_frame_t)
                              + sizeof(hw_stack_frame_t)
                              + 40];
 
-/* Static init */
-void sched_init(void) __attribute__((constructor));
-
 /* Static function declarations **********************************************/
 static void init_thread_id_queue(void);
 void * idleTask(void * arg);
@@ -129,6 +126,7 @@ static int sched_thread_detach(pthread_t id);
 /**
  * Initialize the scheduler
  */
+void sched_init(void) __attribute__((constructor));
 void sched_init(void)
 {
     SUBSYS_INIT();

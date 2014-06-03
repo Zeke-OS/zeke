@@ -34,6 +34,7 @@
 #include <kstring.h>
 #include <hal/uart.h>
 #include <kerror.h>
+#include <sys/linker_set.h>
 
 #if configUART == 0
 #error configUART must be enabled
