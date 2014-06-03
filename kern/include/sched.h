@@ -218,7 +218,6 @@ void sched_thread_sleep_current(int permanent);
 
 /* TODO Following shouldn't be extern'd and there should be better way to export
  * these for thread.h */
-void sched_calc_loads(void);
 void sched_context_switcher(void);
 
 /* Functions that are mainly used by syscalls but can be also caleed by

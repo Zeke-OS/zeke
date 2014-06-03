@@ -135,7 +135,6 @@ void ptlist_free(struct ptlist * ptlist_head)
     struct vm_pt * var, * nxt;
 
     if (!RB_EMPTY(ptlist_head)) {
-
         for (var = RB_MIN(ptlist, ptlist_head); var != 0;
                 var = nxt) {
             nxt = RB_NEXT(ptlist, ptlist_head, var);
@@ -241,8 +240,9 @@ int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done)
     /* TODO Translation */
     retval_cpy = strlcpy(kaddr, uaddr, len);
     if (retval_cpy >= len) {
-        if (done != 0)
+        if (done != 0) {
             *done = len;
+        }
         retval = ENAMETOOLONG;
     } else if (done != 0) {
         *done = retval_cpy;
@@ -359,17 +359,16 @@ int kernacc(void * addr, int len, int rw)
     /* TODO Check other static regions as well */
 
     if ((ap = dynmem_acc(addr, len))) {
-        if (test_ap_priv(rw, ap))
+        if (test_ap_priv(rw, ap)) {
             return (1 == 1);
-        //else
-        //    goto out;
+        }
     }
 
+#if (configDEBUG >= KERROR_DEBUG)
     KERROR(KERROR_WARN, "Can't fully verify access to address in kernacc()");
+#endif
 
-    return (1 == 1); /* TODO */
-//out:
-//    return 0;
+    return (1 == 1);
 }
 
 /**

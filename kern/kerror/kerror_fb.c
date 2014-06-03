@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    kerror_uart.c
+ * @file    kerror_fb.c
  * @author  Olli Vanhoja
  * @brief   UART klogger.
  * @section LICENSE
@@ -31,48 +31,23 @@
  */
 
 #define KERNEL_INTERNAL
-#include <kstring.h>
-#include <hal/uart.h>
+#include <hal/fb.h>
 #include <kerror.h>
 
 #if configUART == 0
-#error configUART must be enabled
+#error configFB must be enabled
 #endif
 
-static uart_port_t * kerror_uart;
-
-/**
- * Kerror logger init function called by kerror_init.
- */
-static void kerror_uart_init(void)
+static void kerror_fb_puts(const char * str)
 {
-    uart_port_init_t uart_conf = {
-        .baud_rate  = UART_BAUDRATE_115200,
-        .data_bits  = UART_DATABITS_8,
-        .stop_bits  = UART_STOPBITS_ONE,
-        .parity     = UART_PARITY_NO,
-    };
-
-    kerror_uart = uart_getport(0);
-    kerror_uart->init(&uart_conf);
+    fb_console_write(str);
 }
 
-static void kerror_uart_puts(const char * str)
-{
-    size_t i = 0;
-
-    while (str[i] != '\0') {
-        if (str[i] == '\n')
-            kerror_uart->uputc('\r');
-        kerror_uart->uputc(str[i++]);
-    }
-}
-
-static const struct kerror_klogger klogger_uart = {
-    .id     = KERROR_UARTLOG,
-    .init   = &kerror_uart_init,
-    .puts   = &kerror_uart_puts,
+static const struct kerror_klogger klogger_fb = {
+    .id     = KERROR_FB,
+    .init   = 0,
+    .puts   = &kerror_fb_puts,
     .read   = 0,
     .flush  = 0
 };
-DATA_SET(klogger_set, klogger_uart);
+DATA_SET(klogger_set, klogger_fb);

@@ -174,17 +174,6 @@ void kinit(void)
     SUBSYS_INITFINI("Load init");
 }
 
-static void random_init(void) __attribute__((constructor));
-static void random_init(void)
-{
-    SUBSYS_INIT();
-
-    /* TODO Add some randomness ;) */
-    ksrandom(1);
-
-    SUBSYS_INITFINI("Seed random number generator");
-}
-
 /**
  * Exec intializer/finalizer array created by the linker.
  * @param pointer to the array.

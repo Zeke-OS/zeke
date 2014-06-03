@@ -34,6 +34,7 @@
 #define KERNEL_INTERNAL
 #include <hal/core.h>
 #include <hal/mmu.h>
+#include <sys/linker_set.h>
 #include <ptmapper.h>
 #include <vralloc.h>
 #include <syscall.h>
@@ -45,9 +46,15 @@
 
 #define KSTACK_SIZE ((MMU_VADDR_TKSTACK_END - MMU_VADDR_TKSTACK_START) + 1)
 
+/* Linker sets for pre- and post-scheduling tasks */
+typedef (*sched_task)(void);
+SET_DECLARE(pre_sched_tasks, sched_task);
+SET_DECLARE(post_sched_tasks, sched_task);
+
 void sched_handler(void)
 {
     threadInfo_t * const prev_thread = current_thread;
+    sched_task ** task;
 
     if (!current_thread) {
         current_thread = sched_get_pThreadInfo(0);
@@ -58,23 +65,19 @@ void sched_handler(void)
 #endif
 
     /* Pre-scheduling tasks */
-#if 0
-    if (flag_kernel_tick) { /* Run only if tick was set */
-    }
-#endif
-    timers_run();
+    SET_FOREACH(task, pre_sched_tasks)
+        (*task)();
 
-    /* Call the actual context switcher function that schedules the next thread.
+    /*
+     * Call the actual context switcher function that schedules the next thread.
      */
     sched_context_switcher();
     if (current_thread != prev_thread)
         mmu_map_region(&(current_thread->kstack_region->mmu));
 
     /* Post-scheduling tasks */
-    if (flag_kernel_tick) {
-        sched_calc_loads();
-        mmu_calc_pfcps();
-    }
+    SET_FOREACH(task, post_sched_tasks)
+        (*task)();
 }
 
 static void thread_event_timer(void * event_arg)

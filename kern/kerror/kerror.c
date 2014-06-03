@@ -56,73 +56,21 @@ vnode_t kerror_vnode = {
     .vnode_ops = &kerror_vops
 };
 
-struct kerror_logger {
-    /**
-     * Initialize the klogger.
-     * @remarks Can be called multiple times.
-     */
-    void (*init)(void);
+SET_DECLARE(klogger_set, struct kerror_klogger);
 
-    /**
-     * Insert a line to the logger.
-     * @param str is the line.
-     */
-    void (*puts)(const char * str);
-
-    void (*read)(char * str, size_t len);
-
-    /**
-     * Flush contents of the logger to the current kputs.
-     * This can be used to flush old logger to the new logger
-     * when changing klogger.
-     */
-    void (*flush)(void);
-};
-
-/* klogger init functions */
-extern void kerror_lastlog_init(void);
-extern void kerror_uart_init(void);
-
-/* klogger puts functions */
 static void nolog_puts(const char * str);
-extern void kerror_lastlog_puts(const char * str);
-extern void kerror_uart_puts(const char * str);
 
-/* klogger flush functions */
-extern void kerror_lastlog_flush(void);
+void (*kputs)(const char *) = &kerror_buf_puts; /* Boot value */
+static size_t curr_klogger_id = KERROR_BUF; /* Boot value */
 
-void (*kputs)(const char *) = &kerror_lastlog_puts; /* Boot value */
-static size_t curr_klogger = KERROR_LASTLOG; /* Boot value */
-
-/** Array of kloggers */
-static struct kerror_logger klogger_arr[] = {
-    [KERROR_NOLOG] = {
-        .init   = 0,
-        .puts   = &nolog_puts,
-        .read   = 0,
-        .flush  = 0},
-    [KERROR_LASTLOG] = {
-        .init   = &kerror_lastlog_init,
-        .puts   = &kerror_lastlog_puts,
-        .read   = 0,
-        .flush = &kerror_lastlog_flush},
-#if configKERROR_UART != 0
-    [KERROR_UARTLOG] = {
-        .init   = &kerror_uart_init,
-        .puts   = &kerror_uart_puts,
-        .read   = 0,
-        .flush  = 0}
-#endif
-};
-
-static int klogger_change(size_t new_klogger, size_t old_klogger);
+static int klogger_change(size_t new_id, size_t old_id);
 
 void kerror_init(void) __attribute__((constructor));
 void kerror_init(void)
 {
     SUBSYS_INIT();
 
-    klogger_change(configDEF_KLOGGER, curr_klogger);
+    klogger_change(configDEF_KLOGGER, curr_klogger_id);
 
     SUBSYS_INITFINI("Kerror logger OK");
 }
@@ -149,14 +97,47 @@ static void nolog_puts(const char * str)
 {
 }
 
+static struct kerror_klogger * get_klogger(size_t id)
+{
+    struct kerror_klogger * logger;
+
+    SET_FOREACH(klogger, klogger_set) {
+        if (klogger->id == id)
+            return klogger;
+    }
+
+    return 0;
+}
+
+static int klogger_change(size_t new_id, size_t old_id)
+{
+    struct kerror_klogger * new = get_klogger(new_id);
+    struct kerror_klogger * old = get_klogger(old_id);
+
+    if (new == 0 || old == 0)
+        return EINVAL;
+
+    if (new->init)
+        new->init();
+
+    kputs = klogger_arr[new_klogger].puts;
+
+    if (old->flush)
+        old->flush();
+
+    curr_klogger_id = new_id;
+
+    return 0;
+}
+
 /**
  * sysctl function to read current klogger and change it.
  */
 static int sysctl_kern_klogger(SYSCTL_HANDLER_ARGS)
 {
     int error;
-    size_t new_klogger = curr_klogger;
-    size_t old_klogger = curr_klogger;
+    size_t new_klogger = curr_klogger_id;
+    size_t old_klogger = curr_klogger_id;
 
     error = sysctl_handle_int(oidp, &new_klogger, sizeof(new_klogger), req);
     if (!error && req->newptr) {
@@ -164,24 +145,6 @@ static int sysctl_kern_klogger(SYSCTL_HANDLER_ARGS)
     }
 
     return error;
-}
-
-static int klogger_change(size_t new_klogger, size_t old_klogger)
-{
-    if (new_klogger > num_elem(klogger_arr))
-        return EINVAL;
-
-    if (klogger_arr[new_klogger].init)
-        klogger_arr[new_klogger].init();
-
-    kputs = klogger_arr[new_klogger].puts;
-
-    if (klogger_arr[old_klogger].flush)
-        klogger_arr[old_klogger].flush();
-
-    curr_klogger = new_klogger;
-
-    return 0;
 }
 
 SYSCTL_PROC(_kern, OID_AUTO, klogger, CTLTYPE_INT | CTLFLAG_RW,

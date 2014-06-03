@@ -143,7 +143,18 @@ int * __error(void);
  * that __erno() defined.
  */
 typedef int errno_t;
-#endif
+#else /* KERNEL_INTERNAL */
+#include <sched.h>
+
+/**
+ * Set errno of the current thread.
+ * @param new_value is the new value of errno for the current_thread.
+ */
+inline void set_errno(int new_value)
+{
+    copyout(&new_value, current_thread->errno_uaddr, sizeof(errno_t));
+}
+#endif /* KERNEL_INTERNAL */
 
 #endif /* ERRNO */
 
