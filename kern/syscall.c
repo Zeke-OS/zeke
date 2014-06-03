@@ -66,15 +66,6 @@ static kernel_syscall_handler_t syscall_callmap[] = {
 };
 
 /**
- * Set errno of the current thread.
- * @param new_value is the new value of errno for the current_thread.
- */
-void set_errno(int new_value)
-{
-    copyout(&new_value, current_thread->errno_uaddr, sizeof(errno_t));
-}
-
-/**
  * Kernel's internal Syscall handler/translator.
  *
  * This function is called from interrupt handler. This function calls the

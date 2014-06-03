@@ -48,8 +48,8 @@
 struct vregion {
     llist_nodedsc_t node;
     intptr_t paddr; /*!< Physical address of the block allocated from dynmem. */
-    size_t count; /*!< Reserved pages count. */
-    size_t size; /*!< Size of allocation bitmap in bytes. */
+    size_t count;   /*!< Reserved pages count. */
+    size_t size;    /*!< Size of allocation bitmap in bytes. */
     bitmap_t map[0]; /*!< Bitmap of reserved pages. */
 };
 
@@ -177,7 +177,7 @@ retry_vra:
             /* Update target struct */
             retval->mmu.paddr = vreg->paddr + iblock * 4096;
             retval->mmu.num_pages = pcount;
-#if configDEBUG != 0
+#if configDEBUG >= KERROR_DEBUG
             retval->allocator_id = VRALLOC_ALLOCATOR_ID;
 #endif
             retval->refcount = 1;
@@ -220,7 +220,7 @@ struct vm_region * vr_rclone(struct vm_region * old_region)
     vm_region_t * new_region;
     size_t rsize = MMU_SIZEOF_REGION(&(old_region->mmu));
 
-#if configDEBUG != 0
+#if configDEBUG >= KERROR_DEBUG
     if (old_region->allocator_id != VRALLOC_ALLOCATOR_ID) {
         KERROR(KERROR_ERR, "Invalid allocator_id");
         return 0;
@@ -250,9 +250,11 @@ struct vm_region * vr_rclone(struct vm_region * old_region)
             rsize);
     new_region->usr_rw = ~VM_PROT_COW & old_region->usr_rw;
     new_region->mmu.vaddr = old_region->mmu.vaddr;
+
     /* num_pages already set */
     new_region->mmu.ap = old_region->mmu.ap;
     new_region->mmu.control = old_region->mmu.control;
+
     /* paddr already set */
     new_region->mmu.pt = old_region->mmu.pt;
     vm_updateusr_ap(new_region);
@@ -267,7 +269,7 @@ void vrfree(struct vm_region * region)
     struct vregion * vreg;
     size_t iblock;
 
-#if configDEBUG != 0
+#if configDEBUG >= KERROR_DEBUG
     if (region->allocator_id != VRALLOC_ALLOCATOR_ID) {
         KERROR(KERROR_ERR, "Invalid allocator_id");
         return;
@@ -291,8 +293,7 @@ void vrfree(struct vm_region * region)
 
     kfree(region);
 
-    if (vreg->count <= 0) {
-        if (last_vreg != vreg)
-            vreg_free_node(vreg);
+    if (vreg->count <= 0 && last_vreg != vreg) {
+        vreg_free_node(vreg);
     }
 }

@@ -144,8 +144,7 @@
 typedef uintptr_t (*kernel_syscall_handler_t)(uint32_t type,  void * p);
 
 void syscall_handler(void);
-void set_errno(int new_value);
-#else
+#else /* !KERNEL_INTERNAL */
 /**
  * Make a system call
  * @param type syscall type.
@@ -154,7 +153,7 @@ void set_errno(int new_value);
  * @note Must be only used in thread scope.
  */
 uint32_t syscall(uint32_t type, void * p);
-#endif
+#endif /* !KERNEL_INTERNAL */
 
 #endif /* SYSCALL_H */
 

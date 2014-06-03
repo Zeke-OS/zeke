@@ -88,3 +88,13 @@ long kunirand(long n)
 
     return draw / partSize;
 }
+
+static void random_init(void) __attribute__((constructor));
+static void random_init(void)
+{
+    SUBSYS_INIT();
+
+    ksrandom((uint32_t)(get_utime() % (uint64_t)0xffffffff));
+
+    SUBSYS_INITFINI("Seed random number generator");
+}

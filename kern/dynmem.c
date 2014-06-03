@@ -291,6 +291,7 @@ static int update_dynmem_region_struct(void * base)
     uint32_t i, flags;
     uint32_t reg_start = (uint32_t)base - DYNMEM_START;
     uint32_t reg_end;
+#if configDEBUG >= KERROR_ERR
     char buf[80];
 
     if (!validate_addr(base, 1)) {
@@ -298,6 +299,7 @@ static int update_dynmem_region_struct(void * base)
         KERROR(KERROR_ERR, buf);
         return -1;
     }
+#endif
 
     i = reg_start;
     if (dynmemmap[i] & DYNMEM_RL_BL) {
@@ -331,7 +333,7 @@ void * dynmem_clone(void * addr)
     /* Take a reference to protect clone operation from concurrent
      * dynmem_free_region() call. */
     if (dynmem_ref(addr)) {
-#if configDEBUG
+#if configDEBUG >= KERROR_ERR
         char buf[80];
         ksprintf(buf, sizeof(buf), "Can't clone given dynmem area @ %x",
                 (uint32_t)addr);
@@ -343,7 +345,7 @@ void * dynmem_clone(void * addr)
     /* Take a copy of dynmem_region struct for this region. */
     mtx_spinlock(&dynmem_region_lock);
     if (update_dynmem_region_struct(addr)) { /* error */
-#if configDEBUG
+#if configDEBUG  >= KERROR_ERR
         char buf[80];
         ksprintf(buf, sizeof(buf), "Clone failed @ %x", (uint32_t)addr);
         KERROR(KERROR_ERR, buf);
@@ -357,7 +359,7 @@ void * dynmem_clone(void * addr)
     /* Allocate a new region. */
     new_region = dynmem_alloc_region(cln.num_pages, cln.ap, cln.control);
     if (new_region == 0) {
-#if configDEBUG
+#if configDEBUG >= KERROR_ERR
         char buf[80];
         ksprintf(buf, sizeof(buf), "Out of dynmem while cloning @ %x",
                 (uint32_t)addr);
@@ -384,7 +386,7 @@ uint32_t dynmem_acc(void * addr, size_t len)
 
     mtx_spinlock(&dynmem_region_lock);
     if (update_dynmem_region_struct(addr)) { /* error */
-#if configDEBUG
+#if configDEBUG >= KERROR_ERR
         char buf[80];
         ksprintf(buf, sizeof(buf), "dynmem_acc() check failed for: %x",
             (uint32_t)addr);
@@ -395,10 +397,12 @@ uint32_t dynmem_acc(void * addr, size_t len)
 
     /* Get size */
     if(!(size = mmu_sizeof_region(&dynmem_region))) {
+#if configDEBUG >= KERROR_WARN
         char buf[80];
         ksprintf(buf, sizeof(buf), "Possible dynmem corruption at: %x",
                 (uint32_t)addr);
         KERROR(KERROR_ERR, buf);
+#endif
         goto out; /* Error in size calculation. */
     }
     if ((size_t)addr < dynmem_region.paddr
