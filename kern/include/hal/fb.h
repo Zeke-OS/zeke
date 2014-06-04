@@ -35,6 +35,9 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <sys/linker_set.h>
+
+#define FB_INIT_ENTRY(init_fn) DATA_SET(fb_init_set, (init_fni))
 
 struct fb_conf {
     size_t width;

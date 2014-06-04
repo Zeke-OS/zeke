@@ -66,8 +66,7 @@ static mmu_region_t bcm2835_fb_region = {
     .pt         = &mmu_pagetable_master
 };
 
-void bcm2835_fb_init(void) __attribute__((constructor));
-void bcm2835_fb_init(void)
+static void bcm2835_fb_init(void)
 {
     SUBSYS_INIT();
     SUBSYS_DEP(bcm2835_mmio_init);
@@ -90,6 +89,7 @@ void bcm2835_fb_init(void)
 
     SUBSYS_INITFINI("BCM2835_fb OK");
 }
+FB_INIT_ENTRY(bcm2835_fb_init);
 
 static void set_fb_config(struct bcm2835_fb_config * fb,
         uint32_t width, uint32_t height)

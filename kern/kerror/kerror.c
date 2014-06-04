@@ -61,7 +61,7 @@ SET_DECLARE(klogger_set, struct kerror_klogger);
 
 extern void kerror_buf_puts(const char * str);
 void (*kputs)(const char *) = &kerror_buf_puts; /* Boot value */
-static size_t curr_klogger_id = KERROR_BUF; /* Boot value */
+static size_t curr_klogger_id = KERROR_BUF;     /* Boot value */
 
 static int klogger_change(size_t new_id, size_t old_id);
 
@@ -69,7 +69,14 @@ void kerror_init(void) __attribute__((constructor));
 void kerror_init(void)
 {
     SUBSYS_INIT();
+#if (configDEF_KLOGGER == KERROR_FB)
+    SUBSYS_DEP(fb_init);
+#endif
 
+    /*
+     * We can now change from klogger buffer to the actual logger selected at
+     * compilation time.
+     */
     klogger_change(configDEF_KLOGGER, curr_klogger_id);
 
     SUBSYS_INITFINI("Kerror logger OK");

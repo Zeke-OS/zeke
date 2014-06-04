@@ -38,8 +38,14 @@
 #include "fonteng.h"
 
 /**
+ * Linker set for frame buffer initializer function pointers.
+ */
+SET_DECLARE(fb_init_set, void (*init_fn)());
+
+/**
  * Set rgb pixel.
  * addr = y * pitch + x * 3
+ * TODO Hw dependant and should be moved
  */
 #define set_pixel(base, x, y, rgb) do {                         \
             const uintptr_t addr = base + y * pitch + x * 3;    \
@@ -61,6 +67,22 @@ const uint32_t def_bg_color = 0x000000;
 static void draw_splash(void);
 static void newline(void);
 static void draw_glyph(const char * font_glyph, size_t * consx, size_t * consy);
+
+/**
+ * Initialize all frame buffer drivers.
+ */
+void fb_init(void) __attribute__((constructor));
+void fb_init(void)
+{
+    SUBSYS_INIT();
+    void (**fbi)();
+
+    SET_FOREACH(fbi, fb_init_set) {
+        (*fbi)();
+    }
+
+    SUBSYS_INITFINI("fb init all OK");
+}
 
 /* TODO Should support multiple frame buffers or fail */
 void fb_register(struct fb_conf * fb)
