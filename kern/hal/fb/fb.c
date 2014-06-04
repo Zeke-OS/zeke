@@ -33,14 +33,16 @@
 #include <stddef.h>
 #include <kstring.h>
 #include <kmalloc.h>
+#include <kinit.h>
 #include <hal/fb.h>
 #include "splash.h"
 #include "fonteng.h"
 
-/**
+/*
  * Linker set for frame buffer initializer function pointers.
  */
-SET_DECLARE(fb_init_set, void (*init_fn)());
+typedef void (*fbi_t)();
+SET_DECLARE(fb_init_funcs, void);
 
 /**
  * Set rgb pixel.
@@ -61,7 +63,7 @@ SET_DECLARE(fb_init_set, void (*init_fn)());
 struct fb_conf * fb_main;
 
 /* Current fg/bg colour */
-const uint32_t def_fg_color = 0xffffff;
+const uint32_t def_fg_color = 0x00cc00;
 const uint32_t def_bg_color = 0x000000;
 
 static void draw_splash(void);
@@ -75,10 +77,12 @@ void fb_init(void) __attribute__((constructor));
 void fb_init(void)
 {
     SUBSYS_INIT();
-    void (**fbi)();
+    void ** p;
 
-    SET_FOREACH(fbi, fb_init_set) {
-        (*fbi)();
+    SET_FOREACH(p, fb_init_funcs) {
+        fbi_t fbi;
+        fbi = *(fbi_t *)p;
+        fbi();
     }
 
     SUBSYS_INITFINI("fb init all OK");

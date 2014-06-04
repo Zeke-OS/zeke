@@ -38,7 +38,6 @@
 #include <hal/fb.h>
 #include "bcm2835_mailbox.h"
 #include "bcm2835_mmio.h"
-#include "bcm2835_fb.h"
 
 struct bcm2835_fb_config {
     uint32_t width;             /*!< Width of the requested frame buffer. */
@@ -69,6 +68,7 @@ static mmu_region_t bcm2835_fb_region = {
 static void bcm2835_fb_init(void)
 {
     SUBSYS_INIT();
+    SUBSYS_DEP(vralloc_init);
     SUBSYS_DEP(bcm2835_mmio_init);
 
     set_fb_config(&fb_bcm, 640, 480);

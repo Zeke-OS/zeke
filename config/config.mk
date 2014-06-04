@@ -44,7 +44,7 @@ configATAG = 0# Support bootloader ATAGs
 configMMU = 1# MMU support
 configUART = 1# UART support
 configUART_MAX_PORTS = 2# Maximum number of UART ports
-configFB = 0# Enable Frame Buffer support
+configFB = 1# Enable Frame Buffer support
 configFB_FONT_LATIN = 0# Latin extension
 configFB_FONT_GREEK = 0# Greek extension
 configFB_FONT_HIRAGANA = 0# Hiragana extension
@@ -54,12 +54,12 @@ configBCM_JTAG = 0# BCM2835 JTAG support
 configKLOGGER = 1# Enable KERROR as kernel logger
 configKERROR_BUF_SIZE = 2048# Lastlog buf size
 configKERROR_UART = 1# Option to output kernel logs directly to UART0
-configKERROR_FB = 0
+configKERROR_FB = 1
 # 0 = No logger
 # 1 = Kerror buffer
 # 2 = UART0
 # 3 = FB
-configDEF_KLOGGER = 2# Select default logger (options above)
+configDEF_KLOGGER = 3# Select default logger (options above)
 
 # loglevel
 # Additional log messages and asserts.

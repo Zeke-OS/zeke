@@ -47,7 +47,7 @@
 #define KSTACK_SIZE ((MMU_VADDR_TKSTACK_END - MMU_VADDR_TKSTACK_START) + 1)
 
 /* Linker sets for pre- and post-scheduling tasks */
-typedef void (*sched_task)();
+typedef void (*sched_task_t)();
 SET_DECLARE(pre_sched_tasks, void);
 SET_DECLARE(post_sched_tasks, void);
 
@@ -55,7 +55,6 @@ void sched_handler(void)
 {
     threadInfo_t * const prev_thread = current_thread;
     void ** task_p;
-    sched_task task;
 
     if (!current_thread) {
         current_thread = sched_get_pThreadInfo(0);
@@ -67,8 +66,8 @@ void sched_handler(void)
 
     /* Pre-scheduling tasks */
     SET_FOREACH(task_p, pre_sched_tasks) {
-        task = *(sched_task *)task_p;
-        (*task)();
+        sched_task_t task = *(sched_task_t *)task_p;
+        task();
     }
 
     /*
@@ -80,8 +79,8 @@ void sched_handler(void)
 
     /* Post-scheduling tasks */
     SET_FOREACH(task_p, post_sched_tasks) {
-        task = *(sched_task *)task_p;
-        (*task)();
+        sched_task_t task = *(sched_task_t *)task_p;
+        task();
     }
 }
 
