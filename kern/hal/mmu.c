@@ -30,11 +30,6 @@
  *******************************************************************************
  */
 
-/** @addtogroup HAL
- * Kernel hardware abstraction layer interface.
- * @{
- */
-
 #define KERNEL_INTERNAL
 #include <kinit.h>
 #include <kstring.h>
@@ -221,7 +216,3 @@ static void mmu_calc_pfcps(void)
     }
 }
 DATA_SET(post_sched_tasks, mmu_calc_pfcps);
-
-/**
- * @}
- */

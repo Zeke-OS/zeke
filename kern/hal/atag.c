@@ -30,10 +30,6 @@
  *******************************************************************************
  */
 
-/** @addtogroup HAL
-  * @{
-  */
-
 #include <kstring.h>
 #include <kerror.h>
 #include <hal/sysinfo.h>
@@ -70,58 +66,54 @@ void atag_scan(uint32_t fw, uint32_t mtype, uint32_t * atag_addr)
 
     for (atags = atag_addr; atags < (uint32_t *)0x8000; atags += 1) {
         switch(atags[1]) {
-            case ATAG_CORE:
-                ksprintf(msg, sizeof(msg),
-                        "[ATAG_CORE] flags: %x, page size: %u, rootdev: %u\n",
-                        atags[2], atags[3], atags[4]);
-                KERROR(KERROR_INFO, msg);
+        case ATAG_CORE:
+            ksprintf(msg, sizeof(msg),
+                    "[ATAG_CORE] flags: %x, page size: %u, rootdev: %u\n",
+                    atags[2], atags[3], atags[4]);
+            KERROR(KERROR_INFO, msg);
 
-                atags += atags[0]-1;
-                break;
-            case ATAG_MEM:
-                ksprintf(msg, sizeof(msg),
-                        "[ATAG_MEM] size: %x, start: %x\n",
-                        atags[2], atags[3]);
-                KERROR(KERROR_INFO, msg);
+            atags += atags[0]-1;
+            break;
+        case ATAG_MEM:
+            ksprintf(msg, sizeof(msg),
+                    "[ATAG_MEM] size: %x, start: %x\n",
+                    atags[2], atags[3]);
+            KERROR(KERROR_INFO, msg);
 
-                atags += atags[0]-1;
+            atags += atags[0]-1;
 
-                sysinfo.mem.size = (size_t)atags[2];
-                sysinfo.mem.start = (size_t)atags[3];
-                break;
-            case ATAG_VIDEOTEXT:
-                atags += atags[0]-1;
-                break;
-            case ATAG_RAMDISK:
-                atags += atags[0]-1;
-                break;
-            case ATAG_INITRD2:
-                atags += atags[0]-1;
-                break;
-            case ATAG_SERIAL:
-                atags += atags[0]-1;
-                break;
-            case ATAG_REVISION:
-                atags += atags[0]-1;
-                break;
-            case ATAG_VIDEOLFB:
-                atags += atags[0]-1;
-                break;
-            case ATAG_CMDLINE:
-                atags += 2;
+            sysinfo.mem.size = (size_t)atags[2];
+            sysinfo.mem.start = (size_t)atags[3];
+            break;
+        case ATAG_VIDEOTEXT:
+            atags += atags[0]-1;
+            break;
+        case ATAG_RAMDISK:
+            atags += atags[0]-1;
+            break;
+        case ATAG_INITRD2:
+            atags += atags[0]-1;
+            break;
+        case ATAG_SERIAL:
+            atags += atags[0]-1;
+            break;
+        case ATAG_REVISION:
+            atags += atags[0]-1;
+            break;
+        case ATAG_VIDEOLFB:
+            atags += atags[0]-1;
+            break;
+        case ATAG_CMDLINE:
+            atags += 2;
 
-                ksprintf(msg, sizeof(msg),
-                        "[ATAG_CMDLINE] : %s\n", (char *)atags);
-                KERROR(KERROR_INFO, msg);
+            ksprintf(msg, sizeof(msg),
+                    "[ATAG_CMDLINE] : %s\n", (char *)atags);
+            KERROR(KERROR_INFO, msg);
 
-                atags += atags[0]-1;
-                break;
-            default:
-                break;
+            atags += atags[0]-1;
+            break;
+        default:
+            break;
         }
     }
 }
-
-/**
-  * @}
-  */

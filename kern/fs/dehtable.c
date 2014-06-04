@@ -30,10 +30,6 @@
  *******************************************************************************
  */
 
-/** @addtogroup fs
-  * @{
-  */
-
 #include <kerror.h>
 #include <kmalloc.h>
 #include <kstring.h>
@@ -337,7 +333,3 @@ static size_t hash_fname(const char * str, size_t len)
 
     return hash;
 }
-
-/**
-  * @}
-  */

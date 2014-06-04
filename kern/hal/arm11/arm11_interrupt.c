@@ -31,14 +31,6 @@
  *******************************************************************************
  */
 
-/** @addtogroup HAL
-* @{
-*/
-
-/** @addtogroup ARM11
-* @{
-*/
-
 #ifndef KERNEL_INTERNAL
 #define KERNEL_INTERNAL
 #endif

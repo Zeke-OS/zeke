@@ -30,14 +30,6 @@
  *******************************************************************************
  */
 
-/** @addtogroup fs
-  * @{
-  */
-
-/** @addtogroup ramfs
-  * @{
-  */
-
 #include <stdint.h>
 #include <sys/types.h>
 #include <time.h>
@@ -1044,11 +1036,3 @@ static ramfs_dp_t get_dp_by_offset(ramfs_inode_t * inode, off_t offset)
 out:
     return dp;
 }
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */

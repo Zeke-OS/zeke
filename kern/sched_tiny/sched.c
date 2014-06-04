@@ -38,7 +38,7 @@
 #include <kstring.h>
 #include <kinit.h>
 #include <sys/linker_set.h>
-#include <hal/core.h> /* TODO Could be removed? */
+#include <hal/core.h>
 #include <klocks.h>
 #include "heap.h"
 #include <queue_r.h>
@@ -714,7 +714,7 @@ int sched_thread_terminate(pthread_t thread_id)
      */
     if (SCHED_TEST_DETACHED_ZOMBIE(task_table[thread_id].flags) ||
             (task_table[thread_id].inh.parent == 0)             ||
-            ((task_table[thread_id].inh.parent != 0) &&
+            ((task_table[thread_id].inh.parent != 0)            &&
             SCHED_TEST_DETACHED_ZOMBIE(((threadInfo_t *)(task_table[thread_id].inh.parent))->flags))) {
         sched_thread_remove(task_table[thread_id].id);
     }
