@@ -44,7 +44,7 @@
 #endif
 
 #if configARCH == __ARM7M__ || configARCH == __ARM7EM__
-/* Needed for debugging if __ARM7M__ || configARCH == __ARM7EM__ */
+/* Needed for debugging if __ARM7M__ or __ARM7EM__ */
 #include <kstring.h>
 #endif
 #include <stddef.h>
@@ -79,29 +79,6 @@ void init_stack_frame(osThreadDef_t * thread_def, void * argument, uint32_t a_de
     thread_frame->pc = ((uint32_t)(thread_def->pthread));
     thread_frame->lr = a_del_thread;
     thread_frame->psr = DEFAULT_PSR;
-}
-
-uint32_t syscall(uint32_t type, void * p)
-{
-    __asm__ volatile (
-        "MOV r2, %0\n\t"    /* Put parameters to r2 & r3 */
-        "MOV r3, %1\n\t"
-        "MOV r1, r4\n\t"    /* Preserve r4 by using hardware push for it */
-        "SVC #0\n\t"
-        "DSB\n\t"           /* Ensure write is completed (architecturally
-                             * required, but not strictly required for
-                             * existing Cortex-M processors) */
-        "ISB\n"             /* Ensure PendSV is executed */
-        : : "r" (type), "r" (p));
-
-    /* Get return value */
-    osStatus scratch;
-    __asm__ volatile (
-        "MOV %0, r4\n\t"    /* Return value is now in r4 */
-        "MOV r4, r1\n"      /* Read r4 back from r1 */
-        : "=r" (scratch));
-
-    return scratch;
 }
 
 int test_and_set(int * lock) {

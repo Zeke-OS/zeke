@@ -31,11 +31,6 @@
  *******************************************************************************
 */
 
-/** @addtogroup libc
-  * @{
-  */
-
-#include <hal/core.h>
 #include <syscall.h>
 #include <kernel.h>
 
@@ -100,11 +95,3 @@ int osSemaphoreRelease(osSemaphore * semaphore)
     syscall(SYSCALL_SEMAPHORE_RELEASE, semaphore);
     return 0;
 }
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */

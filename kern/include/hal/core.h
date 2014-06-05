@@ -45,7 +45,7 @@
 /* Select Core Implementation ************************************************/
 #if configARM_PROFILE_M != 0 /* All M profile cores are handled in one file. */
 #include "../hal/cortex_m/cortex_m.h"
-#elif configARCH == __ARM6__ || __ARM6K__ /* ARM11 uses ARMv6 arch */
+#elif configARCH == __ARM6__ || configARCH == __ARM6K__ /* ARM11 uses ARMv6 arch */
 #include "../hal/arm11/arm11.h"
 #else
 #error Selected ARM profile/architecture is not supported

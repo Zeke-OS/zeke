@@ -31,16 +31,8 @@
  *******************************************************************************
 */
 
-/** @addtogroup Library_Functions
-  * @{
-  */
-
 #include <syscall.h>
 #include <unistd.h>
-
-/** @addtogroup unistd
- *  @{
- */
 
 pid_t fork(void)
 {
@@ -78,12 +70,3 @@ unsigned sleep(unsigned seconds)
 
     return (unsigned)syscall(SYSCALL_SCHED_SLEEP_MS, &millisec);
 }
-
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */

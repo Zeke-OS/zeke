@@ -36,18 +36,9 @@
  *******************************************************************************
 */
 
-/** @addtogroup Library_Functions
-  * @{
-  */
-
-#include <hal/core.h>
 #include <syscall.h>
 #include <kstring.h> /* TODO Should include string.h if compiling for user space */
 #include <sys/sysctl.h>
-
-/** @addtogroup sysctl
- *  @{
- */
 
 int sysctl(int * name, unsigned int namelen, void * oldp, size_t * oldlenp,
         void * newp, size_t newlen)
@@ -156,11 +147,3 @@ int sysctltstmib(int * left, int * right, int len)
     }
     return (1 == 1);
 }
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */

@@ -31,11 +31,6 @@
  *******************************************************************************
 */
 
-/** @addtogroup Library_Functions
-  * @{
-  */
-
-#include <hal/core.h>
 #include <syscall.h>
 #include <errno.h>
 #include <sys/resource.h>
@@ -86,7 +81,3 @@ int  getpriority(int which, id_t who)
         return -1;
     }
 }
-
-/**
-  * @}
-  */
