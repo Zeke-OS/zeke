@@ -136,10 +136,10 @@ void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t control)
 
     if(bitmap_block_search(&pos, size, dynmemmap_bitmap,
                 sizeof(dynmemmap_bitmap))) {
-#if configDEBUG != 0
+#if configDEBUG >= KERROR_DEBUG
         char buf[80];
-        ksprintf(buf, sizeof(buf), "Out of dynmem, free %u/%u, tried %u, %u",
-                dynmem_free, dynmem_tot, size * 1048576, sizeof(dynmemmap_bitmap));
+        ksprintf(buf, sizeof(buf), "Out of dynmem, free %u/%u, tried to allocate %u MB",
+                dynmem_free, dynmem_tot, size);
         KERROR(KERROR_DEBUG, buf);
 #endif
         goto out;

@@ -218,7 +218,13 @@ static void vrref(struct vm_region * region)
 struct vm_region * vr_rclone(struct vm_region * old_region)
 {
     vm_region_t * new_region;
-    size_t rsize = MMU_SIZEOF_REGION(&(old_region->mmu));
+    size_t rsize;
+
+    if (old_region->mmu.pt == 0) {
+        KERROR(KERROR_ERR, "vregion->mmu->pt must be set");
+        return 0;
+    }
+    rsize = MMU_SIZEOF_REGION(&(old_region->mmu));
 
 #if configDEBUG >= KERROR_DEBUG
     if (old_region->allocator_id != VRALLOC_ALLOCATOR_ID) {
@@ -259,6 +265,7 @@ struct vm_region * vr_rclone(struct vm_region * old_region)
     new_region->mmu.pt = old_region->mmu.pt;
     vm_updateusr_ap(new_region);
 
+    /* Release "lock". */
     vrfree(old_region);
 
     return new_region;

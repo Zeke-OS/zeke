@@ -36,6 +36,7 @@
 #include <libkern.h>
 #include <kstring.h>
 #include <sched.h>
+#include <proc.h>
 #include <hal/core.h>
 #include <kerror.h>
 #include <errno.h>
@@ -82,7 +83,8 @@ void syscall_handler(void)
 
     if ((major >= num_elem(syscall_callmap)) || !syscall_callmap[major]) {
         char buf[30];
-        ksprintf(buf, sizeof(buf), "syscall %u not supported", major);
+        ksprintf(buf, sizeof(buf), "syscall %u not supported, (p:%u, i:%u)",
+                major, current_process_id, current_thread->id);
         KERROR(KERROR_WARN, buf);
 
         set_errno(ENOSYS); /* Not supported. */
