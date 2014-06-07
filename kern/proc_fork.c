@@ -53,6 +53,7 @@ static pid_t proc_lastpid;  /*!< last allocated pid. */
 
 static proc_info_t * clone_proc_info(proc_info_t * const old_proc);
 static int clone_L2_pt(proc_info_t * const new_proc, proc_info_t * const old_proc);
+static int clone_stack(proc_info_t * new_proc, proc_info_t * old_proc);
 static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc);
 
 pid_t proc_fork(pid_t pid)
@@ -118,6 +119,7 @@ pid_t proc_fork(pid_t pid)
 
     /* Clone L2 page tables. */
     if (clone_L2_pt(new_proc, old_proc) < 0) {
+        retval = -ENOMEM;
         goto free_vpt_rb;
     }
 
@@ -128,63 +130,21 @@ pid_t proc_fork(pid_t pid)
     /* Copy code region pointer. */
     vm_reg_tmp = (*old_proc->mm.regions)[MM_CODE_REGION];
     if (!vm_reg_tmp) {
-        panic("Old proc code region can't be null");
+        KERROR(KERROR_ERR, "Old proc code region can't be null");
+        retval = -EINVAL; /* Not allowed but this shouldn't happen */
+        goto free_vpt_rb;
     }
     if (vm_reg_tmp->vm_ops)
         vm_reg_tmp->vm_ops->rref(vm_reg_tmp);
     (*new_proc->mm.regions)[MM_CODE_REGION] = vm_reg_tmp;
 
-    /* Clone stack region. */
-    vm_reg_tmp = (*old_proc->mm.regions)[MM_STACK_REGION];
-    if (vm_reg_tmp && vm_reg_tmp->vm_ops) { /* Only if vmp_ops are defined. */
+    /* Clone stack region */
+    if ((retval = clone_stack(new_proc, old_proc))) {
 #if configDEBUG >= KERROR_DEBUG
-        KERROR(KERROR_DEBUG, "Cloning stack");
+        ksprintf(buf, sizeof(buf), "Cloning stack region failed.");
+        KERROR(KERROR_DEBUG, buf);
 #endif
-        if (!vm_reg_tmp->vm_ops->rclone)
-            panic("No clone operation");
-
-        vm_reg_tmp = vm_reg_tmp->vm_ops->rclone(vm_reg_tmp);
-        if (!vm_reg_tmp) {
-            retval = -ENOMEM;
-            goto free_regions;
-        }
-    } else if (vm_reg_tmp) { /* Try to clone the stack manually. */
-#if configDEBUG >= KERROR_DEBUG
-        KERROR(KERROR_DEBUG, "Cloning stack manually");
-#endif
-        vm_region_t * old_region = vm_reg_tmp;
-        size_t rsize = MMU_SIZEOF_REGION(&(vm_reg_tmp->mmu));
-
-        vm_reg_tmp = vralloc(rsize);
-        if (!vm_reg_tmp)
-            panic("OOM during fork()");
-
-        memcpy((void *)(vm_reg_tmp->mmu.paddr), (void *)(old_region->mmu.paddr),
-                rsize);
-        vm_reg_tmp->usr_rw = VM_PROT_READ | VM_PROT_WRITE;
-        vm_reg_tmp->mmu.vaddr = old_region->mmu.vaddr;
-        vm_reg_tmp->mmu.ap = old_region->mmu.ap;
-        vm_reg_tmp->mmu.control = old_region->mmu.control;
-        /* paddr already set */
-        vm_reg_tmp->mmu.pt = old_region->mmu.pt;
-        vm_updateusr_ap(vm_reg_tmp);
-    } else { /* else: NO STACK */
-#if configDEBUG >= KERROR_DEBUG
-        KERROR(KERROR_DEBUG, "fork: No stack created");
-#endif
-    }
-
-    if (vm_reg_tmp) {
-        if ((vpt = ptlist_get_pt(
-                &(new_proc->mm.ptlist_head),
-                &(new_proc->mm.mpt),
-                vm_reg_tmp->mmu.vaddr)) == 0) {
-            retval = -ENOMEM;
-            goto free_regions;
-        }
-        (*new_proc->mm.regions)[MM_STACK_REGION] = vm_reg_tmp;
-
-        vm_map_region((*new_proc->mm.regions)[MM_STACK_REGION], vpt);
+        goto free_regions;
     }
 
     /* Copy other region pointers.
@@ -330,7 +290,6 @@ static proc_info_t * clone_proc_info(proc_info_t * const old_proc)
     return new_proc;
 }
 
-
 /**
  * Clone L2 page tables of a process.
  * @param new_proc is the target process.
@@ -388,6 +347,67 @@ static int clone_L2_pt(proc_info_t * const new_proc, proc_info_t * const old_pro
 
 out:
     return retval;
+}
+
+static int clone_stack(proc_info_t * new_proc, proc_info_t * old_proc)
+{
+    struct vm_pt * vpt;
+    vm_region_t * const old_region = (*old_proc->mm.regions)[MM_STACK_REGION];
+    vm_region_t * new_region = 0;
+
+    if (old_region && old_region->vm_ops) { /* Only if vmp_ops are defined. */
+#if configDEBUG >= KERROR_DEBUG
+        KERROR(KERROR_DEBUG, "Cloning stack");
+#endif
+        if (!old_region->vm_ops->rclone) {
+            KERROR(KERROR_ERR, "No clone operation");
+            return -ENOMEM;
+        }
+
+        new_region = old_region->vm_ops->rclone(old_region);
+        if (!new_region) {
+            return -ENOMEM;
+        }
+    } else if (old_region) { /* Try to clone the stack manually. */
+        const size_t rsize = MMU_SIZEOF_REGION(&(old_region->mmu));
+
+#if configDEBUG >= KERROR_DEBUG
+        KERROR(KERROR_DEBUG, "Cloning stack manually");
+#endif
+
+        new_region = vralloc(rsize);
+        if (!new_region) {
+            return -ENOMEM;
+        }
+
+        memcpy((void *)(new_region->mmu.paddr), (void *)(old_region->mmu.paddr),
+                rsize);
+        new_region->usr_rw = VM_PROT_READ | VM_PROT_WRITE;
+        new_region->mmu.vaddr = old_region->mmu.vaddr;
+        new_region->mmu.ap = old_region->mmu.ap;
+        new_region->mmu.control = old_region->mmu.control;
+        /* paddr already set */
+        new_region->mmu.pt = old_region->mmu.pt;
+        vm_updateusr_ap(new_region);
+    } else { /* else: NO STACK */
+#if configDEBUG >= KERROR_DEBUG
+        KERROR(KERROR_DEBUG, "fork(): No stack created");
+#endif
+    }
+
+    if (new_region) {
+        if ((vpt = ptlist_get_pt(
+                        &(new_proc->mm.ptlist_head),
+                        &(new_proc->mm.mpt),
+                        new_region->mmu.vaddr)) == 0) {
+            return -ENOMEM;
+        }
+
+        (*new_proc->mm.regions)[MM_STACK_REGION] = new_region;
+        vm_map_region((*new_proc->mm.regions)[MM_STACK_REGION], vpt);
+    }
+
+    return 0;
 }
 
 static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc)

@@ -448,22 +448,16 @@ pthread_t sched_thread_fork(void)
 
     /* Initialize a new kstack & copy data from old kstack. */
     thread_init_kstack(&tmp);
-#if 0
     memcpy((void *)(tmp.kstack_region->mmu.paddr),
             (void *)(old_thread->kstack_region->mmu.paddr),
             MMU_SIZEOF_REGION(&(old_thread->kstack_region->mmu)));
-#endif
     char buf[80];
 
+    /* TODO Following should be done in HAL */
     memcpy(&tmp.sframe[SCHED_SFRAME_SYS], &old_thread->sframe[SCHED_SFRAME_SVC],
             sizeof(sw_stack_frame_t));
     tmp.sframe[SCHED_SFRAME_SYS].r0 = 0;
-    tmp.sframe[SCHED_SFRAME_SYS].pc = (uint32_t)idleTask2; /* TODO REMOVE */
     tmp.sframe[SCHED_SFRAME_SYS].pc += 4; /* TODO This is too hw specific */
-    tmp.sframe[SCHED_SFRAME_SYS].psr = 0x40000010u; /* TODO REMOVE */
-
-    ksprintf(buf, 80, "pc = %x, psr = %x", tmp.sframe[SCHED_SFRAME_SYS].pc, tmp.sframe[SCHED_SFRAME_SYS].psr);
-    KERROR(KERROR_DEBUG, buf);
 
     memcpy(&(task_table[new_id]), &tmp, sizeof(threadInfo_t));
 

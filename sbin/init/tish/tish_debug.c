@@ -70,8 +70,10 @@ void tish_debug(char ** args)
                 puts("fork() failed\n");
             } else if (pid == 0) {
                 puts("Hello from the child process\n");
-                while(1)
+                while(1) {
+                    puts(".");
                     msleep(500);
+                }
             } else {
                 puts("original\n");
             }

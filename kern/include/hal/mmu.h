@@ -157,11 +157,13 @@ typedef struct mmu_region {
 
 /**
  * Calculate the size of a given region reg.
+ * @note pt must be set before calling this.
  * @param reg is the region.
  * @return Size of the region in bytes.
  */
 #define MMU_SIZEOF_REGION(reg) \
-    (((reg)->num_pages * ((reg)->pt->type == MMU_PTE_COARSE)) ? 4096 : 1048576)
+    ((reg)->num_pages * (((reg)->pt->type == MMU_PTE_COARSE) \
+      ? MMU_PGSIZE_COARSE : MMU_PGSIZE_SECTION))
 
 /**
  * Calc coarse page table virtual address from virtual address x.

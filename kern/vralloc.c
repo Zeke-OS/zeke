@@ -159,7 +159,7 @@ static size_t pagealign(size_t size, size_t bytes)
 
 vm_region_t * vralloc(size_t size)
 {
-    size_t iblock;
+    size_t iblock; /* Block index of the allocation */
     size = pagealign(size, 4096);
     const size_t pcount = size / 4096;
     struct vregion * vreg = last_vreg;
