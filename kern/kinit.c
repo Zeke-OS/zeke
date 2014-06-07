@@ -69,8 +69,10 @@ void exec_init_array(void)
     n  = __init_array_end - __init_array_start;
     exec_array(__init_array_start, n);
 
+    disable_interrupt();
     n = __hw_postinit_array_end - __hw_postinit_array_start;
     exec_array(__hw_postinit_array_start, n);
+    enable_interrupt();
 }
 
 /**

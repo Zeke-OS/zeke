@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    arm11_timers.h
+ * @file    bcm2835_timers.h
  * @author  Olli Vanhoja
- * @brief   Header for arm11_timers.c module.
+ * @brief   Header for bcm2835_timers.c module.
  * @section LICENSE
  * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>

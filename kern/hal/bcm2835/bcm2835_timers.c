@@ -2,7 +2,7 @@
  *******************************************************************************
  * @file bcm2835_timers.c
  * @author Olli Vanhoja
- * @brief Interrupt service routines.
+ * @brief Timer service routines.
  * @section LICENSE
  * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
@@ -36,7 +36,30 @@
 #include <kerror.h>
 #include <hal/hw_timers.h>
 #include "bcm2835_mmio.h"
+#include "bcm2835_interrupt.h"
 #include "bcm2835_timers.h"
+
+/* Peripheral Addresses */
+#define ARM_TIMER_BASE          0x2000b400
+#define ARM_TIMER_LOAD          (ARM_TIMER_BASE + 0x00)
+#define ARM_TIMER_VALUE         (ARM_TIMER_BASE + 0x04)
+#define ARM_TIMER_CONTROL       (ARM_TIMER_BASE + 0x08)
+#define ARM_TIMER_IRQ_CLEAR     (ARM_TIMER_BASE + 0x0c)
+#define ARM_TIMER_RAW_IRQ       (ARM_TIMER_BASE + 0x10)
+#define ARM_TIMER_MASK_IRQ      (ARM_TIMER_BASE + 0x14)
+#define ARM_TIMER_RELOAD        (ARM_TIMER_BASE + 0x18)
+#define ARM_TIMER_PREDIV        (ARM_TIMER_BASE + 0x1c)
+#define ARM_TIMER_FREERUNCNT    (ARM_TIMER_BASE + 0x20)
+
+#define SYS_TIMER_BASE          0x20003000
+#define SYS_TIMER_STATUS        (SYS_TIMER_BASE + 0x00)
+#define SYS_TIMER_CLO           (SYS_TIMER_BASE + 0x04)
+#define SYS_TIMER_CHI           (SYS_TIMER_BASE + 0x08)
+#define SYS_TIMER_C0            (SYS_TIMER_BASE + 0x0c)
+#define SYS_TIMER_C1            (SYS_TIMER_BASE + 0x10)
+#define SYS_TIMER_C2            (SYS_TIMER_BASE + 0x14)
+#define SYS_TIMER_C3            (SYS_TIMER_BASE + 0x18)
+/* End of Peripheral Addresses */
 
 #define ARM_TIMER_PRESCALE_1    0x0
 #define ARM_TIMER_PRESCALE_16   0x4
@@ -48,26 +71,6 @@
 #define ARM_TIMER_EN            0x80
 #define ARM_TIMER_INT_EN        0x20
 
-/* Peripheral Addresses */
-#define IRQ_ENABLE1             0x2000b210
-#define IRQ_ENABLE2             0x2000b214
-#define IRQ_ENABLE_BASIC        0x2000b218
-
-#define ARM_TIMER_LOAD          0x2000b400
-#define ARM_TIMER_VALUE         0x2000b404
-#define ARM_TIMER_CONTROL       0x2000b408
-#define ARM_TIMER_IRQ_CLEAR     0x2000b40c
-
-#define SYS_TIMER_BASE          0x20003000
-#define SYS_TIMER_STATUS        (SYS_TIMER_BASE + 0x0)
-#define SYS_TIMER_CLO           (SYS_TIMER_BASE + 0x4)
-#define SYS_TIMER_CHI           (SYS_TIMER_BASE + 0x8)
-#define SYS_TIMER_C0            (SYS_TIMER_BASE + 0xc)
-#define SYS_TIMER_C1            (SYS_TIMER_BASE + 0x10)
-#define SYS_TIMER_C2            (SYS_TIMER_BASE + 0x14)
-#define SYS_TIMER_C3            (SYS_TIMER_BASE + 0x18)
-/* End of Peripheral Addresses */
-
 #define SYS_CLOCK       700000 /* kHz */
 #define ARM_TIMER_FREQ  configSCHED_HZ
 
@@ -77,16 +80,14 @@ static void enable_arm_timer(void);
 
 void bcm2835_timers_arm_clear(void)
 {
-    uint32_t val;
     istate_t s_entry;
 
     mmio_start(&s_entry);
-    val = mmio_read(ARM_TIMER_VALUE);
-    if (val == 0) {
-        mmio_write(ARM_TIMER_IRQ_CLEAR, 0);
+    if (mmio_read(ARM_TIMER_MASK_IRQ)) {
 #if 0
         bcm2835_uart_uputc('C'); /* Timer debug print */
 #endif
+        mmio_write(ARM_TIMER_IRQ_CLEAR, 0);
         flag_kernel_tick = 1;
     }
     mmio_end(&s_entry);
@@ -99,12 +100,21 @@ static void enable_arm_timer(void)
     /* Use the ARM timer - BCM 2832 peripherals doc, p.196 */
     /* Enable ARM timer IRQ */
     mmio_start(&s_entry);
-    mmio_write(IRQ_ENABLE_BASIC, 0x00000001);
+
+    if (mmio_read(ARM_TIMER_IRQ_CLEAR) != 0x544D5241)
+        panic("No ARM timer found");
+
     /* Interrupt every (value * prescaler) timer ticks */
     mmio_write(ARM_TIMER_LOAD, (SYS_CLOCK / (ARM_TIMER_FREQ * 16)));
+    mmio_write(ARM_TIMER_RELOAD, (SYS_CLOCK / (ARM_TIMER_FREQ * 16)));
+    mmio_write(ARM_TIMER_IRQ_CLEAR, 0);
     mmio_write(ARM_TIMER_CONTROL,
             (ARM_TIMER_PRESCALE_16 | ARM_TIMER_EN |
              ARM_TIMER_INT_EN | ARM_TIMER_23BIT));
+
+    /* Enable ARM timer IRQ */
+    mmio_write(BCMIRQ_ENABLE_BASIC, 0x1);
+
     mmio_end(&s_entry);
 }
 
@@ -132,11 +142,10 @@ uint64_t get_utime(void)
 void bcm_interrupt_postinit(void)
 {
     SUBSYS_INIT();
-    KERROR(KERROR_INFO, "Starting ARM timer");
 
     enable_arm_timer();
     register_schedtimer_clear(bcm2835_timers_arm_clear);
 
-    KERROR(KERROR_DEBUG, "OK");
+    SUBSYS_INITFINI("ARM timer OK");
 }
 HW_POSTINIT_ENTRY(bcm_interrupt_postinit);

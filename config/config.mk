@@ -111,4 +111,4 @@ configKUNIT_FS = 0# Tests for vfs and filesystems
 
 # User space
 # TODO This should be possibly somewhere else
-configTISH = 0# Debug console in init
+configTISH = 1# Debug console in init
