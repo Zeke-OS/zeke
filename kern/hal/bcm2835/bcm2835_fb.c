@@ -39,6 +39,10 @@
 #include "bcm2835_mailbox.h"
 #include "bcm2835_mmio.h"
 
+#if configBCM_MB == 0
+#error configBCM_MB is required by the fb driver
+#endif
+
 struct bcm2835_fb_config {
     uint32_t width;             /*!< Width of the requested frame buffer. */
     uint32_t height;            /*!< Height of the requested frame buffer. */

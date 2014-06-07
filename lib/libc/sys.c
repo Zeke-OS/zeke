@@ -34,7 +34,7 @@
 
 #include <syscall.h>
 
-#if configARCH == __ARM6__ || configARCH == __ARM6K__ || configARCH == __ARM6M__
+#if configARCH == __ARM6__ || configARCH == __ARM6K__ || configARCH == __ARM6M__
 uint32_t syscall(uint32_t type, void * p)
 {
     uint32_t scratch;

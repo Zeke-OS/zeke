@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    raspi_leds.c
+ * @file    rpi_leds.c
  * @author  Olli Vanhoja
  * @brief   Raspberry Pi leds.
  * @section LICENSE
@@ -36,12 +36,12 @@
 #include "../bcm2835/bcm2835_mmio.h"
 #include "../bcm2835/bcm2835_gpio.h"
 
-#define RASPI_LED_POS   (1 << 16)
+#define RPI_LED_POS   (1 << 16)
 
-void raspi_led_invert(void);
+void rpi_led_invert(void);
 
-void raspi_leds_init(void) __attribute__((constructor));
-void raspi_leds_init(void) {
+void rpi_leds_init(void) __attribute__((constructor));
+void rpi_leds_init(void) {
     SUBSYS_INIT();
     SUBSYS_DEP(bcm2835_mmio_init);
 
@@ -58,7 +58,7 @@ void raspi_leds_init(void) {
     sel = mmio_read(GPIO_GPFSEL1);
 
     /* GPIO 16 = 001 - output */
-    sel &=~ (7<<18);
+    sel &=~ (7 << 18);
     sel |= 1 << 18;
     /* GPIO 14 = 000 - input */
     sel &=~ (7 << 12);
@@ -88,30 +88,30 @@ void raspi_leds_init(void) {
     mmio_end(&s_entry);
 
     for (int i = 0; i < 4; i++) {
-        raspi_led_invert();
+        rpi_led_invert();
         bcm_udelay(20000);
     }
 
-    SUBSYS_INITFINI("raspi leds");
+    SUBSYS_INITFINI("rpi leds");
 }
 
 static unsigned int led_status;
 
-void raspi_led_set(int state)
+void rpi_led_set(int state)
 {
     istate_t s_entry;
 
     mmio_start(&s_entry);
     if (state) {
-        mmio_write(GPIO_GPCLR0, RASPI_LED_POS); /* on */
+        mmio_write(GPIO_GPCLR0, RPI_LED_POS); /* on */
     } else {
-        mmio_write(GPIO_GPSET0, RASPI_LED_POS); /* off */
+        mmio_write(GPIO_GPSET0, RPI_LED_POS); /* off */
     }
     mmio_end(&s_entry);
 }
 
-void raspi_led_invert(void)
+void rpi_led_invert(void)
 {
     led_status = !led_status;
-    raspi_led_set(led_status);
+    rpi_led_set(led_status);
 }
