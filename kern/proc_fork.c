@@ -51,6 +51,7 @@
 
 static pid_t proc_lastpid;  /*!< last allocated pid. */
 
+static proc_info_t * clone_proc_info(proc_info_t * const old_proc);
 static int clone_L2_pt(proc_info_t * const new_proc, proc_info_t * const old_proc);
 static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc);
 
@@ -67,10 +68,8 @@ pid_t proc_fork(pid_t pid)
 #endif
 
     proc_info_t * const old_proc = proc_get_struct(pid);
-    proc_info_t * const new_proc = kmalloc(sizeof(proc_info_t));
+    proc_info_t * new_proc;
     pid_t retval = -EAGAIN;
-
-    procarr_realloc();
 
     /* Check that the old PID was valid. */
     if (!old_proc || (old_proc->state == PROC_STATE_INITIAL)) {
@@ -78,14 +77,14 @@ pid_t proc_fork(pid_t pid)
         goto out;
     }
 
-    /* Check that a new PCB was allocated. */
-    if (!new_proc) {
+    new_proc = clone_proc_info(old_proc);
+    if (!new_proc) { /* Check that clone was ok */
         retval = -ENOMEM;
         goto out;
     }
 
-    /* First copy everything in the proc struct... */
-    memcpy(new_proc, old_proc, sizeof(proc_info_t));
+    procarr_realloc();
+
     /* Clear some things required to be zeroed at this point */
     new_proc->state = PROC_STATE_INITIAL;
     new_proc->files = 0;
@@ -283,7 +282,7 @@ pid_t proc_fork(pid_t pid)
     /* TODO state */
     new_proc->state = PROC_STATE_READY;
 
-    /* Insert the new process to _procarr */
+    /* Insert the new process into the process array */
     procarr_insert(new_proc);
 
     if (new_proc->main_thread) {
@@ -314,6 +313,23 @@ free_new_proc:
 out:
     return retval;
 }
+
+/**
+ * Clone old process descriptor.
+ */
+static proc_info_t * clone_proc_info(proc_info_t * const old_proc)
+{
+    proc_info_t * new_proc;
+
+    new_proc = kmalloc(sizeof(proc_info_t));
+    if (!new_proc) {
+        return 0;
+    }
+    memcpy(new_proc, old_proc, sizeof(proc_info_t));
+
+    return new_proc;
+}
+
 
 /**
  * Clone L2 page tables of a process.

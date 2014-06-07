@@ -242,7 +242,8 @@ proc_info_t * proc_get_struct(pid_t pid)
 
         ksprintf(buf, sizeof(buf),
                 "Invalid PID : %u\ncurrpid : %u\nmaxproc : %i\nstate %x",
-                pid, current_process_id, act_maxproc, (*_procarr)[pid]->state);
+                pid, current_process_id, act_maxproc,
+                ((*_procarr)[pid]) ? (*_procarr)[pid]->state : 0);
         KERROR(KERROR_DEBUG, buf);
 #endif
         return 0;
