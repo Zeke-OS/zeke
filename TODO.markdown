@@ -13,12 +13,6 @@ Generic Tasks
 - Implement other messaging services
 - Use thread parent<->client relationship to improve scheduling
 - elf supports
-- man pages are not generated for some kernel functions that are declared in
-  `include/` instead of `kern/include`
-
-BCM2835
--------
-- Use system timer instead of ARM timer for more accurate scheduler timing
 
 KNOWN ISSUES
 ============

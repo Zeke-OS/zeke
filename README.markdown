@@ -16,9 +16,9 @@ development. Especially when ARMv6-M is compared to ARMv7-M used in M4 core or
 any Cortex-A cores using real ARM architectures.
 
 One of the original goals of Zero Kernel was to make it CMSIS-RTOS compliant
-where ever possible. However this changed early and the kernel is no more
-CMSIS compatible at any level. Currently Zeke is no moving towards
-POSIX-like implementation.
+where possible, as some concepts of Zeke were not CMSIS compliant from the
+begining. However scope changed early and the kernel is no more CMSIS compatible
+at any level. Currently Zeke is no moving towards POSIX-like system.
 
 Key features
 ------------
@@ -32,10 +32,9 @@ Key features
 
 News
 ----
-- Merging some things from freebsd (signal handling, sysctl)
-- Dev subsys removed and will be soon replaced with devfs and
-  virtual file system
-- Coming "soon": Full POSIX process & thread support
+- Coming "soon":
+    - POSIX process & thread support
+    - VFS
 - ARM11/Raspberry Pi port ongoing
 
 Port status
@@ -94,8 +93,8 @@ best for BCM2835/Raspberry Pi version of Zeke.
 
 ### Running Zeke on real hw
 
-Zeke should boot just fine with practically any bootloader that is capable of
-loading linux image. However Zeke only supports ATAGs so some older bootloader
-(like found in Raspbian is better) but ATAGs are just extra so basically any
-bootloader should work.
+Zeke should boot just fine with, practically, any bootloader that is capable of
+loading linux image. However Zeke only supports ATAGs for gathering device
+information so some older bootloader may work better. Still ATAGs are optional
+so basically any bootloader should work.
 

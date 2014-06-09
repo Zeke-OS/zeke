@@ -1,4 +1,5 @@
 #!/bin/bash
+# Parse help texts from Makefile for `make help`.
 
 TARGETS=$(egrep "^# target" Makefile)
 

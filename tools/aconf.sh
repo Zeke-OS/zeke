@@ -1,8 +1,12 @@
 #!/bin/bash
+# Parse a C header file from config.mk file.
 
-if [ -z "$1" -o -z "$2" ]
-then
+if [ -z "$1" -o -z "$2" ]; then
     echo "Usage: $0 [config.mk] [autoconf.h]"
+    exit 1
+fi
+if [ ! -f "$1" ]; then
+    echo "Config file '$1' doesn't exist"
     exit 1
 fi
 
