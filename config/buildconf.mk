@@ -33,7 +33,7 @@ LLCFLAGS        =#
 UNIFDEF         = $(ROOT_DIR)/tools/unifdef/unifdef
 UNIFDEFALL      = $(ROOT_DIR)/tools/unifdef/zunifdefall.sh
 
-CONFIG_DIR		= $(ROOT_DIR)/config
+CONFIG_DIR      = $(ROOT_DIR)/config
 
 include $(CONFIG_DIR)/targetconf.mk
 
