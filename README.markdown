@@ -56,7 +56,7 @@ Compiling and Testing
 
 To successfully compile Zeke, you'll need the following packages/tools:
 
-- make
+- make >3.8
 - gcc-arm-none-eabi
 - llvm-3.3
 - clang 3.3

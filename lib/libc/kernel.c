@@ -39,10 +39,6 @@ unsigned msleep(unsigned millisec)
     return (unsigned)syscall(SYSCALL_SCHED_SLEEP_MS, &millisec);
 }
 
-/** @addtogroup thread
-  * @{
-  */
-
 int osThreadTerminate(pthread_t thread_id)
 {
     return (int)syscall(SYSCALL_THREAD_TERMINATE, &thread_id);
@@ -53,14 +49,6 @@ int * __error(void)
     return (int *)syscall(SYSCALL_THREAD_GETERRNO, NULL);
 }
 
-
-/**
-  * @}
-  */
-
-/** @addtogroup Semaphore
-  * @{
-  */
 
 //osSemaphore osSemaphoreCreate(osSemaphoreDef_t * semaphore_def, int32_t count)
 //{

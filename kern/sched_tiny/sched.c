@@ -458,6 +458,9 @@ pthread_t sched_thread_fork(void)
             sizeof(sw_stack_frame_t));
     tmp.sframe[SCHED_SFRAME_SYS].r0 = 0;
     tmp.sframe[SCHED_SFRAME_SYS].pc += 4; /* TODO This is too hw specific */
+#if 0
+    tmp.sframe[SCHED_SFRAME_SYS].psr &= ~0x1c0u; /* TODO REMOVE */
+#endif
 
     memcpy(&(task_table[new_id]), &tmp, sizeof(threadInfo_t));
 

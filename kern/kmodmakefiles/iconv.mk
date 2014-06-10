@@ -1,3 +1,3 @@
 # iconv
-#iconv-SRC-1 += kern/iconv/*.c
+#iconv-SRC-1 += iconv/*.c
 

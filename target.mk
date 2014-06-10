@@ -23,29 +23,28 @@ endif
 ifeq ($(configHFP),__HFP_VFP__)
 	ASFLAGS  += -mfpu=vfp
 endif
+CCFLAGS += -m32
 
-# Target specific Startup code & CRT ###########################################
-# Memmap & vector table is set per MCU/CPU model
-ifeq ($(configMCU_MODEL),MCU_MODEL_BCM2835)
-	MEMMAP = config/memmap_bcm2835.ld
-	# We may wan't to move this line to some where else
-	STARTUP = kern/hal/arm11/arm11_startup.S
-endif
-# Check that MEMMAP and STARTUP are defined
-ifndef MEMMAP
-	$(error Missing MEMMAP! Wrong configMCU_MODEL?)
-endif
-ifndef STARTUP
-	$(error Missing STARTUP! Wrong configMCU_MODEL?)
-endif
-
+# Target specific CRT ##########################################################
 # CRT is compiled per instruction set or per core model
 ifeq ($(configARM_PROFILE_M),1)
 	ifeq ($(configARCH),__ARM6M__)
-		CRT = lib/crt/libaeabi-armv6-m/libaeabi-armv6-m.a
+		CRT = $(ROOT_DIR)/lib/crt/libaeabi-armv6-m/libaeabi-armv6-m.a
 	endif
 else
 	ifeq ($(configARCH),__ARM6K__)
-		CRT = lib/crt/libaeabi-armv6k/libaeabi-armv6k.a
+		CRT = $(ROOT_DIR)/lib/crt/libaeabi-armv6k/libaeabi-armv6k.a
 	endif
 endif
+CRT_DIR = $(dir $(CRT))
+
+# Checks #######################################################################
+ifndef ASFLAGS
+    $(error Missing ASFLAGS! Wrong configARCH? "$(configARCH)")
+endif
+
+# Check that CRT is defined
+ifndef CRT
+    $(error Missing CRT! Wrong configMCU_MODEL or configARCH? "$(configARCH)")
+endif
+

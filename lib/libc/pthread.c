@@ -32,16 +32,8 @@
  *******************************************************************************
 */
 
-/** @addtogroup Library_Functions
-  * @{
-  */
-
 #include <syscall.h>
 #include <pthread.h>
-
-/** @addtogroup Threads
-  * @{
-  */
 
 int pthread_create(pthread_t * thread, const pthread_attr_t * attr,
                 void * (*start_routine)(void *), void * arg)
@@ -78,19 +70,6 @@ int pthread_detach(pthread_t thread)
 {
     return syscall(SYSCALL_SCHED_DETACH, &thread);
 }
-
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
-
-/** @addtogroup Mutex
-  * @{
-  */
 
 /* Mutex Management ***********************************************************
  * NOTE: osMutexId/mutex_id is a direct pointer to a os_mutex_cb structure.
@@ -153,7 +132,3 @@ int pthread_mutex_unlock(pthread_mutex_t * mutex)
     }
     return 1;
 }
-
-/**
-  * @}
-  */

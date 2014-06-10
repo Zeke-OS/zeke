@@ -1,8 +1,8 @@
 #!/bin/bash
-# Parse a C header file from config.mk file.
+# Parse a C header file from config.mk files.
 
 if [ -z "$1" -o -z "$2" ]; then
-    echo "Usage: $0 [config.mk] [autoconf.h]"
+    echo "Usage: $0 [config1.mk] ... [confign.mk] [autoconf.h]"
     exit 1
 fi
 if [ ! -f "$1" ]; then
@@ -10,7 +10,14 @@ if [ ! -f "$1" ]; then
     exit 1
 fi
 
-echo "/* Automatically generated file. */" >"$2"
-echo -e "#pragma once\n#ifndef KERNEL_CONFIG_H\n#define KERNEL_CONFIG_H" >>"$2"
-cat "$1"|sed 's/#.*$//g' |grep -e '^.*=.*$'|sed 's/\ *=\ */ /1'|sed 's/^/#define /' >>"$2"
-echo "#endif" >>"$2"
+HFILE="${@: -1}"
+
+echo "/* Automatically generated file. */" >"$HFILE"
+echo -e "#pragma once\n#ifndef KERNEL_CONFIG_H\n#define KERNEL_CONFIG_H" >>"$HFILE"
+for conffile in "$@"; do
+    if [ "$conffile" = "$HFILE" ]; then
+        break
+    fi
+    cat "$conffile"|sed 's/#.*$//g'|grep -e '^.*=.*$'|sed 's/\ *=\ */ /1'|sed 's/^/#define /' >>"$HFILE"
+done
+echo "#endif" >>"$HFILE"
