@@ -1,8 +1,8 @@
 BCM2835 Physical Memory Map
 ===========================
 
-Following table explains the physical memory layout of BCM2835 as well as its
-usage on Zeke. Some of these mappings are common to all ARM11 implementations.
+Following table explains the physical memory layout of BCM2835 as well as Zeke
+specific mappings. Some of these mappings are common to all ARM11 implementations.
 
     Address             |   | Description
     ----------------------------------------------------------------------------

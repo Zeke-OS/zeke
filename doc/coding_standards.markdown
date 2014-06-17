@@ -1,8 +1,8 @@
 Zeke Coding Standards & Generic Documentation
 =============================================
 
-Here is some misc documentation and generic guidelines on how to write code for
-Zeke.
+Here is some misc documentation and general guidelines on topic of how to write
+new code for Zeke.
 
 Directory Structure
 -------------------
@@ -54,7 +54,7 @@ following naming convention:
 ### Function names
 
 + `module_comp_function` + module = name that also appears in filename
-                        + comp   = component/functionality eg. thread
+                         + comp   = component/functionality eg. thread
                                    components will change thread status
 
 
@@ -194,14 +194,17 @@ using following notation:
 Makefiles
 ---------
 
-The main Makefile is responsible of parsing module makefiles and compiling the
-whole kernel. Module makefiles are named as `<module>.mk` and are located in the
-`kmodmakefiles` directory under `kern` directory.
+The main Makefile is responsible of recursively compiling all parts of Zeke.
+
+`kern/Makefile`is responsible of compiling the kernel and parsing module
+makefiles. Module makefiles are following the naming convention `<module>.mk`
+and are located under `kern/kmodmakefiles` directory.
 
 Note that in context of Zeke there is two kinds of modules, the core/top level
 subsystems that are packed as static library files and then there is kind of
 submodules (often referred as modules too) that are optional compilation units
 or compilation unit groups. Both are configured in the kernel configuration.
+What Zeke doesn't support currently is dynamically loaded modules.
 
 Module makefiles are parsed like normal makefiles but care should be taken when
 changing global variables in these makefiles. Module makefiles are mainly
@@ -223,24 +226,23 @@ Example of a module makefile (test.mk):
     # Assembly file
     test-ASRC$(configTEST_CONFIGURABLE) += src/test/lowlevel.S
 
-The main makefile will automatically discover `test-SRC-1` list and will compile
-a new static library based on the compilation units in the list. Name of the
-library is derived from the makefile's name and so should be the first word of
-the source file list name.
+The kernel makefile will automatically discover `test-SRC-1` list and will
+compile a new static library based on the compilation units in the list. Name of
+the library is derived from the makefile's name and so should be the first word
+of the source file list name.
 
-### Target specific compilation options and special files
+### Target specific compilation options
 
-As we don't want to put anything target specific and possibly changing data to
-the main makefile we are using another makefile called `target.mak`. This file
-contains the targer specific compilation options for different phases of
-compilation. `target.mak` doesn't need to be changed if Zeke is compiled for a
-different platform but it has to be updated if support for a new platform is to
-be implemented.
+Because we don't want to put any target specific configuration into the main
+makefile we are using another makefile called `target.mk`. This file contains
+the target specific compilation options for different phases of compilation.
+`target.mk` doesn't need to be changed if Zeke is compiled for a different
+platform but it has to be updated if support for a new hardware platform is to
+be implemented. `target.mk` is generic in a way that it can be used to configure
+kernel compilation as well as user space utility compilation.
 
-`target.mak` should define at least following target specific variables:
+`target.mk` should define at least following target specific variables:
 + `ASFLAGS`:    Containing CPU architecture flags
-+ `MEMMAP`:     Specifying linker script for kernel image memory map
-+ `STARTUP`:    Specifying target specific startup assembly source code file
 + `CRT`:        Specifying CRT library used with the target
 
 and optionally:
