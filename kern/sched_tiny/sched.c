@@ -111,7 +111,7 @@ static char sched_idle_stack[sizeof(sw_stack_frame_t)
 
 /* Static function declarations **********************************************/
 static void init_thread_id_queue(void);
-void * idleTask(void * arg);
+void * idle_task(void * arg);
 static void sched_thread_init(pthread_t i,
         struct _ds_pthread_create * thread_def, threadInfo_t * parent, int priv);
 static void sched_thread_set_inheritance(threadInfo_t * new_child, threadInfo_t * parent);
@@ -141,7 +141,7 @@ void sched_init(void)
     /* Create the idle task as task 0 */
     struct _ds_pthread_create tdef_idle = {
         .thread   = &tid,
-        .start    = idleTask,
+        .start    = idle_task,
         .def      = &attr,
         .argument = NULL
     };
@@ -183,7 +183,7 @@ static void init_thread_id_queue(void)
  * @note sw stacked registers are invalid when this thread executes for the
  * first time.
  */
-void * idleTask(/*@unused@*/ void * arg)
+void * idle_task(/*@unused@*/ void * arg)
 {
     while(1) {
         unsigned tmp_no_threads = 0;
@@ -409,19 +409,6 @@ static void sched_thread_set_inheritance(threadInfo_t * new_child, threadInfo_t 
 
     /* Set newly created thread as the last child in chain. */
     last_node->inh.next_child = new_child;
-}
-
-void * idleTask2(/*@unused@*/ void * arg)
-{
-    char buf[30];
-    uint32_t mode;
-    while(1) {
-        __asm__ volatile ("mrs     %0, cpsr" : "=r" (mode));
-        ksprintf(buf, sizeof(buf), "mode: %x\n", mode);
-        //write(2, buf,  sizeof(buf));
-        KERROR(KERROR_DEBUG, buf);
-        idle_sleep();
-    }
 }
 
 pthread_t sched_thread_fork(void)
