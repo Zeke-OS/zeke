@@ -436,6 +436,7 @@ pthread_t sched_thread_fork(void)
     }
 #endif
 
+    /* Get next free thread_id */
     if (!queue_pop(&next_thread_id_queue_cb, &new_id)) {
         return -ENOMEM;
     }
@@ -448,19 +449,17 @@ pthread_t sched_thread_fork(void)
 
     /* Initialize a new kstack & copy data from old kstack. */
     thread_init_kstack(&tmp);
+#if 0
     memcpy((void *)(tmp.kstack_region->mmu.paddr),
             (void *)(old_thread->kstack_region->mmu.paddr),
             MMU_SIZEOF_REGION(&(old_thread->kstack_region->mmu)));
-    char buf[80];
+#endif
 
     /* TODO Following should be done in HAL */
     memcpy(&tmp.sframe[SCHED_SFRAME_SYS], &old_thread->sframe[SCHED_SFRAME_SVC],
             sizeof(sw_stack_frame_t));
     tmp.sframe[SCHED_SFRAME_SYS].r0 = 0;
     tmp.sframe[SCHED_SFRAME_SYS].pc += 4; /* TODO This is too hw specific */
-#if 0
-    tmp.sframe[SCHED_SFRAME_SYS].psr &= ~0x1c0u; /* TODO REMOVE */
-#endif
 
     memcpy(&(task_table[new_id]), &tmp, sizeof(threadInfo_t));
 
