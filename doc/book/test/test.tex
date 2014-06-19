@@ -20,19 +20,19 @@ Running thread is blocked until requested test has returned.
 \section{Assertions}
 
 \begin{itemize}
-\item \verb+pu_assert(message, test)+ - Checks if boolean value of test is true
-\item \verb+pu_assert_equal(message, left, right)+ - Checks if
+\item \verb+ku_assert(message, test)+ - Checks if boolean value of test is true
+\item \verb+ku_assert_equal(message, left, right)+ - Checks if
       \verb+left == right+ is true
-\item \verb+pu_assert_ptr_equal(message, left, right)+ - Checks if left and
+\item \verb+ku_assert_ptr_equal(message, left, right)+ - Checks if left and
       right pointers are equal
-\item \verb+pu_assert_str_equal(message, left, right)+ - Checks if left and
+\item \verb+ku_assert_str_equal(message, left, right)+ - Checks if left and
       right strings are equal (strcmp)
-\item \verb+pu_assert_array_equal(message, left, right, size)+ - Asserts that
+\item \verb+ku_assert_array_equal(message, left, right, size)+ - Asserts that
       each integer element i of two arrays are equal (\verb+strcmp()+)
-\item \verb+pu_assert_str_array_equal(message, left, right, size)+ - Asserts
+\item \verb+ku_assert_str_array_equal(message, left, right, size)+ - Asserts
       that each string element i of two arrays are equal (\verb+==+)
-\item \verb+pu_assert_null(message, ptr)+ - Asserts that a pointer is null
-\item \verb+pu_assert_not_null(message, ptr)+ - Asserts that a pointer isn't
+\item \verb+ku_assert_null(message, ptr)+ - Asserts that a pointer is null
+\item \verb+ku_assert_not_null(message, ptr)+ - Asserts that a pointer isn't
       null
-\item \verb+pu_assert_fail(message)+ - Always fails
+\item \verb+ku_assert_fail(message)+ - Always fails
 \end{itemize}

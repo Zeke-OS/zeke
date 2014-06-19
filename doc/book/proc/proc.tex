@@ -7,40 +7,40 @@
 +-------------+
 | process_a   |
 +-------------+
-| pid = pid_a |     +-------------------+
-| main_thread |---->| main              |
-+-------------+     +-------------------+
-                    | id = tid_a        |
-                    | pid_owner = pid_a |
-                    | inh.parent = NULL |   +---------------------------+
-                    | inh.first_child   |-->| child_1                   |
-                    | inh.next_child    |   +---------------------------+
-                    +--------^----------+   | id = tid_b                |
-                             |              | pid_owner = pid_a         |
-                             +--------------| inh.parent                |
-                             |              | inh.first_child = NULL    |
-                             |              | inh.next_child            |---
-                             |              +---------------------------+  |
-                             |                                             |
-                             |              +---------------------------+  |
-                             |          --->| child_2                   |<--
-                             |          |   +---------------------------+
-                             |          |   | id = tid_c                |
-                             |          |   | pid_owner = pid_a         |
-                             ---------- | --| inh.parent                |
-                                        |   | inh.first_child           |---
-                                        |   | inh.next_child = NULL     |  |
-                                        |   +---------------------------+  |
-                                        |                                  |
-                                        |   +---------------------------+  |
-                                        |   | child_2_1                 |<--
-                                        |   +---------------------------+
-                                        |   | id = tid_d                |
-                                        |   | pid_owner = pid_a         |
-                                        ----| inh.parent                |
-                                            | inh.first_child = NULL    |
-                                            | inh.next_child = NULL     |
-                                            +---------------------------+
+| pid = pid_a |  +-------------------+
+| main_thread |->| main              |
++-------------+  +-------------------+
+                 | id = tid_a        |
+                 | pid_owner = pid_a |
+                 | inh.parent = 0    |  +---------------------+
+                 | inh.first_child   |->| child_1             |
+                 | inh.next_child    |  +---------------------+
+                 +--------^----------+  | id = tid_b          |
+                          |             | pid_owner = pid_a   |
+                          +-------------| inh.parent          |
+                          |             | inh.first_child = 0 |
+                          |             | inh.next_child      |---
+                          |             +---------------------+  |
+                          |                                      |
+                          |             +---------------------+  |
+                          |         --->| child_2             |<--
+                          |         |   +---------------------+
+                          |         |   | id = tid_c          |
+                          |         |   | pid_owner = pid_a   |
+                          --------- | --| inh.parent          |
+                                    |   | inh.first_child     |---
+                                    |   | inh.next_child = 0  |  |
+                                    |   +---------------------+  |
+                                    |                            |
+                                    |   +---------------------+  |
+                                    |   | child_2_1           |<--
+                                    |   +---------------------+
+                                    |   | id = tid_d          |
+                                    |   | pid_owner = pid_a   |
+                                    ----| inh.parent          |
+                                        | inh.first_child = 0 |
+                                        | inh.next_child = 0  |
+                                        +---------------------+
 \end{verbatim}
 \caption{Thread tree example.}
 \label{figure:thtree}
@@ -49,6 +49,7 @@
 \begin{itemize}
   \item \verb+tid_X+ = Thread ID
   \item \verb+pid_a+ = Process ID
+  \item \verb+0+ = NULL
 \end{itemize}
 
 \verb+process_a+ a has a main thread called \verb+main+. Thread
@@ -80,4 +81,51 @@ Killing of \verb+child_2+ causes \verb+child_2_1+ to be killed first.
 
 \chapter{Thread Scheduler}
 
-% TODO
+\section{sched\_tiny}
+
+Sched\_tiny is solely based on priority queue and penalties and it doesn't make
+a difference between threads belongin to the current process or some other
+process, so it can't optimize much on swapping between process contexts
+(eg. changing master page table).
+
+Figure \ref{figure:thtree} shows the most important process states in the thread
+scheduler and also where information about the thread is stored in different
+states. It should be noted that the current scheduler implementation does not
+have a strict state machine, instead of discrete states a thread can be in
+several states at the same time, and flags controls the state of a thread.
+
+Flags are designed so that it is relatively easy to check if a certain operation
+is permitted for the thread based on its flags. Thus for example we can derive
+from the flags if we can set execute flag or not and if context switch is ok
+etc. In practice most of state checks are done by using \verb+SCHED_TEST_XXX_OK+
+macros defined in \verb+kern/include/sched.h+ header file, where XXX is the
+operation to be executed on the thread.
+
+\begin{figure}
+    \begin{verbatim}
++----------+      +------------------+
+| Inactive |--+-->| Ready            |-----------+
++----------+  |   +------------------+           |
+              |   | - task_table     |          \ /
+              |   | - priority_queue |  +------------------+
+              |   +------------------+  | Running          |
+              |                         +------------------+
+              |                         | - task_table     |
+              |                         | - current_thread |
+              |                         +------------------+
+              |   +--------------+               |
+              +---| Sleeping     |<--------------+
+              |   +--------------+               |
+              |   | - task_table |               |
+              |   +--------------+               |
+              |                                  |
+              |   +--------------+               |
+              +---| Waiting IO   |<--------------+
+                  +--------------+
+                  | - task_table |
+                  +--------------+
+    \end{verbatim}
+    \caption{Scheduler states and storage locations of thread information/id at
+             different thread states.}
+    \label{figure:thtree}
+\end{figure}

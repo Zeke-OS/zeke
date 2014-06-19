@@ -76,8 +76,8 @@ ASRC-1	=#
 SRC-1 += $(foreach var,$(MODULES), $($(var)-SRC-1))
 ASRC-1 += $(foreach var,$(MODULES), $($(var)-ASRC-1))
 ################################################################################
+# Parse file names
 
-# Parse file names #############################################################
 # Assembly Obj files
 ASOBJS 	:= $(patsubst %.S, %.o, $(ASRC-1))
 
@@ -87,15 +87,10 @@ OBJS 	:= $(patsubst %.c, %.o, $(SRC-1))
 
 STARTUP_O = $(patsubst %.S, %.o, $(STARTUP))
 
-# A files for modules
+# a files for modules
 MODAS = $(addsuffix .a, $(MODULES))
 
 KERNEL_IMG = $(ROOT_DIR)/kernel.img
-################################################################################
-
-# We use suffixes because it's fun
-.SUFFIXES:						# Delete the default suffixes
-.SUFFIXES: .c .bc .o .h .S ._S	# Define our suffix list
 
 # Targets ######################################################################
 
@@ -142,7 +137,6 @@ $(KERNEL_IMG): $(MEMMAP) $(STARTUP_O) $(MODAS)
 
 .PHONY: kernel clean
 
-# target_clean: clean - Clean all targets.
 clean:
 	rm -f $(ASOBJS) $(OBJS) $(STARTUP_O)
 	rm -f $(BCS)
