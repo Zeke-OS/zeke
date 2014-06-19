@@ -59,7 +59,7 @@
 #define STDERR_FILENO   2 /*!< File number of stderr. */
 
 /* Sysconf variables */
-#define _SC_AIO_LISTIO_MAX               2
+#define _SC_AIO_LISTIO_MAX               1
 #define _SC_AIO_MAX                      2
 #define _SC_AIO_PRIO_DELTA_MAX           3
 #define _SC_ARG_MAX                      4

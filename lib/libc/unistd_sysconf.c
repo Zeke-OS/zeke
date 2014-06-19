@@ -30,6 +30,8 @@
  *******************************************************************************
 */
 
+#include <errno.h>
+#include <sys/sysctl.h>
 #include <syscall.h>
 #include <unistd.h>
 
@@ -76,7 +78,7 @@ long sysconf(int name)
     case _SC_CLK_TCK:
         sysctl_len = sysctlnametomib("kern.hz", sysctl_mib, num_elem(sysctl_mib));
         len = sizeof(value);
-        if (sysctl(mib, sysctl_len, &value, &len, 0, 0)) {
+        if (sysctl(sysctl_mib, sysctl_len, &value, &len, 0, 0)) {
             value = -1;
             errno = EINVAL;
         }
