@@ -199,7 +199,7 @@ pid_t proc_fork(pid_t pid)
         retval = -ENOMEM;
         goto free_regions;
     }
-    /* new_proc->files->count = old_proc->files->count; Already done */
+    new_proc->files->count = old_proc->files->count;
     for (int i = 0; i < old_proc->files->count; i++) {
         new_proc->files->fd[i] = old_proc->files->fd[i];
         if (new_proc->files->fd[i]) /* TODO Lock? */

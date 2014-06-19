@@ -449,11 +449,6 @@ pthread_t sched_thread_fork(void)
 
     /* Initialize a new kstack & copy data from old kstack. */
     thread_init_kstack(&tmp);
-#if 0
-    memcpy((void *)(tmp.kstack_region->mmu.paddr),
-            (void *)(old_thread->kstack_region->mmu.paddr),
-            MMU_SIZEOF_REGION(&(old_thread->kstack_region->mmu)));
-#endif
 
     /* TODO Following should be done in HAL */
     memcpy(&tmp.sframe[SCHED_SFRAME_SYS], &old_thread->sframe[SCHED_SFRAME_SVC],

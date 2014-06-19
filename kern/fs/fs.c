@@ -248,7 +248,7 @@ static ssize_t fs_write_cproc(int fildes, const void * buf, size_t nbyte,
     size_t retval = -1;
 
     /* Check that fildes exists */
-    if (fildes > cpr->files->count && !(cpr->files->fd[fildes])) {
+    if (fildes >= cpr->files->count && !(cpr->files->fd[fildes])) {
         set_errno(EBADF);
         goto out;
     }
