@@ -34,8 +34,7 @@
 #ifndef _SYS_RESOURCES_H
 #define _SYS_RESOURCES_H
 
-/* TODO Missing sys/time.h */
-//#include <sys/time.h>
+/* TODO Missing timeval struct from sys/time.h */
 
 #define RLIMIT_CORE     0 /*!< Resource id for maximum size of a core file,
                            * in bytes.
