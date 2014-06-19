@@ -7,40 +7,40 @@
 +-------------+
 | process_a   |
 +-------------+
-| pid = pid_a |   +-------------------+
-| main_thread |-->| main              |
-+-------------+   +-------------------+
-                  | id = tid_a        |
-                  | pid_owner = pid_a |
-                  | inh.parent = NULL |   +------------------------+
-                  | inh.first_child   |-->| child_1                |
-                  | inh.next_child    |   +------------------------+
-                  +--------^----------+   | id = tid_b             |
-                           |              | pid_owner = pid_a      |
-                           +--------------| inh.parent             |
-                           |              | inh.first_child = NULL |
-                           |              | inh.next_child         |---
-                           |              +------------------------+  |
-                           |                                          |
-                           |              +------------------------+  |
-                           |          --->| child_2                |<--
-                           |          |   +------------------------+
-                           |          |   | id = tid_c             |
-                           |          |   | pid_owner = pid_a      |
-                           ---------- | --| inh.parent             |
-                                      |   | inh.first_child        |---
-                                      |   | inh.next_child = NULL  |  |
-                                      |   +------------------------+  |
-                                      |                               |
-                                      |   +------------------------+  |
-                                      |   | child_2_1              |<--
-                                      |   +------------------------+
-                                      |   | id = tid_d             |
-                                      |   | pid_owner = pid_a      |
-                                      ----| inh.parent             |
-                                          | inh.first_child = NULL |
-                                          | inh.next_child = NULL  |
-                                          +------------------------+
+| pid = pid_a |  +-------------------+
+| main_thread |->| main              |
++-------------+  +-------------------+
+                 | id = tid_a        |
+                 | pid_owner = pid_a |
+                 | inh.parent = 0    |  +---------------------+
+                 | inh.first_child   |->| child_1             |
+                 | inh.next_child    |  +---------------------+
+                 +--------^----------+  | id = tid_b          |
+                          |             | pid_owner = pid_a   |
+                          +-------------| inh.parent          |
+                          |             | inh.first_child = 0 |
+                          |             | inh.next_child      |---
+                          |             +---------------------+  |
+                          |                                      |
+                          |             +---------------------+  |
+                          |         --->| child_2             |<--
+                          |         |   +---------------------+
+                          |         |   | id = tid_c          |
+                          |         |   | pid_owner = pid_a   |
+                          --------- | --| inh.parent          |
+                                    |   | inh.first_child     |---
+                                    |   | inh.next_child = 0  |  |
+                                    |   +---------------------+  |
+                                    |                            |
+                                    |   +---------------------+  |
+                                    |   | child_2_1           |<--
+                                    |   +---------------------+
+                                    |   | id = tid_d          |
+                                    |   | pid_owner = pid_a   |
+                                    ----| inh.parent          |
+                                        | inh.first_child = 0 |
+                                        | inh.next_child = 0  |
+                                        +---------------------+
 \end{verbatim}
 \caption{Thread tree example.}
 \label{figure:thtree}
@@ -49,6 +49,7 @@
 \begin{itemize}
   \item \verb+tid_X+ = Thread ID
   \item \verb+pid_a+ = Process ID
+  \item \verb+0+ = NULL
 \end{itemize}
 
 \verb+process_a+ a has a main thread called \verb+main+. Thread
