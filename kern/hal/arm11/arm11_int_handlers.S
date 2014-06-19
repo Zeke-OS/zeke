@@ -58,7 +58,7 @@ interrupt_svc:
      * Solution: Check if earlier mode was other than usr and don't change
      * stack address if so.
      */
-    ldr     sp, =0x00001000 /* vaddr of tkstack. */
+    change_to_tkstack
 
     cpsie   aif             /* Enable interrupts */
 
@@ -143,7 +143,7 @@ interrupt_dabt:
      * allocation of kernel structures, e.g. just after pushcontext */
 
     cps     #0x1f           /* Change to system mode */
-    ldr     sp, =0x00001000 /* vaddr of tkstack. */
+    change_to_tkstack
     
     bl      mmu_data_abort_handler
 
