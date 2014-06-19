@@ -30,10 +30,6 @@ export ROOT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 include $(ROOT_DIR)/config/buildconf.mk
 ################################################################################
 
-# We use suffixes because it's fun
-.SUFFIXES:                      # Delete the default suffixes
-.SUFFIXES: .c .bc .o .h .S ._S  # Define our suffix list
-
 # Targets ######################################################################
 # Help lines
 # '# target: '		Generic target
