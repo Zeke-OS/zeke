@@ -44,6 +44,7 @@
 #include <time.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <klocks.h>
 
 #define FS_FLAG_INIT        0x01 /*!< File system initialized. */
 #define FS_FLAG_FAIL        0x08 /*!< File system has failed. */
@@ -100,6 +101,7 @@ typedef struct file {
     mode_t mode;    /*!< Access mode. */
     int refcount;   /*!< Reference count. */
     vnode_t * vnode;
+    mtx_t lock;
 } file_t;
 
 /**
@@ -243,6 +245,21 @@ fs_superblock_t * fs_next_sb(sb_iterator_t * it);
  * Get next free pseudo fs minor code.
  */
 unsigned int fs_get_pfs_minor(void);
+
+/**
+ * Create a new file descriptor.
+ * @param vnode     is a vnode.
+ * @return Returns a pointer to the new file descriptor.
+ */
+file_t * fs_fildes_create(vnode_t * vnode);
+
+/**
+ * Increment or decrement a file descriptor reference count and free the
+ * descriptor if there is no more refereces to it.
+ * @param fildes    is the file descriptor to be updated.
+ * @param count     is the value to be added to the refcount.
+ */
+void fs_fildes_ref(file_t * fildes, int count);
 
 #endif /* FS_H */
 

@@ -31,6 +31,7 @@
  */
 
 #define KERNEL_INTERNAL 1
+#include <kinit.h>
 #include <kerror.h>
 #include <kstring.h>
 #include <kmalloc.h>
@@ -42,6 +43,13 @@
 #include <syscall.h>
 #include <errno.h>
 #include <fs/fs.h>
+
+mtx_t fslock;
+#define FS_LOCK()       mtx_spinlock(&fslock)
+#define FS_UNLOCK()     mtx_unlock(&fslock)
+#define FS_TESTLOCK()   mtx_test(&fslock)
+#define FS_LOCK_INIT()  mtx_init(&fslock, MTX_DEF | MTX_SPIN)
+
 
 /**
  * Linked list of registered file systems.
@@ -57,6 +65,17 @@ static fs_t * find_fs(const char * fsname);
 static ssize_t fs_write_cproc(int fildes, const void * buf, size_t nbyte,
         off_t * offset);
 
+
+void fs_init(void) __attribute__((constructor));
+void fs_init(void)
+{
+    SUBSYS_INIT();
+
+    FS_LOCK_INIT();
+
+    SUBSYS_INITFINI("fs OK");
+}
+
 /**
  * Register a new file system driver.
  * @param fs file system control struct.
@@ -65,6 +84,8 @@ int fs_register(fs_t * fs)
 {
     fsl_node_t * new;
     int retval = -1;
+
+    FS_LOCK();
 
     if (fsl_head == 0) { /* First entry */
         fsl_head = kmalloc(sizeof(fsl_node_t));
@@ -89,6 +110,7 @@ int fs_register(fs_t * fs)
     retval = 0;
 
 out:
+    FS_UNLOCK();
     return retval;
 }
 
@@ -191,6 +213,39 @@ unsigned int fs_get_pfs_minor(void)
 
     pfs_minor++;
     return retval;
+}
+
+file_t * fs_fildes_create(vnode_t * vnode)
+{
+    file_t * fildes;
+
+    if (!(fildes = kcalloc(1, sizeof(file_t))))
+        return 0;
+
+    mtx_init(&fildes->lock, MTX_DEF | MTX_SPIN);
+    fildes->vnode = vnode;
+    fildes->refcount = 1;
+
+    return fildes;
+}
+
+void fs_fildes_ref(file_t * fildes, int count)
+{
+    int free = 0;
+
+    mtx_spinlock(&fildes->lock);
+    fildes->refcount += count;
+    if (fildes->refcount <= 0) {
+        free = 1;
+    }
+    mtx_unlock(&fildes->lock);
+
+    /* The following is normally unsafe but in the case of file descriptors it
+     * should be safe to assume that there is always only one process that wants
+     * to free a filedes.
+     */
+    if (free)
+        kfree(fildes);
 }
 
 /**

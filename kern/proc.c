@@ -167,8 +167,7 @@ static void init_kernel_proc(void)
     kernel_proc->files->fd[0] = 0;
     kernel_proc->files->fd[1] = 0;
 #if configKLOGGER != 0
-    kernel_proc->files->fd[2] = kcalloc(1, sizeof(file_t)); /* stderr */
-    kernel_proc->files->fd[2]->vnode = &kerror_vnode;
+    kernel_proc->files->fd[2] = fs_fildes_create(&kerror_vnode); /* stderr */
 #else
     kernel_proc->files->fd[2] = 0;
 #endif
@@ -237,8 +236,8 @@ void _proc_free(proc_info_t * p)
     /* Free files */
     if (p->files) {
         for (int i = 0; i < p->files->count; i++) {
-            if (p->files->fd[i]) /* TODO Lock? */
-                p->files->fd[i]->refcount--;
+            if (p->files->fd[i])
+                fs_fildes_ref(p->files->fd[i], -1);
         }
         kfree(p->files);
     }
