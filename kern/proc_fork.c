@@ -430,7 +430,7 @@ static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc)
     /* Find the last child process
      * Assuming first_child is a valid pointer
      */
-    tmp = (proc_info_t *)(old_proc->inh.first_child);
+    tmp = old_proc->inh.first_child;
     do {
         last_node = tmp;
     } while ((tmp = last_node->inh.next_child) != NULL);

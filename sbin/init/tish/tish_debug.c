@@ -30,6 +30,7 @@
  *******************************************************************************
  */
 
+#include <stdlib.h>
 #include <sys/types.h>
 #include <kstring.h>
 #include <unistd.h>
@@ -70,12 +71,18 @@ void tish_debug(char ** args)
                 puts("fork() failed\n");
             } else if (pid == 0) {
                 puts("Hello from the child process\n");
-                while(1) {
+                for (int i = 0; i < 10; i++) {
                     puts(".");
                     msleep(500);
                 }
+                exit(0);
             } else {
+                int status;
+                char buf[20];
                 puts("original\n");
+                wait(&status);
+                ksprintf(buf, sizeof(buf), "status: %u\n", status);
+                puts(buf);
             }
         } else {
             puts(invalid_arg);

@@ -30,9 +30,9 @@
  *******************************************************************************
  */
 
-/** @addtogroup Library_Functions
-  * @{
-  */
+/** @addtogroup libc
+ * @{
+ */
 
 #pragma once
 #ifndef STAT_H
@@ -125,10 +125,10 @@ mode_t umask(mode_t);
 int mount(const char * mount_point, const char * fsname, uint32_t mode,
         int parm_len, char * parm);
 __END_DECLS
-#endif /* KERNEL_INTERNAL */
+#endif /* !KERNEL_INTERNAL */
 
 #endif /* STAT_H */
 
 /**
-  * @}
-  */
+ * @}
+ */

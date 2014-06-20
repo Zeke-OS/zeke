@@ -95,9 +95,9 @@ static pthread_t next_thread_id_queue[configSCHED_MAX_THREADS - 1];
 static unsigned max_threads = configSCHED_MAX_THREADS;
 SYSCTL_UINT(_kern_sched, OID_AUTO, max_threads, CTLFLAG_RD,
     &max_threads, 0, "Max no. of threads.");
-static unsigned no_threads;
-SYSCTL_UINT(_kern_sched, OID_AUTO, no_threads, CTLFLAG_RD,
-    &no_threads, 0, "Number of threads.");
+static unsigned nr_threads;
+SYSCTL_UINT(_kern_sched, OID_AUTO, nr_threads, CTLFLAG_RD,
+    &nr_threads, 0, "Number of threads.");
 
 threadInfo_t * current_thread; /*!< Pointer to the currently active
                                          *   thread */
@@ -117,8 +117,6 @@ static void sched_thread_init(pthread_t i,
 static void sched_thread_set_inheritance(threadInfo_t * new_child, threadInfo_t * parent);
 static void _sched_thread_set_exec(pthread_t thread_id, osPriority pri);
 static void sched_thread_remove(pthread_t id);
-static void sched_thread_die(intptr_t retval);
-static int sched_thread_detach(pthread_t id);
 /* End of Static function declarations ***************************************/
 
 /* Functions called from outside of kernel context ***************************/
@@ -186,16 +184,16 @@ static void init_thread_id_queue(void)
 void * idle_task(/*@unused@*/ void * arg)
 {
     while(1) {
-        unsigned tmp_no_threads = 0;
+        unsigned tmp_nr_threads = 0;
         //bcm2835_uart_uputc('I');
         //raspi_led_invert();
 
-        /* Update no_threads */
+        /* Update nr_threads */
         for (int i = 0; i < configSCHED_MAX_THREADS; i++) {
             if (task_table[i].flags & SCHED_IN_USE_FLAG) {
-                tmp_no_threads++;
+                tmp_nr_threads++;
             }
-            no_threads = tmp_no_threads;
+            nr_threads = tmp_nr_threads;
         }
 
         idle_sleep();
@@ -513,10 +511,10 @@ static void sched_thread_remove(pthread_t tt_id)
 #endif
 
     if ((task_table[tt_id].flags & SCHED_IN_USE_FLAG) == 0) {
-        return;
+        return; /* Already freed */
     }
 
-    /* Notify the owner about removal of a thread. */
+    /* Notify the owner process about removal of a thread. */
     if (task_table[tt_id].pid_owner != 0) {
         proc_thread_removed(task_table[tt_id].pid_owner, tt_id);
     }
@@ -552,13 +550,7 @@ static void sched_thread_remove(pthread_t tt_id)
 #endif
 }
 
-/**
- * Terminate current thread.
- * This makes current_thread a zombie that should be either killed by the
- * parent thread or will be killed at least when the parent is killed.
- * @param retval is a return value from the thread.
- */
-static void sched_thread_die(intptr_t retval)
+void sched_thread_die(intptr_t retval)
 {
     current_thread->flags |= SCHED_ZOMBIE_FLAG;
     sched_thread_sleep_current(1);
@@ -566,12 +558,7 @@ static void sched_thread_die(intptr_t retval)
     /* Thread will now block and next thread will be scheduled in. */
 }
 
-/**
- * Mark thread as detached so it wont be turned into zombie on exit.
- * @param id is a thread id.
- * @return Return -EINVAL if invalid thread id was given; Otherwise zero.
- */
-static int sched_thread_detach(pthread_t id)
+int sched_thread_detach(pthread_t id)
 {
     if ((task_table[id].flags & SCHED_IN_USE_FLAG) == 0) {
         return -EINVAL;
@@ -647,28 +634,29 @@ pthread_t sched_threadCreate(struct _ds_pthread_create * thread_def, int priv)
 /* TODO Might be unsafe to call from multiple threads for the same tree! */
 int sched_thread_terminate(pthread_t thread_id)
 {
+    threadInfo_t * thread = &task_table[thread_id];
     threadInfo_t * child;
     threadInfo_t * prev_child;
 
-    if (!SCHED_TEST_TERMINATE_OK(task_table[thread_id].flags)) {
+    if (!SCHED_TEST_TERMINATE_OK(thread->flags)) {
         return -EPERM;
     }
 
     /* Remove all child threads from execution */
-    child = task_table[thread_id].inh.first_child;
+    child = thread->inh.first_child;
     prev_child = NULL;
     if (child != NULL) {
         do {
             if (sched_thread_terminate(child->id) != 0) {
-                child->inh.parent = 0; /* Thread is now parentles, it was
-                                        * possibly a kworker that couldn't be
+                child->inh.parent = 0; /* Child is now orphan, it was
+                                        * probably a kworker that couldn't be
                                         * killed. */
             }
 
             /* Fix child list */
             if (child->flags &&
-                    (((threadInfo_t *)(task_table[thread_id].inh.first_child))->flags == 0)) {
-                task_table[thread_id].inh.first_child = child;
+                    (((threadInfo_t *)(thread->inh.first_child))->flags == 0)) {
+                thread->inh.first_child = child;
                 prev_child = child;
             } else if (child->flags && prev_child) {
                 prev_child->inh.next_child = child;
@@ -683,18 +671,18 @@ int sched_thread_terminate(pthread_t thread_id)
      * sched_thread_remove() will remove this thread immediately but usually
      * it's not, then it will release some resourses but left the thread
      * struct mostly intact. */
-    task_table[thread_id].flags |= SCHED_ZOMBIE_FLAG;
-    task_table[thread_id].flags &= ~SCHED_EXEC_FLAG;
+    thread->flags |= SCHED_ZOMBIE_FLAG;
+    thread->flags &= ~SCHED_EXEC_FLAG;
 
     /* Remove thread completely if it is a detached zombie, its parent is a
      * detached zombie thread or the thread is parentles for any reason.
      * Otherwise we left the thread struct intact for now.
      */
-    if (SCHED_TEST_DETACHED_ZOMBIE(task_table[thread_id].flags) ||
-            (task_table[thread_id].inh.parent == 0)             ||
-            ((task_table[thread_id].inh.parent != 0)            &&
-            SCHED_TEST_DETACHED_ZOMBIE(((threadInfo_t *)(task_table[thread_id].inh.parent))->flags))) {
-        sched_thread_remove(task_table[thread_id].id);
+    if (SCHED_TEST_DETACHED_ZOMBIE(thread->flags) ||
+            (thread->inh.parent == 0)             ||
+            ((thread->inh.parent != 0)            &&
+            SCHED_TEST_DETACHED_ZOMBIE(((threadInfo_t *)(thread->inh.parent))->flags))) {
+        sched_thread_remove(thread_id);
     }
 
     return 0;

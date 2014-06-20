@@ -31,8 +31,8 @@
  */
 
 /** @addtogroup libc
-  * @{
-  */
+ * @{
+ */
 
 #pragma once
 #ifndef DIRENT_H
@@ -68,5 +68,5 @@ long int telldir(DIR *);*/
 #endif /* DIRENT_H */
 
 /**
-  * @}
-  */
+ * @}
+ */

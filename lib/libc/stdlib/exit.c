@@ -30,21 +30,16 @@
  *******************************************************************************
 */
 
-/** @addtogroup Library_Functions
-  * @{
-  */
-
 #include <syscall.h>
+#include <errno.h>
 #include <stdlib.h>
-
-/** @addtogroup stdlib
-  * @{
-  */
 
 void exit(int status)
 {
     /* TODO Execute atexit functions and terminate the process */
-    while(1);
+
+    errno = status;
+    syscall(SYSCALL_PROC_EXIT, 0);
 }
 
 void abort(void)
@@ -52,11 +47,3 @@ void abort(void)
     /* TODO */
     while(1);
 }
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */

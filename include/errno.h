@@ -154,6 +154,19 @@ inline void set_errno(int new_value)
 {
     copyout(&new_value, current_thread->errno_uaddr, sizeof(errno_t));
 }
+
+/**
+ * Get errno of the current thread.
+ * @return Returns the errno of the current thread.
+ */
+inline errno_t get_errno(void)
+{
+    errno_t value;
+
+    copyin(current_thread->errno_uaddr, &value, sizeof(errno_t));
+
+    return value;
+}
 #endif /* KERNEL_INTERNAL */
 
 #endif /* ERRNO */

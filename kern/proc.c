@@ -73,6 +73,8 @@ SYSCTL_INT(_kern, OID_AUTO, nprocs, CTLFLAG_RD,
     &nprocs, 0, "Current number of processes");
 
 static void init_kernel_proc(void);
+static void procarr_remove(pid_t pid);
+static void proc_remove(pid_t pid);
 pid_t proc_update(void); /* Used in HAL, so not static but not in headeaders. */
 
 void proc_init(void)
@@ -197,10 +199,28 @@ void procarr_realloc(void)
 void procarr_insert(proc_info_t * new_proc)
 {
     PROC_LOCK();
-    /* TODO Bound check */
+    /* TODO Bounds check */
     (*_procarr)[new_proc->pid] = new_proc;
     nprocs++;
     PROC_UNLOCK();
+}
+
+static void procarr_remove(pid_t pid)
+{
+    PROC_LOCK();
+    /* TODO Bounds check */
+    (*_procarr)[pid] = 0;
+    nprocs--;
+    PROC_UNLOCK();
+}
+
+/**
+ * Remove zombie process from the system.
+ */
+static void proc_remove(pid_t pid)
+{
+    /* TODO free everything */
+    procarr_remove(pid);
 }
 
 #if 0
@@ -215,11 +235,6 @@ pid_t process_init(void * image, size_t size)
     return -1;
 }
 #endif
-
-int proc_kill(void)
-{
-    return -1;
-}
 
 int proc_replace(pid_t pid, void * image, size_t size)
 {
@@ -251,12 +266,22 @@ proc_info_t * proc_get_struct(pid_t pid)
     return (*_procarr)[pid];
 }
 
+/* Called when thread is completely removed from the scheduler */
 void proc_thread_removed(pid_t pid, pthread_t thread_id)
 {
+    proc_info_t * p;
+
     /* TODO
      * + Free stack area
      * + Remove thread pointer
      */
+
+    if (!(p = proc_get_struct(pid)))
+        return;
+
+    if (p->main_thread && (p->main_thread->id == thread_id)) {
+        p->state = PROC_STATE_ZOMBIE;
+    }
 }
 
 mmu_pagetable_t * proc_enter_kernel(void)
@@ -361,6 +386,36 @@ pid_t proc_update(void)
     return current_process_id;
 }
 
+static uintptr_t procsys_wait(void * p)
+{
+    pid_t pid_child;
+
+    if (!curproc->inh.first_child) {
+        /* The calling process has no existing unwaited-for child
+         * processes. */
+        set_errno(ECHILD);
+        return -1;
+    }
+    pid_child = curproc->inh.first_child->pid;
+
+    /* curproc->state = PROC_STATE_WAITING needs some other flag? */
+    while (curproc->inh.first_child->state != PROC_STATE_ZOMBIE) {
+        idle_sleep();
+        /* TODO In some cases we have to return early without waiting.
+         * eg. signal received */
+    }
+
+    if (!useracc(p, sizeof(pid_t), VM_PROT_WRITE)) {
+        /* TODO Signal */
+        return -1;
+    }
+
+    copyout(&curproc->inh.first_child->exit_code, p, sizeof(int));
+
+    proc_remove(pid_child);
+    return (uintptr_t)pid_child;
+}
+
 uintptr_t proc_syscall(uint32_t type, void * p)
 {
     switch(type) {
@@ -378,12 +433,16 @@ uintptr_t proc_syscall(uint32_t type, void * p)
     }
 
     case SYSCALL_PROC_WAIT:
-        set_errno(ENOSYS);
-        return -3;
+        return procsys_wait(p);
 
     case SYSCALL_PROC_EXIT:
-        set_errno(ENOSYS);
-        return -4;
+        curproc->exit_code = 1; // get_errno();
+        sched_thread_detach(current_thread->id);
+        sched_thread_die(curproc->exit_code);
+        while (1) {
+            idle_sleep();
+        }
+        return 0; /* Never reached */
 
     case SYSCALL_PROC_GETUID:
         set_errno(ENOSYS);

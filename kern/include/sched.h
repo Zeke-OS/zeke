@@ -216,6 +216,21 @@ void sched_thread_set_exec(pthread_t thread_id);
  */
 void sched_thread_sleep_current(int permanent);
 
+/**
+ * Terminate current thread.
+ * This makes current_thread a zombie that should be either killed by the
+ * parent thread or will be killed at least when the parent is killed.
+ * @param retval is a return value from the thread.
+ */
+void sched_thread_die(intptr_t retval);
+
+/**
+ * Mark thread as detached so it wont be turned into zombie on exit.
+ * @param id is a thread id.
+ * @return Return -EINVAL if invalid thread id was given; Otherwise zero.
+ */
+int sched_thread_detach(pthread_t id);
+
 /* TODO Following shouldn't be extern'd and there should be better way to export
  * these for thread.h */
 void sched_context_switcher(void);

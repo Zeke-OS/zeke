@@ -77,7 +77,7 @@
 /**
  * Process Control Block.
  */
-typedef struct {
+typedef struct proc_info {
     pid_t pid;
     char name[PROC_NAME_LEN]; /*!< process name */
     int state;                  /*!< 0 - running, >0 stopped */
@@ -121,9 +121,9 @@ typedef struct {
      *   child node of the common parent thread
      */
     struct inh {
-        void * parent;      /*!< Parent thread. */
-        void * first_child; /*!< Link to the first child thread. */
-        void * next_child;  /*!< Next child of the common parent. */
+        struct proc_info * parent;      /*!< Parent thread. */
+        struct proc_info * first_child; /*!< Link to the first child. */
+        struct proc_info * next_child;  /*!< Next child of the common parent. */
     } inh;
 
     threadInfo_t * main_thread; /*!< Main thread of this process. */
@@ -210,8 +210,6 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
  * @note This function is called by interrupt handler(s).
  */
 pid_t proc_update(void);
-
-int proc_kill(void);
 
 /**
  * Replace the image of a given process with a new one.
