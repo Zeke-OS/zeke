@@ -438,7 +438,7 @@ uintptr_t proc_syscall(uint32_t type, void * p)
         return procsys_wait(p);
 
     case SYSCALL_PROC_EXIT:
-        curproc->exit_code = 1; // get_errno();
+        curproc->exit_code = get_errno();
         sched_thread_detach(current_thread->id);
         sched_thread_die(curproc->exit_code);
         while (1) {
