@@ -98,7 +98,7 @@ pid_t proc_fork(pid_t pid)
     new_proc->mm.mpt.dom = MMU_DOM_USER;
     if (ptmapper_alloc(&(new_proc->mm.mpt))) {
         retval = -ENOMEM;
-        goto free_new_proc;
+        goto free_res;
     }
     new_proc->mm.curr_mpt = &new_proc->mm.mpt;
 
@@ -107,20 +107,19 @@ pid_t proc_fork(pid_t pid)
         kmalloc(old_proc->mm.nr_regions * sizeof(vm_region_t *));
     if (!new_proc->mm.regions) {
         retval = -ENOMEM;
-        goto free_pptable_arr;
+        goto free_res;
     }
-    /* new_proc->mm.nr_regions = old_proc->mm.nr_regions; Already done */
 
     /* Clone master page table. */
     if (mmu_ptcpy(&(new_proc->mm.mpt), &(old_proc->mm.mpt))) {
         retval = -EAGAIN; // Actually more like -EINVAL
-        goto free_regions_arr;
+        goto free_res;
     }
 
     /* Clone L2 page tables. */
     if (clone_L2_pt(new_proc, old_proc) < 0) {
         retval = -ENOMEM;
-        goto free_vpt_rb;
+        goto free_res;
     }
 
     /* Variables for cloning and referencing regions. */
@@ -132,7 +131,7 @@ pid_t proc_fork(pid_t pid)
     if (!vm_reg_tmp) {
         KERROR(KERROR_ERR, "Old proc code region can't be null");
         retval = -EINVAL; /* Not allowed but this shouldn't happen */
-        goto free_vpt_rb;
+        goto free_res;
     }
     if (vm_reg_tmp->vm_ops)
         vm_reg_tmp->vm_ops->rref(vm_reg_tmp);
@@ -144,7 +143,7 @@ pid_t proc_fork(pid_t pid)
         ksprintf(buf, sizeof(buf), "Cloning stack region failed.");
         KERROR(KERROR_DEBUG, buf);
 #endif
-        goto free_regions;
+        goto free_res;
     }
 
     /* Copy other region pointers.
@@ -186,7 +185,7 @@ pid_t proc_fork(pid_t pid)
                 (*new_proc->mm.regions)[i]->mmu.vaddr);
         if (vpt == 0) {
             retval = -ENOMEM;
-            goto free_regions;
+            goto free_res;
         }
 
         /* Attach region with page table owned by the new process. */
@@ -197,7 +196,7 @@ pid_t proc_fork(pid_t pid)
     new_proc->files = kmalloc(SIZEOF_FILES(old_proc->files->count));
     if (!new_proc->files) {
         retval = -ENOMEM;
-        goto free_regions;
+        goto free_res;
     }
     new_proc->files->count = old_proc->files->count;
     for (int i = 0; i < old_proc->files->count; i++) {
@@ -224,7 +223,7 @@ pid_t proc_fork(pid_t pid)
         pthread_t new_tid = sched_thread_fork();
         if (new_tid < 0) {
             retval = -EAGAIN; /* TODO ?? */
-            goto free_files;
+            goto free_res;
         } else if (new_tid > 0) { /* thread of the forking process returning */
             new_proc->main_thread = sched_get_pThreadInfo(new_tid);
             new_proc->main_thread->pid_owner = new_proc->pid;
@@ -254,22 +253,8 @@ pid_t proc_fork(pid_t pid)
 #endif
     goto out; /* Fork created. */
 
-free_files:
-    /* TODO */
-free_regions:
-    for (int i = 0; i < new_proc->mm.nr_regions; i++) {
-        if ((*new_proc->mm.regions)[i]->vm_ops->rfree)
-            (*new_proc->mm.regions)[i]->vm_ops->rfree((*new_proc->mm.regions)[i]);
-    }
-    new_proc->mm.nr_regions = 0;
-free_vpt_rb:
-    ptlist_free(&(new_proc->mm.ptlist_head));
-free_regions_arr:
-    kfree(new_proc->mm.regions);
-free_pptable_arr:
-    ptmapper_free(&(new_proc->mm.mpt));
-free_new_proc:
-    kfree(new_proc);
+free_res:
+    _proc_free(new_proc);
 out:
     return retval;
 }

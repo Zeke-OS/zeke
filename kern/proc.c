@@ -219,8 +219,49 @@ static void procarr_remove(pid_t pid)
  */
 static void proc_remove(pid_t pid)
 {
+    proc_info_t * p;
+
     /* TODO free everything */
+    if (!(p = proc_get_struct(pid)))
+        return;
+
+    _proc_free(p);
     procarr_remove(pid);
+}
+
+void _proc_free(proc_info_t * p)
+{
+    if (p)
+        return;
+
+    /* Free files */
+    if (p->files) {
+        for (int i = 0; i < p->files->count; i++) {
+            if (p->files->fd[i]) /* TODO Lock? */
+                p->files->fd[i]->refcount--;
+        }
+        kfree(p->files);
+    }
+
+    /* Free regions */
+    if (p->mm.regions) {
+        for (int i = 0; i < p->mm.nr_regions; i++) {
+            if ((*p->mm.regions)[i]->vm_ops->rfree)
+                    (*p->mm.regions)[i]->vm_ops->rfree((*p->mm.regions)[i]);
+        }
+        p->mm.nr_regions = 0;
+
+        /* Free page table list */
+        ptlist_free(&(p->mm.ptlist_head));
+
+        /* Free regions array */
+        kfree(p->mm.regions);
+    }
+
+    if (p->mm.mpt.pt_addr)
+        ptmapper_free(&(p->mm.mpt));
+
+    kfree(p);
 }
 
 #if 0
@@ -271,15 +312,11 @@ void proc_thread_removed(pid_t pid, pthread_t thread_id)
 {
     proc_info_t * p;
 
-    /* TODO
-     * + Free stack area
-     * + Remove thread pointer
-     */
-
     if (!(p = proc_get_struct(pid)))
         return;
 
     if (p->main_thread && (p->main_thread->id == thread_id)) {
+        p->main_thread = 0;
         p->state = PROC_STATE_ZOMBIE;
     }
 }

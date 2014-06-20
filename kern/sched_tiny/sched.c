@@ -531,6 +531,8 @@ static void sched_thread_remove(pthread_t tt_id)
         timers_release(task_table[tt_id].wait_tim);
     }
 
+    thread_free_kstack(&task_table[tt_id]);
+
     /* Increment the thread priority to the highest possible value so context
      * switch will garbage collect it from the priority queue on the next run.
      */

@@ -221,6 +221,8 @@ pid_t proc_update(void);
  */
 int proc_replace(pid_t pid, void * image, size_t size);
 
+void _proc_free(proc_info_t * p);
+
 /**
  * Get pointer to a internal proc_info structure.
  */

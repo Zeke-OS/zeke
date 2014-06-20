@@ -46,6 +46,7 @@ void sched_handler(void);
  * @param th is a pointer to the thread.
  */
 void thread_init_kstack(threadInfo_t * th);
+void thread_free_kstack(threadInfo_t * th);
 
 void sched_thread_sleep(long millisec);
 

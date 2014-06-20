@@ -1038,7 +1038,7 @@ int userland_sysctl(threadInfo_t * td, int * name, unsigned int namelen, void * 
     int error = 0; //, memlocked;
     struct sysctl_req req;
 
-    memset(&req, 0, sizeof req);
+    memset(&req, 0, sizeof(req));
 
     req.td = td;
     req.flags = flags;

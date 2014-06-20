@@ -130,6 +130,11 @@ void thread_init_kstack(threadInfo_t * th)
     th->kstack_region->mmu.pt = &mmu_pagetable_system;
 }
 
+void thread_free_kstack(threadInfo_t * th)
+{
+    vrfree(th->kstack_region);
+}
+
 pthread_t get_current_tid(void)
 {
     if (current_thread)

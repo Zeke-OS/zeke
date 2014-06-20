@@ -292,9 +292,10 @@ uintptr_t fs_syscall(uint32_t type, void * p)
         return -4;
 
     case SYSCALL_FS_WRITE:
-        {
+    {
         struct _fs_write_args fswa;
         char * buf;
+        uintptr_t retval;
 
         /* Args */
         if (!useracc(p, sizeof(struct _fs_write_args), VM_PROT_READ)) {
@@ -313,9 +314,11 @@ uintptr_t fs_syscall(uint32_t type, void * p)
         buf = kmalloc(fswa.nbyte);
         copyin(fswa.buf, buf, fswa.nbyte);
 
-        return (uintptr_t)fs_write_cproc(fswa.fildes, buf, fswa.nbyte,
+        retval = (uintptr_t)fs_write_cproc(fswa.fildes, buf, fswa.nbyte,
                 &(fswa.offset));
-        }
+        kfree(buf);
+        return retval;
+    }
 
     case SYSCALL_FS_LSEEK:
         set_errno(ENOSYS);
