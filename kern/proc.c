@@ -426,10 +426,12 @@ uintptr_t proc_syscall(uint32_t type, void * p)
     case SYSCALL_PROC_FORK:
     {
         pid_t pid = proc_fork(current_process_id);
-        if (pid < 0)
+        if (pid < 0) {
+            set_errno(-pid);
             return -1;
-        else
+        } else {
             return pid;
+        }
     }
 
     case SYSCALL_PROC_WAIT:

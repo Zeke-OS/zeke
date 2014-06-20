@@ -32,7 +32,8 @@
 
 #include <stdlib.h>
 #include <sys/types.h>
-#include <kstring.h>
+#include <sys/wait.h>
+#include <kstring.h> /* TODO Remove */
 #include <unistd.h>
 #include <libkern.h>
 #include <errno.h>
