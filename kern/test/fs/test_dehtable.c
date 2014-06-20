@@ -31,7 +31,7 @@ static char * test_link(void)
 
     ku_test_description("Test that dh_link works correctly.");
 
-    vnode.vnode_num = 10;
+    vnode.vn_num = 10;
     dh_link(&table, &vnode, str, sizeof(str) - 1);
 
     for (i = 0; i < DEHTABLE_SIZE; i++) {
@@ -39,7 +39,7 @@ static char * test_link(void)
     }
     ku_assert("Created chain found.", dea != 0);
 
-    ku_assert_equal("Entry has a correct vnode number.", (int)dea[0].dh_ino, (int)vnode.vnode_num);
+    ku_assert_equal("Entry has a correct vnode number.", (int)dea[0].dh_ino, (int)vnode.vn_num);
 
 #undef str
     return 0;
@@ -58,8 +58,8 @@ static char * test_link_chain(void)
 
     ku_test_description("Test that dh_link chaining works correctly.");
 
-    vnode1.vnode_num = 10;
-    vnode2.vnode_num = 11;
+    vnode1.vn_num = 10;
+    vnode2.vn_num = 11;
 
     res = dh_link(&table, &vnode1, str1, sizeof(str1) - 1);
     ku_assert_equal("Insert succeeded.", res, 0);
@@ -71,9 +71,9 @@ static char * test_link_chain(void)
     }
     ku_assert("Created chain found.", dea != 0);
 
-    ku_assert_equal("First entry has a correct vnode number.", (int)get_dirent(dea, 0)->dh_ino, (int)vnode1.vnode_num);
+    ku_assert_equal("First entry has a correct vnode number.", (int)get_dirent(dea, 0)->dh_ino, (int)vnode1.vn_num);
     offset = get_dirent(dea, 0)->dh_size;
-    ku_assert_equal("Second entry has a correct vnode number.", (int)get_dirent(dea, offset)->dh_ino, (int)vnode2.vnode_num);
+    ku_assert_equal("Second entry has a correct vnode number.", (int)get_dirent(dea, offset)->dh_ino, (int)vnode2.vn_num);
 
 #undef str1
 #undef str2
@@ -91,8 +91,8 @@ static char * test_lookup(void)
 
     ku_test_description("Test that dh_lookup can locate the correct link.");
 
-    vnode1.vnode_num = 10;
-    vnode2.vnode_num = 11;
+    vnode1.vn_num = 10;
+    vnode2.vn_num = 11;
 
     res = dh_link(&table, &vnode1, str1, sizeof(str1) - 1);
     ku_assert_equal("Insert succeeded.", res, 0);
@@ -101,7 +101,7 @@ static char * test_lookup(void)
 
     ku_assert_equal("No error",
             dh_lookup(&table, str2, sizeof(str2) - 1, &nnum), 0);
-    ku_assert_equal("vnode num equal.", (int)nnum, (int)vnode2.vnode_num);
+    ku_assert_equal("vnode num equal.", (int)nnum, (int)vnode2.vn_num);
 
 #undef str1
 #undef str2
@@ -123,10 +123,10 @@ static char * test_iterator(void)
     ku_test_description("Test that dirent hash table iterator works correctly.");
 
     /* Some vnodes */
-    vnode1.vnode_num = 0;
-    vnode2.vnode_num = 1;
-    vnode3.vnode_num = 2;
-    vnode4.vnode_num = 3;
+    vnode1.vn_num = 0;
+    vnode2.vn_num = 1;
+    vnode3.vn_num = 2;
+    vnode4.vn_num = 3;
 
     /* Insert entries */
     ku_assert_equal("Insert OK.",

@@ -124,8 +124,8 @@ static vnode_t * create_tst(const fs_superblock_t * sb, ino_t * num)
         return 0;
     }
 
-    inode->in_vnode.vnode_num = *num;
-    inode->in_vnode.refcount = 0;
+    inode->in_vnode.vn_num = *num;
+    inode->in_vnode.vn_refcount = 0;
     inode->in_vnode.sb = &sb_tst;
     inode->data = 16;
 

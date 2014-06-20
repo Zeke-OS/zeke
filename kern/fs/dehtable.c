@@ -125,7 +125,7 @@ int dh_link(dh_table_t * dir, vnode_t * vnode, const char * name, size_t name_le
     /* Create a link */
     get_dirent(dea, chinfo.i_last)->dh_link = CH_LINK;
     /* New node */
-    get_dirent(dea, chinfo.i_size)->dh_ino = vnode->vnode_num;
+    get_dirent(dea, chinfo.i_size)->dh_ino = vnode->vn_num;
     get_dirent(dea, chinfo.i_size)->dh_size = entry_size;
     get_dirent(dea, chinfo.i_size)->dh_link = CH_NO_LINK;
     strncpy(get_dirent(dea, chinfo.i_size)->dh_name, name, name_len + 1);

@@ -34,6 +34,8 @@
   * @{
   */
 
+#include <autoconf.h>
+
 #if configKUNIT == 0
 #error kunit is required for tests
 #endif

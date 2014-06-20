@@ -67,14 +67,14 @@ configUSRINIT_SSIZE = 8192# Stack size for usrinit thread
 configUSRINIT_PRI = osPriorityNormal# Priority of usrinit thread
 
 # Virtual file system and file systems
-configRAMFS = 0# Compile ramfs with Zeke base
+configRAMFS = 1# Compile ramfs with Zeke base
 
 # In-Kernel Unit Tests
-configKUNIT = 0# Compile KUnit and tests
-KU_REPORT_ORIENTED = 0#
+configKUNIT = 1# Compile KUnit and tests
+configKUNIT_REPORT_ORIENTED = 0#
 configKUNIT_GENERIC = 0# Tests for generic data structures
 configKUNIT_KSTRING = 0# Tests for kstring library
-configKUNIT_FS = 0# Tests for vfs and filesystems
+configKUNIT_FS = 1# Tests for vfs and filesystems
 
 # User space
 # TODO This should be possibly somewhere else

@@ -285,7 +285,7 @@ int ramfs_get_vnode(fs_superblock_t * sb, ino_t * vnode_num, vnode_t ** vnode)
     }
 
     *vnode = &(ramfs_sb->ramfs_iarr[*vnode_num]->in_vnode);
-    (*vnode)->refcount++;
+    (*vnode)->vn_refcount++;
 
 out:
     return retval;
@@ -305,8 +305,8 @@ int ramfs_delete_vnode(vnode_t * vnode)
 
     inode = get_inode_of_vnode(vnode);
 
-    inode->in_vnode.refcount--;
-    if ((inode->in_nlink == 0) && (inode->in_vnode.refcount <= 0)) {
+    inode->in_vnode.vn_refcount--;
+    if ((inode->in_nlink == 0) && (inode->in_vnode.vn_refcount <= 0)) {
         /* TODO Clear mutexes, queues etc. */
         destroy_inode_data(inode);
         vn_tmp = &(inode->in_vnode);
@@ -338,7 +338,7 @@ size_t ramfs_write(vnode_t * file, const off_t * offset,
 
     /* TODO Support for at least S_IFBLK, S_IFCHR, S_IFIFO, S_IFSOCK,
      * possibly a wrapper or callback? */
-    switch (file->mode & S_IFMT) {
+    switch (file->vn_mode & S_IFMT) {
         case S_IFREG: /* File is a regular file. */
             bytes_wr = ramfs_wr_regular(file, offset, buf, count);
             break;
@@ -362,7 +362,7 @@ size_t ramfs_read(vnode_t * file, const off_t * offset, void * buf, size_t count
     size_t bytes_rd = 0;
 
     /* TODO Support some other file types? */
-    switch (file->mode & S_IFMT) {
+    switch (file->vn_mode & S_IFMT) {
         case S_IFREG: /* File is a regular file. */
             bytes_rd = ramfs_rd_regular(file, offset, buf, count);
             break;
@@ -391,7 +391,7 @@ int ramfs_create(vnode_t * dir, const char * name, size_t name_len, vnode_t ** r
     ramfs_inode_t * inode;
 
     /* TODO is this check needed here? */
-    if (!S_ISDIR(dir->mode)) {
+    if (!S_ISDIR(dir->vn_mode)) {
         retval = -1; /* No a directory entry. */
         goto out;
     }
@@ -420,8 +420,8 @@ int ramfs_create(vnode_t * dir, const char * name, size_t name_len, vnode_t ** r
 
     /* TODO update times */
     /* TODO update uid & gid */
-    vnode->len = 0;
-    vnode->mode = S_IFREG;
+    vnode->vn_len = 0;
+    vnode->vn_mode = S_IFREG;
     //vnode->mutex = /* TODO other flags etc. */
 
     /* Create a directory entry. */
@@ -432,7 +432,7 @@ int ramfs_create(vnode_t * dir, const char * name, size_t name_len, vnode_t ** r
     }
 
     *result = vnode;
-    (*result)->refcount++;
+    (*result)->vn_refcount++;
 out:
     return retval;
 }
@@ -453,7 +453,7 @@ int ramfs_lookup(vnode_t * dir, const char * name, size_t name_len,
     int retval = 0;
 
     /* TODO is this check needed here? */
-    if (!S_ISDIR(dir->mode)) {
+    if (!S_ISDIR(dir->vn_mode)) {
         retval = -1; /* No a directory entry. */
         goto out;
     }
@@ -469,7 +469,7 @@ int ramfs_lookup(vnode_t * dir, const char * name, size_t name_len,
                       * Broken link? */
     }
 
-    (*result)->refcount++;
+    (*result)->vn_refcount++;
 out:
     return retval;
 }
@@ -491,7 +491,7 @@ int ramfs_link(vnode_t * dir, vnode_t * vnode, const char * name, size_t name_le
     int retval = 0;
 
     /* TODO is this check needed here? */
-    if (!S_ISDIR(dir->mode)) {
+    if (!S_ISDIR(dir->vn_mode)) {
         retval = -1; /* No a directory entry. */
         goto out;
     }
@@ -525,7 +525,7 @@ int ramfs_mkdir(vnode_t * dir,  const char * name, size_t name_len)
     int retval = 0;
 
     /* TODO is this check needed here? */
-    if (!S_ISDIR(dir->mode)) {
+    if (!S_ISDIR(dir->vn_mode)) {
         retval = -1; /* No a directory entry. */
         goto out;
     }
@@ -544,7 +544,7 @@ int ramfs_mkdir(vnode_t * dir,  const char * name, size_t name_len)
         retval = -2;
         goto delete_inode; /* Cant allocate dh_table */
     }
-    vnode_new->mode = S_IFDIR; /* This is a directory. */
+    vnode_new->vn_mode = S_IFDIR; /* This is a directory. */
     /* TODO set times, uid & gid */
 
     /* Insert inode to the inode lookup table of its superblock. */
@@ -573,7 +573,7 @@ int ramfs_readdir(vnode_t * dir, struct dirent * d)
     int retval = 0;
 
     /* TODO is this check needed here? */
-    if (!S_ISDIR(dir->mode)) {
+    if (!S_ISDIR(dir->vn_mode)) {
         retval = -1; /* No a directory entry. */
         goto out;
     }
@@ -651,7 +651,7 @@ static vnode_t * create_root(ramfs_sb_t * ramfs_sb)
     inode = get_inode_of_vnode(retval);
 
     inode->in.dir = kcalloc(1, sizeof(dh_table_t)); /* Create a dh_table */
-    retval->mode = S_IFDIR; /* Root is a directory. */
+    retval->vn_mode = S_IFDIR; /* Root is a directory. */
     /* TODO Any other settings? */
 
     /* Insert inode to the inode lookup table of its superblock. */
@@ -775,8 +775,8 @@ vnode_t * ramfs_raw_create_inode(const fs_superblock_t * sb, ino_t * num)
 static void init_inode(ramfs_inode_t * inode, ramfs_sb_t * ramfs_sb, ino_t * num)
 {
     memset((void *)inode, 0, sizeof(ramfs_inode_t));
-    inode->in_vnode.vnode_num = *num;
-    inode->in_vnode.refcount = 0;
+    inode->in_vnode.vn_num = *num;
+    inode->in_vnode.vn_refcount = 0;
     inode->in_vnode.sb = &(ramfs_sb->sbn.sbl_sb);
     inode->in_vnode.vnode_ops = (vnode_ops_t *)(&ramfs_vnode_ops);
 }
@@ -801,7 +801,7 @@ static void destroy_inode(ramfs_inode_t * inode)
 static void destroy_inode_data(ramfs_inode_t * inode)
 {
     /* TODO Other types */
-    switch (inode->in_vnode.mode & S_IFMT) {
+    switch (inode->in_vnode.vn_mode & S_IFMT) {
         case S_IFREG: /* File is a regular file. */
             /* Free all data blocks. */
             ramfs_set_filesize(inode, 0);
@@ -829,7 +829,7 @@ static int insert_inode(ramfs_inode_t * inode)
 {
     ramfs_sb_t * ramfs_sb;
     ramfs_inode_t ** tmp_iarr;
-    const ino_t vnode_num = inode->in_vnode.vnode_num;
+    const ino_t vnode_num = inode->in_vnode.vn_num;
     int retval = 0;
 
     ramfs_sb = get_rfsb_of_sb(inode->in_vnode.sb);
@@ -899,7 +899,7 @@ static size_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
         bytes_wr += curr_wr_len;
     } while (bytes_wr < count);
 
-    file->len = *offset + bytes_wr;
+    file->vn_len = *offset + bytes_wr;
     return bytes_wr;
 }
 
@@ -925,7 +925,7 @@ static size_t ramfs_rd_regular(vnode_t * file, const off_t * restrict offset,
         size_t remain = count - bytes_rd;
         size_t curr_rd_len;
 
-        if ((*offset + bytes_rd) >= file->len) {
+        if ((*offset + bytes_rd) >= file->vn_len) {
             break; /* EOF */
         }
 

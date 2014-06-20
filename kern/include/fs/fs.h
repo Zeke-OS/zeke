@@ -42,12 +42,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <time.h>
-#if !defined(PU_TEST_BUILD)
 #include <sys/stat.h>
-#else
-#define STAT_H
-#include "../../include/sys/stat.h"
-#endif
 #include <dirent.h>
 
 #define FS_FLAG_INIT        0x01 /*!< File system initialized. */
@@ -86,11 +81,12 @@
 /* End of macros **************************************************************/
 
 typedef struct vnode {
-    ino_t vnode_num;    /*!< vnode number. */
-    int refcount;
-    off_t len;          /*!< Length of file. */
-    size_t mutex;
-    mode_t mode;        /*!< File type part of st_mode sys/stat.h */
+    ino_t vn_num;       /*!< vnode number. */
+    int vn_refcount;
+    off_t vn_len;       /*!< Length of file. */
+    size_t vn_mutex;
+    mode_t vn_mode;     /*!< File type part of st_mode sys/stat.h */
+    dev_t vn_devid;     /*!< Dev identifier in a case of cdev or bdev. */
     struct fs_superblock * sb; /*!< Pointer to the super block of this vnode. */
     struct vnode_ops * vnode_ops;
     /* TODO wait queue here */

@@ -50,7 +50,7 @@ int ku_tests_count;
  */
 void ku_mod_description(char * str)
 {
-#if KU_REPORT_ORIENTED == 1
+#if configKU_REPORT_ORIENTED == 1
     printf("Test module: %s\n", str);
 #endif
 }
@@ -61,7 +61,7 @@ void ku_mod_description(char * str)
  */
 void ku_test_description(char * str)
 {
-#if KU_REPORT_ORIENTED == 1
+#if configKU_REPORT_ORIENTED == 1
     printf("\t%s\n", str);
 #endif
 }

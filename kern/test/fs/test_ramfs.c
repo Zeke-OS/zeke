@@ -240,7 +240,7 @@ static char * test_mkdir(void)
     sb = ramfs_fs.mount(KM_STRING(MOUNT_POINT), MODE_FLAGS, 0, "");
     root = sb->root;
     ku_assert("Root exist", root != 0);
-    ku_assert_equal("Type is dir", S_ISDIR(root->mode), 1);
+    ku_assert_equal("Type is dir", S_ISDIR(root->vn_mode), 1);
 
     /* Create dir a */
     ku_assert_equal("Dir created",
@@ -248,7 +248,7 @@ static char * test_mkdir(void)
     ku_assert_equal("Lookup ok",
             root->vnode_ops->lookup(root, DIR_1, sizeof(DIR_1) - 1, &result), 0);
     ku_assert("Found new dir", result != 0);
-    ku_assert_equal("Type is dir", S_ISDIR(result->mode), 1);
+    ku_assert_equal("Type is dir", S_ISDIR(result->vn_mode), 1);
 
     /* Create dir b */
     ku_assert_equal("Dir created",
@@ -256,7 +256,7 @@ static char * test_mkdir(void)
     ku_assert_equal("Lookup ok",
             result->vnode_ops->lookup(result, DIR_2, sizeof(DIR_2) - 1, &result1), 0);
     ku_assert("Found new dir", result1 != 0);
-    ku_assert_equal("Type is dir", S_ISDIR(result1->mode), 1);
+    ku_assert_equal("Type is dir", S_ISDIR(result1->vn_mode), 1);
 
     /* Create dir c */
     ku_assert_equal("Dir created",
@@ -264,7 +264,7 @@ static char * test_mkdir(void)
     ku_assert_equal("Lookup ok",
             result->vnode_ops->lookup(result, DIR_3, sizeof(DIR_3) - 1, &result), 0);
     ku_assert("Found new dir", result != 0);
-    ku_assert_equal("Type is dir", S_ISDIR(result->mode), 1);
+    ku_assert_equal("Type is dir", S_ISDIR(result->vn_mode), 1);
 #undef MOUNT_POINT
 #undef MODE_FLAGS
 #undef DIR_1
@@ -362,7 +362,7 @@ static void walk_dirtree(vnode_t * vnode, int ind)
 #ifdef KU_REPORT_ORIENTED
         iprintf(ind, "|- %s\t", d.d_name);
 #endif
-        if (vnode->vnode_num == d.d_ino) { /* Skip if cycle. */
+        if (vnode->vn_num == d.d_ino) { /* Skip if cycle. */
             kputs("[hard link to .]\n");
             continue;
         }
@@ -370,7 +370,7 @@ static void walk_dirtree(vnode_t * vnode, int ind)
         /* Check if found node was a directory */
         if(!sb->get_vnode(sb, &(d.d_ino), &vnode_child)) {
             //printf("walk, mode: %u, node: %u\n", vnode_child->mode, vnode_child->vnode_num);
-            switch (vnode_child->mode & S_IFMT) {
+            switch (vnode_child->vn_mode & S_IFMT) {
                 case S_IFREG:
                     kputs("[regular file]\n");
                     break;
