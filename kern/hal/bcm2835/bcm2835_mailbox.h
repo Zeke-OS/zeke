@@ -44,6 +44,8 @@
 #define BCM2835_MBCH_LEDS       4   /*!< LEDs interface */
 #define BCM2835_MBCH_BUTTONS    5   /*!< Buttons interface */
 #define BCM2835_MBCH_TOUCH      6   /*!< Touch screen interface */
+#define BCM2835_MBCH_COUNT      7
+#define BCM2835_MBCH_PROP       8
 
 /**
  * Read from BCM2835 mailbox.
