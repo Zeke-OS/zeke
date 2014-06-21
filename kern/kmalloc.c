@@ -89,7 +89,7 @@ typedef struct mblock {
 /**
  * kmalloc base address.
  */
-void * kmalloc_base = 0;
+void * kmalloc_base;
 
 /**
  * Get pointer to a memory block descriptor by memory block pointer.
@@ -196,8 +196,9 @@ static mblock_t * find_mblock(mblock_t ** last, size_t size)
         }
 #endif
         *last = b;
-        if ((b->refcount == 0) && b->size >= size)
+        if ((b->refcount == 0) && b->size >= size) {
             break;
+        }
     } while ((b = b->next) != 0);
 
     return b;
@@ -232,12 +233,14 @@ static void split_mblock(mblock_t * b, size_t s)
  * @param b is the block on imaginary left side.
  * @return Pointer to a descriptor of the merged block.
  */
-static mblock_t * merge(mblock_t * b) {
+static mblock_t * merge(mblock_t * b)
+{
     if (b->next && (b->next->refcount == 0)) {
         /* Don't merge if these blocks are not in contiguous memory space.
          * If they aren't it means that they are from diffent areas of dynmem */
-        if ((void *)((size_t)(b->data) + b->size) != (void *)(b->next))
+        if ((void *)((size_t)(b->data) + b->size) != (void *)(b->next)) {
             goto out;
+        }
 
         /* Mark signature of the next block invalid. */
         b->next->signature = KM_SIGNATURE_INVALID;
@@ -286,9 +289,11 @@ static int valid_addr(void * p)
     if (kmalloc_base) { /* If base is not set it's impossible that we would have
                          * any allocated blocks. */
 #if PRINT_VALID != 0
-        if((retval = ADDR_VALIDATION)) /* Validation. */
+        if ((retval = ADDR_VALIDATION)) { /* Validation. */
             printf("VALID\n");
-        else printf("INVALID %p\n", p);
+        } else {
+            printf("INVALID %p\n", p);
+        }
 #else
         retval = ADDR_VALIDATION; /* Validation. */
 #endif
@@ -363,8 +368,9 @@ void kfree(void * p)
         }
 
         b->refcount--;
-        if (b->refcount > 0)
+        if (b->refcount > 0) {
             return;
+        }
 
         update_stat_down(&(kmalloc_stat.kms_mem_alloc), b->size);
 
@@ -378,10 +384,11 @@ void kfree(void * p)
             merge(b);
         } else {
             /* Free the last block. */
-            if (b->prev)
+            if (b->prev) {
                 b->prev->next = 0;
-            else /* All freed, no more memory allocated by kmalloc. */
+            } else { /* All freed, no more memory allocated by kmalloc. */
                 kmalloc_base = 0;
+            }
 
             /* This should work as b should be pointing to a begining of
              * a region allocated with dynmem.
@@ -405,7 +412,7 @@ void * krealloc(void * p, size_t size)
     void * np; /* Pointer to the data section of the new block. */
     void * retval = 0;
 
-    if(!p) {
+    if (!p) {
         /* realloc is specified to call malloc(s) if p == 0. */
         retval = kmalloc(size);
         goto out;
@@ -484,8 +491,9 @@ static void update_stat_up(size_t * stat_act, size_t amount)
     size_t * stat_max = stat_act + 1;
 
     *stat_act += amount;
-    if (*stat_act > *stat_max)
+    if (*stat_act > *stat_max) {
         *stat_max = *stat_act;
+    }
 }
 
 /**
@@ -510,7 +518,8 @@ static void update_stat_set(size_t * stat_act, size_t value)
     size_t * stat_max = stat_act + sizeof(size_t);
 
     *stat_act = value;
-    if (*stat_act > *stat_max)
+    if (*stat_act > *stat_max) {
         *stat_max = *stat_act;
+    }
 }
 #endif
