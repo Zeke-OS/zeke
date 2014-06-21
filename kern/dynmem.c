@@ -295,7 +295,8 @@ static int update_dynmem_region_struct(void * base)
     char buf[80];
 
     if (!validate_addr(base, 1)) {
-        ksprintf(buf, sizeof(buf), "Invalid dynmem region addr: %x", (uint32_t)base);
+        ksprintf(buf, sizeof(buf), "Invalid dynmem region addr: %x",
+                (uint32_t)base);
         KERROR(KERROR_ERR, buf);
         return -1;
     }
@@ -396,7 +397,7 @@ uint32_t dynmem_acc(void * addr, size_t len)
     }
 
     /* Get size */
-    if(!(size = mmu_sizeof_region(&dynmem_region))) {
+    if (!(size = mmu_sizeof_region(&dynmem_region))) {
 #if configDEBUG >= KERROR_WARN
         char buf[80];
         ksprintf(buf, sizeof(buf), "Possible dynmem corruption at: %x",
@@ -406,8 +407,9 @@ uint32_t dynmem_acc(void * addr, size_t len)
         goto out; /* Error in size calculation. */
     }
     if ((size_t)addr < dynmem_region.paddr
-            || (size_t)addr > (dynmem_region.paddr + size))
+            || (size_t)addr > (dynmem_region.paddr + size)) {
         goto out; /* Not in region range. */
+    }
 
     /* Acc seems to be ok.
      * Calc ap + xn as a return value for further testing.

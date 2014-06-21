@@ -52,7 +52,8 @@
 static pid_t proc_lastpid;  /*!< last allocated pid. */
 
 static proc_info_t * clone_proc_info(proc_info_t * const old_proc);
-static int clone_L2_pt(proc_info_t * const new_proc, proc_info_t * const old_proc);
+static int clone_L2_pt(proc_info_t * const new_proc,
+        proc_info_t * const old_proc);
 static int clone_stack(proc_info_t * new_proc, proc_info_t * old_proc);
 static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc);
 
@@ -283,7 +284,8 @@ static proc_info_t * clone_proc_info(proc_info_t * const old_proc)
  *          Zero idicating that no page tables were copied;
  *          Negative value idicating that copying page tables failed.
  */
-static int clone_L2_pt(proc_info_t * const new_proc, proc_info_t * const old_proc)
+static int clone_L2_pt(proc_info_t * const new_proc,
+        proc_info_t * const old_proc)
 {
     struct vm_pt * old_vpt;
     struct vm_pt * new_vpt;
@@ -316,7 +318,7 @@ static int clone_L2_pt(proc_info_t * const new_proc, proc_info_t * const old_pro
         new_vpt->pt.dom = old_vpt->pt.dom;
 
         /* Allocate the actual page table, this will also set pt_addr. */
-        if(ptmapper_alloc(&(new_vpt->pt))) {
+        if (ptmapper_alloc(&(new_vpt->pt))) {
             retval = -ENOMEM;
             goto out;
         }
@@ -397,7 +399,8 @@ static int clone_stack(proc_info_t * new_proc, proc_info_t * old_proc)
 
 static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc)
 {
-    proc_info_t * last_node, * tmp;
+    proc_info_t * last_node;
+    proc_info_t * tmp;
 
     /* Initial values */
     new_proc->inh.parent = old_proc;
@@ -435,7 +438,10 @@ pid_t proc_get_random_pid(void)
     last_maxproc = act_maxproc;
     newpid = last_maxproc + 1;
 
-    /* The new PID will be "randomly" selected between proc_lastpid and maxproc */
+    /*
+     * The new PID will be "randomly" selected between proc_lastpid and
+     * maxproc
+     */
     do {
         if (newpid > last_maxproc)
             newpid = proc_lastpid + kunirand(last_maxproc - proc_lastpid - 1) + 1;

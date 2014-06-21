@@ -114,7 +114,8 @@ static void init_thread_id_queue(void);
 void * idle_task(void * arg);
 static void sched_thread_init(pthread_t i,
         struct _ds_pthread_create * thread_def, threadInfo_t * parent, int priv);
-static void sched_thread_set_inheritance(threadInfo_t * new_child, threadInfo_t * parent);
+static void sched_thread_set_inheritance(threadInfo_t * new_child,
+        threadInfo_t * parent);
 static void _sched_thread_set_exec(pthread_t thread_id, osPriority pri);
 static void sched_thread_remove(pthread_t id);
 /* End of Static function declarations ***************************************/
@@ -335,7 +336,8 @@ static void sched_thread_init(pthread_t i,
         *(thread_def->thread) = (pthread_t)i;
 
     /* Init core specific stack frame for user space */
-    init_stack_frame(thread_def, &(task_table[i].sframe[SCHED_SFRAME_SYS]), priv);
+    init_stack_frame(thread_def, &(task_table[i].sframe[SCHED_SFRAME_SYS]),
+            priv);
 
     /* Mark this thread index as used.
      * EXEC flag is set later in sched_thread_set_exec */
@@ -374,9 +376,11 @@ static void sched_thread_init(pthread_t i,
  * Set thread inheritance
  * Sets linking from the parent thread to the thread id.
  */
-static void sched_thread_set_inheritance(threadInfo_t * new_child, threadInfo_t * parent)
+static void sched_thread_set_inheritance(threadInfo_t * new_child,
+        threadInfo_t * parent)
 {
-    threadInfo_t * last_node, * tmp;
+    threadInfo_t * last_node;
+    threadInfo_t * tmp;
 
     /* Initial values for all threads */
     new_child->inh.parent = parent;
@@ -495,7 +499,8 @@ void sched_thread_sleep_current(int permanent)
      * on top */
     current_thread->priority = osPriorityError;
 
-    heap_inc_key(&priority_queue, heap_find(&priority_queue, current_thread->id));
+    heap_inc_key(&priority_queue, heap_find(&priority_queue,
+                current_thread->id));
 
     set_interrupt_state(s);
 }

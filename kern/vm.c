@@ -275,34 +275,34 @@ void vm_updateusr_ap(struct vm_region * region)
         region->mmu.ap = MMU_AP_RWRW;
     } else if (usr_rw & VM_PROT_READ) {
         switch (ap) {
-            case MMU_AP_NANA:
-            case MMU_AP_RONA:
-                region->mmu.ap = MMU_AP_RORO;
-                break;
-            case MMU_AP_RWNA:
-                region->mmu.ap = MMU_AP_RWRO;
-                break;
-            case MMU_AP_RWRO:
-                break;
-            case MMU_AP_RWRW:
-                region->mmu.ap = MMU_AP_RWRO;
-                break;
-            case MMU_AP_RORO:
-                break;
+        case MMU_AP_NANA:
+        case MMU_AP_RONA:
+            region->mmu.ap = MMU_AP_RORO;
+            break;
+        case MMU_AP_RWNA:
+            region->mmu.ap = MMU_AP_RWRO;
+            break;
+        case MMU_AP_RWRO:
+            break;
+        case MMU_AP_RWRW:
+            region->mmu.ap = MMU_AP_RWRO;
+            break;
+        case MMU_AP_RORO:
+            break;
         }
     } else {
         switch (ap) {
-            case MMU_AP_NANA:
-            case MMU_AP_RONA:
-            case MMU_AP_RWNA:
-                break;
-            case MMU_AP_RWRO:
-            case MMU_AP_RWRW:
-                region->mmu.ap = MMU_AP_RWNA;
-                break;
-            case MMU_AP_RORO:
-                region->mmu.ap = MMU_AP_RONA;
-                break;
+        case MMU_AP_NANA:
+        case MMU_AP_RONA:
+        case MMU_AP_RWNA:
+            break;
+        case MMU_AP_RWRO:
+        case MMU_AP_RWRW:
+            region->mmu.ap = MMU_AP_RWNA;
+            break;
+        case MMU_AP_RORO:
+            region->mmu.ap = MMU_AP_RONA;
+            break;
         }
     }
 #undef _COWRD
@@ -390,23 +390,23 @@ static int test_ap_priv(uint32_t rw, uint32_t ap)
 
     if (rw & VM_PROT_WRITE) { /* Test for RWxx */
         switch (ap) {
-            case MMU_AP_RWNA:
-            case MMU_AP_RWRO:
-            case MMU_AP_RWRW:
-                return (1 == 1);
-            default:
-                return 0; /* No write access. */
+        case MMU_AP_RWNA:
+        case MMU_AP_RWRO:
+        case MMU_AP_RWRW:
+            return (1 == 1);
+        default:
+            return 0; /* No write access. */
         }
     } else if (rw & VM_PROT_READ) { /* Test for ROxx */
         switch (ap) {
-            case MMU_AP_RWNA:
-            case MMU_AP_RWRO:
-            case MMU_AP_RWRW: /* I guess it's ok to accept if we have rw. */
-            case MMU_AP_RONA:
-            case MMU_AP_RORO:
-                return (1 == 1);
-            default:
-                return 0; /* No read access. */
+        case MMU_AP_RWNA:
+        case MMU_AP_RWRO:
+        case MMU_AP_RWRW: /* I guess it's ok to accept if we have rw. */
+        case MMU_AP_RONA:
+        case MMU_AP_RORO:
+            return (1 == 1);
+        default:
+            return 0; /* No read access. */
         }
     }
 
@@ -453,19 +453,19 @@ static int test_ap_user(uint32_t rw, uint32_t ap)
 
     if (rw & VM_PROT_WRITE) { /* Test for xxRW */
         switch (ap) {
-            case MMU_AP_RWRW:
-                return (1 == 1);
-            default:
-                return 0; /* No write access. */
+        case MMU_AP_RWRW:
+            return (1 == 1);
+        default:
+            return 0; /* No write access. */
         }
     } else if (rw & VM_PROT_READ) { /* Test for xxRO */
         switch (ap) {
-            case MMU_AP_RWRW: /* I guess rw is ok too. */
-            case MMU_AP_RWRO:
-            case MMU_AP_RORO:
-                return (1 == 1);
-            default:
-                return 0; /* No read access. */
+        case MMU_AP_RWRW: /* I guess rw is ok too. */
+        case MMU_AP_RWRO:
+        case MMU_AP_RORO:
+            return (1 == 1);
+        default:
+            return 0; /* No read access. */
         }
     }
 

@@ -382,7 +382,9 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
 
     for (int i = 0; i < pcb->mm.nr_regions; i++) {
         region = ((*pcb->mm.regions)[i]);
-        ksprintf(buf, sizeof(buf), "reg_vaddr %x, reg_end %x", region->mmu.vaddr, region->mmu.vaddr + MMU_SIZEOF_REGION(&(region->mmu)));
+        ksprintf(buf, sizeof(buf), "reg_vaddr %x, reg_end %x",
+                region->mmu.vaddr,
+                region->mmu.vaddr + MMU_SIZEOF_REGION(&(region->mmu)));
         KERROR(KERROR_DEBUG, buf);
 
         if (vaddr >= region->mmu.vaddr &&
@@ -392,7 +394,7 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
                 return PROC_DABERR_PROT; /* Memory protection error. */
             }
 
-            if(!(region->vm_ops->rclone)
+            if (!(region->vm_ops->rclone)
                     || !(new_region = region->vm_ops->rclone(region))) {
                 /* Can't clone region; COW clone failed. */
                 return PROC_DABERR_ENOMEM;
@@ -454,7 +456,7 @@ static uintptr_t procsys_wait(void * p)
 
 uintptr_t proc_syscall(uint32_t type, void * p)
 {
-    switch(type) {
+    switch (type) {
     case SYSCALL_PROC_EXEC: /* note: can only return EAGAIN or ENOMEM */
         set_errno(ENOSYS);
         return -1;
