@@ -50,6 +50,7 @@
 #define FS_FLAG_FAIL        0x08 /*!< File system has failed. */
 
 #define FS_FILENAME_MAX     255 /*!< Maximum file name length. */
+#define PATH_MAX            4096 /* TODO Should be in limits.h? */
 #define PATH_DELIMS "/"
 
 /* Some macros for use with flags *********************************************/
@@ -84,10 +85,19 @@
 typedef struct vnode {
     ino_t vn_num;       /*!< vnode number. */
     int vn_refcount;
+    /*!< Pointer to the vnode in mounted file system. If no fs is mounted on
+     *   this vnode then this is a self pointing pointer. */
+    struct vnode * vn_mountpoint;
+
     off_t vn_len;       /*!< Length of file. */
     size_t vn_mutex;
     mode_t vn_mode;     /*!< File type part of st_mode sys/stat.h */
-    dev_t vn_devid;     /*!< Dev identifier in a case of cdev or bdev. */
+    void * dev;
+    /**
+     * Pointer to the dev struct in case of S_IFBLK or S_IFCHR device.
+     * S_IFBLK = struct block_dev
+     */
+    void * vn_dev;
     struct fs_superblock * sb; /*!< Pointer to the super block of this vnode. */
     struct vnode_ops * vnode_ops;
     /* TODO wait queue here */
@@ -128,7 +138,7 @@ typedef struct files_struct {
 typedef struct fs {
     char fsname[8];
 
-    struct fs_superblock * (*mount)(const char * mpoint, uint32_t mode,
+    struct fs_superblock * (*mount)(vnode_t * vnode_dev, uint32_t mode,
             int parm_len, char * parm);
     int (*umount)(struct fs_superblock * fs_sb);
     struct superblock_lnode * sbl_head; /*!< List of all mounts. */
@@ -139,10 +149,10 @@ typedef struct fs {
  */
 typedef struct fs_superblock {
     fs_t * fs;
-    dev_t dev;
     uint32_t mode_flags; /*!< Mount mode flags */
     vnode_t * root; /*!< Root of this fs mount. */
-    char * mtpt_path; /*!< Mount point path */
+    vnode_t * mountpoint; /*!< Mount point where this sb is mounted on.
+                           *   (only vfs should touch this) */
 
     /**
      * Get the vnode struct linked to a vnode number.
@@ -219,6 +229,9 @@ typedef struct sb_iterator {
     superblock_lnode_t * curr_sb; /*!< Current superblock of curr_fs. */
 } sb_iterator_t;
 
+
+void fs_init(void) __attribute__((constructor));
+
 /* VFS Function Prototypes */
 
 /**
@@ -226,6 +239,25 @@ typedef struct sb_iterator {
  * @param fs file system control struct.
  */
 int fs_register(fs_t * fs);
+
+/**
+ * Mount file system.
+ * @param vnode_mp  is the mount point.
+ * @param vonde_dev is a vnode of a device or other mountable file system
+ *                  device.
+ * @param fsname    is the name of the file system type to mount. This
+ *                  argument is optional and if left out fs_mount() tries
+ *                  to determine the file system type from existing information.
+ */
+int fs_mount(vnode_t * vnode_mp, vnode_t * vnode_dev, const char * fsname,
+        uint32_t mode, int parm_len, char * parm);
+
+/**
+ * Find registered file system by name.
+ * @param fsname is the name of the file system.
+ * @return The file system structure.
+ */
+fs_t * fs_by_name(const char * fsname);
 
 /**
  * Initialize a file system superblock iterator.

@@ -42,6 +42,7 @@
 #include <syscalldef.h>
 #include <syscall.h>
 #include <errno.h>
+#include <fs/mbr.h>
 #include <fs/fs.h>
 
 mtx_t fslock;
@@ -61,12 +62,9 @@ static fsl_node_t * fsl_head;
  */
 
 
-static fs_t * find_fs(const char * fsname);
 static ssize_t fs_write_cproc(int fildes, const void * buf, size_t nbyte,
         off_t * offset);
 
-
-void fs_init(void) __attribute__((constructor));
 void fs_init(void)
 {
     SUBSYS_INIT();
@@ -117,52 +115,74 @@ out:
 /**
  * Lookup for vnode by path.
  * @param[out]  vnode   is the target where vnode struct is stored.
+ * @param[in]   root    is the vnode where search is started from.
  * @param       str     is the path.
- * @return Returns zero if vnode was found or error code.
+ * @return  Returns zero if vnode was found;
+ *          error code -errno in case of an error.
  */
-int lookup_vnode(vnode_t ** vnode, const char * str)
+int lookup_vnode(vnode_t ** vnode, vnode_t * root, const char * str)
 {
+    char * path;
+    char * nodename;
+    char * strtok_lasts;
     int retval = 0;
 
-    /* TODO */
+    if (!(vnode && root && str))
+        return -EINVAL;
 
-    return retval;
-}
+    path = kmalloc(PATH_MAX)
+    if (!path)
+        return -ENOMEM;
+    strncpy(path, str, PATH_MAX);
 
-int fs_mount(const char * mount_point, const char * fsname, uint32_t mode,
-        int parm_len, char * parm)
-{
-    vnode_t * vnode_mp;
-    fs_t * fs;
-    int retval = 0;
+    /*
+     * Start looking for a vnode.
+     * We don't care if root is not a directory because lookup will spot it
+     * anyway.
+     */
+    *vnode = root;
+    while ((nodename = kstrtok(path, PATH_DELIMS, &strtok_lasts))) {
+        vnode_t * result;
 
-    /* TODO handle dot & dot-dot so that mount point is always fqp
-     * or should we return error if mp is not a fqp already? */
-
-    /* Find the mount point and accept if found */
-    if (lookup_vnode(&vnode_mp, mount_point)) {
-        retval = -1; /* Path doesn't exist. */
-        goto out;
+        retval = *vnode->vnode_ops->lookup(*vnode, nodename,
+                strlenn(nodename, FS_FILENAME_MAX), &result);
+        if (retval) {
+            goto out;
+        }
+        *vnode = result->vn_mountpoint;
     }
-
-    fs = find_fs(fsname);
-    if (fs == 0) {
-        retval = -2; /* fs doesn't exist. */
-        goto out;
-    }
-
-    fs->mount(mount_point, mode, parm_len, parm);
 
 out:
+    kfree(path);
     return retval;
 }
 
-/**
- * Find registered file system by name.
- * @param fsname is the name of the file system.
- * @return The file system structure.
- */
-static fs_t * find_fs(const char * fsname)
+int fs_mount(vnode_t * vnode_mp, vnode_t * vnode_dev, const char * fsname,
+        uint32_t mode, int parm_len, char * parm)
+{
+    fs_t * fs = 0;
+    struct fs_superblock * sb;
+
+    if (fsname) {
+        fs = fs_by_name(fsname);
+    } else {
+        /* TODO Try to determine type of the fs */
+    }
+
+    if (!fs)
+        return -ENOTSUP; /* fs doesn't exist. */
+
+    sb = fs->mount(vnode_dev, mode, parm_len, parm);
+    if (!sb)
+        return -ENODEV;
+
+    sb->mountpoint = vnode_mp;
+    vnode_mp->vn_mountpoint = sb->root;
+
+    return 0;
+}
+
+fs_t * fs_by_name(const char * fsname)
 {
     fsl_node_t * node = fsl_head;
 

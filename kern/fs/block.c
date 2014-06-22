@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    block.h
+ * @file    block.c
  * @author  Olli Vanhoja
- * @brief   Block device interface headers.
+ * @brief
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,39 +30,53 @@
  *******************************************************************************
  */
 
-#pragma once
-#ifndef BLOCK_H
-#define BLOCK_H
+#include <fs/block.h>
 
-#include <stdint.h>
-#include <stddef.h>
-#include <sys/types.h>
-#include <fs/fs.h>
+#define MAX_TRIES 2;
 
-#define BDEV_FLAGS_MB_READ      0x01 /*!< Supports multiple block read. */
-#define BDEV_FLAGS_MB_WRITE     0x02 /*!< Supports multiple block write. */
-#define BDEV_FLAGS_WR_BT_MASK   0x04 /*!< 0 = Write-back; 1 = Write-through */
+int block_read(vnode_t * vnode, const off_t * offset, void * vbuf, size_t count)
+{
+    struct block_dev * bdev = (struct block_dev *)vnode->vn_dev;
+    uint8_t * buf = (uint8_t *)vbuf;
 
-struct block_dev {
-    dev_t dev_id;
-    char * drv_name;
-    char dev_name[20];
+    if (!bdev->read)
+        return 0;
 
-    /*!< Configuration flags for block device handling */
-    uint32_t flags;
+    if ((bdev->flags & BDEV_FLAGS_MB_READ) && ((count / bdev->block_size) > 1))
+        return bdev->read(bdev, *offset, buf, count);
 
-    size_t block_size;
-    ssize_t num_blocks;
+    size_t buf_offset = 0;
+    ssize_t block_offset = 0;
+    do {
+        int tries = MAX_TRIES;
+        size_t to_read = (count > bdev->block_size) ? bdev->block_size : count;
 
-    int (*read)(struct block_dev * bdev, off_t offset,
-            uint8_t * buf, size_t count);
-    int (*write)(struct block_dev * bdev, off_t offset,
-            uint8_t * buf, size_t count);
-};
+        while (1) {
+            int ret = bdev->read(bdev, *offset + block_offset,
+                    &buf[buf_offset], to_read);
+            if (ret < 0) {
+                tries--;
+                if (tries <= 0)
+                    return ret;
+            } else {
+                break;
+            }
+        }
 
-int block_read(vnode_t * vnode, const off_t * offset,
-        void * vbuf, size_t count);
+        buf_offset += to_read;
+        block_offset++;
+
+        if (count < bdev->block_size)
+            count = 0;
+        else
+            count -= bdev->block_size;
+    } while (count > 0);
+
+    return buf_offset;
+}
+
 int block_write(vnode_t * file, const off_t * offset,
-        const void * vbuf, size_t count);
-
-#endif /* BLOCK_H */
+        const void * vbuf, size_t count)
+{
+    return -1;
+}

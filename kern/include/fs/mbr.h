@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    block.c
+ * @file    mbr.h
  * @author  Olli Vanhoja
- * @brief   Block device interface.
+ * @brief   MBR driver header.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,14 +30,14 @@
  *******************************************************************************
  */
 
-#include <fs/fs.h>
-#include "block.h"
+#pragma once
+#ifndef MBR_H
+#define MBR_H
 
-size_t block_write(vnode_t * file, const off_t * offset,
-        const void * buf, size_t count)
-{
-}
-size_t block_read(vnode_t * file, const off_t * offset,
-        void * buf, size_t count)
-{
-}
+#include <fs/fs.h>
+#include <fs/block.h>
+
+int mbr_register(vnode_t * parent_vnode,
+        struct block_dev *** partitions, int * part_count);
+
+#endif /* MBR_H */

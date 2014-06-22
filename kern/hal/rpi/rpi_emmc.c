@@ -28,6 +28,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
+ *
  * Copyright (C) 2013 by John Cronin <jncronin@tysos.org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -312,8 +313,8 @@ static char *err_irpts[] = {
 };
 #endif
 
-int sd_read(struct block_dev *, ssize_t, uint8_t *, size_t buf_size);
-int sd_write(struct block_dev *, ssize_t, uint8_t *, size_t buf_size);
+int sd_read(struct block_dev *, off_t, uint8_t *, size_t buf_size);
+int sd_write(struct block_dev *, off_t, uint8_t *, size_t buf_size);
 
 static uint32_t sd_commands[] = {
     SD_CMD_INDEX(0),
@@ -502,6 +503,30 @@ static uint32_t sd_acommands[] = {
 #define SD_RESET_ALL            (1 << 24)
 
 #define SD_GET_CLOCK_DIVIDER_FAIL    0xffffffff
+
+void rpi_emmc_init(void) __attribute__((constructor));
+void rpi_emmc_init(void)
+{
+    SUBSYS_INIT();
+    SUBSYS_DEP(fs_init);
+
+    struct block_device *sd_dev = NULL;
+    if (sd_card_init(&sd_dev) == 0) {
+        struct block_device *c_dev = sd_dev;
+#ifdef ENABLE_BLOCK_CACHE
+        uintptr_t cache_start = alloc_buf(BLOCK_CACHE_SIZE);
+
+        if (cache_start != 0)
+            cache_init(sd_dev, &c_dev, cache_start, BLOCK_CACHE_SIZE);
+#endif
+
+#ifdef configMBR
+        mbr_register(c_dev, (void*)0, (void*)0);
+#endif
+    }
+
+    SUBSYS_INITFINI("rpi_emmc OK");
+}
 
 static void sd_power_off()
 {
@@ -1383,34 +1408,8 @@ static void sd_issue_command(struct emmc_block_dev *dev, uint32_t command,
 #endif
 }
 
-int sd_card_init(struct block_dev **dev)
+int rpi_emmc_card_init(struct block_dev **dev)
 {
-    /* Check the sanity of the sd_commands and sd_acommands structures */
-    if (sizeof(sd_commands) != (64 * sizeof(uint32_t))) {
-        char buf[80];
-
-        ksprintf(buf, sizeof(buf),
-                 "EMMC: fatal error, sd_commands of incorrect size: %i "
-                 "expected %i\n",
-                 sizeof(sd_commands),
-                 64 * sizeof(uint32_t));
-        KERROR(KERROR_ERR, buf);
-
-        return -1;
-    }
-    if (sizeof(sd_acommands) != (64 * sizeof(uint32_t))) {
-        char buf[80];
-
-        ksprintf(buf, sizeof(buf),
-                "EMMC: fatal error, sd_acommands of incorrect size: %i "
-                "expected %i\n",
-                sizeof(sd_acommands),
-               64 * sizeof(uint32_t));
-        KERROR(KERROR_ERR, buf);
-
-        return -1;
-    }
-
 #if SDHCI_IMPLEMENTATION == SDHCI_IMPLEMENTATION_BCM_2708
     /* Power cycle the card to ensure its in its startup state */
     if (bcm_2708_power_cycle() != 0) {
@@ -1778,7 +1777,7 @@ int sd_card_init(struct block_dev **dev)
 #endif
             ret->failed_voltage_switch = 1;
             sd_power_off();
-            return sd_card_init((struct block_dev **)&ret);
+            return rpi_emmc_card_init((struct block_dev **)&ret);
         }
 
         /* Disable SD clock */
@@ -1795,7 +1794,7 @@ int sd_card_init(struct block_dev **dev)
 #endif
             ret->failed_voltage_switch = 1;
             sd_power_off();
-            return sd_card_init((struct block_dev **)&ret);
+            return rpi_emmc_card_init((struct block_dev **)&ret);
         }
 
         /* Set 1.8V signal enable to 1 */
@@ -1815,7 +1814,7 @@ int sd_card_init(struct block_dev **dev)
 #endif
             ret->failed_voltage_switch = 1;
             sd_power_off();
-            return sd_card_init((struct block_dev **)&ret);
+            return rpi_emmc_card_init((struct block_dev **)&ret);
         }
 
         /* Re-enable the SD clock */
@@ -1841,7 +1840,7 @@ int sd_card_init(struct block_dev **dev)
 #endif
             ret->failed_voltage_switch = 1;
             sd_power_off();
-            return sd_card_init((struct block_dev **)&ret);
+            return rpi_emmc_card_init((struct block_dev **)&ret);
         }
 
 #ifdef EMMC_DEBUG
@@ -2108,7 +2107,7 @@ static int sd_ensure_data_mode(struct emmc_block_dev *edev)
 {
     if (edev->card_rca == 0) {
         /* Try again to initialise the card */
-        int ret = sd_card_init((struct block_dev **)&edev);
+        int ret = rpi_emmc_card_init((struct block_dev **)&edev);
         if (ret != 0)
             return ret;
     }
@@ -2170,7 +2169,7 @@ static int sd_ensure_data_mode(struct emmc_block_dev *edev)
         sd_reset_dat();
     } else if (cur_state != 4) {
         /* Not in the transfer state - re-initialise */
-        int ret = sd_card_init((struct block_dev **)&edev);
+        int ret = rpi_emmc_card_init((struct block_dev **)&edev);
         if (ret != 0)
             return ret;
     }
@@ -2319,7 +2318,7 @@ static int sd_do_data_command(struct emmc_block_dev *edev, int is_write,
     return 0;
 }
 
-int sd_read(struct block_dev *dev, ssize_t block_no,
+int sd_read(struct block_dev *dev, off_t block_no,
         uint8_t *buf, size_t buf_size)
 {
     /* Check the status of the card */
@@ -2347,7 +2346,7 @@ int sd_read(struct block_dev *dev, ssize_t block_no,
 }
 
 #ifdef SD_WRITE_SUPPORT
-int sd_write(struct block_dev * dev, ssize_t block_no, uint8_t *buf,
+int sd_write(struct block_dev * dev, off_t block_no, uint8_t *buf,
         size_t buf_size)
 {
     /* Check the status of the card */

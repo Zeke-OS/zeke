@@ -104,7 +104,7 @@ typedef struct ramfs_dp {
 
 
 /* fs ops */
-struct fs_superblock * ramsfs_mount(const char * mpoint, uint32_t mode,
+struct fs_superblock * ramsfs_mount(vnode_t * vnode_dev, uint32_t mode,
         int parm_len, char * parm);
 int ramfs_umount(struct fs_superblock * fs_sb);
 /* sb ops */
@@ -123,7 +123,7 @@ int ramfs_link(vnode_t * dir, vnode_t * vnode, const char * name, size_t name_le
 int ramfs_mkdir(vnode_t * dir,  const char * name, size_t name_len);
 int ramfs_readdir(vnode_t * dir, struct dirent * d);
 /* Private */
-static void init_sbn(ramfs_sb_t * ramfs_sb, const char * mpoint, uint32_t mode);
+static void init_sbn(ramfs_sb_t * ramfs_sb, uint32_t mode);
 static vnode_t * create_root(ramfs_sb_t * ramfs_sb);
 static void insert_superblock(ramfs_sb_t * ramfs_sb);
 static void remove_superblock(ramfs_sb_t * ramfs_sb);
@@ -191,13 +191,12 @@ void ramfs_init(void)
 
 /**
  * Mount a new ramfs.
- * @param mpoint    is the mountpoint path.
  * @param mode      mount flags.
  * @param parm_len  length of param string.
  * @param           param contains optional mount parameters.
  * @return Returns the superblock of the new mount.
  */
-struct fs_superblock * ramsfs_mount(const char * mpoint, uint32_t mode,
+struct fs_superblock * ramsfs_mount(vnode_t * vnode_dev, uint32_t mode,
         int parm_len, char * parm)
 {
     ramfs_sb_t * ramfs_sb;
@@ -205,9 +204,7 @@ struct fs_superblock * ramsfs_mount(const char * mpoint, uint32_t mode,
     ramfs_sb = kmalloc(sizeof(ramfs_sb_t));
     if (ramfs_sb == 0)
         goto out_zero;
-    init_sbn(ramfs_sb, mpoint, mode);
-    /* TODO Set dev */
-    ramfs_sb->sbn.sbl_sb.dev = 0;
+    init_sbn(ramfs_sb, mode);
 
     /* Allocate memory for the inode lookup table.
      * kcalloc is used here to clear all inode pointers.
@@ -615,17 +612,15 @@ out:
 /**
  * Intializes a ramfs superblock node.
  * @param ramfs_sb  is a pointer to a ramfs superblock.
- * @param mpoint    is the mountpoint path of the superblock.
  * @param mode      mount flags.
  */
-static void init_sbn(ramfs_sb_t * ramfs_sb, const char * mpoint, uint32_t mode)
+static void init_sbn(ramfs_sb_t * ramfs_sb, uint32_t mode)
 {
     fs_superblock_t * sb = &(ramfs_sb->sbn.sbl_sb);
 
     sb->fs = &ramfs_fs;
     sb->mode_flags = mode;
     sb->root = 0; /* Cleared temporarily */
-    sb->mtpt_path = kstrdup(mpoint, FS_FILENAME_MAX);
 
     /* Function pointers to superblock methods: */
     sb->get_vnode = ramfs_get_vnode;
@@ -737,10 +732,6 @@ static void destroy_superblock(ramfs_sb_t * ramfs_sb)
     /* Destroy inode pool */
     if (ramfs_sb->ramfs_ipool.ip_arr)
         inpool_destroy(&(ramfs_sb->ramfs_ipool));
-
-    /* Free mount path string */
-    if (ramfs_sb->sbn.sbl_sb.mtpt_path)
-        kfree(ramfs_sb->sbn.sbl_sb.mtpt_path);
 
     kfree(ramfs_sb);
 }
