@@ -149,9 +149,8 @@ static mblock_t * extend(mblock_t * last, size_t s)
     b->size = s - MBLOCK_SIZE;
     b->next = 0;
     b->prev = last;
-    if (last) {
+    if (last)
         last->next = b;
-    }
     b->signature = KM_SIGNATURE_VALID;
     b->ptr = b->data;
     b->refcount = 0;
@@ -196,9 +195,8 @@ static mblock_t * find_mblock(mblock_t ** last, size_t size)
         }
 #endif
         *last = b;
-        if ((b->refcount == 0) && b->size >= size) {
+        if ((b->refcount == 0) && b->size >= size)
             break;
-        }
     } while ((b = b->next) != 0);
 
     return b;
@@ -223,9 +221,8 @@ static void split_mblock(mblock_t * b, size_t s)
     b->size = s;
     b->next = nb;
 
-    if (nb->next) {
+    if (nb->next)
         nb->next->prev = nb;
-    }
 }
 
 /**
@@ -324,15 +321,13 @@ void * kmalloc(size_t size)
         } else {
             /* No fitting block, allocate more memory. */
             b = extend(last, s);
-            if (!b) {
+            if (!b)
                 return 0;
-            }
         }
     } else { /* First kmalloc call or no pages allocated. */
         b = extend(0, s);
-        if (!b) {
+        if (!b)
             return 0;
-        }
         kmalloc_base = b;
     }
 
@@ -368,9 +363,8 @@ void kfree(void * p)
         }
 
         b->refcount--;
-        if (b->refcount > 0) {
+        if (b->refcount > 0)
             return;
-        }
 
         update_stat_down(&(kmalloc_stat.kms_mem_alloc), b->size);
 
@@ -491,9 +485,8 @@ static void update_stat_up(size_t * stat_act, size_t amount)
     size_t * stat_max = stat_act + 1;
 
     *stat_act += amount;
-    if (*stat_act > *stat_max) {
+    if (*stat_act > *stat_max)
         *stat_max = *stat_act;
-    }
 }
 
 /**
@@ -518,8 +511,7 @@ static void update_stat_set(size_t * stat_act, size_t value)
     size_t * stat_max = stat_act + sizeof(size_t);
 
     *stat_act = value;
-    if (*stat_act > *stat_max) {
+    if (*stat_act > *stat_max)
         *stat_max = *stat_act;
-    }
 }
 #endif

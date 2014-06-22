@@ -2558,9 +2558,9 @@ sub process {
                                             $allowed = 1;
 					}
 				}
-				if ($seen != ($#chunks + 1)) {
-					WARN("braces {} are necessary for all arms of this statement\n" . $herectx);
-				}
+                #if ($seen != ($#chunks + 1)) {
+                #	WARN("braces {} are necessary for all arms of this statement\n" . $herectx);
+                #}
 			}
 		}
 		if (!defined $suppress_ifbraces{$linenr - 1} &&
