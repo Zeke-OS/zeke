@@ -122,6 +122,48 @@ long kunirand(long n);
  * @}
  */
 
+static inline void write_word(uint32_t val, uint8_t *buf, int offset)
+{
+    buf[offset + 0] = val & 0xff;
+    buf[offset + 1] = (val >> 8) & 0xff;
+    buf[offset + 2] = (val >> 16) & 0xff;
+    buf[offset + 3] = (val >> 24) & 0xff;
+}
+
+static inline void write_halfword(uint16_t val, uint8_t *buf, int offset)
+{
+    buf[offset + 0] = val & 0xff;
+    buf[offset + 1] = (val >> 8) & 0xff;
+}
+
+static inline void write_byte(uint8_t byte, uint8_t *buf, int offset)
+{
+    buf[offset] = byte;
+}
+
+static inline uint32_t read_word(uint8_t * buf, int offset)
+{
+    uint32_t b0 = buf[offset + 0] & 0xff;
+    uint32_t b1 = buf[offset + 1] & 0xff;
+    uint32_t b2 = buf[offset + 2] & 0xff;
+    uint32_t b3 = buf[offset + 3] & 0xff;
+
+    return b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
+}
+
+static inline uint16_t read_halfword(uint8_t * buf, int offset)
+{
+    uint16_t b0 = buf[offset + 0] & 0xff;
+    uint16_t b1 = buf[offset + 1] & 0xff;
+
+    return b0 | (b1 << 8);
+}
+
+static inline uint8_t read_byte(uint8_t * buf, int offset)
+{
+    return buf[offset];
+}
+
 #endif /* LIBKERN_H */
 
 /**

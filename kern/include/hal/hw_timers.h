@@ -37,4 +37,13 @@
 void register_schedtimer_clear(void (*clear)(void));
 int schedtimer_clear(void);
 
+#define TIMEOUT_WAIT(stop_if_true, usec)            \
+do {                                                \
+    uint64_t __start_time = get_utime();            \
+    do {                                            \
+        if(stop_if_true)                            \
+            break;                                  \
+    } while((get_utime() - __start_time) >= usec);  \
+} while(0);
+
 #endif /* HW_TIMERS_H */

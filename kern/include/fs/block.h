@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    bcm2835_mailbox.h
+ * @file    block.h
  * @author  Olli Vanhoja
- * @brief   Access to BCM2835 mailboxes.
+ * @brief   Block device interface headers.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -31,37 +31,34 @@
  */
 
 #pragma once
-#ifndef BCM2835_MAILBOX_H
-#define BCM2835_MAILBOX_H
+#ifndef BLOCK_H
+#define BLOCK_H
 
 #include <stdint.h>
+#include <stddef.h>
+#include <sys/types.h>
 
-/* Mailbox channels */
-#define BCM2835_MBCH_PM         0   /*!< Power management interface */
-#define BCM2835_MBCH_FB         1   /*!< Frame Buffer */
-#define BCM2835_MBCH_VUART      2   /*!< Virtual UART */
-#define BCM2835_MBCH_VCHIQ      3   /*!< VCHIQ interface */
-#define BCM2835_MBCH_LEDS       4   /*!< LEDs interface */
-#define BCM2835_MBCH_BUTTONS    5   /*!< Buttons interface */
-#define BCM2835_MBCH_TOUCH      6   /*!< Touch screen interface */
-#define BCM2835_MBCH_COUNT      7
-#define BCM2835_MBCH_PROP       8
+#define BDEV_FLAGS_WR_BT_MASK   0x1 /*!< 0 = Write-back; 1 = Write-through */
 
-#define BCM2835_STATUS_SUCCESS  0x80000000
+struct block_dev {
+    char * drv_name;
+    char dev_name[20];
+    dev_t dev_id;
 
-/**
- * Read from BCM2835 mailbox.
- * @param channel is a channel number.
- * @return  Returns received mailbox value;
- *          If no data is received 0xffffffff is returned.
- */
-uint32_t bcm2835_readmailbox(unsigned int channel);
+    int supports_multiple_block_read;
+    int supports_multiple_block_write;
+    size_t block_size;
+    size_t num_blocks;
 
-/**
- * Write to BCM2835 mailbox.
- * @param channel   is a channel number.
- * @param data      is the data to be written.
- */
-void bcm2835_writemailbox(unsigned int channel, uint32_t data);
+    uint32_t flags;
+    /* TODO Pointer to the buffer */
 
-#endif /* BCM2835_MAILBOX_H */
+    int (*read)(struct block_dev * bdev, ssize_t offset,
+            uint8_t * buf, size_t count);
+    int (*write)(struct block_dev * bdev, ssize_t offset,
+            uint8_t * buf, size_t count);
+};
+
+/* TODO array of block devs by major */
+
+#endif /* BLOCK_H */

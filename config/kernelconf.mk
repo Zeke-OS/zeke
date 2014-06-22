@@ -19,6 +19,7 @@ configFB_FONT_HIRAGANA = 0# Hiragana extension
 configBCM_MB = 0# BCM2835 mailboxes
 configBCM_JTAG = 0# BCM2835 JTAG support
 configRPI_LEDS = 0# Raspberry PI leds
+configRPI_EMMC = 0# Raspberry PI EMMC
 
 # Kernel logging options
 configKLOGGER = 1# Enable KERROR as kernel logger

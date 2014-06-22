@@ -64,7 +64,7 @@ uint32_t bcm2835_readmailbox(unsigned int channel)
             mb_status = mmio_read(MAILBOX0_STATUS);
             mmio_end(&s_entry);
 
-            if(count++ >(1<<25)) {
+            if(count++ >(1 << 25)) {
                 return 0xffffffff; /* no luck */
             }
         } while (mb_status & MBSTAT_EMPTY);
@@ -75,7 +75,7 @@ uint32_t bcm2835_readmailbox(unsigned int channel)
         mmio_end(&s_entry);
     } while ((data & MBWR_CHANNEL) != channel);
 
-    return data;
+    return (data & MBWR_DATA);
 }
 
 void bcm2835_writemailbox(unsigned int channel, uint32_t data)
