@@ -41,7 +41,8 @@
 void rpi_led_invert(void);
 
 void rpi_leds_init(void) __attribute__((constructor));
-void rpi_leds_init(void) {
+void rpi_leds_init(void)
+{
     SUBSYS_INIT();
     SUBSYS_DEP(bcm2835_mmio_init);
 
@@ -58,10 +59,10 @@ void rpi_leds_init(void) {
     sel = mmio_read(GPIO_GPFSEL1);
 
     /* GPIO 16 = 001 - output */
-    sel &=~ (7 << 18);
+    sel &= ~(7 << 18);
     sel |= 1 << 18;
     /* GPIO 14 = 000 - input */
-    sel &=~ (7 << 12);
+    sel &= ~(7 << 12);
 
     /* Write back updated value */
     mmio_write(GPIO_GPFSEL1, sel);

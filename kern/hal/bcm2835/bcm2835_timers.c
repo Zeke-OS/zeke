@@ -121,7 +121,7 @@ static void enable_arm_timer(void)
 void bcm_udelay(uint32_t delay)
 {
     volatile uint64_t * ts = (uint64_t *)SYS_TIMER_CLO;
-    uint64_t stop = * ts + delay;
+    uint64_t stop = *ts + delay;
 
     while (*ts < stop)
         __asm__ volatile ("nop");

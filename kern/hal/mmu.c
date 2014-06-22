@@ -103,14 +103,14 @@ size_t mmu_sizeof_pt(const mmu_pagetable_t * pt)
     size_t size;
 
     switch (pt->type) {
-        case MMU_PTT_MASTER:
-            size = MMU_PTSZ_MASTER;
-            break;
-        case MMU_PTT_COARSE:
-            size = MMU_PTSZ_COARSE;
-            break;
-        default:
-            size = 0;
+    case MMU_PTT_MASTER:
+        size = MMU_PTSZ_MASTER;
+        break;
+    case MMU_PTT_COARSE:
+        size = MMU_PTSZ_COARSE;
+        break;
+    default:
+        size = 0;
     }
 
     return size;
@@ -126,13 +126,13 @@ size_t mmu_sizeof_region(const mmu_region_t * region)
     if (!region->pt)
         return 0;
 
-    switch(region->pt->type) {
-        case MMU_PTT_COARSE:
-            return region->num_pages * 4096; /* Cool guys hard code values. */
-        case MMU_PTT_MASTER:
-            return region->num_pages * 1024 * 1024;
-        default:
-            return 0;
+    switch (region->pt->type) {
+    case MMU_PTT_COARSE:
+        return region->num_pages * 4096; /* Cool guys hard code values. */
+    case MMU_PTT_MASTER:
+        return region->num_pages * 1024 * 1024;
+    default:
+        return 0;
     }
 }
 

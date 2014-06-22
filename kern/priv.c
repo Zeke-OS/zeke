@@ -142,10 +142,10 @@ priv_check_cred(struct ucred *cred, int priv, int flags)
      */
     error = EPERM;
 out:
-    return (error);
+    return error;
 }
 
 int priv_check(threadInfo_t * td, int priv)
 {
-    return (priv_check_cred(td->td_ucred, priv, 0));
+    return priv_check_cred(td->td_ucred, priv, 0);
 }

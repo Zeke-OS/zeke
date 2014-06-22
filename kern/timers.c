@@ -6,7 +6,8 @@
  * @brief   Kernel timers
  * @section LICENSE
  * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+ * Copyright (c) 2012, 2013 Ninjaware Oy,
+ *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -59,7 +60,7 @@ struct timer_cb {
  * should not try to spin on this lock as it would hang the kernel.
  */
 static mtx_t timers_lock;
-static volatile struct timer_cb timers_array[configTIMERS_MAX];
+static struct timer_cb timers_array[configTIMERS_MAX];
 #define VALID_TIMER_ID(x) ((x) < configTIMERS_MAX && (x) >= 0)
 
 void timers_init(void) __attribute__((constructor));

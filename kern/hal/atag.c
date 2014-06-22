@@ -65,7 +65,7 @@ void atag_scan(uint32_t fw, uint32_t mtype, uint32_t * atag_addr)
     }
 
     for (atags = atag_addr; atags < (uint32_t *)0x8000; atags += 1) {
-        switch(atags[1]) {
+        switch (atags[1]) {
         case ATAG_CORE:
             ksprintf(msg, sizeof(msg),
                     "[ATAG_CORE] flags: %x, page size: %u, rootdev: %u\n",

@@ -40,7 +40,7 @@ uintptr_t sysctl_syscall(uint32_t type, void * p)
 {
     int err;
 
-    switch(type) {
+    switch (type) {
     case SYSCALL_SYSCTL_SYSCTL:
         /* sysctl will handle copyin for p. */
         err = sys___sysctl((threadInfo_t *)current_thread, p);

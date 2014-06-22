@@ -93,7 +93,8 @@ static int sysctl_sysctl_next_ls(struct sysctl_oid_list * lsp, int * name,
         unsigned int namelen, int * next, int * len, int level,
         struct sysctl_oid ** oidpp);
 static int sysctl_sysctl_next(SYSCTL_HANDLER_ARGS);
-static int name2oid(char * name, int * oid, int * len, struct sysctl_oid ** oidpp);
+static int name2oid(char * name, int * oid, int * len,
+        struct sysctl_oid ** oidpp);
 static int sysctl_sysctl_name2oid(SYSCTL_HANDLER_ARGS);
 static int sysctl_sysctl_oidfmt(SYSCTL_HANDLER_ARGS);
 static int sysctl_old_kernel(struct sysctl_req * req, const void * p, size_t l);
@@ -414,7 +415,8 @@ static int sysctl_sysctl_next(SYSCTL_HANDLER_ARGS)
 static SYSCTL_NODE(_sysctl, 2, next, CTLFLAG_RD | CTLFLAG_CAPRD,
     sysctl_sysctl_next, "");
 
-static int name2oid(char * name, int * oid, int * len, struct sysctl_oid ** oidpp)
+static int name2oid(char * name, int * oid, int * len,
+        struct sysctl_oid ** oidpp)
 {
     struct sysctl_oid * oidp;
     struct sysctl_oid_list * lsp = &sysctl__children;
@@ -471,7 +473,7 @@ static int sysctl_sysctl_name2oid(SYSCTL_HANDLER_ARGS)
         return error;
     }
 
-    p [req->newlen] = '\0';
+    p[req->newlen] = '\0';
 
     SYSCTL_LOCK();
     error = name2oid(p, oid, &len, &op);
@@ -511,7 +513,8 @@ static int sysctl_sysctl_oidfmt(SYSCTL_HANDLER_ARGS)
     error = SYSCTL_OUT(req, &oid->oid_kind, sizeof(oid->oid_kind));
     if (error)
         goto out;
-    error = SYSCTL_OUT(req, oid->oid_fmt, strlenn(oid->oid_fmt, CTL_MAXSTRNAME) + 1);
+    error = SYSCTL_OUT(req, oid->oid_fmt,
+                       strlenn(oid->oid_fmt, CTL_MAXSTRNAME) + 1);
  out:
     SYSCTL_UNLOCK();
     return error;
@@ -536,7 +539,8 @@ sysctl_sysctl_oiddescr(SYSCTL_HANDLER_ARGS)
         error = ENOENT;
         goto out;
     }
-    error = SYSCTL_OUT(req, oid->oid_descr, strlenn(oid->oid_descr, CTL_MAXSTRNAME) + 1);
+    error = SYSCTL_OUT(req, oid->oid_descr,
+                       strlenn(oid->oid_descr, CTL_MAXSTRNAME) + 1);
  out:
     SYSCTL_UNLOCK();
     return error;
@@ -764,8 +768,9 @@ out:
     return retval;
 }
 
-int kernel_sysctl(threadInfo_t * td, int * name, unsigned int namelen, void * old,
-    size_t * oldlenp, void * new, size_t newlen, size_t * retval, int flags)
+int kernel_sysctl(threadInfo_t * td, int * name, unsigned int namelen,
+        void * old, size_t * oldlenp, void * new, size_t newlen,
+        size_t * retval, int flags)
 {
     int error = 0;
     struct sysctl_req req;
@@ -781,7 +786,7 @@ int kernel_sysctl(threadInfo_t * td, int * name, unsigned int namelen, void * ol
     req.validlen = req.oldlen;
 
     if (old) {
-        req.oldptr= old;
+        req.oldptr = old;
     }
 
     if (new != NULL) {
@@ -813,8 +818,8 @@ int kernel_sysctl(threadInfo_t * td, int * name, unsigned int namelen, void * ol
     return error;
 }
 
-int kernel_sysctlbyname(threadInfo_t * td, char * name, void * old, size_t * oldlenp,
-        void * new, size_t newlen, size_t * retval, int flags)
+int kernel_sysctlbyname(threadInfo_t * td, char * name, void * old,
+        size_t * oldlenp, void * new, size_t newlen, size_t * retval, int flags)
 {
     int oid[CTL_MAXNAME];
     size_t oidlen, plen;
@@ -1031,9 +1036,9 @@ int sys___sysctl(threadInfo_t * td, struct _sysctl_args * uap)
  * This is used from various compatibility syscalls too.  That's why name
  * must be in kernel space.
  */
-int userland_sysctl(threadInfo_t * td, int * name, unsigned int namelen, void * old,
-    size_t * oldlenp, int inkernel, void * new, size_t newlen, size_t * retval,
-    int flags)
+int userland_sysctl(threadInfo_t * td, int * name, unsigned int namelen,
+        void * old, size_t * oldlenp, int inkernel, void * new,
+        size_t newlen, size_t * retval, int flags)
 {
     int error = 0; //, memlocked;
     struct sysctl_req req;
@@ -1057,7 +1062,7 @@ int userland_sysctl(threadInfo_t * td, int * name, unsigned int namelen, void * 
     if (old) {
         if (!useracc(old, req.oldlen, VM_PROT_WRITE))
             return EFAULT;
-        req.oldptr= old;
+        req.oldptr = old;
     }
 
     if (new != NULL) {

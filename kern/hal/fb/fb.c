@@ -145,7 +145,7 @@ static void newline(void)
     size_t *const consy = &fb_main->cons.state.consy;
 
     *consx = 0;
-    if(*consy < (max_rows - 1)) {
+    if (*consy < (max_rows - 1)) {
         (*consy)++;
         return;
     }
@@ -205,7 +205,7 @@ void fb_console_write(char * text)
 
         draw_glyph(fonteng_getglyph(ch), consx, consy);
 
-        if(++(*consx) >= fb_main->cons.max_cols)
+        if (++(*consx) >= fb_main->cons.max_cols)
             newline();
     }
 }

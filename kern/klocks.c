@@ -56,7 +56,7 @@ int _mtx_spinlock(mtx_t * mtx, char * whr)
         goto out;
     }
 
-    while(test_and_set((int *)(&(mtx->mtx_lock)))) {
+    while (test_and_set((int *)(&(mtx->mtx_lock)))) {
 #if configMP != 0
         cpu_wfe(); /* Sleep until event. */
 #endif

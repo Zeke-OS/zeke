@@ -118,7 +118,10 @@ static void commit_fb_config(struct bcm2835_fb_config * fb)
         KERROR(KERROR_DEBUG, "GPU init failed?");
     }
 
-    ksprintf(buf, sizeof(buf), "BCM_FB: addr = %p, width = %u, height = %u, bpp = %u, pitch = %u, size = %u",
-            (void *)fb->fb_paddr, fb->width, fb->height, fb->depth, fb->pitch, fb->size);
+    ksprintf(buf, sizeof(buf),
+            "BCM_FB: addr = %p, width = %u, height = %u, "
+            "bpp = %u, pitch = %u, size = %u",
+            (void *)fb->fb_paddr, fb->width, fb->height,
+            fb->depth, fb->pitch, fb->size);
     KERROR(KERROR_INFO, buf);
 }
