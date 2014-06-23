@@ -32,9 +32,12 @@
 
 #include <fs/block.h>
 
-#define MAX_TRIES 2;
+/**
+ * Max tries in case of block read/write returns 0.
+ */
+#define MAX_TRIES 2
 
-int block_read(vnode_t * vnode, const off_t * offset, void * vbuf, size_t count)
+size_t block_read(vnode_t * vnode, const off_t * offset, void * vbuf, size_t count)
 {
     struct block_dev * bdev = (struct block_dev *)vnode->vn_dev;
     uint8_t * buf = (uint8_t *)vbuf;
@@ -46,18 +49,18 @@ int block_read(vnode_t * vnode, const off_t * offset, void * vbuf, size_t count)
         return bdev->read(bdev, *offset, buf, count);
 
     size_t buf_offset = 0;
-    ssize_t block_offset = 0;
+    off_t block_offset = 0;
     do {
         int tries = MAX_TRIES;
         size_t to_read = (count > bdev->block_size) ? bdev->block_size : count;
 
         while (1) {
             int ret = bdev->read(bdev, *offset + block_offset,
-                    &buf[buf_offset], to_read);
+                                 &buf[buf_offset], to_read);
             if (ret < 0) {
                 tries--;
                 if (tries <= 0)
-                    return ret;
+                    return buf_offset;
             } else {
                 break;
             }
@@ -75,8 +78,44 @@ int block_read(vnode_t * vnode, const off_t * offset, void * vbuf, size_t count)
     return buf_offset;
 }
 
-int block_write(vnode_t * file, const off_t * offset,
+size_t block_write(vnode_t * vnode, const off_t * offset,
         const void * vbuf, size_t count)
 {
-    return -1;
+    struct block_dev * bdev = (struct block_dev *)vnode->vn_dev;
+    uint8_t * buf = (uint8_t *)vbuf;
+
+    if (!bdev->write)
+        return 0;
+
+    if ((bdev->flags & BDEV_FLAGS_MB_WRITE) && ((count / bdev->block_size) > 1))
+        return bdev->write(bdev, *offset, buf, count);
+
+    size_t buf_offset = 0;
+    off_t block_offset = 0;
+    do {
+        int tries = MAX_TRIES;
+        size_t to_write = (count > bdev->block_size) ? bdev->block_size : count;
+
+        while (1) {
+            int ret = bdev->read(bdev, *offset + block_offset,
+                                 &buf[buf_offset], to_write);
+            if (ret < 0) {
+                tries--;
+                if(tries <= 0)
+                    return buf_offset;
+            } else {
+                break;
+            }
+        }
+
+        buf_offset += to_write;
+        block_offset++;
+
+        if (count < bdev->block_size)
+            count = 0;
+        else
+            count -= bdev->block_size;
+    } while (count > 0);
+
+    return buf_offset;
 }

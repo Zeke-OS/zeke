@@ -60,9 +60,25 @@ struct block_dev {
             uint8_t * buf, size_t count);
 };
 
-int block_read(vnode_t * vnode, const off_t * offset,
+/**
+ * Read from block device.
+ * @param vnode     is a vnode pointing to the block device.
+ * @param offset    is the offset to start from.
+ * @param vbuf      is the target buffer.
+ * @param count     is the byte count to read.
+ * @return  Returns number of bytes read from the device.
+ */
+size_t block_read(vnode_t * vnode, const off_t * offset,
         void * vbuf, size_t count);
-int block_write(vnode_t * file, const off_t * offset,
+/**
+ * Write to block device.
+ * @param vnode     is a vnode pointing to the block device.
+ * @param offset    is the offset to start from.
+ * @param vbuf      is the source buffer.
+ * @param count     is the byte count to write.
+ * @return  Returns number of bytes written to the device.
+ */
+size_t block_write(vnode_t * vnode, const off_t * offset,
         const void * vbuf, size_t count);
 
 #endif /* BLOCK_H */
