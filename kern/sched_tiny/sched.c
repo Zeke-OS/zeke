@@ -734,7 +734,7 @@ uintptr_t sched_syscall(uint32_t type, void * p)
         return 0;
 
     case SYSCALL_SCHED_DETACH:
-        {
+    {
         pthread_t thread_id;
         if (!useracc(p, sizeof(pthread_t), VM_PROT_READ)) {
             /* No permission to read */
@@ -748,10 +748,10 @@ uintptr_t sched_syscall(uint32_t type, void * p)
             return -1;
         }
         return 0;
-        }
+    }
 
     case SYSCALL_SCHED_SETPRIORITY:
-        {
+    {
         int err;
         struct _ds_set_priority ds;
         if (!useracc(p, sizeof(struct _ds_set_priority), VM_PROT_READ)) {
@@ -765,10 +765,10 @@ uintptr_t sched_syscall(uint32_t type, void * p)
             return -1;
         }
         return 0;
-        }
+    }
 
     case SYSCALL_SCHED_GETPRIORITY:
-        {
+    {
         osPriority pri;
         pthread_t thread_id;
         if (!useracc(p, sizeof(pthread_t), VM_PROT_READ)) {
@@ -784,10 +784,10 @@ uintptr_t sched_syscall(uint32_t type, void * p)
             pri = -1; /* Note: -1 might be also legitimate prio value. */
         }
         return pri;
-        }
+    }
 
     case SYSCALL_SCHED_SLEEP_MS:
-        {
+    {
         uint32_t val;
         if (!useracc(p, sizeof(uint32_t), VM_PROT_READ)) {
             /* No permission to read/write */
@@ -798,10 +798,10 @@ uintptr_t sched_syscall(uint32_t type, void * p)
         copyin(p, &val, sizeof(uint32_t));
         sched_thread_sleep(val);
         return 0; /* TODO Return value might be incorrect */
-        }
+    }
 
     case SYSCALL_SCHED_GET_LOADAVG:
-        {
+    {
         uint32_t arr[3];
         if (!useracc(p, sizeof(arr), VM_PROT_WRITE)) {
             /* No permission to write */
@@ -811,7 +811,7 @@ uintptr_t sched_syscall(uint32_t type, void * p)
         }
         sched_get_loads(arr);
         copyout(arr, p, sizeof(arr));
-        }
+    }
         return (uintptr_t)NULL;
 
     default:

@@ -114,7 +114,7 @@ SYSCTL_UINT(_vm, OID_AUTO, dynmem_tot, CTLFLAG_RD, (void *)(&dynmem_tot), 0,
 
 static void * kmap_allocation(size_t pos, size_t size, uint32_t ap, uint32_t control);
 static int update_dynmem_region_struct(void * p);
-static int validate_addr(void * addr, int test);
+static int validate_addr(const void * addr, int test);
 
 HW_PREINIT_ENTRY(dynmem_init);
 void dynmem_init(void)
@@ -377,7 +377,7 @@ void * dynmem_clone(void * addr)
     return new_region;
 }
 
-uint32_t dynmem_acc(void * addr, size_t len)
+uint32_t dynmem_acc(const void * addr, size_t len)
 {
     size_t size;
     uint32_t retval = 0;
@@ -386,7 +386,7 @@ uint32_t dynmem_acc(void * addr, size_t len)
         goto out; /* Address out of bounds. */
 
     mtx_spinlock(&dynmem_region_lock);
-    if (update_dynmem_region_struct(addr)) { /* error */
+    if (update_dynmem_region_struct((void *)addr)) { /* error */
 #if configDEBUG >= KERROR_ERR
         char buf[80];
         ksprintf(buf, sizeof(buf), "dynmem_acc() check failed for: %x",
@@ -428,7 +428,7 @@ out:
  *              of addr.
  * @return Boolean true if valid; Otherwise false/0.
  */
-static int validate_addr(void * addr, int test)
+static int validate_addr(const void * addr, int test)
 {
     const size_t i = (size_t)addr - DYNMEM_START;
 

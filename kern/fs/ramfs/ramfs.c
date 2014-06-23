@@ -104,8 +104,8 @@ typedef struct ramfs_dp {
 
 
 /* fs ops */
-struct fs_superblock * ramsfs_mount(vnode_t * vnode_dev, uint32_t mode,
-        int parm_len, char * parm);
+struct fs_superblock * ramsfs_mount(const char * source, uint32_t mode,
+        const char * parm, int parm_len);
 int ramfs_umount(struct fs_superblock * fs_sb);
 /* sb ops */
 int ramfs_get_vnode(struct fs_superblock * sb, ino_t * vnode_num, vnode_t ** vnode);
@@ -196,8 +196,8 @@ void ramfs_init(void)
  * @param           param contains optional mount parameters.
  * @return Returns the superblock of the new mount.
  */
-struct fs_superblock * ramsfs_mount(vnode_t * vnode_dev, uint32_t mode,
-        int parm_len, char * parm)
+struct fs_superblock * ramsfs_mount(const char * source, uint32_t mode,
+        const char * parm, int parm_len)
 {
     ramfs_sb_t * ramfs_sb;
 

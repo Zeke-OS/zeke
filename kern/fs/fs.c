@@ -39,8 +39,6 @@
 #include <proc.h>
 #include <sched.h>
 #include <ksignal.h>
-#include <syscalldef.h>
-#include <syscall.h>
 #include <errno.h>
 #include <fs/mbr.h>
 #include <fs/fs.h>
@@ -61,9 +59,6 @@ static fsl_node_t * fsl_head;
  * Then iterator can just iterate over fs_array
  */
 
-
-static ssize_t fs_write_cproc(int fildes, const void * buf, size_t nbyte,
-        off_t * offset);
 
 void fs_init(void)
 {
@@ -112,53 +107,64 @@ out:
     return retval;
 }
 
-/**
- * Lookup for vnode by path.
- * @param[out]  vnode   is the target where vnode struct is stored.
- * @param[in]   root    is the vnode where search is started from.
- * @param       str     is the path.
- * @return  Returns zero if vnode was found;
- *          error code -errno in case of an error.
- */
-int lookup_vnode(vnode_t ** vnode, vnode_t * root, const char * str)
+int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str)
 {
     char * path;
     char * nodename;
-    char * strtok_lasts;
+    char * lasts;
     int retval = 0;
 
-    if (!(vnode && root && str))
+    if (!(result && *result && root && str))
         return -EINVAL;
 
-    path = kmalloc(PATH_MAX);
+    path = kstrdup(str, PATH_MAX);
     if (!path)
         return -ENOMEM;
-    strncpy(path, str, PATH_MAX);
+
+    if (!(nodename = kstrtok(path, PATH_DELIMS, &lasts))) {
+        retval = -1;
+        goto out;
+    }
 
     /*
      * Start looking for a vnode.
      * We don't care if root is not a directory because lookup will spot it
      * anyway.
      */
-    *vnode = root;
-    while ((nodename = kstrtok(path, PATH_DELIMS, &strtok_lasts))) {
-        vnode_t * result;
+    *result = root;
+    do {
+        vnode_t * vnode;
 
-        retval = (*vnode)->vnode_ops->lookup(*vnode, nodename,
-                strlenn(nodename, FS_FILENAME_MAX), &result);
+        retval = (*result)->vnode_ops->lookup(*result, nodename,
+                strlenn(nodename, FS_FILENAME_MAX), &vnode);
         if (retval) {
             goto out;
         }
-        *vnode = result->vn_mountpoint;
-    }
+        /* TODO hard and soft links */
+        *result = vnode->vn_mountpoint;
+    } while ((nodename = kstrtok(0, PATH_DELIMS, &lasts)));
 
 out:
     kfree(path);
     return retval;
 }
 
-int fs_mount(vnode_t * vnode_mp, vnode_t * vnode_dev, const char * fsname,
-        uint32_t mode, int parm_len, char * parm)
+int fs_namei_proc(vnode_t ** result, char * path)
+{
+    vnode_t * start;
+
+    if (path[0] == '/') {
+        path++;
+        start = curproc->croot;
+    } else {
+        start = curproc->cwd;
+    }
+
+    return lookup_vnode(result, start, path);
+}
+
+int fs_mount(vnode_t * vnode_mp, const char * source, const char * fsname,
+        uint32_t mode, const char * parm, int parm_len)
 {
     fs_t * fs = 0;
     struct fs_superblock * sb;
@@ -172,7 +178,7 @@ int fs_mount(vnode_t * vnode_mp, vnode_t * vnode_dev, const char * fsname,
     if (!fs)
         return -ENOTSUP; /* fs doesn't exist. */
 
-    sb = fs->mount(vnode_dev, mode, parm_len, parm);
+    sb = fs->mount(source, mode, parm, parm_len);
     if (!sb)
         return -ENODEV;
 
@@ -268,54 +274,7 @@ void fs_fildes_ref(file_t * fildes, int count)
         kfree(fildes);
 }
 
-/**
- * Walks the file system for a process and tries to locate and lock vnode
- * corresponding to a given path.
- */
-struct vnode * fs_namei_proc(char * path)
-{
-    char * _path = kstrdup(path, 1024); /* TODO max ok? */
-    char * lasts;
-    char * name;
-    vnode_t * cur = curproc->croot;
-    vnode_t * res;
-
-    if (!(name = kstrtok(_path, PATH_DELIMS, &lasts))) {
-        kfree(_path);
-        return 0;
-    }
-
-    do {
-        if (cur->vnode_ops->lookup(cur, name, FS_FILENAME_MAX, &res)) {
-            kfree(_path);
-            return 0; /* vnode not found */
-        }
-        /* TODO Check if vnode is dir or symlink and there is yet path left.
-         * - if file is a link to a next dir then continue by setting a new value to cur
-         * - if file is not a link and there is still path left we'll exit by the next iteration
-         * - decrement refcount of cur
-         */
-    } while ((name = kstrtok(0, PATH_DELIMS, &lasts)));
-    kfree(_path);
-
-    return res;
-}
-
-/**
- * Write to a open file of the current process.
- * Error code is written to the errno of the current thread.
- * @param fildes    is the file descriptor.
- * @param buf       is the buffer.
- * @param nbytes    is the amount of bytes to be writted.
- * @return  Return the number of bytes actually written to the file associated
- *          with fildes; Otherwise, -1 is returned and errno set to indicate the
- *          error.
- * @throws EBADF    The fildes argument is not a valid file descriptor open for
- *                  writing.
- * @throws ENOSPC   There was no free space remaining on the device containing
- *                  the file.
- */
-static ssize_t fs_write_cproc(int fildes, const void * buf, size_t nbyte,
+ssize_t fs_write_cproc(int fildes, const void * buf, size_t nbyte,
         off_t * offset)
 {
     proc_info_t * cpr = (proc_info_t *)curproc;
@@ -340,111 +299,4 @@ static ssize_t fs_write_cproc(int fildes, const void * buf, size_t nbyte,
         set_errno(ENOSPC);
 out:
     return retval;
-}
-
-/**
- * fs syscall handler
- * @param type Syscall type
- * @param p Syscall parameters
- */
-uintptr_t fs_syscall(uint32_t type, void * p)
-{
-    switch(type) {
-    case SYSCALL_FS_CREAT:
-        set_errno(ENOSYS);
-        return -1;
-
-    case SYSCALL_FS_OPEN:
-        set_errno(ENOSYS);
-        return -2;
-
-    case SYSCALL_FS_CLOSE:
-        set_errno(ENOSYS);
-        return -3;
-
-    case SYSCALL_FS_READ:
-        set_errno(ENOSYS);
-        return -4;
-
-    case SYSCALL_FS_WRITE:
-    {
-        struct _fs_write_args fswa;
-        char * buf;
-        uintptr_t retval;
-
-        /* Args */
-        if (!useracc(p, sizeof(struct _fs_write_args), VM_PROT_READ)) {
-            /* No permission to read/write */
-            /* TODO Signal/Kill? */
-            set_errno(EFAULT);
-        }
-        copyin(p, &fswa, sizeof(struct _fs_write_args));
-
-        /* Buffer */
-        if (!useracc(fswa.buf, fswa.nbyte, VM_PROT_READ)) {
-            /* No permission to read/write */
-            /* TODO Signal/Kill? */
-            set_errno(EFAULT);
-        }
-        buf = kmalloc(fswa.nbyte);
-        copyin(fswa.buf, buf, fswa.nbyte);
-
-        retval = (uintptr_t)fs_write_cproc(fswa.fildes, buf, fswa.nbyte,
-                &(fswa.offset));
-        kfree(buf);
-        return retval;
-    }
-
-    case SYSCALL_FS_LSEEK:
-        set_errno(ENOSYS);
-        return -6;
-
-    case SYSCALL_FS_DUP:
-        set_errno(ENOSYS);
-        return -7;
-
-    case SYSCALL_FS_LINK:
-        set_errno(ENOSYS);
-        return -8;
-
-    case SYSCALL_FS_UNLINK:
-        set_errno(ENOSYS);
-        return -9;
-
-    case SYSCALL_FS_STAT:
-        set_errno(ENOSYS);
-        return -10;
-
-    case SYSCALL_FS_FSTAT:
-        set_errno(ENOSYS);
-        return -11;
-
-    case SYSCALL_FS_ACCESS:
-        set_errno(ENOSYS);
-        return -12;
-
-    case SYSCALL_FS_CHMOD:
-        set_errno(ENOSYS);
-        return -13;
-
-    case SYSCALL_FS_CHOWN:
-        set_errno(ENOSYS);
-        return -14;
-
-    case SYSCALL_FS_UMASK:
-        set_errno(ENOSYS);
-        return -15;
-
-    case SYSCALL_FS_IOCTL:
-        set_errno(ENOSYS);
-        return -16;
-
-    case SYSCALL_FS_MOUNT:
-        set_errno(ENOSYS);
-        return -17;
-
-    default:
-        set_errno(ENOSYS);
-        return (uintptr_t)NULL;
-    }
 }

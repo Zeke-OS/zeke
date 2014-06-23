@@ -84,9 +84,6 @@ static int mbr_write(struct block_dev *, off_t starting_block, uint8_t * buf,
 int mbr_register(vnode_t * parent_vnode,
         struct block_dev *** partitions, int * part_count)
 {
-    (void)partitions;
-    (void)part_count;
-    (void)driver_name;
     struct block_dev * parent = (struct block_dev *)parent_vnode->vn_dev;
 
     /* Check the validity of the parent device */

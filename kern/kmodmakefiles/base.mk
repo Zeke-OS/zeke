@@ -18,5 +18,5 @@ base-SRC-$(configMBR) += $(wildcard fs/mbr/*.c)
 # devfs
 #base-SRC-1 += fs/dev/devfs.c
 # ramfs
-base-SRC-$(configRAMFS) += fs/ramfs/*.c
+base-SRC-$(configRAMFS) += $(wildcard fs/ramfs/*.c)
 

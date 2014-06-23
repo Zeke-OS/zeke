@@ -37,6 +37,7 @@
 #include <proc.h>
 #include <libkern.h>
 #include <kstring.h>
+#include <kmalloc.h>
 #include <vralloc.h>
 #include <kinit.h>
 
@@ -52,6 +53,7 @@ extern void (*__init_array_end []) (void) __attribute__((weak));
 extern void (*__fini_array_start []) (void) __attribute__((weak));
 extern void (*__fini_array_end []) (void) __attribute__((weak));
 
+static void mount_rootfs(void);
 static void exec_array(void (*a []) (void), int n);
 
 /**
@@ -95,6 +97,8 @@ void kinit(void)
     SUBSYS_DEP(proc_init);
 
     char buf[80]; /* Buffer for panic messages. */
+
+    mount_rootfs();
 
     /* User stack for init */
     vm_region_t * init_vmstack = vralloc(configUSRINIT_SSIZE);
@@ -174,6 +178,33 @@ void kinit(void)
     KERROR(KERROR_DEBUG, buf);
 #endif
     SUBSYS_INITFINI("Load init");
+}
+
+static void mount_rootfs(void)
+{
+    const char failed[] = "Failed to mount rootfs";
+    vnode_t * tmp;
+    proc_info_t * kernel_proc = proc_get_struct(0);
+
+    if (!kernel_proc) {
+        panic(failed);
+    }
+
+    /* Root dir */
+    tmp = kmalloc(sizeof(vnode_t));
+    if (!tmp) {
+        panic(failed);
+    }
+    kernel_proc->croot = tmp;
+    kernel_proc->croot->vn_mountpoint = kernel_proc->croot;
+    kernel_proc->croot->vn_refcount = 1;
+
+    fs_mount(kernel_proc->croot, "", "ramfs", 0, "", 1);
+
+    kernel_proc->cwd = kernel_proc->cwd->vn_mountpoint;
+    kernel_proc->cwd = kernel_proc->croot;
+
+    kfree(tmp);
 }
 
 /**

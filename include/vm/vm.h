@@ -137,8 +137,8 @@ void vm_updateusr_ap(struct vm_region * region);
 int vm_map_region(vm_region_t * vm_region, struct vm_pt * pt);
 
 /* Not sure if these should be actually in vm_extern.h for BSD compatibility */
-int kernacc(void * addr, int len, int rw);
-int useracc(void * addr, int len, int rw);
+int kernacc(const void * addr, int len, int rw);
+int useracc(const void * addr, int len, int rw);
 
 #endif /* KERNEL_INTERNAL */
 #endif /* _VM_VM_H */

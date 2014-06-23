@@ -346,7 +346,7 @@ int vm_map_region(vm_region_t * vm_region, struct vm_pt * pt)
  * @return  Boolean true if the type of access specified by rw is permitted;
  *          Otherwise boolean false.
  */
-int kernacc(void * addr, int len, int rw)
+int kernacc(const void * addr, int len, int rw)
 {
     size_t reg_start, reg_size;
     uint32_t ap;
@@ -424,7 +424,7 @@ static int test_ap_priv(uint32_t rw, uint32_t ap)
  * @return  Boolean true if the type of access specified by rw is permitted;
  *          Otherwise boolean false.
  */
-int useracc(void * addr, int len, int rw)
+int useracc(const void * addr, int len, int rw)
 {
     /* TODO We may wan't to handle cow here */
     /* TODO */

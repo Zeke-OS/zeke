@@ -138,7 +138,7 @@ void * dynmem_clone(void * addr);
  * @param len   is the size of block tested.
  * @return Returns 0 if addr is invalid; Otherwise returns ap flags + xn bit.
  */
-uint32_t dynmem_acc(void * addr, size_t len);
+uint32_t dynmem_acc(const void * addr, size_t len);
 
 #endif /* DYNMEM_H */
 

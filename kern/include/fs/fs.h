@@ -138,8 +138,8 @@ typedef struct files_struct {
 typedef struct fs {
     char fsname[8];
 
-    struct fs_superblock * (*mount)(vnode_t * vnode_dev, uint32_t mode,
-            int parm_len, char * parm);
+    struct fs_superblock * (*mount)(const char * source, uint32_t mode,
+            const char * parm, int parm_len);
     int (*umount)(struct fs_superblock * fs_sb);
     struct superblock_lnode * sbl_head; /*!< List of all mounts. */
 } fs_t;
@@ -241,6 +241,22 @@ void fs_init(void) __attribute__((constructor));
 int fs_register(fs_t * fs);
 
 /**
+ * Lookup for vnode by path.
+ * @param[out]  result  is the target where vnode struct is stored.
+ * @param[in]   root    is the vnode where search is started from.
+ * @param       str     is the path.
+ * @return  Returns zero if vnode was found;
+ *          error code -errno in case of an error.
+ */
+int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str);
+
+/**
+ * Walks the file system for a process and tries to locate and lock vnode
+ * corresponding to a given path.
+ */
+int fs_namei_proc(vnode_t ** result, char * path);
+
+/**
  * Mount file system.
  * @param vnode_mp  is the mount point.
  * @param vonde_dev is a vnode of a device or other mountable file system
@@ -249,8 +265,8 @@ int fs_register(fs_t * fs);
  *                  argument is optional and if left out fs_mount() tries
  *                  to determine the file system type from existing information.
  */
-int fs_mount(vnode_t * vnode_mp, vnode_t * vnode_dev, const char * fsname,
-        uint32_t mode, int parm_len, char * parm);
+int fs_mount(vnode_t * vnode_mp, const char * source, const char * fsname,
+        uint32_t mode, const char * parm, int parm_len);
 
 /**
  * Find registered file system by name.
@@ -292,6 +308,23 @@ file_t * fs_fildes_create(vnode_t * vnode);
  * @param count     is the value to be added to the refcount.
  */
 void fs_fildes_ref(file_t * fildes, int count);
+
+/**
+ * Write to a open file of the current process.
+ * Error code is written to the errno of the current thread.
+ * @param fildes    is the file descriptor.
+ * @param buf       is the buffer.
+ * @param nbytes    is the amount of bytes to be writted.
+ * @return  Return the number of bytes actually written to the file associated
+ *          with fildes; Otherwise, -1 is returned and errno set to indicate the
+ *          error.
+ * @throws EBADF    The fildes argument is not a valid file descriptor open for
+ *                  writing.
+ * @throws ENOSPC   There was no free space remaining on the device containing
+ *                  the file.
+ */
+ssize_t fs_write_cproc(int fildes, const void * buf, size_t nbyte,
+        off_t * offset);
 
 #endif /* FS_H */
 
