@@ -130,7 +130,7 @@ int lookup_vnode(vnode_t ** vnode, vnode_t * root, const char * str)
     if (!(vnode && root && str))
         return -EINVAL;
 
-    path = kmalloc(PATH_MAX)
+    path = kmalloc(PATH_MAX);
     if (!path)
         return -ENOMEM;
     strncpy(path, str, PATH_MAX);
@@ -144,7 +144,7 @@ int lookup_vnode(vnode_t ** vnode, vnode_t * root, const char * str)
     while ((nodename = kstrtok(path, PATH_DELIMS, &strtok_lasts))) {
         vnode_t * result;
 
-        retval = *vnode->vnode_ops->lookup(*vnode, nodename,
+        retval = (*vnode)->vnode_ops->lookup(*vnode, nodename,
                 strlenn(nodename, FS_FILENAME_MAX), &result);
         if (retval) {
             goto out;

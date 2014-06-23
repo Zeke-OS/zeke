@@ -97,7 +97,7 @@ static void thread_event_timer(void * event_arg)
 
 void sched_thread_sleep(long millisec)
 {
-    istate_t s;
+    //istate_t s;
     int timer_id;
 
     do {
