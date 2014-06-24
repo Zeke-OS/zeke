@@ -83,22 +83,17 @@
 /* End of macros **************************************************************/
 
 typedef struct vnode {
-    ino_t vn_num;       /*!< vnode number. */
+    ino_t vn_num;               /*!< vnode number. */
     int vn_refcount;
     /*!< Pointer to the vnode in mounted file system. If no fs is mounted on
      *   this vnode then this is a self pointing pointer. */
     struct vnode * vn_mountpoint;
 
-    off_t vn_len;       /*!< Length of file. */
-    size_t vn_mutex;
-    mode_t vn_mode;     /*!< File type part of st_mode sys/stat.h */
-    void * dev;
-    /**
-     * Pointer to the dev struct in case of S_IFBLK or S_IFCHR device.
-     * S_IFBLK = struct block_dev
-     */
-    void * vn_dev;
-    struct fs_superblock * sb; /*!< Pointer to the super block of this vnode. */
+    off_t vn_len;               /*!< Length of file. */
+    mode_t vn_mode;             /*!< File type part of st_mode sys/stat.h */
+    void * vn_specinfo;         /*!< Pointer to an additional information required by the
+                                 *   ops. */
+    struct fs_superblock * sb;  /*!< Pointer to the super block of this vnode. */
     struct vnode_ops * vnode_ops;
     /* TODO wait queue here */
 } vnode_t;
@@ -107,10 +102,11 @@ typedef struct vnode {
  * File descriptor.
  */
 typedef struct file {
-    off_t seek_pos; /*!< Seek pointer. */
-    mode_t mode;    /*!< Access mode. */
-    int refcount;   /*!< Reference count. */
+    off_t seek_pos;     /*!< Seek pointer. */
+    int oflags;
+    int refcount;       /*!< Reference count. */
     vnode_t * vnode;
+    void * stream;      /*!< Pointer to a special file stream data or info. */
     mtx_t lock;
 } file_t;
 
@@ -149,10 +145,11 @@ typedef struct fs {
  */
 typedef struct fs_superblock {
     fs_t * fs;
-    uint32_t mode_flags; /*!< Mount mode flags */
-    vnode_t * root; /*!< Root of this fs mount. */
-    vnode_t * mountpoint; /*!< Mount point where this sb is mounted on.
-                           *   (only vfs should touch this) */
+    dev_t vdev_id;          /*!< Virtual dev_id. */
+    uint32_t mode_flags;    /*!< Mount mode flags */
+    vnode_t * root;         /*!< Root of this fs mount. */
+    vnode_t * mountpoint;   /*!< Mount point where this sb is mounted on.
+                             *   (only vfs should touch this) */
 
     /**
      * Get the vnode struct linked to a vnode number.
@@ -191,7 +188,7 @@ typedef struct vnode_ops {
     int (*create)(vnode_t * dir, const char * name, size_t name_len,
             vnode_t ** result);
     int (*mknod)(vnode_t * dir, const char * name, size_t name_len, int mode,
-            dev_t dev);
+            void * specinfo, vnode_t ** result);
     int (*lookup)(vnode_t * dir, const char * name, size_t name_len,
             vnode_t ** result);
     int (*link)(vnode_t * dir, vnode_t * vnode, const char * name,
@@ -296,10 +293,14 @@ unsigned int fs_get_pfs_minor(void);
 
 /**
  * Create a new file descriptor.
+ * @note Permissions to create a fildes are verified against effective
+ * permissions of the curproc or root if curproc == NULL.
+ * @oaram[out] fildes
  * @param vnode     is a vnode.
- * @return Returns a pointer to the new file descriptor.
+ * @param oflags    specifies the opening flags.
+ * @return -errno.
  */
-file_t * fs_fildes_create(vnode_t * vnode);
+int fs_fildes_create(file_t ** fildes, vnode_t * vnode, int oflags);
 
 /**
  * Increment or decrement a file descriptor reference count and free the

@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    mbr.h
+ * @file    tish_dir.c
  * @author  Olli Vanhoja
- * @brief   MBR driver header.
+ * @brief   Directory manipulation commands for tish/Zeke.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,13 +30,58 @@
  *******************************************************************************
  */
 
-#pragma once
-#ifndef MBR_H
-#define MBR_H
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <kstring.h> /* TODO Remove */
+#include <unistd.h>
+#include <libkern.h>
+#include <errno.h>
+#include <pthread.h>
+#include <kernel.h>
+#include "tish.h"
 
-#include <fs/devfs.h>
+/* TODO Remove */
+#define fprintf(stream, str) write(2, str, strlenn(str, MAX_LEN) + 1)
+#define puts(str) fprintf(stderr, str)
 
-int mbr_register(vnode_t * parent_vnode,
-        struct dev_info *** partitions, int * part_count);
+//static char invalid_arg[] = "Invalid argument\n";
 
-#endif /* MBR_H */
+static void ls(char * path);
+
+void tish_tree(char ** args)
+{
+    //char * arg = kstrtok(0, DELIMS, args);
+
+    //walk_dirtree(cwd, 0);
+}
+
+#define iprintf(indent, fmt, ...) do { char buf[80];                    \
+    ksprintf(buf, sizeof(buf), "%*s" fmt, indent, " ", __VA_ARGS__);    \
+    kputs(buf);                                                         \
+} while (0)
+static void ls(char * path)
+{
+#if 0
+    DIR * dirp;
+    struct dirent dp;
+    dp.d_off = 0x00000000FFFFFFFF; /* TODO initializer? */
+
+    if ((dirp = opendir(".")) == NULL) {
+        puts("couldn't open dir");
+        return;
+    }
+
+    do {
+        errno = 0;
+        if ((dp = readdir(dirp)) != NULL) {
+            puts(dp->d_name);
+        }
+    } while (dp != NULL);
+
+    if (errno != 0)
+        puts("error reading dir");
+
+    closedir(dirp);
+#endif
+}

@@ -99,6 +99,14 @@ struct _fs_mount_args {
     size_t parm_len;
 };
 
+struct _fs_open_args {
+    const char * name;
+    size_t name_len;
+    int oflags;
+    mode_t mode;
+};
+
+
 /** Arguments struct for SYSCALL_PROC_GETBREAK */
 struct _ds_getbreak {
     void * start;

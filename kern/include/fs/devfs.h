@@ -1,11 +1,10 @@
 /**
  *******************************************************************************
- * @file    devtypes.h
+ * @file    devfs.h
  * @author  Olli Vanhoja
- * @brief   Device driver types header file.
+ * @brief   Device interface headers.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+ * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,29 +31,54 @@
  */
 
 #pragma once
-#ifndef DEVTYPES_H
-#define DEVTYPES_H
+#ifndef DEVFS_H
+#define DEVFS_H
 
 #include <stdint.h>
+#include <stddef.h>
 #include <sys/types.h>
+#include <fs/fs.h>
 
-#define DEV_MAJORDEVS   16 /*!< Number of major devs 2^nbr_of_marjor_bits */
-#define DEV_MINORBITS   28 /*!< Number of minor bits */
-#define DEV_MINORMASK   ((1u << DEV_MINORBITS) - 1) /*!< Minor bits mask */
+#define DEV_FLAGS_MB_READ       0x01 /*!< Supports multiple block read. */
+#define DEV_FLAGS_MB_WRITE      0x02 /*!< Supports multiple block write. */
+#define DEV_FLAGS_WR_BT_MASK    0x04 /*!< 0 = Write-back; 1 = Write-through */
+
+struct dev_info {
+    dev_t dev_id;
+    char * drv_name;
+    char dev_name[20];
+
+    /*!< Configuration flags for block device handling */
+    uint32_t flags;
+
+    size_t block_size;
+    ssize_t num_blocks;
+
+    int (*read)(struct dev_info * devnfo, off_t offset,
+            uint8_t * buf, size_t count);
+    int (*write)(struct dev_info * devnfo, off_t offset,
+            uint8_t * buf, size_t count);
+};
 
 /**
- * Get major number from osDev_t.
+ * Read from a device.
+ * @param vnode     is a vnode pointing to the device.
+ * @param offset    is the offset to start from.
+ * @param vbuf      is the target buffer.
+ * @param count     is the byte count to read.
+ * @return  Returns number of bytes read from the device.
  */
-#define DEV_MAJOR(dev)  ((unsigned int)((dev) >> DEV_MINORBITS))
-
+size_t dev_read(vnode_t * vnode, const off_t * offset,
+        void * vbuf, size_t count);
 /**
- * Get minor number from osDev_t.
+ * Write to a device.
+ * @param vnode     is a vnode pointing to the device.
+ * @param offset    is the offset to start from.
+ * @param vbuf      is the source buffer.
+ * @param count     is the byte count to write.
+ * @return  Returns number of bytes written to the device.
  */
-#define DEV_MINOR(dev)  ((unsigned int)((dev) & DEV_MINORMASK))
+size_t dev_write(vnode_t * vnode, const off_t * offset,
+        const void * vbuf, size_t count);
 
-/**
- * Convert major, minor pair into osDev_t.
- */
-#define DEV_MMTODEV(ma, mi) (((ma) << DEV_MINORBITS) | (mi))
-
-#endif /* DEVTYPES_H */
+#endif /* DEVFS_H */

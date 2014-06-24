@@ -70,6 +70,26 @@ typedef int64_t suseconds_t; /*!< Used for time in microseconds */
 typedef int timer_t; /*!< Used for timer ID returned by timer_create(). */
 
 
+#define DEV_MAJORDEVS   16 /*!< Number of major devs 2^nbr_of_marjor_bits */
+#define DEV_MINORBITS   28 /*!< Number of minor bits */
+#define DEV_MINORMASK   ((1u << DEV_MINORBITS) - 1) /*!< Minor bits mask */
+
+/**
+ * Get major number from osDev_t.
+ */
+#define DEV_MAJOR(dev)  ((unsigned int)((dev) >> DEV_MINORBITS))
+
+/**
+ * Get minor number from osDev_t.
+ */
+#define DEV_MINOR(dev)  ((unsigned int)((dev) & DEV_MINORMASK))
+
+/**
+ * Convert major, minor pair into osDev_t.
+ */
+#define DEV_MMTODEV(ma, mi) (((ma) << DEV_MINORBITS) | (mi))
+
+
 /* TODO Missing types:
  * - trace_attr_t
  * - trace_event_id_t

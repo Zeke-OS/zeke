@@ -40,6 +40,7 @@
 #include <sched.h>
 #include <ksignal.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <fs/mbr.h>
 #include <fs/fs.h>
 
@@ -135,12 +136,17 @@ int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str)
     do {
         vnode_t * vnode;
 
+        if (!strcmp(nodename, "."))
+            continue;
+
         retval = (*result)->vnode_ops->lookup(*result, nodename,
                 strlenn(nodename, FS_FILENAME_MAX), &vnode);
         if (retval) {
             goto out;
         }
-        /* TODO hard and soft links */
+        /* TODO - soft links
+         *      - ../ on mount point
+         */
         *result = vnode->vn_mountpoint;
     } while ((nodename = kstrtok(0, PATH_DELIMS, &lasts)));
 
@@ -174,7 +180,6 @@ int fs_mount(vnode_t * vnode_mp, const char * source, const char * fsname,
     } else {
         /* TODO Try to determine type of the fs */
     }
-
     if (!fs)
         return -ENOTSUP; /* fs doesn't exist. */
 
@@ -193,7 +198,7 @@ fs_t * fs_by_name(const char * fsname)
     fsl_node_t * node = fsl_head;
 
     do {
-        if (strcmp(node->fs->fsname, fsname))
+        if (!strcmp(node->fs->fsname, fsname))
             break;
     } while ((node = node->next) != 0);
 
@@ -241,18 +246,42 @@ unsigned int fs_get_pfs_minor(void)
     return retval;
 }
 
-file_t * fs_fildes_create(vnode_t * vnode)
+int fs_fildes_create(file_t ** fildes, vnode_t * vnode, int oflags)
 {
-    file_t * fildes;
+    file_t * new_fildes;
+    struct stat stat;
+    gid_t euid;
+    uid_t egid;
+    int retval;
 
-    if (!(fildes = kcalloc(1, sizeof(file_t))))
-        return 0;
+    if (curproc) {
+        euid = curproc->euid;
+        egid = curproc->egid;
+    } else { /* Assume root */
+        euid = 0;
+        egid = 0;
+        goto skip;
+    }
+    if (euid == 0)
+        goto skip;
 
-    mtx_init(&fildes->lock, MTX_DEF | MTX_SPIN);
-    fildes->vnode = vnode;
-    fildes->refcount = 1;
+    if (retval = vnode->vnode_ops->stat(vnode, &stat)) {
+        return retval;
+    }
+    if (!(euid == stat.st_uid || egid == stat.st_gid))
+        return -EPERM;
 
-    return fildes;
+skip:
+    if (!(new_fildes = kcalloc(1, sizeof(file_t))))
+        return -ENOMEM;
+
+    mtx_init(&new_fildes->lock, MTX_DEF | MTX_SPIN);
+    new_fildes->vnode = vnode;
+    new_fildes->oflags = oflags;
+    new_fildes->refcount = 1;
+    *fildes = new_fildes;
+
+    return 0;
 }
 
 void fs_fildes_ref(file_t * fildes, int count)
@@ -277,12 +306,18 @@ void fs_fildes_ref(file_t * fildes, int count)
 ssize_t fs_write_cproc(int fildes, const void * buf, size_t nbyte,
         off_t * offset)
 {
-    proc_info_t * cpr = (proc_info_t *)curproc;
+    proc_info_t * cpr = curproc;
     vnode_t * vnode;
     size_t retval = -1;
 
-    /* Check that fildes exists */
+    /* Check that fildes exists. */
     if (fildes >= cpr->files->count && !(cpr->files->fd[fildes])) {
+        set_errno(EBADF);
+        goto out;
+    }
+
+    /* Check that the fildes is open for writing. */
+    if (!(cpr->files->fd[fildes]->oflags & O_WRONLY)) {
         set_errno(EBADF);
         goto out;
     }

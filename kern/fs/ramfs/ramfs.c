@@ -33,14 +33,13 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <time.h>
+#include <kinit.h>
 #include <libkern.h>
 #include <kstring.h>
 #include <kmalloc.h>
-#include <fs/fs.h>
 #include "../dehtable.h"
 #include "../inpool.h"
-
-#define RAMFS_FSNAME            "ramfs"
+#include <fs/ramfs.h>
 
 /**
  * inode pool size.
@@ -103,25 +102,8 @@ typedef struct ramfs_dp {
 } ramfs_dp_t;
 
 
-/* fs ops */
-struct fs_superblock * ramsfs_mount(const char * source, uint32_t mode,
-        const char * parm, int parm_len);
-int ramfs_umount(struct fs_superblock * fs_sb);
-/* sb ops */
-int ramfs_get_vnode(struct fs_superblock * sb, ino_t * vnode_num, vnode_t ** vnode);
-int ramfs_delete_vnode(vnode_t * vnode);
-/* vnode ops */
-size_t ramfs_write(vnode_t * file, const off_t * offset,
-        const void * buf, size_t count);
-size_t ramfs_read(vnode_t * file, const off_t * offset,
-        void * buf, size_t count);
-int ramfs_create(vnode_t * dir, const char * name, size_t name_len,
-        vnode_t ** result);
-int ramfs_lookup(vnode_t * dir, const char * name, size_t name_len,
-        vnode_t ** result);
-int ramfs_link(vnode_t * dir, vnode_t * vnode, const char * name, size_t name_len);
-int ramfs_mkdir(vnode_t * dir,  const char * name, size_t name_len);
-int ramfs_readdir(vnode_t * dir, struct dirent * d);
+dev_t ramfs_vdev_minor;
+
 /* Private */
 static void init_sbn(ramfs_sb_t * ramfs_sb, uint32_t mode);
 static vnode_t * create_root(ramfs_sb_t * ramfs_sb);
@@ -176,6 +158,7 @@ const vnode_ops_t ramfs_vnode_ops = {
     .write = ramfs_write,
     .read = ramfs_read,
     .create = ramfs_create,
+    .mknod = ramfs_mknod,
     .lookup = ramfs_lookup,
     .link = ramfs_link,
     .mkdir = ramfs_mkdir,
@@ -185,8 +168,13 @@ const vnode_ops_t ramfs_vnode_ops = {
 void ramfs_init(void) __attribute__((constructor));
 void ramfs_init(void)
 {
+    SUBSYS_INIT();
+    SUBSYS_DEP(proc_init);
+
     /* Register ramfs with vfs. */
     fs_register(&ramfs_fs);
+
+    SUBSYS_INITFINI("ramfs OK");
 }
 
 /**
@@ -221,6 +209,9 @@ struct fs_superblock * ramsfs_mount(const char * source, uint32_t mode,
                 ramfs_raw_create_inode, RAMFS_INODE_POOL_SIZE)) {
         goto free_ramfs_sb;
     }
+
+    /* Set vdev number */
+    ramfs_sb->sbn.sbl_sb.vdev_id = DEV_MMTODEV(RAMFS_VDEV_MAJOR_ID, ramfs_vdev_minor++);
 
     /* Create the root inode */
     create_root(ramfs_sb);
@@ -432,6 +423,27 @@ int ramfs_create(vnode_t * dir, const char * name, size_t name_len, vnode_t ** r
     (*result)->vn_refcount++;
 out:
     return retval;
+}
+
+/**
+ * Create a special vnode.
+ * @note ops must be set manually after creation of a vnode.
+ * @param specinfo  is a pointer to the special info struct.
+ * @param mode      is the mode of the new file.
+ */
+int ramfs_mknod(vnode_t * dir, const char * name, size_t name_len, int mode,
+        void * specinfo, vnode_t ** result)
+{
+    int retval;
+
+    retval = ramfs_create(dir, name, name_len, result);
+    if (retval)
+        return retval;
+
+    (*result)->vn_mode = mode;
+    (*result)->vn_specinfo = specinfo;
+
+    return 0;
 }
 
 /**

@@ -38,6 +38,8 @@
 #ifndef DEHTABLE_H
 #define DEHTABLE_H
 
+#include <fs/fs.h>
+
 #define DEHTABLE_SIZE 16
 
 /**

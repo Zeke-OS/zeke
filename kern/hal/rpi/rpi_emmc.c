@@ -1585,7 +1585,7 @@ int rpi_emmc_card_init(struct block_dev **dev)
 
     memset(ret, 0, sizeof(struct emmc_block_dev));
     ret->bd.drv_name = driver_name;
-    ret->bd.drv_name = device_name;
+    ret->bd.dev_name = device_name;
     ret->bd.block_size = 512;
     ret->bd.read = sd_read;
 #ifdef SD_WRITE_SUPPORT

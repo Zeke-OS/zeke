@@ -41,6 +41,7 @@
 #include <errno.h>
 #include <vm/vm.h>
 #include <sys/sysctl.h>
+#include <fcntl.h>
 #include <ptmapper.h>
 #include <dynmem.h>
 #include <kmalloc.h>
@@ -167,7 +168,9 @@ static void init_kernel_proc(void)
     kernel_proc->files->fd[0] = 0;
     kernel_proc->files->fd[1] = 0;
 #if configKLOGGER != 0
-    kernel_proc->files->fd[2] = fs_fildes_create(&kerror_vnode); /* stderr */
+    /* stderr */
+    if (fs_fildes_create(&(kernel_proc->files->fd[2]), &kerror_vnode, O_WRONLY))
+        panic(panic_msg);
 #else
     kernel_proc->files->fd[2] = 0;
 #endif

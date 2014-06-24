@@ -66,8 +66,8 @@
 /* Code for interpreting an mbr */
 
 struct mbr_block_dev {
-    struct block_dev bd;
-    struct block_dev *parent;
+    struct dev_info bd;
+    struct dev_info *parent;
     int part_no;
     uint32_t start_block;
     uint32_t blocks;
@@ -76,15 +76,20 @@ struct mbr_block_dev {
 
 static char driver_name[] = "mbr";
 
-static int mbr_read(struct block_dev *, off_t starting_block, uint8_t * buf,
+static int mbr_read(struct dev_info *, off_t starting_block, uint8_t * buf,
         size_t buf_size);
-static int mbr_write(struct block_dev *, off_t starting_block, uint8_t * buf,
+static int mbr_write(struct dev_info *, off_t starting_block, uint8_t * buf,
         size_t buf_size);
 
 int mbr_register(vnode_t * parent_vnode,
-        struct block_dev *** partitions, int * part_count)
+        struct dev_info *** partitions, int * part_count)
 {
-    struct block_dev * parent = (struct block_dev *)parent_vnode->vn_dev;
+    struct dev_info * parent = (struct dev_info *)parent_vnode->vn_specinfo;
+
+    if (!(S_ISBLK(parent_vnode->vn_mode) || S_ISCHR(parent_vnode->vn_mode))) {
+        KERROR(KERROR_ERR, "MBR: not a device\n");
+        return -1;
+    }
 
     /* Check the validity of the parent device */
     if (parent == 0) {
@@ -107,7 +112,7 @@ int mbr_register(vnode_t * parent_vnode,
     }
 #endif
 
-    int ret = block_read(parent_vnode, 0, block_0, 512);
+    int ret = dev_read(parent_vnode, 0, block_0, 512);
     if (ret < 0) {
         char buf[80];
 
@@ -204,7 +209,7 @@ int mbr_register(vnode_t * parent_vnode,
 #endif
 
     /* Load the partitions */
-    struct block_dev **parts = kmalloc(4 * sizeof(struct block_dev *));
+    struct dev_info **parts = kmalloc(4 * sizeof(struct dev_info *));
     int cur_p = 0;
 
     for (int i = 0; i < 4; i++) {
@@ -255,7 +260,7 @@ int mbr_register(vnode_t * parent_vnode,
             d->blocks /= block_size_adjust;
             d->bd.num_blocks = d->blocks;
 
-            parts[cur_p++] = (struct block_dev *)d;
+            parts[cur_p++] = (struct dev_info *)d;
 #ifdef MBR_DEBUG
             {
                 char buf[120];
@@ -269,7 +274,7 @@ int mbr_register(vnode_t * parent_vnode,
             }
 #endif
             /* Register the fs */
-            //register_fs__((struct block_dev *)d, d->part_id);
+            //register_fs__((struct dev_info *)d, d->part_id);
             /* TODO Register the fs dev with devfs */
         }
     }
@@ -295,19 +300,19 @@ int mbr_register(vnode_t * parent_vnode,
     return 0;
 }
 
-static int mbr_read(struct block_dev * dev, off_t starting_block, uint8_t * buf,
+static int mbr_read(struct dev_info * dev, off_t starting_block, uint8_t * buf,
         size_t buf_size)
 {
-    struct block_dev *parent = ((struct mbr_block_dev *)dev)->parent;
+    struct dev_info *parent = ((struct mbr_block_dev *)dev)->parent;
 
     return parent->read(parent, starting_block +
             ((struct mbr_block_dev *)dev)->start_block, buf, buf_size);
 }
 
-static int mbr_write(struct block_dev * dev, off_t starting_block, uint8_t * buf,
+static int mbr_write(struct dev_info * dev, off_t starting_block, uint8_t * buf,
         size_t buf_size)
 {
-    struct block_dev *parent = ((struct mbr_block_dev *)dev)->parent;
+    struct dev_info *parent = ((struct mbr_block_dev *)dev)->parent;
 
     return parent->write(parent, ((struct mbr_block_dev *)dev)->start_block,
             buf, buf_size);

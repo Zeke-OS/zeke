@@ -41,6 +41,7 @@
 #include <syscalldef.h>
 #include <syscall.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <fs/fs.h>
 
 static int fs_syscall_write(void * p)
@@ -85,12 +86,11 @@ static int fs_syscall_mount(struct _fs_mount_args * user_args)
     char * target_path = 0;
     char * parm_str = 0;
     vnode_t * mpt;
-    int retval;
+    int retval = -1;
 
     /* Copyin args struct */
     if (!useracc(user_args, sizeof(struct _fs_mount_args), VM_PROT_READ)) {
         set_errno(EFAULT);
-        retval = -1;
         goto out;
     }
     copyin(user_args, &args, sizeof(struct _fs_mount_args));
@@ -100,7 +100,6 @@ static int fs_syscall_mount(struct _fs_mount_args * user_args)
             !useracc(args.target, args.target_len, VM_PROT_READ) &&
             !useracc(args.parm, args.parm_len, VM_PROT_READ)) {
         set_errno(EFAULT);
-        retval = -1;
         goto out;
     }
     source_path = kmalloc(args.source_len);
@@ -108,7 +107,6 @@ static int fs_syscall_mount(struct _fs_mount_args * user_args)
     parm_str = kmalloc(args.parm_len);
     if (!source_path || !target_path || !parm_str) {
         set_errno(ENOMEM);
-        retval = -1;
         goto out;
     }
     copyin(args.source, source_path, args.source_len);
@@ -120,12 +118,13 @@ static int fs_syscall_mount(struct _fs_mount_args * user_args)
 
     if (!fs_namei_proc(&mpt, (char *)args.target)) {
         set_errno(ENOENT); /* Mount point doesn't exist */
-        retval = -1;
         goto out;
     }
 
     retval = fs_mount(mpt, args.source, args.fsname, args.mode,
                     args.parm, args.parm_len);
+    if (retval != 0)
+        set_errno(ENOENT); /* TODO Other ernos? */
 
 out:
     if (source_path)
@@ -135,6 +134,56 @@ out:
     if (parm_str)
         kfree(parm_str);
 
+    return retval;
+}
+
+static int fs_syscall_open(void * user_args)
+{
+    struct _fs_open_args args;
+    char * name = 0;
+    vnode_t * file;
+    struct file fildes;
+    int retval = 0;
+
+    /* Copyin args struct */
+    if (!useracc(user_args, sizeof(args), VM_PROT_READ)) {
+        set_errno(EFAULT);
+        goto out;
+    }
+    copyin(user_args, &args, sizeof(args));
+
+    name = kmalloc(args.name_len);
+    if (!name) {
+        set_errno(ENFILE);
+        goto out;
+    }
+    if (!useracc(args.name, args.name_len, VM_PROT_READ)) {
+        set_errno(EFAULT);
+        goto out;
+    }
+    copyin(args.name, &name, args.name_len);
+    args.name = name;
+
+    if (!fs_namei_proc(&file, name)) {
+        if (args.oflags & O_CREAT) {
+            /* TODO Create a file */
+        } else {
+            set_errno(ENOENT);
+            goto out;
+        }
+    }
+
+    retval = fs_fildes_create(&fildes, &file, args.oflags);
+    if (retval) {
+        set_errno(-retval);
+        retval = -1;
+    } else {
+        retval = 0;
+    }
+
+out:
+    if (name)
+        kfree(name);
     return retval;
 }
 
@@ -151,8 +200,7 @@ uintptr_t fs_syscall(uint32_t type, void * p)
         return -1;
 
     case SYSCALL_FS_OPEN:
-        set_errno(ENOSYS);
-        return -2;
+        return (uintptr_t)fs_syscall_open(p);
 
     case SYSCALL_FS_CLOSE:
         set_errno(ENOSYS);

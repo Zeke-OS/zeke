@@ -19,7 +19,6 @@
 #include <sys/types.h>
 #include <pthread.h>
 #include <semaphore.h>
-#include <devtypes.h>
 #include <autoconf.h>
 
 #ifndef KERNEL_INTERNAL /* prevent kernel internals from implementing these

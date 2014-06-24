@@ -95,6 +95,7 @@ void kinit(void)
     SUBSYS_INIT();
     SUBSYS_DEP(sched_init);
     SUBSYS_DEP(proc_init);
+    SUBSYS_DEP(ramfs_init);
 
     char buf[80]; /* Buffer for panic messages. */
 
@@ -177,7 +178,7 @@ void kinit(void)
             pid, tid, init_vmstack->mmu.vaddr);
     KERROR(KERROR_DEBUG, buf);
 #endif
-    SUBSYS_INITFINI("Load init");
+    SUBSYS_INITFINI("kinit OK");
 }
 
 static void mount_rootfs(void)
@@ -185,6 +186,7 @@ static void mount_rootfs(void)
     const char failed[] = "Failed to mount rootfs";
     vnode_t * tmp;
     proc_info_t * kernel_proc = proc_get_struct(0);
+    int ret;
 
     if (!kernel_proc) {
         panic(failed);
@@ -199,11 +201,19 @@ static void mount_rootfs(void)
     kernel_proc->croot->vn_mountpoint = kernel_proc->croot;
     kernel_proc->croot->vn_refcount = 1;
 
-    fs_mount(kernel_proc->croot, "", "ramfs", 0, "", 1);
+    ret = fs_mount(kernel_proc->croot, "", "ramfs", 0, "", 1);
+    if(ret) {
+        char buf[80];
 
-    kernel_proc->cwd = kernel_proc->cwd->vn_mountpoint;
+        ksprintf(buf, sizeof(buf), "%s : %i\n", failed, ret);
+        KERROR(KERROR_ERR, buf);
+        goto out;
+    }
+
+    kernel_proc->croot = kernel_proc->croot->vn_mountpoint;
     kernel_proc->cwd = kernel_proc->croot;
 
+out:
     kfree(tmp);
 }
 

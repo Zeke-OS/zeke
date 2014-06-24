@@ -16,7 +16,6 @@ base-SRC-1 += $(wildcard fs/*.c)
 # mbr
 base-SRC-$(configMBR) += $(wildcard fs/mbr/*.c)
 # devfs
-#base-SRC-1 += fs/dev/devfs.c
+base-SRC-1 += fs/devfs/devfs.c
 # ramfs
 base-SRC-$(configRAMFS) += $(wildcard fs/ramfs/*.c)
-
