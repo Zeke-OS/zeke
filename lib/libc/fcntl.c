@@ -1,11 +1,10 @@
 /**
  *******************************************************************************
- * @file    unistd.c
+ * @file    fcntl.c
  * @author  Olli Vanhoja
- * @brief   Standard functions.
+ * @brief   File control.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+ * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,42 +30,30 @@
  *******************************************************************************
 */
 
+#include <stdarg.h>
+#if 0
+#include <string.h>
+#endif
+#include <kstring.h>
+#define strlen(x) strlenn(x, 4096) /* TODO REMOVE ME */
 #include <syscall.h>
-#include <unistd.h>
+#include <fcntl.h>
 
-pid_t fork(void)
+int open(const char * path, int oflags, ...)
 {
-    return (pid_t)syscall(SYSCALL_PROC_FORK, NULL);
-}
-
-ssize_t pwrite(int fildes, const void * buf, size_t nbyte,
-        off_t offset)
-{
-    struct _fs_write_args args = {
-        .fildes = fildes,
-        .buf = (void *)buf,
-        .nbyte = nbyte,
-        .offset = offset
+    struct _fs_open_args args = {
+        .name = path,
+        .name_len = strlen(path),
+        .oflags = oflags
     };
 
-    return (ssize_t)syscall(SYSCALL_FS_WRITE, &args);
-}
+    if (oflags & O_CREAT) {
+        va_list ap;
 
-ssize_t write(int fildes, const void * buf, size_t nbyte)
-{
-    struct _fs_write_args args = {
-        .fildes = fildes,
-        .buf = (void *)buf,
-        .nbyte = nbyte,
-        .offset = SEEK_CUR
-    };
+        va_start(ap, oflags);
+        args.mode = va_arg(ap, mode_t);
+        va_end(ap);
+    }
 
-    return (ssize_t)syscall(SYSCALL_FS_WRITE, &args);
-}
-
-unsigned sleep(unsigned seconds)
-{
-    unsigned int millisec = seconds * 1000;
-
-    return (unsigned)syscall(SYSCALL_SCHED_SLEEP_MS, &millisec);
+    return syscall(SYSCALL_FS_OPEN, &args);
 }
