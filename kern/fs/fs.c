@@ -259,50 +259,53 @@ int fs_fildes_set(file_t * fildes, vnode_t * vnode, int oflags)
     return 0;
 }
 
-static int chkperm_cproc(struct stat * stat, int operm)
+static int chkperm_cproc(struct stat * stat, int oflags)
 {
     gid_t euid = curproc->euid;
     uid_t egid = curproc->egid;
-    mode_t tst_perm = 0;
 
-    /* user */
-    if (stat->st_uid == euid) {
-        tst_perm = 0;
-        if (operm == O_RDONLY)
-            tst_perm |= S_IRUSR;
-        else if (operm == O_WRONLY)
-            tst_perm |= S_IWUSR;
-        else if ((operm & O_EXEC) || (S_ISDIR(stat->st_mode)))
-            tst_perm |= S_IXUSR;
+    oflags &= O_ACCMODE;
+
+    if (oflags & O_RDONLY) {
+        mode_t req_perm = 0;
+
+        if (stat->st_uid == euid)
+            req_perm |= S_IRUSR;
+        if (stat->st_gid == egid)
+            req_perm |= S_IRGRP;
+        req_perm |= S_IROTH;
+
+        if (!(req_perm & stat->st_mode))
+            return -EPERM;
     }
-    if (stat->st_mode & tst_perm)
-        return 0;
 
-    /* group */
-    if (stat->st_gid == egid) {
-        tst_perm = 0;
-        if (operm == O_RDONLY)
-            tst_perm |= S_IRGRP;
-        else if (operm == O_WRONLY)
-            tst_perm |= S_IWGRP;
-        else if ((operm & O_EXEC) || (S_ISDIR(stat->st_mode)))
-            tst_perm |= S_IXGRP;
+    if (oflags & O_WRONLY) {
+        mode_t req_perm = 0;
+
+        if (stat->st_uid == euid)
+            req_perm |= S_IWUSR;
+        if (stat->st_gid == egid)
+            req_perm |= S_IWGRP;
+       req_perm |= S_IWOTH;
+
+       if (!(req_perm & stat->st_mode))
+           return -EPERM;
     }
-    if (stat->st_mode & tst_perm)
-        return 0;
 
-    /* others */
-    tst_perm = 0;
-    if (operm == O_RDONLY)
-        tst_perm |= S_IROTH;
-    else if (operm == O_WRONLY)
-        tst_perm |= S_IWOTH;
-    else if ((operm & O_EXEC) || (S_ISDIR(stat->st_mode)))
-        tst_perm |= S_IXOTH;
-    if (stat->st_mode & tst_perm)
-        return 0;
+    if ((oflags & O_EXEC) || (S_ISDIR(stat->st_mode))) {
+        mode_t req_perm = 0;
 
-    return -EPERM;
+        if (stat->st_uid == euid)
+            req_perm |= S_IXUSR;
+        if (stat->st_gid == egid)
+            req_perm |= S_IXGRP;
+       req_perm |= S_IXOTH;
+
+       if (!(req_perm & stat->st_mode))
+           return -EPERM;
+    }
+
+    return 0;
 }
 
 int fs_fildes_create_cproc(vnode_t * vnode, int oflags)
@@ -322,18 +325,8 @@ int fs_fildes_create_cproc(vnode_t * vnode, int oflags)
     }
 
     /* Check if user perms gives access */
-    if (oflags & O_RDONLY) {
-        if (chkperm_cproc(&stat, O_RDONLY))
-            return -EPERM;
-    }
-    if (oflags & O_WRONLY) {
-        if (chkperm_cproc(&stat, O_WRONLY))
-            return -EPERM;
-    }
-    if ((oflags & O_EXEC) || (S_ISDIR(stat.st_mode))) {
-        if (chkperm_cproc(&stat, O_EXEC))
-            return -EPERM;
-    }
+    if (chkperm_cproc(&stat, oflags))
+        return -EPERM;
 
     /* TODO Check other file mode bits */
 
