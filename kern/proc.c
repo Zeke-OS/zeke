@@ -169,7 +169,8 @@ static void init_kernel_proc(void)
     kernel_proc->files->fd[1] = 0;
 #if configKLOGGER != 0
     /* stderr */
-    if (fs_fildes_create(&(kernel_proc->files->fd[2]), &kerror_vnode, O_WRONLY))
+    kernel_proc->files->fd[2] = kcalloc(1, sizeof(file_t));
+    if (fs_fildes_set(kernel_proc->files->fd[2], &kerror_vnode, O_WRONLY))
         panic(panic_msg);
 #else
     kernel_proc->files->fd[2] = 0;

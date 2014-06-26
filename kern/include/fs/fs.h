@@ -292,15 +292,17 @@ fs_superblock_t * fs_next_sb(sb_iterator_t * it);
 unsigned int fs_get_pfs_minor(void);
 
 /**
- * Create a new file descriptor.
- * @note Permissions to create a fildes are verified against effective
- * permissions of the curproc or root if curproc == NULL.
- * @oaram[out] fildes
+ * Set parameters of a file descriptor.
  * @param vnode     is a vnode.
  * @param oflags    specifies the opening flags.
  * @return -errno.
  */
-int fs_fildes_create(file_t ** fildes, vnode_t * vnode, int oflags);
+int fs_fildes_set(file_t * fildes, vnode_t * vnode, int oflags);
+
+/**
+ * Create a new file descriptor to the first empty spot.
+ */
+int fs_fildes_create_cproc(vnode_t * vnode, int oflags);
 
 /**
  * Increment or decrement a file descriptor reference count and free the

@@ -99,6 +99,7 @@ struct _fs_mount_args {
     size_t parm_len;
 };
 
+/* Arguments for SYSCALL_FS_OPEN */
 struct _fs_open_args {
     const char * name;
     size_t name_len;

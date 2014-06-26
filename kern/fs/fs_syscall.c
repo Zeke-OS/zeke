@@ -142,7 +142,6 @@ static int fs_syscall_open(void * user_args)
     struct _fs_open_args args;
     char * name = 0;
     vnode_t * file;
-    struct file fildes;
     int retval = 0;
 
     /* Copyin args struct */
@@ -173,7 +172,7 @@ static int fs_syscall_open(void * user_args)
         }
     }
 
-    retval = fs_fildes_create(&fildes, &file, args.oflags);
+    retval = fs_fildes_create_cproc(file, args.oflags);
     if (retval) {
         set_errno(-retval);
         retval = -1;

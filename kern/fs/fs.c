@@ -246,42 +246,111 @@ unsigned int fs_get_pfs_minor(void)
     return retval;
 }
 
-int fs_fildes_create(file_t ** fildes, vnode_t * vnode, int oflags)
+int fs_fildes_set(file_t * fildes, vnode_t * vnode, int oflags)
 {
-    file_t * new_fildes;
-    struct stat stat;
-    gid_t euid;
-    uid_t egid;
-    int retval;
+    if (!fildes || !vnode)
+        return -1;
 
-    if (curproc) {
-        euid = curproc->euid;
-        egid = curproc->egid;
-    } else { /* Assume root */
-        euid = 0;
-        egid = 0;
-        goto skip;
-    }
-    if (euid == 0)
-        goto skip;
-
-    if (retval = vnode->vnode_ops->stat(vnode, &stat)) {
-        return retval;
-    }
-    if (!(euid == stat.st_uid || egid == stat.st_gid))
-        return -EPERM;
-
-skip:
-    if (!(new_fildes = kcalloc(1, sizeof(file_t))))
-        return -ENOMEM;
-
-    mtx_init(&new_fildes->lock, MTX_DEF | MTX_SPIN);
-    new_fildes->vnode = vnode;
-    new_fildes->oflags = oflags;
-    new_fildes->refcount = 1;
-    *fildes = new_fildes;
+    mtx_init(&fildes->lock, MTX_DEF | MTX_SPIN);
+    fildes->vnode = vnode;
+    fildes->oflags = oflags;
+    fildes->refcount = 1;
 
     return 0;
+}
+
+static int chkperm_cproc(struct stat * stat, int operm)
+{
+    gid_t euid = curproc->euid;
+    uid_t egid = curproc->egid;
+    mode_t tst_perm = 0;
+
+    /* user */
+    if (stat->st_uid == euid) {
+        tst_perm = 0;
+        if (operm == O_RDONLY)
+            tst_perm |= S_IRUSR;
+        else if (operm == O_WRONLY)
+            tst_perm |= S_IWUSR;
+        else if ((operm & O_EXEC) || (S_ISDIR(stat->st_mode)))
+            tst_perm |= S_IXUSR;
+    }
+    if (stat->st_mode & tst_perm)
+        return 0;
+
+    /* group */
+    if (stat->st_gid == egid) {
+        tst_perm = 0;
+        if (operm == O_RDONLY)
+            tst_perm |= S_IRGRP;
+        else if (operm == O_WRONLY)
+            tst_perm |= S_IWGRP;
+        else if ((operm & O_EXEC) || (S_ISDIR(stat->st_mode)))
+            tst_perm |= S_IXGRP;
+    }
+    if (stat->st_mode & tst_perm)
+        return 0;
+
+    /* others */
+    tst_perm = 0;
+    if (operm == O_RDONLY)
+        tst_perm |= S_IROTH;
+    else if (operm == O_WRONLY)
+        tst_perm |= S_IWOTH;
+    else if ((operm & O_EXEC) || (S_ISDIR(stat->st_mode)))
+        tst_perm |= S_IXOTH;
+    if (stat->st_mode & tst_perm)
+        return 0;
+
+    return -EPERM;
+}
+
+int fs_fildes_create_cproc(vnode_t * vnode, int oflags)
+{
+    int retval;
+    struct stat stat;
+    file_t * new_fildes;
+    files_t * files;
+
+    files = curproc->files;
+    if (curproc->euid == 0)
+        goto perms_ok;
+
+    retval = vnode->vnode_ops->stat(vnode, &stat);
+    if (retval) {
+        return retval;
+    }
+
+    /* Check if user perms gives access */
+    if (oflags & O_RDONLY) {
+        if (chkperm_cproc(&stat, O_RDONLY))
+            return -EPERM;
+    }
+    if (oflags & O_WRONLY) {
+        if (chkperm_cproc(&stat, O_WRONLY))
+            return -EPERM;
+    }
+    if ((oflags & O_EXEC) || (S_ISDIR(stat.st_mode))) {
+        if (chkperm_cproc(&stat, O_EXEC))
+            return -EPERM;
+    }
+
+    /* TODO Check other file mode bits */
+
+perms_ok:
+    new_fildes = kcalloc(1, sizeof(file_t));
+    if (!new_fildes) {
+        return -ENOMEM;
+    }
+
+    for (int i = 0; i < files->count; i++) {
+        if (!(files->fd[i])) {
+            fs_fildes_set(files->fd[i], vnode, oflags);
+            return 0;
+        }
+    }
+
+    return -EMFILE;
 }
 
 void fs_fildes_ref(file_t * fildes, int count)
