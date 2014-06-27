@@ -108,7 +108,7 @@ out:
     return retval;
 }
 
-int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str)
+int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str, int oflags)
 {
     char * path;
     char * nodename;
@@ -123,7 +123,7 @@ int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str)
         return -ENOMEM;
 
     if (!(nodename = kstrtok(path, PATH_DELIMS, &lasts))) {
-        retval = -1;
+        retval = -EINVAL;
         goto out;
     }
 
@@ -144,11 +144,17 @@ int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str)
         if (retval) {
             goto out;
         }
-        /* TODO - soft links
+        /* TODO - soft links but if O_NOFOLLOW we should fail on link and return
+         *        -ELOOP
          *      - ../ on mount point
          */
         *result = vnode->vn_mountpoint;
     } while ((nodename = kstrtok(0, PATH_DELIMS, &lasts)));
+
+    if ((oflags & O_DIRECTORY) && !S_ISDIR((*result)->vn_mode)) {
+        retval = -ENOTDIR;
+        goto out;
+    }
 
 out:
     kfree(path);
@@ -166,7 +172,7 @@ int fs_namei_proc(vnode_t ** result, char * path)
         start = curproc->cwd;
     }
 
-    return lookup_vnode(result, start, path);
+    return lookup_vnode(result, start, path, 0);
 }
 
 int fs_mount(vnode_t * vnode_mp, const char * source, const char * fsname,
@@ -328,9 +334,12 @@ int fs_fildes_create_cproc(vnode_t * vnode, int oflags)
     if (chkperm_cproc(&stat, oflags))
         return -EPERM;
 
-    /* TODO Check other file mode bits */
-
 perms_ok:
+    /* Check other oflags */
+    if ((oflags & O_DIRECTORY) && (!S_ISDIR(vnode->vn_mode))) {
+        return -ENOTDIR;
+    }
+
     new_fildes = kcalloc(1, sizeof(file_t));
     if (!new_fildes) {
         return -ENOMEM;

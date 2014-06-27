@@ -242,10 +242,11 @@ int fs_register(fs_t * fs);
  * @param[out]  result  is the target where vnode struct is stored.
  * @param[in]   root    is the vnode where search is started from.
  * @param       str     is the path.
+ * @param       oflags  Tested flags are: O_DIRECTORY, O_NOFOLLOW
  * @return  Returns zero if vnode was found;
  *          error code -errno in case of an error.
  */
-int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str);
+int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str, int oflags);
 
 /**
  * Walks the file system for a process and tries to locate and lock vnode
