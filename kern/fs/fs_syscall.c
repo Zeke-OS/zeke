@@ -109,9 +109,9 @@ static int fs_syscall_mount(struct _fs_mount_args * user_args)
         set_errno(ENOMEM);
         goto out;
     }
-    copyin(args.source, source_path, args.source_len);
-    copyin(args.target, target_path, args.target_len);
-    copyin(args.parm, parm_str, args.parm_len);
+    copyinstr(args.source, source_path, args.source_len, 0);
+    copyinstr(args.target, target_path, args.target_len, 0);
+    copyinstr(args.parm, parm_str, args.parm_len, 0);
     args.source = source_path;
     args.target = target_path;
     args.parm = parm_str;
@@ -160,7 +160,7 @@ static int fs_syscall_open(void * user_args)
         set_errno(EFAULT);
         goto out;
     }
-    copyin(args.name, &name, args.name_len);
+    copyinstr(args.name, &name, args.name_len, 0);
     args.name = name;
 
     if (!fs_namei_proc(&file, name)) {

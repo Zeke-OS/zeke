@@ -164,6 +164,7 @@ out:
 int fs_namei_proc(vnode_t ** result, char * path)
 {
     vnode_t * start;
+    int oflags = 0;
 
     if (path[0] == '/') {
         path++;
@@ -172,7 +173,10 @@ int fs_namei_proc(vnode_t ** result, char * path)
         start = curproc->cwd;
     }
 
-    return lookup_vnode(result, start, path, 0);
+    if (path[strlenn(path, PATH_MAX)] == '/')
+        oflags = O_DIRECTORY;
+
+    return lookup_vnode(result, start, path, oflags);
 }
 
 int fs_mount(vnode_t * vnode_mp, const char * source, const char * fsname,
@@ -374,6 +378,8 @@ void fs_fildes_ref(file_t * fildes, int count)
         kfree(fildes);
 }
 
+/* TODO This function should not use set_errno(), errno should be only set in
+ *      actual syscall related functions. */
 ssize_t fs_write_cproc(int fildes, const void * buf, size_t nbyte,
         off_t * offset)
 {

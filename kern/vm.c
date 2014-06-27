@@ -234,21 +234,18 @@ int copyout(const void * kaddr, void * uaddr, size_t len)
  */
 int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done)
 {
-    size_t retval_cpy;
-    int retval = 0;
+    size_t slen;
 
-    /* TODO Translation */
-    retval_cpy = strlcpy(kaddr, uaddr, len);
-    if (retval_cpy >= len) {
-        if (done != 0) {
-            *done = len;
-        }
-        retval = ENAMETOOLONG;
-    } else if (done != 0) {
-        *done = retval_cpy;
+    copyin(uaddr, kaddr, len);
+    slen = strlenn(kaddr, len);
+    if (done) {
+        *done = slen + 1;
     }
 
-    return retval;
+    if (((char *)kaddr)[slen] != '\0')
+        return ENAMETOOLONG;
+
+    return 0;
 }
 
 /**
