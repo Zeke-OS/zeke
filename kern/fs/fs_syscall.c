@@ -84,14 +84,17 @@ static int fs_syscall_mount(struct _fs_mount_args * user_args)
 {
     struct _fs_mount_args * args = 0;
     vnode_t * mpt;
+    int err;
     int retval = -1;
 
-    if (!copyinstruct(user_args, (void **)(&args), sizeof(struct _fs_mount_args),
-                GET_STRUCT_OFFSETS(struct _fs_mount_args,
-                    source, source_len,
-                    target, target_len,
-                    parm,   parm_len))) {
-        set_errno(ENOMEM);
+    err = copyinstruct(user_args, (void **)(&args),
+            sizeof(struct _fs_mount_args),
+            GET_STRUCT_OFFSETS(struct _fs_mount_args,
+                source, source_len,
+                target, target_len,
+                parm,   parm_len));
+    if (err) {
+        set_errno(-err);
         goto out;
     }
 
@@ -100,11 +103,12 @@ static int fs_syscall_mount(struct _fs_mount_args * user_args)
         goto out;
     }
 
-    retval = fs_mount(mpt, args->source, args->fsname, args->mode,
+    retval = fs_mount(mpt, args->source, args->fsname, args->flags,
                     args->parm, args->parm_len);
     if (retval != 0)
         set_errno(ENOENT); /* TODO Other ernos? */
 
+    retval = 0;
 out:
     if (args)
         freecpystruct(args);

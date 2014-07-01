@@ -88,13 +88,14 @@ struct _fs_write_args {
     off_t offset;
 };
 
+/** Arguments struct for SYSCALL_FS_MOUNT */
 struct _fs_mount_args {
     const char * source;
     size_t source_len; /*!< in bytes */
     const char * target;
     size_t target_len; /*!< in bytes */
     const char fsname[8];
-    uint32_t mode;
+    uint32_t flags;
     const char * parm;
     size_t parm_len; /*!< in bytes */
 };
@@ -106,7 +107,6 @@ struct _fs_open_args {
     int oflags;
     mode_t mode;
 };
-
 
 /** Arguments struct for SYSCALL_PROC_GETBREAK */
 struct _ds_getbreak {

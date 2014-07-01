@@ -264,7 +264,7 @@ int fs_namei_proc(vnode_t ** result, char * path);
  *                  to determine the file system type from existing information.
  */
 int fs_mount(vnode_t * target, const char * source, const char * fsname,
-        uint32_t mode, const char * parm, int parm_len);
+        uint32_t flags, const char * parm, int parm_len);
 
 /**
  * Find registered file system by name.

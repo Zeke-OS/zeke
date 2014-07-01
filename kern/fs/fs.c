@@ -179,14 +179,17 @@ int fs_namei_proc(vnode_t ** result, char * path)
 }
 
 int fs_mount(vnode_t * target, const char * source, const char * fsname,
-        uint32_t mode, const char * parm, int parm_len)
+        uint32_t flags, const char * parm, int parm_len)
 {
     fs_t * fs = 0;
     struct fs_superblock * sb;
     vnode_t * dotdot;
 
-    //if (lookup_vnode(&dotdot, target, "..", O_DIRECTORY))
-    //    return -ENOLINK;
+    if (lookup_vnode(&dotdot, target, "..", O_DIRECTORY)) {
+        /* We could return -ENOLINK but usually this means that we are mounting
+         * to some pseudo vnode, so we just ignore .. for now */
+        dotdot = 0;
+    }
 
     if (fsname) {
         fs = fs_by_name(fsname);
@@ -196,12 +199,16 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
     if (!fs)
         return -ENOTSUP; /* fs doesn't exist. */
 
-    sb = fs->mount(source, mode, parm, parm_len);
+    sb = fs->mount(source, flags, parm, parm_len);
     if (!sb)
         return -ENODEV;
 
-    /* TODO Make .. of the new mount to point prev dir of the mp */
-    //fs_link(sb->root, dotdot, "..", 3);
+    if (dotdot) {
+        /* TODO - Make .. of the new mount to point prev dir of the mp
+         *      - inherit mode from original target dir?
+         */
+        //fs_link(sb->root, dotdot, "..", 3);
+    }
 
     sb->mountpoint = target;
     target->vn_mountpoint = sb->root;
