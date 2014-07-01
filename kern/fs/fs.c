@@ -185,8 +185,8 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
     struct fs_superblock * sb;
     vnode_t * dotdot;
 
-    if (lookup_vnode(&dotdot, target, "..", O_DIRECTORY))
-        return -ENOLINK;
+    //if (lookup_vnode(&dotdot, target, "..", O_DIRECTORY))
+    //    return -ENOLINK;
 
     if (fsname) {
         fs = fs_by_name(fsname);

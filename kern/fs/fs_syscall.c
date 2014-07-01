@@ -35,6 +35,7 @@
 #include <kstring.h>
 #include <kmalloc.h>
 #include <vm/vm.h>
+#include <vm_copyinstruct.h>
 #include <proc.h>
 #include <sched.h>
 #include <ksignal.h>
@@ -81,58 +82,32 @@ out:
 
 static int fs_syscall_mount(struct _fs_mount_args * user_args)
 {
-    struct _fs_mount_args args;
-    char * source_path = 0;
-    char * target_path = 0;
-    char * parm_str = 0;
+    struct _fs_mount_args * args = 0;
     vnode_t * mpt;
     int retval = -1;
 
-    /* Copyin args struct */
-    if (!useracc(user_args, sizeof(struct _fs_mount_args), VM_PROT_READ)) {
-        set_errno(EFAULT);
-        goto out;
-    }
-    copyin(user_args, &args, sizeof(struct _fs_mount_args));
-
-    /* Copyin string arguments strings */
-    if (!useracc(args.source, args.source_len, VM_PROT_READ) &&
-            !useracc(args.target, args.target_len, VM_PROT_READ) &&
-            !useracc(args.parm, args.parm_len, VM_PROT_READ)) {
-        set_errno(EFAULT);
-        goto out;
-    }
-    source_path = kmalloc(args.source_len);
-    target_path = kmalloc(args.target_len);
-    parm_str = kmalloc(args.parm_len);
-    if (!source_path || !target_path || !parm_str) {
+    if (!copyinstruct(user_args, (void **)(&args), sizeof(struct _fs_mount_args),
+                GET_STRUCT_OFFSETS(struct _fs_mount_args,
+                    source, source_len,
+                    target, target_len,
+                    parm,   parm_len))) {
         set_errno(ENOMEM);
         goto out;
     }
-    copyinstr(args.source, source_path, args.source_len, &args.source_len);
-    copyinstr(args.target, target_path, args.target_len, &args.target_len);
-    copyinstr(args.parm, parm_str, args.parm_len, &args.parm_len);
-    args.source = source_path;
-    args.target = target_path;
-    args.parm = parm_str;
 
-    if (!fs_namei_proc(&mpt, (char *)args.target)) {
+    if (!fs_namei_proc(&mpt, (char *)args->target)) {
         set_errno(ENOENT); /* Mount point doesn't exist */
         goto out;
     }
 
-    retval = fs_mount(mpt, args.source, args.fsname, args.mode,
-                    args.parm, args.parm_len);
+    retval = fs_mount(mpt, args->source, args->fsname, args->mode,
+                    args->parm, args->parm_len);
     if (retval != 0)
         set_errno(ENOENT); /* TODO Other ernos? */
 
 out:
-    if (source_path)
-        kfree(source_path);
-    if (target_path)
-        kfree(target_path);
-    if (parm_str)
-        kfree(parm_str);
+    if (args)
+        freecpystruct(args);
 
     return retval;
 }
