@@ -91,7 +91,7 @@
 #define ENOENT          45  /*!< No such file or directory. */
 #define ENOEXEC         46  /*!< Executable file format error. */
 #define ENOLCK          47  /*!< No locks available. */
-#define ENOLINK         48  /*!< Reserved. */
+#define ENOLINK         48  /*!< Link has been severed. */
 #define ENOMEM          49  /*!< Not enough space. */
 #define ENOMSG          50  /*!< No message of the desired type. */
 #define ENOPROTOOPT     51  /*!< Protocol not available. */

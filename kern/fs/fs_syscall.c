@@ -109,9 +109,9 @@ static int fs_syscall_mount(struct _fs_mount_args * user_args)
         set_errno(ENOMEM);
         goto out;
     }
-    copyinstr(args.source, source_path, args.source_len, 0);
-    copyinstr(args.target, target_path, args.target_len, 0);
-    copyinstr(args.parm, parm_str, args.parm_len, 0);
+    copyinstr(args.source, source_path, args.source_len, &args.source_len);
+    copyinstr(args.target, target_path, args.target_len, &args.target_len);
+    copyinstr(args.parm, parm_str, args.parm_len, &args.parm_len);
     args.source = source_path;
     args.target = target_path;
     args.parm = parm_str;

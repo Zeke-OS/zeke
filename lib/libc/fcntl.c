@@ -43,7 +43,7 @@ int open(const char * path, int oflags, ...)
 {
     struct _fs_open_args args = {
         .name = path,
-        .name_len = strlen(path),
+        .name_len = strlen(path) + 1,
         .oflags = oflags
     };
 

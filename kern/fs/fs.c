@@ -146,7 +146,6 @@ int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str, int oflags
         }
         /* TODO - soft links but if O_NOFOLLOW we should fail on link and return
          *        -ELOOP
-         *      - ../ on mount point
          */
         *result = vnode->vn_mountpoint;
     } while ((nodename = kstrtok(0, PATH_DELIMS, &lasts)));
@@ -179,11 +178,15 @@ int fs_namei_proc(vnode_t ** result, char * path)
     return lookup_vnode(result, start, path, oflags);
 }
 
-int fs_mount(vnode_t * vnode_mp, const char * source, const char * fsname,
+int fs_mount(vnode_t * target, const char * source, const char * fsname,
         uint32_t mode, const char * parm, int parm_len)
 {
     fs_t * fs = 0;
     struct fs_superblock * sb;
+    vnode_t * dotdot;
+
+    if (lookup_vnode(&dotdot, target, "..", O_DIRECTORY))
+        return -ENOLINK;
 
     if (fsname) {
         fs = fs_by_name(fsname);
@@ -197,8 +200,11 @@ int fs_mount(vnode_t * vnode_mp, const char * source, const char * fsname,
     if (!sb)
         return -ENODEV;
 
-    sb->mountpoint = vnode_mp;
-    vnode_mp->vn_mountpoint = sb->root;
+    /* TODO Make .. of the new mount to point prev dir of the mp */
+    //fs_link(sb->root, dotdot, "..", 3);
+
+    sb->mountpoint = target;
+    target->vn_mountpoint = sb->root;
 
     return 0;
 }

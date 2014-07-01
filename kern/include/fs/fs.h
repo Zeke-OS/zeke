@@ -256,14 +256,14 @@ int fs_namei_proc(vnode_t ** result, char * path);
 
 /**
  * Mount file system.
- * @param vnode_mp  is the mount point.
+ * @param target    is the target mount point directory.
  * @param vonde_dev is a vnode of a device or other mountable file system
  *                  device.
  * @param fsname    is the name of the file system type to mount. This
  *                  argument is optional and if left out fs_mount() tries
  *                  to determine the file system type from existing information.
  */
-int fs_mount(vnode_t * vnode_mp, const char * source, const char * fsname,
+int fs_mount(vnode_t * target, const char * source, const char * fsname,
         uint32_t mode, const char * parm, int parm_len);
 
 /**

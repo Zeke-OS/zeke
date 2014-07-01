@@ -90,19 +90,19 @@ struct _fs_write_args {
 
 struct _fs_mount_args {
     const char * source;
-    size_t source_len;
+    size_t source_len; /*!< in bytes */
     const char * target;
-    size_t target_len;
+    size_t target_len; /*!< in bytes */
     const char fsname[8];
     uint32_t mode;
     const char * parm;
-    size_t parm_len;
+    size_t parm_len; /*!< in bytes */
 };
 
 /* Arguments for SYSCALL_FS_OPEN */
 struct _fs_open_args {
     const char * name;
-    size_t name_len;
+    size_t name_len; /*!< in bytes */
     int oflags;
     mode_t mode;
 };
