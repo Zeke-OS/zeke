@@ -115,7 +115,7 @@ int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str, int oflags
     char * lasts;
     int retval = 0;
 
-    if (!(result && *result && root && str))
+    if (!(result && root && root->vnode_ops && str))
         return -EINVAL;
 
     path = kstrdup(str, PATH_MAX);
