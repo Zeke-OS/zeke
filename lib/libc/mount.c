@@ -31,6 +31,7 @@
 */
 
 #include <syscall.h>
+#include <kstring.h> /* TODO Remove */
 #include <mount.h>
 
 int mount(const char * source, const char * target, const char * type,
@@ -46,7 +47,7 @@ int mount(const char * source, const char * target, const char * type,
         .parm_len = strlenn(parms, 256) /* TODO Change to strlen() */
     };
 
-    strcpy(args.fsname, type);
+    strcpy((char *)args.fsname, type);
 
     return syscall(SYSCALL_FS_MOUNT, &args);
 }

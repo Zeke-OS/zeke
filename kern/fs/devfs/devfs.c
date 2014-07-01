@@ -34,6 +34,7 @@
 #include <kinit.h>
 #include <kmalloc.h>
 #include <kstring.h>
+#include <errno.h>
 #include <fs/ramfs.h>
 #include <fs/devfs.h>
 
@@ -53,6 +54,17 @@ const vnode_ops_t devfs_vnode_ops = {
     .readdir = ramfs_readdir
 };
 
+static struct fs_superblock * devfs_mount(const char * source, uint32_t mode,
+                                          const char * parm, int parm_len);
+static int devfs_umount(struct fs_superblock * fs_sb);
+
+static fs_t devfs_fs = {
+    .fsname = DEVFS_FSNAME,
+    .mount = devfs_mount,
+    .umount = devfs_umount,
+    .sbl_head = 0
+};
+
 /* There is only one devfs, but it can be mounted multiple times */
 vnode_t * vn_devfs;
 
@@ -63,7 +75,7 @@ void devfs_init(void)
     SUBSYS_DEP(ramfs_init);
 
     const char failed[] = "Failed to init";
-    int ret;
+    int err;
 
     /* Root dir */
     vn_devfs = kmalloc(sizeof(vnode_t));
@@ -74,16 +86,31 @@ void devfs_init(void)
     vn_devfs->vn_mountpoint = vn_devfs;
     vn_devfs->vn_refcount = 1;
 
-    ret = fs_mount(vn_devfs, "", "ramfs", 0, "", 1);
-    if (ret) {
+    err = fs_mount(vn_devfs, "", "ramfs", 0, "", 1);
+    if (err) {
         char buf[80];
 
-        ksprintf(buf, sizeof(buf), "%s : %i\n", failed, ret);
+        ksprintf(buf, sizeof(buf), "%s : %i\n", failed, err);
         KERROR(KERROR_ERR, buf);
         return;
     }
 
+    vn_devfs->vn_mountpoint->sb->vdev_id = DEV_MMTODEV(DEVFS_VDEV_MAJOR_ID, 0);
+    fs_register(&devfs_fs);
+
     SUBSYS_INITFINI("devfs OK");
+}
+
+static struct fs_superblock * devfs_mount(const char * source, uint32_t mode,
+                                          const char * parm, int parm_len)
+{
+    return vn_devfs->vn_mountpoint->sb;
+}
+
+static int devfs_umount(struct fs_superblock * fs_sb)
+{
+    /* TODO */
+    return -EBUSY;
 }
 
 int dev_make(struct dev_info * devnfo, uid_t uid, gid_t gid, int perms)

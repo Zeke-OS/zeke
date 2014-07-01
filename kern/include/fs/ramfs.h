@@ -40,7 +40,7 @@
 #include <fs/fs.h>
 
 #define RAMFS_FSNAME            "ramfs"
-#define RAMFS_VDEV_MAJOR_ID     9
+#define RAMFS_VDEV_MAJOR_ID     10
 
 /* fs ops */
 struct fs_superblock * ramsfs_mount(const char * source, uint32_t mode,

@@ -39,6 +39,9 @@
 #include <sys/types.h>
 #include <fs/fs.h>
 
+#define DEVFS_FSNAME            "devfs"
+#define DEVFS_VDEV_MAJOR_ID     11
+
 #define DEV_FLAGS_MB_READ       0x01 /*!< Supports multiple block read. */
 #define DEV_FLAGS_MB_WRITE      0x02 /*!< Supports multiple block write. */
 #define DEV_FLAGS_WR_BT_MASK    0x04 /*!< 0 = Write-back; 1 = Write-through */
