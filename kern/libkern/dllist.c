@@ -43,7 +43,7 @@ void dllist_insert_head(struct llist * lst, void * new_node);
 void dllist_insert_tail(struct llist * lst, void * new_node);
 void dllist_insert_before(struct llist * lst, void * node, void * new_node);
 void dllist_insert_after(struct llist * lst, void * node, void * new_node);
-void dllist_remove(struct llist * lst, void * node);
+void * dllist_remove(struct llist * lst, void * node);
 
 llist_t * _dllist_create(size_t offset)
 {
@@ -162,9 +162,14 @@ void dllist_insert_after(struct llist * lst, void * node, void * new_node)
     lst->count += 1;
 }
 
-void dllist_remove(struct llist * lst, void * node)
+void * dllist_remove(struct llist * lst, void * node)
 {
-    llist_nodedsc_t * dsc = LISTDSC(node);
+    llist_nodedsc_t * dsc;
+
+    if (!node)
+        return 0;
+
+    dsc = LISTDSC(node);
 
     if (dsc->prev == 0)
         lst->head = dsc->next;
@@ -176,4 +181,6 @@ void dllist_remove(struct llist * lst, void * node)
         LISTDSC(dsc->next)->prev = dsc->prev;
 
     lst->count -= 1;
+
+    return node;
 }

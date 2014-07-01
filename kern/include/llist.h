@@ -55,7 +55,7 @@ typedef struct llist {
     void (*insert_tail)(struct llist *, void * new_node);
     void (*insert_before)(struct llist *, void * node, void * new_node);
     void (*insert_after)(struct llist *, void * node, void * new_node);
-    void (*remove)(struct llist *, void * node);
+    void * (*remove)(struct llist *, void * node);
 } llist_t;
 
 #endif /* LLIST_H */
