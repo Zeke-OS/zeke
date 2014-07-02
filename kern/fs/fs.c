@@ -184,6 +184,7 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
     fs_t * fs = 0;
     struct fs_superblock * sb;
     vnode_t * dotdot;
+    int err;
 
     if (lookup_vnode(&dotdot, target, "..", O_DIRECTORY)) {
         /* We could return -ENOLINK but usually this means that we are mounting
@@ -199,9 +200,9 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
     if (!fs)
         return -ENOTSUP; /* fs doesn't exist. */
 
-    sb = fs->mount(source, flags, parm, parm_len);
-    if (!sb)
-        return -ENODEV; /* TODO We may want more error codes here */
+    err = fs->mount(source, flags, parm, parm_len, &sb);
+    if (err)
+        return err;
 
     if (dotdot) {
         /* TODO - Make .. of the new mount to point prev dir of the mp

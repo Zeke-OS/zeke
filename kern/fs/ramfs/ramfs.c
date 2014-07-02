@@ -33,6 +33,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <time.h>
+#include <errno.h>
 #include <kinit.h>
 #include <libkern.h>
 #include <kstring.h>
@@ -180,18 +181,22 @@ void ramfs_init(void)
 /**
  * Mount a new ramfs.
  * @param mode      mount flags.
+ * @param param     contains optional mount parameters.
  * @param parm_len  length of param string.
- * @param           param contains optional mount parameters.
- * @return Returns the superblock of the new mount.
+ * @param[out] sb   Returns the superblock of the new mount.
+ * @return error code, -errno.
  */
-struct fs_superblock * ramsfs_mount(const char * source, uint32_t mode,
-        const char * parm, int parm_len)
+int ramsfs_mount(const char * source, uint32_t mode,
+        const char * parm, int parm_len, fs_superblock ** sb)
 {
     ramfs_sb_t * ramfs_sb;
+    int retval = 0;
 
     ramfs_sb = kmalloc(sizeof(ramfs_sb_t));
-    if (ramfs_sb == 0)
-        goto out_zero;
+    if (ramfs_sb == 0) {
+        retval = -ENOMEM;
+        goto out;
+    }
     init_sbn(ramfs_sb, mode);
 
     /* Allocate memory for the inode lookup table.
@@ -200,6 +205,7 @@ struct fs_superblock * ramsfs_mount(const char * source, uint32_t mode,
     ramfs_sb->ramfs_iarr = (ramfs_inode_t **)kcalloc(RAMFS_INODE_POOL_SIZE,
             sizeof(ramfs_inode_t *));
     if (ramfs_sb->ramfs_iarr == 0) {
+        retval = -ENOMEM;
         goto free_ramfs_sb;
     }
     ramfs_sb->ramfs_iarr_size = 0;
@@ -207,6 +213,7 @@ struct fs_superblock * ramsfs_mount(const char * source, uint32_t mode,
     /* Initialize the inode pool. */
     if(inpool_init(&(ramfs_sb->ramfs_ipool), &(ramfs_sb->sbn.sbl_sb),
                 ramfs_raw_create_inode, RAMFS_INODE_POOL_SIZE)) {
+        retval = -ENOMEM;
         goto free_ramfs_sb;
     }
 
@@ -222,10 +229,9 @@ struct fs_superblock * ramsfs_mount(const char * source, uint32_t mode,
     goto out;
 free_ramfs_sb:
     destroy_superblock(ramfs_sb);
-out_zero:
-    return 0;
 out:
-    return &(ramfs_sb->sbn.sbl_sb);
+    *sb = &(ramfs_sb->sbn.sbl_sb);
+    return retval;
 }
 
 /**
@@ -260,7 +266,7 @@ int ramfs_get_vnode(fs_superblock_t * sb, ino_t * vnode_num, vnode_t ** vnode)
     int retval = 0;
 
     if (strcmp(sb->fs->fsname, RAMFS_FSNAME)) {
-        retval = -1;
+        retval = -EINVAL;
         goto out;
     }
 
@@ -268,7 +274,7 @@ int ramfs_get_vnode(fs_superblock_t * sb, ino_t * vnode_num, vnode_t ** vnode)
     ramfs_sb = get_rfsb_of_sb(sb);
 
     if (*vnode_num >= (ino_t)(ramfs_sb->ramfs_iarr_size)) {
-        retval = -2; /* inode can't exist. */
+        retval = -ENOENT; /* inode can't exist. */
         goto out;
     }
 
@@ -380,14 +386,14 @@ int ramfs_create(vnode_t * dir, const char * name, size_t name_len, vnode_t ** r
 
     /* TODO is this check needed here? */
     if (!S_ISDIR(dir->vn_mode)) {
-        retval = -1; /* No a directory entry. */
+        retval = -ENOTDIR; /* No a directory entry. */
         goto out;
     }
 
     ramfs_sb = get_rfsb_of_sb(dir->sb);
     vnode = inpool_get_next(&(ramfs_sb->ramfs_ipool));
     if (vnode == 0) {
-        retval = -2; /* Can't create */
+        retval = -ENOSPC; /* Can't create */
         goto out;
     }
 
@@ -463,19 +469,19 @@ int ramfs_lookup(vnode_t * dir, const char * name, size_t name_len,
 
     /* TODO is this check needed here? */
     if (!S_ISDIR(dir->vn_mode)) {
-        retval = -1; /* No a directory entry. */
+        retval = -ENOTDIR; /* No a directory entry. */
         goto out;
     }
 
     dh_dir = get_inode_of_vnode(dir)->in.dir;
     if (dh_lookup(dh_dir, name, name_len, &vnode_num)) {
-        retval = -2; /* Link not found. */
+        retval = -ENOENT; /* Link not found. */
         goto out;
     }
 
     if (ramfs_get_vnode(dir->sb, &vnode_num, result)) {
-        retval = -3; /* Could not translate vnode_num to a vnode;
-                      * Broken link? */
+        retval = -ENOLINK; /* Could not translate vnode_num to a vnode;
+                            * Broken link? */
     }
 
     (*result)->vn_refcount++;
@@ -501,14 +507,14 @@ int ramfs_link(vnode_t * dir, vnode_t * vnode, const char * name, size_t name_le
 
     /* TODO is this check needed here? */
     if (!S_ISDIR(dir->vn_mode)) {
-        retval = -1; /* No a directory entry. */
+        retval = -ENOTDIR; /* No a directory entry. */
         goto out;
     }
 
     inode = get_inode_of_vnode(vnode);
     inode_dir = get_inode_of_vnode(dir);
     if (dh_link(inode_dir->in.dir, vnode, name, name_len)) {
-        retval = -2; /* Failed to create a hard link. */
+        retval = -ENOSPC; /* Failed to create a hard link. */
         goto out;
     }
 
@@ -535,14 +541,14 @@ int ramfs_mkdir(vnode_t * dir,  const char * name, size_t name_len)
 
     /* TODO is this check needed here? */
     if (!S_ISDIR(dir->vn_mode)) {
-        retval = -1; /* No a directory entry. */
+        retval = -ENOTDIR; /* No a directory entry. */
         goto out;
     }
 
     ramfs_sb = get_rfsb_of_sb(dir->sb);
     vnode_new = inpool_get_next(&(ramfs_sb->ramfs_ipool));
     if (vnode_new == 0) {
-        retval = -1;
+        retval = -ENOSPC;
         goto out; /* Can't create a new dir. */
     }
     inode_dir = get_inode_of_vnode(dir);
@@ -550,7 +556,7 @@ int ramfs_mkdir(vnode_t * dir,  const char * name, size_t name_len)
 
     inode_new->in.dir = kcalloc(1, sizeof(dh_table_t)); /* Create a dh_table */
     if (inode_new->in.dir == 0) {
-        retval = -2;
+        retval = -ENOSPC;
         goto delete_inode; /* Cant allocate dh_table */
     }
     vnode_new->vn_mode = S_IFDIR; /* This is a directory. */
@@ -583,7 +589,7 @@ int ramfs_readdir(vnode_t * dir, struct dirent * d)
 
     /* TODO is this check needed here? */
     if (!S_ISDIR(dir->vn_mode)) {
-        retval = -1; /* No a directory entry. */
+        retval = -ENOTDIR; /* No a directory entry. */
         goto out;
     }
 
@@ -843,7 +849,7 @@ static int insert_inode(ramfs_inode_t * inode)
         tmp_iarr = (ramfs_inode_t **)krealloc(ramfs_sb->ramfs_iarr,
                 (ino_t)(ramfs_sb->ramfs_iarr_size) * sizeof(ramfs_inode_t *));
         if (tmp_iarr == 0) {
-            retval = -1; /* Can't allocate more memory for inode lookup table */
+            retval = -ENOSPC; /* Can't allocate more memory for inode lookup table */
             goto out;
         }
         ramfs_sb->ramfs_iarr = tmp_iarr; /* reallocate ok. */
