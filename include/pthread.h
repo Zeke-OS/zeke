@@ -33,8 +33,8 @@
  */
 
 /** @addtogroup LIBC
-  * @{
-  */
+ * @{
+ */
 
 #pragma once
 #ifndef PTHREAD_H
@@ -44,8 +44,8 @@
 #include <sys/types_pthread.h>
 
 /** @addtogroup Threads
-  * @{
-  */
+ * @{
+ */
 
 /* TODO Missing most of the standard declarations */
 /* TODO errnos */

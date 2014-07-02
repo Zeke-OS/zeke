@@ -201,7 +201,7 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
 
     sb = fs->mount(source, flags, parm, parm_len);
     if (!sb)
-        return -ENODEV;
+        return -ENODEV; /* TODO We may want more error codes here */
 
     if (dotdot) {
         /* TODO - Make .. of the new mount to point prev dir of the mp

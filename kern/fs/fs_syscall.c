@@ -103,10 +103,12 @@ static int fs_syscall_mount(struct _fs_mount_args * user_args)
         goto out;
     }
 
-    retval = fs_mount(mpt, args->source, args->fsname, args->flags,
+    err = fs_mount(mpt, args->source, args->fsname, args->flags,
                     args->parm, args->parm_len);
-    if (retval != 0)
-        set_errno(ENOENT); /* TODO Other ernos? */
+    if (err) {
+        set_errno(-err);
+        goto out;
+    }
 
     retval = 0;
 out:

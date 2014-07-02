@@ -42,9 +42,22 @@
 
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
+
+/**
+ * The mount() system call attaches the file system specified by source to the
+ * directory specified by target.
+ * @throws + EFAULT     One of the argument pointers is outside of the process's
+ *                      allocated address space.
+ *         + ENOMEM     Not enough memory available to mount a new file system.
+ *         + ENOENT     Mount target doesn't exist.
+ *         + ENOTSUP    File system type is not supported.
+ *         + ENODEV     Mount failed. TODO ??
+ */
 int mount(const char * source, const char * target, const char * type,
           int flags, char * parms);
+
 int unmount(const char * dir, int flags);
+
 __END_DECLS
 #endif /* !KERNEL_INTERNAL */
 
