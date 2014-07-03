@@ -187,7 +187,7 @@ void ramfs_init(void)
  * @return error code, -errno.
  */
 int ramsfs_mount(const char * source, uint32_t mode,
-        const char * parm, int parm_len, fs_superblock ** sb)
+                 const char * parm, int parm_len, struct fs_superblock ** sb)
 {
     ramfs_sb_t * ramfs_sb;
     int retval = 0;

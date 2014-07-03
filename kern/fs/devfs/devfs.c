@@ -54,8 +54,9 @@ const vnode_ops_t devfs_vnode_ops = {
     .readdir = ramfs_readdir
 };
 
-static struct fs_superblock * devfs_mount(const char * source, uint32_t mode,
-                                          const char * parm, int parm_len);
+static int devfs_mount(const char * source, uint32_t mode,
+                       const char * parm, int parm_len,
+                       struct fs_superblock ** sb);
 static int devfs_umount(struct fs_superblock * fs_sb);
 
 static fs_t devfs_fs = {
@@ -101,10 +102,14 @@ void devfs_init(void)
     SUBSYS_INITFINI("devfs OK");
 }
 
-static struct fs_superblock * devfs_mount(const char * source, uint32_t mode,
-                                          const char * parm, int parm_len)
+static int devfs_mount(const char * source, uint32_t mode,
+                       const char * parm, int parm_len,
+                       struct fs_superblock ** sb)
 {
-    return vn_devfs->vn_mountpoint->sb;
+    if (!(vn_devfs && vn_devfs->vn_mountpoint && vn_devfs->vn_mountpoint->sb))
+        return -ENODEV;
+    *sb = vn_devfs->vn_mountpoint->sb;
+    return 0;
 }
 
 static int devfs_umount(struct fs_superblock * fs_sb)

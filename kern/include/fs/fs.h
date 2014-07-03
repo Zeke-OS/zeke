@@ -134,8 +134,8 @@ typedef struct files_struct {
 typedef struct fs {
     char fsname[8];
 
-    struct fs_superblock * (*mount)(const char * source, uint32_t mode,
-            const char * parm, int parm_len, fs_superblock ** sb);
+    int (*mount)(const char * source, uint32_t mode,
+                 const char * parm, int parm_len, struct fs_superblock ** sb);
     int (*umount)(struct fs_superblock * fs_sb);
     struct superblock_lnode * sbl_head; /*!< List of all mounts. */
 } fs_t;

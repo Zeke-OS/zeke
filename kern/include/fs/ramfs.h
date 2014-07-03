@@ -43,23 +43,23 @@
 #define RAMFS_VDEV_MAJOR_ID     10
 
 /* fs ops */
-struct fs_superblock * ramsfs_mount(const char * source, uint32_t mode,
-        const char * parm, int parm_len);
+int ramsfs_mount(const char * source, uint32_t mode,
+                 const char * parm, int parm_len, struct fs_superblock ** sb);
 int ramfs_umount(struct fs_superblock * fs_sb);
 /* sb ops */
 int ramfs_get_vnode(struct fs_superblock * sb, ino_t * vnode_num, vnode_t ** vnode);
 int ramfs_delete_vnode(vnode_t * vnode);
 /* vnode ops */
 size_t ramfs_write(vnode_t * file, const off_t * offset,
-        const void * buf, size_t count);
+                   const void * buf, size_t count);
 size_t ramfs_read(vnode_t * file, const off_t * offset,
-        void * buf, size_t count);
+                  void * buf, size_t count);
 int ramfs_create(vnode_t * dir, const char * name, size_t name_len,
-        vnode_t ** result);
+                 vnode_t ** result);
 int ramfs_mknod(vnode_t * dir, const char * name, size_t name_len, int mode,
-        void * specinfo, vnode_t ** result);
+                void * specinfo, vnode_t ** result);
 int ramfs_lookup(vnode_t * dir, const char * name, size_t name_len,
-        vnode_t ** result);
+                 vnode_t ** result);
 int ramfs_link(vnode_t * dir, vnode_t * vnode, const char * name, size_t name_len);
 int ramfs_mkdir(vnode_t * dir,  const char * name, size_t name_len);
 int ramfs_readdir(vnode_t * dir, struct dirent * d);
