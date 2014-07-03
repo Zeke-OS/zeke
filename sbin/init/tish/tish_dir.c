@@ -60,7 +60,7 @@ void tish_ls(char ** args)
         puts("Opening ./ failed.\n");
         return;
     }
-    count = getdents(fildes, dbuf, sizeof(dbuf));
+    count = getdents(fildes, (char *)dbuf, sizeof(dbuf));
     if (count < 1) {
         puts("Reading directory entries failed\n");
     }

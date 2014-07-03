@@ -128,7 +128,7 @@ int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str, int oflags
     }
 
     /*
-     * Start looking for a vnode.
+     * Start looking up for a vnode.
      * We don't care if root is not a directory because lookup will spot it
      * anyway.
      */
@@ -381,6 +381,7 @@ perms_ok:
             return 0;
         }
     }
+    /* TODO Try to extend files array if maximum value is not yet reached */
 
     kfree(new_fildes);
     return -EMFILE;
@@ -417,37 +418,46 @@ file_t * fs_fildes_ref(files_t * files, int fd, int count)
     return fildes;
 }
 
-/* TODO This function should not use set_errno(), errno should be only set in
- *      actual syscall related functions. */
-ssize_t fs_write_cproc(int fildes, const void * buf, size_t nbyte,
-        off_t * offset)
+/**
+ * @param oper  is the file operation, either O_RDONLY or O_WRONLY.
+ */
+ssize_t fs_readwrite_cproc(int fildes, void * buf, size_t nbyte, int oper)
 {
-    proc_info_t * cpr = curproc;
     vnode_t * vnode;
+    file_t * file;
     size_t retval = -1;
 
-    /* Check that fildes exists. */
-    if (fildes >= cpr->files->count && !(cpr->files->fd[fildes])) {
-        set_errno(EBADF);
+    file = fs_fildes_ref(curproc->files, fildes, 1);
+    if (!file)
+        return -EBADF;
+    vnode = file->vnode;
+
+    /* Check that file is opened for correct mode, the vnode exist and we have
+     * ops struct for the vnode. */
+    if (!(file->oflags & oper) || !vnode || !(vnode->vnode_ops)) {
+        retval = -EBADF;
         goto out;
     }
 
-    /* Check that the fildes is open for writing. */
-    if (!(cpr->files->fd[fildes]->oflags & O_WRONLY)) {
-        set_errno(EBADF);
+    if (((oper & O_ACCMODE) == O_RDONLY) && !(vnode->vnode_ops->read)) {
+        retval = -EOPNOTSUPP;
+        goto out;
+    } else if (((oper & O_ACCMODE) == O_WRONLY) && !(vnode->vnode_ops->write)) {
+        retval = -EOPNOTSUPP;
+        goto out;
+    } else if ((oper & O_ACCMODE) == (O_RDONLY | O_WRONLY)) {
+        /* Invalid operation code */
+        retval = -ENOTSUP;
         goto out;
     }
 
-    vnode = cpr->files->fd[fildes]->vnode;
-    /* Check if there is a vnode linked with the file and it can be written. */
-    if (!vnode || !(vnode->vnode_ops) || !(vnode->vnode_ops->write)) {
-        set_errno(EBADF);
-        goto out;
-    }
-
-    retval = vnode->vnode_ops->write(vnode, offset, buf, nbyte);
-    if (retval < nbyte) /* TODO How to determine other errno types? */
-        set_errno(ENOSPC);
+    if (oper & O_RDONLY)
+        retval = vnode->vnode_ops->read(vnode, &(file->seek_pos), buf, nbyte);
+    else
+        retval = vnode->vnode_ops->write(vnode, &(file->seek_pos), buf, nbyte);
+    if (retval < nbyte) /* TODO There should be other codes too */
+        retval = -ENOSPC;
 out:
+    fs_fildes_ref(curproc->files, fildes, -1);
     return retval;
 }

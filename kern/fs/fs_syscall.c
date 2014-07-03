@@ -46,37 +46,77 @@
 #include <dirent.h>
 #include <fs/fs.h>
 
-static int sys_write(void * p)
+static int sys_read(void * user_args)
 {
-    struct _fs_write_args fswa;
+    struct _fs_readwrite_args args;
+    char * buf;
+    int retval;
+
+    if (!useracc(user_args, sizeof(struct _fs_readwrite_args), VM_PROT_READ)) {
+        /* No permission to read/write */
+        /* TODO Signal/Kill? */
+        set_errno(EFAULT);
+        retval = -1;
+        goto out;
+    }
+    copyin(user_args, &args, sizeof(struct _fs_readwrite_args));
+
+    /* Buffer */
+    if (!useracc(args.buf, args.nbytes, VM_PROT_WRITE)) {
+        /* No permission to read/write */
+        /* TODO Signal/Kill? */
+        set_errno(EFAULT);
+        retval = -1;
+        goto out;
+    }
+    buf = kmalloc(args.nbytes);
+
+    retval = fs_readwrite_cproc(args.fildes, buf, args.nbytes, O_RDONLY);
+    if (retval < 0) {
+        set_errno(-retval);
+        retval = -1;
+    }
+
+    copyout(buf, args.buf, args.nbytes);
+    kfree(buf);
+out:
+    return retval;
+}
+
+static int sys_write(void * user_args)
+{
+    struct _fs_readwrite_args args;
     char * buf;
     int retval;
 
     /* Args */
-    if (!useracc(p, sizeof(struct _fs_write_args), VM_PROT_READ)) {
+    if (!useracc(user_args, sizeof(struct _fs_readwrite_args), VM_PROT_READ)) {
         /* No permission to read/write */
         /* TODO Signal/Kill? */
         set_errno(EFAULT);
         retval = -1;
         goto out;
     }
-    copyin(p, &fswa, sizeof(struct _fs_write_args));
+    copyin(user_args, &args, sizeof(struct _fs_readwrite_args));
 
     /* Buffer */
-    if (!useracc(fswa.buf, fswa.nbyte, VM_PROT_READ)) {
+    if (!useracc(args.buf, args.nbytes, VM_PROT_READ)) {
         /* No permission to read/write */
         /* TODO Signal/Kill? */
         set_errno(EFAULT);
         retval = -1;
         goto out;
     }
-    buf = kmalloc(fswa.nbyte);
-    copyin(fswa.buf, buf, fswa.nbyte);
+    buf = kmalloc(args.nbytes);
+    copyin(args.buf, buf, args.nbytes);
 
-    retval = fs_write_cproc(fswa.fildes, buf, fswa.nbyte,
-                            &(fswa.offset));
+    retval = fs_readwrite_cproc(args.fildes, buf, args.nbytes, O_WRONLY);
+    if (retval < 0) {
+        set_errno(-retval);
+        retval = -1;
+    }
+
     kfree(buf);
-
 out:
     return retval;
 }
@@ -170,7 +210,13 @@ out:
 
 static int sys_close(int fildes)
 {
-    return fs_fildes_ref(curproc->files, fildes, -1);
+    if(!fs_fildes_ref(curproc->files, fildes, 0)) {
+        set_errno(EBADF);
+        return -1;
+    }
+    fs_fildes_ref(curproc->files, fildes, -1);
+
+    return 0;
 }
 
 static int sys_getdents(void * user_args)
@@ -222,10 +268,11 @@ static int sys_getdents(void * user_args)
 
         bytes_left -= (sizeof(struct dirent));
     }
+    fildes->seek_pos = d.d_off;
+    fs_fildes_ref(curproc->files, args.fd, -1);
 
     copyout(dents, args.buf, count * sizeof(struct dirent));
     kfree(dents);
-    fs_fildes_ref(curproc->files, args.fd, -1);
 
     return count;
 }
@@ -249,8 +296,7 @@ uintptr_t fs_syscall(uint32_t type, void * p)
         return (uintptr_t)sys_close((int)p);
 
     case SYSCALL_FS_READ:
-        set_errno(ENOSYS);
-        return -4;
+        return (uintptr_t)sys_read(p);
 
     case SYSCALL_FS_WRITE:
         return (uintptr_t)sys_write(p);

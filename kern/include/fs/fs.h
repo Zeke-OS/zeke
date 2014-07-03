@@ -315,21 +315,15 @@ int fs_fildes_create_cproc(vnode_t * vnode, int oflags);
 file_t * fs_fildes_ref(files_t * files, int fd, int count);
 
 /**
- * Write to a open file of the current process.
- * Error code is written to the errno of the current thread.
+ * Read or write to a open file of the current process.
  * @param fildes    is the file descriptor.
  * @param buf       is the buffer.
- * @param nbytes    is the amount of bytes to be writted.
- * @return  Return the number of bytes actually written to the file associated
- *          with fildes; Otherwise, -1 is returned and errno set to indicate the
- *          error.
- * @throws EBADF    The fildes argument is not a valid file descriptor open for
- *                  writing.
- * @throws ENOSPC   There was no free space remaining on the device containing
- *                  the file.
+ * @param nbytes    is the amount of bytes to be read/writted.
+ * @return  Return the number of bytes actually read/written from/to the file
+ *          associated with fildes; Otherwise a negative value representing
+ *          -errno.
  */
-ssize_t fs_write_cproc(int fildes, const void * buf, size_t nbyte,
-        off_t * offset);
+ssize_t fs_readwrite_cproc(int fildes, void * buf, size_t nbyte, int oper);
 
 #endif /* FS_H */
 

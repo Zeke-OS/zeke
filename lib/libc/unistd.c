@@ -39,26 +39,27 @@ pid_t fork(void)
     return (pid_t)syscall(SYSCALL_PROC_FORK, NULL);
 }
 
+#if 0
 ssize_t pwrite(int fildes, const void * buf, size_t nbyte,
         off_t offset)
 {
-    struct _fs_write_args args = {
+    struct _fs_readwrite_args args = {
         .fildes = fildes,
         .buf = (void *)buf,
-        .nbyte = nbyte,
-        .offset = offset
+        .nbytes = nbyte
     };
 
+    /* TODO Seek first */
     return (ssize_t)syscall(SYSCALL_FS_WRITE, &args);
 }
+#endif
 
 ssize_t write(int fildes, const void * buf, size_t nbyte)
 {
-    struct _fs_write_args args = {
+    struct _fs_readwrite_args args = {
         .fildes = fildes,
         .buf = (void *)buf,
-        .nbyte = nbyte,
-        .offset = SEEK_CUR
+        .nbytes = nbyte
     };
 
     return (ssize_t)syscall(SYSCALL_FS_WRITE, &args);

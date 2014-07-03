@@ -61,5 +61,5 @@ int open(const char * path, int oflags, ...)
 
 int close(int fildes)
 {
-    return syscall(SYSCALL_FS_CLOSE, fildes);
+    return syscall(SYSCALL_FS_CLOSE, (void *)fildes);
 }

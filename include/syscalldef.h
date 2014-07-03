@@ -81,11 +81,10 @@ struct _sysctl_args {
 };
 
 /** Arguments struct for SYSCALL_FS_WRITE */
-struct _fs_write_args {
+struct _fs_readwrite_args {
     int fildes;
     void * buf;
-    size_t nbyte;
-    off_t offset;
+    size_t nbytes;
 };
 
 /** Arguments struct for SYSCALL_FS_MOUNT */
