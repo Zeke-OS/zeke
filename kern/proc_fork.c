@@ -202,8 +202,7 @@ pid_t proc_fork(pid_t pid)
     new_proc->files->count = old_proc->files->count;
     for (int i = 0; i < old_proc->files->count; i++) {
         new_proc->files->fd[i] = old_proc->files->fd[i];
-        if (new_proc->files->fd[i])
-            fs_fildes_ref(new_proc->files->fd[i], 1);
+        fs_fildes_ref(new_proc->files, i, 1); /* null pointer safe */
     }
 
     if (nprocs != 1) { /* Tecnically it would be good idea to have lock on

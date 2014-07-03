@@ -108,6 +108,13 @@ struct _fs_open_args {
     mode_t mode;
 };
 
+/** Arguments for SYSCALL_FS_GETDENTS */
+struct _ds_getdents_args {
+    int fd;
+    char * buf;
+    size_t nbytes;
+};
+
 /** Arguments struct for SYSCALL_PROC_GETBREAK */
 struct _ds_getbreak {
     void * start;

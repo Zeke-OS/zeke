@@ -43,9 +43,10 @@
 #include <syscall.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <dirent.h>
 #include <fs/fs.h>
 
-static int fs_syscall_write(void * p)
+static int sys_write(void * p)
 {
     struct _fs_write_args fswa;
     char * buf;
@@ -80,7 +81,7 @@ out:
     return retval;
 }
 
-static int fs_syscall_mount(struct _fs_mount_args * user_args)
+static int sys_mount(struct _fs_mount_args * user_args)
 {
     struct _fs_mount_args * args = 0;
     vnode_t * mpt;
@@ -118,7 +119,7 @@ out:
     return retval;
 }
 
-static int fs_syscall_open(void * user_args)
+static int sys_open(void * user_args)
 {
     struct _fs_open_args args;
     char * name = 0;
@@ -141,10 +142,10 @@ static int fs_syscall_open(void * user_args)
         set_errno(EFAULT);
         goto out;
     }
-    copyinstr(args.name, &name, args.name_len, 0);
+    copyinstr(args.name, name, args.name_len, 0);
     args.name = name;
 
-    if (!fs_namei_proc(&file, name)) {
+    if (fs_namei_proc(&file, name)) {
         if (args.oflags & O_CREAT) {
             /* TODO Create a file */
         } else {
@@ -167,6 +168,68 @@ out:
     return retval;
 }
 
+static int sys_close(int fildes)
+{
+    return fs_fildes_ref(curproc->files, fildes, -1);
+}
+
+static int sys_getdents(void * user_args)
+{
+    struct _ds_getdents_args args;
+    struct dirent * dents;
+    size_t bytes_left;
+    file_t * fildes;
+    struct dirent d; /* Temp storage */
+    int count = 0;
+
+    if (!useracc(user_args, sizeof(args), VM_PROT_READ)) {
+        set_errno(EFAULT);
+        return -1;
+    }
+    copyin(user_args, &args, sizeof(struct _ds_getdents_args));
+
+    /* We must have write access to the given buffer. */
+    if (!useracc(args.buf, args.nbytes, VM_PROT_WRITE)) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    fildes = fs_fildes_ref(curproc->files, args.fd, 1);
+    if (!fildes) {
+        set_errno(EBADF);
+        return -1;
+    }
+
+    dents = kmalloc(args.nbytes);
+    if (!dents) {
+        fs_fildes_ref(curproc->files, args.fd, -1);
+        set_errno(ENOMEM);
+        return -1;
+    }
+
+    /*
+     * This is a bit tricky, if we are here for the first time there should be a
+     * magic value 0x00000000FFFFFFFF set to seek_pos but we can't do a thing if
+     * fildes was initialized incorrectly, so lets cross our fingers.
+     */
+    d.d_off = fildes->seek_pos;
+    bytes_left = args.nbytes;
+    while (bytes_left >= sizeof(struct dirent)) {
+        vnode_t * vnode = fildes->vnode;
+        if (vnode->vnode_ops->readdir(vnode, &d))
+            break;
+        dents[count++] = d;
+
+        bytes_left -= (sizeof(struct dirent));
+    }
+
+    copyout(dents, args.buf, count * sizeof(struct dirent));
+    kfree(dents);
+    fs_fildes_ref(curproc->files, args.fd, -1);
+
+    return count;
+}
+
 /**
  * fs syscall handler
  * @param type Syscall type
@@ -180,22 +243,24 @@ uintptr_t fs_syscall(uint32_t type, void * p)
         return -1;
 
     case SYSCALL_FS_OPEN:
-        return (uintptr_t)fs_syscall_open(p);
+        return (uintptr_t)sys_open(p);
 
     case SYSCALL_FS_CLOSE:
-        set_errno(ENOSYS);
-        return -3;
+        return (uintptr_t)sys_close((int)p);
 
     case SYSCALL_FS_READ:
         set_errno(ENOSYS);
         return -4;
 
     case SYSCALL_FS_WRITE:
-        return (uintptr_t)fs_syscall_write(p);
+        return (uintptr_t)sys_write(p);
 
     case SYSCALL_FS_LSEEK:
         set_errno(ENOSYS);
         return -6;
+
+    case SYSCALL_FS_GETDENTS:
+        return (uintptr_t)sys_getdents(p);
 
     case SYSCALL_FS_DUP:
         set_errno(ENOSYS);
@@ -238,7 +303,7 @@ uintptr_t fs_syscall(uint32_t type, void * p)
         return -16;
 
     case SYSCALL_FS_MOUNT:
-        return (uintptr_t)fs_syscall_mount(p);
+        return (uintptr_t)sys_mount(p);
 
     default:
         set_errno(ENOSYS);

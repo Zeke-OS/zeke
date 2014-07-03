@@ -148,6 +148,10 @@ int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str, int oflags
          *        -ELOOP
          */
         *result = vnode->vn_mountpoint;
+#if configDEBUG != 0
+        if (*result == 0)
+            panic("vfs is in inconsistent state");
+#endif
     } while ((nodename = kstrtok(0, PATH_DELIMS, &lasts)));
 
     if ((oflags & O_DIRECTORY) && !S_ISDIR((*result)->vn_mode)) {
@@ -172,8 +176,10 @@ int fs_namei_proc(vnode_t ** result, char * path)
         start = curproc->cwd;
     }
 
-    if (path[strlenn(path, PATH_MAX)] == '/')
+    if (path[strlenn(path, PATH_MAX)] == '/') {
+        KERROR(KERROR_DEBUG, "look for dir");
         oflags = O_DIRECTORY;
+    }
 
     return lookup_vnode(result, start, path, oflags);
 }
@@ -272,7 +278,7 @@ unsigned int fs_get_pfs_minor(void)
 
 int fs_fildes_set(file_t * fildes, vnode_t * vnode, int oflags)
 {
-    if (!fildes || !vnode)
+    if (!(fildes && vnode))
         return -1;
 
     mtx_init(&fildes->lock, MTX_DEF | MTX_SPIN);
@@ -339,6 +345,9 @@ int fs_fildes_create_cproc(vnode_t * vnode, int oflags)
     file_t * new_fildes;
     files_t * files;
 
+    if (!vnode)
+        return -EINVAL;
+
     files = curproc->files;
     if (curproc->euid == 0)
         goto perms_ok;
@@ -354,28 +363,39 @@ int fs_fildes_create_cproc(vnode_t * vnode, int oflags)
 
 perms_ok:
     /* Check other oflags */
-    if ((oflags & O_DIRECTORY) && (!S_ISDIR(vnode->vn_mode))) {
+    if ((oflags & O_DIRECTORY) && (!S_ISDIR(vnode->vn_mode)))
         return -ENOTDIR;
-    }
 
     new_fildes = kcalloc(1, sizeof(file_t));
     if (!new_fildes) {
         return -ENOMEM;
     }
 
+    if (S_ISDIR(vnode->vn_mode))
+        new_fildes->seek_pos = DSEEKPOS_MAGIC;
+
     for (int i = 0; i < files->count; i++) {
         if (!(files->fd[i])) {
+            files->fd[i] = new_fildes;
             fs_fildes_set(files->fd[i], vnode, oflags);
             return 0;
         }
     }
 
+    kfree(new_fildes);
     return -EMFILE;
 }
 
-void fs_fildes_ref(file_t * fildes, int count)
+file_t * fs_fildes_ref(files_t * files, int fd, int count)
 {
+    file_t * fildes;
     int free = 0;
+
+    if (!files || (fd >= files->count))
+        return 0;
+    fildes = files->fd[fd];
+    if (!fildes)
+        return 0;
 
     mtx_spinlock(&fildes->lock);
     fildes->refcount += count;
@@ -386,10 +406,15 @@ void fs_fildes_ref(file_t * fildes, int count)
 
     /* The following is normally unsafe but in the case of file descriptors it
      * should be safe to assume that there is always only one process that wants
-     * to free a filedes.
+     * to free a filedes concurrently (the owener itself).
      */
-    if (free)
+    if (free) {
         kfree(fildes);
+        files->fd[fd] = 0;
+        return 0;
+    }
+
+    return fildes;
 }
 
 /* TODO This function should not use set_errno(), errno should be only set in

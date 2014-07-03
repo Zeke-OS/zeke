@@ -37,6 +37,7 @@
 #include <kstring.h>
 #define strlen(x) strlenn(x, 4096) /* TODO REMOVE ME */
 #include <syscall.h>
+#include <unistd.h>
 #include <fcntl.h>
 
 int open(const char * path, int oflags, ...)
@@ -56,4 +57,9 @@ int open(const char * path, int oflags, ...)
     }
 
     return syscall(SYSCALL_FS_OPEN, &args);
+}
+
+int close(int fildes)
+{
+    return syscall(SYSCALL_FS_CLOSE, fildes);
 }

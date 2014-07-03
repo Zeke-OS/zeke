@@ -32,13 +32,12 @@
 
 #include <stdlib.h>
 #include <sys/types.h>
-#include <sys/wait.h>
 #include <kstring.h> /* TODO Remove */
 #include <unistd.h>
-#include <libkern.h>
 #include <errno.h>
-#include <pthread.h>
 #include <kernel.h>
+#include <fcntl.h>
+#include <dirent.h>
 #include "tish.h"
 
 /* TODO Remove */
@@ -47,41 +46,32 @@
 
 //static char invalid_arg[] = "Invalid argument\n";
 
-static void ls(char * path);
-
-void tish_tree(char ** args)
-{
-    //char * arg = kstrtok(0, DELIMS, args);
-
-    //walk_dirtree(cwd, 0);
-}
-
 #define iprintf(indent, fmt, ...) do { char buf[80];                    \
     ksprintf(buf, sizeof(buf), "%*s" fmt, indent, " ", __VA_ARGS__);    \
     kputs(buf);                                                         \
 } while (0)
-static void ls(char * path)
+void tish_ls(char ** args)
 {
-#if 0
-    DIR * dirp;
-    struct dirent dp;
-    dp.d_off = 0x00000000FFFFFFFF; /* TODO initializer? */
+    int fildes, count;
+    struct dirent dbuf[10];
 
-    if ((dirp = opendir(".")) == NULL) {
-        puts("couldn't open dir");
+    fildes = open("./", O_DIRECTORY | O_RDONLY);
+    if (fildes < 0) {
+        puts("Opening ./ failed.\n");
         return;
     }
+    count = getdents(fildes, dbuf, sizeof(dbuf));
+    if (count < 1) {
+        puts("Reading directory entries failed\n");
+    }
 
-    do {
-        errno = 0;
-        if ((dp = readdir(dirp)) != NULL) {
-            puts(dp->d_name);
-        }
-    } while (dp != NULL);
+    for (int i = 0; i < count; i++) {
+        char buf[80];
 
-    if (errno != 0)
-        puts("error reading dir");
+        ksprintf(buf, sizeof(buf), "%s ", dbuf[i].d_name);
+        puts(buf);
+    }
+    puts("\n");
 
-    closedir(dirp);
-#endif
+    close(fildes);
 }

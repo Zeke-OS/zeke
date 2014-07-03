@@ -308,10 +308,11 @@ int fs_fildes_create_cproc(vnode_t * vnode, int oflags);
 /**
  * Increment or decrement a file descriptor reference count and free the
  * descriptor if there is no more refereces to it.
- * @param fildes    is the file descriptor to be updated.
+ * @param files     is the files struct where fd is searched for.
+ * @param fd        is the file descriptor to be updated.
  * @param count     is the value to be added to the refcount.
  */
-void fs_fildes_ref(file_t * fildes, int count);
+file_t * fs_fildes_ref(files_t * files, int fd, int count);
 
 /**
  * Write to a open file of the current process.

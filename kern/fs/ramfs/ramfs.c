@@ -665,6 +665,9 @@ static vnode_t * create_root(ramfs_sb_t * ramfs_sb)
 
     inode->in.dir = kcalloc(1, sizeof(dh_table_t)); /* Create a dh_table */
     retval->vn_mode = S_IFDIR; /* Root is a directory. */
+    char buf[80];
+    ksprintf(buf, sizeof(buf), "%p %u", retval, retval->vn_mode);
+    KERROR(KERROR_DEBUG, buf);
     /* TODO Any other settings? */
 
     /* Insert inode to the inode lookup table of its superblock. */

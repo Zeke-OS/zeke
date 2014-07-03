@@ -42,11 +42,23 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#ifdef KERNEL_INTERNAL
+#define DSEEKPOS_MAGIC 0x00000000FFFFFFFF
+#endif
+
 struct dirent {
     ino_t d_ino; /*!< File serial number. */
     off_t d_off; /*!< Seek offset. */
     char d_name[256]; /*!< Name of entry. */
 };
+
+#ifndef KERNEL_INTERNAL
+__BEGIN_DECLS
+
+/**
+ * Get directory entries.
+ */
+int getdents(int fd, char * buf, int nbytes);
 
 /*
 int alphasort(const struct dirent **, const struct dirent **);
@@ -64,6 +76,9 @@ int scandir(const char *, struct dirent ***,
         const struct dirent **));
 void seekdir(DIR *, long int);
 long int telldir(DIR *);*/
+
+__END_DECLS
+#endif /* !KERNEL_INTERNAL */
 
 #endif /* DIRENT_H */
 

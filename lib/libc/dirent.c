@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    tish.h
+ * @file    dirent.c
  * @author  Olli Vanhoja
- * @brief   Tiny Init Shell for debugging in init.
+ * @brief   Low level operations on directory entries.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -28,22 +28,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************
- */
+*/
 
-#ifdef configTISH
-#pragma once
-#ifndef TISH_H
-#define TISH_H
+#include <syscall.h>
+#include <dirent.h>
 
-#define MAX_LEN 80
-#define DELIMS  " \t\r\n"
+int getdents(int fd, char * buf, int nbytes)
+{
+    struct _ds_getdents_args args = {
+        .fd = fd,
+        .buf = buf,
+        .nbytes = nbytes
+    };
 
-int tish(void);
-void tish_sysctl_cmd(char ** args);
-void tish_uname(char ** args);
-void tish_ikut(char ** args);
-void tish_debug(char ** args);
-void tish_ls(char ** args);
-
-#endif /* TISH_H */
-#endif /* configTISH */
+    return syscall(SYSCALL_FS_GETDENTS, &args);
+}

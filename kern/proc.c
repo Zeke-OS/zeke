@@ -240,8 +240,7 @@ void _proc_free(proc_info_t * p)
     /* Free files */
     if (p->files) {
         for (int i = 0; i < p->files->count; i++) {
-            if (p->files->fd[i])
-                fs_fildes_ref(p->files->fd[i], -1);
+            fs_fildes_ref(p->files, i, -1); /* null pointer safe */
         }
         kfree(p->files);
     }

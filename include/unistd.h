@@ -176,6 +176,7 @@ pid_t fork(void);
 ssize_t pwrite(int fildes, const void *buf, size_t nbyte,
     off_t offset);
 ssize_t write(int fildes, const void * buf, size_t nbyte);
+int close(int fildes);
 
 unsigned sleep(unsigned seconds);
 __END_DECLS
