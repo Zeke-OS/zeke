@@ -422,6 +422,7 @@ int ramfs_create(vnode_t * dir, const char * name, size_t name_len, vnode_t ** r
     if(ramfs_link(dir, vnode, name, name_len)) {
         /* Hard link creation failed. */
         destroy_inode(inode);
+        retval = -EMLINK;
         goto out;
     }
 
@@ -525,7 +526,7 @@ out:
 }
 
 /**
- * Creates a directory called name in dir.
+ * Create a directory called name in dir.
  * @param dir       is a directory in ramfs.
  * @param name      is the name of the new directory.
  * @param name_len  is the length of the name.

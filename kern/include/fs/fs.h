@@ -325,6 +325,8 @@ file_t * fs_fildes_ref(files_t * files, int fd, int count);
  */
 ssize_t fs_readwrite_cproc(int fildes, void * buf, size_t nbyte, int oper);
 
+int fs_creat_cproc(const char * path, mode_t mode, vnode_t ** result);
+
 #endif /* FS_H */
 
 /**

@@ -63,6 +63,7 @@ struct builtin cmdarr[] = {
         {tish_ikut, "ikut"},
         {uptime, "uptime"},
         {tish_ls, "ls"},
+        {tish_touch, "touch"},
         {reg, "reg"},
         {tish_debug, "debug"},
         {tish_exit, "exit"},

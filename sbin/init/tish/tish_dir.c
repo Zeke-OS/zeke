@@ -38,6 +38,8 @@
 #include <kernel.h>
 #include <fcntl.h>
 #include <dirent.h>
+#include <time.h>
+#include <sys/stat.h>
 #include "tish.h"
 
 /* TODO Remove */
@@ -46,10 +48,6 @@
 
 //static char invalid_arg[] = "Invalid argument\n";
 
-#define iprintf(indent, fmt, ...) do { char buf[80];                    \
-    ksprintf(buf, sizeof(buf), "%*s" fmt, indent, " ", __VA_ARGS__);    \
-    kputs(buf);                                                         \
-} while (0)
 void tish_ls(char ** args)
 {
     int fildes, count;
@@ -68,10 +66,20 @@ void tish_ls(char ** args)
     for (int i = 0; i < count; i++) {
         char buf[80];
 
-        ksprintf(buf, sizeof(buf), "%s ", dbuf[i].d_name);
+        ksprintf(buf, sizeof(buf), "%u %s\n", (uint32_t)dbuf[i].d_ino, dbuf[i].d_name);
         puts(buf);
     }
     puts("\n");
+
+    close(fildes);
+}
+
+void tish_touch(char ** args)
+{
+    int fildes;
+    char * path = kstrtok(0, DELIMS, args);
+
+    fildes = creat(path, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 
     close(fildes);
 }

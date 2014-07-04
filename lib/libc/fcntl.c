@@ -59,6 +59,11 @@ int open(const char * path, int oflags, ...)
     return syscall(SYSCALL_FS_OPEN, &args);
 }
 
+int creat(const char * path, mode_t mode)
+{
+    return open(path, O_WRONLY | O_CREAT | O_TRUNC, mode);
+}
+
 int close(int fildes)
 {
     return syscall(SYSCALL_FS_CLOSE, (void *)fildes);

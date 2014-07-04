@@ -169,6 +169,9 @@ int fs_namei_proc(vnode_t ** result, char * path)
     vnode_t * start;
     int oflags = 0;
 
+    if (path[0] == '\0')
+        return -EINVAL;
+
     if (path[0] == '/') {
         path++;
         start = curproc->croot;
@@ -459,5 +462,47 @@ ssize_t fs_readwrite_cproc(int fildes, void * buf, size_t nbyte, int oper)
         retval = -ENOSPC;
 out:
     fs_fildes_ref(curproc->files, fildes, -1);
+    return retval;
+}
+
+int fs_creat_cproc(const char * path, mode_t mode, vnode_t ** result)
+{
+    char * path_act = kmalloc(PATH_MAX);
+    char * name = kmalloc(FS_FILENAME_MAX);
+    vnode_t * dir;
+    size_t i = strlenn(path, PATH_MAX);
+    int retval = 0;
+
+    strncpy(path_act, path, PATH_MAX);
+    while (path_act[i] != '/') {
+        path_act[i--] = '\0';
+        if ((i == 0) && (!(path_act[0] == '/') ||
+                    !(path_act[0] == '.' && path_act[1] == '/'))) {
+            path_act[0] = '.';
+            path_act[1] = '/';
+            path_act[2] = '\0';
+            break;
+        }
+    }
+
+    for (int j = 0; j < FS_FILENAME_MAX; j++) {
+        name[j] = path[i++];
+        if (name[j] == '\0')
+            break;
+    }
+
+    if(fs_namei_proc(&dir, path_act)) {
+        retval = -ENOENT;
+        goto out;
+    }
+
+    /* We know that the returned vnode is a dir so we can just call mknod() */
+    *result = 0;
+    retval = dir->vnode_ops->create(dir, name, FS_FILENAME_MAX, result);
+    //retval = dir->vnode_ops->mknod(dir, name, FS_FILENAME_MAX, mode, 0, result);
+
+out:
+    kfree(path_act);
+    kfree(name);
     return retval;
 }

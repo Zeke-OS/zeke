@@ -44,6 +44,7 @@ void tish_uname(char ** args);
 void tish_ikut(char ** args);
 void tish_debug(char ** args);
 void tish_ls(char ** args);
+void tish_touch(char ** args);
 
 #endif /* TISH_H */
 #endif /* configTISH */

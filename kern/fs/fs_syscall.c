@@ -173,6 +173,11 @@ static int sys_open(void * user_args)
     }
     copyin(user_args, &args, sizeof(args));
 
+    if (args.name_len < 2) {
+        set_errno(EINVAL);
+        goto out;
+    }
+
     name = kmalloc(args.name_len);
     if (!name) {
         set_errno(ENFILE);
@@ -187,7 +192,13 @@ static int sys_open(void * user_args)
 
     if (fs_namei_proc(&file, name)) {
         if (args.oflags & O_CREAT) {
-            /* TODO Create a file */
+            /* Create a new file */
+            /* TODO Determine correct mode bits?? */
+            retval = fs_creat_cproc(name, S_IFREG | args.mode, &file);
+            if (retval) {
+                set_errno(-retval);
+                goto out;
+            }
         } else {
             set_errno(ENOENT);
             goto out;

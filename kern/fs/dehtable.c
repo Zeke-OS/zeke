@@ -75,7 +75,8 @@ static size_t hash_fname(const char * str, size_t len);
  * @param offset is the offset of dh_dirent in the array.
  * @return Pointer to a dh_dirent struct.
  */
-#define get_dirent(dea, offset) ((dh_dirent_t *)((size_t)(dea) + (offset)))
+#define get_dirent(dea, offset) \
+    ((dh_dirent_t *)((size_t)(dea) + (offset)))
 
 /**
  * Returns true if given dirent node has an invalid dh_size.
@@ -83,8 +84,8 @@ static size_t hash_fname(const char * str, size_t len);
  * @param denode is a directory entry node.
  * @return 0 if dh_size is valid; Otherwise value other than zero.
  */
-#define if_invalid_offset(denode) ((denode)->dh_size > \
-        DIRENT_SIZE + FS_FILENAME_MAX)
+#define is_invalid_offset(denode) \
+    ((denode)->dh_size > (DIRENT_SIZE + FS_FILENAME_MAX))
 
 /**
  * Insert a new directory entry link.
@@ -243,7 +244,7 @@ dh_dirent_t * dh_iter_next(dh_dir_iter_t * it)
 
 
     node = get_dirent(dea, it->ch_ind); /* Get a node from the chain. */
-    if (if_invalid_offset(node)) {
+    if (is_invalid_offset(node)) {
         node = 0;
         goto out; /* Broken dirent hash table. */
     }
@@ -272,7 +273,7 @@ static chain_info_t find_last_node(dh_dirent_t * chain)
     chinfo.i_size = 0;
     do {
         node = get_dirent(chain, chinfo.i_size);
-        if (if_invalid_offset(node)) {
+        if (is_invalid_offset(node)) {
             /* Error */
             KERROR(KERROR_ERR, "Invalid offset in deh node");
             break;
@@ -301,7 +302,7 @@ static dh_dirent_t * find_node(dh_dirent_t * chain, const char * name,
     offset = 0;
     do {
         node = get_dirent(chain, offset);
-        if (if_invalid_offset(node)) {
+        if (is_invalid_offset(node)) {
             /* Error */
             KERROR(KERROR_ERR, "Invalid offset in deh node");
             break;
