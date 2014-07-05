@@ -179,7 +179,8 @@ static size_t inpool_fill(inpool_t * pool, size_t count)
     vnode_t * vnode;
 
     for (; i < count; i++) {
-        vnode = pool->create_inode(pool->ip_sb, (ino_t *)(&(pool->ip_next_inum)));
+        ino_t * num = &(pool->ip_next_inum);
+        vnode = pool->create_inode(pool->ip_sb, num);
         if (vnode == 0)
             break;
         inpool_insert(pool, vnode);

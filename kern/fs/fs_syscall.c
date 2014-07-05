@@ -190,7 +190,8 @@ static int sys_open(void * user_args)
     copyinstr(args.name, name, args.name_len, 0);
     args.name = name;
 
-    if (fs_namei_proc(&file, name)) {
+    int err;
+    if ((err = fs_namei_proc(&file, name))) {
         if (args.oflags & O_CREAT) {
             /* Create a new file */
             /* TODO Determine correct mode bits?? */

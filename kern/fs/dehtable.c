@@ -85,18 +85,19 @@ static size_t hash_fname(const char * str, size_t len);
  * @return 0 if dh_size is valid; Otherwise value other than zero.
  */
 #define is_invalid_offset(denode) \
-    ((denode)->dh_size > (DIRENT_SIZE + FS_FILENAME_MAX))
+    ((denode)->dh_size > (DIRENT_SIZE + FS_FILENAME_MAX + 1))
 
 /**
  * Insert a new directory entry link.
  * @param dir       is a directory entry table.
  * @param vnode     is the vnode where the new hard link will point.
  * @param name      is the name of the hard link.
- * @param name_len  is the length of the name without null character.
+ * @param name_len  is the length of the name.
  * @return Returns 0 if succeed; Otherwise value other than zero.
  */
 int dh_link(dh_table_t * dir, vnode_t * vnode, const char * name, size_t name_len)
 {
+    name_len = strlenn(name, name_len);
     const size_t h = hash_fname(name, name_len);
     const size_t entry_size = DIRENT_SIZE + name_len + 1;
     dh_dirent_t * dea;
@@ -164,6 +165,7 @@ void dh_destroy_all(dh_table_t * dir)
 int dh_lookup(dh_table_t * dir, const char * name, size_t name_len,
         ino_t * vnode_num)
 {
+    name_len = strlenn(name, name_len);
     const size_t h = hash_fname(name, name_len);
     dh_dirent_t * dea;
     dh_dirent_t * dent;
@@ -175,7 +177,7 @@ int dh_lookup(dh_table_t * dir, const char * name, size_t name_len,
         goto out;
     }
 
-    dent = find_node(dea, name, name_len);
+    dent = find_node(dea, name, name_len + 1);
     if (dent == 0) {
         retval = -2;
         goto out;
@@ -274,8 +276,11 @@ static chain_info_t find_last_node(dh_dirent_t * chain)
     do {
         node = get_dirent(chain, chinfo.i_size);
         if (is_invalid_offset(node)) {
-            /* Error */
-            KERROR(KERROR_ERR, "Invalid offset in deh node");
+            char buf[80];
+
+            ksprintf(buf, sizeof(buf), "Invalid offset in deh node: %u",
+                     node->dh_size);
+            KERROR(KERROR_ERR, buf);
             break;
         }
         chinfo.i_size += node->dh_size;
@@ -289,12 +294,13 @@ static chain_info_t find_last_node(dh_dirent_t * chain)
  * Find a specific dirent node in chain.
  * @param chain     is the chain array.
  * @param name      is the name of the node searched for.
- * @param name_len  is the length of the name without null character.
+ * @param name_len  is the length of the name.
  * @return Returns a pointer to the node; Or null if node not found.
  */
 static dh_dirent_t * find_node(dh_dirent_t * chain, const char * name,
         size_t name_len)
 {
+    name_len = strlenn(name, name_len);
     size_t offset;
     dh_dirent_t * node;
     dh_dirent_t * retval = 0;

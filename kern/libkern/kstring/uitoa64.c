@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    inpool.h
+ * @file    uitoa32.c
  * @author  Olli Vanhoja
- * @brief   Generic inode pool.
+ * @brief   uitoa32 function.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,42 +30,20 @@
  *******************************************************************************
  */
 
-#pragma once
-#ifndef INPOOL_H
-#define INPOOL_H
+#include <kstring.h>
 
-#ifndef FS_H
-#error <fs.h> must be included.
-#endif
+int uitoa64(char * str, uint64_t value)
+{
+    uint64_t div, digs;
+    size_t n = 0;
 
-/**
- * typedef for callback to the inode creation function.
- * @param sb is the superblock used.
- * @param num is the inode number used.
- */
-typedef vnode_t * (*inpool_crin_t)(const fs_superblock_t * sb, ino_t * num);
+    for (div = 1, digs = 1; value / div >= 10; div *= 10, digs++);
 
-/**
- * inode pool struct.
- * The implementation of inode pool uses vnodes to make the implementation more
- * generic, this means that vnode has to be defined as a static member in the
- * actual inode struct.
- */
-typedef struct inpool {
-    vnode_t ** ip_arr; /*!< inode pool array. */
-    size_t ip_max; /*!< Maximum size of the inode pool. */
-    size_t ip_wr; /*!< Write index. */
-    size_t ip_rd; /*!< Read index. */
-    ino_t ip_next_inum; /*!< Next free inode number after pool is used. */
-    fs_superblock_t * ip_sb; /*!< Default Super block of this pool. */
+    do {
+        str[n++] = ((value / div) % 10) + '0';
+    } while (div /= 10);
 
-    inpool_crin_t create_inode; /*!< Create inode callback. */
-} inpool_t;
+    str[n] = '\0';
 
-int inpool_init(inpool_t * pool, fs_superblock_t * sb,
-        inpool_crin_t create_inode, size_t max);
-vnode_t * inpool_insert(inpool_t * pool, vnode_t * vnode);
-vnode_t * inpool_get_next(inpool_t * pool);
-void inpool_destroy(inpool_t * pool);
-
-#endif /* INPOOL_H */
+    return (int)digs;
+}

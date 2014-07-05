@@ -140,7 +140,7 @@ int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str, int oflags
             continue;
 
         retval = (*result)->vnode_ops->lookup(*result, nodename,
-                strlenn(nodename, FS_FILENAME_MAX), &vnode);
+                strlenn(nodename, FS_FILENAME_MAX) + 1, &vnode);
         if (retval) {
             goto out;
         }
@@ -481,12 +481,13 @@ int fs_creat_cproc(const char * path, mode_t mode, vnode_t ** result)
             path_act[0] = '.';
             path_act[1] = '/';
             path_act[2] = '\0';
+            i--; /* little trick */
             break;
         }
     }
 
     for (int j = 0; j < FS_FILENAME_MAX; j++) {
-        name[j] = path[i++];
+        name[j] = path[++i];
         if (name[j] == '\0')
             break;
     }

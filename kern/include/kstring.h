@@ -151,6 +151,8 @@ int atoi(const char * str);
  */
 int uitoa32(char * str, uint32_t value);
 
+int uitoa64(char * str, uint64_t value);
+
 /**
  * Convert uint32_t integer to a hex string.
  * @param str Array in memory where to store the resulting null-terminated
