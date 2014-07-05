@@ -331,7 +331,7 @@ void * kmalloc(size_t size)
         kmalloc_base = b;
     }
 
-    update_stat_up(&(kmalloc_stat.kms_mem_alloc), s);
+    update_stat_up(&(kmalloc_stat.kms_mem_alloc), b->size);
 
     b->refcount = 1;
     return b->data;
