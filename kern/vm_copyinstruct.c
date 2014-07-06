@@ -76,13 +76,18 @@ int copyinstruct(void * usr, void ** kern, size_t bytes, ...)
     va_start(ap, bytes);
     while (1) {
         struct _cpyin_gc_node * gc_node;
-        size_t offset = va_arg(ap, size_t);
-        void * src = *((void **)((size_t)(*kern) + offset));
-        size_t len = *((size_t *)((size_t)(*kern) + va_arg(ap, size_t)));
+        const size_t offset = va_arg(ap, size_t);
+        void * src;
+        size_t len = va_arg(ap, size_t);
         void * dst;
 
-        if ((offset == 0) && (len == 0) && i++ != 0)
+        if ((offset == 0) && (len == 0) && i != 0)
             break;
+        i++; /* This must be here to prevent it from getting optimized out as a
+              * break condition. */
+
+        src = *((void **)((size_t)(*kern) + offset));
+        len = *((size_t *)((size_t)(*kern) + len));
 
         if (!useracc(src, len, VM_PROT_READ)) {
             retval = -EFAULT;
