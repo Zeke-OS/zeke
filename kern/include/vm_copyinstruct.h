@@ -96,7 +96,22 @@
             structure, field, __VA_ARGS__) 0, 0
 
 /**
+ * Copy in struct and selected members from user space to kernel space.
  * Usage: copyinst(usr, &kern, sizeof(usr), GET_STRUCT_OFFSETS(struct x, a, a_len, c, c_len));
+ * @param[in]   usr     is the user space address to the struct.
+ * @param [out] kern    is a kernel space pointer that will be set to point to
+ *                      the newly copied struct.
+ * @param       bytes   is the size of the container struct in bytes.
+ * @param       ...     byte offset of members to be copied and sizes of the
+ *                      members. (offset, len)
+ * @return      0 if succeed; Negative error code representing errno in case of
+ *              failure.
  */
 int copyinstruct(void * usr, void ** kern, size_t bytes, ...);
+
+/**
+ * Free a structure and copied members allocated with copyinstruct().
+ * @param[in]   p       is a pointer to the container struct returned by
+ *                      copyinstruct().
+ */
 void freecpystruct(void * p);
