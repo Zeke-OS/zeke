@@ -111,12 +111,16 @@ __BEGIN_DECLS
 /*
 int chmod(const char *, mode_t);
 int fchmod(int, mode_t);
-int fstat(int, struct stat *);
-int lstat(const char *restrict, struct stat *restrict);
+*/
+int fstat(int fildes, struct stat * buf);
+int fstatat(int fd, const char * restrict path,
+            struct stat * restrict buf, int flag);
+int lstat(const char * restrict path, struct stat * restrict buf);
+int stat(const char * restrict path, struct stat * restrict buf);
+/*
 int mkdir(const char *, mode_t);
 int mkfifo(const char *, mode_t);
 int mknod(const char *, mode_t, dev_t);
-int stat(const char *restrict, struct stat *restrict);
 mode_t umask(mode_t);
 */
 

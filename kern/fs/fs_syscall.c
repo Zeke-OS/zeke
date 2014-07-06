@@ -121,44 +121,6 @@ out:
     return retval;
 }
 
-static int sys_mount(struct _fs_mount_args * user_args)
-{
-    struct _fs_mount_args * args = 0;
-    vnode_t * mpt;
-    int err;
-    int retval = -1;
-
-    err = copyinstruct(user_args, (void **)(&args),
-            sizeof(struct _fs_mount_args),
-            GET_STRUCT_OFFSETS(struct _fs_mount_args,
-                source, source_len,
-                target, target_len,
-                parm,   parm_len));
-    if (err) {
-        set_errno(-err);
-        goto out;
-    }
-
-    if (!fs_namei_proc(&mpt, (char *)args->target)) {
-        set_errno(ENOENT); /* Mount point doesn't exist */
-        goto out;
-    }
-
-    err = fs_mount(mpt, args->source, args->fsname, args->flags,
-                    args->parm, args->parm_len);
-    if (err) {
-        set_errno(-err);
-        goto out;
-    }
-
-    retval = 0;
-out:
-    if (args)
-        freecpystruct(args);
-
-    return retval;
-}
-
 static int sys_open(void * user_args)
 {
     struct _fs_open_args args;
@@ -289,6 +251,119 @@ static int sys_getdents(void * user_args)
     return count;
 }
 
+static int sys_filestat(void * user_args)
+{
+    struct _fs_stat_args * args;
+    vnode_t * vnode;
+    struct stat stat_buf;
+    int err, retval = -1;
+
+    err = copyinstruct(user_args, (void **)(&args),
+            sizeof(struct _fs_stat_args),
+            GET_STRUCT_OFFSETS(struct _fs_stat_args,
+                path, path_len));
+    if (err) {
+        set_errno(-err);
+        goto out;
+    }
+
+    if (!useracc(args->buf, sizeof(struct stat), VM_PROT_WRITE)) {
+        set_errno(EFAULT);
+        goto out;
+    }
+
+    if (args->flags & AT_FDARG) { /* by fildes */
+        file_t * fildes;
+        /* Note: AT_SYMLINK_NOFOLLOW == O_NOFOLLOW */
+        const int ofalgs = (args->flags & AT_SYMLINK_NOFOLLOW);
+
+        fildes = fs_fildes_ref(curproc->files, args->fd, 1);
+        if (!fildes) {
+            set_errno(EBADF);
+            goto out;
+        }
+
+        err = fildes->vnode->vnode_ops->stat(fildes->vnode, &stat_buf);
+        if (!err) {
+            /* Check if fildes was opened with O_SEARCH or if not then if we
+             * have a permission to search by file permission. */
+            if (fildes->oflags & O_SEARCH || chkperm_cproc(&stat_buf, O_EXEC))
+                err = lookup_vnode(&vnode, fildes->vnode, args->path, ofalgs);
+            else /* No permission to search */
+                err = -EACCES;
+        }
+
+        fs_fildes_ref(curproc->files, args->fd, -1);
+        if (err) {
+            set_errno(-err);
+            goto out;
+        }
+    } else { /* search by path */
+        if (!fs_namei_proc(&vnode, (char *)args->path)) {
+            set_errno(ENOENT);
+            goto out;
+        }
+    }
+
+    if ((args->flags & AT_FDARG) &&
+        (args->flags & O_EXEC)) { /* Get stat of given fildes, which we have
+                                   * have in stat_buf. */
+        goto ready;
+    }
+
+    err = vnode->vnode_ops->stat(vnode, &stat_buf);
+    if (err) {
+        set_errno(-err);
+        goto out;
+    }
+
+ready:
+    copyout(&stat_buf, args->buf, sizeof(struct stat));
+    retval = 0;
+out:
+    if (args)
+        freecpystruct(args);
+    return retval;
+}
+
+static int sys_mount(struct _fs_mount_args * user_args)
+{
+    struct _fs_mount_args * args = 0;
+    vnode_t * mpt;
+    int err;
+    int retval = -1;
+
+    err = copyinstruct(user_args, (void **)(&args),
+            sizeof(struct _fs_mount_args),
+            GET_STRUCT_OFFSETS(struct _fs_mount_args,
+                source, source_len,
+                target, target_len,
+                parm,   parm_len));
+    if (err) {
+        set_errno(-err);
+        goto out;
+    }
+
+    if (!fs_namei_proc(&mpt, (char *)args->target)) {
+        set_errno(ENOENT); /* Mount point doesn't exist */
+        goto out;
+    }
+
+    err = fs_mount(mpt, args->source, args->fsname, args->flags,
+                    args->parm, args->parm_len);
+    if (err) {
+        set_errno(-err);
+        goto out;
+    }
+
+    retval = 0;
+out:
+    if (args)
+        freecpystruct(args);
+
+    return retval;
+}
+
 /**
  * fs syscall handler
  * @param type Syscall type
@@ -333,6 +408,7 @@ uintptr_t fs_syscall(uint32_t type, void * p)
         return -9;
 
     case SYSCALL_FS_STAT:
+        return (uintptr_t)sys_filestat(p);
         set_errno(ENOSYS);
         return -10;
 

@@ -92,6 +92,18 @@
 #define O_SEARCH        0x0000 /*!< Open directory for search only. */
 #define O_EXEC          0x4000 /*!< Open for execute only. */
 
+#define AT_FDCWD            0x01 /*!< Use the current working directory to
+                                  *   determine the target of relative file
+                                  *   paths. */
+#define AT_FDARG            0x02 /*!< Use the file descriptor given as an
+                                  *   argument to determine the target of
+                                  *   relative file paths. */
+#define AT_EACCESS          0x10 /*!< Check access using effective user and
+                                  *   group ID. */
+#define AT_SYMLINK_NOFOLLOW 0x20 /*!< Do not follow symbolic links. */
+#define AT_SYMLINK_FOLLOW   0x40 /*!< Follow symbolic link. */
+#define AT_REMOVEDIR        0x80 /*!< Remove directory instead of file. */
+
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
 int open(const char *, int, ...);

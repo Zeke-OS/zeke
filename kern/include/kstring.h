@@ -162,6 +162,8 @@ int uitoa64(char * str, uint64_t value);
  */
 int uitoah32(char * str, uint32_t value);
 
+int uitoa32base(char * str, uint32_t value, uint32_t base);
+
 /**
  * Duplicate a string.
  * @param src is a pointer to the source string.

@@ -219,7 +219,7 @@ pid_t proc_fork(pid_t pid)
      * We left main_thread null if calling process has no main thread.
      */
     if (old_proc->main_thread) {
-        pthread_t old_tid = get_current_tid();
+        //pthread_t old_tid = get_current_tid();
         pthread_t new_tid = sched_thread_fork();
         if (new_tid < 0) {
             retval = -EAGAIN; /* TODO ?? */

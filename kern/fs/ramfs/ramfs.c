@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   ramfs - a temporary file system stored in RAM.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -163,7 +163,8 @@ const vnode_ops_t ramfs_vnode_ops = {
     .lookup = ramfs_lookup,
     .link = ramfs_link,
     .mkdir = ramfs_mkdir,
-    .readdir = ramfs_readdir
+    .readdir = ramfs_readdir,
+    .stat = ramfs_stat
 };
 
 void ramfs_init(void) __attribute__((constructor));
@@ -626,6 +627,27 @@ int ramfs_readdir(vnode_t * dir, struct dirent * d)
 
 out:
     return retval;
+}
+
+int ramfs_stat(vnode_t * vnode, struct stat * buf)
+{
+    ramfs_inode_t * inode = get_inode_of_vnode(vnode);
+
+    buf->st_dev     = vnode->sb->vdev_id;
+    buf->st_ino     = vnode->vn_num;
+    buf->st_mode    = vnode->vn_mode;
+    buf->st_nlink   = inode->in_nlink;
+    buf->st_uid     = inode->in_uid;
+    buf->st_gid     = inode->in_gid;
+    buf->st_rdev    = 0;
+    buf->st_size    = vnode->vn_len;
+    buf->st_atime   = inode->in_atime;
+    buf->st_mtime   = inode->in_mtime;
+    buf->st_ctime   = inode->in_ctime;
+    buf->st_blksize = inode->in_blksize;
+    buf->st_blocks  = inode->in_blocks;
+
+    return 0;
 }
 
 /**

@@ -293,6 +293,15 @@ fs_superblock_t * fs_next_sb(sb_iterator_t * it);
 unsigned int fs_get_pfs_minor(void);
 
 /**
+ * Check file permissions against oflag(s).
+ * @param stat      is a pointer to stat struct of the file.
+ * @param oflags    specifies the verified oflags.
+ * @return  Returns negative errno in case of error or improper permissions;
+ *          Otherwise zero.
+ */
+int chkperm_cproc(struct stat * stat, int oflags);
+
+/**
  * Set parameters of a file descriptor.
  * @param vnode     is a vnode.
  * @param oflags    specifies the opening flags.

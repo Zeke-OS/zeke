@@ -180,7 +180,6 @@ int fs_namei_proc(vnode_t ** result, char * path)
     }
 
     if (path[strlenn(path, PATH_MAX)] == '/') {
-        KERROR(KERROR_DEBUG, "look for dir");
         oflags = O_DIRECTORY;
     }
 
@@ -292,7 +291,7 @@ int fs_fildes_set(file_t * fildes, vnode_t * vnode, int oflags)
     return 0;
 }
 
-static int chkperm_cproc(struct stat * stat, int oflags)
+int chkperm_cproc(struct stat * stat, int oflags)
 {
     gid_t euid = curproc->euid;
     uid_t egid = curproc->egid;

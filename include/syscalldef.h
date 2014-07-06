@@ -114,6 +114,15 @@ struct _ds_getdents_args {
     size_t nbytes;
 };
 
+/** Arguments for SYSCALL_FS_STAT */
+struct _fs_stat_args {
+    int fd;
+    const char * path;
+    size_t path_len;
+    struct stat * buf;
+    unsigned flags;
+};
+
 /** Arguments struct for SYSCALL_PROC_GETBREAK */
 struct _ds_getbreak {
     void * start;

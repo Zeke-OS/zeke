@@ -50,12 +50,16 @@
 
 void tish_ls(char ** args)
 {
+    char * path = kstrtok(0, DELIMS, args);
     int fildes, count;
     struct dirent dbuf[10];
 
-    fildes = open("./", O_DIRECTORY | O_RDONLY);
+    if (!strcmp(path, ""))
+        path = "./";
+
+    fildes = open(path, O_DIRECTORY | O_RDONLY);
     if (fildes < 0) {
-        puts("Opening ./ failed.\n");
+        puts("Open failed\n");
         return;
     }
     count = getdents(fildes, (char *)dbuf, sizeof(dbuf));
@@ -65,8 +69,13 @@ void tish_ls(char ** args)
 
     for (int i = 0; i < count; i++) {
         char buf[80];
+        struct stat stat;
 
-        ksprintf(buf, sizeof(buf), "%u %s\n", (uint32_t)dbuf[i].d_ino, dbuf[i].d_name);
+        fstatat(fildes, dbuf[i].d_name, &stat, 0);
+
+        ksprintf(buf, sizeof(buf), "%u %o %u:%u %s\n",
+                 (uint32_t)dbuf[i].d_ino, (uint32_t)stat.st_mode,
+                 (uint32_t)stat.st_uid, (uint32_t)stat.st_gid, dbuf[i].d_name);
         puts(buf);
     }
     puts("\n");

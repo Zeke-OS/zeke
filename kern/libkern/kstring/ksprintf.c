@@ -65,6 +65,10 @@ void ksprintf(char * str, size_t maxlen, const char * format, ...)
                         n += uitoa32(str + n,
                                 (uint32_t)(va_arg(args, unsigned int)));
                         break;
+                    case 'o':
+                        n += uitoa32base(str + n,
+                                (uint32_t)(va_arg(args, unsigned int)), 8);
+                        break;
                     case 'l':
                         n += uitoa64(str + n,
                                 (uint64_t)(va_arg(args, uint64_t)));

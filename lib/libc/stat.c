@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    ramfs.h
+ * @file    stat.c
  * @author  Olli Vanhoja
- * @brief   ramfs headers.
+ * @brief   File status functions.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -28,41 +28,60 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************
- */
+*/
 
-#pragma once
-#ifndef FS_RAMFS_H
-#define FS_RAMFS_H
+#include <stdarg.h>
+#if 0
+#include <string.h>
+#endif
+#include <kstring.h>
+#include <time.h>
+#define strlen(x) strlenn(x, 4096) /* TODO REMOVE ME */
+#include <syscall.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
-#include <stdint.h>
-#include <stddef.h>
-#include <sys/types.h>
-#include <fs/fs.h>
+int fstat(int fildes, struct stat * buf)
+{
+    struct _fs_stat_args args = {
+        .fd = fildes,
+        .buf = buf,
+        .flags = AT_FDARG | O_EXEC
+    };
 
-#define RAMFS_FSNAME            "ramfs"
-#define RAMFS_VDEV_MAJOR_ID     10
+    return syscall(SYSCALL_FS_STAT, &args);
+}
 
-/* fs ops */
-int ramsfs_mount(const char * source, uint32_t mode,
-                 const char * parm, int parm_len, struct fs_superblock ** sb);
-int ramfs_umount(struct fs_superblock * fs_sb);
-/* sb ops */
-int ramfs_get_vnode(struct fs_superblock * sb, ino_t * vnode_num, vnode_t ** vnode);
-int ramfs_delete_vnode(vnode_t * vnode);
-/* vnode ops */
-size_t ramfs_write(vnode_t * file, const off_t * offset,
-                   const void * buf, size_t count);
-size_t ramfs_read(vnode_t * file, const off_t * offset,
-                  void * buf, size_t count);
-int ramfs_create(vnode_t * dir, const char * name, size_t name_len,
-                 vnode_t ** result);
-int ramfs_mknod(vnode_t * dir, const char * name, size_t name_len, int mode,
-                void * specinfo, vnode_t ** result);
-int ramfs_lookup(vnode_t * dir, const char * name, size_t name_len,
-                 vnode_t ** result);
-int ramfs_link(vnode_t * dir, vnode_t * vnode, const char * name, size_t name_len);
-int ramfs_mkdir(vnode_t * dir,  const char * name, size_t name_len);
-int ramfs_readdir(vnode_t * dir, struct dirent * d);
-int ramfs_stat(vnode_t * vnode, struct stat * buf);
+int fstatat(int fd, const char * restrict path,
+            struct stat * restrict buf, int flag)
+{
+    struct _fs_stat_args args = {
+        .fd = fd,
+        .path = path,
+        .buf = buf,
+        .flags = AT_FDARG | flag
+    };
 
-#endif /* FS_RAMFS_H */
+    return syscall(SYSCALL_FS_STAT, &args);
+}
+
+int lstat(const char * restrict path, struct stat * restrict buf)
+{
+    struct _fs_stat_args args = {
+        .path = path,
+        .buf = buf,
+        .flags = AT_SYMLINK_NOFOLLOW
+    };
+
+    return syscall(SYSCALL_FS_STAT, &args);
+}
+
+int stat(const char * restrict path, struct stat * restrict buf)
+{
+    struct _fs_stat_args args = {
+        .path = path,
+        .buf = buf
+    };
+
+    return syscall(SYSCALL_FS_STAT, &args);
+}

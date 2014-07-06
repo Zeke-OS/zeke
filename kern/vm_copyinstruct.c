@@ -62,8 +62,6 @@ int copyinstruct(void * usr, void ** kern, size_t bytes, ...)
     size_t i = 0;
     int retval = 0;
 
-    while (1);
-
     /* Copy the base struct */
     if (!useracc(usr, bytes, VM_PROT_READ))
         return -EFAULT;
@@ -79,8 +77,8 @@ int copyinstruct(void * usr, void ** kern, size_t bytes, ...)
     while (1) {
         struct _cpyin_gc_node * gc_node;
         size_t offset = va_arg(ap, size_t);
-        void * src = (*((void **)((uintptr_t)(*kern) + offset)));
-        size_t len = *((size_t *)((uintptr_t)(*kern) + va_arg(ap, size_t)));
+        void * src = *((void **)((size_t)(*kern) + offset));
+        size_t len = *((size_t *)((size_t)(*kern) + va_arg(ap, size_t)));
         void * dst;
 
         if ((offset == 0) && (len == 0) && i++ != 0)
@@ -98,9 +96,9 @@ int copyinstruct(void * usr, void ** kern, size_t bytes, ...)
         }
         token->gc_lst->insert_tail(token->gc_lst, gc_node);
         dst = gc_node->data;
-        *((void **)((uintptr_t)(*kern) + offset)) = dst;
 
         copyin(src, dst, len);
+        src = dst;
     };
     va_end(ap);
 

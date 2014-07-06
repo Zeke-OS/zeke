@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    ramfs.h
+ * @file    uitoa32.c
  * @author  Olli Vanhoja
- * @brief   ramfs headers.
+ * @brief   uitoa32 function.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,39 +30,19 @@
  *******************************************************************************
  */
 
-#pragma once
-#ifndef FS_RAMFS_H
-#define FS_RAMFS_H
+#include <kstring.h>
 
-#include <stdint.h>
-#include <stddef.h>
-#include <sys/types.h>
-#include <fs/fs.h>
+int uitoa32base(char * str, uint32_t value, uint32_t base)
+{
+    size_t n = 0, div, digs;
 
-#define RAMFS_FSNAME            "ramfs"
-#define RAMFS_VDEV_MAJOR_ID     10
+    for (div = 1, digs = 1; value / div >= base; div *= base, digs++);
 
-/* fs ops */
-int ramsfs_mount(const char * source, uint32_t mode,
-                 const char * parm, int parm_len, struct fs_superblock ** sb);
-int ramfs_umount(struct fs_superblock * fs_sb);
-/* sb ops */
-int ramfs_get_vnode(struct fs_superblock * sb, ino_t * vnode_num, vnode_t ** vnode);
-int ramfs_delete_vnode(vnode_t * vnode);
-/* vnode ops */
-size_t ramfs_write(vnode_t * file, const off_t * offset,
-                   const void * buf, size_t count);
-size_t ramfs_read(vnode_t * file, const off_t * offset,
-                  void * buf, size_t count);
-int ramfs_create(vnode_t * dir, const char * name, size_t name_len,
-                 vnode_t ** result);
-int ramfs_mknod(vnode_t * dir, const char * name, size_t name_len, int mode,
-                void * specinfo, vnode_t ** result);
-int ramfs_lookup(vnode_t * dir, const char * name, size_t name_len,
-                 vnode_t ** result);
-int ramfs_link(vnode_t * dir, vnode_t * vnode, const char * name, size_t name_len);
-int ramfs_mkdir(vnode_t * dir,  const char * name, size_t name_len);
-int ramfs_readdir(vnode_t * dir, struct dirent * d);
-int ramfs_stat(vnode_t * vnode, struct stat * buf);
+    do {
+        str[n++] = ((value / div) % base) + '0';
+    } while (div /= base);
 
-#endif /* FS_RAMFS_H */
+    str[n] = '\0';
+
+    return (int)digs;
+}
