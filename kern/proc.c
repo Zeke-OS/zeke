@@ -32,6 +32,7 @@
  */
 
 #define KERNEL_INTERNAL 1
+#include <autoconf.h>
 #include <sched.h>
 #include <kstring.h>
 #include <libkern.h>

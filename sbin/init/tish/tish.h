@@ -38,12 +38,5 @@
 #define DELIMS  " \t\r\n"
 
 int tish(void);
-void tish_sysctl_cmd(char ** args);
-void tish_uname(char ** args);
-void tish_ikut(char ** args);
-void tish_debug(char ** args);
-void tish_ls(char ** args);
-void tish_touch(char ** args);
-void tish_mount(char ** args);
 
 #endif /* TISH_H */

@@ -31,6 +31,7 @@
  *******************************************************************************
  */
 
+#include <autoconf.h>
 #include <kstring.h> /* TODO remove */
 #include <libkern.h> /* TODO */
 #include <sys/sysctl.h>

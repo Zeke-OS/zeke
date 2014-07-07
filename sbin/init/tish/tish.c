@@ -43,6 +43,14 @@
 #define fprintf(stream, str) write(2, str, strlenn(str, MAX_LEN) + 1)
 #define puts(str) fprintf(stderr, str)
 
+extern void tish_sysctl_cmd(char ** args);
+extern void tish_uname(char ** args);
+extern void tish_ikut(char ** args);
+extern void tish_debug(char ** args);
+extern void tish_ls(char ** args);
+extern void tish_touch(char ** args);
+extern void tish_mount(char ** args);
+
 struct builtin {
     void (*fn)(char ** args);
     char name[10];
