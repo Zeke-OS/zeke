@@ -124,10 +124,6 @@ int mknod(const char *, mode_t, dev_t);
 mode_t umask(mode_t);
 */
 
-/* Extensions to POSIX */
-
-int mount(const char * mount_point, const char * fsname, uint32_t mode,
-        int parm_len, char * parm);
 __END_DECLS
 #endif /* !KERNEL_INTERNAL */
 

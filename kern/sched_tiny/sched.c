@@ -44,7 +44,6 @@
 #include <queue_r.h>
 #include <timers.h>
 #include <syscall.h>
-#include <kernel.h>
 #include <ptmapper.h>
 #include <vralloc.h>
 #include <vm/vm.h>

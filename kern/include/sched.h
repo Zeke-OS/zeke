@@ -45,7 +45,6 @@
 #include <autoconf.h>
 #include <syscalldef.h>
 #include <ksignal.h>
-#include <kernel.h>
 #include <vm/vm.h>
 #include <hal/core.h>
 

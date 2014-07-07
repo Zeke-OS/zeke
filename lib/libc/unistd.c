@@ -64,10 +64,3 @@ ssize_t write(int fildes, const void * buf, size_t nbyte)
 
     return (ssize_t)syscall(SYSCALL_FS_WRITE, &args);
 }
-
-unsigned sleep(unsigned seconds)
-{
-    unsigned int millisec = seconds * 1000;
-
-    return (unsigned)syscall(SYSCALL_SCHED_SLEEP_MS, &millisec);
-}

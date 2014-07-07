@@ -30,7 +30,6 @@
  *******************************************************************************
  */
 
-#include <kernel.h>
 #include <kerror.h>
 #include "../sbin/init/init.h" /* TODO To be removed */
 #include <sched.h>

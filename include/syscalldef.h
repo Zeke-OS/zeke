@@ -37,6 +37,9 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <pthread.h>
+#include <time.h>
+#include <sys/stat.h>
 
 /** Argument struct for SYSCALL_SCHED_THREAD_CREATE */
 struct _ds_pthread_create {

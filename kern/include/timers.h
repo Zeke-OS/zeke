@@ -40,7 +40,6 @@
 #define TIMERS_H
 
 #include <stdint.h>
-#include <kernel.h>
 
 /* User Flag Bits */
 #define TIMERS_FLAG_ENABLED     0x1

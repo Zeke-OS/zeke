@@ -30,7 +30,6 @@
  *******************************************************************************
  */
 
-#ifdef configTISH
 #pragma once
 #ifndef TISH_H
 #define TISH_H
@@ -48,4 +47,3 @@ void tish_touch(char ** args);
 void tish_mount(char ** args);
 
 #endif /* TISH_H */
-#endif /* configTISH */

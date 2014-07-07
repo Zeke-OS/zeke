@@ -35,7 +35,6 @@
 #include <kstring.h> /* TODO Remove */
 #include <unistd.h>
 #include <errno.h>
-#include <kernel.h>
 #include <fcntl.h>
 #include <dirent.h>
 #include <time.h>

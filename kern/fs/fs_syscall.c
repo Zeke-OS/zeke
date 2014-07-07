@@ -254,6 +254,7 @@ static int sys_getdents(void * user_args)
 static int sys_mkdir(void * user_args)
 {
     /* TODO */
+    return -1;
 }
 
 static int sys_filestat(void * user_args)

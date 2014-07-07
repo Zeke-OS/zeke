@@ -33,7 +33,7 @@
 #include <sys/types.h>
 #include <kstring.h>
 #include <libkern.h>
-#include <kernel.h>
+#include <zeke.h>
 #include <errno.h>
 #include <unistd.h>
 #include <syscall.h>

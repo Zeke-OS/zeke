@@ -40,7 +40,6 @@
 #ifndef SYSCALL_H
 #define SYSCALL_H
 
-#include <kernel.h>
 #include <syscalldef.h>
 #include <../kern/include/hal/core.h>
 #if configDEVSUBSYS != 0

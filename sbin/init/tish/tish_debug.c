@@ -34,11 +34,11 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <kstring.h> /* TODO Remove */
-#include <unistd.h>
 #include <libkern.h>
+#include <unistd.h>
 #include <errno.h>
 #include <pthread.h>
-#include <kernel.h>
+#include <zeke.h>
 #include "tish.h"
 
 static void create_debug_thread(void);

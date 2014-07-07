@@ -39,7 +39,6 @@
 #include <stdint.h>
 #include <signal.h>
 #include <sys/signalvar.h>
-#include "kernel.h"
 
 typedef uint32_t ksig_t;
 
