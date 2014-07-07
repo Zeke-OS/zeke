@@ -334,6 +334,15 @@ file_t * fs_fildes_ref(files_t * files, int fd, int count);
  */
 ssize_t fs_readwrite_cproc(int fildes, void * buf, size_t nbyte, int oper);
 
+/**
+ * Create a new file by using fs specific create() function.
+ * File will be created relative to the attributes of a current process.
+ * @param[in]   path    is a path to the new file.
+ * @param[in]   mode    selects the file mode.
+ * @param[out]  result  is the new vnode created.
+ * @return      0 if succeed; Negative error code representing errno in case of
+ *              failure.
+ */
 int fs_creat_cproc(const char * path, mode_t mode, vnode_t ** result);
 
 #endif /* FS_H */
