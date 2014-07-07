@@ -35,7 +35,8 @@
 #ifndef SYSCALLDEF_H
 #define SYSCALLDEF_H
 
-#include <kernel.h>
+#include <stdint.h>
+#include <stddef.h>
 
 /** Argument struct for SYSCALL_SCHED_THREAD_CREATE */
 struct _ds_pthread_create {

@@ -24,8 +24,6 @@
 #ifndef KERNEL_INTERNAL /* prevent kernel internals from implementing these
                          * as these should be implemented as syscall services.*/
 
-unsigned msleep(unsigned millisec);
-
 /* ==== Non-CMSIS-RTOS functions ==== */
 
 //  ==== Semaphore Management Functions ====
