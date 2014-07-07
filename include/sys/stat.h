@@ -66,30 +66,30 @@ struct stat {
 /* Symbolic names for the values of st_mode
  * -----------------------------------------
  * File type bits: */
-#define S_IFMT      0x0170000 /*!< Bit mask for the file type bit fields. */
-#define S_IFBLK     0x0060000 /*!< Block device (special). */
-#define S_IFCHR     0x0020000 /*!< Character device (special). */
-#define S_IFIFO     0x0010000 /*!< FIFO special. */
-#define S_IFREG     0x0100000 /*!< Regular file. */
-#define S_IFDIR     0x0040000 /*!< Directory. */
-#define S_IFLNK     0x0120000 /*!< Symbolic link. */
-#define S_IFSOCK    0x0140000 /*!< Socked. */
+#define S_IFMT      0170000 /*!< Bit mask for the file type bit fields. */
+#define S_IFBLK     0060000 /*!< Block device (special). */
+#define S_IFCHR     0020000 /*!< Character device (special). */
+#define S_IFIFO     0010000 /*!< FIFO special. */
+#define S_IFREG     0100000 /*!< Regular file. */
+#define S_IFDIR     0040000 /*!< Directory. */
+#define S_IFLNK     0120000 /*!< Symbolic link. */
+#define S_IFSOCK    0140000 /*!< Socked. */
 /* File mode bits: */
 #define S_IRWXU (S_IRUSR | S_IWUSR | S_IXUSR) /*!< Mask for file owner permissions. */
-#define S_IRUSR 0x0400 /*!< Owner has read permission. */
-#define S_IWUSR 0x0200 /*!< Owner has write permission. */
-#define S_IXUSR 0x0100 /*!< Owner has execute permission. */
+#define S_IRUSR     0000400 /*!< Owner has read permission. */
+#define S_IWUSR     0000200 /*!< Owner has write permission. */
+#define S_IXUSR     0000100 /*!< Owner has execute permission. */
 #define S_IRWXG (S_IRGRP | S_IWGRP | S_IXGRP) /*!< Mask for group permissions. */
-#define S_IRGRP 0x0040 /*!< Group has read permission. */
-#define S_IWGRP 0x0020 /*!< Group has write permission. */
-#define S_IXGRP 0x0010 /*!< Group has execute permission. */
+#define S_IRGRP     0000040 /*!< Group has read permission. */
+#define S_IWGRP     0000020 /*!< Group has write permission. */
+#define S_IXGRP     0000010 /*!< Group has execute permission. */
 #define S_IRWXO (S_IROTH | S_IWOTH | S_IXOTH) /*!< Mask for permissions for others. */
-#define S_IROTH 0x0004 /*!< Others have read permission. */
-#define S_IWOTH 0x0002 /*!< Others have write permission. */
-#define S_IXOTH 0x0001 /*!< Others have execute permission. */
-#define S_ISUID 0x4000 /*!< Set-user-ID bit. */
-#define S_ISGID 0x2000 /*!< Set-group-ID bit. */
-#define S_ISVTX 0x1000 /*!< On directories, restricted deletion flag. */
+#define S_IROTH     0000004 /*!< Others have read permission. */
+#define S_IWOTH     0000002 /*!< Others have write permission. */
+#define S_IXOTH     0000001 /*!< Others have execute permission. */
+#define S_ISUID     0004000 /*!< Set-user-ID bit. */
+#define S_ISGID     0002000 /*!< Set-group-ID bit. */
+#define S_ISVTX     0001000 /*!< On directories, restricted deletion flag. */
 
 /** Test for a block special file. */
 #define S_ISBLK(m) (((m) & S_IFMT) == S_IFBLK)
@@ -117,9 +117,10 @@ int fstatat(int fd, const char * restrict path,
             struct stat * restrict buf, int flag);
 int lstat(const char * restrict path, struct stat * restrict buf);
 int stat(const char * restrict path, struct stat * restrict buf);
-/*
 int mkdir(const char *, mode_t);
+/*
 int mkfifo(const char *, mode_t);
+int mkdirat(int fd, const char  *path, mode_t mode);
 int mknod(const char *, mode_t, dev_t);
 mode_t umask(mode_t);
 */

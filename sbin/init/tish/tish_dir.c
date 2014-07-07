@@ -62,7 +62,7 @@ void tish_ls(char ** args)
         return;
     }
     count = getdents(fildes, (char *)dbuf, sizeof(dbuf));
-    if (count < 1) {
+    if (count < 0) {
         puts("Reading directory entries failed\n");
     }
 
@@ -90,4 +90,11 @@ void tish_touch(char ** args)
     fildes = creat(path, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 
     close(fildes);
+}
+
+void tish_mkdir(char ** args)
+{
+    char * path = kstrtok(0, DELIMS, args);
+
+    mkdir(path, S_IRWXU | S_IRGRP | S_IXGRP);
 }

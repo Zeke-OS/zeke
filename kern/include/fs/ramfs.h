@@ -54,14 +54,16 @@ size_t ramfs_write(vnode_t * file, const off_t * offset,
                    const void * buf, size_t count);
 size_t ramfs_read(vnode_t * file, const off_t * offset,
                   void * buf, size_t count);
-int ramfs_create(vnode_t * dir, const char * name, size_t name_len,
+int ramfs_create(vnode_t * dir, const char * name, size_t name_len, mode_t mode,
                  vnode_t ** result);
 int ramfs_mknod(vnode_t * dir, const char * name, size_t name_len, int mode,
                 void * specinfo, vnode_t ** result);
 int ramfs_lookup(vnode_t * dir, const char * name, size_t name_len,
                  vnode_t ** result);
-int ramfs_link(vnode_t * dir, vnode_t * vnode, const char * name, size_t name_len);
-int ramfs_mkdir(vnode_t * dir,  const char * name, size_t name_len);
+int ramfs_link(vnode_t * dir, vnode_t * vnode, const char * name,
+               size_t name_len);
+int ramfs_mkdir(vnode_t * dir,  const char * name, size_t name_len,
+                mode_t mode);
 int ramfs_readdir(vnode_t * dir, struct dirent * d);
 int ramfs_stat(vnode_t * vnode, struct stat * buf);
 

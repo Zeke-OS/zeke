@@ -50,6 +50,7 @@ mtx_t fslock;
 #define FS_TESTLOCK()   mtx_test(&fslock)
 #define FS_LOCK_INIT()  mtx_init(&fslock, MTX_DEF | MTX_SPIN)
 
+static int parse_filepath(const char * pathname, char ** path, char ** name);
 
 /**
  * Linked list of registered file systems.
@@ -464,15 +465,24 @@ out:
     return retval;
 }
 
-int fs_creat_cproc(const char * path, mode_t mode, vnode_t ** result)
+static int parse_filepath(const char * pathname, char ** path, char ** name)
 {
-    char * path_act = kmalloc(PATH_MAX);
-    char * name = kmalloc(FS_FILENAME_MAX);
-    vnode_t * dir;
-    size_t i = strlenn(path, PATH_MAX);
-    int retval = 0;
+    char * path_act;
+    char * fname;
+    size_t i = strlenn(pathname, PATH_MAX);
 
-    strncpy(path_act, path, PATH_MAX);
+    path_act = kmalloc(PATH_MAX);
+    if (!path_act) {
+        return -ENOMEM;
+    }
+
+    fname = kmalloc(FS_FILENAME_MAX);
+    if (!fname) {
+        kfree(path_act);
+        return -ENOMEM;
+    }
+
+    strncpy(path_act, pathname, PATH_MAX);
     while (path_act[i] != '/') {
         path_act[i--] = '\0';
         if ((i == 0) && (!(path_act[0] == '/') ||
@@ -486,23 +496,71 @@ int fs_creat_cproc(const char * path, mode_t mode, vnode_t ** result)
     }
 
     for (int j = 0; j < FS_FILENAME_MAX; j++) {
-        name[j] = path[++i];
-        if (name[j] == '\0')
+        fname[j] = pathname[++i];
+        if (fname[j] == '\0')
             break;
     }
 
-    if(fs_namei_proc(&dir, path_act)) {
+    *path = path_act;
+    *name = fname;
+
+    return 0;
+}
+
+int fs_creat_cproc(const char * pathname, mode_t mode, vnode_t ** result)
+{
+    char * path = 0;
+    char * name = 0;
+    vnode_t * dir;
+    int retval = 0;
+
+    if (parse_filepath(pathname, &path, &name)) {
+        retval = -ENOMEM;
+        goto out;
+    }
+
+    if (fs_namei_proc(&dir, path)) {
         retval = -ENOENT;
         goto out;
     }
 
     /* We know that the returned vnode is a dir so we can just call mknod() */
     *result = 0;
-    retval = dir->vnode_ops->create(dir, name, FS_FILENAME_MAX, result);
-    //retval = dir->vnode_ops->mknod(dir, name, FS_FILENAME_MAX, mode, 0, result);
+    mode &= ~S_IFMT; /* Filter out file type bits */
+    retval = dir->vnode_ops->create(dir, name, FS_FILENAME_MAX, mode, result);
 
 out:
-    kfree(path_act);
-    kfree(name);
+    if (path)
+        kfree(path);
+    if (name)
+        kfree(name);
+    return retval;
+}
+
+int fs_mkdir_curproc(const char * pathname, mode_t mode)
+{
+    char * path = 0;
+    char * name = 0;
+    vnode_t * dir;
+    int retval = 0;
+
+    if (parse_filepath(pathname, &path, &name)) {
+        retval = -ENOMEM;
+        goto out;
+    }
+
+    if (fs_namei_proc(&dir, path)) {
+        retval = -ENOENT;
+        goto out;
+    }
+
+    mode &= ~S_IFMT; /* Filter out file type bits */
+    retval = dir->vnode_ops->mkdir(dir, name, FS_FILENAME_MAX, mode);
+
+out:
+    if (path)
+        kfree(path);
+    if (name)
+        kfree(name);
     return retval;
 }

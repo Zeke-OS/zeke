@@ -58,6 +58,7 @@ int fstatat(int fd, const char * restrict path,
     struct _fs_stat_args args = {
         .fd = fd,
         .path = path,
+        .path_len = strlen(path),
         .buf = buf,
         .flags = AT_FDARG | flag
     };
@@ -69,6 +70,7 @@ int lstat(const char * restrict path, struct stat * restrict buf)
 {
     struct _fs_stat_args args = {
         .path = path,
+        .path_len = strlen(path),
         .buf = buf,
         .flags = AT_SYMLINK_NOFOLLOW
     };
@@ -80,8 +82,20 @@ int stat(const char * restrict path, struct stat * restrict buf)
 {
     struct _fs_stat_args args = {
         .path = path,
+        .path_len = strlen(path),
         .buf = buf
     };
 
     return syscall(SYSCALL_FS_STAT, &args);
+}
+
+int mkdir(const char * path, mode_t mode)
+{
+    struct _fs_mkdir_args args = {
+        .path = path,
+        .path_len = strlen(path),
+        .mode = mode
+    };
+
+    return syscall(SYSCALL_FS_MKDIR, &args);
 }

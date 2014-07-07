@@ -253,13 +253,34 @@ static int sys_getdents(void * user_args)
 
 static int sys_mkdir(void * user_args)
 {
-    /* TODO */
-    return -1;
+    struct _fs_mkdir_args * args = 0;
+    int err, retval = -1;
+
+    err = copyinstruct(user_args, (void **)(&args),
+            sizeof(struct _fs_mkdir_args),
+            GET_STRUCT_OFFSETS(struct _fs_mkdir_args,
+                path, path_len));
+    if (err) {
+        set_errno(-err);
+        goto out;
+    }
+
+    err = fs_mkdir_curproc(args->path, args->mode);
+    if (err) {
+        set_errno(-err);
+        goto out;
+    }
+
+    retval = 0;
+out:
+    if (args)
+        freecpystruct(args);
+    return retval;
 }
 
 static int sys_filestat(void * user_args)
 {
-    struct _fs_stat_args * args;
+    struct _fs_stat_args * args = 0;
     vnode_t * vnode;
     struct stat stat_buf;
     int err, retval = -1;
@@ -414,8 +435,7 @@ uintptr_t fs_syscall(uint32_t type, void * p)
         return -9;
 
     case SYSCALL_FS_MKDIR:
-        set_errno(ENOSYS);
-        return -91;
+        return (uintptr_t)sys_mkdir(p);
 
     case SYSCALL_FS_RMDIR:
         set_errno(ENOSYS);

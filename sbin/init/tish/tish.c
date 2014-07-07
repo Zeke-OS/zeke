@@ -49,6 +49,7 @@ extern void tish_ikut(char ** args);
 extern void tish_debug(char ** args);
 extern void tish_ls(char ** args);
 extern void tish_touch(char ** args);
+extern void tish_mkdir(char ** args);
 extern void tish_mount(char ** args);
 
 struct builtin {
@@ -72,6 +73,7 @@ struct builtin cmdarr[] = {
         {uptime, "uptime"},
         {tish_ls, "ls"},
         {tish_touch, "touch"},
+        {tish_mkdir, "mkdir"},
         {tish_mount, "mount"},
         {reg, "reg"},
         {tish_debug, "debug"},

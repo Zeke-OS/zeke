@@ -185,7 +185,7 @@ typedef struct vnode_ops {
     //int (*mmap)(vnode_t * file, !mem area!);
     /* Directory file operations
      * ------------------------- */
-    int (*create)(vnode_t * dir, const char * name, size_t name_len,
+    int (*create)(vnode_t * dir, const char * name, size_t name_len, mode_t mode,
             vnode_t ** result);
     int (*mknod)(vnode_t * dir, const char * name, size_t name_len, int mode,
             void * specinfo, vnode_t ** result);
@@ -194,7 +194,7 @@ typedef struct vnode_ops {
     int (*link)(vnode_t * dir, vnode_t * vnode, const char * name,
             size_t name_len);
     int (*unlink)(vnode_t * dir, const char * name, size_t name_len);
-    int (*mkdir)(vnode_t * dir,  const char * name, size_t name_len);
+    int (*mkdir)(vnode_t * dir,  const char * name, size_t name_len, mode_t mode);
     int (*rmdir)(vnode_t * dir,  const char * name, size_t name_len);
     int (*readdir)(vnode_t * dir, struct dirent * d);
     /* Operations specified for any file type */
@@ -344,6 +344,8 @@ ssize_t fs_readwrite_cproc(int fildes, void * buf, size_t nbyte, int oper);
  *              failure.
  */
 int fs_creat_cproc(const char * path, mode_t mode, vnode_t ** result);
+
+int fs_mkdir_curproc(const char * pathname, mode_t mode);
 
 #endif /* FS_H */
 

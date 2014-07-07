@@ -127,6 +127,15 @@ struct _fs_stat_args {
     unsigned flags;
 };
 
+/** Arguments for SYSCALL_FS_MKDIR */
+struct _fs_mkdir_args {
+    int fd;
+    const char * path;
+    size_t path_len;
+    mode_t mode;
+    unsigned flags;
+};
+
 /** Arguments struct for SYSCALL_PROC_GETBREAK */
 struct _ds_getbreak {
     void * start;

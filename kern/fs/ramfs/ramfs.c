@@ -378,7 +378,8 @@ size_t ramfs_read(vnode_t * file, const off_t * offset, void * buf, size_t count
  * @param[out] result is a pointer to the resulting vnode.
  * @return Zero in case of operation succeed; Otherwise value other than zero.
  */
-int ramfs_create(vnode_t * dir, const char * name, size_t name_len, vnode_t ** result)
+int ramfs_create(vnode_t * dir, const char * name, size_t name_len, mode_t mode,
+                 vnode_t ** result)
 {
     int retval = 0;
     ramfs_sb_t * ramfs_sb;
@@ -416,7 +417,7 @@ int ramfs_create(vnode_t * dir, const char * name, size_t name_len, vnode_t ** r
     /* TODO update times */
     /* TODO update uid & gid */
     vnode->vn_len = 0;
-    vnode->vn_mode = S_IFREG;
+    vnode->vn_mode = S_IFREG | mode;
     //vnode->mutex = /* TODO other flags etc. */
 
     /* Create a directory entry. */
@@ -444,11 +445,11 @@ int ramfs_mknod(vnode_t * dir, const char * name, size_t name_len, int mode,
 {
     int retval;
 
-    retval = ramfs_create(dir, name, name_len, result);
+    retval = ramfs_create(dir, name, name_len, mode, result);
     if (retval)
         return retval;
 
-    (*result)->vn_mode = mode;
+    (*result)->vn_mode = mode; /* TODO Not necessarily needed? */
     (*result)->vn_specinfo = specinfo;
 
     return 0;
@@ -533,7 +534,7 @@ out:
  * @param name_len  is the length of the name.
  * @return Zero in case of operation succeed; Otherwise value other than zero.
  */
-int ramfs_mkdir(vnode_t * dir,  const char * name, size_t name_len)
+int ramfs_mkdir(vnode_t * dir,  const char * name, size_t name_len, mode_t mode)
 {
     ramfs_sb_t * ramfs_sb;
     vnode_t * vnode_new;
@@ -561,7 +562,7 @@ int ramfs_mkdir(vnode_t * dir,  const char * name, size_t name_len)
         retval = -ENOSPC;
         goto delete_inode; /* Cant allocate dh_table */
     }
-    vnode_new->vn_mode = S_IFDIR; /* This is a directory. */
+    vnode_new->vn_mode = S_IFDIR | mode; /* This is a directory. */
     /* TODO set times, uid & gid */
 
     /* Insert inode to the inode lookup table of its superblock. */
