@@ -54,6 +54,9 @@
  */
 #define RAMFS_MAX_FILES         SIZE_MAX
 
+#define RFS_DOT "."
+#define RFS_DOTDOT ".."
+
 /**
  * inode struct.
  */
@@ -565,11 +568,15 @@ int ramfs_mkdir(vnode_t * dir,  const char * name, size_t name_len, mode_t mode)
     vnode_new->vn_mode = S_IFDIR | mode; /* This is a directory. */
     /* TODO set times, uid & gid */
 
+    /* Create links according to POSIX. */
+    ramfs_link(&(inode_new->in_vnode), &(inode_new->in_vnode), RFS_DOT, sizeof(RFS_DOT) - 1);
+    ramfs_link(&(inode_new->in_vnode), &(inode_dir->in_vnode), RFS_DOTDOT, sizeof(RFS_DOTDOT) - 1);
+
     /* Insert inode to the inode lookup table of its superblock. */
     insert_inode(inode_new); /* This can't fail on mount. */
     ramfs_link(&(inode_dir->in_vnode), vnode_new, name, name_len);
-    goto out;
 
+    goto out;
 delete_inode:
     ramfs_delete_vnode(&(inode_new->in_vnode));
 out:
@@ -696,12 +703,8 @@ static vnode_t * create_root(ramfs_sb_t * ramfs_sb)
     ramfs_sb->sbn.sbl_sb.root = retval;
 
     /* Create links according to POSIX. */
-#define RFS_DOT "."
-#define RFS_DOTDOT ".."
     ramfs_link(retval, retval, RFS_DOT, sizeof(RFS_DOT) - 1);
     ramfs_link(retval, retval, RFS_DOTDOT, sizeof(RFS_DOTDOT) - 1);
-#undef RFS_DOT
-#undef RFS_DOTDOT
 
 out:
     return retval;
