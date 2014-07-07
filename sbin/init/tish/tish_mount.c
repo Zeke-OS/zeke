@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    tish.h
+ * @file    tish_dir.c
  * @author  Olli Vanhoja
- * @brief   Tiny Init Shell for debugging in init.
+ * @brief   Directory manipulation commands for tish/Zeke.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,22 +30,17 @@
  *******************************************************************************
  */
 
-#ifdef configTISH
-#pragma once
-#ifndef TISH_H
-#define TISH_H
+#include <stdlib.h>
+#include <sys/types.h>
+#include <kstring.h> /* TODO Remove */
+#include <unistd.h>
+#include <errno.h>
+#include <kernel.h>
+#include <mount.h>
+#include "tish.h"
 
-#define MAX_LEN 80
-#define DELIMS  " \t\r\n"
 
-int tish(void);
-void tish_sysctl_cmd(char ** args);
-void tish_uname(char ** args);
-void tish_ikut(char ** args);
-void tish_debug(char ** args);
-void tish_ls(char ** args);
-void tish_touch(char ** args);
-void tish_mount(char ** args);
-
-#endif /* TISH_H */
-#endif /* configTISH */
+void tish_mount(char ** args)
+{
+    mount("", "/dev", "devfs", 0, "");
+}

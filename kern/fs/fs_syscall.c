@@ -251,6 +251,11 @@ static int sys_getdents(void * user_args)
     return count;
 }
 
+static int sys_mkdir(void * user_args)
+{
+    /* TODO */
+}
+
 static int sys_filestat(void * user_args)
 {
     struct _fs_stat_args * args;
@@ -299,7 +304,7 @@ static int sys_filestat(void * user_args)
             goto out;
         }
     } else { /* search by path */
-        if (!fs_namei_proc(&vnode, (char *)args->path)) {
+        if (fs_namei_proc(&vnode, (char *)args->path)) {
             set_errno(ENOENT);
             goto out;
         }
@@ -344,7 +349,7 @@ static int sys_mount(struct _fs_mount_args * user_args)
         goto out;
     }
 
-    if (!fs_namei_proc(&mpt, (char *)args->target)) {
+    if (fs_namei_proc(&mpt, (char *)args->target)) {
         set_errno(ENOENT); /* Mount point doesn't exist */
         goto out;
     }
@@ -406,6 +411,14 @@ uintptr_t fs_syscall(uint32_t type, void * p)
     case SYSCALL_FS_UNLINK:
         set_errno(ENOSYS);
         return -9;
+
+    case SYSCALL_FS_MKDIR:
+        set_errno(ENOSYS);
+        return -91;
+
+    case SYSCALL_FS_RMDIR:
+        set_errno(ENOSYS);
+        return -92;
 
     case SYSCALL_FS_STAT:
         return (uintptr_t)sys_filestat(p);
