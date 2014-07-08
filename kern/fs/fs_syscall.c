@@ -313,7 +313,7 @@ static int sys_filestat(void * user_args)
         err = fildes->vnode->vnode_ops->stat(fildes->vnode, &stat_buf);
         if (!err) {
             /* Check if fildes was opened with O_SEARCH or if not then if we
-             * have a permission to search by file permission. */
+             * have a permission to search by file permissions. */
             if (fildes->oflags & O_SEARCH || chkperm_cproc(&stat_buf, O_EXEC))
                 err = lookup_vnode(&vnode, fildes->vnode, args->path, ofalgs);
             else /* No permission to search */

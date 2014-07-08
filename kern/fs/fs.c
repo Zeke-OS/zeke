@@ -296,7 +296,6 @@ int chkperm_cproc(struct stat * stat, int oflags)
 {
     gid_t euid = curproc->euid;
     uid_t egid = curproc->egid;
-
     oflags &= O_ACCMODE;
 
     if (oflags & O_RDONLY) {

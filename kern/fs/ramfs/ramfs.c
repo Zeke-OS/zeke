@@ -38,6 +38,7 @@
 #include <libkern.h>
 #include <kstring.h>
 #include <kmalloc.h>
+#include <proc.h>
 #include "../dehtable.h"
 #include "../inpool.h"
 #include <fs/ramfs.h>
@@ -389,7 +390,6 @@ int ramfs_create(vnode_t * dir, const char * name, size_t name_len, mode_t mode,
     vnode_t * vnode;
     ramfs_inode_t * inode;
 
-    /* TODO is this check needed here? */
     if (!S_ISDIR(dir->vn_mode)) {
         retval = -ENOTDIR; /* No a directory entry. */
         goto out;
@@ -412,15 +412,16 @@ int ramfs_create(vnode_t * dir, const char * name, size_t name_len, mode_t mode,
 #define BLK_SIZE (5 * 1024)
 #define BLK_COUNT 1
     inode->in_blocks = 0; /* Will be set by ramfs_set_filesize() */
-    inode->in_blksize = BLK_SIZE; /* TODO ?? */
+    inode->in_blksize = BLK_SIZE;
     ramfs_set_filesize(inode, BLK_COUNT * BLK_SIZE);
 #undef BLK_COUNT
 #undef BLK_SIZE
 
-    /* TODO update times */
-    /* TODO update uid & gid */
     vnode->vn_len = 0;
     vnode->vn_mode = S_IFREG | mode;
+    inode->in_uid = curproc->euid;
+    inode->in_gid = curproc->egid;
+    /* TODO update times */
     //vnode->mutex = /* TODO other flags etc. */
 
     /* Create a directory entry. */
@@ -473,7 +474,6 @@ int ramfs_lookup(vnode_t * dir, const char * name, size_t name_len,
     ino_t vnode_num;
     int retval = 0;
 
-    /* TODO is this check needed here? */
     if (!S_ISDIR(dir->vn_mode)) {
         retval = -ENOTDIR; /* No a directory entry. */
         goto out;
@@ -511,7 +511,6 @@ int ramfs_link(vnode_t * dir, vnode_t * vnode, const char * name, size_t name_le
     ramfs_inode_t * inode_dir;
     int retval = 0;
 
-    /* TODO is this check needed here? */
     if (!S_ISDIR(dir->vn_mode)) {
         retval = -ENOTDIR; /* No a directory entry. */
         goto out;
@@ -545,7 +544,6 @@ int ramfs_mkdir(vnode_t * dir,  const char * name, size_t name_len, mode_t mode)
     ramfs_inode_t * inode_new;
     int retval = 0;
 
-    /* TODO is this check needed here? */
     if (!S_ISDIR(dir->vn_mode)) {
         retval = -ENOTDIR; /* No a directory entry. */
         goto out;
@@ -566,7 +564,9 @@ int ramfs_mkdir(vnode_t * dir,  const char * name, size_t name_len, mode_t mode)
         goto delete_inode; /* Cant allocate dh_table */
     }
     vnode_new->vn_mode = S_IFDIR | mode; /* This is a directory. */
-    /* TODO set times, uid & gid */
+    inode_new->in_uid = curproc->euid;
+    inode_new->in_gid = curproc->egid;
+    /* TODO set times */
 
     /* Create links according to POSIX. */
     ramfs_link(&(inode_new->in_vnode), &(inode_new->in_vnode), RFS_DOT, sizeof(RFS_DOT) - 1);
@@ -597,7 +597,6 @@ int ramfs_readdir(vnode_t * dir, struct dirent * d)
     dh_dirent_t * dh;
     int retval = 0;
 
-    /* TODO is this check needed here? */
     if (!S_ISDIR(dir->vn_mode)) {
         retval = -ENOTDIR; /* No a directory entry. */
         goto out;
@@ -737,17 +736,22 @@ static void insert_superblock(ramfs_sb_t * ramfs_sb)
  */
 static void remove_superblock(ramfs_sb_t * ramfs_sb)
 {
+    const char err_msg[] = "Unable to remove ramfs sb from the mount list.";
     superblock_lnode_t * prev;
     superblock_lnode_t * curr = ramfs_fs.sbl_head;
 
-    if (curr == 0) /* TODO print error message to kerror log */
+    if (curr == 0) {
+        KERROR(KERROR_ERR, err_msg);
         return;
+    }
 
     while (curr != &(ramfs_sb->sbn)) {
         prev = curr;
         curr = curr->next;
-        if (curr == 0) /* TODO print error message to kerror log */
+        if (curr == 0) {
+            KERROR(KERROR_ERR, err_msg);
             return;
+        }
     }
 
     prev->next = curr->next;

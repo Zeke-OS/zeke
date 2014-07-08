@@ -84,8 +84,8 @@ typedef struct proc_info {
     long counter;               /*!< Counter for process running time */
     unsigned long blocked;      /*!< bitmap of masked signals */
     int exit_code, exit_signal;
-    uid_t uid, euid, suid, fsuid;
-    gid_t gid, egid, sgid, fsgid;
+    uid_t uid, euid, suid;
+    gid_t gid, egid, sgid;
     unsigned long timeout;      /*!< Used to kill processes with absolute timeout */
     long utime, stime, cutime, cstime, start_time; /*!< For performance statistics */
     struct rlimit rlim; /*!< hard and soft limit for filesize TODO: own struct or just pointer? */
