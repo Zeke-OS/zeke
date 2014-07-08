@@ -89,7 +89,7 @@
 #define O_RDONLY        0x1000 /*!< Open for reading only. */
 #define O_WRONLY        0x2000 /*!< Open for writing only. */
 #define O_RDWR          0x3000 /*!< Open for reading and writing. */
-#define O_SEARCH        0x0000 /*!< Open directory for search only. */
+#define O_SEARCH        0x8000 /*!< Open directory for search only. */
 #define O_EXEC          0x4000 /*!< Open for execute only. */
 
 #define AT_FDCWD            0x01 /*!< Use the current working directory to

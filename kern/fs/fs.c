@@ -513,6 +513,11 @@ int fs_creat_cproc(const char * pathname, mode_t mode, vnode_t ** result)
     vnode_t * dir;
     int retval = 0;
 
+    if (!fs_namei_proc(&dir, pathname)) {
+        retval = -EEXIST;
+        goto out;
+    }
+
     if (parse_filepath(pathname, &path, &name)) {
         retval = -ENOMEM;
         goto out;
@@ -542,6 +547,11 @@ int fs_mkdir_curproc(const char * pathname, mode_t mode)
     char * name = 0;
     vnode_t * dir;
     int retval = 0;
+
+    if (!fs_namei_proc(&dir, pathname)) {
+        retval = -EEXIST;
+        goto out;
+    }
 
     if (parse_filepath(pathname, &path, &name)) {
         retval = -ENOMEM;

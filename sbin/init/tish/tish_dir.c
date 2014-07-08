@@ -56,7 +56,7 @@ void tish_ls(char ** args)
     if (!strcmp(path, ""))
         path = "./";
 
-    fildes = open(path, O_DIRECTORY | O_RDONLY);
+    fildes = open(path, O_DIRECTORY | O_RDONLY | O_SEARCH);
     if (fildes < 0) {
         puts("Open failed\n");
         return;
