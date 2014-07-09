@@ -63,6 +63,8 @@ struct dev_info {
             uint8_t * buf, size_t count);
 };
 
+int dev_make(struct dev_info * devnfo, uid_t uid, gid_t gid, int perms);
+
 /**
  * Read from a device.
  * @param vnode     is a vnode pointing to the device.

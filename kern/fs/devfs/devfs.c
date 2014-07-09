@@ -50,8 +50,10 @@ const vnode_ops_t devfs_vnode_ops = {
     .mknod = ramfs_mknod,
     .lookup = ramfs_lookup,
     .link = ramfs_link,
+    .unlink = ramfs_unlink,
     .mkdir = ramfs_mkdir,
-    .readdir = ramfs_readdir
+    .readdir = ramfs_readdir,
+    .stat = ramfs_stat
 };
 
 static int devfs_mount(const char * source, uint32_t mode,
@@ -95,8 +97,12 @@ void devfs_init(void)
         KERROR(KERROR_ERR, buf);
         return;
     }
+    vn_devfs = vn_devfs->vn_mountpoint;
+    kfree(vn_devfs->vn_prev_mountpoint);
+    vn_devfs->vn_prev_mountpoint = vn_devfs;
+    vn_devfs->vn_mountpoint = vn_devfs;
 
-    vn_devfs->vn_mountpoint->sb->vdev_id = DEV_MMTODEV(DEVFS_VDEV_MAJOR_ID, 0);
+    vn_devfs->sb->vdev_id = DEV_MMTODEV(DEVFS_VDEV_MAJOR_ID, 0);
     fs_register(&devfs_fs);
 
     SUBSYS_INITFINI("devfs OK");
@@ -106,9 +112,9 @@ static int devfs_mount(const char * source, uint32_t mode,
                        const char * parm, int parm_len,
                        struct fs_superblock ** sb)
 {
-    if (!(vn_devfs && vn_devfs->vn_mountpoint && vn_devfs->vn_mountpoint->sb))
+    if (!(vn_devfs && vn_devfs->sb))
         return -ENODEV;
-    *sb = vn_devfs->vn_mountpoint->sb;
+    *sb = vn_devfs->sb;
     return 0;
 }
 
@@ -123,14 +129,19 @@ int dev_make(struct dev_info * devnfo, uid_t uid, gid_t gid, int perms)
     vnode_t * result;
     int retval;
 
-    /* TODO Check that name is not reserved before trying mknod() */
+    /* TODO Auto-numbering feature */
+
+    if (!vn_devfs->vnode_ops->lookup(vn_devfs, devnfo->dev_name,
+            sizeof(devnfo->dev_name), NULL)) {
+        return -EEXIST;
+    }
     retval = vn_devfs->vnode_ops->mknod(vn_devfs, devnfo->dev_name,
             sizeof(devnfo->dev_name), S_IFCHR, devnfo, &result);
     if (retval)
         return retval;
 
     /* Replace ops with our own */
-    vn_devfs->vnode_ops = (struct vnode_ops *)(&devfs_vnode_ops);
+    result->vnode_ops = (struct vnode_ops *)(&devfs_vnode_ops);
 
     return 0;
 }

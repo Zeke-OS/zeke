@@ -491,7 +491,8 @@ int ramfs_lookup(vnode_t * dir, const char * name, size_t name_len,
                             * Broken link? */
     }
 
-    (*result)->vn_refcount++;
+    if (result)
+        (*result)->vn_refcount++;
 out:
     return retval;
 }

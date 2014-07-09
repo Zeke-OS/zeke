@@ -13,9 +13,9 @@ base-SRC-$(configKERROR_FB) += kerror/kerror_fb.c
 
 # File system
 base-SRC-1 += $(wildcard fs/*.c)
+# devfs
+base-SRC-1 += $(wildcard fs/devfs/*.c)
 # mbr
 base-SRC-$(configMBR) += $(wildcard fs/mbr/*.c)
-# devfs
-base-SRC-1 += fs/devfs/devfs.c
 # ramfs
 base-SRC-$(configRAMFS) += $(wildcard fs/ramfs/*.c)

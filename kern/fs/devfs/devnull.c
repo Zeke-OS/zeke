@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    stat.c
+ * @file    devnull.c
  * @author  Olli Vanhoja
- * @brief   File status functions.
+ * @brief   dev/null pseudo device.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -28,74 +28,38 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************
-*/
+ */
 
-#include <stdarg.h>
-#if 0
-#include <string.h>
-#endif
-#include <kstring.h>
-#include <time.h>
-#define strlen(x) strlenn(x, 4096) /* TODO REMOVE ME */
-#include <syscall.h>
-#include <fcntl.h>
-#include <sys/stat.h>
+#include <kinit.h>
+#include <kerror.h>
+#include <fs/devfs.h>
 
-int fstat(int fildes, struct stat * buf)
+static int devnull_write(struct dev_info * devnfo, off_t offset,
+                         uint8_t * buf, size_t count);
+
+struct dev_info devnull_info = {
+    .dev_id = DEV_MMTODEV(1, 3),
+    .drv_name = "memdev",
+    .dev_name = "null",
+    .flags = DEV_FLAGS_MB_READ | DEV_FLAGS_MB_WRITE,
+    .write = devnull_write
+};
+
+void devnull_init(void) __attribute__((constructor));
+void devnull_init(void)
 {
-    struct _fs_stat_args args = {
-        .fd = fildes,
-        .buf = buf,
-        .flags = AT_FDARG | O_EXEC
-    };
+    SUBSYS_INIT();
+    SUBSYS_DEP(devfs_init);
 
-    return syscall(SYSCALL_FS_STAT, &args);
+    if (dev_make(&devnull_info, 0, 0, 0666)) {
+        KERROR(KERROR_ERR, "Failed to init dev/null");
+    }
+
+    SUBSYS_INITFINI("dev/null OK");
 }
 
-int fstatat(int fd, const char * restrict path,
-            struct stat * restrict buf, int flag)
+static int devnull_write(struct dev_info * devnfo, off_t offset,
+                         uint8_t * buf, size_t count)
 {
-    struct _fs_stat_args args = {
-        .fd = fd,
-        .path = path,
-        .path_len = strlen(path) + 1,
-        .buf = buf,
-        .flags = AT_FDARG | flag
-    };
-
-    return syscall(SYSCALL_FS_STAT, &args);
-}
-
-int lstat(const char * restrict path, struct stat * restrict buf)
-{
-    struct _fs_stat_args args = {
-        .path = path,
-        .path_len = strlen(path) + 1,
-        .buf = buf,
-        .flags = AT_SYMLINK_NOFOLLOW
-    };
-
-    return syscall(SYSCALL_FS_STAT, &args);
-}
-
-int stat(const char * restrict path, struct stat * restrict buf)
-{
-    struct _fs_stat_args args = {
-        .path = path,
-        .path_len = strlen(path) + 1,
-        .buf = buf
-    };
-
-    return syscall(SYSCALL_FS_STAT, &args);
-}
-
-int mkdir(const char * path, mode_t mode)
-{
-    struct _fs_mkdir_args args = {
-        .path = path,
-        .path_len = strlen(path) + 1,
-        .mode = mode
-    };
-
-    return syscall(SYSCALL_FS_MKDIR, &args);
+    return count;
 }
