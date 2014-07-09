@@ -166,6 +166,7 @@ const vnode_ops_t ramfs_vnode_ops = {
     .mknod = ramfs_mknod,
     .lookup = ramfs_lookup,
     .link = ramfs_link,
+    .unlink = ramfs_unlink,
     .mkdir = ramfs_mkdir,
     .readdir = ramfs_readdir,
     .stat = ramfs_stat
@@ -518,12 +519,46 @@ int ramfs_link(vnode_t * dir, vnode_t * vnode, const char * name, size_t name_le
 
     inode = get_inode_of_vnode(vnode);
     inode_dir = get_inode_of_vnode(dir);
-    if (dh_link(inode_dir->in.dir, vnode, name, name_len)) {
-        retval = -ENOSPC; /* Failed to create a hard link. */
+    retval = dh_link(inode_dir->in.dir, vnode->vn_num, name, name_len);
+    if (retval)
+        goto out;
+
+    inode->in_nlink++; /* Increment hard link count. */
+
+out:
+    return retval;
+}
+
+int ramfs_unlink(vnode_t * dir, const char * name, size_t name_len)
+{
+    ramfs_inode_t * inode_dir;
+    ino_t vnum;
+    vnode_t * vn;
+    ramfs_inode_t * inode;
+    int retval = 0;
+
+    if (!S_ISDIR(dir->vn_mode)) {
+        retval = -ENOTDIR; /* No a directory entry. */
         goto out;
     }
 
-    inode->in_nlink++; /* Hard link count. */
+    inode_dir = get_inode_of_vnode(dir);
+    retval = dh_lookup(inode_dir->in.dir, name, name_len, &vnum);
+    if (retval)
+        goto out;
+
+    retval = ramfs_get_vnode(dir->sb, &vnum, &vn);
+    if (retval)
+        goto out;
+    inode = get_inode_of_vnode(vn);
+
+    retval = dh_unlink(inode_dir->in.dir, name, name_len);
+    if (retval)
+        goto out;
+
+    inode->in_nlink--; /* Decrement hard link count. */
+    if (inode->in_nlink <= 0)
+        ; /* TODO Free the inode */
 
 out:
     return retval;

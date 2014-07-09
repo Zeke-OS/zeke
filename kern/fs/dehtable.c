@@ -33,6 +33,7 @@
 #include <kerror.h>
 #include <kmalloc.h>
 #include <kstring.h>
+#include <errno.h>
 #include <fs/fs.h>
 #include "dehtable.h"
 
@@ -68,6 +69,7 @@ static chain_info_t find_last_node(dh_dirent_t * chain);
 static dh_dirent_t * find_node(dh_dirent_t * chain, const char * name,
         size_t name_len);
 static size_t hash_fname(const char * str, size_t len);
+static int rm_node(dh_dirent_t ** chain, const char * name, size_t name_len);
 
 /**
  * Get reference to a directory entry in array.
@@ -95,16 +97,21 @@ static size_t hash_fname(const char * str, size_t len);
  * @param name_len  is the length of the name.
  * @return Returns 0 if succeed; Otherwise value other than zero.
  */
-int dh_link(dh_table_t * dir, vnode_t * vnode, const char * name, size_t name_len)
+int dh_link(dh_table_t * dir, ino_t vnode_num, const char * name, size_t name_len)
 {
     name_len = strlenn(name, name_len);
     const size_t h = hash_fname(name, name_len);
-    const size_t entry_size = DIRENT_SIZE + name_len + 1;
+    const size_t entry_size = memalign(DIRENT_SIZE + name_len + 1);
     dh_dirent_t * dea;
     chain_info_t chinfo;
     int retval = 0;
 
-    /* TODO Should we double check that link with a same name doesn't exist? */
+    /* Verify that link doesn't exist */
+    if (!dh_lookup(dir, name, name_len, NULL)) {
+        retval = -EEXIST;
+        goto out;
+    }
+
     dea = (*dir)[h];
     if (dea == 0) { /* Chain array not yet created. */
         dea = kmalloc(entry_size);
@@ -119,7 +126,7 @@ int dh_link(dh_table_t * dir, vnode_t * vnode, const char * name, size_t name_le
     }
     if (dea == 0) {
         /* OOM, can't add new entries. */
-        retval = -1;
+        retval = -ENOMEM;
         goto out;
     }
     (*dir)[h] = dea;
@@ -127,7 +134,7 @@ int dh_link(dh_table_t * dir, vnode_t * vnode, const char * name, size_t name_le
     /* Create a link */
     get_dirent(dea, chinfo.i_last)->dh_link = CH_LINK;
     /* New node */
-    get_dirent(dea, chinfo.i_size)->dh_ino = vnode->vn_num;
+    get_dirent(dea, chinfo.i_size)->dh_ino = vnode_num;
     get_dirent(dea, chinfo.i_size)->dh_size = entry_size;
     get_dirent(dea, chinfo.i_size)->dh_link = CH_NO_LINK;
     strncpy(get_dirent(dea, chinfo.i_size)->dh_name, name, name_len + 1);
@@ -136,7 +143,19 @@ out:
     return retval;
 }
 
-/* TODO unlink */
+int dh_unlink(dh_table_t * dir, const char * name, size_t name_len)
+{
+    name_len = strlenn(name, name_len);
+    const size_t h = hash_fname(name, name_len);
+    dh_dirent_t ** dea;
+
+    dea = &((*dir)[h]);
+    if (dea == 0) {
+        return -ENOENT;
+    }
+
+    return rm_node(dea, name, name_len + 1);
+}
 
 /**
  * Destroy all dir entries.
@@ -183,7 +202,8 @@ int dh_lookup(dh_table_t * dir, const char * name, size_t name_len,
         goto out;
     }
 
-    *vnode_num = dent->dh_ino;
+    if (vnode_num)
+        *vnode_num = dent->dh_ino;
 out:
     return retval;
 }
@@ -314,7 +334,7 @@ static dh_dirent_t * find_node(dh_dirent_t * chain, const char * name,
             break;
         }
 
-        if(strncmp(node->dh_name, name, name_len + 1) == 0) {
+        if (strncmp(node->dh_name, name, name_len + 1) == 0) {
             retval = node;
             break;
         }
@@ -322,6 +342,48 @@ static dh_dirent_t * find_node(dh_dirent_t * chain, const char * name,
     } while (node->dh_link == CH_LINK);
 
     return retval;
+}
+
+static int rm_node(dh_dirent_t ** chain, const char * name, size_t name_len)
+{
+    name_len = strlenn(name, name_len);
+    chain_info_t chinfo = find_last_node(*chain);
+    size_t old_offset = 0, new_offset = 0, prev_noffset;
+    dh_dirent_t * node;
+    dh_dirent_t * new_chain;
+
+    if (chinfo.i_size < sizeof(void *))
+        return -ENOENT;
+
+    new_chain = kcalloc(1, chinfo.i_size);
+    if (!new_chain)
+        return -ENOMEM;
+
+    do {
+        node = get_dirent(*chain, old_offset);
+        if (is_invalid_offset(node)) {
+            /* Error */
+            KERROR(KERROR_ERR, "Invalid offset in deh node");
+            kfree(new_chain);
+            return -ENOTRECOVERABLE;
+        }
+
+        if (strncmp(node->dh_name, name, FS_FILENAME_MAX)) {
+            dh_dirent_t * new_node = get_dirent(new_chain, new_offset);
+
+            memcpy(new_node, node, node->dh_size);
+            prev_noffset = new_offset;
+            new_offset += node->dh_size;
+        }
+        old_offset += node->dh_size;
+    } while (node->dh_link == CH_LINK);
+
+    get_dirent(new_chain, prev_noffset)->dh_link = CH_NO_LINK;
+
+    kfree(*chain);
+    *chain = new_chain;
+
+    return 0;
 }
 
 /**

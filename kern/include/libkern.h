@@ -102,6 +102,13 @@ static inline off_t omin(off_t a, off_t b)
 static inline int abs(int a) { return (a < 0 ? -a : a); }
 static inline long labs(long a) { return (a < 0 ? -a : a); }
 
+/**
+ * Return word aligned size of size.
+ * @param size is a size of a memory block requested.
+ * @returns Returns size aligned to the word size of the current system.
+ */
+size_t memalign(size_t size);
+
 /** @addtogroup krandom krandom, ksrandom, kunirandom
  * @{
  */

@@ -62,6 +62,7 @@ int ramfs_lookup(vnode_t * dir, const char * name, size_t name_len,
                  vnode_t ** result);
 int ramfs_link(vnode_t * dir, vnode_t * vnode, const char * name,
                size_t name_len);
+int ramfs_unlink(vnode_t * dir, const char * name, size_t name_len);
 int ramfs_mkdir(vnode_t * dir,  const char * name, size_t name_len,
                 mode_t mode);
 int ramfs_readdir(vnode_t * dir, struct dirent * d);

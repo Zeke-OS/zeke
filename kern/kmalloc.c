@@ -33,6 +33,7 @@
 #define KERNEL_INTERNAL
 #include <stdint.h>
 #include <stddef.h>
+#include <libkern.h>
 #include <kstring.h>
 #include <kerror.h>
 #include <sys/sysctl.h>
@@ -109,7 +110,6 @@ static mblock_t * extend(mblock_t * last, size_t size);
 static mblock_t * find_mblock(mblock_t ** last, size_t size);
 static void split_mblock(mblock_t * b, size_t s);
 static mblock_t * merge(mblock_t * b);
-static size_t memalign(size_t size);
 static int valid_addr(void * p);
 /* Stat functions */
 static void update_stat_up(size_t * stat_act, size_t amount);
@@ -252,22 +252,6 @@ static mblock_t * merge(mblock_t * b)
     }
 out:
     return b;
-}
-
-/**
- * Return word aligned size of size.
- * @param size is a size of a memory block requested.
- * @returns Returns size aligned to the word size of the current system.
- */
-static size_t memalign(size_t size)
-{
-#define ALIGN (sizeof(void *))
-#define MOD_AL(x) ((x) & (ALIGN - 1)) /* x % ALIGN */
-    size_t padding = MOD_AL((ALIGN - (MOD_AL(size))));
-
-    return size + padding;
-#undef MOD_AL
-#undef ALIGN
 }
 
 /**

@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    dehtable.h
+ * @file    memalign.c
  * @author  Olli Vanhoja
- * @brief   Directory Entry Hashtable.
+ * @brief   Mem align function.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,53 +30,15 @@
  *******************************************************************************
  */
 
-/** @addtogroup fs
-  * @{
-  */
+#include <libkern.h>
 
-#pragma once
-#ifndef DEHTABLE_H
-#define DEHTABLE_H
+size_t memalign(size_t size)
+{
+#define ALIGN (sizeof(void *))
+#define MOD_AL(x) ((x) & (ALIGN - 1)) /* x % ALIGN */
+    size_t padding = MOD_AL((ALIGN - (MOD_AL(size))));
 
-#include <fs/fs.h>
-
-#define DEHTABLE_SIZE 16
-
-/**
- * Directory entry.
- */
-typedef struct dh_dirent {
-    ino_t dh_ino; /*!< File serial number. */
-    size_t dh_size; /*!< Size of this directory entry. */
-    uint8_t dh_link; /*!< Internal link tag. If 0 chain ends here; otherwise
-                      * chain linking continues. */
-    char dh_name[1]; /*!< Name of the entry. */
-} dh_dirent_t;
-
-/**
- * Directory entry hash table array type.
- */
-typedef dh_dirent_t * dh_table_t[DEHTABLE_SIZE];
-
-/**
- * Directory iterator.
- */
-typedef struct dh_dir_iter {
-    dh_table_t * dir;
-    size_t dea_ind;
-    size_t ch_ind;
-} dh_dir_iter_t;
-
-int dh_link(dh_table_t * dir, ino_t vnode_num, const char * name, size_t name_len);
-int dh_unlink(dh_table_t * dir, const char * name, size_t name_len);
-void dh_destroy_all(dh_table_t * dir);
-int dh_lookup(dh_table_t * dir, const char * name, size_t name_len,
-                ino_t * vnode_num);
-dh_dir_iter_t dh_get_iter(dh_table_t * dir);
-dh_dirent_t * dh_iter_next(dh_dir_iter_t * it);
-
-#endif /* DEHTABLE_H */
-
-/**
-  * @}
-  */
+    return size + padding;
+#undef MOD_AL
+#undef ALIGN
+}
