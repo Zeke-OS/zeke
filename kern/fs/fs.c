@@ -556,6 +556,11 @@ int fs_mkdir_curproc(const char * pathname, mode_t mode)
     vnode_t * dir;
     int retval = 0;
 
+    if (pathname[0] == '\0') {
+        retval = -EINVAL;
+        goto out;
+    }
+
     if (!fs_namei_proc(&dir, pathname)) {
         retval = -EEXIST;
         goto out;
