@@ -88,6 +88,7 @@ typedef struct vnode {
     /*!< Pointer to the vnode in mounted file system. If no fs is mounted on
      *   this vnode then this is a self pointing pointer. */
     struct vnode * vn_mountpoint;
+    struct vnode * vn_prev_mountpoint;
 
     off_t vn_len;               /*!< Length of file. */
     mode_t vn_mode;             /*!< File type part of st_mode sys/stat.h */
@@ -252,7 +253,7 @@ int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str, int oflags
  * Walks the file system for a process and tries to locate and lock vnode
  * corresponding to a given path.
  */
-int fs_namei_proc(vnode_t ** result, char * path);
+int fs_namei_proc(vnode_t ** result, const char * path);
 
 /**
  * Mount file system.

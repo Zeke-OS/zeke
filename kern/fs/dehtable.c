@@ -33,6 +33,7 @@
 #include <kerror.h>
 #include <kmalloc.h>
 #include <kstring.h>
+#include <libkern.h>
 #include <errno.h>
 #include <fs/fs.h>
 #include "dehtable.h"

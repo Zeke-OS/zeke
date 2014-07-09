@@ -140,15 +140,36 @@ int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str, int oflags
         if (!strcmp(nodename, "."))
             continue;
 
+again:  /* Get vnode by name in this dir. */
         retval = (*result)->vnode_ops->lookup(*result, nodename,
                 strlenn(nodename, FS_FILENAME_MAX) + 1, &vnode);
         if (retval) {
             goto out;
         }
-        /* TODO - soft links but if O_NOFOLLOW we should fail on link and return
-         *        -ELOOP
-         */
-        *result = vnode->vn_mountpoint;
+
+        if (!strcmp(nodename, "..") && (vnode->vn_prev_mountpoint != vnode)) {
+            /* Get prev dir of prev fs sb from mount point. */
+            while (vnode->vn_prev_mountpoint != vnode) {
+                /* We loop here to get to the first file system mounted on this
+                 * mountpoint.
+                 */
+                vnode = vnode->vn_prev_mountpoint;
+            }
+            *result = vnode;
+            goto again; /* Start from begining to actually get to the prev dir.
+                         */
+        } else {
+            /* TODO - soft links support
+             *      - if O_NOFOLLOW we should fail on soft link and return
+             *        (-ELOOP)
+             */
+
+            /* Go to the last mountpoint. */
+            while (vnode != vnode->vn_mountpoint) {
+                vnode = vnode->vn_mountpoint;
+            }
+            *result = vnode;
+        }
 #if configDEBUG != 0
         if (*result == 0)
             panic("vfs is in inconsistent state");
@@ -165,7 +186,7 @@ out:
     return retval;
 }
 
-int fs_namei_proc(vnode_t ** result, char * path)
+int fs_namei_proc(vnode_t ** result, const char * path)
 {
     vnode_t * start;
     int oflags = 0;
@@ -192,14 +213,7 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
 {
     fs_t * fs = 0;
     struct fs_superblock * sb;
-    vnode_t * dotdot;
     int err;
-
-    if (lookup_vnode(&dotdot, target, "..", O_DIRECTORY)) {
-        /* We could return -ENOLINK but usually this means that we are mounting
-         * to some pseudo vnode, so we just ignore .. for now */
-        dotdot = 0;
-    }
 
     if (fsname) {
         fs = fs_by_name(fsname);
@@ -213,14 +227,8 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
     if (err)
         return err;
 
-    if (dotdot) {
-        /* TODO - Make .. of the new mount to point prev dir of the mp
-         *      - inherit mode from original target dir?
-         */
-        //fs_link(sb->root, dotdot, "..", 3);
-    }
-
     sb->mountpoint = target;
+    sb->root->vn_prev_mountpoint = target->vn_mountpoint;
     target->vn_mountpoint = sb->root;
 
     return 0;

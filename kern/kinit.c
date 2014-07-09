@@ -209,6 +209,7 @@ static void mount_rootfs(void)
         KERROR(KERROR_ERR, buf);
         goto out;
     }
+    kernel_proc->croot->vn_mountpoint->vn_prev_mountpoint = kernel_proc->croot->vn_mountpoint;
 
     kernel_proc->croot = kernel_proc->croot->vn_mountpoint;
     kernel_proc->cwd = kernel_proc->croot;
