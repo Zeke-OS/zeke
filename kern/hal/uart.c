@@ -54,6 +54,7 @@ void uart_init(void)
 {
     SUBSYS_INIT();
     SUBSYS_DEP(devfs_init);
+    vfs_ready = 1;
 
     for (int i = 0; i < uart_nr_ports; i++) {
         struct uart_port * port = uart_ports[i];
