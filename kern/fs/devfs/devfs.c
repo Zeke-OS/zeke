@@ -216,8 +216,8 @@ size_t dev_write(vnode_t * vnode, const off_t * offset,
             devnfo->block_size : count;
 
         while (1) {
-            int ret = devnfo->read(devnfo, *offset + block_offset,
-                                   &buf[buf_offset], to_write);
+            int ret = devnfo->write(devnfo, *offset + block_offset,
+                                    &buf[buf_offset], to_write);
             if (ret < 0) {
                 tries--;
                 if(tries <= 0)

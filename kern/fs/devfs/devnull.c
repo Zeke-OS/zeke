@@ -34,6 +34,8 @@
 #include <kerror.h>
 #include <fs/devfs.h>
 
+static int devnull_read(struct dev_info * devnfo, off_t offset,
+                        uint8_t * buf, size_t count);
 static int devnull_write(struct dev_info * devnfo, off_t offset,
                          uint8_t * buf, size_t count);
 
@@ -42,6 +44,7 @@ struct dev_info devnull_info = {
     .drv_name = "memdev",
     .dev_name = "null",
     .flags = DEV_FLAGS_MB_READ | DEV_FLAGS_MB_WRITE,
+    .read = devnull_read,
     .write = devnull_write
 };
 
@@ -56,6 +59,12 @@ void devnull_init(void)
     }
 
     SUBSYS_INITFINI("dev/null OK");
+}
+
+static int devnull_read(struct dev_info * devnfo, off_t offset,
+                        uint8_t * buf, size_t count)
+{
+    return 0;
 }
 
 static int devnull_write(struct dev_info * devnfo, off_t offset,
