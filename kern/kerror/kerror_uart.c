@@ -40,14 +40,14 @@
 #error configUART must be enabled
 #endif
 
-static uart_port_t * kerror_uart;
+static struct uart_port * kerror_uart;
 
 /**
  * Kerror logger init function called by kerror_init.
  */
 static void kerror_uart_init(void)
 {
-    uart_port_init_t uart_conf = {
+    struct uart_port_conf conf = {
         .baud_rate  = UART_BAUDRATE_115200,
         .data_bits  = UART_DATABITS_8,
         .stop_bits  = UART_STOPBITS_ONE,
@@ -55,7 +55,8 @@ static void kerror_uart_init(void)
     };
 
     kerror_uart = uart_getport(0);
-    kerror_uart->init(&uart_conf);
+    kerror_uart->conf = conf;
+    kerror_uart->init(kerror_uart);
 }
 
 static void kerror_uart_puts(const char * str)
@@ -64,8 +65,8 @@ static void kerror_uart_puts(const char * str)
 
     while (str[i] != '\0') {
         if (str[i] == '\n')
-            kerror_uart->uputc('\r');
-        kerror_uart->uputc(str[i++]);
+            kerror_uart->uputc(kerror_uart, '\r');
+        kerror_uart->uputc(kerror_uart, str[i++]);
     }
 }
 

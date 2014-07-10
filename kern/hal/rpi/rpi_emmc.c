@@ -63,13 +63,15 @@
  */
 
 #include <autoconf.h>
+#include <kinit.h>
 #include <stdint.h>
-#include <libkern.h>
 #include <kstring.h>
+#include <libkern.h>
 #include <kmalloc.h>
 #include <kerror.h>
 #include <hal/hw_timers.h>
-#include <fs/block.h>
+#include <fs/devfs.h>
+#include <fs/mbr.h>
 #include "../bcm2835/bcm2835_mmio.h"
 #include "../bcm2835/bcm2835_timers.h"
 #include "../bcm2835/bcm2835_mailbox.h"
@@ -139,7 +141,7 @@ struct sd_scr {
 };
 
 struct emmc_block_dev {
-    struct block_dev bd;
+    struct dev_info dev;
 
     uint8_t *cid;
     size_t cid_len;
@@ -313,8 +315,8 @@ static char *err_irpts[] = {
 };
 #endif
 
-int sd_read(struct block_dev *, off_t, uint8_t *, size_t buf_size);
-int sd_write(struct block_dev *, off_t, uint8_t *, size_t buf_size);
+int sd_read(struct dev_info *, off_t, uint8_t *, size_t buf_size);
+int sd_write(struct dev_info *, off_t, uint8_t *, size_t buf_size);
 
 static uint32_t sd_commands[] = {
     SD_CMD_INDEX(0),
@@ -504,23 +506,26 @@ static uint32_t sd_acommands[] = {
 
 #define SD_GET_CLOCK_DIVIDER_FAIL    0xffffffff
 
+int rpi_emmc_card_init(struct dev_info ** dev);
+
 void rpi_emmc_init(void) __attribute__((constructor));
 void rpi_emmc_init(void)
 {
     SUBSYS_INIT();
     SUBSYS_DEP(fs_init);
 
-    struct block_device *sd_dev = NULL;
-    if (sd_card_init(&sd_dev) == 0) {
-        struct block_device *c_dev = sd_dev;
+    struct dev_info * sd_dev = NULL;
+    if (rpi_emmc_card_init(&sd_dev) == 0) {
 #ifdef ENABLE_BLOCK_CACHE
+        struct dev_info * c_dev = sd_dev;
         uintptr_t cache_start = alloc_buf(BLOCK_CACHE_SIZE);
 
         if (cache_start != 0)
             cache_init(sd_dev, &c_dev, cache_start, BLOCK_CACHE_SIZE);
 #endif
 
-#ifdef configMBR
+#if configMBR != 0
+        /* TODO */
         mbr_register(c_dev, (void*)0, (void*)0);
 #endif
     }
@@ -1408,7 +1413,7 @@ static void sd_issue_command(struct emmc_block_dev *dev, uint32_t command,
 #endif
 }
 
-int rpi_emmc_card_init(struct block_dev **dev)
+int rpi_emmc_card_init(struct dev_info ** dev)
 {
 #if SDHCI_IMPLEMENTATION == SDHCI_IMPLEMENTATION_BCM_2708
     /* Power cycle the card to ensure its in its startup state */
@@ -1584,15 +1589,14 @@ int rpi_emmc_card_init(struct block_dev **dev)
         ret = (struct emmc_block_dev *)*dev;
 
     memset(ret, 0, sizeof(struct emmc_block_dev));
-    ret->bd.drv_name = driver_name;
-    ret->bd.dev_name = device_name;
-    ret->bd.block_size = 512;
-    ret->bd.read = sd_read;
+    ret->dev.drv_name = driver_name;
+    strncpy(ret->dev.dev_name, device_name, sizeof(ret->dev.dev_name));
+    ret->dev.block_size = 512;
+    ret->dev.read = sd_read;
 #ifdef SD_WRITE_SUPPORT
-    ret->bd.write = sd_write;
+    ret->dev.write = sd_write;
 #endif
-    ret->bd.supports_multiple_block_read = 1;
-    ret->bd.supports_multiple_block_write = 1;
+    ret->dev.flags = DEV_FLAGS_MB_READ | DEV_FLAGS_MB_WRITE;
     ret->base_clock = base_clock;
 
 #ifdef EMMC_DEBUG
@@ -1777,7 +1781,7 @@ int rpi_emmc_card_init(struct block_dev **dev)
 #endif
             ret->failed_voltage_switch = 1;
             sd_power_off();
-            return rpi_emmc_card_init((struct block_dev **)&ret);
+            return rpi_emmc_card_init((struct dev_info **)&ret);
         }
 
         /* Disable SD clock */
@@ -1794,7 +1798,7 @@ int rpi_emmc_card_init(struct block_dev **dev)
 #endif
             ret->failed_voltage_switch = 1;
             sd_power_off();
-            return rpi_emmc_card_init((struct block_dev **)&ret);
+            return rpi_emmc_card_init((struct dev_info **)&ret);
         }
 
         /* Set 1.8V signal enable to 1 */
@@ -1814,7 +1818,7 @@ int rpi_emmc_card_init(struct block_dev **dev)
 #endif
             ret->failed_voltage_switch = 1;
             sd_power_off();
-            return rpi_emmc_card_init((struct block_dev **)&ret);
+            return rpi_emmc_card_init((struct dev_info **)&ret);
         }
 
         /* Re-enable the SD clock */
@@ -1840,7 +1844,7 @@ int rpi_emmc_card_init(struct block_dev **dev)
 #endif
             ret->failed_voltage_switch = 1;
             sd_power_off();
-            return rpi_emmc_card_init((struct block_dev **)&ret);
+            return rpi_emmc_card_init((struct dev_info **)&ret);
         }
 
 #ifdef EMMC_DEBUG
@@ -2098,7 +2102,7 @@ int rpi_emmc_card_init(struct block_dev **dev)
     /* Reset interrupt register */
     mmio_write(EMMC_BASE + EMMC_INTERRUPT, 0xffffffff);
 
-    *dev = (struct block_dev *)ret;
+    *dev = (struct dev_info *)ret;
 
     return 0;
 }
@@ -2107,7 +2111,7 @@ static int sd_ensure_data_mode(struct emmc_block_dev *edev)
 {
     if (edev->card_rca == 0) {
         /* Try again to initialise the card */
-        int ret = rpi_emmc_card_init((struct block_dev **)&edev);
+        int ret = rpi_emmc_card_init((struct dev_info **)&edev);
         if (ret != 0)
             return ret;
     }
@@ -2169,7 +2173,7 @@ static int sd_ensure_data_mode(struct emmc_block_dev *edev)
         sd_reset_dat();
     } else if (cur_state != 4) {
         /* Not in the transfer state - re-initialise */
-        int ret = rpi_emmc_card_init((struct block_dev **)&edev);
+        int ret = rpi_emmc_card_init((struct dev_info **)&edev);
         if (ret != 0)
             return ret;
     }
@@ -2318,7 +2322,7 @@ static int sd_do_data_command(struct emmc_block_dev *edev, int is_write,
     return 0;
 }
 
-int sd_read(struct block_dev *dev, off_t block_no,
+int sd_read(struct dev_info *dev, off_t block_no,
         uint8_t *buf, size_t buf_size)
 {
     /* Check the status of the card */
@@ -2330,7 +2334,7 @@ int sd_read(struct block_dev *dev, off_t block_no,
     {
         char buf[80];
         ksprintf(buf, sizeof(buf),
-                "SD: read() card ready, reading from block %u\n", block_no);
+                "SD: read() card ready, reading from block %l\n", block_no);
         KERROR(KERROR_DEBUG, buf);
     }
 #endif
@@ -2346,7 +2350,7 @@ int sd_read(struct block_dev *dev, off_t block_no,
 }
 
 #ifdef SD_WRITE_SUPPORT
-int sd_write(struct block_dev * dev, off_t block_no, uint8_t *buf,
+int sd_write(struct dev_info * dev, off_t block_no, uint8_t *buf,
         size_t buf_size)
 {
     /* Check the status of the card */
@@ -2358,7 +2362,7 @@ int sd_write(struct block_dev * dev, off_t block_no, uint8_t *buf,
     {
         char buf[80];
         ksprintf(buf, sizeof(buf),
-                "SD: write() card ready, reading from block %u\n", block_no);
+                "SD: write() card ready, reading from block %l\n", block_no);
         KERROR(KERROR_DEBUG, buf);
     }
 #endif

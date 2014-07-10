@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Headers for UART HAL.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -79,38 +79,47 @@ enum uart_parity {
 #define UART_BAUDRATE_9600      9600
 #define UART_BAUDRATE_115200    115200
 
-typedef struct {
+struct uart_port_conf {
     unsigned int baud_rate;         /*!< Baud rate selection. */
     enum uart_databits data_bits;   /*!< Data bits. */
     enum uart_stopbits stop_bits;   /*!< One or Two stop bits. */
     enum uart_parity parity;        /*!< Parity. */
-} uart_port_init_t;
+};
 
-/**
- *
- */
-typedef struct {
+#define UART_PORT_FLAG_FS       0x01 /*!< Port is exported to the devfs. */
+
+struct uart_port {
+    unsigned uart_id;   /*!< ID that can be used by the hal level driver. This
+                         *   id is not connected with the port_num.
+                         */
+    unsigned flags;     /*!< Flags used by the UART abstraction layer. */
+    struct uart_port_conf conf;
+
     /**
      * Initialize UART.
      */
-    void (* init)(const uart_port_init_t * conf);
+    void (* init)(struct uart_port * port);
 
     /**
      * Transmit a byte via UARTx.
      * @param byte Byte to send.
      */
-    void (* uputc)(uint8_t byte);
+    void (* uputc)(struct uart_port * port, uint8_t byte);
 
     /**
      * Receive a byte via UART.
      * @return A byte read from UART or -1 if undeflow.
      */
-    int (* ugetc)(void);
-} uart_port_t;
+    int (* ugetc)(struct uart_port * port);
+};
 
-int uart_register_port(uart_port_t * port);
+/**
+ * UART port register.
+ * @param port_init_struct is a
+ */
+int uart_register_port(struct uart_port * port);
 int uart_nports(void);
-uart_port_t * uart_getport(int port);
+struct uart_port * uart_getport(int port_num);
 
 #endif /* UART_H */
 

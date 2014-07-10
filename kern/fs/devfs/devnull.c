@@ -43,7 +43,7 @@ struct dev_info devnull_info = {
     .dev_id = DEV_MMTODEV(1, 3),
     .drv_name = "memdev",
     .dev_name = "null",
-    .flags = DEV_FLAGS_MB_READ | DEV_FLAGS_MB_WRITE,
+    .flags = DEV_FLAGS_MB_READ | DEV_FLAGS_MB_WRITE | DEV_FLAGS_WR_BT_MASK,
     .read = devnull_read,
     .write = devnull_write
 };
