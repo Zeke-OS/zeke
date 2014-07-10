@@ -30,21 +30,77 @@
  *******************************************************************************
  */
 
+#include <errno.h>
+#include <kinit.h>
+#include <kstring.h>
+#include <kmalloc.h>
+#include <fs/devfs.h>
 #include <hal/uart.h>
 
-static uart_port_t uart_ports[UART_PORTS_MAX];
-static int uart_nr_ports;
+static const char drv_name[] = "UART";
 
-int uart_register_port(uart_port_t * port)
+static struct uart_port * uart_ports[UART_PORTS_MAX];
+static int uart_nr_ports;
+static int vfs_ready;
+
+static int make_uartdev(struct uart_port * port, int port_num);
+static int uart_read(struct dev_info * devnfo, off_t offset, uint8_t * buf,
+                     size_t count);
+static int uart_write(struct dev_info * devnfo, off_t offset, uint8_t * buf,
+                      size_t count);
+
+void uart_init(void) __attribute__((constructor));
+void uart_init(void)
+{
+    SUBSYS_INIT();
+    SUBSYS_DEP(devfs_init);
+
+    for (int i = 0; i < uart_nr_ports; i++) {
+        struct uart_port * port = uart_ports[i];
+
+        if (!(port->flags & UART_PORT_FLAG_FS))
+            make_uartdev(port, i);
+    }
+
+    SUBSYS_INITFINI("uart OK");
+}
+
+static int make_uartdev(struct uart_port * port, int port_num)
+{
+    struct dev_info * dev = kcalloc(1, sizeof(struct dev_info));
+
+    if (!dev)
+        return -ENOMEM;
+
+    dev->dev_id = DEV_MMTODEV(4, port_num);
+    dev->drv_name = drv_name;
+    ksprintf(dev->dev_name, sizeof(dev->dev_name), "ttyS%i", port_num);
+    dev->flags = DEV_FLAGS_WR_BT_MASK;
+    dev->read = uart_read;
+    dev->write = uart_write;
+
+    if (dev_make(dev, 0, 0, 0666)) {
+        KERROR(KERROR_ERR, "Failed to");
+    } else {
+        port->flags |= UART_PORT_FLAG_FS;
+    }
+
+    return -ENODEV;
+}
+
+int uart_register_port(struct uart_port * port)
 {
     int i, retval = -1;
 
     i = uart_nr_ports;
     if (i < UART_PORTS_MAX) {
-        uart_ports[i] = *port;
+        uart_ports[i] = port;
         uart_nr_ports++;
         retval = i;
     }
+
+    if (vfs_ready)
+        make_uartdev(port, i);
 
     return retval;
 }
@@ -54,12 +110,40 @@ int uart_nports(void)
     return uart_nr_ports;
 }
 
-uart_port_t * uart_getport(int port)
+struct uart_port * uart_getport(int port_num)
 {
-    uart_port_t * retval = 0;
+    struct uart_port * retval = 0;
 
-    if (port < uart_nr_ports)
-        retval = &uart_ports[port];
+    if (port_num < uart_nr_ports)
+        retval = uart_ports[port_num];
 
     return retval;
+}
+
+static int uart_read(struct dev_info * devnfo, off_t offset, uint8_t * buf,
+                     size_t count)
+{
+    struct uart_port * port = uart_getport(DEV_MINOR(devnfo->dev_id));
+
+    if (!port)
+        return -ENODEV;
+
+    port->uputc(port, *buf);
+
+    return 1;
+}
+
+static int uart_write(struct dev_info * devnfo, off_t offset, uint8_t * buf,
+                      size_t count)
+{
+    struct uart_port * port = uart_getport(DEV_MINOR(devnfo->dev_id));
+    int ret;
+
+    if (!port)
+        return -ENODEV;
+
+    ret = port->ugetc(port);
+    if (ret == -1)
+        return -EAGAIN;
+    return ret;
 }

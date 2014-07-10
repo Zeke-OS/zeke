@@ -75,22 +75,23 @@
 #define UART0_FR_BUSY_OFFSET    3
 #define UART0_FR_CTS_OFFSET     0
 
-static void bcm2835_uart_init(const uart_port_init_t * conf);
+static void bcm2835_uart_init(struct uart_port * port);
 static void set_baudrate(unsigned int baud_rate);
-static void set_lcrh(const uart_port_init_t * conf);
-void bcm2835_uart_uputc(uint8_t byte);
-int bcm2835_uart_ugetc(void);
+static void set_lcrh(const struct uart_port_conf * conf);
+void bcm2835_uart_uputc(struct uart_port * port, uint8_t byte);
+int bcm2835_uart_ugetc(struct uart_port * port);
+
+static struct uart_port port = {
+    .init = bcm2835_uart_init,
+    .uputc = bcm2835_uart_uputc,
+    .ugetc = bcm2835_uart_ugetc
+};
+
 
 void bcm2835_uart_register(void)
 {
     SUBSYS_INIT();
     SUBSYS_DEP(arm_interrupt_preinit);
-
-    uart_port_t port = {
-        .init = bcm2835_uart_init,
-        .uputc = bcm2835_uart_uputc,
-        .ugetc = bcm2835_uart_ugetc
-    };
 
     uart_register_port(&port);
 
@@ -98,8 +99,9 @@ void bcm2835_uart_register(void)
 }
 HW_PREINIT_ENTRY(bcm2835_uart_register);
 
-void bcm2835_uart_init(const uart_port_init_t * conf)
+void bcm2835_uart_init(struct uart_port * port)
 {
+    struct uart_port_conf * conf = &port->conf;
     istate_t s_entry;
 
     mmio_start(&s_entry);
@@ -163,7 +165,7 @@ static void set_baudrate(unsigned int baud_rate)
     mmio_end(&s_entry);
 }
 
-static void set_lcrh(const uart_port_init_t * conf)
+static void set_lcrh(const struct uart_port_conf * conf)
 {
     uint32_t tmp = 0;
     istate_t s_entry;
@@ -203,7 +205,7 @@ static void set_lcrh(const uart_port_init_t * conf)
     mmio_end(&s_entry);
 }
 
-void bcm2835_uart_uputc(uint8_t byte)
+void bcm2835_uart_uputc(struct uart_port * port, uint8_t byte)
 {
     istate_t s_entry;
 
@@ -221,7 +223,7 @@ void bcm2835_uart_uputc(uint8_t byte)
     mmio_end(&s_entry);
 }
 
-int bcm2835_uart_ugetc()
+int bcm2835_uart_ugetc(struct uart_port * port)
 {
     int byte = -1;
     istate_t s_entry;

@@ -48,7 +48,7 @@
 
 struct dev_info {
     dev_t dev_id;
-    char * drv_name;
+    const char * drv_name;
     char dev_name[20];
 
     /*!< Configuration flags for block device handling */
