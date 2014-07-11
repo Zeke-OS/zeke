@@ -42,6 +42,11 @@
 void sched_handler(void);
 
 /**
+ * Kernel idle thread.
+ */
+void * idle_thread(void * arg);
+
+/**
  * Initialize thread kernel mode stack.
  * @param th is a pointer to the thread.
  */
