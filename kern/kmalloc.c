@@ -55,18 +55,26 @@ struct kmalloc_stat {
 };
 struct kmalloc_stat kmalloc_stat;
 
-SYSCTL_UINT(_vm, OID_AUTO, kmalloc_res, CTLFLAG_RD,
+static int sysctl_stat_fragm(SYSCTL_HANDLER_ARGS);
+
+SYSCTL_DECL(_vm_kmalloc);
+SYSCTL_NODE(_vm, OID_AUTO, kmalloc, CTLFLAG_RW, 0,
+        "kmalloc stats");
+
+SYSCTL_UINT(_vm_kmalloc, OID_AUTO, kmalloc_res, CTLFLAG_RD,
         ((unsigned int *)&(kmalloc_stat.kms_mem_res)), 0,
         "Amount of memory currently reserved for kmalloc.");
-SYSCTL_UINT(_vm, OID_AUTO, kmalloc_max, CTLFLAG_RD,
+SYSCTL_UINT(_vm_kmalloc, OID_AUTO, kmalloc_max, CTLFLAG_RD,
         ((unsigned int *)&(kmalloc_stat.kms_mem_max)), 0,
         "Maximum peak amount of memory reserved for kmalloc.");
-SYSCTL_UINT(_vm, OID_AUTO, kmalloc_alloc, CTLFLAG_RD,
+SYSCTL_UINT(_vm_kmalloc, OID_AUTO, kmalloc_alloc, CTLFLAG_RD,
         ((unsigned int *)&(kmalloc_stat.kms_mem_alloc)), 0,
         "Amount of memory currectly allocated with kmalloc.");
-SYSCTL_UINT(_vm, OID_AUTO, kmalloc_alloc_max, CTLFLAG_RD,
+SYSCTL_UINT(_vm_kmalloc, OID_AUTO, kmalloc_alloc_max, CTLFLAG_RD,
         ((unsigned int *)&(kmalloc_stat.kms_mem_alloc_max)), 0,
         "Maximum peak amount of memory allocated with kmalloc");
+SYSCTL_PROC(_vm_kmalloc, OID_AUTO, kmalloc_fragm, CTLTYPE_INT | CTLFLAG_RD, NULL, 0,
+        sysctl_stat_fragm, "I", "Fragmentation percentage");
 
 /**
  * Memory block descriptor.
@@ -117,7 +125,7 @@ static void update_stat_down(size_t * stat_act, size_t amount);
 #if 0
 static void update_stat_set(size_t * stat_act, size_t value);
 #endif
-
+static int stat_fragmentation(void);
 
 /**
  * Allocate more memory for kmalloc.
@@ -499,3 +507,32 @@ static void update_stat_set(size_t * stat_act, size_t value)
         *stat_max = *stat_act;
 }
 #endif
+
+static int sysctl_stat_fragm(SYSCTL_HANDLER_ARGS)
+{
+    int value = stat_fragmentation();
+    int error;
+
+    error = sysctl_handle_int(oidp, &value, sizeof(int), req);
+
+    return error;
+}
+
+/**
+ * kmalloc fragmentation percentage.
+ */
+static int stat_fragmentation(void)
+{
+    mblock_t * b = kmalloc_base;
+    int blocks_free = 0;
+    int blocks_total = 0;
+
+    do {
+        if (b->refcount == 0) {
+            blocks_free++;
+        }
+        blocks_total++;
+    } while ((b = b->next) != 0);
+
+    return (blocks_free * 100) / blocks_total;
+}
