@@ -43,14 +43,19 @@
 #include <errno.h>
 #include <timers.h>
 #include <sched.h>
-#include "thread.h"
+#include <thread.h>
 
 #define KSTACK_SIZE ((MMU_VADDR_TKSTACK_END - MMU_VADDR_TKSTACK_START) + 1)
 
 /* Linker sets for pre- and post-scheduling tasks */
-typedef void (*sched_task_t)();
 SET_DECLARE(pre_sched_tasks, void);
 SET_DECLARE(post_sched_tasks, void);
+
+SET_DECLARE(sched_idle_tasks, void);
+/** Stack for idle thread */
+static char sched_idle_stack[sizeof(sw_stack_frame_t)
+                             + sizeof(hw_stack_frame_t)
+                             + 40];
 
 void sched_handler(void)
 {
@@ -84,6 +89,27 @@ void sched_handler(void)
         task();
     }
 }
+
+/**
+ * Kernel idle thread
+ * @note sw stacked registers are invalid when this thread executes for the
+ * first time.
+ */
+void * idle_thread(/*@unused@*/ void * arg)
+{
+    void ** task_p;
+
+    while(1) {
+        /* Execute idle tasks */
+        SET_FOREACH(task_p, sched_idle_tasks) {
+            sched_task_t task = *(sched_task_t *)task_p;
+            task();
+        }
+
+        idle_sleep();
+    }
+}
+
 
 static void thread_event_timer(void * event_arg)
 {

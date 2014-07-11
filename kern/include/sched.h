@@ -172,6 +172,9 @@ typedef struct {
     } inh;
 } threadInfo_t;
 
+/* Scheduler task type */
+typedef void (*sched_task_t)();
+
 /* External variables **********************************************************/
 extern threadInfo_t * current_thread;
 

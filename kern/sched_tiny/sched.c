@@ -99,18 +99,18 @@ SYSCTL_UINT(_kern_sched, OID_AUTO, nr_threads, CTLFLAG_RD,
     &nr_threads, 0, "Number of threads.");
 
 threadInfo_t * current_thread; /*!< Pointer to the currently active
-                                         *   thread */
+                                *   thread */
 static rwlock_t loadavg_lock;
 static uint32_t loadavg[3]  = { 0, 0, 0 }; /*!< CPU load averages */
 
-/** Stack for idle task */
+/** Stack for idle thread */
 static char sched_idle_stack[sizeof(sw_stack_frame_t)
                              + sizeof(hw_stack_frame_t)
                              + 40];
 
 /* Static function declarations **********************************************/
 static void init_thread_id_queue(void);
-void * idle_task(void * arg);
+static void * sched_idle_task(void * arg);
 static void sched_thread_init(pthread_t i,
         struct _ds_pthread_create * thread_def, threadInfo_t * parent, int priv);
 static void sched_thread_set_inheritance(threadInfo_t * new_child,
@@ -139,7 +139,7 @@ void sched_init(void)
     /* Create the idle task as task 0 */
     struct _ds_pthread_create tdef_idle = {
         .thread   = &tid,
-        .start    = idle_task,
+        .start    = idle_thread,
         .def      = &attr,
         .argument = NULL
     };
@@ -177,28 +177,25 @@ static void init_thread_id_queue(void)
 /* End of Functions called from outside of kernel context ********************/
 
 /**
- * Kernel idle task
- * @note sw stacked registers are invalid when this thread executes for the
- * first time.
+ * Idle task specific for this scheduler.
  */
-void * idle_task(/*@unused@*/ void * arg)
+static void * idle_task(void)
 {
-    while(1) {
-        unsigned tmp_nr_threads = 0;
-        //bcm2835_uart_uputc('I');
-        //raspi_led_invert();
+    unsigned tmp_nr_threads = 0;
+    //bcm2835_uart_uputc('I');
+    //raspi_led_invert();
 
-        /* Update nr_threads */
-        for (int i = 0; i < configSCHED_MAX_THREADS; i++) {
-            if (task_table[i].flags & SCHED_IN_USE_FLAG) {
-                tmp_nr_threads++;
-            }
-            nr_threads = tmp_nr_threads;
+    /* Update nr_threads */
+    for (int i = 0; i < configSCHED_MAX_THREADS; i++) {
+        if (task_table[i].flags & SCHED_IN_USE_FLAG) {
+            tmp_nr_threads++;
         }
-
-        idle_sleep();
+        nr_threads = tmp_nr_threads;
     }
+
+    idle_sleep();
 }
+DATA_SET(sched_idle_tasks, idle_task);
 
 /**
  * Calculate load averages
