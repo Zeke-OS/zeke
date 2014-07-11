@@ -50,12 +50,7 @@
 /* Linker sets for pre- and post-scheduling tasks */
 SET_DECLARE(pre_sched_tasks, void);
 SET_DECLARE(post_sched_tasks, void);
-
 SET_DECLARE(sched_idle_tasks, void);
-/** Stack for idle thread */
-static char sched_idle_stack[sizeof(sw_stack_frame_t)
-                             + sizeof(hw_stack_frame_t)
-                             + 40];
 
 void sched_handler(void)
 {

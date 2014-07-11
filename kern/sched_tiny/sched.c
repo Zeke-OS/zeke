@@ -110,7 +110,6 @@ static char sched_idle_stack[sizeof(sw_stack_frame_t)
 
 /* Static function declarations **********************************************/
 static void init_thread_id_queue(void);
-static void * sched_idle_task(void * arg);
 static void sched_thread_init(pthread_t i,
         struct _ds_pthread_create * thread_def, threadInfo_t * parent, int priv);
 static void sched_thread_set_inheritance(threadInfo_t * new_child,
@@ -179,7 +178,7 @@ static void init_thread_id_queue(void)
 /**
  * Idle task specific for this scheduler.
  */
-static void * idle_task(void)
+static void idle_task(void)
 {
     unsigned tmp_nr_threads = 0;
     //bcm2835_uart_uputc('I');

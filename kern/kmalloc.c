@@ -54,27 +54,26 @@ struct kmalloc_stat {
     size_t kms_mem_alloc_max; /*!< Maximum amount of allocated memory. */
 };
 struct kmalloc_stat kmalloc_stat;
-
-static int sysctl_stat_fragm(SYSCTL_HANDLER_ARGS);
+int fragm_ratio;
 
 SYSCTL_DECL(_vm_kmalloc);
 SYSCTL_NODE(_vm, OID_AUTO, kmalloc, CTLFLAG_RW, 0,
         "kmalloc stats");
 
-SYSCTL_UINT(_vm_kmalloc, OID_AUTO, kmalloc_res, CTLFLAG_RD,
+SYSCTL_UINT(_vm_kmalloc, OID_AUTO, res, CTLFLAG_RD,
         ((unsigned int *)&(kmalloc_stat.kms_mem_res)), 0,
         "Amount of memory currently reserved for kmalloc.");
-SYSCTL_UINT(_vm_kmalloc, OID_AUTO, kmalloc_max, CTLFLAG_RD,
+SYSCTL_UINT(_vm_kmalloc, OID_AUTO, max, CTLFLAG_RD,
         ((unsigned int *)&(kmalloc_stat.kms_mem_max)), 0,
         "Maximum peak amount of memory reserved for kmalloc.");
-SYSCTL_UINT(_vm_kmalloc, OID_AUTO, kmalloc_alloc, CTLFLAG_RD,
+SYSCTL_UINT(_vm_kmalloc, OID_AUTO, alloc, CTLFLAG_RD,
         ((unsigned int *)&(kmalloc_stat.kms_mem_alloc)), 0,
         "Amount of memory currectly allocated with kmalloc.");
-SYSCTL_UINT(_vm_kmalloc, OID_AUTO, kmalloc_alloc_max, CTLFLAG_RD,
+SYSCTL_UINT(_vm_kmalloc, OID_AUTO, alloc_max, CTLFLAG_RD,
         ((unsigned int *)&(kmalloc_stat.kms_mem_alloc_max)), 0,
         "Maximum peak amount of memory allocated with kmalloc");
-SYSCTL_PROC(_vm_kmalloc, OID_AUTO, kmalloc_fragm, CTLTYPE_INT | CTLFLAG_RD, NULL, 0,
-        sysctl_stat_fragm, "I", "Fragmentation percentage");
+SYSCTL_INT(_vm_kmalloc, OID_AUTO, fragm_rat, CTLFLAG_RD,
+        &fragm_ratio, 0, "Fragmentation percentage");
 
 /**
  * Memory block descriptor.
@@ -125,7 +124,6 @@ static void update_stat_down(size_t * stat_act, size_t amount);
 #if 0
 static void update_stat_set(size_t * stat_act, size_t value);
 #endif
-static int stat_fragmentation(void);
 
 /**
  * Allocate more memory for kmalloc.
@@ -508,20 +506,10 @@ static void update_stat_set(size_t * stat_act, size_t value)
 }
 #endif
 
-static int sysctl_stat_fragm(SYSCTL_HANDLER_ARGS)
-{
-    int value = stat_fragmentation();
-    int error;
-
-    error = sysctl_handle_int(oidp, &value, sizeof(int), req);
-
-    return error;
-}
-
 /**
- * kmalloc fragmentation percentage.
+ * kmalloc fragmentation percentage stats.
  */
-static int stat_fragmentation(void)
+static void stat_fragmentation(void)
 {
     mblock_t * b = kmalloc_base;
     int blocks_free = 0;
@@ -534,5 +522,6 @@ static int stat_fragmentation(void)
         blocks_total++;
     } while ((b = b->next) != 0);
 
-    return (blocks_free * 100) / blocks_total;
+    fragm_ratio = (blocks_free * 100) / blocks_total;
 }
+DATA_SET(sched_idle_tasks, stat_fragmentation);
