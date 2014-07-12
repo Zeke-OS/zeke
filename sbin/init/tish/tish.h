@@ -37,6 +37,10 @@
 #define MAX_LEN 80
 #define DELIMS  " \t\r\n"
 
+/* TODO Remove */
+#define fprintf(stream, str) write(STDOUT_FILENO, str, strlenn(str, MAX_LEN) + 1)
+#define puts(str) fprintf(stderr, str)
+
 int tish(void);
 
 #endif /* TISH_H */

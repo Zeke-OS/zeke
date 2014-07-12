@@ -41,10 +41,6 @@
 #include <sys/stat.h>
 #include "tish.h"
 
-/* TODO Remove */
-#define fprintf(stream, str) write(2, str, strlenn(str, MAX_LEN) + 1)
-#define puts(str) fprintf(stderr, str)
-
 //static char invalid_arg[] = "Invalid argument\n";
 
 void tish_ls(char ** args)

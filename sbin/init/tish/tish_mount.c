@@ -41,5 +41,14 @@
 
 void tish_mount(char ** args)
 {
-    mount("", "/dev", "devfs", 0, "");
+    char * src = kstrtok(0, DELIMS, args);
+    char * dest = kstrtok(0, DELIMS, args);
+    char * fs = kstrtok(0, DELIMS, args);
+
+    if (!src || !dest || !fs) {
+        puts("Invalid args\n"
+             "mount src dest fs\n");
+    }
+
+    mount(src, dest, fs, 0, "");
 }

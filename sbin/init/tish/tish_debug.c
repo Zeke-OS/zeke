@@ -45,10 +45,6 @@ static void create_debug_thread(void);
 static void * test_thread(void * arg);
 static void thread_stat(void);
 
-/* TODO Remove */
-#define fprintf(stream, str) write(2, str, strlenn(str, MAX_LEN) + 1)
-#define puts(str) fprintf(stderr, str)
-
 static char invalid_arg[] = "Invalid argument\n";
 
 void tish_debug(char ** args)
