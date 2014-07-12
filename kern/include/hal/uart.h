@@ -44,47 +44,10 @@
 
 #include <autoconf.h>
 #include <stdint.h>
+#include <termios.h>
 
 /* UART HAL Configuration */
 #define UART_PORTS_MAX configUART_MAX_PORTS
-
-/**
- * UART data bits.
- */
-enum uart_databits {
-    UART_DATABITS_5,        /*!< 5 data bits. */
-    UART_DATABITS_6,        /*!< 6 data bits. */
-    UART_DATABITS_7,        /*!< 7 data bits. */
-    UART_DATABITS_8         /*!< 8 data bits. */
-};
-
-/**
- * UART stop bits selection enum type.
- */
-enum uart_stopbits {
-    UART_STOPBITS_ONE = 1,  /*!< One stop bit */
-    UART_STOPBITS_TWO = 2   /*!< Two stop bits */
-};
-
-/**
- * UART parity bit generation and detection.
- */
-enum uart_parity {
-    UART_PARITY_EVEN,       /*!< Even parity. */
-    UART_PARITY_ODD,        /*!< Odd parity. */
-    UART_PARITY_NO          /*!< No parity bit generation and detection. */
-};
-
-/* List of mandatory baud rates. */
-#define UART_BAUDRATE_9600      9600
-#define UART_BAUDRATE_115200    115200
-
-struct uart_port_conf {
-    unsigned int baud_rate;         /*!< Baud rate selection. */
-    enum uart_databits data_bits;   /*!< Data bits. */
-    enum uart_stopbits stop_bits;   /*!< One or Two stop bits. */
-    enum uart_parity parity;        /*!< Parity. */
-};
 
 #define UART_PORT_FLAG_FS       0x01 /*!< Port is exported to the devfs. */
 
@@ -93,7 +56,7 @@ struct uart_port {
                          *   id is not connected with the port_num.
                          */
     unsigned flags;     /*!< Flags used by the UART abstraction layer. */
-    struct uart_port_conf conf;
+    struct termios conf;
 
     /**
      * Initialize UART.
@@ -111,6 +74,12 @@ struct uart_port {
      * @return A byte read from UART or -1 if undeflow.
      */
     int (* ugetc)(struct uart_port * port);
+
+    /**
+     * Check if there is data available from UART.
+     * @return 0 if no data avaiable; Otherwise value other than zero.
+     */
+    int (* peek)(struct uart_port * port);
 };
 
 /**

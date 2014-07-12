@@ -55,7 +55,7 @@ void * main(void * arg)
 {
     int r0, r1, r2;
     const char tty_path[] = "/dev/ttyS0";
-    char buf[80];
+//    char buf[80];
 
     mkdir("/dev", S_IRWXU | S_IRGRP | S_IXGRP);
     mount("", "/dev", "devfs", 0, "");

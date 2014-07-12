@@ -47,11 +47,10 @@ static struct uart_port * kerror_uart;
  */
 static void kerror_uart_init(void)
 {
-    struct uart_port_conf conf = {
-        .baud_rate  = UART_BAUDRATE_115200,
-        .data_bits  = UART_DATABITS_8,
-        .stop_bits  = UART_STOPBITS_ONE,
-        .parity     = UART_PARITY_NO,
+    struct termios conf = {
+        .c_cflag    = CS8 | CREAD,
+        .c_ispeed   = B115200,
+        .c_ospeed   = B115200,
     };
 
     kerror_uart = uart_getport(0);

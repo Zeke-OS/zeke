@@ -175,14 +175,12 @@ typedef struct fs_superblock {
  * vnode operations struct.
  */
 typedef struct vnode_ops {
-    /* Normal file operations
-     * ---------------------- */
-    int (*lock)(vnode_t * file);
-    int (*release)(vnode_t * file);
-    ssize_t (*write)(vnode_t * file, const off_t * offset,
-             const void * buf, size_t count);
-    ssize_t (*read)(vnode_t * file, const off_t * offset,
-             void * buf, size_t count);
+    /* Operation for open files
+     * ------------------------ */
+    int (*lock)(file_t * file);
+    int (*release)(file_t * file);
+    ssize_t (*write)(file_t * file, const void * buf, size_t count);
+    ssize_t (*read)(file_t * file, void * buf, size_t count);
     //int (*mmap)(vnode_t * file, !mem area!);
     /* Directory file operations
      * ------------------------- */

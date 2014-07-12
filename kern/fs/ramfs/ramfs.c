@@ -326,21 +326,19 @@ int ramfs_delete_vnode(vnode_t * vnode)
  * file will be extended; If offset is smaller than file length, the existing
  * data will be overwriten.
  * @param file      is a file stored in ramfs.
- * @param offset    is the offset from SEEK_START.
  * @param buf       is a buffer where bytes are read from.
  * @param count     is the number of bytes buf contains.
  * @return Returns the number of bytes written.
  */
-ssize_t ramfs_write(vnode_t * file, const off_t * offset,
-        const void * buf, size_t count)
+ssize_t ramfs_write(file_t * file, const void * buf, size_t count)
 {
     size_t bytes_wr = 0;
 
     /* TODO Support for at least S_IFBLK, S_IFCHR, S_IFIFO, S_IFSOCK,
      * possibly a wrapper or callback? */
-    switch (file->vn_mode & S_IFMT) {
+    switch (file->vnode->vn_mode & S_IFMT) {
         case S_IFREG: /* File is a regular file. */
-            bytes_wr = ramfs_wr_regular(file, offset, buf, count);
+            bytes_wr = ramfs_wr_regular(file->vnode, &(file->seek_pos), buf, count);
             break;
         default: /* File type not supported. */
             return -EOPNOTSUPP;
@@ -352,19 +350,18 @@ ssize_t ramfs_write(vnode_t * file, const off_t * offset,
 /**
  * Read transfers bytes from file into buf.
  * @param file      is a file stored in ramfs.
- * @param offset    is the offset from SEEK_START.
  * @param buf       is a buffer bytes are written to.
  * @param count     is the number of bytes to be read.
  * @return Returns the number of bytes read.
  */
-ssize_t ramfs_read(vnode_t * file, const off_t * offset, void * buf, size_t count)
+ssize_t ramfs_read(file_t * file, void * buf, size_t count)
 {
     size_t bytes_rd = 0;
 
     /* TODO Support some other file types? */
-    switch (file->vn_mode & S_IFMT) {
+    switch (file->vnode->vn_mode & S_IFMT) {
         case S_IFREG: /* File is a regular file. */
-            bytes_rd = ramfs_rd_regular(file, offset, buf, count);
+            bytes_rd = ramfs_rd_regular(file->vnode, &(file->seek_pos), buf, count);
             break;
         case S_IFDIR:
             return -EISDIR;

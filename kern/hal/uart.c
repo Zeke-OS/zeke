@@ -34,6 +34,10 @@
 #include <kinit.h>
 #include <kstring.h>
 #include <kmalloc.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <sched.h>
+#include <thread.h>
 #include <fs/devfs.h>
 #include <hal/uart.h>
 
@@ -45,9 +49,9 @@ static int vfs_ready;
 
 static int make_uartdev(struct uart_port * port, int port_num);
 static int uart_read(struct dev_info * devnfo, off_t offset, uint8_t * buf,
-                     size_t count);
+                     size_t count, int oflags);
 static int uart_write(struct dev_info * devnfo, off_t offset, uint8_t * buf,
-                      size_t count);
+                      size_t count, int oflags);
 
 void uart_init(void) __attribute__((constructor));
 void uart_init(void)
@@ -123,13 +127,20 @@ struct uart_port * uart_getport(int port_num)
 }
 
 static int uart_read(struct dev_info * devnfo, off_t offset, uint8_t * buf,
-                     size_t count)
+                     size_t count, int oflags)
 {
     struct uart_port * port = uart_getport(DEV_MINOR(devnfo->dev_id));
     int ret;
 
     if (!port)
         return -ENODEV;
+
+    if (!(oflags & O_NONBLOCK)) {
+        /* TODO Block until new data event */
+        while (!port->peek(port)) {
+            sched_thread_sleep(10);
+        }
+    }
 
     ret = port->ugetc(port);
     if (ret == -1)
@@ -140,7 +151,7 @@ static int uart_read(struct dev_info * devnfo, off_t offset, uint8_t * buf,
 }
 
 static int uart_write(struct dev_info * devnfo, off_t offset, uint8_t * buf,
-                      size_t count)
+                      size_t count, int oflags)
 {
     struct uart_port * port = uart_getport(DEV_MINOR(devnfo->dev_id));
 

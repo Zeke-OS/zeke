@@ -35,9 +35,9 @@
 #include <fs/devfs.h>
 
 static int devnull_read(struct dev_info * devnfo, off_t offset,
-                        uint8_t * buf, size_t count);
+                        uint8_t * buf, size_t count, int oflags);
 static int devnull_write(struct dev_info * devnfo, off_t offset,
-                         uint8_t * buf, size_t count);
+                         uint8_t * buf, size_t count, int oflags);
 
 struct dev_info devnull_info = {
     .dev_id = DEV_MMTODEV(1, 3),
@@ -62,13 +62,13 @@ void devnull_init(void)
 }
 
 static int devnull_read(struct dev_info * devnfo, off_t offset,
-                        uint8_t * buf, size_t count)
+                        uint8_t * buf, size_t count, int oflags)
 {
     return 0;
 }
 
 static int devnull_write(struct dev_info * devnfo, off_t offset,
-                         uint8_t * buf, size_t count)
+                         uint8_t * buf, size_t count, int oflags)
 {
     return count;
 }

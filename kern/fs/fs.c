@@ -474,26 +474,13 @@ ssize_t fs_readwrite_cproc(int fildes, void * buf, size_t nbyte, int oper)
         goto out;
     }
 
-    int block;
-    int blocking = !(file->oflags & O_NONBLOCK);
-    do {
-        if (oper & O_RDONLY) {
-            retval = vnode->vnode_ops->read(vnode, &(file->seek_pos), buf, nbyte);
-        } else {
-            retval = vnode->vnode_ops->write(vnode, &(file->seek_pos), buf, nbyte);
-            if (retval == 0)
-                retval = -EIO;
-        }
-
-        block = blocking && retval == -EAGAIN;
-        /*
-         * TODO Kludgy way to ensure that we don't block everything.
-         * Actually we should ensure that the following sleep is never needed by
-         * blocking properly in read() or write() function.
-         */
-        if (block)
-            sched_thread_sleep(10);
-    } while (block);
+    if (oper & O_RDONLY) {
+        retval = vnode->vnode_ops->read(file, buf, nbyte);
+    } else {
+        retval = vnode->vnode_ops->write(file, buf, nbyte);
+        if (retval == 0)
+            retval = -EIO;
+    }
 
 out:
     fs_fildes_ref(curproc->files, fildes, -1);

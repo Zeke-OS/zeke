@@ -151,9 +151,11 @@ void dev_destroy(struct dev_info * devnfo)
 {
 }
 
-ssize_t dev_read(vnode_t * vnode, const off_t * offset,
-        void * vbuf, size_t count)
+ssize_t dev_read(file_t * file, void * vbuf, size_t count)
 {
+    vnode_t * const vnode = file->vnode;
+    const off_t * offset = &(file->seek_pos);
+    const int oflags = file->oflags;
     struct dev_info * devnfo = (struct dev_info *)vnode->vn_specinfo;
     uint8_t * buf = (uint8_t *)vbuf;
 
@@ -162,7 +164,7 @@ ssize_t dev_read(vnode_t * vnode, const off_t * offset,
 
     if ((devnfo->flags & DEV_FLAGS_MB_READ) &&
             ((count / devnfo->block_size) > 1)) {
-        return devnfo->read(devnfo, *offset, buf, count);
+        return devnfo->read(devnfo, *offset, buf, count, oflags);
     }
 
     size_t buf_offset = 0;
@@ -174,7 +176,7 @@ ssize_t dev_read(vnode_t * vnode, const off_t * offset,
 
         while (1) {
             int ret = devnfo->read(devnfo, *offset + block_offset,
-                                   &buf[buf_offset], to_read);
+                                   &buf[buf_offset], to_read, oflags);
             if (ret < 0) {
                 tries--;
                 if (tries <= 0)
@@ -196,9 +198,11 @@ ssize_t dev_read(vnode_t * vnode, const off_t * offset,
     return buf_offset;
 }
 
-ssize_t dev_write(vnode_t * vnode, const off_t * offset,
-        const void * vbuf, size_t count)
+ssize_t dev_write(file_t * file, const void * vbuf, size_t count)
 {
+    vnode_t * const vnode = file->vnode;
+    const off_t * offset = &(file->seek_pos);
+    const int oflags = file->oflags;
     struct dev_info * devnfo = (struct dev_info *)vnode->vn_specinfo;
     uint8_t * buf = (uint8_t *)vbuf;
 
@@ -207,7 +211,7 @@ ssize_t dev_write(vnode_t * vnode, const off_t * offset,
 
     if ((devnfo->flags & DEV_FLAGS_MB_WRITE) &&
             ((count / devnfo->block_size) > 1)) {
-        return devnfo->write(devnfo, *offset, buf, count);
+        return devnfo->write(devnfo, *offset, buf, count, oflags);
     }
 
     size_t buf_offset = 0;
@@ -219,7 +223,7 @@ ssize_t dev_write(vnode_t * vnode, const off_t * offset,
 
         while (1) {
             int ret = devnfo->write(devnfo, *offset + block_offset,
-                                    &buf[buf_offset], to_write);
+                                    &buf[buf_offset], to_write, oflags);
             if (ret < 0) {
                 tries--;
                 if(tries <= 0)

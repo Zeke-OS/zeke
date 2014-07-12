@@ -58,33 +58,29 @@ struct dev_info {
     ssize_t num_blocks;
 
     int (*read)(struct dev_info * devnfo, off_t offset,
-            uint8_t * buf, size_t count);
+            uint8_t * buf, size_t count, int oflags);
     int (*write)(struct dev_info * devnfo, off_t offset,
-            uint8_t * buf, size_t count);
+            uint8_t * buf, size_t count, int oflags);
 };
 
 int dev_make(struct dev_info * devnfo, uid_t uid, gid_t gid, int perms);
 
 /**
  * Read from a device.
- * @param vnode     is a vnode pointing to the device.
- * @param offset    is the offset to start from.
+ * @param file      is a pointer the device file read.
  * @param vbuf      is the target buffer.
  * @param count     is the byte count to read.
  * @return  Returns number of bytes read from the device.
  */
-ssize_t dev_read(vnode_t * vnode, const off_t * offset,
-        void * vbuf, size_t count);
+ssize_t dev_read(file_t * file, void * vbuf, size_t count);
 
 /**
  * Write to a device.
- * @param vnode     is a vnode pointing to the device.
- * @param offset    is the offset to start from.
+ * @param file      is a pointer the device file written.
  * @param vbuf      is the source buffer.
  * @param count     is the byte count to write.
  * @return  Returns number of bytes written to the device.
  */
-ssize_t dev_write(vnode_t * vnode, const off_t * offset,
-        const void * vbuf, size_t count);
+ssize_t dev_write(file_t * file, const void * vbuf, size_t count);
 
 #endif /* DEVFS_H */

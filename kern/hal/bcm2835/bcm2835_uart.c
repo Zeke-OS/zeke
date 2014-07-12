@@ -77,14 +77,16 @@
 
 static void bcm2835_uart_init(struct uart_port * port);
 static void set_baudrate(unsigned int baud_rate);
-static void set_lcrh(const struct uart_port_conf * conf);
+static void set_lcrh(const struct termios * conf);
 void bcm2835_uart_uputc(struct uart_port * port, uint8_t byte);
 int bcm2835_uart_ugetc(struct uart_port * port);
+int bcm2835_uart_peek(struct uart_port * port);
 
 static struct uart_port port = {
     .init = bcm2835_uart_init,
     .uputc = bcm2835_uart_uputc,
-    .ugetc = bcm2835_uart_ugetc
+    .ugetc = bcm2835_uart_ugetc,
+    .peek = bcm2835_uart_peek
 };
 
 
@@ -101,7 +103,7 @@ HW_PREINIT_ENTRY(bcm2835_uart_register);
 
 void bcm2835_uart_init(struct uart_port * port)
 {
-    struct uart_port_conf * conf = &port->conf;
+    struct termios * conf = &port->conf;
     istate_t s_entry;
 
     mmio_start(&s_entry);
@@ -129,7 +131,7 @@ void bcm2835_uart_init(struct uart_port * port)
     mmio_end(&s_entry);
 
 
-    set_baudrate(conf->baud_rate); /* Set baud rate */
+    set_baudrate(conf->c_ospeed); /* Set baud rate */
     set_lcrh(conf); /* Configure UART */
 
 
@@ -140,8 +142,9 @@ void bcm2835_uart_init(struct uart_port * port)
             (1 << 6) | (1 << 7) | (1 << 8) |
             (1 << 9) | (1 << 10));*/
 
-    /* Enable UART0, receive & transfer part of UART.*/
-    mmio_write(UART0_CR, (1 << 0) | (1 << 8) | (1 << 9));
+    /* Enable UART0, receive & transfer part of the UART.*/
+    mmio_write(UART0_CR, (1 << 0) | (1 << 8) |
+            (conf->c_cflag & CREAD) ? (1 << 9) : 0);
 
     mmio_end(&s_entry);
 }
@@ -154,7 +157,7 @@ static void set_baudrate(unsigned int baud_rate)
      * fraction = (divider mod 1 * 64) + 0.5
      * UART_CLOCK = 3000000
      */
-    uint32_t tmp = 3000000/(16 * ((uint32_t)baud_rate >> 6));
+    uint32_t tmp = 3000000 / (16 * ((uint32_t)baud_rate >> 6));
     uint32_t divider = tmp >> 6;
     uint32_t fraction = tmp - (divider << 6);
     istate_t s_entry;
@@ -165,7 +168,7 @@ static void set_baudrate(unsigned int baud_rate)
     mmio_end(&s_entry);
 }
 
-static void set_lcrh(const struct uart_port_conf * conf)
+static void set_lcrh(const struct termios * conf)
 {
     uint32_t tmp = 0;
     istate_t s_entry;
@@ -173,31 +176,26 @@ static void set_lcrh(const struct uart_port_conf * conf)
     /* Enable FIFOs */
     tmp |= 1 << UART0_LCRH_FEN_OFFSET;
 
-    switch (conf->data_bits) {
-    case UART_DATABITS_5:
+    switch (conf->c_cflag & CSIZE) {
+    case CS5:
         /* NOP */
         break;
-    case UART_DATABITS_6:
+    case CS6:
         tmp |= (0x1 << UART0_LCRH_WLEN_OFFSET);
         break;
-    case UART_DATABITS_7:
+    case CS7:
         tmp |= (0x2 << UART0_LCRH_WLEN_OFFSET);
         break;
-    case UART_DATABITS_8:
+    case CS8:
         tmp |= (0x3 << UART0_LCRH_WLEN_OFFSET);
         break;
     }
 
-    switch (conf->parity) {
-    case UART_PARITY_NO:
-        /* NOP */
-        break;
-    case UART_PARITY_EVEN:
-        tmp |= (1 << UART0_LCRH_EPS_OFFSET);
-        break;
-    case UART_PARITY_ODD:
-        tmp |= (1 << UART0_LCRH_PEN_OFFSET);
-        break;
+    if (conf->c_cflag & PARENB) {
+        if (conf->c_cflag & PARODD)
+            tmp |= (1 << UART0_LCRH_PEN_OFFSET);
+        else /* even */
+            tmp |= (1 << UART0_LCRH_EPS_OFFSET);
     }
 
     mmio_start(&s_entry);
@@ -238,4 +236,10 @@ int bcm2835_uart_ugetc(struct uart_port * port)
     mmio_end(&s_entry);
 
     return byte;
+}
+
+int bcm2835_uart_peek(struct uart_port * port)
+{
+    /* We don't support peek yet. */
+    return 1;
 }
