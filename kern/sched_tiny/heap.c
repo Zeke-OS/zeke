@@ -33,6 +33,7 @@
  */
 
 #include <sched.h>
+#include <kerror.h>
 #include "heap.h"
 
 #if configDEBUG != 0
@@ -103,9 +104,8 @@ static void heapify(heap_t * heap, int i)
 void heap_del_max(heap_t * heap)
 {
 #ifdef HEAP_BOUNDS_CHECK
-    if (heap->size <= 0) {
-        while (1); /* Catch */
-    }
+    if (heap->size <= 0)
+        panic("sched heap out of bounds");
 #endif
 
     heap->a[0] = heap->a[heap->size];
@@ -120,9 +120,8 @@ void heap_insert(heap_t * heap, threadInfo_t * k)
     heap->size++;
 
 #ifdef HEAP_BOUNDS_CHECK
-    if (heap->size > configSCHED_MAX_THREADS) {
-        while (1); /* Catch */
-    }
+    if (heap->size > configSCHED_MAX_THREADS)
+        panic("sched heap out of bounds");
 #endif
 
     i = heap->size;
