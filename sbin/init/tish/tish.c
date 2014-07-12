@@ -189,19 +189,19 @@ static void help(char ** args)
 
 static char * gline(char * str, int num)
 {
-    int c;
-    int i = 0;
+    int err, i = 0;
+    char ch;
     char buf[2] = {'\0', '\0'};
 
     while (1) {
-        c = _ugetc();   /* Instead of sleeping  we should*/
-        if (c < 0) {    /* actually wait for input, */
-            msleep(150); /* not poll for it. */
+        err = read(STDIN_FILENO, &ch, sizeof(ch));
+        if (err <= 0) {
+            msleep(150); /* TODO blocking instead of polling */
             continue;
         }
 
         /* Handle backspace */
-        if (c == 127) {
+        if (ch == 127) {
             if (i > 0) {
                 i--;
                 puts("\b \b");
@@ -212,16 +212,16 @@ static char * gline(char * str, int num)
         /* TODO Handle arrow keys and delete */
 
         /* Handle return */
-        if (c == '\n' || c == '\r' || i == num) {
+        if (ch == '\n' || ch == '\r' || i == num) {
             str[i] = '\0';
             buf[0] = '\n';
             puts(buf);
             return str;
         } else {
-            str[i] = (char)c;
+            str[i] = ch;
         }
 
-        buf[0] = c;
+        buf[0] = ch;
         puts(buf);
         i++;
     }

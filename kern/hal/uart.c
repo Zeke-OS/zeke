@@ -77,6 +77,7 @@ static int make_uartdev(struct uart_port * port, int port_num)
     dev->drv_name = drv_name;
     ksprintf(dev->dev_name, sizeof(dev->dev_name), "ttyS%i", port_num);
     dev->flags = DEV_FLAGS_WR_BT_MASK;
+    dev->block_size = 1;
     dev->read = uart_read;
     dev->write = uart_write;
 
@@ -125,19 +126,6 @@ static int uart_read(struct dev_info * devnfo, off_t offset, uint8_t * buf,
                      size_t count)
 {
     struct uart_port * port = uart_getport(DEV_MINOR(devnfo->dev_id));
-
-    if (!port)
-        return -ENODEV;
-
-    port->uputc(port, *buf);
-
-    return 1;
-}
-
-static int uart_write(struct dev_info * devnfo, off_t offset, uint8_t * buf,
-                      size_t count)
-{
-    struct uart_port * port = uart_getport(DEV_MINOR(devnfo->dev_id));
     int ret;
 
     if (!port)
@@ -146,5 +134,20 @@ static int uart_write(struct dev_info * devnfo, off_t offset, uint8_t * buf,
     ret = port->ugetc(port);
     if (ret == -1)
         return -EAGAIN;
-    return ret;
+
+    *buf = (char)ret;
+    return 1;
+}
+
+static int uart_write(struct dev_info * devnfo, off_t offset, uint8_t * buf,
+                      size_t count)
+{
+    struct uart_port * port = uart_getport(DEV_MINOR(devnfo->dev_id));
+
+    if (!port)
+        return -ENODEV;
+
+    port->uputc(port, *buf);
+
+    return 1;
 }

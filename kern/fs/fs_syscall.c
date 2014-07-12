@@ -126,7 +126,7 @@ static int sys_open(void * user_args)
     struct _fs_open_args args;
     char * name = 0;
     vnode_t * file;
-    int retval = 0;
+    int err, retval = 0;
 
     /* Copyin args struct */
     if (!useracc(user_args, sizeof(args), VM_PROT_READ)) {
@@ -152,7 +152,6 @@ static int sys_open(void * user_args)
     copyinstr(args.name, name, args.name_len, 0);
     args.name = name;
 
-    int err;
     if ((err = fs_namei_proc(&file, name))) {
         if (args.oflags & O_CREAT) {
             /* Create a new file */
@@ -169,11 +168,9 @@ static int sys_open(void * user_args)
     }
 
     retval = fs_fildes_create_cproc(file, args.oflags);
-    if (retval) {
+    if (retval < 0) {
         set_errno(-retval);
         retval = -1;
-    } else {
-        retval = 0;
     }
 
 out:
@@ -189,6 +186,7 @@ static int sys_close(int fildes)
         return -1;
     }
     fs_fildes_ref(curproc->files, fildes, -1);
+    curproc->files->fd[fildes] = NULL;
 
     return 0;
 }

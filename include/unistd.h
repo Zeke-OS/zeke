@@ -173,6 +173,7 @@ void * sbrk(intptr_t incr);
 long sysconf(int name);
 
 pid_t fork(void);
+ssize_t read(int fildes, void * buf, size_t nbytes);
 ssize_t pwrite(int fildes, const void *buf, size_t nbyte,
     off_t offset);
 ssize_t write(int fildes, const void * buf, size_t nbyte);

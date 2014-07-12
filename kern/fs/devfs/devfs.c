@@ -35,13 +35,14 @@
 #include <kmalloc.h>
 #include <kstring.h>
 #include <errno.h>
+#include <kerror.h>
 #include <fs/ramfs.h>
 #include <fs/devfs.h>
 
 /**
  * Max tries in case of block read/write returns 0.
  */
-#define RW_MAX_TRIES 2
+#define RW_MAX_TRIES 3
 
 const vnode_ops_t devfs_vnode_ops = {
     .write = dev_write,

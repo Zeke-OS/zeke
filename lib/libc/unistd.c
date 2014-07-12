@@ -39,6 +39,17 @@ pid_t fork(void)
     return (pid_t)syscall(SYSCALL_PROC_FORK, NULL);
 }
 
+ssize_t read(int fildes, void * buf, size_t nbytes)
+{
+    struct _fs_readwrite_args args = {
+        .fildes = fildes,
+        .buf = buf,
+        .nbytes = nbytes
+    };
+
+    return (ssize_t)syscall(SYSCALL_FS_READ, &args);
+}
+
 #if 0
 ssize_t pwrite(int fildes, const void * buf, size_t nbyte,
         off_t offset)

@@ -39,6 +39,7 @@
 #include <kerror.h>
 #include <kinit.h>
 #include <syscall.h>
+#include <unistd.h>
 #include <errno.h>
 #include <vm/vm.h>
 #include <sys/sysctl.h>
@@ -166,15 +167,16 @@ static void init_kernel_proc(void)
     kernel_proc->files->count = 3;
 
     /* TODO Do this correctly */
-    kernel_proc->files->fd[0] = 0;
-    kernel_proc->files->fd[1] = 0;
+    kernel_proc->files->fd[STDIN_FILENO] = 0;
+    kernel_proc->files->fd[STDOUT_FILENO] = 0;
 #if configKLOGGER != 0
     /* stderr */
-    kernel_proc->files->fd[2] = kcalloc(1, sizeof(file_t));
-    if (fs_fildes_set(kernel_proc->files->fd[2], &kerror_vnode, O_WRONLY))
+    kernel_proc->files->fd[STDERR_FILENO] = kcalloc(1, sizeof(file_t));
+    if (fs_fildes_set(kernel_proc->files->fd[STDERR_FILENO],
+                &kerror_vnode, O_WRONLY))
         panic(panic_msg);
 #else
-    kernel_proc->files->fd[2] = 0;
+    kernel_proc->files->fd[STDERR_FILENO] = 0;
 #endif
 }
 

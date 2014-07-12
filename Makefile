@@ -89,6 +89,9 @@ clean-all: clean clean-tools clean-doc
 # target_clean: clean - Clean.
 clean:
 	rm -f $(AUTOCONF_H)
+	find . -type f -name "*.bc" -exec rm -f {} \;
+	find . -type f -name "*.opt.bc" -exec rm -f {} \;
+	find . -type f -name "*.opt.s" -exec rm -f {} \;
 	rm -f *.bin
 	rm -f *.img
 	rm -f *.elf

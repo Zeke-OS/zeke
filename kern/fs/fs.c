@@ -384,14 +384,27 @@ perms_ok:
     if (S_ISDIR(vnode->vn_mode))
         new_fildes->seek_pos = DSEEKPOS_MAGIC;
 
+retry:
     for (int i = 0; i < files->count; i++) {
         if (!(files->fd[i])) {
             files->fd[i] = new_fildes;
             fs_fildes_set(files->fd[i], vnode, oflags);
-            return 0;
+            return i;
         }
     }
-    /* TODO Try to extend files array if maximum value is not yet reached */
+
+    /* Extend fd array */
+    int new_count = files->count + files->count / 2;
+    files = krealloc(files, SIZEOF_FILES(new_count));
+    if (files) {
+        for (int i = files->count; i < new_count; i++)
+            files->fd[i] = NULL;
+
+        files->count = new_count;
+        curproc->files = files;
+
+        goto retry;
+    }
 
     kfree(new_fildes);
     return -EMFILE;
@@ -463,10 +476,12 @@ ssize_t fs_readwrite_cproc(int fildes, void * buf, size_t nbyte, int oper)
 
     if (oper & O_RDONLY)
         retval = vnode->vnode_ops->read(vnode, &(file->seek_pos), buf, nbyte);
-    else
+    else {
         retval = vnode->vnode_ops->write(vnode, &(file->seek_pos), buf, nbyte);
-    if (retval < nbyte) /* TODO There should be other codes too */
-        retval = -ENOSPC;
+        if (retval < nbyte) /* TODO There should be other codes too */
+            retval = -ENOSPC;
+    }
+
 out:
     fs_fildes_ref(curproc->files, fildes, -1);
     return retval;
@@ -492,8 +507,9 @@ static int parse_filepath(const char * pathname, char ** path, char ** name)
     strncpy(path_act, pathname, PATH_MAX);
     while (path_act[i] != '/') {
         path_act[i--] = '\0';
-        if ((i == 0) && (!(path_act[0] == '/') ||
-                    !(path_act[0] == '.' && path_act[1] == '/'))) {
+        if ((i == 0) &&
+            (!(path_act[0] == '/') ||
+             !(path_act[0] == '.' && path_act[1] == '/'))) {
             path_act[0] = '.';
             path_act[1] = '/';
             path_act[2] = '\0';
@@ -502,10 +518,15 @@ static int parse_filepath(const char * pathname, char ** path, char ** name)
         }
     }
 
-    for (int j = 0; j < FS_FILENAME_MAX; j++) {
-        fname[j] = pathname[++i];
+    for (int j = 0; j < FS_FILENAME_MAX;) {
+        i++;
+        if (pathname[i] == '/')
+            continue;
+
+        fname[j] = pathname[i];
         if (fname[j] == '\0')
             break;
+        j++;
     }
 
     *path = path_act;

@@ -32,11 +32,13 @@
  */
 
 #include <autoconf.h>
-#include <kstring.h> /* TODO remove */
-#include <libkern.h> /* TODO */
-#include <sys/sysctl.h>
+#include <sys/types.h>
+#include <time.h>
 #include <unistd.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <mount.h>
 #include "tish/tish.h"
 #include "init.h"
 
@@ -51,14 +53,33 @@ char banner[] = "\
 
 void * main(void * arg)
 {
-    write(2, banner, sizeof(banner));
-    write(2, "Init v0.0.1\n", 13);
+    int r0, r1, r2;
+    const char tty_path[] = "/dev/ttyS0";
+    char buf[80];
+
+    mkdir("/dev", S_IRWXU | S_IRGRP | S_IXGRP);
+    mount("", "/dev", "devfs", 0, "");
+
+    close(STDIN_FILENO);
+    close(STDOUT_FILENO);
+    close(STDERR_FILENO);
+    r0 = open(tty_path, O_RDONLY);
+    r1 = open(tty_path, O_WRONLY);
+    r2 = open(tty_path, O_WRONLY);
+
+#if 0
+    ksprintf(buf, sizeof(buf), "fd: %i, %i, %i\n", r0, r1, r2);
+    write(STDOUT_FILENO, buf, strlenn(buf, sizeof(buf)));
+#endif
+
+    write(STDOUT_FILENO, banner, sizeof(banner));
+    write(STDOUT_FILENO, "Init v0.0.1\n", 13);
 
 #if configTISH != 0
     tish();
 #endif
     while(1) {
-        write(2, "init\n", 5);
+        write(STDOUT_FILENO, "init\n", 5);
         sleep(10);
     }
 }
