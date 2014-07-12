@@ -120,9 +120,9 @@ static void init_inode(ramfs_inode_t * inode, ramfs_sb_t * ramfs_sb, ino_t * num
 static void destroy_inode(ramfs_inode_t * inode);
 static void destroy_inode_data(ramfs_inode_t * inode);
 static int insert_inode(ramfs_inode_t * inode);
-static size_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
+static ssize_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
         const void * buf, size_t count);
-static size_t ramfs_rd_regular(vnode_t * file, const off_t * restrict offset,
+static ssize_t ramfs_rd_regular(vnode_t * file, const off_t * restrict offset,
         void * buff, size_t count);
 static int ramfs_set_filesize(ramfs_inode_t * inode, off_t size);
 static ramfs_dp_t get_dp_by_offset(ramfs_inode_t * inode, off_t offset);
@@ -331,7 +331,7 @@ int ramfs_delete_vnode(vnode_t * vnode)
  * @param count     is the number of bytes buf contains.
  * @return Returns the number of bytes written.
  */
-size_t ramfs_write(vnode_t * file, const off_t * offset,
+ssize_t ramfs_write(vnode_t * file, const off_t * offset,
         const void * buf, size_t count)
 {
     size_t bytes_wr = 0;
@@ -343,7 +343,7 @@ size_t ramfs_write(vnode_t * file, const off_t * offset,
             bytes_wr = ramfs_wr_regular(file, offset, buf, count);
             break;
         default: /* File type not supported. */
-            break;
+            return -EOPNOTSUPP;
     }
 
     return bytes_wr;
@@ -357,7 +357,7 @@ size_t ramfs_write(vnode_t * file, const off_t * offset,
  * @param count     is the number of bytes to be read.
  * @return Returns the number of bytes read.
  */
-size_t ramfs_read(vnode_t * file, const off_t * offset, void * buf, size_t count)
+ssize_t ramfs_read(vnode_t * file, const off_t * offset, void * buf, size_t count)
 {
     size_t bytes_rd = 0;
 
@@ -366,8 +366,10 @@ size_t ramfs_read(vnode_t * file, const off_t * offset, void * buf, size_t count
         case S_IFREG: /* File is a regular file. */
             bytes_rd = ramfs_rd_regular(file, offset, buf, count);
             break;
+        case S_IFDIR:
+            return -EISDIR;
         default: /* File type not supported. */
-            break;
+            return -EOPNOTSUPP;
     }
 
     return bytes_rd;
@@ -943,7 +945,7 @@ out:
  * @param count     is the number of bytes buf contains.
  * @return Returns the number of bytes written.
  */
-static size_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
+static ssize_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
         const void * buf, size_t count)
 {
     ramfs_inode_t * inode = get_inode_of_vnode(file);
@@ -989,7 +991,7 @@ static size_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
  * @param count     is the requested number of bytes to be read.
  * @return Returns the number of bytes read from the file.
  */
-static size_t ramfs_rd_regular(vnode_t * file, const off_t * restrict offset,
+static ssize_t ramfs_rd_regular(vnode_t * file, const off_t * restrict offset,
         void * buf, size_t count)
 {
     ramfs_inode_t * inode = get_inode_of_vnode(file);

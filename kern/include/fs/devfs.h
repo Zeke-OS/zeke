@@ -73,8 +73,9 @@ int dev_make(struct dev_info * devnfo, uid_t uid, gid_t gid, int perms);
  * @param count     is the byte count to read.
  * @return  Returns number of bytes read from the device.
  */
-size_t dev_read(vnode_t * vnode, const off_t * offset,
+ssize_t dev_read(vnode_t * vnode, const off_t * offset,
         void * vbuf, size_t count);
+
 /**
  * Write to a device.
  * @param vnode     is a vnode pointing to the device.
@@ -83,7 +84,7 @@ size_t dev_read(vnode_t * vnode, const off_t * offset,
  * @param count     is the byte count to write.
  * @return  Returns number of bytes written to the device.
  */
-size_t dev_write(vnode_t * vnode, const off_t * offset,
+ssize_t dev_write(vnode_t * vnode, const off_t * offset,
         const void * vbuf, size_t count);
 
 #endif /* DEVFS_H */

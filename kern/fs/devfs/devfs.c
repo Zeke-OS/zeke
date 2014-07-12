@@ -151,13 +151,14 @@ void dev_destroy(struct dev_info * devnfo)
 {
 }
 
-size_t dev_read(vnode_t * vnode, const off_t * offset, void * vbuf, size_t count)
+ssize_t dev_read(vnode_t * vnode, const off_t * offset,
+        void * vbuf, size_t count)
 {
     struct dev_info * devnfo = (struct dev_info *)vnode->vn_specinfo;
     uint8_t * buf = (uint8_t *)vbuf;
 
     if (!devnfo->read)
-        return 0;
+        return -EOPNOTSUPP;
 
     if ((devnfo->flags & DEV_FLAGS_MB_READ) &&
             ((count / devnfo->block_size) > 1)) {
@@ -177,7 +178,7 @@ size_t dev_read(vnode_t * vnode, const off_t * offset, void * vbuf, size_t count
             if (ret < 0) {
                 tries--;
                 if (tries <= 0)
-                    return buf_offset;
+                    return (buf_offset > 0) ? buf_offset : ret;
             } else {
                 break;
             }
@@ -195,14 +196,14 @@ size_t dev_read(vnode_t * vnode, const off_t * offset, void * vbuf, size_t count
     return buf_offset;
 }
 
-size_t dev_write(vnode_t * vnode, const off_t * offset,
+ssize_t dev_write(vnode_t * vnode, const off_t * offset,
         const void * vbuf, size_t count)
 {
     struct dev_info * devnfo = (struct dev_info *)vnode->vn_specinfo;
     uint8_t * buf = (uint8_t *)vbuf;
 
     if (!devnfo->write)
-        return 0;
+        return -EOPNOTSUPP;
 
     if ((devnfo->flags & DEV_FLAGS_MB_WRITE) &&
             ((count / devnfo->block_size) > 1)) {
@@ -222,7 +223,7 @@ size_t dev_write(vnode_t * vnode, const off_t * offset,
             if (ret < 0) {
                 tries--;
                 if(tries <= 0)
-                    return buf_offset;
+                    return (buf_offset > 0) ? buf_offset : ret;
             } else {
                 break;
             }

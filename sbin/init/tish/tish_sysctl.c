@@ -47,10 +47,6 @@ static void getset_ivalue(int * oid, int len, size_t oval_len,
         char * nval, size_t nval_len);
 static void print_mib_name(int * mib, int len);
 
-/* TODO Remove */
-#define fprintf(stream, str) write(2, str, strlenn(str, MAX_LEN) + 1)
-#define puts(str) fprintf(stderr, str)
-
 void tish_sysctl_cmd(char ** args)
 {
     char * arg = kstrtok(0, DELIMS, args);

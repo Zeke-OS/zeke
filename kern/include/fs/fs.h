@@ -179,10 +179,10 @@ typedef struct vnode_ops {
      * ---------------------- */
     int (*lock)(vnode_t * file);
     int (*release)(vnode_t * file);
-    size_t (*write)(vnode_t * file, const off_t * offset,
-            const void * buf, size_t count);
-    size_t (*read)(vnode_t * file, const off_t * offset,
-            void * buf, size_t count);
+    ssize_t (*write)(vnode_t * file, const off_t * offset,
+             const void * buf, size_t count);
+    ssize_t (*read)(vnode_t * file, const off_t * offset,
+             void * buf, size_t count);
     //int (*mmap)(vnode_t * file, !mem area!);
     /* Directory file operations
      * ------------------------- */

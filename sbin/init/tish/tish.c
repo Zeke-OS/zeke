@@ -191,10 +191,8 @@ static char * gline(char * str, int num)
 
     while (1) {
         err = read(STDIN_FILENO, &ch, sizeof(ch));
-        if (err <= 0) {
-            msleep(150); /* TODO blocking instead of polling */
+        if (err <= 0)
             continue;
-        }
 
         /* Handle backspace */
         if (ch == 127) {

@@ -50,10 +50,10 @@ int ramfs_umount(struct fs_superblock * fs_sb);
 int ramfs_get_vnode(struct fs_superblock * sb, ino_t * vnode_num, vnode_t ** vnode);
 int ramfs_delete_vnode(vnode_t * vnode);
 /* vnode ops */
-size_t ramfs_write(vnode_t * file, const off_t * offset,
-                   const void * buf, size_t count);
-size_t ramfs_read(vnode_t * file, const off_t * offset,
-                  void * buf, size_t count);
+ssize_t ramfs_write(vnode_t * file, const off_t * offset,
+                    const void * buf, size_t count);
+ssize_t ramfs_read(vnode_t * file, const off_t * offset,
+                   void * buf, size_t count);
 int ramfs_create(vnode_t * dir, const char * name, size_t name_len, mode_t mode,
                  vnode_t ** result);
 int ramfs_mknod(vnode_t * dir, const char * name, size_t name_len, int mode,
