@@ -397,10 +397,6 @@ out:
 uintptr_t fs_syscall(uint32_t type, void * p)
 {
     switch (type) {
-    case SYSCALL_FS_CREAT:
-        set_errno(ENOSYS);
-        return -1;
-
     case SYSCALL_FS_OPEN:
         return (uintptr_t)sys_open(p);
 

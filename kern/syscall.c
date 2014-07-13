@@ -51,6 +51,7 @@
     apply(SYSCALL_GROUP_SIGNAL, ksignal_syscall)    \
     apply(SYSCALL_GROUP_PROC, proc_syscall)         \
     apply(SYSCALL_GROUP_FS, fs_syscall)             \
+    apply(SYSCALL_GROUP_IOCTL, ioctl_syscall)       \
     apply(SYSCALL_GROUP_LOCKS, ulocks_syscall)
 
 /*
