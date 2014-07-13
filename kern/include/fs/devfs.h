@@ -57,9 +57,9 @@ struct dev_info {
     size_t block_size;
     ssize_t num_blocks;
 
-    int (*read)(struct dev_info * devnfo, off_t offset,
+    ssize_t (*read)(struct dev_info * devnfo, off_t offset,
             uint8_t * buf, size_t count, int oflags);
-    int (*write)(struct dev_info * devnfo, off_t offset,
+    ssize_t (*write)(struct dev_info * devnfo, off_t offset,
             uint8_t * buf, size_t count, int oflags);
 };
 

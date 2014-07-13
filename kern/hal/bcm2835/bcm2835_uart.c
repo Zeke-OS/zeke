@@ -78,7 +78,7 @@
 static void bcm2835_uart_init(struct uart_port * port);
 static void set_baudrate(unsigned int baud_rate);
 static void set_lcrh(const struct termios * conf);
-void bcm2835_uart_uputc(struct uart_port * port, uint8_t byte);
+int bcm2835_uart_uputc(struct uart_port * port, uint8_t byte);
 int bcm2835_uart_ugetc(struct uart_port * port);
 int bcm2835_uart_peek(struct uart_port * port);
 
@@ -203,22 +203,26 @@ static void set_lcrh(const struct termios * conf)
     mmio_end(&s_entry);
 }
 
-void bcm2835_uart_uputc(struct uart_port * port, uint8_t byte)
+int bcm2835_uart_uputc(struct uart_port * port, uint8_t byte)
 {
     istate_t s_entry;
+    int retval;
 
-    /* Wait for UART to become ready to transmit. */
-    while (1) {
-        bcm_udelay(100); /* Seems to work slightly better with this */
-        mmio_start(&s_entry);
-        if (!(mmio_read(UART0_FR) & (1 << UART0_FR_TXFF_OFFSET))) {
-            break;
-        }
-        mmio_end(&s_entry);
+    bcm_udelay(100); /* Seems to work slightly better with this */
+    mmio_start(&s_entry);
+
+    /* Return if buffer is full */
+    if ((mmio_read(UART0_FR) & (1 << UART0_FR_TXFF_OFFSET))) {
+        retval = -1;
+        goto out;
     }
 
     mmio_write(UART0_DR, byte);
+    retval = 0;
+out:
     mmio_end(&s_entry);
+
+    return retval;
 }
 
 int bcm2835_uart_ugetc(struct uart_port * port)

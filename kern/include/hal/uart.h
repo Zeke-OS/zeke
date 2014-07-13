@@ -66,8 +66,9 @@ struct uart_port {
     /**
      * Transmit a byte via UARTx.
      * @param byte Byte to send.
+     * @returns 0 if byte was written; Otherwise -1, overflow.
      */
-    void (* uputc)(struct uart_port * port, uint8_t byte);
+    int (* uputc)(struct uart_port * port, uint8_t byte);
 
     /**
      * Receive a byte via UART.

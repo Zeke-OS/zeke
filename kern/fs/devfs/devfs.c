@@ -173,9 +173,10 @@ ssize_t dev_read(file_t * file, void * vbuf, size_t count)
         int tries = RW_MAX_TRIES;
         size_t to_read = (count > devnfo->block_size) ?
             devnfo->block_size : count;
+        ssize_t ret;
 
         while (1) {
-            int ret = devnfo->read(devnfo, *offset + block_offset,
+            ret = devnfo->read(devnfo, *offset + block_offset,
                                    &buf[buf_offset], to_read, oflags);
             if (ret < 0) {
                 tries--;
@@ -186,13 +187,9 @@ ssize_t dev_read(file_t * file, void * vbuf, size_t count)
             }
         }
 
-        buf_offset += to_read;
-        block_offset++;
-
-        if (count < devnfo->block_size)
-            count = 0;
-        else
-            count -= devnfo->block_size;
+        buf_offset += ret;
+        block_offset += devnfo->block_size;
+        count -= ret;
     } while (count > 0);
 
     return buf_offset;
@@ -220,9 +217,10 @@ ssize_t dev_write(file_t * file, const void * vbuf, size_t count)
         int tries = RW_MAX_TRIES;
         size_t to_write = (count > devnfo->block_size) ?
             devnfo->block_size : count;
+        ssize_t ret;
 
         while (1) {
-            int ret = devnfo->write(devnfo, *offset + block_offset,
+            ret = devnfo->write(devnfo, *offset + block_offset,
                                     &buf[buf_offset], to_write, oflags);
             if (ret < 0) {
                 tries--;
@@ -233,13 +231,9 @@ ssize_t dev_write(file_t * file, const void * vbuf, size_t count)
             }
         }
 
-        buf_offset += to_write;
-        block_offset++;
-
-        if (count < devnfo->block_size)
-            count = 0;
-        else
-            count -= devnfo->block_size;
+        buf_offset += ret;
+        block_offset += devnfo->block_size;
+        count -= ret;
     } while (count > 0);
 
     return buf_offset;

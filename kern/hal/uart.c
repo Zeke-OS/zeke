@@ -48,10 +48,10 @@ static int uart_nr_ports;
 static int vfs_ready;
 
 static int make_uartdev(struct uart_port * port, int port_num);
-static int uart_read(struct dev_info * devnfo, off_t offset, uint8_t * buf,
-                     size_t count, int oflags);
-static int uart_write(struct dev_info * devnfo, off_t offset, uint8_t * buf,
-                      size_t count, int oflags);
+static ssize_t uart_read(struct dev_info * devnfo, off_t offset, uint8_t * buf,
+        size_t count, int oflags);
+static ssize_t uart_write(struct dev_info * devnfo, off_t offset, uint8_t * buf,
+        size_t count, int oflags);
 
 void uart_init(void) __attribute__((constructor));
 void uart_init(void)
@@ -80,8 +80,8 @@ static int make_uartdev(struct uart_port * port, int port_num)
     dev->dev_id = DEV_MMTODEV(4, port_num);
     dev->drv_name = drv_name;
     ksprintf(dev->dev_name, sizeof(dev->dev_name), "ttyS%i", port_num);
-    dev->flags = DEV_FLAGS_WR_BT_MASK;
-    dev->block_size = 1;
+    dev->flags = DEV_FLAGS_MB_READ | DEV_FLAGS_WR_BT_MASK;
+    dev->block_size = 16; /* TODO Should be adjustable */
     dev->read = uart_read;
     dev->write = uart_write;
 
@@ -126,10 +126,11 @@ struct uart_port * uart_getport(int port_num)
     return retval;
 }
 
-static int uart_read(struct dev_info * devnfo, off_t offset, uint8_t * buf,
-                     size_t count, int oflags)
+static ssize_t uart_read(struct dev_info * devnfo, off_t offset, uint8_t * buf,
+        size_t count, int oflags)
 {
     struct uart_port * port = uart_getport(DEV_MINOR(devnfo->dev_id));
+    size_t n = 0;
     int ret;
 
     if (!port)
@@ -142,23 +143,33 @@ static int uart_read(struct dev_info * devnfo, off_t offset, uint8_t * buf,
         }
     }
 
-    ret = port->ugetc(port);
-    if (ret == -1)
+    do {
+        ret = port->ugetc(port);
+        if (ret == -1)
+            break;
+        buf[n++] = (char)ret;
+    } while (n < count);
+    if (n == 0)
         return -EAGAIN;
 
-    *buf = (char)ret;
-    return 1;
+    return n;
 }
 
-static int uart_write(struct dev_info * devnfo, off_t offset, uint8_t * buf,
-                      size_t count, int oflags)
+static ssize_t uart_write(struct dev_info * devnfo, off_t offset, uint8_t * buf,
+        size_t count, int oflags)
 {
     struct uart_port * port = uart_getport(DEV_MINOR(devnfo->dev_id));
+    const unsigned block = !(oflags & O_NONBLOCK);
+    int err;
 
     if (!port)
         return -ENODEV;
 
-    port->uputc(port, *buf);
+    do {
+        err = port->uputc(port, *buf);
+    } while (block && err);
 
+    if (err == -1)
+        return -EAGAIN;
     return 1;
 }
