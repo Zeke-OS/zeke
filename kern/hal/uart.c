@@ -138,7 +138,7 @@ static int uart_read(struct dev_info * devnfo, off_t offset, uint8_t * buf,
     if (!(oflags & O_NONBLOCK)) {
         /* TODO Block until new data event */
         while (!port->peek(port)) {
-            sched_thread_sleep(10);
+            sched_thread_sleep(50);
         }
     }
 

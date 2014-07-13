@@ -38,23 +38,28 @@
 #ifndef TERMIOS_H
 #define TERMIOS_H
 
+#ifndef _PID_T_DECLARED
+typedef int pid_t; /*!< Process ID. */
+#define _PID_T_DECLARED
+#endif
+
 /*
  * Control characters.
  * There are used as indexes into c_cc array in termios struct.
  */
-#define VEOF    0
-#define VEOL    1
-#define VERASE  3
-#define VINTR   4
-#define VKILL   5
-#define VMIN    6
-#define VQUIT   7
-#define VSTART  8
-#define VSTOP   9
-#define VSUSP   10
-#define VTIME   11
+#define VEOF    0   /*!< EOF character. */
+#define VEOL    1   /*!< EOL character. */
+#define VERASE  3   /*!< ERASE character. */
+#define VINTR   4   /*!< INTR character. */
+#define VKILL   5   /*!< KILL character. */
+#define VMIN    6   /*!< MIN value. */
+#define VQUIT   7   /*!< QUIT character. */
+#define VSTART  8   /*!< START character. */
+#define VSTOP   9   /*!< STOP character. */
+#define VSUSP   10  /*!< SUSP character. */
+#define VTIME   11  /*!< TIME value. */
 
-#define NCCS    16
+#define NCCS    16  /*!< Size of the array c_cc for control characters. */
 
 /*
  * Input mode flags.
@@ -144,6 +149,30 @@
 #define B460800 460800
 #define B921600 921600
 
+/*
+ * Atribute Selection.
+ * Symbolic constants for use with tcsetattr().
+ */
+#define TCSANOW     0 /*!< Change attributes immediately. */
+#define TCSADRAIN   1 /*!< Change attributes when output has drained. */
+#define TCSAFLUSH   2 /*!< Change attributes when output has drained;
+                       *   also flush pending input. */
+
+/*
+ * Line Control.
+ * Symbolic constants for use with tcflush() and tcflow().
+ */
+#define TCIFLUSH    1 /*!< Flush pending input. */
+#define TCIOFLUSH   2 /*!< Flush both pending input and untransmitted output. */
+#define TCOFLUSH    3 /*!< Flush untransmitted output. */
+
+#define TCIOFF      1 /*!< Transmit a STOP character, intended to suspend input
+                       *   data. */
+#define TCION       2 /*!< Transmit a START character, intended to restart input
+                       *   data. */
+#define TCOOFF      3 /*!< Suspend output. */
+#define TCOON       4 /*!< Restart output. */
+
 typedef unsigned int tcflag_t;  /*!< Type for terminal modes. */
 typedef unsigned char cc_t;     /*!< Terminal special characters. */
 typedef unsigned int speed_t;   /*!< Terminal baud rates. */
@@ -158,6 +187,21 @@ struct termios {
     speed_t     c_ospeed;   /*!< Output speed. */
 };
 
+#ifndef KERNEL_INTERNAL
+__BEGIN_DECLS
+speed_t cfgetispeed(const struct termios *);
+speed_t cfgetospeed(const struct termios *);
+int     cfsetispeed(struct termios *, speed_t);
+int     cfsetospeed(struct termios *, speed_t);
+int     tcdrain(int);
+int     tcflow(int, int);
+int     tcflush(int, int);
+int     tcgetattr(int, struct termios *);
+pid_t   tcgetsid(int);
+int     tcsendbreak(int, int);
+int     tcsetattr(int, int, const struct termios *);
+__END_DECLS
+#endif
 
 #endif /* TERMIOS_H */
 

@@ -240,6 +240,12 @@ int bcm2835_uart_ugetc(struct uart_port * port)
 
 int bcm2835_uart_peek(struct uart_port * port)
 {
-    /* We don't support peek yet. */
-    return 1;
+    istate_t s_entry;
+    int retval;
+
+    mmio_start(&s_entry);
+    retval = !(mmio_read(UART0_FR) & (1 << UART0_FR_RXFE_OFFSET));
+    mmio_end(&s_entry);
+
+    return retval;
 }

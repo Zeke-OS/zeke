@@ -57,7 +57,10 @@ typedef uint32_t key_t; /*!< Used for XSI interprocess communication. */
 typedef int mode_t; /*!< Used for some file attributes. */
 typedef int nlink_t; /*!< Used for link counts. */
 typedef int64_t off_t; /*!< Used for file sizes. */
+#ifndef _PID_T_DECLARED
 typedef int pid_t; /*!< Process ID. */
+#define _PID_T_DECLARED
+#endif
 #ifndef ssize_t
 #ifndef SSIZE_MAX
 #define SSIZE_MAX INT32_MAX
