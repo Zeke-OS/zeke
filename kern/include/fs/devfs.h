@@ -61,13 +61,19 @@ struct dev_info {
             uint8_t * buf, size_t count, int oflags);
     ssize_t (*write)(struct dev_info * devnfo, off_t offset,
             uint8_t * buf, size_t count, int oflags);
+    /**
+     * ioctl for the device driver.
+     * This function is optional and can be NULL.
+     */
+    int (*ioctl)(struct dev_info * devnfo, uint32_t request,
+            void * arg, size_t arg_len);
 };
 
 int dev_make(struct dev_info * devnfo, uid_t uid, gid_t gid, int perms);
 
 /**
  * Read from a device.
- * @param file      is a pointer the device file read.
+ * @param file      is a pointer to the device file.
  * @param vbuf      is the target buffer.
  * @param count     is the byte count to read.
  * @return  Returns number of bytes read from the device.
@@ -76,11 +82,21 @@ ssize_t dev_read(file_t * file, void * vbuf, size_t count);
 
 /**
  * Write to a device.
- * @param file      is a pointer the device file written.
+ * @param file      is a pointer to the device file.
  * @param vbuf      is the source buffer.
  * @param count     is the byte count to write.
  * @return  Returns number of bytes written to the device.
  */
 ssize_t dev_write(file_t * file, const void * vbuf, size_t count);
+
+/**
+ * Device control.
+ * @param file      is a pointer the device file written.
+ * @param request   is a request code, same as in user space.
+ * @param arg       is a pointer to the argument (struct).
+ * @return  Returns 0 if operation succeed;
+ *          Otherwise a negative value representing errno.
+ */
+int ioctl(file_t * file, uint32_t request, void * arg);
 
 #endif /* DEVFS_H */

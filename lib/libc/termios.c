@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    ioctl.h
+ * @file    termios.c
  * @author  Olli Vanhoja
- * @brief   Control devices.
+ * @brief   Termios.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -28,39 +28,41 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************
- */
+*/
 
-/** @addtogroup LIBC
- * @{
- */
+#include <syscall.h>
+#include <sys/ioctl.h>
+#include <termios.h>
 
-#pragma once
-#ifndef IOCTL_H
-#define IOCTL_H
+speed_t cfgetispeed(const struct termios * termios_p)
+{
+    return termios_p->c_ispeed;
+}
 
-#include <stdint.h>
-#include <sys/cdefs.h>
+speed_t cfgetospeed(const struct termios * termios_p)
+{
+    return termios_p->c_ospeed;
+}
 
-/*
- * IOCTL request codes.
- * Get requests shall be odd and set request shall be even, this information can
- * be then used to optimize the syscall.
- */
-#define IOCTL_GTERMIOS 1    /*!< Get termios struct. */
-#define IOCTL_STERMIOS 2    /*!< Set termios struct. */
+int cfsetispeed(struct termios * termios_p, speed_t speed)
+{
+    termios_p->c_ispeed = speed;
+    return 0;
+}
 
-#ifndef KERNEL_INTERNAL
-__BEGIN_DECLS
-/**
- * ioctl.
- * @note This is a non-POSIX implementation of ioctl.
- */
-int _ioctl(int fildes, uint32_t request, void * arg, size_t arg_len);
-__END_DECLS
-#endif
+int cfsetospeed(struct termios * termios_p, speed_t speed)
+{
+    termios_p->c_ospeed = speed;
+    return 0;
+}
 
-#endif /* IOCTL_H */
+int tcgetattr(int fildes, struct termios * termios_p)
+{
+    return _ioctl(fildes, IOCTL_GTERMIOS, termios_p, sizeof(struct termios));
+}
 
-/**
- * @}
- */
+int tcsetattr(int fildes, int optional_actions,
+        const struct termios * termios_p)
+{
+    return _ioctl(fildes, IOCTL_STERMIOS, (void *)termios_p, sizeof(struct termios));
+}

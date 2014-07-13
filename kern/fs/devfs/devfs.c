@@ -44,9 +44,17 @@
  */
 #define RW_MAX_TRIES 3
 
+static int devfs_mount(const char * source, uint32_t mode,
+                       const char * parm, int parm_len,
+                       struct fs_superblock ** sb);
+static int devfs_umount(struct fs_superblock * fs_sb);
+static int dev_ioctl(file_t * file, uint32_t request,
+        void * arg, size_t arg_len);
+
 const vnode_ops_t devfs_vnode_ops = {
     .write = dev_write,
     .read = dev_read,
+    .ioctl = dev_ioctl,
     .create = ramfs_create,
     .mknod = ramfs_mknod,
     .lookup = ramfs_lookup,
@@ -56,11 +64,6 @@ const vnode_ops_t devfs_vnode_ops = {
     .readdir = ramfs_readdir,
     .stat = ramfs_stat
 };
-
-static int devfs_mount(const char * source, uint32_t mode,
-                       const char * parm, int parm_len,
-                       struct fs_superblock ** sb);
-static int devfs_umount(struct fs_superblock * fs_sb);
 
 static fs_t devfs_fs = {
     .fsname = DEVFS_FSNAME,
@@ -239,3 +242,12 @@ ssize_t dev_write(file_t * file, const void * vbuf, size_t count)
     return buf_offset;
 }
 
+static int dev_ioctl(file_t * file, uint32_t request, void * arg, size_t arg_len)
+{
+    struct dev_info * devnfo = (struct dev_info *)file->vnode->vn_specinfo;
+
+    if (!devnfo || !devnfo->ioctl)
+        return -ENOTTY;
+
+    return devnfo->ioctl(devnfo, request, arg, arg_len);
+}

@@ -39,6 +39,7 @@
 #include <sched.h>
 #include <thread.h>
 #include <fs/devfs.h>
+#include <sys/ioctl.h>
 #include <hal/uart.h>
 
 static const char drv_name[] = "UART";
@@ -52,6 +53,8 @@ static ssize_t uart_read(struct dev_info * devnfo, off_t offset, uint8_t * buf,
         size_t count, int oflags);
 static ssize_t uart_write(struct dev_info * devnfo, off_t offset, uint8_t * buf,
         size_t count, int oflags);
+static int uart_ioctl(struct dev_info * devnfo, uint32_t request,
+        void * arg, size_t arg_len);
 
 void uart_init(void) __attribute__((constructor));
 void uart_init(void)
@@ -84,6 +87,7 @@ static int make_uartdev(struct uart_port * port, int port_num)
     dev->block_size = 16; /* TODO Should be adjustable */
     dev->read = uart_read;
     dev->write = uart_write;
+    dev->ioctl = uart_ioctl;
 
     if (dev_make(dev, 0, 0, 0666)) {
         KERROR(KERROR_ERR, "Failed to");
@@ -172,4 +176,22 @@ static ssize_t uart_write(struct dev_info * devnfo, off_t offset, uint8_t * buf,
     if (err == -1)
         return -EAGAIN;
     return 1;
+}
+
+static int uart_ioctl(struct dev_info * devnfo, uint32_t request, void * arg, size_t arg_len)
+{
+    struct uart_port * port = uart_getport(DEV_MINOR(devnfo->dev_id));
+
+    switch (request) {
+    case IOCTL_GTERMIOS:
+        if (arg_len < sizeof(struct termios))
+            return -EINVAL;
+
+        memcpy(&(port->conf), arg, sizeof(struct termios));
+        break;
+    default:
+        return -EINVAL;
+    }
+
+    return 0;
 }

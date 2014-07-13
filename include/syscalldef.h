@@ -139,7 +139,8 @@ struct _fs_mkdir_args {
 struct _ioctl_get_args {
     int fd;
     uint32_t request;
-    void * args;
+    void * arg;
+    size_t arg_len;
 };
 
 /** Arguments struct for SYSCALL_PROC_GETBREAK */

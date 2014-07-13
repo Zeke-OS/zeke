@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    ioctl.h
+ * @file    ioctl.c
  * @author  Olli Vanhoja
- * @brief   Control devices.
+ * @brief   ioctl libc functions.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -28,39 +28,20 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************
- */
+*/
 
-/** @addtogroup LIBC
- * @{
- */
+#include <errno.h>
+#include <syscall.h>
+#include <sys/ioctl.h>
 
-#pragma once
-#ifndef IOCTL_H
-#define IOCTL_H
+int _ioctl(int fildes, uint32_t request, void * arg, size_t arg_len)
+{
+    struct _ioctl_get_args args = {
+        .fd = fildes,
+        .request = request,
+        .arg = arg,
+        .arg_len = arg_len
+    };
 
-#include <stdint.h>
-#include <sys/cdefs.h>
-
-/*
- * IOCTL request codes.
- * Get requests shall be odd and set request shall be even, this information can
- * be then used to optimize the syscall.
- */
-#define IOCTL_GTERMIOS 1    /*!< Get termios struct. */
-#define IOCTL_STERMIOS 2    /*!< Set termios struct. */
-
-#ifndef KERNEL_INTERNAL
-__BEGIN_DECLS
-/**
- * ioctl.
- * @note This is a non-POSIX implementation of ioctl.
- */
-int _ioctl(int fildes, uint32_t request, void * arg, size_t arg_len);
-__END_DECLS
-#endif
-
-#endif /* IOCTL_H */
-
-/**
- * @}
- */
+    return syscall(SYSCALL_IOCTL_GETSET, &args);
+}

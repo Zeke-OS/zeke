@@ -38,6 +38,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <pthread.h>
+#include <termios.h>
 #include <zeke.h>
 #include "tish.h"
 
@@ -91,6 +92,23 @@ void tish_debug(char ** args)
             puts("Trying fatal DAB\n");
             int * x = (void *)0xfffffff;
             *x = 1;
+        } else {
+            puts(invalid_arg);
+        }
+    } else if (!strcmp(arg, "ioctl")) {
+        arg = kstrtok(0, DELIMS, args);
+        if (!strcmp(arg, "termios")) {
+            struct termios term;
+            int err;
+            char buf[80];
+
+            err = tcgetattr(STDOUT_FILENO, &term);
+            if (err)
+                return;
+
+            ksprintf(buf, sizeof(buf), "cflags: %u\nispeed: %u\nospeed: %u\n",
+                    term.c_cflag, term.c_ispeed, term.c_ospeed);
+            puts(buf);
         } else {
             puts(invalid_arg);
         }

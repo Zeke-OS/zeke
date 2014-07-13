@@ -38,7 +38,6 @@
 #include <kmalloc.h>
 #include <fs/fs.h>
 #include <errno.h>
-#include <termios.h>
 #include <syscall.h>
 #include <sys/ioctl.h>
 
@@ -47,7 +46,6 @@ static int sys_ioctl(void * user_args)
     struct _ioctl_get_args args;
     file_t * file;
     void * ioargs = 0;
-    int changed = 0;
     int retval = -1;
 
     if (!useracc(user_args, sizeof(args), VM_PROT_READ)) {
@@ -62,43 +60,25 @@ static int sys_ioctl(void * user_args)
         return -1;
     }
 
-    /* Copyin actual args based on request */
-    switch (args.request) {
-    /* Get operation, no need to copyin */
-    case IOCTL_GTERMIOS:
-        if (!useracc(user_args, sizeof(args), VM_PROT_WRITE)) {
-            set_errno(EFAULT);
-            goto out;
-        }
-
-        ioargs = kmalloc(sizeof(struct termios));
-        if (!ioargs) {
-            set_errno(ENOMEM);
-            goto out;
-        }
-        changed = 1; /* Ensure copyout */
-
-        break;
-
-    /* Set operation, copyin needed */
-    case IOCTL_STERMIOS:
-        if (!useracc(user_args, sizeof(args), VM_PROT_READ)) {
-            set_errno(EFAULT);
-            goto out;
-        }
-
-        ioargs = kmalloc(sizeof(struct termios));
-        if (!ioargs) {
-            set_errno(ENOMEM);
-            goto out;
-        }
-        copyin(args.args, ioargs, sizeof(struct termios));
-
-        break;
-
-    default:
-        set_errno(EINVAL);
+    ioargs = kmalloc(args.arg_len);
+    if (!ioargs) {
+        set_errno(ENOMEM);
         goto out;
+    }
+
+    if (args.request & 1) { /* Get request */
+        if (!useracc(user_args, args.arg_len, VM_PROT_WRITE)) {
+            set_errno(EFAULT);
+            goto out;
+        }
+        /* Get request doesn't need copyin */
+    } else { /* Set request */
+        if (!useracc(user_args, args.arg_len, VM_PROT_READ)) {
+            set_errno(EFAULT);
+            goto out;
+        }
+        /* Set operation needs copyin */
+        copyin(args.arg, ioargs, args.arg_len);
     }
 
     /* Actual ioctl call */
@@ -106,13 +86,14 @@ static int sys_ioctl(void * user_args)
         set_errno(ENOTTY);
         goto out;
     }
-    retval = file->vnode->vnode_ops->ioctl(file, args.request, ioargs);
+    retval = file->vnode->vnode_ops->ioctl(file, args.request,
+            ioargs, args.arg_len);
     if (retval)
         set_errno(-retval);
 
     /* Copyout if request type was get. */
-    if (changed)
-        copyout(ioargs, args.args, sizeof(struct termios));
+    if (args.request & 1)
+        copyout(ioargs, args.arg, args.arg_len);
 
 out:
     if (ioargs)
