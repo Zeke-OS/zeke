@@ -38,6 +38,9 @@
 #ifndef IOCTL_H
 #define IOCTL_H
 
+#include <stdint.h>
+#include <sys/cdefs.h>
+
 /*
  * TODO termios functions shall redirect to ioctl in user space.
  */
@@ -51,7 +54,7 @@ __BEGIN_DECLS
  * ioctl.
  * @note This is a non-POSIX implementation of ioctl.
  */
-int _ioctl(int fildes, unsigned long request, void * arg);
+int _ioctl(int fildes, uint32_t request, void * arg);
 __END_DECLS
 #endif
 

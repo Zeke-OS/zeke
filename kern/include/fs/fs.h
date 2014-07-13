@@ -181,6 +181,7 @@ typedef struct vnode_ops {
     int (*release)(file_t * file);
     ssize_t (*write)(file_t * file, const void * buf, size_t count);
     ssize_t (*read)(file_t * file, void * buf, size_t count);
+    int (*ioctl)(file_t * file, uint32_t request, void * arg); /* for devs */
     //int (*mmap)(vnode_t * file, !mem area!);
     /* Directory file operations
      * ------------------------- */

@@ -231,6 +231,8 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
     sb->root->vn_prev_mountpoint = target->vn_mountpoint;
     target->vn_mountpoint = sb->root;
 
+    /* TODO inherit perms */
+
     return 0;
 }
 

@@ -136,6 +136,12 @@ struct _fs_mkdir_args {
     unsigned flags;
 };
 
+struct _ioctl_get_args {
+    int fd;
+    uint32_t request;
+    void * args;
+};
+
 /** Arguments struct for SYSCALL_PROC_GETBREAK */
 struct _ds_getbreak {
     void * start;

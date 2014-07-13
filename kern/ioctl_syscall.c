@@ -33,21 +33,99 @@
 #define KERNEL_INTERNAL
 #include <stdint.h>
 #include <stddef.h>
+#include <proc.h>
+#include <vm/vm.h>
+#include <kmalloc.h>
+#include <fs/fs.h>
 #include <errno.h>
 #include <termios.h>
 #include <syscall.h>
 #include <sys/ioctl.h>
 
+static int sys_ioctl(void * user_args)
+{
+    struct _ioctl_get_args args;
+    file_t * file;
+    void * ioargs = 0;
+    int changed = 0;
+    int retval = -1;
+
+    if (!useracc(user_args, sizeof(args), VM_PROT_READ)) {
+        set_errno(EFAULT);
+        return -1;
+    }
+    copyin(user_args, &args, sizeof(args));
+
+    file = fs_fildes_ref(curproc->files, args.fd, 1);
+    if (!file) {
+        set_errno(EBADF);
+        return -1;
+    }
+
+    /* Copyin actual args based on request */
+    switch (args.request) {
+    /* Get operation, no need to copyin */
+    case IOCTL_GTERMIOS:
+        if (!useracc(user_args, sizeof(args), VM_PROT_WRITE)) {
+            set_errno(EFAULT);
+            goto out;
+        }
+
+        ioargs = kmalloc(sizeof(struct termios));
+        if (!ioargs) {
+            set_errno(ENOMEM);
+            goto out;
+        }
+        changed = 1; /* Ensure copyout */
+
+        break;
+
+    /* Set operation, copyin needed */
+    case IOCTL_STERMIOS:
+        if (!useracc(user_args, sizeof(args), VM_PROT_READ)) {
+            set_errno(EFAULT);
+            goto out;
+        }
+
+        ioargs = kmalloc(sizeof(struct termios));
+        if (!ioargs) {
+            set_errno(ENOMEM);
+            goto out;
+        }
+        copyin(args.args, ioargs, sizeof(struct termios));
+
+        break;
+
+    default:
+        set_errno(EINVAL);
+        goto out;
+    }
+
+    /* Actual ioctl call */
+    if (!file->vnode->vnode_ops->ioctl) {
+        set_errno(ENOTTY);
+        goto out;
+    }
+    retval = file->vnode->vnode_ops->ioctl(file, args.request, ioargs);
+    if (retval)
+        set_errno(-retval);
+
+    /* Copyout if request type was get. */
+    if (changed)
+        copyout(ioargs, args.args, sizeof(struct termios));
+
+out:
+    if (ioargs)
+        kfree(ioargs);
+    fs_fildes_ref(curproc->files, args.fd, -1);
+    return retval;
+}
+
 uintptr_t ioctl_syscall(uint32_t type, void * p)
 {
     switch (type) {
-    case SYSCALL_IOCTL_GET:
-        set_errno(ENOSYS);
-        return -1;
-
-    case SYSCALL_IOCTL_SET:
-        set_errno(ENOSYS);
-        return -2;
+    case SYSCALL_IOCTL_GETSET:
+        return (uintptr_t)sys_ioctl(p);
 
     default:
         set_errno(ENOSYS);
