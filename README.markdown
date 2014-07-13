@@ -20,24 +20,30 @@ where possible, as some concepts of Zeke were not CMSIS compliant from the
 begining. However scope changed early and the kernel is no more CMSIS compatible
 at any level. Currently Zeke is no moving towards POSIX-like system.
 
-Key features
+Key Features
 ------------
-- Dynamic prioritizing pre-emptive scheduling with penalties to prevent
-  starvation
-- System call based kernel services
-- High configurability & Adjustable footprint
-- BSD-like sysctl interface
-- Threading implemented at kernel level
-- Pre-emptible kernel mode
+- For user applications
+    - Dynamic prioritizing pre-emptive scheduling with penalties to prevent
+      starvation
+    - System call based kernel services
+    - Standard user application separation by using POSIX processes
+    - Many-to-Many thread scheduling implemented at kernel level
+- Scalability
+    - Adjustable footprint by compilation flags
+- File Systems
+    - Complete file system abstraction (VFS)
+    - freeBSD-like device file interface
+- Kernel
+    - Fully pre-emptible kernel mode
+    - freeBSD-like sysctl interface
 
 News
 ----
 - Coming "soon":
-    - POSIX process & thread support
-    - VFS
+    - SD card support and file system X (tbd)
 - ARM11/Raspberry Pi port ongoing
 
-Port status
+Port Status
 -----------
 
     +-----------+-----------------------+
@@ -66,7 +72,7 @@ To successfully compile Zeke, you'll need the following packages/tools:
 
 doc-book target:
 
-- latex + some packages
+- LaTeX + some packages
 - latexmk
 - gnuplot
 
@@ -83,7 +89,7 @@ Doxygen targets:
 
 Run `make help` for full list of targets and compilation flags.
 
-### Running Zeke in emulator
+### Running Zeke in QEMU
 
 Qemu from rpi branch of `git@github.com:Torlus/qemu.git` repository seems to work
 best for BCM2835/Raspberry Pi version of Zeke.
@@ -91,10 +97,10 @@ best for BCM2835/Raspberry Pi version of Zeke.
     ../src/configure --prefix=[PATH TO BIN] --target-list=arm-softmmu,arm-linux-user,armeb-linux-user --enable-sdl
     make -j4 && sudo make install
 
-### Running Zeke on real hw
+### Running Zeke on real ARM
 
 Zeke should boot just fine with, practically, any bootloader that is capable of
-loading linux image. However Zeke only supports ATAGs for gathering device
-information so some older bootloader may work better. Still ATAGs are optional
-so basically any bootloader should work.
+loading a linux image. However Zeke only supports ATAGs for gathering device
+information so some older bootloader may work better. Though ATAGs are optional
+so basically any bootloader should work if you compile Zeke without configATAG.
 
