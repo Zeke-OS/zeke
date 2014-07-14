@@ -23,7 +23,7 @@ __ARM6M__   = 7
 # Notes:
 # MCU_MODEL_STM32F0 = __ARM6M__
 # MCU_MODEL_STR912F = __ARM4T__
-# MCU_MODEL_BCM2835 = __ARM6__
+# MCU_MODEL_BCM2835 = __ARM6K__
 
 # User configurable part begins ################################################
 
