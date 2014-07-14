@@ -177,6 +177,7 @@ ssize_t read(int fildes, void * buf, size_t nbytes);
 ssize_t pwrite(int fildes, const void *buf, size_t nbyte,
     off_t offset);
 ssize_t write(int fildes, const void * buf, size_t nbyte);
+off_t lseek(int fildes, off_t offset, int whence);
 int close(int fildes);
 
 unsigned sleep(unsigned seconds);

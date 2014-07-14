@@ -75,3 +75,19 @@ ssize_t write(int fildes, const void * buf, size_t nbyte)
 
     return (ssize_t)syscall(SYSCALL_FS_WRITE, &args);
 }
+
+off_t lseek(int fildes, off_t offset, int whence)
+{
+    int err;
+    struct _fs_lseek_args args = {
+        .fd = fildes,
+        .offset = offset,
+        .whence = whence
+    };
+
+    err = (int)syscall(SYSCALL_FS_LSEEK, &args);
+    if (err)
+        return -1;
+
+    return args.offset;
+}

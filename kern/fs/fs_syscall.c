@@ -42,6 +42,7 @@
 #include <syscalldef.h>
 #include <syscall.h>
 #include <errno.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <dirent.h>
 #include <fs/fs.h>
@@ -52,14 +53,14 @@ static int sys_read(void * user_args)
     char * buf;
     int retval;
 
-    if (!useracc(user_args, sizeof(struct _fs_readwrite_args), VM_PROT_READ)) {
+    if (!useracc(user_args, sizeof(args), VM_PROT_READ)) {
         /* No permission to read/write */
         /* TODO Signal/Kill? */
         set_errno(EFAULT);
         retval = -1;
         goto out;
     }
-    copyin(user_args, &args, sizeof(struct _fs_readwrite_args));
+    copyin(user_args, &args, sizeof(args));
 
     /* Buffer */
     if (!useracc(args.buf, args.nbytes, VM_PROT_WRITE)) {
@@ -90,14 +91,14 @@ static int sys_write(void * user_args)
     int retval;
 
     /* Args */
-    if (!useracc(user_args, sizeof(struct _fs_readwrite_args), VM_PROT_READ)) {
+    if (!useracc(user_args, sizeof(args), VM_PROT_READ)) {
         /* No permission to read/write */
         /* TODO Signal/Kill? */
         set_errno(EFAULT);
         retval = -1;
         goto out;
     }
-    copyin(user_args, &args, sizeof(struct _fs_readwrite_args));
+    copyin(user_args, &args, sizeof(args));
 
     /* Buffer */
     if (!useracc(args.buf, args.nbytes, VM_PROT_READ)) {
@@ -118,6 +119,64 @@ static int sys_write(void * user_args)
 
     kfree(buf);
 out:
+    return retval;
+}
+
+static int sys_lseek(void * user_args)
+{
+    struct _fs_lseek_args args;
+    file_t * file;
+    int retval = 0;
+
+    if (!useracc(user_args, sizeof(args), VM_PROT_WRITE)) {
+        /* No permission to read/write */
+        /* TODO Signal/Kill? */
+        set_errno(EFAULT);
+        return -1;
+    }
+    copyin(user_args, &args, sizeof(args));
+
+    /* Increment refcount for the file pointed by fd */
+    file = fs_fildes_ref(curproc->files, args.fd, 1);
+    if (!file) {
+        set_errno(EBADF);
+        return -1;
+    }
+
+    if (args.whence == SEEK_SET)
+        file->seek_pos = args.offset;
+    else if (args.whence == SEEK_CUR)
+        file->seek_pos += args.offset;
+    else if (args.whence == SEEK_END) {
+        struct stat stat_buf;
+        int err;
+
+        err = file->vnode->vnode_ops->stat(file->vnode, &stat_buf);
+        if (!err) {
+            const off_t new_offset = stat_buf.st_size + args.offset;
+
+            if (new_offset >= stat_buf.st_size)
+                file->seek_pos = new_offset;
+            else {
+                set_errno(EOVERFLOW);
+                retval = -1;
+            }
+        } else {
+            set_errno(EBADF);
+            retval = -1;
+        }
+    } else {
+        set_errno(EINVAL);
+        retval = -1;
+    }
+
+    /* Resulting offset is stored to args */
+    args.offset = file->seek_pos;
+
+    /* Decrement refcount for the file pointed by fd */
+    fs_fildes_ref(curproc->files, args.fd, -1);
+
+    copyout(&args, user_args, sizeof(args));
     return retval;
 }
 
@@ -204,7 +263,7 @@ static int sys_getdents(void * user_args)
         set_errno(EFAULT);
         return -1;
     }
-    copyin(user_args, &args, sizeof(struct _ds_getdents_args));
+    copyin(user_args, &args, sizeof(args));
 
     /* We must have a write access to the given buffer. */
     if (!useracc(args.buf, args.nbytes, VM_PROT_WRITE)) {
@@ -319,7 +378,7 @@ static int sys_filestat(void * user_args)
         }
 
         fs_fildes_ref(curproc->files, args->fd, -1);
-        if (err) {
+        if (err) { /* Handle previous error */
             set_errno(-err);
             goto out;
         }
@@ -410,8 +469,7 @@ uintptr_t fs_syscall(uint32_t type, void * p)
         return (uintptr_t)sys_write(p);
 
     case SYSCALL_FS_LSEEK:
-        set_errno(ENOSYS);
-        return -6;
+        return (uintptr_t)sys_lseek(p);
 
     case SYSCALL_FS_GETDENTS:
         return (uintptr_t)sys_getdents(p);

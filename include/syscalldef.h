@@ -91,6 +91,13 @@ struct _fs_readwrite_args {
     size_t nbytes;
 };
 
+/** Arguments struct for SYSCALL_FS_LSEEK */
+struct _fs_lseek_args {
+    int fd;
+    off_t offset; /* input and return value */
+    int whence;
+};
+
 /** Arguments struct for SYSCALL_FS_MOUNT */
 struct _fs_mount_args {
     const char * source;

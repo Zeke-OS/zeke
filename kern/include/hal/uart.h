@@ -86,7 +86,7 @@ struct uart_port {
 
 /**
  * UART port register.
- * @param port_init_struct is a
+ * @param port_init_struct is a pointer to the port struct.
  */
 int uart_register_port(struct uart_port * port);
 
