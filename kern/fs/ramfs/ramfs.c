@@ -319,17 +319,6 @@ int ramfs_delete_vnode(vnode_t * vnode)
     return 0;
 }
 
-/**
- * Write transfers bytes from buf into file.
- * Writing is begin from offset and ended at offset + count. buf must therefore
- * contain at least count bytes. If offset is past end of the current file the
- * file will be extended; If offset is smaller than file length, the existing
- * data will be overwriten.
- * @param file      is a file stored in ramfs.
- * @param buf       is a buffer where bytes are read from.
- * @param count     is the number of bytes buf contains.
- * @return Returns the number of bytes written.
- */
 ssize_t ramfs_write(file_t * file, const void * buf, size_t count)
 {
     size_t bytes_wr = 0;
@@ -347,13 +336,6 @@ ssize_t ramfs_write(file_t * file, const void * buf, size_t count)
     return bytes_wr;
 }
 
-/**
- * Read transfers bytes from file into buf.
- * @param file      is a file stored in ramfs.
- * @param buf       is a buffer bytes are written to.
- * @param count     is the number of bytes to be read.
- * @return Returns the number of bytes read.
- */
 ssize_t ramfs_read(file_t * file, void * buf, size_t count)
 {
     size_t bytes_rd = 0;
@@ -372,16 +354,6 @@ ssize_t ramfs_read(file_t * file, void * buf, size_t count)
     return bytes_rd;
 }
 
-/**
- * Create a new vnode with S_IFREG and a hard link with specified name for it
- * created in dir.
- * @param dir       is the directory vnode which is used to store the hard link
- *                  created.
- * @param name      is the name of the hard link.
- * @param name_len  is the length of the name.
- * @param[out] result is a pointer to the resulting vnode.
- * @return Zero in case of operation succeed; Otherwise value other than zero.
- */
 int ramfs_create(vnode_t * dir, const char * name, size_t name_len, mode_t mode,
                  vnode_t ** result)
 {
@@ -438,12 +410,6 @@ out:
     return retval;
 }
 
-/**
- * Create a special vnode.
- * @note ops must be set manually after creation of a vnode.
- * @param specinfo  is a pointer to the special info struct.
- * @param mode      is the mode of the new file.
- */
 int ramfs_mknod(vnode_t * dir, const char * name, size_t name_len, int mode,
         void * specinfo, vnode_t ** result)
 {
@@ -459,14 +425,6 @@ int ramfs_mknod(vnode_t * dir, const char * name, size_t name_len, int mode,
     return 0;
 }
 
-/**
- * Lookup for a hard linked vnode in a directory vnode.
- * @param dir       is a directory in ramfs.
- * @param name      is a filename.
- * @param name_len  is the length of name.
- * @param[out] result is the result of lookup.
- * @return Returns 0 if a vnode was found; Otherwise value other than zero.
- */
 int ramfs_lookup(vnode_t * dir, const char * name, size_t name_len,
         vnode_t ** result)
 {
@@ -496,16 +454,6 @@ out:
     return retval;
 }
 
-/**
- * Create a hard link.
- * Link vnode into dir with the specified name.
- * @param dir       is the directory where entry will be created.
- * @param vnode     is a vnode where the link will point.
- * @param name      is the name of the hard link.
- * @param name_len  is the length of the name.
- * @return Returns 0 if creating a link succeeded; Otherwise value other than
- *         zero.
- */
 int ramfs_link(vnode_t * dir, vnode_t * vnode, const char * name, size_t name_len)
 {
     ramfs_inode_t * inode;
@@ -564,13 +512,6 @@ out:
     return retval;
 }
 
-/**
- * Create a directory called name in dir.
- * @param dir       is a directory in ramfs.
- * @param name      is the name of the new directory.
- * @param name_len  is the length of the name.
- * @return Zero in case of operation succeed; Otherwise value other than zero.
- */
 int ramfs_mkdir(vnode_t * dir,  const char * name, size_t name_len, mode_t mode)
 {
     ramfs_sb_t * ramfs_sb;
@@ -618,14 +559,6 @@ out:
     return retval;
 }
 
-/**
- * Reads one directory entry from the dir into the struct dirent.
- * @param dir       is a directory in ramfs.
- * @param dirent    is a directory entry struct.
- * @return  Zero in case of operation succeed;
- *          -1 if dir is not a directory;
- *          -2 if end of dir.
- */
 int ramfs_readdir(vnode_t * dir, struct dirent * d)
 {
     dh_dir_iter_t it;

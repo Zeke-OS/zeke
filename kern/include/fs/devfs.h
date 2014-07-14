@@ -39,22 +39,21 @@
 #include <sys/types.h>
 #include <fs/fs.h>
 
-#define DEVFS_FSNAME            "devfs"
-#define DEVFS_VDEV_MAJOR_ID     11
+#define DEVFS_FSNAME            "devfs" /*!< Name of the devfs in vfs. */
+#define DEVFS_VDEV_MAJOR_ID     11      /*!< Major id of the devfs. */
 
 #define DEV_FLAGS_MB_READ       0x01 /*!< Supports multiple block read. */
 #define DEV_FLAGS_MB_WRITE      0x02 /*!< Supports multiple block write. */
 #define DEV_FLAGS_WR_BT_MASK    0x04 /*!< 0 = Write-back; 1 = Write-through */
 
 struct dev_info {
-    dev_t dev_id;
-    const char * drv_name;
-    char dev_name[20];
+    dev_t dev_id;           /*!< Device id (major, minor). */
+    const char * drv_name;  /*!< Name of the driver associated with the dev. */
+    char dev_name[20];      /*!< File name of the device. */
 
-    /*!< Configuration flags for block device handling */
-    uint32_t flags;
+    uint32_t flags;         /*!< Configuration flags. */
 
-    size_t block_size;
+    size_t block_size;      /*!< Preferred block transfer size. */
     ssize_t num_blocks;
 
     ssize_t (*read)(struct dev_info * devnfo, off_t offset,

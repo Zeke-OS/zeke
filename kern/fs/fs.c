@@ -483,12 +483,22 @@ ssize_t fs_readwrite_cproc(int fildes, void * buf, size_t nbyte, int oper)
         if (retval == 0)
             retval = -EIO;
     }
+    if (retval > 0)
+        file->seek_pos += retval;
 
 out:
     fs_fildes_ref(curproc->files, fildes, -1);
     return retval;
 }
 
+/**
+ * Parse path and file name from a complete path.
+ * <path>/<name>
+ * @param pathname  is a complete path to a file or directory.
+ * @param path[out] is the expected dirtory part of the path.
+ * @param name[out] is the file or directory name parsed from the full path.
+ * @return 0 if succeed; Otherwise a negative errno is returned.
+ */
 static int parse_filepath(const char * pathname, char ** path, char ** name)
 {
     char * path_act;

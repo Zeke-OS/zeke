@@ -179,29 +179,106 @@ typedef struct vnode_ops {
      * ------------------------ */
     int (*lock)(file_t * file);
     int (*release)(file_t * file);
+    /**
+     * Write transfers bytes from buf into file.
+     * Writing is begin from offset and ended at offset + count. buf must
+     * therefore contain at least count bytes. If offset is past end of the
+     * current file the file will be extended; If offset is smaller than file
+     * length, the existing data will be overwriten.
+     * @param file      is a file stored in ramfs.
+     * @param buf       is a buffer where bytes are read from.
+     * @param count     is the number of bytes buf contains.
+     * @return  Returns the number of bytes written; Otherwise a negative errno
+     *          is returned.
+     */
     ssize_t (*write)(file_t * file, const void * buf, size_t count);
+    /**
+     * Read transfers bytes from file into buf.
+     * @param file      is a file stored in ramfs.
+     * @param buf       is a buffer bytes are written to.
+     * @param count     is the number of bytes to be read.
+     * @return  Returns the number of bytes read; Otherwise a negative errno
+     *          is returned.
+     */
     ssize_t (*read)(file_t * file, void * buf, size_t count);
     /**
      * IO Control.
      * Only defined for devices and shall be set NULL if not supported.
+     * @param file      is the open file accessed.
+     * @param request   is the request number.
+     * @param arg       is a pointer to the argument (struct).
+     * @param ar_len    is the length of arg.
+     * @return          0 ig succeed; Otherwise a negative errno is returned.
      */
     int (*ioctl)(file_t * file, uint32_t request, void * arg, size_t arg_len);
     //int (*mmap)(vnode_t * file, !mem area!);
     /* Directory file operations
      * ------------------------- */
+    /**
+     * Create a new vnode with S_IFREG and a hard link with specified name for it
+     * created in dir.
+     * @param dir       is the directory vnode which is used to store the hard link
+     *                  created.
+     * @param name      is the name of the hard link.
+     * @param name_len  is the length of the name.
+     * @param[out] result is a pointer to the resulting vnode.
+     * @return Zero in case of operation succeed; Otherwise value other than zero.
+     */
     int (*create)(vnode_t * dir, const char * name, size_t name_len, mode_t mode,
             vnode_t ** result);
+    /**
+     * Create a special vnode.
+     * @note ops must be set manually after creation of a vnode.
+     * @param specinfo  is a pointer to the special info struct.
+     * @param mode      is the mode of the new file.
+     */
     int (*mknod)(vnode_t * dir, const char * name, size_t name_len, int mode,
             void * specinfo, vnode_t ** result);
+    /**
+     * Lookup for a hard linked vnode in a directory vnode.
+     * @param dir       is a directory in ramfs.
+     * @param name      is a filename.
+     * @param name_len  is the length of name.
+     * @param[out] result is the result of lookup.
+     * @return Returns 0 if a vnode was found; Otherwise value other than zero.
+     */
     int (*lookup)(vnode_t * dir, const char * name, size_t name_len,
             vnode_t ** result);
+    /**
+     * Create a hard link.
+     * Link vnode into dir with the specified name.
+     * @param dir       is the directory where entry will be created.
+     * @param vnode     is a vnode where the link will point.
+     * @param name      is the name of the hard link.
+     * @param name_len  is the length of the name.
+     * @return Returns 0 if creating a link succeeded; Otherwise value other than
+     *         zero.
+     */
     int (*link)(vnode_t * dir, vnode_t * vnode, const char * name,
             size_t name_len);
     int (*unlink)(vnode_t * dir, const char * name, size_t name_len);
+    /**
+     * Create a directory called name in dir.
+     * @param dir       is a directory in ramfs.
+     * @param name      is the name of the new directory.
+     * @param name_len  is the length of the name.
+     * @return Zero in case of operation succeed; Otherwise value other than zero.
+     */
     int (*mkdir)(vnode_t * dir,  const char * name, size_t name_len, mode_t mode);
     int (*rmdir)(vnode_t * dir,  const char * name, size_t name_len);
+    /**
+     * Reads one directory entry from the dir into the struct dirent.
+     * @param dir       is a directory in ramfs.
+     * @param dirent    is a directory entry struct.
+     * @return  Zero in case of operation succeed;
+     *          -1 if dir is not a directory;
+     *          -2 if end of dir.
+     */
     int (*readdir)(vnode_t * dir, struct dirent * d);
     /* Operations specified for any file type */
+    /**
+     * Get file status.
+     */
     int (*stat)(vnode_t * vnode, struct stat * buf);
 } vnode_ops_t;
 
@@ -349,6 +426,9 @@ ssize_t fs_readwrite_cproc(int fildes, void * buf, size_t nbyte, int oper);
  */
 int fs_creat_cproc(const char * path, mode_t mode, vnode_t ** result);
 
+/**
+ * Create a new directory relative to the current process.
+ */
 int fs_mkdir_curproc(const char * pathname, mode_t mode);
 
 #endif /* FS_H */

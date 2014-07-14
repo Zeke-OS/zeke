@@ -206,7 +206,7 @@ static int sys_getdents(void * user_args)
     }
     copyin(user_args, &args, sizeof(struct _ds_getdents_args));
 
-    /* We must have write access to the given buffer. */
+    /* We must have a write access to the given buffer. */
     if (!useracc(args.buf, args.nbytes, VM_PROT_WRITE)) {
         set_errno(EFAULT);
         return -1;
@@ -459,10 +459,6 @@ uintptr_t fs_syscall(uint32_t type, void * p)
     case SYSCALL_FS_UMASK:
         set_errno(ENOSYS);
         return -15;
-
-    case SYSCALL_FS_IOCTL:
-        set_errno(ENOSYS);
-        return -16;
 
     case SYSCALL_FS_MOUNT:
         return (uintptr_t)sys_mount(p);
