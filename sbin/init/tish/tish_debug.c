@@ -36,6 +36,9 @@
 #include <kstring.h> /* TODO Remove */
 #include <libkern.h>
 #include <unistd.h>
+#include <fcntl.h> /* file test */
+#include <time.h> /* file test */
+#include <sys/stat.h> /* file test */
 #include <errno.h>
 #include <pthread.h>
 #include <termios.h>
@@ -112,6 +115,20 @@ void tish_debug(char ** args)
         } else {
             puts(invalid_arg);
         }
+    } else if (!strcmp(arg, "file")) {
+        const char text[] = "This is a test.";
+        char buf[80];
+        int fildes = open("file", O_RDWR | O_CREAT | O_TRUNC,
+                S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+        if (fildes < 0)
+            return;
+
+        write(fildes, text, sizeof(text));
+        lseek(fildes, 0, SEEK_SET);
+        read(fildes, buf, sizeof(buf));
+        close(fildes);
+
+        puts(buf);
     } else {
         puts("Invalid subcommand\n");
         errno = EINVAL;
