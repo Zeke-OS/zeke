@@ -185,7 +185,7 @@ static int sys_open(void * user_args)
     struct _fs_open_args args;
     char * name = 0;
     vnode_t * file;
-    int err, retval = 0;
+    int err, retval = -1;
 
     /* Copyin args struct */
     if (!useracc(user_args, sizeof(args), VM_PROT_READ)) {
@@ -306,6 +306,58 @@ static int sys_getdents(void * user_args)
     kfree(dents);
 
     return count;
+}
+
+static int sys_fcntl(void * user_args)
+{
+    struct _fs_fcntl_args args;
+    file_t * file;
+
+    if (!useracc(user_args, sizeof(args), VM_PROT_READ)) {
+        set_errno(EFAULT);
+        return -1;
+    }
+    copyin(user_args, &args, sizeof(args));
+
+    file = fs_fildes_ref(curproc->files, args.fd, 1);
+    if (!file) {
+        set_errno(EBADF);
+        return -1;
+    }
+
+    switch (args.cmd) {
+    case F_DUPFD:
+    {
+        int new_fd;
+
+        new_fd = fs_fildes_cproc_next(file, args.third.ival);
+        if (new_fd < 0) {
+            fs_fildes_ref(curproc->files, args.fd, -1);
+            set_errno(-new_fd);
+            return -1;
+        }
+
+        return new_fd;
+    }
+    /* TODO */
+    case F_DUPFD_CLOEXEC:
+    case F_DUP2FD:
+    case F_GETFD:
+    case F_SETFD:
+    case F_GETFL:
+    case F_SETFL:
+    case F_GETOWN:
+    case F_SETOWN:
+    case F_GETLK:
+    case F_SETLK:
+    case F_SETLKW:
+    default:
+        fs_fildes_ref(curproc->files, args.fd, -1);
+        set_errno(EINVAL);
+        return -1;
+    }
+
+    return 0;
 }
 
 static int sys_mkdir(void * user_args)
@@ -474,9 +526,8 @@ uintptr_t fs_syscall(uint32_t type, void * p)
     case SYSCALL_FS_GETDENTS:
         return (uintptr_t)sys_getdents(p);
 
-    case SYSCALL_FS_DUP:
-        set_errno(ENOSYS);
-        return -7;
+    case SYSCALL_FS_FCNTL:
+        return (uintptr_t)sys_fcntl(p);
 
     case SYSCALL_FS_LINK:
         set_errno(ENOSYS);

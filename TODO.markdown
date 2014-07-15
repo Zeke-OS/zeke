@@ -24,7 +24,8 @@ proc
 fs (vfs)
 --------
 
-- syscalls missigng
+- lock to files struct
+- syscalls missing
     - dup
     - link
     - unlink

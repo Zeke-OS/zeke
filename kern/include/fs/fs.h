@@ -396,6 +396,14 @@ int fs_fildes_set(file_t * fildes, vnode_t * vnode, int oflags);
 int fs_fildes_create_cproc(vnode_t * vnode, int oflags);
 
 /**
+ * Get next free file descriptor for the current process.
+ * @param new_file  is the file to be stored in the next free position from
+ *                  start.
+ * @param start     is the start offset.
+ */
+int fs_fildes_cproc_next(file_t * new_file, int start);
+
+/**
  * Increment or decrement a file descriptor reference count and free the
  * descriptor if there is no more refereces to it.
  * @param files     is the files struct where fd is searched for.

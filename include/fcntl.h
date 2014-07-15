@@ -42,21 +42,36 @@
 
 #include <sys/cdefs.h>
 
+#ifndef _MODE_T_DECLARED
+typedef int mode_t; /*!< Used for some file attributes. */
+#define _MODE_T_DECLARED
+#endif
+#ifndef _OFF_T_DECLARED
+typedef int64_t off_t; /*!< Used for file sizes. */
+#define _OFF_T_DECLARED
+#endif
+#ifndef _PID_T_DECLARED
+typedef int pid_t; /*!< Process ID. */
+#define _PID_T_DECLARED
+#endif
+
 /* cmd args used by fcntl() */
 #define F_DUPFD         0   /*!< Duplicate file descriptor. */
-#define F_DUPFD_CLOEXEC 1   /*!< Duplicate file descriptor with the
+#define F_DUP2FD        1   /*!< Duplicate file descriptor to given number and
+                             *   close any existing file. */
+#define F_DUPFD_CLOEXEC 2   /*!< Duplicate file descriptor with the
                               close-on- exec flag FD_CLOEXEC set. */
-#define F_GETFD         2   /*!< Get file descriptor flags. */
-#define F_SETFD         3   /*!< Set file descriptor flags. */
-#define F_GETFL         4   /*!< Get file status flags and file access modes. */
-#define F_SETFL         5   /*!< Set file status flags. */
-#define F_GETLK         6   /*!< Get record locking information. */
-#define F_SETLK         7   /*!< Set record locking information. */
-#define F_SETLKW        8   /*!< Set record locking information; wait if
+#define F_GETFD         3   /*!< Get file descriptor flags. */
+#define F_SETFD         4   /*!< Set file descriptor flags. */
+#define F_GETFL         5   /*!< Get file status flags and file access modes. */
+#define F_SETFL         6   /*!< Set file status flags. */
+#define F_GETLK         7   /*!< Get record locking information. */
+#define F_SETLK         8   /*!< Set record locking information. */
+#define F_SETLKW        9   /*!< Set record locking information; wait if
                              *   blocked. */
-#define F_GETOWN        9   /*!< Get process or process group ID to receive
+#define F_GETOWN        10  /*!< Get process or process group ID to receive
                               SIGURG signals. */
-#define F_SETOWN        10  /*!< Set process or process group ID to receive
+#define F_SETOWN        11  /*!< Set process or process group ID to receive
                              *   SIGURG signals. */
 
 /* fcntl() fd flag */
@@ -103,6 +118,18 @@
 #define AT_SYMLINK_NOFOLLOW 0x20 /*!< Do not follow symbolic links. */
 #define AT_SYMLINK_FOLLOW   0x40 /*!< Follow symbolic link. */
 #define AT_REMOVEDIR        0x80 /*!< Remove directory instead of file. */
+
+/**
+ * File lock.
+ */
+struct flock {
+    short  l_type;      /*!< Type of lock; F_RDLCK, F_WRLCK, F_UNLCK. */
+    short  l_whence;    /*!< Flag for starting offset. */
+    off_t  l_start;     /*!< Relative offset in bytes. */
+    off_t  l_len;       /*!< Size; if 0 then until EOF. */
+    pid_t  l_pid;       /*!< Process ID of the process holding the lock;
+                         *   returned with F_GETLK. */
+};
 
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS

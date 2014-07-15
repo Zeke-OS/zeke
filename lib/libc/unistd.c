@@ -32,6 +32,7 @@
 */
 
 #include <syscall.h>
+#include <fcntl.h>
 #include <unistd.h>
 
 pid_t fork(void)
@@ -90,4 +91,14 @@ off_t lseek(int fildes, off_t offset, int whence)
         return -1;
 
     return args.offset;
+}
+
+int dup(int fildes)
+{
+    return fcntl(fildes, F_DUPFD, 0);
+}
+
+int dup2(int fildes, int fildes2)
+{
+    return fcntl(fildes, F_DUP2FD, fildes2);
 }

@@ -40,6 +40,7 @@
 #include <pthread.h>
 #include <time.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 
 /** Argument struct for SYSCALL_SCHED_THREAD_CREATE */
 struct _ds_pthread_create {
@@ -96,6 +97,16 @@ struct _fs_lseek_args {
     int fd;
     off_t offset; /* input and return value */
     int whence;
+};
+
+/** Arguments struct for SYSCALL_FS_FCNTL */
+struct _fs_fcntl_args {
+    int fd;
+    int cmd;
+    union {
+        int ival;
+        struct flock fl;
+    } third;
 };
 
 /** Arguments struct for SYSCALL_FS_MOUNT */

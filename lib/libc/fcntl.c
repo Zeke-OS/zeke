@@ -38,6 +38,7 @@
 #define strlen(x) strlenn(x, 4096) /* TODO REMOVE ME */
 #include <syscall.h>
 #include <unistd.h>
+#include <errno.h>
 #include <fcntl.h>
 
 int open(const char * path, int oflags, ...)
@@ -67,4 +68,40 @@ int creat(const char * path, mode_t mode)
 int close(int fildes)
 {
     return syscall(SYSCALL_FS_CLOSE, (void *)fildes);
+}
+
+int fcntl(int fildes, int cmd, ...)
+{
+    /* TODO */
+    va_list ap;
+    struct _fs_fcntl_args args = {
+        .fd = fildes,
+        .cmd = cmd
+    };
+    int retval = 0;
+
+    va_start(ap, cmd);
+    switch (cmd) {
+    case F_DUPFD:
+    case F_DUP2FD:
+    case F_DUPFD_CLOEXEC:
+    case F_SETFD:
+    case F_SETFL:
+    case F_SETOWN:
+        args.third.ival = va_arg(ap, int);
+        break;
+    case F_GETLK:
+    case F_SETLK:
+    case F_SETLKW:
+        args.third.fl = va_arg(ap, struct flock);
+        break;
+    default:
+        errno = EINVAL;
+        retval = -1;
+    }
+    va_end(ap);
+    if (retval)
+        return retval;
+
+    return syscall(SYSCALL_FS_FCNTL, &args);
 }

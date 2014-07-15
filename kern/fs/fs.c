@@ -355,12 +355,10 @@ int fs_fildes_create_cproc(vnode_t * vnode, int oflags)
     int retval;
     struct stat stat;
     file_t * new_fildes;
-    files_t * files;
 
     if (!vnode)
         return -EINVAL;
 
-    files = curproc->files;
     if (curproc->euid == 0)
         goto perms_ok;
 
@@ -386,17 +384,31 @@ perms_ok:
     if (S_ISDIR(vnode->vn_mode))
         new_fildes->seek_pos = DSEEKPOS_MAGIC;
 
+    int fd = fs_fildes_cproc_next(new_fildes, 0);
+    if (fd < 0) {
+        kfree(new_fildes);
+        return fd;
+    }
+    fs_fildes_set(curproc->files->fd[fd], vnode, oflags);
+
+    return fd;
+}
+
+int fs_fildes_cproc_next(file_t * new_file, int start)
+{
+    files_t * files = curproc->files;
+    int new_count;
+
 retry:
-    for (int i = 0; i < files->count; i++) {
+    for (int i = start; i < files->count; i++) {
         if (!(files->fd[i])) {
-            files->fd[i] = new_fildes;
-            fs_fildes_set(files->fd[i], vnode, oflags);
+            curproc->files->fd[i] = new_file;
             return i;
         }
     }
 
     /* Extend fd array */
-    int new_count = files->count + files->count / 2;
+    new_count = files->count + files->count / 2;
     files = krealloc(files, SIZEOF_FILES(new_count));
     if (files) {
         for (int i = files->count; i < new_count; i++)
@@ -408,7 +420,6 @@ retry:
         goto retry;
     }
 
-    kfree(new_fildes);
     return -EMFILE;
 }
 

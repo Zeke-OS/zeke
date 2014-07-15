@@ -54,18 +54,26 @@ typedef int id_t; /*!< Used as a general identifier; can be used to contain at
 #define id_t id_t
 typedef uint64_t ino_t; /*!< Used for file serial numbers.*/
 typedef uint32_t key_t; /*!< Used for XSI interprocess communication. */
+#ifndef _MODE_T_DECLARED
 typedef int mode_t; /*!< Used for some file attributes. */
+#define _MODE_T_DECLARED
+#endif
 typedef int nlink_t; /*!< Used for link counts. */
+#ifndef _OFF_T_DECLARED
 typedef int64_t off_t; /*!< Used for file sizes. */
+#define _OFF_T_DECLARED
+#endif
 #ifndef _PID_T_DECLARED
 typedef int pid_t; /*!< Process ID. */
 #define _PID_T_DECLARED
 #endif
-#ifndef ssize_t
+#ifndef _SSIZE_T_DECLARED
 #ifndef SSIZE_MAX
 #define SSIZE_MAX INT32_MAX
-typedef int32_t ssize_t; /*!< Used for a count of bytes or an error indication. */
+typedef int32_t ssize_t; /*!< Used for a count of bytes or an error
+                          *   indication. */
 #endif
+#define _SSIZE_T_DECLARED
 #endif
 typedef int64_t time_t; /*!< Used for time in seconds. */
 typedef int64_t useconds_t; /*!< Used for time in microseconds. */

@@ -23,7 +23,7 @@ configRPI_EMMC = 0# Raspberry PI EMMC
 
 # Kernel logging options
 configKLOGGER = 1# Enable KERROR as kernel logger
-configKERROR_BUF_SIZE = 2048# Lastlog buf size
+configKERROR_BUF_SIZE = 4096# Lastlog buf size
 configKERROR_MAXLEN = 400# Max kerror line length
 configKERROR_UART = 1# Option to output kernel logs directly to UART0
 configKERROR_FB = 0
@@ -58,7 +58,7 @@ configSCHED_MAX_THREADS = 10# Maximum number of threads.
 configSCHED_HZ = 100u# Scheduler frequency in Hz.
 configSCHED_LAVG_PER = SCHED_LAVGPERIOD_11SEC#
 
-configTIMERS_MAX = 4# Maximum number of timers available
+configTIMERS_MAX = 16# Maximum number of timers available
 
 # String functions
 configSTRING_OPT_SIZE = 0# Optimize string functions for speed or size
@@ -68,7 +68,7 @@ configUSRINIT_SSIZE = 8192# Stack size for usrinit thread
 configUSRINIT_PRI = osPriorityNormal# Priority of usrinit thread
 
 # Virtual file system and file systems
-configMBR = 1# MBR Support
+configMBR = 0# MBR Support
 configRAMFS = 1# Compile ramfs with Zeke base
 
 # In-Kernel Unit Tests
