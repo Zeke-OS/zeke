@@ -516,7 +516,7 @@ static int parse_filepath(const char * pathname, char ** path, char ** name)
         return -ENOMEM;
     }
 
-    strncpy(path_act, pathname, PATH_MAX);
+    strlcpy(path_act, pathname, PATH_MAX);
     while (path_act[i] != '/') {
         path_act[i--] = '\0';
         if ((i == 0) &&
