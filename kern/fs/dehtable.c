@@ -100,7 +100,7 @@ static int rm_node(dh_dirent_t ** chain, const char * name, size_t name_len);
  */
 int dh_link(dh_table_t * dir, ino_t vnode_num, const char * name, size_t name_len)
 {
-    name_len = strlenn(name, name_len);
+    name_len = strlenn(name, name_len + 1);
     const size_t h = hash_fname(name, name_len);
     const size_t entry_size = memalign(DIRENT_SIZE + name_len + 1);
     dh_dirent_t * dea;
@@ -138,7 +138,7 @@ int dh_link(dh_table_t * dir, ino_t vnode_num, const char * name, size_t name_le
     get_dirent(dea, chinfo.i_size)->dh_ino = vnode_num;
     get_dirent(dea, chinfo.i_size)->dh_size = entry_size;
     get_dirent(dea, chinfo.i_size)->dh_link = CH_NO_LINK;
-    strncpy(get_dirent(dea, chinfo.i_size)->dh_name, name, name_len + 1);
+    strlcpy(get_dirent(dea, chinfo.i_size)->dh_name, name, name_len + 1);
 
 out:
     return retval;

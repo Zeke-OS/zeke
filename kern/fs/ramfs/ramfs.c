@@ -596,7 +596,7 @@ int ramfs_readdir(vnode_t * dir, struct dirent * d)
     d->d_off = ((((off_t)it.dea_ind) << 32) & RAMFS_DEA_IND_MASK) |
         (off_t)(it.ch_ind & RAMFS_CH_IND_MASK);
     d->d_ino = dh->dh_ino;
-    strncpy(d->d_name, dh->dh_name, member_size(struct dirent, d_name));
+    strlcpy(d->d_name, dh->dh_name, member_size(struct dirent, d_name));
 #undef RAMFS_DEA_IND_MASK
 #undef RAMFS_CH_IND_MASK
 
