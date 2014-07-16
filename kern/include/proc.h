@@ -88,7 +88,7 @@ typedef struct proc_info {
     gid_t gid, egid, sgid;
     unsigned long timeout;      /*!< Used to kill processes with absolute timeout */
     long utime, stime, cutime, cstime, start_time; /*!< For performance statistics */
-    struct rlimit rlim; /*!< hard and soft limit for filesize TODO: own struct or just pointer? */
+    struct rlimit rlim[_RLIMIT_ARR_COUNT]; /*!< Hard and soft limits. */
 
     /* open file information */
     struct vnode * croot;       /*!< Current root dir. */

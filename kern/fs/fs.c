@@ -399,7 +399,9 @@ int fs_fildes_cproc_next(file_t * new_file, int start)
     files_t * files = curproc->files;
     int new_count;
 
+#if 0
 retry:
+#endif
     for (int i = start; i < files->count; i++) {
         if (!(files->fd[i])) {
             curproc->files->fd[i] = new_file;
@@ -407,6 +409,9 @@ retry:
         }
     }
 
+    /* TODO Until we have a good idea how to handle concurrency on this it's
+     * better to follow a static limit. */
+#if 0
     /* Extend fd array */
     new_count = files->count + files->count / 2;
     files = krealloc(files, SIZEOF_FILES(new_count));
@@ -419,6 +424,7 @@ retry:
 
         goto retry;
     }
+#endif
 
     return -EMFILE;
 }

@@ -160,11 +160,14 @@ static void init_kernel_proc(void)
         + mmu_sizeof_region(&(kprocvm_heap->mmu)) - 1);
 
     /* File descriptors */
-    kernel_proc->files = kmalloc(SIZEOF_FILES(3));
+    /* TODO We have a hard limit of 8 files here now but this should be tunable
+     * by using setrlimit() Also we may want to set this smaller at some point.
+     */
+    kernel_proc->files = kmalloc(SIZEOF_FILES(8));
     if (!kernel_proc->files) {
         panic(panic_msg);
     }
-    kernel_proc->files->count = 3;
+    kernel_proc->files->count = 8;
 
     /* TODO Do this correctly */
     kernel_proc->files->fd[STDIN_FILENO] = 0;

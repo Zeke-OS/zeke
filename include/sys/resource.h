@@ -36,6 +36,8 @@
 
 /* TODO Missing timeval struct from sys/time.h */
 
+#define _RLIMIT_ARR_COUNT 7
+
 #define RLIMIT_CORE     0 /*!< Resource id for maximum size of a core file,
                            * in bytes.
                            * A limit of 0 shall prevent the creation of a
