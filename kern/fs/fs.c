@@ -397,7 +397,9 @@ perms_ok:
 int fs_fildes_cproc_next(file_t * new_file, int start)
 {
     files_t * files = curproc->files;
+#if 0
     int new_count;
+#endif
 
 #if 0
 retry:
