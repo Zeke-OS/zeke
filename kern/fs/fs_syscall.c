@@ -277,11 +277,17 @@ static int sys_getdents(void * user_args)
         return -1;
     }
 
+    if (!S_ISDIR(fildes->vnode->vn_mode)) {
+        count = -1;
+        set_errno(EBADF);
+        goto out;
+    }
+
     dents = kmalloc(args.nbytes);
     if (!dents) {
-        fs_fildes_ref(curproc->files, args.fd, -1);
+        count = -1;
         set_errno(ENOMEM);
-        return -1;
+        goto out;
     }
 
     /*
@@ -300,11 +306,12 @@ static int sys_getdents(void * user_args)
         bytes_left -= (sizeof(struct dirent));
     }
     fildes->seek_pos = d.d_off;
-    fs_fildes_ref(curproc->files, args.fd, -1);
 
     copyout(dents, args.buf, count * sizeof(struct dirent));
     kfree(dents);
 
+out:
+    fs_fildes_ref(curproc->files, args.fd, -1);
     return count;
 }
 
