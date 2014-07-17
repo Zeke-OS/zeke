@@ -235,12 +235,13 @@ out:
 
 static int sys_close(int fildes)
 {
-    if(!fs_fildes_ref(curproc->files, fildes, 0)) {
-        set_errno(EBADF);
+    int err;
+
+    err = fs_fildes_close_cproc(fildes);
+    if (err) {
+        set_errno(-err);
         return -1;
     }
-    fs_fildes_ref(curproc->files, fildes, -1);
-    curproc->files->fd[fildes] = NULL;
 
     return 0;
 }
@@ -314,6 +315,7 @@ static int sys_fcntl(void * user_args)
 {
     struct _fs_fcntl_args args;
     file_t * file;
+    int retval = -1;
 
     if (!useracc(user_args, sizeof(args), VM_PROT_READ)) {
         set_errno(EFAULT);
@@ -334,16 +336,47 @@ static int sys_fcntl(void * user_args)
 
         new_fd = fs_fildes_cproc_next(file, args.third.ival);
         if (new_fd < 0) {
-            fs_fildes_ref(curproc->files, args.fd, -1);
             set_errno(-new_fd);
-            return -1;
+            goto out;
         }
 
-        return new_fd;
+        fs_fildes_ref(curproc->files, new_fd, 1);
+        retval = new_fd;
+        goto out;
     }
     /* TODO */
     case F_DUPFD_CLOEXEC:
     case F_DUP2FD:
+    {
+        int new_fd = args.third.ival;
+
+        if (args.fd == new_fd) {
+            retval = new_fd;
+            goto out;
+        }
+
+        if (curproc->files->fd[new_fd]) {
+            if (fs_fildes_close_cproc(new_fd)) {
+                set_errno(EIO);
+                goto out;
+            }
+        }
+
+        new_fd = fs_fildes_cproc_next(file, new_fd);
+        if (new_fd < 0) {
+            set_errno(-new_fd);
+            goto out;
+        }
+        if (new_fd != args.third.ival ||
+            !fs_fildes_ref(curproc->files, new_fd, 1)) {
+            fs_fildes_close_cproc(new_fd);
+            set_errno(EIO);
+            goto out;
+        }
+
+        retval = new_fd;
+        goto out;
+    }
     case F_GETFD:
     case F_SETFD:
     case F_GETFL:
@@ -356,10 +389,11 @@ static int sys_fcntl(void * user_args)
     default:
         fs_fildes_ref(curproc->files, args.fd, -1);
         set_errno(EINVAL);
-        return -1;
     }
 
-    return 0;
+out:
+    fs_fildes_ref(curproc->files, args.fd, -1);
+    return retval;
 }
 
 static int sys_mkdir(void * user_args)

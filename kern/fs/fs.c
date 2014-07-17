@@ -401,6 +401,11 @@ int fs_fildes_cproc_next(file_t * new_file, int start)
     int new_count;
 #endif
 
+    if (!new_file)
+        return -EBADF;
+
+    if (start > files->count - 1)
+        return -EMFILE;
 #if 0
 retry:
 #endif
@@ -428,7 +433,7 @@ retry:
     }
 #endif
 
-    return -EMFILE;
+    return -ENFILE;
 }
 
 file_t * fs_fildes_ref(files_t * files, int fd, int count)
@@ -460,6 +465,18 @@ file_t * fs_fildes_ref(files_t * files, int fd, int count)
     }
 
     return fildes;
+}
+
+int fs_fildes_close_cproc(int fildes)
+{
+    if(!fs_fildes_ref(curproc->files, fildes, 0)) {
+        return -EBADF;
+    }
+
+    fs_fildes_ref(curproc->files, fildes, -1);
+    curproc->files->fd[fildes] = NULL;
+
+    return 0;
 }
 
 /**

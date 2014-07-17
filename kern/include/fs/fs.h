@@ -413,6 +413,11 @@ int fs_fildes_cproc_next(file_t * new_file, int start);
 file_t * fs_fildes_ref(files_t * files, int fd, int count);
 
 /**
+ * Close file open for curproc.
+ */
+int fs_fildes_close_cproc(int fildes);
+
+/**
  * Read or write to a open file of the current process.
  * @param fildes    is the file descriptor.
  * @param buf       is the buffer.
