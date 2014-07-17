@@ -141,7 +141,6 @@ uintptr_t ulocks_syscall(uint32_t type, void * p)
                 set_errno(EBUSY);
             }
         } else { /* No permission to read/write */
-            /* TODO Kill? */
             set_errno(EFAULT);
             return -1;
         }
@@ -154,7 +153,6 @@ uintptr_t ulocks_syscall(uint32_t type, void * p)
                     ((struct _ds_semaphore_wait *)(p))->s,
                     ((struct _ds_semaphore_wait *)(p))->millisec);
         } else { /* No permission to read/write */
-            /* TODO Kill? */
             set_errno(EFAULT);
             return -1;
         }
@@ -166,7 +164,6 @@ uintptr_t ulocks_syscall(uint32_t type, void * p)
                 ulocks_semaphore_v(&(((os_semaphore_cb_t *)(p))->s));
             return (uint32_t)NULL;
         } else { /* No permission to read/write */
-            /* TODO Kill? */
             set_errno(EFAULT);
             return -1;
         }

@@ -55,7 +55,6 @@ static int sys_read(void * user_args)
 
     if (!useracc(user_args, sizeof(args), VM_PROT_READ)) {
         /* No permission to read/write */
-        /* TODO Signal/Kill? */
         set_errno(EFAULT);
         retval = -1;
         goto out;
@@ -65,7 +64,6 @@ static int sys_read(void * user_args)
     /* Buffer */
     if (!useracc(args.buf, args.nbytes, VM_PROT_WRITE)) {
         /* No permission to read/write */
-        /* TODO Signal/Kill? */
         set_errno(EFAULT);
         retval = -1;
         goto out;
@@ -93,7 +91,6 @@ static int sys_write(void * user_args)
     /* Args */
     if (!useracc(user_args, sizeof(args), VM_PROT_READ)) {
         /* No permission to read/write */
-        /* TODO Signal/Kill? */
         set_errno(EFAULT);
         retval = -1;
         goto out;
@@ -103,7 +100,6 @@ static int sys_write(void * user_args)
     /* Buffer */
     if (!useracc(args.buf, args.nbytes, VM_PROT_READ)) {
         /* No permission to read/write */
-        /* TODO Signal/Kill? */
         set_errno(EFAULT);
         retval = -1;
         goto out;
@@ -130,7 +126,6 @@ static int sys_lseek(void * user_args)
 
     if (!useracc(user_args, sizeof(args), VM_PROT_WRITE)) {
         /* No permission to read/write */
-        /* TODO Signal/Kill? */
         set_errno(EFAULT);
         return -1;
     }
@@ -279,7 +274,7 @@ static int sys_getdents(void * user_args)
 
     if (!S_ISDIR(fildes->vnode->vn_mode)) {
         count = -1;
-        set_errno(EBADF);
+        set_errno(ENOTDIR);
         goto out;
     }
 

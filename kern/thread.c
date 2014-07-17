@@ -183,7 +183,6 @@ uintptr_t thread_syscall(uint32_t type, void * p)
         struct _ds_pthread_create ds;
         if (!useracc(p, sizeof(struct _ds_pthread_create), VM_PROT_WRITE)) {
             /* No permission to read/write */
-            /* TODO Signal/Kill? */
             set_errno(EFAULT);
             return -1;
         }
@@ -199,7 +198,6 @@ uintptr_t thread_syscall(uint32_t type, void * p)
         pthread_t thread_id;
         if (!useracc(p, sizeof(pthread_t), VM_PROT_READ)) {
             /* No permission to read */
-            /* TODO Signal/Kill? */
             set_errno(EFAULT);
             return -1;
         }

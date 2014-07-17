@@ -733,7 +733,6 @@ uintptr_t sched_syscall(uint32_t type, void * p)
         pthread_t thread_id;
         if (!useracc(p, sizeof(pthread_t), VM_PROT_READ)) {
             /* No permission to read */
-            /* TODO Signal/Kill? */
             set_errno(EFAULT);
             return -1;
         }
@@ -768,7 +767,6 @@ uintptr_t sched_syscall(uint32_t type, void * p)
         pthread_t thread_id;
         if (!useracc(p, sizeof(pthread_t), VM_PROT_READ)) {
             /* No permission to read */
-            /* TODO Signal/Kill? */
             set_errno(ESRCH);
             return -1;
         }
@@ -786,7 +784,6 @@ uintptr_t sched_syscall(uint32_t type, void * p)
         uint32_t val;
         if (!useracc(p, sizeof(uint32_t), VM_PROT_READ)) {
             /* No permission to read/write */
-            /* TODO Signal/Kill? */
             set_errno(EFAULT);
             return -EFAULT;
         }
@@ -800,7 +797,6 @@ uintptr_t sched_syscall(uint32_t type, void * p)
         uint32_t arr[3];
         if (!useracc(p, sizeof(arr), VM_PROT_WRITE)) {
             /* No permission to write */
-            /* TODO Signal/Kill? */
             set_errno(EFAULT);
             return -1;
         }
