@@ -33,7 +33,6 @@
 #define KERNEL_INTERNAL
 #include <errno.h>
 #include <syscall.h>
-#include <syscalldef.h>
 #include <sys/sysctl.h>
 
 uintptr_t sysctl_syscall(uint32_t type, void * p)

@@ -104,7 +104,8 @@ typedef struct vnode {
  */
 typedef struct file {
     off_t seek_pos;     /*!< Seek pointer. */
-    int oflags;
+    int fdflags;        /*!< File descriptor flags. */
+    int oflags;         /*!< File status flags. */
     int refcount;       /*!< Reference count. */
     vnode_t * vnode;
     void * stream;      /*!< Pointer to a special file stream data or info. */
@@ -414,17 +415,20 @@ file_t * fs_fildes_ref(files_t * files, int fd, int count);
 
 /**
  * Close file open for curproc.
+ * @param fildes    is the file descriptor number.
+ * @return  0 if file was closed;
+ *          Otherwise a negative value representing errno.
  */
 int fs_fildes_close_cproc(int fildes);
 
 /**
  * Read or write to a open file of the current process.
- * @param fildes    is the file descriptor.
+ * @param fildes    is the file descriptor nuber.
  * @param buf       is the buffer.
  * @param nbytes    is the amount of bytes to be read/writted.
  * @return  Return the number of bytes actually read/written from/to the file
  *          associated with fildes; Otherwise a negative value representing
- *          -errno.
+ *          errno.
  */
 ssize_t fs_readwrite_cproc(int fildes, void * buf, size_t nbyte, int oper);
 
@@ -438,6 +442,16 @@ ssize_t fs_readwrite_cproc(int fildes, void * buf, size_t nbyte, int oper);
  *              failure.
  */
 int fs_creat_cproc(const char * path, mode_t mode, vnode_t ** result);
+
+/**
+ * Remove link to a file.
+ */
+int fs_unlink_curproc(const char * path);
+
+/**
+ * Remove link to a file relative to fd.
+ */
+int fs_unlinkat_curproc(int fd, const char * path, int flag);
 
 /**
  * Create a new directory relative to the current process.

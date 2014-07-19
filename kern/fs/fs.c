@@ -289,19 +289,6 @@ unsigned int fs_get_pfs_minor(void)
     return retval;
 }
 
-int fs_fildes_set(file_t * fildes, vnode_t * vnode, int oflags)
-{
-    if (!(fildes && vnode))
-        return -1;
-
-    mtx_init(&fildes->lock, MTX_DEF | MTX_SPIN);
-    fildes->vnode = vnode;
-    fildes->oflags = oflags;
-    fildes->refcount = 1;
-
-    return 0;
-}
-
 int chkperm_cproc(struct stat * stat, int oflags)
 {
     gid_t euid = curproc->euid;
@@ -346,6 +333,19 @@ int chkperm_cproc(struct stat * stat, int oflags)
        if (!(req_perm & stat->st_mode))
            return -EPERM;
     }
+
+    return 0;
+}
+
+int fs_fildes_set(file_t * fildes, vnode_t * vnode, int oflags)
+{
+    if (!(fildes && vnode))
+        return -1;
+
+    mtx_init(&fildes->lock, MTX_DEF | MTX_SPIN);
+    fildes->vnode = vnode;
+    fildes->oflags = oflags;
+    fildes->refcount = 1;
 
     return 0;
 }
@@ -595,10 +595,9 @@ int fs_creat_cproc(const char * pathname, mode_t mode, vnode_t ** result)
         goto out;
     }
 
-    if (parse_filepath(pathname, &path, &name)) {
-        retval = -ENOMEM;
+    retval = parse_filepath(pathname, &path, &name);
+    if (retval)
         goto out;
-    }
 
     if (fs_namei_proc(&dir, path)) {
         retval = -ENOENT;
@@ -618,6 +617,69 @@ out:
     return retval;
 }
 
+int fs_unlink_curproc(const char * path)
+{
+    char * dirpath = 0;
+    char * filename = 0;
+    struct stat stat;
+    vnode_t * dir;
+    vnode_t * fnode;
+    int err;
+
+    if (!fs_namei_proc(&fnode, path))
+        return -EEXIST;
+
+    /* unlink() is prohibited on directories for non-root users. */
+    err = fnode->vnode_ops->stat(fnode, &stat);
+    if (err)
+        goto out;
+    if (S_ISDIR(stat.st_mode) && curproc->euid != 0) {
+        err = -EPERM;
+        goto out;
+    }
+
+    err = parse_filepath(path, &dirpath, &filename);
+    if (err)
+        goto out;
+
+    /* Get vnode of the containing directory */
+    if (fs_namei_proc(&dir, dirpath)) {
+        err = -ENOENT;
+        goto out;
+    }
+
+    /* We need write access to the containing directory to allow removal of
+     * a directory entry. */
+    err = dir->vnode_ops->stat(dir, &stat);
+    if (err)
+        goto out;
+    if (chkperm_cproc(&stat, O_WRONLY)) {
+        err = -EACCES;
+        goto out;
+    }
+
+    if (!dir->vnode_ops->unlink) {
+        err = -EACCES;
+        goto out;
+    }
+
+    err = dir->vnode_ops->unlink(dir, filename,
+            strlenn(filename, FS_FILENAME_MAX));
+
+out:
+    if (dirpath)
+        kfree(dirpath);
+    if (filename)
+        kfree(filename);
+    return err;
+}
+
+int fs_unlinkat_curproc(int fd, const char * path, int flag)
+{
+    /* TODO */
+    return -ENOTSUP;
+}
+
 int fs_mkdir_curproc(const char * pathname, mode_t mode)
 {
     char * path = 0;
@@ -635,10 +697,9 @@ int fs_mkdir_curproc(const char * pathname, mode_t mode)
         goto out;
     }
 
-    if (parse_filepath(pathname, &path, &name)) {
-        retval = -ENOMEM;
+    retval = parse_filepath(pathname, &path, &name);
+    if (retval)
         goto out;
-    }
 
     if (fs_namei_proc(&dir, path)) {
         retval = -ENOENT;

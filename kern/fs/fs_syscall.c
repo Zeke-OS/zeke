@@ -39,7 +39,6 @@
 #include <proc.h>
 #include <sched.h>
 #include <ksignal.h>
-#include <syscalldef.h>
 #include <syscall.h>
 #include <errno.h>
 #include <unistd.h>
@@ -330,6 +329,8 @@ static int sys_fcntl(void * user_args)
     }
 
     switch (args.cmd) {
+    case F_DUPFD_CLOEXEC:
+        file->fdflags = FD_CLOEXEC;
     case F_DUPFD:
     {
         int new_fd;
@@ -342,10 +343,8 @@ static int sys_fcntl(void * user_args)
 
         fs_fildes_ref(curproc->files, new_fd, 1);
         retval = new_fd;
-        goto out;
+        break;
     }
-    /* TODO */
-    case F_DUPFD_CLOEXEC:
     case F_DUP2FD:
     {
         int new_fd = args.third.ival;
@@ -375,24 +374,63 @@ static int sys_fcntl(void * user_args)
         }
 
         retval = new_fd;
-        goto out;
+        break;
     }
     case F_GETFD:
+        retval = file->fdflags;
+        break;
     case F_SETFD:
+        file->fdflags = args.third.ival;
+        break;
     case F_GETFL:
+        retval = file->oflags;
+        break;
     case F_SETFL:
+        /* TODO sync will need some operations to be done */
+        file->oflags = args.third.ival & (O_APPEND | O_SYNC | O_NONBLOCK);
+        retval = 0;
+        break;
     case F_GETOWN:
+        /* TODO */
     case F_SETOWN:
+        /* TODO */
     case F_GETLK:
+        /* TODO */
     case F_SETLK:
+        /* TODO */
     case F_SETLKW:
+        /* TODO */
     default:
-        fs_fildes_ref(curproc->files, args.fd, -1);
         set_errno(EINVAL);
     }
 
 out:
     fs_fildes_ref(curproc->files, args.fd, -1);
+    return retval;
+}
+
+static int sys_unlink(void * user_args)
+{
+    struct _fs_unlink_args * args;
+    int err, retval = -1;
+
+    err = copyinstruct(user_args, (void **)(&args),
+            sizeof(struct _fs_unlink_args),
+            GET_STRUCT_OFFSETS(struct _fs_unlink_args,
+                path, path_len));
+    if (err) {
+        set_errno(-err);
+        goto out;
+    }
+
+    err = fs_unlink_curproc(args->path);
+    if (err) {
+        set_errno(-err);
+        goto out;
+    }
+
+    retval = 0;
+out:
     return retval;
 }
 
@@ -570,8 +608,7 @@ uintptr_t fs_syscall(uint32_t type, void * p)
         return -8;
 
     case SYSCALL_FS_UNLINK:
-        set_errno(ENOSYS);
-        return -9;
+        return (uintptr_t)sys_unlink(p);
 
     case SYSCALL_FS_MKDIR:
         return (uintptr_t)sys_mkdir(p);

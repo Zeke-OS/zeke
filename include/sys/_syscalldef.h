@@ -145,6 +145,15 @@ struct _fs_stat_args {
     unsigned flags;
 };
 
+/** Arguments for SYSCALL_FS_UNLINK */
+struct _fs_unlink_args {
+    int op;             /*!< Operation: 0 = unlink, 1 = unlinkat */
+    int fd;             /*!< File descriptor number. */
+    const char * path;
+    size_t path_len;
+    int flag;
+};
+
 /** Arguments for SYSCALL_FS_MKDIR */
 struct _fs_mkdir_args {
     int fd;

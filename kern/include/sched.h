@@ -43,7 +43,6 @@
 #define KERNEL_INTERNAL
 #endif
 #include <autoconf.h>
-#include <syscalldef.h>
 #include <ksignal.h>
 #include <vm/vm.h>
 #include <hal/core.h>

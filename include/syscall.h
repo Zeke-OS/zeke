@@ -41,7 +41,7 @@
 #define SYSCALL_H
 
 #include <autoconf.h>
-#include <syscalldef.h>
+#include <sys/_syscalldef.h>
 #include <../kern/include/hal/core.h>
 #if configDEVSUBSYS != 0
 #include <devtypes.h>
@@ -142,7 +142,6 @@
 
 /* Kernel scope functions */
 #ifdef KERNEL_INTERNAL
-#include "syscalldef.h"
 
 typedef uintptr_t (*kernel_syscall_handler_t)(uint32_t type,  void * p);
 

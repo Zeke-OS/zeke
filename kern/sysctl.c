@@ -54,7 +54,7 @@
 #include <klocks.h>
 #include <sys/priv.h>
 #include <vm/vm.h>
-#include <syscalldef.h>
+#include <sys/_syscalldef.h>
 #include <sys/sysctl.h>
 
 
