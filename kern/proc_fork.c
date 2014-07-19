@@ -205,6 +205,7 @@ pid_t proc_fork(pid_t pid)
         fs_fildes_ref(new_proc->files, i, 1); /* null pointer safe */
     }
 
+    /* Select PID */
     if (nprocs != 1) { /* Tecnically it would be good idea to have lock on
                         * nprocs before reading it but I think this should
                         * work fine... */

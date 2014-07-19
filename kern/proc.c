@@ -163,7 +163,7 @@ static void init_kernel_proc(void)
     /* TODO We have a hard limit of 8 files here now but this should be tunable
      * by using setrlimit() Also we may want to set this smaller at some point.
      */
-    kernel_proc->files = kmalloc(SIZEOF_FILES(8));
+    kernel_proc->files = kcalloc(1, SIZEOF_FILES(8));
     if (!kernel_proc->files) {
         panic(panic_msg);
     }
