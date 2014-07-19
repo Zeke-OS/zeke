@@ -163,6 +163,12 @@ struct _fs_mkdir_args {
     unsigned flags;
 };
 
+/** Arguments for SYSCALL_FS_RMDIR */
+struct _fs_rmdir_args {
+    const char * path;
+    size_t path_len;
+};
+
 struct _ioctl_get_args {
     int fd;
     uint32_t request;

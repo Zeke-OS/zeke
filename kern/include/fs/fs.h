@@ -383,6 +383,8 @@ unsigned int fs_get_pfs_minor(void);
  */
 int chkperm_cproc(struct stat * stat, int oflags);
 
+int chkperm_vnode_cproc(vnode_t * vnode, int oflags);
+
 /**
  * Set parameters of a file descriptor.
  * @param vnode     is a vnode.
@@ -457,6 +459,8 @@ int fs_unlinkat_curproc(int fd, const char * path, int flag);
  * Create a new directory relative to the current process.
  */
 int fs_mkdir_curproc(const char * pathname, mode_t mode);
+
+int fs_rmdir_curproc(const char * pathname);
 
 #endif /* FS_H */
 

@@ -112,8 +112,14 @@ int copyinstruct(void * usr, void ** kern, size_t bytes, ...)
 
 void freecpystruct(void * p)
 {
-    struct _cpyin_struct * token = container_of(p, struct _cpyin_struct, data);
-    llist_t * lst = token->gc_lst;
+    struct _cpyin_struct * token;
+    llist_t * lst;
+
+    if (!p)
+        return;
+
+    token = container_of(p, struct _cpyin_struct, data);
+    lst = token->gc_lst;
 
     if (lst && lst->head) {
         struct _cpyin_gc_node * node;

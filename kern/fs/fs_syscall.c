@@ -461,8 +461,28 @@ static int sys_mkdir(void * user_args)
 
     retval = 0;
 out:
-    if (args)
-        freecpystruct(args);
+    freecpystruct(args);
+    return retval;
+}
+
+static int sys_rmdir(void * user_args)
+{
+    struct _fs_rmdir_args * args = 0;
+    int err, retval = -1;
+
+    err = copyinstruct(user_args, (void **)(&args),
+            sizeof(struct _fs_rmdir_args),
+            GET_STRUCT_OFFSETS(struct _fs_rmdir_args,
+                path, path_len));
+    if (err) {
+        set_errno(-err);
+        goto out;
+    }
+
+    err = fs_rmdir_curproc(args->path);
+
+out:
+    freecpystruct(args);
     return retval;
 }
 
@@ -536,8 +556,7 @@ ready:
     copyout(&stat_buf, args->buf, sizeof(struct stat));
     retval = 0;
 out:
-    if (args)
-        freecpystruct(args);
+    freecpystruct(args);
     return retval;
 }
 
@@ -573,9 +592,7 @@ static int sys_mount(struct _fs_mount_args * user_args)
 
     retval = 0;
 out:
-    if (args)
-        freecpystruct(args);
-
+    freecpystruct(args);
     return retval;
 }
 

@@ -191,6 +191,8 @@ int fs_namei_proc(vnode_t ** result, const char * path)
     vnode_t * start;
     int oflags = 0;
 
+    /* TODO This should return -EACCES if last char is '.' */
+
     if (path[0] == '\0')
         return -EINVAL;
 
@@ -337,6 +339,20 @@ int chkperm_cproc(struct stat * stat, int oflags)
     return 0;
 }
 
+int chkperm_vnode_cproc(vnode_t * vnode, int oflags)
+{
+    struct stat stat;
+    int err;
+
+    err = vnode->vnode_ops->stat(vnode, &stat);
+    if (err)
+        return err;
+
+    err = chkperm_cproc(&stat, oflags);
+
+    return err;
+}
+
 int fs_fildes_set(file_t * fildes, vnode_t * vnode, int oflags)
 {
     if (!(fildes && vnode))
@@ -352,9 +368,8 @@ int fs_fildes_set(file_t * fildes, vnode_t * vnode, int oflags)
 
 int fs_fildes_create_cproc(vnode_t * vnode, int oflags)
 {
-    int retval;
-    struct stat stat;
     file_t * new_fildes;
+    int err;
 
     if (!vnode)
         return -EINVAL;
@@ -362,14 +377,10 @@ int fs_fildes_create_cproc(vnode_t * vnode, int oflags)
     if (curproc->euid == 0)
         goto perms_ok;
 
-    retval = vnode->vnode_ops->stat(vnode, &stat);
-    if (retval) {
-        return retval;
-    }
-
     /* Check if user perms gives access */
-    if (chkperm_cproc(&stat, oflags))
-        return -EPERM;
+    err = chkperm_vnode_cproc(vnode, oflags);
+    if (err)
+        return err;
 
 perms_ok:
     /* Check other oflags */
@@ -591,8 +602,11 @@ int fs_creat_cproc(const char * pathname, mode_t mode, vnode_t ** result)
     vnode_t * dir;
     int retval = 0;
 
-    if (!fs_namei_proc(&dir, pathname)) {
+    retval = fs_namei_proc(&dir, pathname);
+    if (retval == 0) {
         retval = -EEXIST;
+        goto out;
+    } else if (retval != -ENOENT) {
         goto out;
     }
 
@@ -649,11 +663,10 @@ int fs_unlink_curproc(const char * path, size_t path_len)
 
     /* We need write access to the containing directory to allow removal of
      * a directory entry. */
-    err = dir->vnode_ops->stat(dir, &stat);
-    if (err)
-        goto out;
-    if (chkperm_cproc(&stat, O_WRONLY)) {
-        err = -EACCES;
+    err = chkperm_vnode_cproc(dir, O_WRONLY);
+    if (err) {
+        if (err == -EPERM)
+            err = -EACCES;
         goto out;
     }
 
@@ -688,8 +701,11 @@ int fs_mkdir_curproc(const char * pathname, mode_t mode)
         goto out;
     }
 
-    if (!fs_namei_proc(&dir, pathname)) {
+    retval = fs_namei_proc(&dir, pathname);
+    if (retval == 0) {
         retval = -EEXIST;
+        goto out;
+    } else if (retval != -ENOENT) {
         goto out;
     }
 
@@ -702,8 +718,49 @@ int fs_mkdir_curproc(const char * pathname, mode_t mode)
         goto out;
     }
 
+    /* Check that we have a permission to write this dir. */
+    retval = chkperm_vnode_cproc(dir, O_WRONLY);
+    if (retval)
+        goto out;
+
     mode &= ~S_IFMT; /* Filter out file type bits */
     retval = dir->vnode_ops->mkdir(dir, name, FS_FILENAME_MAX, mode);
+
+    /* TODO Set owner */
+
+out:
+    kfree(path);
+    kfree(name);
+    return retval;
+}
+
+int fs_rmdir_curproc(const char * pathname)
+{
+    char * path = 0;
+    char * name = 0;
+    vnode_t * dir;
+    int retval;
+
+    retval = fs_namei_proc(&dir, pathname);
+    if (retval) {
+        goto out;
+    }
+
+    retval = parse_filepath(pathname, &path, &name);
+    if (retval)
+        goto out;
+
+    if (fs_namei_proc(&dir, path)) {
+        retval = -ENOENT;
+        goto out;
+    }
+
+    /* Check that we have a permission to write this dir. */
+    retval = chkperm_vnode_cproc(dir, O_WRONLY);
+    if (retval)
+        goto out;
+
+    retval = dir->vnode_ops->rmdir(dir, name, FS_FILENAME_MAX);
 
 out:
     kfree(path);
