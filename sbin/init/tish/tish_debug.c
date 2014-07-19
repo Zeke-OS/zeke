@@ -51,7 +51,7 @@ static void thread_stat(void);
 
 static char invalid_arg[] = "Invalid argument\n";
 
-void tish_debug(char ** args)
+static void debug(char ** args)
 {
     char * arg = kstrtok(0, DELIMS, args);
 
@@ -134,6 +134,7 @@ void tish_debug(char ** args)
         errno = EINVAL;
     }
 }
+TISH_CMD(debug, "debug");
 
 static void create_debug_thread(void)
 {

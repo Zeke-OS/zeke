@@ -39,7 +39,7 @@
 #include "tish.h"
 
 
-void tish_mount(char ** args)
+static void tish_mount(char ** args)
 {
     char * src = kstrtok(0, DELIMS, args);
     char * dest = kstrtok(0, DELIMS, args);
@@ -52,3 +52,4 @@ void tish_mount(char ** args)
 
     mount(src, dest, fs, 0, "");
 }
+TISH_CMD(tish_mount, "mount");

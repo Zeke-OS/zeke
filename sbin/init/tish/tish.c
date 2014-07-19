@@ -39,43 +39,7 @@
 #include <syscall.h>
 #include "tish.h"
 
-extern void tish_sysctl_cmd(char ** args);
-extern void tish_uname(char ** args);
-extern void tish_ikut(char ** args);
-extern void tish_debug(char ** args);
-extern void tish_ls(char ** args);
-extern void tish_touch(char ** args);
-extern void tish_mkdir(char ** args);
-extern void tish_mount(char ** args);
-
-struct builtin {
-    void (*fn)(char ** args);
-    char name[10];
-};
-
-/* Builtins */
-
-static void cd(char ** args);
-static void uptime(char ** args);
-static void reg(char ** args);
-static void tish_exit(char ** args);
-static void help(char ** args);
-
-struct builtin cmdarr[] = {
-        {cd, "cd"},
-        {tish_sysctl_cmd, "sysctl"},
-        {tish_uname, "uname"},
-        {tish_ikut, "ikut"},
-        {uptime, "uptime"},
-        {tish_ls, "ls"},
-        {tish_touch, "touch"},
-        {tish_mkdir, "mkdir"},
-        {tish_mount, "mount"},
-        {reg, "reg"},
-        {tish_debug, "debug"},
-        {tish_exit, "exit"},
-        {help, "help"}
-};
+SET_DECLARE(tish_cmd, struct tish_builtin);
 
 int tish_eof;
 
@@ -84,7 +48,7 @@ static char * gline(char * str, int num);
 
 int tish(void)
 {
-    char * cmd;
+    char * cmd_name;
     char line[MAX_LEN];
     char * strtok_lasts;
     int err;
@@ -94,12 +58,13 @@ int tish(void)
         if (!gline(line, MAX_LEN))
             break;
 
-        if ((cmd = kstrtok(line, DELIMS, &strtok_lasts))) {
+        if ((cmd_name = kstrtok(line, DELIMS, &strtok_lasts))) {
+            struct tish_builtin ** cmd;
             errno = 0;
 
-            for (int i = 0; i < num_elem(cmdarr); i++) {
-                if (!strcmp(cmd, cmdarr[i].name)) {
-                    cmdarr[i].fn(&strtok_lasts);
+            SET_FOREACH(cmd, tish_cmd) {
+                if(!strcmp(cmd_name, (*cmd)->name)) {
+                    (*cmd)->fn(&strtok_lasts);
                     goto get_errno;
                 }
             }
@@ -120,18 +85,6 @@ get_errno:
     return 0;
 }
 
-static void cd(char ** args)
-{
-    //char * arg = kstrtok(0, DELIMS, args);
-    puts("cd not implemented\n");
-#if 0
-    if (!arg)
-        fprintf(stderr, "cd missing argument.\n");
-    else
-        chdir(arg);
-#endif
-}
-
 static void uptime(char ** args)
 {
     uint32_t loads[3];
@@ -142,6 +95,7 @@ static void uptime(char ** args)
     ksprintf(buf, sizeof(buf), "load average: %u, %u, %u\n", loads[0], loads[1], loads[2]);
     puts(buf);
 }
+TISH_CMD(uptime, "uptime");
 
 static void reg(char ** args)
 {
@@ -162,22 +116,26 @@ static void reg(char ** args)
 
     puts(buf);
 }
+TISH_CMD(reg, "reg");
 
 static void tish_exit(char ** args)
 {
     tish_eof = 1;
 }
+TISH_CMD(tish_exit, "exit");
 
 static void help(char ** args)
 {
-    char buf[20];
+    struct tish_builtin ** cmd;
 
-    for (int i = 0; i < num_elem(cmdarr); i++) {
-        ksprintf(buf, sizeof(buf), "%s ", cmdarr[i].name);
-        puts(buf);
+    SET_FOREACH(cmd, tish_cmd) {
+        puts((*cmd)->name);
+        puts(" ");
     }
+
     puts("\n");
 }
+TISH_CMD(help, "help");
 
 /* TODO Until we have some actual standard IO subsystem working the following
  * is the best hack I can think of. */

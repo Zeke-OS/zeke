@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    tish_dir.c
+ * @file    tish_fs.c
  * @author  Olli Vanhoja
- * @brief   Directory manipulation commands for tish/Zeke.
+ * @brief   File system manipulation commands for tish/Zeke.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -43,7 +43,20 @@
 
 //static char invalid_arg[] = "Invalid argument\n";
 
-void tish_ls(char ** args)
+static void cd(char ** args)
+{
+    //char * arg = kstrtok(0, DELIMS, args);
+    puts("cd not implemented\n");
+#if 0
+    if (!arg)
+        fprintf(stderr, "cd missing argument.\n");
+    else
+        chdir(arg);
+#endif
+}
+TISH_CMD(cd, "cd");
+
+static void ls(char ** args)
 {
     char * path = kstrtok(0, DELIMS, args);
     int fildes, count;
@@ -77,8 +90,9 @@ void tish_ls(char ** args)
 
     close(fildes);
 }
+TISH_CMD(ls, "ls");
 
-void tish_touch(char ** args)
+static void touch(char ** args)
 {
     int fildes;
     char * path = kstrtok(0, DELIMS, args);
@@ -87,10 +101,12 @@ void tish_touch(char ** args)
 
     close(fildes);
 }
+TISH_CMD(touch, "touch");
 
-void tish_mkdir(char ** args)
+static void tish_mkdir(char ** args)
 {
     char * path = kstrtok(0, DELIMS, args);
 
     mkdir(path, S_IRWXU | S_IRGRP | S_IXGRP);
 }
+TISH_CMD(tish_mkdir, "mkdir");

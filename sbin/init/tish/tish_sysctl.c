@@ -47,7 +47,7 @@ static void getset_ivalue(int * oid, int len, size_t oval_len,
         char * nval, size_t nval_len);
 static void print_mib_name(int * mib, int len);
 
-void tish_sysctl_cmd(char ** args)
+static void tish_sysctl_cmd(char ** args)
 {
     char * arg = kstrtok(0, DELIMS, args);
 
@@ -59,6 +59,7 @@ void tish_sysctl_cmd(char ** args)
         getset_parm(arg);
     }
 }
+TISH_CMD(tish_sysctl_cmd, "sysctl");
 
 static void getset_parm(char * arg)
 {
@@ -180,7 +181,7 @@ static void print_mib_name(int * mib, int len)
     puts(buf);
 }
 
-void tish_uname(char ** args)
+static void tish_uname(char ** args)
 {
     char * arg = kstrtok(0, DELIMS, args);
     int mib[2];
@@ -211,8 +212,9 @@ void tish_uname(char ** args)
     ksprintf(buf1, sizeof(buf1), "%s\n", buf2);
     puts(buf1);
 }
+TISH_CMD(tish_uname, "uname");
 
-void tish_ikut(char ** arg)
+static void tish_ikut(char ** arg)
 {
     char buf[80];
     int mib_test[5];
@@ -246,3 +248,4 @@ void tish_ikut(char ** arg)
     ksprintf(buf, sizeof(buf), "errno = %i\n", errno);
     puts(buf);
 }
+TISH_CMD(tish_ikut, "ikut");

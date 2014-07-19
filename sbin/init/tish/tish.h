@@ -34,12 +34,25 @@
 #ifndef TISH_H
 #define TISH_H
 
+#include <sys/linker_set.h>
+
 #define MAX_LEN 80
 #define DELIMS  " \t\r\n"
 
 /* TODO Remove */
 #define fprintf(stream, str) write(STDOUT_FILENO, str, strlenn(str, MAX_LEN) + 1)
 #define puts(str) fprintf(stderr, str)
+
+struct tish_builtin {
+    char name[10];
+    void (*fn)(char ** args);
+};
+
+#define TISH_CMD(fun, cmdnamestr)           \
+    static struct tish_builtin fun##_st = { \
+        .name = cmdnamestr, .fn = fun       \
+    };                                      \
+    DATA_SET(tish_cmd, fun##_st)
 
 int tish(void);
 
