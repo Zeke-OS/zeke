@@ -110,3 +110,11 @@ static void tish_mkdir(char ** args)
     mkdir(path, S_IRWXU | S_IRGRP | S_IXGRP);
 }
 TISH_CMD(tish_mkdir, "mkdir");
+
+static void tish_unlink(char ** args)
+{
+    char * path = kstrtok(0, DELIMS, args);
+
+    unlink(path);
+}
+TISH_CMD(tish_unlink, "unlink");

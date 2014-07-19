@@ -180,6 +180,8 @@ ssize_t write(int fildes, const void * buf, size_t nbyte);
 off_t lseek(int fildes, off_t offset, int whence);
 int close(int fildes);
 
+int unlink(const char * path);
+
 /**
  * Return a new file descriptor that is the lowest number available.
  * The new file descriptor will refer to the same open file as the original file

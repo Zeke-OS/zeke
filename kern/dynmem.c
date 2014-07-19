@@ -202,8 +202,8 @@ void dynmem_free_region(void * addr)
     uint32_t i, j, rc;
 
     if (!validate_addr(addr, 1)) {
-        char buf[80];
-        ksprintf(buf, sizeof(buf), "Invalid address; dynmem_free_region(): %x",
+        char buf[40];
+        ksprintf(buf, sizeof(buf), "Invalid address: %x",
                 (uint32_t)addr);
         KERROR(KERROR_ERR, buf);
         return;

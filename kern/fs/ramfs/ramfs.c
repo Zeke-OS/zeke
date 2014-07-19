@@ -587,7 +587,7 @@ int ramfs_readdir(vnode_t * dir, struct dirent * d)
                                * architectures. (i.e. len of size_t) */
 
     dh = dh_iter_next(&it);
-    if (dh == 0) {
+    if (dh == 0 || dh->dh_size == 0) {
         retval = -2; /* End of dir. */
         goto out;
     }

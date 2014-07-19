@@ -423,7 +423,13 @@ static int sys_unlink(void * user_args)
         goto out;
     }
 
-    err = fs_unlink_curproc(args->path);
+    if (args->op != 0) {
+        set_errno(ENOTSUP);
+        goto out;
+    }
+
+
+    err = fs_unlink_curproc(args->path, args->path_len);
     if (err) {
         set_errno(-err);
         goto out;

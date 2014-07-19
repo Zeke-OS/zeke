@@ -617,7 +617,7 @@ out:
     return retval;
 }
 
-int fs_unlink_curproc(const char * path)
+int fs_unlink_curproc(const char * path, size_t path_len)
 {
     char * dirpath = 0;
     char * filename = 0;
@@ -626,7 +626,7 @@ int fs_unlink_curproc(const char * path)
     vnode_t * fnode;
     int err;
 
-    if (!fs_namei_proc(&fnode, path))
+    if (fs_namei_proc(&fnode, path))
         return -EEXIST;
 
     /* unlink() is prohibited on directories for non-root users. */
@@ -663,8 +663,7 @@ int fs_unlink_curproc(const char * path)
         goto out;
     }
 
-    err = dir->vnode_ops->unlink(dir, filename,
-            strlenn(filename, FS_FILENAME_MAX));
+    err = dir->vnode_ops->unlink(dir, filename, path_len);
 
 out:
     if (dirpath)

@@ -189,22 +189,20 @@ int dh_lookup(dh_table_t * dir, const char * name, size_t name_len,
     const size_t h = hash_fname(name, name_len);
     dh_dirent_t * dea;
     dh_dirent_t * dent;
-    int retval = 0;
+    int retval = -ENOENT;
 
     dea = (*dir)[h];
-    if (dea == 0) {
-        retval = -1;
+    if (dea == 0)
         goto out;
-    }
 
     dent = find_node(dea, name, name_len + 1);
-    if (dent == 0) {
-        retval = -2;
+    if (dent == 0)
         goto out;
-    }
 
     if (vnode_num)
         *vnode_num = dent->dh_ino;
+
+    retval = 0;
 out:
     return retval;
 }
@@ -349,7 +347,7 @@ static int rm_node(dh_dirent_t ** chain, const char * name, size_t name_len)
 {
     name_len = strlenn(name, name_len);
     chain_info_t chinfo = find_last_node(*chain);
-    size_t old_offset = 0, new_offset = 0, prev_noffset;
+    size_t old_offset = 0, new_offset = 0, prev_noffset = 0;
     dh_dirent_t * node;
     dh_dirent_t * new_chain;
 
@@ -359,6 +357,9 @@ static int rm_node(dh_dirent_t ** chain, const char * name, size_t name_len)
     new_chain = kcalloc(1, chinfo.i_size);
     if (!new_chain)
         return -ENOMEM;
+
+    /* Initial empty first entry. */
+    *get_dirent(new_chain, 0) = (dh_dirent_t){ .dh_size = 0 };
 
     do {
         node = get_dirent(*chain, old_offset);

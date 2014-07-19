@@ -31,6 +31,7 @@
  *******************************************************************************
 */
 
+#include <kstring.h> /* TODO */
 #include <syscall.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -101,4 +102,15 @@ int dup(int fildes)
 int dup2(int fildes, int fildes2)
 {
     return fcntl(fildes, F_DUP2FD, fildes2);
+}
+
+int unlink(const char * path)
+{
+    struct _fs_unlink_args args = {
+        .op = 0,
+        .path = path,
+        .path_len = strlenn(path, 4096) /* TODO */
+    };
+
+    return (int)syscall(SYSCALL_FS_UNLINK, &args);
 }

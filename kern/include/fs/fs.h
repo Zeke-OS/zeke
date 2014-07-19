@@ -446,7 +446,7 @@ int fs_creat_cproc(const char * path, mode_t mode, vnode_t ** result);
 /**
  * Remove link to a file.
  */
-int fs_unlink_curproc(const char * path);
+int fs_unlink_curproc(const char * path, size_t path_len);
 
 /**
  * Remove link to a file relative to fd.
