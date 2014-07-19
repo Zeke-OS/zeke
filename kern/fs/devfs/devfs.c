@@ -227,7 +227,7 @@ ssize_t dev_write(file_t * file, const void * vbuf, size_t count)
                                     &buf[buf_offset], to_write, oflags);
             if (ret < 0) {
                 tries--;
-                if(tries <= 0)
+                if (tries <= 0)
                     return (buf_offset > 0) ? buf_offset : ret;
             } else {
                 break;

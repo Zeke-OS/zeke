@@ -55,7 +55,9 @@ static void kerror_uart_init(void)
 
     kerror_uart = uart_getport(0);
     kerror_uart->conf = conf;
-    kerror_uart->init(kerror_uart);
+    /* TODO currently there is a bug in init function so we don't want to break
+     * a working UART connection. */
+    //kerror_uart->init(kerror_uart);
 }
 
 static void kerror_uart_puts(const char * str)

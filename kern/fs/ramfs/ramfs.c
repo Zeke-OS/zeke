@@ -208,7 +208,7 @@ int ramsfs_mount(const char * source, uint32_t mode,
     /* Allocate memory for the inode lookup table.
      * kcalloc is used here to clear all inode pointers.
      */
-    ramfs_sb->ramfs_iarr = (ramfs_inode_t **)kcalloc(RAMFS_INODE_POOL_SIZE,
+    ramfs_sb->ramfs_iarr = kcalloc(RAMFS_INODE_POOL_SIZE,
             sizeof(ramfs_inode_t *));
     if (ramfs_sb->ramfs_iarr == 0) {
         retval = -ENOMEM;
@@ -217,7 +217,7 @@ int ramsfs_mount(const char * source, uint32_t mode,
     ramfs_sb->ramfs_iarr_size = 0;
 
     /* Initialize the inode pool. */
-    if(inpool_init(&(ramfs_sb->ramfs_ipool), &(ramfs_sb->sbn.sbl_sb),
+    if (inpool_init(&(ramfs_sb->ramfs_ipool), &(ramfs_sb->sbn.sbl_sb),
                 ramfs_raw_create_inode, RAMFS_INODE_POOL_SIZE)) {
         retval = -ENOMEM;
         goto free_ramfs_sb;
@@ -310,7 +310,8 @@ int ramfs_delete_vnode(vnode_t * vnode)
         /* TODO Clear mutexes, queues etc. */
         destroy_inode_data(inode);
         vn_tmp = &(inode->in_vnode);
-        vn_tmp = inpool_insert(&(get_rfsb_of_sb(vn_tmp->sb)->ramfs_ipool), vn_tmp);
+        vn_tmp = inpool_insert(&(get_rfsb_of_sb(vn_tmp->sb)->ramfs_ipool),
+                vn_tmp);
         if (vn_tmp != 0) { /* Try to recycle this inode */
             destroy_inode(get_inode_of_vnode(vn_tmp));
         }
@@ -326,11 +327,11 @@ ssize_t ramfs_write(file_t * file, const void * buf, size_t count)
     /* TODO Support for at least S_IFBLK, S_IFCHR, S_IFIFO, S_IFSOCK,
      * possibly a wrapper or callback? */
     switch (file->vnode->vn_mode & S_IFMT) {
-        case S_IFREG: /* File is a regular file. */
-            bytes_wr = ramfs_wr_regular(file->vnode, &(file->seek_pos), buf, count);
-            break;
-        default: /* File type not supported. */
-            return -EOPNOTSUPP;
+    case S_IFREG: /* File is a regular file. */
+        bytes_wr = ramfs_wr_regular(file->vnode, &(file->seek_pos), buf, count);
+        break;
+    default: /* File type not supported. */
+        return -EOPNOTSUPP;
     }
 
     return bytes_wr;
@@ -342,13 +343,13 @@ ssize_t ramfs_read(file_t * file, void * buf, size_t count)
 
     /* TODO Support some other file types? */
     switch (file->vnode->vn_mode & S_IFMT) {
-        case S_IFREG: /* File is a regular file. */
-            bytes_rd = ramfs_rd_regular(file->vnode, &(file->seek_pos), buf, count);
-            break;
-        case S_IFDIR:
-            return -EISDIR;
-        default: /* File type not supported. */
-            return -EOPNOTSUPP;
+    case S_IFREG: /* File is a regular file. */
+        bytes_rd = ramfs_rd_regular(file->vnode, &(file->seek_pos), buf, count);
+        break;
+    case S_IFDIR:
+        return -EISDIR;
+    default: /* File type not supported. */
+        return -EOPNOTSUPP;
     }
 
     return bytes_rd;
@@ -397,7 +398,7 @@ int ramfs_create(vnode_t * dir, const char * name, size_t name_len, mode_t mode,
     //vnode->mutex = /* TODO other flags etc. */
 
     /* Create a directory entry. */
-    if(ramfs_link(dir, vnode, name, name_len)) {
+    if (ramfs_link(dir, vnode, name, name_len)) {
         /* Hard link creation failed. */
         destroy_inode(inode);
         retval = -EMLINK;
@@ -545,8 +546,10 @@ int ramfs_mkdir(vnode_t * dir,  const char * name, size_t name_len, mode_t mode)
     /* TODO set times */
 
     /* Create links according to POSIX. */
-    ramfs_link(&(inode_new->in_vnode), &(inode_new->in_vnode), RFS_DOT, sizeof(RFS_DOT) - 1);
-    ramfs_link(&(inode_new->in_vnode), &(inode_dir->in_vnode), RFS_DOTDOT, sizeof(RFS_DOTDOT) - 1);
+    ramfs_link(&(inode_new->in_vnode), &(inode_new->in_vnode), RFS_DOT,
+            sizeof(RFS_DOT) - 1);
+    ramfs_link(&(inode_new->in_vnode), &(inode_dir->in_vnode), RFS_DOTDOT,
+            sizeof(RFS_DOTDOT) - 1);
 
     /* Insert inode to the inode lookup table of its superblock. */
     insert_inode(inode_new); /* This can't fail on mount. */
@@ -764,7 +767,7 @@ vnode_t * ramfs_raw_create_inode(const fs_superblock_t * sb, ino_t * num)
     ramfs_inode_t * inode;
     ramfs_sb_t * ramfs_sb;
 
-    inode = (ramfs_inode_t *)kmalloc(sizeof(ramfs_inode_t));
+    inode = kmalloc(sizeof(ramfs_inode_t));
     if (inode == 0)
         return 0;
 
@@ -812,19 +815,19 @@ static void destroy_inode_data(ramfs_inode_t * inode)
 {
     /* TODO Other types */
     switch (inode->in_vnode.vn_mode & S_IFMT) {
-        case S_IFREG: /* File is a regular file. */
-            /* Free all data blocks. */
-            ramfs_set_filesize(inode, 0);
-            break;
-        case S_IFDIR:
-            /* Free dhtable entries and dhtable. */
-            if (inode->in.dir) {
-                dh_destroy_all(inode->in.dir);
-                kfree(inode->in.dir);
-            }
-            break;
-        default: /* File type not supported or nothing to free. */
-            break;
+    case S_IFREG: /* File is a regular file. */
+        /* Free all data blocks. */
+        ramfs_set_filesize(inode, 0);
+        break;
+    case S_IFDIR:
+        /* Free dhtable entries and dhtable. */
+        if (inode->in.dir) {
+            dh_destroy_all(inode->in.dir);
+            kfree(inode->in.dir);
+        }
+        break;
+    default: /* File type not supported or nothing to free. */
+        break;
     }
 }
 
@@ -850,7 +853,8 @@ static int insert_inode(ramfs_inode_t * inode)
         tmp_iarr = (ramfs_inode_t **)krealloc(ramfs_sb->ramfs_iarr,
                 (ino_t)(ramfs_sb->ramfs_iarr_size) * sizeof(ramfs_inode_t *));
         if (tmp_iarr == 0) {
-            retval = -ENOSPC; /* Can't allocate more memory for inode lookup table */
+            /* Can't allocate more memory for inode lookup table */
+            retval = -ENOSPC;
             goto out;
         }
         ramfs_sb->ramfs_iarr = tmp_iarr; /* reallocate ok. */
@@ -894,7 +898,7 @@ static ssize_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
         dp = get_dp_by_offset(inode, *offset + bytes_wr);
         if (dp.p == 0) { /* Extend the file first. */
             /* Extend the file to the final size if possible. */
-            if(ramfs_set_filesize(inode, inode->in_blocks * blksize
+            if (ramfs_set_filesize(inode, inode->in_blocks * blksize
                         + *offset + (off_t)count)) {
                 break; /* Failed to extend the file. */
             } else { /* Try again to get a block. */
@@ -971,7 +975,8 @@ static int ramfs_set_filesize(ramfs_inode_t * file, off_t new_size)
      * Some size_t casts to speed up the computation as ramfs doesn't support
      * larger files anyway. */
     new_size = new_size +
-        (off_t)((size_t)blksize - (((size_t)new_size - 1) & ((size_t)blksize - 1)) - 1);
+        (off_t)((size_t)blksize -
+                (((size_t)new_size - 1) & ((size_t)blksize - 1)) - 1);
 
     if (new_size == old_size) {
         /* Same as old */

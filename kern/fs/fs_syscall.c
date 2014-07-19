@@ -227,8 +227,7 @@ static int sys_open(void * user_args)
     }
 
 out:
-    if (name)
-        kfree(name);
+    kfree(name);
     return retval;
 }
 

@@ -263,7 +263,7 @@ fs_superblock_t * fs_next_sb(sb_iterator_t * it)
 
     it->curr_sb = it->curr_sb->next;
     if (it->curr_sb == 0) {
-        while(1) {
+        while (1) {
             it->curr_fs = it->curr_fs->next;
             if (it->curr_fs == 0)
                 break;
@@ -282,7 +282,7 @@ out:
  */
 unsigned int fs_get_pfs_minor(void)
 {
-    unsigned int static pfs_minor = 0;
+    static unsigned int pfs_minor = 0;
     unsigned int retval = pfs_minor;
 
     pfs_minor++;
@@ -315,10 +315,10 @@ int chkperm_cproc(struct stat * stat, int oflags)
             req_perm |= S_IWUSR;
         if (stat->st_gid == egid)
             req_perm |= S_IWGRP;
-       req_perm |= S_IWOTH;
+        req_perm |= S_IWOTH;
 
-       if (!(req_perm & stat->st_mode))
-           return -EPERM;
+        if (!(req_perm & stat->st_mode))
+            return -EPERM;
     }
 
     if ((oflags & O_EXEC) || (S_ISDIR(stat->st_mode))) {
@@ -328,10 +328,10 @@ int chkperm_cproc(struct stat * stat, int oflags)
             req_perm |= S_IXUSR;
         if (stat->st_gid == egid)
             req_perm |= S_IXGRP;
-       req_perm |= S_IXOTH;
+        req_perm |= S_IXOTH;
 
-       if (!(req_perm & stat->st_mode))
-           return -EPERM;
+        if (!(req_perm & stat->st_mode))
+            return -EPERM;
     }
 
     return 0;
@@ -443,6 +443,7 @@ file_t * fs_fildes_ref(files_t * files, int fd, int count)
 
     if (!files || (fd >= files->count))
         return 0;
+
     fildes = files->fd[fd];
     if (!fildes)
         return 0;
@@ -469,7 +470,7 @@ file_t * fs_fildes_ref(files_t * files, int fd, int count)
 
 int fs_fildes_close_cproc(int fildes)
 {
-    if(!fs_fildes_ref(curproc->files, fildes, 0)) {
+    if (!fs_fildes_ref(curproc->files, fildes, 0)) {
         return -EBADF;
     }
 
@@ -610,10 +611,8 @@ int fs_creat_cproc(const char * pathname, mode_t mode, vnode_t ** result)
     retval = dir->vnode_ops->create(dir, name, FS_FILENAME_MAX, mode, result);
 
 out:
-    if (path)
-        kfree(path);
-    if (name)
-        kfree(name);
+    kfree(path);
+    kfree(name);
     return retval;
 }
 
@@ -666,10 +665,8 @@ int fs_unlink_curproc(const char * path, size_t path_len)
     err = dir->vnode_ops->unlink(dir, filename, path_len);
 
 out:
-    if (dirpath)
-        kfree(dirpath);
-    if (filename)
-        kfree(filename);
+    kfree(dirpath);
+    kfree(filename);
     return err;
 }
 
@@ -709,9 +706,7 @@ int fs_mkdir_curproc(const char * pathname, mode_t mode)
     retval = dir->vnode_ops->mkdir(dir, name, FS_FILENAME_MAX, mode);
 
 out:
-    if (path)
-        kfree(path);
-    if (name)
-        kfree(name);
+    kfree(path);
+    kfree(name);
     return retval;
 }

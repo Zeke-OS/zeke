@@ -272,6 +272,9 @@ static int valid_addr(void * p)
         && get_mblock(p)->signature == KM_SIGNATURE_VALID)
     int retval = 0;
 
+    if (!p)
+        return 0;
+
     /* TODO what if get_mblock returns invalid address? */
     if (kmalloc_base) { /* If base is not set it's impossible that we would have
                          * any allocated blocks. */

@@ -96,8 +96,7 @@ static int sys_ioctl(void * user_args)
         copyout(ioargs, args.arg, args.arg_len);
 
 out:
-    if (ioargs)
-        kfree(ioargs);
+    kfree(ioargs);
     fs_fildes_ref(curproc->files, args.fd, -1);
     return retval;
 }

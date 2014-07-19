@@ -51,7 +51,7 @@ int inpool_init(inpool_t * pool, fs_superblock_t * sb,
     int retval = 0;
 
     /* Create the pool array. */
-    pool->ip_arr = (vnode_t **)kcalloc(max, sizeof(void *));
+    pool->ip_arr = kcalloc(max, sizeof(void *));
     if (pool->ip_arr == 0) { /* OOM */
         retval = -1;
         goto out;

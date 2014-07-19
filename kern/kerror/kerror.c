@@ -96,6 +96,13 @@ void kerror_print_macro(char level, const char * where, const char * msg)
 
     ksprintf(buf, sizeof(buf), "%c:%s%s\n", level, where, msg);
     kputs(buf);
+
+#if 0
+    /* TODO Temp hack */
+    int i = 0;
+    while (buf[i] != '\0')
+        bcm2835_uart_uputc(NULL, buf[i++]);
+#endif
 }
 
 static void nolog_puts(const char * str)
