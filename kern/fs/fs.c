@@ -630,6 +630,46 @@ out:
     return retval;
 }
 
+int fs_link_curproc(const char * path1, size_t path1_len,
+        const char * path2, size_t path2_len)
+{
+    char * dirpath = 0;
+    char * filename = 0;
+    vnode_t * dir;
+    vnode_t * fnode;
+    int err;
+
+    err = fs_namei_proc(&fnode, path1);
+    if (err)
+        return err;
+
+    err = fs_namei_proc(&fnode, path2);
+    if (err == 0) {
+        err = -EEXIST;
+        goto out;
+    } else if (retval != -ENOENT) {
+        goto out;
+    }
+
+    err = parse_filepath(path, &dirpath, &filename);
+    if (err)
+        goto out;
+
+    /* Get the vnode of the containing directory */
+    if (fs_namei_proc(&dir, dirpath)) {
+        err = -ENOENT;
+        goto out;
+    }
+
+    /* TODO */
+
+    /* Get the vnode of the target directory */
+
+    /* Check write permission to the target directory and source vnode */
+
+    //(*link)(vnode_t * dir, vnode_t * vnode, const char * name, size_t name_len)
+}
+
 int fs_unlink_curproc(const char * path, size_t path_len)
 {
     char * dirpath = 0;
@@ -639,8 +679,10 @@ int fs_unlink_curproc(const char * path, size_t path_len)
     vnode_t * fnode;
     int err;
 
-    if (fs_namei_proc(&fnode, path))
-        return -EEXIST;
+    /* TODO Incorrect?? */
+    err = fs_namei_proc(&fnode, path);
+    if (err)
+        return err;
 
     /* unlink() is prohibited on directories for non-root users. */
     err = fnode->vnode_ops->stat(fnode, &stat);
@@ -655,7 +697,7 @@ int fs_unlink_curproc(const char * path, size_t path_len)
     if (err)
         goto out;
 
-    /* Get vnode of the containing directory */
+    /* Get the vnode of the containing directory */
     if (fs_namei_proc(&dir, dirpath)) {
         err = -ENOENT;
         goto out;
