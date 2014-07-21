@@ -46,12 +46,12 @@
 #include <dirent.h>
 #include <klocks.h>
 
-#define FS_FLAG_INIT        0x01 /*!< File system initialized. */
-#define FS_FLAG_FAIL        0x08 /*!< File system has failed. */
+#define FS_FLAG_INIT    0x01 /*!< File system initialized. */
+#define FS_FLAG_FAIL    0x08 /*!< File system has failed. */
 
-#define FS_FILENAME_MAX     255 /*!< Maximum file name length. */
-#define PATH_MAX            4096 /* TODO Should be in limits.h? */
-#define PATH_DELIMS "/"
+#define NAME_MAX        255 /*!< Maximum file name length. */
+#define PATH_MAX        4096 /* Maximum path length. */
+#define PATH_DELIMS     "/"
 
 /* Some macros for use with flags *********************************************/
 /**
@@ -444,6 +444,12 @@ ssize_t fs_readwrite_cproc(int fildes, void * buf, size_t nbyte, int oper);
  *              failure.
  */
 int fs_creat_cproc(const char * path, mode_t mode, vnode_t ** result);
+
+/**
+ * Create a new link to existing vnode.
+ */
+int fs_link_curproc(const char * path1, size_t path1_len,
+    const char * path2, size_t path2_len);
 
 /**
  * Remove link to a file.

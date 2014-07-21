@@ -41,6 +41,7 @@
 #include <ksignal.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <sys/sysctl.h>
 #include <fs/mbr.h>
 #include <fs/fs.h>
 
@@ -51,6 +52,18 @@ mtx_t fslock;
 #define FS_LOCK_INIT()  mtx_init(&fslock, MTX_DEF | MTX_SPIN)
 
 static int parse_filepath(const char * pathname, char ** path, char ** name);
+
+SYSCTL_NODE(, CTL_VFS, vfs, CTLFLAG_RW, 0,
+        "File system");
+
+SYSCTL_DECL(_vfs_limits);
+SYSCTL_NODE(_vfs, OID_AUTO, limits, CTLFLAG_RD, 0,
+        "File system limits and information");
+
+SYSCTL_INT(_vfs_limits, OID_AUTO, name_max, CTLFLAG_RD, 0, NAME_MAX,
+        "Limit for the length of a file name component.");
+SYSCTL_INT(_vfs_limits, OID_AUTO, path_max, CTLFLAG_RD, 0, PATH_MAX,
+        "Limit for for length of an entire file name.");
 
 /**
  * Linked list of registered file systems.
@@ -142,7 +155,7 @@ int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str, int oflags
 
 again:  /* Get vnode by name in this dir. */
         retval = (*result)->vnode_ops->lookup(*result, nodename,
-                strlenn(nodename, FS_FILENAME_MAX) + 1, &vnode);
+                strlenn(nodename, NAME_MAX) + 1, &vnode);
         if (retval) {
             goto out;
         }
@@ -551,20 +564,22 @@ static int parse_filepath(const char * pathname, char ** path, char ** name)
 {
     char * path_act;
     char * fname;
-    size_t i = strlenn(pathname, PATH_MAX);
+    size_t i;
 
-    path_act = kmalloc(PATH_MAX);
+    /* TODO Fail to PATH_MAX and NAME_MAX => ENAMETOOLONG */
+
+    path_act = kstrdup(pathname, PATH_MAX);
     if (!path_act) {
         return -ENOMEM;
     }
 
-    fname = kmalloc(FS_FILENAME_MAX);
+    fname = kmalloc(NAME_MAX);
     if (!fname) {
         kfree(path_act);
         return -ENOMEM;
     }
 
-    strncpy(path_act, pathname, PATH_MAX);
+    i = strlenn(pathname, PATH_MAX);
     while (path_act[i] != '/') {
         path_act[i--] = '\0';
         if ((i == 0) &&
@@ -578,7 +593,7 @@ static int parse_filepath(const char * pathname, char ** path, char ** name)
         }
     }
 
-    for (int j = 0; j < FS_FILENAME_MAX;) {
+    for (int j = 0; j < NAME_MAX;) {
         i++;
         if (pathname[i] == '/')
             continue;
@@ -622,7 +637,7 @@ int fs_creat_cproc(const char * pathname, mode_t mode, vnode_t ** result)
     /* We know that the returned vnode is a dir so we can just call mknod() */
     *result = 0;
     mode &= ~S_IFMT; /* Filter out file type bits */
-    retval = dir->vnode_ops->create(dir, name, FS_FILENAME_MAX, mode, result);
+    retval = dir->vnode_ops->create(dir, name, NAME_MAX, mode, result);
 
 out:
     kfree(path);
@@ -633,41 +648,49 @@ out:
 int fs_link_curproc(const char * path1, size_t path1_len,
         const char * path2, size_t path2_len)
 {
-    char * dirpath = 0;
-    char * filename = 0;
-    vnode_t * dir;
-    vnode_t * fnode;
+    char * targetpath = 0;
+    char * targetname = 0;
+    vnode_t * vn_src;
+    vnode_t * vn_dir;
     int err;
 
-    err = fs_namei_proc(&fnode, path1);
+    /* Get the source vnode */
+    err = fs_namei_proc(&vn_src, path1);
     if (err)
         return err;
 
-    err = fs_namei_proc(&fnode, path2);
-    if (err == 0) {
-        err = -EEXIST;
-        goto out;
-    } else if (retval != -ENOENT) {
-        goto out;
-    }
-
-    err = parse_filepath(path, &dirpath, &filename);
+    /* Check write access to the source vnode */
+    err = chkperm_vnode_cproc(vn_src, O_WRONLY);
     if (err)
         goto out;
 
-    /* Get the vnode of the containing directory */
-    if (fs_namei_proc(&dir, dirpath)) {
-        err = -ENOENT;
+    /* Get vnode of the target directory */
+    err = parse_filepath(path2, &targetpath, &targetname);
+    if (err)
+        goto out;
+    err = fs_namei_proc(&vn_dir, targetpath);
+    if (err)
+        goto out;
+
+    if (vn_src->sb->vdev_id != vn_dir->sb->vdev_id) {
+        /*
+         * The link named by path2 and the file named by path1 are
+         * on different file systems.
+         */
+        err = -EXDEV;
         goto out;
     }
 
-    /* TODO */
+    err = chkperm_vnode_cproc(vn_dir, O_WRONLY);
+    if (err)
+        goto out;
 
-    /* Get the vnode of the target directory */
+    err = vn_dir->vnode_ops->link(vn_dir, vn_src, targetname, NAME_MAX);
 
-    /* Check write permission to the target directory and source vnode */
-
-    //(*link)(vnode_t * dir, vnode_t * vnode, const char * name, size_t name_len)
+out:
+    kfree(targetpath);
+    kfree(targetname);
+    return err;
 }
 
 int fs_unlink_curproc(const char * path, size_t path_len)
@@ -766,7 +789,7 @@ int fs_mkdir_curproc(const char * pathname, mode_t mode)
         goto out;
 
     mode &= ~S_IFMT; /* Filter out file type bits */
-    retval = dir->vnode_ops->mkdir(dir, name, FS_FILENAME_MAX, mode);
+    retval = dir->vnode_ops->mkdir(dir, name, NAME_MAX, mode);
 
     /* TODO Set owner */
 
@@ -802,7 +825,7 @@ int fs_rmdir_curproc(const char * pathname)
     if (retval)
         goto out;
 
-    retval = dir->vnode_ops->rmdir(dir, name, FS_FILENAME_MAX);
+    retval = dir->vnode_ops->rmdir(dir, name, NAME_MAX);
 
 out:
     kfree(path);

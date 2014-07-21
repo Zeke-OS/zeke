@@ -39,8 +39,6 @@ SYSCTL_NODE(, CTL_KERN, kern, CTLFLAG_RW|CTLFLAG_CAPRD, 0,
         "High kernel, proc, limits &c");
 SYSCTL_NODE(, CTL_VM, vm, CTLFLAG_RW, 0,
         "Virtual memory");
-SYSCTL_NODE(, CTL_VFS, vfs, CTLFLAG_RW, 0,
-        "File system");
 SYSCTL_NODE(, CTL_DEBUG, debug, CTLFLAG_RW, 0,
         "Debugging");
 SYSCTL_NODE(, CTL_HW, hw, CTLFLAG_RW, 0,

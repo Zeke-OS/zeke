@@ -180,6 +180,14 @@ ssize_t write(int fildes, const void * buf, size_t nbyte);
 off_t lseek(int fildes, off_t offset, int whence);
 int close(int fildes);
 
+/**
+ * Create a new link for the existing file.
+ */
+int link(const char * path1, const char * path2);
+
+/**
+ * Remove a directory entry.
+ */
 int unlink(const char * path);
 
 /**

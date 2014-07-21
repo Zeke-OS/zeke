@@ -70,7 +70,7 @@ static chain_info_t find_last_node(dh_dirent_t * chain);
 static dh_dirent_t * find_node(dh_dirent_t * chain, const char * name,
         size_t name_len);
 static size_t hash_fname(const char * str, size_t len);
-static int rm_node(dh_dirent_t ** chain, const char * name, size_t name_len);
+static int rm_node(dh_dirent_t ** chain, const char * name);
 
 /**
  * Get reference to a directory entry in array.
@@ -88,7 +88,7 @@ static int rm_node(dh_dirent_t ** chain, const char * name, size_t name_len);
  * @return 0 if dh_size is valid; Otherwise value other than zero.
  */
 #define is_invalid_offset(denode) \
-    ((denode)->dh_size > (DIRENT_SIZE + FS_FILENAME_MAX + 1))
+    ((denode)->dh_size > (DIRENT_SIZE + NAME_MAX + 1))
 
 /**
  * Insert a new directory entry link.
@@ -155,7 +155,7 @@ int dh_unlink(dh_table_t * dir, const char * name, size_t name_len)
         return -ENOENT;
     }
 
-    return rm_node(dea, name, name_len + 1);
+    return rm_node(dea, name);
 }
 
 /**
@@ -343,9 +343,8 @@ static dh_dirent_t * find_node(dh_dirent_t * chain, const char * name,
     return retval;
 }
 
-static int rm_node(dh_dirent_t ** chain, const char * name, size_t name_len)
+static int rm_node(dh_dirent_t ** chain, const char * name)
 {
-    name_len = strlenn(name, name_len);
     chain_info_t chinfo = find_last_node(*chain);
     size_t old_offset = 0, new_offset = 0, prev_noffset = 0;
     dh_dirent_t * node;
@@ -370,7 +369,7 @@ static int rm_node(dh_dirent_t ** chain, const char * name, size_t name_len)
             return -ENOTRECOVERABLE;
         }
 
-        if (strncmp(node->dh_name, name, FS_FILENAME_MAX)) {
+        if (strncmp(node->dh_name, name, NAME_MAX)) {
             dh_dirent_t * new_node = get_dirent(new_chain, new_offset);
 
             memcpy(new_node, node, node->dh_size);

@@ -104,12 +104,24 @@ int dup2(int fildes, int fildes2)
     return fcntl(fildes, F_DUP2FD, fildes2);
 }
 
+int link(const char * path1, const char * path2)
+{
+    struct _fs_link_args args = {
+        .path1 = path1,
+        .path1_len = strlenn(path1, 4096) + 1, /* TODO */
+        .path2 = path2,
+        .path2_len = strlenn(path2, 4096) + 1
+    };
+
+    return (int)syscall(SYSCALL_FS_LINK, &args);
+}
+
 int unlink(const char * path)
 {
     struct _fs_unlink_args args = {
         .op = 0,
         .path = path,
-        .path_len = strlenn(path, 4096) /* TODO */
+        .path_len = strlenn(path, 4096) + 1 /* TODO */
     };
 
     return (int)syscall(SYSCALL_FS_UNLINK, &args);
