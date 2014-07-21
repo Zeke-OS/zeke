@@ -10,6 +10,7 @@ Generic Tasks
   the scheduler (and compare with others as well like for example idle task)
 - Use hw optimization for bitmap_search()
 - sysconf: http://pubs.opengroup.org/onlinepubs/7990989775/xsh/sysconf.html
+- dlfcn.h - dynamic linking
 
 proc
 ----

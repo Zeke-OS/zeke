@@ -636,8 +636,7 @@ uintptr_t fs_syscall(uint32_t type, void * p)
         return (uintptr_t)sys_mkdir(p);
 
     case SYSCALL_FS_RMDIR:
-        set_errno(ENOSYS);
-        return -92;
+        return (uintptr_t)sys_rmdir(p);
 
     case SYSCALL_FS_STAT:
         return (uintptr_t)sys_filestat(p);
