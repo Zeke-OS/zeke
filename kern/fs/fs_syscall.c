@@ -408,6 +408,34 @@ out:
     return retval;
 }
 
+static int sys_link(void * user_args)
+{
+    struct _fs_link_args * args;
+    int err, retval = -1;
+
+    err = copyinstruct(user_args, (void **)(&args),
+            sizeof(struct _fs_link_args),
+            GET_STRUCT_OFFSETS(struct _fs_link_args,
+                path1, path1_len,
+                path2, path2_len));
+    if (err) {
+        set_errno(-err);
+        goto out;
+    }
+
+    err = fs_link_curproc(args->path1, args->path1_len,
+                args->path2, args->path2_len);
+    if (err) {
+        set_errno(-err);
+        goto out;
+    }
+
+    retval = 0;
+out:
+    freecpystruct(args);
+    return retval;
+}
+
 static int sys_unlink(void * user_args)
 {
     struct _fs_unlink_args * args;
@@ -427,7 +455,6 @@ static int sys_unlink(void * user_args)
         goto out;
     }
 
-
     err = fs_unlink_curproc(args->path, args->path_len);
     if (err) {
         set_errno(-err);
@@ -436,6 +463,7 @@ static int sys_unlink(void * user_args)
 
     retval = 0;
 out:
+    freecpystruct(args);
     return retval;
 }
 
@@ -626,8 +654,7 @@ uintptr_t fs_syscall(uint32_t type, void * p)
         return (uintptr_t)sys_fcntl(p);
 
     case SYSCALL_FS_LINK:
-        set_errno(ENOSYS);
-        return -8;
+        return (uintptr_t)sys_link(p);
 
     case SYSCALL_FS_UNLINK:
         return (uintptr_t)sys_unlink(p);

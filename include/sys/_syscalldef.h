@@ -145,6 +145,14 @@ struct _fs_stat_args {
     unsigned flags;
 };
 
+/** Arguments for SYSCALL_FS_LINK */
+struct _fs_link_args {
+    const char * path1;
+    size_t path1_len;
+    const char * path2;
+    size_t path2_len;
+};
+
 /** Arguments for SYSCALL_FS_UNLINK */
 struct _fs_unlink_args {
     int op;             /*!< Operation: 0 = unlink, 1 = unlinkat */
