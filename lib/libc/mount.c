@@ -39,12 +39,12 @@ int mount(const char * source, const char * target, const char * type,
 {
     struct _fs_mount_args args = {
         .source = source,
-        .source_len = strlenn(source, 256), /* TODO Change to strlen() */
+        .source_len = strlenn(source, 256) + 1, /* TODO Change to strlen() */
         .target = target,
-        .target_len = strlenn(target, 256), /* TODO Change to strlen() */
+        .target_len = strlenn(target, 256) + 1, /* TODO Change to strlen() */
         .flags = flags,
         .parm = parms,
-        .parm_len = strlenn(parms, 256) /* TODO Change to strlen() */
+        .parm_len = strlenn(parms, 256) + 1 /* TODO Change to strlen() */
     };
 
     strcpy((char *)args.fsname, type);

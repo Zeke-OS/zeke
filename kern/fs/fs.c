@@ -204,7 +204,8 @@ int fs_namei_proc(vnode_t ** result, const char * path)
     vnode_t * start;
     int oflags = 0;
 
-    /* TODO This should return -EACCES if last char is '.' */
+    if (path[strlenn(path, PATH_MAX) - 1] == '.')
+        return -EACCES;
 
     if (path[0] == '\0')
         return -EINVAL;
@@ -564,14 +565,11 @@ static int parse_filepath(const char * pathname, char ** path, char ** name)
 {
     char * path_act;
     char * fname;
-    size_t i;
-
-    /* TODO Fail to PATH_MAX and NAME_MAX => ENAMETOOLONG */
+    size_t i, j;
 
     path_act = kstrdup(pathname, PATH_MAX);
-    if (!path_act) {
+    if (!path_act)
         return -ENOMEM;
-    }
 
     fname = kmalloc(NAME_MAX);
     if (!fname) {
@@ -579,7 +577,10 @@ static int parse_filepath(const char * pathname, char ** path, char ** name)
         return -ENOMEM;
     }
 
-    i = strlenn(pathname, PATH_MAX);
+    i = strlenn(path_act, PATH_MAX);
+    if (path_act[i] != '\0')
+        goto fail;
+
     while (path_act[i] != '/') {
         path_act[i--] = '\0';
         if ((i == 0) &&
@@ -593,7 +594,7 @@ static int parse_filepath(const char * pathname, char ** path, char ** name)
         }
     }
 
-    for (int j = 0; j < NAME_MAX;) {
+    for (j = 0; j < NAME_MAX;) {
         i++;
         if (pathname[i] == '/')
             continue;
@@ -604,10 +605,18 @@ static int parse_filepath(const char * pathname, char ** path, char ** name)
         j++;
     }
 
+    if (fname[j] != '\0')
+        goto fail;
+
     *path = path_act;
     *name = fname;
 
     return 0;
+
+fail:
+    kfree(path_act);
+    kfree(fname);
+    return -ENAMETOOLONG;
 }
 
 int fs_creat_cproc(const char * pathname, mode_t mode, vnode_t ** result)
@@ -702,7 +711,6 @@ int fs_unlink_curproc(const char * path, size_t path_len)
     vnode_t * fnode;
     int err;
 
-    /* TODO Incorrect?? */
     err = fs_namei_proc(&fnode, path);
     if (err)
         return err;

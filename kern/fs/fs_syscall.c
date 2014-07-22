@@ -193,6 +193,7 @@ static int sys_open(void * user_args)
         goto out;
     }
 
+    /* Copyin file name */
     name = kmalloc(args.name_len);
     if (!name) {
         set_errno(ENFILE);
@@ -204,6 +205,12 @@ static int sys_open(void * user_args)
     }
     copyinstr(args.name, name, args.name_len, 0);
     args.name = name;
+
+    /* Validate name string */
+    if (!strvalid(args.name, args.name_len)) {
+        set_errno(ENAMETOOLONG);
+        goto out;
+    }
 
     if ((err = fs_namei_proc(&file, name))) {
         if (args.oflags & O_CREAT) {
@@ -423,6 +430,13 @@ static int sys_link(void * user_args)
         goto out;
     }
 
+    /* Validate strings */
+    if (!strvalid(args->path1, args->path1_len) ||
+                  !strvalid(args->path2, args->path2_len)) {
+        set_errno(ENAMETOOLONG);
+        goto out;
+    }
+
     err = fs_link_curproc(args->path1, args->path1_len,
                 args->path2, args->path2_len);
     if (err) {
@@ -455,6 +469,12 @@ static int sys_unlink(void * user_args)
         goto out;
     }
 
+    /* Validate path string */
+    if (!strvalid(args->path, args->path_len)) {
+        set_errno(ENAMETOOLONG);
+        goto out;
+    }
+
     err = fs_unlink_curproc(args->path, args->path_len);
     if (err) {
         set_errno(-err);
@@ -481,6 +501,13 @@ static int sys_mkdir(void * user_args)
         goto out;
     }
 
+    /* Validate path string */
+    if (!strvalid(args->path, args->path_len)) {
+        set_errno(ENAMETOOLONG);
+        goto out;
+    }
+
+
     err = fs_mkdir_curproc(args->path, args->mode);
     if (err) {
         set_errno(-err);
@@ -504,6 +531,12 @@ static int sys_rmdir(void * user_args)
                 path, path_len));
     if (err) {
         set_errno(-err);
+        goto out;
+    }
+
+    /* Validate path string */
+    if (!strvalid(args->path, args->path_len)) {
+        set_errno(ENAMETOOLONG);
         goto out;
     }
 
@@ -532,6 +565,12 @@ static int sys_filestat(void * user_args)
 
     if (!useracc(args->buf, sizeof(struct stat), VM_PROT_WRITE)) {
         set_errno(EFAULT);
+        goto out;
+    }
+
+    /* Validate path string */
+    if (!strvalid(args->path, args->path_len)) {
+        set_errno(ENAMETOOLONG);
         goto out;
     }
 
@@ -603,6 +642,13 @@ static int sys_mount(struct _fs_mount_args * user_args)
                 parm,   parm_len));
     if (err) {
         set_errno(-err);
+        goto out;
+    }
+
+    /* Validate path strings */
+    if (!strvalid(args->source, args->source_len) ||
+        !strvalid(args->target, args->target_len)) {
+        set_errno(ENAMETOOLONG);
         goto out;
     }
 
