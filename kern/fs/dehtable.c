@@ -63,7 +63,7 @@ typedef struct chain_info {
 
 #define DIRENT_SIZE (sizeof(dh_dirent_t) - sizeof(char))
 
-#define CH_NO_LINK  0
+#define CH_NOLINK   0
 #define CH_LINK     1
 
 static chain_info_t find_last_node(dh_dirent_t * chain);
@@ -137,7 +137,7 @@ int dh_link(dh_table_t * dir, ino_t vnode_num, const char * name, size_t name_le
     /* New node */
     get_dirent(dea, chinfo.i_size)->dh_ino = vnode_num;
     get_dirent(dea, chinfo.i_size)->dh_size = entry_size;
-    get_dirent(dea, chinfo.i_size)->dh_link = CH_NO_LINK;
+    get_dirent(dea, chinfo.i_size)->dh_link = CH_NOLINK;
     strlcpy(get_dirent(dea, chinfo.i_size)->dh_name, name, name_len + 1);
 
 out:
@@ -149,13 +149,17 @@ int dh_unlink(dh_table_t * dir, const char * name, size_t name_len)
     name_len = strlenn(name, name_len);
     const size_t h = hash_fname(name, name_len);
     dh_dirent_t ** dea;
+    int err;
 
     dea = &((*dir)[h]);
-    if (dea == 0) {
+    if (dea == 0)
         return -ENOENT;
-    }
 
-    return rm_node(dea, name);
+    err = rm_node(dea, name);
+    if (err)
+        return err;
+
+    return 0;
 }
 
 /**
@@ -234,17 +238,11 @@ dh_dirent_t * dh_iter_next(dh_dir_iter_t * it)
     dh_dirent_t * node = 0; /* Dir entry node in chain. */
 
     /* Already iterated over all nodes? */
-    if (it->dea_ind >= DEHTABLE_SIZE) {
+    if (it->dea_ind >= DEHTABLE_SIZE)
         goto out;
-    }
 
     if (it->ch_ind == SIZE_MAX) { /* Get a next chain array */
         size_t i = it->dea_ind;
-
-        /* Already iterated over all nodes? */
-        //if (it->dea_ind >= DEHTABLE_SIZE) {
-        //    goto out;
-        //}
 
         it->ch_ind = 0; /* Reset chain index */
 
@@ -252,23 +250,19 @@ dh_dirent_t * dh_iter_next(dh_dir_iter_t * it)
             dea = (*(it->dir))[i]; /* Get a dir entry array */
             i++;
         } while (dea == 0 && i < DEHTABLE_SIZE);
+
         it->dea_ind = i - 1;
     } else { /* Still iterating the old chain. */
         dea = (*(it->dir))[it->dea_ind];
-        if (dea == 0) {
-            goto out; /* Empty hash table or No more entries. */
-        }
     }
-    if (dea == 0) {
+    if (dea == 0)
         goto out; /* Empty hash table or No more entries. */
-    }
 
+    /* Get a node from the chain. */
+    node = get_dirent(dea, it->ch_ind);
+    if (is_invalid_offset(node))
+        return 0; /* Broken dirent hash table. */
 
-    node = get_dirent(dea, it->ch_ind); /* Get a node from the chain. */
-    if (is_invalid_offset(node)) {
-        node = 0;
-        goto out; /* Broken dirent hash table. */
-    }
     if (node->dh_link == CH_LINK) {
         it->ch_ind += node->dh_size;
     } else {
@@ -328,7 +322,6 @@ static dh_dirent_t * find_node(dh_dirent_t * chain, const char * name,
     do {
         node = get_dirent(chain, offset);
         if (is_invalid_offset(node)) {
-            /* Error */
             KERROR(KERROR_ERR, "Invalid offset in deh node");
             break;
         }
@@ -345,9 +338,8 @@ static dh_dirent_t * find_node(dh_dirent_t * chain, const char * name,
 
 static int rm_node(dh_dirent_t ** chain, const char * name)
 {
-    chain_info_t chinfo = find_last_node(*chain);
+    const chain_info_t chinfo = find_last_node(*chain);
     size_t old_offset = 0, new_offset = 0, prev_noffset = 0;
-    dh_dirent_t * node;
     dh_dirent_t * new_chain;
 
     if (chinfo.i_size < sizeof(void *))
@@ -360,10 +352,10 @@ static int rm_node(dh_dirent_t ** chain, const char * name)
     /* Initial empty first entry. */
     *get_dirent(new_chain, 0) = (dh_dirent_t){ .dh_size = 0 };
 
-    do {
-        node = get_dirent(*chain, old_offset);
+    while(1) {
+        const dh_dirent_t * const node = get_dirent(*chain, old_offset);
+
         if (is_invalid_offset(node)) {
-            /* Error */
             KERROR(KERROR_ERR, "Invalid offset in deh node");
             kfree(new_chain);
             return -ENOTRECOVERABLE;
@@ -377,9 +369,18 @@ static int rm_node(dh_dirent_t ** chain, const char * name)
             new_offset += node->dh_size;
         }
         old_offset += node->dh_size;
-    } while (node->dh_link == CH_LINK);
 
-    get_dirent(new_chain, prev_noffset)->dh_link = CH_NO_LINK;
+        if (node->dh_link == CH_NOLINK)
+            break;
+    }
+
+    get_dirent(new_chain, prev_noffset)->dh_link = CH_NOLINK;
+
+    /* Check if new_chain is empty */
+    if (get_dirent(new_chain, 0)->dh_link == CH_NOLINK) {
+        kfree(new_chain);
+        new_chain = 0;
+    }
 
     kfree(*chain);
     *chain = new_chain;
