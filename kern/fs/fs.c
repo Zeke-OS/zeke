@@ -204,9 +204,6 @@ int fs_namei_proc(vnode_t ** result, const char * path)
     vnode_t * start;
     int oflags = 0;
 
-    if (path[strlenn(path, PATH_MAX) - 1] == '.')
-        return -EACCES;
-
     if (path[0] == '\0')
         return -EINVAL;
 
@@ -619,29 +616,63 @@ fail:
     return -ENAMETOOLONG;
 }
 
+/**
+ * Get directory vnode of a target file and the actual directory entry name.
+ * @param[in]   pathname    is a path to the target.
+ * @param[out]  dir         is the directory containing the entry.
+ * @param[out]  filename    is the actual file name / directory entry name.
+ * @param[in]   flag        0 = file should exist; O_CREAT = file should not exist.
+ */
+static int getvndir(const char * pathname, vnode_t ** dir, char ** filename, int flag)
+{
+    vnode_t * file;
+    char * path = 0;
+    char * name = 0;
+    int err;
+
+    if (pathname[0] == '\0') {
+        err = -EINVAL;
+        goto out;
+    }
+
+    err = fs_namei_proc(&file, pathname);
+    if (flag & O_CREAT) { /* File should not exist */
+        if (err == 0) {
+            err = -EEXIST;
+            goto out;
+        } else if (err != -ENOENT) {
+            goto out;
+        }
+    } else if (err) { /* File should exist */
+        goto out;
+    }
+
+    err = parse_filepath(pathname, &path, &name);
+    if (err)
+        goto out;
+
+    kpalloc(name); /* Incr ref count */
+    *filename = name;
+
+    err = fs_namei_proc(dir, path);
+    if (err)
+        goto out;
+
+out:
+    kfree(path);
+    kfree(name);
+    return err;
+}
+
 int fs_creat_cproc(const char * pathname, mode_t mode, vnode_t ** result)
 {
-    char * path = 0;
     char * name = 0;
     vnode_t * dir;
     int retval = 0;
 
-    retval = fs_namei_proc(&dir, pathname);
-    if (retval == 0) {
-        retval = -EEXIST;
-        goto out;
-    } else if (retval != -ENOENT) {
-        goto out;
-    }
-
-    retval = parse_filepath(pathname, &path, &name);
+    retval = getvndir(pathname, &dir, &name, O_CREAT);
     if (retval)
         goto out;
-
-    if (fs_namei_proc(&dir, path)) {
-        retval = -ENOENT;
-        goto out;
-    }
 
     /* We know that the returned vnode is a dir so we can just call mknod() */
     *result = 0;
@@ -649,7 +680,6 @@ int fs_creat_cproc(const char * pathname, mode_t mode, vnode_t ** result)
     retval = dir->vnode_ops->create(dir, name, NAME_MAX, mode, result);
 
 out:
-    kfree(path);
     kfree(name);
     return retval;
 }
@@ -657,10 +687,9 @@ out:
 int fs_link_curproc(const char * path1, size_t path1_len,
         const char * path2, size_t path2_len)
 {
-    char * targetpath = 0;
     char * targetname = 0;
     vnode_t * vn_src;
-    vnode_t * vn_dir;
+    vnode_t * vndir_dst;
     int err;
 
     /* Get the source vnode */
@@ -674,14 +703,11 @@ int fs_link_curproc(const char * path1, size_t path1_len,
         goto out;
 
     /* Get vnode of the target directory */
-    err = parse_filepath(path2, &targetpath, &targetname);
-    if (err)
-        goto out;
-    err = fs_namei_proc(&vn_dir, targetpath);
+    err = getvndir(path2, &vndir_dst, &targetname, O_CREAT);
     if (err)
         goto out;
 
-    if (vn_src->sb->vdev_id != vn_dir->sb->vdev_id) {
+    if (vn_src->sb->vdev_id != vndir_dst->sb->vdev_id) {
         /*
          * The link named by path2 and the file named by path1 are
          * on different file systems.
@@ -690,14 +716,13 @@ int fs_link_curproc(const char * path1, size_t path1_len,
         goto out;
     }
 
-    err = chkperm_vnode_cproc(vn_dir, O_WRONLY);
+    err = chkperm_vnode_cproc(vndir_dst, O_WRONLY);
     if (err)
         goto out;
 
-    err = vn_dir->vnode_ops->link(vn_dir, vn_src, targetname, NAME_MAX);
+    err = vndir_dst->vnode_ops->link(vndir_dst, vn_src, targetname, NAME_MAX);
 
 out:
-    kfree(targetpath);
     kfree(targetname);
     return err;
 }
@@ -734,7 +759,7 @@ int fs_unlink_curproc(const char * path, size_t path_len)
         goto out;
     }
 
-    /* We need write access to the containing directory to allow removal of
+    /* We need a write access to the containing directory to allow removal of
      * a directory entry. */
     err = chkperm_vnode_cproc(dir, O_WRONLY);
     if (err) {
@@ -756,40 +781,15 @@ out:
     return err;
 }
 
-int fs_unlinkat_curproc(int fd, const char * path, int flag)
-{
-    /* TODO */
-    return -ENOTSUP;
-}
-
 int fs_mkdir_curproc(const char * pathname, mode_t mode)
 {
-    char * path = 0;
     char * name = 0;
     vnode_t * dir;
     int retval = 0;
 
-    if (pathname[0] == '\0') {
-        retval = -EINVAL;
-        goto out;
-    }
-
-    retval = fs_namei_proc(&dir, pathname);
-    if (retval == 0) {
-        retval = -EEXIST;
-        goto out;
-    } else if (retval != -ENOENT) {
-        goto out;
-    }
-
-    retval = parse_filepath(pathname, &path, &name);
+    retval = getvndir(pathname, &dir, &name, O_CREAT);
     if (retval)
         goto out;
-
-    if (fs_namei_proc(&dir, path)) {
-        retval = -ENOENT;
-        goto out;
-    }
 
     /* Check that we have a permission to write this dir. */
     retval = chkperm_vnode_cproc(dir, O_WRONLY);
@@ -802,31 +802,19 @@ int fs_mkdir_curproc(const char * pathname, mode_t mode)
     /* TODO Set owner */
 
 out:
-    kfree(path);
     kfree(name);
     return retval;
 }
 
 int fs_rmdir_curproc(const char * pathname)
 {
-    char * path = 0;
     char * name = 0;
     vnode_t * dir;
     int retval;
 
-    retval = fs_namei_proc(&dir, pathname);
-    if (retval) {
-        goto out;
-    }
-
-    retval = parse_filepath(pathname, &path, &name);
+    retval = getvndir(pathname, &dir, &name, 0);
     if (retval)
         goto out;
-
-    if (fs_namei_proc(&dir, path)) {
-        retval = -ENOENT;
-        goto out;
-    }
 
     /* Check that we have a permission to write this dir. */
     retval = chkperm_vnode_cproc(dir, O_WRONLY);
@@ -836,7 +824,6 @@ int fs_rmdir_curproc(const char * pathname)
     retval = dir->vnode_ops->rmdir(dir, name, NAME_MAX);
 
 out:
-    kfree(path);
     kfree(name);
     return retval;
 }
