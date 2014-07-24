@@ -20,4 +20,5 @@ for conffile in "$@"; do
     fi
     cat "$conffile"|sed 's/#.*$//g'|grep -e '^.*=.*$'|sed 's/\ *=\ */ /1'|sed 's/^/#define /' >>"$HFILE"
 done
+echo "#define KERNEL_VERSION \"$(git describe)\"" >>"$HFILE"
 echo "#endif" >>"$HFILE"

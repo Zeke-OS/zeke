@@ -65,11 +65,14 @@ $(UNIFDEF):
 # End of Tools
 
 
+$(AUTOCONF_H): $(CONFIG_DIR)/targetconf.mk $(CONFIG_DIR)/kernelconf.mk
+	$(ROOT_DIR)/tools/aconf.sh $^ $@
+
 $(CRT):
 	$(MAKE) -C $(CRT_DIR) all
 
 # Kernel
-kernel.img: tools $(CRT)
+kernel.img: tools $(AUTOCONF_H) $(CRT)
 	$(MAKE) -C kern all
 
 

@@ -31,6 +31,7 @@
  */
 
 #define KERNEL_INTERNAL
+#include <autoconf.h>
 #include <sys/sysctl.h>
 
 SYSCTL_NODE(, 0, sysctl, CTLFLAG_RW, 0,
@@ -57,7 +58,6 @@ static const char osrelease[] = KERNEL_VERSION;
 SYSCTL_STRING(_kern, KERN_OSRELEASE, osrelease, CTLFLAG_RD|CTLFLAG_MPSAFE,
         (char *)osrelease, 0, "Operating system release");
 
-/* TODO */
 static const char version[] = __XSTRING(configARCH) " " __DATE__;
 SYSCTL_STRING(_kern, KERN_VERSION, version, CTLFLAG_RD|CTLFLAG_MPSAFE,
         (char *)version, 0, "Kernel version");
