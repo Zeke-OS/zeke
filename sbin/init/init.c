@@ -51,6 +51,8 @@ char banner[] = "\
              .||. ||.'|...'\n\n\
 ";
 
+static const char msg[] = "Zeke " KERNEL_VERSION " init\n";
+
 void * main(void * arg)
 {
     int r0, r1, r2;
@@ -73,7 +75,7 @@ void * main(void * arg)
 #endif
 
     write(STDOUT_FILENO, banner, sizeof(banner));
-    write(STDOUT_FILENO, "Init v0.0.1\n", 13);
+    write(STDOUT_FILENO, msg, sizeof(msg));
 
 #if configTISH != 0
     tish();
