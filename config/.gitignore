@@ -1,2 +1,7 @@
 # Autoconf
 autoconf.h
+
+# User config
+buildconf.mk
+kernelconf.mk
+targetconf.mk

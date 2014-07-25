@@ -83,6 +83,7 @@ Doxygen targets:
 
 ### Compiling
 
++ `configure`- Set defaults for files in config dir
 + `make` - Compile the kernel
 + `make test` - Compile unit tests
 + `make clean` - Clean all targets
