@@ -99,3 +99,13 @@ int mkdir(const char * path, mode_t mode)
 
     return syscall(SYSCALL_FS_MKDIR, &args);
 }
+
+int rmdir(const char * path)
+{
+    struct _fs_rmdir_args args = {
+        .path = path,
+        .path_len = strlen(path) + 1
+    };
+
+    return syscall(SYSCALL_FS_RMDIR, &args);
+}

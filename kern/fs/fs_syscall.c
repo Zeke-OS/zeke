@@ -541,7 +541,12 @@ static int sys_rmdir(void * user_args)
     }
 
     err = fs_rmdir_curproc(args->path);
+    if (err) {
+        set_errno(-err);
+        goto out;
+    }
 
+    retval = 0;
 out:
     freecpystruct(args);
     return retval;
