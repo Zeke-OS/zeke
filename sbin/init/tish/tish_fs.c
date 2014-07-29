@@ -111,6 +111,14 @@ static void tish_mkdir(char ** args)
 }
 TISH_CMD(tish_mkdir, "mkdir");
 
+static void tish_rmdir(char ** args)
+{
+    char * path = kstrtok(0, DELIMS, args);
+
+    rmdir(path);
+}
+TISH_CMD(tish_rmdir, "rmdir");
+
 static void tish_unlink(char ** args)
 {
     char * path = kstrtok(0, DELIMS, args);

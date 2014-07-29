@@ -821,6 +821,12 @@ int fs_rmdir_curproc(const char * pathname)
     if (retval)
         goto out;
 
+    /* Return if rmdir is not defined for this vnode. */
+    if (!dir->vnode_ops->rmdir) {
+        retval = EBUSY;
+        goto out;
+    }
+
     retval = dir->vnode_ops->rmdir(dir, name, NAME_MAX);
 
 out:

@@ -168,6 +168,7 @@ const vnode_ops_t ramfs_vnode_ops = {
     .link = ramfs_link,
     .unlink = ramfs_unlink,
     .mkdir = ramfs_mkdir,
+    .rmdir = ramfs_rmdir,
     .readdir = ramfs_readdir,
     .stat = ramfs_stat
 };
@@ -547,9 +548,9 @@ int ramfs_mkdir(vnode_t * dir,  const char * name, size_t name_len, mode_t mode)
 
     /* Create links according to POSIX. */
     ramfs_link(&(inode_new->in_vnode), &(inode_new->in_vnode), RFS_DOT,
-            sizeof(RFS_DOT) - 1);
+            sizeof(RFS_DOT));
     ramfs_link(&(inode_new->in_vnode), &(inode_dir->in_vnode), RFS_DOTDOT,
-            sizeof(RFS_DOTDOT) - 1);
+            sizeof(RFS_DOTDOT));
 
     /* Insert inode to the inode lookup table of its superblock. */
     insert_inode(inode_new); /* This can't fail on mount. */
@@ -558,6 +559,42 @@ int ramfs_mkdir(vnode_t * dir,  const char * name, size_t name_len, mode_t mode)
     goto out;
 delete_inode:
     ramfs_delete_vnode(&(inode_new->in_vnode));
+out:
+    return retval;
+}
+
+int ramfs_rmdir(vnode_t * dir,  const char * name, size_t name_len)
+{
+    ramfs_inode_t * inode_dir;
+    ino_t vnum;
+    vnode_t * vn;
+    ramfs_inode_t * inode;
+    int retval = 0;
+
+    if (!S_ISDIR(dir->vn_mode)) {
+        retval = -ENOTDIR; /* No a directory entry. */
+        goto out;
+    }
+
+    inode_dir = get_inode_of_vnode(dir);
+    retval = dh_lookup(inode_dir->in.dir, name, name_len, &vnum);
+    if (retval)
+        goto out;
+
+    retval = ramfs_get_vnode(dir->sb, &vnum, &vn);
+    if (retval)
+         goto out;
+    inode = get_inode_of_vnode(vn);
+
+    if (inode->in_nlink > 2) {
+        retval = -ENOTEMPTY;
+        goto out;
+    }
+
+    dh_unlink(inode->in.dir, RFS_DOT, sizeof(RFS_DOT));
+    dh_unlink(inode->in.dir, RFS_DOTDOT, sizeof(RFS_DOTDOT));
+    dh_unlink(inode_dir->in.dir, name, name_len);
+
 out:
     return retval;
 }

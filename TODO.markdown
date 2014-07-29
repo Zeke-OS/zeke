@@ -28,9 +28,6 @@ fs (vfs)
 - lock to files struct
 - syscalls missing
     - dup
-    - link
-    - unlink
-    - rmdir
     - fsstat
     - access
     - chmod
