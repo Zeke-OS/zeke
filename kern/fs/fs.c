@@ -754,7 +754,7 @@ out:
     return err;
 }
 
-int fs_unlink_curproc(const char * path, size_t path_len)
+int fs_unlink_curproc(int fd, const char * path, size_t path_len, int atflags)
 {
     char * dirpath = 0;
     char * filename = 0;
@@ -763,7 +763,7 @@ int fs_unlink_curproc(const char * path, size_t path_len)
     vnode_t * fnode;
     int err;
 
-    err = fs_namei_proc(&fnode, -1, path, AT_FDCWD);
+    err = fs_namei_proc(&fnode, fd, path, atflags);
     if (err)
         return err;
 
@@ -781,7 +781,7 @@ int fs_unlink_curproc(const char * path, size_t path_len)
         goto out;
 
     /* Get the vnode of the containing directory */
-    if (fs_namei_proc(&dir, -1, dirpath, AT_FDCWD)) {
+    if (fs_namei_proc(&dir, fd, dirpath, atflags)) {
         err = -ENOENT;
         goto out;
     }

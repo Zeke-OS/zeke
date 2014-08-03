@@ -164,7 +164,6 @@ struct _fs_link_args {
 
 /** Arguments for SYSCALL_FS_UNLINK */
 struct _fs_unlink_args {
-    int op;             /*!< Operation: 0 = unlink, 1 = unlinkat */
     int fd;             /*!< File descriptor number. */
     const char * path;
     size_t path_len;

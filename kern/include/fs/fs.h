@@ -462,7 +462,7 @@ int fs_link_curproc(const char * path1, size_t path1_len,
 /**
  * Remove link to a file.
  */
-int fs_unlink_curproc(const char * path, size_t path_len);
+int fs_unlink_curproc(int fd, const char * path, size_t path_len, int atflags);
 
 /**
  * Remove link to a file relative to fd.

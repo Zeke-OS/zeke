@@ -465,18 +465,13 @@ static int sys_unlink(void * user_args)
         goto out;
     }
 
-    if (args->op != 0) {
-        set_errno(ENOTSUP);
-        goto out;
-    }
-
     /* Validate path string */
     if (!strvalid(args->path, args->path_len)) {
         set_errno(ENAMETOOLONG);
         goto out;
     }
 
-    err = fs_unlink_curproc(args->path, args->path_len);
+    err = fs_unlink_curproc(args->fd, args->path, args->path_len, args->flag);
     if (err) {
         set_errno(-err);
         goto out;
@@ -686,6 +681,13 @@ out:
     return retval;
 }
 
+static int sys_chmod(void * args)
+{
+    /* TODO */
+    set_errno(ENOSYS);
+    return -13;
+}
+
 static int sys_mount(struct _fs_mount_args * user_args)
 {
     struct _fs_mount_args * args = 0;
@@ -783,8 +785,7 @@ uintptr_t fs_syscall(uint32_t type, void * p)
         return (uintptr_t)sys_access(p);
 
     case SYSCALL_FS_CHMOD:
-        set_errno(ENOSYS);
-        return -13;
+        return (uintptr_t)sys_chmod(p);
 
     case SYSCALL_FS_CHOWN:
         set_errno(ENOSYS);

@@ -141,9 +141,24 @@ int link(const char * path1, const char * path2)
 int unlink(const char * path)
 {
     struct _fs_unlink_args args = {
-        .op = 0,
         .path = path,
-        .path_len = strlenn(path, 4096) + 1 /* TODO */
+        .path_len = strlenn(path, 4096) + 1, /* TODO */
+        .flag = AT_FDCWD
+    };
+
+    return (int)syscall(SYSCALL_FS_UNLINK, &args);
+}
+
+int unlinkat(int fd, const char * path, int flag)
+{
+    if (!(flag & AT_FDCWD))
+        flag |= AT_FDARG;
+
+    struct _fs_unlink_args args = {
+        .fd = fd,
+        .path = path,
+        .path_len = strlenn(path, 4096) + 1, /* TODO */
+        .flag = flag
     };
 
     return (int)syscall(SYSCALL_FS_UNLINK, &args);
