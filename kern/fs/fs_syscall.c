@@ -212,7 +212,8 @@ static int sys_open(void * user_args)
         goto out;
     }
 
-    if ((err = fs_namei_proc(&file, name))) {
+    err = fs_namei_proc(&file, -1, name, AT_FDCWD);
+    if (err) {
         if (args.oflags & O_CREAT) {
             /* Create a new file */
             /* TODO Determine correct mode bits?? */
@@ -606,7 +607,7 @@ static int sys_filestat(void * user_args)
             goto out;
         }
     } else { /* search by path */
-        if (fs_namei_proc(&vnode, (char *)args->path)) {
+        if (fs_namei_proc(&vnode, -1, (char *)args->path, AT_FDCWD)) {
             set_errno(ENOENT);
             goto out;
         }
@@ -629,6 +630,59 @@ ready:
     retval = 0;
 out:
     freecpystruct(args);
+    return retval;
+}
+
+static int sys_access(void * user_args)
+{
+    struct _fs_access_args * args = 0;
+    vnode_t * vnode;
+    uid_t euid;
+    gid_t egid;
+    int err, retval = -1;
+
+    err = copyinstruct(user_args, (void **)(&args),
+            sizeof(struct _fs_access_args),
+            GET_STRUCT_OFFSETS(struct _fs_access_args,
+                path, path_len));
+    if (err) {
+        set_errno(-err);
+        goto out;
+    }
+
+    if (!strvalid(args->path, args->path_len)) {
+        set_errno(ENAMETOOLONG);
+        goto out;
+    }
+
+    if (!(args->flag & AT_FDARG)) { /* access() */
+        err = fs_namei_proc(&vnode, -1, args->path, AT_FDCWD);
+        if (err) {
+            set_errno(-err);
+            goto out;
+        }
+    } else { /* faccessat() */
+        fs_namei_proc(&vnode, args->fd, args->path, AT_FDARG);
+
+        set_errno(ENOTSUP);
+        return -1;
+    }
+
+    if (args->flag & AT_EACCESS) {
+        euid = curproc->euid;
+        egid = curproc->egid;
+    } else {
+        euid = curproc->uid;
+        egid = curproc->gid;
+    }
+
+    if (args->amode & F_OK) {
+        retval = 0;
+        goto out;
+    }
+    retval = chkperm_vnode(vnode, euid, egid, args->amode);
+
+out:
     return retval;
 }
 
@@ -657,7 +711,7 @@ static int sys_mount(struct _fs_mount_args * user_args)
         goto out;
     }
 
-    if (fs_namei_proc(&mpt, (char *)args->target)) {
+    if (fs_namei_proc(&mpt, -1, (char *)args->target, AT_FDCWD)) {
         set_errno(ENOENT); /* Mount point doesn't exist */
         goto out;
     }
@@ -726,8 +780,7 @@ uintptr_t fs_syscall(uint32_t type, void * p)
         return -11;
 
     case SYSCALL_FS_ACCESS:
-        set_errno(ENOSYS);
-        return -12;
+        return (uintptr_t)sys_access(p);
 
     case SYSCALL_FS_CHMOD:
         set_errno(ENOSYS);

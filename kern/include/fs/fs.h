@@ -333,8 +333,13 @@ int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str, int oflags
 /**
  * Walks the file system for a process and tries to locate and lock vnode
  * corresponding to a given path.
+ * @param fd        is the optional starting point for relative search.
+ * @param atflags   if this is set to AT_FDARG then fd is used;
+ *                  AT_FDCWD is implicit rule for this function.
+ *                  AT_SYMLINK_NOFOLLOW is optional and AT_SYMLINK_FOLLOW is
+ *                  implicit.
  */
-int fs_namei_proc(vnode_t ** result, const char * path);
+int fs_namei_proc(vnode_t ** result, int fd, const char * path, int atflags);
 
 /**
  * Mount file system.
@@ -374,16 +379,19 @@ fs_superblock_t * fs_next_sb(sb_iterator_t * it);
  */
 unsigned int fs_get_pfs_minor(void);
 
+int chkperm(struct stat * stat, uid_t uid, gid_t gid, int amode);
+
 /**
  * Check file permissions against oflag(s).
  * @param stat      is a pointer to stat struct of the file.
- * @param oflags    specifies the verified oflags.
+ * @param oflags    specifies the verified oflags or amodes.
  * @return  Returns negative errno in case of error or improper permissions;
  *          Otherwise zero.
  */
 int chkperm_cproc(struct stat * stat, int oflags);
 
 int chkperm_vnode_cproc(vnode_t * vnode, int oflags);
+int chkperm_vnode(vnode_t * vnode, uid_t euid, gid_t egid, int oflags);
 
 /**
  * Set parameters of a file descriptor.

@@ -145,6 +145,15 @@ struct _fs_stat_args {
     unsigned flags;
 };
 
+/** Arguments for SYSCALL_FS_ACCESS */
+struct _fs_access_args {
+    int fd;
+    const char * path;
+    size_t path_len;
+    int amode;
+    int flag;
+};
+
 /** Arguments for SYSCALL_FS_LINK */
 struct _fs_link_args {
     const char * path1;

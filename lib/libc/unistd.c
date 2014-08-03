@@ -41,6 +41,28 @@ pid_t fork(void)
     return (pid_t)syscall(SYSCALL_PROC_FORK, NULL);
 }
 
+int access(const char * path, int amode)
+{
+    struct _fs_access_args args = {
+        .path = path,
+        .amode = amode,
+        .flag = 0
+    };
+
+    return (int)syscall(SYSCALL_FS_ACCESS, &args);
+}
+
+int faccessat(int fd, const char * path, int amode, int flag)
+{
+    struct _fs_access_args args = {
+        .path = path,
+        .amode = amode,
+        .flag = AT_FDARG | flag
+    };
+
+    return (int)syscall(SYSCALL_FS_ACCESS, &args);
+}
+
 ssize_t read(int fildes, void * buf, size_t nbytes)
 {
     struct _fs_readwrite_args args = {

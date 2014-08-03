@@ -47,6 +47,15 @@
 #define _POSIX_THREAD_ATTR_STACKSIZE    200809L
 #define _POSIX_THREADS                  200809L
 
+/* Access test flags.
+ * For compatibility with oflags these are defined to have same values so they
+ * are interchangeable, except F_OK which obviously doesn't exist for oflags.
+ */
+#define F_OK 0x0001 /*!< Test for existence of file. */
+#define R_OK 0x1000 /*!< Test for read permission. */
+#define W_OK 0x2000 /*!< Test for write permission. */
+#define X_OK 0x4000 /*!< Test for execute (search) permission. */
+
 /* Block device seek origin types */
 #ifndef SEEK_SET
 #define SEEK_SET        0 /*!< Beginning of file. */
@@ -173,6 +182,16 @@ void * sbrk(intptr_t incr);
 long sysconf(int name);
 
 pid_t fork(void);
+
+/**
+ * Checks whether the process would be allowed to read, write or test for
+ * existence of the file.
+ * @param path  is a path to the file.
+ * @param amode is the access mode tested.
+ */
+int access(const char * path, int amode);
+int faccessat(int fd, const char * path, int amode, int flag);
+
 ssize_t read(int fildes, void * buf, size_t nbytes);
 ssize_t pwrite(int fildes, const void *buf, size_t nbyte,
     off_t offset);
@@ -189,6 +208,8 @@ int link(const char * path1, const char * path2);
  * Remove a directory entry.
  */
 int unlink(const char * path);
+
+int rmdir(const char * path);
 
 /**
  * Return a new file descriptor that is the lowest number available.
