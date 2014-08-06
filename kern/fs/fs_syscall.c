@@ -492,7 +492,6 @@ static int sys_mkdir(void * user_args)
         goto out;
     }
 
-
     err = fs_mkdir_curproc(args->path, args->mode);
     if (err) {
         set_errno(-err);

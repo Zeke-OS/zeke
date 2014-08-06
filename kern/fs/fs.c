@@ -704,6 +704,7 @@ int fs_creat_cproc(const char * pathname, mode_t mode, vnode_t ** result)
     /* We know that the returned vnode is a dir so we can just call mknod() */
     *result = 0;
     mode &= ~S_IFMT; /* Filter out file type bits */
+    mode &= ~curproc->files->umask;
     retval = dir->vnode_ops->create(dir, name, NAME_MAX, mode, result);
 
 out:
@@ -829,6 +830,7 @@ int fs_mkdir_curproc(const char * pathname, mode_t mode)
     }
 
     mode &= ~S_IFMT; /* Filter out file type bits */
+    mode &= ~curproc->files->umask;
     retval = dir->vnode_ops->mkdir(dir, name, NAME_MAX, mode);
 
     /* TODO Set owner */

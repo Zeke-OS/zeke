@@ -119,7 +119,7 @@ int stat(const char * restrict path, struct stat * restrict buf);
 int mkdir(const char *, mode_t);
 /*
 int mkfifo(const char *, mode_t);
-int mkdirat(int fd, const char  *path, mode_t mode);
+int mkdirat(int fd, const char * path, mode_t mode);
 int mknod(const char *, mode_t, dev_t);
 mode_t umask(mode_t);
 */

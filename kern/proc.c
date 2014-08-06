@@ -168,6 +168,7 @@ static void init_kernel_proc(void)
         panic(panic_msg);
     }
     kernel_proc->files->count = 8;
+    kernel_proc->files->umask = 022; /* File creation mask: S_IWGRP|S_IWOTH */
 
     /* TODO Do this correctly */
     kernel_proc->files->fd[STDIN_FILENO] = 0;

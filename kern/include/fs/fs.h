@@ -117,6 +117,7 @@ typedef struct file {
  */
 typedef struct files_struct {
         int count;
+        mode_t umask;        /*!< File mode creation mask of the process. */
         struct file * fd[0]; /*!< Open files.
                               *   Thre should be at least following files:
                               *   [0] = stdin

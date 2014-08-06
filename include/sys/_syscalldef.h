@@ -184,7 +184,7 @@ struct _fs_mkdir_args {
     const char * path;
     size_t path_len;
     mode_t mode;
-    unsigned flags;
+    unsigned atflags;
 };
 
 /** Arguments for SYSCALL_FS_RMDIR */
