@@ -823,6 +823,11 @@ int fs_mkdir_curproc(const char * pathname, mode_t mode)
     if (retval)
         goto out;
 
+    if (!dir->vnode_ops->mkdir) {
+        retval = -EROFS;
+        goto out;
+    }
+
     mode &= ~S_IFMT; /* Filter out file type bits */
     retval = dir->vnode_ops->mkdir(dir, name, NAME_MAX, mode);
 
@@ -848,9 +853,8 @@ int fs_rmdir_curproc(const char * pathname)
     if (retval)
         goto out;
 
-    /* Return if rmdir is not defined for this vnode. */
     if (!dir->vnode_ops->rmdir) {
-        retval = EBUSY;
+        retval = -EROFS;
         goto out;
     }
 
@@ -858,5 +862,33 @@ int fs_rmdir_curproc(const char * pathname)
 
 out:
     kfree(name);
+    return retval;
+}
+
+int fs_chmod_curproc(int fildes, mode_t mode)
+{
+    vnode_t * vnode;
+    file_t * file;
+    int retval = 0;
+
+    file = fs_fildes_ref(curproc->files, fildes, 1);
+    if (!file)
+        return -EBADF;
+    vnode = file->vnode;
+
+    if (!((file->oflags & O_WRONLY) || !chkperm_vnode_cproc(vnode, W_OK))) {
+        retval = -EPERM;
+        goto out;
+    }
+
+    if (!vnode->vnode_ops->chmod) {
+        retval = -EROFS;
+        goto out;
+    }
+    vnode->vnode_ops->chmod(vnode, mode);
+
+out:
+    fs_fildes_ref(curproc->files, fildes, -1);
+
     return retval;
 }

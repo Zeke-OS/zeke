@@ -108,10 +108,9 @@ struct stat {
 
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
-/*
-int chmod(const char *, mode_t);
+int chmod(const char * path, mode_t mode);
+int fchmodat(int fd, const char * path, mode_t mode, int flag);
 int fchmod(int, mode_t);
-*/
 int fstat(int fildes, struct stat * buf);
 int fstatat(int fd, const char * restrict path,
             struct stat * restrict buf, int flag);

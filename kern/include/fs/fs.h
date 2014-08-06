@@ -276,11 +276,14 @@ typedef struct vnode_ops {
      *          -2 if end of dir.
      */
     int (*readdir)(vnode_t * dir, struct dirent * d);
+
     /* Operations specified for any file type */
     /**
      * Get file status.
      */
     int (*stat)(vnode_t * vnode, struct stat * buf);
+
+    int (*chmod)(vnode_t * vnode, mode_t mode);
 } vnode_ops_t;
 
 
@@ -475,6 +478,8 @@ int fs_unlinkat_curproc(int fd, const char * path, int flag);
 int fs_mkdir_curproc(const char * pathname, mode_t mode);
 
 int fs_rmdir_curproc(const char * pathname);
+
+int fs_chmod_curproc(int fildes, mode_t mode);
 
 #endif /* FS_H */
 

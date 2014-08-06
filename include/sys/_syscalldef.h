@@ -123,9 +123,11 @@ struct _fs_mount_args {
 
 /* Arguments for SYSCALL_FS_OPEN */
 struct _fs_open_args {
+    int fd; /* if AT_FDARG */
     const char * name;
     size_t name_len; /*!< in bytes */
     int oflags;
+    int atflags; /* AT_FDCWD or AT_FDARG */
     mode_t mode;
 };
 
@@ -152,6 +154,12 @@ struct _fs_access_args {
     size_t path_len;
     int amode;
     int flag;
+};
+
+/** Arguments for SYSCALL_FS_CHMOD */
+struct _fs_chmod_args {
+    int fd;
+    mode_t mode;
 };
 
 /** Arguments for SYSCALL_FS_LINK */

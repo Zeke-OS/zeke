@@ -170,7 +170,8 @@ const vnode_ops_t ramfs_vnode_ops = {
     .mkdir = ramfs_mkdir,
     .rmdir = ramfs_rmdir,
     .readdir = ramfs_readdir,
-    .stat = ramfs_stat
+    .stat = ramfs_stat,
+    .chmod = ramfs_chmod
 };
 
 void ramfs_init(void) __attribute__((constructor));
@@ -662,6 +663,12 @@ int ramfs_stat(vnode_t * vnode, struct stat * buf)
     buf->st_blksize = inode->in_blksize;
     buf->st_blocks  = inode->in_blocks;
 
+    return 0;
+}
+
+int ramfs_chmod(vnode_t * vnode, mode_t mode)
+{
+    vnode->vn_mode = mode;
     return 0;
 }
 

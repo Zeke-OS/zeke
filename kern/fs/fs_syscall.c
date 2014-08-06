@@ -176,48 +176,37 @@ static int sys_lseek(void * user_args)
 
 static int sys_open(void * user_args)
 {
-    struct _fs_open_args args;
-    char * name = 0;
+    struct _fs_open_args * args = 0;
     vnode_t * file;
     int err, retval = -1;
 
     /* Copyin args struct */
-    if (!useracc(user_args, sizeof(args), VM_PROT_READ)) {
-        set_errno(EFAULT);
+    err = copyinstruct(user_args, (void **)(&args),
+            sizeof(struct _fs_open_args),
+            GET_STRUCT_OFFSETS(struct _fs_open_args,
+                name, name_len));
+    if (err) {
+        set_errno(-err);
         goto out;
     }
-    copyin(user_args, &args, sizeof(args));
 
-    if (args.name_len < 2) {
+    if (args->name_len < 2) { /* File name too short */
         set_errno(EINVAL);
         goto out;
     }
 
-    /* Copyin file name */
-    name = kmalloc(args.name_len);
-    if (!name) {
-        set_errno(ENFILE);
-        goto out;
-    }
-    if (!useracc(args.name, args.name_len, VM_PROT_READ)) {
-        set_errno(EFAULT);
-        goto out;
-    }
-    copyinstr(args.name, name, args.name_len, 0);
-    args.name = name;
-
     /* Validate name string */
-    if (!strvalid(args.name, args.name_len)) {
+    if (!strvalid(args->name, args->name_len)) {
         set_errno(ENAMETOOLONG);
         goto out;
     }
 
-    err = fs_namei_proc(&file, -1, name, AT_FDCWD);
+    err = fs_namei_proc(&file, args->fd, args->name, args->atflags);
     if (err) {
-        if (args.oflags & O_CREAT) {
+        if (args->oflags & O_CREAT) {
             /* Create a new file */
             /* TODO Determine correct mode bits?? */
-            retval = fs_creat_cproc(name, S_IFREG | args.mode, &file);
+            retval = fs_creat_cproc(args->name, S_IFREG | args->mode, &file);
             if (retval) {
                 set_errno(-retval);
                 goto out;
@@ -228,14 +217,14 @@ static int sys_open(void * user_args)
         }
     }
 
-    retval = fs_fildes_create_cproc(file, args.oflags);
+    retval = fs_fildes_create_cproc(file, args->oflags);
     if (retval < 0) {
         set_errno(-retval);
         retval = -1;
     }
 
 out:
-    kfree(name);
+    freecpystruct(args);
     return retval;
 }
 
@@ -681,11 +670,20 @@ out:
     return retval;
 }
 
-static int sys_chmod(void * args)
+/* Only fchmod() is implemented at the kernel level and rest must be implemented
+ * in user space. */
+static int sys_chmod(void * user_args)
 {
-    /* TODO */
-    set_errno(ENOSYS);
-    return -13;
+    struct _fs_chmod_args args;
+
+    /* Copyin args struct */
+    if (!useracc(user_args, sizeof(args), VM_PROT_READ)) {
+        set_errno(EFAULT);
+        return -1;
+    }
+    copyin(user_args, &args, sizeof(args));
+
+    return fs_chmod_curproc(args.fd, args.mode);
 }
 
 static int sys_mount(struct _fs_mount_args * user_args)
@@ -719,7 +717,7 @@ static int sys_mount(struct _fs_mount_args * user_args)
     }
 
     err = fs_mount(mpt, args->source, args->fsname, args->flags,
-                    args->parm, args->parm_len);
+                   args->parm, args->parm_len);
     if (err) {
         set_errno(-err);
         goto out;

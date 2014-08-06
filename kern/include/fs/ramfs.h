@@ -66,5 +66,6 @@ int ramfs_mkdir(vnode_t * dir,  const char * name, size_t name_len,
 int ramfs_rmdir(vnode_t * dir,  const char * name, size_t name_len);
 int ramfs_readdir(vnode_t * dir, struct dirent * d);
 int ramfs_stat(vnode_t * vnode, struct stat * buf);
+int ramfs_chmod(vnode_t * vnode, mode_t mode);
 
 #endif /* FS_RAMFS_H */

@@ -133,7 +133,8 @@ struct flock {
 
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
-int open(const char *, int, ...);
+int open(const char * path, int oflags, ...);
+int openat(int fd, const char * path, int oflags, ...);
 int creat(const char *, mode_t);
 int fcntl(int, int, ...);
 __END_DECLS
