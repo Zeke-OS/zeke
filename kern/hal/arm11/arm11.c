@@ -61,7 +61,7 @@ void init_stack_frame(struct _ds_pthread_create * thread_def,
     sframe->psr = priv ? SYSTEM_PSR : USER_PSR;
 }
 
-void svc_setretval(uintptr_t retval)
+void svc_setretval(intptr_t retval)
 {
     current_thread->sframe[SCHED_SFRAME_SVC].r0 = retval;
 }

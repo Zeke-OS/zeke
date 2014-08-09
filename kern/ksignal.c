@@ -192,7 +192,7 @@ void sigqueue_init(sigqueue_t * list, struct proc * p)
  * @param type Syscall type
  * @param p Syscall parameters
  */
-uintptr_t ksignal_syscall(uint32_t type, void * p)
+intptr_t ksignal_syscall(uint32_t type, void * p)
 {
     switch(type) {
         case SYSCALL_SIGNAL_KILL:

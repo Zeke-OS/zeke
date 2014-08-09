@@ -57,11 +57,11 @@
 /*
  * Declare prototypes of syscall handlers.
  */
-#define DECLARE_SCHANDLER(major, function) extern uint32_t function(uint32_t type, void * p);
+#define DECLARE_SCHANDLER(major, function) extern intptr_t function(uint32_t type, void * p);
 FOR_ALL_SYSCALL_GROUPS(DECLARE_SCHANDLER)
 #undef DECLARE_SCHANDLER
 
-static kernel_syscall_handler_t syscall_callmap[] = {
+static const kernel_syscall_handler_t syscall_callmap[] = {
     #define SYSCALL_MAP_X(major, function) [major] = function,
     FOR_ALL_SYSCALL_GROUPS(SYSCALL_MAP_X)
     #undef SYSCALL_MAP_X
@@ -89,7 +89,7 @@ void syscall_handler(void)
         KERROR(KERROR_WARN, buf);
 
         set_errno(ENOSYS); /* Not supported. */
-        svc_setretval(0);
+        svc_setretval(-1);
         return;
     }
 

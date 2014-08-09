@@ -101,7 +101,7 @@ out:
     return retval;
 }
 
-uintptr_t ioctl_syscall(uint32_t type, void * p)
+intptr_t ioctl_syscall(uint32_t type, void * p)
 {
     switch (type) {
     case SYSCALL_IOCTL_GETSET:

@@ -464,7 +464,7 @@ static uintptr_t procsys_wait(void * p)
     return (uintptr_t)pid_child;
 }
 
-uintptr_t proc_syscall(uint32_t type, void * p)
+intptr_t proc_syscall(uint32_t type, void * p)
 {
     switch (type) {
     case SYSCALL_PROC_EXEC: /* note: can only return EAGAIN or ENOMEM */

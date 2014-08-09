@@ -719,7 +719,7 @@ osPriority sched_thread_get_priority(pthread_t thread_id)
 
 /* Syscall handlers ***********************************************************/
 
-uintptr_t sched_syscall(uint32_t type, void * p)
+intptr_t sched_syscall(uint32_t type, void * p)
 {
     switch(type) {
     case SYSCALL_SCHED_DIE:

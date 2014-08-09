@@ -32,6 +32,7 @@
 
 #define KERNEL_INTERNAL 1
 #include <kerror.h>
+#include <libkern.h>
 #include <kstring.h>
 #include <kmalloc.h>
 #include <vm/vm.h>
@@ -228,9 +229,10 @@ out:
     return retval;
 }
 
-static int sys_close(int fildes)
+static int sys_close(void * p)
 {
     int err;
+    int fildes = (int)p;
 
     err = fs_fildes_close_cproc(fildes);
     if (err) {
@@ -718,7 +720,7 @@ static int sys_umask(void * user_args)
     return 0;
 }
 
-static int sys_mount(struct _fs_mount_args * user_args)
+static int sys_mount(void * user_args)
 {
     struct _fs_mount_args * args = 0;
     vnode_t * mpt;
@@ -762,70 +764,42 @@ out:
 }
 
 /**
+ * Declarations of fs syscall functions.
+ */
+static const syscall_handler_t fs_sysfnmap[] = {
+    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_OPEN, sys_open),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_CLOSE, sys_close),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_READ, sys_read),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_WRITE, sys_write),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_LSEEK, sys_lseek),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_GETDENTS, sys_getdents),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_FCNTL, sys_fcntl),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_LINK, sys_link),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_UNLINK, sys_unlink),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_MKDIR, sys_mkdir),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_RMDIR, sys_rmdir),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_STAT, sys_filestat),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_FSTAT, 0), /* Not implemented */
+    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_ACCESS, sys_access),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_CHMOD, sys_chmod),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_CHOWN, sys_chown),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_UMASK, sys_umask),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_MOUNT, sys_mount)
+};
+
+/**
  * fs syscall handler
  * @param type Syscall type
  * @param p Syscall parameters
  */
-uintptr_t fs_syscall(uint32_t type, void * p)
+intptr_t fs_syscall(uint32_t type, void * p)
 {
-    switch (type) {
-    case SYSCALL_FS_OPEN:
-        return (uintptr_t)sys_open(p);
+    uint32_t minor = SYSCALL_MINOR(type);
 
-    case SYSCALL_FS_CLOSE:
-        return (uintptr_t)sys_close((int)p);
-
-    case SYSCALL_FS_READ:
-        return (uintptr_t)sys_read(p);
-
-    case SYSCALL_FS_WRITE:
-        return (uintptr_t)sys_write(p);
-
-    case SYSCALL_FS_LSEEK:
-        return (uintptr_t)sys_lseek(p);
-
-    case SYSCALL_FS_GETDENTS:
-        return (uintptr_t)sys_getdents(p);
-
-    case SYSCALL_FS_FCNTL:
-        return (uintptr_t)sys_fcntl(p);
-
-    case SYSCALL_FS_LINK:
-        return (uintptr_t)sys_link(p);
-
-    case SYSCALL_FS_UNLINK:
-        return (uintptr_t)sys_unlink(p);
-
-    case SYSCALL_FS_MKDIR:
-        return (uintptr_t)sys_mkdir(p);
-
-    case SYSCALL_FS_RMDIR:
-        return (uintptr_t)sys_rmdir(p);
-
-    case SYSCALL_FS_STAT:
-        return (uintptr_t)sys_filestat(p);
-
-    case SYSCALL_FS_FSTAT:
+    if ((minor >= num_elem(fs_sysfnmap)) || !fs_sysfnmap[minor]) {
         set_errno(ENOSYS);
-        return -11;
-
-    case SYSCALL_FS_ACCESS:
-        return (uintptr_t)sys_access(p);
-
-    case SYSCALL_FS_CHMOD:
-        return (uintptr_t)sys_chmod(p);
-
-    case SYSCALL_FS_CHOWN:
-        return (uintptr_t)sys_chown(p);
-
-    case SYSCALL_FS_UMASK:
-        return (uintptr_t)sys_umask(p);
-
-    case SYSCALL_FS_MOUNT:
-        return (uintptr_t)sys_mount(p);
-
-    default:
-        set_errno(ENOSYS);
-        return (uintptr_t)NULL;
+        return -1;
     }
+
+    return fs_sysfnmap[minor](p);
 }
