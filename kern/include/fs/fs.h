@@ -285,6 +285,7 @@ typedef struct vnode_ops {
     int (*stat)(vnode_t * vnode, struct stat * buf);
 
     int (*chmod)(vnode_t * vnode, mode_t mode);
+    int (*chown)(vnode_t * vnode, uid_t owner, gid_t group);
 } vnode_ops_t;
 
 
@@ -481,6 +482,7 @@ int fs_mkdir_curproc(const char * pathname, mode_t mode);
 int fs_rmdir_curproc(const char * pathname);
 
 int fs_chmod_curproc(int fildes, mode_t mode);
+int fs_chown_curproc(int fildes, uid_t owner, gid_t group);
 
 #endif /* FS_H */
 

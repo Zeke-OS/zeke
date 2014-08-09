@@ -162,6 +162,13 @@ struct _fs_chmod_args {
     mode_t mode;
 };
 
+/** Arguments for SYSCALL_FS_CHOWN */
+struct _fs_chown_args {
+    int fd;
+    uid_t owner;
+    gid_t group;
+};
+
 /** Arguments for SYSCALL_FS_LINK */
 struct _fs_link_args {
     const char * path1;
@@ -191,6 +198,11 @@ struct _fs_mkdir_args {
 struct _fs_rmdir_args {
     const char * path;
     size_t path_len;
+};
+
+struct _fs_umask_args {
+    mode_t newumask;
+    mode_t oldumask;
 };
 
 struct _ioctl_get_args {

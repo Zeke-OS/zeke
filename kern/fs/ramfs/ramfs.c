@@ -171,7 +171,8 @@ const vnode_ops_t ramfs_vnode_ops = {
     .rmdir = ramfs_rmdir,
     .readdir = ramfs_readdir,
     .stat = ramfs_stat,
-    .chmod = ramfs_chmod
+    .chmod = ramfs_chmod,
+    .chown = ramfs_chown
 };
 
 void ramfs_init(void) __attribute__((constructor));
@@ -669,6 +670,16 @@ int ramfs_stat(vnode_t * vnode, struct stat * buf)
 int ramfs_chmod(vnode_t * vnode, mode_t mode)
 {
     vnode->vn_mode = mode;
+    return 0;
+}
+
+int ramfs_chown(vnode_t * vnode, uid_t owner, gid_t group)
+{
+    ramfs_inode_t * inode = get_inode_of_vnode(vnode);
+
+    inode->in_uid = owner;
+    inode->in_gid = group;
+
     return 0;
 }
 

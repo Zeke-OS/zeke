@@ -156,3 +156,15 @@ int rmdir(const char * path)
 
     return syscall(SYSCALL_FS_RMDIR, &args);
 }
+
+mode_t umask(mode_t cmask)
+{
+    struct _fs_umask_args args = {
+        .newumask = cmask
+    };
+
+    if (syscall(SYSCALL_FS_UMASK, &args))
+        args.oldumask = args.newumask; /* POSIX defines no errors */
+
+    return args.oldumask;
+}

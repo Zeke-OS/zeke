@@ -887,7 +887,35 @@ int fs_chmod_curproc(int fildes, mode_t mode)
         retval = -EROFS;
         goto out;
     }
-    vnode->vnode_ops->chmod(vnode, mode);
+    retval = vnode->vnode_ops->chmod(vnode, mode);
+
+out:
+    fs_fildes_ref(curproc->files, fildes, -1);
+
+    return retval;
+}
+
+int fs_chown_curproc(int fildes, uid_t owner, gid_t group)
+{
+    vnode_t * vnode;
+    file_t * file;
+    int retval = 0;
+
+    file = fs_fildes_ref(curproc->files, fildes, 1);
+    if (!file)
+        return -EBADF;
+    vnode = file->vnode;
+
+    if (!((file->oflags & O_WRONLY) || !chkperm_vnode_cproc(vnode, W_OK))) {
+        retval = -EPERM;
+        goto out;
+    }
+
+    if (!vnode->vnode_ops->chown) {
+        retval = -EROFS;
+        goto out;
+    }
+    retval = vnode->vnode_ops->chown(vnode, owner, group);
 
 out:
     fs_fildes_ref(curproc->files, fildes, -1);

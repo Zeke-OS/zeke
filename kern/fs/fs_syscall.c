@@ -685,6 +685,39 @@ static int sys_chmod(void * user_args)
     return fs_chmod_curproc(args.fd, args.mode);
 }
 
+/* Only fchown() is implemented at the kernel level and rest must be implemented
+ * in user space. */
+static int sys_chown(void * user_args)
+{
+    struct _fs_chown_args args;
+
+    /* Copyin args struct */
+    if (!useracc(user_args, sizeof(args), VM_PROT_READ)) {
+        set_errno(EFAULT);
+        return -1;
+    }
+    copyin(user_args, &args, sizeof(args));
+
+    return fs_chown_curproc(args.fd, args.owner, args.group);
+}
+
+static int sys_umask(void * user_args)
+{
+    struct _fs_umask_args args;
+
+    if (!useracc(user_args, sizeof(args), VM_PROT_WRITE)) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    copyin(user_args, &args, sizeof(args));
+    args.oldumask = curproc->files->umask;
+    curproc->files->umask = args.newumask;
+    copyout(&args, user_args, sizeof(args));
+
+    return 0;
+}
+
 static int sys_mount(struct _fs_mount_args * user_args)
 {
     struct _fs_mount_args * args = 0;
@@ -771,8 +804,6 @@ uintptr_t fs_syscall(uint32_t type, void * p)
 
     case SYSCALL_FS_STAT:
         return (uintptr_t)sys_filestat(p);
-        set_errno(ENOSYS);
-        return -10;
 
     case SYSCALL_FS_FSTAT:
         set_errno(ENOSYS);
@@ -785,12 +816,10 @@ uintptr_t fs_syscall(uint32_t type, void * p)
         return (uintptr_t)sys_chmod(p);
 
     case SYSCALL_FS_CHOWN:
-        set_errno(ENOSYS);
-        return -14;
+        return (uintptr_t)sys_chown(p);
 
     case SYSCALL_FS_UMASK:
-        set_errno(ENOSYS);
-        return -15;
+        return (uintptr_t)sys_umask(p);
 
     case SYSCALL_FS_MOUNT:
         return (uintptr_t)sys_mount(p);

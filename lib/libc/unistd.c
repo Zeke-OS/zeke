@@ -63,6 +63,56 @@ int faccessat(int fd, const char * path, int amode, int flag)
     return (int)syscall(SYSCALL_FS_ACCESS, &args);
 }
 
+int chown(const char *path, uid_t owner, gid_t group)
+{
+    int err;
+    struct _fs_chown_args args = {
+        .owner = owner,
+        .group = group
+    };
+
+    args.fd = open(path, O_WRONLY);
+    if (args.fd < 0)
+        return -1;
+
+    err = syscall(SYSCALL_FS_CHOWN, &args);
+
+    close(args.fd);
+
+    return err;
+}
+
+int fchownat(int fd, const char *path, uid_t owner, gid_t group,
+             int flag)
+{
+    int err;
+    struct _fs_chown_args args = {
+        .owner = owner,
+        .group = group
+    };
+
+    args.fd = openat(fd, path, O_WRONLY, flag);
+    if (args.fd < 0)
+        return -1;
+
+    err = syscall(SYSCALL_FS_CHOWN, &args);
+
+    close(args.fd);
+
+    return err;
+}
+
+int fchown(int fd, uid_t owner, gid_t group)
+{
+    struct _fs_chown_args args = {
+        .fd = fd,
+        .owner = owner,
+        .group = group
+    };
+
+    return (int)syscall(SYSCALL_FS_CHOWN, &args);
+}
+
 ssize_t read(int fildes, void * buf, size_t nbytes)
 {
     struct _fs_readwrite_args args = {

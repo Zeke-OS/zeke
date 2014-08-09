@@ -192,6 +192,11 @@ pid_t fork(void);
 int access(const char * path, int amode);
 int faccessat(int fd, const char * path, int amode, int flag);
 
+int chown(const char * path, uid_t owner, gid_t group);
+int fchownat(int fd, const char * path, uid_t owner, gid_t group,
+             int flag);
+int fchown(int fildes, uid_t owner, gid_t group);
+
 ssize_t read(int fildes, void * buf, size_t nbytes);
 ssize_t pwrite(int fildes, const void *buf, size_t nbyte,
     off_t offset);
