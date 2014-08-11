@@ -142,11 +142,13 @@
 
 /* Kernel scope functions */
 #ifdef KERNEL_INTERNAL
-
-typedef uintptr_t (*kernel_syscall_handler_t)(uint32_t type,  void * p);
+typedef intptr_t (*kernel_syscall_handler_t)(uint32_t type, void * p);
+typedef intptr_t (*syscall_handler_t)(void * p);
+#define ARRDECL_SYSCALL_HNDL(SYSCALL_NR, fn) [SYSCALL_MINOR(SYSCALL_NR)] = fn
 
 void syscall_handler(void);
 #else /* !KERNEL_INTERNAL */
+
 /**
  * Make a system call
  * @param type syscall type.
@@ -154,7 +156,7 @@ void syscall_handler(void);
  * @return return value of the called kernel function.
  * @note Must be only used in thread scope.
  */
-uint32_t syscall(uint32_t type, void * p);
+intptr_t syscall(uint32_t type, void * p);
 
 #if configARCH == __ARM6__ || configARCH == __ARM6K__
 /**

@@ -108,21 +108,20 @@ struct stat {
 
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
-/*
-int chmod(const char *, mode_t);
+int chmod(const char * path, mode_t mode);
+int fchmodat(int fd, const char * path, mode_t mode, int flag);
 int fchmod(int, mode_t);
-*/
 int fstat(int fildes, struct stat * buf);
 int fstatat(int fd, const char * restrict path,
             struct stat * restrict buf, int flag);
 int lstat(const char * restrict path, struct stat * restrict buf);
 int stat(const char * restrict path, struct stat * restrict buf);
 int mkdir(const char *, mode_t);
+mode_t umask(mode_t cmask);
 /*
 int mkfifo(const char *, mode_t);
-int mkdirat(int fd, const char  *path, mode_t mode);
+int mkdirat(int fd, const char * path, mode_t mode);
 int mknod(const char *, mode_t, dev_t);
-mode_t umask(mode_t);
 */
 
 __END_DECLS

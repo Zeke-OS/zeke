@@ -40,6 +40,7 @@
 #include <sched.h>
 #include <ksignal.h>
 #include <errno.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <sys/sysctl.h>
 #include <fs/mbr.h>
@@ -199,26 +200,37 @@ out:
     return retval;
 }
 
-int fs_namei_proc(vnode_t ** result, const char * path)
+int fs_namei_proc(vnode_t ** result, int fd, const char * path, int atflags)
 {
     vnode_t * start;
-    int oflags = 0;
+    int oflags = atflags & AT_SYMLINK_NOFOLLOW;
+    int retval;
 
     if (path[0] == '\0')
         return -EINVAL;
 
-    if (path[0] == '/') {
+    if (path[0] == '/') { /* Absolute path */
         path++;
         start = curproc->croot;
-    } else {
+    } else if (atflags & AT_FDARG) { /* AT_FDARG */
+        file_t * file = fs_fildes_ref(curproc->files, fd, 1);
+        if (!file)
+            return -EBADF;
+        start = file->vnode;
+    } else { /* Implicit AT_FDCWD */
         start = curproc->cwd;
     }
 
     if (path[strlenn(path, PATH_MAX)] == '/') {
-        oflags = O_DIRECTORY;
+        oflags |= O_DIRECTORY;
     }
 
-    return lookup_vnode(result, start, path, oflags);
+    retval = lookup_vnode(result, start, path, oflags);
+
+    if (atflags & AT_FDARG)
+        fs_fildes_ref(curproc->files, fd, -1);
+
+    return retval;
 }
 
 int fs_mount(vnode_t * target, const char * source, const char * fsname,
@@ -304,11 +316,18 @@ unsigned int fs_get_pfs_minor(void)
 
 int chkperm_cproc(struct stat * stat, int oflags)
 {
-    gid_t euid = curproc->euid;
-    uid_t egid = curproc->egid;
+    uid_t euid = curproc->euid;
+    gid_t egid = curproc->egid;
+
+    return chkperm(stat, euid, egid, oflags);
+}
+
+/* This function accepts both oflags and amodes, except F_OK. */
+int chkperm(struct stat * stat, uid_t euid, gid_t egid, int oflags)
+{
     oflags &= O_ACCMODE;
 
-    if (oflags & O_RDONLY) {
+    if (oflags & R_OK) {
         mode_t req_perm = 0;
 
         if (stat->st_uid == euid)
@@ -321,7 +340,7 @@ int chkperm_cproc(struct stat * stat, int oflags)
             return -EPERM;
     }
 
-    if (oflags & O_WRONLY) {
+    if (oflags & W_OK) {
         mode_t req_perm = 0;
 
         if (stat->st_uid == euid)
@@ -334,7 +353,7 @@ int chkperm_cproc(struct stat * stat, int oflags)
             return -EPERM;
     }
 
-    if ((oflags & O_EXEC) || (S_ISDIR(stat->st_mode))) {
+    if ((oflags & X_OK) || (S_ISDIR(stat->st_mode))) {
         mode_t req_perm = 0;
 
         if (stat->st_uid == euid)
@@ -352,6 +371,14 @@ int chkperm_cproc(struct stat * stat, int oflags)
 
 int chkperm_vnode_cproc(vnode_t * vnode, int oflags)
 {
+    uid_t euid = curproc->euid;
+    gid_t egid = curproc->egid;
+
+    return chkperm_vnode(vnode, euid, egid, oflags);
+}
+
+int chkperm_vnode(vnode_t * vnode, uid_t euid, gid_t egid, int oflags)
+{
     struct stat stat;
     int err;
 
@@ -359,7 +386,7 @@ int chkperm_vnode_cproc(vnode_t * vnode, int oflags)
     if (err)
         return err;
 
-    err = chkperm_cproc(&stat, oflags);
+    err = chkperm(&stat, euid, egid, oflags);
 
     return err;
 }
@@ -635,7 +662,7 @@ static int getvndir(const char * pathname, vnode_t ** dir, char ** filename, int
         goto out;
     }
 
-    err = fs_namei_proc(&file, pathname);
+    err = fs_namei_proc(&file, -1, pathname, AT_FDCWD);
     if (flag & O_CREAT) { /* File should not exist */
         if (err == 0) {
             err = -EEXIST;
@@ -654,7 +681,7 @@ static int getvndir(const char * pathname, vnode_t ** dir, char ** filename, int
     kpalloc(name); /* Incr ref count */
     *filename = name;
 
-    err = fs_namei_proc(dir, path);
+    err = fs_namei_proc(dir, -1, path, AT_FDCWD);
     if (err)
         goto out;
 
@@ -677,6 +704,7 @@ int fs_creat_cproc(const char * pathname, mode_t mode, vnode_t ** result)
     /* We know that the returned vnode is a dir so we can just call mknod() */
     *result = 0;
     mode &= ~S_IFMT; /* Filter out file type bits */
+    mode &= ~curproc->files->umask;
     retval = dir->vnode_ops->create(dir, name, NAME_MAX, mode, result);
 
 out:
@@ -693,7 +721,7 @@ int fs_link_curproc(const char * path1, size_t path1_len,
     int err;
 
     /* Get the source vnode */
-    err = fs_namei_proc(&vn_src, path1);
+    err = fs_namei_proc(&vn_src, -1, path1, AT_FDCWD);
     if (err)
         return err;
 
@@ -727,7 +755,7 @@ out:
     return err;
 }
 
-int fs_unlink_curproc(const char * path, size_t path_len)
+int fs_unlink_curproc(int fd, const char * path, size_t path_len, int atflags)
 {
     char * dirpath = 0;
     char * filename = 0;
@@ -736,7 +764,7 @@ int fs_unlink_curproc(const char * path, size_t path_len)
     vnode_t * fnode;
     int err;
 
-    err = fs_namei_proc(&fnode, path);
+    err = fs_namei_proc(&fnode, fd, path, atflags);
     if (err)
         return err;
 
@@ -754,7 +782,7 @@ int fs_unlink_curproc(const char * path, size_t path_len)
         goto out;
 
     /* Get the vnode of the containing directory */
-    if (fs_namei_proc(&dir, dirpath)) {
+    if (fs_namei_proc(&dir, fd, dirpath, atflags)) {
         err = -ENOENT;
         goto out;
     }
@@ -796,7 +824,13 @@ int fs_mkdir_curproc(const char * pathname, mode_t mode)
     if (retval)
         goto out;
 
+    if (!dir->vnode_ops->mkdir) {
+        retval = -EROFS;
+        goto out;
+    }
+
     mode &= ~S_IFMT; /* Filter out file type bits */
+    mode &= ~curproc->files->umask;
     retval = dir->vnode_ops->mkdir(dir, name, NAME_MAX, mode);
 
     /* TODO Set owner */
@@ -821,9 +855,8 @@ int fs_rmdir_curproc(const char * pathname)
     if (retval)
         goto out;
 
-    /* Return if rmdir is not defined for this vnode. */
     if (!dir->vnode_ops->rmdir) {
-        retval = EBUSY;
+        retval = -EROFS;
         goto out;
     }
 
@@ -831,5 +864,61 @@ int fs_rmdir_curproc(const char * pathname)
 
 out:
     kfree(name);
+    return retval;
+}
+
+int fs_chmod_curproc(int fildes, mode_t mode)
+{
+    vnode_t * vnode;
+    file_t * file;
+    int retval = 0;
+
+    file = fs_fildes_ref(curproc->files, fildes, 1);
+    if (!file)
+        return -EBADF;
+    vnode = file->vnode;
+
+    if (!((file->oflags & O_WRONLY) || !chkperm_vnode_cproc(vnode, W_OK))) {
+        retval = -EPERM;
+        goto out;
+    }
+
+    if (!vnode->vnode_ops->chmod) {
+        retval = -EROFS;
+        goto out;
+    }
+    retval = vnode->vnode_ops->chmod(vnode, mode);
+
+out:
+    fs_fildes_ref(curproc->files, fildes, -1);
+
+    return retval;
+}
+
+int fs_chown_curproc(int fildes, uid_t owner, gid_t group)
+{
+    vnode_t * vnode;
+    file_t * file;
+    int retval = 0;
+
+    file = fs_fildes_ref(curproc->files, fildes, 1);
+    if (!file)
+        return -EBADF;
+    vnode = file->vnode;
+
+    if (!((file->oflags & O_WRONLY) || !chkperm_vnode_cproc(vnode, W_OK))) {
+        retval = -EPERM;
+        goto out;
+    }
+
+    if (!vnode->vnode_ops->chown) {
+        retval = -EROFS;
+        goto out;
+    }
+    retval = vnode->vnode_ops->chown(vnode, owner, group);
+
+out:
+    fs_fildes_ref(curproc->files, fildes, -1);
+
     return retval;
 }

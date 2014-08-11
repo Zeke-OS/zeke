@@ -123,9 +123,11 @@ struct _fs_mount_args {
 
 /* Arguments for SYSCALL_FS_OPEN */
 struct _fs_open_args {
+    int fd; /* if AT_FDARG */
     const char * name;
     size_t name_len; /*!< in bytes */
     int oflags;
+    int atflags; /* AT_FDCWD or AT_FDARG */
     mode_t mode;
 };
 
@@ -145,6 +147,28 @@ struct _fs_stat_args {
     unsigned flags;
 };
 
+/** Arguments for SYSCALL_FS_ACCESS */
+struct _fs_access_args {
+    int fd;
+    const char * path;
+    size_t path_len;
+    int amode;
+    int flag;
+};
+
+/** Arguments for SYSCALL_FS_CHMOD */
+struct _fs_chmod_args {
+    int fd;
+    mode_t mode;
+};
+
+/** Arguments for SYSCALL_FS_CHOWN */
+struct _fs_chown_args {
+    int fd;
+    uid_t owner;
+    gid_t group;
+};
+
 /** Arguments for SYSCALL_FS_LINK */
 struct _fs_link_args {
     const char * path1;
@@ -155,7 +179,6 @@ struct _fs_link_args {
 
 /** Arguments for SYSCALL_FS_UNLINK */
 struct _fs_unlink_args {
-    int op;             /*!< Operation: 0 = unlink, 1 = unlinkat */
     int fd;             /*!< File descriptor number. */
     const char * path;
     size_t path_len;
@@ -168,13 +191,18 @@ struct _fs_mkdir_args {
     const char * path;
     size_t path_len;
     mode_t mode;
-    unsigned flags;
+    unsigned atflags;
 };
 
 /** Arguments for SYSCALL_FS_RMDIR */
 struct _fs_rmdir_args {
     const char * path;
     size_t path_len;
+};
+
+struct _fs_umask_args {
+    mode_t newumask;
+    mode_t oldumask;
 };
 
 struct _ioctl_get_args {

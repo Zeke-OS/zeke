@@ -35,9 +35,9 @@
 #include <syscall.h>
 
 #if configARCH == __ARM6__ || configARCH == __ARM6K__ || configARCH == __ARM6M__
-uint32_t syscall(uint32_t type, void * p)
+intptr_t syscall(uint32_t type, void * p)
 {
-    uint32_t scratch;
+    int32_t scratch;
 
     /* Lets expect that parameters are already in r0 & r1 */
     __asm__ volatile (
@@ -54,7 +54,7 @@ uint32_t syscall(uint32_t type, void * p)
         : [typ]"r" (type), [arg]"r" (p)
         : "r2", "r3", "r4");
 
-    return scratch;
+    return (intptr_t)scratch;
 }
 #elif configARCH == __ARM6M__
 /**

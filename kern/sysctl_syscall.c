@@ -35,7 +35,7 @@
 #include <syscall.h>
 #include <sys/sysctl.h>
 
-uintptr_t sysctl_syscall(uint32_t type, void * p)
+intptr_t sysctl_syscall(uint32_t type, void * p)
 {
     int err;
 

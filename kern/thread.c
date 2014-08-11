@@ -171,7 +171,7 @@ void * thread_get_curr_stackframe(size_t ind)
     return NULL;
 }
 
-uintptr_t thread_syscall(uint32_t type, void * p)
+intptr_t thread_syscall(uint32_t type, void * p)
 {
     switch (type) {
     case SYSCALL_THREAD_CREATE:

@@ -38,8 +38,55 @@
 #include <time.h>
 #define strlen(x) strlenn(x, 4096) /* TODO REMOVE ME */
 #include <syscall.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+
+int chmod(const char * path, mode_t mode)
+{
+    int err;
+    struct _fs_chmod_args args = {
+        .mode = mode
+    };
+
+    args.fd = open(path, O_WRONLY);
+    if (args.fd < 0)
+        return -1;
+
+    err = syscall(SYSCALL_FS_CHMOD, &args);
+
+    close(args.fd);
+
+    return err;
+}
+
+int fchmodat(int fd, const char * path, mode_t mode, int flag)
+{
+    int err;
+    struct _fs_chmod_args args = {
+        .mode = mode
+    };
+
+    args.fd = openat(fd, path, O_WRONLY, flag);
+    if (args.fd < 0)
+        return -1;
+
+    err = syscall(SYSCALL_FS_CHMOD, &args);
+
+    close(args.fd);
+
+    return err;
+}
+
+int fchmod(int fildes, mode_t mode)
+{
+    struct _fs_chmod_args args = {
+        .fd = fildes,
+        .mode = mode
+    };
+
+    return syscall(SYSCALL_FS_CHMOD, &args);
+}
 
 int fstat(int fildes, struct stat * buf)
 {
@@ -108,4 +155,16 @@ int rmdir(const char * path)
     };
 
     return syscall(SYSCALL_FS_RMDIR, &args);
+}
+
+mode_t umask(mode_t cmask)
+{
+    struct _fs_umask_args args = {
+        .newumask = cmask
+    };
+
+    if (syscall(SYSCALL_FS_UMASK, &args))
+        args.oldumask = args.newumask; /* POSIX defines no errors */
+
+    return args.oldumask;
 }

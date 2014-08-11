@@ -41,6 +41,78 @@ pid_t fork(void)
     return (pid_t)syscall(SYSCALL_PROC_FORK, NULL);
 }
 
+int access(const char * path, int amode)
+{
+    struct _fs_access_args args = {
+        .path = path,
+        .amode = amode,
+        .flag = 0
+    };
+
+    return (int)syscall(SYSCALL_FS_ACCESS, &args);
+}
+
+int faccessat(int fd, const char * path, int amode, int flag)
+{
+    struct _fs_access_args args = {
+        .path = path,
+        .amode = amode,
+        .flag = AT_FDARG | flag
+    };
+
+    return (int)syscall(SYSCALL_FS_ACCESS, &args);
+}
+
+int chown(const char *path, uid_t owner, gid_t group)
+{
+    int err;
+    struct _fs_chown_args args = {
+        .owner = owner,
+        .group = group
+    };
+
+    args.fd = open(path, O_WRONLY);
+    if (args.fd < 0)
+        return -1;
+
+    err = syscall(SYSCALL_FS_CHOWN, &args);
+
+    close(args.fd);
+
+    return err;
+}
+
+int fchownat(int fd, const char *path, uid_t owner, gid_t group,
+             int flag)
+{
+    int err;
+    struct _fs_chown_args args = {
+        .owner = owner,
+        .group = group
+    };
+
+    args.fd = openat(fd, path, O_WRONLY, flag);
+    if (args.fd < 0)
+        return -1;
+
+    err = syscall(SYSCALL_FS_CHOWN, &args);
+
+    close(args.fd);
+
+    return err;
+}
+
+int fchown(int fd, uid_t owner, gid_t group)
+{
+    struct _fs_chown_args args = {
+        .fd = fd,
+        .owner = owner,
+        .group = group
+    };
+
+    return (int)syscall(SYSCALL_FS_CHOWN, &args);
+}
+
 ssize_t read(int fildes, void * buf, size_t nbytes)
 {
     struct _fs_readwrite_args args = {
@@ -119,9 +191,24 @@ int link(const char * path1, const char * path2)
 int unlink(const char * path)
 {
     struct _fs_unlink_args args = {
-        .op = 0,
         .path = path,
-        .path_len = strlenn(path, 4096) + 1 /* TODO */
+        .path_len = strlenn(path, 4096) + 1, /* TODO */
+        .flag = AT_FDCWD
+    };
+
+    return (int)syscall(SYSCALL_FS_UNLINK, &args);
+}
+
+int unlinkat(int fd, const char * path, int flag)
+{
+    if (!(flag & AT_FDCWD))
+        flag |= AT_FDARG;
+
+    struct _fs_unlink_args args = {
+        .fd = fd,
+        .path = path,
+        .path_len = strlenn(path, 4096) + 1, /* TODO */
+        .flag = flag
     };
 
     return (int)syscall(SYSCALL_FS_UNLINK, &args);

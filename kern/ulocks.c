@@ -128,7 +128,7 @@ static int ulocks_semaphore_thread_spinwait(uint32_t * s, uint32_t millisec)
  * TODO Atleast semaphores could be made blocking
  */
 
-uintptr_t ulocks_syscall(uint32_t type, void * p)
+intptr_t ulocks_syscall(uint32_t type, void * p)
 {
     uint32_t retval;
 

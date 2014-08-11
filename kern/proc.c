@@ -168,6 +168,7 @@ static void init_kernel_proc(void)
         panic(panic_msg);
     }
     kernel_proc->files->count = 8;
+    kernel_proc->files->umask = 022; /* File creation mask: S_IWGRP|S_IWOTH */
 
     /* TODO Do this correctly */
     kernel_proc->files->fd[STDIN_FILENO] = 0;
@@ -463,7 +464,7 @@ static uintptr_t procsys_wait(void * p)
     return (uintptr_t)pid_child;
 }
 
-uintptr_t proc_syscall(uint32_t type, void * p)
+intptr_t proc_syscall(uint32_t type, void * p)
 {
     switch (type) {
     case SYSCALL_PROC_EXEC: /* note: can only return EAGAIN or ENOMEM */
