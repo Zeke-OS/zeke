@@ -63,6 +63,8 @@ void uart_init(void)
     SUBSYS_DEP(devfs_init);
     vfs_ready = 1;
 
+    /* Register all UART devices with devfs that were registered with UART
+     * subsystem before devfs was initialized. */
     for (int i = 0; i < uart_nr_ports; i++) {
         struct uart_port * port = uart_ports[i];
 
@@ -73,6 +75,9 @@ void uart_init(void)
     SUBSYS_INITFINI("uart OK");
 }
 
+/**
+ * Register a new UART with devfs.
+ */
 static int make_uartdev(struct uart_port * port, int port_num)
 {
     struct dev_info * dev = kcalloc(1, sizeof(struct dev_info));

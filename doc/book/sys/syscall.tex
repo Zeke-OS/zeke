@@ -13,13 +13,13 @@ User scope syscall code is allowed to call the following functions in
   \item \verb+req_context_switch()+
 \end{itemize}
 
-\section{Syscall flow}
+\section{Syscall Flow Sequence}
 
 \begin{enumerate}
 \item User scope thread makes a syscall by calling:
       \verb+syscall(SYSCALL_XXX_YYY, &args)+, where XXX is generally a
       module/compilation unit name, YYY is a function name and args is a
-      syscall dataset structure in format specified in \verb+syscalldef.h+.
+      syscall dataset structure in format declared in \verb+syscalldef.h+.
 
 \item After interrupt handler and other hardware specific code execution enters
       to \verb+_intSyscall_handler()+ function where thread local \verb+errno+
@@ -32,7 +32,13 @@ User scope syscall code is allowed to call the following functions in
 
 \item \verb+XXX_syscall()+ returns a \verb+uint32_t+ value which is, after
       multiple return steps, returned back to the caller which should know
-      what type the returned value actually represents.
+      what type the returned value actually represents. In the future return
+      value should be always integer value having the same size as register
+      in the architecture. Everything else shall be passed both ways by using
+      dataset structs, thus unifying the return value. This means that in
+      general pointers shouldn't be returned as a return value because it's
+      portability is hard to guarantee and it creates ambiguous system calls
+      in user space.
 \end{enumerate}
 
 

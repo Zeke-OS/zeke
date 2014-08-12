@@ -40,6 +40,13 @@ supported inside the kernel.
 
 \section{UART devices}
 
+UART devices are handled by UART submodule (\verb+kern/hal/uart.c+) so that
+common code between UART implementations can be shared and tty numbering can
+be centrally organized. To register a new UART port the device driver has to
+allocate a new \verb+uart_port+ structure and pass it to
+\verb+uart_register_port()+ which finally registers the a new device file for
+the port.
+
 \begin{figure}
   \center
   \includegraphics[width=9cm]{pics/uart}
