@@ -156,19 +156,19 @@ void ptlist_free(struct ptlist * ptlist_head)
  * Copy data from user-space to kernel-space.
  * Copy len bytes of data from the user-space address uaddr to the kernel-space
  * address kaddr.
- * @remark Compatible with BSD.
  * @param[in]   uaddr is the source address.
  * @param[out]  kaddr is the target address.
  * @param       len  is the length of source.
- * @return 0 if succeeded; otherwise EFAULT.
+ * @return 0 if succeeded; otherwise -EFAULT.
  */
 int copyin(const void * uaddr, void * kaddr, size_t len)
 {
     struct vm_pt * vpt;
     void * phys_uaddr;
 
-    /* By now we believe existence of the requested address is already asserted
-     * and we can just do the page table translation and copy data. */
+    if (!useracc(uaddr, len, VM_PROT_READ)) {
+        return -EFAULT;
+    }
 
     vpt = ptlist_get_pt(
             &(curproc->mm.ptlist_head),
@@ -180,7 +180,7 @@ int copyin(const void * uaddr, void * kaddr, size_t len)
 
     phys_uaddr = mmu_translate_vaddr(&(vpt->pt), (uintptr_t)uaddr);
     if (!phys_uaddr) {
-        return EFAULT;
+        return -EFAULT;
     }
 
     memcpy(kaddr, phys_uaddr, len);
@@ -191,17 +191,20 @@ int copyin(const void * uaddr, void * kaddr, size_t len)
  * Copy data from kernel-space to user-space.
  * Copy len bytes of data from the kernel-space address kaddr to the user-space
  * address uaddr.
- * @remark Compatible with BSD.
  * @param[in]   kaddr is the source address.
  * @param[out]  uaddr is the target address.
  * @param       len is the length of source.
- * @return 0 if succeeded; otherwise EFAULT.
+ * @return 0 if succeeded; otherwise -EFAULT.
  */
 int copyout(const void * kaddr, void * uaddr, size_t len)
 {
     /* TODO Handle possible cow flag? */
     struct vm_pt * vpt;
     void * phys_uaddr;
+
+    if (!useracc(uaddr, len, VM_PROT_WRITE)) {
+        return -EFAULT;
+    }
 
     vpt = ptlist_get_pt(
             &(curproc->mm.ptlist_head),
@@ -213,7 +216,7 @@ int copyout(const void * kaddr, void * uaddr, size_t len)
 
     phys_uaddr = mmu_translate_vaddr(&(vpt->pt), (uintptr_t)uaddr);
     if (!phys_uaddr)
-        return EFAULT;
+        return -EFAULT;
 
     memcpy(phys_uaddr, kaddr, len);
     return 0;
@@ -223,27 +226,30 @@ int copyout(const void * kaddr, void * uaddr, size_t len)
  * Copy a string from user-space to kernel-space.
  * Copy a NUL-terminated string, at most len bytes long, from user-space address
  * uaddr to kernel-space address kaddr.
- * @remark Compatible with BSD.
  * @param[in]   uaddr is the source address.
  * @param[out]  kaddr is the target address.
  * @param       len is the length of string in uaddr.
  * @param[out]  done is the number of bytes actually copied, including the
  *                   terminating NUL, if done is non-NULL.
- * @return  0 if succeeded; or ENAMETOOLONG if the string is longer than len
- *          bytes.
+ * @return  0 if succeeded; or -ENAMETOOLONG if the string is longer than len
+ *          bytes; or any of the return values defined for copyin().
  */
 int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done)
 {
     size_t slen;
+    int err;
 
-    copyin(uaddr, kaddr, len);
+    err = copyin(uaddr, kaddr, len);
+    if (err)
+        return err;
+
     slen = strlenn(kaddr, len);
     if (done) {
         *done = slen + 1;
     }
 
     if (((char *)kaddr)[slen] != '\0')
-        return ENAMETOOLONG;
+        return -ENAMETOOLONG;
 
     return 0;
 }

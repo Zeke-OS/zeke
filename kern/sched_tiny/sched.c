@@ -36,6 +36,7 @@
 #include <stddef.h>
 #include <autoconf.h>
 #include <kstring.h>
+#include <libkern.h>
 #include <kinit.h>
 #include <sys/linker_set.h>
 #include <hal/core.h>
@@ -554,10 +555,16 @@ static void sched_thread_remove(pthread_t tt_id)
 
 void sched_thread_die(intptr_t retval)
 {
+    current_thread->retval = retval;
     current_thread->flags |= SCHED_ZOMBIE_FLAG;
     sched_thread_sleep_current(1);
-    current_thread->retval = retval;
-    /* Thread will now block and next thread will be scheduled in. */
+
+    /*
+     * The current thread will now block and a next thread will be scheduled in.
+     */
+    while (1) {
+        idle_sleep();
+    }
 }
 
 int sched_thread_detach(pthread_t id)
@@ -719,94 +726,112 @@ osPriority sched_thread_get_priority(pthread_t thread_id)
 
 /* Syscall handlers ***********************************************************/
 
-intptr_t sched_syscall(uint32_t type, void * p)
+static int sys_sched_die(void * user_args)
 {
-    switch(type) {
-    case SYSCALL_SCHED_DIE:
-        /* We don't care about validity of a possible pointer returned as a
-         * return value because we don't touch it in the kernel. */
-        sched_thread_die((intptr_t)p); /* Thread will eventually block now... */
-        return 0;
+    sched_thread_die((intptr_t)user_args);
 
-    case SYSCALL_SCHED_DETACH:
-    {
-        pthread_t thread_id;
-        if (!useracc(p, sizeof(pthread_t), VM_PROT_READ)) {
-            /* No permission to read */
-            set_errno(EFAULT);
-            return -1;
-        }
-        copyin(p, &thread_id, sizeof(pthread_t));
-        if ((uintptr_t)sched_thread_detach(thread_id)) {
-            set_errno(EINVAL);
-            return -1;
-        }
-        return 0;
-    }
-
-    case SYSCALL_SCHED_SETPRIORITY:
-    {
-        int err;
-        struct _ds_set_priority ds;
-        if (!useracc(p, sizeof(struct _ds_set_priority), VM_PROT_READ)) {
-            set_errno(ESRCH);
-            return -1;
-        }
-        copyin(p, &ds, sizeof(struct _ds_set_priority));
-        err = (uintptr_t)sched_thread_set_priority(ds.thread_id, ds.priority);
-        if (err) {
-            set_errno(-err);
-            return -1;
-        }
-        return 0;
-    }
-
-    case SYSCALL_SCHED_GETPRIORITY:
-    {
-        osPriority pri;
-        pthread_t thread_id;
-        if (!useracc(p, sizeof(pthread_t), VM_PROT_READ)) {
-            /* No permission to read */
-            set_errno(ESRCH);
-            return -1;
-        }
-        copyin(p, &thread_id, sizeof(pthread_t));
-        pri = (uintptr_t)sched_thread_get_priority(thread_id);
-        if (pri == osPriorityError) {
-            set_errno(ESRCH);
-            pri = -1; /* Note: -1 might be also legitimate prio value. */
-        }
-        return pri;
-    }
-
-    case SYSCALL_SCHED_SLEEP_MS:
-    {
-        uint32_t val;
-        if (!useracc(p, sizeof(uint32_t), VM_PROT_READ)) {
-            /* No permission to read/write */
-            set_errno(EFAULT);
-            return -EFAULT;
-        }
-        copyin(p, &val, sizeof(uint32_t));
-        sched_thread_sleep(val);
-        return 0; /* TODO Return value might be incorrect */
-    }
-
-    case SYSCALL_SCHED_GET_LOADAVG:
-    {
-        uint32_t arr[3];
-        if (!useracc(p, sizeof(arr), VM_PROT_WRITE)) {
-            /* No permission to write */
-            set_errno(EFAULT);
-            return -1;
-        }
-        sched_get_loads(arr);
-        copyout(arr, p, sizeof(arr));
-    }
-        return (uintptr_t)NULL;
-
-    default:
-        set_errno(ENOSYS);
-        return (uintptr_t)NULL;
-    }
+    /* Does not return */
+    return 0;
 }
+
+static int sys_sched_detach(void * user_args)
+{
+    pthread_t thread_id;
+    int err;
+
+    err = copyin(user_args, &thread_id, sizeof(pthread_t));
+    if (err) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    if ((uintptr_t)sched_thread_detach(thread_id)) {
+        set_errno(EINVAL);
+        return -1;
+    }
+
+    return 0;
+}
+
+static int sys_sched_setpriority(void * user_args)
+{
+    int err;
+    struct _ds_set_priority args;
+
+    err = copyin(user_args, &args, sizeof(args));
+    if (err) {
+        set_errno(ESRCH);
+        return -1;
+    }
+
+    err = (uintptr_t)sched_thread_set_priority(args.thread_id, args.priority);
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
+    return 0;
+}
+
+static int sys_sched_getpriority(void * user_args)
+{
+    osPriority pri;
+    pthread_t thread_id;
+    int err;
+
+    err = copyin(user_args, &thread_id, sizeof(pthread_t));
+    if (err) {
+        set_errno(ESRCH);
+        return -1;
+    }
+
+    pri = (uintptr_t)sched_thread_get_priority(thread_id);
+    if (pri == osPriorityError) {
+        set_errno(ESRCH);
+        pri = -1; /* Note: -1 might be also legitimate prio value. */
+    }
+
+    return pri;
+}
+
+static int sys_sched_sleep_ms(void * user_args)
+{
+    uint32_t val;
+    int err;
+
+    err = copyin(user_args, &val, sizeof(uint32_t));
+    if (err) {
+        set_errno(EFAULT);
+        return -EFAULT;
+    }
+
+    sched_thread_sleep(val);
+
+    return 0; /* TODO Return value might be incorrect */
+}
+
+static int sys_sched_get_loadavg(void * user_args)
+{
+    uint32_t arr[3];
+    int err;
+
+    sched_get_loads(arr);
+
+    err = copyout(arr, user_args, sizeof(arr));
+    if (err) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    return 0;
+}
+
+static const syscall_handler_t sched_sysfnmap[] = {
+    ARRDECL_SYSCALL_HNDL(SYSCALL_SCHED_DIE, sys_sched_die),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_SCHED_DETACH, sys_sched_detach),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_SCHED_SETPRIORITY, sys_sched_setpriority),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_SCHED_GETPRIORITY, sys_sched_getpriority),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_SCHED_SLEEP_MS, sys_sched_sleep_ms),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_SCHED_GET_LOADAVG, sys_sched_get_loadavg)
+};
+SYSCALL_HANDLERDEF(sched_syscall, sched_sysfnmap)

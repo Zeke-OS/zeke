@@ -79,13 +79,14 @@ void syscall_handler(void)
 {
     const uint32_t type = (uint32_t)current_thread->sframe[SCHED_SFRAME_SVC].r0;
     void * p = (void *)current_thread->sframe[SCHED_SFRAME_SVC].r1;
-    uint32_t major = SYSCALL_MAJOR(type);
-    kernel_syscall_handler_t fpt;
+    const uint32_t major = SYSCALL_MAJOR(type);
 
     if ((major >= num_elem(syscall_callmap)) || !syscall_callmap[major]) {
+        const uint32_t minor = SYSCALL_MINOR(type);
         char buf[30];
-        ksprintf(buf, sizeof(buf), "syscall %u not supported, (p:%u, i:%u)",
-                major, current_process_id, current_thread->id);
+
+        ksprintf(buf, sizeof(buf), "syscall %u:%u not supported, (p:%u, i:%u)",
+                major, minor, current_process_id, current_thread->id);
         KERROR(KERROR_WARN, buf);
 
         set_errno(ENOSYS); /* Not supported. */
@@ -93,6 +94,5 @@ void syscall_handler(void)
         return;
     }
 
-    fpt = syscall_callmap[major];
-    svc_setretval(fpt(type, p));
+    svc_setretval(syscall_callmap[major](type, p));
 }

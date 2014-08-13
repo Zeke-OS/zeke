@@ -46,13 +46,13 @@ static int sys_ioctl(void * user_args)
     struct _ioctl_get_args args;
     file_t * file;
     void * ioargs = 0;
-    int retval = -1;
+    int err, retval = -1;
 
-    if (!useracc(user_args, sizeof(args), VM_PROT_READ)) {
+    err = copyin(user_args, &args, sizeof(args));
+    if (err) {
         set_errno(EFAULT);
         return -1;
     }
-    copyin(user_args, &args, sizeof(args));
 
     file = fs_fildes_ref(curproc->files, args.fd, 1);
     if (!file) {
@@ -73,12 +73,12 @@ static int sys_ioctl(void * user_args)
         }
         /* Get request doesn't need copyin */
     } else { /* Set request */
-        if (!useracc(user_args, args.arg_len, VM_PROT_READ)) {
+        /* Set operation needs copyin */
+        err = copyin(args.arg, ioargs, args.arg_len);
+        if (err) {
             set_errno(EFAULT);
             goto out;
         }
-        /* Set operation needs copyin */
-        copyin(args.arg, ioargs, args.arg_len);
     }
 
     /* Actual ioctl call */

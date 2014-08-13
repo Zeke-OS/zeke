@@ -140,11 +140,26 @@
 #define SYSCALL_SEMAPHORE_WAIT      SYSCALL_MMTOTYPE(SYSCALL_GROUP_LOCKS, 0x01)
 #define SYSCALL_SEMAPHORE_RELEASE   SYSCALL_MMTOTYPE(SYSCALL_GROUP_LOCKS, 0x02)
 
-/* Kernel scope functions */
+/* Kernel scope */
 #ifdef KERNEL_INTERNAL
 typedef intptr_t (*kernel_syscall_handler_t)(uint32_t type, void * p);
 typedef intptr_t (*syscall_handler_t)(void * p);
 #define ARRDECL_SYSCALL_HNDL(SYSCALL_NR, fn) [SYSCALL_MINOR(SYSCALL_NR)] = fn
+
+/**
+ * Define a syscall handler that calls functions from a function pointer array.
+ */
+#define SYSCALL_HANDLERDEF(groupfnname, callmaparray)                       \
+    intptr_t groupfnname(uint32_t type, void * p) {                         \
+        uint32_t minor = SYSCALL_MINOR(type);                               \
+                                                                            \
+        if ((minor >= num_elem(callmaparray)) || !(callmaparray)[minor]) {  \
+            set_errno(ENOSYS);                                              \
+            return -1;                                                      \
+        }                                                                   \
+        return (callmaparray)[minor](p);                                    \
+}
+
 
 void syscall_handler(void);
 #else /* !KERNEL_INTERNAL */

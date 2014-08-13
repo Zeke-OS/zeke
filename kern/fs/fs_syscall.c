@@ -51,15 +51,14 @@ static int sys_read(void * user_args)
 {
     struct _fs_readwrite_args args;
     char * buf;
-    int retval;
+    int err, retval;
 
-    if (!useracc(user_args, sizeof(args), VM_PROT_READ)) {
-        /* No permission to read/write */
+    err = copyin(user_args, &args, sizeof(args));
+    if (err) {
         set_errno(EFAULT);
         retval = -1;
         goto out;
     }
-    copyin(user_args, &args, sizeof(args));
 
     /* Buffer */
     if (!useracc(args.buf, args.nbytes, VM_PROT_WRITE)) {
@@ -85,27 +84,25 @@ out:
 static int sys_write(void * user_args)
 {
     struct _fs_readwrite_args args;
-    char * buf;
-    int retval;
+    char * buf = 0;
+    int err, retval;
 
     /* Args */
-    if (!useracc(user_args, sizeof(args), VM_PROT_READ)) {
-        /* No permission to read/write */
+    err = copyin(user_args, &args, sizeof(args));
+    if (err) {
         set_errno(EFAULT);
         retval = -1;
         goto out;
     }
-    copyin(user_args, &args, sizeof(args));
 
     /* Buffer */
-    if (!useracc(args.buf, args.nbytes, VM_PROT_READ)) {
-        /* No permission to read/write */
+    buf = kmalloc(args.nbytes);
+    err = copyin(args.buf, buf, args.nbytes);
+    if (err) {
         set_errno(EFAULT);
         retval = -1;
         goto out;
     }
-    buf = kmalloc(args.nbytes);
-    copyin(args.buf, buf, args.nbytes);
 
     retval = fs_readwrite_cproc(args.fildes, buf, args.nbytes, O_WRONLY);
     if (retval < 0) {
@@ -113,8 +110,8 @@ static int sys_write(void * user_args)
         retval = -1;
     }
 
-    kfree(buf);
 out:
+    kfree(buf);
     return retval;
 }
 
@@ -250,13 +247,13 @@ static int sys_getdents(void * user_args)
     size_t bytes_left;
     file_t * fildes;
     struct dirent d; /* Temp storage */
-    int count = 0;
+    int err, count = 0;
 
-    if (!useracc(user_args, sizeof(args), VM_PROT_READ)) {
+    err = copyin(user_args, &args, sizeof(args));
+    if (err) {
         set_errno(EFAULT);
         return -1;
     }
-    copyin(user_args, &args, sizeof(args));
 
     /* We must have a write access to the given buffer. */
     if (!useracc(args.buf, args.nbytes, VM_PROT_WRITE)) {
@@ -312,13 +309,13 @@ static int sys_fcntl(void * user_args)
 {
     struct _fs_fcntl_args args;
     file_t * file;
-    int retval = -1;
+    int err, retval = -1;
 
-    if (!useracc(user_args, sizeof(args), VM_PROT_READ)) {
+    err = copyin(user_args, &args, sizeof(args));
+    if (err) {
         set_errno(EFAULT);
         return -1;
     }
-    copyin(user_args, &args, sizeof(args));
 
     file = fs_fildes_ref(curproc->files, args.fd, 1);
     if (!file) {
@@ -676,13 +673,14 @@ out:
 static int sys_chmod(void * user_args)
 {
     struct _fs_chmod_args args;
+    int err;
 
     /* Copyin args struct */
-    if (!useracc(user_args, sizeof(args), VM_PROT_READ)) {
+    err = copyin(user_args, &args, sizeof(args));
+    if (err) {
         set_errno(EFAULT);
         return -1;
     }
-    copyin(user_args, &args, sizeof(args));
 
     return fs_chmod_curproc(args.fd, args.mode);
 }
@@ -692,13 +690,14 @@ static int sys_chmod(void * user_args)
 static int sys_chown(void * user_args)
 {
     struct _fs_chown_args args;
+    int err;
 
     /* Copyin args struct */
-    if (!useracc(user_args, sizeof(args), VM_PROT_READ)) {
+    err = copyin(user_args, &args, sizeof(args));
+    if (err) {
         set_errno(EFAULT);
         return -1;
     }
-    copyin(user_args, &args, sizeof(args));
 
     return fs_chown_curproc(args.fd, args.owner, args.group);
 }
@@ -786,20 +785,4 @@ static const syscall_handler_t fs_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_UMASK, sys_umask),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_MOUNT, sys_mount)
 };
-
-/**
- * fs syscall handler
- * @param type Syscall type
- * @param p Syscall parameters
- */
-intptr_t fs_syscall(uint32_t type, void * p)
-{
-    uint32_t minor = SYSCALL_MINOR(type);
-
-    if ((minor >= num_elem(fs_sysfnmap)) || !fs_sysfnmap[minor]) {
-        set_errno(ENOSYS);
-        return -1;
-    }
-
-    return fs_sysfnmap[minor](p);
-}
+SYSCALL_HANDLERDEF(fs_syscall, fs_sysfnmap)

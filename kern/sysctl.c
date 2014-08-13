@@ -861,9 +861,9 @@ static int sysctl_old_user(struct sysctl_req * req, const void * p, size_t l)
         if (i > len - origidx)
             i = len - origidx;
         if (req->lock == REQ_WIRED) {
-            error = copyout(p, (char *)req->oldptr + origidx, i);
+            error = -copyout(p, (char *)req->oldptr + origidx, i);
         } else
-            error = copyout(p, (char *)req->oldptr + origidx, i);
+            error = -copyout(p, (char *)req->oldptr + origidx, i);
         if (error != 0)
             return error;
     }
@@ -881,7 +881,7 @@ static int sysctl_new_user(struct sysctl_req * req, void * p, size_t l)
     if (req->newlen - req->newidx < l)
         return EINVAL;
 
-    error = copyin((char *)req->newptr + req->newidx, p, l);
+    error = -copyin((char *)req->newptr + req->newidx, p, l);
     req->newidx += l;
 
     return error;
@@ -1007,35 +1007,6 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
     return error;
 }
 
-int sys___sysctl(threadInfo_t * td, struct _sysctl_args * uap)
-{
-    int error, i, name[CTL_MAXNAME];
-    size_t j;
-
-    if (uap->namelen > CTL_MAXNAME || uap->namelen < 2)
-        return EINVAL;
-
-    error = copyin(uap->name, &name, uap->namelen * sizeof(int));
-    if (error)
-        return error;
-
-    error = userland_sysctl(td, name, uap->namelen,
-        uap->old, uap->oldlenp, 0,
-        uap->new, uap->newlen, &j, 0);
-    if (error && error != ENOMEM)
-        return error;
-    if (uap->oldlenp) {
-        i = copyout(&j, uap->oldlenp, sizeof(j));
-        if (i)
-            return i;
-    }
-    return error;
-}
-
-/*
- * This is used from various compatibility syscalls too.  That's why name
- * must be in kernel space.
- */
 int userland_sysctl(threadInfo_t * td, int * name, unsigned int namelen,
         void * old, size_t * oldlenp, int inkernel, void * new,
         size_t newlen, size_t * retval, int flags)
@@ -1061,13 +1032,13 @@ int userland_sysctl(threadInfo_t * td, int * name, unsigned int namelen,
 
     if (old) {
         if (!useracc(old, req.oldlen, VM_PROT_WRITE))
-            return EFAULT;
+            return -EFAULT;
         req.oldptr = old;
     }
 
     if (new != NULL) {
         if (!useracc(new, newlen, VM_PROT_READ))
-            return EFAULT;
+            return -EFAULT;
         req.newlen = newlen;
         req.newptr = new;
     }
@@ -1104,8 +1075,11 @@ int userland_sysctl(threadInfo_t * td, int * name, unsigned int namelen,
     //if (memlocked)
     //    sx_xunlock(&sysctlmemlock);
 
-    if (error && error != ENOMEM)
+    if (error && error != ENOMEM) {
+        if (error > 0)
+            error = -error; /* Compatibility fix */
         return error;
+    }
 
     if (retval) {
         if (req.oldptr && req.oldidx > req.validlen)
@@ -1113,5 +1087,8 @@ int userland_sysctl(threadInfo_t * td, int * name, unsigned int namelen,
         else
             *retval = req.oldidx;
     }
+
+    if (error > 0)
+        error = -error; /* Compatibility fix */
     return error;
 }

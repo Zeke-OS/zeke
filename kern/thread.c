@@ -33,9 +33,10 @@
  */
 
 #define KERNEL_INTERNAL
+#include <libkern.h>
+#include <sys/linker_set.h>
 #include <hal/core.h>
 #include <hal/mmu.h>
-#include <sys/linker_set.h>
 #include <ptmapper.h>
 #include <vralloc.h>
 #include <syscall.h>
@@ -171,49 +172,54 @@ void * thread_get_curr_stackframe(size_t ind)
     return NULL;
 }
 
-intptr_t thread_syscall(uint32_t type, void * p)
+static int sys_thread_create(void * user_args)
 {
-    switch (type) {
-    case SYSCALL_THREAD_CREATE:
-        {
-        /* TODO pthread_create is allowed to throw errors and we definitely
-         *      should use those.
-         */
+    struct _ds_pthread_create args;
 
-        struct _ds_pthread_create ds;
-        if (!useracc(p, sizeof(struct _ds_pthread_create), VM_PROT_WRITE)) {
-            /* No permission to read/write */
-            set_errno(EFAULT);
-            return -1;
-        }
-        copyin(p, &ds, sizeof(struct _ds_pthread_create));
-        sched_threadCreate(&ds, 0);
-        copyout(&ds, p, sizeof(struct _ds_pthread_create));
-
-        return 0;
-        }
-
-    case SYSCALL_THREAD_TERMINATE:
-        {
-        pthread_t thread_id;
-        if (!useracc(p, sizeof(pthread_t), VM_PROT_READ)) {
-            /* No permission to read */
-            set_errno(EFAULT);
-            return -1;
-        }
-        copyin(p, &thread_id, sizeof(pthread_t));
-
-        return (uintptr_t)sched_thread_terminate(thread_id);
-        }
-
-    case SYSCALL_THREAD_GETTID:
-        return (uintptr_t)get_current_tid();
-
-    case SYSCALL_THREAD_GETERRNO:
-        return (uintptr_t)(current_thread->errno_uaddr);
-
-    default:
-        set_errno(ENOSYS);
-        return (uintptr_t)NULL;
+    if (!useracc(user_args, sizeof(args), VM_PROT_WRITE)) {
+        /* No permission to read/write */
+        set_errno(EFAULT);
+        return -1;
     }
+
+    copyin(user_args, &args, sizeof(args));
+    sched_threadCreate(&args, 0);
+    copyout(&args, user_args, sizeof(args));
+
+    return 0;
 }
+
+static int sys_thread_terminate(void * user_args)
+{
+    pthread_t thread_id;
+    int err;
+
+    err = copyin(user_args, &thread_id, sizeof(pthread_t));
+    if (err) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    return sched_thread_terminate(thread_id);
+}
+
+static int sys_get_current_tid(void * user_args)
+{
+    return (int)get_current_tid();
+}
+
+/**
+ * Get address of thread errno.
+ */
+static intptr_t sys_geterrno(void * user_args)
+{
+    return (intptr_t)current_thread->errno_uaddr;
+}
+
+static const syscall_handler_t thread_sysfnmap[] = {
+    ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_CREATE, sys_thread_create),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_TERMINATE, sys_thread_terminate),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_GETTID, sys_get_current_tid),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_GETERRNO, sys_geterrno)
+};
+SYSCALL_HANDLERDEF(thread_syscall, thread_sysfnmap)

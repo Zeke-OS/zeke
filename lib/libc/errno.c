@@ -35,6 +35,11 @@
 
 int * __error(void)
 {
-    return (int *)syscall(SYSCALL_THREAD_GETERRNO, NULL);
+    static int * perrno = 0;
+
+    if (!perrno)
+        perrno = (int *)syscall(SYSCALL_THREAD_GETERRNO, NULL);
+
+    return perrno;
 }
 
