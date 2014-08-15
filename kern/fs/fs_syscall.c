@@ -50,7 +50,7 @@
 static int sys_read(void * user_args)
 {
     struct _fs_readwrite_args args;
-    char * buf;
+    char * buf = 0;
     int err, retval;
 
     err = copyin(user_args, &args, sizeof(args));
@@ -68,6 +68,11 @@ static int sys_read(void * user_args)
         goto out;
     }
     buf = kmalloc(args.nbytes);
+    if (!buf) {
+        set_errno(ENOMEM);
+        retval = -1;
+        goto out;
+    }
 
     retval = fs_readwrite_cproc(args.fildes, buf, args.nbytes, O_RDONLY);
     if (retval < 0) {
@@ -76,8 +81,8 @@ static int sys_read(void * user_args)
     }
 
     copyout(buf, args.buf, args.nbytes);
-    kfree(buf);
 out:
+    kfree(buf);
     return retval;
 }
 
@@ -97,6 +102,11 @@ static int sys_write(void * user_args)
 
     /* Buffer */
     buf = kmalloc(args.nbytes);
+    if (!buf) {
+        set_errno(ENOMEM);
+        retval = -1;
+        goto out;
+    }
     err = copyin(args.buf, buf, args.nbytes);
     if (err) {
         set_errno(EFAULT);
