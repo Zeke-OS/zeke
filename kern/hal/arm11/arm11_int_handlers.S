@@ -45,8 +45,6 @@
 interrupt_svc:
     pushcontext #1          /* Push context to SCHED_SFRAME_SVC */
 
-    /* TODO Check if mp table should be attached earlier to allow dynamic
-     * allocation of kernel structures, e.g. just after pushcontext */
     /* Attach kernel master page table */
     enter_kernel
     /* We could actually panic here if attach failed */
@@ -82,6 +80,10 @@ interrupt_svc:
 interrupt_sys:
     pushcontext #0          /* Push context to SCHED_SFRAME_SYS */
 
+    /* Suspend process and attach kernel master page table */
+    attach_kernel_mptable
+    bl      proc_suspend
+
     /* Handler IRQ */
     bl      schedtimer_clear /* if kernel_tick */
     cmp     r0, #0
@@ -92,12 +94,6 @@ interrupt_sys:
     /* Set Context ID to 0 (as we need ASID to be 0 in kernel mode) */
 1:  mov     r0, #0
     bl      cpu_set_cid
-
-    /* TODO Check if mp table should be attached earlier to allow dynamic
-     * allocation of kernel structures, e.g. just after pushcontext */
-    /* Suspend process and attach kernel master page table */
-    bl      proc_suspend
-    attach_kernel_mptable
 
     /* Run scheduler */
     bl      sched_handler

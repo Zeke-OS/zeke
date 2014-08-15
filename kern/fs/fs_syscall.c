@@ -36,7 +36,7 @@
 #include <kstring.h>
 #include <kmalloc.h>
 #include <vm/vm.h>
-#include <vm_copyinstruct.h>
+#include <vm/vm_copyinstruct.h>
 #include <proc.h>
 #include <sched.h>
 #include <ksignal.h>

@@ -78,7 +78,9 @@
  */
 typedef struct proc_info {
     pid_t pid;
-    char name[PROC_NAME_LEN]; /*!< process name */
+    char name[PROC_NAME_LEN];   /*!< process name */
+    char ** argv;               /*!< Argument strings */
+    char ** env;                /*!< Environmen variables. */
     int state;                  /*!< 0 - running, >0 stopped */
     int priority;               /*!< We might want to prioritize processes too */
     long counter;               /*!< Counter for process running time */
@@ -173,9 +175,8 @@ void proc_thread_removed(pid_t pid, pthread_t thread_id);
  * A process enters kernel mode.
  * This function shall be called when a process enters kernel mode and
  * interrupts will be enabled.
- * @return Next master page table.
  */
-mmu_pagetable_t * proc_enter_kernel(void);
+void proc_enter_kernel(void);
 
 /**
  * A process exits kernel mode.
@@ -210,15 +211,9 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
  */
 pid_t proc_update(void);
 
-/**
- * Replace the image of a given process with a new one.
- * The new image must be mapped in kernel memory space.
- * @param pid   Process id.
- * @param image Process image to be loaded.
- * @param size  Size of the image.
- * @return  Value other than zero if unable to replace process.
- */
-int proc_replace(pid_t pid, void * image, size_t size);
+vm_region_t * proc_newsect(uintptr_t vaddr, size_t size, int prot);
+
+int proc_replace(pid_t pid, vm_region_t * (*regions)[], int nr_regions);
 
 void _proc_free(proc_info_t * p);
 

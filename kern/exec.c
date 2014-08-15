@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    vralloc.h
+ * @file    exec.c
  * @author  Olli Vanhoja
- * @brief   Virtual Region Allocator.
+ * @brief   Execute a file.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,52 +30,54 @@
  *******************************************************************************
  */
 
-/** @addtogroup vralloc
- * Virtual region memory allocator.
- * Vralloc is used to allocate memory regions that can be mapped into user
- * space as well as kernel space. This is usually done by using physical
- * memory layout in kernel mode and using vaddr as a user space mapping.
- * @sa kmalloc
- * @{
- */
+#define KERNEL_INTERNAL 1
+#include <errno.h>
+#include <kmalloc.h>
+#include <proc.h>
+#include <exec.h>
 
-#ifndef VRALLOC_H
-#define VRALLOC_H
-#ifndef KERNEL_INTERNAL
-#define KERNEL_INTERNAL
-#endif
-#include <stdint.h>
-#include <vm/vm.h>
-
-#define VRALLOC_ALLOCATOR_ID 0xBE57
+SET_DECLARE(exec_loader, struct exec_loadfn);
 
 /**
- * Allocate a virtual memory region.
- * Usr has a write permission by default.
- * @note Page table and virtual address is not set.
- * @param size is the size of new region in bytes.
- * @return  Returns vm_region struct if allocated was successful;
- *          Otherwise function return 0.
+ * Execute a file.
+ * File can be elf binary, she-bang file, etc.
+ * @param file  is the executable file.
+ * @param argc  is the argument count.
+ * @param argv  contains the argument strings.
+ * @param env   contains environmen variables.
  */
-vm_region_t * vralloc(size_t size);
+int exec_file(file_t * file, char ** argv, char ** env)
+{
+    struct exec_loadfn ** loader;
+    void * old_argv = 0;
+    int err, retval = 0;
+    uintptr_t vaddr;
 
-/**
- * Clone a vregion.
- * @param old_region is the old region to be cloned.
- * @return  Returns pointer to the new vregion if operation was successful;
- *          Otherwise zero.
- */
-struct vm_region * vr_rclone(struct vm_region * old_region);
+    if (!file)
+        return -ENOENT;
 
-/**
- * Free allocated vregion.
- * Dereferences a vregion.
- * @param region is a vregion to be derefenced/freed.
- */
-void vrfree(struct vm_region * region);
+    /* Set argv */
+    old_argv = (void *)curproc->argv;
+    curproc->argv = argv;
 
-#endif /* VRALLOC_H */
+    SET_FOREACH(loader, exec_loader) {
+        err = (*loader)->fn(file, &vaddr);
+        if (err == 0 || err != -ENOEXEC)
+            break;
+    }
+    if (err) {
+        retval = err;
+        goto fail;
+    }
 
-/**
- * @}
- */
+    kfree(curproc->env);
+    curproc->env = env;
+
+    goto out;
+fail:
+    curproc->argv = old_argv;
+out:
+    kfree(old_argv);
+
+    return retval;
+}

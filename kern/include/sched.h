@@ -211,6 +211,7 @@ pthread_t sched_thread_fork();
  */
 void sched_thread_set_exec(pthread_t thread_id);
 
+#define SCHED_PERMASLEEP 1
 /**
  * Put the current thread into sleep.
  * @param permanent sets wait flag to keep thread in permanent sleep.

@@ -30,14 +30,19 @@
  *******************************************************************************
  */
 
+#define KERNEL_INTERNAL 1
 #include <errno.h>
+#include <kmalloc.h>
+#include <kstring.h>
+#include <vm/vm.h>
+#include <vralloc.h>
+#include <proc.h>
+#include <exec.h>
 #include <elf_common.h>
 #include <elf32.h>
 
-static int check_header(const char * buf)
+static int check_header(const struct elf32_header * hdr)
 {
-    const struct elf32_header * hdr = (const struct elf32_header *)buf;
-
     if (!IS_ELF(hdr) ||
         hdr->e_ident[EI_CLASS]      != ELFCLASS32 ||
         hdr->e_ident[EI_DATA]       != ELFDATA2LSB || /* TODO conf */
@@ -50,5 +55,136 @@ static int check_header(const char * buf)
     if (hdr->e_machine != EM_ARM)
         return -ENOEXEC;
 
+    /* Other sanity checks */
+    if (hdr->e_phentsize != sizeof(struct elf32_phdr) || hdr->e_phoff == 0 ||
+            hdr->e_phnum == 0)
+        return -ENOEXEC;
+    if (hdr->e_shnum == 0 || hdr->e_shentsize != sizeof(struct elf32_shdr))
+        return -ENOEXEC;
+
     return 0;
 }
+
+static int elf32_trans_prot(uint32_t flags)
+{
+    int prot = 0;
+
+    if (flags & PF_X)
+        prot |= VM_PROT_EXECUTE;
+    if (flags & PF_W)
+        prot |= VM_PROT_WRITE;
+    if (flags & PF_R)
+        prot |= VM_PROT_READ;
+
+    return prot;
+}
+
+static int load_section(vm_region_t * (*regions)[], int i, file_t * file,
+        uintptr_t vaddr, struct elf32_phdr * phdr)
+{
+    int prot = elf32_trans_prot(phdr->p_flags);
+    vm_region_t * sect = proc_newsect(vaddr, phdr->p_memsz, prot);
+    int err;
+
+    if (!sect)
+        return -ENOMEM;
+
+    (*regions)[i] = sect;
+
+    /* TODO Following may not always work in the future? */
+    memset((void *)sect->mmu.paddr, 0, phdr->p_memsz);
+    file->seek_pos = 0;
+    if (phdr->p_filesz > 0) {
+        err = file->vnode->vnode_ops->read(file, (void *)sect->mmu.paddr,
+                                           phdr->p_filesz);
+        if (err < 0)
+            return -ENOEXEC;
+    }
+
+    return 0;
+}
+
+int load_elf32(file_t * file, uintptr_t * vaddr_base)
+{
+    struct elf32_header * elfhdr = NULL;
+    ssize_t slen;
+    struct elf32_phdr * phdr = NULL;
+    size_t phsize;
+    uintptr_t rbase;
+    vm_region_t * (*newregions)[] = NULL;
+    int retval = 0;
+
+    elfhdr = kmalloc(sizeof(struct elf32_header));
+    if (!elfhdr)
+        return -ENOMEM;
+
+    if (!vaddr_base)
+        return -EINVAL;
+
+    /* Read elf header */
+    file->seek_pos = 0;
+    slen = file->vnode->vnode_ops->read(file, elfhdr,
+            sizeof(struct elf32_header));
+    if (slen != sizeof(struct elf32_header)) {
+        retval = -ENOEXEC;
+        goto out;
+    }
+
+    /* Verify elf header */
+    retval = check_header(elfhdr);
+    if (retval)
+        goto out;
+
+    if (elfhdr->e_type == ET_DYN)
+        rbase = *vaddr_base;
+    else if (elfhdr->e_type == ET_EXEC)
+        rbase = 0;
+    else {
+        retval = -ENOEXEC;
+        goto out;
+    }
+
+    /* Read program headers */
+    phsize = elfhdr->e_phnum * sizeof(struct elf32_phdr);
+    phdr = kmalloc(phsize);
+    if (!phdr) {
+        retval = -ENOMEM;
+        goto out;
+    }
+    file->seek_pos = elfhdr->e_phoff;
+    if (file->vnode->vnode_ops->read(file, phdr,
+                sizeof(struct elf32_phdr)) != phsize) {
+        retval = -ENOEXEC;
+        goto out;
+    }
+
+    /* Allocate memory for new regions struct */
+    newregions = kmalloc(elfhdr->e_phnum * sizeof(vm_region_t *));
+    if (!newregions) {
+        retval = -ENOMEM;
+        goto out;
+    }
+
+    /* Load sections */
+    for (int i = 0; i < elfhdr->e_phnum; i++) {
+        if (phdr[i].p_type == PT_LOAD && phdr[i].p_memsz != 0) {
+            retval = load_section(newregions, i, file, rbase, &phdr[i]);
+            if (retval)
+                goto fail;
+
+            if (i == 0)
+                *vaddr_base = phdr[i].p_vaddr + rbase;
+        }
+    }
+
+    proc_replace(curproc->pid, newregions, elfhdr->e_phnum);
+
+    goto out;
+fail:
+    kfree(newregions);
+out:
+    kfree(phdr);
+    kfree(elfhdr);
+    return retval;
+}
+EXEC_LOADFN(load_elf32, "elf32");

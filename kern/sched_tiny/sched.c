@@ -557,7 +557,13 @@ void sched_thread_die(intptr_t retval)
 {
     current_thread->retval = retval;
     current_thread->flags |= SCHED_ZOMBIE_FLAG;
-    sched_thread_sleep_current(1);
+    sched_thread_sleep_current(SCHED_PERMASLEEP);
+
+    /*
+     * There is several reasons to call this function with interrupts disabled,
+     * so we enable interrupts just in case.
+     */
+    enable_interrupt();
 
     /*
      * The current thread will now block and a next thread will be scheduled in.

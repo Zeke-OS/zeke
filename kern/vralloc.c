@@ -82,6 +82,10 @@ static const vm_ops_t vra_ops = {
 };
 
 
+/**
+ * Initializes vregion allocator data structures.
+ */
+void vralloc_init(void) __attribute__((constructor));
 void vralloc_init(void)
 {
     SUBSYS_INIT();

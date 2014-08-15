@@ -95,8 +95,8 @@
  * Enter to kernel mode (syscall).
  */
 .macro enter_kernel
+    attach_kernel_mptable
     bl      proc_enter_kernel
-    bl      mmu_attach_pagetable
 .endm
 
 /**

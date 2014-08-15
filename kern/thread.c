@@ -149,7 +149,7 @@ void thread_init_kstack(threadInfo_t * th)
     }
 
     th->kstack_region->usr_rw = 0;
-    th->kstack_region->mmu.vaddr = 0x0; /* TODO Don't hard-code this */
+    th->kstack_region->mmu.vaddr = MMU_VADDR_TKSTACK_START;
     th->kstack_region->mmu.pt = &mmu_pagetable_system;
 }
 

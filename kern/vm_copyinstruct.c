@@ -40,7 +40,7 @@
 #include <kmalloc.h>
 #include <kerror.h>
 #include <vm/vm.h>
-#include <vm_copyinstruct.h>
+#include <vm/vm_copyinstruct.h>
 
 struct _cpyin_struct {
     llist_t * gc_lst;

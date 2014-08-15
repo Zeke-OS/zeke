@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    vralloc.h
+ * @file    exec.h
  * @author  Olli Vanhoja
- * @brief   Virtual Region Allocator.
+ * @brief   Execute a file.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,52 +30,21 @@
  *******************************************************************************
  */
 
-/** @addtogroup vralloc
- * Virtual region memory allocator.
- * Vralloc is used to allocate memory regions that can be mapped into user
- * space as well as kernel space. This is usually done by using physical
- * memory layout in kernel mode and using vaddr as a user space mapping.
- * @sa kmalloc
- * @{
- */
+#ifndef EXEC_H
+#define EXEC_H
 
-#ifndef VRALLOC_H
-#define VRALLOC_H
-#ifndef KERNEL_INTERNAL
-#define KERNEL_INTERNAL
-#endif
-#include <stdint.h>
-#include <vm/vm.h>
+#include <sys/linker_set.h>
+#include <fs/fs.h>
 
-#define VRALLOC_ALLOCATOR_ID 0xBE57
+struct exec_loadfn {
+    int (*fn)(file_t * file, uintptr_t * vaddr_base);
+    char name[10];
+};
 
-/**
- * Allocate a virtual memory region.
- * Usr has a write permission by default.
- * @note Page table and virtual address is not set.
- * @param size is the size of new region in bytes.
- * @return  Returns vm_region struct if allocated was successful;
- *          Otherwise function return 0.
- */
-vm_region_t * vralloc(size_t size);
+#define EXEC_LOADFN(fun, namestr)           \
+    static struct exec_loadfn fun##_st = {  \
+        .name = namestr, .fn = fun          \
+    };                                      \
+    DATA_SET(exec_loader, fun##_st)
 
-/**
- * Clone a vregion.
- * @param old_region is the old region to be cloned.
- * @return  Returns pointer to the new vregion if operation was successful;
- *          Otherwise zero.
- */
-struct vm_region * vr_rclone(struct vm_region * old_region);
-
-/**
- * Free allocated vregion.
- * Dereferences a vregion.
- * @param region is a vregion to be derefenced/freed.
- */
-void vrfree(struct vm_region * region);
-
-#endif /* VRALLOC_H */
-
-/**
- * @}
- */
+#endif /* EXEC_H */

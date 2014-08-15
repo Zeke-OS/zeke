@@ -286,11 +286,6 @@ pid_t process_init(void * image, size_t size)
 }
 #endif
 
-int proc_replace(pid_t pid, void * image, size_t size)
-{
-    return -1;
-}
-
 proc_info_t * proc_get_struct(pid_t pid)
 {
     /* TODO We actually want to require proclock */
@@ -330,14 +325,13 @@ void proc_thread_removed(pid_t pid, pthread_t thread_id)
     }
 }
 
-mmu_pagetable_t * proc_enter_kernel(void)
+void proc_enter_kernel(void)
 {
 #if configDEBUG != 0
     if (!curproc)
         panic("No current process set");
 #endif
     curproc->mm.curr_mpt = &mmu_pagetable_master;
-    return curproc->mm.curr_mpt;
 }
 
 mmu_pagetable_t * proc_exit_kernel(void)
@@ -434,6 +428,86 @@ pid_t proc_update(void)
     return current_process_id;
 }
 
+vm_region_t * proc_newsect(uintptr_t vaddr, size_t size, int prot)
+{
+    vm_region_t * new_region = vralloc(size);
+
+    if (!new_region)
+        return NULL;
+
+    new_region->usr_rw = prot & ~VM_PROT_COW;
+    new_region->mmu.vaddr = vaddr;
+    new_region->mmu.ap = MMU_AP_NANA;
+    new_region->mmu.control = MMU_CTRL_NG |
+        ((prot | VM_PROT_EXECUTE) ? 0 : MMU_CTRL_XN);
+    vm_updateusr_ap(new_region);
+
+    return new_region;
+}
+
+int proc_replace(pid_t pid, vm_region_t * (*regions)[], int nr_regions)
+{
+    proc_info_t * p = proc_get_struct(pid);
+
+    if (!p)
+        return -ESRCH;
+
+    /*
+     * Must disable interrupts here because there is no way getting back here
+     * after a context switch.
+     */
+    disable_interrupt();
+
+    /*
+     * Mark main thread for deletion, it's up to user space to kill any
+     * children. If there however is any child threads those may or may
+     * not cause a segmentation fault depending on when the scheduler
+     * starts removing stuff. This decission was made because we want to
+     * keep disable_interrupt() time as short as possible and POSIX seems
+     * to be quite silent about this issue anyway.
+     */
+    p->main_thread->flags |= SCHED_DETACH_FLAG; /* This kills the man. */
+
+    /* TODO Free old regions struct and its contents */
+
+    p->mm.regions = regions;
+    p->mm.nr_regions = nr_regions;
+
+    /* Map regions */
+    for (int i = 0; i < nr_regions; i++) {
+        struct vm_pt * vpt = ptlist_get_pt(&p->mm.ptlist_head, &p->mm.mpt,
+                (*regions)[i]->mmu.vaddr);
+        if (!vpt) {
+            panic("Exec failed");
+        }
+
+        (*regions)[i]->mmu.pt = &vpt->pt;
+        vm_map_region((*regions)[i], vpt);
+    }
+
+    /* Create a new thread for executing main() */
+    pthread_attr_t pattr = {
+        .tpriority  = configUSRINIT_PRI,
+        .stackAddr  = (void *)((*regions)[MM_STACK_REGION]->mmu.paddr),
+        .stackSize  = configUSRINIT_SSIZE
+    };
+    struct _ds_pthread_create ds = {
+        .thread     = 0, /* return value */
+        .start      = (*regions)[MM_CODE_REGION]->mmu.vaddr,
+        .def        = &pattr,
+        .argument   = 0, /* TODO */
+        .del_thread = pthread_exit /* TODO */
+    };
+
+    const pthread_t tid = sched_threadCreate(&ds, 0);
+    if (tid <= 0) {
+        panic("Exec failed");
+    }
+
+    /* interrupts will be enabled automatically */
+    sched_thread_die(0);
+}
+
 static uintptr_t procsys_wait(void * p)
 {
     pid_t pid_child;
@@ -489,9 +563,6 @@ intptr_t proc_syscall(uint32_t type, void * p)
         curproc->exit_code = get_errno();
         sched_thread_detach(current_thread->id);
         sched_thread_die(curproc->exit_code);
-        while (1) {
-            idle_sleep();
-        }
         return 0; /* Never reached */
 
     case SYSCALL_PROC_GETUID:

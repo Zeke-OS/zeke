@@ -62,7 +62,7 @@ static void ls(char ** args)
     int fildes, count;
     struct dirent dbuf[10];
 
-    if (!strcmp(path, ""))
+    if (path == 0 || !strcmp(path, ""))
         path = "./";
 
     fildes = open(path, O_DIRECTORY | O_RDONLY | O_SEARCH);

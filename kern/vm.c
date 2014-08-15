@@ -30,10 +30,6 @@
  *******************************************************************************
  */
 
-/** @addtogroup Kernel
- * @{
- */
-
 #define KERNEL_INTERNAL
 #include <kstring.h>
 #include <hal/mmu.h>
@@ -44,6 +40,7 @@
 #include <errno.h>
 #include <proc.h>
 #include <vm/vm.h>
+#include <vm/vm_proc.h>
 
 extern mmu_region_t mmu_region_kernel;
 
@@ -53,16 +50,6 @@ static int test_ap_user(uint32_t rw, uint32_t ap);
 
 RB_GENERATE(ptlist, vm_pt, entry_, ptlist_compare);
 
-/**
- * Compare vmp_pt rb tree nodes.
- * Compares virtual addresses of two page tables.
- * @param a is the left node.
- * @param b is the right node.
- * @return  If the first argument is smaller than the second, the function
- *          returns a value smaller than zero;
- *          If they are equal, the  function returns zero;
- *          Otherwise, value greater than zero is returned.
- */
 int ptlist_compare(struct vm_pt * a, struct vm_pt * b)
 {
     const ssize_t vaddr_a = (a) ? (ssize_t)(a->pt.vaddr) : 0;
@@ -71,15 +58,8 @@ int ptlist_compare(struct vm_pt * a, struct vm_pt * b)
     return (int)(vaddr_a - vaddr_b);
 }
 
-/**
- * Get a page table for given virtual address.
- * @param ptlist_heas is a structure containing all page tables.
- * @param mpt   is a master page table.
- * @param vaddr is the virtual address that will be mapped into a returned page
- *              table.
- * @return Returs a page table where vaddr can be mapped.
- */
-struct vm_pt * ptlist_get_pt(struct ptlist * ptlist_head, mmu_pagetable_t * mpt, uintptr_t vaddr)
+struct vm_pt * ptlist_get_pt(struct ptlist * ptlist_head, mmu_pagetable_t * mpt,
+        uintptr_t vaddr)
 {
     struct vm_pt * vpt = 0;
     struct vm_pt filter = {
@@ -127,9 +107,6 @@ struct vm_pt * ptlist_get_pt(struct ptlist * ptlist_head, mmu_pagetable_t * mpt,
     return vpt;
 }
 
-/**
- * Free ptlist and its page tables.
- */
 void ptlist_free(struct ptlist * ptlist_head)
 {
     struct vm_pt * var, * nxt;
@@ -144,24 +121,13 @@ void ptlist_free(struct ptlist * ptlist_head)
     }
 }
 
-/** @addtogroup copy copyin, copyout, copyinstr
- * Kernel copy functions.
- *
- * The copy functions are designed to copy contiguous data from one address
- * to another from user-space to kernel-space and vice-versa.
- * @{
- */
-
-/**
- * Copy data from user-space to kernel-space.
- * Copy len bytes of data from the user-space address uaddr to the kernel-space
- * address kaddr.
- * @param[in]   uaddr is the source address.
- * @param[out]  kaddr is the target address.
- * @param       len  is the length of source.
- * @return 0 if succeeded; otherwise -EFAULT.
- */
 int copyin(const void * uaddr, void * kaddr, size_t len)
+{
+    return copyinproc(curproc, uaddr, kaddr, len);
+}
+
+int copyinproc(struct proc_info * proc, const void * uaddr, void * kaddr,
+        size_t len)
 {
     struct vm_pt * vpt;
     void * phys_uaddr;
@@ -187,16 +153,13 @@ int copyin(const void * uaddr, void * kaddr, size_t len)
     return 0;
 }
 
-/**
- * Copy data from kernel-space to user-space.
- * Copy len bytes of data from the kernel-space address kaddr to the user-space
- * address uaddr.
- * @param[in]   kaddr is the source address.
- * @param[out]  uaddr is the target address.
- * @param       len is the length of source.
- * @return 0 if succeeded; otherwise -EFAULT.
- */
 int copyout(const void * kaddr, void * uaddr, size_t len)
+{
+    return copyoutproc(curproc, kaddr, uaddr, len);
+}
+
+int copyoutproc(struct proc_info * proc, const void * kaddr, void * uaddr,
+        size_t len)
 {
     /* TODO Handle possible cow flag? */
     struct vm_pt * vpt;
@@ -207,8 +170,8 @@ int copyout(const void * kaddr, void * uaddr, size_t len)
     }
 
     vpt = ptlist_get_pt(
-            &(curproc->mm.ptlist_head),
-            &(curproc->mm.mpt),
+            &(proc->mm.ptlist_head),
+            &(proc->mm.mpt),
             (uintptr_t)uaddr);
 
     if (!vpt)
@@ -222,18 +185,6 @@ int copyout(const void * kaddr, void * uaddr, size_t len)
     return 0;
 }
 
-/**
- * Copy a string from user-space to kernel-space.
- * Copy a NUL-terminated string, at most len bytes long, from user-space address
- * uaddr to kernel-space address kaddr.
- * @param[in]   uaddr is the source address.
- * @param[out]  kaddr is the target address.
- * @param       len is the length of string in uaddr.
- * @param[out]  done is the number of bytes actually copied, including the
- *                   terminating NUL, if done is non-NULL.
- * @return  0 if succeeded; or -ENAMETOOLONG if the string is longer than len
- *          bytes; or any of the return values defined for copyin().
- */
 int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done)
 {
     size_t slen;
@@ -254,14 +205,6 @@ int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done)
     return 0;
 }
 
-/**
- * @}
- */
-
-/**
- * Update usr access permissions based on region->usr_rw.
- * @param region is the region to be updated.
- */
 void vm_updateusr_ap(struct vm_region * region)
 {
     int usr_rw;
@@ -313,13 +256,6 @@ void vm_updateusr_ap(struct vm_region * region)
     mtx_unlock(&(region->lock));
 }
 
-/**
- * Map a VM region with the given page table.
- * @note vm_region->mmu.pt is not respected and is considered as invalid.
- * @param vm_region is a vm region.
- * @param vm_pt is a vm page table.
- * @return Zero if succeed; non-zero error code otherwise.
- */
 int vm_map_region(vm_region_t * vm_region, struct vm_pt * pt)
 {
     mmu_region_t mmu_region;
@@ -340,15 +276,6 @@ int vm_map_region(vm_region_t * vm_region, struct vm_pt * pt)
     return mmu_map_region(&mmu_region);
 }
 
-/**
- * Check kernel space memory region for accessibility.
- * Check whether operations of the type specified in rw are permitted in the
- * range of virtual addresses given by addr and len.
- * @todo Not implemented properly!
- * @remark Compatible with BSD.
- * @return  Boolean true if the type of access specified by rw is permitted;
- *          Otherwise boolean false.
- */
 int kernacc(const void * addr, int len, int rw)
 {
     size_t reg_start, reg_size;
@@ -374,15 +301,6 @@ int kernacc(const void * addr, int len, int rw)
     return (1 == 1);
 }
 
-/**
- * Test for priv mode access permissions.
- *
- * AP format for this function:
- * 3  2    0
- * +--+----+
- * |XN| AP |
- * +--+----+
- */
 static int test_ap_priv(uint32_t rw, uint32_t ap)
 {
     if (rw & VM_PROT_EXECUTE) {
@@ -416,17 +334,6 @@ static int test_ap_priv(uint32_t rw, uint32_t ap)
     return 0;
 }
 
-/**
- * Check user space memeory region for accessibility.
- * Check whether operations of the type specified in rw are permitted in the
- * range of virtual addresses given by addr and len.
- * This function considers addr to represent an user space address. The process
- * context to use for this operation is taken from the global variable curproc.
- * @todo Not implemented properly!
- * @remark Compatible with BSD.
- * @return  Boolean true if the type of access specified by rw is permitted;
- *          Otherwise boolean false.
- */
 int useracc(const void * addr, int len, int rw)
 {
     /* TODO We may wan't to handle cow here */
@@ -437,15 +344,6 @@ int useracc(const void * addr, int len, int rw)
     return (1 == 1);
 }
 
-/**
- * Test for user mode access permissions.
- *
- * AP format for this function:
- * 3  2    0
- * +--+----+
- * |XN| AP |
- * +--+----+
- */
 static int test_ap_user(uint32_t rw, uint32_t ap)
 {
     if (rw & VM_PROT_EXECUTE) {
@@ -474,7 +372,3 @@ static int test_ap_user(uint32_t rw, uint32_t ap)
 
     return 0;
 }
-
-/**
- * @}
- */
