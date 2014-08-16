@@ -54,7 +54,7 @@ void devnull_init(void)
     SUBSYS_INIT();
     SUBSYS_DEP(devfs_init);
 
-    if (dev_make(&devnull_info, 0, 0, 0666)) {
+    if (dev_make(&devnull_info, 0, 0, 0666, NULL)) {
         KERROR(KERROR_ERR, "Failed to init dev/null");
     }
 

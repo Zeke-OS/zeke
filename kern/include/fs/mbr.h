@@ -36,7 +36,6 @@
 
 #include <fs/devfs.h>
 
-int mbr_register(vnode_t * parent_vnode,
-        struct dev_info *** partitions, int * part_count);
+int mbr_register(int fd, int * part_count);
 
 #endif /* MBR_H */

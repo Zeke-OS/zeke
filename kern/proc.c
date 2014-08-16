@@ -493,7 +493,7 @@ int proc_replace(pid_t pid, vm_region_t * (*regions)[], int nr_regions)
     };
     struct _ds_pthread_create ds = {
         .thread     = 0, /* return value */
-        .start      = (*regions)[MM_CODE_REGION]->mmu.vaddr,
+        .start      = (void *(*)(void *))((*regions)[MM_CODE_REGION]->mmu.vaddr),
         .def        = &pattr,
         .argument   = 0, /* TODO */
         .del_thread = pthread_exit /* TODO */
@@ -506,6 +506,8 @@ int proc_replace(pid_t pid, vm_region_t * (*regions)[], int nr_regions)
 
     /* interrupts will be enabled automatically */
     sched_thread_die(0);
+
+    return 0; /* Never returns */
 }
 
 static uintptr_t procsys_wait(void * p)

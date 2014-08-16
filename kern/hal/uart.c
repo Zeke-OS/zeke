@@ -94,7 +94,7 @@ static int make_uartdev(struct uart_port * port, int port_num)
     dev->write = uart_write;
     dev->ioctl = uart_ioctl;
 
-    if (dev_make(dev, 0, 0, 0666)) {
+    if (dev_make(dev, 0, 0, 0666, NULL)) {
         KERROR(KERROR_ERR, "Failed to");
     } else {
         port->flags |= UART_PORT_FLAG_FS;

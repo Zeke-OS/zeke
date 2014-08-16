@@ -514,6 +514,9 @@ void rpi_emmc_init(void)
     SUBSYS_INIT();
     SUBSYS_DEP(fs_init);
 
+    vnode_t * vnode;
+    int fd;
+
     struct dev_info * sd_dev = NULL;
     if (rpi_emmc_card_init(&sd_dev)) {
         KERROR(KERROR_ERR, "rpi_emmc FAILED");
@@ -529,13 +532,18 @@ void rpi_emmc_init(void)
 #endif
 
     /* Register with devfs */
-    if (dev_make(sd_dev, 0, 0, 0666)) {
+    if (dev_make(sd_dev, 0, 0, 0666, &vnode)) {
         KERROR(KERROR_ERR, "Failed to register a new emmc dev");
     }
 
 #if configMBR != 0
-    /* TODO */
-    mbr_register(c_dev, (void *)0, (void *)0);
+    fd = fs_fildes_create_cproc(vnode, O_RDONLY);
+    if (fd < 0) {
+        KERROR(KERROR_ERR, "Failed to open the device");
+        return;
+    }
+
+    mbr_register(fd, NULL);
 #endif
 
     SUBSYS_INITFINI("rpi_emmc OK");
