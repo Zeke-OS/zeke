@@ -65,6 +65,7 @@
 #include <autoconf.h>
 #include <kinit.h>
 #include <stdint.h>
+#include <errno.h>
 #include <kstring.h>
 #include <libkern.h>
 #include <kmalloc.h>
@@ -315,8 +316,10 @@ static char *err_irpts[] = {
 };
 #endif
 
-int sd_read(struct dev_info *, off_t, uint8_t *, size_t buf_size);
-int sd_write(struct dev_info *, off_t, uint8_t *, size_t buf_size);
+ssize_t sd_read(struct dev_info * dev, off_t offset, uint8_t * buf,
+                size_t count, int oflags);
+ssize_t sd_write(struct dev_info * dev, off_t offset, uint8_t * buf,
+                 size_t count, int oflags);
 
 static uint32_t sd_commands[] = {
     SD_CMD_INDEX(0),
@@ -1600,6 +1603,7 @@ int rpi_emmc_card_init(struct dev_info ** dev)
         ret = (struct emmc_block_dev *)*dev;
 
     memset(ret, 0, sizeof(struct emmc_block_dev));
+    ret->dev.dev_id = DEV_MMTODEV(8, 0);
     ret->dev.drv_name = driver_name;
     strlcpy(ret->dev.dev_name, device_name, sizeof(ret->dev.dev_name));
     ret->dev.block_size = 512;
@@ -2331,59 +2335,66 @@ static int sd_do_data_command(struct emmc_block_dev *edev, int is_write,
     return 0;
 }
 
-int sd_read(struct dev_info *dev, off_t block_no,
-        uint8_t *buf, size_t buf_size)
-{
-    /* Check the status of the card */
-    struct emmc_block_dev *edev = (struct emmc_block_dev *)dev;
-    if (sd_ensure_data_mode(edev) != 0)
-        return -1;
 
+ssize_t sd_read(struct dev_info * dev, off_t offset, uint8_t * buf,
+                size_t count, int oflags)
+{
+    struct emmc_block_dev * edev =
+        container_of(dev, struct emmc_block_dev, dev);
+    const uint32_t block_no = (uint32_t)offset * dev->block_size;
 #ifdef EMMC_DEBUG
-    {
-        char buf[80];
-        ksprintf(buf, sizeof(buf),
-                "SD: read() card ready, reading from block %l\n", block_no);
-        KERROR(KERROR_DEBUG, buf);
-    }
+    char msgbuf[80];
 #endif
 
-    if (sd_do_data_command(edev, 0, buf, buf_size, block_no) < 0)
-        return -1;
+    /* Check the status of the card */
+    if (sd_ensure_data_mode(edev))
+        return -EIO;
+
+#ifdef EMMC_DEBUG
+    ksprintf(msgbuf, sizeof(msgbuf),
+             "SD: read() card ready, reading from block %l\n", block_no);
+    KERROR(KERROR_DEBUG, msgbuf);
+#endif
+
+    if (sd_do_data_command(edev, 0, buf, count, block_no) < 0)
+        return -EIO;
 
 #ifdef EMMC_DEBUG
     KERROR(KERROR_DEBUG, "SD: data read successful\n");
 #endif
 
-    return buf_size;
+    return count;
 }
 
 #ifdef SD_WRITE_SUPPORT
-int sd_write(struct dev_info * dev, off_t block_no, uint8_t *buf,
-        size_t buf_size)
+ssize_t sd_write(struct dev_info * dev, off_t offset, uint8_t * buf,
+                 size_t count, int oflags)
 {
-    /* Check the status of the card */
-    struct emmc_block_dev *edev = (struct emmc_block_dev *)dev;
-    if (sd_ensure_data_mode(edev) != 0)
-        return -1;
-
+    struct emmc_block_dev * edev =
+        container_of(dev, struct emmc_block_dev, dev);
+    const uint32_t block_no = (uint32_t)offset * dev->block_size;
 #ifdef EMMC_DEBUG
-    {
-        char buf[80];
-        ksprintf(buf, sizeof(buf),
-                "SD: write() card ready, reading from block %l\n", block_no);
-        KERROR(KERROR_DEBUG, buf);
-    }
+    char msgbuf[80];
 #endif
 
-    if (sd_do_data_command(edev, 1, buf, buf_size, block_no) < 0)
-        return -1;
+    /* Check the status of the card */
+    if (sd_ensure_data_mode(edev))
+        return -EIO;
+
+#ifdef EMMC_DEBUG
+    ksprintf(msgbuf, sizeof(msgbuf),
+             "SD: write() card ready, reading from block %l\n", block_no);
+    KERROR(KERROR_DEBUG, msgbuf);
+#endif
+
+    if (sd_do_data_command(edev, 1, buf, count, block_no) < 0)
+        return -EIO;
 
 #ifdef EMMC_DEBUG
     KERROR(KERROR_DEBUG, "SD: write read successful\n");
 #endif
 
-    return buf_size;
+    return count;
 }
 #endif
 

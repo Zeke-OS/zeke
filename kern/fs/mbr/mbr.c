@@ -74,9 +74,8 @@ struct mbr_dev {
     uint8_t part_id;
 };
 
-static size_t mbr_dev_count;
-
 static char driver_name[] = "mbr";
+static size_t mbr_dev_count;
 
 static int mbr_read(struct dev_info * devnfo, off_t offset,
                     uint8_t * buf, size_t count, int oflags);
@@ -210,6 +209,7 @@ int mbr_register(int fd, int * part_count)
     }
 #endif
 
+    int major_num = parent->dev_id + 1;
     for (int i = 0; i < 4; i++) {
         int p_offset = 0x1be + (i * 0x10);
         if (block_0[p_offset + 4] != 0x00) { /* Valid partition */
@@ -225,11 +225,10 @@ int mbr_register(int fd, int * part_count)
                 mbr_dev_count++;
             }
 
+            d->dev.dev_id = DEV_MMTODEV(major_num, mbr_dev_count);
             d->dev.drv_name = driver_name;
-
-            ksprintf(d->dev.dev_name, sizeof(d->dev.dev_name), "%s_%c0",
+            ksprintf(d->dev.dev_name, sizeof(d->dev.dev_name), "%sp%c",
                      parent->dev_name, '0' + i);
-            d->dev.dev_id = i;
             d->dev.read = mbr_read;
             if (parent->write)
                 d->dev.write = mbr_write;

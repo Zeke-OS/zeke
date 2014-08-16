@@ -106,7 +106,7 @@ void devfs_init(void)
     vn_devfs->vn_prev_mountpoint = vn_devfs;
     vn_devfs->vn_mountpoint = vn_devfs;
 
-    vn_devfs->sb->vdev_id = DEV_MMTODEV(DEVFS_VDEV_MAJOR_ID, 0);
+    vn_devfs->sb->vdev_id = DEV_MMTODEV(DEVFS_MAJOR_NUM, 0);
     fs_register(&devfs_fs);
 
     SUBSYS_INITFINI("devfs OK");

@@ -40,7 +40,7 @@
 #include <fs/fs.h>
 
 #define DEVFS_FSNAME            "devfs" /*!< Name of the devfs in vfs. */
-#define DEVFS_VDEV_MAJOR_ID     11      /*!< Major id of the devfs. */
+#define DEVFS_MAJOR_NUM         11      /*!< Major id of the devfs. */
 
 #define DEV_FLAGS_MB_READ       0x01 /*!< Supports multiple block read. */
 #define DEV_FLAGS_MB_WRITE      0x02 /*!< Supports multiple block write. */
