@@ -118,11 +118,11 @@
 #define EROFS           73  /*!< Read-only file system. */
 #define ESPIPE          74  /*!< Invalid seek. */
 #define ESRCH           75  /*!< No such process. */
-#define ESTALE          76  /*!< Reserved. */
+#define ESTALE          76  /*!< Stale file handle. */
 #define ETIMEDOUT       78  /*!< Connection timed out. */
 #define ETXTBSY         79  /*!< Text file busy. */
 #define EWOULDBLOCK     6   /*!< Operation would block */
-#define EXDEV           80  /*!< Cross-device link. */
+#define EXDEV           80  /*!< Cross-device link or Improper link. */
 
 #ifndef KERNEL_INTERNAL
 #include <sys/cdefs.h>
