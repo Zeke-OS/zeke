@@ -56,10 +56,10 @@ struct dev_info {
     size_t block_size;      /*!< Preferred block transfer size. */
     ssize_t num_blocks;
 
-    ssize_t (*read)(struct dev_info * devnfo, off_t offset,
-            uint8_t * buf, size_t count, int oflags);
-    ssize_t (*write)(struct dev_info * devnfo, off_t offset,
-            uint8_t * buf, size_t count, int oflags);
+    ssize_t (*read)(struct dev_info * devnfo, off_t blkno,
+            uint8_t * buf, size_t bcount, int oflags);
+    ssize_t (*write)(struct dev_info * devnfo, off_t blkno,
+            uint8_t * buf, size_t bcount, int oflags);
     /**
      * ioctl for the device driver.
      * This function is optional and can be NULL.
@@ -78,7 +78,7 @@ int dev_make(struct dev_info * devnfo, uid_t uid, gid_t gid, int perms,
  * @param count     is the byte count to read.
  * @return  Returns number of bytes read from the device.
  */
-ssize_t dev_read(file_t * file, void * vbuf, size_t count);
+ssize_t dev_read(file_t * file, void * vbuf, size_t bcount);
 
 /**
  * Write to a device.
@@ -87,7 +87,7 @@ ssize_t dev_read(file_t * file, void * vbuf, size_t count);
  * @param count     is the byte count to write.
  * @return  Returns number of bytes written to the device.
  */
-ssize_t dev_write(file_t * file, const void * vbuf, size_t count);
+ssize_t dev_write(file_t * file, const void * vbuf, size_t bcount);
 
 /**
  * Device control.

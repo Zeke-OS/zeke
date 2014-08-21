@@ -49,10 +49,10 @@ static int uart_nr_ports;
 static int vfs_ready;
 
 static int make_uartdev(struct uart_port * port, int port_num);
-static ssize_t uart_read(struct dev_info * devnfo, off_t offset, uint8_t * buf,
-        size_t count, int oflags);
-static ssize_t uart_write(struct dev_info * devnfo, off_t offset, uint8_t * buf,
-        size_t count, int oflags);
+static ssize_t uart_read(struct dev_info * devnfo, off_t blkno, uint8_t * buf,
+        size_t bcount, int oflags);
+static ssize_t uart_write(struct dev_info * devnfo, off_t blkno, uint8_t * buf,
+        size_t bcount, int oflags);
 static int uart_ioctl(struct dev_info * devnfo, uint32_t request,
         void * arg, size_t arg_len);
 
@@ -89,7 +89,7 @@ static int make_uartdev(struct uart_port * port, int port_num)
     dev->drv_name = drv_name;
     ksprintf(dev->dev_name, sizeof(dev->dev_name), "ttyS%i", port_num);
     dev->flags = DEV_FLAGS_MB_READ | DEV_FLAGS_WR_BT_MASK;
-    dev->block_size = 16; /* TODO Should be adjustable */
+    dev->block_size = 1;
     dev->read = uart_read;
     dev->write = uart_write;
     dev->ioctl = uart_ioctl;
@@ -135,8 +135,8 @@ struct uart_port * uart_getport(int port_num)
     return retval;
 }
 
-static ssize_t uart_read(struct dev_info * devnfo, off_t offset, uint8_t * buf,
-        size_t count, int oflags)
+static ssize_t uart_read(struct dev_info * devnfo, off_t blkno, uint8_t * buf,
+        size_t bcount, int oflags)
 {
     struct uart_port * port = uart_getport(DEV_MINOR(devnfo->dev_id));
     size_t n = 0;
@@ -148,24 +148,24 @@ static ssize_t uart_read(struct dev_info * devnfo, off_t offset, uint8_t * buf,
     if (!(oflags & O_NONBLOCK)) {
         /* TODO Block until new data event */
         while (!port->peek(port)) {
-            sched_thread_sleep(50);
+            thread_sleep(50);
         }
     }
 
-    do {
+    while (n < bcount) {
         ret = port->ugetc(port);
         if (ret == -1)
             break;
         buf[n++] = (char)ret;
-    } while (n < count);
-    if (n == 0)
+    };
+    if (n == 0 && bcount != 0)
         return -EAGAIN;
 
     return n;
 }
 
-static ssize_t uart_write(struct dev_info * devnfo, off_t offset, uint8_t * buf,
-        size_t count, int oflags)
+static ssize_t uart_write(struct dev_info * devnfo, off_t blkno, uint8_t * buf,
+        size_t bcount, int oflags)
 {
     struct uart_port * port = uart_getport(DEV_MINOR(devnfo->dev_id));
     const unsigned block = !(oflags & O_NONBLOCK);

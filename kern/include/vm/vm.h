@@ -36,6 +36,7 @@
 #include <hal/mmu.h>
 #include <klocks.h>
 #include <sys/tree.h>
+#include <fs/fs.h>
 
 #define VM_PROT_READ    0x1 /*!< Read. */
 #define VM_PROT_WRITE   0x2 /*!< Write. */
@@ -53,26 +54,36 @@ struct vm_pt {
 
 /**
  * VM memory region management structure.
- * This struct type is used to manage memory regions in vm system.
+ * This struct type is used to manage memory regions in the vm system.
  */
-typedef struct vm_region {
-    mmu_region_t mmu; /*!< MMU struct. @note pt pointer might be invalid. */
-    int usr_rw; /*!< Actual user mode permissions on this data. Sometimes we
-                 * want to set ap read-only to easily make copy-on-write or to
-                 * pass control to MMU exception handler for some other reason.
-                 */
+struct buf {
+    uintptr_t b_data;       /*!< Address in kernel space. */
+    size_t b_bufsize;       /*!< Allocated buffer size. */
+    size_t b_bcount;        /*!< Originally requested buffer size, can be used
+                             *   for bounds check. */
 
-    /* Allocator specific data */
-#if configDEBUG != 0
-    unsigned int allocator_id; /*!< Optional allocator identifier. Allocator
-                                * can use this to check that a given
-                                * region is actually allocated with it. */
-#endif
-    void * allocator_data;      /*!< Optional allocator specific data. */
+    /* User space mappings */
+    mmu_region_t b_mmu;     /*!< MMU struct for user space access. */
+    int b_uflags;           /*!< Actual user space permissions and flags. */
+
+    /* IO Buffer */
+    file_t file;            /*!< File descriptor for the buffered device. */
+    size_t b_dirtyoff;      /*!< Offset in buffer of dirty region. */
+    size_t b_dirtyend;      /*!< Offset of end of dirty region. */
+
+    /* Status */
+    unsigned b_flags;
+    int b_error;            /*!< Negative errno returned after I/O. */
+    size_t b_resid;         /*!< words not transferred after an error. */
+
+    /** Operations */
     const struct vm_ops * vm_ops;
+
+    void * allocator_data;  /*!< Allocator specific data. */
+
     int refcount;
     mtx_t lock;
-} vm_region_t;
+};
 
 /**
  * VM operations.
@@ -81,7 +92,7 @@ typedef struct vm_ops {
     /**
      * Increment region reference count.
      */
-    void (*rref)(struct vm_region * this);
+    void (*rref)(struct buf * this);
 
     /**
      * Pointer to a 1:1 region cloning function.
@@ -90,14 +101,14 @@ typedef struct vm_ops {
      * @note Can be null.
      * @param cur_region    is a pointer to the current region.
      */
-    struct vm_region * (*rclone)(struct vm_region * old_region);
+    struct buf * (*rclone)(struct buf * old_region);
 
     /**
      * Free this region.
      * @note Can be null.
      * @param this is the current region.
      */
-    void (*rfree)(struct vm_region * this);
+    void (*rfree)(struct buf * this);
 } vm_ops_t;
 
 /* struct ptlist */
@@ -114,7 +125,7 @@ struct vm_mm_struct {
 #define MM_CODE_REGION  0
 #define MM_STACK_REGION 1
 #define MM_HEAP_REGION  2
-    vm_region_t * (*regions)[]; /*!< Memory regions of a process.
+    struct buf * (*regions)[]; /*!< Memory regions of a process.
                                  *   [0] = code         RORO
                                  *   [1] = stack        RWRW
                                  *   [2] = heap/data    RWRW
@@ -204,16 +215,16 @@ int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done);
  * Update usr access permissions based on region->usr_rw.
  * @param region is the region to be updated.
  */
-void vm_updateusr_ap(struct vm_region * region);
+void vm_updateusr_ap(struct buf * region);
 
 /**
  * Map a VM region with the given page table.
- * @note vm_region->mmu.pt is not respected and is considered as invalid.
- * @param vm_region is a vm region.
+ * @note buf->b_mmu.pt is not respected and is considered as invalid.
+ * @param region is a vm region buffer.
  * @param vm_pt is a vm page table.
  * @return Zero if succeed; non-zero error code otherwise.
  */
-int vm_map_region(vm_region_t * vm_region, struct vm_pt * pt);
+int vm_map_region(struct buf * region, struct vm_pt * pt);
 
 /**
  * Check kernel space memory region for accessibility.

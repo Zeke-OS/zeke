@@ -50,7 +50,7 @@ mtx_t fslock;
 #define FS_LOCK()       mtx_spinlock(&fslock)
 #define FS_UNLOCK()     mtx_unlock(&fslock)
 #define FS_TESTLOCK()   mtx_test(&fslock)
-#define FS_LOCK_INIT()  mtx_init(&fslock, MTX_DEF | MTX_SPIN)
+#define FS_LOCK_INIT()  mtx_init(&fslock, MTX_TYPE_SPIN)
 
 static int parse_filepath(const char * pathname, char ** path, char ** name);
 
@@ -396,7 +396,7 @@ int fs_fildes_set(file_t * fildes, vnode_t * vnode, int oflags)
     if (!(fildes && vnode))
         return -1;
 
-    mtx_init(&fildes->lock, MTX_DEF | MTX_SPIN);
+    mtx_init(&fildes->lock, MTX_TYPE_SPIN);
     fildes->vnode = vnode;
     fildes->oflags = oflags;
     fildes->refcount = 1;

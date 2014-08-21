@@ -158,10 +158,10 @@ void dev_destroy(struct dev_info * devnfo)
 {
 }
 
-ssize_t dev_read(file_t * file, void * vbuf, size_t count)
+ssize_t dev_read(file_t * file, void * vbuf, size_t bcount)
 {
     vnode_t * const vnode = file->vnode;
-    const off_t * offset = &(file->seek_pos);
+    const off_t offset = file->seek_pos;
     const int oflags = file->oflags;
     struct dev_info * devnfo = (struct dev_info *)vnode->vn_specinfo;
     uint8_t * buf = (uint8_t *)vbuf;
@@ -170,20 +170,20 @@ ssize_t dev_read(file_t * file, void * vbuf, size_t count)
         return -EOPNOTSUPP;
 
     if ((devnfo->flags & DEV_FLAGS_MB_READ) &&
-            ((count / devnfo->block_size) > 1)) {
-        return devnfo->read(devnfo, *offset, buf, count, oflags);
+            ((bcount / devnfo->block_size) > 1)) {
+        return devnfo->read(devnfo, offset, buf, bcount, oflags);
     }
 
     size_t buf_offset = 0;
     off_t block_offset = 0;
     do {
         int tries = RW_MAX_TRIES;
-        size_t to_read = (count > devnfo->block_size) ?
-            devnfo->block_size : count;
+        size_t to_read = (bcount > devnfo->block_size) ?
+            devnfo->block_size : bcount;
         ssize_t ret;
 
         while (1) {
-            ret = devnfo->read(devnfo, *offset + block_offset,
+            ret = devnfo->read(devnfo, offset + block_offset,
                                    &buf[buf_offset], to_read, oflags);
             if (ret < 0) {
                 tries--;
@@ -195,17 +195,17 @@ ssize_t dev_read(file_t * file, void * vbuf, size_t count)
         }
 
         buf_offset += ret;
-        block_offset += devnfo->block_size;
-        count -= ret;
-    } while (count > 0);
+        block_offset++;
+        bcount -= ret;
+    } while (bcount > 0);
 
     return buf_offset;
 }
 
-ssize_t dev_write(file_t * file, const void * vbuf, size_t count)
+ssize_t dev_write(file_t * file, const void * vbuf, size_t bcount)
 {
     vnode_t * const vnode = file->vnode;
-    const off_t * offset = &(file->seek_pos);
+    const off_t offset = file->seek_pos;
     const int oflags = file->oflags;
     struct dev_info * devnfo = (struct dev_info *)vnode->vn_specinfo;
     uint8_t * buf = (uint8_t *)vbuf;
@@ -214,20 +214,20 @@ ssize_t dev_write(file_t * file, const void * vbuf, size_t count)
         return -EOPNOTSUPP;
 
     if ((devnfo->flags & DEV_FLAGS_MB_WRITE) &&
-            ((count / devnfo->block_size) > 1)) {
-        return devnfo->write(devnfo, *offset, buf, count, oflags);
+            ((bcount / devnfo->block_size) > 1)) {
+        return devnfo->write(devnfo, offset, buf, bcount, oflags);
     }
 
     size_t buf_offset = 0;
     off_t block_offset = 0;
     do {
         int tries = RW_MAX_TRIES;
-        size_t to_write = (count > devnfo->block_size) ?
-            devnfo->block_size : count;
+        size_t to_write = (bcount > devnfo->block_size) ?
+            devnfo->block_size : bcount;
         ssize_t ret;
 
         while (1) {
-            ret = devnfo->write(devnfo, *offset + block_offset,
+            ret = devnfo->write(devnfo, offset + block_offset,
                                     &buf[buf_offset], to_write, oflags);
             if (ret < 0) {
                 tries--;
@@ -239,9 +239,9 @@ ssize_t dev_write(file_t * file, const void * vbuf, size_t count)
         }
 
         buf_offset += ret;
-        block_offset += devnfo->block_size;
-        count -= ret;
-    } while (count > 0);
+        block_offset++;
+        bcount -= ret;
+    } while (bcount > 0);
 
     return buf_offset;
 }

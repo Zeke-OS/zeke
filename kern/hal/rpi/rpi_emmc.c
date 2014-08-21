@@ -651,13 +651,13 @@ static int bcm_2708_power_off()
         KERROR(KERROR_ERR,
                "EMMC: bcm_2708_power_off(): property mailbox did not return "
                "a valid response.\n");
-        return -1;
+        return -EIO;
     }
 
     if (mailbuffer[5] != 0x0) {
         KERROR(KERROR_ERR, "EMMC: property mailbox did not return "
                            "a valid device id.\n");
-        return -1;
+        return -EIO;
     }
 
     if ((mailbuffer[6] & 0x3) != 0) {
@@ -704,13 +704,13 @@ static int bcm_2708_power_on()
         KERROR(KERROR_ERR,
                "EMMC: bcm_2708_power_on(): property mailbox did not return "
                "a valid response.\n");
-        return -1;
+        return -EIO;
     }
 
     if (mailbuffer[5] != 0x0) {
         KERROR(KERROR_ERR, "EMMC: property mailbox did not return "
                            "a valid device id.\n");
-        return -1;
+        return -EIO;
     }
 
     if ((mailbuffer[6] & 0x3) != 1) {
@@ -722,7 +722,7 @@ static int bcm_2708_power_on()
                  mailbuffer[6]);
         KERROR(KERROR_DEBUG, buf);
 #endif
-        return 1;
+        return EIO;
     }
 
     return 0;
@@ -731,7 +731,7 @@ static int bcm_2708_power_on()
 static int bcm_2708_power_cycle()
 {
     if (bcm_2708_power_off() < 0)
-        return -1;
+        return -EIO;
 
     bcm_udelay(5000);
 
@@ -830,7 +830,7 @@ static int sd_switch_clock_rate(uint32_t base_clock, uint32_t target_rate)
                 "EMMC: couldn't get a valid divider for target rate %i Hz\n",
                 target_rate);
         KERROR(KERROR_DEBUG, buf);
-        return -1;
+        return -EIO;
     }
 
     /* Wait for the command inhibit (CMD and DAT) bits to clear */
@@ -878,7 +878,7 @@ static int sd_reset_cmd()
     if (mmio_read(EMMC_BASE + EMMC_CONTROL1) & SD_RESET_CMD) {
         KERROR(KERROR_ERR, "EMMC: CMD line did not reset properly\n");
 
-        return -1;
+        return -EIO;
     }
 
     return 0;
@@ -895,7 +895,7 @@ static int sd_reset_dat()
             1000000);
     if ((mmio_read(EMMC_BASE + EMMC_CONTROL1) & SD_RESET_DAT) != 0) {
         KERROR(KERROR_ERR, "EMMC: DAT line did not reset properly\n");
-        return -1;
+        return -EIO;
     }
 
     return 0;
@@ -1434,7 +1434,7 @@ int rpi_emmc_card_init(struct dev_info ** dev)
     if (bcm_2708_power_cycle() != 0) {
         KERROR(KERROR_ERR,
                 "EMMC: BCM2708 controller did not power cycle successfully\n");
-        return -1;
+        return -EIO;
     }
 #ifdef EMMC_DEBUG
     KERROR(KERROR_DEBUG, "EMMC: BCM2708 controller power-cycled\n");
@@ -1458,7 +1458,7 @@ int rpi_emmc_card_init(struct dev_info ** dev)
     if (hci_ver < 2) {
         KERROR(KERROR_ERR, "EMMC: only SDHCI versions >= 3.0 are supported\n");
 
-        return -1;
+        return -EIO;
     }
 
     /* Reset the controller */
@@ -1475,7 +1475,7 @@ int rpi_emmc_card_init(struct dev_info ** dev)
                  1000000);
     if ((mmio_read(EMMC_BASE + EMMC_CONTROL1) & (0x7 << 24)) != 0) {
         KERROR(KERROR_ERR, "EMMC: controller did not reset properly\n");
-        return -1;
+        return -EIO;
     }
 #ifdef EMMC_DEBUG
     {
@@ -1511,7 +1511,7 @@ int rpi_emmc_card_init(struct dev_info ** dev)
     uint32_t status_reg = mmio_read(EMMC_BASE + EMMC_STATUS);
     if ((status_reg & (1 << 16)) == 0) {
         KERROR(KERROR_ERR, "EMMC: no card inserted\n");
-        return -1;
+        return -EIO;
     }
 #ifdef EMMC_DEBUG
     {
@@ -1544,7 +1544,7 @@ int rpi_emmc_card_init(struct dev_info ** dev)
         KERROR(KERROR_ERR,
                 "EMMC: unable to get a valid clock divider for ID frequency\n");
 
-        return -1;
+        return -EIO;
     }
     control1 |= f_id;
 
@@ -1554,7 +1554,7 @@ int rpi_emmc_card_init(struct dev_info ** dev)
     if ((mmio_read(EMMC_BASE + EMMC_CONTROL1) & 0x2) == 0) {
         KERROR(KERROR_ERR,
                 "EMMC: controller's clock did not stabilise within 1 second\n");
-        return -1;
+        return -EIO;
     }
 #ifdef EMMC_DEBUG
     {
@@ -1623,7 +1623,7 @@ int rpi_emmc_card_init(struct dev_info ** dev)
     if (FAIL(ret)) {
         KERROR(KERROR_ERR, "SD: no CMD0 response\n");
 
-        return -1;
+        return -EIO;
     }
 
     /* Send CMD8 to the card */
@@ -1641,7 +1641,7 @@ int rpi_emmc_card_init(struct dev_info ** dev)
         v2_later = 0;
     } else if (CMD_TIMEOUT(ret)) {
         if (sd_reset_cmd() == -1)
-            return -1;
+            return -EIO;
         mmio_write(EMMC_BASE + EMMC_INTERRUPT, SD_ERR_MASK_CMD_TIMEOUT);
         v2_later = 0;
     } else if (FAIL(ret)) {
@@ -1651,7 +1651,7 @@ int rpi_emmc_card_init(struct dev_info ** dev)
                 ret->last_interrupt);
         KERROR(KERROR_ERR, buf);
 
-        return -1;
+        return -EIO;
     } else {
         if ((ret->last_r0 & 0xfff) != 0x1aa) {
             KERROR(KERROR_ERR, "SD: unusable card\n");
@@ -1662,7 +1662,7 @@ int rpi_emmc_card_init(struct dev_info ** dev)
                     ret->last_r0);
             KERROR(KERROR_DEBUG, buf);
 #endif
-            return -1;
+            return -EIO;
         } else {
             v2_later = 1;
         }
@@ -1690,7 +1690,7 @@ int rpi_emmc_card_init(struct dev_info ** dev)
                  ret->last_r0);
         KERROR(KERROR_DEBUG, buf);
 #endif
-        return -1;
+        return -EIO;
     }
 
     /* Call an inquiry ACMD41 (voltage window = 0) to get the OCR */
@@ -1702,7 +1702,7 @@ int rpi_emmc_card_init(struct dev_info ** dev)
     if (FAIL(ret)) {
         KERROR(KERROR_ERR, "SD: inquiry ACMD41 failed\n");
 
-        return -1;
+        return -EIO;
     }
 #ifdef EMMC_DEBUG
     {
@@ -1738,7 +1738,7 @@ int rpi_emmc_card_init(struct dev_info ** dev)
         if (FAIL(ret)) {
             KERROR(KERROR_ERR, "SD: error issuing ACMD41\n");
 
-            return -1;
+            return -EIO;
         }
 
         if ((ret->last_r0 >> 31) & 0x1) {
@@ -1869,7 +1869,7 @@ int rpi_emmc_card_init(struct dev_info ** dev)
     sd_issue_command(ret, ALL_SEND_CID, 0, 500000);
     if (FAIL(ret)) {
         KERROR(KERROR_DEBUG, "SD: error sending ALL_SEND_CID\n");
-        return -1;
+        return -EIO;
     }
     uint32_t card_cid_0 = ret->last_r0;
     uint32_t card_cid_1 = ret->last_r1;
@@ -1898,7 +1898,7 @@ int rpi_emmc_card_init(struct dev_info ** dev)
         KERROR(KERROR_ERR, "SD: error sending SEND_RELATIVE_ADDR\n");
 
         kfree(ret);
-        return -1;
+        return -EIO;
     }
 
     uint32_t cmd3_resp = ret->last_r0;
@@ -1923,7 +1923,7 @@ int rpi_emmc_card_init(struct dev_info ** dev)
         kfree(ret);
         kfree(dev_id);
 
-        return -1;
+        return -EIO;
     }
 
     if (illegal_cmd) {
@@ -1932,7 +1932,7 @@ int rpi_emmc_card_init(struct dev_info ** dev)
         kfree(ret);
         kfree(dev_id);
 
-        return -1;
+        return -EIO;
     }
 
     if (error) {
@@ -1941,7 +1941,7 @@ int rpi_emmc_card_init(struct dev_info ** dev)
         kfree(ret);
         kfree(dev_id);
 
-        return -1;
+        return -EIO;
     }
 
     if (!ready) {
@@ -1950,7 +1950,7 @@ int rpi_emmc_card_init(struct dev_info ** dev)
         kfree(ret);
         kfree(dev_id);
 
-        return -1;
+        return -EIO;
     }
 
 #ifdef EMMC_DEBUG
@@ -1968,7 +1968,7 @@ int rpi_emmc_card_init(struct dev_info ** dev)
 
         kfree(ret);
 
-        return -1;
+        return -EIO;
     }
 
     uint32_t cmd7_resp = ret->last_r0;
@@ -1983,7 +1983,7 @@ int rpi_emmc_card_init(struct dev_info ** dev)
         kfree(ret);
         kfree(dev_id);
 
-        return -1;
+        return -EIO;
     }
 
     /* If not an SDHC card, ensure BLOCKLEN is 512 bytes */
@@ -1994,10 +1994,10 @@ int rpi_emmc_card_init(struct dev_info ** dev)
 
             kfree(ret);
 
-            return -1;
+            return -EIO;
         }
     }
-    ret->block_size = 512;
+
     uint32_t controller_block_size = mmio_read(EMMC_BASE + EMMC_BLKSIZECNT);
     controller_block_size &= (~0xfff);
     controller_block_size |= 0x200;
@@ -2016,7 +2016,7 @@ int rpi_emmc_card_init(struct dev_info ** dev)
         kfree(ret->scr);
         kfree(ret);
 
-        return -1;
+        return -EIO;
     }
 
     /* Determine card version */
@@ -2147,7 +2147,7 @@ static int sd_ensure_data_mode(struct emmc_block_dev *edev)
 
         edev->card_rca = 0;
 
-        return -1;
+        return -EIO;
     }
 
     uint32_t status = edev->last_r0;
@@ -2169,7 +2169,7 @@ static int sd_ensure_data_mode(struct emmc_block_dev *edev)
 
             edev->card_rca = 0;
 
-            return -1;
+            return -EIO;
         }
     } else if (cur_state == 5) {
         /* In the data transfer state - cancel the transmission */
@@ -2179,7 +2179,7 @@ static int sd_ensure_data_mode(struct emmc_block_dev *edev)
             KERROR(KERROR_ERR,
                     "SD: ensure_data_mode() no response from CMD12\n");
             edev->card_rca = 0;
-            return -1;
+            return -EIO;
         }
 
         /* Reset the data circuit */
@@ -2201,7 +2201,8 @@ static int sd_ensure_data_mode(struct emmc_block_dev *edev)
             KERROR(KERROR_ERR,
                     "SD: ensure_data_mode() no response from CMD13\n");
             edev->card_rca = 0;
-            return -1;
+
+            return -EIO;
         }
         status = edev->last_r0;
         cur_state = (status >> 9) & 0xf;
@@ -2223,7 +2224,7 @@ static int sd_ensure_data_mode(struct emmc_block_dev *edev)
             KERROR(KERROR_ERR, buf);
 
             edev->card_rca = 0;
-            return -1;
+            return -EIO;
         }
     }
 
@@ -2258,7 +2259,7 @@ static int sd_do_data_command(struct emmc_block_dev *edev, int is_write,
                 "block size (%i)\n", buf_size, edev->block_size);
         KERROR(KERROR_ERR, buf);
 
-        return -1;
+        return -EIO;
     }
 
     edev->blocks_to_transfer = buf_size / edev->block_size;
@@ -2271,7 +2272,7 @@ static int sd_do_data_command(struct emmc_block_dev *edev, int is_write,
                 buf_size, edev->block_size);
         KERROR(KERROR_ERR, buf);
 
-        return -1;
+        return -EIO;
     }
     edev->buf = buf;
 
@@ -2329,7 +2330,7 @@ static int sd_do_data_command(struct emmc_block_dev *edev, int is_write,
     }
     if (retry_count == max_retries) {
         edev->card_rca = 0;
-        return -1;
+        return -EIO;
     }
 
     return 0;
@@ -2337,11 +2338,11 @@ static int sd_do_data_command(struct emmc_block_dev *edev, int is_write,
 
 
 ssize_t sd_read(struct dev_info * dev, off_t offset, uint8_t * buf,
-                size_t count, int oflags)
+                size_t bcount, int oflags)
 {
     struct emmc_block_dev * edev =
         container_of(dev, struct emmc_block_dev, dev);
-    const uint32_t block_no = (uint32_t)offset * dev->block_size;
+    const uint32_t block_no = (uint32_t)offset;
 #ifdef EMMC_DEBUG
     char msgbuf[80];
 #endif
@@ -2356,23 +2357,23 @@ ssize_t sd_read(struct dev_info * dev, off_t offset, uint8_t * buf,
     KERROR(KERROR_DEBUG, msgbuf);
 #endif
 
-    if (sd_do_data_command(edev, 0, buf, count, block_no) < 0)
+    if (sd_do_data_command(edev, 0, buf, bcount, block_no) < 0)
         return -EIO;
 
 #ifdef EMMC_DEBUG
     KERROR(KERROR_DEBUG, "SD: data read successful\n");
 #endif
 
-    return count;
+    return bcount;
 }
 
 #ifdef SD_WRITE_SUPPORT
 ssize_t sd_write(struct dev_info * dev, off_t offset, uint8_t * buf,
-                 size_t count, int oflags)
+                 size_t bcount, int oflags)
 {
     struct emmc_block_dev * edev =
         container_of(dev, struct emmc_block_dev, dev);
-    const uint32_t block_no = (uint32_t)offset * dev->block_size;
+    const uint32_t block_no = (uint32_t)offset;
 #ifdef EMMC_DEBUG
     char msgbuf[80];
 #endif
@@ -2387,14 +2388,14 @@ ssize_t sd_write(struct dev_info * dev, off_t offset, uint8_t * buf,
     KERROR(KERROR_DEBUG, msgbuf);
 #endif
 
-    if (sd_do_data_command(edev, 1, buf, count, block_no) < 0)
+    if (sd_do_data_command(edev, 1, buf, bcount, block_no) < 0)
         return -EIO;
 
 #ifdef EMMC_DEBUG
     KERROR(KERROR_DEBUG, "SD: write read successful\n");
 #endif
 
-    return count;
+    return bcount;
 }
 #endif
 

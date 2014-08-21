@@ -31,13 +31,16 @@
  */
 
 #define KERNEL_INTERNAL
+#include <errno.h>
 #include <hal/core.h>
 #include <klocks.h>
 
 void mtx_init(mtx_t * mtx, unsigned int type)
 {
-    mtx->mtx_lock = 0;
     mtx->mtx_tflags = type;
+    mtx->mtx_lock = 0;
+    mtx->ticket.queue = ATOMIC_INIT(0);
+    mtx->ticket.dequeue = ATOMIC_INIT(0);
 #ifdef LOCK_DEBUG
     mtx->mtx_ldebug = 0;
 #endif
@@ -49,25 +52,35 @@ int mtx_spinlock(mtx_t * mtx)
 int _mtx_spinlock(mtx_t * mtx, char * whr)
 #endif
 {
-    int retval = 0;
-
-    if ((mtx->mtx_tflags & MTX_SPIN) == 0) {
-        retval = 3; /* Not allowed */
-        goto out;
+    if (!MTX_TYPE(mtx, MTX_TYPE_SPIN)) {
+#ifdef LOCK_DEBUG
+        KERROR(KERROR_DEBUG, "Invalid lock type.");
+#endif
+        return -ENOTSUP;
     }
 
-    while (test_and_set((int *)(&(mtx->mtx_lock)))) {
+    if (MTX_TYPE(mtx, MTX_TYPE_TICKET)) {
+        const int ticket = atomic_inc(&(mtx->ticket.queue));
+
+        while (atomic_read(&(mtx->ticket.dequeue)) != ticket) {
+                sched_current_thread_yield();
 #if configMP != 0
-        cpu_wfe(); /* Sleep until event. */
+                cpu_wfe(); /* Sleep until event. */
 #endif
+        }
+    } else {
+        while (test_and_set((int *)(&(mtx->mtx_lock)))) {
+#if configMP != 0
+            cpu_wfe(); /* Sleep until event. */
+#endif
+        }
     }
 
 #ifdef LOCK_DEBUG
     mtx->mtx_ldebug = whr;
 #endif
 
-out:
-    return retval;
+    return 0;
 }
 
 #ifndef LOCK_DEBUG
@@ -88,9 +101,14 @@ int _mtx_trylock(mtx_t * mtx, char * whr)
 
 void mtx_unlock(mtx_t * mtx)
 {
-    mtx->mtx_lock = 0;
+    if (MTX_TYPE(mtx, MTX_TYPE_TICKET)) {
+        atomic_inc(&(mtx->ticket.dequeue));
+    } else {
+        mtx->mtx_lock = 0;
+    }
+
 #if configMP != 0
-    cpu_sev(); /* Wakeup cores possible waiting for lock. */
+    cpu_sev(); /* Wakeup cores possibly waiting for lock. */
 #endif
 }
 
@@ -103,7 +121,7 @@ void rwlock_init(rwlock_t * l)
 {
     l->state = 0;
     l->wr_waiting = 0;
-    mtx_init(&(l->lock), MTX_DEF | MTX_SPIN);
+    mtx_init(&(l->lock), MTX_TYPE_SPIN);
 }
 
 void rwlock_wrlock(rwlock_t * l)
@@ -209,11 +227,3 @@ void rwlock_rdunlock(rwlock_t * l)
     }
     mtx_unlock(&(l->lock));
 }
-
-/**
- * @}
- */
-
-/**
- * @}
- */

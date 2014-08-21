@@ -205,33 +205,33 @@ int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done)
     return 0;
 }
 
-void vm_updateusr_ap(struct vm_region * region)
+void vm_updateusr_ap(struct buf * region)
 {
     int usr_rw;
     unsigned ap;
 
     mtx_spinlock(&(region->lock));
-    usr_rw = region->usr_rw;
-    ap = region->mmu.ap;
+    usr_rw = region->b_uflags;
+    ap = region->b_mmu.ap;
 
 #define _COWRD (VM_PROT_COW | VM_PROT_READ)
     if ((usr_rw & _COWRD) == _COWRD) {
-        region->mmu.ap = MMU_AP_RORO;
+        region->b_mmu.ap = MMU_AP_RORO;
     } else if (usr_rw & VM_PROT_WRITE) {
-        region->mmu.ap = MMU_AP_RWRW;
+        region->b_mmu.ap = MMU_AP_RWRW;
     } else if (usr_rw & VM_PROT_READ) {
         switch (ap) {
         case MMU_AP_NANA:
         case MMU_AP_RONA:
-            region->mmu.ap = MMU_AP_RORO;
+            region->b_mmu.ap = MMU_AP_RORO;
             break;
         case MMU_AP_RWNA:
-            region->mmu.ap = MMU_AP_RWRO;
+            region->b_mmu.ap = MMU_AP_RWRO;
             break;
         case MMU_AP_RWRO:
             break;
         case MMU_AP_RWRW:
-            region->mmu.ap = MMU_AP_RWRO;
+            region->b_mmu.ap = MMU_AP_RWRO;
             break;
         case MMU_AP_RORO:
             break;
@@ -244,10 +244,10 @@ void vm_updateusr_ap(struct vm_region * region)
             break;
         case MMU_AP_RWRO:
         case MMU_AP_RWRW:
-            region->mmu.ap = MMU_AP_RWNA;
+            region->b_mmu.ap = MMU_AP_RWNA;
             break;
         case MMU_AP_RORO:
-            region->mmu.ap = MMU_AP_RONA;
+            region->b_mmu.ap = MMU_AP_RONA;
             break;
         }
     }
@@ -256,22 +256,22 @@ void vm_updateusr_ap(struct vm_region * region)
     mtx_unlock(&(region->lock));
 }
 
-int vm_map_region(vm_region_t * vm_region, struct vm_pt * pt)
+int vm_map_region(struct buf * region, struct vm_pt * pt)
 {
     mmu_region_t mmu_region;
 
 #if configDEBUG >= KERROR_ERR
-    if (vm_region == 0)
-        panic("vm_region can't be null");
+    if (region == 0)
+        panic("region can't be null");
 #endif
 
-    vm_updateusr_ap(vm_region);
-    mtx_spinlock(&(vm_region->lock));
+    vm_updateusr_ap(region);
+    mtx_spinlock(&(region->lock));
 
-    mmu_region = vm_region->mmu; /* Make a copy of mmu region struct */
+    mmu_region = region->b_mmu; /* Make a copy of mmu region struct */
     mmu_region.pt = &(pt->pt);
 
-    mtx_unlock(&(vm_region->lock));
+    mtx_unlock(&(region->lock));
 
     return mmu_map_region(&mmu_region);
 }

@@ -38,7 +38,7 @@
 #include <hal/core.h>
 #include <hal/mmu.h>
 #include <ptmapper.h>
-#include <vralloc.h>
+#include <buf.h>
 #include <syscall.h>
 #include <kerror.h>
 #include <errno.h>
@@ -77,7 +77,7 @@ void sched_handler(void)
      */
     sched_context_switcher();
     if (current_thread != prev_thread)
-        mmu_map_region(&(current_thread->kstack_region->mmu));
+        mmu_map_region(&(current_thread->kstack_region->b_mmu));
 
     /* Post-scheduling tasks */
     SET_FOREACH(task_p, post_sched_tasks) {
@@ -113,11 +113,30 @@ static void thread_event_timer(void * event_arg)
 
     timers_release(thread->wait_tim);
     thread->wait_tim = -1;
-    current_thread->flags &= ~SCHED_WAIT_FLAG;
-    sched_thread_set_exec(thread->id);
+
+    thread_release(thread);
 }
 
-void sched_thread_sleep(long millisec)
+/* TODO MP safety of wait and release */
+
+void thread_wait(void)
+{
+    current_thread->wait_count++;
+    sched_sleep_current_thread(0);
+}
+
+void thread_release(threadInfo_t * thread)
+{
+    if (thread->wait_count > 0)
+        thread->wait_count--;
+
+    if (thread->wait_count == 0) {
+        thread->flags &= ~SCHED_WAIT_FLAG;
+        sched_thread_set_exec(thread->id);
+    }
+}
+
+void thread_sleep(long millisec)
 {
     //istate_t s;
     int timer_id;
@@ -132,7 +151,7 @@ void sched_thread_sleep(long millisec)
     //disable_interrupt(); /* TODO Not MP safe! */
     /* This should prevent anyone from waking up this thread for a while. */
     timers_start(timer_id);
-    sched_thread_sleep_current(0); /* TODO Should work with 1 */
+    thread_wait();
     //set_interrupt_state(s);
 
     do {
@@ -143,19 +162,19 @@ void sched_thread_sleep(long millisec)
 void thread_init_kstack(threadInfo_t * th)
 {
     /* Create kstack */
-    th->kstack_region = vralloc(KSTACK_SIZE);
+    th->kstack_region = geteblk(KSTACK_SIZE);
     if (!th->kstack_region) {
         panic("OOM during thread creation");
     }
 
-    th->kstack_region->usr_rw = 0;
-    th->kstack_region->mmu.vaddr = MMU_VADDR_TKSTACK_START;
-    th->kstack_region->mmu.pt = &mmu_pagetable_system;
+    th->kstack_region->b_uflags = 0;
+    th->kstack_region->b_mmu.vaddr = MMU_VADDR_TKSTACK_START;
+    th->kstack_region->b_mmu.pt = &mmu_pagetable_system;
 }
 
 void thread_free_kstack(threadInfo_t * th)
 {
-    vrfree(th->kstack_region);
+    th->kstack_region->vm_ops->rfree(th->kstack_region);
 }
 
 pthread_t get_current_tid(void)

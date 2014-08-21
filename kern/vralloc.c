@@ -39,7 +39,8 @@
 #include <kstring.h>
 #include <kerror.h>
 #include <sys/sysctl.h>
-#include <vralloc.h>
+#include <vm/vm.h>
+#include <buf.h>
 
 /**
  * vralloc region struct.
@@ -47,7 +48,7 @@
  */
 struct vregion {
     llist_nodedsc_t node;
-    intptr_t paddr; /*!< Physical address of the block allocated from dynmem. */
+    intptr_t kaddr; /*!< Kernel address of the block allocated from dynmem. */
     size_t count;   /*!< Reserved pages count. */
     size_t size;    /*!< Size of allocation bitmap in bytes. */
     bitmap_t map[0]; /*!< Bitmap of reserved pages. */
@@ -59,18 +60,20 @@ struct vregion {
 static llist_t * vrlist; /*!< List of all allocations done by vralloc. */
 static struct vregion * last_vreg; /*!< Last node that contained empty pages. */
 
-static size_t vralloc_tot;
-SYSCTL_UINT(_vm, OID_AUTO, vralloc_tot, CTLFLAG_RD, &vralloc_tot, 0,
-    "Amount of memory currently allocated for vralloc");
+static size_t vmem_all;
+SYSCTL_UINT(_vm, OID_AUTO, vmem_all, CTLFLAG_RD, &vmem_all, 0,
+    "Amount of memory currently allocated");
 
-static size_t vralloc_used;
-SYSCTL_UINT(_vm, OID_AUTO, vralloc_used, CTLFLAG_RD, &vralloc_used, 0,
-    "Amount of vralloc memory used");
+static size_t vmem_used;
+SYSCTL_UINT(_vm, OID_AUTO, vmem_used, CTLFLAG_RD, &vmem_used, 0,
+    "Amount of memory used");
 
 static struct vregion * vreg_alloc_node(size_t count);
 static void vreg_free_node(struct vregion * reg);
 static size_t pagealign(size_t size, size_t bytes);
-static void vrref(struct vm_region * region);
+static void vrref(struct buf * region);
+
+extern void _add2bioman(struct buf * bp);
 
 /**
  * VRA specific operations for allocated vm regions.
@@ -78,7 +81,7 @@ static void vrref(struct vm_region * region);
 static const vm_ops_t vra_ops = {
     .rref = vrref,
     .rclone = vr_rclone,
-    .rfree = vrfree
+    .rfree = brelse
 };
 
 
@@ -115,9 +118,9 @@ static struct vregion * vreg_alloc_node(size_t count)
     if (!vreg)
         return 0;
 
-    vreg->paddr = (intptr_t)dynmem_alloc_region(count / 256, MMU_AP_RWNA,
+    vreg->kaddr = (intptr_t)dynmem_alloc_region(count / 256, MMU_AP_RWNA,
             MMU_CTRL_MEMTYPE_WB);
-    if (vreg->paddr == 0) {
+    if (vreg->kaddr == 0) {
         kfree(vreg);
         return 0;
     }
@@ -126,7 +129,7 @@ static struct vregion * vreg_alloc_node(size_t count)
     vrlist->insert_head(vrlist, vreg);
 
     /* Update stats */
-    vralloc_tot += count * 4096;
+    vmem_all += count * MMU_PGSIZE_COARSE;
 
     return vreg;
 }
@@ -138,11 +141,11 @@ static struct vregion * vreg_alloc_node(size_t count)
 static void vreg_free_node(struct vregion * vreg)
 {
     /* Update stats */
-    vralloc_tot -= vreg->size * (4 * 8) * 4096;
+    vmem_all -= vreg->size * (4 * 8) * MMU_PGSIZE_COARSE;
 
     /* Free node */
     vrlist->remove(vrlist, vreg);
-    dynmem_free_region((void *)vreg->paddr);
+    dynmem_free_region((void *)vreg->kaddr);
     kfree(vreg);
 }
 
@@ -161,33 +164,35 @@ static size_t pagealign(size_t size, size_t bytes)
 #undef MOD_AL
 }
 
-vm_region_t * vralloc(size_t size)
+struct buf * geteblk(size_t size)
 {
     size_t iblock; /* Block index of the allocation */
-    size = pagealign(size, 4096);
-    const size_t pcount = size / 4096;
+    const size_t orig_size = size;
+    size = pagealign(size, MMU_PGSIZE_COARSE);
+    const size_t pcount = size / MMU_PGSIZE_COARSE;
     struct vregion * vreg = last_vreg;
-    vm_region_t * retval = 0;
+    struct buf * retval = 0;
 
 retry_vra:
     do {
         if (bitmap_block_search(&iblock, pcount, vreg->map, vreg->size) == 0) {
             /* Found block */
-            retval = kcalloc(1, sizeof(vm_region_t));
+            retval = kcalloc(1, sizeof(struct buf));
             if (!retval)
                 return 0; /* Can't allocate vm_region struct */
-            mtx_init(&(retval->lock), MTX_DEF | MTX_SPIN);
+            mtx_init(&(retval->lock), MTX_TYPE_SPIN);
 
             /* Update target struct */
-            retval->mmu.paddr = vreg->paddr + iblock * 4096;
-            retval->mmu.num_pages = pcount;
-#if configDEBUG >= KERROR_DEBUG
-            retval->allocator_id = VRALLOC_ALLOCATOR_ID;
-#endif
+            retval->b_mmu.paddr = vreg->kaddr + iblock * MMU_PGSIZE_COARSE;
+            retval->b_mmu.num_pages = pcount;
+            retval->b_data = retval->b_mmu.paddr; /* Currently this way as
+                                                   * kernel space is 1:1 */
+            retval->b_bufsize = pcount * MMU_PGSIZE_COARSE;
+            retval->b_bcount = orig_size;
             retval->refcount = 1;
             retval->allocator_data = vreg;
             retval->vm_ops = &vra_ops;
-            retval->usr_rw = VM_PROT_READ | VM_PROT_WRITE;
+            retval->b_uflags = VM_PROT_READ | VM_PROT_WRITE;
             vm_updateusr_ap(retval);
 
             vreg->count += pcount;
@@ -197,14 +202,17 @@ retry_vra:
         }
     } while ((vreg = vreg->node.next));
     if (retval == 0) { /* Not found */
-        vreg = vreg_alloc_node(pagealign(size, 1048576) / 4096);
+        vreg = vreg_alloc_node(pagealign(size, MMU_PGSIZE_SECTION) / MMU_PGSIZE_COARSE);
         if (!vreg)
             return 0;
         goto retry_vra;
     }
 
-    vralloc_used += size; /* Update stats */
+    vmem_used += size; /* Update stats */
     last_vreg = vreg;
+
+    _add2bioman(retval);
+
     return retval;
 }
 
@@ -212,35 +220,22 @@ retry_vra:
  * Increment reference count of a vr allocated vm_region.
  * @param region is a vregion.
  */
-static void vrref(struct vm_region * region)
+static void vrref(struct buf * region)
 {
     mtx_spinlock(&(region->lock));
     region->refcount++;
     mtx_unlock(&(region->lock));
 }
 
-struct vm_region * vr_rclone(struct vm_region * old_region)
+struct buf * vr_rclone(struct buf * old_region)
 {
-    vm_region_t * new_region;
-    size_t rsize;
-
-    if (old_region->mmu.pt == 0) {
-        KERROR(KERROR_ERR, "vregion->mmu->pt must be set");
-        return 0;
-    }
-    rsize = MMU_SIZEOF_REGION(&(old_region->mmu));
-
-#if configDEBUG >= KERROR_DEBUG
-    if (old_region->allocator_id != VRALLOC_ALLOCATOR_ID) {
-        KERROR(KERROR_ERR, "Invalid allocator_id");
-        return 0;
-    }
-#endif
+    struct buf * new_region;
+    const size_t rsize = old_region->b_bufsize;
 
     /* "Lock", ensure that the region is not freed during the operation. */
     vrref(old_region);
 
-    new_region = vralloc(rsize);
+    new_region = geteblk(rsize);
     if (!new_region) {
         KERROR(KERROR_ERR, "Out of memory");
         return 0;
@@ -250,42 +245,40 @@ struct vm_region * vr_rclone(struct vm_region * old_region)
     {
     char buf[80];
     ksprintf(buf, sizeof(buf), "clone %x -> %x, %u bytes",
-            old_region->mmu.paddr, new_region->mmu.paddr, rsize);
+            old_region->b_data, new_region->b_data, rsize);
     KERROR(KERROR_DEBUG, buf);
     }
 #endif
 
-    /* Copy data and attributes */
-    memcpy((void *)(new_region->mmu.paddr), (void *)(old_region->mmu.paddr),
+    /* Copy data */
+    memcpy((void *)(new_region->b_data), (void *)(old_region->b_data),
             rsize);
-    new_region->usr_rw = ~VM_PROT_COW & old_region->usr_rw;
-    new_region->mmu.vaddr = old_region->mmu.vaddr;
 
+    /* Copy attributes */
+    new_region->b_uflags = ~VM_PROT_COW & old_region->b_uflags;
+    new_region->b_mmu.vaddr = old_region->b_mmu.vaddr;
     /* num_pages already set */
-    new_region->mmu.ap = old_region->mmu.ap;
-    new_region->mmu.control = old_region->mmu.control;
-
+    new_region->b_mmu.ap = old_region->b_mmu.ap;
+    new_region->b_mmu.control = old_region->b_mmu.control;
     /* paddr already set */
-    new_region->mmu.pt = old_region->mmu.pt;
+    new_region->b_mmu.pt = old_region->b_mmu.pt;
     vm_updateusr_ap(new_region);
 
     /* Release "lock". */
-    vrfree(old_region);
+    brelse(old_region);
 
     return new_region;
 }
 
-void vrfree(struct vm_region * region)
+void allocbuf(struct buf * bp, size_t size)
+{
+    /* TODO */
+}
+
+void brelse(struct buf * region)
 {
     struct vregion * vreg;
     size_t iblock;
-
-#if configDEBUG >= KERROR_DEBUG
-    if (region->allocator_id != VRALLOC_ALLOCATOR_ID) {
-        KERROR(KERROR_ERR, "Invalid allocator_id");
-        return;
-    }
-#endif
 
     mtx_spinlock(&(region->lock));
     region->refcount--;
@@ -296,11 +289,11 @@ void vrfree(struct vm_region * region)
     mtx_unlock(&(region->lock));
 
     vreg = (struct vregion *)(region->allocator_data);
-    iblock = (region->mmu.paddr - vreg->paddr) / 4096;
+    iblock = (region->b_data - vreg->kaddr) / MMU_PGSIZE_COARSE;
 
-    bitmap_block_update(vreg->map, 0, iblock, region->mmu.num_pages);
-    vreg->count -= region->mmu.num_pages;
-    vralloc_used -= region->mmu.num_pages * 4096; /* Update stats */
+    bitmap_block_update(vreg->map, 0, iblock, region->b_bufsize / MMU_PGSIZE_COARSE);
+    vreg->count -= region->b_bufsize * MMU_PGSIZE_COARSE;
+    vmem_used -= region->b_bufsize; /* Update stats */
 
     kfree(region);
 

@@ -41,8 +41,11 @@
 #ifndef KLOCKS_H_
 #define KLOCKS_H_
 
-//#define LOCK_DEBUG 1
+#if configDEBUG >= KERROR_DEBUG
+#define LOCK_DEBUG 1
+#endif
 
+#include <hal/atomic.h>
 #ifdef LOCK_DEBUG
 #include <kerror.h>
 #endif
@@ -62,9 +65,12 @@
  * @{
  */
 
+#define MTX_TYPE(mtx, typ) (((mtx)->mtx_tflags & (typ)) != 0)
+
 /* Mutex types */
-#define MTX_DEF     0x00 /*!< DEFAULT (sleep) lock */
-#define MTX_SPIN    0x01 /*!< Spin lock. */
+#define MTX_TYPE_UNDEF  0x00 /*!< mtx un-initialized. */
+#define MTX_TYPE_SPIN   0x01 /*!< Spin lock. */
+#define MTX_TYPE_TICKET 0x02 /*!< Use ticket locking. */
 
 /**
  * Sleep/spin mutex.
@@ -76,9 +82,13 @@
  * be modified appropriately.
  */
 typedef struct mtx {
-    intptr_t _alignment_bytes;
+    intptr_t _alignment;
     unsigned int mtx_tflags;    /*!< Type flags. */
-    volatile int mtx_lock;      /*!< Lock value. */
+    volatile int mtx_lock;      /*!< Lock value for regular (spin)lock. */
+    struct ticket {
+        atomic_t queue;
+        atomic_t dequeue;
+    } ticket;                   /*!< Ticket lock. */
 #ifdef LOCK_DEBUG
     char * mtx_ldebug;
 #endif

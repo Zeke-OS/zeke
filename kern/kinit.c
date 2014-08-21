@@ -38,7 +38,7 @@
 #include <libkern.h>
 #include <kstring.h>
 #include <kmalloc.h>
-#include <vralloc.h>
+#include <buf.h>
 #include <kinit.h>
 
 extern void (*__hw_preinit_array_start[]) (void) __attribute__((weak));
@@ -102,19 +102,19 @@ void kinit(void)
     mount_rootfs();
 
     /* User stack for init */
-    vm_region_t * init_vmstack = vralloc(configUSRINIT_SSIZE);
+    struct buf * init_vmstack = geteblk(configUSRINIT_SSIZE);
     if (!init_vmstack)
         panic("Can't allocate a stack for init");
 
-    init_vmstack->usr_rw = VM_PROT_READ | VM_PROT_WRITE;
-    init_vmstack->mmu.vaddr = init_vmstack->mmu.paddr;
-    init_vmstack->mmu.ap = MMU_AP_RWRW;
-    init_vmstack->mmu.control = MMU_CTRL_XN;
+    init_vmstack->b_uflags = VM_PROT_READ | VM_PROT_WRITE;
+    init_vmstack->b_mmu.vaddr = init_vmstack->b_mmu.paddr;
+    init_vmstack->b_mmu.ap = MMU_AP_RWRW;
+    init_vmstack->b_mmu.control = MMU_CTRL_XN;
 
     /* Create a thread for init */
     pthread_attr_t init_attr = {
         .tpriority  = configUSRINIT_PRI,
-        .stackAddr  = (void *)(init_vmstack->mmu.paddr),
+        .stackAddr  = (void *)(init_vmstack->b_mmu.paddr),
         .stackSize  = configUSRINIT_SSIZE
     };
     struct _ds_pthread_create init_ds = {
@@ -161,21 +161,21 @@ void kinit(void)
         vpt = ptlist_get_pt(
                 &(init_proc->mm.ptlist_head),
                 &(init_proc->mm.mpt),
-                init_vmstack->mmu.vaddr);
+                init_vmstack->b_mmu.vaddr);
         if (vpt == 0)
             panic("Couldn't get vpt for init stack");
 
-        init_vmstack->mmu.pt = &(vpt->pt);
+        init_vmstack->b_mmu.pt = &(vpt->pt);
         vm_map_region(init_vmstack, vpt);
     }
 
     /* Map tkstack of init with mmu_pagetable_system */
-    mmu_map_region(&(init_thread->kstack_region->mmu));
+    mmu_map_region(&(init_thread->kstack_region->b_mmu));
     init_proc->main_thread = init_thread;
 
 #if configDEBUG >= KERROR_INFO
     ksprintf(buf, sizeof(buf), "Init created with pid: %u, tid: %u, stack: %x",
-            pid, tid, init_vmstack->mmu.vaddr);
+            pid, tid, init_vmstack->b_mmu.vaddr);
     KERROR(KERROR_DEBUG, buf);
 #endif
     SUBSYS_INITFINI("kinit OK");

@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    vralloc.h
+ * @file    bio.c
  * @author  Olli Vanhoja
- * @brief   Virtual Region Allocator.
+ * @brief   IO Buffer Cache.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,52 +30,58 @@
  *******************************************************************************
  */
 
-/** @addtogroup vralloc
- * Virtual region memory allocator.
- * Vralloc is used to allocate memory regions that can be mapped into user
- * space as well as kernel space. This is usually done by using physical
- * memory layout in kernel mode and using vaddr as a user space mapping.
- * @sa kmalloc
- * @{
- */
-
-#ifndef VRALLOC_H
-#define VRALLOC_H
-#ifndef KERNEL_INTERNAL
 #define KERNEL_INTERNAL
-#endif
-#include <stdint.h>
-#include <vm/vm.h>
+#include <sys/linker_set.h>
+#include <errno.h>
+#include <buf.h>
 
-#define VRALLOC_ALLOCATOR_ID 0xBE57
+int bread(vnode_t * vnode, off_t blkno, int size, struct buf ** bpp)
+{
+}
+
+int  breadn(vnode_t * vnode, off_t blkno, int size, off_t rablks[],
+            int rasizes[], int nrablks, struct buf ** bpp)
+{
+}
+
+int bwrite(struct buf * bp)
+{
+}
+
+void bawrite(struct buf * bp)
+{
+}
+
+void bdwrite(struct buf * bp)
+{
+}
+
+struct buf * getblk(vnode_t * vnode, off_t blkno, size_t size, int slpflag,
+                    int slptimeo)
+{
+}
+
+struct buf * incore(vnode_t * vnode, off_t blkno)
+{
+}
+
+void biodone(struct buf * bp)
+{
+}
+
+int biowait(struct buf * bp)
+{
+}
 
 /**
- * Allocate a virtual memory region.
- * Usr has a write permission by default.
- * @note Page table and virtual address is not set.
- * @param size is the size of new region in bytes.
- * @return  Returns vm_region struct if allocated was successful;
- *          Otherwise function return 0.
+ * Add a buffer region to the bio automanagement data structures.
  */
-vm_region_t * vralloc(size_t size);
+void _add2bioman(struct buf * bp)
+{
+}
 
-/**
- * Clone a vregion.
- * @param old_region is the old region to be cloned.
- * @return  Returns pointer to the new vregion if operation was successful;
- *          Otherwise zero.
- */
-struct vm_region * vr_rclone(struct vm_region * old_region);
-
-/**
- * Free allocated vregion.
- * Dereferences a vregion.
- * @param region is a vregion to be derefenced/freed.
- */
-void vrfree(struct vm_region * region);
-
-#endif /* VRALLOC_H */
-
-/**
- * @}
- */
+static void bio_idle_task(void)
+{
+    /* TODO look for unbusied buffers that can be written out. */
+}
+DATA_SET(sched_idle_tasks, bio_idle_task);

@@ -68,7 +68,7 @@ void timers_init(void)
 {
     SUBSYS_INIT();
 
-    mtx_init(&timers_lock, MTX_DEF | MTX_SPIN);
+    mtx_init(&timers_lock, MTX_TYPE_SPIN);
 
     SUBSYS_INITFINI("timers OK");
 }

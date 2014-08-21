@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    bio.h
+ * @file    buf.h
  * @author  Olli Vanhoja
- * @brief   IO Buffer Cache.
+ * @brief   Buffer Cache.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -31,10 +31,11 @@
  */
 
 #pragma once
-#ifndef BIO_H
-#define BIO_H
+#ifndef BUF_H
+#define BUF_H
 
 #include <fs/fs.h>
+#include <vm/vm.h>
 
 /**
  * Read a block corresponding to vnode and blkno.
@@ -90,7 +91,7 @@ void bdwrite(struct buf * bp);
  * busy and return. Otherwise, return an empty block of the correct size.  It
  * is up to the caller to ensure that the cache blocks are of the correct size.
  */
-struct buf * getblk(vnode_t * vnode, off_t blkno, int size, int slpflag,
+struct buf * getblk(vnode_t * vnode, off_t blkno, size_t size, int slpflag,
                     int slptimeo);
 
 /**
@@ -98,7 +99,7 @@ struct buf * getblk(vnode_t * vnode, off_t blkno, int size, int slpflag,
  * @param[in] size is the size of the new buffer.
  * @return  Returns the new buffer.
  */
-struct buf * geteblk(int size);
+struct buf * geteblk(size_t size);
 
 /**
  * Determine if a block associated with a given vnode and block offset is in
@@ -114,7 +115,7 @@ struct buf * incore(vnode_t * vnode, off_t blkno);
  * @param[in] buf   is the buffer.
  * @param[in] size  is the new size.
  */
-void allocbuf(struct buf * bp, int size);
+void allocbuf(struct buf * bp, size_t size);
 
 /**
  * Unlock a buffer.
@@ -136,4 +137,19 @@ void biodone(struct buf * bp);
  */
 int biowait(struct buf * bp);
 
-#endif /* BIO_H */
+/**
+ * Clone a vregion.
+ * @param old_region is the old region to be cloned.
+ * @return  Returns pointer to the new vregion if operation was successful;
+ *          Otherwise zero.
+ */
+struct buf * vr_rclone(struct buf * old_region);
+
+/**
+ * Free allocated vregion.
+ * Dereferences a vregion.
+ * @param region is a vregion to be derefenced/freed.
+ */
+void vrfree(struct buf * region);
+
+#endif /* BUF_H */

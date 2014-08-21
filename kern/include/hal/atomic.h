@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    devnull.c
+ * @file    atomic.h
  * @author  Olli Vanhoja
- * @brief   dev/null pseudo device.
+ * @brief   Atomic integer operations.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,45 +30,18 @@
  *******************************************************************************
  */
 
-#include <kinit.h>
-#include <kerror.h>
-#include <fs/devfs.h>
+#ifndef HAL_ATOMIC_H_
+#define HAL_ATOMIC_H_
 
-static int devnull_read(struct dev_info * devnfo, off_t blkno,
-                        uint8_t * buf, size_t bcount, int oflags);
-static int devnull_write(struct dev_info * devnfo, off_t blkno,
-                         uint8_t * buf, size_t bcount, int oflags);
+typedef int atomic_t;
 
-struct dev_info devnull_info = {
-    .dev_id = DEV_MMTODEV(1, 3),
-    .drv_name = "memdev",
-    .dev_name = "null",
-    .flags = DEV_FLAGS_MB_READ | DEV_FLAGS_MB_WRITE | DEV_FLAGS_WR_BT_MASK,
-    .read = devnull_read,
-    .write = devnull_write
-};
+#define ATOMIC_INIT(i) (i)
 
-void devnull_init(void) __attribute__((constructor));
-void devnull_init(void)
-{
-    SUBSYS_INIT();
-    SUBSYS_DEP(devfs_init);
+int atomic_read(atomic_t * v);
+int atomic_set(atomic_t * v, int i);
+int atomic_add(atomic_t * v, int i);
+int atomic_sub(atomic_t * v, int i);
+int atomic_inc(atomic_t * v);
+int atomic_dec(atomic_t * v);
 
-    if (dev_make(&devnull_info, 0, 0, 0666, NULL)) {
-        KERROR(KERROR_ERR, "Failed to init dev/null");
-    }
-
-    SUBSYS_INITFINI("dev/null OK");
-}
-
-static int devnull_read(struct dev_info * devnfo, off_t blkno,
-                        uint8_t * buf, size_t bcount, int oflags)
-{
-    return 0;
-}
-
-static int devnull_write(struct dev_info * devnfo, off_t blkno,
-                         uint8_t * buf, size_t bcount, int oflags)
-{
-    return bcount;
-}
+#endif /* HAL_ATOMIC_H_ */

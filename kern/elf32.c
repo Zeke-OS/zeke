@@ -35,7 +35,6 @@
 #include <kmalloc.h>
 #include <kstring.h>
 #include <vm/vm.h>
-#include <vralloc.h>
 #include <proc.h>
 #include <exec.h>
 #include <elf_common.h>
@@ -79,11 +78,11 @@ static int elf32_trans_prot(uint32_t flags)
     return prot;
 }
 
-static int load_section(vm_region_t * (*regions)[], int i, file_t * file,
+static int load_section(struct buf * (*regions)[], int i, file_t * file,
         uintptr_t vaddr, struct elf32_phdr * phdr)
 {
     int prot = elf32_trans_prot(phdr->p_flags);
-    vm_region_t * sect = proc_newsect(vaddr, phdr->p_memsz, prot);
+    struct buf * sect = proc_newsect(vaddr, phdr->p_memsz, prot);
     int err;
 
     if (!sect)
@@ -91,11 +90,10 @@ static int load_section(vm_region_t * (*regions)[], int i, file_t * file,
 
     (*regions)[i] = sect;
 
-    /* TODO Following may not always work in the future? */
-    memset((void *)sect->mmu.paddr, 0, phdr->p_memsz);
+    memset((void *)sect->b_data, 0, phdr->p_memsz);
     file->seek_pos = 0;
     if (phdr->p_filesz > 0) {
-        err = file->vnode->vnode_ops->read(file, (void *)sect->mmu.paddr,
+        err = file->vnode->vnode_ops->read(file, (void *)sect->b_data,
                                            phdr->p_filesz);
         if (err < 0)
             return -ENOEXEC;
@@ -111,7 +109,7 @@ int load_elf32(file_t * file, uintptr_t * vaddr_base)
     struct elf32_phdr * phdr = NULL;
     size_t phsize;
     uintptr_t rbase;
-    vm_region_t * (*newregions)[] = NULL;
+    struct buf * (*newregions)[] = NULL;
     int retval = 0;
 
     elfhdr = kmalloc(sizeof(struct elf32_header));
@@ -159,7 +157,7 @@ int load_elf32(file_t * file, uintptr_t * vaddr_base)
     }
 
     /* Allocate memory for new regions struct */
-    newregions = kmalloc(elfhdr->e_phnum * sizeof(vm_region_t *));
+    newregions = kmalloc(elfhdr->e_phnum * sizeof(struct buf *));
     if (!newregions) {
         retval = -ENOMEM;
         goto out;

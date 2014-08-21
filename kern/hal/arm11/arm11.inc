@@ -96,6 +96,7 @@
  */
 .macro enter_kernel
     attach_kernel_mptable
+    clrex
     bl      proc_enter_kernel
 .endm
 
@@ -105,4 +106,5 @@
 .macro exit_kernel
     bl      proc_exit_kernel
     bl      mmu_attach_pagetable
+    clrex
 .endm

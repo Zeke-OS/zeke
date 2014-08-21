@@ -56,13 +56,10 @@
  * 0 = Thread is in zombie state or already removed from the system.
  *
  * SCHED_WAIT_FLAG
- * Only the kworker that has been assigned for this thread can remove this flag.
- * kworker is added as a child of the thread. If kworker parent is 0 then the
- * parent is killed and kworker should terminate as soon as possible.
- * kworker can use SCHED_INTERNAL_FLAG as a semi-critical section flag if
- * necessary.
- * 0 = Thread is not wating for kworker.
- * 1 = Thread is waiting for kworker to complete.
+ * Thread is waiting for one or more events. This flag should be removed only
+ * if wait_count is 0.
+ * 0 = Thread is not wating for events.
+ * 1 = Thread is waiting for events.
  *
  * SCHED_NO_SIG_FLAG
  * Thread cannot be woken up by a signal if this flag is set.
@@ -141,9 +138,10 @@
 typedef struct {
     uint32_t flags;                 /*!< Status flags. */
     sw_stack_frame_t sframe[SCHED_SFRAME_ARR_SIZE];
-    vm_region_t * kstack_region;    /*!< Thread kernel stack region. */
+    struct buf * kstack_region;    /*!< Thread kernel stack region. */
     void * errno_uaddr;             /*!< Address of the thread local errno. */
     intptr_t retval;                /*!< Return value of the thread. */
+    int wait_count;                 /*!< Wait counter. -1 = permanent */
     int wait_tim;                   /*!< Reference to a timeout timer. */
     osPriority def_priority;        /*!< Thread priority. */
     osPriority priority;            /*!< Thread dynamic priority. */
@@ -216,7 +214,9 @@ void sched_thread_set_exec(pthread_t thread_id);
  * Put the current thread into sleep.
  * @param permanent sets wait flag to keep thread in permanent sleep.
  */
-void sched_thread_sleep_current(int permanent);
+void sched_sleep_current_thread(int permanent);
+
+void sched_current_thread_yield(void);
 
 /**
  * Terminate current thread.

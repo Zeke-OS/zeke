@@ -47,7 +47,7 @@
 #include <ptmapper.h>
 #include <dynmem.h>
 #include <kmalloc.h>
-#include <vralloc.h>
+#include <buf.h>
 #include <proc.h>
 #include "_proc.h"
 
@@ -138,17 +138,17 @@ static void init_kernel_proc(void)
     }
 
     /* Copy region descriptors */
-    vm_region_t * kprocvm_code = kcalloc(1, sizeof(vm_region_t));
-    vm_region_t * kprocvm_heap = kcalloc(1, sizeof(vm_region_t));
+    struct buf * kprocvm_code = kcalloc(1, sizeof(struct buf));
+    struct buf * kprocvm_heap = kcalloc(1, sizeof(struct buf));
     if (!(kprocvm_code && kprocvm_heap)) {
         panic(panic_msg);
     }
 
-    kprocvm_code->mmu = mmu_region_kernel;
-    kprocvm_heap->mmu = mmu_region_kdata;
+    kprocvm_code->b_mmu = mmu_region_kernel;
+    kprocvm_heap->b_mmu = mmu_region_kdata;
 
-    mtx_init(&(kprocvm_code->lock), MTX_DEF | MTX_SPIN);
-    mtx_init(&(kprocvm_heap->lock), MTX_DEF | MTX_SPIN);
+    mtx_init(&(kprocvm_code->lock), MTX_TYPE_SPIN);
+    mtx_init(&(kprocvm_heap->lock), MTX_TYPE_SPIN);
 
     (*kernel_proc->mm.regions)[MM_CODE_REGION] = kprocvm_code;
     (*kernel_proc->mm.regions)[MM_STACK_REGION] = 0;
@@ -156,8 +156,8 @@ static void init_kernel_proc(void)
 
     /* Break values */
     kernel_proc->brk_start = __bss_break;
-    kernel_proc->brk_stop = (void *)(kprocvm_heap->mmu.vaddr
-        + mmu_sizeof_region(&(kprocvm_heap->mmu)) - 1);
+    kernel_proc->brk_stop = (void *)(kprocvm_heap->b_mmu.vaddr
+        + mmu_sizeof_region(&(kprocvm_heap->b_mmu)) - 1);
 
     /* File descriptors */
     /* TODO We have a hard limit of 8 files here now but this should be tunable
@@ -370,8 +370,8 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
     const pid_t pid = thread->pid_owner;
     const uintptr_t vaddr = far;
     proc_info_t * pcb;
-    vm_region_t * region;
-    vm_region_t * new_region;
+    struct buf * region;
+    struct buf * new_region;
 
 #if configDEBUG >= KERROR_DEBUG
     char buf[80];
@@ -387,14 +387,14 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
     for (int i = 0; i < pcb->mm.nr_regions; i++) {
         region = ((*pcb->mm.regions)[i]);
         ksprintf(buf, sizeof(buf), "reg_vaddr %x, reg_end %x",
-                region->mmu.vaddr,
-                region->mmu.vaddr + MMU_SIZEOF_REGION(&(region->mmu)));
+                region->b_mmu.vaddr,
+                region->b_mmu.vaddr + MMU_SIZEOF_REGION(&(region->b_mmu)));
         KERROR(KERROR_DEBUG, buf);
 
-        if (vaddr >= region->mmu.vaddr &&
-                vaddr <= (region->mmu.vaddr + MMU_SIZEOF_REGION(&(region->mmu)))) {
+        if (vaddr >= region->b_mmu.vaddr &&
+                vaddr <= (region->b_mmu.vaddr + MMU_SIZEOF_REGION(&(region->b_mmu)))) {
             /* Test for COW flag. */
-            if ((region->usr_rw & VM_PROT_COW) != VM_PROT_COW) {
+            if ((region->b_uflags & VM_PROT_COW) != VM_PROT_COW) {
                 return PROC_DABERR_PROT; /* Memory protection error. */
             }
 
@@ -409,9 +409,9 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
             if (region->vm_ops->rfree)
                 region->vm_ops->rfree(region);
 
-            new_region->usr_rw &= ~VM_PROT_COW; /* No more COW. */
+            new_region->b_uflags &= ~VM_PROT_COW; /* No more COW. */
             (*pcb->mm.regions)[i] = new_region; /* Replace old region. */
-            mmu_map_region(&(new_region->mmu)); /* Map it to the page table. */
+            mmu_map_region(&(new_region->b_mmu)); /* Map it to the page table. */
 
             return 0; /* COW done. */
         }
@@ -428,24 +428,24 @@ pid_t proc_update(void)
     return current_process_id;
 }
 
-vm_region_t * proc_newsect(uintptr_t vaddr, size_t size, int prot)
+struct buf * proc_newsect(uintptr_t vaddr, size_t size, int prot)
 {
-    vm_region_t * new_region = vralloc(size);
+    struct buf * new_region = geteblk(size);
 
     if (!new_region)
         return NULL;
 
-    new_region->usr_rw = prot & ~VM_PROT_COW;
-    new_region->mmu.vaddr = vaddr;
-    new_region->mmu.ap = MMU_AP_NANA;
-    new_region->mmu.control = MMU_CTRL_NG |
+    new_region->b_uflags = prot & ~VM_PROT_COW;
+    new_region->b_mmu.vaddr = vaddr;
+    new_region->b_mmu.ap = MMU_AP_NANA;
+    new_region->b_mmu.control = MMU_CTRL_NG |
         ((prot | VM_PROT_EXECUTE) ? 0 : MMU_CTRL_XN);
     vm_updateusr_ap(new_region);
 
     return new_region;
 }
 
-int proc_replace(pid_t pid, vm_region_t * (*regions)[], int nr_regions)
+int proc_replace(pid_t pid, struct buf * (*regions)[], int nr_regions)
 {
     proc_info_t * p = proc_get_struct(pid);
 
@@ -476,24 +476,24 @@ int proc_replace(pid_t pid, vm_region_t * (*regions)[], int nr_regions)
     /* Map regions */
     for (int i = 0; i < nr_regions; i++) {
         struct vm_pt * vpt = ptlist_get_pt(&p->mm.ptlist_head, &p->mm.mpt,
-                (*regions)[i]->mmu.vaddr);
+                (*regions)[i]->b_mmu.vaddr);
         if (!vpt) {
             panic("Exec failed");
         }
 
-        (*regions)[i]->mmu.pt = &vpt->pt;
+        (*regions)[i]->b_mmu.pt = &vpt->pt;
         vm_map_region((*regions)[i], vpt);
     }
 
     /* Create a new thread for executing main() */
     pthread_attr_t pattr = {
         .tpriority  = configUSRINIT_PRI,
-        .stackAddr  = (void *)((*regions)[MM_STACK_REGION]->mmu.paddr),
+        .stackAddr  = (void *)((*regions)[MM_STACK_REGION]->b_mmu.paddr),
         .stackSize  = configUSRINIT_SSIZE
     };
     struct _ds_pthread_create ds = {
         .thread     = 0, /* return value */
-        .start      = (void *(*)(void *))((*regions)[MM_CODE_REGION]->mmu.vaddr),
+        .start      = (void *(*)(void *))((*regions)[MM_CODE_REGION]->b_mmu.vaddr),
         .def        = &pattr,
         .argument   = 0, /* TODO */
         .del_thread = pthread_exit /* TODO */

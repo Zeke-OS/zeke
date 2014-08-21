@@ -47,13 +47,25 @@ void sched_handler(void);
 void * idle_thread(void * arg);
 
 /**
+ * Wait for event.
+ * Put current_thread on sleep until thread_release().
+ * Can be called multiple times.
+ */
+void thread_wait(void);
+
+/**
+ * Release thread waiting state.
+ */
+void thread_release(threadInfo_t * thread);
+
+/**
  * Initialize thread kernel mode stack.
  * @param th is a pointer to the thread.
  */
 void thread_init_kstack(threadInfo_t * th);
 void thread_free_kstack(threadInfo_t * th);
 
-void sched_thread_sleep(long millisec);
+void thread_sleep(long millisec);
 
 /**
  * Get thread id of the current thread.

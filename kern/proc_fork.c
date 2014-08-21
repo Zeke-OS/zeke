@@ -45,7 +45,7 @@
 #include <ptmapper.h>
 #include <dynmem.h>
 #include <kmalloc.h>
-#include <vralloc.h>
+#include <buf.h>
 #include <proc.h>
 #include "_proc.h"
 
@@ -105,7 +105,7 @@ pid_t proc_fork(pid_t pid)
 
     /* Allocate an array for regions. */
     new_proc->mm.regions =
-        kmalloc(old_proc->mm.nr_regions * sizeof(vm_region_t *));
+        kmalloc(old_proc->mm.nr_regions * sizeof(struct buf *));
     if (!new_proc->mm.regions) {
         retval = -ENOMEM;
         goto free_res;
@@ -125,7 +125,7 @@ pid_t proc_fork(pid_t pid)
 
     /* Variables for cloning and referencing regions. */
     struct vm_pt * vpt;
-    vm_region_t * vm_reg_tmp;
+    struct buf * vm_reg_tmp;
 
     /* Copy code region pointer. */
     vm_reg_tmp = (*old_proc->mm.regions)[MM_CODE_REGION];
@@ -154,7 +154,7 @@ pid_t proc_fork(pid_t pid)
      * doesn't matter at all because we are doing COW anyway so no information
      * is ever completely lost but we have to just keep in mind that COW regions
      * are bit incomplete and L1 is not completely reconstructable by using just
-     * vm_region struct.
+     * buf struct.
      *
      * Many BSD variants have fully reconstructable L1 tables but we don't have
      * it directly that way because shared regions can't properly point to more
@@ -168,12 +168,12 @@ pid_t proc_fork(pid_t pid)
         (*new_proc->mm.regions)[i] = vm_reg_tmp;
 
         /* Skip for regions in system page table */
-        if ((*new_proc->mm.regions)[i]->mmu.vaddr <= MMU_VADDR_KERNEL_END)
+        if ((*new_proc->mm.regions)[i]->b_mmu.vaddr <= MMU_VADDR_KERNEL_END)
             continue;
 
         /* Set COW bit */
-        if ((*new_proc->mm.regions)[i]->usr_rw & VM_PROT_WRITE) {
-            (*new_proc->mm.regions)[i]->usr_rw |= VM_PROT_COW;
+        if ((*new_proc->mm.regions)[i]->b_uflags & VM_PROT_WRITE) {
+            (*new_proc->mm.regions)[i]->b_uflags |= VM_PROT_COW;
 #if 0
             /* Unnecessary as vm_map_region() will do this too. */
             vm_updateusr_ap((*new_proc->mm.regions)[i]);
@@ -183,7 +183,7 @@ pid_t proc_fork(pid_t pid)
         vpt = ptlist_get_pt(
                 &(new_proc->mm.ptlist_head),
                 &(new_proc->mm.mpt),
-                (*new_proc->mm.regions)[i]->mmu.vaddr);
+                (*new_proc->mm.regions)[i]->b_mmu.vaddr);
         if (vpt == 0) {
             retval = -ENOMEM;
             goto free_res;
@@ -339,8 +339,8 @@ out:
 static int clone_stack(proc_info_t * new_proc, proc_info_t * old_proc)
 {
     struct vm_pt * vpt;
-    vm_region_t * const old_region = (*old_proc->mm.regions)[MM_STACK_REGION];
-    vm_region_t * new_region = 0;
+    struct buf * const old_region = (*old_proc->mm.regions)[MM_STACK_REGION];
+    struct buf * new_region = 0;
 
     if (old_region && old_region->vm_ops) { /* Only if vmp_ops are defined. */
 #if configDEBUG >= KERROR_DEBUG
@@ -356,25 +356,25 @@ static int clone_stack(proc_info_t * new_proc, proc_info_t * old_proc)
             return -ENOMEM;
         }
     } else if (old_region) { /* Try to clone the stack manually. */
-        const size_t rsize = MMU_SIZEOF_REGION(&(old_region->mmu));
+        const size_t rsize = MMU_SIZEOF_REGION(&(old_region->b_mmu));
 
 #if configDEBUG >= KERROR_DEBUG
         KERROR(KERROR_DEBUG, "Cloning stack manually");
 #endif
 
-        new_region = vralloc(rsize);
+        new_region = geteblk(rsize);
         if (!new_region) {
             return -ENOMEM;
         }
 
-        memcpy((void *)(new_region->mmu.paddr), (void *)(old_region->mmu.paddr),
+        memcpy((void *)(new_region->b_mmu.paddr), (void *)(old_region->b_data),
                 rsize);
-        new_region->usr_rw = VM_PROT_READ | VM_PROT_WRITE;
-        new_region->mmu.vaddr = old_region->mmu.vaddr;
-        new_region->mmu.ap = old_region->mmu.ap;
-        new_region->mmu.control = old_region->mmu.control;
+        new_region->b_uflags = VM_PROT_READ | VM_PROT_WRITE;
+        new_region->b_mmu.vaddr = old_region->b_mmu.vaddr;
+        new_region->b_mmu.ap = old_region->b_mmu.ap;
+        new_region->b_mmu.control = old_region->b_mmu.control;
         /* paddr already set */
-        new_region->mmu.pt = old_region->mmu.pt;
+        new_region->b_mmu.pt = old_region->b_mmu.pt;
         vm_updateusr_ap(new_region);
     } else { /* else: NO STACK */
 #if configDEBUG >= KERROR_DEBUG
@@ -386,7 +386,7 @@ static int clone_stack(proc_info_t * new_proc, proc_info_t * old_proc)
         if ((vpt = ptlist_get_pt(
                         &(new_proc->mm.ptlist_head),
                         &(new_proc->mm.mpt),
-                        new_region->mmu.vaddr)) == 0) {
+                        new_region->b_mmu.vaddr)) == 0) {
             return -ENOMEM;
         }
 

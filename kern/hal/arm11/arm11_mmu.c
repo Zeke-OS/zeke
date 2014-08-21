@@ -97,7 +97,7 @@ void mmu_lock_init(void);
 
 void mmu_lock_init(void)
 {
-    mtx_init(&mmu_lock, MTX_DEF | MTX_SPIN);
+    mtx_init(&mmu_lock, MTX_TYPE_SPIN);
 }
 #endif
 

@@ -46,7 +46,6 @@
 #include <timers.h>
 #include <syscall.h>
 #include <ptmapper.h>
-#include <vralloc.h>
 #include <vm/vm.h>
 #include <proc.h>
 #include <pthread.h>
@@ -478,7 +477,7 @@ static void _sched_thread_set_exec(pthread_t thread_id, osPriority pri)
     }
 }
 
-void sched_thread_sleep_current(int permanent)
+void sched_sleep_current_thread(int permanent)
 {
     istate_t s;
 
@@ -488,6 +487,7 @@ void sched_thread_sleep_current(int permanent)
     /* Sleep flag */
     current_thread->flags &= ~SCHED_EXEC_FLAG;
     if (permanent) {
+        current_thread->wait_count = -1;
         current_thread->flags |= SCHED_WAIT_FLAG;
     }
 
@@ -499,6 +499,15 @@ void sched_thread_sleep_current(int permanent)
                 current_thread->id));
 
     set_interrupt_state(s);
+}
+
+void sched_current_thread_yield(void)
+{
+    if (!current_thread || !(*priority_queue.a))
+        return;
+
+    if ((*priority_queue.a)->id == current_thread->id)
+        heap_reschedule_root(&priority_queue, osPriorityIdle);
 }
 
 /**
@@ -557,7 +566,7 @@ void sched_thread_die(intptr_t retval)
 {
     current_thread->retval = retval;
     current_thread->flags |= SCHED_ZOMBIE_FLAG;
-    sched_thread_sleep_current(SCHED_PERMASLEEP);
+    sched_sleep_current_thread(SCHED_PERMASLEEP);
 
     /*
      * There is several reasons to call this function with interrupts disabled,
@@ -811,7 +820,7 @@ static int sys_sched_sleep_ms(void * user_args)
         return -EFAULT;
     }
 
-    sched_thread_sleep(val);
+    thread_sleep(val);
 
     return 0; /* TODO Return value might be incorrect */
 }

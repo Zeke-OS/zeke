@@ -153,7 +153,7 @@ extern mtx_t proclock;
 #define PROC_LOCK()         mtx_spinlock(&proclock)
 #define PROC_UNLOCK()       mtx_unlock(&proclock)
 #define PROC_TESTLOCK()     mtx_test(&proclock)
-#define PROC_LOCK_INIT()    mtx_init(&proclock, MTX_DEF | MTX_SPIN)
+#define PROC_LOCK_INIT()    mtx_init(&proclock, MTX_TYPE_SPIN)
 
 /**
  * Init process handling subsystem.
@@ -211,9 +211,9 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
  */
 pid_t proc_update(void);
 
-vm_region_t * proc_newsect(uintptr_t vaddr, size_t size, int prot);
+struct buf * proc_newsect(uintptr_t vaddr, size_t size, int prot);
 
-int proc_replace(pid_t pid, vm_region_t * (*regions)[], int nr_regions);
+int proc_replace(pid_t pid, struct buf * (*regions)[], int nr_regions);
 
 void _proc_free(proc_info_t * p);
 

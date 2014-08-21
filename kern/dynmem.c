@@ -122,7 +122,7 @@ void dynmem_init(void)
     SUBSYS_INIT();
     SUBSYS_DEP(mmu_init);
 
-    mtx_init(&dynmem_region_lock, MTX_DEF | MTX_SPIN);
+    mtx_init(&dynmem_region_lock, MTX_TYPE_SPIN);
 
     SUBSYS_INITFINI("dynmem OK");
 }

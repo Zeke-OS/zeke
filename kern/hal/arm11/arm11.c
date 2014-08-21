@@ -95,48 +95,41 @@ int test_lock(int * lock)
 {
     int value;
 
-    istate_t s_entry = get_interrupt_state();
-    disable_interrupt();
-
     __asm__ volatile (
         "LDREX      %[val], [%[addr]]"
         : [val]"+r" (value)
         : [addr]"r" (lock));
-
-    set_interrupt_state(s_entry);
 
     return value;
 }
 
 int test_and_set(int * lock)
 {
-    int err = 2; /* Initial value of error meaning already locked */
+    int err = 1;
 
+#if configMP == 0
     istate_t s_entry = get_interrupt_state();
     disable_interrupt();
 
-    /* We can use a lot simpler code for non-MP targets and infact the MP
-     * version doesn't always work that well on non-MP hardware. */
-#if configMP == 0
     err = *lock != 0 ? 2 : 0;
     *lock = 1;
+
+    set_interrupt_state(s_entry);
 #else
     __asm__ volatile (
         "MOV        r1, #1\n\t"             /* locked value to r1 */
         "try%=:\n\t"
         "LDREX      r2, [%[addr]]\n\t"      /* load value of the lock */
-        "CMP        r2, #1\n\t"             /* if already set */
+        "CMP        r2, r1\n\t"             /* if already set */
         "STREXNE    %[res], r1, [%[addr]]\n\t" /* Sets err = 0
                                                 * if store op ok */
-        "CMPEQ      %[res], #0\n\t"         /* Try again if strex failed */
-        "BNE        try%="
+        "CMPNE      %[res], #1\n\t"         /* Try again if strex failed */
+        "BEQ        try%="
         : [res]"+r" (err)
         : [addr]"r" (lock)
         : "r1", "r2"
     );
 #endif
-
-    set_interrupt_state(s_entry);
 
     return err;
 }
