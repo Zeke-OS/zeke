@@ -109,7 +109,7 @@
 #define MMU_CTRL_XN             (0x1 << MMU_CTRL_XN_OFFSET)
 
 /* MEMTYPE */
-#define MMU_CTRL_MEMTYPE_OFFSET 2
+#define MMU_CTRL_MEMTYPE_OFFSET 5
 /** Strongly ordered, shared */
 #define MMU_CTRL_MEMTYPE_SO     (0x0 << MMU_CTRL_MEMTYPE_OFFSET)
 /** Non-shareable device */

@@ -142,9 +142,14 @@ void cpu_invalidate_caches(void)
     const uint32_t rd = 0; /* Cache operation. */
 
     __asm__ volatile (
-        "MCR     p15, 0, %[rd], c7, c7, 0\n\t"  /* Invalidate I+D caches. */
-        "MCR     p15, 0, %[rd], c8, c7, 0\n\t"  /* Invalidate all I+D TLBs. */
-        "MCR     p15, 0, %[rd], c7, c10, 4\n\t" /* Drain write buffer. */
+        "MCR    p15, 0, %[rd], c7, c10, 0\n\t" /* Clean D cache. */
+        "MCR    p15, 0, %[rd], c7, c10, 4\n\t" /* DSB. */
+        "MCR    p15, 0, %[rd], c7, c7, 0\n\t"  /* Invalidate I+D caches. */
+        "MCR    p15, 0, %[rd], c8, c7, 0\n\t"  /* Invalidate all I+D TLBs. */
+        "MCR    p15, 0, %[rd], c7, c10, 4\n\t" /* DSB. */
+#if 0
+        "MCR    p15, 0, %[rd], c7, c5, 4"      /* Prefetch flush. */
+#endif
         : : [rd]"r" (rd)
     );
 }

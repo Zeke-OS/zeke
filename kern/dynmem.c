@@ -63,9 +63,10 @@
 
 /* TODO Is there any reason to store AP & Control here? */
 
-#define FLAGS_TO_MAP(AP, CTRL)  ((AP << DYNMEM_AP_POS) | CTRL)
-#define MAP_TO_AP(VAL)          ((VAL & DYNMEM_AP_MASK) >> DYNMEM_AP_POS)
-#define MAP_TO_CTRL(VAL)        ((VAL & DYNMEM_CTRL_MASK) >> DYNMEM_CTRL_POS)
+#define FLAGS_TO_MAP(AP, CTRL)  \
+    ((((AP) & 0x7) << DYNMEM_AP_POS) | ((CTRL) & 0x3FF))
+#define MAP_TO_AP(VAL)          (((VAL) & DYNMEM_AP_MASK) >> DYNMEM_AP_POS)
+#define MAP_TO_CTRL(VAL)        (((VAL) & DYNMEM_CTRL_MASK) >> DYNMEM_CTRL_POS)
 
 #if E2BITMAP_SIZE(DYNMEM_MAPSIZE) > 0
 #define DYNMEM_BITMAPSIZE       E2BITMAP_SIZE(DYNMEM_MAPSIZE)
@@ -256,11 +257,11 @@ out:
 static void * kmap_allocation(size_t base, size_t size, uint32_t ap, uint32_t control)
 {
     size_t i;
-    uint32_t mapflags = FLAGS_TO_MAP(ap, control);
-    uint32_t rlb = (size > 1) ? DYNMEM_RL_BL : DYNMEM_RL_NL;
-    uint32_t rle = (size > 1) ? DYNMEM_RL_EL : DYNMEM_RL_NL;
-    uint32_t rc = (1 << DYNMEM_RC_POS);
-    uint32_t addr = DYNMEM_START + base * 1048576;
+    const uint32_t mapflags = FLAGS_TO_MAP(ap, control);
+    const uint32_t rlb = (size > 1) ? DYNMEM_RL_BL : DYNMEM_RL_NL;
+    const uint32_t rle = (size > 1) ? DYNMEM_RL_EL : DYNMEM_RL_NL;
+    const uint32_t rc = (1 << DYNMEM_RC_POS);
+    const uint32_t addr = DYNMEM_START + base * 1048576;
 
     for (i = base; i < base + size - 1; i++) {
         dynmemmap[i] = rc | rlb | mapflags;
@@ -416,6 +417,7 @@ uint32_t dynmem_acc(const void * addr, size_t len)
      */
     retval = dynmem_region.ap |
         (((dynmem_region.control & MMU_CTRL_XN) >> MMU_CTRL_XN_OFFSET) << 3);
+
     mtx_unlock(&dynmem_region_lock);
 out:
     return retval;

@@ -30,12 +30,14 @@
  *******************************************************************************
  */
 
+#define KERNEL_INTERNAL 1
+#include <errno.h>
 #include <kstring.h>
 #include <kerror.h>
 #include <klocks.h>
 #include <proc.h>
 #include "arm11.h"
-#include "arm11_mmu.h"
+#include <hal/mmu.h>
 
 #if configMP != 0
 static mtx_t mmu_lock;
@@ -116,7 +118,7 @@ int mmu_init_pagetable(const mmu_pagetable_t * pt)
 #if config_DEBUG != 0
     if (p_pte == 0) {
         KERROR(KERROR_ERR, "Page table address can't be null.");
-        return -1;
+        return -EINVAL;
     }
 #endif
 
@@ -127,7 +129,7 @@ int mmu_init_pagetable(const mmu_pagetable_t * pt)
         i = MMU_PTSZ_MASTER / 4 / 32; break;
     default:
         KERROR(KERROR_ERR, "Unknown page table type.");
-        return -2;
+        return -EINVAL;
     }
 
     __asm__ volatile (
@@ -161,7 +163,9 @@ int mmu_init_pagetable(const mmu_pagetable_t * pt)
  */
 int mmu_map_region(const mmu_region_t * region)
 {
-    int retval = 0;
+    if (!region->pt) {
+        panic("region->pt must be set");
+    }
 
     switch (region->pt->type) {
     case MMU_PTT_MASTER:    /* Map section in L1 page table */
@@ -171,14 +175,13 @@ int mmu_map_region(const mmu_region_t * region)
         mmu_map_coarse_region(region);
         break;
     default:
-#if configDEBUG
+#if configDEBUG != 0
         KERROR(KERROR_ERR, "Invalid mmu_region struct.");
 #endif
-        retval = -1;
-        break;
+        return -EINVAL;
     }
 
-    return retval;
+    return 0;
 }
 
 /**
@@ -199,11 +202,11 @@ static void mmu_map_section_region(const mmu_region_t * region)
     pte = region->paddr & 0xfff00000;       /* Set physical address */
     pte |= (region->ap & 0x3) << 10;        /* Set access permissions (AP) */
     pte |= (region->ap & 0x4) << 13;        /* Set access permissions (APX) */
-    pte |= region->pt->dom << 5;            /* Set domain */
+    pte |= (region->pt->dom & 0x7) << 5;    /* Set domain */
     pte |= (region->control & 0x3) << 16;   /* Set nG & S bits */
     pte |= (region->control & 0x10);        /* Set XN bit */
     pte |= (region->control & 0x60) >> 3;   /* Set C & B bits */
-    pte |= (region->control & 0x380) << 3;  /* Set TEX bits */
+    pte |= (region->control & 0x380) << 5;  /* Set TEX bits */
     pte |= MMU_PTE_SECTION;                 /* Set entry type */
 
     MMU_LOCK();
@@ -246,10 +249,10 @@ static void mmu_map_coarse_region(const mmu_region_t * region)
     pte |= (region->ap & 0x3) << 4;         /* Set access permissions (AP) */
     pte |= (region->ap & 0x4) << 7;         /* Set access permissions (APX) */
     pte |= (region->control & 0x3) << 10;   /* Set nG & S bits */
-    pte |= (region->control & 0x10) >> 2;    /* Set XN bit */
+    pte |= (region->control & 0x10) >> 4;   /* Set XN bit */
     pte |= (region->control & 0x60) >> 3;   /* Set C & B bits */
     pte |= (region->control & 0x380) >> 1;  /* Set TEX bits */
-    pte |= 0x2;                             /* Set entry type */
+    pte |= 0x2;                             /* Set entry type (4 kB page) */
 
     MMU_LOCK();
     s = get_interrupt_state();
@@ -429,7 +432,7 @@ int mmu_detach_pagetable(const mmu_pagetable_t * pt)
 
     if (pt->type == MMU_PTT_MASTER) {
         KERROR(KERROR_ERR, "Cannot detach a master pt");
-        return -1;
+        return -EPERM;
     }
 
     /* Mark page table entry at i as translation fault */

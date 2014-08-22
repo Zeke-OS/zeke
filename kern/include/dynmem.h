@@ -130,7 +130,7 @@ void * dynmem_clone(void * addr);
 /**
  * Test for dynmem access.
  * Return value format:
- * 3  2    0
+ *   3 2   0
  * +--+----+
  * |XN| AP |
  * +--+----+

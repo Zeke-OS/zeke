@@ -70,7 +70,7 @@ const mmu_region_t mmu_region_kstack = {
     .num_pages      = MMU_PAGE_CNT_BY_RANGE(
                         MMU_VADDR_KSTACK_START, MMU_VADDR_KSTACK_END, 4096),
     .ap             = MMU_AP_RWNA,
-    .control        = MMU_CTRL_XN,
+    .control        = MMU_CTRL_MEMTYPE_WB | MMU_CTRL_XN,
     .paddr          = MMU_VADDR_KSTACK_START,
     .pt             = &mmu_pagetable_system
 };
@@ -90,12 +90,12 @@ mmu_region_t mmu_region_tkstack = {
 #endif
 
 extern void *  _rodata_end __attribute__((weak));
-/** Read-only kernel code & data */
+/** Read-only kernel code &  ro-data */
 mmu_region_t mmu_region_kernel = {
     .vaddr          = MMU_VADDR_KERNEL_START,
     .num_pages      = 0, /* Set in init */
     .ap             = MMU_AP_RORO, /* TODO this must be changed later to RONA */
-    .control        = 0,
+    .control        = MMU_CTRL_MEMTYPE_SO,
     .paddr          = MMU_VADDR_KERNEL_START,
     .pt             = &mmu_pagetable_system
 };
@@ -136,7 +136,7 @@ mmu_region_t mmu_region_rpihw = {
     .num_pages      = MMU_PAGE_CNT_BY_RANGE(MMU_VADDR_RPIHW_START, \
                         MMU_VADDR_RPIHW_END, 1048576),
     .ap             = MMU_AP_RWRW, /* TODO */
-    .control        = MMU_CTRL_MEMTYPE_WT | MMU_CTRL_MEMTYPE_SDEV, /* TODO not sure about these... */
+    .control        = MMU_CTRL_MEMTYPE_SDEV,
     .paddr          = MMU_VADDR_RPIHW_START,
     .pt             = &mmu_pagetable_master
 };
