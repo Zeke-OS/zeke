@@ -768,7 +768,7 @@ out:
     return retval;
 }
 
-int kernel_sysctl(threadInfo_t * td, int * name, unsigned int namelen,
+int kernel_sysctl(pid_t pid, int * name, unsigned int namelen,
         void * old, size_t * oldlenp, void * new, size_t newlen,
         size_t * retval, int flags)
 {
@@ -777,8 +777,11 @@ int kernel_sysctl(threadInfo_t * td, int * name, unsigned int namelen,
 
     memset(&req, 0, sizeof req);
 
-    req.td = td;
+    req.proc = proc_get_struct(pid);
     req.flags = flags;
+
+    if (!req.proc)
+        return -EINVAL;
 
     if (oldlenp) {
         req.oldlen = *oldlenp;
@@ -818,7 +821,7 @@ int kernel_sysctl(threadInfo_t * td, int * name, unsigned int namelen,
     return error;
 }
 
-int kernel_sysctlbyname(threadInfo_t * td, char * name, void * old,
+int kernel_sysctlbyname(pid_t pid, char * name, void * old,
         size_t * oldlenp, void * new, size_t newlen, size_t * retval, int flags)
 {
     int oid[CTL_MAXNAME];
@@ -829,12 +832,12 @@ int kernel_sysctlbyname(threadInfo_t * td, char * name, void * old,
     oid[1] = 3;                /* name2oid */
     oidlen = sizeof(oid);
 
-    error = kernel_sysctl(td, oid, 2, oid, &oidlen,
+    error = kernel_sysctl(pid, oid, 2, oid, &oidlen,
             (void *)name, strlenn(name, CTL_MAXSTRNAME), &plen, flags);
     if (error)
         return error;
 
-    error = kernel_sysctl(td, oid, plen / sizeof(int), old, oldlenp,
+    error = kernel_sysctl(pid, oid, plen / sizeof(int), old, oldlenp,
             new, newlen, retval, flags);
 
     return error;
@@ -950,12 +953,12 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
     if (req->newptr && !(oid->oid_kind & CTLFLAG_WR))
         return EPERM;
 
-    //KASSERT(req->td != NULL, ("sysctl_root(): req->td == NULL"));
+    //KASSERT(req->proc != NULL, ("sysctl_root(): req->proc == NULL"));
 
     /* Is this sysctl sensitive to securelevels? */
     if (req->newptr && (oid->oid_kind & CTLFLAG_SECURE)) {
         lvl = (oid->oid_kind & CTLMASK_SECURE) >> CTLSHIFT_SECURE;
-        error = securelevel_gt(req->td->td_ucred, lvl);
+        error = securelevel_gt(req->proc, lvl);
         if (error)
             return error;
     }
@@ -965,7 +968,7 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
         int priv;
 
         priv = PRIV_SYSCTL_WRITE;
-        error = priv_check(req->td, priv);
+        error = priv_check(req->proc, priv);
         if (error)
             return error;
     }
@@ -1007,7 +1010,7 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
     return error;
 }
 
-int userland_sysctl(threadInfo_t * td, int * name, unsigned int namelen,
+int userland_sysctl(pid_t pid, int * name, unsigned int namelen,
         void * old, size_t * oldlenp, int inkernel, void * new,
         size_t newlen, size_t * retval, int flags)
 {
@@ -1016,8 +1019,11 @@ int userland_sysctl(threadInfo_t * td, int * name, unsigned int namelen,
 
     memset(&req, 0, sizeof(req));
 
-    req.td = td;
+    req.proc = proc_get_struct(pid);
     req.flags = flags;
+
+    if (!req.proc)
+        return -EINVAL;
 
     if (oldlenp) {
         if (inkernel) {
@@ -1064,9 +1070,7 @@ int userland_sysctl(threadInfo_t * td, int * name, unsigned int namelen,
         SYSCTL_UNLOCK();
         if (error != EAGAIN)
             break;
-#if 0
-        kern_yield(PRI_USER); /* TODO Should we yield here? */
-#endif
+        sched_current_thread_yield();
     }
 
     /* TODO ?? */

@@ -215,7 +215,7 @@ int sysctltstmib(int * left, int * right, int len);
 
 #ifdef KERNEL_INTERNAL
 #include <sys/linker_set.h>
-#include <sched.h>
+#include <proc.h>
 
 #define SYSCTL_HANDLER_ARGS struct sysctl_oid * oidp, void * arg1, \
         intptr_t arg2, struct sysctl_req * req
@@ -229,7 +229,7 @@ int sysctltstmib(int * left, int * right, int len);
  * so that we can use the interface from the kernel or from user-space.
  */
 struct sysctl_req {
-    threadInfo_t * td;  /* used for access checking */
+    proc_info_t * proc; /* used for access checking */
     int lock;           /* wiring state */
     void * oldptr;
     size_t oldlen;
@@ -584,15 +584,15 @@ void sysctl_register_oid(struct sysctl_oid * oidp);
 void sysctl_unregister_oid(struct sysctl_oid * oidp);
 int sysctl_find_oid(int * name, unsigned int namelen, struct sysctl_oid ** noid,
         int * nindx, struct sysctl_req * req);
-int kernel_sysctlbyname(threadInfo_t * td, char * name, void * old,
+int kernel_sysctlbyname(pid_t pid, char * name, void * old,
         size_t * oldlenp, void * new, size_t newlen, size_t * retval,
         int flags);
 int sysctl_wire_old_buffer(struct sysctl_req * req, size_t len);
-int kernel_sysctl(threadInfo_t * td, int * name, unsigned int namelen,
+int kernel_sysctl(pid_t pid, int * name, unsigned int namelen,
         void * old, size_t * oldlenp, void * new, size_t newlen,
         size_t * retval, int flags);
-int sys___sysctl(threadInfo_t * td, struct _sysctl_args * uap);
-int userland_sysctl(threadInfo_t * td, int * name, unsigned int namelen,
+int sys___sysctl(pid_t pid, struct _sysctl_args * uap);
+int userland_sysctl(pid_t pid, int * name, unsigned int namelen,
         void * old, size_t * oldlenp, int inkernel, void * new, size_t newlen,
         size_t * retval, int flags);
 

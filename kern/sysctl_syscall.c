@@ -63,7 +63,7 @@ intptr_t sysctl_syscall(uint32_t type, void * p)
         return -1;
     }
 
-    err = userland_sysctl(current_thread, name, uap.namelen,
+    err = userland_sysctl(current_process_id, name, uap.namelen,
                           uap.old, uap.oldlenp, 0,
                           uap.new, uap.newlen, &j, 0);
     if (err && err != -ENOMEM) {

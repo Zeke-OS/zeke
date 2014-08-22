@@ -88,6 +88,7 @@ typedef struct proc_info {
     int exit_code, exit_signal;
     uid_t uid, euid, suid;
     gid_t gid, egid, sgid;
+    int securelevel;
     unsigned long timeout;      /*!< Used to kill processes with absolute timeout */
     long utime, stime, cutime, cstime, start_time; /*!< For performance statistics */
     struct rlimit rlim[_RLIMIT_ARR_COUNT]; /*!< Hard and soft limits. */

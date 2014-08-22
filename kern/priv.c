@@ -33,9 +33,9 @@
  */
 
 #define KERNEL_INTERNAL
+#include <proc.h>
 #include <errno.h>
 #include <sys/sysctl.h>
-#include <sys/ucred.h>
 #include <sys/priv.h>
 
 static int  suser_enabled = 1;
@@ -43,35 +43,28 @@ SYSCTL_INT(_security, OID_AUTO, suser_enabled, CTLFLAG_RW,
         &suser_enabled, 0, "processes with uid 0 have privilege");
 //TUNABLE_INT("security.suser_enabled", &suser_enabled);
 
-static int  unprivileged_mlock = 1;
-SYSCTL_INT(_security, OID_AUTO, unprivileged_mlock, CTLFLAG_RW|CTLFLAG_TUN,
-        &unprivileged_mlock, 0, "Allow non-root users to call mlock(2)");
-//TUNABLE_INT("security.unprivileged_mlock", &unprivileged_mlock);
-
 /**
  * Test active securelevel.
  * Test whether or not the active security level is greater than the
  * supplied level.
- * @param cr    is the calling credential.
  * @param level is the needed security level.
- * @return  Returns EPERM if condition evaluated to true; Otherwise zero.
+ * @return  Returns -EPERM if condition evaluated to true; Otherwise zero.
  */
-int securelevel_gt(struct ucred * cr, int level)
+int securelevel_gt(proc_info_t * proc, int level)
 {
-    return (cr->pr_securelevel > level ? EPERM : 0);
+    return (proc->securelevel > level ? -EPERM : 0);
 }
 
 /**
  * Test active securelevel.
  * Test whether or not the active security level is greater than or equal to
  * the supplied level.
- * @param cr    is the calling credential.
  * @param level is the needed security level.
- * @return  Returns EPERM if condition evaluated to true; Otherwise zero.
+ * @return  Returns -EPERM if condition evaluated to true; Otherwise zero.
  */
-int securelevel_ge(struct ucred * cr, int level)
+int securelevel_ge(proc_info_t * proc, int level)
 {
-    return (cr->pr_securelevel >= level ? EPERM : 0);
+    return (proc->securelevel >= level ? -EPERM : 0);
 }
 
 /*
@@ -79,22 +72,9 @@ int securelevel_ge(struct ucred * cr, int level)
  * only a few to grant it.
  */
 int
-priv_check_cred(struct ucred *cred, int priv, int flags)
+priv_check_cred(proc_info_t * proc, int priv, int flags)
 {
     int error;
-
-    if (unprivileged_mlock) {
-        /*
-         * Allow unprivileged users to call mlock(2)/munlock(2) and
-         * mlockall(2)/munlockall(2).
-         */
-        switch (priv) {
-        case PRIV_VM_MLOCK:
-        case PRIV_VM_MUNLOCK:
-            error = 0;
-            goto out;
-        }
-    }
 
     /*
      * Having determined if privilege is restricted by various policies,
@@ -112,13 +92,13 @@ priv_check_cred(struct ucred *cred, int priv, int flags)
         case PRIV_MAXFILES:
         case PRIV_MAXPROC:
         case PRIV_PROC_LIMIT:
-            if (cred->cr_ruid == 0) {
+            if (proc->uid == 0) {
                 error = 0;
                 goto out;
             }
             break;
         default:
-            if (cred->cr_uid == 0) {
+            if (proc->euid == 0) {
                 error = 0;
                 goto out;
             }
@@ -140,12 +120,12 @@ priv_check_cred(struct ucred *cred, int priv, int flags)
      * The default is deny, so if no policies have granted it, reject
      * with a privilege error here.
      */
-    error = EPERM;
+    error = -EPERM;
 out:
     return error;
 }
 
-int priv_check(threadInfo_t * td, int priv)
+int priv_check(proc_info_t * proc, int priv)
 {
-    return priv_check_cred(td->td_ucred, priv, 0);
+    return priv_check_cred(proc, priv, 0);
 }

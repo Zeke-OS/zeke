@@ -500,7 +500,6 @@
 
 #ifdef KERNEL_INTERNAL
 #include <sched.h>
-#include "ucred.h"
 
 /*
  * Privilege check interfaces, modeled after historic suser() interfaces, but
@@ -509,10 +508,10 @@
  * instead of the effective uid, and whether or not the check should be
  * allowed in jail.
  */
-int priv_check(threadInfo_t * td, int priv);
-int priv_check_cred(struct ucred * cred, int priv, int flags);
-int securelevel_ge(struct ucred * cr, int level);
-int securelevel_gt(struct ucred * cr, int level);
+int priv_check(proc_info_t * proc, int priv);
+int priv_check_cred(proc_info_t * proc, int priv, int flags);
+int securelevel_ge(proc_info_t * proc, int level);
+int securelevel_gt(proc_info_t * proc, int level);
 #endif
 
 #endif /* !_SYS_PRIV_H_ */
