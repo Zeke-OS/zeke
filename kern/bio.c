@@ -35,6 +35,7 @@
 #include <errno.h>
 #include <kerror.h>
 #include <kmalloc.h>
+#include <kstring.h>
 #include <dllist.h>
 #include <fs/devfs.h>
 #include <buf.h>

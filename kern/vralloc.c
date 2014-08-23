@@ -38,6 +38,7 @@
 #include <dynmem.h>
 #include <kmalloc.h>
 #include <kstring.h>
+#include <errno.h>
 #include <kerror.h>
 #include <proc.h>
 #include <sys/sysctl.h>
@@ -65,6 +66,9 @@ struct vregion {
 #define VREG_BYTESIZE(pcount_) \
     ((pcount_) * MMU_PGSIZE_COARSE)
 
+#define VREG_I2ADDR(vreg_, iblock_) \
+    ((vreg_)->kaddr + VREG_BYTESIZE(iblock_))
+
 static llist_t * vrlist; /*!< List of all allocations done by vralloc. */
 static struct vregion * last_vreg; /*!< Last node that contained empty pages. */
 
@@ -78,6 +82,8 @@ SYSCTL_UINT(_vm, OID_AUTO, vmem_used, CTLFLAG_RD, &vmem_used, 0,
 
 static struct vregion * vreg_alloc_node(size_t count);
 static void vreg_free_node(struct vregion * reg);
+static int get_iblocks(size_t * iblock, size_t pcount,
+                      struct vregion ** vreg_ret);
 static void vrref(struct buf * region);
 
 extern void _bio_init(void);
@@ -159,56 +165,67 @@ static void vreg_free_node(struct vregion * vreg)
     kfree(vreg);
 }
 
+static int get_iblocks(size_t * iblock, size_t pcount,
+                       struct vregion ** vreg_ret)
+{
+    struct vregion * vreg = last_vreg;
+
+retry_vra:
+    do {
+        if (bitmap_block_search(iblock, pcount, vreg->map, vreg->size) == 0)
+            break; /* Found block */
+    } while ((vreg = vreg->node.next));
+
+    if (!vreg) { /* Not found */
+        vreg = vreg_alloc_node(pcount);
+        if (!vreg)
+            return -ENOMEM;
+        goto retry_vra;
+    }
+
+    *vreg_ret = vreg;
+    return 0;
+}
+
 struct buf * geteblk(size_t size)
 {
     size_t iblock; /* Block index of the allocation */
     const size_t orig_size = size;
     size = memalign_size(size, MMU_PGSIZE_COARSE);
     const size_t pcount = VREG_PCOUNT(size);
-    struct vregion * vreg = last_vreg;
+    struct vregion * vreg;
     struct buf * retval = NULL;
 
-retry_vra:
-    do {
-        if (bitmap_block_search(&iblock, pcount, vreg->map, vreg->size) == 0) {
-            /* Found block */
-            retval = kcalloc(1, sizeof(struct buf));
-            if (!retval)
-                return 0; /* Can't allocate vm_region struct */
-            mtx_init(&(retval->lock), MTX_TYPE_SPIN | MTX_TYPE_TICKET);
+    if (get_iblocks(&iblock, pcount, &vreg))
+        return NULL;
 
-            /* Update target struct */
-            retval->b_mmu.paddr = vreg->kaddr + VREG_BYTESIZE(iblock);
-            retval->b_mmu.num_pages = pcount;
-            retval->b_data = retval->b_mmu.paddr; /* Currently this way as
-                                                   * kernel space is 1:1 */
-            retval->b_bufsize = VREG_BYTESIZE(pcount);
-            retval->b_bcount = orig_size;
-            retval->b_flags = 0;
-            retval->refcount = 1;
-            retval->allocator_data = vreg;
-            retval->vm_ops = &vra_ops;
-            retval->b_uflags = VM_PROT_READ | VM_PROT_WRITE;
-            vm_updateusr_ap(retval);
+    retval = kcalloc(1, sizeof(struct buf));
+    if (!retval)
+        return 0; /* Can't allocate vm_region struct */
+    mtx_init(&(retval->lock), MTX_TYPE_SPIN | MTX_TYPE_TICKET);
 
-            vreg->count += pcount;
-            bitmap_block_update(vreg->map, 1, iblock, pcount);
+    /* Update target struct */
+    retval->b_mmu.paddr = VREG_I2ADDR(vreg, iblock);
+    retval->b_mmu.num_pages = pcount;
+    retval->b_data = retval->b_mmu.paddr; /* Currently this way as
+                                           * kernel space is 1:1 */
+    retval->b_bufsize = VREG_BYTESIZE(pcount);
+    retval->b_bcount = orig_size;
+    retval->b_flags = 0;
+    retval->refcount = 1;
+    retval->allocator_data = vreg;
+    retval->vm_ops = &vra_ops;
+    retval->b_uflags = VM_PROT_READ | VM_PROT_WRITE;
+    vm_updateusr_ap(retval);
 
-            break;
-        }
-    } while ((vreg = vreg->node.next));
-    if (retval == NULL) { /* Not found */
-        vreg = vreg_alloc_node(VREG_PCOUNT(
-                    memalign_size(size, MMU_PGSIZE_SECTION)));
-        if (!vreg)
-            return NULL;
-        goto retry_vra;
-    }
-
-    vmem_used += size; /* Update stats */
-    last_vreg = vreg;
+    vreg->count += pcount;
+    bitmap_block_update(vreg->map, 1, iblock, pcount);
 
     _add2bioman(retval);
+
+    /* Update stats */
+    vmem_used += size;
+    last_vreg = vreg;
 
     return retval;
 }
@@ -330,8 +347,10 @@ struct buf * vr_rclone(struct buf * old_region)
 
 void allocbuf(struct buf * bp, size_t size)
 {
+    const size_t orig_size = size;
     const size_t new_size = memalign_size(size, MMU_PGSIZE_COARSE);
-    const size_t blockdiff = VREG_PCOUNT(new_size) - VREG_PCOUNT(bp->b_bufsize);
+    const size_t pcount = VREG_PCOUNT(new_size);
+    const size_t blockdiff = pcount - VREG_PCOUNT(bp->b_bufsize);
     size_t iblock;
     size_t bcount = VREG_PCOUNT(bp->b_bufsize);
     struct vregion * vreg = bp->allocator_data;
@@ -349,23 +368,42 @@ void allocbuf(struct buf * bp, size_t size)
 
         if (bitmap_block_search_s(sblock, &iblock, blockdiff, vreg->map,
                     vreg->size) == 0) {
-            if (iblock != sblock + 1) {
-                /* TODO Allocate a new buffer and copy */
+            if (iblock == sblock + 1) {
+                bitmap_block_update(vreg->map, 1, sblock, blockdiff);
+            } else { /* Must allocate a new region */
+                struct vregion * nvreg;
+                uintptr_t new_addr;
+
+                if (get_iblocks(&iblock, pcount, &nvreg))
+                    panic("OOM during allocbuf()");
+
+                new_addr = VREG_I2ADDR(nvreg, iblock);
+                memcpy((void *)(new_addr), (void *)(bp->b_data), bp->b_bufsize);
+
+                bp->b_mmu.paddr = new_addr;
+                bp->b_data = bp->b_mmu.paddr; /* Currently this way as
+                                               * kernel space is 1:1 */
+                bp->allocator_data = nvreg;
+
+                /* Free blocks from old vreg */
+                bitmap_block_update(vreg->map, 0, iblock, bcount);
+                vreg = nvreg;
 
                 mtx_unlock(&bp->lock);
-                return;
             }
-
-            bitmap_block_update(vreg->map, 1, sblock, blockdiff);
         }
     } else {
+#if 0 /* We don't usually want to shrunk because it's hard to get memory back. */
         const size_t sblock = VREG_PCOUNT((bp->b_data - vreg->kaddr)) + bcount + blockdiff;
 
         bitmap_block_update(vreg->map, 0, sblock, -blockdiff);
+#endif
     }
 
     vreg->count += blockdiff;
     bp->b_bufsize = new_size;
+    bp->b_bcount = orig_size;
+    bp->b_mmu.num_pages = pcount;
 
     mtx_unlock(&bp->lock);
 }
