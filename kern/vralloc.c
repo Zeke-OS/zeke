@@ -180,7 +180,7 @@ retry_vra:
             retval = kcalloc(1, sizeof(struct buf));
             if (!retval)
                 return 0; /* Can't allocate vm_region struct */
-            mtx_init(&(retval->lock), MTX_TYPE_SPIN);
+            mtx_init(&(retval->lock), MTX_TYPE_SPIN | MTX_TYPE_TICKET);
 
             /* Update target struct */
             retval->b_mmu.paddr = vreg->kaddr + iblock * MMU_PGSIZE_COARSE;

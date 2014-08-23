@@ -68,7 +68,8 @@ struct vm_pt vm_pagetable_system;
 const mmu_region_t mmu_region_kstack = {
     .vaddr          = MMU_VADDR_KSTACK_START,
     .num_pages      = MMU_PAGE_CNT_BY_RANGE(
-                        MMU_VADDR_KSTACK_START, MMU_VADDR_KSTACK_END, 4096),
+                        MMU_VADDR_KSTACK_START, MMU_VADDR_KSTACK_END,
+                        MMU_PGSIZE_COARSE),
     .ap             = MMU_AP_RWNA,
     .control        = MMU_CTRL_MEMTYPE_WB | MMU_CTRL_XN,
     .paddr          = MMU_VADDR_KSTACK_START,
@@ -134,15 +135,15 @@ mmu_region_t mmu_region_shared = {
 mmu_region_t mmu_region_rpihw = {
     .vaddr          = MMU_VADDR_RPIHW_START,
     .num_pages      = MMU_PAGE_CNT_BY_RANGE(MMU_VADDR_RPIHW_START, \
-                        MMU_VADDR_RPIHW_END, 1048576),
+                        MMU_VADDR_RPIHW_END, MMU_PGSIZE_SECTION),
     .ap             = MMU_AP_RWRW, /* TODO */
-    .control        = MMU_CTRL_MEMTYPE_SDEV,
+    .control        = MMU_CTRL_MEMTYPE_SDEV | MMU_CTRL_XN,
     .paddr          = MMU_VADDR_RPIHW_START,
     .pt             = &mmu_pagetable_master
 };
 
 #define PTREGION_SIZE \
-    MMU_PAGE_CNT_BY_RANGE(PTMAPPER_PT_START, PTMAPPER_PT_END, 1048576) /* MB */
+    MMU_PAGE_CNT_BY_RANGE(PTMAPPER_PT_START, PTMAPPER_PT_END, MMU_PGSIZE_SECTION)
 mmu_region_t mmu_region_page_tables = {
     .vaddr          = PTMAPPER_PT_START,
     .num_pages      = PTREGION_SIZE,
@@ -169,11 +170,11 @@ static int ptm_nr_pt = 0;
 SYSCTL_INT(_vm, OID_AUTO, ptm_nr_pt, CTLFLAG_RD, &ptm_nr_pt, 0,
     "Total number of page tables allocated.");
 
-static size_t ptm_mem_free = PTREGION_SIZE * 1048576;
+static size_t ptm_mem_free = PTREGION_SIZE * MMU_PGSIZE_SECTION;
 SYSCTL_UINT(_vm, OID_AUTO, ptm_mem_free, CTLFLAG_RD, &ptm_mem_free, 0,
     "Amount of free page table region memory.");
 
-static const size_t ptm_mem_tot = PTREGION_SIZE * 1048576;
+static const size_t ptm_mem_tot = PTREGION_SIZE * MMU_PGSIZE_SECTION;
 SYSCTL_UINT(_vm, OID_AUTO, ptm_mem_tot, CTLFLAG_RD,
     (unsigned int *)(&ptm_mem_tot), 0,
     "Total size of page table region.");
@@ -237,11 +238,13 @@ void ptmapper_init(void)
     /* Init regions */
     /* Kernel ro region */
     mmu_region_kernel.num_pages  = MMU_PAGE_CNT_BY_RANGE(
-            MMU_VADDR_KERNEL_START, (intptr_t)(&_rodata_end) - 1, 4096);
+            MMU_VADDR_KERNEL_START, (intptr_t)(&_rodata_end) - 1,
+            MMU_PGSIZE_COARSE);
     /* Kernel rw data region */
     mmu_region_kdata.vaddr      = (intptr_t)(&_data_start);
     mmu_region_kdata.num_pages  = MMU_PAGE_CNT_BY_RANGE(
-            (intptr_t)(&_data_start), MMU_VADDR_KERNEL_END, 4096);
+            (intptr_t)(&_data_start), MMU_VADDR_KERNEL_END,
+            MMU_PGSIZE_COARSE);
     mmu_region_kdata.paddr      = (intptr_t)(&_data_start);
 
     /* Fill page tables with translations & attributes */

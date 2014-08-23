@@ -42,3 +42,6 @@ SYSCTL_NODE(_debug_test, OID_AUTO, kstring, CTLFLAG_RW, 0,
 
 SYSCTL_NODE(_debug_test, OID_AUTO, fs, CTLFLAG_RW, 0,
         "fs unit tests");
+
+SYSCTL_NODE(_debug_test, OID_AUTO, hal, CTLFLAG_RW, 0,
+        "hal unit tests");

@@ -54,7 +54,10 @@ int _mtx_spinlock(mtx_t * mtx, char * whr)
 {
     if (!MTX_TYPE(mtx, MTX_TYPE_SPIN)) {
 #ifdef LOCK_DEBUG
-        KERROR(KERROR_DEBUG, "Invalid lock type.");
+        char buf[80];
+
+        ksprintf(buf, sizeof(buf), "Invalid lock type. Caller: %s", whr);
+        KERROR(KERROR_DEBUG, buf);
 #endif
         return -ENOTSUP;
     }

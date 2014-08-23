@@ -39,5 +39,6 @@
 SYSCTL_DECL(_debug_test_generic);
 SYSCTL_DECL(_debug_test_kstring);
 SYSCTL_DECL(_debug_test_fs);
+SYSCTL_DECL(_debug_test_hal);
 
 #endif /* KTEST_MIB_H */

@@ -107,15 +107,6 @@ int test_and_set(int * lock)
 {
     int err = 1;
 
-#if configMP == 0
-    istate_t s_entry = get_interrupt_state();
-    disable_interrupt();
-
-    err = *lock != 0 ? 2 : 0;
-    *lock = 1;
-
-    set_interrupt_state(s_entry);
-#else
     __asm__ volatile (
         "MOV        r1, #1\n\t"             /* locked value to r1 */
         "try%=:\n\t"
@@ -129,7 +120,6 @@ int test_and_set(int * lock)
         : [addr]"r" (lock)
         : "r1", "r2"
     );
-#endif
 
     return err;
 }
