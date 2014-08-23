@@ -183,7 +183,9 @@ retry_vra:
         goto retry_vra;
     }
 
+    bitmap_block_update(vreg->map, 1, *iblock, pcount);
     *vreg_ret = vreg;
+
     return 0;
 }
 
@@ -219,8 +221,6 @@ struct buf * geteblk(size_t size)
     vm_updateusr_ap(retval);
 
     vreg->count += pcount;
-    bitmap_block_update(vreg->map, 1, iblock, pcount);
-
     _add2bioman(retval);
 
     /* Update stats */
