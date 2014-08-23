@@ -59,6 +59,12 @@ struct vregion {
 #define VREG_SIZE(count) \
     (sizeof(struct vregion) + E2BITMAP_SIZE(count) * sizeof(bitmap_t))
 
+#define VREG_PCOUNT(byte_size_) \
+    ((byte_size_) / MMU_PGSIZE_COARSE)
+
+#define VREG_BYTESIZE(pcount_) \
+    ((pcount_) * MMU_PGSIZE_COARSE)
+
 static llist_t * vrlist; /*!< List of all allocations done by vralloc. */
 static struct vregion * last_vreg; /*!< Last node that contained empty pages. */
 
@@ -74,6 +80,7 @@ static struct vregion * vreg_alloc_node(size_t count);
 static void vreg_free_node(struct vregion * reg);
 static void vrref(struct buf * region);
 
+extern void _bio_init(void);
 extern void _add2bioman(struct buf * bp);
 
 /**
@@ -103,6 +110,8 @@ void vralloc_init(void)
 
     last_vreg = reg;
 
+    _bio_init();
+
     SUBSYS_INITFINI("vralloc OK");
 }
 
@@ -130,7 +139,7 @@ static struct vregion * vreg_alloc_node(size_t count)
     vrlist->insert_head(vrlist, vreg);
 
     /* Update stats */
-    vmem_all += count * MMU_PGSIZE_COARSE;
+    vmem_all += VREG_BYTESIZE(count);
 
     return vreg;
 }
@@ -155,9 +164,9 @@ struct buf * geteblk(size_t size)
     size_t iblock; /* Block index of the allocation */
     const size_t orig_size = size;
     size = memalign_size(size, MMU_PGSIZE_COARSE);
-    const size_t pcount = size / MMU_PGSIZE_COARSE;
+    const size_t pcount = VREG_PCOUNT(size);
     struct vregion * vreg = last_vreg;
-    struct buf * retval = 0;
+    struct buf * retval = NULL;
 
 retry_vra:
     do {
@@ -169,12 +178,13 @@ retry_vra:
             mtx_init(&(retval->lock), MTX_TYPE_SPIN | MTX_TYPE_TICKET);
 
             /* Update target struct */
-            retval->b_mmu.paddr = vreg->kaddr + iblock * MMU_PGSIZE_COARSE;
+            retval->b_mmu.paddr = vreg->kaddr + VREG_BYTESIZE(iblock);
             retval->b_mmu.num_pages = pcount;
             retval->b_data = retval->b_mmu.paddr; /* Currently this way as
                                                    * kernel space is 1:1 */
-            retval->b_bufsize = pcount * MMU_PGSIZE_COARSE;
+            retval->b_bufsize = VREG_BYTESIZE(pcount);
             retval->b_bcount = orig_size;
+            retval->b_flags = 0;
             retval->refcount = 1;
             retval->allocator_data = vreg;
             retval->vm_ops = &vra_ops;
@@ -187,11 +197,11 @@ retry_vra:
             break;
         }
     } while ((vreg = vreg->node.next));
-    if (retval == 0) { /* Not found */
-        vreg = vreg_alloc_node(memalign_size(size,
-                    MMU_PGSIZE_SECTION) / MMU_PGSIZE_COARSE);
+    if (retval == NULL) { /* Not found */
+        vreg = vreg_alloc_node(VREG_PCOUNT(
+                    memalign_size(size, MMU_PGSIZE_SECTION)));
         if (!vreg)
-            return 0;
+            return NULL;
         goto retry_vra;
     }
 
@@ -203,17 +213,29 @@ retry_vra:
     return retval;
 }
 
-static uintptr_t ksec_next = MMU_VADDR_KSEC_START;
-uintptr_t ptmapper_get_ksec_addr(size_t region_size)
+/* TODO We may want to use bitmaps here */
+mtx_t l_ksect_next;
+static uintptr_t ksect_next = MMU_VADDR_KSECT_START;
+static uintptr_t get_ksect_addr(size_t region_size)
 {
     uintptr_t retval;
 
-    if (region_size < MMU_PGSIZE_SECTION)
-        retval = memalign_size(ksec_next, MMU_PGSIZE_SECTION);
-    else
-        retval = memalign_size(ksec_next, MMU_PGSIZE_COARSE);
+    if (l_ksect_next.mtx_tflags == MTX_TYPE_UNDEF)
+        mtx_init(&l_ksect_next, MTX_TYPE_SPIN);
 
-    ksec_next += retval;
+    mtx_spinlock(&l_ksect_next);
+
+    if (region_size < MMU_PGSIZE_SECTION)
+        retval = memalign_size(ksect_next, MMU_PGSIZE_SECTION);
+    else
+        retval = memalign_size(ksect_next, MMU_PGSIZE_COARSE);
+
+    if (retval > MMU_VADDR_KSECT_END)
+        return 0;
+
+    ksect_next += retval;
+
+    mtx_unlock(&l_ksect_next);
 
     return retval;
 }
@@ -221,13 +243,17 @@ uintptr_t ptmapper_get_ksec_addr(size_t region_size)
 struct buf * geteblk_special(size_t size, uint32_t control)
 {
     struct proc_info * p = proc_get_struct(0);
+    const uintptr_t paddr = get_ksect_addr(size);
     struct vm_pt * vpt;
     struct buf * buf;
 
     if (!p)
         panic("Can't get the PCB of pid 0");
 
-    buf = proc_newsect(ptmapper_get_ksec_addr(size), size, VM_PROT_READ | VM_PROT_WRITE);
+    if (paddr == 0)
+        return NULL;
+
+    buf = proc_newsect(paddr, size, VM_PROT_READ | VM_PROT_WRITE);
     if (!buf)
         return buf;
 
@@ -304,13 +330,49 @@ struct buf * vr_rclone(struct buf * old_region)
 
 void allocbuf(struct buf * bp, size_t size)
 {
-    /* TODO */
+    const size_t new_size = memalign_size(size, MMU_PGSIZE_COARSE);
+    const size_t blockdiff = VREG_PCOUNT(new_size) - VREG_PCOUNT(bp->b_bufsize);
+    size_t iblock;
+    size_t bcount = VREG_PCOUNT(bp->b_bufsize);
+    struct vregion * vreg = bp->allocator_data;
+
+    if (!vreg)
+        panic("bp->allocator_data not set");
+
+    if (bp->b_bufsize == new_size)
+        return;
+
+    mtx_spinlock(&bp->lock);
+
+    if (blockdiff > 0) {
+        const size_t sblock = VREG_PCOUNT((bp->b_data - vreg->kaddr)) + bcount;
+
+        if (bitmap_block_search_s(sblock, &iblock, blockdiff, vreg->map,
+                    vreg->size) == 0) {
+            if (iblock != sblock + 1) {
+                /* TODO Allocate a new buffer and copy */
+
+                mtx_unlock(&bp->lock);
+                return;
+            }
+
+            bitmap_block_update(vreg->map, 1, sblock, blockdiff);
+        }
+    } else {
+        const size_t sblock = VREG_PCOUNT((bp->b_data - vreg->kaddr)) + bcount + blockdiff;
+
+        bitmap_block_update(vreg->map, 0, sblock, -blockdiff);
+    }
+    vreg->count += blockdiff;
+
+    mtx_unlock(&bp->lock);
 }
 
 void brelse(struct buf * region)
 {
     struct vregion * vreg;
     size_t iblock;
+    const size_t bcount = VREG_PCOUNT(region->b_bufsize);
 
     mtx_spinlock(&(region->lock));
     region->refcount--;
@@ -321,10 +383,10 @@ void brelse(struct buf * region)
     mtx_unlock(&(region->lock));
 
     vreg = (struct vregion *)(region->allocator_data);
-    iblock = (region->b_data - vreg->kaddr) / MMU_PGSIZE_COARSE;
+    iblock = VREG_PCOUNT(region->b_data - vreg->kaddr);
 
-    bitmap_block_update(vreg->map, 0, iblock, region->b_bufsize / MMU_PGSIZE_COARSE);
-    vreg->count -= region->b_bufsize * MMU_PGSIZE_COARSE;
+    bitmap_block_update(vreg->map, 0, iblock, bcount);
+    vreg->count -= bcount;
     vmem_used -= region->b_bufsize; /* Update stats */
 
     kfree(region);

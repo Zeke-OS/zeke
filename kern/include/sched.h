@@ -215,7 +215,11 @@ void sched_thread_set_exec(pthread_t thread_id);
  */
 void sched_sleep_current_thread(int permanent);
 
-void sched_current_thread_yield(void);
+/**
+ * Yield turn.
+ * @param sleep_flag sleep immediately if flag is set.
+ */
+void sched_current_thread_yield(int sleep_flag);
 
 /**
  * Terminate current thread.

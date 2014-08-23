@@ -32,10 +32,12 @@
 
 #ifndef _VM_VM_H
 #define _VM_VM_H
+
 #ifdef KERNEL_INTERNAL
+#include <llist.h>
+#include <sys/tree.h>
 #include <hal/mmu.h>
 #include <klocks.h>
-#include <sys/tree.h>
 #include <fs/fs.h>
 
 #define VM_PROT_READ    0x1 /*!< Read. */
@@ -61,13 +63,14 @@ struct buf {
     size_t b_bufsize;       /*!< Allocated buffer size. */
     size_t b_bcount;        /*!< Originally requested buffer size, can be used
                              *   for bounds check. */
+    size_t b_blkno;         /*!< Block # on device. */
 
     /* MMU mappings.             Usually used for user space mapping. */
     mmu_region_t b_mmu;     /*!< MMU struct for user space or special access. */
     int b_uflags;           /*!< Actual user space permissions and flags. */
 
     /* IO Buffer */
-    file_t file;            /*!< File descriptor for the buffered device. */
+    file_t b_file;          /*!< File descriptor for the buffered device. */
     size_t b_dirtyoff;      /*!< Offset in buffer of dirty region. */
     size_t b_dirtyend;      /*!< Offset of end of dirty region. */
 
@@ -80,10 +83,21 @@ struct buf {
     const struct vm_ops * vm_ops;
 
     void * allocator_data;  /*!< Allocator specific data. */
+    llist_nodedsc_t lnode;  /*!< Descriptor for linked lists. */
 
     int refcount;
     mtx_t lock;
 };
+
+#define B_DONE      0x00002     /*!< Transaction finished. */
+#define B_ERROR     0x00004     /*!< Transaction aborted. */
+#define B_BUSY      0x00008     /*!< Buffer busy. */
+#define B_PERSIST   0x00010     /*!< Persistent buf, won't become free soon. */
+#define B_DIRTY     0x00020
+#define B_NOCOPY    0x00100     /*!< Don't copy-on-write this buf. */
+#define B_ASYNC     0x01000     /*!< Start I/O but don't wait for completion. */
+#define B_IDLWRI    0x02000     /*!< Defer write until idling. */
+#define B_DELWRI    0x04000     /*!< Delayed write. */
 
 /**
  * VM operations.

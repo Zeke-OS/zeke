@@ -33,19 +33,103 @@
 #define KERNEL_INTERNAL
 #include <sys/linker_set.h>
 #include <errno.h>
+#include <kerror.h>
+#include <kmalloc.h>
+#include <dllist.h>
+#include <fs/devfs.h>
 #include <buf.h>
 
-int bread(vnode_t * vnode, off_t blkno, int size, struct buf ** bpp)
+#define BUFHSZ 64
+#define BUFHASH(dev, bn) (((dev) + bn) & (BUFHSZ - 1))
+
+struct bufhd {
+    llist_t * li;
+};
+
+struct bufhd (*bufhash)[];
+
+static int _biowait(struct buf * bp, long timeout);
+
+/* Init bio, called by vralloc_init() */
+void _bio_init(void)
 {
+    bufhash = kcalloc(BUFHSZ, sizeof(struct bufhd));
+    if (!bufhash)
+        panic("OOM during _bio_init()");
 }
 
-int  breadn(vnode_t * vnode, off_t blkno, int size, off_t rablks[],
+int bread(vnode_t * vnode, size_t blkno, int size, struct buf ** bpp)
+{
+    struct buf * bp;
+
+    bp = getblk(vnode, blkno, size, 0);
+    if (!bp)
+        return -ENOMEM;
+
+    if (bp->b_flags & B_DONE)
+        goto out;
+
+    biowait(bp);
+    bp->b_bcount = size;
+
+out:
+    *bpp = bp;
+    return 0;
+}
+
+int  breadn(vnode_t * vnode, size_t blkno, int size, size_t rablks[],
             int rasizes[], int nrablks, struct buf ** bpp)
 {
 }
 
 int bwrite(struct buf * bp)
 {
+    unsigned flags;
+    file_t * file;
+    mtx_t * lock;
+
+#if configDEBUG >= KERROR_DEBUG
+    if (!bp)
+        panic("bp not set");
+#endif
+
+    lock = &bp->lock;
+    file = &bp->b_file;
+
+    /* Sanity check */
+    if(!(bp->b_file.vnode && bp->b_file.vnode->vnode_ops &&
+                bp->b_file.vnode->vnode_ops->write)) {
+        mtx_spinlock(lock);
+        bp->b_flags |= B_ERROR;
+        bp->b_error |= -EIO;
+        mtx_unlock(lock);
+
+        return -EIO;
+    }
+
+    mtx_spinlock(lock);
+    flags = bp->b_flags;
+    bp->b_flags &= ~(B_DONE | B_ERROR | B_ASYNC | B_IDLWRI | B_DELWRI);
+    bp->b_flags |= B_BUSY;
+    mtx_unlock(lock);
+
+    /* TODO Use dirty offsets */
+    if (flags & B_ASYNC) {
+        biowait(bp);
+
+        return 0;
+    } else {
+        mtx_spinlock(lock);
+
+        file->seek_pos = bp->b_blkno;
+        file->vnode->vnode_ops->write(file, (void *)bp->b_data,
+                bp->b_bcount);
+
+        bp->b_flags &= ~B_BUSY;
+        mtx_unlock(lock);
+    }
+
+    return 0;
 }
 
 void bawrite(struct buf * bp)
@@ -56,12 +140,112 @@ void bdwrite(struct buf * bp)
 {
 }
 
-struct buf * getblk(vnode_t * vnode, off_t blkno, size_t size, int slpflag,
-                    int slptimeo)
+void bio_clrbuf(struct buf * bp)
 {
+#if configDEBUG >= KERROR_DEBUG
+    if (!bp)
+        panic("bp not set");
+#endif
+
+    mtx_spinlock(&bp->lock);
+    if (bp->b_flags & (B_IDLWRI | B_DELWRI)) {
+        biowait(bp);
+    }
+    bp->b_flags &= ~B_ERROR;
+    bp->b_flags |= B_BUSY;
+    mtx_unlock(&bp->lock);
+
+    memset((void *)bp->b_data, 0, bp->b_bufsize);
+
+    mtx_spinlock(&bp->lock);
+    bp->b_flags &= ~B_BUSY;
+    mtx_unlock(&bp->lock);
 }
 
-struct buf * incore(vnode_t * vnode, off_t blkno)
+static struct buf * create_blk(vnode_t * vnode, size_t blkno, size_t size,
+                               int slptimeo)
+{
+    struct buf * bp = geteblk(size);
+    struct file file;
+
+    if (!bp)
+        return NULL;
+
+    bp->b_blkno = blkno;
+    file.vnode = vnode;
+    file.seek_pos = blkno;
+    file.oflags = O_RDWR;
+    file.refcount = 1;
+    file.stream = NULL;
+
+    bp->b_file = file;
+    mtx_init(&bp->b_file.lock, MTX_TYPE_SPIN);
+
+    return bp;
+}
+
+struct buf * getblk(vnode_t * vnode, size_t blkno, size_t size, int slptimeo)
+{
+    size_t hash;
+    struct bufhd * bf;
+    dev_t dev;
+    struct buf * bp;
+
+    if (!vnode)
+        return NULL;
+
+    if (S_ISBLK(vnode->vn_mode) || S_ISCHR(vnode->vn_mode)) {
+        dev = ((struct dev_info *)vnode->vn_specinfo)->dev_id;
+    } else {
+        dev = vnode->sb->vdev_id;
+    }
+
+    hash = BUFHASH(dev, blkno);
+    bf = &(*bufhash)[hash];
+
+    if (bf->li == NULL) {
+        /* If list is not yet created we create it */
+        bf->li = dllist_create(struct buf, lnode);
+
+        goto not_found;
+    }
+
+    /* Look for a buffer in the linked list found. */
+    bp = bf->li->head;
+    while (bp) {
+        if ((bp->b_file.vnode == vnode) && (bp->b_blkno == blkno))
+            break;
+
+        bp = bp->lnode.next;
+    }
+    if (!bp) {
+not_found:
+        bp = create_blk(vnode, blkno, size, slptimeo);
+        if (!bp)
+            return NULL;
+
+        /* Insert to the hashmap list */
+        bf->li->insert_head(bf->li, bp);
+    }
+
+    /* Found */
+    mtx_spinlock(&bp->lock);
+    //bp->refcount++; /* TODO We can't increment this everytime */
+    mtx_unlock(&bp->lock);
+    biowait(bp); /* Wait until I/O has completed. */
+
+    allocbuf(bp, size);
+
+    mtx_spinlock(&bp->lock);
+    /* TODO check error? */
+    bp->b_flags &= ~B_ERROR;
+    bp->b_error = 0;
+    mtx_unlock(&bp->lock);
+
+    return bp;
+}
+
+struct buf * incore(vnode_t * vnode, size_t blkno)
 {
 }
 
@@ -69,8 +253,18 @@ void biodone(struct buf * bp)
 {
 }
 
+static int _biowait(struct buf * bp, long timeout)
+{
+    /* TODO timeout */
+
+    while (!(bp->b_flags & B_DONE));
+
+    return bp->b_error;
+}
+
 int biowait(struct buf * bp)
 {
+    return _biowait(bp, 0);
 }
 
 /**

@@ -78,6 +78,20 @@ typedef uint32_t bitmap_t;
 int bitmap_block_search(size_t * retval, size_t block_len, bitmap_t * bitmap, size_t size);
 
 /**
+ * Search for a contiguous block of block_len in bitmap.
+ * @param       start       is the index where lookup starts from.
+ * @param[out] retval       is the index of the first contiguous block of
+ *                          the requested length.
+ * @param       block_len   is the lenght of contiguous block searched for.
+ * @param       bitmap      is a bitmap of block reservations.
+ * @param       size        is the size of bitmap in bytes.
+ * @return  Returns zero if a free block found; Value other than zero if there
+ *          is no free contiguous block of requested length.
+ */
+int bitmap_block_search_s(size_t start, size_t * retval, size_t block_len,
+                          bitmap_t * bitmap, size_t size);
+
+/**
  * Set or clear contiguous block of bits in bitmap.
  * @param bitmap    is the bitmap being changed.
  * @param mark      0 = clear; 1 = set;

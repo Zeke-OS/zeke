@@ -80,8 +80,8 @@
 #define MMU_VADDR_RPIHW_END     0x20FFFFFF
 
 /* Kernel dynamic sections */
-#define MMU_VADDR_KSEC_START    0x30000000
-#define MMU_VADDR_KSEC_END      0x50000000
+#define MMU_VADDR_KSECT_START   0x30000000
+#define MMU_VADDR_KSECT_END     0x50000000
 /* End of Kernel memory map ***************************************************/
 
 /* Page Table Region Macros ***************************************************/

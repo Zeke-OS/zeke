@@ -71,6 +71,7 @@
 #define MTX_TYPE_UNDEF  0x00 /*!< mtx un-initialized. */
 #define MTX_TYPE_SPIN   0x01 /*!< Spin lock. */
 #define MTX_TYPE_TICKET 0x02 /*!< Use ticket locking. */
+#define MTX_TYPE_SLEEP  0x10 /*!< Allow timeouted waiting. */
 
 /**
  * Sleep/spin mutex.
@@ -97,11 +98,14 @@ typedef struct mtx {
 /* Mutex functions */
 #ifndef LOCK_DEBUG
 int mtx_spinlock(mtx_t * mtx);
+int mtx_sleep(mtx_t * mtx, long timeout);
 int mtx_trylock(mtx_t * mtx);
 #else /* Debug versions */
 #define mtx_spinlock(mtx)   _mtx_spinlock(mtx, _KERROR_WHERESTR)
+#define mtx_sleep(mtx, timeout) _mtx_sleep(mtx, timeout, _KERROR_WHERESTR)
 #define mtx_trylock(mtx)    _mtx_trylock(mtx, _KERROR_WHERESTR)
 int _mtx_spinlock(mtx_t * mtx, char * whr);
+int _mtx_sleep(mtx_t * mtx, long timeout, char * whr);
 int _mtx_trylock(mtx_t * mtx, char * whr);
 #endif
 

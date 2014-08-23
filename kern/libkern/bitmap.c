@@ -35,25 +35,12 @@
 #define BIT2WORDI(i)    ((i - (i & (SIZEOF_BITMAP_T - 1))) / SIZEOF_BITMAP_T)
 #define BIT2WBITOFF(i)  (i & (SIZEOF_BITMAP_T - 1))
 
-static int _bitmap_block_search(size_t start, size_t * retval, size_t block_len,
-        bitmap_t * bitmap, size_t size);
-
 int bitmap_block_search(size_t * retval, size_t block_len, bitmap_t * bitmap, size_t size)
 {
-    return _bitmap_block_search(0, retval, block_len, bitmap, size);
+    return bitmap_block_search_s(0, retval, block_len, bitmap, size);
 }
 
-/**
- * Search for a contiguous block of block_len in bitmap.
- * @parami[out] retval  is the index of the first contiguous block of requested
- *                      length.
- * @param block_len     is the lenght of contiguous block searched for.
- * @param bitmap        is a bitmap of block reservations.
- * @param size          is the size of bitmap in bytes.
- * @return  Returns zero if a free block found; Value other than zero if there
- *          is no free contiguous block of requested length.
- */
-static int _bitmap_block_search(size_t start, size_t * retval, size_t block_len,
+int bitmap_block_search_s(size_t start, size_t * retval, size_t block_len,
         bitmap_t * bitmap, size_t size)
 {
     size_t i, j;
@@ -133,7 +120,7 @@ int bitmap_block_align_alloc(size_t * start, size_t len,
             goto out;
         }
 
-        retval = _bitmap_block_search(begin, start, len, bitmap, size);
+        retval = bitmap_block_search_s(begin, start, len, bitmap, size);
         if (retval != 0)
             goto out;
         begin = *start + (balign - (*start % balign));

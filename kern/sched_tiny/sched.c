@@ -479,9 +479,6 @@ static void _sched_thread_set_exec(pthread_t thread_id, osPriority pri)
 
 void sched_sleep_current_thread(int permanent)
 {
-    istate_t s;
-
-    s = get_interrupt_state();
     disable_interrupt(); /* TODO Not MP safe! */
 
     /* Sleep flag */
@@ -498,16 +495,21 @@ void sched_sleep_current_thread(int permanent)
     heap_inc_key(&priority_queue, heap_find(&priority_queue,
                 current_thread->id));
 
-    set_interrupt_state(s);
+    /* We don't want to get stuck here */
+    enable_interrupt();
+    idle_sleep();
 }
 
-void sched_current_thread_yield(void)
+void sched_current_thread_yield(int sleep_flag)
 {
     if (!current_thread || !(*priority_queue.a))
         return;
 
     if ((*priority_queue.a)->id == current_thread->id)
         heap_reschedule_root(&priority_queue, osPriorityIdle);
+
+    if (sleep_flag)
+        idle_sleep();
 }
 
 /**
@@ -567,19 +569,6 @@ void sched_thread_die(intptr_t retval)
     current_thread->retval = retval;
     current_thread->flags |= SCHED_ZOMBIE_FLAG;
     sched_sleep_current_thread(SCHED_PERMASLEEP);
-
-    /*
-     * There is several reasons to call this function with interrupts disabled,
-     * so we enable interrupts just in case.
-     */
-    enable_interrupt();
-
-    /*
-     * The current thread will now block and a next thread will be scheduled in.
-     */
-    while (1) {
-        idle_sleep();
-    }
 }
 
 int sched_thread_detach(pthread_t id)

@@ -39,20 +39,20 @@
 
 /**
  * Read a block corresponding to vnode and blkno.
- * @param[in]   vnode   is a pointer vnode to a vnode.
+ * @param[in]   vnode   is a pointer to a vnode.
  * @param[in]   blkno   is a block number.
  * @param[in]   size    is the size to be read.
  * @param[out]  buf     points to the returned buffer.
  * @return      Returns 0 if succeed; A negative errno if failed.
  */
-int bread(vnode_t * vnode, off_t blkno, int size, struct buf ** bpp);
+int bread(vnode_t * vnode, size_t blkno, int size, struct buf ** bpp);
 
 /**
  * Get a buffer as bread().
  * In addition, breadn() will start read-ahead of blocks specified by rablks,
  * rasizes and nrablks. The read-ahead blocks aren't returned, but are available
  * in cache for future accesses.
- * @param[in]   vnode   is a pointer vnode to a vnode.
+ * @param[in]   vnode   is a pointer to a vnode.
  * @param[in]   blkno   is a block number.
  * @param[in]   size    is the size to be read.
  * @param[in]   rablks
@@ -61,7 +61,7 @@ int bread(vnode_t * vnode, off_t blkno, int size, struct buf ** bpp);
  * @param[out]  bpp     points to the returned buffer.
  * @return      Returns 0 if succeed; A negative errno if failed.
  */
-int  breadn(vnode_t * vnode, off_t blkno, int size, off_t rablks[],
+int  breadn(vnode_t * vnode, size_t blkno, int size, size_t rablks[],
             int rasizes[], int nrablks, struct buf ** bpp);
 
 /**
@@ -85,14 +85,18 @@ void bawrite(struct buf * bp);
 void bdwrite(struct buf * bp);
 
 /**
+ * Clear a buffer.
+ */
+void bio_clrbuf(struct buf * bp);
+
+/**
  * Get a block of requested size size that is associated with a given vnode and
  * block offset, specified by vp and blkno.
  * If the block is found in the cache, mark it as having been found, make it
  * busy and return. Otherwise, return an empty block of the correct size.  It
  * is up to the caller to ensure that the cache blocks are of the correct size.
  */
-struct buf * getblk(vnode_t * vnode, off_t blkno, size_t size, int slpflag,
-                    int slptimeo);
+struct buf * getblk(vnode_t * vnode, size_t blkno, size_t size, int slptimeo);
 
 /**
  * Allocate an empty, disassociated block of a given size size.
@@ -110,7 +114,7 @@ struct buf * geteblk_special(size_t size, uint32_t control);
  * @param[in]   blkno   is the block number.
  * @return  Returns the buffer if it's already in memory.
  */
-struct buf * incore(vnode_t * vnode, off_t blkno);
+struct buf * incore(vnode_t * vnode, size_t blkno);
 
 /**
  * Expand or contract a allocated buffer.

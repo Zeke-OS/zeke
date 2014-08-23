@@ -138,7 +138,6 @@ void thread_release(threadInfo_t * thread)
 
 void thread_sleep(long millisec)
 {
-    //istate_t s;
     int timer_id;
 
     do {
@@ -147,16 +146,9 @@ void thread_sleep(long millisec)
     } while (timer_id < 0);
     current_thread->wait_tim = timer_id;
 
-    //s = get_interrupt_state();
-    //disable_interrupt(); /* TODO Not MP safe! */
     /* This should prevent anyone from waking up this thread for a while. */
     timers_start(timer_id);
     thread_wait();
-    //set_interrupt_state(s);
-
-    do {
-        idle_sleep();
-    } while (current_thread->wait_tim >= 0);
 }
 
 void thread_init_kstack(threadInfo_t * th)

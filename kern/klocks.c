@@ -33,6 +33,7 @@
 #define KERNEL_INTERNAL
 #include <errno.h>
 #include <kstring.h>
+#include <timers.h>
 #include <hal/core.h>
 #include <klocks.h>
 
@@ -53,6 +54,10 @@ int mtx_spinlock(mtx_t * mtx)
 int _mtx_spinlock(mtx_t * mtx, char * whr)
 #endif
 {
+    const int ticket_mode = MTX_TYPE(mtx, MTX_TYPE_TICKET);
+    int ticket;
+    int sleep_mode = MTX_TYPE(mtx, MTX_TYPE_SLEEP);
+
     if (!MTX_TYPE(mtx, MTX_TYPE_SPIN)) {
 #ifdef LOCK_DEBUG
         char buf[80];
@@ -63,21 +68,27 @@ int _mtx_spinlock(mtx_t * mtx, char * whr)
         return -ENOTSUP;
     }
 
-    if (MTX_TYPE(mtx, MTX_TYPE_TICKET)) {
-        const int ticket = atomic_inc(&(mtx->ticket.queue));
+    if (ticket_mode) {
+        ticket = atomic_inc(&(mtx->ticket.queue));
+    }
 
-        while (atomic_read(&(mtx->ticket.dequeue)) != ticket) {
-                sched_current_thread_yield();
-#if configMP != 0
-                cpu_wfe(); /* Sleep until event. */
-#endif
+    while (1) {
+        if (sleep_mode && (current_thread->wait_tim == -2))
+            return -EWOULDBLOCK;
+
+        if (ticket_mode) {
+            if (atomic_read(&(mtx->ticket.dequeue)) == ticket)
+                break;
+
+            sched_current_thread_yield(0);
+        } else {
+            if (!test_and_set((int *)(&(mtx->mtx_lock))))
+                break;
         }
-    } else {
-        while (test_and_set((int *)(&(mtx->mtx_lock)))) {
+
 #if configMP != 0
-            cpu_wfe(); /* Sleep until event. */
+        cpu_wfe(); /* Sleep until event. */
 #endif
-        }
     }
 
 #ifdef LOCK_DEBUG
@@ -85,6 +96,34 @@ int _mtx_spinlock(mtx_t * mtx, char * whr)
 #endif
 
     return 0;
+}
+
+static void mtx_wakeup(void * arg)
+{
+    timers_release(current_thread->wait_tim);
+    current_thread->wait_tim = -2; /* Magic */
+}
+
+#ifndef LOCK_DEBUG
+int mtx_sleep(mtx_t * mtx, long timeout)
+#else
+int _mtx_sleep(mtx_t * mtx, long timeout, char * whr)
+#endif
+{
+    int retval;
+
+    if (timeout > 0) {
+        current_thread->wait_tim = timers_add(mtx_wakeup, mtx, TIMERS_FLAG_ONESHOT, timeout);
+        if (current_thread->wait_tim < 0)
+            return -EWOULDBLOCK;
+        retval = mtx_spinlock(mtx);
+        timers_release(current_thread->wait_tim);
+        current_thread->wait_tim = -1;
+    } else {
+        retval = mtx_spinlock(mtx);
+    }
+
+    return retval;
 }
 
 #ifndef LOCK_DEBUG
@@ -95,7 +134,15 @@ int _mtx_trylock(mtx_t * mtx, char * whr)
 {
     int retval;
 
+    if (!MTX_TYPE(mtx, MTX_TYPE_SPIN)) {
+#ifdef LOCK_DEBUG
+        KERROR(KERROR_ERR, "mtx_trylock() is only supported for MTX_TYPE_SPIN");
+#endif
+        return -ENOTSUP;
+    }
+
     retval = test_and_set((int *)(&(mtx->mtx_lock)));
+
 #ifdef LOCK_DEBUG
     mtx->mtx_ldebug = whr;
 #endif
@@ -105,6 +152,11 @@ int _mtx_trylock(mtx_t * mtx, char * whr)
 
 void mtx_unlock(mtx_t * mtx)
 {
+    if (MTX_TYPE(mtx, MTX_TYPE_SLEEP) && (current_thread->wait_tim >= 0)) {
+        timers_release(current_thread->wait_tim);
+        current_thread->wait_tim = -1;
+    }
+
     if (MTX_TYPE(mtx, MTX_TYPE_TICKET)) {
         atomic_inc(&(mtx->ticket.dequeue));
     } else {

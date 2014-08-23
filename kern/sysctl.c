@@ -1070,7 +1070,7 @@ int userland_sysctl(pid_t pid, int * name, unsigned int namelen,
         SYSCTL_UNLOCK();
         if (error != EAGAIN)
             break;
-        sched_current_thread_yield();
+        sched_current_thread_yield(1);
     }
 
     /* TODO ?? */
