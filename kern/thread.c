@@ -149,6 +149,11 @@ void thread_sleep(long millisec)
     /* This should prevent anyone from waking up this thread for a while. */
     timers_start(timer_id);
     thread_wait();
+
+    do {
+        idle_sleep();
+    } while (current_thread->wait_tim >= 0);
+
 }
 
 void thread_init_kstack(threadInfo_t * th)

@@ -363,7 +363,9 @@ void allocbuf(struct buf * bp, size_t size)
 
         bitmap_block_update(vreg->map, 0, sblock, -blockdiff);
     }
+
     vreg->count += blockdiff;
+    bp->b_bufsize = new_size;
 
     mtx_unlock(&bp->lock);
 }
