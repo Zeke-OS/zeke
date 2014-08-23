@@ -32,6 +32,7 @@
 
 #define KERNEL_INTERNAL
 #include <errno.h>
+#include <kstring.h>
 #include <hal/core.h>
 #include <klocks.h>
 

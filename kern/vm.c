@@ -256,6 +256,20 @@ void vm_updateusr_ap(struct buf * region)
     mtx_unlock(&(region->lock));
 }
 
+int vm_add_region(struct vm_mm_struct * mm, struct buf * region)
+{
+    struct buf * (*new_regions)[];
+
+    new_regions = krealloc(mm->regions, (mm->nr_regions + 1) * sizeof(struct buf *));
+    if (!new_regions)
+        return -ENOMEM;
+
+    (*mm->regions)[mm->nr_regions] = region;
+    mm->nr_regions = mm->nr_regions + 1;
+
+    return 0;
+}
+
 int vm_map_region(struct buf * region, struct vm_pt * pt)
 {
     mmu_region_t mmu_region;

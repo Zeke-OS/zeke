@@ -62,6 +62,7 @@
  * Broadcom BCM2835 Peripherals Guide
  */
 
+#define KERNEL_INTERNAL
 #include <autoconf.h>
 #include <kinit.h>
 #include <stdint.h>
@@ -69,6 +70,8 @@
 #include <kstring.h>
 #include <libkern.h>
 #include <kmalloc.h>
+#include <vm/vm.h>
+#include <buf.h>
 #include <kerror.h>
 #include <hal/hw_timers.h>
 #include <fs/devfs.h>
@@ -133,7 +136,7 @@ static uint32_t hci_ver;
 static uint32_t capabilities_0;
 static uint32_t capabilities_1;
 
-static uint32_t mailbuffer[10] __attribute__((aligned(16)));
+static struct buf * mailbuf;
 
 struct sd_scr {
     uint32_t    scr[2];
@@ -520,6 +523,13 @@ void rpi_emmc_init(void)
     vnode_t * vnode;
     int fd;
 
+    mailbuf = geteblk_special(10 * sizeof(uint32_t),
+            MMU_CTRL_MEMTYPE_SO);
+    if (!mailbuf || mailbuf->b_data == 0) {
+        KERROR(KERROR_ERR, "Unable to get mailbuffer");
+        return;
+    }
+
     struct dev_info * sd_dev = NULL;
     if (rpi_emmc_card_init(&sd_dev)) {
         KERROR(KERROR_ERR, "rpi_emmc FAILED");
@@ -564,6 +574,8 @@ static void sd_power_off()
 static uint32_t sd_get_base_clock_hz()
 {
     uint32_t base_clock;
+    uint32_t * mailbuffer = (uint32_t *)(mailbuf->b_data);
+
 #if SDHCI_IMPLEMENTATION == SDHCI_IMPLEMENTATION_GENERIC
     capabilities_0 = mmio_read(EMMC_BASE + EMMC_CAPABILITIES_0);
     base_clock = ((capabilities_0 >> 8) & 0xff) * 1000000;
@@ -586,7 +598,7 @@ static uint32_t sd_get_base_clock_hz()
     mailbuffer[7] = 0;
 
     /* send the message */
-    bcm2835_writemailbox(BCM2835_MBCH_PROP, (uint32_t)(&mailbuffer));
+    bcm2835_writemailbox(BCM2835_MBCH_PROP, (uint32_t)(mailbuf->b_mmu.paddr));
 
     /* read the response */
     bcm2835_readmailbox(BCM2835_MBCH_PROP);
@@ -626,6 +638,8 @@ static uint32_t sd_get_base_clock_hz()
 #if SDHCI_IMPLEMENTATION == SDHCI_IMPLEMENTATION_BCM_2708
 static int bcm_2708_power_off()
 {
+    uint32_t * mailbuffer = (uint32_t *)(mailbuf->b_data);
+
     /* Power off the SD card */
     /* set up the buffer */
     mailbuffer[0] = 8 * 4;  /* size of this message */
@@ -642,7 +656,7 @@ static int bcm_2708_power_off()
     mailbuffer[7] = 0;
 
     /* send the message */
-    bcm2835_writemailbox(BCM2835_MBCH_PROP, (uint32_t)(&mailbuffer));
+    bcm2835_writemailbox(BCM2835_MBCH_PROP, (uint32_t)(mailbuf->b_mmu.paddr));
 
     /* read the response */
     bcm2835_readmailbox(BCM2835_MBCH_PROP);
@@ -679,6 +693,8 @@ static int bcm_2708_power_off()
 
 static int bcm_2708_power_on()
 {
+    uint32_t * mailbuffer = (uint32_t *)(mailbuf->b_data);
+
     /* Power on the SD card */
     /* set up the buffer */
     mailbuffer[0] = 8 * 4;      /* size of this message */
@@ -695,7 +711,7 @@ static int bcm_2708_power_on()
     mailbuffer[7] = 0;
 
     /* send the message */
-    bcm2835_writemailbox(BCM2835_MBCH_PROP, (uint32_t)(&mailbuffer));
+    bcm2835_writemailbox(BCM2835_MBCH_PROP, (uint32_t)(mailbuf->b_mmu.paddr));
 
     /* read the response */
     bcm2835_readmailbox(BCM2835_MBCH_PROP);

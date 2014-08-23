@@ -374,5 +374,4 @@ void ptmapper_free(mmu_pagetable_t * pt)
     /* Accounting for sysctl */
     ptm_nr_pt--;
     ptm_mem_free += bsize;
-
 }

@@ -101,6 +101,8 @@ struct buf * getblk(vnode_t * vnode, off_t blkno, size_t size, int slpflag,
  */
 struct buf * geteblk(size_t size);
 
+struct buf * geteblk_special(size_t size, uint32_t control);
+
 /**
  * Determine if a block associated with a given vnode and block offset is in
  * the cache.

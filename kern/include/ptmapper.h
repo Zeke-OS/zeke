@@ -78,6 +78,10 @@
 /* TODO These shouldn't be here actually */
 #define MMU_VADDR_RPIHW_START   0x20000000
 #define MMU_VADDR_RPIHW_END     0x20FFFFFF
+
+/* Kernel dynamic sections */
+#define MMU_VADDR_KSEC_START    0x30000000
+#define MMU_VADDR_KSEC_END      0x50000000
 /* End of Kernel memory map ***************************************************/
 
 /* Page Table Region Macros ***************************************************/

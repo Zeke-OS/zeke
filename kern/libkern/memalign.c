@@ -32,13 +32,20 @@
 
 #include <libkern.h>
 
+#define MOD_AL(x, y) ((x) & (y - 1)) /* x % bytes */
+
 size_t memalign(size_t size)
 {
 #define ALIGN (sizeof(void *))
-#define MOD_AL(x) ((x) & (ALIGN - 1)) /* x % ALIGN */
-    size_t padding = MOD_AL((ALIGN - (MOD_AL(size))));
+    size_t padding = MOD_AL((ALIGN - MOD_AL(size, ALIGN)), ALIGN);
 
     return size + padding;
-#undef MOD_AL
 #undef ALIGN
+}
+
+size_t memalign_size(size_t size, size_t bytes)
+{
+    size_t padding = MOD_AL((bytes - MOD_AL(size, bytes)), bytes);
+
+    return size + padding;
 }

@@ -62,8 +62,8 @@ struct buf {
     size_t b_bcount;        /*!< Originally requested buffer size, can be used
                              *   for bounds check. */
 
-    /* User space mappings */
-    mmu_region_t b_mmu;     /*!< MMU struct for user space access. */
+    /* MMU mappings.             Usually used for user space mapping. */
+    mmu_region_t b_mmu;     /*!< MMU struct for user space or special access. */
     int b_uflags;           /*!< Actual user space permissions and flags. */
 
     /* IO Buffer */
@@ -216,6 +216,8 @@ int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done);
  * @param region is the region to be updated.
  */
 void vm_updateusr_ap(struct buf * region);
+
+int vm_add_region(struct vm_mm_struct * mm, struct buf * region);
 
 /**
  * Map a VM region with the given page table.

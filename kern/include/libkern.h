@@ -109,6 +109,14 @@ static inline long labs(long a) { return (a < 0 ? -a : a); }
  */
 size_t memalign(size_t size);
 
+/**
+ * Return page aligned size of size.
+ * @param size is a size of a memory block requested.
+ * @param bytes align to bytes.
+ * @returns Returns size aligned to the word size of the current system.
+ */
+size_t memalign_size(size_t size, size_t bytes);
+
 /** @addtogroup krandom krandom, ksrandom, kunirandom
  * @{
  */

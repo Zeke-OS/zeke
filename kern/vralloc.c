@@ -31,6 +31,7 @@
  */
 
 #define KERNEL_INTERNAL
+#include <libkern.h>
 #include <kinit.h>
 #include <bitmap.h>
 #include <dllist.h>
@@ -38,6 +39,7 @@
 #include <kmalloc.h>
 #include <kstring.h>
 #include <kerror.h>
+#include <proc.h>
 #include <sys/sysctl.h>
 #include <vm/vm.h>
 #include <buf.h>
@@ -70,7 +72,6 @@ SYSCTL_UINT(_vm, OID_AUTO, vmem_used, CTLFLAG_RD, &vmem_used, 0,
 
 static struct vregion * vreg_alloc_node(size_t count);
 static void vreg_free_node(struct vregion * reg);
-static size_t pagealign(size_t size, size_t bytes);
 static void vrref(struct buf * region);
 
 extern void _add2bioman(struct buf * bp);
@@ -149,26 +150,11 @@ static void vreg_free_node(struct vregion * vreg)
     kfree(vreg);
 }
 
-/**
- * Return page aligned size of size.
- * @param size is a size of a memory block requested.
- * @param bytes align to bytes.
- * @returns Returns size aligned to the word size of the current system.
- */
-static size_t pagealign(size_t size, size_t bytes)
-{
-#define MOD_AL(x) ((x) & (bytes - 1)) /* x % bytes */
-    size_t padding = MOD_AL((bytes - (MOD_AL(size))));
-
-    return size + padding;
-#undef MOD_AL
-}
-
 struct buf * geteblk(size_t size)
 {
     size_t iblock; /* Block index of the allocation */
     const size_t orig_size = size;
-    size = pagealign(size, MMU_PGSIZE_COARSE);
+    size = memalign_size(size, MMU_PGSIZE_COARSE);
     const size_t pcount = size / MMU_PGSIZE_COARSE;
     struct vregion * vreg = last_vreg;
     struct buf * retval = 0;
@@ -202,7 +188,8 @@ retry_vra:
         }
     } while ((vreg = vreg->node.next));
     if (retval == 0) { /* Not found */
-        vreg = vreg_alloc_node(pagealign(size, MMU_PGSIZE_SECTION) / MMU_PGSIZE_COARSE);
+        vreg = vreg_alloc_node(memalign_size(size,
+                    MMU_PGSIZE_SECTION) / MMU_PGSIZE_COARSE);
         if (!vreg)
             return 0;
         goto retry_vra;
@@ -214,6 +201,51 @@ retry_vra:
     _add2bioman(retval);
 
     return retval;
+}
+
+static uintptr_t ksec_next = MMU_VADDR_KSEC_START;
+uintptr_t ptmapper_get_ksec_addr(size_t region_size)
+{
+    uintptr_t retval;
+
+    if (region_size < MMU_PGSIZE_SECTION)
+        retval = memalign_size(ksec_next, MMU_PGSIZE_SECTION);
+    else
+        retval = memalign_size(ksec_next, MMU_PGSIZE_COARSE);
+
+    ksec_next += retval;
+
+    return retval;
+}
+
+struct buf * geteblk_special(size_t size, uint32_t control)
+{
+    struct proc_info * p = proc_get_struct(0);
+    struct vm_pt * vpt;
+    struct buf * buf;
+
+    if (!p)
+        panic("Can't get the PCB of pid 0");
+
+    buf = proc_newsect(ptmapper_get_ksec_addr(size), size, VM_PROT_READ | VM_PROT_WRITE);
+    if (!buf)
+        return buf;
+
+    buf->b_mmu.control = control;
+
+    vpt = ptlist_get_pt(&p->mm.ptlist_head, &p->mm.mpt,
+                        buf->b_mmu.vaddr);
+    if (!vpt) {
+        panic("Mapping a kernel special buffer failed");
+    }
+
+    buf->b_mmu.pt = &vpt->pt;
+    vm_map_region(buf, vpt);
+    vm_add_region(&p->mm, buf);
+
+    buf->b_data = buf->b_mmu.vaddr;
+
+    return buf;
 }
 
 /**
