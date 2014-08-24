@@ -38,8 +38,8 @@ int atomic_read(atomic_t * v)
     int value;
 
     __asm__ volatile (
-        "LDREX      %[val], [%[addr]]"
-        /* TODO clear here */
+        "LDREX      %[val], [%[addr]]\n\t"
+        "CLREX"
         : [val]"+r" (value)
         : [addr]"r" (v)
     );
