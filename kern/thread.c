@@ -106,6 +106,26 @@ void * idle_thread(/*@unused@*/ void * arg)
     }
 }
 
+void thread_wait(void)
+{
+    atomic_inc(&current_thread->a_wait_count);
+    sched_sleep_current_thread(0);
+}
+
+void thread_release(threadInfo_t * thread)
+{
+    int old_val = atomic_dec(&thread->a_wait_count);
+
+    if (old_val == 0) {
+        atomic_inc(&thread->a_wait_count);
+        old_val = 1;
+    }
+
+    if (old_val == 1) {
+        thread->flags &= ~SCHED_WAIT_FLAG;
+        sched_thread_set_exec(thread->id);
+    }
+}
 
 static void thread_event_timer(void * event_arg)
 {
@@ -115,25 +135,6 @@ static void thread_event_timer(void * event_arg)
     thread->wait_tim = -1;
 
     thread_release(thread);
-}
-
-/* TODO MP safety of wait and release */
-
-void thread_wait(void)
-{
-    current_thread->wait_count++;
-    sched_sleep_current_thread(0);
-}
-
-void thread_release(threadInfo_t * thread)
-{
-    if (thread->wait_count > 0)
-        thread->wait_count--;
-
-    if (thread->wait_count == 0) {
-        thread->flags &= ~SCHED_WAIT_FLAG;
-        sched_thread_set_exec(thread->id);
-    }
 }
 
 void thread_sleep(long millisec)
@@ -149,11 +150,6 @@ void thread_sleep(long millisec)
     /* This should prevent anyone from waking up this thread for a while. */
     timers_start(timer_id);
     thread_wait();
-
-    do {
-        idle_sleep();
-    } while (current_thread->wait_tim >= 0);
-
 }
 
 void thread_init_kstack(threadInfo_t * th)

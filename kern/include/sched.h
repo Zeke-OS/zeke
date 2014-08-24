@@ -141,7 +141,7 @@ typedef struct {
     struct buf * kstack_region;    /*!< Thread kernel stack region. */
     void * errno_uaddr;             /*!< Address of the thread local errno. */
     intptr_t retval;                /*!< Return value of the thread. */
-    int wait_count;                 /*!< Wait counter. -1 = permanent */
+    atomic_t a_wait_count;          /*!< Wait counter. -1 = permanent */
     int wait_tim;                   /*!< Reference to a timeout timer. */
     osPriority def_priority;        /*!< Thread priority. */
     osPriority priority;            /*!< Thread dynamic priority. */

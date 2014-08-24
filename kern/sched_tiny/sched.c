@@ -348,6 +348,7 @@ static void sched_thread_init(pthread_t i,
     }
 
     /* Clear signal flags & wait states */
+    task_table[i].a_wait_count = ATOMIC_INIT(0);
     task_table[i].wait_tim = -1;
 
     /* Update parent and child pointers */
@@ -481,23 +482,21 @@ void sched_sleep_current_thread(int permanent)
 {
     disable_interrupt(); /* TODO Not MP safe! */
 
-    /* Sleep flag */
     current_thread->flags &= ~SCHED_EXEC_FLAG;
+    current_thread->flags |= SCHED_WAIT_FLAG;
     if (permanent) {
-        current_thread->wait_count = -1;
-        current_thread->flags |= SCHED_WAIT_FLAG;
+        atomic_set(&current_thread->a_wait_count, -1);
     }
 
-    /* Find index of the current thread in the priority queue and move it
-     * on top */
     current_thread->priority = osPriorityError;
-
     heap_inc_key(&priority_queue, heap_find(&priority_queue,
                 current_thread->id));
 
     /* We don't want to get stuck here */
     enable_interrupt();
-    idle_sleep();
+
+    while (current_thread->flags & SCHED_WAIT_FLAG)
+        idle_sleep();
 }
 
 void sched_current_thread_yield(int sleep_flag)
@@ -510,6 +509,9 @@ void sched_current_thread_yield(int sleep_flag)
 
     if (sleep_flag)
         idle_sleep();
+
+    /* TODO User may expect this function to yield immediately which doesn't
+     * actually happen. */
 }
 
 /**
