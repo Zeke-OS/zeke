@@ -45,6 +45,8 @@
 #include <vm/vm.h>
 #include <buf.h>
 
+/* TODO Locks to protect global data structures. */
+
 /**
  * vralloc region struct.
  * Struct describing a single dynmem alloc block of vrallocated memory.
@@ -87,7 +89,6 @@ static int get_iblocks(size_t * iblock, size_t pcount,
 static void vrref(struct buf * region);
 
 extern void _bio_init(void);
-extern void _add2bioman(struct buf * bp);
 
 /**
  * VRA specific operations for allocated vm regions.
@@ -95,7 +96,7 @@ extern void _add2bioman(struct buf * bp);
 static const vm_ops_t vra_ops = {
     .rref = vrref,
     .rclone = vr_rclone,
-    .rfree = brelse
+    .rfree = vrfree
 };
 
 
@@ -213,7 +214,7 @@ struct buf * geteblk(size_t size)
                                            * kernel space is 1:1 */
     retval->b_bufsize = VREG_BYTESIZE(pcount);
     retval->b_bcount = orig_size;
-    retval->b_flags = 0;
+    retval->b_flags = B_BUSY;
     retval->refcount = 1;
     retval->allocator_data = vreg;
     retval->vm_ops = &vra_ops;
@@ -221,7 +222,6 @@ struct buf * geteblk(size_t size)
     vm_updateusr_ap(retval);
 
     vreg->count += pcount;
-    _add2bioman(retval);
 
     /* Update stats */
     vmem_used += size;
@@ -408,7 +408,14 @@ void allocbuf(struct buf * bp, size_t size)
     mtx_unlock(&bp->lock);
 }
 
-void brelse(struct buf * region)
+void brelse(struct buf * bp)
+{
+    mtx_spinlock(&bp->lock);
+    bp->b_flags &= ~B_BUSY;
+    mtx_unlock(&bp->lock);
+}
+
+void vrfree(struct buf * region)
 {
     struct vregion * vreg;
     size_t iblock;

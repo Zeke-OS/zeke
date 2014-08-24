@@ -47,6 +47,7 @@ struct bufhd {
     llist_t * li;
 };
 
+mtx_t cache_lock; /* Protect caching data structures */
 struct bufhd (*bufhash)[];
 
 static int _biowait(struct buf * bp, long timeout);
@@ -57,6 +58,8 @@ void _bio_init(void)
     bufhash = kcalloc(BUFHSZ, sizeof(struct bufhd));
     if (!bufhash)
         panic("OOM during _bio_init()");
+
+    mtx_init(&cache_lock, MTX_TYPE_SPIN | MTX_TYPE_TICKET | MTX_TYPE_SLEEP);
 }
 
 int bread(vnode_t * vnode, size_t blkno, int size, struct buf ** bpp)
@@ -201,7 +204,17 @@ struct buf * getblk(vnode_t * vnode, size_t blkno, size_t size, int slptimeo)
         dev = vnode->sb->vdev_id;
     }
 
+    /*
+     * TODO This can be probably refactored to be a part of incore().
+     *      We may want to have two versions, one that requires a cache
+     *      lock and one that acquires it by itself.
+     */
+
     hash = BUFHASH(dev, blkno);
+
+    /* Get lock to caching */
+    mtx_spinlock(&cache_lock);
+
     bf = &(*bufhash)[hash];
 
     if (bf->li == NULL) {
@@ -223,25 +236,40 @@ struct buf * getblk(vnode_t * vnode, size_t blkno, size_t size, int slptimeo)
 not_found:
         bp = create_blk(vnode, blkno, size, slptimeo);
         if (!bp)
-            return NULL;
+            goto fail;
 
         /* Insert to the hashmap list */
         bf->li->insert_head(bf->li, bp);
     }
 
     /* Found */
-    mtx_spinlock(&bp->lock);
-    //bp->refcount++; /* TODO We can't increment this everytime */
-    mtx_unlock(&bp->lock);
+retry:
     biowait(bp); /* Wait until I/O has completed. */
 
-    allocbuf(bp, size);
+    /*
+     * Wait until the buffer is released. It is possible that we don't get it
+     * locked for us on first try, so we just keep trying until it's not set
+     * busy by some other thread.
+     */
+    while (bp->b_flags & B_BUSY)
+        sched_current_thread_yield(0);
+    mtx_spinlock(&bp->lock);
+    if (bp->b_flags & B_BUSY) {
+        mtx_unlock(&bp->lock);
+        goto retry;
+    }
+    bp->b_flags |= B_BUSY;
+    mtx_unlock(&bp->lock);
+
+    allocbuf(bp, size); /* Resize if necessary */
 
     mtx_spinlock(&bp->lock);
-    /* TODO check error? */
     bp->b_flags &= ~B_ERROR;
     bp->b_error = 0;
     mtx_unlock(&bp->lock);
+
+fail:
+    mtx_unlock(&cache_lock);
 
     return bp;
 }
@@ -252,6 +280,14 @@ struct buf * incore(vnode_t * vnode, size_t blkno)
 
 void biodone(struct buf * bp)
 {
+    mtx_spinlock(&bp->lock);
+
+    bp->b_flags |= B_DONE;
+
+    if (bp->b_flags & B_ASYNC)
+        brelse(bp);
+
+    mtx_unlock(&bp->lock);
 }
 
 static int _biowait(struct buf * bp, long timeout)
@@ -268,15 +304,9 @@ int biowait(struct buf * bp)
     return _biowait(bp, 0);
 }
 
-/**
- * Add a buffer region to the bio automanagement data structures.
- */
-void _add2bioman(struct buf * bp)
-{
-}
-
 static void bio_idle_task(void)
 {
     /* TODO look for unbusied buffers that can be written out. */
+    /* TODO vrfree buffers that have been unused for a long time. */
 }
 DATA_SET(sched_idle_tasks, bio_idle_task);
