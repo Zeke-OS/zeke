@@ -63,7 +63,7 @@ int setpriority(int which, id_t who, int prio)
                 .priority = prio
             };
 
-        return (int)syscall(SYSCALL_SCHED_SETPRIORITY, &ds);
+        return (int)syscall(SYSCALL_THREAD_SETPRIORITY, &ds);
         }
     default:
         errno = EINVAL;
@@ -75,7 +75,7 @@ int  getpriority(int which, id_t who)
 {
     switch (which) {
     case PRIO_THREAD:
-        return (int)syscall(SYSCALL_SCHED_GETPRIORITY, &who);
+        return (int)syscall(SYSCALL_THREAD_GETPRIORITY, &who);
     default:
         errno = EINVAL;
         return -1;

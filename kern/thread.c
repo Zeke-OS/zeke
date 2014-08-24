@@ -215,6 +215,22 @@ static int sys_thread_terminate(void * user_args)
     return sched_thread_terminate(thread_id);
 }
 
+static int sys_thread_sleep_ms(void * user_args)
+{
+    uint32_t val;
+    int err;
+
+    err = copyin(user_args, &val, sizeof(uint32_t));
+    if (err) {
+        set_errno(EFAULT);
+        return -EFAULT;
+    }
+
+    thread_sleep(val);
+
+    return 0; /* TODO Return value might be incorrect */
+}
+
 static int sys_get_current_tid(void * user_args)
 {
     return (int)get_current_tid();
@@ -228,10 +244,83 @@ static intptr_t sys_geterrno(void * user_args)
     return (intptr_t)current_thread->errno_uaddr;
 }
 
+static int sys_thread_die(void * user_args)
+{
+    sched_thread_die((intptr_t)user_args);
+
+    /* Does not return */
+    return 0;
+}
+
+static int sys_thread_detach(void * user_args)
+{
+    pthread_t thread_id;
+    int err;
+
+    err = copyin(user_args, &thread_id, sizeof(pthread_t));
+    if (err) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    if ((uintptr_t)sched_thread_detach(thread_id)) {
+        set_errno(EINVAL);
+        return -1;
+    }
+
+    return 0;
+}
+
+static int sys_thread_setpriority(void * user_args)
+{
+    int err;
+    struct _ds_set_priority args;
+
+    err = copyin(user_args, &args, sizeof(args));
+    if (err) {
+        set_errno(ESRCH);
+        return -1;
+    }
+
+    err = (uintptr_t)sched_thread_set_priority(args.thread_id, args.priority);
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
+    return 0;
+}
+
+static int sys_thread_getpriority(void * user_args)
+{
+    osPriority pri;
+    pthread_t thread_id;
+    int err;
+
+    err = copyin(user_args, &thread_id, sizeof(pthread_t));
+    if (err) {
+        set_errno(ESRCH);
+        return -1;
+    }
+
+    pri = (uintptr_t)sched_thread_get_priority(thread_id);
+    if (pri == osPriorityError) {
+        set_errno(ESRCH);
+        pri = -1; /* Note: -1 might be also legitimate prio value. */
+    }
+
+    return pri;
+}
+
 static const syscall_handler_t thread_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_CREATE, sys_thread_create),
     ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_TERMINATE, sys_thread_terminate),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_SLEEP_MS, sys_thread_sleep_ms),
     ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_GETTID, sys_get_current_tid),
-    ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_GETERRNO, sys_geterrno)
+    ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_GETERRNO, sys_geterrno),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_DIE, sys_thread_die),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_DETACH, sys_thread_detach),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_SETPRIORITY, sys_thread_setpriority),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_GETPRIORITY, sys_thread_getpriority)
 };
 SYSCALL_HANDLERDEF(thread_syscall, thread_sysfnmap)

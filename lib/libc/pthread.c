@@ -62,13 +62,13 @@ pthread_t pthread_self(void)
 
 void pthread_exit(void * retval)
 {
-    (void)syscall(SYSCALL_SCHED_DIE, retval);
+    (void)syscall(SYSCALL_THREAD_DIE, retval);
     /* Syscall will not return */
 }
 
 int pthread_detach(pthread_t thread)
 {
-    return syscall(SYSCALL_SCHED_DETACH, &thread);
+    return syscall(SYSCALL_THREAD_DETACH, &thread);
 }
 
 /* Mutex Management ***********************************************************

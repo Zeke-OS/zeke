@@ -37,12 +37,12 @@
 
 unsigned msleep(unsigned millisec)
 {
-    return (unsigned)syscall(SYSCALL_SCHED_SLEEP_MS, &millisec);
+    return (unsigned)syscall(SYSCALL_THREAD_SLEEP_MS, &millisec);
 }
 
 unsigned sleep(unsigned seconds)
 {
     unsigned int millisec = seconds * 1000;
 
-    return (unsigned)syscall(SYSCALL_SCHED_SLEEP_MS, &millisec);
+    return (unsigned)syscall(SYSCALL_THREAD_SLEEP_MS, &millisec);
 }
