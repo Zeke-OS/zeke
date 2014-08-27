@@ -41,14 +41,13 @@
 #ifndef KLOCKS_H_
 #define KLOCKS_H_
 
+#include <autoconf.h>
 #if configDEBUG >= KERROR_DEBUG
 #define LOCK_DEBUG 1
 #endif
 
+#include <sys/types_pthread.h>
 #include <hal/atomic.h>
-#ifdef LOCK_DEBUG
-#include <kerror.h>
-#endif
 
 /**
  * @addtogroup mtx mtx_init, mtx_spinlock, mtx_trylock
@@ -68,10 +67,11 @@
 #define MTX_TYPE(mtx, typ) (((mtx)->mtx_tflags & (typ)) != 0)
 
 /* Mutex types */
-#define MTX_TYPE_UNDEF  0x00 /*!< mtx un-initialized. */
-#define MTX_TYPE_SPIN   0x01 /*!< Spin lock. */
-#define MTX_TYPE_TICKET 0x02 /*!< Use ticket locking. */
-#define MTX_TYPE_SLEEP  0x10 /*!< Allow timeouted waiting. */
+#define MTX_TYPE_UNDEF      0x00 /*!< mtx un-initialized. */
+#define MTX_TYPE_SPIN       0x01 /*!< Spin lock. */
+#define MTX_TYPE_TICKET     0x02 /*!< Use ticket locking. */
+#define MTX_TYPE_SLEEP      0x10 /*!< Allow timeouted waiting. */
+#define MTX_TYPE_PRICEIL    0x20 /*!< Use priority ceiling. */
 
 /**
  * Sleep/spin mutex.
@@ -90,6 +90,10 @@ typedef struct mtx {
         atomic_t queue;
         atomic_t dequeue;
     } ticket;                   /*!< Ticket lock. */
+    struct pri {
+        osPriority p_lock;
+        osPriority p_saved;
+    } pri;
 #ifdef LOCK_DEBUG
     char * mtx_ldebug;
 #endif

@@ -33,9 +33,30 @@
 #define KERNEL_INTERNAL
 #include <errno.h>
 #include <kstring.h>
+#include <kerror.h>
 #include <timers.h>
 #include <hal/core.h>
 #include <klocks.h>
+
+static void priceil_set(mtx_t * mtx)
+{
+    if (MTX_TYPE(mtx, MTX_TYPE_PRICEIL)) {
+        mtx->pri.p_saved = sched_thread_get_priority(current_thread->id);
+        sched_thread_set_priority(current_thread->id, mtx->pri.p_lock);
+    }
+}
+
+static void priceil_restore(mtx_t * mtx)
+{
+    if (MTX_TYPE(mtx, MTX_TYPE_PRICEIL)) {
+        /*
+         * XXX There is a very rare race condition if some other thread tries to
+         * set a new priority for this thread just after this if clause.
+         */
+        if (sched_thread_get_priority(current_thread->id) == mtx->pri.p_lock)
+            sched_thread_set_priority(current_thread->id, mtx->pri.p_saved);
+    }
+}
 
 void mtx_init(mtx_t * mtx, unsigned int type)
 {
@@ -56,7 +77,10 @@ int _mtx_spinlock(mtx_t * mtx, char * whr)
 {
     const int ticket_mode = MTX_TYPE(mtx, MTX_TYPE_TICKET);
     int ticket;
-    int sleep_mode = MTX_TYPE(mtx, MTX_TYPE_SLEEP);
+    const int sleep_mode = MTX_TYPE(mtx, MTX_TYPE_SLEEP);
+#ifdef LOCK_DEBUG
+    unsigned deadlock_cnt = 0;
+#endif
 
     if (!MTX_TYPE(mtx, MTX_TYPE_SPIN)) {
 #ifdef LOCK_DEBUG
@@ -86,10 +110,23 @@ int _mtx_spinlock(mtx_t * mtx, char * whr)
                 break;
         }
 
+#ifdef LOCK_DEBUG
+        if (++deadlock_cnt == 100 * configSCHED_HZ) {
+            char buf[80];
+
+            ksprintf(buf, sizeof(buf), "Deadlock detected:\nWAIT: %s\nLOCK: %s",
+                    whr, mtx->mtx_ldebug);
+            KERROR(KERROR_DEBUG, buf);
+        }
+#endif
+
 #if configMP != 0
         cpu_wfe(); /* Sleep until event. */
 #endif
     }
+
+    /* Handle priority ceiling. */
+    priceil_set(mtx);
 
 #ifdef LOCK_DEBUG
     mtx->mtx_ldebug = whr;
@@ -143,6 +180,9 @@ int _mtx_trylock(mtx_t * mtx, char * whr)
 
     retval = test_and_set((int *)(&(mtx->mtx_lock)));
 
+    /* Handle priority ceiling. */
+    priceil_set(mtx);
+
 #ifdef LOCK_DEBUG
     mtx->mtx_ldebug = whr;
 #endif
@@ -162,6 +202,9 @@ void mtx_unlock(mtx_t * mtx)
     } else {
         mtx->mtx_lock = 0;
     }
+
+    /* Restore priority ceiling. */
+    priceil_restore(mtx);
 
 #if configMP != 0
     cpu_sev(); /* Wakeup cores possibly waiting for lock. */

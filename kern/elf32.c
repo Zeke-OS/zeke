@@ -35,6 +35,7 @@
 #include <kmalloc.h>
 #include <kstring.h>
 #include <vm/vm.h>
+#include <buf.h>
 #include <proc.h>
 #include <exec.h>
 #include <elf_common.h>

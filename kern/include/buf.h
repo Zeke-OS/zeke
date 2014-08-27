@@ -38,6 +38,80 @@
 #include <vm/vm.h>
 
 /**
+ * VM memory region management structure.
+ * This struct type is used to manage memory regions in the vm system.
+ */
+struct buf {
+    uintptr_t b_data;       /*!< Address in kernel space. */
+    size_t b_bufsize;       /*!< Allocated buffer size. */
+    size_t b_bcount;        /*!< Originally requested buffer size, can be used
+                             *   for bounds check. */
+    size_t b_blkno;         /*!< Block # on device. */
+
+    /* MMU mappings.             Usually used for user space mapping. */
+    mmu_region_t b_mmu;     /*!< MMU struct for user space or special access. */
+    int b_uflags;           /*!< Actual user space permissions and flags. */
+
+    /* IO Buffer */
+    file_t b_file;          /*!< File descriptor for the buffered device. */
+    size_t b_dirtyoff;      /*!< Offset in buffer of dirty region. */
+    size_t b_dirtyend;      /*!< Offset of end of dirty region. */
+
+    /* Status */
+    unsigned b_flags;
+    int b_error;            /*!< Negative errno returned after I/O. */
+    size_t b_resid;         /*!< words not transferred after an error. */
+
+    /** Operations */
+    const struct vm_ops * vm_ops;
+
+    void * allocator_data;  /*!< Allocator specific data. */
+    SPLAY_ENTRY(buf) sentry_;
+    llist_nodedsc_t lentry_;
+
+    int refcount;
+    mtx_t lock;
+};
+
+/**
+ * VM operations.
+ */
+typedef struct vm_ops {
+    /**
+     * Increment region reference count.
+     */
+    void (*rref)(struct buf * this);
+
+    /**
+     * Pointer to a 1:1 region cloning function.
+     * This function if set clones contents of the region to another
+     * physical locatation.
+     * @note Can be null.
+     * @param cur_region    is a pointer to the current region.
+     */
+    struct buf * (*rclone)(struct buf * old_region);
+
+    /**
+     * Free this region.
+     * @note Can be null.
+     * @param this is the current region.
+     */
+    void (*rfree)(struct buf * this);
+} vm_ops_t;
+
+#define B_DONE      0x00002     /*!< Transaction finished. */
+#define B_ERROR     0x00004     /*!< Transaction aborted. */
+#define B_BUSY      0x00008     /*!< Buffer busy. */
+#define B_LOCKED    0x00010     /*!< Locked in memory. */
+#define B_DIRTY     0x00020
+#define B_NOCOPY    0x00100     /*!< Don't copy-on-write this buf. */
+#define B_ASYNC     0x01000     /*!< Start I/O but don't wait for completion. */
+#define B_DELWRI    0x04000     /*!< Delayed write. */
+
+int biobuf_compar(struct buf * a, struct buf * b);
+SPLAY_PROTOTYPE(bufhd_splay, buf, sentry_, biobuf_compar);
+
+/**
  * Read a block corresponding to vnode and blkno.
  * @param[in]   vnode   is a pointer to a vnode.
  * @param[in]   blkno   is a block number.

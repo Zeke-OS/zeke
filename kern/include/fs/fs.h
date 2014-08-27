@@ -44,6 +44,7 @@
 #include <time.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <sys/tree.h>
 #include <klocks.h>
 
 #define FS_FLAG_INIT    0x01 /*!< File system initialized. */
@@ -82,6 +83,12 @@
 
 /* End of macros **************************************************************/
 
+/* Types for buffer pointer storage object in vnode. */
+SPLAY_HEAD(bufhd_splay, buf);
+struct bufhd {
+    struct bufhd_splay sroot;
+};
+
 typedef struct vnode {
     ino_t vn_num;               /*!< vnode number. */
     int vn_refcount;
@@ -94,10 +101,13 @@ typedef struct vnode {
     mode_t vn_mode;             /*!< File type part of st_mode sys/stat.h */
     void * vn_specinfo;         /*!< Pointer to an additional information required by the
                                  *   ops. */
+    struct bufhd vn_bpo;        /*!< Pointer to a buffer pointer storage object. */
     struct fs_superblock * sb;  /*!< Pointer to the super block of this vnode. */
     struct vnode_ops * vnode_ops;
-    /* TODO wait queue here */
+
+    mtx_t lock;
 } vnode_t;
+#define VN_LOCK_MODES (MTX_TYPE_SPIN | MTX_TYPE_TICKET | MTX_TYPE_SLEEP)
 
 /**
  * File descriptor.

@@ -39,6 +39,7 @@
 #include <kerror.h>
 #include <errno.h>
 #include <proc.h>
+#include <buf.h>
 #include <vm/vm.h>
 #include <vm/vm_proc.h>
 

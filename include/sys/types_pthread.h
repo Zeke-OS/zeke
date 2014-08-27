@@ -64,13 +64,14 @@ typedef void * (*start_routine)(void *);
  * TODO Legacy
  */
 typedef enum {
-    osPriorityIdle          = -3,       ///< priority: idle (lowest)
+    osPriorityIdle          = -4,       ///< priority: idle
+    osPriorityYield         = -3,
     osPriorityLow           = -2,       ///< priority: low
     osPriorityBelowNormal   = -1,       ///< priority: below normal
     osPriorityNormal        =  0,       ///< priority: normal (default)
     osPriorityAboveNormal   = +1,       ///< priority: above normal
     osPriorityHigh          = +2,       ///< priority: high
-    osPriorityRealtime      = +3,       ///< priority: realtime (highest)
+    osPriorityRealtime      = +3,       ///< priority: realtime
     osPriorityError         =  0x84     ///< system cannot determine priority or thread has illegal priority
 } osPriority;
 

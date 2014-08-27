@@ -848,6 +848,7 @@ static void init_inode(ramfs_inode_t * inode, ramfs_sb_t * ramfs_sb, ino_t * num
     inode->in_vnode.vn_prev_mountpoint = &inode->in_vnode;
     inode->in_vnode.sb = &(ramfs_sb->sbn.sbl_sb);
     inode->in_vnode.vnode_ops = (vnode_ops_t *)(&ramfs_vnode_ops);
+    mtx_init(&inode->in_vnode.lock, VN_LOCK_MODES);
 }
 
 /**

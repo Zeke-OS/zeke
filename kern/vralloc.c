@@ -408,13 +408,6 @@ void allocbuf(struct buf * bp, size_t size)
     mtx_unlock(&bp->lock);
 }
 
-void brelse(struct buf * bp)
-{
-    mtx_spinlock(&bp->lock);
-    bp->b_flags &= ~B_BUSY;
-    mtx_unlock(&bp->lock);
-}
-
 void vrfree(struct buf * region)
 {
     struct vregion * vreg;

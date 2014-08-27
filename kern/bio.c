@@ -32,6 +32,7 @@
 
 #define KERNEL_INTERNAL
 #include <sys/linker_set.h>
+#include <sys/tree.h>
 #include <errno.h>
 #include <kerror.h>
 #include <kmalloc.h>
@@ -40,26 +41,43 @@
 #include <fs/devfs.h>
 #include <buf.h>
 
-#define BUFHSZ 64
-#define BUFHASH(dev, bn) (((dev) + bn) & (BUFHSZ - 1))
+static mtx_t cache_lock;            /* Used to protect access caching data
+                                     * structures and synchronizing access
+                                     * to some functions. */
+static struct llist * relse_list;  /* Released buffers list. */
 
-struct bufhd {
-    llist_t * li;
-};
+static inline void bio_writeout(struct buf * bp);
+static void bl_brelse(struct buf * bp);
+static int biowait_timo(struct buf * bp, long timeout);
+static void bio_clean(int freebufs);
 
-mtx_t cache_lock; /* Protect caching data structures */
-struct bufhd (*bufhash)[];
-
-static int _biowait(struct buf * bp, long timeout);
+SPLAY_GENERATE(bufhd_splay, buf, sentry_, biobuf_compar);
 
 /* Init bio, called by vralloc_init() */
 void _bio_init(void)
 {
-    bufhash = kcalloc(BUFHSZ, sizeof(struct bufhd));
-    if (!bufhash)
-        panic("OOM during _bio_init()");
+    mtx_init(&cache_lock, MTX_TYPE_SPIN | MTX_TYPE_TICKET | MTX_TYPE_SLEEP |
+                          MTX_TYPE_PRICEIL);
+    cache_lock.pri.p_lock = osPriorityRealtime;
 
-    mtx_init(&cache_lock, MTX_TYPE_SPIN | MTX_TYPE_TICKET | MTX_TYPE_SLEEP);
+    /*
+     * Init released buffers list.
+     */
+
+    relse_list = dllist_create(struct buf, lentry_);
+}
+
+/*
+ * Comparator for buffer splay trees.
+ */
+int biobuf_compar(struct buf * a, struct buf * b)
+{
+#if configDEBUG >= KERROR_DEBUG
+    if (a->b_file.vnode != b->b_file.vnode)
+        panic("vnodes differ in the same tree");
+#endif
+
+    return (a->b_blkno - b->b_blkno);
 }
 
 int bread(vnode_t * vnode, size_t blkno, int size, struct buf ** bpp)
@@ -84,12 +102,23 @@ out:
 int  breadn(vnode_t * vnode, size_t blkno, int size, size_t rablks[],
             int rasizes[], int nrablks, struct buf ** bpp)
 {
+    /* TODO */
+    return -ENOTSUP;
+}
+
+static inline void bio_writeout(struct buf * bp)
+{
+    file_t * file = &bp->b_file;
+
+    file->seek_pos = bp->b_blkno;
+    file->vnode->vnode_ops->write(file, (void *)bp->b_data,
+                                  bp->b_bcount);
 }
 
 int bwrite(struct buf * bp)
 {
     unsigned flags;
-    file_t * file;
+    vnode_t * vnode;
     mtx_t * lock;
 
 #if configDEBUG >= KERROR_DEBUG
@@ -98,11 +127,10 @@ int bwrite(struct buf * bp)
 #endif
 
     lock = &bp->lock;
-    file = &bp->b_file;
+    vnode = bp->b_file.vnode;
 
     /* Sanity check */
-    if(!(bp->b_file.vnode && bp->b_file.vnode->vnode_ops &&
-                bp->b_file.vnode->vnode_ops->write)) {
+    if(!(vnode && vnode->vnode_ops && vnode->vnode_ops->write)) {
         mtx_spinlock(lock);
         bp->b_flags |= B_ERROR;
         bp->b_error |= -EIO;
@@ -113,22 +141,18 @@ int bwrite(struct buf * bp)
 
     mtx_spinlock(lock);
     flags = bp->b_flags;
-    bp->b_flags &= ~(B_DONE | B_ERROR | B_ASYNC | B_IDLWRI | B_DELWRI);
+    bp->b_flags &= ~(B_DONE | B_ERROR | B_ASYNC | B_DELWRI);
     bp->b_flags |= B_BUSY;
     mtx_unlock(lock);
 
     /* TODO Use dirty offsets */
     if (flags & B_ASYNC) {
-        biowait(bp);
+        /* TODO */
 
         return 0;
     } else {
         mtx_spinlock(lock);
-
-        file->seek_pos = bp->b_blkno;
-        file->vnode->vnode_ops->write(file, (void *)bp->b_data,
-                bp->b_bcount);
-
+        bio_writeout(bp);
         bp->b_flags &= ~B_BUSY;
         mtx_unlock(lock);
     }
@@ -138,24 +162,33 @@ int bwrite(struct buf * bp)
 
 void bawrite(struct buf * bp)
 {
+    /* TODO */
 }
 
 void bdwrite(struct buf * bp)
 {
+    /* TODO */
 }
 
 void bio_clrbuf(struct buf * bp)
 {
+    unsigned flags;
+
 #if configDEBUG >= KERROR_DEBUG
     if (!bp)
         panic("bp not set");
 #endif
 
     mtx_spinlock(&bp->lock);
-    if (bp->b_flags & (B_IDLWRI | B_DELWRI)) {
+
+    flags = bp->b_flags;
+
+    if (flags & B_DELWRI) {
+        bio_writeout(bp);
+    } else if (flags & B_ASYNC) {
         biowait(bp);
     }
-    bp->b_flags &= ~B_ERROR;
+    bp->b_flags &= ~(B_DELWRI | B_ERROR);
     bp->b_flags |= B_BUSY;
     mtx_unlock(&bp->lock);
 
@@ -185,61 +218,32 @@ static struct buf * create_blk(vnode_t * vnode, size_t blkno, size_t size,
     bp->b_file = file;
     mtx_init(&bp->b_file.lock, MTX_TYPE_SPIN);
 
+    mtx_spinlock(&vnode->lock);
+
+    /* Put to the buffer splay tree of the vnode. */
+    if (SPLAY_INSERT(bufhd_splay, &vnode->vn_bpo.sroot, bp))
+        panic("Double insert"); /* TODO */
+
+    mtx_unlock(&vnode->lock);
+
     return bp;
 }
 
 struct buf * getblk(vnode_t * vnode, size_t blkno, size_t size, int slptimeo)
 {
-    size_t hash;
-    struct bufhd * bf;
-    dev_t dev;
     struct buf * bp;
 
     if (!vnode)
         return NULL;
 
-    if (S_ISBLK(vnode->vn_mode) || S_ISCHR(vnode->vn_mode)) {
-        dev = ((struct dev_info *)vnode->vn_specinfo)->dev_id;
-    } else {
-        dev = vnode->sb->vdev_id;
-    }
-
-    /*
-     * TODO This can be probably refactored to be a part of incore().
-     *      We may want to have two versions, one that requires a cache
-     *      lock and one that acquires it by itself.
-     */
-
-    hash = BUFHASH(dev, blkno);
-
-    /* Get lock to caching */
+    /* For now we want to synchronize access to this function. */
     mtx_spinlock(&cache_lock);
 
-    bf = &(*bufhash)[hash];
-
-    if (bf->li == NULL) {
-        /* If list is not yet created we create it */
-        bf->li = dllist_create(struct buf, lnode);
-
-        goto not_found;
-    }
-
-    /* Look for a buffer in the linked list found. */
-    bp = bf->li->head;
-    while (bp) {
-        if ((bp->b_file.vnode == vnode) && (bp->b_blkno == blkno))
-            break;
-
-        bp = bp->lnode.next;
-    }
-    if (!bp) {
-not_found:
+    bp = incore(vnode, blkno);
+    if (!bp) { /* Not found, create a new buffer. */
         bp = create_blk(vnode, blkno, size, slptimeo);
         if (!bp)
             goto fail;
-
-        /* Insert to the hashmap list */
-        bf->li->insert_head(bf->li, bp);
     }
 
     /* Found */
@@ -259,6 +263,7 @@ retry:
         goto retry;
     }
     bp->b_flags |= B_BUSY;
+    relse_list->remove(relse_list, bp); /* Remove from the released list. */
     mtx_unlock(&bp->lock);
 
     allocbuf(bp, size); /* Resize if necessary */
@@ -276,6 +281,42 @@ fail:
 
 struct buf * incore(vnode_t * vnode, size_t blkno)
 {
+    struct bufhd * bf;
+    struct buf * bp;
+    struct buf find;
+
+    if (!vnode)
+        return NULL;
+
+    bf = &vnode->vn_bpo;
+
+    if (SPLAY_EMPTY(&bf->sroot))
+        return NULL;
+
+    find.b_file.vnode = vnode;
+    find.b_blkno = blkno;
+    bp = SPLAY_FIND(bufhd_splay, &bf->sroot, &find);
+
+    return bp;
+}
+
+static void bl_brelse(struct buf * bp)
+{
+    if (mtx_test(&bp->lock))
+        panic("Lock is required.");
+
+    bp->b_flags &= ~B_BUSY;
+
+    mtx_spinlock(&cache_lock);
+    relse_list->insert_tail(relse_list, bp);
+    mtx_unlock(&cache_lock);
+}
+
+void brelse(struct buf * bp)
+{
+    mtx_spinlock(&bp->lock);
+    bl_brelse(bp);
+    mtx_unlock(&bp->lock);
 }
 
 void biodone(struct buf * bp)
@@ -285,12 +326,12 @@ void biodone(struct buf * bp)
     bp->b_flags |= B_DONE;
 
     if (bp->b_flags & B_ASYNC)
-        brelse(bp);
+        bl_brelse(bp);
 
     mtx_unlock(&bp->lock);
 }
 
-static int _biowait(struct buf * bp, long timeout)
+static int biowait_timo(struct buf * bp, long timeout)
 {
     /* TODO timeout */
 
@@ -301,12 +342,59 @@ static int _biowait(struct buf * bp, long timeout)
 
 int biowait(struct buf * bp)
 {
-    return _biowait(bp, 0);
+    return biowait_timo(bp, 0);
+}
+
+/**
+ * Cleanup released buffers.
+ * @param freebufs  tells if released buffers should be freed after write out.
+ */
+static void bio_clean(int freebufs)
+{
+    struct buf * bp;
+
+    if (mtx_trylock(&cache_lock))
+        return; /* Don't enter if we don't get exclusive access. */
+
+    bp = relse_list->head;
+    if (!bp)
+        goto out; /* no nodes. */
+
+    do {
+        file_t * file;
+
+        /* Skip if already locked or BUSY */
+        if (mtx_trylock(&bp->lock) || (bp->b_flags & B_BUSY))
+            continue;
+
+        file = &bp->b_file;
+
+        /* Write out if delayed write was set. */
+        if (bp->b_flags & B_DELWRI) {
+            bp->b_flags |= B_BUSY;
+            bp->b_flags &= ~B_ASYNC;
+
+            file->seek_pos = bp->b_blkno;
+            file->vnode->vnode_ops->write(file, (void *)bp->b_data,
+                                          bp->b_bcount);
+        }
+
+        if (freebufs && !(bp->b_flags & B_LOCKED) &&
+                !mtx_trylock(&file->vnode->lock)) {
+            SPLAY_REMOVE(bufhd_splay, &file->vnode->vn_bpo.sroot, bp);
+            vrfree(bp);
+            mtx_unlock(&file->vnode->lock);
+        } else {
+            mtx_unlock(&bp->lock);
+        }
+    } while ((bp = bp->lentry_.next));
+
+out:
+    mtx_unlock(&cache_lock);
 }
 
 static void bio_idle_task(void)
 {
-    /* TODO look for unbusied buffers that can be written out. */
-    /* TODO vrfree buffers that have been unused for a long time. */
+    bio_clean(0);
 }
 DATA_SET(sched_idle_tasks, bio_idle_task);

@@ -505,7 +505,7 @@ void sched_current_thread_yield(int sleep_flag)
         return;
 
     if ((*priority_queue.a)->id == current_thread->id)
-        heap_reschedule_root(&priority_queue, osPriorityIdle);
+        heap_reschedule_root(&priority_queue, osPriorityYield);
 
     if (sleep_flag)
         idle_sleep();
