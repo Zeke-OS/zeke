@@ -106,6 +106,9 @@ int  breadn(vnode_t * vnode, size_t blkno, int size, size_t rablks[],
     return -ENOTSUP;
 }
 
+/*
+ * It's a good idea to have lock on bp before calling this function.
+ */
 static inline void bio_writeout(struct buf * bp)
 {
     file_t * file = &bp->b_file;
@@ -113,6 +116,8 @@ static inline void bio_writeout(struct buf * bp)
     file->seek_pos = bp->b_blkno;
     file->vnode->vnode_ops->write(file, (void *)bp->b_data,
                                   bp->b_bcount);
+
+    bp->b_flags |= B_DONE;
 }
 
 int bwrite(struct buf * bp)
@@ -167,7 +172,9 @@ void bawrite(struct buf * bp)
 
 void bdwrite(struct buf * bp)
 {
-    /* TODO */
+    mtx_spinlock(&bp->lock);
+    bp->b_flags |= B_DELWRI;
+    mtx_unlock(&bp->lock);
 }
 
 void bio_clrbuf(struct buf * bp)
@@ -374,19 +381,23 @@ static void bio_clean(int freebufs)
             bp->b_flags |= B_BUSY;
             bp->b_flags &= ~B_ASYNC;
 
-            file->seek_pos = bp->b_blkno;
-            file->vnode->vnode_ops->write(file, (void *)bp->b_data,
-                                          bp->b_bcount);
+            bio_writeout(bp);
         }
 
         if (freebufs && !(bp->b_flags & B_LOCKED) &&
                 !mtx_trylock(&file->vnode->lock)) {
+            struct buf * bp_prev = bp->lentry_.prev;
+
             SPLAY_REMOVE(bufhd_splay, &file->vnode->vn_bpo.sroot, bp);
             vrfree(bp);
             mtx_unlock(&file->vnode->lock);
-        } else {
-            mtx_unlock(&bp->lock);
+
+            bp = bp_prev;
+            continue;
         }
+
+        bp->b_flags &= ~B_BUSY;
+        mtx_unlock(&bp->lock);
     } while ((bp = bp->lentry_.next));
 
 out:
