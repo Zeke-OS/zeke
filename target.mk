@@ -47,6 +47,7 @@ ifeq ($(configHFP),__HFP_VFP__)
 	ASFLAGS  += -mfpu=vfp
 endif
 CCFLAGS += -m32
+MACHIDIR = arm
 
 # Target specific CRT ##########################################################
 # CRT is compiled per instruction set or per core model

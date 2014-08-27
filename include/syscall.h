@@ -173,6 +173,8 @@ void syscall_handler(void);
  */
 intptr_t syscall(uint32_t type, void * p);
 
+#include <machine/syscall.h>
+
 #if configARCH == __ARM6__ || configARCH == __ARM6K__
 /**
  * Request immediate context switch

@@ -67,6 +67,7 @@ $(UNIFDEF):
 
 $(AUTOCONF_H): $(CONFIG_DIR)/targetconf.mk $(CONFIG_DIR)/kernelconf.mk
 	$(ROOT_DIR)/tools/aconf.sh $^ $@
+	cd include && ln -fs sys/mach/$(MACHIDIR) machine
 
 $(CRT):
 	$(MAKE) -C $(CRT_DIR) all
@@ -100,6 +101,7 @@ clean:
 	rm -f *.elf
 	rm -f *.list
 	rm -f *.a
+	rm -f include/machine
 	$(MAKE) -C $(CRT_DIR) clean
 	$(MAKE) -C kern clean
 
