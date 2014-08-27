@@ -72,6 +72,7 @@
 #include <sched.h>
 #include <timers.h>
 #include <kmalloc.h>
+#include <sys/param.h>
 #include <sys/sysctl.h>
 #include "ksignal.h"
 

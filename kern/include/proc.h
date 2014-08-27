@@ -61,6 +61,7 @@
 #include <vm/vm.h>
 #include <fs/fs.h>
 #include <klocks.h>
+#include <sys/param.h>
 #include <sys/resource.h>
 
 #define PROC_STATE_INITIAL  0

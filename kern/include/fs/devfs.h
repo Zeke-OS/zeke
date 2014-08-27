@@ -37,6 +37,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <sys/types.h>
+#include <sys/param.h>
 #include <fs/fs.h>
 
 #define DEVFS_FSNAME            "devfs" /*!< Name of the devfs in vfs. */
@@ -49,7 +50,7 @@
 struct dev_info {
     dev_t dev_id;           /*!< Device id (major, minor). */
     const char * drv_name;  /*!< Name of the driver associated with the dev. */
-    char dev_name[20];      /*!< File name of the device. */
+    char dev_name[SPECNAMELEN]; /*!< File name of the device. */
 
     uint32_t flags;         /*!< Configuration flags. */
 

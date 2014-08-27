@@ -41,11 +41,9 @@
 #define SYSCALL_H
 
 #include <autoconf.h>
+#include <sys/param.h>
 #include <sys/_syscalldef.h>
 #include <../kern/include/hal/core.h>
-#if configDEVSUBSYS != 0
-#include <devtypes.h>
-#endif
 
 #define SYSCALL_MINORBITS   27 /*!< Number of minor bits */
 #define SYSCALL_MINORMASK   ((1u << MINORBITS) - 1) /*!< Minor bits mask */
