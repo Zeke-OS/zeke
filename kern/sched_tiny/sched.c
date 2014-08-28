@@ -114,7 +114,7 @@ static void sched_thread_init(pthread_t i,
         struct _ds_pthread_create * thread_def, threadInfo_t * parent, int priv);
 static void sched_thread_set_inheritance(threadInfo_t * new_child,
         threadInfo_t * parent);
-static void _sched_thread_set_exec(pthread_t thread_id, osPriority pri);
+static void _sched_thread_set_exec(pthread_t thread_id, int pri);
 static void sched_thread_remove(pthread_t id);
 /* End of Static function declarations ***************************************/
 
@@ -131,7 +131,7 @@ void sched_init(void)
 
     pthread_t tid;
     pthread_attr_t attr = {
-        .tpriority  = osPriorityIdle,
+        .tpriority  = NICE_IDLE,
         .stackAddr  = sched_idle_stack,
         .stackSize  = sizeof(sched_idle_stack)
     };
@@ -268,20 +268,20 @@ void sched_context_switcher(void)
         } else if ( /* if maximum time slices for this thread is used */
             (current_thread->ts_counter <= 0)
             /* and process is not a realtime process */
-            && ((int)current_thread->priority < (int)osPriorityRealtime)
-            /* and its priority is yet higher than low */
-            && ((int)current_thread->priority > (int)osPriorityLow))
+            && ((int)current_thread->priority < NICE_MAX)
+            /* and its priority is yet better than minimum */
+            && ((int)current_thread->priority > NICE_MIN))
         {
             /* Penalties
              * =========
              * Penalties are given to CPU hog threads (CPU bound) to prevent
-             * starvation of other threads. This is done by dynamically lowering
-             * the priority (gives less CPU time in CMSIS RTOS) of a thread.
+             * starvation of other threads.
              */
 
             /* Give a penalty: Set lower priority
              * and perform reschedule operation on heap. */
-            heap_reschedule_root(&priority_queue, osPriorityLow);
+            current_thread->priority = NICE_MIN;
+            heap_reschedule_root(&priority_queue, NICE_MIN);
 
             continue; /* Select next thread */
         }
@@ -338,7 +338,7 @@ static void sched_thread_init(pthread_t i,
      * EXEC flag is set later in sched_thread_set_exec */
     task_table[i].flags         = (uint32_t)SCHED_IN_USE_FLAG;
     task_table[i].id            = i;
-    task_table[i].def_priority  = thread_def->def->tpriority;
+    task_table[i].niceval       = thread_def->def->tpriority;
     /* task_table[i].priority is set later in sched_thread_set_exec */
 
     if (priv) {
@@ -450,7 +450,7 @@ pthread_t sched_thread_fork(void)
 
 void sched_thread_set_exec(pthread_t thread_id)
 {
-    _sched_thread_set_exec(thread_id, task_table[thread_id].def_priority);
+    _sched_thread_set_exec(thread_id, task_table[thread_id].niceval);
 }
 
 /**
@@ -460,7 +460,7 @@ void sched_thread_set_exec(pthread_t thread_id)
   * @param thread_id    Thread id
   * @param pri          Priority
   */
-static void _sched_thread_set_exec(pthread_t thread_id, osPriority pri)
+static void _sched_thread_set_exec(pthread_t thread_id, int pri)
 {
     istate_t s;
 
@@ -469,7 +469,7 @@ static void _sched_thread_set_exec(pthread_t thread_id, osPriority pri)
         s = get_interrupt_state();
         disable_interrupt(); /* TODO Not MP safe! */
 
-        task_table[thread_id].ts_counter = 4 + (int)pri;
+        task_table[thread_id].ts_counter = (-NICE_PENALTY + pri) >> 1;
         task_table[thread_id].priority = pri;
         task_table[thread_id].flags |= SCHED_EXEC_FLAG; /* Set EXEC flag */
         (void)heap_insert(&priority_queue, &(task_table[thread_id]));
@@ -488,7 +488,7 @@ void sched_sleep_current_thread(int permanent)
         atomic_set(&current_thread->a_wait_count, -1);
     }
 
-    current_thread->priority = osPriorityError;
+    current_thread->priority = NICE_ERR;
     heap_inc_key(&priority_queue, heap_find(&priority_queue,
                 current_thread->id));
 
@@ -505,7 +505,7 @@ void sched_current_thread_yield(int sleep_flag)
         return;
 
     if ((*priority_queue.a)->id == current_thread->id)
-        heap_reschedule_root(&priority_queue, osPriorityYield);
+        heap_reschedule_root(&priority_queue, NICE_YIELD);
 
     if (sleep_flag)
         idle_sleep();
@@ -550,7 +550,7 @@ static void sched_thread_remove(pthread_t tt_id)
     /* Increment the thread priority to the highest possible value so context
      * switch will garbage collect it from the priority queue on the next run.
      */
-    task_table[tt_id].priority = osPriorityError;
+    task_table[tt_id].priority = NICE_ERR;
     {
         int i;
         i = heap_find(&priority_queue, tt_id);
@@ -703,31 +703,32 @@ int sched_thread_terminate(pthread_t thread_id)
     return 0;
 }
 
-int sched_thread_set_priority(pthread_t thread_id, osPriority priority)
+int sched_thread_set_priority(pthread_t thread_id, int priority)
 {
     if ((task_table[thread_id].flags & SCHED_IN_USE_FLAG) == 0) {
         return -ESRCH;
     }
 
-    /* Only thread def_priority is updated to make this syscall O(1)
+    /* Only thread niceval is updated to make this syscall O(1)
      * Actual priority will be updated anyway some time later after one sleep
      * cycle.
      */
-    task_table[thread_id].def_priority = priority;
+    task_table[thread_id].niceval = priority;
 
     return 0;
 }
 
-osPriority sched_thread_get_priority(pthread_t thread_id)
+int sched_thread_get_priority(pthread_t thread_id)
 {
     if ((task_table[thread_id].flags & SCHED_IN_USE_FLAG) == 0) {
-        return (osPriority)osPriorityError;
+        return NICE_ERR;
     }
 
-    /* Not sure if this function should return "dynamic" priority or
+    /*
+     * TODO Not sure if this function should return "dynamic" priority or
      * default priorty.
      */
-    return task_table[thread_id].def_priority;
+    return task_table[thread_id].niceval;
 }
 
 /* Syscall handlers ***********************************************************/

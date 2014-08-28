@@ -78,7 +78,7 @@ void heap_dec_key(heap_t * heap, int i);
  * @param heap a pointer to the heap_t struct.
  * @param pri the new priority.
  */
-void heap_reschedule_root(heap_t * heap, osPriority pri);
+void heap_reschedule_root(heap_t * heap, int pri);
 
 /**
  * Find thread from a heap array

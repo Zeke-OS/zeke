@@ -91,8 +91,8 @@ typedef struct mtx {
         atomic_t dequeue;
     } ticket;                   /*!< Ticket lock. */
     struct pri {
-        osPriority p_lock;
-        osPriority p_saved;
+        int p_lock;
+        int p_saved;
     } pri;
 #ifdef LOCK_DEBUG
     char * mtx_ldebug;

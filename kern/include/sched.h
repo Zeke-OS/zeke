@@ -126,10 +126,21 @@
 #define SCHED_TEST_DETACHED_ZOMBIE(x) \
     (((x) & SCHED_DETACHED_ZOMBIE_FLAGS) == SCHED_DETACHED_ZOMBIE_FLAGS)
 
+/* Stack frames */
 #define SCHED_SFRAME_SYS        0   /*!< Sys int/Scheduling stack frame. */
 #define SCHED_SFRAME_SVC        1   /*!< Syscall stack frame. */
 #define SCHED_SFRAME_ABO        2   /*!< Stack frame for aborts. */
 #define SCHED_SFRAME_ARR_SIZE   3
+
+/* Nice leves */
+#define NICE_ERR        (100)   /*!< GC value. */
+#define NICE_MAX        (20)    /*!< Realtime. */
+#define NICE_DEF        (0)     /*!< Normal value. */
+#define NICE_MIN        (-19)
+#define NICE_YIELD      (-20)
+#define NICE_IDLE       (-21)
+#define NICE_PENALTY    (-22)   /*!< Penalty. Shall not be used as an actual
+                                 *   value. */
 
 /**
  * Thread info struct.
@@ -143,8 +154,8 @@ typedef struct {
     intptr_t retval;                /*!< Return value of the thread. */
     atomic_t a_wait_count;          /*!< Wait counter. -1 = permanent */
     int wait_tim;                   /*!< Reference to a timeout timer. */
-    osPriority def_priority;        /*!< Thread priority. */
-    osPriority priority;            /*!< Thread dynamic priority. */
+    int niceval;                    /*!< Thread nice value. */
+    int priority;                   /*!< Current dynamic priority. */
     int ts_counter;                 /*!< Time slice counter. */
     pthread_t id;                   /*!< Thread id. */
     pid_t pid_owner;                /*!< Owner process of this thread. */
@@ -264,9 +275,9 @@ int sched_thread_terminate(pthread_t thread_id);
  * @param   priority New priority for thread referenced by thread_id.
  * @return  0; -EINVAL.
  */
-int sched_thread_set_priority(pthread_t thread_id, osPriority priority);
+int sched_thread_set_priority(pthread_t thread_id, int priority);
 
-osPriority sched_thread_get_priority(pthread_t thread_id);
+int sched_thread_get_priority(pthread_t thread_id);
 
 #endif /* SCHED_H */
 

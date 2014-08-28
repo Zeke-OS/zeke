@@ -54,7 +54,7 @@ struct _ds_pthread_create {
 /** Argument struct for SYSCALL_SCHED_THREAD_SETPRIORITY */
 struct _ds_set_priority {
     pthread_t thread_id;    /*!< Thread id */
-    osPriority priority;    /*!< Thread priority */
+    int priority;           /*!< Thread priority */
 };
 
 /** Argument struct for SYSCALL_SCHED_SIGNAL_SET

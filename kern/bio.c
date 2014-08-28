@@ -58,7 +58,7 @@ void _bio_init(void)
 {
     mtx_init(&cache_lock, MTX_TYPE_SPIN | MTX_TYPE_TICKET | MTX_TYPE_SLEEP |
                           MTX_TYPE_PRICEIL);
-    cache_lock.pri.p_lock = osPriorityRealtime;
+    cache_lock.pri.p_lock = NICE_MAX;
 
     /*
      * Init released buffers list.

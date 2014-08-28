@@ -65,7 +65,7 @@ configSTRING_OPT_SIZE = 0# Optimize string functions for speed or size
 
 # usrinit
 configUSRINIT_SSIZE = 8192# Stack size for usrinit thread
-configUSRINIT_PRI = osPriorityNormal# Priority of usrinit thread
+configUSRINIT_PRI = 0# Priority of usrinit thread
 
 # Virtual file system and file systems
 configMBR = 0# MBR Support

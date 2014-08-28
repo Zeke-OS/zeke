@@ -147,12 +147,12 @@ void heap_dec_key(heap_t * heap, int i)
     heapify(heap, i);
 }
 
-void heap_reschedule_root(heap_t * heap, osPriority pri)
+void heap_reschedule_root(heap_t * heap, int pri)
 {
     int s = heap->size;
 
     /* Swap with the last one */
-    heap->a[0]->priority = (int)osPriorityIdle - 1;
+    heap->a[0]->priority = NICE_PENALTY;
     swap(heap, 0, s);
     heapify(heap, 0);
 

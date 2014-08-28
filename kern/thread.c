@@ -293,7 +293,7 @@ static int sys_thread_setpriority(void * user_args)
 
 static int sys_thread_getpriority(void * user_args)
 {
-    osPriority pri;
+    int pri;
     pthread_t thread_id;
     int err;
 
@@ -304,7 +304,7 @@ static int sys_thread_getpriority(void * user_args)
     }
 
     pri = (uintptr_t)sched_thread_get_priority(thread_id);
-    if (pri == osPriorityError) {
+    if (pri == NICE_ERR) {
         set_errno(ESRCH);
         pri = -1; /* Note: -1 might be also legitimate prio value. */
     }
