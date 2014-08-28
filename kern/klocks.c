@@ -95,6 +95,23 @@ int _mtx_lock(mtx_t * mtx, char * whr)
     }
 
     while (1) {
+#ifdef LOCK_DEBUG
+        /*
+         * TODO deadlock detection threshold should depend on lock type and
+         *      current priorities.
+         */
+        if (++deadlock_cnt >= configSCHED_HZ) {
+            char buf[100];
+            char * lwhr = (mtx->mtx_ldebug) ? mtx->mtx_ldebug : "?";
+
+            ksprintf(buf, sizeof(buf), "Deadlock detected:\n%s WAITING\n%s LOCKED",
+                    whr, lwhr);
+            KERROR(KERROR_DEBUG, buf);
+
+            deadlock_cnt = 0;
+        }
+#endif
+
         if (sleep_mode && (current_thread->wait_tim == -2))
             return -EWOULDBLOCK;
 
@@ -107,16 +124,6 @@ int _mtx_lock(mtx_t * mtx, char * whr)
             if (!test_and_set((int *)(&(mtx->mtx_lock))))
                 break;
         }
-
-#ifdef LOCK_DEBUG
-        if (++deadlock_cnt == 100 * configSCHED_HZ) {
-            char buf[80];
-
-            ksprintf(buf, sizeof(buf), "Deadlock detected:\nWAIT: %s\nLOCK: %s",
-                    whr, mtx->mtx_ldebug);
-            KERROR(KERROR_DEBUG, buf);
-        }
-#endif
 
 #if configMP != 0
         cpu_wfe(); /* Sleep until event. */
