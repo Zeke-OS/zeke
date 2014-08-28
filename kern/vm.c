@@ -211,7 +211,7 @@ void vm_updateusr_ap(struct buf * region)
     int usr_rw;
     unsigned ap;
 
-    mtx_spinlock(&(region->lock));
+    mtx_lock(&(region->lock));
     usr_rw = region->b_uflags;
     ap = region->b_mmu.ap;
 
@@ -281,7 +281,7 @@ int vm_map_region(struct buf * region, struct vm_pt * pt)
 #endif
 
     vm_updateusr_ap(region);
-    mtx_spinlock(&(region->lock));
+    mtx_lock(&(region->lock));
 
     mmu_region = region->b_mmu; /* Make a copy of mmu region struct */
     mmu_region.pt = &(pt->pt);

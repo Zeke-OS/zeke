@@ -50,7 +50,7 @@
 #include <hal/atomic.h>
 
 /**
- * @addtogroup mtx mtx_init, mtx_spinlock, mtx_trylock
+ * @addtogroup mtx mtx_init, mtx_lock, mtx_trylock
  * Kernel mutex lock functions.
  * This implementation of kernel locks is intended for handling mutex on
  * multithreaded/pre-emptive kernel.
@@ -69,7 +69,7 @@
 /* Mutex types */
 #define MTX_TYPE_UNDEF      0x00 /*!< mtx un-initialized. */
 #define MTX_TYPE_SPIN       0x01 /*!< Spin lock. */
-#define MTX_TYPE_TICKET     0x02 /*!< Use ticket locking. */
+#define MTX_TYPE_TICKET     0x02 /*!< Use ticket spin locking. */
 #define MTX_TYPE_SLEEP      0x10 /*!< Allow timeouted waiting. */
 #define MTX_TYPE_PRICEIL    0x20 /*!< Use priority ceiling. */
 
@@ -101,14 +101,14 @@ typedef struct mtx {
 
 /* Mutex functions */
 #ifndef LOCK_DEBUG
-int mtx_spinlock(mtx_t * mtx);
+int mtx_lock(mtx_t * mtx);
 int mtx_sleep(mtx_t * mtx, long timeout);
 int mtx_trylock(mtx_t * mtx);
 #else /* Debug versions */
-#define mtx_spinlock(mtx)   _mtx_spinlock(mtx, _KERROR_WHERESTR)
+#define mtx_lock(mtx)   _mtx_lock(mtx, _KERROR_WHERESTR)
 #define mtx_sleep(mtx, timeout) _mtx_sleep(mtx, timeout, _KERROR_WHERESTR)
 #define mtx_trylock(mtx)    _mtx_trylock(mtx, _KERROR_WHERESTR)
-int _mtx_spinlock(mtx_t * mtx, char * whr);
+int _mtx_lock(mtx_t * mtx, char * whr);
 int _mtx_sleep(mtx_t * mtx, long timeout, char * whr);
 int _mtx_trylock(mtx_t * mtx, char * whr);
 #endif

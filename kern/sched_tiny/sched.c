@@ -181,8 +181,6 @@ static void init_thread_id_queue(void)
 static void idle_task(void)
 {
     unsigned tmp_nr_threads = 0;
-    //bcm2835_uart_uputc('I');
-    //raspi_led_invert();
 
     /* Update nr_threads */
     for (int i = 0; i < configSCHED_MAX_THREADS; i++) {
@@ -250,7 +248,6 @@ void sched_get_loads(uint32_t loads[3])
  */
 void sched_context_switcher(void)
 {
-    /* Select the next thread */
     do {
         /* Get next thread from the priority queue */
         current_thread = *priority_queue.a;
@@ -266,21 +263,14 @@ void sched_context_switcher(void)
             }
             continue; /* Select next thread */
         } else if ( /* if maximum time slices for this thread is used */
-            (current_thread->ts_counter <= 0)
-            /* and process is not a realtime process */
-            && ((int)current_thread->priority < NICE_MAX)
-            /* and its priority is yet better than minimum */
-            && ((int)current_thread->priority > NICE_MIN))
+                    (current_thread->ts_counter <= 0) &&
+                    /* and process is not a realtime process */
+                    (current_thread->priority < NICE_MAX)
+                    /* and its priority is yet better than minimum */
+                    && (current_thread->priority > NICE_MIN))
         {
-            /* Penalties
-             * =========
-             * Penalties are given to CPU hog threads (CPU bound) to prevent
-             * starvation of other threads.
-             */
-
             /* Give a penalty: Set lower priority
              * and perform reschedule operation on heap. */
-            current_thread->priority = NICE_MIN;
             heap_reschedule_root(&priority_queue, NICE_MIN);
 
             continue; /* Select next thread */

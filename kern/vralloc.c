@@ -205,7 +205,7 @@ struct buf * geteblk(size_t size)
     retval = kcalloc(1, sizeof(struct buf));
     if (!retval)
         return 0; /* Can't allocate vm_region struct */
-    mtx_init(&(retval->lock), MTX_TYPE_SPIN | MTX_TYPE_TICKET);
+    mtx_init(&(retval->lock), MTX_TYPE_TICKET);
 
     /* Update target struct */
     retval->b_mmu.paddr = VREG_I2ADDR(vreg, iblock);
@@ -240,7 +240,7 @@ static uintptr_t get_ksect_addr(size_t region_size)
     if (l_ksect_next.mtx_tflags == MTX_TYPE_UNDEF)
         mtx_init(&l_ksect_next, MTX_TYPE_SPIN);
 
-    mtx_spinlock(&l_ksect_next);
+    mtx_lock(&l_ksect_next);
 
     if (region_size < MMU_PGSIZE_SECTION)
         retval = memalign_size(ksect_next, MMU_PGSIZE_SECTION);
@@ -297,7 +297,7 @@ struct buf * geteblk_special(size_t size, uint32_t control)
  */
 static void vrref(struct buf * region)
 {
-    mtx_spinlock(&(region->lock));
+    mtx_lock(&(region->lock));
     region->refcount++;
     mtx_unlock(&(region->lock));
 }
@@ -361,7 +361,7 @@ void allocbuf(struct buf * bp, size_t size)
     if (bp->b_bufsize == new_size)
         return;
 
-    mtx_spinlock(&bp->lock);
+    mtx_lock(&bp->lock);
 
     if (blockdiff > 0) {
         const size_t sblock = VREG_PCOUNT((bp->b_data - vreg->kaddr)) + bcount;
@@ -414,7 +414,7 @@ void vrfree(struct buf * region)
     size_t iblock;
     const size_t bcount = VREG_PCOUNT(region->b_bufsize);
 
-    mtx_spinlock(&(region->lock));
+    mtx_lock(&(region->lock));
     region->refcount--;
     if (region->refcount > 0) {
         mtx_unlock(&(region->lock));

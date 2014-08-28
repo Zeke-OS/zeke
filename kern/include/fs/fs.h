@@ -107,7 +107,7 @@ typedef struct vnode {
 
     mtx_t lock;
 } vnode_t;
-#define VN_LOCK_MODES (MTX_TYPE_SPIN | MTX_TYPE_TICKET | MTX_TYPE_SLEEP)
+#define VN_LOCK_MODES (MTX_TYPE_TICKET | MTX_TYPE_SLEEP)
 
 /**
  * File descriptor.

@@ -105,7 +105,7 @@ int timers_add(void (*event_fn)(void *), void * event_arg,
 
     flags &= TIMERS_EXT_FLAGS; /* Allow only external flags to be set */
 
-    mtx_spinlock(&timers_lock);
+    mtx_lock(&timers_lock);
     do { /* Locate first free timer */
         if (timers_array[i].event_fn == 0) {
             timers_array[i].event_fn = event_fn; /* reserve */

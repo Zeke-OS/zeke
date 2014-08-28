@@ -152,7 +152,7 @@ extern proc_info_t * curproc;       /*!< PCB of the current process. */
  * This should be only touched by using macros defined in proc.h file.
  */
 extern mtx_t proclock;
-#define PROC_LOCK()         mtx_spinlock(&proclock)
+#define PROC_LOCK()         mtx_lock(&proclock)
 #define PROC_UNLOCK()       mtx_unlock(&proclock)
 #define PROC_TESTLOCK()     mtx_test(&proclock)
 #define PROC_LOCK_INIT()    mtx_init(&proclock, MTX_TYPE_SPIN)

@@ -56,7 +56,11 @@ SPLAY_GENERATE(bufhd_splay, buf, sentry_, biobuf_compar);
 /* Init bio, called by vralloc_init() */
 void _bio_init(void)
 {
-    mtx_init(&cache_lock, MTX_TYPE_SPIN | MTX_TYPE_TICKET | MTX_TYPE_SLEEP |
+    /*
+     * TODO We'd like to use MTX_TYPE_TICKET here but bio_clean() makes it
+     * impossible right now.
+     */
+    mtx_init(&cache_lock, MTX_TYPE_SPIN | MTX_TYPE_SLEEP |
                           MTX_TYPE_PRICEIL);
     cache_lock.pri.p_lock = NICE_MAX;
 
@@ -136,7 +140,7 @@ int bwrite(struct buf * bp)
 
     /* Sanity check */
     if(!(vnode && vnode->vnode_ops && vnode->vnode_ops->write)) {
-        mtx_spinlock(lock);
+        mtx_lock(lock);
         bp->b_flags |= B_ERROR;
         bp->b_error |= -EIO;
         mtx_unlock(lock);
@@ -144,7 +148,7 @@ int bwrite(struct buf * bp)
         return -EIO;
     }
 
-    mtx_spinlock(lock);
+    mtx_lock(lock);
     flags = bp->b_flags;
     bp->b_flags &= ~(B_DONE | B_ERROR | B_ASYNC | B_DELWRI);
     bp->b_flags |= B_BUSY;
@@ -156,7 +160,7 @@ int bwrite(struct buf * bp)
 
         return 0;
     } else {
-        mtx_spinlock(lock);
+        mtx_lock(lock);
         bio_writeout(bp);
         bp->b_flags &= ~B_BUSY;
         mtx_unlock(lock);
@@ -167,7 +171,7 @@ int bwrite(struct buf * bp)
 
 void bawrite(struct buf * bp)
 {
-    mtx_spinlock(&bp->lock);
+    mtx_lock(&bp->lock);
     bp->b_flags |= B_ASYNC;
     mtx_unlock(&bp->lock);
     bwrite(bp);
@@ -175,7 +179,7 @@ void bawrite(struct buf * bp)
 
 void bdwrite(struct buf * bp)
 {
-    mtx_spinlock(&bp->lock);
+    mtx_lock(&bp->lock);
     bp->b_flags |= B_DELWRI;
     mtx_unlock(&bp->lock);
 }
@@ -189,7 +193,7 @@ void bio_clrbuf(struct buf * bp)
         panic("bp not set");
 #endif
 
-    mtx_spinlock(&bp->lock);
+    mtx_lock(&bp->lock);
 
     flags = bp->b_flags;
 
@@ -204,7 +208,7 @@ void bio_clrbuf(struct buf * bp)
 
     memset((void *)bp->b_data, 0, bp->b_bufsize);
 
-    mtx_spinlock(&bp->lock);
+    mtx_lock(&bp->lock);
     bp->b_flags &= ~B_BUSY;
     mtx_unlock(&bp->lock);
 }
@@ -228,7 +232,7 @@ static struct buf * create_blk(vnode_t * vnode, size_t blkno, size_t size,
     bp->b_file = file;
     mtx_init(&bp->b_file.lock, MTX_TYPE_SPIN);
 
-    mtx_spinlock(&vnode->lock);
+    mtx_lock(&vnode->lock);
 
     /* Put to the buffer splay tree of the vnode. */
     if (SPLAY_INSERT(bufhd_splay, &vnode->vn_bpo.sroot, bp))
@@ -247,7 +251,7 @@ struct buf * getblk(vnode_t * vnode, size_t blkno, size_t size, int slptimeo)
         return NULL;
 
     /* For now we want to synchronize access to this function. */
-    mtx_spinlock(&cache_lock);
+    mtx_lock(&cache_lock);
 
     bp = incore(vnode, blkno);
     if (!bp) { /* Not found, create a new buffer. */
@@ -267,7 +271,7 @@ retry:
      */
     while (bp->b_flags & B_BUSY)
         sched_current_thread_yield(0);
-    mtx_spinlock(&bp->lock);
+    mtx_lock(&bp->lock);
     if (bp->b_flags & B_BUSY) {
         mtx_unlock(&bp->lock);
         goto retry;
@@ -278,7 +282,7 @@ retry:
 
     allocbuf(bp, size); /* Resize if necessary */
 
-    mtx_spinlock(&bp->lock);
+    mtx_lock(&bp->lock);
     bp->b_flags &= ~B_ERROR;
     bp->b_error = 0;
     mtx_unlock(&bp->lock);
@@ -317,21 +321,21 @@ static void bl_brelse(struct buf * bp)
 
     bp->b_flags &= ~B_BUSY;
 
-    mtx_spinlock(&cache_lock);
+    mtx_lock(&cache_lock);
     relse_list->insert_tail(relse_list, bp);
     mtx_unlock(&cache_lock);
 }
 
 void brelse(struct buf * bp)
 {
-    mtx_spinlock(&bp->lock);
+    mtx_lock(&bp->lock);
     bl_brelse(bp);
     mtx_unlock(&bp->lock);
 }
 
 void biodone(struct buf * bp)
 {
-    mtx_spinlock(&bp->lock);
+    mtx_lock(&bp->lock);
 
     bp->b_flags |= B_DONE;
 

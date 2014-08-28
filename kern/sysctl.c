@@ -81,7 +81,7 @@ SYSCTL_DECL(_sysctl);
  */
 static mtx_t sysctllock;
 
-#define SYSCTL_LOCK()       mtx_spinlock(&sysctllock)
+#define SYSCTL_LOCK()       mtx_lock(&sysctllock)
 #define SYSCTL_UNLOCK()     mtx_unlock(&sysctllock)
 #define SYSCTL_LOCK_INIT()  mtx_init(&sysctllock, MTX_TYPE_SPIN)
 

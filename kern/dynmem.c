@@ -133,7 +133,7 @@ void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t control)
     uint32_t pos;
     void * retval = 0;
 
-    mtx_spinlock(&dynmem_region_lock);
+    mtx_lock(&dynmem_region_lock);
 
     if(bitmap_block_search(&pos, size, dynmemmap_bitmap,
                 sizeof(dynmemmap_bitmap))) {
@@ -170,7 +170,7 @@ void * dynmem_alloc_force(void * addr, size_t size, uint32_t ap, uint32_t contro
         return 0;
     }
 
-    mtx_spinlock(&dynmem_region_lock);
+    mtx_lock(&dynmem_region_lock);
     bitmap_block_update(dynmemmap_bitmap, 1, pos, size);
     retval = kmap_allocation(pos, size, ap, control);
     mtx_unlock(&dynmem_region_lock);
@@ -192,7 +192,7 @@ void * dynmem_ref(void * addr)
     if ((dynmemmap[i] & DYNMEM_RC_MASK) == 0)
         return 0;
 
-    mtx_spinlock(&dynmem_region_lock);
+    mtx_lock(&dynmem_region_lock);
     dynmemmap[i] += 1 << DYNMEM_RC_POS;
     mtx_unlock(&dynmem_region_lock);
     return addr;
@@ -214,7 +214,7 @@ void dynmem_free_region(void * addr)
     rc = (dynmemmap[i] & DYNMEM_RC_MASK) >> DYNMEM_RC_POS;
 
     /* Get lock to dynmem_region */
-    mtx_spinlock(&dynmem_region_lock);
+    mtx_lock(&dynmem_region_lock);
 
     /* Check if there is any references */
     if (rc > 1) {
@@ -345,7 +345,7 @@ void * dynmem_clone(void * addr)
     }
 
     /* Take a copy of dynmem_region struct for this region. */
-    mtx_spinlock(&dynmem_region_lock);
+    mtx_lock(&dynmem_region_lock);
     if (update_dynmem_region_struct(addr)) { /* error */
 #if configDEBUG  >= KERROR_ERR
         char buf[80];
@@ -386,7 +386,7 @@ uint32_t dynmem_acc(const void * addr, size_t len)
     if (!validate_addr(addr, 1))
         goto out; /* Address out of bounds. */
 
-    mtx_spinlock(&dynmem_region_lock);
+    mtx_lock(&dynmem_region_lock);
     if (update_dynmem_region_struct((void *)addr)) { /* error */
 #if configDEBUG >= KERROR_ERR
         char buf[80];

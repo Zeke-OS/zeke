@@ -60,6 +60,14 @@ static void priceil_restore(mtx_t * mtx)
 
 void mtx_init(mtx_t * mtx, unsigned int type)
 {
+    const unsigned test = type & (MTX_TYPE_SPIN | MTX_TYPE_TICKET);
+
+    if (test == 0) {
+        panic("Select mtx type");
+    } else if (test == (MTX_TYPE_SPIN | MTX_TYPE_TICKET)) {
+        panic("Select either MTX_TYPE_SPIN or MTX_TYPE_TICKET");
+    }
+
     mtx->mtx_tflags = type;
     mtx->mtx_lock = 0;
     mtx->ticket.queue = ATOMIC_INIT(0);
@@ -70,9 +78,9 @@ void mtx_init(mtx_t * mtx, unsigned int type)
 }
 
 #ifndef LOCK_DEBUG
-int mtx_spinlock(mtx_t * mtx)
+int mtx_lock(mtx_t * mtx)
 #else
-int _mtx_spinlock(mtx_t * mtx, char * whr)
+int _mtx_lock(mtx_t * mtx, char * whr)
 #endif
 {
     const int ticket_mode = MTX_TYPE(mtx, MTX_TYPE_TICKET);
@@ -81,16 +89,6 @@ int _mtx_spinlock(mtx_t * mtx, char * whr)
 #ifdef LOCK_DEBUG
     unsigned deadlock_cnt = 0;
 #endif
-
-    if (!MTX_TYPE(mtx, MTX_TYPE_SPIN)) {
-#ifdef LOCK_DEBUG
-        char buf[80];
-
-        ksprintf(buf, sizeof(buf), "Invalid lock type. Caller: %s", whr);
-        KERROR(KERROR_DEBUG, buf);
-#endif
-        return -ENOTSUP;
-    }
 
     if (ticket_mode) {
         ticket = atomic_inc(&(mtx->ticket.queue));
@@ -153,11 +151,20 @@ int _mtx_sleep(mtx_t * mtx, long timeout, char * whr)
         current_thread->wait_tim = timers_add(mtx_wakeup, mtx, TIMERS_FLAG_ONESHOT, timeout);
         if (current_thread->wait_tim < 0)
             return -EWOULDBLOCK;
-        retval = mtx_spinlock(mtx);
+        retval = mtx_lock(mtx);
         timers_release(current_thread->wait_tim);
         current_thread->wait_tim = -1;
+    } else if (MTX_TYPE(mtx, MTX_TYPE_SPIN)) {
+        retval = mtx_lock(mtx);
     } else {
-        retval = mtx_spinlock(mtx);
+#ifdef LOCK_DEBUG
+        char buf[80];
+
+        ksprintf(buf, sizeof(buf), "Invalid lock type. Caller: %s", whr);
+        panic(buf);
+#else
+        panic("Invalid lock type.");
+#endif
     }
 
     return retval;
@@ -225,7 +232,7 @@ void rwlock_init(rwlock_t * l)
 
 void rwlock_wrlock(rwlock_t * l)
 {
-    mtx_spinlock(&(l->lock));
+    mtx_lock(&(l->lock));
     if (l->state == 0) {
         goto get_wrlock;
     } else {
@@ -236,7 +243,7 @@ void rwlock_wrlock(rwlock_t * l)
     /* Try to minimize locked time. */
     while (1) {
         if (l->state == 0) {
-            mtx_spinlock(&(l->lock));
+            mtx_lock(&(l->lock));
             if (l->state == 0) {
                 l->wr_waiting--;
                 goto get_wrlock;
@@ -269,7 +276,7 @@ out:
 
 void rwlock_wrunlock(rwlock_t * l)
 {
-    mtx_spinlock(&(l->lock));
+    mtx_lock(&(l->lock));
     if (l->state == -1) {
         l->state = 0;
     }
@@ -278,7 +285,7 @@ void rwlock_wrunlock(rwlock_t * l)
 
 void rwlock_rdlock(rwlock_t * l)
 {
-    mtx_spinlock(&(l->lock));
+    mtx_lock(&(l->lock));
     /* Don't take lock if any writer is waiting. */
     if (l->wr_waiting == 0 && l->state >= 0) {
         goto get_rdlock;
@@ -288,7 +295,7 @@ void rwlock_rdlock(rwlock_t * l)
     /* Try to minimize locked time. */
     while (1) {
         if (l->wr_waiting == 0 && l->state >= 0) {
-            mtx_spinlock(&(l->lock));
+            mtx_lock(&(l->lock));
             if (l->wr_waiting == 0 && l->state >= 0) {
                 goto get_rdlock;
             }
@@ -320,7 +327,7 @@ out:
 
 void rwlock_rdunlock(rwlock_t * l)
 {
-    mtx_spinlock(&(l->lock));
+    mtx_lock(&(l->lock));
     if (l->state > 0) {
         l->state--;
     }

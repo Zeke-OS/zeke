@@ -48,7 +48,7 @@
 #include <fs/fs.h>
 
 mtx_t fslock;
-#define FS_LOCK()       mtx_spinlock(&fslock)
+#define FS_LOCK()       mtx_lock(&fslock)
 #define FS_UNLOCK()     mtx_unlock(&fslock)
 #define FS_TESTLOCK()   mtx_test(&fslock)
 #define FS_LOCK_INIT()  mtx_init(&fslock, MTX_TYPE_SPIN)
@@ -498,7 +498,7 @@ file_t * fs_fildes_ref(files_t * files, int fd, int count)
     if (!fildes)
         return 0;
 
-    mtx_spinlock(&fildes->lock);
+    mtx_lock(&fildes->lock);
     fildes->refcount += count;
     if (fildes->refcount <= 0) {
         free = 1;
