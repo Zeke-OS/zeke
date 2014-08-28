@@ -42,6 +42,12 @@ fs (vfs)
     - umount
     - mmap
 
+ramfs
+-----
+
+Allocate blocks with geteblk, this will also make memmapping possible for ramfs
+files.
+
 kinit
 -----
 
