@@ -39,6 +39,7 @@
 #include <proc.h>
 #include <sched.h>
 #include <ksignal.h>
+#include <buf.h>
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -53,6 +54,7 @@ mtx_t fslock;
 #define FS_LOCK_INIT()  mtx_init(&fslock, MTX_TYPE_SPIN)
 
 static int parse_filepath(const char * pathname, char ** path, char ** name);
+static void vnode_cleanup(vnode_t * vnode);
 
 SYSCTL_NODE(, CTL_VFS, vfs, CTLFLAG_RW, 0,
         "File system");
@@ -801,6 +803,7 @@ int fs_unlink_curproc(int fd, const char * path, size_t path_len, int atflags)
         goto out;
     }
 
+    vnode_cleanup(fnode);
     err = dir->vnode_ops->unlink(dir, filename, path_len);
 
 out:
@@ -921,4 +924,24 @@ out:
     fs_fildes_ref(curproc->files, fildes, -1);
 
     return retval;
+}
+
+/**
+ * Cleanup some vnode data.
+ * - Releases buffers.
+ */
+static void vnode_cleanup(vnode_t * vnode)
+{
+    struct buf * var, * nxt;
+
+    if (!SPLAY_EMPTY(&vnode->vn_bpo.sroot)) {
+        for (var = SPLAY_MIN(bufhd_splay, &vnode->vn_bpo.sroot);
+                var != NULL; var = nxt) {
+            nxt = SPLAY_NEXT(bufhd_splay, &vnode->vn_bpo.sroot, var);
+            SPLAY_REMOVE(bufhd_splay, &vnode->vn_bpo.sroot, var);
+            if (!(var->b_flags & B_DONE))
+                var->b_flags |= B_DELWRI;
+            brelse(var);
+        }
+   }
 }

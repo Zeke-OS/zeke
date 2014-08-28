@@ -167,7 +167,10 @@ int bwrite(struct buf * bp)
 
 void bawrite(struct buf * bp)
 {
-    /* TODO */
+    mtx_spinlock(&bp->lock);
+    bp->b_flags |= B_ASYNC;
+    mtx_unlock(&bp->lock);
+    bwrite(bp);
 }
 
 void bdwrite(struct buf * bp)
