@@ -504,6 +504,9 @@ int ramfs_unlink(vnode_t * dir, const char * name, size_t name_len)
         goto out;
     inode = get_inode_of_vnode(vn);
 
+    /* Mandatory cleanup. */
+    fs_vnode_cleanup(vn);
+
     retval = dh_unlink(inode_dir->in.dir, name, name_len);
     if (retval)
         goto out;

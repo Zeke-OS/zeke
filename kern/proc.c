@@ -173,15 +173,11 @@ static void init_kernel_proc(void)
     /* TODO Do this correctly */
     kernel_proc->files->fd[STDIN_FILENO] = 0;
     kernel_proc->files->fd[STDOUT_FILENO] = 0;
-#if configKLOGGER != 0
     /* stderr */
     kernel_proc->files->fd[STDERR_FILENO] = kcalloc(1, sizeof(file_t));
     if (fs_fildes_set(kernel_proc->files->fd[STDERR_FILENO],
                 &kerror_vnode, O_WRONLY))
         panic(panic_msg);
-#else
-    kernel_proc->files->fd[STDERR_FILENO] = 0;
-#endif
 }
 
 void procarr_realloc(void)
@@ -297,7 +293,6 @@ proc_info_t * proc_get_struct(pid_t pid)
 
     /* TODO do state check properly */
     if (pid > act_maxproc) {
-#if configDEBUG != 0
         char buf[80];
 
         ksprintf(buf, sizeof(buf),
@@ -305,7 +300,7 @@ proc_info_t * proc_get_struct(pid_t pid)
                 pid, current_process_id, act_maxproc,
                 ((*_procarr)[pid]) ? (*_procarr)[pid]->state : 0);
         KERROR(KERROR_DEBUG, buf);
-#endif
+
         return 0;
     }
     return (*_procarr)[pid];
@@ -327,7 +322,7 @@ void proc_thread_removed(pid_t pid, pthread_t thread_id)
 
 void proc_enter_kernel(void)
 {
-#if configDEBUG != 0
+#if configDEBUG >= KERROR_DEBUG
     if (!curproc)
         panic("No current process set");
 #endif
@@ -336,7 +331,7 @@ void proc_enter_kernel(void)
 
 mmu_pagetable_t * proc_exit_kernel(void)
 {
-#if configDEBUG != 0
+#if configDEBUG >= KERROR_DEBUG
     if (!curproc)
         panic("No current proces set");
 #endif
@@ -346,7 +341,7 @@ mmu_pagetable_t * proc_exit_kernel(void)
 
 void proc_suspend(void)
 {
-#if configDEBUG != 0
+#if configDEBUG >= KERROR_DEBUG
     if (!curproc)
         panic("No current proces set");
 #endif
@@ -356,7 +351,7 @@ void proc_suspend(void)
 
 mmu_pagetable_t * proc_resume(void)
 {
-#if configDEBUG != 0
+#if configDEBUG >= KERROR_DEBUG
     if (!curproc)
         panic("No current proces set");
 #endif

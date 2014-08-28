@@ -115,7 +115,7 @@ int mmu_init_pagetable(const mmu_pagetable_t * pt)
     const uint32_t pte = MMU_PTE_FAULT;
     uint32_t * p_pte = (uint32_t *)pt->pt_addr; /* points to a pt entry in PT */
 
-#if config_DEBUG != 0
+#if config_DEBUG >= KERROR_DEBUG
     if (p_pte == 0) {
         KERROR(KERROR_ERR, "Page table address can't be null.");
         return -EINVAL;
@@ -175,7 +175,7 @@ int mmu_map_region(const mmu_region_t * region)
         mmu_map_coarse_region(region);
         break;
     default:
-#if configDEBUG != 0
+#if configDEBUG >= KERROR_DEBUG
         KERROR(KERROR_ERR, "Invalid mmu_region struct.");
 #endif
         return -EINVAL;
@@ -239,7 +239,7 @@ static void mmu_map_coarse_region(const mmu_region_t * region)
     p_pte += (region->vaddr & 0x000ff000) >> 12;    /* First */
     p_pte += region->num_pages - 1;                 /* Last pte */
 
-#if configDEBUG
+#if configDEBUG >= KERROR_DEBUG
         if (p_pte == 0)
             KERROR(KERROR_ERR, "p_pte is null");
 #endif
@@ -360,7 +360,7 @@ int mmu_attach_pagetable(const mmu_pagetable_t * pt)
     uintptr_t caller;
     int retval = 0;
 
-#if configDEBUG != 0
+#if configDEBUG >= KERROR_DEBUG
     __asm__ volatile ("mov %[tmp], lr" : [tmp]"=r" (caller));
     caller -= 4;
 #endif
@@ -371,11 +371,11 @@ int mmu_attach_pagetable(const mmu_pagetable_t * pt)
 
         ksprintf(buf, sizeof(buf),
                 "pt->master_pt_addr can't be null.\n"
-#if configDEBUG != 0
+#if configDEBUG >= KERROR_DEBUG
                 "Caller: %x, pt: %x\n"
 #endif
                 "pt->vaddr = %x\npt->type = %s\npt->pt_addr = %x",
-#if configDEBUG != 0
+#if configDEBUG >= KERROR_DEBUG
                 caller, (uintptr_t)pt,
 #endif
                 pt->vaddr,
@@ -539,7 +539,7 @@ void * mmu_translate_vaddr(const mmu_pagetable_t * pt, uintptr_t vaddr)
         p_pte  += (vaddr & 0x000ff000) >> 12;
         break;
     default:
-#if configDEBUG
+#if configDEBUG >= KERROR_DEBUG
         KERROR(KERROR_ERR, "Invalid pt type.");
 #endif
         goto out;

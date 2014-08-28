@@ -494,6 +494,14 @@ int fs_rmdir_curproc(const char * pathname);
 int fs_chmod_curproc(int fildes, mode_t mode);
 int fs_chown_curproc(int fildes, uid_t owner, gid_t group);
 
+/**
+ * Cleanup some vnode data.
+ * File system is responsible to call this function before deleting a vnode.
+ * This handles following cleanup tasks:
+ * - Release and write out buffers
+ */
+void fs_vnode_cleanup(vnode_t * vnode);
+
 #endif /* FS_H */
 
 /**

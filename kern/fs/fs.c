@@ -54,7 +54,6 @@ mtx_t fslock;
 #define FS_LOCK_INIT()  mtx_init(&fslock, MTX_TYPE_SPIN)
 
 static int parse_filepath(const char * pathname, char ** path, char ** name);
-static void vnode_cleanup(vnode_t * vnode);
 
 SYSCTL_NODE(, CTL_VFS, vfs, CTLFLAG_RW, 0,
         "File system");
@@ -186,7 +185,7 @@ again:  /* Get vnode by name in this dir. */
             }
             *result = vnode;
         }
-#if configDEBUG != 0
+#if configDEBUG >= KERROR_DEBUG
         if (*result == 0)
             panic("vfs is in inconsistent state");
 #endif
@@ -803,7 +802,6 @@ int fs_unlink_curproc(int fd, const char * path, size_t path_len, int atflags)
         goto out;
     }
 
-    vnode_cleanup(fnode);
     err = dir->vnode_ops->unlink(dir, filename, path_len);
 
 out:
@@ -926,13 +924,14 @@ out:
     return retval;
 }
 
-/**
- * Cleanup some vnode data.
- * - Releases buffers.
- */
-static void vnode_cleanup(vnode_t * vnode)
+void fs_vnode_cleanup(vnode_t * vnode)
 {
     struct buf * var, * nxt;
+
+#if configDEBUG >= KERROR_DEBUG
+    if (!vnode)
+        panic("vnode can't be null.");
+#endif
 
     if (!SPLAY_EMPTY(&vnode->vn_bpo.sroot)) {
         for (var = SPLAY_MIN(bufhd_splay, &vnode->vn_bpo.sroot);

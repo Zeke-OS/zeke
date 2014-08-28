@@ -36,7 +36,7 @@
 #include <kerror.h>
 #include "heap.h"
 
-#if configDEBUG != 0
+#if configDEBUG >= KERROR_DEBUG
 #define HEAP_BOUNDS_CHECK 1
 #endif
 

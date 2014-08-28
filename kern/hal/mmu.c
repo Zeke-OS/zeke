@@ -83,7 +83,7 @@ void mmu_init(void)
     mask = MMU_DOMAC_ALL;
     mmu_domain_access_set(value, mask);
 
-#if configDEBUG != 0
+#if configDEBUG >= KERROR_DEBUG
     KERROR(KERROR_DEBUG, "Enabling MMU");
 #endif
     value = MMU_ZEKE_C1_DEFAULTS;

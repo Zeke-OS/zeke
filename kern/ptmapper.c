@@ -320,7 +320,7 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
 
     /* Try to allocate a new page table */
     if (!PTM_ALLOC(&block, size, balign)) {
-#if configDEBUG != 0
+#if configDEBUG >= KERROR_CRIT
         char buf[80];
 #endif
 
