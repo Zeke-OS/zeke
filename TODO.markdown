@@ -47,6 +47,7 @@ ramfs
 
 Allocate blocks with geteblk, this will also make memmapping possible for ramfs
 files.
+Use LINK_MAX.
 
 kinit
 -----

@@ -40,6 +40,7 @@
 #define FS_H
 
 #include <stdint.h>
+#include <limits.h>
 #include <sys/types.h>
 #include <time.h>
 #include <sys/stat.h>
@@ -50,8 +51,6 @@
 #define FS_FLAG_INIT    0x01 /*!< File system initialized. */
 #define FS_FLAG_FAIL    0x08 /*!< File system has failed. */
 
-#define NAME_MAX        255 /*!< Maximum file name length. */
-#define PATH_MAX        4096 /* Maximum path length. */
 #define PATH_DELIMS     "/"
 
 /* Some macros for use with flags *********************************************/

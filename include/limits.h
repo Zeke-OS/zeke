@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    param.h
+ * @file    fs.h
  * @author  Olli Vanhoja
- * @brief   Definitions.
+ * @brief   Implementation-defined constants.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,34 +30,26 @@
  *******************************************************************************
  */
 
-#ifndef _SYS_PARAM_H_
-#define _SYS_PARAM_H_
+#ifndef _LIMITS_H_
+#define _LIMITS_H_
 
-#include <limits.h>
+#include_next <limits.h> /* Include the compiler header file. */
 
-#define MAXCOMLEN       19      /*!< Max command name remembered. */
-#define MAXLOGNAME      33      /*!< max login name length (incl. NUL). */
-#define MAXHOSTNAMELEN  HOST_NAME_MAX /*!< Max hostname size. */
-#define SPECNAMELEN     20      /*!< Max length of devicename. */
+/* Runtime Invariant Values */
+#define HOST_NAME_MAX   256
 
+/* Pathname Variable Values */
+#define FILESIZEBITS    32
+#define LINK_MAX        _POSIX_LINK_MAX
+#define NAME_MAX        255     /*!< Maximum file name length. */
+#define PATH_MAX        4096    /*!< Maximum path length. */
 
-#define DEV_MAJORDEVS   16 /*!< Number of major devs 2^nbr_of_marjor_bits */
-#define DEV_MINORBITS   28 /*!< Number of minor bits */
-#define DEV_MINORMASK   ((1u << DEV_MINORBITS) - 1) /*!< Minor bits mask */
+/* Runtime Increasable Values */
+/* Maximum Values */
+/* Minimum Values */
+#define _POSIX_LINK_MAX 16
 
-/**
- * Get major number from osDev_t.
- */
-#define DEV_MAJOR(dev)  ((unsigned int)((dev) >> DEV_MINORBITS))
+/* Other Invariant Values */
+#define NZERO           0       /*!< Default process priority. */
 
-/**
- * Get minor number from osDev_t.
- */
-#define DEV_MINOR(dev)  ((unsigned int)((dev) & DEV_MINORMASK))
-
-/**
- * Convert major, minor pair into osDev_t.
- */
-#define DEV_MMTODEV(ma, mi) (((ma) << DEV_MINORBITS) | (mi))
-
-#endif /* _SYS_PARAM_H_ */
+#endif /* _LIMITS_H_ */

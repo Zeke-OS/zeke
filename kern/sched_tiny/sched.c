@@ -32,9 +32,9 @@
  */
 
 #define KERNEL_INTERNAL
+#include <autoconf.h>
 #include <stdint.h>
 #include <stddef.h>
-#include <autoconf.h>
 #include <kstring.h>
 #include <libkern.h>
 #include <kinit.h>

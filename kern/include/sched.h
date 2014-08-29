@@ -135,7 +135,7 @@
 /* Nice leves */
 #define NICE_ERR        (100)   /*!< GC value. */
 #define NICE_MAX        (20)    /*!< Realtime. */
-#define NICE_DEF        (0)     /*!< Normal value. */
+#define NICE_DEF        (NZERO) /*!< Normal value. */
 #define NICE_MIN        (-19)
 #define NICE_YIELD      (-20)
 #define NICE_IDLE       (-21)
