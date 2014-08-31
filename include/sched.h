@@ -46,6 +46,9 @@
 #define NICE_DEF        (NZERO) /*!< Normal value. */
 #define NICE_MIN        (-19)
 #define NICE_YIELD      (-20)
+#define NICE_IDLE       (-21)
+#define NICE_PENALTY    (-22)   /*!< Penalty for some schedulers. Shall not be used as
+                                 * an actual nice value. */
 
 /* Scheduling policies */
 #define SCHED_FIFO  1

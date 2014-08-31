@@ -152,7 +152,7 @@ void heap_reschedule_root(heap_t * heap, int pri)
     int s = heap->size;
 
     /* Swap with the last one */
-    heap->a[0]->priority = -22; /* NICE_PENALTY */
+    heap->a[0]->priority = NICE_PENALTY;
     swap(heap, 0, s);
     heapify(heap, 0);
 

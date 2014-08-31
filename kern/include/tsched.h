@@ -134,9 +134,9 @@
 #define SCHED_SFRAME_ARR_SIZE   3
 
 #if configSCHED_CDS != 0
-RB_HEAD(sched_threads, struct thread_info);
-RB_HEAD(sched_ready, struct thread_info);
-RB_HEAD(sched_exec, struct thread_info);
+RB_HEAD(sched_threads, thread_info);
+RB_HEAD(sched_ready, thread_info);
+RB_HEAD(sched_exec, thread_info);
 #endif
 
 /**
@@ -159,11 +159,11 @@ typedef struct thread_info {
 
 #if configSCHED_CDS != 0
     struct sched {
-        unsigned policy;                    /*!< Scheduling policy. */
-        RB_ENTRY(sched_threads) threads;
-        RB_ENTRY(sched_ready)   ready;
-        RB_ENTRY(sched_exec)    exec;
-        llist_nodedsc_t         fifo_exec;
+        unsigned policy;                            /*!< Scheduling policy. */
+        RB_ENTRY(thread_info)   threads_entry;
+        RB_ENTRY(thread_info)   ready_entry;
+        RB_ENTRY(thread_info)   exec_entry;
+        llist_nodedsc_t         fifo_exec_entry;
     } sched;
 #endif
 

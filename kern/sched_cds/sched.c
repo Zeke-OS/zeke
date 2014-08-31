@@ -31,7 +31,7 @@
  *******************************************************************************
  */
 
-#define KERNEL_INTERNAL
+#define KERNEL_INTERNAL 1
 #include <autoconf.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -41,8 +41,11 @@
 #include <kinit.h>
 #include <sys/linker_set.h>
 #include <sys/tree.h>
+#include <dllist.h>
 #include <sys/sysctl.h>
+#include <syscall.h>
 #include <kerror.h>
+#include <errno.h>
 #include <lavg.h>
 #include <pthread.h>
 #include <thread.h>
@@ -58,7 +61,7 @@
  * rb   ready   nice        Ready for next epoch.
  * rb   exec    time used   Execution queue of the current epoch.
  */
-struct sched {
+struct cpusched {
     unsigned nr_threads;    /*!< Number of threads in scheduling. */
     unsigned nr_exec;       /*!< Number of threads in execution. */
     int cnt_epoch;
@@ -66,8 +69,8 @@ struct sched {
     struct sched_ready      q_ready;
     struct sched_exec       q_exec;
     struct llist          * q_fifo_exec;
-}
-static struct sched cpusched;
+};
+static struct cpusched cpusched;
 
 /* sysctl node for scheduler */
 SYSCTL_DECL(_kern_sched);
@@ -98,7 +101,7 @@ static void insert_threads(int quantums);
 static int fifo_sched(void);
 static int cds_sched(void);
 
-void sched_init(void) __attribute__((constructor))
+void sched_init(void) __attribute__((constructor));
 void sched_init(void)
 {
     SUBSYS_INIT();
@@ -107,7 +110,8 @@ void sched_init(void)
     RB_INIT(&cpusched.all_threads);
     RB_INIT(&cpusched.q_ready);
     RB_INIT(&cpusched.q_exec);
-    q_fifo_exec = dllist_create(struct thread_info, sched.fifo);
+    cpusched.q_fifo_exec = dllist_create(struct thread_info,
+                                         sched.fifo_exec_entry);
 
     pthread_t tid;
     pthread_attr_t attr = {
@@ -130,9 +134,9 @@ void sched_init(void)
     SUBSYS_INITFINI("Init scheduler: cds");
 }
 
-RB_GENERATE(sched_threads, thread_info, sched.threads, sched_tid_comp);
-RB_GENERATE(sched_ready, thread_info, sched.ready, sched_nice_comp);
-RB_GENERATE(sched_exec, thread_info, sched.exec, sched_ts_comp);
+RB_GENERATE(sched_threads, thread_info, sched.threads_entry, sched_tid_comp);
+RB_GENERATE(sched_ready, thread_info, sched.ready_entry, sched_nice_comp);
+RB_GENERATE(sched_exec, thread_info, sched.exec_entry, sched_ts_comp);
 
 /**
  * Schedule in the next thread.
@@ -147,12 +151,12 @@ RB_GENERATE(sched_exec, thread_info, sched.exec, sched_ts_comp);
 void sched_schedule(void)
 {
     struct thread_info * thread;
-    int (*schedpol)(void)[] = {
+    int (*schedpol[])(void) = {
         fifo_sched, /* RT sched. */
         cds_sched   /* conv sched. */
     };
 
-    corrent_thread->ts_counter++;
+    current_thread->ts_counter++;
 
     /* If new epoch begins. */
     if (--cpusched.cnt_epoch <= 0) {
@@ -165,7 +169,7 @@ void sched_schedule(void)
     /* Scheduling */
     current_thread = NULL;
     do {
-        for (int i = 0; i < numelem(schedpol); i++) {
+        for (int i = 0; i < num_elem(schedpol); i++) {
             if (schedpol[i]())
                 break;
         }
@@ -177,7 +181,7 @@ static int calc_quantums(struct thread_info * thread)
     const int fmul = 50; /* Fixed point: 1 / (NICE_MAX + -NICE_MIN + 1) */
     const int add = NICE_MAX + 1;
 
-    return (cpusched.epoch_len * fmul * (add + thread->nice)) >> FSHIFT;
+    return (epoch_len * fmul * (add + thread->niceval)) >> FSHIFT;
 }
 
 /**
@@ -187,18 +191,18 @@ static void insert_threads(int quantums)
 {
     struct thread_info * thread, * nxt;
 
-    if (!RB_EMPTY(cpusched.q_ready)) {
+    if (!RB_EMPTY(&cpusched.q_ready)) {
         for (thread = RB_MIN(sched_ready, &cpusched.q_ready);
                 thread != NULL && quantums > 0;
                 thread = nxt) {
             if (thread->priority > quantums)
                 return;
 
-            RB__REMOVE(sched_ready, &cpusched.q_ready, thread);
+            RB_REMOVE(sched_ready, &cpusched.q_ready, thread);
 
             switch (thread->sched.policy) {
             case SCHED_FIFO:
-                cpusched.q_fifo_exec->insert_tail(&cpusched.q_fifo_exec, thread);
+                cpusched.q_fifo_exec->insert_tail(cpusched.q_fifo_exec, thread);
             case SCHED_OTHER:
                 RB_INSERT(sched_exec, &cpusched.q_exec, thread);
                 thread->priority = calc_quantums(thread);
@@ -211,9 +215,9 @@ static void insert_threads(int quantums)
         }
     }
 
-    if (RB_EMPTY(cpusched.q_ready)) {
+    if (RB_EMPTY(&cpusched.q_ready)) {
         /* No threads to execute. */
-        RB_INSERT(sched_exec, &cpusched.q_exec, idle_thread);
+        RB_INSERT(sched_exec, &cpusched.q_exec, sched_get_thread_info(0));
     }
 }
 
@@ -224,15 +228,15 @@ static int fifo_sched(void)
 {
     struct thread_info * thread;
 
-    while (sched.q_fifo_exec->count) {
-        thread = sched.q_fifo_exec->head;
+    while (cpusched.q_fifo_exec->count) {
+        thread = cpusched.q_fifo_exec->head;
 
         if (SCHED_TEST_CSW_OK(thread->flags)) {
             current_thread = thread;
 
             return 1;
         } else {
-            sched.q_fifo_exec->remove(sched.q_fifo_exec, thread);
+            cpusched.q_fifo_exec->remove(cpusched.q_fifo_exec, thread);
 
             if (SCHED_TEST_DETACHED_ZOMBIE(thread->flags)) {
                 thread_terminate(thread->id);
@@ -251,7 +255,7 @@ static int cds_sched(void)
     struct thread_info * thread;
 
     do {
-        thread = RB_MIN(&cpusched.q_exec);
+        thread = RB_MIN(sched_exec, &cpusched.q_exec);
 
         if (thread->ts_counter < thread->priority &&
                 SCHED_TEST_CSW_OK(thread->flags)) {
@@ -273,7 +277,7 @@ static int cds_sched(void)
 static void sched_calc_loads(void)
 {
     static int count = LOAD_FREQ;
-    uint32_t active_threads; /* Fixed-point */
+    uint32_t nr_active; /* Fixed-point */
 
     /* Run only on kernel tick */
     if (!flag_kernel_tick)
@@ -333,41 +337,7 @@ struct thread_info * sched_get_thread_info(pthread_t thread_id)
 /* TODO */
 pthread_t sched_threadCreate(struct _ds_pthread_create * thread_def, int priv)
 {
-    pthread_t i;
-#if 0
-    istate_t s;
-
-    s = get_interrupt_state();
-    disable_interrupt();
-#endif
-
-    if (!queue_pop(&next_thread_id_queue_cb, &i)) {
-        /* New thread could not be created */
-#if 0
-        set_interrupt_state(s);
-#endif
-        return -1;
-    }
-
-    thread_init(
-            &task_table[i],
-            i,                      /* Index of the thread created */
-            thread_def,             /* Thread definition. */
-            (void *)current_thread, /* Pointer to the parent thread, which is
-                                     * expected to be the current thread. */
-            priv);                  /* kworker flag. */
-
-#if 0
-        set_interrupt_state(s);
-#endif
-
-    if (i == configSCHED_MAX_THREADS) {
-        /* New thread could not be created */
-        return -2;
-    } else {
-        /* Return the id of the new thread */
-        return i;
-    }
+    return -1;
 }
 
 int sched_thread_set_priority(pthread_t thread_id, int priority)
