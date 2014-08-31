@@ -36,7 +36,7 @@
 #include <autoconf.h>
 #include <kinit.h>
 #include <sys/linker_set.h>
-#include <sched.h>
+#include <tsched.h>
 #include <timers.h>
 
 /** Timer allocation struct */

@@ -52,33 +52,14 @@
 #include <sys/sysctl.h>
 #include <errno.h>
 #include <kerror.h>
+#include <lavg.h>
 #include <thread.h>
-#include <sched.h>
+#include <tsched.h>
 
-/* Definitions for load average calculation **********************************/
-#define LOAD_FREQ   (configSCHED_LAVG_PER * (int)configSCHED_HZ)
-/* FEXP_N = 2^11/(2^(interval * log_2(e/N))) */
-#if configSCHED_LAVG_PER == 5
-#define FSHIFT      11      /*!< nr of bits of precision */
-#define FEXP_1      1884    /*!< 1/exp(5sec/1min) */
-#define FEXP_5      2014    /*!< 1/exp(5sec/5min) */
-#define FEXP_15     2037    /*!< 1/exp(5sec/15min) */
-#elif configSCHED_LAVG_PER == 11
-#define FSHIFT      11
-#define FEXP_1      1704
-#define FEXP_5      1974
-#define FEXP_15     2023
-#else
-#error Incorrect value of kernel configuration configSCHED_LAVG_PER
-#endif
-#define FIXED_1     (1 << FSHIFT) /*!< 1.0 in fixed-point */
-#define CALC_LOAD(load, exp, n)                  \
-                    load *= exp;                 \
-                    load += n * (FIXED_1 - exp); \
-                    load >>= FSHIFT;
-/** Scales fixed-point load average value to a integer format scaled to 100 */
-#define SCALE_LOAD(x) (((x + (FIXED_1/200)) * 100) >> FSHIFT)
-/* End of Definitions for load average calculation ***************************/
+#define NICE_IDLE       (-21)
+#define NICE_PENALTY    (-22)   /*!< Penalty. Shall not be used as an actual
+                                 *   value. */
+
 /* sysctl node for scheduler */
 SYSCTL_DECL(_kern_sched);
 SYSCTL_NODE(_kern, OID_AUTO, sched, CTLFLAG_RW, 0, "Scheduler");
@@ -110,12 +91,7 @@ static char sched_idle_stack[sizeof(sw_stack_frame_t)
 
 /* Static function declarations **********************************************/
 static void init_thread_id_queue(void);
-static void sched_thread_init(pthread_t i,
-        struct _ds_pthread_create * thread_def, threadInfo_t * parent, int priv);
-static void sched_thread_set_inheritance(threadInfo_t * new_child,
-        threadInfo_t * parent);
 static void _sched_thread_set_exec(pthread_t thread_id, int pri);
-static void sched_thread_remove(pthread_t id);
 /* End of Static function declarations ***************************************/
 
 /* Functions called from outside of kernel context ***************************/
@@ -143,7 +119,7 @@ void sched_init(void)
         .argument = NULL
     };
 
-    sched_thread_init(0, &tdef_idle, NULL, 1);
+    thread_init(&task_table[0], 0, &tdef_idle, NULL, 1);
     current_thread = 0; /* To initialize it later on sched_handler. */
 
     /* Initialize locks */
@@ -246,7 +222,7 @@ void sched_get_loads(uint32_t loads[3])
 /**
  * Schedule next thread.
  */
-void sched_context_switcher(void)
+void sched_schedule(void)
 {
     do {
         /* Get next thread from the priority queue */
@@ -258,7 +234,7 @@ void sched_context_switcher(void)
             (void)heap_del_max(&priority_queue);
 
             if (SCHED_TEST_DETACHED_ZOMBIE(current_thread->flags)) {
-                sched_thread_terminate(current_thread->id);
+                thread_terminate(current_thread->id);
                 current_thread = 0;
             }
             continue; /* Select next thread */
@@ -286,7 +262,18 @@ void sched_context_switcher(void)
     current_thread->ts_counter--;
 }
 
-threadInfo_t * sched_get_pThreadInfo(pthread_t thread_id)
+pthread_t sched_new_tid(void)
+{
+    pthread_t new_id;
+
+    if (!queue_pop(&next_thread_id_queue_cb, &new_id)) {
+        return -EAGAIN;
+    }
+
+    return new_id;
+}
+
+struct thread_info * sched_get_thread_info(pthread_t thread_id)
 {
     if (thread_id > configSCHED_MAX_THREADS)
         return NULL;
@@ -295,147 +282,6 @@ threadInfo_t * sched_get_pThreadInfo(pthread_t thread_id)
         return NULL;
 
     return &(task_table[thread_id]);
-}
-
-/**
-  * Set thread initial configuration
-  * @note This function should not be called for already initialized threads.
-  * @param i            Thread id
-  * @param thread_def   Thread definitions
-  * @param parent       Parent thread id, NULL = doesn't have a parent
-  * @param priv         If set thread is initialized as a kernel mode thread
-  *                     (kworker).
-  * @todo what if parent is stopped before this function is called?
-  */
-static void sched_thread_init(pthread_t i,
-        struct _ds_pthread_create * thread_def, threadInfo_t * parent, int priv)
-{
-    /* This function should not be called for already initialized threads. */
-    if ((task_table[i].flags & (uint32_t)SCHED_IN_USE_FLAG) != 0)
-        return;
-
-    memset(&(task_table[i]), 0, sizeof(threadInfo_t));
-
-    /* Return thread id */
-    if (thread_def->thread)
-        *(thread_def->thread) = (pthread_t)i;
-
-    /* Init core specific stack frame for user space */
-    init_stack_frame(thread_def, &(task_table[i].sframe[SCHED_SFRAME_SYS]),
-            priv);
-
-    /* Mark this thread index as used.
-     * EXEC flag is set later in sched_thread_set_exec */
-    task_table[i].flags         = (uint32_t)SCHED_IN_USE_FLAG;
-    task_table[i].id            = i;
-    task_table[i].niceval       = thread_def->def->tpriority;
-    /* task_table[i].priority is set later in sched_thread_set_exec */
-
-    if (priv) {
-        /* Just that user can see that this is a kworker, no functional
-         * difference other than privileged mode. */
-         task_table[i].flags |= SCHED_KWORKER_FLAG;
-    }
-
-    /* Clear signal flags & wait states */
-    task_table[i].a_wait_count = ATOMIC_INIT(0);
-    task_table[i].wait_tim = -1;
-
-    /* Update parent and child pointers */
-    sched_thread_set_inheritance(&(task_table[i]), parent);
-
-    /* So errno is at the last address of stack area.
-     * Note that this should also agree with core specific
-     * init_stack_frame() function. */
-    task_table[i].errno_uaddr = (void *)((uint32_t)(thread_def->def->stackAddr)
-                                        + thread_def->def->stackSize
-                                        - sizeof(errno_t));
-
-    /* Create kstack */
-    thread_init_kstack(&(task_table[i]));
-
-    /* Put thread into execution */
-    _sched_thread_set_exec(i, thread_def->def->tpriority);
-}
-
-/**
- * Set thread inheritance
- * Sets linking from the parent thread to the thread id.
- */
-static void sched_thread_set_inheritance(threadInfo_t * new_child,
-        threadInfo_t * parent)
-{
-    threadInfo_t * last_node;
-    threadInfo_t * tmp;
-
-    /* Initial values for all threads */
-    new_child->inh.parent = parent;
-    new_child->inh.first_child = NULL;
-    new_child->inh.next_child = NULL;
-
-    if (parent == NULL) {
-        new_child->pid_owner = 0;
-        return;
-    }
-    new_child->pid_owner = parent->pid_owner;
-
-    if (parent->inh.first_child == NULL) {
-        /* This is the first child of this parent */
-        parent->inh.first_child = new_child;
-        new_child->inh.next_child = NULL;
-
-        return; /* All done */
-    }
-
-    /* Find the last child thread
-     * Assuming first_child is a valid thread pointer
-     */
-    tmp = (threadInfo_t *)(parent->inh.first_child);
-    do {
-        last_node = tmp;
-    } while ((tmp = last_node->inh.next_child) != NULL);
-
-    /* Set newly created thread as the last child in chain. */
-    last_node->inh.next_child = new_child;
-}
-
-pthread_t sched_thread_fork(void)
-{
-    threadInfo_t * const old_thread = current_thread;
-    threadInfo_t tmp;
-    pthread_t new_id;
-
-#if configDEBUG >= KERROR_DEBUG
-    if (old_thread == 0) {
-        panic("current_thread not set");
-    }
-#endif
-
-    /* Get next free thread_id */
-    if (!queue_pop(&next_thread_id_queue_cb, &new_id)) {
-        return -ENOMEM;
-    }
-
-    /* New thread is kept in tmp until it's ready for execution. */
-    memcpy(&tmp, old_thread, sizeof(threadInfo_t));
-    tmp.flags &= ~SCHED_EXEC_FLAG; /* Disable exec for now. */
-    tmp.id = new_id;
-    sched_thread_set_inheritance(&tmp, old_thread);
-
-    /* Initialize a new kstack & copy data from old kstack. */
-    thread_init_kstack(&tmp);
-
-    /* TODO Following should be done in HAL */
-    memcpy(&tmp.sframe[SCHED_SFRAME_SYS], &old_thread->sframe[SCHED_SFRAME_SVC],
-            sizeof(sw_stack_frame_t));
-    tmp.sframe[SCHED_SFRAME_SYS].r0 = 0;
-    tmp.sframe[SCHED_SFRAME_SYS].pc += 4; /* TODO This is too hw specific */
-
-    memcpy(&(task_table[new_id]), &tmp, sizeof(threadInfo_t));
-
-    /* TODO Increment resource refcounters(?) */
-
-    return new_id;
 }
 
 void sched_thread_set_exec(pthread_t thread_id)
@@ -504,11 +350,7 @@ void sched_current_thread_yield(int sleep_flag)
      * actually happen. */
 }
 
-/**
- * Removes a thread from scheduling.
- * @param tt_id Thread task table id
- */
-static void sched_thread_remove(pthread_t tt_id)
+void sched_thread_remove(pthread_t tt_id)
 {
 #if 0
     istate_t s;
@@ -556,13 +398,6 @@ static void sched_thread_remove(pthread_t tt_id)
 #endif
 }
 
-void sched_thread_die(intptr_t retval)
-{
-    current_thread->retval = retval;
-    current_thread->flags |= SCHED_ZOMBIE_FLAG;
-    sched_sleep_current_thread(SCHED_PERMASLEEP);
-}
-
 int sched_thread_detach(pthread_t id)
 {
     if ((task_table[id].flags & SCHED_IN_USE_FLAG) == 0) {
@@ -608,7 +443,8 @@ pthread_t sched_threadCreate(struct _ds_pthread_create * thread_def, int priv)
     disable_interrupt();
 #endif
 
-    if (!queue_pop(&next_thread_id_queue_cb, &i)) {
+    i = sched_new_tid();
+    if (i < 0) {
         /* New thread could not be created */
 #if 0
         set_interrupt_state(s);
@@ -616,7 +452,8 @@ pthread_t sched_threadCreate(struct _ds_pthread_create * thread_def, int priv)
         return -1;
     }
 
-    sched_thread_init(
+    thread_init(
+            &task_table[i],
             i,                      /* Index of the thread created */
             thread_def,             /* Thread definition. */
             (void *)current_thread, /* Pointer to the parent thread, which is
@@ -634,63 +471,6 @@ pthread_t sched_threadCreate(struct _ds_pthread_create * thread_def, int priv)
         /* Return the id of the new thread */
         return i;
     }
-}
-
-/* TODO Might be unsafe to call from multiple threads for the same tree! */
-int sched_thread_terminate(pthread_t thread_id)
-{
-    threadInfo_t * thread = &task_table[thread_id];
-    threadInfo_t * child;
-    threadInfo_t * prev_child;
-
-    if (!SCHED_TEST_TERMINATE_OK(thread->flags)) {
-        return -EPERM;
-    }
-
-    /* Remove all child threads from execution */
-    child = thread->inh.first_child;
-    prev_child = NULL;
-    if (child != NULL) {
-        do {
-            if (sched_thread_terminate(child->id) != 0) {
-                child->inh.parent = 0; /* Child is now orphan, it was
-                                        * probably a kworker that couldn't be
-                                        * killed. */
-            }
-
-            /* Fix child list */
-            if (child->flags &&
-                    (((threadInfo_t *)(thread->inh.first_child))->flags == 0)) {
-                thread->inh.first_child = child;
-                prev_child = child;
-            } else if (child->flags && prev_child) {
-                prev_child->inh.next_child = child;
-                prev_child = child;
-            } else if (child->flags) {
-                prev_child = child;
-            }
-        } while ((child = child->inh.next_child) != NULL);
-    }
-
-    /* We set this thread as a zombie. If detach is also set then
-     * sched_thread_remove() will remove this thread immediately but usually
-     * it's not, then it will release some resourses but left the thread
-     * struct mostly intact. */
-    thread->flags |= SCHED_ZOMBIE_FLAG;
-    thread->flags &= ~SCHED_EXEC_FLAG;
-
-    /* Remove thread completely if it is a detached zombie, its parent is a
-     * detached zombie thread or the thread is parentles for any reason.
-     * Otherwise we left the thread struct intact for now.
-     */
-    if (SCHED_TEST_DETACHED_ZOMBIE(thread->flags) ||
-            (thread->inh.parent == 0)             ||
-            ((thread->inh.parent != 0)            &&
-            SCHED_TEST_DETACHED_ZOMBIE(((threadInfo_t *)(thread->inh.parent))->flags))) {
-        sched_thread_remove(thread_id);
-    }
-
-    return 0;
 }
 
 int sched_thread_set_priority(pthread_t thread_id, int priority)

@@ -47,6 +47,39 @@ void sched_handler(void);
 void * idle_thread(void * arg);
 
 /**
+  * Set thread initial configuration
+  * @note This function should not be called for already initialized threads.
+  * @param tp           is a pointer to the thread struct.
+  * @param thread_id    Thread id
+  * @param thread_def   Thread definitions
+  * @param parent       Parent thread id, NULL = doesn't have a parent
+  * @param priv         If set thread is initialized as a kernel mode thread
+  *                     (kworker).
+  * @todo what if parent is stopped before this function is called?
+  */
+void thread_init(struct thread_info * tp, pthread_t thread_id,
+                 struct _ds_pthread_create * thread_def, threadInfo_t * parent,
+                 int priv);
+
+/**
+ * Set thread inheritance
+ * Sets linking from the parent thread to the thread id.
+ */
+void thread_set_inheritance(threadInfo_t * new_child, threadInfo_t * parent);
+
+/**
+ * Fork current thread.
+ * @note Cloned thread is set to sleep state and caller of this function should
+ * set it to exec state. Caller is also expected to handle user stack issues as
+ * as well. The new thread is exact clone of the current thread but with a new
+ * kernel stack.
+ * @return  0 clone succeed and this is the new thread executing;
+ *          < 0 error;
+ *          > 0 clone succeed and return value is the id of the new thread.
+ */
+pthread_t thread_fork(void);
+
+/**
  * Wait for event.
  * Put current_thread on sleep until thread_release().
  * Can be called multiple times.
@@ -79,5 +112,20 @@ pthread_t get_current_tid(void);
  *          Or NULL if current_thread is not set.
  */
 void * thread_get_curr_stackframe(size_t ind);
+
+/**
+ * Terminate current thread.
+ * This makes current_thread a zombie that should be either killed by the
+ * parent thread or will be killed at least when the parent is killed.
+ * @param retval is a return value from the thread.
+ */
+void thread_die(intptr_t retval);
+
+/**
+ * Terminate a thread and its childs.
+ * @param thread_id   thread ID obtained by \ref sched_threadCreate or \ref sched_thread_getId.
+ * @return 0 if succeed; Otherwise -EPERM.
+ */
+int thread_terminate(pthread_t thread_id);
 
 #endif /* THREAD_H */

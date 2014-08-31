@@ -37,7 +37,7 @@
 #include <kmalloc.h>
 #include <vm/vm.h>
 #include <proc.h>
-#include <sched.h>
+#include <tsched.h>
 #include <ksignal.h>
 #include <buf.h>
 #include <errno.h>

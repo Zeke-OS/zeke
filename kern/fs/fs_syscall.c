@@ -38,7 +38,7 @@
 #include <vm/vm.h>
 #include <vm/vm_copyinstruct.h>
 #include <proc.h>
-#include <sched.h>
+#include <tsched.h>
 #include <ksignal.h>
 #include <syscall.h>
 #include <errno.h>

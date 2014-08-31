@@ -80,7 +80,7 @@ __attribute__ ((naked)) void undef_handler(void)
 
 #if 0
     /* Kill the current thread */
-    sched_thread_terminate(current_thread->id);
+    thread_terminate(current_thread->id);
 
     /* Return to the scheduler ASAP */
     req_context_switch();

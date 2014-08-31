@@ -37,7 +37,7 @@
 #include <kstring.h>
 #include <kerror.h>
 #include <errno.h>
-#include <sched.h>
+#include <tsched.h>
 #include <hal/core.h>
 
 volatile uint32_t flag_kernel_tick = 0;

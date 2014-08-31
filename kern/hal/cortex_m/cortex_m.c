@@ -48,7 +48,7 @@
 #include <kstring.h>
 #endif
 #include <stddef.h>
-#include <sched.h>
+#include <tsched.h>
 #include "../hal_mcu.h"
 #include "cortex_m.h"
 
@@ -127,7 +127,7 @@ void HardFault_Handler(void)
      * kill the current thread and call the scheduler for reschedule. */
 
     /* Kill the current thread */
-    sched_thread_terminate(current_thread->id);
+    thread_terminate(current_thread->id);
 
     /* Return to the scheduler ASAP */
     req_context_switch();

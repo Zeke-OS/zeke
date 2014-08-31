@@ -33,7 +33,7 @@
 #include <autoconf.h>
 #include <kerror.h>
 #include "../sbin/init/init.h" /* TODO To be removed */
-#include <sched.h>
+#include <tsched.h>
 #include <proc.h>
 #include <libkern.h>
 #include <kstring.h>
@@ -139,7 +139,7 @@ void kinit(void)
         panic(buf);
     }
 
-    threadInfo_t * const init_thread = sched_get_pThreadInfo(tid);
+    threadInfo_t * const init_thread = sched_get_thread_info(tid);
     if (!init_thread) {
         panic("Can't get thread descriptor of init_thread!");
     }

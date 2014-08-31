@@ -35,7 +35,7 @@
 #define KERNEL_INTERNAL 1
 #include <libkern.h>
 #include <kstring.h>
-#include <sched.h>
+#include <tsched.h>
 #include <proc.h>
 #include <hal/core.h>
 #include <kerror.h>

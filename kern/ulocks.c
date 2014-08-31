@@ -36,7 +36,7 @@
 #include <semaphore.h>
 #include <hal/core.h>
 #include <vm/vm.h>
-#include <sched.h>
+#include <tsched.h>
 #include <thread.h>
 #include <timers.h>
 #include <errno.h>

@@ -133,7 +133,7 @@
 int * __error(void);
 #define errno (*__error())
 #else /* KERNEL_INTERNAL */
-#include <sched.h>
+#include <tsched.h>
 
 /**
  * A type for errno.

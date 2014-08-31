@@ -56,7 +56,7 @@
 #define KERNEL_INTERNAL
 #endif
 
-#include <sched.h> /* Needed for threadInfo_t and threading functions */
+#include <tsched.h> /* Needed for threadInfo_t and threading functions */
 #include <hal/mmu.h>
 #include <vm/vm.h>
 #include <fs/fs.h>

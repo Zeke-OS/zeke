@@ -499,7 +499,7 @@
 #define PRIV_VALID(x)   ((x) > _PRIV_LOWEST && (x) < _PRIV_HIGHEST)
 
 #ifdef KERNEL_INTERNAL
-#include <sched.h>
+#include <tsched.h>
 
 /*
  * Privilege check interfaces, modeled after historic suser() interfaces, but

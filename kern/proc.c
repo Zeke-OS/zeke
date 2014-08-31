@@ -33,7 +33,7 @@
 
 #define KERNEL_INTERNAL 1
 #include <autoconf.h>
-#include <sched.h>
+#include <tsched.h>
 #include <kstring.h>
 #include <libkern.h>
 #include <kerror.h>
@@ -48,6 +48,7 @@
 #include <dynmem.h>
 #include <kmalloc.h>
 #include <buf.h>
+#include <thread.h>
 #include <proc.h>
 #include "_proc.h"
 
@@ -500,7 +501,7 @@ int proc_replace(pid_t pid, struct buf * (*regions)[], int nr_regions)
     }
 
     /* interrupts will be enabled automatically */
-    sched_thread_die(0);
+    thread_die(0);
 
     return 0; /* Never returns */
 }
@@ -559,7 +560,7 @@ intptr_t proc_syscall(uint32_t type, void * p)
     case SYSCALL_PROC_EXIT:
         curproc->exit_code = get_errno();
         sched_thread_detach(current_thread->id);
-        sched_thread_die(curproc->exit_code);
+        thread_die(curproc->exit_code);
         return 0; /* Never reached */
 
     case SYSCALL_PROC_GETUID:

@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    sched.h
+ * @file    tsched.h
  * @author  Olli Vanhoja
  * @brief   Kernel scheduler header file for sched.c.
  * @section LICENSE
@@ -36,13 +36,14 @@
   */
 
 #pragma once
-#ifndef SCHED_H
-#define SCHED_H
+#ifndef TSCHED_H
+#define TSCHED_H
 
 #ifndef KERNEL_INTERNAL
 #define KERNEL_INTERNAL
 #endif
 #include <autoconf.h>
+#include <sched.h>
 #include <ksignal.h>
 #include <vm/vm.h>
 #include <hal/core.h>
@@ -132,21 +133,17 @@
 #define SCHED_SFRAME_ABO        2   /*!< Stack frame for aborts. */
 #define SCHED_SFRAME_ARR_SIZE   3
 
-/* Nice leves */
-#define NICE_ERR        (100)   /*!< GC value. */
-#define NICE_MAX        (20)    /*!< Realtime. */
-#define NICE_DEF        (NZERO) /*!< Normal value. */
-#define NICE_MIN        (-19)
-#define NICE_YIELD      (-20)
-#define NICE_IDLE       (-21)
-#define NICE_PENALTY    (-22)   /*!< Penalty. Shall not be used as an actual
-                                 *   value. */
+#if configSCHED_CDS != 0
+RB_HEAD(sched_threads, struct thread_info);
+RB_HEAD(sched_ready, struct thread_info);
+RB_HEAD(sched_exec, struct thread_info);
+#endif
 
 /**
  * Thread info struct.
  * Thread Control Block structure.
  */
-typedef struct {
+typedef struct thread_info {
     uint32_t flags;                 /*!< Status flags. */
     sw_stack_frame_t sframe[SCHED_SFRAME_ARR_SIZE];
     struct buf * kstack_region;    /*!< Thread kernel stack region. */
@@ -159,6 +156,16 @@ typedef struct {
     int ts_counter;                 /*!< Time slice counter. */
     pthread_t id;                   /*!< Thread id. */
     pid_t pid_owner;                /*!< Owner process of this thread. */
+
+#if configSCHED_CDS != 0
+    struct sched {
+        unsigned policy;                    /*!< Scheduling policy. */
+        RB_ENTRY(sched_threads) threads;
+        RB_ENTRY(sched_ready)   ready;
+        RB_ENTRY(sched_exec)    exec;
+        llist_nodedsc_t         fifo_exec;
+    } sched;
+#endif
 
     /**
      * Thread inheritance; Parent and child thread pointers.
@@ -187,6 +194,15 @@ extern threadInfo_t * current_thread;
 
 /* Public function prototypes ***************************************************/
 
+#if configSCHED_CDS != 0
+int sched_tid_comp(struct thread_info * a, struct thread_info * b);
+int sched_nice_comp(struct thread_info * a, struct thread_info * b);
+int sched_ts_comp(struct thread_info * a, struct thread_info * b);
+RB_PROTOTYPE(sched_threads, thread_info, sched.threads, sched_tid_comp);
+RB_PROTOTYPE(sched_ready, thread_info, sched.ready, sched_nice_comp);
+RB_PROTOTYPE(sched_exec, thread_info, sched.exec, sched_ts_comp);
+#endif
+
 /**
  * Return load averages in integer format scaled to 100.
  * @param[out] loads load averages.
@@ -194,24 +210,20 @@ extern threadInfo_t * current_thread;
 void sched_get_loads(uint32_t loads[3]);
 
 /**
+ * Get new unused thread id.
+ * Returned thread shall be available with sched_get_thread_info() function and
+ * shall not have SCHED_IN_USE_FLAG set.
+ * @return Returns a new thread id or -EAGAIN.
+ */
+pthread_t sched_new_tid(void);
+
+/**
  * Get pointer to a threadInfo structure.
  * @param thread_id id of a thread.
  * @return Pointer to a threadInfo structure of a correspondig thread id
  *         or NULL if thread does not exist.
  */
-threadInfo_t * sched_get_pThreadInfo(pthread_t thread_id);
-
-/**
- * Fork current thread.
- * @note Cloned thread is set to sleep state and caller of this function should
- * set it to exec state. Caller is also expected to handle user stack issues as
- * as well. The new thread is exact clone of the current thread but with a new
- * kernel stack.
- * @return  0 clone succeed and this is the new thread executing;
- *          < 0 error;
- *          > 0 clone succeed and return value is the id of the new thread.
- */
-pthread_t sched_thread_fork();
+struct thread_info * sched_get_thread_info(pthread_t thread_id);
 
 /**
  * Set thread into execution with its default priority.
@@ -233,23 +245,13 @@ void sched_sleep_current_thread(int permanent);
 void sched_current_thread_yield(int sleep_flag);
 
 /**
- * Terminate current thread.
- * This makes current_thread a zombie that should be either killed by the
- * parent thread or will be killed at least when the parent is killed.
- * @param retval is a return value from the thread.
- */
-void sched_thread_die(intptr_t retval);
-
-/**
  * Mark thread as detached so it wont be turned into zombie on exit.
  * @param id is a thread id.
  * @return Return -EINVAL if invalid thread id was given; Otherwise zero.
  */
 int sched_thread_detach(pthread_t id);
 
-/* TODO Following shouldn't be extern'd and there should be better way to export
- * these for thread.h */
-void sched_context_switcher(void);
+void sched_schedule(void);
 
 /* Functions that are mainly used by syscalls but can be also caleed by
  * other kernel source modules. */
@@ -263,11 +265,10 @@ void sched_context_switcher(void);
 pthread_t sched_threadCreate(struct _ds_pthread_create * thread_def, int priv);
 
 /**
- * Terminate a thread and its childs.
- * @param thread_id   thread ID obtained by \ref sched_threadCreate or \ref sched_thread_getId.
- * @return 0 if succeed; Otherwise -EPERM.
+ * Removes a thread from scheduling.
+ * @param tt_id Thread task table id
  */
-int sched_thread_terminate(pthread_t thread_id);
+void sched_thread_remove(pthread_t id);
 
 /**
  * Set thread priority.
@@ -279,7 +280,7 @@ int sched_thread_set_priority(pthread_t thread_id, int priority);
 
 int sched_thread_get_priority(pthread_t thread_id);
 
-#endif /* SCHED_H */
+#endif /* TSCHED_H */
 
 /**
   * @}

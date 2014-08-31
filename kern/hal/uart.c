@@ -36,7 +36,7 @@
 #include <kmalloc.h>
 #include <sys/types.h>
 #include <fcntl.h>
-#include <sched.h>
+#include <tsched.h>
 #include <thread.h>
 #include <fs/devfs.h>
 #include <sys/ioctl.h>

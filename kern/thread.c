@@ -34,6 +34,7 @@
 
 #define KERNEL_INTERNAL
 #include <libkern.h>
+#include <kstring.h>
 #include <sys/linker_set.h>
 #include <hal/core.h>
 #include <hal/mmu.h>
@@ -43,7 +44,7 @@
 #include <kerror.h>
 #include <errno.h>
 #include <timers.h>
-#include <sched.h>
+#include <tsched.h>
 #include <thread.h>
 
 #define KSTACK_SIZE ((MMU_VADDR_TKSTACK_END - MMU_VADDR_TKSTACK_START) + 1)
@@ -59,12 +60,10 @@ void sched_handler(void)
     void ** task_p;
 
     if (!current_thread) {
-        current_thread = sched_get_pThreadInfo(0);
+        current_thread = sched_get_thread_info(0);
+        if (!current_thread)
+            panic("No thread 0");
     }
-
-#if 0
-    bcm2835_uart_uputc('.');
-#endif
 
     /* Pre-scheduling tasks */
     SET_FOREACH(task_p, pre_sched_tasks) {
@@ -75,7 +74,7 @@ void sched_handler(void)
     /*
      * Call the actual context switcher function that schedules the next thread.
      */
-    sched_context_switcher();
+    sched_schedule();
     if (current_thread != prev_thread)
         mmu_map_region(&(current_thread->kstack_region->b_mmu));
 
@@ -104,6 +103,133 @@ void * idle_thread(/*@unused@*/ void * arg)
 
         idle_sleep();
     }
+}
+
+void thread_init(struct thread_info * tp, pthread_t thread_id,
+                 struct _ds_pthread_create * thread_def, threadInfo_t * parent,
+                 int priv)
+{
+    /* This function should not be called for already initialized threads. */
+    if ((tp->flags & (uint32_t)SCHED_IN_USE_FLAG) != 0)
+        panic("Can't init thread that is already in use.");
+
+    memset(tp, 0, sizeof(struct thread_info));
+
+    /* Return thread id */
+    if (thread_def->thread)
+        *(thread_def->thread) = thread_id;
+
+    /* Init core specific stack frame for user space */
+    init_stack_frame(thread_def, &(tp->sframe[SCHED_SFRAME_SYS]),
+            priv);
+
+    /* Mark this thread index as used.
+     * EXEC flag is set later in sched_thread_set_exec */
+    tp->flags   = (uint32_t)SCHED_IN_USE_FLAG;
+    tp->id      = thread_id;
+    tp->niceval = thread_def->def->tpriority;
+
+    if (priv) {
+        /* Just that user can see that this is a kworker, no functional
+         * difference other than privileged mode. */
+         tp->flags |= SCHED_KWORKER_FLAG;
+    }
+
+    /* Clear signal flags & wait states */
+    tp->a_wait_count = ATOMIC_INIT(0);
+    tp->wait_tim = -1;
+
+    /* Update parent and child pointers */
+    thread_set_inheritance(tp, parent);
+
+    /* So errno is at the last address of stack area.
+     * Note that this should also agree with core specific
+     * init_stack_frame() function. */
+    tp->errno_uaddr = (void *)((uintptr_t)(thread_def->def->stackAddr)
+            + thread_def->def->stackSize
+            - sizeof(errno_t));
+
+    /* Create kstack */
+    thread_init_kstack(tp);
+
+    /* Put thread into execution */
+    sched_thread_set_exec(tp->id);
+}
+
+void thread_set_inheritance(threadInfo_t * new_child, threadInfo_t * parent)
+{
+    threadInfo_t * last_node;
+    threadInfo_t * tmp;
+
+    /* Initial values for all threads */
+    new_child->inh.parent = parent;
+    new_child->inh.first_child = NULL;
+    new_child->inh.next_child = NULL;
+
+    if (parent == NULL) {
+        new_child->pid_owner = 0;
+        return;
+    }
+    new_child->pid_owner = parent->pid_owner;
+
+    if (parent->inh.first_child == NULL) {
+        /* This is the first child of this parent */
+        parent->inh.first_child = new_child;
+        new_child->inh.next_child = NULL;
+
+        return; /* All done */
+    }
+
+    /* Find the last child thread
+     * Assuming first_child is a valid thread pointer
+     */
+    tmp = (threadInfo_t *)(parent->inh.first_child);
+    do {
+        last_node = tmp;
+    } while ((tmp = last_node->inh.next_child) != NULL);
+
+    /* Set newly created thread as the last child in chain. */
+    last_node->inh.next_child = new_child;
+}
+
+pthread_t thread_fork(void)
+{
+    threadInfo_t * const old_thread = current_thread;
+    threadInfo_t tmp;
+    pthread_t new_id;
+
+#if configDEBUG >= KERROR_DEBUG
+    if (old_thread == 0) {
+        panic("current_thread not set");
+    }
+#endif
+
+    /* Get next free thread_id */
+    new_id = sched_new_tid();
+    if (new_id < 0) {
+        return -ENOMEM;
+    }
+
+    /* New thread is kept in tmp until it's ready for execution. */
+    memcpy(&tmp, old_thread, sizeof(threadInfo_t));
+    tmp.flags &= ~SCHED_EXEC_FLAG; /* Disable exec for now. */
+    tmp.id = new_id;
+    thread_set_inheritance(&tmp, old_thread);
+
+    /* Initialize a new kstack & copy data from old kstack. */
+    thread_init_kstack(&tmp);
+
+    /* TODO Following should be done in HAL */
+    memcpy(&tmp.sframe[SCHED_SFRAME_SYS], &old_thread->sframe[SCHED_SFRAME_SVC],
+            sizeof(sw_stack_frame_t));
+    tmp.sframe[SCHED_SFRAME_SYS].r0 = 0;
+    tmp.sframe[SCHED_SFRAME_SYS].pc += 4; /* TODO This is too hw specific */
+
+    memcpy(sched_get_thread_info(new_id), &tmp, sizeof(struct thread_info));
+
+    /* TODO Increment resource refcounters(?) */
+
+    return new_id;
 }
 
 void thread_wait(void)
@@ -184,6 +310,70 @@ void * thread_get_curr_stackframe(size_t ind)
     return NULL;
 }
 
+void thread_die(intptr_t retval)
+{
+    current_thread->retval = retval;
+    current_thread->flags |= SCHED_ZOMBIE_FLAG;
+    sched_sleep_current_thread(SCHED_PERMASLEEP);
+}
+
+/* TODO Might be unsafe to call from multiple threads for the same tree! */
+int thread_terminate(pthread_t thread_id)
+{
+    threadInfo_t * thread = sched_get_thread_info(thread_id);
+    threadInfo_t * child;
+    threadInfo_t * prev_child;
+
+    if (!thread || !SCHED_TEST_TERMINATE_OK(thread->flags)) {
+        return -EPERM;
+    }
+
+    /* Remove all child threads from execution */
+    child = thread->inh.first_child;
+    prev_child = NULL;
+    if (child != NULL) {
+        do {
+            if (thread_terminate(child->id) != 0) {
+                child->inh.parent = 0; /* Child is now orphan, it was
+                                        * probably a kworker that couldn't be
+                                        * killed. */
+            }
+
+            /* Fix child list */
+            if (child->flags &&
+                    (((threadInfo_t *)(thread->inh.first_child))->flags == 0)) {
+                thread->inh.first_child = child;
+                prev_child = child;
+            } else if (child->flags && prev_child) {
+                prev_child->inh.next_child = child;
+                prev_child = child;
+            } else if (child->flags) {
+                prev_child = child;
+            }
+        } while ((child = child->inh.next_child) != NULL);
+    }
+
+    /* We set this thread as a zombie. If detach is also set then
+     * sched_thread_remove() will remove this thread immediately but usually
+     * it's not, then it will release some resourses but left the thread
+     * struct mostly intact. */
+    thread->flags |= SCHED_ZOMBIE_FLAG;
+    thread->flags &= ~SCHED_EXEC_FLAG;
+
+    /* Remove thread completely if it is a detached zombie, its parent is a
+     * detached zombie thread or the thread is parentles for any reason.
+     * Otherwise we left the thread struct intact for now.
+     */
+    if (SCHED_TEST_DETACHED_ZOMBIE(thread->flags) ||
+            (thread->inh.parent == 0)             ||
+            ((thread->inh.parent != 0)            &&
+            SCHED_TEST_DETACHED_ZOMBIE(((threadInfo_t *)(thread->inh.parent))->flags))) {
+        sched_thread_remove(thread_id);
+    }
+
+    return 0;
+}
+
 static int sys_thread_create(void * user_args)
 {
     struct _ds_pthread_create args;
@@ -212,7 +402,7 @@ static int sys_thread_terminate(void * user_args)
         return -1;
     }
 
-    return sched_thread_terminate(thread_id);
+    return thread_terminate(thread_id);
 }
 
 static int sys_thread_sleep_ms(void * user_args)
@@ -246,7 +436,7 @@ static intptr_t sys_geterrno(void * user_args)
 
 static int sys_thread_die(void * user_args)
 {
-    sched_thread_die((intptr_t)user_args);
+    thread_die((intptr_t)user_args);
 
     /* Does not return */
     return 0;

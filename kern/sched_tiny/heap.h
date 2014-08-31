@@ -37,7 +37,7 @@
 #define HEAP_H
 
 #include <stddef.h>
-#include "sched.h"
+#include <tsched.h>
 
 #define HEAP_NEW_EMPTY {{NULL}, -1}
 

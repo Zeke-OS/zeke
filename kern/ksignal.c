@@ -69,7 +69,7 @@
 #define KERNEL_INTERNAL 1
 #include <syscall.h>
 #include <errno.h>
-#include <sched.h>
+#include <tsched.h>
 #include <timers.h>
 #include <kmalloc.h>
 #include <sys/param.h>

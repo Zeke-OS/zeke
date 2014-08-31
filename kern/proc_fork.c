@@ -34,7 +34,7 @@
 #define KERNEL_INTERNAL 1
 #include <kstring.h>
 #include <libkern.h>
-#include <sched.h>
+#include <tsched.h>
 #include <thread.h>
 #include <kerror.h>
 #include <kinit.h>
@@ -221,12 +221,12 @@ pid_t proc_fork(pid_t pid)
      */
     if (old_proc->main_thread) {
         //pthread_t old_tid = get_current_tid();
-        pthread_t new_tid = sched_thread_fork();
+        pthread_t new_tid = thread_fork();
         if (new_tid < 0) {
             retval = -EAGAIN; /* TODO ?? */
             goto free_res;
         } else if (new_tid > 0) { /* thread of the forking process returning */
-            new_proc->main_thread = sched_get_pThreadInfo(new_tid);
+            new_proc->main_thread = sched_get_thread_info(new_tid);
             new_proc->main_thread->pid_owner = new_proc->pid;
         } else {
             panic("Thread forking failed");
