@@ -192,7 +192,7 @@ static void insert_threads(int quantums)
     struct thread_info * thread, * nxt;
 
     if (!RB_EMPTY(&cpusched.q_ready)) {
-        for (thread = RB_MIN(sched_ready, &cpusched.q_ready);
+        for (thread = RB_MAX(sched_ready, &cpusched.q_ready);
                 thread != NULL && quantums > 0;
                 thread = nxt) {
             if (thread->priority > quantums)

@@ -56,10 +56,6 @@
 #include <thread.h>
 #include <tsched.h>
 
-#define NICE_IDLE       (-21)
-#define NICE_PENALTY    (-22)   /*!< Penalty. Shall not be used as an actual
-                                 *   value. */
-
 /* sysctl node for scheduler */
 SYSCTL_DECL(_kern_sched);
 SYSCTL_NODE(_kern, OID_AUTO, sched, CTLFLAG_RW, 0, "Scheduler");
