@@ -62,6 +62,7 @@
  * rb   exec    time used   Execution queue of the current epoch.
  */
 struct cpusched {
+    unsigned next_tid;
     unsigned nr_threads;    /*!< Number of threads in scheduling. */
     unsigned nr_exec;       /*!< Number of threads in execution. */
     int cnt_epoch;
@@ -98,8 +99,9 @@ static char sched_idle_stack[sizeof(sw_stack_frame_t)
 
 static int calc_quantums(struct thread_info * thread);
 static void insert_threads(int quantums);
-static int fifo_sched(void);
-static int cds_sched(void);
+static void validate_thread(struct thread_info * tp);
+static struct thread_info * fifo_sched(void);
+static struct thread_info * cds_sched(void);
 
 void sched_init(void) __attribute__((constructor));
 void sched_init(void)
@@ -126,12 +128,33 @@ void sched_init(void)
         .def      = &attr,
         .argument = NULL
     };
-    /* TODO Exec idle thread */
+    tid = sched_new_tid();
+    struct thread_info * tp = sched_get_thread_info(tid);
+    if (tid < 0)
+        panic("Invalid TID");
+    if (!tp)
+        panic("Invalid thread_info struct for TID 0");
+    thread_init(tp, 0, &tdef_idle, NULL, 1);
 
     /* Initialize locks */
     rwlock_init(&loadavg_lock);
 
     SUBSYS_INITFINI("Init scheduler: cds");
+}
+
+int sched_tid_comp(struct thread_info * a, struct thread_info * b)
+{
+    return a->id - b->id;
+}
+
+int sched_nice_comp(struct thread_info * a, struct thread_info * b)
+{
+    return a->niceval - b->niceval;
+}
+
+int sched_ts_comp(struct thread_info * a, struct thread_info * b)
+{
+    return a->ts_counter - b->ts_counter;
 }
 
 RB_GENERATE(sched_threads, thread_info, sched.threads_entry, sched_tid_comp);
@@ -150,8 +173,7 @@ RB_GENERATE(sched_exec, thread_info, sched.exec_entry, sched_ts_comp);
  */
 void sched_schedule(void)
 {
-    struct thread_info * thread;
-    int (*schedpol[])(void) = {
+    struct thread_info * (*schedpol[])(void) = {
         fifo_sched, /* RT sched. */
         cds_sched   /* conv sched. */
     };
@@ -170,8 +192,12 @@ void sched_schedule(void)
     current_thread = NULL;
     do {
         for (int i = 0; i < num_elem(schedpol); i++) {
-            if (schedpol[i]())
-                break;
+            struct thread_info * thread = schedpol[i]();
+
+            if (!thread)
+                continue;
+
+            current_thread = thread;
         }
     } while (!current_thread && (insert_threads(cpusched.cnt_epoch), 1));
 }
@@ -190,6 +216,7 @@ static int calc_quantums(struct thread_info * thread)
 static void insert_threads(int quantums)
 {
     struct thread_info * thread, * nxt;
+    struct thread_info * idle = sched_get_thread_info(0);
 
     if (!RB_EMPTY(&cpusched.q_ready)) {
         for (thread = RB_MAX(sched_ready, &cpusched.q_ready);
@@ -203,10 +230,12 @@ static void insert_threads(int quantums)
             switch (thread->sched.policy) {
             case SCHED_FIFO:
                 cpusched.q_fifo_exec->insert_tail(cpusched.q_fifo_exec, thread);
+                break;
             case SCHED_OTHER:
                 RB_INSERT(sched_exec, &cpusched.q_exec, thread);
                 thread->priority = calc_quantums(thread);
                 quantums -= thread->priority;
+                break;
             default:
                 panic("Incorrect sched policy.");
             }
@@ -215,42 +244,63 @@ static void insert_threads(int quantums)
         }
     }
 
-    if (RB_EMPTY(&cpusched.q_ready)) {
+    if (cpusched.nr_exec <= 0) {
         /* No threads to execute. */
-        RB_INSERT(sched_exec, &cpusched.q_exec, sched_get_thread_info(0));
+        RB_INSERT(sched_exec, &cpusched.q_exec, idle);
+    }
+}
+
+/**
+ * Validate thread.
+ * Validates the status of a thread and determine if it should be terminated and/or
+ * freed.
+ * @param tp is a pointer to the thread.
+ */
+static void validate_thread(struct thread_info * tp)
+{
+    if (SCHED_TEST_DETACHED_ZOMBIE(tp->flags)) {
+            thread_terminate(tp->id);
+    }
+
+    /* thread_terminate() may have set this thread for removal. */
+    if (!(tp->flags & SCHED_IN_USE_FLAG)) {
+        RB_REMOVE(sched_threads, &cpusched.all_threads, tp);
+        kfree(tp);
     }
 }
 
 /**
  *  RT Scheduling.
  */
-static int fifo_sched(void)
+static struct thread_info * fifo_sched(void)
 {
     struct thread_info * thread;
 
-    while (cpusched.q_fifo_exec->count) {
+    while (cpusched.q_fifo_exec->count > 0) {
         thread = cpusched.q_fifo_exec->head;
 
         if (SCHED_TEST_CSW_OK(thread->flags)) {
-            current_thread = thread;
-
-            return 1;
+            if (thread->niceval == NICE_YIELD) {
+                cpusched.q_fifo_exec->remove(cpusched.q_fifo_exec, thread);
+                RB_INSERT(sched_ready, &cpusched.q_ready, thread);
+            } else { /* OK to CSW */
+                break;
+            }
         } else {
             cpusched.q_fifo_exec->remove(cpusched.q_fifo_exec, thread);
-
-            if (SCHED_TEST_DETACHED_ZOMBIE(thread->flags)) {
-                thread_terminate(thread->id);
-            }
+            validate_thread(thread);
         }
+
+        cpusched.nr_exec--;
     }
 
-    return 0;
+    return thread;
 }
 
 /**
  * Conventional Scheduling.
  */
-static int cds_sched(void)
+static struct thread_info * cds_sched(void)
 {
     struct thread_info * thread;
 
@@ -259,19 +309,21 @@ static int cds_sched(void)
 
         if (thread->ts_counter < thread->priority &&
                 SCHED_TEST_CSW_OK(thread->flags)) {
-            current_thread = thread;
-
-            return 1;
+            if (thread->niceval == NICE_YIELD) {
+                RB_REMOVE(sched_exec, &cpusched.q_exec, thread);
+                RB_INSERT(sched_ready, &cpusched.q_ready, thread);
+            } else { /* Ok to CSW */
+                break;
+            }
         } else {
             RB_REMOVE(sched_exec, &cpusched.q_exec, thread);
-
-            if (SCHED_TEST_DETACHED_ZOMBIE(thread->flags)) {
-                thread_terminate(thread->id);
-            }
+            validate_thread(thread);
         }
-    } while (!current_thread);
 
-    return 0;
+        cpusched.nr_exec--;
+    } while (thread);
+
+    return thread;
 }
 
 static void sched_calc_loads(void)
@@ -319,8 +371,17 @@ void sched_get_loads(uint32_t loads[3])
 
 pthread_t sched_new_tid(void)
 {
-    /* TODO Create if doesn't exist */
-    return -1;
+    const pthread_t tid = cpusched.next_tid;
+    struct thread_info * tp = kcalloc(1, sizeof(struct thread_info));
+
+    if (!tp)
+        return -ENOMEM;
+
+    tp->id = tid;
+    RB_INSERT(sched_threads, &cpusched.all_threads, tp);
+    cpusched.next_tid++;
+
+    return tid;
 }
 
 struct thread_info * sched_get_thread_info(pthread_t thread_id)
@@ -328,16 +389,101 @@ struct thread_info * sched_get_thread_info(pthread_t thread_id)
     struct thread_info find;
     struct thread_info * thread;
 
+    if (thread_id < 0)
+        return NULL;
+
     find.id = thread_id;
     thread = RB_FIND(sched_threads, &cpusched.all_threads, &find);
 
     return thread;
 }
 
-/* TODO */
-pthread_t sched_threadCreate(struct _ds_pthread_create * thread_def, int priv)
+pthread_t sched_thread_create(struct _ds_pthread_create * thread_def, int priv)
 {
-    return -1;
+    pthread_t tid = sched_new_tid();
+    struct thread_info * tp = sched_get_thread_info(tid);
+
+    if (tid < 0 || !tp)
+        return -1;
+
+    thread_init(tp,
+                tid,                    /* Index of the thread created */
+                thread_def,             /* Thread definition. */
+                (void *)current_thread, /* Pointer to the parent thread, which is
+                                         * expected to be the current thread. */
+                priv);                  /* kworker flag. */
+
+    return tid;
+}
+
+void sched_thread_set_exec(pthread_t thread_id)
+{
+    istate_t s;
+    struct thread_info * tp = sched_get_thread_info(thread_id);
+
+    if (!tp || !SCHED_TEST_WAKEUP_OK(tp->flags))
+        return;
+
+    /* TODO Protect for MP */
+    s = get_interrupt_state();
+    disable_interrupt();
+
+    tp->flags |= SCHED_EXEC_FLAG;
+    RB_INSERT(sched_ready, &cpusched.q_ready, tp);
+
+    set_interrupt_state(s);
+}
+
+void sched_current_thread_yield(int sleep_flag)
+{
+    int nice_save;
+
+    if (!current_thread)
+        return;
+
+    nice_save = current_thread->niceval;
+    current_thread->niceval = NICE_YIELD;
+
+    if (sleep_flag)
+        idle_sleep();
+
+    current_thread->niceval = nice_save;
+}
+
+int sched_thread_detach(pthread_t thread_id)
+{
+    struct thread_info * tp = sched_get_thread_info(thread_id);
+
+    if (!tp || (tp->flags & SCHED_IN_USE_FLAG) == 0)
+        return -EINVAL;
+
+    tp->flags |= SCHED_DETACH_FLAG;
+
+    return 0;
+}
+
+void sched_sleep_current_thread(int permanent)
+{
+    current_thread->flags &= ~SCHED_EXEC_FLAG;
+    current_thread->flags |= SCHED_WAIT_FLAG;
+    if (permanent) {
+        atomic_set(&current_thread->a_wait_count, -1);
+    }
+
+    while (current_thread->flags & SCHED_WAIT_FLAG)
+        idle_sleep();
+}
+
+void sched_thread_remove(pthread_t thread_id)
+{
+    struct thread_info * tp = sched_get_thread_info(thread_id);
+
+    if (!tp)
+        return;
+
+    /* Clear all flags. */
+    tp->flags = 0;
+    tp->priority = NICE_ERR;
 }
 
 int sched_thread_set_priority(pthread_t thread_id, int priority)

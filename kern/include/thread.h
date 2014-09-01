@@ -123,7 +123,8 @@ void thread_die(intptr_t retval);
 
 /**
  * Terminate a thread and its childs.
- * @param thread_id   thread ID obtained by \ref sched_threadCreate or \ref sched_thread_getId.
+ * @param thread_id     thread ID obtained by \ref sched_thread_create or
+ *                      \ref sched_thread_getId.
  * @return 0 if succeed; Otherwise -EPERM.
  */
 int thread_terminate(pthread_t thread_id);

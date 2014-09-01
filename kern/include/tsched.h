@@ -249,7 +249,7 @@ void sched_current_thread_yield(int sleep_flag);
  * @param id is a thread id.
  * @return Return -EINVAL if invalid thread id was given; Otherwise zero.
  */
-int sched_thread_detach(pthread_t id);
+int sched_thread_detach(pthread_t thread_id);
 
 void sched_schedule(void);
 
@@ -262,13 +262,13 @@ void sched_schedule(void);
  * @param priv          If set thread is created as a kernel mode thread aka
  *                      kworker; Otherwise user mode is selected.
  */
-pthread_t sched_threadCreate(struct _ds_pthread_create * thread_def, int priv);
+pthread_t sched_thread_create(struct _ds_pthread_create * thread_def, int priv);
 
 /**
  * Removes a thread from scheduling.
  * @param tt_id Thread task table id
  */
-void sched_thread_remove(pthread_t id);
+void sched_thread_remove(pthread_t thread_id);
 
 /**
  * Set thread priority.

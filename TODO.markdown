@@ -59,6 +59,8 @@ sched
 
 Implement thread cancellation in a POSIX way.
 
+Zombie threads are not cleaned properly.
+
 Short sched_thread_sleep() delays may crash the kernel. This may happen because
 of some race condition with scheduling. So times under 5 ms in some conditions
 overflow in scheduler heap.

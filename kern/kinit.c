@@ -126,7 +126,7 @@ void kinit(void)
     };
 
     /* thread id of init main() */
-    const pthread_t tid = sched_threadCreate(&init_ds, 0);
+    const pthread_t tid = sched_thread_create(&init_ds, 0);
     if (tid <= 0) {
         ksprintf(buf, sizeof(buf), "Can't create a thread for init. %i", tid);
         panic(buf);

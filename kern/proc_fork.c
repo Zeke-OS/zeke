@@ -433,7 +433,6 @@ pid_t proc_get_random_pid(void)
     pid_t last_maxproc;
     pid_t newpid;
 
-
     PROC_LOCK();
     last_maxproc = act_maxproc;
     newpid = last_maxproc + 1;

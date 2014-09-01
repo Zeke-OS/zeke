@@ -495,7 +495,7 @@ int proc_replace(pid_t pid, struct buf * (*regions)[], int nr_regions)
         .del_thread = pthread_exit /* TODO */
     };
 
-    const pthread_t tid = sched_threadCreate(&ds, 0);
+    const pthread_t tid = sched_thread_create(&ds, 0);
     if (tid <= 0) {
         panic("Exec failed");
     }

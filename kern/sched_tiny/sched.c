@@ -348,32 +348,11 @@ void sched_current_thread_yield(int sleep_flag)
 
 void sched_thread_remove(pthread_t tt_id)
 {
-#if 0
-    istate_t s;
-#endif
-
     if ((task_table[tt_id].flags & SCHED_IN_USE_FLAG) == 0) {
         return; /* Already freed */
     }
 
-    /* Notify the owner process about removal of a thread. */
-    if (task_table[tt_id].pid_owner != 0) {
-        proc_thread_removed(task_table[tt_id].pid_owner, tt_id);
-    }
-
-#if 0
-    s = get_interrupt_state();
-    disable_interrupt();
-#endif
-
     task_table[tt_id].flags = 0; /* Clear all flags */
-
-    /* Release wait timeout timer */
-    if (task_table[tt_id].wait_tim >= 0) {
-        timers_release(task_table[tt_id].wait_tim);
-    }
-
-    thread_free_kstack(&task_table[tt_id]);
 
     /* Increment the thread priority to the highest possible value so context
      * switch will garbage collect it from the priority queue on the next run.
@@ -394,17 +373,18 @@ void sched_thread_remove(pthread_t tt_id)
 #endif
 }
 
-int sched_thread_detach(pthread_t id)
+int sched_thread_detach(pthread_t thread_id)
 {
-    if ((task_table[id].flags & SCHED_IN_USE_FLAG) == 0) {
+    struct thread_info * tp = &task_table[thread_id];
+
+    if ((tp->flags & SCHED_IN_USE_FLAG) == 0) {
         return -EINVAL;
     }
 
-    task_table[id].flags |= SCHED_DETACH_FLAG;
-
-    if (SCHED_TEST_DETACHED_ZOMBIE(task_table[id].flags)) {
+    tp->flags |= SCHED_DETACH_FLAG;
+    if (SCHED_TEST_DETACHED_ZOMBIE(tp->flags)) {
         /* Workaround to remove the thread without locking the system now
-         * because we don't want to disable interrupts here for a long tome
+         * because we don't want to disable interrupts here for too long time
          * and we have no other proctection in the scheduler right now. */
         istate_t s;
         int i;
@@ -413,10 +393,10 @@ int sched_thread_detach(pthread_t id)
         s = get_interrupt_state();
         disable_interrupt();
 
-        i = heap_find(&priority_queue, id);
+        i = heap_find(&priority_queue, thread_id);
 
         if (i < 0)
-            (void)heap_insert(&priority_queue, &(task_table[id]));
+            (void)heap_insert(&priority_queue, tp);
         /* It will be now definitely gc'ed at some point. */
         set_interrupt_state(s);
     }
@@ -429,7 +409,7 @@ int sched_thread_detach(pthread_t id)
 
 /*  ==== Thread Management ==== */
 
-pthread_t sched_threadCreate(struct _ds_pthread_create * thread_def, int priv)
+pthread_t sched_thread_create(struct _ds_pthread_create * thread_def, int priv)
 {
     pthread_t i;
 #if 0

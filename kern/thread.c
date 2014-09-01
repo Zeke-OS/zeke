@@ -109,8 +109,8 @@ void thread_init(struct thread_info * tp, pthread_t thread_id,
                  struct _ds_pthread_create * thread_def, threadInfo_t * parent,
                  int priv)
 {
-    /* This function should not be called for already initialized threads. */
-    if ((tp->flags & (uint32_t)SCHED_IN_USE_FLAG) != 0)
+    /* This function should not be called for an already initialized thread. */
+    if (tp->flags & SCHED_IN_USE_FLAG)
         panic("Can't init thread that is already in use.");
 
     memset(tp, 0, sizeof(struct thread_info));
@@ -368,6 +368,18 @@ int thread_terminate(pthread_t thread_id)
             (thread->inh.parent == 0)             ||
             ((thread->inh.parent != 0)            &&
             SCHED_TEST_DETACHED_ZOMBIE(((threadInfo_t *)(thread->inh.parent))->flags))) {
+
+        /* Release wait timeout timer */
+        if (thread->wait_tim >= 0) {
+            timers_release(thread->wait_tim);
+        }
+
+        /* Notify the owner process about removal of a thread. */
+        if (thread->pid_owner != 0) {
+            proc_thread_removed(thread->pid_owner, thread_id);
+        }
+
+        thread_free_kstack(thread);
         sched_thread_remove(thread_id);
     }
 
@@ -385,7 +397,7 @@ static int sys_thread_create(void * user_args)
     }
 
     copyin(user_args, &args, sizeof(args));
-    sched_threadCreate(&args, 0);
+    sched_thread_create(&args, 0);
     copyout(&args, user_args, sizeof(args));
 
     return 0;
