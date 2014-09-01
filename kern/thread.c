@@ -44,10 +44,16 @@
 #include <kerror.h>
 #include <errno.h>
 #include <timers.h>
+#include <proc.h>
 #include <tsched.h>
 #include <thread.h>
 
 #define KSTACK_SIZE ((MMU_VADDR_TKSTACK_END - MMU_VADDR_TKSTACK_START) + 1)
+
+static void thread_set_inheritance(threadInfo_t * new_child,
+                                   threadInfo_t * parent);
+static void thread_init_kstack(threadInfo_t * tp);
+static void thread_free_kstack(threadInfo_t * tp);
 
 /* Linker sets for pre- and post-scheduling tasks */
 SET_DECLARE(pre_sched_tasks, void);
@@ -105,6 +111,24 @@ void * idle_thread(/*@unused@*/ void * arg)
     }
 }
 
+pthread_t thread_create(struct _ds_pthread_create * thread_def, int priv)
+{
+    pthread_t tid = sched_new_tid();
+    struct thread_info * tp = sched_get_thread_info(tid);
+
+    if (tid < 0 || !tp)
+        return -1;
+
+    thread_init(tp,
+                tid,                    /* Index of the thread created */
+                thread_def,             /* Thread definition. */
+                (void *)current_thread, /* Pointer to the parent thread, which is
+                                         * expected to be the current thread. */
+                priv);                  /* kworker flag. */
+
+    return tid;
+}
+
 void thread_init(struct thread_info * tp, pthread_t thread_id,
                  struct _ds_pthread_create * thread_def, threadInfo_t * parent,
                  int priv)
@@ -113,7 +137,9 @@ void thread_init(struct thread_info * tp, pthread_t thread_id,
     if (tp->flags & SCHED_IN_USE_FLAG)
         panic("Can't init thread that is already in use.");
 
+#if configSCHED_TINY != 0
     memset(tp, 0, sizeof(struct thread_info));
+#endif
 
     /* Return thread id */
     if (thread_def->thread)
@@ -136,8 +162,8 @@ void thread_init(struct thread_info * tp, pthread_t thread_id,
     }
 
     /* Clear signal flags & wait states */
-    tp->a_wait_count = ATOMIC_INIT(0);
-    tp->wait_tim = -1;
+    tp->a_wait_count    = ATOMIC_INIT(0);
+    tp->wait_tim        = -1;
 
     /* Update parent and child pointers */
     thread_set_inheritance(tp, parent);
@@ -156,7 +182,12 @@ void thread_init(struct thread_info * tp, pthread_t thread_id,
     sched_thread_set_exec(tp->id);
 }
 
-void thread_set_inheritance(threadInfo_t * new_child, threadInfo_t * parent)
+/**
+ * Set thread inheritance
+ * Sets linking from the parent thread to the thread id.
+ */
+static void thread_set_inheritance(threadInfo_t * new_child,
+                                   threadInfo_t * parent)
 {
     threadInfo_t * last_node;
     threadInfo_t * tmp;
@@ -278,22 +309,35 @@ void thread_sleep(long millisec)
     thread_wait();
 }
 
-void thread_init_kstack(threadInfo_t * th)
+/**
+ * Initialize thread kernel mode stack.
+ * @param th is a pointer to the thread.
+ */
+static void thread_init_kstack(threadInfo_t * tp)
 {
+    struct buf * kstack;
+
+#if configDEBUG >= KERROR_DEBUG
+    if (!tp)
+        panic("tp not set");
+#endif
+
     /* Create kstack */
-    th->kstack_region = geteblk(KSTACK_SIZE);
-    if (!th->kstack_region) {
+    kstack = geteblk(KSTACK_SIZE);
+    if (!kstack) {
         panic("OOM during thread creation");
     }
 
-    th->kstack_region->b_uflags = 0;
-    th->kstack_region->b_mmu.vaddr = MMU_VADDR_TKSTACK_START;
-    th->kstack_region->b_mmu.pt = &mmu_pagetable_system;
+    kstack->b_uflags = 0;
+    kstack->b_mmu.vaddr = MMU_VADDR_TKSTACK_START;
+    kstack->b_mmu.pt = &mmu_pagetable_system;
+
+    tp->kstack_region = kstack;
 }
 
-void thread_free_kstack(threadInfo_t * th)
+static void thread_free_kstack(threadInfo_t * tp)
 {
-    th->kstack_region->vm_ops->rfree(th->kstack_region);
+    tp->kstack_region->vm_ops->rfree(tp->kstack_region);
 }
 
 pthread_t get_current_tid(void)
@@ -308,6 +352,30 @@ void * thread_get_curr_stackframe(size_t ind)
     if (current_thread && (ind < SCHED_SFRAME_ARR_SIZE))
         return &(current_thread->sframe[ind]);
     return NULL;
+}
+
+int thread_set_priority(pthread_t thread_id, int priority)
+{
+    struct thread_info * tp = sched_get_thread_info(thread_id);
+
+    if (!tp || (tp->flags & SCHED_IN_USE_FLAG) == 0) {
+        return -ESRCH;
+    }
+
+    tp->niceval = priority;
+
+    return 0;
+}
+
+int thread_get_priority(pthread_t thread_id)
+{
+    struct thread_info * tp = sched_get_thread_info(thread_id);
+
+    if (!tp || (tp->flags & SCHED_IN_USE_FLAG) == 0) {
+        return NICE_ERR;
+    }
+
+    return tp->niceval;
 }
 
 void thread_die(intptr_t retval)
@@ -386,6 +454,8 @@ int thread_terminate(pthread_t thread_id)
     return 0;
 }
 
+/* Syscalls */
+
 static int sys_thread_create(void * user_args)
 {
     struct _ds_pthread_create args;
@@ -397,7 +467,7 @@ static int sys_thread_create(void * user_args)
     }
 
     copyin(user_args, &args, sizeof(args));
-    sched_thread_create(&args, 0);
+    thread_create(&args, 0);
     copyout(&args, user_args, sizeof(args));
 
     return 0;
@@ -484,7 +554,7 @@ static int sys_thread_setpriority(void * user_args)
         return -1;
     }
 
-    err = (uintptr_t)sched_thread_set_priority(args.thread_id, args.priority);
+    err = (uintptr_t)thread_set_priority(args.thread_id, args.priority);
     if (err) {
         set_errno(-err);
         return -1;
@@ -505,7 +575,7 @@ static int sys_thread_getpriority(void * user_args)
         return -1;
     }
 
-    pri = (uintptr_t)sched_thread_get_priority(thread_id);
+    pri = (uintptr_t)thread_get_priority(thread_id);
     if (pri == NICE_ERR) {
         set_errno(ESRCH);
         pri = -1; /* Note: -1 might be also legitimate prio value. */

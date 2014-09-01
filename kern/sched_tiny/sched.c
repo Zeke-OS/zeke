@@ -37,22 +37,20 @@
 #include <stddef.h>
 #include <kstring.h>
 #include <libkern.h>
-#include <kinit.h>
 #include <sys/linker_set.h>
-#include <hal/core.h>
-#include <klocks.h>
 #include "heap.h"
 #include <queue_r.h>
+#include <kinit.h>
+#include <hal/core.h>
+#include <klocks.h>
 #include <timers.h>
 #include <syscall.h>
-#include <ptmapper.h>
-#include <vm/vm.h>
-#include <proc.h>
-#include <pthread.h>
 #include <sys/sysctl.h>
 #include <errno.h>
 #include <kerror.h>
 #include <lavg.h>
+#include <proc.h>
+#include <pthread.h>
 #include <thread.h>
 #include <tsched.h>
 
@@ -402,79 +400,6 @@ int sched_thread_detach(pthread_t thread_id)
     }
 
     return 0;
-}
-
-/* Functions defined in header file
- ******************************************************************************/
-
-/*  ==== Thread Management ==== */
-
-pthread_t sched_thread_create(struct _ds_pthread_create * thread_def, int priv)
-{
-    pthread_t i;
-#if 0
-    istate_t s;
-
-    s = get_interrupt_state();
-    disable_interrupt();
-#endif
-
-    i = sched_new_tid();
-    if (i < 0) {
-        /* New thread could not be created */
-#if 0
-        set_interrupt_state(s);
-#endif
-        return -1;
-    }
-
-    thread_init(
-            &task_table[i],
-            i,                      /* Index of the thread created */
-            thread_def,             /* Thread definition. */
-            (void *)current_thread, /* Pointer to the parent thread, which is
-                                     * expected to be the current thread. */
-            priv);                  /* kworker flag. */
-
-#if 0
-        set_interrupt_state(s);
-#endif
-
-    if (i == configSCHED_MAX_THREADS) {
-        /* New thread could not be created */
-        return -2;
-    } else {
-        /* Return the id of the new thread */
-        return i;
-    }
-}
-
-int sched_thread_set_priority(pthread_t thread_id, int priority)
-{
-    if ((task_table[thread_id].flags & SCHED_IN_USE_FLAG) == 0) {
-        return -ESRCH;
-    }
-
-    /* Only thread niceval is updated to make this syscall O(1)
-     * Actual priority will be updated anyway some time later after one sleep
-     * cycle.
-     */
-    task_table[thread_id].niceval = priority;
-
-    return 0;
-}
-
-int sched_thread_get_priority(pthread_t thread_id)
-{
-    if ((task_table[thread_id].flags & SCHED_IN_USE_FLAG) == 0) {
-        return NICE_ERR;
-    }
-
-    /*
-     * TODO Not sure if this function should return "dynamic" priority or
-     * default priorty.
-     */
-    return task_table[thread_id].niceval;
 }
 
 /* Syscall handlers ***********************************************************/

@@ -47,6 +47,14 @@ void sched_handler(void);
 void * idle_thread(void * arg);
 
 /**
+ * Create a new thread.
+ * @param thread_def    Thread definitions.
+ * @param priv          If set thread is created as a kernel mode thread aka
+ *                      kworker; Otherwise user mode is selected.
+ */
+pthread_t thread_create(struct _ds_pthread_create * thread_def, int priv);
+
+/**
   * Set thread initial configuration
   * @note This function should not be called for already initialized threads.
   * @param tp           is a pointer to the thread struct.
@@ -60,12 +68,6 @@ void * idle_thread(void * arg);
 void thread_init(struct thread_info * tp, pthread_t thread_id,
                  struct _ds_pthread_create * thread_def, threadInfo_t * parent,
                  int priv);
-
-/**
- * Set thread inheritance
- * Sets linking from the parent thread to the thread id.
- */
-void thread_set_inheritance(threadInfo_t * new_child, threadInfo_t * parent);
 
 /**
  * Fork current thread.
@@ -91,13 +93,6 @@ void thread_wait(void);
  */
 void thread_release(threadInfo_t * thread);
 
-/**
- * Initialize thread kernel mode stack.
- * @param th is a pointer to the thread.
- */
-void thread_init_kstack(threadInfo_t * th);
-void thread_free_kstack(threadInfo_t * th);
-
 void thread_sleep(long millisec);
 
 /**
@@ -112,6 +107,21 @@ pthread_t get_current_tid(void);
  *          Or NULL if current_thread is not set.
  */
 void * thread_get_curr_stackframe(size_t ind);
+
+/**
+ * Set thread priority.
+ * @param   thread_id Thread id.
+ * @param   priority New priority for thread referenced by thread_id.
+ * @return  0; -EINVAL.
+ */
+int thread_set_priority(pthread_t thread_id, int priority);
+
+/**
+ * Get thread priority.
+ * @param thread_id is the thread id.
+ * @return Returns the thread priory value or NICE_ERR if thread doesn't exist.
+ */
+int thread_get_priority(pthread_t thread_id);
 
 /**
  * Terminate current thread.

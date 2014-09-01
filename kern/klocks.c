@@ -36,13 +36,14 @@
 #include <kerror.h>
 #include <timers.h>
 #include <hal/core.h>
+#include <thread.h>
 #include <klocks.h>
 
 static void priceil_set(mtx_t * mtx)
 {
     if (MTX_TYPE(mtx, MTX_TYPE_PRICEIL)) {
-        mtx->pri.p_saved = sched_thread_get_priority(current_thread->id);
-        sched_thread_set_priority(current_thread->id, mtx->pri.p_lock);
+        mtx->pri.p_saved = thread_get_priority(current_thread->id);
+        thread_set_priority(current_thread->id, mtx->pri.p_lock);
     }
 }
 
@@ -53,8 +54,8 @@ static void priceil_restore(mtx_t * mtx)
          * XXX There is a very rare race condition if some other thread tries to
          * set a new priority for this thread just after this if clause.
          */
-        if (sched_thread_get_priority(current_thread->id) == mtx->pri.p_lock)
-            sched_thread_set_priority(current_thread->id, mtx->pri.p_saved);
+        if (thread_get_priority(current_thread->id) == mtx->pri.p_lock)
+            thread_set_priority(current_thread->id, mtx->pri.p_saved);
     }
 }
 

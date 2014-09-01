@@ -128,13 +128,9 @@ void sched_init(void)
         .def      = &attr,
         .argument = NULL
     };
-    tid = sched_new_tid();
-    struct thread_info * tp = sched_get_thread_info(tid);
-    if (tid < 0)
-        panic("Invalid TID");
-    if (!tp)
-        panic("Invalid thread_info struct for TID 0");
-    thread_init(tp, 0, &tdef_idle, NULL, 1);
+    thread_create(&tdef_idle, 1);
+    if (tid != 0)
+        panic("TID for idle thread must be 0");
 
     /* Initialize locks */
     rwlock_init(&loadavg_lock);
@@ -142,18 +138,34 @@ void sched_init(void)
     SUBSYS_INITFINI("Init scheduler: cds");
 }
 
+static const char msg_abnotset[] = "a & b must be set";
 int sched_tid_comp(struct thread_info * a, struct thread_info * b)
 {
+#if configDEBUG >= KERROR_DEBUG
+    if (!(a && b))
+        panic(msg_abnotset);
+#endif
+
     return a->id - b->id;
 }
 
 int sched_nice_comp(struct thread_info * a, struct thread_info * b)
 {
+#if configDEBUG >= KERROR_DEBUG
+    if (!(a && b))
+        panic(msg_abnotset);
+#endif
+
     return a->niceval - b->niceval;
 }
 
 int sched_ts_comp(struct thread_info * a, struct thread_info * b)
 {
+#if configDEBUG >= KERROR_DEBUG
+    if (!(a && b))
+        panic(msg_abnotset);
+#endif
+
     return a->ts_counter - b->ts_counter;
 }
 
@@ -190,7 +202,7 @@ void sched_schedule(void)
 
     /* Scheduling */
     current_thread = NULL;
-    do {
+    while (1) {
         for (int i = 0; i < num_elem(schedpol); i++) {
             struct thread_info * thread = schedpol[i]();
 
@@ -199,9 +211,17 @@ void sched_schedule(void)
 
             current_thread = thread;
         }
-    } while (!current_thread && (insert_threads(cpusched.cnt_epoch), 1));
+
+        if (!current_thread)
+            insert_threads(cpusched.cnt_epoch);
+        else
+            break;
+    }
 }
 
+/**
+ * Calc time quantums for a thread.
+ */
 static int calc_quantums(struct thread_info * thread)
 {
     const int fmul = 50; /* Fixed point: 1 / (NICE_MAX + -NICE_MIN + 1) */
@@ -215,37 +235,34 @@ static int calc_quantums(struct thread_info * thread)
  */
 static void insert_threads(int quantums)
 {
-    struct thread_info * thread, * nxt;
-    struct thread_info * idle = sched_get_thread_info(0);
+    while (!RB_EMPTY(&cpusched.q_ready) && quantums > 0) {
+        struct thread_info * thread = RB_MAX(sched_ready, &cpusched.q_ready);
 
-    if (!RB_EMPTY(&cpusched.q_ready)) {
-        for (thread = RB_MAX(sched_ready, &cpusched.q_ready);
-                thread != NULL && quantums > 0;
-                thread = nxt) {
-            if (thread->priority > quantums)
-                return;
+        if (thread->priority > quantums)
+            return; /* Doesn't fit to the remaining time left in epoch. */
 
-            RB_REMOVE(sched_ready, &cpusched.q_ready, thread);
+        RB_REMOVE(sched_ready, &cpusched.q_ready, thread);
 
-            switch (thread->sched.policy) {
-            case SCHED_FIFO:
-                cpusched.q_fifo_exec->insert_tail(cpusched.q_fifo_exec, thread);
-                break;
-            case SCHED_OTHER:
-                RB_INSERT(sched_exec, &cpusched.q_exec, thread);
-                thread->priority = calc_quantums(thread);
-                quantums -= thread->priority;
-                break;
-            default:
-                panic("Incorrect sched policy.");
-            }
-
-            cpusched.nr_exec++;
+        switch (thread->sched.policy) {
+        case SCHED_FIFO:
+            cpusched.q_fifo_exec->insert_tail(cpusched.q_fifo_exec, thread);
+            break;
+        case SCHED_OTHER:
+            RB_INSERT(sched_exec, &cpusched.q_exec, thread);
+            thread->priority = calc_quantums(thread);
+            quantums -= thread->priority;
+            break;
+        default:
+            panic("Incorrect sched policy.");
         }
+
+        cpusched.nr_exec++;
     }
 
     if (cpusched.nr_exec <= 0) {
         /* No threads to execute. */
+        struct thread_info * idle = sched_get_thread_info(0);
+
         RB_INSERT(sched_exec, &cpusched.q_exec, idle);
     }
 }
@@ -305,6 +322,9 @@ static struct thread_info * cds_sched(void)
     struct thread_info * thread;
 
     do {
+        if (RB_EMPTY(&cpusched.q_exec))
+            return NULL;
+
         thread = RB_MIN(sched_exec, &cpusched.q_exec);
 
         if (thread->ts_counter < thread->priority &&
@@ -387,33 +407,15 @@ pthread_t sched_new_tid(void)
 struct thread_info * sched_get_thread_info(pthread_t thread_id)
 {
     struct thread_info find;
-    struct thread_info * thread;
+    struct thread_info * tp;
 
-    if (thread_id < 0)
+    if (thread_id < 0 || RB_EMPTY(&cpusched.all_threads))
         return NULL;
 
     find.id = thread_id;
-    thread = RB_FIND(sched_threads, &cpusched.all_threads, &find);
+    tp = RB_FIND(sched_threads, &cpusched.all_threads, &find);
 
-    return thread;
-}
-
-pthread_t sched_thread_create(struct _ds_pthread_create * thread_def, int priv)
-{
-    pthread_t tid = sched_new_tid();
-    struct thread_info * tp = sched_get_thread_info(tid);
-
-    if (tid < 0 || !tp)
-        return -1;
-
-    thread_init(tp,
-                tid,                    /* Index of the thread created */
-                thread_def,             /* Thread definition. */
-                (void *)current_thread, /* Pointer to the parent thread, which is
-                                         * expected to be the current thread. */
-                priv);                  /* kworker flag. */
-
-    return tid;
+    return tp;
 }
 
 void sched_thread_set_exec(pthread_t thread_id)
@@ -484,38 +486,6 @@ void sched_thread_remove(pthread_t thread_id)
     /* Clear all flags. */
     tp->flags = 0;
     tp->priority = NICE_ERR;
-}
-
-int sched_thread_set_priority(pthread_t thread_id, int priority)
-{
-    struct thread_info * tp = sched_get_thread_info(thread_id);
-
-    if (!tp || (tp->flags & SCHED_IN_USE_FLAG) == 0) {
-        return -ESRCH;
-    }
-
-    /* Only thread niceval is updated to make this syscall O(1)
-     * Actual priority will be updated anyway some time later after one sleep
-     * cycle.
-     */
-    tp->niceval = priority;
-
-    return 0;
-}
-
-int sched_thread_get_priority(pthread_t thread_id)
-{
-    struct thread_info * tp = sched_get_thread_info(thread_id);
-
-    if (!tp || (tp->flags & SCHED_IN_USE_FLAG) == 0) {
-        return NICE_ERR;
-    }
-
-    /*
-     * TODO Not sure if this function should return "dynamic" priority or
-     * default priorty.
-     */
-    return tp->niceval;
 }
 
 /* Syscall handlers ***********************************************************/

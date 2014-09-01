@@ -251,34 +251,21 @@ void sched_current_thread_yield(int sleep_flag);
  */
 int sched_thread_detach(pthread_t thread_id);
 
+/**
+ * Schedule in a next thread.
+ */
 void sched_schedule(void);
 
-/* Functions that are mainly used by syscalls but can be also caleed by
- * other kernel source modules. */
-
-/**
- * Create a new thread.
- * @param thread_def    Thread definitions.
- * @param priv          If set thread is created as a kernel mode thread aka
- *                      kworker; Otherwise user mode is selected.
+/*
+ * Functions that are mainly used by syscalls but can be also caleed by
+ * other kernel source modules.
  */
-pthread_t sched_thread_create(struct _ds_pthread_create * thread_def, int priv);
 
 /**
  * Removes a thread from scheduling.
  * @param tt_id Thread task table id
  */
 void sched_thread_remove(pthread_t thread_id);
-
-/**
- * Set thread priority.
- * @param   thread_id Thread id.
- * @param   priority New priority for thread referenced by thread_id.
- * @return  0; -EINVAL.
- */
-int sched_thread_set_priority(pthread_t thread_id, int priority);
-
-int sched_thread_get_priority(pthread_t thread_id);
 
 #endif /* TSCHED_H */
 

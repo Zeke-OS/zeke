@@ -371,7 +371,7 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
 
 #if configDEBUG >= KERROR_DEBUG
     char buf[80];
-    ksprintf(buf, sizeof(buf), "proc_dab_handler(): MOO, %x", vaddr);
+    ksprintf(buf, sizeof(buf), "proc_dab_handler(): MOO, %x @ %x", vaddr, lr);
     KERROR(KERROR_DEBUG, buf);
 #endif
 
@@ -495,7 +495,7 @@ int proc_replace(pid_t pid, struct buf * (*regions)[], int nr_regions)
         .del_thread = pthread_exit /* TODO */
     };
 
-    const pthread_t tid = sched_thread_create(&ds, 0);
+    const pthread_t tid = thread_create(&ds, 0);
     if (tid <= 0) {
         panic("Exec failed");
     }
