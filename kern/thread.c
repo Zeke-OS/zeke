@@ -113,7 +113,7 @@ void * idle_thread(/*@unused@*/ void * arg)
 
 pthread_t thread_create(struct _ds_pthread_create * thread_def, int priv)
 {
-    pthread_t tid = sched_new_tid();
+    const pthread_t tid = sched_new_tid();
     struct thread_info * tp = sched_get_thread_info(tid);
 
     if (tid < 0 || !tp)
@@ -122,8 +122,7 @@ pthread_t thread_create(struct _ds_pthread_create * thread_def, int priv)
     thread_init(tp,
                 tid,                    /* Index of the thread created */
                 thread_def,             /* Thread definition. */
-                (void *)current_thread, /* Pointer to the parent thread, which is
-                                         * expected to be the current thread. */
+                current_thread,         /* Pointer to the parent thread. */
                 priv);                  /* kworker flag. */
 
     return tid;
@@ -225,7 +224,8 @@ static void thread_set_inheritance(threadInfo_t * new_child,
 
 pthread_t thread_fork(void)
 {
-    threadInfo_t * const old_thread = current_thread;
+    struct thread_info * const old_thread = current_thread;
+    struct thread_info * new_thread;
     threadInfo_t tmp;
     pthread_t new_id;
 
@@ -256,7 +256,11 @@ pthread_t thread_fork(void)
     tmp.sframe[SCHED_SFRAME_SYS].r0 = 0;
     tmp.sframe[SCHED_SFRAME_SYS].pc += 4; /* TODO This is too hw specific */
 
-    memcpy(sched_get_thread_info(new_id), &tmp, sizeof(struct thread_info));
+    new_thread = sched_get_thread_info(new_id);
+    if (!new_thread)
+        panic("Failed to get newly created thread struct");
+
+    memcpy(new_thread, &tmp, sizeof(struct thread_info));
 
     /* TODO Increment resource refcounters(?) */
 

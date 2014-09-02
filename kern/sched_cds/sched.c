@@ -42,6 +42,7 @@
 #include <sys/linker_set.h>
 #include <sys/tree.h>
 #include <dllist.h>
+#include <hal/core.h>
 #include <sys/sysctl.h>
 #include <syscall.h>
 #include <kerror.h>
@@ -185,11 +186,12 @@ RB_GENERATE(sched_exec, thread_info, sched.exec_entry, sched_ts_comp);
  */
 void sched_schedule(void)
 {
-    struct thread_info * (*schedpol[])(void) = {
+    struct thread_info * (* const schedpol[])(void) = {
         fifo_sched, /* RT sched. */
-        cds_sched   /* conv sched. */
+        cds_sched   /* Conv sched. */
     };
 
+    /* Pay for CPU time. */
     current_thread->ts_counter++;
 
     /* If new epoch begins. */
@@ -203,9 +205,11 @@ void sched_schedule(void)
     /* Scheduling */
     current_thread = NULL;
     while (1) {
+        /* Loop through scheduling algorithms. */
         for (int i = 0; i < num_elem(schedpol); i++) {
-            struct thread_info * thread = schedpol[i]();
+            struct thread_info * thread;
 
+            thread = schedpol[i]();
             if (!thread)
                 continue;
 
@@ -232,6 +236,7 @@ static int calc_quantums(struct thread_info * thread)
 
 /**
  * Select ready threads for execution.
+ * @note Shall be only called interrupts disabled.
  */
 static void insert_threads(int quantums)
 {
@@ -271,6 +276,7 @@ static void insert_threads(int quantums)
  * Validate thread.
  * Validates the status of a thread and determine if it should be terminated and/or
  * freed.
+ * @note Shall be only called interrupts disabled.
  * @param tp is a pointer to the thread.
  */
 static void validate_thread(struct thread_info * tp)
@@ -288,6 +294,7 @@ static void validate_thread(struct thread_info * tp)
 
 /**
  *  RT Scheduling.
+ *  @note Shall be only called interrupts disabled.
  */
 static struct thread_info * fifo_sched(void)
 {
@@ -316,6 +323,7 @@ static struct thread_info * fifo_sched(void)
 
 /**
  * Conventional Scheduling.
+ * @note Shall be only called interrupts disabled.
  */
 static struct thread_info * cds_sched(void)
 {
@@ -389,10 +397,20 @@ void sched_get_loads(uint32_t loads[3])
     rwlock_rdunlock(&loadavg_lock);
 }
 
+/**
+ * @TODO Not MP safe!
+ */
 pthread_t sched_new_tid(void)
 {
-    const pthread_t tid = cpusched.next_tid;
-    struct thread_info * tp = kcalloc(1, sizeof(struct thread_info));
+    istate_t s;
+    pthread_t tid;
+    struct thread_info * tp;
+
+    s = get_interrupt_state();
+    disable_interrupt();
+
+    tid = cpusched.next_tid;
+    tp = kcalloc(1, sizeof(struct thread_info));
 
     if (!tp)
         return -ENOMEM;
@@ -401,13 +419,22 @@ pthread_t sched_new_tid(void)
     RB_INSERT(sched_threads, &cpusched.all_threads, tp);
     cpusched.next_tid++;
 
+    set_interrupt_state(s);
+
     return tid;
 }
 
+/**
+ * @TODO Not MP safe!
+ */
 struct thread_info * sched_get_thread_info(pthread_t thread_id)
 {
+    istate_t s;
     struct thread_info find;
     struct thread_info * tp;
+
+    s = get_interrupt_state();
+    disable_interrupt();
 
     if (thread_id < 0 || RB_EMPTY(&cpusched.all_threads))
         return NULL;
@@ -415,9 +442,14 @@ struct thread_info * sched_get_thread_info(pthread_t thread_id)
     find.id = thread_id;
     tp = RB_FIND(sched_threads, &cpusched.all_threads, &find);
 
+    set_interrupt_state(s);
+
     return tp;
 }
 
+/**
+ * @TODO Not MP safe!
+ */
 void sched_thread_set_exec(pthread_t thread_id)
 {
     istate_t s;
@@ -426,7 +458,6 @@ void sched_thread_set_exec(pthread_t thread_id)
     if (!tp || !SCHED_TEST_WAKEUP_OK(tp->flags))
         return;
 
-    /* TODO Protect for MP */
     s = get_interrupt_state();
     disable_interrupt();
 

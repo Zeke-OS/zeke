@@ -220,7 +220,7 @@ pthread_t sched_new_tid(void);
 /**
  * Get pointer to a threadInfo structure.
  * @param thread_id id of a thread.
- * @return Pointer to a threadInfo structure of a correspondig thread id
+ * @return Pointer to a thread_info structure of a correspondig thread id
  *         or NULL if thread does not exist.
  */
 struct thread_info * sched_get_thread_info(pthread_t thread_id);

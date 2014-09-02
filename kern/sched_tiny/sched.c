@@ -272,9 +272,6 @@ struct thread_info * sched_get_thread_info(pthread_t thread_id)
     if (thread_id > configSCHED_MAX_THREADS)
         return NULL;
 
-    if ((task_table[thread_id].flags & (uint32_t)SCHED_IN_USE_FLAG) == 0)
-        return NULL;
-
     return &(task_table[thread_id]);
 }
 
