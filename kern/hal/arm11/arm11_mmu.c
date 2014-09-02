@@ -163,9 +163,13 @@ int mmu_init_pagetable(const mmu_pagetable_t * pt)
  */
 int mmu_map_region(const mmu_region_t * region)
 {
-    if (!region->pt) {
+    if (!region->pt)
         panic("region->pt must be set");
-    }
+
+#if configDEBUG >= KERROR_DEBUG
+    if (region->num_pages == 0)
+        panic("region->num_pages can't be zero.");
+#endif
 
     switch (region->pt->type) {
     case MMU_PTT_MASTER:    /* Map section in L1 page table */
@@ -235,7 +239,7 @@ static void mmu_map_coarse_region(const mmu_region_t * region)
     uint32_t pte;
     istate_t s;
 
-    p_pte = (uint32_t *)region->pt->pt_addr; /* Page table base address */
+    p_pte = (uint32_t *)region->pt->pt_addr;    /* Page table base address */
     p_pte += (region->vaddr & 0x000ff000) >> 12;    /* First */
     p_pte += region->num_pages - 1;                 /* Last pte */
 
@@ -243,7 +247,6 @@ static void mmu_map_coarse_region(const mmu_region_t * region)
         if (p_pte == 0)
             KERROR(KERROR_ERR, "p_pte is null");
 #endif
-
 
     pte = region->paddr & 0xfffff000;       /* Set physical address */
     pte |= (region->ap & 0x3) << 4;         /* Set access permissions (AP) */

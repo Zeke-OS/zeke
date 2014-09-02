@@ -156,7 +156,7 @@ static void init_kernel_proc(void)
     (*kernel_proc->mm.regions)[MM_HEAP_REGION] = kprocvm_heap;
 
     /* Break values */
-    kernel_proc->brk_start = __bss_break;
+    kernel_proc->brk_start = &__bss_break;
     kernel_proc->brk_stop = (void *)(kprocvm_heap->b_mmu.vaddr
         + mmu_sizeof_region(&(kprocvm_heap->b_mmu)) - 1);
 

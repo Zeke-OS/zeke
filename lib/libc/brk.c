@@ -52,6 +52,10 @@ static int getbrk(void)
             errno = EAGAIN;
             return -1;
         }
+        curr_break = ds_brk.start;
+
+        if (ds_brk.start == 0)
+            return -1;
     }
 
     return 0;
@@ -79,11 +83,14 @@ int brk(void * addr)
 
 void * sbrk(intptr_t incr)
 {
-    void * old_break = curr_break;
-    void * new_break = (void *)((char *)curr_break + incr);
+    void * old_break;
+    void * new_break;
 
     if (getbrk())
         return (void *)-1;
+
+    old_break = curr_break;
+    new_break = (void *)((char *)curr_break + incr);
 
     if ((ds_brk.start > new_break) || (new_break > ds_brk.stop)) {
         errno = ENOMEM;

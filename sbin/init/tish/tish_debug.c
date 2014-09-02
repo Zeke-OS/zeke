@@ -159,7 +159,7 @@ static void create_debug_thread(void)
         puts("Thread creation failed\n");
         return;
     }
-    ksprintf(buf, sizeof(buf), "Thread created with id: %u\n", test_tid);
+    ksprintf(buf, sizeof(buf), "Thread created with id: %u and stack: %x\n", test_tid, newstack);
     puts(buf);
 }
 
@@ -182,6 +182,6 @@ static void thread_stat(void)
         "mrs     %0, cpsr\n\t"
         "mov     %1, sp"
         : "=r" (mode), "=r" (sp));
-    ksprintf(buf, sizeof(buf), "My id: %u, sp: %u, my mode: %x\n", id, sp, mode);
+    ksprintf(buf, sizeof(buf), "My id: %u, sp: %x, my mode: %x\n", id, sp, mode);
     puts(buf);
 }

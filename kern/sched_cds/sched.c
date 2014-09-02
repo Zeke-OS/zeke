@@ -436,7 +436,8 @@ struct thread_info * sched_get_thread_info(pthread_t thread_id)
     s = get_interrupt_state();
     disable_interrupt();
 
-    if (thread_id < 0 || RB_EMPTY(&cpusched.all_threads))
+    if (thread_id < 0 || thread_id > configSCHED_MAX_THREADS ||
+            RB_EMPTY(&cpusched.all_threads))
         return NULL;
 
     find.id = thread_id;
