@@ -105,8 +105,9 @@ int _mtx_lock(mtx_t * mtx, char * whr)
             char buf[100];
             char * lwhr = (mtx->mtx_ldebug) ? mtx->mtx_ldebug : "?";
 
-            ksprintf(buf, sizeof(buf), "Deadlock detected:\n%s WAITING\n%s LOCKED",
-                    whr, lwhr);
+            ksprintf(buf, sizeof(buf),
+                     "Deadlock detected:\n%s WAITING\n%s LOCKED",
+                     whr, lwhr);
             KERROR(KERROR_DEBUG, buf);
 
             deadlock_cnt = 0;
@@ -156,9 +157,11 @@ int _mtx_sleep(mtx_t * mtx, long timeout, char * whr)
     int retval;
 
     if (timeout > 0) {
-        current_thread->wait_tim = timers_add(mtx_wakeup, mtx, TIMERS_FLAG_ONESHOT, timeout);
+        current_thread->wait_tim = timers_add(mtx_wakeup, mtx,
+                TIMERS_FLAG_ONESHOT, timeout);
         if (current_thread->wait_tim < 0)
             return -EWOULDBLOCK;
+
         retval = mtx_lock(mtx);
         timers_release(current_thread->wait_tim);
         current_thread->wait_tim = -1;

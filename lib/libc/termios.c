@@ -64,5 +64,6 @@ int tcgetattr(int fildes, struct termios * termios_p)
 int tcsetattr(int fildes, int optional_actions,
         const struct termios * termios_p)
 {
-    return _ioctl(fildes, IOCTL_STERMIOS, (void *)termios_p, sizeof(struct termios));
+    return _ioctl(fildes, IOCTL_STERMIOS, (void *)termios_p,
+                  sizeof(struct termios));
 }

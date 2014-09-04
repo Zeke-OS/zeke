@@ -76,7 +76,8 @@ long sysconf(int name)
         /* TODO */
         break;
     case _SC_CLK_TCK:
-        sysctl_len = sysctlnametomib("kern.hz", sysctl_mib, num_elem(sysctl_mib));
+        sysctl_len = sysctlnametomib("kern.hz", sysctl_mib,
+                                     num_elem(sysctl_mib));
         len = sizeof(value);
         if (sysctl(sysctl_mib, sysctl_len, &value, &len, 0, 0)) {
             value = -1;

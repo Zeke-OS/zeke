@@ -95,7 +95,7 @@ struct vm_pt * ptlist_get_pt(struct ptlist * ptlist_head, mmu_pagetable_t * mpt,
         vpt->pt.dom = MMU_DOM_USER;
 
         /* Allocate the actual page table, this will also set pt_addr. */
-        if(ptmapper_alloc(&(vpt->pt))) {
+        if (ptmapper_alloc(&(vpt->pt))) {
             kfree(vpt);
             return 0;
         }
@@ -261,7 +261,8 @@ int vm_add_region(struct vm_mm_struct * mm, struct buf * region)
 {
     struct buf * (*new_regions)[];
 
-    new_regions = krealloc(mm->regions, (mm->nr_regions + 1) * sizeof(struct buf *));
+    new_regions = krealloc(mm->regions,
+            (mm->nr_regions + 1) * sizeof(struct buf *));
     if (!new_regions)
         return -ENOMEM;
 
@@ -319,7 +320,7 @@ int kernacc(const void * addr, int len, int rw)
 static int test_ap_priv(uint32_t rw, uint32_t ap)
 {
     if (rw & VM_PROT_EXECUTE) {
-        if(ap & 0x8)
+        if (ap & 0x8)
             return 0; /* XN bit set. */
     }
     ap &= ~0x8; /* Discard XN bit. */
@@ -362,7 +363,7 @@ int useracc(const void * addr, int len, int rw)
 static int test_ap_user(uint32_t rw, uint32_t ap)
 {
     if (rw & VM_PROT_EXECUTE) {
-        if(ap & 0x8)
+        if (ap & 0x8)
             return 0; /* XN bit set. */
     }
     ap &= ~0x8; /* Discard XN bit. */
