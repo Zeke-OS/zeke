@@ -179,6 +179,12 @@ static inline uint8_t read_byte(uint8_t * buf, int offset)
     return buf[offset];
 }
 
+int ffs(int mask);
+int ffsl(long mask);
+int fls(int mask);
+int flsl(long mask);
+int flsll(long long mask);
+
 #endif /* LIBKERN_H */
 
 /**
