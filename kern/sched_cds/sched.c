@@ -93,16 +93,20 @@ static rwlock_t loadavg_lock;
 static uint32_t loadavg[3]  = { 0, 0, 0 }; /*!< CPU load averages */
 
 /** Stack for idle thread */
-static char sched_idle_stack[sizeof(sw_stack_frame_t)
-                             + sizeof(hw_stack_frame_t)
-                             + 40];
-
+static char sched_idle_stack[sizeof(sw_stack_frame_t) +
+                             sizeof(hw_stack_frame_t) +
+                             IDLE_THREAD_MINSTACK];
 
 static int calc_quantums(struct thread_info * thread);
 static void insert_threads(int quantums);
 static void validate_thread(struct thread_info * tp);
 static struct thread_info * fifo_sched(void);
 static struct thread_info * cds_sched(void);
+
+struct thread_info * (* const schedpol[])(void) = {
+    fifo_sched, /* RT sched. */
+    cds_sched   /* Conv sched. */
+};
 
 void sched_init(void) __attribute__((constructor));
 void sched_init(void)
@@ -186,11 +190,6 @@ RB_GENERATE(sched_exec, thread_info, sched.exec_entry, sched_ts_comp);
  */
 void sched_schedule(void)
 {
-    struct thread_info * (* const schedpol[])(void) = {
-        fifo_sched, /* RT sched. */
-        cds_sched   /* Conv sched. */
-    };
-
     /* Pay for CPU time. */
     current_thread->ts_counter++;
 
@@ -368,7 +367,7 @@ static void sched_calc_loads(void)
         if (rwlock_trywrlock(&loadavg_lock) == 0) {
             count = LOAD_FREQ; /* Count is only reset if we get write lock so
                                 * we can try again each time. */
-            nr_active  = (uint32_t)(cpusched.nr_exec * FIXED_1);
+            nr_active = (uint32_t)(cpusched.nr_exec * FIXED_1);
 
             /* Load averages */
             CALC_LOAD(loadavg[0], FEXP_1, nr_active);
@@ -500,6 +499,7 @@ void sched_sleep_current_thread(int permanent)
 {
     current_thread->flags &= ~SCHED_EXEC_FLAG;
     current_thread->flags |= SCHED_WAIT_FLAG;
+
     if (permanent) {
         atomic_set(&current_thread->a_wait_count, -1);
     }

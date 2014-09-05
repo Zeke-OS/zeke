@@ -79,9 +79,9 @@ static rwlock_t loadavg_lock;
 static uint32_t loadavg[3]  = { 0, 0, 0 }; /*!< CPU load averages */
 
 /** Stack for idle thread */
-static char sched_idle_stack[sizeof(sw_stack_frame_t)
-                             + sizeof(hw_stack_frame_t)
-                             + 40];
+static char sched_idle_stack[sizeof(sw_stack_frame_t) +
+                             sizeof(hw_stack_frame_t) +
+                             IDLE_THREAD_MINSTACK];
 
 /* Static function declarations **********************************************/
 static void init_thread_id_queue(void);

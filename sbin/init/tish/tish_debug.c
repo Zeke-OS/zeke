@@ -159,7 +159,7 @@ static void create_debug_thread(void)
         puts("Thread creation failed\n");
         return;
     }
-    ksprintf(buf, sizeof(buf), "Thread created with id: %u and stack: %x\n", test_tid, newstack);
+    ksprintf(buf, sizeof(buf), "Thread created with id: %u and stack: %p\n", test_tid, newstack);
     puts(buf);
 }
 

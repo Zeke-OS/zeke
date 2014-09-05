@@ -34,6 +34,8 @@
 #ifndef BUF_H
 #define BUF_H
 
+#include <llist.h>
+#include <hal/mmu.h>
 #include <fs/fs.h>
 #include <vm/vm.h>
 

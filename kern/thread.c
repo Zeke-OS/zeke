@@ -81,8 +81,12 @@ void sched_handler(void)
      * Call the actual context switcher function that schedules the next thread.
      */
     sched_schedule();
-    if (current_thread != prev_thread)
+    if (current_thread != prev_thread) {
+        char buf[80];
+        ksprintf(buf, sizeof(buf), "%x", current_thread->kstack_region);
+        KERROR(KERROR_DEBUG, buf);
         mmu_map_region(&(current_thread->kstack_region->b_mmu));
+    }
 
     /* Post-scheduling tasks */
     SET_FOREACH(task_p, post_sched_tasks) {
@@ -247,13 +251,10 @@ pthread_t thread_fork(void)
     tmp.id = new_id;
     thread_set_inheritance(&tmp, old_thread);
 
-    /* Initialize a new kstack & copy data from old kstack. */
-    thread_init_kstack(&tmp);
-
     /* TODO Following should be done in HAL */
     memcpy(&tmp.sframe[SCHED_SFRAME_SYS], &old_thread->sframe[SCHED_SFRAME_SVC],
             sizeof(sw_stack_frame_t));
-    tmp.sframe[SCHED_SFRAME_SYS].r0 = 0;
+    tmp.sframe[SCHED_SFRAME_SYS].r0  = 0;
     tmp.sframe[SCHED_SFRAME_SYS].pc += 4; /* TODO This is too hw specific */
 
     new_thread = sched_get_thread_info(new_id);
@@ -261,6 +262,7 @@ pthread_t thread_fork(void)
         panic("Failed to get newly created thread struct");
 
     memcpy(new_thread, &tmp, sizeof(struct thread_info));
+    thread_init_kstack(new_thread);
 
     /* TODO Increment resource refcounters(?) */
 
@@ -332,9 +334,9 @@ static void thread_init_kstack(threadInfo_t * tp)
         panic("OOM during thread creation");
     }
 
-    kstack->b_uflags = 0;
+    kstack->b_uflags    = 0;
     kstack->b_mmu.vaddr = MMU_VADDR_TKSTACK_START;
-    kstack->b_mmu.pt = &mmu_pagetable_system;
+    kstack->b_mmu.pt    = &mmu_pagetable_system;
 
     tp->kstack_region = kstack;
 }

@@ -60,4 +60,6 @@
  */
 #define DEV_MMTODEV(ma, mi) (((ma) << DEV_MINORBITS) | (mi))
 
+#define CMASK 022 /*!< File creation mask: S_IWGRP|S_IWOTH */
+
 #endif /* _SYS_PARAM_H_ */

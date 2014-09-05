@@ -32,7 +32,6 @@ configKERROR_FB = 0# Print to FB support
 # 2 = UART0
 # 3 = FB
 configDEF_KLOGGER = 2# Select default logger (options above)
-
 # loglevel
 # Additional log messages and asserts.
 # These are one to one with KERROR message levels, although meanings are bit
@@ -45,7 +44,6 @@ configDEF_KLOGGER = 2# Select default logger (options above)
 #     occur in normal operation.
 # 0 - Normal build
 configDEBUG = '4'#Additional debug messages and asserts.
-# end of logging options
 
 # Processes
 configMAXPROC = 5# maxproc, default maximum number of processes.
@@ -62,8 +60,7 @@ configSCHED_MAX_THREADS = 10# Maximum number of threads.
 # SCHED_CDS Config
 configSCHED_CDS_EPOCHLEN = 100
 
-
-
+# Timers
 configTIMERS_MAX = 16# Maximum number of timers available
 
 # String functions

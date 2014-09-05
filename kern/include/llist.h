@@ -34,6 +34,8 @@
 #ifndef LLIST_H
 #define LLIST_H
 
+#include <stddef.h>
+
 typedef struct {
     struct llist * lst;
     void * next;

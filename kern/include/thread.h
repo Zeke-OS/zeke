@@ -35,6 +35,8 @@
 #ifndef THREAD_H
 #define THREAD_H
 
+#define IDLE_THREAD_MINSTACK 40
+
 /**
  * Scheduler handler.
  * This is mainly called when timer ticks.
