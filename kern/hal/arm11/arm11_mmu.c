@@ -115,12 +115,12 @@ int mmu_init_pagetable(const mmu_pagetable_t * pt)
     const uint32_t pte = MMU_PTE_FAULT;
     uint32_t * p_pte = (uint32_t *)pt->pt_addr; /* points to a pt entry in PT */
 
+    if (!p_pte) {
 #if config_DEBUG >= KERROR_DEBUG
-    if (p_pte == 0) {
         KERROR(KERROR_ERR, "Page table address can't be null.");
+#endif
         return -EINVAL;
     }
-#endif
 
     switch (pt->type) {
     case MMU_PTT_COARSE:
@@ -243,10 +243,7 @@ static void mmu_map_coarse_region(const mmu_region_t * region)
     p_pte += (region->vaddr & 0x000ff000) >> 12;    /* First */
     p_pte += region->num_pages - 1;                 /* Last pte */
 
-#if configDEBUG >= KERROR_DEBUG
-        if (p_pte == 0)
-            KERROR(KERROR_ERR, "p_pte is null");
-#endif
+    KASSERT(p_pte, "p_pte is null");
 
     pte = region->paddr & 0xfffff000;       /* Set physical address */
     pte |= (region->ap & 0x3) << 4;         /* Set access permissions (AP) */

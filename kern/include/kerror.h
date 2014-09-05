@@ -72,9 +72,17 @@ const char _kernel_panic_msg[19];
 #define panic(msg) do {                     \
     disable_interrupt();                    \
     KERROR(KERROR_CRIT, _kernel_panic_msg); \
-    KERROR(KERROR_CRIT, msg);               \
+    KERROR(KERROR_CRIT, (msg));             \
     panic_halt();                           \
 } while(1)
+
+#if configDEBUG >= KERROR_DEBUG
+#define KASSERT(invariant, msg) do {        \
+    if (!(invariant)) { panic(msg); }       \
+} while(0)
+#else
+#define KASSERT(invariant, msg)
+#endif
 
 /* Log levels */
 #define KERROR_CRIT     '0' /*!< Critical error system is halted. */
