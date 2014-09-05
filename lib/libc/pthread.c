@@ -6,7 +6,8 @@
  * @section LICENSE
  * Copyright (c) 2013 Joni Hauhia <joni.hauhia@cs.helsinki.fi>
  * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+ * Copyright (c) 2012, 2013 Ninjaware Oy,
+ *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -88,7 +89,8 @@ int pthread_detach(pthread_t thread)
 
 /** TODO Add headers to pthreads.h! */
 
-int pthread_mutex_init(pthread_mutex_t * mutex, const pthread_mutexattr_t * attr)
+int pthread_mutex_init(pthread_mutex_t * mutex,
+                       const pthread_mutexattr_t * attr)
 {
     /*TODO What if attr is not set?*/
     mutex->thread_id    = pthread_self();
@@ -101,8 +103,7 @@ int pthread_mutex_init(pthread_mutex_t * mutex, const pthread_mutexattr_t * attr
 int pthread_mutex_lock(pthread_mutex_t * mutex)
 {
     /*If not succesful, we switch context. Should be posix compliant.*/
-    while((int)syscall(SYSCALL_MUTEX_TEST_AND_SET, (void*)(&(mutex->lock))) != 0)
-    {
+    while ((int)syscall(SYSCALL_MUTEX_TEST_AND_SET, (void *)(&(mutex->lock)))) {
         req_context_switch();
     }
     return 0;
@@ -113,9 +114,8 @@ int pthread_mutex_trylock(pthread_mutex_t * mutex)
 {
     int result;
 
-    result = (int)syscall(SYSCALL_MUTEX_TEST_AND_SET, (void*)(&(mutex->lock)));
-    if (result == 0)
-    {
+    result = (int)syscall(SYSCALL_MUTEX_TEST_AND_SET, (void *)(&(mutex->lock)));
+    if (result == 0) {
         mutex->thread_id = pthread_self();
         return 0;
     }
@@ -125,8 +125,7 @@ int pthread_mutex_trylock(pthread_mutex_t * mutex)
 
 int pthread_mutex_unlock(pthread_mutex_t * mutex)
 {
-    if (mutex->thread_id == pthread_self())
-    {
+    if (mutex->thread_id == pthread_self()) {
         mutex->lock = 0;
         return 0;
     }

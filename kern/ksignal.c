@@ -6,7 +6,8 @@
  * @brief   Source file for thread Signal Management in kernel.
  * @section LICENSE
  * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+ * Copyright (c) 2012, 2013 Ninjaware Oy,
+ *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -155,7 +156,7 @@ static int sigproptbl[] = {
 
 ksiginfo_t * ksiginfo_alloc(int wait)
 {
-    return (ksiginfo_t *)kmalloc(sizeof(ksiginfo_t));
+    return kmalloc(sizeof(ksiginfo_t));
 }
 
 void ksiginfo_free(ksiginfo_t * ksi)
@@ -195,26 +196,26 @@ void sigqueue_init(sigqueue_t * list, struct proc * p)
  */
 intptr_t ksignal_syscall(uint32_t type, void * p)
 {
-    switch(type) {
-        case SYSCALL_SIGNAL_KILL:
-            set_errno(ENOSYS);
-            return -3;
+    switch (type) {
+    case SYSCALL_SIGNAL_KILL:
+        set_errno(ENOSYS);
+        return -3;
 
-        case SYSCALL_SIGNAL_RAISE:
-            set_errno(ENOSYS);
-            return -4;
+    case SYSCALL_SIGNAL_RAISE:
+        set_errno(ENOSYS);
+        return -4;
 
-        case SYSCALL_SIGNAL_ACTION:
-            set_errno(ENOSYS);
-            return -5;
+    case SYSCALL_SIGNAL_ACTION:
+        set_errno(ENOSYS);
+        return -5;
 
-        case SYSCALL_SIGNAL_ALTSTACK:
-            set_errno(ENOSYS);
-            return -6;
+    case SYSCALL_SIGNAL_ALTSTACK:
+        set_errno(ENOSYS);
+        return -6;
 
-        default:
-            set_errno(ENOSYS);
-            return -1;
+    default:
+        set_errno(ENOSYS);
+        return -1;
     }
 }
 

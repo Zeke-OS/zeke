@@ -64,7 +64,7 @@ int sysctlnametomib(char * name, int * oidp, int lenp)
     j = lenp * sizeof(int);
     i = sysctl(qoid, 2, oidp, &j, name, strlenn(name, CTL_MAXSTRNAME));
     if (i < 0)
-        return (i);
+        return i;
     return j / sizeof(int);
 }
 

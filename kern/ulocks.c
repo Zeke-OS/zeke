@@ -5,7 +5,8 @@
  * @brief   User space locks and Syscall handlers for locks.
  * @section LICENSE
  * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+ * Copyright (c) 2012, 2013 Ninjaware Oy,
+ *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -132,7 +133,7 @@ intptr_t ulocks_syscall(uint32_t type, void * p)
 {
     uint32_t retval;
 
-    switch(type) {
+    switch (type) {
     case SYSCALL_MUTEX_TEST_AND_SET: /* TODO User space to kernel space address
                                       *      translation? */
         if (useracc(p, sizeof(int), VM_PROT_WRITE)) {
