@@ -82,9 +82,11 @@ void sched_handler(void)
      */
     sched_schedule();
     if (current_thread != prev_thread) {
+#if 0
         char buf[80];
         ksprintf(buf, sizeof(buf), "%x", current_thread->kstack_region);
         KERROR(KERROR_DEBUG, buf);
+#endif
         mmu_map_region(&(current_thread->kstack_region->b_mmu));
     }
 
