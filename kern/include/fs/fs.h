@@ -494,6 +494,12 @@ int fs_chmod_curproc(int fildes, mode_t mode);
 int fs_chown_curproc(int fildes, uid_t owner, gid_t group);
 
 /**
+ * Init a vnode.
+ */
+void fs_vnode_init(vnode_t * vnode, ino_t vn_num, struct fs_superblock * sb,
+                   const vnode_ops_t * const vnops);
+
+/**
  * Cleanup some vnode data.
  * File system is responsible to call this function before deleting a vnode.
  * This handles following cleanup tasks:

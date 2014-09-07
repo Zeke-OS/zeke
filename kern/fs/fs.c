@@ -924,6 +924,18 @@ out:
     return retval;
 }
 
+void fs_vnode_init(vnode_t * vnode, ino_t vn_num, struct fs_superblock * sb,
+                   const vnode_ops_t * const vnops)
+{
+    vnode->vn_num = vn_num;
+    vnode->vn_refcount = 0;
+    vnode->vn_mountpoint = vnode;
+    vnode->vn_prev_mountpoint = vnode;
+    vnode->sb = sb;
+    vnode->vnode_ops = (vnode_ops_t *)vnops;
+    mtx_init(&vnode->lock, VN_LOCK_MODES);
+}
+
 void fs_vnode_cleanup(vnode_t * vnode)
 {
     struct buf * var, * nxt;

@@ -845,13 +845,8 @@ vnode_t * ramfs_raw_create_inode(const fs_superblock_t * sb, ino_t * num)
 static void init_inode(ramfs_inode_t * inode, ramfs_sb_t * ramfs_sb, ino_t * num)
 {
     memset((void *)inode, 0, sizeof(ramfs_inode_t));
-    inode->in_vnode.vn_num = *num;
-    inode->in_vnode.vn_refcount = 0;
-    inode->in_vnode.vn_mountpoint = &inode->in_vnode;
-    inode->in_vnode.vn_prev_mountpoint = &inode->in_vnode;
-    inode->in_vnode.sb = &(ramfs_sb->sbn.sbl_sb);
-    inode->in_vnode.vnode_ops = (vnode_ops_t *)(&ramfs_vnode_ops);
-    mtx_init(&inode->in_vnode.lock, VN_LOCK_MODES);
+    fs_vnode_init(&inode->in_vnode, *num, &(ramfs_sb->sbn.sbl_sb),
+                  &ramfs_vnode_ops);
 }
 
 /**
