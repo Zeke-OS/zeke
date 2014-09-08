@@ -21,6 +21,7 @@
 #define _TO_STR(x) #x
 #define TO_STR(x) _TO_STR(x)
 
+int memcmp(const void * s1, const void * s2, size_t n);
 void * memcpy(void * restrict destination, const void * source, size_t num);
 void * memmove(void * destination, const void * source, size_t num);
 void * memset(void * ptr, int value, size_t num);
