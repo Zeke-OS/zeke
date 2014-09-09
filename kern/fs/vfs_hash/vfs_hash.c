@@ -1,4 +1,5 @@
 /*-
+ * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2005 Poul-Henning Kamp
  * All rights reserved.
  *
