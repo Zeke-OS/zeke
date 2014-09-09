@@ -181,6 +181,7 @@ static inline uint8_t read_byte(uint8_t * buf, int offset)
 
 int ffs(int mask);
 int ffsl(long mask);
+int ffsll(long long mask);
 int fls(int mask);
 int flsl(long mask);
 int flsll(long long mask);

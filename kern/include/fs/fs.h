@@ -42,10 +42,11 @@
 #include <stdint.h>
 #include <limits.h>
 #include <sys/types.h>
+#include <sys/queue.h>
+#include <sys/tree.h>
 #include <time.h>
 #include <sys/stat.h>
 #include <dirent.h>
-#include <sys/tree.h>
 #include <klocks.h>
 
 #define FS_FLAG_INIT    0x01 /*!< File system initialized. */
@@ -90,6 +91,7 @@ struct bufhd {
 
 typedef struct vnode {
     ino_t vn_num;               /*!< vnode number. */
+    unsigned vn_hash;           /*!< Hash for using vfs hashing. */
     int vn_refcount;
     /*!< Pointer to the vnode in mounted file system. If no fs is mounted on
      *   this vnode then this is a self pointing pointer. */
@@ -104,9 +106,23 @@ typedef struct vnode {
     struct fs_superblock * sb;  /*!< Pointer to the super block of this vnode. */
     struct vnode_ops * vnode_ops;
 
-    mtx_t lock;
+#if configVFS_HASH != 0
+    /*
+     * vfs_hash: (mount + inode) -> vnode hash.  The hash value
+     * itself is grouped with other int fields, to avoid padding.
+     */
+    LIST_ENTRY(vnode)   vn_hashlist;
+#endif
+
+    mtx_t vn_lock;
 } vnode_t;
 #define VN_LOCK_MODES (MTX_TYPE_TICKET | MTX_TYPE_SLEEP)
+/* Test macros for vnodes */
+#define VN_IS_FSROOT(vn) ((vn)->sb->mountpoint == (vn))
+/* Op macros for vnodes */
+#define VN_LOCK(vn) (mtx_lock(&(vn)->vn_lock))
+#define VN_TRYLOCK(vn) (mtx_trylock(&(vn)->vn_lock))
+#define VN_UNLOCK(vn) (mtx_unlock(&(vn)->vn_lock))
 
 /**
  * File descriptor.
@@ -158,6 +174,7 @@ typedef struct fs {
 typedef struct fs_superblock {
     fs_t * fs;
     dev_t vdev_id;          /*!< Virtual dev_id. */
+    unsigned sb_hashseed;   /*!< Seed for using vfs hashing */
     uint32_t mode_flags;    /*!< Mount mode flags */
     vnode_t * root;         /*!< Root of this fs mount. */
     vnode_t * mountpoint;   /*!< Mount point where this sb is mounted on.

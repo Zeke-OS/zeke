@@ -38,8 +38,96 @@ int ffs(int mask)
     int bit;
 
     if (mask == 0)
-        return (0);
-    for (bit = 1; !(mask & 1); bit++)
+        return 0;
+
+    for (bit = 1; !(mask & 1); bit++) {
         mask = (unsigned int)mask >> 1;
-    return (bit);
+    }
+
+    return bit;
+}
+
+/*
+ * Find First Set bit
+ */
+int ffsl(long mask)
+{
+    int bit;
+
+    if (mask == 0)
+        return 0;
+
+    for (bit = 1; !(mask & 1); bit++) {
+        mask = (unsigned long)mask >> 1;
+    }
+
+    return bit;
+}
+
+/*
+ * Find First Set bit
+ */
+int ffsll(long long mask)
+{
+    int bit;
+
+    if (mask == 0)
+        return 0;
+
+    for (bit = 1; !(mask & 1); bit++) {
+        mask = (unsigned long long)mask >> 1;
+    }
+
+    return bit;
+}
+
+/*
+ * Find Last Set bit
+ */
+int fls(int mask)
+{
+    int bit;
+
+    if (mask == 0)
+        return 0;
+
+    for (bit = 1; mask != 1; bit++) {
+        mask = (unsigned int)mask >> 1;
+    }
+
+    return bit;
+}
+
+/*
+ * Find Last Set bit
+ */
+int flsl(long mask)
+{
+    int bit;
+
+    if (mask == 0)
+        return 0;
+
+    for (bit = 1; mask != 1; bit++) {
+        mask = (unsigned long)mask >> 1;
+    }
+
+    return bit;
+}
+
+/*
+ * Find Last Set bit
+ */
+int flsll(long long mask)
+{
+    int bit;
+
+    if (mask == 0)
+        return 0;
+
+    for (bit = 1; mask != 1; bit++) {
+        mask = (unsigned long long)mask >> 1;
+    }
+
+    return bit;
 }

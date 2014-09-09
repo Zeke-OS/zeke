@@ -71,7 +71,8 @@ configUSRINIT_SSIZE = 8192# Stack size for usrinit thread
 configUSRINIT_PRI = 0# Priority of usrinit thread
 
 # Virtual file system and file systems
-configMBR = 0# MBR Support
+configVFS_HASH = 0# VFS Hash - Vnode hashmap
+configMBR = 1# MBR Support
 configRAMFS = 1# Compile ramfs with Zeke base
 
 # In-Kernel Unit Tests

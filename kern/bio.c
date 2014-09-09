@@ -232,13 +232,13 @@ static struct buf * create_blk(vnode_t * vnode, size_t blkno, size_t size,
     bp->b_file = file;
     mtx_init(&bp->b_file.lock, MTX_TYPE_SPIN);
 
-    mtx_lock(&vnode->lock);
+    VN_LOCK(vnode);
 
     /* Put to the buffer splay tree of the vnode. */
     if (SPLAY_INSERT(bufhd_splay, &vnode->vn_bpo.sroot, bp))
         panic("Double insert"); /* TODO */
 
-    mtx_unlock(&vnode->lock);
+    VN_UNLOCK(vnode);
 
     return bp;
 }
@@ -392,12 +392,12 @@ static void bio_clean(int freebufs)
         }
 
         if (freebufs && !(bp->b_flags & B_LOCKED) &&
-                !mtx_trylock(&file->vnode->lock)) {
+                !VN_TRYLOCK(file->vnode)) {
             struct buf * bp_prev = bp->lentry_.prev;
 
             SPLAY_REMOVE(bufhd_splay, &file->vnode->vn_bpo.sroot, bp);
             vrfree(bp);
-            mtx_unlock(&file->vnode->lock);
+            VN_UNLOCK(file->vnode);
 
             bp = bp_prev;
             continue;

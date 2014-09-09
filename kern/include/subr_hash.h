@@ -1,6 +1,12 @@
-/*-
- * Copyright (c) 1990, 1993
+/*
+ * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 1982, 1986, 1991, 1993
  *  The Regents of the University of California.  All rights reserved.
+ * (c) UNIX System Laboratories, Inc.
+ * All or some portions of this file are derived from material licensed
+ * to the University of California by American Telephone and Telegraph
+ * Co. or Unix System Laboratories, Inc. and are reproduced herein with
+ * the permission of UNIX System Laboratories, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,19 +33,36 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-#include <libkern.h>
+#ifndef SUBR_HASH_H
+#define SUBR_HASH_H
 
-/*
- * Find Last Set bit
+/**
+ * Init a hash table.
+ * The hashinit() function allocates hash tables that are sized to largest
+ * power of two less than or equal to  argument nelements.
  */
-int fls(int mask)
-{
-    int bit;
+void * hashinit(int count, unsigned long * hashmask);
+void * hashinit_flags(int count, unsigned long * hashmask, int flags);
+/**
+ * Any malloc performed by  the hashinit_flags() function
+ * will not be allowed to wait, and therefore may fail.
+ */
+#define HASH_NOWAIT     0x00000001
 
-    if (mask == 0)
-        return (0);
-    for (bit = 1; mask != 1; bit++)
-        mask = (unsigned int)mask >> 1;
-    return (bit);
-}
+/**
+ * Any malloc performed by  the hashinit_flags() function
+ * is allowed to wait for memory.
+ */
+#define HASH_WAITOK     0x00000002
+
+/**
+ * Destroy a hash table.
+ * The hashdestroy() function frees the space occupied by the hash table
+ * pointed to by argument hashtbl.
+ */
+void hashdestroy(void *, unsigned long);
+
+
+void * phashinit(int count, unsigned long * nentries);
+
+#endif /* SUBR_HASH_H */
