@@ -514,27 +514,27 @@ static uint32_t sd_acommands[] = {
 
 int rpi_emmc_card_init(struct dev_info ** dev);
 
-void rpi_emmc_init(void) __attribute__((constructor));
-void rpi_emmc_init(void)
+int rpi_emmc_init(void) __attribute__((constructor));
+int rpi_emmc_init(void)
 {
     SUBSYS_DEP(fs_init);
     SUBSYS_INIT("rpi_emc");
 
     vnode_t * vnode;
     int fd;
+    int err;
 
     mailbuf = geteblk_special(10 * sizeof(uint32_t),
             MMU_CTRL_MEMTYPE_SO);
     if (!mailbuf || mailbuf->b_data == 0) {
         KERROR(KERROR_ERR, "Unable to get mailbuffer");
-        return;
+        return -ENOMEM;
     }
 
     struct dev_info * sd_dev = NULL;
-    if (rpi_emmc_card_init(&sd_dev)) {
-        KERROR(KERROR_ERR, "rpi_emmc FAILED");
-        return;
-    }
+    err = rpi_emmc_card_init(&sd_dev);
+    if (err)
+        return err;
 
 #ifdef ENABLE_BLOCK_CACHE
     struct dev_info * c_dev = sd_dev;
@@ -553,11 +553,13 @@ void rpi_emmc_init(void)
     fd = fs_fildes_create_cproc(vnode, O_RDONLY);
     if (fd < 0) {
         KERROR(KERROR_ERR, "Failed to open the device");
-        return;
+        return -ENOENT;
     }
 
     mbr_register(fd, NULL);
 #endif
+
+    return 0;
 }
 
 static void sd_power_off()

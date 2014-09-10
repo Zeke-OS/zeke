@@ -103,8 +103,8 @@ static const vm_ops_t vra_ops = {
 /**
  * Initializes vregion allocator data structures.
  */
-void vralloc_init(void) __attribute__((constructor));
-void vralloc_init(void)
+int vralloc_init(void) __attribute__((constructor));
+int vralloc_init(void)
 {
     SUBSYS_INIT("vrallloc");
     struct vregion * reg;
@@ -118,6 +118,8 @@ void vralloc_init(void)
     last_vreg = reg;
 
     _bio_init();
+
+    return 0;
 }
 
 /**

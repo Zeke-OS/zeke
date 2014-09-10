@@ -63,12 +63,14 @@ static mtx_t timers_lock;
 static struct timer_cb timers_array[configTIMERS_MAX];
 #define VALID_TIMER_ID(x) ((x) < configTIMERS_MAX && (x) >= 0)
 
-void timers_init(void) __attribute__((constructor));
-void timers_init(void)
+int timers_init(void) __attribute__((constructor));
+int timers_init(void)
 {
     SUBSYS_INIT("timers");
 
     mtx_init(&timers_lock, MTX_TYPE_SPIN);
+
+    return 0;
 }
 
 void timers_run(void)

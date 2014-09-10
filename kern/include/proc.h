@@ -160,7 +160,7 @@ extern mtx_t proclock;
 /**
  * Init process handling subsystem.
  */
-void proc_init(void) __attribute__((constructor));
+int proc_init(void) __attribute__((constructor));
 
 /* proc.c
  * Process scheduling and sys level management

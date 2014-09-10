@@ -39,6 +39,7 @@
 #ifndef KINIT_H
 #define KINIT_H
 
+#include <errno.h>
 #include <kerror.h>
 
 /**
@@ -48,7 +49,7 @@
 #define SUBSYS_INIT(name) do {      \
     static char __subsys_init = 0;  \
     if (__subsys_init != 0) {       \
-        return;                     \
+        return -EAGAIN;             \
     } else {                        \
         __subsys_init = 1;          \
         kputs((name));              \
@@ -61,20 +62,22 @@
  * @param dep is a name of an intializer function.
  */
 #define SUBSYS_DEP(dep)             \
-    extern void dep(void);          \
-    dep()
+    extern int dep(void);           \
+    exec_initfn((dep))
 
 /**
  * hw_preinit initializer functions are run before any other kernel initializer
  * functions.
  */
-#define HW_PREINIT_ENTRY(fn) static void (*fp_##fn)(void) __attribute__ ((section (".hw_preinit_array"), __used__)) = fn;
+#define HW_PREINIT_ENTRY(fn) static int (*fp_##fn)(void) __attribute__ ((section (".hw_preinit_array"), __used__)) = fn;
 
 /**
  * hw_post_init initializer are run after all other kernel initializer so post
  * init is ideal for example initializing hw timers and interrupts.
  */
-#define HW_POSTINIT_ENTRY(fn) static void (*fp_##fn)(void) __attribute__ ((section (".hw_postinit_array"), __used__)) = fn;
+#define HW_POSTINIT_ENTRY(fn) static int (*fp_##fn)(void) __attribute__ ((section (".hw_postinit_array"), __used__)) = fn;
+
+void exec_initfn(int (*fn)(void));
 
 #endif /* KINIT_H */
 

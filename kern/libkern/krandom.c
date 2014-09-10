@@ -91,10 +91,12 @@ long kunirand(long n)
     return draw / partSize;
 }
 
-static void random_init(void) __attribute__((constructor));
-static void random_init(void)
+int random_init(void) __attribute__((constructor));
+int random_init(void)
 {
     SUBSYS_INIT("krandom");
 
     ksrandom((uint32_t)(get_utime() % (uint64_t)0xffffffff));
+
+    return 0;
 }

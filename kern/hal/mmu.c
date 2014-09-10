@@ -64,8 +64,7 @@ SYSCTL_UINT(_vm, OID_AUTO, pfps, CTLFLAG_RD, (&mmu_pfps), 0,
 
 extern void mmu_lock_init();
 
-HW_PREINIT_ENTRY(mmu_init);
-void mmu_init(void)
+int mmu_init(void)
 {
     SUBSYS_DEP(arm_interrupt_preinit);
     SUBSYS_DEP(ptmapper_init);
@@ -89,7 +88,10 @@ void mmu_init(void)
     value = MMU_ZEKE_C1_DEFAULTS;
     mask = MMU_ZEKE_C1_DEFAULTS;
     mmu_control_set(value, mask);
+
+    return 0;
 }
+HW_PREINIT_ENTRY(mmu_init);
 
 /**
  * Get size of a page table.

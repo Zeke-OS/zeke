@@ -75,8 +75,8 @@ static fs_t devfs_fs = {
 /* There is only one devfs, but it can be mounted multiple times */
 vnode_t * vn_devfs;
 
-void devfs_init(void) __attribute__((constructor));
-void devfs_init(void)
+int devfs_init(void) __attribute__((constructor));
+int devfs_init(void)
 {
     SUBSYS_DEP(ramfs_init);
     SUBSYS_INIT("devfs");
@@ -99,7 +99,7 @@ void devfs_init(void)
 
         ksprintf(buf, sizeof(buf), "%s : %i\n", failed, err);
         KERROR(KERROR_ERR, buf);
-        return;
+        return err;
     }
     vn_devfs = vn_devfs->vn_mountpoint;
     kfree(vn_devfs->vn_prev_mountpoint);
@@ -108,6 +108,8 @@ void devfs_init(void)
 
     vn_devfs->sb->vdev_id = DEV_MMTODEV(DEVFS_MAJOR_NUM, 0);
     fs_register(&devfs_fs);
+
+    return 0;
 }
 
 static int devfs_mount(const char * source, uint32_t mode,

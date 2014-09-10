@@ -64,8 +64,8 @@ static size_t curr_klogger_id = KERROR_BUF;     /* Boot value */
 
 static int klogger_change(size_t new_id, size_t old_id);
 
-void kerror_init(void) __attribute__((constructor));
-void kerror_init(void)
+int kerror_init(void) __attribute__((constructor));
+int kerror_init(void)
 {
 #if (configDEF_KLOGGER == KERROR_FB)
     SUBSYS_DEP(fb_init);
@@ -77,6 +77,8 @@ void kerror_init(void)
      * compilation time.
      */
     klogger_change(configDEF_KLOGGER, curr_klogger_id);
+
+    return 0;
 }
 
 /**

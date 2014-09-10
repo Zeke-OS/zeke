@@ -69,7 +69,7 @@ static mmu_region_t bcm2835_fb_region = {
     .pt         = &mmu_pagetable_master
 };
 
-static void bcm2835_fb_init(void)
+static int bcm2835_fb_init(void)
 {
     SUBSYS_DEP(vralloc_init);
     SUBSYS_DEP(bcm2835_mmio_init);

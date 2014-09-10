@@ -139,11 +139,13 @@ uint64_t get_utime(void)
     return now;
 }
 
-void bcm_interrupt_postinit(void)
+int bcm_interrupt_postinit(void)
 {
     SUBSYS_INIT("ARM timer");
 
     enable_arm_timer();
     register_schedtimer_clear(bcm2835_timers_arm_clear);
+
+    return 0;
 }
 HW_POSTINIT_ENTRY(bcm_interrupt_postinit);

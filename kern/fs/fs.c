@@ -76,12 +76,14 @@ static fsl_node_t * fsl_head;
  * Then iterator can just iterate over fs_array
  */
 
-
-void fs_init(void)
+int fs_init(void) __attribute__((constructor));
+int fs_init(void)
 {
     SUBSYS_INIT("fs");
 
     FS_LOCK_INIT();
+
+    return 0;
 }
 
 /**

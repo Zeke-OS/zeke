@@ -40,7 +40,7 @@
 #include <kstring.h>
 #include <hal/core.h>
 
-void arm_interrupt_preinit(void);
+int arm_interrupt_preinit(void);
 
 HW_PREINIT_ENTRY(arm_interrupt_preinit);
 
@@ -95,14 +95,16 @@ __attribute__ ((naked)) void bad_exception(void)
     panic("bad_exception.");
 }
 
-void arm_interrupt_preinit(void)
+int arm_interrupt_preinit(void)
 {
     SUBSYS_INIT("arm_interrupt_preinit");
-    kputs(" ...enabling interrupts");
+    kputs(" ...enabling interrupts\n");
 
     /* Set interrupt base register */
     __asm__ volatile ("mcr p15, 0, %[addr], c12, c0, 0"
             : : [addr]"r" (&interrupt_vectors));
     /* Turn on interrupts */
     __asm__ volatile ("cpsie aif");
+
+    return 0;
 }

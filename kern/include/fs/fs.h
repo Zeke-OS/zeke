@@ -340,8 +340,6 @@ typedef struct sb_iterator {
 } sb_iterator_t;
 
 
-void fs_init(void) __attribute__((constructor));
-
 /* VFS Function Prototypes */
 
 /**

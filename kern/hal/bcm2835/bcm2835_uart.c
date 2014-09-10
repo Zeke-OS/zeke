@@ -90,12 +90,14 @@ static struct uart_port port = {
 };
 
 
-void bcm2835_uart_register(void)
+int bcm2835_uart_register(void)
 {
     SUBSYS_DEP(arm_interrupt_preinit);
     SUBSYS_INIT("BCM2836 UART");
 
     uart_register_port(&port);
+
+    return 0;
 }
 HW_PREINIT_ENTRY(bcm2835_uart_register);
 

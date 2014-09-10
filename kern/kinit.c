@@ -42,25 +42,25 @@
 #include <buf.h>
 #include <kinit.h>
 
-extern void (*__hw_preinit_array_start[]) (void) __attribute__((weak));
-extern void (*__hw_preinit_array_end[]) (void) __attribute__((weak));
+extern int (*__hw_preinit_array_start[]) (void) __attribute__((weak));
+extern int (*__hw_preinit_array_end[]) (void) __attribute__((weak));
 
-extern void (*__hw_postinit_array_start[]) (void) __attribute__((weak));
-extern void (*__hw_postinit_array_end[]) (void) __attribute__((weak));
+extern int (*__hw_postinit_array_start[]) (void) __attribute__((weak));
+extern int (*__hw_postinit_array_end[]) (void) __attribute__((weak));
 
-extern void (*__init_array_start []) (void) __attribute__((weak));
-extern void (*__init_array_end []) (void) __attribute__((weak));
+extern int (*__init_array_start []) (void) __attribute__((weak));
+extern int (*__init_array_end []) (void) __attribute__((weak));
 
-extern void (*__fini_array_start []) (void) __attribute__((weak));
-extern void (*__fini_array_end []) (void) __attribute__((weak));
+extern int (*__fini_array_start []) (void) __attribute__((weak));
+extern int (*__fini_array_end []) (void) __attribute__((weak));
 
 static void mount_rootfs(void);
-static void exec_array(void (*a []) (void), int n);
+static void exec_array(int (*a []) (void), int n);
 
 /**
  * Run all kernel module initializers.
  */
-void exec_init_array(void)
+int exec_init_array(void)
 {
     int n;
 
@@ -76,6 +76,8 @@ void exec_init_array(void)
     n = __hw_postinit_array_end - __hw_postinit_array_start;
     exec_array(__hw_postinit_array_start, n);
     enable_interrupt();
+
+    return 0;
 }
 
 /**
@@ -90,13 +92,13 @@ void exec_fini_array(void)
 /**
  * Create init process.
  */
-void kinit(void) __attribute__((constructor));
-void kinit(void)
+int kinit(void) __attribute__((constructor));
+int kinit(void)
 {
-    SUBSYS_INIT();
     SUBSYS_DEP(sched_init);
     SUBSYS_DEP(proc_init);
     SUBSYS_DEP(ramfs_init);
+    SUBSYS_INIT("kinit");
 
     char buf[80]; /* Buffer for panic messages. */
 
@@ -180,7 +182,8 @@ void kinit(void)
             pid, tid, init_vmstack->b_mmu.vaddr);
     KERROR(KERROR_DEBUG, buf);
 #endif
-    SUBSYS_INITFINI("kinit OK");
+
+    return 0;
 }
 
 static void mount_rootfs(void)
@@ -225,13 +228,23 @@ out:
  * @param pointer to the array.
  * @param n number of entries.
  */
-static void exec_array(void (*a []) (void), int n)
+static void exec_array(int (*a []) (void), int n)
 {
     int i;
 
     for (i = 0; i < n; i++) {
-        a[i]();
-        kputs(" ok");
+        exec_initfn(a[i]);
     }
 }
 
+void exec_initfn(int (*fn)(void))
+{
+    int err;
+
+    err = fn();
+
+    if (err == 0)
+        kputs("\t\t\t\tOK\n");
+    else if (err != -EAGAIN)
+        kputs("\t\t\t\tFAILED\n");
+}

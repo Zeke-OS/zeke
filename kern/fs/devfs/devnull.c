@@ -48,8 +48,8 @@ struct dev_info devnull_info = {
     .write = devnull_write
 };
 
-void devnull_init(void) __attribute__((constructor));
-void devnull_init(void)
+int devnull_init(void) __attribute__((constructor));
+int devnull_init(void)
 {
     SUBSYS_DEP(devfs_init);
     SUBSYS_INIT("dev/null");
@@ -57,6 +57,8 @@ void devnull_init(void)
     if (dev_make(&devnull_info, 0, 0, 0666, NULL)) {
         KERROR(KERROR_ERR, "Failed to init dev/null\n");
     }
+
+    return 0;
 }
 
 static int devnull_read(struct dev_info * devnfo, off_t blkno,

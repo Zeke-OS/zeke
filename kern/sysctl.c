@@ -104,17 +104,19 @@ static int sysctl_new_user(struct sysctl_req * req, void * p, size_t l);
 static int sysctl_root(SYSCTL_HANDLER_ARGS);
 
 
-void sysctl_init(void) __attribute__((constructor));
-void sysctl_init(void)
+int sysctl_init(void) __attribute__((constructor));
+int sysctl_init(void)
 {
     struct sysctl_oid ** oidp;
+    SUBSYS_INIT("sysctl");
 
     SYSCTL_LOCK_INIT();
     SYSCTL_LOCK();
     SET_FOREACH(oidp, sysctl_set)
             sysctl_register_oid(*oidp);
     SYSCTL_UNLOCK();
-    SUBSYS_INITFINI("sysctl OK");
+
+    return 0;
 }
 
 void sysctl_register_oid(struct sysctl_oid * oidp)

@@ -117,14 +117,16 @@ static void * kmap_allocation(size_t pos, size_t size, uint32_t ap, uint32_t con
 static int update_dynmem_region_struct(void * p);
 static int validate_addr(const void * addr, int test);
 
-HW_PREINIT_ENTRY(dynmem_init);
-void dynmem_init(void)
+static int dynmem_init(void)
 {
     SUBSYS_DEP(mmu_init);
     SUBSYS_INIT("dynmem");
 
     mtx_init(&dynmem_region_lock, MTX_TYPE_SPIN);
+
+    return 0;
 }
+HW_PREINIT_ENTRY(dynmem_init);
 
 void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t control)
 {

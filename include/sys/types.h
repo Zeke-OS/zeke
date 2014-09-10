@@ -62,6 +62,7 @@ typedef int nlink_t; /*!< Used for link counts. */
 #ifndef _OFF_T_DECLARED
 typedef int64_t off_t; /*!< Used for file sizes. */
 #define _OFF_T_DECLARED
+typedef uint64_t uoff_t;
 #endif
 #ifndef _PID_T_DECLARED
 typedef int pid_t; /*!< Process ID. */

@@ -175,14 +175,16 @@ const vnode_ops_t ramfs_vnode_ops = {
     .chown = ramfs_chown
 };
 
-void ramfs_init(void) __attribute__((constructor));
-void ramfs_init(void)
+int ramfs_init(void) __attribute__((constructor));
+int ramfs_init(void)
 {
     SUBSYS_DEP(proc_init);
     SUBSYS_INIT("ramfs");
 
     /* Register ramfs with vfs. */
     fs_register(&ramfs_fs);
+
+    return 0;
 }
 
 /**

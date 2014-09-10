@@ -93,8 +93,8 @@ static void _sched_thread_set_exec(pthread_t thread_id, int pri);
 /**
  * Initialize the scheduler
  */
-void sched_init(void) __attribute__((constructor));
-void sched_init(void)
+int sched_init(void) __attribute__((constructor));
+int sched_init(void)
 {
     SUBSYS_DEP(vralloc_init);
     SUBSYS_INIT("Init scheduler: tiny");
@@ -121,6 +121,8 @@ void sched_init(void)
 
     /* Initialize threadID queue */
     init_thread_id_queue();
+
+    return 0;
 }
 
 /**

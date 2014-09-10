@@ -45,8 +45,8 @@ static struct mtx               vfs_hash_mtx;
 /* TODO */
 static int desiredvnodes = 100;
 
-void vfs_hashinit(void) __attribute__((constructor));
-void vfs_hashinit(void)
+int vfs_hashinit(void) __attribute__((constructor));
+int vfs_hashinit(void)
 {
     SUBSYS_DEP(proc_init);
     SUBSYS_INIT("vfs_hash");
@@ -54,6 +54,8 @@ void vfs_hashinit(void)
     vfs_hash_tbl = hashinit(desiredvnodes, &vfs_hash_mask);
     mtx_init(&vfs_hash_mtx, MTX_TYPE_SPIN);
     LIST_INIT(&vfs_hash_side);
+
+    return 0;
 }
 
 unsigned vfs_hash_index(struct vnode * vp)

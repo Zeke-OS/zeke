@@ -41,7 +41,7 @@
 /*
  * Linker set for frame buffer initializer function pointers.
  */
-typedef void (*fbi_t)();
+typedef int (*fbi_t)();
 SET_DECLARE(fb_init_funcs, void);
 
 /**
@@ -73,8 +73,8 @@ static void draw_glyph(const char * font_glyph, size_t * consx, size_t * consy);
 /**
  * Initialize all frame buffer drivers.
  */
-void fb_init(void) __attribute__((constructor));
-void fb_init(void)
+int fb_init(void) __attribute__((constructor));
+int fb_init(void)
 {
     SUBSYS_INIT("fb init all");
     void ** p;
@@ -82,8 +82,11 @@ void fb_init(void)
     SET_FOREACH(p, fb_init_funcs) {
         fbi_t fbi;
         fbi = *(fbi_t *)p;
-        fbi();
+        if (fbi())
+            panic("Failed to init FB"); /* TODO */
     }
+
+    return 0;
 }
 
 /* TODO Should support multiple frame buffers or fail */

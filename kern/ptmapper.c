@@ -38,7 +38,7 @@
 #include <sys/sysctl.h>
 #include <ptmapper.h>
 
-void ptmapper_init(void);
+int ptmapper_init(void);
 HW_PREINIT_ENTRY(ptmapper_init);
 
 /* Fixed Page Tables **********************************************************/
@@ -216,13 +216,16 @@ SYSCTL_UINT(_vm, OID_AUTO, ptm_mem_tot, CTLFLAG_RD,
  * Page table mapper init function.
  * @note This function should be called by mmu init.
  */
-void ptmapper_init(void)
+int ptmapper_init(void)
 {
     SUBSYS_INIT("ptmapper");
+#if configDEBUG >= KERROR_DEBUG
+    kputs("\n");
+#endif
 
     /* Allocate memory for mmu_pagetable_master */
     if (ptmapper_alloc(&mmu_pagetable_master)) {
-        panic("Can't allocate memory for master page table.\ŋ");
+        panic("Can't allocate memory for master page table.\n");
     }
 
     mmu_pagetable_system.master_pt_addr = mmu_pagetable_master.master_pt_addr;
@@ -289,6 +292,8 @@ void ptmapper_init(void)
 #if configDEBUG >= KERROR_DEBUG
     KERROR(KERROR_DEBUG, "Attached mmu_pagetable_system\n");
 #endif
+
+    return 0;
 }
 
 int ptmapper_alloc(mmu_pagetable_t * pt)

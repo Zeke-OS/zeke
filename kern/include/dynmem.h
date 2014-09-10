@@ -81,8 +81,6 @@
 
 extern uint32_t dynmemmap[];
 
-void dynmem_init(void);
-
 /**
  * Allocate a contiguous memory region from dynmem area.
  * @param size      Region size in 1MB blocks.

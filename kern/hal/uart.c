@@ -56,8 +56,8 @@ static ssize_t uart_write(struct dev_info * devnfo, off_t blkno, uint8_t * buf,
 static int uart_ioctl(struct dev_info * devnfo, uint32_t request,
         void * arg, size_t arg_len);
 
-void uart_init(void) __attribute__((constructor));
-void uart_init(void)
+int uart_init(void) __attribute__((constructor));
+int uart_init(void)
 {
     SUBSYS_DEP(devfs_init);
     SUBSYS_INIT("uart");
@@ -71,6 +71,8 @@ void uart_init(void)
         if (!(port->flags & UART_PORT_FLAG_FS))
             make_uartdev(port, i);
     }
+
+    return 0;
 }
 
 /**

@@ -82,7 +82,7 @@ static void procarr_remove(pid_t pid);
 static void proc_remove(pid_t pid);
 pid_t proc_update(void); /* Used in HAL, so not static but not in headeaders. */
 
-void proc_init(void)
+int proc_init(void)
 {
     SUBSYS_DEP(vralloc_init);
     SUBSYS_INIT("proc");
@@ -96,6 +96,8 @@ void proc_init(void)
     /* Do here same as proc_update() would do when running. */
     current_process_id = 0;
     curproc = (*_procarr)[0];
+
+    return 0;
 }
 
 /**
