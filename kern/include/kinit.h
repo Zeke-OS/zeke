@@ -43,17 +43,17 @@
 
 /**
  * Subsystem initializer prologue.
- * @todo TODO Fix order of init messages
+ * @param name is the subsystem name.
  */
-#define SUBSYS_INIT()               \
+#define SUBSYS_INIT(name) do {      \
     static char __subsys_init = 0;  \
-    do {                            \
-    if (__subsys_init != 0) return; \
-    else __subsys_init = 1;         \
-    } while (0)
-
-#define SUBSYS_INITFINI(msg)        \
-    KERROR(KERROR_INFO, msg)
+    if (__subsys_init != 0) {       \
+        return;                     \
+    } else {                        \
+        __subsys_init = 1;          \
+        kputs((name));              \
+    }                               \
+} while (0)                         \
 
 /**
  * Subsystem initializer dependency.

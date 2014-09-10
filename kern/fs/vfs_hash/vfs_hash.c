@@ -48,14 +48,12 @@ static int desiredvnodes = 100;
 void vfs_hashinit(void) __attribute__((constructor));
 void vfs_hashinit(void)
 {
-    SUBSYS_INIT();
     SUBSYS_DEP(proc_init);
+    SUBSYS_INIT("vfs_hash");
 
     vfs_hash_tbl = hashinit(desiredvnodes, &vfs_hash_mask);
     mtx_init(&vfs_hash_mtx, MTX_TYPE_SPIN);
     LIST_INIT(&vfs_hash_side);
-
-    SUBSYS_INITFINI("vfs_hash ok");
 }
 
 unsigned vfs_hash_index(struct vnode * vp)

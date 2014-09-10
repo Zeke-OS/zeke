@@ -59,8 +59,8 @@ static int uart_ioctl(struct dev_info * devnfo, uint32_t request,
 void uart_init(void) __attribute__((constructor));
 void uart_init(void)
 {
-    SUBSYS_INIT();
     SUBSYS_DEP(devfs_init);
+    SUBSYS_INIT("uart");
     vfs_ready = 1;
 
     /* Register all UART devices with devfs that were registered with UART
@@ -71,8 +71,6 @@ void uart_init(void)
         if (!(port->flags & UART_PORT_FLAG_FS))
             make_uartdev(port, i);
     }
-
-    SUBSYS_INITFINI("uart OK");
 }
 
 /**

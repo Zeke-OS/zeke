@@ -51,14 +51,12 @@ struct dev_info devnull_info = {
 void devnull_init(void) __attribute__((constructor));
 void devnull_init(void)
 {
-    SUBSYS_INIT();
     SUBSYS_DEP(devfs_init);
+    SUBSYS_INIT("dev/null");
 
     if (dev_make(&devnull_info, 0, 0, 0666, NULL)) {
         KERROR(KERROR_ERR, "Failed to init dev/null\n");
     }
-
-    SUBSYS_INITFINI("dev/null OK");
 }
 
 static int devnull_read(struct dev_info * devnfo, off_t blkno,

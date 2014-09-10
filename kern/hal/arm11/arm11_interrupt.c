@@ -97,14 +97,12 @@ __attribute__ ((naked)) void bad_exception(void)
 
 void arm_interrupt_preinit(void)
 {
-    SUBSYS_INIT();
-    KERROR(KERROR_INFO, "Enabling interrupts\n");
+    SUBSYS_INIT("arm_interrupt_preinit");
+    kputs(" ...enabling interrupts");
 
     /* Set interrupt base register */
     __asm__ volatile ("mcr p15, 0, %[addr], c12, c0, 0"
             : : [addr]"r" (&interrupt_vectors));
     /* Turn on interrupts */
     __asm__ volatile ("cpsie aif");
-
-    SUBSYS_INITFINI("arm_interrupt_preinit OK");
 }

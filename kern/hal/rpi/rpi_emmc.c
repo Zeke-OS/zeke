@@ -517,8 +517,8 @@ int rpi_emmc_card_init(struct dev_info ** dev);
 void rpi_emmc_init(void) __attribute__((constructor));
 void rpi_emmc_init(void)
 {
-    SUBSYS_INIT();
     SUBSYS_DEP(fs_init);
+    SUBSYS_INIT("rpi_emc");
 
     vnode_t * vnode;
     int fd;
@@ -558,8 +558,6 @@ void rpi_emmc_init(void)
 
     mbr_register(fd, NULL);
 #endif
-
-    SUBSYS_INITFINI("rpi_emmc OK");
 }
 
 static void sd_power_off()

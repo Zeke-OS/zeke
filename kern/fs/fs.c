@@ -79,11 +79,9 @@ static fsl_node_t * fsl_head;
 
 void fs_init(void)
 {
-    SUBSYS_INIT();
+    SUBSYS_INIT("fs");
 
     FS_LOCK_INIT();
-
-    SUBSYS_INITFINI("fs OK");
 }
 
 /**

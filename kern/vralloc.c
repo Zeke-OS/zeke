@@ -106,7 +106,7 @@ static const vm_ops_t vra_ops = {
 void vralloc_init(void) __attribute__((constructor));
 void vralloc_init(void)
 {
-    SUBSYS_INIT();
+    SUBSYS_INIT("vrallloc");
     struct vregion * reg;
 
     vrlist = dllist_create(struct vregion, node);
@@ -118,8 +118,6 @@ void vralloc_init(void)
     last_vreg = reg;
 
     _bio_init();
-
-    SUBSYS_INITFINI("vralloc OK");
 }
 
 /**

@@ -78,8 +78,8 @@ vnode_t * vn_devfs;
 void devfs_init(void) __attribute__((constructor));
 void devfs_init(void)
 {
-    SUBSYS_INIT();
     SUBSYS_DEP(ramfs_init);
+    SUBSYS_INIT("devfs");
 
     const char failed[] = "Failed to init";
     int err;
@@ -108,8 +108,6 @@ void devfs_init(void)
 
     vn_devfs->sb->vdev_id = DEV_MMTODEV(DEVFS_MAJOR_NUM, 0);
     fs_register(&devfs_fs);
-
-    SUBSYS_INITFINI("devfs OK");
 }
 
 static int devfs_mount(const char * source, uint32_t mode,

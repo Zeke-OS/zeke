@@ -71,9 +71,9 @@ static mmu_region_t bcm2835_fb_region = {
 
 static void bcm2835_fb_init(void)
 {
-    SUBSYS_INIT();
     SUBSYS_DEP(vralloc_init);
     SUBSYS_DEP(bcm2835_mmio_init);
+    SUBSYS_INIT("BCM2835_fb");
 
     set_fb_config(&fb_bcm, 640, 480);
     commit_fb_config(&fb_bcm);
@@ -90,8 +90,6 @@ static void bcm2835_fb_init(void)
         .base = fb_bcm.fb_paddr
     };
     fb_register(&fb_gen);
-
-    SUBSYS_INITFINI("BCM2835_fb OK");
 }
 FB_INIT_ENTRY(bcm2835_fb_init);
 

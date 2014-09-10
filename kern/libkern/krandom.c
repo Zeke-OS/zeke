@@ -94,9 +94,7 @@ long kunirand(long n)
 static void random_init(void) __attribute__((constructor));
 static void random_init(void)
 {
-    SUBSYS_INIT();
+    SUBSYS_INIT("krandom");
 
     ksrandom((uint32_t)(get_utime() % (uint64_t)0xffffffff));
-
-    SUBSYS_INITFINI("Seed random number generator");
 }

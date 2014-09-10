@@ -76,7 +76,7 @@ static void draw_glyph(const char * font_glyph, size_t * consx, size_t * consy);
 void fb_init(void) __attribute__((constructor));
 void fb_init(void)
 {
-    SUBSYS_INIT();
+    SUBSYS_INIT("fb init all");
     void ** p;
 
     SET_FOREACH(p, fb_init_funcs) {
@@ -84,8 +84,6 @@ void fb_init(void)
         fbi = *(fbi_t *)p;
         fbi();
     }
-
-    SUBSYS_INITFINI("fb init all OK");
 }
 
 /* TODO Should support multiple frame buffers or fail */

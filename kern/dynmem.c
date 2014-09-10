@@ -120,12 +120,10 @@ static int validate_addr(const void * addr, int test);
 HW_PREINIT_ENTRY(dynmem_init);
 void dynmem_init(void)
 {
-    SUBSYS_INIT();
     SUBSYS_DEP(mmu_init);
+    SUBSYS_INIT("dynmem");
 
     mtx_init(&dynmem_region_lock, MTX_TYPE_SPIN);
-
-    SUBSYS_INITFINI("dynmem OK");
 }
 
 void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t control)

@@ -43,8 +43,8 @@ void rpi_led_invert(void);
 void rpi_leds_init(void) __attribute__((constructor));
 void rpi_leds_init(void)
 {
-    SUBSYS_INIT();
     SUBSYS_DEP(bcm2835_mmio_init);
+    SUBSYS_INIT("rpi_leds");
 
     unsigned int sel;
     istate_t s_entry;
@@ -92,8 +92,6 @@ void rpi_leds_init(void)
         rpi_led_invert();
         bcm_udelay(20000);
     }
-
-    SUBSYS_INITFINI("rpi leds");
 }
 
 static unsigned int led_status;

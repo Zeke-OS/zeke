@@ -66,11 +66,9 @@ static struct timer_cb timers_array[configTIMERS_MAX];
 void timers_init(void) __attribute__((constructor));
 void timers_init(void)
 {
-    SUBSYS_INIT();
+    SUBSYS_INIT("timers");
 
     mtx_init(&timers_lock, MTX_TYPE_SPIN);
-
-    SUBSYS_INITFINI("timers OK");
 }
 
 void timers_run(void)

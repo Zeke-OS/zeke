@@ -111,8 +111,8 @@ struct thread_info * (* const schedpol[])(void) = {
 void sched_init(void) __attribute__((constructor));
 void sched_init(void)
 {
-    SUBSYS_INIT();
     SUBSYS_DEP(vralloc_init);
+    SUBSYS_INIT("Init scheduler: cds");
 
     RB_INIT(&cpusched.all_threads);
     RB_INIT(&cpusched.q_ready);
@@ -139,8 +139,6 @@ void sched_init(void)
 
     /* Initialize locks */
     rwlock_init(&loadavg_lock);
-
-    SUBSYS_INITFINI("Init scheduler: cds");
 }
 
 static const char msg_abnotset[] = "a & b must be set";

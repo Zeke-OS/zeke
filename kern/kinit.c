@@ -231,6 +231,7 @@ static void exec_array(void (*a []) (void), int n)
 
     for (i = 0; i < n; i++) {
         a[i]();
+        kputs(" ok");
     }
 }
 

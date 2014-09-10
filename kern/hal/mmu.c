@@ -67,9 +67,9 @@ extern void mmu_lock_init();
 HW_PREINIT_ENTRY(mmu_init);
 void mmu_init(void)
 {
-    SUBSYS_INIT();
     SUBSYS_DEP(arm_interrupt_preinit);
     SUBSYS_DEP(ptmapper_init);
+    SUBSYS_INIT("MMU");
 
     uint32_t value, mask;
 
@@ -89,8 +89,6 @@ void mmu_init(void)
     value = MMU_ZEKE_C1_DEFAULTS;
     mask = MMU_ZEKE_C1_DEFAULTS;
     mmu_control_set(value, mask);
-
-    SUBSYS_INITFINI("MMU OK");
 }
 
 /**
