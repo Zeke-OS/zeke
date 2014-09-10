@@ -68,7 +68,7 @@ void sched_handler(void)
     if (!current_thread) {
         current_thread = sched_get_thread_info(0);
         if (!current_thread)
-            panic("No thread 0");
+            panic("No thread 0\n");
     }
 
     /* Pre-scheduling tasks */
@@ -84,7 +84,7 @@ void sched_handler(void)
     if (current_thread != prev_thread) {
 #if 0
         char buf[80];
-        ksprintf(buf, sizeof(buf), "%x", current_thread->kstack_region);
+        ksprintf(buf, sizeof(buf), "%x\n", current_thread->kstack_region);
         KERROR(KERROR_DEBUG, buf);
 #endif
         mmu_map_region(&(current_thread->kstack_region->b_mmu));
@@ -140,7 +140,7 @@ void thread_init(struct thread_info * tp, pthread_t thread_id,
 {
     /* This function should not be called for an already initialized thread. */
     if (tp->flags & SCHED_IN_USE_FLAG)
-        panic("Can't init thread that is already in use.");
+        panic("Can't init thread that is already in use.\n");
 
 #if configSCHED_TINY != 0
     memset(tp, 0, sizeof(struct thread_info));
@@ -237,7 +237,7 @@ pthread_t thread_fork(void)
 
 #if configDEBUG >= KERROR_DEBUG
     if (old_thread == 0) {
-        panic("current_thread not set");
+        panic("current_thread not set\n");
     }
 #endif
 
@@ -261,7 +261,7 @@ pthread_t thread_fork(void)
 
     new_thread = sched_get_thread_info(new_id);
     if (!new_thread)
-        panic("Failed to get newly created thread struct");
+        panic("Failed to get newly created thread struct\n");
 
     memcpy(new_thread, &tmp, sizeof(struct thread_info));
     thread_init_kstack(new_thread);
@@ -327,13 +327,13 @@ static void thread_init_kstack(threadInfo_t * tp)
 
 #if configDEBUG >= KERROR_DEBUG
     if (!tp)
-        panic("tp not set");
+        panic("tp not set\n");
 #endif
 
     /* Create kstack */
     kstack = geteblk(KSTACK_SIZE);
     if (!kstack) {
-        panic("OOM during thread creation");
+        panic("OOM during thread creation\n");
     }
 
     kstack->b_uflags    = 0;

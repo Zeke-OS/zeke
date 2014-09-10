@@ -278,7 +278,7 @@ int vm_map_region(struct buf * region, struct vm_pt * pt)
 
 #if configDEBUG >= KERROR_ERR
     if (region == 0)
-        panic("region can't be null");
+        panic("region can't be null\n");
 #endif
 
     vm_updateusr_ap(region);
@@ -311,7 +311,7 @@ int kernacc(const void * addr, int len, int rw)
     }
 
 #if (configDEBUG >= KERROR_DEBUG)
-    KERROR(KERROR_WARN, "Can't fully verify access to address in kernacc()");
+    KERROR(KERROR_WARN, "Can't fully verify access to address in kernacc()\n");
 #endif
 
     return (1 == 1);

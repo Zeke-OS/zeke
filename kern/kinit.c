@@ -64,7 +64,7 @@ void exec_init_array(void)
 {
     int n;
 
-    KERROR(KERROR_INFO, "ZeKe PreInit");
+    KERROR(KERROR_INFO, "ZeKe PreInit\n");
 
     n = __hw_preinit_array_end - __hw_preinit_array_start;
     exec_array(__hw_preinit_array_start, n);
@@ -175,7 +175,8 @@ void kinit(void)
     init_proc->main_thread = init_thread;
 
 #if configDEBUG >= KERROR_INFO
-    ksprintf(buf, sizeof(buf), "Init created with pid: %u, tid: %u, stack: %x",
+    ksprintf(buf, sizeof(buf),
+            "Init created with pid: %u, tid: %u, stack: %x\n",
             pid, tid, init_vmstack->b_mmu.vaddr);
     KERROR(KERROR_DEBUG, buf);
 #endif

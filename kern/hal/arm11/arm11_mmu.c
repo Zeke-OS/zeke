@@ -117,7 +117,7 @@ int mmu_init_pagetable(const mmu_pagetable_t * pt)
 
     if (!p_pte) {
 #if config_DEBUG >= KERROR_DEBUG
-        KERROR(KERROR_ERR, "Page table address can't be null.");
+        KERROR(KERROR_ERR, "Page table address can't be null.\n");
 #endif
         return -EINVAL;
     }
@@ -128,7 +128,7 @@ int mmu_init_pagetable(const mmu_pagetable_t * pt)
     case MMU_PTT_MASTER:
         i = MMU_PTSZ_MASTER / 4 / 32; break;
     default:
-        KERROR(KERROR_ERR, "Unknown page table type.");
+        KERROR(KERROR_ERR, "Unknown page table type.\n");
         return -EINVAL;
     }
 
@@ -180,7 +180,7 @@ int mmu_map_region(const mmu_region_t * region)
         break;
     default:
 #if configDEBUG >= KERROR_DEBUG
-        KERROR(KERROR_ERR, "Invalid mmu_region struct.");
+        KERROR(KERROR_ERR, "Invalid mmu_region struct.\n");
 #endif
         return -EINVAL;
     }
@@ -431,7 +431,8 @@ int mmu_detach_pagetable(const mmu_pagetable_t * pt)
     istate_t s;
 
     if (pt->type == MMU_PTT_MASTER) {
-        KERROR(KERROR_ERR, "Cannot detach a master pt");
+        KERROR(KERROR_ERR, "Cannot detach a master pt\n");
+
         return -EPERM;
     }
 
@@ -540,7 +541,7 @@ void * mmu_translate_vaddr(const mmu_pagetable_t * pt, uintptr_t vaddr)
         break;
     default:
 #if configDEBUG >= KERROR_DEBUG
-        KERROR(KERROR_ERR, "Invalid pt type.");
+        KERROR(KERROR_ERR, "Invalid pt type.\n");
 #endif
         goto out;
     }
@@ -594,7 +595,7 @@ void mmu_data_abort_handler(void)
         if ((err = data_aborts[fsr & FSR_MASK](fsr, far, spsr, lr, thread))) {
             /* TODO Handle this nicer... signal? */
             char buf[80];
-            ksprintf(buf, sizeof(buf), "DAB handling failed: %i", err);
+            ksprintf(buf, sizeof(buf), "DAB handling failed: %i\n", err);
             KERROR(KERROR_CRIT, buf);
             stack_dump(current_thread->sframe[SCHED_SFRAME_ABO]);
             dab_fatal(fsr, far, spsr, lr, thread);

@@ -65,7 +65,7 @@ pid_t proc_fork(pid_t pid)
 
 #if configDEBUG >= KERROR_DEBUG
     char buf[80];
-    ksprintf(buf, sizeof(buf), "fork(%u)", pid);
+    ksprintf(buf, sizeof(buf), "fork(%u)\n", pid);
     KERROR(KERROR_DEBUG, buf);
 #endif
 
@@ -130,7 +130,7 @@ pid_t proc_fork(pid_t pid)
     /* Copy code region pointer. */
     vm_reg_tmp = (*old_proc->mm.regions)[MM_CODE_REGION];
     if (!vm_reg_tmp) {
-        KERROR(KERROR_ERR, "Old proc code region can't be null");
+        KERROR(KERROR_ERR, "Old proc code region can't be null\n");
         retval = -EINVAL; /* Not allowed but this shouldn't happen */
         goto free_res;
     }
@@ -141,7 +141,7 @@ pid_t proc_fork(pid_t pid)
     /* Clone stack region */
     if ((retval = clone_stack(new_proc, old_proc))) {
 #if configDEBUG >= KERROR_DEBUG
-        ksprintf(buf, sizeof(buf), "Cloning stack region failed.");
+        ksprintf(buf, sizeof(buf), "Cloning stack region failed.\n");
         KERROR(KERROR_DEBUG, buf);
 #endif
         goto free_res;
@@ -249,7 +249,7 @@ pid_t proc_fork(pid_t pid)
         sched_thread_set_exec(new_proc->main_thread->id);
     }
 #if configDEBUG >= KERROR_DEBUG
-    ksprintf(buf, sizeof(buf), "Fork created.");
+    ksprintf(buf, sizeof(buf), "Fork created.\n");
     KERROR(KERROR_DEBUG, buf);
 #endif
     goto out; /* Fork created. */
@@ -344,10 +344,10 @@ static int clone_stack(proc_info_t * new_proc, proc_info_t * old_proc)
 
     if (old_region && old_region->vm_ops) { /* Only if vmp_ops are defined. */
 #if configDEBUG >= KERROR_DEBUG
-        KERROR(KERROR_DEBUG, "Cloning stack");
+        KERROR(KERROR_DEBUG, "Cloning stack\n");
 #endif
         if (!old_region->vm_ops->rclone) {
-            KERROR(KERROR_ERR, "No clone operation");
+            KERROR(KERROR_ERR, "No clone operation\n");
             return -ENOMEM;
         }
 
@@ -359,7 +359,7 @@ static int clone_stack(proc_info_t * new_proc, proc_info_t * old_proc)
         const size_t rsize = MMU_SIZEOF_REGION(&(old_region->b_mmu));
 
 #if configDEBUG >= KERROR_DEBUG
-        KERROR(KERROR_DEBUG, "Cloning stack manually");
+        KERROR(KERROR_DEBUG, "Cloning stack manually\n");
 #endif
 
         new_region = geteblk(rsize);
@@ -378,7 +378,7 @@ static int clone_stack(proc_info_t * new_proc, proc_info_t * old_proc)
         vm_updateusr_ap(new_region);
     } else { /* else: NO STACK */
 #if configDEBUG >= KERROR_DEBUG
-        KERROR(KERROR_DEBUG, "fork(): No stack created");
+        KERROR(KERROR_DEBUG, "fork(): No stack created\n");
 #endif
     }
 

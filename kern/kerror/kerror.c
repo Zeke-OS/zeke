@@ -94,7 +94,7 @@ void kerror_print_macro(char level, const char * where, const char * msg)
 {
     char buf[configKERROR_MAXLEN];
 
-    ksprintf(buf, sizeof(buf), "%c:%s%s\n", level, where, msg);
+    ksprintf(buf, sizeof(buf), "%c:%s%s", level, where, msg);
     kputs(buf);
 
 #if 0

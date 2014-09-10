@@ -766,7 +766,7 @@ static void insert_superblock(ramfs_sb_t * ramfs_sb)
  */
 static void remove_superblock(ramfs_sb_t * ramfs_sb)
 {
-    const char err_msg[] = "Unable to remove ramfs sb from the mount list.";
+    const char err_msg[] = "Unable to remove ramfs sb from the mount list.\n";
     superblock_lnode_t * prev;
     superblock_lnode_t * curr = ramfs_fs.sbl_head;
 

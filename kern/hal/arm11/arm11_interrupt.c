@@ -75,7 +75,7 @@ __attribute__ ((naked)) void undef_handler(void)
     __asm__ volatile (
         "subs %[reg], r14, #4" : [reg] "=r" (addr) :: "r14");
 
-    ksprintf(buf, sizeof(buf), "Undefined instruction @ %x", addr);
+    ksprintf(buf, sizeof(buf), "Undefined instruction @ %x\n", addr);
     panic(buf);
 
 #if 0
@@ -98,7 +98,7 @@ __attribute__ ((naked)) void bad_exception(void)
 void arm_interrupt_preinit(void)
 {
     SUBSYS_INIT();
-    KERROR(KERROR_INFO, "Enabling interrupts");
+    KERROR(KERROR_INFO, "Enabling interrupts\n");
 
     /* Set interrupt base register */
     __asm__ volatile ("mcr p15, 0, %[addr], c12, c0, 0"

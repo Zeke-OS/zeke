@@ -115,12 +115,12 @@ static void commit_fb_config(struct bcm2835_fb_config * fb)
     bcm2835_writemailbox(BCM2835_MBCH_FB, (uint32_t)fb);
     if (!bcm2835_readmailbox(BCM2835_MBCH_FB)) {
         /* TODO */
-        KERROR(KERROR_DEBUG, "GPU init failed?");
+        KERROR(KERROR_DEBUG, "GPU init failed?\n");
     }
 
     ksprintf(buf, sizeof(buf),
             "BCM_FB: addr = %p, width = %u, height = %u, "
-            "bpp = %u, pitch = %u, size = %u",
+            "bpp = %u, pitch = %u, size = %u\n",
             (void *)fb->fb_paddr, fb->width, fb->height,
             fb->depth, fb->pitch, fb->size);
     KERROR(KERROR_INFO, buf);

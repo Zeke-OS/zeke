@@ -48,6 +48,6 @@ void bcm_jtag_init(void)
     bcm2835_set_gpio_func(23, GPIO_FSEL_ALTFN4);
     bcm2835_set_gpio_func(24, GPIO_FSEL_ALTFN4);
 
-    KERROR(KERROR_DEBUG, "BCM2835 JTAG OK");
+    KERROR(KERROR_DEBUG, "BCM2835 JTAG OK\n");
 }
 HW_POSTINIT_ENTRY(bcm_jtag_init);

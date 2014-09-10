@@ -86,7 +86,7 @@ void syscall_handler(void)
         const uint32_t minor = SYSCALL_MINOR(type);
         char buf[30];
 
-        ksprintf(buf, sizeof(buf), "syscall %u:%u not supported, (p:%u, i:%u)",
+        ksprintf(buf, sizeof(buf), "syscall %u:%u not supported, (p:%u, i:%u)\n",
                 major, minor, current_process_id, current_thread->id);
         KERROR(KERROR_WARN, buf);
 

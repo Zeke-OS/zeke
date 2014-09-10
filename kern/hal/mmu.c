@@ -84,7 +84,7 @@ void mmu_init(void)
     mmu_domain_access_set(value, mask);
 
 #if configDEBUG >= KERROR_DEBUG
-    KERROR(KERROR_DEBUG, "Enabling MMU");
+    KERROR(KERROR_DEBUG, "Enabling MMU\n");
 #endif
     value = MMU_ZEKE_C1_DEFAULTS;
     mask = MMU_ZEKE_C1_DEFAULTS;
@@ -148,17 +148,17 @@ int mmu_ptcpy(mmu_pagetable_t * dest, const mmu_pagetable_t * src)
     const size_t len_dest = mmu_sizeof_pt(dest);
 
     if (len_src == 0) {
-        KERROR(KERROR_ERR, "Attemp to clone an source invalid page table.");
+        KERROR(KERROR_ERR, "Attemp to clone an source invalid page table.\n");
         return -1;
     }
 
     if (len_dest == 0) {
-        KERROR(KERROR_ERR, "Invalid destination page table.");
+        KERROR(KERROR_ERR, "Invalid destination page table.\n");
         return -2;
     }
 
     if (len_src != len_dest) {
-        KERROR(KERROR_ERR, "Destination and source pts differ in size");
+        KERROR(KERROR_ERR, "Destination and source pts differ in size\n");
         return -3;
     }
 

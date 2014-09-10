@@ -139,8 +139,9 @@ void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t control)
                 sizeof(dynmemmap_bitmap))) {
 #if configDEBUG >= KERROR_DEBUG
         char buf[80];
-        ksprintf(buf, sizeof(buf), "Out of dynmem, free %u/%u, tried to allocate %u MB",
-                dynmem_free, dynmem_tot, size);
+        ksprintf(buf, sizeof(buf),
+                 "Out of dynmem, free %u/%u, tried to allocate %u MB\n",
+                 dynmem_free, dynmem_tot, size);
         KERROR(KERROR_DEBUG, buf);
 #endif
         goto out;
@@ -164,8 +165,9 @@ void * dynmem_alloc_force(void * addr, size_t size, uint32_t ap, uint32_t contro
 
     if (!validate_addr(addr, 0)) {
         char buf[80];
-        ksprintf(buf, sizeof(buf), "Invalid address; dynmem_alloc_force(): %x",
-                (uint32_t)addr);
+        ksprintf(buf, sizeof(buf),
+                 "Invalid address; dynmem_alloc_force(): %x\n",
+                 (uint32_t)addr);
         KERROR(KERROR_ERR, buf);
         return 0;
     }
@@ -184,7 +186,7 @@ void * dynmem_ref(void * addr)
 
     if (!validate_addr(addr, 1)) {
         char buf[80];
-        ksprintf(buf, sizeof(buf), "Invalid address: %x",
+        ksprintf(buf, sizeof(buf), "Invalid address: %x\n",
                 (uint32_t)addr);
         KERROR(KERROR_ERR, buf);
         return 0;
@@ -204,7 +206,7 @@ void dynmem_free_region(void * addr)
 
     if (!validate_addr(addr, 1)) {
         char buf[40];
-        ksprintf(buf, sizeof(buf), "Invalid address: %x",
+        ksprintf(buf, sizeof(buf), "Invalid address: %x\n",
                 (uint32_t)addr);
         KERROR(KERROR_ERR, buf);
         return;
@@ -224,7 +226,7 @@ void dynmem_free_region(void * addr)
 
     if (update_dynmem_region_struct(addr)) { /* error */
         char buf[80];
-        ksprintf(buf, sizeof(buf), "Can't free dynmem region: %x",
+        ksprintf(buf, sizeof(buf), "Can't free dynmem region: %x\n",
                 (uint32_t)addr);
         KERROR(KERROR_ERR, buf);
         goto out;
@@ -296,7 +298,7 @@ static int update_dynmem_region_struct(void * base)
     char buf[80];
 
     if (!validate_addr(base, 1)) {
-        ksprintf(buf, sizeof(buf), "Invalid dynmem region addr: %x",
+        ksprintf(buf, sizeof(buf), "Invalid dynmem region addr: %x\n",
                 (uint32_t)base);
         KERROR(KERROR_ERR, buf);
         return -1;
@@ -337,7 +339,7 @@ void * dynmem_clone(void * addr)
     if (dynmem_ref(addr)) {
 #if configDEBUG >= KERROR_ERR
         char buf[80];
-        ksprintf(buf, sizeof(buf), "Can't clone given dynmem area @ %x",
+        ksprintf(buf, sizeof(buf), "Can't clone given dynmem area @ %x\n",
                 (uint32_t)addr);
         KERROR(KERROR_ERR, buf);
 #endif
@@ -349,7 +351,7 @@ void * dynmem_clone(void * addr)
     if (update_dynmem_region_struct(addr)) { /* error */
 #if configDEBUG  >= KERROR_ERR
         char buf[80];
-        ksprintf(buf, sizeof(buf), "Clone failed @ %x", (uint32_t)addr);
+        ksprintf(buf, sizeof(buf), "Clone failed @ %x\n", (uint32_t)addr);
         KERROR(KERROR_ERR, buf);
 #endif
         mtx_unlock(&dynmem_region_lock);
@@ -390,7 +392,7 @@ uint32_t dynmem_acc(const void * addr, size_t len)
     if (update_dynmem_region_struct((void *)addr)) { /* error */
 #if configDEBUG >= KERROR_ERR
         char buf[80];
-        ksprintf(buf, sizeof(buf), "dynmem_acc() check failed for: %x",
+        ksprintf(buf, sizeof(buf), "dynmem_acc() check failed for: %x\n",
             (uint32_t)addr);
         KERROR(KERROR_DEBUG, buf);
 #endif
@@ -401,7 +403,7 @@ uint32_t dynmem_acc(const void * addr, size_t len)
     if (!(size = mmu_sizeof_region(&dynmem_region))) {
 #if configDEBUG >= KERROR_WARN
         char buf[80];
-        ksprintf(buf, sizeof(buf), "Possible dynmem corruption at: %x",
+        ksprintf(buf, sizeof(buf), "Possible dynmem corruption at: %x\n",
                 (uint32_t)addr);
         KERROR(KERROR_ERR, buf);
 #endif

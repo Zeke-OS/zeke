@@ -187,7 +187,7 @@ void stack_dump(sw_stack_frame_t frame)
         "r12 = %x\n"
         "sp  = %x\n"
         "lr  = %x\n"
-        "pc  = %x"
+        "pc  = %x\n"
     };
     char buf[sizeof(sdump) + 17 * 10];
 

@@ -219,16 +219,16 @@ SYSCTL_UINT(_vm, OID_AUTO, ptm_mem_tot, CTLFLAG_RD,
 void ptmapper_init(void)
 {
     SUBSYS_INIT();
-    KERROR(KERROR_INFO, "ptmapper init started");
+    KERROR(KERROR_INFO, "ptmapper init started\n");
 
     /* Allocate memory for mmu_pagetable_master */
     if (ptmapper_alloc(&mmu_pagetable_master)) {
-        panic("Can't allocate memory for master page table.");
+        panic("Can't allocate memory for master page table.\ŋ");
     }
 
     mmu_pagetable_system.master_pt_addr = mmu_pagetable_master.master_pt_addr;
     if (ptmapper_alloc(&mmu_pagetable_system)) {
-        panic("Can't allocate memory for system page table.");
+        panic("Can't allocate memory for system page table.\n");
     }
 
     /* Initialize system page tables */
@@ -253,7 +253,7 @@ void ptmapper_init(void)
         char buf[80];
         const char str_type[2][9] = {"sections", "pages"};
 #define PRINTMAPREG(region) \
-        ksprintf(buf, sizeof(buf), "Mapped %s: %u %s", \
+        ksprintf(buf, sizeof(buf), "Mapped %s: %u %s\n", \
             #region, region.num_pages, \
             (region.pt->type == MMU_PTT_MASTER) ? \
                 str_type[0] : str_type[1]); \
@@ -284,11 +284,11 @@ void ptmapper_init(void)
     /* Activate page tables */
     mmu_attach_pagetable(&mmu_pagetable_master); /* Load L1 TTB */
 #if configDEBUG >= KERROR_DEBUG
-    KERROR(KERROR_DEBUG, "Attached TTB mmu_pagetable_master");
+    KERROR(KERROR_DEBUG, "Attached TTB mmu_pagetable_master\n");
 #endif
     mmu_attach_pagetable(&mmu_pagetable_system); /* Add L2 pte into L1 mpt */
 #if configDEBUG >= KERROR_DEBUG
-    KERROR(KERROR_DEBUG, "Attached mmu_pagetable_system");
+    KERROR(KERROR_DEBUG, "Attached mmu_pagetable_system\n");
 #endif
 
     SUBSYS_INITFINI("ptmapper OK");
@@ -327,7 +327,7 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
         addr = PTM_BLOCK2ADDR(block);
 #if configDEBUG >= KERROR_DEBUG
         ksprintf(buf, sizeof(buf),
-                "Alloc pt %u bytes @ %x", bsize, addr);
+                "Alloc pt %u bytes @ %x\n", bsize, addr);
         KERROR(KERROR_DEBUG, buf);
 #endif
         pt->pt_addr = addr;
@@ -340,7 +340,7 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
         ptm_mem_free -= bsize;
     } else {
 #if configDEBUG >= KERROR_ERR
-        KERROR(KERROR_ERR, "Out of pt memory");
+        KERROR(KERROR_ERR, "Out of pt memory\n");
 #endif
         retval = -1;
     }
@@ -364,7 +364,7 @@ void ptmapper_free(mmu_pagetable_t * pt)
         bsize = MMU_PTSZ_COARSE;
         break;
     default:
-        KERROR(KERROR_ERR, "Attemp to free an invalid page table.");
+        KERROR(KERROR_ERR, "Attemp to free an invalid page table.\n");
         return;
     }
 

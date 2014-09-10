@@ -60,7 +60,7 @@ void atag_scan(uint32_t fw, uint32_t mtype, uint32_t * atag_addr)
     sysinfo.mtype = mtype;
 
     if (*atag_addr != ATAG_CORE) {
-        KERROR(KERROR_WARN, "No ATAGs!");
+        KERROR(KERROR_WARN, "No ATAGs!\n");
         return;
     }
 

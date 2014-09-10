@@ -289,7 +289,7 @@ proc_info_t * proc_get_struct(pid_t pid)
     /* TODO We actually want to require proclock */
 #if 0
     if (!PROC_TESTLOCK()) {
-        KERROR(KERROR_WARN, "proclock is required before entering proc_get_struct()");
+        KERROR(KERROR_WARN, "proclock is required before entering proc_get_struct()\n");
     }
 #endif
 
@@ -298,7 +298,7 @@ proc_info_t * proc_get_struct(pid_t pid)
         char buf[80];
 
         ksprintf(buf, sizeof(buf),
-                "Invalid PID : %u\ncurrpid : %u\nmaxproc : %i\nstate %x",
+                "Invalid PID : %u\ncurrpid : %u\nmaxproc : %i\nstate %x\n",
                 pid, current_process_id, act_maxproc,
                 ((*_procarr)[pid]) ? (*_procarr)[pid]->state : 0);
         KERROR(KERROR_DEBUG, buf);
@@ -372,7 +372,7 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
 
 #if configDEBUG >= KERROR_DEBUG
     char buf[80];
-    ksprintf(buf, sizeof(buf), "proc_dab_handler(): MOO, %x @ %x", vaddr, lr);
+    ksprintf(buf, sizeof(buf), "proc_dab_handler(): MOO, %x @ %x\n", vaddr, lr);
     KERROR(KERROR_DEBUG, buf);
 #endif
 
@@ -383,7 +383,7 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
 
     for (int i = 0; i < pcb->mm.nr_regions; i++) {
         region = ((*pcb->mm.regions)[i]);
-        ksprintf(buf, sizeof(buf), "reg_vaddr %x, reg_end %x",
+        ksprintf(buf, sizeof(buf), "reg_vaddr %x, reg_end %x\n",
                 region->b_mmu.vaddr,
                 region->b_mmu.vaddr + MMU_SIZEOF_REGION(&(region->b_mmu)));
         KERROR(KERROR_DEBUG, buf);

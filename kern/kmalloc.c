@@ -142,7 +142,7 @@ static mblock_t * extend(mblock_t * last, size_t s)
     b = dynmem_alloc_region(s_mbytes, MMU_AP_RWNA, MMU_CTRL_MEMTYPE_WB);
     if (!b) {
 #if configDEBUG >= KERROR_WARN
-        KERROR(KERROR_DEBUG, "dynmem returned null.");
+        KERROR(KERROR_DEBUG, "dynmem returned null.\n");
 #endif
         goto out;
     }
