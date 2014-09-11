@@ -104,7 +104,8 @@ static void _update_realtime(void)
         usecdiff = (~0 - utime_last) + utime;
     else
         usecdiff = utime - utime_last;
-    realtime.tv_nsec = (realtime.tv_nsec + usecdiff * 1000) % SEC_NS;
+    realtime.tv_nsec = (realtime.tv_nsec + usecdiff * 1000);
+    realtime.tv_nsec = realtime.tv_nsec - (realtime.tv_nsec / SEC_NS) * SEC_NS;
 
     utime_last = utime;
 }
