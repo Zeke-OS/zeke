@@ -55,6 +55,13 @@ typedef int pid_t; /*!< Process ID. */
 #define _PID_T_DECLARED
 #endif
 
+/**
+ * @addtogroup fcntl
+ * FCNTL
+ * Manipulate file descriptor.
+ * @{
+ */
+
 /* cmd args used by fcntl() */
 #define F_DUPFD         0   /*!< Duplicate file descriptor. */
 #define F_DUP2FD        1   /*!< Duplicate file descriptor to given number and
@@ -82,6 +89,11 @@ typedef int pid_t; /*!< Process ID. */
 #define F_RDLCK         0   /*!< Shared or read lock. */
 #define F_UNLCK         1   /*!< Unlock. */
 #define F_WRLCK         2   /*!< Exclusive or write lock. */
+
+/**
+ * @}
+ */
+
 
 /* open() oflags */
 #define O_CLOEXEC       0x0001 /*!< Close the file descriptor upon execution of
@@ -136,7 +148,24 @@ __BEGIN_DECLS
 int open(const char * path, int oflags, ...);
 int openat(int fd, const char * path, int oflags, ...);
 int creat(const char *, mode_t);
-int fcntl(int, int, ...);
+
+/**
+ * @addtogroup fcntl
+ * @{
+ */
+
+/**
+ * Perform an operation on file descriptor.
+ * @param fd    is the file descriptor number.
+ * @param cmd   is one of the commands listed.
+ * @param arg   is an optional third argument used by some of the commands.
+ */
+int fcntl(int fd, int cmd, ... /* arg */);
+
+/**
+ * @}
+ */
+
 __END_DECLS
 #endif /* !KERNEL_INTERNAL */
 
