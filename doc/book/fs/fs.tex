@@ -55,6 +55,12 @@ modifying file contents or adding new hard links to a directory node.
 \lstinputlisting[label=list:fs,caption=fs struct definition.]{fs/fs.c}
 \lstinputlisting[label=list:fs_sb,caption=superblock struct definition.]{fs/fs_superblock.c}
 
+\section{VFS hash}
+
+\verb+vfs_hash+ is an optional hashmap used for vnode caching for physically
+slow file systems. VFS itself doesn't use this caching for any purpose so
+it is completely optional to insert anything into there.
+
 \chapter{ramfs}
 \input{fs/ramfs}
 
