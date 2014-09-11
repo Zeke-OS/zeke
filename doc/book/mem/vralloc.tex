@@ -1,10 +1,10 @@
 \chapter{vralloc}
 
 \acf{vralloc} is a memory allocator targeted to allocate blocks of memory
-that can be mapped in virtual address space of a user processes.
-\verb+vralloc+ returns a \verb+buf+ struct as a result of successful memory
-allocation. This struct describes physical layout of the allocated
-memory region as well as its status.
+that can be mapped in virtual address space of a user processes or used for
+file system buffering. \verb+vralloc+ returns a \verb+buf+ struct as a result
+of successful a memory allocation. This struct describes physical layout of
+the allocated memory region as well as its status.
 
 \lstinputlisting[label=list:vregion,caption=vregion struct.]{mem/vregion_struct.c}
 

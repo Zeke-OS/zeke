@@ -40,6 +40,17 @@
 #include <vm/vm.h>
 
 /**
+ * @addtogroup buffercache vralloc bread breadn bwrite bawrite bdwrite getblk geteblk incore allocbuf brelse biodone biowait
+ * The buffercache interface is used by filesystems to improve I/O performance
+ * using in-core caches of filesystem blocks.
+ * The kernel memory used to cache a block is called a buffer and described
+ * by a buf structure. In addition to describing a cached block, a buf
+ * structure is also used to describe an I/O request as a part of the disk
+ * driver interface and for allocating and mapping memory for user space.
+ * @{
+ */
+
+/**
  * VM memory region management structure.
  * This struct type is used to manage memory regions in the vm system.
  */
@@ -115,6 +126,14 @@ SPLAY_PROTOTYPE(bufhd_splay, buf, sentry_, biobuf_compar);
 
 /**
  * Read a block corresponding to vnode and blkno.
+ * If the buffer is not found (i.e. the block is not cached in memory,
+ * bread() calls getblk() to allocate a buffer with enough pages for
+ * size and reads the specified disk block into it. The buffer returned
+ * by bread() is marked as busy. (The B_BUSY  flag is set.) After manipulation
+ * of the buffer returned from bread(), the caller should unbusy it so that
+ * another thread can get it. If the buffer contents are modified and should be
+ * written back to disk, it should be unbusied using one of the variants of
+ * bwrite().  Otherwise, it should be unbusied using brelse().
  * @param[in]   vnode   is a pointer to a vnode.
  * @param[in]   blkno   is a block number.
  * @param[in]   size    is the size to be read.
@@ -194,6 +213,10 @@ struct buf * incore(vnode_t * vnode, size_t blkno);
 
 /**
  * Expand or contract a allocated buffer.
+ * If the buffer shrinks, the truncated part of the data is lost, so it is up
+ * to the caller to have written it out first if needed; this routine will not
+ * start a write.  If the buffer grows, it is the caller's responsibility to
+ * fill out the buffer's additional contents.
  * @param[in] buf   is the buffer.
  * @param[in] size  is the new size.
  */
@@ -233,5 +256,9 @@ struct buf * vr_rclone(struct buf * old_region);
  * @param region is a vregion to be derefenced/freed.
  */
 void vrfree(struct buf * region);
+
+/**
+ * @}
+ */
 
 #endif /* BUF_H */
