@@ -76,33 +76,36 @@
 
 extern volatile uint32_t flag_kernel_tick;
 
-static void enable_arm_timer(void);
+static int enable_arm_timer(void);
 
-void bcm2835_timers_arm_clear(void)
+void bcm2835_timers_handler(void)
 {
     istate_t s_entry;
 
+    /* Handle scheduling timer */
     mmio_start(&s_entry);
     if (mmio_read(ARM_TIMER_MASK_IRQ)) {
-#if 0
-        bcm2835_uart_uputc('C'); /* Timer debug print */
-#endif
         mmio_write(ARM_TIMER_IRQ_CLEAR, 0);
         flag_kernel_tick = 1;
     }
     mmio_end(&s_entry);
 }
 
-static void enable_arm_timer(void)
+static int enable_arm_timer(void)
 {
     istate_t s_entry;
+    int retval = 0;
 
     /* Use the ARM timer - BCM 2832 peripherals doc, p.196 */
     /* Enable ARM timer IRQ */
     mmio_start(&s_entry);
 
-    if (mmio_read(ARM_TIMER_IRQ_CLEAR) != 0x544D5241)
-        panic("No ARM timer found");
+    if (mmio_read(ARM_TIMER_IRQ_CLEAR) != 0x544D5241) {
+        KERROR(KERROR_ERR, "No ARM timer found");
+        retval = -ENOTSUP;
+
+        goto fail;
+    }
 
     /* Interrupt every (value * prescaler) timer ticks */
     mmio_write(ARM_TIMER_LOAD, (SYS_CLOCK / (ARM_TIMER_FREQ * 16)));
@@ -115,7 +118,10 @@ static void enable_arm_timer(void)
     /* Enable ARM timer IRQ */
     mmio_write(BCMIRQ_ENABLE_BASIC, 0x1);
 
+fail:
     mmio_end(&s_entry);
+
+    return retval;
 }
 
 void bcm_udelay(uint32_t delay)
@@ -141,10 +147,11 @@ uint64_t get_utime(void)
 
 int bcm_interrupt_postinit(void)
 {
-    SUBSYS_INIT("ARM timer");
+    SUBSYS_INIT("bcm2835_timers");
 
-    enable_arm_timer();
-    register_schedtimer_clear(bcm2835_timers_arm_clear);
+    if (enable_arm_timer())
+        panic("No timer for kernel ticks");
+    register_schedtimer_clear(bcm2835_timers_handler);
 
     return 0;
 }

@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    time.h
+ * @file    tish_date.c
  * @author  Olli Vanhoja
- * @brief   time types.
+ * @brief   date command for tish.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,58 +30,28 @@
  *******************************************************************************
  */
 
-/** @addtogroup LIBC
-  * @{
-  */
+#include <stdlib.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <kstring.h> /* TODO Remove */
+#include <errno.h>
+#include <time.h>
+#include "tish.h"
 
-#pragma once
-#ifndef TIME_H
-#define TIME_H
 
-#include <sys/cdefs.h>
-#include <sys/_null.h>
-#include "sys/types.h" /* TODO Not OK, instead of this only needed types should be defined */
+static void tish_date(char ** args)
+{
+    struct timespec ts = {0, 0};
+    char buf[40];
+    int sec, nsec;
 
-struct tm {
-    int tm_sec;     /*!< Seconds [0,60]. */
-    int tm_min;     /*!< Minutes [0,59]. */
-    int tm_hour;    /*!< Hour [0,23]. */
-    int tm_mday;    /*!< Day of month [1,31]. */
-    int tm_mon;     /*!< Month of year [0,11]. */
-    int tm_year;    /*!< Years since 1900. */
-    int tm_wday;    /*!< Day of week [0,6] (Sunday =0). */
-    int tm_yday;    /*!< Day of year [0,365]. */
-    int tm_isdst;   /*!< Daylight Savings flag. */
-};
+    if (clock_gettime(CLOCK_REALTIME, &ts))
+        return;
 
-struct timespec {
-    time_t tv_sec;  /*!< Seconds. */
-    long tv_nsec;   /*!< Nanoseconds. */
-};
+    sec = ts.tv_sec;
+    nsec = ts.tv_nsec;
 
-struct itimerspec {
-    struct timespec it_interval;    /*!< Timer period.  */
-    struct timespec it_value;       /*!< Timer expiration. */
-};
-
-#define CLOCK_REALTIME              0
-#define CLOCK_UPTIME                5
-#define CLOCK_PROCESS_CPUTIME_ID    14
-#define CLOCK_THREAD_CPUTIME_ID     15
-
-__BEGIN_DECLS
-
-int clock_gettime(clockid_t clk_id, struct timespec * tp);
-
-__END_DECLS
-
-/* TODO Add POSIX test macro:
- * http://pubs.opengroup.org/onlinepubs/9699919799/functions/V2_chap02.html#tag_15_02 */
-
-/* TODO http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/time.h.html */
-
-#endif /* TIME_H */
-
-/**
-  * @}
-  */
+    ksprintf(buf, sizeof(buf), "%u.%u\n", sec, nsec);
+    puts(buf);
+}
+TISH_CMD(tish_date, "date");

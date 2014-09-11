@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    syscalldef.h
+ * @file    _syscalldef.h
  * @author  Olli Vanhoja
  * @brief   Types and definitions for syscalls.
  * @section LICENSE
@@ -216,6 +216,12 @@ struct _ioctl_get_args {
 struct _ds_getbreak {
     void * start;
     void * stop;
+};
+
+/** Argument struct for SYSCALL_TIME_GETTIME */
+struct _ds_gettime {
+    clockid_t clk_id;
+    struct timespec * tp;
 };
 
 #endif /* SYSCALLDEF_H */

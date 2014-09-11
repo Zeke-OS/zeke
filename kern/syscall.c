@@ -53,7 +53,8 @@
     apply(SYSCALL_GROUP_PROC, proc_syscall)         \
     apply(SYSCALL_GROUP_FS, fs_syscall)             \
     apply(SYSCALL_GROUP_IOCTL, ioctl_syscall)       \
-    apply(SYSCALL_GROUP_LOCKS, ulocks_syscall)
+    apply(SYSCALL_GROUP_LOCKS, ulocks_syscall)      \
+    apply(SYSCALL_GROUP_TIME, time_syscall)
 
 /*
  * Declare prototypes of syscall handlers.
@@ -84,10 +85,13 @@ void syscall_handler(void)
 
     if ((major >= num_elem(syscall_callmap)) || !syscall_callmap[major]) {
         const uint32_t minor = SYSCALL_MINOR(type);
-        char buf[30];
+        char buf[80];
 
-        ksprintf(buf, sizeof(buf), "syscall %u:%u not supported, (p:%u, i:%u)\n",
-                major, minor, current_process_id, current_thread->id);
+        ksprintf(buf, sizeof(buf),
+                 "syscall %u:%u not supported, (p:%u, i:%u)\n",
+                 major, minor,
+                 (unsigned)current_process_id,
+                 (unsigned)current_thread->id);
         KERROR(KERROR_WARN, buf);
 
         set_errno(ENOSYS); /* Not supported. */

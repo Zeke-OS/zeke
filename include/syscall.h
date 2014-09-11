@@ -45,7 +45,7 @@
 #include <sys/_syscalldef.h>
 #include <../kern/include/hal/core.h>
 
-#define SYSCALL_MINORBITS   27 /*!< Number of minor bits */
+#define SYSCALL_MINORBITS   24 /*!< Number of minor bits */
 #define SYSCALL_MINORMASK   ((1u << MINORBITS) - 1) /*!< Minor bits mask */
 
 /**
@@ -73,6 +73,7 @@
 #define SYSCALL_GROUP_FS            0x07
 #define SYSCALL_GROUP_IOCTL         0x08
 #define SYSCALL_GROUP_LOCKS         0x09
+#define SYSCALL_GROUP_TIME          0x0A
 
 /* List of syscalls */
 #define SYSCALL_SCHED_GET_LOADAVG   SYSCALL_MMTOTYPE(SYSCALL_GROUP_SCHED, 0x01)
@@ -137,6 +138,7 @@
 #define SYSCALL_MUTEX_TEST_AND_SET  SYSCALL_MMTOTYPE(SYSCALL_GROUP_LOCKS, 0x00)
 #define SYSCALL_SEMAPHORE_WAIT      SYSCALL_MMTOTYPE(SYSCALL_GROUP_LOCKS, 0x01)
 #define SYSCALL_SEMAPHORE_RELEASE   SYSCALL_MMTOTYPE(SYSCALL_GROUP_LOCKS, 0x02)
+#define SYSCALL_TIME_GETTIME        SYSCALL_MMTOTYPE(SYSCALL_GROUP_TIME, 0x01)
 
 /* Kernel scope */
 #ifdef KERNEL_INTERNAL
