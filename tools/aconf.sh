@@ -18,7 +18,10 @@ for conffile in "$@"; do
     if [ "$conffile" = "$HFILE" ]; then
         break
     fi
-    cat "$conffile"|sed 's/#.*$//g'|grep -e '^.*=.*$'|sed 's/\ *=\ */ /1'|sed 's/^/#define /' >>"$HFILE"
+    cat "$conffile"|sed 's/#.*$//g'|grep -e '^.*=.*$'| \
+        sed 's/=n$/=0/'|sed 's/=y$/=1/'|sed 's/=m$/=2/'| \
+        sed 's/\ *=\ */ /1'| \
+        sed 's/^/#define /' >>"$HFILE"
 done
 echo "#define KERNEL_VERSION \"$(git describe)\"" >>"$HFILE"
 echo "#endif" >>"$HFILE"

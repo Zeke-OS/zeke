@@ -1,0 +1,291 @@
+# config/kernelconf.kconf
+
+menu "HW features"
+
+config configATAG
+    bool "Support bootloader ATAGs"
+    default y
+    help
+        blah blah.
+
+config configMP
+    bool "Enable MP support"
+    default n
+
+config configMMU
+    bool "MMU support"
+    default y
+
+config configUART
+    bool "UART support"
+    default y
+
+if configUART
+
+config configUART_MAX_PORTS
+    int "Maximum number of UART ports"
+    default 2
+    range 1 256
+
+endif
+
+menuconfig configFB 
+    bool "Enable Frame Buffer support"
+    default n
+
+if configFB
+
+config configFB_FONT_LATIN
+    bool "Latin extension"
+    default n
+
+config configFB_FONT_GREEK
+    bool "Greek extension"
+    default n
+
+config configFB_FONT_HIRAGANA
+    bool "Hiragana extension"
+
+endif
+
+menu "BCM drivers"
+
+config configBCM_MB
+    bool "BCM2835 mailboxes"
+    default y if configBCM2835
+    depends on configBCM2835
+
+config configBCM_JTAG
+    bool "BCM2835 JTAG support"
+    default n
+    depends on configBCM2835
+
+config configBCM_FB
+    bool "BCM2835 FB"
+    default n
+    depends on configBCM_MB
+
+endmenu
+
+menu "Raspberry PI drivers"
+
+config configRPI_LEDS
+    bool "Raspberry PI leds"
+    default n
+    depends on configBCM2835
+
+config configRPI_EMMC
+    bool "Raspberry PI EMMC"
+    default n
+    depends on configBCM2835 && configBCM_MB
+
+endmenu
+
+endmenu
+
+
+menuconfig configKLOGGER
+    bool "KERROR kernel logging facility"
+    default y
+
+if configKLOGGER
+config configKERROR_BUF_SIZE
+    int "Lastlog buf size"
+    default 4096
+config configKERROR_MAXLEN
+    int "Max kerror line length"
+    default 400
+
+config configKERROR_UART
+    bool "Direct UART0 printing support"
+    default y
+    depends on configUART
+
+config configKERROR_FB
+    bool "Print to FB support"
+    default n
+    depends on configFB
+
+config configDEF_KLOGGER
+    int "Default klogger method"
+    range 0 3
+    default 2
+    help
+        0 = No logger
+        1 = Kerror buffer
+        2 = UART0
+        3 = FB
+
+choice
+    prompt "Log level"
+    default configDEBUG_CRIT
+config configDEBUG_CRIT
+    bool "Normal build"
+config configDEBUG_ERR
+    bool "Errors"
+    help
+        Additional error messages and asserts for serious errors that should not
+        occur in normal operation.
+config configDEBUG_WARN
+    bool "Additional warnings."
+config configDEBUG_INFO
+    bool "Additional information"
+    help
+        Additional information on warnings and errors.
+config configDEBUG_DEBUG
+    bool "Debug messages"
+    help
+        All debug messages and asserts.
+endchoice
+
+endif
+
+
+menu "Thread Scheduling"
+
+choice
+    prompt "Sceduler"
+    default configSCHED_TINY
+config configSCHED_TINY
+    bool "sched_tiny"
+config configSCHED_CDS
+    bool "sched_cds"
+endchoice
+
+config configSCHED_HZ 
+    int "Scheduler frequency in Hz."
+    default 100
+    range 5 1000
+
+choice
+    prompt "Load averages calculation period"
+    default configSCHED_LAVGPERIOD_11SEC
+config configSCHED_LAVGPERIOD_5SEC
+    bool "5 sec"
+config configSCHED_LAVGPERIOD_11SEC
+    bool "11 sec"
+endchoice
+
+if configSCHED_TINY
+config configSCHED_MAX_THREADS
+    int "Maximum number of threads."
+    default 10
+endif
+
+if configSCHED_CDS
+config configSCHED_CDS_EPOCHLEN
+    int "CDS epoch length"
+    default 100
+endif
+
+endmenu
+
+
+menu "Processes"
+
+config configMAXPROC
+    int "maxproc"
+    default 5
+    help
+        Default maximum number of processes.
+
+config configPROC_DEBUG
+    bool "Proc debug"
+    default n
+    help
+        Process subsystem debugging.
+
+endmenu
+
+
+config configTIMERS_MAX
+    int "Maximum number of kernel timers"
+    default 16
+    range 15 65535
+    help 
+        Maximum number of timers available.
+
+config configUSRINIT_SSIZE
+    int "init stack size"
+    default 8192
+    help
+        Stack size for init process main() thread.
+
+config configUSRINIT_PRI
+    int "init priority"
+    default 0
+    help
+        Priority of usrinit thread.
+
+config configLOCK_DEBUG
+    bool "klock debugging"
+    default n
+    help
+        Debug kernel locks.
+
+
+menu "File Systems"
+
+config configVFS_HASH
+    bool "VFS Hash"
+    default n
+    help
+        A vnode hashmap for file systems that have to cache vnode data in-core.
+
+menuconfig configMBR
+    bool "MBR Support"
+    default n
+
+config MBR_DEBUG
+    bool "MBR debug"
+    default n
+    depends on configMBR
+
+config configRAMFS
+    bool "RAMFS"
+    default y
+    help
+        Compile ramfs with Zeke base.
+    depends on y
+
+endmenu
+
+
+menu "Library routines"
+
+config configSTRING_OPT_SIZE
+    bool "Optimize string functions for size"
+    help
+        Optimize string functions for speed or size.
+
+endmenu
+
+menu "In-Kernel Unit Tests"
+
+config configKUNIT
+    bool "Compile KUnit"
+
+if configKUNIT
+config configKUNIT_REPORT_ORIENTED
+    bool "Report oriented"
+endif
+
+config configKUNIT_GENERIC
+    bool "generic"
+    depends on configKUNIT
+    help
+        Tests for generic data structures.
+
+config configKUNIT_KSTRING
+    bool "kstring"
+    depends on configKUNIT
+    help
+        Tests for kstring library.
+
+config configKUNIT_FS
+    bool "fs"
+    depends on configKUNIT
+    help
+        Tests for vfs and filesystems.
+
+endmenu

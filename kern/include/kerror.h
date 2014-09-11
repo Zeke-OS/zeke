@@ -42,6 +42,25 @@
 #define KERROR_UARTLOG  2
 #define KERROR_FB       3
 
+/* Log levels */
+#define KERROR_CRIT     '0' /*!< Critical error system is halted. */
+#define KERROR_ERR      '1' /*!< Fatal error. */
+#define KERROR_WARN     '2' /*!< Unexpected condition. */
+#define KERROR_INFO     '3' /*!< Normal informational message. */
+#define KERROR_DEBUG    '4' /*!< Debug message. */
+
+#if defined(configDEBUG_CRIT)
+#define configDEBUG KERROR_CRIT
+#elif defined(configDEBUG_ERR)
+#define configDEBUG KERROR_ERR
+#elif defined(configDEBUG_WARN)
+#define configDEBUG KERROR_WARN
+#elif defined(configDEBUG_INFO)
+#define configDEBUG KERROR_INFO
+#elif defined(configDEBUG_DEBUG)
+#define configDEBUG KERROR_DEBUG
+#endif
+
 /* Line number as a string */
 #define _KERROR_S(x) #x
 #define _KERROR_S2(x) _KERROR_S(x)
@@ -83,13 +102,6 @@ const char _kernel_panic_msg[19];
 #else
 #define KASSERT(invariant, msg)
 #endif
-
-/* Log levels */
-#define KERROR_CRIT     '0' /*!< Critical error system is halted. */
-#define KERROR_ERR      '1' /*!< Fatal error. */
-#define KERROR_WARN     '2' /*!< Unexpected condition. */
-#define KERROR_INFO     '3' /*!< Normal informational message. */
-#define KERROR_DEBUG    '4' /*!< Debug message. */
 
 struct kerror_klogger {
     size_t id;

@@ -59,7 +59,8 @@ SYSCTL_STRING(_kern, KERN_OSRELEASE, osrelease, CTLFLAG_RD|CTLFLAG_MPSAFE,
         (char *)osrelease, 0,
         "Operating system release");
 
-static const char version[] = __XSTRING(configARCH) " " __DATE__;
+/* TODO Arch */
+static const char version[] = "ARCH" " " __DATE__;
 SYSCTL_STRING(_kern, KERN_VERSION, version, CTLFLAG_RD|CTLFLAG_MPSAFE,
         (char *)version, 0,
         "Kernel version");

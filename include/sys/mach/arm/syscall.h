@@ -43,7 +43,7 @@
 #include <autoconf.h>
 
 #ifndef KERNEL_INTERNAL
-#if configARCH == __ARM6__ || configARCH == __ARM6K__
+#if __ARM6__ || __ARM6K__
 /**
  * Request immediate context switch
  *
@@ -52,7 +52,7 @@
 #define req_context_switch() do {           \
     __asm__ volatile ("WFI");               \
 } while (0)
-#elif configARCH == __ARM6M__
+#elif __ARM6M__
 /**
  * Request immediate context switch
  */

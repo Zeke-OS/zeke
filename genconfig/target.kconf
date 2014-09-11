@@ -1,0 +1,53 @@
+choice
+    optional
+    prompt "ARM Profile"
+config configARM_PROFILE_A
+    bool "A"
+config configARM_PROFILE_R
+    bool "R"
+config configARM_PROFILE_M
+    bool "M"
+endchoice
+
+choice
+    prompt "Arch"
+    help
+        For historical reasons we will detect the processor core model mainly by
+        its architecture version. Also profile identification is used for newer
+        models and complete model number for some very vendor/model specific
+        stuff like interupts.
+config __ARM4T__
+    bool "ARMv4T"
+#__ARM4TM__
+#__ARM5__
+#__ARM5E__
+config __ARM6__
+    bool "ARMv6"
+config __ARM6K__
+    bool "ARMv6K"
+config __ARM6M__
+    bool "ARMv6M"
+    depends on configARM_PROFILE_M
+config __ARM6SM__
+    bool "ARMv6SM"
+    depends on configARM_PROFILE_M
+config __ARM7M__
+    bool "ARMv7M"
+    depends on configARM_PROFILE_M
+config __ARM7EM__
+    bool "ARMv7EM"
+    depends on configARM_PROFILE_M
+config __ARM7A__
+    bool "ARMv7A"
+    depends on configARM_PROFILE_A
+config __ARM7R__
+    bool "ARMv7R"
+    depends on configARM_PROFILE_R
+endchoice
+
+choice
+    prompt "MCU/CPU Model"
+config configBCM2835
+    bool "BCM2835"
+    depends on __ARM6K__
+endchoice

@@ -175,31 +175,6 @@ intptr_t syscall(uint32_t type, void * p);
 
 #include <machine/syscall.h>
 
-#if configARCH == __ARM6__ || configARCH == __ARM6K__
-/**
- * Request immediate context switch
- *
- * Called from thread context.
- */
-#define req_context_switch() do {           \
-    __asm__ volatile ("WFI");               \
-} while (0)
-#elif configARCH == __ARM6M__
-/**
- * Request immediate context switch
- */
-#define req_context_switch() do {                                              \
-    SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk; /* Switch the context */              \
-    __asm__ volatile ("DSB\n\t" /* Ensure write is completed
-                               * (architecturally required, but not strictly
-                               * required for existing Cortex-M processors) */ \
-                      "ISB\n" /* Ensure PendSV is executed */                  \
-    );                                                                         \
-} while (0)
-#else
-#error Selected core is not suported by this libc
-#endif
-
 #endif /* !KERNEL_INTERNAL */
 
 #endif /* SYSCALL_H */

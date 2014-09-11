@@ -1,3 +1,3 @@
 # iconv
-#iconv-SRC-1 += iconv/*.c
+#iconv-SRC-y += iconv/*.c
 

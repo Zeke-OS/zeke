@@ -24,7 +24,7 @@ void __aeabi_memcpy8(void *destination, const void *source, size_t num) __attrib
   (((long)X & (sizeof (long) - 1)) | ((long)Y & (sizeof (long) - 1)))
 
 /* TODO Check in which platforms this optimization is valid */
-#if configARCH == __ARM6K__
+#if __ARM6K__
 #define ARM_OPTIMIZATION 1
 #define BIGBLOCKSIZE    (sizeof(size_t) << 2)
 #else /* No ARM optimization */

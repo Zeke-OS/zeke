@@ -1,0 +1,13 @@
+mainmenu "Zeke Configuration"
+
+menu "Target Config"
+source "genconfig/target.kconf"
+endmenu
+
+menu "Kernel"
+source "genconfig/kernel.kconf"
+endmenu
+
+menu "User Space"
+source "genconfig/user.kconf"
+endmenu

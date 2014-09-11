@@ -27,7 +27,7 @@
 # Configuration files ##########################################################
 export ROOT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
-include $(ROOT_DIR)/config/buildconf.mk
+include $(ROOT_DIR)/genconfig/buildconf.mk
 ################################################################################
 
 # Targets ######################################################################
@@ -64,8 +64,7 @@ $(UNIFDEF):
 	$(MAKE) -C tools/unifdef unifdef
 # End of Tools
 
-
-$(AUTOCONF_H): $(CONFIG_DIR)/targetconf.mk $(CONFIG_DIR)/kernelconf.mk
+$(AUTOCONF_H): $(CONFIG_DIR)/buildconf.mk config
 	$(ROOT_DIR)/tools/aconf.sh $^ $@
 	cd include && ln -fs sys/mach/$(MACHIDIR) machine
 

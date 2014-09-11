@@ -4,6 +4,10 @@ kernel.bin
 kernel.elf
 kernel.list
 
+# Generated config
+.config*
+config*
+
 # LLVM bitcode
 *.bc
 *.opt.bc

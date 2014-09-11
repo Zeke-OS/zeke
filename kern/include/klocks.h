@@ -42,9 +42,6 @@
 #define KLOCKS_H_
 
 #include <autoconf.h>
-#if configDEBUG >= KERROR_DEBUG
-#define LOCK_DEBUG 1
-#endif
 
 #include <sys/types_pthread.h>
 #include <hal/atomic.h>
@@ -94,13 +91,13 @@ typedef struct mtx {
         int p_lock;
         int p_saved;
     } pri;
-#ifdef LOCK_DEBUG
+#ifdef configLOCK_DEBUG
     char * mtx_ldebug;
 #endif
 } mtx_t;
 
 /* Mutex functions */
-#ifndef LOCK_DEBUG
+#ifndef configLOCK_DEBUG
 int mtx_lock(mtx_t * mtx);
 int mtx_sleep(mtx_t * mtx, long timeout);
 int mtx_trylock(mtx_t * mtx);

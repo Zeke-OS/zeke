@@ -324,7 +324,7 @@ void proc_thread_removed(pid_t pid, pthread_t thread_id)
 
 void proc_enter_kernel(void)
 {
-#if configDEBUG >= KERROR_DEBUG
+#ifdef configPROC_DEBUG
     if (!curproc)
         panic("No current process set");
 #endif
@@ -333,7 +333,7 @@ void proc_enter_kernel(void)
 
 mmu_pagetable_t * proc_exit_kernel(void)
 {
-#if configDEBUG >= KERROR_DEBUG
+#ifdef configPROC_DEBUG
     if (!curproc)
         panic("No current proces set");
 #endif
@@ -343,7 +343,7 @@ mmu_pagetable_t * proc_exit_kernel(void)
 
 void proc_suspend(void)
 {
-#if configDEBUG >= KERROR_DEBUG
+#ifdef configPROC_DEBUG
     if (!curproc)
         panic("No current proces set");
 #endif
@@ -353,7 +353,7 @@ void proc_suspend(void)
 
 mmu_pagetable_t * proc_resume(void)
 {
-#if configDEBUG >= KERROR_DEBUG
+#ifdef configPROC_DEBUG
     if (!curproc)
         panic("No current proces set");
 #endif
@@ -370,7 +370,7 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
     struct buf * region;
     struct buf * new_region;
 
-#if configDEBUG >= KERROR_DEBUG
+#ifdef configPROC_DEBUG
     char buf[80];
     ksprintf(buf, sizeof(buf), "proc_dab_handler(): MOO, %x @ %x\n", vaddr, lr);
     KERROR(KERROR_DEBUG, buf);
@@ -383,10 +383,12 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
 
     for (int i = 0; i < pcb->mm.nr_regions; i++) {
         region = ((*pcb->mm.regions)[i]);
+#ifdef configPROC_DEBUG
         ksprintf(buf, sizeof(buf), "reg_vaddr %x, reg_end %x\n",
                 region->b_mmu.vaddr,
                 region->b_mmu.vaddr + MMU_SIZEOF_REGION(&(region->b_mmu)));
         KERROR(KERROR_DEBUG, buf);
+#endif
 
         if (vaddr >= region->b_mmu.vaddr &&
                 vaddr <= (region->b_mmu.vaddr + MMU_SIZEOF_REGION(&(region->b_mmu)))) {

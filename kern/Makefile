@@ -26,8 +26,7 @@
 
 # Configuration files ##########################################################
 # Generic config
-include $(ROOT_DIR)/config/buildconf.mk
-include $(CONFIG_DIR)/kernelconf.mk
+include $(ROOT_DIR)/genconfig/buildconf.mk
 ################################################################################
 # We use suffixes because it's fun
 .SUFFIXES:                      # Delete the default suffixes
@@ -40,7 +39,7 @@ include $(MODMKFILES)
 # Following will generate a list of module names
 ALLMODULES = $(basename $(notdir $(MODMKFILES)))
 # Remove modules that do not contain any compilation units
-MODULES += $(foreach var, $(ALLMODULES), $(if $(strip $($(var)-SRC-1) $($(var)-ASRC-1)), $(var),))
+MODULES += $(foreach var, $(ALLMODULES), $(if $(strip $($(var)-SRC-y) $($(var)-ASRC-y)), $(var),))
 ################################################################################
 
 # Compiler Options #############################################################
@@ -57,7 +56,7 @@ LDFLAGS    +=#
 ################################################################################
 
 # Include Dirs #################################################################
-IDIR   = ./include ../include ../config
+IDIR   = ./include ../include ../genconfig
 AIDIR += ../config
 ################################################################################
 IDIR  := $(patsubst %,-I%,$(subst :, ,$(IDIR)))
@@ -66,25 +65,25 @@ AIDIR := $(patsubst %,-I%,$(subst :, ,$(AIDIR)))
 # Select & Include Modules #####################################################
 # Available selections for source code files:
 SRC-	=# C sources
-SRC-0  	=#
-SRC-1  	=#
+SRC-n  	=#
+SRC-y  	=#
 ASRC-  	=# Assembly sources
-ASRC-0 	=#
-ASRC-1	=#
-# (A)SRC- and (A)SRC-0 meaning that submodule won't be compiled
+ASRC-n 	=#
+ASRC-y	=#
+# (A)SRC- and (A)SRC-n meaning that submodule won't be compiled
 
 # Include sources from top modules
-SRC-1 += $(foreach var,$(MODULES), $($(var)-SRC-1))
-ASRC-1 += $(foreach var,$(MODULES), $($(var)-ASRC-1))
+SRC-y += $(foreach var,$(MODULES), $($(var)-SRC-y))
+ASRC-y += $(foreach var,$(MODULES), $($(var)-ASRC-y))
 ################################################################################
 # Parse file names
 
 # Assembly Obj files
-ASOBJS 	:= $(patsubst %.S, %.o, $(ASRC-1))
+ASOBJS 	:= $(patsubst %.S, %.o, $(ASRC-y))
 
 # C Obj files
-BCS  	:= $(patsubst %.c, %.bc, $(SRC-1))
-OBJS 	:= $(patsubst %.c, %.o, $(SRC-1))
+BCS  	:= $(patsubst %.c, %.bc, $(SRC-y))
+OBJS 	:= $(patsubst %.c, %.o, $(SRC-y))
 
 STARTUP_O = $(patsubst %.S, %.o, $(STARTUP))
 
@@ -104,11 +103,11 @@ $(STARTUP_O): $(STARTUP) $(AUTOCONF_H)
 	@echo "AS $@"
 	@$(UNIFDEFALL) $(AIDIR) $< | $(ARMGNU)-as -o $(STARTUP_O)
 
-$(ASOBJS): $(ASRC-1) $(UNIFDEF) $(AUTOCONF_H)
+$(ASOBJS): $(ASRC-y) $(UNIFDEF) $(AUTOCONF_H)
 	@echo "AS $@"
 	@$(UNIFDEFALL) $(AIDIR) $*.S | $(ARMGNU)-as -am $(AIDIR) -o $@
 
-$(BCS): $(SRC-1) $(AUTOCONF_H)
+$(BCS): $(SRC-y) $(AUTOCONF_H)
 	@echo "CC $@"
 	@$(CC) $(CCFLAGS) $(IDIR) -c $*.c -o $@
 
@@ -122,8 +121,8 @@ $(OBJS): $(BCS)
 
 $(MODAS): $(ASOBJS) $(OBJS)
 	$(eval CUR_MODULE := $(basename $@))
-	$(eval CUR_OBJS := $(patsubst %.c, %.o, $($(CUR_MODULE)-SRC-1)))
-	$(eval CUR_OBJS += $(patsubst %.S, %.o, $($(CUR_MODULE)-ASRC-1)))
+	$(eval CUR_OBJS := $(patsubst %.c, %.o, $($(CUR_MODULE)-SRC-y)))
+	$(eval CUR_OBJS += $(patsubst %.S, %.o, $($(CUR_MODULE)-ASRC-y)))
 	@echo "AR $@"
 	@ar rcs $@ $(CUR_OBJS)
 

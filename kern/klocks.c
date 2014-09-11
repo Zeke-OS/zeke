@@ -73,12 +73,12 @@ void mtx_init(mtx_t * mtx, unsigned int type)
     mtx->mtx_lock = 0;
     mtx->ticket.queue = ATOMIC_INIT(0);
     mtx->ticket.dequeue = ATOMIC_INIT(0);
-#ifdef LOCK_DEBUG
+#ifdef configLOCK_DEBUG
     mtx->mtx_ldebug = 0;
 #endif
 }
 
-#ifndef LOCK_DEBUG
+#ifndef configLOCK_DEBUG
 int mtx_lock(mtx_t * mtx)
 #else
 int _mtx_lock(mtx_t * mtx, char * whr)
@@ -87,7 +87,7 @@ int _mtx_lock(mtx_t * mtx, char * whr)
     const int ticket_mode = MTX_TYPE(mtx, MTX_TYPE_TICKET);
     int ticket;
     const int sleep_mode = MTX_TYPE(mtx, MTX_TYPE_SLEEP);
-#ifdef LOCK_DEBUG
+#ifdef configLOCK_DEBUG
     unsigned deadlock_cnt = 0;
 #endif
 
@@ -96,7 +96,7 @@ int _mtx_lock(mtx_t * mtx, char * whr)
     }
 
     while (1) {
-#ifdef LOCK_DEBUG
+#ifdef configLOCK_DEBUG
         /*
          * TODO deadlock detection threshold should depend on lock type and
          *      current priorities.
@@ -135,7 +135,7 @@ int _mtx_lock(mtx_t * mtx, char * whr)
     /* Handle priority ceiling. */
     priceil_set(mtx);
 
-#ifdef LOCK_DEBUG
+#ifdef configLOCK_DEBUG
     mtx->mtx_ldebug = whr;
 #endif
 
@@ -148,7 +148,7 @@ static void mtx_wakeup(void * arg)
     current_thread->wait_tim = -2; /* Magic */
 }
 
-#ifndef LOCK_DEBUG
+#ifndef configLOCK_DEBUG
 int mtx_sleep(mtx_t * mtx, long timeout)
 #else
 int _mtx_sleep(mtx_t * mtx, long timeout, char * whr)
@@ -168,7 +168,7 @@ int _mtx_sleep(mtx_t * mtx, long timeout, char * whr)
     } else if (MTX_TYPE(mtx, MTX_TYPE_SPIN)) {
         retval = mtx_lock(mtx);
     } else {
-#ifdef LOCK_DEBUG
+#ifdef configLOCK_DEBUG
         char buf[80];
 
         ksprintf(buf, sizeof(buf), "Invalid lock type. Caller: %s", whr);
@@ -181,7 +181,7 @@ int _mtx_sleep(mtx_t * mtx, long timeout, char * whr)
     return retval;
 }
 
-#ifndef LOCK_DEBUG
+#ifndef configLOCK_DEBUG
 int mtx_trylock(mtx_t * mtx)
 #else
 int _mtx_trylock(mtx_t * mtx, char * whr)
@@ -190,7 +190,7 @@ int _mtx_trylock(mtx_t * mtx, char * whr)
     int retval;
 
     if (!MTX_TYPE(mtx, MTX_TYPE_SPIN)) {
-#ifdef LOCK_DEBUG
+#ifdef configLOCK_DEBUG
         KERROR(KERROR_ERR, "mtx_trylock() is only supported for MTX_TYPE_SPIN");
 #endif
         return -ENOTSUP;
@@ -201,7 +201,7 @@ int _mtx_trylock(mtx_t * mtx, char * whr)
     /* Handle priority ceiling. */
     priceil_set(mtx);
 
-#ifdef LOCK_DEBUG
+#ifdef configLOCK_DEBUG
     mtx->mtx_ldebug = whr;
 #endif
 

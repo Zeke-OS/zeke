@@ -1,0 +1,50 @@
+
+# Synopsys
+
+kconfig is an isolated packaging of the kernel configuration tools
+as found in the scripts/kconfig/ directory of the kernel sources.
+
+The purpose is to provide the great functionalities of the kernel
+configuration mechanism to any project that need application
+level configuration.
+
+# Usage
+
+On can extract kconfig sources and run without installation
+from his own project directory:
+
+$ cd myproject/
+$ kconfig/config.sh manuconfig
+
+As a default the mypoject/Kconfig file must be present for
+declaring the project configuration.
+The result is a myproject/config file which can be sources in
+a shell of makefile script.
+
+Alternatively the call to:
+
+$ kconfig/config.sh menuconfig
+
+can be replaced by a direct call to the kconfig/GNUmakefile:
+
+$ make -f kconfig/GNUmakefile TOPDIR=. SRCDIR=kconfig
+
+Note that all common kernel configuration targets are available,
+in particular config, menuconfig, nconfig, gconfig, xconfig,
+defconfig, oldconfig, etc...
+
+Get the list of targets with:
+
+$ kconfig/config.sh help
+
+or
+
+$ make -f kconfig/GNUmakefile help TOPDIR=. SRCDIR=kconfig
+
+
+# References
+
+Ref to buildroot README.buildroot file for the original idea
+of packaging kconfig.
+
+Ref to kernel.org for actual contributors of kconfig.

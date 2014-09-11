@@ -61,10 +61,6 @@
 #include <proc.h>
 #include <fs/mbr.h>
 
-#if configDEBUG >= KERROR_DEBUG
-#define MBR_DEBUG 1
-#endif
-
 struct mbr_dev {
     struct dev_info dev;
     struct dev_info * parent;
@@ -89,9 +85,7 @@ int mbr_register(int fd, int * part_count)
     vnode_t * parent_vnode;
     struct dev_info * parent;
     uint8_t * block_0 = 0;
-#ifdef MBR_DEBUG
     char msgbuf[120];
-#endif
     int parts = 0;
     int retval = 0;
 
@@ -123,7 +117,7 @@ int mbr_register(int fd, int * part_count)
         goto fail;
     }
 
-#ifdef MBR_DEBUG
+#ifdef configMBR_DEBUG
     ksprintf(msgbuf, sizeof(msgbuf),
              "MBR: reading block 0 from device %s\n",
              parent->dev_name);
@@ -161,7 +155,7 @@ int mbr_register(int fd, int * part_count)
         goto fail;
     }
 
-#ifdef MBR_DEBUG
+#ifdef configMBR_DEBUG
     ksprintf(msgbuf, sizeof(msgbuf),
              "MBR: found valid MBR on device %s\n", parent->dev_name);
     KERROR(KERROR_DEBUG, msgbuf);
@@ -193,7 +187,7 @@ int mbr_register(int fd, int * part_count)
         goto fail;
     }
 
-#ifdef MBR_DEBUG
+#ifdef configMBR_DEBUG
     if (block_size_adjust > 1) {
         ksprintf(msgbuf, sizeof(msgbuf), "MBR: block_size_adjust: %i\n",
                  block_size_adjust);
@@ -260,7 +254,7 @@ int mbr_register(int fd, int * part_count)
         d->blocks /= block_size_adjust;
         d->dev.num_blocks = d->blocks;
 
-#ifdef MBR_DEBUG
+#ifdef configMBR_DEBUG
         ksprintf(msgbuf, sizeof(msgbuf),
                  "MBR: partition number %i (%s) of type %x, "
                  "start sector %u, sector count %u, p_offset %03x\n",

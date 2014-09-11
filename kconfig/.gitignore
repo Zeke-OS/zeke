@@ -1,0 +1,4 @@
+.depend
+mconf
+zconf.hash.c
+zconf.lex.c

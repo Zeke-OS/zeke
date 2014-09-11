@@ -35,7 +35,7 @@
 
 #include <syscall.h>
 
-#if configARCH == __ARM6__ || configARCH == __ARM6K__ || configARCH == __ARM6M__
+#if __ARM6__ || __ARM6K__ || __ARM6M__
 intptr_t syscall(uint32_t type, void * p)
 {
     int32_t scratch;
@@ -43,7 +43,7 @@ intptr_t syscall(uint32_t type, void * p)
     /* Lets expect that parameters are already in r0 & r1 */
     __asm__ volatile (
         "SVC    #0\n\t"
-#if configARCH == __ARM6M__
+#if __ARM6M__
         "DSB\n\t"           /* Ensure write is completed (architecturally
                              * required, but not strictly required for
                              * existing Cortex-M processors) */
@@ -57,18 +57,6 @@ intptr_t syscall(uint32_t type, void * p)
 
     return (intptr_t)scratch;
 }
-#elif configARCH == __ARM6M__
-/**
- * Request immediate context switch
- */
-#define req_context_switch() do {                                              \
-    SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk; /* Switch the context */              \
-    __asm__ volatile ("DSB\n\t" /* Ensure write is completed
-                               * (architecturally required, but not strictly
-                               * required for existing Cortex-M processors) */ \
-                      "ISB\n" /* Ensure PendSV is executed */                  \
-    );                                                                         \
-} while (0)
 #else
 #error Selected core is not suported by this libc
 #endif

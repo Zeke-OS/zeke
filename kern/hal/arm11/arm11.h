@@ -50,9 +50,6 @@
 #if configARM_PROFILE_M != 0
 #error ARM Cortex-M profile is not supported by this layer.
 #endif
-#ifndef configARCH
-#error Core is not selected.
-#endif
 
 #if configMMU == 0
 #error MMU must be enabled when compiling for ARM11.

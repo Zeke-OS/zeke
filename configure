@@ -1,13 +1,15 @@
 #!/bin/bash
 
-CONFFILES="buildconf.mk kernelconf.mk targetconf.mk"
+CONFFILES="buildconf.mk"
+
+kconfig/config.sh menuconfig
 
 for f in $CONFFILES; do
-    CURFILES="config/$f.default config/$f"
+    CURFILES="genconfig/$f.default genconfig/$f"
     diff $CURFILES 2> /dev/null
     if [ "$?" -ne "0" ]; then
         cp -i $CURFILES
     else
-        echo "config/$f already has the default configuration"
+        echo "genconfig/$f already has the default configuration"
     fi
 done
