@@ -30,6 +30,7 @@
  *******************************************************************************
  */
 
+#include <kinit.h>
 #include <hal/mmu.h>
 #include "bcm2835_mmio.h"
 
@@ -42,8 +43,12 @@ mmu_region_t bcm2835_mmio_region = {
     .pt         = &mmu_pagetable_master
 };
 
-void bcm2835_mmio_init(void) __attribute__((constructor));
-void bcm2835_mmio_init(void)
+int bcm2835_mmio_init(void) __attribute__((constructor));
+int bcm2835_mmio_init(void)
 {
+    SUBSYS_INIT("bcm2835_mmio");
+
     mmu_map_region(&bcm2835_mmio_region);
+
+    return 0;
 }

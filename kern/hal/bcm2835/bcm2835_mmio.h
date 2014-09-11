@@ -44,8 +44,6 @@
 #include <stdint.h>
 #include <hal/core.h>
 
-extern void bcm2835_mmio_init(void);
-
 /* mmio_start & mmio_end are related to out-of-order AXI bus system in
  * BCM2835. See p. 7 in BCM2835-ARM-Peripherals.pdf */
 

@@ -30,19 +30,16 @@
  *******************************************************************************
  */
 
+#define KERNEL_INTERNAL
+#include <autoconf.h>
 #include <stddef.h>
 #include <kstring.h>
 #include <kmalloc.h>
 #include <kinit.h>
+#include <kerror.h>
 #include <hal/fb.h>
 #include "splash.h"
 #include "fonteng.h"
-
-/*
- * Linker set for frame buffer initializer function pointers.
- */
-typedef int (*fbi_t)();
-SET_DECLARE(fb_init_funcs, void);
 
 /**
  * Set rgb pixel.
@@ -69,25 +66,6 @@ const uint32_t def_bg_color = 0x000000;
 static void draw_splash(void);
 static void newline(void);
 static void draw_glyph(const char * font_glyph, size_t * consx, size_t * consy);
-
-/**
- * Initialize all frame buffer drivers.
- */
-int fb_init(void) __attribute__((constructor));
-int fb_init(void)
-{
-    SUBSYS_INIT("fb init all");
-    void ** p;
-
-    SET_FOREACH(p, fb_init_funcs) {
-        fbi_t fbi;
-        fbi = *(fbi_t *)p;
-        if (fbi())
-            panic("Failed to init FB"); /* TODO */
-    }
-
-    return 0;
-}
 
 /* TODO Should support multiple frame buffers or fail */
 void fb_register(struct fb_conf * fb)

@@ -31,11 +31,14 @@
  */
 
 #define KERNEL_INTERNAL
+#include <autoconf.h>
 #include <kinit.h>
 #include <kstring.h>
-#include <hal/mmu.h>
 #include <ptmapper.h>
+#include <hal/core.h>
+#include <hal/mmu.h>
 #include <hal/fb.h>
+#include <kerror.h>
 #include "bcm2835_mailbox.h"
 #include "bcm2835_mmio.h"
 
@@ -69,6 +72,7 @@ static mmu_region_t bcm2835_fb_region = {
     .pt         = &mmu_pagetable_master
 };
 
+static int bcm2835_fb_init(void) __attribute__((constructor));
 static int bcm2835_fb_init(void)
 {
     SUBSYS_DEP(vralloc_init);
@@ -90,8 +94,9 @@ static int bcm2835_fb_init(void)
         .base = fb_bcm.fb_paddr
     };
     fb_register(&fb_gen);
+
+    return 0;
 }
-FB_INIT_ENTRY(bcm2835_fb_init);
 
 static void set_fb_config(struct bcm2835_fb_config * fb,
         uint32_t width, uint32_t height)
