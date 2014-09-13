@@ -374,11 +374,6 @@ if configKUNIT
 config configKUNIT_REPORT_ORIENTED
     bool "Report oriented"
 
-config configKUNIT_BIO
-    bool "bio"
-    ---help---
-        Tests for buffered IO.
-
 config configKUNIT_FS
     bool "fs"
     ---help---
@@ -398,5 +393,10 @@ config configKUNIT_KSTRING
     bool "kstring"
     ---help---
         Tests for kstring library.
+
+config configKUNIT_VM
+    bool "vm"
+    ---help---
+        Tests for virtual memory related libraries and subsystems.
 
 endif

@@ -30,10 +30,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/** @addtogroup KUnit
-  * @{
-  */
-
 #include "kunit.h"
 
 SYSCTL_NODE(_debug, CTL_DEBUG, test, CTLFLAG_RW, 0,
@@ -87,7 +83,3 @@ int ku_run_tests(void (*all_tests)(void))
 
     return (ku_tests_passed + ku_tests_skipped) != ku_tests_count;
 }
-
-/**
-  * @}
-  */

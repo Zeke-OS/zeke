@@ -36,10 +36,20 @@
 
 #include <sys/sysctl.h>
 
-SYSCTL_DECL(_debug_test_bio);
+#ifdef configKUNIT_FS
 SYSCTL_DECL(_debug_test_fs);
+#endif
+#ifdef configKUNIT_GENERIC
 SYSCTL_DECL(_debug_test_generic);
+#endif
+#ifdef configKUNIT_HAL
 SYSCTL_DECL(_debug_test_hal);
+#endif
+#ifdef configKUNIT_KSTRING
 SYSCTL_DECL(_debug_test_kstring);
+#endif
+#ifdef configKUNIT_VM
+SYSCTL_DECL(_debug_test_vm);
+#endif
 
 #endif /* KTEST_MIB_H */

@@ -50,9 +50,6 @@
 #ifndef configARM_PROFILE_M
     #error Only ARM Cortex-M profile is currently supported.
 #endif
-#ifndef configARCH
-    #error Core is not selected by the compiler.
-#endif
 
 /* Exception return values */
 #define HAND_RETURN         0xFFFFFFF1u /*!< Return to handler mode using the MSP. */
@@ -124,7 +121,7 @@ inline void wr_thread_stack_ptr(void * ptr);
 inline void save_context(void)
 {
     volatile uint32_t scratch;
-#if configARCH == __ARM6M__
+#if __ARM6M__
     __asm__ volatile ("MRS   %0,  psp\n\t"
                       "SUBS  %0,  %0, #32\n\t"
                       "MSR   psp, %0\n\t"       /* This is the address that will
@@ -141,7 +138,7 @@ inline void save_context(void)
                       "STMIA %0!, {r4-r7}\n\t"
                       "POP   {r4-r7}\n"         /* Pop them back */
                       : "=r" (scratch));
-#elif configARCH == __ARM7M__
+#elif __ARM7M__
     __asm__ volatile ("MRS   %0,  psp\n\t"
                       "STMDB %0!, {r4-r11}\n\t"
                       "MSR   psp, %0\n\t"
@@ -158,7 +155,7 @@ inline void save_context(void)
 inline void load_context(void)
 {
     volatile uint32_t scratch;
-#if configARCH == __ARM6M__
+#if __ARM6M__
     __asm__ volatile ("MRS   %0,  psp\n\t"
                       "ADDS  %0,  %0, #16\n\t"  /* Move to the high registers */
                       "LDMIA %0!, {r4-r7}\n\t"
@@ -171,7 +168,7 @@ inline void load_context(void)
                       "SUBS  r0,  r0, #32\n\t"  /* Go back to the low registers */
                       "LDMIA %0!, {r4-r7}\n"
                       : "=r" (scratch));
-#elif configARCH == __ARM7M__
+#elif __ARM7M__
     __asm__ volatile ("MRS   %0,  psp\n\t"
                       "LDMFD %0!, {r4-r11}\n\t"
                       "MSR   psp, %0\n\t"

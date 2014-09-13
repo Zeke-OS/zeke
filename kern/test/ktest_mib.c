@@ -34,17 +34,27 @@
 #include <kunit.h>
 #include "ktest_mib.h"
 
-SYSCTL_NODE(_debug_test, OID_AUTO, bio, CTLFLAG_RW, 0,
-        "bio unit tests");
-
+#ifdef configKUNIT_FS
 SYSCTL_NODE(_debug_test, OID_AUTO, fs, CTLFLAG_RW, 0,
         "fs unit tests");
+#endif
 
+#ifdef configKUNIT_GENERIC
 SYSCTL_NODE(_debug_test, OID_AUTO, generic, CTLFLAG_RW, 0,
         "generic unit tests");
+#endif
 
+#ifdef configKUNIT_HAL
 SYSCTL_NODE(_debug_test, OID_AUTO, hal, CTLFLAG_RW, 0,
         "hal unit tests");
+#endif
 
+#ifdef configKUNIT_KSTRING
 SYSCTL_NODE(_debug_test, OID_AUTO, kstring, CTLFLAG_RW, 0,
         "kstring unit tests");
+#endif
+
+#ifdef configKUNIT_VM
+SYSCTL_NODE(_debug_test, OID_AUTO, vm, CTLFLAG_RW, 0,
+        "vm unit tests");
+#endif

@@ -45,8 +45,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#if configMMU == 0 && !defined(PU_TEST_BUILD)
-    #error MMU not enabled but header was included in some file.
+#if configMMU == 0
+#error MMU not enabled but header was included in some file.
 #endif
 
 /* Zeke Domains */
@@ -171,9 +171,8 @@ typedef struct mmu_region {
  */
 #define MMU_CPT_VADDR(x) ((x) & 0xFFF00000)
 
-#if configARCH == __ARM6__ || configARCH == __ARM6K__ /* ARM11 uses ARMv6 arch */
+#if __ARM6__ || __ARM6K__ /* ARM11 uses ARMv6 arch */
 #include "../../hal/arm11/arm11_mmu.h"
-#elif defined(PU_TEST_BUILD)
 #else
     #error MMU for selected ARM profile/architecture is not supported
 #endif
