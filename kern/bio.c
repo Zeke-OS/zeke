@@ -77,7 +77,7 @@ void _bio_init(void)
  */
 int biobuf_compar(struct buf * a, struct buf * b)
 {
-#if configDEBUG >= KERROR_DEBUG
+#ifdef configBIO_DEBUG
     if (a->b_file.vnode != b->b_file.vnode)
         panic("vnodes differ in the same tree");
 #endif
@@ -93,14 +93,13 @@ int bread(vnode_t * vnode, size_t blkno, int size, struct buf ** bpp)
     if (!bp)
         return -ENOMEM;
 
-    if (bp->b_flags & B_DONE)
-        goto out;
+    BUF_LOCK(bp);
+    bio_readin(bp);
+    BUF_UNLOCK(bp);
 
-    biowait(bp);
     bp->b_bcount = size;
-
-out:
     *bpp = bp;
+
     return 0;
 }
 
@@ -115,12 +114,16 @@ static void bio_readin(struct buf * bp)
 {
     file_t * file = &bp->b_file;
 
+    KASSERT(mtx_test(&bp->lock), "bp should be locked\n");
+
     /*
      * If we have a separate device file associated with the buffer we should
      * use it.
      */
     if (bp->b_devfile.vnode)
         file = &bp->b_devfile;
+
+    bp->b_flags &= ~B_DONE;
 
     file->seek_pos = bp->b_blkno;
     file->vnode->vnode_ops->read(file, (void *)bp->b_data, bp->b_bcount);
@@ -134,6 +137,8 @@ static void bio_readin(struct buf * bp)
 static void bio_writeout(struct buf * bp)
 {
     file_t * file = &bp->b_file;
+
+    KASSERT(mtx_test(&bp->lock), "bp should be locked\n");
 
     /*
      * If we have a separate device file associated with the buffer we should
@@ -152,31 +157,28 @@ int bwrite(struct buf * bp)
 {
     unsigned flags;
     vnode_t * vnode;
-    mtx_t * lock;
 
-#if configDEBUG >= KERROR_DEBUG
-    if (!bp)
-        panic("bp not set");
+#ifdef configBIO_DEBUG
+    KASSERT(bp, "bp != NULL\n");
 #endif
 
-    lock = &bp->lock;
     vnode = bp->b_file.vnode;
 
     /* Sanity check */
     if(!(vnode && vnode->vnode_ops && vnode->vnode_ops->write)) {
-        mtx_lock(lock);
+        BUF_LOCK(bp);
         bp->b_flags |= B_ERROR;
         bp->b_error |= -EIO;
-        mtx_unlock(lock);
+        BUF_UNLOCK(bp);
 
         return -EIO;
     }
 
-    mtx_lock(lock);
+    BUF_LOCK(bp);
     flags = bp->b_flags;
     bp->b_flags &= ~(B_DONE | B_ERROR | B_ASYNC | B_DELWRI);
     bp->b_flags |= B_BUSY;
-    mtx_unlock(lock);
+    BUF_UNLOCK(bp);
 
     /* TODO Use dirty offsets */
     if (flags & B_ASYNC) {
@@ -184,10 +186,10 @@ int bwrite(struct buf * bp)
 
         return 0;
     } else {
-        mtx_lock(lock);
+        BUF_LOCK(bp);
         bio_writeout(bp);
         bp->b_flags &= ~B_BUSY;
-        mtx_unlock(lock);
+        BUF_UNLOCK(bp);
     }
 
     return 0;
@@ -195,29 +197,28 @@ int bwrite(struct buf * bp)
 
 void bawrite(struct buf * bp)
 {
-    mtx_lock(&bp->lock);
+    BUF_LOCK(bp);
     bp->b_flags |= B_ASYNC;
-    mtx_unlock(&bp->lock);
+    BUF_UNLOCK(bp);
     bwrite(bp);
 }
 
 void bdwrite(struct buf * bp)
 {
-    mtx_lock(&bp->lock);
+    BUF_LOCK(bp);
     bp->b_flags |= B_DELWRI;
-    mtx_unlock(&bp->lock);
+    BUF_UNLOCK(bp);
 }
 
 void bio_clrbuf(struct buf * bp)
 {
     unsigned flags;
 
-#if configDEBUG >= KERROR_DEBUG
-    if (!bp)
-        panic("bp not set");
+#ifdef configBIO_DEBUG
+    KASSERT(bp, "bp != NULL\n");
 #endif
 
-    mtx_lock(&bp->lock);
+    BUF_LOCK(bp);
 
     flags = bp->b_flags;
 
@@ -228,13 +229,13 @@ void bio_clrbuf(struct buf * bp)
     }
     bp->b_flags &= ~(B_DELWRI | B_ERROR);
     bp->b_flags |= B_BUSY;
-    mtx_unlock(&bp->lock);
+    BUF_UNLOCK(bp);
 
     memset((void *)bp->b_data, 0, bp->b_bufsize);
 
-    mtx_lock(&bp->lock);
+    BUF_LOCK(bp);
     bp->b_flags &= ~B_BUSY;
-    mtx_unlock(&bp->lock);
+    BUF_UNLOCK(bp);
 }
 
 static struct buf * create_blk(vnode_t * vnode, size_t blkno, size_t size,
@@ -261,15 +262,18 @@ static struct buf * create_blk(vnode_t * vnode, size_t blkno, size_t size,
             devfile.vnode = file.vnode->sb->sb_dev;
         else
             panic("file->vnode->sb->sb_dev not set");
+
+        devfile.oflags = O_RDWR;
+        devfile.refcount = 1;
+        devfile.stream = NULL;
     } else {
-        panic("vn file type not supported"); /* TODO */
+        devfile.vnode = NULL;
     }
-    devfile.oflags = O_RDWR;
-    devfile.refcount = 1;
-    devfile.stream = NULL;
 
     bp->b_file = file;
     bp->b_devfile = devfile;
+    bp->b_flags |= B_DONE;
+    bp->b_flags &= ~B_BUSY; /* Unbusy for now */
     mtx_init(&bp->b_file.lock, MTX_TYPE_SPIN);
 
     VN_LOCK(vnode);
@@ -311,21 +315,21 @@ retry:
      */
     while (bp->b_flags & B_BUSY)
         sched_current_thread_yield(0);
-    mtx_lock(&bp->lock);
+    BUF_LOCK(bp);
     if (bp->b_flags & B_BUSY) {
-        mtx_unlock(&bp->lock);
+        BUF_UNLOCK(bp);
         goto retry;
     }
     bp->b_flags |= B_BUSY;
     relse_list->remove(relse_list, bp); /* Remove from the released list. */
-    mtx_unlock(&bp->lock);
+    BUF_UNLOCK(bp);
 
     allocbuf(bp, size); /* Resize if necessary */
 
-    mtx_lock(&bp->lock);
+    BUF_LOCK(bp);
     bp->b_flags &= ~B_ERROR;
     bp->b_error = 0;
-    mtx_unlock(&bp->lock);
+    BUF_UNLOCK(bp);
 
 fail:
     mtx_unlock(&cache_lock);
@@ -356,8 +360,7 @@ struct buf * incore(vnode_t * vnode, size_t blkno)
 
 static void bl_brelse(struct buf * bp)
 {
-    if (mtx_test(&bp->lock))
-        panic("Lock is required.");
+    KASSERT(mtx_test(&bp->lock), "Lock is required.");
 
     bp->b_flags &= ~B_BUSY;
 
@@ -368,21 +371,21 @@ static void bl_brelse(struct buf * bp)
 
 void brelse(struct buf * bp)
 {
-    mtx_lock(&bp->lock);
+    BUF_LOCK(bp);
     bl_brelse(bp);
-    mtx_unlock(&bp->lock);
+    BUF_UNLOCK(bp);
 }
 
 void biodone(struct buf * bp)
 {
-    mtx_lock(&bp->lock);
+    BUF_LOCK(bp);
 
     bp->b_flags |= B_DONE;
 
     if (bp->b_flags & B_ASYNC)
         bl_brelse(bp);
 
-    mtx_unlock(&bp->lock);
+    BUF_UNLOCK(bp);
 }
 
 static int biowait_timo(struct buf * bp, long timeout)
@@ -444,7 +447,7 @@ static void bio_clean(int freebufs)
         }
 
         bp->b_flags &= ~B_BUSY;
-        mtx_unlock(&bp->lock);
+        BUF_UNLOCK(bp);
     } while ((bp = bp->lentry_.next));
 
 out:

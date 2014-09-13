@@ -50,4 +50,5 @@ choice
 config configBCM2835
     bool "BCM2835"
     depends on __ARM6K__
+    select configMMU
 endchoice

@@ -14,7 +14,6 @@ config configMP
 
 config configMMU
     bool "MMU support"
-    default y
 
 config configUART
     bool "UART support"
@@ -197,6 +196,7 @@ config configPROC_DEBUG
 
 endmenu
 
+menu "Generic"
 
 config configTIMERS_MAX
     int "Maximum number of kernel timers"
@@ -217,11 +217,19 @@ config configUSRINIT_PRI
     help
         Priority of usrinit thread.
 
+config configBIO_DEBUG
+    bool "bio debugging"
+    default n
+    help
+        Enable bio/buf debug messages and additional asserts.
+
 config configLOCK_DEBUG
     bool "klock debugging"
     default n
     help
         Debug kernel locks.
+
+endmenu
 
 
 menu "File Systems"
@@ -278,32 +286,36 @@ config configSTRING_OPT_SIZE
 
 endmenu
 
-menu "In-Kernel Unit Tests"
-
-config configKUNIT
-    bool "Compile KUnit"
+menuconfig configKUNIT
+    bool "In-Kernel Unit Tests"
 
 if configKUNIT
 config configKUNIT_REPORT_ORIENTED
     bool "Report oriented"
-endif
 
-config configKUNIT_GENERIC
-    bool "generic"
-    depends on configKUNIT
+config configKUNIT_BIO
+    bool "bio"
     help
-        Tests for generic data structures.
-
-config configKUNIT_KSTRING
-    bool "kstring"
-    depends on configKUNIT
-    help
-        Tests for kstring library.
+        Tests for buffered IO.
 
 config configKUNIT_FS
     bool "fs"
-    depends on configKUNIT
     help
         Tests for vfs and filesystems.
 
-endmenu
+config configKUNIT_GENERIC
+    bool "generic"
+    help
+        Tests for generic data structures.
+
+config configKUNIT_HAL
+    bool "hal"
+    help
+        Tests for HAL.
+
+config configKUNIT_KSTRING
+    bool "kstring"
+    help
+        Tests for kstring library.
+
+endif

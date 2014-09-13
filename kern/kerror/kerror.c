@@ -41,7 +41,7 @@
 #include <sys/linker_set.h>
 #include <kerror.h>
 
-const char _kernel_panic_msg[19] = "Oops, Kernel panic";
+const char _kernel_panic_msg[19] = "Oops, Kernel panic\n";
 
 static ssize_t kerror_fdwrite(file_t * file, const void * buf, size_t count);
 

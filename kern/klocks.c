@@ -118,8 +118,10 @@ int _mtx_lock(mtx_t * mtx, char * whr)
             return -EWOULDBLOCK;
 
         if (ticket_mode) {
-            if (atomic_read(&(mtx->ticket.dequeue)) == ticket)
+            if (atomic_read(&(mtx->ticket.dequeue)) == ticket) {
+                mtx->mtx_lock = 1;
                 break;
+            }
 
             sched_current_thread_yield(0);
         } else {
@@ -127,7 +129,7 @@ int _mtx_lock(mtx_t * mtx, char * whr)
                 break;
         }
 
-#if configMP != 0
+#ifdef configMP
         cpu_wfe(); /* Sleep until event. */
 #endif
     }
@@ -194,9 +196,10 @@ int _mtx_trylock(mtx_t * mtx, char * whr)
     } else if (MTX_TYPE(mtx, MTX_TYPE_TICKET)) {
         int ticket = atomic_inc(&(mtx->ticket.queue));
 
-        if (atomic_read(&(mtx->ticket.dequeue)) == ticket)
+        if (atomic_read(&(mtx->ticket.dequeue)) == ticket) {
+            mtx->mtx_lock = 1;
             return 0; /* Got it */
-        else {
+        } else {
             atomic_dec(&(mtx->ticket.queue));
             return 1; /* No luck */
         }
@@ -231,14 +234,13 @@ void mtx_unlock(mtx_t * mtx)
 
     if (MTX_TYPE(mtx, MTX_TYPE_TICKET)) {
         atomic_inc(&(mtx->ticket.dequeue));
-    } else {
-        mtx->mtx_lock = 0;
     }
+    mtx->mtx_lock = 0;
 
     /* Restore priority ceiling. */
     priceil_restore(mtx);
 
-#if configMP != 0
+#ifdef configMP
     cpu_sev(); /* Wakeup cores possibly waiting for lock. */
 #endif
 }

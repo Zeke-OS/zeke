@@ -66,8 +66,8 @@ struct buf {
     int b_uflags;           /*!< Actual user space permissions and flags. */
 
     /* IO Buffer */
-    file_t b_file;          /*!< File descriptor for the buffered device. */
-    file_t b_devfile;       /*!< Device file descriptor. */
+    file_t b_file;          /*!< File descriptor for the buffered vnode. */
+    file_t b_devfile;       /*!< File descriptor for the buffered device. */
     size_t b_dirtyoff;      /*!< Offset in buffer of dirty region. */
     size_t b_dirtyend;      /*!< Offset of end of dirty region. */
 
@@ -121,6 +121,9 @@ typedef struct vm_ops {
 #define B_NOCOPY    0x00100     /*!< Don't copy-on-write this buf. */
 #define B_ASYNC     0x01000     /*!< Start I/O but don't wait for completion. */
 #define B_DELWRI    0x04000     /*!< Delayed write. */
+
+#define BUF_LOCK(bp)    mtx_lock(&(bp)->lock)
+#define BUF_UNLOCK(bp)  mtx_unlock(&(bp)->lock)
 
 int biobuf_compar(struct buf * a, struct buf * b);
 SPLAY_PROTOTYPE(bufhd_splay, buf, sentry_, biobuf_compar);
