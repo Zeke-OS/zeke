@@ -66,8 +66,7 @@ $(UNIFDEF):
 
 $(AUTOCONF_H): $(CONFIG_DIR)/buildconf.mk config
 	$(ROOT_DIR)/tools/aconf.sh $^ $@
-	if [ ! -d include/sys/mach/$(MACHIDIR) ]; then \
-		 include && ln -s sys/mach/$(MACHIDIR) machine; exit 0; fi
+	cd include && rm machine; ln -s sys/mach/$(MACHIDIR) machine
 
 $(CRT):
 	$(MAKE) -C $(CRT_DIR) all
