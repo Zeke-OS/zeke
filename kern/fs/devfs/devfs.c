@@ -109,6 +109,8 @@ int devfs_init(void)
     vn_devfs->sb->vdev_id = DEV_MMTODEV(DEVFS_MAJOR_NUM, 0);
     fs_register(&devfs_fs);
 
+    _devfs_create_specials();
+
     return 0;
 }
 

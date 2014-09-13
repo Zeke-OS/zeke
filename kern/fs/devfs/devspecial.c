@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    devnull.c
+ * @file    devspecial.c
  * @author  Olli Vanhoja
- * @brief   dev/null pseudo device.
+ * @brief   Special pseudo devices.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -38,6 +38,14 @@ static int devnull_read(struct dev_info * devnfo, off_t blkno,
                         uint8_t * buf, size_t bcount, int oflags);
 static int devnull_write(struct dev_info * devnfo, off_t blkno,
                          uint8_t * buf, size_t bcount, int oflags);
+static int devzero_read(struct dev_info * devnfo, off_t blkno,
+                        uint8_t * buf, size_t bcount, int oflags);
+static int devzero_write(struct dev_info * devnfo, off_t blkno,
+                         uint8_t * buf, size_t bcount, int oflags);
+static int devfull_read(struct dev_info * devnfo, off_t blkno,
+                        uint8_t * buf, size_t bcount, int oflags);
+static int devfull_write(struct dev_info * devnfo, off_t blkno,
+                         uint8_t * buf, size_t bcount, int oflags);
 
 struct dev_info devnull_info = {
     .dev_id = DEV_MMTODEV(1, 3),
@@ -48,17 +56,37 @@ struct dev_info devnull_info = {
     .write = devnull_write
 };
 
-int devnull_init(void) __attribute__((constructor));
-int devnull_init(void)
-{
-    SUBSYS_DEP(devfs_init);
-    SUBSYS_INIT("dev/null");
+struct dev_info devzero_info = {
+    .dev_id = DEV_MMTODEV(1, 5),
+    .drv_name = "memdev",
+    .dev_name = "zero",
+    .flags = DEV_FLAGS_MB_READ | DEV_FLAGS_MB_WRITE | DEV_FLAGS_WR_BT_MASK,
+    .read = devzero_read,
+    .write = devzero_write
+};
 
+struct dev_info devfull_info = {
+    .dev_id = DEV_MMTODEV(1, 7),
+    .drv_name = "memdev",
+    .dev_name = "full",
+    .flags = DEV_FLAGS_MB_READ | DEV_FLAGS_MB_WRITE | DEV_FLAGS_WR_BT_MASK,
+    .read = devfull_read,
+    .write = devfull_write
+};
+
+void _devfs_create_specials()
+{
     if (dev_make(&devnull_info, 0, 0, 0666, NULL)) {
         KERROR(KERROR_ERR, "Failed to init dev/null\n");
     }
 
-    return 0;
+    if (dev_make(&devzero_info, 0, 0, 0666, NULL)) {
+        KERROR(KERROR_ERR, "Failed to init dev/zero\n");
+    }
+
+    if (dev_make(&devfull_info, 0, 0, 0666, NULL)) {
+        KERROR(KERROR_ERR, "Failed to init dev/full\n");
+    }
 }
 
 static int devnull_read(struct dev_info * devnfo, off_t blkno,
@@ -71,4 +99,32 @@ static int devnull_write(struct dev_info * devnfo, off_t blkno,
                          uint8_t * buf, size_t bcount, int oflags)
 {
     return bcount;
+}
+
+static int devzero_read(struct dev_info * devnfo, off_t blkno,
+                        uint8_t * buf, size_t bcount, int oflags)
+{
+    memset(buf, '\0', bcount);
+
+    return bcount;
+}
+
+static int devzero_write(struct dev_info * devnfo, off_t blkno,
+                         uint8_t * buf, size_t bcount, int oflags)
+{
+    return bcount;
+}
+
+static int devfull_read(struct dev_info * devnfo, off_t blkno,
+                        uint8_t * buf, size_t bcount, int oflags)
+{
+    memset(buf, '\0', bcount);
+
+    return bcount;
+}
+
+static int devfull_write(struct dev_info * devnfo, off_t blkno,
+                         uint8_t * buf, size_t bcount, int oflags)
+{
+    return -ENOSPC;
 }

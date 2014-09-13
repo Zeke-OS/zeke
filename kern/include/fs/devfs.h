@@ -69,6 +69,8 @@ struct dev_info {
             void * arg, size_t arg_len);
 };
 
+void _devfs_create_specials(void);
+
 int dev_make(struct dev_info * devnfo, uid_t uid, gid_t gid, int perms,
         vnode_t ** result);
 
