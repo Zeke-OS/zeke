@@ -123,6 +123,10 @@ typedef struct vnode {
 #define VN_LOCK(vn) (mtx_lock(&(vn)->vn_lock))
 #define VN_TRYLOCK(vn) (mtx_trylock(&(vn)->vn_lock))
 #define VN_UNLOCK(vn) (mtx_unlock(&(vn)->vn_lock))
+/*
+ * Token indicating no attribute value yet assigned.
+ */
+#define VNOVAL  (-1)
 
 /**
  * File descriptor.
@@ -179,6 +183,7 @@ typedef struct fs_superblock {
     vnode_t * root;         /*!< Root of this fs mount. */
     vnode_t * mountpoint;   /*!< Mount point where this sb is mounted on.
                              *   (only vfs should touch this) */
+    vnode_t * sb_dev;       /*!< Device for the file system. */
 
     /**
      * Get the vnode struct linked to a vnode number.

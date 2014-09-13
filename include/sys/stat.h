@@ -57,6 +57,8 @@ struct stat {
     struct timespec st_atime;     /*!< Time of last access. */
     struct timespec st_mtime;     /*!< Time of last data modification. */
     struct timespec st_ctime;     /*!< Time of last status change. */
+    struct timespec st_birthtime; /*!< Time file created. */
+    fflags_t  st_flags;    /*!< User defined flags for file */
     blksize_t st_blksize;   /*!< A filesystem-specific preferred I/O block size
                                 for this object.  In some filesystem types, this
                                 may vary from file to file. */
@@ -73,7 +75,7 @@ struct stat {
 #define S_IFREG     0100000 /*!< Regular file. */
 #define S_IFDIR     0040000 /*!< Directory. */
 #define S_IFLNK     0120000 /*!< Symbolic link. */
-#define S_IFSOCK    0140000 /*!< Socked. */
+#define S_IFSOCK    0140000 /*!< Socket. */
 /* File mode bits: */
 #define S_IRWXU (S_IRUSR | S_IWUSR | S_IXUSR) /*!< Mask for file owner permissions. */
 #define S_IRUSR     0000400 /*!< Owner has read permission. */
@@ -105,6 +107,34 @@ struct stat {
 #define S_ISLNK(m) (((m) & S_IFMT) == S_IFLNK)
 /** Test for a socked. */
 #define S_ISSOCK(m) (((m) & S_IFMT) == S_IFSOCK)
+
+/*
+ * Definitions of flags stored in file flags word.
+ * Super-user and owner changeable flags.
+ */
+#define UF_SETTABLE     0x0000ffff  /* Mask of owner changeable flags. */
+#define UF_NODUMP       0x00000001  /* Do not dump file. */
+#define UF_IMMUTABLE    0x00000002  /* File may not be changed. */
+#define UF_APPEND       0x00000004  /* Writes to file may only append. */
+#define UF_OPAQUE       0x00000008  /* Directory is opaque wrt. union. */
+#define UF_NOUNLINK     0x00000010  /* File may not be removed or renamed. */
+#define UF_SYSTEM       0x00000080  /* Windows system file bit. */
+#define UF_SPARSE       0x00000100  /* Sparse file. */
+#define UF_OFFLINE      0x00000200  /* File is offline. */
+#define UF_REPARSE      0x00000400  /* Windows reparse point file bit. */
+#define UF_ARCHIVE      0x00000800  /* File needs to be archived. */
+#define UF_READONLY     0x00001000  /* Windows readonly file bit. */
+#define UF_HIDDEN       0x00008000  /* File is hidden. */
+
+/*
+ * Super-user changeable flags.
+ */
+#define SF_SETTABLE     0xffff0000  /*!< Mask of superuser changeable flags. */
+#define SF_ARCHIVED     0x00010000  /*!< File is archived. */
+#define SF_IMMUTABLE    0x00020000  /*!< File may not be changed. */
+#define SF_APPEND       0x00040000  /*!< Writes to file may only append. */
+#define SF_NOUNLINK     0x00100000  /*!< file may not be removed or renamed. */
+#define SF_SNAPSHOT     0x00200000  /*!< Snapshot inode. */
 
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS

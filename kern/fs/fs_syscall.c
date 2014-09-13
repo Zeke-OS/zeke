@@ -292,7 +292,7 @@ static int sys_getdents(void * user_args)
 
     /*
      * This is a bit tricky, if we are here for the first time there should be a
-     * magic value 0x00000000FFFFFFFF set to seek_pos but we can't do a thing if
+     * magic value DSEEKPOS_MAGIC set to seek_pos but we can't do a thing if
      * fildes was initialized incorrectly, so lets cross our fingers.
      */
     d.d_off = fildes->seek_pos;

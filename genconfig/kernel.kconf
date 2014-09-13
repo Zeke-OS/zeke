@@ -242,11 +242,29 @@ config MBR_DEBUG
     depends on configMBR
 
 config configRAMFS
-    bool "RAMFS"
+    bool "ramfs"
     default y
     help
         Compile ramfs with Zeke base.
-    depends on y
+
+config configDEVFS
+    bool "devfs"
+    default y
+    select configRAMFS
+
+menuconfig configMSDOSFS
+    bool "MSDOSFS"
+    default n
+
+if configMSDOSFS
+
+config configMSDOSFS_DEBUG
+    bool "MSDOSFS debug"
+    default n
+    help
+        MSDOSFS debugging.
+
+endif
 
 endmenu
 

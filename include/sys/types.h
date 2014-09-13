@@ -54,6 +54,7 @@ typedef int id_t; /*!< Used as a general identifier; can be used to contain at
 #define id_t id_t
 typedef uint64_t ino_t; /*!< Used for file serial numbers.*/
 typedef uint32_t key_t; /*!< Used for XSI interprocess communication. */
+typedef uint32_t fflags_t;     /*!< file flags */
 #ifndef _MODE_T_DECLARED
 typedef int mode_t; /*!< Used for some file attributes. */
 #define _MODE_T_DECLARED

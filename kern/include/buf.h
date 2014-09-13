@@ -67,6 +67,7 @@ struct buf {
 
     /* IO Buffer */
     file_t b_file;          /*!< File descriptor for the buffered device. */
+    file_t b_devfile;       /*!< Device file descriptor. */
     size_t b_dirtyoff;      /*!< Offset in buffer of dirty region. */
     size_t b_dirtyend;      /*!< Offset of end of dirty region. */
 

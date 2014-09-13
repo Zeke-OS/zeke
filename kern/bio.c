@@ -46,7 +46,8 @@ static mtx_t cache_lock;            /* Used to protect access caching data
                                      * to some functions. */
 static struct llist * relse_list;  /* Released buffers list. */
 
-static inline void bio_writeout(struct buf * bp);
+static void bio_readin(struct buf * bp);
+static void bio_writeout(struct buf * bp);
 static void bl_brelse(struct buf * bp);
 static int biowait_timo(struct buf * bp, long timeout);
 static void bio_clean(int freebufs);
@@ -110,16 +111,39 @@ int  breadn(vnode_t * vnode, size_t blkno, int size, size_t rablks[],
     return -ENOTSUP;
 }
 
-/*
- * It's a good idea to have lock on bp before calling this function.
- */
-static inline void bio_writeout(struct buf * bp)
+static void bio_readin(struct buf * bp)
 {
     file_t * file = &bp->b_file;
 
+    /*
+     * If we have a separate device file associated with the buffer we should
+     * use it.
+     */
+    if (bp->b_devfile.vnode)
+        file = &bp->b_devfile;
+
     file->seek_pos = bp->b_blkno;
-    file->vnode->vnode_ops->write(file, (void *)bp->b_data,
-                                  bp->b_bcount);
+    file->vnode->vnode_ops->read(file, (void *)bp->b_data, bp->b_bcount);
+
+    bp->b_flags |= B_DONE;
+}
+
+/*
+ * It's a good idea to have lock on bp before calling this function.
+ */
+static void bio_writeout(struct buf * bp)
+{
+    file_t * file = &bp->b_file;
+
+    /*
+     * If we have a separate device file associated with the buffer we should
+     * use it.
+     */
+    if (bp->b_devfile.vnode)
+        file = &bp->b_devfile;
+
+    file->seek_pos = bp->b_blkno;
+    file->vnode->vnode_ops->write(file, (void *)bp->b_data, bp->b_bcount);
 
     bp->b_flags |= B_DONE;
 }
@@ -218,18 +242,34 @@ static struct buf * create_blk(vnode_t * vnode, size_t blkno, size_t size,
 {
     struct buf * bp = geteblk(size);
     struct file file;
+    struct file devfile;
 
     if (!bp)
         return NULL;
 
     bp->b_blkno = blkno;
+
+    /* fd for the file */
     file.vnode = vnode;
-    file.seek_pos = blkno;
     file.oflags = O_RDWR;
     file.refcount = 1;
     file.stream = NULL;
 
+    /* fd for the device */
+    if (!S_ISBLK(vnode->vn_mode) && !S_ISCHR(vnode->vn_mode)) {
+        if (file.vnode->sb && file.vnode->sb->sb_dev)
+            devfile.vnode = file.vnode->sb->sb_dev;
+        else
+            panic("file->vnode->sb->sb_dev not set");
+    } else {
+        panic("vn file type not supported"); /* TODO */
+    }
+    devfile.oflags = O_RDWR;
+    devfile.refcount = 1;
+    devfile.stream = NULL;
+
     bp->b_file = file;
+    bp->b_devfile = devfile;
     mtx_init(&bp->b_file.lock, MTX_TYPE_SPIN);
 
     VN_LOCK(vnode);

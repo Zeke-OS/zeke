@@ -4,7 +4,7 @@ base-SRC-y += $(wildcard fs/*.c)
 base-SRC-$(configVFS_HASH) += $(wildcard fs/vfs_hash/*.c)
 
 # devfs
-base-SRC-y += $(wildcard fs/devfs/*.c)
+base-SRC-$(configDEVFS) += $(wildcard fs/devfs/*.c)
 # mbr
 base-SRC-$(configMBR) += $(wildcard fs/mbr/*.c)
 # ramfs

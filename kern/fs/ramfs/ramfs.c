@@ -659,7 +659,7 @@ int ramfs_stat(vnode_t * vnode, struct stat * buf)
     buf->st_nlink   = inode->in_nlink;
     buf->st_uid     = inode->in_uid;
     buf->st_gid     = inode->in_gid;
-    buf->st_rdev    = 0;
+    buf->st_rdev    = VNOVAL;
     buf->st_size    = vnode->vn_len;
     buf->st_atime   = inode->in_atime;
     buf->st_mtime   = inode->in_mtime;
