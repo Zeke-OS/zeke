@@ -257,22 +257,28 @@ static uintptr_t get_ksect_addr(size_t region_size)
     return retval;
 }
 
+/**
+ * Get a special block that has a mapping in ksect area as well as regular
+ * mapping in kernel space.
+ * This buffer can be used, for example, to access memory mapped hardware
+ * by setting strongly orderd access to control. Regular buffers may miss
+ * newly written data due to CPU caching.
+ */
 struct buf * geteblk_special(size_t size, uint32_t control)
 {
     struct proc_info * p = proc_get_struct(0);
-    const uintptr_t paddr = get_ksect_addr(size);
+    const uintptr_t kvaddr = get_ksect_addr(size);
     struct vm_pt * vpt;
     struct buf * buf;
 
-    if (!p)
-        panic("Can't get the PCB of pid 0");
+    KASSERT(p, "Can't get the PCB of pid 0");
 
-    if (paddr == 0)
+    if (kvaddr == 0)
         return NULL;
 
-    buf = proc_newsect(paddr, size, VM_PROT_READ | VM_PROT_WRITE);
+    buf = proc_newsect(kvaddr, size, VM_PROT_READ | VM_PROT_WRITE);
     if (!buf)
-        return buf;
+        return NULL;
 
     buf->b_mmu.control = control;
 
@@ -286,7 +292,7 @@ struct buf * geteblk_special(size_t size, uint32_t control)
     vm_map_region(buf, vpt);
     vm_add_region(&p->mm, buf);
 
-    buf->b_data = buf->b_mmu.vaddr;
+    buf->b_data = buf->b_mmu.vaddr; /* Should be same as kvaddr */
 
     return buf;
 }

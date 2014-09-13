@@ -193,7 +193,7 @@ static mblock_t * find_mblock(mblock_t ** last, size_t size)
     mblock_t * b = kmalloc_base;
 
     do {
-#if 0
+#ifdef configKMALLOC_DEBUG
         if (b->ptr == 0) {
             printf("Invalid mblock: p = %p sign = %x\n", b->ptr, b->signature);
             b = 0;
@@ -267,7 +267,6 @@ out:
  */
 static int valid_addr(void * p)
 {
-#define PRINT_VALID 0
 #define ADDR_VALIDATION (p == (get_mblock(p)->ptr) \
         && get_mblock(p)->signature == KM_SIGNATURE_VALID)
     int retval = 0;
@@ -278,7 +277,7 @@ static int valid_addr(void * p)
     /* TODO what if get_mblock returns invalid address? */
     if (kmalloc_base) { /* If base is not set it's impossible that we would have
                          * any allocated blocks. */
-#if PRINT_VALID != 0
+#ifdef configKMALLOC_DEBUG
         if ((retval = ADDR_VALIDATION)) { /* Validation. */
             printf("VALID\n");
         } else {

@@ -1363,7 +1363,7 @@ sub process {
 # Check for incorrect file permissions
 		if ($line =~ /^new (file )?mode.*[7531]\d{0,2}$/) {
 			my $permhere = $here . "FILE: $realfile\n";
-			if ($realfile =~ /(Makefile|Kconfig|\.c|\.cpp|\.h|\.S|\.tmpl)$/) {
+			if ($realfile =~ /(Makefile|Kconfig|\.kconf|\.c|\.cpp|\.h|\.S|\.tmpl)$/) {
 				ERROR("do not set execute permissions for source files\n" . $permhere);
 			}
 		}
@@ -1431,7 +1431,7 @@ sub process {
 # check for Kconfig help text having a real description
 # Only applies when adding the entry originally, after that we do not have
 # sufficient context to determine whether it is indeed long enough.
-		if ($realfile =~ /Kconfig/ &&
+		if ($realfile =~ /(Kconfig|.*\.kconf)/ &&
 		    $line =~ /\+\s*(?:---)?help(?:---)?$/) {
 			my $length = 0;
 			my $cnt = $realcnt;

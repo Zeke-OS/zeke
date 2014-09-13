@@ -72,7 +72,7 @@ int mmu_init(void)
 
     uint32_t value, mask;
 
-#if configMP != 0
+#ifdef configMP
     mmu_lock_init();
     mtx_init(&_pfrc_lock, MTX_TYPE_SPIN);
 #endif
@@ -169,7 +169,7 @@ int mmu_ptcpy(mmu_pagetable_t * dest, const mmu_pagetable_t * src)
  */
 void mmu_pf_event(void)
 {
-#if configMP != 0
+#ifdef configMP
     /* By using spinlock here there should be no risk of deadlock because even
      * that this event is basically called only when one core is in interrupts
      * disabled state the call should not ever nest. If it nests something
@@ -180,7 +180,7 @@ void mmu_pf_event(void)
 
     _pf_raw_count++;
 
-#if configMP != 0
+#ifdef configMP
     mtx_unlock(&_pfrc_lock);
 #endif
 }

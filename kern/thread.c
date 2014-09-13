@@ -82,7 +82,7 @@ void sched_handler(void)
      */
     sched_schedule();
     if (current_thread != prev_thread) {
-#if 0
+#ifdef configSCHED_DEBUG
         char buf[80];
         ksprintf(buf, sizeof(buf), "%x\n", current_thread->kstack_region);
         KERROR(KERROR_DEBUG, buf);
@@ -142,7 +142,7 @@ void thread_init(struct thread_info * tp, pthread_t thread_id,
     if (tp->flags & SCHED_IN_USE_FLAG)
         panic("Can't init thread that is already in use.\n");
 
-#if configSCHED_TINY != 0
+#ifdef configSCHED_TINY
     memset(tp, 0, sizeof(struct thread_info));
 #endif
 
@@ -235,10 +235,8 @@ pthread_t thread_fork(void)
     threadInfo_t tmp;
     pthread_t new_id;
 
-#if configDEBUG >= KERROR_DEBUG
-    if (old_thread == 0) {
-        panic("current_thread not set\n");
-    }
+#ifdef configSCHED_DEBUG
+    KASSERT(old_thread, "current_thread not set\n");
 #endif
 
     /* Get next free thread_id */
@@ -325,9 +323,8 @@ static void thread_init_kstack(threadInfo_t * tp)
 {
     struct buf * kstack;
 
-#if configDEBUG >= KERROR_DEBUG
-    if (!tp)
-        panic("tp not set\n");
+#ifdef configSCHED_DEBUG
+    KASSERT(tp, "tp not set\n");
 #endif
 
     /* Create kstack */

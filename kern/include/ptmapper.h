@@ -38,33 +38,42 @@
 #ifndef PTMAPPER_H
 #define PTMAPPER_H
 
+#include <autoconf.h>
 #include <hal/mmu.h>
 #include <vm/vm.h>
 
 /* Kernel memory map **********************************************************/
 /* page table area */
-#define PTMAPPER_PT_START       0x00100000
-#define PTMAPPER_PT_END         0x002FFFFF
+#ifdef configPT_AREA_START
+#define PTMAPPER_PT_START       configPT_AREA_START
+#define PTMAPPER_PT_END         configPT_AREA_END
+#endif
 
-#define MMU_VADDR_KSTACK_START  0x00001000
-#define MMU_VADDR_KSTACK_END    0x00007fff
+#ifdef configKSTACK_START
+#define MMU_VADDR_KSTACK_START  configKSTACK_START
+#define MMU_VADDR_KSTACK_END    configKSTACK_END
+#endif
 
 /** TKSTACK is a thread local kernel mode stack and its NOT mapped 1:1 unlike
  * other regions defined here. */
-#define MMU_VADDR_TKSTACK_START 0x00000000
-#define MMU_VADDR_TKSTACK_END   0x00000fff
+#ifdef configTKSTACK_START
+#define MMU_VADDR_TKSTACK_START configTKSTACK_START
+#define MMU_VADDR_TKSTACK_END   configTKSTACK_END
+#endif
 
-#define MMU_VADDR_KERNEL_START  0x00008000
-#define MMU_VADDR_KERNEL_END    0x000FFFFF
+#ifdef configKERNEL_START
+#define MMU_VADDR_KERNEL_START  configKERNEL_START
+#define MMU_VADDR_KERNEL_END    configKERNEL_END
+#endif
 #if 0
 #define MMU_VADDR_SHARED_START  0x00080000
 #define MMU_VADDR_SHARED_END    0x000FFFFF /* 1M; End of system page table */
 #endif
 /**
  * Begining of dynmem area.
- * TODO check if this is ok?
  */
-#define MMU_VADDR_DYNMEM_START  0x00300000
+#ifdef configDYNMEM_START
+#define MMU_VADDR_DYNMEM_START  configDYNMEM_START
 /**
  * End of dynmem area.
  * TODO should match end of physical memory at least
@@ -73,15 +82,20 @@
  * but not here because this is used for some statical
  * allocations.
  */
-#define MMU_VADDR_DYNMEM_END    0x00FFFFFF
+#define MMU_VADDR_DYNMEM_END    configDYNMEM_END
+#endif
 
 /* TODO These shouldn't be here actually */
+#ifdef configBCM2835
 #define MMU_VADDR_RPIHW_START   0x20000000
 #define MMU_VADDR_RPIHW_END     0x20FFFFFF
+#endif
 
 /* Kernel dynamic sections */
-#define MMU_VADDR_KSECT_START   0x30000000
-#define MMU_VADDR_KSECT_END     0x50000000
+#ifdef configKSECT_START
+#define MMU_VADDR_KSECT_START   configKSECT_START
+#define MMU_VADDR_KSECT_END     configKSECT_END
+#endif
 /* End of Kernel memory map ***************************************************/
 
 /* Page Table Region Macros ***************************************************/

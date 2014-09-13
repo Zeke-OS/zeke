@@ -9,9 +9,13 @@ config configARM_PROFILE_M
     bool "M"
 endchoice
 
+# select if MP capable core or instruction set
+config configHAVE_MP_CAP
+    bool
+
 choice
     prompt "Arch"
-    help
+    ---help---
         For historical reasons we will detect the processor core model mainly by
         its architecture version. Also profile identification is used for newer
         models and complete model number for some very vendor/model specific
@@ -25,6 +29,7 @@ config __ARM6__
     bool "ARMv6"
 config __ARM6K__
     bool "ARMv6K"
+    select configHAVE_MP_CAP
 config __ARM6M__
     bool "ARMv6M"
     depends on configARM_PROFILE_M

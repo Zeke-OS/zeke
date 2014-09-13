@@ -5,12 +5,22 @@ menu "HW features"
 config configATAG
     bool "Support bootloader ATAGs"
     default y
-    help
-        blah blah.
+    ---help---
+        Linux ATAGs support. ATAGs are used to describe the current hardware
+        configuration on some systems where a Linux compatible bootloader is
+        involved.
+
+        If unsure, say Y.
 
 config configMP
     bool "Enable MP support"
     default n
+    depends on configHAVE_MP_CAP
+    ---help---
+        Selecting configMP enables some MP safeguards but doesn't break anything
+        even if MP is not actually supported on the hardware.
+
+        If unsure, say Y.
 
 config configMMU
     bool "MMU support"
@@ -28,8 +38,8 @@ config configUART_MAX_PORTS
 
 endif
 
-menuconfig configFB 
-    bool "Enable Frame Buffer support"
+menuconfig configFB
+    bool "Frame Buffer support"
     default n
 
 if configFB
@@ -62,7 +72,7 @@ config configBCM_JTAG
 config configBCM_FB
     bool "BCM2835 FB"
     default n
-    depends on configBCM_MB
+    depends on configBCM2835 && configBCM_MB
 
 endmenu
 
@@ -109,7 +119,7 @@ config configDEF_KLOGGER
     int "Default klogger method"
     range 0 3
     default 2
-    help
+    ---help---
         0 = No logger
         1 = Kerror buffer
         2 = UART0
@@ -122,22 +132,83 @@ config configDEBUG_CRIT
     bool "Normal build"
 config configDEBUG_ERR
     bool "Errors"
-    help
+    ---help---
         Additional error messages and asserts for serious errors that should not
         occur in normal operation.
 config configDEBUG_WARN
     bool "Additional warnings."
 config configDEBUG_INFO
     bool "Additional information"
-    help
+    ---help---
         Additional information on warnings and errors.
 config configDEBUG_DEBUG
     bool "Debug messages"
-    help
+    ---help---
         All debug messages and asserts.
 endchoice
 
 endif
+
+
+menu "Memory Map"
+
+config configPT_AREA_START
+    hex "Page table area start"
+    default 0x00100000
+    depends on configMMU
+
+config configPT_AREA_END
+    hex "Page table area end"
+    default 0x002FFFFF
+    depends on configMMU
+
+config configKSTACK_START
+    hex "kstack start"
+    default 0x00001000
+
+config configKSTACK_END
+    hex "kstack end"
+    default 0x00007fff
+
+config configTKSTACK_START
+    hex "tkstack vaddr start"
+    default 0x00000000
+    depends on configMMU
+
+config configTKSTACK_END
+    hex "tkstack vaddr end"
+    default 0x00000fff
+    depends on configMMU
+
+config configKERNEL_START
+    hex "kernel caddr start"
+    default 0x00008000
+
+config configKERNEL_END
+    hex "kernel caddr end"
+    default 0x000FFFFF
+
+config configDYNMEM_START
+    hex "dynmem start"
+    default 0x00300000
+
+config configDYNMEM_END
+    hex "dynmem end"
+    default 0x00FFFFFF
+
+config configKSECT_START
+    hex "ksect start"
+    default 0x30000000
+    ---help---
+        Ksects, kernel dynamic virtual sections, are mainly mainly used to
+        access memory mapped IO by using strongly ordered access on
+        the virtual ksect address.
+
+config configKSECT_END
+    hex "ksect end"
+    default 0x50000000
+
+endmenu
 
 
 menu "Thread Scheduling"
@@ -151,7 +222,7 @@ config configSCHED_CDS
     bool "sched_cds"
 endchoice
 
-config configSCHED_HZ 
+config configSCHED_HZ
     int "Scheduler frequency in Hz."
     default 100
     range 5 1000
@@ -165,10 +236,19 @@ config configSCHED_LAVGPERIOD_11SEC
     bool "11 sec"
 endchoice
 
+config configSCHED_DEBUG
+    bool "Thread scheduler debugging"
+    default n
+    ---help---
+        Enable debugging invariants and messages in thread scheduling related
+        functions.
+
 if configSCHED_TINY
 config configSCHED_MAX_THREADS
-    int "Maximum number of threads."
+    int "Maximum number of threads"
     default 10
+    ---help---
+        sched_tiny supports only a fixed number of threads in execution.
 endif
 
 if configSCHED_CDS
@@ -185,14 +265,16 @@ menu "Processes"
 config configMAXPROC
     int "maxproc"
     default 5
-    help
+    ---help---
         Default maximum number of processes.
 
 config configPROC_DEBUG
     bool "Proc debug"
     default n
-    help
-        Process subsystem debugging.
+    ---help---
+        Process subsystem debugging. This knob adds more invariants that cause
+        a performance hit as well as print a lot of useles debug messages to
+        the klogging facility.
 
 endmenu
 
@@ -202,32 +284,38 @@ config configTIMERS_MAX
     int "Maximum number of kernel timers"
     default 16
     range 15 65535
-    help 
+    ---help---
         Maximum number of timers available.
 
 config configUSRINIT_SSIZE
     int "init stack size"
     default 8192
-    help
+    ---help---
         Stack size for init process main() thread.
 
 config configUSRINIT_PRI
     int "init priority"
     default 0
-    help
+    ---help---
         Priority of usrinit thread.
 
 config configBIO_DEBUG
     bool "bio debugging"
     default n
-    help
+    ---help---
         Enable bio/buf debug messages and additional asserts.
 
 config configLOCK_DEBUG
     bool "klock debugging"
     default n
-    help
+    ---help---
         Debug kernel locks.
+
+config configKMALLOC_DEBUG
+    bool "kmalloc debugging"
+    default n
+    ---help---
+        Debug kmalloc.
 
 endmenu
 
@@ -237,7 +325,7 @@ menu "File Systems"
 config configVFS_HASH
     bool "VFS Hash"
     default n
-    help
+    ---help---
         A vnode hashmap for file systems that have to cache vnode data in-core.
 
 menuconfig configMBR
@@ -252,7 +340,7 @@ config MBR_DEBUG
 config configRAMFS
     bool "ramfs"
     default y
-    help
+    ---help---
         Compile ramfs with Zeke base.
 
 config configDEVFS
@@ -267,13 +355,20 @@ menu "Library routines"
 
 config configSTRING_OPT_SIZE
     bool "Optimize string functions for size"
-    help
+    ---help---
         Optimize string functions for speed or size.
 
 endmenu
 
 menuconfig configKUNIT
     bool "In-Kernel Unit Tests"
+    ---help---
+        KUnit is a port of PUnit for in-kernel testing. KUnit is only needed
+        if you are willing to run those tests. In-kernel tests may cause
+        serious stability issues or crash the kernel.
+        Tests are exported under sysctl debug.test tree and can be executed
+        by writing to a test node. Test log is then written to the kernel
+        logging facility.
 
 if configKUNIT
 config configKUNIT_REPORT_ORIENTED
@@ -281,27 +376,27 @@ config configKUNIT_REPORT_ORIENTED
 
 config configKUNIT_BIO
     bool "bio"
-    help
+    ---help---
         Tests for buffered IO.
 
 config configKUNIT_FS
     bool "fs"
-    help
+    ---help---
         Tests for vfs and filesystems.
 
 config configKUNIT_GENERIC
     bool "generic"
-    help
+    ---help---
         Tests for generic data structures.
 
 config configKUNIT_HAL
     bool "hal"
-    help
+    ---help---
         Tests for HAL.
 
 config configKUNIT_KSTRING
     bool "kstring"
-    help
+    ---help---
         Tests for kstring library.
 
 endif
