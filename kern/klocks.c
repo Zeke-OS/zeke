@@ -189,14 +189,28 @@ int _mtx_trylock(mtx_t * mtx, char * whr)
 {
     int retval;
 
-    if (!MTX_TYPE(mtx, MTX_TYPE_SPIN)) {
+    if (MTX_TYPE(mtx, MTX_TYPE_SPIN)) {
+        retval = test_and_set((int *)(&(mtx->mtx_lock)));
+    } else if (MTX_TYPE(mtx, MTX_TYPE_TICKET)) {
+        int ticket = atomic_inc(&(mtx->ticket.queue));
+
+        if (atomic_read(&(mtx->ticket.dequeue)) == ticket)
+            return 0; /* Got it */
+        else {
+            atomic_dec(&(mtx->ticket.queue));
+            return 1; /* No luck */
+        }
+    } else {
 #ifdef configLOCK_DEBUG
-        KERROR(KERROR_ERR, "mtx_trylock() is only supported for MTX_TYPE_SPIN");
+        char msgbuf[120];
+
+        ksprintf(msgbuf, sizeof(msgbuf),
+                 "mtx_trylock() not supported for this lock type (%s)",
+                 whr);
+        KERROR(KERROR_ERR, msgbuf);
 #endif
         return -ENOTSUP;
     }
-
-    retval = test_and_set((int *)(&(mtx->mtx_lock)));
 
     /* Handle priority ceiling. */
     priceil_set(mtx);
