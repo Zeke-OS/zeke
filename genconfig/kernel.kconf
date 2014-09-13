@@ -260,20 +260,6 @@ config configDEVFS
     default y
     select configRAMFS
 
-menuconfig configMSDOSFS
-    bool "MSDOSFS"
-    default n
-
-if configMSDOSFS
-
-config configMSDOSFS_DEBUG
-    bool "MSDOSFS debug"
-    default n
-    help
-        MSDOSFS debugging.
-
-endif
-
 endmenu
 
 
