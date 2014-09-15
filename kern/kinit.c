@@ -244,7 +244,7 @@ void exec_initfn(int (*fn)(void))
     err = fn();
 
     if (err == 0)
-        kputs("\t\t\t\tOK\n");
+        kputs("\r\t\t\t\tOK\n");
     else if (err != -EAGAIN)
-        kputs("\t\t\t\tFAILED\n");
+        kputs("\r\t\t\t\tFAILED\n");
 }
