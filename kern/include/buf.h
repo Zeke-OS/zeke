@@ -204,6 +204,13 @@ struct buf * getblk(vnode_t * vnode, size_t blkno, size_t size, int slptimeo);
  */
 struct buf * geteblk(size_t size);
 
+/**
+ * Get a special block that has a mapping in ksect area as well as regular
+ * mapping in kernel space.
+ * This buffer can be used, for example, to access memory mapped hardware
+ * by setting strongly orderd access to control. Regular buffers may miss
+ * newly written data due to CPU caching.
+ */
 struct buf * geteblk_special(size_t size, uint32_t control);
 
 /**
@@ -245,6 +252,8 @@ void biodone(struct buf * bp);
  * @return  Returns 0 if IO was complete; In case of IO error -EIO.
  */
 int biowait(struct buf * bp);
+
+int bio_geterror(struct buf * bp);
 
 /**
  * Clone a vregion.

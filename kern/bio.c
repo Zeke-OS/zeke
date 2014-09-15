@@ -168,7 +168,7 @@ int bwrite(struct buf * bp)
     if(!(vnode && vnode->vnode_ops && vnode->vnode_ops->write)) {
         BUF_LOCK(bp);
         bp->b_flags |= B_ERROR;
-        bp->b_error |= -EIO;
+        bp->b_error = -EIO;
         BUF_UNLOCK(bp);
 
         return -EIO;
@@ -178,6 +178,7 @@ int bwrite(struct buf * bp)
     flags = bp->b_flags;
     bp->b_flags &= ~(B_DONE | B_ERROR | B_ASYNC | B_DELWRI);
     bp->b_flags |= B_BUSY;
+    bp->b_error = 0;
     BUF_UNLOCK(bp);
 
     /* TODO Use dirty offsets */
@@ -380,6 +381,10 @@ void biodone(struct buf * bp)
 {
     BUF_LOCK(bp);
 
+#ifdef configBIO_DEBUG
+    KASSERT(bp->b_flags & B_DONE, "dup biodone");
+#endif
+
     bp->b_flags |= B_DONE;
 
     if (bp->b_flags & B_ASYNC)
@@ -452,6 +457,24 @@ static void bio_clean(int freebufs)
 
 out:
     mtx_unlock(&cache_lock);
+}
+
+int bio_geterror(struct buf * bp)
+{
+    int error = 0;
+
+    BUF_LOCK(bp);
+
+    if (bp->b_flags & B_ERROR) {
+        if (bp->b_error != 0)
+            error = bp->b_error;
+        else
+            error = -EIO;
+    }
+
+    BUF_UNLOCK(bp);
+
+    return error;
 }
 
 static void bio_idle_task(void)

@@ -257,13 +257,6 @@ static uintptr_t get_ksect_addr(size_t region_size)
     return retval;
 }
 
-/**
- * Get a special block that has a mapping in ksect area as well as regular
- * mapping in kernel space.
- * This buffer can be used, for example, to access memory mapped hardware
- * by setting strongly orderd access to control. Regular buffers may miss
- * newly written data due to CPU caching.
- */
 struct buf * geteblk_special(size_t size, uint32_t control)
 {
     struct proc_info * p = proc_get_struct(0);
