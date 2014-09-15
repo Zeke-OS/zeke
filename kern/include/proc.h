@@ -134,12 +134,6 @@ typedef struct proc_info {
     struct signals sigs;        /*!< Signals. */
 } proc_info_t;
 
-/* Proc dab handling error codes */
-#define PROC_DABERR_NOPROC  1
-#define PROC_DABERR_INVALID 2
-#define PROC_DABERR_PROT    3
-#define PROC_DABERR_ENOMEM  4
-
 extern int maxproc;                 /*!< Maximum # of processes, set. */
 extern int act_maxproc;             /*!< Effective maxproc. */
 extern int nprocs;                  /*!< Current # of procs. */
