@@ -5,7 +5,8 @@
  * @brief   Types and definitions for syscalls.
  * @section LICENSE
  * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+ * Copyright (c) 2012, 2013 Ninjaware Oy,
+ *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,6 +38,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <sys/types.h>
 #include <pthread.h>
 #include <time.h>
 #include <sys/stat.h>
@@ -211,6 +213,33 @@ struct _ioctl_get_args {
     void * arg;
     size_t arg_len;
 };
+
+struct _ds_proc_credctl {
+    /**
+     * get/set mask.
+     * | SBZ | sgid | egid | rgid | SBZ | suid | euid | ruid |
+     *      7      6      5      4     3      2      1      0
+     *
+     * 0 = only get
+     * 1 = set and get
+     */
+    unsigned mask;
+
+    /* uids and gids */
+    uid_t ruid;
+    uid_t euid;
+    uid_t suid;
+    gid_t rgid;
+    gid_t egid;
+    gid_t sgid;
+};
+
+#define PROC_CREDCTL_RUID 0x01
+#define PROC_CREDCTL_EUID 0x02
+#define PROC_CREDCTL_SUID 0x04
+#define PROC_CREDCTL_RGID 0x10
+#define PROC_CREDCTL_EGID 0x20
+#define PROC_CREDCTL_SGID 0x40
 
 /** Arguments struct for SYSCALL_PROC_GETBREAK */
 struct _ds_getbreak {

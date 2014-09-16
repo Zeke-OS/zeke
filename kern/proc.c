@@ -509,9 +509,33 @@ int proc_replace(pid_t pid, struct buf * (*regions)[], int nr_regions)
     return 0; /* Never returns */
 }
 
-static uintptr_t procsys_wait(void * p)
+/* Syscall handlers ***********************************************************/
+
+static int sys_proc_exec(void * user_args)
+{
+    set_errno(ENOSYS); /* note: can only return EAGAIN or ENOMEM */
+    return -1;
+}
+
+static int sys_proc_fork(void * user_args)
+{
+    pid_t pid = proc_fork(current_process_id);
+    if (pid < 0) {
+        set_errno(-pid);
+        return -1;
+    } else {
+        return pid;
+    }
+}
+
+static int sys_proc_wait(void * user_args)
 {
     pid_t pid_child;
+
+    if (!useracc(user_args, sizeof(pid_t), VM_PROT_WRITE)) {
+        set_errno(EFAULT);
+        return -1;
+    }
 
     if (!curproc->inh.first_child) {
         /* The calling process has no existing unwaited-for child
@@ -519,6 +543,7 @@ static uintptr_t procsys_wait(void * p)
         set_errno(ECHILD);
         return -1;
     }
+
     pid_child = curproc->inh.first_child->pid;
 
     /* curproc->state = PROC_STATE_WAITING needs some other flag? */
@@ -528,102 +553,203 @@ static uintptr_t procsys_wait(void * p)
          * eg. signal received */
     }
 
-    if (!useracc(p, sizeof(pid_t), VM_PROT_WRITE)) {
-        /* TODO Signal */
-        return -1;
-    }
-
-    copyout(&curproc->inh.first_child->exit_code, p, sizeof(int));
+    copyout(&curproc->inh.first_child->exit_code, user_args, sizeof(int));
 
     proc_remove(pid_child);
     return (uintptr_t)pid_child;
 }
 
-intptr_t proc_syscall(uint32_t type, void * p)
+static int sys_proc_exit(void * user_args)
 {
-    switch (type) {
-    case SYSCALL_PROC_EXEC: /* note: can only return EAGAIN or ENOMEM */
-        set_errno(ENOSYS);
-        return -1;
+    curproc->exit_code = get_errno();
+    sched_thread_detach(current_thread->id);
+    thread_die(curproc->exit_code);
 
-    case SYSCALL_PROC_FORK:
-    {
-        pid_t pid = proc_fork(current_process_id);
-        if (pid < 0) {
-            set_errno(-pid);
-            return -1;
-        } else {
-            return pid;
-        }
-    }
-
-    case SYSCALL_PROC_WAIT:
-        return procsys_wait(p);
-
-    case SYSCALL_PROC_EXIT:
-        curproc->exit_code = get_errno();
-        sched_thread_detach(current_thread->id);
-        thread_die(curproc->exit_code);
-        return 0; /* Never reached */
-
-    case SYSCALL_PROC_GETUID:
-        set_errno(ENOSYS);
-        return -5;
-
-    case SYSCALL_PROC_GETEUID:
-        set_errno(ENOSYS);
-        return -6;
-
-    case SYSCALL_PROC_GETGID:
-        set_errno(ENOSYS);
-        return -7;
-
-    case SYSCALL_PROC_GETEGID:
-        set_errno(ENOSYS);
-        return -8;
-
-    case SYSCALL_PROC_GETPID:
-        set_errno(ENOSYS);
-        return -9;
-
-    case SYSCALL_PROC_GETPPID:
-        set_errno(ENOSYS);
-        return -10;
-
-    case SYSCALL_PROC_ALARM:
-        set_errno(ENOSYS);
-        return -13;
-
-    case SYSCALL_PROC_CHDIR:
-        set_errno(ENOSYS);
-        return -14;
-
-    case SYSCALL_PROC_SETPRIORITY:
-        set_errno(ENOSYS);
-        return -15;
-
-    case SYSCALL_PROC_GETPRIORITY:
-        set_errno(ENOSYS);
-        return -15;
-
-    case SYSCALL_PROC_GETBREAK:
-        {
-        struct _ds_getbreak ds;
-
-        if (!useracc(p, sizeof(struct _ds_getbreak), VM_PROT_WRITE)) {
-            /* No permission to read/write */
-            /* TODO Signal/Kill? */
-            set_errno(EFAULT);
-            return -1;
-        }
-        copyin(p, &ds, sizeof(struct _ds_getbreak));
-        ds.start = curproc->brk_start;
-        ds.stop = curproc->brk_stop;
-        copyout(&ds, p, sizeof(struct _ds_getbreak));
-        }
-        return 0;
-
-    default:
-        return (uint32_t)NULL;
-    }
+    return 0; /* Never reached */
 }
+
+/**
+ * Set and get process credentials (user and group ids).
+ * This function can serve following POSIX functions:
+ * - getuid(), geteuid()
+ * - setuid(), seteuid(), setreuid()
+ * - getegid(), getgid()
+ * - setgid(), setegid(), setregid()
+ */
+static int sys_proc_getsetcred(void * user_args)
+{
+    struct _ds_proc_credctl cred;
+    uid_t ruid = curproc->uid;
+    uid_t euid = curproc->euid;
+    uid_t suid = curproc->suid;
+    gid_t rgid = curproc->gid;
+    gid_t sgid = curproc->sgid;
+    int retval;
+
+    if (!useracc(user_args, sizeof(cred), VM_PROT_WRITE)) {
+        set_errno(EFAULT);
+        return -1;
+    }
+    copyin(user_args, &cred, sizeof(cred));
+
+    /* Set uid */
+    if (cred.mask & PROC_CREDCTL_RUID) {
+        if (cred.ruid < 0)
+            goto fail_einval;
+
+        if (euid == 0)
+            curproc->uid = cred.ruid;
+        else
+            goto fail_eperm;
+    }
+
+    /* Set euid */
+    if (cred.mask & PROC_CREDCTL_EUID) {
+        uid_t new_euid = cred.euid;
+
+        if (new_euid < 0)
+            goto fail_einval;
+
+        if (euid == 0 || new_euid == ruid || new_euid == suid)
+            curproc->euid = new_euid;
+        else
+            goto fail_eperm;
+    }
+
+    /* Set suid */
+    if (cred.mask & PROC_CREDCTL_SUID) {
+        if (cred.suid < 0)
+            goto fail_einval;
+
+        if (euid == 0)
+            curproc->suid = cred.suid;
+        else
+            goto fail_eperm;
+    }
+
+    /* Set gid */
+    if (cred.mask & PROC_CREDCTL_RGID) {
+        if (cred.rgid < 0)
+            goto fail_einval;
+
+        if (euid == 0)
+            curproc->gid = cred.rgid;
+        else
+            goto fail_eperm;
+    }
+
+    /* Set egid */
+    if (cred.mask & PROC_CREDCTL_EGID) {
+        gid_t new_egid = cred.egid;
+
+        if (new_egid < 0)
+            goto fail_einval;
+
+        if (euid == 0 || new_egid == rgid || new_egid == sgid)
+            curproc->egid = cred.egid;
+        else
+            goto fail_eperm;
+    }
+
+    /* Set sgid */
+    if (cred.mask & PROC_CREDCTL_SGID) {
+        if (cred.sgid < 0)
+            goto fail_einval;
+
+        if (euid == 0)
+            curproc->sgid = cred.sgid;
+        else
+            goto fail_eperm;
+    }
+
+    retval = 0;
+    goto out;
+fail_einval:
+    set_errno(EINVAL);
+    retval = -1;
+fail_eperm:
+    set_errno(EPERM);
+    retval = -1;
+out:
+
+    /* Get current values */
+    cred.ruid = curproc->uid;
+    cred.euid = curproc->euid;
+    cred.suid = curproc->suid;
+    cred.rgid = curproc->gid;
+    cred.egid = curproc->egid;
+    cred.sgid = curproc->sgid;
+
+    copyout(&cred, user_args, sizeof(cred));
+
+    return retval;
+}
+
+static int sys_proc_getpid(void * user_args)
+{
+    set_errno(ENOSYS);
+    return -1;
+}
+
+static int sys_proc_getppid(void * user_args)
+{
+    set_errno(ENOSYS);
+    return -1;
+}
+
+static int sys_proc_alarm(void * user_args)
+{
+    set_errno(ENOSYS);
+    return -1;
+}
+
+static int sys_proc_chdir(void * user_args)
+{
+    set_errno(ENOSYS);
+    return -1;
+}
+
+static int sys_proc_setpriority(void * user_args)
+{
+    set_errno(ENOSYS);
+    return -1;
+}
+
+static int sys_proc_getpriority(void * user_args)
+{
+    set_errno(ENOSYS);
+    return -1;
+}
+
+static int sys_proc_getbreak(void * user_args)
+{
+    struct _ds_getbreak ds;
+
+    if (!useracc(user_args, sizeof(struct _ds_getbreak), VM_PROT_WRITE)) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    copyin(user_args, &ds, sizeof(ds));
+    ds.start = curproc->brk_start;
+    ds.stop = curproc->brk_stop;
+    copyout(&ds, user_args, sizeof(ds));
+
+    return 0;
+}
+
+static const syscall_handler_t proc_sysfnmap[] = {
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_EXEC, sys_proc_exec),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_FORK, sys_proc_fork),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_WAIT, sys_proc_wait),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_EXIT, sys_proc_exit),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_CRED, sys_proc_getsetcred),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETPID, sys_proc_getpid),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETPPID, sys_proc_getppid),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_ALARM, sys_proc_alarm),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_CHDIR, sys_proc_chdir),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_SETPRIORITY, sys_proc_setpriority),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETPRIORITY, sys_proc_getpriority),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETBREAK, sys_proc_getbreak)
+};
+SYSCALL_HANDLERDEF(proc_syscall, proc_sysfnmap)
