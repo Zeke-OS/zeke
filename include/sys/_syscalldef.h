@@ -214,6 +214,14 @@ struct _ioctl_get_args {
     size_t arg_len;
 };
 
+/* Arguments for SYSCALL_FS_CHDIR */
+struct _proc_chdir_args {
+    int fd; /* if AT_FDARG */
+    const char * name;
+    size_t name_len; /*!< in bytes */
+    int atflags;
+};
+
 /**
  * Arguments struct for SYSCALL_PROC_CRED
  * Set value to -1 for get only.

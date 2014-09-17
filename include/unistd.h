@@ -181,6 +181,11 @@ void * sbrk(intptr_t incr);
  */
 long sysconf(int name);
 
+/**
+ * Change working directory.
+ */
+int chdir(const char * path);
+
 pid_t fork(void);
 
 uid_t getuid(void);

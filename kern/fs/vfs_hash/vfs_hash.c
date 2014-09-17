@@ -85,8 +85,7 @@ int vfs_hash_get(const struct fs_superblock * mp, unsigned hash,
                 continue;
             VN_LOCK(vp);
             mtx_unlock(&vfs_hash_mtx);
-            /* TODO Incr ref count by fn call? */
-            vp->vn_refcount++;
+            vref(vp);
             *vpp = vp;
             return 0; /* TODO Return or break? */
         }

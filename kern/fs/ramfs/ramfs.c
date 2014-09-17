@@ -288,7 +288,7 @@ int ramfs_get_vnode(fs_superblock_t * sb, ino_t * vnode_num, vnode_t ** vnode)
     }
 
     *vnode = &(ramfs_sb->ramfs_iarr[*vnode_num]->in_vnode);
-    (*vnode)->vn_refcount++;
+    vref(*vnode);
 
 out:
     return retval;
@@ -308,8 +308,8 @@ int ramfs_delete_vnode(vnode_t * vnode)
 
     inode = get_inode_of_vnode(vnode);
 
-    inode->in_vnode.vn_refcount--;
-    if ((inode->in_nlink == 0) && (inode->in_vnode.vn_refcount <= 0)) {
+    vrele(&inode->in_vnode); /* TODO Concurrency issues will arise */
+    if ((inode->in_nlink == 0) && (vrefcnt(&inode->in_vnode) <= 0)) {
         /* TODO Clear mutexes, queues etc. */
         destroy_inode_data(inode);
         vn_tmp = &(inode->in_vnode);
@@ -409,7 +409,7 @@ int ramfs_create(vnode_t * dir, const char * name, size_t name_len, mode_t mode,
     }
 
     *result = vnode;
-    (*result)->vn_refcount++;
+    vref(*result);
 out:
     return retval;
 }
@@ -453,7 +453,7 @@ int ramfs_lookup(vnode_t * dir, const char * name, size_t name_len,
     }
 
     if (result)
-        (*result)->vn_refcount++;
+        vref(*result);
 out:
     return retval;
 }

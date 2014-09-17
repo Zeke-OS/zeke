@@ -936,6 +936,46 @@ void fs_vnode_init(vnode_t * vnode, ino_t vn_num, struct fs_superblock * sb,
     mtx_init(&vnode->vn_lock, VN_LOCK_MODES);
 }
 
+int vrefcnt(struct vnode * vnode)
+{
+    int retval;
+
+    VN_LOCK(vnode);
+    retval = vnode->vn_refcount;
+    VN_UNLOCK(vnode);
+
+    return retval;
+}
+
+void vref(vnode_t * vnode)
+{
+    VN_LOCK(vnode);
+    vnode->vn_refcount++;
+    VN_UNLOCK(vnode);
+}
+
+void vrele(vnode_t * vnode)
+{
+    VN_LOCK(vnode);
+    vnode->vn_refcount--;
+    VN_UNLOCK(vnode);
+}
+
+void vput(vnode_t * vnode)
+{
+    KASSERT(mtx_test(&vnode->vn_lock), "vnode should be locked");
+
+    vnode->vn_refcount--;
+    VN_UNLOCK(vnode);
+}
+
+void vunref(vnode_t * vnode)
+{
+    KASSERT(mtx_test(&vnode->vn_lock), "vnode should be locked");
+
+    vnode->vn_refcount--;
+}
+
 void fs_vnode_cleanup(vnode_t * vnode)
 {
     struct buf * var, * nxt;

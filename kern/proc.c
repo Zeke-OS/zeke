@@ -42,6 +42,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <vm/vm.h>
+#include <vm/vm_copyinstruct.h>
 #include <sys/sysctl.h>
 #include <sys/param.h>
 #include <fcntl.h>
@@ -695,8 +696,46 @@ static int sys_proc_alarm(void * user_args)
 
 static int sys_proc_chdir(void * user_args)
 {
-    set_errno(ENOSYS);
-    return -1;
+    struct _proc_chdir_args * args = 0;
+    vnode_t * vn;
+    int err, retval = -1;
+
+    err = copyinstruct(user_args, (void **)(&args),
+            sizeof(struct _proc_chdir_args),
+            GET_STRUCT_OFFSETS(struct _proc_chdir_args,
+                name, name_len));
+    if (err) {
+        set_errno(EFAULT);
+        goto out;
+    }
+
+    /* Validate name string */
+    if (!strvalid(args->name, args->name_len)) {
+        set_errno(ENAMETOOLONG);
+        goto out;
+    }
+
+    err = fs_namei_proc(&vn, args->fd, args->name, args->atflags &
+            (AT_FDCWD | AT_FDARG | AT_SYMLINK_NOFOLLOW | AT_SYMLINK_FOLLOW));
+    if (err) {
+        set_errno(-err);
+        goto out;
+    }
+
+    if (!S_ISDIR(vn->vn_mode)) {
+        vrele(vn);
+        set_errno(ENOTDIR);
+        goto out;
+    }
+
+    /* Change cwd */
+    curproc->cwd = vn;
+    /* Leave vnode refcount +1 */
+
+    retval = 0;
+out:
+    freecpystruct(args);
+    return retval;
 }
 
 static int sys_proc_setpriority(void * user_args)

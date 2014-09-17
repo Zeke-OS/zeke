@@ -33,13 +33,26 @@
 */
 
 #include <kstring.h> /* TODO */
-#include <syscall.h>
+#include <limits.h>
+#include <sys/types.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <syscall.h>
 
 pid_t fork(void)
 {
     return (pid_t)syscall(SYSCALL_PROC_FORK, NULL);
+}
+
+int chdir(const char * path)
+{
+    struct _proc_chdir_args args = {
+        .name       = path,
+        .name_len   = strlenn(path, PATH_MAX) + 1,
+        .atflags    = AT_FDCWD
+    };
+
+    return (int)syscall(SYSCALL_PROC_CHDIR, &args);
 }
 
 int access(const char * path, int amode)

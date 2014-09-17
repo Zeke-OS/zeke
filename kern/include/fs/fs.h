@@ -31,9 +31,10 @@
  *******************************************************************************
  */
 
-/** @addtogroup fs
-  * @{
-  */
+/**
+ * @addtogroup fs
+ * @{
+ */
 
 #pragma once
 #ifndef FS_H
@@ -520,6 +521,46 @@ void fs_vnode_init(vnode_t * vnode, ino_t vn_num, struct fs_superblock * sb,
                    const vnode_ops_t * const vnops);
 
 /**
+ * Returns the refcount of a vnode.
+ */
+int vrefcnt(struct vnode * vnode);
+
+/**
+ * Increment the vn_refcount field of a vnode.
+ */
+void vref(vnode_t * vnode);
+
+/** @addtogroup vput, vrele, vunref
+ * Decrement the refcount for a vnode.
+ * @{
+ */
+
+/**
+ * Decrement the vn_refcount field of a vnode.
+ * The function takes an unlocked vnode and returns with the vnode
+ * unlocked.
+ */
+void vrele(vnode_t * vnode);
+
+/**
+ * Decrement the vn_refcount field of a vnode.
+ * The function should  be given a locked vnode as argument, the vnode
+ * is unlocked after the function returned.
+ */
+void vput(vnode_t * vnode);
+
+/**
+ * Decrement the vn_refcount field of a vnode.
+ * The function takes a locked vnode as argument, and returns with
+ * the vnode locked.
+ */
+void vunref(vnode_t * vnode);
+
+/**
+ * @}
+ */
+
+/**
  * Cleanup some vnode data.
  * File system is responsible to call this function before deleting a vnode.
  * This handles following cleanup tasks:
@@ -530,5 +571,5 @@ void fs_vnode_cleanup(vnode_t * vnode);
 #endif /* FS_H */
 
 /**
-  * @}
-  */
+ * @}
+ */

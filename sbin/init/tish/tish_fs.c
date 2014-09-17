@@ -45,14 +45,11 @@
 
 static void cd(char ** args)
 {
-    //char * arg = kstrtok(0, DELIMS, args);
-    puts("cd not implemented\n");
-#if 0
+    char * arg = kstrtok(0, DELIMS, args);
     if (!arg)
         fprintf(stderr, "cd missing argument.\n");
     else
         chdir(arg);
-#endif
 }
 TISH_CMD(cd, "cd");
 
