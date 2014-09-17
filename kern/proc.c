@@ -729,6 +729,7 @@ static int sys_proc_chdir(void * user_args)
     }
 
     /* Change cwd */
+    vrele(curproc->cwd);
     curproc->cwd = vn;
     /* Leave vnode refcount +1 */
 

@@ -214,6 +214,9 @@ pid_t proc_fork(pid_t pid)
         new_proc->pid = 1;
     }
 
+    //vref(new_proc->cwd); /* Increment refcount for the cwd */
+    new_proc->cwd->vn_refcount++; /* TODO Not safe. */
+
     /* A process shall be created with a single thread. If a multi-threaded
      * process calls fork(), the new process shall contain a replica of the
      * calling thread.
