@@ -214,18 +214,11 @@ struct _ioctl_get_args {
     size_t arg_len;
 };
 
+/**
+ * Arguments struct for SYSCALL_PROC_CRED
+ * Set value to -1 for get only.
+ */
 struct _ds_proc_credctl {
-    /**
-     * get/set mask.
-     * | SBZ | sgid | egid | rgid | SBZ | suid | euid | ruid |
-     *      7      6      5      4     3      2      1      0
-     *
-     * 0 = only get
-     * 1 = set and get
-     */
-    unsigned mask;
-
-    /* uids and gids */
     uid_t ruid;
     uid_t euid;
     uid_t suid;
@@ -233,13 +226,6 @@ struct _ds_proc_credctl {
     gid_t egid;
     gid_t sgid;
 };
-
-#define PROC_CREDCTL_RUID 0x01
-#define PROC_CREDCTL_EUID 0x02
-#define PROC_CREDCTL_SUID 0x04
-#define PROC_CREDCTL_RGID 0x10
-#define PROC_CREDCTL_EGID 0x20
-#define PROC_CREDCTL_SGID 0x40
 
 /** Arguments struct for SYSCALL_PROC_GETBREAK */
 struct _ds_getbreak {

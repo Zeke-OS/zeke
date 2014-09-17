@@ -584,7 +584,7 @@ static int sys_proc_getsetcred(void * user_args)
     uid_t suid = curproc->suid;
     gid_t rgid = curproc->gid;
     gid_t sgid = curproc->sgid;
-    int retval;
+    int retval = 0;
 
     if (!useracc(user_args, sizeof(cred), VM_PROT_WRITE)) {
         set_errno(EFAULT);
@@ -593,84 +593,59 @@ static int sys_proc_getsetcred(void * user_args)
     copyin(user_args, &cred, sizeof(cred));
 
     /* Set uid */
-    if (cred.mask & PROC_CREDCTL_RUID) {
-        if (cred.ruid < 0)
-            goto fail_einval;
-
+    if (cred.ruid >= 0) {
         if (euid == 0)
             curproc->uid = cred.ruid;
         else
-            goto fail_eperm;
+            retval = -1;
     }
 
     /* Set euid */
-    if (cred.mask & PROC_CREDCTL_EUID) {
+    if (cred.euid >= 0) {
         uid_t new_euid = cred.euid;
-
-        if (new_euid < 0)
-            goto fail_einval;
 
         if (euid == 0 || new_euid == ruid || new_euid == suid)
             curproc->euid = new_euid;
         else
-            goto fail_eperm;
+            retval = -1;
     }
 
     /* Set suid */
-    if (cred.mask & PROC_CREDCTL_SUID) {
-        if (cred.suid < 0)
-            goto fail_einval;
-
+    if (cred.suid >= 0) {
         if (euid == 0)
             curproc->suid = cred.suid;
         else
-            goto fail_eperm;
+            retval = -1;
     }
 
     /* Set gid */
-    if (cred.mask & PROC_CREDCTL_RGID) {
-        if (cred.rgid < 0)
-            goto fail_einval;
-
+    if (cred.rgid >= 0) {
         if (euid == 0)
             curproc->gid = cred.rgid;
         else
-            goto fail_eperm;
+            retval = -1;
     }
 
     /* Set egid */
-    if (cred.mask & PROC_CREDCTL_EGID) {
+    if (cred.egid >= 0) {
         gid_t new_egid = cred.egid;
-
-        if (new_egid < 0)
-            goto fail_einval;
 
         if (euid == 0 || new_egid == rgid || new_egid == sgid)
             curproc->egid = cred.egid;
         else
-            goto fail_eperm;
+            retval = -1;
     }
 
     /* Set sgid */
-    if (cred.mask & PROC_CREDCTL_SGID) {
-        if (cred.sgid < 0)
-            goto fail_einval;
-
+    if (cred.sgid >= 0) {
         if (euid == 0)
             curproc->sgid = cred.sgid;
         else
-            goto fail_eperm;
+            retval = -1;
     }
 
-    retval = 0;
-    goto out;
-fail_einval:
-    set_errno(EINVAL);
-    retval = -1;
-fail_eperm:
-    set_errno(EPERM);
-    retval = -1;
-out:
+    if (retval)
+        set_errno(EPERM);
 
     /* Get current values */
     cred.ruid = curproc->uid;
@@ -687,14 +662,29 @@ out:
 
 static int sys_proc_getpid(void * user_args)
 {
-    set_errno(ENOSYS);
-    return -1;
+    if (copyout(&curproc->pid, user_args, sizeof(pid_t))) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    return 0;
 }
 
 static int sys_proc_getppid(void * user_args)
 {
-    set_errno(ENOSYS);
-    return -1;
+    pid_t parent;
+
+    if (!curproc->inh.parent)
+        parent = 0;
+    else
+        parent = curproc->inh.parent->pid;
+
+    if (copyout(&parent, user_args, sizeof(pid_t))) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    return 0;
 }
 
 static int sys_proc_alarm(void * user_args)

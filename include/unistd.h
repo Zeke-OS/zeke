@@ -183,6 +183,31 @@ long sysconf(int name);
 
 pid_t fork(void);
 
+uid_t getuid(void);
+uid_t geteuid(void);
+gid_t getgid(void);
+gid_t getegid(void);
+int setuid(uid_t uid);
+int seteuid(uid_t uid);
+int setgid(gid_t gid);
+int setegid(gid_t gid);
+#if 0
+int          setreuid(uid_t, uid_t);
+int          setregid(gid_t, gid_t);
+#endif
+
+/**
+ * Get the Process ID.
+ * @return Returns the Process ID of the current process.
+ */
+pid_t getpid(void);
+
+/**
+ * Get the parent Process ID.
+ * @return Returns the Process ID of the parent process.
+ */
+pid_t getppid(void);
+
 /**
  * Checks whether the process would be allowed to read, write or test for
  * existence of the file.

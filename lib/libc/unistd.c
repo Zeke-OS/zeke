@@ -114,6 +114,30 @@ int fchown(int fd, uid_t owner, gid_t group)
     return (int)syscall(SYSCALL_FS_CHOWN, &args);
 }
 
+pid_t getpid(void)
+{
+    pid_t pid;
+    int err;
+
+    err = (int)syscall(SYSCALL_PROC_GETPID, &pid);
+
+    if (err)
+        return -1;
+    return pid;
+}
+
+pid_t getppid(void)
+{
+    pid_t pid;
+    int err;
+
+    err = (int)syscall(SYSCALL_PROC_GETPPID, &pid);
+
+    if (err)
+        return -1;
+    return pid;
+}
+
 ssize_t read(int fildes, void * buf, size_t nbytes)
 {
     struct _fs_readwrite_args args = {
