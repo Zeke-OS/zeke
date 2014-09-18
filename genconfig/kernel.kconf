@@ -28,6 +28,7 @@ config configMMU
 config configUART
     bool "UART support"
     default y
+    depends on configDEVFS
 
 if configUART
 
@@ -322,6 +323,28 @@ endmenu
 
 menu "File Systems"
 
+menuconfig configMOUNTROOTFS
+    bool "Rootfs"
+    default y
+
+if configMOUNTROOTFS
+
+config configROOTFS_NAME
+    string "FS name"
+    default "ramfs" if configRAMFS
+
+config configROOTFS_DEVPATH
+    string "Path to dev"
+
+config configROOTFS_FLAGS
+    int "Mount flags"
+    default 0
+
+config configROOTFS_PARMS
+    string "Params"
+
+endif
+
 config configVFS_HASH
     bool "VFS Hash"
     default n
@@ -331,6 +354,7 @@ config configVFS_HASH
 menuconfig configMBR
     bool "MBR Support"
     default n
+    depends on configDEVFS
 
 config MBR_DEBUG
     bool "MBR debug"
@@ -340,13 +364,11 @@ config MBR_DEBUG
 config configRAMFS
     bool "ramfs"
     default y
-    ---help---
-        Compile ramfs with Zeke base.
 
 config configDEVFS
     bool "devfs"
     default y
-    select configRAMFS
+    depends on configRAMFS
 
 endmenu
 
