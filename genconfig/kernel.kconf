@@ -28,7 +28,7 @@ config configMMU
 config configUART
     bool "UART support"
     default y
-    depends on configDEVFS
+    select configDEVFS
 
 if configUART
 
@@ -345,12 +345,6 @@ config configROOTFS_PARMS
 
 endif
 
-config configVFS_HASH
-    bool "VFS Hash"
-    default n
-    ---help---
-        A vnode hashmap for file systems that have to cache vnode data in-core.
-
 menuconfig configMBR
     bool "MBR Support"
     default n
@@ -364,11 +358,35 @@ config MBR_DEBUG
 config configRAMFS
     bool "ramfs"
     default y
+    select configFS_INPOOL
 
 config configDEVFS
     bool "devfs"
     default y
-    depends on configRAMFS
+    select configRAMFS
+comment "No devfs"
+    depends on !configDEVFS
+
+menu "FS libs"
+
+config configFS_INPOOL
+    bool "inode pools"
+    ---help---
+        inode pool speeds up the creation of new inodes in file systems.
+        A pool is used to get new preallocated inodes as well as destroying
+        and recyling old inodes. A file system may have unlimited amount of
+        pools as pools are handled as objects.
+
+        This is usually auto selected.
+
+config configVFS_HASH
+    bool "VFS Hash"
+    ---help---
+        A vnode hashmap for file systems that have to cache vnode data in-core.
+
+        This is usually auto selected.
+
+endmenu
 
 endmenu
 
