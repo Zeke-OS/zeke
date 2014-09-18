@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Directory Entry Hashtable.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -67,10 +67,9 @@ typedef struct chain_info {
 #define CH_LINK     1
 
 static chain_info_t find_last_node(dh_dirent_t * chain);
-static dh_dirent_t * find_node(dh_dirent_t * chain, const char * name,
-        size_t name_len);
-static size_t hash_fname(const char * str, size_t len);
+static dh_dirent_t * find_node(dh_dirent_t * chain, const char * name);
 static int rm_node(dh_dirent_t ** chain, const char * name);
+static size_t hash_fname(const char * str, size_t len);
 
 /**
  * Get reference to a directory entry in array.
@@ -95,26 +94,25 @@ static int rm_node(dh_dirent_t ** chain, const char * name);
  * @param dir       is a directory entry table.
  * @param vnode     is the vnode where the new hard link will point.
  * @param name      is the name of the hard link.
- * @param name_len  is the length of the name.
  * @return Returns 0 if succeed; Otherwise value other than zero.
  */
-int dh_link(dh_table_t * dir, ino_t vnode_num, const char * name, size_t name_len)
+int dh_link(dh_table_t * dir, ino_t vnode_num, const char * name)
 {
-    name_len = strlenn(name, name_len + 1);
+    size_t name_len = strlenn(name, NAME_MAX + 1) + 1;
     const size_t h = hash_fname(name, name_len);
-    const size_t entry_size = memalign(DIRENT_SIZE + name_len + 1);
+    const size_t entry_size = memalign(DIRENT_SIZE + name_len);
     dh_dirent_t * dea;
     chain_info_t chinfo;
     int retval = 0;
 
     /* Verify that link doesn't exist */
-    if (!dh_lookup(dir, name, name_len, NULL)) {
+    if (!dh_lookup(dir, name, NULL)) {
         retval = -EEXIST;
         goto out;
     }
 
     dea = (*dir)[h];
-    if (dea == 0) { /* Chain array not yet created. */
+    if (!dea) { /* Chain array not yet created. */
         dea = kmalloc(entry_size);
 
         chinfo.i_last = 0;
@@ -125,7 +123,7 @@ int dh_link(dh_table_t * dir, ino_t vnode_num, const char * name, size_t name_le
         chinfo = find_last_node(dea);
         dea = krealloc(dea, chinfo.i_size + entry_size);
     }
-    if (dea == 0) {
+    if (!dea) {
         /* OOM, can't add new entries. */
         retval = -ENOMEM;
         goto out;
@@ -144,15 +142,15 @@ out:
     return retval;
 }
 
-int dh_unlink(dh_table_t * dir, const char * name, size_t name_len)
+int dh_unlink(dh_table_t * dir, const char * name)
 {
-    name_len = strlenn(name, name_len);
+    size_t name_len = strlenn(name, NAME_MAX + 1) + 1;
     const size_t h = hash_fname(name, name_len);
     dh_dirent_t ** dea;
     int err;
 
     dea = &((*dir)[h]);
-    if (dea == 0)
+    if (!dea)
         return -ENOENT;
 
     err = rm_node(dea, name);
@@ -186,21 +184,20 @@ void dh_destroy_all(dh_table_t * dir)
  * @return Returns zero if link with specified name was found;
  *         Otherwise value other than zero indicating type of error.
  */
-int dh_lookup(dh_table_t * dir, const char * name, size_t name_len,
-        ino_t * vnode_num)
+int dh_lookup(dh_table_t * dir, const char * name, ino_t * vnode_num)
 {
-    name_len = strlenn(name, name_len);
+    size_t name_len = strlenn(name, NAME_MAX + 1) + 1;
     const size_t h = hash_fname(name, name_len);
     dh_dirent_t * dea;
     dh_dirent_t * dent;
     int retval = -ENOENT;
 
     dea = (*dir)[h];
-    if (dea == 0)
+    if (!dea)
         goto out;
 
-    dent = find_node(dea, name, name_len + 1);
-    if (dent == 0)
+    dent = find_node(dea, name);
+    if (!dent)
         goto out;
 
     if (vnode_num)
@@ -246,22 +243,24 @@ dh_dirent_t * dh_iter_next(dh_dir_iter_t * it)
 
         it->ch_ind = 0; /* Reset chain index */
 
+        /* Get a dir entry array */
         do {
-            dea = (*(it->dir))[i]; /* Get a dir entry array */
+            dea = (*(it->dir))[i];
             i++;
-        } while (dea == 0 && i < DEHTABLE_SIZE);
+        } while (!dea && i < DEHTABLE_SIZE);
 
         it->dea_ind = i - 1;
-    } else { /* Still iterating the old chain. */
+    } else {
+        /* Still iterating the old chain. */
         dea = (*(it->dir))[it->dea_ind];
     }
-    if (dea == 0)
+    if (!dea)
         goto out; /* Empty hash table or No more entries. */
 
     /* Get a node from the chain. */
     node = get_dirent(dea, it->ch_ind);
     if (is_invalid_offset(node))
-        return 0; /* Broken dirent hash table. */
+        return NULL; /* Broken dirent hash table. */
 
     if (node->dh_link == CH_LINK) {
         it->ch_ind += node->dh_size;
@@ -310,15 +309,13 @@ static chain_info_t find_last_node(dh_dirent_t * chain)
  * @param name_len  is the length of the name.
  * @return Returns a pointer to the node; Or null if node not found.
  */
-static dh_dirent_t * find_node(dh_dirent_t * chain, const char * name,
-        size_t name_len)
+static dh_dirent_t * find_node(dh_dirent_t * chain, const char * name)
 {
-    name_len = strlenn(name, name_len);
-    size_t offset;
+    size_t name_len = strlenn(name, NAME_MAX + 1) + 1;
+    size_t offset = 0;
     dh_dirent_t * node;
     dh_dirent_t * retval = 0;
 
-    offset = 0;
     do {
         node = get_dirent(chain, offset);
         if (is_invalid_offset(node)) {
@@ -326,7 +323,7 @@ static dh_dirent_t * find_node(dh_dirent_t * chain, const char * name,
             break;
         }
 
-        if (strncmp(node->dh_name, name, name_len + 1) == 0) {
+        if (strncmp(node->dh_name, name, name_len) == 0) {
             retval = node;
             break;
         }
@@ -341,6 +338,7 @@ static int rm_node(dh_dirent_t ** chain, const char * name)
     const chain_info_t chinfo = find_last_node(*chain);
     size_t old_offset = 0, new_offset = 0, prev_noffset = 0;
     dh_dirent_t * new_chain;
+    int match = 0;
 
     if (chinfo.i_size < sizeof(void *))
         return -ENOENT;
@@ -352,7 +350,7 @@ static int rm_node(dh_dirent_t ** chain, const char * name)
     /* Initial empty first entry. */
     *get_dirent(new_chain, 0) = (dh_dirent_t){ .dh_size = 0 };
 
-    while(1) {
+    while (1) {
         const dh_dirent_t * const node = get_dirent(*chain, old_offset);
 
         if (is_invalid_offset(node)) {
@@ -361,12 +359,15 @@ static int rm_node(dh_dirent_t ** chain, const char * name)
             return -ENOTRECOVERABLE;
         }
 
-        if (strncmp(node->dh_name, name, NAME_MAX)) {
+        /* Copy if no match or already matched. */
+        if (match || strncmp(node->dh_name, name, NAME_MAX + 1) != 0) {
             dh_dirent_t * new_node = get_dirent(new_chain, new_offset);
 
             memcpy(new_node, node, node->dh_size);
             prev_noffset = new_offset;
             new_offset += node->dh_size;
+        } else {
+            match = 1;
         }
         old_offset += node->dh_size;
 
@@ -377,11 +378,12 @@ static int rm_node(dh_dirent_t ** chain, const char * name)
     get_dirent(new_chain, prev_noffset)->dh_link = CH_NOLINK;
 
     /* Check if new_chain is empty */
-    if (get_dirent(new_chain, 0)->dh_link == CH_NOLINK) {
+    if (get_dirent(new_chain, 0)->dh_size == 0) {
         kfree(new_chain);
-        new_chain = 0;
+        new_chain = NULL;
     }
 
+    /* Replace old chain. */
     kfree(*chain);
     *chain = new_chain;
 
@@ -391,7 +393,7 @@ static int rm_node(dh_dirent_t ** chain, const char * name)
 /**
  * Hash function.
  * @param str is the string to be hashed.
- * @param len is the length of str without '\0'.
+ * @param len is the length of str.
  * @return Hash value.
  */
 static size_t hash_fname(const char * str, size_t len)

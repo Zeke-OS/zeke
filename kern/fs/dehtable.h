@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Directory Entry Hashtable.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -67,11 +67,10 @@ typedef struct dh_dir_iter {
     size_t ch_ind;
 } dh_dir_iter_t;
 
-int dh_link(dh_table_t * dir, ino_t vnode_num, const char * name, size_t name_len);
-int dh_unlink(dh_table_t * dir, const char * name, size_t name_len);
+int dh_link(dh_table_t * dir, ino_t vnode_num, const char * name);
+int dh_unlink(dh_table_t * dir, const char * name);
 void dh_destroy_all(dh_table_t * dir);
-int dh_lookup(dh_table_t * dir, const char * name, size_t name_len,
-                ino_t * vnode_num);
+int dh_lookup(dh_table_t * dir, const char * name, ino_t * vnode_num);
 dh_dir_iter_t dh_get_iter(dh_table_t * dir);
 dh_dirent_t * dh_iter_next(dh_dir_iter_t * it);
 

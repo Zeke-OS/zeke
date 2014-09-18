@@ -40,7 +40,7 @@
 #include <kmalloc.h>
 #include <proc.h>
 #include "../dehtable.h"
-#include "../inpool.h"
+#include <fs/inpool.h>
 #include <fs/ramfs.h>
 
 /**
@@ -117,6 +117,7 @@ static void remove_superblock(ramfs_sb_t * ramfs_sb);
 static void destroy_superblock(ramfs_sb_t * ramfs_sb);
 vnode_t * ramfs_raw_create_inode(const fs_superblock_t * sb, ino_t * num);
 static void init_inode(ramfs_inode_t * inode, ramfs_sb_t * ramfs_sb, ino_t * num);
+static void destroy_vnode(vnode_t * vnode);
 static void destroy_inode(ramfs_inode_t * inode);
 static void destroy_inode_data(ramfs_inode_t * inode);
 static int insert_inode(ramfs_inode_t * inode);
@@ -221,7 +222,7 @@ int ramsfs_mount(const char * source, uint32_t mode,
 
     /* Initialize the inode pool. */
     if (inpool_init(&(ramfs_sb->ramfs_ipool), &(ramfs_sb->sbn.sbl_sb),
-                ramfs_raw_create_inode, RAMFS_INODE_POOL_SIZE)) {
+                ramfs_raw_create_inode, destroy_vnode, RAMFS_INODE_POOL_SIZE)) {
         retval = -ENOMEM;
         goto free_ramfs_sb;
     }
@@ -313,11 +314,9 @@ int ramfs_delete_vnode(vnode_t * vnode)
         /* TODO Clear mutexes, queues etc. */
         destroy_inode_data(inode);
         vn_tmp = &(inode->in_vnode);
-        vn_tmp = inpool_insert(&(get_rfsb_of_sb(vn_tmp->sb)->ramfs_ipool),
-                vn_tmp);
-        if (vn_tmp != 0) { /* Try to recycle this inode */
-            destroy_inode(get_inode_of_vnode(vn_tmp));
-        }
+
+        /* Recycle this inode */
+        inpool_insert(&(get_rfsb_of_sb(vn_tmp->sb)->ramfs_ipool), vn_tmp);
     }
 
     return 0;
@@ -373,7 +372,7 @@ int ramfs_create(vnode_t * dir, const char * name, size_t name_len, mode_t mode,
 
     ramfs_sb = get_rfsb_of_sb(dir->sb);
     vnode = inpool_get_next(&(ramfs_sb->ramfs_ipool));
-    if (vnode == 0) {
+    if (!vnode) {
         retval = -ENOSPC; /* Can't create */
         goto out;
     }
@@ -401,10 +400,10 @@ int ramfs_create(vnode_t * dir, const char * name, size_t name_len, mode_t mode,
     //vnode->mutex = /* TODO other flags etc. */
 
     /* Create a directory entry. */
-    if (ramfs_link(dir, vnode, name, name_len)) {
+    retval = ramfs_link(dir, vnode, name, name_len);
+    if (retval != 0) {
         /* Hard link creation failed. */
         destroy_inode(inode);
-        retval = -EMLINK;
         goto out;
     }
 
@@ -442,7 +441,7 @@ int ramfs_lookup(vnode_t * dir, const char * name, size_t name_len,
     }
 
     dh_dir = get_inode_of_vnode(dir)->in.dir;
-    if (dh_lookup(dh_dir, name, name_len, &vnode_num)) {
+    if (dh_lookup(dh_dir, name, &vnode_num)) {
         retval = -ENOENT; /* Link not found. */
         goto out;
     }
@@ -471,7 +470,7 @@ int ramfs_link(vnode_t * dir, vnode_t * vnode, const char * name, size_t name_le
 
     inode = get_inode_of_vnode(vnode);
     inode_dir = get_inode_of_vnode(dir);
-    retval = dh_link(inode_dir->in.dir, vnode->vn_num, name, name_len);
+    retval = dh_link(inode_dir->in.dir, vnode->vn_num, name);
     if (retval)
         goto out;
 
@@ -495,7 +494,7 @@ int ramfs_unlink(vnode_t * dir, const char * name, size_t name_len)
     }
 
     inode_dir = get_inode_of_vnode(dir);
-    retval = dh_lookup(inode_dir->in.dir, name, name_len, &vnum);
+    retval = dh_lookup(inode_dir->in.dir, name, &vnum);
     if (retval)
         goto out;
 
@@ -507,13 +506,13 @@ int ramfs_unlink(vnode_t * dir, const char * name, size_t name_len)
     /* Mandatory cleanup. */
     fs_vnode_cleanup(vn);
 
-    retval = dh_unlink(inode_dir->in.dir, name, name_len);
+    retval = dh_unlink(inode_dir->in.dir, name);
     if (retval)
         goto out;
 
     inode->in_nlink--; /* Decrement hard link count. */
     if (inode->in_nlink <= 0)
-        ; /* TODO Free the inode */
+        ramfs_delete_vnode(vn);
 
 out:
     return retval;
@@ -582,7 +581,7 @@ int ramfs_rmdir(vnode_t * dir,  const char * name, size_t name_len)
     }
 
     inode_dir = get_inode_of_vnode(dir);
-    retval = dh_lookup(inode_dir->in.dir, name, name_len, &vnum);
+    retval = dh_lookup(inode_dir->in.dir, name, &vnum);
     if (retval)
         goto out;
 
@@ -596,9 +595,9 @@ int ramfs_rmdir(vnode_t * dir,  const char * name, size_t name_len)
         goto out;
     }
 
-    dh_unlink(inode->in.dir, RFS_DOT, sizeof(RFS_DOT));
-    dh_unlink(inode->in.dir, RFS_DOTDOT, sizeof(RFS_DOTDOT));
-    dh_unlink(inode_dir->in.dir, name, name_len);
+    dh_unlink(inode->in.dir, RFS_DOT);
+    dh_unlink(inode->in.dir, RFS_DOTDOT);
+    dh_unlink(inode_dir->in.dir, name);
 
 out:
     return retval;
@@ -809,8 +808,7 @@ static void destroy_superblock(ramfs_sb_t * ramfs_sb)
     }
 
     /* Destroy inode pool */
-    if (ramfs_sb->ramfs_ipool.ip_arr)
-        inpool_destroy(&(ramfs_sb->ramfs_ipool));
+    inpool_destroy(&(ramfs_sb->ramfs_ipool));
 
     kfree(ramfs_sb);
 }
@@ -849,8 +847,13 @@ static void init_inode(ramfs_inode_t * inode, ramfs_sb_t * ramfs_sb, ino_t * num
                   &ramfs_vnode_ops);
 }
 
+static void destroy_vnode(vnode_t * vnode)
+{
+    destroy_inode(get_inode_of_vnode(vnode));
+}
+
 /**
- * Destroy a ramfs_inode struct and ints contents.
+ * Destroy a ramfs_inode struct and its contents.
  * @note This should be normally called only if there is no more references and
  * links to the inode.
  * @param inode is the inode to be destroyed.

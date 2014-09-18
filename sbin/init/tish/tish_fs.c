@@ -95,6 +95,8 @@ static void touch(char ** args)
     char * path = kstrtok(0, DELIMS, args);
 
     fildes = creat(path, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    if (fildes < 0)
+        return; /* err */
 
     close(fildes);
 }

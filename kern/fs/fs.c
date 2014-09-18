@@ -940,32 +940,26 @@ int vrefcnt(struct vnode * vnode)
 {
     int retval;
 
-    VN_LOCK(vnode);
-    retval = vnode->vn_refcount;
-    VN_UNLOCK(vnode);
+    retval = atomic_read(&vnode->vn_refcount);
 
     return retval;
 }
 
 void vref(vnode_t * vnode)
 {
-    VN_LOCK(vnode);
-    vnode->vn_refcount++;
-    VN_UNLOCK(vnode);
+    atomic_inc(&vnode->vn_refcount);
 }
 
 void vrele(vnode_t * vnode)
 {
-    VN_LOCK(vnode);
-    vnode->vn_refcount--;
-    VN_UNLOCK(vnode);
+    atomic_dec(&vnode->vn_refcount);
 }
 
 void vput(vnode_t * vnode)
 {
     KASSERT(mtx_test(&vnode->vn_lock), "vnode should be locked");
 
-    vnode->vn_refcount--;
+    atomic_dec(&vnode->vn_refcount);
     VN_UNLOCK(vnode);
 }
 
@@ -973,7 +967,7 @@ void vunref(vnode_t * vnode)
 {
     KASSERT(mtx_test(&vnode->vn_lock), "vnode should be locked");
 
-    vnode->vn_refcount--;
+    atomic_dec(&vnode->vn_refcount);
 }
 
 void fs_vnode_cleanup(vnode_t * vnode)
@@ -985,6 +979,7 @@ void fs_vnode_cleanup(vnode_t * vnode)
         panic("vnode can't be null.");
 #endif
 
+    /* Release associated buffers. */
     if (!SPLAY_EMPTY(&vnode->vn_bpo.sroot)) {
         for (var = SPLAY_MIN(bufhd_splay, &vnode->vn_bpo.sroot);
                 var != NULL; var = nxt) {

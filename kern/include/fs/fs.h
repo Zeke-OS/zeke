@@ -45,6 +45,7 @@
 #include <sys/types.h>
 #include <sys/queue.h>
 #include <sys/tree.h>
+#include <hal/atomic.h>
 #include <time.h>
 #include <sys/stat.h>
 #include <dirent.h>
@@ -93,7 +94,7 @@ struct bufhd {
 typedef struct vnode {
     ino_t vn_num;               /*!< vnode number. */
     unsigned vn_hash;           /*!< Hash for using vfs hashing. */
-    int vn_refcount;
+    atomic_t vn_refcount;
     /*!< Pointer to the vnode in mounted file system. If no fs is mounted on
      *   this vnode then this is a self pointing pointer. */
     struct vnode * vn_mountpoint;
@@ -101,18 +102,25 @@ typedef struct vnode {
 
     off_t vn_len;               /*!< Length of file. */
     mode_t vn_mode;             /*!< File type part of st_mode sys/stat.h */
-    void * vn_specinfo;         /*!< Pointer to an additional information required by the
-                                 *   ops. */
-    struct bufhd vn_bpo;        /*!< Pointer to a buffer pointer storage object. */
-    struct fs_superblock * sb;  /*!< Pointer to the super block of this vnode. */
+    void * vn_specinfo;         /*!< Pointer to an additional information
+                                 * required by the ops. */
+    struct bufhd vn_bpo;        /*!< Pointer to a buffer pointer storage
+                                 *   object. */
+    struct fs_superblock * sb;  /*!< Pointer to the super block of this
+                                 *   vnode. */
     struct vnode_ops * vnode_ops;
 
-#if configVFS_HASH != 0
-    /*
-     * vfs_hash: (mount + inode) -> vnode hash.  The hash value
-     * itself is grouped with other int fields, to avoid padding.
+    /**
+     * inpool:      Used for internal lists in inpool.
      */
-    LIST_ENTRY(vnode)   vn_hashlist;
+    TAILQ_ENTRY(vnode) vn_inqueue;
+
+#ifdef configVFS_HASH
+    /**
+     * vfs_hash:    (mount + inode) -> vnode hash. The hash value itself is
+     *              grouped with other int fields, to avoid padding.
+     */
+    LIST_ENTRY(vnode) vn_hashlist;
 #endif
 
     mtx_t vn_lock;

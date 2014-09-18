@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Generic inode pool.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,161 +30,144 @@
  *******************************************************************************
  */
 
+#define KERNEL_INTERNAL
 #include <stddef.h>
+#include <errno.h>
+#include <kerror.h>
 #include <kmalloc.h>
 #include <fs/fs.h>
-#include "inpool.h"
+#include <fs/inpool.h>
 
 static size_t inpool_fill(inpool_t * pool, size_t count);
 
-/**
- * Initialize a inode pool.
- * Allocates memory for a inode pool according to parameter max.
- * @param pool  is the inode pool struct that is initialized.
- * @param sb    is the default super block of this pool.
- * @param max   is maximum size of initialized inode pool.
- * @return Return value is 0 if succeeded; Otherwise value other than zero.
- */
 int inpool_init(inpool_t * pool, fs_superblock_t * sb,
-        inpool_crin_t create_inode, size_t max)
+                inpool_creatin_t create_inode,
+                inpool_destrin_t destroy_inode,
+                size_t max)
 {
     int retval = 0;
 
-    /* Create the pool array. */
-    pool->ip_arr = kcalloc(max, sizeof(void *));
-    if (pool->ip_arr == 0) { /* OOM */
-        retval = -1;
-        goto out;
-    }
+    mtx_lock(&pool->lock);
 
-    pool->ip_max = max + 1;
-    pool->ip_wr = 0;
-    pool->ip_rd = 0;
+    pool->ip_max = max;
+    pool->ip_count = 0;
     pool->ip_next_inum = 0;
     pool->ip_sb = sb;
     pool->create_inode = create_inode;
+    pool->destroy_inode = destroy_inode;
+    TAILQ_INIT(&pool->ip_freelist);
+    TAILQ_INIT(&pool->ip_dirtylist);
 
-    /* Pool is not fully filled so that wr & rd pointer won't point to the same
-     * index. */
-    inpool_fill(pool, max);
+    if (inpool_fill(pool, max) == 0)
+        retval = -ENOMEM;
 
-out:
+    mtx_unlock(&pool->lock);
+
     return retval;
 }
 
-/**
- * Destroy a inode pool.
- * @param pool is the inode pool to be destroyed.
- */
 void inpool_destroy(inpool_t * pool)
 {
-    size_t i;
     vnode_t * vnode;
 
     pool->ip_max = 0;
 
-    /* Delete each vnode. */
-    for (i = 0; i < pool->ip_max; i++) {
-        if (pool->ip_arr[i] != 0) {
-            vnode = pool->ip_arr[i];
-            if (vnode->sb != 0) /* If sb is null we'll leak some meory. */
-                vnode->sb->delete_vnode(vnode);
-            pool->ip_arr[i] = 0;
-        }
+    /* Delete vnodes stored in pool. */
+    while (!TAILQ_EMPTY(&pool->ip_freelist)) {
+        vnode = TAILQ_FIRST(&pool->ip_freelist);
+        TAILQ_REMOVE(&pool->ip_freelist, vnode, vn_inqueue);
+        pool->destroy_inode(vnode);
     }
 
-    kfree(pool->ip_arr);
-    pool->ip_arr = 0;
+    /* Delete dirty vnodes */
+    while (!TAILQ_EMPTY(&pool->ip_dirtylist)) {
+        vnode = TAILQ_FIRST(&pool->ip_dirtylist);
+        TAILQ_REMOVE(&pool->ip_dirtylist, vnode, vn_inqueue);
+        pool->destroy_inode(vnode);
+    }
 }
 
-/**
- * Insert inode to the inode pool.
- * This function can be used for inode recycling.
- * @note If pool is full inode is destroyed and the inode number is lost from
- *       recycling until the pool is reinitialized.
- * @param pool  is the inode pool, vnode_num must be set and refcount should have
- *              sane value.
- * @param vnode is the inode that will be inserted to the pool.
- * @return  Returns null if vnode was inserted to the pool; Otherwise returns a
- *          vnode that could not be fitted to the pool.
- */
-vnode_t * inpool_insert(inpool_t * pool, vnode_t * vnode)
+void inpool_insert(inpool_t * pool, vnode_t * vnode)
 {
-    size_t next;
-
-    if (pool->ip_max == 0)
-        goto out;
-
-    next = (pool->ip_wr + 1) % pool->ip_max;
-
-    if (next == pool->ip_rd) {
-        /* Pool is closed... ehm full, can't fit any more inodes to the pool.
-         * So we must return back this node.
-         */
-        goto out;
-    } else {
-        /* Insert. */
-        pool->ip_arr[pool->ip_wr] = vnode;
-        pool->ip_wr = next;
-        vnode = 0; /* Set return value to null. */
-    }
-
-out:
-    return vnode;
+    mtx_lock(&pool->lock);
+    TAILQ_INSERT_TAIL(&pool->ip_dirtylist, vnode, vn_inqueue);
+    mtx_unlock(&pool->lock);
 }
 
-/**
- * Get the next free node from the inode pool.
- * @param pool is the pool where inode is removed from.
- * @return  Returns a new inode from the pool or null pointer if out of memory
- *          or out of inode numbers.
- */
 vnode_t * inpool_get_next(inpool_t * pool)
 {
-    size_t rd = pool->ip_rd;
-    size_t wr = pool->ip_wr;
-    size_t next;
-    vnode_t * retval = 0;
+    vnode_t * vnode;
 
-    if (pool->ip_max == 0)
-        goto out;
+    mtx_lock(&pool->lock);
 
-    if (rd == wr) { /* Pool is empty. */
-        size_t n;
-
-        /* Fill the pool. */
-        n = inpool_fill(pool, pool->ip_max / 2);
-
-        if (n < 1) /* Could not allocate even at least one inode. */
-            goto out;
+    if (TAILQ_EMPTY(&pool->ip_freelist)) {
+        int n = inpool_fill(pool, pool->ip_max / 2);
+        if (n < 1)
+            return NULL;
     }
 
-    next = (rd  + 1) % pool->ip_max;
-    retval = pool->ip_arr[rd];
-    pool->ip_rd = next;
+    vnode = TAILQ_FIRST(&pool->ip_freelist);
+    TAILQ_REMOVE(&pool->ip_freelist, vnode, vn_inqueue);
+    pool->ip_count--;
 
-out:
-    return retval;
+    mtx_unlock(&pool->lock);
+
+    return vnode;
 }
 
 /**
  * Fill the inode pool.
  * @param pool  is the pool to be filled.
  * @param count is the number of inodes to be filled in.
- * @return Returns the number of inodes inserted to the pool.
+ * @return Returns the number of inodes inserted into the pool.
  */
 static size_t inpool_fill(inpool_t * pool, size_t count)
 {
-    size_t i = 0;
+    int i = 0;
     vnode_t * vnode;
+    vnode_t * vnode_temp;
 
-    for (; i < count; i++) {
+    KASSERT(mtx_test(&pool->lock), "pool should be locked.");
+
+    /*
+     * First fill from the "dirty" list.
+     * Purpose of the dirty list is to try avoid remapping or destroying a vnode
+     * that may still undergo some access by some process. TODO We still should
+     * try to come up with a better solution here for concurrency safety.
+     */
+    TAILQ_FOREACH_SAFE(vnode, &pool->ip_dirtylist, vn_inqueue, vnode_temp) {
+        if (vrefcnt(vnode) > 1)
+            continue;
+        TAILQ_REMOVE(&pool->ip_dirtylist, vnode, vn_inqueue);
+
+        if (count > 0 && pool->ip_count < pool->ip_max) {
+            /* Insert into the free list. */
+            TAILQ_INSERT_TAIL(&pool->ip_freelist, vnode, vn_inqueue);
+            pool->ip_count++;
+            pool->ip_next_inum++;
+            i++;
+            count--;
+        } else {
+            /*
+             * Destroy it as it's not needed anymore and can't fit into
+             * the free list.
+             */
+            pool->destroy_inode(vnode);
+        }
+    }
+
+    /* Insert some new inodes if necessary. */
+    while (count-- > 0 && pool->ip_count < pool->ip_max) {
         ino_t * num = &(pool->ip_next_inum);
+
         vnode = pool->create_inode(pool->ip_sb, num);
-        if (vnode == 0)
+        if (!vnode)
             break;
-        inpool_insert(pool, vnode);
+
+        TAILQ_INSERT_TAIL(&pool->ip_freelist, vnode, vn_inqueue);
+        pool->ip_count++;
         pool->ip_next_inum++;
+        i++;
     }
 
     return i;

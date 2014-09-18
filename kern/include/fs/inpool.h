@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Generic inode pool.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,12 +38,17 @@
 #error <fs.h> must be included.
 #endif
 
+#include <sys/queue.h>
+
 /**
  * typedef for callback to the inode creation function.
  * @param sb is the superblock used.
  * @param num is the inode number used.
  */
-typedef vnode_t * (*inpool_crin_t)(const fs_superblock_t * sb, ino_t * num);
+typedef vnode_t *(*inpool_creatin_t)(const fs_superblock_t * sb, ino_t * num);
+typedef void     (*inpool_destrin_t)(vnode_t * vnode);
+
+TAILQ_HEAD(ip_listhead, vnode);
 
 /**
  * inode pool struct.
@@ -52,20 +57,56 @@ typedef vnode_t * (*inpool_crin_t)(const fs_superblock_t * sb, ino_t * num);
  * actual inode struct.
  */
 typedef struct inpool {
-    vnode_t ** ip_arr; /*!< inode pool array. */
-    size_t ip_max; /*!< Maximum size of the inode pool. */
-    size_t ip_wr; /*!< Write index. */
-    size_t ip_rd; /*!< Read index. */
-    ino_t ip_next_inum; /*!< Next free inode number after pool is used. */
-    fs_superblock_t * ip_sb; /*!< Default Super block of this pool. */
+    struct ip_listhead ip_freelist;
+    struct ip_listhead ip_dirtylist;
+    size_t ip_count;
+    size_t ip_max;              /*!< Maximum size of the inode pool. */
+    ino_t ip_next_inum;         /*!< Next free in number after pool is empty. */
+    fs_superblock_t * ip_sb;    /*!< Default Super block of this pool. */
+    mtx_t lock;
 
-    inpool_crin_t create_inode; /*!< Create inode callback. */
+    inpool_creatin_t create_inode; /*!< Create inode callback. */
+    inpool_destrin_t destroy_inode;
 } inpool_t;
 
+
+
+/**
+ * Initialize a inode pool.
+ * Allocates memory for a inode pool according to parameter max.
+ * @param pool  is the inode pool struct that is initialized.
+ * @param sb    is the default super block of this pool.
+ * @param max   is maximum size of initialized inode pool.
+ * @return Return value is 0 if succeeded; Otherwise value other than zero.
+ */
 int inpool_init(inpool_t * pool, fs_superblock_t * sb,
-        inpool_crin_t create_inode, size_t max);
-vnode_t * inpool_insert(inpool_t * pool, vnode_t * vnode);
+                inpool_creatin_t create_inode,
+                inpool_destrin_t destroy_inode,
+                size_t max);
+
+/**
+ * Insert inode to the inode pool.
+ * This function can be used for inode recycling.
+ * @param pool  is the inode pool, vnode_num must be set and refcount should have
+ *              sane value.
+ * @param vnode is the inode that will be inserted to the pool.
+ * @return  Returns null if vnode was inserted to the pool; Otherwise returns a
+ *          vnode that could not be fitted to the pool.
+ */
+void inpool_insert(inpool_t * pool, vnode_t * vnode);
+
+/**
+ * Get the next free node from the inode pool.
+ * @param pool is the pool where inode is removed from.
+ * @return  Returns a new inode from the pool or null pointer if out of memory
+ *          or out of inode numbers.
+ */
 vnode_t * inpool_get_next(inpool_t * pool);
+
+/**
+ * Destroy a inode pool.
+ * @param pool is the inode pool to be destroyed.
+ */
 void inpool_destroy(inpool_t * pool);
 
 #endif /* INPOOL_H */
