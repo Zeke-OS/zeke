@@ -290,22 +290,15 @@ static int sys_getdents(void * user_args)
         goto out;
     }
 
-    /*
-     * This is a bit tricky, if we are here for the first time there should be a
-     * magic value DSEEKPOS_MAGIC set to seek_pos but we can't do a thing if
-     * fildes was initialized incorrectly, so lets cross our fingers.
-     */
-    d.d_off = fildes->seek_pos;
     bytes_left = args.nbytes;
     while (bytes_left >= sizeof(struct dirent)) {
         vnode_t * vnode = fildes->vnode;
-        if (vnode->vnode_ops->readdir(vnode, &d))
+        if (vnode->vnode_ops->readdir(vnode, &d, &fildes->seek_pos))
             break;
         dents[count++] = d;
 
         bytes_left -= (sizeof(struct dirent));
     }
-    fildes->seek_pos = d.d_off;
 
     copyout(dents, args.buf, count * sizeof(struct dirent));
     kfree(dents);

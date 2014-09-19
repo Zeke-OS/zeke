@@ -603,16 +603,15 @@ out:
     return retval;
 }
 
-int ramfs_readdir(vnode_t * dir, struct dirent * d)
+int ramfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
 {
+    const off_t dea_ind_mask = 0x7FFFFFFF00000000;
+    const off_t ch_ind_mask  = 0x00000000FFFFFFFF;
     dh_dir_iter_t it;
     dh_dirent_t * dh;
-    int retval = 0;
 
-    if (!S_ISDIR(dir->vn_mode)) {
-        retval = -ENOTDIR; /* No a directory entry. */
-        goto out;
-    }
+    if (!S_ISDIR(dir->vn_mode))
+        return -ENOTDIR; /* No a directory entry. */
 
     /* Dirent to iterator translation.
      * We assume here that off_t is a 64-bit signed integer, so we can store the
@@ -620,32 +619,25 @@ int ramfs_readdir(vnode_t * dir, struct dirent * d)
      * will be the low 32-bits.
      * Note: For the first iteration ch_ind must be set to 0xFFFFFFFF.
      */
-#define RAMFS_DEA_IND_MASK 0x7FFFFFFF00000000
-#define RAMFS_CH_IND_MASK  0x00000000FFFFFFFF
     it.dir = get_inode_of_vnode(dir)->in.dir;
-    it.dea_ind = (d->d_off & RAMFS_DEA_IND_MASK) >> 32;
-    it.ch_ind  = (d->d_off & RAMFS_CH_IND_MASK);
-    if (it.ch_ind == RAMFS_CH_IND_MASK)
+    it.dea_ind = (*off & dea_ind_mask) >> 32;
+    it.ch_ind  = (*off & ch_ind_mask);
+    if (it.ch_ind == ch_ind_mask)
         it.ch_ind = SIZE_MAX; /* Just to make sure that the requirements of the
                                * iterator are met on systems with different
                                * architectures. (i.e. len of size_t) */
 
     dh = dh_iter_next(&it);
-    if (dh == 0 || dh->dh_size == 0) {
-        retval = -2; /* End of dir. */
-        goto out;
-    }
+    if (dh == 0 || dh->dh_size == 0)
+        return -ESPIPE; /* End of dir. */
 
     /* Translate iterator back to dirent. */
-    d->d_off = ((((off_t)it.dea_ind) << 32) & RAMFS_DEA_IND_MASK) |
-        (off_t)(it.ch_ind & RAMFS_CH_IND_MASK);
+    *off = ((((off_t)it.dea_ind) << 32) & dea_ind_mask) |
+           (off_t)(it.ch_ind & ch_ind_mask);
     d->d_ino = dh->dh_ino;
     strlcpy(d->d_name, dh->dh_name, member_size(struct dirent, d_name));
-#undef RAMFS_DEA_IND_MASK
-#undef RAMFS_CH_IND_MASK
 
-out:
-    return retval;
+    return 0;
 }
 
 int ramfs_stat(vnode_t * vnode, struct stat * buf)

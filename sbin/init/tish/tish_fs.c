@@ -67,21 +67,20 @@ static void ls(char ** args)
         puts("Open failed\n");
         return;
     }
-    count = getdents(fildes, (char *)dbuf, sizeof(dbuf));
-    if (count < 0) {
-        puts("Reading directory entries failed\n");
-    }
 
-    for (int i = 0; i < count; i++) {
-        char buf[80];
-        struct stat stat;
+    while ((count = getdents(fildes, (char *)dbuf, sizeof(dbuf))) > 0) {
+        for (int i = 0; i < count; i++) {
+            char buf[80];
+            struct stat stat;
 
-        fstatat(fildes, dbuf[i].d_name, &stat, 0);
+            fstatat(fildes, dbuf[i].d_name, &stat, 0);
 
-        ksprintf(buf, sizeof(buf), "%u %o %u:%u %s\n",
-                 (uint32_t)dbuf[i].d_ino, (uint32_t)stat.st_mode,
-                 (uint32_t)stat.st_uid, (uint32_t)stat.st_gid, dbuf[i].d_name);
-        puts(buf);
+            ksprintf(buf, sizeof(buf), "%u %o %u:%u %s\n",
+                     (uint32_t)dbuf[i].d_ino, (uint32_t)stat.st_mode,
+                     (uint32_t)stat.st_uid, (uint32_t)stat.st_gid,
+                     dbuf[i].d_name);
+            puts(buf);
+        }
     }
     puts("\n");
 

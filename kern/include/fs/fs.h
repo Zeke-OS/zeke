@@ -310,13 +310,14 @@ typedef struct vnode_ops {
     int (*rmdir)(vnode_t * dir,  const char * name, size_t name_len);
     /**
      * Reads one directory entry from the dir into the struct dirent.
-     * @param dir       is a directory in ramfs.
-     * @param dirent    is a directory entry struct.
+     * @param dir       is a directory open in ramfs.
+     * @param d         is a directory entry struct.
+     * @param off       is the offset into the directory.
      * @return  Zero in case of operation succeed;
-     *          -1 if dir is not a directory;
-     *          -2 if end of dir.
+     *          -ENOTDIR if dir is not a directory;
+     *          -ESPIPE if end of dir.
      */
-    int (*readdir)(vnode_t * dir, struct dirent * d);
+    int (*readdir)(vnode_t * dir, struct dirent * d, off_t * off);
 
     /* Operations specified for any file type */
     /**
