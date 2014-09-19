@@ -91,6 +91,10 @@ int bitmap_block_search(size_t * retval, size_t block_len, bitmap_t * bitmap, si
 int bitmap_block_search_s(size_t start, size_t * retval, size_t block_len,
                           bitmap_t * bitmap, size_t size);
 
+int bitmap_status(bitmap_t * bitmap, size_t pos, size_t len);
+int bitmap_set(bitmap_t * bitmap, size_t pos, size_t len);
+int bitmap_clear(bitmap_t * bitmap, size_t pos, size_t len);
+
 /**
  * Set or clear contiguous block of bits in bitmap.
  * @param bitmap    is the bitmap being changed.

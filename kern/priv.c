@@ -36,45 +36,32 @@
 #include <proc.h>
 #include <errno.h>
 #include <sys/sysctl.h>
+#include <bitmap.h>
 #include <sys/priv.h>
 
-static int  suser_enabled = 1;
+static int suser_enabled = 1;
 SYSCTL_INT(_security, OID_AUTO, suser_enabled, CTLFLAG_RW,
-        &suser_enabled, 0, "processes with uid 0 have privilege");
+           &suser_enabled, 0, "processes with uid 0 have privilege");
 //TUNABLE_INT("security.suser_enabled", &suser_enabled);
 
-/**
- * Test active securelevel.
- * Test whether or not the active security level is greater than the
- * supplied level.
- * @param level is the needed security level.
- * @return  Returns -EPERM if condition evaluated to true; Otherwise zero.
- */
-int securelevel_gt(proc_info_t * proc, int level)
-{
-    return (proc->securelevel > level ? -EPERM : 0);
-}
-
-/**
- * Test active securelevel.
- * Test whether or not the active security level is greater than or equal to
- * the supplied level.
- * @param level is the needed security level.
- * @return  Returns -EPERM if condition evaluated to true; Otherwise zero.
- */
-int securelevel_ge(proc_info_t * proc, int level)
-{
-    return (proc->securelevel >= level ? -EPERM : 0);
-}
-
 /*
- * Check a credential for privilege.  Lots of good reasons to deny privilege;
+ * Check a credential for privilege. Lots of good reasons to deny privilege;
  * only a few to grant it.
  */
 int
-priv_check_cred(proc_info_t * proc, int priv, int flags)
+priv_check(proc_info_t * proc, int priv)
 {
     int error;
+
+#ifdef configMAC
+    /* MAC disable bit check */
+    error = bitmap_status(proc->mac_restrmap, priv, _PRIV_MAC_MAP_SIZE);
+    if (error) {
+        if (error != -EINVAL)
+            error = -EPERM;
+        goto out;
+    }
+#endif
 
     /*
      * Having determined if privilege is restricted by various policies,
@@ -116,6 +103,17 @@ priv_check_cred(proc_info_t * proc, int priv, int flags)
         goto out;
     }
 
+#ifdef configMAC
+    error = bitmap_status(proc->mac_grantmap, priv, _PRIV_MAC_MAP_SIZE);
+    if (error < 0) {
+        goto out;
+    } else if (error > 0) {
+        /* Grant */
+        error = 0;
+        goto out;
+    }
+#endif
+
     /*
      * The default is deny, so if no policies have granted it, reject
      * with a privilege error here.
@@ -123,9 +121,4 @@ priv_check_cred(proc_info_t * proc, int priv, int flags)
     error = -EPERM;
 out:
     return error;
-}
-
-int priv_check(proc_info_t * proc, int priv)
-{
-    return priv_check_cred(proc, priv, 0);
 }

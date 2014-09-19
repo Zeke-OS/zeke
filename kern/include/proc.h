@@ -60,6 +60,7 @@
 #include <hal/mmu.h>
 #include <vm/vm.h>
 #include <fs/fs.h>
+#include <bitmap.h>
 #include <klocks.h>
 #include <sys/param.h>
 #include <sys/resource.h>
@@ -89,7 +90,10 @@ typedef struct proc_info {
     int exit_code, exit_signal;
     uid_t uid, euid, suid;
     gid_t gid, egid, sgid;
-    int securelevel;
+#ifdef configMAC
+    bitmap_t mac_restrmap[1024]; /*!< MAC priv restrict bitmap. */
+    bitmap_t mac_grantmap[1024]; /*!< MAC priv grant bitmap. */
+#endif
     unsigned long timeout;      /*!< Used to kill processes with absolute timeout */
     long utime, stime, cutime, cstime, start_time; /*!< For performance statistics */
     struct rlimit rlim[_RLIMIT_ARR_COUNT]; /*!< Hard and soft limits. */

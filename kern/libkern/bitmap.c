@@ -30,6 +30,7 @@
  *******************************************************************************
  */
 
+#include <errno.h>
 #include <bitmap.h>
 
 #define BIT2WORDI(i)    ((i - (i & (SIZEOF_BITMAP_T - 1))) / SIZEOF_BITMAP_T)
@@ -69,6 +70,43 @@ int bitmap_block_search_s(size_t start, size_t * retval, size_t block_len,
     }
 
     return 1;
+}
+
+int bitmap_status(bitmap_t * bitmap, size_t pos, size_t len)
+{
+    size_t k = BIT2WORDI(pos);
+    size_t n = BIT2WBITOFF(pos);
+
+    if (k >= len)
+        return -EINVAL;
+
+    return (bitmap[k] & (1 << n)) != 0;
+}
+
+int bitmap_set(bitmap_t * bitmap, size_t pos, size_t len)
+{
+    size_t k = BIT2WORDI(pos);
+    size_t n = BIT2WBITOFF(pos);
+
+    if (k >= len)
+        return -EINVAL;
+
+    bitmap[k] |= 1 << n;
+
+    return 0;
+}
+
+int bitmap_clear(bitmap_t * bitmap, size_t pos, size_t len)
+{
+    size_t k = BIT2WORDI(pos);
+    size_t n = BIT2WBITOFF(pos);
+
+    if (k >= len)
+        return -EINVAL;
+
+    bitmap[k] &= ~(1 << n);
+
+    return 0;
 }
 
 void bitmap_block_update(bitmap_t * bitmap, unsigned int mark, size_t start, size_t len)

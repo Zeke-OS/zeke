@@ -53,6 +53,12 @@ static int sys_read(void * user_args)
     char * buf = 0;
     int err, retval;
 
+    err = priv_check(curproc, PRIV_VFS_READ);
+    if (err) {
+        set_errno(EPERM);
+        return -1;
+    }
+
     err = copyin(user_args, &args, sizeof(args));
     if (err) {
         set_errno(EFAULT);
@@ -91,6 +97,12 @@ static int sys_write(void * user_args)
     struct _fs_readwrite_args args;
     char * buf = 0;
     int err, retval;
+
+    err = priv_check(curproc, PRIV_VFS_WRITE);
+    if (err) {
+        set_errno(EPERM);
+        return -1;
+    }
 
     /* Args */
     err = copyin(user_args, &args, sizeof(args));
@@ -728,6 +740,12 @@ static int sys_mount(void * user_args)
     vnode_t * mpt;
     int err;
     int retval = -1;
+
+    err = priv_check(curproc, PRIV_VFS_MOUNT);
+    if (err) {
+        set_errno(EPERM);
+        return -1;
+    }
 
     err = copyinstruct(user_args, (void **)(&args),
             sizeof(struct _fs_mount_args),

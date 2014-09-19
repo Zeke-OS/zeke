@@ -300,6 +300,16 @@ config configUSRINIT_PRI
     ---help---
         Priority of usrinit thread.
 
+config configMAC
+    bool "Mandatory Access Control"
+    default n
+    ---help---
+        Currently very light implementation of access control to some kernel
+        features. Selecting this option adds a bitmaps for disabling and
+        granting privileges per process basis.
+
+        This feature adds memory usage around 2048 bytes per process.
+
 config configBIO_DEBUG
     bool "bio debugging"
     default n

@@ -932,8 +932,8 @@ int sysctl_wire_old_buffer(struct sysctl_req * req, size_t len)
 
 static int sysctl_root(SYSCTL_HANDLER_ARGS)
 {
-    struct sysctl_oid *oid;
-    int error, indx, lvl;
+    struct sysctl_oid * oid;
+    int error, indx;
 
     //SYSCTL_ASSERT_XLOCKED();
 
@@ -956,14 +956,6 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
         return EPERM;
 
     //KASSERT(req->proc != NULL, ("sysctl_root(): req->proc == NULL"));
-
-    /* Is this sysctl sensitive to securelevels? */
-    if (req->newptr && (oid->oid_kind & CTLFLAG_SECURE)) {
-        lvl = (oid->oid_kind & CTLMASK_SECURE) >> CTLSHIFT_SECURE;
-        error = securelevel_gt(req->proc, lvl);
-        if (error)
-            return error;
-    }
 
     /* Is this sysctl writable by only privileged users? */
     if (req->newptr && !(oid->oid_kind & CTLFLAG_ANYBODY)) {
