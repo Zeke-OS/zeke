@@ -42,6 +42,8 @@
 #define RAMFS_FSNAME            "ramfs"
 #define RAMFS_VDEV_MAJOR_ID     10
 
+const vnode_ops_t ramfs_vnode_ops;
+
 /* fs ops */
 int ramsfs_mount(const char * source, uint32_t mode,
                  const char * parm, int parm_len, struct fs_superblock ** sb);

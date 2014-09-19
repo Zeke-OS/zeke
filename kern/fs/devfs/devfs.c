@@ -51,19 +51,7 @@ static int devfs_umount(struct fs_superblock * fs_sb);
 static int dev_ioctl(file_t * file, uint32_t request,
         void * arg, size_t arg_len);
 
-const vnode_ops_t devfs_vnode_ops = {
-    .write = dev_write,
-    .read = dev_read,
-    .ioctl = dev_ioctl,
-    .create = ramfs_create,
-    .mknod = ramfs_mknod,
-    .lookup = ramfs_lookup,
-    .link = ramfs_link,
-    .unlink = ramfs_unlink,
-    .mkdir = ramfs_mkdir,
-    .readdir = ramfs_readdir,
-    .stat = ramfs_stat
-};
+const vnode_ops_t * devfs_vnode_ops;
 
 static fs_t devfs_fs = {
     .fsname = DEVFS_FSNAME,
@@ -75,21 +63,34 @@ static fs_t devfs_fs = {
 /* There is only one devfs, but it can be mounted multiple times */
 vnode_t * vn_devfs;
 
+#define PANIC_MSG "devfs_init(): "
+
 int devfs_init(void) __attribute__((constructor));
 int devfs_init(void)
 {
     SUBSYS_DEP(ramfs_init);
     SUBSYS_INIT("devfs");
 
-    const char failed[] = "Failed to init";
     int err;
 
-    /* Root dir */
+    vnode_ops_t * vnops = kmalloc(sizeof(vnode_ops_t));
     vn_devfs = kmalloc(sizeof(vnode_t));
-    if (!vn_devfs) {
-        panic(failed);
+    if (!vnops || !vn_devfs) {
+        panic(PANIC_MSG "ENOMEM\n");
     }
 
+    /*
+     * Create vnops struct.
+     * We want to inherit ops from ramfs and change pointers to overridden
+     * functions.
+     */
+    memcpy(vnops, &ramfs_vnode_ops, sizeof(vnode_ops_t));
+    vnops->write = dev_write;
+    vnops->read = dev_read;
+    vnops->ioctl = dev_ioctl;
+    devfs_vnode_ops = vnops;
+
+    /* Root dir */
     vn_devfs->vn_mountpoint = vn_devfs;
     vn_devfs->vn_refcount = 1;
 
@@ -97,7 +98,7 @@ int devfs_init(void)
     if (err) {
         char buf[80];
 
-        ksprintf(buf, sizeof(buf), "%s : %i\n", failed, err);
+        ksprintf(buf, sizeof(buf), PANIC_MSG "%i\n", err);
         KERROR(KERROR_ERR, buf);
         return err;
     }
@@ -148,7 +149,7 @@ int dev_make(struct dev_info * devnfo, uid_t uid, gid_t gid, int perms,
         return retval;
 
     /* Replace ops with our own */
-    res->vnode_ops = (struct vnode_ops *)(&devfs_vnode_ops);
+    res->vnode_ops = (struct vnode_ops *)(devfs_vnode_ops);
 
     if (result)
         *result = res;
