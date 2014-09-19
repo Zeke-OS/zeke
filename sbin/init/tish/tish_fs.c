@@ -125,3 +125,24 @@ static void tish_unlink(char ** args)
     unlink(path);
 }
 TISH_CMD(tish_unlink, "unlink");
+
+static void tish_cat(char ** args)
+{
+    char * path = kstrtok(0, DELIMS, args);
+    int fildes = open(path, O_RDONLY);
+    char buf[80];
+    ssize_t ret;
+
+    if (fildes < 0)
+        return; /* err */
+
+    while (1) {
+        ret = read(fildes, &buf, sizeof(buf));
+        if (ret <= 0)
+            break;
+        puts(buf);
+    }
+
+    close(fildes);
+}
+TISH_CMD(tish_cat, "cat");

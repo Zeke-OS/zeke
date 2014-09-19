@@ -80,7 +80,7 @@ int devfs_init(void)
     }
 
     /*
-     * Create vnops struct.
+     * Create a vnops struct.
      * We want to inherit ops from ramfs and change pointers to overridden
      * functions.
      */
