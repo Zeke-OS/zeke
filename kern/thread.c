@@ -553,6 +553,12 @@ static int sys_thread_setpriority(void * user_args)
     int err;
     struct _ds_set_priority args;
 
+    err = priv_check(curproc, PRIV_SCHED_SETPRIORITY);
+    if (err) {
+        set_errno(EPERM);
+        return -1;
+    }
+
     err = copyin(user_args, &args, sizeof(args));
     if (err) {
         set_errno(ESRCH);

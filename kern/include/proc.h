@@ -91,9 +91,9 @@ typedef struct proc_info {
     int exit_code, exit_signal;
     uid_t uid, euid, suid;
     gid_t gid, egid, sgid;
-#ifdef configMAC
-    bitmap_t mac_restrmap[_PRIV_MAC_MSIZE]; /*!< MAC priv restrict bitmap. */
-    bitmap_t mac_grantmap[_PRIV_MAC_MSIZE]; /*!< MAC priv grant bitmap. */
+#ifdef configPROCCAP
+    bitmap_t pcap_restrmap[_PRIV_MSIZE]; /*!< Privilege restrict bitmap. */
+    bitmap_t pcap_grantmap[_PRIV_MSIZE]; /*!< Privilege grant bitmap. */
 #endif
     unsigned long timeout;      /*!< Used to kill processes with absolute timeout */
     long utime, stime, cutime, cstime, start_time; /*!< For performance statistics */

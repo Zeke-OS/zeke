@@ -247,4 +247,17 @@ struct _ds_gettime {
     struct timespec * tp;
 };
 
+/** Argument struct for SYSCALL_PRIV_PCAP */
+struct _ds_priv_pcap {
+    pid_t pid;
+    int mode;
+#define PRIV_PCAP_MODE_GETR 0 /* get restr */
+#define PRIV_PCAP_MODE_SETR 1 /* set restr */
+#define PRIV_PCAP_MODE_CLRR 2 /* clear restr */
+#define PRIV_PCAP_MODE_GETG 3 /* get grant */
+#define PRIV_PCAP_MODE_SETG 4 /* set grant */
+#define PRIV_PCAP_MODE_CLRG 5 /* clear grant */
+    size_t priv;
+};
+
 #endif /* SYSCALLDEF_H */

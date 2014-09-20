@@ -97,11 +97,9 @@
 #define PRIV_KLD_UNLOAD     41 /* Unload a kernel module. */
 
 /*
- * Privileges associated with the MAC Framework and specific MAC policy
- * modules.
+ * Privileges associated with the security framework.
  */
-#define PRIV_MAC_PARTITION  50 /* Privilege in mac_partition policy. */
-#define PRIV_MAC_PRIVS      51 /* Privilege in the mac_privs policy. */
+#define PRIV_ALTPCAP        50 /* Privilege to change process capabilities. */
 
 /*
  * Process-related privileges.
@@ -131,12 +129,12 @@
 /*
  * Scheduling privileges.
  */
-#define PRIV_SCHED_DIFFCRED 90 /* Exempt scheduling other users. */
+#define PRIV_SCHED_DIFFCRED 90  /* Exempt scheduling other users. */
 #define PRIV_SCHED_SETPRIORITY 91 /* Can set lower nice value for proc. */
-#define PRIV_SCHED_RTPRIO   92 /* Can set real time scheduling. */
+#define PRIV_SCHED_RTPRIO   92  /* Can set real time scheduling. */
 #define PRIV_SCHED_SETPOLICY 93 /* Can set scheduler policy. */
-#define PRIV_SCHED_SET      94 /* Can set thread scheduler. */
-#define PRIV_SCHED_SETPARAM 95 /* Can set thread scheduler params. */
+#define PRIV_SCHED_SET      94  /* Can set thread scheduler. */
+#define PRIV_SCHED_SETPARAM 95  /* Can set thread scheduler params. */
 
 /*
  * Signal privileges.
@@ -163,11 +161,11 @@
 /*
  * VFS privileges.
  */
-#define PRIV_VFS_READ       130 /* Override vnode DAC read perm. */
-#define PRIV_VFS_WRITE      131 /* Override vnode DAC write perm. */
-#define PRIV_VFS_ADMIN      132 /* Override vnode DAC admin perm. */
-#define PRIV_VFS_EXEC       133 /* Override vnode DAC exec perm. */
-#define PRIV_VFS_LOOKUP     134 /* Override vnode DAC lookup perm. */
+#define PRIV_VFS_READ       130 /* vnode read perm. */
+#define PRIV_VFS_WRITE      131 /* vnode write perm. */
+#define PRIV_VFS_ADMIN      132 /* vnode admin perm. */
+#define PRIV_VFS_EXEC       133 /* vnode exec perm. */
+#define PRIV_VFS_LOOKUP     134 /* vnode lookup perm. */
 #define PRIV_VFS_BLOCKRESERVE 135 /* Can use free block reserve. */
 #define PRIV_VFS_CHFLAGS_DEV  136 /* Can chflags() a device node. */
 #define PRIV_VFS_CHOWN      137 /* Can set user; group to non-member. */
@@ -197,13 +195,13 @@
 #define PRIV_VM_MLOCK        161 /* Can mlock(), mlockall(). */
 #define PRIV_VM_MUNLOCK      162 /* Can munlock(), munlockall(). */
 #define PRIV_VM_SWAP_NOQUOTA 163 /*
-                                     * Can override the global
-                                     * swap reservation limits.
-                                     */
+                                  * Can override the global
+                                  * swap reservation limits.
+                                  */
 #define PRIV_VM_SWAP_NORLIMIT 164 /*
-                                    * Can override the per-uid swap reservation
-                                    * limits.
-                                    * */
+                                   * Can override the per-uid swap reservation
+                                   * limits.
+                                   */
 
 /*
  * Device file system privileges.
@@ -286,15 +284,7 @@
 /*
  * Priv bitmap size.
  */
-#define _PRIV_MAC_MSIZE     256
-
-/*
- * Validate that a named privilege is known by the privilege system.  Invalid
- * privileges presented to the privilege system by a priv_check interface
- * will result in a panic.  This is only approximate due to sparse allocation
- * of the privilege space.
- */
-#define PRIV_VALID(x)   ((x) > _PRIV_LOWEST && (x) < _PRIV_HIGHEST)
+#define _PRIV_MSIZE     256
 
 #ifdef KERNEL_INTERNAL
 #ifndef FS_H
@@ -303,14 +293,34 @@
 
 struct proc_info;
 
-/*
- * Privilege check interfaces, modeled after historic suser() interfaces, but
- * with the addition of a specific privilege name.  No flags are currently
- * defined for the API.  Historically, flags specified using the real uid
- * instead of the effective uid, and whether or not the check should be
- * allowed in jail.
+/**
+ * @addtogroup priv_check
+ * The priv interfaces check to see if specific system privileges are granted
+ * to the passed process.
+ *
+ * Privileges are typically granted based on one of two base system policies:
+ * the superuser policy, which grants privilege based on the effective
+ * (or sometimes read) UID having a value of 0 and process capability maps.
+ * @{
+ */
+
+/**
+ * Check privileges.
+ * @param proc is a pointer to a process.
+ * @param priv is a PRIV.
+ * @return Typically, 0 will be returned for success, and -EPERM will be
+ *         returned on failure. In case of invalid arguments -EINVAL is
+ *         returned.
  */
 int priv_check(struct proc_info * proc, int priv);
+
+/**
+ * @}
+ */
+
+#else
+int priv_setpcap(pid_t pid, int grant, size_t priv, int value);
+int priv_getcap(pid_t pid, int grant, size_t priv);
 #endif
 
 #endif /* !_SYS_PRIV_H_ */

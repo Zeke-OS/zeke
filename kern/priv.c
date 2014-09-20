@@ -36,6 +36,7 @@
 #include <autoconf.h>
 #include <proc.h>
 #include <errno.h>
+#include <syscall.h>
 #include <sys/sysctl.h>
 #include <bitmap.h>
 #include <sys/priv.h>
@@ -54,9 +55,9 @@ priv_check(struct proc_info * proc, int priv)
 {
     int error;
 
-#ifdef configMAC
-    /* MAC disable bit check */
-    error = bitmap_status(proc->mac_restrmap, priv, _PRIV_MAC_MSIZE);
+#ifdef configPROCCAP
+    /* Check if capability is disabled. */
+    error = bitmap_status(proc->pcap_restrmap, priv, _PRIV_MSIZE);
     if (error) {
         if (error != -EINVAL)
             error = -EPERM;
@@ -104,8 +105,9 @@ priv_check(struct proc_info * proc, int priv)
         goto out;
     }
 
-#ifdef configMAC
-    error = bitmap_status(proc->mac_grantmap, priv, _PRIV_MAC_MSIZE);
+#ifdef configPROCCAP
+    /* Check if we should grant privilege. */
+    error = bitmap_status(proc->pcap_grantmap, priv, _PRIV_MSIZE);
     if (error < 0) {
         goto out;
     } else if (error > 0) {
@@ -123,3 +125,71 @@ priv_check(struct proc_info * proc, int priv)
 out:
     return error;
 }
+
+/**
+ * @return -1 if failed;
+ *          0 if status was zero or operation succeed;
+ *          greater than zero status was one.
+ */
+static int sys_priv_pcap(void * user_args)
+{
+    struct _ds_priv_pcap args;
+    proc_info_t * proc;
+    int err;
+
+    /* If not selected. */
+#ifndef configPROCCAP
+    set_errno(ENOSYS);
+    err = -1;
+#else
+    err = priv_check(curproc, PRIV_ALTPCAP);
+    if (err) {
+        set_errno(EPERM);
+        return -1;
+    }
+
+    err = copyin(user_args, &args, sizeof(args));
+    if (err) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    proc = proc_get_struct(args.pid);
+    if (!proc) {
+        set_errno(ESRCH);
+        return -1;
+    }
+
+    switch (args.mode) {
+    case PRIV_PCAP_MODE_GETR: /* Get restr */
+        err = bitmap_status(proc->pcap_restrmap, args.priv, _PRIV_MSIZE);
+        break;
+    case PRIV_PCAP_MODE_SETR: /* Set restr */
+        err = bitmap_set(proc->pcap_restrmap, args.priv, _PRIV_MSIZE);
+        break;
+    case PRIV_PCAP_MODE_CLRR: /* Clear restr */
+        err = bitmap_clear(proc->pcap_restrmap, args.priv, _PRIV_MSIZE);
+        break;
+    case PRIV_PCAP_MODE_GETG: /* Get grant */
+        err = bitmap_status(proc->pcap_grantmap, args.priv, _PRIV_MSIZE);
+        break;
+    case PRIV_PCAP_MODE_SETG: /* Set grant */
+        err = bitmap_set(proc->pcap_grantmap, args.priv, _PRIV_MSIZE);
+        break;
+    case PRIV_PCAP_MODE_CLRG: /* Clear grant */
+        err = bitmap_clear(proc->pcap_grantmap, args.priv, _PRIV_MSIZE);
+        break;
+    default:
+        set_errno(EINVAL);
+        return -1;
+    }
+#endif
+
+    return err;
+}
+
+static const syscall_handler_t priv_sysfnmap[] = {
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PRIV_PCAP, sys_priv_pcap),
+};
+SYSCALL_HANDLERDEF(priv_syscall, priv_sysfnmap)
+

@@ -32,6 +32,7 @@
 
 #include <syscall.h>
 #include <errno.h>
+#include <sys/priv.h>
 #include <unistd.h>
 
 static const struct _ds_proc_credctl ds_init = { -1, -1, -1, -1, -1, -1 };
@@ -189,3 +190,41 @@ int setregid(gid_t, gid_t)
 {
 }
 #endif
+
+int priv_setpcap(pid_t pid, int grant, size_t priv, int value)
+{
+    struct _ds_priv_pcap args = {
+        .pid = pid,
+        .priv = priv
+    };
+
+    if (!grant) {
+        if (value)
+            args.mode = PRIV_PCAP_MODE_SETR;
+        else
+            args.mode = PRIV_PCAP_MODE_CLRR;
+    } else {
+        if (value)
+            args.mode = PRIV_PCAP_MODE_SETG;
+        else
+            args.mode = PRIV_PCAP_MODE_CLRG;
+    }
+
+    return syscall(SYSCALL_PRIV_PCAP, &args);
+}
+
+int priv_getcap(pid_t pid, int grant, size_t priv)
+{
+    struct _ds_priv_pcap args = {
+        .pid = pid,
+        .priv = priv
+    };
+
+    if (!grant) {
+        args.mode = PRIV_PCAP_MODE_GETR;
+    } else {
+        args.mode = PRIV_PCAP_MODE_GETG;
+    }
+
+    return syscall(SYSCALL_PRIV_PCAP, &args);
+}
