@@ -595,7 +595,7 @@ static int sys_proc_getsetcred(void * user_args)
 
     /* Set uid */
     if (cred.ruid >= 0) {
-        if (euid == 0)
+        if (priv_check(curproc, PRIV_CRED_SETUID) == 0)
             curproc->uid = cred.ruid;
         else
             retval = -1;
@@ -605,7 +605,8 @@ static int sys_proc_getsetcred(void * user_args)
     if (cred.euid >= 0) {
         uid_t new_euid = cred.euid;
 
-        if (euid == 0 || new_euid == ruid || new_euid == suid)
+        if ((priv_check(curproc, PRIV_CRED_SETEUID) == 0) ||
+                new_euid == ruid || new_euid == suid)
             curproc->euid = new_euid;
         else
             retval = -1;
@@ -613,7 +614,7 @@ static int sys_proc_getsetcred(void * user_args)
 
     /* Set suid */
     if (cred.suid >= 0) {
-        if (euid == 0)
+        if (priv_check(curproc, PRIV_CRED_SETSUID) == 0)
             curproc->suid = cred.suid;
         else
             retval = -1;
@@ -621,7 +622,7 @@ static int sys_proc_getsetcred(void * user_args)
 
     /* Set gid */
     if (cred.rgid >= 0) {
-        if (euid == 0)
+        if (priv_check(curproc, PRIV_CRED_SETGID) == 0)
             curproc->gid = cred.rgid;
         else
             retval = -1;
@@ -631,7 +632,8 @@ static int sys_proc_getsetcred(void * user_args)
     if (cred.egid >= 0) {
         gid_t new_egid = cred.egid;
 
-        if (euid == 0 || new_egid == rgid || new_egid == sgid)
+        if ((priv_check(curproc, PRIV_CRED_SETEGID) == 0) ||
+                new_egid == rgid || new_egid == sgid)
             curproc->egid = cred.egid;
         else
             retval = -1;
@@ -639,7 +641,7 @@ static int sys_proc_getsetcred(void * user_args)
 
     /* Set sgid */
     if (cred.sgid >= 0) {
-        if (euid == 0)
+        if (priv_check(curproc, PRIV_CRED_SETSGID) == 0)
             curproc->sgid = cred.sgid;
         else
             retval = -1;
