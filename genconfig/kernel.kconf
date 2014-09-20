@@ -393,6 +393,19 @@ endmenu
 
 menu "Security"
 
+config configSUSER
+    bool "Enable super user privileges"
+    default y
+    ---help---
+    Processes with uid 0 have privilege by default. This knob sets default value
+    of suser_enabled sysctl variable to one.
+
+    If suser_enabled is set to zero, uid 0 is offers no special privilege in
+    the kernel security policy in most of the places. It can be also set at
+    runtime by using sysctl interface.
+
+    If unsure, say Y.
+
 config configPROCCAP
     bool "Process Capabilities"
     default n

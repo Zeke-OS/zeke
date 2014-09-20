@@ -41,7 +41,13 @@
 #include <bitmap.h>
 #include <sys/priv.h>
 
-static int suser_enabled = 1;
+#ifdef configSUSER
+#define SUSER_EN_DEFAULT 1
+#else
+#define SUSER_EN_DEFAULT 0
+#endif
+
+static int suser_enabled = SUSER_EN_DEFAULT;
 SYSCTL_INT(_security, OID_AUTO, suser_enabled, CTLFLAG_RW,
            &suser_enabled, 0, "processes with uid 0 have privilege");
 //TUNABLE_INT("security.suser_enabled", &suser_enabled);
