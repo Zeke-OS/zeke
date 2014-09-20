@@ -238,7 +238,8 @@
 /*
  * Priv bitmap size.
  */
-#define _PRIV_MSIZE 200
+#define _PRIV_MENT 200
+#define _PRIV_MLEN E2BITMAP_SIZE(_PRIV_MENT)
 
 #ifdef KERNEL_INTERNAL
 #ifndef PROC_H

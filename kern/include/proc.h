@@ -92,8 +92,8 @@ typedef struct proc_info {
     uid_t uid, euid, suid;
     gid_t gid, egid, sgid;
 #ifdef configPROCCAP
-    bitmap_t pcap_restrmap[_PRIV_MSIZE]; /*!< Privilege restrict bitmap. */
-    bitmap_t pcap_grantmap[_PRIV_MSIZE]; /*!< Privilege grant bitmap. */
+    bitmap_t pcap_restrmap[_PRIV_MLEN]; /*!< Privilege restrict bitmap. */
+    bitmap_t pcap_grantmap[_PRIV_MLEN]; /*!< Privilege grant bitmap. */
 #endif
     unsigned long timeout;      /*!< Used to kill processes with absolute timeout */
     long utime, stime, cutime, cstime, start_time; /*!< For performance statistics */

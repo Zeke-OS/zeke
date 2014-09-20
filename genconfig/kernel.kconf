@@ -415,8 +415,6 @@ config configPROCCAP
         process capability maps that can be altered by a capable process and
         are inherited by child processes.
 
-        This feature increases memory usage by 512 bytes per process.
-
 endmenu
 
 
