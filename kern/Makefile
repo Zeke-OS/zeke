@@ -57,7 +57,7 @@ LDFLAGS    +=#
 
 # Include Dirs #################################################################
 IDIR   = ./include ../include ../genconfig
-AIDIR += ../config
+AIDIR += ../genconfig
 ################################################################################
 IDIR  := $(patsubst %,-I%,$(subst :, ,$(IDIR)))
 AIDIR := $(patsubst %,-I%,$(subst :, ,$(AIDIR)))

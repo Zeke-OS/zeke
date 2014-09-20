@@ -321,7 +321,7 @@
 /*
  * Priv bitmap size.
  */
-#define _PRIV_MAC_MAP_SIZE  1024
+#define _PRIV_MAC_MSIZE     1024
 
 /*
  * Validate that a named privilege is known by the privilege system.  Invalid
@@ -332,7 +332,11 @@
 #define PRIV_VALID(x)   ((x) > _PRIV_LOWEST && (x) < _PRIV_HIGHEST)
 
 #ifdef KERNEL_INTERNAL
-#include <tsched.h>
+#ifndef FS_H
+#error fs.h must be included
+#endif
+
+struct proc_info;
 
 /*
  * Privilege check interfaces, modeled after historic suser() interfaces, but
@@ -341,7 +345,7 @@
  * instead of the effective uid, and whether or not the check should be
  * allowed in jail.
  */
-int priv_check(proc_info_t * proc, int priv);
+int priv_check(struct proc_info * proc, int priv);
 #endif
 
 #endif /* !_SYS_PRIV_H_ */

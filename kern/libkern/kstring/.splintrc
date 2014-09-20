@@ -8,4 +8,4 @@
 -I../../
 -I../../include
 -I../../hal
--I../../../config
+-I../../../genconfig

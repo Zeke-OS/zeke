@@ -64,6 +64,7 @@
 #include <klocks.h>
 #include <sys/param.h>
 #include <sys/resource.h>
+#include <sys/priv.h>
 
 #define PROC_STATE_INITIAL  0
 #define PROC_STATE_RUNNING  1
@@ -91,8 +92,8 @@ typedef struct proc_info {
     uid_t uid, euid, suid;
     gid_t gid, egid, sgid;
 #ifdef configMAC
-    bitmap_t mac_restrmap[1024]; /*!< MAC priv restrict bitmap. */
-    bitmap_t mac_grantmap[1024]; /*!< MAC priv grant bitmap. */
+    bitmap_t mac_restrmap[_PRIV_MAC_MSIZE]; /*!< MAC priv restrict bitmap. */
+    bitmap_t mac_grantmap[_PRIV_MAC_MSIZE]; /*!< MAC priv grant bitmap. */
 #endif
     unsigned long timeout;      /*!< Used to kill processes with absolute timeout */
     long utime, stime, cutime, cstime, start_time; /*!< For performance statistics */

@@ -33,6 +33,7 @@
  */
 
 #define KERNEL_INTERNAL
+#include <autoconf.h>
 #include <proc.h>
 #include <errno.h>
 #include <sys/sysctl.h>
@@ -49,13 +50,13 @@ SYSCTL_INT(_security, OID_AUTO, suser_enabled, CTLFLAG_RW,
  * only a few to grant it.
  */
 int
-priv_check(proc_info_t * proc, int priv)
+priv_check(struct proc_info * proc, int priv)
 {
     int error;
 
 #ifdef configMAC
     /* MAC disable bit check */
-    error = bitmap_status(proc->mac_restrmap, priv, _PRIV_MAC_MAP_SIZE);
+    error = bitmap_status(proc->mac_restrmap, priv, _PRIV_MAC_MSIZE);
     if (error) {
         if (error != -EINVAL)
             error = -EPERM;
@@ -104,7 +105,7 @@ priv_check(proc_info_t * proc, int priv)
     }
 
 #ifdef configMAC
-    error = bitmap_status(proc->mac_grantmap, priv, _PRIV_MAC_MAP_SIZE);
+    error = bitmap_status(proc->mac_grantmap, priv, _PRIV_MAC_MSIZE);
     if (error < 0) {
         goto out;
     } else if (error > 0) {
