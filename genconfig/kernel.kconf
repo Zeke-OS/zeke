@@ -308,7 +308,7 @@ config configMAC
         features. Selecting this option adds a bitmaps for disabling and
         granting privileges per process basis.
 
-        This feature adds memory usage around 2048 bytes per process.
+        This feature increases memory usage by 512 bytes per process.
 
 config configBIO_DEBUG
     bool "bio debugging"

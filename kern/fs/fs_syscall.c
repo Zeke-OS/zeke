@@ -708,6 +708,12 @@ static int sys_chown(void * user_args)
     struct _fs_chown_args args;
     int err;
 
+    err = priv_check(curproc, PRIV_VFS_CHOWN);
+    if (err) {
+        set_errno(EPERM);
+        return -1;
+    }
+
     /* Copyin args struct */
     err = copyin(user_args, &args, sizeof(args));
     if (err) {

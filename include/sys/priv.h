@@ -80,162 +80,127 @@
 /*
  * Credential management privileges.
  */
-#define PRIV_CRED_SETUID    50 /* setuid. */
-#define PRIV_CRED_SETEUID   51 /* seteuid to !ruid and !svuid. */
-#define PRIV_CRED_SETGID    52 /* setgid. */
-#define PRIV_CRED_SETEGID   53 /* setgid to !rgid and !svgid. */
-#define PRIV_CRED_SETGROUPS 54 /* Set process additional groups. */
-#define PRIV_CRED_SETREUID  55 /* setreuid. */
-#define PRIV_CRED_SETREGID  56 /* setregid. */
-#define PRIV_CRED_SETRESUID 57 /* setresuid. */
-#define PRIV_CRED_SETRESGID 58 /* setresgid. */
-#define PRIV_SEEOTHERGIDS   59 /* Exempt bsd.seeothergids. */
-#define PRIV_SEEOTHERUIDS   60 /* Exempt bsd.seeotheruids. */
-
-/*
- * Debugging privileges.
- */
-#define PRIV_DEBUG_DIFFCRED 80 /* Exempt debugging other users. */
-#define PRIV_DEBUG_SUGID    81 /* Exempt debugging setuid proc. */
-#define PRIV_DEBUG_UNPRIV   82 /* Exempt unprivileged debug limit. */
-
-/*
- * Firmware privilegs.
- */
-#define PRIV_FIRMWARE_LOAD  100 /* Can load firmware. */
-
-/*
- * Kernel environment priveleges.
- */
-#define PRIV_KENV_SET       110 /* Set kernel env. variables. */
-#define PRIV_KENV_UNSET     111 /* Unset kernel env. variables. */
+#define PRIV_CRED_SETUID    20 /* setuid. */
+#define PRIV_CRED_SETEUID   21 /* seteuid to !ruid and !svuid. */
+#define PRIV_CRED_SETGID    22 /* setgid. */
+#define PRIV_CRED_SETEGID   23 /* setgid to !rgid and !svgid. */
+#define PRIV_CRED_SETGROUPS 24 /* Set process additional groups. */
+#define PRIV_CRED_SETREUID  25 /* setreuid. */
+#define PRIV_CRED_SETREGID  26 /* setregid. */
+#define PRIV_CRED_SETRESUID 27 /* setresuid. */
+#define PRIV_CRED_SETRESGID 28 /* setresgid. */
 
 /*
  * Loadable kernel module privileges.
  */
-#define PRIV_KLD_LOAD       120 /* Load a kernel module. */
-#define PRIV_KLD_UNLOAD     121 /* Unload a kernel module. */
+#define PRIV_KLD_LOAD       40 /* Load a kernel module. */
+#define PRIV_KLD_UNLOAD     41 /* Unload a kernel module. */
 
 /*
  * Privileges associated with the MAC Framework and specific MAC policy
  * modules.
  */
-#define PRIV_MAC_PARTITION  130 /* Privilege in mac_partition policy. */
-#define PRIV_MAC_PRIVS      131 /* Privilege in the mac_privs policy. */
+#define PRIV_MAC_PARTITION  50 /* Privilege in mac_partition policy. */
+#define PRIV_MAC_PRIVS      51 /* Privilege in the mac_privs policy. */
 
 /*
  * Process-related privileges.
  */
-#define PRIV_PROC_LIMIT     140 /* Exceed user process limit. */
-#define PRIV_PROC_SETLOGIN  141 /* Can call setlogin. */
-#define PRIV_PROC_SETRLIMIT 142 /* Can raise resources limits. */
+#define PRIV_PROC_LIMIT     60 /* Exceed user process limit. */
+#define PRIV_PROC_SETLOGIN  61 /* Can call setlogin. */
+#define PRIV_PROC_SETRLIMIT 62 /* Can raise resources limits. */
 
 /*
  * System V IPC privileges.
- */
-#define PRIV_IPC_READ       150 /* Can override IPC read perm. */
-#define PRIV_IPC_WRITE      151 /* Can override IPC write perm. */
-#define PRIV_IPC_ADMIN      152 /* Can override IPC owner-only perm. */
-#define PRIV_IPC_MSGSIZE    153 /* Exempt IPC message queue limit. */
-
-/*
  * POSIX message queue privileges.
+ * POSIX semaphore privileges.
  */
-#define PRIV_MQ_ADMIN       160 /* Can override msgq owner-only perm. */
+#define PRIV_IPC_READ       70 /* Can override IPC read perm. */
+#define PRIV_IPC_WRITE      71 /* Can override IPC write perm. */
+#define PRIV_IPC_ADMIN      72 /* Can override IPC owner-only perm. */
+#define PRIV_IPC_MSGSIZE    73 /* Exempt IPC message queue limit. */
+#define PRIV_MQ_ADMIN       74 /* Can override msgq owner-only perm. */
+#define PRIV_SEM_WRITE      75 /* Can override sem write perm. */
 
 /*
  * Performance monitoring counter privileges.
  */
-#define PRIV_PMC_MANAGE     170 /* Can administer PMC. */
-#define PRIV_PMC_SYSTEM     171 /* Can allocate a system-wide PMC. */
+#define PRIV_PMC_MANAGE     80 /* Can administer PMC. */
+#define PRIV_PMC_SYSTEM     81 /* Can allocate a system-wide PMC. */
 
 /*
  * Scheduling privileges.
  */
-#define PRIV_SCHED_DIFFCRED 180 /* Exempt scheduling other users. */
-#define PRIV_SCHED_SETPRIORITY 181 /* Can set lower nice value for proc. */
-#define PRIV_SCHED_RTPRIO   182 /* Can set real time scheduling. */
-#define PRIV_SCHED_SETPOLICY 183 /* Can set scheduler policy. */
-#define PRIV_SCHED_SET      184 /* Can set thread scheduler. */
-#define PRIV_SCHED_SETPARAM 185 /* Can set thread scheduler params. */
-
-/*
- * POSIX semaphore privileges.
- */
-#define PRIV_SEM_WRITE      190 /* Can override sem write perm. */
+#define PRIV_SCHED_DIFFCRED 90 /* Exempt scheduling other users. */
+#define PRIV_SCHED_SETPRIORITY 91 /* Can set lower nice value for proc. */
+#define PRIV_SCHED_RTPRIO   92 /* Can set real time scheduling. */
+#define PRIV_SCHED_SETPOLICY 93 /* Can set scheduler policy. */
+#define PRIV_SCHED_SET      94 /* Can set thread scheduler. */
+#define PRIV_SCHED_SETPARAM 95 /* Can set thread scheduler params. */
 
 /*
  * Signal privileges.
  */
-#define PRIV_SIGNAL_DIFFCRED 200 /* Exempt signalling other users. */
-#define PRIV_SIGNAL_SUGID   201 /* Non-conserv signal setuid proc. */
+#define PRIV_SIGNAL_DIFFCRED 100 /* Exempt signalling other users. */
+#define PRIV_SIGNAL_SUGID   101 /* Non-conserv signal setuid proc. */
 
 /*
  * Sysctl privileges.
  */
-#define PRIV_SYSCTL_DEBUG   210 /* Can invoke sysctl.debug. */
-#define PRIV_SYSCTL_WRITE   211 /* Can write sysctls. */
+#define PRIV_SYSCTL_DEBUG   110 /* Can invoke sysctl.debug. */
+#define PRIV_SYSCTL_WRITE   111 /* Can write sysctls. */
 
 /*
  * TTY privileges.
  */
-#define PRIV_TTY_CONSOLE    220 /* Set console to tty. */
-#define PRIV_TTY_DRAINWAIT  221 /* Set tty drain wait time. */
-#define PRIV_TTY_DTRWAIT    222 /* Set DTR wait on tty. */
-#define PRIV_TTY_EXCLUSIVE  223 /* Override tty exclusive flag. */
-#define PRIV_TTY_STI        225 /* Simulate input on another tty. */
-#define PRIV_TTY_SETA       226 /* Set tty termios structure. */
+#define PRIV_TTY_CONSOLE    120 /* Set console to tty. */
+#define PRIV_TTY_DRAINWAIT  121 /* Set tty drain wait time. */
+#define PRIV_TTY_DTRWAIT    122 /* Set DTR wait on tty. */
+#define PRIV_TTY_EXCLUSIVE  123 /* Override tty exclusive flag. */
+#define PRIV_TTY_STI        125 /* Simulate input on another tty. */
+#define PRIV_TTY_SETA       126 /* Set tty termios structure. */
 
 /*
  * VFS privileges.
  */
-#define PRIV_VFS_READ       310 /* Override vnode DAC read perm. */
-#define PRIV_VFS_WRITE      311 /* Override vnode DAC write perm. */
-#define PRIV_VFS_ADMIN      312 /* Override vnode DAC admin perm. */
-#define PRIV_VFS_EXEC       313 /* Override vnode DAC exec perm. */
-#define PRIV_VFS_LOOKUP     314 /* Override vnode DAC lookup perm. */
-#define PRIV_VFS_BLOCKRESERVE 315 /* Can use free block reserve. */
-#define PRIV_VFS_CHFLAGS_DEV  316 /* Can chflags() a device node. */
-#define PRIV_VFS_CHOWN      317 /* Can set user; group to non-member. */
-#define PRIV_VFS_CHROOT     318 /* chroot(). */
-#define PRIV_VFS_RETAINSUGID 319 /* Can retain sugid bits on change. */
-#define PRIV_VFS_EXCEEDQUOTA 320 /* Exempt from quota restrictions. */
-#define PRIV_VFS_EXTATTR_SYSTEM 321 /* Operate on system EA namespace. */
-#define PRIV_VFS_FCHROOT    322 /* fchroot(). */
-#define PRIV_VFS_FHOPEN     323 /* Can fhopen(). */
-#define PRIV_VFS_FHSTAT     324 /* Can fhstat(). */
-#define PRIV_VFS_FHSTATFS   325 /* Can fhstatfs(). */
-#define PRIV_VFS_GENERATION 326 /* stat() returns generation number. */
-#define PRIV_VFS_GETFH      327 /* Can retrieve file handles. */
-#define PRIV_VFS_GETQUOTA   328 /* getquota(). */
-#define PRIV_VFS_LINK       329 /* bsd.hardlink_check_uid */
-#define PRIV_VFS_MKNOD_BAD  330 /* Can mknod() to mark bad inodes. */
-#define PRIV_VFS_MKNOD_DEV  331 /* Can mknod() to create dev nodes. */
-#define PRIV_VFS_MKNOD_WHT  332 /* Can mknod() to create whiteout. */
-#define PRIV_VFS_MOUNT      333 /* Can mount(). */
-#define PRIV_VFS_MOUNT_OWNER    334 /* Can manage other users' file systems. */
-#define PRIV_VFS_MOUNT_EXPORTED 335 /* Can set MNT_EXPORTED on mount. */
-#define PRIV_VFS_MOUNT_PERM 336 /* Override dev node perms at mount. */
-#define PRIV_VFS_MOUNT_SUIDDIR  337 /* Can set MNT_SUIDDIR on mount. */
-#define PRIV_VFS_MOUNT_NONUSER  338 /* Can perform a non-user mount. */
-#define PRIV_VFS_SETGID     339 /* Can setgid if not in group. */
-#define PRIV_VFS_SETQUOTA   340 /* setquota(). */
-#define PRIV_VFS_STICKYFILE 341 /* Can set sticky bit on file. */
-#define PRIV_VFS_SYSFLAGS   342 /* Can modify system flags. */
-#define PRIV_VFS_UNMOUNT    343 /* Can unmount(). */
-#define PRIV_VFS_STAT       344 /* Override vnode MAC stat perm. */
+#define PRIV_VFS_READ       130 /* Override vnode DAC read perm. */
+#define PRIV_VFS_WRITE      131 /* Override vnode DAC write perm. */
+#define PRIV_VFS_ADMIN      132 /* Override vnode DAC admin perm. */
+#define PRIV_VFS_EXEC       133 /* Override vnode DAC exec perm. */
+#define PRIV_VFS_LOOKUP     134 /* Override vnode DAC lookup perm. */
+#define PRIV_VFS_BLOCKRESERVE 135 /* Can use free block reserve. */
+#define PRIV_VFS_CHFLAGS_DEV  136 /* Can chflags() a device node. */
+#define PRIV_VFS_CHOWN      137 /* Can set user; group to non-member. */
+#define PRIV_VFS_CHROOT     138 /* chroot(). */
+#define PRIV_VFS_RETAINSUGID 139 /* Can retain sugid bits on change. */
+#define PRIV_VFS_EXTATTR_SYSTEM 140 /* Operate on system EA namespace. */
+#define PRIV_VFS_LINK       141 /* bsd.hardlink_check_uid */
+#define PRIV_VFS_MKNOD_BAD  142 /* Can mknod() to mark bad inodes. */
+#define PRIV_VFS_MKNOD_DEV  143 /* Can mknod() to create dev nodes. */
+#define PRIV_VFS_MKNOD_WHT  144 /* Can mknod() to create whiteout. */
+#define PRIV_VFS_MOUNT      145 /* Can mount(). */
+#define PRIV_VFS_MOUNT_OWNER    146 /* Can manage other users' file systems. */
+#define PRIV_VFS_MOUNT_EXPORTED 147 /* Can set MNT_EXPORTED on mount. */
+#define PRIV_VFS_MOUNT_PERM     148 /* Override dev node perms at mount. */
+#define PRIV_VFS_MOUNT_SUIDDIR  149 /* Can set MNT_SUIDDIR on mount. */
+#define PRIV_VFS_MOUNT_NONUSER  150 /* Can perform a non-user mount. */
+#define PRIV_VFS_SETGID     151 /* Can setgid if not in group. */
+#define PRIV_VFS_STICKYFILE 152 /* Can set sticky bit on file. */
+#define PRIV_VFS_SYSFLAGS   153 /* Can modify system flags. */
+#define PRIV_VFS_UNMOUNT    154 /* Can unmount(). */
+#define PRIV_VFS_STAT       155 /* Stat perm. */
 
 /*
  * Virtual memory privileges.
  */
-#define PRIV_VM_MADV_PROTECT 360 /* Can set MADV_PROTECT. */
-#define PRIV_VM_MLOCK        361 /* Can mlock(), mlockall(). */
-#define PRIV_VM_MUNLOCK      362 /* Can munlock(), munlockall(). */
-#define PRIV_VM_SWAP_NOQUOTA 363 /*
+#define PRIV_VM_MADV_PROTECT 160 /* Can set MADV_PROTECT. */
+#define PRIV_VM_MLOCK        161 /* Can mlock(), mlockall(). */
+#define PRIV_VM_MUNLOCK      162 /* Can munlock(), munlockall(). */
+#define PRIV_VM_SWAP_NOQUOTA 163 /*
                                      * Can override the global
                                      * swap reservation limits.
                                      */
-#define PRIV_VM_SWAP_NORLIMIT 364 /*
+#define PRIV_VM_SWAP_NORLIMIT 164 /*
                                     * Can override the per-uid swap reservation
                                     * limits.
                                     * */
@@ -243,85 +208,85 @@
 /*
  * Device file system privileges.
  */
-#define PRIV_DEVFS_RULE     370 /* Can manage devfs rules. */
-#define PRIV_DEVFS_SYMLINK  371 /* Can create symlinks in devfs. */
+#define PRIV_DEVFS_RULE     170 /* Can manage devfs rules. */
+#define PRIV_DEVFS_SYMLINK  171 /* Can create symlinks in devfs. */
 
 /*
  * Random number generator privileges.
  */
-#define PRIV_RANDOM_RESEED  380 /* Closing /dev/random reseeds. */
+#define PRIV_RANDOM_RESEED  180 /* Closing /dev/random reseeds. */
 
 /*
  * Network stack privileges.
  */
-#define PRIV_NET_BRIDGE     390 /* Administer bridge. */
-#define PRIV_NET_GRE        391 /* Administer GRE. */
-#define _PRIV_NET_PPP       392 /* Removed. */
-#define _PRIV_NET_SLIP      393 /* Removed. */
-#define PRIV_NET_BPF        394 /* Monitor BPF. */
-#define PRIV_NET_RAW        395 /* Open raw socket. */
-#define PRIV_NET_ROUTE      396 /* Administer routing. */
-#define PRIV_NET_TAP        397 /* Can open tap device. */
-#define PRIV_NET_SETIFMTU   398 /* Set interface MTU. */
-#define PRIV_NET_SETIFFLAGS 399 /* Set interface flags. */
-#define PRIV_NET_SETIFCAP   400 /* Set interface capabilities. */
-#define PRIV_NET_SETIFNAME  401 /* Set interface name. */
-#define PRIV_NET_SETIFMETRIC 402 /* Set interface metrics. */
-#define PRIV_NET_SETIFPHYS  403 /* Set interface physical layer prop. */
-#define PRIV_NET_SETIFMAC   404 /* Set interface MAC label. */
-#define PRIV_NET_ADDMULTI   405 /* Add multicast addr. to ifnet. */
-#define PRIV_NET_DELMULTI   406 /* Delete multicast addr. from ifnet. */
-#define PRIV_NET_HWIOCTL    407 /* Issue hardware ioctl on ifnet. */
-#define PRIV_NET_SETLLADDR  408 /* Set interface link-level address. */
-#define PRIV_NET_ADDIFGROUP 409 /* Add new interface group. */
-#define PRIV_NET_DELIFGROUP 410 /* Delete interface group. */
-#define PRIV_NET_IFCREATE   411 /* Create cloned interface. */
-#define PRIV_NET_IFDESTROY  412 /* Destroy cloned interface. */
-#define PRIV_NET_ADDIFADDR  413 /* Add protocol addr to interface. */
-#define PRIV_NET_DELIFADDR  414 /* Delete protocol addr on interface. */
-#define PRIV_NET_LAGG       415 /* Administer lagg interface. */
-#define PRIV_NET_GIF        416 /* Administer gif interface. */
-#define PRIV_NET_SETIFVNET  417 /* Move interface to vnet. */
-#define PRIV_NET_SETIFDESCR 418 /* Set interface description. */
-#define PRIV_NET_SETIFFIB   419 /* Set interface fib. */
+#define PRIV_NET_BRIDGE     190 /* Administer bridge. */
+#define PRIV_NET_GRE        191 /* Administer GRE. */
+#define _PRIV_NET_PPP       192 /* Removed. */
+#define _PRIV_NET_SLIP      193 /* Removed. */
+#define PRIV_NET_BPF        194 /* Monitor BPF. */
+#define PRIV_NET_RAW        195 /* Open raw socket. */
+#define PRIV_NET_ROUTE      196 /* Administer routing. */
+#define PRIV_NET_TAP        197 /* Can open tap device. */
+#define PRIV_NET_SETIFMTU   198 /* Set interface MTU. */
+#define PRIV_NET_SETIFFLAGS 199 /* Set interface flags. */
+#define PRIV_NET_SETIFCAP   200 /* Set interface capabilities. */
+#define PRIV_NET_SETIFNAME  201 /* Set interface name. */
+#define PRIV_NET_SETIFMETRIC 202 /* Set interface metrics. */
+#define PRIV_NET_SETIFPHYS  203 /* Set interface physical layer prop. */
+#define PRIV_NET_SETIFMAC   204 /* Set interface MAC label. */
+#define PRIV_NET_ADDMULTI   205 /* Add multicast addr. to ifnet. */
+#define PRIV_NET_DELMULTI   206 /* Delete multicast addr. from ifnet. */
+#define PRIV_NET_HWIOCTL    207 /* Issue hardware ioctl on ifnet. */
+#define PRIV_NET_SETLLADDR  208 /* Set interface link-level address. */
+#define PRIV_NET_ADDIFGROUP 209 /* Add new interface group. */
+#define PRIV_NET_DELIFGROUP 210 /* Delete interface group. */
+#define PRIV_NET_IFCREATE   211 /* Create cloned interface. */
+#define PRIV_NET_IFDESTROY  212 /* Destroy cloned interface. */
+#define PRIV_NET_ADDIFADDR  213 /* Add protocol addr to interface. */
+#define PRIV_NET_DELIFADDR  214 /* Delete protocol addr on interface. */
+#define PRIV_NET_LAGG       215 /* Administer lagg interface. */
+#define PRIV_NET_GIF        216 /* Administer gif interface. */
+#define PRIV_NET_SETIFVNET  217 /* Move interface to vnet. */
+#define PRIV_NET_SETIFDESCR 218 /* Set interface description. */
+#define PRIV_NET_SETIFFIB   219 /* Set interface fib. */
 
 /*
  * IPv4 and IPv6 privileges.
  */
-#define PRIV_NETINET_RESERVEDPORT   490 /* Bind low port number. */
-#define PRIV_NETINET_IPFW   491 /* Administer IPFW firewall. */
-#define PRIV_NETINET_DIVERT 492 /* Open IP divert socket. */
-#define PRIV_NETINET_PF     493 /* Administer pf firewall. */
-#define PRIV_NETINET_DUMMYNET   494 /* Administer DUMMYNET. */
-#define PRIV_NETINET_CARP   495 /* Administer CARP. */
-#define PRIV_NETINET_MROUTE 496 /* Administer multicast routing. */
-#define PRIV_NETINET_RAW    497 /* Open netinet raw socket. */
-#define PRIV_NETINET_GETCRED    498 /* Query netinet pcb credentials. */
-#define PRIV_NETINET_ADDRCTRL6  499 /* Administer IPv6 address scopes. */
-#define PRIV_NETINET_ND6    500 /* Administer IPv6 neighbor disc. */
-#define PRIV_NETINET_SCOPE6 501 /* Administer IPv6 address scopes. */
-#define PRIV_NETINET_ALIFETIME6 502 /* Administer IPv6 address lifetimes. */
-#define PRIV_NETINET_IPSEC  503 /* Administer IPSEC. */
-#define PRIV_NETINET_REUSEPORT  504 /* Allow [rapid] port/address reuse. */
-#define PRIV_NETINET_SETHDROPTS 505 /* Set certain IPv4/6 header options. */
-#define PRIV_NETINET_BINDANY    506 /* Allow bind to any address. */
+#define PRIV_NETINET_RESERVEDPORT 220 /* Bind low port number. */
+#define PRIV_NETINET_IPFW   221 /* Administer IPFW firewall. */
+#define PRIV_NETINET_DIVERT 222 /* Open IP divert socket. */
+#define PRIV_NETINET_PF     223 /* Administer pf firewall. */
+#define PRIV_NETINET_DUMMYNET 224 /* Administer DUMMYNET. */
+#define PRIV_NETINET_CARP   225 /* Administer CARP. */
+#define PRIV_NETINET_MROUTE 225 /* Administer multicast routing. */
+#define PRIV_NETINET_RAW    227 /* Open netinet raw socket. */
+#define PRIV_NETINET_GETCRED 228 /* Query netinet pcb credentials. */
+#define PRIV_NETINET_ADDRCTRL6 229 /* Administer IPv6 address scopes. */
+#define PRIV_NETINET_ND6    230 /* Administer IPv6 neighbor disc. */
+#define PRIV_NETINET_SCOPE6 231 /* Administer IPv6 address scopes. */
+#define PRIV_NETINET_ALIFETIME6 232 /* Administer IPv6 address lifetimes. */
+#define PRIV_NETINET_IPSEC  233 /* Administer IPSEC. */
+#define PRIV_NETINET_REUSEPORT  234 /* Allow [rapid] port/address reuse. */
+#define PRIV_NETINET_SETHDROPTS 235 /* Set certain IPv4/6 header options. */
+#define PRIV_NETINET_BINDANY    236 /* Allow bind to any address. */
 
 /*
  * cpuctl(4) privileges.
  */
-#define PRIV_CPUCTL_WRMSR   640 /* Write model-specific register. */
-#define PRIV_CPUCTL_UPDATE  641 /* Update cpu microcode. */
+#define PRIV_CPUCTL_WRMSR   240 /* Write model-specific register. */
+#define PRIV_CPUCTL_UPDATE  241 /* Update cpu microcode. */
 
 /*
  * mem(4) privileges.
  */
-#define PRIV_KMEM_READ      680 /* Open mem/kmem for reading. */
-#define PRIV_KMEM_WRITE     681 /* Open mem/kmem for writing. */
+#define PRIV_KMEM_READ      250 /* Open mem/kmem for reading. */
+#define PRIV_KMEM_WRITE     251 /* Open mem/kmem for writing. */
 
 /*
  * Priv bitmap size.
  */
-#define _PRIV_MAC_MSIZE     1024
+#define _PRIV_MAC_MSIZE     256
 
 /*
  * Validate that a named privilege is known by the privilege system.  Invalid
