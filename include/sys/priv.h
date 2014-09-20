@@ -241,8 +241,8 @@
 #define _PRIV_MSIZE 200
 
 #ifdef KERNEL_INTERNAL
-#ifndef FS_H
-#error fs.h must be included
+#ifndef PROC_H
+#error proc.h must be included
 #endif
 
 struct proc_info;
