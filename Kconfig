@@ -5,7 +5,7 @@ source "genconfig/target.kconf"
 endmenu
 
 menu "Kernel"
-source "genconfig/kernel.kconf"
+source "kern/Kconfig"
 endmenu
 
 menu "User Space"

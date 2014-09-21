@@ -1,0 +1,42 @@
+# kern/kunit/Kconfig
+
+menuconfig configKUNIT
+    bool "In-Kernel Unit Tests"
+    ---help---
+        KUnit is a port of PUnit for in-kernel testing. KUnit is only needed
+        if you are willing to run those tests. In-kernel tests may cause
+        serious stability issues or crash the kernel.
+        Tests are exported under sysctl debug.test tree and can be executed
+        by writing to a test node. Test log is then written to the kernel
+        logging facility.
+
+if configKUNIT
+config configKUNIT_REPORT_ORIENTED
+    bool "Report oriented"
+
+config configKUNIT_FS
+    bool "fs"
+    ---help---
+        Tests for vfs and filesystems.
+
+config configKUNIT_GENERIC
+    bool "generic"
+    ---help---
+        Tests for generic data structures.
+
+config configKUNIT_HAL
+    bool "hal"
+    ---help---
+        Tests for HAL.
+
+config configKUNIT_KSTRING
+    bool "kstring"
+    ---help---
+        Tests for kstring library.
+
+config configKUNIT_VM
+    bool "vm"
+    ---help---
+        Tests for virtual memory related libraries and subsystems.
+
+endif

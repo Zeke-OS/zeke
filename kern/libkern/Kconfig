@@ -1,0 +1,10 @@
+# kern/libkern/Kconfig
+
+menu "Library routines"
+
+config configSTRING_OPT_SIZE
+    bool "Optimize string functions for size"
+    ---help---
+        Optimize string functions for speed or size.
+
+endmenu

@@ -1,0 +1,57 @@
+# kern/kerror/Kconfig
+
+menuconfig configKLOGGER
+    bool "Kernel logging facility"
+    default y
+
+if configKLOGGER
+config configKERROR_BUF_SIZE
+    int "Lastlog buf size"
+    default 4096
+config configKERROR_MAXLEN
+    int "Max kerror line length"
+    default 400
+
+config configKERROR_UART
+    bool "Direct UART0 printing support"
+    default y
+    depends on configUART
+
+config configKERROR_FB
+    bool "Print to FB support"
+    default n
+    depends on configFB
+
+config configDEF_KLOGGER
+    int "Default klogger method"
+    range 0 3
+    default 2
+    ---help---
+        0 = No logger
+        1 = Kerror buffer
+        2 = UART0
+        3 = FB
+
+choice
+    prompt "Log level"
+    default configDEBUG_CRIT
+config configDEBUG_CRIT
+    bool "Normal build"
+config configDEBUG_ERR
+    bool "Errors"
+    ---help---
+        Additional error messages and asserts for serious errors that should not
+        occur in normal operation.
+config configDEBUG_WARN
+    bool "Additional warnings"
+config configDEBUG_INFO
+    bool "Additional information"
+    ---help---
+        Additional information on warnings and errors.
+config configDEBUG_DEBUG
+    bool "Debug messages"
+    ---help---
+        All debug messages and asserts.
+endchoice
+
+endif
