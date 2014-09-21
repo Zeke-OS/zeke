@@ -558,6 +558,12 @@ static int sys_filestat(void * user_args)
     struct stat stat_buf;
     int err, retval = -1;
 
+    err = priv_check(curproc, PRIV_VFS_STAT);
+    if (err) {
+        set_errno(EPERM);
+        return -1;
+    }
+
     err = copyinstruct(user_args, (void **)(&args),
             sizeof(struct _fs_stat_args),
             GET_STRUCT_OFFSETS(struct _fs_stat_args,
