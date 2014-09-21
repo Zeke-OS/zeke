@@ -95,19 +95,34 @@ typedef struct vnode {
     ino_t vn_num;               /*!< vnode number. */
     unsigned vn_hash;           /*!< Hash for using vfs hashing. */
     atomic_t vn_refcount;
+
     /*!< Pointer to the vnode in mounted file system. If no fs is mounted on
      *   this vnode then this is a self pointing pointer. */
     struct vnode * vn_mountpoint;
     struct vnode * vn_prev_mountpoint;
 
-    off_t vn_len;               /*!< Length of file. */
+    off_t vn_len;               /*!< Length of file, usually in bytes. */
     mode_t vn_mode;             /*!< File type part of st_mode sys/stat.h */
     void * vn_specinfo;         /*!< Pointer to an additional information
                                  * required by the ops. */
-    struct bufhd vn_bpo;        /*!< Pointer to a buffer pointer storage
-                                 *   object. */
-    struct fs_superblock * sb;  /*!< Pointer to the super block of this
-                                 *   vnode. */
+
+    /**
+     * Pointer to a buffer pointer storage object.
+     * vn_bpo represents a set of buffers belonging to the same vnode where
+     * different buffers cover different non-overlapping ranges of data
+     * within the vnode.
+     */
+    struct bufhd vn_bpo;
+
+    /**
+     * Pointer to the super block of this vnode.
+     * Superblock is representing the actual file system mount.
+     */
+    struct fs_superblock * sb;
+
+    /**
+     * vnode operations.
+     */
     struct vnode_ops * vnode_ops;
 
     /**
