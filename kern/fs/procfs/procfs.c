@@ -150,6 +150,8 @@ static ssize_t procfs_read(file_t * file, void * vbuf, size_t bcount)
                             min(bcount, bbytes));
             file->seek_pos = min(file->seek_pos + bytes, bbytes);
         }
+
+        kfree(tmpbuf);
     }
 
     return bytes;
