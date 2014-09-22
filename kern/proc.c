@@ -581,7 +581,7 @@ static int sys_proc_getsetcred(void * user_args)
 {
     struct _ds_proc_credctl cred;
     uid_t ruid = curproc->uid;
-    uid_t euid = curproc->euid;
+    /*uid_t euid = curproc->euid;*/
     uid_t suid = curproc->suid;
     gid_t rgid = curproc->gid;
     gid_t sgid = curproc->sgid;

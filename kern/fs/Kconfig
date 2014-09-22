@@ -24,6 +24,10 @@ config configROOTFS_PARMS
 
 endif
 
+config config_FS_DEBUG
+    bool "fs subsystem debugging"
+    default n
+
 menuconfig configMBR
     bool "MBR Support"
     default n
@@ -45,6 +49,11 @@ config configDEVFS
     select configRAMFS
 comment "No devfs"
     depends on !configDEVFS
+
+config configPROCFS
+    bool "procfs"
+    default y
+    select configRAMFS
 
 menu "FS libs"
 

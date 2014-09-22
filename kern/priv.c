@@ -132,6 +132,7 @@ out:
     return error;
 }
 
+#ifdef configPROCCAP
 /**
  * @return -1 if failed;
  *          0 if status was zero or operation succeed;
@@ -143,11 +144,6 @@ static int sys_priv_pcap(void * user_args)
     proc_info_t * proc;
     int err;
 
-    /* If not selected. */
-#ifndef configPROCCAP
-    set_errno(ENOSYS);
-    err = -1;
-#else
     err = priv_check(curproc, PRIV_ALTPCAP);
     if (err) {
         set_errno(EPERM);
@@ -189,13 +185,16 @@ static int sys_priv_pcap(void * user_args)
         set_errno(EINVAL);
         return -1;
     }
-#endif
 
     return err;
 }
+#endif
 
 static const syscall_handler_t priv_sysfnmap[] = {
+#ifdef configPROCCAP
     ARRDECL_SYSCALL_HNDL(SYSCALL_PRIV_PCAP, sys_priv_pcap),
+#else
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PRIV_PCAP, NULL),
+#endif
 };
 SYSCALL_HANDLERDEF(priv_syscall, priv_sysfnmap)
-

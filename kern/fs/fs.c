@@ -240,6 +240,15 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
     fs_t * fs = 0;
     struct fs_superblock * sb;
     int err;
+#ifdef config_FS_DEBUG
+    char buf[160];
+
+    ksprintf(buf, sizeof(buf),
+            "fs_mount(target \"%s\", source \"%s\", fsname \"%s\", "
+            "flags %x, parm \"%s\", parm_len %d)\n",
+            target, source, fsname, flags, parm, parm_len);
+    KERROR(KERROR_DEBUG, buf);
+#endif
 
     if (fsname) {
         fs = fs_by_name(fsname);
@@ -248,6 +257,11 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
     }
     if (!fs)
         return -ENOTSUP; /* fs doesn't exist. */
+
+#ifdef config_FS_DEBUG
+    ksprintf(buf, sizeof(buf), "Found fs: %s\n", fsname);
+    KERROR(KERROR_DEBUG, buf);
+#endif
 
     err = fs->mount(source, flags, parm, parm_len, &sb);
     if (err)
@@ -922,6 +936,44 @@ out:
     fs_fildes_ref(curproc->files, fildes, -1);
 
     return retval;
+}
+
+vnode_t * fs_create_pseudofs_root(const char * fsname, int majornum)
+{
+    /*
+     * We use a little trick here and create a temporary vnode that will be
+     * destroyed after succesful mount.
+     */
+
+    int err;
+    vnode_t * rootnode = kcalloc(1, sizeof(vnode_t));
+
+    if (!rootnode)
+        return NULL;
+
+    /* Tem root dir */
+    rootnode->vn_mountpoint = rootnode;
+    rootnode->vn_refcount = 1;
+    mtx_init(&rootnode->vn_lock, VN_LOCK_MODES);
+
+    err = fs_mount(rootnode, "", "ramfs", 0, "", 1);
+    if (err) {
+        char buf[80];
+
+        ksprintf(buf, sizeof(buf),
+                 "Unable to create a pseudo fs root vnode for %s (%i)\n",
+                 fsname, err);
+        KERROR(KERROR_ERR, buf);
+        return NULL;
+    }
+    rootnode = rootnode->vn_mountpoint;
+    kfree(rootnode->vn_prev_mountpoint);
+    rootnode->vn_prev_mountpoint = rootnode;
+    rootnode->vn_mountpoint = rootnode;
+
+    rootnode->sb->vdev_id = DEV_MMTODEV(majornum, 0);
+
+    return rootnode;
 }
 
 void fs_vnode_init(vnode_t * vnode, ino_t vn_num, struct fs_superblock * sb,

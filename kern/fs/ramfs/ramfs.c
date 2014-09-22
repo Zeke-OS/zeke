@@ -267,32 +267,28 @@ int ramfs_umount(struct fs_superblock * fs_sb)
  * Get the vnode struct linked to a vnode number.
  * @param[in] sb        is the superblock.
  * @param[in] vnode_num is the vnode number.
- * @param[out] vnode    is a pointer to the vnode.
+ * @param[out] vnode    is a pointer to the vnode, can be NULL.
  * @return Returns 0 if no error; Otherwise value other than zero.
  */
 int ramfs_get_vnode(fs_superblock_t * sb, ino_t * vnode_num, vnode_t ** vnode)
 {
     ramfs_sb_t * ramfs_sb;
-    int retval = 0;
 
-    if (strcmp(sb->fs->fsname, RAMFS_FSNAME)) {
-        retval = -EINVAL;
-        goto out;
-    }
+    if (strcmp(sb->fs->fsname, RAMFS_FSNAME))
+        return -EINVAL;
 
     /* Get pointer to the ramfs_sb from generic sb. */
     ramfs_sb = get_rfsb_of_sb(sb);
 
-    if (*vnode_num >= (ino_t)(ramfs_sb->ramfs_iarr_size)) {
-        retval = -ENOENT; /* inode can't exist. */
-        goto out;
+    if (*vnode_num >= (ino_t)(ramfs_sb->ramfs_iarr_size))
+        return -ENOENT; /* inode can't exist. */
+
+    if (vnode) {
+        *vnode = &(ramfs_sb->ramfs_iarr[*vnode_num]->in_vnode);
+        vref(*vnode);
     }
 
-    *vnode = &(ramfs_sb->ramfs_iarr[*vnode_num]->in_vnode);
-    vref(*vnode);
-
-out:
-    return retval;
+    return 0;
 }
 
 /**
@@ -433,28 +429,20 @@ int ramfs_lookup(vnode_t * dir, const char * name, size_t name_len,
 {
     dh_table_t * dh_dir;
     ino_t vnode_num;
-    int retval = 0;
 
-    if (!S_ISDIR(dir->vn_mode)) {
-        retval = -ENOTDIR; /* No a directory entry. */
-        goto out;
-    }
+    if (!S_ISDIR(dir->vn_mode))
+        return -ENOTDIR; /* No a directory entry. */
 
     dh_dir = get_inode_of_vnode(dir)->in.dir;
-    if (dh_lookup(dh_dir, name, &vnode_num)) {
-        retval = -ENOENT; /* Link not found. */
-        goto out;
-    }
+    if (dh_lookup(dh_dir, name, &vnode_num))
+        return -ENOENT; /* Link not found. */
 
     if (ramfs_get_vnode(dir->sb, &vnode_num, result)) {
-        retval = -ENOLINK; /* Could not translate vnode_num to a vnode;
-                            * Broken link? */
+        return -ENOLINK; /* Could not translate vnode_num to a vnode;
+                          * Broken link? */
     }
 
-    if (result)
-        vref(*result);
-out:
-    return retval;
+    return 0;
 }
 
 int ramfs_link(vnode_t * dir, vnode_t * vnode, const char * name, size_t name_len)

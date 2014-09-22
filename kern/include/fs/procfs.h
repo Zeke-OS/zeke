@@ -1,11 +1,10 @@
 /**
  *******************************************************************************
- * @file    init.c
+ * @file    procfs.h
  * @author  Olli Vanhoja
- * @brief   First user scope process.
+ * @brief   Process file system headers.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+ * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,60 +30,26 @@
  *******************************************************************************
  */
 
-#include <autoconf.h>
+#pragma once
+#ifndef PROCFS_H
+#define PROCFS_H
+
+#include <stdint.h>
+#include <stddef.h>
 #include <sys/types.h>
-#include <time.h>
-#include <unistd.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <mount.h>
-#include "tish/tish.h"
-#include "init.h"
+#include <sys/param.h>
+#include <fs/fs.h>
 
-char banner[] = "\
-|'''''||                    \n\
-    .|'   ...'||            \n\
-   ||   .|...|||  ..  ....  \n\
- .|'    ||    || .' .|...|| \n\
-||......|'|...||'|. ||      \n\
-             .||. ||.'|...'\n\n\
-";
+#define PROCFS_FSNAME            "procfs" /*!< Name of the fs. */
+#define PROCFS_MAJOR_NUM         12      /*!< Major id of the fs. */
 
-static const char msg[] = "Zeke " KERNEL_VERSION " init\n";
+enum procfs_filetype {
+    PROCFS_STATUS
+};
 
-void * main(void * arg)
-{
-    int r0, r1, r2;
-    const char tty_path[] = "/dev/ttyS0";
-//    char buf[80];
+struct procfs_info {
+    enum procfs_filetype ftype;
+    pid_t pid;
+};
 
-    mkdir("/dev", S_IRWXU | S_IRGRP | S_IXGRP);
-    mount("", "/dev", "devfs", 0, "");
-
-    mkdir("/proc", S_IRWXU | S_IRGRP | S_IXGRP);
-    mount("", "/proc", "procfs", 0, "");
-
-    close(STDIN_FILENO);
-    close(STDOUT_FILENO);
-    close(STDERR_FILENO);
-    r0 = open(tty_path, O_RDONLY);
-    r1 = open(tty_path, O_WRONLY);
-    r2 = open(tty_path, O_WRONLY);
-
-#if 0
-    ksprintf(buf, sizeof(buf), "fd: %i, %i, %i\n", r0, r1, r2);
-    write(STDOUT_FILENO, buf, strlenn(buf, sizeof(buf)));
-#endif
-
-    write(STDOUT_FILENO, banner, sizeof(banner));
-    write(STDOUT_FILENO, msg, sizeof(msg));
-
-#if configTISH != 0
-    tish();
-#endif
-    while(1) {
-        write(STDOUT_FILENO, "init\n", 5);
-        sleep(10);
-    }
-}
+#endif /* PROCFS_H */

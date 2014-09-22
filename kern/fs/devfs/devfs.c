@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    block.c
+ * @file    devfs.c
  * @author  Olli Vanhoja
- * @brief
+ * @brief   Device file system.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -63,20 +63,17 @@ static fs_t devfs_fs = {
 /* There is only one devfs, but it can be mounted multiple times */
 vnode_t * vn_devfs;
 
-#define PANIC_MSG "devfs_init(): "
-
 int devfs_init(void) __attribute__((constructor));
 int devfs_init(void)
 {
     SUBSYS_DEP(ramfs_init);
     SUBSYS_INIT("devfs");
 
-    int err;
+    vnode_ops_t * vnops;
 
-    vnode_ops_t * vnops = kmalloc(sizeof(vnode_ops_t));
-    vn_devfs = kmalloc(sizeof(vnode_t));
-    if (!vnops || !vn_devfs) {
-        panic(PANIC_MSG "ENOMEM\n");
+    vnops = kmalloc(sizeof(vnode_ops_t));
+    if (!vnops) {
+        panic("devfs_init(): ENOMEM\n");
     }
 
     /*
@@ -90,24 +87,9 @@ int devfs_init(void)
     vnops->ioctl = dev_ioctl;
     devfs_vnode_ops = vnops;
 
-    /* Root dir */
-    vn_devfs->vn_mountpoint = vn_devfs;
-    vn_devfs->vn_refcount = 1;
-
-    err = fs_mount(vn_devfs, "", "ramfs", 0, "", 1);
-    if (err) {
-        char buf[80];
-
-        ksprintf(buf, sizeof(buf), PANIC_MSG "%i\n", err);
-        KERROR(KERROR_ERR, buf);
-        return err;
-    }
-    vn_devfs = vn_devfs->vn_mountpoint;
-    kfree(vn_devfs->vn_prev_mountpoint);
-    vn_devfs->vn_prev_mountpoint = vn_devfs;
-    vn_devfs->vn_mountpoint = vn_devfs;
-
-    vn_devfs->sb->vdev_id = DEV_MMTODEV(DEVFS_MAJOR_NUM, 0);
+    vn_devfs = fs_create_pseudofs_root(DEVFS_FSNAME, DEVFS_MAJOR_NUM);
+    if (!vn_devfs)
+        return -ENOMEM;
     fs_register(&devfs_fs);
 
     _devfs_create_specials();
