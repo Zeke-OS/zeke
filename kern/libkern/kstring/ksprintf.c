@@ -33,7 +33,7 @@
 #include <stdarg.h>
 #include <kstring.h>
 
-void ksprintf(char * str, size_t maxlen, const char * format, ...)
+int ksprintf(char * str, size_t maxlen, const char * format, ...)
 {
     va_list args;
     size_t i = 0, n = 0;
@@ -110,4 +110,6 @@ void ksprintf(char * str, size_t maxlen, const char * format, ...)
 
     str[n] = '\0';
     va_end(args);
+
+    return n + 1;
 }

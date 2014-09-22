@@ -214,7 +214,8 @@ char * kstrdup(const char * src, size_t max);
  *            arguments, each containing a value to be used to replace
  *            a format specifier in the format string.
  */
-void ksprintf(char * str, size_t maxlen, const char * format, ...) __attribute__ ((format (printf, 3, 4)));
+int ksprintf(char * str, size_t maxlen, const char * format, ...)
+    __attribute__ ((format (printf, 3, 4)));
 
 /**
  * @}
