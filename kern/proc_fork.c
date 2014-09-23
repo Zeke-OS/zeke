@@ -42,6 +42,7 @@
 #include <errno.h>
 #include <vm/vm.h>
 #include <sys/sysctl.h>
+#include <fs/procfs.h>
 #include <ptmapper.h>
 #include <dynmem.h>
 #include <kmalloc.h>
@@ -247,6 +248,10 @@ pid_t proc_fork(pid_t pid)
 
     /* Insert the new process into the process array */
     procarr_insert(new_proc);
+
+#ifdef configPROCFS
+    procfs_mkentry(new_proc);
+#endif
 
     if (new_proc->main_thread) {
         sched_thread_set_exec(new_proc->main_thread->id);

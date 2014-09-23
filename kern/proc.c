@@ -46,6 +46,7 @@
 #include <sys/sysctl.h>
 #include <sys/param.h>
 #include <fcntl.h>
+#include <fs/procfs.h>
 #include <ptmapper.h>
 #include <dynmem.h>
 #include <kmalloc.h>
@@ -233,6 +234,10 @@ static void proc_remove(pid_t pid)
     /* TODO free everything */
     if (!(p = proc_get_struct(pid)))
         return;
+
+#ifdef configPROCFS
+    procfs_rmentry(pid);
+#endif
 
     _proc_free(p);
     procarr_remove(pid);

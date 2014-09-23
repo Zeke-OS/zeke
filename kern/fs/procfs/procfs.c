@@ -80,8 +80,8 @@ int procfs_init(void)
 
     /*
      * Create a vnops struct.
-     * We want to inherit ops from ramfs and change pointers to overridden
-     * functions.
+     * We want to inherit ops from ramfs and override some function
+     * implementations.
      */
     memcpy(vnops, &ramfs_vnode_ops, sizeof(vnode_ops_t));
     vnops->read = procfs_read;
@@ -109,6 +109,9 @@ static int procfs_umount(struct fs_superblock * fs_sb)
     return -EBUSY;
 }
 
+/**
+ * Override read() function.
+ */
 static ssize_t procfs_read(file_t * file, void * vbuf, size_t bcount)
 {
     size_t bbytes;
@@ -157,12 +160,14 @@ static ssize_t procfs_read(file_t * file, void * vbuf, size_t bcount)
     return bytes;
 }
 
+/**
+ * Override write() function.
+ */
 static ssize_t procfs_write(file_t * file, const void * vbuf, size_t bcount)
 {
     return -EROFS; /* TODO is there any files that should allow writing? */
 }
 
-/* TODO Should be called automatically! */
 static int procfs_updatedir(vnode_t * dir)
 {
     int err = 0;
@@ -178,32 +183,15 @@ static int procfs_updatedir(vnode_t * dir)
          * directories that should not exist anymore.
          */
         for (int i = 0; i < act_maxproc; i++) {
-            vnode_t * pdir;
             const proc_info_t * proc = proc_get_struct(i);
-            char name[10];
-            size_t name_len;
 
-            if (!proc)
-                continue;
-
-            /* proc dir name and name_len */
-            name_len = uitoa32(name, proc->pid);
-
-            dir->vnode_ops->mkdir(dir, name, name_len, 0444);
-            err = dir->vnode_ops->lookup(dir, name, name_len, &pdir);
-            if (err) {
-                err = -ENOTDIR;
+            if (proc)
+                err = procfs_mkentry(proc);
+            else
+                err = procfs_rmentry(i);
+            if (err)
                 goto fail;
-            }
-
-            err = create_status_file(pdir, proc);
-            if (err) {
-                err = -ENOTDIR;
-                goto fail;
-            }
         }
-
-        /* TODO Remove old process dirs */
     }
 
 fail:
@@ -212,11 +200,67 @@ fail:
     return err;
 }
 
-static int create_status_file(vnode_t * dir, const proc_info_t * proc)
+int procfs_mkentry(const proc_info_t * proc)
+{
+    vnode_t * pdir;
+    char name[10];
+    size_t name_len;
+    int err;
+
+    if (!vn_procfs)
+        return 0; /* Not yet initialized. */
+
+
+    /* proc dir name and name_len */
+    name_len = uitoa32(name, proc->pid);
+
+    err = vn_procfs->vnode_ops->mkdir(vn_procfs, name, name_len, PROCFS_PERMS);
+    if (err == -EEXIST)
+        return 0;
+    else if (err)
+        return err;
+
+    err = vn_procfs->vnode_ops->lookup(vn_procfs, name, name_len, &pdir);
+    if (err)
+        return err;
+
+    err = create_status_file(pdir, proc);
+    if (err)
+        return err;
+
+    return 0;
+}
+
+int procfs_rmentry(pid_t pid)
+{
+    vnode_t * pdir;
+    char name[10];
+    size_t name_len;
+    int err;
+
+    if (!vn_procfs)
+        return 0; /* Not yet initialized. */
+
+    /* proc dir name and name_len */
+    name_len = uitoa32(name, pid);
+
+    err = vn_procfs->vnode_ops->lookup(vn_procfs, name, name_len, &pdir);
+    if (err == -ENOENT)
+        return 0;
+    else if (err)
+        return err;
+
+    pdir->vnode_ops->unlink(pdir, PROCFS_FN_STATUS, sizeof(PROCFS_FN_STATUS));
+
+    return 0;
+}
+
+/**
+ * Create a process status file.
+ */
+static int create_status_file(vnode_t * pdir, const proc_info_t * proc)
 {
     vnode_t * vn;
-    const char name[7] = "status";
-    const size_t name_len = 7;
     struct procfs_info * spec = kcalloc(1, sizeof(struct procfs_info));
     int err;
 
@@ -229,7 +273,9 @@ static int create_status_file(vnode_t * dir, const proc_info_t * proc)
     spec->ftype = PROCFS_STATUS;
     spec->pid = proc->pid;
 
-    err = dir->vnode_ops->mknod(dir, name, name_len, S_IFREG | 0444, spec, &vn);
+    err = pdir->vnode_ops->mknod(pdir,
+            PROCFS_FN_STATUS, sizeof(PROCFS_FN_STATUS),
+            S_IFREG | PROCFS_PERMS, spec, &vn);
     if (err) {
         kfree(spec);
         return -ENOTDIR;

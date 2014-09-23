@@ -40,16 +40,41 @@
 #include <sys/param.h>
 #include <fs/fs.h>
 
-#define PROCFS_FSNAME            "procfs" /*!< Name of the fs. */
-#define PROCFS_MAJOR_NUM         12      /*!< Major id of the fs. */
+#define PROCFS_FSNAME           "procfs"    /*!< Name of the fs. */
+#define PROCFS_MAJOR_NUM        12          /*!< Major id of the fs. */
 
+#define PROCFS_PERMS            0400        /*!< Default file permissions of
+                                             *   an procfs entry.
+                                             */
+/* Procfs file names */
+#define PROCFS_FN_STATUS        "status"
+
+/**
+ * Procfs file types.
+ */
 enum procfs_filetype {
-    PROCFS_STATUS
+    PROCFS_STATUS       /*!< Process status file. */
 };
 
+/**
+ * Procfs specinfo descriptor.
+ */
 struct procfs_info {
     enum procfs_filetype ftype;
     pid_t pid;
 };
+
+/**
+ * Create an entry for a process into procfs.
+ * @param proc is a PCB to be described in procfs.
+ */
+int procfs_mkentry(const proc_info_t * proc);
+
+/**
+ * Remove a process entry strored in procfs.
+ * @param pid is the process ID of the process to be removed.
+ */
+int procfs_rmentry(pid_t pid);
+
 
 #endif /* PROCFS_H */
