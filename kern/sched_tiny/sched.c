@@ -5,7 +5,8 @@
  * @brief   Kernel scheduler
  * @section LICENSE
  * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+ * Copyright (c) 2012, 2013 Ninjaware Oy,
+ *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -78,10 +79,13 @@ threadInfo_t * current_thread; /*!< Pointer to the currently active
 static rwlock_t loadavg_lock;
 static uint32_t loadavg[3]  = { 0, 0, 0 }; /*!< CPU load averages */
 
-/** Stack for idle thread */
+#if configIDLE_TH_STACK_SIZE < 40
+#error Idle thread stack (configIDLE_TH_STACK_SIZE) should be at least 40
+#endif
+/** Stack for the idle thread */
 static char sched_idle_stack[sizeof(sw_stack_frame_t) +
                              sizeof(hw_stack_frame_t) +
-                             IDLE_THREAD_MINSTACK];
+                             configIDLE_TH_STACK_SIZE];
 
 /* Static function declarations **********************************************/
 static void init_thread_id_queue(void);

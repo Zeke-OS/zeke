@@ -147,6 +147,8 @@ static void create_debug_thread(void)
         puts("Failed to create a stack\n");
         return;
     }
+    ksprintf(buf, sizeof(buf), "New stack @ %p\n", newstack);
+    puts(buf);
 
     pthread_attr_t attr = {
         .tpriority  = 0,

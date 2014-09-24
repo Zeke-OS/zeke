@@ -4,8 +4,9 @@
  * @author  Olli Vanhoja
  * @brief   Thread-safe queue.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2012, 2013 Ninjaware Oy
+ *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,7 +51,7 @@ queue_cb_t queue_create(void * data_array, size_t block_size, size_t array_size)
 int queue_push(queue_cb_t * cb, void * element)
 {
     size_t nextElement = (cb->m_write + 1) % cb->a_len;
-    size_t b_size = cb->b_size;
+    const size_t b_size = cb->b_size;
 
     /* Check that queue is not full */
     if(nextElement == cb->m_read)
@@ -65,9 +66,9 @@ int queue_push(queue_cb_t * cb, void * element)
 
 int queue_pop(queue_cb_t * cb, void * element)
 {
-    size_t read = cb->m_read;
-    size_t write = cb->m_write;
-    size_t b_size = cb->b_size;
+    const size_t read = cb->m_read;
+    const size_t write = cb->m_write;
+    const size_t b_size = cb->b_size;
     size_t nextElement;
 
     /* Check that queue is not empty */

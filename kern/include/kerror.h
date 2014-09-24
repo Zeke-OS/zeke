@@ -82,7 +82,7 @@
  */
 #define KERROR(level, msg) _KERROR2(level, _KERROR_WHERESTR, msg)
 
-const char _kernel_panic_msg[19];
+const char _kernel_panic_msg[20];
 
 /**
  * Kernel panic with message.

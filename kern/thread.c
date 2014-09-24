@@ -119,7 +119,9 @@ void * idle_thread(/*@unused@*/ void * arg)
 
 pthread_t thread_create(struct _ds_pthread_create * thread_def, int priv)
 {
+    KERROR(KERROR_DEBUG, "!\n");
     const pthread_t tid = sched_new_tid();
+    KERROR(KERROR_DEBUG, "!\n");
     struct thread_info * tp = sched_get_thread_info(tid);
 
     if (tid < 0 || !tp)

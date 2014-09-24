@@ -95,7 +95,7 @@ static uint32_t loadavg[3]  = { 0, 0, 0 }; /*!< CPU load averages */
 /** Stack for idle thread */
 static char sched_idle_stack[sizeof(sw_stack_frame_t) +
                              sizeof(hw_stack_frame_t) +
-                             IDLE_THREAD_MINSTACK];
+                             configIDLE_TH_STACK_SIZE];
 
 static int calc_quantums(struct thread_info * thread);
 static void insert_threads(int quantums);

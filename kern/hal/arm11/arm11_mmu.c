@@ -658,8 +658,11 @@ static int dab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
             "proc info:\n"
             "pid : %u\n"
             "tid : %u",
-            lr, fsr, get_dab_strerror(fsr), far,
-            current_process_id, thread->id);
+            lr,
+            fsr, get_dab_strerror(fsr),
+            far,
+            current_process_id,
+            thread->id);
     panic(buf);
 
     return -1; /* XXX Doesn't return yet as we panic but this makes split happy */
