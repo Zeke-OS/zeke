@@ -218,6 +218,8 @@ int proc_replace(pid_t pid, struct buf * (*regions)[], int nr_regions);
 
 void _proc_free(proc_info_t * p);
 
+proc_info_t * proc_get_struct_l(pid_t pid);
+
 /**
  * Get pointer to a internal proc_info structure.
  */

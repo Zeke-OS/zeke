@@ -290,26 +290,47 @@ pid_t process_init(void * image, size_t size)
 }
 #endif
 
+proc_info_t * proc_get_struct_l(pid_t pid)
+{
+    istate_t s;
+    proc_info_t * retval;
+
+    s = get_interrupt_state();
+    if (!(s & PSR_INT_I))
+        PROC_LOCK();
+    retval = proc_get_struct(pid);
+    if (!(s & PSR_INT_I))
+        PROC_UNLOCK();
+
+    return retval;
+}
+
 proc_info_t * proc_get_struct(pid_t pid)
 {
-    /* TODO We actually want to require proclock */
-#if 0
-    if (!PROC_TESTLOCK()) {
-        KERROR(KERROR_WARN, "proclock is required before entering proc_get_struct()\n");
+    istate_t s;
+
+    s = get_interrupt_state();
+    if (!(s & PSR_INT_I)) {
+        KASSERT(PROC_TESTLOCK(),
+                "proclock is required before entering proc_get_struct()\n");
     }
-#endif
 
     /* TODO do state check properly */
     if (pid > act_maxproc) {
         char buf[80];
 
+        /* Following may cause nasty things if pid is out of bounds */
+#if 0
         ksprintf(buf, sizeof(buf),
                 "Invalid PID : %u\ncurrpid : %u\nmaxproc : %i\nstate %x\n",
                 pid, current_process_id, act_maxproc,
                 ((*_procarr)[pid]) ? (*_procarr)[pid]->state : 0);
         KERROR(KERROR_DEBUG, buf);
+#endif
+        ksprintf(buf, sizeof(buf), "Invalid PID (%d)", pid);
+        KERROR(KERROR_ERR, buf);
 
-        return 0;
+        return NULL;
     }
     return (*_procarr)[pid];
 }
@@ -382,7 +403,7 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
     KERROR(KERROR_DEBUG, buf);
 #endif
 
-    pcb = proc_get_struct(pid);
+    pcb = proc_get_struct_l(pid);
     if (!pcb || (pcb->state == PROC_STATE_INITIAL)) {
         return -ESRCH; /* Process doesn't exist. */
     }
@@ -428,7 +449,7 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
 pid_t proc_update(void)
 {
     current_process_id = current_thread->pid_owner;
-    curproc = proc_get_struct(current_process_id);
+    curproc = proc_get_struct_l(current_process_id);
 
     return current_process_id;
 }

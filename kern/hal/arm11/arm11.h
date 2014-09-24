@@ -57,6 +57,9 @@
 
 /** PSR interrupt bits mask */
 #define PSR_INT_MASK    0x1C0u
+#define PSR_INT_F       (1 << 6)
+#define PSR_INT_I       (1 << 7)
+#define PSR_INT_A       (1 << 8)
 
 /* PSR Mode bits */
 #define PSR_MODE_MASK   0x1fu

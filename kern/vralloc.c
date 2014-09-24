@@ -259,7 +259,7 @@ static uintptr_t get_ksect_addr(size_t region_size)
 
 struct buf * geteblk_special(size_t size, uint32_t control)
 {
-    struct proc_info * p = proc_get_struct(0);
+    struct proc_info * p = proc_get_struct_l(0);
     const uintptr_t kvaddr = get_ksect_addr(size);
     struct vm_pt * vpt;
     struct buf * buf;
@@ -311,14 +311,14 @@ struct buf * vr_rclone(struct buf * old_region)
 
     new_region = geteblk(rsize);
     if (!new_region) {
-        KERROR(KERROR_ERR, "Out of memory");
+        KERROR(KERROR_ERR, "Out of memory\n");
         return 0;
     }
 
 #if configDEBUG >= KERROR_DEBUG
     {
     char buf[80];
-    ksprintf(buf, sizeof(buf), "clone %x -> %x, %u bytes",
+    ksprintf(buf, sizeof(buf), "clone %x -> %x, %u bytes\n",
             old_region->b_data, new_region->b_data, rsize);
     KERROR(KERROR_DEBUG, buf);
     }

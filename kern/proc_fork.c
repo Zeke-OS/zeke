@@ -70,7 +70,7 @@ pid_t proc_fork(pid_t pid)
     KERROR(KERROR_DEBUG, buf);
 #endif
 
-    proc_info_t * const old_proc = proc_get_struct(pid);
+    proc_info_t * const old_proc = proc_get_struct_l(pid);
     proc_info_t * new_proc;
     pid_t retval = -EAGAIN;
 

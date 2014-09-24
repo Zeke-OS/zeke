@@ -656,8 +656,8 @@ static int dab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
             "fsr : %x (%s)\n"
             "far : %x\n"
             "proc info:\n"
-            "pid : %x\n"
-            "tid : %x",
+            "pid : %u\n"
+            "tid : %u",
             lr, fsr, get_dab_strerror(fsr), far,
             current_process_id, thread->id);
     panic(buf);

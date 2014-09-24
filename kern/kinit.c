@@ -151,7 +151,7 @@ int kinit(void)
         panic("Can't get thread descriptor of init_thread!");
     }
 
-    proc_info_t * const init_proc = proc_get_struct(pid);
+    proc_info_t * const init_proc = proc_get_struct_l(pid);
     if (!init_proc || (init_proc->state == PROC_STATE_INITIAL)) {
         panic("Failed to get proc struct or invalid struct");
     }
@@ -195,7 +195,7 @@ static void mount_rootfs(void)
 {
     const char failed[] = "Failed to mount rootfs";
     vnode_t * tmp;
-    proc_info_t * kernel_proc = proc_get_struct(0);
+    proc_info_t * kernel_proc = proc_get_struct_l(0);
     int ret;
 
     if (!kernel_proc) {
