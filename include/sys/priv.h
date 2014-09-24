@@ -249,6 +249,24 @@
 struct proc_info;
 
 /**
+ * Test active securelevel.
+ * Test whether or not the active security level is greater than or equal to
+ * the supplied level.
+ * @param level is the needed security level.
+ * @return  Returns -EPERM if condition evaluated to true; Otherwise zero.
+ */
+int securelevel_ge(int level);
+
+/**
+ * Test active securelevel.
+ * Test whether or not the active security level is greater than the
+ * supplied level.
+ * @param level is the needed security level.
+ * @return  Returns -EPERM if condition evaluated to true; Otherwise zero.
+ */
+int securelevel_gt(int level);
+
+/**
  * @addtogroup priv_check
  * The priv interfaces check to see if specific system privileges are granted
  * to the passed process.

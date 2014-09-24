@@ -52,6 +52,20 @@ SYSCTL_INT(_security, OID_AUTO, suser_enabled, CTLFLAG_RW,
            &suser_enabled, 0, "processes with uid 0 have privilege");
 //TUNABLE_INT("security.suser_enabled", &suser_enabled);
 
+static int securelevel = configBOOT_SECURELEVEL;
+SYSCTL_INT(_security, OID_AUTO, securelevel, CTLTYPE_INT|CTLFLAG_RW,
+           &securelevel, 0, "Current secure level");
+
+int securelevel_ge(int level)
+{
+    return (securelevel >= level ? -EPERM : 0);
+}
+
+int securelevel_gt(int level)
+{
+    return (securelevel > level ? -EPERM : 0);
+}
+
 /*
  * Check a credential for privilege. Lots of good reasons to deny privilege;
  * only a few to grant it.

@@ -203,6 +203,10 @@ config configSUSER
 
     If unsure, say Y.
 
+config configBOOT_SECURELEVEL
+    int "Securelevel at boot"
+    default 0
+
 config configPROCCAP
     bool "Process Capabilities"
     default n

@@ -93,8 +93,10 @@ struct ctlname {
 #define CTLFLAG_WR      0x40000000  /* Allow writes to the variable */
 #define CTLFLAG_RW      (CTLFLAG_RD|CTLFLAG_WR)
 #define CTLFLAG_ANYBODY 0x10000000  /* All users can set this var */
+#define CTLFLAG_SECURE  0x08000000  /* Permit set only if securelevel<=0 */
 #define CTLFLAG_DYN     0x02000000  /* Dynamic oid - can be freed */
 #define CTLFLAG_SKIP    0x01000000  /* Skip this sysctl when listing */
+#define CTLMASK_SECURE  0x00F00000  /* Secure level */
 #define CTLFLAG_TUN     0x00080000  /* Tunable variable */
 #define CTLFLAG_RDTUN   (CTLFLAG_RD|CTLFLAG_TUN)
 #define CTLFLAG_RWTUN   (CTLFLAG_RW|CTLFLAG_TUN)
@@ -104,6 +106,16 @@ struct ctlname {
 #define CTLFLAG_CAPWR   0x00004000  /* Can be written in capability mode */
 #define CTLFLAG_STATS   0x00002000  /* Statistics, not a tuneable */
 #define CTLFLAG_CAPRW   (CTLFLAG_CAPRD|CTLFLAG_CAPWR)
+
+/*
+ * Secure level.   Note that CTLFLAG_SECURE == CTLFLAG_SECURE1.
+ *
+ * Secure when the securelevel is raised to at least N.
+ */
+#define        CTLSHIFT_SECURE        20
+#define        CTLFLAG_SECURE1        (CTLFLAG_SECURE | (0 << CTLSHIFT_SECURE))
+#define        CTLFLAG_SECURE2        (CTLFLAG_SECURE | (1 << CTLSHIFT_SECURE))
+#define        CTLFLAG_SECURE3        (CTLFLAG_SECURE | (2 << CTLSHIFT_SECURE))
 
 /*
  * USE THIS instead of a hardwired number from the categories below

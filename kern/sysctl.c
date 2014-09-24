@@ -235,8 +235,10 @@ int sysctl_find_oid(int * name, unsigned int namelen, struct sysctl_oid ** noid,
                 *noid = oid;
                 if (nindx != NULL)
                     *nindx = indx;
-                //KASSERT((oid->oid_kind & CTLFLAG_DYING) == 0,
-                //    ("%s found DYING node %p", __func__, oid));
+#if 0
+                KASSERT((oid->oid_kind & CTLFLAG_DYING) == 0,
+                        ("%s found DYING node %p", __func__, oid));
+#endif
                 return 0;
             }
             lsp = SYSCTL_CHILDREN(oid);
@@ -244,8 +246,10 @@ int sysctl_find_oid(int * name, unsigned int namelen, struct sysctl_oid ** noid,
             *noid = oid;
             if (nindx != NULL)
                 *nindx = indx;
-            //KASSERT((oid->oid_kind & CTLFLAG_DYING) == 0,
-            //    ("%s found DYING node %p", __func__, oid));
+#if 0
+            KASSERT((oid->oid_kind & CTLFLAG_DYING) == 0,
+                    ("%s found DYING node %p", __func__, oid));
+#endif
             return 0;
         } else {
             return ENOTDIR;
@@ -779,8 +783,10 @@ int kernel_sysctl(pid_t pid, int * name, unsigned int namelen,
 
     memset(&req, 0, sizeof req);
 
+    PROC_LOCK();
     req.proc = proc_get_struct(pid);
     req.flags = flags;
+    PROC_UNLOCK();
 
     if (!req.proc)
         return -EINVAL;
@@ -957,6 +963,14 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
 
     //KASSERT(req->proc != NULL, ("sysctl_root(): req->proc == NULL"));
 
+    /* Is this sysctl sensitive to securelevels? */
+    if (req->newptr && (oid->oid_kind & CTLFLAG_SECURE)) {
+        int lvl = (oid->oid_kind & CTLMASK_SECURE) >> CTLSHIFT_SECURE;
+        error = securelevel_gt(lvl);
+        if (error)
+            return error;
+    }
+
     /* Is this sysctl writable by only privileged users? */
     if (req->newptr && !(oid->oid_kind & CTLFLAG_ANYBODY)) {
         int priv;
@@ -1013,8 +1027,10 @@ int userland_sysctl(pid_t pid, int * name, unsigned int namelen,
 
     memset(&req, 0, sizeof(req));
 
+    PROC_LOCK();
     req.proc = proc_get_struct(pid);
     req.flags = flags;
+    PROC_UNLOCK();
 
     if (!req.proc)
         return -EINVAL;
