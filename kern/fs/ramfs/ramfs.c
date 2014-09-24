@@ -332,6 +332,7 @@ ssize_t ramfs_write(file_t * file, const void * buf, size_t count)
         return -EOPNOTSUPP;
     }
 
+    file->seek_pos += bytes_wr;
     return bytes_wr;
 }
 
@@ -350,6 +351,7 @@ ssize_t ramfs_read(file_t * file, void * buf, size_t count)
         return -EOPNOTSUPP;
     }
 
+    file->seek_pos += bytes_rd;
     return bytes_rd;
 }
 
@@ -929,7 +931,7 @@ static ssize_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
      * files. */
 
     do {
-        size_t remain = count - bytes_wr;
+        const size_t remain = count - bytes_wr;
         size_t curr_wr_len;
 
         /* Get next block pointer. */
@@ -944,14 +946,16 @@ static ssize_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
             }
         }
 
-        /* Write bytes to the block.
-         * Max per iteration is the size of the current block. */
-        curr_wr_len = remain <= dp.len ? remain : dp.len;
-        memcpy(dp.p, (void *)((char *)buf + bytes_wr), curr_wr_len);
+        /*
+         * Write bytes to the block.
+         * Max per iteration is the size of the current block.
+         */
+        curr_wr_len = min(remain, dp.len);
+        memcpy(dp.p, ((char *)buf + bytes_wr), curr_wr_len);
         bytes_wr += curr_wr_len;
     } while (bytes_wr < count);
 
-    file->vn_len = *offset + bytes_wr;
+    file->vn_len = max(file->vn_len, *offset + bytes_wr);
     return bytes_wr;
 }
 
@@ -970,11 +974,13 @@ static ssize_t ramfs_rd_regular(vnode_t * file, const off_t * restrict offset,
     ramfs_dp_t dp;
     size_t bytes_rd = 0;
 
-    /* No file type check is needed as this function is called only for regular
-     * files. */
+    /*
+     * No file type check is needed as this function is called only for regular
+     * files.
+     */
 
     do {
-        size_t remain = count - bytes_rd;
+        const size_t remain = count - bytes_rd;
         size_t curr_rd_len;
 
         if ((*offset + bytes_rd) >= file->vn_len) {
@@ -988,10 +994,10 @@ static ssize_t ramfs_rd_regular(vnode_t * file, const off_t * restrict offset,
         }
 
         /* Read bytes from the block. */
-        curr_rd_len = remain <= dp.len ? remain : dp.len;
-        memcpy((void *)((char *)buf + bytes_rd), dp.p, curr_rd_len);
+        curr_rd_len = min(remain, dp.len);
+        memcpy(((char *)buf + bytes_rd), dp.p, curr_rd_len);
         bytes_rd += curr_rd_len;
-    } while (bytes_rd != count);
+    } while (bytes_rd < count);
 
     return bytes_rd;
 }

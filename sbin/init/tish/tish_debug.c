@@ -116,7 +116,7 @@ static void debug(char ** args)
             puts(invalid_arg);
         }
     } else if (!strcmp(arg, "file")) {
-        const char text[] = "This is a test.";
+        const char text[] = "This is a test.\n";
         char buf[80];
         int fildes = open("file", O_RDWR | O_CREAT | O_TRUNC,
                 S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);

@@ -150,6 +150,7 @@ ssize_t dev_read(file_t * file, void * vbuf, size_t bcount)
     const int oflags = file->oflags;
     struct dev_info * devnfo = (struct dev_info *)vnode->vn_specinfo;
     uint8_t * buf = (uint8_t *)vbuf;
+    ssize_t bytes_rd;
 
     if (!devnfo->read)
         return -EOPNOTSUPP;
@@ -172,8 +173,10 @@ ssize_t dev_read(file_t * file, void * vbuf, size_t bcount)
                                    &buf[buf_offset], to_read, oflags);
             if (ret < 0) {
                 tries--;
-                if (tries <= 0)
-                    return (buf_offset > 0) ? buf_offset : ret;
+                if (tries <= 0) {
+                    bytes_rd = (buf_offset > 0) ? buf_offset : ret;
+                    goto out;
+                }
             } else {
                 break;
             }
@@ -184,7 +187,10 @@ ssize_t dev_read(file_t * file, void * vbuf, size_t bcount)
         bcount -= ret;
     } while (bcount > 0);
 
-    return buf_offset;
+    bytes_rd = buf_offset;
+out:
+    file->seek_pos += bytes_rd;
+    return bytes_rd;
 }
 
 ssize_t dev_write(file_t * file, const void * vbuf, size_t bcount)
@@ -194,6 +200,7 @@ ssize_t dev_write(file_t * file, const void * vbuf, size_t bcount)
     const int oflags = file->oflags;
     struct dev_info * devnfo = (struct dev_info *)vnode->vn_specinfo;
     uint8_t * buf = (uint8_t *)vbuf;
+    ssize_t bytes_wr;
 
     if (!devnfo->write)
         return -EOPNOTSUPP;
@@ -216,8 +223,10 @@ ssize_t dev_write(file_t * file, const void * vbuf, size_t bcount)
                                     &buf[buf_offset], to_write, oflags);
             if (ret < 0) {
                 tries--;
-                if (tries <= 0)
-                    return (buf_offset > 0) ? buf_offset : ret;
+                if (tries <= 0) {
+                    bytes_wr = (buf_offset > 0) ? buf_offset : ret;
+                    goto out;
+                }
             } else {
                 break;
             }
@@ -228,7 +237,10 @@ ssize_t dev_write(file_t * file, const void * vbuf, size_t bcount)
         bcount -= ret;
     } while (bcount > 0);
 
-    return buf_offset;
+    bytes_wr = buf_offset;
+out:
+    file->seek_pos += bytes_wr;
+    return bytes_wr;
 }
 
 static int dev_ioctl(file_t * file, uint32_t request, void * arg, size_t arg_len)

@@ -584,8 +584,6 @@ ssize_t fs_readwrite_cproc(int fildes, void * buf, size_t nbyte, int oper)
         if (retval == 0)
             retval = -EIO;
     }
-    if (retval > 0)
-        file->seek_pos += retval;
 
 out:
     fs_fildes_ref(curproc->files, fildes, -1);

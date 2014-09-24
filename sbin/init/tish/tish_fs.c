@@ -135,8 +135,9 @@ static void tish_cat(char ** args)
     if (fildes < 0)
         return; /* err */
 
+    buf[sizeof(buf) - 1] = '\0';
     while (1) {
-        ret = read(fildes, &buf, sizeof(buf));
+        ret = read(fildes, &buf, sizeof(buf) - 1);
         if (ret <= 0)
             break;
         puts(buf);
