@@ -1,4 +1,4 @@
-/* Runtime ABI for the ARM Cortex-M0  
+/* Runtime ABI for the ARMv6k
  * ldivmod.S: signed 64 bit division (quotient and remainder)
  *
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>

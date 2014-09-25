@@ -1,5 +1,5 @@
-/* Runtime ABI for the ARM Cortex-M0  
- * ldivmod.S: signed 64 bit division (only remainder)
+/* Runtime ABI for the ARMv6k
+ * moddi3.S: signed 64 bit division (only remainder)
  *
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012 Jörg Mische <bobbl@gmx.de>
@@ -28,8 +28,8 @@
 @ Special case of __aeabi_ldivmod() that is a lot simpler and moves the
 @ remainder to r1:r0.
 @
-    .global __aeabi_ldivmod
-__aeabi_ldivmod:
+    .global __moddi3
+__moddi3:
 
 	push	{r4, lr}
 	cmp	r3, #0

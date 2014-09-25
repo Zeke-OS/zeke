@@ -1,4 +1,4 @@
-/* Runtime ABI for the ARM Cortex-M0  
+/* Runtime ABI for the ARMv6k
  * uldivmod.S: unsigned 64 bit division
  *
  * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
