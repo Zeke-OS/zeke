@@ -101,7 +101,7 @@ int _mtx_lock(mtx_t * mtx, char * whr)
          * TODO deadlock detection threshold should depend on lock type and
          *      current priorities.
          */
-        if (++deadlock_cnt >= configSCHED_HZ) {
+        if (++deadlock_cnt >= configSCHED_HZ * (configKLOCK_DLTHRES + 1)) {
             char buf[100];
             char * lwhr = (mtx->mtx_ldebug) ? mtx->mtx_ldebug : "?";
 

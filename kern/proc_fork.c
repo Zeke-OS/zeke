@@ -451,7 +451,7 @@ pid_t proc_get_random_pid(void)
      */
     do {
         if (newpid > last_maxproc)
-            newpid = proc_lastpid + kunirand(last_maxproc - proc_lastpid - 1) + 1;
+            newpid = proc_lastpid + kunirand(last_maxproc - proc_lastpid - 1);
         newpid++;
     } while (proc_get_struct(newpid));
 

@@ -232,7 +232,7 @@ static void proc_remove(pid_t pid)
     proc_info_t * p;
 
     /* TODO free everything */
-    if (!(p = proc_get_struct(pid)))
+    if (!(p = proc_get_struct_l(pid)))
         return;
 
 #ifdef configPROCFS
@@ -320,14 +320,7 @@ proc_info_t * proc_get_struct(pid_t pid)
         char buf[80];
 
         /* Following may cause nasty things if pid is out of bounds */
-#if 0
-        ksprintf(buf, sizeof(buf),
-                "Invalid PID : %u\ncurrpid : %u\nmaxproc : %i\nstate %x\n",
-                pid, current_process_id, act_maxproc,
-                ((*_procarr)[pid]) ? (*_procarr)[pid]->state : 0);
-        KERROR(KERROR_DEBUG, buf);
-#endif
-        ksprintf(buf, sizeof(buf), "Invalid PID (%d)", pid);
+        ksprintf(buf, sizeof(buf), "Invalid PID (%d > %d)\n", pid, act_maxproc);
         KERROR(KERROR_ERR, buf);
 
         return NULL;

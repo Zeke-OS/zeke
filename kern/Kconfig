@@ -176,6 +176,11 @@ config configLOCK_DEBUG
     ---help---
         Debug kernel locks.
 
+config configKLOCK_DLTHRES
+    int "Klock deadlock detection threshold"
+    default 19
+    depends on configLOCK_DEBUG
+
 config configKMALLOC_DEBUG
     bool "kmalloc debugging"
     default n
