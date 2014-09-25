@@ -179,6 +179,8 @@ static inline uint8_t read_byte(uint8_t * buf, int offset)
     return buf[offset];
 }
 
+int sizetto(size_t value, void * p, size_t size);
+
 int ffs(int mask);
 int ffsl(long mask);
 int ffsll(long long mask);
