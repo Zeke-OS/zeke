@@ -52,5 +52,17 @@ void nanotime(struct timespec * ts);
  */
 void getnanotime(struct timespec * tsp);
 
+/**
+ * Get GMT time.
+ * @param[out] tm       is modified.
+ * @param[in]  clock    is a unix time.
+ */
+void gmtime(struct tm * tm, time_t * clock);
+
+/**
+ * @param[out] tm
+ */
+void offtime(struct tm * tm, time_t * clock, long offset);
+
 #endif
 #endif /* SYS_TIME_H */
