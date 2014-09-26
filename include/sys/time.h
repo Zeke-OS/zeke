@@ -52,6 +52,12 @@ void nanotime(struct timespec * ts);
  */
 void getnanotime(struct timespec * tsp);
 
+
+/* ctime */
+
+void ctime(char * result, time_t * t);
+void asctime(char * result, struct tm * timeptr);
+
 /**
  * Get GMT time.
  * @param[out] tm       is modified.
