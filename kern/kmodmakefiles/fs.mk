@@ -1,9 +1,11 @@
 # File systems
 base-SRC-y += $(wildcard fs/*.c)
 # inode pools
-base-SRC-$(configFS_INPOOL) += $(wildcard fs/inpool/*.c)
+base-SRC-$(configFS_INPOOL) += fs/libfs/inpool.c
+# dehtable
+base-SRC-$(configFS_DEHTABLE) += fs/libfs/dehtable.c
 # VFS hash
-base-SRC-$(configVFS_HASH) += $(wildcard fs/vfs_hash/*.c)
+base-SRC-$(configVFS_HASH) += fs/libfs/vfs_hash.c
 
 # mbr
 base-SRC-$(configMBR) += $(wildcard fs/mbr/*.c)
@@ -17,5 +19,6 @@ base-SRC-$(configDEVFS) += $(wildcard fs/devfs/*.c)
 base-SRC-$(configPROCFS) += $(wildcard fs/procfs/*.c)
 
 
-# msdosfs
-base-SRC-$(configMSDOSFS) += $(wildcard fs/msdosfs/*.c)
+# fatfs
+base-SRC-$(configFATFS) += $(wildcard fs/fatfs/*.c)
+base-SRC-$(configFATFS) += $(wildcard fs/fatfs/src/*.c)

@@ -39,7 +39,7 @@
 #include <kstring.h>
 #include <kmalloc.h>
 #include <proc.h>
-#include "../dehtable.h"
+#include <fs/dehtable.h>
 #include <fs/inpool.h>
 #include <fs/ramfs.h>
 

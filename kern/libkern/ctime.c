@@ -7,6 +7,7 @@
 
 #define KERNEL_INTERNAL
 #include <stdbool.h>
+#include <kstring.h>
 #include <timeconst.h>
 #include <sys/time.h>
 

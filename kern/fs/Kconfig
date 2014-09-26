@@ -41,6 +41,7 @@ config MBR_DEBUG
 config configRAMFS
     bool "ramfs"
     default y
+    select configFS_DEHTABLE
     select configFS_INPOOL
 
 config configDEVFS
@@ -55,6 +56,8 @@ config configPROCFS
     default y
     select configRAMFS
 
+source "kern/fs/fatfs/Kconfig"
+
 menu "FS libs"
 
 config configFS_INPOOL
@@ -66,6 +69,9 @@ config configFS_INPOOL
         pools as pools are handled as objects.
 
         This is usually auto selected.
+
+config configFS_DEHTABLE
+    bool "Dirent hash table"
 
 config configVFS_HASH
     bool "VFS Hash"

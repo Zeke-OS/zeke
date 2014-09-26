@@ -36,9 +36,10 @@
 #include <libkern.h>
 #include <errno.h>
 #include <fs/fs.h>
-#include "dehtable.h"
+#include <fs/dehtable.h>
 
-/* Chains
+/*
+ * Chains
  * ------
  *
  * Dirent hash table uses chaining to solve collisions. Chains are dh_dirent
