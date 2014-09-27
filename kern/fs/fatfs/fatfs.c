@@ -124,7 +124,7 @@ static int fatfs_mount(const char * source, uint32_t mode,
     err = lookup_vnode(&vndev, curproc->croot, source, 0);
     if (err)
         return err;
-    if (!S_ISBLK(vndev->vn_mode) || !vndev->vnode_ops->ioctl)
+    if (!S_ISBLK(vndev->vn_mode))
         return -ENOTBLK;
 
     /* Allocate superblock */
@@ -135,12 +135,6 @@ static int fatfs_mount(const char * source, uint32_t mode,
     sbp = &(fatfs_sb->sbn.sbl_sb);
     fs_fildes_set(&fatfs_sb->ff_devfile, vndev, O_RDWR);
     sbp->vdev_id = DEV_MMTODEV(FATFS_VDEV_MAJOR_ID, fatfs_vdev_minor++);
-    err = vndev->vnode_ops->ioctl(&fatfs_sb->ff_devfile, IOCTL_GETBLKSIZE,
-                            &fatfs_sb->ff_blksize, sizeof(size_t));
-    if (err) {
-        retval = err;
-        goto fail;
-    }
 
     /* Insert sb to fatfs_sb_arr lookup array */
     fatfs_sb_arr[DEV_MINOR(sbp->vdev_id)] = fatfs_sb;

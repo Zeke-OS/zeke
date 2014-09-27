@@ -59,7 +59,6 @@ struct fatfs_inode {
 struct fatfs_sb {
     superblock_lnode_t sbn; /*!< Superblock node. */
     file_t ff_devfile;
-    size_t ff_blksize;
     FATFS ff_fs;
     ino_t ff_ino;
 };

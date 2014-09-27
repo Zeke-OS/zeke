@@ -66,23 +66,21 @@ DSTATUS fatfs_disk_status(BYTE pdrv)
  * @param pdrv      is a (physical) drive nmuber to identify the drive.
  * @param buff      is a data buffer to store read data.
  * @param sector    is a sector address in LBA.
- * @param count     is the number of sectors to read.
+ * @param count     is the number of bytes to read.
  *
  */
 DRESULT fatfs_disk_read(BYTE pdrv, BYTE* buff, DWORD sector, UINT count)
 {
     file_t * file;
-    size_t blk_size;
     ssize_t retval;
 
-    if (pdrv >= configFATFS_MAX_MOUNTS)
+    if (pdrv >= configFATFS_MAX_MOUNTS || !fatfs_sb_arr[pdrv])
         return RES_PARERR;
 
     file = &fatfs_sb_arr[pdrv]->ff_devfile;
     file->seek_pos = sector;
-    blk_size = fatfs_sb_arr[pdrv]->ff_blksize;
 
-    retval = file->vnode->vnode_ops->read(file, buff, count * blk_size);
+    retval = file->vnode->vnode_ops->read(file, buff, count);
     if (retval < 0) {
 #ifdef configFATFS_DEBUG
         char msgbuf[80];
@@ -93,7 +91,7 @@ DRESULT fatfs_disk_read(BYTE pdrv, BYTE* buff, DWORD sector, UINT count)
         return RES_ERROR;
     }
 
-    if (retval / blk_size != count) {
+    if (retval != count) {
 #ifdef configFATFS_DEBUG
         char msgbuf[80];
 
@@ -113,22 +111,20 @@ DRESULT fatfs_disk_read(BYTE pdrv, BYTE* buff, DWORD sector, UINT count)
  * @param pdrv      is a (physical) drive nmuber to identify the drive.
  * @param buff      is the data buffer to be written.
  * @param sector    is a sector address in LBA.
- * @param count     is the number of sectors to write.
+ * @param count     is the number of bytes to write.
  */
 DRESULT fatfs_disk_write(BYTE pdrv, const BYTE* buff, DWORD sector, UINT count)
 {
     file_t * file;
-    size_t blk_size;
     ssize_t retval;
 
-    if (pdrv >= configFATFS_MAX_MOUNTS)
+    if (pdrv >= configFATFS_MAX_MOUNTS || !fatfs_sb_arr[pdrv])
         return RES_PARERR;
 
     file = &fatfs_sb_arr[pdrv]->ff_devfile;
     file->seek_pos = sector;
-    blk_size = fatfs_sb_arr[pdrv]->ff_blksize;
 
-    retval = file->vnode->vnode_ops->write(file, buff, count * blk_size);
+    retval = file->vnode->vnode_ops->write(file, buff, count);
     if (retval < 0) {
 #ifdef configFATFS_DEBUG
         char msgbuf[80];
@@ -140,18 +136,26 @@ DRESULT fatfs_disk_write(BYTE pdrv, const BYTE* buff, DWORD sector, UINT count)
         return RES_ERROR;
     }
 
-    if (retval / blk_size != count)
+    if (retval != count)
         return RES_PARERR;
 
     return 0;
 }
 
-DRESULT fatfs_disk_ioctl(BYTE pdrv, BYTE cmd, void* buff)
+DRESULT fatfs_disk_ioctl(BYTE pdrv, BYTE cmd, void * buff)
 {
     file_t * file;
     ssize_t err;
+#ifdef configFATFS_DEBUG
+    char msgbuf[80];
 
-    if (pdrv >= configFATFS_MAX_MOUNTS)
+    ksprintf(msgbuf, sizeof(msgbuf),
+            "fatfs_disk_ioctl(pdrv %u, cmd %u, buff %p)\n",
+            (uint32_t)pdrv, (uint32_t)cmd, buff);
+    KERROR(KERROR_DEBUG, msgbuf);
+#endif
+
+    if (pdrv >= configFATFS_MAX_MOUNTS || !fatfs_sb_arr[pdrv])
         return RES_PARERR;
 
     file = &fatfs_sb_arr[pdrv]->ff_devfile;

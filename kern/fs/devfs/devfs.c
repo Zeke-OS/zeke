@@ -34,6 +34,7 @@
 #include <sys/ioctl.h>
 #include <kinit.h>
 #include <kmalloc.h>
+#include <libkern.h>
 #include <kstring.h>
 #include <errno.h>
 #include <kerror.h>
