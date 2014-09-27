@@ -158,7 +158,7 @@
 / Drive/Volume Configurations
 /---------------------------------------------------------------------------*/
 
-#define _VOLUMES    1
+#define _VOLUMES configFATFS_MAX_MOUNTS
 /* Number of volumes (logical drives) to be used. */
 
 
@@ -208,13 +208,17 @@
 / System Configurations
 /---------------------------------------------------------------------------*/
 
+#ifdef configFATFS_READONLY
+#define _FS_LOCK 0
+#else
 #define _FS_LOCK    10  /* 0:Disable or >=1:Enable */
+#endif
 /* To enable file lock control feature, set _FS_LOCK to non-zero value.
 /  The value defines how many files/sub-directories can be opened simultaneously
 /  with file lock control. This feature uses bss _FS_LOCK * 12 bytes. */
 
 
-#define _FS_REENTRANT   1       /* 0:Disable or 1:Enable */
+#define _FS_REENTRANT   0       /* 0:Disable or 1:Enable */
 #define _FS_TIMEOUT     1000    /* Timeout period in unit of time tick */
 #define _SYNC_t         mtx_t   /* O/S dependent sync object type. */
 /* The _FS_REENTRANT option switches the re-entrancy (thread safe) of

@@ -34,6 +34,7 @@
 #include <libkern.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <kstring.h>
 #include <libkern.h>
 #include <fs/fs.h>
 #include <fs/devfs.h>
@@ -80,12 +81,27 @@ DRESULT fatfs_disk_read(BYTE pdrv, BYTE* buff, DWORD sector, UINT count)
     file->seek_pos = sector;
 
     retval = file->vnode->vnode_ops->read(file, buff, count);
+    if (retval < 0) {
+#ifdef configFATFS_DEBUG
+        char msgbuf[80];
 
-    if (retval < 0)
+        ksprintf(msgbuf, sizeof(msgbuf), "fatfs_disk_read(): err %i\n", retval);
+        KERROR(KERROR_ERR, msgbuf);
+#endif
         return RES_ERROR;
+    }
 
-    if (retval != count)
+    if (retval != count) {
+#ifdef configFATFS_DEBUG
+        char msgbuf[80];
+
+        ksprintf(msgbuf, sizeof(msgbuf), "retval(%i) != count(%i)\n",
+                (uint32_t)retval, (uint32_t)count);
+
+        KERROR(KERROR_WARN, msgbuf);
+#endif
         return RES_PARERR;
+    }
 
     return 0;
 }
@@ -109,9 +125,16 @@ DRESULT fatfs_disk_write(BYTE pdrv, const BYTE* buff, DWORD sector, UINT count)
     file->seek_pos = sector;
 
     retval = file->vnode->vnode_ops->write(file, buff, count);
+    if (retval < 0) {
+#ifdef configFATFS_DEBUG
+        char msgbuf[80];
 
-    if (retval < 0)
+        ksprintf(msgbuf, sizeof(msgbuf), "fatfs_disk_read(): err %i\n", retval);
+        KERROR(KERROR_ERR, msgbuf);
+#endif
+
         return RES_ERROR;
+    }
 
     if (retval != count)
         return RES_PARERR;

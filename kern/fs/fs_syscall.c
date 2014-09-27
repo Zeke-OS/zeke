@@ -292,7 +292,7 @@ static int sys_getdents(void * user_args)
 
     if (!S_ISDIR(fildes->vnode->vn_mode)) {
         count = -1;
-        set_errno(ENOTDIR);
+        set_errno(ENOTDIR - 1);
         goto out;
     }
 

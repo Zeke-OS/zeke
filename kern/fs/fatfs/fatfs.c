@@ -45,6 +45,11 @@
 
 static int fatfs_mount(const char * source, uint32_t mode,
         const char * parm, int parm_len, struct fs_superblock ** sb);
+static char * format_fpath(struct fatfs_inode * indir, const char * name,
+                           size_t name_len);
+static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
+                        char * fpath, long vn_hash);
+static vnode_t * create_root(fs_superblock_t * sb);
 static int fatfs_delete_vnode(vnode_t * vnode);
 static int fatfs_lookup(vnode_t * dir, const char * name, size_t name_len,
                         vnode_t ** result);
@@ -127,22 +132,11 @@ static int fatfs_mount(const char * source, uint32_t mode,
         goto fail;
     }
 
-    /* Init super block */
-    sbp = &(fatfs_sb->sbn.sbl_sb);
-    sbp->fs = &fatfs_fs;
-    sbp->vdev_id = DEV_MMTODEV(FATFS_VDEV_MAJOR_ID, fatfs_vdev_minor++);
-    sbp->mode_flags = mode;
-    sbp->sb_dev = vndev;
-    sbp->sb_hashseed = sbp->vdev_id;
-    /* Function pointers to superblock methods */
-    sbp->get_vnode = NULL; /* Not implemented for FAT. */
-    sbp->delete_vnode = fatfs_delete_vnode;
-
-    fatfs_sb->sbn.next = NULL; /* SB list */
-
     /* Mount */
     char pdrv = (char)DEV_MINOR(sbp->vdev_id);
-    err = f_mount(fatfs_sb->ff_fs, &pdrv, 1);
+    char drive[5];
+    ksprintf(drive, sizeof(drive), "%u:", pdrv);
+    err = f_mount(&fatfs_sb->ff_fs, drive, 1);
     switch (err) {
     case FR_INVALID_DRIVE:
         retval = -ENXIO;
@@ -163,8 +157,32 @@ static int fatfs_mount(const char * source, uint32_t mode,
             goto fail;
         }
     }
-
     fatfs_sb_arr[DEV_MINOR(sbp->vdev_id)] = fatfs_sb;
+#ifdef configFATFS_DEBUG
+    KERROR(KERROR_DEBUG, "Initialized a work area for FAT\n");
+#endif
+
+    /* Init super block */
+    sbp = &(fatfs_sb->sbn.sbl_sb);
+    sbp->fs = &fatfs_fs;
+    sbp->vdev_id = DEV_MMTODEV(FATFS_VDEV_MAJOR_ID, fatfs_vdev_minor++);
+    sbp->mode_flags = mode;
+    sbp->root = create_root(sbp);
+    sbp->sb_dev = vndev;
+    sbp->sb_hashseed = sbp->vdev_id;
+    /* Function pointers to superblock methods */
+    sbp->get_vnode = NULL; /* Not implemented for FAT. */
+    sbp->delete_vnode = fatfs_delete_vnode;
+
+    if (!sbp->root) {
+#ifdef configFATFS_DEBUG
+        KERROR(KERROR_DEBUG, "Root of fatfs not found\n");
+#endif
+        return -EIO;
+    }
+
+    fatfs_sb->sbn.next = NULL; /* SB list */
+
     /* Add this sb to the list of mounted file systems. */
     insert_superblock(fatfs_sb);
 
@@ -176,84 +194,71 @@ out:
     return retval;
 }
 
-static int fatfs_delete_vnode(vnode_t * vnode)
-{
-    /* TODO */
-    return -ENOTSUP;
-}
-
 /**
- * Lookup for a vnode (file/dir) in FatFs.
- * First lookup form vfs_hash and if not found then read it from ff which will
- * probably read it via devfs interface. After the vnode has been created it
- * will be added to the vfs hashmap. In ff terminology all files and directories
- * that are in hashmap are also open on a file/dir handle, thus we'll have to
- * make sure we don't have too many vnodes in cache that have no references, to
- * avoid hitting any ff hard limits.
+ * Get kmalloc'd array for full path name.
  */
-static int fatfs_lookup(vnode_t * dir, const char * name, size_t name_len,
-                        vnode_t ** result)
+static char * format_fpath(struct fatfs_inode * indir, const char * name,
+                           size_t name_len)
 {
-    struct fatfs_inode * indir = get_inode_of_vnode(dir);
-    struct fatfs_sb * sb = get_rfsb_of_sb(dir->sb);
     char * in_fpath;
     size_t in_fpath_size;
-    long vn_hash;
-    struct vnode * vn = NULL;
-    /* Following variables are used only if not cached. */
-    struct fatfs_inode * in = NULL;
-    ino_t num;
-    mode_t vn_mode;
-    /* --- */
-    int err, retval = 0;
 
-    /* Format full path */
     in_fpath_size = name_len + strlenn(indir->in_fpath, NAME_MAX + 1) + 6;
     in_fpath = kmalloc(in_fpath_size);
     if (!in_fpath)
-        return -ENOMEM;
+        return NULL;
+
     ksprintf(in_fpath, in_fpath_size, "%u:/%s/%s",
             DEV_MINOR(indir->in_vnode.sb->vdev_id), indir->in_fpath, name);
 
-    vn_hash = hash32_str(in_fpath, 0);
+#ifdef configFATFS_DEBUG
+    KERROR(KERROR_DEBUG, in_fpath);
+#endif
 
-    /* Lookup from vfs_hash */
-    err = vfs_hash_get(
-            dir->sb,        /* FS superblock */
-            vn_hash,        /* Hash */
-            &vn,            /* Retval */
-            fatfs_vncmp,    /* Comparer */
-            in_fpath        /* Compared fpath */
-          );
-    if (err) {
-        retval = -EIO;
-        goto fail;
-    }
-    if (vn) {
-        /* Found it */
-        kfree(in_fpath);
-        vref(vn);
-        *result = vn;
+    return in_fpath;
+}
 
-        goto out;
-    }
+/**
+ * Create a inode.
+ * @param fpath won't be duplicated.
+ */
+static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
+                        char * fpath, long vn_hash)
+{
+    struct fatfs_inode * in = NULL;
+    vnode_t * vn;
+    vnode_t * xvp;
+    mode_t vn_mode;
+    ino_t num;
+    int err, retval = 0;
+#ifdef configFATFS_DEBUG
+    char msgbuf[80];
 
-    /*
-     * Create a inode and fetch data from the device.
-     */
+    ksprintf(msgbuf, sizeof(msgbuf), "create_inode(fpath \"%s\", vn_hash %u)\n",
+             fpath, vn_hash);
+    KERROR(KERROR_DEBUG, msgbuf);
+#endif
 
     in = kcalloc(1, sizeof(struct fatfs_inode));
     if (!in) {
+#ifdef configFATFS_DEBUG
+        KERROR(KERROR_DEBUG, "ENOMEM\n");
+#endif
         retval = -ENOMEM;
         goto fail;
     }
-    in->in_fpath = in_fpath;
+    in->in_fpath = fpath;
     vn = &in->in_vnode;
 
     /* Try open */
-    vn_mode = S_IFDIR;
+#ifdef configFATFS_DEBUG
+    KERROR(KERROR_DEBUG, "create_inode(): Trying as a dir\n");
+#endif
     err = f_opendir(&in->dp, in->in_fpath);
     if (err == FR_NO_PATH) {
+#ifdef configFATFS_DEBUG
+        KERROR(KERROR_DEBUG, "create_inode(): Trying as a file\n");
+#endif
        /* Probably not a dir, try to open as a file. */
         vn_mode = S_IFREG;
         err = f_open(&in->fp, in->in_fpath, FA_OPEN_EXISTING);
@@ -299,29 +304,123 @@ static int fatfs_lookup(vnode_t * dir, const char * name, size_t name_len,
     init_fatfs_vnode(vn, num, vn_mode, vn_hash, &(sb->sbn.sbl_sb));
 
     /* Insert to cache */
-    vnode_t * xvp; /* Ex vp ? */
-    vfs_hash_insert(vn, vn_hash, &xvp, fatfs_vncmp, in_fpath);
+    err = vfs_hash_insert(vn, vn_hash, &xvp, fatfs_vncmp, fpath);
     if (err) {
+#ifdef configFATFS_DEBUG
+        KERROR(KERROR_DEBUG, "ENOMEM\n");
+#endif
         retval = -ENOMEM;
         goto fail;
     }
     if (xvp) {
-        char msgbuf[80];
-
         /* TODO No idea what to do now */
         ksprintf(msgbuf, sizeof(msgbuf),
-                "fatfs_lookup(): Found it during insert: \"%s\"\n",
-                in_fpath);
+                "create_inode(): Found it during insert: \"%s\"\n",
+                fpath);
         KERROR(KERROR_WARN, msgbuf);
     }
 
-    *result = &in->in_vnode;
-    vref(*result);
-    goto out;
+    *result = in;
+    vref(vn);
+    return 0;
+fail:
+#ifdef configFATFS_DEBUG
+    ksprintf(msgbuf, sizeof(msgbuf), "create_inode(): err %i, retval %i\n",
+             err, retval);
+    KERROR(KERROR_DEBUG, msgbuf);
+#endif
+
+    kfree(in);
+    return retval;
+}
+
+static vnode_t * create_root(fs_superblock_t * sb)
+{
+    char rootpath[5];
+    long vn_hash;
+    struct fatfs_inode * in;
+    int err;
+
+    ksprintf(rootpath, sizeof(rootpath), "%u:", DEV_MINOR(sb->vdev_id));
+    vn_hash = hash32_str(rootpath, 0);
+
+    err = create_inode(&in, get_ffsb_of_sb(sb), rootpath, vn_hash);
+    if (err) {
+        KERROR(KERROR_ERR, "Failed to get a root for fatfs\n");
+        return NULL;
+    }
+    return &in->in_vnode;
+}
+
+static int fatfs_delete_vnode(vnode_t * vnode)
+{
+    /* TODO */
+    return -ENOTSUP;
+}
+
+/**
+ * Lookup for a vnode (file/dir) in FatFs.
+ * First lookup form vfs_hash and if not found then read it from ff which will
+ * probably read it via devfs interface. After the vnode has been created it
+ * will be added to the vfs hashmap. In ff terminology all files and directories
+ * that are in hashmap are also open on a file/dir handle, thus we'll have to
+ * make sure we don't have too many vnodes in cache that have no references, to
+ * avoid hitting any ff hard limits.
+ */
+static int fatfs_lookup(vnode_t * dir, const char * name, size_t name_len,
+                        vnode_t ** result)
+{
+    struct fatfs_inode * indir = get_inode_of_vnode(dir);
+    struct fatfs_sb * sb = get_ffsb_of_sb(dir->sb);
+    char * in_fpath;
+    long vn_hash;
+    struct vnode * vn = NULL;
+    /* Following variables are used only if not cached. */
+    struct fatfs_inode * in;
+    /* --- */
+    int err, retval = 0;
+
+    /* Format full path */
+    in_fpath = format_fpath(indir, name, name_len);
+    if (!in_fpath)
+        return -ENOMEM;
+
+    vn_hash = hash32_str(in_fpath, 0);
+
+    /* Lookup from vfs_hash */
+    err = vfs_hash_get(
+            dir->sb,        /* FS superblock */
+            vn_hash,        /* Hash */
+            &vn,            /* Retval */
+            fatfs_vncmp,    /* Comparer */
+            in_fpath        /* Compared fpath */
+          );
+    if (err) {
+        retval = -EIO;
+        goto fail;
+    }
+    if (vn) {
+        /* Found it */
+        kfree(in_fpath);
+        vref(vn);
+        *result = vn;
+
+        return 0;
+    }
+
+    /*
+     * Create a inode and fetch data from the device.
+     */
+    err = create_inode(&in, sb, in_fpath, vn_hash);
+    if (err) {
+        retval = err;
+        goto fail;
+    }
+    /* Already referenced */
+
+    return 0;
 fail:
     kfree(in_fpath);
-    kfree(in);
-out:
     return retval;
 }
 
@@ -488,14 +587,22 @@ static void init_fatfs_vnode(vnode_t * vnode, ino_t inum, mode_t mode,
                              long vn_hash, fs_superblock_t * sb)
 {
     struct stat stat;
+#ifdef configFATFS_DEBUG
+    char msgbuf[80];
+
+    ksprintf(msgbuf, sizeof(msgbuf),
+             "init_fatfs_vnode(vnode %p, inum %l, mode, vn_hash %u, sb %p)\n",
+             vnode, (uint64_t)inum, (uint32_t)vn_hash, sb);
+    KERROR(KERROR_DEBUG, msgbuf);
+#endif
 
     fs_vnode_init(vnode, inum, sb, &fatfs_vnode_ops);
 
     vnode->vn_hash = vn_hash;
     /* TODO Correct modes */
-    if (mode & S_IFDIR)
+    if (S_ISDIR(mode))
         mode |= S_IRWXU | S_IXGRP | S_IXOTH;
-    vnode->vn_mode = mode | S_IRGRP | S_IROTH;
+    vnode->vn_mode = mode | S_IRUSR | S_IRGRP | S_IROTH;
 
     fatfs_stat(vnode, &stat);
     vnode->vn_len = stat.st_size;

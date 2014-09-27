@@ -15,6 +15,7 @@ if configFATFS
 config configFATFS_MAX_MOUNTS
     int "Maximum number of mounts"
     default 1
+    range 1 10
 
 config configFATFS_READONLY
     bool "Read-only FAT driver"
@@ -33,6 +34,10 @@ config configFATFS_LFN
 
 config configFATFS_UNICODE
     bool "FAT Unicode support"
+    default n
+
+config configFATFS_DEBUG
+    bool "Debugging"
     default n
 
 endif

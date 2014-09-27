@@ -137,7 +137,7 @@
 #if _USE_LFN == 1
 #error Static LFN work area cannot be used at thread-safe configuration.
 #endif
-#define ENTER_FF(fs)        { if (!lock_fs(fs)) return FR_TIMEOUT; }
+#define ENTER_FF(fs)        { if (lock_fs(fs)) return FR_TIMEOUT; }
 #define LEAVE_FF(fs, res)   { unlock_fs(fs, res); return res; }
 #else
 #define ENTER_FF(fs)

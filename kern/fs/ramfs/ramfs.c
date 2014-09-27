@@ -243,7 +243,7 @@ int ramsfs_mount(const char * source, uint32_t mode,
 #ifdef configRAMFS_DEBUG
     KERROR(KERROR_DEBUG, "Create the root inode\n");
 #endif
-    create_root(ramfs_sb);
+    ramfs_sb->sbn.sbl_sb.root = create_root(ramfs_sb);
 
     /* Add this sb to the list of mounted file systems. */
     insert_superblock(ramfs_sb);
