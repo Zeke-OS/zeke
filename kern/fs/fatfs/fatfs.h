@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    ioctl.h
+ * @file    fz_fs.h
  * @author  Olli Vanhoja
- * @brief   Control devices.
+ * @brief   FatFs public header.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,39 +30,56 @@
  *******************************************************************************
  */
 
-/** @addtogroup LIBC
- * @{
- */
+#ifndef FATFS_H
+#define FATFS_H
 
-#pragma once
-#ifndef IOCTL_H
-#define IOCTL_H
+#include <libkern.h>
+#include <fs/fs.h>
+#include "src/ff.h"
 
-#include <stdint.h>
-#include <sys/cdefs.h>
+#define FATFS_FSNAME            "fatfs"
+#define FATFS_VDEV_MAJOR_ID     13
 
-/*
- * IOCTL request codes.
- * Get requests shall be odd and set request shall be even, this information can
- * be then used to optimize the syscall.
- */
-#define IOCTL_GTERMIOS       1  /*!< Get termios struct. */
-#define IOCTL_STERMIOS       2  /*!< Set termios struct. */
-#define IOCTL_GETBLKSIZE    10  /*!< Get device block size. */
-#define IOCTL_GETBLKCNT     11  /*!< Get device block count. */
+struct fatfs_inode {
+    vnode_t in_vnode;   /*!< vnode for this inode. */
+    char * in_fpath;    /*!< Full path to this node from the sb root. */
 
-#ifndef KERNEL_INTERNAL
-__BEGIN_DECLS
-/**
- * ioctl.
- * @note This is a non-POSIX implementation of ioctl.
- */
-int _ioctl(int fildes, uint32_t request, void * arg, size_t arg_len);
-__END_DECLS
-#endif
-
-#endif /* IOCTL_H */
+    /**
+     * file pointer or directory pointer, check in_vnode->vn_mode.
+     */
+    union {
+    FIL fp;
+    DIR dp;
+    };
+};
 
 /**
- * @}
+ * FatFs superblock.
  */
+struct fatfs_sb {
+    superblock_lnode_t sbn; /*!< Superblock node. */
+    file_t ff_devfile;
+    FATFS * ff_fs;
+    ino_t ff_ino;
+};
+
+/**
+ * Get fatfs_sb of a generic superblock that belongs to fatfs.
+ * @param sb    is a pointer to a superblock pointing some ramfs mount.
+ * @return Returns a pointer to the ramfs_sb ob of the sb.
+ */
+#define get_rfsb_of_sb(sb) \
+    (container_of(container_of(sb, superblock_lnode_t, sbl_sb), \
+                  struct fatfs_sb, sbn))
+
+/**
+ * Get corresponding inode of given vnode.
+ * @param vn    is a pointer to a vnode.
+ * @return Returns a pointer to the inode.
+ */
+#define get_inode_of_vnode(vn) \
+    (container_of(vn, struct fatfs_inode, in_vnode))
+
+struct fatfs_sb ** fatfs_sb_arr;
+
+#endif /* FATFS_H */

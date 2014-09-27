@@ -64,6 +64,7 @@
 
 #define KERNEL_INTERNAL
 #include <autoconf.h>
+#include <sys/ioctl.h>
 #include <kinit.h>
 #include <stdint.h>
 #include <errno.h>
@@ -331,6 +332,9 @@ ssize_t sd_read(struct dev_info * dev, off_t offset, uint8_t * buf,
                 size_t count, int oflags);
 ssize_t sd_write(struct dev_info * dev, off_t offset, uint8_t * buf,
                  size_t count, int oflags);
+static int sd_ioctl(struct dev_info * devnfo, uint32_t request,
+        void * arg, size_t arg_len);
+
 
 static uint32_t sd_commands[] = {
     SD_CMD_INDEX(0),
@@ -965,16 +969,20 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
     if (is_sdma) {
         /* Set system address register (ARGUMENT2 in RPi) */
 
-        /* We need to define a 4 kiB aligned buffer to use here */
-        /* Then convert its virtual address to a bus address */
+        /*
+         * We need to define a 4 kiB aligned buffer to use here
+         * Then convert its virtual address to a bus address
+         */
         /* TODO set dma buffer */
         panic("no dma support");
         /*mmio_write(EMMC_BASE + EMMC_ARG2, SDMA_BUFFER_PA); */
     }
 
-    /* Set block size and block count */
-    /* For now, block size = 512 bytes, block count = 1, */
-    /*  host SDMA buffer boundary = 4 kiB */
+    /*
+     * Set block size and block count
+     * For now, block size = 512 bytes, block count = 1,
+     * host SDMA buffer boundary = 4 kiB
+     */
     if (dev->blocks_to_transfer > 0xffff) {
         char buf[80];
 
@@ -1635,6 +1643,7 @@ int rpi_emmc_card_init(struct dev_info ** dev)
 #ifdef SD_WRITE_SUPPORT
     ret->dev.write = sd_write;
 #endif
+    ret->dev.ioctl = sd_ioctl;
     ret->dev.flags = DEV_FLAGS_MB_READ | DEV_FLAGS_MB_WRITE;
     ret->base_clock = base_clock;
 
@@ -2272,7 +2281,7 @@ static int sd_do_data_command(struct emmc_block_dev *edev, int is_write,
     /* PLSS table 4.20 - SDSC cards use byte addresses rather than
      * block addresses */
     if (!edev->card_supports_sdhc)
-        block_no *= 512;
+        block_no *= edev->dev.block_size;
 
     /* This is as per HCSS 3.7.2.1 */
     if (buf_size < edev->block_size) {
@@ -2423,3 +2432,27 @@ ssize_t sd_write(struct dev_info * dev, off_t offset, uint8_t * buf,
 }
 #endif
 
+static int sd_ioctl(struct dev_info * devnfo, uint32_t request,
+        void * arg, size_t arg_len)
+{
+    switch (request) {
+    case IOCTL_GETBLKSIZE:
+        if (!arg)
+            return -EINVAL;
+
+        sizetto(devnfo->block_size, arg, arg_len);
+
+        break;
+    case IOCTL_GETBLKCNT:
+        if (!arg)
+            return -EINVAL;
+
+        sizetto(devnfo->num_blocks, arg, arg_len);
+
+        break;
+    default:
+        return -EINVAL;
+    }
+
+    return 0;
+}

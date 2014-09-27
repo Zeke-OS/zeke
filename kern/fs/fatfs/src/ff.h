@@ -266,16 +266,6 @@ void ff_memfree (void* mblock);			/* Free memory block */
 #endif
 #endif
 
-/* Sync functions */
-#if _FS_REENTRANT
-int ff_cre_syncobj (BYTE vol, _SYNC_t* sobj);	/* Create a sync object */
-int ff_req_grant (_SYNC_t sobj);				/* Lock sync object */
-void ff_rel_grant (_SYNC_t sobj);				/* Unlock sync object */
-int ff_del_syncobj (_SYNC_t sobj);				/* Delete a sync object */
-#endif
-
-
-
 
 /*--------------------------------------------------------------*/
 /* Flags and offset address                                     */

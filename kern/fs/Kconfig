@@ -75,6 +75,7 @@ config configFS_DEHTABLE
 
 config configVFS_HASH
     bool "VFS Hash"
+    select configSUBR_HASH
     ---help---
         A vnode hashmap for file systems that have to cache vnode data in-core.
 

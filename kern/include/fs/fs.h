@@ -51,6 +51,10 @@
 #include <dirent.h>
 #include <klocks.h>
 
+#ifndef KERNEL_CONFIG_H
+#error Needs autoconf
+#endif
+
 #define FS_FLAG_INIT    0x01 /*!< File system initialized. */
 #define FS_FLAG_FAIL    0x08 /*!< File system has failed. */
 
@@ -202,7 +206,9 @@ typedef struct fs {
 typedef struct fs_superblock {
     fs_t * fs;
     dev_t vdev_id;          /*!< Virtual dev_id. */
+#ifdef configVFS_HASH
     unsigned sb_hashseed;   /*!< Seed for using vfs hashing */
+#endif
     uint32_t mode_flags;    /*!< Mount mode flags */
     vnode_t * root;         /*!< Root of this fs mount. */
     vnode_t * mountpoint;   /*!< Mount point where this sb is mounted on.
@@ -368,6 +374,29 @@ typedef struct sb_iterator {
     fsl_node_t * curr_fs; /*!< Current fs list node. */
     superblock_lnode_t * curr_sb; /*!< Current superblock of curr_fs. */
 } sb_iterator_t;
+
+
+/**
+ * Generate insert_suberblock function.
+ * Insert a fatfs_sb struct to the end of sb mount linked list.
+ * @param fatfs_sb is a pointer to a ramfs superblock.
+ */
+#define GENERATE_INSERT_SB(sb_type, fs)                 \
+static void insert_superblock(struct sb_type * sb)      \
+{                                                       \
+    superblock_lnode_t * curr = (fs).sbl_head;          \
+                                                        \
+    /* Add as a first sb if no other mounts yet */      \
+    if (curr == 0) {                                    \
+        (fs).sbl_head = &(sb->sbn);                     \
+    } else {                                            \
+        /* else find the last sb on the linked list. */ \
+        while (curr->next != 0) {                       \
+            curr = curr->next;                          \
+        }                                               \
+        curr->next = &(sb->sbn);                        \
+    }                                                   \
+}
 
 
 /* VFS Function Prototypes */

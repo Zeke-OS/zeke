@@ -45,6 +45,7 @@
 
 #include <sys/types_pthread.h>
 #include <hal/atomic.h>
+#include <kerror.h>
 
 /**
  * @addtogroup mtx mtx_init, mtx_lock, mtx_trylock

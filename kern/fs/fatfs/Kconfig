@@ -1,0 +1,38 @@
+menuconfig configFATFS
+    bool "FatFs"
+    default n
+    select configVFS_HASH
+    ---help---
+    The FatFs driver will permit the kernel to read and write MS-DOS based
+    file systems. This driver covers the FAT12, FAT16 and FAT32 file system
+    versions.
+
+    Some hardware platforms like raspberry may require a FAT boot partition,
+    so this driver is useful for accessing that partiotion too.
+
+if configFATFS
+
+config configFATFS_MAX_MOUNTS
+    int "Maximum number of mounts"
+    default 1
+
+config configFATFS_READONLY
+    bool "Read-only FAT driver"
+    ---help---
+    Strips out write support from the FatFs driver.
+
+config configFATFS_CODEPAGE
+    int "Code page for FAT"
+    default 437
+    ---help---
+    This option sets the code page used for FAT file systems.
+
+config configFATFS_LFN
+    bool "LFN option"
+    default n
+
+config configFATFS_UNICODE
+    bool "FAT Unicode support"
+    default n
+
+endif

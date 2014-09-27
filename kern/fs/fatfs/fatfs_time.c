@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    ioctl.h
+ * @file    fatfs_time.c
  * @author  Olli Vanhoja
- * @brief   Control devices.
+ * @brief   File System wrapper for time.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,39 +30,32 @@
  *******************************************************************************
  */
 
-/** @addtogroup LIBC
- * @{
- */
+#define KERNEL_INTERNAL 1
+#include <sys/time.h>
+#include "src/ff.h"
 
-#pragma once
-#ifndef IOCTL_H
-#define IOCTL_H
+#define FATTIME_YEAR_MASK   0xFE000000 /* Year origin from the 1980 (0..127) */
+#define FATTIME_MON_MASK    0x01E00000 /* Month (1..12) */
+#define FATTIME_DAY_MASK    0x001F0000 /* Day of the month(1..31) */
+#define FATTIME_HOUR_MASK   0x0000F800 /* Hour (0..23) */
+#define FATTIME_MINUTE_MASK 0x000007E0 /* Minute (0..59) */
+#define FATTIME_SEC_MASK    0x0000001F /* Second / 2 (0..29) */
 
-#include <stdint.h>
-#include <sys/cdefs.h>
+DWORD get_fattime(void)
+{
+    struct timespec ts;
+    struct tm tm;
+    uint32_t fattime;
 
-/*
- * IOCTL request codes.
- * Get requests shall be odd and set request shall be even, this information can
- * be then used to optimize the syscall.
- */
-#define IOCTL_GTERMIOS       1  /*!< Get termios struct. */
-#define IOCTL_STERMIOS       2  /*!< Set termios struct. */
-#define IOCTL_GETBLKSIZE    10  /*!< Get device block size. */
-#define IOCTL_GETBLKCNT     11  /*!< Get device block count. */
+    nanotime(&ts);
+    gmtime(&tm, &ts.tv_sec);
 
-#ifndef KERNEL_INTERNAL
-__BEGIN_DECLS
-/**
- * ioctl.
- * @note This is a non-POSIX implementation of ioctl.
- */
-int _ioctl(int fildes, uint32_t request, void * arg, size_t arg_len);
-__END_DECLS
-#endif
+    fattime  = (tm.tm_year - 80) & FATTIME_YEAR_MASK;
+    fattime |= (tm.tm_mon + 1) & FATTIME_MON_MASK;
+    fattime |= (tm.tm_mday + 1) & FATTIME_DAY_MASK;
+    fattime |= (tm.tm_hour) & FATTIME_HOUR_MASK;
+    fattime |= (tm.tm_min) & FATTIME_MINUTE_MASK;
+    fattime |= (tm.tm_sec) & FATTIME_SEC_MASK;
 
-#endif /* IOCTL_H */
-
-/**
- * @}
- */
+    return fattime;
+}

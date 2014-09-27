@@ -228,7 +228,8 @@ int ramsfs_mount(const char * source, uint32_t mode,
     }
 
     /* Set vdev number */
-    ramfs_sb->sbn.sbl_sb.vdev_id = DEV_MMTODEV(RAMFS_VDEV_MAJOR_ID, ramfs_vdev_minor++);
+    ramfs_sb->sbn.sbl_sb.vdev_id = DEV_MMTODEV(RAMFS_VDEV_MAJOR_NUM,
+                                               ramfs_vdev_minor++);
 
     /* Create the root inode */
     create_root(ramfs_sb);
