@@ -200,7 +200,11 @@ int ramsfs_mount(const char * source, uint32_t mode,
                  const char * parm, int parm_len, struct fs_superblock ** sb)
 {
     ramfs_sb_t * ramfs_sb;
-    int retval = 0;
+    int retval = 0, err;
+
+#ifdef configRAMFS_DEBUG
+    KERROR(KERROR_DEBUG, "ramfs_mount()\n");
+#endif
 
     ramfs_sb = kmalloc(sizeof(ramfs_sb_t));
     if (ramfs_sb == 0) {
@@ -213,7 +217,7 @@ int ramsfs_mount(const char * source, uint32_t mode,
      * kcalloc is used here to clear all inode pointers.
      */
     ramfs_sb->ramfs_iarr = kcalloc(RAMFS_INODE_POOL_SIZE,
-            sizeof(ramfs_inode_t *));
+                                   sizeof(ramfs_inode_t *));
     if (ramfs_sb->ramfs_iarr == 0) {
         retval = -ENOMEM;
         goto free_ramfs_sb;
@@ -221,8 +225,12 @@ int ramsfs_mount(const char * source, uint32_t mode,
     ramfs_sb->ramfs_iarr_size = 0;
 
     /* Initialize the inode pool. */
-    if (inpool_init(&(ramfs_sb->ramfs_ipool), &(ramfs_sb->sbn.sbl_sb),
-                ramfs_raw_create_inode, destroy_vnode, RAMFS_INODE_POOL_SIZE)) {
+#ifdef configRAMFS_DEBUG
+    KERROR(KERROR_DEBUG, "Initialize the inode pool.\n");
+#endif
+    err = inpool_init(&(ramfs_sb->ramfs_ipool), &(ramfs_sb->sbn.sbl_sb),
+            ramfs_raw_create_inode, destroy_vnode, RAMFS_INODE_POOL_SIZE);
+    if (err) {
         retval = -ENOMEM;
         goto free_ramfs_sb;
     }
@@ -232,6 +240,9 @@ int ramsfs_mount(const char * source, uint32_t mode,
                                                ramfs_vdev_minor++);
 
     /* Create the root inode */
+#ifdef configRAMFS_DEBUG
+    KERROR(KERROR_DEBUG, "Create the root inode\n");
+#endif
     create_root(ramfs_sb);
 
     /* Add this sb to the list of mounted file systems. */
@@ -729,8 +740,12 @@ static void insert_superblock(ramfs_sb_t * ramfs_sb)
 {
     superblock_lnode_t * curr = ramfs_fs.sbl_head;
 
+#ifdef configRAMFS_DEBUG
+    KERROR(KERROR_DEBUG, "insert_superblock()\n");
+#endif
+
     /* Add as a first sb if no other mounts yet */
-    if (curr == 0) {
+    if (!curr) {
         ramfs_fs.sbl_head = &(ramfs_sb->sbn);
     } else {
         /* else find the last sb on the linked list. */

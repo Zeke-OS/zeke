@@ -194,7 +194,7 @@ int kinit(void)
 static void mount_rootfs(void)
 {
     const char failed[] = "Failed to mount rootfs";
-    vnode_t * tmp;
+    vnode_t * tmp = NULL;
     proc_info_t * kernel_proc = proc_get_struct_l(0);
     int ret;
 
@@ -223,8 +223,9 @@ static void mount_rootfs(void)
         KERROR(KERROR_ERR, buf);
         goto out;
     }
-    kernel_proc->croot->vn_mountpoint->vn_prev_mountpoint = kernel_proc->croot->vn_mountpoint;
 
+    kernel_proc->croot->vn_mountpoint->vn_prev_mountpoint =
+        kernel_proc->croot->vn_mountpoint;
     kernel_proc->croot = kernel_proc->croot->vn_mountpoint;
     kernel_proc->cwd = kernel_proc->croot;
 

@@ -244,7 +244,7 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
     char buf[160];
 
     ksprintf(buf, sizeof(buf),
-            "fs_mount(target \"%s\", source \"%s\", fsname \"%s\", "
+            "fs_mount(target \"%p\", source \"%s\", fsname \"%s\", "
             "flags %x, parm \"%s\", parm_len %d)\n",
             target, source, fsname, flags, parm, parm_len);
     KERROR(KERROR_DEBUG, buf);
@@ -263,9 +263,20 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
     KERROR(KERROR_DEBUG, buf);
 #endif
 
+    if (!fs->mount) {
+        char buf[80];
+
+        ksprintf(buf, sizeof(buf), "No mount function for \"%s\"\n", fsname);
+        panic(buf);
+    }
+
     err = fs->mount(source, flags, parm, parm_len, &sb);
     if (err)
         return err;
+
+#ifdef config_FS_DEBUG
+    KERROR(KERROR_DEBUG, "Mount OK\n");
+#endif
 
     sb->mountpoint = target;
     sb->root->vn_prev_mountpoint = target->vn_mountpoint;

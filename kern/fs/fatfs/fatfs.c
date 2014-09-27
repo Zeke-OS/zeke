@@ -372,19 +372,14 @@ int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
 {
     struct fatfs_inode * in = get_inode_of_vnode(dir);
     FILINFO fno;
-    char * fname;
-    size_t fname_maxsize;
     int err;
 
     if (!S_ISDIR(dir->vn_mode))
         return -ENOTDIR;
 
 #if configFATFS_USE_LFN
-    fname_maxsize = _MAX_LFN + 1;
-    fno.lfsize = fname_maxsize;
-    fno.lfname = kmalloc(fname_maxsize);
-#else
-    fname_maxsize = 13;
+    fno.lfsize = _MAX_LFN + 1;
+    fno.lfname = d->d_name;
 #endif
 
     err = f_readdir(&in->dp, &fno);
@@ -408,11 +403,11 @@ int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
 
     d->d_ino = 0; /* TODO */
 #if configFATFS_USE_LFN
-    fname = *fno.lfname ? fno.lfname : fno.fname;
+    if (!*fno.lfname)
+        strlcpy(d->d_name, fno.lfname, 13);
 #else
-    fname = fno.fname;
+    strlcpy(d->d_name, fno.fname, 13);
 #endif
-    strlcpy(d->d_name, fname, fname_maxsize);
 
     return 0;
 }

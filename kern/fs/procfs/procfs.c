@@ -143,7 +143,7 @@ static ssize_t procfs_read(file_t * file, void * vbuf, size_t bcount)
                 "Pid: %u\n"
                 "Uid: %u %u %u\n"
                 "Gid: %u %u %u\n"
-                "Break: %p %pi\n",
+                "Break: %p %p\n",
                 proc->name,
                 proc->state,
                 proc->pid,
@@ -195,7 +195,10 @@ static int procfs_updatedir(vnode_t * dir)
          * regardless whether it already exist or not and try to remove
          * directories that should not exist anymore.
          */
-        for (int i = 0; i < act_maxproc; i++) {
+        for (int i = 0; i <= act_maxproc; i++) {
+            char buf[40];
+            ksprintf(buf, 40, "%u\n", act_maxproc);
+            KERROR(KERROR_DEBUG, buf);
             const proc_info_t * proc = proc_get_struct(i);
 
             if (proc)
@@ -218,11 +221,19 @@ int procfs_mkentry(const proc_info_t * proc)
     vnode_t * pdir;
     char name[10];
     size_t name_len;
+#ifdef configPROCFS_DEBUG
+    char msgbuf[80];
+#endif
     int err;
 
     if (!vn_procfs)
         return 0; /* Not yet initialized. */
 
+#ifdef configPROCFS_DEBUG
+    ksprintf(msgbuf, sizeof(msgbuf), "procfs_mkentry(pid = %u)\n",
+             proc->pid);
+    KERROR(KERROR_DEBUG, msgbuf);
+#endif
 
     /* proc dir name and name_len */
     name_len = uitoa32(name, proc->pid);

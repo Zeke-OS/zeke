@@ -38,11 +38,17 @@ config MBR_DEBUG
     default n
     depends on configMBR
 
-config configRAMFS
+menuconfig configRAMFS
     bool "ramfs"
     default y
     select configFS_DEHTABLE
     select configFS_INPOOL
+
+if configRAMFS
+config configRAMFS_DEBUG
+    bool "Debugging"
+    default n
+endif
 
 config configDEVFS
     bool "devfs"
@@ -51,10 +57,16 @@ config configDEVFS
 comment "No devfs"
     depends on !configDEVFS
 
-config configPROCFS
+menuconfig configPROCFS
     bool "procfs"
     default y
     select configRAMFS
+
+if configPROCFS
+config configPROCFS_DEBUG
+    bool "Debugging"
+    default n
+endif
 
 source "kern/fs/fatfs/Kconfig"
 

@@ -192,6 +192,14 @@ void procarr_realloc(void)
     if (maxproc == act_maxproc)
         return;
 
+#ifdef configPROC_DEBUG
+    char buf[80];
+
+    ksprintf(buf, sizeof(buf), "realloc procarr maxproc = %u, act_maxproc = %u\n",
+             maxproc, act_maxproc);
+    KERROR(KERROR_DEBUG, buf);
+#endif
+
     PROC_LOCK();
     tmp = krealloc(_procarr, SIZEOF_PROCARR());
     if ((tmp == 0) && (_procarr == 0)) {

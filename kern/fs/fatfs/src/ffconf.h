@@ -208,7 +208,7 @@
 / System Configurations
 /---------------------------------------------------------------------------*/
 
-#define _FS_LOCK    1   /* 0:Disable or >=1:Enable */
+#define _FS_LOCK    10  /* 0:Disable or >=1:Enable */
 /* To enable file lock control feature, set _FS_LOCK to non-zero value.
 /  The value defines how many files/sub-directories can be opened simultaneously
 /  with file lock control. This feature uses bss _FS_LOCK * 12 bytes. */

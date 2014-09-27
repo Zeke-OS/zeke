@@ -4,52 +4,52 @@ source "kern/hal/Kconfig"
 
 menu "Memory Map"
 
-config configPT_AREA_START
-    hex "Page table area start"
-    default 0x00100000
-    depends on configMMU
-
-config configPT_AREA_END
-    hex "Page table area end"
-    default 0x002FFFFF
-    depends on configMMU
-
 config configKSTACK_START
-    hex "kstack start"
+    hex "P kstack start"
     default 0x00001000
 
 config configKSTACK_END
-    hex "kstack end"
+    hex "P kstack end"
     default 0x00007fff
 
 config configTKSTACK_START
-    hex "tkstack vaddr start"
+    hex "V tkstack vaddr start"
     default 0x00000000
     depends on configMMU
 
 config configTKSTACK_END
-    hex "tkstack vaddr end"
+    hex "V tkstack vaddr end"
     default 0x00000fff
     depends on configMMU
 
 config configKERNEL_START
-    hex "kernel caddr start"
+    hex "P kernel caddr start"
     default 0x00008000
 
 config configKERNEL_END
-    hex "kernel caddr end"
-    default 0x000FFFFF
+    hex "P kernel caddr end"
+    default 0x003fffff
+
+config configPT_AREA_START
+    hex "P Page table area start"
+    default 0x00400000
+    depends on configMMU
+
+config configPT_AREA_END
+    hex "P Page table area end"
+    default 0x007FFFFF
+    depends on configMMU
 
 config configDYNMEM_START
-    hex "dynmem start"
-    default 0x00300000
+    hex "P dynmem start"
+    default 0x00800000
 
 config configDYNMEM_END
-    hex "dynmem end"
+    hex "P dynmem end"
     default 0x00FFFFFF
 
 config configKSECT_START
-    hex "ksect start"
+    hex "V ksect start"
     default 0x30000000
     ---help---
         Ksects, kernel dynamic virtual sections, are mainly mainly used to
@@ -57,7 +57,7 @@ config configKSECT_START
         the virtual ksect address.
 
 config configKSECT_END
-    hex "ksect end"
+    hex "V ksect end"
     default 0x50000000
 
 endmenu

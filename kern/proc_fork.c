@@ -64,7 +64,7 @@ pid_t proc_fork(pid_t pid)
      * http://pubs.opengroup.org/onlinepubs/9699919799/functions/fork.html
      */
 
-#if configDEBUG >= KERROR_DEBUG
+#ifdef configPROC_DEBUG
     char buf[80];
     ksprintf(buf, sizeof(buf), "fork(%u)\n", pid);
     KERROR(KERROR_DEBUG, buf);
@@ -141,7 +141,7 @@ pid_t proc_fork(pid_t pid)
 
     /* Clone stack region */
     if ((retval = clone_stack(new_proc, old_proc))) {
-#if configDEBUG >= KERROR_DEBUG
+#ifdef configPROC_DEBUG
         ksprintf(buf, sizeof(buf), "Cloning stack region failed.\n");
         KERROR(KERROR_DEBUG, buf);
 #endif
@@ -195,8 +195,15 @@ pid_t proc_fork(pid_t pid)
     }
 
     /* Copy file descriptors */
+#ifdef configPROC_DEBUG
+    KERROR(KERROR_DEBUG, "Copy file descriptors\n");
+#endif
     new_proc->files = kmalloc(SIZEOF_FILES(old_proc->files->count));
     if (!new_proc->files) {
+#ifdef configPROC_DEBUG
+        KERROR(KERROR_DEBUG,
+               "\tENOMEM when tried to allocate memory for file descriptors\n");
+#endif
         retval = -ENOMEM;
         goto free_res;
     }
@@ -205,6 +212,9 @@ pid_t proc_fork(pid_t pid)
         new_proc->files->fd[i] = old_proc->files->fd[i];
         fs_fildes_ref(new_proc->files, i, 1); /* null pointer safe */
     }
+#ifdef configPROC_DEBUG
+    KERROR(KERROR_DEBUG, "All file descriptors copied\n");
+#endif
 
     /* Select PID */
     if (nprocs != 1) { /* Tecnically it would be good idea to have lock on
@@ -212,31 +222,55 @@ pid_t proc_fork(pid_t pid)
                         * work fine... */
         new_proc->pid = proc_get_random_pid();
     } else { /* Proc is init */
+#ifdef configPROC_DEBUG
+        KERROR(KERROR_DEBUG, "Assuming this process to be init\n");
+#endif
         new_proc->pid = 1;
     }
 
-    //vref(new_proc->cwd); /* Increment refcount for the cwd */
-    new_proc->cwd->vn_refcount++; /* TODO Not safe. */
+    if (new_proc->cwd) {
+#ifdef configPROC_DEBUG
+        KERROR(KERROR_DEBUG, "Increment refcount for the cwd\n");
+#endif
+        //vref(new_proc->cwd); /* Increment refcount for the cwd */
+        new_proc->cwd->vn_refcount++; /* TODO Not safe. */
+    }
 
     /* A process shall be created with a single thread. If a multi-threaded
      * process calls fork(), the new process shall contain a replica of the
      * calling thread.
      * We left main_thread null if calling process has no main thread.
      */
+#ifdef configPROC_DEBUG
+    KERROR(KERROR_DEBUG, "Handle main_thread");
+#endif
     if (old_proc->main_thread) {
+#ifdef configPROC_DEBUG
+        KERROR(KERROR_DEBUG,
+               "Call thread_fork() to get a new main thread for the fork.\n");
+#endif
         //pthread_t old_tid = get_current_tid();
         pthread_t new_tid = thread_fork();
         if (new_tid < 0) {
+#ifdef configPROC_DEBUG
+            KERROR(KERROR_DEBUG, "thread_fork() failed\n");
+#endif
             retval = -EAGAIN; /* TODO ?? */
             goto free_res;
         } else if (new_tid > 0) { /* thread of the forking process returning */
+#ifdef configPROC_DEBUG
+            KERROR(KERROR_DEBUG, "\tthread_fork() fork OK\n");
+#endif
             new_proc->main_thread = sched_get_thread_info(new_tid);
             new_proc->main_thread->pid_owner = new_proc->pid;
         } else {
-            panic("Thread forking failed");
+            panic("\tThread forking failed");
         }
     } else {
-        new_proc->main_thread = 0;
+#ifdef configPROC_DEBUG
+        KERROR(KERROR_DEBUG, "No main thread to fork.\n");
+#endif
+        new_proc->main_thread = NULL;
     }
     retval = new_proc->pid;
 
@@ -256,7 +290,7 @@ pid_t proc_fork(pid_t pid)
     if (new_proc->main_thread) {
         sched_thread_set_exec(new_proc->main_thread->id);
     }
-#if configDEBUG >= KERROR_DEBUG
+#ifdef configPROC_DEBUG
     ksprintf(buf, sizeof(buf), "Fork created.\n");
     KERROR(KERROR_DEBUG, buf);
 #endif
@@ -274,6 +308,12 @@ out:
 static proc_info_t * clone_proc_info(proc_info_t * const old_proc)
 {
     proc_info_t * new_proc;
+#ifdef configPROC_DEBUG
+    char buf[80];
+
+    ksprintf(buf, sizeof(buf), "clone_proc_info of pid %u\n", old_proc->pid);
+    KERROR(KERROR_DEBUG, buf);
+#endif
 
     new_proc = kmalloc(sizeof(proc_info_t));
     if (!new_proc) {
@@ -351,7 +391,7 @@ static int clone_stack(proc_info_t * new_proc, proc_info_t * old_proc)
     struct buf * new_region = 0;
 
     if (old_region && old_region->vm_ops) { /* Only if vmp_ops are defined. */
-#if configDEBUG >= KERROR_DEBUG
+#ifdef configPROC_DEBUG
         KERROR(KERROR_DEBUG, "Cloning stack\n");
 #endif
         if (!old_region->vm_ops->rclone) {
@@ -366,7 +406,7 @@ static int clone_stack(proc_info_t * new_proc, proc_info_t * old_proc)
     } else if (old_region) { /* Try to clone the stack manually. */
         const size_t rsize = MMU_SIZEOF_REGION(&(old_region->b_mmu));
 
-#if configDEBUG >= KERROR_DEBUG
+#ifdef configPROC_DEBUG
         KERROR(KERROR_DEBUG, "Cloning stack manually\n");
 #endif
 
@@ -385,7 +425,7 @@ static int clone_stack(proc_info_t * new_proc, proc_info_t * old_proc)
         new_region->b_mmu.pt = old_region->b_mmu.pt;
         vm_updateusr_ap(new_region);
     } else { /* else: NO STACK */
-#if configDEBUG >= KERROR_DEBUG
+#ifdef configPROC_DEBUG
         KERROR(KERROR_DEBUG, "fork(): No stack created\n");
 #endif
     }
@@ -409,6 +449,10 @@ static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc)
 {
     proc_info_t * last_node;
     proc_info_t * tmp;
+
+#ifdef configPROC_DEBUG
+    KERROR(KERROR_DEBUG, "Updating inheriance attributes of new_proc\n");
+#endif
 
     /* Initial values */
     new_proc->inh.parent = old_proc;
@@ -441,6 +485,10 @@ pid_t proc_get_random_pid(void)
     pid_t last_maxproc;
     pid_t newpid;
 
+#ifdef configPROC_DEBUG
+    KERROR(KERROR_DEBUG, "proc_get_random_pid()");
+#endif
+
     PROC_LOCK();
     last_maxproc = act_maxproc;
     newpid = last_maxproc + 1;
@@ -453,11 +501,18 @@ pid_t proc_get_random_pid(void)
         if (newpid > last_maxproc)
             newpid = proc_lastpid + kunirand(last_maxproc - proc_lastpid - 1);
         newpid++;
+#ifdef configPROC_DEBUG
+        kputs(".");
+#endif
     } while (proc_get_struct(newpid));
 
     proc_lastpid = newpid;
 
     PROC_UNLOCK();
+
+#ifdef configPROC_DEBUG
+    kputs("done\n");
+#endif
 
     return newpid;
 }

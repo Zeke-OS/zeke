@@ -15,10 +15,10 @@ specific mappings. Some of these mappings are common to all ARM11 implementation
     0x5000 - 0x5fff     | Z | IRQ stack
     0x6000 - 0x6fff     | Z | Undef stack
     0x7000 - 0x7fff     | Z | System stack
-    0x8000 - 0xfffff    | Z | Kernel area (boot address)
-    0x00100000-         | Z | Page Table
-    0x002FFFFF          |   | Area
-    0x00300000          | Z | Dynmem
+    0x8000 - 0x3fffff   | Z | Kernel area (boot address)
+    0x00400000-         | Z | Page Table
+    0x007FFFFF          |   | Area
+    0x00800000          | Z | Dynmem
     0x00FFFFFF          |   | Area
     -                   |   |
     Peripherals:        |   |

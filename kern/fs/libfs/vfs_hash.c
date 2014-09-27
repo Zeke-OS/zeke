@@ -113,8 +113,7 @@ int vfs_hash_insert(struct vnode * vp, unsigned hash,
     *vpp = NULL;
     while (1) {
         mtx_lock(&vfs_hash_mtx);
-        LIST_FOREACH(vp2,
-            vfs_hash_bucket(vp->sb, hash), vn_hashlist) {
+        LIST_FOREACH(vp2, vfs_hash_bucket(vp->sb, hash), vn_hashlist) {
             if (vp2->vn_hash != hash)
                 continue;
             if (vp2->sb != vp->sb)
@@ -123,7 +122,7 @@ int vfs_hash_insert(struct vnode * vp, unsigned hash,
                 continue;
             VN_LOCK(vp2);
             mtx_unlock(&vfs_hash_mtx);
-            /* TODO incr refcount */
+            /* TODO incr refcount of vp2 */
             mtx_lock(&vfs_hash_mtx);
             LIST_INSERT_HEAD(&vfs_hash_side, vp, vn_hashlist);
             mtx_unlock(&vfs_hash_mtx);
