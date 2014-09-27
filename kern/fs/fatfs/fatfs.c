@@ -176,6 +176,15 @@ static int fatfs_delete_vnode(vnode_t * vnode)
     /* TODO */
 }
 
+/**
+ * Lookup for a vnode (file/dir) in FatFs.
+ * First lookup form vfs_hash and if not found then read it from ff which will
+ * probably read it via devfs interface. After the vnode has been created it
+ * will be added to the vfs hashmap. In ff terminology all files and directories
+ * that are in hashmap are also open on a file/dir handle, thus we'll have to
+ * make sure we don't have too many vnodes in cache that have no references, to
+ * avoid hitting any ff hard limits.
+ */
 static int fatfs_lookup(vnode_t * dir, const char * name, size_t name_len,
                         vnode_t ** result)
 {
@@ -223,7 +232,9 @@ static int fatfs_lookup(vnode_t * dir, const char * name, size_t name_len,
         goto out;
     }
 
-    /* Create a inode and fetch data from the device. */
+    /*
+     * Create a inode and fetch data from the device.
+     */
 
     in = kcalloc(1, sizeof(struct fatfs_inode));
     if (!in) {
@@ -292,6 +303,7 @@ static int fatfs_lookup(vnode_t * dir, const char * name, size_t name_len,
         ksprintf(msgbuf, sizeof(msgbuf),
                 "fatfs_lookup(): Found it during insert: \"%s\"\n",
                 in_fpath);
+        KERROR(KERROR_WARN, msgbug);
     }
 
     *result = &in->in_vnode;
