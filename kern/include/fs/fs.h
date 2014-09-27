@@ -217,6 +217,8 @@ typedef struct fs_superblock {
 
     /**
      * Get the vnode struct linked to a vnode number.
+     * @note    This is an optional function and file systems are not required
+     *          to implement this.
      * @param[in]  sb is the superblock.
      * @param[in]  vnode_num is the vnode number.
      * @param[out] vnode is a pointer to the vnode.

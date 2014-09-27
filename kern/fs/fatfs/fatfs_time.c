@@ -32,7 +32,10 @@
 
 #define KERNEL_INTERNAL 1
 #include <sys/time.h>
+#include <timeconst.h>
 #include "src/ff.h"
+
+#define FATTIME_EPOCH       1980
 
 #define FATTIME_YEAR_MASK   0xFE000000 /* Year origin from the 1980 (0..127) */
 #define FATTIME_MON_MASK    0x01E00000 /* Month (1..12) */
@@ -50,7 +53,7 @@ DWORD get_fattime(void)
     nanotime(&ts);
     gmtime(&tm, &ts.tv_sec);
 
-    fattime  = (tm.tm_year - 80) & FATTIME_YEAR_MASK;
+    fattime  = (tm.tm_year - (FATTIME_EPOCH - EPOCH_YEAR)) & FATTIME_YEAR_MASK;
     fattime |= (tm.tm_mon + 1) & FATTIME_MON_MASK;
     fattime |= (tm.tm_mday + 1) & FATTIME_DAY_MASK;
     fattime |= (tm.tm_hour) & FATTIME_HOUR_MASK;
