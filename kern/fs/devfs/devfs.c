@@ -143,6 +143,16 @@ void dev_destroy(struct dev_info * devnfo)
 {
 }
 
+const char * devtoname(struct vnode * dev)
+{
+    struct dev_info * devnfo = (struct dev_info *)dev->vn_specinfo;
+
+    if (!(dev->vn_mode & (S_IFBLK | S_IFCHR)))
+        return NULL;
+
+    return devnfo->dev_name;
+}
+
 ssize_t dev_read(file_t * file, void * vbuf, size_t bcount)
 {
     vnode_t * const vnode = file->vnode;

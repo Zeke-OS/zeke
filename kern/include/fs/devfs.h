@@ -75,6 +75,12 @@ int dev_make(struct dev_info * devnfo, uid_t uid, gid_t gid, int perms,
         vnode_t ** result);
 
 /**
+ * Get a string indicating the device name by device vnode.
+ * @param dev is a vnode representing a device.
+ */
+const char * devtoname(struct vnode * dev);
+
+/**
  * Read from a device.
  * @param file      is a pointer to the device file.
  * @param vbuf      is the target buffer.

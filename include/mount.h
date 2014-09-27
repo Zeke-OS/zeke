@@ -40,11 +40,12 @@
 
 #include <sys/cdefs.h>
 
-#define MNT_RDONLY      0x01 /*!< Read only. */
-#define MNT_SYNCHRONOUS 0x02
-#define MNT_NOEXEC      0x04
-#define MNT_NOSUID      0x08
-#define MNT_ASYNC       0x40
+#define MNT_RDONLY      0x0001 /*!< Read only. */
+#define MNT_SYNCHRONOUS 0x0002 /*!< Synchronous writes. */
+#define MNT_ASYNC       0x0040 /*!< Asynchronous writes. */
+#define MNT_NOEXEC      0x0004 /*!< No exec for the file system. */
+#define MNT_NOSUID      0x0008 /*!< Set uid bits not honored. */
+#define MNT_NOATIME     0x0100 /*!< Don't update file access times. */
 
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS

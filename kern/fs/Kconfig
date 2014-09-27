@@ -33,7 +33,7 @@ menuconfig configMBR
     default n
     depends on configDEVFS
 
-config MBR_DEBUG
+config configMBR_DEBUG
     bool "MBR debug"
     default n
     depends on configMBR
