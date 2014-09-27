@@ -72,6 +72,7 @@ DSTATUS fatfs_disk_status(BYTE pdrv)
 DRESULT fatfs_disk_read(BYTE pdrv, BYTE* buff, DWORD sector, UINT count)
 {
     file_t * file;
+    size_t blk_size;
     ssize_t retval;
 
     if (pdrv >= configFATFS_MAX_MOUNTS)
@@ -79,8 +80,9 @@ DRESULT fatfs_disk_read(BYTE pdrv, BYTE* buff, DWORD sector, UINT count)
 
     file = &fatfs_sb_arr[pdrv]->ff_devfile;
     file->seek_pos = sector;
+    blk_size = fatfs_sb_arr[pdrv]->ff_blksize;
 
-    retval = file->vnode->vnode_ops->read(file, buff, count);
+    retval = file->vnode->vnode_ops->read(file, buff, count * blk_size);
     if (retval < 0) {
 #ifdef configFATFS_DEBUG
         char msgbuf[80];
@@ -91,7 +93,7 @@ DRESULT fatfs_disk_read(BYTE pdrv, BYTE* buff, DWORD sector, UINT count)
         return RES_ERROR;
     }
 
-    if (retval != count) {
+    if (retval / blk_size != count) {
 #ifdef configFATFS_DEBUG
         char msgbuf[80];
 
@@ -116,6 +118,7 @@ DRESULT fatfs_disk_read(BYTE pdrv, BYTE* buff, DWORD sector, UINT count)
 DRESULT fatfs_disk_write(BYTE pdrv, const BYTE* buff, DWORD sector, UINT count)
 {
     file_t * file;
+    size_t blk_size;
     ssize_t retval;
 
     if (pdrv >= configFATFS_MAX_MOUNTS)
@@ -123,8 +126,9 @@ DRESULT fatfs_disk_write(BYTE pdrv, const BYTE* buff, DWORD sector, UINT count)
 
     file = &fatfs_sb_arr[pdrv]->ff_devfile;
     file->seek_pos = sector;
+    blk_size = fatfs_sb_arr[pdrv]->ff_blksize;
 
-    retval = file->vnode->vnode_ops->write(file, buff, count);
+    retval = file->vnode->vnode_ops->write(file, buff, count * blk_size);
     if (retval < 0) {
 #ifdef configFATFS_DEBUG
         char msgbuf[80];
@@ -136,7 +140,7 @@ DRESULT fatfs_disk_write(BYTE pdrv, const BYTE* buff, DWORD sector, UINT count)
         return RES_ERROR;
     }
 
-    if (retval != count)
+    if (retval / blk_size != count)
         return RES_PARERR;
 
     return 0;

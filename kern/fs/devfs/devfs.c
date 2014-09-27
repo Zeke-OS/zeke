@@ -31,6 +31,7 @@
  */
 
 #include <hal/core.h>
+#include <sys/ioctl.h>
 #include <kinit.h>
 #include <kmalloc.h>
 #include <kstring.h>
@@ -125,8 +126,9 @@ int dev_make(struct dev_info * devnfo, uid_t uid, gid_t gid, int perms,
             sizeof(devnfo->dev_name), NULL)) {
         return -EEXIST;
     }
-    retval = vn_devfs->vnode_ops->mknod(vn_devfs, devnfo->dev_name,
-            sizeof(devnfo->dev_name), S_IFCHR, devnfo, &res);
+    retval = vn_devfs->vnode_ops->mknod(vn_devfs,
+            devnfo->dev_name, sizeof(devnfo->dev_name),
+            (devnfo->block_size > 1) ? S_IFBLK : S_IFCHR, devnfo, &res);
     if (retval)
         return retval;
 
@@ -257,8 +259,28 @@ static int dev_ioctl(file_t * file, uint32_t request, void * arg, size_t arg_len
 {
     struct dev_info * devnfo = (struct dev_info *)file->vnode->vn_specinfo;
 
-    if (!devnfo || !devnfo->ioctl)
+    if (!devnfo)
         return -ENOTTY;
+
+    switch (request) {
+    case IOCTL_GETBLKSIZE:
+        if (!arg)
+            return -EINVAL;
+
+        sizetto(devnfo->block_size, arg, arg_len);
+
+        return 0;
+    case IOCTL_GETBLKCNT:
+        if (!arg)
+            return -EINVAL;
+
+        sizetto(devnfo->num_blocks, arg, arg_len);
+
+        return 0;
+    }
+
+    if (!devnfo->ioctl)
+        return -EINVAL;
 
     return devnfo->ioctl(devnfo, request, arg, arg_len);
 }

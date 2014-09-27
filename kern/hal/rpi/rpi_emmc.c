@@ -2386,7 +2386,7 @@ ssize_t sd_read(struct dev_info * dev, off_t offset, uint8_t * buf,
 
 #ifdef configRPI_EMMC_DEBUG
     ksprintf(msgbuf, sizeof(msgbuf),
-             "SD: read() card ready, reading from block %l\n", block_no);
+             "SD: read() card ready, reading from block %u\n", block_no);
     KERROR(KERROR_DEBUG, msgbuf);
 #endif
 
@@ -2417,7 +2417,7 @@ ssize_t sd_write(struct dev_info * dev, off_t offset, uint8_t * buf,
 
 #ifdef configRPI_EMMC_DEBUG
     ksprintf(msgbuf, sizeof(msgbuf),
-             "SD: write() card ready, reading from block %l\n", block_no);
+             "SD: write() card ready, reading from block %u\n", block_no);
     KERROR(KERROR_DEBUG, msgbuf);
 #endif
 
@@ -2436,20 +2436,6 @@ static int sd_ioctl(struct dev_info * devnfo, uint32_t request,
         void * arg, size_t arg_len)
 {
     switch (request) {
-    case IOCTL_GETBLKSIZE:
-        if (!arg)
-            return -EINVAL;
-
-        sizetto(devnfo->block_size, arg, arg_len);
-
-        break;
-    case IOCTL_GETBLKCNT:
-        if (!arg)
-            return -EINVAL;
-
-        sizetto(devnfo->num_blocks, arg, arg_len);
-
-        break;
     default:
         return -EINVAL;
     }

@@ -106,7 +106,7 @@
 #define ENOTSUP         61  /*!< Not supported. */
 #define ENOTTY          62  /*!< Inappropriate I/O control operation. */
 #define ENXIO           63  /*!< No such device or address. */
-#define EOPNOTSUPP      61  /*!< Operation not supported on socket */
+#define EOPNOTSUPP      ENOTSUP /*!< Operation not supported on socket */
 #define EOVERFLOW       64  /*!< Value too large to be stored in data type. */
 #define EOWNERDEAD      66  /*!< Previous owner died. */
 #define EPERM           67  /*!< Operation not permitted. */
@@ -121,8 +121,9 @@
 #define ESTALE          76  /*!< Stale file handle. */
 #define ETIMEDOUT       78  /*!< Connection timed out. */
 #define ETXTBSY         79  /*!< Text file busy. */
-#define EWOULDBLOCK     6   /*!< Operation would block */
+#define EWOULDBLOCK     EAGAIN /*!< Operation would block */
 #define EXDEV           80  /*!< Cross-device link or Improper link. */
+#define ENOTBLK         81  /*!< Block device required */
 
 #ifndef KERNEL_INTERNAL
 #include <sys/cdefs.h>

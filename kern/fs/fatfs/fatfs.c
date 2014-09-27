@@ -34,6 +34,8 @@
 #include <autoconf.h>
 #include <time.h>
 #include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
 #include <dirent.h>
 #include <sys/hash.h>
 #include <kinit.h>
@@ -120,17 +122,28 @@ static int fatfs_mount(const char * source, uint32_t mode,
 
     /* Get device vnode */
     err = lookup_vnode(&vndev, curproc->croot, source, 0);
+    if (err)
+        return err;
+    if (!S_ISBLK(vndev->vn_mode) || !vndev->vnode_ops->ioctl)
+        return -ENOTBLK;
+
+    /* Allocate superblock */
+    fatfs_sb = kcalloc(1, sizeof(struct fatfs_sb));
+    if (!fatfs_sb)
+        return -ENOMEM;
+
+    sbp = &(fatfs_sb->sbn.sbl_sb);
+    fs_fildes_set(&fatfs_sb->ff_devfile, vndev, O_RDWR);
+    sbp->vdev_id = DEV_MMTODEV(FATFS_VDEV_MAJOR_ID, fatfs_vdev_minor++);
+    err = vndev->vnode_ops->ioctl(&fatfs_sb->ff_devfile, IOCTL_GETBLKSIZE,
+                            &fatfs_sb->ff_blksize, sizeof(size_t));
     if (err) {
         retval = err;
         goto fail;
     }
 
-    /* Allocate superblock */
-    fatfs_sb = kcalloc(1, sizeof(struct fatfs_sb));
-    if (!fatfs_sb) {
-        retval = -ENOMEM;
-        goto fail;
-    }
+    /* Insert sb to fatfs_sb_arr lookup array */
+    fatfs_sb_arr[DEV_MINOR(sbp->vdev_id)] = fatfs_sb;
 
     /* Mount */
     char pdrv = (char)DEV_MINOR(sbp->vdev_id);
@@ -157,15 +170,12 @@ static int fatfs_mount(const char * source, uint32_t mode,
             goto fail;
         }
     }
-    fatfs_sb_arr[DEV_MINOR(sbp->vdev_id)] = fatfs_sb;
 #ifdef configFATFS_DEBUG
     KERROR(KERROR_DEBUG, "Initialized a work area for FAT\n");
 #endif
 
     /* Init super block */
-    sbp = &(fatfs_sb->sbn.sbl_sb);
     sbp->fs = &fatfs_fs;
-    sbp->vdev_id = DEV_MMTODEV(FATFS_VDEV_MAJOR_ID, fatfs_vdev_minor++);
     sbp->mode_flags = mode;
     sbp->root = create_root(sbp);
     sbp->sb_dev = vndev;
@@ -188,6 +198,7 @@ static int fatfs_mount(const char * source, uint32_t mode,
 
     goto out;
 fail:
+    fatfs_sb_arr[DEV_MINOR(sbp->vdev_id)] = NULL;
     kfree(fatfs_sb);
 out:
     *sb = &(fatfs_sb->sbn.sbl_sb);
@@ -230,12 +241,12 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
     vnode_t * xvp;
     mode_t vn_mode;
     ino_t num;
-    int err, retval = 0;
+    int err = 0, retval = 0;
 #ifdef configFATFS_DEBUG
     char msgbuf[80];
 
     ksprintf(msgbuf, sizeof(msgbuf), "create_inode(fpath \"%s\", vn_hash %u)\n",
-             fpath, vn_hash);
+             fpath, (uint32_t)vn_hash);
     KERROR(KERROR_DEBUG, msgbuf);
 #endif
 
