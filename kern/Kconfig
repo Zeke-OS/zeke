@@ -141,8 +141,6 @@ config configPROC_DEBUG
 
 endmenu
 
-source "kern/kerror/Kconfig"
-
 menu "Generic"
 
 config configTIMERS_MAX
@@ -163,6 +161,14 @@ config configUSRINIT_PRI
     default 0
     ---help---
         Priority of usrinit thread.
+
+endmenu
+
+menu "Kernel debugging"
+
+config configKASSERT
+    bool "Kernel asserts"
+    default n
 
 config configBIO_DEBUG
     bool "bio debugging"
@@ -189,6 +195,7 @@ config configKMALLOC_DEBUG
 
 endmenu
 
+source "kern/kerror/Kconfig"
 
 source "kern/fs/Kconfig"
 

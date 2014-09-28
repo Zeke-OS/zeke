@@ -291,6 +291,8 @@ fs_t * fs_by_name(const char * fsname)
 {
     fsl_node_t * node = fsl_head;
 
+    KASSERT(fsname != NULL, "fsname should be set\n");
+
     do {
         if (!strcmp(node->fs->fsname, fsname))
             break;
@@ -301,13 +303,19 @@ fs_t * fs_by_name(const char * fsname)
 
 void fs_init_sb_iterator(sb_iterator_t * it)
 {
+    KASSERT(it != NULL, "fs iterator should be set\n");
+
     it->curr_fs = fsl_head;
     it->curr_sb = fsl_head->fs->sbl_head;
 }
 
 fs_superblock_t * fs_next_sb(sb_iterator_t * it)
 {
-    fs_superblock_t * retval = (it->curr_sb != 0) ? &(it->curr_sb->sbl_sb) : 0;
+    fs_superblock_t * retval;
+
+    KASSERT(it != NULL, "fs iterator should be set\n");
+
+    retval = (it->curr_sb != 0) ? &(it->curr_sb->sbl_sb) : 0;
 
     if (retval == 0)
         goto out;
@@ -407,6 +415,8 @@ int chkperm_vnode(vnode_t * vnode, uid_t euid, gid_t egid, int oflags)
 {
     struct stat stat;
     int err;
+
+    KASSERT(vnode != NULL, "vnode should be set\n");
 
     err = vnode->vnode_ops->stat(vnode, &stat);
     if (err)
@@ -545,9 +555,8 @@ file_t * fs_fildes_ref(files_t * files, int fd, int count)
 
 int fs_fildes_close_cproc(int fildes)
 {
-    if (!fs_fildes_ref(curproc->files, fildes, 0)) {
+    if (!fs_fildes_ref(curproc->files, fildes, 0))
         return -EBADF;
-    }
 
     fs_fildes_ref(curproc->files, fildes, -1);
     curproc->files->fd[fildes] = NULL;
@@ -563,6 +572,8 @@ ssize_t fs_readwrite_cproc(int fildes, void * buf, size_t nbyte, int oper)
     vnode_t * vnode;
     file_t * file;
     ssize_t retval = -1;
+
+    KASSERT(buf != NULL, "buf should be set\n");
 
     file = fs_fildes_ref(curproc->files, fildes, 1);
     if (!file)
@@ -614,6 +625,10 @@ static int parse_filepath(const char * pathname, char ** path, char ** name)
     char * path_act;
     char * fname;
     size_t i, j;
+
+    KASSERT(pathname != NULL, "pathname should be set\n");
+    KASSERT(path != NULL, "path should be set\n");
+    KASSERT(name != NULL, "name should be set\n");
 
     path_act = kstrdup(pathname, PATH_MAX);
     if (!path_act)

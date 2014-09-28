@@ -253,8 +253,11 @@ static void proc_remove(pid_t pid)
 
 void _proc_free(proc_info_t * p)
 {
-    if (p)
+    if (p) {
+        KERROR(KERROR_WARN, "Got NULL as a proc_info struct\n");
+
         return;
+    }
 
     /* Free files */
     if (p->files) {
@@ -284,19 +287,6 @@ void _proc_free(proc_info_t * p)
 
     kfree(p);
 }
-
-#if 0
-/**
- * Initialize a new process.
- * @param image Process image to be loaded.
- * @param size  Size of the image.
- * @return  PID; -1 if unable to initialize.
- */
-pid_t process_init(void * image, size_t size)
-{
-    return -1;
-}
-#endif
 
 proc_info_t * proc_get_struct_l(pid_t pid)
 {
@@ -361,31 +351,25 @@ void proc_enter_kernel(void)
 
 mmu_pagetable_t * proc_exit_kernel(void)
 {
-#ifdef configPROC_DEBUG
-    if (!curproc)
-        panic("No current proces set");
-#endif
+    KASSERT(curproc != NULL, "Current proces should be set");
+
     curproc->mm.curr_mpt = &curproc->mm.mpt;
+
     return curproc->mm.curr_mpt;
 }
 
 void proc_suspend(void)
 {
-#ifdef configPROC_DEBUG
-    if (!curproc)
-        panic("No current proces set");
-#endif
+    KASSERT(curproc != NULL, "Current proces should be set");
     /* TODO set state */
     //curproc->state
 }
 
 mmu_pagetable_t * proc_resume(void)
 {
-#ifdef configPROC_DEBUG
-    if (!curproc)
-        panic("No current proces set");
-#endif
+    KASSERT(curproc != NULL, "Current proces should be set");
     /* TODO set state */
+
     return curproc->mm.curr_mpt;
 }
 
@@ -397,9 +381,9 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
     proc_info_t * pcb;
     struct buf * region;
     struct buf * new_region;
-
 #ifdef configPROC_DEBUG
     char buf[80];
+
     ksprintf(buf, sizeof(buf), "proc_dab_handler(): MOO, %x @ %x\n", vaddr, lr);
     KERROR(KERROR_DEBUG, buf);
 #endif
@@ -451,6 +435,8 @@ pid_t proc_update(void)
 {
     current_process_id = current_thread->pid_owner;
     curproc = proc_get_struct_l(current_process_id);
+
+    KASSERT(curproc, "curproc should be valid");
 
     return current_process_id;
 }

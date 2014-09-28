@@ -95,7 +95,7 @@ const char _kernel_panic_msg[20];
     panic_halt();                           \
 } while(1)
 
-#if configDEBUG >= KERROR_DEBUG
+#ifdef configKASSERT
 #define KASSERT(invariant, msg) do {        \
     if (!(invariant)) { panic(msg); }       \
 } while(0)
