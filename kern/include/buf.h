@@ -60,6 +60,7 @@ struct buf {
     size_t b_bcount;        /*!< Originally requested buffer size, can be used
                              *   for bounds check. */
     size_t b_blkno;         /*!< Block # on device. */
+    size_t b_lblkno;        /*!< Logical block number. */
 
     /* MMU mappings.             Usually used for user space mapping. */
     mmu_region_t b_mmu;     /*!< MMU struct for user space or special access. */
@@ -121,6 +122,7 @@ typedef struct vm_ops {
 #define B_NOCOPY    0x00100     /*!< Don't copy-on-write this buf. */
 #define B_ASYNC     0x01000     /*!< Start I/O but don't wait for completion. */
 #define B_DELWRI    0x04000     /*!< Delayed write. */
+#define B_IOERROR   0x10000     /*!< IO Error. */
 
 #define BUF_LOCK(bp)    mtx_lock(&(bp)->lock)
 #define BUF_UNLOCK(bp)  mtx_unlock(&(bp)->lock)
