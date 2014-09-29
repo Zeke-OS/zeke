@@ -5,6 +5,10 @@ menu "File Systems"
 menuconfig configMOUNTROOTFS
     bool "Rootfs"
     default y
+    ---help---
+    Mount rootfs on boot.
+
+    If unsure, say Y.
 
 if configMOUNTROOTFS
 
@@ -32,6 +36,8 @@ menuconfig configMBR
     bool "MBR Support"
     default n
     depends on configDEVFS
+    ---help---
+    Read MBR and populate devices for drive partitions accordingly.
 
 config configMBR_DEBUG
     bool "MBR debug"
@@ -43,6 +49,11 @@ menuconfig configRAMFS
     default y
     select configFS_DEHTABLE
     select configFS_INPOOL
+    ---help---
+    Provides in-RAM file system that can be used before hardware backed
+    file systems are mounted. It also provides a mountpoint for pseudo
+    file systems during boot. Some file systems may also inherit ramfs
+    and thus auto select it.
 
 if configRAMFS
 config configRAMFS_DEBUG
@@ -61,6 +72,8 @@ menuconfig configPROCFS
     bool "procfs"
     default y
     select configRAMFS
+    ---help---
+    Provides a Plan 9 -like process file system.
 
 if configPROCFS
 config configPROCFS_DEBUG
@@ -75,12 +88,12 @@ menu "FS libs"
 config configFS_INPOOL
     bool "inode pools"
     ---help---
-        inode pool speeds up the creation of new inodes in file systems.
-        A pool is used to get new preallocated inodes as well as destroying
-        and recyling old inodes. A file system may have unlimited amount of
-        pools as pools are handled as objects.
+    inode pool speeds up the creation of new inodes in file systems.
+    A pool is used to get new preallocated inodes as well as destroying
+    and recyling old inodes. A file system may have unlimited amount of
+    pools as pools are handled as objects.
 
-        This is usually auto selected.
+    This is usually auto selected.
 
 config configFS_DEHTABLE
     bool "Dirent hash table"
@@ -89,9 +102,9 @@ config configVFS_HASH
     bool "VFS Hash"
     select configSUBR_HASH
     ---help---
-        A vnode hashmap for file systems that have to cache vnode data in-core.
+    A vnode hashmap for file systems that have to cache vnode data in-core.
 
-        This is usually auto selected.
+    This is usually auto selected.
 
 endmenu
 

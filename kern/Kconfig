@@ -111,7 +111,7 @@ config configSCHED_MAX_THREADS
     int "Maximum number of threads"
     default 10
     ---help---
-        sched_tiny supports only a fixed number of threads in execution.
+    sched_tiny supports only a fixed number of threads in execution.
 endif
 
 if configSCHED_CDS
@@ -129,15 +129,16 @@ config configMAXPROC
     int "maxproc"
     default 5
     ---help---
-        Default maximum number of processes.
+    Default maximum number of processes. This is a sysctl tunable variable
+    and thus can be changed on runtime.
 
 config configPROC_DEBUG
     bool "Proc debug"
     default n
     ---help---
-        Process subsystem debugging. This knob adds more invariants that cause
-        a performance hit as well as print a lot of useles debug messages to
-        the klogging facility.
+    Process subsystem debugging. This knob adds more invariants that cause
+    a performance hit as well as print a lot of useles debug messages to
+    the klogging facility.
 
 endmenu
 
@@ -148,19 +149,19 @@ config configTIMERS_MAX
     default 16
     range 15 65535
     ---help---
-        Maximum number of timers available.
+    Maximum number of timers available.
 
 config configUSRINIT_SSIZE
     int "init stack size"
     default 8192
     ---help---
-        Stack size for init process main() thread.
+    Stack size for init process main() thread.
 
 config configUSRINIT_PRI
     int "init priority"
     default 0
     ---help---
-        Priority of usrinit thread.
+    Priority of usrinit thread.
 
 endmenu
 
@@ -174,13 +175,13 @@ config configBIO_DEBUG
     bool "bio debugging"
     default n
     ---help---
-        Enable bio/buf debug messages and additional asserts.
+    Enable bio/buf debug messages and additional asserts.
 
 config configLOCK_DEBUG
     bool "klock debugging"
     default n
     ---help---
-        Debug kernel locks.
+    Debug kernel locks.
 
 config configKLOCK_DLTHRES
     int "Klock deadlock detection threshold"
@@ -191,7 +192,7 @@ config configKMALLOC_DEBUG
     bool "kmalloc debugging"
     default n
     ---help---
-        Debug kmalloc.
+    Debug kmalloc.
 
 endmenu
 
@@ -223,10 +224,10 @@ config configPROCCAP
     bool "Process Capabilities"
     default n
     ---help---
-        Currently a very lightweight implementation to restrict or grant access
-        to some kernel features per process basis. Selecting this feature adds
-        process capability maps that can be altered by a capable process and
-        are inherited by child processes.
+    Currently a very lightweight implementation to restrict or grant access
+    to some kernel features per process basis. Selecting this feature adds
+    process capability maps that can be altered by a capable process and
+    are inherited by child processes.
 
 endmenu
 

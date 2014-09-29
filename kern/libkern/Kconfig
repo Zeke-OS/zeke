@@ -3,17 +3,16 @@
 menu "Library routines"
 
 config configSUBR_HASH
-    bool "Legacy kernel hash tables"
+    bool "kernel hash tables"
     default n
     ---help---
-    Legacy kernel hash tables. For now this is only provided for
-    BSD compatibility.
+    BSD kernel hash tables.
 
     See kern/libkern/subr_hash/hashinit.9
 
 config configSTRING_OPT_SIZE
     bool "Optimize string functions for size"
     ---help---
-        Optimize string functions for speed or size.
+    Optimize string functions for speed or size.
 
 endmenu
