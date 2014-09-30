@@ -85,8 +85,8 @@ typedef struct proc_info {
     char ** argv;               /*!< Argument strings */
     char ** env;                /*!< Environmen variables. */
     int state;                  /*!< 0 - running, >0 stopped */
-    int priority;               /*!< We might want to prioritize processes too */
-    long counter;               /*!< Counter for process running time */
+    int priority;               /*!< We might want to prioritize processes too
+                                 */
     unsigned long blocked;      /*!< bitmap of masked signals */
     int exit_code, exit_signal;
     uid_t uid, euid, suid;
@@ -95,11 +95,17 @@ typedef struct proc_info {
     bitmap_t pcap_restrmap[_PRIV_MLEN]; /*!< Privilege restrict bitmap. */
     bitmap_t pcap_grantmap[_PRIV_MLEN]; /*!< Privilege grant bitmap. */
 #endif
-    unsigned long timeout;      /*!< Used to kill processes with absolute timeout */
-    long utime, stime, cutime, cstime, start_time; /*!< For performance statistics */
+
+    /* Accounting */
+    unsigned long timeout;          /*!< Absolute timeout of the process */
+    struct timespec * start_time;   /*!< For performance statistics */
+    clock_t utime;                  /*!< User time. */
+    clock_t stime;                  /*!< System time. */
+    clock_t cutime;                 /*!< Sum of waited children utimes. */
+    clock_t cstime;                 /*!< Sum of waited children stimes. */
     struct rlimit rlim[_RLIMIT_ARR_COUNT]; /*!< Hard and soft limits. */
 
-    /* open file information */
+    /* Open file information */
     struct vnode * croot;       /*!< Current root dir. */
     struct vnode * cwd;         /*!< Current working dir. */
     files_t * files;            /*!< Open files */
@@ -197,6 +203,8 @@ void proc_suspend(void);
  * @return Next master page table.
  */
 mmu_pagetable_t * proc_resume(void);
+
+void proc_update_times(void);
 
 /**
  * Handle page fault caused by a process.

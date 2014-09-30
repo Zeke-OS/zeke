@@ -34,6 +34,7 @@
  */
 
 #define KERNEL_INTERNAL 1
+#include <stdbool.h>
 #include <libkern.h>
 #include <kstring.h>
 #include <tsched.h>
@@ -83,6 +84,9 @@ void syscall_handler(void)
     const uint32_t type = (uint32_t)current_thread->sframe[SCHED_SFRAME_SVC].r0;
     void * p = (void *)current_thread->sframe[SCHED_SFRAME_SVC].r1;
     const uint32_t major = SYSCALL_MAJOR(type);
+    intptr_t retval;
+
+    thread_set_current_insys(true);
 
     if ((major >= num_elem(syscall_callmap)) || !syscall_callmap[major]) {
         const uint32_t minor = SYSCALL_MINOR(type);
@@ -96,9 +100,11 @@ void syscall_handler(void)
         KERROR(KERROR_WARN, buf);
 
         set_errno(ENOSYS); /* Not supported. */
-        svc_setretval(-1);
-        return;
+        retval = -1;
+    } else {
+        retval = syscall_callmap[major](type, p);
     }
 
-    svc_setretval(syscall_callmap[major](type, p));
+    thread_set_current_insys(false);
+    svc_setretval(retval);
 }

@@ -5,7 +5,8 @@
  * @brief   Kernel scheduler header file for sched.c.
  * @section LICENSE
  * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+ * Copyright (c) 2012, 2013 Ninjaware Oy,
+ *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -75,7 +76,13 @@
                                          *   signal. */
 #define SCHED_ZOMBIE_FLAG   0x00000010u /*!< Zombie waiting for parent. */
 #define SCHED_DETACH_FLAG   0x00000020u /*!< Detached thread. If thread exits
-                                         *   it will be immediately destroyed. */
+                                         *   it will be immediately destroyed.
+                                         */
+#define SCHED_INSYS_FLAG    0x01000000u /*!< In system call if set;
+                                         *   Otherwise usr.
+                                         *   This can be used for counting
+                                         *   process times.
+                                         */
 #define SCHED_KWORKER_FLAG  0x40000000u /*!< Thread is a kworker. */
 #define SCHED_INTERNAL_FLAG 0x80000000u /*!< Immortal internal kernel thread. */
 
@@ -144,18 +151,20 @@ RB_HEAD(sched_exec, thread_info);
  * Thread Control Block structure.
  */
 typedef struct thread_info {
+    pthread_t id;                   /*!< Thread id. */
+    pid_t pid_owner;                /*!< Owner process of this thread. */
     uint32_t flags;                 /*!< Status flags. */
+
     sw_stack_frame_t sframe[SCHED_SFRAME_ARR_SIZE];
     struct buf * kstack_region;    /*!< Thread kernel stack region. */
     void * errno_uaddr;             /*!< Address of the thread local errno. */
     intptr_t retval;                /*!< Return value of the thread. */
+
     atomic_t a_wait_count;          /*!< Wait counter. -1 = permanent */
     int wait_tim;                   /*!< Reference to a timeout timer. */
     int niceval;                    /*!< Thread nice value. */
     int priority;                   /*!< Current dynamic priority. */
     int ts_counter;                 /*!< Time slice counter. */
-    pthread_t id;                   /*!< Thread id. */
-    pid_t pid_owner;                /*!< Owner process of this thread. */
 
 #if configSCHED_CDS != 0
     struct sched {

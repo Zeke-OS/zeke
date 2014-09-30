@@ -70,6 +70,12 @@ void thread_init(struct thread_info * tp, pthread_t thread_id,
                  int priv);
 
 /**
+ * Set In system call state for current thread.
+ * @param s
+ */
+void thread_set_current_insys(int s);
+
+/**
  * Fork current thread.
  * @note Cloned thread is set to sleep state and caller of this function should
  * set it to exec state. Caller is also expected to handle user stack issues as

@@ -119,7 +119,7 @@ static ssize_t procfs_read(file_t * file, void * vbuf, size_t bcount)
     struct procfs_info * spec = (struct procfs_info *)file->vnode->vn_specinfo;
     proc_info_t * proc;
     char * tmpbuf;
-    const size_t bufsz = 100;
+    const size_t bufsz = 200;
 
     if (!spec)
         return -EIO;
@@ -143,12 +143,15 @@ static ssize_t procfs_read(file_t * file, void * vbuf, size_t bcount)
                 "Pid: %u\n"
                 "Uid: %u %u %u\n"
                 "Gid: %u %u %u\n"
+                "User: %u\n"
+                "Sys: %u\n"
                 "Break: %p %p\n",
                 proc->name,
                 proc->state,
                 proc->pid,
                 proc->uid, proc->euid, proc->suid,
                 proc->gid, proc->egid, proc->sgid,
+                proc->utime, proc->stime,
                 proc->brk_start, proc->brk_stop);
 
         if (file->seek_pos <= bbytes) {
@@ -275,6 +278,7 @@ int procfs_rmentry(pid_t pid)
         return err;
 
     pdir->vnode_ops->unlink(pdir, PROCFS_FN_STATUS, sizeof(PROCFS_FN_STATUS));
+    vn_procfs->vnode_ops->rmdir(vn_procfs, name, name_len);
 
     return 0;
 }
@@ -288,10 +292,8 @@ static int create_status_file(vnode_t * pdir, const proc_info_t * proc)
     struct procfs_info * spec = kcalloc(1, sizeof(struct procfs_info));
     int err;
 
-    if (!spec) {
-        PROC_UNLOCK();
+    if (!spec)
         return -ENOTDIR;
-    }
 
     /* Create a specinfo */
     spec->ftype = PROCFS_STATUS;

@@ -237,10 +237,10 @@ static void procarr_remove(pid_t pid)
  */
 static void proc_remove(pid_t pid)
 {
-    proc_info_t * p;
+    proc_info_t * p = proc_get_struct_l(pid);
 
     /* TODO free everything */
-    if (!(p = proc_get_struct_l(pid)))
+    if (!p)
         return;
 
 #ifdef configPROCFS
@@ -253,8 +253,8 @@ static void proc_remove(pid_t pid)
 
 void _proc_free(proc_info_t * p)
 {
-    if (p) {
-        KERROR(KERROR_WARN, "Got NULL as a proc_info struct\n");
+    if (!p) {
+        KERROR(KERROR_WARN, "Got NULL as a proc_info struct, double free?\n");
 
         return;
     }
@@ -371,6 +371,14 @@ mmu_pagetable_t * proc_resume(void)
     /* TODO set state */
 
     return curproc->mm.curr_mpt;
+}
+
+void proc_update_times(void)
+{
+    if (current_thread->flags & SCHED_INSYS_FLAG)
+        curproc->stime++;
+    else
+        curproc->utime++;
 }
 
 int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
@@ -545,31 +553,42 @@ static int sys_proc_fork(void * user_args)
 static int sys_proc_wait(void * user_args)
 {
     pid_t pid_child;
+    proc_info_t * child;
 
     if (!useracc(user_args, sizeof(pid_t), VM_PROT_WRITE)) {
         set_errno(EFAULT);
         return -1;
     }
 
-    if (!curproc->inh.first_child) {
+    child = curproc->inh.first_child;
+    if (!child) {
         /* The calling process has no existing unwaited-for child
          * processes. */
         set_errno(ECHILD);
         return -1;
     }
 
+    /* Get the thread number we are waiting for */
     pid_child = curproc->inh.first_child->pid;
 
     /* curproc->state = PROC_STATE_WAITING needs some other flag? */
-    while (curproc->inh.first_child->state != PROC_STATE_ZOMBIE) {
+    while (child->state != PROC_STATE_ZOMBIE) {
         idle_sleep();
         /* TODO In some cases we have to return early without waiting.
          * eg. signal received */
     }
 
-    copyout(&curproc->inh.first_child->exit_code, user_args, sizeof(int));
+    /* Increment children times.
+     * We do this only for wait() and waitpid().
+     */
+    curproc->cutime += child->utime;
+    curproc->cstime += child->stime;
 
+    copyout(&child->exit_code, user_args, sizeof(int));
+
+    /* Remove wait'd thread */
     proc_remove(pid_child);
+
     return (uintptr_t)pid_child;
 }
 

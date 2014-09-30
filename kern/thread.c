@@ -55,6 +55,7 @@ static void thread_set_inheritance(threadInfo_t * new_child,
 static void thread_init_kstack(threadInfo_t * tp);
 static void thread_free_kstack(threadInfo_t * tp);
 
+
 /* Linker sets for pre- and post-scheduling tasks */
 SET_DECLARE(pre_sched_tasks, void);
 SET_DECLARE(post_sched_tasks, void);
@@ -70,6 +71,8 @@ void sched_handler(void)
         if (!current_thread)
             panic("No thread 0\n");
     }
+
+    proc_update_times();
 
     /* Pre-scheduling tasks */
     SET_FOREACH(task_p, pre_sched_tasks) {
@@ -226,6 +229,14 @@ static void thread_set_inheritance(threadInfo_t * new_child,
 
     /* Set newly created thread as the last child in chain. */
     last_node->inh.next_child = new_child;
+}
+
+void thread_set_current_insys(int s)
+{
+    if (s)
+        current_thread->flags |= SCHED_INSYS_FLAG;
+    else
+        current_thread->flags &= ~SCHED_INSYS_FLAG;
 }
 
 pthread_t thread_fork(void)
