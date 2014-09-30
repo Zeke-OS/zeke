@@ -306,6 +306,8 @@ static int sys_getdents(void * user_args)
     bytes_left = args.nbytes;
     while (bytes_left >= sizeof(struct dirent)) {
         vnode_t * vnode = fildes->vnode;
+
+        KASSERT(vnode->vnode_ops->readdir, "readdir() is defined");
         if (vnode->vnode_ops->readdir(vnode, &d, &fildes->seek_pos))
             break;
         dents[count++] = d;
@@ -623,6 +625,7 @@ static int sys_filestat(void * user_args)
         goto ready;
     }
 
+    KASSERT(vnode->vnode_ops->stat, "stat() should be defined");
     err = vnode->vnode_ops->stat(vnode, &stat_buf);
     if (err) {
         set_errno(-err);

@@ -36,6 +36,8 @@
 #include <sys/ioctl.h>
 #include <kstring.h>
 #include <libkern.h>
+#include <hal/core.h>
+#include <kerror.h>
 #include <fs/fs.h>
 #include <fs/devfs.h>
 #include "src/diskio.h"
@@ -80,6 +82,7 @@ DRESULT fatfs_disk_read(BYTE pdrv, BYTE* buff, DWORD sector, UINT count)
     file = &fatfs_sb_arr[pdrv]->ff_devfile;
     file->seek_pos = sector;
 
+    KASSERT(file->vnode->vnode_ops->read, "read() is defined");
     retval = file->vnode->vnode_ops->read(file, buff, count);
     if (retval < 0) {
 #ifdef configFATFS_DEBUG

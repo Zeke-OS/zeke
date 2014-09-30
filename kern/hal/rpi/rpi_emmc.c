@@ -1102,16 +1102,16 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
                 cur_buf_addr++;
             }
 
-#ifdef configRPI_EMMC_DEBUG
+            cur_block++;
+
+            #ifdef configRPI_EMMC_DEBUG
             {
                 char buf[80];
-                ksprintf(buf, sizeof(buf), "SD: block %i transfer complete\n",
+                ksprintf(buf, sizeof(buf), "SD: %u block transfer complete\n",
                         cur_block);
                 KERROR(KERROR_DEBUG, buf);
             }
 #endif
-
-            cur_block++;
         }
     }
 

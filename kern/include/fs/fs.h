@@ -146,7 +146,7 @@ typedef struct vnode {
 } vnode_t;
 #define VN_LOCK_MODES (MTX_TYPE_TICKET | MTX_TYPE_SLEEP)
 /* Test macros for vnodes */
-#define VN_IS_FSROOT(vn) ((vn)->sb->mountpoint == (vn))
+#define VN_IS_FSROOT(vn) ((vn)->sb->root == (vn))
 /* Op macros for vnodes */
 #define VN_LOCK(vn) (mtx_lock(&(vn)->vn_lock))
 #define VN_TRYLOCK(vn) (mtx_trylock(&(vn)->vn_lock))

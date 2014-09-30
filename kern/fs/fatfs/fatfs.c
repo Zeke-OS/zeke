@@ -57,7 +57,7 @@ static int fatfs_lookup(vnode_t * dir, const char * name, size_t name_len,
                         vnode_t ** result);
 static void init_fatfs_vnode(vnode_t * vnode, ino_t inum, mode_t mode,
                              long vn_hash, fs_superblock_t * sb);
-static void get_mp_stat(vnode_t * vnode, struct stat * st);
+static int get_mp_stat(vnode_t * vnode, struct stat * st);
 
 static struct fs fatfs_fs = {
     .fsname = FATFS_FSNAME,
@@ -73,6 +73,8 @@ struct fatfs_sb ** fatfs_sb_arr;
 
 const vnode_ops_t fatfs_vnode_ops = {
     .lookup = fatfs_lookup,
+    .readdir = fatfs_readdir,
+    .stat = fatfs_stat
 };
 
 GENERATE_INSERT_SB(fatfs_sb, fatfs_fs)
@@ -217,7 +219,11 @@ static char * format_fpath(struct fatfs_inode * indir, const char * name,
             DEV_MINOR(indir->in_vnode.sb->vdev_id), indir->in_fpath, name);
 
 #ifdef configFATFS_DEBUG
-    KERROR(KERROR_DEBUG, in_fpath);
+    char msgbuf[80];
+
+    ksprintf(msgbuf, sizeof(msgbuf), "Formatted \"%s\" as \"%s\"\n",
+             name, in_fpath);
+    KERROR(KERROR_DEBUG, msgbuf);
 #endif
 
     return in_fpath;
@@ -259,6 +265,7 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
 #ifdef configFATFS_DEBUG
     KERROR(KERROR_DEBUG, "create_inode(): Trying as a dir\n");
 #endif
+    vn_mode = S_IFDIR;
     err = f_opendir(&in->dp, in->in_fpath);
     if (err == FR_NO_PATH) {
 #ifdef configFATFS_DEBUG
@@ -482,8 +489,8 @@ int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
         return -ENOTDIR;
 
 #if configFATFS_USE_LFN
-    fno.lfsize = _MAX_LFN + 1;
     fno.lfname = d->d_name;
+    fno.lfsize = NAME_MAX + 1;
 #endif
 
     err = f_readdir(&in->dp, &fno);
@@ -505,13 +512,14 @@ int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
         }
     }
 
+    if (fno.fname[0] == '\0')
+        return -ESPIPE;
+
     d->d_ino = 0; /* TODO */
 #if configFATFS_USE_LFN
     if (!*fno.lfname)
-        strlcpy(d->d_name, fno.lfname, 13);
-#else
-    strlcpy(d->d_name, fno.fname, 13);
 #endif
+        strlcpy(d->d_name, fno.fname, 13);
 
     return 0;
 }
@@ -520,10 +528,15 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
 {
     struct fatfs_inode * in = get_inode_of_vnode(vnode);
     FILINFO fno;
-    struct stat mp_stat;
+    struct stat mp_stat = { .st_uid = 0, .st_gid = 0 };
     int err;
 
-    get_mp_stat(vnode, &mp_stat);
+    /* TODO It hangs?? */
+#if 0
+    err = get_mp_stat(vnode, &mp_stat);
+    if (err != -EINPROGRESS)
+        return err;
+#endif
 
     err = f_stat(in->in_fpath, &fno);
     switch (err) {
@@ -593,11 +606,11 @@ static void init_fatfs_vnode(vnode_t * vnode, ino_t inum, mode_t mode,
 {
     struct stat stat;
 #ifdef configFATFS_DEBUG
-    char msgbuf[80];
+    char msgbuf[120];
 
     ksprintf(msgbuf, sizeof(msgbuf),
-             "init_fatfs_vnode(vnode %p, inum %l, mode, vn_hash %u, sb %p)\n",
-             vnode, (uint64_t)inum, (uint32_t)vn_hash, sb);
+             "init_fatfs_vnode(vnode %p, inum %l, mode %o, vn_hash %u, sb %p)\n",
+             vnode, (uint64_t)inum, mode, (uint32_t)vn_hash, sb);
     KERROR(KERROR_DEBUG, msgbuf);
 #endif
 
@@ -616,7 +629,21 @@ static void init_fatfs_vnode(vnode_t * vnode, ino_t inum, mode_t mode,
 /**
  * Get mountpoint stat.
  */
-static void get_mp_stat(vnode_t * vnode, struct stat * st)
+static int get_mp_stat(vnode_t * vnode, struct stat * st)
 {
-    vnode->sb->mountpoint->vnode_ops->stat(vnode->sb->mountpoint, st);
+#ifdef configFATFS_DEBUG
+    KASSERT(vnode, "Vnode was given");
+    KASSERT(vnode->sb, "Superblock is set");
+#endif
+
+    if (!vnode->sb->mountpoint) {
+        /* We are probably mounting and mountpoint is not yet set. */
+        return -EINPROGRESS;
+    }
+
+#ifdef configFATFS_DEBUG
+    KASSERT(vnode->sb->mountpoint->vnode_ops->stat, "stat() is defined");
+#endif
+
+    return vnode->sb->mountpoint->vnode_ops->stat(vnode->sb->mountpoint, st);
 }

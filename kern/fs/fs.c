@@ -275,6 +275,7 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
         return err;
 
 #ifdef config_FS_DEBUG
+    KASSERT((uintptr_t)sb > configKERNEL_START, "sb is not a stack address");
     KERROR(KERROR_DEBUG, "Mount OK\n");
 #endif
 
