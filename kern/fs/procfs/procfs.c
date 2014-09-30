@@ -151,7 +151,7 @@ static ssize_t procfs_read(file_t * file, void * vbuf, size_t bcount)
                 proc->pid,
                 proc->uid, proc->euid, proc->suid,
                 proc->gid, proc->egid, proc->sgid,
-                proc->utime, proc->stime,
+                proc->tms.tms_utime, proc->tms.tms_stime,
                 proc->brk_start, proc->brk_stop);
 
         if (file->seek_pos <= bbytes) {

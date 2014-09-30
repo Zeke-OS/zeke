@@ -33,19 +33,19 @@
 
 #define KERNEL_INTERNAL 1
 #include <autoconf.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <sys/sysctl.h>
 #include <tsched.h>
 #include <kstring.h>
 #include <libkern.h>
 #include <kerror.h>
 #include <kinit.h>
 #include <syscall.h>
-#include <unistd.h>
-#include <errno.h>
 #include <vm/vm.h>
 #include <vm/vm_copyinstruct.h>
-#include <sys/sysctl.h>
-#include <sys/param.h>
-#include <fcntl.h>
 #include <fs/procfs.h>
 #include <ptmapper.h>
 #include <dynmem.h>
@@ -376,9 +376,9 @@ mmu_pagetable_t * proc_resume(void)
 void proc_update_times(void)
 {
     if (current_thread->flags & SCHED_INSYS_FLAG)
-        curproc->stime++;
+        curproc->tms.tms_stime++;
     else
-        curproc->utime++;
+        curproc->tms.tms_utime++;
 }
 
 int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
@@ -581,8 +581,8 @@ static int sys_proc_wait(void * user_args)
     /* Increment children times.
      * We do this only for wait() and waitpid().
      */
-    curproc->cutime += child->utime;
-    curproc->cstime += child->stime;
+    curproc->tms.tms_cutime += child->tms.tms_utime;
+    curproc->tms.tms_cstime += child->tms.tms_stime;
 
     copyout(&child->exit_code, user_args, sizeof(int));
 
@@ -785,6 +785,18 @@ static int sys_proc_getpriority(void * user_args)
     return -1;
 }
 
+static int sys_proc_times(void * user_args)
+{
+    struct tms tms;
+
+    if (copyout(&curproc->tms, user_args, sizeof(struct tms))) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    return 0;
+}
+
 static int sys_proc_getbreak(void * user_args)
 {
     struct _ds_getbreak ds;
@@ -814,6 +826,7 @@ static const syscall_handler_t proc_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_CHDIR, sys_proc_chdir),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_SETPRIORITY, sys_proc_setpriority),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETPRIORITY, sys_proc_getpriority),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_TIMES, sys_proc_times),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETBREAK, sys_proc_getbreak)
 };
 SYSCALL_HANDLERDEF(proc_syscall, proc_sysfnmap)

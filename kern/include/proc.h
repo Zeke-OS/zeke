@@ -56,15 +56,16 @@
 #define KERNEL_INTERNAL
 #endif
 
+#include <sys/param.h>
+#include <sys/times.h>
+#include <sys/resource.h>
+#include <sys/priv.h>
 #include <tsched.h> /* Needed for threadInfo_t and threading functions */
 #include <hal/mmu.h>
 #include <vm/vm.h>
 #include <fs/fs.h>
 #include <bitmap.h>
 #include <klocks.h>
-#include <sys/param.h>
-#include <sys/resource.h>
-#include <sys/priv.h>
 
 #define PROC_STATE_INITIAL  0
 #define PROC_STATE_RUNNING  1
@@ -99,10 +100,7 @@ typedef struct proc_info {
     /* Accounting */
     unsigned long timeout;          /*!< Absolute timeout of the process */
     struct timespec * start_time;   /*!< For performance statistics */
-    clock_t utime;                  /*!< User time. */
-    clock_t stime;                  /*!< System time. */
-    clock_t cutime;                 /*!< Sum of waited children utimes. */
-    clock_t cstime;                 /*!< Sum of waited children stimes. */
+    struct tms tms;                 /*!< User, System and childred times. */
     struct rlimit rlim[_RLIMIT_ARR_COUNT]; /*!< Hard and soft limits. */
 
     /* Open file information */
