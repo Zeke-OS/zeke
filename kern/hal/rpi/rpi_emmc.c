@@ -135,7 +135,11 @@
 /* The particular SDHCI implementation */
 #define SDHCI_IMPLEMENTATION_GENERIC        0
 #define SDHCI_IMPLEMENTATION_BCM_2708       1
+#if configRPI_EMMC_GENERIC
+#define SDHCI_IMPLEMENTATION                SDHCI_IMPLEMENTATION_GENERIC
+#elif configRPI_EMMC_BCM2708
 #define SDHCI_IMPLEMENTATION                SDHCI_IMPLEMENTATION_BCM_2708
+#endif
 
 static char driver_name[] = "emmc";
 static char device_name[] = "emmc0"; /* We use a single device name as there

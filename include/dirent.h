@@ -93,7 +93,9 @@ void seekdir(DIR *, long int);
 long int telldir(DIR *);*/
 
 __END_DECLS
-#endif /* !KERNEL_INTERNAL */
+#else /* !KERNEL_INTERNAL */
+#define DIRENT_SEEK_START 0x00000000FFFFFFFF
+#endif /* KERNEL_INTERNAL */
 
 #endif /* DIRENT_H */
 

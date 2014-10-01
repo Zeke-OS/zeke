@@ -269,6 +269,7 @@ static int sys_getdents(void * user_args)
     struct dirent * dents;
     size_t bytes_left;
     file_t * fildes;
+    vnode_t * vnode;
     struct dirent d; /* Temp storage */
     int err, count = 0;
 
@@ -292,7 +293,7 @@ static int sys_getdents(void * user_args)
 
     if (!S_ISDIR(fildes->vnode->vn_mode)) {
         count = -1;
-        set_errno(ENOTDIR - 1);
+        set_errno(ENOTDIR);
         goto out;
     }
 
@@ -303,11 +304,12 @@ static int sys_getdents(void * user_args)
         goto out;
     }
 
+    vnode = fildes->vnode;
+    KASSERT(vnode->vnode_ops->readdir, "readdir() is defined");
+
     bytes_left = args.nbytes;
     while (bytes_left >= sizeof(struct dirent)) {
-        vnode_t * vnode = fildes->vnode;
 
-        KASSERT(vnode->vnode_ops->readdir, "readdir() is defined");
         if (vnode->vnode_ops->readdir(vnode, &d, &fildes->seek_pos))
             break;
         dents[count++] = d;
@@ -815,7 +817,6 @@ static const syscall_handler_t fs_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_MKDIR, sys_mkdir),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_RMDIR, sys_rmdir),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_STAT, sys_filestat),
-    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_FSTAT, 0), /* Not implemented */
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_ACCESS, sys_access),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_CHMOD, sys_chmod),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_CHOWN, sys_chown),

@@ -356,7 +356,7 @@ static void walk_dirtree(vnode_t * vnode, int ind)
 
     /* TODO This doesn't actually test anything by now */
 
-    d.d_off = 0x00000000FFFFFFFF; /* TODO initializer? */
+    d.d_off = DIRENT_SEEK_START; /* TODO initializer? */
 
     while(!vnode->vnode_ops->readdir(vnode, &d)) {
 #ifdef KU_REPORT_ORIENTED

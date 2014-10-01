@@ -107,6 +107,19 @@ config configRPI_EMMC_WRITE_SUPPORT
 
         If unsure, say N.
 
+choice
+    prompt "EMMC Implementation"
+    default configRPI_EMMC_BCM2708 if configBCM2835
+    default configRPI_EMMC_GENERIC
+
+config configRPI_EMMC_GENERIC
+    bool "Generic EMMC"
+
+config configRPI_EMMC_BCM2708
+    bool "BCM2708 EMMC"
+
+endchoice
+
 config configRPI_EMMC_DEBUG
     bool "Debugging mode"
     default n

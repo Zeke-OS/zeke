@@ -608,7 +608,7 @@ out:
 int ramfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
 {
     const off_t dea_ind_mask = 0x7FFFFFFF00000000;
-    const off_t ch_ind_mask  = 0x00000000FFFFFFFF;
+    const off_t ch_ind_mask  = DIRENT_SEEK_START;
     dh_dir_iter_t it;
     dh_dirent_t * dh;
 
