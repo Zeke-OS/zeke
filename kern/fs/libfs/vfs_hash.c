@@ -83,7 +83,7 @@ int vfs_hash_get(const struct fs_superblock * mp, unsigned hash,
                 continue;
             if (fn != NULL && fn(vp, arg))
                 continue;
-            VN_LOCK(vp);
+            //VN_LOCK(vp);
             mtx_unlock(&vfs_hash_mtx);
             vref(vp);
             *vpp = vp;
@@ -120,13 +120,13 @@ int vfs_hash_insert(struct vnode * vp, unsigned hash,
                 continue;
             if (fn != NULL && fn(vp2, arg))
                 continue;
-            VN_LOCK(vp2);
+            //VN_LOCK(vp2);
             mtx_unlock(&vfs_hash_mtx);
             /* TODO incr refcount of vp2 */
             mtx_lock(&vfs_hash_mtx);
             LIST_INSERT_HEAD(&vfs_hash_side, vp, vn_hashlist);
             mtx_unlock(&vfs_hash_mtx);
-            VN_UNLOCK(vp);
+            //VN_UNLOCK(vp);
             *vpp = vp2;
             return 0;
         }

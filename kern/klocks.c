@@ -106,7 +106,7 @@ int _mtx_lock(mtx_t * mtx, char * whr)
             char * lwhr = (mtx->mtx_ldebug) ? mtx->mtx_ldebug : "?";
 
             ksprintf(buf, sizeof(buf),
-                     "Deadlock detected:\n%s WAITING\n%s LOCKED",
+                     "Deadlock detected:\n%s WAITING\n%s LOCKED\n",
                      whr, lwhr);
             KERROR(KERROR_DEBUG, buf);
 

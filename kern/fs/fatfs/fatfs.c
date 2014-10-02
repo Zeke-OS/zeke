@@ -74,7 +74,9 @@ struct fatfs_sb ** fatfs_sb_arr;
 const vnode_ops_t fatfs_vnode_ops = {
     .lookup = fatfs_lookup,
     .readdir = fatfs_readdir,
-    .stat = fatfs_stat
+    .stat = fatfs_stat,
+    .chmod = fatfs_chmod,
+    .chown = fatfs_chown
 };
 
 GENERATE_INSERT_SB(fatfs_sb, fatfs_fs)
@@ -207,26 +209,32 @@ out:
 static char * format_fpath(struct fatfs_inode * indir, const char * name,
                            size_t name_len)
 {
-    char * in_fpath;
-    size_t in_fpath_size;
-
-    in_fpath_size = name_len + strlenn(indir->in_fpath, NAME_MAX + 1) + 6;
-    in_fpath = kmalloc(in_fpath_size);
-    if (!in_fpath)
-        return NULL;
-
-    ksprintf(in_fpath, in_fpath_size, "%u:/%s/%s",
-            DEV_MINOR(indir->in_vnode.sb->vdev_id), indir->in_fpath, name);
-
+    char * fpath;
+    size_t fpath_size;
 #ifdef configFATFS_DEBUG
     char msgbuf[80];
 
-    ksprintf(msgbuf, sizeof(msgbuf), "Formatted \"%s\" as \"%s\"\n",
-             name, in_fpath);
+    ksprintf(msgbuf, sizeof(msgbuf),
+             "format_fpath(indir \"%s\", name \"%s\", name_len %u)\n",
+             indir->in_fpath, name, name_len);
     KERROR(KERROR_DEBUG, msgbuf);
 #endif
 
-    return in_fpath;
+
+    fpath_size = name_len + strlenn(indir->in_fpath, NAME_MAX + 1) + 6;
+    fpath = kmalloc(fpath_size);
+    if (!fpath)
+        return NULL;
+
+    ksprintf(fpath, fpath_size, "%s/%s", indir->in_fpath, name);
+
+#ifdef configFATFS_DEBUG
+    ksprintf(msgbuf, sizeof(msgbuf), "Formatted \"%s\" as \"%s\"\n",
+             name, fpath);
+    KERROR(KERROR_DEBUG, msgbuf);
+#endif
+
+    return fpath;
 }
 
 /**
@@ -348,10 +356,14 @@ fail:
 
 static vnode_t * create_root(fs_superblock_t * sb)
 {
-    char rootpath[5];
+    char * rootpath;
     long vn_hash;
     struct fatfs_inode * in;
     int err;
+
+    rootpath = kmalloc(5);
+    if (!rootpath)
+        return NULL;
 
     ksprintf(rootpath, sizeof(rootpath), "%u:", DEV_MINOR(sb->vdev_id));
     vn_hash = hash32_str(rootpath, 0);
@@ -361,6 +373,9 @@ static vnode_t * create_root(fs_superblock_t * sb)
         KERROR(KERROR_ERR, "Failed to get a root for fatfs\n");
         return NULL;
     }
+
+    in->in_fpath = rootpath;
+
     return &in->in_vnode;
 }
 
@@ -397,9 +412,36 @@ static int fatfs_lookup(vnode_t * dir, const char * name, size_t name_len,
     if (!in_fpath)
         return -ENOMEM;
 
-    vn_hash = hash32_str(in_fpath, 0);
+    /*
+     * Emulate . and ..
+     */
+    if (name[0] == '.' && name[1] != '.') {
+#ifdef configFATFS_DEBUG
+        KERROR(KERROR_DEBUG, "Lookup emulating .\n");
+#endif
+        *result = dir;
+
+        kfree(in_fpath);
+        return 0;
+    } else if (name[0] == '.' && name[1] == '.' && name[2] != '.') {
+#ifdef configFATFS_DEBUG
+        KERROR(KERROR_DEBUG, "Lookup emulating ..\n");
+#endif
+        if (VN_IS_FSROOT(dir)) {
+            *result = dir->sb->mountpoint;
+
+            kfree(in_fpath);
+            return 0;
+        } else {
+            size_t i = strlenn(in_fpath, NAME_MAX);
+
+            while (in_fpath[i] != '/') i--;
+            in_fpath[i] = '\0';
+        }
+    }
 
     /* Lookup from vfs_hash */
+    vn_hash = hash32_str(in_fpath, 0);
     err = vfs_hash_get(
             dir->sb,        /* FS superblock */
             vn_hash,        /* Hash */
@@ -428,7 +470,8 @@ static int fatfs_lookup(vnode_t * dir, const char * name, size_t name_len,
         retval = err;
         goto fail;
     }
-    /* Already referenced */
+    /* Vn is already referenced so just return. */
+    *result = &in->in_vnode;
 
     return 0;
 fail:
@@ -490,6 +533,8 @@ int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
 
     /* Emulate . and .. */
     if (*off == DIRENT_SEEK_START) {
+        f_readdir(&in->dp, NULL); /* Rewind */
+
         strlcpy(d->d_name, ".", NAME_MAX);
         d->d_ino = dir->vn_num;
         *off = DIRENT_SEEK_START + 1;
