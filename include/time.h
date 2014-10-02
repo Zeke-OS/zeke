@@ -69,6 +69,8 @@ struct itimerspec {
 #define CLOCK_PROCESS_CPUTIME_ID    14
 #define CLOCK_THREAD_CPUTIME_ID     15
 
+#define CLOCKS_PER_SEC              1000000
+
 __BEGIN_DECLS
 
 int clock_gettime(clockid_t clk_id, struct timespec * tp);
