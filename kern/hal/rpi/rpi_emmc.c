@@ -590,12 +590,13 @@ static void sd_power_off()
 static uint32_t sd_get_base_clock_hz()
 {
     uint32_t base_clock;
-    uint32_t * mailbuffer = (uint32_t *)(mailbuf->b_data);
 
 #if SDHCI_IMPLEMENTATION == SDHCI_IMPLEMENTATION_GENERIC
     capabilities_0 = mmio_read(EMMC_BASE + EMMC_CAPABILITIES_0);
     base_clock = ((capabilities_0 >> 8) & 0xff) * 1000000;
 #elif SDHCI_IMPLEMENTATION == SDHCI_IMPLEMENTATION_BCM_2708
+    uint32_t * mailbuffer = (uint32_t *)(mailbuf->b_data);
+
     /*
      * Get the base clock rate
      * set up the buffer
