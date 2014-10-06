@@ -794,6 +794,8 @@ static int sys_proc_times(void * user_args)
         return -1;
     }
 
+    /* TODO */
+
     return 0;
 }
 

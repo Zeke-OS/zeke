@@ -788,7 +788,7 @@ FRESULT move_window (
         if (sync_window(fs) != FR_OK)
             return FR_DISK_ERR;
 #endif
-        if (disk_read(fs->drv, fs->win, sector, SS(fp->fs)))
+        if (disk_read(fs->drv, fs->win, sector, SS(fs)))
             return FR_DISK_ERR;
         fs->winsect = sector;
     }

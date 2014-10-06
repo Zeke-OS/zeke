@@ -50,7 +50,7 @@ static int fatfs_mount(const char * source, uint32_t mode,
 static char * format_fpath(struct fatfs_inode * indir, const char * name,
                            size_t name_len);
 static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
-                        char * fpath, long vn_hash);
+                        char * fpath, long vn_hash, int oflags);
 static vnode_t * create_root(fs_superblock_t * sb);
 static int fatfs_delete_vnode(vnode_t * vnode);
 static int fatfs_lookup(vnode_t * dir, const char * name, size_t name_len,
@@ -58,6 +58,7 @@ static int fatfs_lookup(vnode_t * dir, const char * name, size_t name_len,
 static void init_fatfs_vnode(vnode_t * vnode, ino_t inum, mode_t mode,
                              long vn_hash, fs_superblock_t * sb);
 static int get_mp_stat(vnode_t * vnode, struct stat * st);
+static int fresult2errno(int fresult);
 
 static struct fs fatfs_fs = {
     .fsname = FATFS_FSNAME,
@@ -72,7 +73,15 @@ static struct fs fatfs_fs = {
 struct fatfs_sb ** fatfs_sb_arr;
 
 const vnode_ops_t fatfs_vnode_ops = {
+    .write = fatfs_write,
+    .read = fatfs_read,
+    .create = fatfs_create,
+    .mknod = fatfs_mknod,
     .lookup = fatfs_lookup,
+    .link = fatfs_link,
+    .unlink = fatfs_unlink,
+    .mkdir = fatfs_mkdir,
+    .rmdir = fatfs_rmdir,
     .readdir = fatfs_readdir,
     .stat = fatfs_stat,
     .chmod = fatfs_chmod,
@@ -148,25 +157,9 @@ static int fatfs_mount(const char * source, uint32_t mode,
     char drive[5];
     ksprintf(drive, sizeof(drive), "%u:", pdrv);
     err = f_mount(&fatfs_sb->ff_fs, drive, 1);
-    switch (err) {
-    case FR_INVALID_DRIVE:
-        retval = -ENXIO;
+    if (err) {
+        retval = fresult2errno(err);
         goto fail;
-    case FR_DISK_ERR:
-        retval = -EIO;
-        goto fail;
-    case FR_NOT_READY:
-        retval = -EBUSY;
-        goto fail;
-    case FR_NO_FILESYSTEM:
-        retval = -EINVAL;
-        goto fail;
-    default:
-        if (err) {
-            /* Unknown error */
-            retval = -EIO;
-            goto fail;
-        }
     }
 #ifdef configFATFS_DEBUG
     KERROR(KERROR_DEBUG, "Initialized a work area for FAT\n");
@@ -240,11 +233,16 @@ static char * format_fpath(struct fatfs_inode * indir, const char * name,
 /**
  * Create a inode.
  * @param fpath won't be duplicated.
+ * @param oflags O_CREAT, O_DIRECTORY, O_RDONLY, O_WRONLY and O_RDWR
+ *               currently supported.
+ *               O_WRONLY/O_RDWR creates in write mode if possible, so this
+ *               should be always verified with stat.
  */
 static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
-                        char * fpath, long vn_hash)
+                        char * fpath, long vn_hash, int oflags)
 {
     struct fatfs_inode * in = NULL;
+    FILINFO fno;
     vnode_t * vn;
     vnode_t * xvp;
     mode_t vn_mode;
@@ -269,56 +267,41 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
     in->in_fpath = fpath;
     vn = &in->in_vnode;
 
+    if (oflags & O_DIRECTORY) {
+        /* O_DIRECTORY was specified. */
+        /* TODO Maybe get mp stat? */
+        fno.fattrib = AM_DIR;
+    } else {
+        err = f_stat(fpath, &fno);
+        if (err)
+            goto chk_err;
+    }
+
     /* Try open */
-#ifdef configFATFS_DEBUG
-    KERROR(KERROR_DEBUG, "create_inode(): Trying as a dir\n");
-#endif
-    vn_mode = S_IFDIR;
-    err = f_opendir(&in->dp, in->in_fpath);
-    if (err == FR_NO_PATH) {
-#ifdef configFATFS_DEBUG
-        KERROR(KERROR_DEBUG, "create_inode(): Trying as a file\n");
-#endif
-       /* Probably not a dir, try to open as a file. */
+    if (fno.fattrib & AM_DIR) {
+        /* it's a directory */
+        vn_mode = S_IFDIR;
+        err = f_opendir(&in->dp, in->in_fpath);
+    } else {
+        /* it's a file */
+        unsigned char fomode = 0;
+
+        fomode |= (oflags & O_CREAT) ? FA_OPEN_ALWAYS : FA_OPEN_EXISTING;
+        fomode |= (oflags & O_RDONLY) ? FA_READ : 0;
+        fomode |= (oflags & O_WRONLY) ? ((fno.fattrib & AM_RDO) ?
+                                         0 : FA_WRITE) : 0 ;
+
         vn_mode = S_IFREG;
-        err = f_open(&in->fp, in->in_fpath, FA_OPEN_EXISTING);
+        err = f_open(&in->fp, in->in_fpath, fomode);
     }
-    switch (err) {
-    case FR_NO_PATH:
-        retval = -ENOENT;
+chk_err:
+    if (err) {
+        retval = fresult2errno(err);
         goto fail;
-    case FR_DISK_ERR:
-    case FR_INT_ERR:
-    case FR_INVALID_OBJECT:
-        retval = -EIO;
-        goto fail;
-    case FR_NOT_READY:
-        retval = -EBUSY;
-        goto fail;
-    case FR_INVALID_NAME:
-    case FR_INVALID_DRIVE:
-        retval = -EINVAL;
-        goto fail;
-    case FR_NOT_ENABLED:
-    case FR_NO_FILESYSTEM:
-        retval = -ENODEV;
-        goto fail;
-    case FR_TIMEOUT:
-        retval = -EWOULDBLOCK;
-        goto fail;
-    case FR_NOT_ENOUGH_CORE:
-        retval = -ENOMEM;
-        goto fail;
-    case FR_TOO_MANY_OPEN_FILES:
-        retval = -ENFILE;
-        goto fail;
-    default:
-        if (err) {
-            /* Unknown error */
-            retval = -EIO;
-            goto fail;
-        }
     }
+#ifdef configFATFS_DEBUG
+    KERROR(KERROR_DEBUG, "Open ok\n");
+#endif
 
     num = sb->ff_ino++;
     init_fatfs_vnode(vn, num, vn_mode, vn_hash, &(sb->sbn.sbl_sb));
@@ -368,7 +351,8 @@ static vnode_t * create_root(fs_superblock_t * sb)
     ksprintf(rootpath, sizeof(rootpath), "%u:", DEV_MINOR(sb->vdev_id));
     vn_hash = hash32_str(rootpath, 0);
 
-    err = create_inode(&in, get_ffsb_of_sb(sb), rootpath, vn_hash);
+    err = create_inode(&in, get_ffsb_of_sb(sb), rootpath, vn_hash,
+                       O_DIRECTORY | O_RDWR);
     if (err) {
         KERROR(KERROR_ERR, "Failed to get a root for fatfs\n");
         return NULL;
@@ -465,7 +449,7 @@ static int fatfs_lookup(vnode_t * dir, const char * name, size_t name_len,
     /*
      * Create a inode and fetch data from the device.
      */
-    err = create_inode(&in, sb, in_fpath, vn_hash);
+    err = create_inode(&in, sb, in_fpath, vn_hash, O_RDWR);
     if (err) {
         retval = err;
         goto fail;
@@ -481,24 +465,96 @@ fail:
 
 ssize_t fatfs_write(file_t * file, const void * buf, size_t count)
 {
+#ifdef configFATFS_READONLY
     return -ENOTSUP;
+#else
+    struct fatfs_inode * in = get_inode_of_vnode(file->vnode);
+    size_t count_out;
+    int err;
+    ssize_t retval;
+
+    if (!S_ISREG(file->vnode->vn_mode))
+        return -EOPNOTSUPP;
+
+    err = f_lseek(&in->fp, file->seek_pos);
+    if (err)
+        return -EIO;
+
+    err = f_write(&in->fp, buf, count, &count_out);
+    if (err)
+        return fresult2errno(err);
+
+    file->seek_pos = f_tell(&in->fp);
+    retval = count_out;
+
+    return retval;
+#endif
 }
 
 ssize_t fatfs_read(file_t * file, void * buf, size_t count)
 {
-    return -ENOTSUP;
+    struct fatfs_inode * in = get_inode_of_vnode(file->vnode);
+    size_t count_out;
+    int err;
+    ssize_t retval;
+
+    if (!S_ISREG(file->vnode->vn_mode))
+        return -EOPNOTSUPP;
+
+    err = f_lseek(&in->fp, file->seek_pos);
+    if (err)
+        return -EIO;
+
+    err = f_read(&in->fp, buf, count, &count_out);
+    if (err)
+        return fresult2errno(err);
+
+    file->seek_pos = f_tell(&in->fp);
+    retval = count_out;
+
+    return retval;
 }
 
 int fatfs_create(vnode_t * dir, const char * name, size_t name_len, mode_t mode,
                  vnode_t ** result)
 {
-    return -ENOTSUP;
+    return fatfs_mknod(dir, name, name_len, (mode & ~S_IFMT) | S_IFREG, NULL,
+                       result);
 }
 
 int fatfs_mknod(vnode_t * dir, const char * name, size_t name_len, int mode,
                 void * specinfo, vnode_t ** result)
 {
-    return -ENOTSUP;
+    struct fatfs_inode * indir = get_inode_of_vnode(dir);
+    struct fatfs_inode * res = NULL;
+    char * in_fpath;
+    int err;
+
+    if (!S_ISDIR(dir->vn_mode))
+        return -ENOTDIR;
+
+    if ((mode & S_IFMT) != S_IFREG)
+        return -ENOTSUP; /* FAT only suports regular files. */
+
+    if (specinfo)
+        return -EINVAL; /* specinfo not supported. */
+
+
+    in_fpath = format_fpath(indir, name, name_len);
+    if (!in_fpath)
+        return -ENOMEM;
+
+    err = create_inode(&res, get_ffsb_of_sb(dir->sb), in_fpath,
+                       hash32_str(in_fpath, 0), FA_CREATE_NEW);
+    if (err) {
+        kfree(in_fpath);
+        return fresult2errno(err);
+    }
+
+    if (result)
+        *result = &res->in_vnode;
+
+    return 0;
 }
 
 int fatfs_link(vnode_t * dir, vnode_t * vnode, const char * name,
@@ -555,23 +611,8 @@ int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
 #endif
 
     err = f_readdir(&in->dp, &fno);
-    switch (err) {
-    case FR_DISK_ERR:
-    case FR_INT_ERR:
-    case  FR_INVALID_OBJECT:
-        return -EIO;
-    case FR_NOT_READY:
-        return -EBUSY;
-    case FR_TIMEOUT:
-        return -EWOULDBLOCK;
-    case FR_NOT_ENOUGH_CORE:
-        return -ENOMEM;
-    default:
-        if (err) {
-            /* Unknown error */
-            return -EIO;
-        }
-    }
+    if (err)
+        return fresult2errno(err);
 
     if (fno.fname[0] == '\0')
         return -ESPIPE;
@@ -589,7 +630,9 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
 {
     struct fatfs_inode * in = get_inode_of_vnode(vnode);
     FILINFO fno;
+    struct fatfs_sb * fat_sb = get_ffsb_of_sb(vnode->sb);
     struct stat mp_stat = { .st_uid = 0, .st_gid = 0 };
+    size_t blksize = fat_sb->ff_fs.ssize;
     int err;
 
     /* TODO It hangs?? */
@@ -600,31 +643,8 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
 #endif
 
     err = f_stat(in->in_fpath, &fno);
-    switch (err) {
-    case FR_DISK_ERR:
-    case FR_INT_ERR:
-        return -EIO;
-    case FR_NOT_READY:
-        return -EBUSY;
-    case FR_NO_FILE:
-    case FR_NO_PATH:
-        return -ENOENT;
-    case FR_INVALID_NAME:
-    case  FR_INVALID_DRIVE:
-        return -EINVAL;
-    case FR_NOT_ENABLED:
-    case FR_NO_FILESYSTEM:
-        return -ENODEV;
-    case FR_TIMEOUT:
-        return -EWOULDBLOCK;
-    case FR_NOT_ENOUGH_CORE:
-        return -ENOMEM;
-    default:
-        if (err) {
-            /* Unknown error */
-            return -EIO;
-        }
-    }
+    if (err)
+        return fresult2errno(err);
 
     buf->st_dev = vnode->sb->vdev_id;
     buf->st_ino = vnode->vn_num;
@@ -641,8 +661,8 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
     buf->st_birthtime;
 #endif
     buf->st_flags = fno.fattrib & (AM_RDO | AM_HID | AM_SYS | AM_ARC);
-    buf->st_blksize = 512;
-    buf->st_blocks = fno.fsize / 512 + 1; /* Best guess. */
+    buf->st_blksize = blksize;
+    buf->st_blocks = fno.fsize / blksize + 1; /* Best guess. */
 
     return 0;
 }
@@ -707,4 +727,45 @@ static int get_mp_stat(vnode_t * vnode, struct stat * st)
 #endif
 
     return vnode->sb->mountpoint->vnode_ops->stat(vnode->sb->mountpoint, st);
+}
+
+static int fresult2errno(int fresult)
+{
+    switch (fresult) {
+    case FR_DISK_ERR:
+    case FR_INVALID_OBJECT:
+    case FR_INT_ERR:
+        return -EIO;
+    case FR_NOT_ENABLED:
+        return -ENODEV;
+    case FR_NO_FILESYSTEM:
+        return -ENXIO;
+    case FR_NO_FILE:
+    case FR_NO_PATH:
+        return -ENOENT;
+    case FR_DENIED:
+        return -EACCES;
+    case FR_EXIST:
+        return -EEXIST;
+    case FR_WRITE_PROTECTED:
+        return -EPERM;
+    case FR_NOT_READY:
+        return -EBUSY;
+    case FR_INVALID_NAME:
+    case FR_INVALID_DRIVE:
+    case FR_MKFS_ABORTED:
+    case FR_INVALID_PARAMETER:
+        return -EINVAL;
+    case FR_TIMEOUT:
+        return -EWOULDBLOCK;
+    case FR_NOT_ENOUGH_CORE:
+        return -ENOMEM;
+    case FR_TOO_MANY_OPEN_FILES:
+        return -ENFILE;
+    default:
+        if (fresult != 0) /* Unknown error */
+            return -EIO;
+    }
+
+    return 0;
 }
