@@ -403,7 +403,7 @@ static int fatfs_lookup(vnode_t * dir, const char * name, size_t name_len,
      */
     if (name[0] == '.' && name[1] != '.') {
 #ifdef configFATFS_DEBUG
-        KERROR(KERROR_DEBUG, "Lookup emulating .\n");
+        KERROR(KERROR_DEBUG, "Lookup emulating \".\"\n");
 #endif
         *result = dir;
 
@@ -411,7 +411,7 @@ static int fatfs_lookup(vnode_t * dir, const char * name, size_t name_len,
         return 0;
     } else if (name[0] == '.' && name[1] == '.' && name[2] != '.') {
 #ifdef configFATFS_DEBUG
-        KERROR(KERROR_DEBUG, "Lookup emulating ..\n");
+        KERROR(KERROR_DEBUG, "Lookup emulating \"..\"\n");
 #endif
         if (VN_IS_FSROOT(dir)) {
             *result = dir->sb->mountpoint;
@@ -595,6 +595,7 @@ int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
 
         strlcpy(d->d_name, ".", NAME_MAX);
         d->d_ino = dir->vn_num;
+        d->d_type = DT_DIR;
         *off = DIRENT_SEEK_START + 1;
 
         return 0;
@@ -602,6 +603,7 @@ int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
         strlcpy(d->d_name, "..", NAME_MAX);
         /* TODO */
         d->d_ino = 0;
+        d->d_type = DT_DIR;
         *off = DIRENT_SEEK_START + 2;
 
         return 0;
@@ -620,12 +622,25 @@ int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
         return -ESPIPE;
 
     d->d_ino = 0; /* TODO */
+    d->d_type = (fno.fattrib & AM_DIR) ? DT_DIR : DT_REG;
 #if configFATFS_USE_LFN
     if (!*fno.lfname)
 #endif
         strlcpy(d->d_name, fno.fname, 13);
 
     return 0;
+}
+
+static fflags_t fattrib2uflags(unsigned fattrib)
+{
+    fflags_t flags = 0;
+
+    flags |= (fattrib & AM_RDO) ? UF_READONLY : 0;
+    flags |= (fattrib & AM_HID) ? UF_HIDDEN : 0;
+    flags |= (fattrib & AM_ARC) ? UF_ARCHIVE : 0;
+    flags |= (fattrib & AM_SYS) ? UF_SYSTEM : 0;
+
+    return flags;
 }
 
 int fatfs_stat(vnode_t * vnode, struct stat * buf)
@@ -637,16 +652,38 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
     size_t blksize = fat_sb->ff_fs.ssize;
     int err;
 
-    /* TODO It hangs?? */
-#if 0
     err = get_mp_stat(vnode, &mp_stat);
-    if (err != -EINPROGRESS)
-        return err;
+    if (err) {
+        if (err == -EINPROGRESS) {
+#ifdef configFATFS_DEBUG
+            KERROR(KERROR_WARN, "vnode->sb->mountpoint should be set\n");
+#endif
+        } else {
+#ifdef configFATFS_DEBUG
+            char msgbuf[60];
+
+            ksprintf(msgbuf, sizeof(msgbuf),
+                     "get_mp_stat() returned error (%d)\n",
+                     err);
+            KERROR(KERROR_WARN, msgbuf);
 #endif
 
+            return err;
+        }
+    }
+
     err = f_stat(in->in_fpath, &fno);
-    if (err)
+    if (err) {
+#ifdef configFATFS_DEBUG
+        char msgbuf[80];
+
+        ksprintf(msgbuf, sizeof(msgbuf),
+                 "f_stat(fpath \"%s\", fno %p) failed\n",
+                 in->in_fpath, &fno);
+        KERROR(KERROR_DEBUG, msgbuf);
+#endif
         return fresult2errno(err);
+    }
 
     buf->st_dev = vnode->sb->vdev_id;
     buf->st_ino = vnode->vn_num;
@@ -662,7 +699,7 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
     buf->st_ctime;
     buf->st_birthtime;
 #endif
-    buf->st_flags = fno.fattrib & (AM_RDO | AM_HID | AM_SYS | AM_ARC);
+    buf->st_flags = fattrib2uflags(fno.fattrib);
     buf->st_blksize = blksize;
     buf->st_blocks = fno.fsize / blksize + 1; /* Best guess. */
 
@@ -714,21 +751,30 @@ static void init_fatfs_vnode(vnode_t * vnode, ino_t inum, mode_t mode,
  */
 static int get_mp_stat(vnode_t * vnode, struct stat * st)
 {
+     struct fs_superblock * sb;
+     vnode_t * mp;
+
 #ifdef configFATFS_DEBUG
     KASSERT(vnode, "Vnode was given");
     KASSERT(vnode->sb, "Superblock is set");
 #endif
 
-    if (!vnode->sb->mountpoint) {
+    sb = vnode->sb;
+    mp = sb->mountpoint;
+
+    if (!mp) {
         /* We are probably mounting and mountpoint is not yet set. */
+#ifdef configFATFS_DEBUG
+        KERROR(KERROR_DEBUG, "mp not set\n");
+#endif
         return -EINPROGRESS;
     }
 
 #ifdef configFATFS_DEBUG
-    KASSERT(vnode->sb->mountpoint->vnode_ops->stat, "stat() is defined");
+    KASSERT(mp->vnode_ops->stat, "stat() is defined");
 #endif
 
-    return vnode->sb->mountpoint->vnode_ops->stat(vnode->sb->mountpoint, st);
+    return mp->vnode_ops->stat(mp, st);
 }
 
 static int fresult2errno(int fresult)
