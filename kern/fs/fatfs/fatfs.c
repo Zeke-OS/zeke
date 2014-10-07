@@ -271,6 +271,8 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
         /* O_DIRECTORY was specified. */
         /* TODO Maybe get mp stat? */
         fno.fattrib = AM_DIR;
+    } else if (oflags & O_CREAT) {
+        /* NOOP */
     } else {
         err = f_stat(fpath, &fno);
         if (err)
@@ -545,7 +547,7 @@ int fatfs_mknod(vnode_t * dir, const char * name, size_t name_len, int mode,
         return -ENOMEM;
 
     err = create_inode(&res, get_ffsb_of_sb(dir->sb), in_fpath,
-                       hash32_str(in_fpath, 0), FA_CREATE_NEW);
+                       hash32_str(in_fpath, 0), O_CREAT);
     if (err) {
         kfree(in_fpath);
         return fresult2errno(err);

@@ -762,13 +762,13 @@ FRESULT sync_window (
 
     if (fs->wflag) {    /* Write back the sector if it is dirty */
         wsect = fs->winsect;    /* Current sector number */
-        if (disk_write(fs->drv, fs->win, wsect, SS(fp->fs)))
+        if (disk_write(fs->drv, fs->win, wsect, SS(fs)))
             return FR_DISK_ERR;
         fs->wflag = 0;
         if (wsect - fs->fatbase < fs->fsize) {      /* Is it in the FAT area? */
             for (nf = fs->n_fats; nf >= 2; nf--) {  /* Reflect the change to all FAT copies */
                 wsect += fs->fsize;
-                disk_write(fs->drv, fs->win, wsect, SS(fp->fs));
+                disk_write(fs->drv, fs->win, wsect, SS(fs));
             }
         }
     }
@@ -824,7 +824,7 @@ FRESULT sync_fs (   /* FR_OK: successful, FR_DISK_ERR: failed */
             ST_DWORD(fs->win+FSI_Nxt_Free, fs->last_clust);
             /* Write it into the FSINFO sector */
             fs->winsect = fs->volbase + 1;
-            disk_write(fs->drv, fs->win, fs->winsect, SS(fp->fs));
+            disk_write(fs->drv, fs->win, fs->winsect, SS(fs));
             fs->fsi_flag = 0;
         }
         /* Make sure that no pending write process in the physical drive */
