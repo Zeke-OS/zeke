@@ -37,6 +37,7 @@
 #include <stdbool.h>
 #include <libkern.h>
 #include <kstring.h>
+#include <thread.h>
 #include <tsched.h>
 #include <proc.h>
 #include <hal/core.h>

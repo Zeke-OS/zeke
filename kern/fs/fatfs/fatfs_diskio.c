@@ -145,7 +145,7 @@ DRESULT fatfs_disk_write(BYTE pdrv, const BYTE* buff, DWORD sector, UINT count)
     return 0;
 }
 
-DRESULT fatfs_disk_ioctl(BYTE pdrv, BYTE cmd, void * buff)
+DRESULT fatfs_disk_ioctl(BYTE pdrv, unsigned cmd, void * buff)
 {
     file_t * file;
     ssize_t err;
@@ -168,23 +168,15 @@ DRESULT fatfs_disk_ioctl(BYTE pdrv, BYTE cmd, void * buff)
     switch (cmd) {
     case CTRL_SYNC:
         break;
-    case GET_SECTOR_COUNT:
-        err = file->vnode->vnode_ops->ioctl(file, IOCTL_GETBLKCNT,
-                                            buff, sizeof(DWORD));
-        if (err)
-            return RES_ERROR;
-        break;
-    case GET_SECTOR_SIZE:
-        err = file->vnode->vnode_ops->ioctl(file, IOCTL_GETBLKSIZE,
-                                            buff, sizeof(WORD));
-        if (err)
-            return RES_ERROR;
-        break;
     case GET_BLOCK_SIZE:
     case CTRL_ERASE_SECTOR:
     default:
-        return RES_PARERR;
+        break;
     }
+
+    err = file->vnode->vnode_ops->ioctl(file, cmd, buff, sizeof(DWORD));
+    if (err)
+        return RES_ERROR;
 
     return 0;
 }

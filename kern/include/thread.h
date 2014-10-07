@@ -35,6 +35,10 @@
 #ifndef THREAD_H
 #define THREAD_H
 
+#include <pthread.h>
+#include <sys/types.h>
+#include <tsched.h>
+
 /**
  * Scheduler handler.
  * This is mainly called when timer ticks.

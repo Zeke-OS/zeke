@@ -275,7 +275,7 @@ typedef struct vnode_ops {
      * @param ar_len    is the length of arg.
      * @return          0 ig succeed; Otherwise a negative errno is returned.
      */
-    int (*ioctl)(file_t * file, uint32_t request, void * arg, size_t arg_len);
+    int (*ioctl)(file_t * file, unsigned request, void * arg, size_t arg_len);
     //int (*mmap)(vnode_t * file, !mem area!);
     /* Directory file operations
      * ------------------------- */

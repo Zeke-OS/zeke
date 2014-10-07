@@ -38,6 +38,7 @@
 #ifndef IOCTL_H
 #define IOCTL_H
 
+#include <stddef.h>
 #include <stdint.h>
 #include <sys/cdefs.h>
 
@@ -57,7 +58,7 @@ __BEGIN_DECLS
  * ioctl.
  * @note This is a non-POSIX implementation of ioctl.
  */
-int _ioctl(int fildes, uint32_t request, void * arg, size_t arg_len);
+int _ioctl(int fildes, unsigned request, void * arg, size_t arg_len);
 __END_DECLS
 #endif
 

@@ -209,7 +209,7 @@ struct _fs_umask_args {
 
 struct _ioctl_get_args {
     int fd;
-    uint32_t request;
+    unsigned request;
     void * arg;
     size_t arg_len;
 };

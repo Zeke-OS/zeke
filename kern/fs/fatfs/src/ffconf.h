@@ -1,11 +1,6 @@
 #include <autoconf.h>
 #include <klocks.h>
 
-#define disk_initialize fatfs_disk_initialize
-#define disk_status     fatfs_disk_status
-#define disk_read       fatfs_disk_read
-#define disk_write      fatfs_disk_write
-#define disk_ioctl      fatfs_disk_ioctl
 #define ff_memalloc     kmalloc
 #define ff_memfree      kfree
 
@@ -160,14 +155,6 @@
 
 #define _VOLUMES configFATFS_MAX_MOUNTS
 /* Number of volumes (logical drives) to be used. */
-
-
-#define _STR_VOLUME_ID  0   /* 0:Use only 0-9 for drive ID, 1:Use strings for drive ID */
-#define _VOLUME_STRS    "RAM","NAND","CF","SD1","SD2","USB1","USB2","USB3"
-/* When _STR_VOLUME_ID is set to 1, also pre-defined strings can be used as drive
-/  number in the path name. _VOLUME_STRS defines the drive ID strings for each logical
-/  drives. Number of items must be equal to _VOLUMES. Valid characters for the drive ID
-/  strings are: 0-9 and A-Z. */
 
 
 #define _MULTI_PARTITION    0   /* 0:Single partition, 1:Enable multiple partition */

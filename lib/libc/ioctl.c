@@ -34,7 +34,7 @@
 #include <syscall.h>
 #include <sys/ioctl.h>
 
-int _ioctl(int fildes, uint32_t request, void * arg, size_t arg_len)
+int _ioctl(int fildes, unsigned request, void * arg, size_t arg_len)
 {
     struct _ioctl_get_args args = {
         .fd = fildes,

@@ -50,7 +50,7 @@ static int devfs_mount(const char * source, uint32_t mode,
                        const char * parm, int parm_len,
                        struct fs_superblock ** sb);
 static int devfs_umount(struct fs_superblock * fs_sb);
-static int dev_ioctl(file_t * file, uint32_t request,
+static int dev_ioctl(file_t * file, unsigned request,
         void * arg, size_t arg_len);
 
 const vnode_ops_t * devfs_vnode_ops;
@@ -256,7 +256,7 @@ out:
     return bytes_wr;
 }
 
-static int dev_ioctl(file_t * file, uint32_t request, void * arg, size_t arg_len)
+static int dev_ioctl(file_t * file, unsigned request, void * arg, size_t arg_len)
 {
     struct dev_info * devnfo = (struct dev_info *)file->vnode->vn_specinfo;
 

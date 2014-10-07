@@ -5,10 +5,6 @@
 #ifndef _DISKIO_DEFINED
 #define _DISKIO_DEFINED
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define _USE_WRITE	1	/* 1: Enable disk_write function */
 #define _USE_IOCTL	1	/* 1: Enable disk_ioctl fucntion */
 
@@ -32,11 +28,11 @@ typedef enum {
 /* Prototypes for disk control functions */
 
 
-DSTATUS disk_initialize (BYTE pdrv);
-DSTATUS disk_status (BYTE pdrv);
-DRESULT disk_read (BYTE pdrv, BYTE* buff, DWORD sector, UINT count);
-DRESULT disk_write (BYTE pdrv, const BYTE* buff, DWORD sector, UINT count);
-DRESULT disk_ioctl (BYTE pdrv, BYTE cmd, void* buff);
+DSTATUS fatfs_disk_initialize(BYTE pdrv);
+DSTATUS fatfs_disk_status(BYTE pdrv);
+DRESULT fatfs_disk_read(BYTE pdrv, BYTE* buff, DWORD sector, UINT count);
+DRESULT fatfs_disk_write(BYTE pdrv, const BYTE* buff, DWORD sector, UINT count);
+DRESULT fatfs_disk_ioctl(BYTE pdrv, unsigned cmd, void* buff);
 
 
 /* Disk Status Bits (DSTATUS) */
@@ -50,25 +46,7 @@ DRESULT disk_ioctl (BYTE pdrv, BYTE cmd, void* buff);
 
 /* Generic command (used by FatFs) */
 #define CTRL_SYNC			0	/* Flush disk cache (for write functions) */
-#define GET_SECTOR_COUNT	1	/* Get media size (for only f_mkfs()) */
-#define GET_SECTOR_SIZE		2	/* Get sector size (for multiple sector size (_MAX_SS >= 1024)) */
 #define GET_BLOCK_SIZE		3	/* Get erase block size (for only f_mkfs()) */
 #define CTRL_ERASE_SECTOR	4	/* Force erased a block of sectors (for only _USE_ERASE) */
-
-/* MMC/SDC specific ioctl command */
-#define MMC_GET_TYPE		10	/* Get card type */
-#define MMC_GET_CSD			11	/* Get CSD */
-#define MMC_GET_CID			12	/* Get CID */
-#define MMC_GET_OCR			13	/* Get OCR */
-#define MMC_GET_SDSTAT		14	/* Get SD status */
-
-/* ATA/CF specific ioctl command */
-#define ATA_GET_REV			20	/* Get F/W revision */
-#define ATA_GET_MODEL		21	/* Get model name */
-#define ATA_GET_SN			22	/* Get serial number */
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif
