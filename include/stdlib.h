@@ -46,6 +46,7 @@
 
 #include <sys/cdefs.h>
 #include <sys/_null.h>
+#include <malloc.h>
 
 #define	EXIT_FAILURE    1
 #define	EXIT_SUCCESS    0

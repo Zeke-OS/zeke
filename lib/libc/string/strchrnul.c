@@ -26,8 +26,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <stddef.h>
 #include <string.h>
 
@@ -36,13 +34,13 @@ __weak_reference(__strchrnul, strchrnul);
 char *
 __strchrnul(const char *p, int ch)
 {
-	char c;
+    char c;
 
-	c = ch;
-	for (;; ++p) {
-		if (*p == c || *p == '\0')
-			return ((char *)p);
-	}
-	/* NOTREACHED */
+    c = ch;
+    for (;; ++p) {
+        if (*p == c || *p == '\0')
+            return ((char *)p);
+    }
+    /* NOTREACHED */
 }
 

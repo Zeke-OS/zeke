@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1988, 1993
- *	The Regents of the University of California.  All rights reserved.
+ *  The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Jeffrey Mogul.
@@ -31,31 +31,30 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)swab.c	8.1 (Berkeley) 6/4/93";
+static char sccsid[] = "@(#)swab.c  8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
+#include <sys/types.h> /* TODO Shouldn't be needed */
 #include <unistd.h>
 
 void
 swab(const void * __restrict from, void * __restrict to, ssize_t len)
 {
-	unsigned long temp;
-	int n;
-	char *fp, *tp;
+    unsigned long temp;
+    int n;
+    char *fp, *tp;
 
-	if (len <= 0)
-		return;
-	n = len >> 1;
-	fp = (char *)from;
-	tp = (char *)to;
-#define	STEP	temp = *fp++,*tp++ = *fp++,*tp++ = temp
-	/* round to multiple of 8 */
-	for (; n & 0x7; --n)
-		STEP;
-	for (n >>= 3; n > 0; --n) {
-		STEP; STEP; STEP; STEP;
-		STEP; STEP; STEP; STEP;
-	}
+    if (len <= 0)
+        return;
+    n = len >> 1;
+    fp = (char *)from;
+    tp = (char *)to;
+#define STEP    temp = *fp++,*tp++ = *fp++,*tp++ = temp
+    /* round to multiple of 8 */
+    for (; n & 0x7; --n)
+        STEP;
+    for (n >>= 3; n > 0; --n) {
+        STEP; STEP; STEP; STEP;
+        STEP; STEP; STEP; STEP;
+    }
 }

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CONFFILES="buildconf.mk"
+CONFFILES="buildconf.mk dist.mk"
 
 kconfig/config.sh menuconfig
 

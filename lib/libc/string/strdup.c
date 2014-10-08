@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1988, 1993
- *	The Regents of the University of California.  All rights reserved.
+ *  The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,11 +28,9 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strdup.c	8.1 (Berkeley) 6/4/93";
+static char sccsid[] = "@(#)strdup.c    8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,12 +38,12 @@ __FBSDID("$FreeBSD$");
 char *
 strdup(const char *str)
 {
-	size_t len;
-	char *copy;
+    size_t len;
+    char *copy;
 
-	len = strlen(str) + 1;
-	if ((copy = malloc(len)) == NULL)
-		return (NULL);
-	memcpy(copy, str, len);
-	return (copy);
+    len = strlen(str) + 1;
+    if ((copy = malloc(len)) == NULL)
+        return (NULL);
+    memcpy(copy, str, len);
+    return (copy);
 }

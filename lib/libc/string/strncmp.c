@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1989, 1993
- *	The Regents of the University of California.  All rights reserved.
+ *  The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,25 +28,23 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strncmp.c	8.1 (Berkeley) 6/4/93";
+static char sccsid[] = "@(#)strncmp.c   8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <string.h>
 
 int
 strncmp(const char *s1, const char *s2, size_t n)
 {
 
-	if (n == 0)
-		return (0);
-	do {
-		if (*s1 != *s2++)
-			return (*(const unsigned char *)s1 -
-				*(const unsigned char *)(s2 - 1));
-		if (*s1++ == '\0')
-			break;
-	} while (--n != 0);
-	return (0);
+    if (n == 0)
+        return (0);
+    do {
+        if (*s1 != *s2++)
+            return (*(const unsigned char *)s1 -
+                *(const unsigned char *)(s2 - 1));
+        if (*s1++ == '\0')
+            break;
+    } while (--n != 0);
+    return (0);
 }

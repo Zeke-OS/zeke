@@ -32,7 +32,7 @@
  *******************************************************************************
 */
 
-#include <kstring.h> /* TODO */
+#include <string.h>
 #include <limits.h>
 #include <sys/types.h>
 #include <fcntl.h>
@@ -48,7 +48,7 @@ int chdir(const char * path)
 {
     struct _proc_chdir_args args = {
         .name       = path,
-        .name_len   = strlenn(path, PATH_MAX) + 1,
+        .name_len   = strlen(path) + 1,
         .atflags    = AT_FDCWD
     };
 
@@ -218,9 +218,9 @@ int link(const char * path1, const char * path2)
 {
     struct _fs_link_args args = {
         .path1 = path1,
-        .path1_len = strlenn(path1, 4096) + 1, /* TODO */
+        .path1_len = strlen(path1) + 1,
         .path2 = path2,
-        .path2_len = strlenn(path2, 4096) + 1
+        .path2_len = strlen(path2) + 1
     };
 
     return (int)syscall(SYSCALL_FS_LINK, &args);
@@ -230,7 +230,7 @@ int unlink(const char * path)
 {
     struct _fs_unlink_args args = {
         .path = path,
-        .path_len = strlenn(path, 4096) + 1, /* TODO */
+        .path_len = strlen(path) + 1,
         .flag = AT_FDCWD
     };
 
@@ -245,7 +245,7 @@ int unlinkat(int fd, const char * path, int flag)
     struct _fs_unlink_args args = {
         .fd = fd,
         .path = path,
-        .path_len = strlenn(path, 4096) + 1, /* TODO */
+        .path_len = strlen(path) + 1,
         .flag = flag
     };
 

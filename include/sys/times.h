@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    mount.c
+ * @file    sys/times.h
  * @author  Olli Vanhoja
- * @brief   Mount or dismount a file system..
+ * @brief   time types.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -28,26 +28,26 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************
-*/
+ */
 
-#include <syscall.h>
-#include <string.h>
-#include <mount.h>
+#ifndef SYS_TIMES_H
+#define SYS_TIMES_H
 
-int mount(const char * source, const char * target, const char * type,
-          int flags, char * parms)
-{
-    struct _fs_mount_args args = {
-        .source = source,
-        .source_len = strlen(source) + 1,
-        .target = target,
-        .target_len = strlen(target) + 1,
-        .flags = flags,
-        .parm = parms,
-        .parm_len = strlen(parms) + 1
-    };
+#include <sys/types.h>
 
-    strcpy((char *)args.fsname, type);
+struct tms {
+    clock_t tms_utime;  /*!< User time. */
+    clock_t tms_stime;  /*!< System time. */
+    clock_t tms_cutime; /*!< User time of children. */
+    clock_t tms_cstime; /*!< System time of children. */
+};
 
-    return syscall(SYSCALL_FS_MOUNT, &args);
-}
+/**
+ * Store the current process times to a tms struct pointed by buf.
+ * All times reported are in clock ticks.
+ * The number of clock ticks per second can be obtained using
+ * sysconf(_SC_CLK_TCK).
+ */
+clock_t times(struct tms * buf);
+
+#endif /* SYS_TIMES_H */

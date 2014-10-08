@@ -39,7 +39,7 @@ include $(ROOT_DIR)/genconfig/buildconf.mk
 # '# target_doc'	Documentation target
 
 # target_comp: all - Make config and compile kernel.
-all: tools $(CRT) kernel.img
+all: tools $(CRT) kernel.img lib
 
 # target_doc: doc - Compile all documentation.
 doc: doc-book doc-man
@@ -75,6 +75,8 @@ $(CRT):
 kernel.img: tools $(AUTOCONF_H) $(CRT)
 	$(MAKE) -C kern all
 
+lib: $(AUTOCONF_H) $(CRT)
+	$(MAKE) -C lib all
 
 # target_doc: stats - Calculate some stats.
 stats: clean
@@ -84,7 +86,7 @@ stats: clean
 help:
 	./tools/help.sh
 
-.PHONY: tools clean-all clean clean-doc clean-tools clean-man
+.PHONY: tools lib clean-all clean clean-doc clean-tools clean-man
 
 # target_clean: clean-all - Clean all targets.
 clean-all: clean clean-tools clean-doc
@@ -102,6 +104,7 @@ clean:
 	rm -f *.a
 	rm -f include/machine
 	$(MAKE) -C $(CRT_DIR) clean
+	$(MAKE) -C lib clean
 	$(MAKE) -C kern clean
 
 # target_clean: clean-tools - Clean all tools.

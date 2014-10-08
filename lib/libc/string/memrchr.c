@@ -1,5 +1,3 @@
-/*	$OpenBSD: memrchr.c,v 1.2 2007/11/27 16:22:12 martynas Exp $	*/
-
 /*
  * Copyright (c) 2007 Todd C. Miller <Todd.Miller@courtesan.com>
  *
@@ -27,14 +25,14 @@
 void *
 memrchr(const void *s, int c, size_t n)
 {
-	const unsigned char *cp;
+    const unsigned char *cp;
 
-	if (n != 0) {
-		cp = (unsigned char *)s + n;
-		do {
-			if (*(--cp) == (unsigned char)c)
-				return((void *)cp);
-		} while (--n != 0);
-	}
-	return(NULL);
+    if (n != 0) {
+        cp = (unsigned char *)s + n;
+        do {
+            if (*(--cp) == (unsigned char)c)
+                return((void *)cp);
+        } while (--n != 0);
+    }
+    return(NULL);
 }

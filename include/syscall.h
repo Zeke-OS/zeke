@@ -43,8 +43,9 @@
 #include <autoconf.h>
 #include <sys/param.h>
 #include <sys/_syscalldef.h>
-#include <libkern.h>
+#ifdef KERNEL_INTERNAL
 #include <../kern/include/hal/core.h>
+#endif
 
 #define SYSCALL_MINORBITS   24 /*!< Number of minor bits */
 #define SYSCALL_MINORMASK   ((1u << MINORBITS) - 1) /*!< Minor bits mask */

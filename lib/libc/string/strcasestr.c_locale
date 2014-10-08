@@ -1,9 +1,14 @@
 /*-
  * Copyright (c) 1990, 1993
- *	The Regents of the University of California.  All rights reserved.
+ *  The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Chris Torek.
+ *
+ * Copyright (c) 2011 The FreeBSD Foundation
+ * All rights reserved.
+ * Portions of this software were developed by David Chisnall
+ * under sponsorship from the FreeBSD Foundation.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,35 +35,35 @@
  * SUCH DAMAGE.
  */
 
-#if 0
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strncpy.c	8.1 (Berkeley) 6/4/93";
-#endif /* LIBC_SCCS and not lint */
-#endif
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
-#include <wchar.h>
+#include <string.h>
+#include "xlocale_private.h"
 
 /*
- * Copy src to dst, truncating or null-padding to always copy n bytes.
- * Return dst.
+ * Find the first occurrence of find in s, ignore case.
  */
-wchar_t *
-wcsncpy(wchar_t * __restrict dst, const wchar_t * __restrict src, size_t n)
+char *
+strcasestr_l(const char *s, const char *find, locale_t locale)
 {
-	if (n != 0) {
-		wchar_t *d = dst;
-		const wchar_t *s = src;
+    char c, sc;
+    size_t len;
+    FIX_LOCALE(locale);
 
-		do {
-			if ((*d++ = *s++) == L'\0') {
-				/* NUL pad the remaining n-1 bytes */
-				while (--n != 0)
-					*d++ = L'\0';
-				break;
-			}
-		} while (--n != 0);
-	}
-	return (dst);
+    if ((c = *find++) != 0) {
+        c = tolower_l((unsigned char)c, locale);
+        len = strlen(find);
+        do {
+            do {
+                if ((sc = *s++) == 0)
+                    return (NULL);
+            } while ((char)tolower_l((unsigned char)sc, locale) != c);
+        } while (strncasecmp_l(s, find, len, locale) != 0);
+        s--;
+    }
+    return ((char *)s);
+}
+char *
+strcasestr(const char *s, const char *find)
+{
+    return strcasestr_l(s, find, __get_locale());
 }

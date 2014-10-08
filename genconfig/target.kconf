@@ -9,6 +9,13 @@ config configARM_PROFILE_M
     bool "M"
 endchoice
 
+config configHAVE_64_BIT_CPU
+    bool
+
+config config64_BIT_CPU
+    bool "64-bit CPU"
+    depends on configHAVE_64_BIT_CPU
+
 # select if MP capable core or instruction set
 config configHAVE_MP_CAP
     bool

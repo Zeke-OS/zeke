@@ -31,12 +31,8 @@
 */
 
 #include <stdarg.h>
-#if 0
 #include <string.h>
-#endif
-#include <kstring.h>
 #include <time.h>
-#define strlen(x) strlenn(x, 4096) /* TODO REMOVE ME */
 #include <syscall.h>
 #include <unistd.h>
 #include <fcntl.h>

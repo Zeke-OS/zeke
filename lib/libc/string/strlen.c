@@ -25,10 +25,8 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
-#include <sys/limits.h>
 #include <sys/types.h>
+#include <limits.h>
 #include <string.h>
 
 /*
@@ -57,10 +55,10 @@ __FBSDID("$FreeBSD$");
  */
 
 /* Magic numbers for the algorithm */
-#if LONG_BIT == 32
+#if ULONG_MAX == 0xffffffff
 static const unsigned long mask01 = 0x01010101;
 static const unsigned long mask80 = 0x80808080;
-#elif LONG_BIT == 64
+#elif ULONG_MAX == 0xffffffffffffffff
 static const unsigned long mask01 = 0x0101010101010101;
 static const unsigned long mask80 = 0x8080808080808080;
 #else

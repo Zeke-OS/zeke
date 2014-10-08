@@ -37,7 +37,7 @@
 */
 
 #include <syscall.h>
-#include <kstring.h> /* TODO Should include string.h if compiling for user space */
+#include <string.h>
 #include <sys/sysctl.h>
 
 int sysctl(int * name, unsigned int namelen, void * oldp, size_t * oldlenp,
@@ -62,7 +62,7 @@ int sysctlnametomib(char * name, int * oidp, int lenp)
     size_t j;
 
     j = lenp * sizeof(int);
-    i = sysctl(qoid, 2, oidp, &j, name, strlenn(name, CTL_MAXSTRNAME));
+    i = sysctl(qoid, 2, oidp, &j, name, strnlen(name, CTL_MAXSTRNAME));
     if (i < 0)
         return i;
     return j / sizeof(int);
