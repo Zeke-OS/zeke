@@ -672,6 +672,13 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
         }
     }
 
+    /* Can't stat FAT root */
+    if (vnode == vnode->sb->root) {
+        memcpy(buf, &mp_stat, sizeof(struct stat));
+
+        return 0;
+    }
+
     err = f_stat(in->in_fpath, &fno);
     if (err) {
 #ifdef configFATFS_DEBUG

@@ -206,6 +206,14 @@ int fs_namei_proc(vnode_t ** result, int fd, const char * path, int atflags)
     vnode_t * start;
     int oflags = atflags & AT_SYMLINK_NOFOLLOW;
     int retval;
+#ifdef config_FS_DEBUG
+    char msgbuf[80];
+
+    ksprintf(msgbuf, sizeof(msgbuf),
+             "fs_namei_proc(result %p, fd %d, path \"%s\", atflags %d)\n",
+             result, fd, path, atflags);
+    KERROR(KERROR_DEBUG, msgbuf);
+#endif
 
     if (path[0] == '\0')
         return -EINVAL;
@@ -1051,7 +1059,7 @@ void fs_vnode_cleanup(vnode_t * vnode)
 {
     struct buf * var, * nxt;
 
-#if configDEBUG >= KERROR_DEBUG
+#ifdef config_FS_DEBUG
     if (!vnode)
         panic("vnode can't be null.");
 #endif
