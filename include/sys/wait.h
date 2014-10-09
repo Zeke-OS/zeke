@@ -39,6 +39,7 @@
 #define WAIT_H
 
 /* TODO */
+#include <sys/cdefs.h>
 
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS

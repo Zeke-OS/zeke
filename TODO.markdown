@@ -190,7 +190,7 @@ libc
 ----
 
 - Missing this and that
-- Makefile
+- enable mmap for malloc
 
 init
 ----

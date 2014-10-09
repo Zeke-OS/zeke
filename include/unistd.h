@@ -42,6 +42,8 @@
 #include <sys/cdefs.h>
 #include <sys/_null.h>
 
+#include <sys/types.h> /* TODO REMOVE */
+
 /* Options and option groups */
 #define _POSIX_THREAD_ATTR_STACKADDR    200809L
 #define _POSIX_THREAD_ATTR_STACKSIZE    200809L

@@ -137,6 +137,11 @@
 #define        __GNUC_PREREQ__(ma, mi)        0
 #endif
 
+/**
+ * This is needed in so many places that it's better to put here...
+ */
+#define num_elem(x) (sizeof(x) / sizeof(*(x)))
+
 /*
  * The __CONCAT macro is used to concatenate parts of symbol names, e.g.
  * with "#define OLD(foo) __CONCAT(old,foo)", OLD(foo) produces oldfoo.

@@ -517,7 +517,7 @@ int proc_replace(pid_t pid, struct buf * (*regions)[], int nr_regions)
         .start      = (void *(*)(void *))((*regions)[MM_CODE_REGION]->b_mmu.vaddr),
         .def        = &pattr,
         .argument   = 0, /* TODO */
-        .del_thread = pthread_exit /* TODO */
+        .del_thread = 0 /* TODO should be libc: pthread_exit */
     };
 
     const pthread_t tid = thread_create(&ds, 0);

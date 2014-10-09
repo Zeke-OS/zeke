@@ -53,11 +53,11 @@ MACHIDIR = arm
 # CRT is compiled per instruction set or per core model
 ifeq ($(configARM_PROFILE_M),y)
 	ifdef __ARM6M__
-		CRT = $(ROOT_DIR)/lib/crt/libaeabi-armv6-m/libaeabi-armv6-m.a
+		CRT = $(ROOT_DIR)/lib/crt0/libaeabi-armv6-m/libaeabi-armv6-m.a
 	endif
 else
 	ifdef __ARM6K__
-		CRT = $(ROOT_DIR)/lib/crt/libaeabi-armv6k/libaeabi-armv6k.a
+		CRT = $(ROOT_DIR)/lib/crt0/libaeabi-armv6k/libaeabi-armv6k.a
 	endif
 endif
 CRT_DIR = $(dir $(CRT))

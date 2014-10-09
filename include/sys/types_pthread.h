@@ -31,7 +31,6 @@
  *******************************************************************************
  */
 
-#pragma once
 #ifndef TYPES_PTHREAD_H
 #define TYPES_PTHREAD_H
 
@@ -48,7 +47,6 @@ typedef int pthread_t; /*!< Thread ID. */
  * - pthread_key_t
  * - pthread_mutex_t
  * - pthread_mutexattr_t
- * - pthread_once_t
  * - pthread_rwlock_t
  * - pthread_rwlockattr_t
  * - pthread_spinlock_t
@@ -85,5 +83,13 @@ typedef struct {
     volatile int lock; /*!< Lock variable */
     enum os_mutex_strategy strategy; /*!< Locking strategy */
 } pthread_mutex_t;
+
+/*
+ * Once definitions.
+ */
+struct pthread_once {
+    int             state;
+    pthread_mutex_t mutex;
+};
 
 #endif /* TYPES_PTHREAD_H */

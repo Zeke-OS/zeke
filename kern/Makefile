@@ -107,14 +107,11 @@ $(ASOBJS): $(ASRC-y) $(UNIFDEF) $(AUTOCONF_H)
 	@echo "AS $@"
 	@$(UNIFDEFALL) $(AIDIR) $*.S | $(ARMGNU)-as -am $(AIDIR) -o $@
 
-$(BCS): $(SRC-y) $(AUTOCONF_H)
-	@echo "CC $@"
-	@$(CC) $(CCFLAGS) $(IDIR) -c $*.c -o $@
-
-$(OBJS): $(BCS)
+$(OBJS): %.o: %.c $(AUTOCONF_H)
 	$(eval CUR_OPT := $*.opt.bc)
 	$(eval CUR_OPT_S := $*.opt.s)
-	@echo "AS $@"
+	@echo "CC $@"
+	@$(CC) $(CCFLAGS) $(IDIR) -c $*.c -o $*.bc
 	@$(OPT) $(OFLAGS) $*.bc -o $(CUR_OPT)
 	@$(LLC) $(LLCFLAGS) $(CUR_OPT) -o $(CUR_OPT_S)
 	@$(ARMGNU)-as $(CUR_OPT_S) -o $@ $(ASFLAGS)
@@ -135,13 +132,13 @@ $(KERNEL_IMG): $(MEMMAP) $(STARTUP_O) $(MODAS)
 .PHONY: kernel clean
 
 clean:
-	rm -f $(ASOBJS) $(OBJS) $(STARTUP_O)
-	rm -f $(BCS)
+	$(RM) $(ASOBJS) $(OBJS) $(STARTUP_O)
+	$(RM) $(BCS)
 	find . -type f -name "*.bc" -exec rm -f {} \;
 	find . -type f -name "*.opt.bc" -exec rm -f {} \;
 	find . -type f -name "*.opt.s" -exec rm -f {} \;
-	rm -f *.bin
-	rm -f *.img
-	rm -f *.elf
-	rm -f *.list
-	rm -f *.a
+	$(RM) *.bin
+	$(RM) *.img
+	$(RM) *.elf
+	$(RM) *.list
+	$(RM) *.a

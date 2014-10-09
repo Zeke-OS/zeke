@@ -74,6 +74,7 @@ struct itimerspec {
 __BEGIN_DECLS
 
 int clock_gettime(clockid_t clk_id, struct timespec * tp);
+time_t time(time_t * t);
 
 __END_DECLS
 

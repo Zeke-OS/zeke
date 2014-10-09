@@ -32,7 +32,6 @@
 
 #include <autoconf.h>
 #include <kerror.h>
-#include "../sbin/init/init.h" /* TODO To be removed */
 #include <proc.h>
 #include <thread.h>
 #include <tsched.h>
@@ -126,10 +125,10 @@ int kinit(void)
     };
     struct _ds_pthread_create init_ds = {
         .thread     = 0, /* return value */
-        .start      = main,
+        .start      = 0x99999, /* TODO */
         .def        = &init_attr,
         .argument   = 0,
-        .del_thread = pthread_exit
+        .del_thread = 0x0 /* TODO should be libc: pthread_exit */
     };
 
     /* thread id of init main() */

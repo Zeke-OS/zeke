@@ -62,12 +62,14 @@
  */
 #define member_size(type, member) (sizeof(((type *)0)->member))
 
+#ifndef num_elem
 /**
  * Get number of elements in an array that is known at compile time.
  * @param x         is an array.
  * @return The number of elements in array.
  */
 #define num_elem(x) (sizeof(x) / sizeof(*(x)))
+#endif
 
 static inline int imax(int a, int b)
 { return (a > b ? a : b); }

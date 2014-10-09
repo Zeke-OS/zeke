@@ -43,3 +43,10 @@ int clock_gettime(clockid_t clk_id, struct timespec * tp)
 
     return syscall(SYSCALL_TIME_GETTIME, &args);
 }
+
+/* TODO Proper implementation */
+time_t time(time_t* t)
+{
+    if(t) *t = -1;
+    return -1;
+}

@@ -35,8 +35,6 @@
 #include <syscall.h>
 #include <unistd.h>
 
-#define num_elem(x) (sizeof(x) / sizeof(*(x)))
-
 long sysconf(int name)
 {
     int sysctl_mib[2];
