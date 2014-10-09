@@ -109,6 +109,7 @@ config configRPI_EMMC_WRITE_SUPPORT
 
 choice
     prompt "EMMC Implementation"
+    default configRPI_EMMC_GENERIC if configQEMU_GUEST
     default configRPI_EMMC_BCM2708 if configBCM2835
     default configRPI_EMMC_GENERIC
 

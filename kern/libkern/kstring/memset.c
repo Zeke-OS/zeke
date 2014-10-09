@@ -7,10 +7,6 @@
 
 #include <kstring.h>
 
-#ifndef configSTRING_OPT_SIZE
-#define configSTRING_OPT_SIZE 0
-#endif
-
 #define LBLOCKSIZE (sizeof(long))
 #define UNALIGNED(X)   ((long)X & (LBLOCKSIZE - 1))
 #define TOO_SMALL(LEN) ((LEN) < LBLOCKSIZE)
@@ -20,7 +16,7 @@ void * memset(void * m, int c, size_t n)
     char * s = (char *)m;
 
 /* If optmizing for speed */
-#if configSTRING_OPT_SIZE == 0
+#ifndef configSTRING_OPT_SIZE
     int i;
     unsigned long buffer;
     unsigned long *aligned_addr;

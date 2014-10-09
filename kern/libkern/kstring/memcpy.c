@@ -15,10 +15,6 @@ void __aeabi_memcpy(void *destination, const void *source, size_t num) __attribu
 void __aeabi_memcpy4(void *destination, const void *source, size_t num) __attribute__ ((weak));
 void __aeabi_memcpy8(void *destination, const void *source, size_t num) __attribute__ ((weak));
 
-#ifndef configSTRING_OPT_SIZE
-#define configSTRING_OPT_SIZE 0
-#endif
-
 /* Nonzero if either X or Y is not aligned on a "long" boundary.  */
 #define UNALIGNED(X, Y) \
   (((long)X & (sizeof (long) - 1)) | ((long)Y & (sizeof (long) - 1)))
@@ -40,7 +36,7 @@ void __aeabi_memcpy8(void *destination, const void *source, size_t num) __attrib
 
 void * memcpy(void * restrict destination, const void * source, size_t num)
 {
-#if configSTRING_OPT_SIZE != 0
+#ifdef configSTRING_OPT_SIZE
     char * dst = (char *) destination;
     char * src = (char *) source;
 

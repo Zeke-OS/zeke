@@ -20,6 +20,10 @@ config config64_BIT_CPU
 config configHAVE_MP_CAP
     bool
 
+config configQEMU_GUEST
+    bool "QEMU vm guest"
+    default n
+
 choice
     prompt "Arch"
     ---help---
