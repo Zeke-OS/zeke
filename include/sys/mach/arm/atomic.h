@@ -127,6 +127,8 @@ static inline int atomic_cmpxchg(atomic_t * v, int expect, int new)
         : [old]"+r" (old), [expect]"+r" (expect), [new]"+r" (new),
           [res]"+r" (err), [addr]"+r" (v)
     );
+
+    return old;
 }
 
 #endif /* HAL_ATOMIC_H_ */

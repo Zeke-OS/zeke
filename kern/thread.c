@@ -193,7 +193,7 @@ void thread_init(struct thread_info * tp, pthread_t thread_id,
 
     /* Call thread constructors */
     void ** thread_ctor_p;
-    SET_FOREACH(thread_ctor, thread_ctors) {
+    SET_FOREACH(thread_ctor_p, thread_ctors) {
         thread_cdtor_t ctor = *(thread_cdtor_t *)thread_ctor_p;
         ctor(tp);
     }
@@ -477,9 +477,10 @@ int thread_terminate(pthread_t thread_id)
 
         /* Call thread destructors */
         void ** thread_dtor_p;
-        SET_FOREACH(thread_dtor, thread_dtors) {
+        SET_FOREACH(thread_dtor_p, thread_dtors) {
             thread_cdtor_t dtor = *(thread_cdtor_t *)thread_dtor_p;
-            dtor();
+            if (dtor)
+                dtor(thread);
         }
 
         thread_free_kstack(thread);
@@ -488,6 +489,12 @@ int thread_terminate(pthread_t thread_id)
 
     return 0;
 }
+
+static void dummycd(struct thread_info * th)
+{
+}
+DATA_SET(thread_ctors, dummycd);
+DATA_SET(thread_dtors, dummycd);
 
 /* Syscalls */
 
