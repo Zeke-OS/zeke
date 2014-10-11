@@ -8,7 +8,7 @@ config configSUBR_HASH
     ---help---
     BSD kernel hash tables.
 
-    See kern/libkern/subr_hash/hashinit.9
+    See hashinit(9)
 
 config configSTRING_OPT_SIZE
     bool "Optimize string functions for size"
