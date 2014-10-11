@@ -6,7 +6,7 @@
 #include <kunit.h>
 #include <ktest_mib.h>
 #include <libkern.h>
-#include <hal/atomic.h>
+#include <machine/atomic.h>
 
 atomic_t avar;
 

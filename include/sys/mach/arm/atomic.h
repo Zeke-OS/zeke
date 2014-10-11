@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    arm11_atomic.c
+ * @file    atomic.h
  * @author  Olli Vanhoja
- * @brief   Hardware Abstraction Layer for ARMv6/ARM11
+ * @brief   Atomic integer operations.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,10 +30,14 @@
  *******************************************************************************
  */
 
-#define KERNEL_INTERNAL
-#include <hal/atomic.h>
+#ifndef HAL_ATOMIC_H_
+#define HAL_ATOMIC_H_
 
-int atomic_read(atomic_t * v)
+typedef int atomic_t;
+
+#define ATOMIC_INIT(i) (i)
+
+static inline int atomic_read(atomic_t * v)
 {
     int value;
 
@@ -47,9 +51,9 @@ int atomic_read(atomic_t * v)
     return value;
 }
 
-int atomic_set(atomic_t * v, int i)
+static inline int atomic_set(atomic_t * v, int i)
 {
-   int old, err;
+   int old, err = 0;
 
     __asm__ volatile (
         "try%=:\n\t"
@@ -63,9 +67,9 @@ int atomic_set(atomic_t * v, int i)
     return old;
 }
 
-int atomic_add(atomic_t * v, int i)
+static inline int atomic_add(atomic_t * v, int i)
 {
-    int old, new, err;
+    int old, new, err = 0;
 
     __asm__ volatile (
         "try%=:\n\t"
@@ -81,7 +85,7 @@ int atomic_add(atomic_t * v, int i)
     return old;
 }
 
-int atomic_sub(atomic_t * v, int i)
+static inline int atomic_sub(atomic_t * v, int i)
 {
     int old, new, err;
 
@@ -99,12 +103,30 @@ int atomic_sub(atomic_t * v, int i)
     return old;
 }
 
-int atomic_inc(atomic_t * v)
+static inline int atomic_inc(atomic_t * v)
 {
     return atomic_add(v, 1);
 }
 
-int atomic_dec(atomic_t * v)
+static inline int atomic_dec(atomic_t * v)
 {
     return atomic_sub(v, 1);
 }
+
+static inline int atomic_cmpxchg(atomic_t * v, int expect, int new)
+{
+    int old, err = 0;
+
+    __asm__ volatile (
+        "try%=:\n\t"
+        "LDREX      %[old], [%[addr]]\n\t"
+        "TEQ        %[old], %[expect]\n\t"
+        "STREXEQ    %[res], %[new], [%[addr]]\n\t"
+        "CMP        %[res], #1\n\t"
+        "BEQ        try%="
+        : [old]"+r" (old), [expect]"+r" (expect), [new]"+r" (new),
+          [res]"+r" (err), [addr]"+r" (v)
+    );
+}
+
+#endif /* HAL_ATOMIC_H_ */

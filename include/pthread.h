@@ -6,7 +6,8 @@
  * @section LICENSE
  * Copyright (c) 2013 Joni Hauhia <joni.hauhia@cs.helsinki.fi>
  * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+ * Copyright (c) 2012, 2013 Ninjaware Oy,
+ *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -81,17 +82,14 @@
  * @{
  */
 
-/* TODO Missing most of the standard declarations */
-/* TODO errnos */
-
 /*
  * Run-time invariant values:
  */
-#define PTHREAD_DESTRUCTOR_ITERATIONS       4
-#define PTHREAD_KEYS_MAX            256
-#define PTHREAD_STACK_MIN           __MINSIGSTKSZ
-#define PTHREAD_THREADS_MAX         __ULONG_MAX
-#define PTHREAD_BARRIER_SERIAL_THREAD       -1
+#define PTHREAD_DESTRUCTOR_ITERATIONS   4
+#define PTHREAD_KEYS_MAX                256
+#define PTHREAD_STACK_MIN               __MINSIGSTKSZ
+#define PTHREAD_THREADS_MAX             __ULONG_MAX
+#define PTHREAD_BARRIER_SERIAL_THREAD   -1
 
 /*
  * Flags for threads and thread attributes.
@@ -119,24 +117,24 @@
 #define PTHREAD_CANCEL_DISABLE      1
 #define PTHREAD_CANCEL_DEFERRED     0
 #define PTHREAD_CANCEL_ASYNCHRONOUS 2
-#define PTHREAD_CANCELED        ((void *) 1)
+#define PTHREAD_CANCELED            ((void *) 1)
 
 /*
  * Flags for once initialization.
  */
-#define PTHREAD_NEEDS_INIT  0
-#define PTHREAD_DONE_INIT   1
+#define PTHREAD_NEEDS_INIT          0
+#define PTHREAD_DONE_INIT           1
 
 /*
  * Static once initialization values.
  */
-#define PTHREAD_ONCE_INIT   { PTHREAD_NEEDS_INIT, NULL }
+#define PTHREAD_ONCE_INIT           { PTHREAD_NEEDS_INIT, NULL }
 
 /*
  * Static initialization values.
  */
-#define PTHREAD_MUTEX_INITIALIZER   NULL
-#define PTHREAD_ADAPTIVE_MUTEX_INITIALIZER_NP   ((pthread_mutex_t)1)
+#define PTHREAD_MUTEX_INITIALIZER {0, 0, -1, -1, -1}
+#define PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP {0, 0, -1, -1, -1}
 #define PTHREAD_COND_INITIALIZER    NULL
 #define PTHREAD_RWLOCK_INITIALIZER  NULL
 
@@ -149,29 +147,29 @@
 #define pthread_attr_default        NULL
 #endif
 
-#define PTHREAD_PRIO_NONE   0
-#define PTHREAD_PRIO_INHERIT    1
-#define PTHREAD_PRIO_PROTECT    2
+#define PTHREAD_PRIO_NONE           0
+#define PTHREAD_PRIO_INHERIT        1
+#define PTHREAD_PRIO_PROTECT        2
 
-/*
- * Mutex types (Single UNIX Specification, Version 2, 1997).
+/**
+ * Mutex types.
  *
  * Note that a mutex attribute with one of the following types:
  *
- *  PTHREAD_MUTEX_NORMAL
- *  PTHREAD_MUTEX_RECURSIVE
+ * - PTHREAD_MUTEX_NORMAL
+ * - PTHREAD_MUTEX_RECURSIVE
  *
  * will deviate from POSIX specified semantics.
+ *
  */
 enum pthread_mutextype {
-    PTHREAD_MUTEX_ERRORCHECK    = 1,    /* Default POSIX mutex */
-    PTHREAD_MUTEX_RECURSIVE     = 2,    /* Recursive mutex */
-    PTHREAD_MUTEX_NORMAL        = 3,    /* No error checking */
-    PTHREAD_MUTEX_ADAPTIVE_NP   = 4,    /* Adaptive mutex, spins briefly before blocking on lock */
+    PTHREAD_MUTEX_NORMAL        = 0, /*!< No error checking */
+    PTHREAD_MUTEX_RECURSIVE     = 1, /*!< Recursive mutex */
+    PTHREAD_MUTEX_ERRORCHECK    = 2, /*!< Default POSIX mutex */
     PTHREAD_MUTEX_TYPE_MAX
 };
 
-#define PTHREAD_MUTEX_DEFAULT       PTHREAD_MUTEX_ERRORCHECK
+#define PTHREAD_MUTEX_DEFAULT    PTHREAD_MUTEX_NORMAL
 
 struct _pthread_cleanup_info {
     uintptr_t pthread_cleanup_pad[8];
@@ -181,6 +179,130 @@ typedef int pthread_key_t;
 typedef struct pthread_once pthread_once_t;
 
 __BEGIN_DECLS
+#if 0
+int     pthread_atfork(void (*)(void), void (*)(void), void (*)(void));
+int     pthread_attr_destroy(pthread_attr_t *);
+int     pthread_attr_getstack(const pthread_attr_t * __restrict,
+            void ** __restrict, size_t * __restrict);
+int     pthread_attr_getstacksize(const pthread_attr_t *, size_t *);
+int     pthread_attr_getguardsize(const pthread_attr_t *, size_t *);
+int     pthread_attr_getstackaddr(const pthread_attr_t *, void **);
+int     pthread_attr_getdetachstate(const pthread_attr_t *, int *);
+int     pthread_attr_init(pthread_attr_t *);
+int     pthread_attr_setstacksize(pthread_attr_t *, size_t);
+int     pthread_attr_setguardsize(pthread_attr_t *, size_t);
+int     pthread_attr_setstack(pthread_attr_t *, void *, size_t);
+int     pthread_attr_setstackaddr(pthread_attr_t *, void *);
+int     pthread_attr_setdetachstate(pthread_attr_t *, int);
+int     pthread_barrier_destroy(pthread_barrier_t *);
+int     pthread_barrier_init(pthread_barrier_t *,
+            const pthread_barrierattr_t *, unsigned);
+int     pthread_barrier_wait(pthread_barrier_t *);
+int     pthread_barrierattr_destroy(pthread_barrierattr_t *);
+int     pthread_barrierattr_getpshared(const pthread_barrierattr_t *,
+            int *);
+int     pthread_barrierattr_init(pthread_barrierattr_t *);
+int     pthread_barrierattr_setpshared(pthread_barrierattr_t *, int);
+void  pthread_cleanup_push(void (*)(void*), void *);
+void  pthread_cleanup_pop(int);
+int     pthread_condattr_destroy(pthread_condattr_t *);
+int     pthread_condattr_getclock(const pthread_condattr_t *,
+            clockid_t *);
+int     pthread_condattr_getpshared(const pthread_condattr_t *, int *);
+int     pthread_condattr_init(pthread_condattr_t *);
+int     pthread_condattr_setclock(pthread_condattr_t *, clockid_t);
+int     pthread_condattr_setpshared(pthread_condattr_t *, int);
+int     pthread_cond_broadcast(pthread_cond_t *);
+int     pthread_cond_destroy(pthread_cond_t *);
+int     pthread_cond_init(pthread_cond_t *,
+            const pthread_condattr_t *);
+int     pthread_cond_signal(pthread_cond_t *);
+int     pthread_cond_timedwait(pthread_cond_t *,
+            pthread_mutex_t *__mutex, const struct timespec *);
+int     pthread_cond_wait(pthread_cond_t *, pthread_mutex_t *__mutex);
+int     pthread_equal(pthread_t, pthread_t);
+void        *pthread_getspecific(pthread_key_t);
+int     pthread_getcpuclockid(pthread_t, clockid_t *);
+int     pthread_join(pthread_t, void **);
+int     pthread_key_create(pthread_key_t *,
+            void (*) (void *));
+int     pthread_key_delete(pthread_key_t);
+int     pthread_mutexattr_destroy(pthread_mutexattr_t *);
+int     pthread_mutexattr_getpshared(const pthread_mutexattr_t *,
+            int *);
+int     pthread_mutexattr_gettype(pthread_mutexattr_t *, int *);
+int     pthread_mutexattr_settype(pthread_mutexattr_t *, int);
+int     pthread_mutexattr_setpshared(pthread_mutexattr_t *, int);
+int     pthread_mutex_destroy(pthread_mutex_t *__mutex);
+int     pthread_mutex_timedlock(pthread_mutex_t *__mutex,
+            const struct timespec *);
+int     pthread_once(pthread_once_t *, void (*) (void));
+int     pthread_rwlock_destroy(pthread_rwlock_t *__rwlock);
+int     pthread_rwlock_init(pthread_rwlock_t *__rwlock,
+            const pthread_rwlockattr_t *);
+int     pthread_rwlock_rdlock(pthread_rwlock_t *__rwlock);
+int     pthread_rwlock_timedrdlock(pthread_rwlock_t *__rwlock,
+            const struct timespec *);
+int     pthread_rwlock_timedwrlock(pthread_rwlock_t *__rwlock,
+            const struct timespec *);
+int     pthread_rwlock_tryrdlock(pthread_rwlock_t *__rwlock);
+int     pthread_rwlock_trywrlock(pthread_rwlock_t *__rwlock);
+int     pthread_rwlock_unlock(pthread_rwlock_t *__rwlock);
+int     pthread_rwlock_wrlock(pthread_rwlock_t *__rwlock);
+int     pthread_rwlockattr_destroy(pthread_rwlockattr_t *);
+int     pthread_rwlockattr_getkind_np(const pthread_rwlockattr_t *,
+            int *);
+int     pthread_rwlockattr_getpshared(const pthread_rwlockattr_t *,
+            int *);
+int     pthread_rwlockattr_init(pthread_rwlockattr_t *);
+int     pthread_rwlockattr_setkind_np(pthread_rwlockattr_t *, int);
+int     pthread_rwlockattr_setpshared(pthread_rwlockattr_t *, int);
+int     pthread_setspecific(pthread_key_t, const void *);
+int     pthread_spin_init(pthread_spinlock_t *__spin, int)
+int     pthread_spin_destroy(pthread_spinlock_t *__spin);
+int     pthread_spin_lock(pthread_spinlock_t *__spin);
+int     pthread_spin_trylock(pthread_spinlock_t *__spin);
+int     pthread_spin_unlock(pthread_spinlock_t *__spin);
+int     pthread_cancel(pthread_t);
+int     pthread_setcancelstate(int, int *);
+int     pthread_setcanceltype(int, int *);
+void    pthread_testcancel(void);
+#endif
+
+#if __BSD_VISIBLE
+#define pthread_getprio(_thread_id_) \
+    getpriority(PRIO_THREAD, _thread_id_)
+#define pthread_setprio(_pthread_id_, _prio_) \
+    setpriority(PRIO_THREAD, _pthread_id_, _prio_)
+#define thrd_yield() thrd_yield();
+#endif
+
+#if 0
+int     pthread_mutexattr_getprioceiling(pthread_mutexattr_t *,
+            int *);
+int     pthread_mutexattr_setprioceiling(pthread_mutexattr_t *,
+            int);
+int     pthread_mutex_getprioceiling(pthread_mutex_t *, int *);
+int     pthread_mutex_setprioceiling(pthread_mutex_t *, int, int *);
+int     pthread_mutexattr_getprotocol(pthread_mutexattr_t *, int *);
+int     pthread_mutexattr_setprotocol(pthread_mutexattr_t *, int);
+
+int     pthread_attr_getinheritsched(const pthread_attr_t *, int *);
+int     pthread_attr_getschedparam(const pthread_attr_t *,
+            struct sched_param *);
+int     pthread_attr_getschedpolicy(const pthread_attr_t *, int *);
+int     pthread_attr_getscope(const pthread_attr_t *, int *);
+int     pthread_attr_setinheritsched(pthread_attr_t *, int);
+int     pthread_attr_setschedparam(pthread_attr_t *,
+            const struct sched_param *);
+int     pthread_attr_setschedpolicy(pthread_attr_t *, int);
+int     pthread_attr_setscope(pthread_attr_t *, int);
+int     pthread_getschedparam(pthread_t pthread, int *,
+            struct sched_param *);
+int     pthread_setschedparam(pthread_t, int,
+            const struct sched_param *);
+#endif
+
 /**
  * Get calling thread's ID.
  *
@@ -252,6 +374,20 @@ int pthread_mutex_trylock(pthread_mutex_t * mutex);
  */
 int pthread_mutex_unlock(pthread_mutex_t * mutex);
 
+int pthread_mutexattr_init(pthread_mutexattr_t * attr);
+
+
+/**
+ * Send a signal to a thread.
+ * @param thread    is a thread id that shall receive the signal,
+ *                  if the value is negative signal is delivered to all
+ *                  threads of the current process.
+ * @param sig       is the signal to be delivered.
+ * @return  Upon successful completion, the function returns a value
+ *          of zero. Otherwise, the function will return an error number.
+ *          If the function fails, no signal is delivered.
+ */
+int pthread_kill(pthread_t thread, int sig);
 
 /* TODO Legacy */
 
@@ -259,6 +395,7 @@ int pthread_mutex_unlock(pthread_mutex_t * mutex);
 /// \param[in]     thread_id   thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
 /// \return status code that indicates the execution status of the function.
 int osThreadTerminate(pthread_t thread_id);
+
 __END_DECLS
 
 #endif /* PTHREAD_H */

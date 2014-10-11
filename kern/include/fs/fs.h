@@ -45,7 +45,7 @@
 #include <sys/types.h>
 #include <sys/queue.h>
 #include <sys/tree.h>
-#include <hal/atomic.h>
+#include <machine/atomic.h>
 #include <time.h>
 #include <sys/stat.h>
 #include <dirent.h>

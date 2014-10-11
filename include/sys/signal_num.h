@@ -51,34 +51,34 @@
  *  S   Stop the process.
  *  C   Continue the process, if it is stopped; otherwise, ignore the signal.
  */
-#define SIGHUP  1   /*!< (T) Hangup. */
-#define SIGINT  2   /*!< (T) Terminal interrupt signal. */
-#define SIGQUIT 3   /*!< (A) Terminal quit signal. */
-#define SIGILL  4   /*!< (A) Illegal instruction. */
-#define SIGTRAP 5   /*!< (A) Trace/breakpoint trap. */
-#define SIGABRT 6   /*!< (A) Process abort signal. */
-#define SIGCHLD 7   /*!< (I) Child process terminated, stopped. */
-#define SIGFPE  8   /*!< (A) Erroneous arithmetic operation. */
-#define SIGKILL 9   /*!< (T) Kill (cannot be caught or ignored). */
-#define SIGBUS  10  /*!< (A) Access to an undefined portion of a memory
-                     *   object. */
-#define SIGSEGV 11  /*!< (A) Invalid memory reference. */
-#define SIGCONT 12  /*!< (C) Continue executing, if stopped. */
-#define SIGPIPE 13  /*!< (T) Write on a pipe with no one to read it. */
-#define SIGALRM 14  /*!< (T) Alarm clock. */
-#define SIGTERM 15  /*!< (T) Termination signal. */
-#define SIGSTOP 16  /*!< (S) Stop executing (cannot be caught or
-                     *   ignored). */
-#define SIGTSTP 17  /*!< (S) Terminal stop signal. */
-#define SIGTTIN 18  /*!< (S) Background process attempting read. */
-#define SIGTTOU 19  /*!< (S) Background process attempting write. */
-#define SIGUSR1 20  /*!< (T) User-defined signal 1. */
-#define SIGUSR2 21  /*!< (T) User-defined signal 2. */
-#define SIGSYS  22  /*!< (A) Bad system call. */
-#define SIGURG  23  /*!< (I) High bandwidth data is available at a
-                     *   socket. */
-#define SIGINFO 24  /*!< (I) Info request. */
-#define SIGPWR  25  /*!< (T) System power failure. */
+#define SIGHUP  1       /*!< (T) Hangup. */
+#define SIGINT  2       /*!< (T) Terminal interrupt signal. */
+#define SIGQUIT 3       /*!< (A) Terminal quit signal. */
+#define SIGILL  4       /*!< (A) Illegal instruction. */
+#define SIGTRAP 5       /*!< (A) Trace/breakpoint trap. */
+#define SIGABRT 6       /*!< (A) Process abort signal. */
+#define SIGCHLD 7       /*!< (I) Child process terminated, stopped. */
+#define SIGFPE  8       /*!< (A) Erroneous arithmetic operation. */
+#define SIGKILL 9       /*!< (T) Kill (cannot be caught or ignored). */
+#define SIGBUS  10      /*!< (A) Access to an undefined portion of a memory
+                         *   object. */
+#define SIGSEGV 11      /*!< (A) Invalid memory reference. */
+#define SIGCONT 12      /*!< (C) Continue executing, if stopped. */
+#define SIGPIPE 13      /*!< (T) Write on a pipe with no one to read it. */
+#define SIGALRM 14      /*!< (T) Alarm clock. */
+#define SIGTERM 15      /*!< (T) Termination signal. */
+#define SIGSTOP 16      /*!< (S) Stop executing (cannot be caught or
+                         *   ignored). */
+#define SIGTSTP 17      /*!< (S) Terminal stop signal. */
+#define SIGTTIN 18      /*!< (S) Background process attempting read. */
+#define SIGTTOU 19      /*!< (S) Background process attempting write. */
+#define SIGUSR1 20      /*!< (T) User-defined signal 1. */
+#define SIGUSR2 21      /*!< (T) User-defined signal 2. */
+#define SIGSYS  22      /*!< (A) Bad system call. */
+#define SIGURG  23      /*!< (I) High bandwidth data is available at a
+                         *   socket. */
+#define SIGINFO 24      /*!< (I) Info request. */
+#define SIGPWR  25      /*!< (T) System power failure. */
 
 #endif /* SIGNAL_NUM_H */
 

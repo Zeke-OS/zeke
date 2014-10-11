@@ -39,6 +39,8 @@
 #include <sys/types.h>
 #include <tsched.h>
 
+typedef void (*thread_cdtor_t)(struct thread_info td);
+
 /**
  * Scheduler handler.
  * This is mainly called when timer ticks.

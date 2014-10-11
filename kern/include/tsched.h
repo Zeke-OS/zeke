@@ -271,7 +271,7 @@ void sched_schedule(void);
  */
 
 /**
- * Removes a thread from scheduling.
+ * Permanently removes a thread from scheduling and frees its resources.
  * @param tt_id Thread task table id
  */
 void sched_thread_remove(pthread_t thread_id);

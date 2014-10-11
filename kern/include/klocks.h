@@ -44,7 +44,7 @@
 #include <autoconf.h>
 
 #include <sys/types_pthread.h>
-#include <hal/atomic.h>
+#include <machine/atomic.h>
 #include <kerror.h>
 
 /**

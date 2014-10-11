@@ -146,30 +146,21 @@ int sched_init(void)
 static const char msg_abnotset[] = "a & b must be set";
 int sched_tid_comp(struct thread_info * a, struct thread_info * b)
 {
-#if configDEBUG >= KERROR_DEBUG
-    if (!(a && b))
-        panic(msg_abnotset);
-#endif
+    KASSERT((a && b), "a and b should be set");
 
     return a->id - b->id;
 }
 
 int sched_nice_comp(struct thread_info * a, struct thread_info * b)
 {
-#if configDEBUG >= KERROR_DEBUG
-    if (!(a && b))
-        panic(msg_abnotset);
-#endif
+    KASSERT((a && b), "a and b should be set");
 
     return a->niceval - b->niceval;
 }
 
 int sched_ts_comp(struct thread_info * a, struct thread_info * b)
 {
-#if configDEBUG >= KERROR_DEBUG
-    if (!(a && b))
-        panic(msg_abnotset);
-#endif
+    KASSERT((a && b), "a and b should be set");
 
     return a->ts_counter - b->ts_counter;
 }

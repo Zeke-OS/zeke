@@ -50,16 +50,21 @@
 
 #define KSTACK_SIZE ((MMU_VADDR_TKSTACK_END - MMU_VADDR_TKSTACK_START) + 1)
 
-static void thread_set_inheritance(threadInfo_t * new_child,
-                                   threadInfo_t * parent);
-static void thread_init_kstack(threadInfo_t * tp);
-static void thread_free_kstack(threadInfo_t * tp);
-
+/* Thread constructors and destructors. */
+SET_DECLARE(thread_ctors, void);
+SET_DECLARE(thread_dtors, void);
 
 /* Linker sets for pre- and post-scheduling tasks */
 SET_DECLARE(pre_sched_tasks, void);
 SET_DECLARE(post_sched_tasks, void);
 SET_DECLARE(sched_idle_tasks, void);
+
+
+static void thread_set_inheritance(threadInfo_t * new_child,
+                                   threadInfo_t * parent);
+static void thread_init_kstack(threadInfo_t * tp);
+static void thread_free_kstack(threadInfo_t * tp);
+
 
 void sched_handler(void)
 {
@@ -185,6 +190,13 @@ void thread_init(struct thread_info * tp, pthread_t thread_id,
 
     /* Create kstack */
     thread_init_kstack(tp);
+
+    /* Call thread constructors */
+    void ** thread_ctor_p;
+    SET_FOREACH(thread_ctor, thread_ctors) {
+        thread_cdtor_t ctor = *(thread_cdtor_t *)thread_ctor_p;
+        ctor(tp);
+    }
 
     /* Put thread into execution */
     sched_thread_set_exec(tp->id);
@@ -461,6 +473,13 @@ int thread_terminate(pthread_t thread_id)
         /* Notify the owner process about removal of a thread. */
         if (thread->pid_owner != 0) {
             proc_thread_removed(thread->pid_owner, thread_id);
+        }
+
+        /* Call thread destructors */
+        void ** thread_dtor_p;
+        SET_FOREACH(thread_dtor, thread_dtors) {
+            thread_cdtor_t dtor = *(thread_cdtor_t *)thread_dtor_p;
+            dtor();
         }
 
         thread_free_kstack(thread);

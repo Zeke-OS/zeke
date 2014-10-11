@@ -5,7 +5,8 @@
  * @brief   Threads.
  * @section LICENSE
  * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+ * Copyright (c) 2012, 2013 Ninjaware Oy,
+ *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,6 +37,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <sys/_sigset.h>
 
 typedef int pthread_t; /*!< Thread ID. */
 
@@ -47,7 +49,7 @@ typedef int pthread_t; /*!< Thread ID. */
  * - pthread_key_t
  * - pthread_mutex_t
  * - pthread_mutexattr_t
- * - pthread_rwlock_t
+ *   pthread_rwlock_t
  * - pthread_rwlockattr_t
  * - pthread_spinlock_t
  */
@@ -66,22 +68,32 @@ typedef const struct pthread_attr {
     size_t          stackSize;  /*!< Size of stack reserved for the thread. */
 } pthread_attr_t;
 
-enum os_mutex_strategy {
-    os_mutex_str_reschedule,
-    os_mutex_str_sleep
-};
+typedef struct pthread_condattr {
+    int dummy;
+} pthread_condattr_t;
 
 /**
  * Mutex Definition structure contains setup information for a mutex.
  */
-typedef struct {
-    enum os_mutex_strategy strategy;
+typedef struct pthread_mutexattr {
+    int pshared;
+    int kind;
 } pthread_mutexattr_t;
 
-typedef struct {
-    volatile pthread_t thread_id; /*!< ID of the thread holding the lock */
-    volatile int lock; /*!< Lock variable */
-    enum os_mutex_strategy strategy; /*!< Locking strategy */
+typedef struct pthread_mutex {
+    int lock;       /*!< Exclusive access to mutex state:
+                     * - 0: unlocked/free
+                     * - 1: locked - no other waiters
+                     * - -1: locked - with possible other waiters
+                     */
+
+  int recursion;    /*!< Number of unlocks a thread needs to perform
+                     *   before the lock is released (recursive mutexes only)
+                     */
+  int kind;         /*!< Mutex type */
+  pthread_t owner;  /*!< Thread owning the mutex */
+  __sigset_t sigset;  /*!< Mutex release notification to waiting threads */
+
 } pthread_mutex_t;
 
 /*
