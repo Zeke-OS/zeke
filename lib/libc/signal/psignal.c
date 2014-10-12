@@ -35,7 +35,8 @@
 /**
  * Signal names.
  */
-static char * signames[] = {
+const char * const sys_signames[] = {
+    "SIG0",
     "SIGHUP",
     "SIGINT",
     "SIGQUIT",
@@ -63,11 +64,39 @@ static char * signames[] = {
     "SIGPWR"
 };
 
+const char * const sys_siglist[] = {
+    "Hangup",
+    "Interrupt",
+    "Quit",
+    "Illegal instruction",
+    "Trace/BPT trap",
+    "Abort trap",
+    "Child exited",
+    "Floating point exception",
+    "Killed",
+    "Bus error",
+    "Segmentation fault",
+    "Continued",
+    "Broken pipe",
+    "Alarm clock",
+    "Terminated",
+    "Suspended (signal)",
+    "Suspended",
+    "Stopped (tty input)",
+    "Stopped (tty output)",
+    "User defined signal 1",
+    "User defined signal 2",
+    "Bad system call",
+    "Urgent I/O condition",
+    "Information request",
+    "Power failure"
+};
+
 void psignal(int signum, const char * message)
 {
     const char * c;
-    if (signum < sizeof(signames)) {
-        c = signames[signum];
+    if (signum < sizeof(sys_siglist)) {
+        c = sys_siglist[signum];
     } else {
         c = "Unknown signal";
     }
