@@ -172,7 +172,9 @@ int kill(pid_t pid, int sig);
 /*
 int killpg(pid_t pgrp, int sig);
 void psiginfo(const siginfo_t * pinfo, const char * message);
+*/
 void psignal(int signum, const char * message);
+/*
 int pthread_kill(pthread_t thread, int sig);
 int pthread_sigmask(int how, const sigset_t * restrict set,
         sigset_t * restrict oset);
@@ -181,11 +183,58 @@ int raise(int sig);
 /*
 int sigaction(int sig, const struct sigaction * restrict act,
         struct sigaction * restrict oact);
+*/
+
+/**
+ * @addtogroup sigsetops
+ * sigsetops
+ * Manipulate signal sets.
+ *
+ * These functions manipulate   signal sets stored in a sigset_t.  Either
+ * sigemptyset() or sigfillset() must  be called for every object of type
+ * sigset_t before any other use of the object.
+ *
+ * @return  The sigismember() function   returns 1 if the signal is a member
+ *          of the set, 0 otherwise.   The other functions return 0 upon
+ *          success.  A -1 return value indicates an error occurred and
+ *          the global variable errno is set to indicate the reason.
+ * @{
+ */
+
+/**
+ * The sigaddset() function adds the specified signal   signo to
+ * the signal set.
+ */
 int sigaddset(sigset_t * set, int signo);
+
+/**
+ * The sigdelset() function deletes the specified signal signo from
+ * the signal set.
+ */
 int sigdelset(sigset_t * set, int signo);
+
+/**
+ * The sigemptyset() function   initializes a signal set to be empty.
+ */
 int sigemptyset(sigset_t * set);
+
+/**
+ * The sigfillset() function initializes a signal set   to contain all
+ * signals.
+ */
 int sigfillset(sigset_t * set);
+
+/**
+ * The sigismember() function   returns whether a specified signal signo is
+ * contained in the signal set.
+ */
 int sigismember(const sigset_t * set, int signo);
+
+/**
+ * @}
+ */
+
+/*
 int sigpending(sigset_t * set);
 int sigprocmask(int how, const sigset_t * restrict set,
         sigset_t * restrict oset);

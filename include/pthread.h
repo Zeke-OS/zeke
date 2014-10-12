@@ -179,7 +179,7 @@ typedef int pthread_key_t;
 typedef struct pthread_once pthread_once_t;
 
 __BEGIN_DECLS
-#if 0
+/*
 int     pthread_atfork(void (*)(void), void (*)(void), void (*)(void));
 int     pthread_attr_destroy(pthread_attr_t *);
 int     pthread_attr_getstack(const pthread_attr_t * __restrict,
@@ -227,6 +227,7 @@ int     pthread_join(pthread_t, void **);
 int     pthread_key_create(pthread_key_t *,
             void (*) (void *));
 int     pthread_key_delete(pthread_key_t);
+*/
 int     pthread_mutexattr_destroy(pthread_mutexattr_t *);
 int     pthread_mutexattr_getpshared(const pthread_mutexattr_t *,
             int *);
@@ -236,6 +237,7 @@ int     pthread_mutexattr_setpshared(pthread_mutexattr_t *, int);
 int     pthread_mutex_destroy(pthread_mutex_t *__mutex);
 int     pthread_mutex_timedlock(pthread_mutex_t *__mutex,
             const struct timespec *);
+/*
 int     pthread_once(pthread_once_t *, void (*) (void));
 int     pthread_rwlock_destroy(pthread_rwlock_t *__rwlock);
 int     pthread_rwlock_init(pthread_rwlock_t *__rwlock,
@@ -267,7 +269,7 @@ int     pthread_cancel(pthread_t);
 int     pthread_setcancelstate(int, int *);
 int     pthread_setcanceltype(int, int *);
 void    pthread_testcancel(void);
-#endif
+*/
 
 #if __BSD_VISIBLE
 #define pthread_getprio(_thread_id_) \

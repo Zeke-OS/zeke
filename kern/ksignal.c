@@ -82,37 +82,6 @@ SYSCTL_INT(_kern, KERN_LOGSIGEXIT, logsigexit, CTLFLAG_RW,
         &kern_logsigexit, 0,
         "Log processes quitting on abnormal signals to syslog(3)");
 
-/**
- * Signal names.
- */
-static char * signames[] = {
-    "SIGHUP",
-    "SIGINT",
-    "SIGQUIT",
-    "SIGILL",
-    "SIGTRAP",
-    "SIGABRT",
-    "SIGCHLD",
-    "SIGFPE",
-    "SIGKILL",
-    "SIGBUS",
-    "SIGSEGV",
-    "SIGCONT",
-    "SIGPIPE",
-    "SIGALRM",
-    "SIGTERM",
-    "SIGSTOP",
-    "SIGTSTP",
-    "SIGTTIN",
-    "SIGTTOU",
-    "SIGUSR1",
-    "SIGUSR2",
-    "SIGSYS",
-    "SIGURG",
-    "SIGINFO",
-    "SIGPWR"
-};
-
 /*
  * Signal properties and actions.
  * The array below categorizes the signals and their default actions
