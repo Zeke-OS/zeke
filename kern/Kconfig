@@ -1,5 +1,7 @@
 # kern/Kconfig
 
+comment "Kernel options"
+
 source "kern/hal/Kconfig"
 
 menu "Memory Map"

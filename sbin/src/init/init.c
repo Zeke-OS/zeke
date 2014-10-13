@@ -57,7 +57,7 @@ void * main(void * arg)
 {
     int r0, r1, r2;
     const char tty_path[] = "/dev/ttyS0";
-//    char buf[80];
+    char buf[80];
 
     mkdir("/dev", S_IRWXU | S_IRGRP | S_IXGRP);
     mount("", "/dev", "devfs", 0, "");
@@ -72,10 +72,8 @@ void * main(void * arg)
     r1 = open(tty_path, O_WRONLY);
     r2 = open(tty_path, O_WRONLY);
 
-#if 0
-    ksprintf(buf, sizeof(buf), "fd: %i, %i, %i\n", r0, r1, r2);
+    snprintf(buf, sizeof(buf), "fd: %i, %i, %i\n", r0, r1, r2);
     write(STDOUT_FILENO, buf, strlenn(buf, sizeof(buf)));
-#endif
 
     write(STDOUT_FILENO, banner, sizeof(banner));
     write(STDOUT_FILENO, msg, sizeof(msg));

@@ -40,6 +40,7 @@
  */
 
 #include <sys/cdefs.h>
+#include <sys/exec.h>
 
 #ifndef lint
 #ifndef __GNUC__
@@ -52,11 +53,7 @@
 #include "../crtbrand.c"
 #include "../ignore_init.c"
 
-struct Struct_Obj_Entry;
-struct ps_strings;
-
-extern void _start(int, char **, char **, const struct Struct_Obj_Entry *,
-    void (*)(void), struct ps_strings *);
+extern void _start(struct main_args *);
 
 #ifdef GCRT
 extern void _mcleanup(void);
@@ -65,52 +62,39 @@ extern int eprol;
 extern int etext;
 #endif
 
-struct ps_strings *__ps_strings;
-
-void __start(int, char **, char **, struct ps_strings *,
-    const struct Struct_Obj_Entry *, void (*)(void));
+void __start(struct main_args *);
 
 /* The entry function. */
 __asm(" .text           \n"
-"   .align  0       \n"
+"   .align  0           \n"
 "   .globl  _start      \n"
-"   _start:         \n"
-"   mov r5, r2      /* cleanup */       \n"
-"   mov r4, r1      /* obj_main */      \n"
-"   mov r3, r0      /* ps_strings */    \n"
-"   /* Get argc, argv, and envp from stack */   \n"
-"   ldr r0, [sp, #0x0000]   \n"
-"   add r1, sp, #0x0004     \n"
-"   add r2, r1, r0, lsl #2  \n"
-"   add r2, r2, #0x0004     \n"
+"   _start:             \n"
 "   /* Ensure the stack is properly aligned before calling C code. */\n"
-"   bic sp, sp, #7  \n"
-"   sub sp, sp, #8  \n"
+"   bic sp, sp, #7      \n"
+"   sub sp, sp, #8      \n"
 "   str r5, [sp, #4]    \n"
 "   str r4, [sp, #0]    \n"
 "\n"
 "   b    __start  ");
 /* ARGSUSED */
-void
-__start(int argc, char **argv, char **env, struct ps_strings *ps_strings,
-    const struct Struct_Obj_Entry *obj __unused, void (*cleanup)(void))
+void __start(struct main_args * args)
 {
+    int argc = args->ma_nargv;
+    char **argv = args->ma_argv;
+    char **envp = args->ma_envp;
 
-    handle_argv(argc, argv, env);
-
-    if (ps_strings != (struct ps_strings *)0)
-        __ps_strings = ps_strings;
+    handle_argv(argc, argv, envp);
 
     /* if (&_DYNAMIC != NULL) */
-        atexit(cleanup);
+        atexit(args->ma_cleanup);
     /*else
         _init_tls();*/
 #ifdef GCRT
     atexit(_mcleanup);
     monstartup(&eprol, &etext);
 #endif
-    handle_static_init(argc, argv, env);
-    exit(main(argc, argv, env));
+    handle_static_init(argc, argv, envp);
+    exit(main(argc, argv, envp));
 }
 
 #ifdef GCRT

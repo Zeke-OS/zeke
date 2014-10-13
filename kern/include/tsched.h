@@ -156,7 +156,7 @@ typedef struct thread_info {
     uint32_t flags;                 /*!< Status flags. */
 
     sw_stack_frame_t sframe[SCHED_SFRAME_ARR_SIZE];
-    struct buf * kstack_region;    /*!< Thread kernel stack region. */
+    struct buf * kstack_region;     /*!< Thread kernel stack region. */
     void * errno_uaddr;             /*!< Address of the thread local errno. */
     intptr_t retval;                /*!< Return value of the thread. */
 
@@ -166,6 +166,10 @@ typedef struct thread_info {
     int priority;                   /*!< Current dynamic priority. */
     int ts_counter;                 /*!< Time slice counter. */
 
+    /* Signals */
+    struct signals sigs;            /*!< Signals. */
+
+    /* Scheduler specific data */
 #if configSCHED_CDS != 0
     struct sched {
         unsigned policy;                            /*!< Scheduling policy. */

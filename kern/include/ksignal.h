@@ -32,22 +32,30 @@
  *******************************************************************************
  */
 
-#pragma once
 #ifndef KSIGNAL_H
 #define KSIGNAL_H
 
+#include <sys/tree.h>
 #include <stdint.h>
 #include <signal.h>
-#include <sys/signalvar.h>
 
-typedef uint32_t ksig_t;
-
-struct signals {
-    ksig_t ps_block;       /*!< List of blocked signals. */
-    ksig_t ps_wait;        /*!< Signal wait mask. */
-    ksig_t ps_pending;     /*!< Signals pending for handling. */
+struct ksigaction {
+    int signum;
+    struct sigaction;
+    RB_ENTRY(ksigaction) _entry;
 };
 
+RB_HEAD(sigaction_tree, ksigaction);
+
+/**
+ * Thread signals struct.
+ */
+struct signals {
+    sigset_t s_block;       /*!< List of blocked signals. */
+    sigset_t s_wait;        /*!< Signal wait mask. */
+    sigset_t s_pending;     /*!< Signals pending for handling. */
+    struct sigaction_tree sa_tree;
+};
 
 /**
  * Get signal boolean value from signals variable.
@@ -63,6 +71,9 @@ struct signals {
  * @return Returns a bit mask for signals variable.
  */
 #define KSIGNAL_GET_MASK(signum) (0x1 << signum)
+
+RB_PROTOTYPE(sigaction_tree, ksigaction, _entry, signum_comp);
+int signum_comp(struct ksigaction * a, struct ksigaction * b);
 
 #endif /* KSIGNAL_H */
 

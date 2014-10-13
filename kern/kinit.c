@@ -53,6 +53,7 @@ extern int (*__init_array_end []) (void) __attribute__((weak));
 extern int (*__fini_array_start []) (void) __attribute__((weak));
 extern int (*__fini_array_end []) (void) __attribute__((weak));
 
+void uinit(void * arg);
 #ifdef configMOUNTROOTFS
 static void mount_rootfs(void);
 #endif
@@ -125,10 +126,14 @@ int kinit(void)
     };
     struct _ds_pthread_create init_ds = {
         .thread     = 0, /* return value */
-        .start      = 0x99999, /* TODO */
+        .start      = uinit, /* We have to first get into user space to use exec
+                              * and mount the rootfs.
+                              */
         .def        = &init_attr,
-        .argument   = 0,
-        .del_thread = 0x0 /* TODO should be libc: pthread_exit */
+        .argument   = NULL,
+        .del_thread = 0xBADBAD /* TODO  Should be libc pthread_exit but we don't
+                                *       yet know where it will be.
+                                */
     };
 
     /* thread id of init main() */
@@ -187,6 +192,12 @@ int kinit(void)
 #endif
 
     return 0;
+}
+
+void uinit(void * arg)
+{
+    /* TODO We should somehow exec and drop privs. */
+    KERROR(KERROR_DEBUG, "uinit\n");
 }
 
 #ifdef configMOUNTROOTFS

@@ -8,6 +8,10 @@ menu "Kernel"
 source "kern/Kconfig"
 endmenu
 
-menu "User Space"
-source "genconfig/user.kconf"
+menu "Lib"
+source "lib/Kconfig"
+endmenu
+
+menu "Sbin"
+source sbin/Kconfig
 endmenu

@@ -80,11 +80,70 @@
 #include <sys/signal_num.h>
 #include <sys/_sigset.h>
 
-#define SIG_DFL ((__sighandler_t *)0)
-#define SIG_IGN ((__sighandler_t *)1)
-#define SIG_ERR ((__sighandler_t *)-1)
-/* #define SIG_CATCH ((__sighandler_t *)2) See signalvar.h */
-#define SIG_HOLD ((__sighandler_t *)3)
+/*
+ * Signal properties and actions, acording to IEEE Std 1003.1, 2004 Edition
+ */
+#ifdef KERNEL_INTERNAL
+#define SA_KILL         0x000001 /*!< Terminates process by default. */
+#define SA_CORE         0x000002 /*!< ditto and coredumps. */
+#define SA_STOP         0x000004 /*!< suspend process. */
+#define SA_TTYSTOP      0x000008 /*!< ditto, from tty. */
+#define SA_IGNORE       0x000010 /*!< ignore by default. */
+#define SA_CONT         0x000020 /*!< continue if suspended. */
+#define SA_CANTMASK     0x000040 /*!< non-maskable, catchable. */
+#endif /* KERNEL_INTERNAL */
+#define SA_NOCLDSTOP    0x000100 /*!< Do not generate SIGCHLD when children stop
+                                  * or stopped children continue. */
+#define SA_ONSTACK      0x000200 /*!< Causes signal delivery to occur on
+                                  * an alternate stack.
+                                  */
+#define SA_RESETHAND    0x000400 /*!< Causes signal dispositions to be set to
+                                  * SIG_DFL on entry to signal handlers.
+                                  */
+#define SA_RESTART      0x000800 /*!< Causes certain functions to become
+                                  * restartable.
+                                  */
+#define SA_SIGINFO      0x001000 /*!< Causes extra information to be passed to
+                                  * signal handlers at the time of receipt of
+                                  * a signal.
+                                  */
+#define SA_NOCLDWAIT    0x002000 /*!< Causes implementations not to create
+                                  * zombie processes on child death.
+                                  */
+#define SA_NODEFER      0x004000 /*!< Causes signal not to be automatically
+                                  * blocked on entry to signal handler.
+                                  */
+
+#define SIG_BLOCK       0x000001 /*!< The resulting set is the union of
+                                  * the current set and the signal set
+                                  * pointed to by the argument set.
+                                  */
+#define SIG_UNBLOCK     0x000002 /*!< The resulting set is the intersection of
+                                  * the current set and the complement of the
+                                  * signal set pointed to by the argument set.
+                                  */
+#define SIG_SETMASK     0x000004 /*!< The resulting set is the signal set pointed
+                                  * to by the argument set.
+                                  */
+
+#define SS_ONSTACK      0x000008 /*!< Process is executing on an alternate
+                                  * signal stack.
+                                  */
+#define SS_DISABLE      0x000010 /*!< Alternate signal stack is disabled. */
+
+#define MINSIGSTKSZ     1024     /*!< Minimum stack size for a signal handler.
+                                  */
+#define SIGSTKSZ        4096     /*!< Default size in bytes for
+                                  *  the alternate signal stack.
+                                  */
+
+/* Requests, sa_handler values. */
+#define SIG_DFL ((__sighandler_t *)0)  /*!< Request for default signal
+                                        * handling. */
+#define SIG_IGN ((__sighandler_t *)1)  /*!< Return value from signal() in case
+                                        * of error. */
+#define SIG_ERR ((__sighandler_t *)-1) /*!< Request that signal be held. */
+#define SIG_HOLD ((__sighandler_t *)3) /*!< Request that signal be ignored. */
 
 #ifndef _SIGSET_T_DECLARED
 #define _SIGSET_T_DECLARED
@@ -97,9 +156,9 @@ union sigval {
 };
 
 struct sigevent {
-    int sigev_notify;                /* Notification type */
-    int sigev_signo;                /* Signal number */
-    union sigval sigev_value;        /* Signal value */
+    int sigev_notify;           /* Notification type */
+    int sigev_signo;            /* Signal number */
+    union sigval sigev_value;   /* Signal value */
     union {
         //__lwpid_t        _threadid;
         struct {
@@ -146,6 +205,25 @@ typedef struct __siginfo {
         } __spare__;
     } _reason;
 } siginfo_t;
+
+struct sigaction {
+    /**
+     * Additional set of signals to be blocked during execution
+     * of signal-catching function.
+     */
+    sigset_t sa_mask;
+    /**
+     * Special flags to affect behavior of signal.
+     */
+    int sa_flags;
+    /**
+     * Pointer to a signal-catching function.
+     */
+    union {
+        void (*sa_handler)(int); /*!< fn pointer or SIG_IGN or SIG_DFL. */
+        void (*sa_sigaction)(int, siginfo_t *, void *);
+    };
+};
 
 /*
  * Type of a signal handling function.

@@ -33,6 +33,7 @@
 
 #define KERNEL_INTERNAL
 #include <stddef.h>
+#include <sys/linker_set.h>
 #include <autoconf.h>
 #include <kstring.h>
 #include <kerror.h>
@@ -60,6 +61,16 @@ void init_stack_frame(struct _ds_pthread_create * thread_def,
     sframe->lr  = (uint32_t)(thread_def->del_thread);
     sframe->psr = priv ? SYSTEM_PSR : USER_PSR;
 }
+
+/**
+ * Fix sys stack frame on fork.
+ */
+static void fork_init_stack_frame(struct thread_info * th)
+{
+    th->sframe[SCHED_SFRAME_SYS].r0  = 0;
+    th->sframe[SCHED_SFRAME_SYS].pc += 4;
+}
+DATA_SET(thread_fork_handlers, fork_init_stack_frame);
 
 void svc_setretval(intptr_t retval)
 {

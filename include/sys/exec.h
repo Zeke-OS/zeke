@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    raise.c
+ * @file    sys/exec.h
  * @author  Olli Vanhoja
- * @brief   Send a signal to the executing process.
+ * @brief   Exec support headers.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,9 +30,15 @@
  *******************************************************************************
  */
 
-#include <signal.h>
+#ifndef SYS_EXEC_H
+#define SYS_EXEC_H
 
-int raise(int sig)
-{
-    return pthread_kill(pthread_self(), sig);
-}
+struct main_args {
+    char ** ma_argv;
+    int ma_nargv;
+    char ** ma_envp;
+    int ma_nenv;
+    void (*ma_cleanup)(void);
+};
+
+#endif /* SYS_EXEC_H */

@@ -68,34 +68,26 @@
  */
 
 #define KERNEL_INTERNAL 1
+#include <sys/tree.h>
 #include <syscall.h>
 #include <errno.h>
 #include <tsched.h>
 #include <timers.h>
 #include <kmalloc.h>
+#include <kstring.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include "ksignal.h"
 
 static int kern_logsigexit = 1;
 SYSCTL_INT(_kern, KERN_LOGSIGEXIT, logsigexit, CTLFLAG_RW,
-        &kern_logsigexit, 0,
-        "Log processes quitting on abnormal signals to syslog(3)");
+           &kern_logsigexit, 0,
+           "Log processes quitting on abnormal signals to syslog(3)");
 
 /*
- * Signal properties and actions.
- * The array below categorizes the signals and their default actions
- * according to the following properties:
+ * Signal default actions.
  */
-#define SA_KILL     0x01    /*!< Terminates process by default. */
-#define SA_CORE     0x02    /*!< ditto and coredumps. */
-#define SA_STOP     0x04    /*!< suspend process. */
-#define SA_TTYSTOP  0x08    /*!< ditto, from tty. */
-#define SA_IGNORE   0x10    /*!< ignore by default. */
-#define SA_CONT     0x20    /*!< continue if suspended. */
-#define SA_CANTMASK 0x40    /*!< non-maskable, catchable. */
-
-static int sigproptbl[] = {
+static const uint8_t default_sigproptbl[] = {
     SA_KILL,            /*!< SIGHUP */
     SA_KILL,            /*!< SIGINT */
     SA_KILL|SA_CORE,    /*!< SIGQUIT */
@@ -123,68 +115,48 @@ static int sigproptbl[] = {
     SA_KILL             /*!< SIGPWR */
 };
 
-ksiginfo_t * ksiginfo_alloc(int wait)
+RB_GENERATE(sigaction_tree, ksigaction, _entry, signum_comp);
+
+int signum_comp(struct ksigaction * a, struct ksigaction * b)
 {
-    return kmalloc(sizeof(ksiginfo_t));
+    KASSERT((a && b), "a & b must be set");
+
+     return a->signum - b->signum;
 }
 
-void ksiginfo_free(ksiginfo_t * ksi)
+static void ksignal_thread_ctor(struct thread_info * th)
 {
-    kfree(ksi);
+    RB_INIT(&th->sigs.sa_tree);
 }
+DATA_SET(thread_ctors, ksignal_thread_ctor);
 
-static inline int ksiginfo_tryfree(ksiginfo_t * ksi)
+static void ksignal_fork_handler(struct thread_info * th)
 {
-    int retval = 0;
+    struct sigaction_tree old_tree = th->sigs.sa_tree;
+    struct ksigaction * sigact_old;
 
-    if (!(ksi->ksi_flags & KSI_EXT)) {
-        kfree(ksi);
-        retval = 1;
-        goto out;
+    /* Clear pending signals as required by POSIX. */
+    memset(&th->sigs.s_pending, 0, sizeof(th->sigs.s_pending));
+
+    /* Clone configured signal actions. */
+    RB_INIT(&th->sigs.sa_tree);
+    RB_FOREACH(sigact_old, sigaction_tree, &old_tree) {
+        struct ksigaction * sigact_new = kmalloc(sizeof(struct ksigaction));
+
+        KASSERT(sigact_new != NULL, "OOM during thread fork\n");
+
+        memcpy(sigact_new, sigact_old, sizeof(struct ksigaction));
+        RB_INSERT(sigaction_tree, &th->sigs.sa_tree, sigact_new);
     }
-
-out:
-    return retval;
 }
-
-void sigqueue_init(sigqueue_t * list, struct proc * p)
-{
-    SIGEMPTYSET(list->sq_signals);
-    SIGEMPTYSET(list->sq_kill);
-    TAILQ_INIT(&list->sq_list);
-    list->sq_proc = p;
-    list->sq_flags = SQ_INIT;
-}
+DATA_SET(thread_fork_handlers, ksignal_fork_handler);
 
 /* Syscall handlers ***********************************************************/
 
-/**
- * Scheduler signal syscall handler
- * @param type Syscall type
- * @param p Syscall parameters
- */
-intptr_t ksignal_syscall(uint32_t type, void * p)
-{
-    switch (type) {
-    case SYSCALL_SIGNAL_KILL:
-        set_errno(ENOSYS);
-        return -3;
-
-    case SYSCALL_SIGNAL_RAISE:
-        set_errno(ENOSYS);
-        return -4;
-
-    case SYSCALL_SIGNAL_ACTION:
-        set_errno(ENOSYS);
-        return -5;
-
-    case SYSCALL_SIGNAL_ALTSTACK:
-        set_errno(ENOSYS);
-        return -6;
-
-    default:
-        set_errno(ENOSYS);
-        return -1;
-    }
-}
-
+static const syscall_handler_t ksignal_sysfnmap[] = {
+    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_KILL, NULL),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_RAISE, NULL),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_ACTION, NULL),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_ALTSTACK, NULL),
+};
+SYSCALL_HANDLERDEF(ksignal_syscall, ksignal_sysfnmap);

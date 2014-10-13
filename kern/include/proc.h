@@ -88,7 +88,6 @@ typedef struct proc_info {
     int state;                  /*!< 0 - running, >0 stopped */
     int priority;               /*!< We might want to prioritize processes too
                                  */
-    unsigned long blocked;      /*!< bitmap of masked signals */
     int exit_code, exit_signal;
     uid_t uid, euid, suid;
     gid_t gid, egid, sgid;
@@ -139,8 +138,6 @@ typedef struct proc_info {
     } inh;
 
     threadInfo_t * main_thread; /*!< Main thread of this process. */
-    /* signal handlers */
-    struct signals sigs;        /*!< Signals. */
 } proc_info_t;
 
 extern int maxproc;                 /*!< Maximum # of processes, set. */

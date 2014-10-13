@@ -53,6 +53,7 @@
 /* Thread constructors and destructors. */
 SET_DECLARE(thread_ctors, void);
 SET_DECLARE(thread_dtors, void);
+SET_DECLARE(thread_fork_handlers, void);
 
 /* Linker sets for pre- and post-scheduling tasks */
 SET_DECLARE(pre_sched_tasks, void);
@@ -257,6 +258,7 @@ pthread_t thread_fork(void)
     struct thread_info * new_thread;
     threadInfo_t tmp;
     pthread_t new_id;
+    void ** fork_handler_p;
 
 #ifdef configSCHED_DEBUG
     KASSERT(old_thread, "current_thread not set\n");
@@ -272,13 +274,16 @@ pthread_t thread_fork(void)
     memcpy(&tmp, old_thread, sizeof(threadInfo_t));
     tmp.flags &= ~SCHED_EXEC_FLAG; /* Disable exec for now. */
     tmp.id = new_id;
+
     thread_set_inheritance(&tmp, old_thread);
 
-    /* TODO Following should be done in HAL */
     memcpy(&tmp.sframe[SCHED_SFRAME_SYS], &old_thread->sframe[SCHED_SFRAME_SVC],
             sizeof(sw_stack_frame_t));
-    tmp.sframe[SCHED_SFRAME_SYS].r0  = 0;
-    tmp.sframe[SCHED_SFRAME_SYS].pc += 4; /* TODO This is too hw specific */
+
+    SET_FOREACH(fork_handler_p, thread_fork_handlers) {
+        sched_task_t task = *(thread_cdtor_t *)fork_handler_p;
+        task(&tmp);
+    }
 
     new_thread = sched_get_thread_info(new_id);
     if (!new_thread)
