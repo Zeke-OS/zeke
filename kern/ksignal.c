@@ -71,6 +71,7 @@
 #include <sys/tree.h>
 #include <syscall.h>
 #include <errno.h>
+#include <libkern.h>
 #include <tsched.h>
 #include <timers.h>
 #include <kmalloc.h>
@@ -78,6 +79,8 @@
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include "ksignal.h"
+
+#define KSIG_LOCK_FLAGS (MTX_TYPE_TICKET | MTX_TYPE_SLEEP | MTX_TYPE_PRICEIL)
 
 static int kern_logsigexit = 1;
 SYSCTL_INT(_kern, KERN_LOGSIGEXIT, logsigexit, CTLFLAG_RW,
@@ -88,6 +91,7 @@ SYSCTL_INT(_kern, KERN_LOGSIGEXIT, logsigexit, CTLFLAG_RW,
  * Signal default actions.
  */
 static const uint8_t default_sigproptbl[] = {
+    SA_IGNORE,          /*!< Not a signal */
     SA_KILL,            /*!< SIGHUP */
     SA_KILL,            /*!< SIGINT */
     SA_KILL|SA_CORE,    /*!< SIGQUIT */
@@ -121,12 +125,36 @@ int signum_comp(struct ksigaction * a, struct ksigaction * b)
 {
     KASSERT((a && b), "a & b must be set");
 
-     return a->signum - b->signum;
+     return a->ks_signum - b->ks_signum;
+}
+
+static int ksig_lock(mtx_t * lock)
+{
+    istate_t s;
+
+    s = get_interrupt_state();
+    if (s & PSR_INT_I) {
+        return mtx_trylock(lock);
+    } else {
+        return mtx_lock(lock);
+    }
+}
+
+static void ksig_unlock(mtx_t * lock)
+{
+    istate_t s;
+
+    s = get_interrupt_state();
+    if (s & PSR_INT_I)
+        return;
+
+    mtx_unlock(lock);
 }
 
 static void ksignal_thread_ctor(struct thread_info * th)
 {
     RB_INIT(&th->sigs.sa_tree);
+    mtx_init(&th->sigs.s_lock, KSIG_LOCK_FLAGS);
 }
 DATA_SET(thread_ctors, ksignal_thread_ctor);
 
@@ -148,15 +176,301 @@ static void ksignal_fork_handler(struct thread_info * th)
         memcpy(sigact_new, sigact_old, sizeof(struct ksigaction));
         RB_INSERT(sigaction_tree, &th->sigs.sa_tree, sigact_new);
     }
+
+    /* Reinit mutex lock */
+    mtx_init(&th->sigs.s_lock, KSIG_LOCK_FLAGS);
 }
 DATA_SET(thread_fork_handlers, ksignal_fork_handler);
 
-/* Syscall handlers ***********************************************************/
+/**
+ * Allocate memory from thread user stack.
+ * @note Works only for any thread of the current process.
+ * @param thread is the thread owning the stack.
+ * @param len is the length of the allocation.
+ * @return Returns pointer to the uaddr of the allocation if succeed;
+ * Otherwise NULL.
+ */
+static void * usr_stack_alloc(struct thread_info * thread, size_t len)
+{
+    int framenum;
+    sw_stack_frame_t * frame;
+    void * sp;
+
+    KASSERT(thread, "thread should be always set.\n");
+    KASSERT(len > 0, "len should be greater than zero.\n");
+
+    if (thread->flags & SCHED_INSYS_FLAG)
+        framenum = SCHED_SFRAME_SVC;
+    else
+        framenum = SCHED_SFRAME_SYS;
+
+    frame = &current_thread->sframe[framenum];
+    sp = (void *)frame->sp;
+
+    /* Check user access */
+    if (!sp || !useracc(sp, len, VM_PROT_READ | VM_PROT_WRITE))
+        return NULL;
+
+    /* Make allocation. */
+    frame->sp += memalign(len);
+
+    return sp;
+}
+
+/**
+ * Post thread scheduling handler that updates thread stack frame if a signal
+ * is pending. After this handler the thread will enter to signal handler
+ * instead of returning to normal execution.
+ */
+static void ksignal_post_scheduling(void)
+{
+    int signum;
+    struct signals * sigs = &current_thread->sigs;
+#if 0
+    struct ksigaction action;
+#endif
+    sw_stack_frame_t * save_frame;
+
+    if (ksig_lock(&sigs->s_lock))
+        return; /* Can't handle signals now. */
+
+    signum = sigffs(&sigs->s_pending);
+    if (signum < 0)
+        return; /* No signals pending. */
+
+#if 0
+    ksignal_get_ksigaction(&action, sigs, signum);
+#endif
+
+    if (sigismember(&sigs->s_running, signum)) {
+        /* Already running a handler for that signum */
+        sigdelset(&sigs->s_running, signum);
+
+        return;
+    }
+
+    if (ksignal_isblocked(sigs, signum))
+        return; /* Signal is currently blocked. */
+
+    /* Allocate memory from user thread stack */
+    save_frame = usr_stack_alloc(current_thread, sizeof(sw_stack_frame_t));
+    if (!save_frame) {
+        /*
+         * Thread has trashed its stack; Nothing we can do but
+         * give SIGILL.
+         */
+        ksignal_sendsig_fatal(current_thread->id, SIGILL);
+        return; /* TODO Is this ok? */
+    }
+
+    panic("Can't handle signals yet\n");
+
+    /*
+     * TODO
+     * - Check current_thread sigs
+     *  -- if we have to enter sig handler save stack frame on top of user stack
+     *     or alt stack
+     *  -- Change return address to our own handler to call syscall that
+     *     reverts signal handling state
+     *  -- Change to alt stack if requested
+     * - or handle signal in kernel
+     */
+
+    ksig_unlock(&sigs->s_lock);
+}
+DATA_SET(post_sched_tasks, ksignal_post_scheduling);
+
+int ksignal_thread_sendsig(pthread_t thread_id, int signum)
+{
+    int retval = 0;
+    struct thread_info * thread = sched_get_thread_info(thread_id);
+    struct signals * sigs;
+    struct ksigaction action;
+
+    if (!thread)
+        return -EINVAL;
+    sigs = &thread->sigs;
+
+    if (ksig_lock(&sigs->s_lock))
+        return -EWOULDBLOCK;
+
+    retval = sigismember(&sigs->s_running, signum);
+    if (retval) /* Already running a handler. */
+        goto out;
+
+    /* Get action struct for this signal. */
+    ksignal_get_ksigaction(&action, sigs, signum);
+
+    /* Ignored? */
+    if (action.ks_action.sa_handler == SIG_IGN)
+        goto out;
+
+    /* Not ignored so we can set the signal to pending state. */
+    retval = sigaddset(&sigs->s_pending, signum);
+    if (retval)
+        goto out;
+
+    /* Not blocked? */
+    if (!ksignal_isblocked(sigs, signum)) {
+        /* so set exec */
+        sched_thread_set_exec(thread_id);
+    }
+
+out:
+    ksig_unlock(&sigs->s_lock);
+
+    return 0;
+}
+
+/**
+ * Kill process by a fatal signal that can't be blocked.
+ */
+int ksignal_sendsig_fatal(pthread_t thid, int signum)
+{
+    /* TODO */
+    return 0;
+}
+
+int ksignal_isblocked(struct signals * sigs, int signum)
+{
+    KASSERT(mtx_test(&sigs->s_lock), "sigs should be locked\n");
+
+    /* TODO IEEE Std 1003.1, 2004 Edition
+     * When a signal is caught by a signal-catching function installed by
+     * sigaction(), a new signal mask is calculated and installed for
+     * the duration of the signal-catching function (or until a call to either
+     * sigprocmask() or sigsuspend() is made). This mask is formed by taking
+     * the union of the current signal mask and the value of the sa_mask for
+     * the signal being delivered [XSI]   unless SA_NODEFER or SA_RESETHAND
+     * is set, and then including the signal being delivered. If and when
+     * the user's signal handler returns normally, the original signal
+     * mask is restored.
+     */
+    if (sigismember(&sigs->s_block, signum))
+        return 1;
+    return 0;
+}
+
+/**
+ * Get a copy of signal action struct.
+ */
+void ksignal_get_ksigaction(struct ksigaction * action,
+                            struct signals * sigs, int signum)
+{
+    struct ksigaction find = { .ks_signum = signum };
+    struct ksigaction * p_action;
+
+    KASSERT(action, "Action should be set\n");
+    KASSERT(signum >= 0, "Signum should be positive\n");
+    KASSERT(mtx_test(&sigs->s_lock), "sigs should be locked\n");
+
+    if (!RB_EMPTY(&sigs->sa_tree) &&
+        (p_action = RB_FIND(sigaction_tree, &sigs->sa_tree, &find))) {
+        memcpy(action, p_action, sizeof(struct ksigaction));
+        return;
+    }
+
+    action->ks_signum = signum;
+    sigemptyset(&action->ks_action.sa_mask);
+    action->ks_action.sa_flags = (signum < sizeof(default_sigproptbl)) ?
+        default_sigproptbl[signum] : SA_IGNORE;
+    action->ks_action.sa_handler = SIG_DFL;
+}
+
+/**
+ * Set signal action struct.
+ * @note Always copied, so action struct can be allocated from stack.
+ */
+void ksignal_set_ksigaction(struct signals * sigs, struct ksigaction * action)
+{
+    struct ksigaction * p_action;
+    const int signum = action->ks_signum;
+    struct sigaction * sigact = NULL;
+
+    KASSERT(action, "Action should be set\n");
+    KASSERT(action->ks_signum >= 0, "Signum should be positive\n");
+    KASSERT(mtx_test(&sigs->s_lock), "sigs should be locked\n");
+
+    if (!RB_EMPTY(&sigs->sa_tree) &&
+        (p_action = RB_FIND(sigaction_tree, &sigs->sa_tree, action))) {
+
+        memcpy(p_action, action, sizeof(struct ksigaction) -
+                sizeof(RB_ENTRY(ksigaction)));
+    } else {
+        p_action = kmalloc(sizeof(struct ksigaction));
+        memcpy(p_action, action, sizeof(struct ksigaction) -
+                sizeof(RB_ENTRY(ksigaction)));
+
+        if (RB_INSERT(sigaction_tree, &sigs->sa_tree, p_action)) {
+            panic("ksignal_set_ksigaction() failed to insert.\n");
+        }
+    }
+
+    /* Check if this action can be actually removed */
+    sigact = &p_action->ks_action;
+    if (sigisemptyset(&sigact->sa_mask) &&
+        (sigact->sa_flags == (signum < sizeof(default_sigproptbl)) ?
+            default_sigproptbl[signum] : SA_IGNORE) &&
+        (sigact->sa_handler == SIG_DFL)) {
+        if (RB_REMOVE(sigaction_tree, &sigs->sa_tree, p_action)) {
+            kfree(p_action);
+        } else {
+            panic("Can't remove an entry from sigaction_tree\n");
+        }
+    }
+}
+
+static int sys_signal_pkill(void * args)
+{
+    /* TODO */
+    set_errno(-ENOTSUP);
+    return -1;
+}
+
+static int sys_signal_tkill(void * args)
+{
+    /* TODO */
+    set_errno(-ENOTSUP);
+    return -1;
+}
+
+static int sys_signal_raise(void * args)
+{
+    /* TODO */
+    set_errno(-ENOTSUP);
+    return -1;
+}
+
+static int sys_signal_action(void * args)
+{
+    /* TODO */
+    set_errno(-ENOTSUP);
+    return -1;
+}
+
+static int sys_signal_altstack(void * args)
+{
+    /* TODO */
+    set_errno(-ENOTSUP);
+    return -1;
+}
+
+static int sys_signal_return(void * args)
+{
+    /*
+     * TODO
+     * - Return from singal, revert stack frame and alt stack
+     */
+
+    return 0;
+}
 
 static const syscall_handler_t ksignal_sysfnmap[] = {
-    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_KILL, NULL),
-    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_RAISE, NULL),
-    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_ACTION, NULL),
-    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_ALTSTACK, NULL),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_PKILL, sys_signal_pkill),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_TKILL, sys_signal_tkill),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_RAISE, sys_signal_raise),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_ACTION, sys_signal_action),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_ALTSTACK, sys_signal_altstack),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_RETURN, sys_signal_return),
 };
 SYSCALL_HANDLERDEF(ksignal_syscall, ksignal_sysfnmap);

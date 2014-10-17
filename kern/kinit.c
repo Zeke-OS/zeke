@@ -53,7 +53,7 @@ extern int (*__init_array_end []) (void) __attribute__((weak));
 extern int (*__fini_array_start []) (void) __attribute__((weak));
 extern int (*__fini_array_end []) (void) __attribute__((weak));
 
-void uinit(void * arg);
+void * uinit(void * arg);
 #ifdef configMOUNTROOTFS
 static void mount_rootfs(void);
 #endif
@@ -194,10 +194,12 @@ int kinit(void)
     return 0;
 }
 
-void uinit(void * arg)
+void * uinit(void * arg)
 {
     /* TODO We should somehow exec and drop privs. */
     KERROR(KERROR_DEBUG, "uinit\n");
+
+    return NULL;
 }
 
 #ifdef configMOUNTROOTFS

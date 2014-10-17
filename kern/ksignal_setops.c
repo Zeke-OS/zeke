@@ -36,8 +36,7 @@
 int sigaddset(sigset_t * set, int signo)
 {
     if (signo <= 0 || signo > _SIG_MAXSIG) {
-        errno = EINVAL;
-        return -1;
+        return -EINVAL;
     }
 
     set->__bits[_SIG_WORD(signo)] |= _SIG_BIT(signo);
@@ -48,8 +47,7 @@ int sigdelset(sigset_t * set, int signo)
 {
 
     if (signo <= 0 || signo > _SIG_MAXSIG) {
-        errno = EINVAL;
-        return -1;
+        return -EINVAL;
     }
 
     set->__bits[_SIG_WORD(signo)] &= ~_SIG_BIT(signo);
@@ -58,7 +56,7 @@ int sigdelset(sigset_t * set, int signo)
 
 int sigemptyset(sigset_t * set)
 {
-    int i;
+    size_t i;
 
     for (i = 0; i < _SIG_WORDS; i++) {
         set->__bits[i] = 0;
@@ -69,7 +67,7 @@ int sigemptyset(sigset_t * set)
 
 int sigfillset(sigset_t * set)
 {
-    int i;
+    size_t i;
 
     for (i = 0; i < _SIG_WORDS; i++) {
         set->__bits[i] = ~0U;
@@ -81,9 +79,33 @@ int sigfillset(sigset_t * set)
 int sigismember(const sigset_t * set, int signo)
 {
     if (signo <= 0 || signo > _SIG_MAXSIG) {
-        errno = EINVAL;
-        return -1;
+        return -EINVAL;
     }
 
     return (set->__bits[_SIG_WORD(signo)] & _SIG_BIT(signo)) ? 1 : 0;
+}
+
+int sigisemptyset(const sigset_t * set)
+{
+    size_t i;
+
+    for (i = 0; i < _SIG_WORDS; i++) {
+        if (set->__bits[i])
+            return 0;
+    }
+
+    return 1;
+}
+
+int sigffs(sigset_t * set)
+{
+    int i, j;
+
+    for (i = 0; i < _SIG_WORDS; i++) {
+        for (j = 0; j < sizeof(set->__bits[0]); j++)
+            if (set->__bits[i] & (1 << j))
+                return i * sizeof(set->__bits[0]) * 8 + j;
+    }
+
+    return -1;
 }

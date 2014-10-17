@@ -77,6 +77,7 @@
   * @{
   */
 
+#include <sys/types_pthread.h>
 #include <sys/signal_num.h>
 #include <sys/_sigset.h>
 
@@ -245,6 +246,7 @@ typedef void __sighandler_t(int);
 typedef __sighandler_t * sig_t;
 typedef void __siginfohandler_t(int, struct __siginfo *, void *);
 
+#ifndef KERNEL_INTERNAL
 
 int kill(pid_t pid, int sig);
 /*
@@ -252,8 +254,9 @@ int killpg(pid_t pgrp, int sig);
 void psiginfo(const siginfo_t * pinfo, const char * message);
 */
 void psignal(int signum, const char * message);
-/*
+
 int pthread_kill(pthread_t thread, int sig);
+/*
 int pthread_sigmask(int how, const sigset_t * restrict set,
         sigset_t * restrict oset);
 */
@@ -323,6 +326,8 @@ int sigtimedwait(const sigset_t * restrict set, siginfo_t * restrict info,
 int sigwait(const sigset_t * restrict set, int * restrict sig);
 int sigwaitinfo(const sigset_t * restrict set, siginfo_t *restrict info);
 */
+
+#endif /* KERNEL_INTERNAL */
 
 #endif /* SIGNAL_H */
 

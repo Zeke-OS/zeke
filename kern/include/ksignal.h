@@ -37,12 +37,13 @@
 
 #include <sys/tree.h>
 #include <stdint.h>
+#include <klocks.h>
 #include <signal.h>
 
 struct ksigaction {
-    int signum;
-    struct sigaction;
-    RB_ENTRY(ksigaction) _entry;
+    int ks_signum;
+    struct sigaction ks_action;
+    RB_ENTRY(ksigaction) _entry; /* Should be the last entry. */
 };
 
 RB_HEAD(sigaction_tree, ksigaction);
@@ -54,26 +55,26 @@ struct signals {
     sigset_t s_block;       /*!< List of blocked signals. */
     sigset_t s_wait;        /*!< Signal wait mask. */
     sigset_t s_pending;     /*!< Signals pending for handling. */
+    sigset_t s_running;     /*!< Signals running mask. */
     struct sigaction_tree sa_tree;
+    mtx_t s_lock;
 };
-
-/**
- * Get signal boolean value from signals variable.
- * @param signals   is a signals variable.
- * @param signum    is the signal number.
- * @return Rerturns 0 if signal is not set; 1 if signal is set.
- */
-#define KSIGNAL_GET_VALUE(signals, signum) ((signals >> signum) & 0x1)
-
-/**
- * Get signal mask.
- * @param signum is a signal number.
- * @return Returns a bit mask for signals variable.
- */
-#define KSIGNAL_GET_MASK(signum) (0x1 << signum)
 
 RB_PROTOTYPE(sigaction_tree, ksigaction, _entry, signum_comp);
 int signum_comp(struct ksigaction * a, struct ksigaction * b);
+
+int ksignal_sendsig_fatal(pthread_t thid, int signum);
+int ksignal_isblocked(struct signals * sigs, int signum);
+void ksignal_get_ksigaction(struct ksigaction * action,
+                            struct signals * sigs, int signum);
+
+int sigaddset(sigset_t * set, int signo);
+int sigdelset(sigset_t * set, int signo);
+int sigemptyset(sigset_t * set);
+int sigfillset(sigset_t * set);
+int sigismember(const sigset_t * set, int signo);
+int sigisemptyset(const sigset_t * set);
+int sigffs(sigset_t * set);
 
 #endif /* KSIGNAL_H */
 
