@@ -34,6 +34,7 @@
 
 #include <syscall.h>
 #include <errno.h>
+#include <sys/types_pthread.h>
 #include <sys/resource.h>
 
 int getloadavg(double loadavg[3], int nelem)

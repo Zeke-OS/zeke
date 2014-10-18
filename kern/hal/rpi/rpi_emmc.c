@@ -64,7 +64,9 @@
 
 #define KERNEL_INTERNAL
 #include <autoconf.h>
+#include <sys/types.h>
 #include <sys/ioctl.h>
+#include <fcntl.h>
 #include <kinit.h>
 #include <stdint.h>
 #include <errno.h>

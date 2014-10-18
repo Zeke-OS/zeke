@@ -34,6 +34,7 @@
 
 #include <errno.h>
 #include <machine/atomic.h>
+#include <sys/types_pthread.h>
 #include <signal.h>
 #include <pthread.h>
 

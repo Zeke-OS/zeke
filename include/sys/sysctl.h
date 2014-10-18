@@ -132,6 +132,16 @@ struct ctlname {
  */
 #define CTL_AUTO_START 0x100
 
+/** Arguments struct for sysctl syscall */
+struct _sysctl_args {
+    int * name;
+    unsigned int namelen;
+    void * old;
+    size_t * oldlenp;
+    void * new;
+    size_t newlen;
+};
+
 /* User space functions. */
 
 /**

@@ -125,6 +125,14 @@ struct rusage {
 #endif
 
 /**
+ * Argument struct for SYSCALL_SCHED_THREAD_SETPRIORITY
+ */
+struct _ds_set_priority {
+    pthread_t thread_id;    /*!< Thread id */
+    int priority;           /*!< Thread priority */
+};
+
+/**
  * Get program scheduling priority.
  */
 int getpriority(int which, id_t who);

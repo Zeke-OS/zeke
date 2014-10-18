@@ -57,6 +57,7 @@
 #endif
 
 #include <sys/param.h>
+#include <sys/types_pthread.h>
 #include <sys/times.h>
 #include <sys/resource.h>
 #include <sys/priv.h>

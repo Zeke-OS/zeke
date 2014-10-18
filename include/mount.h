@@ -47,6 +47,20 @@
 #define MNT_NOSUID      0x0008 /*!< Set uid bits not honored. */
 #define MNT_NOATIME     0x0100 /*!< Don't update file access times. */
 
+/**
+ * Arguments struct for SYSCALL_FS_MOUNT
+ */
+struct _fs_mount_args {
+    const char * source;
+    size_t source_len; /*!< in bytes */
+    const char * target;
+    size_t target_len; /*!< in bytes */
+    const char fsname[8];
+    uint32_t flags;
+    const char * parm;
+    size_t parm_len; /*!< in bytes */
+};
+
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
 

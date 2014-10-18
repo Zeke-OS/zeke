@@ -30,6 +30,8 @@
  *******************************************************************************
 */
 
+#include <stddef.h>
+#include <sys/types.h>
 #include <syscall.h>
 #include <errno.h>
 #include <sys/priv.h>

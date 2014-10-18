@@ -143,6 +143,30 @@ struct flock {
                          *   returned with F_GETLK. */
 };
 
+/**
+ * Arguments struct for SYSCALL_FS_FCNTL
+ */
+struct _fs_fcntl_args {
+    int fd;
+    int cmd;
+    union {
+        int ival;
+        struct flock fl;
+    } third;
+};
+
+/*
+ * Arguments for SYSCALL_FS_OPEN
+ */
+struct _fs_open_args {
+    int fd; /* if AT_FDARG */
+    const char * name;
+    size_t name_len; /*!< in bytes */
+    int oflags;
+    int atflags; /* AT_FDCWD or AT_FDARG */
+    mode_t mode;
+};
+
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
 int open(const char * path, int oflags, ...);

@@ -71,12 +71,22 @@ struct itimerspec {
 
 #define CLOCKS_PER_SEC              1000000
 
+/**
+ * Argument struct for SYSCALL_TIME_GETTIME
+ */
+struct _ds_gettime {
+    clockid_t clk_id;
+    struct timespec * tp;
+};
+
+#ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
 
 int clock_gettime(clockid_t clk_id, struct timespec * tp);
 time_t time(time_t * t);
 
 __END_DECLS
+#endif /* KERNEL_INTERNAL*/
 
 /* TODO Add POSIX test macro:
  * http://pubs.opengroup.org/onlinepubs/9699919799/functions/V2_chap02.html#tag_15_02 */

@@ -29,6 +29,8 @@
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/queue.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <subr_hash.h>
 #include <mount.h>
 #include <errno.h>

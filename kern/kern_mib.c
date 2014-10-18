@@ -32,6 +32,7 @@
 
 #define KERNEL_INTERNAL
 #include <autoconf.h>
+#include <sys/types_pthread.h>
 #include <sys/sysctl.h>
 
 SYSCTL_NODE(, 0, sysctl, CTLFLAG_RW, 0,

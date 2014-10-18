@@ -241,6 +241,35 @@
 #define _PRIV_MENT 200
 #define _PRIV_MLEN E2BITMAP_SIZE(_PRIV_MENT)
 
+/**
+ * Arguments struct for SYSCALL_PROC_CRED
+ * Set value to -1 for get only.
+ */
+struct _ds_proc_credctl {
+    uid_t ruid;
+    uid_t euid;
+    uid_t suid;
+    gid_t rgid;
+    gid_t egid;
+    gid_t sgid;
+};
+
+/**
+ * Argument struct for SYSCALL_PRIV_PCAP
+ */
+struct _ds_priv_pcap {
+    pid_t pid;
+    int mode;
+#define PRIV_PCAP_MODE_GETR 0 /* get restr */
+#define PRIV_PCAP_MODE_SETR 1 /* set restr */
+#define PRIV_PCAP_MODE_CLRR 2 /* clear restr */
+#define PRIV_PCAP_MODE_GETG 3 /* get grant */
+#define PRIV_PCAP_MODE_SETG 4 /* set grant */
+#define PRIV_PCAP_MODE_CLRG 5 /* clear grant */
+    size_t priv;
+};
+
+
 #ifdef KERNEL_INTERNAL
 #ifndef PROC_H
 #error proc.h must be included

@@ -33,6 +33,8 @@
 #define KERNEL_INTERNAL
 #include <sys/linker_set.h>
 #include <sys/tree.h>
+#include <sys/types.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <kerror.h>
 #include <kmalloc.h>

@@ -67,6 +67,16 @@ struct dirent {
 #define IFTODT(mode)    (((mode) & 0170000) >> 12)
 #define DTTOIF(dirtype) ((dirtype) << 12)
 
+/**
+ * Arguments for SYSCALL_FS_GETDENTS
+ */
+struct _ds_getdents_args {
+    int fd;
+    char * buf;
+    size_t nbytes;
+};
+
+
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
 

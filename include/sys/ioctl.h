@@ -52,6 +52,13 @@
 #define IOCTL_GETBLKSIZE    10  /*!< Get device block size. */
 #define IOCTL_GETBLKCNT     11  /*!< Get device block count. */
 
+struct _ioctl_get_args {
+    int fd;
+    unsigned request;
+    void * arg;
+    size_t arg_len;
+};
+
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
 /**

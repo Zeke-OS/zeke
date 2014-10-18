@@ -136,6 +136,45 @@ struct stat {
 #define SF_NOUNLINK     0x00100000  /*!< file may not be removed or renamed. */
 #define SF_SNAPSHOT     0x00200000  /*!< Snapshot inode. */
 
+/**
+ * Arguments for SYSCALL_FS_STAT
+ */
+struct _fs_stat_args {
+    int fd;
+    const char * path;
+    size_t path_len;
+    struct stat * buf;
+    unsigned flags;
+};
+
+/**
+ * Arguments for SYSCALL_FS_CHMOD
+ */
+struct _fs_chmod_args {
+    int fd;
+    mode_t mode;
+};
+
+/** Arguments for SYSCALL_FS_MKDIR */
+struct _fs_mkdir_args {
+    int fd;
+    const char * path;
+    size_t path_len;
+    mode_t mode;
+    unsigned atflags;
+};
+
+/** Arguments for SYSCALL_FS_RMDIR */
+struct _fs_rmdir_args {
+    const char * path;
+    size_t path_len;
+};
+
+struct _fs_umask_args {
+    mode_t newumask;
+    mode_t oldumask;
+};
+
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
 int chmod(const char * path, mode_t mode);

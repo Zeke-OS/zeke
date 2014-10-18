@@ -31,6 +31,15 @@
  */
 
 #define KERNEL_INTERNAL 1
+#include <stddef.h>
+#include <stdint.h>
+#include <sys/types.h>
+#include <mount.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <syscall.h>
+#include <errno.h>
 #include <kerror.h>
 #include <libkern.h>
 #include <kstring.h>
@@ -41,11 +50,6 @@
 #include <tsched.h>
 #include <sys/priv.h>
 #include <ksignal.h>
-#include <syscall.h>
-#include <errno.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <dirent.h>
 #include <fs/fs.h>
 
 static int sys_read(void * user_args)

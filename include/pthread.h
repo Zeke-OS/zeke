@@ -178,6 +178,17 @@ struct _pthread_cleanup_info {
 typedef int pthread_key_t;
 typedef struct pthread_once pthread_once_t;
 
+/**
+ * Argument struct for SYSCALL_SCHED_THREAD_CREATE
+ */
+struct _ds_pthread_create {
+    pthread_t * thread;         /*!< Returned thread id. */
+    start_routine start;        /*!< Thread start routine. */
+    pthread_attr_t * def;       /*!< Thread def attributes. */
+    void * argument;            /*!< Thread parameter(s) pointer. */
+    void (*del_thread)(void *); /*!< Thread exit function. */
+};
+
 __BEGIN_DECLS
 /*
 int     pthread_atfork(void (*)(void), void (*)(void), void (*)(void));

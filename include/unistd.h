@@ -153,6 +153,84 @@
 #define _SC_V7_LPBIG_OFFBIG             81
 /* End of sysconf variables */
 
+/**
+ * Arguments struct for SYSCALL_FS_WRITE
+ */
+struct _fs_readwrite_args {
+    int fildes;
+    void * buf;
+    size_t nbytes;
+};
+
+/**
+ * Arguments struct for SYSCALL_FS_LSEEK
+ */
+struct _fs_lseek_args {
+    int fd;
+    off_t offset; /* input and return value */
+    int whence;
+};
+
+/**
+ * Arguments for SYSCALL_FS_ACCESS
+ */
+struct _fs_access_args {
+    int fd;
+    const char * path;
+    size_t path_len;
+    int amode;
+    int flag;
+};
+
+/**
+ * Arguments for SYSCALL_FS_CHOWN
+ */
+struct _fs_chown_args {
+    int fd;
+    uid_t owner;
+    gid_t group;
+};
+
+/**
+ * Arguments for SYSCALL_FS_LINK
+ */
+struct _fs_link_args {
+    const char * path1;
+    size_t path1_len;
+    const char * path2;
+    size_t path2_len;
+};
+
+/**
+ * Arguments for SYSCALL_FS_UNLINK
+ */
+struct _fs_unlink_args {
+    int fd;             /*!< File descriptor number. */
+    const char * path;
+    size_t path_len;
+    int flag;
+};
+
+/**
+ * Arguments for SYSCALL_FS_CHDIR
+ */
+struct _proc_chdir_args {
+    int fd; /* if AT_FDARG */
+    const char * name;
+    size_t name_len; /*!< in bytes */
+    int atflags;
+};
+
+/**
+ * Arguments struct for SYSCALL_PROC_GETBREAK
+ */
+struct _ds_getbreak {
+    void * start;
+    void * stop;
+};
+
+
+#ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
 /**
  * Set the break value.
@@ -258,6 +336,7 @@ int dup2(int fildes, int fildes2);
 
 unsigned sleep(unsigned seconds);
 __END_DECLS
+#endif /* !KERNEL_INTERNAL */
 
 #endif /* UNISTD_H */
 
