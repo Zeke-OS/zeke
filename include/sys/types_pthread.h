@@ -92,8 +92,6 @@ typedef struct pthread_mutex {
                      */
   int kind;         /*!< Mutex type */
   pthread_t owner;  /*!< Thread owning the mutex */
-  __sigset_t sigset;  /*!< Mutex release notification to waiting threads */
-
 } pthread_mutex_t;
 
 /*

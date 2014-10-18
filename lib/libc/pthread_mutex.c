@@ -101,6 +101,26 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int kind)
     return 0;
 }
 
+static void init_mtxsigset(sigset_t * set)
+{
+    sigemptyset(set);
+    sigaddset(set, _SIGMTX);
+}
+
+static void on_sigmtx(void)
+{
+    sigset_t set;
+
+    /*
+     * Block signal _SIGMTX as someone has unblocked it.
+     */
+    init_mtxsigset(&set);
+    sigprocmask(SIG_BLOCK, &set, NULL);
+
+    /* Let's try again. */
+    raise(_SIGMTX);
+}
+
 int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr)
 {
     if (!mutex)
@@ -113,8 +133,13 @@ int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr)
     mutex->recursion = 0;
     mutex->kind = attr ? attr->kind : PTHREAD_MUTEX_DEFAULT;
     mutex->owner = -1;
-    sigemptyset(&mutex->sigset);
-    sigaddset(&mutex->sigset, SIGCONT);
+
+    /*
+     * We must set a handler for _SIGMTX or otherwise it woudn't work with
+     * sigwait().
+     */
+    signal(_SIGMTX, &on_sigmtx);
+    on_sigmtx();
 
     return 0;
 }
@@ -133,8 +158,11 @@ int pthread_mutex_lock(pthread_mutex_t *mutex)
     if (mutex->kind == PTHREAD_MUTEX_NORMAL) {
         if (atomic_set(&mutex->lock, 1) != 0) {
             while (atomic_set(&mutex->lock, -1) != 0) {
+                sigset_t set;
                 int sig;
-                if (sigwait(&mutex->sigset, &sig) != 0)
+
+                init_mtxsigset(&set);
+                if (sigwait(&set, &sig) != 0)
                     return EINVAL;
             }
         }
@@ -152,8 +180,11 @@ int pthread_mutex_lock(pthread_mutex_t *mutex)
                     return EDEADLK;
             } else {
                 while (atomic_set(&mutex->lock, -1) != 0) {
+                    sigset_t set;
                     int sig;
-                    if (sigwait(mutex->sigset, &sig) != 0)
+
+                    init_mtxsigset(&set);
+                    if (sigwait(&set, &sig) != 0)
                         return EINVAL;
                     mutex->recursion = 1;
                     mutex->owner = self;
@@ -171,8 +202,11 @@ int pthread_mutex_timedlock(pthread_mutex_t *mutex,
     if (mutex->kind == PTHREAD_MUTEX_NORMAL) {
         if (atomic_set(&mutex->lock, 1) != 0) {
             while (atomic_set(&mutex->lock, -1) != 0) {
+                sigset_t set;
                 siginfo_t info;
-                if (sigtimedwait(&mutex->sigset, &info, abstime) != 0)
+
+                init_mtxsigset(&set);
+                if (sigtimedwait(&set, &info, abstime) != 0)
                     return EINVAL;
             }
         }
@@ -190,8 +224,11 @@ int pthread_mutex_timedlock(pthread_mutex_t *mutex,
                     return EDEADLK;
             } else {
                 while (atomic_set(&mutex->lock, -1) != 0) {
+                    sigset_t set;
                     siginfo_t info;
-                    if (sigtimedwait(&mutex->sigset, &info, abstime) != 0)
+
+                    init_mtxsigset(&set);
+                    if (sigtimedwait(&set, &info, abstime) != 0)
                         return EINVAL;
                     mutex->recursion = 1;
                     mutex->owner = self;
@@ -230,7 +267,7 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex)
         if (idx != 0) {
             if (idx < 0) {
                 /* Signal to all threads of the current process */
-                if (pthread_kill(-2, SIGCONT))
+                if (pthread_kill(-2, _SIGMTX))
                     return EINVAL;
             }
         } else {
@@ -243,7 +280,7 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex)
                 mutex->owner = -1;
                 if (atomic_set(&mutex->lock, 0) < 0) {
                     /* Signal to all threads of the current process */
-                    if (pthread_kill(-2, SIGCONT))
+                    if (pthread_kill(-2, _SIGMTX))
                         return EINVAL;
                 }
             }

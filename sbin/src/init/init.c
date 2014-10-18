@@ -35,6 +35,7 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+#include <string.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -73,7 +74,7 @@ void * main(void * arg)
     r2 = open(tty_path, O_WRONLY);
 
     snprintf(buf, sizeof(buf), "fd: %i, %i, %i\n", r0, r1, r2);
-    write(STDOUT_FILENO, buf, strlenn(buf, sizeof(buf)));
+    write(STDOUT_FILENO, buf, strnlen(buf, sizeof(buf)));
 
     write(STDOUT_FILENO, banner, sizeof(banner));
     write(STDOUT_FILENO, msg, sizeof(msg));

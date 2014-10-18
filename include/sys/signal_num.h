@@ -79,6 +79,7 @@
                          *   socket. */
 #define SIGINFO 24      /*!< (I) Info request. */
 #define SIGPWR  25      /*!< (T) System power failure. */
+#define _SIGMTX 127     /*!< (I) Wakeup mutex. */
 
 #endif /* SIGNAL_NUM_H */
 

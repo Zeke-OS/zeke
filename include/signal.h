@@ -246,7 +246,24 @@ typedef void __sighandler_t(int);
 typedef __sighandler_t * sig_t;
 typedef void __siginfohandler_t(int, struct __siginfo *, void *);
 
+/**
+ * Arguments struct for SYSCALL_SIGNAL_PKILL
+ */
+struct _pkill_args {
+    pid_t pid;
+    int sig;
+};
+
+/**
+ * Arguments struct for SYSCALL_SIGNAL_TKILL
+ */
+struct _tkill_args {
+    pthread_t thread;
+    int sig;
+};
+
 #ifndef KERNEL_INTERNAL
+__BEGIN_DECLS
 
 int kill(pid_t pid, int sig);
 /*
@@ -327,7 +344,8 @@ int sigwait(const sigset_t * restrict set, int * restrict sig);
 int sigwaitinfo(const sigset_t * restrict set, siginfo_t *restrict info);
 */
 
-#endif /* KERNEL_INTERNAL */
+__END_DECLS
+#endif /* !KERNEL_INTERNAL */
 
 #endif /* SIGNAL_H */
 
