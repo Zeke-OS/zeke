@@ -310,8 +310,8 @@ int ksignal_thread_sendsig(pthread_t thread_id, int signum)
     if (retval)
         goto out;
 
-    /* Not blocked? */
-    if (!ksignal_isblocked(sigs, signum)) {
+    /* Signal is not blocked or the thread is waiting for this signal. */
+    if (!ksignal_isblocked(sigs, signum) || sigismember(sigs->s_wait, signum)) {
         /* so set exec */
         sched_thread_set_exec(thread_id);
     }
