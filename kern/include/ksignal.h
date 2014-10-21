@@ -60,13 +60,17 @@ struct signals {
     mtx_t s_lock;
 };
 
+struct thread_info;
+
 RB_PROTOTYPE(sigaction_tree, ksigaction, _entry, signum_comp);
 int signum_comp(struct ksigaction * a, struct ksigaction * b);
 
+int ksignal_thread_sendsig(struct thread_info * thread, int signum);
 int ksignal_sendsig_fatal(pthread_t thid, int signum);
 int ksignal_isblocked(struct signals * sigs, int signum);
 void ksignal_get_ksigaction(struct ksigaction * action,
                             struct signals * sigs, int signum);
+int ksignal_set_ksigaction(struct signals * sigs, struct ksigaction * action);
 
 int sigaddset(sigset_t * set, int signo);
 int sigdelset(sigset_t * set, int signo);

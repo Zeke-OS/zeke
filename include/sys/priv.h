@@ -116,7 +116,6 @@
  * - POSIX semaphore privileges.
  */
 #define PRIV_SIGNAL_OTHER   100 /* Exempt signalling other users. */
-#define PRIV_SIGNAL_SUGID   101 /* Non-conserv signal setuid proc. */
 #define PRIV_IPC_READ       70  /* Can override IPC read perm. */
 #define PRIV_IPC_WRITE      71  /* Can override IPC write perm. */
 #define PRIV_IPC_ADMIN      72  /* Can override IPC owner-only perm. */

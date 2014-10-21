@@ -258,8 +258,13 @@ struct _pkill_args {
  * Arguments struct for SYSCALL_SIGNAL_TKILL
  */
 struct _tkill_args {
-    pthread_t thread;
+    pthread_t thread_id;
     int sig;
+};
+
+struct _signal_action_args {
+    int signum;
+    struct sigaction action;
 };
 
 #ifndef KERNEL_INTERNAL

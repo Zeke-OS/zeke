@@ -73,6 +73,8 @@
 #include <errno.h>
 #include <libkern.h>
 #include <tsched.h>
+#include <proc.h>
+#include <sys/priv.h>
 #include <timers.h>
 #include <kmalloc.h>
 #include <kstring.h>
@@ -280,10 +282,9 @@ static void ksignal_post_scheduling(void)
 }
 DATA_SET(post_sched_tasks, ksignal_post_scheduling);
 
-int ksignal_thread_sendsig(pthread_t thread_id, int signum)
+int ksignal_thread_sendsig(struct thread_info * thread, int signum)
 {
     int retval = 0;
-    struct thread_info * thread = sched_get_thread_info(thread_id);
     struct signals * sigs;
     struct ksigaction action;
 
@@ -311,9 +312,9 @@ int ksignal_thread_sendsig(pthread_t thread_id, int signum)
         goto out;
 
     /* Signal is not blocked or the thread is waiting for this signal. */
-    if (!ksignal_isblocked(sigs, signum) || sigismember(sigs->s_wait, signum)) {
+    if (!ksignal_isblocked(sigs, signum) || sigismember(&sigs->s_wait, signum)) {
         /* so set exec */
-        sched_thread_set_exec(thread_id);
+        sched_thread_set_exec(thread->id);
     }
 
 out:
@@ -381,15 +382,19 @@ void ksignal_get_ksigaction(struct ksigaction * action,
  * Set signal action struct.
  * @note Always copied, so action struct can be allocated from stack.
  */
-void ksignal_set_ksigaction(struct signals * sigs, struct ksigaction * action)
+int ksignal_set_ksigaction(struct signals * sigs, struct ksigaction * action)
 {
     struct ksigaction * p_action;
     const int signum = action->ks_signum;
     struct sigaction * sigact = NULL;
 
-    KASSERT(action, "Action should be set\n");
-    KASSERT(action->ks_signum >= 0, "Signum should be positive\n");
     KASSERT(mtx_test(&sigs->s_lock), "sigs should be locked\n");
+
+    if (!action)
+        return -EINVAL;
+
+    if (action->ks_signum < 0)
+        return -EINVAL;
 
     if (!RB_EMPTY(&sigs->sa_tree) &&
         (p_action = RB_FIND(sigaction_tree, &sigs->sa_tree, action))) {
@@ -418,59 +423,176 @@ void ksignal_set_ksigaction(struct signals * sigs, struct ksigaction * action)
             panic("Can't remove an entry from sigaction_tree\n");
         }
     }
+
+    return 0;
 }
 
-static int sys_signal_pkill(void * args)
+/**
+ * Send a signal to a process or a group of processes.
+ */
+static int sys_signal_pkill(void * user_args)
+{
+    struct _pkill_args args;
+    proc_info_t * proc;
+    struct thread_info * thread;
+    int err;
+
+    err = copyin(user_args, &args, sizeof(args));
+    if (err) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    proc = proc_get_struct(args.pid);
+    if (!proc) {
+        set_errno(ESRCH);
+        return -1;
+    }
+
+    /*
+     * Check if process is privileged to signal other users.
+     */
+    if ((curproc->euid != proc->uid && curproc->euid != proc->suid) &&
+        (curproc->uid  != proc->uid && curproc->uid  != proc->suid)) {
+        if (priv_check(curproc, PRIV_SIGNAL_OTHER)) {
+            set_errno(EPERM);
+            return -1;
+        }
+    }
+
+    /*
+     * The null signal can be used to check the validity of pid.
+     * IEEE Std 1003.1, 2013 Edition
+     *
+     * If sig == 0 we can return immediately.
+     */
+    if (args.sig == 0)
+        return 0;
+
+    /*
+     * TODO
+     * Proper signaling logic:
+     * - send to a sigwaiting thread or sighandling thread
+     * - send to all
+     */
+    thread = curproc->main_thread;
+    if (!thread) {
+        set_errno(ESRCH);
+        return -1;
+    }
+
+    err = ksignal_thread_sendsig(thread, args.sig);
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
+    return 0;
+}
+
+/**
+ * Send a signal to a thread or threads.
+ */
+static int sys_signal_tkill(void * user_args)
+{
+    struct _tkill_args args;
+    struct thread_info * thread;
+    proc_info_t * proc;
+    int err;
+
+    err = copyin(user_args, &args, sizeof(args));
+    if (err) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    thread = sched_get_thread_info(args.thread_id);
+    if (!thread) {
+        set_errno(ESRCH);
+        return -1;
+    }
+
+    proc = proc_get_struct(thread->pid_owner);
+    if (!proc) {
+        set_errno(ESRCH);
+        return -1;
+    }
+
+    /*
+     * Check if process is privileged to signal other users.
+     */
+    if ((curproc->euid != proc->uid && curproc->euid != proc->suid) &&
+        (curproc->uid  != proc->uid && curproc->uid  != proc->suid)) {
+        if (priv_check(curproc, PRIV_SIGNAL_OTHER)) {
+            set_errno(EPERM);
+            return -1;
+        }
+    }
+
+    /*
+     * The null signal can be used to check the validity of pid. (thread id)
+     * IEEE Std 1003.1, 2013 Edition
+     *
+     * If sig == 0 we can return immediately.
+     */
+    if (args.sig == 0)
+        return 0;
+
+    err = ksignal_thread_sendsig(thread, args.sig);
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
+    return 0;
+}
+
+static int sys_signal_action(void * user_args)
+{
+    struct _signal_action_args args;
+    int err;
+
+    err = copyin(user_args, &args, sizeof(args));
+    if (err) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    err = ksignal_set_ksigaction(&current_thread->sigs,
+            &(struct ksigaction){
+                .ks_signum = args.signum,
+                .ks_action = args.action
+            });
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
+    return 0;
+}
+
+static int sys_signal_altstack(void * user_args)
 {
     /* TODO */
-    set_errno(-ENOTSUP);
+    set_errno(ENOTSUP);
     return -1;
 }
 
-static int sys_signal_tkill(void * args)
-{
-    /* TODO */
-    set_errno(-ENOTSUP);
-    return -1;
-}
-
-static int sys_signal_raise(void * args)
-{
-    /* TODO */
-    set_errno(-ENOTSUP);
-    return -1;
-}
-
-static int sys_signal_action(void * args)
-{
-    /* TODO */
-    set_errno(-ENOTSUP);
-    return -1;
-}
-
-static int sys_signal_altstack(void * args)
-{
-    /* TODO */
-    set_errno(-ENOTSUP);
-    return -1;
-}
-
-static int sys_signal_return(void * args)
+static int sys_signal_return(void * user_args)
 {
     /*
      * TODO
-     * - Return from singal, revert stack frame and alt stack
+     * - Return from signal, revert stack frame and alt stack
      */
 
     return 0;
 }
 
 static const syscall_handler_t ksignal_sysfnmap[] = {
-    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_PKILL, sys_signal_pkill),
-    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_TKILL, sys_signal_tkill),
-    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_RAISE, sys_signal_raise),
-    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_ACTION, sys_signal_action),
-    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_ALTSTACK, sys_signal_altstack),
-    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_RETURN, sys_signal_return),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_PKILL,      sys_signal_pkill),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_TKILL,      sys_signal_tkill),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_ACTION,     sys_signal_action),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_ALTSTACK,   sys_signal_altstack),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_RETURN,     sys_signal_return),
 };
 SYSCALL_HANDLERDEF(ksignal_syscall, ksignal_sysfnmap);
