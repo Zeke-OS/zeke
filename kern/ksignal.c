@@ -336,7 +336,8 @@ int ksignal_isblocked(struct signals * sigs, int signum)
 {
     KASSERT(mtx_test(&sigs->s_lock), "sigs should be locked\n");
 
-    /* TODO IEEE Std 1003.1, 2004 Edition
+    /*
+     * TODO IEEE Std 1003.1, 2004 Edition
      * When a signal is caught by a signal-catching function installed by
      * sigaction(), a new signal mask is calculated and installed for
      * the duration of the signal-catching function (or until a call to either
@@ -551,6 +552,11 @@ static int sys_signal_action(void * user_args)
 {
     struct _signal_action_args args;
     int err;
+
+    if (priv_check(curproc, PRIV_SIGNAL_ACTION)) {
+        set_errno(ENOTSUP);
+        return -1;
+    }
 
     err = copyin(user_args, &args, sizeof(args));
     if (err) {
