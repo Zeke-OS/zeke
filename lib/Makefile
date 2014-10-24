@@ -52,15 +52,18 @@ $(wildcard libc/_PDCLIB/*.c) \
 $(wildcard libc/*.c) \
 $(wildcard libc/basecodecs/*.c) \
 $(wildcard libc/ctype/*.c) \
+$(wildcard libc/fcntl/*.c) \
 $(wildcard libc/gen/*.c) \
 $(wildcard libc/inttypes/*.c) \
 $(wildcard libc/locale/*.c) \
 $(wildcard libc/malloc/*.c) \
 $(wildcard libc/pthreads/*.c) \
 $(wildcard libc/signal/*.c) \
+$(wildcard libc/stat/*.c) \
 $(wildcard libc/stdio/*.c) \
 $(wildcard libc/stdlib/*.c) \
 $(wildcard libc/string/*.c) \
+$(wildcard libc/unistd/*.c) \
 $(wildcard libc/uchar/*.c) \
 $(wildcard libc/wchar/*.c) \
 $(wildcard libc/wctype/*.c)

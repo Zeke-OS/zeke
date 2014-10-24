@@ -324,6 +324,11 @@ int link(const char * path1, const char * path2);
  */
 int unlink(const char * path);
 
+/**
+ * Remove a directory entry relative to directory file descriptor.
+ */
+int unlinkat(int fd, const char * path, int flag);
+
 int rmdir(const char * path);
 
 /**

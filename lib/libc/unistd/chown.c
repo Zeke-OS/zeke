@@ -1,10 +1,9 @@
 /**
  *******************************************************************************
- * @file    pthread.c
+ * @file    unistd.c
  * @author  Olli Vanhoja
- * @brief   Zero Kernel user space code
+ * @brief   Standard functions.
  * @section LICENSE
- * Copyright (c) 2013 Joni Hauhia <joni.hauhia@cs.helsinki.fi>
  * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
@@ -33,55 +32,26 @@
  *******************************************************************************
 */
 
+#include <sys/types.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <syscall.h>
-#include <pthread.h>
 
-int pthread_create(pthread_t * thread, const pthread_attr_t * attr,
-                void * (*start_routine)(void *), void * arg)
+int chown(const char *path, uid_t owner, gid_t group)
 {
-    struct _ds_pthread_create args = {
-        .thread     = thread,
-        .start      = start_routine,
-        .def        = attr,
-        .argument   = arg,
-        .del_thread = pthread_exit
+    int err;
+    struct _fs_chown_args args = {
+        .owner = owner,
+        .group = group
     };
-    int result;
 
-    result = (int)syscall(SYSCALL_THREAD_CREATE, &args);
+    args.fd = open(path, O_WRONLY);
+    if (args.fd < 0)
+        return -1;
 
-    /* Request immediate context switch */
-    req_context_switch();
+    err = syscall(SYSCALL_FS_CHOWN, &args);
 
-    return result;
+    close(args.fd);
+
+    return err;
 }
-
-pthread_t pthread_self(void)
-{
-    return (pthread_t)syscall(SYSCALL_THREAD_GETTID, NULL);
-}
-
-void pthread_exit(void * retval)
-{
-    (void)syscall(SYSCALL_THREAD_DIE, retval);
-    /* Syscall will not return */
-}
-
-int pthread_detach(pthread_t thread)
-{
-    return syscall(SYSCALL_THREAD_DETACH, &thread);
-}
-
-/* Mutex Management ***********************************************************
- * NOTE: osMutexId/mutex_id is a direct pointer to a os_mutex_cb structure.
- * POSIX compliant functions for mutex are:
- * pthread_mutex_init(mutex,attr)
- * pthread_mutex_destroy(mutex)
- *
- * pthread_mutexattr_init(attr)
- * pthread_mutexattr_destroy(attr)
- *
- * pthread_mutex_lock(mutex) - Thread will become blocked
- * pthread_mutex_unlock(mutex)
- * pthread_mutex_trylock(mutex) - Thread will not be blocked
- */

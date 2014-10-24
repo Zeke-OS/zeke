@@ -41,6 +41,8 @@
 #define FCNTL_H
 
 #include <sys/cdefs.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifndef _MODE_T_DECLARED
 typedef int mode_t; /*!< Used for some file attributes. */
