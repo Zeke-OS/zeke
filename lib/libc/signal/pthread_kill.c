@@ -33,12 +33,12 @@
 #include <syscall.h>
 #include <signal.h>
 
-int kill(pid_t pid, int sig)
+int pthread_kill(pthread_t thread, int sig)
 {
-    struct _pkill_args args = {
-        .pid = pid,
+    struct _tkill_args args = {
+        .thread_id = thread,
         .sig = sig
     };
 
-    return (int)syscall(SYSCALL_SIGNAL_PKILL, &args);
+    return (int)syscall(SYSCALL_SIGNAL_TKILL, &args);
 }
