@@ -35,6 +35,7 @@
 #ifndef KSIGNAL_H
 #define KSIGNAL_H
 
+#include <sys/queue.h>
 #include <sys/tree.h>
 #include <stdint.h>
 #include <klocks.h>
@@ -46,6 +47,7 @@ struct ksigaction {
     RB_ENTRY(ksigaction) _entry; /* Should be the last entry. */
 };
 
+STAILQ_HEAD(sigwait_queue, __siginfo);
 RB_HEAD(sigaction_tree, ksigaction);
 
 /**
@@ -56,7 +58,9 @@ struct signals {
     sigset_t s_wait;        /*!< Signal wait mask. */
     sigset_t s_pending;     /*!< Signals pending for handling. */
     sigset_t s_running;     /*!< Signals running mask. */
+    /* TODO struct sigwait_queue s_waitqueue; */
     struct sigaction_tree sa_tree;
+    uintptr_t s_usigret;  /*!< Address of the sigret() function in uspace. */
     mtx_t s_lock;
 };
 

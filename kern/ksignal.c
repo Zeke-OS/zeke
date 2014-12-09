@@ -155,8 +155,12 @@ static void ksig_unlock(mtx_t * lock)
 
 static void ksignal_thread_ctor(struct thread_info * th)
 {
-    RB_INIT(&th->sigs.sa_tree);
-    mtx_init(&th->sigs.s_lock, KSIG_LOCK_FLAGS);
+    struct signals * sigs = &th->sigs;
+
+    /* TODO */
+    //SLIST_HEAD_INITIALIZER(&sigs->s_waitqueue);
+    RB_INIT(&sigs->sa_tree);
+    mtx_init(&sigs->s_lock, KSIG_LOCK_FLAGS);
 }
 DATA_SET(thread_ctors, ksignal_thread_ctor);
 
@@ -185,7 +189,7 @@ static void ksignal_fork_handler(struct thread_info * th)
 DATA_SET(thread_fork_handlers, ksignal_fork_handler);
 
 /**
- * Allocate memory from thread user stack.
+ * Allocate memory from the user stack of a thread.
  * @note Works only for any thread of the current process.
  * @param thread is the thread owning the stack.
  * @param len is the length of the allocation.
@@ -228,35 +232,47 @@ static void ksignal_post_scheduling(void)
 {
     int signum;
     struct signals * sigs = &current_thread->sigs;
-#if 0
     struct ksigaction action;
-#endif
-    sw_stack_frame_t * save_frame;
+    siginfo_t siginfo;
+    siginfo_t * usiginfo; /* Note: in user space */
+    sw_stack_frame_t * usave_frame;
+    sw_stack_frame_t * next_frame;
 
+    /*
+     * Can't handle signals now as the thread is in syscall and we don't want to
+     * export data from kernel registers to user space stack.
+     */
+    if (current_thread->flags & SCHED_INSYS_FLAG)
+        return;
+
+    /*
+     * Can't handle signals now if we can't get lock to sigs of
+     * the current thread.
+     */
     if (ksig_lock(&sigs->s_lock))
-        return; /* Can't handle signals now. */
+        return;
 
+    /* TODO Replace with queue */
     signum = sigffs(&sigs->s_pending);
     if (signum < 0)
         return; /* No signals pending. */
 
-#if 0
+    /* Signal pending let's check if we should handle it now. */
     ksignal_get_ksigaction(&action, sigs, signum);
-#endif
-
     if (sigismember(&sigs->s_running, signum)) {
         /* Already running a handler for that signum */
         sigdelset(&sigs->s_running, signum);
-
         return;
     }
 
+    /* Check if signal is blocked */
     if (ksignal_isblocked(sigs, signum))
         return; /* Signal is currently blocked. */
 
-    /* Allocate memory from user thread stack */
-    save_frame = usr_stack_alloc(current_thread, sizeof(sw_stack_frame_t));
-    if (!save_frame) {
+    /* Allocate memory from user thread stack for stack frame and siginfo */
+    usave_frame = usr_stack_alloc(current_thread,
+            sizeof(sw_stack_frame_t) + sizeof(siginfo_t));
+    if (!usave_frame) {
         /*
          * Thread has trashed its stack; Nothing we can do but
          * give SIGILL.
@@ -265,13 +281,28 @@ static void ksignal_post_scheduling(void)
         return; /* TODO Is this ok? */
     }
 
-    panic("Can't handle signals yet\n");
+    /* TODO kill? */
+
+    /* Save stack frame to the user space stack */
+    next_frame = &current_thread->sframe[SCHED_SFRAME_SYS];
+    (void)copyout(next_frame, usave_frame, sizeof(sw_stack_frame_t));
+
+    /* Set siginfo struct */
+    usiginfo = (void *)usave_frame + sizeof(sw_stack_frame_t);
+    (void)copyout(&siginfo, usiginfo, sizeof(siginfo_t));
+
+    /*
+     * Set next frame
+     */
+    next_frame->pc = (uintptr_t)action.ks_action.sa_sigaction;
+    next_frame->r0 = signum;                /* arg1 = signum */
+    next_frame->r1 = (uintptr_t)usiginfo;   /* arg2 = siginfo */
+    next_frame->r2 = 0;                     /* arg3 = TODO context */
+    next_frame->lr = sigs->s_usigret;
 
     /*
      * TODO
      * - Check current_thread sigs
-     *  -- if we have to enter sig handler save stack frame on top of user stack
-     *     or alt stack
      *  -- Change return address to our own handler to call syscall that
      *     reverts signal handling state
      *  -- Change to alt stack if requested
@@ -548,6 +579,55 @@ static int sys_signal_tkill(void * user_args)
     return 0;
 }
 
+static int sys_signal_signal(void * user_args)
+{
+    struct _signal_signal_args args;
+    struct ksigaction action;
+    void * old_handler;
+    int err;
+
+    if (priv_check(curproc, PRIV_SIGNAL_ACTION)) {
+        set_errno(ENOTSUP);
+        return -1;
+    }
+
+    err = copyin(user_args, &args, sizeof(args));
+    if (err) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    if (ksig_lock(&current_thread->sigs.s_lock)) {
+        set_errno(EAGAIN);
+        return -1;
+    }
+
+    /* Get current sigaction */
+    ksignal_get_ksigaction(&action, &current_thread->sigs, args.signum);
+
+    /* Swap handler pointers */
+    old_handler = action.ks_action.sa_handler;
+    action.ks_action.sa_handler = args.handler;
+    args.handler = old_handler;
+
+    /* Set new handler */
+    err = ksignal_set_ksigaction(&current_thread->sigs, &action);
+
+    ksig_unlock(&current_thread->sigs.s_lock);
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
+    err = copyout(&args, user_args, sizeof(args));
+    if (err) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    return 0;
+}
+
 static int sys_signal_action(void * user_args)
 {
     struct _signal_action_args args;
@@ -564,11 +644,18 @@ static int sys_signal_action(void * user_args)
         return -1;
     }
 
-    err = ksignal_set_ksigaction(&current_thread->sigs,
+    if (ksig_lock(&current_thread->sigs.s_lock)) {
+        set_errno(EAGAIN);
+        return -1;
+    }
+
+    err = ksignal_set_ksigaction(
+            &current_thread->sigs,
             &(struct ksigaction){
                 .ks_signum = args.signum,
                 .ks_action = args.action
             });
+    ksig_unlock(&current_thread->sigs.s_lock);
     if (err) {
         set_errno(-err);
         return -1;
@@ -597,6 +684,7 @@ static int sys_signal_return(void * user_args)
 static const syscall_handler_t ksignal_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_PKILL,      sys_signal_pkill),
     ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_TKILL,      sys_signal_tkill),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_SIGNAL,     sys_signal_signal),
     ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_ACTION,     sys_signal_action),
     ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_ALTSTACK,   sys_signal_altstack),
     ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_RETURN,     sys_signal_return),
