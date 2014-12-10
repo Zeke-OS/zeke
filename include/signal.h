@@ -275,14 +275,30 @@ struct _tkill_args {
     int sig;
 };
 
+/**
+ * Arguments for SYSCAL_SIGNAL_SIGNAL
+ */
 struct _signal_signal_args {
     int signum;
     void (*handler)(int);
 };
 
+/**
+ * Arguments for SYSCALL_SIGNAL_ACTION
+ */
 struct _signal_action_args {
     int signum;
     struct sigaction action;
+};
+
+/**
+ * Arguments for SYSCALL_SIGNAL_SIGMASK
+ */
+struct _signal_sigmask_args {
+    int threadmask; /*!< 0 = process mask: 1 = thread mask */
+    int how;
+    const sigset_t * restrict set;
+    const sigset_t * restrict oset;
 };
 
 #ifndef KERNEL_INTERNAL
@@ -359,8 +375,10 @@ int sigismember(const sigset_t * set, int signo);
 
 /*
 int sigpending(sigset_t * set);
+*/
 int sigprocmask(int how, const sigset_t * restrict set,
-        sigset_t * restrict oset);
+                sigset_t * restrict oset);
+/*
 int sigqueue(pid_t pid, int signo, const union sigval value);
 int sigsuspend(const sigset_t * sigmask);
 int sigtimedwait(const sigset_t * restrict set, siginfo_t * restrict info,

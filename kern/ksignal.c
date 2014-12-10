@@ -359,7 +359,9 @@ out:
  */
 int ksignal_sendsig_fatal(pthread_t thid, int signum)
 {
-    /* TODO */
+    /*
+     * TODO Implementation
+     */
     return 0;
 }
 
@@ -666,7 +668,18 @@ static int sys_signal_action(void * user_args)
 
 static int sys_signal_altstack(void * user_args)
 {
-    /* TODO */
+    /*
+     * TODO Implement altstack syscall that can be used to set alternative
+     *      user stack for signal handlers.
+     */
+    set_errno(ENOTSUP);
+    return -1;
+}
+
+static int sys_signal_sigmask(void * user_args)
+{
+    /* TODO Implementation */
+
     set_errno(ENOTSUP);
     return -1;
 }
@@ -678,7 +691,8 @@ static int sys_signal_return(void * user_args)
      * - Return from signal, revert stack frame and alt stack
      */
 
-    return 0;
+    set_errno(ENOTSUP);
+    return -1;
 }
 
 static const syscall_handler_t ksignal_sysfnmap[] = {
@@ -687,6 +701,7 @@ static const syscall_handler_t ksignal_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_SIGNAL,     sys_signal_signal),
     ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_ACTION,     sys_signal_action),
     ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_ALTSTACK,   sys_signal_altstack),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_SIGMASK,    sys_signal_sigmask),
     ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_RETURN,     sys_signal_return),
 };
 SYSCALL_HANDLERDEF(ksignal_syscall, ksignal_sysfnmap);
