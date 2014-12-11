@@ -69,15 +69,16 @@
 
 #define KERNEL_INTERNAL 1
 #include <sys/tree.h>
-#include <syscall.h>
-#include <errno.h>
+#include <kstring.h>
 #include <libkern.h>
+#include <syscall.h>
 #include <tsched.h>
 #include <proc.h>
-#include <sys/priv.h>
-#include <timers.h>
 #include <kmalloc.h>
-#include <kstring.h>
+#include <vm/vm.h>
+#include <timers.h>
+#include <errno.h>
+#include <sys/priv.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include "ksignal.h"
@@ -676,12 +677,99 @@ static int sys_signal_altstack(void * user_args)
     return -1;
 }
 
+/**
+ * Examine and change blocked signals of the thread or the current process.
+ * Process in this context is considered to be the main thread of
+ * the actual process.
+ */
 static int sys_signal_sigmask(void * user_args)
 {
-    /* TODO Implementation */
+    struct _signal_sigmask_args args;
+    sigset_t set;
+    sigset_t * current_set;
+    mtx_t * s_lock;
+    int err;
 
-    set_errno(ENOTSUP);
-    return -1;
+    err = copyin(user_args, &args, sizeof(struct _signal_sigmask_args));
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
+    if (args.oset) {
+        /* Copy current set to usr oset. */
+        copyout(&current_thread->sigs.s_block, (void *)args.oset,
+                sizeof(struct _signal_sigmask_args));
+        if (err) {
+            set_errno(-err);
+            return -1;
+        }
+    }
+
+    /* If 'set' is null we can return now. */
+    if (!args.set) {
+        return 0;
+    }
+
+    err = copyin(args.set, &set, sizeof(sigset_t));
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
+    /* Select current set */
+    if (args.threadmask) {
+        current_set = &current_thread->sigs.s_block;
+        s_lock = &current_thread->sigs.s_lock;
+    } else {
+        if (!curproc->main_thread) {
+            set_errno(ESRCH);
+            return -1;
+        }
+        current_set = &curproc->main_thread->sigs.s_block;
+        s_lock = &curproc->main_thread->sigs.s_lock;
+    }
+
+    if (ksig_lock(s_lock)) {
+        set_errno(EAGAIN);
+        return -1;
+    }
+
+    /* Change ops. */
+    switch (args.how) {
+    case SIG_BLOCK:
+        /*
+         * The resulting set is the union of the current set and the signal set
+         * pointed by 'set'
+         */
+        sigunion(current_set, current_set, &set);
+        break;
+    case SIG_SETMASK:
+        /*
+         * The resulting set is the signal set pointed by 'set'.
+         */
+        memcpy(current_set, &set, sizeof(sigset_t));
+        break;
+    case SIG_UNBLOCK:
+        /*
+         * The resulting set is the intersection of the current set and
+         * the complement of the signal set pointed by 'set'.
+         */
+        sigcompl(&set, &set);
+        sigintersect(current_set, current_set, &set);
+        break;
+    default:
+        /*
+         * Invalid 'how' value.
+         */
+        ksig_unlock(s_lock);
+        set_errno(EINVAL);
+        return -1;
+    }
+
+    ksig_unlock(s_lock);
+
+    return 0;
 }
 
 static int sys_signal_return(void * user_args)

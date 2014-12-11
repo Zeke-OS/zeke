@@ -83,6 +83,12 @@ int sigfillset(sigset_t * set);
 int sigismember(const sigset_t * set, int signo);
 int sigisemptyset(const sigset_t * set);
 int sigffs(sigset_t * set);
+/**
+ * Union of sigset a and b to target.
+ */
+void sigunion(sigset_t * target, sigset_t * a, sigset_t * b);
+void sigintersect(sigset_t * target, sigset_t * a, sigset_t * b);
+void sigcompl(sigset_t * target, sigset_t * set);
 
 #endif /* KSIGNAL_H */
 

@@ -30,6 +30,7 @@
  */
 
 #include <sys/cdefs.h>
+#include <kstring.h>
 #include <errno.h>
 #include <signal.h>
 
@@ -108,4 +109,40 @@ int sigffs(sigset_t * set)
     }
 
     return -1;
+}
+
+void sigunion(sigset_t * target, sigset_t * a, sigset_t * b)
+{
+    int i;
+    sigset_t tmp;
+
+    for (i = 0; i < _SIG_WORDS; i++) {
+        tmp.__bits[i] = a->__bits[i] | b->__bits[i];
+    }
+
+    memcpy(target, &tmp, sizeof(sigset_t));
+}
+
+void sigintersect(sigset_t * target, sigset_t * a, sigset_t * b)
+{
+    int i;
+    sigset_t tmp;
+
+    for (i = 0; i < _SIG_WORDS; i++) {
+        tmp.__bits[i] = a->__bits[i] & b->__bits[i];
+    }
+
+    memcpy(target, &tmp, sizeof(sigset_t));
+}
+
+void sigcompl(sigset_t * target, sigset_t * set)
+{
+    int i;
+    sigset_t tmp;
+
+    for (i = 0; i < _SIG_WORDS; i++) {
+        tmp.__bits[i] = ~(set->__bits[i]);
+    }
+
+    memcpy(target, &tmp, sizeof(sigset_t));
 }
