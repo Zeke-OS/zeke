@@ -86,9 +86,9 @@ int sigffs(sigset_t * set);
 /**
  * Union of sigset a and b to target.
  */
-void sigunion(sigset_t * target, sigset_t * a, sigset_t * b);
-void sigintersect(sigset_t * target, sigset_t * a, sigset_t * b);
-void sigcompl(sigset_t * target, sigset_t * set);
+sigset_t * sigunion(sigset_t * target, sigset_t * a, sigset_t * b);
+sigset_t * sigintersect(sigset_t * target, sigset_t * a, sigset_t * b);
+sigset_t * sigcompl(sigset_t * target, sigset_t * set);
 
 #endif /* KSIGNAL_H */
 

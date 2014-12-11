@@ -111,7 +111,7 @@ int sigffs(sigset_t * set)
     return -1;
 }
 
-void sigunion(sigset_t * target, sigset_t * a, sigset_t * b)
+sigset_t * sigunion(sigset_t * target, sigset_t * a, sigset_t * b)
 {
     int i;
     sigset_t tmp;
@@ -121,9 +121,10 @@ void sigunion(sigset_t * target, sigset_t * a, sigset_t * b)
     }
 
     memcpy(target, &tmp, sizeof(sigset_t));
+    return target;
 }
 
-void sigintersect(sigset_t * target, sigset_t * a, sigset_t * b)
+sigset_t * sigintersect(sigset_t * target, sigset_t * a, sigset_t * b)
 {
     int i;
     sigset_t tmp;
@@ -133,9 +134,10 @@ void sigintersect(sigset_t * target, sigset_t * a, sigset_t * b)
     }
 
     memcpy(target, &tmp, sizeof(sigset_t));
+    return target;
 }
 
-void sigcompl(sigset_t * target, sigset_t * set)
+sigset_t * sigcompl(sigset_t * target, sigset_t * set)
 {
     int i;
     sigset_t tmp;
@@ -145,4 +147,5 @@ void sigcompl(sigset_t * target, sigset_t * set)
     }
 
     memcpy(target, &tmp, sizeof(sigset_t));
+    return target;
 }

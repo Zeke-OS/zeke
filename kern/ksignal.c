@@ -253,7 +253,7 @@ static void ksignal_post_scheduling(void)
     if (ksig_lock(&sigs->s_lock))
         return;
 
-    /* TODO Replace with queue */
+    /* TODO Replace with a queue */
     signum = sigffs(&sigs->s_pending);
     if (signum < 0)
         return; /* No signals pending. */
@@ -755,8 +755,7 @@ static int sys_signal_sigmask(void * user_args)
          * The resulting set is the intersection of the current set and
          * the complement of the signal set pointed by 'set'.
          */
-        sigcompl(&set, &set);
-        sigintersect(current_set, current_set, &set);
+        sigintersect(current_set, current_set, sigcompl(&set, &set));
         break;
     default:
         /*
