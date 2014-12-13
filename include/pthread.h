@@ -231,7 +231,9 @@ int     pthread_cond_signal(pthread_cond_t *);
 int     pthread_cond_timedwait(pthread_cond_t *,
             pthread_mutex_t *__mutex, const struct timespec *);
 int     pthread_cond_wait(pthread_cond_t *, pthread_mutex_t *__mutex);
+*/
 int     pthread_equal(pthread_t, pthread_t);
+/*
 void        *pthread_getspecific(pthread_key_t);
 int     pthread_getcpuclockid(pthread_t, clockid_t *);
 int     pthread_join(pthread_t, void **);

@@ -31,7 +31,6 @@
 */
 
 #include <stdarg.h>
-#include <string.h>
 #include <syscall.h>
 #include <unistd.h>
 #include <errno.h>
@@ -55,71 +54,4 @@ int open(const char * path, int oflags, ...)
     }
 
     return syscall(SYSCALL_FS_OPEN, &args);
-}
-
-int openat(int fd, const char * path, int oflags, ...)
-{
-    struct _fs_open_args args = {
-        .fd = fd,
-        .name = path,
-        .name_len = strlen(path) + 1,
-        .oflags = oflags,
-        .atflags = (fd == AT_FDCWD) ? AT_FDCWD : AT_FDARG
-    };
-
-    if (oflags & O_CREAT) {
-        va_list ap;
-
-        va_start(ap, oflags);
-        args.mode = va_arg(ap, mode_t);
-        va_end(ap);
-    }
-
-    return syscall(SYSCALL_FS_OPEN, &args);
-}
-
-int creat(const char * path, mode_t mode)
-{
-    return open(path, O_WRONLY | O_CREAT | O_TRUNC, mode);
-}
-
-int close(int fildes)
-{
-    return syscall(SYSCALL_FS_CLOSE, (void *)fildes);
-}
-
-int fcntl(int fildes, int cmd, ...)
-{
-    /* TODO */
-    va_list ap;
-    struct _fs_fcntl_args args = {
-        .fd = fildes,
-        .cmd = cmd
-    };
-    int retval = 0;
-
-    va_start(ap, cmd);
-    switch (cmd) {
-    case F_DUPFD:
-    case F_DUP2FD:
-    case F_DUPFD_CLOEXEC:
-    case F_SETFD:
-    case F_SETFL:
-    case F_SETOWN:
-        args.third.ival = va_arg(ap, int);
-        break;
-    case F_GETLK:
-    case F_SETLK:
-    case F_SETLKW:
-        args.third.fl = va_arg(ap, struct flock);
-        break;
-    default:
-        errno = EINVAL;
-        retval = -1;
-    }
-    va_end(ap);
-    if (retval)
-        return retval;
-
-    return syscall(SYSCALL_FS_FCNTL, &args);
 }

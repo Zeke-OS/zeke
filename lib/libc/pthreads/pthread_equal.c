@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    fcntl.c
+ * @file    errno.c
  * @author  Olli Vanhoja
- * @brief   File control.
+ * @brief   Get pointer to thread local errno.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,29 +30,10 @@
  *******************************************************************************
 */
 
-#include <stdarg.h>
 #include <syscall.h>
-#include <unistd.h>
-#include <errno.h>
-#include <fcntl.h>
+#include <pthread.h>
 
-int openat(int fd, const char * path, int oflags, ...)
+int pthread_equal(pthread_t t1, pthread_t t2)
 {
-    struct _fs_open_args args = {
-        .fd = fd,
-        .name = path,
-        .name_len = strlen(path) + 1,
-        .oflags = oflags,
-        .atflags = (fd == AT_FDCWD) ? AT_FDCWD : AT_FDARG
-    };
-
-    if (oflags & O_CREAT) {
-        va_list ap;
-
-        va_start(ap, oflags);
-        args.mode = va_arg(ap, mode_t);
-        va_end(ap);
-    }
-
-    return syscall(SYSCALL_FS_OPEN, &args);
+    return (t1 == t2);
 }
