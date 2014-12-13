@@ -31,9 +31,10 @@
 */
 
 #include <stdarg.h>
-#include <syscall.h>
 #include <unistd.h>
+#include <string.h>
 #include <errno.h>
+#include <syscall.h>
 #include <fcntl.h>
 
 int openat(int fd, const char * path, int oflags, ...)

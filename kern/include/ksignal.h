@@ -41,27 +41,37 @@
 #include <klocks.h>
 #include <signal.h>
 
+#define USAVEFRAME_SIZE (sizeof(sw_stack_frame_t) + sizeof(siginfo_t))
+
+struct ksiginfo {
+    siginfo_t siginfo;
+    STAILQ_ENTRY(ksiginfo) _entry;
+};
+
 struct ksigaction {
     int ks_signum;
     struct sigaction ks_action;
     RB_ENTRY(ksigaction) _entry; /* Should be the last entry. */
 };
 
-STAILQ_HEAD(sigwait_queue, __siginfo);
+STAILQ_HEAD(sigwait_queue, ksiginfo);
 RB_HEAD(sigaction_tree, ksigaction);
+
+typedef struct _ksigmtx_ {
+    mtx_t l;
+} ksigmtx_t;
 
 /**
  * Thread signals struct.
  */
 struct signals {
-    sigset_t s_block;       /*!< List of blocked signals. */
-    sigset_t s_wait;        /*!< Signal wait mask. */
-    sigset_t s_pending;     /*!< Signals pending for handling. */
-    sigset_t s_running;     /*!< Signals running mask. */
-    /* TODO struct sigwait_queue s_waitqueue; */
-    struct sigaction_tree sa_tree;
-    uintptr_t s_usigret;  /*!< Address of the sigret() function in uspace. */
-    mtx_t s_lock;
+    sigset_t s_block;                   /*!< List of blocked signals. */
+    sigset_t s_wait;                    /*!< Signal wait mask. */
+    sigset_t s_running;                 /*!< Signals running mask. */
+    struct sigwait_queue s_pendqueue;   /*!< Signals pending for handling. */
+    struct sigaction_tree sa_tree;      /*!< Configured signal actions. */
+    uintptr_t s_usigret;    /*!< Address of the sigret() function in uspace. */
+    ksigmtx_t s_lock;
 };
 
 struct thread_info;

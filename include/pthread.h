@@ -233,14 +233,21 @@ int     pthread_cond_timedwait(pthread_cond_t *,
 int     pthread_cond_wait(pthread_cond_t *, pthread_mutex_t *__mutex);
 */
 int     pthread_equal(pthread_t, pthread_t);
+
+void    *pthread_getspecific(pthread_key_t);
 /*
-void        *pthread_getspecific(pthread_key_t);
 int     pthread_getcpuclockid(pthread_t, clockid_t *);
 int     pthread_join(pthread_t, void **);
-int     pthread_key_create(pthread_key_t *,
-            void (*) (void *));
-int     pthread_key_delete(pthread_key_t);
 */
+/**
+ * Create a thread specific data key.
+ * @param[out]  key
+ * @param       destructor
+ * @return EAGAIN, ENOMEM or 0
+ */
+int     pthread_key_create(pthread_key_t * key, void (*destructor)(void*));
+int     pthread_key_delete(pthread_key_t key);
+void    __pthread_key_dtors(void);
 int     pthread_mutexattr_destroy(pthread_mutexattr_t *);
 int     pthread_mutexattr_getpshared(const pthread_mutexattr_t *,
             int *);
@@ -272,7 +279,9 @@ int     pthread_rwlockattr_getpshared(const pthread_rwlockattr_t *,
 int     pthread_rwlockattr_init(pthread_rwlockattr_t *);
 int     pthread_rwlockattr_setkind_np(pthread_rwlockattr_t *, int);
 int     pthread_rwlockattr_setpshared(pthread_rwlockattr_t *, int);
+*/
 int     pthread_setspecific(pthread_key_t, const void *);
+/*
 int     pthread_spin_init(pthread_spinlock_t *__spin, int)
 int     pthread_spin_destroy(pthread_spinlock_t *__spin);
 int     pthread_spin_lock(pthread_spinlock_t *__spin);

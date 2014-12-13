@@ -46,7 +46,6 @@ typedef int pthread_t; /*!< Thread ID. */
  * - pthread_barrierattr_t
  * - pthread_cond_t
  * - pthread_condattr_t
- * - pthread_key_t
  * - pthread_mutex_t
  * - pthread_mutexattr_t
  *   pthread_rwlock_t

@@ -131,4 +131,23 @@ static inline int atomic_cmpxchg(atomic_t * v, int expect, int new)
     return old;
 }
 
+static inline void * atomic_cmpxchg_ptr(void * ptr, void * expect, void * new)
+{
+    void * old;
+    int err = 0;
+
+    __asm__ volatile (
+        "try%=:\n\t"
+        "LDREX      %[old], [%[addr]]\n\t"
+        "TEQ        %[old], %[expect]\n\t"
+        "STREXEQ    %[res], %[new], [%[addr]]\n\t"
+        "CMP        %[res], #1\n\t"
+        "BEQ        try%="
+        : [old]"+r" (old), [expect]"+r" (expect), [new]"+r" (new),
+          [res]"+r" (err), [addr]"+r" (ptr)
+    );
+
+    return old;
+}
+
 #endif /* HAL_ATOMIC_H_ */

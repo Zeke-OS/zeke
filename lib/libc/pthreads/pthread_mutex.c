@@ -107,7 +107,7 @@ static void init_mtxsigset(sigset_t * set)
     sigaddset(set, _SIGMTX);
 }
 
-static void on_sigmtx(void)
+static void on_sigmtx(int i)
 {
     sigset_t set;
 
@@ -139,7 +139,7 @@ int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr)
      * sigwait().
      */
     signal(_SIGMTX, &on_sigmtx);
-    on_sigmtx();
+    on_sigmtx(0);
 
     return 0;
 }

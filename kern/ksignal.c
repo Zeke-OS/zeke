@@ -124,6 +124,9 @@ static const uint8_t default_sigproptbl[] = {
 
 RB_GENERATE(sigaction_tree, ksigaction, _entry, signum_comp);
 
+/**
+ * Signum comparator for rb trees.
+ */
 int signum_comp(struct ksigaction * a, struct ksigaction * b)
 {
     KASSERT((a && b), "a & b must be set");
@@ -131,19 +134,19 @@ int signum_comp(struct ksigaction * a, struct ksigaction * b)
      return a->ks_signum - b->ks_signum;
 }
 
-static int ksig_lock(mtx_t * lock)
+static int ksig_lock(ksigmtx_t * lock)
 {
     istate_t s;
 
     s = get_interrupt_state();
     if (s & PSR_INT_I) {
-        return mtx_trylock(lock);
+        return mtx_trylock(&lock->l);
     } else {
-        return mtx_lock(lock);
+        return mtx_lock(&lock->l);
     }
 }
 
-static void ksig_unlock(mtx_t * lock)
+static void ksig_unlock(ksigmtx_t * lock)
 {
     istate_t s;
 
@@ -151,17 +154,16 @@ static void ksig_unlock(mtx_t * lock)
     if (s & PSR_INT_I)
         return;
 
-    mtx_unlock(lock);
+    mtx_unlock(&lock->l);
 }
 
 static void ksignal_thread_ctor(struct thread_info * th)
 {
     struct signals * sigs = &th->sigs;
 
-    /* TODO */
-    //SLIST_HEAD_INITIALIZER(&sigs->s_waitqueue);
+    STAILQ_INIT(&sigs->s_pendqueue);
     RB_INIT(&sigs->sa_tree);
-    mtx_init(&sigs->s_lock, KSIG_LOCK_FLAGS);
+    mtx_init(&sigs->s_lock.l, KSIG_LOCK_FLAGS);
 }
 DATA_SET(thread_ctors, ksignal_thread_ctor);
 
@@ -169,9 +171,17 @@ static void ksignal_fork_handler(struct thread_info * th)
 {
     struct sigaction_tree old_tree = th->sigs.sa_tree;
     struct ksigaction * sigact_old;
+    struct ksiginfo * n1;
+    struct ksiginfo * n2;
 
     /* Clear pending signals as required by POSIX. */
-    memset(&th->sigs.s_pending, 0, sizeof(th->sigs.s_pending));
+    n1  = STAILQ_FIRST(&th->sigs.s_pendqueue);
+    while (n1 != NULL) {
+        n2 = STAILQ_NEXT(n1, _entry);
+        kfree(n1);
+        n1 = n2;
+    }
+    STAILQ_INIT(&th->sigs.s_pendqueue);
 
     /* Clone configured signal actions. */
     RB_INIT(&th->sigs.sa_tree);
@@ -185,7 +195,7 @@ static void ksignal_fork_handler(struct thread_info * th)
     }
 
     /* Reinit mutex lock */
-    mtx_init(&th->sigs.s_lock, KSIG_LOCK_FLAGS);
+    mtx_init(&th->sigs.s_lock.l, KSIG_LOCK_FLAGS);
 }
 DATA_SET(thread_fork_handlers, ksignal_fork_handler);
 
@@ -197,7 +207,8 @@ DATA_SET(thread_fork_handlers, ksignal_fork_handler);
  * @return Returns pointer to the uaddr of the allocation if succeed;
  * Otherwise NULL.
  */
-static void * usr_stack_alloc(struct thread_info * thread, size_t len)
+static void * usr_stack_alloc(struct thread_info * thread,
+        uintptr_t * old_frame, size_t len)
 {
     int framenum;
     sw_stack_frame_t * frame;
@@ -219,7 +230,8 @@ static void * usr_stack_alloc(struct thread_info * thread, size_t len)
         return NULL;
 
     /* Make allocation. */
-    frame->sp += memalign(len);
+    *old_frame = frame->sp;
+    frame->sp -= memalign(len);
 
     return sp;
 }
@@ -234,8 +246,9 @@ static void ksignal_post_scheduling(void)
     int signum;
     struct signals * sigs = &current_thread->sigs;
     struct ksigaction action;
-    siginfo_t siginfo;
+    struct ksiginfo * ksiginfo;
     siginfo_t * usiginfo; /* Note: in user space */
+    uintptr_t old_uframe;
     sw_stack_frame_t * usave_frame;
     sw_stack_frame_t * next_frame;
 
@@ -253,10 +266,11 @@ static void ksignal_post_scheduling(void)
     if (ksig_lock(&sigs->s_lock))
         return;
 
-    /* TODO Replace with a queue */
-    signum = sigffs(&sigs->s_pending);
-    if (signum < 0)
+    /* Get next pending signal. */
+    ksiginfo = STAILQ_FIRST(&sigs->s_pendqueue);
+    if (ksiginfo == 0)
         return; /* No signals pending. */
+    signum = ksiginfo->siginfo.si_signo;
 
     /* Signal pending let's check if we should handle it now. */
     ksignal_get_ksigaction(&action, sigs, signum);
@@ -270,9 +284,11 @@ static void ksignal_post_scheduling(void)
     if (ksignal_isblocked(sigs, signum))
         return; /* Signal is currently blocked. */
 
+    /* Else the pending singal should be handled now. */
+    STAILQ_REMOVE_HEAD(&sigs->s_pendqueue, _entry);
+
     /* Allocate memory from user thread stack for stack frame and siginfo */
-    usave_frame = usr_stack_alloc(current_thread,
-            sizeof(sw_stack_frame_t) + sizeof(siginfo_t));
+    usave_frame = usr_stack_alloc(current_thread, &old_uframe, USAVEFRAME_SIZE);
     if (!usave_frame) {
         /*
          * Thread has trashed its stack; Nothing we can do but
@@ -288,9 +304,9 @@ static void ksignal_post_scheduling(void)
     next_frame = &current_thread->sframe[SCHED_SFRAME_SYS];
     (void)copyout(next_frame, usave_frame, sizeof(sw_stack_frame_t));
 
-    /* Set siginfo struct */
+    /* Copyout siginfo struct. */
     usiginfo = (void *)usave_frame + sizeof(sw_stack_frame_t);
-    (void)copyout(&siginfo, usiginfo, sizeof(siginfo_t));
+    (void)copyout(&ksiginfo->siginfo, usiginfo, sizeof(siginfo_t));
 
     /*
      * Set next frame
@@ -299,6 +315,7 @@ static void ksignal_post_scheduling(void)
     next_frame->r0 = signum;                /* arg1 = signum */
     next_frame->r1 = (uintptr_t)usiginfo;   /* arg2 = siginfo */
     next_frame->r2 = 0;                     /* arg3 = TODO context */
+    next_frame->r9 = old_uframe;            /* frame pointer */
     next_frame->lr = sigs->s_usigret;
 
     /*
@@ -311,18 +328,25 @@ static void ksignal_post_scheduling(void)
      */
 
     ksig_unlock(&sigs->s_lock);
+    kfree(ksiginfo);
 }
 DATA_SET(post_sched_tasks, ksignal_post_scheduling);
 
+/* TODO use signal queue and prepare siginfo struct to be delivered. */
 int ksignal_thread_sendsig(struct thread_info * thread, int signum)
 {
     int retval = 0;
     struct signals * sigs;
     struct ksigaction action;
+    struct ksiginfo * ksiginfo;
 
     if (!thread)
         return -EINVAL;
     sigs = &thread->sigs;
+
+    if (signum <= 0 || signum > _SIG_MAXSIG) {
+        return -EINVAL;
+    }
 
     if (ksig_lock(&sigs->s_lock))
         return -EWOULDBLOCK;
@@ -339,9 +363,20 @@ int ksignal_thread_sendsig(struct thread_info * thread, int signum)
         goto out;
 
     /* Not ignored so we can set the signal to pending state. */
-    retval = sigaddset(&sigs->s_pending, signum);
-    if (retval)
-        goto out;
+    ksiginfo = kmalloc(sizeof(struct ksiginfo));
+    if (!ksiginfo)
+        return -ENOMEM;
+    *ksiginfo = (struct ksiginfo){
+        .siginfo.si_signo = signum,
+        .siginfo.si_code = 0, /* TODO */
+        .siginfo.si_errno = 0, /* TODO */
+        .siginfo.si_pid = current_process_id,
+        .siginfo.si_uid = curproc->uid,
+        .siginfo.si_addr = 0, /* TODO */
+        .siginfo.si_status = 0, /* TODO */
+        .siginfo.si_value = { 0 }, /* TODO */
+    };
+    STAILQ_INSERT_TAIL(&sigs->s_pendqueue, ksiginfo, _entry);
 
     /* Signal is not blocked or the thread is waiting for this signal. */
     if (!ksignal_isblocked(sigs, signum) || sigismember(&sigs->s_wait, signum)) {
@@ -368,7 +403,7 @@ int ksignal_sendsig_fatal(pthread_t thid, int signum)
 
 int ksignal_isblocked(struct signals * sigs, int signum)
 {
-    KASSERT(mtx_test(&sigs->s_lock), "sigs should be locked\n");
+    KASSERT(mtx_test(&sigs->s_lock.l), "sigs should be locked\n");
 
     /*
      * TODO IEEE Std 1003.1, 2004 Edition
@@ -398,7 +433,7 @@ void ksignal_get_ksigaction(struct ksigaction * action,
 
     KASSERT(action, "Action should be set\n");
     KASSERT(signum >= 0, "Signum should be positive\n");
-    KASSERT(mtx_test(&sigs->s_lock), "sigs should be locked\n");
+    KASSERT(mtx_test(&sigs->s_lock.l), "sigs should be locked\n");
 
     if (!RB_EMPTY(&sigs->sa_tree) &&
         (p_action = RB_FIND(sigaction_tree, &sigs->sa_tree, &find))) {
@@ -423,7 +458,7 @@ int ksignal_set_ksigaction(struct signals * sigs, struct ksigaction * action)
     const int signum = action->ks_signum;
     struct sigaction * sigact = NULL;
 
-    KASSERT(mtx_test(&sigs->s_lock), "sigs should be locked\n");
+    KASSERT(mtx_test(&sigs->s_lock.l), "sigs should be locked\n");
 
     if (!action)
         return -EINVAL;
@@ -687,7 +722,7 @@ static int sys_signal_sigmask(void * user_args)
     struct _signal_sigmask_args args;
     sigset_t set;
     sigset_t * current_set;
-    mtx_t * s_lock;
+    ksigmtx_t * s_lock;
     int err;
 
     err = copyin(user_args, &args, sizeof(struct _signal_sigmask_args));
@@ -775,7 +810,10 @@ static int sys_signal_return(void * user_args)
 {
     /*
      * TODO
-     * - Return from signal, revert stack frame and alt stack
+     * Return from signal handler
+     * - get address of the old frame pointer
+     * - revert stack frame and alt stack
+     * - reset pc and oth registers
      */
 
     set_errno(ENOTSUP);

@@ -190,7 +190,8 @@ libc
 ----
 
 - Missing this and that
-- enable mmap for malloc
+- Enable mmap for malloc
+- `__pthread_key_dtors()` is only called when `pthread_exit()` is called
 
 init
 ----
