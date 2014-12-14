@@ -326,6 +326,22 @@ proc_info_t * proc_get_struct(pid_t pid)
     return (*_procarr)[pid];
 }
 
+threadInfo_t * proc_iterate_threads(proc_info_t * proc,
+        threadInfo_t ** thread_it)
+{
+    if (*thread_it == NULL) {
+        *thread_it = proc->main_thread;
+    } else {
+        if (*thread_it == proc->main_thread) {
+            *thread_it = (*thread_it)->inh.first_child;
+        } else {
+            *thread_it = (*thread_it)->inh.next_child;
+        }
+    }
+
+    return *thread_it;
+}
+
 /* Called when thread is completely removed from the scheduler */
 void proc_thread_removed(pid_t pid, pthread_t thread_id)
 {

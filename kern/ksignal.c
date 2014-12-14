@@ -85,6 +85,12 @@
 
 #define KSIG_LOCK_FLAGS (MTX_TYPE_TICKET | MTX_TYPE_SLEEP | MTX_TYPE_PRICEIL)
 
+#define KSIG_EXEC_IF(thread_, signum_) do { \
+    if (!ksignal_isblocked(&thread_->sigs, signum_) \
+            || sigismember(&thread_->sigs.s_wait, signum_)) { \
+        sched_thread_set_exec(thread_->id); \
+    } } while (0)
+
 static int kern_logsigexit = 1;
 SYSCTL_INT(_kern, KERN_LOGSIGEXIT, logsigexit, CTLFLAG_RW,
            &kern_logsigexit, 0,
@@ -254,13 +260,13 @@ static void ksignal_post_scheduling(void)
 
     /*
      * Can't handle signals now as the thread is in syscall and we don't want to
-     * export data from kernel registers to user space stack.
+     * export data from kernel registers to the user space stack.
      */
     if (current_thread->flags & SCHED_INSYS_FLAG)
         return;
 
     /*
-     * Can't handle signals now if we can't get lock to sigs of
+     * Can't handle signals right now if we can't get lock to sigs of
      * the current thread.
      */
     if (ksig_lock(&sigs->s_lock))
@@ -333,16 +339,11 @@ static void ksignal_post_scheduling(void)
 DATA_SET(post_sched_tasks, ksignal_post_scheduling);
 
 /* TODO use signal queue and prepare siginfo struct to be delivered. */
-int ksignal_thread_sendsig(struct thread_info * thread, int signum)
+int ksignal_queue_sig(struct signals * sigs, int signum)
 {
     int retval = 0;
-    struct signals * sigs;
     struct ksigaction action;
     struct ksiginfo * ksiginfo;
-
-    if (!thread)
-        return -EINVAL;
-    sigs = &thread->sigs;
 
     if (signum <= 0 || signum > _SIG_MAXSIG) {
         return -EINVAL;
@@ -377,12 +378,6 @@ int ksignal_thread_sendsig(struct thread_info * thread, int signum)
         .siginfo.si_value = { 0 }, /* TODO */
     };
     STAILQ_INSERT_TAIL(&sigs->s_pendqueue, ksiginfo, _entry);
-
-    /* Signal is not blocked or the thread is waiting for this signal. */
-    if (!ksignal_isblocked(sigs, signum) || sigismember(&sigs->s_wait, signum)) {
-        /* so set exec */
-        sched_thread_set_exec(thread->id);
-    }
 
 out:
     ksig_unlock(&sigs->s_lock);
@@ -505,6 +500,7 @@ static int sys_signal_pkill(void * user_args)
     struct _pkill_args args;
     proc_info_t * proc;
     struct thread_info * thread;
+    struct thread_info * thread_it;
     int err;
 
     err = copyin(user_args, &args, sizeof(args));
@@ -542,19 +538,78 @@ static int sys_signal_pkill(void * user_args)
     /*
      * TODO
      * Proper signaling logic:
-     * - send to a sigwaiting thread or sighandling thread
-     * - send to all
+     * - send to all case
      */
-    thread = curproc->main_thread;
-    if (!thread) {
-        set_errno(ESRCH);
-        return -1;
-    }
 
-    err = ksignal_thread_sendsig(thread, args.sig);
-    if (err) {
-        set_errno(-err);
-        return -1;
+
+    thread_it = NULL;
+    while ((thread = proc_iterate_threads(proc, &thread_it))) {
+        int blocked;
+
+        /*
+         * Check if signal is not blocked for the thread.
+         */
+        if (ksig_lock(&thread->sigs.s_lock)) {
+            set_errno(EAGAIN);
+            return -1;
+        }
+        blocked = ksignal_isblocked(&thread->sigs, args.sig);
+        ksig_unlock(&thread->sigs.s_lock);
+        if (blocked)
+            continue; /* check next thread */
+
+        /* Send signal and return */
+        err = ksignal_queue_sig(&thread->sigs, args.sig);
+
+        /* Signal is not blocked or the thread is waiting for this signal. */
+        KSIG_EXEC_IF(thread, args.sig);
+
+        if (err) {
+            set_errno(-err);
+            return -1;
+        }
+        return 0;
+    }
+    if (!thread) { /* All threads blocking, send to the process queue */
+        int blocked;
+
+        if (ksig_lock(&thread->sigs.s_lock)) {
+            set_errno(EAGAIN);
+            return -1;
+        }
+        blocked = ksignal_isblocked(&thread->sigs, args.sig);
+        ksig_unlock(&thread->sigs.s_lock);
+
+        if (blocked) {
+            ksignal_queue_sig(&thread->sigs, args.sig);
+        } else { /* Not blocked, send to main. */
+            struct signals * sigs;
+
+            /*
+             * TODO
+             * Verify if signal should be delivered to the main or queued,
+             * or something else.
+             */
+
+            thread = proc->main_thread;
+            if (!thread) {
+                set_errno(ESRCH);
+                return -1;
+            }
+            sigs = &thread->sigs;
+
+            err = ksignal_queue_sig(sigs, args.sig);
+            if (err) {
+                set_errno(-err);
+                return -1;
+            }
+
+            /*
+             * Signal is not blocked or the thread is waiting for
+             * this signal.
+             */
+            KSIG_EXEC_IF(thread, args.sig);
+        }
     }
 
     return 0;
@@ -568,6 +623,7 @@ static int sys_signal_tkill(void * user_args)
     struct _tkill_args args;
     struct thread_info * thread;
     proc_info_t * proc;
+    struct signals * sigs;
     int err;
 
     err = copyin(user_args, &args, sizeof(args));
@@ -581,6 +637,7 @@ static int sys_signal_tkill(void * user_args)
         set_errno(ESRCH);
         return -1;
     }
+    sigs = &thread->sigs;
 
     proc = proc_get_struct(thread->pid_owner);
     if (!proc) {
@@ -608,11 +665,14 @@ static int sys_signal_tkill(void * user_args)
     if (args.sig == 0)
         return 0;
 
-    err = ksignal_thread_sendsig(thread, args.sig);
+    err = ksignal_queue_sig(sigs, args.sig);
     if (err) {
         set_errno(-err);
         return -1;
     }
+
+    /* Signal is not blocked or the thread is waiting for this signal. */
+    KSIG_EXEC_IF(thread, args.sig);
 
     return 0;
 }
@@ -714,8 +774,6 @@ static int sys_signal_altstack(void * user_args)
 
 /**
  * Examine and change blocked signals of the thread or the current process.
- * Process in this context is considered to be the main thread of
- * the actual process.
  */
 static int sys_signal_sigmask(void * user_args)
 {
@@ -754,15 +812,13 @@ static int sys_signal_sigmask(void * user_args)
 
     /* Select current set */
     if (args.threadmask) {
+        /* current thread. */
         current_set = &current_thread->sigs.s_block;
         s_lock = &current_thread->sigs.s_lock;
     } else {
-        if (!curproc->main_thread) {
-            set_errno(ESRCH);
-            return -1;
-        }
-        current_set = &curproc->main_thread->sigs.s_block;
-        s_lock = &curproc->main_thread->sigs.s_lock;
+        /* current process. */
+        current_set = &curproc->sigs.s_block;
+        s_lock = &curproc->sigs.s_lock;
     }
 
     if (ksig_lock(s_lock)) {

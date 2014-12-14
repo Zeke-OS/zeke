@@ -114,6 +114,8 @@ typedef struct proc_info {
     void * brk_start;           /*!< Break start address. (end of heap data) */
     void * brk_stop;            /*!< Break stop address. (end of heap region) */
 
+    struct signals sigs;        /*!< Per process signals. */
+
     /* notes:
      * - main_thread already has a linked list of child threads
      * - file_t fd's
@@ -163,9 +165,18 @@ extern mtx_t proclock;
  */
 int proc_init(void) __attribute__((constructor));
 
-/* proc.c
+/*
+ * proc.c
  * Process scheduling and sys level management
  */
+
+/**
+ * Iterate over threads owned by proc.
+ * @param thread_it should be initialized to NULL.
+ * @return next thread or NULL.
+ */
+threadInfo_t * proc_iterate_threads(proc_info_t * proc,
+        threadInfo_t ** thread_it);
 
 /**
  * Remove thread from a process.
