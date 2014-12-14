@@ -168,6 +168,7 @@ typedef struct thread_info {
 
     /* Signals */
     struct signals sigs;            /*!< Signals. */
+    int sigwait_retval;             /*!< Return value for sigwait() */
 
     /* Scheduler specific data */
 #if configSCHED_CDS != 0

@@ -72,6 +72,7 @@
 #include <kstring.h>
 #include <libkern.h>
 #include <syscall.h>
+#include <thread.h>
 #include <tsched.h>
 #include <proc.h>
 #include <kmalloc.h>
@@ -85,11 +86,12 @@
 
 #define KSIG_LOCK_FLAGS (MTX_TYPE_TICKET | MTX_TYPE_SLEEP | MTX_TYPE_PRICEIL)
 
-#define KSIG_EXEC_IF(thread_, signum_) do { \
-    if (!ksignal_isblocked(&thread_->sigs, signum_) \
-            || sigismember(&thread_->sigs.s_wait, signum_)) { \
-        sched_thread_set_exec(thread_->id); \
-    } } while (0)
+#define KSIG_EXEC_IF(thread_, signum_) do {                     \
+    int blocked = ksignal_isblocked(&thread_->sigs, signum_);   \
+    int swait = sigismember(&thread_->sigs.s_wait, signum_);    \
+    if (blocked && swait) thread_release(thread_);              \
+    else if (!blocked) sched_thread_set_exec(thread_->id);      \
+} while (0)
 
 static int kern_logsigexit = 1;
 SYSCTL_INT(_kern, KERN_LOGSIGEXIT, logsigexit, CTLFLAG_RW,
@@ -243,13 +245,63 @@ static void * usr_stack_alloc(struct thread_info * thread,
 }
 
 /**
+ * Forward signals pending in proc sigs struct.
+ */
+static void forward_proc_signals(void)
+{
+    struct signals * sigs = &curproc->sigs;
+    struct ksiginfo * ksiginfo;
+    struct ksiginfo * tmp;
+
+    if (ksig_lock(&sigs->s_lock))
+        return;
+
+    /* Get next pending signal. */
+    STAILQ_FOREACH_SAFE(ksiginfo, &sigs->s_pendqueue, _entry, tmp) {
+        struct thread_info * thread;
+        struct thread_info * thread_it = NULL;
+
+        while ((thread = proc_iterate_threads(curproc, &thread_it))) {
+            int signum;
+            int blocked, swait;
+
+            /*
+             * Check if signal is not blocked for the thread.
+             */
+            if (ksig_lock(&thread->sigs.s_lock)) {
+                ksig_unlock(&sigs->s_lock);
+                return; /* Try again later */
+            }
+            signum = ksiginfo->siginfo.si_signo;
+            blocked = ksignal_isblocked(&thread->sigs, signum);
+            swait = sigismember(&thread->sigs.s_wait, signum);
+
+            if (!(blocked && swait) && blocked) {
+                ksig_unlock(&thread->sigs.s_lock);
+                continue; /* check next thread */
+            }
+
+            STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
+            STAILQ_INSERT_TAIL(&thread->sigs.s_pendqueue, ksiginfo, _entry);
+            if (thread != current_thread)
+                KSIG_EXEC_IF(thread, ksiginfo->siginfo.si_signo);
+            ksig_unlock(&thread->sigs.s_lock);
+            ksig_unlock(&sigs->s_lock);
+            return; /* Safer than break? */
+        }
+    }
+
+    ksig_unlock(&sigs->s_lock);
+}
+
+/**
  * Post thread scheduling handler that updates thread stack frame if a signal
  * is pending. After this handler the thread will enter to signal handler
  * instead of returning to normal execution.
  */
 static void ksignal_post_scheduling(void)
 {
-    int signum;
+    int signum, blocked, swait;
     struct signals * sigs = &current_thread->sigs;
     struct ksigaction action;
     struct ksiginfo * ksiginfo;
@@ -257,6 +309,8 @@ static void ksignal_post_scheduling(void)
     uintptr_t old_uframe;
     sw_stack_frame_t * usave_frame;
     sw_stack_frame_t * next_frame;
+
+    forward_proc_signals();
 
     /*
      * Can't handle signals now as the thread is in syscall and we don't want to
@@ -273,25 +327,42 @@ static void ksignal_post_scheduling(void)
         return;
 
     /* Get next pending signal. */
-    ksiginfo = STAILQ_FIRST(&sigs->s_pendqueue);
-    if (ksiginfo == 0)
-        return; /* No signals pending. */
-    signum = ksiginfo->siginfo.si_signo;
+    STAILQ_FOREACH(ksiginfo, &sigs->s_pendqueue, _entry) {
+        signum = ksiginfo->siginfo.si_signo;
+        blocked = ksignal_isblocked(sigs, signum);
+        swait = sigismember(&sigs->s_wait, signum);
 
-    /* Signal pending let's check if we should handle it now. */
-    ksignal_get_ksigaction(&action, sigs, signum);
-    if (sigismember(&sigs->s_running, signum)) {
-        /* Already running a handler for that signum */
-        sigdelset(&sigs->s_running, signum);
-        return;
+        /* Signal pending let's check if we should handle it now. */
+        ksignal_get_ksigaction(&action, sigs, signum);
+        if (sigismember(&sigs->s_running, signum)) {
+            /* Already running a handler for that signum */
+            sigdelset(&sigs->s_running, signum);
+            ksig_unlock(&sigs->s_lock);
+            continue;
+        }
+
+        /* Check if the thread is waiting for this signal */
+        if (blocked && swait) {
+            current_thread->sigwait_retval = signum;
+            sigemptyset(&sigs->s_wait);
+            STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
+            kfree(ksiginfo);
+            ksig_unlock(&sigs->s_lock);
+            return; /* There is a sigwait() for this signum. */
+        }
+
+        /* Check if signal is blocked */
+        if (blocked) {
+            ksig_unlock(&sigs->s_lock);
+            continue; /* This signal is currently blocked. */
+        }
     }
-
-    /* Check if signal is blocked */
-    if (ksignal_isblocked(sigs, signum))
-        return; /* Signal is currently blocked. */
-
+    if (!ksiginfo) {
+        ksig_unlock(&sigs->s_lock);
+        return; /* All signals blocked or no signals pending */
+    }
     /* Else the pending singal should be handled now. */
-    STAILQ_REMOVE_HEAD(&sigs->s_pendqueue, _entry);
+    STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
 
     /* Allocate memory from user thread stack for stack frame and siginfo */
     usave_frame = usr_stack_alloc(current_thread, &old_uframe, USAVEFRAME_SIZE);
@@ -301,6 +372,7 @@ static void ksignal_post_scheduling(void)
          * give SIGILL.
          */
         ksignal_sendsig_fatal(current_thread->id, SIGILL);
+        ksig_unlock(&sigs->s_lock);
         return; /* TODO Is this ok? */
     }
 
@@ -499,8 +571,7 @@ static int sys_signal_pkill(void * user_args)
 {
     struct _pkill_args args;
     proc_info_t * proc;
-    struct thread_info * thread;
-    struct thread_info * thread_it;
+    struct signals * sigs;
     int err;
 
     err = copyin(user_args, &args, sizeof(args));
@@ -514,6 +585,7 @@ static int sys_signal_pkill(void * user_args)
         set_errno(ESRCH);
         return -1;
     }
+    sigs = &proc->sigs;
 
     /*
      * Check if process is privileged to signal other users.
@@ -535,82 +607,16 @@ static int sys_signal_pkill(void * user_args)
     if (args.sig == 0)
         return 0;
 
-    /*
-     * TODO
-     * Proper signaling logic:
-     * - send to all case
-     */
-
-
-    thread_it = NULL;
-    while ((thread = proc_iterate_threads(proc, &thread_it))) {
-        int blocked;
-
-        /*
-         * Check if signal is not blocked for the thread.
-         */
-        if (ksig_lock(&thread->sigs.s_lock)) {
-            set_errno(EAGAIN);
-            return -1;
-        }
-        blocked = ksignal_isblocked(&thread->sigs, args.sig);
-        ksig_unlock(&thread->sigs.s_lock);
-        if (blocked)
-            continue; /* check next thread */
-
-        /* Send signal and return */
-        err = ksignal_queue_sig(&thread->sigs, args.sig);
-
-        /* Signal is not blocked or the thread is waiting for this signal. */
-        KSIG_EXEC_IF(thread, args.sig);
-
-        if (err) {
-            set_errno(-err);
-            return -1;
-        }
-        return 0;
+    if (ksig_lock(&sigs->s_lock)) {
+        set_errno(EAGAIN);
+        return -1;
     }
-    if (!thread) { /* All threads blocking, send to the process queue */
-        int blocked;
 
-        if (ksig_lock(&thread->sigs.s_lock)) {
-            set_errno(EAGAIN);
-            return -1;
-        }
-        blocked = ksignal_isblocked(&thread->sigs, args.sig);
-        ksig_unlock(&thread->sigs.s_lock);
+    ksignal_queue_sig(sigs, args.sig);
 
-        if (blocked) {
-            ksignal_queue_sig(&thread->sigs, args.sig);
-        } else { /* Not blocked, send to main. */
-            struct signals * sigs;
+    ksig_unlock(&sigs->s_lock);
 
-            /*
-             * TODO
-             * Verify if signal should be delivered to the main or queued,
-             * or something else.
-             */
-
-            thread = proc->main_thread;
-            if (!thread) {
-                set_errno(ESRCH);
-                return -1;
-            }
-            sigs = &thread->sigs;
-
-            err = ksignal_queue_sig(sigs, args.sig);
-            if (err) {
-                set_errno(-err);
-                return -1;
-            }
-
-            /*
-             * Signal is not blocked or the thread is waiting for
-             * this signal.
-             */
-            KSIG_EXEC_IF(thread, args.sig);
-        }
-    }
+    forward_proc_signals();
 
     return 0;
 }
@@ -671,7 +677,6 @@ static int sys_signal_tkill(void * user_args)
         return -1;
     }
 
-    /* Signal is not blocked or the thread is waiting for this signal. */
     KSIG_EXEC_IF(thread, args.sig);
 
     return 0;
@@ -783,7 +788,7 @@ static int sys_signal_sigmask(void * user_args)
     ksigmtx_t * s_lock;
     int err;
 
-    err = copyin(user_args, &args, sizeof(struct _signal_sigmask_args));
+    err = copyin(user_args, &args, sizeof(args));
     if (err) {
         set_errno(-err);
         return -1;
@@ -862,6 +867,59 @@ static int sys_signal_sigmask(void * user_args)
     return 0;
 }
 
+static int sys_signal_sigwait(void * user_args)
+{
+    struct _signal_sigwait_args args;
+    sigset_t set;
+    struct signals * sigs = &current_thread->sigs;
+    ksigmtx_t * s_lock = &sigs->s_lock;
+    struct ksiginfo * ksiginfo;
+    int err;
+
+    err = copyin(user_args, &args, sizeof(args));
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+    err = copyin(args.set, &set, sizeof(set));
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
+    memcpy(&current_thread->sigs.s_wait, &set,
+           sizeof(current_thread->sigs.s_wait));
+    forward_proc_signals();
+
+    if (ksig_lock(s_lock)) {
+        set_errno(EAGAIN);
+        return -1;
+    }
+
+    /* Iterate through pending signals */
+    STAILQ_FOREACH(ksiginfo, &sigs->s_pendqueue, _entry) {
+        if (sigismember(&set, ksiginfo->siginfo.si_signo)) {
+            current_thread->sigwait_retval = ksiginfo->siginfo.si_signo;
+            STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
+            sigemptyset(&current_thread->sigs.s_wait);
+            ksig_unlock(s_lock);
+            goto out;
+        }
+    }
+
+    ksig_unlock(s_lock);
+    thread_wait();
+
+out:
+    err = copyout(&current_thread->sigwait_retval, args.sig, sizeof(int));
+    if (err) {
+        set_errno(EINVAL);
+        return -1;
+    }
+
+    return 0;
+}
+
 static int sys_signal_return(void * user_args)
 {
     /*
@@ -883,6 +941,7 @@ static const syscall_handler_t ksignal_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_ACTION,     sys_signal_action),
     ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_ALTSTACK,   sys_signal_altstack),
     ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_SIGMASK,    sys_signal_sigmask),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_SIGWAIT,    sys_signal_sigwait),
     ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_RETURN,     sys_signal_return),
 };
 SYSCALL_HANDLERDEF(ksignal_syscall, ksignal_sysfnmap);

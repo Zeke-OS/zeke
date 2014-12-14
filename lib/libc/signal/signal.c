@@ -31,6 +31,7 @@
  */
 
 #include <syscall.h>
+#include <errno.h>
 #include <signal.h>
 
 void (*signal(int sig, void (*func)(int)))(int)
@@ -41,10 +42,12 @@ void (*signal(int sig, void (*func)(int)))(int)
     };
 
     if (sig < 0) {
+        errno = EINVAL;
         return SIG_ERR;
     }
 
     if (syscall(SYSCALL_SIGNAL_SIGNAL, &args) != 0) {
+        errno = EINVAL;
         return SIG_ERR;
     }
 

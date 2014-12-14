@@ -301,6 +301,14 @@ struct _signal_sigmask_args {
     const sigset_t * restrict oset;
 };
 
+/**
+ * Arguments for SYSCALL_SIGNAL_SIGWAIT
+ */
+struct _signal_sigwait_args {
+    const sigset_t * restrict set;
+    int * restrict sig;
+};
+
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
 

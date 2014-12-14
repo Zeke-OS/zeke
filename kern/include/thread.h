@@ -96,7 +96,7 @@ pthread_t thread_fork(void);
 /**
  * Wait for event.
  * Put current_thread on sleep until thread_release().
- * Can be called multiple times.
+ * Can be called multiple times, eg. from interrupt handler.
  */
 void thread_wait(void);
 
