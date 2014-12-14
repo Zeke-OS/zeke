@@ -341,6 +341,8 @@ static void ksignal_post_scheduling(void)
             continue;
         }
 
+        /* TODO check handling policy and kill now if requested. */
+
         /* Check if the thread is waiting for this signal */
         if (blocked && swait) {
             current_thread->sigwait_retval = signum;
@@ -356,6 +358,27 @@ static void ksignal_post_scheduling(void)
             ksig_unlock(&sigs->s_lock);
             continue; /* This signal is currently blocked. */
         }
+
+        /* Take a sig action request? */
+        switch ((int)(action.ks_action.sa_handler)) {
+        case (int)(SIG_DFL):
+            break;
+        case (int)(SIG_IGN):
+            /*
+             * TODO
+             * - Decide if we want to continue and/or remove this
+             *   signal from pend in some of these cases?
+             * - Any other differences between IGN, ERR and HOLD?
+             */
+        case (int)(SIG_ERR):
+        case (int)(SIG_HOLD):
+            ksig_unlock(&sigs->s_lock);
+            goto next;
+        }
+
+        break;
+next:
+        continue;
     }
     if (!ksiginfo) {
         ksig_unlock(&sigs->s_lock);
@@ -363,6 +386,12 @@ static void ksignal_post_scheduling(void)
     }
     /* Else the pending singal should be handled now. */
     STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
+
+    /* TODO apply sa_mask?? */
+
+    /*
+     * TODO Take sa_flag actions requested provided in action.ks_action.sa_flags
+     */
 
     /* Allocate memory from user thread stack for stack frame and siginfo */
     usave_frame = usr_stack_alloc(current_thread, &old_uframe, USAVEFRAME_SIZE);
@@ -375,8 +404,6 @@ static void ksignal_post_scheduling(void)
         ksig_unlock(&sigs->s_lock);
         return; /* TODO Is this ok? */
     }
-
-    /* TODO kill? */
 
     /* Save stack frame to the user space stack */
     next_frame = &current_thread->sframe[SCHED_SFRAME_SYS];
@@ -411,7 +438,7 @@ static void ksignal_post_scheduling(void)
 DATA_SET(post_sched_tasks, ksignal_post_scheduling);
 
 /* TODO use signal queue and prepare siginfo struct to be delivered. */
-int ksignal_queue_sig(struct signals * sigs, int signum)
+int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
 {
     int retval = 0;
     struct ksigaction action;
@@ -441,7 +468,7 @@ int ksignal_queue_sig(struct signals * sigs, int signum)
         return -ENOMEM;
     *ksiginfo = (struct ksiginfo){
         .siginfo.si_signo = signum,
-        .siginfo.si_code = 0, /* TODO */
+        .siginfo.si_code = si_code,
         .siginfo.si_errno = 0, /* TODO */
         .siginfo.si_pid = current_process_id,
         .siginfo.si_uid = curproc->uid,
@@ -510,7 +537,7 @@ void ksignal_get_ksigaction(struct ksigaction * action,
 
     action->ks_signum = signum;
     sigemptyset(&action->ks_action.sa_mask);
-    action->ks_action.sa_flags = (signum < sizeof(default_sigproptbl)) ?
+    action->ks_action.sa_flags = (signum < num_elem(default_sigproptbl)) ?
         default_sigproptbl[signum] : SA_IGNORE;
     action->ks_action.sa_handler = SIG_DFL;
 }
@@ -580,6 +607,8 @@ static int sys_signal_pkill(void * user_args)
         return -1;
     }
 
+    /* TODO if pid == 0 send signal to all procs */
+
     proc = proc_get_struct(args.pid);
     if (!proc) {
         set_errno(ESRCH);
@@ -612,7 +641,7 @@ static int sys_signal_pkill(void * user_args)
         return -1;
     }
 
-    ksignal_queue_sig(sigs, args.sig);
+    ksignal_queue_sig(sigs, args.sig, SI_USER);
 
     ksig_unlock(&sigs->s_lock);
 
@@ -637,6 +666,8 @@ static int sys_signal_tkill(void * user_args)
         set_errno(EFAULT);
         return -1;
     }
+
+    /* TODO if thread_id == 0 then send to all threads */
 
     thread = sched_get_thread_info(args.thread_id);
     if (!thread) {
@@ -671,7 +702,7 @@ static int sys_signal_tkill(void * user_args)
     if (args.sig == 0)
         return 0;
 
-    err = ksignal_queue_sig(sigs, args.sig);
+    err = ksignal_queue_sig(sigs, args.sig, SI_USER);
     if (err) {
         set_errno(-err);
         return -1;
