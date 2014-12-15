@@ -1,5 +1,3 @@
-/* $Id$ */
-
 /* fclose( FILE * )
 
    This file is part of the Public Domain C Library (PDCLib).
@@ -11,7 +9,6 @@
 #include <threads.h>
 #include <errno.h>
 
-#ifndef REGTEST
 #include <sys/_PDCLIB_io.h>
 
 extern FILE * _PDCLIB_filelist;
@@ -74,39 +71,3 @@ int fclose( FILE * stream )
     errno = EINVAL;
     return -1;
 }
-
-#endif
-
-#ifdef TEST
-#include <_PDCLIB_test.h>
-
-int main( void )
-{
-#ifndef REGTEST
-    FILE * file1;
-    FILE * file2;
-    remove( testfile1 );
-    remove( testfile2 );
-    TESTCASE( _PDCLIB_filelist == stdin );
-    TESTCASE( ( file1 = fopen( testfile1, "w" ) ) != NULL );
-    TESTCASE( _PDCLIB_filelist == file1 );
-    TESTCASE( ( file2 = fopen( testfile2, "w" ) ) != NULL );
-    TESTCASE( _PDCLIB_filelist == file2 );
-    TESTCASE( fclose( file2 ) == 0 );
-    TESTCASE( _PDCLIB_filelist == file1 );
-    TESTCASE( ( file2 = fopen( testfile2, "w" ) ) != NULL );
-    TESTCASE( _PDCLIB_filelist == file2 );
-    TESTCASE( fclose( file1 ) == 0 );
-    TESTCASE( _PDCLIB_filelist == file2 );
-    TESTCASE( fclose( file2 ) == 0 );
-    TESTCASE( _PDCLIB_filelist == stdin );
-    TESTCASE( remove( testfile1 ) == 0 );
-    TESTCASE( remove( testfile2 ) == 0 );
-#else
-    puts( " NOTEST fclose() test driver is PDCLib-specific." );
-#endif
-    return TEST_RESULTS;
-}
-
-#endif
-
