@@ -1,5 +1,3 @@
-/* $Id$ */
-
 /* vfscanf( FILE *, const char *, va_list )
 
    This file is part of the Public Domain C Library (PDCLib).
@@ -10,7 +8,6 @@
 #include <stdarg.h>
 #include <ctype.h>
 
-#ifndef REGTEST
 #include <sys/_PDCLIB_io.h>
 
 int _PDCLIB_vfscanf_unlocked( FILE * _PDCLIB_restrict stream,
@@ -97,32 +94,3 @@ int vfscanf( FILE * _PDCLIB_restrict stream,
     _PDCLIB_funlockfile( stream );
     return r;
 }
-
-#endif
-
-#ifdef TEST
-#define _PDCLIB_FILEID "stdio/vfscanf.c"
-#define _PDCLIB_FILEIO
-
-#include <_PDCLIB_test.h>
-
-static int testscanf( FILE * stream, char const * format, ... )
-{
-    va_list ap;
-    va_start( ap, format );
-    int result = vfscanf( stream, format, ap );
-    va_end( ap );
-    return result;
-}
-
-int main( void )
-{
-    FILE * source;
-    TESTCASE( ( source = tmpfile() ) != NULL );
-#include "scanf_testcases.h"
-    TESTCASE( fclose( source ) == 0 );
-    return TEST_RESULTS;
-}
-
-#endif
-

@@ -1,13 +1,7 @@
-static tss_t key;
-static char v;
+#include <threads.h>
+#include <pthread.h>
 
-int main(void)
+void *tss_get(tss_t key)
 {
-    TESTCASE(tss_create(&key, NULL) == thrd_success);
-    TESTCASE(tss_get(key) == NULL);
-    TESTCASE(tss_set(key, &v) == thrd_success);
-    TESTCASE(tss_get(key) == &v);
-    tss_delete(key);
-
-    return TEST_RESULTS;
+    return pthread_getspecific(key);
 }

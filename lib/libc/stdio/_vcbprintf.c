@@ -1,5 +1,3 @@
-/* $Id$ */
-
 /* vsnprintf( char *, size_t, const char *, va_list ap )
 
    This file is part of the Public Domain C Library (PDCLib).
@@ -10,7 +8,6 @@
 #include <stdarg.h>
 #include <stdbool.h>
 
-#ifndef REGTEST
 #include <sys/_PDCLIB_io.h>
 
 /* returns true if callback-based output succeeded; else false */
@@ -80,47 +77,3 @@ int _vcbprintf(
     va_end( status.arg );
     return status.i;
 }
-
-#endif
-
-#ifdef TEST
-#define _PDCLIB_FILEID "stdio/_vcbprintf.c"
-#define _PDCLIB_STRINGIO
-#include <stdint.h>
-#include <stddef.h>
-#include <_PDCLIB_test.h>
-
-#ifndef REGTEST
-
-static size_t testcb( void *p, const char *buf, size_t size )
-{
-    char **destbuf = p;
-    memcpy(*destbuf, buf, size);
-    *destbuf += size;
-    return size;
-}
-
-static int testprintf( char * s, const char * format, ... )
-{
-    int i;
-    va_list arg;
-    va_start( arg, format );
-    i = _vcbprintf( &s, testcb, format, arg );
-    *s = 0;
-    va_end( arg );
-    return i;
-}
-
-#endif
-
-int main( void )
-{
-    char target[100];
-#ifndef REGTEST
-#include "printf_testcases.h"
-#endif
-    return TEST_RESULTS;
-}
-
-#endif
-

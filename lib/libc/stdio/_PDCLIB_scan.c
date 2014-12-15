@@ -1,5 +1,3 @@
-/* $Id$ */
-
 /* _PDCLIB_scan( const char *, struct _PDCLIB_status_t * )
 
    This file is part of the Public Domain C Library (PDCLib).
@@ -15,8 +13,6 @@
 #include <string.h>
 #include <stddef.h>
 #include <limits.h>
-
-#ifndef REGTEST
 
 /* Using an integer's bits as flags for both the conversion flags and length
    modifiers.
@@ -591,42 +587,3 @@ const char * _PDCLIB_scan( const char * spec, struct _PDCLIB_status_t * status )
     /* TODO: Floats. */
     return NULL;
 }
-#endif
-
-#ifdef TEST
-#define _PDCLIB_FILEID "_PDCLIB/scan.c"
-#define _PDCLIB_STRINGIO
-
-#include <_PDCLIB_test.h>
-
-#ifndef REGTEST
-static int testscanf( char const * s, char const * format, ... )
-{
-    struct _PDCLIB_status_t status;
-    status.n = 0;
-    status.i = 0;
-    status.s = (char *)s;
-    status.stream = NULL;
-    va_start( status.arg, format );
-    if ( *(_PDCLIB_scan( format, &status )) != '\0' )
-    {
-        printf( "_PDCLIB_scan() did not return end-of-specifier on '%s'.\n", format );
-        ++TEST_RESULTS;
-    }
-    va_end( status.arg );
-    return status.n;
-}
-#endif
-
-#define TEST_CONVERSION_ONLY
-
-int main( void )
-{
-#ifndef REGTEST
-    char source[100];
-#include "scanf_testcases.h"
-#endif
-    return TEST_RESULTS;
-}
-
-#endif
