@@ -135,13 +135,14 @@ _tag:                       /* TODO */
 interrupt_dabt:
     pushcontext #2          /* Push context to SCHED_SFRAME_ABO */
 
-    /* TODO Check if mp table should be attached earlier to allow dynamic
-     * allocation of kernel structures, e.g. just after pushcontext */
+    enter_kernel
 
     cps     #0x1f           /* Change to system mode */
     change_to_tkstack
     
     bl      mmu_data_abort_handler
+
+    exit_kernel
 
     popcontext #2           /* Pop context from SCHED_SFRAME_ABO */
     subs    pc, lr, #0x8
