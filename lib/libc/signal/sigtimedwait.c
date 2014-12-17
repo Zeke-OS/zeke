@@ -1,11 +1,10 @@
 /**
  *******************************************************************************
- * @file    init.c
+ * @file    signal.c
  * @author  Olli Vanhoja
- * @brief   First user scope process.
+ * @brief   Set function to handle signal.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, 2013, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+ * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,60 +30,14 @@
  *******************************************************************************
  */
 
-#include <autoconf.h>
-#include <stdio.h>
-#include <sys/types.h>
-#include <time.h>
-#include <unistd.h>
-#include <string.h>
+#include <syscall.h>
 #include <errno.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <mount.h>
-#include "tish/tish.h"
-#include "init.h"
+#include <signal.h>
 
-char banner[] = "\
-|'''''||                    \n\
-    .|'   ...'||            \n\
-   ||   .|...|||  ..  ....  \n\
- .|'    ||    || .' .|...|| \n\
-||......|'|...||'|. ||      \n\
-             .||. ||.'|...'\n\n\
-";
-
-static const char msg[] = "Zeke " KERNEL_VERSION " init\n";
-
-void * main(void * arg)
+int sigtimedwait(const sigset_t * restrict set, siginfo_t * restrict info,
+        const struct timespec * restrict timeout)
 {
-    int r0, r1, r2;
-    const char tty_path[] = "/dev/ttyS0";
-    char buf[80];
-
-    mkdir("/dev", S_IRWXU | S_IRGRP | S_IXGRP);
-    mount("", "/dev", "devfs", 0, "");
-
-    mkdir("/proc", S_IRWXU | S_IRGRP | S_IXGRP);
-    mount("", "/proc", "procfs", 0, "");
-
-    close(STDIN_FILENO);
-    close(STDOUT_FILENO);
-    close(STDERR_FILENO);
-    r0 = open(tty_path, O_RDONLY);
-    r1 = open(tty_path, O_WRONLY);
-    r2 = open(tty_path, O_WRONLY);
-
-    snprintf(buf, sizeof(buf), "fd: %i, %i, %i\n", r0, r1, r2);
-    write(STDOUT_FILENO, buf, strnlen(buf, sizeof(buf)));
-
-    write(STDOUT_FILENO, banner, sizeof(banner));
-    write(STDOUT_FILENO, msg, sizeof(msg));
-
-#if configTISH != 0
-    tish();
-#endif
-    while(1) {
-        write(STDOUT_FILENO, "init\n", 5);
-        sleep(10);
-    }
+    /* TODO Ipmlementation */
+    errno = ENOTSUP;
+    return -1;
 }

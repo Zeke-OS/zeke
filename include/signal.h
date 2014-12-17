@@ -389,9 +389,9 @@ int sigprocmask(int how, const sigset_t * restrict set,
 /*
 int sigqueue(pid_t pid, int signo, const union sigval value);
 int sigsuspend(const sigset_t * sigmask);
+*/
 int sigtimedwait(const sigset_t * restrict set, siginfo_t * restrict info,
         const struct timespec * restrict timeout);
-*/
 int sigwait(const sigset_t * restrict set, int * restrict sig);
 /*
 int sigwaitinfo(const sigset_t * restrict set, siginfo_t *restrict info);
