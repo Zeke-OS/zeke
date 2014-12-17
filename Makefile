@@ -47,8 +47,7 @@ doc: doc-book doc-man
 # target_doc: doc-man - Generate man pages.
 doc-man: clean-man
 	doxygen Doxyfile.libc
-	doxygen Doxyfile.kern; \
-		./tools/fixman.sh
+	doxygen Doxyfile.kern
 
 # target_doc: doc-book - Compile Zeke book.
 doc-book:
