@@ -91,9 +91,32 @@ int bitmap_block_search(size_t * retval, size_t block_len, bitmap_t * bitmap, si
 int bitmap_block_search_s(size_t start, size_t * retval, size_t block_len,
                           bitmap_t * bitmap, size_t size);
 
-int bitmap_status(bitmap_t * bitmap, size_t pos, size_t len);
-int bitmap_set(bitmap_t * bitmap, size_t pos, size_t len);
-int bitmap_clear(bitmap_t * bitmap, size_t pos, size_t len);
+/**
+ * Check status of a bit in a bitmap pointed by bitmap.
+ * @param bitmap            is a bitmap.
+ * @param pos               is the bit position to be checked.
+ * @param size              is the size of bitmap in bytes.
+ * @return  Boolean value or -EINVAL.
+ */
+int bitmap_status(bitmap_t * bitmap, size_t pos, size_t size);
+
+/**
+ * Set a bit in a bitmap pointed by bitmap.
+ * @param bitmap            is a bitmap.
+ * @param pos               is the bit position to be set.
+ * @param size              is the size of bitmap in bytes.
+ * @return  0 or -EINVAL.
+ */
+int bitmap_set(bitmap_t * bitmap, size_t pos, size_t size);
+
+/**
+ * Clear a bit in a bitmap pointed by bitmap.
+ * @param bitmap            is a bitmap.
+ * @param pos               is the bit position to be cleared.
+ * @param size              is the size of bitmap in bytes.
+ * @return  0 or -EINVAL.
+ */
+int bitmap_clear(bitmap_t * bitmap, size_t pos, size_t size);
 
 /**
  * Set or clear contiguous block of bits in bitmap.

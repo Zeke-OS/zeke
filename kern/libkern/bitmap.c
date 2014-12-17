@@ -72,23 +72,23 @@ int bitmap_block_search_s(size_t start, size_t * retval, size_t block_len,
     return 1;
 }
 
-int bitmap_status(bitmap_t * bitmap, size_t pos, size_t len)
+int bitmap_status(bitmap_t * bitmap, size_t pos, size_t size)
 {
     size_t k = BIT2WORDI(pos);
     size_t n = BIT2WBITOFF(pos);
 
-    if (pos >= len * SIZEOF_BITMAP_T)
+    if (pos >= size * SIZEOF_BITMAP_T)
         return -EINVAL;
 
     return (bitmap[k] & (1 << n)) != 0;
 }
 
-int bitmap_set(bitmap_t * bitmap, size_t pos, size_t len)
+int bitmap_set(bitmap_t * bitmap, size_t pos, size_t size)
 {
     size_t k = BIT2WORDI(pos);
     size_t n = BIT2WBITOFF(pos);
 
-    if (pos >= len * SIZEOF_BITMAP_T)
+    if (pos >= size * SIZEOF_BITMAP_T)
         return -EINVAL;
 
     bitmap[k] |= 1 << n;
@@ -96,12 +96,12 @@ int bitmap_set(bitmap_t * bitmap, size_t pos, size_t len)
     return 0;
 }
 
-int bitmap_clear(bitmap_t * bitmap, size_t pos, size_t len)
+int bitmap_clear(bitmap_t * bitmap, size_t pos, size_t size)
 {
     size_t k = BIT2WORDI(pos);
     size_t n = BIT2WBITOFF(pos);
 
-    if (pos >= len * SIZEOF_BITMAP_T)
+    if (pos >= size * SIZEOF_BITMAP_T)
         return -EINVAL;
 
     bitmap[k] &= ~(1 << n);
