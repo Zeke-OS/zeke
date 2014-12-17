@@ -617,10 +617,11 @@ static uint32_t sd_get_base_clock_hz()
     mailbuffer[7] = 0;
 
     /* send the message */
-    bcm2835_writemailbox(BCM2835_MBCH_PROP, (uint32_t)(mailbuf->b_mmu.paddr));
+    bcm2835_writemailbox(BCM2835_MBCH_PROP_OUT,
+                         (uint32_t)(mailbuf->b_mmu.paddr));
 
     /* read the response */
-    bcm2835_readmailbox(BCM2835_MBCH_PROP);
+    bcm2835_readmailbox(BCM2835_MBCH_PROP_OUT);
 
     if (mailbuffer[1] != BCM2835_STATUS_SUCCESS) {
         KERROR(KERROR_ERR,
@@ -675,10 +676,11 @@ static int bcm_2708_power_off()
     mailbuffer[7] = 0;
 
     /* send the message */
-    bcm2835_writemailbox(BCM2835_MBCH_PROP, (uint32_t)(mailbuf->b_mmu.paddr));
+    bcm2835_writemailbox(BCM2835_MBCH_PROP_OUT,
+                         (uint32_t)(mailbuf->b_mmu.paddr));
 
     /* read the response */
-    bcm2835_readmailbox(BCM2835_MBCH_PROP);
+    bcm2835_readmailbox(BCM2835_MBCH_PROP_OUT);
 
     if (mailbuffer[1] != BCM2835_STATUS_SUCCESS) {
         KERROR(KERROR_ERR,
@@ -730,10 +732,11 @@ static int bcm_2708_power_on()
     mailbuffer[7] = 0;
 
     /* send the message */
-    bcm2835_writemailbox(BCM2835_MBCH_PROP, (uint32_t)(mailbuf->b_mmu.paddr));
+    bcm2835_writemailbox(BCM2835_MBCH_PROP_OUT,
+                         (uint32_t)(mailbuf->b_mmu.paddr));
 
     /* read the response */
-    bcm2835_readmailbox(BCM2835_MBCH_PROP);
+    bcm2835_readmailbox(BCM2835_MBCH_PROP_OUT);
 
     if (mailbuffer[1] != BCM2835_STATUS_SUCCESS) {
         KERROR(KERROR_ERR,

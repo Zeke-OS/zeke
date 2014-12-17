@@ -45,7 +45,8 @@
 #define BCM2835_MBCH_BUTTONS    5   /*!< Buttons interface */
 #define BCM2835_MBCH_TOUCH      6   /*!< Touch screen interface */
 #define BCM2835_MBCH_COUNT      7
-#define BCM2835_MBCH_PROP       8
+#define BCM2835_MBCH_PROP_OUT   8   /*!< Property tags to VC */
+#define BCM2835_MBCG_PROP_IN    9   /*!< Property tags from VC */
 
 #define BCM2835_STATUS_SUCCESS  0x80000000
 
