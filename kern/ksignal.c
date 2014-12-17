@@ -165,45 +165,65 @@ static void ksig_unlock(ksigmtx_t * lock)
     mtx_unlock(&lock->l);
 }
 
-static void ksignal_thread_ctor(struct thread_info * th)
+void ksignal_signals_ctor(struct signals * sigs)
 {
-    struct signals * sigs = &th->sigs;
-
+    /* TODO Use as a ctor for sigs structs in threads and procs.
+     * Also create similar function for forking and make sure that all data
+     * is cloned instead of reuse.
+     */
     STAILQ_INIT(&sigs->s_pendqueue);
     RB_INIT(&sigs->sa_tree);
     mtx_init(&sigs->s_lock.l, KSIG_LOCK_FLAGS);
 }
+
+static void ksignal_thread_ctor(struct thread_info * th)
+{
+    ksignal_signals_ctor(&th->sigs);
+}
 DATA_SET(thread_ctors, ksignal_thread_ctor);
 
-static void ksignal_fork_handler(struct thread_info * th)
+void ksignal_signals_fork_reinit(struct signals * sigs)
 {
-    struct sigaction_tree old_tree = th->sigs.sa_tree;
+    struct sigaction_tree old_tree = sigs->sa_tree;
     struct ksigaction * sigact_old;
     struct ksiginfo * n1;
     struct ksiginfo * n2;
 
-    /* Clear pending signals as required by POSIX. */
-    n1  = STAILQ_FIRST(&th->sigs.s_pendqueue);
+    /*
+     * Clear pending signals as required by POSIX.
+     */
+#if 0 /* Not ok but can be reused for kill */
+    n1  = STAILQ_FIRST(&sigs->s_pendqueue);
     while (n1 != NULL) {
         n2 = STAILQ_NEXT(n1, _entry);
         kfree(n1);
         n1 = n2;
     }
-    STAILQ_INIT(&th->sigs.s_pendqueue);
+#endif
+    STAILQ_INIT(&sigs->s_pendqueue);
 
-    /* Clone configured signal actions. */
-    RB_INIT(&th->sigs.sa_tree);
+    /*
+     * Clone configured signal actions.
+     */
+    RB_INIT(&sigs->sa_tree);
     RB_FOREACH(sigact_old, sigaction_tree, &old_tree) {
         struct ksigaction * sigact_new = kmalloc(sizeof(struct ksigaction));
 
         KASSERT(sigact_new != NULL, "OOM during thread fork\n");
 
         memcpy(sigact_new, sigact_old, sizeof(struct ksigaction));
-        RB_INSERT(sigaction_tree, &th->sigs.sa_tree, sigact_new);
+        RB_INSERT(sigaction_tree, &sigs->sa_tree, sigact_new);
     }
 
-    /* Reinit mutex lock */
-    mtx_init(&th->sigs.s_lock.l, KSIG_LOCK_FLAGS);
+    /*
+     * Reinit mutex lock.
+     */
+    mtx_init(&sigs->s_lock.l, KSIG_LOCK_FLAGS);
+}
+
+static void ksignal_fork_handler(struct thread_info * th)
+{
+    ksignal_signals_fork_reinit(&th->sigs);
 }
 DATA_SET(thread_fork_handlers, ksignal_fork_handler);
 

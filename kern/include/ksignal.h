@@ -77,6 +77,9 @@ struct thread_info;
 RB_PROTOTYPE(sigaction_tree, ksigaction, _entry, signum_comp);
 int signum_comp(struct ksigaction * a, struct ksigaction * b);
 
+void ksignal_signals_ctor(struct signals * sigs);
+void ksignal_signals_fork_reinit(struct signals * sigs);
+
 int ksignal_thread_sendsig(struct thread_info * thread, int signum);
 int ksignal_sendsig_fatal(pthread_t thid, int signum);
 int ksignal_isblocked(struct signals * sigs, int signum);

@@ -208,7 +208,7 @@ int _mtx_trylock(mtx_t * mtx, char * whr)
         char msgbuf[120];
 
         ksprintf(msgbuf, sizeof(msgbuf),
-                 "mtx_trylock() not supported for this lock type (%s)",
+                 "mtx_trylock() not supported for this lock type (%s)\n",
                  whr);
         KERROR(KERROR_ERR, msgbuf);
 #endif

@@ -193,6 +193,9 @@ pid_t proc_fork(pid_t pid)
         vm_map_region((*new_proc->mm.regions)[i], vpt);
     }
 
+    /* fork() signals */
+    ksignal_signals_fork_reinit(&new_proc->sigs);
+
     /* Copy file descriptors */
 #ifdef configPROC_DEBUG
     KERROR(KERROR_DEBUG, "Copy file descriptors\n");

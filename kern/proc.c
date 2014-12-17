@@ -163,6 +163,9 @@ static void init_kernel_proc(void)
     kernel_proc->brk_stop = (void *)(kprocvm_heap->b_mmu.vaddr
         + mmu_sizeof_region(&(kprocvm_heap->b_mmu)) - 1);
 
+    /* signals struct */
+    ksignal_signals_ctor(&kernel_proc->sigs);
+
     /* File descriptors */
     /* TODO We have a hard limit of 8 files here now but this should be tunable
      * by using setrlimit() Also we may want to set this smaller at some point.
