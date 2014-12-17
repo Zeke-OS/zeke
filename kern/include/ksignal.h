@@ -41,8 +41,6 @@
 #include <klocks.h>
 #include <signal.h>
 
-#define USAVEFRAME_SIZE (sizeof(sw_stack_frame_t) + sizeof(siginfo_t))
-
 struct ksiginfo {
     siginfo_t siginfo;
     STAILQ_ENTRY(ksiginfo) _entry;

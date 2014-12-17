@@ -208,40 +208,74 @@ static void ksignal_fork_handler(struct thread_info * th)
 DATA_SET(thread_fork_handlers, ksignal_fork_handler);
 
 /**
- * Allocate memory from the user stack of a thread.
- * @note Works only for any thread of the current process.
- * @param thread is the thread owning the stack.
- * @param len is the length of the allocation.
- * @return Returns pointer to the uaddr of the allocation if succeed;
- * Otherwise NULL.
+ * Push 'src' to thread stack.
+ * @param thread    thread.
+ * @param src       data to be pushed.
+ * @param size      size of data.
+ * @param old_thread_sp[in] returns the old thread stack pointer, can be NULL.
+ * @return Error code or zero.
  */
-static void * usr_stack_alloc(struct thread_info * thread,
-        uintptr_t * old_frame, size_t len)
+static int push_to_thread_stack(struct thread_info * thread, const void * src,
+        size_t size, void ** old_thread_sp)
 {
-    int framenum;
-    sw_stack_frame_t * frame;
-    void * sp;
+    const int insys = (thread->flags & SCHED_INSYS_FLAG) ? 1 : 0;
+    const int framenum = (insys) ? SCHED_SFRAME_SVC : SCHED_SFRAME_SYS;
+    sw_stack_frame_t * sframe = &thread->sframe[framenum];
+    void * old_sp = (void *)sframe->sp;
+    void * new_sp = old_sp -  memalign(size);
+    int err;
 
-    KASSERT(thread, "thread should be always set.\n");
-    KASSERT(len > 0, "len should be greater than zero.\n");
+    KASSERT(size > 0, "size should be greater than zero.\n");
 
-    if (thread->flags & SCHED_INSYS_FLAG)
-        framenum = SCHED_SFRAME_SVC;
-    else
-        framenum = SCHED_SFRAME_SYS;
+    if (!old_sp || !new_sp)
+        return -EFAULT;
 
-    frame = &current_thread->sframe[framenum];
-    sp = (void *)frame->sp;
+    if (insys) {
+        err = copyout(src, new_sp, size);
+        if (err)
+            return -EFAULT;
+    } else {
+        if (!kernacc(old_sp, size, VM_PROT_READ | VM_PROT_WRITE))
+            return -EFAULT;
 
-    /* Check user access */
-    if (!sp || !useracc(sp, len, VM_PROT_READ | VM_PROT_WRITE))
-        return NULL;
+        memmove(new_sp, src, size);
+    }
 
-    /* Make allocation. */
-    *old_frame = frame->sp;
-    frame->sp -= memalign(len);
+    sframe->sp = (uintptr_t)new_sp;
+    if (old_thread_sp)
+        *old_thread_sp = old_sp;
 
-    return sp;
+    return 0;
+}
+
+/**
+ * Pop from thread stack to dest.
+ */
+static int pop_from_thread_stack(struct thread_info * thread, void * dest,
+        size_t size)
+{
+    const int insys = (thread->flags & SCHED_INSYS_FLAG) ? 1 : 0;
+    const int framenum = (insys) ? SCHED_SFRAME_SVC : SCHED_SFRAME_SYS;
+    const void * sp = (void *)thread->sframe[framenum].sp;
+    int err;
+
+    if (!sp)
+        return -EFAULT;
+
+    if (insys) {
+        err = copyin(sp, dest, size);
+        if (err)
+            return err;
+    } else {
+        if (!kernacc(sp, size, VM_PROT_READ | VM_PROT_WRITE))
+            return -EFAULT;
+
+        memmove(dest, sp, size);
+    }
+
+    thread->sframe[framenum].sp += memalign(size);
+
+    return 0;
 }
 
 /**
@@ -305,9 +339,7 @@ static void ksignal_post_scheduling(void)
     struct signals * sigs = &current_thread->sigs;
     struct ksigaction action;
     struct ksiginfo * ksiginfo;
-    siginfo_t * usiginfo; /* Note: in user space */
-    uintptr_t old_uframe;
-    sw_stack_frame_t * usave_frame;
+    void * old_thread_sp; /* Note: in user space */
     sw_stack_frame_t * next_frame;
 
     forward_proc_signals();
@@ -393,43 +425,42 @@ next:
      * TODO Take sa_flag actions requested provided in action.ks_action.sa_flags
      */
 
-    /* Allocate memory from user thread stack for stack frame and siginfo */
-    usave_frame = usr_stack_alloc(current_thread, &old_uframe, USAVEFRAME_SIZE);
-    if (!usave_frame) {
+
+    if (/* Push current stack frame to the user space thread stack. */
+        push_to_thread_stack(current_thread,
+                             &current_thread->sframe[SCHED_SFRAME_SYS],
+                             sizeof(sw_stack_frame_t),
+                             NULL) ||
+        /* Push siginfo struct. */
+        push_to_thread_stack(current_thread,
+                             &ksiginfo->siginfo,
+                             sizeof(ksiginfo->siginfo),
+                             &old_thread_sp /* Address of the prev sframe. */)
+       ) {
         /*
-         * Thread has trashed its stack; Nothing we can do but
-         * give SIGILL.
+         * Thread has trashed its stack; Nothing we can do but give SIGILL.
          */
         ksignal_sendsig_fatal(current_thread->id, SIGILL);
         ksig_unlock(&sigs->s_lock);
         return; /* TODO Is this ok? */
     }
-
-    /* Save stack frame to the user space stack */
-    next_frame = &current_thread->sframe[SCHED_SFRAME_SYS];
-    (void)copyout(next_frame, usave_frame, sizeof(sw_stack_frame_t));
-
-    /* Copyout siginfo struct. */
-    usiginfo = (void *)usave_frame + sizeof(sw_stack_frame_t);
-    (void)copyout(&ksiginfo->siginfo, usiginfo, sizeof(siginfo_t));
+    /* Don't push anything after this point. */
 
     /*
-     * Set next frame
+     * Update next stack frame.
      */
+    next_frame = &current_thread->sframe[SCHED_SFRAME_SYS];
     next_frame->pc = (uintptr_t)action.ks_action.sa_sigaction;
-    next_frame->r0 = signum;                /* arg1 = signum */
-    next_frame->r1 = (uintptr_t)usiginfo;   /* arg2 = siginfo */
-    next_frame->r2 = 0;                     /* arg3 = TODO context */
-    next_frame->r9 = old_uframe;            /* frame pointer */
+    next_frame->r0 = signum;                    /* arg1 = signum */
+    next_frame->r1 = next_frame->sp;            /* arg2 = siginfo */
+    next_frame->r2 = 0;                         /* arg3 = TODO context */
+    next_frame->r9 = (uintptr_t)old_thread_sp;  /* frame pointer */
     next_frame->lr = sigs->s_usigret;
 
     /*
      * TODO
      * - Check current_thread sigs
-     *  -- Change return address to our own handler to call syscall that
-     *     reverts signal handling state
      *  -- Change to alt stack if requested
-     * - or handle signal in kernel
      */
 
     ksig_unlock(&sigs->s_lock);
@@ -953,6 +984,10 @@ out:
 
 static int sys_signal_return(void * user_args)
 {
+    const sw_stack_frame_t * const sframe =
+        &current_thread->sframe[SCHED_SFRAME_SYS];
+    int err;
+
     /*
      * TODO
      * Return from signal handler
@@ -961,8 +996,23 @@ static int sys_signal_return(void * user_args)
      * - reset pc and oth registers
      */
 
-    set_errno(ENOTSUP);
-    return -1;
+    current_thread->sframe[SCHED_SFRAME_SYS].sp = sframe->r9;
+    err = pop_from_thread_stack(current_thread,
+                                &current_thread->sframe[SCHED_SFRAME_SYS],
+                                sizeof(const sw_stack_frame_t));
+    if (err) {
+        ksignal_sendsig_fatal(current_thread->id, SIGILL);
+        while (1) {
+            sched_sleep_current_thread(0); /* TODO ?? */
+            /* Should not return to here */
+        }
+    }
+
+    /*
+     * We return for now but the actual return from this system call will
+     * happen to the place that was originally interrupted by a signal.
+     */
+    return 0;
 }
 
 static const syscall_handler_t ksignal_sysfnmap[] = {
