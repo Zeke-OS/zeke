@@ -58,6 +58,7 @@ BCS := $(patsubst %.c, %.bc, $(SRC-y))
 OBJS := $(patsubst %.c, %.o, $(SRC-y))
 
 all: $(SBIN)
+	echo "$(SBIN)" > manifest
 
 $(ASOBJS): $(ASRC-y) $(AUTOCONF_H)
 	@echo "AS $@"
@@ -83,3 +84,4 @@ $(SBIN): $(OBJS)
 clean:
 	$(RM) $(ASOBJS) $(OBJS)
 	$(RM) *.a
+	$(RM) manifest

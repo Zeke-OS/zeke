@@ -4,9 +4,12 @@ kernel.bin
 kernel.elf
 kernel.list
 
+zeke-rootfs.img
+
 # Generated config
 .config*
 config*
+manifest
 
 # LLVM bitcode
 *.bc

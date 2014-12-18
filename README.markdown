@@ -68,7 +68,8 @@ To successfully compile Zeke, you'll need the following packages/tools:
 - clang 3.3
 - binutils
 - bash
-- cloc (for stats)
+- cloc for source code stats
+-mkdosfs and mtools for creating a rootfs image
 
 doc-book target:
 

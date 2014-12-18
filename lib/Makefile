@@ -92,6 +92,7 @@ LIBSA = $(addsuffix .a, $(LIBS))
 
 
 all: $(LIBSA)
+	echo "$(LIBSA)" > manifest
 
 $(ASOBJS): %.o: %.S $(AUTOCONF_H)
 	@echo "AS $@"
@@ -123,3 +124,4 @@ clean:
 	$(RM) $(ASOBJS) $(OBJS)
 	rm -rf crt0_o
 	$(RM) *.a
+	$(RM) manifest

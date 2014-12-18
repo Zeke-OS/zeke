@@ -83,6 +83,10 @@ lib: $(AUTOCONF_H) $(CRT)
 sbin: lib
 	$(MAKE) -C sbin all
 
+# target_comp: rootfs - Create an rootfs image.
+rootfs: dist
+	./tools/mkrootfs.sh
+
 # target_doc: stats - Calculate some stats.
 stats: clean
 	cloc --exclude-dir=.git,doc .
@@ -107,6 +111,7 @@ clean:
 	rm -f *.elf
 	rm -f *.list
 	rm -f *.a
+	rm zeke-rootfs.img
 	rm -f include/machine
 	$(MAKE) -C $(CRT_DIR) clean
 	$(MAKE) -C lib clean
