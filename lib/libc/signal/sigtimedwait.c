@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    signal.c
+ * @file    sigtimedwait.c
  * @author  Olli Vanhoja
- * @brief   Set function to handle signal.
+ * @brief   Wait for queued signals.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
