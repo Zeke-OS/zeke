@@ -62,18 +62,18 @@ Compiling and Testing
 
 To successfully compile Zeke, you'll need the following packages/tools:
 
-- make >3.8
-- gcc-arm-none-eabi
-- llvm-3.3
-- clang 3.3
-- binutils
-- bash
-- cloc for source code stats
--mkdosfs and mtools for creating a rootfs image
+- `make` >3.8
+- `gcc-arm-none-eabi`
+- `llvm-3.3`
+- `clang 3.3`
+- `binutils`
+- `bash`
+- `cloc` for source code stats
+- `mkdosfs` and `mtools` for creating a rootfs image
 
 doc-book target:
 
-- LaTeX + some packages
+- LaTeX + various packages
 - latexmk
 - gnuplot
 
