@@ -84,11 +84,10 @@
 typedef struct proc_info {
     pid_t pid;
     char name[PROC_NAME_LEN];   /*!< process name */
-    char ** argv;               /*!< Argument strings */
-    char ** env;                /*!< Environmen variables. */
-    int state;                  /*!< 0 - running, >0 stopped */
-    int priority;               /*!< We might want to prioritize processes too
-                                 */
+    struct buf * environ;          /*!< Process environment shared with the
+                                    *   user space. */
+    int state;                  /*!< 0 - running, > 0 stopped */
+    int priority;               /*!< We may want to prioritize processes too. */
     int exit_code, exit_signal;
     uid_t uid, euid, suid;
     gid_t gid, egid, sgid;
@@ -239,6 +238,8 @@ proc_info_t * proc_get_struct_l(pid_t pid);
  * Get pointer to a internal proc_info structure.
  */
 proc_info_t * proc_get_struct(pid_t pid);
+
+int proc_setenv(struct buf * environ_bp, char *argv[], char *env[]);
 
 /* proc_fork.c */
 

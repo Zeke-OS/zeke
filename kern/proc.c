@@ -38,6 +38,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/sysctl.h>
+#include <sys/environ.h>
 #include <tsched.h>
 #include <kstring.h>
 #include <libkern.h>
@@ -52,6 +53,7 @@
 #include <kmalloc.h>
 #include <buf.h>
 #include <thread.h>
+#include <exec.h>
 #include <proc.h>
 #include "_proc.h"
 
@@ -134,14 +136,18 @@ static void init_kernel_proc(void)
     RB_INSERT(ptlist, &(kernel_proc->mm.ptlist_head), vpt);
 #endif
 
-    /* Create regions */
+    /*
+     * Create regions
+     */
     kernel_proc->mm.regions = kcalloc(3, sizeof(void *));
     kernel_proc->mm.nr_regions = 3;
     if (!kernel_proc->mm.regions) {
         panic(panic_msg);
     }
 
-    /* Copy region descriptors */
+    /*
+     * Copy region descriptors
+     */
     struct buf * kprocvm_code = kcalloc(1, sizeof(struct buf));
     struct buf * kprocvm_heap = kcalloc(1, sizeof(struct buf));
     if (!(kprocvm_code && kprocvm_heap)) {
@@ -158,16 +164,40 @@ static void init_kernel_proc(void)
     (*kernel_proc->mm.regions)[MM_STACK_REGION] = 0;
     (*kernel_proc->mm.regions)[MM_HEAP_REGION] = kprocvm_heap;
 
-    /* Break values */
+    /*
+     * Break values
+     */
     kernel_proc->brk_start = &__bss_break;
     kernel_proc->brk_stop = (void *)(kprocvm_heap->b_mmu.vaddr
         + mmu_sizeof_region(&(kprocvm_heap->b_mmu)) - 1);
 
-    /* signals struct */
+    /*
+     * Environ
+     */
+    kernel_proc->environ = geteblk(MMU_PGSIZE_COARSE);
+    if (!kernel_proc->environ) {
+        panic(panic_msg);
+    }
+    kernel_proc->environ->b_uflags = VM_PROT_READ | VM_PROT_WRITE;
+    /* TODO Remove magic value */
+    if (vm_addrmap_region(kernel_proc, kernel_proc->environ, 0x10000000)) {
+        panic(panic_msg);
+    }
+    /* TODO proc_setenv is broken */
+#if 0
+    if (proc_setenv(kernel_proc->environ,
+                    (char **){ NULL }, (char **){ NULL })) {
+        panic(panic_msg);
+    }
+#endif
+
+    /* Call constructor for signals struct */
     ksignal_signals_ctor(&kernel_proc->sigs);
 
-    /* File descriptors */
-    /* TODO We have a hard limit of 8 files here now but this should be tunable
+    /*
+     * File descriptors
+     *
+     * TODO We have a hard limit of 8 files here now but this should be tunable
      * by using setrlimit() Also we may want to set this smaller at some point.
      */
     kernel_proc->files = kcalloc(1, SIZEOF_FILES(8));
@@ -260,6 +290,11 @@ void _proc_free(proc_info_t * p)
         KERROR(KERROR_WARN, "Got NULL as a proc_info struct, double free?\n");
 
         return;
+    }
+
+    /* Free environ (argv and env) */
+    if (p->environ) {
+        p->environ->vm_ops->rfree(p->environ);
     }
 
     /* Free files */
@@ -550,10 +585,76 @@ int proc_replace(pid_t pid, struct buf * (*regions)[], int nr_regions)
     return 0; /* Never returns */
 }
 
+static size_t copyvars(char ** dp, char *vp[], size_t left)
+{
+    char * data = *dp;
+    size_t i, len;
+
+    i = 0;
+    while (vp[i]) {
+        len = strlcpy(data, vp[i], left);
+        left -= len + 1;
+        data = data + len;
+
+        i++;
+        if (left == 0 || vp[i] == NULL)
+            break;
+    }
+
+    *dp = data;
+    return left;
+}
+
+int proc_setenv(struct buf * environ_bp, char *argv[], char *env[])
+{
+    char * data = (char *)environ_bp->b_data;
+    size_t left = ARG_MAX;
+
+    /*
+     * First arguments and then environmental variables.
+     */
+
+    left = copyvars(&data, argv, left);
+
+    if (left == 0)
+        return -ENOMEM;
+
+    *data = ENVIRON_FS;
+
+    left = copyvars(&data, env, left);
+
+    return 0;
+}
+
 /* Syscall handlers ***********************************************************/
 
 static int sys_proc_exec(void * user_args)
 {
+    struct _proc_exec_args args;
+    file_t * file;
+    char ** argv = { NULL };
+    char ** env = { NULL };
+    int err;
+
+    err = copyin(user_args, &args, sizeof(args));
+    if (err) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    /* Increment refcount for the file pointed by fd */
+    file = fs_fildes_ref(curproc->files, args.fd, 1);
+    if (!file) {
+        set_errno(EBADF);
+        return -1;
+    }
+
+    /* TODO get argv and env */
+    exec_file(file, argv, env);
+
+    /* Decrement refcount for the file pointed by fd */
+    fs_fildes_ref(curproc->files, args.fd, -1);
+
     set_errno(ENOSYS); /* note: can only return EAGAIN or ENOMEM */
     return -1;
 }
@@ -804,6 +905,7 @@ static int sys_proc_getpriority(void * user_args)
     return -1;
 }
 
+/* TODO Implementation */
 static int sys_proc_times(void * user_args)
 {
     struct tms tms;
@@ -812,8 +914,6 @@ static int sys_proc_times(void * user_args)
         set_errno(EFAULT);
         return -1;
     }
-
-    /* TODO */
 
     return 0;
 }

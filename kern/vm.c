@@ -67,14 +67,14 @@ struct vm_pt * ptlist_get_pt(struct ptlist * ptlist_head, mmu_pagetable_t * mpt,
         .pt.vaddr = MMU_CPT_VADDR(vaddr)
     }; /* Used as a search filter */
 
-#if configDEBUG >= KERROR_ERR
-    if (!mpt)
-        panic("mpt can't be null");
-#endif
+    KASSERT(mpt, "mpt can't be null");
 
-    /* Check if system page table is needed. */
-    /* TODO I'm not sure if we have this one MB boundary as some fancy constant
-     * somewhere but this should be quite stable thing though. */
+    /*
+     * Check if system page table is needed.
+     *
+     * TODO I'm not quite sure if we have this one MB boundary as
+     * a fancy constant somewhere but this should be ok.
+     */
     if (vaddr <= 0x000FFFFF) {
         return &vm_pagetable_system;
     }
@@ -183,9 +183,14 @@ int copyoutproc(struct proc_info * proc, const void * kaddr, void * uaddr,
         return -EFAULT;
 
     memcpy(phys_uaddr, kaddr, len);
+
     return 0;
 }
 
+/*
+ * TODO Might be problematic if user space address space end before len as well
+ * as the string.
+ */
 int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done)
 {
     size_t slen;
@@ -276,10 +281,7 @@ int vm_map_region(struct buf * region, struct vm_pt * pt)
 {
     mmu_region_t mmu_region;
 
-#if configDEBUG >= KERROR_ERR
-    if (region == 0)
-        panic("region can't be null\n");
-#endif
+    KASSERT(region, "region can't be null\n");
 
     vm_updateusr_ap(region);
     mtx_lock(&(region->lock));
@@ -290,6 +292,20 @@ int vm_map_region(struct buf * region, struct vm_pt * pt)
     mtx_unlock(&(region->lock));
 
     return mmu_map_region(&mmu_region);
+}
+
+int vm_addrmap_region(struct proc_info * proc, struct buf * region,
+        uintptr_t vaddr)
+{
+    struct vm_pt * vpt;
+
+    vpt = ptlist_get_pt(&proc->mm.ptlist_head, &proc->mm.mpt, vaddr);
+    if (!vpt)
+        return -ENOMEM;
+
+    region->b_mmu.vaddr = vaddr;
+
+    return vm_map_region(region, vpt);
 }
 
 int kernacc(const void * addr, int len, int rw)
@@ -353,9 +369,11 @@ static int test_ap_priv(uint32_t rw, uint32_t ap)
 int useracc(const void * addr, int len, int rw)
 {
     /* TODO We may wan't to handle cow here */
-    /* TODO */
-    //if (curproc == 0)
-    //    return 0;
+    /* TODO Implementation */
+#if 0
+    if (!curproc)
+        return 0;
+#endif
 
     return (1 == 1);
 }

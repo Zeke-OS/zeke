@@ -144,6 +144,8 @@ vralloc
 vm
 --
 
+*vm_automap_region() function to automatically map a buffer to any free location*
+
 *vm_map_region() should call allocator specific mapper*
 So for VRA this call would just call mmu_map_region() but for some COR mapper
 it would possibly allocate only requested page and not the whole region and for

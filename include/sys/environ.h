@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    exec.c
+ * @file    environ.h
  * @author  Olli Vanhoja
- * @brief   Execute a file.
+ * @brief   Header file for environment manipulation.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,60 +30,17 @@
  *******************************************************************************
  */
 
-#define KERNEL_INTERNAL 1
-#include <errno.h>
-#include <kmalloc.h>
-#include <buf.h>
-#include <proc.h>
-#include <exec.h>
+/** @addtogroup LIBC
+ * @{
+ */
 
-SET_DECLARE(exec_loader, struct exec_loadfn);
+#ifndef ENVIRON_H
+#define ENVIRON_H
+
+#define ENVIRON_FS  '\x1C' /*!< Separator between argv and env arrays. */
+
+#endif /* ENVIRON_H */
 
 /**
- * Execute a file.
- * File can be elf binary, she-bang file, etc.
- * @param file  is the executable file.
- * @param argc  is the argument count.
- * @param argv  contains the argument strings.
- * @param env   contains environmen variables.
+ * @}
  */
-int exec_file(file_t * file, char ** argv, char ** env)
-{
-    struct exec_loadfn ** loader;
-    struct buf * old_environ;
-    int err, retval = 0;
-    uintptr_t vaddr;
-
-    if (!file)
-        return -ENOENT;
-
-    /*
-     * Backup old environ and set new.
-     */
-    old_environ = curproc->environ->vm_ops->rclone(curproc->environ);
-    proc_setenv(curproc->environ, argv, env);
-
-    SET_FOREACH(loader, exec_loader) {
-        err = (*loader)->fn(file, &vaddr);
-        if (err == 0 || err != -ENOEXEC)
-            break;
-    }
-    if (err) {
-        retval = err;
-        goto fail;
-    }
-
-    /*
-     * TODO Previously new env was set here, it should be probably done
-     * here for BSD (and probably POSIX compatibility)
-     */
-
-    goto out;
-fail:
-    memcpy((void *)curproc->environ->b_data, old_environ->b_data,
-            curproc->environ->b_bcount);
-out:
-    old_environ->vm_ops->rfree(old_environ);
-
-    return retval;
-}

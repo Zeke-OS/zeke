@@ -93,6 +93,13 @@ pid_t proc_fork(pid_t pid)
     new_proc->files = 0;
     /* ..and then start to fix things. */
 
+    /* Clone environ */
+    new_proc->environ = vr_rclone(old_proc->environ);
+    if (!new_proc->environ) {
+        retval = -ENOMEM;
+        goto free_res;
+    }
+
     /* Allocate a master page table for the new process. */
     new_proc->mm.mpt.vaddr = 0;
     new_proc->mm.mpt.type = MMU_PTT_MASTER;

@@ -45,6 +45,8 @@
 #define VM_PROT_EXECUTE 0x4 /*!< Execute. */
 #define VM_PROT_COW     0x8 /*!< Copy-on-write. */
 
+struct proc_info;
+
 /**
  * VM page table structure.
  */
@@ -155,7 +157,7 @@ int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done);
  */
 
 /**
- * Update usr access permissions based on region->usr_rw.
+ * Update usr access permissions based on b_uflags.
  * @param region is the region to be updated.
  */
 void vm_updateusr_ap(struct buf * region);
@@ -170,6 +172,15 @@ int vm_add_region(struct vm_mm_struct * mm, struct buf * region);
  * @return Zero if succeed; non-zero error code otherwise.
  */
 int vm_map_region(struct buf * region, struct vm_pt * pt);
+
+/**
+ * Map a VM region to given address on a process pointer by proc.
+ * @param proc is the process struct.
+ * @param region is a vm region buffer.
+ * @param vaddr is an address in user space.
+ */
+int vm_addrmap_region(struct proc_info * proc, struct buf * region,
+        uintptr_t vaddr);
 
 /**
  * Check kernel space memory region for accessibility.
