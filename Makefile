@@ -102,17 +102,17 @@ clean-all: clean clean-tools clean-doc
 
 # target_clean: clean - Clean.
 clean:
-	rm -f $(AUTOCONF_H)
+	$(RM) $(AUTOCONF_H)
 	find . -type f -name "*.bc" -exec rm -f {} \;
 	find . -type f -name "*.opt.bc" -exec rm -f {} \;
 	find . -type f -name "*.opt.s" -exec rm -f {} \;
-	rm -f *.bin
-	rm -f *.img
-	rm -f *.elf
-	rm -f *.list
-	rm -f *.a
-	rm zeke-rootfs.img
-	rm -f include/machine
+	$(RM) *.bin
+	$(RM) *.img
+	$(RM) *.elf
+	$(RM) *.list
+	$(RM) *.a
+	$(RM) zeke-rootfs.img
+	$(RM) include/machine
 	$(MAKE) -C $(CRT_DIR) clean
 	$(MAKE) -C lib clean
 	$(MAKE) -C kern clean

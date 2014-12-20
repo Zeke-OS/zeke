@@ -83,5 +83,5 @@ $(SBIN): $(OBJS)
 
 clean:
 	$(RM) $(ASOBJS) $(OBJS)
-	$(RM) *.a
+	$(RM)  *.a
 	$(RM) manifest
