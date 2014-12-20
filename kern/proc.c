@@ -183,13 +183,10 @@ static void init_kernel_proc(void)
     if (vm_addrmap_region(kernel_proc, kernel_proc->environ, 0x10000000)) {
         panic(panic_msg);
     }
-    /* TODO proc_setenv is broken */
-#if 0
     if (proc_setenv(kernel_proc->environ,
                     (char **){ NULL }, (char **){ NULL })) {
         panic(panic_msg);
     }
-#endif
 
     /* Call constructor for signals struct */
     ksignal_signals_ctor(&kernel_proc->sigs);
@@ -585,10 +582,13 @@ int proc_replace(pid_t pid, struct buf * (*regions)[], int nr_regions)
     return 0; /* Never returns */
 }
 
-static size_t copyvars(char ** dp, char *vp[], size_t left)
+static size_t copyvars(char ** dp, char ** vp, size_t left)
 {
     char * data = *dp;
     size_t i, len;
+
+    if (!vp)
+        return left;
 
     i = 0;
     while (vp[i]) {

@@ -199,9 +199,11 @@ static int procfs_updatedir(vnode_t * dir)
          * directories that should not exist anymore.
          */
         for (int i = 0; i <= act_maxproc; i++) {
+#if 0
             char buf[40];
             ksprintf(buf, 40, "%u\n", act_maxproc);
             KERROR(KERROR_DEBUG, buf);
+#endif
             const proc_info_t * proc = proc_get_struct(i);
 
             if (proc)
