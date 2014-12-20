@@ -37,8 +37,8 @@
 #include <fs/fs.h>
 
 struct exec_loadfn {
-    int (*fn)(file_t * file, uintptr_t * vaddr_base);
     char name[10];
+    int (*fn)(file_t * file, uintptr_t * vaddr_base);
 };
 
 #define EXEC_LOADFN(fun, namestr)           \
@@ -46,5 +46,7 @@ struct exec_loadfn {
         .name = namestr, .fn = fun          \
     };                                      \
     DATA_SET(exec_loader, fun##_st)
+
+int exec_file(file_t * file, char ** argv, char ** env);
 
 #endif /* EXEC_H */

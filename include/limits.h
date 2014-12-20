@@ -52,4 +52,6 @@
 /* Other Invariant Values */
 #define NZERO           0       /*!< Default process priority. */
 
+#define ARG_MAX         4096    /*!< Maximum size of argv and env combined. */
+
 #endif /* _LIMITS_H_ */

@@ -165,13 +165,16 @@ _PDCLIB_noreturn void exit( int status ) _PDCLIB_nothrow;
 */
 _PDCLIB_noreturn void _Exit( int status ) _PDCLIB_nothrow;
 
-/* Search an environment-provided key-value map for the given key name, and
-   return a pointer to the associated value string (or NULL if key name cannot
-   be found). The value string pointed to might be overwritten by a subsequent
-   call to getenv(). The library never calls getenv() itself.
-   Details on the provided keys and how to set / change them are determined by
-   the hosting OS and its glue function.
-*/
+/**
+ * Get value of an environment variable.
+ *
+ * Search an environment-provided key-value map for the given key name, and
+ * return a pointer to the associated value string (or NULL if key name cannot
+ * be found). The value string pointed to might be overwritten by a subsequent
+ * call to getenv(). The library never calls getenv() itself.
+ * Details on the provided keys and how to set / change them are determined by
+ * the hosting OS and its glue function.
+ */
 char * getenv( const char * name ) _PDCLIB_nothrow;
 
 /* If string is a NULL pointer, system() returns nonzero if a command processor

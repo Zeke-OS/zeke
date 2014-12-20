@@ -221,6 +221,14 @@ struct _proc_chdir_args {
     int atflags;
 };
 
+struct _proc_exec_args {
+    int fd;
+    char ** argv;
+    size_t nargv;
+    char ** env;
+    size_t nenv;
+};
+
 /**
  * Arguments struct for SYSCALL_PROC_GETBREAK
  */

@@ -37,7 +37,7 @@
 int sigtimedwait(const sigset_t * restrict set, siginfo_t * restrict info,
         const struct timespec * restrict timeout)
 {
-    /* TODO Ipmlementation */
+    /* TODO Implementation */
     errno = ENOTSUP;
     return -1;
 }

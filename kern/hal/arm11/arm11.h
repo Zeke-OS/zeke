@@ -121,16 +121,6 @@ void wr_thread_stack_ptr(void * ptr);
 } while (0)
 
 /**
- * Request immediate context switch
- *
- * Called from thread context.
- * TODO Make this a common implementation for all ARM processors?
- */
-#define req_context_switch() do {           \
-    __asm__ volatile ("WFI");               \
-} while (0)
-
-/**
  * Platform sepcific idle sleep mode.
  * Clock is stopped until one of the following events take place:
  * + An IRQ interrupt
