@@ -605,7 +605,7 @@ static size_t copyvars(char ** dp, char ** vp, size_t left)
     return left;
 }
 
-int proc_setenv(struct buf * environ_bp, char *argv[], char *env[])
+int proc_setenv(struct buf * environ_bp, char * argv[], char * env[])
 {
     char * data = (char *)environ_bp->b_data;
     size_t left = ARG_MAX;
@@ -620,8 +620,71 @@ int proc_setenv(struct buf * environ_bp, char *argv[], char *env[])
         return -ENOMEM;
 
     *data = ENVIRON_FS;
-
     left = copyvars(&data, env, left);
+
+    return 0;
+}
+
+/**
+ * Copyin argv or argc array from user space to a kernel buffer pointed by kdata.
+ * @param kdata is a character buffer of at least left bytes in size.
+ * @param uaddr is a user space pointer to a argv or env array.
+ * @param n is the count of elements in uaddr array.
+ * @param left is the number of bytes left in kdata.
+ */
+static int copyin_envvars(char ** kdata, char ** uaddr, const size_t n,
+        size_t * left)
+{
+    char ** udata;
+    const size_t udata_size = n * sizeof(char *);
+    size_t i;
+    int err;
+
+    if (n == 0)
+        return 0;
+
+    udata = kmalloc(udata_size);
+    if (!udata)
+        return -ENOMEM;
+    err = copyin(uaddr, udata, udata_size);
+    if (err)
+        return err;
+
+    for (i = 0; i < n; i++) {
+        size_t copied;
+
+        if (!udata[i])
+            break;
+
+        err = copyinstr(udata[i], *kdata, *left, &copied);
+        if (err)
+            return err;
+
+        *left -= copied;
+        *kdata += copied;
+    }
+
+    kfree(udata);
+
+    return 0;
+}
+
+int proc_copyinenv(struct buf * environ_bp, char * uargv[], size_t nargv,
+        char * uenv[], size_t nenv)
+{
+    char * data = (char *)environ_bp->b_data;
+    size_t left = ARG_MAX;
+    int err;
+
+    err = copyin_envvars(&data, uargv, nargv, &left);
+    if (err)
+        return err;
+    if (left == 0)
+        return -ENOMEM;
+
+    *data = ENVIRON_FS;
+
+    left = copyin_envvars(&data, uenv, nenv, &left);
 
     return 0;
 }
@@ -632,9 +695,8 @@ static int sys_proc_exec(void * user_args)
 {
     struct _proc_exec_args args;
     file_t * file;
-    char ** argv = { NULL };
-    char ** env = { NULL };
-    int err;
+    struct buf * new_environ;
+    int err, retval;
 
     err = copyin(user_args, &args, sizeof(args));
     if (err) {
@@ -649,14 +711,22 @@ static int sys_proc_exec(void * user_args)
         return -1;
     }
 
-    /* TODO get argv and env */
-    exec_file(file, argv, env);
+    new_environ = curproc->environ->vm_ops->rclone(curproc->environ);
+    if (!new_environ) {
+        set_errno(ENOMEM);
+        retval = -1;
+        goto out;
+    }
 
+    proc_copyinenv(new_environ, args.argv, args.nargv, args.env, args.nenv);
+
+    exec_file(file, new_environ);
+
+    retval = 0;
+out:
     /* Decrement refcount for the file pointed by fd */
     fs_fildes_ref(curproc->files, args.fd, -1);
-
-    set_errno(ENOSYS); /* note: can only return EAGAIN or ENOMEM */
-    return -1;
+    return retval;
 }
 
 static int sys_proc_fork(void * user_args)

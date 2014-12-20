@@ -183,20 +183,27 @@ int copyoutproc(struct proc_info * proc, const void * kaddr, void * uaddr,
         return -EFAULT;
 
     memcpy(phys_uaddr, kaddr, len);
-
     return 0;
 }
 
-/*
- * TODO Might be problematic if user space address space end before len as well
- * as the string.
- */
 int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done)
 {
     size_t slen;
     int err;
 
-    err = copyin(uaddr, kaddr, len);
+    /*
+     * There is two things user may try to use this functions for, copying
+     * a string thats length is already known and copying a string of unknown
+     * length to a buffer. In a case of unknown string we may fail to copy if
+     * the string is too close to the page bound and add + len is out of bounds,
+     * to solve this but to optimize of performance we do the following funny
+     * looking loop-copyin.
+     */
+    while ((err = copyin(uaddr, kaddr, len))) {
+        if (len == 1)
+            break;
+        len--;
+    }
     if (err)
         return err;
 

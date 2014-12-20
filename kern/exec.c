@@ -39,15 +39,7 @@
 
 SET_DECLARE(exec_loader, struct exec_loadfn);
 
-/**
- * Execute a file.
- * File can be elf binary, she-bang file, etc.
- * @param file  is the executable file.
- * @param argc  is the argument count.
- * @param argv  contains the argument strings.
- * @param env   contains environmen variables.
- */
-int exec_file(file_t * file, char ** argv, char ** env)
+int exec_file(file_t * file, struct buf * environ)
 {
     struct exec_loadfn ** loader;
     struct buf * old_environ;
@@ -57,11 +49,8 @@ int exec_file(file_t * file, char ** argv, char ** env)
     if (!file)
         return -ENOENT;
 
-    /*
-     * Backup old environ and set new.
-     */
-    old_environ = curproc->environ->vm_ops->rclone(curproc->environ);
-    proc_setenv(curproc->environ, argv, env);
+    old_environ = curproc->environ;
+    curproc->environ = environ;
 
     SET_FOREACH(loader, exec_loader) {
         err = (*loader)->fn(file, &vaddr);
@@ -80,8 +69,7 @@ int exec_file(file_t * file, char ** argv, char ** env)
 
     goto out;
 fail:
-    memcpy((void *)curproc->environ->b_data, old_environ->b_data,
-            curproc->environ->b_bcount);
+    curproc->environ = old_environ;
 out:
     old_environ->vm_ops->rfree(old_environ);
 

@@ -47,6 +47,11 @@ struct exec_loadfn {
     };                                      \
     DATA_SET(exec_loader, fun##_st)
 
-int exec_file(file_t * file, char ** argv, char ** env);
+/**
+ * Execute a file.
+ * File can be elf binary, she-bang file, etc.
+ * @param file  is the executable file.
+ */
+int exec_file(file_t * file, struct buf * environ);
 
 #endif /* EXEC_H */
