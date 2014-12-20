@@ -312,7 +312,7 @@ struct buf * vr_rclone(struct buf * old_region)
     new_region = geteblk(rsize);
     if (!new_region) {
         KERROR(KERROR_ERR, "Out of memory\n");
-        return 0;
+        return NULL;
     }
 
 #if configDEBUG >= KERROR_DEBUG
@@ -339,7 +339,7 @@ struct buf * vr_rclone(struct buf * old_region)
     vm_updateusr_ap(new_region);
 
     /* Release "lock". */
-    brelse(old_region);
+    vrfree(old_region);
 
     return new_region;
 }
