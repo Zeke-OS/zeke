@@ -30,6 +30,7 @@
  *******************************************************************************
  */
 
+#define KERNEL_INTERNAL
 #include <autoconf.h>
 #include <kerror.h>
 #include <proc.h>
@@ -40,6 +41,7 @@
 #include <kmalloc.h>
 #include <buf.h>
 #include <kinit.h>
+
 
 extern int (*__hw_preinit_array_start[]) (void) __attribute__((weak));
 extern int (*__hw_preinit_array_end[]) (void) __attribute__((weak));
@@ -192,14 +194,6 @@ int kinit(void)
 #endif
 
     return 0;
-}
-
-void * uinit(void * arg)
-{
-    /* TODO We should somehow exec and drop privs. */
-    KERROR(KERROR_DEBUG, "uinit\n");
-
-    return NULL;
 }
 
 #ifdef configMOUNTROOTFS
