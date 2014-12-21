@@ -223,9 +223,9 @@ struct _proc_chdir_args {
 
 struct _proc_exec_args {
     int fd;
-    char ** argv;
+    char * const * argv;
     size_t nargv;
-    char ** env;
+    char * const * env;
     size_t nenv;
 };
 
@@ -275,6 +275,20 @@ long sysconf(int name);
 int chdir(const char * path);
 
 pid_t fork(void);
+
+extern char **environ;
+#if 0
+int execl(const char *path, const char *arg0, ... /*, (char *)0 */);
+int execle(const char *path, const char *arg0, ... /*,
+       (char *)0, char *const envp[]*/);
+int execlp(const char *file, const char *arg0, ... /*, (char *)0 */);
+int execv(const char *path, char *const argv[]);
+#endif
+int execve(const char * path, char * const argv[], char * const envp[]);
+#if 0
+int execvp(const char *file, char *const argv[]);
+int fexecve(int fd, char *const argv[], char *const envp[]);
+#endif
 
 uid_t getuid(void);
 uid_t geteuid(void);

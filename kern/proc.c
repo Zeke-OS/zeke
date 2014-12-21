@@ -617,7 +617,7 @@ int proc_setenv(struct buf * environ_bp, char * argv[], char * env[])
     left = copyvars(&data, argv, left);
 
     if (left == 0)
-        return -ENOMEM;
+        return -E2BIG;
 
     *data = ENVIRON_FS;
     left = copyvars(&data, env, left);
@@ -685,7 +685,7 @@ int proc_copyinenv(struct buf * environ_bp, char * uargv[], size_t nargv,
     if (err)
         return err;
     if (left == 0)
-        return -ENOMEM;
+        return -E2BIG;
 
     *data = ENVIRON_FS;
 
@@ -723,7 +723,12 @@ static int sys_proc_exec(void * user_args)
         goto out;
     }
 
-    proc_copyinenv(new_environ, args.argv, args.nargv, args.env, args.nenv);
+    err = proc_copyinenv(new_environ, args.argv, args.nargv, args.env,
+            args.nenv);
+    if (err) {
+        set_errno(-err);
+        goto out;
+    }
 
     exec_file(file, new_environ);
 

@@ -4,7 +4,7 @@
    This file is part of the Public Domain C Library (PDCLib).
    Permission is granted to use, modify, and / or redistribute at will.
 */
-#ifndef REGTEST
+
 #include <sys/_PDCLIB_glue.h>
 #include <sys/_PDCLIB_io.h>
 #include <fcntl.h>
@@ -49,14 +49,3 @@ bool _PDCLIB_open(
     *ops = &_PDCLIB_fileops;
     return true;
 }
-#endif
-
-#ifdef TEST
-#include <_PDCLIB_test.h>
-
-int main( void )
-{
-    return TEST_RESULTS;
-}
-
-#endif

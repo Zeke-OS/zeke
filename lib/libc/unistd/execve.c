@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    fcntl.c
+ * @file    execve.c
  * @author  Olli Vanhoja
- * @brief   File control.
+ * @brief   Execute a file.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -28,12 +28,47 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************
-*/
+ */
 
+#include <stddef.h>
 #include <syscall.h>
+#include <fcntl.h>
 #include <unistd.h>
 
-int close(int fildes)
+static size_t vcount(char * const argv[])
 {
-    return syscall(SYSCALL_FS_CLOSE, (void *)fildes);
+    int i;
+
+    if (!argv)
+        return 0;
+
+    i = 0;
+    while (argv[i]) {
+        i++;
+    }
+
+    return i;
+}
+
+int execve(const char * path, char * const argv[], char * const envp[])
+{
+    struct _proc_exec_args args = {
+        .argv = argv,
+        .env = envp,
+    };
+    int retval;
+
+    args.fd = open(path, O_EXEC);
+    if (args.fd < 0) {
+        return -1;
+    }
+
+    args.nargv = vcount(argv);
+    args.nenv = vcount(argv);
+
+    retval = syscall(SYSCALL_PROC_EXEC, &args);
+
+    close(args.fd);
+
+    return retval;
 }
