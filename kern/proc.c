@@ -638,7 +638,7 @@ static int copyin_envvars(char ** kdata, char ** uaddr, const size_t n,
     char ** udata;
     const size_t udata_size = n * sizeof(char *);
     size_t i;
-    int err;
+    int err, retval = 0;
 
     if (n == 0)
         return 0;
@@ -646,9 +646,12 @@ static int copyin_envvars(char ** kdata, char ** uaddr, const size_t n,
     udata = kmalloc(udata_size);
     if (!udata)
         return -ENOMEM;
+
     err = copyin(uaddr, udata, udata_size);
-    if (err)
-        return err;
+    if (err) {
+        retval = err;
+        goto out;
+    }
 
     for (i = 0; i < n; i++) {
         size_t copied;
@@ -657,16 +660,18 @@ static int copyin_envvars(char ** kdata, char ** uaddr, const size_t n,
             break;
 
         err = copyinstr(udata[i], *kdata, *left, &copied);
-        if (err)
-            return err;
+        if (err) {
+            retval = err;
+            goto out;
+        }
 
         *left -= copied;
         *kdata += copied;
     }
 
+out:
     kfree(udata);
-
-    return 0;
+    return retval;
 }
 
 int proc_copyinenv(struct buf * environ_bp, char * uargv[], size_t nargv,
