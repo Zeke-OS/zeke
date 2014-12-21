@@ -186,13 +186,12 @@ void ksignal_signals_fork_reinit(struct signals * sigs)
 {
     struct sigaction_tree old_tree = sigs->sa_tree;
     struct ksigaction * sigact_old;
-    struct ksiginfo * n1;
-    struct ksiginfo * n2;
 
     /*
      * Clear pending signals as required by POSIX.
      */
-#if 0 /* Not ok but can be reused for kill */
+#if 0
+    /* Not ok but can be reused for kill */
     n1  = STAILQ_FIRST(&sigs->s_pendqueue);
     while (n1 != NULL) {
         n2 = STAILQ_NEXT(n1, _entry);

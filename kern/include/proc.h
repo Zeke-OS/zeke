@@ -239,9 +239,10 @@ proc_info_t * proc_get_struct_l(pid_t pid);
  */
 proc_info_t * proc_get_struct(pid_t pid);
 
-int proc_setenv(struct buf * environ_bp, char *argv[], char *env[]);
-int proc_copyinenv(struct buf * environ_bp, char * uargv[], size_t nargv,
-        char * uenv[], size_t nenv);
+int proc_setenv(struct buf * environ_bp, char * const argv[],
+        char * const env[]);
+int proc_copyinenv(struct buf * environ_bp, char * const uargv[], size_t nargv,
+        char * const uenv[], size_t nenv);
 
 /* proc_fork.c */
 

@@ -41,7 +41,6 @@
 #include <proc.h>
 #include <buf.h>
 #include <vm/vm.h>
-#include <vm/vm_proc.h>
 
 extern mmu_region_t mmu_region_kernel;
 
@@ -124,10 +123,10 @@ void ptlist_free(struct ptlist * ptlist_head)
 
 int copyin(const void * uaddr, void * kaddr, size_t len)
 {
-    return copyinproc(curproc, uaddr, kaddr, len);
+    return copyin_proc(curproc, uaddr, kaddr, len);
 }
 
-int copyinproc(struct proc_info * proc, const void * uaddr, void * kaddr,
+int copyin_proc(struct proc_info * proc, const void * uaddr, void * kaddr,
         size_t len)
 {
     struct vm_pt * vpt;
@@ -156,10 +155,10 @@ int copyinproc(struct proc_info * proc, const void * uaddr, void * kaddr,
 
 int copyout(const void * kaddr, void * uaddr, size_t len)
 {
-    return copyoutproc(curproc, kaddr, uaddr, len);
+    return copyout_proc(curproc, kaddr, uaddr, len);
 }
 
-int copyoutproc(struct proc_info * proc, const void * kaddr, void * uaddr,
+int copyout_proc(struct proc_info * proc, const void * kaddr, void * uaddr,
         size_t len)
 {
     /* TODO Handle possible cow flag? */

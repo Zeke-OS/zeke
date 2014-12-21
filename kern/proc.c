@@ -582,7 +582,7 @@ int proc_replace(pid_t pid, struct buf * (*regions)[], int nr_regions)
     return 0; /* Never returns */
 }
 
-static size_t copyvars(char ** dp, char ** vp, size_t left)
+static size_t copyvars(char ** dp, char * const * vp, size_t left)
 {
     char * data = *dp;
     size_t i, len;
@@ -605,7 +605,8 @@ static size_t copyvars(char ** dp, char ** vp, size_t left)
     return left;
 }
 
-int proc_setenv(struct buf * environ_bp, char * argv[], char * env[])
+int proc_setenv(struct buf * environ_bp, char * const argv[],
+        char * const env[])
 {
     char * data = (char *)environ_bp->b_data;
     size_t left = ARG_MAX;
@@ -632,7 +633,7 @@ int proc_setenv(struct buf * environ_bp, char * argv[], char * env[])
  * @param n is the count of elements in uaddr array.
  * @param left is the number of bytes left in kdata.
  */
-static int copyin_envvars(char ** kdata, char ** uaddr, const size_t n,
+static int copyin_envvars(char ** kdata, char * const * uaddr, const size_t n,
         size_t * left)
 {
     char ** udata;
@@ -674,8 +675,8 @@ out:
     return retval;
 }
 
-int proc_copyinenv(struct buf * environ_bp, char * uargv[], size_t nargv,
-        char * uenv[], size_t nenv)
+int proc_copyinenv(struct buf * environ_bp, char * const uargv[], size_t nargv,
+        char * const uenv[], size_t nenv)
 {
     char * data = (char *)environ_bp->b_data;
     size_t left = ARG_MAX;
@@ -727,6 +728,7 @@ static int sys_proc_exec(void * user_args)
             args.nenv);
     if (err) {
         set_errno(-err);
+        retval = -1;
         goto out;
     }
 

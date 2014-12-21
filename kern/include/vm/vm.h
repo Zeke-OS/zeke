@@ -152,6 +152,11 @@ int copyout(const void * kaddr, void * uaddr, size_t len);
  */
 int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done);
 
+int copyin_proc(struct proc_info * proc, const void * uaddr, void * kaddr,
+        size_t len);
+int copyout_proc(struct proc_info * proc, const void * kaddr, void * uaddr,
+        size_t len);
+
 /**
  * @}
  */
