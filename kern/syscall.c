@@ -93,10 +93,11 @@ void syscall_handler(void)
         char buf[80];
 
         ksprintf(buf, sizeof(buf),
-                 "syscall %u:%u not supported, (p:%u, i:%u)\n",
+                 "syscall %u:%u not supported, (pid:%u, tid:%u, pc:%x)\n",
                  major, minor,
                  (unsigned)current_process_id,
-                 (unsigned)current_thread->id);
+                 (unsigned)current_thread->id,
+                 current_thread->sframe[SCHED_SFRAME_SVC].pc);
         KERROR(KERROR_WARN, buf);
 
         set_errno(ENOSYS); /* Not supported. */

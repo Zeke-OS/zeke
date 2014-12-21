@@ -38,9 +38,10 @@
 #if __ARM6__ || __ARM6K__ || __ARM6M__
 intptr_t syscall(uint32_t type, void * p)
 {
+    register uint32_t arg0 __asm__("r0") = type;
+    register void * arg1 __asm__("r1") = p;
     int32_t scratch;
 
-    /* Lets expect that parameters are already in r0 & r1 */
     __asm__ volatile (
         "SVC    #0\n\t"
 #if __ARM6M__
@@ -52,7 +53,7 @@ intptr_t syscall(uint32_t type, void * p)
 #endif
         "MOV    %[res], r0\n\t"
         : [res]"=r" (scratch)
-        : [typ]"r" (type), [arg]"r" (p)
+        : [typ]"r" (arg0), [arg]"r" (arg1)
         : "r2", "r3", "r4");
 
     return (intptr_t)scratch;
