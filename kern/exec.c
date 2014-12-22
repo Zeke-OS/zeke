@@ -34,6 +34,7 @@
 #include <errno.h>
 #include <kmalloc.h>
 #include <buf.h>
+#include <thread.h>
 #include <proc.h>
 #include <exec.h>
 
@@ -43,8 +44,9 @@ int exec_file(file_t * file, struct buf * environ)
 {
     struct exec_loadfn ** loader;
     struct buf * old_environ;
-    int err, retval = 0;
     uintptr_t vaddr;
+    pthread_t tid;
+    int err, retval = 0;
 
     if (!file)
         return -ENOENT;
@@ -62,16 +64,45 @@ int exec_file(file_t * file, struct buf * environ)
         goto fail;
     }
 
-    /*
-     * TODO Previously new env was set here, it should be probably done
-     * here for BSD (and probably POSIX compatibility)
-     */
+    /* Create a new thread for executing main() */
+    pthread_attr_t pattr = {
+        .tpriority  = configUSRINIT_PRI,
+        .stackAddr  = (void *)((*curproc->mm.regions)[MM_STACK_REGION]->b_mmu.vaddr),
+        .stackSize  = configUSRINIT_SSIZE
+    };
+    struct _ds_pthread_create ds = {
+        .thread     = 0, /* return value */
+        .start      = (void *(*)(void *))((*curproc->mm.regions)[MM_CODE_REGION]->b_mmu.vaddr),
+        .def        = &pattr,
+        .argument   = NULL, /* TODO */
+        .del_thread = NULL /* TODO should be libc: pthread_exit */
+    };
+
+    tid = thread_create(&ds, 0);
+    if (tid <= 0) {
+        panic("Exec failed");
+    }
 
     goto out;
 fail:
     curproc->environ = old_environ;
 out:
     old_environ->vm_ops->rfree(old_environ);
+
+    if (err == 0) {
+        disable_interrupt();
+        /*
+         * Mark main thread for deletion, it's up to user space to kill any
+         * children. If there however is any child threads those may or may
+         * not cause a segmentation fault depending on when the scheduler
+         * starts removing stuff. This decission was made because we want to
+         * keep disable_interrupt() time as short as possible and POSIX seems
+         * to be quite silent about this issue anyway.
+         */
+        //curproc->main_thread->flags |= SCHED_DETACH_FLAG;
+        curproc->main_thread = sched_get_thread_info(tid);
+        thread_die(0); /* Don't return but die. */
+    }
 
     return retval;
 }

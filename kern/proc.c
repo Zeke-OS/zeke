@@ -517,79 +517,33 @@ struct buf * proc_newsect(uintptr_t vaddr, size_t size, int prot)
     return new_region;
 }
 
-int proc_replace(pid_t pid, struct buf * (*regions)[], int nr_regions)
+int proc_replace_region(struct buf * region, int region_nr)
 {
-    size_t i;
-    proc_info_t * p;
+    struct vm_pt * vpt;
+    char buf[80];
 
-    /* Check that no section is going to be mapped below the base limit. */
-    for (i = 0; i < nr_regions; i++) {
-        if ((*regions)[i]->b_mmu.vaddr < configEXEC_BASE_LIMIT)
-            return -ENOEXEC;
-    }
-
-    p = proc_get_struct_l(pid);
-    if (!p)
-        return -ESRCH;
-
-    /*
-     * Must disable interrupts here because there is no way getting back here
-     * after a context switch.
-     */
-    disable_interrupt();
-
-    /*
-     * Mark main thread for deletion, it's up to user space to kill any
-     * children. If there however is any child threads those may or may
-     * not cause a segmentation fault depending on when the scheduler
-     * starts removing stuff. This decission was made because we want to
-     * keep disable_interrupt() time as short as possible and POSIX seems
-     * to be quite silent about this issue anyway.
-     */
-    p->main_thread->flags |= SCHED_DETACH_FLAG; /* This kills the man. */
+    /* TODO realloc regions struct etc. */
+    if (region_nr > 2)
+        panic("Operation not supported");
 
     /* TODO Free old regions struct and its contents */
+    (*curproc->mm.regions)[region_nr] = region;
 
-    p->mm.regions = regions;
-    p->mm.nr_regions = nr_regions;
-
-    /* Map regions */
-    for (i = 0; i < nr_regions; i++) {
-        struct vm_pt * vpt;
-        char buf[80];
-
-        vpt = ptlist_get_pt(&p->mm.ptlist_head, &p->mm.mpt,
-                            (*regions)[i]->b_mmu.vaddr);
-        if (!vpt) {
-            panic("Exec failed");
-        }
-
-        ksprintf(buf, sizeof(buf), "Mapping sect %d to %x\n",
-                 i, (*regions)[i]->b_mmu.vaddr);
-        KERROR(KERROR_DEBUG, buf);
-
-        (*regions)[i]->b_mmu.pt = &vpt->pt;
-        vm_map_region((*regions)[i], vpt);
-    }
-
-    /* Create a new thread for executing main() */
-    pthread_attr_t pattr = {
-        .tpriority  = configUSRINIT_PRI,
-        .stackAddr  = (void *)((*regions)[MM_STACK_REGION]->b_mmu.paddr),
-        .stackSize  = configUSRINIT_SSIZE
-    };
-    struct _ds_pthread_create ds = {
-        .thread     = 0, /* return value */
-        .start      = (void *(*)(void *))((*regions)[MM_CODE_REGION]->b_mmu.vaddr),
-        .def        = &pattr,
-        .argument   = 0, /* TODO */
-        .del_thread = 0 /* TODO should be libc: pthread_exit */
-    };
-
-    const pthread_t tid = thread_create(&ds, 0);
-    if (tid <= 0) {
+    /*
+     * Map the new region
+     */
+    vpt = ptlist_get_pt(&curproc->mm.ptlist_head, &curproc->mm.mpt,
+                        region->b_mmu.vaddr);
+    if (!vpt) {
         panic("Exec failed");
     }
+
+    region->b_mmu.pt = &vpt->pt;
+    vm_map_region(region, vpt);
+
+    ksprintf(buf, sizeof(buf), "Mapped sect %d to %x\n",
+             region_nr, region->b_mmu.vaddr);
+    KERROR(KERROR_DEBUG, buf);
 
     return 0;
 }

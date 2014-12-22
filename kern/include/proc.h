@@ -228,7 +228,7 @@ pid_t proc_update(void);
 
 struct buf * proc_newsect(uintptr_t vaddr, size_t size, int prot);
 
-int proc_replace(pid_t pid, struct buf * (*regions)[], int nr_regions);
+int proc_replace_region(struct buf * region, int region_nr);
 
 void _proc_free(proc_info_t * p);
 

@@ -80,7 +80,7 @@ static int elf32_trans_prot(uint32_t flags)
     return prot;
 }
 
-static int load_section(struct buf * (*regions)[], int i, file_t * file,
+static int load_section(struct buf ** region, file_t * file,
         uintptr_t rbase, struct elf32_phdr * phdr)
 {
     int prot;
@@ -92,17 +92,18 @@ static int load_section(struct buf * (*regions)[], int i, file_t * file,
     if (!sect)
         return -ENOMEM;
 
-    (*regions)[i] = sect;
-
     memset((void *)sect->b_data, 0, phdr->p_memsz);
     file->seek_pos = 0;
     if (phdr->p_filesz > 0) {
         err = file->vnode->vnode_ops->read(file, (void *)sect->b_data,
                                            phdr->p_filesz);
-        if (err < 0)
+        if (err < 0) {
+            /* TODO free sect */
             return -ENOEXEC;
+        }
     }
 
+    *region = sect;
     return 0;
 }
 
@@ -111,10 +112,8 @@ int load_elf32(file_t * file, uintptr_t * vaddr_base)
     struct elf32_header * elfhdr = NULL;
     ssize_t slen;
     struct elf32_phdr * phdr = NULL;
-    size_t phsize;
+    size_t phsize, nr_newsections;
     uintptr_t rbase;
-    size_t lsections = 0;
-    struct buf * (*newregions)[] = NULL;
     int retval = 0;
 
     elfhdr = kmalloc(sizeof(struct elf32_header));
@@ -161,43 +160,40 @@ int load_elf32(file_t * file, uintptr_t * vaddr_base)
     }
 
     /* Count loadable sections. */
-    for (int i = 0; i < elfhdr->e_phnum; i++) {
+    nr_newsections = 0;
+    for (size_t i = 0; i < elfhdr->e_phnum; i++) {
         if (phdr[i].p_type == PT_LOAD && phdr[i].p_memsz != 0)
-            lsections++;
-    }
+            nr_newsections++;
 
-    /* Allocate memory for new regions struct */
-    newregions = kmalloc(lsections * sizeof(struct buf *));
-    if (!newregions) {
-        retval = -ENOMEM;
-        goto out;
+        /* Check that no section is going to be mapped below the base limit. */
+        if (phdr[i].p_vaddr + rbase < configEXEC_BASE_LIMIT)
+            return -ENOEXEC;
     }
+    if (nr_newsections > 2)
+        return -ENOEXEC;
 
     /* Load sections */
-    for (int i = 0; i < elfhdr->e_phnum; i++) {
+    for (size_t i = 0; i < elfhdr->e_phnum; i++) {
         if (phdr[i].p_type == PT_LOAD && phdr[i].p_memsz != 0) {
-            retval = load_section(newregions, i, file, rbase, &phdr[i]);
+            struct buf * sect;
+            const int reg_nr = (i == 0) ? MM_CODE_REGION : MM_HEAP_REGION;
+            /* TODO Support more than two sections */
+
+            retval = load_section(&sect, file, rbase, &phdr[i]);
             if (retval)
-                goto fail;
+                goto out;
 
             if (i == 0)
                 *vaddr_base = phdr[i].p_vaddr + rbase;
+
+            proc_replace_region(sect, reg_nr);
         }
     }
 
-    retval = proc_replace(curproc->pid, newregions, lsections);
-    if (retval)
-        goto fail;
-
     goto out;
-fail:
-    kfree(newregions);
 out:
     kfree(phdr);
     kfree(elfhdr);
-
-    if (retval == 0)
-        thread_die(0); /* Don't return but die. */
 
     return retval;
 }
