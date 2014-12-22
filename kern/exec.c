@@ -62,13 +62,6 @@ int exec_file(file_t * file, struct buf * environ)
         goto fail;
     }
 
-    {
-    char buf[80];
-
-    ksprintf(buf, sizeof(buf), "Image loaded to %x\n", vaddr);
-    KERROR(KERROR_DEBUG, buf);
-    }
-
     /*
      * TODO Previously new env was set here, it should be probably done
      * here for BSD (and probably POSIX compatibility)

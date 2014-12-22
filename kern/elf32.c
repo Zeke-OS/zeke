@@ -189,16 +189,16 @@ int load_elf32(file_t * file, uintptr_t * vaddr_base)
     if (retval)
         goto fail;
 
-    /* Interrupts will be enabled automatically. */
-    thread_die(0);
-    /* Never returns if previous function was called. */
-
     goto out;
 fail:
     kfree(newregions);
 out:
     kfree(phdr);
     kfree(elfhdr);
+
+    if (retval == 0)
+        thread_die(0); /* Don't return but die. */
+
     return retval;
 }
 EXEC_LOADFN(load_elf32, "elf32");
