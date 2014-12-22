@@ -541,8 +541,8 @@ int proc_replace_region(struct buf * region, int region_nr)
     region->b_mmu.pt = &vpt->pt;
     vm_map_region(region, vpt);
 
-    ksprintf(buf, sizeof(buf), "Mapped sect %d to %x\n",
-             region_nr, region->b_mmu.vaddr);
+    ksprintf(buf, sizeof(buf), "Mapped sect %d to %x (phys:%x)\n",
+             region_nr, region->b_mmu.vaddr, region->b_mmu.paddr);
     KERROR(KERROR_DEBUG, buf);
 
     return 0;

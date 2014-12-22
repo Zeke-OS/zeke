@@ -93,7 +93,7 @@ static int load_section(struct buf ** region, file_t * file,
         return -ENOMEM;
 
     memset((void *)sect->b_data, 0, phdr->p_memsz);
-    file->seek_pos = 0;
+    file->seek_pos = phdr->p_offset;
     if (phdr->p_filesz > 0) {
         err = file->vnode->vnode_ops->read(file, (void *)sect->b_data,
                                            phdr->p_filesz);
