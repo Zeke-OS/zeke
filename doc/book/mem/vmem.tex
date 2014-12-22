@@ -53,13 +53,13 @@ W   | MMU & coProcessor |
 \label{figure:vmsubsys}
 \end{figure}
 
-Virtual memory is managed as virtual memory regions (\verb+vm_region_t+) that
-are abstractions of \verb+mmu_region_t+ embedded with memory allocator
+Virtual memory is managed as virtual memory regions (\verb+struct buf+) that
+are abstractions of \verb+struct buf+ embedded with memory allocator
 information. Goal of this arrangement is to allow copy-on-write as well as
 support schemes where part of the memory is stored on secondary storage
 (i.e. paging).
 
-Due to the fact that \verb+vm_region_t+ structures are used by multiple
+Due to the fact that \verb+struct buf+ structures are used by multiple
 allocators there is no global knowledge of the actual state of a particular
 allocation, instead each allocator should/may keep track of allocation structs
 if desired so. Ideally the same struct can be reused when moving data from a
@@ -74,16 +74,17 @@ See figure \ref{figure:vmsubsys}.
   \item \verb+vralloc+  - VRAlloc is a special memory allocator targeted to
                         allocate blocks of memory that will be mapped in virtual
                         address space of a processes, it returns
-                        \verb+vm_region+ structs instead of just base address of
+                        \verb+buf+ structs instead of just base address of
                         the allocation.
   \item \verb+dynmem+   - is a dynamic memory allocation system that allocates
                         \& frees contiguous blocks of physical memory.
-  \item \verb+ptmapper+ - owns the statically created page tables (particularly
-                        the master page table) and regions, and is also used to
-                        allocate new page tables from the page table region.
+  \item \verb+ptmapper+ - owns all statically created page tables (particularly
+                        the master page table) and regions, and it is also used
+                        to allocate new page tables from the page table region.
   \item \verb+vm+       - vm runs various checks on virtual memory access,
-                        copies data between user land and kernel space and
-                        allocates memory for processes.
+                        copies data between user land, kernel space and
+                        allocates memory for processes, and wraps memory mapping
+                        operations for proc and \acs{bio}.
   \item mmu HAL -       is the abract MMU interface provided by \verb+mmu.h+
                         and \verb+mmu.c+.
   \item CPU specific MMU code is the module responsible of configuring the

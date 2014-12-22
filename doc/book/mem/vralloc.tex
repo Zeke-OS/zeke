@@ -2,11 +2,7 @@
 
 \acf{vralloc} is a memory allocator targeted to allocate blocks of memory
 that can be mapped in virtual address space of a user processes or used for
-file system buffering. \verb+vralloc+ returns a \verb+buf+ struct as a result
-of successful a memory allocation. This struct describes physical layout of
-the allocated memory region as well as its status.
-
-\lstinputlisting[label=list:vregion,caption=vregion struct.]{mem/vregion_struct.c}
+file system buffering.
 
 \begin{figure}
 \begin{verbatim}
@@ -18,6 +14,6 @@ the allocated memory region as well as its status.
 |                |     |                 |     |       |
 +----------------+     +-----------------+     +-------+
 \end{verbatim}
-\caption{vralloc blocks allocated from dynmem.}
+\caption{buf blocks allocated from dynmem.}
 \label{figure:vralloc_blocks}
 \end{figure}
