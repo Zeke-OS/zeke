@@ -519,8 +519,16 @@ struct buf * proc_newsect(uintptr_t vaddr, size_t size, int prot)
 
 int proc_replace(pid_t pid, struct buf * (*regions)[], int nr_regions)
 {
-    proc_info_t * p = proc_get_struct(pid);
+    size_t i;
+    proc_info_t * p;
 
+    /* Check that no section is going to be mapped below the base limit. */
+    for (i = 0; i < nr_regions; i++) {
+        if ((*regions)[i]->b_mmu.vaddr < configEXEC_BASE_LIMIT)
+            return -ENOEXEC;
+    }
+
+    p = proc_get_struct_l(pid);
     if (!p)
         return -ESRCH;
 
@@ -546,12 +554,19 @@ int proc_replace(pid_t pid, struct buf * (*regions)[], int nr_regions)
     p->mm.nr_regions = nr_regions;
 
     /* Map regions */
-    for (int i = 0; i < nr_regions; i++) {
-        struct vm_pt * vpt = ptlist_get_pt(&p->mm.ptlist_head, &p->mm.mpt,
-                (*regions)[i]->b_mmu.vaddr);
+    for (i = 0; i < nr_regions; i++) {
+        struct vm_pt * vpt;
+        char buf[80];
+
+        vpt = ptlist_get_pt(&p->mm.ptlist_head, &p->mm.mpt,
+                            (*regions)[i]->b_mmu.vaddr);
         if (!vpt) {
             panic("Exec failed");
         }
+
+        ksprintf(buf, sizeof(buf), "Mapping sect %d to %x\n",
+                 i, (*regions)[i]->b_mmu.vaddr);
+        KERROR(KERROR_DEBUG, buf);
 
         (*regions)[i]->b_mmu.pt = &vpt->pt;
         vm_map_region((*regions)[i], vpt);
@@ -576,10 +591,7 @@ int proc_replace(pid_t pid, struct buf * (*regions)[], int nr_regions)
         panic("Exec failed");
     }
 
-    /* interrupts will be enabled automatically */
-    thread_die(0);
-
-    return 0; /* Never returns */
+    return 0;
 }
 
 static size_t copyvars(char ** dp, char * const * vp, size_t left)
@@ -732,7 +744,12 @@ static int sys_proc_exec(void * user_args)
         goto out;
     }
 
-    exec_file(file, new_environ);
+    err = exec_file(file, new_environ);
+    if (err) {
+        set_errno(-err);
+        retval = -1;
+        goto out;
+    }
 
     retval = 0;
 out:

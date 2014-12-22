@@ -6,6 +6,8 @@ source "kern/hal/Kconfig"
 
 menu "Memory Map"
 
+menu "Physical layout"
+
 config configKSTACK_START
     hex "P kstack start"
     default 0x00001000
@@ -13,16 +15,6 @@ config configKSTACK_START
 config configKSTACK_END
     hex "P kstack end"
     default 0x00007fff
-
-config configTKSTACK_START
-    hex "V tkstack vaddr start"
-    default 0x00000000
-    depends on configMMU
-
-config configTKSTACK_END
-    hex "V tkstack vaddr end"
-    default 0x00000fff
-    depends on configMMU
 
 config configKERNEL_START
     hex "P kernel caddr start"
@@ -50,6 +42,20 @@ config configDYNMEM_END
     hex "P dynmem end"
     default 0x00FFFFFF
 
+endmenu
+
+menu "Kernel virtual layout"
+
+config configTKSTACK_START
+    hex "V tkstack vaddr start"
+    default 0x00000000
+    depends on configMMU
+
+config configTKSTACK_END
+    hex "V tkstack vaddr end"
+    default 0x00000fff
+    depends on configMMU
+
 config configKSECT_START
     hex "V ksect start"
     default 0x30000000
@@ -61,6 +67,18 @@ config configKSECT_START
 config configKSECT_END
     hex "V ksect end"
     default 0x50000000
+
+endmenu
+
+menu "Usr process layout"
+
+config configEXEC_BASE_LIMIT
+    hex "Exec base address low limit"
+    default 0x10000000
+    ---help---
+    "Lowest base address allowed for loading sections from a binary file.
+
+endmenu
 
 endmenu
 

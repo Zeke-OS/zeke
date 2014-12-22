@@ -79,7 +79,7 @@ $(SBIN): $(OBJS)
 	$(eval CUR_OBJS += $(patsubst %.S, %.o, $($(CUR_BIN)-ASRC-y)))
 	$(eval CUR_OBJS := $(patsubst %.c, %.o, $($(CUR_BIN)-SRC-y)))
 	@echo "LD $@"
-	$(ARMGNU)-ld -o $@ $(LDFLAGS) $(ROOT_DIR)/lib/crt1.a $(LDIR) $(CUR_OBJS) -lc
+	$(ARMGNU)-ld -o $@ -T $(ROOT_DIR)/$(ELFLD) $(LDFLAGS) $(ROOT_DIR)/lib/crt1.a $(LDIR) $(CUR_OBJS) -lc
 
 clean:
 	$(RM) $(ASOBJS) $(OBJS)

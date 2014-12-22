@@ -24,22 +24,27 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # Target Specific Compiler Options #############################################
+ARM32_ELFLD = lib/arm32.ld
+
 # Arch specific flags
 ifdef __ARM6M__
 	LLCFLAGS += -march=thumb
 	ASFLAGS  += -mcpu=cortex-m0 -mthumb -EL
+	ELFLD    := $(ARM32_ELFLD)
 	# or more generic with
 	#ASFLAGS  march=armv6-m -mthumb -EL
 endif
 ifdef __ARM6__
 	LLCFLAGS += -march=arm
 	ASFLAGS  += -march=armv6 -EL
+	ELFLD    := $(ARM32_ELFLD)
 endif
 # TODO Enable thumb?
 ifdef __ARM6K__
 	CCFLAGS  += -target armv6k-none-eabi
 	LLCFLAGS += -march=arm
 	ASFLAGS  += -march=armv6k -EL
+	ELFLD    := $(ARM32_ELFLD)
 endif
 
 # Floating point hardware

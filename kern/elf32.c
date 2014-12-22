@@ -36,6 +36,7 @@
 #include <kstring.h>
 #include <vm/vm.h>
 #include <buf.h>
+#include <thread.h>
 #include <proc.h>
 #include <exec.h>
 #include <elf_common.h>
@@ -80,12 +81,14 @@ static int elf32_trans_prot(uint32_t flags)
 }
 
 static int load_section(struct buf * (*regions)[], int i, file_t * file,
-        uintptr_t vaddr, struct elf32_phdr * phdr)
+        uintptr_t rbase, struct elf32_phdr * phdr)
 {
-    int prot = elf32_trans_prot(phdr->p_flags);
-    struct buf * sect = proc_newsect(vaddr, phdr->p_memsz, prot);
+    int prot;
+    struct buf * sect;
     int err;
 
+    prot = elf32_trans_prot(phdr->p_flags);
+    sect = proc_newsect(phdr->p_vaddr + rbase, phdr->p_memsz, prot);
     if (!sect)
         return -ENOMEM;
 
@@ -110,6 +113,7 @@ int load_elf32(file_t * file, uintptr_t * vaddr_base)
     struct elf32_phdr * phdr = NULL;
     size_t phsize;
     uintptr_t rbase;
+    size_t lsections = 0;
     struct buf * (*newregions)[] = NULL;
     int retval = 0;
 
@@ -151,14 +155,19 @@ int load_elf32(file_t * file, uintptr_t * vaddr_base)
         goto out;
     }
     file->seek_pos = elfhdr->e_phoff;
-    if (file->vnode->vnode_ops->read(file, phdr,
-                sizeof(struct elf32_phdr)) != phsize) {
+    if (file->vnode->vnode_ops->read(file, phdr, phsize) != phsize) {
         retval = -ENOEXEC;
         goto out;
     }
 
+    /* Count loadable sections. */
+    for (int i = 0; i < elfhdr->e_phnum; i++) {
+        if (phdr[i].p_type == PT_LOAD && phdr[i].p_memsz != 0)
+            lsections++;
+    }
+
     /* Allocate memory for new regions struct */
-    newregions = kmalloc(elfhdr->e_phnum * sizeof(struct buf *));
+    newregions = kmalloc(lsections * sizeof(struct buf *));
     if (!newregions) {
         retval = -ENOMEM;
         goto out;
@@ -176,7 +185,13 @@ int load_elf32(file_t * file, uintptr_t * vaddr_base)
         }
     }
 
-    proc_replace(curproc->pid, newregions, elfhdr->e_phnum);
+    retval = proc_replace(curproc->pid, newregions, lsections);
+    if (retval)
+        goto fail;
+
+    /* Interrupts will be enabled automatically. */
+    thread_die(0);
+    /* Never returns if previous function was called. */
 
     goto out;
 fail:

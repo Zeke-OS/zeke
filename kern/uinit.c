@@ -99,7 +99,7 @@ static int _execve(const char * path, char * const argv[], size_t nargv,
     if (exec_args.fd >= 0) {
         retval = syscall(SYSCALL_PROC_EXEC, &exec_args);
     } else {
-        return _geterrno();
+        return -1;
     }
 
     syscall(SYSCALL_FS_CLOSE, (void *)exec_args.fd);
@@ -141,7 +141,7 @@ void * uinit(void * arg)
     /* Exec init */
     err = _execve(argv[0], argv, num_elem(argv), env, num_elem(env));
     if (err) {
-        printfail("init not found");
+        printfail("exec init failed");
         while (1);
     }
 
