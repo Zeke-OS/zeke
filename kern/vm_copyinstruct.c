@@ -77,7 +77,7 @@ int copyinstruct(void * usr, void ** kern, size_t bytes, ...)
     while (1) {
         struct _cpyin_gc_node * gc_node;
         const size_t offset = va_arg(ap, size_t);
-        void * src;
+        void ** src;
         size_t len = va_arg(ap, size_t);
         void * dst;
 
@@ -86,10 +86,10 @@ int copyinstruct(void * usr, void ** kern, size_t bytes, ...)
         i++; /* This must be here to prevent it from getting optimized out as a
               * break condition. */
 
-        src = *((void **)((size_t)(*kern) + offset));
+        src = ((void **)((size_t)(*kern) + offset));
         len = *((size_t *)((size_t)(*kern) + len));
 
-        if (!useracc(src, len, VM_PROT_READ)) {
+        if (!useracc(*src, len, VM_PROT_READ)) {
             retval = -EFAULT;
             break;
         }
@@ -102,8 +102,8 @@ int copyinstruct(void * usr, void ** kern, size_t bytes, ...)
         token->gc_lst->insert_tail(token->gc_lst, gc_node);
         dst = gc_node->data;
 
-        copyin(src, dst, len);
-        src = dst;
+        copyin(*src, dst, len);
+        *src = dst;
     };
     va_end(ap);
 
