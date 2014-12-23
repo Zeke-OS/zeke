@@ -82,6 +82,5 @@ $(SBIN): $(OBJS)
 	$(ARMGNU)-ld -o $@ -T $(ROOT_DIR)/$(ELFLD) $(LDFLAGS) $(ROOT_DIR)/lib/crt1.a $(LDIR) $(CUR_OBJS) -lc
 
 clean:
-	$(RM) $(ASOBJS) $(OBJS)
-	$(RM)  *.a
+	$(RM) $(ASOBJS) $(OBJS) $(SBIN)
 	$(RM) manifest

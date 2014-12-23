@@ -134,9 +134,6 @@ $(KERNEL_IMG): $(MEMMAP) $(STARTUP_O) $(MODAS)
 clean:
 	$(RM) $(ASOBJS) $(OBJS) $(STARTUP_O)
 	$(RM) $(BCS)
-	find . -type f -name "*.bc" -exec rm -f {} \;
-	find . -type f -name "*.opt.bc" -exec rm -f {} \;
-	find . -type f -name "*.opt.s" -exec rm -f {} \;
 	$(RM) *.bin
 	$(RM) *.img
 	$(RM) *.elf

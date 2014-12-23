@@ -103,6 +103,11 @@ clean-all: clean clean-tools clean-doc
 # target_clean: clean - Clean.
 clean:
 	$(RM) $(AUTOCONF_H)
+	$(MAKE) -C $(CRT_DIR) clean
+	$(MAKE) -C lib clean
+	$(MAKE) -C kern clean
+	$(MAKE) -C sbin clean
+	find . -type f -name "*.o" -exec rm -f {} \;
 	find . -type f -name "*.bc" -exec rm -f {} \;
 	find . -type f -name "*.opt.bc" -exec rm -f {} \;
 	find . -type f -name "*.opt.s" -exec rm -f {} \;
@@ -113,9 +118,6 @@ clean:
 	$(RM) *.a
 	$(RM) zeke-rootfs.img
 	$(RM) include/machine
-	$(MAKE) -C $(CRT_DIR) clean
-	$(MAKE) -C lib clean
-	$(MAKE) -C kern clean
 
 # target_clean: clean-tools - Clean all tools.
 clean-tools:
