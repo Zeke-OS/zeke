@@ -582,12 +582,12 @@ int proc_setenv(struct buf * environ_bp, char * const argv[],
      */
 
     left = copyvars(&data, argv, left);
-
     if (left == 0)
         return -E2BIG;
 
     *data = ENVIRON_FS;
     left = copyvars(&data, env, left);
+    *data = ENVIRON_FS;
 
     return 0;
 }
@@ -655,8 +655,8 @@ int proc_copyinenv(struct buf * environ_bp, char * const uargv[], size_t nargv,
         return -E2BIG;
 
     *data = ENVIRON_FS;
-
     left = copyin_envvars(&data, uenv, nenv, &left);
+    *data = ENVIRON_FS;
 
     return 0;
 }
