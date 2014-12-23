@@ -805,6 +805,22 @@ out:
     return retval;
 }
 
+static int sys_chroot(void * user_args)
+{
+    int err;
+
+    err = priv_check(curproc, PRIV_VFS_CHROOT);
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
+    /* TODO Should we free or take some new refs? */
+    curproc->croot = curproc->cwd;
+
+    return 0;
+}
+
 /**
  * Declarations of fs syscall functions.
  */
@@ -825,6 +841,7 @@ static const syscall_handler_t fs_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_CHMOD, sys_chmod),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_CHOWN, sys_chown),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_UMASK, sys_umask),
-    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_MOUNT, sys_mount)
+    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_MOUNT, sys_mount),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_CHROOT, sys_chroot),
 };
 SYSCALL_HANDLERDEF(fs_syscall, fs_sysfnmap)

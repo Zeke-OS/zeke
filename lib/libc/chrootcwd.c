@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    zeke.h
+ * @file    chrootcwd.c
  * @author  Olli Vanhoja
- * @brief   Zeke specific system functions.
+ * @brief   Change root directory to the current working directory.
  * @section LICENSE
  * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,30 +30,10 @@
  *******************************************************************************
  */
 
-/** @addtogroup LIBC
-  * @{
-  */
+#include <syscall.h>
+#include <zeke.h>
 
-#pragma once
-#ifndef ZEKE_H
-#define ZEKE_H
-
-#ifndef KERNEL_INTERNAL /* prevent kernel internals from implementing these
-                         * as these should be implemented as syscall services.*/
-
-unsigned msleep(unsigned millisec);
-
-/**
- * Change root directory.
- * Change root directory to current process working directory.
- * Requires root permission and/or PRIV_VFS_CHROOT depending on configuration.
- */
-int chrootcwd(void);
-
-#endif /* !KERNEL_INTERNAL */
-
-#endif /* ZEKE_H */
-
-/**
-  * @}
-  */
+int chrootcwd(void)
+{
+    return syscall(SYSCALL_FS_CHROOT, NULL);
+}
