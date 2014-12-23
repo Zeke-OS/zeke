@@ -222,9 +222,9 @@ struct _proc_chdir_args {
 };
 
 /**
- * Arguments for SYSCALL_PROC_EXEC
+ * Arguments for SYSCALL_EXEC_EXEC
  */
-struct _proc_exec_args {
+struct _exec_args {
     int fd;
     char * const * argv;
     size_t nargv;

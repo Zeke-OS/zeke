@@ -52,6 +52,6 @@ struct exec_loadfn {
  * File can be elf binary, she-bang file, etc.
  * @param file  is the executable file.
  */
-int exec_file(file_t * file, struct buf * environ);
+int exec_file(file_t * file);
 
 #endif /* EXEC_H */

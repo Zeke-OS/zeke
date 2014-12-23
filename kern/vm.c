@@ -83,9 +83,11 @@ struct vm_pt * ptlist_get_pt(struct ptlist * ptlist_head, mmu_pagetable_t * mpt,
         vpt = RB_FIND(ptlist, ptlist_head, &filter);
     }
     if (!vpt) { /* Create a new pt if a sufficient pt not found. */
+        int err;
+
         vpt = kcalloc(1, sizeof(struct vm_pt));
         if (!vpt) {
-            return 0;
+            return NULL;
         }
 
         vpt->pt.vaddr = filter.pt.vaddr;
@@ -96,12 +98,15 @@ struct vm_pt * ptlist_get_pt(struct ptlist * ptlist_head, mmu_pagetable_t * mpt,
         /* Allocate the actual page table, this will also set pt_addr. */
         if (ptmapper_alloc(&(vpt->pt))) {
             kfree(vpt);
-            return 0;
+            return NULL;
         }
 
         /* Insert vpt (L2 page table) to the new new process. */
         RB_INSERT(ptlist, ptlist_head, vpt);
-        mmu_attach_pagetable(&(vpt->pt));
+        err = mmu_attach_pagetable(&(vpt->pt));
+        if (err) {
+            panic("Can't attach new pt");
+        }
     }
 
     return vpt;
@@ -276,9 +281,47 @@ int vm_add_region(struct vm_mm_struct * mm, struct buf * region)
             (mm->nr_regions + 1) * sizeof(struct buf *));
     if (!new_regions)
         return -ENOMEM;
+    mm->regions = new_regions;
 
     (*mm->regions)[mm->nr_regions] = region;
     mm->nr_regions = mm->nr_regions + 1;
+
+    return 0;
+}
+
+int vm_replace_region(struct vm_mm_struct * mm, struct buf * region,
+                      int region_nr)
+{
+    struct vm_pt * vpt;
+    char buf[80];
+    int err;
+
+    /* TODO realloc regions struct etc. */
+    if (region_nr > 2)
+        panic("Operation not supported");
+
+    /* TODO Free old regions struct and its contents */
+    (*mm->regions)[region_nr] = region;
+
+    /*
+     * Map the new region.
+     */
+    vpt = ptlist_get_pt(&mm->ptlist_head,
+                        &mm->mpt,
+                        region->b_mmu.vaddr);
+    if (!vpt) {
+        panic("Exec failed");
+    }
+
+    region->b_mmu.pt = &vpt->pt;
+    err = vm_map_region(region, vpt);
+    if (err) {
+        panic("Failed to map proc section while in exec");
+    }
+
+    ksprintf(buf, sizeof(buf), "Mapped sect %d to %x (phys:%x)\n",
+             region_nr, region->b_mmu.vaddr, region->b_mmu.paddr);
+    KERROR(KERROR_DEBUG, buf);
 
     return 0;
 }
@@ -300,16 +343,14 @@ int vm_map_region(struct buf * region, struct vm_pt * pt)
     return mmu_map_region(&mmu_region);
 }
 
-int vm_addrmap_region(struct proc_info * proc, struct buf * region,
-        uintptr_t vaddr)
+int vm_mapproc_region(struct proc_info * proc, struct buf * region)
 {
     struct vm_pt * vpt;
 
-    vpt = ptlist_get_pt(&proc->mm.ptlist_head, &proc->mm.mpt, vaddr);
+    vpt = ptlist_get_pt(&proc->mm.ptlist_head, &proc->mm.mpt,
+                        region->b_mmu.vaddr);
     if (!vpt)
         return -ENOMEM;
-
-    region->b_mmu.vaddr = vaddr;
 
     return vm_map_region(region, vpt);
 }

@@ -186,7 +186,7 @@ int load_elf32(file_t * file, uintptr_t * vaddr_base)
             if (i == 0)
                 *vaddr_base = phdr[i].p_vaddr + rbase;
 
-            proc_replace_region(sect, reg_nr);
+            vm_replace_region(&curproc->mm, sect, reg_nr);
         }
     }
 

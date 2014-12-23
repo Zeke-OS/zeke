@@ -72,6 +72,7 @@ pid_t proc_fork(pid_t pid)
 
     proc_info_t * const old_proc = proc_get_struct_l(pid);
     proc_info_t * new_proc;
+    int err;
     pid_t retval = -EAGAIN;
 
     /* Check that the old PID was valid. */
@@ -92,13 +93,6 @@ pid_t proc_fork(pid_t pid)
     new_proc->state = PROC_STATE_INITIAL;
     new_proc->files = 0;
     /* ..and then start to fix things. */
-
-    /* Clone environ */
-    new_proc->environ = vr_rclone(old_proc->environ);
-    if (!new_proc->environ) {
-        retval = -ENOMEM;
-        goto free_res;
-    }
 
     /* Allocate a master page table for the new process. */
     new_proc->mm.mpt.vaddr = 0;
@@ -131,7 +125,6 @@ pid_t proc_fork(pid_t pid)
     }
 
     /* Variables for cloning and referencing regions. */
-    struct vm_pt * vpt;
     struct buf * vm_reg_tmp;
 
     /* Copy code region pointer. */
@@ -187,17 +180,11 @@ pid_t proc_fork(pid_t pid)
 #endif
         }
 
-        vpt = ptlist_get_pt(
-                &(new_proc->mm.ptlist_head),
-                &(new_proc->mm.mpt),
-                (*new_proc->mm.regions)[i]->b_mmu.vaddr);
-        if (vpt == 0) {
+        err = vm_mapproc_region(new_proc, (*new_proc->mm.regions)[i]);
+        if (err) {
             retval = -ENOMEM;
             goto free_res;
         }
-
-        /* Attach region with page table owned by the new process. */
-        vm_map_region((*new_proc->mm.regions)[i], vpt);
     }
 
     /* fork() signals */

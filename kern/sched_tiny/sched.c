@@ -114,7 +114,8 @@ int sched_init(void)
         .thread   = &tid,
         .start    = idle_thread,
         .def      = &attr,
-        .argument = NULL
+        .arg1     = 0,
+        .del_thread = NULL,
     };
 
     thread_init(&task_table[0], 0, &tdef_idle, NULL, 1);

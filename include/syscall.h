@@ -68,16 +68,17 @@
 #define SYSCALL_MMTOTYPE(ma, mi) (((ma) << DEV_MINORBITS) | (mi))
 
 /* Syscall groups */
-#define SYSCALL_GROUP_SCHED         0x01 /*!< Scheduler system call group. */
-#define SYSCALL_GROUP_THREAD        0x02 /*!< Thread system call group. */
-#define SYSCALL_GROUP_SYSCTL        0x03 /*!< Sysctl system call group. */
-#define SYSCALL_GROUP_SIGNAL        0x04 /*!< Signal system call group. */
-#define SYSCALL_GROUP_PROC          0x05 /*!< Process system call group. */
-#define SYSCALL_GROUP_IPC           0x06 /*!< IPC system call group. */
-#define SYSCALL_GROUP_FS            0x07 /*!< File system system call group. */
-#define SYSCALL_GROUP_IOCTL         0x08 /*!< ioctl sysctem call group. */
-#define SYSCALL_GROUP_TIME          0x09 /*!< Time system call group. */
-#define SYSCALL_GROUP_PRIV          0x0A /*!< Pivileges system call group. */
+#define SYSCALL_GROUP_SCHED         0x1 /*!< Scheduler system call group. */
+#define SYSCALL_GROUP_THREAD        0x2 /*!< Thread system call group. */
+#define SYSCALL_GROUP_SYSCTL        0x3 /*!< Sysctl system call group. */
+#define SYSCALL_GROUP_SIGNAL        0x4 /*!< Signal system call group. */
+#define SYSCALL_GROUP_EXEC          0x5 /*!< Exec system call group. */
+#define SYSCALL_GROUP_PROC          0x6 /*!< Process system call group. */
+#define SYSCALL_GROUP_IPC           0x7 /*!< IPC system call group. */
+#define SYSCALL_GROUP_FS            0x8 /*!< File system system call group. */
+#define SYSCALL_GROUP_IOCTL         0x9 /*!< ioctl sysctem call group. */
+#define SYSCALL_GROUP_TIME          0xA /*!< Time system call group. */
+#define SYSCALL_GROUP_PRIV          0xB /*!< Pivileges system call group. */
 
 /* List of syscalls */
 #define SYSCALL_SCHED_GET_LOADAVG   SYSCALL_MMTOTYPE(SYSCALL_GROUP_SCHED, 0x00)
@@ -99,19 +100,19 @@
 #define SYSCALL_SIGNAL_SIGMASK      SYSCALL_MMTOTYPE(SYSCALL_GROUP_SIGNAL, 0x05)
 #define SYSCALL_SIGNAL_SIGWAIT      SYSCALL_MMTOTYPE(SYSCALL_GROUP_SIGNAL, 0x06)
 #define SYSCALL_SIGNAL_RETURN       SYSCALL_MMTOTYPE(SYSCALL_GROUP_SIGNAL, 0x07)
-#define SYSCALL_PROC_EXEC           SYSCALL_MMTOTYPE(SYSCALL_GROUP_PROC, 0x00)
-#define SYSCALL_PROC_FORK           SYSCALL_MMTOTYPE(SYSCALL_GROUP_PROC, 0x01)
-#define SYSCALL_PROC_WAIT           SYSCALL_MMTOTYPE(SYSCALL_GROUP_PROC, 0x02)
-#define SYSCALL_PROC_EXIT           SYSCALL_MMTOTYPE(SYSCALL_GROUP_PROC, 0x03)
-#define SYSCALL_PROC_CRED           SYSCALL_MMTOTYPE(SYSCALL_GROUP_PROC, 0x04)
-#define SYSCALL_PROC_GETPID         SYSCALL_MMTOTYPE(SYSCALL_GROUP_PROC, 0x05)
-#define SYSCALL_PROC_GETPPID        SYSCALL_MMTOTYPE(SYSCALL_GROUP_PROC, 0x06)
-#define SYSCALL_PROC_ALARM          SYSCALL_MMTOTYPE(SYSCALL_GROUP_PROC, 0x07)
-#define SYSCALL_PROC_CHDIR          SYSCALL_MMTOTYPE(SYSCALL_GROUP_PROC, 0x08)
-#define SYSCALL_PROC_SETPRIORITY    SYSCALL_MMTOTYPE(SYSCALL_GROUP_PROC, 0x09)
-#define SYSCALL_PROC_GETPRIORITY    SYSCALL_MMTOTYPE(SYSCALL_GROUP_PROC, 0x0A)
-#define SYSCALL_PROC_TIMES          SYSCALL_MMTOTYPE(SYSCALL_GROUP_PROC, 0x0B)
-#define SYSCALL_PROC_GETBREAK       SYSCALL_MMTOTYPE(SYSCALL_GROUP_PROC, 0x0C)
+#define SYSCALL_EXEC_EXEC           SYSCALL_MMTOTYPE(SYSCALL_GROUP_EXEC, 0x00)
+#define SYSCALL_PROC_FORK           SYSCALL_MMTOTYPE(SYSCALL_GROUP_PROC, 0x00)
+#define SYSCALL_PROC_WAIT           SYSCALL_MMTOTYPE(SYSCALL_GROUP_PROC, 0x01)
+#define SYSCALL_PROC_EXIT           SYSCALL_MMTOTYPE(SYSCALL_GROUP_PROC, 0x02)
+#define SYSCALL_PROC_CRED           SYSCALL_MMTOTYPE(SYSCALL_GROUP_PROC, 0x03)
+#define SYSCALL_PROC_GETPID         SYSCALL_MMTOTYPE(SYSCALL_GROUP_PROC, 0x04)
+#define SYSCALL_PROC_GETPPID        SYSCALL_MMTOTYPE(SYSCALL_GROUP_PROC, 0x05)
+#define SYSCALL_PROC_ALARM          SYSCALL_MMTOTYPE(SYSCALL_GROUP_PROC, 0x06)
+#define SYSCALL_PROC_CHDIR          SYSCALL_MMTOTYPE(SYSCALL_GROUP_PROC, 0x07)
+#define SYSCALL_PROC_SETPRIORITY    SYSCALL_MMTOTYPE(SYSCALL_GROUP_PROC, 0x08)
+#define SYSCALL_PROC_GETPRIORITY    SYSCALL_MMTOTYPE(SYSCALL_GROUP_PROC, 0x09)
+#define SYSCALL_PROC_TIMES          SYSCALL_MMTOTYPE(SYSCALL_GROUP_PROC, 0x0A)
+#define SYSCALL_PROC_GETBREAK       SYSCALL_MMTOTYPE(SYSCALL_GROUP_PROC, 0x0B)
 #define SYSCALL_IPC_PIPE            SYSCALL_MMTOTYPE(SYSCALL_GROUP_IPC, 0x00)
 #define SYSCALL_IPC_MSGGET          SYSCALL_MMTOTYPE(SYSCALL_GROUP_IPC, 0x01)
 #define SYSCALL_IPC_MSGSND          SYSCALL_MMTOTYPE(SYSCALL_GROUP_IPC, 0x02)

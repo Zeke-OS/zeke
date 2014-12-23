@@ -169,6 +169,9 @@ void vm_updateusr_ap(struct buf * region);
 
 int vm_add_region(struct vm_mm_struct * mm, struct buf * region);
 
+int vm_replace_region(struct vm_mm_struct * mm, struct buf * region,
+                      int region_nr);
+
 /**
  * Map a VM region with the given page table.
  * @note buf->b_mmu.pt is not respected and is considered as invalid.
@@ -179,13 +182,11 @@ int vm_add_region(struct vm_mm_struct * mm, struct buf * region);
 int vm_map_region(struct buf * region, struct vm_pt * pt);
 
 /**
- * Map a VM region to given address on a process pointer by proc.
+ * Map a VM region to given a process pointed by proc.
  * @param proc is the process struct.
  * @param region is a vm region buffer.
- * @param vaddr is an address in user space.
  */
-int vm_addrmap_region(struct proc_info * proc, struct buf * region,
-        uintptr_t vaddr);
+int vm_mapproc_region(struct proc_info * proc, struct buf * region);
 
 /**
  * Check kernel space memory region for accessibility.

@@ -132,7 +132,7 @@ int kinit(void)
                               * and mount the rootfs.
                               */
         .def        = &init_attr,
-        .argument   = NULL,
+        .arg1       = 0,
         .del_thread = 0xBADBAD /* TODO  Should be libc pthread_exit but we don't
                                 *       yet know where it will be.
                                 */

@@ -84,8 +84,6 @@
 typedef struct proc_info {
     pid_t pid;
     char name[PROC_NAME_LEN];   /*!< process name */
-    struct buf * environ;          /*!< Process environment shared with the
-                                    *   user space. */
     int state;                  /*!< 0 - running, > 0 stopped */
     int priority;               /*!< We may want to prioritize processes too. */
     int exit_code, exit_signal;
@@ -228,8 +226,6 @@ pid_t proc_update(void);
 
 struct buf * proc_newsect(uintptr_t vaddr, size_t size, int prot);
 
-int proc_replace_region(struct buf * region, int region_nr);
-
 void _proc_free(proc_info_t * p);
 
 proc_info_t * proc_get_struct_l(pid_t pid);
@@ -238,11 +234,6 @@ proc_info_t * proc_get_struct_l(pid_t pid);
  * Get pointer to a internal proc_info structure.
  */
 proc_info_t * proc_get_struct(pid_t pid);
-
-int proc_setenv(struct buf * environ_bp, char * const argv[],
-        char * const env[]);
-int proc_copyinenv(struct buf * environ_bp, char * const uargv[], size_t nargv,
-        char * const uenv[], size_t nenv);
 
 /* proc_fork.c */
 

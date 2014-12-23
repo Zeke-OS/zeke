@@ -38,7 +38,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/sysctl.h>
-#include <sys/environ.h>
 #include <tsched.h>
 #include <kstring.h>
 #include <libkern.h>
@@ -171,23 +170,6 @@ static void init_kernel_proc(void)
     kernel_proc->brk_stop = (void *)(kprocvm_heap->b_mmu.vaddr
         + mmu_sizeof_region(&(kprocvm_heap->b_mmu)) - 1);
 
-    /*
-     * Environ
-     */
-    kernel_proc->environ = geteblk(MMU_PGSIZE_COARSE);
-    if (!kernel_proc->environ) {
-        panic(panic_msg);
-    }
-    kernel_proc->environ->b_uflags = VM_PROT_READ | VM_PROT_WRITE;
-    /* TODO Remove magic value */
-    if (vm_addrmap_region(kernel_proc, kernel_proc->environ, 0x10000000)) {
-        panic(panic_msg);
-    }
-    if (proc_setenv(kernel_proc->environ,
-                    (char **){ NULL }, (char **){ NULL })) {
-        panic(panic_msg);
-    }
-
     /* Call constructor for signals struct */
     ksignal_signals_ctor(&kernel_proc->sigs);
 
@@ -287,11 +269,6 @@ void _proc_free(proc_info_t * p)
         KERROR(KERROR_WARN, "Got NULL as a proc_info struct, double free?\n");
 
         return;
-    }
-
-    /* Free environ (argv and env) */
-    if (p->environ) {
-        p->environ->vm_ops->rfree(p->environ);
     }
 
     /* Free files */
@@ -509,208 +486,13 @@ struct buf * proc_newsect(uintptr_t vaddr, size_t size, int prot)
 
     new_region->b_uflags = prot & ~VM_PROT_COW;
     new_region->b_mmu.vaddr = vaddr;
-    new_region->b_mmu.ap = MMU_AP_NANA;
-    new_region->b_mmu.control = MMU_CTRL_NG |
-        ((prot | VM_PROT_EXECUTE) ? 0 : MMU_CTRL_XN);
+    new_region->b_mmu.control = MMU_CTRL_MEMTYPE_WB;
     vm_updateusr_ap(new_region);
 
     return new_region;
 }
 
-int proc_replace_region(struct buf * region, int region_nr)
-{
-    struct vm_pt * vpt;
-    char buf[80];
-
-    /* TODO realloc regions struct etc. */
-    if (region_nr > 2)
-        panic("Operation not supported");
-
-    /* TODO Free old regions struct and its contents */
-    (*curproc->mm.regions)[region_nr] = region;
-
-    /*
-     * Map the new region
-     */
-    vpt = ptlist_get_pt(&curproc->mm.ptlist_head, &curproc->mm.mpt,
-                        region->b_mmu.vaddr);
-    if (!vpt) {
-        panic("Exec failed");
-    }
-
-    region->b_mmu.pt = &vpt->pt;
-    vm_map_region(region, vpt);
-
-    ksprintf(buf, sizeof(buf), "Mapped sect %d to %x (phys:%x)\n",
-             region_nr, region->b_mmu.vaddr, region->b_mmu.paddr);
-    KERROR(KERROR_DEBUG, buf);
-
-    return 0;
-}
-
-static size_t copyvars(char ** dp, char * const * vp, size_t left)
-{
-    char * data = *dp;
-    size_t i, len;
-
-    if (!vp)
-        return left;
-
-    i = 0;
-    while (vp[i]) {
-        len = strlcpy(data, vp[i], left);
-        left -= len + 1;
-        data = data + len;
-
-        i++;
-        if (left == 0 || vp[i] == NULL)
-            break;
-    }
-
-    *dp = data;
-    return left;
-}
-
-int proc_setenv(struct buf * environ_bp, char * const argv[],
-        char * const env[])
-{
-    char * data = (char *)environ_bp->b_data;
-    size_t left = ARG_MAX;
-
-    /*
-     * First arguments and then environmental variables.
-     */
-
-    left = copyvars(&data, argv, left);
-    if (left == 0)
-        return -E2BIG;
-
-    *data = ENVIRON_FS;
-    left = copyvars(&data, env, left);
-    *data = ENVIRON_FS;
-
-    return 0;
-}
-
-/**
- * Copyin argv or argc array from user space to a kernel buffer pointed by kdata.
- * @param kdata is a character buffer of at least left bytes in size.
- * @param uaddr is a user space pointer to a argv or env array.
- * @param n is the count of elements in uaddr array.
- * @param left is the number of bytes left in kdata.
- */
-static int copyin_envvars(char ** kdata, char * const * uaddr, const size_t n,
-        size_t * left)
-{
-    char ** udata;
-    const size_t udata_size = n * sizeof(char *);
-    size_t i;
-    int err, retval = 0;
-
-    if (n == 0)
-        return 0;
-
-    udata = kmalloc(udata_size);
-    if (!udata)
-        return -ENOMEM;
-
-    err = copyin(uaddr, udata, udata_size);
-    if (err) {
-        retval = err;
-        goto out;
-    }
-
-    for (i = 0; i < n; i++) {
-        size_t copied;
-
-        if (!udata[i])
-            break;
-
-        err = copyinstr(udata[i], *kdata, *left, &copied);
-        if (err) {
-            retval = err;
-            goto out;
-        }
-
-        *left -= copied;
-        *kdata += copied;
-    }
-
-out:
-    kfree(udata);
-    return retval;
-}
-
-int proc_copyinenv(struct buf * environ_bp, char * const uargv[], size_t nargv,
-        char * const uenv[], size_t nenv)
-{
-    char * data = (char *)environ_bp->b_data;
-    size_t left = ARG_MAX;
-    int err;
-
-    err = copyin_envvars(&data, uargv, nargv, &left);
-    if (err)
-        return err;
-    if (left == 0)
-        return -E2BIG;
-
-    *data = ENVIRON_FS;
-    left = copyin_envvars(&data, uenv, nenv, &left);
-    *data = ENVIRON_FS;
-
-    return 0;
-}
-
 /* Syscall handlers ***********************************************************/
-
-static int sys_proc_exec(void * user_args)
-{
-    struct _proc_exec_args args;
-    file_t * file;
-    struct buf * new_environ;
-    int err, retval;
-
-    err = copyin(user_args, &args, sizeof(args));
-    if (err) {
-        set_errno(EFAULT);
-        return -1;
-    }
-
-    /* Increment refcount for the file pointed by fd */
-    file = fs_fildes_ref(curproc->files, args.fd, 1);
-    if (!file) {
-        set_errno(EBADF);
-        return -1;
-    }
-
-    new_environ = curproc->environ->vm_ops->rclone(curproc->environ);
-    if (!new_environ) {
-        set_errno(ENOMEM);
-        retval = -1;
-        goto out;
-    }
-
-    err = proc_copyinenv(new_environ, args.argv, args.nargv, args.env,
-            args.nenv);
-    if (err) {
-        set_errno(-err);
-        retval = -1;
-        goto out;
-    }
-
-    err = exec_file(file, new_environ);
-    if (err) {
-        set_errno(-err);
-        retval = -1;
-        goto out;
-    }
-
-    retval = 0;
-out:
-    /* Decrement refcount for the file pointed by fd */
-    fs_fildes_ref(curproc->files, args.fd, -1);
-    return retval;
-}
 
 static int sys_proc_fork(void * user_args)
 {
@@ -989,7 +771,6 @@ static int sys_proc_getbreak(void * user_args)
 }
 
 static const syscall_handler_t proc_sysfnmap[] = {
-    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_EXEC, sys_proc_exec),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_FORK, sys_proc_fork),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_WAIT, sys_proc_wait),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_EXIT, sys_proc_exit),

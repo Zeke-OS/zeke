@@ -1,4 +1,5 @@
 /*-
+ * Copyright 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright 2012 Konstantin Belousov <kib@FreeBSD.org>
  * All rights reserved.
  *
@@ -40,8 +41,10 @@ extern void (*__fini_array_end[])(void) __hidden;
 extern void _fini(void) __hidden;
 extern void _init(void) __hidden;
 
+#if 0
 extern int _DYNAMIC;
 #pragma weak _DYNAMIC
+#endif
 
 char **environ;
 const char *__progname = "";
@@ -62,13 +65,15 @@ finalizer(void)
 }
 
 static inline void
-handle_static_init(int argc, char **argv, char **env)
+handle_static_init(int argc, char ** argv, char ** env)
 {
     void (*fn)(int, char **, char **);
     size_t array_size, n;
 
+#if 0
     if (&_DYNAMIC != NULL)
         return;
+#endif
 
     atexit(finalizer);
 
@@ -78,7 +83,11 @@ handle_static_init(int argc, char **argv, char **env)
         if ((uintptr_t)fn != 0 && (uintptr_t)fn != 1)
             fn(argc, argv, env);
     }
+
+/*
     _init();
+*/
+
     array_size = __init_array_end - __init_array_start;
     for (n = 0; n < array_size; n++) {
         fn = __init_array_start[n];
@@ -88,14 +97,17 @@ handle_static_init(int argc, char **argv, char **env)
 }
 
 static inline void
-handle_argv(int argc, char *argv[], char **env)
+handle_argv(int argc, char * argv[], char ** env)
 {
-    const char *s;
+    const char * s;
 
     if (environ == NULL)
         environ = env;
+
     if (argc > 0 && argv[0] != NULL) {
         __progname = argv[0];
+
+        /* Discard path from progname */
         for (s = __progname; *s != '\0'; s++) {
             if (*s == '/')
                 __progname = s + 1;

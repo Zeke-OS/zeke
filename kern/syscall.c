@@ -52,6 +52,7 @@
     apply(SYSCALL_GROUP_THREAD, thread_syscall)     \
     apply(SYSCALL_GROUP_SYSCTL, sysctl_syscall)     \
     apply(SYSCALL_GROUP_SIGNAL, ksignal_syscall)    \
+    apply(SYSCALL_GROUP_EXEC, exec_syscall)         \
     apply(SYSCALL_GROUP_PROC, proc_syscall)         \
     apply(SYSCALL_GROUP_FS, fs_syscall)             \
     apply(SYSCALL_GROUP_IOCTL, ioctl_syscall)       \

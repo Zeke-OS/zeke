@@ -129,10 +129,10 @@ int sched_init(void)
     };
     /* Create the idle task as task 0 */
     struct _ds_pthread_create tdef_idle = {
-        .thread   = &tid,
-        .start    = idle_thread,
-        .def      = &attr,
-        .argument = NULL
+        .thread = &tid,
+        .start  = idle_thread,
+        .def    = &attr,
+        .arg1   = NULL
     };
     thread_create(&tdef_idle, 1);
     if (tid != 0)

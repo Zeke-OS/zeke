@@ -63,5 +63,5 @@ static const struct {
     .descsz = sizeof(int32_t),
     .type = ABI_NOTETYPE,
     .name = NOTE_VENDOR,
-    .desc = 0 /* TODO */
+    .desc = 0
 };

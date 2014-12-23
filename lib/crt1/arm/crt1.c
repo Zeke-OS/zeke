@@ -1,5 +1,6 @@
 /* LINTLIBRARY */
 /*-
+ * Copyright 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright 2001 David E. O'Brien.
  * All rights reserved.
  * Copyright 1996-1998 John D. Polstra.
@@ -40,7 +41,6 @@
  */
 
 #include <sys/cdefs.h>
-#include <sys/exec.h>
 
 #ifndef lint
 #ifndef __GNUC__
@@ -53,7 +53,7 @@
 #include "../crtbrand.c"
 #include "../ignore_init.c"
 
-extern void _start(struct main_args *);
+extern void _start(int argc, char ** argv, char ** envp, void (*cleanup)(void));
 
 #ifdef GCRT
 extern void _mcleanup(void);
@@ -62,7 +62,7 @@ extern int eprol;
 extern int etext;
 #endif
 
-void __start(struct main_args *);
+void __start(int argc, char ** argv, char ** envp, void (*cleanup)(void));
 
 /* The entry function. */
 __asm(" .text           \n"
@@ -77,21 +77,19 @@ __asm(" .text           \n"
 "\n"
 "   b    __start  ");
 /* ARGSUSED */
-void __start(struct main_args * args)
+void __start(int argc, char ** argv, char ** envp, void (*cleanup)(void))
 {
-    int argc = args->ma_nargv;
-    char **argv = args->ma_argv;
-    char **envp = args->ma_envp;
-
     handle_argv(argc, argv, envp);
 
     /* if (&_DYNAMIC != NULL) */
-        atexit(args->ma_cleanup);
+        atexit(cleanup);
     /*else
         _init_tls();*/
+#if 0
 #ifdef GCRT
     atexit(_mcleanup);
     monstartup(&eprol, &etext);
+#endif
 #endif
     handle_static_init(argc, argv, envp);
     exit(main(argc, argv, envp));

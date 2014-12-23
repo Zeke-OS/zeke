@@ -52,10 +52,10 @@ void init_stack_frame(struct _ds_pthread_create * thread_def,
             + thread_def->def->stackSize
             - sizeof(errno_t));
 
-    sframe->r0  = (uint32_t)(thread_def->argument);
-    sframe->r1  = 0;
-    sframe->r2  = 0;
-    sframe->r3  = 0;
+    sframe->r0  = (uint32_t)(thread_def->arg1);
+    sframe->r1  = (uint32_t)(thread_def->arg2);
+    sframe->r2  = (uint32_t)(thread_def->arg3);
+    sframe->r3  = (uint32_t)(thread_def->arg4);
     sframe->r12 = 0;
     sframe->sp  = stack_start;
     sframe->pc  = ((uint32_t)(thread_def->start)) + 4;

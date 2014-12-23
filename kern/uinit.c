@@ -89,10 +89,10 @@ static int _execve(const char * path, char * const argv[], size_t nargv,
     struct _fs_open_args open_args = {
         .name = path,
         .name_len = strlenn(path, PATH_MAX) + 1,
-        .oflags = SYSCALL_PROC_EXEC,
+        .oflags = O_EXEC | O_CLOEXEC,
         .atflags = AT_FDCWD
     };
-    struct _proc_exec_args exec_args = {
+    struct _exec_args exec_args = {
         .argv = argv,
         .nargv = nargv,
         .env = envp,
@@ -102,7 +102,7 @@ static int _execve(const char * path, char * const argv[], size_t nargv,
 
     exec_args.fd = syscall(SYSCALL_FS_OPEN, &open_args);
     if (exec_args.fd >= 0) {
-        retval = syscall(SYSCALL_PROC_EXEC, &exec_args);
+        retval = syscall(SYSCALL_EXEC_EXEC, &exec_args);
     } else {
         return -1;
     }

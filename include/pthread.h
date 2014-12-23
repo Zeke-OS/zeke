@@ -185,7 +185,10 @@ struct _ds_pthread_create {
     pthread_t * thread;         /*!< Returned thread id. */
     start_routine start;        /*!< Thread start routine. */
     pthread_attr_t * def;       /*!< Thread def attributes. */
-    void * argument;            /*!< Thread parameter(s) pointer. */
+    uintptr_t arg1;
+    uintptr_t arg2;
+    uintptr_t arg3;
+    uintptr_t arg4;
     void (*del_thread)(void *); /*!< Thread exit function. */
 };
 

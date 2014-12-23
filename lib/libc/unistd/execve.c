@@ -52,7 +52,7 @@ static size_t vcount(char * const argv[])
 
 int execve(const char * path, char * const argv[], char * const envp[])
 {
-    struct _proc_exec_args args = {
+    struct _exec_args args = {
         .argv = argv,
         .env = envp,
     };
@@ -66,7 +66,7 @@ int execve(const char * path, char * const argv[], char * const envp[])
     args.nargv = vcount(argv);
     args.nenv = vcount(argv);
 
-    retval = syscall(SYSCALL_PROC_EXEC, &args);
+    retval = syscall(SYSCALL_EXEC_EXEC, &args);
 
     close(args.fd);
 

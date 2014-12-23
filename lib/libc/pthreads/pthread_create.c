@@ -43,7 +43,7 @@ int pthread_create(pthread_t * thread, const pthread_attr_t * attr,
         .thread     = thread,
         .start      = start_routine,
         .def        = attr,
-        .argument   = arg,
+        .arg1       = (uintptr_t)arg,
         .del_thread = pthread_exit
     };
     int result;
