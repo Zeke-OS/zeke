@@ -38,7 +38,7 @@
 
 struct exec_loadfn {
     char name[10];
-    int (*fn)(file_t * file, uintptr_t * vaddr_base);
+    int (*fn)(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base);
 };
 
 #define EXEC_LOADFN(fun, namestr)           \

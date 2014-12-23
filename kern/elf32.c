@@ -98,7 +98,7 @@ static int load_section(struct buf ** region, file_t * file,
         err = file->vnode->vnode_ops->read(file, (void *)sect->b_data,
                                            phdr->p_filesz);
         if (err < 0) {
-            /* TODO free sect */
+            sect->vm_ops->rfree(sect);
             return -ENOEXEC;
         }
     }
@@ -107,13 +107,15 @@ static int load_section(struct buf ** region, file_t * file,
     return 0;
 }
 
-int load_elf32(file_t * file, uintptr_t * vaddr_base)
+int load_elf32(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base)
 {
     struct elf32_header * elfhdr = NULL;
     ssize_t slen;
     struct elf32_phdr * phdr = NULL;
     size_t phsize, nr_newsections;
+    int e_type;
     uintptr_t rbase;
+    struct vm_mm_struct * mm = &proc->mm;
     int retval = 0;
 
     elfhdr = kmalloc(sizeof(struct elf32_header));
@@ -137,11 +139,12 @@ int load_elf32(file_t * file, uintptr_t * vaddr_base)
     if (retval)
         goto out;
 
-    if (elfhdr->e_type == ET_DYN)
+    e_type = elfhdr->e_type;
+    if (e_type == ET_DYN) {
         rbase = *vaddr_base;
-    else if (elfhdr->e_type == ET_EXEC)
+    } else if (e_type == ET_EXEC) {
         rbase = 0;
-    else {
+    } else {
         retval = -ENOEXEC;
         goto out;
     }
@@ -172,21 +175,25 @@ int load_elf32(file_t * file, uintptr_t * vaddr_base)
     if (nr_newsections > 2)
         return -ENOEXEC;
 
+    /* TODO Unload regions above HEAP */
+
     /* Load sections */
     for (size_t i = 0; i < elfhdr->e_phnum; i++) {
         if (phdr[i].p_type == PT_LOAD && phdr[i].p_memsz != 0) {
             struct buf * sect;
-            const int reg_nr = (i == 0) ? MM_CODE_REGION : MM_HEAP_REGION;
-            /* TODO Support more than two sections */
-
             retval = load_section(&sect, file, rbase, &phdr[i]);
             if (retval)
                 goto out;
 
-            if (i == 0)
-                *vaddr_base = phdr[i].p_vaddr + rbase;
+            if (e_type == ET_EXEC && i < 2) {
+                const int reg_nr = (i == 0) ? MM_CODE_REGION : MM_HEAP_REGION;
 
-            vm_replace_region(&curproc->mm, sect, reg_nr);
+                if (i == 0)
+                    *vaddr_base = phdr[i].p_vaddr + rbase;
+                vm_replace_region(mm, sect, reg_nr);
+            } else {
+                vm_add_region(mm, sect);
+            }
         }
     }
 

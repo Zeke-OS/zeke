@@ -56,7 +56,7 @@ int exec_file(file_t * file)
         return -ENOENT;
 
     SET_FOREACH(loader, exec_loader) {
-        err = (*loader)->fn(file, &vaddr);
+        err = (*loader)->fn(curproc, file, &vaddr);
         if (err == 0 || err != -ENOEXEC)
             break;
     }
