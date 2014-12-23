@@ -88,7 +88,7 @@ static int load_section(struct buf ** region, file_t * file,
     int err;
 
     prot = elf32_trans_prot(phdr->p_flags);
-    sect = proc_newsect(phdr->p_vaddr + rbase, phdr->p_memsz, prot);
+    sect = vm_newsect(phdr->p_vaddr + rbase, phdr->p_memsz, prot);
     if (!sect)
         return -ENOMEM;
 

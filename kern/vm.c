@@ -222,6 +222,21 @@ int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done)
     return 0;
 }
 
+struct buf * vm_newsect(uintptr_t vaddr, size_t size, int prot)
+{
+    struct buf * new_region = geteblk(size);
+
+    if (!new_region)
+        return NULL;
+
+    new_region->b_uflags = prot & ~VM_PROT_COW;
+    new_region->b_mmu.vaddr = vaddr;
+    new_region->b_mmu.control = MMU_CTRL_MEMTYPE_WB;
+    vm_updateusr_ap(new_region);
+
+    return new_region;
+}
+
 void vm_updateusr_ap(struct buf * region)
 {
     int usr_rw;

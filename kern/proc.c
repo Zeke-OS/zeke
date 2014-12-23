@@ -477,21 +477,6 @@ pid_t proc_update(void)
     return current_process_id;
 }
 
-struct buf * proc_newsect(uintptr_t vaddr, size_t size, int prot)
-{
-    struct buf * new_region = geteblk(size);
-
-    if (!new_region)
-        return NULL;
-
-    new_region->b_uflags = prot & ~VM_PROT_COW;
-    new_region->b_mmu.vaddr = vaddr;
-    new_region->b_mmu.control = MMU_CTRL_MEMTYPE_WB;
-    vm_updateusr_ap(new_region);
-
-    return new_region;
-}
-
 /* Syscall handlers ***********************************************************/
 
 static int sys_proc_fork(void * user_args)

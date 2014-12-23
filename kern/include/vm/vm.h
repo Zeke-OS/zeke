@@ -161,6 +161,8 @@ int copyout_proc(struct proc_info * proc, const void * kaddr, void * uaddr,
  * @}
  */
 
+struct buf * vm_newsect(uintptr_t vaddr, size_t size, int prot);
+
 /**
  * Update usr access permissions based on b_uflags.
  * @param region is the region to be updated.

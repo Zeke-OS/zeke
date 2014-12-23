@@ -269,7 +269,7 @@ struct buf * geteblk_special(size_t size, uint32_t control)
     if (kvaddr == 0)
         return NULL;
 
-    buf = proc_newsect(kvaddr, size, VM_PROT_READ | VM_PROT_WRITE);
+    buf = vm_newsect(kvaddr, size, VM_PROT_READ | VM_PROT_WRITE);
     if (!buf)
         return NULL;
 

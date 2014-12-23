@@ -224,8 +224,6 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
  */
 pid_t proc_update(void);
 
-struct buf * proc_newsect(uintptr_t vaddr, size_t size, int prot);
-
 void _proc_free(proc_info_t * p);
 
 proc_info_t * proc_get_struct_l(pid_t pid);
