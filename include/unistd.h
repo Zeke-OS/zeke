@@ -221,6 +221,9 @@ struct _proc_chdir_args {
     int atflags;
 };
 
+/**
+ * Arguments for SYSCALL_PROC_EXEC
+ */
 struct _proc_exec_args {
     int fd;
     char * const * argv;

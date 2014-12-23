@@ -68,16 +68,16 @@
 #define SYSCALL_MMTOTYPE(ma, mi) (((ma) << DEV_MINORBITS) | (mi))
 
 /* Syscall groups */
-#define SYSCALL_GROUP_SCHED         0x01
-#define SYSCALL_GROUP_THREAD        0x02
-#define SYSCALL_GROUP_SYSCTL        0x03
-#define SYSCALL_GROUP_SIGNAL        0x04
-#define SYSCALL_GROUP_PROC          0x05
-#define SYSCALL_GROUP_IPC           0x06
-#define SYSCALL_GROUP_FS            0x07
-#define SYSCALL_GROUP_IOCTL         0x08
-#define SYSCALL_GROUP_TIME          0x09
-#define SYSCALL_GROUP_PRIV          0x0A
+#define SYSCALL_GROUP_SCHED         0x01 /*!< Scheduler system call group. */
+#define SYSCALL_GROUP_THREAD        0x02 /*!< Thread system call group. */
+#define SYSCALL_GROUP_SYSCTL        0x03 /*!< Sysctl system call group. */
+#define SYSCALL_GROUP_SIGNAL        0x04 /*!< Signal system call group. */
+#define SYSCALL_GROUP_PROC          0x05 /*!< Process system call group. */
+#define SYSCALL_GROUP_IPC           0x06 /*!< IPC system call group. */
+#define SYSCALL_GROUP_FS            0x07 /*!< File system system call group. */
+#define SYSCALL_GROUP_IOCTL         0x08 /*!< ioctl sysctem call group. */
+#define SYSCALL_GROUP_TIME          0x09 /*!< Time system call group. */
+#define SYSCALL_GROUP_PRIV          0x0A /*!< Pivileges system call group. */
 
 /* List of syscalls */
 #define SYSCALL_SCHED_GET_LOADAVG   SYSCALL_MMTOTYPE(SYSCALL_GROUP_SCHED, 0x00)
@@ -169,10 +169,10 @@ void syscall_handler(void);
 #else /* !KERNEL_INTERNAL */
 
 /**
- * Make a system call
- * @param type syscall type.
- * @param p pointer to the syscall parameter(s).
- * @return return value of the called kernel function.
+ * Make a system call.
+ * @param type is the system call code.
+ * @param p is pointer to a syscall args struct or to a single argument.
+ * @return Return value of the called kernel function.
  * @note Must be only used in thread scope.
  */
 intptr_t syscall(uint32_t type, void * p);
