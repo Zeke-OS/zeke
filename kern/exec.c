@@ -104,7 +104,6 @@ out:
          */
         //curproc->main_thread->flags |= SCHED_DETACH_FLAG;
         curproc->main_thread = sched_get_thread_info(tid);
-        curproc->mm.curr_mpt = &curproc->mm.mpt;
         thread_die(0); /* Don't return but die. */
     }
 

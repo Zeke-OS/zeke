@@ -102,7 +102,6 @@ pid_t proc_fork(pid_t pid)
         retval = -ENOMEM;
         goto free_res;
     }
-    new_proc->mm.curr_mpt = &new_proc->mm.mpt;
 
     /* Allocate an array for regions. */
     new_proc->mm.regions =

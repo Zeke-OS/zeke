@@ -192,6 +192,19 @@ void thread_init(struct thread_info * tp, pthread_t thread_id,
     /* Create kstack */
     thread_init_kstack(tp);
 
+    /* Select master page table used on startup */
+    if (!parent) {
+        tp->curr_mpt = &mmu_pagetable_master;
+    } else {
+        proc_info_t * proc;
+
+        proc = proc_get_struct_l(parent->pid_owner);
+        if (!proc)
+            panic("Owner must exist");
+
+        tp->curr_mpt = &proc->mm.mpt;
+    }
+
     /* Call thread constructors */
     void ** thread_ctor_p;
     SET_FOREACH(thread_ctor_p, thread_ctors) {

@@ -123,7 +123,6 @@ static void init_kernel_proc(void)
     /* Copy master page table descriptor */
     memcpy(&(kernel_proc->mm.mpt), &mmu_pagetable_master,
             sizeof(mmu_pagetable_t));
-    kernel_proc->mm.curr_mpt = &(kernel_proc->mm.mpt);
 
     /* Insert page tables */
     /* TODO Remove following lines completely? */
@@ -370,35 +369,28 @@ void proc_thread_removed(pid_t pid, pthread_t thread_id)
 
 void proc_enter_kernel(void)
 {
-#ifdef configPROC_DEBUG
-    if (!curproc)
-        panic("No current process set");
-#endif
-    curproc->mm.curr_mpt = &mmu_pagetable_master;
+    current_thread->curr_mpt = &mmu_pagetable_master;
 }
 
 mmu_pagetable_t * proc_exit_kernel(void)
 {
-    KASSERT(curproc != NULL, "Current proces should be set");
+    KASSERT(current_thread->curr_mpt != NULL, "curr_mpt must be set");
 
-    curproc->mm.curr_mpt = &curproc->mm.mpt;
-
-    return curproc->mm.curr_mpt;
+    current_thread->curr_mpt = &curproc->mm.mpt;
+    return current_thread->curr_mpt;
 }
 
 void proc_suspend(void)
 {
-    KASSERT(curproc != NULL, "Current proces should be set");
     /* TODO set state */
     //curproc->state
 }
 
 mmu_pagetable_t * proc_resume(void)
 {
-    KASSERT(curproc != NULL, "Current proces should be set");
-    /* TODO set state */
+    KASSERT(current_thread->curr_mpt != NULL, "curr_mpt must be set");
 
-    return curproc->mm.curr_mpt;
+    return current_thread->curr_mpt;
 }
 
 void proc_update_times(void)

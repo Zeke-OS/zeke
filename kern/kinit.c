@@ -163,6 +163,7 @@ int kinit(void)
     }
 
     init_thread->pid_owner = pid;
+    init_thread->curr_mpt = &init_proc->mm.mpt;
 
     /* Map previously created user stack with init process page table. */
     {
