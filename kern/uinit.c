@@ -80,7 +80,7 @@ static int _mount(const char * source, const char * target, const char * type)
 
 static int _chrootcwd(void)
 {
-    syscall(SYSCALL_FS_CHROOT, NULL);
+    return syscall(SYSCALL_FS_CHROOT, NULL);
 }
 
 static int _execve(const char * path, char * const argv[], size_t nargv,
