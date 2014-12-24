@@ -83,7 +83,7 @@ interrupt_sys:
 
     /* Suspend process and attach kernel master page table */
     attach_kernel_mptable
-    bl      proc_suspend
+    bl      thread_suspend
 
     /* Handler IRQ */
     bl      schedtimer_clear /* if kernel_tick */
@@ -109,7 +109,7 @@ interrupt_sys:
     mov     r5, r0          /* New PID is into r5 */
 
     /* Resume process and attach process page table */
-    bl      proc_resume
+    bl      thread_resume
     bl      mmu_attach_pagetable
 
     /* Set process Context ID to the value of current PID */

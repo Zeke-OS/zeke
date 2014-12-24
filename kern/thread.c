@@ -107,6 +107,42 @@ void sched_handler(void)
 }
 
 /**
+ * Enter kernel mode.
+ */
+void thread_enter_kernel(void)
+{
+    current_thread->curr_mpt = &mmu_pagetable_master;
+}
+
+/**
+ * Exit from kernel mode.
+ */
+mmu_pagetable_t * thread_exit_kernel(void)
+{
+    KASSERT(current_thread->curr_mpt != NULL, "curr_mpt must be set");
+
+    current_thread->curr_mpt = &curproc->mm.mpt;
+    return current_thread->curr_mpt;
+}
+
+/**
+ * Suspend thread, enter scheduler.
+ */
+void thread_suspend(void)
+{
+}
+
+/**
+ * Resume threa from scheduler.
+ */
+mmu_pagetable_t * thread_resume(void)
+{
+    KASSERT(current_thread->curr_mpt != NULL, "curr_mpt must be set");
+
+    return current_thread->curr_mpt;
+}
+
+/**
  * Kernel idle thread
  * @note sw stacked registers are invalid when this thread executes for the
  * first time.

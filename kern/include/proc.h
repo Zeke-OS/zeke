@@ -182,31 +182,6 @@ threadInfo_t * proc_iterate_threads(proc_info_t * proc,
  */
 void proc_thread_removed(pid_t pid, pthread_t thread_id);
 
-/**
- * Enters kernel mode (syscall).
- * This function shall be called when a process enters kernel mode and
- * interrupts will be enabled.
- */
-void proc_enter_kernel(void);
-
-/**
- * A process exits kernel mode.
- * This function shall be called when a process exits kernel mode.
- * @return Next master page table.
- */
-mmu_pagetable_t * proc_exit_kernel(void);
-
-/**
- * Enter scheduler.
- */
-void proc_suspend(void);
-
-/**
- * Resume from the scheduler.
- * @return Next master page table.
- */
-mmu_pagetable_t * proc_resume(void);
-
 void proc_update_times(void);
 
 /**

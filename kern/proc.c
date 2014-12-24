@@ -367,32 +367,6 @@ void proc_thread_removed(pid_t pid, pthread_t thread_id)
     }
 }
 
-void proc_enter_kernel(void)
-{
-    current_thread->curr_mpt = &mmu_pagetable_master;
-}
-
-mmu_pagetable_t * proc_exit_kernel(void)
-{
-    KASSERT(current_thread->curr_mpt != NULL, "curr_mpt must be set");
-
-    current_thread->curr_mpt = &curproc->mm.mpt;
-    return current_thread->curr_mpt;
-}
-
-void proc_suspend(void)
-{
-    /* TODO set state */
-    //curproc->state
-}
-
-mmu_pagetable_t * proc_resume(void)
-{
-    KASSERT(current_thread->curr_mpt != NULL, "curr_mpt must be set");
-
-    return current_thread->curr_mpt;
-}
-
 void proc_update_times(void)
 {
     if (current_thread->flags & SCHED_INSYS_FLAG)
