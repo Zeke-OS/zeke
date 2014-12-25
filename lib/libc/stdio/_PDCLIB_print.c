@@ -330,80 +330,65 @@ int _PDCLIB_print( const char * spec, struct _PDCLIB_status_t * status )
     } while ( ! ( status->flags & E_done ) );
 
     /* Optional field width */
-    if ( *spec == '*' )
-    {
+    if (*spec == '*') {
         /* Retrieve width value from argument stack */
-        int width = va_arg( status->arg, int );
-        if ( width < 0 )
-        {
+        int width = va_arg(status->arg, int);
+        if (width < 0) {
             status->flags |= E_minus;
             status->width = abs( width );
-        }
-        else
-        {
+        } else {
             status->width = width;
         }
         ++spec;
-    }
-    else
-    {
-        /* If a width is given, strtol() will return its value. If not given,
-           strtol() will return zero. In both cases, endptr will point to the
-           rest of the conversion specifier - just what we need.
-        */
-        status->width = (int)strtol( spec, (char**)&spec, 10 );
+    } else {
+        /*
+         * If a width is given, strtol() will return its value. If not given,
+         * strtol() will return zero. In both cases, endptr will point to the
+         * rest of the conversion specifier - just what we need.
+         */
+        status->width = (int)strtol(spec, (char **)&spec, 10);
     }
 
     /* Optional precision */
-    if ( *spec == '.' )
-    {
+    if (*spec == '.') {
         ++spec;
-        if ( *spec == '*' )
-        {
-            /* Retrieve precision value from argument stack. A negative value
-               is as if no precision is given - as precision is initalized to
-               EOF (negative), there is no need for testing for negative here.
-            */
-            status->prec = va_arg( status->arg, int );
+        if (*spec == '*') {
+            /*
+             * Retrieve precision value from argument stack. A negative value
+             * is as if no precision is given - as precision is initalized to
+             * EOF (negative), there is no need for testing for negative here.
+             */
+            status->prec = va_arg(status->arg, int);
             ++spec;
-        }
-        else
-        {
-            status->prec = (int)strtol( spec, (char**) &spec, 10 );
+        } else {
+            status->prec = (int)strtol(spec, (char **) &spec, 10);
         }
         /* Having a precision cancels out any zero flag. */
         status->flags &= ~E_zero;
     }
 
     /* Optional length modifier
-       We step one character ahead in any case, and step back only if we find
-       there has been no length modifier (or step ahead another character if it
-       has been "hh" or "ll").
-    */
-    switch ( *(spec++) )
-    {
+     * We step one character ahead in any case, and step back only if we find
+     * there has been no length modifier (or step ahead another character if it
+     * has been "hh" or "ll").
+     */
+    switch (*(spec++)) {
         case 'h':
-            if ( *spec == 'h' )
-            {
+            if (*spec == 'h') {
                 /* hh -> char */
                 status->flags |= E_char;
                 ++spec;
-            }
-            else
-            {
+            } else {
                 /* h -> short */
                 status->flags |= E_short;
             }
             break;
         case 'l':
-            if ( *spec == 'l' )
-            {
+            if (*spec == 'l') {
                 /* ll -> long long */
                 status->flags |= E_llong;
                 ++spec;
-            }
-            else
-            {
+            } else {
                 /* k -> long */
                 status->flags |= E_long;
             }
@@ -430,8 +415,7 @@ int _PDCLIB_print( const char * spec, struct _PDCLIB_status_t * status )
     }
 
     /* Conversion specifier */
-    switch ( *spec )
-    {
+    switch (*spec) {
         case 'd':
             /* FALLTHROUGH */
         case 'i':
@@ -465,7 +449,7 @@ int _PDCLIB_print( const char * spec, struct _PDCLIB_status_t * status )
             break;
         case 'c':
             /* TODO: wide chars. */
-            if ( !printchar( va_arg( status->arg, int ), status ) )
+            if (!printchar(va_arg(status->arg, int), status))
                 return -1;
             ++spec;
             return (spec - orig_spec);
@@ -473,6 +457,7 @@ int _PDCLIB_print( const char * spec, struct _PDCLIB_status_t * status )
             /* TODO: wide chars. */
             {
                 char * s = va_arg( status->arg, char * );
+
                 if ( !printstr( s, status ) )
                     return -1;
                 ++spec;
@@ -485,6 +470,7 @@ int _PDCLIB_print( const char * spec, struct _PDCLIB_status_t * status )
         case 'n':
            {
                int * val = va_arg( status->arg, int * );
+
                *val = status->i;
                ++spec;
                return (spec - orig_spec);
@@ -494,15 +480,12 @@ int _PDCLIB_print( const char * spec, struct _PDCLIB_status_t * status )
             return 0;
     }
     /* Do the actual output based on our findings */
-    if ( status->base != 0 )
-    {
+    if (status->base != 0) {
         /* Integer conversions */
         /* TODO: Check for invalid flag combinations. */
-        if ( status->flags & E_unsigned )
-        {
+        if (status->flags & E_unsigned) {
             uintmax_t value;
-            switch ( status->flags & E_TYPES )
-            {
+            switch (status->flags & E_TYPES) {
                 case E_char:
                     value = (uintmax_t)(unsigned char)va_arg( status->arg, int );
                     break;
