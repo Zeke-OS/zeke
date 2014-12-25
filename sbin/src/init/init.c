@@ -59,7 +59,7 @@ static const char msg[] = "Zeke " KERNEL_VERSION " init\n";
 const char tty_path[] = "/dev/ttyS0";
 char buf[80];
 
-void * main(void * arg)
+int main(void)
 {
     int r0, r1, r2;
 
@@ -87,4 +87,6 @@ void * main(void * arg)
 #if configTISH != 0
     tish();
 #endif
+
+    return 0;
 }

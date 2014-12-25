@@ -36,6 +36,6 @@
 #ifndef INIT_H_
 #define INIT_H_
 
-void * main(void * arg);
+int main(void);
 
  #endif /* INIT_H_ */
