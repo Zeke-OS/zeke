@@ -78,6 +78,17 @@ static int _mount(const char * source, const char * target, const char * type)
     return syscall(SYSCALL_FS_MOUNT, &args);
 }
 
+static int _chdir(char * path)
+{
+    struct _proc_chdir_args args = {
+        .name       = path,
+        .name_len   = strlenn(path, PATH_MAX) + 1,
+        .atflags    = AT_FDCWD
+    };
+
+    return (int)syscall(SYSCALL_PROC_CHDIR, &args);
+}
+
 static int _chrootcwd(void)
 {
     return syscall(SYSCALL_FS_CHROOT, NULL);
@@ -123,7 +134,7 @@ static void printfail(char * str)
 
 void * uinit(void * arg)
 {
-    char *argv[] = { "/mnt/sbin/init", NULL };
+    char *argv[] = { "/sbin/init", NULL };
     char *env[] = { NULL };
     int err;
 
@@ -142,6 +153,21 @@ void * uinit(void * arg)
         printfail("can't mount sd card");
         while (1);
      }
+
+     _chdir("/mnt");
+    _chrootcwd();
+
+    err = _mount("", "/dev", "devfs");
+    if (err) {
+        printfail("can't mount /dev");
+        while(1);
+    }
+
+    err = _mount("", "/proc", "procfs");
+    if (err) {
+        printfail("can't mount /proc");
+        while(1);
+    }
 
     /* Exec init */
     err = _execve(argv[0], argv, num_elem(argv), env, num_elem(env));

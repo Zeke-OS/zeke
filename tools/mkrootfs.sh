@@ -14,3 +14,5 @@ if [ $? -ne 0 ]; then
 fi
 dir2img lib
 dir2img sbin
+mmd -i "$IMG" dev
+mmd -i "$IMG" proc
