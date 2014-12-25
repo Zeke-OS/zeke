@@ -142,25 +142,44 @@ int signum_comp(struct ksigaction * a, struct ksigaction * b)
      return a->ks_signum - b->ks_signum;
 }
 
+#ifdef configLOCK_DEBUG
+#define ksig_lock(lock) ksig_lock_(lock, _KERROR_WHERESTR)
+static int ksig_lock_(ksigmtx_t * lock, char * whr)
+#else
 static int ksig_lock(ksigmtx_t * lock)
+#endif
 {
     istate_t s;
+    int retval;
+
+#if configLOCK_DEBUG
+#define _ksig_lock_(mtx)    _mtx_lock(&mtx->l, whr)
+#define _ksig_trylock_(mtx) _mtx_trylock(&mtx->l, whr)
+#else
+#define _ksig_lock_(mtx)    mtx_lock(&mtx->l)
+#define _ksig_trylock_(mtx) mtx_trylock(&mtx->l)
+#endif
 
     s = get_interrupt_state();
     if (s & PSR_INT_I) {
-        return mtx_trylock(&lock->l);
+        retval = _ksig_trylock_(lock);
     } else {
-        return mtx_lock(&lock->l);
+        retval = _ksig_lock_(lock);
     }
+
+#if configLOCK_DEBUG
+    if (retval == 0) {
+        lock->l.mtx_ldebug = whr;
+    }
+#endif
+
+
+    return retval;
 }
 
 static void ksig_unlock(ksigmtx_t * lock)
 {
     istate_t s;
-
-    s = get_interrupt_state();
-    if (s & PSR_INT_I)
-        return;
 
     mtx_unlock(&lock->l);
 }
@@ -348,6 +367,35 @@ static void forward_proc_signals(void)
 }
 
 /**
+ * @return  0 = signal handled;
+ *         -1 = signal can't be handled right now;
+ *          1 = signal handling shall continue
+ */
+static int eval_inkernel_action(struct ksigaction * action)
+{
+    int retval = 0;
+
+    /* Take a sig action request? */
+    switch ((int)(action->ks_action.sa_handler)) {
+    case (int)(SIG_DFL):
+        retval = 1;
+        break;
+    case (int)(SIG_IGN):
+        /*
+         * TODO
+         * - Decide if we want to continue and/or remove this
+         *   signal from pend in some of these cases?
+         * - Any other differences between IGN, ERR and HOLD?
+         */
+    case (int)(SIG_ERR):
+    case (int)(SIG_HOLD):
+        return -1;
+    }
+
+    return retval;
+}
+
+/**
  * Post thread scheduling handler that updates thread stack frame if a signal
  * is pending. After this handler the thread will enter to signal handler
  * instead of returning to normal execution.
@@ -388,7 +436,6 @@ static void ksignal_post_scheduling(void)
         if (sigismember(&sigs->s_running, signum)) {
             /* Already running a handler for that signum */
             sigdelset(&sigs->s_running, signum);
-            ksig_unlock(&sigs->s_lock);
             continue;
         }
 
@@ -399,37 +446,29 @@ static void ksignal_post_scheduling(void)
             current_thread->sigwait_retval = signum;
             sigemptyset(&sigs->s_wait);
             STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
-            kfree(ksiginfo);
             ksig_unlock(&sigs->s_lock);
+            kfree(ksiginfo);
             return; /* There is a sigwait() for this signum. */
         }
 
         /* Check if signal is blocked */
         if (blocked) {
-            ksig_unlock(&sigs->s_lock);
             continue; /* This signal is currently blocked. */
         }
 
-        /* Take a sig action request? */
-        switch ((int)(action.ks_action.sa_handler)) {
-        case (int)(SIG_DFL):
-            break;
-        case (int)(SIG_IGN):
-            /*
-             * TODO
-             * - Decide if we want to continue and/or remove this
-             *   signal from pend in some of these cases?
-             * - Any other differences between IGN, ERR and HOLD?
-             */
-        case (int)(SIG_ERR):
-        case (int)(SIG_HOLD):
+        int nxt_state;
+        nxt_state = eval_inkernel_action(&action);
+        if (nxt_state == 0) {
+            /* Handling done */
+            STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
             ksig_unlock(&sigs->s_lock);
-            goto next;
+            kfree(ksiginfo);
+            return;
+        } else if (nxt_state < 0) {
+            /* This signal can't be handled right now */
+            continue;
         }
-
         break;
-next:
-        continue;
     }
     if (!ksiginfo) {
         ksig_unlock(&sigs->s_lock);
@@ -487,30 +526,28 @@ next:
 }
 DATA_SET(post_sched_tasks, ksignal_post_scheduling);
 
-/* TODO use signal queue and prepare siginfo struct to be delivered. */
 int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
 {
     int retval = 0;
     struct ksigaction action;
     struct ksiginfo * ksiginfo;
 
+    KASSERT(mtx_test(&sigs->s_lock.l), "sigs should be locked\n");
+
     if (signum <= 0 || signum > _SIG_MAXSIG) {
         return -EINVAL;
     }
 
-    if (ksig_lock(&sigs->s_lock))
-        return -EWOULDBLOCK;
-
     retval = sigismember(&sigs->s_running, signum);
     if (retval) /* Already running a handler. */
-        goto out;
+        return 0;
 
     /* Get action struct for this signal. */
     ksignal_get_ksigaction(&action, sigs, signum);
 
     /* Ignored? */
     if (action.ks_action.sa_handler == SIG_IGN)
-        goto out;
+        return 0;
 
     /* Not ignored so we can set the signal to pending state. */
     ksiginfo = kmalloc(sizeof(struct ksiginfo));
@@ -527,9 +564,6 @@ int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
         .siginfo.si_value = { 0 }, /* TODO */
     };
     STAILQ_INSERT_TAIL(&sigs->s_pendqueue, ksiginfo, _entry);
-
-out:
-    ksig_unlock(&sigs->s_lock);
 
     return 0;
 }
@@ -659,7 +693,7 @@ static int sys_signal_pkill(void * user_args)
 
     /* TODO if pid == 0 send signal to all procs */
 
-    proc = proc_get_struct(args.pid);
+    proc = proc_get_struct_l(args.pid);
     if (!proc) {
         set_errno(ESRCH);
         return -1;
@@ -726,7 +760,7 @@ static int sys_signal_tkill(void * user_args)
     }
     sigs = &thread->sigs;
 
-    proc = proc_get_struct(thread->pid_owner);
+    proc = proc_get_struct_l(thread->pid_owner);
     if (!proc) {
         set_errno(ESRCH);
         return -1;
@@ -752,13 +786,19 @@ static int sys_signal_tkill(void * user_args)
     if (args.sig == 0)
         return 0;
 
-    err = ksignal_queue_sig(sigs, args.sig, SI_USER);
-    if (err) {
-        set_errno(-err);
+    if (ksig_lock(&sigs->s_lock)) {
+        set_errno(EAGAIN);
         return -1;
     }
 
+    err = ksignal_queue_sig(sigs, args.sig, SI_USER);
+    if (err) {
+        ksig_unlock(&sigs->s_lock);
+        set_errno(-err);
+        return -1;
+    }
     KSIG_EXEC_IF(thread, args.sig);
+    ksig_unlock(&sigs->s_lock);
 
     return 0;
 }
