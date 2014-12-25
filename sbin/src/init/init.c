@@ -56,17 +56,20 @@ char banner[] = "\
 
 static const char msg[] = "Zeke " KERNEL_VERSION " init\n";
 
+const char tty_path[] = "/dev/ttyS0";
+char buf[80];
+
 void * main(void * arg)
 {
     int r0, r1, r2;
-    const char tty_path[] = "/dev/ttyS0";
-    char buf[80];
 
+#if 0
     mkdir("/dev", S_IRWXU | S_IRGRP | S_IXGRP);
     mount("", "/dev", "devfs", 0, "");
 
     mkdir("/proc", S_IRWXU | S_IRGRP | S_IXGRP);
     mount("", "/proc", "procfs", 0, "");
+#endif
 
     close(STDIN_FILENO);
     close(STDOUT_FILENO);
@@ -84,8 +87,4 @@ void * main(void * arg)
 #if configTISH != 0
     tish();
 #endif
-    while(1) {
-        write(STDOUT_FILENO, "init\n", 5);
-        sleep(10);
-    }
 }
