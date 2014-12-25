@@ -30,11 +30,6 @@
  *******************************************************************************
 */
 
-/*
- * TODO
- * - code to call destructors properly
- */
-
 #include <errno.h>
 #include <machine/atomic.h>
 #include <sys/tree.h>

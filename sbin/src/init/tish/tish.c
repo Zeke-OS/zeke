@@ -54,7 +54,7 @@ int tish(void)
     int err;
 
     while (1) {
-        printf("# ");
+        write(STDOUT_FILENO, "# ", 3);
         if (!gline(line, MAX_LEN))
             break;
 
@@ -152,7 +152,7 @@ static char * gline(char * str, int num)
         if (ch == 127) {
             if (i > 0) {
                 i--;
-                printf("\b \b");
+                write(STDOUT_FILENO, "\b \b", 4);
             }
             continue;
         }
@@ -163,14 +163,15 @@ static char * gline(char * str, int num)
         if (ch == '\n' || ch == '\r' || i == num) {
             str[i] = '\0';
             buf[0] = '\n';
-            printf("%s", buf);
+            write(STDOUT_FILENO, buf, sizeof(buf));
+
             return str;
         } else {
             str[i] = ch;
         }
 
         buf[0] = ch;
-        printf("%s", buf);
+        write(STDOUT_FILENO, buf, sizeof(buf));
         i++;
     }
 }

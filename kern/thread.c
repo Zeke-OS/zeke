@@ -555,6 +555,10 @@ DATA_SET(thread_dtors, dummycd);
 static int sys_thread_create(void * user_args)
 {
     struct _ds_pthread_create args;
+    pthread_attr_t thdef;
+    pthread_t thread_id;
+    pthread_t * usr_thread_id;
+    int err;
 
     if (!useracc(user_args, sizeof(args), VM_PROT_WRITE)) {
         /* No permission to read/write */
@@ -563,9 +567,26 @@ static int sys_thread_create(void * user_args)
     }
 
     copyin(user_args, &args, sizeof(args));
-    thread_create(&args, 0);
-    copyout(&args, user_args, sizeof(args));
+    err = copyin(args.def, (void *)(&thdef), sizeof(thdef));
+    if (err) {
+        set_errno(EFAULT);
+        return -1;
+    }
 
+    usr_thread_id = args.thread;
+    if (usr_thread_id) {
+        if (!useracc(usr_thread_id, sizeof(pthread_t), VM_PROT_WRITE)) {
+            set_errno(EFAULT);
+            return -1;
+        }
+    }
+    args.thread = &thread_id;
+
+    thread_create(&args, 0);
+
+    copyout(&args, user_args, sizeof(args));
+    if (usr_thread_id)
+        copyout(&thread_id, usr_thread_id, sizeof(thread_id));
     return 0;
 }
 

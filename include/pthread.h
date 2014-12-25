@@ -250,7 +250,7 @@ int     pthread_join(pthread_t, void **);
  */
 int     pthread_key_create(pthread_key_t * key, void (*destructor)(void*));
 int     pthread_key_delete(pthread_key_t key);
-void    __pthread_key_dtors(void);
+void    __pthread_key_dtors(void) __attribute__((destructor));
 int     pthread_mutexattr_destroy(pthread_mutexattr_t *);
 int     pthread_mutexattr_getpshared(const pthread_mutexattr_t *,
             int *);

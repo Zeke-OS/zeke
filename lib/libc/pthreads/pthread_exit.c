@@ -38,8 +38,6 @@
 
 void pthread_exit(void * retval)
 {
-    __pthread_key_dtors();
-
     (void)syscall(SYSCALL_THREAD_DIE, retval);
     /* Syscall will not return */
 }

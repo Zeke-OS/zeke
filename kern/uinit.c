@@ -138,7 +138,7 @@ void * uinit(void * arg)
     char *env[] = { NULL };
     int err;
 
-    write(STDERR_FILENO, "uinit\n", 7);
+    write(STDOUT_FILENO, "uinit\n", 7);
 
     _mkdir("/dev", S_IRWXU | S_IRGRP | S_IXGRP);
     err = _mount("", "/dev", "devfs");
