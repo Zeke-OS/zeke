@@ -87,16 +87,23 @@ static int load_section(struct buf ** region, file_t * file,
     struct buf * sect;
     int err;
 
+    if (phdr->p_memsz < phdr->p_filesz)
+        return -ENOEXEC;
+
     prot = elf32_trans_prot(phdr->p_flags);
     sect = vm_newsect(phdr->p_vaddr + rbase, phdr->p_memsz, prot);
     if (!sect)
         return -ENOMEM;
 
-    memset((void *)sect->b_data, 0, phdr->p_memsz);
-    file->seek_pos = phdr->p_offset;
+    memset((void *)sect->b_data, 0, sect->b_bcount);
+
     if (phdr->p_filesz > 0) {
-        err = file->vnode->vnode_ops->read(file, (void *)sect->b_data,
-                                           phdr->p_filesz);
+        void * ldp;
+
+        ldp = (void *)(sect->b_data + (phdr->p_vaddr - sect->b_mmu.vaddr));
+
+        file->seek_pos = phdr->p_offset;
+        err = file->vnode->vnode_ops->read(file, ldp, phdr->p_filesz);
         if (err < 0) {
             sect->vm_ops->rfree(sect);
             return -ENOEXEC;
