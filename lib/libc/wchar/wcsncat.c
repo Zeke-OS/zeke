@@ -8,8 +8,8 @@
 
 #ifndef REGTEST
 
-wchar_t * wcsncat( wchar_t * _PDCLIB_restrict s1, 
-                   const wchar_t * _PDCLIB_restrict s2, 
+wchar_t * wcsncat( wchar_t * _PDCLIB_restrict s1,
+                   const wchar_t * _PDCLIB_restrict s2,
                    size_t n )
 {
     wchar_t * rc = s1;

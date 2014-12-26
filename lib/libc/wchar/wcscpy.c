@@ -8,7 +8,7 @@
 
 #ifndef REGTEST
 
-wchar_t *wcscpy( wchar_t * _PDCLIB_restrict dest, 
+wchar_t *wcscpy( wchar_t * _PDCLIB_restrict dest,
                  const wchar_t * _PDCLIB_restrict src)
 {
     wchar_t * rv = dest;

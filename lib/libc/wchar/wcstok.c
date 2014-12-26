@@ -8,7 +8,7 @@
 
 #ifndef REGTEST
 
-wchar_t * wcstok( wchar_t * _PDCLIB_restrict s1, 
+wchar_t * wcstok( wchar_t * _PDCLIB_restrict s1,
                   const wchar_t * _PDCLIB_restrict s2,
                   wchar_t ** _PDCLIB_restrict ptr )
 {

@@ -1,12 +1,11 @@
-/* _PDCLIB_fillbuffer( FILE * stream )
-
-   This file is part of the Public Domain C Library (PDCLib).
-   Permission is granted to use, modify, and / or redistribute at will.
-*/
+/*
+ * _PDCLIB_fillbuffer( FILE * stream )
+ *
+ * This file is part of the Public Domain C Library (PDCLib).
+ * Permission is granted to use, modify, and / or redistribute at will.
+ */
 
 #include <stdio.h>
-
-#ifndef REGTEST
 #include <sys/_PDCLIB_glue.h>
 #include <sys/_PDCLIB_io.h>
 
@@ -30,17 +29,3 @@ int _PDCLIB_fillbuffer( FILE * stream )
         return EOF;
     }
 }
-
-#endif
-
-#ifdef TEST
-#include <_PDCLIB_test.h>
-
-int main( void )
-{
-    /* Testing covered by ftell.c */
-    return TEST_RESULTS;
-}
-
-#endif
-

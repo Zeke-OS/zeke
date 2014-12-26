@@ -1,8 +1,8 @@
 /* iswctype( wint_t, wctype_t )
-
-   This file is part of the Public Domain C Library (PDCLib).
-   Permission is granted to use, modify, and / or redistribute at will.
-*/
+ *
+ * This file is part of the Public Domain C Library (PDCLib).
+ * Permission is granted to use, modify, and / or redistribute at will.
+ */
 
 #include <wctype.h>
 #ifndef REGTEST

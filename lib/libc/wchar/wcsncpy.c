@@ -8,7 +8,7 @@
 
 #ifndef REGTEST
 
-wchar_t *wcsncpy( wchar_t * _PDCLIB_restrict s1, 
+wchar_t *wcsncpy( wchar_t * _PDCLIB_restrict s1,
                   const wchar_t * _PDCLIB_restrict s2,
                   size_t n )
 {

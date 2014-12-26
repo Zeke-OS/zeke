@@ -8,8 +8,8 @@
 
 #ifndef REGTEST
 
-wchar_t * wmemcpy( wchar_t * _PDCLIB_restrict dest, 
-                   const wchar_t * _PDCLIB_restrict src, 
+wchar_t * wmemcpy( wchar_t * _PDCLIB_restrict dest,
+                   const wchar_t * _PDCLIB_restrict src,
                    size_t n )
 {
     wchar_t* rv = dest;
