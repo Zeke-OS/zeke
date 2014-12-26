@@ -10,7 +10,7 @@
 #include <sys/_PDCLIB_io.h>
 #include <stdbool.h>
 #include <stddef.h>
-_PDCLIB_BEGIN_EXTERN_C
+__BEGIN_DECLS
 
 /* -------------------------------------------------------------------------- */
 /* OS "glue", part 2                                                          */
@@ -69,5 +69,5 @@ int _PDCLIB_remove( const char * filename );
 */
 int _PDCLIB_rename( const char * old, const char * newn);
 
-_PDCLIB_END_EXTERN_C
+__END_DECLS
 #endif

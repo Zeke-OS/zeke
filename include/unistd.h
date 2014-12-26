@@ -318,14 +318,35 @@ pid_t getpid(void);
  */
 pid_t getppid(void);
 
+/** @addtogroup access
+ * Check accessibility of a file.
+ *
+ * The access() system call check the accessibility of the file named by
+ * the path argument for access permissions indicated by the amode argument.
+ * The value of amode is either the bitwise-inclusive OR of the access
+ * permissions to be checked (R_OK for read permission, W_OK for write
+ * permission, and X_OK for execute/search permission), or the
+ * existence test (F_OK).
+ *
+ * The faccessat() system call is equivalent to access() but in case of relative
+ * path is given the access is determined relatively to the directory associated
+ * with file descriptor fd.
+ * @{
+ */
+
 /**
  * Checks whether the process would be allowed to read, write or test for
  * existence of the file.
  * @param path  is a path to the file.
  * @param amode is the access mode tested.
+ * @return 0 if file can be accessed; Otherwise -1 and errno.
  */
 int access(const char * path, int amode);
 int faccessat(int fd, const char * path, int amode, int flag);
+
+/**
+ * @}
+ */
 
 int chown(const char * path, uid_t owner, gid_t group);
 int fchownat(int fd, const char * path, uid_t owner, gid_t group,

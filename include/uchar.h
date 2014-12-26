@@ -8,7 +8,7 @@
 #ifndef _PDCLIB_UCHAR_H
 #define _PDCLIB_UCHAR_H
 #include <sys/_PDCLIB_int.h>
-_PDCLIB_BEGIN_EXTERN_C
+__BEGIN_DECLS
 
 /* This is mostly a placeholder. for now. This header will be completed by the
  * release of 0.6, but at present merely exposes types needed by the rest of the
@@ -90,4 +90,5 @@ size_t _PDCLIB_c32srtombs(
     mbstate_t       *_PDCLIB_restrict   ps);
 #endif
 
+__END_DECLS
 #endif

@@ -1,15 +1,13 @@
-/* $Id$ */
-
 /* 7.19 Input/output <stdio.h>
-
-   This file is part of the Public Domain C Library (PDCLib).
-   Permission is granted to use, modify, and / or redistribute at will.
-*/
+ *
+ * This file is part of the Public Domain C Library (PDCLib).
+ * Permission is granted to use, modify, and / or redistribute at will.
+ */
 
 #ifndef _PDCLIB_STDIO_H
 #define _PDCLIB_STDIO_H _PDCLIB_STDIO_H
 #include <sys/_PDCLIB_int.h>
-_PDCLIB_BEGIN_EXTERN_C
+__BEGIN_DECLS
 
 #if !defined(_SIZE_T)
 #define _SIZE_T
@@ -939,5 +937,5 @@ _PDCLIB_uint_fast64_t _PDCLIB_ftell64( FILE * stream ) _PDCLIB_nothrow;
 _PDCLIB_uint_fast64_t _PDCLIB_ftell64_unlocked( FILE * stream ) _PDCLIB_nothrow;
 #endif
 
-_PDCLIB_END_EXTERN_C
+__END_DECLS
 #endif

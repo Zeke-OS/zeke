@@ -7,7 +7,7 @@
 #ifndef _PDCLIB_WCTYPE_H
 #define _PDCLIB_WCTYPE_H _PDCLIB_WCTYPE_H
 #include <sys/_PDCLIB_int.h>
-_PDCLIB_BEGIN_EXTERN_C
+__BEGIN_DECLS
 
 #ifndef _PDCLIB_WINT_T_DEFINED
 #define _PDCLIB_WINT_T_DEFINED _PDCLIB_WINT_T_DEFINED
@@ -43,5 +43,5 @@ wint_t towupper( wint_t _Wc );
 wint_t towctrans( wint_t _Wc, wctrans_t _Desc );
 wctrans_t wctrans( const char * _Property );
 
-_PDCLIB_END_EXTERN_C
+__END_DECLS
 #endif // _PDCLIB_WCTYPE_H

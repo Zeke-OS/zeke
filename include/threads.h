@@ -3,7 +3,7 @@
 #include <sys/_PDCLIB_int.h>
 #include <sys/_PDCLIB_threadconfig.h>
 #include <time.h>
-_PDCLIB_BEGIN_EXTERN_C
+__BEGIN_DECLS
 
 #define thread_local _Thread_local
 
@@ -98,5 +98,5 @@ void *tss_get(tss_t key) _PDCLIB_nothrow;
 int tss_set(tss_t key, void *val) _PDCLIB_nothrow;
 #endif
 
-_PDCLIB_END_EXTERN_C
+__END_DECLS
 #endif

@@ -1,15 +1,13 @@
-/* $Id$ */
-
 /* 7.20 General utilities <stdlib.h>
-
-   This file is part of the Public Domain C Library (PDCLib).
-   Permission is granted to use, modify, and / or redistribute at will.
-*/
+ *
+ * This file is part of the Public Domain C Library (PDCLib).
+ * Permission is granted to use, modify, and / or redistribute at will.
+ */
 
 #ifndef _PDCLIB_STDLIB_H
 #define _PDCLIB_STDLIB_H _PDCLIB_STDLIB_H
 #include <sys/_PDCLIB_int.h>
-_PDCLIB_BEGIN_EXTERN_C
+__BEGIN_DECLS
 
 #if !defined(_SIZE_T)
 #define _SIZE_T
@@ -250,5 +248,5 @@ size_t mbstowcs( wchar_t * _PDCLIB_restrict pwcs, const char * _PDCLIB_restrict 
 size_t wcstombs( char * _PDCLIB_restrict s, const wchar_t * _PDCLIB_restrict pwcs, size_t n );
 */
 
-_PDCLIB_END_EXTERN_C
+__END_DECLS
 #endif

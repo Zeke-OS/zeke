@@ -1,16 +1,14 @@
-/* $Id$ */
-
 /* 7.2 Diagnostics <assert.h>
-
-   This file is part of the Public Domain C Library (PDCLib).
-   Permission is granted to use, modify, and / or redistribute at will.
-*/
+ *
+ * This file is part of the Public Domain C Library (PDCLib).
+ * Permission is granted to use, modify, and / or redistribute at will.
+ */
 
 #ifndef _PDCLIB_ASSERT_H
 #define _PDCLIB_ASSERT_H _PDCLIB_ASSERT_H
 #include <sys/_PDCLIB_aux.h>
 #include <sys/_PDCLIB_config.h>
-_PDCLIB_BEGIN_EXTERN_C
+__BEGIN_DECLS
 
 /* Functions _NOT_ tagged noreturn as this hampers debugging */
 void _PDCLIB_assert99( char const * const, char const * const, char const * const );
@@ -48,6 +46,6 @@ void _PDCLIB_assert89( char const * const );
     } while(0)
 #endif
 
-_PDCLIB_END_EXTERN_C
+__END_DECLS
 #endif
 

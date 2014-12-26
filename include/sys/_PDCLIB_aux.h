@@ -61,16 +61,6 @@
     #error Compiler does not define _ _STDC_HOSTED_ _ to 0 or 1 (not standard-compliant)!
 #endif
 
-#ifdef __cplusplus
-    #define _PDCLIB_BEGIN_EXTERN_C extern "C" {
-    #define _PDCLIB_END_EXTERN_C }
-    typedef bool _PDCLIB_bool;
-#else
-    #define _PDCLIB_BEGIN_EXTERN_C
-    #define _PDCLIB_END_EXTERN_C
-    typedef _Bool _PDCLIB_bool;
-#endif
-
 /* Clang style feature detection macros
  * Note: It is common to #define __has_feature(0) if undefined so the presence
  * of this macro does not guarantee it to be working
@@ -207,7 +197,7 @@
     #define _PDCLIB_HIDDEN
 #endif
 
-#if defined(_PDCLIB_SHARED) 
+#if defined(_PDCLIB_SHARED)
     #if defined(_PDCLIB_BUILD)
         #define _PDCLIB_API _PDCLIB_EXPORT
     #else
@@ -266,28 +256,28 @@
  *   _PDCLIB_*_MAX(max):            Availabel in versions <= max
  *
  * The defined tests are:
- *   C:     C standard versions 
+ *   C:     C standard versions
  *              1990, 1995, 1999, 2011
- *   CXX:   C++ standard versions 
+ *   CXX:   C++ standard versions
  *              1997, 2011
  *   POSIX: POSIX extension versions.
- *              1 (POSIX.2), 2 (POSIX.2), 199309L (POSIX.1b), 
+ *              1 (POSIX.2), 2 (POSIX.2), 199309L (POSIX.1b),
  *              199506L (POSIX.1c), 200112L (2001), 200809L (2008)
  *   XOPEN: X/Open System Interface (XSI)/Single Unix Specification
  *              0 (XPG4), 500 (SUSv2/UNIX98), 600 (SUSv3/UNIX03), 700 (SUSv4)
  *
  *   Additionally, the macros
  *     _BSD_SOURCE, _SVID_SOURCE and _GNU_SOURCE
- *   are adhered to. If _GNU_SOURCE is defined, _XOPEN_SOURCE and 
- *   _POSIX_C_SOURCE are defined to their most recent values to match glibc 
+ *   are adhered to. If _GNU_SOURCE is defined, _XOPEN_SOURCE and
+ *   _POSIX_C_SOURCE are defined to their most recent values to match glibc
  *   behaviour
  *
- *   The intention of supporting these feature test macros is to ease 
+ *   The intention of supporting these feature test macros is to ease
  *   application portability from these systems to PDCLib systems; in addition,
- *   it eases support for these standards by systems supporting them which are 
+ *   it eases support for these standards by systems supporting them which are
  *   using PDCLib as their default C library.
  *
- *   Applications targetting purely PDClib/PDCLib based platforms may define 
+ *   Applications targetting purely PDClib/PDCLib based platforms may define
  *   just _PDCLIB_EXTENSIONS, which will enable all supported extensions, plus
  *   all features from all supported versions of C and C++.
  *
@@ -307,7 +297,7 @@
     #define _PDCLIB_XOPEN_MINMAX(min, max) 1
 
     #undef _PDCLIB_EXTENSIONS
-    #undef _PDCLIB_BSD_SOURCE 
+    #undef _PDCLIB_BSD_SOURCE
     #undef _PDCLIB_SVID_SOURCE
     #undef _PDCLIB_GNU_SOURCE
 
@@ -361,7 +351,7 @@
 
     #if _PDCLIB_XOPEN_MIN(700) && !_PDCLIB_POSIX_MIN(200809L)
         #undef _POSIX_C_SOURCE
-        #define _POSIX_C_SOURCE 2008098L    
+        #define _POSIX_C_SOURCE 2008098L
     #elif _PDCLIB_XOPEN_MIN(600) && !_PDCLIB_POSIX_MIN(200112L)
         #undef _POSIX_C_SOURCE
         #define _POSIX_C_SOURCE 200112L

@@ -1,15 +1,13 @@
-/* $Id$ */
-
 /* 7.11 Localization <locale.h>
-
-   This file is part of the Public Domain C Library (PDCLib).
-   Permission is granted to use, modify, and / or redistribute at will.
-*/
+ *
+ * This file is part of the Public Domain C Library (PDCLib).
+ * Permission is granted to use, modify, and / or redistribute at will.
+ */
 
 #ifndef _PDCLIB_LOCALE_H
 #define _PDCLIB_LOCALE_H _PDCLIB_LOCALE_H
 #include <sys/_PDCLIB_int.h>
-_PDCLIB_BEGIN_EXTERN_C
+__BEGIN_DECLS
 
 #include <sys/_null.h>
 
@@ -128,6 +126,6 @@ void freelocale(locale_t loc);
 
 #endif
 
-_PDCLIB_END_EXTERN_C
+__END_DECLS
 #endif
 

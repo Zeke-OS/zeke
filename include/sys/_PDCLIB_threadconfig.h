@@ -13,5 +13,4 @@
 typedef pthread_once_t _PDCLIB_once_flag;
 #define _PDCLIB_ONCE_FLAG_INIT PTHREAD_ONCE_INIT
 
-_PDCLIB_END_EXTERN_C
 #endif

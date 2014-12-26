@@ -38,8 +38,8 @@
 #ifndef ZEKE_H
 #define ZEKE_H
 
-#ifndef KERNEL_INTERNAL /* prevent kernel internals from implementing these
-                         * as these should be implemented as syscall services.*/
+#ifndef KERNEL_INTERNAL
+__BEGIN_DECLS
 
 unsigned msleep(unsigned millisec);
 
@@ -50,6 +50,7 @@ unsigned msleep(unsigned millisec);
  */
 int chrootcwd(void);
 
+__END_DECLS
 #endif /* !KERNEL_INTERNAL */
 
 #endif /* ZEKE_H */

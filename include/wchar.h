@@ -9,7 +9,7 @@
 #define _PDCLIB_WCHAR_H
 #include <sys/_PDCLIB_int.h>
 #include <stddef.h>
-_PDCLIB_BEGIN_EXTERN_C
+__BEGIN_DECLS
 
 #ifndef _PDCLIB_WINT_T_DEFINED
 #define _PDCLIB_WINT_T_DEFINED _PDCLIB_WINT_T_DEFINED
@@ -118,5 +118,5 @@ size_t wcrtomb(char *_PDCLIB_restrict s, wchar_t wc, mbstate_t *_PDCLIB_restrict
 size_t mbsrtowcs(wchar_t *_PDCLIB_restrict dst, const char **_PDCLIB_restrict src, size_t len, mbstate_t *_PDCLIB_restrict ps);
 size_t wcsrtombs(char *_PDCLIB_restrict dst, const wchar_t **_PDCLIB_restrict src, size_t len, mbstate_t *_PDCLIB_restrict ps);
 
-_PDCLIB_END_EXTERN_C
+__END_DECLS
 #endif
