@@ -27,8 +27,7 @@ proc
 
 - sysctl kern.maxproc should not allow negative values
 - Update vm_pt linkcount correctly during fork() and other operations
-- proc is not MP safe
-- exec(), elf
+- proc is not fully MP safe
 - kill()
 - signals
 
