@@ -61,7 +61,6 @@ finalizer(void)
         if ((uintptr_t)fn != 0 && (uintptr_t)fn != 1)
             (fn)();
     }
-    _fini();
 }
 
 static inline void
@@ -83,10 +82,6 @@ handle_static_init(int argc, char ** argv, char ** env)
         if ((uintptr_t)fn != 0 && (uintptr_t)fn != 1)
             fn(argc, argv, env);
     }
-
-/*
-    _init();
-*/
 
     array_size = __init_array_end - __init_array_start;
     for (n = 0; n < array_size; n++) {

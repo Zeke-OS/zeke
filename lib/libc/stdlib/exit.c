@@ -1,14 +1,10 @@
-/* $Id$ */
-
 /* exit( int )
-
-   This file is part of the Public Domain C Library (PDCLib).
-   Permission is granted to use, modify, and / or redistribute at will.
-*/
+ *
+ * This file is part of the Public Domain C Library (PDCLib).
+ * Permission is granted to use, modify, and / or redistribute at will.
+ */
 
 #include <stdlib.h>
-
-#ifndef REGTEST
 #include <sys/_PDCLIB_io.h>
 
 /* TODO - "except that a function is called after any previously registered
@@ -20,27 +16,17 @@
 */
 #define NUMBER_OF_SLOTS 40
 
-void (*_PDCLIB_regstack[ NUMBER_OF_SLOTS ])( void ) = { _PDCLIB_closeall };
+void (*_PDCLIB_regstack[NUMBER_OF_SLOTS])(void) = { _PDCLIB_closeall };
 size_t _PDCLIB_regptr = NUMBER_OF_SLOTS;
 
-void exit( int status )
+void exit(int status)
 {
-    while ( _PDCLIB_regptr < NUMBER_OF_SLOTS )
-    {
-        _PDCLIB_regstack[ _PDCLIB_regptr++ ]();
+    while (_PDCLIB_regptr < NUMBER_OF_SLOTS) {
+        void (*p)(void) = _PDCLIB_regstack[_PDCLIB_regptr++];
+
+        if (p)
+            p();
     }
-    _Exit( status );
+
+    _Exit(status);
 }
-
-#endif
-
-#ifdef TEST
-#include <_PDCLIB_test.h>
-
-int main( void )
-{
-    /* Unwinding of regstack tested in atexit(). */
-    return TEST_RESULTS;
-}
-
-#endif

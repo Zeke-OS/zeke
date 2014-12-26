@@ -21,11 +21,6 @@ __BEGIN_DECLS
 
 /* stdlib.h */
 
-/* A system call that terminates the calling process, returning a given status
-   to the environment.
-*/
-_PDCLIB_noreturn void _PDCLIB_Exit( int status );
-
 /* A system call which allocates n pages of memory and returns a pointer to
    them. On failure, returns NULL
 */

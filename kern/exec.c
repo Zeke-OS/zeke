@@ -81,7 +81,7 @@ int exec_file(file_t * file)
         .arg2       = 0,
         .arg3       = 0,
         .arg4       = 0,
-        .del_thread = NULL /* TODO should be libc: pthread_exit */
+        .del_thread = NULL /* Not needed for main(). */
     };
 
     tid = thread_create(&ds, 0);
