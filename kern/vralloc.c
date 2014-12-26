@@ -227,6 +227,10 @@ struct buf * geteblk(size_t size)
     vmem_used += size;
     last_vreg = vreg;
 
+
+    /* Clear allocated pages. */
+    memset((void *)retval->b_data, 0, retval->b_bufsize);
+
     return retval;
 }
 

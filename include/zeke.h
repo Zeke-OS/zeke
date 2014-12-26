@@ -38,6 +38,8 @@
 #ifndef ZEKE_H
 #define ZEKE_H
 
+#include <sys/cdefs.h>
+
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
 

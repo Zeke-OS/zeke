@@ -95,8 +95,6 @@ static int load_section(struct buf ** region, file_t * file,
     if (!sect)
         return -ENOMEM;
 
-    memset((void *)sect->b_data, 0, sect->b_bcount);
-
     if (phdr->p_filesz > 0) {
         void * ldp;
 

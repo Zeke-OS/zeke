@@ -61,6 +61,12 @@
     #error Compiler does not define _ _STDC_HOSTED_ _ to 0 or 1 (not standard-compliant)!
 #endif
 
+#ifdef __cplusplus
+    typedef bool _PDCLIB_bool;
+#else
+    typedef _Bool _PDCLIB_bool;
+#endif
+
 /* Clang style feature detection macros
  * Note: It is common to #define __has_feature(0) if undefined so the presence
  * of this macro does not guarantee it to be working
