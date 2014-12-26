@@ -396,7 +396,7 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
     }
 
     for (int i = 0; i < pcb->mm.nr_regions; i++) {
-        region = ((*pcb->mm.regions)[i]);
+        region = (*pcb->mm.regions)[i];
 #ifdef configPROC_DEBUG
         ksprintf(buf, sizeof(buf), "reg_vaddr %x, reg_end %x\n",
                 region->b_mmu.vaddr,
@@ -406,6 +406,8 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
 
         if (vaddr >= region->b_mmu.vaddr &&
                 vaddr <= (region->b_mmu.vaddr + MMU_SIZEOF_REGION(&(region->b_mmu)))) {
+            int err;
+
             /* Test for COW flag. */
             if ((region->b_uflags & VM_PROT_COW) != VM_PROT_COW) {
                 return -EACCES; /* Memory protection error. */
@@ -417,14 +419,10 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
                 return -ENOMEM;
             }
 
-            /* Free the old region as this process no longer uses it.
-             * (Usually decrements some internal refcount) */
-            if (region->vm_ops->rfree)
-                region->vm_ops->rfree(region);
-
             new_region->b_uflags &= ~VM_PROT_COW; /* No more COW. */
-            (*pcb->mm.regions)[i] = new_region; /* Replace old region. */
-            mmu_map_region(&(new_region->b_mmu)); /* Map it to the page table. */
+            err = vm_replace_region(&pcb->mm, new_region, i);
+            if (err)
+                return err;
 
             return 0; /* COW done. */
         }

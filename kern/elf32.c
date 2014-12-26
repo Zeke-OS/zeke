@@ -186,6 +186,8 @@ int load_elf32(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base)
     for (size_t i = 0; i < elfhdr->e_phnum; i++) {
         if (phdr[i].p_type == PT_LOAD && phdr[i].p_memsz != 0) {
             struct buf * sect;
+            int err;
+
             retval = load_section(&sect, file, rbase, &phdr[i]);
             if (retval)
                 goto out;
@@ -195,7 +197,10 @@ int load_elf32(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base)
 
                 if (i == 0)
                     *vaddr_base = phdr[i].p_vaddr + rbase;
-                vm_replace_region(mm, sect, reg_nr);
+                err = vm_replace_region(mm, sect, reg_nr);
+                if (err) {
+                    panic("Failed to map a section while in exec.");
+                }
             } else {
                 vm_add_region(mm, sect);
             }

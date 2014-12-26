@@ -176,8 +176,5 @@ void * uinit(void * arg)
         while (1);
     }
 
-    write(STDERR_FILENO, "fail", 5);
-    while (1);
-
     return NULL;
 }

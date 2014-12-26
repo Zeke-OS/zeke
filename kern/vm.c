@@ -308,6 +308,7 @@ int vm_replace_region(struct vm_mm_struct * mm, struct buf * region,
                       int region_nr)
 {
     struct vm_pt * vpt;
+    struct buf * old_region;
     char buf[80];
     int err;
 
@@ -316,6 +317,14 @@ int vm_replace_region(struct vm_mm_struct * mm, struct buf * region,
         panic("Operation not supported");
 
     /* TODO Free old regions struct and its contents */
+    /*
+     * Free the old region as this process no longer uses it.
+     * (Usually decrements some internal refcount)
+     */
+    old_region = (*mm->regions)[region_nr];
+    if (old_region && old_region->vm_ops && old_region->vm_ops->rfree)
+        old_region->vm_ops->rfree(old_region);
+
     (*mm->regions)[region_nr] = region;
 
     /*
@@ -324,15 +333,13 @@ int vm_replace_region(struct vm_mm_struct * mm, struct buf * region,
     vpt = ptlist_get_pt(&mm->ptlist_head,
                         &mm->mpt,
                         region->b_mmu.vaddr);
-    if (!vpt) {
-        panic("Exec failed");
-    }
+    if (!vpt)
+        return -ENOMEM;
 
     region->b_mmu.pt = &vpt->pt;
     err = vm_map_region(region, vpt);
-    if (err) {
-        panic("Failed to map proc section while in exec");
-    }
+    if (err)
+        return err;
 
     ksprintf(buf, sizeof(buf), "Mapped sect %d to %x (phys:%x)\n",
              region_nr, region->b_mmu.vaddr, region->b_mmu.paddr);
