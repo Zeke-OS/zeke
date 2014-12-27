@@ -133,7 +133,7 @@ void ksrandom(unsigned long seed);
  * @return Returns a pseudo-random number.
  */
 unsigned long krandom(void);
-long kunirand(long n);
+long kunirand(unsigned long n);
 
 /**
  * @}

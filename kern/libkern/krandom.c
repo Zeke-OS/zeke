@@ -78,7 +78,7 @@ unsigned long krandom(void)
     return t;
 }
 
-long kunirand(long n)
+long kunirand(unsigned long n)
 {
     const long part_size = (n == RAND_MAX) ? 1 : 1 + (RAND_MAX - n) / (n + 1);
     const long max_usefull = part_size * n + (part_size - 1);
