@@ -495,8 +495,10 @@ pid_t proc_get_random_pid(void)
      * maxproc
      */
     do {
+        if (last_maxproc - proc_lastpid == 0)
+            proc_lastpid = 2;
         if (newpid > last_maxproc)
-            newpid = proc_lastpid + kunirand(last_maxproc);
+            newpid = proc_lastpid + kunirand(last_maxproc - proc_lastpid - 1);
         newpid++;
 #ifdef configPROC_DEBUG
         kputs(".");
