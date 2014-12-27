@@ -286,12 +286,13 @@ pid_t proc_fork(pid_t pid)
     if (new_proc->main_thread) {
         sched_thread_set_exec(new_proc->main_thread->id);
     }
+
 #ifdef configPROC_DEBUG
     ksprintf(buf, sizeof(buf), "Fork created.\n");
     KERROR(KERROR_DEBUG, buf);
 #endif
-    goto out; /* Fork created. */
 
+    goto out; /* Fork created. */
 free_res:
     _proc_free(new_proc);
 out:

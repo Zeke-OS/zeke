@@ -322,6 +322,7 @@ pthread_t thread_fork(void)
     /* New thread is kept in tmp until it's ready for execution. */
     memcpy(&tmp, old_thread, sizeof(threadInfo_t));
     tmp.flags &= ~SCHED_EXEC_FLAG; /* Disable exec for now. */
+    tmp.flags &= ~SCHED_INSYS_FLAG;
     tmp.id = new_id;
 
     thread_set_inheritance(&tmp, old_thread);
@@ -394,7 +395,7 @@ void thread_sleep(long millisec)
 
 /**
  * Initialize thread kernel mode stack.
- * @param th is a pointer to the thread.
+ * @param tp is a pointer to the thread.
  */
 static void thread_init_kstack(threadInfo_t * tp)
 {
@@ -404,7 +405,7 @@ static void thread_init_kstack(threadInfo_t * tp)
     KASSERT(tp, "tp not set\n");
 #endif
 
-    /* Create kstack */
+    /* Create a kstack */
     kstack = geteblk(KSTACK_SIZE);
     if (!kstack) {
         panic("OOM during thread creation\n");

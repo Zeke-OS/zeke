@@ -41,7 +41,7 @@
 #define NSHUFF 50 /* to drop some "seed -> 1st value" linearity */
 #define RAND_MAX 0x7fffffff
 
-static unsigned long randseed = 937186357; /* after srandom(1), NSHUFF counted */
+static unsigned long randseed = 937186357;
 
 void ksrandom(unsigned long seed)
 {
@@ -80,15 +80,15 @@ unsigned long krandom(void)
 
 long kunirand(long n)
 {
-    long partSize = (n == RAND_MAX) ? 1 : 1 + (RAND_MAX - n)/(n + 1);
-    long maxUsefull = partSize * n + (partSize - 1);
+    const long part_size = (n == RAND_MAX) ? 1 : 1 + (RAND_MAX - n) / (n + 1);
+    const long max_usefull = part_size * n + (part_size - 1);
     long draw;
 
     do {
         draw = krandom();
-    } while (draw > maxUsefull);
+    } while (draw > max_usefull);
 
-    return draw / partSize;
+    return draw / part_size;
 }
 
 int random_init(void) __attribute__((constructor));

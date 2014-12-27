@@ -274,7 +274,7 @@ pthread_t sched_new_tid(void)
 
 struct thread_info * sched_get_thread_info(pthread_t thread_id)
 {
-    if (thread_id < 0 || thread_id > configSCHED_MAX_THREADS)
+    if (thread_id < 0 || thread_id >= configSCHED_MAX_THREADS)
         return NULL;
 
     return &(task_table[thread_id]);
