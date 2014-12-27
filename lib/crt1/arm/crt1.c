@@ -82,6 +82,7 @@ void __start(int argc, char ** argv, char ** envp, void (*cleanup)(void))
     handle_argv(argc, argv, envp);
 
     /* if (&_DYNAMIC != NULL) */
+    if (cleanup)
         atexit(cleanup);
     /*else
         _init_tls();*/
