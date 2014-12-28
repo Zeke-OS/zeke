@@ -76,6 +76,7 @@ struct vm_mm_struct {
                                  *   [n] = allocs
                                  */
     int nr_regions;             /*!< Number of regions allocated. */
+    /* TODO Lock */
 };
 
 /**

@@ -70,12 +70,9 @@ struct vm_pt * ptlist_get_pt(struct ptlist * ptlist_head, mmu_pagetable_t * mpt,
     KASSERT(mpt, "mpt can't be null");
 
     /*
-     * Check if system page table is needed.
-     *
-     * TODO I'm not quite sure if we have this one MB boundary as
-     * a fancy constant somewhere but this should be ok.
+     * Check if the requested page table is actually the system pagetable.
      */
-    if (vaddr <= 0x000FFFFF) {
+    if (vaddr <= MMU_PGSIZE_SECTION - 1) {
         return &vm_pagetable_system;
     }
 
@@ -304,8 +301,7 @@ void vm_updateusr_ap(struct buf * region)
     mtx_unlock(&(region->lock));
 }
 
-/* TODO Should return mm->nr_regions */
-int vm_add_region(struct vm_mm_struct * mm, struct buf * region)
+static int realloc_mm_regions(struct vm_mm_struct * mm, size_t new_size)
 {
     struct buf * (*new_regions)[];
 
@@ -314,9 +310,21 @@ int vm_add_region(struct vm_mm_struct * mm, struct buf * region)
     if (!new_regions)
         return -ENOMEM;
     mm->regions = new_regions;
+    mm->nr_regions = mm->nr_regions + 1;
+
+    return 0;
+}
+
+/* TODO Should return mm->nr_regions */
+int vm_add_region(struct vm_mm_struct * mm, struct buf * region)
+{
+    int err;
+
+    err = realloc_mm_regions(mm, (mm->nr_regions + 1) * sizeof(struct buf *));
+    if (err)
+        return err;
 
     (*mm->regions)[mm->nr_regions] = region;
-    mm->nr_regions = mm->nr_regions + 1;
 
     return 0;
 }

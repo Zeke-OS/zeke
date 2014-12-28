@@ -82,7 +82,7 @@ SYSCTL_INT(_kern, OID_AUTO, nprocs, CTLFLAG_RD,
 
 static void init_kernel_proc(void);
 static void procarr_remove(pid_t pid);
-static void proc_remove(pid_t pid);
+static void proc_remove(struct proc_info * proc);
 pid_t proc_update(void); /* Used in HAL, so not static but not in headeaders. */
 
 int proc_init(void)
@@ -115,7 +115,7 @@ static void init_kernel_proc(void)
     kernel_proc = (*_procarr)[0];
 
     kernel_proc->pid = 0;
-    kernel_proc->state = PROC_STATE_RUNNING; /* TODO */
+    kernel_proc->state = PROC_STATE_READY;
     strcpy(kernel_proc->name, "kernel");
 
     RB_INIT(&(kernel_proc->mm.ptlist_head));
@@ -216,8 +216,8 @@ void procarr_realloc(void)
     if ((tmp == 0) && (_procarr == 0)) {
         char buf[80];
         ksprintf(buf, sizeof(buf),
-                "Unable to allocate _procarr (%u bytes)",
-                SIZEOF_PROCARR());
+                 "Unable to allocate _procarr (%u bytes)",
+                 SIZEOF_PROCARR());
         panic(buf);
     }
     _procarr = tmp;
@@ -227,8 +227,14 @@ void procarr_realloc(void)
 
 void procarr_insert(proc_info_t * new_proc)
 {
+    KASSERT(new_proc, "new_proc can't be NULL");
+
     PROC_LOCK();
-    /* TODO Bounds check */
+    if (new_proc->pid > act_maxproc || new_proc->pid < 0) {
+        KERROR(KERROR_ERR, "Inserted new_proc out of bounds");
+        return;
+    }
+
     (*_procarr)[new_proc->pid] = new_proc;
     nprocs++;
     PROC_UNLOCK();
@@ -237,8 +243,12 @@ void procarr_insert(proc_info_t * new_proc)
 static void procarr_remove(pid_t pid)
 {
     PROC_LOCK();
-    /* TODO Bounds check */
-    (*_procarr)[pid] = 0;
+    if (pid > act_maxproc || pid < 0) {
+        KERROR(KERROR_ERR, "Attempt to remove a nonexistent process");
+        return;
+    }
+
+    (*_procarr)[pid] = NULL;
     nprocs--;
     PROC_UNLOCK();
 }
@@ -246,20 +256,18 @@ static void procarr_remove(pid_t pid)
 /**
  * Remove zombie process from the system.
  */
-static void proc_remove(pid_t pid)
+static void proc_remove(struct proc_info * proc)
 {
-    proc_info_t * p = proc_get_struct_l(pid);
+    KASSERT(proc, "Attempt to remove NULL proc");
 
-    /* TODO free everything */
-    if (!p)
-        return;
+    proc->state = PROC_STATE_STOPPED;
 
 #ifdef configPROCFS
-    procfs_rmentry(pid);
+    procfs_rmentry(proc->pid);
 #endif
 
-    _proc_free(p);
-    procarr_remove(pid);
+    _proc_free(proc);
+    procarr_remove(proc->pid);
 }
 
 void _proc_free(proc_info_t * p)
@@ -361,8 +369,9 @@ void proc_thread_removed(pid_t pid, pthread_t thread_id)
     if (!(p = proc_get_struct(pid)))
         return;
 
+    /* Go zombie if removed thread was main() */
     if (p->main_thread && (p->main_thread->id == thread_id)) {
-        p->main_thread = 0;
+        p->main_thread = NULL;
         p->state = PROC_STATE_ZOMBIE;
     }
 }
@@ -466,8 +475,10 @@ static int sys_proc_wait(void * user_args)
 
     child = curproc->inh.first_child;
     if (!child) {
-        /* The calling process has no existing unwaited-for child
-         * processes. */
+        /*
+         * The calling process has no existing unwaited-for child
+         * processes.
+         */
         set_errno(ECHILD);
         return -1;
     }
@@ -475,14 +486,16 @@ static int sys_proc_wait(void * user_args)
     /* Get the thread number we are waiting for */
     pid_child = curproc->inh.first_child->pid;
 
-    /* curproc->state = PROC_STATE_WAITING needs some other flag? */
     while (child->state != PROC_STATE_ZOMBIE) {
         idle_sleep();
-        /* TODO In some cases we have to return early without waiting.
-         * eg. signal received */
+        /*
+         * TODO In some cases we have to return early without waiting.
+         * eg. signal received
+         */
     }
 
-    /* Increment children times.
+    /*
+     * Increment children times.
      * We do this only for wait() and waitpid().
      */
     curproc->tms.tms_cutime += child->tms.tms_utime;
@@ -491,7 +504,7 @@ static int sys_proc_wait(void * user_args)
     copyout(&child->exit_code, user_args, sizeof(int));
 
     /* Remove wait'd thread */
-    proc_remove(pid_child);
+    proc_remove(child);
 
     return (uintptr_t)pid_child;
 }

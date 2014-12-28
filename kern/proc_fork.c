@@ -273,7 +273,6 @@ pid_t proc_fork(pid_t pid)
     /* Update inheritance attributes */
     set_proc_inher(old_proc, new_proc);
 
-    /* TODO state */
     new_proc->state = PROC_STATE_READY;
 
     /* Insert the new process into the process array */

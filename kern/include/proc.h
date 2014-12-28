@@ -69,11 +69,15 @@
 #include <klocks.h>
 
 #define PROC_STATE_INITIAL  0
+#if 0
 #define PROC_STATE_RUNNING  1
+#endif
 #define PROC_STATE_READY    2   /* Can be woken up, ready to run */
+#if 0
 #define PROC_STATE_WAITING  3   /* Can't be woken up */
+#endif
 #define PROC_STATE_ZOMBIE   4
-#define PROC_STATE_STOPPED  8
+#define PROC_STATE_STOPPED  5
 
 #define PROC_NAME_LEN       10
 
@@ -83,8 +87,8 @@
  */
 typedef struct proc_info {
     pid_t pid;
-    char name[PROC_NAME_LEN];   /*!< process name */
-    int state;                  /*!< 0 - running, > 0 stopped */
+    char name[PROC_NAME_LEN];   /*!< Process name. */
+    int state;                  /*!< Process state. */
     int priority;               /*!< We may want to prioritize processes too. */
     int exit_code, exit_signal;
     uid_t uid, euid, suid;
