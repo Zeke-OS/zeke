@@ -13,6 +13,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 dir2img lib
+dir2img bin
 dir2img sbin
 mmd -i "$IMG" dev
 mmd -i "$IMG" proc

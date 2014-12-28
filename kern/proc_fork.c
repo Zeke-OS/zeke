@@ -488,21 +488,22 @@ pid_t proc_get_random_pid(void)
 
     PROC_LOCK();
     last_maxproc = act_maxproc;
-    newpid = last_maxproc + 1;
+    newpid = last_maxproc;
 
     /*
      * The new PID will be "randomly" selected between proc_lastpid and
      * maxproc
      */
     do {
-        if (last_maxproc - proc_lastpid == 0)
+        long d = last_maxproc - proc_lastpid - 1;
+
+        if (d <= 0) {
             proc_lastpid = 2;
-        if (newpid > last_maxproc)
-            newpid = proc_lastpid + kunirand(last_maxproc - proc_lastpid - 1);
+            continue;
+        }
+        if (newpid + 1 > last_maxproc)
+            newpid = proc_lastpid + kunirand(d);
         newpid++;
-#ifdef configPROC_DEBUG
-        kputs(".");
-#endif
     } while (proc_get_struct(newpid));
 
     proc_lastpid = newpid;

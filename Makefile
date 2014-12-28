@@ -75,10 +75,13 @@ kernel.img: tools $(AUTOCONF_H) $(CRT)
 	$(MAKE) -C kern all
 
 # target_comp: dist - Compile distribution user space.
-dist: lib sbin
+dist: lib bin sbin
 
 lib: $(AUTOCONF_H) $(CRT)
 	$(MAKE) -C lib all
+
+bin: lib
+	$(MAKE) -C bin all
 
 sbin: lib
 	$(MAKE) -C sbin all
@@ -95,7 +98,7 @@ stats: clean
 help:
 	./tools/help.sh
 
-.PHONY: tools dist lib sbin clean-all clean clean-doc clean-tools clean-man
+.PHONY: tools dist lib sbin bin clean-all clean clean-doc clean-tools clean-man
 
 # target_clean: clean-all - Clean all targets.
 clean-all: clean clean-tools clean-doc
@@ -106,6 +109,7 @@ clean:
 	$(MAKE) -C $(CRT_DIR) clean
 	$(MAKE) -C lib clean
 	$(MAKE) -C kern clean
+	$(MAKE) -C bin clean
 	$(MAKE) -C sbin clean
 	find . -type f -name "*.o" -exec rm -f {} \;
 	find . -type f -name "*.bc" -exec rm -f {} \;

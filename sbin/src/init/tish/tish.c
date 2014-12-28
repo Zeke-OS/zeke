@@ -139,9 +139,13 @@ TISH_CMD(help, "help");
 
 static void forkexec(char * path, char ** args)
 {
-    char *argv[] = { path, NULL };
+    char *argv[] = { path, NULL, NULL };
+    char * arg;
     char *env[] = { NULL };
     pid_t pid;
+
+    arg = strtok_r(0, DELIMS, args);
+    argv[1] = arg;
 
     pid = fork();
     if (pid == -1) {
