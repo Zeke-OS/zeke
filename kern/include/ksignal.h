@@ -42,6 +42,8 @@
 #include <klocks.h>
 #include <signal.h>
 
+struct proc_info;
+
 struct ksiginfo {
     siginfo_t siginfo;
     STAILQ_ENTRY(ksiginfo) _entry;
@@ -82,7 +84,7 @@ void ksignal_signals_ctor(struct signals * sigs);
 void ksignal_signals_fork_reinit(struct signals * sigs);
 
 int ksignal_thread_sendsig(struct thread_info * thread, int signum);
-int ksignal_sendsig_fatal(pthread_t thid, int signum);
+int ksignal_sendsig_fatal(struct proc_info * p, int signum);
 int ksignal_isblocked(struct signals * sigs, int signum);
 void ksignal_get_ksigaction(struct ksigaction * action,
                             struct signals * sigs, int signum);

@@ -39,6 +39,7 @@
 #include <kinit.h>
 #include <kerror.h>
 #include <kstring.h>
+#include <proc.h>
 #include <hal/core.h>
 
 int arm_interrupt_preinit(void);
@@ -80,16 +81,27 @@ __attribute__ ((naked)) void undef_handler(void)
 
     ksprintf(buf, sizeof(buf), "Undefined instruction @ %x, lr: %x\n",
              addr, lr);
-    panic(buf);
 
-    /* TODO */
-#if 0
-    /* Kill the current thread */
-    thread_terminate(current_thread->id);
+    if (!current_thread || current_thread->flags & SCHED_INSYS_FLAG ||
+        current_thread->curr_mpt != &curproc->mm.mpt /* Probably in interrupt */
+       ) {
+        /*
+         * TODO In some cases we could probably just kill the process/thread
+         * and still maintain a stable system even though the issue was in
+         * the kernel.
+         */
+        panic(buf);
+    } else {
+        enable_interrupt();
 
-    /* Return to the scheduler ASAP */
-    req_context_switch();
-#endif
+        KERROR(KERROR_ERR, buf);
+
+        /* Kill the current thread
+         * TODO Should we punish only the thread or whole process?
+         */
+        ksignal_sendsig_fatal(curproc, SIGILL);
+        sched_sleep_current_thread(0);
+    }
 }
 
 /**

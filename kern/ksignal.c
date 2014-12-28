@@ -392,6 +392,13 @@ static int eval_inkernel_action(struct ksigaction * action)
         return -1;
     }
 
+    /*
+     * SA_KILL should be handled before queuing.
+     */
+    if (action->ks_action.sa_flags & SA_KILL) {
+        panic("post_scheduling can't handle SA_KILL");
+    }
+
     return retval;
 }
 
@@ -439,8 +446,6 @@ static void ksignal_post_scheduling(void)
             continue;
         }
 
-        /* TODO check handling policy and kill now if requested. */
-
         /* Check if the thread is waiting for this signal */
         if (blocked && swait) {
             current_thread->sigwait_retval = signum;
@@ -477,12 +482,9 @@ static void ksignal_post_scheduling(void)
     /* Else the pending singal should be handled now. */
     STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
 
-    /* TODO apply sa_mask?? */
-
     /*
-     * TODO Take sa_flag actions requested provided in action.ks_action.sa_flags
+     * Continue to handle the signal in user space handler.
      */
-
 
     if (/* Push current stack frame to the user space thread stack. */
         push_to_thread_stack(current_thread,
@@ -497,8 +499,9 @@ static void ksignal_post_scheduling(void)
        ) {
         /*
          * Thread has trashed its stack; Nothing we can do but give SIGILL.
+         * TODO Should we punish only the thread or whole process?
          */
-        ksignal_sendsig_fatal(current_thread->id, SIGILL);
+        ksignal_sendsig_fatal(curproc, SIGILL);
         ksig_unlock(&sigs->s_lock);
         return; /* TODO Is this ok? */
     }
@@ -549,6 +552,17 @@ int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
     if (action.ks_action.sa_handler == SIG_IGN)
         return 0;
 
+    /*
+     * SA_KILL is handled here because post_scheduling hander can't change
+     * next thread.
+     */
+    if (action.ks_action.sa_flags & SA_KILL) {
+        /* TODO not always curproc? */
+        thread_terminate(curproc->main_thread->id);
+
+        return 0;
+    }
+
     /* Not ignored so we can set the signal to pending state. */
     ksiginfo = kmalloc(sizeof(struct ksiginfo));
     if (!ksiginfo)
@@ -571,12 +585,23 @@ int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
 /**
  * Kill process by a fatal signal that can't be blocked.
  */
-int ksignal_sendsig_fatal(pthread_t thid, int signum)
+int ksignal_sendsig_fatal(struct proc_info * p, int signum)
 {
-    /*
-     * TODO Implementation
-     */
-    return 0;
+    struct signals * sigs = &p->sigs;
+    int err;
+
+    if (ksig_lock(&sigs->s_lock)) {
+        set_errno(EAGAIN);
+        return -1;
+    }
+
+    /* TODO Change action to default. */
+
+    err = ksignal_queue_sig(sigs, signum, SI_UNKNOWN);
+
+    ksig_unlock(&sigs->s_lock);
+
+    return err;
 }
 
 int ksignal_isblocked(struct signals * sigs, int signum)
@@ -1060,7 +1085,10 @@ static int sys_signal_return(void * user_args)
                                 &current_thread->sframe[SCHED_SFRAME_SYS],
                                 sizeof(const sw_stack_frame_t));
     if (err) {
-        ksignal_sendsig_fatal(current_thread->id, SIGILL);
+        /*
+         * TODO Should we punish only the thread or whole process?
+         */
+        ksignal_sendsig_fatal(curproc, SIGILL);
         while (1) {
             sched_sleep_current_thread(0); /* TODO ?? */
             /* Should not return to here */
