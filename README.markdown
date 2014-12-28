@@ -23,6 +23,7 @@ at any level. Currently Zeke is no moving towards POSIX-like system.
 Key Features
 ------------
 - For user applications
+    - Mostly C99 compliant libc
     - Dynamic prioritizing pre-emptive scheduling with penalties to prevent
       starvation
     - System call based kernel services
