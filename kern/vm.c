@@ -31,6 +31,7 @@
  */
 
 #define KERNEL_INTERNAL
+#include <libkern.h>
 #include <kstring.h>
 #include <hal/mmu.h>
 #include <ptmapper.h>
@@ -190,34 +191,49 @@ int copyout_proc(struct proc_info * proc, const void * kaddr, void * uaddr,
     return 0;
 }
 
-int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done)
+int copyinstr(const char * uaddr, char * kaddr, size_t len, size_t * done)
 {
-    size_t slen;
-    int err;
+    uintptr_t last_prefix = UINTPTR_MAX;
+    char * phys_uaddr;
+    size_t off = 0;
 
-    /*
-     * There is two things user may try to use this functions for, copying
-     * a string thats length is already known and copying a string of unknown
-     * length to a buffer. In a case of unknown string we may fail to copy if
-     * the string is too close to the page bound and add + len is out of bounds,
-     * to solve this but to optimize of performance we do the following funny
-     * looking loop-copyin.
-     */
-    while ((err = copyin(uaddr, kaddr, len))) {
-        if (len == 1)
+    KASSERT(uaddr != NULL, "uaddr shall be set");
+    KASSERT(kaddr != NULL, "kaddr shall be set");
+
+    while (off < len) {
+        if (((uintptr_t)uaddr >> NBITS(MMU_PGSIZE_COARSE)) != last_prefix) {
+            struct vm_pt * vpt;
+
+            if (!useracc(uaddr, 1, VM_PROT_READ)) {
+                return -EFAULT;
+            }
+
+            vpt = ptlist_get_pt(&(curproc->mm.ptlist_head),
+                                &(curproc->mm.mpt),
+                                (uintptr_t)uaddr);
+            if (!vpt)
+                panic("Can't copyinstr()");
+
+            last_prefix = (uintptr_t)uaddr >> NBITS(MMU_PGSIZE_COARSE);
+
+            phys_uaddr = mmu_translate_vaddr(&(vpt->pt), (uintptr_t)uaddr);
+            if (!phys_uaddr) {
+                return -EFAULT;
+            }
+        }
+
+        kaddr[off] = *phys_uaddr++;
+        uaddr += ++off;
+
+        if (kaddr[off - 1] == '\0')
             break;
-        len--;
-    }
-    if (err)
-        return err;
-
-    slen = strlenn(kaddr, len);
-    if (done) {
-        *done = slen + 1;
     }
 
-    if (((char *)kaddr)[slen] != '\0')
+    *done = off;
+
+    if (kaddr[off - 1] != '\0') {
         return -ENAMETOOLONG;
+    }
 
     return 0;
 }
@@ -288,6 +304,7 @@ void vm_updateusr_ap(struct buf * region)
     mtx_unlock(&(region->lock));
 }
 
+/* TODO Should return mm->nr_regions */
 int vm_add_region(struct vm_mm_struct * mm, struct buf * region)
 {
     struct buf * (*new_regions)[];
@@ -304,6 +321,20 @@ int vm_add_region(struct vm_mm_struct * mm, struct buf * region)
     return 0;
 }
 
+int vm_proc_add_region(struct proc_info * proc, struct buf * region)
+{
+    struct vm_mm_struct * mm = &proc->mm;
+    int err;
+
+    err = vm_add_region(mm, NULL);
+    if (err)
+        return err;
+
+    err = vm_replace_region(mm, region, mm->nr_regions - 1);
+
+    return err;
+}
+
 int vm_replace_region(struct vm_mm_struct * mm, struct buf * region,
                       int region_nr)
 {
@@ -313,7 +344,7 @@ int vm_replace_region(struct vm_mm_struct * mm, struct buf * region,
     int err;
 
     /* TODO realloc regions struct etc. */
-    if (region_nr > 2)
+    if (region_nr > mm->nr_regions)
         panic("Operation not supported");
 
     /* TODO Free old regions struct and its contents */

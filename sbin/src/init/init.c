@@ -59,7 +59,7 @@ static const char msg[] = "Zeke " KERNEL_VERSION " init\n";
 const char tty_path[] = "/dev/ttyS0";
 char buf[80];
 
-int main(void)
+int main(int argc, char * argv[], char * envp[])
 {
     int r0, r1, r2;
 
@@ -80,6 +80,18 @@ int main(void)
 
     snprintf(buf, sizeof(buf), "fd: %i, %i, %i\n", r0, r1, r2);
     write(STDOUT_FILENO, buf, strnlen(buf, sizeof(buf)));
+
+    printf("args[%d]:", argc);
+    argc += 1;
+    while (*argv) {
+        printf(" %s", *argv++);
+    }
+
+    printf("\nenviron:");
+    while (*envp) {
+        printf(" %s", *envp++);
+    }
+    printf("\n");
 
     write(STDOUT_FILENO, banner, sizeof(banner));
     write(STDOUT_FILENO, msg, sizeof(msg));

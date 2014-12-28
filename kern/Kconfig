@@ -76,7 +76,13 @@ config configEXEC_BASE_LIMIT
     hex "Exec base address low limit"
     default 0x10000000
     ---help---
-    "Lowest base address allowed for loading sections from a binary file.
+    Lowest base address allowed for loading sections from a binary file.
+
+config configUENV_BASE_ADDR
+    hex "Args & environ page base address"
+    default 0x0FFFF000
+    --help---
+    Base address for process arguments and environment.
 
 endmenu
 

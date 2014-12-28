@@ -31,8 +31,10 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <zeke.h>
 #include <errno.h>
 #include <unistd.h>
@@ -44,6 +46,7 @@ SET_DECLARE(tish_cmd, struct tish_builtin);
 int tish_eof;
 
 /* Static functions */
+static void forkexec(char * path, char ** args);
 static char * gline(char * str, int num);
 
 int tish(void)
@@ -69,7 +72,8 @@ int tish(void)
                 }
             }
 
-            printf("I don't know how to execute\n");
+            /* Assume fork & exec */
+            forkexec(cmd_name, &strtok_lasts);
 
 get_errno:
             if ((err = errno)) {
@@ -132,6 +136,28 @@ static void help(char ** args)
     printf("\n");
 }
 TISH_CMD(help, "help");
+
+static void forkexec(char * path, char ** args)
+{
+    char *argv[] = { path, NULL };
+    char *env[] = { NULL };
+    pid_t pid;
+
+    pid = fork();
+    if (pid == -1) {
+        char failmsg[] = "Fork failed\n";
+
+        write(STDOUT_FILENO, failmsg, sizeof(failmsg));
+    } else if (pid == 0) {
+        execve(path, argv, env);
+        _exit(1); /* TODO Figure out why exit(1) fails */
+    } else {
+        int status;
+
+        wait(&status);
+        printf("status: %u\n", status);
+    }
+}
 
 /* TODO Until we have some actual standard IO subsystem working the following
  * is the best hack I can think of. */

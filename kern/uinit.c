@@ -134,8 +134,8 @@ static void printfail(char * str)
 
 void * uinit(void * arg)
 {
-    char *argv[] = { "/sbin/init", NULL };
-    char *env[] = { NULL };
+    char * argv[] = { "/sbin/init", NULL };
+    char * env[] = { "PATH=", "HOME=/", NULL };
     int err;
 
     write(STDOUT_FILENO, "uinit\n", 7);
@@ -170,7 +170,7 @@ void * uinit(void * arg)
     }
 
     /* Exec init */
-    err = _execve(argv[0], argv, num_elem(argv), env, num_elem(env));
+    err = _execve(argv[0], argv, num_elem(argv) - 1, env, num_elem(env) - 1);
     if (err) {
         printfail("exec init failed");
         while (1);

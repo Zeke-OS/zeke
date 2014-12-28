@@ -31,19 +31,20 @@
  */
 
 #define KERNEL_INTERNAL 1
-#include <syscall.h>
-#include <errno.h>
+#include <libkern.h>
 #include <kmalloc.h>
 #include <buf.h>
 #include <thread.h>
 #include <proc.h>
 #include <unistd.h>
+#include <errno.h>
+#include <syscall.h>
 #include <exec.h>
 
 SET_DECLARE(exec_loader, struct exec_loadfn);
 
-/* TODO Add args and envp */
-int exec_file(file_t * file)
+int exec_file(file_t * file, struct buf * env_bp,
+              int uargc, uintptr_t uargv, uintptr_t uenvp)
 {
     struct exec_loadfn ** loader;
     uintptr_t vaddr;
@@ -65,6 +66,18 @@ int exec_file(file_t * file)
         goto fail;
     }
 
+    /* Map new environment */
+    err = vm_proc_add_region(curproc, env_bp);
+    if (err) {
+        if (env_bp->vm_ops && env_bp->vm_ops->rfree)
+            env_bp->vm_ops->rfree(env_bp);
+        else {
+            KERROR(KERROR_ERR, "Can't free env_bp\n");
+        }
+        retval = err;
+        goto fail;
+    }
+
     /* Create a new thread for executing main() */
     stack_region = (*curproc->mm.regions)[MM_STACK_REGION];
     code_region = (*curproc->mm.regions)[MM_CODE_REGION];
@@ -77,10 +90,10 @@ int exec_file(file_t * file)
         .thread     = 0, /* return value */
         .start      = (void *(*)(void *))(code_region->b_mmu.vaddr),
         .def        = &pattr,
-        .arg1       = 0, /* TODO */
-        .arg2       = 0,
-        .arg3       = 0,
-        .arg4       = 0,
+        .arg1       = uargc,
+        .arg2       = uargv,
+        .arg3       = uenvp,
+        .arg4       = 0, /* TODO */
         .del_thread = NULL /* Not needed for main(). */
     };
 
@@ -110,15 +123,72 @@ out:
     return retval;
 }
 
+/**
+ * Copyin an array of strings and remap to a new section mapped in user space.
+ * @note vaddr must be set to the final value.
+ */
+static int copyin_aa(struct buf * bp, char * uarr, size_t uarr_len,
+                     size_t * doffset)
+{
+    char ** arg = (char **)(bp->b_data + *doffset);
+    char * val = (char *)(bp->b_data + *doffset);
+    size_t left = bp->b_bcount - *doffset;
+    size_t offset = *doffset;
+    int err;
+
+    if (uarr_len == 0)
+        return 0;
+
+    if (left <= uarr_len)
+        return -ENOMEM;
+
+    err = copyin(uarr, arg, uarr_len * sizeof(char *));
+    if (err)
+        return err;
+
+    arg[uarr_len] = NULL;
+    offset = uarr_len * sizeof(char *) + sizeof(char *);
+    left -= offset;
+
+    for (size_t i = 0; i < uarr_len; i++) {
+        size_t copied;
+
+        if (!arg[i])
+            continue;
+
+        err = copyinstr(arg[i], val + offset, left, &copied);
+        if (err)
+            return err;
+
+        /* new pointer from agg[i] to the string, valid in user space. */
+        arg[i] = (char *)(bp->b_mmu.vaddr + *doffset + offset);
+
+        offset += copied;
+        left -= copied;
+    }
+
+    *doffset = offset;
+
+    return 0;
+}
+
 static int sys_exec(void * user_args)
 {
     struct _exec_args args;
     file_t * file;
+    struct buf * env_bp;
+    size_t arg_offset = 0;
+    uintptr_t envp;
     int err, retval;
 
     err = copyin(user_args, &args, sizeof(args));
     if (err) {
         set_errno(EFAULT);
+        return -1;
+    }
+
+    if (!args.argv || !args.env) {
+        set_errno(EINVAL);
         return -1;
     }
 
@@ -129,10 +199,42 @@ static int sys_exec(void * user_args)
         return -1;
     }
 
+    /*
+     * Copy in & out arguments and environ.
+     */
+    env_bp = geteblk(MMU_PGSIZE_COARSE);
+    if (!env_bp) {
+        set_errno(ENOMEM);
+        retval = -1;
+        goto out;
+    }
 
-    /* TODO Copy env and args */
+    /* Currently copyin_aa() requires vaddr to be set. */
+    env_bp->b_mmu.vaddr = configUENV_BASE_ADDR;
+    env_bp->b_uflags = VM_PROT_READ;
 
-    err = exec_file(file);
+    /* Copyin argv */
+    err = copyin_aa(env_bp, (char *)args.argv, args.nargv, &arg_offset);
+    if (err) {
+        set_errno(-err);
+        retval = -1;
+        goto out;
+    }
+    arg_offset = memalign(arg_offset);
+    envp = env_bp->b_mmu.vaddr + arg_offset;
+
+    /* Copyin env */
+    err = copyin_aa(env_bp, (char *)args.env, args.nenv, &arg_offset);
+    if (err) {
+        set_errno(-err);
+        retval = -1;
+        goto out;
+    }
+
+    /*
+     * Execute.
+     */
+    err = exec_file(file, env_bp, args.nargv, env_bp->b_mmu.vaddr, envp);
     if (err) {
         set_errno(-err);
         retval = -1;

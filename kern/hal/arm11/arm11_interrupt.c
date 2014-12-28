@@ -69,16 +69,20 @@ __attribute__ ((naked, aligned(32))) static void interrupt_vectors(void)
 
 __attribute__ ((naked)) void undef_handler(void)
 {
-    /* TODO */
-    size_t addr;
+    uintptr_t addr;
+    uintptr_t lr;
     char buf[80];
 
     __asm__ volatile (
         "subs %[reg], r14, #4" : [reg] "=r" (addr) :: "r14");
+    __asm__ volatile (
+        "mov  %[reg], lr" : [reg] "=r" (lr) :: "lr");
 
-    ksprintf(buf, sizeof(buf), "Undefined instruction @ %x\n", addr);
+    ksprintf(buf, sizeof(buf), "Undefined instruction @ %x, lr: %x\n",
+             addr, lr);
     panic(buf);
 
+    /* TODO */
 #if 0
     /* Kill the current thread */
     thread_terminate(current_thread->id);

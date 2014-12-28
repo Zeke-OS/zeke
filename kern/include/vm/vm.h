@@ -143,13 +143,13 @@ int copyout(const void * kaddr, void * uaddr, size_t len);
  * uaddr to kernel-space address kaddr.
  * @param[in]   uaddr is the source address.
  * @param[out]  kaddr is the target address.
- * @param       len is the length of string in uaddr.
+ * @param       len is the maximum number of bytes to be copied.
  * @param[out]  done is the number of bytes actually copied, including the
  *                   terminating NUL, if done is non-NULL.
  * @return  0 if succeeded; or -ENAMETOOLONG if the string is longer than len
  *          bytes; or any of the return values defined for copyin().
  */
-int copyinstr(const void * uaddr, void * kaddr, size_t len, size_t * done);
+int copyinstr(const char * uaddr, char * kaddr, size_t len, size_t * done);
 
 int copyin_proc(struct proc_info * proc, const void * uaddr, void * kaddr,
         size_t len);
@@ -168,7 +168,15 @@ struct buf * vm_newsect(uintptr_t vaddr, size_t size, int prot);
  */
 void vm_updateusr_ap(struct buf * region);
 
+/**
+ * @note region pt is not updated.
+ */
 int vm_add_region(struct vm_mm_struct * mm, struct buf * region);
+
+/**
+ * @note region pt is updated.
+ */
+int vm_proc_add_region(struct proc_info * proc, struct buf * region);
 
 int vm_replace_region(struct vm_mm_struct * mm, struct buf * region,
                       int region_nr);
