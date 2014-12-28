@@ -4,8 +4,8 @@ Zeke Coding Standards & Generic Documentation
 Here is some misc documentation and general guidelines on topic of how to write
 new code for Zeke.
 
-Directory Structure
--------------------
+Source Tree Directory Structure
+--------------------------------
 
 + kern/                 Most of the kernel code.
 + /kern/include/        Most of the shared kernel header files.
@@ -20,10 +20,24 @@ Directory Structure
 + lib/                  C runtime libraries and user space libraries.
 + config/               Kernel build config.
 + modmakefiles/         Kernel module makefiles.
-+ sbin/                 System utilities.
++ bin/                  Essential commands.
++ sbin/                 Essential system utilities.
 + tools/                Build tools and scripts.
 + test/                 User space unit tests.
 + test/punit/           User space unit test framework (PUnit).
+
+
+Root Filesystem Hierarchy
+-------------------------
+
++ /bin/                 Essential command binaries.
++ /dev/                 Virtual file system providing access to devices.
++ /lib/                 Essential libraries for /bin/ and /sbin/.
++ /mnt/                 Mount point for temporarily mounted filesystems.
++ /proc/                Virtual filesystem providing process information.
++ /sbin/                Essential system binaries.
++ /tmp/                 Temporary files.
++ kernel.img            The kernel image.
 
 
 Naming Conventions

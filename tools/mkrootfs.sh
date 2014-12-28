@@ -16,4 +16,6 @@ dir2img lib
 dir2img bin
 dir2img sbin
 mmd -i "$IMG" dev
+mmd -i "$IMG" mnt
 mmd -i "$IMG" proc
+mmd -i "$IMG" tmp
