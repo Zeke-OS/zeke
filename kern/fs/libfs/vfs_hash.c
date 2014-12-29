@@ -44,8 +44,7 @@ static LIST_HEAD(,vnode)        vfs_hash_side;
 static unsigned long            vfs_hash_mask;
 static struct mtx               vfs_hash_mtx;
 
-/* TODO */
-static int desiredvnodes = 100;
+static int desiredvnodes = configVFS_HASH_DESIREDVNODES;
 
 int vfs_hashinit(void) __attribute__((constructor));
 int vfs_hashinit(void)

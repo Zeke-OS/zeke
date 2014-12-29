@@ -229,8 +229,7 @@ static int sys_open(void * user_args)
     err = fs_namei_proc(&file, args->fd, args->name, args->atflags);
     if (err) {
         if (args->oflags & O_CREAT) {
-            /* Create a new file */
-            /* TODO Determine correct mode bits?? */
+            /* Create a new file, umask is handled in fs_creat_cproc() */
             retval = fs_creat_cproc(args->name, S_IFREG | args->mode, &file);
             if (retval) {
                 set_errno(-retval);

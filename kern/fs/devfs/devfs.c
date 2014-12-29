@@ -111,7 +111,7 @@ static int devfs_mount(const char * source, uint32_t mode,
 
 static int devfs_umount(struct fs_superblock * fs_sb)
 {
-    /* TODO */
+    /* TODO Implementation of devfs_umount() */
     return -EBUSY;
 }
 
@@ -120,8 +120,6 @@ int dev_make(struct dev_info * devnfo, uid_t uid, gid_t gid, int perms,
 {
     vnode_t * res;
     int retval;
-
-    /* TODO Auto-numbering feature */
 
     if (!vn_devfs->vnode_ops->lookup(vn_devfs, devnfo->dev_name,
             sizeof(devnfo->dev_name), NULL)) {
@@ -144,6 +142,7 @@ int dev_make(struct dev_info * devnfo, uid_t uid, gid_t gid, int perms,
 
 void dev_destroy(struct dev_info * devnfo)
 {
+    /* TODO Implementation of dev_destroy() */
 }
 
 const char * devtoname(struct vnode * dev)

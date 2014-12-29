@@ -106,6 +106,13 @@ config configVFS_HASH
 
     This is usually auto selected.
 
+config configVFS_HASH_DESIREDVNODES
+    int "desiredvnodes"
+    default 100
+    depends on configVFS_HASH
+    ---help---
+    Controls the VFS hash table size.
+
 endmenu
 
 endmenu

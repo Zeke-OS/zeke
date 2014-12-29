@@ -105,7 +105,7 @@ static int procfs_mount(const char * source, uint32_t mode,
 
 static int procfs_umount(struct fs_superblock * fs_sb)
 {
-    /* TODO */
+    /* TODO implementation of procfs_umount() */
     return -EBUSY;
 }
 

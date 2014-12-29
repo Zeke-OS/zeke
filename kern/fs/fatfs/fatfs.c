@@ -367,7 +367,7 @@ static vnode_t * create_root(fs_superblock_t * sb)
 
 static int fatfs_delete_vnode(vnode_t * vnode)
 {
-    /* TODO */
+    /* TODO Implementation of fatfs_delete_vnode() */
     return -ENOTSUP;
 }
 
@@ -601,7 +601,7 @@ int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
         return 0;
     } else if (*off == DIRENT_SEEK_START + 1) {
         strlcpy(d->d_name, "..", NAME_MAX);
-        /* TODO */
+        /* TODO Set d members to proper values */
         d->d_ino = 0;
         d->d_type = DT_DIR;
         *off = DIRENT_SEEK_START + 2;
@@ -621,7 +621,7 @@ int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
     if (fno.fname[0] == '\0')
         return -ESPIPE;
 
-    d->d_ino = 0; /* TODO */
+    d->d_ino = 0; /* TODO ino should be set */
     d->d_type = (fno.fattrib & AM_DIR) ? DT_DIR : DT_REG;
 #if configFATFS_USE_LFN
     if (!*fno.lfname)
@@ -715,12 +715,13 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
 
 int fatfs_chmod(vnode_t * vnode, mode_t mode)
 {
-    /* TODO */
+    /* TODO Add chmod support */
     return -ENOTSUP;
 }
 
 int fatfs_chown(vnode_t * vnode, uid_t owner, gid_t group)
 {
+    /* chown can't be supported on FAT. */
     return -ENOTSUP;
 }
 
