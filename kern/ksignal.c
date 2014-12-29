@@ -582,9 +582,6 @@ int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
     return 0;
 }
 
-/**
- * Kill process by a fatal signal that can't be blocked.
- */
 int ksignal_sendsig_fatal(struct proc_info * p, int signum)
 {
     struct signals * sigs = &p->sigs;
@@ -637,9 +634,6 @@ int ksignal_isblocked(struct signals * sigs, int signum)
     return 0;
 }
 
-/**
- * Get a copy of signal action struct.
- */
 void ksignal_get_ksigaction(struct ksigaction * action,
                             struct signals * sigs, int signum)
 {

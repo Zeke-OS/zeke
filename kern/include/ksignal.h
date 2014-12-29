@@ -44,11 +44,18 @@
 
 struct proc_info;
 
+/**
+ * Kernel signal info struct type that is used to deliver signals to
+ * processes and threads.
+ */
 struct ksiginfo {
     siginfo_t siginfo;
     STAILQ_ENTRY(ksiginfo) _entry;
 };
 
+/**
+ * Kernel signal action descriptor.
+ */
 struct ksigaction {
     int ks_signum;
     struct sigaction ks_action;
@@ -58,6 +65,9 @@ struct ksigaction {
 STAILQ_HEAD(sigwait_queue, ksiginfo);
 RB_HEAD(sigaction_tree, ksigaction);
 
+/**
+ * Special lock type for ksignal.
+ */
 typedef struct _ksigmtx_ {
     mtx_t l;
 } ksigmtx_t;
@@ -84,17 +94,41 @@ void ksignal_signals_ctor(struct signals * sigs);
 void ksignal_signals_fork_reinit(struct signals * sigs);
 
 int ksignal_thread_sendsig(struct thread_info * thread, int signum);
+
+/**
+ * Kill process by sending a fatal signal that can't be blocked.
+ * @param p is the process to be signaled.
+ * @param signum is the signum used.
+ * @returns Returns 0 if succeed; Otherwise a negative error code is returned.
+ */
 int ksignal_sendsig_fatal(struct proc_info * p, int signum);
+
+/**
+ * Check if a signal is blocked.
+ * @param sigs is a pointer to a signals struct, that's already locked.
+ * @param signum is the signal number to be checked.
+ * @returns 0 if the given signal is not blocked; Value other than zero if
+ *          the signal is blocked.
+ */
 int ksignal_isblocked(struct signals * sigs, int signum);
 
 /**
  * Get copy of a signal action struct.
+ * @param action[out] is a pointer to a struct than will be modified.
+ * @param sigs[in]    is a pointer to a signals struct, that's already locked.
+ * @param signum      is the signal number.
+ * @returns Returns 0 if operation succeed;
+ *          Otherwise a negative error code is returned.
  */
 void ksignal_get_ksigaction(struct ksigaction * action,
                             struct signals * sigs, int signum);
 
 /**
  * Reset signal action to default.
+ * @param sigs is a pointer to a signals struct, that's already locked.
+ * @param signum is the signal number.
+ * @returns Returns 0 if operation succeed;
+ *          Otherwise a negative error code is returned.
  */
 int ksignal_reset_ksigaction(struct signals * sigs, int signum);
 
@@ -111,6 +145,7 @@ int sigfillset(sigset_t * set);
 int sigismember(const sigset_t * set, int signo);
 int sigisemptyset(const sigset_t * set);
 int sigffs(sigset_t * set);
+
 /**
  * Union of sigset a and b to target.
  */
