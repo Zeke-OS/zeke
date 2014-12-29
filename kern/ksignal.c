@@ -588,6 +588,7 @@ int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
 int ksignal_sendsig_fatal(struct proc_info * p, int signum)
 {
     struct signals * sigs = &p->sigs;
+    struct ksigaction act;
     int err;
 
     if (ksig_lock(&sigs->s_lock)) {
@@ -595,7 +596,18 @@ int ksignal_sendsig_fatal(struct proc_info * p, int signum)
         return -1;
     }
 
-    /* TODO Change action to default. */
+    /* Change signal action to default to make this signal fatal. */
+    err = ksignal_reset_ksigaction(sigs, signum);
+    if (err)
+        return err;
+    ksignal_get_ksigaction(&act, sigs, signum);
+    if (!(act.ks_action.sa_flags & SA_KILL)) {
+        char msg[80];
+        ksprintf(msg, sizeof(msg), "%d requested a fatal signal for %d"
+                 "but dfl action for signum %d is not SA_KILL\n",
+                 curproc->pid, p->pid, signum);
+        KERROR(KERROR_WARN, msg);
+    }
 
     err = ksignal_queue_sig(sigs, signum, SI_UNKNOWN);
 
@@ -649,6 +661,29 @@ void ksignal_get_ksigaction(struct ksigaction * action,
     action->ks_action.sa_flags = (signum < num_elem(default_sigproptbl)) ?
         default_sigproptbl[signum] : SA_IGNORE;
     action->ks_action.sa_handler = SIG_DFL;
+}
+
+int ksignal_reset_ksigaction(struct signals * sigs, int signum)
+{
+    struct ksigaction filt = { .ks_signum = signum };
+    struct ksigaction * p_action;
+
+    if (signum < 0 || signum >= num_elem(default_sigproptbl)) {
+        return -EINVAL;
+    }
+
+    KASSERT(mtx_test(&sigs->s_lock.l), "sigs should be locked\n");
+
+    if (!RB_EMPTY(&sigs->sa_tree) &&
+        (p_action = RB_FIND(sigaction_tree, &sigs->sa_tree, &filt))) {
+        if (RB_REMOVE(sigaction_tree, &sigs->sa_tree, p_action)) {
+            kfree(p_action);
+        } else {
+            panic("Can't remove an entry from sigaction_tree\n");
+        }
+    }
+
+    return 0;
 }
 
 /**

@@ -86,8 +86,22 @@ void ksignal_signals_fork_reinit(struct signals * sigs);
 int ksignal_thread_sendsig(struct thread_info * thread, int signum);
 int ksignal_sendsig_fatal(struct proc_info * p, int signum);
 int ksignal_isblocked(struct signals * sigs, int signum);
+
+/**
+ * Get copy of a signal action struct.
+ */
 void ksignal_get_ksigaction(struct ksigaction * action,
                             struct signals * sigs, int signum);
+
+/**
+ * Reset signal action to default.
+ */
+int ksignal_reset_ksigaction(struct signals * sigs, int signum);
+
+/**
+ * Set signal action.
+ * @note action can be allocated from stack as its data will be copied.
+ */
 int ksignal_set_ksigaction(struct signals * sigs, struct ksigaction * action);
 
 int sigaddset(sigset_t * set, int signo);
