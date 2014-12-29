@@ -40,4 +40,4 @@ AUTOCONF_H = $(CONFIG_DIR)/autoconf.h
 
 # CRT and common target specific options
 include $(ROOT_DIR)/config
-include $(ROOT_DIR)/target.mk
+include $(ROOT_DIR)/makefiles/target.mk

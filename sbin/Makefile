@@ -23,64 +23,12 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Configuration files ##########################################################
-# Generic config
-include $(ROOT_DIR)/genconfig/buildconf.mk
-include $(ROOT_DIR)/genconfig/dist.mk
-################################################################################
-# We use suffixes because it's fun
-.SUFFIXES:                  	# Delete the default suffixes
-.SUFFIXES: .c .bc .o .h .S ._S	# Define our suffix list
+include $(ROOT_DIR)/makefiles/user_head.mk
 
-SBIN = init
+# Binaries #####################################################################
+BIN = init
 
 # Source Files #################################################################
 init-SRC-y = $(wildcard src/init/*.c) $(wildcard src/init/tish/*.c)
-################################################################################
-# Available selections for source code files:
-SRC-	=# C sources
-SRC-n	=#
-SRC-y	=#
-ASRC-	=# Assembly sources
-ASRC-n	=#
-ASRC-y	=#
-# (A)SRC- and (A)SRC-n meaning that submodule won't be compiled
 
-# All sources
-SRC-y += $(foreach var,$(SBIN), $($(var)-SRC-y))
-ASRC-y += $(foreach var,$(SBIN), $($(var)-ASRC-y))
-
-# Assembly Obj files
-ASOBJS := $(patsubst %.S, %.o, $(ASRC-y))
-
-# C Obj files
-BCS := $(patsubst %.c, %.bc, $(SRC-y))
-OBJS := $(patsubst %.c, %.o, $(SRC-y))
-
-all: $(SBIN)
-	echo "$(SBIN)" > manifest
-
-$(ASOBJS): $(ASRC-y) $(AUTOCONF_H)
-	@echo "AS $@"
-	@$(UNIFDEFALL) $(IDIR) $*.S | $(ARMGNU)-as -am $(IDIR) -o $@
-
-$(OBJS): $(SRC-y) $(AUTOCONF_H)
-	$(eval CUR_BC := $*.bc)
-	$(eval CUR_OPT := $*.opt.bc)
-	$(eval CUR_OPT_S := $*.opt.s)
-	@echo "CC $@"
-	@$(CC) $(CCFLAGS) $(IDIR) -c $*.c -o $(CUR_BC)
-	@$(OPT) $(OFLAGS) $*.bc -o $(CUR_OPT)
-	@$(LLC) $(LLCFLAGS) $(CUR_OPT) -o $(CUR_OPT_S)
-	@$(ARMGNU)-as $(CUR_OPT_S) -o $@ $(ASFLAGS)
-
-$(SBIN): $(OBJS)
-	$(eval CUR_BIN := $(basename $@))
-	$(eval CUR_OBJS += $(patsubst %.S, %.o, $($(CUR_BIN)-ASRC-y)))
-	$(eval CUR_OBJS := $(patsubst %.c, %.o, $($(CUR_BIN)-SRC-y)))
-	@echo "LD $@"
-	$(ARMGNU)-ld -o $@ -T $(ROOT_DIR)/$(ELFLD) $(LDFLAGS) $(ROOT_DIR)/lib/crt1.a $(LDIR) $(CUR_OBJS) -lc
-
-clean:
-	$(RM) $(ASOBJS) $(OBJS) $(SBIN)
-	$(RM) manifest
+include $(ROOT_DIR)/makefiles/user_tail.mk

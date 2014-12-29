@@ -1,4 +1,4 @@
-# Zeke - /bin Makefile
+# Zeke - User space base makefile
 #
 # Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
 # All rights reserved.
@@ -23,12 +23,33 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-include $(ROOT_DIR)/makefiles/user_head.mk
+# Configuration files ##########################################################
+# Generic config
+include $(ROOT_DIR)/genconfig/buildconf.mk
+include $(ROOT_DIR)/genconfig/dist.mk
+################################################################################
 
-# Binaries #####################################################################
-BIN = echo
+################################################################################
+# We use suffixes because it's fun
+.SUFFIXES:                      # Delete the default suffixes
+.SUFFIXES: .c .bc .o .h .S ._S  # Define our suffix list
 
-# Source Files #################################################################
-echo-SRC-y = src/echo.c
+# Available selections for source code files:
+# SRC-    =# C sources
+# SRC-n   =#
+# SRC-y   =#
+# ASRC-   =# Assembly sources
+# ASRC-n  =#
+# ASRC-y  =#
+# (A)SRC- and (A)SRC-n won't be compiled
 
-include $(ROOT_DIR)/makefiles/user_tail.mk
+# Automatically generated list of sources
+SRC-y = $(foreach var,$(BIN), $($(var)-SRC-y))
+ASRC-y = $(foreach var,$(BIN), $($(var)-ASRC-y))
+
+# Assembly Obj files
+ASOBJS = $(patsubst %.S, %.o, $(ASRC-y))
+
+# C Obj files
+BCS = $(patsubst %.c, %.bc, $(SRC-y))
+OBJS = $(patsubst %.c, %.o, $(SRC-y))
