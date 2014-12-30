@@ -193,7 +193,14 @@ pid_t proc_fork(pid_t pid)
 #ifdef configPROC_DEBUG
     KERROR(KERROR_DEBUG, "Copy file descriptors\n");
 #endif
-    new_proc->files = kmalloc(SIZEOF_FILES(old_proc->files->count));
+    size_t nofile_max = old_proc->rlim[RLIMIT_NOFILE].rlim_max;
+    if (nofile_max < 0) {
+#if configRLIMIT_NOFILE < 0
+#error configRLIMIT_NOFILE can't be negative.
+#endif
+        nofile_max = configRLIMIT_NOFILE;
+    }
+    new_proc->files = kmalloc(SIZEOF_FILES(nofile_max));
     if (!new_proc->files) {
 #ifdef configPROC_DEBUG
         KERROR(KERROR_DEBUG,
@@ -202,7 +209,8 @@ pid_t proc_fork(pid_t pid)
         retval = -ENOMEM;
         goto free_res;
     }
-    new_proc->files->count = old_proc->files->count;
+    new_proc->files->count = nofile_max;
+    /* Copy and ref old file descriptors */
     for (int i = 0; i < old_proc->files->count; i++) {
         new_proc->files->fd[i] = old_proc->files->fd[i];
         fs_fildes_ref(new_proc->files, i, 1); /* null pointer safe */

@@ -52,7 +52,7 @@
                            * ignoring SIGXCPU, or all threads belonging to
                            * that process are blocking SIGXCPU, the
                            * behavior is unspecified. */
-#define RLIMIT_DATA     2 /*!< Resource id for data segmeent size limit.
+#define RLIMIT_DATA     2 /*!< Resource id for data segment size limit.
                            * This is the maximum size of a process' data
                            * segment, in bytes. If this limit is exceeded,
                            * the malloc() function shall fail with errno set

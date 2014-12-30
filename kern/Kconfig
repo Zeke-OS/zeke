@@ -166,7 +166,68 @@ config configPROC_DEBUG
     a performance hit as well as print a lot of useles debug messages to
     the klogging facility.
 
+menu "Default hard limits"
+
+config configRLIMIT_CORE
+    int "RLIMIT_CORE"
+    default -1
+    ---help---
+    Maximum size of a core file, in bytes.
+
+    -1 is no limit.
+
+config configRLIMIT_CPU
+    int "RLIMIT_CPU"
+    default -1
+    ---help---
+    Max amount of CPU time limit.
+
+    -1 is no limit.
+
+config configRLIMIT_DATA
+    int "RLIMIT_DATA"
+    default -1
+    ---help---
+    Data segment size limit.
+
+    -1 is no limit.
+
+config configRLIMIT_FSIZE
+    int "configRLIMIT_FSIZE"
+    default -1
+    ---help---
+    File size limit of a process.
+
+    -1 is no limit.
+
+config configRLIMIT_NOFILE
+    int "RLIMIT_NOFILE"
+    default 8
+    ---help---
+    Limit on number of open files.
+
+    Can't be infinite (-1).
+
+config configRLIMIT_STACK
+    int RLIMIT_STACK
+    default -1
+    ---help---
+    Maximum size of stack for a thread, in bytes.
+
+    -1 is no limit.
+
+config configRLIMIT_AS
+    int "RLIMIT_AS"
+    default -1
+    ---help---
+    Limit on address space size of a process.
+
+    -1 is no limit.
+
 endmenu
+
+endmenu
+
 
 menu "Generic"
 

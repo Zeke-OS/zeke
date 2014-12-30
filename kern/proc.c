@@ -103,6 +103,28 @@ int proc_init(void)
     return 0;
 }
 
+static void init_rlims(struct rlimit (*rlim)[_RLIMIT_ARR_COUNT])
+{
+    /*
+     * These are only initialized once and inherited for childred even
+     * over execs.
+     */
+    (*rlim)[RLIMIT_CORE] =      (struct rlimit){ configRLIMIT_CORE,
+                                                 configRLIMIT_CORE };
+    (*rlim)[RLIMIT_CPU] =       (struct rlimit){ configRLIMIT_CPU,
+                                                 configRLIMIT_CPU };
+    (*rlim)[RLIMIT_DATA] =      (struct rlimit){ configRLIMIT_DATA,
+                                                 configRLIMIT_DATA };
+    (*rlim)[RLIMIT_FSIZE] =     (struct rlimit){ configRLIMIT_FSIZE,
+                                                 configRLIMIT_FSIZE };
+    (*rlim)[RLIMIT_NOFILE] =    (struct rlimit){ configRLIMIT_NOFILE,
+                                                 configRLIMIT_NOFILE };
+    (*rlim)[RLIMIT_STACK] =     (struct rlimit){ configRLIMIT_STACK,
+                                                 configRLIMIT_STACK };
+    (*rlim)[RLIMIT_AS] =        (struct rlimit){ configRLIMIT_AS,
+                                                 configRLIMIT_AS };
+}
+
 /**
  * Initialize kernel process 0.
  */
@@ -123,16 +145,6 @@ static void init_kernel_proc(void)
     /* Copy master page table descriptor */
     memcpy(&(kernel_proc->mm.mpt), &mmu_pagetable_master,
             sizeof(mmu_pagetable_t));
-
-    /* Insert page tables */
-    /* TODO Remove following lines completely? */
-#if 0
-    struct vm_pt * vpt;
-    vpt = kmalloc(sizeof(struct vm_pt));
-    vpt->pt = mmu_pagetable_system;
-    vpt->linkcount = 1;
-    RB_INSERT(ptlist, &(kernel_proc->mm.ptlist_head), vpt);
-#endif
 
     /*
      * Create regions
@@ -175,8 +187,8 @@ static void init_kernel_proc(void)
     /*
      * File descriptors
      *
-     * TODO We have a hard limit of 8 files here now but this should be tunable
-     * by using setrlimit() Also we may want to set this smaller at some point.
+     * We have a hard limit of 8 files here now but this is actually tunable
+     * for child processes by using setrlimit().
      */
     kernel_proc->files = kcalloc(1, SIZEOF_FILES(8));
     if (!kernel_proc->files) {
@@ -193,6 +205,8 @@ static void init_kernel_proc(void)
     if (fs_fildes_set(kernel_proc->files->fd[STDERR_FILENO],
                 &kerror_vnode, O_WRONLY))
         panic(panic_msg);
+
+    init_rlims(&kernel_proc->rlim);
 }
 
 void procarr_realloc(void)
