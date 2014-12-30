@@ -63,14 +63,6 @@ int main(int argc, char * argv[], char * envp[])
 {
     int r0, r1, r2;
 
-#if 0
-    mkdir("/dev", S_IRWXU | S_IRGRP | S_IXGRP);
-    mount("", "/dev", "devfs", 0, "");
-
-    mkdir("/proc", S_IRWXU | S_IRGRP | S_IXGRP);
-    mount("", "/proc", "procfs", 0, "");
-#endif
-
     close(STDIN_FILENO);
     close(STDOUT_FILENO);
     close(STDERR_FILENO);

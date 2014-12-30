@@ -76,8 +76,13 @@ struct vm_mm_struct {
                                  *   [n] = allocs
                                  */
     int nr_regions;             /*!< Number of regions allocated. */
+    mtx_t regions_lock;
     /* TODO Lock */
 };
+
+/* Region insert operations */
+#define VM_INSOP_SET_PT 1   /*!< Set default page tabe from process vpt. */
+#define VM_INSOP_MAP_REG 2  /*!< Map the region to the given proc. */
 
 /**
  * Compare vmp_pt rb tree nodes.
@@ -94,14 +99,11 @@ RB_PROTOTYPE(ptlist, vm_pt, entry_, ptlist_compare);
 
 /**
  * Get a page table for a given virtual address.
- * @param ptlist_head   is a structure containing all page tables.
- * @param mpt           is a master page table.
  * @param vaddr         is the virtual address that will be mapped into
  *                      a returned page table.
  * @return Returs a page table where vaddr can be mapped.
  */
-struct vm_pt * ptlist_get_pt(struct ptlist * ptlist_head, mmu_pagetable_t * mpt,
-        uintptr_t vaddr);
+struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr);
 
 /**
  * Free ptlist and its page tables.
@@ -169,18 +171,20 @@ struct buf * vm_newsect(uintptr_t vaddr, size_t size, int prot);
  */
 void vm_updateusr_ap(struct buf * region);
 
-/**
- * @note region pt is not updated.
- */
-int vm_add_region(struct vm_mm_struct * mm, struct buf * region);
+int realloc_mm_regions(struct vm_mm_struct * mm, int new_count);
 
 /**
+ * Insert a reference to a region, set its pt and map.
  * @note region pt is updated.
+ * @param region is the region to be inserted, since the region pt attribute is
+ *               modified region must be set.
+ * @returns value >= 0 succeed and value is the region nr;
+ *          value < 0 failed with an error code.
  */
-int vm_proc_add_region(struct proc_info * proc, struct buf * region);
+int vm_insert_region(struct proc_info * proc, struct buf * region, int op);
 
-int vm_replace_region(struct vm_mm_struct * mm, struct buf * region,
-                      int region_nr);
+int vm_replace_region(struct proc_info * proc, struct buf * region,
+                      int region_nr, int op);
 
 /**
  * Map a VM region with the given page table.

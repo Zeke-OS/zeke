@@ -132,6 +132,7 @@ static void init_kernel_proc(void)
 {
     const char panic_msg[] = "Can't init kernel process";
     proc_info_t * kernel_proc;
+    int err;
 
     (*_procarr)[0] = kcalloc(1, sizeof(proc_info_t));
     kernel_proc = (*_procarr)[0];
@@ -149,9 +150,8 @@ static void init_kernel_proc(void)
     /*
      * Create regions
      */
-    kernel_proc->mm.regions = kcalloc(3, sizeof(void *));
-    kernel_proc->mm.nr_regions = 3;
-    if (!kernel_proc->mm.regions) {
+    err = realloc_mm_regions(&kernel_proc->mm, 3);
+    if (err) {
         panic(panic_msg);
     }
 
@@ -170,9 +170,11 @@ static void init_kernel_proc(void)
     mtx_init(&(kprocvm_code->lock), MTX_TYPE_SPIN);
     mtx_init(&(kprocvm_heap->lock), MTX_TYPE_SPIN);
 
+    mtx_lock(&kernel_proc->mm.regions_lock);
     (*kernel_proc->mm.regions)[MM_CODE_REGION] = kprocvm_code;
-    (*kernel_proc->mm.regions)[MM_STACK_REGION] = 0;
+    (*kernel_proc->mm.regions)[MM_STACK_REGION] = NULL;
     (*kernel_proc->mm.regions)[MM_HEAP_REGION] = kprocvm_heap;
+    mtx_unlock(&kernel_proc->mm.regions_lock);
 
     /*
      * Break values
@@ -203,8 +205,9 @@ static void init_kernel_proc(void)
     /* stderr */
     kernel_proc->files->fd[STDERR_FILENO] = kcalloc(1, sizeof(file_t));
     if (fs_fildes_set(kernel_proc->files->fd[STDERR_FILENO],
-                &kerror_vnode, O_WRONLY))
+                      &kerror_vnode, O_WRONLY)) {
         panic(panic_msg);
+    }
 
     init_rlims(&kernel_proc->rlim);
 }
@@ -301,6 +304,7 @@ void _proc_free(proc_info_t * p)
     }
 
     /* Free regions */
+    mtx_lock(&p->mm.regions_lock);
     if (p->mm.regions) {
         for (int i = 0; i < p->mm.nr_regions; i++) {
             if ((*p->mm.regions)[i]->vm_ops->rfree)
@@ -313,6 +317,8 @@ void _proc_free(proc_info_t * p)
 
         /* Free regions array */
         kfree(p->mm.regions);
+
+        /* RFE should not unlock regions? */
     }
 
     if (p->mm.mpt.pt_addr)
@@ -418,6 +424,7 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
         return -ESRCH; /* Process doesn't exist. */
     }
 
+    mtx_lock(&pcb->mm.regions_lock);
     for (int i = 0; i < pcb->mm.nr_regions; i++) {
         region = (*pcb->mm.regions)[i];
 #ifdef configPROC_DEBUG
@@ -443,13 +450,16 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
             }
 
             new_region->b_uflags &= ~VM_PROT_COW; /* No more COW. */
-            err = vm_replace_region(&pcb->mm, new_region, i);
+            mtx_unlock(&pcb->mm.regions_lock);
+            err = vm_replace_region(pcb, new_region, i,
+                                    VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
             if (err)
                 return err;
 
             return 0; /* COW done. */
         }
     }
+    mtx_unlock(&pcb->mm.regions_lock);
 
     return -EFAULT; /* Not found */
 }

@@ -172,10 +172,7 @@ int kinit(void)
         (*init_proc->mm.regions)[MM_STACK_REGION] = init_vmstack;
         vm_updateusr_ap(init_vmstack);
 
-        vpt = ptlist_get_pt(
-                &(init_proc->mm.ptlist_head),
-                &(init_proc->mm.mpt),
-                init_vmstack->b_mmu.vaddr);
+        vpt = ptlist_get_pt(&init_proc->mm, init_vmstack->b_mmu.vaddr);
         if (vpt == 0)
             panic("Couldn't get vpt for init stack");
 

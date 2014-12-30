@@ -67,8 +67,8 @@ int exec_file(file_t * file, struct buf * env_bp,
     }
 
     /* Map new environment */
-    err = vm_proc_add_region(curproc, env_bp);
-    if (err) {
+    err = vm_insert_region(curproc, env_bp, VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
+    if (err < 0) {
         if (env_bp->vm_ops && env_bp->vm_ops->rfree)
             env_bp->vm_ops->rfree(env_bp);
         else {
@@ -101,6 +101,7 @@ int exec_file(file_t * file, struct buf * env_bp,
     if (tid <= 0) {
         panic("Exec failed");
     }
+    err = 0;
 
     goto out;
 fail:
@@ -117,7 +118,8 @@ out:
          */
         //curproc->main_thread->flags |= SCHED_DETACH_FLAG;
         curproc->main_thread = sched_get_thread_info(tid);
-        thread_die(0); /* Don't return but die. */
+        /* Don't return but die. */
+        thread_die(0);
     }
 
     return retval;

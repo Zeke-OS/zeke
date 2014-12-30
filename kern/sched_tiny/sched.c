@@ -329,6 +329,12 @@ void sched_sleep_current_thread(int permanent)
 
     while (current_thread->flags & SCHED_WAIT_FLAG)
         idle_sleep();
+
+    if (permanent) {
+        while (1) {
+            idle_sleep();
+        }
+    }
 }
 
 void sched_current_thread_yield(int sleep_flag)

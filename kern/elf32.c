@@ -120,7 +120,6 @@ int load_elf32(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base)
     size_t phsize, nr_newsections;
     int e_type;
     uintptr_t rbase;
-    struct vm_mm_struct * mm = &proc->mm;
     int retval = 0;
 
     elfhdr = kmalloc(sizeof(struct elf32_header));
@@ -184,25 +183,32 @@ int load_elf32(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base)
 
     /* Load sections */
     for (size_t i = 0; i < elfhdr->e_phnum; i++) {
-        if (phdr[i].p_type == PT_LOAD && phdr[i].p_memsz != 0) {
-            struct buf * sect;
-            int err;
+        const char * const panicmsg = "Failed to map a section while in exec.";
+        struct buf * sect;
+        int err;
 
-            retval = load_section(&sect, file, rbase, &phdr[i]);
-            if (retval)
-                goto out;
+        if (!(phdr[i].p_type == PT_LOAD && phdr[i].p_memsz != 0))
+            continue;
 
-            if (e_type == ET_EXEC && i < 2) {
-                const int reg_nr = (i == 0) ? MM_CODE_REGION : MM_HEAP_REGION;
+        retval = load_section(&sect, file, rbase, &phdr[i]);
+        if (retval)
+            goto out;
 
-                if (i == 0)
-                    *vaddr_base = phdr[i].p_vaddr + rbase;
-                err = vm_replace_region(mm, sect, reg_nr);
-                if (err) {
-                    panic("Failed to map a section while in exec.");
-                }
-            } else {
-                vm_add_region(mm, sect);
+        if (e_type == ET_EXEC && i < 2) {
+            const int reg_nr = (i == 0) ? MM_CODE_REGION : MM_HEAP_REGION;
+
+            if (i == 0)
+                *vaddr_base = phdr[i].p_vaddr + rbase;
+            err = vm_replace_region(proc, sect, reg_nr,
+                                    VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
+            if (err) {
+                panic(panicmsg);
+            }
+        } else {
+            err = vm_insert_region(proc, sect,
+                                   VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
+            if (err < 0) {
+                panic(panicmsg);
             }
         }
     }

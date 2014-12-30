@@ -59,9 +59,10 @@ int ptlist_compare(struct vm_pt * a, struct vm_pt * b)
     return (int)(vaddr_a - vaddr_b);
 }
 
-struct vm_pt * ptlist_get_pt(struct ptlist * ptlist_head, mmu_pagetable_t * mpt,
-        uintptr_t vaddr)
+struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr)
 {
+    struct ptlist * const ptlist_head = &mm->ptlist_head;
+    mmu_pagetable_t * const mpt = &mm->mpt;
     struct vm_pt * vpt = 0;
     struct vm_pt filter = {
         .pt.vaddr = MMU_CPT_VADDR(vaddr)
@@ -139,11 +140,7 @@ int copyin_proc(struct proc_info * proc, const void * uaddr, void * kaddr,
         return -EFAULT;
     }
 
-    vpt = ptlist_get_pt(
-            &(curproc->mm.ptlist_head),
-            &(curproc->mm.mpt),
-            (uintptr_t)uaddr);
-
+    vpt = ptlist_get_pt(&curproc->mm, (uintptr_t)uaddr);
     if (!vpt)
         panic("Can't copyin()");
 
@@ -172,11 +169,7 @@ int copyout_proc(struct proc_info * proc, const void * kaddr, void * uaddr,
         return -EFAULT;
     }
 
-    vpt = ptlist_get_pt(
-            &(proc->mm.ptlist_head),
-            &(proc->mm.mpt),
-            (uintptr_t)uaddr);
-
+    vpt = ptlist_get_pt(&proc->mm, (uintptr_t)uaddr);
     if (!vpt)
         panic("Can't copyout()");
 
@@ -205,9 +198,7 @@ int copyinstr(const char * uaddr, char * kaddr, size_t len, size_t * done)
                 return -EFAULT;
             }
 
-            vpt = ptlist_get_pt(&(curproc->mm.ptlist_head),
-                                &(curproc->mm.mpt),
-                                (uintptr_t)uaddr);
+            vpt = ptlist_get_pt(&curproc->mm, (uintptr_t)uaddr);
             if (!vpt)
                 panic("Can't copyinstr()");
 
@@ -301,85 +292,157 @@ void vm_updateusr_ap(struct buf * region)
     mtx_unlock(&(region->lock));
 }
 
-static int realloc_mm_regions(struct vm_mm_struct * mm, size_t new_size)
+/* TODO Add locks for regions array */
+int realloc_mm_regions(struct vm_mm_struct * mm, int new_count)
 {
     struct buf * (*new_regions)[];
+    size_t i = mm->nr_regions;
 
-    new_regions = krealloc(mm->regions,
-            (mm->nr_regions + 1) * sizeof(struct buf *));
+    /* TODO Remove me */
+    char buf[80];
+    ksprintf(buf, sizeof(buf),
+             "realloc_mm_regions(mm %p, new_count %d), old %d\n",
+             mm, new_count, i);
+    KERROR(KERROR_DEBUG, buf);
+
+    if (i == 0) {
+        /* TODO ticket lock? */
+        mtx_init(&mm->regions_lock, MTX_TYPE_SPIN);
+    }
+    mtx_lock(&mm->regions_lock);
+
+    if (new_count <= i) {
+        ksprintf(buf, sizeof(buf),
+                 "realloc_mm_regions cancelled %d <= %d\n",
+                 new_count, i);
+        KERROR(KERROR_DEBUG, buf);
+        return 0;
+    }
+
+    new_regions = krealloc(mm->regions, new_count * sizeof(struct buf *));
     if (!new_regions)
         return -ENOMEM;
+
+    for (; i < new_count; i++) {
+        (*new_regions)[i] = NULL;
+    }
+
     mm->regions = new_regions;
-    mm->nr_regions = mm->nr_regions + 1;
+    mm->nr_regions = new_count;
+
+    mtx_unlock(&mm->regions_lock);
 
     return 0;
 }
 
-/* TODO Should return mm->nr_regions */
-int vm_add_region(struct vm_mm_struct * mm, struct buf * region)
+/**
+ * Insert a reference to a region but don't map it.
+ * @note region pt is not updated.
+ * @param region is the region to be inserted, can be null to allow allocations
+ *               from regions array.
+ * @returns value >= 0 succeed and value is the region nr;
+ *          value < 0 failed with an error code.
+ */
+static int vm_insert_region_ref(struct vm_mm_struct * mm, struct buf * region)
 {
-    int err;
+    size_t nr_regions = mm->nr_regions;
+    int slot = -1, err;
 
-    err = realloc_mm_regions(mm, (mm->nr_regions + 1) * sizeof(struct buf *));
+    mtx_lock(&mm->regions_lock);
+    for (size_t i = 0; i < nr_regions; i++) {
+        if ((*mm->regions)[i] == NULL) {
+            slot = i;
+            break;
+        }
+    }
+    mtx_unlock(&mm->regions_lock);
+
+    if (slot == -1) {
+        slot = nr_regions;
+        err = realloc_mm_regions(mm, nr_regions + 1);
+        if (err)
+            return err;
+    }
+
+    mtx_lock(&mm->regions_lock);
+    (*mm->regions)[slot] = region;
+    mtx_unlock(&mm->regions_lock);
+
+    return slot;
+}
+
+int vm_insert_region(struct proc_info * proc, struct buf * region, int op)
+{
+    int slot, err;
+
+    KASSERT(region, "Region must be set");
+
+    slot = vm_insert_region_ref(&proc->mm, NULL);
+    if (slot < 0)
+        return slot;
+
+    err = vm_replace_region(proc, region, slot, op);
     if (err)
         return err;
 
-    (*mm->regions)[mm->nr_regions] = region;
-
-    return 0;
+    return slot;
 }
 
-int vm_proc_add_region(struct proc_info * proc, struct buf * region)
+int vm_replace_region(struct proc_info * proc, struct buf * region,
+                      int region_nr, int op)
 {
-    struct vm_mm_struct * mm = &proc->mm;
-    int err;
-
-    err = vm_add_region(mm, NULL);
-    if (err)
-        return err;
-
-    err = vm_replace_region(mm, region, mm->nr_regions - 1);
-
-    return err;
-}
-
-int vm_replace_region(struct vm_mm_struct * mm, struct buf * region,
-                      int region_nr)
-{
+    struct vm_mm_struct * const mm = &proc->mm;
     struct vm_pt * vpt;
     struct buf * old_region;
     char buf[80];
     int err;
 
-    /* TODO realloc regions struct etc. */
-    if (region_nr > mm->nr_regions)
-        panic("Operation not supported");
+    /*
+     * Realloc if necessary.
+     */
+    if (region_nr >= mm->nr_regions) {
+        err = realloc_mm_regions(mm, region_nr + 1);
+        if (err)
+            return err;
+    }
 
-    /* TODO Free old regions struct and its contents */
     /*
      * Free the old region as this process no longer uses it.
      * (Usually decrements some internal refcount)
      */
+    mtx_lock(&mm->regions_lock);
     old_region = (*mm->regions)[region_nr];
-    if (old_region && old_region->vm_ops && old_region->vm_ops->rfree)
+    mtx_unlock(&mm->regions_lock);
+    (*mm->regions)[region_nr] = NULL;
+    if (old_region && old_region->vm_ops && old_region->vm_ops->rfree) {
         old_region->vm_ops->rfree(old_region);
-
-    (*mm->regions)[region_nr] = region;
+    }
 
     /*
-     * Map the new region.
+     * Get & set page table.
      */
-    vpt = ptlist_get_pt(&mm->ptlist_head,
-                        &mm->mpt,
-                        region->b_mmu.vaddr);
-    if (!vpt)
-        return -ENOMEM;
+    if (op & VM_INSOP_SET_PT) {
+        vpt = ptlist_get_pt(mm, region->b_mmu.vaddr);
+        if (!vpt)
+            return -ENOMEM;
 
-    region->b_mmu.pt = &vpt->pt;
-    err = vm_map_region(region, vpt);
+        region->b_mmu.pt = &vpt->pt;
+    }
+
+    err = 0;
+    if (op & (VM_INSOP_SET_PT | VM_INSOP_MAP_REG)) {
+        err = vm_map_region(region, vpt);
+    } else if (op & VM_INSOP_MAP_REG) {
+        err = vm_mapproc_region(proc, region);
+    }
     if (err)
         return err;
 
+    mtx_lock(&mm->regions_lock);
+    (*mm->regions)[region_nr] = region;
+    mtx_unlock(&mm->regions_lock);
+
+    /* TODO Hide debugging message with kconfig */
     ksprintf(buf, sizeof(buf), "Mapped sect %d to %x (phys:%x)\n",
              region_nr, region->b_mmu.vaddr, region->b_mmu.paddr);
     KERROR(KERROR_DEBUG, buf);
@@ -396,7 +459,7 @@ int vm_map_region(struct buf * region, struct vm_pt * pt)
     vm_updateusr_ap(region);
     mtx_lock(&(region->lock));
 
-    mmu_region = region->b_mmu; /* Make a copy of mmu region struct */
+    mmu_region = region->b_mmu; /* Make a copy. */
     mmu_region.pt = &(pt->pt);
 
     mtx_unlock(&(region->lock));
@@ -408,8 +471,7 @@ int vm_mapproc_region(struct proc_info * proc, struct buf * region)
 {
     struct vm_pt * vpt;
 
-    vpt = ptlist_get_pt(&proc->mm.ptlist_head, &proc->mm.mpt,
-                        region->b_mmu.vaddr);
+    vpt = ptlist_get_pt(&proc->mm, region->b_mmu.vaddr);
     if (!vpt)
         return -ENOMEM;
 

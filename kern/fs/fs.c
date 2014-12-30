@@ -476,7 +476,7 @@ perms_ok:
     }
 
     if (S_ISDIR(vnode->vn_mode))
-        new_fildes->seek_pos = 0x00000000FFFFFFFF; /* TODO Magic here */
+        new_fildes->seek_pos = DIRENT_SEEK_START;
 
     int fd = fs_fildes_cproc_next(new_fildes, 0);
     if (fd < 0) {

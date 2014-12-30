@@ -104,8 +104,9 @@ pid_t proc_fork(pid_t pid)
     }
 
     /* Allocate an array for regions. */
-    new_proc->mm.regions =
-        kmalloc(old_proc->mm.nr_regions * sizeof(struct buf *));
+    new_proc->mm.regions = NULL;
+    new_proc->mm.nr_regions = 0;
+    realloc_mm_regions(&new_proc->mm, old_proc->mm.nr_regions);
     if (!new_proc->mm.regions) {
         retval = -ENOMEM;
         goto free_res;
@@ -161,6 +162,9 @@ pid_t proc_fork(pid_t pid)
      */
     for (int i = MM_HEAP_REGION; i < old_proc->mm.nr_regions; i++) {
         vm_reg_tmp = (*old_proc->mm.regions)[i];
+        if (!vm_reg_tmp)
+            continue;
+
         if (vm_reg_tmp->vm_ops && vm_reg_tmp->vm_ops->rref)
             vm_reg_tmp->vm_ops->rref(vm_reg_tmp);
 
@@ -173,10 +177,6 @@ pid_t proc_fork(pid_t pid)
         /* Set COW bit */
         if ((*new_proc->mm.regions)[i]->b_uflags & VM_PROT_WRITE) {
             (*new_proc->mm.regions)[i]->b_uflags |= VM_PROT_COW;
-#if 0
-            /* Unnecessary as vm_map_region() will do this too. */
-            vm_updateusr_ap((*new_proc->mm.regions)[i]);
-#endif
         }
 
         err = vm_mapproc_region(new_proc, (*new_proc->mm.regions)[i]);
@@ -193,7 +193,7 @@ pid_t proc_fork(pid_t pid)
 #ifdef configPROC_DEBUG
     KERROR(KERROR_DEBUG, "Copy file descriptors\n");
 #endif
-    size_t nofile_max = old_proc->rlim[RLIMIT_NOFILE].rlim_max;
+    int nofile_max = old_proc->rlim[RLIMIT_NOFILE].rlim_max;
     if (nofile_max < 0) {
 #if configRLIMIT_NOFILE < 0
 #error configRLIMIT_NOFILE can't be negative.
@@ -435,15 +435,15 @@ static int clone_stack(proc_info_t * new_proc, proc_info_t * old_proc)
     }
 
     if (new_region) {
-        if ((vpt = ptlist_get_pt(
-                        &(new_proc->mm.ptlist_head),
-                        &(new_proc->mm.mpt),
-                        new_region->b_mmu.vaddr)) == 0) {
+        struct vm_mm_struct * const mm = &new_proc->mm;
+        if ((vpt = ptlist_get_pt(mm, new_region->b_mmu.vaddr)) == 0) {
             return -ENOMEM;
         }
 
-        (*new_proc->mm.regions)[MM_STACK_REGION] = new_region;
-        vm_map_region((*new_proc->mm.regions)[MM_STACK_REGION], vpt);
+        mtx_lock(&mm->regions_lock);
+        (*mm->regions)[MM_STACK_REGION] = new_region;
+        vm_map_region((*mm->regions)[MM_STACK_REGION], vpt);
+        mtx_unlock(&mm->regions_lock);
     }
 
     return 0;
