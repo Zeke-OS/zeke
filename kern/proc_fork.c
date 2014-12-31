@@ -58,96 +58,46 @@ static int clone_L2_pt(proc_info_t * const new_proc,
 static int clone_stack(proc_info_t * new_proc, proc_info_t * old_proc);
 static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc);
 
-pid_t proc_fork(pid_t pid)
+static int alloc_master_pt(proc_info_t * new_proc)
 {
-    /*
-     * http://pubs.opengroup.org/onlinepubs/9699919799/functions/fork.html
-     */
-
-#ifdef configPROC_DEBUG
-    char buf[80];
-    ksprintf(buf, sizeof(buf), "fork(%u)\n", pid);
-    KERROR(KERROR_DEBUG, buf);
-#endif
-
-    proc_info_t * const old_proc = proc_get_struct_l(pid);
-    proc_info_t * new_proc;
-    int err;
-    pid_t retval = -EAGAIN;
-
-    /* Check that the old PID was valid. */
-    if (!old_proc || (old_proc->state == PROC_STATE_INITIAL)) {
-        retval = -EINVAL;
-        goto out;
-    }
-
-    new_proc = clone_proc_info(old_proc);
-    if (!new_proc) { /* Check that clone was ok */
-        retval = -ENOMEM;
-        goto out;
-    }
-
-    procarr_realloc();
-
-    /* Clear some things required to be zeroed at this point */
-    new_proc->state = PROC_STATE_INITIAL;
-    new_proc->files = 0;
-    /* ..and then start to fix things. */
-
     /* Allocate a master page table for the new process. */
     new_proc->mm.mpt.vaddr = 0;
     new_proc->mm.mpt.type = MMU_PTT_MASTER;
     new_proc->mm.mpt.dom = MMU_DOM_USER;
-    if (ptmapper_alloc(&(new_proc->mm.mpt))) {
-        retval = -ENOMEM;
-        goto free_res;
-    }
 
-    /* Allocate an array for regions. */
-    new_proc->mm.regions = NULL;
-    new_proc->mm.nr_regions = 0;
-    realloc_mm_regions(&new_proc->mm, old_proc->mm.nr_regions);
-    if (!new_proc->mm.regions) {
-        retval = -ENOMEM;
-        goto free_res;
-    }
+    if (ptmapper_alloc(&(new_proc->mm.mpt)))
+        return -ENOMEM;
 
-    /* Clone master page table. */
-    if (mmu_ptcpy(&(new_proc->mm.mpt), &(old_proc->mm.mpt))) {
-        retval = -EAGAIN; // Actually more like -EINVAL
-        goto free_res;
-    }
+    return 0;
+}
 
-    /* Clone L2 page tables. */
-    if (clone_L2_pt(new_proc, old_proc) < 0) {
-        retval = -ENOMEM;
-        goto free_res;
-    }
-
-    /* Variables for cloning and referencing regions. */
+static int clone_code_region(proc_info_t * new_proc, proc_info_t * old_proc)
+{
     struct buf * vm_reg_tmp;
 
     /* Copy code region pointer. */
     vm_reg_tmp = (*old_proc->mm.regions)[MM_CODE_REGION];
     if (!vm_reg_tmp) {
         KERROR(KERROR_ERR, "Old proc code region can't be null\n");
-        retval = -EINVAL; /* Not allowed but this shouldn't happen */
-        goto free_res;
+        return -EINVAL; /* Not allowed but this shouldn't happen */
     }
+
+    /* Incr ref */
     if (vm_reg_tmp->vm_ops)
         vm_reg_tmp->vm_ops->rref(vm_reg_tmp);
+
     (*new_proc->mm.regions)[MM_CODE_REGION] = vm_reg_tmp;
 
-    /* Clone stack region */
-    if ((retval = clone_stack(new_proc, old_proc))) {
-#ifdef configPROC_DEBUG
-        ksprintf(buf, sizeof(buf), "Cloning stack region failed.\n");
-        KERROR(KERROR_DEBUG, buf);
-#endif
-        goto free_res;
-    }
+    return 0;
+}
 
-    /* Copy other region pointers.
+static int clone_oth_regions(proc_info_t * new_proc, proc_info_t * old_proc)
+{
+    struct buf * vm_reg_tmp;
+    int err;
+
+    /*
+     * Copy other region pointers.
      * As an iteresting sidenote, what we are doing here and earlier when L1
      * page table was cloned is that we are losing link between the region
      * structs and the actual L1 page table of this process. However it
@@ -180,11 +130,92 @@ pid_t proc_fork(pid_t pid)
         }
 
         err = vm_mapproc_region(new_proc, (*new_proc->mm.regions)[i]);
-        if (err) {
-            retval = -ENOMEM;
-            goto free_res;
-        }
+        if (err)
+            return -ENOMEM;
     }
+
+    return 0;
+}
+
+pid_t proc_fork(pid_t pid)
+{
+    /*
+     * http://pubs.opengroup.org/onlinepubs/9699919799/functions/fork.html
+     */
+
+#ifdef configPROC_DEBUG
+    char buf[80];
+    ksprintf(buf, sizeof(buf), "fork(%u)\n", pid);
+    KERROR(KERROR_DEBUG, buf);
+#endif
+
+    proc_info_t * const old_proc = proc_get_struct_l(pid);
+    proc_info_t * new_proc;
+    pid_t retval;
+
+    /* Check that the old PID was valid. */
+    if (!old_proc || (old_proc->state == PROC_STATE_INITIAL)) {
+        retval = -EINVAL;
+        goto out;
+    }
+
+    new_proc = clone_proc_info(old_proc);
+    if (!new_proc) { /* Check that clone was ok */
+        retval = -ENOMEM;
+        goto out;
+    }
+
+    procarr_realloc();
+
+    /* Clear some things required to be zeroed at this point */
+    new_proc->state = PROC_STATE_INITIAL;
+    new_proc->files = 0;
+    /* ..and then start to fix things. */
+
+    /* Allocate a master page table for the new process. */
+    retval = alloc_master_pt(new_proc);
+    if (retval)
+        goto free_res;
+
+    /* Allocate an array for regions. */
+    new_proc->mm.regions = NULL;
+    new_proc->mm.nr_regions = 0;
+    realloc_mm_regions(&new_proc->mm, old_proc->mm.nr_regions);
+    if (!new_proc->mm.regions) {
+        retval = -ENOMEM;
+        goto free_res;
+    }
+
+    /* Clone master page table. */
+    if (mmu_ptcpy(&(new_proc->mm.mpt), &(old_proc->mm.mpt))) {
+        retval = -EAGAIN; // Actually more like -EINVAL
+        goto free_res;
+    }
+
+    /* Clone L2 page tables. */
+    if (clone_L2_pt(new_proc, old_proc) < 0) {
+        retval = -ENOMEM;
+        goto free_res;
+    }
+
+    /* Copy code region pointer. */
+    retval = clone_code_region(new_proc, old_proc);
+    if (retval)
+        goto free_res;
+
+    /* Clone stack region */
+    retval = clone_stack(new_proc, old_proc);
+    if (retval) {
+#ifdef configPROC_DEBUG
+        ksprintf(buf, sizeof(buf), "Cloning stack region failed.\n");
+        KERROR(KERROR_DEBUG, buf);
+#endif
+        goto free_res;
+    }
+
+    retval = clone_oth_regions(new_proc, old_proc);
+    if (retval)
+        goto free_res;
 
     /* fork() signals */
     ksignal_signals_fork_reinit(&new_proc->sigs);

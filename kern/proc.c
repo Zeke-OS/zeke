@@ -742,16 +742,21 @@ static int sys_proc_times(void * user_args)
 static int sys_proc_getbreak(void * user_args)
 {
     struct _ds_getbreak ds;
+    int err;
 
     if (!useracc(user_args, sizeof(struct _ds_getbreak), VM_PROT_WRITE)) {
         set_errno(EFAULT);
         return -1;
     }
 
-    copyin(user_args, &ds, sizeof(ds));
+    err = copyin(user_args, &ds, sizeof(ds));
     ds.start = curproc->brk_start;
     ds.stop = curproc->brk_stop;
-    copyout(&ds, user_args, sizeof(ds));
+    err |= copyout(&ds, user_args, sizeof(ds));
+    if (err) {
+        set_errno(EFAULT);
+        return -1;
+    }
 
     return 0;
 }
