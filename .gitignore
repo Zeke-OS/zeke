@@ -55,6 +55,7 @@ manifest
 # List files
 *.lst
 *.map
+*.list
 
 # Simulation files
 *.sim

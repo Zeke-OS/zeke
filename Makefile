@@ -115,6 +115,7 @@ clean:
 	$(MAKE) -C kern clean
 	$(MAKE) -C bin clean
 	$(MAKE) -C sbin clean
+	$(MAKE) -C opt/test clean
 	find . -type f -name "*.o" -exec rm -f {} \;
 	find . -type f -name "*.bc" -exec rm -f {} \;
 	find . -type f -name "*.opt.bc" -exec rm -f {} \;
