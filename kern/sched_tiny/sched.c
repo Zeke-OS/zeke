@@ -234,7 +234,7 @@ void sched_schedule(void)
 
             if (SCHED_TEST_DETACHED_ZOMBIE(current_thread->flags)) {
                 thread_terminate(current_thread->id);
-                current_thread = 0;
+                current_thread = NULL;
             }
             continue; /* Select next thread */
         } else if ( /* if maximum time slices for this thread is used */

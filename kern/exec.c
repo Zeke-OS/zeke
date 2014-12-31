@@ -116,8 +116,10 @@ out:
          * keep disable_interrupt() time as short as possible and POSIX seems
          * to be quite silent about this issue anyway.
          */
-        //curproc->main_thread->flags |= SCHED_DETACH_FLAG;
+        current_thread->inh.first_child = NULL;
+        current_thread->inh.parent = NULL;
         curproc->main_thread = sched_get_thread_info(tid);
+        sched_thread_detach(current_thread->id);
         /* Don't return but die. */
         thread_die(0);
     }

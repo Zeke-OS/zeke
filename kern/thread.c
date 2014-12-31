@@ -504,10 +504,12 @@ int thread_terminate(pthread_t thread_id)
         } while ((child = child->inh.next_child) != NULL);
     }
 
-    /* We set this thread as a zombie. If detach is also set then
+    /*
+     * We set this thread as a zombie. If detach is also set then
      * sched_thread_remove() will remove this thread immediately but usually
-     * it's not, then it will release some resourses but left the thread
-     * struct mostly intact. */
+     * it's not, then it will release some resources but left the thread
+     * struct mostly intact.
+     */
     thread->flags |= SCHED_ZOMBIE_FLAG;
     thread->flags &= ~SCHED_EXEC_FLAG;
 
