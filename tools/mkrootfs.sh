@@ -12,10 +12,19 @@ mkfs.msdos -C "$IMG" -F 16 16384
 if [ $? -ne 0 ]; then
     exit 1
 fi
-dir2img lib
-dir2img bin
-dir2img sbin
+
 mmd -i "$IMG" dev
 mmd -i "$IMG" mnt
+mmd -i "$IMG" opt
+mmd -i "$IMG" opt/test
 mmd -i "$IMG" proc
 mmd -i "$IMG" tmp
+
+MANIFEST=$(find . -name manifest -exec dirname {} \;)
+for dir in $MANIFEST; do
+    dir2img $dir
+done
+
+
+
+

@@ -86,6 +86,10 @@ bin: lib
 sbin: lib
 	$(MAKE) -C sbin all
 
+# target_test: opttest - Target platform tests.
+opttest: lib
+	$(MAKE) -C opt/test all
+
 # target_comp: rootfs - Create an rootfs image.
 rootfs: dist
 	./tools/mkrootfs.sh

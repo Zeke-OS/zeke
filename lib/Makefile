@@ -91,8 +91,7 @@ OBJS := $(patsubst %.c, %.o, $(SRC-y))
 LIBSA = $(addsuffix .a, $(LIBS))
 
 
-all: $(LIBSA)
-	echo "$(LIBSA)" > manifest
+all: $(LIBSA) manifest
 
 $(ASOBJS): %.o: %.S $(AUTOCONF_H)
 	@echo "AS $@"
@@ -119,6 +118,9 @@ $(LIBSA): crt0_o $(OBJS) $(ASOBJS)
 	$(eval CUR_ARFLAGS := $($(CUR_LIB)-ARFLAGS))
 	@echo "AR $@"
 	@ar rcs $@ $(CUR_OBJS) $(CUR_ARFLAGS)
+
+manifest: $(LIBSA)
+	echo "$(LIBSA)" > manifest
 
 clean:
 	$(RM) $(ASOBJS) $(OBJS)

@@ -2,8 +2,7 @@
 BCS = $(patsubst %.c, %.bc, $(SRC-y))
 OBJS = $(patsubst %.c, %.o, $(SRC-y))
 
-all: $(BIN)
-	echo "$(BIN)" > manifest
+all: $(BIN) manifest
 
 $(ASOBJS): $(ASRC-y) $(AUTOCONF_H)
 	@echo "AS $@"
@@ -25,6 +24,9 @@ $(BIN): $(OBJS)
 	$(eval CUR_OBJS := $(patsubst %.c, %.o, $($(CUR_BIN)-SRC-y)))
 	@echo "LD $@"
 	$(ARMGNU)-ld -o $@ -T $(ROOT_DIR)/$(ELFLD) $(LDFLAGS) $(ROOT_DIR)/lib/crt1.a $(LDIR) $(CUR_OBJS) -lc
+
+manifest: $(BIN)
+	echo "$(BIN)" > manifest
 
 clean:
 	$(RM) $(ASOBJS) $(OBJS) $(BIN)
