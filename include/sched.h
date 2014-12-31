@@ -39,8 +39,6 @@
 #ifndef SCHED_H
 #define SCHED_H
 
-#include <autoconf.h>
-
 /* Nice leves */
 #define NICE_ERR        (100)   /*!< Cant't determine. */
 #define NICE_MAX        (20)    /*!< Realtime. */
