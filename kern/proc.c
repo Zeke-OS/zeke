@@ -491,6 +491,7 @@ static int sys_proc_wait(void * user_args)
 {
     pid_t pid_child;
     proc_info_t * child;
+    int * state;
 
     if (!useracc(user_args, sizeof(pid_t), VM_PROT_WRITE)) {
         set_errno(EFAULT);
@@ -508,9 +509,10 @@ static int sys_proc_wait(void * user_args)
     }
 
     /* Get the thread number we are waiting for */
-    pid_child = curproc->inh.first_child->pid;
+    pid_child = child->pid;
+    state = &child->state;
 
-    while (child->state != PROC_STATE_ZOMBIE) {
+    while (*state != PROC_STATE_ZOMBIE) {
         idle_sleep();
         /*
          * TODO In some cases we have to return early without waiting.

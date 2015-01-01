@@ -1,4 +1,5 @@
 /*-
+ * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1982, 1986, 1993
  *  The Regents of the University of California.  All rights reserved.
  *
@@ -47,54 +48,50 @@
 #endif
 
 /*
- * Protections are chosen from these bits, or-ed together
+ * Protections are chosen from these bits, or-ed together.
+ * Flags that appear here should match with corresponding VM_PROT flags.
  */
-#define PROT_NONE   0x00    /* no permissions */
-#define PROT_READ   0x01    /* pages can be read */
-#define PROT_WRITE  0x02    /* pages can be written */
-#define PROT_EXEC   0x04    /* pages can be executed */
+#define PROT_NONE   0x00    /*!< no permissions */
+#define PROT_READ   0x01    /*!< pages can be read */
+#define PROT_WRITE  0x02    /*!< pages can be written */
+#define PROT_EXEC   0x04    /*!< pages can be executed */
 
 /*
  * Flags contain sharing type and options.
  * Sharing types; choose one.
  */
-#define MAP_SHARED  0x0001      /* share changes */
-#define MAP_PRIVATE 0x0002      /* changes are private */
-#if __BSD_VISIBLE
-#define MAP_COPY    MAP_PRIVATE /* Obsolete */
-#endif
+#define MAP_SHARED          0x0001 /*!< share changes */
+#define MAP_PRIVATE         0x0002 /*!< changes are private */
 
 /*
  * Other flags
  */
-#define MAP_FIXED    0x0010 /* map addr must be exactly as requested */
+#define MAP_FIXED           0x0010 /*!< map addr must be exactly as requested */
 
 #if __BSD_VISIBLE
-#define MAP_RENAME   0x0020 /* Sun: rename private pages to file */
-#define MAP_NORESERVE    0x0040 /* Sun: don't reserve needed swap area */
-#define MAP_RESERVED0080 0x0080 /* previously misimplemented MAP_INHERIT */
-#define MAP_RESERVED0100 0x0100 /* previously unimplemented MAP_NOEXTEND */
-#define MAP_HASSEMAPHORE 0x0200 /* region may contain semaphores */
-#define MAP_STACK    0x0400 /* region grows down, like a stack */
-#define MAP_NOSYNC   0x0800 /* page to but do not sync underlying file */
+#define MAP_RENAME          0x0020 /*!< Sun: rename private pages to file */
+#define MAP_NORESERVE       0x0040 /*!< Sun: don't reserve needed swap area */
+#define MAP_HASSEMAPHORE    0x0200 /*!< region may contain semaphores */
+#define MAP_STACK           0x0400 /*!< region grows down, like a stack */
+#define MAP_NOSYNC          0x0800 /*!< don't sync underlying file */
 
 /*
  * Mapping type
  */
-#define MAP_FILE     0x0000 /* map from file (default) */
-#define MAP_ANON     0x1000 /* allocated from memory, swap space */
+#define MAP_FILE            0x0000 /*!< map from file (default) */
+#define MAP_ANON            0x1000 /*!< allocated from memory */
 #ifndef KERNEL_INTERNAL
-#define MAP_ANONYMOUS    MAP_ANON /* For compatibility. */
+#define MAP_ANONYMOUS       MAP_ANON /* For compatibility. */
 #endif /* !KERNEL_INTERNAL */
 
 /*
  * Extended flags
  */
-#define MAP_EXCL     0x00004000 /* for MAP_FIXED, fail if address is used */
-#define MAP_NOCORE   0x00020000 /* dont include these pages in a coredump */
+#define MAP_EXCL    0x00004000 /* for MAP_FIXED, fail if address is used */
+#define MAP_NOCORE  0x00020000 /* dont include these pages in a coredump */
 #define MAP_PREFAULT_READ 0x00040000 /* prefault mapping for reading */
 #ifdef __LP64__
-#define MAP_32BIT    0x00080000 /* map in the low 2GB of address space */
+#define MAP_32BIT   0x00080000 /* map in the low 2GB of address space */
 #endif
 
 /*
@@ -103,7 +100,7 @@
  * MAP_ALIGNED_SUPER requests optimal superpage alignment, but does
  * not enforce a specific alignment.
  */
-#define MAP_ALIGNED(n)   ((n) << MAP_ALIGNMENT_SHIFT)
+#define MAP_ALIGNED(n)      ((n) << MAP_ALIGNMENT_SHIFT)
 #define MAP_ALIGNMENT_SHIFT 24
 #define MAP_ALIGNMENT_MASK  MAP_ALIGNED(0xff)
 #define MAP_ALIGNED_SUPER   MAP_ALIGNED(1) /* align on a superpage */
@@ -179,49 +176,14 @@
 #define POSIX_MADV_DONTNEED _MADV_DONTNEED
 #endif
 
-#if defined(KERNEL_INTERNAL) || defined(_WANT_FILE)
-#include <sys/lock.h>
-#include <sys/mutex.h>
-#include <sys/queue.h>
-#include <sys/rangelock.h>
-#include <vm/vm.h>
-
-struct file;
-
-struct shmfd {
-    size_t      shm_size;
-    vm_object_t shm_object;
-    int     shm_refs;
-    uid_t       shm_uid;
-    gid_t       shm_gid;
-    mode_t      shm_mode;
-    int     shm_kmappings;
-
-    /*
-     * Values maintained solely to make this a better-behaved file
-     * descriptor for fstat() to run on.
-     */
-    struct timespec shm_atime;
-    struct timespec shm_mtime;
-    struct timespec shm_ctime;
-    struct timespec shm_birthtime;
-    ino_t       shm_ino;
-
-    struct label    *shm_label;     /* MAC label */
-    const char  *shm_path;
-
-    struct rangelock shm_rl;
-    struct mtx  shm_mtx;
+struct _mmap_args {
+    void * addr;
+    size_t bsize;
+    int prot;
+    int flags;
+    int fildes;
+    off_t off;
 };
-#endif
-
-#ifdef KERNEL_INTERNAL
-int shm_mmap(struct shmfd *shmfd, vm_size_t objsize, vm_ooffset_t foff,
-        vm_object_t *obj);
-int shm_map(struct file *fp, size_t size, off_t offset, void **memp);
-int shm_unmap(struct file *fp, void *mem, size_t size);
-
-#else /* !KERNEL_INTERNAL */
 
 __BEGIN_DECLS
 /*
@@ -253,7 +215,5 @@ int shm_open(const char *, int, mode_t);
 int shm_unlink(const char *);
 #endif
 __END_DECLS
-
-#endif /* !KERNEL_INTERNAL */
 
 #endif /* !_SYS_MMAN_H_ */

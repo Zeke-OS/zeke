@@ -412,8 +412,8 @@ int vm_replace_region(struct proc_info * proc, struct buf * region,
      */
     mtx_lock(&mm->regions_lock);
     old_region = (*mm->regions)[region_nr];
-    mtx_unlock(&mm->regions_lock);
     (*mm->regions)[region_nr] = NULL;
+    mtx_unlock(&mm->regions_lock);
     if (old_region && old_region->vm_ops && old_region->vm_ops->rfree) {
         old_region->vm_ops->rfree(old_region);
     }
@@ -430,7 +430,8 @@ int vm_replace_region(struct proc_info * proc, struct buf * region,
     }
 
     err = 0;
-    if (op & (VM_INSOP_SET_PT | VM_INSOP_MAP_REG)) {
+    const int mask = VM_INSOP_SET_PT | VM_INSOP_MAP_REG;
+    if ((op & mask) == mask) {
         err = vm_map_region(region, vpt);
     } else if (op & VM_INSOP_MAP_REG) {
         err = vm_mapproc_region(proc, region);

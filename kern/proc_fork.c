@@ -421,9 +421,9 @@ out:
 
 static int clone_stack(proc_info_t * new_proc, proc_info_t * old_proc)
 {
-    struct vm_pt * vpt;
     struct buf * const old_region = (*old_proc->mm.regions)[MM_STACK_REGION];
     struct buf * new_region = 0;
+    int err;
 
     if (old_region && old_region->vm_ops) { /* Only if vmp_ops are defined. */
 #ifdef configPROC_DEBUG
@@ -463,19 +463,13 @@ static int clone_stack(proc_info_t * new_proc, proc_info_t * old_proc)
 #ifdef configPROC_DEBUG
         KERROR(KERROR_DEBUG, "fork(): No stack created\n");
 #endif
+        return 0;
     }
 
-    if (new_region) {
-        struct vm_mm_struct * const mm = &new_proc->mm;
-        if ((vpt = ptlist_get_pt(mm, new_region->b_mmu.vaddr)) == 0) {
-            return -ENOMEM;
-        }
-
-        mtx_lock(&mm->regions_lock);
-        (*mm->regions)[MM_STACK_REGION] = new_region;
-        vm_map_region((*mm->regions)[MM_STACK_REGION], vpt);
-        mtx_unlock(&mm->regions_lock);
-    }
+    err = vm_replace_region(new_proc, new_region, MM_STACK_REGION,
+            (VM_INSOP_SET_PT | VM_INSOP_MAP_REG));
+    if (err)
+        return err;
 
     return 0;
 }

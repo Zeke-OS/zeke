@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Header file for syscalls.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -68,17 +68,18 @@
 #define SYSCALL_MMTOTYPE(ma, mi) (((ma) << DEV_MINORBITS) | (mi))
 
 /* Syscall groups */
-#define SYSCALL_GROUP_SCHED         0x1 /*!< Scheduler system call group. */
-#define SYSCALL_GROUP_THREAD        0x2 /*!< Thread system call group. */
-#define SYSCALL_GROUP_SYSCTL        0x3 /*!< Sysctl system call group. */
-#define SYSCALL_GROUP_SIGNAL        0x4 /*!< Signal system call group. */
-#define SYSCALL_GROUP_EXEC          0x5 /*!< Exec system call group. */
-#define SYSCALL_GROUP_PROC          0x6 /*!< Process system call group. */
-#define SYSCALL_GROUP_IPC           0x7 /*!< IPC system call group. */
-#define SYSCALL_GROUP_FS            0x8 /*!< File system system call group. */
-#define SYSCALL_GROUP_IOCTL         0x9 /*!< ioctl sysctem call group. */
-#define SYSCALL_GROUP_TIME          0xA /*!< Time system call group. */
-#define SYSCALL_GROUP_PRIV          0xB /*!< Pivileges system call group. */
+#define SYSCALL_GROUP_SCHED     0x1 /*!< Scheduler system call group. */
+#define SYSCALL_GROUP_THREAD    0x2 /*!< Thread system call group. */
+#define SYSCALL_GROUP_SYSCTL    0x3 /*!< Sysctl system call group. */
+#define SYSCALL_GROUP_SIGNAL    0x4 /*!< Signal system call group. */
+#define SYSCALL_GROUP_EXEC      0x5 /*!< Exec system call group. */
+#define SYSCALL_GROUP_PROC      0x6 /*!< Process system call group. */
+#define SYSCALL_GROUP_IPC       0x7 /*!< IPC system call group. */
+#define SYSCALL_GROUP_FS        0x8 /*!< File system system call group. */
+#define SYSCALL_GROUP_IOCTL     0x9 /*!< ioctl sysctem call group. */
+#define SYSCALL_GROUP_SHMEM     0xA /*!< Shared memory system call group. */
+#define SYSCALL_GROUP_TIME      0xB /*!< Time system call group. */
+#define SYSCALL_GROUP_PRIV      0xC /*!< Pivileges system call group. */
 
 /* List of syscalls */
 #define SYSCALL_SCHED_GET_LOADAVG   SYSCALL_MMTOTYPE(SYSCALL_GROUP_SCHED, 0x00)
@@ -142,6 +143,7 @@
 #define SYSCALL_FS_MOUNT            SYSCALL_MMTOTYPE(SYSCALL_GROUP_FS, 0x10)
 #define SYSCALL_FS_CHROOT           SYSCALL_MMTOTYPE(SYSCALL_GROUP_FS, 0x11)
 #define SYSCALL_IOCTL_GETSET        SYSCALL_MMTOTYPE(SYSCALL_GROUP_IOCTL, 0x00)
+#define SYSCALL_SHMEM_MMAP          SYSCALL_MMTOTYPE(SYSCALL_GROUP_SHMEM, 0x00)
 #define SYSCALL_TIME_GETTIME        SYSCALL_MMTOTYPE(SYSCALL_GROUP_TIME, 0x00)
 #define SYSCALL_PRIV_PCAP           SYSCALL_MMTOTYPE(SYSCALL_GROUP_PRIV, 0x00)
 

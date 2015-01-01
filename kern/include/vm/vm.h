@@ -80,8 +80,8 @@ struct vm_mm_struct {
 };
 
 /* Region insert operations */
-#define VM_INSOP_SET_PT 1   /*!< Set default page tabe from process vpt. */
-#define VM_INSOP_MAP_REG 2  /*!< Map the region to the given proc. */
+#define VM_INSOP_SET_PT  0x01 /*!< Set default page tabe from process vpt. */
+#define VM_INSOP_MAP_REG 0x02 /*!< Map the region to the given proc. */
 
 /**
  * Compare vmp_pt rb tree nodes.
@@ -220,6 +220,8 @@ int vm_replace_region(struct proc_info * proc, struct buf * region,
 
 /**
  * Map a VM region with the given page table.
+ * Usually you don't want to use this function but instead you want to use
+ * vm_replace_region() or vm_insert_region().
  * @note buf->b_mmu.pt is not respected and is considered as invalid.
  * @param region is a vm region buffer.
  * @param vm_pt is a vm page table.
@@ -229,6 +231,8 @@ int vm_map_region(struct buf * region, struct vm_pt * pt);
 
 /**
  * Map a VM region to given a process pointed by proc.
+ * Usually you don't want to use this function but instead you want to use
+ * vm_replace_region() or vm_insert_region().
  * @param proc is the process struct.
  * @param region is a vm region buffer.
  * @return Zero if succeed; non-zero error code otherwise.
