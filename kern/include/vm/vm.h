@@ -77,7 +77,6 @@ struct vm_mm_struct {
                                  */
     int nr_regions;             /*!< Number of regions allocated. */
     mtx_t regions_lock;
-    /* TODO Lock */
 };
 
 /* Region insert operations */
@@ -154,8 +153,17 @@ int copyout(const void * kaddr, void * uaddr, size_t len);
  */
 int copyinstr(const char * uaddr, char * kaddr, size_t len, size_t * done);
 
+/**
+ * Copyin from a process specified by proc argument.
+ * Arguments same as for copyin() except proc.
+ */
 int copyin_proc(struct proc_info * proc, const void * uaddr, void * kaddr,
         size_t len);
+
+/**
+ * Copyout to a process specified by proc argument.
+ * Arguments same as for copyout() except proc.
+ */
 int copyout_proc(struct proc_info * proc, const void * kaddr, void * uaddr,
         size_t len);
 
@@ -163,6 +171,11 @@ int copyout_proc(struct proc_info * proc, const void * kaddr, void * uaddr,
  * @}
  */
 
+/**
+ * Create a new empty general purpose section.
+ * Create a new empty buffer that can be inserted as a section/region
+ * to a process into regions array.
+ */
 struct buf * vm_newsect(uintptr_t vaddr, size_t size, int prot);
 
 /**
@@ -171,11 +184,21 @@ struct buf * vm_newsect(uintptr_t vaddr, size_t size, int prot);
  */
 void vm_updateusr_ap(struct buf * region);
 
+/**
+ * Reallocate MM regions array to a new size given in new_count.
+ * If new_count is smaller than the current size of regions array
+ * calling this function will be NOP i.e. this function will only
+ * icrease the size of the regions array. Note that not any part of the kernel
+ * should take a pointer to the regions array without taking regions_lock and
+ * any pointer to a regions array shall be consireded invalid when user doesn't
+ * hold lock to a regions_lock controlling that array.
+ * @param mm is a pointer to the mm struct to be updated.
+ * @param new_count is the new size of the regions array.
+ */
 int realloc_mm_regions(struct vm_mm_struct * mm, int new_count);
 
 /**
  * Insert a reference to a region, set its pt and map.
- * @note region pt is updated.
  * @param region is the region to be inserted, since the region pt attribute is
  *               modified region must be set.
  * @returns value >= 0 succeed and value is the region nr;
@@ -183,6 +206,15 @@ int realloc_mm_regions(struct vm_mm_struct * mm, int new_count);
  */
 int vm_insert_region(struct proc_info * proc, struct buf * region, int op);
 
+/**
+ * Replace a region in process running image.
+ * @param proc is a pointer to the PCB.
+ * @param region is the region to be inserted.
+ * @param region_nr is the region number to be replaced.
+ * @param op contains bitwise OR'ed operations/options (VM_INSOP_) instructions
+ *        how to handle the insertion.
+ * @return Zero if succeed; non-zero error code otherwise.
+ */
 int vm_replace_region(struct proc_info * proc, struct buf * region,
                       int region_nr, int op);
 
@@ -199,6 +231,7 @@ int vm_map_region(struct buf * region, struct vm_pt * pt);
  * Map a VM region to given a process pointed by proc.
  * @param proc is the process struct.
  * @param region is a vm region buffer.
+ * @return Zero if succeed; non-zero error code otherwise.
  */
 int vm_mapproc_region(struct proc_info * proc, struct buf * region);
 
