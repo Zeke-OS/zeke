@@ -512,22 +512,12 @@ static int sys_proc_wait(void * user_args)
     pid_child = child->pid;
     state = &child->state;
 
-    int i = 0;
     while (*state != PROC_STATE_ZOMBIE) {
         idle_sleep();
         /*
          * TODO In some cases we have to return early without waiting.
          * eg. signal received
          */
-        char buf[80];
-
-        i++;
-        if (i > 1000) {
-            ksprintf(buf, sizeof(buf), "waiting for pid = %d, state = %d\n",
-                     pid_child, *state);
-            KERROR(KERROR_DEBUG, buf);
-            i = 0;
-        }
     }
 
     /*
