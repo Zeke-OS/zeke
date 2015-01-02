@@ -41,6 +41,12 @@
 /* TODO */
 #include <sys/cdefs.h>
 
+struct _proc_wait_args {
+    pid_t pid;
+    int status;
+    int options;
+};
+
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
 pid_t  wait(int * status);

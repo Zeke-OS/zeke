@@ -137,12 +137,17 @@ typedef struct proc_info {
      */
     struct inh {
         struct proc_info * parent;      /*!< Parent thread. */
-        struct proc_info * first_child; /*!< Link to the first child. */
+        struct proc_info * first_child; /*!< Link to the first child of this
+                                         *   process. */
         struct proc_info * next_child;  /*!< Next child of the common parent. */
+        mtx_t lock;                     /*!< Lock for all children inh structs
+                                         *   of this process. */
     } inh;
 
     threadInfo_t * main_thread; /*!< Main thread of this process. */
 } proc_info_t;
+
+#define PROC_INH_LOCK_TYPE (MTX_TYPE_SPIN)
 
 extern int maxproc;                 /*!< Maximum # of processes, set. */
 extern int act_maxproc;             /*!< Effective maxproc. */

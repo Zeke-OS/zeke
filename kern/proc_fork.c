@@ -483,6 +483,8 @@ static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc)
     KERROR(KERROR_DEBUG, "Updating inheriance attributes of new_proc\n");
 #endif
 
+    mtx_init(&new_proc->inh.lock, PROC_INH_LOCK_TYPE);
+
     /* Initial values */
     new_proc->inh.parent = old_proc;
     new_proc->inh.first_child = NULL;

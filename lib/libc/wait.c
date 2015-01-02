@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Waiting.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,5 +36,16 @@
 
 pid_t wait(int * status)
 {
-    return syscall(SYSCALL_PROC_WAIT, status);
+    struct _proc_wait_args args = {
+        .pid = -1,
+        .options = 0
+    };
+    int retval;
+
+    retval = syscall(SYSCALL_PROC_WAIT, &args);
+
+    if (status)
+        *status = args.status;
+
+    return retval;
 }

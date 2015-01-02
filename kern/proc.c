@@ -38,6 +38,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/sysctl.h>
+#include <sys/wait.h>
 #include <tsched.h>
 #include <kstring.h>
 #include <libkern.h>
@@ -210,6 +211,8 @@ static void init_kernel_proc(void)
     }
 
     init_rlims(&kernel_proc->rlim);
+
+    mtx_init(&kernel_proc->inh.lock, PROC_INH_LOCK_TYPE);
 }
 
 void procarr_realloc(void)
@@ -275,6 +278,8 @@ static void procarr_remove(pid_t pid)
  */
 static void proc_remove(struct proc_info * proc)
 {
+    struct proc_info * parent;
+
     KASSERT(proc, "Attempt to remove NULL proc");
 
     proc->state = PROC_STATE_STOPPED;
@@ -282,6 +287,31 @@ static void proc_remove(struct proc_info * proc)
 #ifdef configPROCFS
     procfs_rmentry(proc->pid);
 #endif
+
+    /*
+     * Remove inheritance.
+     */
+    parent = proc->inh.parent;
+    if (parent) {
+        struct proc_info * tmp;
+        struct proc_info * prev_node = NULL;
+
+        mtx_lock(&parent->inh.lock);
+
+        tmp = parent->inh.first_child;
+        do {
+            if (tmp == proc) {
+                if (!prev_node)
+                    parent->inh.first_child = proc->inh.next_child;
+                else
+                    prev_node->inh.next_child = proc->inh.next_child;
+                break;
+            }
+            prev_node = tmp;
+        } while ((tmp = prev_node->inh.next_child) != NULL);
+
+        mtx_unlock(&parent->inh.lock);
+    }
 
     _proc_free(proc);
     procarr_remove(proc->pid);
@@ -489,16 +519,62 @@ static int sys_proc_fork(void * user_args)
 
 static int sys_proc_wait(void * user_args)
 {
+    struct _proc_wait_args args;
     pid_t pid_child;
-    proc_info_t * child;
+    proc_info_t * child = NULL;
     int * state;
 
-    if (!useracc(user_args, sizeof(pid_t), VM_PROT_WRITE)) {
+    if (!useracc(user_args, sizeof(args), VM_PROT_WRITE) ||
+            copyin(user_args, &args, sizeof(args))) {
         set_errno(EFAULT);
         return -1;
     }
 
-    child = curproc->inh.first_child;
+    if (args.pid == 0) {
+        /*
+         * TODO
+         * If pid is 0, status is requested for any child process whose
+         * process group ID is equal to that of the calling process.
+         */
+        set_errno(ENOTSUP);
+        return -1;
+    } else if (args.pid == -1) {
+        child = curproc->inh.first_child;
+    } else if (args.pid < -1) {
+        /*
+         * TODO
+         * If pid is less than (pid_t)-1, status is requested for any child
+         * process whose process group ID is equal to the absolute value of pid.
+         */
+        set_errno(ENOTSUP);
+        return -1;
+    } else if (args.pid > 0) {
+        proc_info_t * p;
+        proc_info_t * last_node;
+        proc_info_t * tmp;
+
+
+        p = proc_get_struct_l(args.pid);
+        tmp = curproc->inh.first_child;
+        if (!p || !tmp) {
+            set_errno(ECHILD);
+            return -1;
+        }
+
+        /*
+         * Check that p is a child of curproc.
+         */
+        mtx_lock(&curproc->inh.lock);
+        do {
+            if (tmp->pid == p->pid) {
+                child = p;
+                break;
+            }
+            last_node = tmp;
+        } while ((tmp = last_node->inh.next_child) != NULL);
+        mtx_unlock(&curproc->inh.lock);
+    }
+
     if (!child) {
         /*
          * The calling process has no existing unwaited-for child
@@ -527,10 +603,8 @@ static int sys_proc_wait(void * user_args)
     curproc->tms.tms_cutime += child->tms.tms_utime;
     curproc->tms.tms_cstime += child->tms.tms_stime;
 
-    copyout(&child->exit_code, user_args, sizeof(int));
-
-    /* First child is dead now, let's update inh. */
-    curproc->inh.first_child = child->inh.next_child;
+    args.status = child->exit_code;
+    copyout(&args, user_args, sizeof(int));
 
     /* Remove wait'd thread */
     proc_remove(child);
