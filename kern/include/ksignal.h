@@ -93,7 +93,7 @@ int signum_comp(struct ksigaction * a, struct ksigaction * b);
 void ksignal_signals_ctor(struct signals * sigs);
 void ksignal_signals_fork_reinit(struct signals * sigs);
 
-int ksignal_thread_sendsig(struct thread_info * thread, int signum);
+int ksignal_sendsig(struct signals * sigs, int signum, int si_code);
 
 /**
  * Kill process by sending a fatal signal that can't be blocked.

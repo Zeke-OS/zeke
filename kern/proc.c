@@ -512,12 +512,22 @@ static int sys_proc_wait(void * user_args)
     pid_child = child->pid;
     state = &child->state;
 
+    int i = 0;
     while (*state != PROC_STATE_ZOMBIE) {
         idle_sleep();
         /*
          * TODO In some cases we have to return early without waiting.
          * eg. signal received
          */
+        char buf[80];
+
+        i++;
+        if (i > 1000) {
+            ksprintf(buf, sizeof(buf), "waiting for pid = %d, state = %d\n",
+                     pid_child, *state);
+            KERROR(KERROR_DEBUG, buf);
+            i = 0;
+        }
     }
 
     /*
@@ -529,6 +539,9 @@ static int sys_proc_wait(void * user_args)
 
     copyout(&child->exit_code, user_args, sizeof(int));
 
+    /* First child is dead now, let's update inh. */
+    curproc->inh.first_child = child->inh.next_child;
+
     /* Remove wait'd thread */
     proc_remove(child);
 
@@ -537,7 +550,11 @@ static int sys_proc_wait(void * user_args)
 
 static int sys_proc_exit(void * user_args)
 {
+    KASSERT(curproc->inh.parent, "parent should exist");
+
     curproc->exit_code = get_errno();
+
+    (void)ksignal_sendsig(&curproc->inh.parent->sigs, SIGCHLD, SI_KERNEL);
     sched_thread_detach(current_thread->id);
     thread_die(curproc->exit_code);
 

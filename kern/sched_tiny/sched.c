@@ -327,13 +327,8 @@ void sched_sleep_current_thread(int permanent)
     /* We don't want to get stuck here */
     enable_interrupt();
 
-    while (current_thread->flags & SCHED_WAIT_FLAG)
+    while (current_thread->flags & SCHED_WAIT_FLAG || permanent) {
         idle_sleep();
-
-    if (permanent) {
-        while (1) {
-            idle_sleep();
-        }
     }
 }
 

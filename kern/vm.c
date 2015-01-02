@@ -498,7 +498,10 @@ int kernacc(const void * addr, int len, int rw)
     }
 
 #if (configDEBUG >= KERROR_DEBUG)
-    KERROR(KERROR_WARN, "Can't fully verify access to address in kernacc()\n");
+    char buf[80];
+    ksprintf(buf, sizeof(buf),
+             "Can't fully verify access to address (%p) in kernacc()\n", addr);
+    KERROR(KERROR_WARN, buf);
 #endif
 
     return (1 == 1);

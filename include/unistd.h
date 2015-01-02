@@ -293,6 +293,11 @@ int execvp(const char *file, char *const argv[]);
 int fexecve(int fd, char *const argv[], char *const envp[]);
 #endif
 
+/**
+ * Terminate the process.
+ */
+void _exit(int status);
+
 uid_t getuid(void);
 uid_t geteuid(void);
 gid_t getgid(void);

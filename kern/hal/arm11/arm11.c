@@ -47,7 +47,7 @@ volatile uint32_t flag_kernel_tick = 0;
 void init_stack_frame(struct _ds_pthread_create * thread_def,
         sw_stack_frame_t * sframe, int priv)
 {
-    /* Note that scheduler has to have the same mapping. */
+    /* Note that scheduler must have the same mapping. */
     uint32_t stack_start = ((uint32_t)(thread_def->def->stackAddr)
             + thread_def->def->stackSize
             - sizeof(errno_t));

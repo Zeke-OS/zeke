@@ -355,7 +355,9 @@ void thread_wait(void)
 
 void thread_release(threadInfo_t * thread)
 {
-    int old_val = atomic_dec(&thread->a_wait_count);
+    int old_val;
+
+    old_val = atomic_dec(&thread->a_wait_count);
 
     if (old_val == 0) {
         atomic_inc(&thread->a_wait_count);
@@ -463,8 +465,17 @@ int thread_get_priority(pthread_t thread_id)
 
 void thread_die(intptr_t retval)
 {
+    istate_t s;
+
+    /* TODO This part is not quite clever nor MP safe. */
+    s = get_interrupt_state();
+    disable_interrupt();
+
     current_thread->retval = retval;
     current_thread->flags |= SCHED_ZOMBIE_FLAG;
+
+    set_interrupt_state(s);
+
     sched_sleep_current_thread(SCHED_PERMASLEEP);
 }
 

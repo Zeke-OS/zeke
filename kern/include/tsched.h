@@ -161,7 +161,8 @@ typedef struct thread_info {
     void * errno_uaddr;             /*!< Address of the thread local errno. */
     intptr_t retval;                /*!< Return value of the thread. */
 
-    atomic_t a_wait_count;          /*!< Wait counter. -1 = permanent */
+    atomic_t a_wait_count;          /*!< Wait counter.
+                                     *   value < 0 is permanent sleep. */
     int wait_tim;                   /*!< Reference to a timeout timer. */
     int niceval;                    /*!< Thread nice value. */
     int priority;                   /*!< Current dynamic priority. */

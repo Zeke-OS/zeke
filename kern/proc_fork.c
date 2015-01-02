@@ -504,7 +504,7 @@ static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc)
         last_node = tmp;
     } while ((tmp = last_node->inh.next_child) != NULL);
 
-    /* Set newly forked thread as the last child in chain. */
+    /* Set the newly forked process as the last child in chain. */
     last_node->inh.next_child = new_proc;
 }
 

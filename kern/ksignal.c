@@ -130,6 +130,8 @@ static const uint8_t default_sigproptbl[] = {
     SA_KILL             /*!< SIGPWR */
 };
 
+static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code);
+
 RB_GENERATE(sigaction_tree, ksigaction, _entry, signum_comp);
 
 /**
@@ -179,8 +181,6 @@ static int ksig_lock(ksigmtx_t * lock)
 
 static void ksig_unlock(ksigmtx_t * lock)
 {
-    istate_t s;
-
     mtx_unlock(&lock->l);
 }
 
@@ -381,13 +381,9 @@ static int eval_inkernel_action(struct ksigaction * action)
         retval = 1;
         break;
     case (int)(SIG_IGN):
-        /*
-         * TODO
-         * - Decide if we want to continue and/or remove this
-         *   signal from pend in some of these cases?
-         * - Any other differences between IGN, ERR and HOLD?
-         */
+        return 0;
     case (int)(SIG_ERR):
+        /* TODO */
     case (int)(SIG_HOLD):
         return -1;
     }
@@ -434,6 +430,8 @@ static void ksignal_post_scheduling(void)
 
     /* Get next pending signal. */
     STAILQ_FOREACH(ksiginfo, &sigs->s_pendqueue, _entry) {
+        int nxt_state;
+
         signum = ksiginfo->siginfo.si_signo;
         blocked = ksignal_isblocked(sigs, signum);
         swait = sigismember(&sigs->s_wait, signum);
@@ -461,9 +459,8 @@ static void ksignal_post_scheduling(void)
             continue; /* This signal is currently blocked. */
         }
 
-        int nxt_state;
         nxt_state = eval_inkernel_action(&action);
-        if (nxt_state == 0) {
+        if (nxt_state == 0 || action.ks_action.sa_flags & SA_IGNORE) {
             /* Handling done */
             STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
             ksig_unlock(&sigs->s_lock);
@@ -485,6 +482,12 @@ static void ksignal_post_scheduling(void)
     /*
      * Continue to handle the signal in user space handler.
      */
+    {
+        char buf[80];
+        ksprintf(buf, sizeof(buf), "Pass sig %d to the user space.\n",
+                 ksiginfo->siginfo.si_signo);
+        KERROR(KERROR_DEBUG, buf);
+    }
 
     if (/* Push current stack frame to the user space thread stack. */
         push_to_thread_stack(current_thread,
@@ -529,7 +532,19 @@ static void ksignal_post_scheduling(void)
 }
 DATA_SET(post_sched_tasks, ksignal_post_scheduling);
 
-int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
+int ksignal_sendsig(struct signals * sigs, int signum, int si_code)
+{
+    int retval;
+
+    if (ksig_lock(&sigs->s_lock))
+        return -EAGAIN;
+    retval = ksignal_queue_sig(sigs, signum, si_code);
+    ksig_unlock(&sigs->s_lock);
+
+    return retval;
+}
+
+static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
 {
     int retval = 0;
     struct ksigaction action;
@@ -606,7 +621,7 @@ int ksignal_sendsig_fatal(struct proc_info * p, int signum)
         KERROR(KERROR_WARN, msg);
     }
 
-    err = ksignal_queue_sig(sigs, signum, SI_UNKNOWN);
+    err = ksignal_queue_sig(sigs, signum, SI_KERNEL);
 
     ksig_unlock(&sigs->s_lock);
 
