@@ -91,7 +91,7 @@ opttest: lib
 	$(MAKE) -C opt/test all
 
 # target_comp: rootfs - Create an rootfs image.
-rootfs: dist
+rootfs: world
 	./tools/mkrootfs.sh
 
 # target_doc: stats - Calculate some stats.
