@@ -163,7 +163,7 @@ static void create_debug_thread(void)
 
 static void * test_thread(void * arg)
 {
-    while(1) {
+    while (1) {
         sleep(1);
         thread_stat();
     }

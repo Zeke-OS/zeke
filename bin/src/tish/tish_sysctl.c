@@ -69,7 +69,7 @@ static void getset_parm(char * arg)
     char * rest;
 
     int mib[CTL_MAXNAME];
-    char fmt [5];
+    char fmt[5];
     unsigned int kind;
     int ctltype;
     size_t dlen;
@@ -121,7 +121,7 @@ static void getset_svalue(int * oid, int len, size_t oval_len,
 {
     char ovalbuf[oval_len + 1];
 
-    if(sysctl(oid, len, ovalbuf, &oval_len, (void *)nval, nval_len)) {
+    if (sysctl(oid, len, ovalbuf, &oval_len, (void *)nval, nval_len)) {
         /* Failed, errno set */
         return;
     }
@@ -135,7 +135,7 @@ static void getset_ivalue(int * oid, int len, size_t oval_len,
     size_t x_len = sizeof(x);
 
     /* Get value */
-    if(sysctl(oid, len, &x, &x_len, 0, 0)) {
+    if (sysctl(oid, len, &x, &x_len, 0, 0)) {
         /* Failed, errno set */
         return;
     }
@@ -154,7 +154,8 @@ static void list_all(void)
     size_t len = 0, len_next;
     int  err;
 
-    while ((len_next = sizeof(mib)), !(err = sysctlgetnext(mib, len, mib, &len_next))) {
+    while ((len_next = sizeof(mib)),
+            !(err = sysctlgetnext(mib, len, mib, &len_next))) {
         len = len_next;
         print_mib_name(mib, len);
     }
@@ -212,7 +213,8 @@ static void tish_ikut(char ** arg)
     int  err;
     const int one = 1;
 
-    const size_t len_test = sysctlnametomib("debug.test", mib_test, num_elem(mib_test));
+    const size_t len_test = sysctlnametomib("debug.test", mib_test,
+            num_elem(mib_test));
 
     printf("     \n"); /* Hack */
     print_mib_name(mib_test, len_test);

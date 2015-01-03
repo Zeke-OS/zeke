@@ -134,7 +134,7 @@ static void printfail(char * str)
 
 void * uinit(void * arg)
 {
-    char * argv[] = { "/sbin/init", NULL };
+    char * argv[] = { "/sbin/sinit", NULL };
     char * env[] = { "PATH=", "HOME=/", NULL };
     int err;
 

@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    init.c
+ * @file    main.c
  * @author  Olli Vanhoja
- * @brief   First user scope process.
+ * @brief   Tiny shell.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -42,8 +42,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <mount.h>
-#include "tish/tish.h"
-#include "init.h"
+#include "tish.h"
 
 char banner[] = "\
 |'''''||                    \n\
@@ -54,7 +53,7 @@ char banner[] = "\
              .||. ||.'|...'\n\n\
 ";
 
-static const char msg[] = "Zeke " KERNEL_VERSION " init\n";
+static const char msg[] = "Zeke " KERNEL_VERSION;
 
 const char tty_path[] = "/dev/ttyS0";
 char buf[80];

@@ -1,12 +1,10 @@
 /**
  *******************************************************************************
- * @file    init.h
+ * @file    waitpid.c
  * @author  Olli Vanhoja
- * @brief   First user scope process.
+ * @brief   Waiting.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, 2013 Ninjaware Oy,
- *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,10 +28,24 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************
- */
+*/
 
- #pragma once
-#ifndef INIT_H_
-#define INIT_H_
+#include <sys/types.h>
+#include <syscall.h>
+#include <sys/wait.h>
 
- #endif /* INIT_H_ */
+pid_t waitpid(pid_t pid, int * status, int options)
+{
+    struct _proc_wait_args args = {
+        .pid = pid,
+        .options = options
+    };
+    int retval;
+
+    retval = syscall(SYSCALL_PROC_WAIT, &args);
+
+    if (status)
+        *status = args.status;
+
+    return retval;
+}

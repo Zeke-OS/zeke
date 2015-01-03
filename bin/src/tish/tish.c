@@ -66,7 +66,7 @@ int tish(void)
             errno = 0;
 
             SET_FOREACH(cmd, tish_cmd) {
-                if(!strcmp(cmd_name, (*cmd)->name)) {
+                if (!strcmp(cmd_name, (*cmd)->name)) {
                     (*cmd)->fn(&strtok_lasts);
                     goto get_errno;
                 }
@@ -153,6 +153,8 @@ static void forkexec(char * path, char ** args)
 
         write(STDOUT_FILENO, failmsg, sizeof(failmsg));
     } else if (pid == 0) {
+        /* TODO Something fails?
+         * execvp(path, argv); */
         execve(path, argv, env);
         _exit(1); /* TODO Figure out why exit(1) fails */
     } else {

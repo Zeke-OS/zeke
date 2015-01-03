@@ -26,9 +26,9 @@
 include $(ROOT_DIR)/makefiles/user_head.mk
 
 # Binaries #####################################################################
-BIN = init
+BIN = sinit
 
 # Source Files #################################################################
-init-SRC-y = $(wildcard src/init/*.c) $(wildcard src/init/tish/*.c)
+sinit-SRC-y = src/sinit/sinit.c
 
 include $(ROOT_DIR)/makefiles/user_tail.mk
