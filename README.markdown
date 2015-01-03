@@ -86,9 +86,11 @@ Doxygen targets:
 ### Compiling
 
 + `configure`- Set defaults for files in config dir
-+ `make` - Compile the kernel
-+ `make test` - Compile unit tests
-+ `make clean` - Clean all targets
++ `make all rootfs` - Compile the kernel, user space and create a rootfs image
++ `make kernel.img` - Compile the kernel
++ `make world` - Compile only the user space without creating a rootfs image
++ `make opttest` - Compile on target tests
++ `make clean` - Clean all compilation targets
 
 Run `make help` for full list of targets and compilation flags.
 
