@@ -66,11 +66,11 @@ struct _proc_wait_args {
 
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
-pid_t  wait(int * status);
+pid_t wait(int * status);
 #if 0
 int    waitid(idtype_t, id_t, siginfo_t *, int);
-pid_t  waitpid(pid_t, int *, int);
 #endif
+pid_t waitpid(pid_t pid, int * status, int options);
 __END_DECLS
 #endif /* !KERNEL_INTERNAL */
 
