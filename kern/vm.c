@@ -228,13 +228,20 @@ int copyinstr(const char * uaddr, char * kaddr, size_t len, size_t * done)
 
 struct buf * vm_newsect(uintptr_t vaddr, size_t size, int prot)
 {
-    struct buf * new_region = geteblk(size);
+    /*
+     * We have to make the section slightly bigger than requested if vaddr
+     * and vaddr + size doesn't align nicely with page boundaries.
+     */
+    const uintptr_t start_vaddr = (vaddr & ~(MMU_PGSIZE_COARSE - 1));
+    const size_t sectsize = (vaddr + size) - start_vaddr;
+    struct buf * new_region;
 
+    new_region = geteblk(sectsize);
     if (!new_region)
         return NULL;
 
     new_region->b_uflags = prot & ~VM_PROT_COW;
-    new_region->b_mmu.vaddr = vaddr & ~(MMU_PGSIZE_COARSE - 1);
+    new_region->b_mmu.vaddr = start_vaddr;
     new_region->b_mmu.control = MMU_CTRL_MEMTYPE_WB;
     vm_updateusr_ap(new_region);
 

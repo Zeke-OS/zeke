@@ -174,7 +174,9 @@ int copyout_proc(struct proc_info * proc, const void * kaddr, void * uaddr,
 /**
  * Create a new empty general purpose section.
  * Create a new empty buffer that can be inserted as a section/region
- * to a process into regions array.
+ * to a process into regions array. Allocated memory region will be aligned
+ * so that vaddr + size will be the upper bound of the region regardless of
+ * the page alignment requirements.
  */
 struct buf * vm_newsect(uintptr_t vaddr, size_t size, int prot);
 
