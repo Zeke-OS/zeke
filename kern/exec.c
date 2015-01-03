@@ -43,7 +43,7 @@
 
 SET_DECLARE(exec_loader, struct exec_loadfn);
 
-int exec_file(file_t * file, struct buf * env_bp,
+int exec_file(file_t * file, char name[PROC_NAME_LEN], struct buf * env_bp,
               int uargc, uintptr_t uargv, uintptr_t uenvp)
 {
     struct exec_loadfn ** loader;
@@ -77,6 +77,9 @@ int exec_file(file_t * file, struct buf * env_bp,
         retval = err;
         goto fail;
     }
+
+    /* Change proc name */
+    strlcpy(curproc->name, name, sizeof(curproc->name));
 
     /* Create a new thread for executing main() */
     stack_region = (*curproc->mm.regions)[MM_STACK_REGION];
@@ -179,6 +182,7 @@ static int copyin_aa(struct buf * bp, char * uarr, size_t uarr_len,
 static int sys_exec(void * user_args)
 {
     struct _exec_args args;
+    char name[PROC_NAME_LEN];
     file_t * file;
     struct buf * env_bp;
     size_t arg_offset = 0;
@@ -235,10 +239,13 @@ static int sys_exec(void * user_args)
         goto out;
     }
 
+    strlcpy(name, (char *)(env_bp->b_data) + (args.nargv + 1) * sizeof(char *),
+            sizeof(name));
+
     /*
      * Execute.
      */
-    err = exec_file(file, env_bp, args.nargv, env_bp->b_mmu.vaddr, envp);
+    err = exec_file(file, name, env_bp, args.nargv, env_bp->b_mmu.vaddr, envp);
     if (err) {
         set_errno(-err);
         retval = -1;

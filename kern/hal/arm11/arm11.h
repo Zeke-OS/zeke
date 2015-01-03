@@ -183,7 +183,7 @@ void wr_thread_stack_ptr(void * ptr);
     intptr_t tmp;                                           \
     char buf[80];                                           \
     __asm__ volatile ("mov %[tmp], lr" : [tmp]"=r" (tmp));  \
-    ksprintf(buf, sizeof(buf), "caller = %x", tmp - 4);     \
+    ksprintf(buf, sizeof(buf), "caller = %x\n", tmp - 4);     \
     KERROR(KERROR_DEBUG, buf);                              \
 } while (0)
 

@@ -76,6 +76,8 @@ int shm_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
         bp->b_uflags = prot & (VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE);
         bp->b_mmu.vaddr = vaddr & ~(MMU_PGSIZE_COARSE - 1);
         bp->b_mmu.control = MMU_CTRL_MEMTYPE_WB;
+    } else {
+        panic("Can't map");
     }
     /* TODO */
 
