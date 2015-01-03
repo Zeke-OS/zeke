@@ -34,14 +34,9 @@
 
 #include <autoconf.h>
 #include <stdio.h>
-#include <sys/types.h>
-#include <time.h>
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <mount.h>
 #include "tish.h"
 
 char banner[] = "\
@@ -55,23 +50,8 @@ char banner[] = "\
 
 static const char msg[] = "Zeke " KERNEL_VERSION;
 
-const char tty_path[] = "/dev/ttyS0";
-char buf[80];
-
 int main(int argc, char * argv[], char * envp[])
 {
-    int r0, r1, r2;
-
-    close(STDIN_FILENO);
-    close(STDOUT_FILENO);
-    close(STDERR_FILENO);
-    r0 = open(tty_path, O_RDONLY);
-    r1 = open(tty_path, O_WRONLY);
-    r2 = open(tty_path, O_WRONLY);
-
-    snprintf(buf, sizeof(buf), "fd: %i, %i, %i\n", r0, r1, r2);
-    write(STDOUT_FILENO, buf, strnlen(buf, sizeof(buf)));
-
     printf("args[%d]:", argc);
     argc += 1;
     while (*argv) {
@@ -87,9 +67,7 @@ int main(int argc, char * argv[], char * envp[])
     write(STDOUT_FILENO, banner, sizeof(banner));
     write(STDOUT_FILENO, msg, sizeof(msg));
 
-#if configTISH != 0
     tish();
-#endif
 
     return 0;
 }

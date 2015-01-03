@@ -31,12 +31,18 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+/* Needed for tty handling */
+#include <fcntl.h>
+
 #define LEN(x) (sizeof(x) / sizeof(*(x)))
 
+static void open_tty(void);
 static void poweroff(void);
 static void reap(void);
 static void reboot(void);
 static void spawn(char *const []);
+
+const char tty_path[] = "/dev/ttyS0";
 
 static struct {
     int sig;
@@ -63,6 +69,9 @@ main(void)
     chdir("/");
     sigfillset(&set);
     sigprocmask(SIG_BLOCK, &set, NULL);
+
+    open_tty();
+
     spawn(rcinitcmd);
 
     while (1) {
@@ -77,6 +86,21 @@ main(void)
 
     /* not reachable */
     return 0;
+}
+
+/* This is needed until we have better way to handle ttys */
+static void open_tty(void)
+{
+    int r0, r1, r2;
+
+    close(STDIN_FILENO);
+    close(STDOUT_FILENO);
+    close(STDERR_FILENO);
+    r0 = open(tty_path, O_RDONLY);
+    r1 = open(tty_path, O_WRONLY);
+    r2 = open(tty_path, O_WRONLY);
+
+    printf("fd: %i, %i, %i\n", r0, r1, r2);
 }
 
 static void

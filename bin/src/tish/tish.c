@@ -143,19 +143,18 @@ static void forkexec(char * path, char ** args)
     char * arg;
     char *env[] = { NULL };
     pid_t pid;
+    char failmsg[] = "Fork failed\n";
 
     arg = strtok_r(0, DELIMS, args);
     argv[1] = arg;
 
     pid = fork();
     if (pid == -1) {
-        char failmsg[] = "Fork failed\n";
-
         write(STDOUT_FILENO, failmsg, sizeof(failmsg));
     } else if (pid == 0) {
-        /* TODO Something fails?
-         * execvp(path, argv); */
-        execve(path, argv, env);
+        /* TODO Something fails? */
+        execvp(path, argv);
+        //execve(path, argv, env);
         _exit(1); /* TODO Figure out why exit(1) fails */
     } else {
         int status;
