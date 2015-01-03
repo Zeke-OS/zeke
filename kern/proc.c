@@ -282,7 +282,7 @@ static void proc_remove(struct proc_info * proc)
 
     KASSERT(proc, "Attempt to remove NULL proc");
 
-    proc->state = PROC_STATE_STOPPED;
+    proc->state = PROC_STATE_DEFUNCT;
 
 #ifdef configPROCFS
     procfs_rmentry(proc->pid);
@@ -588,6 +588,16 @@ static int sys_proc_wait(void * user_args)
     pid_child = child->pid;
     state = &child->state;
 
+    if ((args.options & WNOHANG) && (*state != PROC_STATE_ZOMBIE)) {
+        /*
+         * WNOHANG = Do not suspend execution of the calling thread if status
+         * is not immediately available.
+         */
+        return 0;
+    }
+
+    /* TODO Implement options WCONTINUED and WUNTRACED. */
+
     while (*state != PROC_STATE_ZOMBIE) {
         idle_sleep();
         /*
@@ -597,14 +607,25 @@ static int sys_proc_wait(void * user_args)
     }
 
     /*
+     * Construct a status value.
+     * TODO Evaluate rest of needed codes like signals etc.
+     */
+    args.status = (child->exit_code & 0xff) << 8;
+
+    if (args.options & WNOWAIT) {
+        /* Leave the proc around, available for later waits. */
+        copyout(&args, user_args, sizeof(args));
+        return (uintptr_t)pid_child;
+    }
+
+    /*
      * Increment children times.
      * We do this only for wait() and waitpid().
      */
     curproc->tms.tms_cutime += child->tms.tms_utime;
     curproc->tms.tms_cstime += child->tms.tms_stime;
 
-    args.status = child->exit_code;
-    copyout(&args, user_args, sizeof(int));
+    copyout(&args, user_args, sizeof(args));
 
     /* Remove wait'd thread */
     proc_remove(child);

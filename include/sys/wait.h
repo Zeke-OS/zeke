@@ -38,9 +38,26 @@
 #ifndef WAIT_H
 #define WAIT_H
 
-/* TODO */
 #include <sys/cdefs.h>
 
+#define WCONTINUED  0x1 /*!< Report a continued process. */
+#define WNOHANG     0x2 /*!< Don't hang in wait. */
+#define WUNTRACED   0x4 /*!< Tell about stopped, untraced children. */
+#define WNOWAIT     0x8 /*!< Poll only. */
+
+
+#define _WSTATUS(x) ((x) & 0177)
+#define _WSTOPPED   0177
+
+#define WIFEXITED(x)    (_WSTATUS(x) == 0)
+#define WEXITSTATUS(x)  ((x) >> 8)
+#define WIFSIGNALED(x)  (_WSTATUS(x) != _WSTOPPED && _WSTATUS(x) != 0 \
+                         && (x) != 0x13)
+#define WTERMSIG(x)     (_WSTATUS(x))
+#define WIFSTOPPED(x)   (_WSTATUS(x) == _WSTOPPED)
+#define WSTOPSIG(x)     ((x) >> 8)
+
+/* Arguments for SYSCALL_PROC_WAIT */
 struct _proc_wait_args {
     pid_t pid;
     int status;

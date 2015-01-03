@@ -76,8 +76,9 @@
 #if 0
 #define PROC_STATE_WAITING  3   /* Can't be woken up */
 #endif
-#define PROC_STATE_ZOMBIE   4
-#define PROC_STATE_STOPPED  5
+#define PROC_STATE_STOPPED  4   /* Stopped with a signal SIGSTOP */
+#define PROC_STATE_ZOMBIE   5
+#define PROC_STATE_DEFUNCT  6   /* Process waiting for the final cleanup. */
 
 #define PROC_NAME_LEN       10
 
