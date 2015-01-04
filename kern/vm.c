@@ -250,8 +250,40 @@ struct buf * vm_newsect(uintptr_t vaddr, size_t size, int prot)
 
 struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot)
 {
-    /* TODO Implementation */
-    return NULL;
+    struct buf * region;
+    size_t nr_regions;
+    const uintptr_t addr_min = configEXEC_BASE_LIMIT;
+    uintptr_t addr_max = 0xEFFFFFFF; /* TODO ??? */
+    int found;
+    uintptr_t vaddr;
+    struct buf * bp;
+
+    mtx_lock(&proc->mm.regions_lock);
+    nr_regions = proc->mm.nr_regions;
+    do {
+        vaddr = addr_min + kunirand(addr_max - addr_min);
+        vaddr = (vaddr & ~(MMU_PGSIZE_COARSE - 1));
+        found = 0;
+
+        for (size_t i = 0; i < nr_regions; i++) {
+            region = (*proc->mm.regions)[i];
+
+            if (vaddr >= region->b_mmu.vaddr &&
+                vaddr <= (region->b_mmu.vaddr + MMU_SIZEOF_REGION(&(region->b_mmu)))) {
+                found = 1;
+                break;
+            }
+        }
+
+        if (!found)
+            break;
+    } while (1); /* TODO What if there is no space left? */
+    mtx_unlock(&proc->mm.regions_lock);
+
+    bp = vm_newsect(vaddr, size, prot);
+    vm_insert_region(proc, bp, VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
+
+    return bp;
 }
 
 void vm_updateusr_ap(struct buf * region)
