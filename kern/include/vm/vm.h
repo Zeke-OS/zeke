@@ -177,8 +177,21 @@ int copyout_proc(struct proc_info * proc, const void * kaddr, void * uaddr,
  * to a process into regions array. Allocated memory region will be aligned
  * so that vaddr + size will be the upper bound of the region regardless of
  * the page alignment requirements.
+ * @param vaddr is the addess of the new section.
+ * @param size is the size of the new section.
+ * @param prot is a OR'd VM_PROT flags mask.
  */
 struct buf * vm_newsect(uintptr_t vaddr, size_t size, int prot);
+
+/**
+ * Create a new section to a randomly selected address.
+ * Returned section is inserted and mapped to the process if operation succeeds.
+ * @param proc is a pointer to the process to be altered.
+ * @param size is the size of the new section.
+ * @param prot is a OR'd VM_PROT flags mask.
+ * @return Returns a new section that is mapped to the given process.
+ */
+struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot);
 
 /**
  * Update usr access permissions based on b_uflags.
@@ -196,6 +209,7 @@ void vm_updateusr_ap(struct buf * region);
  * hold lock to a regions_lock controlling that array.
  * @param mm is a pointer to the mm struct to be updated.
  * @param new_count is the new size of the regions array.
+ * @return Returns zero if succeed; Otherwise a negative errno is returned.
  */
 int realloc_mm_regions(struct vm_mm_struct * mm, int new_count);
 
@@ -252,16 +266,8 @@ int vm_mapproc_region(struct proc_info * proc, struct buf * region);
  */
 int kernacc(const void * addr, int len, int rw);
 
-/**
- * Test for priv mode access permissions.
- *
- * AP format for this function:
- * 3  2    0
- * +--+----+
- * |XN| AP |
- * +--+----+
- */
-int useracc(const void * addr, int len, int rw);
+int useracc(const void * addr, size_t len, int rw);
+int useracc_proc(const void * addr, size_t len, struct proc_info * proc, int rw);
 
 #endif /* KERNEL_INTERNAL */
 #endif /* _VM_VM_H */

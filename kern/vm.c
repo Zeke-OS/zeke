@@ -46,7 +46,7 @@
 extern mmu_region_t mmu_region_kernel;
 
 static int test_ap_priv(uint32_t rw, uint32_t ap);
-static int test_ap_user(uint32_t rw, uint32_t ap);
+static int test_ap_user(uint32_t rw, uint32_t mmu_ap, uint32_t mmu_control);
 
 
 RB_GENERATE(ptlist, vm_pt, entry_, ptlist_compare);
@@ -136,7 +136,7 @@ int copyin_proc(struct proc_info * proc, const void * uaddr, void * kaddr,
     struct vm_pt * vpt;
     void * phys_uaddr;
 
-    if (!useracc(uaddr, len, VM_PROT_READ)) {
+    if (!useracc_proc(uaddr, len, proc, VM_PROT_READ)) {
         return -EFAULT;
     }
 
@@ -165,7 +165,7 @@ int copyout_proc(struct proc_info * proc, const void * kaddr, void * uaddr,
     struct vm_pt * vpt;
     void * phys_uaddr;
 
-    if (!useracc(uaddr, len, VM_PROT_WRITE)) {
+    if (!useracc_proc(uaddr, len, proc, VM_PROT_WRITE)) {
         return -EFAULT;
     }
 
@@ -248,6 +248,12 @@ struct buf * vm_newsect(uintptr_t vaddr, size_t size, int prot)
     return new_region;
 }
 
+struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot)
+{
+    /* TODO Implementation */
+    return NULL;
+}
+
 void vm_updateusr_ap(struct buf * region)
 {
     int usr_rw;
@@ -299,7 +305,6 @@ void vm_updateusr_ap(struct buf * region)
     mtx_unlock(&(region->lock));
 }
 
-/* TODO Add locks for regions array */
 int realloc_mm_regions(struct vm_mm_struct * mm, int new_count)
 {
     struct buf * (*new_regions)[];
@@ -514,6 +519,15 @@ int kernacc(const void * addr, int len, int rw)
     return (1 == 1);
 }
 
+/**
+ * Test for priv mode access permissions.
+ *
+ * AP format for this function:
+ * 3  2    0
+ * +--+----+
+ * |XN| AP |
+ * +--+----+
+ */
 static int test_ap_priv(uint32_t rw, uint32_t ap)
 {
     if (rw & VM_PROT_EXECUTE) {
@@ -547,7 +561,7 @@ static int test_ap_priv(uint32_t rw, uint32_t ap)
     return 0;
 }
 
-int useracc(const void * addr, int len, int rw)
+int useracc(const void * addr, size_t len, int rw)
 {
     /* TODO We may wan't to handle cow here */
     /* TODO Implementation */
@@ -555,34 +569,50 @@ int useracc(const void * addr, int len, int rw)
     if (!curproc)
         return 0;
 #endif
+    useracc_proc(addr, len, curproc, rw);
 
     return (1 == 1);
 }
 
-static int test_ap_user(uint32_t rw, uint32_t ap)
+int useracc_proc(const void * addr, size_t len, struct proc_info * proc, int rw)
+{
+    uintptr_t vaddr = (uintptr_t)addr;
+    struct buf * region;
+
+    mtx_lock(&proc->mm.regions_lock);
+    for (size_t i = 0; i < proc->mm.nr_regions; i++) {
+        region = (*proc->mm.regions)[i];
+
+        if (vaddr >= region->b_mmu.vaddr &&
+                vaddr <= (region->b_mmu.vaddr + MMU_SIZEOF_REGION(&(region->b_mmu)))) {
+            mtx_unlock(&proc->mm.regions_lock);
+
+            return test_ap_user(rw, region->b_mmu.ap, region->b_mmu.control);
+        }
+    }
+    mtx_unlock(&proc->mm.regions_lock);
+
+    return 0;
+}
+
+static int test_ap_user(uint32_t rw, uint32_t mmu_ap, uint32_t mmu_control)
 {
     if (rw & VM_PROT_EXECUTE) {
-        if (ap & 0x8)
+        if (mmu_control & MMU_CTRL_XN)
             return 0; /* XN bit set. */
     }
-    ap &= ~0x8; /* Discard XN bit. */
 
     if (rw & VM_PROT_WRITE) { /* Test for xxRW */
-        switch (ap) {
-        case MMU_AP_RWRW:
-            return (1 == 1);
-        default:
-            return 0; /* No write access. */
-        }
+        if (mmu_ap & MMU_AP_RWRW)
+            return 1;
+        else
+            return 0;
     } else if (rw & VM_PROT_READ) { /* Test for xxRO */
-        switch (ap) {
-        case MMU_AP_RWRW: /* I guess rw is ok too. */
-        case MMU_AP_RWRO:
-        case MMU_AP_RORO:
-            return (1 == 1);
-        default:
-            return 0; /* No read access. */
-        }
+        if ((mmu_ap & MMU_AP_RWRO) || (mmu_ap & MMU_AP_RWRW)
+                || (mmu_ap & MMU_AP_RORO))
+            return 1;
+        else
+            return 0;
     }
 
     return 0;
