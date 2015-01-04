@@ -50,7 +50,7 @@
 
 #define KSTACK_SIZE ((MMU_VADDR_TKSTACK_END - MMU_VADDR_TKSTACK_START) + 1)
 
-/* Thread constructors and destructors. */
+/* Linker sets for thread constructors and destructors. */
 SET_DECLARE(thread_ctors, void);
 SET_DECLARE(thread_dtors, void);
 SET_DECLARE(thread_fork_handlers, void);

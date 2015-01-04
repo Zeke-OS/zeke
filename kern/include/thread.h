@@ -40,6 +40,9 @@
 #include <sys/types.h>
 #include <tsched.h>
 
+/**
+ * Type for thread constructor and destructor functions.
+ */
 typedef void (*thread_cdtor_t)(struct thread_info * td);
 
 /**
@@ -106,6 +109,10 @@ void thread_wait(void);
  */
 void thread_release(threadInfo_t * thread);
 
+/**
+ * Sleep current thread for millisec.
+ * @param millisec is the sleep time.
+ */
 void thread_sleep(long millisec);
 
 /**

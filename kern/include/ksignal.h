@@ -90,9 +90,22 @@ struct thread_info;
 RB_PROTOTYPE(sigaction_tree, ksigaction, _entry, signum_comp);
 int signum_comp(struct ksigaction * a, struct ksigaction * b);
 
+/**
+ * Sigs struct constructor.
+ */
 void ksignal_signals_ctor(struct signals * sigs);
+
+/**
+ * Re-init sigs on thread fork.
+ */
 void ksignal_signals_fork_reinit(struct signals * sigs);
 
+/**
+ * Send signal to a process or thread.
+ * @param sigs is a sigs struct owned by a process or thread.
+ * @param signum is the signal number to be signald.
+ * @param si_code is a SI_ code indentifying the sender of the signal.
+ */
 int ksignal_sendsig(struct signals * sigs, int signum, int si_code);
 
 /**
