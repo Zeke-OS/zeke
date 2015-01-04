@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   VM functions.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -109,7 +109,8 @@ struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr);
  */
 void ptlist_free(struct ptlist * ptlist_head);
 
-/** @addtogroup copy copyin, copyout, copyinstr
+/**
+ * @addtogroup copy copyin, copyout, copyinstr
  * Kernel copy functions.
  *
  * The copy functions are designed to copy contiguous data from one address
@@ -260,6 +261,18 @@ int vm_map_region(struct buf * region, struct vm_pt * pt);
 int vm_mapproc_region(struct proc_info * proc, struct buf * region);
 
 /**
+ * @addtogroup useracc kernacc, useracc, useracc_proc
+ * Check memory regions for accessibility.
+ *
+ * The kernacc()m useracc() and useracc_proc() functions check whether access
+ * types specified in rw are permitted in the range of virtual addresses given
+ * by addr and len. The possible values of rw are any bitwise combination of
+ * VM_PROT_READ, VM_PROT_WRITE and VM_PROT_EXECUTE.
+ * @{
+ */
+
+
+/**
  * Check kernel space memory region for accessibility.
  * Check whether operations of the type specified in rw are permitted in the
  * range of virtual addresses given by addr and len.
@@ -270,8 +283,17 @@ int vm_mapproc_region(struct proc_info * proc, struct buf * region);
  */
 int kernacc(const void * addr, int len, int rw);
 
+/**
+ * Check user space memory region for accessibility.
+ * @return  Boolean true if the type of access specified by rw is permitted;
+ *          Otherwise boolean false.
+ */
 int useracc(const void * addr, size_t len, int rw);
 int useracc_proc(const void * addr, size_t len, struct proc_info * proc, int rw);
+
+/**
+ * @}
+ */
 
 #endif /* KERNEL_INTERNAL */
 #endif /* _VM_VM_H */
