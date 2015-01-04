@@ -248,15 +248,18 @@ struct buf * vm_newsect(uintptr_t vaddr, size_t size, int prot)
     return new_region;
 }
 
-struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot)
+struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot,
+        struct buf * old_bp)
 {
-    struct buf * region;
     size_t nr_regions;
     const uintptr_t addr_min = configEXEC_BASE_LIMIT;
     uintptr_t addr_max = 0xEFFFFFFF; /* TODO ??? */
     int found;
     uintptr_t vaddr;
     struct buf * bp;
+
+    if (old_bp)
+        size = MMU_SIZEOF_REGION(&old_bp->b_mmu);
 
     mtx_lock(&proc->mm.regions_lock);
     nr_regions = proc->mm.nr_regions;
@@ -266,10 +269,13 @@ struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot)
         found = 0;
 
         for (size_t i = 0; i < nr_regions; i++) {
-            region = (*proc->mm.regions)[i];
+            struct buf * region = (*proc->mm.regions)[i];
+            const uintptr_t reg_start = region->b_mmu.vaddr;
+            const uintptr_t reg_end = region->b_mmu.vaddr
+                                 + MMU_SIZEOF_REGION(&region->b_mmu);
 
-            if (vaddr >= region->b_mmu.vaddr &&
-                vaddr <= (region->b_mmu.vaddr + MMU_SIZEOF_REGION(&(region->b_mmu)))) {
+            if ((vaddr >= reg_start && vaddr <= reg_end) ||
+                (vaddr + size >= reg_end && vaddr + size <= reg_end)) {
                 found = 1;
                 break;
             }
@@ -280,7 +286,12 @@ struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot)
     } while (1); /* TODO What if there is no space left? */
     mtx_unlock(&proc->mm.regions_lock);
 
-    bp = vm_newsect(vaddr, size, prot);
+    if (old_bp) {
+        bp = old_bp;
+        bp->b_mmu.vaddr = vaddr;
+    } else {
+        bp = vm_newsect(vaddr, size, prot);
+    }
     vm_insert_region(proc, bp, VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
 
     return bp;
@@ -291,7 +302,7 @@ void vm_updateusr_ap(struct buf * region)
     int usr_rw;
     unsigned ap;
 
-    mtx_lock(&(region->lock));
+    mtx_lock(&region->lock);
     usr_rw = region->b_uflags;
     ap = region->b_mmu.ap;
 
@@ -334,7 +345,7 @@ void vm_updateusr_ap(struct buf * region)
     }
 #undef _COWRD
 
-    mtx_unlock(&(region->lock));
+    mtx_unlock(&region->lock);
 }
 
 int realloc_mm_regions(struct vm_mm_struct * mm, int new_count)
@@ -379,6 +390,7 @@ int realloc_mm_regions(struct vm_mm_struct * mm, int new_count)
     return 0;
 }
 
+/* TODO Verify that the mapping will be valid */
 /**
  * Insert a reference to a region but don't map it.
  * @note region pt is not updated.
@@ -502,12 +514,12 @@ int vm_map_region(struct buf * region, struct vm_pt * pt)
     KASSERT(region, "region can't be null\n");
 
     vm_updateusr_ap(region);
-    mtx_lock(&(region->lock));
+    mtx_lock(&region->lock);
 
     mmu_region = region->b_mmu; /* Make a copy. */
     mmu_region.pt = &(pt->pt);
 
-    mtx_unlock(&(region->lock));
+    mtx_unlock(&region->lock);
 
     return mmu_map_region(&mmu_region);
 }
@@ -614,9 +626,11 @@ int useracc_proc(const void * addr, size_t len, struct proc_info * proc, int rw)
     mtx_lock(&proc->mm.regions_lock);
     for (size_t i = 0; i < proc->mm.nr_regions; i++) {
         region = (*proc->mm.regions)[i];
+        const size_t reg_end = region->b_mmu.vaddr
+                                + MMU_SIZEOF_REGION(&region->b_mmu);
 
         if (vaddr >= region->b_mmu.vaddr &&
-                vaddr <= (region->b_mmu.vaddr + MMU_SIZEOF_REGION(&(region->b_mmu)))) {
+            vaddr <= region->b_mmu.vaddr + reg_end) {
             mtx_unlock(&proc->mm.regions_lock);
 
             return test_ap_user(rw, region->b_mmu.ap, region->b_mmu.control);

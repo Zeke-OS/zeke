@@ -65,23 +65,19 @@ int shm_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
         return -ENOMEM;
     }
 
-    /*
-     * TODO
-     * Get randomized address that is not yet mapped,
-     * this should be implemented in vm.
-     * Also vm subsys should provide a reliable way to tell if address interval
-     * is reserved.
-     */
-    if (flags & MAP_FIXED) {
-        bp->b_uflags = prot & (VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE);
-        bp->b_mmu.vaddr = vaddr & ~(MMU_PGSIZE_COARSE - 1);
-        bp->b_mmu.control = MMU_CTRL_MEMTYPE_WB;
-    } else {
-        panic("Can't map");
-    }
-    /* TODO */
+     bp->b_uflags = prot & (VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE);
+     bp->b_mmu.control = MMU_CTRL_MEMTYPE_WB;
 
-    err = vm_insert_region(proc, bp, VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
+    if (flags & MAP_FIXED) {
+        bp->b_mmu.vaddr = vaddr & ~(MMU_PGSIZE_COARSE - 1);
+        err = vm_insert_region(proc, bp, VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
+    } else {
+        /* Randomly map bp somwhere into the process address space. */
+        if (vm_rndsect(proc, 0 /* Ignored */, 0 /* Ignored */, bp))
+            err = 0;
+        else
+            err = -ENOMEM;
+    }
     if (err) {
         bp->vm_ops->rfree(bp);
         return err;

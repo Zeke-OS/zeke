@@ -189,9 +189,13 @@ struct buf * vm_newsect(uintptr_t vaddr, size_t size, int prot);
  * @param proc is a pointer to the process to be altered.
  * @param size is the size of the new section.
  * @param prot is a OR'd VM_PROT flags mask.
+ * @param old_bp is an optional argument containing a pointer to a buffer that
+ *               shall be mapped instead of allocating a new one, if old_bp is
+ *               set size and prot arguments will be ignored.
  * @return Returns a new section that is mapped to the given process.
  */
-struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot);
+struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot,
+        struct buf * old_bp);
 
 /**
  * Update usr access permissions based on b_uflags.
