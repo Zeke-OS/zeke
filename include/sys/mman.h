@@ -69,9 +69,6 @@
 #define MAP_FIXED           0x0010 /*!< map addr must be exactly as requested */
 
 #if __BSD_VISIBLE
-#define MAP_RENAME          0x0020 /*!< Sun: rename private pages to file */
-#define MAP_NORESERVE       0x0040 /*!< Sun: don't reserve needed swap area */
-#define MAP_HASSEMAPHORE    0x0200 /*!< region may contain semaphores */
 #define MAP_STACK           0x0400 /*!< region grows down, like a stack */
 #define MAP_NOSYNC          0x0800 /*!< don't sync underlying file */
 

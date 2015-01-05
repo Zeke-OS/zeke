@@ -47,6 +47,17 @@ int shm_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
 
     KASSERT(out, "out buffer pointer must be set");
 
+    /*
+     * TODO Support for:
+     * - MAP_SHARED, MAP_PRIVATE
+     * - MAP_STACK
+     * - MAP_NOSYNC
+     * - MAP_EXCL
+     * - MAP_NOCORE
+     * - MAP_PREFAULT_READ
+     * - MAP_32BIT (not needed anytime soon?)
+     */
+
     if (flags & MAP_ANON) {
         bp = geteblk(bsize);
     } else { /* Map a file */
@@ -65,8 +76,8 @@ int shm_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
         return -ENOMEM;
     }
 
-     bp->b_uflags = prot & (VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE);
-     bp->b_mmu.control = MMU_CTRL_MEMTYPE_WB;
+    bp->b_uflags = prot & (VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE);
+    bp->b_mmu.control = MMU_CTRL_MEMTYPE_WB;
 
     if (flags & MAP_FIXED) {
         bp->b_mmu.vaddr = vaddr & ~(MMU_PGSIZE_COARSE - 1);
