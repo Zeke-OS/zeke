@@ -1,4 +1,4 @@
-DIRS := libc
+DIRS := libc mman
 CLEANDIRS := $(patsubst %,%.clean,$(subst :, ,$(DIRS)))
 
 all: $(DIRS)

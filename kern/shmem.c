@@ -71,6 +71,8 @@ int shm_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
     if (flags & MAP_FIXED) {
         bp->b_mmu.vaddr = vaddr & ~(MMU_PGSIZE_COARSE - 1);
         err = vm_insert_region(proc, bp, VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
+        if (err > 0)
+            err = 0;
     } else {
         /* Randomly map bp somwhere into the process address space. */
         if (vm_rndsect(proc, 0 /* Ignored */, 0 /* Ignored */, bp))
@@ -78,56 +80,61 @@ int shm_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
         else
             err = -ENOMEM;
     }
-    if (err) {
+    if (err && bp->vm_ops->rfree) {
         bp->vm_ops->rfree(bp);
         return err;
     }
 
     *out = bp;
-
     return 0;
 }
 
 static int sys_mmap(void * user_args)
 {
-    struct _mmap_args args;
+    struct _shmem_mmap_args args;
     struct buf * bp = NULL;
     int err, retval;
 
     if (!useracc(user_args, sizeof(args), VM_PROT_WRITE)) {
-        retval = EFAULT;
+        retval = -EFAULT;
         goto fail;
     }
 
     err = copyin(user_args, &args, sizeof(args));
     if (err) {
-        retval = EFAULT;
-        goto out;
+        retval = -EFAULT;
+        goto fail;
     }
 
     err = shm_mmap(curproc, (uintptr_t)args.addr, args.bsize, args.prot,
                    args.flags, args.fildes, args.off, &bp);
     if (err) {
-        retval = -err;
+        retval = err;
+        goto fail;
+    }
+    if (!bp) {
+        retval = -ENOMEM;
         goto fail;
     }
 
+    args.addr = (void *)(bp->b_mmu.vaddr);
     err = copyout(&args, user_args, sizeof(args));
     if (err) {
-        retval = EFAULT;
-        goto out;
+        retval = -EFAULT;
+        goto fail;
     }
 
     retval = 0;
-    goto out;
 fail:
-    if (bp && bp->vm_ops->rfree) {
-        bp->vm_ops->rfree(bp);
+    if (retval != 0) {
+        if (bp && bp->vm_ops->rfree) {
+            bp->vm_ops->rfree(bp);
+        }
+
+        set_errno(-retval);
+        retval = -1;
     }
 
-    set_errno(retval);
-    retval = -1;
-out:
     return retval;
 }
 

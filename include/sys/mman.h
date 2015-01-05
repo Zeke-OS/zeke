@@ -176,7 +176,7 @@
 #define POSIX_MADV_DONTNEED _MADV_DONTNEED
 #endif
 
-struct _mmap_args {
+struct _shmem_mmap_args {
     void * addr;
     size_t bsize;
     int prot;
@@ -199,7 +199,7 @@ int minherit(void *, size_t, int);
 int mlock(const void *, size_t);
 #ifndef _MMAP_DECLARED
 #define _MMAP_DECLARED
-void *  mmap(void *, size_t, int, int, int, off_t);
+void * mmap(void * addr, size_t len, int prot, int flags, int fd, off_t offset);
 #endif
 int mprotect(const void *, size_t, int);
 int msync(void *, size_t, int);

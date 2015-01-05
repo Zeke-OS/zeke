@@ -257,6 +257,7 @@ struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot,
     int found;
     uintptr_t vaddr;
     struct buf * bp;
+    int err;
 
     if (old_bp)
         size = MMU_SIZEOF_REGION(&old_bp->b_mmu);
@@ -292,7 +293,9 @@ struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot,
     } else {
         bp = vm_newsect(vaddr, size, prot);
     }
-    vm_insert_region(proc, bp, VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
+    err = vm_insert_region(proc, bp, VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
+    if (err < 0)
+        panic("Failed to insert region"); /* TODO Handle error */
 
     return bp;
 }

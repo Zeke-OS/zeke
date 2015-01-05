@@ -56,6 +56,7 @@
     apply(SYSCALL_GROUP_PROC, proc_syscall)         \
     apply(SYSCALL_GROUP_FS, fs_syscall)             \
     apply(SYSCALL_GROUP_IOCTL, ioctl_syscall)       \
+    apply(SYSCALL_GROUP_SHMEM, shmem_syscall)       \
     apply(SYSCALL_GROUP_TIME, time_syscall)         \
     apply(SYSCALL_GROUP_PRIV, priv_syscall)
 

@@ -66,7 +66,8 @@ $(wildcard libc/string/*.c) \
 $(wildcard libc/unistd/*.c) \
 $(wildcard libc/uchar/*.c) \
 $(wildcard libc/wchar/*.c) \
-$(wildcard libc/wctype/*.c)
+$(wildcard libc/wctype/*.c) \
+$(wildcard libc/mman/*.c)
 ################################################################################
 # Available selections for source code files:
 SRC-	=# C sources

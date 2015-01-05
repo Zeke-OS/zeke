@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Kernel random.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1992, 1993
  *        The Regents of the University of California.  All rights reserved.
  *
@@ -80,8 +80,9 @@ unsigned long krandom(void)
 
 long kunirand(unsigned long n)
 {
-    const long part_size = (n == RAND_MAX) ? 1 : 1 + (RAND_MAX - n) / (n + 1);
-    const long max_usefull = part_size * n + (part_size - 1);
+    const unsigned long part_size = (n == RAND_MAX) ?
+                                    1 : 1 + (RAND_MAX - n) / (n + 1);
+    const unsigned long max_usefull = part_size * n + (part_size - 1);
     long draw;
 
     do {
