@@ -141,7 +141,6 @@ static void forkexec(char * path, char ** args)
 {
     char *argv[] = { path, NULL, NULL };
     char * arg;
-    char *env[] = { NULL };
     pid_t pid;
     char failmsg[] = "Fork failed\n";
 

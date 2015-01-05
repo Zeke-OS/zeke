@@ -32,6 +32,7 @@
 
 #define KERNEL_INTERNAL 1
 #include <libkern.h>
+#include <kstring.h>
 #include <kmalloc.h>
 #include <buf.h>
 #include <thread.h>
