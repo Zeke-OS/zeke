@@ -4,16 +4,34 @@
 that can be mapped in virtual address space of a user processes or used for
 file system buffering.
 
+\verb+vreg+ struct is the intrenal representation of a generic page aligned
+allocation made from dynmem and \verb+struct buf+ is the external interface
+used to pass allocated memory for external users.
+
 \begin{figure}
 \begin{verbatim}
                       last_vreg
                                \
 +----------------+     +-----------------+     +-------+
 | .paddr = 0x100 |     | .paddr = 0x1500 |     |       |
-| .count = 100   |<--->| -count = 20     |<--->|       |
-|                |     |                 |     |       |
+| .count = 100   |<--->| .count = 20     |<--->|       |
+| .map[]         |     | .map[]          |     |       |
 +----------------+     +-----------------+     +-------+
 \end{verbatim}
-\caption{buf blocks allocated from dynmem.}
+\caption{vregion blocks allocated from dynmem.}
 \label{figure:vralloc_blocks}
+\end{figure}
+
+\begin{figure}
+\begin{verbatim}
++-----------------+     +-----------+
+| struct buf b    |  -> |  vreg     |
++-----------------+  |  +-----------+
+| ...             |  |  | .paddr    |
+| .allocator_data | --  | .count    |
+|                 |     | .map[]    |
++-----------------+     +-----------+
+\end{verbatim}
+\caption{vralloc and buffer interface.}
+\label{figure:vrregbufapi}
 \end{figure}

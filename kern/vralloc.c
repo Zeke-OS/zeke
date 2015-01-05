@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Virtual Region Allocator.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,6 +50,9 @@
 /**
  * vralloc region struct.
  * Struct describing a single dynmem alloc block of vrallocated memory.
+ * This is the internal representation of a memory allocation made with
+ * vralloc where as struct buf is the external interface used and seen
+ * by external users.
  */
 struct vregion {
     llist_nodedsc_t node;
@@ -152,7 +155,7 @@ static struct vregion * vreg_alloc_node(size_t count)
 }
 
 /**
- * Free vregion node.
+ * Free a vregion node.
  * @param vreg is a pointer to vregion.
  */
 static void vreg_free_node(struct vregion * vreg)
@@ -166,6 +169,12 @@ static void vreg_free_node(struct vregion * vreg)
     kfree(vreg);
 }
 
+/**
+ * Get pcount number of unallocated pages.
+ * @param[out] iblock is the returned index of the allocation made.
+ * @param pcount is the number of pages requested.
+ * @param vreg_ret[out] returns a pointer to the allocated vreg.
+ */
 static int get_iblocks(size_t * iblock, size_t pcount,
                        struct vregion ** vreg_ret)
 {
@@ -197,29 +206,30 @@ struct buf * geteblk(size_t size)
     size = memalign_size(size, MMU_PGSIZE_COARSE);
     const size_t pcount = VREG_PCOUNT(size);
     struct vregion * vreg;
-    struct buf * retval = NULL;
+    struct buf * bp = NULL;
 
     if (get_iblocks(&iblock, pcount, &vreg))
         return NULL;
 
-    retval = kcalloc(1, sizeof(struct buf));
-    if (!retval)
-        return 0; /* Can't allocate vm_region struct */
-    mtx_init(&(retval->lock), MTX_TYPE_TICKET);
+    bp = kcalloc(1, sizeof(struct buf));
+    if (!bp)
+        return NULL; /* Can't allocate vm_region struct */
+
+    mtx_init(&bp->lock, MTX_TYPE_TICKET);
 
     /* Update target struct */
-    retval->b_mmu.paddr = VREG_I2ADDR(vreg, iblock);
-    retval->b_mmu.num_pages = pcount;
-    retval->b_data = retval->b_mmu.paddr; /* Currently this way as
-                                           * kernel space is 1:1 */
-    retval->b_bufsize = VREG_BYTESIZE(pcount);
-    retval->b_bcount = orig_size;
-    retval->b_flags = B_BUSY;
-    retval->refcount = 1;
-    retval->allocator_data = vreg;
-    retval->vm_ops = &vra_ops;
-    retval->b_uflags = VM_PROT_READ | VM_PROT_WRITE;
-    vm_updateusr_ap(retval);
+    bp->b_mmu.paddr = VREG_I2ADDR(vreg, iblock);
+    bp->b_mmu.num_pages = pcount;
+    bp->b_data = bp->b_mmu.paddr; /* Currently this way as
+                                   * kernel space is 1:1 */
+    bp->b_bufsize = VREG_BYTESIZE(pcount);
+    bp->b_bcount = orig_size;
+    bp->b_flags = B_BUSY;
+    bp->refcount = 1;
+    bp->allocator_data = vreg;
+    bp->vm_ops = &vra_ops;
+    bp->b_uflags = VM_PROT_READ | VM_PROT_WRITE;
+    vm_updateusr_ap(bp);
 
     vreg->count += pcount;
 
@@ -227,11 +237,10 @@ struct buf * geteblk(size_t size)
     vmem_used += size;
     last_vreg = vreg;
 
-
     /* Clear allocated pages. */
-    memset((void *)retval->b_data, 0, retval->b_bufsize);
+    memset((void *)bp->b_data, 0, bp->b_bufsize);
 
-    return retval;
+    return bp;
 }
 
 /* TODO We may want to use bitmaps here */
@@ -295,9 +304,9 @@ struct buf * geteblk_special(size_t size, uint32_t control)
  */
 static void vrref(struct buf * region)
 {
-    mtx_lock(&(region->lock));
+    mtx_lock(&region->lock);
     region->refcount++;
-    mtx_unlock(&(region->lock));
+    mtx_unlock(&region->lock);
 }
 
 struct buf * vr_rclone(struct buf * old_region)
@@ -406,28 +415,31 @@ void allocbuf(struct buf * bp, size_t size)
     mtx_unlock(&bp->lock);
 }
 
-void vrfree(struct buf * region)
+void vrfree(struct buf * bp)
 {
     struct vregion * vreg;
     size_t iblock;
-    const size_t bcount = VREG_PCOUNT(region->b_bufsize);
+    const size_t bcount = VREG_PCOUNT(bp->b_bufsize);
 
-    mtx_lock(&(region->lock));
-    region->refcount--;
-    if (region->refcount > 0) {
-        mtx_unlock(&(region->lock));
+    mtx_lock(&bp->lock);
+    bp->refcount--;
+    if (bp->refcount > 0) {
+        mtx_unlock(&bp->lock);
         return;
     }
-    mtx_unlock(&(region->lock));
+    mtx_unlock(&bp->lock);
 
-    vreg = (struct vregion *)(region->allocator_data);
-    iblock = VREG_PCOUNT(region->b_data - vreg->kaddr);
+    /*
+     * Get vreg pointer and iblock no.
+     */
+    vreg = (struct vregion *)(bp->allocator_data);
+    iblock = VREG_PCOUNT(bp->b_data - vreg->kaddr);
 
     bitmap_block_update(vreg->map, 0, iblock, bcount);
     vreg->count -= bcount;
-    vmem_used -= region->b_bufsize; /* Update stats */
+    vmem_used -= bp->b_bufsize; /* Update stats */
 
-    kfree(region);
+    kfree(bp);
 
     if (vreg->count <= 0 && last_vreg != vreg) {
         vreg_free_node(vreg);
