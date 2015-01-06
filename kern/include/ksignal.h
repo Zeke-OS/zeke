@@ -117,6 +117,11 @@ int ksignal_sendsig(struct signals * sigs, int signum, int si_code);
 int ksignal_sendsig_fatal(struct proc_info * p, int signum);
 
 /**
+ * Wait for signal(s) specified in set.
+ */
+int ksignal_sigwait(int * retval, sigset_t * set);
+
+/**
  * Check if a signal is blocked.
  * @param sigs is a pointer to a signals struct, that's already locked.
  * @param signum is the signal number to be checked.

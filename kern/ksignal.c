@@ -628,6 +628,44 @@ int ksignal_sendsig_fatal(struct proc_info * p, int signum)
     return err;
 }
 
+int ksignal_sigwait(int * retval, sigset_t * set)
+{
+    struct signals * sigs = &current_thread->sigs;
+    ksigmtx_t * s_lock = &sigs->s_lock;
+    struct ksiginfo * ksiginfo;
+
+    if (ksig_lock(s_lock))
+        return -EAGAIN;
+    memcpy(&sigs->s_wait, set, sizeof(sigs->s_wait));
+    ksig_unlock(s_lock);
+
+    forward_proc_signals();
+
+    if (ksig_lock(s_lock))
+        return -EAGAIN;
+
+    /* Iterate through pending signals */
+    STAILQ_FOREACH(ksiginfo, &sigs->s_pendqueue, _entry) {
+        if (sigismember(set, ksiginfo->siginfo.si_signo)) {
+            current_thread->sigwait_retval = ksiginfo->siginfo.si_signo;
+            STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
+            ksig_unlock(s_lock);
+            goto out;
+        }
+    }
+
+    ksig_unlock(s_lock);
+    thread_wait();
+
+out:
+    while (ksig_lock(s_lock));
+    sigemptyset(&sigs->s_wait);
+    *retval = current_thread->sigwait_retval;
+    ksig_unlock(s_lock);
+
+    return 0;
+}
+
 int ksignal_isblocked(struct signals * sigs, int signum)
 {
     KASSERT(mtx_test(&sigs->s_lock.l), "sigs should be locked\n");
@@ -1061,10 +1099,7 @@ static int sys_signal_sigwait(void * user_args)
 {
     struct _signal_sigwait_args args;
     sigset_t set;
-    struct signals * sigs = &current_thread->sigs;
-    ksigmtx_t * s_lock = &sigs->s_lock;
-    struct ksiginfo * ksiginfo;
-    int err;
+    int retval, err;
 
     err = copyin(user_args, &args, sizeof(args));
     if (err) {
@@ -1077,31 +1112,13 @@ static int sys_signal_sigwait(void * user_args)
         return -1;
     }
 
-    memcpy(&current_thread->sigs.s_wait, &set,
-           sizeof(current_thread->sigs.s_wait));
-    forward_proc_signals();
-
-    if (ksig_lock(s_lock)) {
-        set_errno(EAGAIN);
+    err = ksignal_sigwait(&retval, &set);
+    if (err) {
+        set_errno(-err);
         return -1;
     }
 
-    /* Iterate through pending signals */
-    STAILQ_FOREACH(ksiginfo, &sigs->s_pendqueue, _entry) {
-        if (sigismember(&set, ksiginfo->siginfo.si_signo)) {
-            current_thread->sigwait_retval = ksiginfo->siginfo.si_signo;
-            STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
-            sigemptyset(&current_thread->sigs.s_wait);
-            ksig_unlock(s_lock);
-            goto out;
-        }
-    }
-
-    ksig_unlock(s_lock);
-    thread_wait();
-
-out:
-    err = copyout(&current_thread->sigwait_retval, args.sig, sizeof(int));
+    err = copyout(&retval, args.sig, sizeof(int));
     if (err) {
         set_errno(EINVAL);
         return -1;
