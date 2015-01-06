@@ -82,7 +82,7 @@ int shm_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
     if (flags & MAP_FIXED) {
         bp->b_mmu.vaddr = vaddr & ~(MMU_PGSIZE_COARSE - 1);
         err = vm_insert_region(proc, bp, VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
-        if (err > 0)
+        if (err > 0) /* err >i= 0 => region nr returned; err < -errorno code */
             err = 0;
     } else {
         /* Randomly map bp somwhere into the process address space. */
