@@ -43,11 +43,15 @@
 #include <buf.h>
 #include <vm/vm.h>
 
+/* TODO
+ * Add configHAVE_HW_PAGETABLES or similar config flag and implement a default
+ * lookup function for uaddr to kaddr that doesn't need HAL support.
+ */
+
 extern mmu_region_t mmu_region_kernel;
 
 static int test_ap_priv(uint32_t rw, uint32_t ap);
 static int test_ap_user(uint32_t rw, uint32_t mmu_ap, uint32_t mmu_control);
-
 
 RB_GENERATE(ptlist, vm_pt, entry_, ptlist_compare);
 
