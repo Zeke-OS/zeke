@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Execute a file.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Originally by the Regents of the University of California?
  * All rights reserved.
  *
@@ -40,12 +40,12 @@
 
 static char shell[] = "/bin/sh";
 #define _PATH_STDPATH "/usr/bin:/bin:/usr/sbin:/sbin:"
+#define NARG_MAX 256
 
 static char * execat(char * s1, const char * s2, char * si)
 {
-    char * s;
+    char * s = si;
 
-    s = si;
     while (*s1 && *s1 != ':') {
         *s++ = *s1++;
     }
@@ -56,7 +56,7 @@ static char * execat(char * s1, const char * s2, char * si)
     }
     *s = '\0';
 
-    return *s1 ? ++s1 : 0;
+    return *s1 ? ++s1 : NULL;
 }
 
 int execvp(const char * name, char * const argv[])
@@ -64,8 +64,7 @@ int execvp(const char * name, char * const argv[])
     char * pathstr;
     char * cp;
     char fname[128];
-    char * newargs[256];
-    int i;
+    char * newargs[NARG_MAX];
     unsigned etxtbsy = 1;
     int eacces = 0;
 
@@ -82,8 +81,8 @@ int execvp(const char * name, char * const argv[])
         case ENOEXEC:
             newargs[0] = "sh";
             newargs[1] = fname;
-            for (i = 1; (newargs[i + 1] = argv[i]); i++) {
-                if (i >= 254) {
+            for (size_t i = 1; (newargs[i + 1] = argv[i]); i++) {
+                if (i >= NARG_MAX - 2) {
                     errno = E2BIG;
                     return -1;
                 }
@@ -96,7 +95,7 @@ int execvp(const char * name, char * const argv[])
             sleep(etxtbsy);
             goto retry;
         case EACCES:
-            eacces++;
+            eacces = 1;
             break;
         case ENOMEM:
         case E2BIG:
