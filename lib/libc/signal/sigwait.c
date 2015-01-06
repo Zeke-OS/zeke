@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Wait for queued signals.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,5 +50,5 @@ int sigwait(const sigset_t * restrict set, int * restrict sig)
     if (!sig)
         args.sig = &tmp;
 
-    return syscall(SYSCALL_SIGNAL_SIGNAL, &args);
+    return syscall(SYSCALL_SIGNAL_SIGWAIT, &args);
 }
