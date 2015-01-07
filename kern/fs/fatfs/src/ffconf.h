@@ -1,9 +1,6 @@
 #include <autoconf.h>
 #include <klocks.h>
 
-#define ff_memalloc     kmalloc
-#define ff_memfree      kfree
-
 /*---------------------------------------------------------------------------/
 /  FatFs - FAT file system module configuration file  R0.10b (C)ChaN, 2014
 /---------------------------------------------------------------------------*/
@@ -100,7 +97,7 @@
 /   1    - ASCII (Valid for only non-LFN configuration) */
 
 
-#ifdef config_FATFS_LFN
+#ifdef configFATFS_LFN
 #define _USE_LFN 3
 #else
 #define _USE_LFN 0

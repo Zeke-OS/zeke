@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    fz_fs.h
+ * @file    fatfs.h
  * @author  Olli Vanhoja
  * @brief   FatFs public header.
  * @section LICENSE

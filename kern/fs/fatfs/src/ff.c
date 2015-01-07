@@ -5,6 +5,7 @@
 / This is a free software that opened for education, research and commercial
 / developments under license policy of following terms.
 /
+/  Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
 /  Copyright (C) 2014, ChaN, all right reserved.
 /
 / * The FatFs module is a free software and there is NO WARRANTY.
@@ -115,6 +116,8 @@
 /                   Fixed LFN entry is not deleted on delete/rename an object with lossy converted SFN.
 /---------------------------------------------------------------------------*/
 
+#define KERNEL_INTERNAL
+#include <kmalloc.h>
 #include <sys/ioctl.h>
 #include "ff.h"         /* Declarations of FatFs API */
 #include "diskio.h"     /* Declarations of disk I/O functions */
@@ -524,10 +527,10 @@ WCHAR LfnBuf[_MAX_LFN+1];
 
 #elif _USE_LFN == 3         /* LFN feature with dynamic working buffer on the heap */
 #define DEF_NAMEBUF         BYTE sfn[12]; WCHAR *lfn
-#define INIT_BUF(dobj)      { lfn = ff_memalloc((_MAX_LFN + 1) * 2); \
+#define INIT_BUF(dobj)      { lfn = kmalloc((_MAX_LFN + 1) * 2); \
                               if (!lfn) LEAVE_FF((dobj).fs, FR_NOT_ENOUGH_CORE); \
                               (dobj).lfn = lfn; (dobj).fn = sfn; }
-#define FREE_BUF()          ff_memfree(lfn)
+#define FREE_BUF()          kfree(lfn)
 
 #else
 #error Wrong LFN configuration.
@@ -1729,8 +1732,7 @@ FRESULT dir_remove (    /* FR_OK: Successful, FR_DISK_ERR: A disk error */
 /* Get file information from directory entry                             */
 /*-----------------------------------------------------------------------*/
 #if _FS_MINIMIZE <= 1 || _FS_RPATH >= 2
-static
-void get_fileinfo (     /* No return code */
+static void get_fileinfo(
     DIR* dp,            /* Pointer to the directory object */
     FILINFO* fno        /* Pointer to the file information to be filled */
 )

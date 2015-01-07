@@ -267,6 +267,8 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
     in->in_fpath = fpath;
     vn = &in->in_vnode;
 
+    memset(&fno, 0, sizeof(fno));
+
     if (oflags & O_DIRECTORY) {
         /* O_DIRECTORY was specified. */
         /* TODO Maybe get mp stat? */
@@ -610,7 +612,7 @@ int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
         return 0;
     }
 
-#if configFATFS_USE_LFN
+#if configFATFS_LFN
     fno.lfname = d->d_name;
     fno.lfsize = NAME_MAX + 1;
 #endif
@@ -624,7 +626,7 @@ int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
 
     d->d_ino = 0; /* TODO ino should be set */
     d->d_type = (fno.fattrib & AM_DIR) ? DT_DIR : DT_REG;
-#if configFATFS_USE_LFN
+#if configFATFS_LFN
     if (!*fno.lfname)
 #endif
         strlcpy(d->d_name, fno.fname, 13);
@@ -652,6 +654,8 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
     struct stat mp_stat = { .st_uid = 0, .st_gid = 0 };
     size_t blksize = fat_sb->ff_fs.ssize;
     int err;
+
+    memset(&fno, 0, sizeof(fno));
 
     err = get_mp_stat(vnode, &mp_stat);
     if (err) {
