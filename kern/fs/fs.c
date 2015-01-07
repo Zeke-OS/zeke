@@ -150,7 +150,7 @@ int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str, int oflags
      */
     *result = root;
     do {
-        vnode_t * vnode;
+        vnode_t * vnode = NULL;
 
         if (!strcmp(nodename, "."))
             continue;
@@ -158,25 +158,37 @@ int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str, int oflags
 again:  /* Get vnode by name in this dir. */
         retval = (*result)->vnode_ops->lookup(*result, nodename,
                 strlenn(nodename, NAME_MAX) + 1, &vnode);
-        if (retval) {
+        if (retval && retval != -EDOM) {
+            goto out;
+        } else if (!vnode) {
+            retval = -ENOENT;
             goto out;
         }
 
-        if (!strcmp(nodename, "..") && (vnode->vn_prev_mountpoint != vnode)) {
+        /*
+         * If retval == -EDOM the result and vnode are same so we are at a root
+         * of a physical file system and trying to exit its mountpoint, this
+         * requires some additional processing as follows.
+         */
+        if (retval == -EDOM && !strcmp(nodename, "..") &&
+            vnode->vn_prev_mountpoint != vnode) {
             /* Get prev dir of prev fs sb from mount point. */
             while (vnode->vn_prev_mountpoint != vnode) {
-                /* We loop here to get to the first file system mounted on this
+                /*
+                 * We loop here to get to the first file system mounted on this
                  * mountpoint.
                  */
                 vnode = vnode->vn_prev_mountpoint;
             }
             *result = vnode;
-            goto again; /* Start from begining to actually get to the prev dir.
-                         */
+            /* Start from begining to actually get to the prev dir. */
+            goto again;
         } else {
-            /* TODO - soft links support
-             *      - if O_NOFOLLOW we should fail on soft link and return
-             *        (-ELOOP)
+            /*
+             * TODO
+             * - soft links support
+             * - if O_NOFOLLOW we should fail on soft link and return
+             *   (-ELOOP)
              */
 
             /* Go to the last mountpoint. */
@@ -185,8 +197,10 @@ again:  /* Get vnode by name in this dir. */
             }
             *result = vnode;
         }
+        retval = 0;
+
 #if configDEBUG >= KERROR_DEBUG
-        if (*result == 0)
+        if (*result == NULL)
             panic("vfs is in inconsistent state");
 #endif
     } while ((nodename = kstrtok(0, PATH_DELIMS, &lasts)));

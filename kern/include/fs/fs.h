@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Virtual file system headers.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -306,7 +306,9 @@ typedef struct vnode_ops {
      * @param name      is a filename.
      * @param name_len  is the length of name.
      * @param[out] result is the result of lookup.
-     * @return Returns 0 if a vnode was found; Otherwise value other than zero.
+     * @return Returns 0 if a vnode was found;
+     *         If vnode is same as dir (root dir) -EDOM shall be returned;
+     *         Otherwise value other than zero.
      */
     int (*lookup)(vnode_t * dir, const char * name, size_t name_len,
             vnode_t ** result);

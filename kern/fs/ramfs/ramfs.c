@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   ramfs - a temporary file system stored in RAM.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -455,6 +455,9 @@ int ramfs_lookup(vnode_t * dir, const char * name, size_t name_len,
         return -ENOLINK; /* Could not translate vnode_num to a vnode;
                           * Broken link? */
     }
+
+    if (*result == dir)
+        return -EDOM;
 
     return 0;
 }

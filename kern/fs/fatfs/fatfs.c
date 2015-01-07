@@ -414,7 +414,7 @@ static int fatfs_lookup(vnode_t * dir, const char * name, size_t name_len,
             *result = dir->sb->mountpoint;
 
             kfree(in_fpath);
-            return 0;
+            return -EDOM;
         } else {
             size_t i = strlenn(in_fpath, NAME_MAX) - 4;
 
