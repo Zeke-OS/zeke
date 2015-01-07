@@ -578,6 +578,10 @@ static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
         return 0;
     }
 
+    if (action.ks_action.sa_flags & SA_RESTART) {
+        KERROR(KERROR_ERR, "SA_RESTART is not yet supported\n");
+    }
+
     /* Not ignored so we can set the signal to pending state. */
     ksiginfo = kmalloc(sizeof(struct ksiginfo));
     if (!ksiginfo)
