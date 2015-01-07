@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   File System wrapper for FatFs.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -388,9 +388,6 @@ static int fatfs_lookup(vnode_t * dir, const char * name, size_t name_len,
     char * in_fpath;
     long vn_hash;
     struct vnode * vn = NULL;
-    /* Following variables are used only if not cached. */
-    struct fatfs_inode * in;
-    /* --- */
     int err, retval = 0;
 
     /* Format full path */
@@ -419,47 +416,51 @@ static int fatfs_lookup(vnode_t * dir, const char * name, size_t name_len,
             kfree(in_fpath);
             return 0;
         } else {
-            size_t i = strlenn(in_fpath, NAME_MAX);
+            size_t i = strlenn(in_fpath, NAME_MAX) - 4;
 
-            while (in_fpath[i] != '/') i--;
+            while (in_fpath[i] != '/')
+                i--;
             in_fpath[i] = '\0';
         }
     }
 
-    /* Lookup from vfs_hash */
+    /*
+     * Lookup from vfs_hash
+     */
     vn_hash = hash32_str(in_fpath, 0);
     err = vfs_hash_get(
             dir->sb,        /* FS superblock */
             vn_hash,        /* Hash */
             &vn,            /* Retval */
-            fatfs_vncmp,    /* Comparer */
+            fatfs_vncmp,    /* Comparator */
             in_fpath        /* Compared fpath */
           );
     if (err) {
         retval = -EIO;
         goto fail;
     }
-    if (vn) {
-        /* Found it */
-        kfree(in_fpath);
+    if (vn) { /* found it in vfs_hash */
         vref(vn);
         *result = vn;
+        retval = 0;
+    } else { /* not cached */
+        struct fatfs_inode * in;
 
-        return 0;
+        /*
+         * Create a inode and fetch data from the device.
+         */
+        err = create_inode(&in, sb, in_fpath, vn_hash, O_RDWR);
+        if (err) {
+            retval = err;
+            goto fail;
+        }
+
+        /* Vn is already referenced so just return. */
+        *result = &in->in_vnode;
+        in_fpath = NULL; /* shall not be freed. */
+        retval = 0;
     }
 
-    /*
-     * Create a inode and fetch data from the device.
-     */
-    err = create_inode(&in, sb, in_fpath, vn_hash, O_RDWR);
-    if (err) {
-        retval = err;
-        goto fail;
-    }
-    /* Vn is already referenced so just return. */
-    *result = &in->in_vnode;
-
-    return 0;
 fail:
     kfree(in_fpath);
     return retval;
