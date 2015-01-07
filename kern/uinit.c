@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   System init for Zero Kernel.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,6 +36,7 @@
 #include <kstring.h>
 #include <kerror.h>
 #include <time.h>
+#include <paths.h>
 #include <sys/stat.h>
 
 #include <../lib/libc/sys.c>
@@ -135,7 +136,7 @@ static void printfail(char * str)
 void * uinit(void * arg)
 {
     char * argv[] = { "/sbin/sinit", NULL };
-    char * env[] = { "PATH=", "HOME=/", NULL };
+    char * env[] = { "PATH=" _PATH_STDPATH, "HOME=/", NULL };
     int err;
 
     write(STDOUT_FILENO, "uinit\n", 7);

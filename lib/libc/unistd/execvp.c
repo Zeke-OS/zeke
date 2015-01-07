@@ -35,11 +35,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <paths.h>
 #include <syscall.h>
 #include <unistd.h>
 
-static char shell[] = "/bin/sh";
-#define _PATH_STDPATH "/usr/bin:/bin:/usr/sbin:/sbin:"
 #define NARG_MAX 256
 
 static char * execat(char * s1, const char * s2, char * si)
@@ -87,7 +86,7 @@ int execvp(const char * name, char * const argv[])
                     return -1;
                 }
             }
-            execv(shell, newargs);
+            execv(_PATH_BSHELL, newargs);
             return -1;
         case ETXTBSY:
             if (++etxtbsy > 5)

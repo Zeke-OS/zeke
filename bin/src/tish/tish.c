@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Tiny Init Shell for debugging in init.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -151,9 +151,7 @@ static void forkexec(char * path, char ** args)
     if (pid == -1) {
         write(STDOUT_FILENO, failmsg, sizeof(failmsg));
     } else if (pid == 0) {
-        /* TODO Something fails? */
         execvp(path, argv);
-        //execve(path, argv, env);
         _exit(1); /* TODO Figure out why exit(1) fails */
     } else {
         int status;
