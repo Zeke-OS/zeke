@@ -12,24 +12,12 @@ Generic Tasks
 - sysconf: http://pubs.opengroup.org/onlinepubs/7990989775/xsh/sysconf.html
 - dlfcn.h - dynamic linking
 
-The current "relaxed" memory layout is not sufficient anymore and it's painful
-to manage. Starting user space memory from 0 would make user space development
-a bit easier. Separated locked kernel memory area would greatly reduce overhead
-of syscalls and make it trivial to know if some data is accessible or not.
-Currently we have some assumptions that some data must exist in low memory and
-those can't be relocated to maintain operational process switches. All of this
-makes constant cache flushes a strict requirement and slows downs things.
-Good things however are that the kernel could easily support non-MMU hw and
-in-kernel memory allocations are not limited by any artificial limits.
-
 proc
 ----
 
 - sysctl kern.maxproc should not allow negative values
 - Update vm_pt linkcount correctly during fork() and other operations
 - proc is not fully MP safe
-- kill()
-- signals
 
 fs (vfs)
 --------
@@ -48,17 +36,8 @@ Allocate blocks with geteblk, this will also make memmapping possible for ramfs
 files.
 Use LINK_MAX.
 
-kinit
------
-
-- Print something when a subsys init begins
-
 sched
 -----
-
-Implement thread cancellation in a POSIX way.
-
-Zombie threads are not cleaned properly.
 
 Short sched_thread_sleep() delays may crash the kernel. This may happen because
 of some race condition with scheduling. So times under 5 ms in some conditions
@@ -105,8 +84,6 @@ MMU
 
 - Instead of always flushing everything flush just addresses changed if
   possible
-- XN bit may not work
-- Better debug messages to detect invalid page tables/regions
 - Individual locks for page tables.
   May improve performance and reliability but might be hard to implement.
 
@@ -126,7 +103,7 @@ ptmapper
 dynmem
 ------
 
-- COW may cause deadlock if dynmem is called
+- COW may cause a deadlock if dynmem is called
 
 kmalloc
 -------
@@ -193,11 +170,6 @@ libc
 - Missing this and that
 - Enable mmap for malloc
 - sigtimedwait, sigwaitinfo implementations missing
-
-init
-----
-
-- fork() new processes like init should do
 
 
 KNOWN ISSUES

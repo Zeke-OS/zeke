@@ -9,20 +9,21 @@ Zero Kernel    {#mainpage}
                  .||. ||.'|...'
 
 Zero Kernel is a tiny kernel implementation that was originally targeted for
-ARM Corex-M microcontrollers. Reasons to start this project was that most of
-currently available RTOSes for M0 were bit bloat and secondly I found
-architectures based on ARMv6-M to be quite challenging platforms for RTOS/kernel
-development. Especially when ARMv6-M is compared to ARMv7-M used in M4 core or
-any Cortex-A cores using real ARM architectures.
+ARM Corex-M microcontrollers. The reason to start this project was that most of
+currently (or back then) available RTOSes for M0 were bit bloat and secondly I
+found architectures based on ARMv6-M to be quite challenging platforms for
+RTOS/kernel development, especially when ARMv6-M is compared to ARMv7-M used
+in M4 core or any Cortex-A cores using real ARM architectures.
 
 One of the original goals of Zero Kernel was to make it CMSIS-RTOS compliant
-where possible, as some concepts of Zeke were not CMSIS compliant from the
-begining. However scope changed early and the kernel is no more CMSIS compatible
-at any level. Currently Zeke is no moving towards POSIX-like system.
+where possible, as some concepts of Zeke were not actually CMSIS compliant from
+the begining. However the scope of the project shifted pretty early and the
+kernel is no longer CMSIS compatible at any level. Currently Zeke is no moving
+towards POSIX-like system and its user space is taking a very Unix-like shape.
 
 Key Features
 ------------
-- For user applications
+- Userland benefits
     - Mostly C99 compliant libc
     - Dynamic prioritizing pre-emptive scheduling with penalties to prevent
       starvation
@@ -34,6 +35,7 @@ Key Features
 - File Systems
     - Complete file system abstraction (VFS)
     - freeBSD-like device file interface
+    - FAT12/16/32 support
 - Kernel
     - Fully pre-emptible kernel mode
     - freeBSD-like sysctl interface
