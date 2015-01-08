@@ -32,6 +32,9 @@ include $(ROOT_DIR)/genconfig/dist.mk
 .SUFFIXES:                  	# Delete the default suffixes
 .SUFFIXES: .c .bc .o .h .S ._S	# Define our suffix list
 
+# Supress warnings about C11 extensions in libc
+CCFLAGS += -Wno-c11-extensions
+
 LIBS = crt1 libc
 
 # AR flags #####################################################################
