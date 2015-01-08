@@ -596,14 +596,14 @@ int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
     if (*off == DIRENT_SEEK_START) {
         f_readdir(&in->dp, NULL); /* Rewind */
 
-        strlcpy(d->d_name, ".", NAME_MAX);
+        strlcpy(d->d_name, ".", sizeof(d->d_name));
         d->d_ino = dir->vn_num;
         d->d_type = DT_DIR;
         *off = DIRENT_SEEK_START + 1;
 
         return 0;
     } else if (*off == DIRENT_SEEK_START + 1) {
-        strlcpy(d->d_name, "..", NAME_MAX);
+        strlcpy(d->d_name, "..", sizeof(d->d_name));
         /* TODO Set d members to proper values */
         d->d_ino = 0;
         d->d_type = DT_DIR;
@@ -629,7 +629,7 @@ int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
 #if configFATFS_LFN
     if (!*fno.lfname)
 #endif
-        strlcpy(d->d_name, fno.fname, 13);
+        strlcpy(d->d_name, fno.fname, sizeof(d->d_name));
 
     return 0;
 }
