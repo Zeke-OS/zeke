@@ -66,15 +66,28 @@ int shm_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
         bp = geteblk(bsize);
     } else { /* Map a file */
         file_t * file;
-        size_t blkno = 0; /* TODO */
+        vnode_t * vnode;
+        struct stat statbuf;
+        size_t blkno;
 
         file = fs_fildes_ref(proc->files, fildes, 1);
         if (!file)
             return -EBADF;
+        vnode = file->vnode;
 
-        bp = getblk(file->vnode, blkno, bsize, 0);
+        /*
+         * Calculate block number.
+         */
+        if (!vnode->vnode_ops->stat)
+            return -ENOTSUP;
+        vnode->vnode_ops->stat(vnode, &statbuf);
+        blkno = off % statbuf.st_blksize;
+
+        bp = getblk(vnode, blkno, bsize, 0);
 
         fs_fildes_ref(proc->files, fildes, -1);
+
+        /* TODO Move address by off */
     }
     if (!bp) {
         return -ENOMEM;
