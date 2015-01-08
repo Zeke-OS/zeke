@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   User credentials.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2006 nCircle Network Security, Inc.
  * All rights reserved.
  *
@@ -178,9 +178,10 @@
 /*
  * Virtual memory privileges.
  */
-#define PRIV_VM_MADV_PROTECT 130 /* Can set MADV_PROTECT. */
-#define PRIV_VM_MLOCK        131 /* Can mlock(), mlockall(). */
-#define PRIV_VM_MUNLOCK      132 /* Can munlock(), munlockall(). */
+#define PRIV_VM_PROT_EXEC    130 /* Can set a memory region executable. */
+#define PRIV_VM_MADV_PROTECT 131 /* Can set MADV_PROTECT. */
+#define PRIV_VM_MLOCK        132 /* Can mlock(), mlockall(). */
+#define PRIV_VM_MUNLOCK      133 /* Can munlock(), munlockall(). */
 
 /*
  * Network stack privileges.
