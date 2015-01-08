@@ -13,7 +13,7 @@ static void teardown()
 
 static char * test_mmap_anon(void)
 {
-    void * data;
+    char * data;
 
     errno = 0;
     data = mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_ANON, -1, 0);
@@ -21,13 +21,16 @@ static char * test_mmap_anon(void)
     pu_assert("a new memory region returned", data != NULL);
     pu_assert_equal("No errno was set", errno, 0);
 
+    memset(data, 0xff, 200);
+    pu_assert("memory is accessible", data[50] == 0xff);
+
     return NULL;
 }
 
 static char * test_mmap_anon_fixed(void)
 {
 #define ADDR ((void *)0xA0000000)
-    void * data;
+    char * data;
     static char msg[80];
     int errno_save;
 
@@ -39,6 +42,9 @@ static char * test_mmap_anon_fixed(void)
     pu_assert_equal("No errno was set", errno_save, 0);
     sprintf(msg, "returned address equals %p", ADDR);
     pu_assert(msg, data == ADDR);
+
+    memset(data, 0xff, 200);
+    pu_assert("memory is accessible", data[50] == 0xff);
 
     return NULL;
 #undef ADDR
