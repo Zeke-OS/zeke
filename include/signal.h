@@ -62,9 +62,10 @@
  *******************************************************************************
  */
 
-/** @addtogroup LIBC
-  * @{
-  */
+/**
+ * @addtogroup LIBC
+ * @{
+ */
 
 #pragma once
 #ifndef SIGNAL_H
@@ -73,9 +74,10 @@
 #include <time.h> /* TODO Header shall define the timespec structure as
                    *      described in time.h */
 
-/** @addtogroup Signals
-  * @{
-  */
+/**
+ * @addtogroup Signals
+ * @{
+ */
 
 #include <sys/types_pthread.h>
 #include <sys/signal_num.h>
@@ -318,34 +320,34 @@ __BEGIN_DECLS
 void (*signal(int sig, void (*func)(int)))(int);
 
 int kill(pid_t pid, int sig);
-/*
+#if 0
 int killpg(pid_t pgrp, int sig);
 void psiginfo(const siginfo_t * pinfo, const char * message);
-*/
+#endif
 void psignal(int signum, const char * message);
 
 int pthread_kill(pthread_t thread, int sig);
-/*
+#if 0
 int pthread_sigmask(int how, const sigset_t * restrict set,
         sigset_t * restrict oset);
-*/
+#endif
 int raise(int sig);
-/*
+#if 0
 int sigaction(int sig, const struct sigaction * restrict act,
         struct sigaction * restrict oact);
-*/
+#endif
 
 /**
  * @addtogroup sigsetops
  * sigsetops
  * Manipulate signal sets.
  *
- * These functions manipulate   signal sets stored in a sigset_t.  Either
- * sigemptyset() or sigfillset() must  be called for every object of type
+ * These functions manipulate signal sets stored in a sigset_t. Either
+ * sigemptyset() or sigfillset() must be called for every object of type
  * sigset_t before any other use of the object.
  *
- * @return  The sigismember() function   returns 1 if the signal is a member
- *          of the set, 0 otherwise.   The other functions return 0 upon
+ * @return  The sigismember() function returns 1 if the signal is a member
+ *          of the set, 0 otherwise. The other functions return 0 upon
  *          success.  A -1 return value indicates an error occurred and
  *          the global variable errno is set to indicate the reason.
  * @{
@@ -411,9 +413,9 @@ __END_DECLS
 #endif /* SIGNAL_H */
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /**
-  * @}
-  */
+ * @}
+ */

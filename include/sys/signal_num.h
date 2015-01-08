@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Signal numbers.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,17 +30,19 @@
  *******************************************************************************
  */
 
-/** @addtogroup Library_Functions
-  * @{
-  */
+/**
+ * @addtogroup Library_Functions
+ * @{
+ */
 
 #pragma once
 #ifndef SIGNAL_NUM_H
 #define SIGNAL_NUM_H
 
-/** @addtogroup Signals
-  * @{
-  */
+/**
+ * @addtogroup Signals
+ * @{
+ */
 
 /* List of signals
  * ---------------
@@ -83,12 +85,12 @@
 
 #define _SIG_MAX_ 32
 
+/**
+ * @}
+ */
+
 #endif /* SIGNAL_NUM_H */
 
 /**
-  * @}
-  */
-
-/**
-  * @}
-  */
+ * @}
+ */

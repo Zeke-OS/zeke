@@ -156,20 +156,69 @@ int ksignal_reset_ksigaction(struct signals * sigs, int signum);
  */
 int ksignal_set_ksigaction(struct signals * sigs, struct ksigaction * action);
 
+/**
+ * @addtogroup kernel_sigsetops
+ * sigsetops
+ * Manipulate signal sets.
+ * @{
+ */
+
+/**
+ * Add a signal to a signal set.
+ */
 int sigaddset(sigset_t * set, int signo);
+
+/**
+ * Delete a signal from a signal set.
+ */
 int sigdelset(sigset_t * set, int signo);
+
+/**
+ * Initialize and empty a signal set.
+ * No signals are set.
+ */
 int sigemptyset(sigset_t * set);
+
+/**
+ * Initialize and fill a signal set.
+ * All defined signals will be included.
+ */
 int sigfillset(sigset_t * set);
+
+/**
+ * Test for a signal in a signal set.
+ * Test if signo is a member of the signal set set.
+ */
 int sigismember(const sigset_t * set, int signo);
+
+/**
+ * Test if a signal set is an empty set.
+ */
 int sigisemptyset(const sigset_t * set);
+
+/**
+ * Find first signal in a signal set.
+ */
 int sigffs(sigset_t * set);
 
 /**
- * Union of sigset a and b to target.
+ * Take union of sigset a and b to target.
  */
 sigset_t * sigunion(sigset_t * target, sigset_t * a, sigset_t * b);
+
+/**
+ * Take intersection of sigset a and b to target.
+ */
 sigset_t * sigintersect(sigset_t * target, sigset_t * a, sigset_t * b);
+
+/**
+ * Take complement of sigset set to target.
+ */
 sigset_t * sigcompl(sigset_t * target, sigset_t * set);
+
+/**
+ * @}
+ */
 
 #endif /* KSIGNAL_H */
 

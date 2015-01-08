@@ -271,7 +271,6 @@ int vm_mapproc_region(struct proc_info * proc, struct buf * region);
  * @{
  */
 
-
 /**
  * Check kernel space memory region for accessibility.
  * Check whether operations of the type specified in rw are permitted in the
@@ -289,6 +288,11 @@ int kernacc(const void * addr, int len, int rw);
  *          Otherwise boolean false.
  */
 int useracc(const void * addr, size_t len, int rw);
+
+/**
+ * Check user space memory region of a process for accessibility.
+ * Same as useracc but proc is specified.
+ */
 int useracc_proc(const void * addr, size_t len, struct proc_info * proc, int rw);
 
 /**

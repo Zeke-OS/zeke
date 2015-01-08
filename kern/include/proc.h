@@ -208,12 +208,19 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
  */
 pid_t proc_update(void);
 
+/**
+ * Free a process PCB and other related resources.
+ */
 void _proc_free(proc_info_t * p);
 
+/**
+ * Get pointer to a internal proc_info structure by first locking it.
+ */
 proc_info_t * proc_get_struct_l(pid_t pid);
 
 /**
  * Get pointer to a internal proc_info structure.
+ * @note Requires a lock.
  */
 proc_info_t * proc_get_struct(pid_t pid);
 

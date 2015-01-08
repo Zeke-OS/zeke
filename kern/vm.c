@@ -43,7 +43,8 @@
 #include <buf.h>
 #include <vm/vm.h>
 
-/* TODO
+/*
+ * TODO
  * Add configHAVE_HW_PAGETABLES or similar config flag and implement a default
  * lookup function for uaddr to kaddr that doesn't need HAL support.
  */
