@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Virtual file system.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,6 +47,9 @@
 #include <fs/mbr.h>
 #include <fs/fs.h>
 
+/*
+ * File system global locking.
+ */
 mtx_t fslock;
 #define FS_LOCK()       mtx_lock(&fslock)
 #define FS_UNLOCK()     mtx_unlock(&fslock)
@@ -275,7 +278,7 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
     if (fsname) {
         fs = fs_by_name(fsname);
     } else {
-        /* TODO Try to determine type of the fs */
+        /* TODO Try to determine the type of the fs */
     }
     if (!fs)
         return -ENOTSUP; /* fs doesn't exist. */
@@ -305,7 +308,7 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
     sb->root->vn_prev_mountpoint = target->vn_mountpoint;
     target->vn_mountpoint = sb->root;
 
-    /* TODO inherit perms */
+    /* TODO inherit permissions */
 
     return 0;
 }
@@ -359,9 +362,6 @@ out:
     return retval;
 }
 
-/**
- * Get next pfs minor number.
- */
 unsigned int fs_get_pfs_minor(void)
 {
     static unsigned int pfs_minor = 0;
@@ -379,7 +379,6 @@ int chkperm_cproc(struct stat * stat, int oflags)
     return chkperm(stat, euid, egid, oflags);
 }
 
-/* This function accepts both oflags and amodes, except F_OK. */
 int chkperm(struct stat * stat, uid_t euid, gid_t egid, int oflags)
 {
     oflags &= O_ACCMODE;
@@ -563,7 +562,8 @@ file_t * fs_fildes_ref(files_t * files, int fd, int count)
     }
     mtx_unlock(&fildes->lock);
 
-    /* The following is normally unsafe but in the case of file descriptors it
+    /*
+     * The following is normally unsafe but in the case of file descriptors it
      * should be safe to assume that there is always only one process that wants
      * to free a filedes concurrently (the owener itself).
      */
@@ -587,9 +587,6 @@ int fs_fildes_close_cproc(int fildes)
     return 0;
 }
 
-/**
- * @param oper  is the file operation, either O_RDONLY or O_WRONLY.
- */
 ssize_t fs_readwrite_cproc(int fildes, void * buf, size_t nbyte, int oper)
 {
     vnode_t * vnode;
@@ -603,8 +600,10 @@ ssize_t fs_readwrite_cproc(int fildes, void * buf, size_t nbyte, int oper)
         return -EBADF;
     vnode = file->vnode;
 
-    /* Check that file is opened for correct mode, the vnode exist and we have
-     * ops struct for the vnode. */
+    /*
+     * Check that file is opened for correct mode, the vnode exist and we have
+     * ops struct for the vnode.
+     */
     if (!(file->oflags & oper) || !vnode || !(vnode->vnode_ops)) {
         retval = -EBADF;
         goto out;
@@ -849,8 +848,10 @@ int fs_unlink_curproc(int fd, const char * path, size_t path_len, int atflags)
         goto out;
     }
 
-    /* We need a write access to the containing directory to allow removal of
-     * a directory entry. */
+    /*
+     * We need a write access to the containing directory to allow removal of
+     * a directory entry.
+     */
     err = chkperm_vnode_cproc(dir, O_WRONLY);
     if (err) {
         if (err == -EPERM)

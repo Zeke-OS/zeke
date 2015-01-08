@@ -468,7 +468,7 @@ void fs_init_sb_iterator(sb_iterator_t * it);
 fs_superblock_t * fs_next_sb(sb_iterator_t * it);
 
 /**
- * Get next free pseudo fs minor code.
+ * Get next free pseudo fs minor number.
  */
 unsigned int fs_get_pfs_minor(void);
 
@@ -476,6 +476,7 @@ int chkperm(struct stat * stat, uid_t uid, gid_t gid, int amode);
 
 /**
  * Check file permissions against oflag(s).
+ * This function accepts both oflags and amodes, except F_OK.
  * @param stat      is a pointer to stat struct of the file.
  * @param oflags    specifies the verified oflags or amodes.
  * @return  Returns negative errno in case of error or improper permissions;
@@ -529,6 +530,7 @@ int fs_fildes_close_cproc(int fildes);
  * @param fildes    is the file descriptor nuber.
  * @param buf       is the buffer.
  * @param nbytes    is the amount of bytes to be read/writted.
+ * @param oper      is the file operation, either O_RDONLY or O_WRONLY.
  * @return  Return the number of bytes actually read/written from/to the file
  *          associated with fildes; Otherwise a negative value representing
  *          errno.
