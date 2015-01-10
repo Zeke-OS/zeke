@@ -280,8 +280,8 @@ struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot,
             const uintptr_t reg_end = region->b_mmu.vaddr
                                  + MMU_SIZEOF_REGION(&region->b_mmu);
 
-            if ((vaddr >= reg_start && vaddr <= reg_end) ||
-                (vaddr + size >= reg_end && vaddr + size <= reg_end)) {
+            if ((reg_start <= vaddr && vaddr <= reg_end) ||
+                (reg_end <= vaddr + size && vaddr + size <= reg_end)) {
                 found = 1;
                 break;
             }

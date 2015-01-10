@@ -19,6 +19,8 @@ mmd -i "$IMG" opt
 mmd -i "$IMG" opt/test
 mmd -i "$IMG" proc
 mmd -i "$IMG" tmp
+mmd -i "$IMG" root
+mcopy -i "$IMG" -s README.markdown "::root"
 
 MANIFEST=$(find . -name manifest -exec dirname {} \;)
 for dir in $MANIFEST; do

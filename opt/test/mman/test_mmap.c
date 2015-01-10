@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <sys/mman.h>
 #include "punit.h"
 
@@ -50,10 +51,23 @@ static char * test_mmap_anon_fixed(void)
 #undef ADDR
 }
 
+static char * test_mmap_file(void)
+{
+    int fd;
+    char * data;
+
+    fd = open("/root/README.markdown", O_RDONLY);
+
+    data = mmap(NULL, 4096, PROT_READ, 0, -1, 0);
+
+    return NULL;
+}
+
 static void all_tests()
 {
     pu_run_test(test_mmap_anon);
     pu_run_test(test_mmap_anon_fixed);
+    pu_run_test(test_mmap_file);
 }
 
 int main(int argc, char **argv)

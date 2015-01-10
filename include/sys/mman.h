@@ -182,6 +182,7 @@ struct _shmem_mmap_args {
     off_t off;
 };
 
+#ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
 /*
  * XXX not yet implemented: posix_mem_offset(), posix_typed_mem_get_info(),
@@ -212,5 +213,10 @@ int shm_open(const char *, int, mode_t);
 int shm_unlink(const char *);
 #endif
 __END_DECLS
+#else /* !KERNEL_INTERNAL */
+int shm_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
+             int flags, int fildes, off_t off, struct buf ** out,
+             char ** uaddr);
+#endif /* KERNEL_INTERNAL */
 
 #endif /* !_SYS_MMAN_H_ */

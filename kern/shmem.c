@@ -40,10 +40,11 @@
 #include <sys/mman.h>
 
 int shm_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
-             int flags, int fildes, off_t off, struct buf ** out)
+             int flags, int fildes, off_t off, struct buf ** out, char ** uaddr)
 {
     struct buf * bp;
     int err;
+    struct stat statbuf = { .st_blksize = 0 };
 
     KASSERT(out, "out buffer pointer must be set");
 
@@ -60,6 +61,8 @@ int shm_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
      * - MAP_NOCORE
      * - MAP_PREFAULT_READ
      * - MAP_32BIT (not needed anytime soon?)
+     *
+     *   Check prot access from fd?
      */
 
     if (flags & MAP_ANON) {
@@ -67,7 +70,6 @@ int shm_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
     } else { /* Map a file */
         file_t * file;
         vnode_t * vnode;
-        struct stat statbuf;
         size_t blkno;
 
         file = fs_fildes_ref(proc->files, fildes, 1);
@@ -81,13 +83,11 @@ int shm_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
         if (!vnode->vnode_ops->stat)
             return -ENOTSUP;
         vnode->vnode_ops->stat(vnode, &statbuf);
-        blkno = off % statbuf.st_blksize;
+        blkno = off / statbuf.st_blksize;
 
         bp = getblk(vnode, blkno, bsize, 0);
 
         fs_fildes_ref(proc->files, fildes, -1);
-
-        /* TODO Move address by off */
     }
     if (!bp) {
         return -ENOMEM;
@@ -103,14 +103,23 @@ int shm_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
             err = 0;
     } else {
         /* Randomly map bp somwhere into the process address space. */
-        if (vm_rndsect(proc, 0 /* Ignored */, 0 /* Ignored */, bp))
+        if (vm_rndsect(proc, 0 /* Ignored */, 0 /* Ignored */, bp)) {
             err = 0;
-        else
+        } else {
             err = -ENOMEM;
+        }
     }
     if (err && bp->vm_ops->rfree) {
         bp->vm_ops->rfree(bp);
         return err;
+    }
+
+    /* Set uaddr */
+    if (statbuf.st_blksize > 0) {
+        /* Adjust returned uaddr by off */
+        *uaddr = (char *)(bp->b_mmu.vaddr + off % statbuf.st_blksize);
+    } else {
+        *uaddr = (char *)(bp->b_mmu.vaddr);
     }
 
     *out = bp;
@@ -135,7 +144,8 @@ static int sys_mmap(void * user_args)
     }
 
     err = shm_mmap(curproc, (uintptr_t)args.addr, args.bsize, args.prot,
-                   args.flags, args.fildes, args.off, &bp);
+                   args.flags, args.fildes, args.off, &bp,
+                   (char **)(&args.addr));
     if (err) {
         retval = err;
         goto fail;
@@ -145,7 +155,6 @@ static int sys_mmap(void * user_args)
         goto fail;
     }
 
-    args.addr = (void *)(bp->b_mmu.vaddr);
     err = copyout(&args, user_args, sizeof(args));
     if (err) {
         retval = -EFAULT;
