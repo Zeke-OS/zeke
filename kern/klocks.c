@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Kernel space locks.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -102,13 +102,11 @@ int _mtx_lock(mtx_t * mtx, char * whr)
          *      current priorities.
          */
         if (++deadlock_cnt >= configSCHED_HZ * (configKLOCK_DLTHRES + 1)) {
-            char buf[100];
             char * lwhr = (mtx->mtx_ldebug) ? mtx->mtx_ldebug : "?";
 
-            ksprintf(buf, sizeof(buf),
+            KERROR(KERROR_DEBUG,
                      "Deadlock detected:\n%s WAITING\n%s LOCKED\n",
                      whr, lwhr);
-            KERROR(KERROR_DEBUG, buf);
 
             deadlock_cnt = 0;
         }
@@ -205,12 +203,9 @@ int _mtx_trylock(mtx_t * mtx, char * whr)
         }
     } else {
 #ifdef configLOCK_DEBUG
-        char msgbuf[120];
-
-        ksprintf(msgbuf, sizeof(msgbuf),
+        KERROR(KERROR_ERR,
                  "mtx_trylock() not supported for this lock type (%s)\n",
                  whr);
-        KERROR(KERROR_ERR, msgbuf);
 #endif
         return -ENOTSUP;
     }

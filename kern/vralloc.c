@@ -324,12 +324,8 @@ struct buf * vr_rclone(struct buf * old_region)
     }
 
 #if configDEBUG >= KERROR_DEBUG
-    {
-    char buf[80];
-    ksprintf(buf, sizeof(buf), "clone %x -> %x, %u bytes\n",
-            old_region->b_data, new_region->b_data, rsize);
-    KERROR(KERROR_DEBUG, buf);
-    }
+    KERROR(KERROR_DEBUG, "clone %x -> %x, %u bytes\n",
+           old_region->b_data, new_region->b_data, rsize);
 #endif
 
     /* Copy data */

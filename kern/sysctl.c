@@ -5,7 +5,7 @@
  *
  * @brief   sysctl kernel code.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1982, 1986, 1989, 1993
  *        The Regents of the University of California.  All rights reserved.
  *
@@ -135,11 +135,8 @@ void sysctl_register_oid(struct sysctl_oid * oidp)
             p->oid_refcnt++;
             return;
         } else {
-            char msg[120];
-
-            ksprintf(msg, sizeof(msg),
+            KERROR(KERROR_WARN,
                     "can't re-use a leaf (%s)!\n", p->oid_name);
-            KERROR(KERROR_WARN, msg);
             return;
         }
     }

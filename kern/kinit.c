@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   System init for Zero Kernel.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -185,10 +185,9 @@ int kinit(void)
     init_proc->main_thread = init_thread;
 
 #if configDEBUG >= KERROR_INFO
-    ksprintf(buf, sizeof(buf),
+    KERROR(KERROR_DEBUG,
             "Init created with pid: %u, tid: %u, stack: %x\n",
             pid, tid, init_vmstack->b_mmu.vaddr);
-    KERROR(KERROR_DEBUG, buf);
 #endif
 
     return 0;
@@ -221,10 +220,7 @@ static void mount_rootfs(void)
                    configROOTFS_FLAGS,
                    configROOTFS_PARMS, sizeof(configROOTFS_PARMS));
     if(ret) {
-        char buf[80];
-
-        ksprintf(buf, sizeof(buf), "%s : %i\n", failed, ret);
-        KERROR(KERROR_ERR, buf);
+        KERROR(KERROR_ERR, "%s : %i\n", failed, ret);
         goto out;
     }
 

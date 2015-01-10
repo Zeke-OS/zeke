@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   ATAG scanner.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,13 +55,11 @@
 void atag_scan(uint32_t fw, uint32_t mtype, uint32_t * atag_addr)
 {
     uint32_t * atags;
-    char msg[120];
 
     sysinfo.mtype = mtype;
 
     if (*atag_addr != ATAG_CORE) {
-        ksprintf(msg, sizeof(msg), "%p:%x\n", atag_addr, *atag_addr);
-        KERROR(KERROR_WARN, msg);
+        KERROR(KERROR_WARN, "%p:%x\n", atag_addr, *atag_addr);
         KERROR(KERROR_WARN, "No ATAGs!\n");
         return;
     }
@@ -69,18 +67,16 @@ void atag_scan(uint32_t fw, uint32_t mtype, uint32_t * atag_addr)
     for (atags = atag_addr; atags < (uint32_t *)0x8000; atags += 1) {
         switch (atags[1]) {
         case ATAG_CORE:
-            ksprintf(msg, sizeof(msg),
+            KERROR(KERROR_INFO,
                     "[ATAG_CORE] flags: %x, page size: %u, rootdev: %u\n",
                     atags[2], atags[3], atags[4]);
-            KERROR(KERROR_INFO, msg);
 
             atags += atags[0]-1;
             break;
         case ATAG_MEM:
-            ksprintf(msg, sizeof(msg),
+            KERROR(KERROR_INFO,
                     "[ATAG_MEM] size: %x, start: %x\n",
                     atags[2], atags[3]);
-            KERROR(KERROR_INFO, msg);
 
             atags += atags[0]-1;
 
@@ -108,9 +104,8 @@ void atag_scan(uint32_t fw, uint32_t mtype, uint32_t * atag_addr)
         case ATAG_CMDLINE:
             atags += 2;
 
-            ksprintf(msg, sizeof(msg),
+            KERROR(KERROR_INFO,
                     "[ATAG_CMDLINE] : %s\n", (char *)atags);
-            KERROR(KERROR_INFO, msg);
 
             atags += atags[0]-1;
             break;

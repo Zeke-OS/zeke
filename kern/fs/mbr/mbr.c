@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   MBR driver.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -85,7 +85,6 @@ int mbr_register(int fd, int * part_count)
     vnode_t * parent_vnode;
     struct dev_info * parent;
     uint8_t * block_0 = 0;
-    char msgbuf[120];
     int parts = 0;
     int retval = 0;
 
@@ -118,27 +117,24 @@ int mbr_register(int fd, int * part_count)
     }
 
 #ifdef configMBR_DEBUG
-    ksprintf(msgbuf, sizeof(msgbuf),
+    KERROR(KERROR_DEBUG,
              "MBR: reading block 0 from device %s\n",
              parent->dev_name);
-    KERROR(KERROR_DEBUG, msgbuf);
 #endif
 
     int ret = dev_read(file, block_0, 512);
     if (ret < 0) {
-        ksprintf(msgbuf, sizeof(msgbuf),
+        KERROR(KERROR_ERR,
                  "MBR: block_read from device %s failed (%i)\n",
                  parent->dev_name, ret);
-        KERROR(KERROR_ERR, msgbuf);
 
         retval = ret;
         goto fail;
     } else if (ret != 512) {
-        ksprintf(msgbuf, sizeof(msgbuf),
+        KERROR(KERROR_ERR,
                  "MBR: unable to read first 512 bytes of device %s, "
                  "only %d bytes read\n",
                  parent->dev_name, ret);
-        KERROR(KERROR_ERR, msgbuf);
 
         retval = -ENOENT;
         goto fail;
@@ -146,29 +142,26 @@ int mbr_register(int fd, int * part_count)
 
     /* Check the MBR signature */
     if ((block_0[0x1fe] != 0x55) || (block_0[0x1ff] != 0xaa)) {
-        ksprintf(msgbuf, sizeof(msgbuf),
+        KERROR(KERROR_ERR,
                  "MBR: Invalid signature on device %s (bytes are %x %x)\n",
                  parent->dev_name, block_0[0x1fe], block_0[0x1ff]);
-        KERROR(KERROR_ERR, msgbuf);
 
         retval = -ENOENT;
         goto fail;
     }
 
 #ifdef configMBR_DEBUG
-    ksprintf(msgbuf, sizeof(msgbuf),
+    KERROR(KERROR_DEBUG,
              "MBR: found valid MBR on device %s\n", parent->dev_name);
-    KERROR(KERROR_DEBUG, msgbuf);
 #endif
 
     /* If parent block size is not 512, we have to coerce start_block
      * and blocks to fit */
     if (parent->block_size < 512) {
         /* We do not support parent device block sizes < 512 */
-        ksprintf(msgbuf, sizeof(msgbuf),
+        KERROR(KERROR_ERR,
                  "MBR: block size of %s is too small (%i)\n",
                  parent->dev_name, parent->block_size);
-        KERROR(KERROR_ERR, msgbuf);
 
         retval = -ENOTSUP;
         goto fail;
@@ -178,10 +171,9 @@ int mbr_register(int fd, int * part_count)
     if (parent->block_size % 512) {
         /* We do not support parent device block sizes that are not a */
         /*  multiple of 512 */
-        ksprintf(msgbuf, sizeof(msgbuf),
+        KERROR(KERROR_ERR,
                  "MBR: block size of %s is not a multiple of 512 (%i)\n",
                  parent->dev_name, parent->block_size);
-        KERROR(KERROR_ERR, msgbuf);
 
         retval = -ENOTSUP;
         goto fail;
@@ -189,9 +181,8 @@ int mbr_register(int fd, int * part_count)
 
 #ifdef configMBR_DEBUG
     if (block_size_adjust > 1) {
-        ksprintf(msgbuf, sizeof(msgbuf), "MBR: block_size_adjust: %i\n",
+        KERROR(KERROR_DEBUG, "MBR: block_size_adjust: %i\n",
                  block_size_adjust);
-        KERROR(KERROR_DEBUG, msgbuf);
     }
 #endif
 
@@ -230,11 +221,10 @@ int mbr_register(int fd, int * part_count)
 
         /* Adjust start_block and blocks to the parent block size */
         if (d->start_block % block_size_adjust) {
-            ksprintf(msgbuf, sizeof(msgbuf),
-                     "MBR: partition number %i on %s does not start on a block "
-                     "boundary (%i).\n",
-                     d->part_no, parent->dev_name, d->start_block);
-            KERROR(KERROR_ERR, msgbuf);
+            KERROR(KERROR_ERR,
+                   "MBR: partition number %i on %s does not start on a block "
+                   "boundary (%i).\n",
+                   d->part_no, parent->dev_name, d->start_block);
 
             retval = -EFAULT;
             goto fail;
@@ -242,11 +232,10 @@ int mbr_register(int fd, int * part_count)
         d->start_block /= block_size_adjust;
 
         if (d->blocks % block_size_adjust) {
-            ksprintf(msgbuf, sizeof(msgbuf),
+            KERROR(KERROR_ERR,
             "MBR: partition number %i on %s does not have a length "
                 "that is an exact multiple of the block length (%i).\n",
                 d->part_no, parent->dev_name, d->start_block);
-            KERROR(KERROR_ERR, msgbuf);
 
             retval = -EFAULT;
             goto fail;
@@ -255,12 +244,11 @@ int mbr_register(int fd, int * part_count)
         d->dev.num_blocks = d->blocks;
 
 #ifdef configMBR_DEBUG
-        ksprintf(msgbuf, sizeof(msgbuf),
+        KERROR(KERROR_DEBUG,
                  "MBR: partition number %i (%s) of type %x, "
                  "start sector %u, sector count %u, p_offset %03x\n",
                  d->part_no, d->dev.dev_name, d->part_id,
                  d->start_block, d->blocks, p_offset);
-        KERROR(KERROR_DEBUG, msgbuf);
 #endif
 
         dev_make(&d->dev, 0, 0, 0666, NULL);
@@ -272,9 +260,8 @@ int mbr_register(int fd, int * part_count)
         /* TODO Register the fs dev with devfs */
     }
 
-    ksprintf(msgbuf, sizeof(msgbuf), "MBR: found total of %i partition(s)\n",
+    KERROR(KERROR_INFO, "MBR: found total of %i partition(s)\n",
              parts);
-    KERROR(KERROR_INFO, msgbuf);
 
 fail:
     kfree(block_0);

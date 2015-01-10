@@ -362,11 +362,9 @@ int realloc_mm_regions(struct vm_mm_struct * mm, int new_count)
     size_t i = mm->nr_regions;
 
     /* TODO Remove me */
-    char buf[80];
-    ksprintf(buf, sizeof(buf),
-             "realloc_mm_regions(mm %p, new_count %d), old %d\n",
-             mm, new_count, i);
-    KERROR(KERROR_DEBUG, buf);
+    KERROR(KERROR_DEBUG,
+           "realloc_mm_regions(mm %p, new_count %d), old %d\n",
+           mm, new_count, i);
 
     if (i == 0) {
         /* TODO ticket lock? */
@@ -375,10 +373,10 @@ int realloc_mm_regions(struct vm_mm_struct * mm, int new_count)
     mtx_lock(&mm->regions_lock);
 
     if (new_count <= i) {
-        ksprintf(buf, sizeof(buf),
-                 "realloc_mm_regions cancelled %d <= %d\n",
-                 new_count, i);
-        KERROR(KERROR_DEBUG, buf);
+        KERROR(KERROR_DEBUG,
+               "realloc_mm_regions cancelled %d <= %d\n",
+               new_count, i);
+
         return 0;
     }
 
@@ -458,7 +456,6 @@ int vm_replace_region(struct proc_info * proc, struct buf * region,
     struct vm_mm_struct * const mm = &proc->mm;
     struct vm_pt * vpt;
     struct buf * old_region;
-    char buf[80];
     int err;
 
     /*
@@ -508,9 +505,8 @@ int vm_replace_region(struct proc_info * proc, struct buf * region,
     mtx_unlock(&mm->regions_lock);
 
     /* TODO Hide debugging message with kconfig */
-    ksprintf(buf, sizeof(buf), "Mapped sect %d to %x (phys:%x)\n",
+    KERROR(KERROR_DEBUG, "Mapped sect %d to %x (phys:%x)\n",
              region_nr, region->b_mmu.vaddr, region->b_mmu.paddr);
-    KERROR(KERROR_DEBUG, buf);
 
     return 0;
 }
@@ -562,10 +558,8 @@ int kernacc(const void * addr, int len, int rw)
     }
 
 #if (configDEBUG >= KERROR_DEBUG)
-    char buf[80];
-    ksprintf(buf, sizeof(buf),
-             "Can't fully verify access to address (%p) in kernacc()\n", addr);
-    KERROR(KERROR_WARN, buf);
+    KERROR(KERROR_WARN,
+           "Can't fully verify access to address (%p) in kernacc()\n", addr);
 #endif
 
     return (1 == 1);

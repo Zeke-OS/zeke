@@ -5,7 +5,7 @@
  *
  * @brief   Kernel's internal Syscall handler that is called from kernel scope.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -92,15 +92,13 @@ void syscall_handler(void)
 
     if ((major >= num_elem(syscall_callmap)) || !syscall_callmap[major]) {
         const uint32_t minor = SYSCALL_MINOR(type);
-        char buf[80];
 
-        ksprintf(buf, sizeof(buf),
+        KERROR(KERROR_WARN,
                  "syscall %u:%u not supported, (pid:%u, tid:%u, pc:%x)\n",
                  major, minor,
                  (unsigned)current_process_id,
                  (unsigned)current_thread->id,
                  current_thread->sframe[SCHED_SFRAME_SVC].pc);
-        KERROR(KERROR_WARN, buf);
 
         set_errno(ENOSYS); /* Not supported. */
         retval = -1;

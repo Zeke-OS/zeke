@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Page table mapper.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -252,19 +252,17 @@ int ptmapper_init(void)
     /* Fill page tables with translations & attributes */
     {
 #if configDEBUG >= KERROR_DEBUG
-        char buf[80];
         const char str_type[2][9] = {"sections", "pages"};
-#define PRINTMAPREG(region) \
-        ksprintf(buf, sizeof(buf), "Mapped %s: %u %s\n", \
-            #region, region.num_pages, \
-            (region.pt->type == MMU_PTT_MASTER) ? \
-                str_type[0] : str_type[1]); \
-        KERROR(KERROR_DEBUG, buf);
+#define PRINTMAPREG(region)                         \
+        KERROR(KERROR_DEBUG, "Mapped %s: %u %s\n",  \
+            #region, region.num_pages,              \
+            (region.pt->type == MMU_PTT_MASTER) ?   \
+                str_type[0] : str_type[1]);
 #else
 #define PRINTMAPREG(region)
 #endif
-#define MAP_REGION(reg) \
-        mmu_map_region(&reg); \
+#define MAP_REGION(reg)         \
+        mmu_map_region(&reg);   \
         PRINTMAPREG(reg)
 
         //MAP_REGION(mmu_region_tkstack);
@@ -322,15 +320,10 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
 
     /* Try to allocate a new page table */
     if (!PTM_ALLOC(&block, size, balign)) {
-#if configDEBUG >= KERROR_CRIT
-        char buf[80];
-#endif
-
         addr = PTM_BLOCK2ADDR(block);
 #if configDEBUG >= KERROR_DEBUG
-        ksprintf(buf, sizeof(buf),
+        KERROR(KERROR_DEBUG,
                 "Alloc pt %u bytes @ %x\n", bsize, addr);
-        KERROR(KERROR_DEBUG, buf);
 #endif
         pt->pt_addr = addr;
         if (pt->type == MMU_PTT_MASTER) {

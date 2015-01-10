@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Directory Entry Hashtable.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -289,11 +289,9 @@ static chain_info_t find_last_node(dh_dirent_t * chain)
     do {
         node = get_dirent(chain, chinfo.i_size);
         if (is_invalid_offset(node)) {
-            char buf[80];
-
-            ksprintf(buf, sizeof(buf), "Invalid offset in deh node: %u",
+            KERROR(KERROR_ERR, "Invalid offset in deh node: %u",
                      node->dh_size);
-            KERROR(KERROR_ERR, buf);
+
             break;
         }
         chinfo.i_size += node->dh_size;
@@ -356,6 +354,7 @@ static int rm_node(dh_dirent_t ** chain, const char * name)
 
         if (is_invalid_offset(node)) {
             KERROR(KERROR_ERR, "Invalid offset in deh node");
+
             kfree(new_chain);
             return -ENOTRECOVERABLE;
         }

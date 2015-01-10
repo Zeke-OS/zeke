@@ -205,10 +205,12 @@ static void init_kernel_proc(void)
     kernel_proc->files->fd[STDOUT_FILENO] = 0;
     /* stderr */
     kernel_proc->files->fd[STDERR_FILENO] = kcalloc(1, sizeof(file_t));
+#if configKLOGGER != 0
     if (fs_fildes_set(kernel_proc->files->fd[STDERR_FILENO],
                       &kerror_vnode, O_WRONLY)) {
         panic(panic_msg);
     }
+#endif
 
     init_rlims(&kernel_proc->rlim);
 
@@ -224,11 +226,8 @@ void procarr_realloc(void)
         return;
 
 #ifdef configPROC_DEBUG
-    char buf[80];
-
-    ksprintf(buf, sizeof(buf), "realloc procarr maxproc = %u, act_maxproc = %u\n",
+    KERROR(KERROR_DEBUG, "realloc procarr maxproc = %u, act_maxproc = %u\n",
              maxproc, act_maxproc);
-    KERROR(KERROR_DEBUG, buf);
 #endif
 
     PROC_LOCK();
@@ -384,11 +383,8 @@ proc_info_t * proc_get_struct(pid_t pid)
 
     /* TODO do state check properly */
     if (pid > act_maxproc) {
-        char buf[80];
-
         /* Following may cause nasty things if pid is out of bounds */
-        ksprintf(buf, sizeof(buf), "Invalid PID (%d > %d)\n", pid, act_maxproc);
-        KERROR(KERROR_ERR, buf);
+        KERROR(KERROR_ERR, "Invalid PID (%d > %d)\n", pid, act_maxproc);
 
         return NULL;
     }
@@ -442,11 +438,9 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
     proc_info_t * pcb;
     struct buf * region;
     struct buf * new_region;
-#ifdef configPROC_DEBUG
-    char buf[80];
 
-    ksprintf(buf, sizeof(buf), "proc_dab_handler(): MOO, %x @ %x\n", vaddr, lr);
-    KERROR(KERROR_DEBUG, buf);
+#ifdef configPROC_DEBUG
+    KERROR(KERROR_DEBUG, "proc_dab_handler(): MOO, %x @ %x\n", vaddr, lr);
 #endif
 
     pcb = proc_get_struct_l(pid);
@@ -457,11 +451,11 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
     mtx_lock(&pcb->mm.regions_lock);
     for (size_t i = 0; i < pcb->mm.nr_regions; i++) {
         region = (*pcb->mm.regions)[i];
+
 #ifdef configPROC_DEBUG
-        ksprintf(buf, sizeof(buf), "reg_vaddr %x, reg_end %x\n",
+        KERROR(KERROR_DEBUG, "reg_vaddr %x, reg_end %x\n",
                 region->b_mmu.vaddr,
                 region->b_mmu.vaddr + MMU_SIZEOF_REGION(&(region->b_mmu)));
-        KERROR(KERROR_DEBUG, buf);
 #endif
 
         if (vaddr >= region->b_mmu.vaddr &&

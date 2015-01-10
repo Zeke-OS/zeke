@@ -41,7 +41,9 @@
 #include <sys/linker_set.h>
 #include <kerror.h>
 
-const char _kernel_panic_msg[20] = "Oops, Kernel panic\n";
+#if configKLOGGER != 0
+const char * const _kernel_panic_msg = "Oops, Kernel panic\n";
+#endif
 
 static ssize_t kerror_fdwrite(file_t * file, const void * buf, size_t count);
 
@@ -90,6 +92,7 @@ static ssize_t kerror_fdwrite(file_t * file, const void * buf, size_t count)
     return count;
 }
 
+#if 0
 void kerror_print_macro(char level, const char * where, const char * msg)
 {
     char buf[configKERROR_MAXLEN];
@@ -104,6 +107,7 @@ void kerror_print_macro(char level, const char * where, const char * msg)
         bcm2835_uart_uputc(NULL, buf[i++]);
 #endif
 }
+#endif
 
 static void nolog_puts(const char * str)
 {

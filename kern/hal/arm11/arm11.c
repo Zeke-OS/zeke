@@ -201,11 +201,9 @@ void stack_dump(sw_stack_frame_t frame)
         "lr  = %x\n"
         "pc  = %x\n"
     };
-    char buf[sizeof(sdump) + 17 * 10];
 
-    ksprintf(buf, sizeof(buf), sdump,
+    KERROR(KERROR_ERR, sdump,
             frame.psr, frame.r0, frame.r1, frame.r2, frame.r3, frame.r4,
             frame.r5, frame.r6, frame.r7, frame.r8, frame.r9, frame.r10,
             frame.r11, frame.r12, frame.sp, frame.lr, frame.pc);
-    KERROR(KERROR_ERR, buf);
 }

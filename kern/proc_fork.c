@@ -144,9 +144,7 @@ pid_t proc_fork(pid_t pid)
      */
 
 #ifdef configPROC_DEBUG
-    char buf[80];
-    ksprintf(buf, sizeof(buf), "fork(%u)\n", pid);
-    KERROR(KERROR_DEBUG, buf);
+    KERROR(KERROR_DEBUG, "fork(%u)\n", pid);
 #endif
 
     proc_info_t * const old_proc = proc_get_struct_l(pid);
@@ -207,8 +205,7 @@ pid_t proc_fork(pid_t pid)
     retval = clone_stack(new_proc, old_proc);
     if (retval) {
 #ifdef configPROC_DEBUG
-        ksprintf(buf, sizeof(buf), "Cloning stack region failed.\n");
-        KERROR(KERROR_DEBUG, buf);
+        KERROR(KERROR_DEBUG, "Cloning stack region failed.\n");
 #endif
         goto free_res;
     }
@@ -326,8 +323,7 @@ pid_t proc_fork(pid_t pid)
     }
 
 #ifdef configPROC_DEBUG
-    ksprintf(buf, sizeof(buf), "Fork created.\n");
-    KERROR(KERROR_DEBUG, buf);
+    KERROR(KERROR_DEBUG, "Fork created.\n");
 #endif
 
     goto out; /* Fork created. */
@@ -343,11 +339,9 @@ out:
 static proc_info_t * clone_proc_info(proc_info_t * const old_proc)
 {
     proc_info_t * new_proc;
-#ifdef configPROC_DEBUG
-    char buf[80];
 
-    ksprintf(buf, sizeof(buf), "clone_proc_info of pid %u\n", old_proc->pid);
-    KERROR(KERROR_DEBUG, buf);
+#ifdef configPROC_DEBUG
+    KERROR(KERROR_DEBUG, "clone_proc_info of pid %u\n", old_proc->pid);
 #endif
 
     new_proc = kmalloc(sizeof(proc_info_t));

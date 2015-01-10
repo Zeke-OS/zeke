@@ -10,7 +10,7 @@ config configKERROR_BUF_SIZE
     default 4096
 config configKERROR_MAXLEN
     int "Max kerror line length"
-    default 400
+    default 200
 
 config configKERROR_UART
     bool "Direct UART0 printing support"

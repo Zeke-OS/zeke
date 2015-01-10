@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Process file system.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -200,9 +200,7 @@ static int procfs_updatedir(vnode_t * dir)
          */
         for (int i = 0; i <= act_maxproc; i++) {
 #if 0
-            char buf[40];
-            ksprintf(buf, 40, "%u\n", act_maxproc);
-            KERROR(KERROR_DEBUG, buf);
+            KERROR(KERROR_DEBUG, "%u\n", act_maxproc);
 #endif
             const proc_info_t * proc = proc_get_struct(i);
 
@@ -226,18 +224,14 @@ int procfs_mkentry(const proc_info_t * proc)
     vnode_t * pdir;
     char name[10];
     size_t name_len;
-#ifdef configPROCFS_DEBUG
-    char msgbuf[80];
-#endif
     int err;
 
     if (!vn_procfs)
         return 0; /* Not yet initialized. */
 
 #ifdef configPROCFS_DEBUG
-    ksprintf(msgbuf, sizeof(msgbuf), "procfs_mkentry(pid = %u)\n",
-             proc->pid);
-    KERROR(KERROR_DEBUG, msgbuf);
+    KERROR(KERROR_DEBUG, "procfs_mkentry(pid = %u)\n",
+           proc->pid);
 #endif
 
     /* proc dir name and name_len */

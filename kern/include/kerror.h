@@ -36,6 +36,7 @@
 
 #include <autoconf.h>
 #include <stddef.h>
+#include <kstring.h>
 
 #define KERROR_NOLOG    0
 #define KERROR_BUF      1
@@ -67,12 +68,21 @@
 #define S__LINE__ _KERROR_S2(__LINE__)
 
 #if configKLOGGER == 0
-#define kerror_print_macro(level, where, msg)
+#define _KERROR_FN(level, where, fmt, ...) ((void)0)
+#else
+#define _KERROR_FN(level, where, fmt, ...) do {                             \
+    char _kerror_buf[configKERROR_MAXLEN];                                  \
+    size_t i;                                                               \
+    i = ksprintf(_kerror_buf, sizeof(_kerror_buf), "%c:%s", level, where);  \
+    ksprintf(_kerror_buf + i - 1, sizeof(_kerror_buf) - i, fmt,             \
+             ##__VA_ARGS__);                                                \
+    kputs(_kerror_buf);                                                     \
+} while (0)
 #endif
 
-#define _KERROR_FN(level, where, msg) kerror_print_macro(level, where, msg)
-#define _KERROR_WHERESTR __FILE__ ":" S__LINE__ ": "
-#define _KERROR2(level, where, msg) _KERROR_FN(level, where, msg)
+#define _KERROR_WHERESTR (__FILE__ ":" S__LINE__ ": ")
+#define _KERROR2(level, where, fmt, ...) _KERROR_FN(level, where, fmt, ##__VA_ARGS__)
+
 /**
  * KERROR macro for logging kernel errors.
  * Expect that storage space for messages may vary depending on selected logging
@@ -80,24 +90,26 @@
  * @param level Log level: KERROR_LOG, KERROR_WARN or KERROR_ERR.
  * @param msg Message to be logged.
  */
-#define KERROR(level, msg) _KERROR2(level, _KERROR_WHERESTR, msg)
+#define KERROR(level, fmt, ...) _KERROR2(level, _KERROR_WHERESTR, fmt, ##__VA_ARGS__)
 
-const char _kernel_panic_msg[20];
+#if configKLOGGER != 0
+extern const char * const _kernel_panic_msg;
+#endif
 
 /**
  * Kernel panic with message.
  * @param msg is a message to be logged before halt.
  */
-#define panic(msg) do {                     \
-    disable_interrupt();                    \
-    KERROR(KERROR_CRIT, _kernel_panic_msg); \
-    KERROR(KERROR_CRIT, (msg));             \
-    panic_halt();                           \
+#define panic(msg) do {                             \
+    disable_interrupt();                            \
+    KERROR(KERROR_CRIT, "%s", _kernel_panic_msg);   \
+    KERROR(KERROR_CRIT, "%s", msg);                 \
+    panic_halt();                                   \
 } while(1)
 
 #ifdef configKASSERT
-#define KASSERT(invariant, msg) do {        \
-    if (!(invariant)) { panic(msg); }       \
+#define KASSERT(invariant, msg) do {    \
+    if (!(invariant)) { panic(msg); }   \
 } while(0)
 #else
 #define KASSERT(invariant, msg)
@@ -128,9 +140,6 @@ struct kerror_klogger {
     void (*flush)(void);
 };
 
-#if configKLOGGER != 0
-void kerror_print_macro(char level, const char * where, const char * msg);
 void (*kputs)(const char *);
-#endif
 
 #endif /* KERROR_H */

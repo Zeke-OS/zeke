@@ -482,12 +482,8 @@ static void ksignal_post_scheduling(void)
     /*
      * Continue to handle the signal in user space handler.
      */
-    {
-        char buf[80];
-        ksprintf(buf, sizeof(buf), "Pass sig %d to the user space.\n",
-                 ksiginfo->siginfo.si_signo);
-        KERROR(KERROR_DEBUG, buf);
-    }
+    KERROR(KERROR_DEBUG, "Pass sig %d to the user space.\n",
+           ksiginfo->siginfo.si_signo);
 
     if (/* Push current stack frame to the user space thread stack. */
         push_to_thread_stack(current_thread,
@@ -618,11 +614,9 @@ int ksignal_sendsig_fatal(struct proc_info * p, int signum)
         return err;
     ksignal_get_ksigaction(&act, sigs, signum);
     if (!(act.ks_action.sa_flags & SA_KILL)) {
-        char msg[80];
-        ksprintf(msg, sizeof(msg), "%d requested a fatal signal for %d"
+        KERROR(KERROR_WARN, "%d requested a fatal signal for %d"
                  "but dfl action for signum %d is not SA_KILL\n",
                  curproc->pid, p->pid, signum);
-        KERROR(KERROR_WARN, msg);
     }
 
     err = ksignal_queue_sig(sigs, signum, SI_KERNEL);

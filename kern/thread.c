@@ -92,9 +92,7 @@ void sched_handler(void)
     sched_schedule();
     if (current_thread != prev_thread) {
 #ifdef configSCHED_DEBUG
-        char buf[80];
-        ksprintf(buf, sizeof(buf), "%x\n", current_thread->kstack_region);
-        KERROR(KERROR_DEBUG, buf);
+        KERROR(KERROR_DEBUG, "%x\n", current_thread->kstack_region);
 #endif
         mmu_map_region(&(current_thread->kstack_region->b_mmu));
     }

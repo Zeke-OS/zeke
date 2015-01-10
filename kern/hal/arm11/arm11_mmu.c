@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   MMU control functions for ARM11 ARMv6 instruction set.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -594,16 +594,15 @@ void mmu_data_abort_handler(void)
     if (data_aborts[fsr & FSR_MASK]) {
         if ((err = data_aborts[fsr & FSR_MASK](fsr, far, spsr, lr, thread))) {
             /* TODO Handle this nicer... signal? */
-            char buf[80];
-            ksprintf(buf, sizeof(buf), "DAB handling failed: %i\n", err);
-            KERROR(KERROR_CRIT, buf);
+            KERROR(KERROR_CRIT, "DAB handling failed: %i\n", err);
+
             stack_dump(current_thread->sframe[SCHED_SFRAME_ABO]);
             dab_fatal(fsr, far, spsr, lr, thread);
         }
     } else {
-       char buf[80];
-       ksprintf(buf, sizeof(buf), "DAB handling failed, no sufficient handler found.\n");
-       KERROR(KERROR_CRIT, buf);
+       KERROR(KERROR_CRIT,
+              "DAB handling failed, no sufficient handler found.\n");
+
        dab_fatal(fsr, far, spsr, lr, thread);
     }
 

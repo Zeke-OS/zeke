@@ -204,13 +204,11 @@ static char * format_fpath(struct fatfs_inode * indir, const char * name,
 {
     char * fpath;
     size_t fpath_size;
-#ifdef configFATFS_DEBUG
-    char msgbuf[80];
 
-    ksprintf(msgbuf, sizeof(msgbuf),
+#ifdef configFATFS_DEBUG
+    KERROR(KERROR_DEBUG,
              "format_fpath(indir \"%s\", name \"%s\", name_len %u)\n",
              indir->in_fpath, name, name_len);
-    KERROR(KERROR_DEBUG, msgbuf);
 #endif
 
 
@@ -222,9 +220,8 @@ static char * format_fpath(struct fatfs_inode * indir, const char * name,
     ksprintf(fpath, fpath_size, "%s/%s", indir->in_fpath, name);
 
 #ifdef configFATFS_DEBUG
-    ksprintf(msgbuf, sizeof(msgbuf), "Formatted \"%s\" as \"%s\"\n",
-             name, fpath);
-    KERROR(KERROR_DEBUG, msgbuf);
+    KERROR(KERROR_DEBUG, "Formatted \"%s\" as \"%s\"\n",
+           name, fpath);
 #endif
 
     return fpath;
@@ -248,12 +245,10 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
     mode_t vn_mode;
     ino_t num;
     int err = 0, retval = 0;
-#ifdef configFATFS_DEBUG
-    char msgbuf[80];
 
-    ksprintf(msgbuf, sizeof(msgbuf), "create_inode(fpath \"%s\", vn_hash %u)\n",
+#ifdef configFATFS_DEBUG
+    KERROR(KERROR_DEBUG, "create_inode(fpath \"%s\", vn_hash %u)\n",
              fpath, (uint32_t)vn_hash);
-    KERROR(KERROR_DEBUG, msgbuf);
 #endif
 
     in = kcalloc(1, sizeof(struct fatfs_inode));
@@ -321,10 +316,9 @@ chk_err:
     }
     if (xvp) {
         /* TODO No idea what to do now */
-        ksprintf(msgbuf, sizeof(msgbuf),
+        KERROR(KERROR_WARN,
                 "create_inode(): Found it during insert: \"%s\"\n",
                 fpath);
-        KERROR(KERROR_WARN, msgbuf);
     }
 
     *result = in;
@@ -332,9 +326,8 @@ chk_err:
     return 0;
 fail:
 #ifdef configFATFS_DEBUG
-    ksprintf(msgbuf, sizeof(msgbuf), "create_inode(): err %i, retval %i\n",
-             err, retval);
-    KERROR(KERROR_DEBUG, msgbuf);
+    KERROR(KERROR_DEBUG, "create_inode(): err %i, retval %i\n",
+           err, retval);
 #endif
 
     kfree(in);
@@ -665,12 +658,9 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
 #endif
         } else {
 #ifdef configFATFS_DEBUG
-            char msgbuf[60];
-
-            ksprintf(msgbuf, sizeof(msgbuf),
-                     "get_mp_stat() returned error (%d)\n",
-                     err);
-            KERROR(KERROR_WARN, msgbuf);
+            KERROR(KERROR_WARN,
+                   "get_mp_stat() returned error (%d)\n",
+                   err);
 #endif
 
             return err;
@@ -687,12 +677,9 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
     err = f_stat(in->in_fpath, &fno);
     if (err) {
 #ifdef configFATFS_DEBUG
-        char msgbuf[80];
-
-        ksprintf(msgbuf, sizeof(msgbuf),
+        KERROR(KERROR_DEBUG,
                  "f_stat(fpath \"%s\", fno %p) failed\n",
                  in->in_fpath, &fno);
-        KERROR(KERROR_DEBUG, msgbuf);
 #endif
         return fresult2errno(err);
     }
@@ -738,13 +725,11 @@ static void init_fatfs_vnode(vnode_t * vnode, ino_t inum, mode_t mode,
                              long vn_hash, fs_superblock_t * sb)
 {
     struct stat stat;
-#ifdef configFATFS_DEBUG
-    char msgbuf[120];
 
-    ksprintf(msgbuf, sizeof(msgbuf),
+#ifdef configFATFS_DEBUG
+    KERROR(KERROR_DEBUG,
              "init_fatfs_vnode(vnode %p, inum %l, mode %o, vn_hash %u, sb %p)\n",
              vnode, (uint64_t)inum, mode, (uint32_t)vn_hash, sb);
-    KERROR(KERROR_DEBUG, msgbuf);
 #endif
 
     fs_vnode_init(vnode, inum, sb, &fatfs_vnode_ops);

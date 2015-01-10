@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   IO wrapper for FatFs.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -86,22 +86,15 @@ DRESULT fatfs_disk_read(BYTE pdrv, BYTE* buff, DWORD sector, UINT count)
     retval = file->vnode->vnode_ops->read(file, buff, count);
     if (retval < 0) {
 #ifdef configFATFS_DEBUG
-        char msgbuf[80];
-
-        ksprintf(msgbuf, sizeof(msgbuf), "fatfs_disk_read(): err %i\n", retval);
-        KERROR(KERROR_ERR, msgbuf);
+        KERROR(KERROR_ERR, "fatfs_disk_read(): err %i\n", retval);
 #endif
         return RES_ERROR;
     }
 
     if (retval != count) {
 #ifdef configFATFS_DEBUG
-        char msgbuf[80];
-
-        ksprintf(msgbuf, sizeof(msgbuf), "retval(%i) != count(%i)\n",
+        KERROR(KERROR_WARN, "retval(%i) != count(%i)\n",
                 (uint32_t)retval, (uint32_t)count);
-
-        KERROR(KERROR_WARN, msgbuf);
 #endif
         return RES_PARERR;
     }
@@ -130,10 +123,7 @@ DRESULT fatfs_disk_write(BYTE pdrv, const BYTE* buff, DWORD sector, UINT count)
     retval = file->vnode->vnode_ops->write(file, buff, count);
     if (retval < 0) {
 #ifdef configFATFS_DEBUG
-        char msgbuf[80];
-
-        ksprintf(msgbuf, sizeof(msgbuf), "fatfs_disk_read(): err %i\n", retval);
-        KERROR(KERROR_ERR, msgbuf);
+        KERROR(KERROR_ERR, "fatfs_disk_read(): err %i\n", retval);
 #endif
 
         return RES_ERROR;
@@ -150,12 +140,9 @@ DRESULT fatfs_disk_ioctl(BYTE pdrv, unsigned cmd, void * buff)
     file_t * file;
     ssize_t err;
 #ifdef configFATFS_DEBUG
-    char msgbuf[80];
-
-    ksprintf(msgbuf, sizeof(msgbuf),
+    KERROR(KERROR_DEBUG,
             "fatfs_disk_ioctl(pdrv %u, cmd %u, buff %p)\n",
             (uint32_t)pdrv, (uint32_t)cmd, buff);
-    KERROR(KERROR_DEBUG, msgbuf);
 #endif
 
     if (pdrv >= configFATFS_MAX_MOUNTS || !fatfs_sb_arr[pdrv])

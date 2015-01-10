@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Hardware Abstraction Layer for ARMv6/ARM11
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -181,10 +181,8 @@ void wr_thread_stack_ptr(void * ptr);
 
 #define DEBUG_PRINT_CALLER() do {                           \
     intptr_t tmp;                                           \
-    char buf[80];                                           \
     __asm__ volatile ("mov %[tmp], lr" : [tmp]"=r" (tmp));  \
-    ksprintf(buf, sizeof(buf), "caller = %x\n", tmp - 4);     \
-    KERROR(KERROR_DEBUG, buf);                              \
+    KERROR(KERROR_DEBUG, "caller = %x\n", tmp - 4);         \
 } while (0)
 
 #endif /* ARM11_H */

@@ -223,13 +223,11 @@ int fs_namei_proc(vnode_t ** result, int fd, const char * path, int atflags)
     vnode_t * start;
     int oflags = atflags & AT_SYMLINK_NOFOLLOW;
     int retval;
-#ifdef config_FS_DEBUG
-    char msgbuf[80];
 
-    ksprintf(msgbuf, sizeof(msgbuf),
-             "fs_namei_proc(result %p, fd %d, path \"%s\", atflags %d)\n",
-             result, fd, path, atflags);
-    KERROR(KERROR_DEBUG, msgbuf);
+#ifdef config_FS_DEBUG
+    KERROR(KERROR_DEBUG,
+           "fs_namei_proc(result %p, fd %d, path \"%s\", atflags %d)\n",
+           result, fd, path, atflags);
 #endif
 
     if (path[0] == '\0')
@@ -265,14 +263,12 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
     fs_t * fs = 0;
     struct fs_superblock * sb;
     int err;
-#ifdef config_FS_DEBUG
-    char buf[160];
 
-    ksprintf(buf, sizeof(buf),
+#ifdef config_FS_DEBUG
+     KERROR(KERROR_DEBUG,
             "fs_mount(target \"%p\", source \"%s\", fsname \"%s\", "
             "flags %x, parm \"%s\", parm_len %d)\n",
             target, source, fsname, flags, parm, parm_len);
-    KERROR(KERROR_DEBUG, buf);
 #endif
 
     if (fsname) {
@@ -284,8 +280,7 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
         return -ENOTSUP; /* fs doesn't exist. */
 
 #ifdef config_FS_DEBUG
-    ksprintf(buf, sizeof(buf), "Found fs: %s\n", fsname);
-    KERROR(KERROR_DEBUG, buf);
+    KERROR(KERROR_DEBUG, "Found fs: %s\n", fsname);
 #endif
 
     if (!fs->mount) {
@@ -1006,12 +1001,10 @@ vnode_t * fs_create_pseudofs_root(const char * fsname, int majornum)
 
     err = fs_mount(rootnode, "", "ramfs", 0, "", 1);
     if (err) {
-        char buf[80];
+        KERROR(KERROR_ERR,
+               "Unable to create a pseudo fs root vnode for %s (%i)\n",
+               fsname, err);
 
-        ksprintf(buf, sizeof(buf),
-                 "Unable to create a pseudo fs root vnode for %s (%i)\n",
-                 fsname, err);
-        KERROR(KERROR_ERR, buf);
         return NULL;
     }
     rootnode = rootnode->vn_mountpoint;
