@@ -70,7 +70,6 @@
 
 #if __BSD_VISIBLE
 #define MAP_STACK           0x0400 /*!< region grows down, like a stack */
-#define MAP_NOSYNC          0x0800 /*!< don't sync underlying file */
 
 /*
  * Mapping type
@@ -182,8 +181,14 @@ struct _shmem_mmap_args {
     off_t off;
 };
 
+struct _shmem_munmap_args {
+    void * addr;
+    size_t size;
+};
+
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
+
 /*
  * XXX not yet implemented: posix_mem_offset(), posix_typed_mem_get_info(),
  * posix_typed_mem_open().
@@ -202,7 +207,14 @@ void * mmap(void * addr, size_t len, int prot, int flags, int fd, off_t offset);
 int mprotect(const void *, size_t, int);
 int msync(void *, size_t, int);
 int munlock(const void *, size_t);
-int munmap(void *, size_t);
+
+/**
+ * Unmap pages of memory.
+ * @param addr is the address of the memory region mapped by the user.
+ * @param size 0 = whole mapping that was previously made to addr;
+ *        size specified.
+ */
+int munmap(void * addr, size_t size);
 #if __POSIX_VISIBLE >= 200112
 int posix_madvise(void *, size_t, int);
 #endif
@@ -212,11 +224,16 @@ int munlockall(void);
 int shm_open(const char *, int, mode_t);
 int shm_unlink(const char *);
 #endif
+
 __END_DECLS
 #else /* !KERNEL_INTERNAL */
-int shm_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
-             int flags, int fildes, off_t off, struct buf ** out,
-             char ** uaddr);
+int shmem_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
+               int flags, int fildes, off_t off, struct buf ** out,
+               char ** uaddr);
+/**
+ * @param size UNUSED, RFU
+ */
+int shmem_munmap(struct buf * bp, size_t size);
 #endif /* KERNEL_INTERNAL */
 
 #endif /* !_SYS_MMAN_H_ */

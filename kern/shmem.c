@@ -39,10 +39,10 @@
 #include <vm/vm.h>
 #include <sys/mman.h>
 
-int shm_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
+int shmem_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
              int flags, int fildes, off_t off, struct buf ** out, char ** uaddr)
 {
-    struct buf * bp;
+    struct buf * bp = NULL;
     int err;
     struct stat statbuf = { .st_blksize = 0 };
 
@@ -51,6 +51,8 @@ int shm_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
     if ((prot & PROT_EXEC) && priv_check(curproc, PRIV_VM_PROT_EXEC)) {
         return -EPERM;
     }
+
+    bsize = (vaddr + bsize) - vaddr & ~(MMU_PGSIZE_COARSE - 1);
 
     /*
      * TODO Support for:
@@ -83,9 +85,14 @@ int shm_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
         if (!vnode->vnode_ops->stat)
             return -ENOTSUP;
         vnode->vnode_ops->stat(vnode, &statbuf);
-        blkno = off / statbuf.st_blksize;
+        if (!S_ISREG(vnode->vn_mode))
+            blkno = off / statbuf.st_blksize;
+        else
+            blkno = off & ~(statbuf.st_blksize - 1);
 
-        bp = getblk(vnode, blkno, bsize, 0);
+        err = bread(vnode, blkno, bsize, &bp);
+        if (err)
+            return -ENOMEM;
 
         fs_fildes_ref(proc->files, fildes, -1);
     }
@@ -112,6 +119,8 @@ int shm_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
     if (err && bp->vm_ops->rfree) {
         bp->vm_ops->rfree(bp);
         return err;
+    } else if (err) {
+        return err;
     }
 
     /* Set uaddr */
@@ -123,6 +132,12 @@ int shm_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
     }
 
     *out = bp;
+    return 0;
+}
+
+int shmem_munmap(struct buf * bp, size_t size)
+{
+    brelse(bp);
     return 0;
 }
 
@@ -143,10 +158,11 @@ static int sys_mmap(void * user_args)
         goto fail;
     }
 
-    err = shm_mmap(curproc, (uintptr_t)args.addr, args.bsize, args.prot,
-                   args.flags, args.fildes, args.off, &bp,
-                   (char **)(&args.addr));
+    err = shmem_mmap(curproc, (uintptr_t)args.addr, args.bsize, args.prot,
+                     args.flags, args.fildes, args.off, &bp,
+                     (char **)(&args.addr));
     if (err) {
+        args.addr = MAP_FAILED;
         retval = err;
         goto fail;
     }
@@ -155,14 +171,12 @@ static int sys_mmap(void * user_args)
         goto fail;
     }
 
-    err = copyout(&args, user_args, sizeof(args));
-    if (err) {
-        retval = -EFAULT;
-        goto fail;
-    }
-
     retval = 0;
 fail:
+    err = copyout(&args, user_args, sizeof(args));
+    if (err)
+        retval = -EFAULT;
+
     if (retval != 0) {
         if (bp && bp->vm_ops->rfree) {
             bp->vm_ops->rfree(bp);
@@ -175,7 +189,48 @@ fail:
     return retval;
 }
 
+static int sys_munmap(void * user_args)
+{
+    struct _shmem_munmap_args args;
+    struct buf * bp;
+    int err, retval;
+
+    err = copyin(user_args, &args, sizeof(args));
+    if (err) {
+        retval = -EFAULT;
+        goto fail;
+    }
+
+    bp = vm_find_reg(curproc, (uintptr_t)args.addr);
+    if (!bp) {
+        retval = -EINVAL;
+    }
+
+    /*
+     * RFE
+     * Currently we only unmap the region if size equals the original
+     * allocation size. This may break some fancy userland programs trying
+     * to do fancy things like expecting page allocation, allocating a big chunk
+     * and the trying to unmap it partially to change some of the pages.
+     */
+    if (args.size == 0 || args.size == bp->b_bcount) {
+        shmem_munmap(bp, args.size);
+    } else {
+        retval = -EINVAL;
+        goto fail;
+    }
+
+    retval = 0;
+fail:
+    if (retval != 0) {
+        set_errno(-retval);
+        retval = -1;
+    }
+    return retval;
+}
+
 static const syscall_handler_t shmem_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_SHMEM_MMAP, sys_mmap),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_SHMEM_MUNMAP, sys_munmap),
 };
 SYSCALL_HANDLERDEF(shmem_syscall, shmem_sysfnmap)

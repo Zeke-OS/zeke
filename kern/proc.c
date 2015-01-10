@@ -436,6 +436,7 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
     const pid_t pid = thread->pid_owner;
     const uintptr_t vaddr = far;
     proc_info_t * pcb;
+    struct vm_mm_struct * mm;
     struct buf * region;
     struct buf * new_region;
 
@@ -447,10 +448,13 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
     if (!pcb || (pcb->state == PROC_STATE_INITIAL)) {
         return -ESRCH; /* Process doesn't exist. */
     }
+    mm = &pcb->mm;
 
-    mtx_lock(&pcb->mm.regions_lock);
-    for (size_t i = 0; i < pcb->mm.nr_regions; i++) {
-        region = (*pcb->mm.regions)[i];
+    mtx_lock(&mm->regions_lock);
+    for (size_t i = 0; i < mm->nr_regions; i++) {
+        region = (*mm->regions)[i];
+        if (!region)
+            continue;
 
 #ifdef configPROC_DEBUG
         KERROR(KERROR_DEBUG, "reg_vaddr %x, reg_end %x\n",
@@ -464,19 +468,19 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
 
             /* Test for COW flag. */
             if ((region->b_uflags & VM_PROT_COW) != VM_PROT_COW) {
-                mtx_unlock(&pcb->mm.regions_lock);
+                mtx_unlock(&mm->regions_lock);
                 return -EACCES; /* Memory protection error. */
             }
 
             if (!(region->vm_ops->rclone)
                     || !(new_region = region->vm_ops->rclone(region))) {
                 /* Can't clone region; COW clone failed. */
-                mtx_unlock(&pcb->mm.regions_lock);
+                mtx_unlock(&mm->regions_lock);
                 return -ENOMEM;
             }
 
             new_region->b_uflags &= ~VM_PROT_COW; /* No more COW. */
-            mtx_unlock(&pcb->mm.regions_lock);
+            mtx_unlock(&mm->regions_lock);
             err = vm_replace_region(pcb, new_region, i,
                                     VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
             if (err)
@@ -485,7 +489,7 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
             return 0; /* COW done. */
         }
     }
-    mtx_unlock(&pcb->mm.regions_lock);
+    mtx_unlock(&mm->regions_lock);
 
     return -EFAULT; /* Not found */
 }

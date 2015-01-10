@@ -185,6 +185,11 @@ FILE * _PDCLIB_fvopen( _PDCLIB_fd_t fd, const _PDCLIB_fileops_t * ops,
 FILE * freopen( const char * _PDCLIB_restrict filename, const char * _PDCLIB_restrict mode, FILE * _PDCLIB_restrict stream ) _PDCLIB_nothrow;
 
 /**
+ * Map a stream pointer to a file descriptor.
+ */
+int fileno(FILE * stream);
+
+/**
  * If buf is a NULL pointer, call setvbuf( stream, NULL, _IONBF, BUFSIZ ).
  * If buf is not a NULL pointer, call setvbuf( stream, buf, _IOFBF, BUFSIZ ).
  */

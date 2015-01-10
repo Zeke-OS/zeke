@@ -4,22 +4,26 @@
 #include <sys/mman.h>
 #include "punit.h"
 
+char * data;
+
 static void setup()
 {
+    data = NULL;
 }
 
 static void teardown()
 {
+    if (data) {
+        munmap(data, 0);
+    }
 }
 
 static char * test_mmap_anon(void)
 {
-    char * data;
-
     errno = 0;
     data = mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_ANON, -1, 0);
 
-    pu_assert("a new memory region returned", data != NULL);
+    pu_assert("a new memory region returned", data != MAP_FAILED);
     pu_assert_equal("No errno was set", errno, 0);
 
     memset(data, 0xff, 200);
@@ -31,7 +35,6 @@ static char * test_mmap_anon(void)
 static char * test_mmap_anon_fixed(void)
 {
 #define ADDR ((void *)0xA0000000)
-    char * data;
     static char msg[80];
     int errno_save;
 
@@ -39,7 +42,7 @@ static char * test_mmap_anon_fixed(void)
     data = mmap(ADDR, 4096, PROT_READ | PROT_WRITE, MAP_ANON | MAP_FIXED, -1, 0);
     errno_save = errno;
 
-    pu_assert("a new memory region returned", data != NULL);
+    pu_assert("a new memory region returned", data != MAP_FAILED);
     pu_assert_equal("No errno was set", errno_save, 0);
     sprintf(msg, "returned address equals %p", ADDR);
     pu_assert(msg, data == ADDR);
@@ -54,11 +57,23 @@ static char * test_mmap_anon_fixed(void)
 static char * test_mmap_file(void)
 {
     int fd;
-    char * data;
+    int errno_save;
+    char str[80];
+
+    memset(str, '\0', sizeof(str));
 
     fd = open("/root/README.markdown", O_RDONLY);
+    pu_assert("fd is ok", fd > 0);
 
-    data = mmap(NULL, 4096, PROT_READ, 0, -1, 0);
+    errno = 0;
+    data = mmap(NULL, 4096, PROT_READ, 0, fd, 0);
+    errno_save = errno;
+
+    pu_assert("a new memory region returned", data != MAP_FAILED);
+    pu_assert_equal("No errno was set", errno_save, 0);
+
+    memcpy(str, data, sizeof(str) - 1);
+    printf("%s\n", str);
 
     return NULL;
 }

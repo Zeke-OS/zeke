@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   File system manipulation commands for tish/Zeke.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -121,25 +121,3 @@ static void tish_unlink(char ** args)
     unlink(path);
 }
 TISH_CMD(tish_unlink, "unlink");
-
-static void tish_cat(char ** args)
-{
-    char * path = strtok_r(0, DELIMS, args);
-    int fildes = open(path, O_RDONLY);
-    char buf[80];
-    ssize_t ret;
-
-    if (fildes < 0)
-        return; /* err */
-
-    buf[sizeof(buf) - 1] = '\0';
-    while (1) {
-        ret = read(fildes, &buf, sizeof(buf) - 1);
-        if (ret <= 0)
-            break;
-        puts(buf);
-    }
-
-    close(fildes);
-}
-TISH_CMD(tish_cat, "cat");

@@ -214,6 +214,16 @@ pid_t proc_fork(pid_t pid)
     if (retval)
         goto free_res;
 
+    /*
+     * Breaks.
+     */
+    new_proc->brk_start = (void *)(
+            (*new_proc->mm.regions)[MM_HEAP_REGION]->b_mmu.vaddr +
+            (*new_proc->mm.regions)[MM_HEAP_REGION]->b_bcount);
+    new_proc->brk_stop = (void *)(
+            (*new_proc->mm.regions)[MM_HEAP_REGION]->b_mmu.vaddr +
+            (*new_proc->mm.regions)[MM_HEAP_REGION]->b_bufsize);
+
     /* fork() signals */
     ksignal_signals_fork_reinit(&new_proc->sigs);
 

@@ -172,6 +172,8 @@ int copyout_proc(struct proc_info * proc, const void * kaddr, void * uaddr,
  * @}
  */
 
+struct buf * vm_find_reg(struct proc_info * proc, uintptr_t uaddr);
+
 /**
  * Create a new empty general purpose section.
  * Create a new empty buffer that can be inserted as a section/region

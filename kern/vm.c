@@ -231,6 +231,31 @@ int copyinstr(const char * uaddr, char * kaddr, size_t len, size_t * done)
     return 0;
 }
 
+struct buf * vm_find_reg(struct proc_info * proc, uintptr_t uaddr)
+{
+    struct buf * region = NULL;
+    struct vm_mm_struct * mm = &proc->mm;
+    uintptr_t reg_start, reg_end;
+
+    mtx_lock(&mm->regions_lock);
+    for (size_t i = 0; i < mm->nr_regions; i++) {
+        region = (*mm->regions)[i];
+        if (!region)
+            continue;
+
+        reg_start = region->b_mmu.vaddr;
+        reg_end = region->b_mmu.vaddr + MMU_SIZEOF_REGION(&region->b_mmu);
+
+        if (reg_start <= uaddr && uaddr <= reg_end) {
+            mtx_unlock(&mm->regions_lock);
+            return region;
+        }
+    }
+    mtx_unlock(&mm->regions_lock);
+
+    return NULL;
+}
+
 struct buf * vm_newsect(uintptr_t vaddr, size_t size, int prot)
 {
     /*
@@ -609,37 +634,24 @@ static int test_ap_priv(uint32_t rw, uint32_t ap)
 
 int useracc(const void * addr, size_t len, int rw)
 {
-    /* TODO We may wan't to handle cow here */
-    /* TODO Implementation */
-#if 0
     if (!curproc)
         return 0;
-#endif
-    useracc_proc(addr, len, curproc, rw);
 
-    return (1 == 1);
+    return useracc_proc(addr, len, curproc, rw);
 }
 
 int useracc_proc(const void * addr, size_t len, struct proc_info * proc, int rw)
 {
-    uintptr_t vaddr = (uintptr_t)addr;
     struct buf * region;
+    uintptr_t reg_end;
 
-    mtx_lock(&proc->mm.regions_lock);
-    for (size_t i = 0; i < proc->mm.nr_regions; i++) {
-        region = (*proc->mm.regions)[i];
-        const size_t reg_end = region->b_mmu.vaddr
-                                + MMU_SIZEOF_REGION(&region->b_mmu);
+    region = vm_find_reg(proc, (uintptr_t)addr);
+    if (!region)
+        return 0;
+    reg_end = region->b_mmu.vaddr + MMU_SIZEOF_REGION(&region->b_mmu);
 
-        if (vaddr >= region->b_mmu.vaddr &&
-            vaddr <= region->b_mmu.vaddr + reg_end) {
-            mtx_unlock(&proc->mm.regions_lock);
-
-            return test_ap_user(rw, region->b_mmu.ap, region->b_mmu.control);
-        }
-    }
-    mtx_unlock(&proc->mm.regions_lock);
-
+    if ((uintptr_t)addr <= reg_end)
+        return test_ap_user(rw, region->b_mmu.ap, region->b_mmu.control);
     return 0;
 }
 
@@ -656,8 +668,8 @@ static int test_ap_user(uint32_t rw, uint32_t mmu_ap, uint32_t mmu_control)
         else
             return 0;
     } else if (rw & VM_PROT_READ) { /* Test for xxRO */
-        if ((mmu_ap & MMU_AP_RWRO) || (mmu_ap & MMU_AP_RWRW)
-                || (mmu_ap & MMU_AP_RORO))
+        if ((mmu_ap & MMU_AP_RWRO) || (mmu_ap & MMU_AP_RWRW) ||
+            (mmu_ap & MMU_AP_RORO))
             return 1;
         else
             return 0;

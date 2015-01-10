@@ -1,6 +1,6 @@
 /* LINTLIBRARY */
 /*-
- * Copyright 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright 2001 David E. O'Brien.
  * All rights reserved.
  * Copyright 1996-1998 John D. Polstra.
@@ -48,6 +48,7 @@
 #endif
 #endif /* lint */
 
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "../crtbrand.c"
@@ -93,6 +94,7 @@ void __start(int argc, char ** argv, char ** envp, void (*cleanup)(void))
 #endif
 #endif
     handle_static_init(argc, argv, envp);
+    fflush(stdout);
     exit(main(argc, argv, envp));
 }
 

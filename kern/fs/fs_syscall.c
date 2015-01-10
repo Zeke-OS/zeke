@@ -126,6 +126,7 @@ static int sys_write(void * user_args)
     }
     err = copyin(args.buf, buf, args.nbytes);
     if (err) {
+        KERROR(KERROR_ERR, "efault %u\n", args.nbytes);
         set_errno(EFAULT);
         retval = -1;
         goto out;
