@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   IO Buffer Cache.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,8 +48,8 @@ static mtx_t cache_lock;            /* Used to protect access caching data
                                      * to some functions. */
 static struct llist * relse_list;  /* Released buffers list. */
 
-static void bio_readin(struct buf * bp);
-static void bio_writeout(struct buf * bp);
+static void _bio_readin(struct buf * bp);
+static void _bio_writeout(struct buf * bp);
 static void bl_brelse(struct buf * bp);
 static int biowait_timo(struct buf * bp, long timeout);
 static void bio_clean(int freebufs);
@@ -96,7 +96,7 @@ int bread(vnode_t * vnode, size_t blkno, int size, struct buf ** bpp)
         return -ENOMEM;
 
     BUF_LOCK(bp);
-    bio_readin(bp);
+    _bio_readin(bp);
     BUF_UNLOCK(bp);
 
     bp->b_bcount = size;
@@ -112,9 +112,16 @@ int  breadn(vnode_t * vnode, size_t blkno, int size, size_t rablks[],
     return -ENOTSUP;
 }
 
-static void bio_readin(struct buf * bp)
+void bio_readin(struct buf * bp)
 {
-    file_t * file = &bp->b_file;
+    BUF_LOCK(bp);
+    _bio_readin(bp);
+    BUF_UNLOCK(bp);
+}
+
+static void _bio_readin(struct buf * bp)
+{
+    file_t * file;
 
     KASSERT(mtx_test(&bp->lock), "bp should be locked\n");
 
@@ -122,8 +129,11 @@ static void bio_readin(struct buf * bp)
      * If we have a separate device file associated with the buffer we should
      * use it.
      */
-    if (bp->b_devfile.vnode)
+    if (bp->b_devfile.vnode) {
         file = &bp->b_devfile;
+    } else {
+        file = &bp->b_file;
+    }
 
     bp->b_flags &= ~B_DONE;
 
@@ -133,25 +143,39 @@ static void bio_readin(struct buf * bp)
     bp->b_flags |= B_DONE;
 }
 
+void bio_writeout(struct buf * bp)
+{
+    BUF_LOCK(bp);
+    _bio_writeout(bp);
+    BUF_UNLOCK(bp);
+}
+
 /*
  * It's a good idea to have lock on bp before calling this function.
  */
-static void bio_writeout(struct buf * bp)
+static void _bio_writeout(struct buf * bp)
 {
-    file_t * file = &bp->b_file;
+    file_t * file;
 
     KASSERT(mtx_test(&bp->lock), "bp should be locked\n");
+
+    if (bp->b_flags & B_NOSYNC)
+        goto out;
 
     /*
      * If we have a separate device file associated with the buffer we should
      * use it.
      */
-    if (bp->b_devfile.vnode)
+    if (bp->b_devfile.vnode) {
         file = &bp->b_devfile;
+    } else {
+        file = &bp->b_file;
+    }
 
     file->seek_pos = bp->b_blkno;
     file->vnode->vnode_ops->write(file, (void *)bp->b_data, bp->b_bcount);
 
+out:
     bp->b_flags |= B_DONE;
 }
 
@@ -190,7 +214,7 @@ int bwrite(struct buf * bp)
         return 0;
     } else {
         BUF_LOCK(bp);
-        bio_writeout(bp);
+        _bio_writeout(bp);
         bp->b_flags &= ~B_BUSY;
         BUF_UNLOCK(bp);
     }
@@ -226,7 +250,7 @@ void bio_clrbuf(struct buf * bp)
     flags = bp->b_flags;
 
     if (flags & B_DELWRI) {
-        bio_writeout(bp);
+        _bio_writeout(bp);
     } else if (flags & B_ASYNC) {
         biowait(bp);
     }
@@ -283,7 +307,7 @@ static struct buf * create_blk(vnode_t * vnode, size_t blkno, size_t size,
 
     /* Put to the buffer splay tree of the vnode. */
     if (SPLAY_INSERT(bufhd_splay, &vnode->vn_bpo.sroot, bp))
-        panic("Double insert"); /* TODO */
+        panic("Double insert");
 
     VN_UNLOCK(vnode);
 
@@ -438,7 +462,7 @@ static void bio_clean(int freebufs)
             bp->b_flags |= B_BUSY;
             bp->b_flags &= ~B_ASYNC;
 
-            bio_writeout(bp);
+            _bio_writeout(bp);
         }
 
         if (freebufs && !(bp->b_flags & B_LOCKED) &&

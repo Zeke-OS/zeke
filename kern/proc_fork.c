@@ -112,7 +112,7 @@ static int clone_oth_regions(proc_info_t * new_proc, proc_info_t * old_proc)
      */
     for (int i = MM_HEAP_REGION; i < old_proc->mm.nr_regions; i++) {
         vm_reg_tmp = (*old_proc->mm.regions)[i];
-        if (!vm_reg_tmp)
+        if (!vm_reg_tmp || (vm_reg_tmp->b_flags & B_NOTSHARED))
             continue;
 
         if (vm_reg_tmp->vm_ops && vm_reg_tmp->vm_ops->rref)

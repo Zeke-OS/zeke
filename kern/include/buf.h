@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Buffer Cache.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -114,15 +114,21 @@ typedef struct vm_ops {
     void (*rfree)(struct buf * this);
 } vm_ops_t;
 
-#define B_DONE      0x00002     /*!< Transaction finished. */
-#define B_ERROR     0x00004     /*!< Transaction aborted. */
-#define B_BUSY      0x00008     /*!< Buffer busy. */
-#define B_LOCKED    0x00010     /*!< Locked in memory. */
-#define B_DIRTY     0x00020
-#define B_NOCOPY    0x00100     /*!< Don't copy-on-write this buf. */
-#define B_ASYNC     0x01000     /*!< Start I/O but don't wait for completion. */
-#define B_DELWRI    0x04000     /*!< Delayed write. */
-#define B_IOERROR   0x10000     /*!< IO Error. */
+/* generic */
+#define B_DONE      0x00000002  /*!< Transaction finished. */
+#define B_ERROR     0x00000004  /*!< Transaction aborted. */
+#define B_BUSY      0x00000008  /*!< Buffer busy. */
+#define B_LOCKED    0x00000010  /*!< Locked in memory. */
+#define B_DIRTY     0x00000020
+#define B_NOCOPY    0x00000100  /*!< Don't copy-on-write this buf. */
+#define B_NOSYNC    0x00001000  /*!< Never synch to the fs. */
+#define B_ASYNC     0x00002000  /*!< Start I/O but don't wait for completion. */
+#define B_DELWRI    0x00004000  /*!< Delayed write. */
+/* shmem */
+#define B_NOTSHARED 0x00010000  /*!< Don't share on fork() */
+#define B_NOCORE    0x00080000  /*!< Don't include in core dumps. */
+/* errors */
+#define B_IOERROR   0x10000000  /*!< IO Error. */
 
 #define BUF_LOCK(bp)    mtx_lock(&(bp)->lock)
 #define BUF_UNLOCK(bp)  mtx_unlock(&(bp)->lock)
@@ -223,6 +229,16 @@ struct buf * geteblk_special(size_t size, uint32_t control);
  * @return  Returns the buffer if it's already in memory.
  */
 struct buf * incore(vnode_t * vnode, size_t blkno);
+
+/**
+ * Readin file backed buffer.
+ */
+void bio_readin(struct buf * bp);
+
+/**
+ * Writeout file backed buffer.
+ */
+void bio_writeout(struct buf * bp);
 
 /**
  * Expand or contract a allocated buffer.

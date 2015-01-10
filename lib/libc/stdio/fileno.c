@@ -31,9 +31,14 @@
  */
 
 #include <stdio.h>
+#include <errno.h>
 #include <sys/_PDCLIB_io.h>
 
 int fileno(FILE * stream)
 {
+    if (!stream) {
+        errno = EBADF;
+        return -1;
+    }
     return stream->handle.sval;
 }

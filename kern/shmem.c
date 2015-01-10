@@ -31,13 +31,52 @@
  */
 
 #define KERNEL_INTERNAL
+#include <libkern.h>
 #include <errno.h>
 #include <kerror.h>
+#include <thread.h>
+#include <kinit.h>
+#include <dllist.h>
 #include <syscall.h>
 #include <proc.h>
 #include <buf.h>
 #include <vm/vm.h>
 #include <sys/mman.h>
+
+static struct llist * shmem_sync_list;
+
+static void * shmem_sync_thread(void * arg);
+
+int shmem_init(void) __attribute__((constructor));
+int shmem_init(void)
+{
+    SUBSYS_DEP(proc_init);
+    SUBSYS_INIT("shmem");
+
+    shmem_sync_list = dllist_create(struct buf, lentry_);
+
+    struct buf * bp_stack = geteblk(MMU_PGSIZE_COARSE);
+    if (!bp_stack)
+        panic("Can't allocate a stack for shmem sync thread.");
+
+    pthread_t tid;
+    pthread_attr_t attr = {
+        .tpriority  = NICE_DEF,
+        .stackAddr  = (void *)bp_stack->b_data,
+        .stackSize  = bp_stack->b_bcount,
+    };
+    struct _ds_pthread_create tdef_shmem = {
+        .thread = &tid,
+        .start  = shmem_sync_thread,
+        .def    = &attr,
+        .arg1   = 0
+    };
+    thread_create(&tdef_shmem, 1);
+    if (tid < 0)
+        panic("Failed to create a thread for shmem sync");
+
+    return 0;
+}
 
 int shmem_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
              int flags, int fildes, off_t off, struct buf ** out, char ** uaddr)
@@ -51,8 +90,6 @@ int shmem_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
     if ((prot & PROT_EXEC) && priv_check(curproc, PRIV_VM_PROT_EXEC)) {
         return -EPERM;
     }
-
-    bsize = (vaddr + bsize) - vaddr & ~(MMU_PGSIZE_COARSE - 1);
 
     /*
      * TODO Support for:
@@ -68,7 +105,11 @@ int shmem_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
      */
 
     if (flags & MAP_ANON) {
+        bsize = memalign_size(bsize, MMU_PGSIZE_COARSE);
         bp = geteblk(bsize);
+        if (!bp) {
+            return -ENOMEM;
+        }
     } else { /* Map a file */
         file_t * file;
         vnode_t * vnode;
@@ -79,26 +120,50 @@ int shmem_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
             return -EBADF;
         vnode = file->vnode;
 
+        if (!(vnode->vnode_ops->stat && vnode->vnode_ops->read))
+            return -ENOTSUP; /* We'll need these operations */
+
         /*
          * Calculate block number.
          */
-        if (!vnode->vnode_ops->stat)
-            return -ENOTSUP;
         vnode->vnode_ops->stat(vnode, &statbuf);
         if (!S_ISREG(vnode->vn_mode))
             blkno = off / statbuf.st_blksize;
         else
             blkno = off & ~(statbuf.st_blksize - 1);
 
-        err = bread(vnode, blkno, bsize, &bp);
-        if (err)
+        /* Fix bsize alignment. */
+        bsize = memalign_size(bsize, statbuf.st_blksize);
+
+        /*
+         * We have to do a clone or something because we don't want to share
+         * a global buffer.
+         */
+        bp = geteblk(bsize);
+        if (!bp) {
             return -ENOMEM;
+        }
+        BUF_LOCK(bp);
+        bp->b_file.fdflags = file->fdflags;
+        bp->b_file.oflags = file->oflags;
+        bp->b_file.refcount = 1;
+        bp->b_file.vnode = vnode;
+        bp->b_file.stream = file->stream;
+        mtx_init(&file->lock, MTX_TYPE_SPIN);
+        bp->b_blkno = blkno;
+
+        if (!(flags & MAP_SHARED))
+            bp->b_flags &= B_NOTSHARED;
+        if (flags & MAP_PRIVATE)
+            bp->b_flags &= B_NOSYNC;
+        BUF_UNLOCK(bp);
+
+        bio_readin(bp);
 
         fs_fildes_ref(proc->files, fildes, -1);
     }
-    if (!bp) {
-        return -ENOMEM;
-    }
+
+    /* TODO Add bp to a periodic update list */
 
     bp->b_uflags = prot & (VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE);
     bp->b_mmu.control = MMU_CTRL_MEMTYPE_WB;
@@ -109,7 +174,7 @@ int shmem_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
         if (err > 0) /* err >i= 0 => region nr returned; err < -errorno code */
             err = 0;
     } else {
-        /* Randomly map bp somwhere into the process address space. */
+        /* Randomly map bp somewhere into the process address space. */
         if (vm_rndsect(proc, 0 /* Ignored */, 0 /* Ignored */, bp)) {
             err = 0;
         } else {
@@ -137,8 +202,29 @@ int shmem_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
 
 int shmem_munmap(struct buf * bp, size_t size)
 {
-    brelse(bp);
+    bio_writeout(bp);
+    vrfree(bp);
     return 0;
+}
+
+int shmem_sync_enabled = 1;
+static void * shmem_sync_thread(void * arg)
+{
+    struct buf * bp;
+
+    while (shmem_sync_enabled) {
+        thread_sleep(500);
+
+        bp = shmem_sync_list->head;
+        if (!bp)
+            continue;
+
+        do {
+            bio_writeout(bp);
+        } while ((bp = bp->lentry_.next));
+    }
+
+    return NULL;
 }
 
 static int sys_mmap(void * user_args)
