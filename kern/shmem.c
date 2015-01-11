@@ -183,6 +183,11 @@ int shmem_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
     bp->b_uflags = prot & (VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE);
     bp->b_mmu.control = MMU_CTRL_MEMTYPE_WB;
 
+    if (flags & MAP_FIXED && vaddr < configEXEC_BASE_LIMIT) {
+        /* No low mem mappings */
+        flags &= ~MAP_FIXED;
+    }
+
     if (flags & MAP_FIXED) {
         bp->b_mmu.vaddr = vaddr & ~(MMU_PGSIZE_COARSE - 1);
         err = vm_insert_region(proc, bp, VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
