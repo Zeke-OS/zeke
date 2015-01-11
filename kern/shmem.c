@@ -106,9 +106,7 @@ int shmem_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
 
     /*
      * TODO Support for:
-     * - MAP_SHARED, MAP_PRIVATE
      * - MAP_STACK
-     * - MAP_NOSYNC
      * - MAP_EXCL
      * - MAP_NOCORE
      * - MAP_PREFAULT_READ
