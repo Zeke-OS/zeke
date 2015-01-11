@@ -232,6 +232,8 @@ int shmem_munmap(struct buf * bp, size_t size)
     flags = bp->b_flags;
     BUF_UNLOCK(bp);
 
+    /* TODO unmapping the region from the process should be moved to here */
+
     if (!(flags & B_NOSYNC)) {
         mtx_lock(&sync_lock);
         shmem_sync_list->remove(shmem_sync_list, bp);
