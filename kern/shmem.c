@@ -335,7 +335,7 @@ static int sys_munmap(void * user_args)
     if (!bp) {
         retval = -EINVAL;
     }
-    vm_replace_region(curproc, NULL, regnr, VM_INSOP_NOFREE);
+    vm_replace_region(curproc, NULL, regnr, 0);
 
     /*
      * RFE
