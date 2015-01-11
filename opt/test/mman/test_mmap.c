@@ -5,17 +5,20 @@
 #include "punit.h"
 
 char * data;
+FILE * fp;
 
 static void setup()
 {
     data = NULL;
+    fp = NULL;
 }
 
 static void teardown()
 {
-    if (data) {
+    if (data)
         munmap(data, 0);
-    }
+    if (fp)
+        fclose(fp);
 }
 
 static char * test_mmap_anon(void)
@@ -56,24 +59,27 @@ static char * test_mmap_anon_fixed(void)
 
 static char * test_mmap_file(void)
 {
-    int fd;
+    FILE * fp;
     int errno_save;
-    char str[80];
+    char str1[80];
+    char str2[80];
 
-    memset(str, '\0', sizeof(str));
+    memset(str1, '\0', sizeof(str1));
+    memset(str2, '\0', sizeof(str2));
 
-    fd = open("/root/README.markdown", O_RDONLY);
-    pu_assert("fd is ok", fd > 0);
+    fp = fopen("/root/README.markdown", "r");
+    pu_assert("fp not NULL", fp != NULL);
 
     errno = 0;
-    data = mmap(NULL, 2 * sizeof(str), PROT_READ, MAP_PRIVATE, fd, 0);
+    data = mmap(NULL, 2 * sizeof(str1), PROT_READ, MAP_PRIVATE, fileno(fp), 0);
     errno_save = errno;
 
     pu_assert("a new memory region returned", data != MAP_FAILED);
     pu_assert_equal("No errno was set", errno_save, 0);
 
-    memcpy(str, data, sizeof(str) - 1);
-    printf("%s\n", str);
+    memcpy(str1, data, sizeof(str1) - 1);
+    fread(str2, sizeof(char), sizeof(str2) - 1, fp);
+    pu_assert("Strings equal", strcmp(str1, str2) == 0);
 
     return NULL;
 }
