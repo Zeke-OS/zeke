@@ -503,8 +503,14 @@ int vm_replace_region(struct proc_info * proc, struct buf * region,
     mtx_unlock(&mm->regions_lock);
 
     if (old_region) {
-        /* TODO unmap should be called but currently it hangs the kernel. */
-        //vm_unmapproc_region(proc, old_region);
+        /*
+         * TODO This is not the best solution but we don't want to unmap static
+         * kernel regions from the process.
+         */
+        if (old_region->b_mmu.vaddr != mmu_region_kernel.vaddr &&
+            old_region->b_mmu.vaddr != mmu_region_kdata.vaddr) {
+            vm_unmapproc_region(proc, old_region);
+        }
     }
 
     /*
