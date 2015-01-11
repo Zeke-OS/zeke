@@ -453,17 +453,19 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
     mtx_lock(&mm->regions_lock);
     for (size_t i = 0; i < mm->nr_regions; i++) {
         region = (*mm->regions)[i];
+        uintptr_t reg_start, reg_end;
         if (!region)
             continue;
 
+        reg_start = region->b_mmu.vaddr;
+        reg_end = region->b_mmu.vaddr + MMU_SIZEOF_REGION(&region->b_mmu);
+
 #ifdef configPROC_DEBUG
         KERROR(KERROR_DEBUG, "reg_vaddr %x, reg_end %x\n",
-                region->b_mmu.vaddr,
-                region->b_mmu.vaddr + MMU_SIZEOF_REGION(&(region->b_mmu)));
+                reg_start, reg_end);
 #endif
 
-        if (vaddr >= region->b_mmu.vaddr &&
-                vaddr <= (region->b_mmu.vaddr + MMU_SIZEOF_REGION(&(region->b_mmu)))) {
+        if (VM_ADDR_IS_IN_RANGE(vaddr, reg_start, reg_end)) {
             int err;
 
             /* Test for COW flag. */

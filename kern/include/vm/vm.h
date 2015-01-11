@@ -84,6 +84,17 @@ struct vm_mm_struct {
 #define VM_INSOP_MAP_REG 0x02 /*!< Map the region to the given proc. */
 #define VM_INSOP_NOFREE  0x10 /*!< Don't free the old region. */
 
+#define VM_ADDR_IS_IN_RANGE(ADDR, RANGE_START, RANGE_END) \
+    (RANGE_START <= ADDR && ADDR <= RANGE_END)
+
+#define VM_RANGE_IS_OVERLAPPING(A_START, A_END, B_START, B_END) \
+    ((A_START <= B_START && B_START <= A_END) ||                \
+     (A_START <= B_END   && B_END   <= A_END))
+
+#define VM_RANGE_IS_INSIDE(A_START, A_END, B_START, B_END)      \
+    ((A_START <= B_START && B_START <= A_END) &&                \
+     (A_START <= B_END   && B_END   <= A_END))
+
 /**
  * Compare vmp_pt rb tree nodes.
  * Compares virtual addresses of two page tables.

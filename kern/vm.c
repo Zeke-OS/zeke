@@ -246,7 +246,7 @@ int vm_find_reg(struct proc_info * proc, uintptr_t uaddr, struct buf ** bp)
         reg_start = region->b_mmu.vaddr;
         reg_end = region->b_mmu.vaddr + MMU_SIZEOF_REGION(&region->b_mmu);
 
-        if (reg_start <= uaddr && uaddr <= reg_end) {
+        if (VM_ADDR_IS_IN_RANGE(uaddr, reg_start, reg_end)) {
             mtx_unlock(&mm->regions_lock);
             *bp = region;
             return i;
@@ -285,7 +285,7 @@ struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot,
     size_t nr_regions;
     const uintptr_t addr_min = configEXEC_BASE_LIMIT;
     uintptr_t addr_max = 0xEFFFFFFF; /* TODO ??? */
-    int found;
+    int overlap;
     uintptr_t vaddr;
     struct buf * bp;
     int err;
@@ -298,7 +298,7 @@ struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot,
     do {
         vaddr = addr_min + kunirand(addr_max - addr_min);
         vaddr = (vaddr & ~(MMU_PGSIZE_COARSE - 1));
-        found = 0;
+        overlap = 0;
 
         for (size_t i = 0; i < nr_regions; i++) {
             uintptr_t reg_start, reg_end, newreg_end;
@@ -310,14 +310,14 @@ struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot,
             reg_end = region->b_mmu.vaddr + MMU_SIZEOF_REGION(&region->b_mmu);
             newreg_end = vaddr + size;
 
-            if ((reg_start <= vaddr      && vaddr      <= reg_end) ||
-                (reg_start <= newreg_end && newreg_end <= reg_end)) {
-                found = 1;
+            if (VM_RANGE_IS_OVERLAPPING(reg_start, reg_end,
+                                        vaddr, newreg_end)) {
+                overlap = 1;
                 break;
             }
         }
 
-        if (found == 0)
+        if (overlap == 0)
             break;
     } while (1); /* TODO What if there is no space left? */
     mtx_unlock(&proc->mm.regions_lock);
