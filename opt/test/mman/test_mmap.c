@@ -66,7 +66,7 @@ static char * test_mmap_file(void)
     pu_assert("fd is ok", fd > 0);
 
     errno = 0;
-    data = mmap(NULL, 2 * sizeof(str), PROT_READ, 0, fd, 0);
+    data = mmap(NULL, 2 * sizeof(str), PROT_READ, MAP_PRIVATE, fd, 0);
     errno_save = errno;
 
     pu_assert("a new memory region returned", data != MAP_FAILED);

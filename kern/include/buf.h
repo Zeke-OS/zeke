@@ -115,20 +115,20 @@ typedef struct vm_ops {
 } vm_ops_t;
 
 /* generic */
-#define B_DONE      0x00000002  /*!< Transaction finished. */
-#define B_ERROR     0x00000004  /*!< Transaction aborted. */
-#define B_BUSY      0x00000008  /*!< Buffer busy. */
-#define B_LOCKED    0x00000010  /*!< Locked in memory. */
-#define B_DIRTY     0x00000020
-#define B_NOCOPY    0x00000100  /*!< Don't copy-on-write this buf. */
-#define B_NOSYNC    0x00001000  /*!< Never synch to the fs. */
-#define B_ASYNC     0x00002000  /*!< Start I/O but don't wait for completion. */
-#define B_DELWRI    0x00004000  /*!< Delayed write. */
+#define B_DONE      0x0000002  /*!< Transaction finished. */
+#define B_ERROR     0x0000004  /*!< Transaction aborted. */
+#define B_BUSY      0x0000008  /*!< Buffer busy. */
+#define B_LOCKED    0x0000010  /*!< Locked in memory. */
+#define B_DIRTY     0x0000020
+#define B_NOCOPY    0x0000100  /*!< Don't copy-on-write this buf. */
+#define B_NOSYNC    0x0001000  /*!< Never synch to the fs. */
+#define B_ASYNC     0x0002000  /*!< Start I/O but don't wait for completion. */
+#define B_DELWRI    0x0004000  /*!< Delayed write. */
 /* shmem */
-#define B_NOTSHARED 0x00010000  /*!< Don't share on fork() */
-#define B_NOCORE    0x00080000  /*!< Don't include in core dumps. */
+#define B_NOTSHARED 0x0010000  /*!< Don't share on fork() */
+#define B_NOCORE    0x0080000  /*!< Don't include in core dumps. */
 /* errors */
-#define B_IOERROR   0x10000000  /*!< IO Error. */
+#define B_IOERROR   0x1000000  /*!< IO Error. */
 
 #define BUF_LOCK(bp)    mtx_lock(&(bp)->lock)
 #define BUF_UNLOCK(bp)  mtx_unlock(&(bp)->lock)

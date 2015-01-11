@@ -43,6 +43,11 @@
 #include <vm/vm.h>
 #include <sys/mman.h>
 
+static mtx_t sync_lock;
+
+/**
+ * Periodic sync list.
+ */
 static struct llist * shmem_sync_list;
 
 static void * shmem_sync_thread(void * arg);
@@ -53,7 +58,15 @@ int shmem_init(void)
     SUBSYS_DEP(proc_init);
     SUBSYS_INIT("shmem");
 
+    mtx_init(&sync_lock, MTX_TYPE_SPIN | MTX_TYPE_SLEEP |
+                         MTX_TYPE_PRICEIL);
+    sync_lock.pri.p_lock = NICE_MAX;
+
     shmem_sync_list = dllist_create(struct buf, lentry_);
+
+    /*
+     * Create a thread for periodic syncing of mmap buffers.
+     */
 
     struct buf * bp_stack = geteblk(MMU_PGSIZE_COARSE);
     if (!bp_stack)
@@ -110,6 +123,10 @@ int shmem_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
         if (!bp) {
             return -ENOMEM;
         }
+
+        BUF_LOCK(bp);
+        bp->b_flags |= B_NOSYNC;
+        BUF_UNLOCK(bp);
     } else { /* Map a file */
         file_t * file;
         vnode_t * vnode;
@@ -153,17 +170,15 @@ int shmem_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
         bp->b_blkno = blkno;
 
         if (!(flags & MAP_SHARED))
-            bp->b_flags &= B_NOTSHARED;
+            bp->b_flags |= B_NOTSHARED;
         if (flags & MAP_PRIVATE)
-            bp->b_flags &= B_NOSYNC;
+            bp->b_flags |= B_NOSYNC;
         BUF_UNLOCK(bp);
 
         bio_readin(bp);
 
         fs_fildes_ref(proc->files, fildes, -1);
     }
-
-    /* TODO Add bp to a periodic update list */
 
     bp->b_uflags = prot & (VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE);
     bp->b_mmu.control = MMU_CTRL_MEMTYPE_WB;
@@ -196,14 +211,36 @@ int shmem_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
         *uaddr = (char *)(bp->b_mmu.vaddr);
     }
 
+    /*
+     * Insert bp to the periodic sync list.
+     */
+    if (!(bp->b_flags & B_NOSYNC)) {
+        mtx_lock(&sync_lock);
+        shmem_sync_list->insert_tail(shmem_sync_list, bp);
+        mtx_unlock(&sync_lock);
+    }
+
     *out = bp;
     return 0;
 }
 
 int shmem_munmap(struct buf * bp, size_t size)
 {
-    bio_writeout(bp);
+    int flags;
+
+    BUF_LOCK(bp);
+    flags = bp->b_flags;
+    BUF_UNLOCK(bp);
+
+    if (!(flags & B_NOSYNC)) {
+        mtx_lock(&sync_lock);
+        shmem_sync_list->remove(shmem_sync_list, bp);
+        mtx_unlock(&sync_lock);
+        bio_writeout(bp);
+    }
+
     vrfree(bp);
+
     return 0;
 }
 
@@ -214,14 +251,18 @@ static void * shmem_sync_thread(void * arg)
 
     while (shmem_sync_enabled) {
         thread_sleep(500);
+        mtx_lock(&sync_lock);
 
         bp = shmem_sync_list->head;
         if (!bp)
-            continue;
+            goto skip;
 
         do {
             bio_writeout(bp);
         } while ((bp = bp->lentry_.next));
+
+skip:
+        mtx_unlock(&sync_lock);
     }
 
     return NULL;
@@ -279,6 +320,7 @@ static int sys_munmap(void * user_args)
 {
     struct _shmem_munmap_args args;
     struct buf * bp;
+    int regnr;
     int err, retval;
 
     err = copyin(user_args, &args, sizeof(args));
@@ -287,10 +329,11 @@ static int sys_munmap(void * user_args)
         goto fail;
     }
 
-    bp = vm_find_reg(curproc, (uintptr_t)args.addr);
+    regnr = vm_find_reg(curproc, (uintptr_t)args.addr, &bp);
     if (!bp) {
         retval = -EINVAL;
     }
+    vm_replace_region(curproc, NULL, regnr, VM_INSOP_NOFREE);
 
     /*
      * RFE

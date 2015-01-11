@@ -82,6 +82,7 @@ struct vm_mm_struct {
 /* Region insert operations */
 #define VM_INSOP_SET_PT  0x01 /*!< Set default page tabe from process vpt. */
 #define VM_INSOP_MAP_REG 0x02 /*!< Map the region to the given proc. */
+#define VM_INSOP_NOFREE  0x10 /*!< Don't free the old region. */
 
 /**
  * Compare vmp_pt rb tree nodes.
@@ -172,7 +173,7 @@ int copyout_proc(struct proc_info * proc, const void * kaddr, void * uaddr,
  * @}
  */
 
-struct buf * vm_find_reg(struct proc_info * proc, uintptr_t uaddr);
+int vm_find_reg(struct proc_info * proc, uintptr_t uaddr, struct buf ** bp);
 
 /**
  * Create a new empty general purpose section.
@@ -261,6 +262,14 @@ int vm_map_region(struct buf * region, struct vm_pt * pt);
  * @return Zero if succeed; non-zero error code otherwise.
  */
 int vm_mapproc_region(struct proc_info * proc, struct buf * region);
+
+int vm_unmapproc_region(struct proc_info * proc, struct buf * region);
+
+/**
+ * Unload regions from a proc mm.
+ * @param end if end is -1 range will be from start to the last region.
+ */
+int vm_unload_regions(struct proc_info * proc, int start, int end);
 
 /**
  * @addtogroup useracc kernacc, useracc, useracc_proc

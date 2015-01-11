@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   32bit ELF loading.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -179,7 +179,8 @@ int load_elf32(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base)
     if (nr_newsections > 2)
         return -ENOEXEC;
 
-    /* TODO Unload regions above HEAP */
+    /* Unload regions above HEAP */
+    vm_unload_regions(proc, MM_HEAP_REGION + 1, -1);
 
     /* Load sections */
     for (size_t i = 0; i < elfhdr->e_phnum; i++) {

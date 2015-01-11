@@ -72,10 +72,10 @@
 #else
 #define _KERROR_FN(level, where, fmt, ...) do {                             \
     char _kerror_buf[configKERROR_MAXLEN];                                  \
-    size_t i;                                                               \
-    i = ksprintf(_kerror_buf, sizeof(_kerror_buf), "%c:%s", level, where);  \
-    ksprintf(_kerror_buf + i - 1, sizeof(_kerror_buf) - i, fmt,             \
-             ##__VA_ARGS__);                                                \
+    size_t _kerror_i = ksprintf(_kerror_buf, sizeof(_kerror_buf), "%c:%s",  \
+                                level, where);                              \
+    ksprintf(_kerror_buf + _kerror_i - 1, sizeof(_kerror_buf) - _kerror_i,  \
+            fmt, ##__VA_ARGS__);                                            \
     kputs(_kerror_buf);                                                     \
 } while (0)
 #endif

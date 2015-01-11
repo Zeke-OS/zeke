@@ -231,7 +231,7 @@ int copyinstr(const char * uaddr, char * kaddr, size_t len, size_t * done)
     return 0;
 }
 
-struct buf * vm_find_reg(struct proc_info * proc, uintptr_t uaddr)
+int vm_find_reg(struct proc_info * proc, uintptr_t uaddr, struct buf ** bp)
 {
     struct buf * region = NULL;
     struct vm_mm_struct * mm = &proc->mm;
@@ -248,12 +248,13 @@ struct buf * vm_find_reg(struct proc_info * proc, uintptr_t uaddr)
 
         if (reg_start <= uaddr && uaddr <= reg_end) {
             mtx_unlock(&mm->regions_lock);
-            return region;
+            *bp = region;
+            return i;
         }
     }
     mtx_unlock(&mm->regions_lock);
 
-    return NULL;
+    return -1;
 }
 
 struct buf * vm_newsect(uintptr_t vaddr, size_t size, int prot)
@@ -300,19 +301,23 @@ struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot,
         found = 0;
 
         for (size_t i = 0; i < nr_regions; i++) {
+            uintptr_t reg_start, reg_end, newreg_end;
             struct buf * region = (*proc->mm.regions)[i];
-            const uintptr_t reg_start = region->b_mmu.vaddr;
-            const uintptr_t reg_end = region->b_mmu.vaddr
-                                 + MMU_SIZEOF_REGION(&region->b_mmu);
+            if (!region)
+                continue;
 
-            if ((reg_start <= vaddr && vaddr <= reg_end) ||
-                (reg_end <= vaddr + size && vaddr + size <= reg_end)) {
+            reg_start = region->b_mmu.vaddr;
+            reg_end = region->b_mmu.vaddr + MMU_SIZEOF_REGION(&region->b_mmu);
+            newreg_end = vaddr + size;
+
+            if ((reg_start <= vaddr      && vaddr      <= reg_end) ||
+                (reg_start <= newreg_end && newreg_end <= reg_end)) {
                 found = 1;
                 break;
             }
         }
 
-        if (!found)
+        if (found == 0)
             break;
     } while (1); /* TODO What if there is no space left? */
     mtx_unlock(&proc->mm.regions_lock);
@@ -492,15 +497,22 @@ int vm_replace_region(struct proc_info * proc, struct buf * region,
             return err;
     }
 
-    /*
-     * Free the old region as this process no longer uses it.
-     * (Usually decrements some internal refcount)
-     */
     mtx_lock(&mm->regions_lock);
     old_region = (*mm->regions)[region_nr];
     (*mm->regions)[region_nr] = NULL;
     mtx_unlock(&mm->regions_lock);
-    if (old_region && old_region->vm_ops && old_region->vm_ops->rfree) {
+
+    if (old_region) {
+        /* TODO unmap should be called but currently it hangs the kernel. */
+        //vm_unmapproc_region(proc, old_region);
+    }
+
+    /*
+     * Free the old region as this process no longer uses it.
+     * (Usually decrements some internal refcount)
+     */
+    if (((op & VM_INSOP_NOFREE) == 0) && old_region && old_region->vm_ops &&
+        old_region->vm_ops->rfree) {
         old_region->vm_ops->rfree(old_region);
     }
 
@@ -562,6 +574,50 @@ int vm_mapproc_region(struct proc_info * proc, struct buf * region)
         return -ENOMEM;
 
     return vm_map_region(region, vpt);
+}
+
+int vm_unmapproc_region(struct proc_info * proc, struct buf * region)
+{
+    struct vm_pt * vpt;
+    mmu_region_t mmu_region;
+
+    mtx_lock(&region->lock);
+    vpt = ptlist_get_pt(&proc->mm, region->b_mmu.vaddr);
+    if (!vpt)
+        panic("Can't unmap a region");
+
+    mmu_region = region->b_mmu;
+    mmu_region.pt = &(vpt->pt);
+    mtx_unlock(&region->lock);
+
+    return mmu_unmap_region(&mmu_region);
+}
+
+int vm_unload_regions(struct proc_info * proc, int start, int end)
+{
+    struct vm_mm_struct * const mm = &proc->mm;
+
+    mtx_lock(&mm->regions_lock);
+    if (start < 0 || start >= mm->nr_regions || end >= mm->nr_regions) {
+        mtx_unlock(&proc->mm.regions_lock);
+        return -EINVAL;
+    }
+    if (end == -1) {
+        end = mm->nr_regions - 1;
+    }
+    mtx_unlock(&proc->mm.regions_lock);
+
+    for (size_t i = start; i < end; i++) {
+        mtx_lock(&mm->regions_lock);
+        struct buf * region = (*mm->regions)[i];
+        if (!region)
+            continue;
+
+        mtx_unlock(&proc->mm.regions_lock);
+        vm_replace_region(proc, NULL, i, 0);
+    }
+
+    return 0;
 }
 
 int kernacc(const void * addr, int len, int rw)
@@ -645,7 +701,7 @@ int useracc_proc(const void * addr, size_t len, struct proc_info * proc, int rw)
     struct buf * region;
     uintptr_t reg_end;
 
-    region = vm_find_reg(proc, (uintptr_t)addr);
+    (void)vm_find_reg(proc, (uintptr_t)addr, &region);
     if (!region)
         return 0;
     reg_end = region->b_mmu.vaddr + MMU_SIZEOF_REGION(&region->b_mmu);
