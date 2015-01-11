@@ -283,6 +283,7 @@ struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot,
         struct buf * old_bp)
 {
     size_t nr_regions;
+    const size_t bits = NBITS(MMU_PGSIZE_COARSE);
     const uintptr_t addr_min = configEXEC_BASE_LIMIT;
     uintptr_t addr_max = 0xEFFFFFFF; /* TODO ??? */
     int overlap;
@@ -296,19 +297,23 @@ struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot,
     mtx_lock(&proc->mm.regions_lock);
     nr_regions = proc->mm.nr_regions;
     do {
-        vaddr = addr_min + kunirand(addr_max - addr_min);
-        vaddr = (vaddr & ~(MMU_PGSIZE_COARSE - 1));
+        uintptr_t newreg_end;
+
+        vaddr = addr_min +
+                (kunirand((addr_max >> bits) - (addr_min >> bits)) << bits);
+        vaddr &= ~(MMU_PGSIZE_COARSE - 1);
+        newreg_end = vaddr + size;
+
         overlap = 0;
 
         for (size_t i = 0; i < nr_regions; i++) {
-            uintptr_t reg_start, reg_end, newreg_end;
+            uintptr_t reg_start, reg_end;
             struct buf * region = (*proc->mm.regions)[i];
             if (!region)
                 continue;
 
             reg_start = region->b_mmu.vaddr;
             reg_end = region->b_mmu.vaddr + MMU_SIZEOF_REGION(&region->b_mmu);
-            newreg_end = vaddr + size;
 
             if (VM_RANGE_IS_OVERLAPPING(reg_start, reg_end,
                                         vaddr, newreg_end)) {
