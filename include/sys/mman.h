@@ -227,6 +227,10 @@ int shm_unlink(const char *);
 
 __END_DECLS
 #else /* !KERNEL_INTERNAL */
+
+/**
+ * Create a mmap() for a process.
+ */
 int shmem_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
                int flags, int fildes, off_t off, struct buf ** out,
                char ** uaddr);

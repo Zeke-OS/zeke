@@ -84,16 +84,26 @@ struct vm_mm_struct {
 #define VM_INSOP_MAP_REG 0x02 /*!< Map the region to the given proc. */
 #define VM_INSOP_NOFREE  0x10 /*!< Don't free the old region. */
 
+/**
+ * Test if ADDR is between RANGE_START and RANGE_END;
+ * ADDR belongs to the range.
+ */
 #define VM_ADDR_IS_IN_RANGE(ADDR, RANGE_START, RANGE_END) \
-    (RANGE_START <= ADDR && ADDR <= RANGE_END)
+    ((RANGE_START) <= (ADDR) && (ADDR) <= (RANGE_END))
 
+/**
+ * Test if two address ranges are overlapping each other.
+ */
 #define VM_RANGE_IS_OVERLAPPING(A_START, A_END, B_START, B_END) \
-    ((A_START <= B_START && B_START <= A_END) ||                \
-     (A_START <= B_END   && B_END   <= A_END))
+    (((A_START) <= (B_START) && (B_START) <= (A_END)) ||        \
+     ((A_START) <= (B_END)   && (B_END)   <= (A_END)))
 
+/**
+ * Test if address range B is a subset of address range A.
+ */
 #define VM_RANGE_IS_INSIDE(A_START, A_END, B_START, B_END)      \
-    ((A_START <= B_START && B_START <= A_END) &&                \
-     (A_START <= B_END   && B_END   <= A_END))
+    (((A_START) <= (B_START) && (B_START) <= (A_END)) &&        \
+     ((A_START) <= (B_END)   && (B_END)   <= (A_END)))
 
 /**
  * Compare vmp_pt rb tree nodes.
@@ -184,6 +194,14 @@ int copyout_proc(struct proc_info * proc, const void * kaddr, void * uaddr,
  * @}
  */
 
+/**
+ * Find a region in a process that maps uaddr.
+ * @param       proc  is the process.
+ * @param       uaddr is the address.
+ * @param[out]  bp    is the result pointer.
+ * @return  Returns the region number if found;
+ *          Otherwise a negative error code is returned.
+ */
 int vm_find_reg(struct proc_info * proc, uintptr_t uaddr, struct buf ** bp);
 
 /**
@@ -274,6 +292,14 @@ int vm_map_region(struct buf * region, struct vm_pt * pt);
  */
 int vm_mapproc_region(struct proc_info * proc, struct buf * region);
 
+/**
+ * Unmap a VM region from a given process.
+ * @param proc is a pointer to the process.
+ * @param region is the region that should be unmapped from the process;
+ *               proc doesn't have to own the region nor the page table
+ *               that region points as it won't be used, instead a proper
+ *               vpt is searched and modified.
+ */
 int vm_unmapproc_region(struct proc_info * proc, struct buf * region);
 
 /**
