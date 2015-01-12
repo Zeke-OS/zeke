@@ -73,7 +73,7 @@ struct buf {
     size_t b_dirtyend;      /*!< Offset of end of dirty region. */
 
     /* Status */
-    unsigned b_flags;
+    unsigned b_flags;       /*!< Buffer control flags. */
     int b_error;            /*!< Negative errno returned after I/O. */
     size_t b_resid;         /*!< words not transferred after an error. */
 
@@ -232,11 +232,13 @@ struct buf * incore(vnode_t * vnode, size_t blkno);
 
 /**
  * Readin file backed buffer.
+ * @param bp is the buffer.
  */
 void bio_readin(struct buf * bp);
 
 /**
  * Writeout file backed buffer.
+ * @param bp is the buffer.
  */
 void bio_writeout(struct buf * bp);
 
@@ -271,6 +273,11 @@ void biodone(struct buf * bp);
  */
 int biowait(struct buf * bp);
 
+/**
+ * Get last error with a buf bp.
+ * @param bp        is the buffer.
+ * @return Returns the error code of a last operation.
+ */
 int bio_geterror(struct buf * bp);
 
 /**
