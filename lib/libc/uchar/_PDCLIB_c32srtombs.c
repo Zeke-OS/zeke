@@ -8,7 +8,6 @@
    Permission is granted to use, modify, and / or redistribute at will.
 */
 
-#ifndef REGTEST
 #include <uchar.h>
 #include <errno.h>
 #include <stdint.h>
@@ -47,15 +46,3 @@ size_t _PDCLIB_c32srtombs(
 {
     return _PDCLIB_c32srtombs_l(dst, src, len, ps, _PDCLIB_threadlocale());
 }
-
-#endif
-
-#ifdef TEST
-#include <_PDCLIB_test.h>
-
-int main( void )
-{
-    TESTCASE( NO_TESTDRIVER );
-    return TEST_RESULTS;
-}
-#endif

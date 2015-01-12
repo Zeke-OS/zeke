@@ -79,7 +79,7 @@ static char * test_mmap_file(void)
 
     memcpy(str1, data, sizeof(str1) - 1);
     fread(str2, sizeof(char), sizeof(str2) - 1, fp);
-    pu_assert("Strings equal", strcmp(str1, str2) == 0);
+    pu_assert("Strings are equal", strcmp(str1, str2) == 0);
 
     return NULL;
 }
