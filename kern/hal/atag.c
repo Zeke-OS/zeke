@@ -58,8 +58,7 @@ void atag_scan(uint32_t fw, uint32_t mtype, uint32_t * atag_addr)
 
     sysinfo.mtype = mtype;
 
-    if (*atag_addr != ATAG_CORE) {
-        KERROR(KERROR_WARN, "%p:%x\n", atag_addr, *atag_addr);
+    if (atag_addr[0] == 0 && atag_addr[1] != ATAG_CORE) {
         KERROR(KERROR_WARN, "No ATAGs!\n");
         return;
     }
@@ -74,9 +73,8 @@ void atag_scan(uint32_t fw, uint32_t mtype, uint32_t * atag_addr)
             atags += atags[0]-1;
             break;
         case ATAG_MEM:
-            KERROR(KERROR_INFO,
-                    "[ATAG_MEM] size: %x, start: %x\n",
-                    atags[2], atags[3]);
+            KERROR(KERROR_INFO, "[ATAG_MEM] size: %x, start: %x\n",
+                   atags[2], atags[3]);
 
             atags += atags[0]-1;
 
@@ -104,8 +102,7 @@ void atag_scan(uint32_t fw, uint32_t mtype, uint32_t * atag_addr)
         case ATAG_CMDLINE:
             atags += 2;
 
-            KERROR(KERROR_INFO,
-                    "[ATAG_CMDLINE] : %s\n", (char *)atags);
+            KERROR(KERROR_INFO, "[ATAG_CMDLINE] : %s\n", (char *)atags);
 
             atags += atags[0]-1;
             break;
