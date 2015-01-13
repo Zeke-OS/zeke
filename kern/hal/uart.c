@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   UART HAL.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -63,8 +63,10 @@ int uart_init(void)
     SUBSYS_INIT("uart");
     vfs_ready = 1;
 
-    /* Register all UART devices with devfs that were registered with UART
-     * subsystem before devfs was initialized. */
+    /*
+     * Register all UART devices with devfs that were registered with UART
+     * subsystem before devfs was initialized.
+     */
     for (int i = 0; i < uart_nr_ports; i++) {
         struct uart_port * port = uart_ports[i];
 
@@ -96,11 +98,12 @@ static int make_uartdev(struct uart_port * port, int port_num)
 
     if (dev_make(dev, 0, 0, 0666, NULL)) {
         KERROR(KERROR_ERR, "Failed to make a device for UART.\n");
+        return -ENODEV;
     } else {
         port->flags |= UART_PORT_FLAG_FS;
     }
 
-    return -ENODEV;
+    return 0;
 }
 
 int uart_register_port(struct uart_port * port)
