@@ -58,7 +58,7 @@ void atag_scan(uint32_t fw, uint32_t mtype, uint32_t * atag_addr)
 
     sysinfo.mtype = mtype;
 
-    if (atag_addr[0] == 0 && atag_addr[1] != ATAG_CORE) {
+    if (atag_addr[0] == 0 || atag_addr[1] != ATAG_CORE) {
         KERROR(KERROR_WARN, "No ATAGs!\n");
         return;
     }
