@@ -2,22 +2,15 @@
 
 menu "File Systems"
 
-menuconfig configMOUNTROOTFS
-    bool "Rootfs"
-    default y
-    ---help---
-    Mount rootfs on boot.
+menu "Rootfs"
 
-    If unsure, say Y.
-
-if configMOUNTROOTFS
+config configROOTFS_PATH
+    string "FS path"
+    default "/dev/emmc0"
 
 config configROOTFS_NAME
     string "FS name"
-    default "ramfs" if configRAMFS
-
-config configROOTFS_DEVPATH
-    string "Path to dev"
+    default "fatfs"
 
 config configROOTFS_FLAGS
     int "Mount flags"
@@ -26,7 +19,7 @@ config configROOTFS_FLAGS
 config configROOTFS_PARMS
     string "Params"
 
-endif
+endmenu
 
 config config_FS_DEBUG
     bool "fs subsystem debugging"

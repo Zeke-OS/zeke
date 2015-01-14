@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Header file for sysinfo.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,6 +30,39 @@
  *******************************************************************************
  */
 
+#define KERNEL_INTERNAL
+#include <autoconf.h>
+#include <kstring.h>
+#include <kerror.h>
+#include <sys/sysctl.h>
 #include <hal/sysinfo.h>
 
-sysinfo_t sysinfo;
+sysinfo_t sysinfo = {
+    .console = "/dev/ttyS0",
+    .root = configROOTFS_PATH " " configROOTFS_NAME,
+};
+
+SYSCTL_STRING(_kern, OID_AUTO, root, CTLFLAG_RD, &sysinfo.root, 0,
+              "Root fs and type");
+
+static const char cmdline_console[] = "console=";
+static const char cmdline_root[] = "root=";
+static const char cmdline_rootfstype[] = "rootfstype=";
+
+void sysinfo_cmdline(const char * cmdline)
+{
+    const char * s;
+    const char * root;
+    const char * rootfstype;
+
+    s = strstr(cmdline, cmdline_console);
+    if (s) {
+        strlcpy(sysinfo.console, s + sizeof(cmdline_console),
+                sizeof(sysinfo.console));
+    }
+
+    root = strstr(cmdline, cmdline_root);
+    rootfstype = strstr(cmdline, cmdline_root);
+    if (root && rootfstype)
+        ksprintf(sysinfo.root, sizeof(sysinfo.root), "%s %s", root, rootfstype);
+}

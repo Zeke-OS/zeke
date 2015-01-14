@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Header file for sysinfo.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,7 +30,8 @@
  *******************************************************************************
  */
 
-/** @addtogroup HAL
+/**
+ * @addtogroup HAL
  * @{
  */
 
@@ -42,15 +43,19 @@
 #include <stdint.h>
 
 typedef struct {
-    unsigned int fw; /*!< Firmware version on platforms like rpi. */
+    unsigned int fw;    /*!< Firmware version on platforms like rpi. */
     unsigned int mtype; /*!< ARM Linux Machine Type. */
     struct meminfo {
         size_t start;
         size_t size;
     } mem;
+    char console[16];   /*!< Default tty. */
+    char root[16 + 8];  /*!< Path and type of the root partition. */
 } sysinfo_t;
 
 extern sysinfo_t sysinfo;
+
+void sysinfo_cmdline(const char * cmdline);
 
 #endif /* SYSINFO_H */
 

@@ -47,7 +47,6 @@
 #define ATAG_VIDEOLFB   0x54410008 /*!< vesafb-type framebuffers init vals. */
 #define ATAG_CMDLINE    0x54410009 /*!< Command line to pass to kernel. */
 
-
 /**
  * ATAG scanner.
  * @note This function is called before intializers.
@@ -103,6 +102,7 @@ void atag_scan(uint32_t fw, uint32_t mtype, uint32_t * atag_addr)
             atags += 2;
 
             KERROR(KERROR_INFO, "[ATAG_CMDLINE] : %s\n", (char *)atags);
+            sysinfo_cmdline((const char *)atags);
 
             atags += atags[0]-1;
             break;

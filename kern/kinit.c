@@ -56,9 +56,7 @@ extern int (*__fini_array_start []) (void) __attribute__((weak));
 extern int (*__fini_array_end []) (void) __attribute__((weak));
 
 void * uinit(void * arg);
-#ifdef configMOUNTROOTFS
 static void mount_rootfs(void);
-#endif
 static void exec_array(int (*a []) (void), int n);
 
 /**
@@ -106,9 +104,7 @@ int kinit(void)
 
     char buf[80]; /* Buffer for panic messages. */
 
-#ifdef configMOUNTROOTFS
     mount_rootfs();
-#endif
 
     /* User stack for init */
     struct buf * init_vmstack = geteblk(configUSRINIT_SSIZE);
@@ -193,7 +189,6 @@ int kinit(void)
     return 0;
 }
 
-#ifdef configMOUNTROOTFS
 static void mount_rootfs(void)
 {
     const char failed[] = "Failed to mount rootfs";
@@ -214,11 +209,9 @@ static void mount_rootfs(void)
     kernel_proc->croot->vn_mountpoint = kernel_proc->croot;
     kernel_proc->croot->vn_refcount = 1;
 
-    ret = fs_mount(kernel_proc->croot,
-                   configROOTFS_DEVPATH,
-                   configROOTFS_NAME,
-                   configROOTFS_FLAGS,
-                   configROOTFS_PARMS, sizeof(configROOTFS_PARMS));
+    /* TODO Should use sysctl to get rootfs path and type */
+    ret = fs_mount(kernel_proc->croot, configROOTFS_PATH, configROOTFS_NAME, 0,
+                   "", 1);
     if(ret) {
         KERROR(KERROR_ERR, "%s : %i\n", failed, ret);
         goto out;
@@ -232,7 +225,6 @@ static void mount_rootfs(void)
 out:
     kfree(tmp);
 }
-#endif
 
 /**
  * Exec intializer/finalizer array created by the linker.
