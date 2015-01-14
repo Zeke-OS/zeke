@@ -23,15 +23,13 @@ towards POSIX-like system and its user space is taking a very Unix-like shape.
 
 Key Features
 ------------
-- Userland benefits
+- Userland
     - Mostly C99 compliant libc
     - Dynamic prioritizing pre-emptive scheduling with penalties to prevent
       starvation
     - System call based kernel services
     - Standard user application separation by using POSIX processes
-    - Many-to-Many thread scheduling implemented at kernel level
-- Scalability
-    - Adjustable footprint by compilation flags
+    - One-to-one kernel threads for user processes
 - File Systems
     - Complete file system abstraction (VFS)
     - freeBSD-like device file interface
@@ -42,9 +40,6 @@ Key Features
 
 News
 ----
-- Coming "soon":
-    - SD card support and file system X (tbd)
-- ARM11/Raspberry Pi port ongoing
 
 Port Status
 -----------
