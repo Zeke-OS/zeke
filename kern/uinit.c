@@ -137,8 +137,6 @@ void * uinit(void * arg)
 {
     char * argv[] = { "/sbin/sinit", NULL };
     char * env[] = { "PATH=" _PATH_STDPATH, "HOME=/", NULL };
-    char * root;
-    char * rootfstype;
     int err;
 
     write(STDOUT_FILENO, "uinit\n", 7);
