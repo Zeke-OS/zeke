@@ -75,10 +75,8 @@ void atag_scan(uint32_t fw, uint32_t mtype, uint32_t * atag_addr)
             KERROR(KERROR_INFO, "[ATAG_MEM] size: %x, start: %x\n",
                    atags[2], atags[3]);
 
+            sysinfo_setmem((size_t)atags[3], (size_t)atags[2]);
             atags += atags[0]-1;
-
-            sysinfo.mem.size = (size_t)atags[2];
-            sysinfo.mem.start = (size_t)atags[3];
             break;
         case ATAG_VIDEOTEXT:
             atags += atags[0]-1;

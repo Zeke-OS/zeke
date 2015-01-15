@@ -4,9 +4,9 @@ comment "Kernel options"
 
 source "kern/hal/Kconfig"
 
-menu "Memory Map"
+menu "Memory Management"
 
-menu "Physical layout"
+menu "Physical memory layout"
 
 config configKSTACK_START
     hex "P kstack start"
@@ -38,9 +38,19 @@ config configDYNMEM_START
     hex "P dynmem start"
     default 0x00800000
 
-config configDYNMEM_END
-    hex "P dynmem end"
-    default 0x00FFFFFF
+config configDYNMEM_SAFE_SIZE
+    hex "dynmem safe size"
+    default 0x800000
+    ---help---
+    Safe size for dynmem if dynamic configuration fails (eg. no ATAGs).
+
+config configDYNMEM_MAX_SIZE
+    hex "dynmem max size"
+    default configDYNMEM_SAFE_SIZE
+    ---help---
+    Maximum size of the dynmem allocation area (excl. reserved regions).
+    This knob sets the absolute maximum size for memory area used for dynamic
+    memory allocations.
 
 endmenu
 
@@ -70,7 +80,7 @@ config configKSECT_END
 
 endmenu
 
-menu "Usr process layout"
+menu "User process memory layout"
 
 config configEXEC_BASE_LIMIT
     hex "Exec base address low limit"

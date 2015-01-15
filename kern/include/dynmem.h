@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Dynmem management headers.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,38 +48,6 @@
  * - Macros to incr/decr ref count on dynamic memory region
  * - Should we have 2 GB dynmem and map it as 1:1 to phys only when possible?
  */
-
-/**
- * Dynmem page/region size in bytes.
- * TODO Not sure if this works with any other size than 1 MB.
- */
-#define DYNMEM_PAGE_SIZE MMU_PGSIZE_SECTION
-
-/**
- * Dynmem area starts
- * TODO check if this is ok?
- */
-#define DYNMEM_START    MMU_VADDR_DYNMEM_START
-
-/**
- * Dynmem area end
- * TODO should match end of physical memory at least
- * (or higher if paging is allowed later)
- */
-#define DYNMEM_END      MMU_VADDR_DYNMEM_END
-
-/**
- * Dynmemmap size.
- * Dynmem memory space is allocated in 1MB sections.
- */
-#define DYNMEM_MAPSIZE  ((DYNMEM_END - DYNMEM_START + 1) / 1048576)
-
-/**
- * Size of dynmem page table in pt region.
- */
-#define DYNMEM_PT_SIZE  MMU_PTSZ_COARSE
-
-extern uint32_t dynmemmap[];
 
 /**
  * Allocate a contiguous memory region from dynmem area.

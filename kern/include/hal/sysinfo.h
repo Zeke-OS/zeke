@@ -55,6 +55,7 @@ typedef struct {
 
 extern sysinfo_t sysinfo;
 
+void sysinfo_setmem(size_t start, size_t size);
 void sysinfo_cmdline(const char * cmdline);
 
 #endif /* SYSINFO_H */

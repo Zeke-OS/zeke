@@ -37,7 +37,31 @@
 #include <klocks.h>
 #include <sys/sysctl.h>
 #include <bitmap.h>
+#include <hal/sysinfo.h>
 #include <dynmem.h>
+
+/**
+ * Dynmem page/region size in bytes.
+ * TODO Not sure if this works with any other size than 1 MB.
+ */
+#define DYNMEM_PAGE_SIZE MMU_PGSIZE_SECTION
+
+/**
+ * Dynmem area starts.
+ */
+#define DYNMEM_START    configDYNMEM_START
+
+/**
+ * Dynmem area end.
+ * Temporarily set to a safe value and overriden on init.
+ */
+static size_t dynmem_end = (DYNMEM_START + configDYNMEM_SAFE_SIZE - 1);
+
+/**
+ * Size of dynmem page table in pt region.
+ */
+#define DYNMEM_PT_SIZE  MMU_PTSZ_COARSE
+
 
 #define DYNMEM_RC_POS       16
 #define DYNMEM_RL_POS       13
@@ -68,11 +92,20 @@
 #define MAP_TO_AP(VAL)          (((VAL) & DYNMEM_AP_MASK) >> DYNMEM_AP_POS)
 #define MAP_TO_CTRL(VAL)        (((VAL) & DYNMEM_CTRL_MASK) >> DYNMEM_CTRL_POS)
 
-#if E2BITMAP_SIZE(DYNMEM_MAPSIZE) > 0
+/**
+ * Dynmemmap size.
+ * Dynmem memory space is allocated in 1MB sections.
+ */
+#define DYNMEM_MAPSIZE  ((configDYNMEM_MAX_SIZE) / 1048576)
+
+#if E2BITMAP_SIZE(_DYNMEM_MAPSIZE) > 0
 #define DYNMEM_BITMAPSIZE       E2BITMAP_SIZE(DYNMEM_MAPSIZE)
 #else
 #define DYNMEM_BITMAPSIZE       1
 #endif
+
+#define SIZEOF_DYNMEMMAP        (DYNMEM_MAPSIZE * sizeof(uint32_t))
+#define SIZEOF_DYNMEMMAP_BITMAP (DYNMEM_BITMAPSIZE * sizeof(uint32_t))
 
 /**
  * Dynmemmap allocation table.
@@ -89,8 +122,8 @@
  * AP = Access Permissions
  * X  = Don't care
  */
-uint32_t dynmemmap[DYNMEM_MAPSIZE];
-uint32_t dynmemmap_bitmap[DYNMEM_BITMAPSIZE];
+static uint32_t dynmemmap[DYNMEM_MAPSIZE];
+static uint32_t dynmemmap_bitmap[DYNMEM_BITMAPSIZE];
 
 /**
  * Struct for temporary storage.
@@ -103,13 +136,14 @@ static mmu_region_t dynmem_region;
  */
 static mtx_t dynmem_region_lock;
 
-/* Some sysctl stat variables.
+/*
+ * Some sysctl stat variables.
  */
-static size_t dynmem_free = DYNMEM_END - DYNMEM_START + 1;
+static size_t dynmem_free = configDYNMEM_SAFE_SIZE;
 SYSCTL_UINT(_vm, OID_AUTO, dynmem_free, CTLFLAG_RD, (void *)(&dynmem_free), 0,
         "Amount of free dynmem");
 
-static const size_t dynmem_tot = DYNMEM_END - DYNMEM_START + 1;
+static const size_t dynmem_tot = configDYNMEM_SAFE_SIZE;
 SYSCTL_UINT(_vm, OID_AUTO, dynmem_tot, CTLFLAG_RD, (void *)(&dynmem_tot), 0,
         "Total amount of dynmem");
 
@@ -121,6 +155,14 @@ static int dynmem_init(void)
 {
     SUBSYS_DEP(mmu_init);
     SUBSYS_INIT("dynmem");
+
+    /*
+     * Set dynmem end address.
+     */
+    if (sysinfo.mem.size > configDYNMEM_MAX_SIZE)
+        dynmem_end = sysinfo.mem.start + configDYNMEM_MAX_SIZE - 1;
+    else
+        dynmem_end = sysinfo.mem.start + sysinfo.mem.size - 1;
 
     mtx_init(&dynmem_region_lock, MTX_TYPE_SPIN);
 
@@ -136,7 +178,7 @@ void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t control)
     mtx_lock(&dynmem_region_lock);
 
     if(bitmap_block_search(&pos, size, dynmemmap_bitmap,
-                sizeof(dynmemmap_bitmap))) {
+                SIZEOF_DYNMEMMAP_BITMAP)) {
 #if configDEBUG >= KERROR_DEBUG
         KERROR(KERROR_DEBUG,
                "Out of dynmem, free %u/%u, tried to allocate %u MB\n",
@@ -296,7 +338,7 @@ static int update_dynmem_region_struct(void * base)
     i = reg_start;
     if (dynmemmap[i] & DYNMEM_RL_BL) {
         /* Region linking begins */
-        while (++i <= DYNMEM_END) {
+        while (++i <= dynmem_end) {
             if (!(dynmemmap[i] & DYNMEM_RL_EL)) {
                 /* This was the last entry of this region */
                 i--;
@@ -415,7 +457,7 @@ static int validate_addr(const void * addr, int test)
 {
     const size_t i = (size_t)addr - DYNMEM_START;
 
-    if ((size_t)addr < DYNMEM_START || (size_t)addr > DYNMEM_END)
+    if ((size_t)addr < DYNMEM_START || (size_t)addr > dynmem_end)
         return 0; /* Not in range */
 
     if (test && (((dynmemmap[i] & DYNMEM_RC_MASK) >> DYNMEM_RC_POS) == 0))

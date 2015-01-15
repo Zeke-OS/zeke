@@ -38,6 +38,7 @@
 #include <hal/sysinfo.h>
 
 sysinfo_t sysinfo = {
+    .mem.size = configDYNMEM_SAFE_SIZE,
     .console = "/dev/ttyS0",
     .root = configROOTFS_PATH " " configROOTFS_NAME,
 };
@@ -48,6 +49,12 @@ SYSCTL_STRING(_kern, OID_AUTO, root, CTLFLAG_RD, &sysinfo.root, 0,
 static const char cmdline_console[] = "console=";
 static const char cmdline_root[] = "root=";
 static const char cmdline_rootfstype[] = "rootfstype=";
+
+void sysinfo_setmem(size_t start, size_t size)
+{
+    sysinfo.mem.start = start;
+    sysinfo.mem.size = size;
+}
 
 void sysinfo_cmdline(const char * cmdline)
 {

@@ -69,21 +69,6 @@
 #define MMU_VADDR_SHARED_START  0x00080000
 #define MMU_VADDR_SHARED_END    0x000FFFFF /* 1M; End of system page table */
 #endif
-/**
- * Begining of dynmem area.
- */
-#ifdef configDYNMEM_START
-#define MMU_VADDR_DYNMEM_START  configDYNMEM_START
-/**
- * End of dynmem area.
- * TODO should match end of physical memory at least
- * (or higher if paging is allowed later)
- * We possibly should use mmu_memsize somewhere,
- * but not here because this is used for some statical
- * allocations.
- */
-#define MMU_VADDR_DYNMEM_END    configDYNMEM_END
-#endif
 
 /* TODO These shouldn't be here actually */
 #ifdef configBCM2835
