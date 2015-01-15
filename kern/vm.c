@@ -78,7 +78,7 @@ struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr)
     /*
      * Check if the requested page table is actually the system pagetable.
      */
-    if (vaddr <= MMU_PGSIZE_SECTION - 1) {
+    if (vaddr < MMU_PGSIZE_SECTION) {
         return &vm_pagetable_system;
     }
 
@@ -244,7 +244,7 @@ int vm_find_reg(struct proc_info * proc, uintptr_t uaddr, struct buf ** bp)
             continue;
 
         reg_start = region->b_mmu.vaddr;
-        reg_end = region->b_mmu.vaddr + MMU_SIZEOF_REGION(&region->b_mmu);
+        reg_end = region->b_mmu.vaddr + MMU_SIZEOF_REGION(&region->b_mmu) - 1;
 
         if (VM_ADDR_IS_IN_RANGE(uaddr, reg_start, reg_end)) {
             mtx_unlock(&mm->regions_lock);
@@ -302,7 +302,7 @@ struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot,
         vaddr = addr_min +
                 (kunirand((addr_max >> bits) - (addr_min >> bits)) << bits);
         vaddr &= ~(MMU_PGSIZE_COARSE - 1);
-        newreg_end = vaddr + size;
+        newreg_end = vaddr + size - 1;
 
         overlap = 0;
 
@@ -313,7 +313,7 @@ struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot,
                 continue;
 
             reg_start = region->b_mmu.vaddr;
-            reg_end = region->b_mmu.vaddr + MMU_SIZEOF_REGION(&region->b_mmu);
+            reg_end = region->b_mmu.vaddr + MMU_SIZEOF_REGION(&region->b_mmu)-1;
 
             if (VM_RANGE_IS_OVERLAPPING(reg_start, reg_end,
                                         vaddr, newreg_end)) {
@@ -638,7 +638,7 @@ int kernacc(const void * addr, int len, int rw)
 
     reg_start = mmu_region_kernel.vaddr;
     reg_size = mmu_sizeof_region(&mmu_region_kernel);
-    if (((size_t)addr >= reg_start) && ((size_t)addr <= reg_start + reg_size))
+    if (((size_t)addr >= reg_start) && ((size_t)addr < reg_start + reg_size))
         return (1 == 1);
 
     /* TODO Check other static regions as well */
@@ -715,9 +715,9 @@ int useracc_proc(const void * addr, size_t len, struct proc_info * proc, int rw)
     (void)vm_find_reg(proc, (uintptr_t)addr, &region);
     if (!region)
         return 0;
-    reg_end = region->b_mmu.vaddr + MMU_SIZEOF_REGION(&region->b_mmu);
+    reg_end = region->b_mmu.vaddr + MMU_SIZEOF_REGION(&region->b_mmu) - 1;
 
-    if ((uintptr_t)addr <= reg_end)
+    if ((uintptr_t)addr < reg_end)
         return test_ap_user(rw, region->b_mmu.ap, region->b_mmu.control);
     return 0;
 }
