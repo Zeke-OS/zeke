@@ -76,20 +76,6 @@ const mmu_region_t mmu_region_kstack = {
     .pt             = &mmu_pagetable_system
 };
 
-#if 0
-/* Kernel mode system/thread stack. */
-mmu_region_t mmu_region_tkstack = {
-    .vaddr          = MMU_VADDR_TKSTACK_START,
-    .num_pages      = MMU_PAGE_CNT_BY_RANGE(
-                        MMU_VADDR_TKSTACK_START, MMU_VADDR_TKSTACK_END, 4096),
-    .ap             = MMU_AP_RWNA,
-    .control        = MMU_CTRL_XN,
-    .paddr          = MMU_VADDR_TKSTACK_START, /* Temporarily 1:1 but this *
-                                                * mapping is never used.   */
-    .pt             = &mmu_pagetable_system
-};
-#endif
-
 extern void *  _rodata_end __attribute__((weak));
 /** Read-only kernel code &  ro-data */
 mmu_region_t mmu_region_kernel = {
@@ -113,30 +99,16 @@ mmu_region_t mmu_region_kdata = {
     .vaddr          = 0, /* Set in init */
     .num_pages      = 0, /* Set in init */
     .ap             = MMU_AP_RWRW, /* TODO */
-    .control        = MMU_CTRL_MEMTYPE_WB,
+    .control        = MMU_CTRL_MEMTYPE_WB | MMU_CTRL_XN,
     .paddr          = 0, /* Set in init */
     .pt             = &mmu_pagetable_system
 };
-
-#if 0
-extern void (*__text_shared_start[]) (void) __attribute__((weak));
-extern void (*__text_shared_end[]) (void) __attribute__((weak));
-mmu_region_t mmu_region_shared = {
-    .vaddr          = MMU_VADDR_SHARED_START,
-    .num_pages      = MMU_PAGE_CNT_BY_RANGE(MMU_VADDR_SHARED_START, \
-                        MMU_VADDR_SHARED_END, 4096),
-    .ap             = MMU_AP_RWRO,
-    .control        = MMU_CTRL_MEMTYPE_WT,
-    .paddr          = 0, /* Will be set later. */
-    .pt             = &mmu_pagetable_system
-};
-#endif
 
 mmu_region_t mmu_region_rpihw = {
     .vaddr          = MMU_VADDR_RPIHW_START,
     .num_pages      = MMU_PAGE_CNT_BY_RANGE(MMU_VADDR_RPIHW_START, \
                         MMU_VADDR_RPIHW_END, MMU_PGSIZE_SECTION),
-    .ap             = MMU_AP_RWRW, /* TODO */
+    .ap             = MMU_AP_RWNA, /* TODO */
     .control        = MMU_CTRL_MEMTYPE_SDEV | MMU_CTRL_XN,
     .paddr          = MMU_VADDR_RPIHW_START,
     .pt             = &mmu_pagetable_master
@@ -177,11 +149,19 @@ SYSCTL_UINT(_vm, OID_AUTO, ptm_mem_free, CTLFLAG_RD, &ptm_mem_free, 0,
 static const size_t ptm_mem_tot = PTREGION_SIZE * MMU_PGSIZE_SECTION;
 SYSCTL_UINT(_vm, OID_AUTO, ptm_mem_tot, CTLFLAG_RD,
     (unsigned int *)(&ptm_mem_tot), 0,
-    "Total size of page table region.");
+    "Total size of the page table region.");
 
 #define PTM_SIZEOF_MAP sizeof(ptm_alloc_map)
-#define PTM_MASTER  0x10 /*!< Len of master page table in ptm_alloc_map. */
-#define PTM_COARSE  0x01 /*!< Len of coarse page table in ptm_alloc_map. */
+
+/**
+ * Length of a master page table in ptm_alloc_map.
+ */
+#define PTM_MASTER  (MMU_PTSZ_MASTER / MMU_PTSZ_COARSE)
+
+/**
+ * Length of a coarse page table in ptm_alloc_map.
+ */
+#define PTM_COARSE  0x01
 
 /**
  * Convert a block index to an address.
@@ -265,7 +245,6 @@ int ptmapper_init(void)
         mmu_map_region(&reg);   \
         PRINTMAPREG(reg)
 
-        //MAP_REGION(mmu_region_tkstack);
         MAP_REGION(mmu_region_kstack);
         MAP_REGION(mmu_region_kernel);
         MAP_REGION(mmu_region_kdata);
@@ -275,9 +254,11 @@ int ptmapper_init(void)
 #undef PRINTMAPREG
     }
 
-    /* Copy system page table to vm version of it, this is the only easy way to
-     * solve some issues now. TODO Maybe we'd like to do some major refactoring
-     * some day. */
+    /*
+     * Copy system page table to vm version of it, this is the only easy way to
+     * solve some issues now.
+     * TODO Maybe we'd like to do some major refactoring some day.
+     */
     vm_pagetable_system.pt = mmu_pagetable_system;
     vm_pagetable_system.linkcount = 1;
 
@@ -307,12 +288,12 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
     case MMU_PTT_MASTER:
         size = PTM_MASTER;
         bsize = MMU_PTSZ_MASTER;
-        balign = 0x10; /* TODO Depends on HW */
+        balign = PTM_MASTER;
         break;
     case MMU_PTT_COARSE:
         size = PTM_COARSE;
         bsize = MMU_PTSZ_COARSE;
-        balign = 0x1;
+        balign = PTM_COARSE;
         break;
     default:
         panic("pt size can't be zero");

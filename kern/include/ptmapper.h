@@ -54,8 +54,10 @@
 #define MMU_VADDR_KSTACK_END    configKSTACK_END
 #endif
 
-/** TKSTACK is a thread local kernel mode stack and its NOT mapped 1:1 unlike
- * other regions defined here. */
+/*
+ * TKSTACK is a thread local kernel mode stack and its NOT mapped 1:1 unlike
+ * other regions defined here.
+ */
 #ifdef configTKSTACK_START
 #define MMU_VADDR_TKSTACK_START configTKSTACK_START
 #define MMU_VADDR_TKSTACK_END   configTKSTACK_END
@@ -65,10 +67,6 @@
 #define MMU_VADDR_KERNEL_START  configKERNEL_START
 #define MMU_VADDR_KERNEL_END    configKERNEL_END
 #endif
-#if 0
-#define MMU_VADDR_SHARED_START  0x00080000
-#define MMU_VADDR_SHARED_END    0x000FFFFF /* 1M; End of system page table */
-#endif
 
 /* TODO These shouldn't be here actually */
 #ifdef configBCM2835
@@ -76,7 +74,9 @@
 #define MMU_VADDR_RPIHW_END     0x20FFFFFF
 #endif
 
-/* Kernel dynamic sections */
+/*
+ * Kernel dynamic sections.
+ */
 #ifdef configKSECT_START
 #define MMU_VADDR_KSECT_START   configKSECT_START
 #define MMU_VADDR_KSECT_END     configKSECT_END
