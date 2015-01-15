@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    bcm2835_mmio.c
+ * @file    rpi_hw.c
  * @author  Olli Vanhoja
- * @brief   Access to MMIO registers on BCM2835.
+ * @brief   Raspberry Pi memory mapped hardware.
  * @section LICENSE
- * Copyright (c) 2013, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,16 +30,17 @@
  *******************************************************************************
  */
 
+#include <autoconf.h>
 #include <hal/mmu.h>
 #include <ptmapper.h>
-#include "bcm2835_mmio.h"
 
-mmu_region_t bcm2835_mmio_region = {
-    .vaddr      = 0x20000000,
-    .num_pages  = 16,
-    .ap         = MMU_AP_RWNA,
-    .control    = (MMU_CTRL_MEMTYPE_DEV | MMU_CTRL_XN),
-    .paddr      = 0x20000000,
-    .pt         = &mmu_pagetable_master
+mmu_region_t mmu_region_rpihw = {
+    .vaddr          = MMU_VADDR_RPIHW_START,
+    .num_pages      = MMU_PAGE_CNT_BY_RANGE(MMU_VADDR_RPIHW_START, \
+                        MMU_VADDR_RPIHW_END, MMU_PGSIZE_SECTION),
+    .ap             = MMU_AP_RWNA,
+    .control        = MMU_CTRL_MEMTYPE_SDEV | MMU_CTRL_XN,
+    .paddr          = MMU_VADDR_RPIHW_START,
+    .pt             = &mmu_pagetable_master
 };
-PTMAPPER_FIXED_REGION(bcm2835_mmio_region);
+PTMAPPER_FIXED_REGION(mmu_region_rpihw);

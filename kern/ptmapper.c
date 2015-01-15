@@ -31,6 +31,7 @@
  */
 
 #define KERNEL_INTERNAL
+#include <sys/linker_set.h>
 #include <kinit.h>
 #include <kstring.h>
 #include <kerror.h>
@@ -46,7 +47,7 @@ HW_PREINIT_ENTRY(ptmapper_init);
 /* Kernel master page table (L1) */
 mmu_pagetable_t mmu_pagetable_master = {
     .vaddr          = 0,
-    .pt_addr        = 0, /* These will be set */
+    .pt_addr        = 0, /* These will be set       */
     .master_pt_addr = 0, /* later in the init phase */
     .type           = MMU_PTT_MASTER,
     .dom            = MMU_DOM_KERNEL
@@ -54,8 +55,8 @@ mmu_pagetable_t mmu_pagetable_master = {
 
 mmu_pagetable_t mmu_pagetable_system = {
     .vaddr          = 0,
-    .pt_addr        = 0, /* Set later */
-    .master_pt_addr = 0, /* Set later */
+    .pt_addr        = 0, /* Will be set later */
+    .master_pt_addr = 0, /* Will be set later */
     .type           = MMU_PTT_COARSE,
     .dom            = MMU_DOM_KERNEL
 };
@@ -104,16 +105,6 @@ mmu_region_t mmu_region_kdata = {
     .pt             = &mmu_pagetable_system
 };
 
-mmu_region_t mmu_region_rpihw = {
-    .vaddr          = MMU_VADDR_RPIHW_START,
-    .num_pages      = MMU_PAGE_CNT_BY_RANGE(MMU_VADDR_RPIHW_START, \
-                        MMU_VADDR_RPIHW_END, MMU_PGSIZE_SECTION),
-    .ap             = MMU_AP_RWNA, /* TODO */
-    .control        = MMU_CTRL_MEMTYPE_SDEV | MMU_CTRL_XN,
-    .paddr          = MMU_VADDR_RPIHW_START,
-    .pt             = &mmu_pagetable_master
-};
-
 #define PTREGION_SIZE \
     MMU_PAGE_CNT_BY_RANGE(PTMAPPER_PT_START, PTMAPPER_PT_END, MMU_PGSIZE_SECTION)
 mmu_region_t mmu_region_page_tables = {
@@ -124,6 +115,8 @@ mmu_region_t mmu_region_page_tables = {
     .paddr          = PTMAPPER_PT_START,
     .pt             = &mmu_pagetable_master
 };
+
+SET_DECLARE(ptmapper_fixed_regions, mmu_region_t);
 
 /**
  * Coarse page tables per MB.
@@ -231,6 +224,7 @@ int ptmapper_init(void)
 
     /* Fill page tables with translations & attributes */
     {
+        mmu_region_t ** regp;
 #if configDEBUG >= KERROR_DEBUG
         const char str_type[2][9] = {"sections", "pages"};
 #define PRINTMAPREG(region)                         \
@@ -249,9 +243,11 @@ int ptmapper_init(void)
         MAP_REGION(mmu_region_kernel);
         MAP_REGION(mmu_region_kdata);
         MAP_REGION(mmu_region_page_tables);
-        MAP_REGION(mmu_region_rpihw);
 #undef MAP_REGION
 #undef PRINTMAPREG
+        SET_FOREACH(regp, ptmapper_fixed_regions) {
+            mmu_map_region(*regp);
+        }
     }
 
     /*

@@ -57,10 +57,16 @@ config configBCM_FB
     bool "BCM2835 FB"
     default n
     depends on configBCM2835 && configBCM_MB
+    select configRPI_HW
 
 endmenu
 
 menu "Raspberry PI drivers"
+
+config configRPI_HW
+    bool "Raspberry PI memory mapped HW support"
+    default n
+    depends on configBCM2835
 
 config configRPI_LEDS
     bool "Raspberry PI leds"

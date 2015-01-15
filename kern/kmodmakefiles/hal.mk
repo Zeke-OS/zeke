@@ -21,6 +21,7 @@ ifdef configBCM2835
 	#should have rpi flag
 	hal-SRC-$(configRPI_LEDS) += hal/rpi/rpi_leds.c
 	hal-SRC-$(configRPI_EMMC) += hal/rpi/rpi_emmc.c
+	hal-SRC-$(configRPI_HW)   += hal/rpi/rpi_hw.c
 endif
 
 # Arhitecture and Profile specific sources

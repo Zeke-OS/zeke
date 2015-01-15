@@ -39,6 +39,7 @@
 #define PTMAPPER_H
 
 #include <autoconf.h>
+#include <sys/linker_set.h>
 #include <hal/mmu.h>
 #include <vm/vm.h>
 
@@ -101,11 +102,15 @@
  * @return Region size in pages.
  */
 #define MMU_PAGE_CNT_BY_RANGE(begin, end, psize)    (((end)-(begin)+1)/(psize))
+
+#define PTMAPPER_FIXED_REGION(_region_name) \
+    DATA_SET(ptmapper_fixed_regions, _region_name)
 /* End of Page Table Region Macros ********************************************/
 
 extern mmu_pagetable_t mmu_pagetable_master;
 extern mmu_pagetable_t mmu_pagetable_system;
-struct vm_pt vm_pagetable_system;
+struct vm_pt;
+extern struct vm_pt vm_pagetable_system;
 
 extern const mmu_region_t mmu_region_kstack;
 extern mmu_region_t mmu_region_kernel;
