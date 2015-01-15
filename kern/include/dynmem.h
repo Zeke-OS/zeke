@@ -30,24 +30,14 @@
  *******************************************************************************
  */
 
-/** @addtogroup dynmem
-  * @{
-  */
+/**
+ * @addtogroup dynmem
+ * @{
+ */
 
-#pragma once
 #ifndef DYNMEM_H
 #define DYNMEM_H
 #include <stddef.h>
-#include <ptmapper.h>
-#include <hal/mmu.h>
-
-/* TODO
- * - Manage memmap arrays
- * - Reference counting for dynmem allocations & mappings
- * - Offer high level memory mapping & allocation functions
- * - Macros to incr/decr ref count on dynamic memory region
- * - Should we have 2 GB dynmem and map it as 1:1 to phys only when possible?
- */
 
 /**
  * Allocate a contiguous memory region from dynmem area.

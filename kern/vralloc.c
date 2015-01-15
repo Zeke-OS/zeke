@@ -35,6 +35,7 @@
 #include <kinit.h>
 #include <bitmap.h>
 #include <dllist.h>
+#include <ptmapper.h>
 #include <dynmem.h>
 #include <kmalloc.h>
 #include <kstring.h>

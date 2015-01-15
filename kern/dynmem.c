@@ -38,6 +38,8 @@
 #include <sys/sysctl.h>
 #include <bitmap.h>
 #include <hal/sysinfo.h>
+#include <hal/mmu.h>
+#include <ptmapper.h>
 #include <dynmem.h>
 
 /**

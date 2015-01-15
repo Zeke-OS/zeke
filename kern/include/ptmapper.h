@@ -30,11 +30,11 @@
  *******************************************************************************
  */
 
-/** @addtogroup ptmapper
+/**
+ * @addtogroup ptmapper
  * @{
  */
 
-#pragma once
 #ifndef PTMAPPER_H
 #define PTMAPPER_H
 
