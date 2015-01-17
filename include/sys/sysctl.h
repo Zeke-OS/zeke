@@ -89,22 +89,18 @@ struct ctlname {
 #define CTLTYPE_U64     9        /*!< Name describes an unsigned 64-bit number */
 
 /* CTL flags */
-#define CTLFLAG_RD      0x80000000  /* Allow reads of variable */
-#define CTLFLAG_WR      0x40000000  /* Allow writes to the variable */
+#define CTLFLAG_RD      0x80000000  /*!< Allow reads of variable */
+#define CTLFLAG_WR      0x40000000  /*!< Allow writes to the variable */
 #define CTLFLAG_RW      (CTLFLAG_RD|CTLFLAG_WR)
-#define CTLFLAG_ANYBODY 0x10000000  /* All users can set this var */
-#define CTLFLAG_SECURE  0x08000000  /* Permit set only if securelevel<=0 */
-#define CTLFLAG_DYN     0x02000000  /* Dynamic oid - can be freed */
-#define CTLFLAG_SKIP    0x01000000  /* Skip this sysctl when listing */
-#define CTLMASK_SECURE  0x00F00000  /* Secure level */
-#define CTLFLAG_TUN     0x00080000  /* Tunable variable */
-#define CTLFLAG_RDTUN   (CTLFLAG_RD|CTLFLAG_TUN)
-#define CTLFLAG_RWTUN   (CTLFLAG_RW|CTLFLAG_TUN)
-#define CTLFLAG_MPSAFE  0x00040000  /* Handler is MP safe */
-#define CTLFLAG_DYING   0x00010000  /* Oid is being removed */
-#define CTLFLAG_CAPRD   0x00008000  /* Can be read in capability mode */
-#define CTLFLAG_CAPWR   0x00004000  /* Can be written in capability mode */
-#define CTLFLAG_STATS   0x00002000  /* Statistics, not a tuneable */
+#define CTLFLAG_ANYBODY 0x10000000  /*!< All users can set this var */
+#define CTLFLAG_SECURE  0x08000000  /*!< Permit set only if securelevel<=0 */
+#define CTLFLAG_DYN     0x02000000  /*!< Dynamic oid - can be freed */
+#define CTLFLAG_SKIP    0x01000000  /*!< Skip this sysctl when listing */
+#define CTLMASK_SECURE  0x00F00000  /*!< Secure level */
+#define CTLFLAG_MPSAFE  0x00040000  /*!< Handler is MP safe */
+#define CTLFLAG_DYING   0x00010000  /*!< Oid is being removed */
+#define CTLFLAG_CAPRD   0x00008000  /*!< Can be read in capability mode */
+#define CTLFLAG_CAPWR   0x00004000  /*!< Can be written in capability mode */
 #define CTLFLAG_CAPRW   (CTLFLAG_CAPRD|CTLFLAG_CAPWR)
 
 /*
