@@ -30,11 +30,11 @@
  *******************************************************************************
  */
 
-/** @addtogroup libc
+/**
+ * @addtogroup libc
  * @{
  */
 
-#pragma once
 #ifndef WAIT_H
 #define WAIT_H
 

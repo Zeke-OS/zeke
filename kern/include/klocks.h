@@ -5,7 +5,7 @@
  *
  * @brief   -
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1997 Berkeley Software Design, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,6 +38,7 @@
  * @{
  */
 
+#pragma once
 #ifndef KLOCKS_H_
 #define KLOCKS_H_
 
@@ -45,7 +46,9 @@
 
 #include <sys/types_pthread.h>
 #include <machine/atomic.h>
+#ifdef configLOCK_DEBUG
 #include <kerror.h>
+#endif
 
 /**
  * @addtogroup mtx mtx_init, mtx_lock, mtx_trylock

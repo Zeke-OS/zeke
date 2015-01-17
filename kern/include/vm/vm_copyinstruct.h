@@ -5,7 +5,7 @@
  * @brief   vm copyinstruct() for copying structs from user space to kernel
  *          space.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,6 +30,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************
  */
+
+#pragma once
+#ifndef VM_COPYINSTRUCT_H
+#define VM_COPYINSTRUCT_H
 
 #include <stddef.h>
 
@@ -115,3 +119,5 @@ int copyinstruct(void * usr, void ** kern, size_t bytes, ...);
  *                      copyinstruct().
  */
 void freecpystruct(void * p);
+
+#endif /* VM_COPYINSTRUCT_H */

@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Directory Entry Hashtable.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,9 +30,10 @@
  *******************************************************************************
  */
 
-/** @addtogroup fs
-  * @{
-  */
+/**
+ * @addtogroup fs
+ * @{
+ */
 
 #pragma once
 #ifndef DEHTABLE_H
@@ -77,5 +78,5 @@ dh_dirent_t * dh_iter_next(dh_dir_iter_t * it);
 #endif /* DEHTABLE_H */
 
 /**
-  * @}
-  */
+ * @}
+ */

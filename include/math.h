@@ -4,6 +4,14 @@
  * specifies the terms and conditions for redistribution.
  */
 
+/**
+ * @addtogroup LIBC
+ * @{
+ */
+
+#ifndef _MATH_H_
+#define _MATH_H_
+
 extern  double  fabs(), floor(), ceil(), fmod(), ldexp();
 extern  double  sqrt(), hypot(), atof();
 extern  double  sin(), cos(), tan(), asin(), acos(), atan(), atan2();
@@ -31,3 +39,9 @@ float ldexpf(float x, int exp);
 double ldexp(double x, int exp);
 
 double fmod(double x, double y);
+
+#endif /* _MATH_H_ */
+
+/**
+ * @}
+ */

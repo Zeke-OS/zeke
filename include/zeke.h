@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Zeke specific system functions.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,11 +30,11 @@
  *******************************************************************************
  */
 
-/** @addtogroup LIBC
-  * @{
-  */
+/**
+ * @addtogroup LIBC
+ * @{
+ */
 
-#pragma once
 #ifndef ZEKE_H
 #define ZEKE_H
 
@@ -58,5 +58,5 @@ __END_DECLS
 #endif /* ZEKE_H */
 
 /**
-  * @}
-  */
+ * @}
+ */

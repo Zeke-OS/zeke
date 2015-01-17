@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   ATAG scanner.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,9 +30,10 @@
  *******************************************************************************
  */
 
-/** @addtogroup HAL
-  * @{
-  */
+/**
+ * @addtogroup HAL
+ * @{
+ */
 
 #pragma once
 #ifndef ATAG_H
@@ -43,5 +44,5 @@ void atag_scan(uint32_t fw, uint32_t mtype, uint32_t * atag_addr);
 #endif /* ATAG_H */
 
 /**
-  * @}
-  */
+ * @}
+ */

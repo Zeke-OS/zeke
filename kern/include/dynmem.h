@@ -35,8 +35,10 @@
  * @{
  */
 
+#pragma once
 #ifndef DYNMEM_H
 #define DYNMEM_H
+
 #include <stddef.h>
 
 /**

@@ -31,16 +31,17 @@
  *******************************************************************************
  */
 
-/** @addtogroup LIBC
+/**
+ * @addtogroup LIBC
  * @{
  */
 
-/** @addtogroup errno
+/**
+ * @addtogroup errno
  * Number of last error.
  * @{
  */
 
-#pragma once
 #ifndef ERRNO_H
 #define ERRNO_H
 

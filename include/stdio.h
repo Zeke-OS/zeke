@@ -4,8 +4,15 @@
  * Permission is granted to use, modify, and / or redistribute at will.
  */
 
+/**
+ * @addtogroup LIBC
+ * @{
+ */
+
+
 #ifndef _PDCLIB_STDIO_H
 #define _PDCLIB_STDIO_H _PDCLIB_STDIO_H
+
 #include <sys/_PDCLIB_int.h>
 __BEGIN_DECLS
 
@@ -944,3 +951,7 @@ _PDCLIB_uint_fast64_t _PDCLIB_ftell64_unlocked( FILE * stream ) _PDCLIB_nothrow;
 
 __END_DECLS
 #endif
+
+/**
+ * @}
+ */

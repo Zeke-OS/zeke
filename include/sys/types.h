@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Types.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -32,7 +32,6 @@
  *******************************************************************************
  */
 
-#pragma once
 #ifndef TYPES_H
 #define TYPES_H
 

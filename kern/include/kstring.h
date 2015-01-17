@@ -2,14 +2,39 @@
  *******************************************************************************
  * @file    kstring.h
  * @author  Olli Vanhoja
- * @brief   String routines
- *******************************************************************************
+ * @brief   String routines.
+ * @section LICENSE
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Berkeley Software Design Inc's name may not be used to endorse or
+ *    promote products derived from this software without specific prior
+ *    written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY BERKELEY SOFTWARE DESIGN INC ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL BERKELEY SOFTWARE DESIGN INC BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
  */
 
-/** @addtogroup kstring
+/**
+ * @addtogroup kstring
  * @{
  */
-
 
 #pragma once
 #ifndef KSTRING_H
@@ -26,7 +51,8 @@ void * memcpy(void * restrict destination, const void * source, size_t num);
 void * memmove(void * destination, const void * source, size_t num);
 void * memset(void * ptr, int value, size_t num);
 
-/** @addtogroup strcmp
+/**
+ * @addtogroup strcmp
  * @{
  */
 
@@ -51,7 +77,8 @@ int strncmp(const char * str1, const char * str2, size_t n);
  * @}
  */
 
-/** @addtogroup strcpy strcpy, strncpy, strlcpy
+/**
+ * @addtogroup strcpy strcpy, strncpy, strlcpy
  * @{
  */
 
@@ -188,7 +215,8 @@ int uitoa32base(char * str, uint32_t value, uint32_t base);
  */
 char * kstrdup(const char * src, size_t max);
 
-/** @addtogroup ksprintf
+/**
+ * @addtogroup ksprintf
  * Formated string composer.
  * @{
  */

@@ -4,8 +4,14 @@
  * Permission is granted to use, modify, and / or redistribute at will.
  */
 
+/**
+ * @addtogroup LIBC
+ * @{
+  */
+
 #ifndef _PDCLIB_STDLIB_H
 #define _PDCLIB_STDLIB_H _PDCLIB_STDLIB_H
+
 #include <sys/_PDCLIB_int.h>
 __BEGIN_DECLS
 
@@ -242,3 +248,7 @@ int unsetenv(const char * name);
 
 __END_DECLS
 #endif
+
+/**
+ * @}
+ */

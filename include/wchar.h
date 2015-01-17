@@ -1,14 +1,20 @@
 /* 7. <wchar.h>
+ *
+ * This file is part of the Public Domain C Library (PDCLib).
+ * Permission is granted to use, modify, and / or redistribute at will.
+ */
 
-   This file is part of the Public Domain C Library (PDCLib).
-   Permission is granted to use, modify, and / or redistribute at will.
-*/
-
+/**
+ * @addtogroup LIBC
+ * @{
+ */
 
 #ifndef _PDCLIB_WCHAR_H
 #define _PDCLIB_WCHAR_H
+
 #include <sys/_PDCLIB_int.h>
 #include <stddef.h>
+
 __BEGIN_DECLS
 
 #ifndef _PDCLIB_WINT_T_DEFINED
@@ -120,3 +126,7 @@ size_t wcsrtombs(char *_PDCLIB_restrict dst, const wchar_t **_PDCLIB_restrict sr
 
 __END_DECLS
 #endif
+
+/**
+ * @}
+ */

@@ -30,6 +30,11 @@
  *******************************************************************************
  */
 
+/**
+ * @addtogroup LIBC
+ * @{
+ */
+
 #ifndef _LIMITS_H_
 #define _LIMITS_H_
 
@@ -55,3 +60,7 @@
 #define ARG_MAX         4096    /*!< Maximum size of argv and env combined. */
 
 #endif /* _LIMITS_H_ */
+
+/**
+ * @}
+ */

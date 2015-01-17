@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Standard symbolic constants and types.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,12 +30,12 @@
  *******************************************************************************
  */
 
-/** @addtogroup LIBC
+/**
+ * @addtogroup LIBC
  * @{
  */
 
 
-#pragma once
 #ifndef UNISTD_H
 #define UNISTD_H
 
@@ -323,7 +323,8 @@ pid_t getpid(void);
  */
 pid_t getppid(void);
 
-/** @addtogroup access
+/**
+ * @addtogroup access
  * Check accessibility of a file.
  *
  * The access() system call check the accessibility of the file named by

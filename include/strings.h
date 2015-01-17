@@ -3,6 +3,7 @@
  * @author  Olli Vanhoja
  * @brief
  * @section LICENSE
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2002 Mike Barcroft <mike@FreeBSD.org>
  * All rights reserved.
  *
@@ -28,9 +29,10 @@
  * SUCH DAMAGE.
  */
 
-/** @addtogroup LIBC
-  * @{
-  */
+/**
+ * @addtogroup LIBC
+ * @{
+ */
 
 #ifndef _STRINGS_H_
 #define _STRINGS_H_

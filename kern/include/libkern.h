@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Generic functions and macros for use in kernel.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1992, 1993
  *      The Regents of the University of California.  All rights reserved.
  * All rights reserved.
@@ -32,7 +32,8 @@
  *******************************************************************************
  */
 
-/** @addtogroup libkern
+/**
+ * @addtogroup libkern
  * Generic functions and macros for use in kernel.
  * @{
  */
@@ -127,7 +128,8 @@ size_t memalign(size_t size);
  */
 size_t memalign_size(size_t size, size_t bytes);
 
-/** @addtogroup krandom krandom, ksrandom, kunirandom
+/**
+ * @addtogroup krandom krandom, ksrandom, kunirandom
  * @{
  */
 

@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   File control options.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,11 +32,11 @@
 
 /* TODO http://pubs.opengroup.org/onlinepubs/9699919799/ */
 
-/** @addtogroup LIBC
+/**
+ * @addtogroup LIBC
  * @{
  */
 
-#pragma once
 #ifndef FCNTL_H
 #define FCNTL_H
 

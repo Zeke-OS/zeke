@@ -32,12 +32,12 @@
  *******************************************************************************
  */
 
-/** @addtogroup LIBC
+/**
+ * @addtogroup LIBC
  * @{
  */
 
 
-#pragma once
 #ifndef SYSCALL_H
 #define SYSCALL_H
 

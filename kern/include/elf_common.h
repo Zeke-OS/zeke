@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Header file for common elf definitions.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2000, 2001, 2008, 2011, David E. O'Brien
  * Copyright (c) 1998 John D. Polstra.
  * All rights reserved.
@@ -31,6 +31,7 @@
  * SUCH DAMAGE.
  */
 
+#pragma once
 #ifndef _ELF_COMMON_H_
 #define _ELF_COMMON_H_ 1
 

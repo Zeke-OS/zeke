@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Kernel initialization.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,17 +30,19 @@
  *******************************************************************************
  */
 
-/** @addtogroup kinit
+/**
+ * @addtogroup kinit
  * Kernel initialization.
  * @{
  */
 
-
+#pragma once
 #ifndef KINIT_H
 #define KINIT_H
 
 #include <errno.h>
-#include <kerror.h>
+
+void (*kputs)(const char *);
 
 /**
  * Subsystem initializer prologue.

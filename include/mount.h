@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Mount or dismount a file system.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,11 +30,11 @@
  *******************************************************************************
  */
 
-/** @addtogroup LIBC
+/**
+ * @addtogroup LIBC
  * @{
  */
 
-#pragma once
 #ifndef MOUNT_H
 #define MOUNT_H
 

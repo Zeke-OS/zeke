@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Execute a file.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,11 +30,15 @@
  *******************************************************************************
  */
 
+#pragma once
 #ifndef EXEC_H
 #define EXEC_H
 
 #include <sys/linker_set.h>
 #include <fs/fs.h>
+
+struct proc_info;
+struct buf;
 
 struct exec_loadfn {
     char name[10];

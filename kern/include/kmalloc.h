@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Generic kernel memory allocator.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,7 +30,8 @@
  *******************************************************************************
  */
 
-/** @addtogroup kmalloc
+/**
+ * @addtogroup kmalloc
  * Malloc for kernel's internal use.
  * Kmalloc should be used for in-kernel dynamic memory allocations that doesn't
  * need to be directly accessible from used space at any point. This includes

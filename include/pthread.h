@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Threads.
  * @section LICENSE
+ * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2013 Joni Hauhia <joni.hauhia@cs.helsinki.fi>
  * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
@@ -65,11 +66,11 @@
  *******************************************************************************
  */
 
-/** @addtogroup LIBC
+/**
+ * @addtogroup LIBC
  * @{
  */
 
-#pragma once
 #ifndef PTHREAD_H
 #define PTHREAD_H
 
@@ -78,7 +79,8 @@
 #include <sched.h>
 #include <time.h>
 
-/** @addtogroup Threads
+/**
+ * @addtogroup Threads
  * @{
  */
 

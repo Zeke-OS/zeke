@@ -5,8 +5,8 @@
  * Inspired by: http://www.jera.com/techinfo/jtns/jtn002.html
  */
 
-/* Copyright (c) 2013, 2014, Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+/* Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2012 Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,9 +30,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/** @addtogroup KUnit
-  * @{
-  */
+/**
+ * @addtogroup KUnit
+ * @{
+ */
 
 #include <autoconf.h>
 
@@ -264,5 +265,5 @@ int ku_run_tests(void (*all_tests)(void));
 #endif /* KUNIT_H */
 
 /**
-  * @}
-  */
+ * @}
+ */

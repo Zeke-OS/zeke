@@ -1,13 +1,19 @@
 /* 7.28 <uchar.h>
+ *
+ * This file is part of the Public Domain C Library (PDCLib).
+ * Permission is granted to use, modify, and / or redistribute at will.
+ */
 
-   This file is part of the Public Domain C Library (PDCLib).
-   Permission is granted to use, modify, and / or redistribute at will.
-*/
-
+/**
+ * @addtogroup LIBC
+ * @{
+ */
 
 #ifndef _PDCLIB_UCHAR_H
 #define _PDCLIB_UCHAR_H
+
 #include <sys/_PDCLIB_int.h>
+
 __BEGIN_DECLS
 
 /* This is mostly a placeholder. for now. This header will be completed by the
@@ -92,3 +98,7 @@ size_t _PDCLIB_c32srtombs(
 
 __END_DECLS
 #endif
+
+/**
+ * @}
+ */

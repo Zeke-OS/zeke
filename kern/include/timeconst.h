@@ -2,6 +2,7 @@
  * 5.2.1 (2.11BSD) 1996/11/29
  */
 
+#pragma once
 #ifndef TZFILE_H
 #define TZFILE_H
 

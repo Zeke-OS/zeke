@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Header file for 32bit ELF.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1996-1998 John D. Polstra.
  * All rights reserved.
  *
@@ -31,6 +31,7 @@
  *******************************************************************************
  */
 
+#pragma once
 #ifndef _ELF32_H_
 #define _ELF32_H_
 

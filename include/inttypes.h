@@ -1,16 +1,22 @@
-/* $Id$ */
-
 /* 7.8 Format conversion of integer types <inttypes.h>
+ *
+ * This file is part of the Public Domain C Library (PDCLib).
+ * Permission is granted to use, modify, and / or redistribute at will.
+ */
 
-   This file is part of the Public Domain C Library (PDCLib).
-   Permission is granted to use, modify, and / or redistribute at will.
-*/
+/**
+ * @addtogroup LIBC
+ * @{
+ */
+
 
 #ifndef _PDCLIB_INTTYPES_H
 #define _PDCLIB_INTTYPES_H _PDCLIB_INTTYPES_H
+
 #include <sys/cdefs.h>
 #include <sys/_PDCLIB_int.h>
 #include <stdint.h>
+
 __BEGIN_DECLS
 
 typedef struct _PDCLIB_imaxdiv_t imaxdiv_t;
@@ -253,3 +259,6 @@ uintmax_t strtoumax( const char * _PDCLIB_restrict nptr, char * * _PDCLIB_restri
 __END_DECLS
 #endif
 
+/**
+ * @}
+ */

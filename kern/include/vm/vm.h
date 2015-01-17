@@ -30,10 +30,10 @@
  *******************************************************************************
  */
 
+#pragma once
 #ifndef _VM_VM_H
 #define _VM_VM_H
 
-#ifdef KERNEL_INTERNAL
 #include <llist.h>
 #include <sys/tree.h>
 #include <hal/mmu.h>
@@ -347,5 +347,4 @@ int useracc_proc(const void * addr, size_t len, struct proc_info * proc, int rw)
  * @}
  */
 
-#endif /* KERNEL_INTERNAL */
 #endif /* _VM_VM_H */

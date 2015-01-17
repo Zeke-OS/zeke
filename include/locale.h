@@ -4,8 +4,14 @@
  * Permission is granted to use, modify, and / or redistribute at will.
  */
 
+/**
+ * @addtogroup LIBC
+ * @{
+ */
+
 #ifndef _PDCLIB_LOCALE_H
 #define _PDCLIB_LOCALE_H _PDCLIB_LOCALE_H
+
 #include <sys/_PDCLIB_int.h>
 __BEGIN_DECLS
 
@@ -129,3 +135,6 @@ void freelocale(locale_t loc);
 __END_DECLS
 #endif
 
+/**
+ * @}
+ */

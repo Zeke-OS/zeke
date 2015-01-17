@@ -4,8 +4,14 @@
  * Permission is granted to use, modify, and / or redistribute at will.
  */
 
+/**
+ * @addtogroup LIBC
+ * @{
+ */
+
 #ifndef _PDCLIB_ASSERT_H
 #define _PDCLIB_ASSERT_H _PDCLIB_ASSERT_H
+
 #include <sys/_PDCLIB_aux.h>
 #include <sys/_PDCLIB_config.h>
 __BEGIN_DECLS
@@ -49,3 +55,6 @@ void _PDCLIB_assert89( char const * const );
 __END_DECLS
 #endif
 
+/**
+ * @}
+ */

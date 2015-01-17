@@ -35,7 +35,6 @@
  * @{
  */
 
-#pragma once
 #ifndef SIGNAL_NUM_H
 #define SIGNAL_NUM_H
 
