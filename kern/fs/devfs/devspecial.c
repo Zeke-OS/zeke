@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Special pseudo devices.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,6 +33,7 @@
 #include <kinit.h>
 #include <kstring.h>
 #include <kerror.h>
+#include <fs/dev_major.h>
 #include <fs/devfs.h>
 
 static int devnull_read(struct dev_info * devnfo, off_t blkno,
@@ -49,7 +50,7 @@ static int devfull_write(struct dev_info * devnfo, off_t blkno,
                          uint8_t * buf, size_t bcount, int oflags);
 
 struct dev_info devnull_info = {
-    .dev_id = DEV_MMTODEV(1, 3),
+    .dev_id = DEV_MMTODEV(VDEV_MJNR_SPECIAL, 3),
     .drv_name = "memdev",
     .dev_name = "null",
     .flags = DEV_FLAGS_MB_READ | DEV_FLAGS_MB_WRITE | DEV_FLAGS_WR_BT_MASK,
@@ -58,7 +59,7 @@ struct dev_info devnull_info = {
 };
 
 struct dev_info devzero_info = {
-    .dev_id = DEV_MMTODEV(1, 5),
+    .dev_id = DEV_MMTODEV(VDEV_MJNR_SPECIAL, 5),
     .drv_name = "memdev",
     .dev_name = "zero",
     .flags = DEV_FLAGS_MB_READ | DEV_FLAGS_MB_WRITE | DEV_FLAGS_WR_BT_MASK,
@@ -67,7 +68,7 @@ struct dev_info devzero_info = {
 };
 
 struct dev_info devfull_info = {
-    .dev_id = DEV_MMTODEV(1, 7),
+    .dev_id = DEV_MMTODEV(VDEV_MJNR_SPECIAL, 7),
     .drv_name = "memdev",
     .dev_name = "full",
     .flags = DEV_FLAGS_MB_READ | DEV_FLAGS_MB_WRITE | DEV_FLAGS_WR_BT_MASK,

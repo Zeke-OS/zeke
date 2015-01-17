@@ -186,7 +186,7 @@ int mbr_register(int fd, int * part_count)
     }
 #endif
 
-    int major_num = parent->dev_id + 1;
+    int major_num = DEV_MAJOR(parent->dev_id) + 1;
     for (size_t i = 0; i < 4; i++) {
         size_t p_offset = 0x1be + (i * 0x10);
         struct mbr_dev * d;

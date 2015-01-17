@@ -78,6 +78,7 @@
 #include <kerror.h>
 #include <hal/hw_timers.h>
 #include <fs/devfs.h>
+#include <fs/dev_major.h>
 #include <fs/mbr.h>
 #include "../bcm2835/bcm2835_mmio.h"
 #include "../bcm2835/bcm2835_timers.h"
@@ -1582,7 +1583,7 @@ int rpi_emmc_card_init(struct dev_info ** dev)
         ret = (struct emmc_block_dev *)*dev;
 
     memset(ret, 0, sizeof(struct emmc_block_dev));
-    ret->dev.dev_id = DEV_MMTODEV(8, 0);
+    ret->dev.dev_id = DEV_MMTODEV(VDEV_MJNR_RPI_EMMC, 0);
     ret->dev.drv_name = driver_name;
     strlcpy(ret->dev.dev_name, device_name, sizeof(ret->dev.dev_name));
     ret->dev.block_size = 512;

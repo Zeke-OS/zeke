@@ -39,6 +39,7 @@
 #include <tsched.h>
 #include <thread.h>
 #include <fs/devfs.h>
+#include <fs/dev_major.h>
 #include <sys/ioctl.h>
 #include <hal/uart.h>
 
@@ -87,7 +88,7 @@ static int make_uartdev(struct uart_port * port, int port_num)
     if (!dev)
         return -ENOMEM;
 
-    dev->dev_id = DEV_MMTODEV(4, port_num);
+    dev->dev_id = DEV_MMTODEV(VDEV_MJNR_UART, port_num);
     dev->drv_name = drv_name;
     ksprintf(dev->dev_name, sizeof(dev->dev_name), "ttyS%i", port_num);
     dev->flags = DEV_FLAGS_MB_READ | DEV_FLAGS_WR_BT_MASK;
