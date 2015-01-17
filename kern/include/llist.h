@@ -49,7 +49,7 @@ typedef struct {
 typedef struct llist {
     size_t offset; /*!< Offset of node descriptor. */
     void * head; /*!< Head node. */
-    oid * tail; /*!< Tail node. */
+    void * tail; /*!< Tail node. */
     int count; /*!< Node count. */
     /* Functions */
     void * (*get)(struct llist *, int i);
