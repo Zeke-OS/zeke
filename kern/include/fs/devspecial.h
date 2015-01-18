@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    devspecial.c
+ * @file    devspecial.h
  * @author  Olli Vanhoja
  * @brief   Special pseudo devices.
  * @section LICENSE
@@ -30,91 +30,27 @@
  *******************************************************************************
  */
 
-#include <kinit.h>
-#include <kstring.h>
-#include <kerror.h>
-#include <fs/dev_major.h>
-#include <fs/devfs.h>
-#include <fs/devspecial.h>
+#ifndef DEVSPECIAL_H
+#define DEVSPECIAL_H
 
-struct dev_info devnull_info = {
-    .dev_id = DEV_MMTODEV(VDEV_MJNR_SPECIAL, 3),
-    .drv_name = "memdev",
-    .dev_name = "null",
-    .flags = DEV_FLAGS_MB_READ | DEV_FLAGS_MB_WRITE | DEV_FLAGS_WR_BT_MASK,
-    .read = devnull_read,
-    .write = devnull_write
-};
+struct dev_info;
 
-struct dev_info devzero_info = {
-    .dev_id = DEV_MMTODEV(VDEV_MJNR_SPECIAL, 5),
-    .drv_name = "memdev",
-    .dev_name = "zero",
-    .flags = DEV_FLAGS_MB_READ | DEV_FLAGS_MB_WRITE | DEV_FLAGS_WR_BT_MASK,
-    .read = devzero_read,
-    .write = devzero_write
-};
-
-struct dev_info devfull_info = {
-    .dev_id = DEV_MMTODEV(VDEV_MJNR_SPECIAL, 7),
-    .drv_name = "memdev",
-    .dev_name = "full",
-    .flags = DEV_FLAGS_MB_READ | DEV_FLAGS_MB_WRITE | DEV_FLAGS_WR_BT_MASK,
-    .read = devfull_read,
-    .write = devfull_write
-};
-
-void _devfs_create_specials()
-{
-    if (dev_make(&devnull_info, 0, 0, 0666, NULL)) {
-        KERROR(KERROR_ERR, "Failed to init dev/null\n");
-    }
-
-    if (dev_make(&devzero_info, 0, 0, 0666, NULL)) {
-        KERROR(KERROR_ERR, "Failed to init dev/zero\n");
-    }
-
-    if (dev_make(&devfull_info, 0, 0, 0666, NULL)) {
-        KERROR(KERROR_ERR, "Failed to init dev/full\n");
-    }
-}
+/*
+ * These special device read and write functions can be also used for other
+ * device files that do not implement read or write.
+ */
 
 int devnull_read(struct dev_info * devnfo, off_t blkno,
-                 uint8_t * buf, size_t bcount, int oflags)
-{
-    return 0;
-}
-
+                 uint8_t * buf, size_t bcount, int oflags);
 int devnull_write(struct dev_info * devnfo, off_t blkno,
-                  uint8_t * buf, size_t bcount, int oflags)
-{
-    return bcount;
-}
-
+                  uint8_t * buf, size_t bcount, int oflags);
 int devzero_read(struct dev_info * devnfo, off_t blkno,
-                 uint8_t * buf, size_t bcount, int oflags)
-{
-    memset(buf, '\0', bcount);
-
-    return bcount;
-}
-
+                 uint8_t * buf, size_t bcount, int oflags);
 int devzero_write(struct dev_info * devnfo, off_t blkno,
-                  uint8_t * buf, size_t bcount, int oflags)
-{
-    return bcount;
-}
-
+                  uint8_t * buf, size_t bcount, int oflags);
 int devfull_read(struct dev_info * devnfo, off_t blkno,
-                 uint8_t * buf, size_t bcount, int oflags)
-{
-    memset(buf, '\0', bcount);
-
-    return bcount;
-}
-
+                 uint8_t * buf, size_t bcount, int oflags);
 int devfull_write(struct dev_info * devnfo, off_t blkno,
-                  uint8_t * buf, size_t bcount, int oflags)
-{
-    return -ENOSPC;
-}
+                  uint8_t * buf, size_t bcount, int oflags);
+
+#endif /* DEVSPECIAL_H */
