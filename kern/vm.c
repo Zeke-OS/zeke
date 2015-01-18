@@ -709,13 +709,13 @@ int useracc(const void * addr, size_t len, int rw)
 
 int useracc_proc(const void * addr, size_t len, struct proc_info * proc, int rw)
 {
-    struct buf * region;
+    struct buf * region = NULL;
     uintptr_t reg_end;
 
     (void)vm_find_reg(proc, (uintptr_t)addr, &region);
     if (!region)
         return 0;
-    reg_end = region->b_mmu.vaddr + MMU_SIZEOF_REGION(&region->b_mmu) - 1;
+    reg_end = region->b_mmu.vaddr + MMU_SIZEOF_REGION(&region->b_mmu);
 
     if ((uintptr_t)addr < reg_end)
         return test_ap_user(rw, region->b_mmu.ap, region->b_mmu.control);
