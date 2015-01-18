@@ -35,6 +35,7 @@
 #include <kstring.h>
 #include <kmalloc.h>
 #include <sys/types.h>
+#include <proc.h>
 #include <fcntl.h>
 #include <tsched.h>
 #include <thread.h>
@@ -83,8 +84,9 @@ int uart_init(void)
  */
 static int make_uartdev(struct uart_port * port, int port_num)
 {
-    struct dev_info * dev = kcalloc(1, sizeof(struct dev_info));
+    struct dev_info * dev;
 
+    dev = kcalloc(1, sizeof(struct dev_info));
     if (!dev)
         return -ENOMEM;
 
@@ -100,9 +102,9 @@ static int make_uartdev(struct uart_port * port, int port_num)
     if (dev_make(dev, 0, 0, 0666, NULL)) {
         KERROR(KERROR_ERR, "Failed to make a device for UART.\n");
         return -ENODEV;
-    } else {
-        port->flags |= UART_PORT_FLAG_FS;
     }
+
+    port->flags |= UART_PORT_FLAG_FS;
 
     return 0;
 }
@@ -189,15 +191,31 @@ static ssize_t uart_write(struct dev_info * devnfo, off_t blkno, uint8_t * buf,
 
 static int uart_ioctl(struct dev_info * devnfo, uint32_t request, void * arg, size_t arg_len)
 {
+    int err;
     struct uart_port * port = uart_getport(DEV_MINOR(devnfo->dev_id));
+
+    if (!port)
+        return -EINVAL;
 
     switch (request) {
     case IOCTL_GTERMIOS:
         if (arg_len < sizeof(struct termios))
             return -EINVAL;
 
+        memcpy(arg, &(port->conf), sizeof(struct termios));
+        break;
+
+    case IOCTL_STERMIOS:
+        if (arg_len < sizeof(struct termios))
+            return -EINVAL;
+
+        err = priv_check(curproc, PRIV_TTY_SETA);
+        if (err)
+            return err;
+
         memcpy(&(port->conf), arg, sizeof(struct termios));
         break;
+
     default:
         return -EINVAL;
     }
