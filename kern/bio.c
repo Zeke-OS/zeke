@@ -63,8 +63,7 @@ void _bio_init(void)
      * TODO We'd like to use MTX_TYPE_TICKET here but bio_clean() makes it
      * impossible right now.
      */
-    mtx_init(&cache_lock, MTX_TYPE_SPIN | MTX_TYPE_SLEEP |
-                          MTX_TYPE_PRICEIL);
+    mtx_init(&cache_lock, MTX_TYPE_SPIN | MTX_TYPE_SLEEP | MTX_TYPE_PRICEIL);
     cache_lock.pri.p_lock = NICE_MAX;
 
     /*
