@@ -1,7 +1,7 @@
 # Zeke - Kernel Makefile
 #
-# Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
-# Copyright (c) 2012, 2013, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+# Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+# Copyright (c) 2012, 2013 Olli Vanhoja <olli.vanhoja@ninjaware.fi>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -108,13 +108,8 @@ $(ASOBJS): $(ASRC-y) $(UNIFDEF) $(AUTOCONF_H)
 	@$(UNIFDEFALL) $(AIDIR) $*.S | $(ARMGNU)-as -am $(AIDIR) -o $@
 
 $(OBJS): %.o: %.c $(AUTOCONF_H)
-	$(eval CUR_OPT := $*.opt.bc)
-	$(eval CUR_OPT_S := $*.opt.s)
 	@echo "CC $@"
-	@$(CC) $(CCFLAGS) $(IDIR) -c $*.c -o $*.bc
-	@$(OPT) $(OFLAGS) $*.bc -o $(CUR_OPT)
-	@$(LLC) $(LLCFLAGS) $(CUR_OPT) -o $(CUR_OPT_S)
-	@$(ARMGNU)-as $(CUR_OPT_S) -o $@ $(ASFLAGS)
+	@$(CC) $(CCFLAGS) $(IDIR) -c $*.c -o /dev/stdout | $(OPT) $(OFLAGS) - -o - | $(LLC) $(LLCFLAGS) - -o - | $(ARMGNU)-as - -o $@ $(ASFLAGS)
 
 $(MODAS): $(ASOBJS) $(OBJS)
 	$(eval CUR_MODULE := $(basename $@))

@@ -13,9 +13,7 @@ $(OBJS): $(SRC-y) $(AUTOCONF_H)
 	$(eval CUR_OPT := $*.opt.bc)
 	$(eval CUR_OPT_S := $*.opt.s)
 	@echo "CC $@"
-	@$(CC) $(CCFLAGS) $(IDIR) -c $*.c -o $(CUR_BC)
-	@$(OPT) $(OFLAGS) $*.bc -o $(CUR_OPT)
-	@$(LLC) $(LLCFLAGS) $(CUR_OPT) -o $(CUR_OPT_S)
+	@$(CC) $(CCFLAGS) $(IDIR) -c $*.c -o /dev/stdout | $(OPT) $(OFLAGS) - -o - | $(LLC) $(LLCFLAGS) - -o $(CUR_OPT_S)
 	@$(ARMGNU)-as $(CUR_OPT_S) -o $@ $(ASFLAGS)
 
 $(BIN): $(OBJS)
