@@ -43,6 +43,8 @@ struct pty_device {
     int pty_id;
     struct termios conf;
     struct dev_info slave;
+    struct queue_cb chbuf;
+    char _cbuf[256];
     RB_ENTRY(pty_device) _entry;
 };
 

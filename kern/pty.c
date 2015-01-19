@@ -40,6 +40,7 @@
 
 #define KERNEL_INTERNAL
 #include <sys/tree.h>
+#include <queue_r.h>
 #include <kinit.h>
 #include <klocks.h>
 #include <errno.h>
@@ -64,7 +65,7 @@ static struct pty_device * pty_get(unsigned id);
 static int creat_pty(void);
 static int make_ptyslave(int pty_id, struct dev_info * slave);
 static int ptymaster_read(struct dev_info * devnfo, off_t blkno,
-                         uint8_t * buf, size_t bcount, int oflags);
+                          uint8_t * buf, size_t bcount, int oflags);
 static int ptymaster_write(struct dev_info * devnfo, off_t blkno,
                            uint8_t * buf, size_t bcount, int oflags);
 static int ptyslave_read(struct dev_info * devnfo, off_t blkno,
@@ -135,6 +136,9 @@ out:
     return res;
 }
 
+/**
+ * Create a new pty master/slave pair.
+ */
 static int creat_pty(void)
 {
     const int pty_id = next_ptyid();
@@ -150,6 +154,9 @@ static int creat_pty(void)
         kfree(ptydev);
         return err;
     }
+
+    ptydev->chbuf = queue_create(ptydev->_cbuf, sizeof(char),
+            sizeof(ptydev->_cbuf));
 
     mtx_lock(&pty_lock);
     RB_INSERT(ptytree, &ptys_head, ptydev);
