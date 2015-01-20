@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   UART source code for BCM2835.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,8 +30,8 @@
  *******************************************************************************
  */
 
+#define KERNEL_INTERNAL
 #include <kinit.h>
-#include <kerror.h>
 #include "bcm2835_mmio.h"
 #include "bcm2835_gpio.h"
 #include "bcm2835_timers.h"
@@ -75,7 +75,7 @@
 #define UART0_FR_BUSY_OFFSET    3
 #define UART0_FR_CTS_OFFSET     0
 
-static void bcm2835_uart_init(struct uart_port * port);
+static void bcm2835_uart_setconf(struct termios * conf);
 static void set_baudrate(unsigned int baud_rate);
 static void set_lcrh(const struct termios * conf);
 int bcm2835_uart_uputc(struct uart_port * port, uint8_t byte);
@@ -83,7 +83,7 @@ int bcm2835_uart_ugetc(struct uart_port * port);
 int bcm2835_uart_peek(struct uart_port * port);
 
 static struct uart_port port = {
-    .init = bcm2835_uart_init,
+    .setconf = bcm2835_uart_setconf,
     .uputc = bcm2835_uart_uputc,
     .ugetc = bcm2835_uart_ugetc,
     .peek = bcm2835_uart_peek
@@ -101,9 +101,8 @@ int bcm2835_uart_register(void)
 }
 HW_PREINIT_ENTRY(bcm2835_uart_register);
 
-void bcm2835_uart_init(struct uart_port * port)
+static void bcm2835_uart_setconf(struct termios * conf)
 {
-    struct termios * conf = &port->conf;
     istate_t s_entry;
 
     mmio_start(&s_entry);

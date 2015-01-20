@@ -55,7 +55,7 @@
 
 static const char drv_name[] = "PTY";
 
-static struct dev_info * dev_ptmx;
+static struct tty * dev_ptmx;
 static atomic_t _next_pty_id;
 RB_HEAD(ptytree, pty_device) ptys_head = RB_INITIALIZER(_head);
 mtx_t pty_lock;
@@ -63,14 +63,14 @@ mtx_t pty_lock;
 static unsigned next_ptyid(void);
 static struct pty_device * pty_get(unsigned id);
 static int creat_pty(void);
-static int make_ptyslave(int pty_id, struct dev_info * slave);
-static int ptymaster_read(struct dev_info * devnfo, off_t blkno,
+static int make_ptyslave(int pty_id, struct tty * tty_slave);
+static int ptymaster_read(struct tty * tty, off_t blkno,
                           uint8_t * buf, size_t bcount, int oflags);
-static int ptymaster_write(struct dev_info * devnfo, off_t blkno,
+static int ptymaster_write(struct tty * tty, off_t blkno,
                            uint8_t * buf, size_t bcount, int oflags);
-static int ptyslave_read(struct dev_info * devnfo, off_t blkno,
+static int ptyslave_read(struct tty * tty, off_t blkno,
                          uint8_t * buf, size_t bcount, int oflags);
-static int ptyslave_write(struct dev_info * devnfo, off_t blkno,
+static int ptyslave_write(struct tty * tty, off_t blkno,
                           uint8_t * buf, size_t bcount, int oflags);
 static int pty_ioctl(struct dev_info * devnfo, uint32_t request,
                      void * arg, size_t arg_len);
@@ -86,6 +86,9 @@ RB_GENERATE_STATIC(ptytree, pty_device, _entry, ptydev_comp);
 int pty_init(void) __attribute__((constructor));
 int pty_init(void)
 {
+    dev_t dev_id = DEV_MMTODEV(VDEV_MJNR_PTY, 0);
+    char dev_name[] = "ptmx";
+
     SUBSYS_DEP(devfs_init);
     SUBSYS_INIT("pty");
 
@@ -93,20 +96,15 @@ int pty_init(void)
     RB_INIT(&ptys_head);
     mtx_init(&pty_lock, MTX_TYPE_TICKET);
 
-    dev_ptmx = kcalloc(1, sizeof(struct dev_info));
+    dev_ptmx = kcalloc(1, sizeof(struct tty));
     if (!dev_ptmx)
         return -ENOMEM;
 
-    dev_ptmx->dev_id = DEV_MMTODEV(VDEV_MJNR_PTY, 0);
-    dev_ptmx->drv_name = drv_name;
-    strcpy(dev_ptmx->dev_name, "ptmx");
-    dev_ptmx->flags = DEV_FLAGS_MB_READ | DEV_FLAGS_WR_BT_MASK;
-    dev_ptmx->block_size = 1;
     dev_ptmx->read = ptymaster_read;
     dev_ptmx->write = ptymaster_write;
     dev_ptmx->ioctl = pty_ioctl;
 
-    if (dev_make(dev_ptmx, 0, 0, 0666, NULL)) {
+    if (make_ttydev(dev_ptmx, drv_name, dev_id, dev_name)) {
         KERROR(KERROR_ERR, "Failed to make /dev/ptmx");
         return -ENODEV;
     }
@@ -149,14 +147,16 @@ static int creat_pty(void)
     if (!ptydev)
         return -ENOMEM;
 
-    err = make_ptyslave(pty_id, &ptydev->slave);
+    err = make_ptyslave(pty_id, &ptydev->tty_slave);
     if (err) {
         kfree(ptydev);
         return err;
     }
 
-    ptydev->chbuf = queue_create(ptydev->_cbuf, sizeof(char),
-            sizeof(ptydev->_cbuf));
+    ptydev->chbuf_ms = queue_create(ptydev->_cbuf_ms, sizeof(char),
+            sizeof(ptydev->_cbuf_ms));
+    ptydev->chbuf_sm = queue_create(ptydev->_cbuf_sm, sizeof(char),
+            sizeof(ptydev->_cbuf_sm));
 
     mtx_lock(&pty_lock);
     RB_INSERT(ptytree, &ptys_head, ptydev);
@@ -165,24 +165,20 @@ static int creat_pty(void)
     return pty_id;
 }
 
-static int make_ptyslave(int pty_id, struct dev_info * slave)
+static int make_ptyslave(int pty_id, struct tty * tty_slave)
 {
-    struct dev_info * dev = slave;
+    dev_t dev_id;
+    char dev_name[SPECNAMELEN];
 
-    dev->dev_id = DEV_MMTODEV(VDEV_MJNR_PTY, pty_id);
-    dev->drv_name = drv_name;
-    ksprintf(dev->dev_name, sizeof(dev->dev_name), "pty%i", pty_id);
-    dev->flags = DEV_FLAGS_MB_READ | DEV_FLAGS_WR_BT_MASK;
-    dev->block_size = 1;
-    dev->read = ptyslave_read;
-    dev->write = ptyslave_write;
-    dev->ioctl = pty_ioctl;
+    dev_id = DEV_MMTODEV(VDEV_MJNR_PTY, pty_id);
+    ksprintf(dev_name, sizeof(dev_name), "pty%i", pty_id);
+    tty_slave->read = ptyslave_read;
+    tty_slave->write = ptyslave_write;
+    tty_slave->ioctl = pty_ioctl;
 
     /* TODO Should be created under pts? */
-    if (dev_make(dev, 0, 0, 0666, NULL)) {
-        KERROR(KERROR_ERR, "Failed to make a pty slave.\n");
+    if (make_ttydev(tty_slave, drv_name, dev_id, dev_name))
         return -ENODEV;
-    }
 
     return 0;
 }
@@ -191,47 +187,70 @@ static int make_ptyslave(int pty_id, struct dev_info * slave)
  * TODO Check owner before read/write
  */
 
-static int ptymaster_read(struct dev_info * devnfo, off_t blkno,
+static int ptymaster_read(struct tty * tty, off_t blkno,
                           uint8_t * buf, size_t bcount, int oflags)
 {
     int pty_id = blkno;
-    struct pty_device * pty = pty_get(pty_id);
+    struct pty_device * ptydev = pty_get(pty_id);
+    size_t i;
 
-    return 0;
+    for (i = 0; i < bcount; i++) {
+        if (!queue_pop(&ptydev->chbuf_sm, &buf[i]))
+            break;
+    }
+
+    return i;
 }
 
-static int ptymaster_write(struct dev_info * devnfo, off_t blkno,
+static int ptymaster_write(struct tty * tty, off_t blkno,
                            uint8_t * buf, size_t bcount, int oflags)
 {
     int pty_id = blkno;
-    struct pty_device * pty = pty_get(pty_id);
+    struct pty_device * ptydev = pty_get(pty_id);
+    size_t i;
 
-    return bcount;
+    for (i = 0; i < bcount; i++) {
+        if (!queue_push(&ptydev->chbuf_ms, &buf[i]))
+            break;
+    }
+
+    return i;
 }
 
-static int ptyslave_read(struct dev_info * devnfo, off_t blkno,
+static int ptyslave_read(struct tty * tty, off_t blkno,
                          uint8_t * buf, size_t bcount, int oflags)
 {
     int pty_id = blkno;
-    struct pty_device * pty = pty_get(pty_id);
+    struct pty_device * ptydev = pty_get(pty_id);
+    size_t i;
 
-    return 0;
+    for (i = 0; i < bcount; i++) {
+        if (!queue_pop(&ptydev->chbuf_ms, &buf[i]))
+            break;
+    }
+
+    return i;
 }
 
-static int ptyslave_write(struct dev_info * devnfo, off_t blkno,
+static int ptyslave_write(struct tty * tty, off_t blkno,
                           uint8_t * buf, size_t bcount, int oflags)
 {
     int pty_id = blkno;
-    struct pty_device * pty = pty_get(pty_id);
+    struct pty_device * ptydev = pty_get(pty_id);
+    size_t i;
 
-    return bcount;
+    for (i = 0; i < bcount; i++) {
+        if (!queue_push(&ptydev->chbuf_sm, &buf[i]))
+            break;
+    }
+
+    return i;
 }
 
 static int pty_ioctl(struct dev_info * devnfo, uint32_t request,
                      void * arg, size_t arg_len)
 {
     struct pty_device * ptydev = pty_get(DEV_MINOR(devnfo->dev_id));
-    int err;
 
     if (!ptydev && request == IOCTL_PTY_CREAT) {
         int ret;
@@ -251,24 +270,6 @@ static int pty_ioctl(struct dev_info * devnfo, uint32_t request,
         return -EINVAL;
 
     switch (request) {
-    case IOCTL_GTERMIOS:
-        if (arg_len < sizeof(struct termios))
-            return -EINVAL;
-
-        memcpy(arg, &(ptydev->conf), sizeof(struct termios));
-        break;
-
-    case IOCTL_STERMIOS:
-        if (arg_len < sizeof(struct termios))
-            return -EINVAL;
-
-        err = priv_check(curproc, PRIV_TTY_SETA);
-            if (err)
-                return err;
-
-        memcpy(&(ptydev->conf), arg, sizeof(struct termios));
-        break;
-
     default:
         return -EINVAL;
     }

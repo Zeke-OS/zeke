@@ -34,6 +34,7 @@
 #ifndef PTY_H
 #define PTY_H
 
+#include <tty.h>
 #include <sys/tree.h>
 
 struct termios;
@@ -41,10 +42,11 @@ struct dev_info;
 
 struct pty_device {
     int pty_id;
-    struct termios conf;
-    struct dev_info slave;
-    struct queue_cb chbuf;
-    char _cbuf[256];
+    struct tty tty_slave;
+    struct queue_cb chbuf_ms;
+    struct queue_cb chbuf_sm;
+    char _cbuf_ms[256];
+    char _cbuf_sm[256];
     RB_ENTRY(pty_device) _entry;
 };
 

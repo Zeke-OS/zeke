@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Device interface headers.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,6 +56,8 @@ struct dev_info {
 
     size_t block_size;      /*!< Preferred block transfer size. */
     ssize_t num_blocks;
+
+    void * opt_data; /*!< Optional device data internal to the driver. */
 
     ssize_t (*read)(struct dev_info * devnfo, off_t blkno,
             uint8_t * buf, size_t bcount, int oflags);

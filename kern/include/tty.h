@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    uart.h
+ * @file    tty.c
  * @author  Olli Vanhoja
- * @brief   Headers for UART HAL.
+ * @brief   Generic tty.
  * @section LICENSE
  * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,85 +30,40 @@
  *******************************************************************************
  */
 
-/**
- * @addtogroup HAL
- * @{
- */
+#ifndef TTY_H
+#define TTY_H
 
-/**
- * @addtogroup UART
- * @{
- */
-
-#pragma once
-#ifndef UART_H
-#define UART_H
-
-#include <autoconf.h>
+#include <stddef.h>
 #include <stdint.h>
-#include <termios.h>
 
-/* UART HAL Configuration */
-#define UART_PORTS_MAX configUART_MAX_PORTS
+struct termios;
 
-#define UART_PORT_FLAG_FS       0x01 /*!< Port is exported to the devfs. */
+struct tty {
+    struct termios conf;
 
-struct uart_port {
-    unsigned uart_id;       /*!< ID that can be used by the hal level driver.
-                             *   This id is not connected with the port_num.
-                             */
-    unsigned flags;         /*!< Flags used by the UART abstraction layer. */
+    void * opt_data;
 
-    /**
-     * Initialize UART.
-     * Sets port configuration according to conf struct.
-     */
     void (* setconf)(struct termios * conf);
 
-    void (* getconf)(struct termios * conf);
+    ssize_t (*read)(struct tty * tty, off_t blkno, uint8_t * buf,
+                    size_t bcount, int oflags);
+
+    ssize_t (*write)(struct tty * tty, off_t blkno, uint8_t * buf,
+                     size_t bcount, int oflags);
 
     /**
-     * Transmit a byte via UARTx.
-     * @param byte Byte to send.
-     * @returns 0 if byte was written; Otherwise -1, overflow.
+     * Overriding ioctl.
+     * @note Can be NULL.
      */
-    int (* uputc)(struct uart_port * port, uint8_t byte);
-
-    /**
-     * Receive a byte via UART.
-     * @return A byte read from UART or -1 if undeflow.
-     */
-    int (* ugetc)(struct uart_port * port);
-
-    /**
-     * Check if there is data available from UART.
-     * @return 0 if no data avaiable; Otherwise value other than zero.
-     */
-    int (* peek)(struct uart_port * port);
+    int (*ioctl)(struct dev_info * devnfo, uint32_t request,
+                 void * arg, size_t arg_len);
 };
 
 /**
- * UART port register.
- * @param port_init_struct is a pointer to the port struct.
+ * @param drv_name should be allocated from heap, refereced.
+ * @param dev_name device name, copied.
  */
-int uart_register_port(struct uart_port * port);
+int make_ttydev(struct tty * tty, const char * drv_name, dev_t dev_id,
+                const char * dev_name);
 
-/**
- * Get nr of ports registered with UART.
- */
-int uart_nports(void);
-
-/**
- * Get port struct by port registration number.
- */
-struct uart_port * uart_getport(int port_num);
-
-#endif /* UART_H */
-
-/**
- * @}
- */
-
-/**
- * @}
- */
+#endif /* TTY_H */

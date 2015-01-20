@@ -47,17 +47,7 @@ static struct uart_port * kerror_uart;
  */
 static void kerror_uart_init(void)
 {
-    struct termios conf = {
-        .c_cflag    = CS8 | CREAD,
-        .c_ispeed   = B115200,
-        .c_ospeed   = B115200,
-    };
-
     kerror_uart = uart_getport(0);
-    kerror_uart->conf = conf;
-    /* TODO currently there is a bug in init function so we don't want to break
-     * a working UART connection. */
-    //kerror_uart->init(kerror_uart);
 }
 
 static void kerror_uart_puts(const char * str)

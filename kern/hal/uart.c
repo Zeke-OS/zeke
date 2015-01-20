@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   UART HAL.
  * @section LICENSE
- * Copyright (c) 2013, 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,18 +30,20 @@
  *******************************************************************************
  */
 
+#define KERNEL_INTERNAL
 #include <errno.h>
 #include <kinit.h>
 #include <kstring.h>
 #include <kmalloc.h>
 #include <sys/types.h>
-#include <proc.h>
 #include <fcntl.h>
 #include <tsched.h>
 #include <thread.h>
 #include <fs/devfs.h>
 #include <fs/dev_major.h>
 #include <sys/ioctl.h>
+#include <termios.h>
+#include <tty.h>
 #include <hal/uart.h>
 
 static const char drv_name[] = "UART";
@@ -51,12 +53,12 @@ static int uart_nr_ports;
 static int vfs_ready;
 
 static int make_uartdev(struct uart_port * port, int port_num);
-static ssize_t uart_read(struct dev_info * devnfo, off_t blkno, uint8_t * buf,
-        size_t bcount, int oflags);
-static ssize_t uart_write(struct dev_info * devnfo, off_t blkno, uint8_t * buf,
-        size_t bcount, int oflags);
+static ssize_t uart_read(struct tty * tty, off_t blkno, uint8_t * buf,
+                         size_t bcount, int oflags);
+static ssize_t uart_write(struct tty * tty, off_t blkno, uint8_t * buf,
+                          size_t bcount, int oflags);
 static int uart_ioctl(struct dev_info * devnfo, uint32_t request,
-        void * arg, size_t arg_len);
+                      void * arg, size_t arg_len);
 
 int uart_init(void) __attribute__((constructor));
 int uart_init(void)
@@ -84,23 +86,25 @@ int uart_init(void)
  */
 static int make_uartdev(struct uart_port * port, int port_num)
 {
-    struct dev_info * dev;
+    struct tty * tty;
+    dev_t dev_id;
+    char dev_name[SPECNAMELEN];
 
-    dev = kcalloc(1, sizeof(struct dev_info));
-    if (!dev)
+    tty = kcalloc(1, sizeof(struct tty));
+    if (!tty) {
         return -ENOMEM;
+    }
 
-    dev->dev_id = DEV_MMTODEV(VDEV_MJNR_UART, port_num);
-    dev->drv_name = drv_name;
-    ksprintf(dev->dev_name, sizeof(dev->dev_name), "ttyS%i", port_num);
-    dev->flags = DEV_FLAGS_MB_READ | DEV_FLAGS_WR_BT_MASK;
-    dev->block_size = 1;
-    dev->read = uart_read;
-    dev->write = uart_write;
-    dev->ioctl = uart_ioctl;
+    dev_id = DEV_MMTODEV(VDEV_MJNR_UART, port_num);
+    ksprintf(dev_name, sizeof(dev_name), "ttyS%i", port_num);
+    tty->opt_data = port;
+    tty->read = uart_read;
+    tty->write = uart_write;
+    tty->setconf = port->setconf;
+    tty->ioctl = uart_ioctl;
 
-    if (dev_make(dev, 0, 0, 0666, NULL)) {
-        KERROR(KERROR_ERR, "Failed to make a device for UART.\n");
+    if (make_ttydev(tty, drv_name, dev_id, dev_name)) {
+        kfree(tty);
         return -ENODEV;
     }
 
@@ -141,10 +145,10 @@ struct uart_port * uart_getport(int port_num)
     return retval;
 }
 
-static ssize_t uart_read(struct dev_info * devnfo, off_t blkno, uint8_t * buf,
-        size_t bcount, int oflags)
+static ssize_t uart_read(struct tty * tty, off_t blkno, uint8_t * buf,
+                         size_t bcount, int oflags)
 {
-    struct uart_port * port = uart_getport(DEV_MINOR(devnfo->dev_id));
+    struct uart_port * port = (struct uart_port *)tty->opt_data;
     size_t n = 0;
     int ret;
 
@@ -170,10 +174,10 @@ static ssize_t uart_read(struct dev_info * devnfo, off_t blkno, uint8_t * buf,
     return n;
 }
 
-static ssize_t uart_write(struct dev_info * devnfo, off_t blkno, uint8_t * buf,
-        size_t bcount, int oflags)
+static ssize_t uart_write(struct tty * tty, off_t blkno, uint8_t * buf,
+                          size_t bcount, int oflags)
 {
-    struct uart_port * port = uart_getport(DEV_MINOR(devnfo->dev_id));
+    struct uart_port * port = (struct uart_port *)tty->opt_data;
     const unsigned block = !(oflags & O_NONBLOCK);
     int err;
 
@@ -189,34 +193,10 @@ static ssize_t uart_write(struct dev_info * devnfo, off_t blkno, uint8_t * buf,
     return 1;
 }
 
-static int uart_ioctl(struct dev_info * devnfo, uint32_t request, void * arg, size_t arg_len)
+static int uart_ioctl(struct dev_info * devnfo, uint32_t request,
+                      void * arg, size_t arg_len)
 {
-    int err;
-    struct uart_port * port = uart_getport(DEV_MINOR(devnfo->dev_id));
-
-    if (!port)
-        return -EINVAL;
-
     switch (request) {
-    case IOCTL_GTERMIOS:
-        if (arg_len < sizeof(struct termios))
-            return -EINVAL;
-
-        memcpy(arg, &(port->conf), sizeof(struct termios));
-        break;
-
-    case IOCTL_STERMIOS:
-        if (arg_len < sizeof(struct termios))
-            return -EINVAL;
-
-        err = priv_check(curproc, PRIV_TTY_SETA);
-        if (err)
-            return err;
-
-        memcpy(&(port->conf), arg, sizeof(struct termios));
-        port->init(port);
-        break;
-
     default:
         return -EINVAL;
     }
