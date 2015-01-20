@@ -214,6 +214,7 @@ static int uart_ioctl(struct dev_info * devnfo, uint32_t request, void * arg, si
             return err;
 
         memcpy(&(port->conf), arg, sizeof(struct termios));
+        port->init(port);
         break;
 
     default:
