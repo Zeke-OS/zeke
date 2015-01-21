@@ -41,7 +41,6 @@
 #include <fs/fs.h>
 
 #define PROCFS_FSNAME           "procfs"    /*!< Name of the fs. */
-#define PROCFS_MAJOR_NUM        12          /*!< Major id of the fs. */
 
 #define PROCFS_PERMS            0400        /*!< Default file permissions of
                                              *   an procfs entry.

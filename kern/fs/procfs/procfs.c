@@ -88,7 +88,7 @@ int procfs_init(void)
     vnops->write = procfs_write;
     procfs_vnode_ops = vnops;
 
-    vn_procfs = fs_create_pseudofs_root(PROCFS_FSNAME, PROCFS_MAJOR_NUM);
+    vn_procfs = fs_create_pseudofs_root(PROCFS_FSNAME, VDEV_MJNR_PROCFS);
     fs_register(&procfs_fs);
     procfs_updatedir(vn_procfs);
 

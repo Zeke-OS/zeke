@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Device file system.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -89,7 +89,7 @@ int devfs_init(void)
     vnops->ioctl = dev_ioctl;
     devfs_vnode_ops = vnops;
 
-    vn_devfs = fs_create_pseudofs_root(DEVFS_FSNAME, DEVFS_MAJOR_NUM);
+    vn_devfs = fs_create_pseudofs_root(DEVFS_FSNAME, VDEV_MJNR_DEVFS);
     if (!vn_devfs)
         return -ENOMEM;
     fs_register(&devfs_fs);

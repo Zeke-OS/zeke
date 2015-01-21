@@ -44,7 +44,11 @@
 #define VDEV_MJNR_UART      4
 #define VDEV_MJNR_PTY       5
 #define VDEV_MJNR_RPI_EMMC  8
+
+/* File system major numbers */
 #define VDEV_MJNR_RAMFS     10
+#define VDEV_MJNR_DEVFS     11
+#define VDEV_MJNR_PROCFS    12
 #define VDEV_MJNR_FATFS     13
 
 #endif /* DEV_MAJOR_H */
