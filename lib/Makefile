@@ -30,7 +30,7 @@ include $(ROOT_DIR)/genconfig/dist.mk
 ################################################################################
 # We use suffixes because it's fun
 .SUFFIXES:                  	# Delete the default suffixes
-.SUFFIXES: .c .bc .o .h .S ._S	# Define our suffix list
+.SUFFIXES: .c .o .h .S ._S	# Define our suffix list
 
 # Supress warnings about C11 extensions in libc
 CCFLAGS += -Wno-c11-extensions
@@ -102,13 +102,8 @@ $(ASOBJS): %.o: %.S $(AUTOCONF_H)
 	@$(UNIFDEFALL) $(IDIR) $*.S | $(ARMGNU)-as -am $(IDIR) -o $@
 
 $(OBJS): %.o: %.c $(AUTOCONF_H)
-	$(eval CUR_OPT := $*.opt.bc)
-	$(eval CUR_OPT_S := $*.opt.s)
 	@echo "CC $@"
-	@$(CC) $(CCFLAGS) $(IDIR) -c $*.c -o $*.bc
-	@$(OPT) $(OFLAGS) $*.bc -o $(CUR_OPT)
-	@$(LLC) $(LLCFLAGS) $(CUR_OPT) -o $(CUR_OPT_S)
-	@$(ARMGNU)-as $(CUR_OPT_S) -o $@ $(ASFLAGS)
+	@$(CC) $(CCFLAGS) $(IDIR) -c $*.c -o /dev/stdout | $(OPT) $(OFLAGS) - -o - | $(LLC) $(LLCFLAGS) - -o - | $(ARMGNU)-as - -o $@ $(ASFLAGS)
 
 crt0_o: $(CRT)
 	mkdir -p crt0_o

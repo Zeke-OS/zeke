@@ -82,7 +82,6 @@ ASRC-y += $(foreach var,$(MODULES), $($(var)-ASRC-y))
 ASOBJS 	:= $(patsubst %.S, %.o, $(ASRC-y))
 
 # C Obj files
-BCS  	:= $(patsubst %.c, %.bc, $(SRC-y))
 OBJS 	:= $(patsubst %.c, %.o, $(SRC-y))
 
 STARTUP_O = $(patsubst %.S, %.o, $(STARTUP))
@@ -128,7 +127,6 @@ $(KERNEL_IMG): $(MEMMAP) $(STARTUP_O) $(MODAS)
 
 clean:
 	$(RM) $(ASOBJS) $(OBJS) $(STARTUP_O)
-	$(RM) $(BCS)
 	$(RM) *.bin
 	$(RM) *.img
 	$(RM) *.elf

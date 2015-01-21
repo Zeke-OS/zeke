@@ -1,5 +1,4 @@
 # C Obj files
-BCS = $(patsubst %.c, %.bc, $(SRC-y))
 OBJS = $(patsubst %.c, %.o, $(SRC-y))
 
 all: $(BIN) manifest
@@ -9,12 +8,8 @@ $(ASOBJS): $(ASRC-y) $(AUTOCONF_H)
 	@$(UNIFDEFALL) $(IDIR) $*.S | $(ARMGNU)-as -am $(IDIR) -o $@
 
 $(OBJS): $(SRC-y) $(AUTOCONF_H)
-	$(eval CUR_BC := $*.bc)
-	$(eval CUR_OPT := $*.opt.bc)
-	$(eval CUR_OPT_S := $*.opt.s)
 	@echo "CC $@"
-	@$(CC) $(CCFLAGS) $(IDIR) -c $*.c -o /dev/stdout | $(OPT) $(OFLAGS) - -o - | $(LLC) $(LLCFLAGS) - -o $(CUR_OPT_S)
-	@$(ARMGNU)-as $(CUR_OPT_S) -o $@ $(ASFLAGS)
+	@$(CC) $(CCFLAGS) $(IDIR) -c $*.c -o /dev/stdout | $(OPT) $(OFLAGS) - -o - | $(LLC) $(LLCFLAGS) - -o - | $(ARMGNU)-as - -o $@ $(ASFLAGS)
 
 $(BIN): $(OBJS)
 	$(eval CUR_BIN := $(basename $@))
