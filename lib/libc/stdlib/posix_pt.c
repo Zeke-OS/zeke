@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    ioctl.h
+ * @file    posix_pt.c
  * @author  Olli Vanhoja
- * @brief   Control devices.
+ * @brief   Open pty.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,52 +30,59 @@
  *******************************************************************************
  */
 
-/**
- * @addtogroup LIBC
- * @{
- */
+#include <sys/param.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
 
-#ifndef IOCTL_H
-#define IOCTL_H
+int posix_openpt(int flags)
+{
+    int fd, err;
 
-#include <stddef.h>
-#include <stdint.h>
-#include <sys/cdefs.h>
+    fd = open("/dev/ptmx", flags & (O_RDWR | O_NOCTTY));
+    if (fd < 0) {
+        if (errno != EMFILE && errno != ENFILE)
+            errno = EAGAIN;
+        return fd;
+    }
 
-/*
- * IOCTL request codes.
- * Get requests shall be odd and set request shall be even, this information can
- * be then used to optimize the syscall.
- */
-/* termio */
-#define IOCTL_GTERMIOS       1  /*!< Get termios struct. */
-#define IOCTL_STERMIOS       2  /*!< Set termios struct. */
-/* dev */
-#define IOCTL_GETBLKSIZE    10  /*!< Get device block size. */
-#define IOCTL_GETBLKCNT     11  /*!< Get device block count. */
-/* pty */
-#define IOCTL_PTY_CREAT     12  /*!< Create a new pty master-slave pair. */
-#define IOCTL_PTY_PTSNAME   13  /*!< Get name of the slave pty. */
+    err = _ioctl(fd, IOCTL_PTY_CREAT, NULL, 0);
+    if (err < 0) {
+        errno = EAGAIN;
+        return -1;
+    }
 
-struct _ioctl_get_args {
-    int fd;
-    unsigned request;
-    void * arg;
-    size_t arg_len;
-};
+    return fd;
+}
 
-#ifndef KERNEL_INTERNAL
-__BEGIN_DECLS
-/**
- * ioctl.
- * @note This is a non-POSIX implementation of ioctl.
- */
-int _ioctl(int fildes, unsigned request, void * arg, size_t arg_len);
-__END_DECLS
-#endif
+int unlockpt(int fildes)
+{
+    return 0;
+}
 
-#endif /* IOCTL_H */
+char * ptsname(int fildes)
+{
+    const char devpath[] = "/dev/";
+    char dev[SPECNAMELEN];
+    char * path;
+    const size_t size = sizeof(devpath) + sizeof(dev);
+    int err;
 
-/**
- * @}
- */
+    path = malloc(size);
+    if (!path) {
+        errno = ENOMEM;
+        return NULL;
+    }
+
+    memcpy(path, devpath, sizeof(devpath));
+    err = _ioctl(fildes, IOCTL_PTY_PTSNAME, path + sizeof(devpath),
+                 size - sizeof(devpath));
+    if (err < 0) {
+        errno = EINVAL;
+        return NULL;
+    }
+
+    return path;
+}

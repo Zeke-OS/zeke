@@ -242,9 +242,15 @@ size_t mbstowcs( wchar_t * _PDCLIB_restrict pwcs, const char * _PDCLIB_restrict 
 size_t wcstombs( char * _PDCLIB_restrict s, const wchar_t * _PDCLIB_restrict pwcs, size_t n );
 */
 
+/* Environ */
 char * getenv(const char * name);
 int setenv(const char * name, const char * value, int rewrite);
 int unsetenv(const char * name);
+
+/* pty */
+int posix_openpt(int flags);
+int unlockpt(int fildes);
+char * ptsname(int fildes);
 
 __END_DECLS
 #endif

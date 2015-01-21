@@ -252,24 +252,18 @@ static int pty_ioctl(struct dev_info * devnfo, uint32_t request,
 {
     struct pty_device * ptydev = pty_get(DEV_MINOR(devnfo->dev_id));
 
-    if (!ptydev && request == IOCTL_PTY_CREAT) {
-        int ret;
-
-        if (arg_len < sizeof(int))
-            return -EINVAL;
-
-        ret = creat_pty();
-        if (ret < 0)
-            return ret;
-        *((int *)arg) = ret;
-
-        return 0;
-    }
+    if (!ptydev && request == IOCTL_PTY_CREAT)
+        return creat_pty();
 
     if (!ptydev)
         return -EINVAL;
 
     switch (request) {
+    case IOCTL_PTY_PTSNAME:
+        if (arg_len == 0)
+            return -EINVAL;
+
+        strlcpy((char *)arg, devnfo->dev_name, arg_len);
     default:
         return -EINVAL;
     }
