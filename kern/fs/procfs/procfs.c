@@ -39,6 +39,7 @@
 #include <kerror.h>
 #include <proc.h>
 #include <fs/ramfs.h>
+#include <fs/dev_major.h>
 #include <fs/procfs.h>
 
 static int procfs_mount(const char * source, uint32_t mode,

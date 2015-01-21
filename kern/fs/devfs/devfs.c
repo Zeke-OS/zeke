@@ -40,6 +40,7 @@
 #include <kerror.h>
 #include <fs/ramfs.h>
 #include <fs/devfs.h>
+#include <fs/dev_major.h>
 
 /**
  * Max tries in case of block read/write returns 0.
