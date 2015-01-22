@@ -57,6 +57,13 @@ int posix_openpt(int flags)
     return fd;
 }
 
+int grantpt(int fildes)
+{
+    int err = _ioctl(fildes, IOCTL_PTY_GRANT, NULL, 0);
+    if (err < 0)
+        return -1;
+}
+
 int unlockpt(int fildes)
 {
     return 0;

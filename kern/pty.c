@@ -259,6 +259,14 @@ static int pty_ioctl(struct dev_info * devnfo, uint32_t request,
         return -EINVAL;
 
     switch (request) {
+    case IOCTL_PTY_GRANT:
+        /* TODO
+         * - The user ID of the slave shall be set to the RUID of the curproc
+         * - GID to an unspecified group?
+         * - rw by the owner
+         * - w by the group
+         *   May return EBADF, EINVAL or EACCES
+         */
     case IOCTL_PTY_PTSNAME:
         if (arg_len == 0)
             return -EINVAL;

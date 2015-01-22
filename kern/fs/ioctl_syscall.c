@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Control devices.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -88,7 +88,7 @@ static int sys_ioctl(void * user_args)
     }
     retval = file->vnode->vnode_ops->ioctl(file, args.request,
             ioargs, args.arg_len);
-    if (retval)
+    if (retval < 0)
         set_errno(-retval);
 
     /* Copyout if request type was get. */

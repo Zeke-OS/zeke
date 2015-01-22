@@ -247,8 +247,20 @@ char * getenv(const char * name);
 int setenv(const char * name, const char * value, int rewrite);
 int unsetenv(const char * name);
 
-/* pty */
+/*
+ * pty
+ */
+
+/**
+ * Open a pty device.
+ */
 int posix_openpt(int flags);
+
+/**
+ * Grant access to the slave pty device.
+ */
+int grantpt(int fildes);
+
 int unlockpt(int fildes);
 char * ptsname(int fildes);
 

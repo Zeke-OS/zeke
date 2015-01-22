@@ -54,8 +54,9 @@
 #define IOCTL_GETBLKSIZE    10  /*!< Get device block size. */
 #define IOCTL_GETBLKCNT     11  /*!< Get device block count. */
 /* pty */
-#define IOCTL_PTY_CREAT     12  /*!< Create a new pty master-slave pair. */
-#define IOCTL_PTY_PTSNAME   13  /*!< Get name of the slave pty. */
+#define IOCTL_PTY_CREAT     50  /*!< Create a new pty master-slave pair. */
+#define IOCTL_PTY_GRANT     51
+#define IOCTL_PTY_PTSNAME   52  /*!< Get name of the slave pty. */
 
 struct _ioctl_get_args {
     int fd;
@@ -66,11 +67,13 @@ struct _ioctl_get_args {
 
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
+
 /**
  * ioctl.
  * @note This is a non-POSIX implementation of ioctl.
  */
 int _ioctl(int fildes, unsigned request, void * arg, size_t arg_len);
+
 __END_DECLS
 #endif
 
