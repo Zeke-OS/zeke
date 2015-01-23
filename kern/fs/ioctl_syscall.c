@@ -45,7 +45,7 @@ static int sys_ioctl(void * user_args)
 {
     struct _ioctl_get_args args;
     file_t * file;
-    void * ioargs = 0;
+    void * ioargs = NULL;
     int err, retval = -1;
 
     err = copyin(user_args, &args, sizeof(args));
@@ -60,24 +60,26 @@ static int sys_ioctl(void * user_args)
         return -1;
     }
 
-    ioargs = kmalloc(args.arg_len);
-    if (!ioargs) {
-        set_errno(ENOMEM);
-        goto out;
-    }
-
-    if (args.request & 1) { /* Get request */
-        if (!useracc(user_args, args.arg_len, VM_PROT_WRITE)) {
-            set_errno(EFAULT);
+    if (args.arg) {
+        ioargs = kmalloc(args.arg_len);
+        if (!ioargs) {
+            set_errno(ENOMEM);
             goto out;
         }
-        /* Get request doesn't need copyin */
-    } else { /* Set request */
-        /* Set operation needs copyin */
-        err = copyin(args.arg, ioargs, args.arg_len);
-        if (err) {
-            set_errno(EFAULT);
-            goto out;
+
+        if (args.request & 1) { /* Get request */
+            if (!useracc(args.arg, args.arg_len, VM_PROT_WRITE)) {
+                set_errno(EFAULT);
+                goto out;
+            }
+            /* Get request doesn't need copyin */
+        } else { /* Set request */
+            /* Set operation needs copyin */
+            err = copyin(args.arg, ioargs, args.arg_len);
+            if (err) {
+                set_errno(EFAULT);
+                goto out;
+            }
         }
     }
 
@@ -87,7 +89,7 @@ static int sys_ioctl(void * user_args)
         goto out;
     }
     retval = file->vnode->vnode_ops->ioctl(file, args.request,
-            ioargs, args.arg_len);
+                                           ioargs, args.arg_len);
     if (retval < 0)
         set_errno(-retval);
 
