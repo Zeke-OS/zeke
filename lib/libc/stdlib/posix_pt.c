@@ -34,12 +34,16 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
+static unsigned last_ptyid;
+
+/* TODO Not re-entrant */
 int posix_openpt(int flags)
 {
-    int fd, err;
+    int fd, ret;
 
     fd = open("/dev/ptmx", flags & (O_RDWR | O_NOCTTY));
     if (fd < 0) {
@@ -48,20 +52,28 @@ int posix_openpt(int flags)
         return fd;
     }
 
-    err = _ioctl(fd, IOCTL_PTY_CREAT, NULL, 0);
-    if (err < 0) {
+    ret = _ioctl(fd, IOCTL_PTY_CREAT, NULL, 0);
+    if (ret < 0) {
         errno = EAGAIN;
         return -1;
     }
 
+    lseek(fd, (off_t)last_ptyid, SEEK_SET);
+
+    last_ptyid = ret;
     return fd;
 }
 
 int grantpt(int fildes)
 {
-    int err = _ioctl(fildes, IOCTL_PTY_GRANT, NULL, 0);
-    if (err < 0)
-        return -1;
+     /* TODO
+      * - The user ID of the slave shall be set to the RUID of the curproc
+      * - GID to an unspecified group?
+      * - rw by the owner
+      * - w by the group
+      *   May return EBADF, EINVAL or EACCES
+      */
+
     return 0;
 }
 
@@ -73,10 +85,8 @@ int unlockpt(int fildes)
 char * ptsname(int fildes)
 {
     const char devpath[] = "/dev/";
-    char dev[SPECNAMELEN];
     char * path;
-    const size_t size = sizeof(devpath) + sizeof(dev);
-    int err;
+    const size_t size = sizeof(devpath) + SPECNAMELEN;
 
     path = malloc(size);
     if (!path) {
@@ -84,13 +94,7 @@ char * ptsname(int fildes)
         return NULL;
     }
 
-    memcpy(path, devpath, sizeof(devpath));
-    err = _ioctl(fildes, IOCTL_PTY_PTSNAME, path + sizeof(devpath),
-                 size - sizeof(devpath));
-    if (err < 0) {
-        errno = EINVAL;
-        return NULL;
-    }
+    snprintf(path, size, "/dev/pty%u", last_ptyid);
 
     return path;
 }

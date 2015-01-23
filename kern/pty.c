@@ -250,28 +250,15 @@ static int ptyslave_write(struct tty * tty, off_t blkno,
 static int pty_ioctl(struct dev_info * devnfo, uint32_t request,
                      void * arg, size_t arg_len)
 {
-    struct pty_device * ptydev = pty_get(DEV_MINOR(devnfo->dev_id));
+    struct pty_device * pty_slave = pty_get(DEV_MINOR(devnfo->dev_id));
 
-    if (!ptydev && request == IOCTL_PTY_CREAT)
+    if (!pty_slave && request == IOCTL_PTY_CREAT)
         return creat_pty();
 
-    if (!ptydev)
+    if (!pty_slave)
         return -EINVAL;
 
     switch (request) {
-    case IOCTL_PTY_GRANT:
-        /* TODO
-         * - The user ID of the slave shall be set to the RUID of the curproc
-         * - GID to an unspecified group?
-         * - rw by the owner
-         * - w by the group
-         *   May return EBADF, EINVAL or EACCES
-         */
-    case IOCTL_PTY_PTSNAME:
-        if (arg_len == 0)
-            return -EINVAL;
-
-        strlcpy((char *)arg, devnfo->dev_name, arg_len);
     default:
         return -EINVAL;
     }

@@ -55,8 +55,6 @@
 #define IOCTL_GETBLKCNT     11  /*!< Get device block count. */
 /* pty */
 #define IOCTL_PTY_CREAT     50  /*!< Create a new pty master-slave pair. */
-#define IOCTL_PTY_GRANT     51
-#define IOCTL_PTY_PTSNAME   52  /*!< Get name of the slave pty. */
 
 struct _ioctl_get_args {
     int fd;
