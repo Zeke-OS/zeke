@@ -283,7 +283,7 @@ pid_t proc_fork(pid_t pid)
      * We left main_thread null if calling process has no main thread.
      */
 #ifdef configPROC_DEBUG
-    KERROR(KERROR_DEBUG, "Handle main_thread");
+    KERROR(KERROR_DEBUG, "Handle main_thread\n");
 #endif
     if (old_proc->main_thread) {
 #ifdef configPROC_DEBUG
@@ -329,6 +329,9 @@ pid_t proc_fork(pid_t pid)
 #endif
 
     if (new_proc->main_thread) {
+#ifdef configPROC_DEBUG
+        KERROR(KERROR_DEBUG, "exec new_proc->main_thread\n");
+#endif
         sched_thread_set_exec(new_proc->main_thread->id);
     }
 
@@ -549,7 +552,7 @@ pid_t proc_get_random_pid(void)
     PROC_UNLOCK();
 
 #ifdef configPROC_DEBUG
-    kputs("done\n");
+    kputs(" done\n");
 #endif
 
     return newpid;

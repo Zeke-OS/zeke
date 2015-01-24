@@ -125,8 +125,6 @@ interrupt_sys:
     .globl  interrupt_pabt
     .type   interrupt_pabt,%function
 interrupt_pabt:
-_tag:                       /* TODO */
-    b       _tag
     subs    pc, lr, #0x4
 
 

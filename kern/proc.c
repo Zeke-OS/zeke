@@ -248,6 +248,10 @@ void procarr_insert(proc_info_t * new_proc)
 {
     KASSERT(new_proc, "new_proc can't be NULL");
 
+#ifdef configPROC_DEBUG
+    KERROR(KERROR_DEBUG, "procarr_insert(%d)\n", new_proc->pid);
+#endif
+
     PROC_LOCK();
     if (new_proc->pid > act_maxproc || new_proc->pid < 0) {
         KERROR(KERROR_ERR, "Inserted new_proc out of bounds");

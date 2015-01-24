@@ -222,6 +222,7 @@ fail:
 
 int procfs_mkentry(const proc_info_t * proc)
 {
+    const char fail[] = "Failed to create a procfs entry\n";
     vnode_t * pdir;
     char name[10];
     size_t name_len;
@@ -241,16 +242,28 @@ int procfs_mkentry(const proc_info_t * proc)
     err = vn_procfs->vnode_ops->mkdir(vn_procfs, name, name_len, PROCFS_PERMS);
     if (err == -EEXIST)
         return 0;
-    else if (err)
+    else if (err) {
+#ifdef configPROCFS_DEBUG
+        KERROR(KERROR_DEBUG, fail);
+#endif
         return err;
+    }
 
     err = vn_procfs->vnode_ops->lookup(vn_procfs, name, name_len, &pdir);
-    if (err)
+    if (err) {
+#ifdef configPROCFS_DEBUG
+        KERROR(KERROR_DEBUG, fail);
+#endif
         return err;
+    }
 
     err = create_status_file(pdir, proc);
-    if (err)
+    if (err) {
+#ifdef configPROCFS_DEBUG
+        KERROR(KERROR_DEBUG, fail);
+#endif
         return err;
+    }
 
     return 0;
 }
@@ -286,11 +299,14 @@ int procfs_rmentry(pid_t pid)
 static int create_status_file(vnode_t * pdir, const proc_info_t * proc)
 {
     vnode_t * vn;
-    struct procfs_info * spec = kcalloc(1, sizeof(struct procfs_info));
+    struct procfs_info * spec;
     int err;
 
+    KASSERT(pdir != NULL, "pdir must be set");
+
+    spec = kcalloc(1, sizeof(struct procfs_info));
     if (!spec)
-        return -ENOTDIR;
+        return -ENOMEM;
 
     /* Create a specinfo */
     spec->ftype = PROCFS_STATUS;

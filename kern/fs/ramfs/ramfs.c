@@ -296,9 +296,17 @@ int ramfs_get_vnode(fs_superblock_t * sb, ino_t * vnode_num, vnode_t ** vnode)
         return -ENOENT; /* inode can't exist. */
 
     if (vnode) {
-        *vnode = &(ramfs_sb->ramfs_iarr[*vnode_num]->in_vnode);
-        if (vref(*vnode))
-            return -EINVAL; /* vnode was removed during the op. */
+        struct ramfs_inode * in;
+        struct vnode_t * vn;
+
+        in = ramfs_sb->ramfs_iarr[*vnode_num];
+        if (!in)
+            return -ENOENT;
+
+        vn = &in->in_vnode;
+        if (vref(vn))
+            return -ENOENT; /* vnode was removed during the op. */
+        *vnode = vn;
     }
 
     return 0;

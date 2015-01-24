@@ -414,6 +414,7 @@ static void thread_init_kstack(threadInfo_t * tp)
     kstack->b_uflags    = 0;
     kstack->b_mmu.vaddr = MMU_VADDR_TKSTACK_START;
     kstack->b_mmu.pt    = &mmu_pagetable_system;
+    kstack->b_mmu.control |= MMU_CTRL_XN;
 
     tp->kstack_region = kstack;
 }
