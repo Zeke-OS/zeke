@@ -253,9 +253,6 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
 
     in = kcalloc(1, sizeof(struct fatfs_inode));
     if (!in) {
-#ifdef configFATFS_DEBUG
-        KERROR(KERROR_DEBUG, "ENOMEM\n");
-#endif
         retval = -ENOMEM;
         goto fail;
     }
@@ -308,9 +305,6 @@ chk_err:
     /* Insert to cache */
     err = vfs_hash_insert(vn, vn_hash, &xvp, fatfs_vncmp, fpath);
     if (err) {
-#ifdef configFATFS_DEBUG
-        KERROR(KERROR_DEBUG, "ENOMEM\n");
-#endif
         retval = -ENOMEM;
         goto fail;
     }
@@ -357,7 +351,7 @@ static vnode_t * create_root(fs_superblock_t * sb)
 
     in->in_fpath = rootpath;
 
-    vref(&in->in_vnode);
+    vrefset(&in->in_vnode, 1);
     return &in->in_vnode;
 }
 
@@ -386,6 +380,8 @@ static int fatfs_lookup(vnode_t * dir, const char * name, size_t name_len,
     struct vnode * vn = NULL;
     int err, retval = 0;
 
+    KASSERT(dir != NULL, "dir must be set");
+
     /* Format full path */
     in_fpath = format_fpath(indir, name, name_len);
     if (!in_fpath)
@@ -398,6 +394,7 @@ static int fatfs_lookup(vnode_t * dir, const char * name, size_t name_len,
 #ifdef configFATFS_DEBUG
         KERROR(KERROR_DEBUG, "Lookup emulating \".\"\n");
 #endif
+        (void)vref(dir);
         *result = dir;
 
         kfree(in_fpath);
@@ -441,8 +438,13 @@ static int fatfs_lookup(vnode_t * dir, const char * name, size_t name_len,
     } else { /* not cached */
         struct fatfs_inode * in;
 
+#ifdef configFATFS_DEBUG
+        KERROR(KERROR_DEBUG, "vn not in vfs_hash\n");
+#endif
+
         /*
          * Create a inode and fetch data from the device.
+         * This also vrefs.
          */
         err = create_inode(&in, sb, in_fpath, vn_hash, O_RDWR);
         if (err) {

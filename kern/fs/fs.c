@@ -164,7 +164,8 @@ again:  /* Get vnode by name in this dir. */
         orig_vn = *result;
         retval = orig_vn->vnode_ops->lookup(*result, nodename,
                 strlenn(nodename, NAME_MAX) + 1, &vnode);
-        vrele(orig_vn);
+        if (!retval)
+            vrele(orig_vn);
         if (retval != 0 && retval != -EDOM) {
             goto out;
         } else if (!vnode) {

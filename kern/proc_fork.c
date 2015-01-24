@@ -273,8 +273,7 @@ pid_t proc_fork(pid_t pid)
 #ifdef configPROC_DEBUG
         KERROR(KERROR_DEBUG, "Increment refcount for the cwd\n");
 #endif
-        //vref(new_proc->cwd); /* Increment refcount for the cwd */
-        new_proc->cwd->vn_refcount++; /* TODO Not safe. */
+        vref(new_proc->cwd); /* Increment refcount for the cwd */
     }
 
     /* A process shall be created with a single thread. If a multi-threaded

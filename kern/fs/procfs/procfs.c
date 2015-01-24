@@ -240,9 +240,9 @@ int procfs_mkentry(const proc_info_t * proc)
     name_len = uitoa32(name, proc->pid);
 
     err = vn_procfs->vnode_ops->mkdir(vn_procfs, name, name_len, PROCFS_PERMS);
-    if (err == -EEXIST)
+    if (err == -EEXIST) {
         return 0;
-    else if (err) {
+    } else if (err) {
 #ifdef configPROCFS_DEBUG
         KERROR(KERROR_DEBUG, fail);
 #endif
@@ -262,6 +262,8 @@ int procfs_mkentry(const proc_info_t * proc)
 #ifdef configPROCFS_DEBUG
         KERROR(KERROR_DEBUG, fail);
 #endif
+        vrele(pdir);
+
         return err;
     }
 
@@ -289,6 +291,7 @@ int procfs_rmentry(pid_t pid)
 
     pdir->vnode_ops->unlink(pdir, PROCFS_FN_STATUS, sizeof(PROCFS_FN_STATUS));
     vn_procfs->vnode_ops->rmdir(vn_procfs, name, name_len);
+    vrele(vn_procfs);
 
     return 0;
 }
