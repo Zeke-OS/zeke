@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Atomic integer operations.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -59,8 +59,8 @@ static inline int atomic_set(atomic_t * v, int i)
         "try%=:\n\t"
         "LDREX      %[old], [%[addr]]\n\t"
         "STREX      %[res], %[new], [%[addr]]\n\t"
-        "CMP        %[res], #1\n\t"
-        "BEQ        try%="
+        "CMP        %[res], #0\n\t"
+        "BNE        try%="
         : [old]"+r" (old), [new]"+r" (i), [res]"+r" (err), [addr]"+r" (v)
     );
 
@@ -76,8 +76,8 @@ static inline int atomic_add(atomic_t * v, int i)
         "LDREX      %[old], [%[addr]]\n\t"
         "ADD        %[new], %[old], %[i]\n\t"
         "STREX      %[res], %[new], [%[addr]]\n\t"
-        "CMP        %[res], #1\n\t"
-        "BEQ        try%="
+        "CMP        %[res], #0\n\t"
+        "BNE        try%="
         : [old]"+r" (old), [new]"+r" (new), [res]"+r" (err),
           [addr]"+r" (v), [i]"+r" (i)
     );
@@ -94,8 +94,8 @@ static inline int atomic_sub(atomic_t * v, int i)
         "LDREX      %[old], [%[addr]]\n\t"
         "SUB        %[new], %[old], %[i]\n\t"
         "STREX      %[res], %[new], [%[addr]]\n\t"
-        "CMP        %[res], #1\n\t"
-        "BEQ        try%="
+        "CMP        %[res], #0\n\t"
+        "BNE        try%="
         : [old]"+r" (old), [new]"+r" (new), [res]"+r" (err),
           [addr]"+r" (v), [i]"+r" (i)
     );
@@ -122,8 +122,8 @@ static inline int atomic_cmpxchg(atomic_t * v, int expect, int new)
         "LDREX      %[old], [%[addr]]\n\t"
         "TEQ        %[old], %[expect]\n\t"
         "STREXEQ    %[res], %[new], [%[addr]]\n\t"
-        "CMP        %[res], #1\n\t"
-        "BEQ        try%="
+        "CMP        %[res], #0\n\t"
+        "BNE        try%="
         : [old]"+r" (old), [expect]"+r" (expect), [new]"+r" (new),
           [res]"+r" (err), [addr]"+r" (v)
     );
@@ -141,8 +141,8 @@ static inline void * atomic_cmpxchg_ptr(void * ptr, void * expect, void * new)
         "LDREX      %[old], [%[addr]]\n\t"
         "TEQ        %[old], %[expect]\n\t"
         "STREXEQ    %[res], %[new], [%[addr]]\n\t"
-        "CMP        %[res], #1\n\t"
-        "BEQ        try%="
+        "CMP        %[res], #0\n\t"
+        "BNE        try%="
         : [old]"+r" (old), [expect]"+r" (expect), [new]"+r" (new),
           [res]"+r" (err), [addr]"+r" (ptr)
     );
