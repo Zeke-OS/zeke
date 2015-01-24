@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Virtual file system syscalls.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -203,7 +203,7 @@ static int sys_lseek(void * user_args)
 static int sys_open(void * user_args)
 {
     struct _fs_open_args * args = 0;
-    vnode_t * file;
+    vnode_t * file = NULL;
     int err, retval = -1;
 
     /* Copyin args struct */
@@ -249,6 +249,8 @@ static int sys_open(void * user_args)
     }
 
 out:
+    if (file)
+        vrele(file);
     freecpystruct(args);
     return retval;
 }
@@ -638,6 +640,8 @@ static int sys_filestat(void * user_args)
         goto out;
     }
 
+    vrele(vnode);
+
 ready:
     copyout(&stat_buf, args->buf, sizeof(struct stat));
     retval = 0;
@@ -649,7 +653,7 @@ out:
 static int sys_access(void * user_args)
 {
     struct _fs_access_args * args = 0;
-    vnode_t * vnode;
+    vnode_t * vnode = NULL;
     uid_t euid;
     gid_t egid;
     int err, retval = -1;
@@ -676,9 +680,10 @@ static int sys_access(void * user_args)
         }
     } else { /* faccessat() */
         fs_namei_proc(&vnode, args->fd, args->path, AT_FDARG);
-
-        set_errno(ENOTSUP);
-        return -1;
+        if (err) {
+            set_errno(-err);
+            goto out;
+        }
     }
 
     if (args->flag & AT_EACCESS) {
@@ -696,6 +701,8 @@ static int sys_access(void * user_args)
     retval = chkperm_vnode(vnode, euid, egid, args->amode);
 
 out:
+    if (vnode)
+        vrele(vnode);
     return retval;
 }
 
@@ -759,7 +766,7 @@ static int sys_umask(void * user_args)
 static int sys_mount(void * user_args)
 {
     struct _fs_mount_args * args = 0;
-    vnode_t * mpt;
+    vnode_t * mpt = NULL;
     int err;
     int retval = -1;
 
@@ -801,6 +808,8 @@ static int sys_mount(void * user_args)
 
     retval = 0;
 out:
+    if (mpt)
+        vrele(mpt);
     freecpystruct(args);
     return retval;
 }

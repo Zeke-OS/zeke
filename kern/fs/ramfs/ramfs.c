@@ -297,7 +297,8 @@ int ramfs_get_vnode(fs_superblock_t * sb, ino_t * vnode_num, vnode_t ** vnode)
 
     if (vnode) {
         *vnode = &(ramfs_sb->ramfs_iarr[*vnode_num]->in_vnode);
-        vref(*vnode);
+        if (vref(*vnode))
+            return -EINVAL; /* vnode was removed during the op. */
     }
 
     return 0;
@@ -317,7 +318,7 @@ int ramfs_delete_vnode(vnode_t * vnode)
 
     inode = get_inode_of_vnode(vnode);
 
-    vrele(&inode->in_vnode); /* TODO Concurrency issues will arise */
+    vrele(&inode->in_vnode);
     if ((inode->in_nlink == 0) && (vrefcnt(&inode->in_vnode) <= 0)) {
         /* TODO Clear mutexes, queues etc. */
         destroy_inode_data(inode);
@@ -392,7 +393,6 @@ int ramfs_create(vnode_t * dir, const char * name, size_t name_len, mode_t mode,
     /* Insert inode to the inode lookup table of its superblock. */
     insert_inode(inode);
 
-
     /* Init file data section. */
 #define BLK_SIZE (5 * 1024)
 #define BLK_COUNT 1
@@ -418,7 +418,7 @@ int ramfs_create(vnode_t * dir, const char * name, size_t name_len, mode_t mode,
     }
 
     *result = vnode;
-    vref(*result);
+    vrefset(*result, 0);
 out:
     return retval;
 }
@@ -456,8 +456,10 @@ int ramfs_lookup(vnode_t * dir, const char * name, size_t name_len,
                           * Broken link? */
     }
 
-    if (*result == dir)
+    if (*result == dir) {
+        vrele(*result);
         return -EDOM;
+    }
 
     return 0;
 }
@@ -516,6 +518,7 @@ int ramfs_unlink(vnode_t * dir, const char * name, size_t name_len)
         goto out;
 
     inode->in_nlink--; /* Decrement hard link count. */
+    vrele(vn);
     if (inode->in_nlink <= 0)
         ramfs_delete_vnode(vn);
 
@@ -603,6 +606,8 @@ int ramfs_rmdir(vnode_t * dir,  const char * name, size_t name_len)
     dh_unlink(inode->in.dir, RFS_DOT);
     dh_unlink(inode->in.dir, RFS_DOTDOT);
     dh_unlink(inode_dir->in.dir, name);
+
+    vrele(vn);
 
 out:
     return retval;
@@ -731,6 +736,7 @@ static vnode_t * create_root(ramfs_sb_t * ramfs_sb)
     ramfs_link(retval, retval, RFS_DOT, sizeof(RFS_DOT) - 1);
     ramfs_link(retval, retval, RFS_DOTDOT, sizeof(RFS_DOTDOT) - 1);
 
+    vrefset(retval, 2);
 out:
     return retval;
 }

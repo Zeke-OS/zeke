@@ -132,6 +132,7 @@ int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str, int oflags
     char * path;
     char * nodename;
     char * lasts;
+    struct vnode * orig_vn;
     int retval = 0;
 
     if (!(result && root && root->vnode_ops && str))
@@ -151,6 +152,7 @@ int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str, int oflags
      * We don't care if root is not a directory because lookup will spot it
      * anyway.
      */
+    vref(root);
     *result = root;
     do {
         vnode_t * vnode = NULL;
@@ -159,9 +161,11 @@ int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str, int oflags
             continue;
 
 again:  /* Get vnode by name in this dir. */
-        retval = (*result)->vnode_ops->lookup(*result, nodename,
+        orig_vn = *result;
+        retval = orig_vn->vnode_ops->lookup(*result, nodename,
                 strlenn(nodename, NAME_MAX) + 1, &vnode);
-        if (retval && retval != -EDOM) {
+        vrele(orig_vn);
+        if (retval != 0 && retval != -EDOM) {
             goto out;
         } else if (!vnode) {
             retval = -ENOENT;
@@ -169,12 +173,13 @@ again:  /* Get vnode by name in this dir. */
         }
 
         /*
-         * If retval == -EDOM the result and vnode are same so we are at a root
-         * of a physical file system and trying to exit its mountpoint, this
-         * requires some additional processing as follows.
+         * If retval == -EDOM the result and vnode are equal so we are at
+         * the root of the physical file system and trying to exit its
+         * mountpoint, this requires some additional processing as follows.
          */
         if (retval == -EDOM && !strcmp(nodename, "..") &&
             vnode->vn_prev_mountpoint != vnode) {
+
             /* Get prev dir of prev fs sb from mount point. */
             while (vnode->vn_prev_mountpoint != vnode) {
                 /*
@@ -184,9 +189,13 @@ again:  /* Get vnode by name in this dir. */
                 vnode = vnode->vn_prev_mountpoint;
             }
             *result = vnode;
-            /* Start from begining to actually get to the prev dir. */
+            vref(vnode);
+
+            /* Restart from the begining to get the actual prev dir. */
             goto again;
         } else {
+            orig_vn = vnode;
+
             /*
              * TODO
              * - soft links support
@@ -199,6 +208,9 @@ again:  /* Get vnode by name in this dir. */
                 vnode = vnode->vn_mountpoint;
             }
             *result = vnode;
+
+            vrele(orig_vn);
+            vref(vnode);
         }
         retval = 0;
 
@@ -208,6 +220,7 @@ again:  /* Get vnode by name in this dir. */
     } while ((nodename = kstrtok(0, PATH_DELIMS, &lasts)));
 
     if ((oflags & O_DIRECTORY) && !S_ISDIR((*result)->vn_mode)) {
+        vrele(*result);
         retval = -ENOTDIR;
         goto out;
     }
@@ -459,27 +472,33 @@ int fs_fildes_set(file_t * fildes, vnode_t * vnode, int oflags)
 int fs_fildes_create_cproc(vnode_t * vnode, int oflags)
 {
     file_t * new_fildes;
-    int err;
+    int err, retval;
 
     if (!vnode)
         return -EINVAL;
+    vref(vnode);
 
     if (curproc->euid == 0)
         goto perms_ok;
 
     /* Check if user perms gives access */
     err = chkperm_vnode_cproc(vnode, oflags);
-    if (err)
-        return err;
+    if (err) {
+        retval = err;
+        goto out;
+    }
 
 perms_ok:
     /* Check other oflags */
-    if ((oflags & O_DIRECTORY) && (!S_ISDIR(vnode->vn_mode)))
-        return -ENOTDIR;
+    if ((oflags & O_DIRECTORY) && (!S_ISDIR(vnode->vn_mode))) {
+        retval = -ENOTDIR;
+        goto out;
+    }
 
     new_fildes = kcalloc(1, sizeof(file_t));
     if (!new_fildes) {
-        return -ENOMEM;
+        retval = -ENOMEM;
+        goto out;
     }
 
     if (S_ISDIR(vnode->vn_mode))
@@ -488,11 +507,16 @@ perms_ok:
     int fd = fs_fildes_cproc_next(new_fildes, 0);
     if (fd < 0) {
         kfree(new_fildes);
-        return fd;
+        retval = fd;
+        goto out;
     }
     fs_fildes_set(curproc->files->fd[fd], vnode, oflags);
 
-    return fd;
+    retval = fd;
+out:
+    if (retval < 0)
+        vrele(vnode);
+    return retval;
 }
 
 int fs_fildes_cproc_next(file_t * new_file, int start)
@@ -562,6 +586,7 @@ file_t * fs_fildes_ref(files_t * files, int fd, int count)
      * to free a filedes concurrently (the owener itself).
      */
     if (free) {
+        vrele(fildes->vnode);
         kfree(fildes);
         files->fd[fd] = 0;
         return 0;
@@ -707,9 +732,9 @@ fail:
  */
 static int getvndir(const char * pathname, vnode_t ** dir, char ** filename, int flag)
 {
-    vnode_t * file;
-    char * path = 0;
-    char * name = 0;
+    vnode_t * vn_file;
+    char * path = NULL;
+    char * name = NULL;
     int err;
 
     if (pathname[0] == '\0') {
@@ -717,9 +742,10 @@ static int getvndir(const char * pathname, vnode_t ** dir, char ** filename, int
         goto out;
     }
 
-    err = fs_namei_proc(&file, -1, pathname, AT_FDCWD);
+    err = fs_namei_proc(&vn_file, -1, pathname, AT_FDCWD);
     if (flag & O_CREAT) { /* File should not exist */
         if (err == 0) {
+            vrele(vn_file);
             err = -EEXIST;
             goto out;
         } else if (err != -ENOENT) {
@@ -728,6 +754,7 @@ static int getvndir(const char * pathname, vnode_t ** dir, char ** filename, int
     } else if (err) { /* File should exist */
         goto out;
     }
+    vrele(vn_file);
 
     err = parse_filepath(pathname, &path, &name);
     if (err)
@@ -743,13 +770,14 @@ static int getvndir(const char * pathname, vnode_t ** dir, char ** filename, int
 out:
     kfree(path);
     kfree(name);
+
     return err;
 }
 
 int fs_creat_cproc(const char * pathname, mode_t mode, vnode_t ** result)
 {
-    char * name = 0;
-    vnode_t * dir;
+    char * name = NULL;
+    vnode_t * dir = NULL;
     int retval = 0;
 
     retval = getvndir(pathname, &dir, &name, O_CREAT);
@@ -757,22 +785,25 @@ int fs_creat_cproc(const char * pathname, mode_t mode, vnode_t ** result)
         goto out;
 
     /* We know that the returned vnode is a dir so we can just call mknod() */
-    *result = 0;
+    *result = NULL;
     mode &= ~S_IFMT; /* Filter out file type bits */
     mode &= ~curproc->files->umask;
     retval = dir->vnode_ops->create(dir, name, NAME_MAX, mode, result);
 
 out:
+    if (dir)
+        vrele(dir);
     kfree(name);
+
     return retval;
 }
 
 int fs_link_curproc(const char * path1, size_t path1_len,
         const char * path2, size_t path2_len)
 {
-    char * targetname = 0;
-    vnode_t * vn_src;
-    vnode_t * vndir_dst;
+    char * targetname = NULL;
+    vnode_t * vn_src = NULL;
+    vnode_t * vndir_dst = NULL;
     int err;
 
     /* Get the source vnode */
@@ -806,17 +837,22 @@ int fs_link_curproc(const char * path1, size_t path1_len,
     err = vndir_dst->vnode_ops->link(vndir_dst, vn_src, targetname, NAME_MAX);
 
 out:
+    if (vn_src)
+        vrele(vn_src);
+    if (vndir_dst)
+        vrele(vndir_dst);
     kfree(targetname);
+
     return err;
 }
 
 int fs_unlink_curproc(int fd, const char * path, size_t path_len, int atflags)
 {
-    char * dirpath = 0;
-    char * filename = 0;
+    char * dirpath = NULL;
+    char * filename = NULL;
     struct stat stat;
-    vnode_t * dir;
-    vnode_t * fnode;
+    vnode_t * dir = NULL;
+    vnode_t * fnode = NULL;
     int err;
 
     err = fs_namei_proc(&fnode, fd, path, atflags);
@@ -861,15 +897,20 @@ int fs_unlink_curproc(int fd, const char * path, size_t path_len, int atflags)
     err = dir->vnode_ops->unlink(dir, filename, path_len);
 
 out:
+    if (fnode)
+        vrele(fnode);
+    if (dir)
+        vrele(dir);
     kfree(dirpath);
     kfree(filename);
+
     return err;
 }
 
 int fs_mkdir_curproc(const char * pathname, mode_t mode)
 {
     char * name = 0;
-    vnode_t * dir;
+    vnode_t * dir = NULL;
     int retval = 0;
 
     retval = getvndir(pathname, &dir, &name, O_CREAT);
@@ -891,14 +932,17 @@ int fs_mkdir_curproc(const char * pathname, mode_t mode)
     retval = dir->vnode_ops->mkdir(dir, name, NAME_MAX, mode);
 
 out:
+    if (dir)
+        vrele(dir);
     kfree(name);
+
     return retval;
 }
 
 int fs_rmdir_curproc(const char * pathname)
 {
     char * name = 0;
-    vnode_t * dir;
+    vnode_t * dir = NULL;
     int retval;
 
     retval = getvndir(pathname, &dir, &name, 0);
@@ -918,7 +962,10 @@ int fs_rmdir_curproc(const char * pathname)
     retval = dir->vnode_ops->rmdir(dir, name, NAME_MAX);
 
 out:
+    if (dir)
+        vrele(dir);
     kfree(name);
+
     return retval;
 }
 
@@ -991,9 +1038,9 @@ vnode_t * fs_create_pseudofs_root(const char * fsname, int majornum)
     if (!rootnode)
         return NULL;
 
-    /* Tem root dir */
+    /* Temp root dir */
     rootnode->vn_mountpoint = rootnode;
-    rootnode->vn_refcount = 1;
+    vrefset(rootnode, 1);
     mtx_init(&rootnode->vn_lock, VN_LOCK_MODES);
 
     err = fs_mount(rootnode, "", "ramfs", 0, "", 1);
@@ -1035,14 +1082,53 @@ int vrefcnt(struct vnode * vnode)
     return retval;
 }
 
-void vref(vnode_t * vnode)
+void vrefset(vnode_t * vnode, int refcnt)
 {
-    atomic_inc(&vnode->vn_refcount);
+    atomic_set(&vnode->vn_refcount, refcnt);
+}
+
+int vref(vnode_t * vnode)
+{
+    int prev;
+
+    /*
+     * TODO refcount verification is a good idea but currently vnode refcounting
+     * is buggy so for easier debugging we let refcounts go below zero.
+     */
+
+#if 0
+    prev = atomic_read(&vnode->vn_refcount);
+    if (prev < 0) {
+        return -ENOLINK;
+    }
+#endif
+    prev = atomic_inc(&vnode->vn_refcount);
+    if (prev < 0) {
+#if 0
+        /* TODO a better solution is needed */
+        panic("vn refcount is inconsistent");
+#endif
+        KERROR(KERROR_ERR, "vref(%s,%l): vn refcount is inconsistent (%d)\n",
+                vnode->sb->fs->fsname, vnode->vn_num, prev);
+    }
+
+#if 0
+    KERROR(KERROR_DEBUG, "vref(), %d\n", prev);
+#endif
+
+    return 0;
 }
 
 void vrele(vnode_t * vnode)
 {
-    atomic_dec(&vnode->vn_refcount);
+    int prev;
+
+    prev = atomic_dec(&vnode->vn_refcount);
+
+#if 0
+    KERROR(KERROR_DEBUG, "vrele(%s,%l), %d\n", vnode->sb->fs->fsname,
+           vnode->vn_num, prev);
+#endif
 }
 
 void vput(vnode_t * vnode)

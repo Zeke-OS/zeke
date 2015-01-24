@@ -590,10 +590,13 @@ void fs_vnode_init(vnode_t * vnode, ino_t vn_num, struct fs_superblock * sb,
  */
 int vrefcnt(struct vnode * vnode);
 
+void vrefset(vnode_t * vnode, int refcnt);
+
 /**
  * Increment the vn_refcount field of a vnode.
+ * @return 0 if referenced; -ENOLINK if ref failed.
  */
-void vref(vnode_t * vnode);
+int vref(vnode_t * vnode);
 
 /** @addtogroup vput, vrele, vunref
  * Decrement the refcount for a vnode.

@@ -207,7 +207,7 @@ static void mount_rootfs(void)
     }
     kernel_proc->croot = tmp;
     kernel_proc->croot->vn_mountpoint = kernel_proc->croot;
-    kernel_proc->croot->vn_refcount = 1;
+    vrefset(kernel_proc->croot, 2);
 
     /* TODO Should use sysctl to get rootfs path and type */
     ret = fs_mount(kernel_proc->croot, configROOTFS_PATH, configROOTFS_NAME, 0,

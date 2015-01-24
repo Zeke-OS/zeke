@@ -322,7 +322,7 @@ chk_err:
     }
 
     *result = in;
-    vref(vn);
+    vrefset(vn, 1);
     return 0;
 fail:
 #ifdef configFATFS_DEBUG
@@ -357,6 +357,7 @@ static vnode_t * create_root(fs_superblock_t * sb)
 
     in->in_fpath = rootpath;
 
+    vref(&in->in_vnode);
     return &in->in_vnode;
 }
 
@@ -435,7 +436,6 @@ static int fatfs_lookup(vnode_t * dir, const char * name, size_t name_len,
         goto fail;
     }
     if (vn) { /* found it in vfs_hash */
-        vref(vn);
         *result = vn;
         retval = 0;
     } else { /* not cached */
@@ -450,9 +450,8 @@ static int fatfs_lookup(vnode_t * dir, const char * name, size_t name_len,
             goto fail;
         }
 
-        /* Vn is already referenced so just return. */
-        *result = &in->in_vnode;
         in_fpath = NULL; /* shall not be freed. */
+        *result = &in->in_vnode;
         retval = 0;
     }
 

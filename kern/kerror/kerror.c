@@ -53,7 +53,7 @@ vnode_ops_t kerror_vops = {
 
 vnode_t kerror_vnode = {
     .vn_num = 0,
-    .vn_refcount = 0,
+    .vn_refcount = 1,
     .vn_len = SIZE_MAX,
     .vnode_ops = &kerror_vops
 };
