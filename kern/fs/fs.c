@@ -202,9 +202,8 @@ again:  /* Get vnode by name in this dir. */
         }
         retval = 0;
 
-#if configDEBUG >= KERROR_DEBUG
-        if (*result == NULL)
-            panic("vfs is in inconsistent state");
+#if config_FS_DEBUG
+        KASSERT(*result != NULL, "vfs is in inconsistent state");
 #endif
     } while ((nodename = kstrtok(0, PATH_DELIMS, &lasts)));
 
@@ -891,8 +890,6 @@ int fs_mkdir_curproc(const char * pathname, mode_t mode)
     mode &= ~curproc->files->umask;
     retval = dir->vnode_ops->mkdir(dir, name, NAME_MAX, mode);
 
-    /* TODO Set owner */
-
 out:
     kfree(name);
     return retval;
@@ -1068,8 +1065,7 @@ void fs_vnode_cleanup(vnode_t * vnode)
     struct buf * var, * nxt;
 
 #ifdef config_FS_DEBUG
-    if (!vnode)
-        panic("vnode can't be null.");
+    KASSERT(vnode != NULL, "vnode can't be null.");
 #endif
 
     /* Release associated buffers. */

@@ -128,14 +128,14 @@ int dev_make(struct dev_info * devnfo, uid_t uid, gid_t gid, int perms,
     }
     retval = vn_devfs->vnode_ops->mknod(vn_devfs,
             devnfo->dev_name, sizeof(devnfo->dev_name),
-            (devnfo->block_size > 1) ? S_IFBLK : S_IFCHR, devnfo, &res);
+            ((devnfo->block_size > 1) ? S_IFBLK : S_IFCHR) | perms,
+            devnfo, &res);
     if (retval)
         return retval;
 
     /* Replace ops with our own */
     res->vnode_ops = (struct vnode_ops *)(devfs_vnode_ops);
 
-    res->vnode_ops->chmod(res, res->vn_mode | perms);
     res->vnode_ops->chown(res, uid, gid);
 
     if (result)

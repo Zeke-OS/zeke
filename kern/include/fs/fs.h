@@ -251,7 +251,7 @@ typedef struct vnode_ops {
      * therefore contain at least count bytes. If offset is past end of the
      * current file the file will be extended; If offset is smaller than file
      * length, the existing data will be overwriten.
-     * @param file      is a file stored in ramfs.
+     * @param file      is a file stored in the file system.
      * @param buf       is a buffer where bytes are read from.
      * @param count     is the number of bytes buf contains.
      * @return  Returns the number of bytes written; Otherwise a negative errno
@@ -260,7 +260,7 @@ typedef struct vnode_ops {
     ssize_t (*write)(file_t * file, const void * buf, size_t count);
     /**
      * Read transfers bytes from file into buf.
-     * @param file      is a file stored in ramfs.
+     * @param file      is a file stored in the file system.
      * @param buf       is a buffer bytes are written to.
      * @param count     is the number of bytes to be read.
      * @return  Returns the number of bytes read; Otherwise a negative errno
@@ -302,7 +302,7 @@ typedef struct vnode_ops {
             void * specinfo, vnode_t ** result);
     /**
      * Lookup for a hard linked vnode in a directory vnode.
-     * @param dir       is a directory in ramfs.
+     * @param dir       is a directory in the file system.
      * @param name      is a filename.
      * @param name_len  is the length of name.
      * @param[out] result is the result of lookup.
@@ -327,16 +327,19 @@ typedef struct vnode_ops {
     int (*unlink)(vnode_t * dir, const char * name, size_t name_len);
     /**
      * Create a directory called name in dir.
-     * @param dir       is a directory in ramfs.
+     * Implementation of mkdir() shall also set uid and gid of the new directory
+     * if the underlying filesystem supports that feature.
+     * @param dir       is a directory in the file system.
      * @param name      is the name of the new directory.
      * @param name_len  is the length of the name.
+     * @param mode      is the file mode of the new directory.
      * @return Zero in case of operation succeed; Otherwise value other than zero.
      */
     int (*mkdir)(vnode_t * dir,  const char * name, size_t name_len, mode_t mode);
     int (*rmdir)(vnode_t * dir,  const char * name, size_t name_len);
     /**
      * Reads one directory entry from the dir into the struct dirent.
-     * @param dir       is a directory open in ramfs.
+     * @param dir       is a directory open in the file system.
      * @param d         is a directory entry struct.
      * @param off       is the offset into the directory.
      * @return  Zero in case of operation succeed;
@@ -383,8 +386,8 @@ typedef struct sb_iterator {
 
 /**
  * Generate insert_suberblock function.
- * Insert a fatfs_sb struct to the end of sb mount linked list.
- * @param fatfs_sb is a pointer to a ramfs superblock.
+ * Insert a sb_type struct to the end of sb mount linked list.
+ * @param sb_type is a pointer to a file system superblock.
  */
 #define GENERATE_INSERT_SB(sb_type, fs)                 \
 static void insert_superblock(struct sb_type * sb)      \

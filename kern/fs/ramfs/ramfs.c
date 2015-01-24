@@ -552,7 +552,7 @@ int ramfs_mkdir(vnode_t * dir,  const char * name, size_t name_len, mode_t mode)
     }
     vnode_new->vn_mode = S_IFDIR | mode; /* This is a directory. */
     inode_new->in_uid = curproc->euid;
-    inode_new->in_gid = curproc->egid;
+    inode_new->in_gid = curproc->egid; /* TODO or to egid of the parent dir */
     /* TODO set times */
 
     /* Create links according to POSIX. */
