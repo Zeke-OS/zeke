@@ -139,6 +139,11 @@ static mmu_region_t dynmem_region;
 static mtx_t dynmem_region_lock;
 
 /*
+ * Memory areas reserved for some other use and shall not be touched by dynmem.
+ */
+SET_DECLARE(dynmem_reserved, struct dynmem_reserved_area);
+
+/*
  * Some sysctl stat variables.
  */
 static size_t dynmem_free = configDYNMEM_SAFE_SIZE;
@@ -149,6 +154,7 @@ static const size_t dynmem_tot = configDYNMEM_SAFE_SIZE;
 SYSCTL_UINT(_vm, OID_AUTO, dynmem_tot, CTLFLAG_RD, (void *)(&dynmem_tot), 0,
         "Total amount of dynmem");
 
+static void mark_reserved_areas(void);
 static void * kmap_allocation(size_t pos, size_t size, uint32_t ap, uint32_t control);
 static int update_dynmem_region_struct(void * p);
 static int validate_addr(const void * addr, int test);
@@ -166,11 +172,32 @@ static int dynmem_init(void)
     else
         dynmem_end = sysinfo.mem.start + sysinfo.mem.size - 1;
 
+    mark_reserved_areas();
+
     mtx_init(&dynmem_region_lock, MTX_TYPE_SPIN);
 
     return 0;
 }
 HW_PREINIT_ENTRY(dynmem_init);
+
+static void mark_reserved_areas(void)
+{
+    struct dynmem_reserved_area ** areap;
+
+    SET_FOREACH(areap, dynmem_reserved) {
+        struct dynmem_reserved_area * area = *areap;
+        const uint32_t pos = (uint32_t)area->caddr_start - DYNMEM_START;
+        size_t size;
+
+        if (area->caddr_start > dynmem_end)
+            continue;
+
+            size = (((area->caddr_end > dynmem_end) ? dynmem_end : area->caddr_end) -
+                   area->caddr_start + 1) / DYNMEM_PAGE_SIZE;
+
+        bitmap_block_update(dynmemmap_bitmap, 1, pos, size);
+    }
+}
 
 void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t control)
 {

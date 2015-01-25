@@ -222,7 +222,9 @@ fail:
 
 int procfs_mkentry(const proc_info_t * proc)
 {
+#ifdef configPROCFS_DEBUG
     const char fail[] = "Failed to create a procfs entry\n";
+#endif
     vnode_t * pdir;
     char name[10];
     size_t name_len;

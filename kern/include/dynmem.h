@@ -40,6 +40,23 @@
 #define DYNMEM_H
 
 #include <stddef.h>
+#include <sys/linker_set.h>
+
+/**
+ * Struct describing a reserved memory area that should not be used by
+ * dynmem.
+ */
+struct dynmem_reserved_area {
+    uintptr_t caddr_start;
+    uintptr_t caddr_end;
+};
+
+#define DYNMEM_RESERVED_AREA(_name_, _caddr_start_, _caddr_end_)        \
+    static struct dynmem_reserved_area _dynmem_reserved_##_name_ = {    \
+        .caddr_start = _caddr_start_,                                   \
+        .caddr_end = _caddr_end_,                                       \
+    };                                                                  \
+    DATA_SET(dynmem_reserved, _dynmem_reserved_##_name_)
 
 /**
  * Allocate a contiguous memory region from dynmem area.

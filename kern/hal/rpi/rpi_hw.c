@@ -33,6 +33,7 @@
 #include <autoconf.h>
 #include <hal/mmu.h>
 #include <ptmapper.h>
+#include <dynmem.h>
 
 mmu_region_t mmu_region_rpihw = {
     .vaddr          = MMU_VADDR_RPIHW_START,
@@ -44,3 +45,4 @@ mmu_region_t mmu_region_rpihw = {
     .pt             = &mmu_pagetable_master
 };
 PTMAPPER_FIXED_REGION(mmu_region_rpihw);
+DYNMEM_RESERVED_AREA(rpihw, MMU_VADDR_RPIHW_START, MMU_VADDR_RPIHW_END);

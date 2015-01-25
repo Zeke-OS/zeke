@@ -297,7 +297,7 @@ int ramfs_get_vnode(fs_superblock_t * sb, ino_t * vnode_num, vnode_t ** vnode)
 
     if (vnode) {
         struct ramfs_inode * in;
-        struct vnode_t * vn;
+        struct vnode * vn;
 
         in = ramfs_sb->ramfs_iarr[*vnode_num];
         if (!in)
