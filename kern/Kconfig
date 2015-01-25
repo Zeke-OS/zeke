@@ -11,10 +11,16 @@ menu "Physical memory layout"
 config configKSTACK_START
     hex "P kstack start"
     default 0x00001000
+    range 0x00001000 0x00001000
+    ---help---
+    See configKSTACK_END.
 
 config configKSTACK_END
     hex "P kstack end"
     default 0x00007fff
+    range 0x00007fff 0x00007fff
+    ---help---
+    Kernel interrupt stacks used at entry.
 
 config configKERNEL_START
     hex "P kernel caddr start"
@@ -37,6 +43,8 @@ config configPT_AREA_END
 config configDYNMEM_START
     hex "P dynmem start"
     default 0x00800000
+    ---help---
+    Dynmem is the memory area used to allocate memory dynamically.
 
 config configDYNMEM_SAFE_SIZE
     hex "dynmem safe size"
@@ -59,12 +67,21 @@ menu "Kernel virtual layout"
 config configTKSTACK_START
     hex "V tkstack vaddr start"
     default 0x00000000
+    range 0x00000000 0x00000000
     depends on configMMU
+    ---help---
+    See help on configTKSTACK_END.
 
 config configTKSTACK_END
     hex "V tkstack vaddr end"
     default 0x00000fff
+    range 0x00000fff 0x00000fff
     depends on configMMU
+    ---help---
+    Thread kernel stack starts from here, unfortunately, at the moment, this has
+    to be manually set to at least kern/hal/arm11/arm11.inc with + 1.
+    Currently this stack addr must be within the first megabyte of the virtual
+    memory address space.
 
 config configKSECT_START
     hex "V ksect start"
