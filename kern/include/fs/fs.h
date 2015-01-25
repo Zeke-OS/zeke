@@ -594,6 +594,12 @@ void vrefset(vnode_t * vnode, int refcnt);
 
 /**
  * Increment the vn_refcount field of a vnode.
+ * Each vnode maintains a reference count of how many parts of the system are
+ * using the vnode. This allows the system to detect when a vnode is no longer
+ * being used and can be safely recycled or freed.
+ *
+ * Any code in the system which will maintain a reference to a vnode
+ * (after a function call) should call vref().
  * @return 0 if referenced; -ENOLINK if ref failed.
  */
 int vref(vnode_t * vnode);
