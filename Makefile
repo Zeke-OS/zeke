@@ -117,6 +117,7 @@ clean:
 	$(MAKE) -C sbin clean
 	$(MAKE) -C opt/test clean
 	find . -type f -name "*.o" -exec rm -f {} \;
+	find . -type f -name "*.bc" -exec rm -f {} \;
 	$(RM) *.bin
 	$(RM) *.img
 	$(RM) *.elf
