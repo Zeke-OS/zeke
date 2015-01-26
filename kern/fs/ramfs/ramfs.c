@@ -38,6 +38,7 @@
 #include <libkern.h>
 #include <kstring.h>
 #include <kmalloc.h>
+#include <buf.h>
 #include <proc.h>
 #include <fs/dehtable.h>
 #include <fs/inpool.h>
@@ -74,7 +75,8 @@ typedef struct ramfs_inode {
     blkcnt_t    in_blocks;  /*!< Number of blocks allocated for this object. */
 
     union {
-        /** Data array.
+        /**
+         * Data array.
          * This is a pointer to an array of pointer pointing to the actual
          * blocks of data. Blocks are fragments of data of the stored file.
          * in_blksize and in_blocks can be used to calculate the size of this
@@ -82,7 +84,7 @@ typedef struct ramfs_inode {
          * the size indicated by in_vnode->len but the size is always at least
          * in_vnode->len in case of ramfs.
          */
-        char ** data;
+        struct buf ** data;
         dh_table_t * dir;
     } in;
 } ramfs_inode_t;
@@ -91,20 +93,20 @@ typedef struct ramfs_inode {
  * ramfs superblock struct.
  */
 typedef struct ramfs_sb {
-    superblock_lnode_t sbn; /* Superblock node. */
-    struct ramfs_inode ** ramfs_iarr; /*!< inode lookup table. */
-    size_t ramfs_iarr_size; /*!< Size of the iarr array. */
-    inpool_t ramfs_ipool; /*!< inode pool. */
+    superblock_lnode_t sbn;             /*!< Superblock node. */
+    struct ramfs_inode ** ramfs_iarr;   /*!< inode lookup table. */
+    size_t ramfs_iarr_size;             /*!< Size of the iarr array. */
+    inpool_t ramfs_ipool;               /*!< inode pool. */
 } ramfs_sb_t;
 
 /**
  * Data pointer.
  * Data pointer to a block of data stored in vnode (regular file).
  */
-typedef struct ramfs_dp {
+struct ramfs_dp {
     char * p;   /*!< Pointer to a data in file. */
     size_t len; /*!< Length of block pointed by p. */
-} ramfs_dp_t;
+};
 
 
 dev_t ramfs_vdev_minor;
@@ -116,17 +118,18 @@ static void insert_superblock(ramfs_sb_t * ramfs_sb);
 static void remove_superblock(ramfs_sb_t * ramfs_sb);
 static void destroy_superblock(ramfs_sb_t * ramfs_sb);
 vnode_t * ramfs_raw_create_inode(const fs_superblock_t * sb, ino_t * num);
-static void init_inode(ramfs_inode_t * inode, ramfs_sb_t * ramfs_sb, ino_t * num);
+static void init_inode(ramfs_inode_t * inode, ramfs_sb_t * ramfs_sb,
+                       ino_t * num);
 static void destroy_vnode(vnode_t * vnode);
 static void destroy_inode(ramfs_inode_t * inode);
 static void destroy_inode_data(ramfs_inode_t * inode);
 static int insert_inode(ramfs_inode_t * inode);
 static ssize_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
-        const void * buf, size_t count);
+                                const void * buf, size_t count);
 static ssize_t ramfs_rd_regular(vnode_t * file, const off_t * restrict offset,
-        void * buff, size_t count);
+                                void * buff, size_t count);
 static int ramfs_set_filesize(ramfs_inode_t * inode, off_t size);
-static ramfs_dp_t get_dp_by_offset(ramfs_inode_t * inode, off_t offset);
+static struct ramfs_dp get_dp_by_offset(ramfs_inode_t * inode, off_t offset);
 
 
 /**
@@ -200,7 +203,7 @@ int ramsfs_mount(const char * source, uint32_t mode,
                  const char * parm, int parm_len, struct fs_superblock ** sb)
 {
     ramfs_sb_t * ramfs_sb;
-    int retval = 0, err;
+    int err, retval = 0;
 
 #ifdef configRAMFS_DEBUG
     KERROR(KERROR_DEBUG, "ramfs_mount()\n");
@@ -213,7 +216,8 @@ int ramsfs_mount(const char * source, uint32_t mode,
     }
     init_sbn(ramfs_sb, mode);
 
-    /* Allocate memory for the inode lookup table.
+    /*
+     * Allocate memory for the inode lookup table.
      * kcalloc is used here to clear all inode pointers.
      */
     ramfs_sb->ramfs_iarr = kcalloc(RAMFS_INODE_POOL_SIZE,
@@ -266,10 +270,12 @@ int ramfs_umount(struct fs_superblock * fs_sb)
     ramfs_sb_t * rsb = get_rfsb_of_sb(fs_sb);
     int retval = 0;
 
-    /* TODO Check for any locks */
-    /* TODO Check that there is no more references to any vnodes of
-     * this super block before destroying everyting related to it. */
-    remove_superblock(rsb); /* Remove from mount list. */
+    /*
+     * TODO Check for any locks
+     * TODO Check that there is no more references to any vnodes of
+     * this super block before destroying everyting related to it.
+     */
+    remove_superblock(rsb); /* Remove it from the mount list. */
     destroy_superblock(rsb); /* Destroy all data. */
 
     return retval;
@@ -298,8 +304,9 @@ int ramfs_get_vnode(fs_superblock_t * sb, ino_t * vnode_num, vnode_t ** vnode)
     if (vnode) {
         struct ramfs_inode * in;
         struct vnode * vn;
+        const size_t vnnum = (size_t)(*vnode_num);
 
-        in = ramfs_sb->ramfs_iarr[*vnode_num];
+        in = ramfs_sb->ramfs_iarr[vnnum];
         if (!in)
             return -ENOENT;
 
@@ -343,8 +350,6 @@ ssize_t ramfs_write(file_t * file, const void * buf, size_t count)
 {
     size_t bytes_wr = 0;
 
-    /* TODO Support for at least S_IFBLK, S_IFCHR, S_IFIFO, S_IFSOCK,
-     * possibly a wrapper or callback? */
     switch (file->vnode->vn_mode & S_IFMT) {
     case S_IFREG: /* File is a regular file. */
         bytes_wr = ramfs_wr_regular(file->vnode, &(file->seek_pos), buf, count);
@@ -361,7 +366,6 @@ ssize_t ramfs_read(file_t * file, void * buf, size_t count)
 {
     size_t bytes_rd = 0;
 
-    /* TODO Support some other file types? */
     switch (file->vnode->vn_mode & S_IFMT) {
     case S_IFREG: /* File is a regular file. */
         bytes_rd = ramfs_rd_regular(file->vnode, &(file->seek_pos), buf, count);
@@ -379,10 +383,10 @@ ssize_t ramfs_read(file_t * file, void * buf, size_t count)
 int ramfs_create(vnode_t * dir, const char * name, size_t name_len, mode_t mode,
                  vnode_t ** result)
 {
-    int retval = 0;
     ramfs_sb_t * ramfs_sb;
     vnode_t * vnode;
     ramfs_inode_t * inode;
+    int retval = 0;
 
     if (!S_ISDIR(dir->vn_mode)) {
         retval = -ENOTDIR; /* No a directory entry. */
@@ -402,13 +406,13 @@ int ramfs_create(vnode_t * dir, const char * name, size_t name_len, mode_t mode,
     insert_inode(inode);
 
     /* Init file data section. */
-#define BLK_SIZE (5 * 1024)
-#define BLK_COUNT 1
     inode->in_blocks = 0; /* Will be set by ramfs_set_filesize() */
-    inode->in_blksize = BLK_SIZE;
-    ramfs_set_filesize(inode, BLK_COUNT * BLK_SIZE);
-#undef BLK_COUNT
-#undef BLK_SIZE
+    inode->in_blksize = MMU_PGSIZE_COARSE;
+    retval = ramfs_set_filesize(inode, 1 * MMU_PGSIZE_COARSE);
+    if (retval != 0) {
+        destroy_inode(inode);
+        goto out;
+    }
 
     vnode->vn_len = 0;
     vnode->vn_mode = S_IFREG | mode;
@@ -432,7 +436,7 @@ out:
 }
 
 int ramfs_mknod(vnode_t * dir, const char * name, size_t name_len, int mode,
-        void * specinfo, vnode_t ** result)
+                void * specinfo, vnode_t ** result)
 {
     int retval;
 
@@ -440,14 +444,13 @@ int ramfs_mknod(vnode_t * dir, const char * name, size_t name_len, int mode,
     if (retval)
         return retval;
 
-    (*result)->vn_mode = mode; /* TODO Not necessarily needed? */
     (*result)->vn_specinfo = specinfo;
 
     return 0;
 }
 
 int ramfs_lookup(vnode_t * dir, const char * name, size_t name_len,
-        vnode_t ** result)
+                 vnode_t ** result)
 {
     dh_table_t * dh_dir;
     ino_t vnode_num;
@@ -631,7 +634,8 @@ int ramfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
     if (!S_ISDIR(dir->vn_mode))
         return -ENOTDIR; /* No a directory entry. */
 
-    /* Dirent to iterator translation.
+    /*
+     * Dirent to iterator translation.
      * We assume here that off_t is a 64-bit signed integer, so we can store the
      * dea index to upper bits as it's definitely shorter than chain index which
      * will be the low 32-bits.
@@ -706,13 +710,13 @@ static void init_sbn(ramfs_sb_t * ramfs_sb, uint32_t mode)
 
     sb->fs = &ramfs_fs;
     sb->mode_flags = mode;
-    sb->root = 0; /* Cleared temporarily */
+    sb->root = NULL; /* Cleared temporarily */
 
     /* Function pointers to superblock methods: */
     sb->get_vnode = ramfs_get_vnode;
     sb->delete_vnode = ramfs_delete_vnode;
 
-    ramfs_sb->sbn.next = 0;
+    ramfs_sb->sbn.next = NULL;
 }
 
 /**
@@ -726,7 +730,7 @@ static vnode_t * create_root(ramfs_sb_t * ramfs_sb)
     vnode_t * retval;
 
     retval = inpool_get_next(&(ramfs_sb->ramfs_ipool));
-    if (retval == 0) {
+    if (!retval) {
         goto out; /* Can't create */
     }
     inode = get_inode_of_vnode(retval);
@@ -766,7 +770,7 @@ static void insert_superblock(ramfs_sb_t * ramfs_sb)
         ramfs_fs.sbl_head = &(ramfs_sb->sbn);
     } else {
         /* else find the last sb on the linked list. */
-        while (curr->next != 0) {
+        while (curr->next) {
             curr = curr->next;
         }
 
@@ -784,7 +788,7 @@ static void remove_superblock(ramfs_sb_t * ramfs_sb)
     superblock_lnode_t * prev;
     superblock_lnode_t * curr = ramfs_fs.sbl_head;
 
-    if (curr == 0) {
+    if (!curr) {
         KERROR(KERROR_ERR, err_msg);
         return;
     }
@@ -792,7 +796,7 @@ static void remove_superblock(ramfs_sb_t * ramfs_sb)
     while (curr != &(ramfs_sb->sbn)) {
         prev = curr;
         curr = curr->next;
-        if (curr == 0) {
+        if (!curr) {
             KERROR(KERROR_ERR, err_msg);
             return;
         }
@@ -819,7 +823,7 @@ static void destroy_superblock(ramfs_sb_t * ramfs_sb)
         }
 
         kfree(ramfs_sb->ramfs_iarr);
-        ramfs_sb->ramfs_iarr = 0;
+        ramfs_sb->ramfs_iarr = NULL;
     }
 
     /* Destroy inode pool */
@@ -840,8 +844,8 @@ vnode_t * ramfs_raw_create_inode(const fs_superblock_t * sb, ino_t * num)
     ramfs_sb_t * ramfs_sb;
 
     inode = kmalloc(sizeof(ramfs_inode_t));
-    if (inode == 0)
-        return 0;
+    if (!inode)
+        return NULL;
 
     ramfs_sb = get_rfsb_of_sb(sb);
     init_inode(inode, ramfs_sb, num);
@@ -886,9 +890,8 @@ static void destroy_inode(ramfs_inode_t * inode)
  */
 static void destroy_inode_data(ramfs_inode_t * inode)
 {
-    /* TODO Other types */
     switch (inode->in_vnode.vn_mode & S_IFMT) {
-    case S_IFREG: /* File is a regular file. */
+    case S_IFREG:
         /* Free all data blocks. */
         ramfs_set_filesize(inode, 0);
         break;
@@ -925,7 +928,7 @@ static int insert_inode(ramfs_inode_t * inode)
         ramfs_sb->ramfs_iarr_size++;
         tmp_iarr = (ramfs_inode_t **)krealloc(ramfs_sb->ramfs_iarr,
                 (ino_t)(ramfs_sb->ramfs_iarr_size) * sizeof(ramfs_inode_t *));
-        if (tmp_iarr == 0) {
+        if (!tmp_iarr) {
             /* Can't allocate more memory for inode lookup table */
             retval = -ENOSPC;
             goto out;
@@ -953,11 +956,11 @@ out:
  * @return Returns the number of bytes written.
  */
 static ssize_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
-        const void * buf, size_t count)
+                                const void * buf, size_t count)
 {
     ramfs_inode_t * inode = get_inode_of_vnode(file);
     const blksize_t blksize = inode->in_blksize;
-    ramfs_dp_t dp;
+    struct ramfs_dp dp;
     size_t bytes_wr = 0;
 
     /* No file type check is needed as this function is called only for regular
@@ -969,7 +972,7 @@ static ssize_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
 
         /* Get next block pointer. */
         dp = get_dp_by_offset(inode, *offset + bytes_wr);
-        if (dp.p == 0) { /* Extend the file first. */
+        if (!dp.p) { /* Extend the file first. */
             /* Extend the file to the final size if possible. */
             if (ramfs_set_filesize(inode, inode->in_blocks * blksize
                         + *offset + (off_t)count)) {
@@ -1001,10 +1004,10 @@ static ssize_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
  * @return Returns the number of bytes read from the file.
  */
 static ssize_t ramfs_rd_regular(vnode_t * file, const off_t * restrict offset,
-        void * buf, size_t count)
+                                void * buf, size_t count)
 {
     ramfs_inode_t * inode = get_inode_of_vnode(file);
-    ramfs_dp_t dp;
+    struct ramfs_dp dp;
     size_t bytes_rd = 0;
 
     /*
@@ -1046,7 +1049,6 @@ static int ramfs_set_filesize(ramfs_inode_t * file, off_t new_size)
 {
     const blksize_t blksize = file->in_blksize;
     const off_t old_size = (off_t)file->in_blocks * (off_t)blksize;
-    int retval = 0;
 
     /* Calculate a block aligned new_size.
      * Some size_t casts to speed up the computation as ramfs doesn't support
@@ -1055,43 +1057,47 @@ static int ramfs_set_filesize(ramfs_inode_t * file, off_t new_size)
         (off_t)((size_t)blksize -
                 (((size_t)new_size - 1) & ((size_t)blksize - 1)) - 1);
 
-    if (new_size == old_size) {
-        /* Same as old */
-        goto out;
-    } else if (new_size < old_size) {
-        /* Truncate */
-        /* TODO Free blocks */
-    } else {
-        /* Extend */
+    if (new_size == old_size) { /* Same as old */
+        return 0;
+    } else if (new_size < old_size) { /* Truncate */
+        if (new_size > 0) {
+            /* TODO Free blocks to truncate the file */
+        } else {  /* Free all blocks. */
+            struct buf ** bpp = file->in.data;
+            size_t i;
+
+            for (i = 0; i < file->in_blocks; i++) {
+                vrfree(bpp[i]);
+            }
+        }
+    } else { /* Extend */
         char ** new_data;
         const blkcnt_t new_blkcnt = new_size / blksize;
         size_t i;
 
-        new_data = krealloc(file->in.data, new_size);
-        if (new_data == 0) {
-            retval = -1; /* Can't extend. */
-            goto out;
+        new_data = krealloc(file->in.data, sizeof(struct buf) * new_blkcnt);
+        if (!new_data) {
+            return -ENOMEM; /* Can't extend. */
         }
         file->in.data = new_data;
 
-        /* TODO It would be possibly more efficient for memory usage to allocate
+        /*
+         * TODO It would be possibly more efficient for memory usage to allocate
          * new blocks just before writing but that'd require some refactoring.
          */
 
         /* Allocate new blocks. */
         for (i = file->in_blocks; i < new_blkcnt; i++) {
-            new_data[i] = kmalloc(blksize);
-            if (new_data[i] == 0) { /* Can't alloc. */
+            new_data[i] = geteblk(blksize);
+            if (!new_data[i]) { /* Can't alloc. */
                 file->in_blocks += i;
-                retval = -2; /* Can't extend to the requested size. */
-                goto out;
+                return -ENOMEM; /* Can't extend to the requested size. */
             }
         }
         file->in_blocks = new_blkcnt;
     }
 
-out:
-   return retval;
+    return 0;
 }
 
 /**
@@ -1103,23 +1109,23 @@ out:
  * @return Returns a struct that contains a pointer to the requested data and
  *         length of returned block. dp.p == 0 if request out of bounds.
  */
-static ramfs_dp_t get_dp_by_offset(ramfs_inode_t * inode, off_t offset)
+static struct ramfs_dp get_dp_by_offset(ramfs_inode_t * inode, off_t offset)
 {
     const blksize_t blksize = inode->in_blksize;
     size_t bi; /* Block index. */
     size_t di; /* Data index. */
     char * block; /* Pointer to the block. */
-    ramfs_dp_t dp = { .p = 0, .len = 0 }; /* Return value. */
+    struct ramfs_dp dp = { .p = 0, .len = 0 }; /* Return value. */
 
     if (offset > ((off_t)inode->in_blocks * (off_t)blksize))
         goto out; /* Out of bounds. */
-    if (inode->in.data == 0)
+    if (!inode->in.data)
         goto out; /* No data array. */
 
     bi = (size_t)((offset - (offset & ((off_t)(blksize - 1))))
             / (off_t)blksize);
     di = (size_t)(((size_t)offset) & (blksize - 1));
-    block = inode->in.data[bi];
+    block = (char *)(inode->in.data[bi]->b_data);
 
     /* Return value. */
     dp.p = &(block[di]);
