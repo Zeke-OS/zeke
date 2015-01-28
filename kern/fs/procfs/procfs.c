@@ -285,6 +285,8 @@ int procfs_rmentry(pid_t pid)
     /* proc dir name and name_len */
     name_len = uitoa32(name, pid);
 
+    vref(vn_procfs);
+
     err = vn_procfs->vnode_ops->lookup(vn_procfs, name, name_len, &pdir);
     if (err == -ENOENT)
         return 0;
@@ -292,7 +294,9 @@ int procfs_rmentry(pid_t pid)
         return err;
 
     pdir->vnode_ops->unlink(pdir, PROCFS_FN_STATUS, sizeof(PROCFS_FN_STATUS));
+    vrele(pdir);
     vn_procfs->vnode_ops->rmdir(vn_procfs, name, name_len);
+
     vrele(vn_procfs);
 
     return 0;
