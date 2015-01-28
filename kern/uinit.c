@@ -170,6 +170,12 @@ void * uinit(void * arg)
         while(1);
     }
 
+    err = _mount("", "/tmp", "ramfs");
+    if (err) {
+        printfail("can't mount /tmp");
+        while(1);
+    }
+
     /* Exec init */
     err = _execve(argv[0], argv, num_elem(argv) - 1, env, num_elem(env) - 1);
     if (err) {
