@@ -32,8 +32,6 @@ fs (vfs)
 ramfs
 -----
 
-Allocate blocks with geteblk, this will also make memmapping possible for ramfs
-files.
 Use LINK_MAX.
 
 sched
@@ -168,7 +166,6 @@ libc
 ----
 
 - Missing this and that
-- Enable mmap for malloc
 - sigtimedwait, sigwaitinfo implementations missing
 
 
