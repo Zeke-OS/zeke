@@ -33,6 +33,7 @@
 #define KERNEL_INTERNAL
 #include <stdint.h>
 #include <sys/types.h>
+#include <machine/atomic.h>
 #include <dirent.h>
 #include <time.h>
 #include <errno.h>
@@ -111,7 +112,7 @@ struct ramfs_dp {
 };
 
 
-dev_t ramfs_vdev_minor;
+static atomic_t ramfs_vdev_minor;
 
 /* Private */
 static void init_sbn(ramfs_sb_t * ramfs_sb, uint32_t mode);
@@ -187,6 +188,8 @@ int ramfs_init(void)
     SUBSYS_DEP(proc_init);
     SUBSYS_INIT("ramfs");
 
+    ATOMIC_INIT(ramfs_vdev_minor);
+
     /* Register ramfs with vfs. */
     fs_register(&ramfs_fs);
 
@@ -243,7 +246,7 @@ int ramsfs_mount(const char * source, uint32_t mode,
 
     /* Set vdev number */
     ramfs_sb->sbn.sbl_sb.vdev_id = DEV_MMTODEV(RAMFS_VDEV_MAJOR_NUM,
-                                               ramfs_vdev_minor++);
+                                               atomic_inc(&ramfs_vdev_minor));
 
     /* Create the root inode */
 #ifdef configRAMFS_DEBUG
