@@ -200,9 +200,6 @@ static int procfs_updatedir(vnode_t * dir)
          * directories that should not exist anymore.
          */
         for (int i = 0; i <= act_maxproc; i++) {
-#if 0
-            KERROR(KERROR_DEBUG, "%u\n", act_maxproc);
-#endif
             const proc_info_t * proc = proc_get_struct(i);
 
             if (proc)
@@ -239,7 +236,7 @@ int procfs_mkentry(const proc_info_t * proc)
 #endif
 
     /* proc dir name and name_len */
-    name_len = uitoa32(name, proc->pid);
+    name_len = uitoa32(name, proc->pid) + 1;
 
     err = vn_procfs->vnode_ops->mkdir(vn_procfs, name, name_len, PROCFS_PERMS);
     if (err == -EEXIST) {
@@ -283,7 +280,7 @@ int procfs_rmentry(pid_t pid)
         return 0; /* Not yet initialized. */
 
     /* proc dir name and name_len */
-    name_len = uitoa32(name, pid);
+    name_len = uitoa32(name, pid) + 1;
 
     vref(vn_procfs);
 
