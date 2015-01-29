@@ -324,6 +324,10 @@ typedef struct vnode_ops {
      */
     int (*link)(vnode_t * dir, vnode_t * vnode, const char * name,
             size_t name_len);
+    /**
+     * Unlink a hard link.
+     * Unlink a hard link in the directory specified.
+     */
     int (*unlink)(vnode_t * dir, const char * name, size_t name_len);
     /**
      * Create a directory called name in dir.

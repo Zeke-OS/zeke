@@ -63,6 +63,8 @@ struct procfs_info {
     pid_t pid;
 };
 
+#define PROCFS_NAMELEN_MAX 10
+
 /**
  * Create an entry for a process into procfs.
  * @param proc is a PCB to be described in procfs.

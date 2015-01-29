@@ -43,8 +43,8 @@
 #include <fs/procfs.h>
 
 static int procfs_mount(const char * source, uint32_t mode,
-                       const char * parm, int parm_len,
-                       struct fs_superblock ** sb);
+                        const char * parm, int parm_len,
+                        struct fs_superblock ** sb);
 static int procfs_umount(struct fs_superblock * fs_sb);
 static ssize_t procfs_read(file_t * file, void * vbuf, size_t bcount);
 static ssize_t procfs_write(file_t * file, const void * vbuf, size_t bcount);
@@ -222,17 +222,16 @@ int procfs_mkentry(const proc_info_t * proc)
 #ifdef configPROCFS_DEBUG
     const char fail[] = "Failed to create a procfs entry\n";
 #endif
-    vnode_t * pdir;
-    char name[10];
+    char name[PROCFS_NAMELEN_MAX];
     size_t name_len;
+    vnode_t * pdir = NULL;
     int err;
 
     if (!vn_procfs)
         return 0; /* Not yet initialized. */
 
 #ifdef configPROCFS_DEBUG
-    KERROR(KERROR_DEBUG, "procfs_mkentry(pid = %u)\n",
-           proc->pid);
+    KERROR(KERROR_DEBUG, "procfs_mkentry(pid = %u)\n", proc->pid);
 #endif
 
     /* proc dir name and name_len */
@@ -245,7 +244,7 @@ int procfs_mkentry(const proc_info_t * proc)
 #ifdef configPROCFS_DEBUG
         KERROR(KERROR_DEBUG, fail);
 #endif
-        return err;
+        goto fail;
     }
 
     err = vn_procfs->vnode_ops->lookup(vn_procfs, name, name_len, &pdir);
@@ -253,7 +252,8 @@ int procfs_mkentry(const proc_info_t * proc)
 #ifdef configPROCFS_DEBUG
         KERROR(KERROR_DEBUG, fail);
 #endif
-        return err;
+        pdir = NULL;
+        goto fail;
     }
 
     err = create_status_file(pdir, proc);
@@ -261,18 +261,19 @@ int procfs_mkentry(const proc_info_t * proc)
 #ifdef configPROCFS_DEBUG
         KERROR(KERROR_DEBUG, fail);
 #endif
-        vrele(pdir);
-
-        return err;
+        goto fail;
     }
 
-    return 0;
+fail:
+    if (pdir)
+        vrele(pdir);
+    return err;
 }
 
 int procfs_rmentry(pid_t pid)
 {
     vnode_t * pdir;
-    char name[10];
+    char name[PROCFS_NAMELEN_MAX];
     size_t name_len;
     int err;
 
