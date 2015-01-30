@@ -40,7 +40,6 @@
 #include <fs/fs.h>
 
 #define RAMFS_FSNAME            "ramfs"
-#define RAMFS_VDEV_MAJOR_NUM    10
 
 const vnode_ops_t ramfs_vnode_ops;
 

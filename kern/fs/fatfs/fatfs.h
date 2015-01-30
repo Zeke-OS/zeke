@@ -81,7 +81,6 @@ struct fatfs_sb {
 
 struct fatfs_sb ** fatfs_sb_arr;
 
-
 ssize_t fatfs_write(file_t * file, const void * buf, size_t count);
 ssize_t fatfs_read(file_t * file, void * buf, size_t count);
 int fatfs_create(vnode_t * dir, const char * name, mode_t mode,

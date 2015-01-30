@@ -45,6 +45,7 @@
 #include <proc.h>
 #include <fs/dehtable.h>
 #include <fs/inpool.h>
+#include <fs/dev_major.h>
 #include <fs/ramfs.h>
 
 /**
@@ -245,7 +246,7 @@ int ramsfs_mount(const char * source, uint32_t mode,
     }
 
     /* Set vdev number */
-    ramfs_sb->sbn.sbl_sb.vdev_id = DEV_MMTODEV(RAMFS_VDEV_MAJOR_NUM,
+    ramfs_sb->sbn.sbl_sb.vdev_id = DEV_MMTODEV(VDEV_MJNR_RAMFS,
                                                atomic_inc(&ramfs_vdev_minor));
 
     /* Create the root inode */
