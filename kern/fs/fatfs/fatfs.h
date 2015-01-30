@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   FatFs public header.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,6 @@
 #include "src/ff.h"
 
 #define FATFS_FSNAME            "fatfs"
-#define FATFS_VDEV_MAJOR_ID     13
 
 struct fatfs_inode {
     vnode_t in_vnode;   /*!< vnode for this inode. */
@@ -85,16 +84,14 @@ struct fatfs_sb ** fatfs_sb_arr;
 
 ssize_t fatfs_write(file_t * file, const void * buf, size_t count);
 ssize_t fatfs_read(file_t * file, void * buf, size_t count);
-int fatfs_create(vnode_t * dir, const char * name, size_t name_len, mode_t mode,
+int fatfs_create(vnode_t * dir, const char * name, mode_t mode,
                  vnode_t ** result);
-int fatfs_mknod(vnode_t * dir, const char * name, size_t name_len, int mode,
-                void * specinfo, vnode_t ** result);
-int fatfs_link(vnode_t * dir, vnode_t * vnode, const char * name,
-               size_t name_len);
-int fatfs_unlink(vnode_t * dir, const char * name, size_t name_len);
-int fatfs_mkdir(vnode_t * dir,  const char * name, size_t name_len,
-                mode_t mode);
-int fatfs_rmdir(vnode_t * dir,  const char * name, size_t name_len);
+int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
+                vnode_t ** result);
+int fatfs_link(vnode_t * dir, vnode_t * vnode, const char * name);
+int fatfs_unlink(vnode_t * dir, const char * name);
+int fatfs_mkdir(vnode_t * dir,  const char * name, mode_t mode);
+int fatfs_rmdir(vnode_t * dir,  const char * name);
 int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off);
 int fatfs_stat(vnode_t * vnode, struct stat * buf);
 int fatfs_chmod(vnode_t * vnode, mode_t mode);

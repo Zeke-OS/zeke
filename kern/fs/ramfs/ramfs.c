@@ -385,7 +385,7 @@ ssize_t ramfs_read(file_t * file, void * buf, size_t count)
     return bytes_rd;
 }
 
-int ramfs_create(vnode_t * dir, const char * name, size_t name_len, mode_t mode,
+int ramfs_create(vnode_t * dir, const char * name, mode_t mode,
                  vnode_t ** result)
 {
     ramfs_sb_t * ramfs_sb;
@@ -430,7 +430,7 @@ int ramfs_create(vnode_t * dir, const char * name, size_t name_len, mode_t mode,
     //vnode->mutex = /* TODO other flags etc. */
 
     /* Create a directory entry. */
-    retval = ramfs_link(dir, vnode, name, name_len);
+    retval = ramfs_link(dir, vnode, name);
     if (retval != 0) { /* Hard link creation failed. */
 #ifdef configRAMFS_DEBUG
         KERROR(KERROR_DEBUG, "ramfs_link() failed on inode creation\n");
@@ -445,12 +445,12 @@ out:
     return retval;
 }
 
-int ramfs_mknod(vnode_t * dir, const char * name, size_t name_len, int mode,
-                void * specinfo, vnode_t ** result)
+int ramfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
+                vnode_t ** result)
 {
     int retval;
 
-    retval = ramfs_create(dir, name, name_len, mode, result);
+    retval = ramfs_create(dir, name, mode, result);
     if (retval)
         return retval;
 
@@ -460,8 +460,7 @@ int ramfs_mknod(vnode_t * dir, const char * name, size_t name_len, int mode,
     return 0;
 }
 
-int ramfs_lookup(vnode_t * dir, const char * name, size_t name_len,
-                 vnode_t ** result)
+int ramfs_lookup(vnode_t * dir, const char * name, vnode_t ** result)
 {
     dh_table_t * dh_dir;
     ino_t vnode_num;
@@ -486,7 +485,7 @@ int ramfs_lookup(vnode_t * dir, const char * name, size_t name_len,
     return 0;
 }
 
-int ramfs_link(vnode_t * dir, vnode_t * vnode, const char * name, size_t name_len)
+int ramfs_link(vnode_t * dir, vnode_t * vnode, const char * name)
 {
     ramfs_inode_t * inode;
     ramfs_inode_t * inode_dir;
@@ -509,7 +508,7 @@ out:
     return retval;
 }
 
-int ramfs_unlink(vnode_t * dir, const char * name, size_t name_len)
+int ramfs_unlink(vnode_t * dir, const char * name)
 {
     ramfs_inode_t * inode_dir;
     ino_t vnum;
@@ -548,7 +547,7 @@ out:
     return retval;
 }
 
-int ramfs_mkdir(vnode_t * dir,  const char * name, size_t name_len, mode_t mode)
+int ramfs_mkdir(vnode_t * dir, const char * name, mode_t mode)
 {
     ramfs_sb_t * ramfs_sb;
     vnode_t * vnode_new;
@@ -581,14 +580,12 @@ int ramfs_mkdir(vnode_t * dir,  const char * name, size_t name_len, mode_t mode)
     /* TODO set times */
 
     /* Create links according to POSIX. */
-    ramfs_link(&(inode_new->in_vnode), &(inode_new->in_vnode), RFS_DOT,
-            sizeof(RFS_DOT));
-    ramfs_link(&(inode_new->in_vnode), &(inode_dir->in_vnode), RFS_DOTDOT,
-            sizeof(RFS_DOTDOT));
+    ramfs_link(&(inode_new->in_vnode), &(inode_new->in_vnode), RFS_DOT);
+    ramfs_link(&(inode_new->in_vnode), &(inode_dir->in_vnode), RFS_DOTDOT);
 
     /* Insert inode to the inode lookup table of its superblock. */
     insert_inode(inode_new); /* This can't fail on mount. */
-    ramfs_link(&(inode_dir->in_vnode), vnode_new, name, name_len);
+    ramfs_link(&(inode_dir->in_vnode), vnode_new, name);
 
     goto out;
 delete_inode:
@@ -597,7 +594,7 @@ out:
     return retval;
 }
 
-int ramfs_rmdir(vnode_t * dir,  const char * name, size_t name_len)
+int ramfs_rmdir(vnode_t * dir,  const char * name)
 {
     ramfs_inode_t * inode_dir;
     ino_t vnum;
@@ -756,8 +753,8 @@ static vnode_t * create_root(ramfs_sb_t * ramfs_sb)
     ramfs_sb->sbn.sbl_sb.root = vn;
 
     /* Create links according to POSIX. */
-    ramfs_link(vn, vn, RFS_DOT, sizeof(RFS_DOT) - 1);
-    ramfs_link(vn, vn, RFS_DOTDOT, sizeof(RFS_DOTDOT) - 1);
+    ramfs_link(vn, vn, RFS_DOT);
+    ramfs_link(vn, vn, RFS_DOTDOT);
 
     vrefset(vn, 2);
 out:

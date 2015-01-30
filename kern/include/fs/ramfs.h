@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   ramfs headers.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,18 +54,15 @@ int ramfs_delete_vnode(vnode_t * vnode);
 /* vnode ops */
 ssize_t ramfs_write(file_t * file, const void * buf, size_t count);
 ssize_t ramfs_read(file_t * file, void * buf, size_t count);
-int ramfs_create(vnode_t * dir, const char * name, size_t name_len, mode_t mode,
+int ramfs_create(vnode_t * dir, const char * name, mode_t mode,
                  vnode_t ** result);
-int ramfs_mknod(vnode_t * dir, const char * name, size_t name_len, int mode,
-                void * specinfo, vnode_t ** result);
-int ramfs_lookup(vnode_t * dir, const char * name, size_t name_len,
-                 vnode_t ** result);
-int ramfs_link(vnode_t * dir, vnode_t * vnode, const char * name,
-               size_t name_len);
-int ramfs_unlink(vnode_t * dir, const char * name, size_t name_len);
-int ramfs_mkdir(vnode_t * dir,  const char * name, size_t name_len,
-                mode_t mode);
-int ramfs_rmdir(vnode_t * dir,  const char * name, size_t name_len);
+int ramfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
+                vnode_t ** result);
+int ramfs_lookup(vnode_t * dir, const char * name, vnode_t ** result);
+int ramfs_link(vnode_t * dir, vnode_t * vnode, const char * name);
+int ramfs_unlink(vnode_t * dir, const char * name);
+int ramfs_mkdir(vnode_t * dir,  const char * name, mode_t mode);
+int ramfs_rmdir(vnode_t * dir,  const char * name);
 int ramfs_readdir(vnode_t * dir, struct dirent * d, off_t * off);
 int ramfs_stat(vnode_t * vnode, struct stat * buf);
 int ramfs_chmod(vnode_t * vnode, mode_t mode);

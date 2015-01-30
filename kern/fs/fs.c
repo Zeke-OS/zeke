@@ -162,8 +162,7 @@ int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str, int oflags
 
 again:  /* Get vnode by name in this dir. */
         orig_vn = *result;
-        retval = orig_vn->vnode_ops->lookup(*result, nodename,
-                strlenn(nodename, NAME_MAX) + 1, &vnode);
+        retval = orig_vn->vnode_ops->lookup(*result, nodename, &vnode);
         if (!retval)
             vrele(orig_vn);
         if (retval != 0 && retval != -EDOM) {
@@ -789,7 +788,7 @@ int fs_creat_cproc(const char * pathname, mode_t mode, vnode_t ** result)
     *result = NULL;
     mode &= ~S_IFMT; /* Filter out file type bits */
     mode &= ~curproc->files->umask;
-    retval = dir->vnode_ops->create(dir, name, NAME_MAX, mode, result);
+    retval = dir->vnode_ops->create(dir, name, mode, result);
 
 out:
     if (dir)
@@ -835,7 +834,7 @@ int fs_link_curproc(const char * path1, size_t path1_len,
     if (err)
         goto out;
 
-    err = vndir_dst->vnode_ops->link(vndir_dst, vn_src, targetname, NAME_MAX);
+    err = vndir_dst->vnode_ops->link(vndir_dst, vn_src, targetname);
 
 out:
     if (vn_src)
@@ -895,7 +894,7 @@ int fs_unlink_curproc(int fd, const char * path, size_t path_len, int atflags)
         goto out;
     }
 
-    err = dir->vnode_ops->unlink(dir, filename, path_len);
+    err = dir->vnode_ops->unlink(dir, filename);
 
 out:
     if (fnode)
@@ -930,7 +929,7 @@ int fs_mkdir_curproc(const char * pathname, mode_t mode)
 
     mode &= ~S_IFMT; /* Filter out file type bits */
     mode &= ~curproc->files->umask;
-    retval = dir->vnode_ops->mkdir(dir, name, NAME_MAX, mode);
+    retval = dir->vnode_ops->mkdir(dir, name, mode);
 
 out:
     if (dir)
@@ -960,7 +959,7 @@ int fs_rmdir_curproc(const char * pathname)
         goto out;
     }
 
-    retval = dir->vnode_ops->rmdir(dir, name, NAME_MAX);
+    retval = dir->vnode_ops->rmdir(dir, name);
 
 out:
     if (dir)

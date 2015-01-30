@@ -41,20 +41,19 @@
 #include <kinit.h>
 #include <kstring.h>
 #include <fs/vfs_hash.h>
+#include <fs/dev_major.h>
 #include <kmalloc.h>
 #include <proc.h>
 #include "fatfs.h"
 
 static int fatfs_mount(const char * source, uint32_t mode,
         const char * parm, int parm_len, struct fs_superblock ** sb);
-static char * format_fpath(struct fatfs_inode * indir, const char * name,
-                           size_t name_len);
+static char * format_fpath(struct fatfs_inode * indir, const char * name);
 static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
                         char * fpath, long vn_hash, int oflags);
 static vnode_t * create_root(fs_superblock_t * sb);
 static int fatfs_delete_vnode(vnode_t * vnode);
-static int fatfs_lookup(vnode_t * dir, const char * name, size_t name_len,
-                        vnode_t ** result);
+static int fatfs_lookup(vnode_t * dir, const char * name, vnode_t ** result);
 static void init_fatfs_vnode(vnode_t * vnode, ino_t inum, mode_t mode,
                              long vn_hash, fs_superblock_t * sb);
 static int get_mp_stat(vnode_t * vnode, struct stat * st);
@@ -147,7 +146,7 @@ static int fatfs_mount(const char * source, uint32_t mode,
 
     sbp = &(fatfs_sb->sbn.sbl_sb);
     fs_fildes_set(&fatfs_sb->ff_devfile, vndev, O_RDWR);
-    sbp->vdev_id = DEV_MMTODEV(FATFS_VDEV_MAJOR_ID, fatfs_vdev_minor++);
+    sbp->vdev_id = DEV_MMTODEV(VDEV_MJNR_FATFS, fatfs_vdev_minor++);
 
     /* Insert sb to fatfs_sb_arr lookup array */
     fatfs_sb_arr[DEV_MINOR(sbp->vdev_id)] = fatfs_sb;
@@ -199,20 +198,19 @@ out:
 /**
  * Get kmalloc'd array for full path name.
  */
-static char * format_fpath(struct fatfs_inode * indir, const char * name,
-                           size_t name_len)
+static char * format_fpath(struct fatfs_inode * indir, const char * name)
 {
     char * fpath;
     size_t fpath_size;
 
 #ifdef configFATFS_DEBUG
     KERROR(KERROR_DEBUG,
-             "format_fpath(indir \"%s\", name \"%s\", name_len %u)\n",
-             indir->in_fpath, name, name_len);
+             "format_fpath(indir \"%s\", name \"%s\")\n",
+             indir->in_fpath, name);
 #endif
 
-
-    fpath_size = name_len + strlenn(indir->in_fpath, NAME_MAX + 1) + 6;
+    fpath_size = strlenn(name, NAME_MAX + 1) +
+                 strlenn(indir->in_fpath, NAME_MAX + 1) + 6;
     fpath = kmalloc(fpath_size);
     if (!fpath)
         return NULL;
@@ -370,8 +368,7 @@ static int fatfs_delete_vnode(vnode_t * vnode)
  * make sure we don't have too many vnodes in cache that have no references, to
  * avoid hitting any ff hard limits.
  */
-static int fatfs_lookup(vnode_t * dir, const char * name, size_t name_len,
-                        vnode_t ** result)
+static int fatfs_lookup(vnode_t * dir, const char * name, vnode_t ** result)
 {
     struct fatfs_inode * indir = get_inode_of_vnode(dir);
     struct fatfs_sb * sb = get_ffsb_of_sb(dir->sb);
@@ -383,7 +380,7 @@ static int fatfs_lookup(vnode_t * dir, const char * name, size_t name_len,
     KASSERT(dir != NULL, "dir must be set");
 
     /* Format full path */
-    in_fpath = format_fpath(indir, name, name_len);
+    in_fpath = format_fpath(indir, name);
     if (!in_fpath)
         return -ENOMEM;
 
@@ -514,15 +511,14 @@ ssize_t fatfs_read(file_t * file, void * buf, size_t count)
     return retval;
 }
 
-int fatfs_create(vnode_t * dir, const char * name, size_t name_len, mode_t mode,
+int fatfs_create(vnode_t * dir, const char * name, mode_t mode,
                  vnode_t ** result)
 {
-    return fatfs_mknod(dir, name, name_len, (mode & ~S_IFMT) | S_IFREG, NULL,
-                       result);
+    return fatfs_mknod(dir, name, (mode & ~S_IFMT) | S_IFREG, NULL, result);
 }
 
-int fatfs_mknod(vnode_t * dir, const char * name, size_t name_len, int mode,
-                void * specinfo, vnode_t ** result)
+int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
+                vnode_t ** result)
 {
     struct fatfs_inode * indir = get_inode_of_vnode(dir);
     struct fatfs_inode * res = NULL;
@@ -539,7 +535,7 @@ int fatfs_mknod(vnode_t * dir, const char * name, size_t name_len, int mode,
         return -EINVAL; /* specinfo not supported. */
 
 
-    in_fpath = format_fpath(indir, name, name_len);
+    in_fpath = format_fpath(indir, name);
     if (!in_fpath)
         return -ENOMEM;
 
@@ -556,23 +552,22 @@ int fatfs_mknod(vnode_t * dir, const char * name, size_t name_len, int mode,
     return 0;
 }
 
-int fatfs_link(vnode_t * dir, vnode_t * vnode, const char * name,
-               size_t name_len)
+int fatfs_link(vnode_t * dir, vnode_t * vnode, const char * name)
 {
     return -ENOTSUP;
 }
 
-int fatfs_unlink(vnode_t * dir, const char * name, size_t name_len)
+int fatfs_unlink(vnode_t * dir, const char * name)
 {
     return -ENOTSUP;
 }
 
-int fatfs_mkdir(vnode_t * dir,  const char * name, size_t name_len, mode_t mode)
+int fatfs_mkdir(vnode_t * dir,  const char * name, mode_t mode)
 {
     return -ENOTSUP;
 }
 
-int fatfs_rmdir(vnode_t * dir,  const char * name, size_t name_len)
+int fatfs_rmdir(vnode_t * dir,  const char * name)
 {
     return -ENOTSUP;
 }

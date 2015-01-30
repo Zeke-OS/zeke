@@ -286,11 +286,10 @@ typedef struct vnode_ops {
      * @param dir       is the directory vnode which is used to store the hard link
      *                  created.
      * @param name      is the name of the hard link.
-     * @param name_len  is the length of the name.
      * @param[out] result is a pointer to the resulting vnode.
      * @return Zero in case of operation succeed; Otherwise value other than zero.
      */
-    int (*create)(vnode_t * dir, const char * name, size_t name_len, mode_t mode,
+    int (*create)(vnode_t * dir, const char * name, mode_t mode,
             vnode_t ** result);
     /**
      * Create a special vnode.
@@ -298,49 +297,44 @@ typedef struct vnode_ops {
      * @param specinfo  is a pointer to the special info struct.
      * @param mode      is the mode of the new file.
      */
-    int (*mknod)(vnode_t * dir, const char * name, size_t name_len, int mode,
-            void * specinfo, vnode_t ** result);
+    int (*mknod)(vnode_t * dir, const char * name, int mode, void * specinfo,
+            vnode_t ** result);
     /**
      * Lookup for a hard linked vnode in a directory vnode.
      * @param dir       is a directory in the file system.
      * @param name      is a filename.
-     * @param name_len  is the length of name.
      * @param[out] result is the result of lookup.
      * @return Returns 0 if a vnode was found;
      *         If vnode is same as dir (root dir) -EDOM shall be returned;
      *         Otherwise value other than zero.
      */
-    int (*lookup)(vnode_t * dir, const char * name, size_t name_len,
-            vnode_t ** result);
+    int (*lookup)(vnode_t * dir, const char * name, vnode_t ** result);
     /**
      * Create a hard link.
      * Link vnode into dir with the specified name.
      * @param dir       is the directory where entry will be created.
      * @param vnode     is a vnode where the link will point.
      * @param name      is the name of the hard link.
-     * @param name_len  is the length of the name.
      * @return Returns 0 if creating a link succeeded; Otherwise value other than
      *         zero.
      */
-    int (*link)(vnode_t * dir, vnode_t * vnode, const char * name,
-            size_t name_len);
+    int (*link)(vnode_t * dir, vnode_t * vnode, const char * name);
     /**
      * Unlink a hard link.
      * Unlink a hard link in the directory specified.
      */
-    int (*unlink)(vnode_t * dir, const char * name, size_t name_len);
+    int (*unlink)(vnode_t * dir, const char * name);
     /**
      * Create a directory called name in dir.
      * Implementation of mkdir() shall also set uid and gid of the new directory
      * if the underlying filesystem supports that feature.
      * @param dir       is a directory in the file system.
      * @param name      is the name of the new directory.
-     * @param name_len  is the length of the name.
      * @param mode      is the file mode of the new directory.
      * @return Zero in case of operation succeed; Otherwise value other than zero.
      */
-    int (*mkdir)(vnode_t * dir,  const char * name, size_t name_len, mode_t mode);
-    int (*rmdir)(vnode_t * dir,  const char * name, size_t name_len);
+    int (*mkdir)(vnode_t * dir,  const char * name, mode_t mode);
+    int (*rmdir)(vnode_t * dir,  const char * name);
     /**
      * Reads one directory entry from the dir into the struct dirent.
      * @param dir       is a directory open in the file system.

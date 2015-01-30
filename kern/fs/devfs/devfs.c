@@ -122,12 +122,10 @@ int dev_make(struct dev_info * devnfo, uid_t uid, gid_t gid, int perms,
     vnode_t * res;
     int retval;
 
-    if (!vn_devfs->vnode_ops->lookup(vn_devfs, devnfo->dev_name,
-            sizeof(devnfo->dev_name), NULL)) {
+    if (!vn_devfs->vnode_ops->lookup(vn_devfs, devnfo->dev_name, NULL)) {
         return -EEXIST;
     }
-    retval = vn_devfs->vnode_ops->mknod(vn_devfs,
-            devnfo->dev_name, sizeof(devnfo->dev_name),
+    retval = vn_devfs->vnode_ops->mknod(vn_devfs, devnfo->dev_name,
             ((devnfo->block_size > 1) ? S_IFBLK : S_IFCHR) | perms,
             devnfo, &res);
     if (retval)

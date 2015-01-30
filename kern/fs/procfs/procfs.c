@@ -237,7 +237,7 @@ int procfs_mkentry(const proc_info_t * proc)
     /* proc dir name and name_len */
     name_len = uitoa32(name, proc->pid) + 1;
 
-    err = vn_procfs->vnode_ops->mkdir(vn_procfs, name, name_len, PROCFS_PERMS);
+    err = vn_procfs->vnode_ops->mkdir(vn_procfs, name, PROCFS_PERMS);
     if (err == -EEXIST) {
         return 0;
     } else if (err) {
@@ -247,7 +247,7 @@ int procfs_mkentry(const proc_info_t * proc)
         goto fail;
     }
 
-    err = vn_procfs->vnode_ops->lookup(vn_procfs, name, name_len, &pdir);
+    err = vn_procfs->vnode_ops->lookup(vn_procfs, name, &pdir);
     if (err) {
 #ifdef configPROCFS_DEBUG
         KERROR(KERROR_DEBUG, fail);
@@ -285,15 +285,15 @@ int procfs_rmentry(pid_t pid)
 
     vref(vn_procfs);
 
-    err = vn_procfs->vnode_ops->lookup(vn_procfs, name, name_len, &pdir);
+    err = vn_procfs->vnode_ops->lookup(vn_procfs, name, &pdir);
     if (err == -ENOENT)
         return 0;
     else if (err)
         return err;
 
-    pdir->vnode_ops->unlink(pdir, PROCFS_FN_STATUS, sizeof(PROCFS_FN_STATUS));
+    pdir->vnode_ops->unlink(pdir, PROCFS_FN_STATUS);
     vrele(pdir);
-    vn_procfs->vnode_ops->rmdir(vn_procfs, name, name_len);
+    vn_procfs->vnode_ops->rmdir(vn_procfs, name);
 
     vrele(vn_procfs);
 
@@ -319,9 +319,8 @@ static int create_status_file(vnode_t * pdir, const proc_info_t * proc)
     spec->ftype = PROCFS_STATUS;
     spec->pid = proc->pid;
 
-    err = pdir->vnode_ops->mknod(pdir,
-            PROCFS_FN_STATUS, sizeof(PROCFS_FN_STATUS),
-            S_IFREG | PROCFS_PERMS, spec, &vn);
+    err = pdir->vnode_ops->mknod(pdir, PROCFS_FN_STATUS, S_IFREG | PROCFS_PERMS,
+            spec, &vn);
     if (err) {
         kfree(spec);
         return -ENOTDIR;
