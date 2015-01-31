@@ -2,8 +2,14 @@
 
 menu "Library routines"
 
+config configGENSEGTREE
+    bool "Generic min/max segment trees"
+    default n
+    ---help---
+    Generic min/max segment tree implementation.
+
 config configSUBR_HASH
-    bool "kernel hash tables"
+    bool "Kernel hash tables"
     default n
     ---help---
     BSD kernel hash tables.
