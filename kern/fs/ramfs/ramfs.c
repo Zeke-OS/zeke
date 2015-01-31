@@ -337,6 +337,11 @@ int ramfs_delete_vnode(vnode_t * vnode)
     ramfs_inode_t * inode;
     vnode_t * vn_tmp;
 
+#if configRAMFS_DEBUG
+    KERROR(KERROR_DEBUG, "%s, ramfs_delete_vnode(%u)\n", vnode->sb->fs->fsname,
+           (unsigned)vnode->vn_num);
+#endif
+
     inode = get_inode_of_vnode(vnode);
 
     vrele(&inode->in_vnode);
