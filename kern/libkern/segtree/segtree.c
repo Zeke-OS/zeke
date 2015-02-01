@@ -37,6 +37,14 @@ struct segt * segt_init(size_t n, segtcmp_t cmp)
 {
     struct segt * s;
 
+    n--;
+    n |= n >> 1;
+    n |= n >> 2;
+    n |= n >> 4;
+    n |= n >> 8;
+    n |= n >> 16;
+    n++;
+
     s = kcalloc(1, sizeof(struct segt) + 2 * n * sizeof(void *));
     s->cmp = cmp;
     s->n = n;
