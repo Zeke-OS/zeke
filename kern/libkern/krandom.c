@@ -4,6 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Kernel random.
  * @section LICENSE
+ * Copyright (c) 2015 Joni Hauhia <joni.hauhia@cs.helsinki.fi>
  * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1992, 1993
  *        The Regents of the University of California.  All rights reserved.
@@ -54,28 +55,25 @@ void ksrandom(unsigned long seed)
 
 unsigned long krandom(void)
 {
-    long x, hi, lo, t;
+    long x;
+    int32_t result;
 
     /*
-     * Compute x[n + 1] = (7^5 * x[n]) mod (2^31 - 1).
-     * From "Random number generators: good ones are hard to find",
-     * Park and Miller, Communications of the ACM, vol. 31, no. 10,
-     * October 1988, p. 1195.
+     * Compute X[n+1] = ( X[n] * a + c) mod 2^31.
      */
 
     /* Can't be initialized with 0, so use another value. */
     if ((x = randseed) == 0)
         x = 123459876;
 
-    hi = x / 127773;
-    lo = x % 127773;
-    t = 16807 * lo - 2836 * hi;
-    if (t < 0)
-        t += 0x7fffffff;
+    result = randseed * 1103515245;
+    result = result + 12345;
+    result = result % 2147483648;
+    result = result & 0x7fffffff;
 
-    randseed = t;
+    randseed = result;
 
-    return t;
+    return result;
 }
 
 long kunirand(unsigned long n)
