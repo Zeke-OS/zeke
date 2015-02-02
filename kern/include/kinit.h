@@ -48,23 +48,23 @@ void (*kputs)(const char *);
  * Subsystem initializer prologue.
  * @param name is the subsystem name.
  */
-#define SUBSYS_INIT(name) do {      \
-    static char __subsys_init = 0;  \
-    if (__subsys_init != 0) {       \
-        return -EAGAIN;             \
-    } else {                        \
-        __subsys_init = 1;          \
-        kputs((name));              \
-    }                               \
-} while (0)                         \
+#define SUBSYS_INIT(name) do {          \
+    static char __subsys_init = '\x00'; \
+    if (__subsys_init != '\x00') {      \
+        return -EAGAIN;                 \
+    } else {                            \
+        __subsys_init = '\x01';         \
+        kputs((name));                  \
+    }                                   \
+} while (0)                             \
 
 /**
  * Subsystem initializer dependency.
  * Mark that subsystem initializer depends on dep.
  * @param dep is a name of an intializer function.
  */
-#define SUBSYS_DEP(dep)             \
-    extern int dep(void);           \
+#define SUBSYS_DEP(dep)                 \
+    extern int dep(void);               \
     exec_initfn((dep))
 
 /**
