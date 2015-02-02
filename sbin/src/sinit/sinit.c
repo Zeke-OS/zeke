@@ -53,7 +53,7 @@ static struct {
     { SIGINT,  reboot   },
 };
 
-#include "config.h"
+#include "siconfig.h"
 
 static sigset_t set;
 
