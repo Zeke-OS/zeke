@@ -158,17 +158,21 @@ void * uinit(void * arg)
      _chdir("/mnt");
     _chrootcwd();
 
+#if configDEVFS
     err = _mount("", "/dev", "devfs");
     if (err) {
         printfail("can't mount /dev");
         while(1);
     }
+#endif
 
+#if configPROCFS
     err = _mount("", "/proc", "procfs");
     if (err) {
         printfail("can't mount /proc");
         while(1);
     }
+#endif
 
     err = _mount("", "/tmp", "ramfs");
     if (err) {
