@@ -46,7 +46,7 @@
                                              *   an procfs entry.
                                              */
 /* Procfs file names */
-#define PROCFS_FN_STATUS        "status"
+#define PROCFS_STATUS_FILE      "status"
 
 /**
  * Procfs file types.

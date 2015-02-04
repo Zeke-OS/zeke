@@ -223,19 +223,17 @@ int procfs_mkentry(const proc_info_t * proc)
     const char fail[] = "Failed to create a procfs entry\n";
 #endif
     char name[PROCFS_NAMELEN_MAX];
-    size_t name_len;
     vnode_t * pdir = NULL;
     int err;
 
     if (!vn_procfs)
         return 0; /* Not yet initialized. */
 
-#ifdef configPROCFS_DEBUG
-    KERROR(KERROR_DEBUG, "procfs_mkentry(pid = %u)\n", proc->pid);
-#endif
+    uitoa32(name, proc->pid);
 
-    /* proc dir name and name_len */
-    name_len = uitoa32(name, proc->pid) + 1;
+#ifdef configPROCFS_DEBUG
+    KERROR(KERROR_DEBUG, "procfs_mkentry(pid = %s)\n", name);
+#endif
 
     err = vn_procfs->vnode_ops->mkdir(vn_procfs, name, PROCFS_PERMS);
     if (err == -EEXIST) {
@@ -274,14 +272,16 @@ int procfs_rmentry(pid_t pid)
 {
     vnode_t * pdir;
     char name[PROCFS_NAMELEN_MAX];
-    size_t name_len;
     int err;
 
     if (!vn_procfs)
         return 0; /* Not yet initialized. */
 
-    /* proc dir name and name_len */
-    name_len = uitoa32(name, pid) + 1;
+    uitoa32(name, pid);
+
+#ifdef configPROCFS_DEBUG
+        KERROR(KERROR_DEBUG, "procfs_rmentry(pid = %s)\n", name);
+#endif
 
     vref(vn_procfs);
 
@@ -291,7 +291,7 @@ int procfs_rmentry(pid_t pid)
     else if (err)
         return err;
 
-    pdir->vnode_ops->unlink(pdir, PROCFS_FN_STATUS);
+    pdir->vnode_ops->unlink(pdir, PROCFS_STATUS_FILE);
     vrele(pdir);
     vn_procfs->vnode_ops->rmdir(vn_procfs, name);
 
@@ -319,8 +319,8 @@ static int create_status_file(vnode_t * pdir, const proc_info_t * proc)
     spec->ftype = PROCFS_STATUS;
     spec->pid = proc->pid;
 
-    err = pdir->vnode_ops->mknod(pdir, PROCFS_FN_STATUS, S_IFREG | PROCFS_PERMS,
-            spec, &vn);
+    err = pdir->vnode_ops->mknod(pdir, PROCFS_STATUS_FILE,
+            S_IFREG | PROCFS_PERMS, spec, &vn);
     if (err) {
         kfree(spec);
         return -ENOTDIR;
