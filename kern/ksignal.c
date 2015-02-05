@@ -67,7 +67,6 @@
  *******************************************************************************
  */
 
-#define KERNEL_INTERNAL 1
 #include <sys/tree.h>
 #include <kstring.h>
 #include <libkern.h>

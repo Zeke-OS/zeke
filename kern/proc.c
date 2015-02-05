@@ -31,7 +31,6 @@
  *******************************************************************************
  */
 
-#define KERNEL_INTERNAL 1
 #include <autoconf.h>
 #include <sys/types.h>
 #include <unistd.h>

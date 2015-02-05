@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   File System wrapper for time.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,7 +30,6 @@
  *******************************************************************************
  */
 
-#define KERNEL_INTERNAL 1
 #include <sys/time.h>
 #include <timeconst.h>
 #include "src/ff.h"

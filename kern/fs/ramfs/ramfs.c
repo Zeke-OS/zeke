@@ -30,7 +30,6 @@
  *******************************************************************************
  */
 
-#define KERNEL_INTERNAL
 #include <stdint.h>
 #include <sys/types.h>
 #include <machine/atomic.h>

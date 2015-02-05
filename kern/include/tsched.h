@@ -41,9 +41,6 @@
 #ifndef TSCHED_H
 #define TSCHED_H
 
-#ifndef KERNEL_INTERNAL
-#define KERNEL_INTERNAL
-#endif
 #include <autoconf.h>
 #include <sched.h>
 #include <ksignal.h>

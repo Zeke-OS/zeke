@@ -62,7 +62,6 @@
  * Broadcom BCM2835 Peripherals Guide
  */
 
-#define KERNEL_INTERNAL
 #include <autoconf.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>

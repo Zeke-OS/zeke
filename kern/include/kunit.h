@@ -45,7 +45,6 @@
 #ifndef KUNIT_H
 #define KUNIT_H
 
-#define KERNEL_INTERNAL
 #include <kstring.h>
 #include <kerror.h>
 #include <sys/sysctl.h>

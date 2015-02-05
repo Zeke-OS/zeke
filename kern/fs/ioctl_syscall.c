@@ -30,7 +30,6 @@
  *******************************************************************************
  */
 
-#define KERNEL_INTERNAL
 #include <stdint.h>
 #include <stddef.h>
 #include <proc.h>

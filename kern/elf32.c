@@ -30,7 +30,6 @@
  *******************************************************************************
  */
 
-#define KERNEL_INTERNAL 1
 #include <errno.h>
 #include <kmalloc.h>
 #include <kstring.h>

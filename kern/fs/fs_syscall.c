@@ -30,7 +30,6 @@
  *******************************************************************************
  */
 
-#define KERNEL_INTERNAL 1
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>

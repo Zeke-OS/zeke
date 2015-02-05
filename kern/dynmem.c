@@ -30,7 +30,6 @@
  *******************************************************************************
  */
 
-#define KERNEL_INTERNAL
 #include <kinit.h>
 #include <kstring.h>
 #include <kerror.h>

@@ -109,7 +109,7 @@ $(ASOBJS): $(ASRC-y) $(UNIFDEF) $(AUTOCONF_H)
 $(OBJS): %.o: %.c $(AUTOCONF_H)
 	@echo "CC $@"
 	$(eval CUR_BC := $*.bc)
-	@$(CC) $(CCFLAGS) $(IDIR) -c $*.c -o $(CUR_BC)
+	@$(CC) $(CCFLAGS) -DKERNEL_INTERNAL $(IDIR) -c $*.c -o $(CUR_BC)
 	@$(OPT) $(OFLAGS) $(CUR_BC) -o - | $(LLC) $(LLCFLAGS) - -o - \
 		| $(ARMGNU)-as - -o $@ $(ASFLAGS)
 

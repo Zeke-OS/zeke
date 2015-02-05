@@ -32,7 +32,6 @@
  *******************************************************************************
  */
 
-#define KERNEL_INTERNAL
 #include <libkern.h>
 #include <kstring.h>
 #include <sys/linker_set.h>

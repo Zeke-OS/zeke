@@ -30,7 +30,6 @@
  *******************************************************************************
  */
 
-#define KERNEL_INTERNAL
 #include <kinit.h>
 #include "bcm2835_mmio.h"
 #include "bcm2835_gpio.h"

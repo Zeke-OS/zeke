@@ -30,7 +30,6 @@
  *******************************************************************************
  */
 
-#define KERNEL_INTERNAL
 #include <libkern.h>
 #include <kinit.h>
 #include <bitmap.h>

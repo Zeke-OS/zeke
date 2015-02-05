@@ -30,7 +30,6 @@
  *******************************************************************************
  */
 
-#define KERNEL_INTERNAL
 #include <autoconf.h>
 #include <kerror.h>
 #include <proc.h>
@@ -41,7 +40,6 @@
 #include <kmalloc.h>
 #include <buf.h>
 #include <kinit.h>
-
 
 extern int (*__hw_preinit_array_start[]) (void) __attribute__((weak));
 extern int (*__hw_preinit_array_end[]) (void) __attribute__((weak));

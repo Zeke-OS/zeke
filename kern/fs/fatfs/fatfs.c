@@ -30,7 +30,6 @@
  *******************************************************************************
  */
 
-#define KERNEL_INTERNAL 1
 #include <autoconf.h>
 #include <time.h>
 #include <sys/stat.h>

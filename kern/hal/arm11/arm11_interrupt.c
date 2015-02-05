@@ -32,10 +32,6 @@
  *******************************************************************************
  */
 
-#ifndef KERNEL_INTERNAL
-#define KERNEL_INTERNAL
-#endif
-
 #include <kinit.h>
 #include <kerror.h>
 #include <kstring.h>

@@ -33,7 +33,6 @@
  *******************************************************************************
  */
 
-#define KERNEL_INTERNAL 1
 #include <stdbool.h>
 #include <libkern.h>
 #include <kstring.h>

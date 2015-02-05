@@ -32,7 +32,6 @@
  *******************************************************************************
  */
 
-#define KERNEL_INTERNAL
 #include <stddef.h>
 #include <sys/linker_set.h>
 #include <autoconf.h>

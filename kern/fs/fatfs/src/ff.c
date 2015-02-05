@@ -116,7 +116,6 @@
 /                   Fixed LFN entry is not deleted on delete/rename an object with lossy converted SFN.
 /---------------------------------------------------------------------------*/
 
-#define KERNEL_INTERNAL
 #include <kmalloc.h>
 #include <sys/ioctl.h>
 #include "ff.h"         /* Declarations of FatFs API */

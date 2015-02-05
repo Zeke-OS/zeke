@@ -42,7 +42,6 @@
  *        @(#)kern_sysctl.c        8.4 (Berkeley) 4/14/94
  */
 
-#define KERNEL_INTERNAL
 #include <stdint.h>
 #include <errno.h>
 #include <kstring.h>

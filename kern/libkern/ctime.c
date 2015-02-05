@@ -1,11 +1,10 @@
 /*
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1987 Regents of the University of California.
  * This file may be freely redistributed provided that this
  * notice remains attached.
  */
 
-#define KERNEL_INTERNAL
 #include <stdbool.h>
 #include <kstring.h>
 #include <timeconst.h>

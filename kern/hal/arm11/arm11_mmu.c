@@ -30,7 +30,6 @@
  *******************************************************************************
  */
 
-#define KERNEL_INTERNAL 1
 #include <errno.h>
 #include <kstring.h>
 #include <kerror.h>

@@ -31,7 +31,6 @@
  *******************************************************************************
  */
 
-#define KERNEL_INTERNAL 1
 #include <kstring.h>
 #include <libkern.h>
 #include <tsched.h>

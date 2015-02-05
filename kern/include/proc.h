@@ -52,11 +52,6 @@
 #define PROC_H
 
 #include <autoconf.h>
-
-#ifndef KERNEL_INTERNAL
-#define KERNEL_INTERNAL
-#endif
-
 #include <sys/param.h>
 #include <sys/types_pthread.h>
 #include <sys/times.h>

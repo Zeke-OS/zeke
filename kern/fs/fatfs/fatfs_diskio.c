@@ -30,7 +30,6 @@
  *******************************************************************************
  */
 
-#define KERNEL_INTERNAL 1
 #include <libkern.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>

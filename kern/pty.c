@@ -38,7 +38,6 @@
  * semantics inside the kernel.
  */
 
-#define KERNEL_INTERNAL
 #include <sys/tree.h>
 #include <queue_r.h>
 #include <kinit.h>

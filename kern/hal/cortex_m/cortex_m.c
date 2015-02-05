@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Hardware Abstraction Layer for Cortex-M
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -32,17 +32,15 @@
  *******************************************************************************
  */
 
-/** @addtogroup HAL
-  * @{
-  */
+/**
+ * @addtogroup HAL
+ * @{
+ */
 
-/** @addtogroup Cortex-M
-  * @{
-  */
-
-#ifndef KERNEL_INTERNAL
-#define KERNEL_INTERNAL
-#endif
+/**
+ * @addtogroup Cortex-M
+ * @{
+ */
 
 #if __ARM7M__ || __ARM7EM__
 /* Needed for debugging if __ARM7M__ or __ARM7EM__ */
@@ -223,9 +221,9 @@ static void printErrorMsg(const char * errMsg)
 /* End of Fault Handling ******************************************************/
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /**
-  * @}
-  */
+ * @}
+ */

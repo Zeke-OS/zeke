@@ -30,7 +30,6 @@
  *******************************************************************************
  */
 
-#define KERNEL_INTERNAL
 #include <sys/linker_set.h>
 #include <sys/tree.h>
 #include <sys/types.h>

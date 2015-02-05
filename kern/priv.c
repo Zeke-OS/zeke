@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   User credentials.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2009 Robert N. M. Watson
  * Copyright (c) 2006 nCircle Network Security, Inc.
  * All rights reserved.
@@ -32,7 +32,6 @@
  *******************************************************************************
  */
 
-#define KERNEL_INTERNAL
 #include <autoconf.h>
 #include <proc.h>
 #include <errno.h>
