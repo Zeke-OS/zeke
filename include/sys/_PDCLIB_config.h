@@ -12,7 +12,6 @@
 /* Misc                                                                       */
 /* -------------------------------------------------------------------------- */
 
-#include <sys/cdefs.h>
 #define _PDCLIB_EXTENSIONS 1
 
 /* The character (sequence) your platform uses as newline.                    */

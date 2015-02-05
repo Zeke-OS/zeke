@@ -40,7 +40,6 @@
 #ifndef FCNTL_H
 #define FCNTL_H
 
-#include <sys/cdefs.h>
 #include <stddef.h>
 #include <stdint.h>
 

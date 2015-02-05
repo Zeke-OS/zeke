@@ -1,4 +1,5 @@
 /*-
+ * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1990, 1993
  *  The Regents of the University of California.  All rights reserved.
  *
@@ -27,7 +28,6 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
 #include <strings.h>
 
 /*
@@ -39,8 +39,10 @@ flsl(long mask)
     int bit;
 
     if (mask == 0)
-        return (0);
+        return 0;
+
     for (bit = 1; mask != 1; bit++)
         mask = (unsigned long)mask >> 1;
-    return (bit);
+
+    return bit;
 }

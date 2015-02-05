@@ -1,6 +1,7 @@
 /*-
+ * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1990, 1993
- *	The Regents of the University of California.  All rights reserved.
+ *  The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,26 +28,21 @@
  * SUCH DAMAGE.
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)memccpy.c	8.1 (Berkeley) 6/4/93";
-#endif /* LIBC_SCCS and not lint */
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <string.h>
 
 void *
 memccpy(void *t, const void *f, int c, size_t n)
 {
+    if (n) {
+        unsigned char *tp = t;
+        const unsigned char *fp = f;
+        unsigned char uc = c;
 
-	if (n) {
-		unsigned char *tp = t;
-		const unsigned char *fp = f;
-		unsigned char uc = c;
-		do {
-			if ((*tp++ = *fp++) == uc)
-				return (tp);
-		} while (--n != 0);
-	}
-	return (0);
+        do {
+            if ((*tp++ = *fp++) == uc)
+                return tp;
+        } while (--n != 0);
+    }
+
+    return 0;
 }

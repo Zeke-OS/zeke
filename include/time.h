@@ -38,7 +38,6 @@
 #ifndef TIME_H
 #define TIME_H
 
-#include <sys/cdefs.h>
 #include <sys/_null.h>
 #include "sys/types.h" /* TODO Not OK, instead of this only needed types should be defined */
 

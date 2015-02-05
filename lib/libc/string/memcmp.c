@@ -1,6 +1,7 @@
 /*-
+ * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1990, 1993
- *	The Regents of the University of California.  All rights reserved.
+ *  The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Chris Torek.
@@ -30,12 +31,6 @@
  * SUCH DAMAGE.
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)memcmp.c	8.1 (Berkeley) 6/4/93";
-#endif /* LIBC_SCCS and not lint */
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <string.h>
 
 /*
@@ -44,13 +39,15 @@ __FBSDID("$FreeBSD$");
 int
 memcmp(const void *s1, const void *s2, size_t n)
 {
-	if (n != 0) {
-		const unsigned char *p1 = s1, *p2 = s2;
+    if (n != 0) {
+        const unsigned char *p1 = s1, *p2 = s2;
 
-		do {
-			if (*p1++ != *p2++)
-				return (*--p1 - *--p2);
-		} while (--n != 0);
-	}
-	return (0);
+        do {
+            if (*p1++ != *p2++)
+                return (*--p1 - *--p2);
+
+        } while (--n != 0);
+    }
+
+    return 0;
 }

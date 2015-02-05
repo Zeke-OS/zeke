@@ -1,8 +1,5 @@
-/*	$NetBSD: tree.h,v 1.8 2004/03/28 19:38:30 provos Exp $	*/
-/*	$OpenBSD: tree.h,v 1.7 2002/10/17 21:51:54 art Exp $	*/
-/* $FreeBSD$ */
-
 /*-
+ * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright 2002 Niels Provos <provos@citi.umich.edu>
  * All rights reserved.
  *
@@ -29,8 +26,6 @@
 
 #ifndef	_SYS_TREE_H_
 #define	_SYS_TREE_H_
-
-#include <sys/cdefs.h>
 
 /*
  * This file defines data structures for different types of trees:
@@ -88,7 +83,7 @@ struct {								\
 	SPLAY_RIGHT(tmp, field) = (head)->sph_root;			\
 	(head)->sph_root = tmp;						\
 } while (/*CONSTCOND*/ 0)
-	
+
 #define SPLAY_ROTATE_LEFT(head, tmp, field) do {			\
 	SPLAY_RIGHT((head)->sph_root, field) = SPLAY_LEFT(tmp, field);	\
 	SPLAY_LEFT(tmp, field) = (head)->sph_root;			\

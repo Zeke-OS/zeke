@@ -1,4 +1,5 @@
 /*-
+ * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2002 Thomas Moestl <tmm@FreeBSD.org>
  * All rights reserved.
  *
@@ -23,14 +24,12 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $FreeBSD$
  */
 
 #ifndef _SYS_ENDIAN_H_
 #define _SYS_ENDIAN_H_
 
 #include <stdint.h>
-#include <sys/cdefs.h>
 #include <machine/endian.h>
 
 /*

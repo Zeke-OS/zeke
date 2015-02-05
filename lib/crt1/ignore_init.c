@@ -1,5 +1,5 @@
 /*-
- * Copyright 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright 2012 Konstantin Belousov <kib@FreeBSD.org>
  * All rights reserved.
  *
@@ -26,7 +26,6 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <sys/cdefs.h>
 #include <stdlib.h>
 #include "notes.h"
 

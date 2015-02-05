@@ -38,8 +38,6 @@
 #ifndef WAIT_H
 #define WAIT_H
 
-#include <sys/cdefs.h>
-
 #define WCONTINUED  0x1 /*!< Report a continued process. */
 #define WNOHANG     0x2 /*!< Don't hang in wait. */
 #define WUNTRACED   0x4 /*!< Tell about stopped, untraced children. */

@@ -5,7 +5,7 @@
  * @brief   System error numbers.
  *          IEEE Std 1003.1, 2013
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -127,7 +127,6 @@
 #define ENOTBLK         81  /*!< Block device required */
 
 #ifndef KERNEL_INTERNAL
-#include <sys/cdefs.h>
 
 /**
  * Get pointer to the thread local errno.

@@ -1,4 +1,5 @@
 /*-
+ * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2013 Niclas Zeising
  * All rights reserved.
  *
@@ -25,7 +26,6 @@
  *
  */
 
-#include <sys/cdefs.h>
 #include <stddef.h>
 #include <string.h>
 

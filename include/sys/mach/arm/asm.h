@@ -1,6 +1,5 @@
-/*  $NetBSD: asm.h,v 1.5 2003/08/07 16:26:53 agc Exp $  */
-
 /*-
+ * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
  *
@@ -30,15 +29,10 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *  from: @(#)asm.h 5.5 (Berkeley) 5/7/91
- *
- * $FreeBSD$
  */
 
 #ifndef _MACHINE_ASM_H_
 #define _MACHINE_ASM_H_
-#include <sys/cdefs.h>
 
 #define _C_LABEL(x) x
 #define _ASM_LABEL(x)   x

@@ -33,7 +33,6 @@
 #ifndef _SYS_MMAN_H_
 #define _SYS_MMAN_H_
 
-#include <sys/cdefs.h>
 #include <sys/types.h> /* TODO Shouldn't be included here, some types should
                         *      be defined in this file instead.
                         */

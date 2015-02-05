@@ -38,8 +38,6 @@
 #ifndef MOUNT_H
 #define MOUNT_H
 
-#include <sys/cdefs.h>
-
 #define MNT_RDONLY      0x0001 /*!< Read only. */
 #define MNT_SYNCHRONOUS 0x0002 /*!< Synchronous writes. */
 #define MNT_ASYNC       0x0040 /*!< Asynchronous writes. */

@@ -74,7 +74,6 @@
 #ifndef PTHREAD_H
 #define PTHREAD_H
 
-#include <sys/cdefs.h>
 #include <sys/types_pthread.h>
 #include <sched.h>
 #include <time.h>

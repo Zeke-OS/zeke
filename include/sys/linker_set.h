@@ -5,6 +5,7 @@
  *
  * @brief   Linker sets.
  * @section LICENSE
+ * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1999 John D. Polstra
  * Copyright (c) 1999,2001 Peter Wemm <peter@FreeBSD.org>
  * All rights reserved.
@@ -33,8 +34,6 @@
 
 #ifndef _SYS_LINKER_SET_H_
 #define _SYS_LINKER_SET_H_
-
-#include <sys/cdefs.h>
 
 /*
  * The following macros are used to declare global sets of objects, which

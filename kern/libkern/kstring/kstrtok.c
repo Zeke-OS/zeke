@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   String tokenizer.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1988 Regents of the University of California.
  * All rights reserved.
  *
@@ -33,7 +33,6 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
 #include <kstring.h>
 
 char * kstrtok(char * s, const char * delim, char ** lasts)

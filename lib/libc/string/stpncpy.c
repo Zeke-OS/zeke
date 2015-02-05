@@ -1,4 +1,5 @@
 /*-
+ * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2009 David Schultz <das@FreeBSD.org>
  * All rights reserved.
  *
@@ -24,22 +25,22 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-
 #include <string.h>
 
 char *
 stpncpy(char * __restrict dst, const char * __restrict src, size_t n)
 {
+    for (; n--; dst++, src++) {
+        if (!(*dst = *src)) {
+            char *ret = dst;
 
-	for (; n--; dst++, src++) {
-		if (!(*dst = *src)) {
-			char *ret = dst;
-			while (n--)
-				*++dst = '\0';
-			return (ret);
-		}
-	}
-	return (dst);
+            while (n--) {
+                *++dst = '\0';
+            }
+
+            return ret;
+        }
+    }
+
+    return dst;
 }

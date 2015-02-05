@@ -1,4 +1,5 @@
 /*-
+ * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1989 Regents of the University of California.
  * All rights reserved.
  *
@@ -29,15 +30,10 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *  from: @(#)float.h   7.1 (Berkeley) 5/8/90
- * $FreeBSD$
  */
 
 #ifndef _MACHINE_FLOAT_H_
 #define _MACHINE_FLOAT_H_ 1
-
-#include <sys/cdefs.h>
 
 __BEGIN_DECLS
 extern int __flt_rounds(void);

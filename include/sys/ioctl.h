@@ -40,7 +40,6 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <sys/cdefs.h>
 
 /*
  * IOCTL request codes.

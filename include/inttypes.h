@@ -9,11 +9,9 @@
  * @{
  */
 
-
 #ifndef _PDCLIB_INTTYPES_H
 #define _PDCLIB_INTTYPES_H _PDCLIB_INTTYPES_H
 
-#include <sys/cdefs.h>
 #include <sys/_PDCLIB_int.h>
 #include <stdint.h>
 
