@@ -42,7 +42,7 @@
 #define NSHUFF 50 /* to drop some "seed -> 1st value" linearity */
 #define RAND_MAX 0x7fffffff
 
-static unsigned long randseed = 937186357;
+static uint32_t randseed = 937186357;
 
 void ksrandom(unsigned long seed)
 {
@@ -53,10 +53,10 @@ void ksrandom(unsigned long seed)
         (void)krandom();
 }
 
-unsigned long krandom(void)
+uint32_t krandom(void)
 {
-    long x;
-    int32_t result;
+    uint32_t x;
+    uint32_t result;
 
     /*
      * Compute X[n+1] = ( X[n] * a + c) mod 2^31.
@@ -76,11 +76,11 @@ unsigned long krandom(void)
     return result;
 }
 
-long kunirand(unsigned long n)
+uint32_t kunirand(unsigned long n)
 {
-    const unsigned long part_size = (n == RAND_MAX) ?
-                                    1 : 1 + (RAND_MAX - n) / (n + 1);
-    const unsigned long max_usefull = part_size * n + (part_size - 1);
+    const uint32_t part_size = (n == RAND_MAX) ?
+                               1 : 1 + (RAND_MAX - n) / (n + 1);
+    const uint32_t max_usefull = part_size * n + (part_size - 1);
     long draw;
 
     do {
@@ -95,7 +95,7 @@ int random_init(void)
 {
     SUBSYS_INIT("krandom");
 
-    ksrandom((uint32_t)(get_utime() % (uint64_t)0xffffffff));
+    ksrandom((uint32_t)(get_utime() % (uint64_t)0x7fffffff));
 
     return 0;
 }

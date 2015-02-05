@@ -142,8 +142,8 @@ void ksrandom(unsigned long seed);
  * [0, 2^31 - 1].
  * @return Returns a pseudo-random number.
  */
-unsigned long krandom(void);
-long kunirand(unsigned long n);
+uint32_t krandom(void);
+uint32_t kunirand(unsigned long n);
 
 /**
  * @}
