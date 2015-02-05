@@ -205,13 +205,10 @@ static int procfs_updatedir(vnode_t * dir)
             if (proc)
                 err = procfs_mkentry(proc);
             else
-                err = procfs_rmentry(i);
-            if (err)
-                goto fail;
+                procfs_rmentry(i);
         }
     }
 
-fail:
     PROC_UNLOCK();
 
     return err;
@@ -268,14 +265,14 @@ fail:
     return err;
 }
 
-int procfs_rmentry(pid_t pid)
+void procfs_rmentry(pid_t pid)
 {
     vnode_t * pdir;
     char name[PROCFS_NAMELEN_MAX];
     int err;
 
     if (!vn_procfs)
-        return 0; /* Not yet initialized. */
+        return; /* Not yet initialized. */
 
     uitoa32(name, pid);
 
@@ -286,18 +283,23 @@ int procfs_rmentry(pid_t pid)
     vref(vn_procfs);
 
     err = vn_procfs->vnode_ops->lookup(vn_procfs, name, &pdir);
-    if (err == -ENOENT)
-        return 0;
-    else if (err)
-        return err;
+    if (err) {
+#ifdef configPROCFS_DEBUG
+        KERROR(KERROR_DEBUG, "pid dir doesn't exist\n");
+#endif
+        vrele(vn_procfs);
+        return;
+    }
 
     pdir->vnode_ops->unlink(pdir, PROCFS_STATUS_FILE);
     vrele(pdir);
-    vn_procfs->vnode_ops->rmdir(vn_procfs, name);
+    err = vn_procfs->vnode_ops->rmdir(vn_procfs, name);
+#ifdef configPROCFS_DEBUG
+    if (err)
+        KERROR(KERROR_DEBUG, "Can't rmdir(%s)\n", name);
+#endif
 
     vrele(vn_procfs);
-
-    return 0;
 }
 
 /**

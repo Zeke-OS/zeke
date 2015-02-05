@@ -75,7 +75,7 @@ int procfs_mkentry(const proc_info_t * proc);
  * Remove a process entry strored in procfs.
  * @param pid is the process ID of the process to be removed.
  */
-int procfs_rmentry(pid_t pid);
+void procfs_rmentry(pid_t pid);
 
 
 #endif /* PROCFS_H */

@@ -282,19 +282,13 @@ static void procarr_remove(pid_t pid)
 static void proc_remove(struct proc_info * proc)
 {
     struct proc_info * parent;
-    int err;
 
     KASSERT(proc, "Attempt to remove NULL proc");
 
     proc->state = PROC_STATE_DEFUNCT;
 
 #ifdef configPROCFS
-    err = procfs_rmentry(proc->pid);
-#ifdef configPROC_DEBUG
-    if (err) {
-        KERROR(KERROR_DEBUG, " procfs_rmentry() failed");
-    }
-#endif
+    procfs_rmentry(proc->pid);
 #endif
 
     /*
