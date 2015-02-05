@@ -30,7 +30,6 @@
  *******************************************************************************
  */
 
-#include <autoconf.h>
 #include <kinit.h>
 #include <kstring.h>
 #include <ptmapper.h>

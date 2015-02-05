@@ -42,8 +42,6 @@
 #ifndef KLOCKS_H_
 #define KLOCKS_H_
 
-#include <autoconf.h>
-
 #include <sys/types_pthread.h>
 #include <machine/atomic.h>
 #ifdef configLOCK_DEBUG

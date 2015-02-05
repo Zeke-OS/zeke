@@ -44,7 +44,6 @@
 #ifndef MMU_H
 #define MMU_H
 
-#include <autoconf.h>
 #include <stdint.h>
 #include <stddef.h>
 

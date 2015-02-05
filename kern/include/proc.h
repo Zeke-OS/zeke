@@ -51,7 +51,6 @@
 #ifndef PROC_H
 #define PROC_H
 
-#include <autoconf.h>
 #include <sys/param.h>
 #include <sys/types_pthread.h>
 #include <sys/times.h>

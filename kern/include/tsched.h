@@ -41,7 +41,6 @@
 #ifndef TSCHED_H
 #define TSCHED_H
 
-#include <autoconf.h>
 #include <sched.h>
 #include <ksignal.h>
 #include <vm/vm.h>

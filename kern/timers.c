@@ -2,10 +2,9 @@
  *******************************************************************************
  * @file    timers.c
  * @author  Olli Vanhoja
- *
  * @brief   Kernel timers
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -33,7 +32,6 @@
  *******************************************************************************
  */
 
-#include <autoconf.h>
 #include <kinit.h>
 #include <sys/linker_set.h>
 #include <tsched.h>

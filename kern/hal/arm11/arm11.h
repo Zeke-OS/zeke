@@ -32,19 +32,19 @@
  *******************************************************************************
  */
 
-/** @addtogroup HAL
-  * @{
-  */
+/**
+ * @addtogroup HAL
+ * @{
+ */
 
 /** @addtogroup ARM11
-  * @{
-  */
+ * @{
+ */
 
 #pragma once
 #ifndef ARM11_H
 #define ARM11_H
 
-#include <autoconf.h>
 #include <stdint.h>
 #include <hal/core.h>
 
@@ -188,9 +188,9 @@ void wr_thread_stack_ptr(void * ptr);
 #endif /* ARM11_H */
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /**
-  * @}
-  */
+ * @}
+ */

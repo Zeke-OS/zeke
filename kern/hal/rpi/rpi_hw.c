@@ -30,7 +30,6 @@
  *******************************************************************************
  */
 
-#include <autoconf.h>
 #include <hal/mmu.h>
 #include <ptmapper.h>
 #include <dynmem.h>

@@ -51,7 +51,6 @@
  *******************************************************************************
  */
 
-#include <autoconf.h>
 #include <errno.h>
 #include <stdint.h>
 #include <kstring.h>

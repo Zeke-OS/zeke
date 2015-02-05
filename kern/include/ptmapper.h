@@ -39,7 +39,6 @@
 #ifndef PTMAPPER_H
 #define PTMAPPER_H
 
-#include <autoconf.h>
 #include <sys/linker_set.h>
 #include <hal/mmu.h>
 #include <vm/vm.h>

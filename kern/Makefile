@@ -45,8 +45,8 @@ MODULES += $(foreach var, $(ALLMODULES), $(if $(strip $($(var)-SRC-y) $($(var)-A
 # Compiler Options #############################################################
 ARMGNU      = arm-none-eabi
 #CC         = SET IN BUILDCONF.MK
-CCFLAGS    += -emit-llvm -ffreestanding
-CCFLAGS    += -nostdlib -nostdinc
+CCFLAGS    += -emit-llvm -ffreestanding -nostdlib -nostdinc
+CCFLAGS    += -include autoconf.h -DKERNEL_INTERNAL
 #OPT        = SET IN BUILDCONF.MK
 OFLAGS     += -std-compile-opts
 #LLC        = SET IN BUILDCONF.MK
@@ -109,7 +109,7 @@ $(ASOBJS): $(ASRC-y) $(UNIFDEF) $(AUTOCONF_H)
 $(OBJS): %.o: %.c $(AUTOCONF_H)
 	@echo "CC $@"
 	$(eval CUR_BC := $*.bc)
-	@$(CC) $(CCFLAGS) -DKERNEL_INTERNAL $(IDIR) -c $*.c -o $(CUR_BC)
+	@$(CC) $(CCFLAGS) $(IDIR) -c $*.c -o $(CUR_BC)
 	@$(OPT) $(OFLAGS) $(CUR_BC) -o - | $(LLC) $(LLCFLAGS) - -o - \
 		| $(ARMGNU)-as - -o $@ $(ASFLAGS)
 

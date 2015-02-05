@@ -30,7 +30,6 @@
  *******************************************************************************
  */
 
-#include <autoconf.h>
 #include <sys/types_pthread.h>
 #include <sys/sysctl.h>
 

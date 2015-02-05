@@ -32,7 +32,6 @@
  *******************************************************************************
  */
 
-#include <autoconf.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <kstring.h>

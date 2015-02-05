@@ -62,7 +62,6 @@
  * Broadcom BCM2835 Peripherals Guide
  */
 
-#include <autoconf.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>

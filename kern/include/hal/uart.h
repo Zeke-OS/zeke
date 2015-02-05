@@ -44,7 +44,6 @@
 #ifndef UART_H
 #define UART_H
 
-#include <autoconf.h>
 #include <stdint.h>
 #include <termios.h>
 

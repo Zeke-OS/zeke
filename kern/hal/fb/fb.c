@@ -30,7 +30,6 @@
  *******************************************************************************
  */
 
-#include <autoconf.h>
 #include <stddef.h>
 #include <kstring.h>
 #include <kmalloc.h>

@@ -41,7 +41,6 @@
 #ifndef HAL_CORE_H
 #define HAL_CORE_H
 
-#include <autoconf.h>
 #include <pthread.h>
 
 /* Select Core Implementation ************************************************/

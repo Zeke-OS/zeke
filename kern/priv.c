@@ -32,7 +32,6 @@
  *******************************************************************************
  */
 
-#include <autoconf.h>
 #include <proc.h>
 #include <errno.h>
 #include <syscall.h>

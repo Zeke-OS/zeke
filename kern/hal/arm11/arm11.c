@@ -34,7 +34,6 @@
 
 #include <stddef.h>
 #include <sys/linker_set.h>
-#include <autoconf.h>
 #include <kstring.h>
 #include <kerror.h>
 #include <errno.h>

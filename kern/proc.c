@@ -31,7 +31,6 @@
  *******************************************************************************
  */
 
-#include <autoconf.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <errno.h>

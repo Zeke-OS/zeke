@@ -34,7 +34,6 @@
 #ifndef KERROR_H
 #define KERROR_H
 
-#include <autoconf.h>
 #include <stddef.h>
 #include <kstring.h>
 
