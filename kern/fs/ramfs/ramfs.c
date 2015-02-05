@@ -43,6 +43,7 @@
 #include <kmalloc.h>
 #include <buf.h>
 #include <proc.h>
+#include <idle.h>
 #include <fs/dehtable.h>
 #include <fs/inpool.h>
 #include <fs/dev_major.h>
@@ -345,17 +346,28 @@ int ramfs_delete_vnode(vnode_t * vnode)
     inode = get_inode_of_vnode(vnode);
 
     vrele(&inode->in_vnode);
-    if ((inode->in_nlink == 0) && (vrefcnt(&inode->in_vnode) <= 0)) {
+    if (inode->in_nlink > 0)
+        return 0;
+
+    if (vrefcnt(&inode->in_vnode) <= 0) {
         /* TODO Clear mutexes, queues etc. */
         destroy_inode_data(inode);
         vn_tmp = &(inode->in_vnode);
 
         /* Recycle this inode */
         inpool_insert(&(get_rfsb_of_sb(vn_tmp->sb)->ramfs_ipool), vn_tmp);
+    } else { /* Add to gc check list */
+        /* TODO Implement a sequential call to clean up the gc list */
     }
 
     return 0;
 }
+
+static void ramfs_idle_task(uintptr_t arg)
+{
+    /* TODO */
+}
+IDLE_TASK(ramfs_idle_task, 0);
 
 ssize_t ramfs_write(file_t * file, const void * buf, size_t count)
 {

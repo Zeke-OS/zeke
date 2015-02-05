@@ -52,11 +52,6 @@ typedef void (*thread_cdtor_t)(struct thread_info * td);
 void sched_handler(void);
 
 /**
- * Kernel idle thread.
- */
-void * idle_thread(void * arg);
-
-/**
  * Create a new thread.
  * @param thread_def    Thread definitions.
  * @param priv          If set thread is created as a kernel mode thread aka

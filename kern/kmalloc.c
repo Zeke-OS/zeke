@@ -38,6 +38,8 @@
 #include <kerror.h>
 #include <sys/sysctl.h>
 #include <dynmem.h>
+#include <idle.h>
+#include <kmalloc.h>
 
 #define KM_SIGNATURE_VALID      0XBAADF00D /*!< Signature for valid mblock
                                             *   entry. */
@@ -511,7 +513,7 @@ static void update_stat_set(size_t * stat_act, size_t value)
 /**
  * kmalloc fragmentation percentage stats.
  */
-static void stat_fragmentation(void)
+static void stat_fragmentation(uintptr_t arg)
 {
     mblock_t * b = kmalloc_base;
     int blocks_free = 0;
@@ -526,4 +528,4 @@ static void stat_fragmentation(void)
 
     fragm_ratio = (blocks_free * 100) / blocks_total;
 }
-DATA_SET(sched_idle_tasks, stat_fragmentation);
+IDLE_TASK(stat_fragmentation, 0);

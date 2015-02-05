@@ -50,6 +50,7 @@
 #include <errno.h>
 #include <kerror.h>
 #include <lavg.h>
+#include <idle.h>
 #include <proc.h>
 #include <pthread.h>
 #include <thread.h>
@@ -78,6 +79,11 @@ threadInfo_t * current_thread; /*!< Pointer to the currently active
                                 *   thread */
 static rwlock_t loadavg_lock;
 static uint32_t loadavg[3]  = { 0, 0, 0 }; /*!< CPU load averages */
+
+/**
+ * Kernel idle thread.
+ */
+extern void * idle_thread(void * arg);
 
 #if configIDLE_TH_STACK_SIZE < 40
 #error Idle thread stack (configIDLE_TH_STACK_SIZE) should be at least 40
@@ -153,7 +159,7 @@ static void init_thread_id_queue(void)
 /**
  * Idle task specific for this scheduler.
  */
-static void idle_task(void)
+static void idle_task(uintptr_t arg)
 {
     unsigned tmp_nr_threads = 0;
 
@@ -167,7 +173,7 @@ static void idle_task(void)
 
     idle_sleep();
 }
-DATA_SET(sched_idle_tasks, idle_task);
+IDLE_TASK(idle_task, 0);
 
 /**
  * Calculate load averages

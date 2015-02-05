@@ -34,12 +34,13 @@
 #include <sys/linker_set.h>
 #include <sys/tree.h>
 #include <sys/types.h>
+#include <kstring.h>
+#include <dllist.h>
+#include <idle.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <kerror.h>
 #include <kmalloc.h>
-#include <kstring.h>
-#include <dllist.h>
 #include <fs/devfs.h>
 #include <buf.h>
 
@@ -52,7 +53,7 @@ static void _bio_readin(struct buf * bp);
 static void _bio_writeout(struct buf * bp);
 static void bl_brelse(struct buf * bp);
 static int biowait_timo(struct buf * bp, long timeout);
-static void bio_clean(int freebufs);
+static void bio_clean(uintptr_t freebufs);
 
 SPLAY_GENERATE(bufhd_splay, buf, sentry_, biobuf_compar);
 
@@ -436,7 +437,7 @@ int biowait(struct buf * bp)
  * Cleanup released buffers.
  * @param freebufs  tells if released buffers should be freed after write out.
  */
-static void bio_clean(int freebufs)
+static void bio_clean(uintptr_t freebufs)
 {
     struct buf * bp;
 
@@ -502,8 +503,7 @@ int bio_geterror(struct buf * bp)
     return error;
 }
 
-static void bio_idle_task(void)
-{
-    bio_clean(0);
-}
-DATA_SET(sched_idle_tasks, bio_idle_task);
+/*
+ * Idle task for cleaning up buffers.
+ */
+IDLE_TASK(bio_clean, 0);

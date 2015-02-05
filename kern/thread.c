@@ -58,7 +58,6 @@ SET_DECLARE(thread_fork_handlers, void);
 /* Linker sets for pre- and post-scheduling tasks */
 SET_DECLARE(pre_sched_tasks, void);
 SET_DECLARE(post_sched_tasks, void);
-SET_DECLARE(sched_idle_tasks, void);
 
 
 static void thread_set_inheritance(threadInfo_t * new_child,
@@ -138,26 +137,6 @@ mmu_pagetable_t * thread_resume(void)
     KASSERT(current_thread->curr_mpt != NULL, "curr_mpt must be set");
 
     return current_thread->curr_mpt;
-}
-
-/**
- * Kernel idle thread
- * @note sw stacked registers are invalid when this thread executes for the
- * first time.
- */
-void * idle_thread(/*@unused@*/ void * arg)
-{
-    void ** task_p;
-
-    while(1) {
-        /* Execute idle tasks */
-        SET_FOREACH(task_p, sched_idle_tasks) {
-            sched_task_t task = *(sched_task_t *)task_p;
-            task();
-        }
-
-        idle_sleep();
-    }
 }
 
 pthread_t thread_create(struct _ds_pthread_create * thread_def, int priv)
