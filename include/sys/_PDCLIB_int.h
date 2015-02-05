@@ -1,5 +1,6 @@
 #ifndef __PDCLIB_INT_H
 #define __PDCLIB_INT_H __PDCLIB_INT_H
+#pragma clang system_header
 
 /* PDCLib internal integer logic <_PDCLIB_int.h>
 
