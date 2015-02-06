@@ -52,10 +52,6 @@
 #include <dirent.h>
 #include <klocks.h>
 
-#ifndef KERNEL_CONFIG_H
-#error Needs autoconf
-#endif
-
 #define FS_FLAG_INIT    0x01 /*!< File system initialized. */
 #define FS_FLAG_FAIL    0x08 /*!< File system has failed. */
 
