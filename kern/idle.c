@@ -57,4 +57,3 @@ void * idle_thread(/*@unused@*/ void * arg)
         idle_sleep();
     }
 }
-
