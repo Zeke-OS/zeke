@@ -12,8 +12,6 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- *
- * $FreeBSD$
  */
 
 #include <string.h>
@@ -31,8 +29,9 @@ memrchr(const void *s, int c, size_t n)
         cp = (unsigned char *)s + n;
         do {
             if (*(--cp) == (unsigned char)c)
-                return((void *)cp);
+                return (void *)cp;
         } while (--n != 0);
     }
-    return(NULL);
+
+    return NULL;
 }

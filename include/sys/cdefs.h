@@ -1,4 +1,5 @@
 /*-
+ * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1991, 1993
  *        The Regents of the University of California.  All rights reserved.
  *
@@ -28,9 +29,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *        @(#)cdefs.h        8.8 (Berkeley) 1/9/95
- * $FreeBSD$
  */
 
 #ifndef        _SYS_CDEFS_H_
@@ -560,36 +558,6 @@
  *    #define __IDSTRING(name,string)        struct __hack
  */
 #define        __IDSTRING(name,string)        static const char name[] __unused = string
-#endif
-
-/*
- * Embed the rcs id of a source file in the resulting library.  Note that in
- * more recent ELF binutils, we use .ident allowing the ID to be stripped.
- * Usage:
- *        __FBSDID("$FreeBSD$");
- */
-#ifndef        __FBSDID
-#if !defined(lint) && !defined(STRIP_FBSDID)
-#define        __FBSDID(s)        __IDSTRING(__CONCAT(__rcsid_,__LINE__),s)
-#else
-#define        __FBSDID(s)        struct __hack
-#endif
-#endif
-
-#ifndef        __RCSID
-#ifndef        NO__RCSID
-#define        __RCSID(s)        __IDSTRING(__CONCAT(__rcsid_,__LINE__),s)
-#else
-#define        __RCSID(s)        struct __hack
-#endif
-#endif
-
-#ifndef        __RCSID_SOURCE
-#ifndef        NO__RCSID_SOURCE
-#define        __RCSID_SOURCE(s)        __IDSTRING(__CONCAT(__rcsid_source_,__LINE__),s)
-#else
-#define        __RCSID_SOURCE(s)        struct __hack
-#endif
 #endif
 
 #ifndef        __SCCSID
