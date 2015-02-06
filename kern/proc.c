@@ -68,7 +68,8 @@ extern void * __bss_break __attribute__((weak));
 
 #define SIZEOF_PROCARR()    ((maxproc + 1) * sizeof(proc_info_t *))
 
-/** proclock.
+/**
+ * proclock.
  * Protects proc array, data structures and variables in proc.
  * This should be only touched by using macros defined in proc.h file.
  */
