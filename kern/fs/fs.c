@@ -213,7 +213,7 @@ again:  /* Get vnode by name in this dir. */
         }
         retval = 0;
 
-#if config_FS_DEBUG
+#if configFS_DEBUG
         KASSERT(*result != NULL, "vfs is in inconsistent state");
 #endif
     } while ((nodename = kstrtok(0, PATH_DELIMS, &lasts)));
@@ -235,7 +235,7 @@ int fs_namei_proc(vnode_t ** result, int fd, const char * path, int atflags)
     int oflags = atflags & AT_SYMLINK_NOFOLLOW;
     int retval;
 
-#ifdef config_FS_DEBUG
+#ifdef configFS_DEBUG
     KERROR(KERROR_DEBUG,
            "fs_namei_proc(result %p, fd %d, path \"%s\", atflags %d)\n",
            result, fd, path, atflags);
@@ -247,6 +247,10 @@ int fs_namei_proc(vnode_t ** result, int fd, const char * path, int atflags)
     if (path[0] == '/') { /* Absolute path */
         path++;
         start = curproc->croot;
+        if (path[0] == '\0') {
+            *result = start;
+            return 0;
+        }
     } else if (atflags & AT_FDARG) { /* AT_FDARG */
         file_t * file = fs_fildes_ref(curproc->files, fd, 1);
         if (!file)
@@ -275,7 +279,7 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
     struct fs_superblock * sb;
     int err;
 
-#ifdef config_FS_DEBUG
+#ifdef configFS_DEBUG
      KERROR(KERROR_DEBUG,
             "fs_mount(target \"%p\", source \"%s\", fsname \"%s\", "
             "flags %x, parm \"%s\", parm_len %d)\n",
@@ -290,7 +294,7 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
     if (!fs)
         return -ENOTSUP; /* fs doesn't exist. */
 
-#ifdef config_FS_DEBUG
+#ifdef configFS_DEBUG
     KERROR(KERROR_DEBUG, "Found fs: %s\n", fsname);
 #endif
 
@@ -305,7 +309,7 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
     if (err)
         return err;
 
-#ifdef config_FS_DEBUG
+#ifdef configFS_DEBUG
     KASSERT((uintptr_t)sb > configKERNEL_START, "sb is not a stack address");
     KERROR(KERROR_DEBUG, "Mount OK\n");
 #endif
@@ -1072,6 +1076,11 @@ void fs_vnode_init(vnode_t * vnode, ino_t vn_num, struct fs_superblock * sb,
     mtx_init(&vnode->vn_lock, VN_LOCK_MODES);
 }
 
+#define KERROR_VREF_FMT(_STR_) "%s(%s:%u): " _STR_
+#define KERROR_VREF(_LVL_, _FMT_, ...) \
+    KERROR(_LVL_, KERROR_VREF_FMT(_FMT_), __func__, \
+           vnode->sb->fs->fsname, (uint32_t)(vnode->vn_num), ##__VA_ARGS__)
+
 int vrefcnt(struct vnode * vnode)
 {
     int retval;
@@ -1090,29 +1099,19 @@ int vref(vnode_t * vnode)
 {
     int prev;
 
-    /*
-     * TODO refcount verification is a good idea but currently vnode refcounting
-     * is buggy so for easier debugging we let refcounts go below zero.
-     */
-
-#if 0
     prev = atomic_read(&vnode->vn_refcount);
     if (prev < 0) {
+#if configFS_VREF_DEBUG
+        KERROR_VREF(KERROR_ERR, "Failed, vnode will be freed soon (%d)\n",
+                    prev);
+#endif
         return -ENOLINK;
     }
-#endif
-    prev = atomic_inc(&vnode->vn_refcount);
-    if (prev < 0) {
-#if 0
-        /* TODO a better solution is needed */
-        panic("vn refcount is inconsistent");
-#endif
-        KERROR(KERROR_ERR, "vref(%s,%l): vn refcount is inconsistent (%d)\n",
-                vnode->sb->fs->fsname, vnode->vn_num, prev);
-    }
 
-#if 0
-    KERROR(KERROR_DEBUG, "vref(), %d\n", prev);
+    prev = atomic_inc(&vnode->vn_refcount);
+
+#if configFS_VREF_DEBUG
+    KERROR_VREF(KERROR_DEBUG, "%d\n", prev);
 #endif
 
     return 0;
@@ -1124,32 +1123,42 @@ void vrele(vnode_t * vnode)
 
     prev = atomic_dec(&vnode->vn_refcount);
 
-#if 0
-    KERROR(KERROR_DEBUG, "vrele(%s,%l), %d\n", vnode->sb->fs->fsname,
-           vnode->vn_num, prev);
+#if configFS_VREF_DEBUG
+    KERROR_VREF(KERROR_DEBUG, "%d\n", prev);
 #endif
+
+    if (prev <= 1)
+        vnode->sb->delete_vnode(vnode);
 }
 
 void vput(vnode_t * vnode)
 {
+    int prev;
+
     KASSERT(mtx_test(&vnode->vn_lock), "vnode should be locked");
 
-    atomic_dec(&vnode->vn_refcount);
+    prev = atomic_dec(&vnode->vn_refcount);
     VN_UNLOCK(vnode);
+    if (prev <= 1)
+        vnode->sb->delete_vnode(vnode);
 }
 
 void vunref(vnode_t * vnode)
 {
+    int prev;
+
     KASSERT(mtx_test(&vnode->vn_lock), "vnode should be locked");
 
-    atomic_dec(&vnode->vn_refcount);
+    prev = atomic_dec(&vnode->vn_refcount);
+    if (prev <= 1)
+        vnode->sb->delete_vnode(vnode);
 }
 
 void fs_vnode_cleanup(vnode_t * vnode)
 {
     struct buf * var, * nxt;
 
-#ifdef config_FS_DEBUG
+#ifdef configFS_DEBUG
     KASSERT(vnode != NULL, "vnode can't be null.");
 #endif
 

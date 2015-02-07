@@ -312,7 +312,7 @@ chk_err:
     }
 
     *result = in;
-    vrefset(vn, 1);
+    vrefset(vn, 1); /* Ref for caller. */
     return 0;
 fail:
 #ifdef configFATFS_DEBUG

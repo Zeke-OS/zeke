@@ -42,7 +42,6 @@
 #include <kmalloc.h>
 #include <buf.h>
 #include <proc.h>
-#include <idle.h>
 #include <fs/dehtable.h>
 #include <fs/inpool.h>
 #include <fs/dev_major.h>
@@ -246,8 +245,8 @@ int ramsfs_mount(const char * source, uint32_t mode,
     }
 
     /* Set vdev number */
-    ramfs_sb->sbn.sbl_sb.vdev_id = DEV_MMTODEV(VDEV_MJNR_RAMFS,
-                                               atomic_inc(&ramfs_vdev_minor));
+    ramfs_sb->sbn.sbl_sb.vdev_id =
+        DEV_MMTODEV(VDEV_MJNR_RAMFS, atomic_inc(&ramfs_vdev_minor));
 
     /* Create the root inode */
 #ifdef configRAMFS_DEBUG
@@ -337,36 +336,28 @@ int ramfs_delete_vnode(vnode_t * vnode)
     ramfs_inode_t * inode;
     vnode_t * vn_tmp;
 
+    inode = get_inode_of_vnode(vnode);
+
+    if (inode->in_nlink > 0)
+        return 0;
+
+    if (vrefcnt(&inode->in_vnode) > 0)
+        return 0;
+
 #if configRAMFS_DEBUG
     KERROR(KERROR_DEBUG, "%s, ramfs_delete_vnode(%u)\n", vnode->sb->fs->fsname,
            (unsigned)vnode->vn_num);
 #endif
 
-    inode = get_inode_of_vnode(vnode);
+    /* TODO Clear mutexes, queues etc. */
+    destroy_inode_data(inode);
+    vn_tmp = &(inode->in_vnode);
 
-    vrele(&inode->in_vnode);
-    if (inode->in_nlink > 0)
-        return 0;
-
-    if (vrefcnt(&inode->in_vnode) <= 0) {
-        /* TODO Clear mutexes, queues etc. */
-        destroy_inode_data(inode);
-        vn_tmp = &(inode->in_vnode);
-
-        /* Recycle this inode */
-        inpool_insert(&(get_rfsb_of_sb(vn_tmp->sb)->ramfs_ipool), vn_tmp);
-    } else { /* Add to gc check list */
-        /* TODO Implement a sequential call to clean up the gc list */
-    }
+    /* Recycle this inode */
+    inpool_insert(&(get_rfsb_of_sb(vn_tmp->sb)->ramfs_ipool), vn_tmp);
 
     return 0;
 }
-
-static void ramfs_idle_task(uintptr_t arg)
-{
-    /* TODO */
-}
-IDLE_TASK(ramfs_idle_task, 0);
 
 ssize_t ramfs_write(file_t * file, const void * buf, size_t count)
 {
@@ -457,7 +448,7 @@ int ramfs_create(vnode_t * dir, const char * name, mode_t mode,
     }
 
     *result = vnode;
-    vrefset(*result, 1);
+    vrefset(*result, 2); /* One ref for ramfs, one ref for caller. */
 out:
     return retval;
 }
