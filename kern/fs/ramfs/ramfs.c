@@ -567,6 +567,7 @@ int ramfs_unlink(vnode_t * dir, const char * name)
 
     inode->in_nlink--; /* Decrement hard link count. */
     vrele(vn);
+    vrele(vn);
     if (inode->in_nlink <= 0)
         ramfs_delete_vnode(vn);
 

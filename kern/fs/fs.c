@@ -783,6 +783,11 @@ int fs_creat_cproc(const char * pathname, mode_t mode, vnode_t ** result)
     vnode_t * dir = NULL;
     int retval = 0;
 
+#if configFS_DEBUG
+    KERROR(KERROR_DEBUG, "fs_creat_cproc(pathname \"%s\", mode %u)\n",
+           pathname, (unsigned)mode);
+#endif
+
     retval = getvndir(pathname, &dir, &name, O_CREAT);
     if (retval)
         goto out;
@@ -792,6 +797,10 @@ int fs_creat_cproc(const char * pathname, mode_t mode, vnode_t ** result)
     mode &= ~S_IFMT; /* Filter out file type bits */
     mode &= ~curproc->files->umask;
     retval = dir->vnode_ops->create(dir, name, mode, result);
+
+#if configFS_DEBUG
+    KERROR(KERROR_DEBUG, "\tresult: %p\n", *result);
+#endif
 
 out:
     if (dir)
