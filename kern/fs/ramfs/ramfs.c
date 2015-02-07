@@ -338,16 +338,30 @@ int ramfs_delete_vnode(vnode_t * vnode)
 
     inode = get_inode_of_vnode(vnode);
 
-    if (inode->in_nlink > 0)
-        return 0;
-
-    if (vrefcnt(&inode->in_vnode) > 0)
-        return 0;
+    KASSERT(inode != NULL, "inode should be set");
 
 #if configRAMFS_DEBUG
     KERROR(KERROR_DEBUG, "%s, ramfs_delete_vnode(%u)\n", vnode->sb->fs->fsname,
            (unsigned)vnode->vn_num);
 #endif
+
+    if (inode->in_nlink > 0) {
+#if configRAMFS_DEBUG
+        KERROR(KERROR_DEBUG, "\tNot removing, (nlink: %d)\n",
+               (int)inode->in_nlink);
+#endif
+        return 0;
+    }
+
+    if (vrefcnt(&inode->in_vnode) > 0) {
+#if configRAMFS_DEBUG
+        int refcount = vrefcnt(&inode->in_vnode);
+
+        KERROR(KERROR_DEBUG, "\tNot removing, (refcount: %d)\n",
+               refcount);
+#endif
+        return 0;
+    }
 
     /* TODO Clear mutexes, queues etc. */
     destroy_inode_data(inode);
@@ -400,6 +414,11 @@ int ramfs_create(vnode_t * dir, const char * name, mode_t mode,
     vnode_t * vnode;
     ramfs_inode_t * inode;
     int retval = 0;
+
+#ifdef configRAMFS_DEBUG
+        KERROR(KERROR_DEBUG, "ramfs_create(name \"%s\", mode %u)\n",
+               name, mode);
+#endif
 
     if (!S_ISDIR(dir->vn_mode)) {
         retval = -ENOTDIR; /* No a directory entry. */

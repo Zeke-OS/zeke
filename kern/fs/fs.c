@@ -578,9 +578,8 @@ file_t * fs_fildes_ref(files_t * files, int fd, int count)
 
     mtx_lock(&fildes->lock);
     fildes->refcount += count;
-    if (fildes->refcount <= 0) {
+    if (fildes->refcount <= 0)
         free = 1;
-    }
     mtx_unlock(&fildes->lock);
 
     /*
@@ -591,7 +590,8 @@ file_t * fs_fildes_ref(files_t * files, int fd, int count)
     if (free) {
         vrele(fildes->vnode);
         kfree(fildes);
-        files->fd[fd] = 0;
+        files->fd[fd] = NULL;
+
         return 0;
     }
 
@@ -855,20 +855,24 @@ int fs_unlink_curproc(int fd, const char * path, size_t path_len, int atflags)
     char * filename = NULL;
     struct stat stat;
     vnode_t * dir = NULL;
-    vnode_t * fnode = NULL;
     int err;
 
-    err = fs_namei_proc(&fnode, fd, path, atflags);
-    if (err)
-        return err;
+    {
+        vnode_t * fnode;
 
-    /* unlink() is prohibited on directories for non-root users. */
-    err = fnode->vnode_ops->stat(fnode, &stat);
-    if (err)
-        goto out;
-    if (S_ISDIR(stat.st_mode) && curproc->euid != 0) {
-        err = -EPERM;
-        goto out;
+        err = fs_namei_proc(&fnode, fd, path, atflags);
+        if (err)
+            return err;
+
+        /* unlink() is prohibited on directories for non-root users. */
+        err = fnode->vnode_ops->stat(fnode, &stat);
+        vrele(fnode);
+        if (err)
+            goto out;
+        if (S_ISDIR(stat.st_mode) && curproc->euid != 0) {
+            err = -EPERM;
+            goto out;
+        }
     }
 
     err = parse_filepath(path, &dirpath, &filename);
@@ -900,8 +904,6 @@ int fs_unlink_curproc(int fd, const char * path, size_t path_len, int atflags)
     err = dir->vnode_ops->unlink(dir, filename);
 
 out:
-    if (fnode)
-        vrele(fnode);
     if (dir)
         vrele(dir);
     kfree(dirpath);
