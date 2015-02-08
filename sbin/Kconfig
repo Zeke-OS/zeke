@@ -1,2 +1,2 @@
 config configTISH
-    bool "Debug console in init"
+    bool "TISH terminal"
