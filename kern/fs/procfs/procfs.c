@@ -291,15 +291,20 @@ void procfs_rmentry(pid_t pid)
         return;
     }
 
+    KERROR(KERROR_DEBUG, "1\n");
     pdir->vnode_ops->unlink(pdir, PROCFS_STATUS_FILE);
+    KERROR(KERROR_DEBUG, "2\n");
     vrele(pdir);
+    KERROR(KERROR_DEBUG, "3\n");
     err = vn_procfs->vnode_ops->rmdir(vn_procfs, name);
+    KERROR(KERROR_DEBUG, "4\n");
 #ifdef configPROCFS_DEBUG
     if (err)
         KERROR(KERROR_DEBUG, "Can't rmdir(%s)\n", name);
 #endif
 
     vrele(vn_procfs);
+    KERROR(KERROR_DEBUG, "5\n");
 }
 
 /**
@@ -330,6 +335,8 @@ static int create_status_file(vnode_t * pdir, const proc_info_t * proc)
 
     vn->vn_specinfo = spec;
     vn->vnode_ops = (struct vnode_ops *)(procfs_vnode_ops);
+
+    vrele(vn);
 
     return 0;
 }

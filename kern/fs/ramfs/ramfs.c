@@ -335,6 +335,7 @@ int ramfs_delete_vnode(vnode_t * vnode)
 {
     ramfs_inode_t * inode;
     vnode_t * vn_tmp;
+    int refcount;
 
     inode = get_inode_of_vnode(vnode);
 
@@ -353,10 +354,9 @@ int ramfs_delete_vnode(vnode_t * vnode)
         return 0;
     }
 
-    if (vrefcnt(&inode->in_vnode) > 0) {
+    refcount = vrefcnt(&inode->in_vnode);
+    if (refcount > 0) {
 #if configRAMFS_DEBUG
-        int refcount = vrefcnt(&inode->in_vnode);
-
         KERROR(KERROR_DEBUG, "\tNot removing, (refcount: %d)\n",
                refcount);
 #endif
@@ -566,8 +566,8 @@ int ramfs_unlink(vnode_t * dir, const char * name)
         goto out;
 
     inode->in_nlink--; /* Decrement hard link count. */
-    vrele(vn);
-    vrele(vn);
+    vrele_nunlink(vn);
+    vrele_nunlink(vn);
     if (inode->in_nlink <= 0)
         ramfs_delete_vnode(vn);
 
@@ -627,8 +627,13 @@ int ramfs_rmdir(vnode_t * dir,  const char * name)
     ramfs_inode_t * inode_dir;
     ino_t vnum;
     vnode_t * vn;
-    ramfs_inode_t * inode;
+    ramfs_inode_t * in;
     int retval = 0;
+
+#ifdef configRAMFS_DEBUG
+    KERROR(KERROR_DEBUG, "ramfs_rmdir(dir %p, name \"%s\")\n",
+           dir, name);
+#endif
 
     if (!S_ISDIR(dir->vn_mode)) {
         retval = -ENOTDIR; /* No a directory entry. */
@@ -643,18 +648,22 @@ int ramfs_rmdir(vnode_t * dir,  const char * name)
     retval = ramfs_get_vnode(dir->sb, &vnum, &vn);
     if (retval)
          goto out;
-    inode = get_inode_of_vnode(vn);
+    in = get_inode_of_vnode(vn);
 
-    if (inode->in_nlink > 2) {
+    in->in_nlink -= 2;
+    if (in->in_nlink > 0) {
+#ifdef configRAMFS_DEBUG
+        KERROR(KERROR_DEBUG, "\tdir not empty\n");
+#endif
+        vrele(vn);
         retval = -ENOTEMPTY;
         goto out;
     }
 
-    dh_unlink(inode->in.dir, RFS_DOT);
-    dh_unlink(inode->in.dir, RFS_DOTDOT);
+    dh_unlink(in->in.dir, RFS_DOT);
+    dh_unlink(in->in.dir, RFS_DOTDOT);
     dh_unlink(inode_dir->in.dir, name);
-
-    vrele(vn);
+    vrele(vn); /* This will call delete if it shall be deleted. */
 
 out:
     return retval;

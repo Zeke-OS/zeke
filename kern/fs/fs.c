@@ -1142,6 +1142,11 @@ void vrele(vnode_t * vnode)
         vnode->sb->delete_vnode(vnode);
 }
 
+void vrele_nunlink(vnode_t * vnode)
+{
+    atomic_dec(&vnode->vn_refcount);
+}
+
 void vput(vnode_t * vnode)
 {
     int prev;

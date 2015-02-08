@@ -612,6 +612,14 @@ void vrele(vnode_t * vnode);
 
 /**
  * Decrement the vn_refcount field of a vnode.
+ * The function takes an unlocked vnode and returns with the vnode
+ * unlocked.
+ * The function doesn't call unlink if ref is zero or less.
+ */
+void vrele_nunlink(vnode_t * vnode);
+
+/**
+ * Decrement the vn_refcount field of a vnode.
  * The function should  be given a locked vnode as argument, the vnode
  * is unlocked after the function returned.
  */
