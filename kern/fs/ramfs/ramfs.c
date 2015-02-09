@@ -414,7 +414,7 @@ static void init_inode_attr(ramfs_inode_t * inode, mode_t mode)
 #if 0
     inode->in_vnode->mutex = /* TODO other flags etc. */
 #endif
-    vrefset(&inode->in_vnode, 0);
+    vrefset(&inode->in_vnode, 2); /* One ref for ramfs, one ref for caller. */
     inode->in_nlink = 0;
     inode->in_uid = curproc->euid;
     inode->in_gid = curproc->egid; /* TODO or to egid of the parent dir */
@@ -469,7 +469,6 @@ int ramfs_create(vnode_t * dir, const char * name, mode_t mode,
     }
 
     *result = vnode;
-    vrefset(*result, 2); /* One ref for ramfs, one ref for caller. */
 
     return 0;
 }
@@ -638,15 +637,9 @@ int ramfs_rmdir(vnode_t * dir,  const char * name)
     if (err)
         return err;
     in = get_inode_of_vnode(vn);
+    vrele(vn);
 
-    in->in_nlink -= 2;
-    if (in->in_nlink > 0) {
-#ifdef configRAMFS_DEBUG
-        KERROR(KERROR_DEBUG, "\tdir not empty\n");
-#endif
-        vrele(vn);
-        return -ENOTEMPTY;
-    }
+    /* TODO Implement  -ENOTEMPTY */
 
     dh_unlink(in->in.dir, RFS_DOT);
     dh_unlink(in->in.dir, RFS_DOTDOT);
