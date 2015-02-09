@@ -36,7 +36,7 @@ void __aeabi_memcpy8(void *destination, const void *source, size_t num) __attrib
 
 void * memcpy(void * restrict destination, const void * source, size_t num)
 {
-#ifdef configSTRING_OPT_SIZE
+#ifdef __OPTIMIZE_SIZE__
     char * dst = (char *) destination;
     char * src = (char *) source;
 

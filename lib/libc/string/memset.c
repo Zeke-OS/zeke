@@ -15,6 +15,7 @@ void * memset(void * m, int c, size_t n)
     char * s = (char *)m;
 
 /* If optmizing for speed */
+#ifndef __OPTIMIZE_SIZE__
     int i;
     unsigned long buffer;
     unsigned long *aligned_addr;
@@ -59,6 +60,7 @@ void * memset(void * m, int c, size_t n)
         /* Pick up the remainder with a bytewise loop. */
         s = (char*)aligned_addr;
     }
+#endif
 
     while (n--)
         *s++ = (char) c;

@@ -16,7 +16,7 @@ void * memset(void * m, int c, size_t n)
     char * s = (char *)m;
 
 /* If optmizing for speed */
-#ifndef configSTRING_OPT_SIZE
+#ifndef __OPTIMIZE_SIZE__
     int i;
     unsigned long buffer;
     unsigned long *aligned_addr;

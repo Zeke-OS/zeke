@@ -36,6 +36,18 @@ void __aeabi_memcpy8(void *destination, const void *source, size_t num) __attrib
 
 void * memcpy(void * restrict destination, const void * source, size_t num)
 {
+#ifdef __OPTIMIZE_SIZE__
+    char * dst = (char *) destination;
+    char * src = (char *) source;
+
+    void * save = destination;
+
+    while (num--) {
+        *dst++ = *src++;
+    }
+
+    return save;
+#else
     char * dst = destination;
     const char * src = source;
     long * aligned_dst;
@@ -82,6 +94,7 @@ void * memcpy(void * restrict destination, const void * source, size_t num)
         *dst++ = *src++;
 
     return destination;
+#endif
 }
 
 void __aeabi_memcpy(void *destination, const void *source, size_t num)

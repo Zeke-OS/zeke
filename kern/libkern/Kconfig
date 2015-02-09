@@ -16,9 +16,4 @@ config configSUBR_HASH
 
     See hashinit(9)
 
-config configSTRING_OPT_SIZE
-    bool "Optimize string functions for size"
-    ---help---
-    Optimize string functions for speed or size.
-
 endmenu

@@ -34,7 +34,7 @@
 
 char * strcpy(char * destination, const char * source)
 {
-#ifdef configSTRING_OPT_SIZE
+#ifdef __OPTIMIZE_SIZE__
     char * src = (char *)source;
     char * dest = destination;
 
