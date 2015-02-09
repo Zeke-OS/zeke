@@ -243,61 +243,6 @@ struct buf * geteblk(size_t size)
     return bp;
 }
 
-/* TODO We may want to use bitmaps here */
-mtx_t l_ksect_next;
-static uintptr_t ksect_next = MMU_VADDR_KSECT_START;
-static uintptr_t get_ksect_addr(size_t region_size)
-{
-    uintptr_t retval;
-
-    if (l_ksect_next.mtx_tflags == MTX_TYPE_UNDEF)
-        mtx_init(&l_ksect_next, MTX_TYPE_SPIN);
-
-    mtx_lock(&l_ksect_next);
-
-    if (region_size < MMU_PGSIZE_SECTION)
-        retval = memalign_size(ksect_next, MMU_PGSIZE_SECTION);
-    else
-        retval = memalign_size(ksect_next, MMU_PGSIZE_COARSE);
-
-    if (retval > MMU_VADDR_KSECT_END)
-        return 0;
-
-    ksect_next += retval;
-
-    mtx_unlock(&l_ksect_next);
-
-    return retval;
-}
-
-struct buf * geteblk_special(size_t size, uint32_t control)
-{
-    struct proc_info * p = proc_get_struct_l(0);
-    const uintptr_t kvaddr = get_ksect_addr(size);
-    struct buf * buf;
-    int err;
-
-    KASSERT(p, "Can't get the PCB of pid 0");
-
-    if (kvaddr == 0)
-        return NULL;
-
-    buf = vm_newsect(kvaddr, size, VM_PROT_READ | VM_PROT_WRITE);
-    if (!buf)
-        return NULL;
-
-    buf->b_mmu.control = control;
-
-    err = vm_insert_region(p, buf, VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
-    if (err < 0) {
-        panic("Mapping a kernel special buffer failed");
-    }
-
-    buf->b_data = buf->b_mmu.vaddr; /* Should be same as kvaddr */
-
-    return buf;
-}
-
 /**
  * Increment reference count of a vr allocated vm_region.
  * @param region is a vregion.
