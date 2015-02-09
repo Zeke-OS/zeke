@@ -208,7 +208,7 @@ int ramsfs_mount(const char * source, uint32_t mode,
                  const char * parm, int parm_len, struct fs_superblock ** sb)
 {
     ramfs_sb_t * ramfs_sb;
-    int err, retval = 0;
+    int err, retval;
 
 #ifdef configRAMFS_DEBUG
     KERROR(KERROR_DEBUG, "ramfs_mount()\n");
@@ -257,6 +257,7 @@ int ramsfs_mount(const char * source, uint32_t mode,
     /* Add this sb to the list of mounted file systems. */
     insert_superblock(ramfs_sb);
 
+    retval = 0;
     goto out;
 free_ramfs_sb:
     destroy_superblock(ramfs_sb);
@@ -273,7 +274,6 @@ out:
 int ramfs_umount(struct fs_superblock * fs_sb)
 {
     ramfs_sb_t * rsb = get_rfsb_of_sb(fs_sb);
-    int retval = 0;
 
     /*
      * TODO Check for any locks
@@ -283,7 +283,7 @@ int ramfs_umount(struct fs_superblock * fs_sb)
     remove_superblock(rsb); /* Remove it from the mount list. */
     destroy_superblock(rsb); /* Destroy all data. */
 
-    return retval;
+    return 0;
 }
 
 /**
@@ -429,24 +429,20 @@ int ramfs_create(vnode_t * dir, const char * name, mode_t mode,
     ramfs_sb_t * ramfs_sb;
     vnode_t * vnode;
     ramfs_inode_t * inode;
-    int err, retval = 0;
+    int err;
 
 #ifdef configRAMFS_DEBUG
         KERROR(KERROR_DEBUG, "ramfs_create(name \"%s\", mode %u)\n",
                name, mode);
 #endif
 
-    if (!S_ISDIR(dir->vn_mode)) {
-        retval = -ENOTDIR; /* No a directory entry. */
-        goto out;
-    }
+    if (!S_ISDIR(dir->vn_mode))
+        return -ENOTDIR; /* No a directory entry. */
 
     ramfs_sb = get_rfsb_of_sb(dir->sb);
     vnode = inpool_get_next(&(ramfs_sb->ramfs_ipool));
-    if (!vnode) {
-        retval = -ENOSPC; /* Can't create */
-        goto out;
-    }
+    if (!vnode)
+        return -ENOSPC; /* Can't create */
 
     inode = get_inode_of_vnode(vnode);
 
@@ -458,8 +454,7 @@ int ramfs_create(vnode_t * dir, const char * name, mode_t mode,
         KERROR(KERROR_DEBUG, "ramfs_set_filesize() failed on inode creation\n");
 #endif
         destroy_inode(inode);
-        retval = err;
-        goto out;
+        return err;
     }
 
     /* Create a directory entry. */
@@ -470,24 +465,23 @@ int ramfs_create(vnode_t * dir, const char * name, mode_t mode,
         KERROR(KERROR_DEBUG, "ramfs_link() failed on inode creation\n");
 #endif
         destroy_inode(inode);
-        retval = err;
-        goto out;
+        return err;
     }
 
     *result = vnode;
     vrefset(*result, 2); /* One ref for ramfs, one ref for caller. */
-out:
-    return retval;
+
+    return 0;
 }
 
 int ramfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
                 vnode_t ** result)
 {
-    int retval;
+    int err;
 
-    retval = ramfs_create(dir, name, mode, result);
-    if (retval)
-        return retval;
+    err = ramfs_create(dir, name, mode, result);
+    if (err)
+        return err;
 
     (*result)->vn_mode = mode; /* ramfs_create() sets improper mode. */
     (*result)->vn_specinfo = specinfo;
@@ -524,23 +518,20 @@ int ramfs_link(vnode_t * dir, vnode_t * vnode, const char * name)
 {
     ramfs_inode_t * inode;
     ramfs_inode_t * inode_dir;
-    int retval = 0;
+    int err;
 
-    if (!S_ISDIR(dir->vn_mode)) {
-        retval = -ENOTDIR; /* No a directory entry. */
-        goto out;
-    }
+    if (!S_ISDIR(dir->vn_mode))
+        return -ENOTDIR; /* No a directory entry. */
 
     inode = get_inode_of_vnode(vnode);
     inode_dir = get_inode_of_vnode(dir);
-    retval = dh_link(inode_dir->in.dir, vnode->vn_num, name);
-    if (retval)
-        goto out;
+    err = dh_link(inode_dir->in.dir, vnode->vn_num, name);
+    if (err)
+        return err;
 
     inode->in_nlink++; /* Increment hard link count. */
 
-out:
-    return retval;
+    return 0;
 }
 
 int ramfs_unlink(vnode_t * dir, const char * name)
@@ -549,29 +540,27 @@ int ramfs_unlink(vnode_t * dir, const char * name)
     ino_t vnum;
     vnode_t * vn;
     ramfs_inode_t * inode;
-    int retval = 0;
+    int err;
 
-    if (!S_ISDIR(dir->vn_mode)) {
-        retval = -ENOTDIR; /* No a directory entry. */
-        goto out;
-    }
+    if (!S_ISDIR(dir->vn_mode))
+        return -ENOTDIR; /* No a directory entry. */
 
     inode_dir = get_inode_of_vnode(dir);
-    retval = dh_lookup(inode_dir->in.dir, name, &vnum);
-    if (retval)
-        goto out;
+    err = dh_lookup(inode_dir->in.dir, name, &vnum);
+    if (err)
+        return err;
 
-    retval = ramfs_get_vnode(dir->sb, &vnum, &vn);
-    if (retval)
-        goto out;
+    err = ramfs_get_vnode(dir->sb, &vnum, &vn);
+    if (err)
+        return err;
     inode = get_inode_of_vnode(vn);
 
     /* Mandatory cleanup. */
     fs_vnode_cleanup(vn);
 
-    retval = dh_unlink(inode_dir->in.dir, name);
-    if (retval)
-        goto out;
+    err = dh_unlink(inode_dir->in.dir, name);
+    if (err)
+        return err;
 
     inode->in_nlink--; /* Decrement hard link count. */
     vrele_nunlink(vn);
@@ -579,8 +568,7 @@ int ramfs_unlink(vnode_t * dir, const char * name)
     if (inode->in_nlink <= 0)
         ramfs_delete_vnode(vn);
 
-out:
-    return retval;
+    return 0;
 }
 
 int ramfs_mkdir(vnode_t * dir, const char * name, mode_t mode)
@@ -589,19 +577,15 @@ int ramfs_mkdir(vnode_t * dir, const char * name, mode_t mode)
     vnode_t * vnode_new;
     ramfs_inode_t * inode_dir;
     ramfs_inode_t * inode_new;
-    int err, retval;
+    int err;
 
-    if (!S_ISDIR(dir->vn_mode)) {
-        retval = -ENOTDIR; /* No a directory entry. */
-        goto out;
-    }
+    if (!S_ISDIR(dir->vn_mode))
+        return -ENOTDIR; /* No a directory entry. */
 
     ramfs_sb = get_rfsb_of_sb(dir->sb);
     vnode_new = inpool_get_next(&(ramfs_sb->ramfs_ipool));
-    if (!vnode_new) {
-        retval = -ENOSPC;
-        goto out; /* Can't create a new dir. */
-    }
+    if (!vnode_new)
+        return -ENOSPC; /* Can't create a new dir. */
     inode_dir = get_inode_of_vnode(dir);
     inode_new = get_inode_of_vnode(vnode_new);
 
@@ -610,9 +594,8 @@ int ramfs_mkdir(vnode_t * dir, const char * name, mode_t mode)
     /* Create a dh_table */
     inode_new->in.dir = kcalloc(1, sizeof(dh_table_t));
     if (!inode_new->in.dir) {
-        retval = -ENOSPC;
         destroy_inode(inode_new);
-        goto out; /* Cant allocate dh_table */
+        return -ENOSPC; /* Cant allocate dh_table */
     }
 
     /* Create links according to POSIX. */
@@ -624,13 +607,10 @@ int ramfs_mkdir(vnode_t * dir, const char * name, mode_t mode)
     err = ramfs_link(&(inode_dir->in_vnode), vnode_new, name);
     if (err) {
         ramfs_delete_vnode(&(inode_new->in_vnode));
-        retval = err;
-        goto out;
+        return err;
     }
 
-    retval = 0;
-out:
-    return retval;
+    return 0;
 }
 
 int ramfs_rmdir(vnode_t * dir,  const char * name)
@@ -639,26 +619,24 @@ int ramfs_rmdir(vnode_t * dir,  const char * name)
     ino_t vnum;
     vnode_t * vn;
     ramfs_inode_t * in;
-    int retval = 0;
+    int err;
 
 #ifdef configRAMFS_DEBUG
     KERROR(KERROR_DEBUG, "ramfs_rmdir(dir %p, name \"%s\")\n",
            dir, name);
 #endif
 
-    if (!S_ISDIR(dir->vn_mode)) {
-        retval = -ENOTDIR; /* No a directory entry. */
-        goto out;
-    }
+    if (!S_ISDIR(dir->vn_mode))
+        return -ENOTDIR; /* No a directory entry. */
 
     inode_dir = get_inode_of_vnode(dir);
-    retval = dh_lookup(inode_dir->in.dir, name, &vnum);
-    if (retval)
-        goto out;
+    err = dh_lookup(inode_dir->in.dir, name, &vnum);
+    if (err)
+        return err;
 
-    retval = ramfs_get_vnode(dir->sb, &vnum, &vn);
-    if (retval)
-         goto out;
+    err = ramfs_get_vnode(dir->sb, &vnum, &vn);
+    if (err)
+        return err;
     in = get_inode_of_vnode(vn);
 
     in->in_nlink -= 2;
@@ -667,8 +645,7 @@ int ramfs_rmdir(vnode_t * dir,  const char * name)
         KERROR(KERROR_DEBUG, "\tdir not empty\n");
 #endif
         vrele(vn);
-        retval = -ENOTEMPTY;
-        goto out;
+        return -ENOTEMPTY;
     }
 
     dh_unlink(in->in.dir, RFS_DOT);
@@ -676,8 +653,7 @@ int ramfs_rmdir(vnode_t * dir,  const char * name)
     dh_unlink(inode_dir->in.dir, name);
     vrele(vn); /* This will call delete if it shall be deleted. */
 
-out:
-    return retval;
+    return 0;
 }
 
 int ramfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
@@ -786,9 +762,8 @@ static vnode_t * create_root(ramfs_sb_t * ramfs_sb)
     vnode_t * vn;
 
     vn = inpool_get_next(&(ramfs_sb->ramfs_ipool));
-    if (!vn) {
-        goto out; /* Can't create */
-    }
+    if (!vn)
+        return NULL; /* Can't create */
     inode = get_inode_of_vnode(vn);
 
     inode->in.dir = kcalloc(1, sizeof(dh_table_t)); /* Create a dh_table */
@@ -805,7 +780,7 @@ static vnode_t * create_root(ramfs_sb_t * ramfs_sb)
     ramfs_link(vn, vn, RFS_DOTDOT);
 
     vrefset(vn, 2);
-out:
+
     return vn;
 }
 
@@ -975,7 +950,6 @@ static int insert_inode(ramfs_inode_t * inode)
     ramfs_sb_t * ramfs_sb;
     ramfs_inode_t ** tmp_iarr;
     const ino_t vnode_num = inode->in_vnode.vn_num;
-    int retval = 0;
 
     ramfs_sb = get_rfsb_of_sb(inode->in_vnode.sb);
 
@@ -986,8 +960,7 @@ static int insert_inode(ramfs_inode_t * inode)
                 (ino_t)(ramfs_sb->ramfs_iarr_size) * sizeof(ramfs_inode_t *));
         if (!tmp_iarr) {
             /* Can't allocate more memory for inode lookup table */
-            retval = -ENOSPC;
-            goto out;
+            return -ENOSPC;
         }
         ramfs_sb->ramfs_iarr = tmp_iarr; /* reallocate ok. */
     }
@@ -995,8 +968,7 @@ static int insert_inode(ramfs_inode_t * inode)
     /* Assign inode to the lookup table. */
     ramfs_sb->ramfs_iarr[vnode_num] = inode;
 
-out:
-    return retval;
+    return 0;
 }
 
 /**

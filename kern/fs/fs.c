@@ -1070,6 +1070,8 @@ vnode_t * fs_create_pseudofs_root(const char * fsname, int majornum)
     rootnode->vn_prev_mountpoint = rootnode;
     rootnode->vn_mountpoint = rootnode;
 
+    /* TODO We can't currently use fsname for anything */
+
     rootnode->sb->vdev_id = DEV_MMTODEV(majornum, 0);
 
     return rootnode;
