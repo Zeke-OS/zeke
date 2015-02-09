@@ -215,7 +215,7 @@ int ramsfs_mount(const char * source, uint32_t mode,
 #endif
 
     ramfs_sb = kmalloc(sizeof(ramfs_sb_t));
-    if (ramfs_sb == 0) {
+    if (!ramfs_sb) {
         retval = -ENOMEM;
         goto out;
     }
@@ -227,7 +227,7 @@ int ramsfs_mount(const char * source, uint32_t mode,
      */
     ramfs_sb->ramfs_iarr = kcalloc(RAMFS_INODE_POOL_SIZE,
                                    sizeof(ramfs_inode_t *));
-    if (ramfs_sb->ramfs_iarr == 0) {
+    if (!ramfs_sb->ramfs_iarr) {
         retval = -ENOMEM;
         goto free_ramfs_sb;
     }
@@ -407,13 +407,29 @@ ssize_t ramfs_read(file_t * file, void * buf, size_t count)
     return bytes_rd;
 }
 
+static void init_inode_attr(ramfs_inode_t * inode, mode_t mode)
+{
+    inode->in_vnode.vn_mode = mode;
+    inode->in_vnode.vn_len = 0;
+#if 0
+    inode->in_vnode->mutex = /* TODO other flags etc. */
+#endif
+    vrefset(&inode->in_vnode, 0);
+    inode->in_nlink = 0;
+    inode->in_uid = curproc->euid;
+    inode->in_gid = curproc->egid; /* TODO or to egid of the parent dir */
+    /* TODO set times */
+    inode->in_blocks = 0;
+    inode->in_blksize = MMU_PGSIZE_COARSE;
+}
+
 int ramfs_create(vnode_t * dir, const char * name, mode_t mode,
                  vnode_t ** result)
 {
     ramfs_sb_t * ramfs_sb;
     vnode_t * vnode;
     ramfs_inode_t * inode;
-    int retval = 0;
+    int err, retval = 0;
 
 #ifdef configRAMFS_DEBUG
         KERROR(KERROR_DEBUG, "ramfs_create(name \"%s\", mode %u)\n",
@@ -434,35 +450,27 @@ int ramfs_create(vnode_t * dir, const char * name, mode_t mode,
 
     inode = get_inode_of_vnode(vnode);
 
-    /* Insert inode to the inode lookup table of its superblock. */
-    insert_inode(inode);
-
     /* Init file data section. */
-    inode->in_blocks = 0; /* Will be set by ramfs_set_filesize() */
-    inode->in_blksize = MMU_PGSIZE_COARSE;
-    retval = ramfs_set_filesize(inode, 1 * MMU_PGSIZE_COARSE);
-    if (retval != 0) {
+    init_inode_attr(inode, S_IFREG | mode);
+    err = ramfs_set_filesize(inode, 1 * MMU_PGSIZE_COARSE);
+    if (err) {
 #ifdef configRAMFS_DEBUG
         KERROR(KERROR_DEBUG, "ramfs_set_filesize() failed on inode creation\n");
 #endif
         destroy_inode(inode);
+        retval = err;
         goto out;
     }
 
-    vnode->vn_len = 0;
-    vnode->vn_mode = S_IFREG | mode;
-    inode->in_uid = curproc->euid;
-    inode->in_gid = curproc->egid;
-    /* TODO update times */
-    //vnode->mutex = /* TODO other flags etc. */
-
     /* Create a directory entry. */
-    retval = ramfs_link(dir, vnode, name);
-    if (retval != 0) { /* Hard link creation failed. */
+    insert_inode(inode); /* Insert into the lookup table of the super block. */
+    err = ramfs_link(dir, vnode, name);
+    if (err) { /* Hard link creation failed. */
 #ifdef configRAMFS_DEBUG
         KERROR(KERROR_DEBUG, "ramfs_link() failed on inode creation\n");
 #endif
         destroy_inode(inode);
+        retval = err;
         goto out;
     }
 
@@ -581,7 +589,7 @@ int ramfs_mkdir(vnode_t * dir, const char * name, mode_t mode)
     vnode_t * vnode_new;
     ramfs_inode_t * inode_dir;
     ramfs_inode_t * inode_new;
-    int retval = 0;
+    int err, retval;
 
     if (!S_ISDIR(dir->vn_mode)) {
         retval = -ENOTDIR; /* No a directory entry. */
@@ -590,34 +598,37 @@ int ramfs_mkdir(vnode_t * dir, const char * name, mode_t mode)
 
     ramfs_sb = get_rfsb_of_sb(dir->sb);
     vnode_new = inpool_get_next(&(ramfs_sb->ramfs_ipool));
-    if (vnode_new == 0) {
+    if (!vnode_new) {
         retval = -ENOSPC;
         goto out; /* Can't create a new dir. */
     }
     inode_dir = get_inode_of_vnode(dir);
     inode_new = get_inode_of_vnode(vnode_new);
 
-    inode_new->in.dir = kcalloc(1, sizeof(dh_table_t)); /* Create a dh_table */
-    if (inode_new->in.dir == 0) {
+    init_inode_attr(inode_new, S_IFDIR | mode);
+
+    /* Create a dh_table */
+    inode_new->in.dir = kcalloc(1, sizeof(dh_table_t));
+    if (!inode_new->in.dir) {
         retval = -ENOSPC;
-        goto delete_inode; /* Cant allocate dh_table */
+        destroy_inode(inode_new);
+        goto out; /* Cant allocate dh_table */
     }
-    vnode_new->vn_mode = S_IFDIR | mode; /* This is a directory. */
-    inode_new->in_uid = curproc->euid;
-    inode_new->in_gid = curproc->egid; /* TODO or to egid of the parent dir */
-    /* TODO set times */
 
     /* Create links according to POSIX. */
     ramfs_link(&(inode_new->in_vnode), &(inode_new->in_vnode), RFS_DOT);
     ramfs_link(&(inode_new->in_vnode), &(inode_dir->in_vnode), RFS_DOTDOT);
 
-    /* Insert inode to the inode lookup table of its superblock. */
-    insert_inode(inode_new); /* This can't fail on mount. */
-    ramfs_link(&(inode_dir->in_vnode), vnode_new, name);
+    /* Insert inode to the inode lookup table of its super block. */
+    insert_inode(inode_new);
+    err = ramfs_link(&(inode_dir->in_vnode), vnode_new, name);
+    if (err) {
+        ramfs_delete_vnode(&(inode_new->in_vnode));
+        retval = err;
+        goto out;
+    }
 
-    goto out;
-delete_inode:
-    ramfs_delete_vnode(&(inode_new->in_vnode));
+    retval = 0;
 out:
     return retval;
 }
@@ -695,7 +706,7 @@ int ramfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
                                * architectures. (i.e. len of size_t) */
 
     dh = dh_iter_next(&it);
-    if (dh == 0 || dh->dh_size == 0)
+    if (!dh || dh->dh_size == 0)
         return -ESPIPE; /* End of dir. */
 
     /* Translate iterator back to dirent. */
@@ -1070,7 +1081,7 @@ static ssize_t ramfs_rd_regular(vnode_t * file, const off_t * restrict offset,
 
         /* Get next block pointer. */
         dp = get_dp_by_offset(inode, *offset + bytes_rd);
-        if (dp.p == 0) {
+        if (!dp.p) {
             break; /* EOF */
         }
 
@@ -1152,7 +1163,7 @@ static int ramfs_set_filesize(ramfs_inode_t * file, off_t new_size)
  * @param inode     is a ramfs inode.
  * @param offset    is the offset of seek pointer.
  * @return Returns a struct that contains a pointer to the requested data and
- *         length of returned block. dp.p == 0 if request out of bounds.
+ *         length of returned block. dp.p == NULL if request out of bounds.
  */
 static struct ramfs_dp get_dp_by_offset(ramfs_inode_t * inode, off_t offset)
 {

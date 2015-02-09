@@ -584,6 +584,9 @@ void fs_vnode_init(vnode_t * vnode, ino_t vn_num, struct fs_superblock * sb,
  */
 int vrefcnt(struct vnode * vnode);
 
+/**
+ * Set refcount of a vnode.
+ */
 void vrefset(vnode_t * vnode, int refcnt);
 
 /**
