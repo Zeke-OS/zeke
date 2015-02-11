@@ -22,7 +22,7 @@ static void setup()
 
 static void teardown()
 {
-    queue_clearFromPushEnd(&queue);
+    queue_clear_from_push_end(&queue);
 }
 
 static char * test_queue_single_push(void)

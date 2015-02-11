@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Thread-safe queue.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -84,22 +84,22 @@ int queue_pop(queue_cb_t * cb, void * element)
     return 1;
 }
 
-void queue_clearFromPushEnd(queue_cb_t * cb)
+void queue_clear_from_push_end(queue_cb_t * cb)
 {
     cb->m_write = cb->m_read;
 }
 
-void queue_clearFromPopEnd(queue_cb_t * cb)
+void queue_clear_from_pop_end(queue_cb_t * cb)
 {
     cb->m_read = cb->m_write;
 }
 
-int queue_isEmpty(queue_cb_t * cb)
+int queue_isempty(queue_cb_t * cb)
 {
     return (int)(cb->m_write == cb->m_read);
 }
 
-int queue_isFull(queue_cb_t * cb)
+int queue_isfull(queue_cb_t * cb)
 {
     return (int)(((cb->m_write + 1) % cb->a_len) == cb->m_read);
 }
@@ -120,7 +120,8 @@ int seek(queue_cb_t * cb, size_t i, void * element)
         return 0;
 
     /* Copy from data array to the element */
-    memcpy(element, &((uint8_t *)(cb->data))[element_i * cb->b_size], cb->b_size);
+    memcpy(element, &((uint8_t *)(cb->data))[element_i * cb->b_size],
+           cb->b_size);
 
     return 1;
 }

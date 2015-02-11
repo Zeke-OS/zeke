@@ -42,11 +42,7 @@
 #define QUEUE_H
 
 #include <stddef.h>
-#ifndef PU_TEST_BUILD
 #include <kstring.h>
-#else /* Test build */
-#include <string.h>
-#endif
 
 /**
  * Queue control block.
@@ -63,7 +59,8 @@ typedef struct queue_cb {
  * Create a new queue control block.
  * Initializes a new queue control block and returns it as a value.
  * @param data_array an array where the actual queue data is stored.
- * @param block_size the size of single data block/struct/data type in data_array in bytes.
+ * @param block_size the size of single data block/struct/data type in
+ *                   data_array in bytes.
  * @param arra_size the size of the data_array in bytes.
  * @return a new queue_cb_t queue control block structure.
  */
@@ -92,28 +89,28 @@ int queue_pop(queue_cb_t * cb, void * element);
  * This operation is considered safe when committed from the push end thread.
  * @param cb the queue control block.
  */
-void queue_clearFromPushEnd(queue_cb_t * cb);
+void queue_clear_from_push_end(queue_cb_t * cb);
 
 /**
  * Clear the queue.
  * This operation is considered safe when committed from the pop end thread.
  * @param cb the queue control block.
  */
-void queue_clearFromPopEnd(queue_cb_t * cb);
+void queue_clear_from_pop_end(queue_cb_t * cb);
 
 /**
  * Check if the queue is empty.
  * @param cb the queue control block.
  * @return 0 if the queue is not empty.
  */
-int queue_isEmpty(queue_cb_t * cb);
+int queue_isempty(queue_cb_t * cb);
 
 /**
  * Check if the queue is full.
  * @param cb the queue control block.
  * @return 0 if the queue is not full.
  */
-int queue_isFull(queue_cb_t * cb);
+int queue_isfull(queue_cb_t * cb);
 
 /**
  * Seek queue.
