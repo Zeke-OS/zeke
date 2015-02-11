@@ -59,15 +59,15 @@ SET_DECLARE(pre_sched_tasks, void);
 SET_DECLARE(post_sched_tasks, void);
 
 
-static void thread_set_inheritance(threadInfo_t * new_child,
-                                   threadInfo_t * parent);
-static void thread_init_kstack(threadInfo_t * tp);
-static void thread_free_kstack(threadInfo_t * tp);
+static void thread_set_inheritance(struct thread_info * new_child,
+                                   struct thread_info * parent);
+static void thread_init_kstack(struct thread_info * tp);
+static void thread_free_kstack(struct thread_info * tp);
 
 
 void sched_handler(void)
 {
-    threadInfo_t * const prev_thread = current_thread;
+    struct thread_info * const prev_thread = current_thread;
     void ** task_p;
 
     if (!current_thread) {
@@ -156,7 +156,8 @@ pthread_t thread_create(struct _ds_pthread_create * thread_def, int priv)
 }
 
 void thread_init(struct thread_info * tp, pthread_t thread_id,
-                 struct _ds_pthread_create * thread_def, threadInfo_t * parent,
+                 struct _ds_pthread_create * thread_def,
+                 struct thread_info * parent,
                  int priv)
 {
     /* This function should not be called for an already initialized thread. */
@@ -232,11 +233,11 @@ void thread_init(struct thread_info * tp, pthread_t thread_id,
  * Set thread inheritance
  * Sets linking from the parent thread to the thread id.
  */
-static void thread_set_inheritance(threadInfo_t * new_child,
-                                   threadInfo_t * parent)
+static void thread_set_inheritance(struct thread_info * new_child,
+                                   struct thread_info * parent)
 {
-    threadInfo_t * last_node;
-    threadInfo_t * tmp;
+    struct thread_info * last_node;
+    struct thread_info * tmp;
 
     /* Initial values for all threads */
     new_child->inh.parent = parent;
@@ -260,7 +261,7 @@ static void thread_set_inheritance(threadInfo_t * new_child,
     /* Find the last child thread
      * Assuming first_child is a valid thread pointer
      */
-    tmp = (threadInfo_t *)(parent->inh.first_child);
+    tmp = parent->inh.first_child;
     do {
         last_node = tmp;
     } while ((tmp = last_node->inh.next_child) != NULL);
@@ -281,7 +282,7 @@ pthread_t thread_fork(void)
 {
     struct thread_info * const old_thread = current_thread;
     struct thread_info * new_thread;
-    threadInfo_t tmp;
+    struct thread_info tmp;
     pthread_t new_id;
     void ** fork_handler_p;
 
@@ -296,7 +297,7 @@ pthread_t thread_fork(void)
     }
 
     /* New thread is kept in tmp until it's ready for execution. */
-    memcpy(&tmp, old_thread, sizeof(threadInfo_t));
+    memcpy(&tmp, old_thread, sizeof(struct thread_info));
     tmp.flags &= ~SCHED_EXEC_FLAG; /* Disable exec for now. */
     tmp.flags &= ~SCHED_INSYS_FLAG;
     tmp.id = new_id;
@@ -329,7 +330,7 @@ void thread_wait(void)
     sched_sleep_current_thread(0);
 }
 
-void thread_release(threadInfo_t * thread)
+void thread_release(struct thread_info * thread)
 {
     int old_val;
 
@@ -348,7 +349,7 @@ void thread_release(threadInfo_t * thread)
 
 static void thread_event_timer(void * event_arg)
 {
-    threadInfo_t * thread = (threadInfo_t *)event_arg;
+    struct thread_info * thread = (struct thread_info *)event_arg;
 
     timers_release(thread->wait_tim);
     thread->wait_tim = -1;
@@ -375,7 +376,7 @@ void thread_sleep(long millisec)
  * Initialize thread kernel mode stack.
  * @param tp is a pointer to the thread.
  */
-static void thread_init_kstack(threadInfo_t * tp)
+static void thread_init_kstack(struct thread_info * tp)
 {
     struct buf * kstack;
 
@@ -397,7 +398,7 @@ static void thread_init_kstack(threadInfo_t * tp)
     tp->kstack_region = kstack;
 }
 
-static void thread_free_kstack(threadInfo_t * tp)
+static void thread_free_kstack(struct thread_info * tp)
 {
     tp->kstack_region->vm_ops->rfree(tp->kstack_region);
 }
@@ -459,9 +460,9 @@ void thread_die(intptr_t retval)
 /* TODO Might be unsafe to call from multiple threads for the same tree! */
 int thread_terminate(pthread_t thread_id)
 {
-    threadInfo_t * thread = sched_get_thread_info(thread_id);
-    threadInfo_t * child;
-    threadInfo_t * prev_child;
+    struct thread_info * thread = sched_get_thread_info(thread_id);
+    struct thread_info * child;
+    struct thread_info * prev_child;
 
     if (!thread || !SCHED_TEST_TERMINATE_OK(thread->flags)) {
         return -EPERM;
@@ -473,14 +474,16 @@ int thread_terminate(pthread_t thread_id)
     if (child != NULL) {
         do {
             if (thread_terminate(child->id) != 0) {
-                child->inh.parent = 0; /* Child is now orphan, it was
-                                        * probably a kworker that couldn't be
-                                        * killed. */
+                /*
+                 * Child is now orphan, it was probably a kworker that couldn't
+                 * be killed.
+                 */
+                child->inh.parent = NULL;
             }
 
             /* Fix child list */
             if (child->flags &&
-                    (((threadInfo_t *)(thread->inh.first_child))->flags == 0)) {
+                    (thread->inh.first_child->flags == 0)) {
                 thread->inh.first_child = child;
                 prev_child = child;
             } else if (child->flags && prev_child) {
@@ -508,7 +511,7 @@ int thread_terminate(pthread_t thread_id)
     if (SCHED_TEST_DETACHED_ZOMBIE(thread->flags) ||
             (thread->inh.parent == 0)             ||
             ((thread->inh.parent != 0)            &&
-            SCHED_TEST_DETACHED_ZOMBIE(((threadInfo_t *)(thread->inh.parent))->flags))) {
+            SCHED_TEST_DETACHED_ZOMBIE((thread->inh.parent)->flags))) {
 
         /* Release wait timeout timer */
         if (thread->wait_tim >= 0) {

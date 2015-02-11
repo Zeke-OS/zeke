@@ -3,9 +3,9 @@
  * @file    heap.c
  * @author  Olli Vanhoja
  *
- * @brief   Heap data structure for threadInfo_t.
+ * @brief   Heap data structure for struct thread_info.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -63,14 +63,14 @@ static void heapify(heap_t * heap, int i);
 #define right(i) (2 * i + 1)
 
 /**
-  * Swap two threadInfo_t pointers in a heap
+  * Swap two struct thread_info pointers in a heap
   * @param heap Pointer to a heap struct.
   * @param i Index of a pointer in heap array.
   * @param j Index of a pointer in heap array.
   */
 static inline void swap(heap_t * heap, int i, int j)
 {
-    threadInfo_t * temp = (threadInfo_t *)(heap->a[i]);
+    struct thread_info * temp = (struct thread_info *)(heap->a[i]);
     heap->a[i] = heap->a[j];
     heap->a[j] = temp;
 }
@@ -97,7 +97,8 @@ static void heapify(heap_t * heap, int i)
             swap(heap, i, largest);
             heapify(heap, largest);
         }
-    } else if ((l == heap->size) && (heap->a[i]->priority < heap->a[l]->priority)) {
+    } else if ((l == heap->size)
+               && (heap->a[i]->priority < heap->a[l]->priority)) {
         swap(heap, i, l);
     }
 }
@@ -114,7 +115,7 @@ void heap_del_max(heap_t * heap)
     heapify(heap, 0);
 }
 
-void heap_insert(heap_t * heap, threadInfo_t * k)
+void heap_insert(heap_t * heap, struct thread_info * k)
 {
     int i;
 

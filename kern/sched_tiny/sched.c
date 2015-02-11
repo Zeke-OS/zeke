@@ -5,7 +5,7 @@
  * @brief   Kernel scheduler
  * @section LICENSE
  * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, 2013 Ninjaware Oy,
+ * Copyrighn (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
@@ -59,8 +59,8 @@ SYSCTL_DECL(_kern_sched);
 SYSCTL_NODE(_kern, OID_AUTO, sched, CTLFLAG_RW, 0, "Scheduler");
 
 /* Task containers */
-static threadInfo_t task_table[configSCHED_MAX_THREADS]; /*!< Array of all
-                                                          *   threads */
+static struct thread_info task_table[configSCHED_MAX_THREADS]; /*!< Array of all
+                                                                *   threads */
 static heap_t priority_queue = HEAP_NEW_EMPTY; /*!< Priority queue of active
                                                 * threads */
 /* Next thread_id queue */
@@ -73,8 +73,8 @@ static unsigned nr_threads;
 SYSCTL_UINT(_kern_sched, OID_AUTO, nr_threads, CTLFLAG_RD,
     &nr_threads, 0, "Number of threads.");
 
-threadInfo_t * current_thread; /*!< Pointer to the currently active
-                                *   thread */
+struct thread_info * current_thread; /*!< Pointer to the currently active
+                                      *   thread */
 static rwlock_t loadavg_lock;
 static uint32_t loadavg[3]  = { 0, 0, 0 }; /*!< CPU load averages */
 

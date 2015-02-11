@@ -56,7 +56,7 @@
 #include <sys/times.h>
 #include <sys/resource.h>
 #include <sys/priv.h>
-#include <tsched.h> /* Needed for threadInfo_t and threading functions */
+#include <tsched.h> /* Needed for struct thread_info and threading functions */
 #include <hal/mmu.h>
 #include <vm/vm.h>
 #include <fs/fs.h>
@@ -140,7 +140,7 @@ typedef struct proc_info {
                                          *   of this process. */
     } inh;
 
-    threadInfo_t * main_thread; /*!< Main thread of this process. */
+    struct thread_info * main_thread; /*!< Main thread of this process. */
 } proc_info_t;
 
 #define PROC_INH_LOCK_TYPE (MTX_TYPE_SPIN)
@@ -177,8 +177,8 @@ int proc_init(void) __attribute__((constructor));
  * @param thread_it should be initialized to NULL.
  * @return next thread or NULL.
  */
-threadInfo_t * proc_iterate_threads(proc_info_t * proc,
-        threadInfo_t ** thread_it);
+struct thread_info * proc_iterate_threads(proc_info_t * proc,
+        struct thread_info ** thread_it);
 
 /**
  * Remove thread from a process.
@@ -194,7 +194,7 @@ void proc_update_times(void);
  * Usually this handler is executed because of cow page table.
  */
 int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-        threadInfo_t * thread);
+        struct thread_info * thread);
 
 /**
  * Update process system state.

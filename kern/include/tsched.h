@@ -147,7 +147,7 @@ RB_HEAD(sched_exec, thread_info);
  * Thread info struct.
  * Thread Control Block structure.
  */
-typedef struct thread_info {
+struct thread_info {
     pthread_t id;                   /*!< Thread id. */
     pid_t pid_owner;                /*!< Owner process of this thread. */
     uint32_t flags;                 /*!< Status flags. */
@@ -192,20 +192,22 @@ typedef struct thread_info {
      * + next_child is a child thread attribute containing address of a next
      *   child node of the common parent thread
      */
-    struct threadInheritance_t {
-        void * parent;              /*!< Parent thread */
-        void * first_child;         /*!< Link to the first child thread */
-        void * next_child;          /*!< Next child of the common parent */
+    struct thread_inheritance {
+        struct thread_info * parent;        /*!< Parent thread */
+        struct thread_info * first_child;   /*!< Link to the first child
+                                             *   thread */
+        struct thread_info * next_child;    /*!< Next child of the common
+                                             *   parent. */
     } inh;
-} threadInfo_t;
+};
 
 /* Scheduler task type */
 typedef void (*sched_task_t)();
 
-/* External variables **********************************************************/
-extern threadInfo_t * current_thread;
+/* External variables *********************************************************/
+extern struct thread_info * current_thread;
 
-/* Public function prototypes ***************************************************/
+/* Public function prototypes *************************************************/
 
 #if configSCHED_CDS != 0
 int sched_tid_comp(struct thread_info * a, struct thread_info * b);

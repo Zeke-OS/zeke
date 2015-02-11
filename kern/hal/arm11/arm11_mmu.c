@@ -57,7 +57,7 @@ static mtx_t mmu_lock;
 #define DAB_WAS_USERMODE(psr)   (((psr) & PSR_MODE_MASK) == PSR_MODE_USER)
 
 typedef int (*dab_handler)(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-        threadInfo_t * thread);
+        struct thread_info * thread);
 
 static void mmu_map_section_region(const mmu_region_t * region);
 static void mmu_map_coarse_region(const mmu_region_t * region);
@@ -66,11 +66,11 @@ static void mmu_unmap_coarse_region(const mmu_region_t * region);
 
 /* Data abort handlers */
 static int dab_align(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-        threadInfo_t * thread);
+        struct thread_info * thread);
 static int dab_buserr(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-        threadInfo_t * thread);
+        struct thread_info * thread);
 static int dab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-        threadInfo_t * thread);
+        struct thread_info * thread);
 
 static const char * get_dab_strerror(uint32_t fsr);
 
@@ -566,7 +566,7 @@ void mmu_data_abort_handler(void)
     const uint32_t lr = current_thread->sframe[SCHED_SFRAME_ABO].pc;
     const istate_t s_old = spsr & PSR_INT_MASK; /*!< Old interrupt state */
     istate_t s_entry; /*!< Int state in handler entry. */
-    threadInfo_t * const thread = (threadInfo_t *)current_thread;
+    struct thread_info * const thread = (struct thread_info *)current_thread;
     int err;
 
     __asm__ volatile (
@@ -619,7 +619,7 @@ void mmu_data_abort_handler(void)
  * DAB handler for alignment aborts.
  */
 static int dab_align(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-        threadInfo_t * thread)
+        struct thread_info * thread)
 {
     /* Kernel mode alignment fault is fatal. */
     if (!DAB_WAS_USERMODE(psr)) {
@@ -631,7 +631,7 @@ static int dab_align(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
 }
 
 static int dab_buserr(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-        threadInfo_t * thread)
+        struct thread_info * thread)
 {
     if (!DAB_WAS_USERMODE(psr)) {
         dab_fatal(fsr, far, psr, lr, thread);
@@ -645,7 +645,7 @@ static int dab_buserr(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
  * DAB handler for fatal aborts.
  */
 static int dab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-        threadInfo_t * thread)
+        struct thread_info * thread)
 {
     char buf[140];
 

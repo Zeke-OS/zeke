@@ -394,8 +394,8 @@ proc_info_t * proc_get_struct(pid_t pid)
     return (*_procarr)[pid];
 }
 
-threadInfo_t * proc_iterate_threads(proc_info_t * proc,
-        threadInfo_t ** thread_it)
+struct thread_info * proc_iterate_threads(proc_info_t * proc,
+        struct thread_info ** thread_it)
 {
     if (*thread_it == NULL) {
         *thread_it = proc->main_thread;
@@ -434,7 +434,7 @@ void proc_update_times(void)
 }
 
 int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-        threadInfo_t * thread)
+        struct thread_info * thread)
 {
     const pid_t pid = thread->pid_owner;
     const uintptr_t vaddr = far;

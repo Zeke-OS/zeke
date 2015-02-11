@@ -145,7 +145,7 @@ int kinit(void)
         panic(buf);
     }
 
-    threadInfo_t * const init_thread = sched_get_thread_info(tid);
+    struct thread_info * const init_thread = sched_get_thread_info(tid);
     if (!init_thread) {
         panic("Can't get thread descriptor of init_thread!");
     }

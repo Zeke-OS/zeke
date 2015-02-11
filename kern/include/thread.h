@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Generic thread management and scheduling functions.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -71,7 +71,8 @@ pthread_t thread_create(struct _ds_pthread_create * thread_def, int priv);
   * @todo what if parent is stopped before this function is called?
   */
 void thread_init(struct thread_info * tp, pthread_t thread_id,
-                 struct _ds_pthread_create * thread_def, threadInfo_t * parent,
+                 struct _ds_pthread_create * thread_def,
+                 struct thread_info * parent,
                  int priv);
 
 /**
@@ -102,7 +103,7 @@ void thread_wait(void);
 /**
  * Release thread waiting state.
  */
-void thread_release(threadInfo_t * thread);
+void thread_release(struct thread_info * thread);
 
 /**
  * Sleep current thread for millisec.

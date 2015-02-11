@@ -3,9 +3,9 @@
  * @file    heap.h
  * @author  Olli Vanhoja
  *
- * @brief   Header file for heap data structure for threadInfo_t (heap.c).
+ * @brief   Header file for heap data structure for struct thread_info (heap.c).
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -44,8 +44,8 @@
 
 /** Heap data struct */
 typedef struct {
-    threadInfo_t * a[configSCHED_MAX_THREADS];  /*!< Heap array */
-    int size;                                   /*!< Current heap size */
+    struct thread_info * a[configSCHED_MAX_THREADS]; /*!< Heap array */
+    int size; /*!< Current heap size */
 } heap_t;
 
 /**
@@ -54,7 +54,7 @@ typedef struct {
  */
 void heap_del_max(heap_t * heap);
 
-void heap_insert(heap_t * heap, threadInfo_t * k);
+void heap_insert(heap_t * heap, struct thread_info * k);
 
 /**
  * Heap increment key
