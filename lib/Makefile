@@ -43,12 +43,12 @@ libc-ARFLAGS = $(wildcard crt0_o/*.o)
 
 # Source Files #################################################################
 crt1-SRC-y = \
-$(wildcard crt1/*.c) \
-$(wildcard crt1/arm/*.c)
+$(wildcard crt1/*.c)
+
+crt1-SRC-$(configARCH_ARM) = $(wildcard crt1/arm/*.c)
 
 # TODO arch specific selection
-crt1-ASRC-y = \
-$(wildcard crt1/arm/*.S)
+crt1-ASRC-$(configARCH_ARM) = $(wildcard crt1/arm/*.S)
 
 libc-SRC-y = \
 $(wildcard libc/_PDCLIB/*.c) \

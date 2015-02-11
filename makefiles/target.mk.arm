@@ -23,8 +23,57 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-ifeq ($(configARCH_ARM),y)
-	include $(ROOT_DIR)/makefiles/target.mk.arm
-else
-	$(error No arch)
+# Target Specific Compiler Options #############################################
+ARM32_ELFLD = lib/arm32.ld
+
+# Arch specific flags
+ifdef __ARM6M__
+	LLCFLAGS += -march=thumb
+	ASFLAGS  += -mcpu=cortex-m0 -mthumb -EL
+	ELFLD    := $(ARM32_ELFLD)
+	# or more generic with
+	#ASFLAGS  march=armv6-m -mthumb -EL
 endif
+ifdef __ARM6__
+	LLCFLAGS += -march=arm
+	ASFLAGS  += -march=armv6 -EL
+	ELFLD    := $(ARM32_ELFLD)
+endif
+# TODO Enable thumb?
+ifdef __ARM6K__
+	CCFLAGS  += -target armv6k-none-eabi
+	LLCFLAGS += -march=arm
+	ASFLAGS  += -march=armv6k -EL
+	ELFLD    := $(ARM32_ELFLD)
+endif
+
+# Floating point hardware
+ifeq ($(configHFP),__HFP_VFP__)
+	ASFLAGS  += -mfpu=vfp
+endif
+CCFLAGS += -m32
+MACHIDIR = arm
+
+# Target specific CRT ##########################################################
+# CRT is compiled per instruction set or per core model
+ifeq ($(configARM_PROFILE_M),y)
+	ifdef __ARM6M__
+		CRT = $(ROOT_DIR)/lib/crt0/libaeabi-armv6-m/libaeabi-armv6-m.a
+	endif
+else
+	ifdef __ARM6K__
+		CRT = $(ROOT_DIR)/lib/crt0/libaeabi-armv6k/libaeabi-armv6k.a
+	endif
+endif
+CRT_DIR = $(dir $(CRT))
+
+# Checks #######################################################################
+ifndef ASFLAGS
+    $(error Missing ASFLAGS! Wrong ARCH?)
+endif
+
+# Check that CRT is defined
+ifndef CRT
+    $(error Missing CRT! Wrong MCU_MODEL or ARCH?)
+endif
+
