@@ -99,14 +99,14 @@ all: $(LIBSA) manifest
 
 $(ASOBJS): %.o: %.S $(AUTOCONF_H)
 	@echo "AS $@"
-	@$(UNIFDEFALL) $(IDIR) $*.S | $(ARMGNU)-as -am $(IDIR) -o $@
+	@$(UNIFDEFALL) $(IDIR) $*.S | $(GNUARCH)-as -am $(IDIR) -o $@
 
 $(OBJS): %.o: %.c $(AUTOCONF_H)
 	@echo "CC $@"
 	$(eval CUR_BC := $*.bc)
 	@$(CC) $(CCFLAGS) $(IDIR) -c $*.c -o $(CUR_BC)
 	@$(OPT) $(OFLAGS) $(CUR_BC) -o - | $(LLC) $(LLCFLAGS) - -o - | \
-		$(ARMGNU)-as - -o $@ $(ASFLAGS)
+		$(GNUARCH)-as - -o $@ $(ASFLAGS)
 
 crt0_o: $(CRT)
 	mkdir -p crt0_o

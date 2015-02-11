@@ -43,14 +43,13 @@ MODULES += $(foreach var, $(ALLMODULES), $(if $(strip $($(var)-SRC-y) $($(var)-A
 ################################################################################
 
 # Compiler Options #############################################################
-ARMGNU      = arm-none-eabi
 #CC         = SET IN BUILDCONF.MK
 CCFLAGS    += -emit-llvm -ffreestanding -nostdlib -nostdinc
 CCFLAGS    += -include autoconf.h -DKERNEL_INTERNAL
 #OPT        = SET IN BUILDCONF.MK
 OFLAGS     += -std-compile-opts
 #LLC        = SET IN BUILDCONF.MK
-LLCFLAGS   += -mtriple=$(ARMGNU)
+LLCFLAGS   += -mtriple=$(GNUARCH)
 ASFLAGS    +=#
 LDFLAGS    +=#
 ################################################################################
@@ -100,18 +99,18 @@ kernel: $(KERNEL_IMG)
 
 $(STARTUP_O): $(STARTUP) $(AUTOCONF_H)
 	@echo "AS $@"
-	@$(UNIFDEFALL) $(AIDIR) $< | $(ARMGNU)-as -o $(STARTUP_O)
+	@$(UNIFDEFALL) $(AIDIR) $< | $(GNUARCH)-as -o $(STARTUP_O)
 
 $(ASOBJS): $(ASRC-y) $(UNIFDEF) $(AUTOCONF_H)
 	@echo "AS $@"
-	@$(UNIFDEFALL) $(AIDIR) $*.S | $(ARMGNU)-as -am $(AIDIR) -o $@
+	@$(UNIFDEFALL) $(AIDIR) $*.S | $(GNUARCH)-as -am $(AIDIR) -o $@
 
 $(OBJS): %.o: %.c $(AUTOCONF_H)
 	@echo "CC $@"
 	$(eval CUR_BC := $*.bc)
 	@$(CC) $(CCFLAGS) $(IDIR) -c $*.c -o $(CUR_BC)
 	@$(OPT) $(OFLAGS) $(CUR_BC) -o - | $(LLC) $(LLCFLAGS) - -o - \
-		| $(ARMGNU)-as - -o $@ $(ASFLAGS)
+		| $(GNUARCH)-as - -o $@ $(ASFLAGS)
 
 $(MODAS): $(ASOBJS) $(OBJS)
 	$(eval CUR_MODULE := $(basename $@))
@@ -121,9 +120,9 @@ $(MODAS): $(ASOBJS) $(OBJS)
 	@ar rcs $@ $(CUR_OBJS)
 
 $(KERNEL_IMG): $(MEMMAP) $(STARTUP_O) $(MODAS)
-	$(ARMGNU)-ld -o $(ROOT_DIR)/kernel.elf -T $(MEMMAP) $(LDFLAGS) $(STARTUP_O) --whole-archive $(MODAS) --no-whole-archive $(CRT)
-	$(ARMGNU)-objdump -D $(ROOT_DIR)/kernel.elf > $(ROOT_DIR)/kernel.list
-	$(ARMGNU)-objcopy -O binary $(ROOT_DIR)/kernel.elf $(KERNEL_IMG)
+	$(GNUARCH)-ld -o $(ROOT_DIR)/kernel.elf -T $(MEMMAP) $(LDFLAGS) $(STARTUP_O) --whole-archive $(MODAS) --no-whole-archive $(CRT)
+	$(GNUARCH)-objdump -D $(ROOT_DIR)/kernel.elf > $(ROOT_DIR)/kernel.list
+	$(GNUARCH)-objcopy -O binary $(ROOT_DIR)/kernel.elf $(KERNEL_IMG)
 # End of Kernel
 
 .PHONY: kernel clean

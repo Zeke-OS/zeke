@@ -63,7 +63,7 @@ $(UNIFDEF):
 	$(MAKE) -C tools/unifdef unifdef
 # End of Tools
 
-$(AUTOCONF_H): $(CONFIG_DIR)/buildconf.mk config
+$(AUTOCONF_H): config
 	$(ROOT_DIR)/tools/aconf.sh $^ $@
 	cd include && rm machine; ln -s sys/mach/$(MACHIDIR) machine
 

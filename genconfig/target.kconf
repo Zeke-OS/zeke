@@ -1,4 +1,32 @@
 choice
+    prompt "Arch"
+    default configARCH_ARM
+
+config configARCH_ARM
+    bool "ARM"
+config configARCH_MIPS
+    bool "MIPS"
+endchoice
+
+config configHAVE_64_BIT_CPU
+    bool
+    default n
+
+config config64_BIT_CPU
+    bool "64-bit CPU"
+    depends on configHAVE_64_BIT_CPU
+
+# select if MP capable core or instruction set
+config configHAVE_MP_CAP
+    bool
+    default n
+
+config configQEMU_GUEST
+    bool "QEMU vm guest"
+    default n
+
+if configARCH_ARM
+choice
     optional
     prompt "ARM Profile"
 config configARM_PROFILE_A
@@ -9,23 +37,8 @@ config configARM_PROFILE_M
     bool "M"
 endchoice
 
-config configHAVE_64_BIT_CPU
-    bool
-
-config config64_BIT_CPU
-    bool "64-bit CPU"
-    depends on configHAVE_64_BIT_CPU
-
-# select if MP capable core or instruction set
-config configHAVE_MP_CAP
-    bool
-
-config configQEMU_GUEST
-    bool "QEMU vm guest"
-    default n
-
 choice
-    prompt "Arch"
+    prompt "ARM Arch"
     ---help---
         For historical reasons we will detect the processor core model mainly by
         its architecture version. Also profile identification is used for newer
@@ -60,11 +73,17 @@ config __ARM7R__
     bool "ARMv7R"
     depends on configARM_PROFILE_R
 endchoice
+endif
 
 choice
     prompt "MCU/CPU Model"
+
 config configBCM2835
     bool "BCM2835"
     depends on __ARM6K__
     select configMMU
+
+config configJZ4780
+    bool "Ingenic JZ4780"
+    depends on configARCH_MIPS
 endchoice
