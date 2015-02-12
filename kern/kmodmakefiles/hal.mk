@@ -23,24 +23,30 @@ ifdef configBCM2835
 	hal-SRC-$(configRPI_EMMC) += hal/rpi/rpi_emmc.c
 	hal-SRC-$(configRPI_HW)   += hal/rpi/rpi_hw.c
 endif
+ifdef configJZ4780
+	MEMMAP = memmap_jz4780.ld
+	STARTUP = hal/mips32/mips32_startup.S
+endif
 
 # Arhitecture and Profile specific sources
-ifeq ($(configARM_PROFILE_M),y)
-	hal-SRC-y += $(wildcard hal/cortex_m/*.c)
-else
-	# ARM11
-	ifneq "$(strip $(__ARM6__), $(__ARM6K__))" ""
-		AIDIR += hal/arm11/
-		hal-ASRC-y += $(filter-out $(STARTUP), $(wildcard hal/arm11/*.S))
-		hal-SRC-y += $(wildcard hal/arm11/*.c)
+ifeq ($(configARCH_ARM),y)
+	ifeq ($(configARM_PROFILE_M),y)
+		hal-SRC-y += $(wildcard hal/cortex_m/*.c)
+	else
+		# ARM11
+		ifneq "$(strip $(__ARM6__), $(__ARM6K__))" ""
+			AIDIR += hal/arm11/
+			hal-ASRC-y += $(filter-out $(STARTUP), $(wildcard hal/arm11/*.S))
+			hal-SRC-y += $(wildcard hal/arm11/*.c)
+		endif
 	endif
 endif
 
 # Checks #######################################################################
 # Check that MEMMAP and STARTUP are defined
 ifndef MEMMAP
-    $(error Missing MEMMAP! Wrong configMCU_MODEL?)
+    $(error Missing kernel MEMMAP! Wrong configMCU_MODEL?)
 endif
 ifndef STARTUP
-    $(error Missing STARTUP! Wrong configMCU_MODEL?)
+    $(error Missing kernel STARTUP! Wrong configMCU_MODEL?)
 endif
