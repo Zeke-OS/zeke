@@ -25,7 +25,7 @@
 
 # Compiler options and tools ###################################################
 CC         	    = clang
-CCFLAGS         = -std=c99 -include sys/cdefs.h -Wall -O2 -g
+CCFLAGS         = -std=c99 -include sys/cdefs.h -Wall -O2
 OPT             = opt-3.3
 OFLAGS          =#
 LLC             = llc-3.3
