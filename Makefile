@@ -100,7 +100,7 @@ stats: clean
 
 # target: help - Display callable targets.
 help:
-	./tools/help.sh
+	@./tools/help.sh
 
 .PHONY: tools world lib sbin bin clean-all clean clean-doc clean-tools clean-man
 
