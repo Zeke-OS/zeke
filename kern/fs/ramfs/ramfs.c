@@ -210,7 +210,7 @@ int ramsfs_mount(const char * source, uint32_t mode,
     ramfs_sb_t * ramfs_sb;
     int err, retval;
 
-#ifdef configRAMFS_DEBUG
+#if configRAMFS_DEBUG
     KERROR(KERROR_DEBUG, "ramfs_mount()\n");
 #endif
 
@@ -231,10 +231,10 @@ int ramsfs_mount(const char * source, uint32_t mode,
         retval = -ENOMEM;
         goto free_ramfs_sb;
     }
-    ramfs_sb->ramfs_iarr_size = 0;
+    ramfs_sb->ramfs_iarr_size = RAMFS_INODE_POOL_SIZE;
 
     /* Initialize the inode pool. */
-#ifdef configRAMFS_DEBUG
+#if configRAMFS_DEBUG
     KERROR(KERROR_DEBUG, "Initialize the inode pool.\n");
 #endif
     err = inpool_init(&(ramfs_sb->ramfs_ipool), &(ramfs_sb->sbn.sbl_sb),
@@ -249,7 +249,7 @@ int ramsfs_mount(const char * source, uint32_t mode,
         DEV_MMTODEV(VDEV_MJNR_RAMFS, atomic_inc(&ramfs_vdev_minor));
 
     /* Create the root inode */
-#ifdef configRAMFS_DEBUG
+#if configRAMFS_DEBUG
     KERROR(KERROR_DEBUG, "Create the root inode\n");
 #endif
     ramfs_sb->sbn.sbl_sb.root = create_root(ramfs_sb);
@@ -297,14 +297,23 @@ int ramfs_get_vnode(fs_superblock_t * sb, ino_t * vnode_num, vnode_t ** vnode)
 {
     ramfs_sb_t * ramfs_sb;
 
-    if (strcmp(sb->fs->fsname, RAMFS_FSNAME))
+    if (strcmp(sb->fs->fsname, RAMFS_FSNAME)) {
+#if configRAMFS_DEBUG
+        KERROR(KERROR_DEBUG, "Invalid fs: %s\n", sb->fs->fsname);
+#endif
         return -EINVAL;
+    }
 
     /* Get pointer to the ramfs_sb from generic sb. */
     ramfs_sb = get_rfsb_of_sb(sb);
 
-    if (*vnode_num >= (ino_t)(ramfs_sb->ramfs_iarr_size))
+    if (*vnode_num >= (ino_t)(ramfs_sb->ramfs_iarr_size)) {
+#if configRAMFS_DEBUG
+        KERROR(KERROR_DEBUG, "invalid vnode num (%d)\n",
+               (unsigned)(*vnode_num));
+#endif
         return -ENOENT; /* inode can't exist. */
+    }
 
     if (vnode) {
         struct ramfs_inode * in;
@@ -312,8 +321,12 @@ int ramfs_get_vnode(fs_superblock_t * sb, ino_t * vnode_num, vnode_t ** vnode)
         const size_t vnnum = (size_t)(*vnode_num);
 
         in = ramfs_sb->ramfs_iarr[vnnum];
-        if (!in)
+        if (!in) {
+#if configRAMFS_DEBUG
+            KERROR(KERROR_DEBUG, "inode's NULL\n");
+#endif
             return -ENOENT;
+        }
 
         vn = &in->in_vnode;
         if (vref(vn))
@@ -431,7 +444,7 @@ int ramfs_create(vnode_t * dir, const char * name, mode_t mode,
     ramfs_inode_t * inode;
     int err;
 
-#ifdef configRAMFS_DEBUG
+#if configRAMFS_DEBUG
         KERROR(KERROR_DEBUG, "ramfs_create(name \"%s\", mode %u)\n",
                name, mode);
 #endif
@@ -450,7 +463,7 @@ int ramfs_create(vnode_t * dir, const char * name, mode_t mode,
     init_inode_attr(inode, S_IFREG | mode);
     err = ramfs_set_filesize(inode, 1 * MMU_PGSIZE_COARSE);
     if (err) {
-#ifdef configRAMFS_DEBUG
+#if configRAMFS_DEBUG
         KERROR(KERROR_DEBUG, "ramfs_set_filesize() failed on inode creation\n");
 #endif
         destroy_inode(inode);
@@ -461,7 +474,7 @@ int ramfs_create(vnode_t * dir, const char * name, mode_t mode,
     insert_inode(inode); /* Insert into the lookup table of the super block. */
     err = ramfs_link(dir, vnode, name);
     if (err) { /* Hard link creation failed. */
-#ifdef configRAMFS_DEBUG
+#if configRAMFS_DEBUG
         KERROR(KERROR_DEBUG, "ramfs_link() failed on inode creation\n");
 #endif
         destroy_inode(inode);
@@ -618,9 +631,10 @@ int ramfs_rmdir(vnode_t * dir,  const char * name)
     ino_t vnum;
     vnode_t * vn;
     ramfs_inode_t * in;
+    size_t nr_entries;
     int err;
 
-#ifdef configRAMFS_DEBUG
+#if configRAMFS_DEBUG
     KERROR(KERROR_DEBUG, "ramfs_rmdir(dir %p, name \"%s\")\n",
            dir, name);
 #endif
@@ -639,7 +653,13 @@ int ramfs_rmdir(vnode_t * dir,  const char * name)
     in = get_inode_of_vnode(vn);
     vrele(vn);
 
-    /* TODO Implement  -ENOTEMPTY */
+    nr_entries = dh_nr_entries(in->in.dir);
+    if (nr_entries > 2) {
+#if configRAMFS_DEBUG
+        KERROR(KERROR_DEBUG, "ENOTEMPTY (%u)\n", (unsigned)nr_entries);
+#endif
+        return -ENOTEMPTY;
+    }
 
     dh_unlink(in->in.dir, RFS_DOT);
     dh_unlink(in->in.dir, RFS_DOTDOT);
@@ -785,7 +805,7 @@ static void insert_superblock(ramfs_sb_t * ramfs_sb)
 {
     superblock_lnode_t * curr = ramfs_fs.sbl_head;
 
-#ifdef configRAMFS_DEBUG
+#if configRAMFS_DEBUG
     KERROR(KERROR_DEBUG, "insert_superblock()\n");
 #endif
 
@@ -918,12 +938,14 @@ static void destroy_inode_data(ramfs_inode_t * inode)
     case S_IFREG:
         /* Free all data blocks. */
         ramfs_set_filesize(inode, 0);
+        inode->in.data = NULL;
         break;
     case S_IFDIR:
         /* Free dhtable entries and dhtable. */
         if (inode->in.dir) {
             dh_destroy_all(inode->in.dir);
             kfree(inode->in.dir);
+            inode->in.dir = NULL;
         }
         break;
     default: /* File type not supported or nothing to free. */
@@ -940,22 +962,28 @@ static void destroy_inode_data(ramfs_inode_t * inode)
  */
 static int insert_inode(ramfs_inode_t * inode)
 {
-    ramfs_sb_t * ramfs_sb;
-    ramfs_inode_t ** tmp_iarr;
+    ramfs_sb_t * ramfs_sb = get_rfsb_of_sb(inode->in_vnode.sb);
     const ino_t vnode_num = inode->in_vnode.vn_num;
 
-    ramfs_sb = get_rfsb_of_sb(inode->in_vnode.sb);
-
+retry:
     if (vnode_num >= (ino_t)(ramfs_sb->ramfs_iarr_size)) {
+        ramfs_inode_t ** tmp_iarr;
+        const size_t new_size = ramfs_sb->ramfs_iarr_size * 2;
+
+        /* TODO Lock */
         /* Allocate more space for iarr. */
-        ramfs_sb->ramfs_iarr_size++;
         tmp_iarr = (ramfs_inode_t **)krealloc(ramfs_sb->ramfs_iarr,
-                (ino_t)(ramfs_sb->ramfs_iarr_size) * sizeof(ramfs_inode_t *));
+                new_size * sizeof(ramfs_inode_t *));
         if (!tmp_iarr) {
-            /* Can't allocate more memory for inode lookup table */
+#if configRAMFS_DEBUG
+            KERROR(KERROR_DEBUG, "ENOSPC\n");
+#endif
+            /* Can't allocate more memory for a inode lookup table */
             return -ENOSPC;
         }
         ramfs_sb->ramfs_iarr = tmp_iarr; /* reallocate ok. */
+        ramfs_sb->ramfs_iarr_size = new_size;
+        goto retry;
     }
 
     /* Assign inode to the lookup table. */

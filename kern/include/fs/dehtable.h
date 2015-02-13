@@ -68,12 +68,51 @@ typedef struct dh_dir_iter {
     size_t ch_ind;
 } dh_dir_iter_t;
 
+/**
+ * Insert a new directory entry link.
+ * @param dir       is a directory entry table.
+ * @param vnode     is the vnode where the new hard link will point.
+ * @param name      is the name of the hard link.
+ * @return Returns 0 if succeed; Otherwise value other than zero.
+ */
 int dh_link(dh_table_t * dir, ino_t vnode_num, const char * name);
 int dh_unlink(dh_table_t * dir, const char * name);
+
+/**
+ * Destroy all dir entries.
+ * @param dir is a directory entry hash table.
+ */
 void dh_destroy_all(dh_table_t * dir);
+
+/**
+ * Lookup for hard link in dh_table of dir.
+ * @param dir       is the dh_table of a directory.
+ * @param name      is the link name searched for.
+ * @param name_len  is the length of name.
+ * @param vnode_num is the vnode number the link is pointing to.
+ * @return Returns zero if link with specified name was found;
+ *         Otherwise value other than zero indicating type of error.
+ */
 int dh_lookup(dh_table_t * dir, const char * name, ino_t * vnode_num);
+
+/**
+ * Get a dirent hashtable iterator.
+ * @param is a directory entry hash table.
+ * @return Returns a dent hash table iterator struct.
+ */
 dh_dir_iter_t dh_get_iter(dh_table_t * dir);
+
+/**
+ * Get the next directory entry from iterator it.
+ * @param it is a dirent hash table iterator.
+ * @return Next directory entry in hash table.
+ */
 dh_dirent_t * dh_iter_next(dh_dir_iter_t * it);
+
+/**
+ * Get the number of entries in a dh_table.
+ */
+size_t dh_nr_entries(dh_table_t * dir);
 
 #endif /* DEHTABLE_H */
 

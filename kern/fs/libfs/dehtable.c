@@ -90,13 +90,6 @@ static size_t hash_fname(const char * str, size_t len);
 #define is_invalid_offset(denode) \
     ((denode)->dh_size > (DIRENT_SIZE + NAME_MAX + 1))
 
-/**
- * Insert a new directory entry link.
- * @param dir       is a directory entry table.
- * @param vnode     is the vnode where the new hard link will point.
- * @param name      is the name of the hard link.
- * @return Returns 0 if succeed; Otherwise value other than zero.
- */
 int dh_link(dh_table_t * dir, ino_t vnode_num, const char * name)
 {
     size_t name_len = strlenn(name, NAME_MAX + 1) + 1;
@@ -161,10 +154,6 @@ int dh_unlink(dh_table_t * dir, const char * name)
     return 0;
 }
 
-/**
- * Destroy all dir entries.
- * @param dir is a directory entry hash table.
- */
 void dh_destroy_all(dh_table_t * dir)
 {
     size_t i;
@@ -176,15 +165,6 @@ void dh_destroy_all(dh_table_t * dir)
     }
 }
 
-/**
- * Lookup for hard link in dh_table of dir.
- * @param dir       is the dh_table of a directory.
- * @param name      is the link name searched for.
- * @param name_len  is the length of name.
- * @param vnode_num is the vnode number the link is pointing to.
- * @return Returns zero if link with specified name was found;
- *         Otherwise value other than zero indicating type of error.
- */
 int dh_lookup(dh_table_t * dir, const char * name, ino_t * vnode_num)
 {
     size_t name_len = strlenn(name, NAME_MAX + 1) + 1;
@@ -209,11 +189,6 @@ out:
     return retval;
 }
 
-/**
- * Get dirent hashtable iterator.
- * @param is a directory entry hash table.
- * @return Returns a dent hash table iterator struct.
- */
 dh_dir_iter_t dh_get_iter(dh_table_t * dir)
 {
     dh_dir_iter_t it = {
@@ -225,19 +200,14 @@ dh_dir_iter_t dh_get_iter(dh_table_t * dir)
     return it;
 }
 
-/**
- * Get next directory entry from iterator it.
- * @param it is a dirent hash table iterator.
- * @return Next directory entry in hash table.
- */
 dh_dirent_t * dh_iter_next(dh_dir_iter_t * it)
 {
     dh_dirent_t * dea; /* Dir entry array (chain). */
-    dh_dirent_t * node = 0; /* Dir entry node in chain. */
+    dh_dirent_t * node; /* Dir entry node in chain. */
 
     /* Already iterated over all nodes? */
-    if (it->dea_ind >= DEHTABLE_SIZE)
-        goto out;
+    if (!it->dir || it->dea_ind >= DEHTABLE_SIZE)
+        return NULL;
 
     if (it->ch_ind == SIZE_MAX) { /* Get a next chain array */
         size_t i = it->dea_ind;
@@ -251,12 +221,11 @@ dh_dirent_t * dh_iter_next(dh_dir_iter_t * it)
         } while (!dea && i < DEHTABLE_SIZE);
 
         it->dea_ind = i - 1;
-    } else {
-        /* Still iterating the old chain. */
+    } else { /* Still iterating the old chain. */
         dea = (*(it->dir))[it->dea_ind];
     }
     if (!dea)
-        goto out; /* Empty hash table or No more entries. */
+        return NULL; /* Empty hash table or No more entries. */
 
     /* Get a node from the chain. */
     node = get_dirent(dea, it->ch_ind);
@@ -271,8 +240,19 @@ dh_dirent_t * dh_iter_next(dh_dir_iter_t * it)
                                 * shorter than SIZE_MAX. */
     }
 
-out:
     return node;
+}
+
+size_t dh_nr_entries(dh_table_t * dir)
+{
+    dh_dir_iter_t it = dh_get_iter(dir);
+    size_t n = 0;
+
+    while (dh_iter_next(&it)) {
+        n++;
+    }
+
+    return n;
 }
 
 /**
