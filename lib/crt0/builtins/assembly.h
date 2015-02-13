@@ -141,11 +141,6 @@
 #define DEFINE_AEABI_FUNCTION_ALIAS(aeabi_name, name)
 #endif
 
-#ifdef __ELF__
-#define END_COMPILERRT_FUNCTION(name)                                          \
-  .size SYMBOL_NAME(name), . - SYMBOL_NAME(name)
-#else
 #define END_COMPILERRT_FUNCTION(name)
-#endif
 
 #endif /* COMPILERRT_ASSEMBLY_H */

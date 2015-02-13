@@ -100,7 +100,7 @@ all: $(LIBSA) manifest
 
 $(ASOBJS): %.o: %.S $(AUTOCONF_H)
 	@echo "AS $@"
-	@$(CC) -E $(IDIR) $*.S | grep -Ev "^#" | $(GNUARCH)-as $(ASFLAGS) -am $(IDIR) -o $@
+	$(CC) -E $(IDIR) $*.S | grep -Ev "^#" | $(GNUARCH)-as $(ASFLAGS) -am $(IDIR) -o $@
 
 $(OBJS): %.o: %.c $(AUTOCONF_H)
 	@echo "CC $@"

@@ -26,9 +26,9 @@
 # Compiler options and tools ###################################################
 CC         	    = clang
 CCFLAGS         = -std=c99 -include sys/cdefs.h -Wall -O2
-OPT             = opt-3.3
+OPT             = opt-3.4
 OFLAGS          =#
-LLC             = llc-3.3
+LLC             = llc-3.4
 LLCFLAGS        =#
 UNIFDEF         = $(ROOT_DIR)/tools/unifdef/unifdef
 UNIFDEFALL      = $(ROOT_DIR)/tools/unifdef/zunifdefall.sh
