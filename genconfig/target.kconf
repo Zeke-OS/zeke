@@ -26,6 +26,11 @@ config configQEMU_GUEST
     default n
 
 if configARCH_ARM
+
+config __ARM_FEATURE_CLZ
+    bool
+    default n
+
 choice
     optional
     prompt "ARM Profile"
@@ -51,9 +56,11 @@ config __ARM4T__
 #__ARM5E__
 config __ARM6__
     bool "ARMv6"
+    select __ARM_FEATURE_CLZ
 config __ARM6K__
     bool "ARMv6K"
     select configHAVE_MP_CAP
+    select __ARM_FEATURE_CLZ
 config __ARM6M__
     bool "ARMv6M"
     depends on configARM_PROFILE_M
@@ -68,6 +75,7 @@ config __ARM7EM__
     depends on configARM_PROFILE_M
 config __ARM7A__
     bool "ARMv7A"
+    select __ARM_FEATURE_CLZ
     depends on configARM_PROFILE_A
 config __ARM7R__
     bool "ARMv7R"

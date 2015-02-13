@@ -32,8 +32,3 @@ ASFLAGS  += -mcpu=mips32 -EL
 ELFLD    := $(MIPS32_ELFLD)
 CCFLAGS += -m32
 MACHIDIR = mips
-
-# Target specific CRT ##########################################################
-# CRT is compiled per instruction set or per core model
-#CRT = $(ROOT_DIR)/lib/crt0/libeabi-mipsel32/libeabi-mipsel32.a
-CRT_DIR = $(dir $(CRT))

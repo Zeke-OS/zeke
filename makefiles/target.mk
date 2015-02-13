@@ -23,6 +23,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+CRT = $(ROOT_DIR)/lib/crt0.a
+CRT_DIR = $(dir $(CRT))
+
 ifeq ($(configARCH_ARM),y)
 	include $(ROOT_DIR)/makefiles/target.mk.arm
 else ifeq ($(configARCH_MIPS),y)

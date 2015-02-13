@@ -35,20 +35,21 @@ include $(ROOT_DIR)/genconfig/dist.mk
 # Supress warnings about C11 extensions in libc
 CCFLAGS += -Wno-c11-extensions
 
-LIBS = crt1 libc
+LIBS = crt0 crt1 libc
 
 # AR flags #####################################################################
 
-libc-ARFLAGS = $(wildcard crt0_o/*.o)
+libc-ARFLAGS = $(patsubst %.c,%.o,$(crt0-SRC-y)) $(patsubst %.S,%.o,$(crt0-ASRC-y))
+LIBS = crt0 crt1 libc
 
 # Source Files #################################################################
-crt1-SRC-y = \
-$(wildcard crt1/*.c)
+ifeq ($(configARCH_ARM),y)
+include crt0/crt0.mk.arm
+endif
 
-crt1-SRC-$(configARCH_ARM) = $(wildcard crt1/arm/*.c)
-
-# TODO arch specific selection
-crt1-ASRC-$(configARCH_ARM) = $(wildcard crt1/arm/*.S)
+crt1-SRC-y = $(wildcard crt1/*.c)
+crt1-SRC-$(configARCH_ARM) += $(wildcard crt1/arm/*.c)
+crt1-ASRC-$(configARCH_ARM) := $(wildcard crt1/arm/*.S)
 
 libc-SRC-y = \
 $(wildcard libc/_PDCLIB/*.c) \
@@ -99,7 +100,7 @@ all: $(LIBSA) manifest
 
 $(ASOBJS): %.o: %.S $(AUTOCONF_H)
 	@echo "AS $@"
-	@$(UNIFDEFALL) $(IDIR) $*.S | $(GNUARCH)-as -am $(IDIR) -o $@
+	@$(CC) -E $(IDIR) $*.S | grep -Ev "^#" | $(GNUARCH)-as $(ASFLAGS) -am $(IDIR) -o $@
 
 $(OBJS): %.o: %.c $(AUTOCONF_H)
 	@echo "CC $@"
@@ -108,12 +109,7 @@ $(OBJS): %.o: %.c $(AUTOCONF_H)
 	@$(OPT) $(OFLAGS) $(CUR_BC) -o - | $(LLC) $(LLCFLAGS) - -o - | \
 		$(GNUARCH)-as - -o $@ $(ASFLAGS)
 
-crt0_o: $(CRT)
-	mkdir -p crt0_o
-	cd crt0_o && \
-		ar x $(CRT)
-
-$(LIBSA): crt0_o $(OBJS) $(ASOBJS)
+$(LIBSA): $(OBJS) $(ASOBJS)
 	$(eval CUR_LIB := $(basename $@))
 	$(eval CUR_OBJS := $(patsubst %.S, %.o, $($(CUR_LIB)-ASRC-y)))
 	$(eval CUR_OBJS += $(patsubst %.c, %.o, $($(CUR_LIB)-SRC-y)))
