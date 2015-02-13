@@ -39,7 +39,8 @@ include $(ROOT_DIR)/genconfig/buildconf.mk
 # '# target_doc'	Documentation target
 
 # target_comp: all - Make config and compile kernel.
-all: tools $(CRT) kernel.img world
+all: tools kernel.img world
+.PHONY: tools lib sbin bin world clean-all clean clean-doc clean-tools clean-man
 
 # target_doc: doc - Compile all documentation.
 doc: doc-book doc-man
@@ -67,17 +68,14 @@ $(AUTOCONF_H): config
 	$(ROOT_DIR)/tools/aconf.sh $^ $@
 	cd include && rm machine; ln -s sys/mach/$(MACHIDIR) machine
 
-$(CRT):
-	$(MAKE) -C $(CRT_DIR) all
-
 # target_comp: kernel.img - Compile kernel image.
-kernel.img: tools $(AUTOCONF_H) $(CRT)
+kernel.img: | tools $(AUTOCONF_H) lib
 	$(MAKE) -C kern all
 
 # target_comp: world - Compile user space stuff.
 world: lib bin sbin
 
-lib: $(AUTOCONF_H) $(CRT)
+lib: $(AUTOCONF_H)
 	$(MAKE) -C lib all
 
 bin: lib
@@ -102,15 +100,12 @@ stats: clean
 help:
 	@./tools/help.sh
 
-.PHONY: tools world lib sbin bin clean-all clean clean-doc clean-tools clean-man
-
 # target_clean: clean-all - Clean all targets.
 clean-all: clean clean-tools clean-doc
 
 # target_clean: clean - Clean.
 clean:
 	$(RM) $(AUTOCONF_H)
-	$(MAKE) -C $(CRT_DIR) clean
 	$(MAKE) -C lib clean
 	$(MAKE) -C kern clean
 	$(MAKE) -C bin clean
