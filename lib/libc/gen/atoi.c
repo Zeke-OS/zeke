@@ -1,5 +1,4 @@
-int
-atoi(char * p)
+int atoi(char * p)
 {
     int n;
     int f;
@@ -19,6 +18,7 @@ atoi(char * p)
         break;
     }
     while(*p >= '0' && *p <= '9')
-        n = n*10 + *p++ - '0';
+        n = n * 10 + *p++ - '0';
+
     return(f? -n: n);
 }

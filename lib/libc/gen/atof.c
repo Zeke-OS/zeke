@@ -4,11 +4,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
+
 #include <math.h>
 #include <ctype.h>
 
-double
-atof(char * p)
+double atof(char * p)
 {
     int c;
     double fl, flexp, exp5;
@@ -31,7 +31,7 @@ atof(char * p)
     nd = 0;
     while ((c = *p++), isdigit(c)) {
         if (fl<big)
-            fl = 10*fl + (c-'0');
+            fl = 10 * fl + (c - '0');
         else
             exp++;
         nd++;
@@ -40,7 +40,7 @@ atof(char * p)
     if (c == '.') {
         while ((c = *p++), isdigit(c)) {
             if (fl<big) {
-                fl = 10*fl + (c-'0');
+                fl = 10 * fl + (c - '0');
                 exp--;
             }
         nd++;
@@ -58,9 +58,9 @@ atof(char * p)
             --p;
 
         while ((c = *p++), isdigit(c)) {
-            eexp = 10*eexp+(c-'0');
+            eexp = 10 * eexp + (c - '0');
         }
-        if (negexp<0)
+        if (negexp < 0)
             eexp = -eexp;
         exp = exp + eexp;
     }
@@ -71,7 +71,6 @@ atof(char * p)
         exp = -exp;
     }
 
-
     if ((nd+exp*negexp) < -LOGHUGE){
         fl = 0;
         exp = 0;
@@ -80,7 +79,7 @@ atof(char * p)
     exp5 = 5;
     bexp = exp;
     for (;;) {
-        if (exp&01)
+        if (exp & 01)
             flexp *= exp5;
         exp >>= 1;
         if (exp==0)
@@ -91,8 +90,9 @@ atof(char * p)
         fl /= flexp;
     else
         fl *= flexp;
-    fl = ldexp(fl, negexp*bexp);
+    fl = ldexp(fl, negexp * bexp);
     if (neg<0)
         fl = -fl;
+
     return(fl);
 }

@@ -7,10 +7,10 @@
  *  arg = x*2^exp
  * if the argument is 0.0, return 0.0 mantissa and 0 exponent.
  */
+
 #include <math.h>
 
-double
-frexp(double x, int * i)
+double frexp(double x, int * i)
 {
     int neg;
     int j;
@@ -23,16 +23,17 @@ frexp(double x, int * i)
     }
     if (x >= 1.0)
         while (x >= 1.0) {
-            j = j+1;
-            x = x/2;
+            j = j + 1;
+            x = x / 2;
         }
     else if (x < 0.5 && x != 0.0)
         while (x < 0.5) {
-            j = j-1;
-            x = 2*x;
+            j = j - 1;
+            x = 2 * x;
         }
     *i = j;
     if (neg)
-            x = -x;
+        x = -x;
+
     return(x);
 }

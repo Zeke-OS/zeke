@@ -6,6 +6,7 @@
  * software is freely granted, provided that this notice
  * is preserved.
  */
+
 #include <math.h>
 
 /* Get two 32 bit ints from a double.  */
