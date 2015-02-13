@@ -31,12 +31,13 @@
  */
 
 #include <sys/param.h>
-#include <errno.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <errno.h>
 
 static unsigned last_ptyid;
 
