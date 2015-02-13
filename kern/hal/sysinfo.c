@@ -67,7 +67,7 @@ void sysinfo_cmdline(const char * cmdline)
     }
 
     root = strstr(cmdline, cmdline_root);
-    rootfstype = strstr(cmdline, cmdline_root);
+    rootfstype = strstr(cmdline, cmdline_rootfstype);
     if (root && rootfstype)
         ksprintf(sysinfo.root, sizeof(sysinfo.root), "%s %s", root, rootfstype);
 }
