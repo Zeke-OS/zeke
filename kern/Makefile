@@ -99,11 +99,11 @@ kernel: $(KERNEL_IMG)
 
 $(STARTUP_O): $(STARTUP) $(AUTOCONF_H)
 	@echo "AS $@"
-	@$(UNIFDEFALL) $(AIDIR) $< | $(GNUARCH)-as -o $(STARTUP_O)
+	@$(CC) -E $(AIDIR) $< | grep -Ev "^#" | $(GNUARCH)-as -o $(STARTUP_O)
 
 $(ASOBJS): $(ASRC-y) $(UNIFDEF) $(AUTOCONF_H)
 	@echo "AS $@"
-	@$(UNIFDEFALL) $(AIDIR) $*.S | $(GNUARCH)-as -am $(AIDIR) -o $@
+	@$(CC) -E $(AIDIR) $*.S | grep -Ev "^#" | $(GNUARCH)-as -am $(AIDIR) -o $@
 
 $(OBJS): %.o: %.c $(AUTOCONF_H)
 	@echo "CC $@"

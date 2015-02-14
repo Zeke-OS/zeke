@@ -5,7 +5,7 @@ all: $(BIN) manifest
 
 $(ASOBJS): $(ASRC-y) $(AUTOCONF_H)
 	@echo "AS $@"
-	@$(UNIFDEFALL) $(IDIR) $*.S | $(GNUARCH)-as -am $(IDIR) -o $@
+	@$(CC) -E $(IDIR) $*.S | grep -Ev "^#" | $(GNUARCH)-as -am $(IDIR) -o $@
 
 $(OBJS): $(SRC-y) $(AUTOCONF_H)
 	@echo "CC $@"
@@ -19,7 +19,8 @@ $(BIN): $(OBJS)
 	$(eval CUR_OBJS += $(patsubst %.S, %.o, $($(CUR_BIN)-ASRC-y)))
 	$(eval CUR_OBJS := $(patsubst %.c, %.o, $($(CUR_BIN)-SRC-y)))
 	@echo "LD $@"
-	$(GNUARCH)-ld -o $@ -T $(ROOT_DIR)/$(ELFLD) $(LDFLAGS) $(ROOT_DIR)/lib/crt1.a $(LDIR) $(CUR_OBJS) -lc
+	$(GNUARCH)-ld -o $@ -T $(ROOT_DIR)/$(ELFLD) $(LDFLAGS) \
+		$(ROOT_DIR)/lib/crt1.a $(LDIR) $(CUR_OBJS) -lc
 
 manifest: $(BIN)
 	echo "$(BIN)" > manifest
