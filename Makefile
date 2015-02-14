@@ -94,7 +94,7 @@ rootfs: world
 
 # target_doc: stats - Calculate some stats.
 stats: clean
-	cloc --exclude-dir=.git,doc .
+	cloc --exclude-dir=.git,doc,tools .
 
 # target: help - Display callable targets.
 help:
