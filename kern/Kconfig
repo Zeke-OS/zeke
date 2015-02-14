@@ -285,11 +285,19 @@ config configKASSERT
     bool "Kernel asserts"
     default n
 
-config configBIO_DEBUG
-    bool "bio debugging"
+config configPTMAPPER_DEBUG
+    bool "ptmapper debugging"
+    default n
+
+config configVM_DEBUG
+    bool "vm debug"
+    default n
+
+config configBUF_DEBUG
+    bool "buffers debugging"
     default n
     ---help---
-    Enable bio/buf debug messages and additional asserts.
+    Enable buf and bio debug messages and additional asserts.
 
 config configLOCK_DEBUG
     bool "klock debugging"

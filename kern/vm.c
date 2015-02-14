@@ -395,10 +395,11 @@ int realloc_mm_regions(struct vm_mm_struct * mm, int new_count)
     struct buf * (*new_regions)[];
     size_t i = mm->nr_regions;
 
-    /* TODO Remove me */
+#if configVM_DEBUG
     KERROR(KERROR_DEBUG,
            "realloc_mm_regions(mm %p, new_count %d), old %d\n",
            mm, new_count, i);
+#endif
 
     if (i == 0) {
         /* TODO ticket lock? */
@@ -551,9 +552,10 @@ int vm_replace_region(struct proc_info * proc, struct buf * region,
     (*mm->regions)[region_nr] = region;
     mtx_unlock(&mm->regions_lock);
 
-    /* TODO Hide debugging message with kconfig */
+#if configVM_DEBUG
     KERROR(KERROR_DEBUG, "Mapped sect %d to %x (phys:%x)\n",
              region_nr, region->b_mmu.vaddr, region->b_mmu.paddr);
+#endif
 
     return 0;
 }
@@ -648,7 +650,7 @@ int kernacc(const void * addr, int len, int rw)
         }
     }
 
-#if (configDEBUG >= KERROR_DEBUG)
+#if (configDEBUG >= KERROR_WARN)
     KERROR(KERROR_WARN,
            "Can't fully verify access to address (%p) in kernacc()\n", addr);
 #endif

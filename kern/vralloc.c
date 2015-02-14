@@ -268,7 +268,7 @@ struct buf * vr_rclone(struct buf * old_region)
         return NULL;
     }
 
-#if configDEBUG >= KERROR_DEBUG
+#if configBUF_DEBUG
     KERROR(KERROR_DEBUG, "clone %x -> %x, %u bytes\n",
            old_region->b_data, new_region->b_data, rsize);
 #endif

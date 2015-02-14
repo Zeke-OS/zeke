@@ -78,7 +78,7 @@ void _bio_init(void)
  */
 int biobuf_compar(struct buf * a, struct buf * b)
 {
-#ifdef configBIO_DEBUG
+#ifdef configBUF_DEBUG
     if (a->b_file.vnode != b->b_file.vnode)
         panic("vnodes differ in the same tree");
 #endif
@@ -183,9 +183,7 @@ int bwrite(struct buf * bp)
     unsigned flags;
     vnode_t * vnode;
 
-#ifdef configBIO_DEBUG
     KASSERT(bp, "bp != NULL\n");
-#endif
 
     vnode = bp->b_file.vnode;
 
@@ -240,9 +238,7 @@ void bio_clrbuf(struct buf * bp)
 {
     unsigned flags;
 
-#ifdef configBIO_DEBUG
     KASSERT(bp, "bp != NULL\n");
-#endif
 
     BUF_LOCK(bp);
 
@@ -406,9 +402,7 @@ void biodone(struct buf * bp)
 {
     BUF_LOCK(bp);
 
-#ifdef configBIO_DEBUG
     KASSERT(bp->b_flags & B_DONE, "dup biodone");
-#endif
 
     bp->b_flags |= B_DONE;
 
