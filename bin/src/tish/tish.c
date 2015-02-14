@@ -88,15 +88,27 @@ get_errno:
     return 0;
 }
 
+static void fmt_lavg(char * dst, double load)
+{
+    int x, y;
+
+    x = (int)(load);
+    y = (int)(load * 100.0) % 100;
+
+    sprintf(dst, "%d.%.2d", x, y);
+}
+
 static void uptime(char ** args)
 {
-    uint32_t loads[3];
+    double loads[3];
+    char l1[5], l2[5], l3[5];
+    getloadavg(loads, 3);
 
-    syscall(SYSCALL_SCHED_GET_LOADAVG, loads);
+    fmt_lavg(l1, loads[0]);
+    fmt_lavg(l2, loads[1]);
+    fmt_lavg(l3, loads[2]);
 
-    /*TODO Should use getloadavg(dloads, 3);*/
-
-    printf("load average: %d, %d, %d\n", loads[0], loads[1], loads[2]);
+    printf("load average: %s, %s, %s\n", l1, l2, l3);
 }
 TISH_CMD(uptime, "uptime");
 
