@@ -8,13 +8,7 @@
 
 #define _TINY_TABLE	0
 
-#if !_USE_LFN || _CODE_PAGE != 932
-#error This file is not needed in current configuration. Remove from the project.
-#endif
-
-
-static
-const WCHAR uni2sjis[] = {
+static const WCHAR uni2sjis[] = {
 /*  Unicode - Sjis, Unicode - Sjis, Unicode - Sjis, Unicode - Sjis, */
 	0x00A7, 0x8198, 0x00A8, 0x814E, 0x00B0, 0x818B, 0x00B1, 0x817D,
 	0x00B4, 0x814C, 0x00B6, 0x81F7, 0x00D7, 0x817E, 0x00F7, 0x8180,

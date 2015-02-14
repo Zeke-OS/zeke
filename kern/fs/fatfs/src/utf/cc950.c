@@ -6,14 +6,7 @@
 
 #include "../ff.h"
 
-
-#if !_USE_LFN || _CODE_PAGE != 950
-#error This file is not needed in current configuration. Remove from the project.
-#endif
-
-
-static
-const WCHAR uni2oem[] = {
+static const WCHAR uni2oem[] = {
 /*  Unicode - OEM,  Unicode - OEM,  Unicode - OEM,  Unicode - OEM */
 	0x00A7, 0xA1B1, 0x00AF, 0xA1C2, 0x00B0, 0xA258, 0x00B1, 0xA1D3,
 	0x00B7, 0xA150, 0x00D7, 0xA1D1, 0x00F7, 0xA1D2, 0x02C7, 0xA3BE,

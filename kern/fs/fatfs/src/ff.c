@@ -5,7 +5,7 @@
 / This is a free software that opened for education, research and commercial
 / developments under license policy of following terms.
 /
-/  Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+/  Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
 /  Copyright (C) 2014, ChaN, all right reserved.
 /
 / * The FatFs module is a free software and there is NO WARRANTY.
@@ -14,107 +14,7 @@
 / * Redistributions of source code must retain the above copyright notice.
 /
 /-----------------------------------------------------------------------------/
-/ Feb 26,'06 R0.00  Prototype.
-/
-/ Apr 29,'06 R0.01  First stable version.
-/
-/ Jun 01,'06 R0.02  Added FAT12 support.
-/                   Removed unbuffered mode.
-/                   Fixed a problem on small (<32M) partition.
-/ Jun 10,'06 R0.02a Added a configuration option (_FS_MINIMUM).
-/
-/ Sep 22,'06 R0.03  Added f_rename().
-/                   Changed option _FS_MINIMUM to _FS_MINIMIZE.
-/ Dec 11,'06 R0.03a Improved cluster scan algorithm to write files fast.
-/                   Fixed f_mkdir() creates incorrect directory on FAT32.
-/
-/ Feb 04,'07 R0.04  Supported multiple drive system.
-/                   Changed some interfaces for multiple drive system.
-/                   Changed f_mountdrv() to f_mount().
-/                   Added f_mkfs().
-/ Apr 01,'07 R0.04a Supported multiple partitions on a physical drive.
-/                   Added a capability of extending file size to f_lseek().
-/                   Added minimization level 3.
-/                   Fixed an endian sensitive code in f_mkfs().
-/ May 05,'07 R0.04b Added a configuration option _USE_NTFLAG.
-/                   Added FSINFO support.
-/                   Fixed DBCS name can result FR_INVALID_NAME.
-/                   Fixed short seek (<= csize) collapses the file object.
-/
-/ Aug 25,'07 R0.05  Changed arguments of f_read(), f_write() and f_mkfs().
-/                   Fixed f_mkfs() on FAT32 creates incorrect FSINFO.
-/                   Fixed f_mkdir() on FAT32 creates incorrect directory.
-/ Feb 03,'08 R0.05a Added f_truncate() and f_utime().
-/                   Fixed off by one error at FAT sub-type determination.
-/                   Fixed btr in f_read() can be mistruncated.
-/                   Fixed cached sector is not flushed when create and close without write.
-/
-/ Apr 01,'08 R0.06  Added fputc(), fputs(), fprintf() and fgets().
-/                   Improved performance of f_lseek() on moving to the same or following cluster.
-/
-/ Apr 01,'09 R0.07  Merged Tiny-FatFs as a configuration option. (_FS_TINY)
-/                   Added long file name feature.
-/                   Added multiple code page feature.
-/                   Added re-entrancy for multitask operation.
-/                   Added auto cluster size selection to f_mkfs().
-/                   Added rewind option to f_readdir().
-/                   Changed result code of critical errors.
-/                   Renamed string functions to avoid name collision.
-/ Apr 14,'09 R0.07a Separated out OS dependent code on reentrant cfg.
-/                   Added multiple sector size feature.
-/ Jun 21,'09 R0.07c Fixed f_unlink() can return FR_OK on error.
-/                   Fixed wrong cache control in f_lseek().
-/                   Added relative path feature.
-/                   Added f_chdir() and f_chdrive().
-/                   Added proper case conversion to extended character.
-/ Nov 03,'09 R0.07e Separated out configuration options from ff.h to ffconf.h.
-/                   Fixed f_unlink() fails to remove a sub-directory on _FS_RPATH.
-/                   Fixed name matching error on the 13 character boundary.
-/                   Added a configuration option, _LFN_UNICODE.
-/                   Changed f_readdir() to return the SFN with always upper case on non-LFN cfg.
-/
-/ May 15,'10 R0.08  Added a memory configuration option. (_USE_LFN = 3)
-/                   Added file lock feature. (_FS_SHARE)
-/                   Added fast seek feature. (_USE_FASTSEEK)
-/                   Changed some types on the API, XCHAR->TCHAR.
-/                   Changed .fname in the FILINFO structure on Unicode cfg.
-/                   String functions support UTF-8 encoding files on Unicode cfg.
-/ Aug 16,'10 R0.08a Added f_getcwd().
-/                   Added sector erase feature. (_USE_ERASE)
-/                   Moved file lock semaphore table from fs object to the bss.
-/                   Fixed a wrong directory entry is created on non-LFN cfg when the given name contains ';'.
-/                   Fixed f_mkfs() creates wrong FAT32 volume.
-/ Jan 15,'11 R0.08b Fast seek feature is also applied to f_read() and f_write().
-/                   f_lseek() reports required table size on creating CLMP.
-/                   Extended format syntax of f_printf().
-/                   Ignores duplicated directory separators in given path name.
-/
-/ Sep 06,'11 R0.09  f_mkfs() supports multiple partition to complete the multiple partition feature.
-/                   Added f_fdisk().
-/ Aug 27,'12 R0.09a Changed f_open() and f_opendir() reject null object pointer to avoid crash.
-/                   Changed option name _FS_SHARE to _FS_LOCK.
-/                   Fixed assertion failure due to OS/2 EA on FAT12/16 volume.
-/ Jan 24,'13 R0.09b Added f_setlabel() and f_getlabel().
-/
-/ Oct 02,'13 R0.10  Added selection of character encoding on the file. (_STRF_ENCODE)
-/                   Added f_closedir().
-/                   Added forced full FAT scan for f_getfree(). (_FS_NOFSINFO)
-/                   Added forced mount feature with changes of f_mount().
-/                   Improved behavior of volume auto detection.
-/                   Improved write throughput of f_puts() and f_printf().
-/                   Changed argument of f_chdrive(), f_mkfs(), fatfs_disk_read() and fatfs_disk_write().
-/                   Fixed f_write() can be truncated when the file size is close to 4GB.
-/                   Fixed f_open(), f_mkdir() and f_setlabel() can return incorrect error code.
-/ Jan 15,'14 R0.10a Added arbitrary strings as drive number in the path name. (_STR_VOLUME_ID)
-/                   Added a configuration option of minimum sector size. (_MIN_SS)
-/                   2nd argument of f_rename() can have a drive number and it will be ignored.
-/                   Fixed f_mount() with forced mount fails when drive number is >= 1.
-/                   Fixed f_close() invalidates the file object without volume lock.
-/                   Fixed f_closedir() returns but the volume lock is left acquired.
-/                   Fixed creation of an entry with LFN fails on too many SFN collisions.
-/ May 19,'14 R0.10b Fixed a hard error in the disk I/O layer can collapse the directory entry.
-/                   Fixed LFN entry is not deleted on delete/rename an object with lossy converted SFN.
-/---------------------------------------------------------------------------*/
+ */
 
 #include <kmalloc.h>
 #include <sys/ioctl.h>
@@ -128,16 +28,8 @@
 
 ---------------------------------------------------------------------------*/
 
-#if _FATFS != 8051  /* Revision ID */
-#error Wrong include file (ff.h).
-#endif
-
-
 /* Reentrancy related */
 #if _FS_REENTRANT
-#if _USE_LFN == 1
-#error Static LFN work area cannot be used at thread-safe configuration.
-#endif
 #define ENTER_FF(fs)        { if (lock_fs(fs)) return FR_TIMEOUT; }
 #define LEAVE_FF(fs, res)   { unlock_fs(fs, res); return res; }
 #else
@@ -360,7 +252,7 @@ typedef struct {
                 0xC0,0xC1,0xC2,0xC3,0xC4,0xC5,0xC6,0xC7,0xC8,0xC9,0xCA,0xCB,0xEC,0xCD,0xCE,0xCF,0xD0,0xD1,0xF2,0xD3,0xD4,0xD5,0xD6,0xF7,0xD8,0xD9,0xDA,0xDB,0xDC,0xDD,0xFE,0x9F}
 
 #elif _CODE_PAGE == 1   /* ASCII (for only non-LFN cfg) */
-#if _USE_LFN
+#if configFATFS_LFN
 #error Cannot use LFN feature without valid code page.
 #endif
 #define _DF1S   0
@@ -489,8 +381,8 @@ typedef struct {
 */
 
 #if _VOLUMES >= 1 || _VOLUMES <= 10
-static
-FATFS *FatFs[_VOLUMES];     /* Pointer to the file system objects (logical drives) */
+/* Pointer to the file system objects (logical drives) */
+static FATFS *FatFs[_VOLUMES];
 #else
 #error Number of volumes must be 1 to 10.
 #endif
@@ -507,38 +399,26 @@ BYTE CurrVol;               /* Current drive */
 static FILESEM * Files;     /* Open object lock semaphores */
 #endif
 
-#if _USE_LFN == 0           /* No LFN feature */
-#define DEF_NAMEBUF         BYTE sfn[12]
-#define INIT_BUF(dobj)      (dobj).fn = sfn
+#if configFATFS_LFN     /*
+                         * LFN feature with dynamic working buffer on
+                         * the heap.
+                         */
+#define DEF_NAMEBUF     BYTE sfn[12]; WCHAR *lfn
+#define INIT_BUF(dobj)  { lfn = kmalloc((_MAX_LFN + 1) * 2); \
+                          if (!lfn) LEAVE_FF((dobj).fs, FR_NOT_ENOUGH_CORE); \
+                            (dobj).lfn = lfn; (dobj).fn = sfn; }
+#define FREE_BUF()      kfree(lfn)
+
+#else                   /* No LFN feature */
+#define DEF_NAMEBUF     BYTE sfn[12]
+#define INIT_BUF(dobj)  (dobj).fn = sfn
 #define FREE_BUF()
-
-#elif _USE_LFN == 1         /* LFN feature with static working buffer */
-static
-WCHAR LfnBuf[_MAX_LFN+1];
-#define DEF_NAMEBUF         BYTE sfn[12]
-#define INIT_BUF(dobj)      { (dobj).fn = sfn; (dobj).lfn = LfnBuf; }
-#define FREE_BUF()
-
-#elif _USE_LFN == 2         /* LFN feature with dynamic working buffer on the stack */
-#define DEF_NAMEBUF         BYTE sfn[12]; WCHAR lbuf[_MAX_LFN+1]
-#define INIT_BUF(dobj)      { (dobj).fn = sfn; (dobj).lfn = lbuf; }
-#define FREE_BUF()
-
-#elif _USE_LFN == 3         /* LFN feature with dynamic working buffer on the heap */
-#define DEF_NAMEBUF         BYTE sfn[12]; WCHAR *lfn
-#define INIT_BUF(dobj)      { lfn = kmalloc((_MAX_LFN + 1) * 2); \
-                              if (!lfn) LEAVE_FF((dobj).fs, FR_NOT_ENOUGH_CORE); \
-                              (dobj).lfn = lfn; (dobj).fn = sfn; }
-#define FREE_BUF()          kfree(lfn)
-
-#else
-#error Wrong LFN configuration.
 #endif
 
 
 #ifdef _EXCVT
-static
-const BYTE ExCvt[] = _EXCVT;    /* Upper conversion table for extended characters */
+/* Upper conversion table for extended characters */
+static const BYTE ExCvt[] = _EXCVT;
 #endif
 
 
@@ -1267,7 +1147,7 @@ void st_clust (
 /*-----------------------------------------------------------------------*/
 /* LFN handling - Test/Pick/Fit an LFN segment from/to directory entry   */
 /*-----------------------------------------------------------------------*/
-#if _USE_LFN
+#if configFATFS_LFN
 static
 const BYTE LfnOfs[] = {1,3,5,7,9,14,16,18,20,22,24,28,30};  /* Offset of LFN characters in the directory entry */
 
@@ -1373,7 +1253,7 @@ void fit_lfn (
 /*-----------------------------------------------------------------------*/
 /* Create numbered name                                                  */
 /*-----------------------------------------------------------------------*/
-#if _USE_LFN
+#if configFATFS_LFN
 static
 void gen_numname (
     BYTE* dst,          /* Pointer to the buffer to store numbered SFN */
@@ -1437,7 +1317,7 @@ void gen_numname (
 /*-----------------------------------------------------------------------*/
 /* Calculate sum of an SFN                                               */
 /*-----------------------------------------------------------------------*/
-#if _USE_LFN
+#if configFATFS_LFN
 static
 BYTE sum_sfn (
     const BYTE* dir     /* Pointer to the SFN entry */
@@ -1465,14 +1345,14 @@ FRESULT dir_find (
 {
     FRESULT res;
     BYTE c, *dir;
-#if _USE_LFN
+#if configFATFS_LFN
     BYTE a, ord, sum;
 #endif
 
     res = dir_sdi(dp, 0);           /* Rewind directory object */
     if (res != FR_OK) return res;
 
-#if _USE_LFN
+#if configFATFS_LFN
     ord = sum = 0xFF; dp->lfn_idx = 0xFFFF; /* Reset LFN sequence */
 #endif
     do {
@@ -1481,7 +1361,7 @@ FRESULT dir_find (
         dir = dp->dir;                  /* Ptr to the directory entry of current index */
         c = dir[DIR_Name];
         if (c == 0) { res = FR_NO_FILE; break; }    /* Reached to end of table */
-#if _USE_LFN    /* LFN configuration */
+#if configFATFS_LFN    /* LFN configuration */
         a = dir[DIR_Attr] & AM_MASK;
         if (c == DDE || ((a & AM_VOL) && a != AM_LFN)) {    /* An entry without valid data */
             ord = 0xFF; dp->lfn_idx = 0xFFFF;   /* Reset LFN sequence */
@@ -1527,7 +1407,7 @@ FRESULT dir_read (
 {
     FRESULT res;
     BYTE a, c, *dir;
-#if _USE_LFN
+#if configFATFS_LFN
     BYTE ord = 0xFF, sum = 0xFF;
 #endif
 
@@ -1539,7 +1419,7 @@ FRESULT dir_read (
         c = dir[DIR_Name];
         if (c == 0) { res = FR_NO_FILE; break; }    /* Reached to end of table */
         a = dir[DIR_Attr] & AM_MASK;
-#if _USE_LFN    /* LFN configuration */
+#if configFATFS_LFN    /* LFN configuration */
         if (c == DDE || (!_FS_RPATH && c == '.') || (int)(a == AM_VOL) != vol) {    /* An entry without valid data */
             ord = 0xFF;
         } else {
@@ -1584,7 +1464,7 @@ FRESULT dir_register (  /* FR_OK:Successful, FR_DENIED:No free entry or too many
 )
 {
     FRESULT res;
-#if _USE_LFN    /* LFN configuration */
+#if configFATFS_LFN    /* LFN configuration */
     UINT n, nent;
     BYTE sn[12], *fn, sum;
     WCHAR *lfn;
@@ -1638,7 +1518,7 @@ FRESULT dir_register (  /* FR_OK:Successful, FR_DENIED:No free entry or too many
         if (res == FR_OK) {
             memset(dp->dir, 0, SZ_DIR);    /* Clean the entry */
             memcpy(dp->dir, dp->fn, 11);   /* Put SFN */
-#if _USE_LFN
+#if configFATFS_LFN
             dp->dir[DIR_NTres] = dp->fn[NS] & (NS_BODY | NS_EXT);   /* Put NT flag */
 #endif
             dp->fs->wflag = 1;
@@ -1662,7 +1542,7 @@ FRESULT dir_remove (    /* FR_OK: Successful, FR_DISK_ERR: A disk error */
 )
 {
     FRESULT res;
-#if _USE_LFN    /* LFN configuration */
+#if configFATFS_LFN    /* LFN configuration */
     UINT i;
 
     i = dp->index;  /* SFN index */
@@ -1722,7 +1602,7 @@ static void get_fileinfo(
             if (c == ' ') continue;         /* Skip padding spaces */
             if (c == NDDE) c = (TCHAR)DDE;  /* Restore replaced DDE character */
             if (i == 9) *p++ = '.';         /* Insert a . if extension is exist */
-#if _USE_LFN
+#if configFATFS_LFN
             if (IsUpper(c) && (dir[DIR_NTres] & (i >= 9 ? NS_EXT : NS_BODY)))
                 c += 0x20;          /* To lower */
 #if _LFN_UNICODE
@@ -1741,7 +1621,7 @@ static void get_fileinfo(
     }
     *p = 0;     /* Terminate SFN string by a \0 */
 
-#if _USE_LFN
+#if configFATFS_LFN
     if (fno->lfname) {
         WCHAR w, *lfn;
 
@@ -1778,7 +1658,7 @@ FRESULT create_name (
     const TCHAR** path  /* Pointer to pointer to the segment in the path string */
 )
 {
-#if _USE_LFN    /* LFN configuration */
+#if configFATFS_LFN    /* LFN configuration */
     BYTE b, cf;
     WCHAR w, *lfn;
     UINT i, ni, si, di;
@@ -2055,7 +1935,7 @@ int get_ldnumber (      /* Returns logical drive number (-1:invalid drive) */
 
 
     if (*path) {    /* If the pointer is not a null */
-        for (tt = *path; (UINT)*tt >= (_USE_LFN ? ' ' : '!') && *tt != ':'; tt++) ; /* Find ':' in the path */
+        for (tt = *path; (UINT)*tt >= (configFATFS_LFN ? ' ' : '!') && *tt != ':'; tt++) ; /* Find ':' in the path */
         if (*tt == ':') {   /* If a ':' is exist in the path name */
             tp = *path;
             i = *tp++ - '0';
@@ -2898,13 +2778,13 @@ FRESULT f_getcwd (
             } while (res == FR_OK);
             if (res == FR_NO_FILE) res = FR_INT_ERR;/* It cannot be 'not found'. */
             if (res != FR_OK) break;
-#if _USE_LFN
+#if configFATFS_LFN
             fno.lfname = buff;
             fno.lfsize = i;
 #endif
             get_fileinfo(&dj, &fno);        /* Get the directory name and push it to the buffer */
             tp = fno.fname;
-#if _USE_LFN
+#if configFATFS_LFN
             if (*buff) tp = buff;
 #endif
             for (n = 0; tp[n]; n++) ;
@@ -3725,7 +3605,7 @@ FRESULT f_getlabel (
         if (res == FR_OK) {
             res = dir_read(&dj, 1);     /* Get an entry with AM_VOL */
             if (res == FR_OK) {         /* A volume label is exist */
-#if _USE_LFN && _LFN_UNICODE
+#if configFATFS_LFN && _LFN_UNICODE
                 WCHAR w;
                 i = j = 0;
                 do {
@@ -3792,13 +3672,13 @@ FRESULT f_setlabel (
     if (sl) {   /* Create volume label in directory form */
         i = j = 0;
         do {
-#if _USE_LFN && _LFN_UNICODE
+#if configFATFS_LFN && _LFN_UNICODE
             w = ff_convert(ff_wtoupper(label[i++]), 0);
 #else
             w = (BYTE)label[i++];
             if (IsDBCS1(w))
                 w = (j < 10 && i < sl && IsDBCS2(label[i])) ? w << 8 | (BYTE)label[i++] : 0;
-#if _USE_LFN
+#if configFATFS_LFN
             w = ff_convert(ff_wtoupper(ff_convert(w, 1)), 0);
 #else
             if (IsLower(w)) w -= 0x20;          /* To upper ASCII characters */
@@ -4259,7 +4139,7 @@ TCHAR* f_gets (
 
 
     while (n < len - 1) {   /* Read characters until buffer gets filled */
-#if _USE_LFN && _LFN_UNICODE
+#if configFATFS_LFN && _LFN_UNICODE
 #if _STRF_ENCODE == 3       /* Read a character in UTF-8 */
         f_read(fp, s, 1, &rc);
         if (rc != 1) break;
@@ -4347,7 +4227,7 @@ void putc_bfd (
     i = pb->idx;    /* Buffer write index (-1:error) */
     if (i < 0) return;
 
-#if _USE_LFN && _LFN_UNICODE
+#if configFATFS_LFN && _LFN_UNICODE
 #if _STRF_ENCODE == 3           /* Write a character in UTF-8 */
     if (c < 0x80) {             /* 7-bit */
         pb->buf[i++] = (BYTE)c;

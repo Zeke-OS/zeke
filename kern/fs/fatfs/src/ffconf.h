@@ -5,7 +5,7 @@
 /---------------------------------------------------------------------------*/
 
 #ifndef _FFCONF
-#define _FFCONF 8051    /* Revision ID */
+#define _FFCONF
 
 
 /*---------------------------------------------------------------------------/
@@ -107,21 +107,9 @@
  */
 
 
-#ifdef configFATFS_LFN
-#define _USE_LFN 3
-#else
-#define _USE_LFN 0
-#endif
 #define _MAX_LFN 255     /* Maximum LFN length to handle (12 to 255) */
 /*
- * The _USE_LFN option switches the LFN feature.
- *
- *  0: Disable LFN feature. _MAX_LFN has no effect.
- *  1: Enable LFN with static working buffer on the BSS. Always NOT thread-safe.
- *  2: Enable LFN with dynamic working buffer on the STACK.
- *  3: Enable LFN with dynamic working buffer on the HEAP.
- *
- * When enable LFN feature, Unicode handling functions ff_convert() and
+ * When LFN feature is enabled, Unicode handling functions ff_convert() and
  * ff_wtoupper() function must be added to the project.
  * The LFN working buffer occupies (_MAX_LFN + 1) * 2 bytes. When use stack for
  * the working buffer, take care on stack overflow. When use heap memory for
