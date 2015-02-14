@@ -12,7 +12,7 @@
 / Functions and Buffer Configurations
 /---------------------------------------------------------------------------*/
 
-#define _FS_TINY        0   /* 0:Normal or 1:Tiny */
+#define _FS_TINY 0   /* 0:Normal or 1:Tiny */
 /*
  * When _FS_TINY is set to 1, it reduces memory consumption _MAX_SS bytes each
  * file object. For file data transfer, FatFs uses the common sector buffer in
@@ -224,7 +224,7 @@
 #ifdef configFATFS_READONLY
 #define _FS_LOCK 0
 #else
-#define _FS_LOCK    10  /* 0:Disable or >=1:Enable */
+#define _FS_LOCK    100  /* 0:Disable or >=1:Enable */
 #endif
 /*
  * To enable file lock control feature, set _FS_LOCK to non-zero value.

@@ -90,12 +90,18 @@ GENERATE_INSERT_SB(fatfs_sb, fatfs_fs)
 int fatfs_init(void) __attribute__((constructor));
 int fatfs_init(void)
 {
+    int err;
+
     SUBSYS_DEP(proc_init);
     SUBSYS_INIT("fatfs");
 
     fatfs_sb_arr = kcalloc(configFATFS_MAX_MOUNTS, sizeof(struct fatfs_sb *));
     if (!fatfs_sb_arr)
         return -ENOMEM;
+
+    err = ff_init();
+    if (err)
+        return err;
 
     fs_register(&fatfs_fs);
 
