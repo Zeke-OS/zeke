@@ -37,7 +37,6 @@ __ucmpdi2(du_int a, du_int b)
     return 1;
 }
 
-#ifdef __ARM_EABI__
 /* Returns: if (a <  b) returns -1
 *           if (a == b) returns  0
 *           if (a >  b) returns  1
@@ -47,5 +46,4 @@ __aeabi_ulcmp(di_int a, di_int b)
 {
 	return __ucmpdi2(a, b) - 1;
 }
-#endif
 

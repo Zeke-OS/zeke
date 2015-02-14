@@ -152,10 +152,6 @@ LOCAL_LABEL(div0block):
 
 LOCAL_LABEL(divby0):
 	mov	r0, #0
-#ifdef __ARM_EABI__
 	b	__aeabi_idiv0
-#else
-	JMP(lr)
-#endif
 
 END_COMPILERRT_FUNCTION(__umodsi3)

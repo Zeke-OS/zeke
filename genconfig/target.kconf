@@ -12,14 +12,23 @@ config configHAVE_64_BIT_CPU
     bool
     default n
 
-config config64_BIT_CPU
-    bool "64-bit CPU"
-    depends on configHAVE_64_BIT_CPU
+config configHAVE_HFP
+    bool
+    default n
 
 # select if MP capable core or instruction set
 config configHAVE_MP_CAP
     bool
     default n
+
+config configUSE_HFP
+    bool "Use HW Floating Points"
+    default n
+    depends on configHAVE_HFP
+
+config config64_BIT_CPU
+    bool "64-bit CPU"
+    depends on configHAVE_64_BIT_CPU
 
 config configQEMU_GUEST
     bool "QEMU vm guest"
@@ -89,6 +98,7 @@ choice
 config configBCM2835
     bool "BCM2835"
     depends on __ARM6K__
+    select configHAVE_HFP
     select configMMU
 
 config configJZ4780

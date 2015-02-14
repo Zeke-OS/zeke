@@ -24,3 +24,5 @@ DEFINE_COMPILERRT_FUNCTION(__extendsfdf2vfp)
 	vmov	r0, r1, d7   // return result in r0/r1 pair
 	bx	lr
 END_COMPILERRT_FUNCTION(__extendsfdf2vfp)
+
+DEFINE_AEABI_FUNCTION_ALIAS(__aeabi_f2d, __extendsfdf2vfp)

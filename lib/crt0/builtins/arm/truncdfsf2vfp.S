@@ -24,3 +24,5 @@ DEFINE_COMPILERRT_FUNCTION(__truncdfsf2vfp)
 	vmov 	r0, s15      // return result in r0
 	bx	lr
 END_COMPILERRT_FUNCTION(__truncdfsf2vfp)
+
+DEFINE_AEABI_FUNCTION_ALIAS(__aeabi_d2f, __truncdfsf2vfp)

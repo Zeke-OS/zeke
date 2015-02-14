@@ -25,3 +25,5 @@ DEFINE_COMPILERRT_FUNCTION(__subsf3vfp)
 	vmov	r0, s14		// move result back to r0
 	bx	lr
 END_COMPILERRT_FUNCTION(__subsf3vfp)
+
+DEFINE_AEABI_FUNCTION_ALIAS(__aeabi_fsub, __subsf3vfp)

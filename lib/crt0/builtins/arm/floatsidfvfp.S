@@ -24,3 +24,5 @@ DEFINE_COMPILERRT_FUNCTION(__floatsidfvfp)
 	vmov	r0, r1, d7     // move d7 to result register pair r0/r1
 	bx	lr
 END_COMPILERRT_FUNCTION(__floatsidfvfp)
+
+DEFINE_AEABI_FUNCTION_ALIAS(__aeabi_i2d, __floatsidfvfp)

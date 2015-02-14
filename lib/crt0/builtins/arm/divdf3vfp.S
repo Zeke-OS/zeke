@@ -24,3 +24,5 @@ DEFINE_COMPILERRT_FUNCTION(__divdf3vfp)
 	vmov	r0, r1, d5		// move result back to r0/r1 pair
 	bx	lr
 END_COMPILERRT_FUNCTION(__divdf3vfp)
+
+DEFINE_AEABI_FUNCTION_ALIAS(__aeabi_ddiv, __divdf3vfp)

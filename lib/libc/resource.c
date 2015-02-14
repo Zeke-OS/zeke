@@ -48,9 +48,8 @@ int getloadavg(double loadavg[3], int nelem)
     if (syscall(SYSCALL_SCHED_GET_LOADAVG, loads))
         return -1;
 
-    /* TODO After float div support */
     for (i = 0; i < nelem; i++) {
-        loadavg[i] = (double)(loads[i]); // 100.0;
+        loadavg[i] = (double)loads[i] / 100.0;
     }
 
     return nelem;

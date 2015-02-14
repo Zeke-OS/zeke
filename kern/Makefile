@@ -121,9 +121,11 @@ $(MODAS): $(ASOBJS) $(OBJS)
 
 $(KERNEL_IMG): $(MEMMAP) $(STARTUP_O) $(MODAS)
 	$(GNUARCH)-ld -o $(ROOT_DIR)/kernel.elf -T $(MEMMAP) $(LDFLAGS) $(STARTUP_O) --whole-archive $(MODAS) --no-whole-archive $(CRT)
-	$(GNUARCH)-objdump -D $(ROOT_DIR)/kernel.elf > $(ROOT_DIR)/kernel.list
 	$(GNUARCH)-objcopy -O binary $(ROOT_DIR)/kernel.elf $(KERNEL_IMG)
 # End of Kernel
+
+$(ROOT_DIR)/kernel.list: $(KERNEL_IMG)
+	$(GNUARCH)-objdump -D $(ROOT_DIR)/kernel.elf > $(ROOT_DIR)/kernel.list
 
 .PHONY: kernel clean
 

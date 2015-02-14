@@ -26,18 +26,6 @@
 #include <limits.h>
 #include "int_lib.h"
 
-// x86_64 FreeBSD prior v9.3 define fixed-width types incorrectly in
-// 32-bit mode.
-#if defined(__FreeBSD__) && defined(__i386__)
-# include <sys/param.h>
-# if __FreeBSD_version < 903000  // v9.3
-#  define uint64_t unsigned long long
-#  define int64_t long long
-#  undef UINT64_C
-#  define UINT64_C(c) (c ## ULL)
-# endif
-#endif
-
 #if defined SINGLE_PRECISION
 
 typedef uint32_t rep_t;
@@ -267,4 +255,4 @@ static inline void wideRightShiftWithSticky(rep_t *hi, rep_t *lo, unsigned int c
 }
 #endif
 
-#endif // FP_LIB_HEADER
+#endif /* FP_LIB_HEADER */

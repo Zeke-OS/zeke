@@ -24,3 +24,5 @@ DEFINE_COMPILERRT_FUNCTION(__mulsf3vfp)
 	vmov	r0, s13		// move result back to r0
 	bx	lr
 END_COMPILERRT_FUNCTION(__mulsf3vfp)
+
+DEFINE_AEABI_FUNCTION_ALIAS(__aeabi_fmul, __mulsf3vfp)

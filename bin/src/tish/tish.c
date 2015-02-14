@@ -94,7 +94,9 @@ static void uptime(char ** args)
 
     syscall(SYSCALL_SCHED_GET_LOADAVG, loads);
 
-    printf("load average: %u, %u, %u\n", loads[0], loads[1], loads[2]);
+    /*TODO Should use getloadavg(dloads, 3);*/
+
+    printf("load average: %d, %d, %d\n", loads[0], loads[1], loads[2]);
 }
 TISH_CMD(uptime, "uptime");
 

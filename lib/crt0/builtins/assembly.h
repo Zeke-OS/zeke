@@ -134,12 +134,8 @@
   SYMBOL_IS_FUNC(SYMBOL_NAME(name)) SEPARATOR                                  \
   .set SYMBOL_NAME(name), SYMBOL_NAME(target) SEPARATOR
 
-#if defined(__ARM_EABI__)
 #define DEFINE_AEABI_FUNCTION_ALIAS(aeabi_name, name)                          \
   DEFINE_COMPILERRT_FUNCTION_ALIAS(aeabi_name, name)
-#else
-#define DEFINE_AEABI_FUNCTION_ALIAS(aeabi_name, name)
-#endif
 
 #define END_COMPILERRT_FUNCTION(name)
 

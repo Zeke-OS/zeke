@@ -47,15 +47,14 @@ ifdef __ARM6K__
 	ELFLD    := $(ARM32_ELFLD)
 endif
 
-# Floating point hardware
-ifeq ($(configHFP),__HFP_VFP__)
-	ASFLAGS  += -mfpu=vfp
+# Floating point hw/sw
+ifeq ($(configUSE_HFP),y)
+    CCFLAGS  += -mfloat-abi=hard -mfpu=vfp
+	ASFLAGS  += -mfloat-abi=hard -mfpu=vfp
+else # sw
+    CCFLAGS  += -mfloat-abi=soft
+    ASFLAGS  += -mfloat-abi=soft
 endif
 CCFLAGS += -m32
 MACHIDIR = arm
-
-# Checks #######################################################################
-ifndef ASFLAGS
-    $(error Missing ASFLAGS! Wrong ARCH?)
-endif
 

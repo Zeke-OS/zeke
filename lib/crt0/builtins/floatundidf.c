@@ -14,7 +14,7 @@
 
 /* Returns: convert a to a double, rounding toward even. */
 
-/* Assumption: double is a IEEE 64 bit floating point type 
+/* Assumption: double is a IEEE 64 bit floating point type
  *             du_int is a 64 bit integral type
  */
 
@@ -24,7 +24,7 @@
 
 ARM_EABI_FNALIAS(ul2d, floatundidf)
 
-#ifndef __SOFT_FP__
+#ifdef configUSE_HFP
 /* Support for systems that have hardware floating-point; we'll set the inexact flag
  * as a side-effect of this computation.
  */
@@ -35,13 +35,13 @@ __floatundidf(du_int a)
 	static const double twop52 = 0x1.0p52;
 	static const double twop84 = 0x1.0p84;
 	static const double twop84_plus_twop52 = 0x1.00000001p84;
-	
+
 	union { uint64_t x; double d; } high = { .d = twop84 };
 	union { uint64_t x; double d; } low = { .d = twop52 };
-	
+
 	high.x |= a >> 32;
 	low.x |= a & UINT64_C(0x00000000ffffffff);
-	
+
 	const double result = (high.d - twop84_plus_twop52) + low.d;
 	return result;
 }
@@ -49,7 +49,7 @@ __floatundidf(du_int a)
 #else
 /* Support for systems that don't have hardware floating-point; there are no flags to
  * set, and we don't want to code-gen to an unknown soft-float implementation.
- */ 
+ */
 
 COMPILER_RT_ABI double
 __floatundidf(du_int a)
@@ -98,9 +98,9 @@ __floatundidf(du_int a)
         /* a is now rounded to DBL_MANT_DIG bits */
     }
     double_bits fb;
-    fb.u.high = ((e + 1023) << 20)      |        /* exponent */
-                ((su_int)(a >> 32) & 0x000FFFFF); /* mantissa-high */
-    fb.u.low = (su_int)a;                         /* mantissa-low  */
+    fb.u.s.high = ((e + 1023) << 20)      |        /* exponent */
+                  ((su_int)(a >> 32) & 0x000FFFFF); /* mantissa-high */
+    fb.u.s.low = (su_int)a;                         /* mantissa-low  */
     return fb.f;
 }
 #endif
