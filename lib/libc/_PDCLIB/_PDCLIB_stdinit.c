@@ -419,6 +419,7 @@ struct _PDCLIB_locale _PDCLIB_global_locale = {
         /* ENETUNREACH */ (char *)"ENETUNREACH",
         /* ENFILE */ (char *)"ENFILE",
         /* ENOBUFS */ (char *)"ENOBUFS",
+        /* !RESERVED! */ (char *)"",
         /* ENODEV */ (char *)"ENODEV",
         /* ENOENT */ (char *)"ENOENT",
         /* ENOEXEC */ (char *)"ENOEXEC",
@@ -428,6 +429,8 @@ struct _PDCLIB_locale _PDCLIB_global_locale = {
         /* ENOMSG */ (char *)"ENOMSG",
         /* ENOPROTOOPT */ (char *)"ENOPROTOOPT",
         /* ENOSPC */ (char *)"ENOSPC",
+        /* !RESERVED! */ (char *)"",
+        /* !RESERVED! */ (char *)"",
         /* ENOSYS */ (char *)"ENOSYS",
         /* ENOTCONN */ (char *)"ENOTCONN",
         /* ENOTDIR */ (char *)"ENOTDIR",
@@ -438,6 +441,7 @@ struct _PDCLIB_locale _PDCLIB_global_locale = {
         /* ENOTTY */ (char *)"ENOTTY",
         /* ENXIO */ (char *)"ENXIO",
         /* EOVERFLOW */ (char *)"EOVERFLOW",
+        /* !RESERVED! */ (char *)"",
         /* EOWNERDEAD */ (char *)"EOWNERDEAD",
         /* EPERM */ (char *)"EPERM",
         /* EPIPE */ (char *)"EPIPE",
@@ -449,6 +453,7 @@ struct _PDCLIB_locale _PDCLIB_global_locale = {
         /* ESPIPE */ (char *)"EROFS",
         /* ESRCH */ (char *)"ESRCH",
         /* ESTALE */ (char *)"ESTALE",
+        /* !RESERVED! */ (char *)"",
         /* ETIMEDOUT */ (char *)"ETIMEDOUT",
         /* ETXTBSY */ (char *)"ETXTBSY",
         /* EXDEV */ (char *)"EXDEV",
@@ -459,8 +464,8 @@ struct _PDCLIB_locale _PDCLIB_global_locale = {
 /* TODO: Better solution than this! */
 __attribute__((constructor)) void init_stdio(void)
 {
-    _PDCLIB_initclocale( &_PDCLIB_global_locale );
-    tss_create(&_PDCLIB_locale_tss, (tss_dtor_t) freelocale);
+    _PDCLIB_initclocale(&_PDCLIB_global_locale);
+    tss_create(&_PDCLIB_locale_tss, (tss_dtor_t)freelocale);
     mtx_init(&stdin->lock,  mtx_recursive);
     mtx_init(&stdout->lock, mtx_recursive);
     mtx_init(&stderr->lock, mtx_recursive);

@@ -1,11 +1,11 @@
-/* uselocale( locale_t )
-
-   This file is part of the Public Domain C Library (PDCLib).
-   Permission is granted to use, modify, and / or redistribute at will.
-*/
+/*
+ * uselocale( locale_t )
+ *
+ * This file is part of the Public Domain C Library (PDCLib).
+ * Permission is granted to use, modify, and / or redistribute at will.
+ */
 
 #include <locale.h>
-#ifndef REGTEST
 #include <sys/_PDCLIB_locale.h>
 
 #ifdef _PDCLIB_LOCALE_METHOD
@@ -20,17 +20,5 @@ locale_t uselocale( locale_t newloc )
     }
 
     return oldloc;
-}
-#endif
-
-#endif
-
-#ifdef TEST
-#include <_PDCLIB_test.h>
-
-int main( void )
-{
-    TESTCASE( NO_TESTDRIVER );
-    return TEST_RESULTS;
 }
 #endif

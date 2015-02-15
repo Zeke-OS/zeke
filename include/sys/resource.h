@@ -123,6 +123,8 @@ struct rusage {
 };
 #endif
 
+#ifdef TYPES_PTHREAD_H
+
 /**
  * Argument struct for SYSCALL_SCHED_THREAD_SETPRIORITY
  */
@@ -130,6 +132,8 @@ struct _ds_set_priority {
     pthread_t thread_id;    /*!< Thread id */
     int priority;           /*!< Thread priority */
 };
+
+#endif
 
 /**
  * Get program scheduling priority.

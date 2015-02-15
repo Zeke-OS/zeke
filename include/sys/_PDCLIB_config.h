@@ -34,8 +34,7 @@
 /* strerror() and perror() functions. (If you change this value because you   */
 /* are using additional errno values, you *HAVE* to provide appropriate error */
 /* messages for *ALL* locales.)                                               */
-/* Default is 4 (0, ERANGE, EDOM, EILSEQ).                                    */
-#define _PDCLIB_ERRNO_MAX 4
+#define _PDCLIB_ERRNO_MAX 81
 
 /* -------------------------------------------------------------------------- */
 /* Integers                                                                   */
@@ -262,9 +261,9 @@ struct _PDCLIB_imaxdiv_t
    most compilers.
 */
 #ifdef __GNUC__
-  #define _PDCLIB_offsetof( type, member ) __builtin_offsetof( type, member )
+  #define _PDCLIB_offsetof(type, member) __builtin_offsetof(type, member)
 #else
-  #define _PDCLIB_offsetof( type, member ) ( (size_t) &( ( (type *) 0 )->member ) )
+  #define _PDCLIB_offsetof(type, member) ((size_t) &( ((type *) 0)->member ))
 #endif
 
 /* Variable Length Parameter List Handling (<stdarg.h>)
