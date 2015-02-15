@@ -421,13 +421,13 @@ static FILESEM * Files;     /* Open object lock semaphores */
 static const BYTE ExCvt[] = _EXCVT;
 #endif
 
-
-
 int ff_init(void)
 {
+#if _FS_LOCK
     Files = kcalloc(_FS_LOCK, sizeof(FILESEM));
     if (!Files)
         return -ENOMEM;
+#endif
     return 0;
 }
 

@@ -208,12 +208,8 @@
 /*---------------------------------------------------------------------------/
 / System Configurations
 /---------------------------------------------------------------------------*/
-
-#ifdef configFATFS_READONLY
-#define _FS_LOCK 0
-#else
-#define _FS_LOCK    100  /* 0:Disable or >=1:Enable */
-#endif
+/* RFE: I don't think we'll ever need this feature */
+#define _FS_LOCK    0  /* 0:Disable or >=1:Enable */
 /*
  * To enable file lock control feature, set _FS_LOCK to non-zero value.
  * The value defines how many files/sub-directories can be opened simultaneously
@@ -221,7 +217,7 @@
  */
 
 
-#define _FS_REENTRANT   0       /* 0:Disable or 1:Enable */
+#define _FS_REENTRANT   1       /* 0:Disable or 1:Enable */
 #define _FS_TIMEOUT     1000    /* Timeout period in unit of time tick */
 #define _SYNC_t         mtx_t   /* O/S dependent sync object type. */
 /*
