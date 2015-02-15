@@ -170,7 +170,11 @@ static int fatfs_mount(const char * source, uint32_t mode,
 
     /* Init super block */
     sbp->fs = &fatfs_fs;
+    /* TODO Detect if target dev is rdonly */
     sbp->mode_flags = mode;
+#if configFATFS_READONLY
+    sbp->mode_flags |= MNT_RDONLY;
+#endif
     sbp->root = create_root(sbp);
     sbp->sb_dev = vndev;
     sbp->sb_hashseed = sbp->vdev_id;
@@ -268,7 +272,8 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
         /* TODO Maybe get mp stat? */
         fno.fattrib = AM_DIR;
     } else if (oflags & O_CREAT) {
-        /* NOOP */
+        if (sb->sbn.sbl_sb.mode_flags & MNT_RDONLY)
+            return -EROFS;
     } else {
         err = f_stat(fpath, &fno);
         if (err)
@@ -287,7 +292,7 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
         fomode |= (oflags & O_CREAT) ? FA_OPEN_ALWAYS : FA_OPEN_EXISTING;
         fomode |= (oflags & O_RDONLY) ? FA_READ : 0;
         fomode |= (oflags & O_WRONLY) ? ((fno.fattrib & AM_RDO) ?
-                                         0 : FA_WRITE) : 0 ;
+                                         0 : FA_WRITE) : 0;
 
         vn_mode = S_IFREG;
         err = f_open(&in->fp, in->in_fpath, fomode);
@@ -298,7 +303,10 @@ chk_err:
         goto fail;
     }
 #ifdef configFATFS_DEBUG
-    KERROR(KERROR_DEBUG, "Open ok\n");
+    if (oflags & O_CREAT)
+        KERROR(KERROR_DEBUG, "ff: Create & open ok\n");
+    else
+        KERROR(KERROR_DEBUG, "ff: Open ok\n");
 #endif
 
     num = sb->ff_ino++;
@@ -316,6 +324,10 @@ chk_err:
                 "create_inode(): Found it during insert: \"%s\"\n",
                 fpath);
     }
+
+#ifdef configFATFS_DEBUG
+    KERROR(KERROR_DEBUG, "create_inode(): ok\n");
+#endif
 
     *result = in;
     vrefset(vn, 1); /* Ref for caller. */
@@ -529,6 +541,13 @@ int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
     char * in_fpath;
     int err;
 
+#ifdef configFATFS_DEBUG
+    KERROR(KERROR_DEBUG,
+           "fatfs_mknod(dir %p, name \"%s\", mode %u, specinfo %p, result %p)\n",
+           dir, name, mode, specinfo, result);
+#endif
+
+
     if (!S_ISDIR(dir->vn_mode))
         return -ENOTDIR;
 
@@ -549,9 +568,14 @@ int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
         kfree(in_fpath);
         return fresult2errno(err);
     }
+    /* TODO Set mode */
 
     if (result)
         *result = &res->in_vnode;
+
+#ifdef configFATFS_DEBUG
+    KERROR(KERROR_DEBUG, "mkdod() ok\n");
+#endif
 
     return 0;
 }

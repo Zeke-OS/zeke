@@ -51,6 +51,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <klocks.h>
+#include <mount.h>
 
 #define FS_FLAG_INIT    0x01 /*!< File system initialized. */
 #define FS_FLAG_FAIL    0x08 /*!< File system has failed. */
@@ -221,12 +222,13 @@ typedef struct fs_superblock {
      * @param[out] vnode is a pointer to the vnode.
      * @return Returns 0 if no error; Otherwise value other than zero.
      */
-    int (*get_vnode)(struct fs_superblock * sb, ino_t * vnode_num, vnode_t ** vnode);
+    int (*get_vnode)(struct fs_superblock * sb, ino_t * vnode_num,
+                     vnode_t ** vnode);
 
     /**
      * Delete a vnode reference.
-     * Deletes a reference to a vnode and destroys the inode corresponding to the
-     * inode if there is no more links and references to it.
+     * Deletes a reference to a vnode and destroys the inode corresponding to
+     * the inode if there is no more links and references to it.
      * @param[in] vnode is the vnode.
      * @return Returns 0 if no error; Otherwise value other than zero.
      */

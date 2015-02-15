@@ -122,7 +122,7 @@ DRESULT fatfs_disk_write(BYTE pdrv, const BYTE* buff, DWORD sector, UINT count)
     retval = file->vnode->vnode_ops->write(file, buff, count);
     if (retval < 0) {
 #ifdef configFATFS_DEBUG
-        KERROR(KERROR_ERR, "fatfs_disk_read(): err %i\n", retval);
+        KERROR(KERROR_ERR, "fatfs_disk_write(): err %i\n", retval);
 #endif
 
         return RES_ERROR;
