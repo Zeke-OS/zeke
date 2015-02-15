@@ -1,29 +1,26 @@
-/* $Id$ */
-
 /* _PDCLIB_stdinit
-
-   This file is part of the Public Domain C Library (PDCLib).
-   Permission is granted to use, modify, and / or redistribute at will.
-*/
+ *
+ * This file is part of the Public Domain C Library (PDCLib).
+ * Permission is granted to use, modify, and / or redistribute at will.
+ */
 
 /* This is an example initialization of stdin, stdout and stderr to the integer
-   file descriptors 0, 1, and 2, respectively. This applies for a great variety
-   of operating systems, including POSIX compliant ones.
-*/
+ * file descriptors 0, 1, and 2, respectively. This applies for a great variety
+ * of operating systems, including POSIX compliant ones.
+ */
 
 #include <stdio.h>
 #include <locale.h>
 #include <limits.h>
 
-#ifndef REGTEST
 #include <sys/_PDCLIB_io.h>
 #include <sys/_PDCLIB_locale.h>
 #include <sys/_PDCLIB_clocale.h>
 #include <threads.h>
 
 /* In a POSIX system, stdin / stdout / stderr are equivalent to the (int) file
-   descriptors 0, 1, and 2 respectively.
-*/
+ *  descriptors 0, 1, and 2 respectively.
+ */
 /* TODO: This is proof-of-concept, requires finetuning. */
 static char _PDCLIB_sin_buffer[BUFSIZ];
 static char _PDCLIB_sout_buffer[BUFSIZ];
@@ -380,13 +377,86 @@ struct _PDCLIB_locale _PDCLIB_global_locale = {
     ._CType = &global_ctype[1],
     ._ErrnoStr = {
         /* no error */ (char *)"",
-        /* ERANGE   */ (char *)"ERANGE (Range error)",
-        /* EDOM     */ (char *)"EDOM (Domain error)",
-        /* EILSEQ   */ (char *)"EILSEQ (Illegal sequence)"
+        /* E2BIG */ (char *)"E2BIG",
+        /* EACCES */ (char *)"EACCES",
+        /* EADDRINUSE */ (char *)"EADDRINUSE",
+        /* EADDRNOTAVAIL */ (char *)"EADDRNOTAVAIL",
+        /* EAFNOSUPPORT */ (char *)"EAFNOSUPPORT",
+        /* EAGAIN */ (char *)"EAGAIN",
+        /* EALREADY */ (char *)"EALREADY",
+        /* EBADF */ (char *)"EBADF",
+        /* EBADMSG */ (char *)"EBADMSG",
+        /* EBUSY */ (char *)"EBUSY",
+        /* ECANCELED */ (char *)"ECANCELED",
+        /* ECHILD */ (char *)"ECHILD",
+        /* ECONNABORTED */ (char *)"ECONNABORTED",
+        /* ECONNREFUSED */ (char *)"ECONNREFUSED",
+        /* ECONNRESET */ (char *)"ECONNRESET",
+        /* EDEADLK */ (char *)"EDEADLK",
+        /* EDESTADDRREQ */ (char *)"EDESTADDRREQ",
+        /* EDOM */ (char *)"EDOM (Domain error)",
+        /* EDQUOT */ (char *)"EDQUOT",
+        /* EEXIST */ (char *)"EEXIST",
+        /* EFAULT */ (char *)"EFAULT",
+        /* EFBIG */ (char *)"EFBIG",
+        /* EHOSTUNREACH */ (char *)"EHOSTUNREACH",
+        /* EIDRM */ (char *)"EIDRM",
+        /* EILSEQ */ (char *)"EILSEQ (Illegal sequence)",
+        /* EINPROGRESS */ (char *)"EINPROGRESS",
+        /* EINTR */ (char *)"EINTR",
+        /* EINVAL */ (char *)"EINVAL",
+        /* EIO */ (char *)"EIO",
+        /* EISCONN */ (char *)"EISCONN",
+        /* EISDIR */ (char *)"EISDIR",
+        /* ELOOP */ (char *)"ELOOP",
+        /* EMFILE */ (char *)"EMFILE",
+        /* EMLINK */ (char *)"EMLINK",
+        /* EMSGSIZE */ (char *)"EMSGSIZE",
+        /* EMULTIHOP */ (char *)"EMULTIHOP",
+        /* ENAMETOOLONG */ (char *)"ENAMETOOLONG",
+        /* ENETDOWN */ (char *)"ENETDOWN",
+        /* ENETRESET */ (char *)"ENETRESET",
+        /* ENETUNREACH */ (char *)"ENETUNREACH",
+        /* ENFILE */ (char *)"ENFILE",
+        /* ENOBUFS */ (char *)"ENOBUFS",
+        /* ENODEV */ (char *)"ENODEV",
+        /* ENOENT */ (char *)"ENOENT",
+        /* ENOEXEC */ (char *)"ENOEXEC",
+        /* ENOLCK */ (char *)"ENOLCK",
+        /* ENOLINK */ (char *)"ENOLINK",
+        /* ENOMEM */ (char *)"ENOMEM",
+        /* ENOMSG */ (char *)"ENOMSG",
+        /* ENOPROTOOPT */ (char *)"ENOPROTOOPT",
+        /* ENOSPC */ (char *)"ENOSPC",
+        /* ENOSYS */ (char *)"ENOSYS",
+        /* ENOTCONN */ (char *)"ENOTCONN",
+        /* ENOTDIR */ (char *)"ENOTDIR",
+        /* ENOTEMPTY */ (char *)"ENOTEMPTY",
+        /* ENOTRECOVERABLE */ (char *)"ENOTRECOVERABLE",
+        /* ENOTSOCK */ (char *)"ENOTSOCK",
+        /* ENOTSUP */ (char *)"ENOTSUP",
+        /* ENOTTY */ (char *)"ENOTTY",
+        /* ENXIO */ (char *)"ENXIO",
+        /* EOVERFLOW */ (char *)"EOVERFLOW",
+        /* EOWNERDEAD */ (char *)"EOWNERDEAD",
+        /* EPERM */ (char *)"EPERM",
+        /* EPIPE */ (char *)"EPIPE",
+        /* EPROTO */ (char *)"EPROTO",
+        /* EPROTONOSUPPORT */ (char *)"EPROTONOSUPPORT",
+        /* EPROTOTYPE */ (char *)"EPROTOTYPE",
+        /* ERANGE */ (char *)"ERANGE (Range error)",
+        /* EROFS */ (char *)"EROFS",
+        /* ESPIPE */ (char *)"EROFS",
+        /* ESRCH */ (char *)"ESRCH",
+        /* ESTALE */ (char *)"ESTALE",
+        /* ETIMEDOUT */ (char *)"ETIMEDOUT",
+        /* ETXTBSY */ (char *)"ETXTBSY",
+        /* EXDEV */ (char *)"EXDEV",
+        /* ENOTBLK */ (char *)"ENOTBLK",
     },
 };
 
-/* Todo: Better solution than this! */
+/* TODO: Better solution than this! */
 __attribute__((constructor)) void init_stdio(void)
 {
     _PDCLIB_initclocale( &_PDCLIB_global_locale );
@@ -395,18 +465,3 @@ __attribute__((constructor)) void init_stdio(void)
     mtx_init(&stdout->lock, mtx_recursive);
     mtx_init(&stderr->lock, mtx_recursive);
 }
-
-#endif
-
-#ifdef TEST
-#include <_PDCLIB_test.h>
-
-int main( void )
-{
-    /* Testing covered by several other testdrivers using stdin / stdout /
-       stderr.
-    */
-    return TEST_RESULTS;
-}
-
-#endif
