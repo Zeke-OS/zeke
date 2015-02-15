@@ -93,7 +93,7 @@ struct _PDCLIB_locale {
     const _PDCLIB_ctype_t       *_CType;
 
     /* perror/strerror */
-    char                        *_ErrnoStr[_PDCLIB_ERRNO_MAX];
+    char                        *_ErrnoStr[_PDCLIB_ERRNO_MAX + 1];
 };
 
 extern const _PDCLIB_wcinfo_t _PDCLIB_wcinfo[];

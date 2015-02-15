@@ -13,7 +13,7 @@ int strerror_r(int errnum, char *strerrbuf, size_t buflen)
     char * buf;
 
     buf = strerror(errnum);
-    strlcpy(strerrbuf, buflen, buf);
+    strlcpy(strerrbuf, buf, buflen);
 
     return 0;
 }
