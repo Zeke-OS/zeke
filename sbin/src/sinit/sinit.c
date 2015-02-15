@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <paths.h>
 
 /* Needed for tty handling */
 #include <fcntl.h>
@@ -92,6 +93,9 @@ main(void)
 static void open_tty(void)
 {
     int r0, r1, r2;
+
+    setenv("PATH", _PATH_STDPATH, 1);
+    setenv("HOME", "/", 1);
 
     close(STDIN_FILENO);
     close(STDOUT_FILENO);

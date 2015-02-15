@@ -53,14 +53,13 @@ static const char msg[] = "Zeke " KERNEL_VERSION;
 int main(int argc, char * argv[], char * envp[])
 {
     printf("args[%d]:", argc);
-    argc += 1;
-    while (*argv) {
-        printf(" %s", *argv++);
+    for (char **s = argv; *s; s++) {
+        printf(" %s", *s);
     }
 
     printf("\nenviron:");
-    while (*envp) {
-        printf(" %s", *envp++);
+    for (char **s = envp; *s; s++) {
+        printf(" %s", *s);
     }
     printf("\n");
 

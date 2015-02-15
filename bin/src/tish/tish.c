@@ -38,6 +38,7 @@
 #include <zeke.h>
 #include <errno.h>
 #include <unistd.h>
+#include <sys/resource.h>
 #include <syscall.h>
 #include "tish.h"
 
@@ -51,8 +52,8 @@ static char * gline(char * str, int num);
 
 int tish(void)
 {
+    static char line[MAX_LEN];
     char * cmd_name;
-    char line[MAX_LEN];
     char * strtok_lasts;
     int err;
 
@@ -151,33 +152,113 @@ static void help(char ** args)
 }
 TISH_CMD(help, "help");
 
+static size_t parse_exec_args(char ** argv, char ** args, size_t arg_max)
+{
+    char * arg;
+    char * an = NULL;
+    int quote = 0;
+    size_t i = 1;
+
+    while ((arg = strtok_r(0, DELIMS, args)) || an) {
+        const size_t len = strlen(arg) + 1;
+
+        if (arg && (arg[0] == '\'' || arg[0] == '\"')) {
+            arg++;
+            quote ^= 1;
+            if (*arg == '\0') {
+                quote = 0;
+                arg = NULL;
+            }
+        }
+
+        if (quote) {
+            size_t an_len;
+            char * ann;
+
+            if (!arg)
+                break;
+
+            ann = realloc(an, strlen(arg) + len);
+
+            if (!ann) {
+                perror("Error while parsing args");
+                return 0;
+            }
+            if (!an) {
+                ann[0] = '\0';
+            } else {
+                strcat(ann, " ");
+            }
+            an = ann;
+
+            strcat(an, arg);
+
+            an_len = strlen(an);
+            if (an[an_len - 1] == '\'' || an[an_len - 1] == '\"') {
+                an[an_len - 1] = '\0';
+                quote = 0;
+            }
+        } else {
+            if (an)
+                argv[i++] = an;
+            if (i == arg_max)
+                break;
+
+            if (!arg)
+                break;
+
+            an = malloc(strlen(arg) + 1);
+            memcpy(an, arg, len);
+            argv[i++] = an;
+            an = NULL;
+        }
+
+        if (i == arg_max)
+            break;
+    }
+    argv[i] = NULL;
+
+    return i;
+}
+
+#define NARG_MAX 256
 static void forkexec(char * path, char ** args)
 {
-    char *argv[] = { path, NULL, NULL };
-    char * arg;
+    static char * argv[NARG_MAX];
+    size_t argc;
     pid_t pid;
-    char failmsg[] = "Fork failed\n";
+    const char failmsg[] = "Fork failed\n";
 
-    arg = strtok_r(0, DELIMS, args);
-    argv[1] = arg;
+    argv[0] = path;
+    argc = parse_exec_args(argv, args, num_elem(argv) - 1);
+    if (argc == 0) {
+        fprintf(stderr, "%s", failmsg);
+        return;
+    }
 
     pid = fork();
     if (pid == -1) {
-        write(STDOUT_FILENO, failmsg, sizeof(failmsg));
+        fprintf(stderr, "%s", failmsg);
     } else if (pid == 0) {
-        execvp(path, argv);
+        int err;
+        err = execvp(path, argv);
+
+        if (err)
+            perror("Exec failed");
+
         _exit(1); /* TODO Figure out why exit(1) fails */
     } else {
         int status;
 
         wait(&status);
+
+        for (size_t i = 1; i < argc; i++) {
+            free(argv[i]);
+        }
+
         printf("status: %u\n", status);
     }
 }
-
-/* TODO Until we have some actual standard IO subsystem working the following
- * is the best hack I can think of. */
-#define _ugetc() bcm2835_uart_ugetc()
 
 static char * gline(char * str, int num)
 {
@@ -191,7 +272,7 @@ static char * gline(char * str, int num)
             continue;
 
         /* Handle backspace */
-        if (ch == 127) {
+        if (ch == '\b') {
             if (i > 0) {
                 i--;
                 write(STDOUT_FILENO, "\b \b", 4);

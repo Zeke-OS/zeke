@@ -221,9 +221,11 @@ int copyinstr(const char * uaddr, char * kaddr, size_t len, size_t * done)
             break;
     }
 
-    *done = off;
+    if (done)
+        *done = off;
 
     if (kaddr[off - 1] != '\0') {
+        kaddr[off - 1] = '\0';
         return -ENAMETOOLONG;
     }
 

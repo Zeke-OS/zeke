@@ -41,6 +41,8 @@
 
 #define NARG_MAX 256
 
+extern char ** environ;
+
 static char * execat(char * s1, const char * s2, char * si)
 {
     char * s = si;
@@ -75,7 +77,7 @@ int execvp(const char * name, char * const argv[])
     do {
         cp = execat(cp, name, fname);
     retry:
-        execv(fname, argv);
+        execve(fname, argv, environ);
         switch (errno) {
         case ENOEXEC:
             newargs[0] = "sh";
@@ -86,7 +88,7 @@ int execvp(const char * name, char * const argv[])
                     return -1;
                 }
             }
-            execv(_PATH_BSHELL, newargs);
+            execve(_PATH_BSHELL, newargs, environ);
             return -1;
         case ETXTBSY:
             if (++etxtbsy > 5)

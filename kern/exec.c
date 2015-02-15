@@ -153,7 +153,7 @@ static int copyin_aa(struct buf * bp, char * uarr, size_t uarr_len,
     if (err)
         return err;
 
-    arg[uarr_len] = NULL;
+    arg[uarr_len - 1] = NULL;
     offset = uarr_len * sizeof(char *) + sizeof(char *);
     left -= offset;
 
@@ -167,7 +167,7 @@ static int copyin_aa(struct buf * bp, char * uarr, size_t uarr_len,
         if (err)
             return err;
 
-        /* new pointer from agg[i] to the string, valid in user space. */
+        /* new pointer from arg[i] to the string, valid in user space. */
         arg[i] = (char *)(bp->b_mmu.vaddr + *doffset + offset);
 
         offset += copied;

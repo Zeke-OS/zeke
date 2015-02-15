@@ -136,10 +136,8 @@ static void printfail(char * str)
 void * uinit(void * arg)
 {
     char * argv[] = { "/sbin/sinit", NULL };
-    char * env[] = { "PATH=" _PATH_STDPATH, "HOME=/", NULL };
+    char * env[] = {  NULL };
     int err;
-
-    write(STDOUT_FILENO, "uinit\n", 7);
 
     _mkdir("/dev", S_IRWXU | S_IRGRP | S_IXGRP);
     err = _mount("", "/dev", "devfs");
@@ -181,7 +179,7 @@ void * uinit(void * arg)
     }
 
     /* Exec init */
-    err = _execve(argv[0], argv, num_elem(argv) - 1, env, num_elem(env) - 1);
+    err = _execve(argv[0], argv, num_elem(argv), env, num_elem(env));
     if (err) {
         printfail("exec init failed");
         while (1);

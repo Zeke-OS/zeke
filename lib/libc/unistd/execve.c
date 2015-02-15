@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Execute a file.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,15 +37,12 @@
 
 static size_t vcount(char * const argv[])
 {
-    int i;
+    size_t i = 0;
 
     if (!argv)
         return 0;
 
-    i = 0;
-    while (argv[i]) {
-        i++;
-    }
+    while (argv[i++]);
 
     return i;
 }
@@ -65,9 +62,7 @@ int execve(const char * path, char * const argv[], char * const envp[])
 
     args.nargv = vcount(argv);
     args.nenv = vcount(argv);
-
     retval = syscall(SYSCALL_EXEC_EXEC, &args);
-
     close(args.fd);
 
     return retval;
