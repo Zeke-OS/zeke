@@ -20,7 +20,7 @@ $(BIN): $(OBJS)
 	$(eval CUR_OBJS := $(patsubst %.c, %.o, $($(CUR_BIN)-SRC-y)))
 	@echo "LD $@"
 	$(GNUARCH)-ld -o $@ -T $(ROOT_DIR)/$(ELFLD) $(LDFLAGS) \
-		$(ROOT_DIR)/lib/crt1.a $(LDIR) $(CUR_OBJS) -lc
+		$(ROOT_DIR)/lib/crt1.a $(LDIR) $(CUR_OBJS) -lc $($(CUR_BIN)-LDFLAGS)
 
 manifest: $(BIN)
 	echo "$(BIN)" > manifest
