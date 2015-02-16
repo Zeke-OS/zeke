@@ -98,8 +98,9 @@ int execvp(const char * name, char * const argv[])
         case EACCES:
             eacces = 1;
             break;
-        case ENOMEM:
         case E2BIG:
+        case EFAULT:
+        case ENOMEM:
             return -1;
         }
     } while (cp);

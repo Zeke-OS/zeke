@@ -53,6 +53,12 @@ int exec_file(file_t * file, char name[PROC_NAME_LEN], struct buf * env_bp,
     struct buf * code_region;
     int err, retval = 0;
 
+#if configEXEC_DEBUG
+    KERROR(KERROR_DEBUG, "exec_file(file %p, name \"%s\", env_bp %p, "
+           "uargc %d, uargv %x,  uenvp %x)\n",
+           file, name, env_bp, uargc, (uint32_t)uargv, (uint32_t)uenvp);
+#endif
+
     if (!file)
         return -ENOENT;
 
@@ -131,39 +137,39 @@ out:
 }
 
 /**
- * Copyin an array of strings and remap to a new section mapped in user space.
- * @note vaddr must be set to the final value.
+ * Clone an array of strings and remap to a new section mapped in user space.
+ * @note vaddr must be set to the final value by the caller.
  */
-static int copyin_aa(struct buf * bp, char * uarr, size_t uarr_len,
-                     size_t * doffset)
+static int clone_aa(struct buf * bp, char * uarr, size_t n_entries,
+                    size_t * doffset)
 {
     char ** arg = (char **)(bp->b_data + *doffset);
-    char * val = (char *)(bp->b_data + *doffset);
-    size_t left = bp->b_bcount - *doffset;
+    char * val  = (char *)(bp->b_data + *doffset);
+    size_t bytesleft = bp->b_bcount - *doffset;
     size_t offset = *doffset;
     int err;
 
-    if (uarr_len == 0)
+    if (n_entries == 0)
         return 0;
 
-    if (left <= uarr_len)
+    if (bytesleft <= n_entries * sizeof(char *))
         return -ENOMEM;
 
-    err = copyin(uarr, arg, uarr_len * sizeof(char *));
+    err = copyin(uarr, arg, n_entries * sizeof(char *));
     if (err)
         return err;
 
-    arg[uarr_len - 1] = NULL;
-    offset = uarr_len * sizeof(char *) + sizeof(char *);
-    left -= offset;
+    arg[n_entries - 1] = NULL;
+    offset = n_entries * sizeof(char *) + sizeof(char *);
+    bytesleft -= offset;
 
-    for (size_t i = 0; i < uarr_len; i++) {
+    for (size_t i = 0; i < n_entries; i++) {
         size_t copied;
 
         if (!arg[i])
             continue;
 
-        err = copyinstr(arg[i], val + offset, left, &copied);
+        err = copyinstr(arg[i], val + offset, bytesleft, &copied);
         if (err)
             return err;
 
@@ -171,7 +177,7 @@ static int copyin_aa(struct buf * bp, char * uarr, size_t uarr_len,
         arg[i] = (char *)(bp->b_mmu.vaddr + *doffset + offset);
 
         offset += copied;
-        left -= copied;
+        bytesleft -= copied;
     }
 
     *doffset = offset;
@@ -188,6 +194,10 @@ static int sys_exec(void * user_args)
     size_t arg_offset = 0;
     uintptr_t envp;
     int err, retval;
+
+#if configEXEC_DEBUG
+    KERROR(KERROR_DEBUG, "exec\n");
+#endif
 
     err = copyin(user_args, &args, sizeof(args));
     if (err) {
@@ -221,9 +231,12 @@ static int sys_exec(void * user_args)
     env_bp->b_mmu.vaddr = configUENV_BASE_ADDR;
     env_bp->b_uflags = VM_PROT_READ;
 
-    /* Copyin argv */
-    err = copyin_aa(env_bp, (char *)args.argv, args.nargv, &arg_offset);
+    /* Clone argv */
+    err = clone_aa(env_bp, (char *)args.argv, args.nargv, &arg_offset);
     if (err) {
+#if configEXEC_DEBUG
+        KERROR(KERROR_DEBUG, "Failed to clone args (%d)\n", err);
+#endif
         set_errno(-err);
         retval = -1;
         goto out;
@@ -231,9 +244,12 @@ static int sys_exec(void * user_args)
     arg_offset = memalign(arg_offset);
     envp = env_bp->b_mmu.vaddr + arg_offset;
 
-    /* Copyin env */
-    err = copyin_aa(env_bp, (char *)args.env, args.nenv, &arg_offset);
+    /* Clone env */
+    err = clone_aa(env_bp, (char *)args.env, args.nenv, &arg_offset);
     if (err) {
+#if configEXEC_DEBUG
+        KERROR(KERROR_DEBUG, "Failed to clone env (%d)\n", err);
+#endif
         set_errno(-err);
         retval = -1;
         goto out;

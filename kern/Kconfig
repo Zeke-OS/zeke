@@ -299,6 +299,12 @@ config configBUF_DEBUG
     ---help---
     Enable buf and bio debug messages and additional asserts.
 
+config configEXEC_DEBUG
+    bool "Exec debugging"
+    default n
+    ---help---
+    Enable exec debug messages.
+
 config configLOCK_DEBUG
     bool "klock debugging"
     default n

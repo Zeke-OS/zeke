@@ -35,14 +35,14 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-static size_t vcount(char * const argv[])
+static size_t vcount(char * const arr[])
 {
     size_t i = 0;
 
-    if (!argv)
+    if (!arr)
         return 0;
 
-    while (argv[i++]);
+    while (arr[i++]);
 
     return i;
 }
@@ -61,7 +61,7 @@ int execve(const char * path, char * const argv[], char * const envp[])
     }
 
     args.nargv = vcount(argv);
-    args.nenv = vcount(argv);
+    args.nenv = vcount(envp);
     retval = syscall(SYSCALL_EXEC_EXEC, &args);
     close(args.fd);
 
