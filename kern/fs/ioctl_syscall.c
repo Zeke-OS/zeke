@@ -83,10 +83,6 @@ static int sys_ioctl(void * user_args)
     }
 
     /* Actual ioctl call */
-    if (!file->vnode->vnode_ops->ioctl) {
-        set_errno(ENOTTY);
-        goto out;
-    }
     retval = file->vnode->vnode_ops->ioctl(file, args.request,
                                            ioargs, args.arg_len);
     if (retval < 0)

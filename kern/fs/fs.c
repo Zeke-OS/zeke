@@ -631,17 +631,13 @@ ssize_t fs_readwrite_cproc(int fildes, void * buf, size_t nbyte, int oper)
         goto out;
     }
 
-    if (((oper & O_ACCMODE) == O_RDONLY) && !(vnode->vnode_ops->read)) {
-        retval = -EOPNOTSUPP;
-        goto out;
-    } else if (((oper & O_ACCMODE) == O_WRONLY) && !(vnode->vnode_ops->write)) {
-        retval = -EOPNOTSUPP;
-        goto out;
-    } else if ((oper & O_ACCMODE) == (O_RDONLY | O_WRONLY)) {
+#if 0
+    if ((oper & O_ACCMODE) == (O_RDONLY | O_WRONLY)) {
         /* Invalid operation code */
         retval = -ENOTSUP;
         goto out;
     }
+#endif
 
     if (oper & O_RDONLY) {
         retval = vnode->vnode_ops->read(file, buf, nbyte);
@@ -905,11 +901,6 @@ int fs_unlink_curproc(int fd, const char * path, size_t path_len, int atflags)
         goto out;
     }
 
-    if (!dir->vnode_ops->unlink) {
-        err = -EACCES;
-        goto out;
-    }
-
     err = dir->vnode_ops->unlink(dir, filename);
 
 out:
@@ -935,11 +926,6 @@ int fs_mkdir_curproc(const char * pathname, mode_t mode)
     retval = chkperm_vnode_cproc(dir, O_WRONLY);
     if (retval)
         goto out;
-
-    if (!dir->vnode_ops->mkdir) {
-        retval = -EROFS;
-        goto out;
-    }
 
     mode &= ~S_IFMT; /* Filter out file type bits */
     mode &= ~curproc->files->umask;
@@ -968,11 +954,6 @@ int fs_rmdir_curproc(const char * pathname)
     if (retval)
         goto out;
 
-    if (!dir->vnode_ops->rmdir) {
-        retval = -EROFS;
-        goto out;
-    }
-
     retval = dir->vnode_ops->rmdir(dir, name);
 
 out:
@@ -999,10 +980,6 @@ int fs_chmod_curproc(int fildes, mode_t mode)
         goto out;
     }
 
-    if (!vnode->vnode_ops->chmod) {
-        retval = -EROFS;
-        goto out;
-    }
     retval = vnode->vnode_ops->chmod(vnode, mode);
 
 out:
@@ -1027,10 +1004,6 @@ int fs_chown_curproc(int fildes, uid_t owner, gid_t group)
         goto out;
     }
 
-    if (!vnode->vnode_ops->chown) {
-        retval = -EROFS;
-        goto out;
-    }
     retval = vnode->vnode_ops->chown(vnode, owner, group);
 
 out:
@@ -1239,12 +1212,12 @@ int fs_enotsup_lookup(vnode_t * dir, const char * name, vnode_t ** result)
 
 int fs_enotsup_link(vnode_t * dir, vnode_t * vnode, const char * name)
 {
-    return -ENOTSUP;
+    return -EACCES;
 }
 
 int fs_enotsup_unlink(vnode_t * dir, const char * name)
 {
-    return -ENOTSUP;
+    return -EACCES;
 }
 
 int fs_enotsup_mkdir(vnode_t * dir,  const char * name, mode_t mode)

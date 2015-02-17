@@ -267,7 +267,8 @@ typedef struct vnode_ops {
     ssize_t (*read)(file_t * file, void * buf, size_t count);
     /**
      * IO Control.
-     * Only defined for devices and shall be set NULL if not supported.
+     * Only defined for devices and shall point to fs_enotsup_ioctl if not
+     * supported.
      * @param file      is the open file accessed.
      * @param request   is the request number.
      * @param arg       is a pointer to the argument (struct).
