@@ -272,20 +272,20 @@ typedef struct vnode_ops {
      * @param request   is the request number.
      * @param arg       is a pointer to the argument (struct).
      * @param ar_len    is the length of arg.
-     * @return          0 ig succeed; Otherwise a negative errno is returned.
+     * @return          0 if succeed; Otherwise a negative errno is returned.
      */
     int (*ioctl)(file_t * file, unsigned request, void * arg, size_t arg_len);
-    //int (*mmap)(vnode_t * file, !mem area!);
     /* Directory file operations
      * ------------------------- */
     /**
-     * Create a new vnode with S_IFREG and a hard link with specified name for it
-     * created in dir.
-     * @param dir       is the directory vnode which is used to store the hard link
-     *                  created.
+     * Create a new vnode with S_IFREG and a hard link with specified name for
+     * it created in dir.
+     * @param dir       is the directory vnode which is used to store
+     *                  the hard link created.
      * @param name      is the name of the hard link.
      * @param[out] result is a pointer to the resulting vnode.
-     * @return Zero in case of operation succeed; Otherwise value other than zero.
+     * @return  Zero in case of operation succeed; Otherwise value other than
+     *          zero.
      */
     int (*create)(vnode_t * dir, const char * name, mode_t mode,
             vnode_t ** result);
@@ -313,8 +313,8 @@ typedef struct vnode_ops {
      * @param dir       is the directory where entry will be created.
      * @param vnode     is a vnode where the link will point.
      * @param name      is the name of the hard link.
-     * @return Returns 0 if creating a link succeeded; Otherwise value other than
-     *         zero.
+     * @return  Returns 0 if creating a link succeeded; Otherwise value other
+     *          than zero.
      */
     int (*link)(vnode_t * dir, vnode_t * vnode, const char * name);
     /**
@@ -329,7 +329,8 @@ typedef struct vnode_ops {
      * @param dir       is a directory in the file system.
      * @param name      is the name of the new directory.
      * @param mode      is the file mode of the new directory.
-     * @return Zero in case of operation succeed; Otherwise value other than zero.
+     * @return  Zero in case of operation succeed; Otherwise value other than
+     *          zero.
      */
     int (*mkdir)(vnode_t * dir,  const char * name, mode_t mode);
     int (*rmdir)(vnode_t * dir,  const char * name);
@@ -648,6 +649,27 @@ void vunref(vnode_t * vnode);
  * - Release and write out buffers
  */
 void fs_vnode_cleanup(vnode_t * vnode);
+
+/* Not sup vnops */
+int fs_enotsup_lock(file_t * file);
+int fs_enotsup_release(file_t * file);
+ssize_t fs_enotsup_write(file_t * file, const void * buf, size_t count);
+ssize_t fs_enotsup_read(file_t * file, void * buf, size_t count);
+int fs_enotsup_ioctl(file_t * file, unsigned request, void * arg,
+                     size_t arg_len);
+int fs_enotsup_create(vnode_t * dir, const char * name, mode_t mode,
+                      vnode_t ** result);
+int fs_enotsup_mknod(vnode_t * dir, const char * name, int mode,
+                     void * specinfo, vnode_t ** result);
+int fs_enotsup_lookup(vnode_t * dir, const char * name, vnode_t ** result);
+int fs_enotsup_link(vnode_t * dir, vnode_t * vnode, const char * name);
+int fs_enotsup_unlink(vnode_t * dir, const char * name);
+int fs_enotsup_mkdir(vnode_t * dir,  const char * name, mode_t mode);
+int fs_enotsup_rmdir(vnode_t * dir,  const char * name);
+int fs_enotsup_readdir(vnode_t * dir, struct dirent * d, off_t * off);
+int fs_enotsup_stat(vnode_t * vnode, struct stat * buf);
+int fs_enotsup_chmod(vnode_t * vnode, mode_t mode);
+int fs_enotsup_chown(vnode_t * vnode, uid_t owner, gid_t group);
 
 #endif /* FS_H */
 

@@ -70,13 +70,15 @@ static struct fs fatfs_fs = {
 struct fatfs_sb ** fatfs_sb_arr;
 
 const vnode_ops_t fatfs_vnode_ops = {
+    .lock = fs_enotsup_lock,
+    .release = fs_enotsup_release,
     .write = fatfs_write,
     .read = fatfs_read,
     .create = fatfs_create,
     .mknod = fatfs_mknod,
     .lookup = fatfs_lookup,
-    .link = fatfs_link,
-    .unlink = fatfs_unlink,
+    .link = fs_enotsup_link,
+    .unlink = fs_enotsup_unlink,
     .mkdir = fatfs_mkdir,
     .rmdir = fatfs_rmdir,
     .readdir = fatfs_readdir,
@@ -578,16 +580,6 @@ int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
 #endif
 
     return 0;
-}
-
-int fatfs_link(vnode_t * dir, vnode_t * vnode, const char * name)
-{
-    return -ENOTSUP;
-}
-
-int fatfs_unlink(vnode_t * dir, const char * name)
-{
-    return -ENOTSUP;
 }
 
 int fatfs_mkdir(vnode_t * dir,  const char * name, mode_t mode)

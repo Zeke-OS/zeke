@@ -331,6 +331,10 @@ void _proc_free(proc_info_t * p)
     if (p->files) {
         for (int i = 0; i < p->files->count; i++) {
             fs_fildes_ref(p->files, i, -1); /* null pointer safe */
+            /*
+             * TODO Should we call?
+             * fs_fildes_close_cproc(int fildes);
+             */
         }
         kfree(p->files);
     }

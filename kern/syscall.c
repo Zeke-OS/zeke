@@ -53,6 +53,7 @@
     apply(SYSCALL_GROUP_SIGNAL, ksignal_syscall)    \
     apply(SYSCALL_GROUP_EXEC, exec_syscall)         \
     apply(SYSCALL_GROUP_PROC, proc_syscall)         \
+    apply(SYSCALL_GROUP_IPC, ipc_syscall)           \
     apply(SYSCALL_GROUP_FS, fs_syscall)             \
     apply(SYSCALL_GROUP_IOCTL, ioctl_syscall)       \
     apply(SYSCALL_GROUP_SHMEM, shmem_syscall)       \
@@ -62,7 +63,8 @@
 /*
  * Declare prototypes of syscall handlers.
  */
-#define DECLARE_SCHANDLER(major, function) extern intptr_t function(uint32_t type, void * p);
+#define DECLARE_SCHANDLER(major, function) \
+    extern intptr_t function(uint32_t type, void * p);
 FOR_ALL_SYSCALL_GROUPS(DECLARE_SCHANDLER)
 #undef DECLARE_SCHANDLER
 

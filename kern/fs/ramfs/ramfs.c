@@ -167,8 +167,11 @@ fs_t ramfs_fs = {
  * @note Virtual function pointers not set here will be null pointers.
  */
 const vnode_ops_t ramfs_vnode_ops = {
+    .lock = fs_enotsup_lock,
+    .release = fs_enotsup_release,
     .write = ramfs_write,
     .read = ramfs_read,
+    .ioctl = fs_enotsup_ioctl,
     .create = ramfs_create,
     .mknod = ramfs_mknod,
     .lookup = ramfs_lookup,
