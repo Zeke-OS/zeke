@@ -1,12 +1,10 @@
 /**
  *******************************************************************************
- * @file    unistd.c
+ * @file    ipc_syscall.c
  * @author  Olli Vanhoja
- * @brief   Standard functions.
+ * @brief   Generic IPC syscalls.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, 2013 Ninjaware Oy,
- *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+ * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,12 +28,40 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************
-*/
+ */
 
-#include <fcntl.h>
 #include <unistd.h>
+#include <syscall.h>
+#include <errno.h>
+#include <proc.h>
+#include <kern_ipc.h>
 
-int dup2(int fildes, int fildes2)
+static int sys_pipe(void * user_args)
 {
-    return fcntl(fildes, F_DUP2FD, fildes2);
+    struct _ipc_pipe_args args;
+    int err;
+
+    if (!useracc(user_args, sizeof(args), VM_PROT_WRITE)) {
+        set_errno(EFAULT);
+        return -1;
+    }
+    copyin(user_args, &args, sizeof(args));
+
+    err = fs_pipe_cproc_creat(curproc->files, args.fildes, args.len);
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
+    copyout(&args, user_args, sizeof(args));
+
+    return 0;
 }
+
+/**
+ * Declarations of ipc syscall functions.
+ */
+static const syscall_handler_t ipc_sysfnmap[] = {
+    ARRDECL_SYSCALL_HNDL(SYSCALL_IPC_PIPE, sys_pipe),
+};
+SYSCALL_HANDLERDEF(ipc_syscall, ipc_sysfnmap)

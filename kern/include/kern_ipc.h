@@ -1,12 +1,10 @@
 /**
  *******************************************************************************
- * @file    unistd.c
+ * @file    kern_ipc.h
  * @author  Olli Vanhoja
- * @brief   Standard functions.
+ * @brief   Generic IPC headers.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, 2013 Ninjaware Oy,
- *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+ * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,12 +28,26 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************
-*/
+ */
 
-#include <fcntl.h>
-#include <unistd.h>
+#pragma once
+#ifndef KERN_IPC_H
+#define KERN_IPC_H
 
-int dup2(int fildes, int fildes2)
-{
-    return fcntl(fildes, F_DUP2FD, fildes2);
-}
+/* Pipes */
+
+/**
+ * Create a pipe for the current process.
+ * @param files is a pointer to a files struct owned by curproc.
+ * @param fildes is an array where new file descriptor numbers will be returned.
+ * @param len is the preferred minimum size of the new pipe.
+ */
+int fs_pipe_cproc_creat(struct files_struct * files, int fildes[2], size_t len);
+
+/**
+ * Destroy a pipe.
+ * @param vnode is the file->vnode.
+ */
+int fs_pipe_destroy(vnode_t * vnode);
+
+#endif /* KERN_IPC_H */

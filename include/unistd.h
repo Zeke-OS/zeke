@@ -221,6 +221,14 @@ struct _proc_chdir_args {
 };
 
 /**
+ * Arguments for SYSCALL_IPC_PIPE
+ */
+struct _ipc_pipe_args {
+    int fildes[2]; /*!< returned file descriptors. */
+    size_t len; /*!< Preferred minumum size of the pipe buf. */
+};
+
+/**
  * Arguments for SYSCALL_EXEC_EXEC
  */
 struct _exec_args {
@@ -389,6 +397,8 @@ int rmdir(const char * path);
  */
 int dup(int fildes);
 int dup2(int fildes, int fildes2);
+
+int pipe(int fildes[2]);
 
 unsigned sleep(unsigned seconds);
 __END_DECLS

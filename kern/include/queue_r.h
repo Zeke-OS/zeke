@@ -74,7 +74,7 @@ queue_cb_t queue_create(void * data_array, size_t block_size, size_t array_size)
  * @note element is always copied to the queue, so it is safe to remove the
  * original data after a push.
  */
-int queue_push(queue_cb_t * cb, void * element);
+int queue_push(queue_cb_t * cb, const void * element);
 
 /**
  * Pop element from the queue.

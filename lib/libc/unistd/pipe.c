@@ -4,9 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Standard functions.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, 2013 Ninjaware Oy,
- *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+ * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,10 +30,24 @@
  *******************************************************************************
 */
 
-#include <fcntl.h>
+#include <sys/_PDCLIB_config.h>
 #include <unistd.h>
+#include <syscall.h>
 
-int dup2(int fildes, int fildes2)
+int pipe(int fildes[2])
 {
-    return fcntl(fildes, F_DUP2FD, fildes2);
+    struct _ipc_pipe_args args = {
+        .len = _PDCLIB_MALLOC_PAGESIZE
+    };
+    int err;
+
+    err = (int)syscall(SYSCALL_IPC_PIPE, &args);
+    if (err)
+        return -1;
+
+    fildes[0] = args.fildes[0];
+    fildes[1] = args.fildes[1];
+
+    return 0;
 }
+

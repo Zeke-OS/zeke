@@ -1,10 +1,12 @@
-/* _PDCLIB_stdinit
+/*
+ * _PDCLIB_stdinit
  *
  * This file is part of the Public Domain C Library (PDCLib).
  * Permission is granted to use, modify, and / or redistribute at will.
  */
 
-/* This is an example initialization of stdin, stdout and stderr to the integer
+/*
+ * This is an example initialization of stdin, stdout and stderr to the integer
  * file descriptors 0, 1, and 2, respectively. This applies for a great variety
  * of operating systems, including POSIX compliant ones.
  */
@@ -12,15 +14,13 @@
 #include <stdio.h>
 #include <locale.h>
 #include <limits.h>
+#include <unistd.h>
 
 #include <sys/_PDCLIB_io.h>
 #include <sys/_PDCLIB_locale.h>
 #include <sys/_PDCLIB_clocale.h>
 #include <threads.h>
 
-/* In a POSIX system, stdin / stdout / stderr are equivalent to the (int) file
- *  descriptors 0, 1, and 2 respectively.
- */
 /* TODO: This is proof-of-concept, requires finetuning. */
 static char _PDCLIB_sin_buffer[BUFSIZ];
 static char _PDCLIB_sout_buffer[BUFSIZ];
@@ -34,7 +34,7 @@ extern _PDCLIB_fileops_t _PDCLIB_fileops;
 
 static FILE _PDCLIB_serr = {
     .ops        = &_PDCLIB_fileops,
-    .handle     = { .sval = 2 },
+    .handle     = { .sval = STDERR_FILENO },
     .buffer     = _PDCLIB_serr_buffer,
     .bufsize    = BUFSIZ,
     .bufidx     = 0,
@@ -47,7 +47,7 @@ static FILE _PDCLIB_serr = {
 };
 static FILE _PDCLIB_sout = {
     .ops        = &_PDCLIB_fileops,
-    .handle     = { .sval = 1 },
+    .handle     = { .sval = STDOUT_FILENO },
     .buffer     = _PDCLIB_sout_buffer,
     .bufsize    = BUFSIZ,
     .bufidx     = 0,
@@ -60,7 +60,7 @@ static FILE _PDCLIB_sout = {
 };
 static FILE _PDCLIB_sin  = {
     .ops        = &_PDCLIB_fileops,
-    .handle     = { .sval = 0 },
+    .handle     = { .sval = STDIN_FILENO },
     .buffer     = _PDCLIB_sin_buffer,
     .bufsize    = BUFSIZ,
     .bufidx     = 0,

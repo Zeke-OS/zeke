@@ -48,7 +48,7 @@ queue_cb_t queue_create(void * data_array, size_t block_size, size_t array_size)
     return cb;
 }
 
-int queue_push(queue_cb_t * cb, void * element)
+int queue_push(queue_cb_t * cb, const void * element)
 {
     size_t nextElement = (cb->m_write + 1) % cb->a_len;
     const size_t b_size = cb->b_size;
