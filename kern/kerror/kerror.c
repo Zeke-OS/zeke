@@ -47,7 +47,22 @@ const char * const _kernel_panic_msg = "Oops, Kernel panic\n";
 static ssize_t kerror_fdwrite(file_t * file, const void * buf, size_t count);
 
 vnode_ops_t kerror_vops = {
-    .write = kerror_fdwrite
+    .lock = fs_enotsup_lock,
+    .release = fs_enotsup_release,
+    .write = kerror_fdwrite,
+    .read = fs_enotsup_read,
+    .ioctl = fs_enotsup_ioctl,
+    .create = fs_enotsup_create,
+    .mknod = fs_enotsup_mknod,
+    .lookup = fs_enotsup_lookup,
+    .link = fs_enotsup_link,
+    .unlink = fs_enotsup_unlink,
+    .mkdir = fs_enotsup_mkdir,
+    .rmdir = fs_enotsup_rmdir,
+    .readdir = fs_enotsup_readdir,
+    .stat = fs_enotsup_stat,
+    .chmod = fs_enotsup_chmod,
+    .chown = fs_enotsup_chown,
 };
 
 vnode_t kerror_vnode = {
