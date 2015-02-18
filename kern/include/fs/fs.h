@@ -161,10 +161,9 @@ typedef struct file {
     off_t seek_pos;     /*!< Seek pointer. */
     int fdflags;        /*!< File descriptor flags. */
     int oflags;         /*!< File status flags. */
-    int refcount;       /*!< Reference count. */
+    atomic_t refcount;  /*!< Reference count. */
     vnode_t * vnode;
     void * stream;      /*!< Pointer to a special file stream data or info. */
-    mtx_t lock;
 } file_t;
 
 /**

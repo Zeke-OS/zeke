@@ -464,7 +464,6 @@ int fs_fildes_set(file_t * fildes, vnode_t * vnode, int oflags)
     if (!(fildes && vnode))
         return -1;
 
-    mtx_init(&fildes->lock, MTX_TYPE_SPIN);
     fildes->vnode = vnode;
     fildes->oflags = oflags;
     fildes->refcount = 1;
@@ -514,6 +513,7 @@ perms_ok:
         goto out;
     }
     fs_fildes_set(curproc->files->fd[fd], vnode, oflags);
+    new_fildes->fdflags |= FD_KFREEABLE;
 
     retval = fd;
 out:
@@ -566,36 +566,31 @@ retry:
 
 file_t * fs_fildes_ref(files_t * files, int fd, int count)
 {
-    file_t * fildes;
-    int free = 0;
+    file_t * file;
+    int old_refcount;
 
-    if (!files || (fd >= files->count))
-        return 0;
+    KASSERT(files != NULL, "files should be set");
 
-    fildes = files->fd[fd];
-    if (!fildes)
-        return 0;
+    if (fd >= files->count)
+        return NULL;
 
-    mtx_lock(&fildes->lock);
-    fildes->refcount += count;
-    if (fildes->refcount <= 0)
-        free = 1;
-    mtx_unlock(&fildes->lock);
+    file = files->fd[fd];
+    if (!file)
+        return NULL;
 
-    /*
-     * The following is normally unsafe but in the case of file descriptors it
-     * should be safe to assume that there is always only one process that wants
-     * to free a filedes concurrently (the owener itself).
-     */
-    if (free) {
-        vrele(fildes->vnode);
-        kfree(fildes);
+    old_refcount = atomic_add(&file->refcount, count);
+    if ((old_refcount + count) <= 0) {
+        vnode_t * vn = file->vnode;
+
+        if (file->fdflags & FD_KFREEABLE)
+            kfree(file);
+        vrele(vn);
         files->fd[fd] = NULL;
 
-        return 0;
+        return NULL;
     }
 
-    return fildes;
+    return file;
 }
 
 int fs_fildes_close_cproc(int fildes)

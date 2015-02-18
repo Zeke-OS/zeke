@@ -296,7 +296,6 @@ static struct buf * create_blk(vnode_t * vnode, size_t blkno, size_t size,
     bp->b_devfile = devfile;
     bp->b_flags |= B_DONE;
     bp->b_flags &= ~B_BUSY; /* Unbusy for now */
-    mtx_init(&bp->b_file.lock, MTX_TYPE_SPIN);
 
     VN_LOCK(vnode);
 

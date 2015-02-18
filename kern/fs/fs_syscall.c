@@ -162,6 +162,12 @@ static int sys_lseek(void * user_args)
         return -1;
     }
 
+    /* can't seek if fifo, pipe or socket */
+    if (file->vnode->vn_mode & (S_IFIFO | S_IFSOCK)) {
+        set_errno(-ESPIPE);
+        return -1;
+    }
+
     if (args.whence == SEEK_SET)
         file->seek_pos = args.offset;
     else if (args.whence == SEEK_CUR)
@@ -705,8 +711,10 @@ out:
     return retval;
 }
 
-/* Only fchmod() is implemented at the kernel level and rest must be implemented
- * in user space. */
+/*
+ * Only fchmod() is implemented at the kernel level and rest must be implemented
+ * in user space.
+ */
 static int sys_chmod(void * user_args)
 {
     struct _fs_chmod_args args;
@@ -722,8 +730,10 @@ static int sys_chmod(void * user_args)
     return fs_chmod_curproc(args.fd, args.mode);
 }
 
-/* Only fchown() is implemented at the kernel level and rest must be implemented
- * in user space. */
+/*
+ * Only fchown() is implemented at the kernel level and rest must be implemented
+ * in user space.
+ */
 static int sys_chown(void * user_args)
 {
     struct _fs_chown_args args;

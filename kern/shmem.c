@@ -163,7 +163,6 @@ int shmem_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
         bp->b_file.refcount = 1;
         bp->b_file.vnode = vnode;
         bp->b_file.stream = file->stream;
-        mtx_init(&file->lock, MTX_TYPE_SPIN);
         bp->b_blkno = blkno;
 
         if (!(flags & MAP_SHARED))

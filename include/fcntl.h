@@ -82,9 +82,17 @@ typedef int pid_t; /*!< Process ID. */
 #define F_SETOWN        11  /*!< Set process or process group ID to receive
                              *   SIGURG signals. */
 
-/* fcntl() fd flag */
-#define FD_CLOEXEC      1   /*!< Close the file descriptor upon execution of
+/* fcntl() fdflags */
+#define FD_CLOEXEC      0x1 /*!< Close the file descriptor upon execution of
                              *   an exec family function. */
+#ifdef KERNEL_INTERNAL
+#define FD_KFREEABLE    0x2 /*!< Can be freed with kfree() by fs_fildes_ref(),
+                             *   if not set the file won't be freed by fs
+                             *   subystem. This flag is useful if the file
+                             *   descriptor is static or freed by other
+                             *   subsystem.
+                             */
+#endif
 
 /* fcntl() l_type arg */
 #define F_RDLCK         0   /*!< Shared or read lock. */
