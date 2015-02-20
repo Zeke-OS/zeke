@@ -73,7 +73,7 @@ void mtx_init(mtx_t * mtx, unsigned int type)
     mtx->ticket.queue = ATOMIC_INIT(0);
     mtx->ticket.dequeue = ATOMIC_INIT(0);
 #ifdef configLOCK_DEBUG
-    mtx->mtx_ldebug = 0;
+    mtx->mtx_ldebug = NULL;
 #endif
 }
 
@@ -225,6 +225,10 @@ void mtx_unlock(mtx_t * mtx)
         timers_release(current_thread->wait_tim);
         current_thread->wait_tim = -1;
     }
+
+#ifdef configLOCK_DEBUG
+    mtx->mtx_ldebug = NULL;
+#endif
 
     if (MTX_TYPE(mtx, MTX_TYPE_TICKET)) {
         atomic_inc(&(mtx->ticket.dequeue));
