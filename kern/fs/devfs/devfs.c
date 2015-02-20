@@ -164,6 +164,8 @@ ssize_t dev_read(file_t * file, void * vbuf, size_t bcount)
     const int oflags = file->oflags;
     struct dev_info * devnfo = (struct dev_info *)vnode->vn_specinfo;
     uint8_t * buf = (uint8_t *)vbuf;
+    size_t buf_offset;
+    off_t block_offset;
     ssize_t bytes_rd;
 
     if (!devnfo->read)
@@ -174,8 +176,8 @@ ssize_t dev_read(file_t * file, void * vbuf, size_t bcount)
         return devnfo->read(devnfo, offset, buf, bcount, oflags);
     }
 
-    size_t buf_offset = 0;
-    off_t block_offset = 0;
+    buf_offset = 0;
+    block_offset = 0;
     do {
         int tries = RW_MAX_TRIES;
         size_t to_read = (bcount > devnfo->block_size) ?
@@ -184,13 +186,10 @@ ssize_t dev_read(file_t * file, void * vbuf, size_t bcount)
 
         while (1) {
             ret = devnfo->read(devnfo, offset + block_offset,
-                                   &buf[buf_offset], to_read, oflags);
-            if (ret < 0) {
-                tries--;
-                if (tries <= 0) {
-                    bytes_rd = (buf_offset > 0) ? buf_offset : ret;
-                    goto out;
-                }
+                               &buf[buf_offset], to_read, oflags);
+            if (ret < 0 && --tries <= 0) {
+                bytes_rd = (buf_offset > 0) ? buf_offset : ret;
+                goto out;
             } else {
                 break;
             }
@@ -214,6 +213,8 @@ ssize_t dev_write(file_t * file, const void * vbuf, size_t bcount)
     const int oflags = file->oflags;
     struct dev_info * devnfo = (struct dev_info *)vnode->vn_specinfo;
     uint8_t * buf = (uint8_t *)vbuf;
+    size_t buf_offset;
+    off_t block_offset;
     ssize_t bytes_wr;
 
     if (!devnfo->write)
@@ -224,8 +225,8 @@ ssize_t dev_write(file_t * file, const void * vbuf, size_t bcount)
         return devnfo->write(devnfo, offset, buf, bcount, oflags);
     }
 
-    size_t buf_offset = 0;
-    off_t block_offset = 0;
+    buf_offset = 0;
+    block_offset = 0;
     do {
         int tries = RW_MAX_TRIES;
         size_t to_write = (bcount > devnfo->block_size) ?
@@ -234,13 +235,10 @@ ssize_t dev_write(file_t * file, const void * vbuf, size_t bcount)
 
         while (1) {
             ret = devnfo->write(devnfo, offset + block_offset,
-                                    &buf[buf_offset], to_write, oflags);
-            if (ret < 0) {
-                tries--;
-                if (tries <= 0) {
-                    bytes_wr = (buf_offset > 0) ? buf_offset : ret;
-                    goto out;
-                }
+                                &buf[buf_offset], to_write, oflags);
+            if (ret < 0 && --tries <= 0) {
+                bytes_wr = (buf_offset > 0) ? buf_offset : ret;
+                goto out;
             } else {
                 break;
             }

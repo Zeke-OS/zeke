@@ -88,9 +88,10 @@ static int sys_read(void * user_args)
     if (retval < 0) {
         set_errno(-retval);
         retval = -1;
+    } else {
+        copyout(buf, args.buf, retval);
     }
 
-    copyout(buf, args.buf, args.nbytes);
 out:
     kfree(buf);
     return retval;

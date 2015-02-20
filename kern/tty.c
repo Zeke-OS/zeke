@@ -66,6 +66,19 @@ int make_ttydev(struct tty * tty, const char * drv_name, dev_t dev_id,
     dev->write = tty_write;
     dev->ioctl = tty_ioctl;
     dev->opt_data = tty;
+    /*
+     * Linux defaults:
+     * tty->conf.c_lflag = ISIG | ICANON | ECHO | ECHOE | ECHOK | ECHOCTL |
+     *                     ECHOKE | IEXTEN;
+     */
+    /*
+     * TODO termios support
+     * *supported now*
+     * iflags: -
+     * oflags: -
+     * cflags: -
+     * lfags: -
+     */
 
     if (dev_make(dev, 0, 0, 0666, NULL)) {
         KERROR(KERROR_ERR, "Failed to make a tty dev.\n");
