@@ -47,8 +47,8 @@ SET_DECLARE(tish_cmd, struct tish_builtin);
 int tish_eof;
 
 /* Static functions */
+static size_t parse_args(char ** argv, char ** args, size_t arg_max);
 static void forkexec(char * path, char ** args);
-static char * gline(char * str, int num);
 
 int tish(void)
 {
@@ -113,27 +113,6 @@ static void uptime(char ** args)
 }
 TISH_CMD(uptime, "uptime");
 
-static void reg(char ** args)
-{
-    char * arg = strtok_r(0, DELIMS, args);
-    char buf[40] = "Invalid argument\n";
-
-    if (!strcmp(arg, "sp")) {
-        void * sp;
-
-        __asm__ ("mov %[result], sp" : [result] "=r" (sp));
-        snprintf(buf, sizeof(buf), "sp = %p\n", sp);
-    } else if (!strcmp(arg, "cpsr")) {
-        uint32_t mode;
-
-        __asm__ ("mrs     %0, cpsr" : "=r" (mode));
-        snprintf(buf, sizeof(buf), "cpsr = %x\n", mode);
-    }
-
-    printf("%s", buf);
-}
-TISH_CMD(reg, "reg");
-
 static void tish_exit(char ** args)
 {
     tish_eof = 1;
@@ -152,7 +131,7 @@ static void help(char ** args)
 }
 TISH_CMD(help, "help");
 
-static size_t parse_exec_args(char ** argv, char ** args, size_t arg_max)
+static size_t parse_args(char ** argv, char ** args, size_t arg_max)
 {
     char * arg;
     char * an = NULL;
@@ -230,7 +209,7 @@ static void forkexec(char * path, char ** args)
     const char failmsg[] = "Fork failed\n";
 
     argv[0] = path;
-    argc = parse_exec_args(argv, args, num_elem(argv) - 1);
+    argc = parse_args(argv, args, num_elem(argv) - 1);
     if (argc == 0) {
         fprintf(stderr, "%s", failmsg);
         return;
@@ -257,44 +236,5 @@ static void forkexec(char * path, char ** args)
         }
 
         printf("status: %u\n", status);
-    }
-}
-
-static char * gline(char * str, int num)
-{
-    int err, i = 0;
-    char ch;
-    char buf[2] = {'\0', '\0'};
-
-    while (1) {
-        err = read(STDIN_FILENO, &ch, sizeof(ch));
-        if (err <= 0)
-            continue;
-
-        /* Handle backspace */
-        if (ch == '\b') {
-            if (i > 0) {
-                i--;
-                write(STDOUT_FILENO, "\b \b", 4);
-            }
-            continue;
-        }
-
-        /* TODO Handle arrow keys and delete */
-
-        /* Handle return */
-        if (ch == '\n' || ch == '\r' || i == num) {
-            str[i] = '\0';
-            buf[0] = '\n';
-            write(STDOUT_FILENO, buf, sizeof(buf));
-
-            return str;
-        } else {
-            str[i] = ch;
-        }
-
-        buf[0] = ch;
-        write(STDOUT_FILENO, buf, sizeof(buf));
-        i++;
     }
 }

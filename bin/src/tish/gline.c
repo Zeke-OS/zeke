@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    tish.h
+ * @file    gline.c
  * @author  Olli Vanhoja
- * @brief   Tiny Init Shell for debugging in init.
+ * @brief   gline, get line.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,27 +30,43 @@
  *******************************************************************************
  */
 
-#pragma once
-#ifndef TISH_H
-#define TISH_H
+#include <unistd.h>
 
-#include <sys/linker_set.h>
+char * gline(char * str, int num)
+{
+    int err, i = 0;
+    char ch;
+    char buf[2] = {'\0', '\0'};
 
-#define MAX_LEN 80
-#define DELIMS  " \t\r\n"
+    while (1) {
+        err = read(STDIN_FILENO, &ch, sizeof(ch));
+        if (err <= 0)
+            continue;
 
-struct tish_builtin {
-    char name[10];
-    void (*fn)(char ** args);
-};
+        /* Handle backspace */
+        if (ch == '\b') {
+            if (i > 0) {
+                i--;
+                write(STDOUT_FILENO, "\b \b", 4);
+            }
+            continue;
+        }
 
-#define TISH_CMD(fun, cmdnamestr)           \
-    static struct tish_builtin fun##_st = { \
-        .name = cmdnamestr, .fn = fun       \
-    };                                      \
-    DATA_SET(tish_cmd, fun##_st)
+        /* TODO Handle arrow keys and delete */
 
-int tish(void);
-char * gline(char * str, int num);
+        /* Handle return */
+        if (ch == '\n' || ch == '\r' || i == num) {
+            str[i] = '\0';
+            buf[0] = '\n';
+            write(STDOUT_FILENO, buf, sizeof(buf));
 
-#endif /* TISH_H */
+            return str;
+        } else {
+            str[i] = ch;
+        }
+
+        buf[0] = ch;
+        write(STDOUT_FILENO, buf, sizeof(buf));
+        i++;
+    }
+}

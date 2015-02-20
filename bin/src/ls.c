@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    tish.h
+ * @file    ls.c
  * @author  Olli Vanhoja
- * @brief   Tiny Init Shell for debugging in init.
+ * @brief   ls.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,27 +30,49 @@
  *******************************************************************************
  */
 
-#pragma once
-#ifndef TISH_H
-#define TISH_H
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <dirent.h>
+#include <time.h>
+#include <sys/stat.h>
 
-#include <sys/linker_set.h>
+int main(int argc, char * argv[], char * envp[])
+{
+    char * path = NULL;
+    int fildes, count;
+    struct dirent dbuf[10];
 
-#define MAX_LEN 80
-#define DELIMS  " \t\r\n"
+    if (argc > 1)
+        path = argv[1];
 
-struct tish_builtin {
-    char name[10];
-    void (*fn)(char ** args);
-};
+    if (path == NULL || !strcmp(path, ""))
+        path = "./";
 
-#define TISH_CMD(fun, cmdnamestr)           \
-    static struct tish_builtin fun##_st = { \
-        .name = cmdnamestr, .fn = fun       \
-    };                                      \
-    DATA_SET(tish_cmd, fun##_st)
+    fildes = open(path, O_DIRECTORY | O_RDONLY | O_SEARCH);
+    if (fildes < 0) {
+        printf("Open failed\n");
+        return 1;
+    }
 
-int tish(void);
-char * gline(char * str, int num);
+    while ((count = getdents(fildes, (char *)dbuf, sizeof(dbuf))) > 0) {
+        for (int i = 0; i < count; i++) {
+            struct stat stat;
 
-#endif /* TISH_H */
+            fstatat(fildes, dbuf[i].d_name, &stat, 0);
+
+            printf("%u %o %u:%u %s\n",
+                     (uint32_t)dbuf[i].d_ino, (uint32_t)stat.st_mode,
+                     (uint32_t)stat.st_uid, (uint32_t)stat.st_gid,
+                     dbuf[i].d_name);
+        }
+    }
+    printf("\n");
+
+    close(fildes);
+    return 0;
+}

@@ -61,10 +61,7 @@ int main(int argc, char * argv[], char * envp[])
     for (char **s = envp; *s; s++) {
         printf(" %s", *s);
     }
-    printf("\n");
-
-    write(STDOUT_FILENO, banner, sizeof(banner));
-    write(STDOUT_FILENO, msg, sizeof(msg));
+    printf("\n%s%s\n", banner, msg);
 
     tish();
 

@@ -52,39 +52,6 @@ static void cd(char ** args)
 }
 TISH_CMD(cd, "cd");
 
-static void ls(char ** args)
-{
-    char * path = strtok_r(0, DELIMS, args);
-    int fildes, count;
-    struct dirent dbuf[10];
-
-    if (path == 0 || !strcmp(path, ""))
-        path = "./";
-
-    fildes = open(path, O_DIRECTORY | O_RDONLY | O_SEARCH);
-    if (fildes < 0) {
-        printf("Open failed\n");
-        return;
-    }
-
-    while ((count = getdents(fildes, (char *)dbuf, sizeof(dbuf))) > 0) {
-        for (int i = 0; i < count; i++) {
-            struct stat stat;
-
-            fstatat(fildes, dbuf[i].d_name, &stat, 0);
-
-            printf("%u %o %u:%u %s\n",
-                     (uint32_t)dbuf[i].d_ino, (uint32_t)stat.st_mode,
-                     (uint32_t)stat.st_uid, (uint32_t)stat.st_gid,
-                     dbuf[i].d_name);
-        }
-    }
-    printf("\n");
-
-    close(fildes);
-}
-TISH_CMD(ls, "ls");
-
 static void touch(char ** args)
 {
     int fildes;
