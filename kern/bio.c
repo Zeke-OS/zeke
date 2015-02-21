@@ -335,7 +335,7 @@ retry:
      * busy by some other thread.
      */
     while (bp->b_flags & B_BUSY)
-        sched_current_thread_yield(0);
+        sched_current_thread_yield(SCHED_YIELD_LAZY);
     BUF_LOCK(bp);
     if (bp->b_flags & B_BUSY) {
         BUF_UNLOCK(bp);

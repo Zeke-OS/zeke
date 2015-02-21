@@ -624,7 +624,7 @@ static int sys_proc_wait(void * user_args)
          * idle_sleep();
          * yield seems to work better.
          */
-        sched_current_thread_yield(0);
+        sched_current_thread_yield(SCHED_YIELD_LAZY);
 
         /*
          * TODO In some cases we have to return early without waiting.

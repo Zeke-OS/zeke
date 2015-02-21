@@ -191,7 +191,7 @@ int ramfs_init(void)
     SUBSYS_DEP(proc_init);
     SUBSYS_INIT("ramfs");
 
-    ATOMIC_INIT(ramfs_vdev_minor);
+    ramfs_vdev_minor = ATOMIC_INIT(0);
 
     /* Register ramfs with vfs. */
     fs_register(&ramfs_fs);

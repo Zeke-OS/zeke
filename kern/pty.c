@@ -91,7 +91,7 @@ int pty_init(void)
     SUBSYS_DEP(devfs_init);
     SUBSYS_INIT("pty");
 
-    ATOMIC_INIT(_next_pty_id);
+    _next_pty_id = ATOMIC_INIT(0);
     RB_INIT(&ptys_head);
     mtx_init(&pty_lock, MTX_TYPE_TICKET);
 

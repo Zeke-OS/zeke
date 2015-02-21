@@ -204,6 +204,17 @@ struct thread_info {
 /* Scheduler task type */
 typedef void (*sched_task_t)();
 
+/**
+ * Scheduler yield strategy.
+ * Immediate yield will not return to the caller until other threads have been
+ * scheduled in if any; Lazy yield will yield turn at some point but it may
+ * also return to the caller at first.
+ */
+enum sched_eyield_strategy {
+    SCHED_YIELD_IMMEDIATE,
+    SCHED_YIELD_LAZY
+};
+
 /* External variables *********************************************************/
 extern struct thread_info * current_thread;
 
@@ -255,9 +266,8 @@ void sched_sleep_current_thread(int permanent);
 
 /**
  * Yield turn.
- * @param sleep_flag sleep immediately if flag is set.
  */
-void sched_current_thread_yield(int sleep_flag);
+void sched_current_thread_yield(enum sched_eyield_strategy strategy);
 
 /**
  * Mark thread as detached so it wont be turned into zombie on exit.

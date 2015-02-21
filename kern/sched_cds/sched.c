@@ -457,7 +457,7 @@ void sched_thread_set_exec(pthread_t thread_id)
     set_interrupt_state(s);
 }
 
-void sched_current_thread_yield(int sleep_flag)
+void sched_current_thread_yield(enum sched_eyield_strategy strategy)
 {
     int nice_save;
 
@@ -467,7 +467,7 @@ void sched_current_thread_yield(int sleep_flag)
     nice_save = current_thread->niceval;
     current_thread->niceval = NICE_YIELD;
 
-    if (sleep_flag)
+    if (strategy == SCHED_YIELD_IMMEDIATE)
         idle_sleep();
 
     current_thread->niceval = nice_save;

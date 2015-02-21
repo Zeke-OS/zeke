@@ -538,7 +538,9 @@ int rpi_emmc_init(void)
     SUBSYS_INIT("rpi_emc");
 
     vnode_t * vnode;
+#if configMBR
     int fd;
+#endif
     int err;
 
     mailbuf = geteblk_special(10 * sizeof(uint32_t),
@@ -567,7 +569,7 @@ int rpi_emmc_init(void)
         KERROR(KERROR_ERR, "Failed to register a new emmc dev");
     }
 
-#if configMBR != 0
+#ifdef configMBR
     fd = fs_fildes_create_cproc(vnode, O_RDONLY);
     if (fd < 0) {
         KERROR(KERROR_ERR, "Failed to open the device");

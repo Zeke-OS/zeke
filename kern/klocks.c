@@ -120,7 +120,7 @@ int _mtx_lock(mtx_t * mtx, char * whr)
                 break;
             }
 
-            sched_current_thread_yield(0);
+            sched_current_thread_yield(SCHED_YIELD_LAZY);
         } else {
             if (!test_and_set((int *)(&(mtx->mtx_lock))))
                 break;

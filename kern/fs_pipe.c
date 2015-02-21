@@ -45,9 +45,14 @@
 #include <kern_ipc.h>
 
 /*
- * TODO Create a pipe with thread safe queue and fake file descriptors like it
- * was in KERROR.
+ * Just a humble guess that lazy yield may render improved performance on
+ * MP system.
  */
+#if configMP
+#define PIPE_YIELD_STRATEGY SCHED_YIELD_LAZY
+#else
+#define PIPE_YIELD_STRATEGY SCHED_YIELD_IMMEDIATE
+#endif
 
 /**
  * Pipe descriptor pointed by file->stream.
@@ -70,7 +75,7 @@ static int fs_pipe_chown(vnode_t * vnode, uid_t owner, gid_t group);
 static int fs_pipe_get_vnode(struct fs_superblock * sb, ino_t * vnode_num,
                              vnode_t ** vnode);
 
-vnode_ops_t fs_pipe_ops = {
+static vnode_ops_t fs_pipe_ops = {
     .lock = fs_enotsup_lock,
     .release = fs_enotsup_release,
     .write = fs_pipe_write,
@@ -89,7 +94,15 @@ vnode_ops_t fs_pipe_ops = {
     .chown = fs_pipe_chown,
 };
 
-struct fs_superblock fs_pipe_sb = {
+static struct fs fs_pipe_fs = {
+    .fsname = "pipefs",
+    .mount = NULL,
+    .umount = NULL,
+    .sbl_head = NULL
+};
+
+static struct fs_superblock fs_pipe_sb = {
+    .fs = &fs_pipe_fs,
     .get_vnode = fs_pipe_get_vnode,
     .delete_vnode = fs_pipe_destroy,
 };
@@ -166,15 +179,11 @@ int fs_pipe_cproc_creat(struct files_struct * files, int fildes[2], size_t len)
     pipe->group = curproc->egid;
 
     /* Init vnode */
-    vnode->vn_num = 0;
+    fs_vnode_init(vnode, 0, &fs_pipe_sb, &fs_pipe_ops);
     vrefset(vnode, 2); /* Two file descripts by default. */
-    vnode->vn_mountpoint = vnode;
-    vnode->vn_prev_mountpoint = vnode;
     vnode->vn_len = len;
     vnode->vn_mode = S_IFIFO | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP;
     vnode->vn_specinfo = pipe;
-    vnode->sb = NULL; /* TODO Must be set? */
-    vnode->vnode_ops = &fs_pipe_ops;
 
     /* Init file descriptors */
     init_file(file0, vnode, pipe, O_RDONLY);
@@ -212,7 +221,7 @@ ssize_t fs_pipe_write(file_t * file, const void * buf, size_t count)
     for (i = 0; i < count;) {
         if (queue_push(&pipe->q, &buf[i]))
             i++;
-        sched_current_thread_yield(1);
+        sched_current_thread_yield(PIPE_YIELD_STRATEGY);
     }
 
     return count;
@@ -229,7 +238,7 @@ ssize_t fs_pipe_read(file_t * file, void * buf, size_t count)
     for (i = 0; i < count;) {
         if (queue_pop(&pipe->q, &buf[i]))
             i++;
-        sched_current_thread_yield(1);
+        sched_current_thread_yield(PIPE_YIELD_STRATEGY);
     }
 
     return count;

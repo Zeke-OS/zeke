@@ -336,7 +336,7 @@ void sched_sleep_current_thread(int permanent)
     }
 }
 
-void sched_current_thread_yield(int sleep_flag)
+void sched_current_thread_yield(enum sched_eyield_strategy strategy)
 {
     if (!current_thread || !(*priority_queue.a))
         return;
@@ -344,7 +344,7 @@ void sched_current_thread_yield(int sleep_flag)
     if ((*priority_queue.a)->id == current_thread->id)
         heap_reschedule_root(&priority_queue, NICE_YIELD);
 
-    if (sleep_flag)
+    if (strategy == SCHED_YIELD_IMMEDIATE)
         idle_sleep();
 
     /* TODO User may expect this function to yield immediately which doesn't

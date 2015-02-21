@@ -54,7 +54,11 @@ static int devfs_umount(struct fs_superblock * fs_sb);
 static int dev_ioctl(file_t * file, unsigned request,
         void * arg, size_t arg_len);
 
-const vnode_ops_t * devfs_vnode_ops;
+vnode_ops_t devfs_vnode_ops = {
+    .write = dev_write,
+    .read = dev_read,
+    .ioctl = dev_ioctl,
+};
 
 static fs_t devfs_fs = {
     .fsname = DEVFS_FSNAME,
@@ -72,23 +76,10 @@ int devfs_init(void)
     SUBSYS_DEP(ramfs_init);
     SUBSYS_INIT("devfs");
 
-    vnode_ops_t * vnops;
-
-    vnops = kmalloc(sizeof(vnode_ops_t));
-    if (!vnops) {
-        panic("devfs_init(): ENOMEM\n");
-    }
-
     /*
-     * Create a vnops struct.
-     * We want to inherit ops from ramfs and change pointers to overridden
-     * functions.
+     * Inherit most of vnops from ramfs.
      */
-    memcpy(vnops, &ramfs_vnode_ops, sizeof(vnode_ops_t));
-    vnops->write = dev_write;
-    vnops->read = dev_read;
-    vnops->ioctl = dev_ioctl;
-    devfs_vnode_ops = vnops;
+    fs_inherit_vnops(&devfs_vnode_ops, &ramfs_vnode_ops);
 
     vn_devfs = fs_create_pseudofs_root(DEVFS_FSNAME, VDEV_MJNR_DEVFS);
     if (!vn_devfs)
@@ -132,7 +123,7 @@ int dev_make(struct dev_info * devnfo, uid_t uid, gid_t gid, int perms,
         return retval;
 
     /* Replace ops with our own */
-    res->vnode_ops = (struct vnode_ops *)(devfs_vnode_ops);
+    res->vnode_ops = &devfs_vnode_ops;
 
     res->vnode_ops->chown(res, uid, gid);
 
