@@ -1,0 +1,17 @@
+comment "Optional applications"
+
+menu "Testing"
+
+config configTESTS_LIBC
+    bool "Libc unit tests"
+    default n
+
+config configTESTS_MMAN
+    bool "Memory management tests (mmap)"
+    default n
+
+config configTESTS_TTY
+    bool "TTY tests"
+    default n
+
+endmenu

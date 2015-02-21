@@ -8,10 +8,14 @@ menu "Kernel"
 source "kern/Kconfig"
 endmenu
 
-menu "Lib"
+menu "lib"
 source "lib/Kconfig"
 endmenu
 
-menu "Sbin"
+menu "sbin"
 source sbin/Kconfig
+endmenu
+
+menu "opt"
+source opt/Kconfig
 endmenu

@@ -7,7 +7,7 @@ hal-SRC-$(configUART) += hal/uart.c
 hal-SRC-$(configFB) += $(wildcard hal/fb/*.c)
 
 # Target model specific modules
-ifdef configBCM2835
+ifeq ($(configBCM2835),y)
 	MEMMAP = memmap_bcm2835.ld
 	STARTUP = hal/arm11/arm11_startup.S
 	hal-ASRC-y += $(wildcard hal/bcm2835/*.S)
@@ -23,7 +23,7 @@ ifdef configBCM2835
 	hal-SRC-$(configRPI_EMMC) += hal/rpi/rpi_emmc.c
 	hal-SRC-$(configRPI_HW)   += hal/rpi/rpi_hw.c
 endif
-ifdef configJZ4780
+ifeq ($(configJZ4780),y)
 	MEMMAP = memmap_jz4780.ld
 	STARTUP = hal/mips32/mips32_startup.S
 endif

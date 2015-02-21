@@ -1,4 +1,14 @@
-DIRS := libc mman tty
+DIRS =#
+ifeq ($(configTESTS_LIBC),y)
+DIRS += libc
+endif
+ifeq ($(configTESTS_MMAN),y)
+DIRS += mman
+endif
+ifeq ($(configTESTS_TTY),y)
+DIRS += tty
+endif
+
 CLEANDIRS := $(patsubst %,%.clean,$(subst :, ,$(DIRS)))
 
 all: $(DIRS)
