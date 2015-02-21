@@ -620,7 +620,11 @@ static int sys_proc_wait(void * user_args)
         ksignal_sigwait(&retval, &set);
         /* Thus we are doing that :( \/ */
 #endif
-        idle_sleep();
+        /*
+         * idle_sleep();
+         * yield seems to work better.
+         */
+        sched_current_thread_yield(0);
 
         /*
          * TODO In some cases we have to return early without waiting.
