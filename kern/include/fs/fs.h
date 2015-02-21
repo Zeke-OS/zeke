@@ -577,6 +577,16 @@ int fs_chown_curproc(int fildes, uid_t owner, gid_t group);
 vnode_t * fs_create_pseudofs_root(const char * fsname, int majornum);
 
 /**
+ * Inherit unset vnops from another file system.
+ * @param dest_vnops is a vnode_ops struct containing pointers to vnops that
+ *                   are actually implemented in the target file system
+ *                   and other functions pointers shall be set to NULL.
+ * @param base_vnops is the source used for vnops that are unimplemented in the
+ *                   target file system.
+ */
+void fs_inherit_vnops(vnode_ops_t * dest_vnops, const vnode_ops_t * base_vnops);
+
+/**
  * Init a vnode.
  */
 void fs_vnode_init(vnode_t * vnode, ino_t vn_num, struct fs_superblock * sb,

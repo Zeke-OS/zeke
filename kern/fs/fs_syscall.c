@@ -89,7 +89,12 @@ static int sys_read(void * user_args)
         set_errno(-retval);
         retval = -1;
     } else {
-        copyout(buf, args.buf, retval);
+        err = copyout(buf, args.buf, retval);
+        if (err) {
+            set_errno(-err);
+            retval = -1;
+            goto out;
+        }
     }
 
 out:

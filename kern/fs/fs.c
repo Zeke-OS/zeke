@@ -525,41 +525,19 @@ out:
 int fs_fildes_cproc_next(file_t * new_file, int start)
 {
     files_t * files = curproc->files;
-#if 0
-    int new_count;
-#endif
 
     if (!new_file)
         return -EBADF;
 
     if (start > files->count - 1)
         return -EMFILE;
-#if 0
-retry:
-#endif
+
     for (int i = start; i < files->count; i++) {
         if (!(files->fd[i])) {
             curproc->files->fd[i] = new_file;
             return i;
         }
     }
-
-    /* TODO Until we have a good idea how to handle concurrency on this it's
-     * better to follow a static limit. */
-#if 0
-    /* Extend fd array */
-    new_count = files->count + files->count / 2;
-    files = krealloc(files, SIZEOF_FILES(new_count));
-    if (files) {
-        for (int i = files->count; i < new_count; i++)
-            files->fd[i] = NULL;
-
-        files->count = new_count;
-        curproc->files = files;
-
-        goto retry;
-    }
-#endif
 
     return -ENFILE;
 }
@@ -618,14 +596,15 @@ ssize_t fs_readwrite_cproc(int fildes, void * buf, size_t nbyte, int oper)
     vnode = file->vnode;
 
     /*
-     * Check that file is opened for correct mode, the vnode exist and we have
-     * ops struct for the vnode.
+     * Check that file is opened with a correct mode and the vnode exist.
      */
-    if (!(file->oflags & oper) || !vnode || !(vnode->vnode_ops)) {
+    if (!(file->oflags & oper) || !vnode) {
         retval = -EBADF;
         goto out;
     }
 
+    KASSERT((oper & O_ACCMODE) != (O_RDONLY | O_WRONLY),
+            "Only read or write selected");
 #if 0
     if ((oper & O_ACCMODE) == (O_RDONLY | O_WRONLY)) {
         /* Invalid operation code */
@@ -1009,13 +988,13 @@ out:
 
 vnode_t * fs_create_pseudofs_root(const char * fsname, int majornum)
 {
+    int err;
+    vnode_t * rootnode = kcalloc(1, sizeof(vnode_t));
+
     /*
      * We use a little trick here and create a temporary vnode that will be
      * destroyed after succesful mount.
      */
-
-    int err;
-    vnode_t * rootnode = kcalloc(1, sizeof(vnode_t));
 
     if (!rootnode)
         return NULL;
@@ -1057,6 +1036,18 @@ void fs_vnode_init(vnode_t * vnode, ino_t vn_num, struct fs_superblock * sb,
     mtx_init(&vnode->vn_lock, VN_LOCK_MODES);
 }
 
+void fs_inherit_vnops(vnode_ops_t * dest_vnops, const vnode_ops_t * base_vnops)
+{
+    void ** dest = (void **)dest_vnops;
+    void ** base = (void **)base_vnops;
+    const size_t fn_count = sizeof(vnode_ops_t) / sizeof(void *);
+
+    for (size_t i = 0; i < fn_count; i++) {
+        if (!dest[i])
+            dest[i] = base[i];
+    }
+}
+
 #define KERROR_VREF_FMT(_STR_) "%s(%s:%u): " _STR_
 #define KERROR_VREF(_LVL_, _FMT_, ...) \
     KERROR(_LVL_, KERROR_VREF_FMT(_FMT_), __func__, \
@@ -1083,7 +1074,8 @@ int vref(vnode_t * vnode)
     prev = atomic_read(&vnode->vn_refcount);
     if (prev < 0) {
 #if configFS_VREF_DEBUG
-        KERROR_VREF(KERROR_ERR, "Failed, vnode will be freed soon (%d)\n",
+        KERROR_VREF(KERROR_ERR, "Failed, vnode will be freed soon or it's "
+                                "orphan (%d)\n",
                     prev);
 #endif
         return -ENOLINK;

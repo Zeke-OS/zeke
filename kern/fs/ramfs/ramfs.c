@@ -159,7 +159,7 @@ fs_t ramfs_fs = {
     .fsname = RAMFS_FSNAME,
     .mount = ramsfs_mount,
     .umount = ramfs_umount,
-    .sbl_head = 0
+    .sbl_head = NULL
 };
 
 /**

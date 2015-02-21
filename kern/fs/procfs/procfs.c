@@ -52,13 +52,16 @@ static int procfs_updatedir(vnode_t * dir);
 static int create_status_file(vnode_t * dir, const proc_info_t * proc);
 
 
-static const vnode_ops_t * procfs_vnode_ops;
+static vnode_ops_t procfs_vnode_ops = {
+    .read = procfs_read,
+    .write = procfs_write,
+};
 
 static fs_t procfs_fs = {
     .fsname = PROCFS_FSNAME,
     .mount = procfs_mount,
     .umount = procfs_umount,
-    .sbl_head = 0
+    .sbl_head = NULL
 };
 
 /* There is only one procfs, but it can be mounted multiple times */
@@ -72,22 +75,10 @@ int procfs_init(void)
     SUBSYS_DEP(ramfs_init);
     SUBSYS_INIT("procfs");
 
-    vnode_ops_t * vnops;
-
-    vnops = kmalloc(sizeof(vnode_ops_t));
-    if (!vnops) {
-        panic(PANIC_MSG "ENOMEM\n");
-    }
-
     /*
-     * Create a vnops struct.
-     * We want to inherit ops from ramfs and override some function
-     * implementations.
+     * Inherit unimplemented vnops from ramfs.
      */
-    memcpy(vnops, &ramfs_vnode_ops, sizeof(vnode_ops_t));
-    vnops->read = procfs_read;
-    vnops->write = procfs_write;
-    procfs_vnode_ops = vnops;
+    fs_inherit_vnops(&procfs_vnode_ops, &ramfs_vnode_ops);
 
     vn_procfs = fs_create_pseudofs_root(PROCFS_FSNAME, VDEV_MJNR_PROCFS);
     fs_register(&procfs_fs);
@@ -329,7 +320,7 @@ static int create_status_file(vnode_t * pdir, const proc_info_t * proc)
     }
 
     vn->vn_specinfo = spec;
-    vn->vnode_ops = (struct vnode_ops *)(procfs_vnode_ops);
+    vn->vnode_ops = &procfs_vnode_ops;
 
     vrele(vn);
 
