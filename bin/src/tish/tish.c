@@ -206,18 +206,17 @@ static void forkexec(char * path, char ** args)
     static char * argv[NARG_MAX];
     size_t argc;
     pid_t pid;
-    const char failmsg[] = "Fork failed\n";
 
     argv[0] = path;
     argc = parse_args(argv, args, num_elem(argv) - 1);
     if (argc == 0) {
-        fprintf(stderr, "%s", failmsg);
+        fprintf(stderr, "Parsing arguments failed\n");
         return;
     }
 
     pid = fork();
     if (pid == -1) {
-        fprintf(stderr, "%s", failmsg);
+        perror("Fork failed");
     } else if (pid == 0) {
         int err;
         err = execvp(path, argv);
@@ -225,7 +224,7 @@ static void forkexec(char * path, char ** args)
         if (err)
             perror("Exec failed");
 
-        _exit(1); /* TODO Figure out why exit(1) fails */
+        _exit(1);
     } else {
         int status;
 
