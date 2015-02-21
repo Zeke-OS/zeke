@@ -362,6 +362,9 @@ void vrfree(struct buf * bp)
     size_t iblock;
     const size_t bcount = VREG_PCOUNT(bp->b_bufsize);
 
+    /*
+     * TODO Locking this doesn't actually provide much safety.
+     */
     mtx_lock(&bp->lock);
     bp->refcount--;
     if (bp->refcount > 0) {
