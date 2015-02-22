@@ -497,6 +497,10 @@ perms_ok:
         goto out;
     }
 
+    retval = vnode->vnode_ops->file_opened(curproc, vnode);
+    if (retval < 0)
+        goto out;
+
     new_fildes = kcalloc(1, sizeof(file_t));
     if (!new_fildes) {
         retval = -ENOMEM;
@@ -571,13 +575,16 @@ file_t * fs_fildes_ref(files_t * files, int fd, int count)
     return file;
 }
 
-int fs_fildes_close_cproc(int fildes)
+int fs_fildes_close(struct proc_info * p, int fildes)
 {
-    if (!fs_fildes_ref(curproc->files, fildes, 0))
+    file_t * fd = fs_fildes_ref(p->files, fildes, 1);
+    if (!fd)
         return -EBADF;
 
-    fs_fildes_ref(curproc->files, fildes, -1);
-    curproc->files->fd[fildes] = NULL;
+    fd->vnode->vnode_ops->file_closed(p, fd);
+
+    fs_fildes_ref(p->files, fildes, -2);
+    p->files->fd[fildes] = NULL;
 
     return 0;
 }

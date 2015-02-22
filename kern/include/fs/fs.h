@@ -87,6 +87,8 @@
 
 /* End of macros **************************************************************/
 
+struct proc_info;
+
 /* Types for buffer pointer storage object in vnode. */
 SPLAY_HEAD(bufhd_splay, buf);
 struct bufhd {
@@ -275,6 +277,32 @@ typedef struct vnode_ops {
      * @return          0 if succeed; Otherwise a negative errno is returned.
      */
     int (*ioctl)(file_t * file, unsigned request, void * arg, size_t arg_len);
+    /**
+     * File opened callback.
+     * @param p     is the process that called fs_fildes_create_cproc() for
+     *              file.
+     * @param vnode is the vnode that will be opened and referenced by
+     *              a new file descriptor.
+     * @return      Default action is to return 0 but negative errno can be
+     *              returned to indicate an error and cancel the file opening
+     *              procedure.
+     */
+    int (*file_opened)(struct proc_info * p, vnode_t * vnode);
+    /**
+     * File closed callback.
+     * This function is called whenever a process closes a file. This function
+     * is called before actual file descriptor close operation is commited,
+     * allowing fs driver to access fd for the last time.
+     *
+     * We don't likr file opening and closing because we believe a file system
+     * is a database like thing not a damn tape drive. Reason to have these
+     * functions is mainly to handle TTY connections nicely.
+     * @note Process closing a file might not be the only process helding
+     *       a reference to the file.
+     * @param p     is the process that called fs_fildes_close_cproc() for file.
+     * @param file  is the file that was closed by p.
+     */
+    void (*file_closed)(struct proc_info * p, file_t * file);
     /* Directory file operations
      * ------------------------- */
     /**
@@ -524,7 +552,7 @@ file_t * fs_fildes_ref(files_t * files, int fd, int count);
  * @return  0 if file was closed;
  *          Otherwise a negative value representing errno.
  */
-int fs_fildes_close_cproc(int fildes);
+int fs_fildes_close(struct proc_info * p, int fildes);
 
 /**
  * Read or write to a open file of the current process.
@@ -665,13 +693,15 @@ void vunref(vnode_t * vnode);
  */
 void fs_vnode_cleanup(vnode_t * vnode);
 
-/* Not sup vnops */
+/* Not sup vnops (in nofs.c) */
 int fs_enotsup_lock(file_t * file);
 int fs_enotsup_release(file_t * file);
 ssize_t fs_enotsup_write(file_t * file, const void * buf, size_t count);
 ssize_t fs_enotsup_read(file_t * file, void * buf, size_t count);
 int fs_enotsup_ioctl(file_t * file, unsigned request, void * arg,
                      size_t arg_len);
+int fs_enotsup_file_opened(struct proc_info * p, vnode_t * vnode);
+void fs_enotsup_file_closed(struct proc_info * p, file_t * file);
 int fs_enotsup_create(vnode_t * dir, const char * name, mode_t mode,
                       vnode_t ** result);
 int fs_enotsup_mknod(vnode_t * dir, const char * name, int mode,

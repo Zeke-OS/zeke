@@ -271,7 +271,7 @@ static int sys_close(void * p)
     int err;
     int fildes = (int)p;
 
-    err = fs_fildes_close_cproc(fildes);
+    err = fs_fildes_close(curproc, fildes);
     if (err) {
         set_errno(-err);
         return -1;
@@ -387,7 +387,7 @@ static int sys_fcntl(void * user_args)
         }
 
         if (curproc->files->fd[new_fd]) {
-            if (fs_fildes_close_cproc(new_fd)) {
+            if (fs_fildes_close(curproc, new_fd)) {
                 set_errno(EIO);
                 goto out;
             }
@@ -400,7 +400,7 @@ static int sys_fcntl(void * user_args)
         }
         if (new_fd != args.third.ival ||
             !fs_fildes_ref(curproc->files, new_fd, 1)) {
-            fs_fildes_close_cproc(new_fd);
+            fs_fildes_close(curproc, new_fd);
             set_errno(EIO);
             goto out;
         }

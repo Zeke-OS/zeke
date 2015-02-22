@@ -38,6 +38,7 @@
 #include <kstring.h>
 #include <errno.h>
 #include <kerror.h>
+#include <proc.h>
 #include <fs/ramfs.h>
 #include <fs/devfs.h>
 #include <fs/dev_major.h>
@@ -156,14 +157,17 @@ void dev_destroy(struct dev_info * devnfo)
 static int devfs_delete_vnode(vnode_t * vnode)
 {
     struct dev_info * devnfo = (struct dev_info *)vnode->vn_specinfo;
-    int err1 = 0, err2;
+    int err;
 
     if (devnfo->delete_vnode_callback)
-        err1 = devnfo->delete_vnode_callback(devnfo);
-    err2 = ramfs_delete_vnode(vnode);
+        devnfo->delete_vnode_callback(devnfo);
+    err = ramfs_delete_vnode(vnode);
 
-    /* TODO Not sure if this is quite clever */
-    return (err1) ? err1 : err2;
+    return err;
+}
+
+static void devfs_file_closed(struct proc_info * p, file_t * file)
+{
 }
 
 const char * devtoname(struct vnode * dev)

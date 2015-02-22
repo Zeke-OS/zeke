@@ -73,7 +73,12 @@ struct dev_info {
      * This function is called if set and vnode deletion is triggered by
      * one of the vnode release functions.
      */
-    int (*delete_vnode_callback)(struct dev_info * devnfo);
+    void (*delete_vnode_callback)(struct dev_info * devnfo);
+
+    /**
+     * This function is called whenever a file is closed.
+     */
+    void (*file_closed_callback)(struct proc_info * p, struct dev_info * devnfo);
 };
 
 void _devfs_create_specials(void);

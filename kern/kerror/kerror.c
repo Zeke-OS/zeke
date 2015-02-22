@@ -47,27 +47,12 @@ const char * const _kernel_panic_msg = "Oops, Kernel panic\n";
 static ssize_t kerror_fdwrite(file_t * file, const void * buf, size_t count);
 
 vnode_ops_t kerror_vops = {
-    .lock = fs_enotsup_lock,
-    .release = fs_enotsup_release,
     .write = kerror_fdwrite,
-    .read = fs_enotsup_read,
-    .ioctl = fs_enotsup_ioctl,
-    .create = fs_enotsup_create,
-    .mknod = fs_enotsup_mknod,
-    .lookup = fs_enotsup_lookup,
-    .link = fs_enotsup_link,
-    .unlink = fs_enotsup_unlink,
-    .mkdir = fs_enotsup_mkdir,
-    .rmdir = fs_enotsup_rmdir,
-    .readdir = fs_enotsup_readdir,
-    .stat = fs_enotsup_stat,
-    .chmod = fs_enotsup_chmod,
-    .chown = fs_enotsup_chown,
 };
 
 vnode_t kerror_vnode = {
     .vn_num = 0,
-    .vn_refcount = 1,
+    .vn_refcount = ATOMIC_INIT(1),
     .vn_len = SIZE_MAX,
     .vnode_ops = &kerror_vops
 };
@@ -87,6 +72,8 @@ int kerror_init(void)
     SUBSYS_DEP(fb_init);
 #endif
     SUBSYS_INIT("kerror logger");
+
+    fs_inherit_vnops(&kerror_vops, &nofs_vnode_ops);
 
     /*
      * We can now change from klogger buffer to the actual logger selected at

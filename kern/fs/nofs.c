@@ -31,6 +31,7 @@
  */
 
 #include <errno.h>
+#include <proc.h>
 #include <fs/fs.h>
 
 const vnode_ops_t nofs_vnode_ops = {
@@ -39,6 +40,8 @@ const vnode_ops_t nofs_vnode_ops = {
     .read = fs_enotsup_read,
     .write = fs_enotsup_write,
     .ioctl = fs_enotsup_ioctl,
+    .file_opened = fs_enotsup_file_opened,
+    .file_closed = fs_enotsup_file_closed,
     .create = fs_enotsup_create,
     .mknod = fs_enotsup_mknod,
     .lookup = fs_enotsup_lookup,
@@ -77,6 +80,15 @@ int fs_enotsup_ioctl(file_t * file, unsigned request, void * arg,
                      size_t arg_len)
 {
     return -ENOTTY;
+}
+
+int fs_enotsup_file_opened(proc_info_t * p, vnode_t * vnode)
+{
+    return 0;
+}
+
+void fs_enotsup_file_closed(proc_info_t * p, file_t * file)
+{
 }
 
 int fs_enotsup_create(vnode_t * dir, const char * name, mode_t mode,
