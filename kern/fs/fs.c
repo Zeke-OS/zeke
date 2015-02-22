@@ -969,6 +969,33 @@ out:
     return retval;
 }
 
+int fs_chflags_curproc(int fildes, fflags_t flags)
+{
+    vnode_t * vnode;
+    file_t * file;
+    int retval = 0;
+
+    file = fs_fildes_ref(curproc->files, fildes, 1);
+    if (!file)
+        return -EBADF;
+    vnode = file->vnode;
+
+    if (!((file->oflags & O_WRONLY) || !chkperm_vnode_cproc(vnode, W_OK))) {
+        retval = -EPERM;
+        goto out;
+    }
+    retval = priv_check(curproc, PRIV_VFS_SYSFLAGS);
+    if (retval)
+        goto out;
+
+    retval = vnode->vnode_ops->chflags(vnode, flags);
+
+out:
+    fs_fildes_ref(curproc->files, fildes, -1);
+
+    return retval;
+}
+
 int fs_chown_curproc(int fildes, uid_t owner, gid_t group)
 {
     vnode_t * vnode;

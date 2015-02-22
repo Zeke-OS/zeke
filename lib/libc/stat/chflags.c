@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    fchmodat.c
+ * @file    chflags.c
  * @author  Olli Vanhoja
  * @brief   File status functions.
  * @section LICENSE
@@ -36,18 +36,18 @@
 #include <time.h>
 #include <sys/stat.h>
 
-int fchmodat(int fd, const char * path, mode_t mode, int flag)
+int chflags(const char * path, unsigned long flags)
 {
     int err;
-    struct _fs_chmod_args args = {
-        .mode = mode
+    struct _fs_chflags_args args = {
+        .flags = flags
     };
 
-    args.fd = openat(fd, path, O_WRONLY, flag);
+    args.fd = open(path, O_WRONLY);
     if (args.fd < 0)
         return -1;
 
-    err = syscall(SYSCALL_FS_CHMOD, &args);
+    err = syscall(SYSCALL_FS_CHFLAGS, &args);
 
     close(args.fd);
 

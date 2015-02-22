@@ -95,6 +95,7 @@ int fatfs_rmdir(vnode_t * dir,  const char * name);
 int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off);
 int fatfs_stat(vnode_t * vnode, struct stat * buf);
 int fatfs_chmod(vnode_t * vnode, mode_t mode);
+int fatfs_chflags(vnode_t * vnode, fflags_t flags);
 int fatfs_chown(vnode_t * vnode, uid_t owner, gid_t group);
 
 #endif /* FATFS_H */

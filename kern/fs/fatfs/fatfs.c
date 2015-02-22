@@ -84,7 +84,7 @@ vnode_ops_t fatfs_vnode_ops = {
     .readdir = fatfs_readdir,
     .stat = fatfs_stat,
     .chmod = fatfs_chmod,
-    .chown = fatfs_chown
+    .chflags = fatfs_chflags,
 };
 
 GENERATE_INSERT_SB(fatfs_sb, fatfs_fs)
@@ -743,14 +743,42 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
 
 int fatfs_chmod(vnode_t * vnode, mode_t mode)
 {
-    /* TODO Add chmod support */
-    return -ENOTSUP;
+    struct fatfs_inode * in = get_inode_of_vnode(vnode);
+    BYTE attr = 0;
+    const BYTE mask = AM_RDO;
+    FRESULT fresult;
+
+    if (!(mode & (S_IWUSR | S_IWGRP | S_IWOTH)))
+        attr |= AM_RDO;
+
+    fresult = f_chmod(in->in_fpath, attr, mask);
+
+    return fresult2errno(fresult);
 }
 
-int fatfs_chown(vnode_t * vnode, uid_t owner, gid_t group)
+/*
+ * Note: Thre is practically two ways to set AM_RDO, either
+ * by using chmod() or by this chflags().
+ */
+int fatfs_chflags(vnode_t * vnode, fflags_t flags)
 {
-    /* chown can't be supported on FAT. */
-    return -ENOTSUP;
+    struct fatfs_inode * in = get_inode_of_vnode(vnode);
+    BYTE attr = 0;
+    const BYTE mask = AM_RDO | AM_ARC | AM_SYS | AM_HID;
+    FRESULT fresult;
+
+    if (flags & UF_SYSTEM)
+        attr |= AM_SYS;
+    if (flags & UF_ARCHIVE)
+        attr |= AM_ARC;
+    if (flags & UF_READONLY)
+        attr |= AM_RDO;
+    if (flags & UF_HIDDEN)
+        attr |= AM_HID;
+
+    fresult = f_chmod(in->in_fpath, attr, mask);
+
+    return fresult2errno(fresult);
 }
 
 /**

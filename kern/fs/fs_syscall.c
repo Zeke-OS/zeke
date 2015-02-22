@@ -736,6 +736,21 @@ static int sys_chmod(void * user_args)
     return fs_chmod_curproc(args.fd, args.mode);
 }
 
+static int sys_chflags(void * user_args)
+{
+    struct _fs_chflags_args args;
+    int err;
+
+    /* Copyin args struct */
+    err = copyin(user_args, &args, sizeof(args));
+    if (err) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    return fs_chflags_curproc(args.fd, args.flags);
+}
+
 /*
  * Only fchown() is implemented at the kernel level and rest must be implemented
  * in user space.
@@ -863,6 +878,7 @@ static const syscall_handler_t fs_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_STAT, sys_filestat),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_ACCESS, sys_access),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_CHMOD, sys_chmod),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_CHFLAGS, sys_chflags),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_CHOWN, sys_chown),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_UMASK, sys_umask),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_MOUNT, sys_mount),

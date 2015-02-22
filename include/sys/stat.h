@@ -155,6 +155,14 @@ struct _fs_chmod_args {
     mode_t mode;
 };
 
+/**
+ * Arguments for SYSCALL_FS_CHFLAGS
+ */
+struct _fs_chflags_args {
+    int fd;
+    fflags_t flags;
+};
+
 /** Arguments for SYSCALL_FS_MKDIR */
 struct _fs_mkdir_args {
     int fd;
@@ -179,7 +187,11 @@ struct _fs_umask_args {
 __BEGIN_DECLS
 int chmod(const char * path, mode_t mode);
 int fchmodat(int fd, const char * path, mode_t mode, int flag);
-int fchmod(int, mode_t);
+int fchmod(int fd, mode_t mode);
+
+int chflags(const char * path, unsigned long flags);
+int fchflags(int fd, unsigned long flags);
+
 int fstat(int fildes, struct stat * buf);
 int fstatat(int fd, const char * restrict path,
             struct stat * restrict buf, int flag);

@@ -379,7 +379,17 @@ typedef struct vnode_ops {
      */
     int (*stat)(vnode_t * vnode, struct stat * buf);
 
+    /**
+     * Change file mode.
+     */
     int (*chmod)(vnode_t * vnode, mode_t mode);
+    /**
+     * Change file flags.
+     */
+    int (*chflags)(vnode_t * vnode, fflags_t flags);
+    /**
+     * Change file owner and group.
+     */
     int (*chown)(vnode_t * vnode, uid_t owner, gid_t group);
 } vnode_ops_t;
 
@@ -601,6 +611,7 @@ int fs_mkdir_curproc(const char * pathname, mode_t mode);
 int fs_rmdir_curproc(const char * pathname);
 
 int fs_chmod_curproc(int fildes, mode_t mode);
+int fs_chflags_curproc(int fildes, fflags_t flags);
 int fs_chown_curproc(int fildes, uid_t owner, gid_t group);
 
 /**
@@ -714,6 +725,7 @@ int fs_enotsup_rmdir(vnode_t * dir,  const char * name);
 int fs_enotsup_readdir(vnode_t * dir, struct dirent * d, off_t * off);
 int fs_enotsup_stat(vnode_t * vnode, struct stat * buf);
 int fs_enotsup_chmod(vnode_t * vnode, mode_t mode);
+int fs_enotsup_chflags(vnode_t * vnode, fflags_t flags);
 int fs_enotsup_chown(vnode_t * vnode, uid_t owner, gid_t group);
 
 #endif /* FS_H */

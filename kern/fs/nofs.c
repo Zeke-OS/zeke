@@ -52,7 +52,8 @@ const vnode_ops_t nofs_vnode_ops = {
     .readdir = fs_enotsup_readdir,
     .stat = fs_enotsup_stat,
     .chmod = fs_enotsup_chmod,
-    .chown = fs_enotsup_chown
+    .chflags = fs_enotsup_chflags,
+    .chown = fs_enotsup_chown,
 };
 
 /* Not sup vnops */
@@ -139,6 +140,11 @@ int fs_enotsup_stat(vnode_t * vnode, struct stat * buf)
 }
 
 int fs_enotsup_chmod(vnode_t * vnode, mode_t mode)
+{
+    return -ENOTSUP;
+}
+
+int fs_enotsup_chflags(vnode_t * vnode, fflags_t flags)
 {
     return -ENOTSUP;
 }

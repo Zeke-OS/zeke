@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    stat.c
+ * @file    fchmod.c
  * @author  Olli Vanhoja
  * @brief   File status functions.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,20 +36,15 @@
 #include <time.h>
 #include <sys/stat.h>
 
-int fchmodat(int fd, const char * path, mode_t mode, int flag)
+int fchmod(int fd, mode_t mode)
 {
     int err;
     struct _fs_chmod_args args = {
-        .mode = mode
+        .fd = fd,
+        .mode = mode,
     };
 
-    args.fd = openat(fd, path, O_WRONLY, flag);
-    if (args.fd < 0)
-        return -1;
-
     err = syscall(SYSCALL_FS_CHMOD, &args);
-
-    close(args.fd);
 
     return err;
 }
