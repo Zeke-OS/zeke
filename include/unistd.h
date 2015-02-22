@@ -401,6 +401,43 @@ int dup2(int fildes, int fildes2);
 int pipe(int fildes[2]);
 
 unsigned sleep(unsigned seconds);
+
+/**
+ * @addtogroup getopt
+ * Parse command-line options
+ * @{
+ */
+
+
+/**
+ * if error message should be printed.
+ */
+extern int opterr;
+
+/**
+ * index into parent argv vector.
+ */
+extern int optind;
+
+/**
+ * character checked for validity.
+ */
+extern int optopt;
+
+/**
+ * reset getopt.
+ */
+extern int optreset;
+
+/**
+ * Parse command-line options.
+ */
+int getopt(int nargc, char * const nargv[], const char * ostr);
+
+/**
+ * @}
+ */
+
 __END_DECLS
 #endif /* !KERNEL_INTERNAL */
 
