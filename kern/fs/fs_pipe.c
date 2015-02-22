@@ -37,6 +37,7 @@
 #include <fcntl.h>
 #include <libkern.h>
 #include <kerror.h>
+#include <kinit.h>
 #include <buf.h>
 #include <kmalloc.h>
 #include <queue_r.h>
@@ -76,19 +77,8 @@ static int fs_pipe_get_vnode(struct fs_superblock * sb, ino_t * vnode_num,
                              vnode_t ** vnode);
 
 static vnode_ops_t fs_pipe_ops = {
-    .lock = fs_enotsup_lock,
-    .release = fs_enotsup_release,
     .write = fs_pipe_write,
     .read = fs_pipe_read,
-    .ioctl = fs_enotsup_ioctl,
-    .create = fs_enotsup_create,
-    .mknod = fs_enotsup_mknod,
-    .lookup = fs_enotsup_lookup,
-    .link = fs_enotsup_link,
-    .unlink = fs_enotsup_unlink,
-    .mkdir = fs_enotsup_mkdir,
-    .rmdir = fs_enotsup_rmdir,
-    .readdir = fs_enotsup_readdir,
     .stat = fs_pipe_stat,
     .chmod = fs_pipe_chmod,
     .chown = fs_pipe_chown,
@@ -106,6 +96,17 @@ static struct fs_superblock fs_pipe_sb = {
     .get_vnode = fs_pipe_get_vnode,
     .delete_vnode = fs_pipe_destroy,
 };
+
+int fs_pipe_init(void) __attribute__((constructor));
+int fs_pipe_init(void)
+{
+    SUBSYS_DEP(ramfs_init);
+    SUBSYS_INIT("fs_pipe");
+
+    fs_inherit_vnops(&fs_pipe_ops, &nofs_vnode_ops);
+
+    return 0;
+}
 
 static void init_file(file_t * file, vnode_t * vn, struct stream_pipe * pipe,
                       int oflags)
