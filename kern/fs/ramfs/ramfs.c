@@ -185,6 +185,8 @@ const vnode_ops_t ramfs_vnode_ops = {
     .chown = ramfs_chown
 };
 
+GENERATE_INSERT_SB(ramfs_sb, ramfs_fs)
+
 int ramfs_init(void) __attribute__((constructor));
 int ramfs_init(void)
 {
@@ -798,31 +800,6 @@ static vnode_t * create_root(ramfs_sb_t * ramfs_sb)
     vrefset(vn, 2);
 
     return vn;
-}
-
-/**
- * Insert a ramfs_sb_t at the end of the sb mount linked list.
- * @param ramfs_sb is a pointer to a ramfs superblock.
- */
-static void insert_superblock(ramfs_sb_t * ramfs_sb)
-{
-    superblock_lnode_t * curr = ramfs_fs.sbl_head;
-
-#if configRAMFS_DEBUG
-    KERROR(KERROR_DEBUG, "insert_superblock()\n");
-#endif
-
-    /* Add as a first sb if no other mounts yet */
-    if (!curr) {
-        ramfs_fs.sbl_head = &(ramfs_sb->sbn);
-    } else {
-        /* else find the last sb on the linked list. */
-        while (curr->next) {
-            curr = curr->next;
-        }
-
-        curr->next = &(ramfs_sb->sbn);
-    }
 }
 
 /**
