@@ -31,7 +31,7 @@
  */
 
 #if !defined(__SOFTFP__) && !defined(__VFP_FP__) && !defined(__ARM_PCS)
-#error FPA is not supported anymore
+#warning FPA is not supported anymore
 #endif
 
 #ifdef __ARM_EABI__
@@ -40,8 +40,6 @@
 
 #include <machine/asm.h>
 #include <machine/setjmp.h>
-
-__FBSDID("$FreeBSD$");
 
 /*
  * C library -- setjmp, longjmp
