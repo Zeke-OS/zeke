@@ -51,6 +51,8 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
                         char * fpath, long vn_hash, int oflags);
 static vnode_t * create_root(fs_superblock_t * sb);
 static int fatfs_delete_vnode(vnode_t * vnode);
+static int fatfs_file_opened(struct proc_info * p, vnode_t * vnode);
+static void fatfs_file_closed(struct proc_info * p, file_t * file);
 static int fatfs_lookup(vnode_t * dir, const char * name, vnode_t ** result);
 static void init_fatfs_vnode(vnode_t * vnode, ino_t inum, mode_t mode,
                              long vn_hash, fs_superblock_t * sb);
@@ -72,6 +74,8 @@ struct fatfs_sb ** fatfs_sb_arr;
 vnode_ops_t fatfs_vnode_ops = {
     .write = fatfs_write,
     .read = fatfs_read,
+    .file_opened = fatfs_file_opened,
+    .file_closed = fatfs_file_closed,
     .create = fatfs_create,
     .mknod = fatfs_mknod,
     .lookup = fatfs_lookup,
@@ -265,6 +269,8 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
     in->in_fpath = fpath;
     vn = &in->in_vnode;
 
+    in->open_count = ATOMIC_INIT(0);
+
     memset(&fno, 0, sizeof(fno));
 
     if (oflags & O_DIRECTORY) {
@@ -373,6 +379,22 @@ static int fatfs_delete_vnode(vnode_t * vnode)
 {
     /* TODO Implementation of fatfs_delete_vnode() */
     return -ENOTSUP;
+}
+
+static int fatfs_file_opened(struct proc_info * p, vnode_t * vnode)
+{
+    struct fatfs_inode * in = get_inode_of_vnode(vnode);
+
+    atomic_inc(&in->open_count);
+
+    return 0;
+}
+
+static void fatfs_file_closed(struct proc_info * p, file_t * file)
+{
+    struct fatfs_inode * in = get_inode_of_vnode(file->vnode);
+
+    atomic_dec(&in->open_count);
 }
 
 /**

@@ -42,6 +42,7 @@
 struct fatfs_inode {
     vnode_t in_vnode;   /*!< vnode for this inode. */
     char * in_fpath;    /*!< Full path to this node from the sb root. */
+    atomic_t open_count;
 
     /**
      * file pointer or directory pointer, check in_vnode->vn_mode.
