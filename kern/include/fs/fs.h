@@ -574,7 +574,11 @@ int fs_rmdir_curproc(const char * pathname);
 int fs_chmod_curproc(int fildes, mode_t mode);
 int fs_chown_curproc(int fildes, uid_t owner, gid_t group);
 
-vnode_t * fs_create_pseudofs_root(const char * fsname, int majornum);
+/**
+ * Create a new pseudo fs root by inheriting ramfs implementation
+ * as a basis.
+ */
+vnode_t * fs_create_pseudofs_root(fs_t * newfs, int majornum);
 
 /**
  * Inherit unset vnops from another file system.

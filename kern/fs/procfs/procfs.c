@@ -80,7 +80,7 @@ int procfs_init(void)
      */
     fs_inherit_vnops(&procfs_vnode_ops, &ramfs_vnode_ops);
 
-    vn_procfs = fs_create_pseudofs_root(PROCFS_FSNAME, VDEV_MJNR_PROCFS);
+    vn_procfs = fs_create_pseudofs_root(&procfs_fs, VDEV_MJNR_PROCFS);
     fs_register(&procfs_fs);
     procfs_updatedir(vn_procfs);
 

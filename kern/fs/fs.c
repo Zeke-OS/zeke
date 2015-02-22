@@ -986,16 +986,17 @@ out:
     return retval;
 }
 
-vnode_t * fs_create_pseudofs_root(const char * fsname, int majornum)
+vnode_t * fs_create_pseudofs_root(fs_t * newfs, int majornum)
 {
     int err;
-    vnode_t * rootnode = kcalloc(1, sizeof(vnode_t));
+    vnode_t * rootnode;
 
     /*
      * We use a little trick here and create a temporary vnode that will be
      * destroyed after succesful mount.
      */
 
+    rootnode = kcalloc(1, sizeof(vnode_t));
     if (!rootnode)
         return NULL;
 
@@ -1008,7 +1009,7 @@ vnode_t * fs_create_pseudofs_root(const char * fsname, int majornum)
     if (err) {
         KERROR(KERROR_ERR,
                "Unable to create a pseudo fs root vnode for %s (%i)\n",
-               fsname, err);
+               newfs->fsname, err);
 
         return NULL;
     }
@@ -1017,8 +1018,14 @@ vnode_t * fs_create_pseudofs_root(const char * fsname, int majornum)
     rootnode->vn_prev_mountpoint = rootnode;
     rootnode->vn_mountpoint = rootnode;
 
-    /* TODO We can't currently use fsname for anything */
-
+    /* TODO The following is something we'd like to do but can't at the moment,
+     * it would allow us for example printing error and debug messages with a
+     * proper fsname.
+     */
+#if 0
+    newfs->sbl_head = rootnode->sb->fs->sbl_head;
+    rootnode->sb->fs = newfs;
+#endif
     rootnode->sb->vdev_id = DEV_MMTODEV(majornum, 0);
 
     return rootnode;

@@ -59,15 +59,21 @@ struct dev_info {
     void * opt_data; /*!< Optional device data internal to the driver. */
 
     ssize_t (*read)(struct dev_info * devnfo, off_t blkno,
-            uint8_t * buf, size_t bcount, int oflags);
+                    uint8_t * buf, size_t bcount, int oflags);
     ssize_t (*write)(struct dev_info * devnfo, off_t blkno,
-            uint8_t * buf, size_t bcount, int oflags);
+                     uint8_t * buf, size_t bcount, int oflags);
     /**
      * ioctl for the device driver.
      * This function is optional and can be NULL.
      */
     int (*ioctl)(struct dev_info * devnfo, uint32_t request,
-            void * arg, size_t arg_len);
+                 void * arg, size_t arg_len);
+
+    /**
+     * This function is called if set and vnode deletion is triggered by
+     * one of the vnode release functions.
+     */
+    int (*delete_vnode_callback)(struct dev_info * devnfo);
 };
 
 void _devfs_create_specials(void);

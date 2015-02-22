@@ -70,20 +70,35 @@ static fs_t devfs_fs = {
 /* There is only one devfs, but it can be mounted multiple times */
 vnode_t * vn_devfs;
 
+static int devfs_delete_vnode(vnode_t * vnode);
+
 int devfs_init(void) __attribute__((constructor));
 int devfs_init(void)
 {
+    struct fs_superblock * sb;
+
     SUBSYS_DEP(ramfs_init);
     SUBSYS_INIT("devfs");
 
     /*
-     * Inherit most of vnops from ramfs.
+     * Inherit ramfs and override what's needed.
      */
     fs_inherit_vnops(&devfs_vnode_ops, &ramfs_vnode_ops);
-
-    vn_devfs = fs_create_pseudofs_root(DEVFS_FSNAME, VDEV_MJNR_DEVFS);
+    vn_devfs = fs_create_pseudofs_root(&devfs_fs, VDEV_MJNR_DEVFS);
     if (!vn_devfs)
         return -ENOMEM;
+
+    /*
+     * It's perfectly ok to set a new delete_vnode() function
+     * as sb struct is always a fresh struct so altering it
+     * doesn't really break functionality for anyone else than us.
+     */
+    sb = vn_devfs->sb;
+    sb->delete_vnode = devfs_delete_vnode;
+
+    /*
+     * Finally register our creation with fs subsystem.
+     */
     fs_register(&devfs_fs);
 
     _devfs_create_specials();
@@ -136,6 +151,19 @@ int dev_make(struct dev_info * devnfo, uid_t uid, gid_t gid, int perms,
 void dev_destroy(struct dev_info * devnfo)
 {
     /* TODO Implementation of dev_destroy() */
+}
+
+static int devfs_delete_vnode(vnode_t * vnode)
+{
+    struct dev_info * devnfo = (struct dev_info *)vnode->vn_specinfo;
+    int err1 = 0, err2;
+
+    if (devnfo->delete_vnode_callback)
+        err1 = devnfo->delete_vnode_callback(devnfo);
+    err2 = ramfs_delete_vnode(vnode);
+
+    /* TODO Not sure if this is quite clever */
+    return (err1) ? err1 : err2;
 }
 
 const char * devtoname(struct vnode * dev)
