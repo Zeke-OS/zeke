@@ -172,6 +172,10 @@ static int tty_ioctl(struct dev_info * devnfo, uint32_t request,
         }
         break;
 
+    case IOCTL_TCSBRK:
+        /* NOP */
+        break;
+
     default:
         return -EINVAL;
     }

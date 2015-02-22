@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    termios.c
+ * @file    tcsetattr.c
  * @author  Olli Vanhoja
  * @brief   Termios.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,33 +33,6 @@
 #include <syscall.h>
 #include <sys/ioctl.h>
 #include <termios.h>
-
-speed_t cfgetispeed(const struct termios * termios_p)
-{
-    return termios_p->c_ispeed;
-}
-
-speed_t cfgetospeed(const struct termios * termios_p)
-{
-    return termios_p->c_ospeed;
-}
-
-int cfsetispeed(struct termios * termios_p, speed_t speed)
-{
-    termios_p->c_ispeed = speed;
-    return 0;
-}
-
-int cfsetospeed(struct termios * termios_p, speed_t speed)
-{
-    termios_p->c_ospeed = speed;
-    return 0;
-}
-
-int tcgetattr(int fildes, struct termios * termios_p)
-{
-    return _ioctl(fildes, IOCTL_GTERMIOS, termios_p, sizeof(struct termios));
-}
 
 int tcsetattr(int fildes, int optional_actions,
         const struct termios * termios_p)

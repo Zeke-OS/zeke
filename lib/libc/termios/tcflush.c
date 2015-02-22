@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    ioctl.h
+ * @file    tcflush.c
  * @author  Olli Vanhoja
- * @brief   Control devices.
+ * @brief   Termios.
  * @section LICENSE
  * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -28,56 +28,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************
- */
+*/
 
-/**
- * @addtogroup LIBC
- * @{
- */
+#include <syscall.h>
+#include <sys/ioctl.h>
+#include <termios.h>
 
-#ifndef IOCTL_H
-#define IOCTL_H
-
-#include <stddef.h>
-#include <stdint.h>
-
-/*
- * IOCTL request codes.
- * Get requests shall be odd and set request shall be even, this information can
- * be then used to optimize the syscall.
- */
-/* termio */
-#define IOCTL_GTERMIOS       1  /*!< Get termios struct. */
-#define IOCTL_STERMIOS       2  /*!< Set termios struct. */
-#define IOCTL_TTYFLUSH       3  /*!< TTY flush controls. */
-#define IOCTL_TCSBRK         4  /*!< Send a break. */
-/* dev */
-#define IOCTL_GETBLKSIZE    10  /*!< Get device block size. */
-#define IOCTL_GETBLKCNT     11  /*!< Get device block count. */
-/* pty */
-#define IOCTL_PTY_CREAT     50  /*!< Create a new pty master-slave pair. */
-
-struct _ioctl_get_args {
-    int fd;
-    unsigned request;
-    void * arg;
-    size_t arg_len;
-};
-
-#ifndef KERNEL_INTERNAL
-__BEGIN_DECLS
-
-/**
- * ioctl.
- * @note This is a non-POSIX implementation of ioctl.
- */
-int _ioctl(int fildes, unsigned request, void * arg, size_t arg_len);
-
-__END_DECLS
-#endif
-
-#endif /* IOCTL_H */
-
-/**
- * @}
- */
+int tcflush(int fildes, int queue_selector)
+{
+    return _ioctl(fildes, IOCTL_TTYFLUSH, &queue_selector, sizeof(int));
+}

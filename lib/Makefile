@@ -67,6 +67,7 @@ $(wildcard libc/stat/*.c) \
 $(wildcard libc/stdio/*.c) \
 $(wildcard libc/stdlib/*.c) \
 $(wildcard libc/string/*.c) \
+$(wildcard libc/termios/*.c) \
 $(wildcard libc/unistd/*.c) \
 $(wildcard libc/uchar/*.c) \
 $(wildcard libc/wchar/*.c) \
