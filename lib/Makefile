@@ -62,6 +62,7 @@ $(wildcard libc/inttypes/*.c) \
 $(wildcard libc/locale/*.c) \
 $(wildcard libc/malloc/*.c) \
 $(wildcard libc/pthreads/*.c) \
+$(wildcard libc/setjmp/*.c) \
 $(wildcard libc/signal/*.c) \
 $(wildcard libc/stat/*.c) \
 $(wildcard libc/stdio/*.c) \
@@ -73,6 +74,9 @@ $(wildcard libc/uchar/*.c) \
 $(wildcard libc/wchar/*.c) \
 $(wildcard libc/wctype/*.c) \
 $(wildcard libc/mman/*.c)
+
+libc-ASRC-$(configARCH_ARM) = \
+$(wildcard libc/setjmp/arm/*.S)
 ################################################################################
 # Available selections for source code files:
 SRC-	=# C sources

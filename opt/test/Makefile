@@ -1,3 +1,5 @@
+include $(ROOT_DIR)/genconfig/buildconf.mk
+
 DIRS =#
 ifeq ($(configTESTS_LIBC),y)
 DIRS += libc
