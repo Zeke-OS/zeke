@@ -5,7 +5,12 @@ IMG=zeke-rootfs.img
 function dir2img {
     local files=$(cat "$1/manifest" | sed "s|[^ ]*|$1/\0|g")
     mmd -i "$IMG" "$1"
-    mcopy -i "$IMG" -s $files "::$1"
+    for file in $files; do
+        local d=$(dirname $file | sed 's|^\./||')
+        mmd -i "$IMG" -D sS "$d"
+        echo "$d/$(basename $file)"
+        mcopy -i "$IMG" -s $file "::$d"
+    done
 }
 
 mkfs.msdos -C "$IMG" -F 16 16384
@@ -26,7 +31,3 @@ MANIFEST=$(find . -name manifest -exec dirname {} \;)
 for dir in $MANIFEST; do
     dir2img $dir
 done
-
-
-
-

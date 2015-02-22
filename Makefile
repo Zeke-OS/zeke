@@ -73,16 +73,19 @@ kernel.img: | tools $(AUTOCONF_H) lib
 	$(MAKE) -C kern all
 
 # target_comp: world - Compile user space stuff.
-world: lib bin sbin
-
-lib: $(AUTOCONF_H)
-	$(MAKE) -C lib all
+world: lib bin sbin usr
 
 bin: lib
 	$(MAKE) -C bin all
 
+lib: $(AUTOCONF_H)
+	$(MAKE) -C lib all
+
 sbin: lib
 	$(MAKE) -C sbin all
+
+usr: lib
+	$(MAKE) -C usr all
 
 # target_test: opttest - Target platform tests.
 opttest: lib
