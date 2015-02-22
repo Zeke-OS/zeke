@@ -30,15 +30,17 @@
  *******************************************************************************
  */
 
-#include <kstring.h>
-#include <kmalloc.h>
-#include <kerror.h>
-#include <errno.h>
-#include <proc.h>
+#include <sys/types.h>
+#include <fcntl.h>
 #include <sys/priv.h>
 #include <sys/ioctl.h>
 #include <termios.h>
 #include <fs/devfs.h>
+#include <errno.h>
+#include <kstring.h>
+#include <kmalloc.h>
+#include <kerror.h>
+#include <proc.h>
 #include <tty.h>
 
 static ssize_t tty_read(struct dev_info * devnfo, off_t blkno, uint8_t * buf,
@@ -125,7 +127,7 @@ static int tty_ioctl(struct dev_info * devnfo, uint32_t request,
         err = tty->ioctl(devnfo, request, arg, arg_len);
         if (err == 0 || err != -EINVAL)
             return err;
-    }
+    } /* otherwise check if we can handle it here */
 
     switch (request) {
     case IOCTL_GTERMIOS:
@@ -145,6 +147,29 @@ static int tty_ioctl(struct dev_info * devnfo, uint32_t request,
 
         memcpy(&(tty->conf), arg, sizeof(struct termios));
         tty->setconf(&tty->conf);
+        break;
+
+    /*
+     * This should be probably overriden and "optimized" in
+     * the low level driver. Also if there is any muxing on
+     * any lower level flush may do stupid things if done
+     * by this function.
+     */
+    case IOCTL_TTYFLUSH:
+        if (arg_len < sizeof(int)) {
+            return -EINVAL;
+        } else {
+            int control = (int)arg;
+            uint8_t buf[5];
+
+            switch (control) {
+            case TCIFLUSH:
+                while (tty->read(tty, 0, buf, sizeof(buf), O_NONBLOCK) >= 0);
+                break;
+            default:
+                return -EINVAL;
+            }
+        }
         break;
 
     default:

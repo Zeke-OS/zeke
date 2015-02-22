@@ -45,6 +45,9 @@ struct tty {
 
     void (* setconf)(struct termios * conf);
 
+    /**
+     * @param blkno can be used for tty muxing, see pty driver.
+     */
     ssize_t (*read)(struct tty * tty, off_t blkno, uint8_t * buf,
                     size_t bcount, int oflags);
 

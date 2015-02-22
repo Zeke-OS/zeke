@@ -272,9 +272,6 @@ struct _ds_priv_pcap {
 
 
 #ifdef KERNEL_INTERNAL
-#ifndef PROC_H
-#error proc.h must be included
-#endif
 
 struct proc_info;
 

@@ -49,6 +49,7 @@
 /* termio */
 #define IOCTL_GTERMIOS       1  /*!< Get termios struct. */
 #define IOCTL_STERMIOS       2  /*!< Set termios struct. */
+#define IOCTL_TTYFLUSH       3  /*!< TTY flush controls. */
 /* dev */
 #define IOCTL_GETBLKSIZE    10  /*!< Get device block size. */
 #define IOCTL_GETBLKCNT     11  /*!< Get device block count. */
