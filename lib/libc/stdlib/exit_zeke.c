@@ -30,11 +30,14 @@
  *******************************************************************************
 */
 
+#include <stdio.h>
 #include <syscall.h>
 #include <errno.h>
 
 void _exit(int status)
 {
+    fflush(stdout);
+
     errno = status;
     syscall(SYSCALL_PROC_EXIT, 0);
 }
