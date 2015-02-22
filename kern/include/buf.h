@@ -73,7 +73,7 @@ struct buf {
     size_t b_dirtyend;      /*!< Offset of end of dirty region. */
 
     /* Status */
-    unsigned b_flags;       /*!< Buffer control flags. */
+    unsigned long b_flags;  /*!< Buffer control flags. */
     int b_error;            /*!< Negative errno returned after I/O. */
     size_t b_resid;         /*!< words not transferred after an error. */
 

@@ -56,7 +56,7 @@ struct uart_port {
     unsigned uart_id;       /*!< ID that can be used by the hal level driver.
                              *   This id is not connected with the port_num.
                              */
-    unsigned flags;         /*!< Flags used by the UART abstraction layer. */
+    unsigned long flags;    /*!< Flags used by the UART abstraction layer. */
 
     /**
      * Initialize UART.
