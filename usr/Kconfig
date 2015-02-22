@@ -1,0 +1,5 @@
+comment "Multi-user util"
+
+config configUSR_GAMES
+    bool "Games"
+    default n

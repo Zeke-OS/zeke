@@ -29,6 +29,6 @@ include $(ROOT_DIR)/makefiles/user_head.mk
 BIN := games/banner
 
 # Source Files #################################################################
-games/banner-SRC-y := games/banner.c
+games/banner-SRC-$(configUSR_GAMES) := games/banner.c
 
 include $(ROOT_DIR)/makefiles/user_tail.mk

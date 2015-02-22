@@ -16,6 +16,10 @@ menu "sbin"
 source sbin/Kconfig
 endmenu
 
+menu "usr"
+source usr/Kconfig
+endmenu
+
 menu "opt"
 source opt/Kconfig
 endmenu
