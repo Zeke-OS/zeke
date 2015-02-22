@@ -243,6 +243,15 @@ typedef struct vnode_ops {
     int (*lock)(file_t * file);
     int (*release)(file_t * file);
     /**
+     * Read transfers bytes from file into buf.
+     * @param file      is a file stored in the file system.
+     * @param buf       is a buffer bytes are written to.
+     * @param count     is the number of bytes to be read.
+     * @return  Returns the number of bytes read; Otherwise a negative errno
+     *          is returned.
+     */
+    ssize_t (*read)(file_t * file, void * buf, size_t count);
+    /**
      * Write transfers bytes from buf into file.
      * Writing is begin from offset and ended at offset + count. buf must
      * therefore contain at least count bytes. If offset is past end of the
@@ -255,15 +264,6 @@ typedef struct vnode_ops {
      *          is returned.
      */
     ssize_t (*write)(file_t * file, const void * buf, size_t count);
-    /**
-     * Read transfers bytes from file into buf.
-     * @param file      is a file stored in the file system.
-     * @param buf       is a buffer bytes are written to.
-     * @param count     is the number of bytes to be read.
-     * @return  Returns the number of bytes read; Otherwise a negative errno
-     *          is returned.
-     */
-    ssize_t (*read)(file_t * file, void * buf, size_t count);
     /**
      * IO Control.
      * Only defined for devices and shall point to fs_enotsup_ioctl if not
@@ -403,6 +403,7 @@ static void insert_superblock(struct sb_type * sb)      \
     }                                                   \
 }
 
+extern const vnode_ops_t nofs_vnode_ops;
 
 /* VFS Function Prototypes */
 

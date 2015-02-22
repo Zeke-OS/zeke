@@ -41,7 +41,7 @@
 
 #define RAMFS_FSNAME            "ramfs"
 
-const vnode_ops_t ramfs_vnode_ops;
+extern vnode_ops_t ramfs_vnode_ops;
 
 /* fs ops */
 int ramsfs_mount(const char * source, uint32_t mode,

@@ -69,16 +69,12 @@ static struct fs fatfs_fs = {
  */
 struct fatfs_sb ** fatfs_sb_arr;
 
-const vnode_ops_t fatfs_vnode_ops = {
-    .lock = fs_enotsup_lock,
-    .release = fs_enotsup_release,
+vnode_ops_t fatfs_vnode_ops = {
     .write = fatfs_write,
     .read = fatfs_read,
     .create = fatfs_create,
     .mknod = fatfs_mknod,
     .lookup = fatfs_lookup,
-    .link = fs_enotsup_link,
-    .unlink = fs_enotsup_unlink,
     .mkdir = fatfs_mkdir,
     .rmdir = fatfs_rmdir,
     .readdir = fatfs_readdir,
@@ -100,6 +96,8 @@ int fatfs_init(void)
     fatfs_sb_arr = kcalloc(configFATFS_MAX_MOUNTS, sizeof(struct fatfs_sb *));
     if (!fatfs_sb_arr)
         return -ENOMEM;
+
+    fs_inherit_vnops(&fatfs_vnode_ops, &nofs_vnode_ops);
 
     err = ff_init();
     if (err)

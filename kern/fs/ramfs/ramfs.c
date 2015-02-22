@@ -164,14 +164,10 @@ fs_t ramfs_fs = {
 
 /**
  * Vnode operations implemented for ramfs.
- * @note Virtual function pointers not set here will be null pointers.
  */
-const vnode_ops_t ramfs_vnode_ops = {
-    .lock = fs_enotsup_lock,
-    .release = fs_enotsup_release,
+vnode_ops_t ramfs_vnode_ops = {
     .write = ramfs_write,
     .read = ramfs_read,
-    .ioctl = fs_enotsup_ioctl,
     .create = ramfs_create,
     .mknod = ramfs_mknod,
     .lookup = ramfs_lookup,
@@ -194,6 +190,8 @@ int ramfs_init(void)
     SUBSYS_INIT("ramfs");
 
     ramfs_vdev_minor = ATOMIC_INIT(0);
+
+    fs_inherit_vnops(&ramfs_vnode_ops, &nofs_vnode_ops);
 
     /* Register ramfs with vfs. */
     fs_register(&ramfs_fs);
