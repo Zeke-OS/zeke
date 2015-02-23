@@ -42,7 +42,7 @@ int setpriority(int which, id_t who, int prio)
     switch (which) {
     case PRIO_THREAD:
         {
-            struct _ds_set_priority ds = {
+            struct _sched_set_priority_args ds = {
                 .thread_id = who,
                 .priority = prio
             };

@@ -114,7 +114,7 @@ int sched_init(void)
         .stackSize  = sizeof(sched_idle_stack)
     };
     /* Create the idle task as task 0 */
-    struct _ds_pthread_create tdef_idle = {
+    struct _sched_pthread_create_args tdef_idle = {
         .thread   = &tid,
         .start    = idle_thread,
         .def      = &attr,

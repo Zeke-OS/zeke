@@ -138,7 +138,7 @@ struct rusage {
 /**
  * Argument struct for SYSCALL_SCHED_THREAD_SETPRIORITY
  */
-struct _ds_set_priority {
+struct _sched_set_priority_args {
     pthread_t thread_id;    /*!< Thread id */
     int priority;           /*!< Thread priority */
 };

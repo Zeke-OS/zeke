@@ -119,7 +119,7 @@ int kinit(void)
         .stackAddr  = (void *)(init_vmstack->b_mmu.paddr),
         .stackSize  = configUSRINIT_SSIZE
     };
-    struct _ds_pthread_create init_ds = {
+    struct _sched_pthread_create_args init_ds = {
         .thread     = 0, /* return value */
         .start      = uinit, /* We have to first get into user space to use exec
                               * and mount the rootfs.

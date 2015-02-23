@@ -682,7 +682,7 @@ static int sys_proc_exit(void * user_args)
  */
 static int sys_proc_getsetcred(void * user_args)
 {
-    struct _ds_proc_credctl cred;
+    struct _proc_credctl_args cred;
     uid_t ruid = curproc->uid;
     /*uid_t euid = curproc->euid;*/
     uid_t suid = curproc->suid;
@@ -868,18 +868,18 @@ static int sys_proc_times(void * user_args)
 
 static int sys_proc_getbreak(void * user_args)
 {
-    struct _ds_getbreak ds;
+    struct _proc_getbreak_args args;
     int err;
 
-    if (!useracc(user_args, sizeof(ds), VM_PROT_WRITE)) {
+    if (!useracc(user_args, sizeof(args), VM_PROT_WRITE)) {
         set_errno(EFAULT);
         return -1;
     }
 
-    err = copyin(user_args, &ds, sizeof(ds));
-    ds.start = curproc->brk_start;
-    ds.stop = curproc->brk_stop;
-    err |= copyout(&ds, user_args, sizeof(ds));
+    err = copyin(user_args, &args, sizeof(args));
+    args.start = curproc->brk_start;
+    args.stop = curproc->brk_stop;
+    err |= copyout(&args, user_args, sizeof(args));
     if (err) {
         set_errno(EFAULT);
         return -1;

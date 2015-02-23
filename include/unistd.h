@@ -242,7 +242,7 @@ struct _exec_args {
 /**
  * Arguments struct for SYSCALL_PROC_GETBREAK
  */
-struct _ds_getbreak {
+struct _proc_getbreak_args {
     void * start;
     void * stop;
 };

@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    brk.c
+ * @file    proccred.c
  * @author  Olli Vanhoja
- * @brief   Change space allocation.
+ * @brief   Process credentials.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,10 +37,10 @@
 #include <sys/priv.h>
 #include <unistd.h>
 
-static const struct _ds_proc_credctl ds_init = { -1, -1, -1, -1, -1, -1 };
+static const struct _proc_credctl_args ds_init = { -1, -1, -1, -1, -1, -1 };
 
 #define SYS_GETCRED(var, cred) do {         \
-    struct _ds_proc_credctl ds = ds_init;   \
+    struct _proc_credctl_args ds = ds_init; \
     if (syscall(SYSCALL_PROC_CRED, &ds)) {  \
         /* TODO Shouldn't fail? */          \
         while (1);                          \
@@ -49,7 +49,7 @@ static const struct _ds_proc_credctl ds_init = { -1, -1, -1, -1, -1, -1 };
 } while (0)
 
 #define SYS_SETCRED(err, value, cred) do {  \
-    struct _ds_proc_credctl ds = ds_init;   \
+    struct _proc_credctl_args ds = ds_init; \
     ds.cred = (value);                      \
     err = syscall(SYSCALL_PROC_CRED, &ds);  \
 } while (0)
@@ -93,7 +93,7 @@ gid_t getegid(void)
 
 int setuid(uid_t uid)
 {
-    struct _ds_proc_credctl ds = {
+    struct _proc_credctl_args ds = {
         .ruid = uid,
         .euid = uid,
         .suid = uid,
@@ -101,7 +101,7 @@ int setuid(uid_t uid)
         .egid = -1,
         .sgid = -1
     };
-    struct _ds_proc_credctl ds_save = ds;
+    struct _proc_credctl_args ds_save = ds;
     int errno_save, err;
 
     if (uid < 0) {
@@ -139,7 +139,7 @@ int seteuid(uid_t uid)
 
 int setgid(gid_t gid)
 {
-    struct _ds_proc_credctl ds = {
+    struct _proc_credctl_args ds = {
         .ruid = -1,
         .euid = -1,
         .suid = -1,
@@ -147,7 +147,7 @@ int setgid(gid_t gid)
         .egid = gid,
         .sgid = gid
     };
-    struct _ds_proc_credctl ds_save = ds;
+    struct _proc_credctl_args ds_save = ds;
     int errno_save, err;
 
     if (gid < 0) {
@@ -195,7 +195,7 @@ int setregid(gid_t, gid_t)
 
 int priv_setpcap(pid_t pid, int grant, size_t priv, int value)
 {
-    struct _ds_priv_pcap args = {
+    struct _priv_pcap_args args = {
         .pid = pid,
         .priv = priv
     };
@@ -217,7 +217,7 @@ int priv_setpcap(pid_t pid, int grant, size_t priv, int value)
 
 int priv_getcap(pid_t pid, int grant, size_t priv)
 {
-    struct _ds_priv_pcap args = {
+    struct _priv_pcap_args args = {
         .pid = pid,
         .priv = priv
     };

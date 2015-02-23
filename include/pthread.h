@@ -182,7 +182,7 @@ typedef struct pthread_once pthread_once_t;
 /**
  * Argument struct for SYSCALL_SCHED_THREAD_CREATE
  */
-struct _ds_pthread_create {
+struct _sched_pthread_create_args {
     pthread_t * thread;         /*!< Returned thread id. */
     start_routine start;        /*!< Thread start routine. */
     pthread_attr_t * def;       /*!< Thread def attributes. */

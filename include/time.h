@@ -73,7 +73,7 @@ struct itimerspec {
 /**
  * Argument struct for SYSCALL_TIME_GETTIME
  */
-struct _ds_gettime {
+struct _time_gettime_args {
     clockid_t clk_id;
     struct timespec * tp;
 };

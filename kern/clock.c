@@ -126,7 +126,7 @@ void getnanotime(struct timespec * tsp)
 
 static int sys_gettime(void * user_args)
 {
-    struct _ds_gettime args;
+    struct _time_gettime_args args;
     struct timespec ts;
     int err;
 

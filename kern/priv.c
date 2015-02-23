@@ -152,7 +152,7 @@ out:
  */
 static int sys_priv_pcap(void * user_args)
 {
-    struct _ds_priv_pcap args;
+    struct _priv_pcap_args args;
     proc_info_t * proc;
     int err;
 

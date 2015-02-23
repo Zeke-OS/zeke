@@ -69,7 +69,7 @@ struct dirent {
 /**
  * Arguments for SYSCALL_FS_GETDENTS
  */
-struct _ds_getdents_args {
+struct _fs_getdents_args {
     int fd;
     char * buf;
     size_t nbytes;

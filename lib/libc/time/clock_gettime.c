@@ -36,7 +36,7 @@
 
 int clock_gettime(clockid_t clk_id, struct timespec * tp)
 {
-    struct _ds_gettime args = {
+    struct _time_gettime_args args = {
         .clk_id = clk_id,
         .tp = tp
     };

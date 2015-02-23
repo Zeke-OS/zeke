@@ -57,7 +57,8 @@ void sched_handler(void);
  * @param priv          If set thread is created as a kernel mode thread aka
  *                      kworker; Otherwise user mode is selected.
  */
-pthread_t thread_create(struct _ds_pthread_create * thread_def, int priv);
+pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
+                        int priv);
 
 /**
   * Set thread initial configuration
@@ -71,7 +72,7 @@ pthread_t thread_create(struct _ds_pthread_create * thread_def, int priv);
   * @todo what if parent is stopped before this function is called?
   */
 void thread_init(struct thread_info * tp, pthread_t thread_id,
-                 struct _ds_pthread_create * thread_def,
+                 struct _sched_pthread_create_args * thread_def,
                  struct thread_info * parent,
                  int priv);
 

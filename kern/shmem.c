@@ -77,7 +77,7 @@ int shmem_init(void)
         .stackAddr  = (void *)bp_stack->b_data,
         .stackSize  = bp_stack->b_bcount,
     };
-    struct _ds_pthread_create tdef_shmem = {
+    struct _sched_pthread_create_args tdef_shmem = {
         .thread = &tid,
         .start  = shmem_sync_thread,
         .def    = &attr,

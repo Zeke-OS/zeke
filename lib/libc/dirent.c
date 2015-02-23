@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Low level operations on directory entries.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@
 
 int getdents(int fd, char * buf, int nbytes)
 {
-    struct _ds_getdents_args args = {
+    struct _fs_getdents_args args = {
         .fd = fd,
         .buf = buf,
         .nbytes = nbytes

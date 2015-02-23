@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Change space allocation.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@
 #include <string.h>
 #include <unistd.h>
 
-static struct _ds_getbreak ds_brk;
+static struct _proc_getbreak_args ds_brk;
 static void * curr_break;
 
 static int getbrk(void)

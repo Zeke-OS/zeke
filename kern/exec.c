@@ -95,7 +95,7 @@ int exec_file(file_t * file, char name[PROC_NAME_LEN], struct buf * env_bp,
         .stackAddr  = (void *)(stack_region->b_mmu.vaddr),
         .stackSize  = MMU_SIZEOF_REGION(&stack_region->b_mmu)
     };
-    struct _ds_pthread_create ds = {
+    struct _sched_pthread_create_args ds = {
         .thread     = 0, /* return value */
         .start      = (void *(*)(void *))(code_region->b_mmu.vaddr),
         .def        = &pattr,

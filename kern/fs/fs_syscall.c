@@ -282,7 +282,7 @@ static int sys_close(void * p)
 
 static int sys_getdents(void * user_args)
 {
-    struct _ds_getdents_args args;
+    struct _fs_getdents_args args;
     struct dirent * dents;
     size_t bytes_left;
     file_t * fildes;

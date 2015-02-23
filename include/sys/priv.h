@@ -246,7 +246,7 @@
  * Arguments struct for SYSCALL_PROC_CRED
  * Set value to -1 for get only.
  */
-struct _ds_proc_credctl {
+struct _proc_credctl_args {
     uid_t ruid;
     uid_t euid;
     uid_t suid;
@@ -258,7 +258,7 @@ struct _ds_proc_credctl {
 /**
  * Argument struct for SYSCALL_PRIV_PCAP
  */
-struct _ds_priv_pcap {
+struct _priv_pcap_args {
     pid_t pid;
     int mode;
 #define PRIV_PCAP_MODE_GETR 0 /* get restr */

@@ -138,7 +138,8 @@ mmu_pagetable_t * thread_resume(void)
     return current_thread->curr_mpt;
 }
 
-pthread_t thread_create(struct _ds_pthread_create * thread_def, int priv)
+pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
+                        int priv)
 {
     const pthread_t tid = sched_new_tid();
     struct thread_info * tp = sched_get_thread_info(tid);
@@ -156,7 +157,7 @@ pthread_t thread_create(struct _ds_pthread_create * thread_def, int priv)
 }
 
 void thread_init(struct thread_info * tp, pthread_t thread_id,
-                 struct _ds_pthread_create * thread_def,
+                 struct _sched_pthread_create_args * thread_def,
                  struct thread_info * parent,
                  int priv)
 {
@@ -548,7 +549,7 @@ DATA_SET(thread_dtors, dummycd);
 
 static int sys_thread_create(void * user_args)
 {
-    struct _ds_pthread_create args;
+    struct _sched_pthread_create_args args;
     pthread_attr_t thdef;
     pthread_t thread_id;
     pthread_t * usr_thread_id;
@@ -657,7 +658,7 @@ static int sys_thread_detach(void * user_args)
 static int sys_thread_setpriority(void * user_args)
 {
     int err;
-    struct _ds_set_priority args;
+    struct _sched_set_priority_args args;
 
     err = priv_check(curproc, PRIV_SCHED_SETPRIORITY);
     if (err) {

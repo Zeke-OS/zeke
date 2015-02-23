@@ -42,7 +42,7 @@
 
 volatile uint32_t flag_kernel_tick = 0;
 
-void init_stack_frame(struct _ds_pthread_create * thread_def,
+void init_stack_frame(struct _sched_pthread_create_args * thread_def,
         sw_stack_frame_t * sframe, int priv)
 {
     /* Note that scheduler must have the same mapping. */
