@@ -70,15 +70,26 @@ struct dev_info {
                  void * arg, size_t arg_len);
 
     /**
-     * This function is called if set and vnode deletion is triggered by
+     * The function is called if set and vnode deletion is triggered by
      * one of the vnode release functions.
      */
     void (*delete_vnode_callback)(struct dev_info * devnfo);
 
     /**
-     * This function is called whenever a file is closed.
+     * The function is called whenever a file associated with tihs device is
+     * opened.
+     * @note Can be NULL.
+     * @return Return 0 if opening the device is ok; Otherwise a negative
+     * errno shall be returned.
      */
-    void (*file_closed_callback)(struct proc_info * p, struct dev_info * devnfo);
+    int (*opened_callback)(struct proc_info * p, struct dev_info * devnfo);
+
+    /**
+     * The function is called whenever a file associated with this device is
+     * closed.
+     * @note Can be NULL.
+     */
+    void (*closed_callback)(struct proc_info * p, struct dev_info * devnfo);
 };
 
 void _devfs_create_specials(void);
