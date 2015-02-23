@@ -41,9 +41,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 
-#ifndef TIME_H
-    #error <time.h> shall be included.
-#endif
+struct timespec;
 
 struct stat {
     dev_t     st_dev;       /*!< ID of device containing file. */
@@ -147,17 +145,19 @@ struct _fs_stat_args {
     unsigned flags;
 };
 
-/**
- * Arguments for SYSCALL_FS_CHMOD
- */
+/** Arguments for SYSCALL_FS_UTIMES */
+struct _fs_utimes_args {
+    int fd;
+    struct timespec times[2];
+};
+
+/** Arguments for SYSCALL_FS_CHMOD */
 struct _fs_chmod_args {
     int fd;
     mode_t mode;
 };
 
-/**
- * Arguments for SYSCALL_FS_CHFLAGS
- */
+/** Arguments for SYSCALL_FS_CHFLAGS  */
 struct _fs_chflags_args {
     int fd;
     fflags_t flags;
@@ -197,6 +197,11 @@ int fstatat(int fd, const char * restrict path,
             struct stat * restrict buf, int flag);
 int lstat(const char * restrict path, struct stat * restrict buf);
 int stat(const char * restrict path, struct stat * restrict buf);
+
+int futimens(int fd, const struct timespec times[2]);
+int utimensat(int fd, const char * path, const struct timespec times[2],
+              int flag);
+
 int mkdir(const char *, mode_t);
 mode_t umask(mode_t cmask);
 /*

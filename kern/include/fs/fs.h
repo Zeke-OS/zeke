@@ -378,7 +378,10 @@ typedef struct vnode_ops {
      * Get file status.
      */
     int (*stat)(vnode_t * vnode, struct stat * buf);
-
+    /**
+     * Set file access and modification times.
+     */
+    int (*utimes)(vnode_t * vnode, const struct timespec times[2]);
     /**
      * Change file mode.
      */
@@ -610,6 +613,7 @@ int fs_mkdir_curproc(const char * pathname, mode_t mode);
 
 int fs_rmdir_curproc(const char * pathname);
 
+int fs_utimes_curproc(int fildes, const struct timespec times[2]);
 int fs_chmod_curproc(int fildes, mode_t mode);
 int fs_chflags_curproc(int fildes, fflags_t flags);
 int fs_chown_curproc(int fildes, uid_t owner, gid_t group);
@@ -724,6 +728,7 @@ int fs_enotsup_mkdir(vnode_t * dir,  const char * name, mode_t mode);
 int fs_enotsup_rmdir(vnode_t * dir,  const char * name);
 int fs_enotsup_readdir(vnode_t * dir, struct dirent * d, off_t * off);
 int fs_enotsup_stat(vnode_t * vnode, struct stat * buf);
+int fs_enotsup_utimes(vnode_t * vnode, const struct timespec times[2]);
 int fs_enotsup_chmod(vnode_t * vnode, mode_t mode);
 int fs_enotsup_chflags(vnode_t * vnode, fflags_t flags);
 int fs_enotsup_chown(vnode_t * vnode, uid_t owner, gid_t group);

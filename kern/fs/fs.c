@@ -945,6 +945,30 @@ out:
     return retval;
 }
 
+int fs_utimes_curproc(int fildes, const struct timespec times[2])
+{
+    vnode_t * vnode;
+    file_t * file;
+    int retval = 0;
+
+    file = fs_fildes_ref(curproc->files, fildes, 1);
+    if (!file)
+        return -EBADF;
+    vnode = file->vnode;
+
+    if (!((file->oflags & O_WRONLY) || !chkperm_vnode_cproc(vnode, W_OK))) {
+        retval = -EPERM;
+        goto out;
+    }
+
+    retval = vnode->vnode_ops->utimes(vnode, times);
+
+out:
+    fs_fildes_ref(curproc->files, fildes, -1);
+
+    return retval;
+}
+
 int fs_chmod_curproc(int fildes, mode_t mode)
 {
     vnode_t * vnode;

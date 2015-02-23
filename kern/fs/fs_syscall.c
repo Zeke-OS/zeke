@@ -717,6 +717,21 @@ out:
     return retval;
 }
 
+static int sys_utimes(void * user_args)
+{
+    struct _fs_utimes_args args;
+    int err;
+
+    /* Copyin args struct */
+    err = copyin(user_args, &args, sizeof(args));
+    if (err) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    return fs_utimes_curproc(args.fd, args.times);
+}
+
 /*
  * Only fchmod() is implemented at the kernel level and rest must be implemented
  * in user space.
@@ -877,6 +892,7 @@ static const syscall_handler_t fs_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_RMDIR, sys_rmdir),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_STAT, sys_filestat),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_ACCESS, sys_access),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_UTIMES, sys_utimes),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_CHMOD, sys_chmod),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_CHFLAGS, sys_chflags),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_CHOWN, sys_chown),

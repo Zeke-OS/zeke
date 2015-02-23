@@ -26,7 +26,9 @@
 include $(ROOT_DIR)/makefiles/user_head.mk
 
 # Binaries #####################################################################
+ifeq ($(configUSR_GAMES),y)
 BIN := games/banner
+endif
 
 # Source Files #################################################################
 games/banner-SRC-$(configUSR_GAMES) := games/banner.c

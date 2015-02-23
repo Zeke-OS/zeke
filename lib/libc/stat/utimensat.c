@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    sys/time.h
+ * @file    utimensat.c
  * @author  Olli Vanhoja
- * @brief   time types.
+ * @brief   File status functions.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,55 +28,36 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************
- */
+*/
 
-#ifndef SYS_TIME_H
-#define SYS_TIME_H
-
+#include <errno.h>
+#include <syscall.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <time.h>
+#include <sys/stat.h>
 
-#ifndef KERNEL_INTERNAL
+int utimensat(int fd, const char * path, const struct timespec times[2],
+              int flag)
+{
+    int err;
+    struct _fs_utimes_args args;
 
-/**
- * Set file access and modification times.
- */
-int utimes(const char * path, const struct timespec times[2]);
+    if (!times) {
+        errno = EACCES;
+        return -1;
+    }
 
+    args.times[0] = times[0];
+    args.times[1] = times[1];
 
-#else
+    args.fd = openat(fd, path, O_WRONLY, flag);
+    if (args.fd < 0)
+        return -1;
 
-/**
- * Update realtime counters.
- */
-void update_realtime(void);
+    err = syscall(SYSCALL_FS_UTIMES, &args);
 
-/**
- * Get realtime precise as possible by first updating the time counter.
- */
-void nanotime(struct timespec * ts);
+    close(args.fd);
 
-/**
- * Get less precise realtime value but much faster.
- */
-void getnanotime(struct timespec * tsp);
-
-
-/* ctime */
-
-void ctime(char * result, time_t * t);
-void asctime(char * result, struct tm * timeptr);
-
-/**
- * Get GMT time.
- * @param[out] tm       is modified.
- * @param[in]  clock    is a unix time.
- */
-void gmtime(struct tm * tm, time_t * clock);
-
-/**
- * @param[out] tm
- */
-void offtime(struct tm * tm, time_t * clock, long offset);
-
-#endif
-#endif /* SYS_TIME_H */
+    return err;
+}

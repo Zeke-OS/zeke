@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    sys/time.h
+ * @file    time.c
  * @author  Olli Vanhoja
- * @brief   time types.
+ * @brief   time.
  * @section LICENSE
  * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,53 +30,14 @@
  *******************************************************************************
  */
 
-#ifndef SYS_TIME_H
-#define SYS_TIME_H
-
+#include <syscall.h>
+#include <errno.h>
 #include <time.h>
 
-#ifndef KERNEL_INTERNAL
-
-/**
- * Set file access and modification times.
- */
-int utimes(const char * path, const struct timespec times[2]);
-
-
-#else
-
-/**
- * Update realtime counters.
- */
-void update_realtime(void);
-
-/**
- * Get realtime precise as possible by first updating the time counter.
- */
-void nanotime(struct timespec * ts);
-
-/**
- * Get less precise realtime value but much faster.
- */
-void getnanotime(struct timespec * tsp);
-
-
-/* ctime */
-
-void ctime(char * result, time_t * t);
-void asctime(char * result, struct tm * timeptr);
-
-/**
- * Get GMT time.
- * @param[out] tm       is modified.
- * @param[in]  clock    is a unix time.
- */
-void gmtime(struct tm * tm, time_t * clock);
-
-/**
- * @param[out] tm
- */
-void offtime(struct tm * tm, time_t * clock, long offset);
-
-#endif
-#endif /* SYS_TIME_H */
+/* TODO Proper implementation */
+time_t time(time_t * t)
+{
+    if (t)
+        *t = -1;
+    return -1;
+}

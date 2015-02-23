@@ -51,6 +51,7 @@ const vnode_ops_t nofs_vnode_ops = {
     .rmdir = fs_enotsup_rmdir,
     .readdir = fs_enotsup_readdir,
     .stat = fs_enotsup_stat,
+    .utimes = fs_enotsup_utimes,
     .chmod = fs_enotsup_chmod,
     .chflags = fs_enotsup_chflags,
     .chown = fs_enotsup_chown,
@@ -137,6 +138,11 @@ int fs_enotsup_readdir(vnode_t * dir, struct dirent * d, off_t * off)
 int fs_enotsup_stat(vnode_t * vnode, struct stat * buf)
 {
     return -ENOTSUP;
+}
+
+int fs_enotsup_utimes(vnode_t * vnode, const struct timespec times[2])
+{
+    return -EPERM;
 }
 
 int fs_enotsup_chmod(vnode_t * vnode, mode_t mode)
