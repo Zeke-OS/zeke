@@ -189,6 +189,7 @@ struct termios {
 
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
+
 speed_t cfgetispeed(const struct termios *);
 speed_t cfgetospeed(const struct termios *);
 int     cfsetispeed(struct termios *, speed_t);
@@ -200,6 +201,12 @@ int     tcgetattr(int, struct termios *);
 pid_t   tcgetsid(int);
 int     tcsendbreak(int, int);
 int     tcsetattr(int, int, const struct termios *);
+
+/**
+ * Test for a terminal device.
+ */
+int     isatty(int fd);
+
 __END_DECLS
 #endif
 
