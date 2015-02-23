@@ -35,6 +35,17 @@
 
 #include <time.h>
 
+#ifndef TIMEVAL_DEFINED
+#define TIMEVAL_DEFINED
+/**
+ * timeval.
+ */
+struct timeval {
+    time_t tv_sec;          /*!< Seconds. */
+    suseconds_t tv_usec;    /*!< Microseconds. */
+};
+#endif
+
 #ifndef KERNEL_INTERNAL
 
 /**

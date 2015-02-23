@@ -1,10 +1,12 @@
 /**
  *******************************************************************************
- * @file    sys/times.h
+ * @file    getloadavg.c
  * @author  Olli Vanhoja
- * @brief   time types.
+ * @brief   Zero Kernel user space code.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2012, 2013 Ninjaware Oy
+ *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,32 +30,27 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************
- */
+*/
 
-#ifndef SYS_TIMES_H
-#define SYS_TIMES_H
+#include <syscall.h>
+#include <errno.h>
+#include <sys/types_pthread.h>
+#include <sys/resource.h>
 
-#include <sys/types.h>
+int getloadavg(double loadavg[3], int nelem)
+{
+    uint32_t loads[3];
+    size_t i;
 
-struct tms {
-    clock_t tms_utime;  /*!< User time. */
-    clock_t tms_stime;  /*!< System time. */
-    clock_t tms_cutime; /*!< User time of children. */
-    clock_t tms_cstime; /*!< System time of children. */
-};
+    if (nelem > 3)
+        return -1;
 
-#ifndef KERNEL_INTERNAL
-__BEGIN_DECLS
+    if (syscall(SYSCALL_SCHED_GET_LOADAVG, loads))
+        return -1;
 
-/**
- * Store the current process times to a tms struct pointed by buf.
- * All times reported are in clock ticks.
- * The number of clock ticks per second can be obtained using
- * sysconf(_SC_CLK_TCK).
- */
-clock_t times(struct tms * buf);
+    for (i = 0; i < nelem; i++) {
+        loadavg[i] = (double)loads[i] / 100.0;
+    }
 
-__END_DECLS
-#endif
-
-#endif /* SYS_TIMES_H */
+    return nelem;
+}

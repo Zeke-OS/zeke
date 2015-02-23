@@ -856,11 +856,8 @@ static int sys_proc_getpriority(void * user_args)
     return -1;
 }
 
-/* TODO Implementation */
 static int sys_proc_times(void * user_args)
 {
-    struct tms tms;
-
     if (copyout(&curproc->tms, user_args, sizeof(struct tms))) {
         set_errno(EFAULT);
         return -1;
@@ -874,7 +871,7 @@ static int sys_proc_getbreak(void * user_args)
     struct _ds_getbreak ds;
     int err;
 
-    if (!useracc(user_args, sizeof(struct _ds_getbreak), VM_PROT_WRITE)) {
+    if (!useracc(user_args, sizeof(ds), VM_PROT_WRITE)) {
         set_errno(EFAULT);
         return -1;
     }
@@ -903,6 +900,6 @@ static const syscall_handler_t proc_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_SETPRIORITY, sys_proc_setpriority),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETPRIORITY, sys_proc_getpriority),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_TIMES, sys_proc_times),
-    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETBREAK, sys_proc_getbreak)
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETBREAK, sys_proc_getbreak),
 };
 SYSCALL_HANDLERDEF(proc_syscall, proc_sysfnmap)

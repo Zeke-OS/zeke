@@ -2,9 +2,9 @@
  *******************************************************************************
  * @file    resource.c
  * @author  Olli Vanhoja
- * @brief   Zero Kernel user space code
+ * @brief   Zero Kernel user space code.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -37,24 +37,6 @@
 #include <sys/types_pthread.h>
 #include <sys/resource.h>
 
-int getloadavg(double loadavg[3], int nelem)
-{
-    uint32_t loads[3];
-    size_t i;
-
-    if (nelem > 3)
-        return -1;
-
-    if (syscall(SYSCALL_SCHED_GET_LOADAVG, loads))
-        return -1;
-
-    for (i = 0; i < nelem; i++) {
-        loadavg[i] = (double)loads[i] / 100.0;
-    }
-
-    return nelem;
-}
-
 int setpriority(int which, id_t who, int prio)
 {
     switch (which) {
@@ -67,17 +49,6 @@ int setpriority(int which, id_t who, int prio)
 
         return (int)syscall(SYSCALL_THREAD_SETPRIORITY, &ds);
         }
-    default:
-        errno = EINVAL;
-        return -1;
-    }
-}
-
-int  getpriority(int which, id_t who)
-{
-    switch (which) {
-    case PRIO_THREAD:
-        return (int)syscall(SYSCALL_THREAD_GETPRIORITY, &who);
     default:
         errno = EINVAL;
         return -1;

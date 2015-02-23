@@ -33,7 +33,7 @@
 #ifndef _SYS_RESOURCES_H
 #define _SYS_RESOURCES_H
 
-/* TODO Missing timeval struct from sys/time.h */
+#include <sys/types.h>
 
 #define _RLIMIT_ARR_COUNT 7
 
@@ -107,21 +107,31 @@ typedef int rlim_t;
 typedef int id_t;
 #endif
 
-/**
- *
- */
 struct rlimit {
     rlim_t  rlim_cur;   /*!< Current (soft) limit */
     rlim_t  rlim_max;   /*!< Maximum value for rlim_cur */
 };
 
-/* TODO Missing sys/time.h */
-#if 0
-struct rusage {
-    struct timeval ru_utime  /*!< User time used. */
-    struct timeval ru_stime  /*!< System time used. */
+#define RUSAGE_SELF     1 /*!< Returns information about the current process. */
+#define RUSAGE_CHILDREN 2 /*!< Returns information about children of the current
+                           *   process. */
+
+#ifndef TIMEVAL_DEFINED
+#define TIMEVAL_DEFINED
+/**
+ * timeval.
+ */
+struct timeval {
+    time_t tv_sec;          /*!< Seconds. */
+    suseconds_t tv_usec;    /*!< Microseconds. */
 };
 #endif
+
+
+struct rusage {
+    struct timeval ru_utime; /*!< User time used. */
+    struct timeval ru_stime; /*!< System time used. */
+};
 
 #ifdef TYPES_PTHREAD_H
 

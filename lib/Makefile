@@ -62,6 +62,7 @@ $(wildcard libc/inttypes/*.c) \
 $(wildcard libc/locale/*.c) \
 $(wildcard libc/malloc/*.c) \
 $(wildcard libc/pthreads/*.c) \
+$(wildcard libc/resource/*.c) \
 $(wildcard libc/setjmp/*.c) \
 $(wildcard libc/signal/*.c) \
 $(wildcard libc/stat/*.c) \
