@@ -526,7 +526,16 @@ int chkperm(struct stat * stat, uid_t uid, gid_t gid, int amode);
  */
 int chkperm_cproc(struct stat * stat, int oflags);
 
+/**
+ * Check permissions to a vnode by curproc.
+ * @param vnode is the vnode to be checked.
+ * @param oflags specfies operation(s).
+ */
 int chkperm_vnode_cproc(vnode_t * vnode, int oflags);
+
+/**
+ * Check permissions to a vnode by given euid and egid.
+ */
 int chkperm_vnode(vnode_t * vnode, uid_t euid, gid_t egid, int oflags);
 
 /**
@@ -611,16 +620,37 @@ int fs_unlinkat_curproc(int fd, const char * path, int flag);
  */
 int fs_mkdir_curproc(const char * pathname, mode_t mode);
 
+/**
+ * Remove a directory.
+ */
 int fs_rmdir_curproc(const char * pathname);
 
+/**
+ * Set file access and modification times.
+ */
 int fs_utimes_curproc(int fildes, const struct timespec times[2]);
+
+/**
+ * Change mode of a file.
+ */
 int fs_chmod_curproc(int fildes, mode_t mode);
+
+/**
+ * Change file flags.
+ */
 int fs_chflags_curproc(int fildes, fflags_t flags);
+
+/**
+ * Change owener and group of a file.
+ */
 int fs_chown_curproc(int fildes, uid_t owner, gid_t group);
 
 /**
+ * Create a new pseudo file system root.
  * Create a new pseudo fs root by inheriting ramfs implementation
- * as a basis.
+ * as a basis. The created fs is a good basis for ram based file
+ * systems like procfs but probably not the best basis for a
+ * disk backed file system.
  */
 vnode_t * fs_create_pseudofs_root(fs_t * newfs, int majornum);
 
@@ -635,7 +665,9 @@ vnode_t * fs_create_pseudofs_root(fs_t * newfs, int majornum);
 void fs_inherit_vnops(vnode_ops_t * dest_vnops, const vnode_ops_t * base_vnops);
 
 /**
- * Init a vnode.
+ * Initialize a vnode.
+ * This is the prefferred method to initialize a vnode because vnode struct
+ * internals may change and this function is (usually) kept up-to-date.
  */
 void fs_vnode_init(vnode_t * vnode, ino_t vn_num, struct fs_superblock * sb,
                    const vnode_ops_t * const vnops);
