@@ -30,8 +30,10 @@
  *******************************************************************************
  */
 
+#include <errno.h>
 #include <sys/types_pthread.h>
 #include <sys/sysctl.h>
+#include <kactype.h>
 
 SYSCTL_NODE(, 0, sysctl, CTLFLAG_RW, 0,
         "Sysctl internal magic");
@@ -54,25 +56,75 @@ SYSCTL_NODE(, OID_AUTO, security, CTLFLAG_RW, 0,
 #define KERNEL_VERSION "0.0.0"
 #endif
 static const char osrelease[] = KERNEL_VERSION;
-SYSCTL_STRING(_kern, KERN_OSRELEASE, osrelease, CTLFLAG_RD|CTLFLAG_MPSAFE,
+SYSCTL_STRING(_kern, KERN_OSRELEASE, osrelease, CTLFLAG_RD | CTLFLAG_MPSAFE,
         (char *)osrelease, 0,
         "Operating system release");
 
 /* TODO Arch */
 static const char version[] = "ARCH" " " __DATE__;
-SYSCTL_STRING(_kern, KERN_VERSION, version, CTLFLAG_RD|CTLFLAG_MPSAFE,
+SYSCTL_STRING(_kern, KERN_VERSION, version, CTLFLAG_RD | CTLFLAG_MPSAFE,
         (char *)version, 0,
         "Kernel version");
 
 static const char compiler_version[] =  __VERSION__;
-SYSCTL_STRING(_kern, OID_AUTO, compiler_version, CTLFLAG_RD|CTLFLAG_MPSAFE,
+SYSCTL_STRING(_kern, OID_AUTO, compiler_version, CTLFLAG_RD | CTLFLAG_MPSAFE,
         (char *)compiler_version, 0,
         "Version of compiler used to compile kernel");
 
 static const char ostype[] = "Zeke";
-SYSCTL_STRING(_kern, KERN_OSTYPE, ostype, CTLFLAG_RD|CTLFLAG_MPSAFE,
+SYSCTL_STRING(_kern, KERN_OSTYPE, ostype, CTLFLAG_RD | CTLFLAG_MPSAFE,
         (char *)ostype, 0,
         "Operating system type");
 
 SYSCTL_INT(_kern, OID_AUTO, hz, CTLFLAG_RD, 0, configSCHED_HZ,
         "Number of kernel clock ticks per second");
+
+char hostname[MAXHOSTNAMELEN + 1] = "wopr";
+static int kern_mib_hostname(SYSCTL_HANDLER_ARGS)
+{
+    char tmp_hostname[MAXHOSTNAMELEN + 1];
+    int error;
+
+    memcpy(tmp_hostname, hostname, sizeof(hostname));
+    error = sysctl_handle_string(oidp, tmp_hostname, sizeof(tmp_hostname), req);
+    if (!error && req->newptr) { /* Validate new hostname before setting it */
+        size_t label_nch = 0;
+
+        if (ka_isdigit(tmp_hostname[0]) || !ka_isalpha(tmp_hostname[0]))
+            return EINVAL;
+
+        for (size_t i = 0; i < sizeof(tmp_hostname); i++) {
+            char c = tmp_hostname[i];
+
+            if (c == '\0') {
+                if (tmp_hostname[i - 1] == '-')
+                    return EINVAL;
+                break;
+            }
+
+            if (c == '.') {
+                if (label_nch == 0)
+                    return EINVAL;
+                label_nch = 0;
+                continue;
+            }
+
+            if (++label_nch > 63)
+                return EINVAL;
+
+            if (!(ka_isalnum(c) || (c == '-')))
+                return EINVAL;
+
+            if (i >= 253)
+                return EINVAL;
+        }
+
+        memcpy(hostname, tmp_hostname, sizeof(tmp_hostname));
+    }
+
+    return error;
+}
+
+SYSCTL_PROC(_kern, KERN_HOSTNAME, hostname,
+        CTLTYPE_STRING | CTLFLAG_RW | CTLFLAG_SECURE3,
+        NULL, 0, kern_mib_hostname, "A", "System hostname");

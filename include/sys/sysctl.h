@@ -5,7 +5,7 @@
  *
  * @brief   Sysctl headers.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1989, 1993
  *        The Regents of the University of California.  All rights reserved.
  *
@@ -155,7 +155,7 @@ struct _sysctl_args {
  * @param newlen    is the lenght of newp or 0.
  */
 int sysctl(int * name, unsigned int namelen, void * oldp, size_t * oldlenp,
-        void * newp, size_t newlen);
+          void * newp, size_t newlen);
 
 /**
  * Lookup for a MIB node by ASCII name.
@@ -230,7 +230,8 @@ int sysctltstmib(int * left, int * right, int len);
 #define REQ_UNWIRED 1
 #define REQ_WIRED   2
 
-/*
+/**
+ * Sysctl request.
  * This describes the access space for a sysctl request.  This is needed
  * so that we can use the interface from the kernel or from user-space.
  */
@@ -411,7 +412,14 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
             CTLTYPE_U64 | CTLFLAG_MPSAFE | (access),                    \
             ptr, val, sysctl_handle_counter_u64, "QU", descr)
 
-/* Oid for a procedure.  Specified by a pointer and an arg. */
+/**
+ * Oid for a procedure.
+ * Specified by a pointer and an arg.
+ * @param parent is the parent OID.
+ * @param nbr OID_AUTO or predefined OID.
+ * @param name is the name of the node.
+ * @param access CTLTYPE and CTLFLAGs.
+ */
 #define SYSCTL_PROC(parent, nbr, name, access, ptr, arg, handler, fmt, descr) \
     CTASSERT(((access) & CTLTYPE) != 0);                \
     SYSCTL_OID(parent, nbr, name, (access), \

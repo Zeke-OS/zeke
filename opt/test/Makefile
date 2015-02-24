@@ -10,6 +10,9 @@ endif
 ifeq ($(configTESTS_TTY),y)
 DIRS += tty
 endif
+ifeq ($(configTESTS_UNISTD),y)
+DIRS += unistd
+endif
 
 CLEANDIRS := $(patsubst %,%.clean,$(subst :, ,$(DIRS)))
 
@@ -26,5 +29,7 @@ clean: $(CLEANDIRS)
 	find . -type f -name "*.d" -exec rm -f {} \;
 	$(RM) libc/manifest
 	$(RM) mman/manifest
+	$(RM) tty/manifest
+	$(RM) unistd/manifest
 
 .PHONY: $(DIRS) $(CLEANDIRS) clean

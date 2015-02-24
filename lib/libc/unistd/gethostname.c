@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    fs.h
+ * @file    gethostname.c
  * @author  Olli Vanhoja
- * @brief   Implementation-defined constants.
+ * @brief   Get system hostname.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,37 +30,11 @@
  *******************************************************************************
  */
 
-/**
- * @addtogroup LIBC
- * @{
- */
+#include <sys/sysctl.h>
 
-#ifndef _LIMITS_H_
-#define _LIMITS_H_
+int gethostname(char * name, size_t namelen)
+{
+    int mib[2] = { CTL_KERN, KERN_HOSTNAME };
 
-#include_next <limits.h> /* Include the compiler header file. */
-
-/* Runtime Invariant Values */
-#define HOST_NAME_MAX   255
-
-/* Pathname Variable Values */
-#define FILESIZEBITS    32
-#define LINK_MAX        _POSIX_LINK_MAX
-#define NAME_MAX        255     /*!< Maximum file name length. */
-#define PATH_MAX        4096    /*!< Maximum path length. */
-
-/* Runtime Increasable Values */
-/* Maximum Values */
-/* Minimum Values */
-#define _POSIX_LINK_MAX 16
-
-/* Other Invariant Values */
-#define NZERO           0       /*!< Default process priority. */
-
-#define ARG_MAX         4096    /*!< Maximum size of argv and env combined. */
-
-#endif /* _LIMITS_H_ */
-
-/**
- * @}
- */
+    return sysctl(mib, num_elem(mib), name, &namelen, NULL, 0);
+}

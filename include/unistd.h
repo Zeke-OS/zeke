@@ -402,6 +402,9 @@ int pipe(int fildes[2]);
 
 unsigned sleep(unsigned seconds);
 
+int gethostname(char * name, size_t namelen);
+int sethostname(char * name, size_t namelen);
+
 /**
  * @addtogroup getopt
  * Parse command-line options

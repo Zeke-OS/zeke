@@ -14,4 +14,8 @@ config configTESTS_TTY
     bool "TTY tests"
     default n
 
+config configTESTS_UNISTD
+    bool "Unistd tests"
+    default n
+
 endmenu
