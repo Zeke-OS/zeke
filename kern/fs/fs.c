@@ -297,20 +297,14 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
 #ifdef configFS_DEBUG
     KERROR(KERROR_DEBUG, "Found fs: %s\n", fsname);
 #endif
-
-    if (!fs->mount) {
-        char buf[80];
-
-        ksprintf(buf, sizeof(buf), "No mount function for \"%s\"\n", fsname);
-        panic(buf);
-    }
+    KASSERT(fs->mount != NULL, "Mount function exist");
 
     err = fs->mount(source, flags, parm, parm_len, &sb);
     if (err)
         return err;
 
-#ifdef configFS_DEBUG
     KASSERT((uintptr_t)sb > configKERNEL_START, "sb is not a stack address");
+#ifdef configFS_DEBUG
     KERROR(KERROR_DEBUG, "Mount OK\n");
 #endif
 
@@ -321,6 +315,23 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
     /* TODO inherit permissions */
 
     return 0;
+}
+
+int fs_umount(struct fs_superblock * sb)
+{
+#ifdef configFS_DEBUG
+    KERROR(KERROR_DEBUG, "fs_umount(sb:%p)\n", sb);
+#endif
+    KASSERT(sb, "sb is set");
+    KASSERT(sb->fs && sb->root && sb->root->vn_prev_mountpoint &&
+            sb->root->vn_prev_mountpoint->vn_mountpoint,
+            "Sanity check");
+    KASSERT(sb->fs->umount, "umount() function should always exist");
+
+    /* Reverse the mount process to unmount */
+    sb->root->vn_prev_mountpoint->vn_mountpoint = sb->root->vn_prev_mountpoint;
+
+    return sb->fs->umount(sb);
 }
 
 fs_t * fs_by_name(const char * fsname)
