@@ -100,6 +100,9 @@ ASOBJS := $(patsubst %.S, %.o, $(ASRC-y))
 # C Obj files
 OBJS := $(patsubst %.c, %.o, $(SRC-y))
 
+# Deps
+DEPS := $(patsubst %.c, %.d, $(SRC-y))
+
 # a files for static libr
 LIBSA = $(addsuffix .a, $(LIBS))
 
@@ -113,9 +116,13 @@ $(ASOBJS): %.o: %.S $(AUTOCONF_H)
 $(OBJS): %.o: %.c $(AUTOCONF_H)
 	@echo "CC $@"
 	$(eval CUR_BC := $*.bc)
+	$(eval SP := s|\(^.*\)\.bc|$@|)
 	@$(CC) $(CCFLAGS) $(IDIR) -c $*.c -o $(CUR_BC)
+	@sed -i "$(SP)" "$*.d"
 	@$(OPT) $(OFLAGS) $(CUR_BC) -o - | $(LLC) $(LLCFLAGS) - -o - | \
 		$(GNUARCH)-as - -o $@ $(ASFLAGS)
+
+-include $(DEPS)
 
 $(LIBSA): $(OBJS) $(ASOBJS)
 	$(eval CUR_LIB := $(basename $@))
@@ -129,7 +136,7 @@ manifest: $(LIBSA)
 	echo "$(LIBSA)" > manifest
 
 clean:
-	$(RM) $(ASOBJS) $(OBJS)
+	$(RM) $(ASOBJS) $(OBJS) $(DEPS)
 	rm -rf crt0_o
 	$(RM) *.a
 	$(RM) manifest

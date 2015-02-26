@@ -83,12 +83,15 @@ ASOBJS 	:= $(patsubst %.S, %.o, $(ASRC-y))
 # C Obj files
 OBJS 	:= $(patsubst %.c, %.o, $(SRC-y))
 
-STARTUP_O = $(patsubst %.S, %.o, $(STARTUP))
+STARTUP_O := $(patsubst %.S, %.o, $(STARTUP))
+
+# Deps
+DEPS := $(patsubst %.c, %.d, $(SRC-y))
 
 # a files for modules
-MODAS = $(addsuffix .a, $(MODULES))
+MODAS := $(addsuffix .a, $(MODULES))
 
-KERNEL_IMG = $(ROOT_DIR)/kernel.img
+KERNEL_IMG := $(ROOT_DIR)/kernel.img
 
 # Targets ######################################################################
 
@@ -108,9 +111,13 @@ $(ASOBJS): $(ASRC-y) $(UNIFDEF) $(AUTOCONF_H)
 $(OBJS): %.o: %.c $(AUTOCONF_H)
 	@echo "CC $@"
 	$(eval CUR_BC := $*.bc)
+	$(eval SP := s|\(^.*\)\.bc|$@|)
 	@$(CC) $(CCFLAGS) $(IDIR) -c $*.c -o $(CUR_BC)
+	@sed -i "$(SP)" "$*.d"
 	@$(OPT) $(OFLAGS) $(CUR_BC) -o - | $(LLC) $(LLCFLAGS) - -o - \
 		| $(GNUARCH)-as - -o $@ $(ASFLAGS)
+
+-include $(DEPS)
 
 $(MODAS): $(ASOBJS) $(OBJS)
 	$(eval CUR_MODULE := $(basename $@))
@@ -120,7 +127,8 @@ $(MODAS): $(ASOBJS) $(OBJS)
 	@ar rcs $@ $(CUR_OBJS)
 
 $(KERNEL_IMG): $(MEMMAP) $(STARTUP_O) $(MODAS)
-	$(GNUARCH)-ld -o $(ROOT_DIR)/kernel.elf -T $(MEMMAP) $(LDFLAGS) $(STARTUP_O) --whole-archive $(MODAS) --no-whole-archive $(CRT)
+	$(GNUARCH)-ld -o $(ROOT_DIR)/kernel.elf -T $(MEMMAP) $(LDFLAGS) \
+		$(STARTUP_O) --whole-archive $(MODAS) --no-whole-archive $(CRT)
 	$(GNUARCH)-objcopy -O binary $(ROOT_DIR)/kernel.elf $(KERNEL_IMG)
 # End of Kernel
 
@@ -130,7 +138,7 @@ $(ROOT_DIR)/kernel.list: $(KERNEL_IMG)
 .PHONY: kernel clean
 
 clean:
-	$(RM) $(ASOBJS) $(OBJS) $(STARTUP_O)
+	$(RM) $(ASOBJS) $(OBJS) $(DEPS) $(STARTUP_O)
 	$(RM) *.bin
 	$(RM) *.img
 	$(RM) *.elf
