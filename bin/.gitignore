@@ -1,5 +1,6 @@
 cat
 echo
 ls
+mount
 tish
 stty

@@ -411,6 +411,7 @@ int sethostname(char * name, size_t namelen);
  * @{
  */
 
+extern char * optarg;
 
 /**
  * if error message should be printed.
