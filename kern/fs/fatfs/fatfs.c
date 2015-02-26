@@ -79,6 +79,7 @@ vnode_ops_t fatfs_vnode_ops = {
     .create = fatfs_create,
     .mknod = fatfs_mknod,
     .lookup = fatfs_lookup,
+    .unlink = fatfs_unlink,
     .mkdir = fatfs_mkdir,
     .rmdir = fatfs_rmdir,
     .readdir = fatfs_readdir,
@@ -555,6 +556,32 @@ int fatfs_create(vnode_t * dir, const char * name, mode_t mode,
     return fatfs_mknod(dir, name, (mode & ~S_IFMT) | S_IFREG, NULL, result);
 }
 
+int fatfs_unlink(vnode_t * dir, const char * name)
+{
+    struct fatfs_inode * indir = get_inode_of_vnode(dir);
+    char * in_fpath;
+    FRESULT err;
+    int retval;
+
+    if (!S_ISDIR(dir->vn_mode))
+        return -ENOTDIR;
+
+    in_fpath = format_fpath(indir, name);
+    if (!in_fpath)
+        return -ENOMEM;
+
+    /* TODO May need checks if file/dir is opened */
+
+    err = f_unlink(in_fpath);
+    if (err)
+        retval = fresult2errno(err);
+    else
+        retval = 0;
+
+    kfree(in_fpath);
+    return retval;
+}
+
 int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
                 vnode_t ** result)
 {
@@ -607,7 +634,7 @@ int fatfs_mkdir(vnode_t * dir,  const char * name, mode_t mode)
     struct fatfs_inode * indir = get_inode_of_vnode(dir);
     char * in_fpath;
     FRESULT err;
-    int retval = 0;
+    int retval;
 
     if (!S_ISDIR(dir->vn_mode))
         return -ENOTDIR;
@@ -619,6 +646,8 @@ int fatfs_mkdir(vnode_t * dir,  const char * name, mode_t mode)
     err = f_mkdir(in_fpath);
     if (err)
         retval = fresult2errno(err);
+    else
+        retval = 0;
 
     kfree(in_fpath);
     return retval;
@@ -626,7 +655,25 @@ int fatfs_mkdir(vnode_t * dir,  const char * name, mode_t mode)
 
 int fatfs_rmdir(vnode_t * dir,  const char * name)
 {
-    return -ENOTSUP;
+    int err;
+    vnode_t * result;
+    mode_t mode;
+    FRESULT ferr;
+
+    if (!S_ISDIR(dir->vn_mode))
+        return -ENOTDIR;
+
+    err = fatfs_lookup(dir, name, &result);
+    if (err)
+        return err;
+    mode = result->vn_mode;
+    vrele(result);
+    if (!S_ISDIR(mode))
+        return -ENOTDIR;
+
+    ferr = fatfs_unlink(dir, name);
+
+    return fresult2errno(err);
 }
 
 int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
