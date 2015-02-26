@@ -32,7 +32,7 @@
 #include <string.h>
 
 char *
-strchr(const char *p, int ch)
+strchr(const char * p, int ch)
 {
     char c;
 
@@ -41,7 +41,7 @@ strchr(const char *p, int ch)
         if (*p == c)
             return ((char *)p);
         if (*p == '\0')
-            return (NULL);
+            return NULL;
     }
     /* NOTREACHED */
 }

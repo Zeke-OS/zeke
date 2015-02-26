@@ -31,12 +31,10 @@
 #include <stddef.h>
 #include <kstring.h>
 
-char * kstrrchr(const char * p, int ch)
+char * kstrrchr(const char * p, char c)
 {
-    char *save;
-    char c;
+    char * save;
 
-    c = ch;
     for (save = NULL;; ++p) {
         if (*p == c)
             save = (char *)p;

@@ -1,6 +1,6 @@
-/*
+/*-
  * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 1988, 1993
+ * Copyright (c) 1990, 1993
  *  The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,22 +29,15 @@
  */
 
 #include <stddef.h>
-#include <string.h>
+#include <kstring.h>
 
-char *
-strrchr(const char * p, int ch)
+char * kstrchr(const char * p, char c)
 {
-    char * save;
-    char c;
-
-    c = ch;
-    for (save = NULL;; ++p) {
+    for (;; ++p) {
         if (*p == c)
-            save = (char *)p;
+            return (char *)p;
         if (*p == '\0')
-            return save;
+            return NULL;
     }
     /* NOTREACHED */
 }
-
-__weak_reference(strrchr, rindex);

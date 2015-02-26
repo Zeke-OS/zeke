@@ -168,6 +168,11 @@ char * strsep(char ** stringp, const char * delim);
 char * kstrrchr(const char * p, char ch);
 
 /**
+ * Locate first occurence of character in string.
+ */
+char * kstrchr(const char * p, char ch);
+
+/**
  * Validate null terminated string.
  * Return (1) if the buffer pointed to by kernel pointer 'buffer' and
  * of length 'bufferlen' contains a valid NUL-terminated string.
