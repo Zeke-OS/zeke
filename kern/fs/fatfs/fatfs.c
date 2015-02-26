@@ -604,7 +604,24 @@ int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
 
 int fatfs_mkdir(vnode_t * dir,  const char * name, mode_t mode)
 {
-    return -ENOTSUP;
+    struct fatfs_inode * indir = get_inode_of_vnode(dir);
+    char * in_fpath;
+    FRESULT err;
+    int retval = 0;
+
+    if (!S_ISDIR(dir->vn_mode))
+        return -ENOTDIR;
+
+    in_fpath = format_fpath(indir, name);
+    if (!in_fpath)
+        return -ENOMEM;
+
+    err = f_mkdir(in_fpath);
+    if (err)
+        retval = fresult2errno(err);
+
+    kfree(in_fpath);
+    return retval;
 }
 
 int fatfs_rmdir(vnode_t * dir,  const char * name)
