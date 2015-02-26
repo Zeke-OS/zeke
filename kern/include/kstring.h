@@ -161,6 +161,13 @@ char * strsep(char ** stringp, const char * delim);
  */
 
 /**
+ * Locate last occurence of character in string.
+ * @return Returns a pointer to the last occurrence of character in str;
+ *         If the character is not found then NULL.
+ */
+char * kstrrchr(const char * p, char ch);
+
+/**
  * Validate null terminated string.
  * Return (1) if the buffer pointed to by kernel pointer 'buffer' and
  * of length 'bufferlen' contains a valid NUL-terminated string.

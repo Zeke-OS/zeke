@@ -379,6 +379,23 @@ static vnode_t * create_root(fs_superblock_t * sb)
 static int fatfs_delete_vnode(vnode_t * vnode)
 {
     /* TODO Implementation of fatfs_delete_vnode() */
+#if 0
+    struct fatfs_inode * in = get_inode_of_vnode(vnode);
+    char * dirname;
+    char * name;
+
+    dirname = kstrdup(in->in_fpath, PATH_MAX);
+    name = kstrrchr(in->in_fpath, '/');
+    if (!name)
+        return -EINVAL;
+    name = '\0';
+    name++;
+
+    vrele_nunlink(vnode);
+    fatfs_unkink(dir, name);
+    kfree(dirname);
+#endif
+
     return -ENOTSUP;
 }
 
@@ -667,7 +684,7 @@ int fatfs_rmdir(vnode_t * dir,  const char * name)
     if (err)
         return err;
     mode = result->vn_mode;
-    vrele(result);
+    vrele_nunlink(result);
     if (!S_ISDIR(mode))
         return -ENOTDIR;
 
