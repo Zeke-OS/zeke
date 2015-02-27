@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    mount.c
+ * @file    umount.c
  * @author  Olli Vanhoja
- * @brief   Mount a file system.
+ * @brief   Dismount a file system.
  * @section LICENSE
  * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -34,20 +34,12 @@
 #include <string.h>
 #include <mount.h>
 
-int mount(const char * source, const char * target, const char * type,
-          int flags, char * parms)
+int umount(const char * target)
 {
-    struct _fs_mount_args args = {
-        .source = source,
-        .source_len = strlen(source) + 1,
+    struct _fs_umount_args args = {
         .target = target,
         .target_len = strlen(target) + 1,
-        .flags = flags,
-        .parm = parms,
-        .parm_len = strlen(parms) + 1
     };
 
-    strcpy((char *)args.fsname, type);
-
-    return syscall(SYSCALL_FS_MOUNT, &args);
+    return syscall(SYSCALL_FS_UMOUNT, &args);
 }

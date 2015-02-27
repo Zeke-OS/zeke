@@ -810,7 +810,7 @@ static int sys_umask(void * user_args)
 
 static int sys_mount(void * user_args)
 {
-    struct _fs_mount_args * args = 0;
+    struct _fs_mount_args * args = NULL;
     vnode_t * mpt = NULL;
     int err;
     int retval = -1;
@@ -834,7 +834,8 @@ static int sys_mount(void * user_args)
 
     /* Validate path strings */
     if (!strvalid(args->source, args->source_len) ||
-        !strvalid(args->target, args->target_len)) {
+        !strvalid(args->target, args->target_len) ||
+        !strvalid(args->fsname, sizeof(args->fsname))) {
         set_errno(ENAMETOOLONG);
         goto out;
     }
@@ -855,6 +856,51 @@ static int sys_mount(void * user_args)
 out:
     if (mpt)
         vrele(mpt);
+    freecpystruct(args);
+    return retval;
+}
+
+static int sys_umount(void * user_args)
+{
+    struct _fs_umount_args * args = NULL;
+    vnode_t * mpt;
+    struct fs_superblock * sb;
+    int err, retval = -1;
+
+    err = priv_check(curproc, PRIV_VFS_UNMOUNT);
+    if (err) {
+        set_errno(EPERM);
+        return -1;
+    }
+
+    err = copyinstruct(user_args, (void **)(&args),
+            sizeof(struct _fs_umount_args),
+            GET_STRUCT_OFFSETS(struct _fs_umount_args,
+                target, target_len));
+    if (err) {
+        set_errno(-err);
+        goto out;
+    }
+
+    if (!strvalid(args->target, args->target_len)) {
+        set_errno(ENAMETOOLONG);
+        goto out;
+    }
+
+    if (fs_namei_proc(&mpt, -1, (char *)args->target, AT_FDCWD)) {
+        set_errno(ENOENT); /* Mount point doesn't exist */
+        goto out;
+    }
+
+    /* TODO Possible race condition with two umounts */
+    sb = mpt->sb;
+    vrele(mpt);
+    retval = sb->fs->umount(sb);
+    if (retval) {
+        set_errno(-retval);
+    }
+
+out:
     freecpystruct(args);
     return retval;
 }
@@ -898,6 +944,7 @@ static const syscall_handler_t fs_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_CHOWN, sys_chown),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_UMASK, sys_umask),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_MOUNT, sys_mount),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_UMOUNT, sys_umount),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_CHROOT, sys_chroot),
 };
 SYSCALL_HANDLERDEF(fs_syscall, fs_sysfnmap)

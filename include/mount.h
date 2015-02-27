@@ -59,6 +59,14 @@ struct _fs_mount_args {
     size_t parm_len; /*!< in bytes */
 };
 
+/**
+ * Arguments struct for SYSCALL_FS_UMOUNT
+ */
+struct _fs_umount_args {
+    const char * target;
+    size_t target_len; /*!< in bytes */
+};
+
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
 
@@ -75,7 +83,7 @@ __BEGIN_DECLS
 int mount(const char * source, const char * target, const char * type,
           int flags, char * parms);
 
-int unmount(const char * dir, int flags);
+int umount(const char * target);
 
 __END_DECLS
 #endif /* !KERNEL_INTERNAL */
