@@ -11,6 +11,9 @@ zeke-rootfs.img
 config*
 manifest
 
+# deps
+*.d
+
 # LLVM bitcode
 *.bc
 *.opt.bc

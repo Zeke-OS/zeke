@@ -32,80 +32,18 @@
  * SUCH DAMAGE.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <mount.h>
-#include "utils.h"
+#ifndef UTILS_H
+#define UTILS_H
 
-struct optarr optnames[] = {
-    { MNT_RDONLY,       "ro" },
-    { MNT_SYNCHRONOUS,  "sync" },
-    { MNT_ASYNC,        "async" },
-    { MNT_NOEXEC,       "noexec" },
-    { MNT_NOSUID,       "nosuid" },
-    { MNT_NOATIME,      "noatime" },
+#include <stddef.h>
+
+struct optarr {
+    const int opt;
+    const char * optname;
 };
 
-static void usage(void)
-{
-    fprintf(stderr,
-            "usage: mount [-rw] [-o options] [-t type] source dest\n");
-    exit(1);
-}
+char * catopt(char * s0, char * s1);
+unsigned long opt2flags(struct optarr * optnames, size_t n_elem,
+                        char ** options);
 
-int main(int argc, char * argv[])
-{
-    int ch, flags = 0;
-    char * vfstype = NULL;
-    char * options = NULL;
-    char * src;
-    char * dst;
-
-    while ((ch = getopt(argc, argv, "o:rwt:")) != EOF) {
-        switch (ch) {
-        case 'o':
-            if (*optarg)
-                options = catopt(options, optarg);
-            break;
-        case 'r':
-            flags |= MNT_RDONLY;
-            break;
-        case 't':
-            if (vfstype) {
-                fprintf(stderr, "mount: only one -t option may be specified");
-                exit(1);
-            }
-            vfstype = optarg;
-        case 'w':
-            flags &= ~MNT_RDONLY;
-            break;
-        case '?':
-            usage();
-        }
-    }
-    argc -= optind;
-    argv += optind;
-
-    if (!vfstype)
-        vfstype = "auto";
-
-    if (argc < 2) {
-        usage();
-    }
-    src = argv[0];
-    dst = argv[1];
-
-    flags |= opt2flags(optnames, num_elem(optnames), &options);
-
-#if 0
-    printf("mount: flags: %d, options: \"%s\", vfstype: \"%s\" "
-            "src: \"%s\", dst: \"%s\"\n",
-            flags, options, vfstype, src, dst);
-#endif
-
-    if (mount(src, dst, vfstype, flags, options))
-        perror("mount: failed");
-
-    return 0;
-}
+#endif /* UTILS_H */

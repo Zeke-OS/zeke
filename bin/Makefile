@@ -32,7 +32,7 @@ BIN := cat echo ls mount tish stty
 cat-SRC-y := src/cat.c
 echo-SRC-y := src/echo.c
 ls-SRC-y := src/ls.c
-mount-SRC-y := src/mount.c
+mount-SRC-y := src/mount.c src/utils/opt.c
 tish-SRC-y := $(wildcard src/tish/*.c)
 stty-SRC-y := src/stty.c
 
