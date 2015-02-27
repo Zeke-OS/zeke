@@ -34,6 +34,7 @@
 #include <kstring.h>
 #include <libkern.h>
 #include <fs/fs.h>
+#include <fs/fs_util.h>
 #include <sys/sysctl.h>
 #include <errno.h>
 #include <hal/uart.h>

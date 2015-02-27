@@ -45,6 +45,8 @@
 #include <fs/dehtable.h>
 #include <fs/inpool.h>
 #include <fs/dev_major.h>
+#include <fs/fs.h>
+#include <fs/fs_util.h>
 #include <fs/ramfs.h>
 
 /**
@@ -370,8 +372,9 @@ int ramfs_delete_vnode(vnode_t * vnode)
         return 0;
     }
 
+    vrele_nunlink(vnode);
     refcount = vrefcnt(&inode->in_vnode);
-    if (refcount > 0) {
+    if (refcount > 1) {
 #if configRAMFS_DEBUG
         KERROR(KERROR_DEBUG, "\tNot removing, (refcount: %d)\n",
                refcount);
@@ -579,7 +582,6 @@ int ramfs_unlink(vnode_t * dir, const char * name)
 
     inode->in_nlink--; /* Decrement hard link count. */
     vrele_nunlink(vn);
-    vrele_nunlink(vn);
     if (inode->in_nlink <= 0)
         ramfs_delete_vnode(vn);
 
@@ -621,7 +623,8 @@ int ramfs_mkdir(vnode_t * dir, const char * name, mode_t mode)
     insert_inode(inode_new);
     err = ramfs_link(&(inode_dir->in_vnode), vnode_new, name);
     if (err) {
-        ramfs_delete_vnode(&(inode_new->in_vnode));
+        vrele_nunlink(vnode_new);
+        ramfs_delete_vnode(vnode_new);
         return err;
     }
 

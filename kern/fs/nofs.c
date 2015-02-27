@@ -94,13 +94,13 @@ void fs_enotsup_file_closed(proc_info_t * p, file_t * file)
 }
 
 int fs_enotsup_create(vnode_t * dir, const char * name, mode_t mode,
-                 vnode_t ** result)
+                      vnode_t ** result)
 {
     return -ENOTSUP;
 }
 
 int fs_enotsup_mknod(vnode_t * dir, const char * name, int mode,
-        void * specinfo, vnode_t ** result)
+                     void * specinfo, vnode_t ** result)
 {
     return -ENOTSUP;
 }

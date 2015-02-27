@@ -45,6 +45,7 @@
 #include <sys/sysctl.h>
 #include <fs/mbr.h>
 #include <fs/fs.h>
+#include <fs/fs_util.h>
 
 /*
  * File system global locking.
@@ -178,7 +179,6 @@ again:  /* Get vnode by name in this dir. */
          */
         if (retval == -EDOM && !strcmp(nodename, "..") &&
             vnode->vn_prev_mountpoint != vnode) {
-
             /* Get prev dir of prev fs sb from mount point. */
             while (vnode->vn_prev_mountpoint != vnode) {
                 /*
@@ -207,7 +207,6 @@ again:  /* Get vnode by name in this dir. */
                 vnode = vnode->vn_mountpoint;
             }
             *result = vnode;
-
             vrele(orig_vn);
             vref(vnode);
         }
@@ -734,9 +733,10 @@ static int getvndir(const char * pathname, vnode_t ** dir, char ** filename, int
     }
 
     err = fs_namei_proc(&vn_file, -1, pathname, AT_FDCWD);
+    if (err == 0)
+        vrele(vn_file);
     if (flag & O_CREAT) { /* File should not exist */
         if (err == 0) {
-            vrele(vn_file);
             err = -EEXIST;
             goto out;
         } else if (err != -ENOENT) {
@@ -745,7 +745,6 @@ static int getvndir(const char * pathname, vnode_t ** dir, char ** filename, int
     } else if (err) { /* File should exist */
         goto out;
     }
-    vrele(vn_file);
 
     err = parse_filepath(pathname, &path, &name);
     if (err)
@@ -1055,75 +1054,6 @@ out:
     return retval;
 }
 
-vnode_t * fs_create_pseudofs_root(fs_t * newfs, int majornum)
-{
-    int err;
-    vnode_t * rootnode;
-
-    /*
-     * We use a little trick here and create a temporary vnode that will be
-     * destroyed after succesful mount.
-     */
-
-    rootnode = kcalloc(1, sizeof(vnode_t));
-    if (!rootnode)
-        return NULL;
-
-    /* Temp root dir */
-    rootnode->vn_mountpoint = rootnode;
-    vrefset(rootnode, 1);
-    mtx_init(&rootnode->vn_lock, VN_LOCK_MODES);
-
-    err = fs_mount(rootnode, "", "ramfs", 0, "", 1);
-    if (err) {
-        KERROR(KERROR_ERR,
-               "Unable to create a pseudo fs root vnode for %s (%i)\n",
-               newfs->fsname, err);
-
-        return NULL;
-    }
-    rootnode = rootnode->vn_mountpoint;
-    kfree(rootnode->vn_prev_mountpoint);
-    rootnode->vn_prev_mountpoint = rootnode;
-    rootnode->vn_mountpoint = rootnode;
-
-    /* TODO The following is something we'd like to do but can't at the moment,
-     * it would allow us for example printing error and debug messages with a
-     * proper fsname.
-     */
-#if 0
-    newfs->sbl_head = rootnode->sb->fs->sbl_head;
-    rootnode->sb->fs = newfs;
-#endif
-    rootnode->sb->vdev_id = DEV_MMTODEV(majornum, 0);
-
-    return rootnode;
-}
-
-void fs_vnode_init(vnode_t * vnode, ino_t vn_num, struct fs_superblock * sb,
-                   const vnode_ops_t * const vnops)
-{
-    vnode->vn_num = vn_num;
-    vnode->vn_refcount = ATOMIC_INIT(0);
-    vnode->vn_mountpoint = vnode;
-    vnode->vn_prev_mountpoint = vnode;
-    vnode->sb = sb;
-    vnode->vnode_ops = (vnode_ops_t *)vnops;
-    mtx_init(&vnode->vn_lock, VN_LOCK_MODES);
-}
-
-void fs_inherit_vnops(vnode_ops_t * dest_vnops, const vnode_ops_t * base_vnops)
-{
-    void ** dest = (void **)dest_vnops;
-    void ** base = (void **)base_vnops;
-    const size_t fn_count = sizeof(vnode_ops_t) / sizeof(void *);
-
-    for (size_t i = 0; i < fn_count; i++) {
-        if (!dest[i])
-            dest[i] = base[i];
-    }
-}
-
 #define KERROR_VREF_FMT(_STR_) "%s(%s:%u): " _STR_
 #define KERROR_VREF(_LVL_, _FMT_, ...) \
     KERROR(_LVL_, KERROR_VREF_FMT(_FMT_), __func__, \
@@ -1206,25 +1136,4 @@ void vunref(vnode_t * vnode)
     prev = atomic_dec(&vnode->vn_refcount);
     if (prev <= 1)
         vnode->sb->delete_vnode(vnode);
-}
-
-void fs_vnode_cleanup(vnode_t * vnode)
-{
-    struct buf * var, * nxt;
-
-#ifdef configFS_DEBUG
-    KASSERT(vnode != NULL, "vnode can't be null.");
-#endif
-
-    /* Release associated buffers. */
-    if (!SPLAY_EMPTY(&vnode->vn_bpo.sroot)) {
-        for (var = SPLAY_MIN(bufhd_splay, &vnode->vn_bpo.sroot);
-                var != NULL; var = nxt) {
-            nxt = SPLAY_NEXT(bufhd_splay, &vnode->vn_bpo.sroot, var);
-            SPLAY_REMOVE(bufhd_splay, &vnode->vn_bpo.sroot, var);
-            if (!(var->b_flags & B_DONE))
-                var->b_flags |= B_DELWRI;
-            brelse(var);
-        }
-   }
 }

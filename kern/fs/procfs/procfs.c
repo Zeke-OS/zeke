@@ -38,6 +38,8 @@
 #include <libkern.h>
 #include <kerror.h>
 #include <proc.h>
+#include <fs/fs.h>
+#include <fs/fs_util.h>
 #include <fs/ramfs.h>
 #include <fs/dev_major.h>
 #include <fs/procfs.h>

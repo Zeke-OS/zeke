@@ -466,8 +466,8 @@ int fs_register(fs_t * fs);
 int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str, int oflags);
 
 /**
- * Walks the file system for a process and tries to locate and lock vnode
- * corresponding to a given path.
+ * Walks the file system for a process and tries to locate vnode corresponding
+ * to a given path.
  * @param fd        is the optional starting point for relative search.
  * @param atflags   if this is set to AT_FDARG then fd is used;
  *                  AT_FDCWD is implicit rule for this function.
@@ -646,33 +646,6 @@ int fs_chflags_curproc(int fildes, fflags_t flags);
 int fs_chown_curproc(int fildes, uid_t owner, gid_t group);
 
 /**
- * Create a new pseudo file system root.
- * Create a new pseudo fs root by inheriting ramfs implementation
- * as a basis. The created fs is a good basis for ram based file
- * systems like procfs but probably not the best basis for a
- * disk backed file system.
- */
-vnode_t * fs_create_pseudofs_root(fs_t * newfs, int majornum);
-
-/**
- * Inherit unset vnops from another file system.
- * @param dest_vnops is a vnode_ops struct containing pointers to vnops that
- *                   are actually implemented in the target file system
- *                   and other functions pointers shall be set to NULL.
- * @param base_vnops is the source used for vnops that are unimplemented in the
- *                   target file system.
- */
-void fs_inherit_vnops(vnode_ops_t * dest_vnops, const vnode_ops_t * base_vnops);
-
-/**
- * Initialize a vnode.
- * This is the prefferred method to initialize a vnode because vnode struct
- * internals may change and this function is (usually) kept up-to-date.
- */
-void fs_vnode_init(vnode_t * vnode, ino_t vn_num, struct fs_superblock * sb,
-                   const vnode_ops_t * const vnops);
-
-/**
  * Returns the refcount of a vnode.
  */
 int vrefcnt(struct vnode * vnode);
@@ -731,14 +704,6 @@ void vunref(vnode_t * vnode);
 /**
  * @}
  */
-
-/**
- * Cleanup some vnode data.
- * File system is responsible to call this function before deleting a vnode.
- * This handles following cleanup tasks:
- * - Release and write out buffers
- */
-void fs_vnode_cleanup(vnode_t * vnode);
 
 /* Not sup vnops (in nofs.c) */
 int fs_enotsup_lock(file_t * file);

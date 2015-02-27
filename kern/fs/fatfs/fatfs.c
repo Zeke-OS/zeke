@@ -38,6 +38,8 @@
 #include <sys/hash.h>
 #include <kinit.h>
 #include <kstring.h>
+#include <fs/fs.h>
+#include <fs/fs_util.h>
 #include <fs/vfs_hash.h>
 #include <fs/dev_major.h>
 #include <kmalloc.h>
@@ -391,6 +393,8 @@ static int fatfs_delete_vnode(vnode_t * vnode)
     char * dirname;
     char * name;
 
+    /* TODO Remove only from memory in there is links or refs */
+
     dirname = kstrdup(in->in_fpath, PATH_MAX);
     name = kstrrchr(in->in_fpath, '/');
     if (!name)
@@ -645,10 +649,9 @@ int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
         return fresult2errno(err);
     }
 
-    fatfs_chmod(res, mode);
-
     if (result)
         *result = &res->in_vnode;
+    fatfs_chmod(*result, mode);
 
 #ifdef configFATFS_DEBUG
     KERROR(KERROR_DEBUG, "mkdod() ok\n");

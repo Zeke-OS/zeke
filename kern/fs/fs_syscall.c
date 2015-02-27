@@ -214,7 +214,7 @@ static int sys_lseek(void * user_args)
 static int sys_open(void * user_args)
 {
     struct _fs_open_args * args = 0;
-    vnode_t * file = NULL;
+    vnode_t * vn_file = NULL;
     int err, retval = -1;
 
     /* Copyin args struct */
@@ -238,11 +238,11 @@ static int sys_open(void * user_args)
         goto out;
     }
 
-    err = fs_namei_proc(&file, args->fd, args->name, args->atflags);
+    err = fs_namei_proc(&vn_file, args->fd, args->name, args->atflags);
     if (err) {
         if (args->oflags & O_CREAT) {
             /* Create a new file, umask is handled in fs_creat_cproc() */
-            retval = fs_creat_cproc(args->name, S_IFREG | args->mode, &file);
+            retval = fs_creat_cproc(args->name, S_IFREG | args->mode, &vn_file);
             if (retval) {
                 set_errno(-retval);
                 goto out;
@@ -253,15 +253,15 @@ static int sys_open(void * user_args)
         }
     }
 
-    retval = fs_fildes_create_cproc(file, args->oflags);
+    retval = fs_fildes_create_cproc(vn_file, args->oflags);
     if (retval < 0) {
         set_errno(-retval);
         retval = -1;
     }
 
 out:
-    if (file)
-        vrele(file);
+    if (vn_file)
+        vrele(vn_file);
     freecpystruct(args);
     return retval;
 }
@@ -326,7 +326,6 @@ static int sys_getdents(void * user_args)
 
     bytes_left = args.nbytes;
     while (bytes_left >= sizeof(struct dirent)) {
-
         if (vnode->vnode_ops->readdir(vnode, &d, &fildes->seek_pos))
             break;
         dents[count++] = d;
@@ -575,9 +574,9 @@ out:
 static int sys_filestat(void * user_args)
 {
     struct _fs_stat_args * args = 0;
-    vnode_t * vnode;
+    vnode_t * vnode = NULL;
     struct stat stat_buf;
-    int err, retval = -1;
+    int err, filref = 0, vnref = 0, retval = -1;
 
     err = priv_check(curproc, PRIV_VFS_STAT);
     if (err) {
@@ -615,35 +614,41 @@ static int sys_filestat(void * user_args)
             set_errno(EBADF);
             goto out;
         }
+        filref = 1;
 
         err = fildes->vnode->vnode_ops->stat(fildes->vnode, &stat_buf);
-        if (!err) {
-            /* Check if fildes was opened with O_SEARCH or if not then if we
-             * have a permission to search by file permissions. */
-            if (fildes->oflags & O_SEARCH || chkperm_cproc(&stat_buf, O_EXEC))
-                err = lookup_vnode(&vnode, fildes->vnode, args->path, ofalgs);
-            else /* No permission to search */
-                err = -EACCES;
+        if (err) {
+            set_errno(-err);
+            goto out;
         }
 
-        fs_fildes_ref(curproc->files, args->fd, -1);
+        if (args->flags & O_EXEC) { /* Get stat of given fildes, which we have
+                                     * have in stat_buf. */
+            goto out;
+        }
+
+        /*
+         * Check if fildes was opened with O_SEARCH, if not then if we
+         * have a permission to search it.
+         */
+        if (fildes->oflags & O_SEARCH || chkperm_cproc(&stat_buf, O_EXEC))
+            err = lookup_vnode(&vnode, fildes->vnode, args->path, ofalgs);
+        else /* No permission to search */
+            err = -EACCES;
         if (err) { /* Handle previous error */
             set_errno(-err);
             goto out;
         }
+        vnref = 1;
     } else { /* search by path */
         if (fs_namei_proc(&vnode, -1, (char *)args->path, AT_FDCWD)) {
             set_errno(ENOENT);
             goto out;
         }
+        vnref = 1;
     }
 
-    if ((args->flags & AT_FDARG) &&
-        (args->flags & O_EXEC)) { /* Get stat of given fildes, which we have
-                                   * have in stat_buf. */
-        goto ready;
-    }
-
+    KASSERT(vnode, "vnode should be set");
     KASSERT(vnode->vnode_ops->stat, "stat() should be defined");
     err = vnode->vnode_ops->stat(vnode, &stat_buf);
     if (err) {
@@ -651,13 +656,15 @@ static int sys_filestat(void * user_args)
         goto out;
     }
 
-    vrele(vnode);
-
-ready:
-    copyout(&stat_buf, args->buf, sizeof(struct stat));
     retval = 0;
 out:
+    if (filref)
+        fs_fildes_ref(curproc->files, args->fd, -1);
+    if (vnref)
+        vrele(vnode);
+    copyout(&stat_buf, args->buf, sizeof(struct stat));
     freecpystruct(args);
+
     return retval;
 }
 
