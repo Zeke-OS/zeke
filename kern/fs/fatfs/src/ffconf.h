@@ -12,15 +12,6 @@
 / Functions and Buffer Configurations
 /---------------------------------------------------------------------------*/
 
-#define _FS_TINY 0   /* 0:Normal or 1:Tiny */
-/*
- * When _FS_TINY is set to 1, it reduces memory consumption _MAX_SS bytes each
- * file object. For file data transfer, FatFs uses the common sector buffer in
- * the file system object (FATFS) instead of private sector buffer eliminated
- * from the file object (FIL).
- */
-
-
 #ifdef configFATFS_READONLY
 #define _FS_READONLY 1
 #else

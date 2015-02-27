@@ -90,6 +90,13 @@ vnode_ops_t fatfs_vnode_ops = {
 
 GENERATE_INSERT_SB(fatfs_sb, fatfs_fs)
 
+/* TODO Could be better way but should be verified first */
+#if 0
+#define FIL2INO(x) ((x)->sclust)
+
+#define DIR2INO(x) ((x)->sclust)
+#endif
+
 int fatfs_init(void) __attribute__((constructor));
 int fatfs_init(void)
 {
@@ -575,6 +582,7 @@ int fatfs_create(vnode_t * dir, const char * name, mode_t mode,
 
 int fatfs_unlink(vnode_t * dir, const char * name)
 {
+#if !configFATFS_READONLY
     struct fatfs_inode * indir = get_inode_of_vnode(dir);
     char * in_fpath;
     FRESULT err;
@@ -597,11 +605,15 @@ int fatfs_unlink(vnode_t * dir, const char * name)
 
     kfree(in_fpath);
     return retval;
+#else
+    return -EROFS;
+#endif
 }
 
 int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
                 vnode_t ** result)
 {
+#if !configFATFS_READONLY
     struct fatfs_inode * indir = get_inode_of_vnode(dir);
     struct fatfs_inode * res = NULL;
     char * in_fpath;
@@ -613,7 +625,6 @@ int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
            dir, name, mode, specinfo, result);
 #endif
 
-
     if (!S_ISDIR(dir->vn_mode))
         return -ENOTDIR;
 
@@ -622,7 +633,6 @@ int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
 
     if (specinfo)
         return -EINVAL; /* specinfo not supported. */
-
 
     in_fpath = format_fpath(indir, name);
     if (!in_fpath)
@@ -634,7 +644,8 @@ int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
         kfree(in_fpath);
         return fresult2errno(err);
     }
-    /* TODO Set mode */
+
+    fatfs_chmod(res, mode);
 
     if (result)
         *result = &res->in_vnode;
@@ -644,10 +655,14 @@ int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
 #endif
 
     return 0;
+#else
+    return -EROFS;
+#endif
 }
 
 int fatfs_mkdir(vnode_t * dir,  const char * name, mode_t mode)
 {
+#if !configFATFS_READONLY
     struct fatfs_inode * indir = get_inode_of_vnode(dir);
     char * in_fpath;
     FRESULT err;
@@ -668,6 +683,9 @@ int fatfs_mkdir(vnode_t * dir,  const char * name, mode_t mode)
 
     kfree(in_fpath);
     return retval;
+#else
+    return -EROFS;
+#endif
 }
 
 int fatfs_rmdir(vnode_t * dir,  const char * name)
@@ -824,6 +842,7 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
 
 int fatfs_chmod(vnode_t * vnode, mode_t mode)
 {
+#if !configFATFS_READONLY
     struct fatfs_inode * in = get_inode_of_vnode(vnode);
     BYTE attr = 0;
     const BYTE mask = AM_RDO;
@@ -835,6 +854,9 @@ int fatfs_chmod(vnode_t * vnode, mode_t mode)
     fresult = f_chmod(in->in_fpath, attr, mask);
 
     return fresult2errno(fresult);
+#else
+    return -EROFS;
+#endif
 }
 
 /*
@@ -843,6 +865,7 @@ int fatfs_chmod(vnode_t * vnode, mode_t mode)
  */
 int fatfs_chflags(vnode_t * vnode, fflags_t flags)
 {
+#if !configFATFS_READONLY
     struct fatfs_inode * in = get_inode_of_vnode(vnode);
     BYTE attr = 0;
     const BYTE mask = AM_RDO | AM_ARC | AM_SYS | AM_HID;
@@ -860,6 +883,9 @@ int fatfs_chflags(vnode_t * vnode, fflags_t flags)
     fresult = f_chmod(in->in_fpath, attr, mask);
 
     return fresult2errno(fresult);
+#else
+    return -EROFS;
+#endif
 }
 
 /**

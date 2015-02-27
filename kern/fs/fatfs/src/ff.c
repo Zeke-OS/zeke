@@ -2433,18 +2433,12 @@ FRESULT f_read (
                 if (fatfs_disk_read(fp->fs->drv, rbuff, sect, cc * SS(fp->fs)))
                     ABORT(fp->fs, FR_DISK_ERR);
 #if !_FS_READONLY && _FS_MINIMIZE <= 2          /* Replace one of the read sectors with cached data if it contains a dirty sector */
-#if _FS_TINY
-                if (fp->fs->wflag && fp->fs->winsect - sect < cc)
-                    memcpy(rbuff + ((fp->fs->winsect - sect) * SS(fp->fs)), fp->fs->win, SS(fp->fs));
-#else
                 if ((fp->flag & FA__DIRTY) && fp->dsect - sect < cc)
                     memcpy(rbuff + ((fp->dsect - sect) * SS(fp->fs)), fp->buf, SS(fp->fs));
-#endif
 #endif
                 rcnt = SS(fp->fs) * cc;         /* Number of bytes transferred */
                 continue;
             }
-#if !_FS_TINY
             if (fp->dsect != sect) {            /* Load data sector if not in cache */
 #if !_FS_READONLY
                 if (fp->flag & FA__DIRTY) {     /* Write-back dirty sector cache */
@@ -2456,18 +2450,11 @@ FRESULT f_read (
                 if (fatfs_disk_read(fp->fs->drv, fp->buf, sect, SS(fp->fs)))   /* Fill sector cache */
                     ABORT(fp->fs, FR_DISK_ERR);
             }
-#endif
             fp->dsect = sect;
         }
         rcnt = SS(fp->fs) - ((UINT)fp->fptr % SS(fp->fs));  /* Get partial sector data from sector buffer */
         if (rcnt > btr) rcnt = btr;
-#if _FS_TINY
-        if (move_window(fp->fs, fp->dsect))     /* Move sector window */
-            ABORT(fp->fs, FR_DISK_ERR);
-        memcpy(rbuff, &fp->fs->win[fp->fptr % SS(fp->fs)], rcnt);  /* Pick partial sector */
-#else
         memcpy(rbuff, &fp->buf[fp->fptr % SS(fp->fs)], rcnt);  /* Pick partial sector */
-#endif
     }
 
     LEAVE_FF(fp->fs, FR_OK);
@@ -2528,16 +2515,13 @@ FRESULT f_write (
                 fp->clust = clst;           /* Update current cluster */
                 if (fp->sclust == 0) fp->sclust = clst; /* Set start cluster if the first write */
             }
-#if _FS_TINY
-            if (fp->fs->winsect == fp->dsect && sync_window(fp->fs))    /* Write-back sector cache */
-                ABORT(fp->fs, FR_DISK_ERR);
-#else
+
             if (fp->flag & FA__DIRTY) {     /* Write-back sector cache */
                 if (fatfs_disk_write(fp->fs->drv, fp->buf, fp->dsect, SS(fp->fs)))
                     ABORT(fp->fs, FR_DISK_ERR);
                 fp->flag &= ~FA__DIRTY;
             }
-#endif
+
             sect = clust2sect(fp->fs, fp->clust);   /* Get current sector */
             if (!sect) ABORT(fp->fs, FR_INT_ERR);
             sect += csect;
@@ -2548,46 +2532,28 @@ FRESULT f_write (
                 if (fatfs_disk_write(fp->fs->drv, wbuff, sect, cc * SS(fp->fs)))
                     ABORT(fp->fs, FR_DISK_ERR);
 #if _FS_MINIMIZE <= 2
-#if _FS_TINY
-                if (fp->fs->winsect - sect < cc) {  /* Refill sector cache if it gets invalidated by the direct write */
-                    memcpy(fp->fs->win, wbuff + ((fp->fs->winsect - sect) * SS(fp->fs)), SS(fp->fs));
-                    fp->fs->wflag = 0;
-                }
-#else
                 if (fp->dsect - sect < cc) { /* Refill sector cache if it gets invalidated by the direct write */
                     memcpy(fp->buf, wbuff + ((fp->dsect - sect) * SS(fp->fs)), SS(fp->fs));
                     fp->flag &= ~FA__DIRTY;
                 }
 #endif
-#endif
                 wcnt = SS(fp->fs) * cc;     /* Number of bytes transferred */
                 continue;
             }
-#if _FS_TINY
-            if (fp->fptr >= fp->fsize) {    /* Avoid silly cache filling at growing edge */
-                if (sync_window(fp->fs)) ABORT(fp->fs, FR_DISK_ERR);
-                fp->fs->winsect = sect;
-            }
-#else
+
             if (fp->dsect != sect) {        /* Fill sector cache with file data */
                 if (fp->fptr < fp->fsize &&
                     fatfs_disk_read(fp->fs->drv, fp->buf, sect, SS(fp->fs)))
                         ABORT(fp->fs, FR_DISK_ERR);
             }
-#endif
             fp->dsect = sect;
         }
         wcnt = SS(fp->fs) - ((UINT)fp->fptr % SS(fp->fs));/* Put partial sector into file I/O buffer */
-        if (wcnt > btw) wcnt = btw;
-#if _FS_TINY
-        if (move_window(fp->fs, fp->dsect)) /* Move sector window */
-            ABORT(fp->fs, FR_DISK_ERR);
-        memcpy(&fp->fs->win[fp->fptr % SS(fp->fs)], wbuff, wcnt);  /* Fit partial sector */
-        fp->fs->wflag = 1;
-#else
+        if (wcnt > btw)
+            wcnt = btw;
+
         memcpy(&fp->buf[fp->fptr % SS(fp->fs)], wbuff, wcnt);  /* Fit partial sector */
         fp->flag |= FA__DIRTY;
-#endif
     }
 
     if (fp->fptr > fp->fsize) fp->fsize = fp->fptr; /* Update file size if needed */
@@ -2616,13 +2582,12 @@ FRESULT f_sync (
     if (res == FR_OK) {
         if (fp->flag & FA__WRITTEN) {   /* Has the file been written? */
             /* Write-back dirty buffer */
-#if !_FS_TINY
             if (fp->flag & FA__DIRTY) {
                 if (fatfs_disk_write(fp->fs->drv, fp->buf, fp->dsect, SS(fp->fs)))
                     LEAVE_FF(fp->fs, FR_DISK_ERR);
                 fp->flag &= ~FA__DIRTY;
             }
-#endif
+
             /* Update the directory entry */
             res = move_window(fp->fs, fp->dir_sect);
             if (res == FR_OK) {
@@ -2876,7 +2841,6 @@ FRESULT f_lseek (
                 if (!dsc) ABORT(fp->fs, FR_INT_ERR);
                 dsc += (ofs - 1) / SS(fp->fs) & (fp->fs->csize - 1);
                 if (fp->fptr % SS(fp->fs) && dsc != fp->dsect) {    /* Refill sector cache if needed */
-#if !_FS_TINY
 #if !_FS_READONLY
                     if (fp->flag & FA__DIRTY) {     /* Write-back dirty sector cache */
                         if (fatfs_disk_write(fp->fs->drv, fp->buf, fp->dsect, SS(fp->fs)))
@@ -2886,7 +2850,6 @@ FRESULT f_lseek (
 #endif
                     if (fatfs_disk_read(fp->fs->drv, fp->buf, dsc, SS(fp->fs)))    /* Load current sector */
                         ABORT(fp->fs, FR_DISK_ERR);
-#endif
                     fp->dsect = dsc;
                 }
             }
@@ -2951,7 +2914,6 @@ FRESULT f_lseek (
             }
         }
         if (fp->fptr % SS(fp->fs) && nsect != fp->dsect) {  /* Fill sector cache if needed */
-#if !_FS_TINY
 #if !_FS_READONLY
             if (fp->flag & FA__DIRTY) {         /* Write-back dirty sector cache */
                 if (fatfs_disk_write(fp->fs->drv, fp->buf, fp->dsect, SS(fp->fs)))
@@ -2961,7 +2923,6 @@ FRESULT f_lseek (
 #endif
             if (fatfs_disk_read(fp->fs->drv, fp->buf, nsect, SS(fp->fs)))  /* Fill sector cache */
                 ABORT(fp->fs, FR_DISK_ERR);
-#endif
             fp->dsect = nsect;
         }
 #if !_FS_READONLY
@@ -3249,14 +3210,13 @@ FRESULT f_truncate (
                     if (res == FR_OK) res = remove_chain(fp->fs, ncl);
                 }
             }
-#if !_FS_TINY
+
             if (res == FR_OK && (fp->flag & FA__DIRTY)) {
                 if (fatfs_disk_write(fp->fs->drv, fp->buf, fp->dsect, SS(fp->fs)))
                     res = FR_DISK_ERR;
                 else
                     fp->flag &= ~FA__DIRTY;
             }
-#endif
         }
         if (res != FR_OK) fp->err = (FRESULT)res;
     }
@@ -3736,68 +3696,6 @@ FRESULT f_setlabel (
 
 #endif /* !_FS_READONLY */
 #endif /* _USE_LABEL */
-
-
-
-/*-----------------------------------------------------------------------*/
-/* Forward data to the stream directly (available on only tiny cfg)      */
-/*-----------------------------------------------------------------------*/
-#if _USE_FORWARD && _FS_TINY
-
-FRESULT f_forward (
-    FIL* fp,                        /* Pointer to the file object */
-    UINT (*func)(const BYTE*,UINT), /* Pointer to the streaming function */
-    UINT btf,                       /* Number of bytes to forward */
-    UINT* bf                        /* Pointer to number of bytes forwarded */
-)
-{
-    FRESULT res;
-    DWORD remain, clst, sect;
-    UINT rcnt;
-    BYTE csect;
-
-
-    *bf = 0;    /* Clear transfer byte counter */
-
-    res = validate(fp);                             /* Check validity of the object */
-    if (res != FR_OK) LEAVE_FF(fp->fs, res);
-    if (fp->err)                                    /* Check error */
-        LEAVE_FF(fp->fs, (FRESULT)fp->err);
-    if (!(fp->flag & FA_READ))                      /* Check access mode */
-        LEAVE_FF(fp->fs, FR_DENIED);
-
-    remain = fp->fsize - fp->fptr;
-    if (btf > remain) btf = (UINT)remain;           /* Truncate btf by remaining bytes */
-
-    for ( ;  btf && (*func)(0, 0);                  /* Repeat until all data transferred or stream becomes busy */
-        fp->fptr += rcnt, *bf += rcnt, btf -= rcnt) {
-        csect = (BYTE)(fp->fptr / SS(fp->fs) & (fp->fs->csize - 1));    /* Sector offset in the cluster */
-        if ((fp->fptr % SS(fp->fs)) == 0) {         /* On the sector boundary? */
-            if (!csect) {                           /* On the cluster boundary? */
-                clst = (fp->fptr == 0) ?            /* On the top of the file? */
-                    fp->sclust : get_fat(fp->fs, fp->clust);
-                if (clst <= 1) ABORT(fp->fs, FR_INT_ERR);
-                if (clst == 0xFFFFFFFF) ABORT(fp->fs, FR_DISK_ERR);
-                fp->clust = clst;                   /* Update current cluster */
-            }
-        }
-        sect = clust2sect(fp->fs, fp->clust);       /* Get current data sector */
-        if (!sect) ABORT(fp->fs, FR_INT_ERR);
-        sect += csect;
-        if (move_window(fp->fs, sect))              /* Move sector window */
-            ABORT(fp->fs, FR_DISK_ERR);
-        fp->dsect = sect;
-        rcnt = SS(fp->fs) - (WORD)(fp->fptr % SS(fp->fs));  /* Forward data from sector window */
-        if (rcnt > btf) rcnt = btf;
-        rcnt = (*func)(&fp->fs->win[(WORD)fp->fptr % SS(fp->fs)], rcnt);
-        if (!rcnt) ABORT(fp->fs, FR_INT_ERR);
-    }
-
-    LEAVE_FF(fp->fs, FR_OK);
-}
-#endif /* _USE_FORWARD */
-
-
 
 #if _USE_MKFS && !_FS_READONLY
 /*-----------------------------------------------------------------------*/
