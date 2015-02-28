@@ -40,6 +40,28 @@ struct vnode;
 struct vnode_ops;
 
 /**
+ * Generate insert_suberblock function.
+ * Insert a sb_type struct to the end of sb mount linked list.
+ * @param sb_type is a pointer to a file system superblock.
+ */
+#define GENERATE_INSERT_SB(sb_type, fs)                 \
+static void insert_superblock(struct sb_type * sb)      \
+{                                                       \
+    superblock_lnode_t * curr = (fs).sbl_head;          \
+                                                        \
+    /* Add as a first sb if no other mounts yet */      \
+    if (curr == 0) {                                    \
+        (fs).sbl_head = &(sb->sbn);                     \
+    } else {                                            \
+        /* else find the last sb on the linked list. */ \
+        while (curr->next != 0) {                       \
+            curr = curr->next;                          \
+        }                                               \
+        curr->next = &(sb->sbn);                        \
+    }                                                   \
+}
+
+/**
  * Create a new pseudo file system root.
  * Create a new pseudo fs root by inheriting ramfs implementation
  * as a basis. The created fs is a good basis for ram based file

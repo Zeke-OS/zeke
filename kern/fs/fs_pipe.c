@@ -122,7 +122,8 @@ static void init_file(file_t * file, vnode_t * vn, struct stream_pipe * pipe,
  * @param fildes returned file descriptor numbers.
  * @param len is the minimum size of the new pipe buffer.
  */
-int fs_pipe_cproc_creat(struct files_struct * files, int fildes[2], size_t len)
+int fs_pipe_curproc_creat(struct files_struct * files, int fildes[2],
+                          size_t len)
 {
     struct stream_pipe * pipe;
     file_t * file0;
@@ -191,8 +192,8 @@ int fs_pipe_cproc_creat(struct files_struct * files, int fildes[2], size_t len)
     init_file(file1, vnode, pipe, O_WRONLY);
 
     /* ... and we are ready */
-    fildes[0] = fs_fildes_cproc_next(file0, 0);
-    fildes[1] = fs_fildes_cproc_next(file1, 0);
+    fildes[0] = fs_fildes_curproc_next(file0, 0);
+    fildes[1] = fs_fildes_curproc_next(file1, 0);
 
     return 0;
 }

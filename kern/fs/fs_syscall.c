@@ -84,7 +84,7 @@ static int sys_read(void * user_args)
         goto out;
     }
 
-    retval = fs_readwrite_cproc(args.fildes, buf, args.nbytes, O_RDONLY);
+    retval = fs_readwrite_curproc(args.fildes, buf, args.nbytes, O_RDONLY);
     if (retval < 0) {
         set_errno(-retval);
         retval = -1;
@@ -137,7 +137,7 @@ static int sys_write(void * user_args)
         goto out;
     }
 
-    retval = fs_readwrite_cproc(args.fildes, buf, args.nbytes, O_WRONLY);
+    retval = fs_readwrite_curproc(args.fildes, buf, args.nbytes, O_WRONLY);
     if (retval < 0) {
         set_errno(-retval);
         retval = -1;
@@ -241,8 +241,9 @@ static int sys_open(void * user_args)
     err = fs_namei_proc(&vn_file, args->fd, args->name, args->atflags);
     if (err) {
         if (args->oflags & O_CREAT) {
-            /* Create a new file, umask is handled in fs_creat_cproc() */
-            retval = fs_creat_cproc(args->name, S_IFREG | args->mode, &vn_file);
+            /* Create a new file, umask is handled in fs_creat_curproc() */
+            retval = fs_creat_curproc(args->name, S_IFREG | args->mode,
+                    &vn_file);
             if (retval) {
                 set_errno(-retval);
                 goto out;
@@ -253,7 +254,7 @@ static int sys_open(void * user_args)
         }
     }
 
-    retval = fs_fildes_create_cproc(vn_file, args->oflags);
+    retval = fs_fildes_create_curproc(vn_file, args->oflags);
     if (retval < 0) {
         set_errno(-retval);
         retval = -1;
@@ -366,7 +367,7 @@ static int sys_fcntl(void * user_args)
     {
         int new_fd;
 
-        new_fd = fs_fildes_cproc_next(file, args.third.ival);
+        new_fd = fs_fildes_curproc_next(file, args.third.ival);
         if (new_fd < 0) {
             set_errno(-new_fd);
             goto out;
@@ -392,7 +393,7 @@ static int sys_fcntl(void * user_args)
             }
         }
 
-        new_fd = fs_fildes_cproc_next(file, new_fd);
+        new_fd = fs_fildes_curproc_next(file, new_fd);
         if (new_fd < 0) {
             set_errno(-new_fd);
             goto out;
@@ -631,7 +632,7 @@ static int sys_filestat(void * user_args)
          * Check if fildes was opened with O_SEARCH, if not then if we
          * have a permission to search it.
          */
-        if (fildes->oflags & O_SEARCH || chkperm_cproc(&stat_buf, O_EXEC))
+        if (fildes->oflags & O_SEARCH || chkperm_curproc(&stat_buf, O_EXEC))
             err = lookup_vnode(&vnode, fildes->vnode, args->path, ofalgs);
         else /* No permission to search */
             err = -EACCES;

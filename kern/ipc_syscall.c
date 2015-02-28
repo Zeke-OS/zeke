@@ -47,7 +47,7 @@ static int sys_pipe(void * user_args)
     }
     copyin(user_args, &args, sizeof(args));
 
-    err = fs_pipe_cproc_creat(curproc->files, args.fildes, args.len);
+    err = fs_pipe_curproc_creat(curproc->files, args.fildes, args.len);
     if (err) {
         set_errno(-err);
         return -1;

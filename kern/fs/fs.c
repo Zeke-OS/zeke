@@ -391,7 +391,7 @@ unsigned int fs_get_pfs_minor(void)
     return retval;
 }
 
-int chkperm_cproc(struct stat * stat, int oflags)
+int chkperm_curproc(struct stat * stat, int oflags)
 {
     uid_t euid = curproc->euid;
     gid_t egid = curproc->egid;
@@ -445,7 +445,7 @@ int chkperm(struct stat * stat, uid_t euid, gid_t egid, int oflags)
     return 0;
 }
 
-int chkperm_vnode_cproc(vnode_t * vnode, int oflags)
+int chkperm_vnode_curproc(vnode_t * vnode, int oflags)
 {
     uid_t euid = curproc->euid;
     gid_t egid = curproc->egid;
@@ -481,7 +481,7 @@ int fs_fildes_set(file_t * fildes, vnode_t * vnode, int oflags)
     return 0;
 }
 
-int fs_fildes_create_cproc(vnode_t * vnode, int oflags)
+int fs_fildes_create_curproc(vnode_t * vnode, int oflags)
 {
     file_t * new_fildes;
     int err, retval;
@@ -494,7 +494,7 @@ int fs_fildes_create_cproc(vnode_t * vnode, int oflags)
         goto perms_ok;
 
     /* Check if user perms gives access */
-    err = chkperm_vnode_cproc(vnode, oflags);
+    err = chkperm_vnode_curproc(vnode, oflags);
     if (err) {
         retval = err;
         goto out;
@@ -520,7 +520,7 @@ perms_ok:
     if (S_ISDIR(vnode->vn_mode))
         new_fildes->seek_pos = DIRENT_SEEK_START;
 
-    int fd = fs_fildes_cproc_next(new_fildes, 0);
+    int fd = fs_fildes_curproc_next(new_fildes, 0);
     if (fd < 0) {
         kfree(new_fildes);
         retval = fd;
@@ -536,7 +536,7 @@ out:
     return retval;
 }
 
-int fs_fildes_cproc_next(file_t * new_file, int start)
+int fs_fildes_curproc_next(file_t * new_file, int start)
 {
     files_t * files = curproc->files;
 
@@ -599,7 +599,7 @@ int fs_fildes_close(struct proc_info * p, int fildes)
     return 0;
 }
 
-ssize_t fs_readwrite_cproc(int fildes, void * buf, size_t nbyte, int oper)
+ssize_t fs_readwrite_curproc(int fildes, void * buf, size_t nbyte, int oper)
 {
     vnode_t * vnode;
     file_t * file;
@@ -764,14 +764,14 @@ out:
     return err;
 }
 
-int fs_creat_cproc(const char * pathname, mode_t mode, vnode_t ** result)
+int fs_creat_curproc(const char * pathname, mode_t mode, vnode_t ** result)
 {
     char * name = NULL;
     vnode_t * dir = NULL;
     int retval = 0;
 
 #if configFS_DEBUG
-    KERROR(KERROR_DEBUG, "fs_creat_cproc(pathname \"%s\", mode %u)\n",
+    KERROR(KERROR_DEBUG, "fs_creat_curproc(pathname \"%s\", mode %u)\n",
            pathname, (unsigned)mode);
 #endif
 
@@ -811,7 +811,7 @@ int fs_link_curproc(const char * path1, size_t path1_len,
         return err;
 
     /* Check write access to the source vnode */
-    err = chkperm_vnode_cproc(vn_src, O_WRONLY);
+    err = chkperm_vnode_curproc(vn_src, O_WRONLY);
     if (err)
         goto out;
 
@@ -829,7 +829,7 @@ int fs_link_curproc(const char * path1, size_t path1_len,
         goto out;
     }
 
-    err = chkperm_vnode_cproc(vndir_dst, O_WRONLY);
+    err = chkperm_vnode_curproc(vndir_dst, O_WRONLY);
     if (err)
         goto out;
 
@@ -885,7 +885,7 @@ int fs_unlink_curproc(int fd, const char * path, size_t path_len, int atflags)
      * We need a write access to the containing directory to allow removal of
      * a directory entry.
      */
-    err = chkperm_vnode_cproc(dir, O_WRONLY);
+    err = chkperm_vnode_curproc(dir, O_WRONLY);
     if (err) {
         if (err == -EPERM)
             err = -EACCES;
@@ -914,7 +914,7 @@ int fs_mkdir_curproc(const char * pathname, mode_t mode)
         goto out;
 
     /* Check that we have a permission to write this dir. */
-    retval = chkperm_vnode_cproc(dir, O_WRONLY);
+    retval = chkperm_vnode_curproc(dir, O_WRONLY);
     if (retval)
         goto out;
 
@@ -941,7 +941,7 @@ int fs_rmdir_curproc(const char * pathname)
         goto out;
 
     /* Check that we have a permission to write this dir. */
-    retval = chkperm_vnode_cproc(dir, O_WRONLY);
+    retval = chkperm_vnode_curproc(dir, O_WRONLY);
     if (retval)
         goto out;
 
@@ -966,7 +966,7 @@ int fs_utimes_curproc(int fildes, const struct timespec times[2])
         return -EBADF;
     vnode = file->vnode;
 
-    if (!((file->oflags & O_WRONLY) || !chkperm_vnode_cproc(vnode, W_OK))) {
+    if (!((file->oflags & O_WRONLY) || !chkperm_vnode_curproc(vnode, W_OK))) {
         retval = -EPERM;
         goto out;
     }
@@ -990,7 +990,7 @@ int fs_chmod_curproc(int fildes, mode_t mode)
         return -EBADF;
     vnode = file->vnode;
 
-    if (!((file->oflags & O_WRONLY) || !chkperm_vnode_cproc(vnode, W_OK))) {
+    if (!((file->oflags & O_WRONLY) || !chkperm_vnode_curproc(vnode, W_OK))) {
         retval = -EPERM;
         goto out;
     }
@@ -1014,7 +1014,7 @@ int fs_chflags_curproc(int fildes, fflags_t flags)
         return -EBADF;
     vnode = file->vnode;
 
-    if (!((file->oflags & O_WRONLY) || !chkperm_vnode_cproc(vnode, W_OK))) {
+    if (!((file->oflags & O_WRONLY) || !chkperm_vnode_curproc(vnode, W_OK))) {
         retval = -EPERM;
         goto out;
     }
@@ -1041,7 +1041,7 @@ int fs_chown_curproc(int fildes, uid_t owner, gid_t group)
         return -EBADF;
     vnode = file->vnode;
 
-    if (!((file->oflags & O_WRONLY) || !chkperm_vnode_cproc(vnode, W_OK))) {
+    if (!((file->oflags & O_WRONLY) || !chkperm_vnode_curproc(vnode, W_OK))) {
         retval = -EPERM;
         goto out;
     }

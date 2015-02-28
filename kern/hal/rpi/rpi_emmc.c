@@ -570,7 +570,7 @@ int rpi_emmc_init(void)
     }
 
 #ifdef configMBR
-    fd = fs_fildes_create_cproc(vnode, O_RDONLY);
+    fd = fs_fildes_create_curproc(vnode, O_RDONLY);
     if (fd < 0) {
         KERROR(KERROR_ERR, "Failed to open the device");
 

@@ -42,7 +42,8 @@
  * @param fildes is an array where new file descriptor numbers will be returned.
  * @param len is the preferred minimum size of the new pipe.
  */
-int fs_pipe_cproc_creat(struct files_struct * files, int fildes[2], size_t len);
+int fs_pipe_curproc_creat(struct files_struct * files, int fildes[2],
+                          size_t len);
 
 /**
  * Destroy a pipe.

@@ -279,7 +279,7 @@ typedef struct vnode_ops {
     int (*ioctl)(file_t * file, unsigned request, void * arg, size_t arg_len);
     /**
      * File opened callback.
-     * @param p     is the process that called fs_fildes_create_cproc() for
+     * @param p     is the process that called fs_fildes_create_curproc() for
      *              file.
      * @param vnode is the vnode that will be opened and referenced by
      *              a new file descriptor.
@@ -299,7 +299,7 @@ typedef struct vnode_ops {
      * functions is mainly to handle TTY connections nicely.
      * @note Process closing a file might not be the only process helding
      *       a reference to the file.
-     * @param p     is the process that called fs_fildes_close_cproc() for file.
+     * @param p     is the process that called fs_fildes_close_curproc() for file.
      * @param file  is the file that was closed by p.
      */
     void (*file_closed)(struct proc_info * p, file_t * file);
@@ -422,28 +422,6 @@ typedef struct sb_iterator {
 } sb_iterator_t;
 
 
-/**
- * Generate insert_suberblock function.
- * Insert a sb_type struct to the end of sb mount linked list.
- * @param sb_type is a pointer to a file system superblock.
- */
-#define GENERATE_INSERT_SB(sb_type, fs)                 \
-static void insert_superblock(struct sb_type * sb)      \
-{                                                       \
-    superblock_lnode_t * curr = (fs).sbl_head;          \
-                                                        \
-    /* Add as a first sb if no other mounts yet */      \
-    if (curr == 0) {                                    \
-        (fs).sbl_head = &(sb->sbn);                     \
-    } else {                                            \
-        /* else find the last sb on the linked list. */ \
-        while (curr->next != 0) {                       \
-            curr = curr->next;                          \
-        }                                               \
-        curr->next = &(sb->sbn);                        \
-    }                                                   \
-}
-
 extern const vnode_ops_t nofs_vnode_ops;
 
 /* VFS Function Prototypes */
@@ -463,7 +441,8 @@ int fs_register(fs_t * fs);
  * @return  Returns zero if vnode was found;
  *          error code -errno in case of an error.
  */
-int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str, int oflags);
+int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str,
+                 int oflags);
 
 /**
  * Walks the file system for a process and tries to locate vnode corresponding
@@ -524,14 +503,14 @@ int chkperm(struct stat * stat, uid_t uid, gid_t gid, int amode);
  * @return  Returns negative errno in case of error or improper permissions;
  *          Otherwise zero.
  */
-int chkperm_cproc(struct stat * stat, int oflags);
+int chkperm_curproc(struct stat * stat, int oflags);
 
 /**
  * Check permissions to a vnode by curproc.
  * @param vnode is the vnode to be checked.
  * @param oflags specfies operation(s).
  */
-int chkperm_vnode_cproc(vnode_t * vnode, int oflags);
+int chkperm_vnode_curproc(vnode_t * vnode, int oflags);
 
 /**
  * Check permissions to a vnode by given euid and egid.
@@ -549,7 +528,7 @@ int fs_fildes_set(file_t * fildes, vnode_t * vnode, int oflags);
 /**
  * Create a new file descriptor to the first empty spot.
  */
-int fs_fildes_create_cproc(vnode_t * vnode, int oflags);
+int fs_fildes_create_curproc(vnode_t * vnode, int oflags);
 
 /**
  * Get next free file descriptor for the current process.
@@ -557,7 +536,7 @@ int fs_fildes_create_cproc(vnode_t * vnode, int oflags);
  *                  start.
  * @param start     is the start offset.
  */
-int fs_fildes_cproc_next(file_t * new_file, int start);
+int fs_fildes_curproc_next(file_t * new_file, int start);
 
 /**
  * Increment or decrement a file descriptor reference count and free the
@@ -586,7 +565,7 @@ int fs_fildes_close(struct proc_info * p, int fildes);
  *          associated with fildes; Otherwise a negative value representing
  *          errno.
  */
-ssize_t fs_readwrite_cproc(int fildes, void * buf, size_t nbyte, int oper);
+ssize_t fs_readwrite_curproc(int fildes, void * buf, size_t nbyte, int oper);
 
 /**
  * Create a new file by using fs specific create() function.
@@ -597,7 +576,7 @@ ssize_t fs_readwrite_cproc(int fildes, void * buf, size_t nbyte, int oper);
  * @return      0 if succeed; Negative error code representing errno in case of
  *              failure.
  */
-int fs_creat_cproc(const char * path, mode_t mode, vnode_t ** result);
+int fs_creat_curproc(const char * path, mode_t mode, vnode_t ** result);
 
 /**
  * Create a new link to existing vnode.

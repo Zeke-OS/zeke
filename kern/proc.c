@@ -333,7 +333,7 @@ void _proc_free(proc_info_t * p)
             fs_fildes_ref(p->files, i, -1); /* null pointer safe */
             /*
              * TODO Should we call?
-             * fs_fildes_close_cproc(int fildes);
+             * fs_fildes_close_curproc(int fildes);
              */
         }
         kfree(p->files);
