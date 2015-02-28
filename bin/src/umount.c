@@ -38,48 +38,20 @@
 #include <mount.h>
 #include "utils.h"
 
-struct optarr optnames[] = {
-    { MNT_RDONLY,       "ro" },
-    { MNT_SYNCHRONOUS,  "sync" },
-    { MNT_ASYNC,        "async" },
-    { MNT_NOEXEC,       "noexec" },
-    { MNT_NOSUID,       "nosuid" },
-    { MNT_NOATIME,      "noatime" },
-};
-
 static void usage(void)
 {
     fprintf(stderr,
-            "usage: mount [-rw] [-o options] [-t type] source dest\n");
+            "usage: umount target\n");
     exit(1);
 }
 
 int main(int argc, char * argv[])
 {
-    int ch, flags = 0;
-    char * vfstype = NULL;
-    char * options = NULL;
-    char * src;
-    char * dst;
+    int ch;
+    char * target;
 
-    while ((ch = getopt(argc, argv, "o:rwt:")) != EOF) {
+    while ((ch = getopt(argc, argv, "")) != EOF) {
         switch (ch) {
-        case 'o':
-            if (*optarg)
-                options = catopt(options, optarg);
-            break;
-        case 'r':
-            flags |= MNT_RDONLY;
-            break;
-        case 't':
-            if (vfstype) {
-                fprintf(stderr, "mount: only one -t option may be specified");
-                exit(1);
-            }
-            vfstype = optarg;
-        case 'w':
-            flags &= ~MNT_RDONLY;
-            break;
         case '?':
             usage();
         }
@@ -87,25 +59,13 @@ int main(int argc, char * argv[])
     argc -= optind;
     argv += optind;
 
-    if (!vfstype)
-        vfstype = "auto";
-
-    if (argc < 3) {
+    if (argc < 2) {
         usage();
     }
-    src = argv[0];
-    dst = argv[1];
+    target = argv[0];
 
-    flags |= opt2flags(optnames, num_elem(optnames), &options);
-
-#if 0
-    printf("mount: flags: %d, options: \"%s\", vfstype: \"%s\" "
-            "src: \"%s\", dst: \"%s\"\n",
-            flags, options, vfstype, src, dst);
-#endif
-
-    if (mount(src, dst, vfstype, flags, options)) {
-        perror("mount: failed");
+    if (umount(target)) {
+        perror("umount: failed");
         return 1;
     }
 

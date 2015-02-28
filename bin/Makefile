@@ -26,14 +26,15 @@
 include $(ROOT_DIR)/makefiles/user_head.mk
 
 # Binaries #####################################################################
-BIN := cat echo ls mount tish stty
+BIN := cat echo ls mount stty tish umount
 
 # Source Files #################################################################
 cat-SRC-y := src/cat.c
 echo-SRC-y := src/echo.c
 ls-SRC-y := src/ls.c
 mount-SRC-y := src/mount.c src/utils/opt.c
-tish-SRC-y := $(wildcard src/tish/*.c)
 stty-SRC-y := src/stty.c
+tish-SRC-y := $(wildcard src/tish/*.c)
+umount-SRC-y := src/umount.c src/utils/opt.c
 
 include $(ROOT_DIR)/makefiles/user_tail.mk

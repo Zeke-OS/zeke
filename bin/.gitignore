@@ -2,5 +2,6 @@ cat
 echo
 ls
 mount
-tish
 stty
+tish
+umount
