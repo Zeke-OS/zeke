@@ -171,7 +171,7 @@ static int sys_lseek(void * user_args)
     /* can't seek if fifo, pipe or socket */
     if (file->vnode->vn_mode & (S_IFIFO | S_IFSOCK)) {
         fs_fildes_ref(curproc->files, args.fd, -1);
-        set_errno(-ESPIPE);
+        set_errno(ESPIPE);
         return -1;
     }
 
