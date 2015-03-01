@@ -170,6 +170,7 @@ static int sys_lseek(void * user_args)
 
     /* can't seek if fifo, pipe or socket */
     if (file->vnode->vn_mode & (S_IFIFO | S_IFSOCK)) {
+        fs_fildes_ref(curproc->files, args.fd, -1);
         set_errno(-ESPIPE);
         return -1;
     }
@@ -334,7 +335,8 @@ static int sys_getdents(void * user_args)
         bytes_left -= (sizeof(struct dirent));
     }
 
-    copyout(dents, args.buf, count * sizeof(struct dirent));
+    if (count > 0)
+        copyout(dents, args.buf, count * sizeof(struct dirent));
     kfree(dents);
 
 out:
