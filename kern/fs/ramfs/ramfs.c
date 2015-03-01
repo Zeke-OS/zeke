@@ -102,7 +102,13 @@ typedef struct ramfs_sb {
     struct ramfs_inode ** ramfs_iarr;   /*!< inode lookup table. */
     size_t ramfs_iarr_size;             /*!< Size of the iarr array. */
     inpool_t ramfs_ipool;               /*!< inode pool. */
+    int ramfs_flags;
 } ramfs_sb_t;
+
+#define RAMFS_SB_FLAG_DYING 0x1    /*!< SB is being umounted */
+
+#define RAMFS_SB_IS_HEALTHY(_x_) \
+    (!(((_x_)->ramfs_flags & RAMFS_SB_FLAG_DYING) == RAMFS_SB_FLAG_DYING))
 
 /**
  * Data pointer.
@@ -219,7 +225,7 @@ int ramsfs_mount(const char * source, uint32_t mode,
     KERROR(KERROR_DEBUG, "ramfs_mount()\n");
 #endif
 
-    ramfs_sb = kmalloc(sizeof(ramfs_sb_t));
+    ramfs_sb = kcalloc(1, sizeof(ramfs_sb_t));
     if (!ramfs_sb) {
         retval = -ENOMEM;
         goto out;
@@ -279,6 +285,10 @@ out:
 int ramfs_umount(struct fs_superblock * fs_sb)
 {
     ramfs_sb_t * rsb = get_rfsb_of_sb(fs_sb);
+
+    if (!RAMFS_SB_IS_HEALTHY(rsb))
+        return -EBUSY;
+    rsb->ramfs_flags = RAMFS_SB_FLAG_DYING;
 
     /*
      * TODO Check for any locks
@@ -459,6 +469,9 @@ int ramfs_create(vnode_t * dir, const char * name, mode_t mode,
         return -ENOTDIR; /* No a directory entry. */
 
     ramfs_sb = get_rfsb_of_sb(dir->sb);
+    if (!RAMFS_SB_IS_HEALTHY(ramfs_sb))
+        return -EROFS; /* fs is beign umounted or it's broken. */
+
     vnode = inpool_get_next(&(ramfs_sb->ramfs_ipool));
     if (!vnode)
         return -ENOSPC; /* Can't create */
@@ -600,6 +613,9 @@ int ramfs_mkdir(vnode_t * dir, const char * name, mode_t mode)
         return -ENOTDIR; /* No a directory entry. */
 
     ramfs_sb = get_rfsb_of_sb(dir->sb);
+    if (!RAMFS_SB_IS_HEALTHY(ramfs_sb))
+        return -EROFS;
+
     vnode_new = inpool_get_next(&(ramfs_sb->ramfs_ipool));
     if (!vnode_new)
         return -ENOSPC; /* Can't create a new dir. */
@@ -842,7 +858,10 @@ static void destroy_superblock(ramfs_sb_t * ramfs_sb)
 
         /* Destroy inodes in iarr */
         for (i = 0; i < ramfs_sb->ramfs_iarr_size; i++) {
-            /* NOTE: There should be no more references to vnodes anymore. */
+            /*
+             * NOTE: There shouldn't be any references to vnodes in this fs
+             * anymore.
+             */
             if (ramfs_sb->ramfs_iarr[i])
                 destroy_inode(ramfs_sb->ramfs_iarr[i]);
         }
@@ -868,11 +887,14 @@ vnode_t * ramfs_raw_create_inode(const fs_superblock_t * sb, ino_t * num)
     ramfs_inode_t * inode;
     ramfs_sb_t * ramfs_sb;
 
+    ramfs_sb = get_rfsb_of_sb(sb);
+    if (!RAMFS_SB_IS_HEALTHY(ramfs_sb))
+        return NULL;
+
     inode = kmalloc(sizeof(ramfs_inode_t));
     if (!inode)
         return NULL;
 
-    ramfs_sb = get_rfsb_of_sb(sb);
     init_inode(inode, ramfs_sb, num);
 
     return &(inode->in_vnode);
