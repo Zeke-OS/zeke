@@ -43,30 +43,71 @@
 
 SET_DECLARE(exec_loader, struct exec_loadfn);
 
-int exec_file(file_t * file, char name[PROC_NAME_LEN], struct buf * env_bp,
-              int uargc, uintptr_t uargv, uintptr_t uenvp)
+static int load_image(int fd, uintptr_t * vaddr_base)
 {
+    file_t * file;
     struct exec_loadfn ** loader;
-    uintptr_t vaddr;
-    pthread_t tid;
-    struct buf * stack_region;
-    struct buf * code_region;
-    int err, retval = 0;
+    int err;
 
-#if configEXEC_DEBUG
-    KERROR(KERROR_DEBUG, "exec_file(file %p, name \"%s\", env_bp %p, "
-           "uargc %d, uargv %x,  uenvp %x)\n",
-           file, name, env_bp, uargc, (uint32_t)uargv, (uint32_t)uenvp);
-#endif
-
-    if (!file)
-        return -ENOENT;
+    file = fs_fildes_ref(curproc->files, fd, 1);
+    if (!file) {
+        set_errno(EBADF);
+        return -1;
+    }
 
     SET_FOREACH(loader, exec_loader) {
-        err = (*loader)->fn(curproc, file, &vaddr);
+        err = (*loader)->fn(curproc, file, vaddr_base);
         if (err == 0 || err != -ENOEXEC)
             break;
     }
+    fs_fildes_ref(curproc->files, fd, -1);
+
+    return err;
+}
+
+/**
+ * Create a new thread for executing main()
+ */
+static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp)
+{
+    struct buf * stack_region = (*curproc->mm.regions)[MM_STACK_REGION];
+    struct buf * code_region = (*curproc->mm.regions)[MM_CODE_REGION];
+    pthread_attr_t pattr = {
+        .tpriority  = configUSRINIT_PRI,
+        .stackAddr  = (void *)(stack_region->b_mmu.vaddr),
+        .stackSize  = MMU_SIZEOF_REGION(&stack_region->b_mmu)
+    };
+    struct _sched_pthread_create_args args = {
+        .thread     = 0, /* return value */
+        .start      = (void *(*)(void *))(code_region->b_mmu.vaddr),
+        .def        = &pattr,
+        .arg1       = uargc,
+        .arg2       = uargv,
+        .arg3       = uenvp,
+        .arg4       = 0, /* TODO */
+        .del_thread = NULL /* Not needed for main(). */
+    };
+    pthread_t tid;
+
+    tid = thread_create(&args, 0);
+
+    return tid;
+}
+
+int exec_file(int fd, char name[PROC_NAME_LEN], struct buf * env_bp,
+              int uargc, uintptr_t uargv, uintptr_t uenvp)
+{
+    uintptr_t vaddr = 0; /* TODO Shouldn't matter if elf is not dyn? */
+    pthread_t tid;
+    int err, retval = 0;
+
+#if configEXEC_DEBUG
+    KERROR(KERROR_DEBUG, "exec_file(fd %i, name \"%s\", env_bp %p, "
+           "uargc %d, uargv %x,  uenvp %x)\n",
+           fd, name, env_bp, uargc, (uint32_t)uargv, (uint32_t)uenvp);
+#endif
+
+    err = load_image(fd, &vaddr);
     if (err) {
         retval = err;
         goto fail;
@@ -87,26 +128,8 @@ int exec_file(file_t * file, char name[PROC_NAME_LEN], struct buf * env_bp,
     /* Change proc name */
     strlcpy(curproc->name, name, sizeof(curproc->name));
 
-    /* Create a new thread for executing main() */
-    stack_region = (*curproc->mm.regions)[MM_STACK_REGION];
-    code_region = (*curproc->mm.regions)[MM_CODE_REGION];
-    pthread_attr_t pattr = {
-        .tpriority  = configUSRINIT_PRI,
-        .stackAddr  = (void *)(stack_region->b_mmu.vaddr),
-        .stackSize  = MMU_SIZEOF_REGION(&stack_region->b_mmu)
-    };
-    struct _sched_pthread_create_args ds = {
-        .thread     = 0, /* return value */
-        .start      = (void *(*)(void *))(code_region->b_mmu.vaddr),
-        .def        = &pattr,
-        .arg1       = uargc,
-        .arg2       = uargv,
-        .arg3       = uenvp,
-        .arg4       = 0, /* TODO */
-        .del_thread = NULL /* Not needed for main(). */
-    };
-
-    tid = thread_create(&ds, 0);
+    /* Create main() */
+    tid = new_main_thread(uargc, uargv, uenvp);
     if (tid <= 0) {
         panic("Exec failed");
     }
@@ -129,6 +152,7 @@ out:
         current_thread->inh.parent = NULL;
         curproc->main_thread = sched_get_thread_info(tid);
         sched_thread_detach(current_thread->id);
+
         /* Don't return but die. */
         thread_die(0);
     }
@@ -189,7 +213,6 @@ static int sys_exec(void * user_args)
 {
     struct _exec_args args;
     char name[PROC_NAME_LEN];
-    file_t * file;
     struct buf * env_bp;
     size_t arg_offset = 0;
     uintptr_t envp;
@@ -207,13 +230,6 @@ static int sys_exec(void * user_args)
 
     if (!args.argv || !args.env) {
         set_errno(EINVAL);
-        return -1;
-    }
-
-    /* Increment refcount for the file pointed by fd */
-    file = fs_fildes_ref(curproc->files, args.fd, 1);
-    if (!file) {
-        set_errno(EBADF);
         return -1;
     }
 
@@ -261,7 +277,8 @@ static int sys_exec(void * user_args)
     /*
      * Execute.
      */
-    err = exec_file(file, name, env_bp, args.nargv, env_bp->b_mmu.vaddr, envp);
+    err = exec_file(args.fd, name, env_bp, args.nargv, env_bp->b_mmu.vaddr,
+                    envp);
     if (err) {
         set_errno(-err);
         retval = -1;
@@ -270,8 +287,6 @@ static int sys_exec(void * user_args)
 
     retval = 0;
 out:
-    /* Decrement refcount for the file pointed by fd */
-    fs_fildes_ref(curproc->files, args.fd, -1);
     return retval;
 }
 
