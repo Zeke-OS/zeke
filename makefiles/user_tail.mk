@@ -1,4 +1,7 @@
-# C Obj files
+# Sort and remove duplicates
+SRC-y := $(sort $(SRC-y))
+
+# Obj files
 OBJS := $(patsubst %.c, %.o, $(SRC-y))
 DEPS := $(patsubst %.c, %.d, $(SRC-y))
 
