@@ -100,9 +100,13 @@ typedef struct vnode {
     unsigned vn_hash;           /*!< Hash for using vfs hashing. */
     atomic_t vn_refcount;
 
-    /*!< Pointer to the vnode in mounted file system. If no fs is mounted on
-     *   this vnode then this is a self pointing pointer. */
-    struct vnode * vn_mountpoint;
+    /** Pointer to the next vnode in mounted file system.
+     * If no fs is mounted on this vnode then this is a self pointing pointer.
+     */
+    struct vnode * vn_next_mountpoint;
+    /**
+     * Pointer to the previous mountpoint vnode.
+     */
     struct vnode * vn_prev_mountpoint;
 
     off_t vn_len;               /*!< Length of file, usually in bytes. */

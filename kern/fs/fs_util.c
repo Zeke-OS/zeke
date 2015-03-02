@@ -52,7 +52,7 @@ vnode_t * fs_create_pseudofs_root(fs_t * newfs, int majornum)
         return NULL;
 
     /* Temp root dir */
-    rootnode->vn_mountpoint = rootnode;
+    rootnode->vn_next_mountpoint = rootnode;
     vrefset(rootnode, 1);
     mtx_init(&rootnode->vn_lock, VN_LOCK_MODES);
 
@@ -64,10 +64,10 @@ vnode_t * fs_create_pseudofs_root(fs_t * newfs, int majornum)
 
         return NULL;
     }
-    rootnode = rootnode->vn_mountpoint;
+    rootnode = rootnode->vn_next_mountpoint;
     kfree(rootnode->vn_prev_mountpoint);
     rootnode->vn_prev_mountpoint = rootnode;
-    rootnode->vn_mountpoint = rootnode;
+    rootnode->vn_next_mountpoint = rootnode;
 
     /* TODO The following is something we'd like to do but can't at the moment,
      * it would allow us for example printing error and debug messages with a
@@ -99,7 +99,7 @@ void fs_vnode_init(vnode_t * vnode, ino_t vn_num, struct fs_superblock * sb,
 {
     vnode->vn_num = vn_num;
     vnode->vn_refcount = ATOMIC_INIT(0);
-    vnode->vn_mountpoint = vnode;
+    vnode->vn_next_mountpoint = vnode;
     vnode->vn_prev_mountpoint = vnode;
     vnode->sb = sb;
     vnode->vnode_ops = (vnode_ops_t *)vnops;

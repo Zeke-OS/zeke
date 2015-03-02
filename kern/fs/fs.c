@@ -203,8 +203,8 @@ again:  /* Get vnode by name in this dir. */
              */
 
             /* Go to the last mountpoint. */
-            while (vnode != vnode->vn_mountpoint) {
-                vnode = vnode->vn_mountpoint;
+            while (vnode != vnode->vn_next_mountpoint) {
+                vnode = vnode->vn_next_mountpoint;
             }
             *result = vnode;
             vrele(orig_vn);
@@ -308,8 +308,8 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
 #endif
 
     sb->mountpoint = target;
-    sb->root->vn_prev_mountpoint = target->vn_mountpoint;
-    target->vn_mountpoint = sb->root;
+    sb->root->vn_prev_mountpoint = target->vn_next_mountpoint;
+    target->vn_next_mountpoint = sb->root;
 
     /* TODO inherit permissions */
 
@@ -318,17 +318,20 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
 
 int fs_umount(struct fs_superblock * sb)
 {
+    vnode_t * prev;
+
 #ifdef configFS_DEBUG
     KERROR(KERROR_DEBUG, "fs_umount(sb:%p)\n", sb);
 #endif
     KASSERT(sb, "sb is set");
     KASSERT(sb->fs && sb->root && sb->root->vn_prev_mountpoint &&
-            sb->root->vn_prev_mountpoint->vn_mountpoint,
+            sb->root->vn_prev_mountpoint->vn_next_mountpoint,
             "Sanity check");
     KASSERT(sb->fs->umount, "umount() function should always exist");
 
     /* Reverse the mount process to unmount */
-    sb->root->vn_prev_mountpoint->vn_mountpoint = sb->root->vn_prev_mountpoint;
+    prev = sb->root->vn_prev_mountpoint;
+    prev->vn_next_mountpoint = prev;
 
     return sb->fs->umount(sb);
 }

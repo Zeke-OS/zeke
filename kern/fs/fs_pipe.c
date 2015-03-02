@@ -43,6 +43,7 @@
 #include <queue_r.h>
 #include <proc.h>
 #include <fs/fs.h>
+#include <fs/fs_util.h>
 #include <kern_ipc.h>
 
 /*

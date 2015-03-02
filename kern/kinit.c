@@ -203,7 +203,7 @@ static void mount_rootfs(void)
         panic(failed);
     }
     kernel_proc->croot = tmp;
-    kernel_proc->croot->vn_mountpoint = kernel_proc->croot;
+    kernel_proc->croot->vn_next_mountpoint = kernel_proc->croot;
     vrefset(kernel_proc->croot, 2);
 
     /* TODO Should use sysctl to get rootfs path and type */
@@ -214,9 +214,9 @@ static void mount_rootfs(void)
         goto out;
     }
 
-    kernel_proc->croot->vn_mountpoint->vn_prev_mountpoint =
-        kernel_proc->croot->vn_mountpoint;
-    kernel_proc->croot = kernel_proc->croot->vn_mountpoint;
+    kernel_proc->croot->vn_next_mountpoint->vn_prev_mountpoint =
+        kernel_proc->croot->vn_next_mountpoint;
+    kernel_proc->croot = kernel_proc->croot->vn_next_mountpoint;
     kernel_proc->cwd = kernel_proc->croot;
 
 out:
