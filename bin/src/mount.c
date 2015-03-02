@@ -50,7 +50,7 @@ struct optarr optnames[] = {
 static void usage(void)
 {
     fprintf(stderr,
-            "usage: mount [-rw] [-o options] [-t type] source dest\n");
+            "usage: mount [-rw] [-o options] [-t type] [source] dest\n");
     exit(1);
 }
 
@@ -59,8 +59,8 @@ int main(int argc, char * argv[])
     int ch, flags = 0;
     char * vfstype = NULL;
     char * options = NULL;
-    char * src;
-    char * dst;
+    char * src = "";
+    char * dst = "";
 
     while ((ch = getopt(argc, argv, "o:rwt:")) != EOF) {
         switch (ch) {
@@ -90,11 +90,14 @@ int main(int argc, char * argv[])
     if (!vfstype)
         vfstype = "auto";
 
-    if (argc < 3) {
+    if (argc == 2) {
+        dst = argv[0];
+    } else if (argc == 3) {
+        src = argv[0];
+        dst = argv[1];
+    } else {
         usage();
     }
-    src = argv[0];
-    dst = argv[1];
 
     flags |= opt2flags(optnames, num_elem(optnames), &options);
 
