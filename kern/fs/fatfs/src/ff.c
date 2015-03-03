@@ -1618,6 +1618,7 @@ static void get_fileinfo(
         fno->fsize = LD_DWORD(dir+DIR_FileSize);    /* Size */
         fno->fdate = LD_WORD(dir+DIR_WrtDate);      /* Date */
         fno->ftime = LD_WORD(dir+DIR_WrtTime);      /* Time */
+        fno->sclust = ld_clust(dp->fs, dir);        /* scluster of the file */
     }
     *p = 0;     /* Terminate SFN string by a \0 */
 

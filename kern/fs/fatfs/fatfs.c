@@ -92,12 +92,9 @@ vnode_ops_t fatfs_vnode_ops = {
 
 GENERATE_INSERT_SB(fatfs_sb, fatfs_fs)
 
-/* TODO Could be better way but should be verified first */
-#if 0
 #define FIL2INO(x) ((x)->sclust)
 
 #define DIR2INO(x) ((x)->sclust)
-#endif
 
 int fatfs_init(void) __attribute__((constructor));
 int fatfs_init(void)
@@ -263,7 +260,7 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
     vnode_t * vn;
     vnode_t * xvp;
     mode_t vn_mode;
-    ino_t num;
+    ino_t inum;
     int err = 0, retval = 0;
 
 #ifdef configFATFS_DEBUG
@@ -292,8 +289,10 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
             return -EROFS;
     } else {
         err = f_stat(fpath, &fno);
-        if (err)
-            goto chk_err;
+        if (err) {
+            retval = fresult2errno(err);
+            goto fail;
+        }
     }
 
     /* Try open */
@@ -301,6 +300,11 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
         /* it's a directory */
         vn_mode = S_IFDIR;
         err = f_opendir(&in->dp, in->in_fpath);
+        if (err) {
+            retval = fresult2errno(err);
+            goto fail;
+        }
+        inum = DIR2INO(&in->dp);
     } else {
         /* it's a file */
         unsigned char fomode = 0;
@@ -312,12 +316,13 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
 
         vn_mode = S_IFREG;
         err = f_open(&in->fp, in->in_fpath, fomode);
+        if (err) {
+            retval = fresult2errno(err);
+            goto fail;
+        }
+        inum = FIL2INO(&in->fp);
     }
-chk_err:
-    if (err) {
-        retval = fresult2errno(err);
-        goto fail;
-    }
+
 #ifdef configFATFS_DEBUG
     if (oflags & O_CREAT)
         KERROR(KERROR_DEBUG, "ff: Create & open ok\n");
@@ -325,10 +330,9 @@ chk_err:
         KERROR(KERROR_DEBUG, "ff: Open ok\n");
 #endif
 
-    num = sb->ff_ino++;
-    init_fatfs_vnode(vn, num, vn_mode, vn_hash, &(sb->sbn.sbl_sb));
+    init_fatfs_vnode(vn, inum, vn_mode, vn_hash, &(sb->sbn.sbl_sb));
 
-    /* Insert to cache */
+    /* Insert to the cache */
     err = vfs_hash_insert(vn, vn_hash, &xvp, fatfs_vncmp, fpath);
     if (err) {
         retval = -ENOMEM;
@@ -698,6 +702,8 @@ int fatfs_rmdir(vnode_t * dir,  const char * name)
     mode_t mode;
     FRESULT ferr;
 
+    /* TODO Should fail if name is a mount point */
+
     if (!S_ISDIR(dir->vn_mode))
         return -ENOTDIR;
 
@@ -736,7 +742,7 @@ int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
     } else if (*off == DIRENT_SEEK_START + 1) {
         strlcpy(d->d_name, "..", sizeof(d->d_name));
         /* TODO Set d members to proper values */
-        d->d_ino = 0;
+        d->d_ino = 0; /* TODO ino should be properly set */
         d->d_type = DT_DIR;
         *off = DIRENT_SEEK_START + 2;
 
@@ -755,7 +761,7 @@ int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
     if (fno.fname[0] == '\0')
         return -ESPIPE;
 
-    d->d_ino = 0; /* TODO ino should be set */
+    d->d_ino = fno.sclust;
     d->d_type = (fno.fattrib & AM_DIR) ? DT_DIR : DT_REG;
 #if configFATFS_LFN
     if (!*fno.lfname)
@@ -902,8 +908,8 @@ static void init_fatfs_vnode(vnode_t * vnode, ino_t inum, mode_t mode,
 
 #ifdef configFATFS_DEBUG
     KERROR(KERROR_DEBUG,
-             "init_fatfs_vnode(vnode %p, inum %l, mode %o, vn_hash %u, sb %p)\n",
-             vnode, (uint64_t)inum, mode, (uint32_t)vn_hash, sb);
+           "init_fatfs_vnode(vnode %p, inum %l, mode %o, vn_hash %u, sb %p)\n",
+           vnode, (uint64_t)inum, mode, (uint32_t)vn_hash, sb);
 #endif
 
     fs_vnode_init(vnode, inum, sb, &fatfs_vnode_ops);

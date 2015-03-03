@@ -365,6 +365,10 @@ typedef struct vnode_ops {
      *          zero.
      */
     int (*mkdir)(vnode_t * dir,  const char * name, mode_t mode);
+    /**
+     * Remove a directory.
+     * Shall fail if named directory is a mountpoint to another file system.
+     */
     int (*rmdir)(vnode_t * dir,  const char * name);
     /**
      * Reads one directory entry from the dir into the struct dirent.

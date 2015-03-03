@@ -673,7 +673,10 @@ int ramfs_rmdir(vnode_t * dir,  const char * name)
     if (err)
         return err;
     in = get_inode_of_vnode(vn);
-    vrele(vn);
+    vrele_nunlink(vn);
+
+    if (vn->vn_next_mountpoint != vn)
+        return -EBUSY; /* It's a mount point. */
 
     nr_entries = dh_nr_entries(in->in.dir);
     if (nr_entries > 2) {

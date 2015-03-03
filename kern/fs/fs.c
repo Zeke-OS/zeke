@@ -163,8 +163,10 @@ int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str, int oflags
 again:  /* Get vnode by name in this dir. */
         orig_vn = *result;
         retval = orig_vn->vnode_ops->lookup(*result, nodename, &vnode);
-        if (!retval)
+        if (!retval) {
+            KASSERT(vnode != NULL, "vnode should be valid if !retval");
             vrele(orig_vn);
+        }
         if (retval != 0 && retval != -EDOM) {
             goto out;
         } else if (!vnode) {
@@ -186,6 +188,8 @@ again:  /* Get vnode by name in this dir. */
                  * mountpoint.
                  */
                 vnode = vnode->vn_prev_mountpoint;
+                KASSERT(vnode != NULL,
+                        "prev_mountpoint should be always valid");
             }
             *result = vnode;
             vref(vnode);
@@ -307,8 +311,11 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
     KERROR(KERROR_DEBUG, "Mount OK\n");
 #endif
 
+    KASSERT(target && sb->root, "target and sb->root must be set");
+
     sb->mountpoint = target;
-    sb->root->vn_prev_mountpoint = target->vn_next_mountpoint;
+    sb->root->vn_prev_mountpoint = target;
+    sb->root->vn_next_mountpoint = sb->root;
     target->vn_next_mountpoint = sb->root;
 
     /* TODO inherit permissions */
@@ -318,6 +325,7 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
 
 int fs_umount(struct fs_superblock * sb)
 {
+    vnode_t * root;
     vnode_t * prev;
 
 #ifdef configFS_DEBUG
@@ -330,8 +338,10 @@ int fs_umount(struct fs_superblock * sb)
     KASSERT(sb->fs->umount, "umount() function should always exist");
 
     /* Reverse the mount process to unmount */
-    prev = sb->root->vn_prev_mountpoint;
+    root = sb->root;
+    prev = root->vn_prev_mountpoint;
     prev->vn_next_mountpoint = prev;
+    root->vn_prev_mountpoint = root;
 
     return sb->fs->umount(sb);
 }
@@ -345,9 +355,9 @@ fs_t * fs_by_name(const char * fsname)
     do {
         if (!strcmp(node->fs->fsname, fsname))
             break;
-    } while ((node = node->next) != 0);
+    } while ((node = node->next));
 
-    return (node != 0) ? node->fs : 0;
+    return (node) ? node->fs : NULL;
 }
 
 void fs_init_sb_iterator(sb_iterator_t * it)

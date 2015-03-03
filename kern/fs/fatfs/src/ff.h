@@ -160,6 +160,7 @@ typedef struct {
     WORD    fdate;          /* Last modified date */
     WORD    ftime;          /* Last modified time */
     BYTE    fattrib;        /* Attribute */
+    DWORD   sclust;         /* File start cluster */
     TCHAR   fname[13];      /* Short file name (8.3 format) */
 #if configFATFS_LFN
     TCHAR*  lfname;         /* Pointer to the LFN buffer */
