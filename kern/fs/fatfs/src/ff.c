@@ -28,6 +28,9 @@
 
 ---------------------------------------------------------------------------*/
 
+#define GET_INO(_dp_) \
+    ((_dp_)->index + ld_clust((_dp_)->fs, (_dp_)->dir))
+
 /* Reentrancy related */
 #if _FS_REENTRANT
 #define ENTER_FF(fs)        { if (lock_fs(fs)) return FR_TIMEOUT; }
@@ -1618,7 +1621,7 @@ static void get_fileinfo(
         fno->fsize = LD_DWORD(dir+DIR_FileSize);    /* Size */
         fno->fdate = LD_WORD(dir+DIR_WrtDate);      /* Date */
         fno->ftime = LD_WORD(dir+DIR_WrtTime);      /* Time */
-        fno->sclust = ld_clust(dp->fs, dir);        /* scluster of the file */
+        fno->ino = GET_INO(dp);
     }
     *p = 0;     /* Terminate SFN string by a \0 */
 
@@ -2359,6 +2362,7 @@ FRESULT f_open (
         if (res == FR_OK) {
             fp->flag = mode;                    /* File access mode */
             fp->err = 0;                        /* Clear error flag */
+            fp->ino = GET_INO(&dj);
             fp->sclust = ld_clust(dj.fs, dir);  /* File start cluster */
             fp->fsize = LD_DWORD(dir+DIR_FileSize); /* File size */
             fp->fptr = 0;                       /* File pointer */
@@ -2989,6 +2993,8 @@ FRESULT f_opendir (
         if (res == FR_NO_FILE) res = FR_NO_PATH;
     }
     if (res != FR_OK) dp->fs = 0;       /* Invalidate the directory object if function faild */
+
+    dp->ino = GET_INO(dp);
 
     LEAVE_FF(fs, res);
 }

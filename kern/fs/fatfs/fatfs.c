@@ -92,10 +92,6 @@ vnode_ops_t fatfs_vnode_ops = {
 
 GENERATE_INSERT_SB(fatfs_sb, fatfs_fs)
 
-#define FIL2INO(x) ((x)->sclust)
-
-#define DIR2INO(x) ((x)->sclust)
-
 int fatfs_init(void) __attribute__((constructor));
 int fatfs_init(void)
 {
@@ -304,7 +300,7 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
             retval = fresult2errno(err);
             goto fail;
         }
-        inum = DIR2INO(&in->dp);
+        inum = in->dp.ino;
     } else {
         /* it's a file */
         unsigned char fomode = 0;
@@ -320,7 +316,7 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
             retval = fresult2errno(err);
             goto fail;
         }
-        inum = FIL2INO(&in->fp);
+        inum = in->fp.ino;
     }
 
 #ifdef configFATFS_DEBUG
@@ -761,7 +757,7 @@ int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
     if (fno.fname[0] == '\0')
         return -ESPIPE;
 
-    d->d_ino = fno.sclust;
+    d->d_ino = fno.ino;
     d->d_type = (fno.fattrib & AM_DIR) ? DT_DIR : DT_REG;
 #if configFATFS_LFN
     if (!*fno.lfname)

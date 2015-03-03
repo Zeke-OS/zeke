@@ -65,7 +65,7 @@ int main(int argc, char * argv[], char * envp[])
 
             fstatat(fildes, dbuf[i].d_name, &stat, 0);
 
-            printf("%u %o %u:%u %s\n",
+            printf("% 7u %o %u:%u %s\n",
                      (uint32_t)dbuf[i].d_ino, (uint32_t)stat.st_mode,
                      (uint32_t)stat.st_uid, (uint32_t)stat.st_gid,
                      dbuf[i].d_name);

@@ -111,6 +111,7 @@ typedef struct {
     BYTE    err;            /* Abort flag (error code) */
     DWORD   fptr;           /* File read/write pointer (Zeroed on file open) */
     DWORD   fsize;          /* File size */
+    uint64_t ino;           /* Emulated ino */
     DWORD   sclust;         /* File start cluster (0:no cluster chain, always 0 when fsize is 0) */
     DWORD   clust;          /* Current cluster of fpter (not valid when fprt is 0) */
     DWORD   dsect;          /* Sector number appearing in buf[] (0:invalid) */
@@ -137,6 +138,7 @@ typedef struct {
     FATFS*  fs;             /* Pointer to the owner file system object (**do not change order**) */
     WORD    id;             /* Owner file system mount ID (**do not change order**) */
     WORD    index;          /* Current read/write index number */
+    uint64_t ino;           /* Emulated ino */
     DWORD   sclust;         /* Table start cluster (0:Root dir) */
     DWORD   clust;          /* Current cluster */
     DWORD   sect;           /* Current sector */
@@ -160,7 +162,7 @@ typedef struct {
     WORD    fdate;          /* Last modified date */
     WORD    ftime;          /* Last modified time */
     BYTE    fattrib;        /* Attribute */
-    DWORD   sclust;         /* File start cluster */
+    uint64_t ino;           /* Emulated ino */
     TCHAR   fname[13];      /* Short file name (8.3 format) */
 #if configFATFS_LFN
     TCHAR*  lfname;         /* Pointer to the LFN buffer */
