@@ -2401,7 +2401,8 @@ FRESULT f_read (
     *br = 0;    /* Clear read byte counter */
 
     res = validate(fp);                         /* Check validity */
-    if (res != FR_OK) LEAVE_FF(fp->fs, res);
+    if (res != FR_OK)
+        LEAVE_FF(fp->fs, res);
     if (fp->err)                                /* Check error */
         LEAVE_FF(fp->fs, (FRESULT)fp->err);
     if (!(fp->flag & FA_READ))                  /* Check access mode */
@@ -2490,7 +2491,8 @@ FRESULT f_write (
     *bw = 0;    /* Clear write byte counter */
 
     res = validate(fp);                     /* Check validity */
-    if (res != FR_OK) LEAVE_FF(fp->fs, res);
+    if (res != FR_OK)
+        LEAVE_FF(fp->fs, res);
     if (fp->err)                            /* Check error */
         LEAVE_FF(fp->fs, (FRESULT)fp->err);
     if (!(fp->flag & FA_WRITE))             /* Check access mode */
@@ -2584,32 +2586,35 @@ FRESULT f_sync (
 
 
     res = validate(fp);                 /* Check validity of the object */
-    if (res == FR_OK) {
-        if (fp->flag & FA__WRITTEN) {   /* Has the file been written? */
-            /* Write-back dirty buffer */
-            if (fp->flag & FA__DIRTY) {
-                if (fatfs_disk_write(fp->fs->drv, fp->buf, fp->dsect, SS(fp->fs)))
-                    LEAVE_FF(fp->fs, FR_DISK_ERR);
-                fp->flag &= ~FA__DIRTY;
-            }
+    if (res != FR_OK)
+        goto fail;
 
-            /* Update the directory entry */
-            res = move_window(fp->fs, fp->dir_sect);
-            if (res == FR_OK) {
-                dir = fp->dir_ptr;
-                dir[DIR_Attr] |= AM_ARC;                    /* Set archive bit */
-                ST_DWORD(dir+DIR_FileSize, fp->fsize);      /* Update file size */
-                st_clust(dir, fp->sclust);                  /* Update start cluster */
-                tm = get_fattime();                         /* Update updated time */
-                ST_DWORD(dir+DIR_WrtTime, tm);
-                ST_WORD(dir+DIR_LstAccDate, 0);
-                fp->flag &= ~FA__WRITTEN;
-                fp->fs->wflag = 1;
-                res = sync_fs(fp->fs);
-            }
+    if (fp->flag & FA__WRITTEN) {   /* Has the file been written? */
+        /* Write-back dirty buffer */
+        if (fp->flag & FA__DIRTY) {
+            if (fatfs_disk_write(fp->fs->drv, fp->buf, fp->dsect, SS(fp->fs)))
+                LEAVE_FF(fp->fs, FR_DISK_ERR);
+            fp->flag &= ~FA__DIRTY;
         }
+
+        /* Update the directory entry */
+        res = move_window(fp->fs, fp->dir_sect);
+        if (res != FR_OK)
+            goto fail;
+
+        dir = fp->dir_ptr;
+        dir[DIR_Attr] |= AM_ARC;                    /* Set archive bit */
+        ST_DWORD(dir+DIR_FileSize, fp->fsize);      /* Update file size */
+        st_clust(dir, fp->sclust);                  /* Update start cluster */
+        tm = get_fattime();                         /* Update updated time */
+        ST_DWORD(dir+DIR_WrtTime, tm);
+        ST_WORD(dir+DIR_LstAccDate, 0);
+        fp->flag &= ~FA__WRITTEN;
+        fp->fs->wflag = 1;
+        res = sync_fs(fp->fs);
     }
 
+fail:
     LEAVE_FF(fp->fs, res);
 }
 
@@ -2630,25 +2635,27 @@ FRESULT f_close (
 
 
 #if !_FS_READONLY
-    res = f_sync(fp);                   /* Flush cached data */
-    if (res == FR_OK)
+    res = f_sync(fp);           /* Flush cached data */
+    if (res != FR_OK)
+        return res;
 #endif
-    {
-        res = validate(fp);             /* Lock volume */
-        if (res == FR_OK) {
+
+    res = validate(fp);         /* Lock volume */
+    if (res != FR_OK)
+        return res;
+
 #if _FS_REENTRANT
-            FATFS *fs = fp->fs;
+        FATFS *fs = fp->fs;
 #endif
 #if _FS_LOCK
-            res = dec_lock(fp->lockid); /* Decrement file open counter */
-            if (res == FR_OK)
+    res = dec_lock(fp->lockid); /* Decrement file open counter */
+    if (res == FR_OK)
 #endif
-                fp->fs = 0;             /* Invalidate file object */
+        fp->fs = NULL;          /* Invalidate file object */
 #if _FS_REENTRANT
-            unlock_fs(fs, FR_OK);       /* Unlock volume */
+    unlock_fs(fs, FR_OK);       /* Unlock volume */
 #endif
-        }
-    }
+
     return res;
 }
 
@@ -2689,23 +2696,26 @@ FRESULT f_chdir (
 
     /* Get logical drive number */
     res = find_volume(&dj.fs, &path, 0);
-    if (res == FR_OK) {
-        INIT_BUF(dj);
-        res = follow_path(&dj, path);       /* Follow the path */
-        FREE_BUF();
-        if (res == FR_OK) {                 /* Follow completed */
-            if (!dj.dir) {
-                dj.fs->cdir = dj.sclust;    /* Start directory itself */
-            } else {
-                if (dj.dir[DIR_Attr] & AM_DIR)  /* Reached to the directory */
-                    dj.fs->cdir = ld_clust(dj.fs, dj.dir);
-                else
-                    res = FR_NO_PATH;       /* Reached but a file */
-            }
-        }
-        if (res == FR_NO_FILE) res = FR_NO_PATH;
-    }
+    if (res != FR_OK)
+        goto fail;
 
+    INIT_BUF(dj);
+    res = follow_path(&dj, path);       /* Follow the path */
+    FREE_BUF();
+    if (res == FR_OK) {                 /* Follow completed */
+        if (!dj.dir) {
+            dj.fs->cdir = dj.sclust;    /* Start directory itself */
+        } else {
+            if (dj.dir[DIR_Attr] & AM_DIR)  /* Reached to the directory */
+                dj.fs->cdir = ld_clust(dj.fs, dj.dir);
+            else
+                res = FR_NO_PATH;       /* Reached but a file */
+        }
+    }
+    if (res == FR_NO_FILE)
+        res = FR_NO_PATH;
+
+fail:
     LEAVE_FF(dj.fs, res);
 }
 
@@ -2803,7 +2813,8 @@ FRESULT f_lseek (
 
 
     res = validate(fp);                 /* Check validity of the object */
-    if (res != FR_OK) LEAVE_FF(fp->fs, res);
+    if (res != FR_OK)
+        LEAVE_FF(fp->fs, res);
     if (fp->err)                        /* Check error */
         LEAVE_FF(fp->fs, (FRESULT)fp->err);
 
@@ -3023,20 +3034,22 @@ FRESULT f_closedir (
 
 
     res = validate(dp);
-    if (res == FR_OK) {
+    if (res != FR_OK)
+        return res;
+
 #if _FS_REENTRANT
-        FATFS *fs = dp->fs;
+    FATFS *fs = dp->fs;
 #endif
 #if _FS_LOCK
-        if (dp->lockid)             /* Decrement sub-directory open counter */
-            res = dec_lock(dp->lockid);
-        if (res == FR_OK)
+    if (dp->lockid)             /* Decrement sub-directory open counter */
+        res = dec_lock(dp->lockid);
+    if (res == FR_OK)
 #endif
-            dp->fs = 0;             /* Invalidate directory object */
+        dp->fs = 0;             /* Invalidate directory object */
 #if _FS_REENTRANT
-        unlock_fs(fs, FR_OK);       /* Unlock volume */
+    unlock_fs(fs, FR_OK);       /* Unlock volume */
 #endif
-    }
+
     return res;
 }
 
@@ -3056,29 +3069,31 @@ FRESULT f_readdir (
     DEF_NAMEBUF;
 
 
-    res = validate(dp);                     /* Check validity of the object */
-    if (res == FR_OK) {
-        if (!fno) {
-            res = dir_sdi(dp, 0);           /* Rewind the directory object */
-        } else {
-            INIT_BUF(*dp);
-            res = dir_read(dp, 0);          /* Read an item */
-            if (res == FR_NO_FILE) {        /* Reached end of directory */
+    res = validate(dp);                 /* Check validity of the object */
+    if (res != FR_OK)
+        goto fail;
+
+    if (!fno) {
+        res = dir_sdi(dp, 0);           /* Rewind the directory object */
+    } else {
+        INIT_BUF(*dp);
+        res = dir_read(dp, 0);          /* Read an item */
+        if (res == FR_NO_FILE) {        /* Reached end of directory */
+            dp->sect = 0;
+            res = FR_OK;
+        }
+        if (res == FR_OK) {             /* A valid entry is found */
+            get_fileinfo(dp, fno);      /* Get the object information */
+            res = dir_next(dp, 0);      /* Increment index for next */
+            if (res == FR_NO_FILE) {
                 dp->sect = 0;
                 res = FR_OK;
             }
-            if (res == FR_OK) {             /* A valid entry is found */
-                get_fileinfo(dp, fno);      /* Get the object information */
-                res = dir_next(dp, 0);      /* Increment index for next */
-                if (res == FR_NO_FILE) {
-                    dp->sect = 0;
-                    res = FR_OK;
-                }
-            }
-            FREE_BUF();
         }
+        FREE_BUF();
     }
 
+fail:
     LEAVE_FF(dp->fs, res);
 }
 
@@ -3101,19 +3116,22 @@ FRESULT f_stat (
 
     /* Get logical drive number */
     res = find_volume(&dj.fs, &path, 0);
-    if (res == FR_OK) {
-        INIT_BUF(dj);
-        res = follow_path(&dj, path);   /* Follow the file path */
-        if (res == FR_OK) {             /* Follow completed */
-            if (dj.dir) {       /* Found an object */
-                if (fno) get_fileinfo(&dj, fno);
-            } else {            /* It is root directory */
-                res = FR_INVALID_NAME;
-            }
-        }
-        FREE_BUF();
-    }
+    if (res != FR_OK)
+        goto fail;
 
+    INIT_BUF(dj);
+    res = follow_path(&dj, path);   /* Follow the file path */
+    if (res == FR_OK) {             /* Follow completed */
+        if (dj.dir) {       /* Found an object */
+            if (fno)
+                get_fileinfo(&dj, fno);
+        } else {            /* It is root directory */
+            res = FR_INVALID_NAME;
+        }
+    }
+    FREE_BUF();
+
+fail:
     LEAVE_FF(dj.fs, res);
 }
 
