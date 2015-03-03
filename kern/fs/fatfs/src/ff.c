@@ -2957,44 +2957,53 @@ FRESULT f_opendir (
     FATFS* fs;
     DEF_NAMEBUF;
 
-
     if (!dp) return FR_INVALID_OBJECT;
 
     /* Get logical drive number */
     res = find_volume(&fs, &path, 0);
-    if (res == FR_OK) {
-        dp->fs = fs;
-        INIT_BUF(*dp);
-        res = follow_path(dp, path);            /* Follow the path to the directory */
-        FREE_BUF();
-        if (res == FR_OK) {                     /* Follow completed */
-            if (dp->dir) {                      /* It is not the origin directory itself */
-                if (dp->dir[DIR_Attr] & AM_DIR) /* The object is a sub directory */
-                    dp->sclust = ld_clust(fs, dp->dir);
-                else                            /* The object is a file */
-                    res = FR_NO_PATH;
-            }
-            if (res == FR_OK) {
-                dp->id = fs->id;
-                res = dir_sdi(dp, 0);           /* Rewind directory */
-#if _FS_LOCK
-                if (res == FR_OK) {
-                    if (dp->sclust) {
-                        dp->lockid = inc_lock(dp, 0);   /* Lock the sub directory */
-                        if (!dp->lockid)
-                            res = FR_TOO_MANY_OPEN_FILES;
-                    } else {
-                        dp->lockid = 0; /* Root directory need not to be locked */
-                    }
-                }
-#endif
-            }
-        }
-        if (res == FR_NO_FILE) res = FR_NO_PATH;
-    }
-    if (res != FR_OK) dp->fs = 0;       /* Invalidate the directory object if function faild */
+    if (res != FR_OK)
+        goto fail;
+
+    dp->fs = fs;
+    INIT_BUF(*dp);
+    res = follow_path(dp, path); /* Follow the path to the directory */
+    FREE_BUF();
+    if (res != FR_OK)
+        goto fail;
 
     dp->ino = GET_INO(dp);
+
+    /* Follow completed */
+    if (dp->dir) { /* It is not the origin directory itself */
+        if (dp->dir[DIR_Attr] & AM_DIR) /* The object is a sub directory */
+            dp->sclust = ld_clust(fs, dp->dir);
+        else                            /* The object is a file */
+            res = FR_NO_PATH;
+    }
+    if (res != FR_OK)
+        goto fail;
+
+    dp->id = fs->id;
+    res = dir_sdi(dp, 0); /* Rewind directory */
+
+#if _FS_LOCK
+    if (res != FR_OK)
+        goto fail;
+
+    if (dp->sclust) {
+        dp->lockid = inc_lock(dp, 0);   /* Lock the sub directory */
+        if (!dp->lockid)
+            res = FR_TOO_MANY_OPEN_FILES;
+    } else {
+        dp->lockid = 0; /* Root directory need not to be locked */
+    }
+#endif
+
+    if (res == FR_NO_FILE)
+        res = FR_NO_PATH;
+fail:
+    if (res != FR_OK)
+        dp->fs = NULL; /* Invalidate the directory object if function faild */
 
     LEAVE_FF(fs, res);
 }
