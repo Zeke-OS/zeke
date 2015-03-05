@@ -33,6 +33,8 @@
 #include <stddef.h>
 #include <sys/param.h>
 #include <kmalloc.h>
+#include <hal/core.h>
+#include <kerror.h>
 #include <klocks.h>
 #include <buf.h>
 #include <fs/fs.h>

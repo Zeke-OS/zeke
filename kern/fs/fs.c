@@ -228,11 +228,6 @@ again:  /* Get vnode by name in this dir. */
     }
 
 out:
-#if configKASSERT
-    if (retval == 0) {
-        KASSERT(*result != NULL, "result should be set if there is no error");
-    }
-#endif
 
     kfree(path);
     return retval;
@@ -333,6 +328,7 @@ int fs_umount(struct fs_superblock * sb)
 {
     vnode_t * root;
     vnode_t * prev;
+    vnode_t * next;
 
 #ifdef configFS_DEBUG
     KERROR(KERROR_DEBUG, "fs_umount(sb:%p)\n", sb);
@@ -346,8 +342,18 @@ int fs_umount(struct fs_superblock * sb)
     /* Reverse the mount process to unmount */
     root = sb->root;
     prev = root->vn_prev_mountpoint;
-    prev->vn_next_mountpoint = prev;
+    next = root->vn_next_mountpoint;
+    KASSERT(root != prev, "FS can't handle umount if root == prev");
+
+    if (next && next != root) {
+        prev->vn_next_mountpoint = root->vn_next_mountpoint;
+        next->vn_prev_mountpoint = prev;
+    } else {
+        prev->vn_next_mountpoint = prev;
+    }
+    root->vn_next_mountpoint = root;
     root->vn_prev_mountpoint = root;
+
 
     return sb->fs->umount(sb);
 }
