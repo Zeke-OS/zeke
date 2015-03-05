@@ -73,11 +73,8 @@ SYSCTL_INT(_vfs_limits, OID_AUTO, path_max, CTLFLAG_RD, 0, PATH_MAX,
 /**
  * Linked list of registered file systems.
  */
-static fsl_node_t * fsl_head;
-/* TODO fsl as an array with:
- * struct { size_t count; fst_t * fs_array; };
- * Then iterator can just iterate over fs_array
- */
+static SLIST_HEAD(fs_list, fs) fs_list_head = SLIST_HEAD_INITIALIZER(fs_list_head);
+
 
 int fs_init(void) __attribute__((constructor));
 int fs_init(void)
@@ -95,35 +92,127 @@ int fs_init(void)
  */
 int fs_register(fs_t * fs)
 {
-    fsl_node_t * new;
-    int retval = -1;
+#ifdef configFS_DEBUG
+    KERROR(KERROR_DEBUG, "fs_register(fs:\"%s\")\n", fs->fsname);
+#endif
 
     FS_LOCK();
-
-    if (fsl_head == 0) { /* First entry */
-        fsl_head = kmalloc(sizeof(fsl_node_t));
-        new = fsl_head;
-    } else {
-        new = kmalloc(sizeof(fsl_node_t));
-    }
-    if (new == 0)
-        goto out;
-
-    new->fs = fs;
-    if (fsl_head == new) { /* First entry */
-        new->next = 0;
-    } else {
-        fsl_node_t * node = fsl_head;
-
-        while (node->next != 0) {
-            node = node->next;
-        }
-        node->next = new;
-    }
-    retval = 0;
-
-out:
+    mtx_lock(&fs->fs_giant);
+    SLIST_INSERT_HEAD(&fs_list_head, fs, _fs_list);
+    mtx_unlock(&fs->fs_giant);
     FS_UNLOCK();
+
+    return 0;
+}
+
+fs_t * fs_by_name(const char * fsname)
+{
+    struct fs * fs;
+
+    KASSERT(fsname != NULL, "fsname should be set\n");
+
+    FS_LOCK();
+    SLIST_FOREACH(fs, &fs_list_head, _fs_list) {
+        /* TODO Remove */
+        KERROR(KERROR_DEBUG, "fs: %s\n", fs->fsname);
+        if (strcmp(fs->fsname, fsname) == 0) {
+            FS_UNLOCK();
+            return fs;
+        }
+    }
+    FS_UNLOCK();
+
+    return NULL;
+}
+
+int fs_mount(vnode_t * target, const char * source, const char * fsname,
+        uint32_t flags, const char * parm, int parm_len)
+{
+    fs_t * fs = 0;
+    struct fs_superblock * sb;
+    int err;
+
+#ifdef configFS_DEBUG
+     KERROR(KERROR_DEBUG,
+            "fs_mount(target \"%p\", source \"%s\", fsname \"%s\", "
+            "flags %x, parm \"%s\", parm_len %d)\n",
+            target, source, fsname, flags, parm, parm_len);
+#endif
+
+    if (fsname) {
+        fs = fs_by_name(fsname);
+    } else {
+        /* TODO Try to determine the type of the fs */
+    }
+    if (!fs)
+        return -ENOTSUP; /* fs doesn't exist. */
+
+#ifdef configFS_DEBUG
+    KERROR(KERROR_DEBUG, "Found fs: %s\n", fsname);
+#endif
+    KASSERT(fs->mount != NULL, "Mount function exist");
+
+    err = fs->mount(source, flags, parm, parm_len, &sb);
+    if (err)
+        return err;
+
+    KASSERT((uintptr_t)sb > configKERNEL_START, "sb is not a stack address");
+#ifdef configFS_DEBUG
+    KERROR(KERROR_DEBUG, "Mount OK\n");
+#endif
+
+    KASSERT(target && sb->root, "target and sb->root must be set");
+
+    sb->mountpoint = target;
+    sb->root->vn_prev_mountpoint = target;
+    sb->root->vn_next_mountpoint = sb->root;
+    target->vn_next_mountpoint = sb->root;
+
+    /* TODO inherit permissions */
+
+    return 0;
+}
+
+int fs_umount(struct fs_superblock * sb)
+{
+    vnode_t * root;
+    vnode_t * prev;
+    vnode_t * next;
+
+#ifdef configFS_DEBUG
+    KERROR(KERROR_DEBUG, "fs_umount(sb:%p)\n", sb);
+#endif
+    KASSERT(sb, "sb is set");
+    KASSERT(sb->fs && sb->root && sb->root->vn_prev_mountpoint &&
+            sb->root->vn_prev_mountpoint->vn_next_mountpoint,
+            "Sanity check");
+    KASSERT(sb->fs->umount, "umount() function should always exist");
+
+    /* Reverse the mount process to unmount */
+    root = sb->root;
+    prev = root->vn_prev_mountpoint;
+    next = root->vn_next_mountpoint;
+    KASSERT(root != prev, "FS can't handle umount if root == prev");
+
+    if (next && next != root) {
+        prev->vn_next_mountpoint = root->vn_next_mountpoint;
+        next->vn_prev_mountpoint = prev;
+    } else {
+        prev->vn_next_mountpoint = prev;
+    }
+    root->vn_next_mountpoint = root;
+    root->vn_prev_mountpoint = root;
+
+
+    return sb->fs->umount(sb);
+}
+
+unsigned int fs_get_pfs_minor(void)
+{
+    static unsigned int pfs_minor = 0;
+    unsigned int retval = pfs_minor;
+
+    pfs_minor++;
     return retval;
 }
 
@@ -276,154 +365,6 @@ int fs_namei_proc(vnode_t ** result, int fd, const char * path, int atflags)
     return retval;
 }
 
-int fs_mount(vnode_t * target, const char * source, const char * fsname,
-        uint32_t flags, const char * parm, int parm_len)
-{
-    fs_t * fs = 0;
-    struct fs_superblock * sb;
-    int err;
-
-#ifdef configFS_DEBUG
-     KERROR(KERROR_DEBUG,
-            "fs_mount(target \"%p\", source \"%s\", fsname \"%s\", "
-            "flags %x, parm \"%s\", parm_len %d)\n",
-            target, source, fsname, flags, parm, parm_len);
-#endif
-
-    if (fsname) {
-        fs = fs_by_name(fsname);
-    } else {
-        /* TODO Try to determine the type of the fs */
-    }
-    if (!fs)
-        return -ENOTSUP; /* fs doesn't exist. */
-
-#ifdef configFS_DEBUG
-    KERROR(KERROR_DEBUG, "Found fs: %s\n", fsname);
-#endif
-    KASSERT(fs->mount != NULL, "Mount function exist");
-
-    err = fs->mount(source, flags, parm, parm_len, &sb);
-    if (err)
-        return err;
-
-    KASSERT((uintptr_t)sb > configKERNEL_START, "sb is not a stack address");
-#ifdef configFS_DEBUG
-    KERROR(KERROR_DEBUG, "Mount OK\n");
-#endif
-
-    KASSERT(target && sb->root, "target and sb->root must be set");
-
-    sb->mountpoint = target;
-    sb->root->vn_prev_mountpoint = target;
-    sb->root->vn_next_mountpoint = sb->root;
-    target->vn_next_mountpoint = sb->root;
-
-    /* TODO inherit permissions */
-
-    return 0;
-}
-
-int fs_umount(struct fs_superblock * sb)
-{
-    vnode_t * root;
-    vnode_t * prev;
-    vnode_t * next;
-
-#ifdef configFS_DEBUG
-    KERROR(KERROR_DEBUG, "fs_umount(sb:%p)\n", sb);
-#endif
-    KASSERT(sb, "sb is set");
-    KASSERT(sb->fs && sb->root && sb->root->vn_prev_mountpoint &&
-            sb->root->vn_prev_mountpoint->vn_next_mountpoint,
-            "Sanity check");
-    KASSERT(sb->fs->umount, "umount() function should always exist");
-
-    /* Reverse the mount process to unmount */
-    root = sb->root;
-    prev = root->vn_prev_mountpoint;
-    next = root->vn_next_mountpoint;
-    KASSERT(root != prev, "FS can't handle umount if root == prev");
-
-    if (next && next != root) {
-        prev->vn_next_mountpoint = root->vn_next_mountpoint;
-        next->vn_prev_mountpoint = prev;
-    } else {
-        prev->vn_next_mountpoint = prev;
-    }
-    root->vn_next_mountpoint = root;
-    root->vn_prev_mountpoint = root;
-
-
-    return sb->fs->umount(sb);
-}
-
-fs_t * fs_by_name(const char * fsname)
-{
-    fsl_node_t * node = fsl_head;
-
-    KASSERT(fsname != NULL, "fsname should be set\n");
-
-    do {
-        if (!strcmp(node->fs->fsname, fsname))
-            break;
-    } while ((node = node->next));
-
-    return (node) ? node->fs : NULL;
-}
-
-void fs_init_sb_iterator(sb_iterator_t * it)
-{
-    KASSERT(it != NULL, "fs iterator should be set\n");
-
-    it->curr_fs = fsl_head;
-    it->curr_sb = fsl_head->fs->sbl_head;
-}
-
-fs_superblock_t * fs_next_sb(sb_iterator_t * it)
-{
-    fs_superblock_t * retval;
-
-    KASSERT(it != NULL, "fs iterator should be set\n");
-
-    retval = (it->curr_sb != 0) ? &(it->curr_sb->sbl_sb) : 0;
-
-    if (retval == 0)
-        goto out;
-
-    it->curr_sb = it->curr_sb->next;
-    if (it->curr_sb == 0) {
-        while (1) {
-            it->curr_fs = it->curr_fs->next;
-            if (it->curr_fs == 0)
-                break;
-            it->curr_sb = it->curr_fs->fs->sbl_head;
-            if (it->curr_sb != 0)
-                break;
-        }
-    }
-
-out:
-    return retval;
-}
-
-unsigned int fs_get_pfs_minor(void)
-{
-    static unsigned int pfs_minor = 0;
-    unsigned int retval = pfs_minor;
-
-    pfs_minor++;
-    return retval;
-}
-
-int chkperm_curproc(struct stat * stat, int oflags)
-{
-    uid_t euid = curproc->euid;
-    gid_t egid = curproc->egid;
-
-    return chkperm(stat, euid, egid, oflags);
-}
-
 int chkperm(struct stat * stat, uid_t euid, gid_t egid, int oflags)
 {
     oflags &= O_ACCMODE;
@@ -468,6 +409,14 @@ int chkperm(struct stat * stat, uid_t euid, gid_t egid, int oflags)
     }
 
     return 0;
+}
+
+int chkperm_curproc(struct stat * stat, int oflags)
+{
+    uid_t euid = curproc->euid;
+    gid_t egid = curproc->egid;
+
+    return chkperm(stat, euid, egid, oflags);
 }
 
 int chkperm_vnode_curproc(vnode_t * vnode, int oflags)

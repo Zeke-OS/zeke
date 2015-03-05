@@ -198,12 +198,14 @@ typedef struct files_struct {
  */
 typedef struct fs {
     char fsname[8];
+    mtx_t fs_giant;
 
     int (*mount)(const char * source, uint32_t mode,
                  const char * parm, int parm_len, struct fs_superblock ** sb);
     int (*umount)(struct fs_superblock * fs_sb);
+
     struct superblock_lnode * sbl_head; /*!< List of all mounts. */
-    mtx_t fs_giant;
+    SLIST_ENTRY(fs) _fs_list;
 } fs_t;
 
 /**
@@ -250,22 +252,6 @@ typedef struct superblock_lnode {
     struct fs_superblock sbl_sb; /*!< Superblock struct. */
     struct superblock_lnode * next; /*!< Pointer to the next super block. */
 } superblock_lnode_t;
-
-/**
- * fs list type.
- */
-typedef struct fsl_node {
-    struct fs * fs; /*!< Pointer to the file system struct. */
-    struct fsl_node * next; /*!< Pointer to the next fs list node. */
-} fsl_node_t;
-
-/**
- * Sperblock iterator.
- */
-typedef struct sb_iterator {
-    struct fsl_node * curr_fs; /*!< Current fs list node. */
-    struct superblock_lnode * curr_sb; /*!< Current superblock of curr_fs. */
-} sb_iterator_t;
 
 /**
  * vnode operations struct.
@@ -444,6 +430,32 @@ extern const vnode_ops_t nofs_vnode_ops;
 int fs_register(fs_t * fs);
 
 /**
+ * Find registered file system by name.
+ * @param fsname is the name of the file system.
+ * @return The file system structure.
+ */
+fs_t * fs_by_name(const char * fsname);
+
+/**
+ * Mount file system.
+ * @param target    is the target mount point directory.
+ * @param vonde_dev is a vnode of a device or other mountable file system
+ *                  device.
+ * @param fsname    is the name of the file system type to mount. This
+ *                  argument is optional and if left out fs_mount() tries
+ *                  to determine the file system type from existing information.
+ */
+int fs_mount(vnode_t * target, const char * source, const char * fsname,
+        uint32_t flags, const char * parm, int parm_len);
+
+int fs_umount(struct fs_superblock * sb);
+
+/**
+ * Get next free pseudo fs minor number.
+ */
+unsigned int fs_get_pfs_minor(void);
+
+/**
  * Lookup for vnode by path.
  * @param[out]  result  is the target where vnode struct is stored.
  * @param[in]   root    is the vnode where search is started from.
@@ -465,44 +477,6 @@ int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str,
  *                  implicit.
  */
 int fs_namei_proc(vnode_t ** result, int fd, const char * path, int atflags);
-
-/**
- * Mount file system.
- * @param target    is the target mount point directory.
- * @param vonde_dev is a vnode of a device or other mountable file system
- *                  device.
- * @param fsname    is the name of the file system type to mount. This
- *                  argument is optional and if left out fs_mount() tries
- *                  to determine the file system type from existing information.
- */
-int fs_mount(vnode_t * target, const char * source, const char * fsname,
-        uint32_t flags, const char * parm, int parm_len);
-
-/**
- * Find registered file system by name.
- * @param fsname is the name of the file system.
- * @return The file system structure.
- */
-fs_t * fs_by_name(const char * fsname);
-
-/**
- * Initialize a file system superblock iterator.
- * Iterator is used to iterate over all superblocks of mounted file systems.
- * @param it is an untilitialized superblock iterator struct.
- */
-void fs_init_sb_iterator(sb_iterator_t * it);
-
-/**
- * Iterate over superblocks of mounted file systems.
- * @param it is the iterator struct.
- * @return The next superblock or 0.
- */
-fs_superblock_t * fs_next_sb(sb_iterator_t * it);
-
-/**
- * Get next free pseudo fs minor number.
- */
-unsigned int fs_get_pfs_minor(void);
 
 int chkperm(struct stat * stat, uid_t uid, gid_t gid, int amode);
 
