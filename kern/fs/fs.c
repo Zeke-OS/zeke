@@ -228,6 +228,12 @@ again:  /* Get vnode by name in this dir. */
     }
 
 out:
+#if configKASSERT
+    if (retval == 0) {
+        KASSERT(*result != NULL, "result should be set if there is no error");
+    }
+#endif
+
     kfree(path);
     return retval;
 }
