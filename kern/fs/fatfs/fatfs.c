@@ -51,13 +51,13 @@ static int fatfs_mount(const char * source, uint32_t mode,
 static char * format_fpath(struct fatfs_inode * indir, const char * name);
 static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
                         char * fpath, long vn_hash, int oflags);
-static vnode_t * create_root(fs_superblock_t * sb);
+static vnode_t * create_root(struct fs_superblock * sb);
 static int fatfs_delete_vnode(vnode_t * vnode);
 static int fatfs_file_opened(struct proc_info * p, vnode_t * vnode);
 static void fatfs_file_closed(struct proc_info * p, file_t * file);
 static int fatfs_lookup(vnode_t * dir, const char * name, vnode_t ** result);
 static void init_fatfs_vnode(vnode_t * vnode, ino_t inum, mode_t mode,
-                             long vn_hash, fs_superblock_t * sb);
+                             long vn_hash, struct fs_superblock * sb);
 static int get_mp_stat(vnode_t * vnode, struct stat * st);
 static int fresult2errno(int fresult);
 
@@ -138,7 +138,7 @@ static int fatfs_mount(const char * source, uint32_t mode,
 {
     static dev_t fatfs_vdev_minor = 0;
     struct fatfs_sb * fatfs_sb = NULL;
-    fs_superblock_t * sbp;
+    struct fs_superblock * sbp;
     vnode_t * vndev;
     int err, retval = 0;
 
@@ -355,7 +355,7 @@ fail:
     return retval;
 }
 
-static vnode_t * create_root(fs_superblock_t * sb)
+static vnode_t * create_root(struct fs_superblock * sb)
 {
     char * rootpath;
     long vn_hash;
@@ -895,7 +895,7 @@ int fatfs_chflags(vnode_t * vnode, fflags_t flags)
  * @param vnode is the target vnode to be initialized.
  */
 static void init_fatfs_vnode(vnode_t * vnode, ino_t inum, mode_t mode,
-                             long vn_hash, fs_superblock_t * sb)
+                             long vn_hash, struct fs_superblock * sb)
 {
     struct stat stat;
 

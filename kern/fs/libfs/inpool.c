@@ -39,7 +39,7 @@
 
 static size_t inpool_fill(inpool_t * pool, size_t count);
 
-int inpool_init(inpool_t * pool, fs_superblock_t * sb,
+int inpool_init(inpool_t * pool, struct fs_superblock * sb,
                 inpool_creatin_t create_inode,
                 inpool_destrin_t destroy_inode,
                 size_t max)

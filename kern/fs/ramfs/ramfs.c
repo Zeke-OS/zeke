@@ -126,7 +126,8 @@ static atomic_t ramfs_vdev_minor;
 static void ramfs_init_sb(ramfs_sb_t * ramfs_sb, uint32_t mode);
 static vnode_t * create_root(ramfs_sb_t * ramfs_sb);
 static void destroy_superblock(ramfs_sb_t * ramfs_sb);
-vnode_t * ramfs_raw_create_inode(const fs_superblock_t * sb, ino_t * num);
+vnode_t * ramfs_raw_create_inode(const struct fs_superblock * sb,
+                                 ino_t * num);
 static void init_inode(ramfs_inode_t * inode, ramfs_sb_t * ramfs_sb,
                        ino_t * num);
 static void destroy_vnode(vnode_t * vnode);
@@ -302,7 +303,8 @@ int ramfs_umount(struct fs_superblock * fs_sb)
  * @param[out] vnode    is a pointer to the vnode, can be NULL.
  * @return Returns 0 if no error; Otherwise value other than zero.
  */
-int ramfs_get_vnode(fs_superblock_t * sb, ino_t * vnode_num, vnode_t ** vnode)
+int ramfs_get_vnode(struct fs_superblock * sb, ino_t * vnode_num,
+                    vnode_t ** vnode)
 {
     ramfs_sb_t * ramfs_sb;
 
@@ -770,7 +772,7 @@ int ramfs_chown(vnode_t * vnode, uid_t owner, gid_t group)
  */
 static void ramfs_init_sb(ramfs_sb_t * ramfs_sb, uint32_t mode)
 {
-    fs_superblock_t * sb = &(ramfs_sb->sb);
+    struct fs_superblock * sb = &(ramfs_sb->sb);
 
     fs_init_superblock(sb, &ramfs_fs);
     sb->mode_flags = mode;
@@ -848,7 +850,7 @@ static void destroy_superblock(ramfs_sb_t * ramfs_sb)
  * @param num   is the inode number.
  * @return Returns the newly created inode or null pointer if failed.
  */
-vnode_t * ramfs_raw_create_inode(const fs_superblock_t * sb, ino_t * num)
+vnode_t * ramfs_raw_create_inode(const struct fs_superblock * sb, ino_t * num)
 {
     ramfs_inode_t * inode;
     ramfs_sb_t * ramfs_sb;

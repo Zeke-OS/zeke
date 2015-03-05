@@ -211,7 +211,7 @@ typedef struct fs {
 /**
  * File system superblock.
  */
-typedef struct fs_superblock {
+struct fs_superblock {
     fs_t * fs;
     dev_t vdev_id;          /*!< Virtual dev_id. */
 #ifdef configVFS_HASH
@@ -245,15 +245,7 @@ typedef struct fs_superblock {
     int (*delete_vnode)(vnode_t * vnode);
 
     SLIST_ENTRY(fs_superblock) _sblist;
-} fs_superblock_t;
-
-/**
- * Superblock list type.
- */
-typedef struct superblock_lnode {
-    struct fs_superblock sbl_sb; /*!< Superblock struct. */
-    struct superblock_lnode * next; /*!< Pointer to the next super block. */
-} superblock_lnode_t;
+};
 
 /**
  * vnode operations struct.

@@ -36,7 +36,7 @@ static char * test_mount(void)
 {
 #define MOUNT_POINT "/tmp"
 #define MODE_FLAGS 0
-    fs_superblock_t * sb;
+    struct fs_superblock * sb;
     superblock_lnode_t * tmp;
     size_t i;
 
@@ -74,7 +74,7 @@ static char * test_lookup(void)
 #define DOT "."
 #define DOTDOT ".."
 #define F_NAME "cefijefj"
-    fs_superblock_t * sb;
+    struct fs_superblock * sb;
     vnode_t * root;
     vnode_t * result;
 
@@ -107,7 +107,7 @@ static char * test_create_inode(void)
 #define MOUNT_POINT "/tmp"
 #define MODE_FLAGS 0
 #define TEST_FILE "test_file"
-    fs_superblock_t * sb;
+    struct fs_superblock * sb;
     vnode_t * root;
     vnode_t * filenode;
     vnode_t * result;
@@ -137,7 +137,7 @@ static char * test_create_multiple(void)
 #define TST2 "tt"
 #define TST3 "ttt"
 #define TST4 "uef"
-    fs_superblock_t * sb;
+    struct fs_superblock * sb;
     vnode_t * root;
     vnode_t * filenode1;
     vnode_t * filenode2;
@@ -187,7 +187,7 @@ static char * test_write_read_reg(void)
 #define MODE_FLAGS 0
 #define FILENAME "test"
 #define str_src "QAZWSXEDCEDCRFV"
-    fs_superblock_t * sb;
+    struct fs_superblock * sb;
     vnode_t * root;
     vnode_t * file;
     char str_dst[sizeof(str_src) + 1];
@@ -230,7 +230,7 @@ static char * test_mkdir(void)
 #define DIR_1 "a"
 #define DIR_2 "b"
 #define DIR_3 "c"
-    fs_superblock_t * sb;
+    struct fs_superblock * sb;
     vnode_t * root;
     vnode_t * result;
     vnode_t * result1;
@@ -281,7 +281,7 @@ static char * test_readdir(void)
 #define DIR_1 "a"
 #define DIR_2 "b"
 #define DIR_3 "c"
-    fs_superblock_t * sb;
+    struct fs_superblock * sb;
     vnode_t * root;
     vnode_t * result;
     vnode_t * result1;
@@ -351,7 +351,7 @@ static char * test_readdir(void)
 static void walk_dirtree(vnode_t * vnode, int ind)
 {
     struct dirent d;
-    fs_superblock_t * sb = vnode->sb;
+    struct fs_superblock * sb = vnode->sb;
     vnode_t * vnode_child;
 
     /* TODO This doesn't actually test anything by now */

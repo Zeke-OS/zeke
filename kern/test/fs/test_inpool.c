@@ -15,10 +15,10 @@ typedef struct inode {
     int data;
 } inode_t;
 
-static vnode_t * create_tst(const fs_superblock_t * sb, ino_t * num);
+static vnode_t * create_tst(const struct fs_superblock * sb, ino_t * num);
 static int delete_tst(vnode_t * vnode);
 
-fs_superblock_t sb_tst = {
+struct fs_superblock sb_tst = {
    .delete_vnode = delete_tst
 };
 
@@ -115,7 +115,7 @@ static void all_tests() {
 
 SYSCTL_TEST(fs, inpool);
 
-static vnode_t * create_tst(const fs_superblock_t * sb, ino_t * num)
+static vnode_t * create_tst(const struct fs_superblock * sb, ino_t * num)
 {
     inode_t * inode;
 

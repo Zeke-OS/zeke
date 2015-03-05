@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Generic inode pool.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,8 @@
  * @param sb is the superblock used.
  * @param num is the inode number used.
  */
-typedef vnode_t *(*inpool_creatin_t)(const fs_superblock_t * sb, ino_t * num);
+typedef vnode_t *(*inpool_creatin_t)(const struct fs_superblock * sb,
+                                     ino_t * num);
 typedef void     (*inpool_destrin_t)(vnode_t * vnode);
 
 TAILQ_HEAD(ip_listhead, vnode);
@@ -62,7 +63,7 @@ typedef struct inpool {
     size_t ip_count;
     size_t ip_max;              /*!< Maximum size of the inode pool. */
     ino_t ip_next_inum;         /*!< Next free in number after pool is empty. */
-    fs_superblock_t * ip_sb;    /*!< Default Super block of this pool. */
+    struct fs_superblock * ip_sb; /*!< Default Super block of this pool. */
     mtx_t lock;
 
     inpool_creatin_t create_inode; /*!< Create inode callback. */
@@ -79,7 +80,7 @@ typedef struct inpool {
  * @param max   is maximum size of initialized inode pool.
  * @return Return value is 0 if succeeded; Otherwise value other than zero.
  */
-int inpool_init(inpool_t * pool, fs_superblock_t * sb,
+int inpool_init(inpool_t * pool, struct fs_superblock * sb,
                 inpool_creatin_t create_inode,
                 inpool_destrin_t destroy_inode,
                 size_t max);
