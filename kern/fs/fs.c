@@ -113,8 +113,6 @@ fs_t * fs_by_name(const char * fsname)
 
     FS_LOCK();
     SLIST_FOREACH(fs, &fs_list_head, _fs_list) {
-        /* TODO Remove */
-        KERROR(KERROR_DEBUG, "fs: %s\n", fs->fsname);
         if (strcmp(fs->fsname, fsname) == 0) {
             FS_UNLOCK();
             return fs;
