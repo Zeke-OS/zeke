@@ -98,7 +98,7 @@ typedef struct ramfs_inode {
  * ramfs superblock struct.
  */
 typedef struct ramfs_sb {
-    superblock_lnode_t sbn;             /*!< Superblock node. */
+    struct fs_superblock sb;            /*!< Superblock node. */
     struct ramfs_inode ** ramfs_iarr;   /*!< inode lookup table. */
     size_t ramfs_iarr_size;             /*!< Size of the iarr array. */
     inpool_t ramfs_ipool;               /*!< inode pool. */
@@ -123,7 +123,7 @@ struct ramfs_dp {
 static atomic_t ramfs_vdev_minor;
 
 /* Private */
-static void init_sbn(ramfs_sb_t * ramfs_sb, uint32_t mode);
+static void ramfs_init_sb(ramfs_sb_t * ramfs_sb, uint32_t mode);
 static vnode_t * create_root(ramfs_sb_t * ramfs_sb);
 static void destroy_superblock(ramfs_sb_t * ramfs_sb);
 vnode_t * ramfs_raw_create_inode(const fs_superblock_t * sb, ino_t * num);
@@ -143,12 +143,11 @@ static struct ramfs_dp get_dp_by_offset(ramfs_inode_t * inode, off_t offset);
 
 /**
  * Get ramfs_sb of a generic superblock that belongs to ramfs.
- * @param sb    is a pointer to a superblock pointing some ramfs mount.
+ * @param _sb_ is a pointer to a superblock pointing some ramfs mount.
  * @return Returns a pointer to the ramfs_sb ob of the sb.
  */
-#define get_rfsb_of_sb(sb) \
-    (container_of(container_of(sb, superblock_lnode_t, sbl_sb), \
-                  ramfs_sb_t, sbn))
+#define get_rfsb_of_sb(_sb_) \
+    (container_of(_sb_, ramfs_sb_t, sb))
 
 /**
  * Get corresponding inode of given vnode.
@@ -165,7 +164,7 @@ fs_t ramfs_fs = {
     .fsname = RAMFS_FSNAME,
     .mount = ramsfs_mount,
     .umount = ramfs_umount,
-    .sbl_head = NULL
+    .sblist_head = SLIST_HEAD_INITIALIZER(),
 };
 
 /**
@@ -224,7 +223,7 @@ int ramsfs_mount(const char * source, uint32_t mode,
         retval = -ENOMEM;
         goto out;
     }
-    init_sbn(ramfs_sb, mode);
+    ramfs_init_sb(ramfs_sb, mode);
 
     /*
      * Allocate memory for the inode lookup table.
@@ -242,7 +241,7 @@ int ramsfs_mount(const char * source, uint32_t mode,
 #if configRAMFS_DEBUG
     KERROR(KERROR_DEBUG, "Initialize the inode pool.\n");
 #endif
-    err = inpool_init(&(ramfs_sb->ramfs_ipool), &(ramfs_sb->sbn.sbl_sb),
+    err = inpool_init(&(ramfs_sb->ramfs_ipool), &ramfs_sb->sb,
             ramfs_raw_create_inode, destroy_vnode, RAMFS_INODE_POOL_SIZE);
     if (err) {
         retval = -ENOMEM;
@@ -250,24 +249,24 @@ int ramsfs_mount(const char * source, uint32_t mode,
     }
 
     /* Set vdev number */
-    ramfs_sb->sbn.sbl_sb.vdev_id =
+    ramfs_sb->sb.vdev_id =
         DEV_MMTODEV(VDEV_MJNR_RAMFS, atomic_inc(&ramfs_vdev_minor));
 
     /* Create the root inode */
 #if configRAMFS_DEBUG
     KERROR(KERROR_DEBUG, "Create the root inode\n");
 #endif
-    ramfs_sb->sbn.sbl_sb.root = create_root(ramfs_sb);
+    ramfs_sb->sb.root = create_root(ramfs_sb);
 
     /* Add this sb to the list of mounted file systems. */
-    fs_insert_superblock(&ramfs_fs, &ramfs_sb->sbn);
+    fs_insert_superblock(&ramfs_fs, &ramfs_sb->sb);
 
     retval = 0;
     goto out;
 free_ramfs_sb:
     destroy_superblock(ramfs_sb);
 out:
-    *sb = &(ramfs_sb->sbn.sbl_sb);
+    *sb = &ramfs_sb->sb;
     return retval;
 }
 
@@ -290,7 +289,7 @@ int ramfs_umount(struct fs_superblock * fs_sb)
      * TODO Check that there is no more references to any vnodes of
      * this super block before destroying everyting related to it.
      */
-    fs_remove_superblock(&ramfs_fs, &rsb->sbn);
+    fs_remove_superblock(&ramfs_fs, &rsb->sb);
     destroy_superblock(rsb); /* Destroy all data. */
 
     return 0;
@@ -769,11 +768,11 @@ int ramfs_chown(vnode_t * vnode, uid_t owner, gid_t group)
  * @param ramfs_sb  is a pointer to a ramfs superblock.
  * @param mode      mount flags.
  */
-static void init_sbn(ramfs_sb_t * ramfs_sb, uint32_t mode)
+static void ramfs_init_sb(ramfs_sb_t * ramfs_sb, uint32_t mode)
 {
-    fs_superblock_t * sb = &(ramfs_sb->sbn.sbl_sb);
+    fs_superblock_t * sb = &(ramfs_sb->sb);
 
-    fs_init_superblock(&ramfs_sb->sbn, &ramfs_fs);
+    fs_init_superblock(sb, &ramfs_fs);
     sb->mode_flags = mode;
     /* Function pointers to superblock methods: */
     sb->get_vnode = ramfs_get_vnode;
@@ -802,7 +801,7 @@ static vnode_t * create_root(ramfs_sb_t * ramfs_sb)
 
     /* Insert inode to the inode lookup table of its superblock. */
     insert_inode(inode); /* This can't fail on mount. */
-    ramfs_sb->sbn.sbl_sb.root = vn;
+    ramfs_sb->sb.root = vn;
 
     /* Create links according to POSIX. */
     ramfs_link(vn, vn, RFS_DOT);
@@ -876,7 +875,7 @@ vnode_t * ramfs_raw_create_inode(const fs_superblock_t * sb, ino_t * num)
 static void init_inode(ramfs_inode_t * inode, ramfs_sb_t * ramfs_sb, ino_t * num)
 {
     memset((void *)inode, 0, sizeof(ramfs_inode_t));
-    fs_vnode_init(&inode->in_vnode, *num, &(ramfs_sb->sbn.sbl_sb),
+    fs_vnode_init(&inode->in_vnode, *num, &ramfs_sb->sb,
                   &ramfs_vnode_ops);
 }
 

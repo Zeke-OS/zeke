@@ -44,21 +44,20 @@ struct vnode_ops;
  * Updates:
  * - fs set properly
  * - root pointer set to NULL
- * - next pointer set to NULL
  * @param[out] sbn is the target superblock node.
  * @param[in] fs is the file system.
  */
-void fs_init_superblock(struct superblock_lnode * sbn, struct fs * fs);
+void fs_init_superblock(struct fs_superblock * sb, struct fs * fs);
 
 /**
  * Insert suberblock to the list of super blocks in fs struct.
  */
-void fs_insert_superblock(struct fs * fs, struct superblock_lnode * new_sbn);
+void fs_insert_superblock(struct fs * fs, struct fs_superblock * new_sb);
 
 /**
  * Remove a given sb from the sb mount list.
  */
-void fs_remove_superblock(struct fs * fs, struct superblock_lnode * sbn);
+void fs_remove_superblock(struct fs * fs, struct fs_superblock * sb);
 
 /**
  * Create a new pseudo file system root.

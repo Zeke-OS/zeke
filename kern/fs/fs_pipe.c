@@ -89,7 +89,7 @@ static struct fs fs_pipe_fs = {
     .fsname = "pipefs",
     .mount = NULL,
     .umount = NULL,
-    .sbl_head = NULL
+    .sblist_head = SLIST_HEAD_INITIALIZER(),
 };
 
 static struct fs_superblock fs_pipe_sb = {

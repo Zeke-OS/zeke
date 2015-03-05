@@ -65,7 +65,7 @@ static struct fs fatfs_fs = {
     .fsname = FATFS_FSNAME,
     .mount = fatfs_mount,
     .umount = NULL,
-    .sbl_head = 0
+    .sblist_head = SLIST_HEAD_INITIALIZER(),
 };
 
 /**
@@ -154,7 +154,7 @@ static int fatfs_mount(const char * source, uint32_t mode,
     if (!fatfs_sb)
         return -ENOMEM;
 
-    sbp = &fatfs_sb->sbn.sbl_sb;
+    sbp = &fatfs_sb->sb;
     fs_fildes_set(&fatfs_sb->ff_devfile, vndev, O_RDWR);
     sbp->vdev_id = DEV_MMTODEV(VDEV_MJNR_FATFS, fatfs_vdev_minor++);
 
@@ -175,7 +175,7 @@ static int fatfs_mount(const char * source, uint32_t mode,
 #endif
 
     /* Init super block */
-    fs_init_superblock(&fatfs_sb->sbn, &fatfs_fs);
+    fs_init_superblock(&fatfs_sb->sb, &fatfs_fs);
     /* TODO Detect if target dev is rdonly */
     sbp->mode_flags = mode;
 #if configFATFS_READONLY
@@ -196,14 +196,14 @@ static int fatfs_mount(const char * source, uint32_t mode,
     }
 
     /* Add this sb to the list of mounted file systems. */
-    fs_insert_superblock(&fatfs_fs, &fatfs_sb->sbn);
+    fs_insert_superblock(&fatfs_fs, &fatfs_sb->sb);
 
     goto out;
 fail:
     fatfs_sb_arr[DEV_MINOR(sbp->vdev_id)] = NULL;
     kfree(fatfs_sb);
 out:
-    *sb = &(fatfs_sb->sbn.sbl_sb);
+    *sb = &(fatfs_sb->sb);
     return retval;
 }
 
@@ -278,7 +278,7 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
         /* TODO Maybe get mp stat? */
         fno.fattrib = AM_DIR;
     } else if (oflags & O_CREAT) {
-        if (sb->sbn.sbl_sb.mode_flags & MNT_RDONLY)
+        if (sb->sb.mode_flags & MNT_RDONLY)
             return -EROFS;
     } else {
         err = f_stat(fpath, &fno);
@@ -323,7 +323,7 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
         KERROR(KERROR_DEBUG, "ff: Open ok\n");
 #endif
 
-    init_fatfs_vnode(vn, inum, vn_mode, vn_hash, &(sb->sbn.sbl_sb));
+    init_fatfs_vnode(vn, inum, vn_mode, vn_hash, &(sb->sb));
 
     /* Insert to the cache */
     err = vfs_hash_insert(vn, vn_hash, &xvp, fatfs_vncmp, fpath);

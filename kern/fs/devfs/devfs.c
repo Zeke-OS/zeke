@@ -71,7 +71,7 @@ static fs_t devfs_fs = {
     .fsname = DEVFS_FSNAME,
     .mount = devfs_mount,
     .umount = devfs_umount,
-    .sbl_head = 0
+    .sblist_head = SLIST_HEAD_INITIALIZER(),
 };
 
 /* There is only one devfs, but it can be mounted multiple times */

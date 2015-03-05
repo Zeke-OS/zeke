@@ -57,19 +57,18 @@ struct fatfs_inode {
  * FatFs superblock.
  */
 struct fatfs_sb {
-    superblock_lnode_t sbn; /*!< Superblock node. */
+    struct fs_superblock sb; /*!< Superblock node. */
     file_t ff_devfile;
     FATFS ff_fs;
 };
 
 /**
  * Get fatfs_sb of a generic superblock that belongs to fatfs.
- * @param sb    is a pointer to a superblock pointing some ramfs mount.
+ * @param _sb_  is a pointer to a superblock pointing some ramfs mount.
  * @return Returns a pointer to the ramfs_sb ob of the sb.
  */
-#define get_ffsb_of_sb(sb) \
-    (container_of(container_of(sb, superblock_lnode_t, sbl_sb), \
-                  struct fatfs_sb, sbn))
+#define get_ffsb_of_sb(_sb_) \
+    (container_of(_sb_, struct fatfs_sb, sb))
 
 /**
  * Get corresponding inode of given vnode.

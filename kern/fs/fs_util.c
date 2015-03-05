@@ -40,63 +40,26 @@
 #include <fs/fs.h>
 #include <fs/fs_util.h>
 
-void fs_init_superblock(struct superblock_lnode * sbn, struct fs * fs)
+void fs_init_superblock(struct fs_superblock * sb, struct fs * fs)
 {
-    fs_superblock_t * sb = &sbn->sbl_sb;
-
     sb->fs = fs;
     sb->root = NULL;
-    sbn->next = NULL;
 }
 
-void fs_insert_superblock(struct fs * fs, struct superblock_lnode * new_sbn)
+void fs_insert_superblock(struct fs * fs, struct fs_superblock * new_sb)
 {
-    superblock_lnode_t * curr;
-
     mtx_lock(&fs->fs_giant);
 
-    curr = fs->sbl_head;
-
-    /* Add as a first sb if no other mounts yet */
-    if (!curr) {
-        fs->sbl_head = new_sbn;
-    } else {
-        /* else find the last sb on the linked list. */
-        while (curr->next) {
-            curr = curr->next;
-        }
-        curr->next = new_sbn;
-    }
+    SLIST_INSERT_HEAD(&fs->sblist_head, new_sb, _sblist);
 
     mtx_unlock(&fs->fs_giant);
 }
 
-void fs_remove_superblock(struct fs * fs, struct superblock_lnode * sbn)
+void fs_remove_superblock(struct fs * fs, struct fs_superblock * sb)
 {
-    const char err_msg[] = "Unable to remove ramfs sb from the mount list.\n";
-    superblock_lnode_t * prev;
-    superblock_lnode_t * curr;
-
     mtx_lock(&fs->fs_giant);
 
-    curr = fs->sbl_head;
-
-    if (!curr) {
-        KERROR(KERROR_ERR, err_msg);
-        mtx_unlock(&fs->fs_giant);
-        return;
-    }
-
-    while (curr != sbn) {
-        prev = curr;
-        curr = curr->next;
-        if (!curr) {
-            KERROR(KERROR_ERR, err_msg);
-            mtx_unlock(&fs->fs_giant);
-            return;
-        }
-    }
-    prev->next = curr->next;
+    SLIST_REMOVE(&fs->sblist_head, sb, fs_superblock, _sblist);
 
     mtx_unlock(&fs->fs_giant);
 }

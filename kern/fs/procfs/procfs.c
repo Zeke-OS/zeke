@@ -63,7 +63,7 @@ static fs_t procfs_fs = {
     .fsname = PROCFS_FSNAME,
     .mount = procfs_mount,
     .umount = procfs_umount,
-    .sbl_head = NULL
+    .sblist_head = SLIST_HEAD_INITIALIZER(),
 };
 
 /* There is only one procfs, but it can be mounted multiple times */

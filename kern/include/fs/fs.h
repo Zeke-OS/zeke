@@ -204,7 +204,7 @@ typedef struct fs {
                  const char * parm, int parm_len, struct fs_superblock ** sb);
     int (*umount)(struct fs_superblock * fs_sb);
 
-    struct superblock_lnode * sbl_head; /*!< List of all mounts. */
+    SLIST_HEAD(sb_list, fs_superblock) sblist_head; /*!< List of all mounts. */
     SLIST_ENTRY(fs) _fs_list;
 } fs_t;
 
@@ -243,6 +243,8 @@ typedef struct fs_superblock {
      * @return Returns 0 if no error; Otherwise value other than zero.
      */
     int (*delete_vnode)(vnode_t * vnode);
+
+    SLIST_ENTRY(fs_superblock) _sblist;
 } fs_superblock_t;
 
 /**
