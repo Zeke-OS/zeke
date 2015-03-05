@@ -90,8 +90,6 @@ vnode_ops_t fatfs_vnode_ops = {
     .chflags = fatfs_chflags,
 };
 
-GENERATE_INSERT_SB(fatfs_sb, fatfs_fs)
-
 int fatfs_init(void) __attribute__((constructor));
 int fatfs_init(void)
 {
@@ -110,6 +108,7 @@ int fatfs_init(void)
     if (err)
         return err;
 
+    mtx_init(&fatfs_fs.fs_giant, MTX_TYPE_TICKET);
     fs_register(&fatfs_fs);
 
     return 0;
@@ -199,7 +198,7 @@ static int fatfs_mount(const char * source, uint32_t mode,
     fatfs_sb->sbn.next = NULL; /* SB list */
 
     /* Add this sb to the list of mounted file systems. */
-    insert_superblock(fatfs_sb);
+    fs_insert_superblock(&fatfs_fs, &fatfs_sb->sbn);
 
     goto out;
 fail:

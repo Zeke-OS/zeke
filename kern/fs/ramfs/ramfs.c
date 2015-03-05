@@ -125,8 +125,6 @@ static atomic_t ramfs_vdev_minor;
 /* Private */
 static void init_sbn(ramfs_sb_t * ramfs_sb, uint32_t mode);
 static vnode_t * create_root(ramfs_sb_t * ramfs_sb);
-static void insert_superblock(ramfs_sb_t * ramfs_sb);
-static void remove_superblock(ramfs_sb_t * ramfs_sb);
 static void destroy_superblock(ramfs_sb_t * ramfs_sb);
 vnode_t * ramfs_raw_create_inode(const fs_superblock_t * sb, ino_t * num);
 static void init_inode(ramfs_inode_t * inode, ramfs_sb_t * ramfs_sb,
@@ -189,8 +187,6 @@ vnode_ops_t ramfs_vnode_ops = {
     .chown = ramfs_chown
 };
 
-GENERATE_INSERT_SB(ramfs_sb, ramfs_fs)
-
 int ramfs_init(void) __attribute__((constructor));
 int ramfs_init(void)
 {
@@ -198,10 +194,8 @@ int ramfs_init(void)
     SUBSYS_INIT("ramfs");
 
     ramfs_vdev_minor = ATOMIC_INIT(0);
-
     fs_inherit_vnops(&ramfs_vnode_ops, &nofs_vnode_ops);
-
-    /* Register ramfs with vfs. */
+    mtx_init(&ramfs_fs.fs_giant, MTX_TYPE_TICKET);
     fs_register(&ramfs_fs);
 
     return 0;
@@ -266,7 +260,7 @@ int ramsfs_mount(const char * source, uint32_t mode,
     ramfs_sb->sbn.sbl_sb.root = create_root(ramfs_sb);
 
     /* Add this sb to the list of mounted file systems. */
-    insert_superblock(ramfs_sb);
+    fs_insert_superblock(&ramfs_fs, &ramfs_sb->sbn);
 
     retval = 0;
     goto out;
@@ -286,16 +280,17 @@ int ramfs_umount(struct fs_superblock * fs_sb)
 {
     ramfs_sb_t * rsb = get_rfsb_of_sb(fs_sb);
 
+    mtx_lock(&ramfs_fs.fs_giant);
     if (!RAMFS_SB_IS_HEALTHY(rsb))
         return -EBUSY;
     rsb->ramfs_flags = RAMFS_SB_FLAG_DYING;
+    mtx_unlock(&ramfs_fs.fs_giant);
 
     /*
-     * TODO Check for any locks
      * TODO Check that there is no more references to any vnodes of
      * this super block before destroying everyting related to it.
      */
-    remove_superblock(rsb); /* Remove it from the mount list. */
+    fs_remove_superblock(&ramfs_fs, &rsb->sbn);
     destroy_superblock(rsb); /* Destroy all data. */
 
     return 0;
@@ -820,33 +815,6 @@ static vnode_t * create_root(ramfs_sb_t * ramfs_sb)
     vrefset(vn, 2);
 
     return vn;
-}
-
-/**
- * Remove a given ramfs_sb_t from the sb mount list.
- * @param ramfs_sb is a pointer to a ramfs superblock.
- */
-static void remove_superblock(ramfs_sb_t * ramfs_sb)
-{
-    const char err_msg[] = "Unable to remove ramfs sb from the mount list.\n";
-    superblock_lnode_t * prev;
-    superblock_lnode_t * curr = ramfs_fs.sbl_head;
-
-    if (!curr) {
-        KERROR(KERROR_ERR, err_msg);
-        return;
-    }
-
-    while (curr != &(ramfs_sb->sbn)) {
-        prev = curr;
-        curr = curr->next;
-        if (!curr) {
-            KERROR(KERROR_ERR, err_msg);
-            return;
-        }
-    }
-
-    prev->next = curr->next;
 }
 
 /**

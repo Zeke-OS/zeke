@@ -642,14 +642,14 @@ static int sys_filestat(void * user_args)
             set_errno(-err);
             goto out;
         }
-        vnref = 1;
     } else { /* search by path */
-        if (fs_namei_proc(&vnode, -1, (char *)args->path, AT_FDCWD)) {
+        err = fs_namei_proc(&vnode, -1, (char *)args->path, AT_FDCWD);
+        if (err) {
             set_errno(ENOENT);
             goto out;
         }
-        vnref = 1;
     }
+    vnref = 1;
 
     KASSERT(vnode, "vnode should be set");
     KASSERT(vnode->vnode_ops->stat, "stat() should be defined");

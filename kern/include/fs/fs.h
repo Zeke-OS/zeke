@@ -83,7 +83,8 @@
  * @param act_flags actual flag values.
  * @param exp_flags expected flag values.
  */
-#define FS_TFLAGS_ALLOF(act_flags, exp_flags) ((act_flags & exp_flags) == exp_flags)
+#define FS_TFLAGS_ALLOF(act_flags, exp_flags) \
+    ((act_flags & exp_flags) == exp_flags)
 
 /* End of macros **************************************************************/
 
@@ -148,6 +149,7 @@ typedef struct vnode {
 
     mtx_t vn_lock;
 } vnode_t;
+
 #define VN_LOCK_MODES (MTX_TYPE_TICKET | MTX_TYPE_SLEEP)
 /* Test macros for vnodes */
 #define VN_IS_FSROOT(vn) ((vn)->sb->root == (vn))
@@ -201,6 +203,7 @@ typedef struct fs {
                  const char * parm, int parm_len, struct fs_superblock ** sb);
     int (*umount)(struct fs_superblock * fs_sb);
     struct superblock_lnode * sbl_head; /*!< List of all mounts. */
+    mtx_t fs_giant;
 } fs_t;
 
 /**
@@ -303,7 +306,8 @@ typedef struct vnode_ops {
      * functions is mainly to handle TTY connections nicely.
      * @note Process closing a file might not be the only process helding
      *       a reference to the file.
-     * @param p     is the process that called fs_fildes_close_curproc() for file.
+     * @param p     is the process that called fs_fildes_close_curproc() for
+     *              file.
      * @param file  is the file that was closed by p.
      */
     void (*file_closed)(struct proc_info * p, file_t * file);

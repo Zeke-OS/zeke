@@ -33,9 +33,63 @@
 #include <stddef.h>
 #include <sys/param.h>
 #include <kmalloc.h>
+#include <klocks.h>
 #include <buf.h>
 #include <fs/fs.h>
 #include <fs/fs_util.h>
+
+void fs_insert_superblock(struct fs * fs, struct superblock_lnode * new_sbn)
+{
+    superblock_lnode_t * curr;
+
+    mtx_lock(&fs->fs_giant);
+
+    curr = fs->sbl_head;
+
+    /* Add as a first sb if no other mounts yet */
+    if (!curr) {
+        fs->sbl_head = new_sbn;
+    } else {
+        /* else find the last sb on the linked list. */
+        while (curr->next) {
+            curr = curr->next;
+        }
+        curr->next = new_sbn;
+    }
+
+    mtx_unlock(&fs->fs_giant);
+}
+
+void fs_remove_superblock(struct fs * fs, struct superblock_lnode * sbn)
+{
+    const char err_msg[] = "Unable to remove ramfs sb from the mount list.\n";
+    superblock_lnode_t * prev;
+    superblock_lnode_t * curr;
+
+    mtx_lock(&fs->fs_giant);
+
+    curr = fs->sbl_head;
+
+    if (!curr) {
+        KERROR(KERROR_ERR, err_msg);
+        mtx_unlock(&fs->fs_giant);
+        return;
+    }
+
+    while (curr != sbn) {
+        prev = curr;
+        curr = curr->next;
+        if (!curr) {
+            KERROR(KERROR_ERR, err_msg);
+            mtx_unlock(&fs->fs_giant);
+            return;
+        }
+    }
+
+    prev->next = curr->next;
+
+    mtx_unlock(&fs->fs_giant);
+}
 
 vnode_t * fs_create_pseudofs_root(fs_t * newfs, int majornum)
 {
