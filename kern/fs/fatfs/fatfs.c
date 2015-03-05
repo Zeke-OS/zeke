@@ -154,7 +154,7 @@ static int fatfs_mount(const char * source, uint32_t mode,
     if (!fatfs_sb)
         return -ENOMEM;
 
-    sbp = &(fatfs_sb->sbn.sbl_sb);
+    sbp = &fatfs_sb->sbn.sbl_sb;
     fs_fildes_set(&fatfs_sb->ff_devfile, vndev, O_RDWR);
     sbp->vdev_id = DEV_MMTODEV(VDEV_MJNR_FATFS, fatfs_vdev_minor++);
 
@@ -175,7 +175,7 @@ static int fatfs_mount(const char * source, uint32_t mode,
 #endif
 
     /* Init super block */
-    sbp->fs = &fatfs_fs;
+    fs_init_superblock(&fatfs_sb->sbn, &fatfs_fs);
     /* TODO Detect if target dev is rdonly */
     sbp->mode_flags = mode;
 #if configFATFS_READONLY
@@ -194,8 +194,6 @@ static int fatfs_mount(const char * source, uint32_t mode,
 #endif
         return -EIO;
     }
-
-    fatfs_sb->sbn.next = NULL; /* SB list */
 
     /* Add this sb to the list of mounted file systems. */
     fs_insert_superblock(&fatfs_fs, &fatfs_sb->sbn);

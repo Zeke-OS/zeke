@@ -40,6 +40,15 @@
 #include <fs/fs.h>
 #include <fs/fs_util.h>
 
+void fs_init_superblock(struct superblock_lnode * sbn, struct fs * fs)
+{
+    fs_superblock_t * sb = &sbn->sbl_sb;
+
+    sb->fs = fs;
+    sb->root = NULL;
+    sbn->next = NULL;
+}
+
 void fs_insert_superblock(struct fs * fs, struct superblock_lnode * new_sbn)
 {
     superblock_lnode_t * curr;
@@ -87,7 +96,6 @@ void fs_remove_superblock(struct fs * fs, struct superblock_lnode * sbn)
             return;
         }
     }
-
     prev->next = curr->next;
 
     mtx_unlock(&fs->fs_giant);

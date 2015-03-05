@@ -773,15 +773,11 @@ static void init_sbn(ramfs_sb_t * ramfs_sb, uint32_t mode)
 {
     fs_superblock_t * sb = &(ramfs_sb->sbn.sbl_sb);
 
-    sb->fs = &ramfs_fs;
+    fs_init_superblock(&ramfs_sb->sbn, &ramfs_fs);
     sb->mode_flags = mode;
-    sb->root = NULL; /* Cleared temporarily */
-
     /* Function pointers to superblock methods: */
     sb->get_vnode = ramfs_get_vnode;
     sb->delete_vnode = ramfs_delete_vnode;
-
-    ramfs_sb->sbn.next = NULL;
 }
 
 /**

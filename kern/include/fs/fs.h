@@ -244,6 +244,30 @@ typedef struct fs_superblock {
 } fs_superblock_t;
 
 /**
+ * Superblock list type.
+ */
+typedef struct superblock_lnode {
+    struct fs_superblock sbl_sb; /*!< Superblock struct. */
+    struct superblock_lnode * next; /*!< Pointer to the next super block. */
+} superblock_lnode_t;
+
+/**
+ * fs list type.
+ */
+typedef struct fsl_node {
+    struct fs * fs; /*!< Pointer to the file system struct. */
+    struct fsl_node * next; /*!< Pointer to the next fs list node. */
+} fsl_node_t;
+
+/**
+ * Sperblock iterator.
+ */
+typedef struct sb_iterator {
+    struct fsl_node * curr_fs; /*!< Current fs list node. */
+    struct superblock_lnode * curr_sb; /*!< Current superblock of curr_fs. */
+} sb_iterator_t;
+
+/**
  * vnode operations struct.
  */
 typedef struct vnode_ops {
@@ -408,32 +432,7 @@ typedef struct vnode_ops {
     int (*chown)(vnode_t * vnode, uid_t owner, gid_t group);
 } vnode_ops_t;
 
-
-/**
- * Superblock list type.
- */
-typedef struct superblock_lnode {
-    fs_superblock_t sbl_sb; /*!< Superblock struct. */
-    struct superblock_lnode * next; /*!< Pointer to the next super block. */
-} superblock_lnode_t;
-
-/**
- * fs list type.
- */
-typedef struct fsl_node {
-    fs_t * fs; /*!< Pointer to the file system struct. */
-    struct fsl_node * next; /*!< Pointer to the next fs list node. */
-} fsl_node_t;
-
-/**
- * Sperblock iterator.
- */
-typedef struct sb_iterator {
-    fsl_node_t * curr_fs; /*!< Current fs list node. */
-    superblock_lnode_t * curr_sb; /*!< Current superblock of curr_fs. */
-} sb_iterator_t;
-
-
+/** vnops for not supported operations */
 extern const vnode_ops_t nofs_vnode_ops;
 
 /* VFS Function Prototypes */
