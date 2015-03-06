@@ -205,15 +205,6 @@ int fs_umount(struct fs_superblock * sb)
     return sb->fs->umount(sb);
 }
 
-unsigned int fs_get_pfs_minor(void)
-{
-    static unsigned int pfs_minor = 0;
-    unsigned int retval = pfs_minor;
-
-    pfs_minor++;
-    return retval;
-}
-
 int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str, int oflags)
 {
     char * path;

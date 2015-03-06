@@ -445,11 +445,6 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
 int fs_umount(struct fs_superblock * sb);
 
 /**
- * Get next free pseudo fs minor number.
- */
-unsigned int fs_get_pfs_minor(void);
-
-/**
  * Lookup for vnode by path.
  * @param[out]  result  is the target where vnode struct is stored.
  * @param[in]   root    is the vnode where search is started from.
@@ -561,7 +556,7 @@ int fs_creat_curproc(const char * path, mode_t mode, vnode_t ** result);
  * Create a new link to existing vnode.
  */
 int fs_link_curproc(const char * path1, size_t path1_len,
-    const char * path2, size_t path2_len);
+                    const char * path2, size_t path2_len);
 
 /**
  * Remove link to a file.
