@@ -200,6 +200,17 @@ int fls(int mask);
 int flsl(long mask);
 int flsll(long long mask);
 
+/**
+ * Parse path and file name from a complete path.
+ * <path>/<name>
+ * Out args can be NULL.
+ * @param pathname  is a complete path to a file or directory.
+ * @param path[out] is the expected dirtory part of the path.
+ * @param name[out] is the file or directory name parsed from the full path.
+ * @return 0 if succeed; Otherwise a negative errno is returned.
+ */
+int parsenames(const char * pathname, char ** path, char ** name);
+
 #endif /* LIBKERN_H */
 
 /**

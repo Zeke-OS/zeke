@@ -31,6 +31,7 @@
  */
 
 #include <kinit.h>
+#include <libkern.h>
 #include <kerror.h>
 #include <kstring.h>
 #include <kmalloc.h>
@@ -55,8 +56,6 @@ mtx_t fslock;
 #define FS_UNLOCK()     mtx_unlock(&fslock)
 #define FS_TESTLOCK()   mtx_test(&fslock)
 #define FS_LOCK_INIT()  mtx_init(&fslock, MTX_TYPE_SPIN)
-
-static int parse_filepath(const char * pathname, char ** path, char ** name);
 
 SYSCTL_NODE(, CTL_VFS, vfs, CTLFLAG_RW, 0,
         "File system");
@@ -607,76 +606,6 @@ out:
 }
 
 /**
- * Parse path and file name from a complete path.
- * <path>/<name>
- * @param pathname  is a complete path to a file or directory.
- * @param path[out] is the expected dirtory part of the path.
- * @param name[out] is the file or directory name parsed from the full path.
- * @return 0 if succeed; Otherwise a negative errno is returned.
- */
-static int parse_filepath(const char * pathname, char ** path, char ** name)
-{
-    char * path_act;
-    char * fname;
-    size_t i, j;
-
-    KASSERT(pathname != NULL, "pathname should be set\n");
-    KASSERT(path != NULL, "path should be set\n");
-    KASSERT(name != NULL, "name should be set\n");
-
-    path_act = kstrdup(pathname, PATH_MAX);
-    if (!path_act)
-        return -ENOMEM;
-
-    fname = kmalloc(NAME_MAX);
-    if (!fname) {
-        kfree(path_act);
-        return -ENOMEM;
-    }
-
-    i = strlenn(path_act, PATH_MAX);
-    if (path_act[i] != '\0')
-        goto fail;
-
-    while (path_act[i] != '/') {
-        path_act[i--] = '\0';
-        if ((i == 0) &&
-            (!(path_act[0] == '/') ||
-             !(path_act[0] == '.' && path_act[1] == '/'))) {
-            path_act[0] = '.';
-            path_act[1] = '/';
-            path_act[2] = '\0';
-            i--; /* little trick */
-            break;
-        }
-    }
-
-    for (j = 0; j < NAME_MAX;) {
-        i++;
-        if (pathname[i] == '/')
-            continue;
-
-        fname[j] = pathname[i];
-        if (fname[j] == '\0')
-            break;
-        j++;
-    }
-
-    if (fname[j] != '\0')
-        goto fail;
-
-    *path = path_act;
-    *name = fname;
-
-    return 0;
-
-fail:
-    kfree(path_act);
-    kfree(fname);
-    return -ENAMETOOLONG;
-}
-
-/**
  * Get directory vnode of a target file and the actual directory entry name.
  * @param[in]   pathname    is a path to the target.
  * @param[out]  dir         is the directory containing the entry.
@@ -709,7 +638,7 @@ static int getvndir(const char * pathname, vnode_t ** dir, char ** filename, int
         goto out;
     }
 
-    err = parse_filepath(pathname, &path, &name);
+    err = parsenames(pathname, &path, &name);
     if (err)
         goto out;
 
@@ -834,7 +763,7 @@ int fs_unlink_curproc(int fd, const char * path, size_t path_len, int atflags)
         }
     }
 
-    err = parse_filepath(path, &dirpath, &filename);
+    err = parsenames(path, &dirpath, &filename);
     if (err)
         goto out;
 
