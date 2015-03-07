@@ -3,7 +3,12 @@
 IMG=zeke-rootfs.img
 
 function dir2img {
-    local files=$(cat "$1/manifest" | sed "s|[^ ]*|$1/\0|g")
+    local manifest="$(cat "$1/manifest")"
+    if [ -z "$manifest" ]; then
+        return 0
+    fi
+    local files=$(echo "$manifest" | sed "s|[^ ]*|$1/\0|g")
+
     mmd -i "$IMG" "$1"
     for file in $files; do
         local d=$(dirname $file | sed 's|^\./||')
