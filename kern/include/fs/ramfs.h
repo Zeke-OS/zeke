@@ -34,7 +34,6 @@
 #ifndef FS_RAMFS_H
 #define FS_RAMFS_H
 
-#include <stdint.h>
 #include <stddef.h>
 #include <sys/types.h>
 
