@@ -712,15 +712,19 @@ int useracc(const void * addr, size_t len, int rw)
 
 int useracc_proc(const void * addr, size_t len, struct proc_info * proc, int rw)
 {
-    struct buf * region = NULL;
-    uintptr_t reg_end;
+    /* TODO Currently we don't allow addr to span over multiple regions */
 
-    (void)vm_find_reg(proc, (uintptr_t)addr, &region);
+    struct buf * region = NULL;
+    uintptr_t uaddr, start, end;
+
+    uaddr = (uintptr_t)addr;
+    (void)vm_find_reg(proc, uaddr, &region);
     if (!region)
         return 0;
-    reg_end = region->b_mmu.vaddr + MMU_SIZEOF_REGION(&region->b_mmu);
 
-    if ((uintptr_t)addr < reg_end)
+    start = region->b_mmu.vaddr;
+    end = region->b_mmu.vaddr + MMU_SIZEOF_REGION(&region->b_mmu) - 1;
+    if (uaddr >= start && uaddr <= end)
         return test_ap_user(rw, region->b_mmu.ap, region->b_mmu.control);
     return 0;
 }
