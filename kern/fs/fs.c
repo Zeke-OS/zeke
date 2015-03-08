@@ -125,7 +125,7 @@ fs_t * fs_by_name(const char * fsname)
 int fs_mount(vnode_t * target, const char * source, const char * fsname,
         uint32_t flags, const char * parm, int parm_len)
 {
-    fs_t * fs = 0;
+    fs_t * fs = NULL;
     struct fs_superblock * sb;
     int err;
 

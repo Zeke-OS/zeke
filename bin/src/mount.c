@@ -101,11 +101,9 @@ int main(int argc, char * argv[])
 
     flags |= opt2flags(optnames, num_elem(optnames), &options);
 
-#if 0
     printf("mount: flags: %d, options: \"%s\", vfstype: \"%s\" "
             "src: \"%s\", dst: \"%s\"\n",
             flags, options, vfstype, src, dst);
-#endif
 
     if (mount(src, dst, vfstype, flags, options)) {
         perror("mount: failed");

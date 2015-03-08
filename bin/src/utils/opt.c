@@ -9,10 +9,8 @@ char * catopt(char * s0, char * s1)
 
     if (s0 && *s0) {
         cp = malloc(strlen(s0) + strlen(s1) + 1 + 1);
-        if (!cp) {
-            perror("Failed");
+        if (!cp)
             exit(1);
-        }
 
         sprintf(cp, "%s,%s", s0, s1);
     } else {
@@ -32,6 +30,11 @@ unsigned long opt2flags(struct optarr * optnames, size_t n_elem,
     char * lasts;
     char * remains = NULL;
     unsigned long flags = 0;
+
+    if ((*options)[0] == '\0') {
+        *options = "";
+        return 0;
+    }
 
     option = strtok_r(*options, delim, &lasts);
     if (!option)
