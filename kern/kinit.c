@@ -204,6 +204,8 @@ static void mount_rootfs(void)
     }
     kernel_proc->croot = tmp;
     kernel_proc->croot->vn_next_mountpoint = kernel_proc->croot;
+    kernel_proc->croot->vn_prev_mountpoint = kernel_proc->croot;
+    mtx_init(&tmp->vn_lock, MTX_TYPE_SPIN);
     vrefset(kernel_proc->croot, 2);
 
     /* TODO Should use sysctl to get rootfs path and type */

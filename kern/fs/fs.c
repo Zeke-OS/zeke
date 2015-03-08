@@ -122,11 +122,46 @@ fs_t * fs_by_name(const char * fsname)
     return NULL;
 }
 
+/**
+ * Get base vnode of a mountpoint.
+ * If vn is not a mountpoint nothing is done and vn is returned as is,
+ * otherwise the first vnode in a mount stack is returned. The first vnode
+ * is the base mountpoint vnode.
+ */
+static vnode_t * get_base_vnode(vnode_t * vn)
+{
+    while (vn->vn_prev_mountpoint != vn) {
+        /*
+         * We loop here to get to the first file system mounted on this
+         * mountpoint.
+         */
+        vn = vn->vn_prev_mountpoint;
+        KASSERT(vn != NULL, "prev_mountpoint should be always valid");
+    }
+    return vn;
+}
+
+/**
+ * Get the top root vnode on a mountpoint.
+ * If there is no mounts on this vnode vn is returned as is,
+ * otherwise the top most root vnode on a mount stack is returned.
+ */
+static vnode_t * get_top_vnode(vnode_t * vn)
+{
+    while (vn->vn_next_mountpoint != vn) {
+        vn = vn->vn_next_mountpoint;
+        KASSERT(vn != NULL, "next_mountpoint should be always valid");
+    }
+    return vn;
+}
+
 int fs_mount(vnode_t * target, const char * source, const char * fsname,
         uint32_t flags, const char * parm, int parm_len)
 {
     fs_t * fs = NULL;
     struct fs_superblock * sb;
+    vnode_t * root;
+    istate_t s;
     int err;
 
 #ifdef configFS_DEBUG
@@ -135,6 +170,7 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
             "flags %x, parm \"%s\", parm_len %d)\n",
             target, source, fsname, flags, parm, parm_len);
 #endif
+    KASSERT(target, "target must be set");
 
     if (fsname) {
         fs = fs_by_name(fsname);
@@ -152,20 +188,34 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
     err = fs->mount(source, flags, parm, parm_len, &sb);
     if (err)
         return err;
-
     KASSERT((uintptr_t)sb > configKERNEL_START, "sb is not a stack address");
+    KASSERT(sb->root, "sb->root must be set");
+
+    target = get_top_vnode(target);
+    root = sb->root;
+
+    /* We test for int mask to avoid blocking in kinit. */
+    s = get_interrupt_state();
+    if (!(s & PSR_INT_MASK)) {
+        VN_LOCK(root);
+        VN_LOCK(target);
+    }
+
+    sb->mountpoint = target;
+    target->vn_next_mountpoint = root;
+    root->vn_prev_mountpoint = target;
+    root->vn_next_mountpoint = root;
+
+    if (!(s & PSR_INT_MASK)) {
+        VN_UNLOCK(target);
+        VN_UNLOCK(root);
+    }
+
+    /* TODO inherit permissions */
+
 #ifdef configFS_DEBUG
     KERROR(KERROR_DEBUG, "Mount OK\n");
 #endif
-
-    KASSERT(target && sb->root, "target and sb->root must be set");
-
-    sb->mountpoint = target;
-    sb->root->vn_prev_mountpoint = target;
-    sb->root->vn_next_mountpoint = sb->root;
-    target->vn_next_mountpoint = sb->root;
-
-    /* TODO inherit permissions */
 
     return 0;
 }
@@ -185,21 +235,32 @@ int fs_umount(struct fs_superblock * sb)
             "Sanity check");
     KASSERT(sb->fs->umount, "umount() function should always exist");
 
-    /* Reverse the mount process to unmount */
     root = sb->root;
+    if (root->vn_prev_mountpoint == root)
+        return -EINVAL; /* Can't unmount rootfs */
+
+    /*
+     * Reverse the mount process to unmount.
+     */
+    sb->mountpoint = NULL;
+    VN_LOCK(root);
     prev = root->vn_prev_mountpoint;
     next = root->vn_next_mountpoint;
     KASSERT(root != prev, "FS can't handle umount if root == prev");
 
+    VN_LOCK(prev);
     if (next && next != root) {
+        VN_LOCK(next);
         prev->vn_next_mountpoint = root->vn_next_mountpoint;
         next->vn_prev_mountpoint = prev;
+        VN_UNLOCK(next);
     } else {
         prev->vn_next_mountpoint = prev;
     }
+    VN_UNLOCK(prev);
     root->vn_next_mountpoint = root;
     root->vn_prev_mountpoint = root;
-
+    VN_UNLOCK(root);
 
     return sb->fs->umount(sb);
 }
@@ -259,15 +320,7 @@ again:  /* Get vnode by name in this dir. */
         if (retval == -EDOM && !strcmp(nodename, "..") &&
             vnode->vn_prev_mountpoint != vnode) {
             /* Get prev dir of prev fs sb from mount point. */
-            while (vnode->vn_prev_mountpoint != vnode) {
-                /*
-                 * We loop here to get to the first file system mounted on this
-                 * mountpoint.
-                 */
-                vnode = vnode->vn_prev_mountpoint;
-                KASSERT(vnode != NULL,
-                        "prev_mountpoint should be always valid");
-            }
+            vnode = get_base_vnode(vnode);
             *result = vnode;
             vref(vnode);
 
@@ -284,9 +337,7 @@ again:  /* Get vnode by name in this dir. */
              */
 
             /* Go to the last mountpoint. */
-            while (vnode != vnode->vn_next_mountpoint) {
-                vnode = vnode->vn_next_mountpoint;
-            }
+            vnode = get_top_vnode(vnode);
             *result = vnode;
             vrele(orig_vn);
             vref(vnode);

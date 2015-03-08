@@ -905,7 +905,7 @@ static int sys_umount(void * user_args)
     /* TODO Possible race condition with two umounts */
     sb = mpt->sb;
     vrele(mpt);
-    retval = sb->fs->umount(sb);
+    retval = fs_umount(sb);
     if (retval) {
         set_errno(-retval);
     }
