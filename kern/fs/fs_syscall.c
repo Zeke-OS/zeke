@@ -54,13 +54,14 @@
 static int sys_read(void * user_args)
 {
     struct _fs_readwrite_args args;
-    char * buf = 0;
+    char * buf = NULL;
     int err, retval;
 
     err = priv_check(curproc, PRIV_VFS_READ);
     if (err) {
         set_errno(EPERM);
-        return -1;
+        retval = -1;
+        goto out;
     }
 
     err = copyin(user_args, &args, sizeof(args));
@@ -93,7 +94,6 @@ static int sys_read(void * user_args)
         if (err) {
             set_errno(-err);
             retval = -1;
-            goto out;
         }
     }
 

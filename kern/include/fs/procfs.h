@@ -52,7 +52,8 @@
  * Procfs file types.
  */
 enum procfs_filetype {
-    PROCFS_STATUS       /*!< Process status file. */
+    PROCFS_STATUS = 0,  /*!< Process status file. */
+    PROCFS_LAST
 };
 
 /**

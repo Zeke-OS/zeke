@@ -49,6 +49,7 @@ static int procfs_mount(const char * source, uint32_t mode,
                         struct fs_superblock ** sb);
 static int procfs_umount(struct fs_superblock * fs_sb);
 static ssize_t procfs_read(file_t * file, void * vbuf, size_t bcount);
+static ssize_t procfs_status(struct procfs_info * spec, char ** retbuf);
 static ssize_t procfs_write(file_t * file, const void * vbuf, size_t bcount);
 static int procfs_updatedir(vnode_t * dir);
 static int create_status_file(vnode_t * dir, const proc_info_t * proc);
@@ -68,6 +69,22 @@ static fs_t procfs_fs = {
 
 /* There is only one procfs, but it can be mounted multiple times */
 static vnode_t * vn_procfs;
+
+/**
+ * Procfs read file function.
+ * One per file type.
+ * @param[in] spec is the procfs specinfo for the file.
+ * @param[out] retbuf is the returned kmalloc'd buffer.
+ * @return Returns number of bytes in retbuf or negative errno if failed.
+ */
+typedef ssize_t (*procfs_readfn_t)(struct procfs_info * spec, char ** retbuf);
+
+/**
+ * Array of procfs read op functions.
+ */
+static const procfs_readfn_t procfs_read_funcs[] = {
+    [PROCFS_STATUS] = procfs_status,
+};
 
 #define PANIC_MSG "procfs_init(): "
 
@@ -108,65 +125,68 @@ static int procfs_umount(struct fs_superblock * fs_sb)
  */
 static ssize_t procfs_read(file_t * file, void * vbuf, size_t bcount)
 {
-    size_t bbytes;
-    ssize_t bytes = 0;
-    struct procfs_info * spec = (struct procfs_info *)file->vnode->vn_specinfo;
+    struct procfs_info * spec;
+    ssize_t bytes;
+    char * buf;
+
+    spec = (struct procfs_info *)file->vnode->vn_specinfo;
+    if (!spec)
+        return -EIO;
+
+    if (spec->ftype > PROCFS_LAST)
+        return -ENOLINK;
+
+    bytes = procfs_read_funcs[spec->ftype](spec, &buf);
+    if (bytes > 0 && file->seek_pos <= bytes) {
+        const size_t count = min(bcount, bytes - file->seek_pos);
+
+        if (count <= bytes) {
+            size_t sz;
+
+            sz = strlcpy((char *)vbuf, buf + file->seek_pos, count);
+            sz++;
+            bytes = (sz >= count) ? count : sz;
+            file->seek_pos += bytes;
+        }
+    }
+
+    kfree(buf);
+    return bytes;
+}
+
+static ssize_t procfs_status(struct procfs_info * spec, char ** retbuf)
+{
+    ssize_t bytes;
     proc_info_t * proc;
     char * tmpbuf;
     const size_t bufsz = 200;
 
-    if (!spec)
-        return -EIO;
+    proc = proc_get_struct_l(spec->pid);
+    if (!proc)
+        return -ENOLINK;
 
     tmpbuf = kcalloc(bufsz, sizeof(char));
     if (!tmpbuf)
         return -EIO;
 
-    if (spec->ftype == PROCFS_STATUS) {
-        PROC_LOCK();
-        proc = proc_get_struct(spec->pid);
-        if (!proc) {
-            PROC_UNLOCK();
-            return -ENOLINK;
-        }
-        PROC_UNLOCK();
+    bytes = ksprintf(tmpbuf, bufsz,
+                     "Name: %s\n"
+                     "State: %u\n"
+                     "Pid: %u\n"
+                     "Uid: %u %u %u\n"
+                     "Gid: %u %u %u\n"
+                     "User: %u\n"
+                     "Sys: %u\n"
+                     "Break: %p %p\n",
+                     proc->name,
+                     proc->state,
+                     proc->pid,
+                     proc->uid, proc->euid, proc->suid,
+                     proc->gid, proc->egid, proc->sgid,
+                     proc->tms.tms_utime, proc->tms.tms_stime,
+                     proc->brk_start, proc->brk_stop);
 
-        bbytes = ksprintf(tmpbuf, bufsz,
-                "Name: %s\n"
-                "State: %u\n"
-                "Pid: %u\n"
-                "Uid: %u %u %u\n"
-                "Gid: %u %u %u\n"
-                "User: %u\n"
-                "Sys: %u\n"
-                "Break: %p %p\n",
-                proc->name,
-                proc->state,
-                proc->pid,
-                proc->uid, proc->euid, proc->suid,
-                proc->gid, proc->egid, proc->sgid,
-                proc->tms.tms_utime, proc->tms.tms_stime,
-                proc->brk_start, proc->brk_stop);
-
-        if (file->seek_pos <= bbytes) {
-            const size_t count = min(bcount, bbytes - file->seek_pos);
-
-            if (count <= bbytes) {
-                size_t sz;
-
-                sz = strlcpy((char *)vbuf, tmpbuf + file->seek_pos, count);
-                sz++;
-                if (sz >= count)
-                    bytes = count;
-                else
-                    bytes = sz;
-                file->seek_pos += bytes;
-            }
-        }
-
-        kfree(tmpbuf);
-    }
-
+    *retbuf = tmpbuf;
     return bytes;
 }
 
