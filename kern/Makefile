@@ -44,7 +44,8 @@ MODULES += $(foreach var, $(ALLMODULES), $(if $(strip $($(var)-SRC-y) $($(var)-A
 
 # Compiler Options #############################################################
 #CC         = SET IN BUILDCONF.MK
-CCFLAGS    += -emit-llvm -ffreestanding -nostdlib -nostdinc
+CCFLAGS    += -emit-llvm -ffreestanding -nostdlib -nostdinc \
+$(subst $\",,$(configKERNEL_CCFLAGS))
 CCFLAGS    += -include autoconf.h -DKERNEL_INTERNAL
 #OPT        = SET IN BUILDCONF.MK
 OFLAGS     += -std-compile-opts

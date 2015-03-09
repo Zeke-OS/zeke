@@ -4,6 +4,21 @@ menu "Target Config"
 source "genconfig/target.kconf"
 endmenu
 
+menu "Build Config"
+
+config configCOMMON_CCFLAGS
+    string "CCFLAGS common to all build targets"
+    default "-Wall -O2"
+
+config configKERNEL_CCFLAGS
+    string "Kernel CCFLAGS"
+    default "-g"
+
+config configUSER_CCFLAGS
+    string "Userland CCFLAGS"
+
+endmenu
+
 menu "Kernel"
 source "kern/Kconfig"
 endmenu

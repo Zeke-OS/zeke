@@ -34,6 +34,8 @@ include $(ROOT_DIR)/genconfig/dist.mk
 .SUFFIXES:                      # Delete the default suffixes
 .SUFFIXES: .c .bc .o .h .S ._S  # Define our suffix list
 
+CCFLAGS += $(subst $\",,$(configUSER_CCFLAGS))
+
 # Available selections for source code files:
 # SRC-    =# C sources
 # SRC-n   =#
