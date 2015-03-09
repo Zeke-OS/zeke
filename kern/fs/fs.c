@@ -242,7 +242,6 @@ int fs_umount(struct fs_superblock * sb)
     /*
      * Reverse the mount process to unmount.
      */
-    sb->mountpoint = NULL;
     VN_LOCK(root);
     prev = root->vn_prev_mountpoint;
     next = root->vn_next_mountpoint;
