@@ -1,1 +1,8 @@
 comment "Library options"
+
+config configBUNDLE_STATIC
+    bool "Bundle static libs into rootfs image"
+    default y
+    ---help---
+    If selected all static libraries built will be also included in the
+    rootfs image.

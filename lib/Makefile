@@ -39,7 +39,10 @@ LIBS = crt0 crt1 libc
 
 # AR flags #####################################################################
 
-libc-ARFLAGS = $(patsubst %.c,%.o,$(crt0-SRC-y)) $(patsubst %.S,%.o,$(crt0-ASRC-y))
+libc-ARFLAGS = \
+$(patsubst %.c,%.o,$(crt0-SRC-y)) \
+$(patsubst %.S,%.o,$(crt0-ASRC-y))
+
 LIBS = crt0 crt1 libc
 
 # Source Files #################################################################
@@ -103,7 +106,7 @@ OBJS := $(patsubst %.c, %.o, $(SRC-y))
 # Deps
 DEPS := $(patsubst %.c, %.d, $(SRC-y))
 
-# a files for static libr
+# a files for static librarries
 LIBSA = $(addsuffix .a, $(LIBS))
 
 
@@ -111,7 +114,8 @@ all: $(LIBSA) manifest
 
 $(ASOBJS): %.o: %.S $(AUTOCONF_H)
 	@echo "AS $@"
-	@$(CC) -E $(IDIR) $*.S | grep -Ev "^#" | $(GNUARCH)-as $(ASFLAGS) -am $(IDIR) -o $@
+	@$(CC) -E $(IDIR) $*.S | grep -Ev "^#" | \
+		$(GNUARCH)-as $(ASFLAGS) -am $(IDIR) -o $@
 
 $(OBJS): %.o: %.c $(AUTOCONF_H)
 	@echo "CC $@"
@@ -133,7 +137,7 @@ $(LIBSA): $(OBJS) $(ASOBJS)
 	@ar rcs $@ $(CUR_OBJS) $(CUR_ARFLAGS)
 
 manifest: $(LIBSA)
-	echo "$(LIBSA)" > manifest
+	if [ "$(configBUNDLE_STATIC)" = "y" ]; then echo "$(LIBSA)" > manifest; fi
 
 clean:
 	$(RM) $(ASOBJS) $(OBJS) $(DEPS)
