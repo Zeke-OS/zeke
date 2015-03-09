@@ -49,7 +49,6 @@ static int procfs_mount(const char * source, uint32_t mode,
                         struct fs_superblock ** sb);
 static int procfs_umount(struct fs_superblock * fs_sb);
 static ssize_t procfs_read(file_t * file, void * vbuf, size_t bcount);
-static ssize_t procfs_status(struct procfs_info * spec, char ** retbuf);
 static ssize_t procfs_write(file_t * file, const void * vbuf, size_t bcount);
 static int procfs_updatedir(vnode_t * dir);
 static int create_status_file(vnode_t * dir, const proc_info_t * proc);
@@ -83,7 +82,7 @@ typedef ssize_t (*procfs_readfn_t)(struct procfs_info * spec, char ** retbuf);
  * Array of procfs read op functions.
  */
 static const procfs_readfn_t procfs_read_funcs[] = {
-    [PROCFS_STATUS] = procfs_status,
+    [PROCFS_STATUS] = procfs_read_status,
 };
 
 #define PANIC_MSG "procfs_init(): "
@@ -151,42 +150,6 @@ static ssize_t procfs_read(file_t * file, void * vbuf, size_t bcount)
     }
 
     kfree(buf);
-    return bytes;
-}
-
-static ssize_t procfs_status(struct procfs_info * spec, char ** retbuf)
-{
-    ssize_t bytes;
-    proc_info_t * proc;
-    char * tmpbuf;
-    const size_t bufsz = 200;
-
-    proc = proc_get_struct_l(spec->pid);
-    if (!proc)
-        return -ENOLINK;
-
-    tmpbuf = kcalloc(bufsz, sizeof(char));
-    if (!tmpbuf)
-        return -EIO;
-
-    bytes = ksprintf(tmpbuf, bufsz,
-                     "Name: %s\n"
-                     "State: %u\n"
-                     "Pid: %u\n"
-                     "Uid: %u %u %u\n"
-                     "Gid: %u %u %u\n"
-                     "User: %u\n"
-                     "Sys: %u\n"
-                     "Break: %p %p\n",
-                     proc->name,
-                     proc->state,
-                     proc->pid,
-                     proc->uid, proc->euid, proc->suid,
-                     proc->gid, proc->egid, proc->sgid,
-                     proc->tms.tms_utime, proc->tms.tms_stime,
-                     proc->brk_start, proc->brk_stop);
-
-    *retbuf = tmpbuf;
     return bytes;
 }
 

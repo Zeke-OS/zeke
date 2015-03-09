@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    procfs.h
+ * @file    procfs_read_status.c
  * @author  Olli Vanhoja
- * @brief   Process file system headers.
+ * @brief   Process file system.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,55 +30,44 @@
  *******************************************************************************
  */
 
-#pragma once
-#ifndef PROCFS_H
-#define PROCFS_H
+#include <errno.h>
+#include <kmalloc.h>
+#include <kstring.h>
+#include <proc.h>
+#include <fs/procfs.h>
 
-#include <stdint.h>
-#include <stddef.h>
-#include <sys/types.h>
-#include <sys/param.h>
-#include <fs/fs.h>
+ssize_t procfs_read_status(struct procfs_info * spec, char ** retbuf)
+{
+    ssize_t bytes;
+    proc_info_t * proc;
+    char * tmpbuf;
+    const size_t bufsz = 200;
 
-#define PROCFS_FSNAME           "procfs"    /*!< Name of the fs. */
+    proc = proc_get_struct_l(spec->pid);
+    if (!proc)
+        return -ENOLINK;
 
-#define PROCFS_PERMS            0400        /*!< Default file permissions of
-                                             *   an procfs entry.
-                                             */
-/* Procfs file names */
-#define PROCFS_STATUS_FILE      "status"
+    tmpbuf = kcalloc(bufsz, sizeof(char));
+    if (!tmpbuf)
+        return -EIO;
 
-/**
- * Procfs file types.
- */
-enum procfs_filetype {
-    PROCFS_STATUS = 0,  /*!< Process status file. */
-    PROCFS_LAST
-};
+    bytes = ksprintf(tmpbuf, bufsz,
+                     "Name: %s\n"
+                     "State: %u\n"
+                     "Pid: %u\n"
+                     "Uid: %u %u %u\n"
+                     "Gid: %u %u %u\n"
+                     "User: %u\n"
+                     "Sys: %u\n"
+                     "Break: %p %p\n",
+                     proc->name,
+                     proc->state,
+                     proc->pid,
+                     proc->uid, proc->euid, proc->suid,
+                     proc->gid, proc->egid, proc->sgid,
+                     proc->tms.tms_utime, proc->tms.tms_stime,
+                     proc->brk_start, proc->brk_stop);
 
-/**
- * Procfs specinfo descriptor.
- */
-struct procfs_info {
-    enum procfs_filetype ftype;
-    pid_t pid;
-};
-
-#define PROCFS_NAMELEN_MAX 10
-
-/**
- * Create an entry for a process into procfs.
- * @param proc is a PCB to be described in procfs.
- */
-int procfs_mkentry(const proc_info_t * proc);
-
-/**
- * Remove a process entry strored in procfs.
- * @param pid is the process ID of the process to be removed.
- */
-void procfs_rmentry(pid_t pid);
-
-/* Internal functions */
-ssize_t procfs_read_status(struct procfs_info * spec, char ** retbuf);
-
-#endif /* PROCFS_H */
+    *retbuf = tmpbuf;
+    return bytes;
+}
