@@ -193,11 +193,12 @@ struct thread_info {
      *   child node of the common parent thread
      */
     struct thread_inheritance {
-        struct thread_info * parent;        /*!< Parent thread */
-        struct thread_info * first_child;   /*!< Link to the first child
-                                             *   thread */
-        struct thread_info * next_child;    /*!< Next child of the common
-                                             *   parent. */
+        /** Parent thread */
+        struct thread_info * parent;
+        /** Link to the first child thread. */
+        struct thread_info * first_child;
+        /** Next child of the common parent. */
+        struct thread_info * next_child;
     } inh;
 };
 
