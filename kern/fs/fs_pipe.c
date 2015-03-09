@@ -88,7 +88,6 @@ static vnode_ops_t fs_pipe_ops = {
 static struct fs fs_pipe_fs = {
     .fsname = "pipefs",
     .mount = NULL,
-    .umount = NULL,
     .sblist_head = SLIST_HEAD_INITIALIZER(),
 };
 
@@ -96,6 +95,7 @@ static struct fs_superblock fs_pipe_sb = {
     .fs = &fs_pipe_fs,
     .get_vnode = fs_pipe_get_vnode,
     .delete_vnode = fs_pipe_destroy,
+    .umount = NULL,
 };
 
 int fs_pipe_init(void) __attribute__((constructor));

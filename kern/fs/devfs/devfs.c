@@ -70,7 +70,6 @@ vnode_ops_t devfs_vnode_ops = {
 static fs_t devfs_fs = {
     .fsname = DEVFS_FSNAME,
     .mount = devfs_mount,
-    .umount = devfs_umount,
     .sblist_head = SLIST_HEAD_INITIALIZER(),
 };
 
@@ -102,6 +101,7 @@ int devfs_init(void)
      */
     sb = vn_devfs->sb;
     sb->delete_vnode = devfs_delete_vnode;
+    sb->umount = devfs_umount;
 
     /*
      * Finally register our creation with fs subsystem.

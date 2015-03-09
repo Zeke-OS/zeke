@@ -64,7 +64,6 @@ static int fresult2errno(int fresult);
 static struct fs fatfs_fs = {
     .fsname = FATFS_FSNAME,
     .mount = fatfs_mount,
-    .umount = NULL,
     .sblist_head = SLIST_HEAD_INITIALIZER(),
 };
 
@@ -187,6 +186,7 @@ static int fatfs_mount(const char * source, uint32_t mode,
     /* Function pointers to superblock methods */
     sbp->get_vnode = NULL; /* Not implemented for FAT. */
     sbp->delete_vnode = fatfs_delete_vnode;
+    sbp->umount = NULL;
 
     if (!sbp->root) {
 #ifdef configFATFS_DEBUG

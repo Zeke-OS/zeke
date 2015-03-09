@@ -183,7 +183,13 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
 #ifdef configFS_DEBUG
     KERROR(KERROR_DEBUG, "Found fs: %s\n", fsname);
 #endif
-    KASSERT(fs->mount != NULL, "Mount function exist");
+
+    if (!fs->mount) {
+#ifdef configFS_DEBUG
+        KERROR(KERROR_DEBUG, "fs %s isn't mountable\n", fsname);
+#endif
+        return -ENOTSUP; /* Not a mountable file system. */
+    }
 
     err = fs->mount(source, flags, parm, parm_len, &sb);
     if (err)
@@ -233,7 +239,9 @@ int fs_umount(struct fs_superblock * sb)
     KASSERT(sb->fs && sb->root && sb->root->vn_prev_mountpoint &&
             sb->root->vn_prev_mountpoint->vn_next_mountpoint,
             "Sanity check");
-    KASSERT(sb->fs->umount, "umount() function should always exist");
+
+    if (!sb->umount)
+        return -ENOTSUP;
 
     root = sb->root;
     if (root->vn_prev_mountpoint == root)
@@ -261,7 +269,7 @@ int fs_umount(struct fs_superblock * sb)
     root->vn_prev_mountpoint = root;
     VN_UNLOCK(root);
 
-    return sb->fs->umount(sb);
+    return sb->umount(sb);
 }
 
 int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str, int oflags)

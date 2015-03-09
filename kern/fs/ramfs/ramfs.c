@@ -164,7 +164,6 @@ static struct ramfs_dp get_dp_by_offset(ramfs_inode_t * inode, off_t offset);
 fs_t ramfs_fs = {
     .fsname = RAMFS_FSNAME,
     .mount = ramsfs_mount,
-    .umount = ramfs_umount,
     .sblist_head = SLIST_HEAD_INITIALIZER(),
 };
 
@@ -779,6 +778,7 @@ static void ramfs_init_sb(ramfs_sb_t * ramfs_sb, uint32_t mode)
     /* Function pointers to superblock methods: */
     sb->get_vnode = ramfs_get_vnode;
     sb->delete_vnode = ramfs_delete_vnode;
+    sb->umount = ramfs_umount;
 }
 
 /**

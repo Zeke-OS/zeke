@@ -202,7 +202,6 @@ typedef struct fs {
 
     int (*mount)(const char * source, uint32_t mode,
                  const char * parm, int parm_len, struct fs_superblock ** sb);
-    int (*umount)(struct fs_superblock * fs_sb);
 
     SLIST_HEAD(sb_list, fs_superblock) sblist_head; /*!< List of all mounts. */
     SLIST_ENTRY(fs) _fs_list;
@@ -243,6 +242,11 @@ struct fs_superblock {
      * @return Returns 0 if no error; Otherwise value other than zero.
      */
     int (*delete_vnode)(vnode_t * vnode);
+
+    /**
+     * Unmount the file system.
+     */
+    int (*umount)(struct fs_superblock * this_sb);
 
     SLIST_ENTRY(fs_superblock) _sblist;
 };

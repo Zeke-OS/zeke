@@ -65,7 +65,6 @@ static vnode_ops_t procfs_vnode_ops = {
 static fs_t procfs_fs = {
     .fsname = PROCFS_FSNAME,
     .mount = procfs_mount,
-    .umount = procfs_umount,
     .sblist_head = SLIST_HEAD_INITIALIZER(),
 };
 
@@ -126,6 +125,7 @@ int procfs_init(void)
     fs_inherit_vnops(&procfs_vnode_ops, &ramfs_vnode_ops);
 
     vn_procfs = fs_create_pseudofs_root(&procfs_fs, VDEV_MJNR_PROCFS);
+    vn_procfs->sb->umount = procfs_umount;
     fs_register(&procfs_fs);
     procfs_updatedir(vn_procfs);
 
@@ -133,8 +133,8 @@ int procfs_init(void)
 }
 
 static int procfs_mount(const char * source, uint32_t mode,
-                       const char * parm, int parm_len,
-                       struct fs_superblock ** sb)
+                        const char * parm, int parm_len,
+                        struct fs_superblock ** sb)
 {
     *sb = vn_procfs->sb;
     return 0;
@@ -143,7 +143,8 @@ static int procfs_mount(const char * source, uint32_t mode,
 static int procfs_umount(struct fs_superblock * fs_sb)
 {
     /* TODO implementation of procfs_umount() */
-    return -EBUSY;
+    KERROR(KERROR_DEBUG, "procfs umount\n");
+    return 0;
 }
 
 /**
