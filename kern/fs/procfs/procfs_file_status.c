@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    procfs_read_status.c
+ * @file    procfs_file_status.c
  * @author  Olli Vanhoja
  * @brief   Process file system.
  * @section LICENSE

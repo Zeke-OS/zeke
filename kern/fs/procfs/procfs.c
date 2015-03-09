@@ -30,6 +30,7 @@
  *******************************************************************************
  */
 
+#include <stddef.h>
 #include <errno.h>
 #include <hal/core.h>
 #include <kinit.h>
@@ -50,6 +51,8 @@ static int procfs_mount(const char * source, uint32_t mode,
 static int procfs_umount(struct fs_superblock * fs_sb);
 static ssize_t procfs_read(file_t * file, void * vbuf, size_t bcount);
 static ssize_t procfs_write(file_t * file, const void * vbuf, size_t bcount);
+static ssize_t procfs_write_enotsup(struct procfs_info * spec, char * buf,
+                                    size_t bufsize);
 static int procfs_updatedir(vnode_t * dir);
 static int create_status_file(vnode_t * dir, const proc_info_t * proc);
 
@@ -66,23 +69,47 @@ static fs_t procfs_fs = {
     .sblist_head = SLIST_HEAD_INITIALIZER(),
 };
 
-/* There is only one procfs, but it can be mounted multiple times */
+/**
+ * PRocfs root vnode.
+ * There is only one procfs, but it can be mounted multiple times.
+ */
 static vnode_t * vn_procfs;
 
-/**
- * Procfs read file function.
- * One per file type.
- * @param[in] spec is the procfs specinfo for the file.
- * @param[out] retbuf is the returned kmalloc'd buffer.
- * @return Returns number of bytes in retbuf or negative errno if failed.
+/*
+ * Lists of procfs read and write functions.
+ * Each read function shall pair witha corresponding write function.
+ * If write is not supported procfs_write_enotsup shall be used.
  */
-typedef ssize_t (*procfs_readfn_t)(struct procfs_info * spec, char ** retbuf);
+
+#define FORALL_FILE_READFN(apply)               \
+    apply(PROCFS_STATUS, procfs_read_status)
+
+#define FORALL_FILE_WRITEFN(apply)              \
+    apply(PROCFS_STATUS, procfs_write_enotsup)
+
+
+#define DECLARE_READFN(file_type, function)     \
+    procfs_readfn_t function;
+FORALL_FILE_READFN(DECLARE_READFN)
+#undef DECLARE_READFN
+
+#define DECLARE_WRITEFN(file_type, function)    \
+    procfs_writefn_t function;
+FORALL_FILE_WRITEFN(DECLARE_WRITEFN)
+#undef DECLARE_WRITEFN
+
+#define MAP_FN2ARR(file_type, function)         \
+    [file_type] = function,
 
 /**
  * Array of procfs read op functions.
  */
-static const procfs_readfn_t procfs_read_funcs[] = {
-    [PROCFS_STATUS] = procfs_read_status,
+static procfs_readfn_t * const procfs_read_funcs[] = {
+    FORALL_FILE_READFN(MAP_FN2ARR)
+};
+
+static procfs_writefn_t * const procfs_write_funcs[] = {
+    FORALL_FILE_WRITEFN(MAP_FN2ARR)
 };
 
 #define PANIC_MSG "procfs_init(): "
@@ -158,7 +185,16 @@ static ssize_t procfs_read(file_t * file, void * vbuf, size_t bcount)
  */
 static ssize_t procfs_write(file_t * file, const void * vbuf, size_t bcount)
 {
-    return -EROFS; /* TODO is there any files that should allow writing? */
+    struct procfs_info * spec;
+
+    spec = (struct procfs_info *)file->vnode->vn_specinfo;
+    if (!spec)
+        return -EIO;
+
+    if (spec->ftype > PROCFS_LAST)
+        return -ENOLINK;
+
+    return procfs_write_funcs[spec->ftype](spec, (char *)vbuf, bcount);
 }
 
 static int procfs_updatedir(vnode_t * dir)
@@ -189,6 +225,13 @@ static int procfs_updatedir(vnode_t * dir)
 
     return err;
 }
+
+static ssize_t procfs_write_enotsup(struct procfs_info * spec, char * buf,
+                                    size_t bufsize)
+{
+    return -ENOTSUP;
+}
+
 
 int procfs_mkentry(const proc_info_t * proc)
 {

@@ -67,6 +67,18 @@ struct procfs_info {
 #define PROCFS_NAMELEN_MAX 10
 
 /**
+ * Procfs read file function.
+ * One per file type.
+ * @param[in] spec is the procfs specinfo for the file.
+ * @param[out] retbuf is the returned kmalloc'd buffer.
+ * @return Returns number of bytes in retbuf or negative errno if failed.
+ */
+typedef ssize_t procfs_readfn_t(struct procfs_info * spec, char ** retbuf);
+
+typedef ssize_t procfs_writefn_t(struct procfs_info * spec,
+                                 char * buf, size_t bufsize);
+
+/**
  * Create an entry for a process into procfs.
  * @param proc is a PCB to be described in procfs.
  */
@@ -77,8 +89,5 @@ int procfs_mkentry(const proc_info_t * proc);
  * @param pid is the process ID of the process to be removed.
  */
 void procfs_rmentry(pid_t pid);
-
-/* Internal functions */
-ssize_t procfs_read_status(struct procfs_info * spec, char ** retbuf);
 
 #endif /* PROCFS_H */
