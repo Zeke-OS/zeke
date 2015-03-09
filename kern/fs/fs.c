@@ -123,6 +123,30 @@ fs_t * fs_by_name(const char * fsname)
 }
 
 /**
+ * Insert suberblock to the list of super blocks in fs struct.
+ */
+static void fs_insert_superblock(struct fs * fs, struct fs_superblock * new_sb)
+{
+    mtx_lock(&fs->fs_giant);
+
+    SLIST_INSERT_HEAD(&fs->sblist_head, new_sb, _sblist);
+
+    mtx_unlock(&fs->fs_giant);
+}
+
+/**
+ * Remove a given sb from the sb mount list.
+ */
+static void fs_remove_superblock(struct fs * fs, struct fs_superblock * sb)
+{
+    mtx_lock(&fs->fs_giant);
+
+    SLIST_REMOVE(&fs->sblist_head, sb, fs_superblock, _sblist);
+
+    mtx_unlock(&fs->fs_giant);
+}
+
+/**
  * Get base vnode of a mountpoint.
  * If vn is not a mountpoint nothing is done and vn is returned as is,
  * otherwise the first vnode in a mount stack is returned. The first vnode
@@ -156,7 +180,7 @@ static vnode_t * get_top_vnode(vnode_t * vn)
 }
 
 int fs_mount(vnode_t * target, const char * source, const char * fsname,
-        uint32_t flags, const char * parm, int parm_len)
+             uint32_t flags, const char * parm, int parm_len)
 {
     fs_t * fs = NULL;
     struct fs_superblock * sb;
@@ -196,6 +220,8 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
         return err;
     KASSERT((uintptr_t)sb > configKERNEL_START, "sb is not a stack address");
     KASSERT(sb->root, "sb->root must be set");
+
+    fs_insert_superblock(fs, sb);
 
     target = get_top_vnode(target);
     root = sb->root;
@@ -268,6 +294,8 @@ int fs_umount(struct fs_superblock * sb)
     root->vn_next_mountpoint = root;
     root->vn_prev_mountpoint = root;
     VN_UNLOCK(root);
+
+    fs_remove_superblock(sb->fs, sb);
 
     return sb->umount(sb);
 }

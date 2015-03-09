@@ -258,9 +258,6 @@ int ramsfs_mount(const char * source, uint32_t mode,
 #endif
     ramfs_sb->sb.root = create_root(ramfs_sb);
 
-    /* Add this sb to the list of mounted file systems. */
-    fs_insert_superblock(&ramfs_fs, &ramfs_sb->sb);
-
     retval = 0;
     goto out;
 free_ramfs_sb:
@@ -289,7 +286,6 @@ int ramfs_umount(struct fs_superblock * fs_sb)
      * TODO Check that there is no more references to any vnodes of
      * this super block before destroying everyting related to it.
      */
-    fs_remove_superblock(&ramfs_fs, &rsb->sb);
     destroy_superblock(rsb); /* Destroy all data. */
 
     return 0;

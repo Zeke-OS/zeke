@@ -203,7 +203,11 @@ typedef struct fs {
     int (*mount)(const char * source, uint32_t mode,
                  const char * parm, int parm_len, struct fs_superblock ** sb);
 
-    SLIST_HEAD(sb_list, fs_superblock) sblist_head; /*!< List of all mounts. */
+    /**
+     * List of all mounts of this fs type.
+     * This list is managed by fs_mount() and fs_umount().
+     */
+    SLIST_HEAD(sb_list, fs_superblock) sblist_head;
     SLIST_ENTRY(fs) _fs_list;
 } fs_t;
 
