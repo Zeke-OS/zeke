@@ -137,7 +137,8 @@ $(LIBSA): $(OBJS) $(ASOBJS)
 	@ar rcs $@ $(CUR_OBJS) $(CUR_ARFLAGS)
 
 manifest: $(LIBSA)
-	if [ "$(configBUNDLE_STATIC)" = "y" ]; then echo "$(LIBSA)" > manifest; fi
+	@if [ "$(configBUNDLE_STATIC)" = "y" ]; then echo "$(LIBSA)" > manifest; \
+		else touch manifest; fi
 
 clean:
 	$(RM) $(ASOBJS) $(OBJS) $(DEPS)
