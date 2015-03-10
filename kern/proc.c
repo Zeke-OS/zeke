@@ -444,8 +444,6 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
     const uintptr_t vaddr = far;
     proc_info_t * pcb;
     struct vm_mm_struct * mm;
-    struct buf * region;
-    struct buf * new_region;
 
 #ifdef configPROC_DEBUG
     KERROR(KERROR_DEBUG, "proc_dab_handler(): MOO, %x @ %x\n", vaddr, lr);
@@ -459,17 +457,19 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
 
     mtx_lock(&mm->regions_lock);
     for (size_t i = 0; i < mm->nr_regions; i++) {
-        region = (*mm->regions)[i];
+        struct buf * region = (*mm->regions)[i];
+        struct buf * new_region;
         uintptr_t reg_start, reg_end;
+
         if (!region)
             continue;
 
         reg_start = region->b_mmu.vaddr;
-        reg_end = region->b_mmu.vaddr + MMU_SIZEOF_REGION(&region->b_mmu);
+        reg_end = region->b_mmu.vaddr + MMU_SIZEOF_REGION(&region->b_mmu) - 1;
 
 #ifdef configPROC_DEBUG
         KERROR(KERROR_DEBUG, "reg_vaddr %x, reg_end %x\n",
-                reg_start, reg_end);
+               reg_start, reg_end);
 #endif
 
         if (VM_ADDR_IS_IN_RANGE(vaddr, reg_start, reg_end)) {
