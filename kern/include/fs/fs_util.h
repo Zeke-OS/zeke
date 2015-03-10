@@ -50,6 +50,22 @@ struct vnode_ops;
 void fs_init_superblock(struct fs_superblock * sb, struct fs * fs);
 
 /**
+ * Insert suberblock to the list of super blocks in fs struct.
+ */
+void fs_insert_superblock(struct fs * fs, struct fs_superblock * new_sb);
+
+/**
+ * Remove a given sb from the sb mount list.
+ */
+void fs_remove_superblock(struct fs * fs, struct fs_superblock * sb);
+
+/**
+ * Iterate over all superblocks mounted on the file system.
+ */
+struct fs_superblock *
+fs_iterate_superblocks(fs_t * fs, struct fs_superblock * sb);
+
+/**
  * Create a new pseudo file system root.
  * Create a new pseudo fs root by inheriting ramfs implementation
  * as a basis. The created fs is a good basis for ram based file

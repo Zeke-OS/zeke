@@ -46,6 +46,46 @@ void fs_init_superblock(struct fs_superblock * sb, struct fs * fs)
     sb->root = NULL;
 }
 
+void fs_insert_superblock(struct fs * fs, struct fs_superblock * new_sb)
+{
+    mtx_lock(&fs->fs_giant);
+
+    SLIST_INSERT_HEAD(&fs->sblist_head, new_sb, _sblist);
+
+    mtx_unlock(&fs->fs_giant);
+}
+
+void fs_remove_superblock(struct fs * fs, struct fs_superblock * sb)
+{
+    mtx_lock(&fs->fs_giant);
+
+    SLIST_REMOVE(&fs->sblist_head, sb, fs_superblock, _sblist);
+
+    mtx_unlock(&fs->fs_giant);
+}
+
+struct fs_superblock *
+fs_iterate_superblocks(fs_t * fs, struct fs_superblock * sb)
+{
+    mtx_t * lock = &fs->fs_giant;
+
+    mtx_lock(lock);
+
+    if (SLIST_EMPTY(&fs->sblist_head)) {
+        mtx_unlock(lock);
+        return NULL;
+    }
+
+    if (!sb)
+        sb = SLIST_FIRST(&fs->sblist_head);
+    else
+        sb = SLIST_NEXT(sb, _sblist);
+
+    mtx_unlock(lock);
+
+    return sb;
+}
+
 vnode_t * fs_create_pseudofs_root(fs_t * newfs, int majornum)
 {
     int err;

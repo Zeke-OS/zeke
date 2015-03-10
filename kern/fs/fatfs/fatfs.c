@@ -195,6 +195,8 @@ static int fatfs_mount(const char * source, uint32_t mode,
         return -EIO;
     }
 
+    fs_insert_superblock(&fatfs_fs, &fatfs_sb->sb);
+
     goto out;
 fail:
     fatfs_sb_arr[DEV_MINOR(sbp->vdev_id)] = NULL;

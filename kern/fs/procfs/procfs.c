@@ -55,6 +55,7 @@ static ssize_t procfs_write_enotsup(struct procfs_info * spec, char * buf,
                                     size_t bufsize);
 static int procfs_updatedir(vnode_t * dir);
 static int create_status_file(vnode_t * dir, const proc_info_t * proc);
+static int create_mounts_file(vnode_t * dir);
 
 
 static vnode_ops_t procfs_vnode_ops = {
@@ -81,10 +82,12 @@ static vnode_t * vn_procfs;
  */
 
 #define FORALL_FILE_READFN(apply)               \
-    apply(PROCFS_STATUS, procfs_read_status)
+    apply(PROCFS_STATUS, procfs_read_status)    \
+    apply(PROCFS_MOUNTS, procfs_read_mounts)
 
 #define FORALL_FILE_WRITEFN(apply)              \
-    apply(PROCFS_STATUS, procfs_write_enotsup)
+    apply(PROCFS_STATUS, procfs_write_enotsup)  \
+    apply(PROCFS_MOUNTS, procfs_write_enotsup)
 
 
 #define DECLARE_READFN(file_type, function)     \
@@ -127,6 +130,7 @@ int procfs_init(void)
     vn_procfs = fs_create_pseudofs_root(&procfs_fs, VDEV_MJNR_PROCFS);
     vn_procfs->sb->umount = procfs_umount;
     fs_register(&procfs_fs);
+    create_mounts_file(vn_procfs);
     procfs_updatedir(vn_procfs);
 
     return 0;
@@ -342,6 +346,35 @@ static int create_status_file(vnode_t * pdir, const proc_info_t * proc)
     spec->pid = proc->pid;
 
     err = pdir->vnode_ops->mknod(pdir, PROCFS_STATUS_FILE,
+            S_IFREG | PROCFS_PERMS, spec, &vn);
+    if (err) {
+        kfree(spec);
+        return -ENOTDIR;
+    }
+
+    vn->vn_specinfo = spec;
+    vn->vnode_ops = &procfs_vnode_ops;
+
+    vrele(vn);
+
+    return 0;
+}
+
+static int create_mounts_file(vnode_t * dir)
+{
+    vnode_t * vn;
+    struct procfs_info * spec;
+    int err;
+
+    spec = kcalloc(1, sizeof(struct procfs_info));
+    if (!spec)
+        return -ENOMEM;
+
+    /* Create a specinfo */
+    spec->ftype = PROCFS_MOUNTS;
+    spec->pid = 0;
+
+    err = dir->vnode_ops->mknod(dir, "mounts",
             S_IFREG | PROCFS_PERMS, spec, &vn);
     if (err) {
         kfree(spec);

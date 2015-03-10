@@ -205,7 +205,6 @@ typedef struct fs {
 
     /**
      * List of all mounts of this fs type.
-     * This list is managed by fs_mount() and fs_umount().
      */
     SLIST_HEAD(sb_list, fs_superblock) sblist_head;
     SLIST_ENTRY(fs) _fs_list;
@@ -437,6 +436,13 @@ int fs_register(fs_t * fs);
  * @return The file system structure.
  */
 fs_t * fs_by_name(const char * fsname);
+
+/**
+ * Iterate over all file system drivers.
+ * @param fsp shall be null on start and shall be given the value that was
+ *            returned on last call of this function.
+ */
+fs_t * fs_iterate(fs_t * fsp);
 
 /**
  * Mount file system.
