@@ -46,14 +46,19 @@
                                              *   an procfs entry.
                                              */
 /* Procfs file names */
-#define PROCFS_STATUS_FILE      "status"
+#define PROCFS_FILE_REGIONS     "regions"
+#define PROCFS_FILE_STATUS      "status"
+#define PROCFS_FILE_MOUNTS      "mounts"
 
 /**
  * Procfs file types.
  */
 enum procfs_filetype {
-    PROCFS_MOUNTS = 0,  /*!< /proc/mounts */
+    /* process filess /proc/<num>/ */
+    PROCFS_REGIONS = 0, /*!< Process memory regions. */
     PROCFS_STATUS,      /*!< Process status file. */
+    /* kernel files */
+    PROCFS_MOUNTS,      /*!< /proc/mounts */
     PROCFS_LAST
 };
 

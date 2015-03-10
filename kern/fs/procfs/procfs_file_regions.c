@@ -34,44 +34,50 @@
 #include <kmalloc.h>
 #include <kstring.h>
 #include <proc.h>
+#include <buf.h>
 #include <fs/fs.h>
-#include <fs/fs_util.h>
 #include <fs/procfs.h>
 
-ssize_t procfs_read_mounts(struct procfs_info * spec, char ** retbuf)
+ssize_t procfs_read_regions(struct procfs_info * spec, char ** retbuf)
 {
     char * buf;
-    fs_t * fs;
     const size_t maxline = 80;
     ssize_t bytes = 0;
+    struct proc_info * proc;
+    struct vm_mm_struct * mm;
+
+    proc = proc_get_struct_l(spec->pid);
+    if (!proc)
+        return -ENOLINK;
 
     buf = kcalloc(maxline, sizeof(char));
     if (!buf)
         return -ENOMEM;
 
-    fs = NULL;
-    while ((fs = fs_iterate(fs))) {
+    mm = &proc->mm;
+    mtx_lock(&mm->regions_lock);
+    for (size_t i = 0; i < mm->nr_regions; i++) {
+        struct buf * region = (*mm->regions)[i];
+        uintptr_t reg_start, reg_end;
         char * p = buf + bytes;
-        struct fs_superblock * sb;
 
-        bytes += ksprintf(p, bytes + maxline, "%s\n", fs->fsname);
+        if (!region)
+            continue;
 
-        sb = NULL;
-        while ((sb = fs_iterate_superblocks(fs, sb))) {
-            char * p = buf + bytes;
+        reg_start = region->b_mmu.vaddr;
+        reg_end = region->b_mmu.vaddr + MMU_SIZEOF_REGION(&region->b_mmu) - 1;
 
-            bytes += ksprintf(p, bytes + maxline, "  (%u,%u)\n",
-                              DEV_MAJOR(sb->vdev_id),
-                              DEV_MINOR(sb->vdev_id));
-        }
+        bytes += ksprintf(p, bytes + maxline, "%x %x\n", reg_start, reg_end);
 
         p = krealloc(buf, bytes + maxline);
         if (!p) {
+            mtx_unlock(&mm->regions_lock);
             kfree(buf);
             return -ENOMEM;
         }
         buf = p;
     }
+    mtx_unlock(&mm->regions_lock);
 
     *retbuf = buf;
     return bytes;

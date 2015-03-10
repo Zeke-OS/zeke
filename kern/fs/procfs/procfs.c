@@ -54,8 +54,8 @@ static ssize_t procfs_write(file_t * file, const void * vbuf, size_t bcount);
 static ssize_t procfs_write_enotsup(struct procfs_info * spec, char * buf,
                                     size_t bufsize);
 static int procfs_updatedir(vnode_t * dir);
-static int create_status_file(vnode_t * dir, const proc_info_t * proc);
-static int create_mounts_file(vnode_t * dir);
+static int create_proc_file(vnode_t * pdir, pid_t pid,
+                            char * filename, enum procfs_filetype ftype);
 
 
 static vnode_ops_t procfs_vnode_ops = {
@@ -82,10 +82,12 @@ static vnode_t * vn_procfs;
  */
 
 #define FORALL_FILE_READFN(apply)               \
+    apply(PROCFS_REGIONS, procfs_read_regions)  \
     apply(PROCFS_STATUS, procfs_read_status)    \
     apply(PROCFS_MOUNTS, procfs_read_mounts)
 
 #define FORALL_FILE_WRITEFN(apply)              \
+    apply(PROCFS_REGIONS, procfs_write_enotsup) \
     apply(PROCFS_STATUS, procfs_write_enotsup)  \
     apply(PROCFS_MOUNTS, procfs_write_enotsup)
 
@@ -130,7 +132,7 @@ int procfs_init(void)
     vn_procfs = fs_create_pseudofs_root(&procfs_fs, VDEV_MJNR_PROCFS);
     vn_procfs->sb->umount = procfs_umount;
     fs_register(&procfs_fs);
-    create_mounts_file(vn_procfs);
+    create_proc_file(vn_procfs, 0, PROCFS_FILE_MOUNTS, PROCFS_MOUNTS);
     procfs_updatedir(vn_procfs);
 
     return 0;
@@ -260,32 +262,30 @@ int procfs_mkentry(const proc_info_t * proc)
     if (err == -EEXIST) {
         return 0;
     } else if (err) {
-#ifdef configPROCFS_DEBUG
-        KERROR(KERROR_DEBUG, fail);
-#endif
         goto fail;
     }
 
     err = vn_procfs->vnode_ops->lookup(vn_procfs, name, &pdir);
     if (err) {
-#ifdef configPROCFS_DEBUG
-        KERROR(KERROR_DEBUG, fail);
-#endif
         pdir = NULL;
         goto fail;
     }
 
-    err = create_status_file(pdir, proc);
-    if (err) {
-#ifdef configPROCFS_DEBUG
-        KERROR(KERROR_DEBUG, fail);
-#endif
+    err = create_proc_file(pdir, proc->pid, "regions", PROCFS_REGIONS);
+    if (err)
         goto fail;
-    }
+
+    err = create_proc_file(pdir, proc->pid, PROCFS_FILE_STATUS, PROCFS_STATUS);
+    if (err)
+        goto fail;
 
 fail:
     if (pdir)
         vrele(pdir);
+#ifdef configPROCFS_DEBUG
+    if (err)
+        KERROR(KERROR_DEBUG, fail);
+#endif
     return err;
 }
 
@@ -315,7 +315,8 @@ void procfs_rmentry(pid_t pid)
         return;
     }
 
-    pdir->vnode_ops->unlink(pdir, PROCFS_STATUS_FILE);
+    pdir->vnode_ops->unlink(pdir, PROCFS_FILE_REGIONS);
+    pdir->vnode_ops->unlink(pdir, PROCFS_FILE_STATUS);
     vrele(pdir);
     err = vn_procfs->vnode_ops->rmdir(vn_procfs, name);
 #ifdef configPROCFS_DEBUG
@@ -327,9 +328,10 @@ void procfs_rmentry(pid_t pid)
 }
 
 /**
- * Create a process status file.
+ * Create a process specific file.
  */
-static int create_status_file(vnode_t * pdir, const proc_info_t * proc)
+static int create_proc_file(vnode_t * pdir, pid_t pid,
+                            char * filename, enum procfs_filetype ftype)
 {
     vnode_t * vn;
     struct procfs_info * spec;
@@ -342,40 +344,11 @@ static int create_status_file(vnode_t * pdir, const proc_info_t * proc)
         return -ENOMEM;
 
     /* Create a specinfo */
-    spec->ftype = PROCFS_STATUS;
-    spec->pid = proc->pid;
+    spec->ftype = ftype;
+    spec->pid = pid;
 
-    err = pdir->vnode_ops->mknod(pdir, PROCFS_STATUS_FILE,
-            S_IFREG | PROCFS_PERMS, spec, &vn);
-    if (err) {
-        kfree(spec);
-        return -ENOTDIR;
-    }
-
-    vn->vn_specinfo = spec;
-    vn->vnode_ops = &procfs_vnode_ops;
-
-    vrele(vn);
-
-    return 0;
-}
-
-static int create_mounts_file(vnode_t * dir)
-{
-    vnode_t * vn;
-    struct procfs_info * spec;
-    int err;
-
-    spec = kcalloc(1, sizeof(struct procfs_info));
-    if (!spec)
-        return -ENOMEM;
-
-    /* Create a specinfo */
-    spec->ftype = PROCFS_MOUNTS;
-    spec->pid = 0;
-
-    err = dir->vnode_ops->mknod(dir, "mounts",
-            S_IFREG | PROCFS_PERMS, spec, &vn);
+    err = pdir->vnode_ops->mknod(pdir, filename, S_IFREG | PROCFS_PERMS, spec,
+                                 &vn);
     if (err) {
         kfree(spec);
         return -ENOTDIR;
