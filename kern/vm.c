@@ -751,3 +751,14 @@ static int test_ap_user(uint32_t rw, uint32_t mmu_ap, uint32_t mmu_control)
 
     return 0;
 }
+
+void vm_get_uapstring(char str[5], struct buf * bp)
+{
+    int uap = bp->b_uflags;
+
+    str[0] = (uap & VM_PROT_READ) ? 'r' : '-';
+    str[1] = (uap & VM_PROT_WRITE) ? 'w' : '-';
+    str[2] = (uap & VM_PROT_EXECUTE) ? 'x' : '-';
+    str[3] = (uap & VM_PROT_COW) ? 'c' : '-';
+    str[4] = '\0';
+}

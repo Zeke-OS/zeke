@@ -347,4 +347,9 @@ int useracc_proc(const void * addr, size_t len, struct proc_info * proc, int rw)
  * @}
  */
 
+/**
+ * Get user access permissions to bp as a cstring.
+ */
+void vm_get_uapstring(char str[5], struct buf * bp);
+
 #endif /* _VM_VM_H */

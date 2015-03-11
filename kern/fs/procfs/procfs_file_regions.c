@@ -35,13 +35,14 @@
 #include <kstring.h>
 #include <proc.h>
 #include <buf.h>
+#include <vm/vm.h>
 #include <fs/fs.h>
 #include <fs/procfs.h>
 
 static ssize_t procfs_read_regions(struct procfs_info * spec, char ** retbuf)
 {
-    char * buf;
-    const size_t maxline = 80;
+    char * buf = NULL;
+    const size_t maxline = 30;
     ssize_t bytes = 0;
     struct proc_info * proc;
     struct vm_mm_struct * mm;
@@ -59,15 +60,11 @@ static ssize_t procfs_read_regions(struct procfs_info * spec, char ** retbuf)
     for (size_t i = 0; i < mm->nr_regions; i++) {
         struct buf * region = (*mm->regions)[i];
         uintptr_t reg_start, reg_end;
-        char * p = buf + bytes;
+        char uap[5];
+        char * p;
 
         if (!region)
             continue;
-
-        reg_start = region->b_mmu.vaddr;
-        reg_end = region->b_mmu.vaddr + MMU_SIZEOF_REGION(&region->b_mmu) - 1;
-
-        bytes += ksprintf(p, bytes + maxline, "%x %x\n", reg_start, reg_end);
 
         p = krealloc(buf, bytes + maxline);
         if (!p) {
@@ -76,6 +73,14 @@ static ssize_t procfs_read_regions(struct procfs_info * spec, char ** retbuf)
             return -ENOMEM;
         }
         buf = p;
+        p = buf + bytes;
+
+        reg_start = region->b_mmu.vaddr;
+        reg_end = region->b_mmu.vaddr + MMU_SIZEOF_REGION(&region->b_mmu) - 1;
+        vm_get_uapstring(uap, region);
+
+        bytes += ksprintf(p, bytes + maxline, "%x %x %s\n",
+                          reg_start, reg_end, uap);
     }
     mtx_unlock(&mm->regions_lock);
 
