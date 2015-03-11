@@ -36,7 +36,7 @@
 #include <proc.h>
 #include <fs/procfs.h>
 
-ssize_t procfs_read_status(struct procfs_info * spec, char ** retbuf)
+static ssize_t procfs_read_status(struct procfs_info * spec, char ** retbuf)
 {
     ssize_t bytes;
     proc_info_t * proc;
@@ -71,3 +71,11 @@ ssize_t procfs_read_status(struct procfs_info * spec, char ** retbuf)
     *retbuf = tmpbuf;
     return bytes;
 }
+
+static struct procfs_file procfs_file_status = {
+    .filetype = PROCFS_STATUS,
+    .filename = "status",
+    .readfn = procfs_read_status,
+    .writefn = NULL,
+};
+DATA_SET(procfs_files, procfs_file_status);

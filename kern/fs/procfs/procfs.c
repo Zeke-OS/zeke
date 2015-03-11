@@ -51,11 +51,9 @@ static int procfs_mount(const char * source, uint32_t mode,
 static int procfs_umount(struct fs_superblock * fs_sb);
 static ssize_t procfs_read(file_t * file, void * vbuf, size_t bcount);
 static ssize_t procfs_write(file_t * file, const void * vbuf, size_t bcount);
-static ssize_t procfs_write_enotsup(struct procfs_info * spec, char * buf,
-                                    size_t bufsize);
 static int procfs_updatedir(vnode_t * dir);
-static int create_proc_file(vnode_t * pdir, pid_t pid,
-                            char * filename, enum procfs_filetype ftype);
+static int create_proc_file(vnode_t * pdir, pid_t pid, const char * filename,
+                            enum procfs_filetype ftype);
 
 
 static vnode_ops_t procfs_vnode_ops = {
@@ -75,48 +73,39 @@ static fs_t procfs_fs = {
  */
 static vnode_t * vn_procfs;
 
-/*
- * Lists of procfs read and write functions.
- * Each read function shall pair witha corresponding write function.
- * If write is not supported procfs_write_enotsup shall be used.
- */
-
-#define FORALL_FILE_READFN(apply)               \
-    apply(PROCFS_REGIONS, procfs_read_regions)  \
-    apply(PROCFS_STATUS, procfs_read_status)    \
-    apply(PROCFS_MOUNTS, procfs_read_mounts)
-
-#define FORALL_FILE_WRITEFN(apply)              \
-    apply(PROCFS_REGIONS, procfs_write_enotsup) \
-    apply(PROCFS_STATUS, procfs_write_enotsup)  \
-    apply(PROCFS_MOUNTS, procfs_write_enotsup)
-
-
-#define DECLARE_READFN(file_type, function)     \
-    procfs_readfn_t function;
-FORALL_FILE_READFN(DECLARE_READFN)
-#undef DECLARE_READFN
-
-#define DECLARE_WRITEFN(file_type, function)    \
-    procfs_writefn_t function;
-FORALL_FILE_WRITEFN(DECLARE_WRITEFN)
-#undef DECLARE_WRITEFN
-
-#define MAP_FN2ARR(file_type, function)         \
-    [file_type] = function,
-
-/**
- * Array of procfs read op functions.
- */
-static procfs_readfn_t * const procfs_read_funcs[] = {
-    FORALL_FILE_READFN(MAP_FN2ARR)
-};
-
-static procfs_writefn_t * const procfs_write_funcs[] = {
-    FORALL_FILE_WRITEFN(MAP_FN2ARR)
-};
+SET_DECLARE(procfs_files, struct procfs_file);
+static procfs_readfn_t ** procfs_read_funcs;
+static procfs_writefn_t ** procfs_write_funcs;
 
 #define PANIC_MSG "procfs_init(): "
+
+static int init_files()
+{
+    struct procfs_file ** file;
+
+    procfs_read_funcs = kcalloc(SET_COUNT(procfs_files),
+            sizeof(procfs_readfn_t *));
+    procfs_write_funcs = kcalloc(SET_COUNT(procfs_files),
+            sizeof(procfs_writefn_t *));
+
+    if (!(procfs_read_funcs && procfs_write_funcs))
+        return -ENOMEM;
+
+    SET_FOREACH(file, procfs_files) {
+        enum procfs_filetype filetype = (*file)->filetype;
+
+        procfs_read_funcs[filetype] = (*file)->readfn;
+        procfs_write_funcs[filetype] = (*file)->writefn;
+
+        if (filetype > PROCFS_KERNEL_SEPARATOR) {
+            const char * filename = (*file)->filename;
+
+            create_proc_file(vn_procfs, 0, filename, filetype);
+        }
+    }
+
+    return 0;
+}
 
 int procfs_init(void) __attribute__((constructor));
 int procfs_init(void)
@@ -132,7 +121,7 @@ int procfs_init(void)
     vn_procfs = fs_create_pseudofs_root(&procfs_fs, VDEV_MJNR_PROCFS);
     vn_procfs->sb->umount = procfs_umount;
     fs_register(&procfs_fs);
-    create_proc_file(vn_procfs, 0, PROCFS_FILE_MOUNTS, PROCFS_MOUNTS);
+    (void)init_files();
     procfs_updatedir(vn_procfs);
 
     return 0;
@@ -159,6 +148,7 @@ static int procfs_umount(struct fs_superblock * fs_sb)
 static ssize_t procfs_read(file_t * file, void * vbuf, size_t bcount)
 {
     struct procfs_info * spec;
+    procfs_readfn_t * fn;
     ssize_t bytes;
     char * buf;
 
@@ -169,7 +159,11 @@ static ssize_t procfs_read(file_t * file, void * vbuf, size_t bcount)
     if (spec->ftype > PROCFS_LAST)
         return -ENOLINK;
 
-    bytes = procfs_read_funcs[spec->ftype](spec, &buf);
+    fn = procfs_read_funcs[spec->ftype];
+    if (!fn)
+        return -ENOTSUP;
+
+    bytes = fn(spec, &buf);
     if (bytes > 0 && file->seek_pos <= bytes) {
         const size_t count = min(bcount, bytes - file->seek_pos);
 
@@ -193,6 +187,7 @@ static ssize_t procfs_read(file_t * file, void * vbuf, size_t bcount)
 static ssize_t procfs_write(file_t * file, const void * vbuf, size_t bcount)
 {
     struct procfs_info * spec;
+    procfs_writefn_t * fn;
 
     spec = (struct procfs_info *)file->vnode->vn_specinfo;
     if (!spec)
@@ -201,7 +196,10 @@ static ssize_t procfs_write(file_t * file, const void * vbuf, size_t bcount)
     if (spec->ftype > PROCFS_LAST)
         return -ENOLINK;
 
-    return procfs_write_funcs[spec->ftype](spec, (char *)vbuf, bcount);
+    fn = procfs_write_funcs[spec->ftype];
+    if (!fn)
+        return -ENOTSUP;
+    return fn(spec, (char *)vbuf, bcount);
 }
 
 static int procfs_updatedir(vnode_t * dir)
@@ -233,13 +231,6 @@ static int procfs_updatedir(vnode_t * dir)
     return err;
 }
 
-static ssize_t procfs_write_enotsup(struct procfs_info * spec, char * buf,
-                                    size_t bufsize)
-{
-    return -ENOTSUP;
-}
-
-
 int procfs_mkentry(const proc_info_t * proc)
 {
 #ifdef configPROCFS_DEBUG
@@ -247,6 +238,7 @@ int procfs_mkentry(const proc_info_t * proc)
 #endif
     char name[PROCFS_NAMELEN_MAX];
     vnode_t * pdir = NULL;
+    struct procfs_file ** file;
     int err;
 
     if (!vn_procfs)
@@ -271,13 +263,17 @@ int procfs_mkentry(const proc_info_t * proc)
         goto fail;
     }
 
-    err = create_proc_file(pdir, proc->pid, "regions", PROCFS_REGIONS);
-    if (err)
-        goto fail;
+    SET_FOREACH(file, procfs_files) {
+        const enum procfs_filetype filetype = (*file)->filetype;
 
-    err = create_proc_file(pdir, proc->pid, PROCFS_FILE_STATUS, PROCFS_STATUS);
-    if (err)
-        goto fail;
+        if (filetype < PROCFS_KERNEL_SEPARATOR) {
+            const char * filename = (*file)->filename;
+
+            err = create_proc_file(pdir, proc->pid, filename, filetype);
+            if (err)
+                goto fail;
+        }
+    }
 
 fail:
     if (pdir)
@@ -293,6 +289,7 @@ void procfs_rmentry(pid_t pid)
 {
     vnode_t * pdir;
     char name[PROCFS_NAMELEN_MAX];
+    struct procfs_file ** file;
     int err;
 
     if (!vn_procfs)
@@ -315,8 +312,13 @@ void procfs_rmentry(pid_t pid)
         return;
     }
 
-    pdir->vnode_ops->unlink(pdir, PROCFS_FILE_REGIONS);
-    pdir->vnode_ops->unlink(pdir, PROCFS_FILE_STATUS);
+    SET_FOREACH(file, procfs_files) {
+        if ((*file)->filetype < PROCFS_KERNEL_SEPARATOR) {
+            pdir->vnode_ops->unlink(pdir, (*file)->filename);
+        }
+    }
+
+
     vrele(pdir);
     err = vn_procfs->vnode_ops->rmdir(vn_procfs, name);
 #ifdef configPROCFS_DEBUG
@@ -330,8 +332,8 @@ void procfs_rmentry(pid_t pid)
 /**
  * Create a process specific file.
  */
-static int create_proc_file(vnode_t * pdir, pid_t pid,
-                            char * filename, enum procfs_filetype ftype)
+static int create_proc_file(vnode_t * pdir, pid_t pid, const char * filename,
+                            enum procfs_filetype ftype)
 {
     vnode_t * vn;
     struct procfs_info * spec;

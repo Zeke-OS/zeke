@@ -38,7 +38,7 @@
 #include <fs/fs_util.h>
 #include <fs/procfs.h>
 
-ssize_t procfs_read_mounts(struct procfs_info * spec, char ** retbuf)
+static ssize_t procfs_read_mounts(struct procfs_info * spec, char ** retbuf)
 {
     char * buf;
     fs_t * fs;
@@ -76,3 +76,11 @@ ssize_t procfs_read_mounts(struct procfs_info * spec, char ** retbuf)
     *retbuf = buf;
     return bytes;
 }
+
+static struct procfs_file procfs_file_mounts = {
+    .filetype = PROCFS_MOUNTS,
+    .filename = "mounts",
+    .readfn = procfs_read_mounts,
+    .writefn = NULL,
+};
+DATA_SET(procfs_files, procfs_file_mounts);

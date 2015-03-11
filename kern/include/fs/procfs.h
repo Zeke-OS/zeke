@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Process file system headers.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,6 +38,7 @@
 #include <stddef.h>
 #include <sys/types.h>
 #include <sys/param.h>
+#include <sys/linker_set.h>
 #include <fs/fs.h>
 
 #define PROCFS_FSNAME           "procfs"    /*!< Name of the fs. */
@@ -45,10 +46,6 @@
 #define PROCFS_PERMS            0400        /*!< Default file permissions of
                                              *   an procfs entry.
                                              */
-/* Procfs file names */
-#define PROCFS_FILE_REGIONS     "regions"
-#define PROCFS_FILE_STATUS      "status"
-#define PROCFS_FILE_MOUNTS      "mounts"
 
 /**
  * Procfs file types.
@@ -57,8 +54,11 @@ enum procfs_filetype {
     /* process filess /proc/<num>/ */
     PROCFS_REGIONS = 0, /*!< Process memory regions. */
     PROCFS_STATUS,      /*!< Process status file. */
+    /* --- */
+    PROCFS_KERNEL_SEPARATOR,
     /* kernel files */
     PROCFS_MOUNTS,      /*!< /proc/mounts */
+    /* Last entry */
     PROCFS_LAST
 };
 
@@ -83,6 +83,13 @@ typedef ssize_t procfs_readfn_t(struct procfs_info * spec, char ** retbuf);
 
 typedef ssize_t procfs_writefn_t(struct procfs_info * spec,
                                  char * buf, size_t bufsize);
+
+struct procfs_file {
+    const enum procfs_filetype filetype;
+    const char * filename;
+    procfs_readfn_t * const readfn;
+    procfs_writefn_t * const writefn;
+};
 
 /**
  * Create an entry for a process into procfs.

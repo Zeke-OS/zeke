@@ -38,7 +38,7 @@
 #include <fs/fs.h>
 #include <fs/procfs.h>
 
-ssize_t procfs_read_regions(struct procfs_info * spec, char ** retbuf)
+static ssize_t procfs_read_regions(struct procfs_info * spec, char ** retbuf)
 {
     char * buf;
     const size_t maxline = 80;
@@ -82,3 +82,11 @@ ssize_t procfs_read_regions(struct procfs_info * spec, char ** retbuf)
     *retbuf = buf;
     return bytes;
 }
+
+static struct procfs_file procfs_file_regions = {
+    .filetype = PROCFS_REGIONS,
+    .filename = "regions",
+    .readfn = procfs_read_regions,
+    .writefn = NULL,
+};
+DATA_SET(procfs_files, procfs_file_regions);
