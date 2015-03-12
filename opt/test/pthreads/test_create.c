@@ -26,12 +26,12 @@ static void * thread(void * arg)
 
 static char * test_create()
 {
-    pthread_attr_t attr = {
-        .tpriority  = 0,
-        .stackAddr  = stack,
-        .stackSize  = sizeof(stack),
-    };
+    pthread_attr_t attr;
     pthread_t tid, ret;
+
+    pthread_attr_init(&attr);
+    pthread_attr_setstack(&attr, stack, sizeof(stack));
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
     pu_assert_equal("Thread created",
             pthread_create(&tid, &attr, thread, 0), 0);
@@ -41,7 +41,6 @@ static char * test_create()
     pthread_join(tid, &ret);
     pu_assert_equal("Thread IDs are equal", tid, ret);
 #endif
-    pthread_detach(tid);
 
     return NULL;
 }

@@ -75,7 +75,8 @@ static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp)
     pthread_attr_t pattr = {
         .tpriority  = configUSRINIT_PRI,
         .stackAddr  = (void *)(stack_region->b_mmu.vaddr),
-        .stackSize  = MMU_SIZEOF_REGION(&stack_region->b_mmu)
+        .stackSize  = MMU_SIZEOF_REGION(&stack_region->b_mmu),
+        .flags = 0
     };
     struct _sched_pthread_create_args args = {
         .thread     = 0, /* return value */

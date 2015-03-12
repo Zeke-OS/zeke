@@ -111,7 +111,8 @@ int sched_init(void)
     pthread_attr_t attr = {
         .tpriority  = NICE_IDLE,
         .stackAddr  = sched_idle_stack,
-        .stackSize  = sizeof(sched_idle_stack)
+        .stackSize  = sizeof(sched_idle_stack),
+        .flags      = 0
     };
     /* Create the idle task as task 0 */
     struct _sched_pthread_create_args tdef_idle = {

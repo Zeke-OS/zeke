@@ -117,7 +117,8 @@ int kinit(void)
     pthread_attr_t init_attr = {
         .tpriority  = configUSRINIT_PRI,
         .stackAddr  = (void *)(init_vmstack->b_mmu.paddr),
-        .stackSize  = configUSRINIT_SSIZE
+        .stackSize  = configUSRINIT_SSIZE,
+        .flags = 0
     };
     struct _sched_pthread_create_args init_ds = {
         .thread     = 0, /* return value */

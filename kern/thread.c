@@ -177,15 +177,23 @@ void thread_init(struct thread_info * tp, pthread_t thread_id,
     init_stack_frame(thread_def, &(tp->sframe[SCHED_SFRAME_SYS]),
             priv);
 
-    /* Mark this thread index as used.
-     * EXEC flag is set later in sched_thread_set_exec */
+    /*
+     * Mark this thread index as used.
+     * EXEC flag is set later in sched_thread_set_exec()
+     */
     tp->flags   = (uint32_t)SCHED_IN_USE_FLAG;
     tp->id      = thread_id;
     tp->niceval = thread_def->def->tpriority;
 
+    if (thread_def->def->flags & PTHREAD_CREATE_DETACHED) {
+        tp->flags |= SCHED_DETACH_FLAG;
+    }
+
     if (priv) {
-        /* Just that user can see that this is a kworker, no functional
-         * difference other than privileged mode. */
+        /*
+         * Just that user can see that this is a kworker, no functional
+         * difference other than privileged mode.
+         */
          tp->flags |= SCHED_KWORKER_FLAG;
     }
 

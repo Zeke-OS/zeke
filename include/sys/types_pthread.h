@@ -61,10 +61,11 @@ typedef void * (*start_routine)(void *);
 /**
  * Thread Definition structure contains startup information of a thread.
  */
-typedef const struct pthread_attr {
+typedef struct pthread_attr {
     int             tpriority;  /*!< initial thread priority */
     void *          stackAddr;  /*!< Stack address */
     size_t          stackSize;  /*!< Size of stack reserved for the thread. */
+    unsigned        flags;
 } pthread_attr_t;
 
 typedef struct pthread_condattr {

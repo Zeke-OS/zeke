@@ -76,6 +76,7 @@ int shmem_init(void)
         .tpriority  = NICE_DEF,
         .stackAddr  = (void *)bp_stack->b_data,
         .stackSize  = bp_stack->b_bcount,
+        .flags      = 0
     };
     struct _sched_pthread_create_args tdef_shmem = {
         .thread = &tid,

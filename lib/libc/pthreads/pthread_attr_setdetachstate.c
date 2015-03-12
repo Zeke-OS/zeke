@@ -1,13 +1,10 @@
 /**
  *******************************************************************************
- * @file    pthread_create.c
+ * @file    pthread_attr_setdetachstate.c
  * @author  Olli Vanhoja
  * @brief   Zero Kernel user space code
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2013 Joni Hauhia <joni.hauhia@cs.helsinki.fi>
- * Copyright (c) 2012, 2013 Ninjaware Oy,
- *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+ * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,25 +30,19 @@
  *******************************************************************************
 */
 
-#include <syscall.h>
+#include <errno.h>
 #include <pthread.h>
 
-int pthread_create(pthread_t * thread, const pthread_attr_t * attr,
-                void * (*start_routine)(void *), void * arg)
+int pthread_attr_setdetachstate(pthread_attr_t * attr, int detachstate)
 {
-    struct _sched_pthread_create_args args = {
-        .thread     = thread,
-        .start      = start_routine,
-        .def        = attr,
-        .arg1       = (uintptr_t)arg,
-        .del_thread = pthread_exit
-    };
-    int result;
+    if ((detachstate != PTHREAD_CREATE_DETACHED) &&
+            (detachstate != PTHREAD_CREATE_JOINABLE)) {
+        errno = -EINVAL;
+        return -EINVAL;
+    }
 
-    result = (int)syscall(SYSCALL_THREAD_CREATE, &args);
+    attr->flags = detachstate;
 
-    /* Request immediate context switch */
-    req_context_switch();
-
-    return result;
+    return 0;
 }
+
