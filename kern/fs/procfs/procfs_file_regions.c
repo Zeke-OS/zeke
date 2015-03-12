@@ -44,19 +44,16 @@ static ssize_t procfs_read_regions(struct procfs_info * spec, char ** retbuf)
     char * buf = NULL;
     const size_t maxline = 30;
     ssize_t bytes = 0;
-    struct proc_info * proc;
     struct vm_mm_struct * mm;
-
-    proc = proc_get_struct_l(spec->pid);
-    if (!proc)
-        return -ENOLINK;
 
     buf = kcalloc(maxline, sizeof(char));
     if (!buf)
         return -ENOMEM;
 
-    mm = &proc->mm;
-    mtx_lock(&mm->regions_lock);
+    mm = proc_get_locked_mm(spec->pid);
+    if (!mm)
+        return -ENOLINK;
+
     for (size_t i = 0; i < mm->nr_regions; i++) {
         struct buf * region = (*mm->regions)[i];
         uintptr_t reg_start, reg_end;

@@ -210,14 +210,18 @@ void _proc_free(proc_info_t * p);
 
 /**
  * Get pointer to a internal proc_info structure by first locking it.
+ * Caller of this function should be the owner/parent of requested data or it
+ * shall first disable interrupts to prevent removal of the data while using it.
  */
 proc_info_t * proc_get_struct_l(pid_t pid);
 
 /**
  * Get pointer to a internal proc_info structure.
- * @note Requires a lock.
+ * @note Requires PROC_LOCK.
  */
 proc_info_t * proc_get_struct(pid_t pid);
+
+struct vm_mm_struct * proc_get_locked_mm(pid_t pid);
 
 /* proc_fork.c */
 

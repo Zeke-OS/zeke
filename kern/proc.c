@@ -398,6 +398,25 @@ proc_info_t * proc_get_struct(pid_t pid)
     return (*_procarr)[pid];
 }
 
+struct vm_mm_struct * proc_get_locked_mm(pid_t pid)
+{
+    struct proc_info * proc;
+    struct vm_mm_struct * mm;
+
+    PROC_LOCK();
+    proc = proc_get_struct(pid);
+    if (!proc) {
+        PROC_UNLOCK();
+        return NULL;
+    }
+
+    mm = &proc->mm;
+    mtx_lock(&mm->regions_lock);
+    PROC_UNLOCK();
+
+    return mm;
+}
+
 struct thread_info * proc_iterate_threads(proc_info_t * proc,
         struct thread_info ** thread_it)
 {

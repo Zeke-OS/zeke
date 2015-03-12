@@ -43,13 +43,16 @@ static ssize_t procfs_read_status(struct procfs_info * spec, char ** retbuf)
     char * tmpbuf;
     const size_t bufsz = 200;
 
-    proc = proc_get_struct_l(spec->pid);
-    if (!proc)
-        return -ENOLINK;
-
     tmpbuf = kcalloc(bufsz, sizeof(char));
     if (!tmpbuf)
         return -EIO;
+
+    PROC_LOCK();
+    proc = proc_get_struct(spec->pid);
+    if (!proc) {
+        PROC_UNLOCK();
+        return -ENOLINK;
+    }
 
     bytes = ksprintf(tmpbuf, bufsz,
                      "Name: %s\n"
@@ -68,6 +71,7 @@ static ssize_t procfs_read_status(struct procfs_info * spec, char ** retbuf)
                      proc->tms.tms_utime, proc->tms.tms_stime,
                      proc->brk_start, proc->brk_stop);
 
+    PROC_UNLOCK();
     *retbuf = tmpbuf;
     return bytes;
 }
