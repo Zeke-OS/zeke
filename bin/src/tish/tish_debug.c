@@ -97,37 +97,6 @@ static void debug(char ** args)
         } else {
             printf("%s", invalid_arg);
         }
-    } else if (!strcmp(arg, "ioctl")) {
-        arg = strtok_r(0, DELIMS, args);
-        if (!strcmp(arg, "termios")) {
-            struct termios term;
-            int err;
-
-            err = tcgetattr(STDOUT_FILENO, &term);
-            if (err)
-                return;
-
-            printf("cflags: %u\nispeed: %u\nospeed: %u\n",
-                   term.c_cflag, term.c_ispeed, term.c_ospeed);
-        } else {
-            printf("%s", invalid_arg);
-        }
-    } else if (!strcmp(arg, "file")) {
-        char buf[80];
-        const char text[] = "This is a test.\n";
-        int fildes;
-
-        fildes = open("file", O_RDWR | O_CREAT | O_TRUNC,
-                S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-        if (fildes < 0)
-            return;
-
-        write(fildes, text, sizeof(text));
-        lseek(fildes, 0, SEEK_SET);
-        read(fildes, buf, sizeof(buf));
-        close(fildes);
-
-        printf("%s", buf);
     } else {
         printf("Invalid subcommand\n");
         errno = EINVAL;
@@ -138,19 +107,21 @@ TISH_CMD(debug, "debug");
 static void create_debug_thread(void)
 {
     static pthread_t test_tid;
-    char * newstack;
+    char * stack;
+    const size_t stack_size = 4096;
 
     errno = 0;
-    if ((newstack = sbrk(1024)) == (void *)-1) {
+    stack = malloc(stack_size);
+    if (!stack) {
         printf("Failed to create a stack\n");
         return;
     }
-    printf("New stack @ %p\n", newstack);
+    printf("New stack @ %p\n", stack);
 
     pthread_attr_t attr = {
         .tpriority  = 0,
-        .stackAddr  = newstack,
-        .stackSize  = 1024
+        .stackAddr  = stack,
+        .stackSize  = stack_size
     };
 
     errno = 0;
@@ -158,7 +129,7 @@ static void create_debug_thread(void)
         printf("Thread creation failed\n");
         return;
     }
-    printf("Thread created with id: %u and stack: %p\n", test_tid, newstack);
+    printf("Thread created with id: %u and stack: %p\n", test_tid, stack);
 }
 
 static void * test_thread(void * arg)
