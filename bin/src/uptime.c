@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    tish_date.c
+ * @file    uptime.c
  * @author  Olli Vanhoja
- * @brief   date command for tish.
+ * @brief   uptime command
  * @section LICENSE
  * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -31,24 +31,35 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <errno.h>
 #include <time.h>
-#include "tish.h"
+#include <sys/resource.h>
 
-static void tish_date(char ** args)
+static void fmt_lavg(char * dst, double load)
+{
+    int x, y;
+
+    x = (int)(load);
+    y = (int)(load * 100.0) % 100;
+
+    sprintf(dst, "%d.%.2d", x, y);
+}
+
+int main(void)
 {
     struct timespec ts = {0, 0};
-    int sec, nsec;
+    double loads[3];
+    char l1[5], l2[5], l3[5];
 
-    if (clock_gettime(CLOCK_REALTIME, &ts))
-        return;
+    if (clock_gettime(CLOCK_UPTIME, &ts))
+        return 1;
 
-    sec = ts.tv_sec;
-    nsec = ts.tv_nsec;
+    getloadavg(loads, 3);
+    fmt_lavg(l1, loads[0]);
+    fmt_lavg(l2, loads[1]);
+    fmt_lavg(l3, loads[2]);
 
-    printf("%u.%u\n", sec, nsec);
+    printf("%u.%u %s, %s, %s\n",
+           (unsigned)ts.tv_sec, (unsigned)ts.tv_nsec, l1, l2, l3);
+
+    return 0;
 }
-TISH_CMD(tish_date, "date");

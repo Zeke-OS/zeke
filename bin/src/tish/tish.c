@@ -89,30 +89,6 @@ get_errno:
     return 0;
 }
 
-static void fmt_lavg(char * dst, double load)
-{
-    int x, y;
-
-    x = (int)(load);
-    y = (int)(load * 100.0) % 100;
-
-    sprintf(dst, "%d.%.2d", x, y);
-}
-
-static void uptime(char ** args)
-{
-    double loads[3];
-    char l1[5], l2[5], l3[5];
-    getloadavg(loads, 3);
-
-    fmt_lavg(l1, loads[0]);
-    fmt_lavg(l2, loads[1]);
-    fmt_lavg(l3, loads[2]);
-
-    printf("load average: %s, %s, %s\n", l1, l2, l3);
-}
-TISH_CMD(uptime, "uptime");
-
 static void tish_exit(char ** args)
 {
     tish_eof = 1;

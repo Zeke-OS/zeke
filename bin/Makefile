@@ -26,7 +26,7 @@
 include $(ROOT_DIR)/makefiles/user_head.mk
 
 # Binaries #####################################################################
-BIN := cat echo ls mount stty tish umount
+BIN := cat echo ls mount stty tish umount uptime
 
 # Source Files #################################################################
 cat-SRC-y := src/cat.c
@@ -36,5 +36,6 @@ mount-SRC-y := src/mount.c src/utils/opt.c
 stty-SRC-y := src/stty.c
 tish-SRC-y := $(wildcard src/tish/*.c)
 umount-SRC-y := src/umount.c src/utils/opt.c
+uptime-SRC-y := src/uptime.c
 
 include $(ROOT_DIR)/makefiles/user_tail.mk

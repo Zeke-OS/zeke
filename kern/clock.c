@@ -137,6 +137,8 @@ static int sys_gettime(void * user_args)
     }
 
     switch (args.clk_id) {
+    case CLOCK_UPTIME:
+        /* TODO Currently same as CLOCK_REALTIME */
     case CLOCK_REALTIME:
         nanotime(&ts);
         err = copyout(&ts, args.tp, sizeof(struct timespec));
