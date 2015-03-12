@@ -10,6 +10,9 @@ endif
 ifeq ($(configTESTS_TTY),y)
 DIRS += tty
 endif
+ifeq ($(configTESTS_PTHREADS),y)
+DIRS += pthreads
+endif
 ifeq ($(configTESTS_UNISTD),y)
 DIRS += unistd
 endif
