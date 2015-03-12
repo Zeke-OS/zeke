@@ -80,7 +80,7 @@ SYSCTL_INT(_vm_kmalloc, OID_AUTO, fragm_rat, CTLFLAG_RD,
  * Memory block descriptor.
  */
 typedef struct mblock {
-    int signature;          /* Magic number for extra security. */
+    unsigned signature;     /* Magic number for extra security. */
     size_t size;            /* Size of data area of this block. */
     struct mblock * next;   /* Pointer to the next memory block desc. */
     struct mblock * prev;   /* Pointer to the previous memory block desc. */
@@ -268,8 +268,10 @@ out:
  */
 static int valid_addr(void * p)
 {
-#define ADDR_VALIDATION (p == (get_mblock(p)->ptr) \
-        && get_mblock(p)->signature == KM_SIGNATURE_VALID)
+#define ADDR_VALIDATION(_p_) \
+    (_p_ == (get_mblock(_p_)->ptr) \
+        && get_mblock(_p_)->signature == KM_SIGNATURE_VALID)
+
     int retval = 0;
 
     if (!p)
@@ -279,13 +281,13 @@ static int valid_addr(void * p)
     if (kmalloc_base) { /* If base is not set it's impossible that we would have
                          * any allocated blocks. */
 #ifdef configKMALLOC_DEBUG
-        if ((retval = ADDR_VALIDATION)) { /* Validation. */
+        if ((retval = ADDR_VALIDATION(p))) { /* Validation. */
             printf("VALID\n");
         } else {
             printf("INVALID %p\n", p);
         }
 #else
-        retval = ADDR_VALIDATION; /* Validation. */
+        retval = ADDR_VALIDATION(p); /* Validation. */
 #endif
     }
 

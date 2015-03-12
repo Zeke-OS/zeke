@@ -40,7 +40,7 @@
 int getloadavg(double loadavg[3], int nelem)
 {
     uint32_t loads[3];
-    size_t i;
+    int i;
 
     if (nelem > 3)
         return -1;

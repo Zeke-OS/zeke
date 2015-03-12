@@ -17,7 +17,7 @@ void * memset(void * m, int c, size_t n)
 
 /* If optmizing for speed */
 #ifndef __OPTIMIZE_SIZE__
-    int i;
+    size_t i;
     unsigned long buffer;
     unsigned long *aligned_addr;
     unsigned int d = c & 0xff;      /* To avoid sign extension, copy C to an
@@ -44,7 +44,7 @@ void * memset(void * m, int c, size_t n)
             buffer = (buffer << i) | buffer;
 
         /* Unroll the loop. */
-        while (n >= LBLOCKSIZE*4)
+        while (n >= LBLOCKSIZE * 4)
         {
             *aligned_addr++ = buffer;
             *aligned_addr++ = buffer;

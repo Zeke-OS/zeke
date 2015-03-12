@@ -702,7 +702,7 @@ void ksignal_get_ksigaction(struct ksigaction * action,
 
     action->ks_signum = signum;
     sigemptyset(&action->ks_action.sa_mask);
-    action->ks_action.sa_flags = (signum < num_elem(default_sigproptbl)) ?
+    action->ks_action.sa_flags = (signum < (int)num_elem(default_sigproptbl)) ?
         default_sigproptbl[signum] : SA_IGNORE;
     action->ks_action.sa_handler = SIG_DFL;
 }
@@ -712,7 +712,7 @@ int ksignal_reset_ksigaction(struct signals * sigs, int signum)
     struct ksigaction filt = { .ks_signum = signum };
     struct ksigaction * p_action;
 
-    if (signum < 0 || signum >= num_elem(default_sigproptbl)) {
+    if (signum < 0 || signum >= (int)num_elem(default_sigproptbl)) {
         return -EINVAL;
     }
 
@@ -766,7 +766,7 @@ int ksignal_set_ksigaction(struct signals * sigs, struct ksigaction * action)
     /* Check if this action can be actually removed */
     sigact = &p_action->ks_action;
     if (sigisemptyset(&sigact->sa_mask) &&
-        (sigact->sa_flags == (signum < sizeof(default_sigproptbl)) ?
+        (sigact->sa_flags == (signum < (int)sizeof(default_sigproptbl)) ?
             default_sigproptbl[signum] : SA_IGNORE) &&
         (sigact->sa_handler == SIG_DFL)) {
         if (RB_REMOVE(sigaction_tree, &sigs->sa_tree, p_action)) {

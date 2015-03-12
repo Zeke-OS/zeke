@@ -81,7 +81,7 @@ uint32_t kunirand(unsigned long n)
     const uint32_t part_size = (n == RAND_MAX) ?
                                1 : 1 + (RAND_MAX - n) / (n + 1);
     const uint32_t max_usefull = part_size * n + (part_size - 1);
-    long draw;
+    uint32_t draw;
 
     do {
         draw = krandom();

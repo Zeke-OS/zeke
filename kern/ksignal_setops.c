@@ -99,7 +99,7 @@ int sigisemptyset(const sigset_t * set)
 
 int sigffs(sigset_t * set)
 {
-    int i, j;
+    size_t i, j;
 
     for (i = 0; i < _SIG_WORDS; i++) {
         for (j = 0; j < sizeof(set->__bits[0]); j++)
@@ -112,7 +112,7 @@ int sigffs(sigset_t * set)
 
 sigset_t * sigunion(sigset_t * target, sigset_t * a, sigset_t * b)
 {
-    int i;
+    size_t i;
     sigset_t tmp;
 
     for (i = 0; i < _SIG_WORDS; i++) {
@@ -125,7 +125,7 @@ sigset_t * sigunion(sigset_t * target, sigset_t * a, sigset_t * b)
 
 sigset_t * sigintersect(sigset_t * target, sigset_t * a, sigset_t * b)
 {
-    int i;
+    size_t i;
     sigset_t tmp;
 
     for (i = 0; i < _SIG_WORDS; i++) {
@@ -138,7 +138,7 @@ sigset_t * sigintersect(sigset_t * target, sigset_t * a, sigset_t * b)
 
 sigset_t * sigcompl(sigset_t * target, sigset_t * set)
 {
-    int i;
+    size_t i;
     sigset_t tmp;
 
     for (i = 0; i < _SIG_WORDS; i++) {

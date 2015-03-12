@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1983, 1993
  *  The Regents of the University of California.  All rights reserved.
  *
@@ -95,7 +95,7 @@ const char * const sys_siglist[] = {
 void psignal(int signum, const char * message)
 {
     const char * c;
-    if (signum < sizeof(sys_siglist)) {
+    if ((size_t)signum < sizeof(sys_siglist)) {
         c = sys_siglist[signum];
     } else {
         c = "Unknown signal";

@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Generic circular buffer for strings.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,9 +35,7 @@
 
 void strcbuf_insert(struct strcbuf * buf, const char * line, size_t len)
 {
-    int i = 0;
-    size_t end = buf->end;
-    size_t next;
+    size_t i = 0, end = buf->end, next;
     const size_t blen = buf->len;
 
     if (len > blen)

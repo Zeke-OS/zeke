@@ -160,7 +160,7 @@ int load_elf32(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base)
         goto out;
     }
     file->seek_pos = elfhdr->e_phoff;
-    if (file->vnode->vnode_ops->read(file, phdr, phsize) != phsize) {
+    if (file->vnode->vnode_ops->read(file, phdr, phsize) != (ssize_t)phsize) {
         retval = -ENOEXEC;
         goto out;
     }
