@@ -567,6 +567,7 @@ static int sys_thread_create(void * user_args)
         set_errno(EFAULT);
         return -1;
     }
+    args.def = &thdef;
 
     usr_thread_id = args.thread;
     if (usr_thread_id) {
@@ -579,7 +580,6 @@ static int sys_thread_create(void * user_args)
 
     thread_create(&args, 0);
 
-    copyout(&args, user_args, sizeof(args));
     if (usr_thread_id)
         copyout(&thread_id, usr_thread_id, sizeof(thread_id));
     return 0;
