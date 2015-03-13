@@ -59,6 +59,7 @@ $(wildcard libc/_PDCLIB/*.c) \
 $(wildcard libc/*.c) \
 $(wildcard libc/basecodecs/*.c) \
 $(wildcard libc/ctype/*.c) \
+$(wildcard libc/dirent/*.c) \
 $(wildcard libc/fcntl/*.c) \
 $(wildcard libc/gen/*.c) \
 $(wildcard libc/inttypes/*.c) \

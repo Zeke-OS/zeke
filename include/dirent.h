@@ -75,6 +75,15 @@ struct _fs_getdents_args {
     size_t nbytes;
 };
 
+/*
+ * Definitions for library routines operating on directories.
+ */
+typedef struct _dirdesc {
+    int dd_fd;
+    size_t dd_loc;
+    size_t dd_count;
+    struct dirent dd_buf[10];
+} DIR;
 
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
@@ -86,10 +95,14 @@ int getdents(int fd, char * buf, int nbytes);
 
 /*
 int alphasort(const struct dirent **, const struct dirent **);
-int closedir(DIR *);
-int dirfd(DIR *);
+*/
+int closedir(DIR * dirp);
+int dirfd(DIR * dirp);
+/*
 DIR * fdopendir(int);
-DIR * opendir(const char *);
+*/
+DIR * opendir(const char * name);
+/*
 struct dirent * readdir(DIR *);
 int readdir_r(DIR * restrict, struct dirent * restrict,
         struct dirent ** restrict);
