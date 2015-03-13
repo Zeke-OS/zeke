@@ -151,7 +151,7 @@ typedef struct {
     WCHAR*  lfn;            /* Pointer to the LFN working buffer */
     WORD    lfn_idx;        /* Last matched LFN index number (0xFFFF:No LFN) */
 #endif
-} DIR;
+} FF_DIR;
 
 
 
@@ -212,9 +212,9 @@ FRESULT f_forward (FIL* fp, UINT(*func)(const BYTE*,UINT), UINT btf, UINT* bf); 
 FRESULT f_lseek (FIL* fp, DWORD ofs);                               /* Move file pointer of a file object */
 FRESULT f_truncate (FIL* fp);                                       /* Truncate file */
 FRESULT f_sync (FIL* fp);                                           /* Flush cached data of a writing file */
-FRESULT f_opendir (DIR* dp, const TCHAR* path);                     /* Open a directory */
-FRESULT f_closedir (DIR* dp);                                       /* Close an open directory */
-FRESULT f_readdir (DIR* dp, FILINFO* fno);                          /* Read a directory item */
+FRESULT f_opendir (FF_DIR* dp, const TCHAR* path);                     /* Open a directory */
+FRESULT f_closedir (FF_DIR* dp);                                       /* Close an open directory */
+FRESULT f_readdir (FF_DIR* dp, FILINFO* fno);                          /* Read a directory item */
 FRESULT f_mkdir (const TCHAR* path);                                /* Create a sub directory */
 FRESULT f_unlink (const TCHAR* path);                               /* Delete an existing file or directory */
 FRESULT f_rename (const TCHAR* path_old, const TCHAR* path_new);    /* Rename/Move a file or directory */

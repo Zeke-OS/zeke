@@ -49,7 +49,7 @@ struct fatfs_inode {
      */
     union {
     FIL fp;
-    DIR dp;
+    FF_DIR dp;
     };
 };
 
