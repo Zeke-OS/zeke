@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    dirent.c
+ * @file    getdents.c
  * @author  Olli Vanhoja
  * @brief   Low level operations on directory entries.
  * @section LICENSE
