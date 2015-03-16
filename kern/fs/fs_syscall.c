@@ -576,7 +576,7 @@ out:
 
 static int sys_filestat(void * user_args)
 {
-    struct _fs_stat_args * args = 0;
+    struct _fs_stat_args * args = NULL;
     vnode_t * vnode = NULL;
     struct stat stat_buf;
     int err, filref = 0, vnref = 0, retval = -1;
@@ -609,8 +609,7 @@ static int sys_filestat(void * user_args)
 
     if (args->flags & AT_FDARG) { /* by fildes */
         file_t * fildes;
-        /* Note: AT_SYMLINK_NOFOLLOW == O_NOFOLLOW */
-        const int ofalgs = (args->flags & AT_SYMLINK_NOFOLLOW);
+        const int oflags = (args->flags & AT_SYMLINK_NOFOLLOW) ? O_NOFOLLOW : 0;
 
         fildes = fs_fildes_ref(curproc->files, args->fd, 1);
         if (!fildes) {
@@ -625,8 +624,9 @@ static int sys_filestat(void * user_args)
             goto out;
         }
 
-        if (args->flags & O_EXEC) { /* Get stat of given fildes, which we have
-                                     * have in stat_buf. */
+        if (args->flags & O_EXEC) {
+            /* Get stat of fildes given in arg struct. */
+            retval = 0;
             goto out;
         }
 
@@ -635,7 +635,7 @@ static int sys_filestat(void * user_args)
          * have a permission to search it.
          */
         if (fildes->oflags & O_SEARCH || chkperm_curproc(&stat_buf, O_EXEC))
-            err = lookup_vnode(&vnode, fildes->vnode, args->path, ofalgs);
+            err = lookup_vnode(&vnode, fildes->vnode, args->path, oflags);
         else /* No permission to search */
             err = -EACCES;
         if (err) { /* Handle previous error */
@@ -643,6 +643,7 @@ static int sys_filestat(void * user_args)
             goto out;
         }
     } else { /* search by path */
+        /* TODO This should support AT_SYMLINK_NOFOLLOW as well. */
         err = fs_namei_proc(&vnode, -1, (char *)args->path, AT_FDCWD);
         if (err) {
             set_errno(ENOENT);

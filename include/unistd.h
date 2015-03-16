@@ -391,6 +391,11 @@ int unlinkat(int fd, const char * path, int flag);
 int rmdir(const char * path);
 
 /**
+ * Get the pathname of the current working directory.
+ */
+char * getcwd(char * pathname, size_t size);
+
+/**
  * Return a new file descriptor that is the lowest number available.
  * The new file descriptor will refer to the same open file as the original file
  * descriptor.

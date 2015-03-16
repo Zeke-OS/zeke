@@ -102,8 +102,9 @@ int dirfd(DIR * dirp);
 DIR * fdopendir(int);
 */
 DIR * opendir(const char * name);
-/*
+
 struct dirent * readdir(DIR *);
+/*
 int readdir_r(DIR * restrict, struct dirent * restrict,
         struct dirent ** restrict);
 void rewinddir(DIR *);

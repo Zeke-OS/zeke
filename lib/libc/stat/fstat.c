@@ -39,6 +39,8 @@ int fstat(int fildes, struct stat * buf)
 {
     struct _fs_stat_args args = {
         .fd = fildes,
+        .path = "",
+        .path_len = 1,
         .buf = buf,
         .flags = AT_FDARG | O_EXEC
     };

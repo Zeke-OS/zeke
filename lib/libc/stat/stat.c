@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   File status functions.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,9 +38,11 @@
 int stat(const char * restrict path, struct stat * restrict buf)
 {
     struct _fs_stat_args args = {
+        .fd = 0, /* Not used */
         .path = path,
         .path_len = strlen(path) + 1,
-        .buf = buf
+        .buf = buf,
+        .flags = 0
     };
 
     return syscall(SYSCALL_FS_STAT, &args);

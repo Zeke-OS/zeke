@@ -12,13 +12,15 @@
 
 DIR * opendir(const char * name)
 {
-    register DIR * dirp;
-    register int fd;
+    DIR * dirp;
+    int fd;
 
-    if ((fd = open(name, O_DIRECTORY)) == -1)
+    fd = open(name, O_DIRECTORY | O_RDONLY | O_SEARCH);
+    if (fd == -1)
         return NULL;
 
-    if ((dirp = malloc(sizeof(DIR))) == NULL) {
+    dirp = malloc(sizeof(DIR));
+    if (!dirp) {
         close(fd);
         return NULL;
     }

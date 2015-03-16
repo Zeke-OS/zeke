@@ -39,6 +39,7 @@
 int lstat(const char * restrict path, struct stat * restrict buf)
 {
     struct _fs_stat_args args = {
+        .fd = 0, /* Not used */
         .path = path,
         .path_len = strlen(path) + 1,
         .buf = buf,

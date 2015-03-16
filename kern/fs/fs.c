@@ -408,7 +408,9 @@ int fs_namei_proc(vnode_t ** result, int fd, const char * path, int atflags)
             return 0;
         }
     } else if (atflags & AT_FDARG) { /* AT_FDARG */
-        file_t * file = fs_fildes_ref(curproc->files, fd, 1);
+        file_t * file;
+
+        file = fs_fildes_ref(curproc->files, fd, 1);
         if (!file)
             return -EBADF;
         start = file->vnode;

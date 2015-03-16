@@ -32,6 +32,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 #include <unistd.h>
 #include <time.h>
 #include <fcntl.h>
@@ -47,6 +48,19 @@ static void cd(char ** args)
         chdir(arg);
 }
 TISH_CMD(cd, "cd");
+
+char cwd_buf[PATH_MAX];
+static void pwd(char ** args)
+{
+    char * cwd;
+
+    cwd = getcwd(&cwd_buf, sizeof(cwd_buf));
+    if (!cwd)
+        perror("Failed to get cwd");
+    else
+        printf("%s\n", cwd);
+}
+TISH_CMD(pwd, "pwd");
 
 static void touch(char ** args)
 {
