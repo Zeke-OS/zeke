@@ -104,7 +104,10 @@ char * getcwd(char * pathname, size_t size)
                 goto fail;
             }
             strcpy(dptr, dir->d_name);
-            lstat(curdir, &dd);
+            if (lstat(curdir, &dd) < 0) {
+                errno = EACCES;
+                goto fail;
+            }
         } while (dd.st_ino != cino || dd.st_dev != cdev);
         closedir(dirp);
         pnptr = prepend("/", prepend(dir->d_name, pnptr, &pathsize, size),
