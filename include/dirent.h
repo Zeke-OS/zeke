@@ -103,22 +103,27 @@ DIR * fdopendir(int);
 */
 DIR * opendir(const char * name);
 
-struct dirent * readdir(DIR *);
+struct dirent * readdir(DIR * dirp);
 /*
 int readdir_r(DIR * restrict, struct dirent * restrict,
         struct dirent ** restrict);
-void rewinddir(DIR *);
+*/
+void rewinddir(DIR * dirp);
+/*
 int scandir(const char *, struct dirent ***,
         int (*)(const struct dirent *),
         int (*)(const struct dirent **,
         const struct dirent **));
-void seekdir(DIR *, long int);
-long int telldir(DIR *);*/
+*/
+void seekdir(DIR * dirp, off_t loc);
+off_t telldir(DIR * dirp);
 
 __END_DECLS
-#else /* !KERNEL_INTERNAL */
+#endif /* !KERNEL_INTERNAL */
+
+#if (KERNEL_INTERNAL || _DIRENT_INTERNAL_)
 #define DIRENT_SEEK_START 0x00000000FFFFFFFF
-#endif /* KERNEL_INTERNAL */
+#endif
 
 #endif /* DIRENT_H */
 
