@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   File status functions.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,8 +39,8 @@ int fstat(int fildes, struct stat * buf)
 {
     struct _fs_stat_args args = {
         .fd = fildes,
-        .path = "",
-        .path_len = 1,
+        .path = "", /* Effectively not used but must be set */
+        .path_len = 1, /* Must be set to the size of string pointed by .path */
         .buf = buf,
         .flags = AT_FDARG | O_EXEC
     };
