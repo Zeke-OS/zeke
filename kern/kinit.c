@@ -209,10 +209,9 @@ static void mount_rootfs(void)
     mtx_init(&tmp->vn_lock, MTX_TYPE_SPIN);
     vrefset(kernel_proc->croot, 2);
 
-    /* TODO Should use sysctl to get rootfs path and type */
-    ret = fs_mount(kernel_proc->croot, configROOTFS_PATH, configROOTFS_NAME, 0,
+    ret = fs_mount(kernel_proc->croot, "", "ramfs", 0,
                    "", 1);
-    if(ret) {
+    if (ret) {
         KERROR(KERROR_ERR, "%s : %i\n", failed, ret);
         goto out;
     }

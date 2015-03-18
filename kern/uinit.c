@@ -146,8 +146,9 @@ void * uinit(void * arg)
         while (1);
     }
 
+     /* TODO Should use sysctl to get rootfs path and type */
      _mkdir("/mnt", S_IRWXU | S_IRGRP | S_IXGRP);
-     err = _mount("/dev/emmc0", "/mnt", "fatfs");
+     err = _mount(configROOTFS_PATH, "/mnt", configROOTFS_NAME);
      if (err) {
         printfail("can't mount sd card");
         while (1);
