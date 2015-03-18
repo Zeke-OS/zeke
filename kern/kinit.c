@@ -88,6 +88,25 @@ void exec_fini_array(void)
     exec_array(__fini_array_start, n);
 }
 
+static pthread_t create_uinit_main(void * stack_addr)
+{
+    struct _sched_pthread_create_args init_ds = {
+        .tpriority  = configUSRINIT_PRI,
+        .stack_addr = stack_addr,
+        .stack_size = configUSRINIT_SSIZE,
+        .flags      = 0,
+        .start      = uinit, /* We have to first get into user space to use exec
+                              * and mount the rootfs.
+                              */
+        .arg1       = 0,
+        .del_thread = 0xBADBAD /* TODO  Should be libc pthread_exit but we don't
+                                *       yet know where it will be.
+                                */
+    };
+
+    return thread_create(&init_ds, 0);
+}
+
 /**
  * Create init process.
  */
@@ -114,27 +133,8 @@ int kinit(void)
     init_vmstack->b_mmu.control = MMU_CTRL_XN;
 
     /* Create a thread for init */
-    pthread_attr_t init_attr = {
-        .tpriority  = configUSRINIT_PRI,
-        .stackAddr  = (void *)(init_vmstack->b_mmu.paddr),
-        .stackSize  = configUSRINIT_SSIZE,
-        .flags = 0
-    };
-    struct _sched_pthread_create_args init_ds = {
-        .thread     = 0, /* return value */
-        .start      = uinit, /* We have to first get into user space to use exec
-                              * and mount the rootfs.
-                              */
-        .def        = &init_attr,
-        .arg1       = 0,
-        .del_thread = 0xBADBAD /* TODO  Should be libc pthread_exit but we don't
-                                *       yet know where it will be.
-                                */
-    };
-
-    /* thread id of init main() */
-    const pthread_t tid = thread_create(&init_ds, 0);
-    if (tid <= 0) {
+    pthread_t tid = create_uinit_main((void *)(init_vmstack->b_mmu.paddr));
+    if (tid < 0) {
         ksprintf(buf, sizeof(buf), "Can't create a thread for init. %i", tid);
         panic(buf);
     }

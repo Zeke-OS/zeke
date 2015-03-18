@@ -119,21 +119,17 @@ int sched_init(void)
     cpusched.q_fifo_exec = dllist_create(struct thread_info,
                                          sched.fifo_exec_entry);
 
-    pthread_t tid;
-    pthread_attr_t attr = {
-        .tpriority  = NICE_IDLE,
-        .stackAddr  = sched_idle_stack,
-        .stackSize  = sizeof(sched_idle_stack),
-        .flags      = 0
-    };
     /* Create the idle task as task 0 */
+    pthread_t tid;
     struct _sched_pthread_create_args tdef_idle = {
-        .thread = &tid,
-        .start  = idle_thread,
-        .def    = &attr,
-        .arg1   = NULL
+        .tpriority  = NICE_IDLE,
+        .stack_addr = sched_idle_stack,
+        .stack_size = sizeof(sched_idle_stack),
+        .flags      = 0,
+        .start      = idle_thread,
+        .arg1       = NULL
     };
-    thread_create(&tdef_idle, 1);
+    tid = thread_create(&tdef_idle, 1);
     if (tid != 0)
         panic("TID for idle thread must be 0");
 

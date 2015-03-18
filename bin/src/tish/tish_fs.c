@@ -54,7 +54,7 @@ static void pwd(char ** args)
 {
     char * cwd;
 
-    cwd = getcwd(&cwd_buf, sizeof(cwd_buf));
+    cwd = getcwd(cwd_buf, sizeof(cwd_buf));
     if (!cwd)
         perror("Failed to get cwd");
     else

@@ -33,17 +33,17 @@
 #include <errno.h>
 #include <pthread.h>
 
-pthread_attr_getstack(const pthread_attr_t * __restrict attr,
-                      void ** __restrict stackaddr,
-                      size_t * __restrict stacksize)
+int pthread_attr_getstack(const pthread_attr_t * __restrict attr,
+                          void ** __restrict stackaddr,
+                          size_t * __restrict stacksize)
 {
     if (!attr) {
         errno = EINVAL;
         return EINVAL;
     }
 
-    *stackaddr = attr->stackAddr;
-    *stacksize = attr->stackSize;
+    *stackaddr = attr->stack_addr;
+    *stacksize = attr->stack_size;
 
     return 0;
 }

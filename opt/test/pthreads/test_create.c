@@ -27,7 +27,7 @@ static void * thread(void * arg)
 static char * test_create()
 {
     pthread_attr_t attr;
-    pthread_t tid, ret;
+    pthread_t tid;
 
     pthread_attr_init(&attr);
     pthread_attr_setstack(&attr, stack, sizeof(stack));

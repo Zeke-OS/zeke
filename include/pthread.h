@@ -183,13 +183,15 @@ typedef struct pthread_once pthread_once_t;
  * Argument struct for SYSCALL_SCHED_THREAD_CREATE
  */
 struct _sched_pthread_create_args {
-    pthread_t * thread;         /*!< Returned thread id. */
-    start_routine start;        /*!< Thread start routine. */
-    const pthread_attr_t * def; /*!< Thread def attributes. */
-    uintptr_t arg1;
-    uintptr_t arg2;
-    uintptr_t arg3;
-    uintptr_t arg4;
+    int             tpriority;  /*!< initial thread priority */
+    void          * stack_addr; /*!< Stack address */
+    size_t          stack_size; /*!< Size of stack reserved for the thread. */
+    unsigned        flags;      /*!< Thread creation flags */
+    start_routine   start;      /*!< Thread start routine. */
+    uintptr_t       arg1;
+    uintptr_t       arg2;
+    uintptr_t       arg3;
+    uintptr_t       arg4;
     void (*del_thread)(void *); /*!< Thread exit function. */
 };
 

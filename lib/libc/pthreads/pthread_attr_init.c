@@ -35,8 +35,8 @@
 int pthread_attr_init(pthread_attr_t * attr)
 {
     attr->tpriority = 0;
-    attr->stackAddr = NULL;
-    attr->stackSize = 0;
+    attr->stack_addr = NULL;
+    attr->stack_size = 0;
     attr->flags = PTHREAD_CREATE_JOINABLE;
 
     return 0;

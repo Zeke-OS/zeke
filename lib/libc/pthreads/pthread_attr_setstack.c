@@ -41,8 +41,8 @@ int pthread_attr_setstack(pthread_attr_t * attr, void * stackaddr,
         return EINVAL;
     }
 
-    attr->stackAddr = stackaddr;
-    attr->stackSize = stacksize;
+    attr->stack_addr = stackaddr;
+    attr->stack_size = stacksize;
 
     return 0;
 }

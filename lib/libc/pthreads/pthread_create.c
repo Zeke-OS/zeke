@@ -33,25 +33,28 @@
  *******************************************************************************
 */
 
+#include <errno.h>
 #include <syscall.h>
 #include <pthread.h>
 
 int pthread_create(pthread_t * thread, const pthread_attr_t * attr,
-                void * (*start_routine)(void *), void * arg)
+                   void * (*start_routine)(void *), void * arg)
 {
     struct _sched_pthread_create_args args = {
-        .thread     = thread,
+        .tpriority  = attr->tpriority,
+        .stack_addr = attr->stack_addr,
+        .stack_size = attr->stack_size,
+        .flags      = attr->flags,
         .start      = start_routine,
-        .def        = attr,
         .arg1       = (uintptr_t)arg,
         .del_thread = pthread_exit
     };
-    int result;
+    pthread_t tid;
 
-    result = (int)syscall(SYSCALL_THREAD_CREATE, &args);
-
-    /* Request immediate context switch */
+    tid = (pthread_t)syscall(SYSCALL_THREAD_CREATE, &args);
     req_context_switch();
 
-    return result;
+    if (thread)
+        *thread = tid;
+    return (tid >= 0) ? 0 : errno;
 }

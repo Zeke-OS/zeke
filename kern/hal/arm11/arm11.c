@@ -46,8 +46,8 @@ void init_stack_frame(struct _sched_pthread_create_args * thread_def,
         sw_stack_frame_t * sframe, int priv)
 {
     /* Note that scheduler must have the same mapping. */
-    uint32_t stack_start = ((uint32_t)(thread_def->def->stackAddr)
-            + thread_def->def->stackSize
+    uint32_t stack_start = ((uint32_t)(thread_def->stack_addr)
+            + thread_def->stack_size
             - sizeof(errno_t));
 
     sframe->r0  = (uint32_t)(thread_def->arg1);

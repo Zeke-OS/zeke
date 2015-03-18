@@ -34,7 +34,7 @@
 
 int pthread_attr_setstackaddr(pthread_attr_t * attr, void * stackaddr)
 {
-    attr->stackAddr = stackaddr;
+    attr->stack_addr = stackaddr;
 
     return 0;
 }

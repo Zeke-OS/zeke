@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Various debug tools for tish/Zeke.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -106,6 +106,7 @@ TISH_CMD(debug, "debug");
 
 static void create_debug_thread(void)
 {
+    pthread_attr_t attr;
     static pthread_t test_tid;
     char * stack;
     const size_t stack_size = 4096;
@@ -118,11 +119,8 @@ static void create_debug_thread(void)
     }
     printf("New stack @ %p\n", stack);
 
-    pthread_attr_t attr = {
-        .tpriority  = 0,
-        .stackAddr  = stack,
-        .stackSize  = stack_size
-    };
+    pthread_attr_init(&attr);
+    pthread_attr_setstack(&attr, stack, stack_size);
 
     errno = 0;
     if (pthread_create(&test_tid, &attr, test_thread, 0)) {

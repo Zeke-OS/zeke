@@ -72,27 +72,20 @@ static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp)
 {
     struct buf * stack_region = (*curproc->mm.regions)[MM_STACK_REGION];
     struct buf * code_region = (*curproc->mm.regions)[MM_CODE_REGION];
-    pthread_attr_t pattr = {
-        .tpriority  = configUSRINIT_PRI,
-        .stackAddr  = (void *)(stack_region->b_mmu.vaddr),
-        .stackSize  = MMU_SIZEOF_REGION(&stack_region->b_mmu),
-        .flags = 0
-    };
     struct _sched_pthread_create_args args = {
-        .thread     = 0, /* return value */
+        .tpriority  = configUSRINIT_PRI,
+        .stack_addr = (void *)(stack_region->b_mmu.vaddr),
+        .stack_size = MMU_SIZEOF_REGION(&stack_region->b_mmu),
+        .flags      = 0,
         .start      = (void *(*)(void *))(code_region->b_mmu.vaddr),
-        .def        = &pattr,
         .arg1       = uargc,
         .arg2       = uargv,
         .arg3       = uenvp,
         .arg4       = 0, /* TODO */
         .del_thread = NULL /* Not needed for main(). */
     };
-    pthread_t tid;
 
-    tid = thread_create(&args, 0);
-
-    return tid;
+    return thread_create(&args, 0);
 }
 
 int exec_file(int fd, char name[PROC_NAME_LEN], struct buf * env_bp,

@@ -71,20 +71,15 @@ int shmem_init(void)
     if (!bp_stack)
         panic("Can't allocate a stack for shmem sync thread.");
 
-    pthread_t tid;
-    pthread_attr_t attr = {
-        .tpriority  = NICE_DEF,
-        .stackAddr  = (void *)bp_stack->b_data,
-        .stackSize  = bp_stack->b_bcount,
-        .flags      = 0
-    };
     struct _sched_pthread_create_args tdef_shmem = {
-        .thread = &tid,
-        .start  = shmem_sync_thread,
-        .def    = &attr,
-        .arg1   = 0
+        .tpriority  = NICE_DEF,
+        .stack_addr = (void *)bp_stack->b_data,
+        .stack_size = bp_stack->b_bcount,
+        .flags      = 0,
+        .start      = shmem_sync_thread,
+        .arg1       = 0,
     };
-    thread_create(&tdef_shmem, 1);
+    const pthread_t tid = thread_create(&tdef_shmem, 1);
     if (tid < 0)
         panic("Failed to create a thread for shmem sync");
 

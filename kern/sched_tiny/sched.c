@@ -107,22 +107,17 @@ int sched_init(void)
     SUBSYS_DEP(vralloc_init);
     SUBSYS_INIT("Init scheduler: tiny");
 
-    pthread_t tid;
-    pthread_attr_t attr = {
-        .tpriority  = NICE_IDLE,
-        .stackAddr  = sched_idle_stack,
-        .stackSize  = sizeof(sched_idle_stack),
-        .flags      = 0
-    };
-    /* Create the idle task as task 0 */
     struct _sched_pthread_create_args tdef_idle = {
-        .thread   = &tid,
-        .start    = idle_thread,
-        .def      = &attr,
-        .arg1     = 0,
+        .tpriority  = NICE_IDLE,
+        .stack_addr = sched_idle_stack,
+        .stack_size = sizeof(sched_idle_stack),
+        .flags      = 0,
+        .start      = idle_thread,
+        .arg1       = 0,
         .del_thread = NULL,
     };
 
+    /* Create the idle task as task 0 */
     thread_init(&task_table[0], 0, &tdef_idle, NULL, 1);
     current_thread = 0; /* To initialize it later on sched_handler. */
 

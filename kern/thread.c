@@ -162,30 +162,25 @@ void thread_init(struct thread_info * tp, pthread_t thread_id,
                  int priv)
 {
     /* This function should not be called for an already initialized thread. */
-    if (tp->flags & SCHED_IN_USE_FLAG)
-        panic("Can't init thread that is already in use.\n");
+    KASSERT(!(tp->flags & SCHED_IN_USE_FLAG),
+            "Can't init thread that is already in use.");
 
 #ifdef configSCHED_TINY
     memset(tp, 0, sizeof(struct thread_info));
 #endif
 
-    /* Return thread id */
-    if (thread_def->thread)
-        *(thread_def->thread) = thread_id;
-
     /* Init core specific stack frame for user space */
-    init_stack_frame(thread_def, &(tp->sframe[SCHED_SFRAME_SYS]),
-            priv);
+    init_stack_frame(thread_def, &(tp->sframe[SCHED_SFRAME_SYS]), priv);
 
     /*
-     * Mark this thread index as used.
+     * Mark this thread as used.
      * EXEC flag is set later in sched_thread_set_exec()
      */
-    tp->flags   = (uint32_t)SCHED_IN_USE_FLAG;
+    tp->flags   = SCHED_IN_USE_FLAG;
     tp->id      = thread_id;
-    tp->niceval = thread_def->def->tpriority;
+    tp->niceval = thread_def->tpriority;
 
-    if (thread_def->def->flags & PTHREAD_CREATE_DETACHED) {
+    if (thread_def->flags & PTHREAD_CREATE_DETACHED) {
         tp->flags |= SCHED_DETACH_FLAG;
     }
 
@@ -207,8 +202,8 @@ void thread_init(struct thread_info * tp, pthread_t thread_id,
     /* So errno is at the last address of stack area.
      * Note that this should also agree with core specific
      * init_stack_frame() function. */
-    tp->errno_uaddr = (void *)((uintptr_t)(thread_def->def->stackAddr)
-            + thread_def->def->stackSize
+    tp->errno_uaddr = (void *)((uintptr_t)(thread_def->stack_addr)
+            + thread_def->stack_size
             - sizeof(errno_t));
 
     /* Create kstack */
@@ -558,39 +553,15 @@ DATA_SET(thread_dtors, dummycd);
 static int sys_thread_create(void * user_args)
 {
     struct _sched_pthread_create_args args;
-    pthread_attr_t thdef;
-    pthread_t thread_id;
-    pthread_t * usr_thread_id;
     int err;
 
-    if (!useracc(user_args, sizeof(args), VM_PROT_WRITE)) {
-        /* No permission to read/write */
-        set_errno(EFAULT);
-        return -1;
-    }
-
-    copyin(user_args, &args, sizeof(args));
-    err = copyin(args.def, (void *)(&thdef), sizeof(thdef));
+    err = copyin(user_args, &args, sizeof(args));
     if (err) {
         set_errno(EFAULT);
         return -1;
     }
-    args.def = &thdef;
 
-    usr_thread_id = args.thread;
-    if (usr_thread_id) {
-        if (!useracc(usr_thread_id, sizeof(pthread_t), VM_PROT_WRITE)) {
-            set_errno(EFAULT);
-            return -1;
-        }
-    }
-    args.thread = &thread_id;
-
-    thread_create(&args, 0);
-
-    if (usr_thread_id)
-        copyout(&thread_id, usr_thread_id, sizeof(thread_id));
-    return 0;
+    return (int)thread_create(&args, 0);
 }
 
 static int sys_thread_terminate(void * user_args)
