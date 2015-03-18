@@ -731,25 +731,30 @@ int useracc_proc(const void * addr, size_t len, struct proc_info * proc, int rw)
 
 static int test_ap_user(uint32_t rw, uint32_t mmu_ap, uint32_t mmu_control)
 {
+    int retval = 0;
+
     if (rw & VM_PROT_EXECUTE) {
-        if (mmu_control & MMU_CTRL_XN)
+        if (mmu_control & MMU_CTRL_XN) {
             return 0; /* XN bit set. */
+        } else {
+            retval = (1 == 1);
+        }
     }
 
     if (rw & VM_PROT_WRITE) { /* Test for xxRW */
         if (mmu_ap & MMU_AP_RWRW)
-            return 1;
+            return (1 == 1);
         else
             return 0;
     } else if (rw & VM_PROT_READ) { /* Test for xxRO */
         if ((mmu_ap & MMU_AP_RWRO) || (mmu_ap & MMU_AP_RWRW) ||
             (mmu_ap & MMU_AP_RORO))
-            return 1;
+            return (1 == 1);
         else
             return 0;
     }
 
-    return 0;
+    return retval;
 }
 
 void vm_get_uapstring(char str[5], struct buf * bp)
