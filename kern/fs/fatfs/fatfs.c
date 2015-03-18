@@ -139,12 +139,18 @@ static int fatfs_mount(const char * source, uint32_t mode,
     struct fatfs_sb * fatfs_sb = NULL;
     struct fs_superblock * sbp;
     vnode_t * vndev;
+    char pdrv;
+    char drive[5];
     int err, retval = 0;
 
     /* Get device vnode */
     err = lookup_vnode(&vndev, curproc->croot, source, 0);
-    if (err)
+    if (err) {
+#ifdef configFATFS_DEBUG
+        KERROR(KERROR_DEBUG, "fatfs source not found\n");
+#endif
         return err;
+    }
     if (!S_ISBLK(vndev->vn_mode))
         return -ENOTBLK;
 
@@ -161,11 +167,16 @@ static int fatfs_mount(const char * source, uint32_t mode,
     fatfs_sb_arr[DEV_MINOR(sbp->vdev_id)] = fatfs_sb;
 
     /* Mount */
-    char pdrv = (char)DEV_MINOR(sbp->vdev_id);
-    char drive[5];
+    pdrv = (char)DEV_MINOR(sbp->vdev_id);
     ksprintf(drive, sizeof(drive), "%u:", pdrv);
+#ifdef configFATFS_DEBUG
+    KERROR(KERROR_DEBUG, "Mount drive letter: \"%s\"\n", drive);
+#endif
     err = f_mount(&fatfs_sb->ff_fs, drive, 1);
     if (err) {
+#ifdef configFATFS_DEBUG
+        KERROR(KERROR_DEBUG, "Cant init a work area for FAT\n");
+#endif
         retval = fresult2errno(err);
         goto fail;
     }

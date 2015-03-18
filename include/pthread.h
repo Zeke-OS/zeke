@@ -196,12 +196,16 @@ struct _sched_pthread_create_args {
 __BEGIN_DECLS
 /*
 int     pthread_atfork(void (*)(void), void (*)(void), void (*)(void));
+*/
 int     pthread_attr_destroy(pthread_attr_t *);
-int     pthread_attr_getstack(const pthread_attr_t * __restrict,
-            void ** __restrict, size_t * __restrict);
+int     pthread_attr_getstack(const pthread_attr_t * __restrict attr,
+            void ** __restrict stackaddr, size_t * __restrict stacksize);
 int     pthread_attr_getstacksize(const pthread_attr_t *, size_t *);
+/*
 int     pthread_attr_getguardsize(const pthread_attr_t *, size_t *);
+*/
 int     pthread_attr_getstackaddr(const pthread_attr_t *, void **);
+/*
 int     pthread_attr_getdetachstate(const pthread_attr_t *, int *);
 */
 int     pthread_attr_init(pthread_attr_t *);

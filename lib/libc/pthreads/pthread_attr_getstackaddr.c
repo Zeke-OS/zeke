@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    pthread_attr_setstack.c
+ * @file    pthread_attr_getstack.c
  * @author  Olli Vanhoja
  * @brief   Zero Kernel user space code
  * @section LICENSE
@@ -33,16 +33,14 @@
 #include <errno.h>
 #include <pthread.h>
 
-int pthread_attr_setstack(pthread_attr_t * attr, void * stackaddr,
-                          size_t stacksize)
+int pthread_attr_getstackaddr(const pthread_attr_t * attr, void ** stackaddr)
 {
     if (!attr) {
         errno = EINVAL;
         return EINVAL;
     }
 
-    attr->stackAddr = stackaddr;
-    attr->stackSize = stacksize;
+    *stackaddr = attr->stackAddr;
 
     return 0;
 }

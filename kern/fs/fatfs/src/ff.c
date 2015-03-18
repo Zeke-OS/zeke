@@ -2203,19 +2203,21 @@ FRESULT validate (  /* FR_OK(0): The object is valid, !=0: Invalid */
 /*-----------------------------------------------------------------------*/
 
 FRESULT f_mount (
-    FATFS* fs,          /* Pointer to the file system object (NULL:unmount)*/
-    const TCHAR* path,  /* Logical drive number to be mounted/unmounted */
+    FATFS * fs,         /* Pointer to the file system object (NULL:unmount)*/
+    const TCHAR * path, /* Logical drive number to be mounted/unmounted */
     BYTE opt            /* 0:Do not mount (delayed mount), 1:Mount immediately */
 )
 {
-    FATFS *cfs;
+    FATFS * cfs;
     int vol;
     FRESULT res;
     const TCHAR *rp = path;
 
 
     vol = get_ldnumber(&rp);
-    if (vol < 0) return FR_INVALID_DRIVE;
+    if (vol < 0)
+        return FR_INVALID_DRIVE;
+
     cfs = FatFs[vol];                   /* Pointer to fs object */
 
     if (cfs) {
@@ -2236,7 +2238,8 @@ FRESULT f_mount (
     }
     FatFs[vol] = fs;                    /* Register new fs object */
 
-    if (!fs || opt != 1) return FR_OK;  /* Do not mount now, it will be mounted later */
+    if (!fs || opt != 1)
+        return FR_OK; /* Do not mount now, it will be mounted later */
 
     res = find_volume(&fs, &path, 0);   /* Force mounted the volume */
     LEAVE_FF(fs, res);
