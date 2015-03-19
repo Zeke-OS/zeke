@@ -324,7 +324,7 @@ void sched_sleep_current_thread(int permanent)
     heap_inc_key(&priority_queue, heap_find(&priority_queue,
                 current_thread->id));
 
-    /* We don't want to get stuck here */
+    /* We don't want to get stuck here, so no istate restore here. */
     enable_interrupt();
 
     while (current_thread->flags & SCHED_WAIT_FLAG || permanent) {
@@ -337,8 +337,16 @@ void sched_current_thread_yield(enum sched_eyield_strategy strategy)
     if (!current_thread || !(*priority_queue.a))
         return;
 
-    if ((*priority_queue.a)->id == current_thread->id)
+    if ((*priority_queue.a)->id == current_thread->id) {
+        istate_t s;
+
+        s = get_interrupt_state();
+        disable_interrupt(); /* TODO Not MP safe! */
+
         heap_reschedule_root(&priority_queue, NICE_YIELD);
+
+        set_interrupt_state(s);
+    }
 
     if (strategy == SCHED_YIELD_IMMEDIATE)
         idle_sleep();

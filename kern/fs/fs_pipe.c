@@ -215,14 +215,13 @@ int fs_pipe_destroy(vnode_t * vnode)
 
 ssize_t fs_pipe_write(file_t * file, const void * buf, size_t count)
 {
-    size_t i;
     struct stream_pipe * pipe = (struct stream_pipe *)file->stream;
 
     if (!(file->oflags & O_WRONLY))
         return -EBADF;
 
-    for (i = 0; i < count;) {
-        if (queue_push(&pipe->q, &buf[i]))
+    for (size_t i = 0; i < count;) {
+        if (queue_push(&pipe->q, buf + i))
             i++;
         sched_current_thread_yield(PIPE_YIELD_STRATEGY);
     }
@@ -232,14 +231,13 @@ ssize_t fs_pipe_write(file_t * file, const void * buf, size_t count)
 
 ssize_t fs_pipe_read(file_t * file, void * buf, size_t count)
 {
-    size_t i;
     struct stream_pipe * pipe = (struct stream_pipe *)file->stream;
 
     if (!(file->oflags & O_RDONLY))
         return -EBADF;
 
-    for (i = 0; i < count;) {
-        if (queue_pop(&pipe->q, &buf[i]))
+    for (size_t i = 0; i < count;) {
+        if (queue_pop(&pipe->q, buf + i))
             i++;
         sched_current_thread_yield(PIPE_YIELD_STRATEGY);
     }
