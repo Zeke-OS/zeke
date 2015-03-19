@@ -91,27 +91,4 @@ typedef int timer_t; /*!< Used for timer ID returned by timer_create(). */
  * -
  */
 
-/* TODO Below this is some legacy */
-
-/**
- * Timeout value
- */
-#define osWaitForever     0x0u       /*!< wait forever timeout value */
-
-/// Timer type value for the timer definition
-typedef enum  {
-  osTimerOnce             =     0,       ///< one-shot timer
-  osTimerPeriodic         =     1        ///< repeating timer
-} os_timer_type;
-
-/// Timer ID identifies the timer (pointer to a timer control block).
-typedef int osTimerId;
-
-/**
- * Semaphore ID identifies the semaphore (pointer to a semaphore control block).
- * @note All data related to the mutex is stored in user space structure and
- *       it is DANGEROUS to edit its contents in thread context.
- */
-typedef struct os_semaphore_cb osSemaphore;
-
 #endif /* TYPES_H */
