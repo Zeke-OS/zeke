@@ -95,8 +95,8 @@ typedef struct proc_info {
 #endif
 
     /* Accounting */
-    unsigned long timeout;          /*!< Absolute timeout of the process */
-    struct timespec * start_time;   /*!< For performance statistics */
+    unsigned long timeout;          /*!< Absolute timeout of the process. */
+    struct timespec * start_time;   /*!< For performance statistics. */
     struct tms tms;                 /*!< User, System and childred times. */
     struct rlimit rlim[_RLIMIT_ARR_COUNT]; /*!< Hard and soft limits. */
 

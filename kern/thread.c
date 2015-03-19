@@ -566,7 +566,7 @@ static int sys_thread_create(void * user_args)
         return -1;
     }
 
-    if (!useracc(args.start, sizeof(void *), VM_PROT_EXECUTE)) {
+    if (!useracc(args.start, sizeof(void *), VM_PROT_READ | VM_PROT_EXECUTE)) {
         set_errno(EINVAL);
         return -1;
     }
