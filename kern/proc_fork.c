@@ -166,7 +166,7 @@ pid_t proc_fork(pid_t pid)
 
     /* Clear some things required to be zeroed at this point */
     new_proc->state = PROC_STATE_INITIAL;
-    new_proc->files = 0;
+    new_proc->files = NULL;
     /* ..and then start to fix things. */
 
     /* Allocate a master page table for the new process. */

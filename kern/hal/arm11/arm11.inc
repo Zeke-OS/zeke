@@ -4,7 +4,7 @@
  * @author Olli Vanhoja
  * @brief ARM11 macros.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
                             Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -98,14 +98,14 @@
 .macro enter_kernel
     attach_kernel_mptable
     clrex
-    bl      thread_enter_kernel
+    bl      _thread_enter_kernel
 .endm
 
 /**
  * Exit from kernel mode (syscall)-
  */
 .macro exit_kernel
-    bl      thread_exit_kernel
+    bl      _thread_exit_kernel
     bl      mmu_attach_pagetable
     clrex
 .endm

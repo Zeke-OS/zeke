@@ -4,7 +4,7 @@
  * @author Olli Vanhoja
  * @brief Interrupt service routine handlers.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy
                             Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -83,7 +83,7 @@ interrupt_sys:
 
     /* Suspend process and attach kernel master page table */
     attach_kernel_mptable
-    bl      thread_suspend
+    bl      _thread_suspend
 
     /* Handler IRQ */
     bl      schedtimer_clear /* if kernel_tick */
@@ -109,7 +109,7 @@ interrupt_sys:
     mov     r5, r0          /* New PID is into r5 */
 
     /* Resume process and attach process page table */
-    bl      thread_resume
+    bl      _thread_resume
     bl      mmu_attach_pagetable
 
     /* Set process Context ID to the value of current PID */

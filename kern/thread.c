@@ -104,16 +104,18 @@ void sched_handler(void)
 
 /**
  * Enter kernel mode.
+ * Called by interrupt handler.
  */
-void thread_enter_kernel(void)
+void _thread_enter_kernel(void)
 {
     current_thread->curr_mpt = &mmu_pagetable_master;
 }
 
 /**
  * Exit from kernel mode.
+ * Called by interrupt handler.
  */
-mmu_pagetable_t * thread_exit_kernel(void)
+mmu_pagetable_t * _thread_exit_kernel(void)
 {
     KASSERT(current_thread->curr_mpt != NULL, "curr_mpt must be set");
 
@@ -123,15 +125,17 @@ mmu_pagetable_t * thread_exit_kernel(void)
 
 /**
  * Suspend thread, enter scheduler.
+ * Called by interrupt handler.
  */
-void thread_suspend(void)
+void _thread_suspend(void)
 {
 }
 
 /**
- * Resume threa from scheduler.
+ * Resume thread from scheduler.
+ * Called by interrupt handler
  */
-mmu_pagetable_t * thread_resume(void)
+mmu_pagetable_t * _thread_resume(void)
 {
     KASSERT(current_thread->curr_mpt != NULL, "curr_mpt must be set");
 
