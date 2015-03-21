@@ -52,6 +52,35 @@ typedef void (*thread_cdtor_t)(struct thread_info * td);
 void sched_handler(void);
 
 /**
+ * @addtogroup thread_flags
+ * Thread flags manipulation functions implemented by the scheduler.
+ * @{
+ */
+
+/**
+ * Set flags indicated by flags_mask.
+ */
+int thread_flags_set(struct thread_info * thread, uint32_t flags_mask);
+
+/**
+ * Clear flags indicated by flags_mask.
+ */
+int thread_flags_clear(struct thread_info * thread, uint32_t flags_mask);
+
+/**
+ * Get current thread flags.
+ */
+uint32_t thread_flags_get(struct thread_info * thread);
+
+int thread_flags_is_set(struct thread_info * thread, uint32_t flags_mask);
+
+int thread_flags_not_set(struct thread_info * thread, uint32_t flags_mask);
+
+/**
+ * @}
+ */
+
+/**
  * Create a new thread.
  * @param thread_def    Thread definitions.
  * @param priv          If set thread is created as a kernel mode thread aka

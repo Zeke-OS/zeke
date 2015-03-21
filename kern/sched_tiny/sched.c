@@ -159,7 +159,7 @@ static void idle_task(uintptr_t arg)
 
     /* Update nr_threads */
     for (int i = 0; i < configSCHED_MAX_THREADS; i++) {
-        if (task_table[i].flags & SCHED_IN_USE_FLAG) {
+        if (thread_flags_is_set(&task_table[i], SCHED_IN_USE_FLAG)) {
             tmp_nr_threads++;
         }
         nr_threads = tmp_nr_threads;
@@ -294,17 +294,18 @@ void sched_thread_set_exec(pthread_t thread_id)
   */
 static void _sched_thread_set_exec(pthread_t thread_id, int pri)
 {
+    struct thread_info * thread = &task_table[thread_id];
     istate_t s;
 
     /* Check that given thread is in use but not in execution */
-    if (SCHED_TEST_WAKEUP_OK(task_table[thread_id].flags)) {
+    if (SCHED_TEST_WAKEUP_OK(thread_flags_get(thread))) {
         s = get_interrupt_state();
-        disable_interrupt(); /* TODO Not MP safe! */
+        disable_interrupt();
 
-        task_table[thread_id].ts_counter = (-NICE_PENALTY + pri) >> 1;
-        task_table[thread_id].priority = pri;
-        task_table[thread_id].flags |= SCHED_EXEC_FLAG; /* Set EXEC flag */
-        (void)heap_insert(&priority_queue, &(task_table[thread_id]));
+        thread->ts_counter = (-NICE_PENALTY + pri) >> 1;
+        thread->priority = pri;
+        thread_flags_set(thread, SCHED_EXEC_FLAG);
+        (void)heap_insert(&priority_queue, thread);
 
         set_interrupt_state(s);
     }
@@ -312,22 +313,23 @@ static void _sched_thread_set_exec(pthread_t thread_id, int pri)
 
 void sched_sleep_current_thread(int permanent)
 {
-    disable_interrupt(); /* TODO Not MP safe! */
+    disable_interrupt();
 
-    current_thread->flags &= ~SCHED_EXEC_FLAG;
-    current_thread->flags |= SCHED_WAIT_FLAG;
+    thread_flags_clear(current_thread, SCHED_EXEC_FLAG);
+    thread_flags_set(current_thread, SCHED_WAIT_FLAG);
+
     if (permanent) {
         atomic_set(&current_thread->a_wait_count, -1);
     }
 
     current_thread->priority = NICE_ERR;
     heap_inc_key(&priority_queue, heap_find(&priority_queue,
-                current_thread->id));
+                 current_thread->id));
 
     /* We don't want to get stuck here, so no istate restore here. */
     enable_interrupt();
 
-    while (current_thread->flags & SCHED_WAIT_FLAG || permanent) {
+    while (thread_flags_is_set(current_thread, SCHED_WAIT_FLAG) || permanent) {
         idle_sleep();
     }
 }
@@ -341,7 +343,7 @@ void sched_current_thread_yield(enum sched_eyield_strategy strategy)
         istate_t s;
 
         s = get_interrupt_state();
-        disable_interrupt(); /* TODO Not MP safe! */
+        disable_interrupt();
 
         heap_reschedule_root(&priority_queue, NICE_YIELD);
 
@@ -357,55 +359,58 @@ void sched_current_thread_yield(enum sched_eyield_strategy strategy)
 
 void sched_thread_remove(pthread_t tt_id)
 {
-    if ((task_table[tt_id].flags & SCHED_IN_USE_FLAG) == 0) {
-        return; /* Already freed */
-    }
+    struct thread_info * thread = &task_table[tt_id];
 
-    task_table[tt_id].flags = 0; /* Clear all flags */
+    if (thread_flags_not_set(thread, SCHED_IN_USE_FLAG))
+        return; /* Already freed */
+
+    thread->flags = 0; /* Clear all flags */
 
     /* Increment the thread priority to the highest possible value so context
      * switch will garbage collect it from the priority queue on the next run.
      */
-    task_table[tt_id].priority = NICE_ERR;
+    thread->priority = NICE_ERR;
     {
+        istate_t s;
         int i;
+
+        s = get_interrupt_state();
+        disable_interrupt();
+
         i = heap_find(&priority_queue, tt_id);
         if (i != -1)
             heap_inc_key(&priority_queue, i);
+
+        set_interrupt_state(s);
     }
 
     /* Release thread id */
     queue_push(&next_thread_id_queue_cb, &tt_id);
-
-#if 0
-    set_interrupt_state(s);
-#endif
 }
 
 int sched_thread_detach(pthread_t thread_id)
 {
     struct thread_info * tp = &task_table[thread_id];
 
-    if ((tp->flags & SCHED_IN_USE_FLAG) == 0) {
+    if (thread_flags_not_set(tp, SCHED_IN_USE_FLAG)) {
         return -EINVAL;
     }
 
-    tp->flags |= SCHED_DETACH_FLAG;
-    if (SCHED_TEST_DETACHED_ZOMBIE(tp->flags)) {
+    thread_flags_set(tp, SCHED_DETACH_FLAG);
+    if (SCHED_TEST_DETACHED_ZOMBIE(thread_flags_get(tp))) {
         /* Workaround to remove the thread without locking the system now
          * because we don't want to disable interrupts here for too long time
          * and we have no other proctection in the scheduler right now. */
         istate_t s;
         int i;
 
-        /* TODO This part is not quite clever nor MP safe. */
         s = get_interrupt_state();
         disable_interrupt();
 
         i = heap_find(&priority_queue, thread_id);
-
         if (i < 0)
             (void)heap_insert(&priority_queue, tp);
+
         /* It will be now definitely gc'ed at some point. */
         set_interrupt_state(s);
     }

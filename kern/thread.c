@@ -166,7 +166,7 @@ void thread_init(struct thread_info * tp, pthread_t thread_id,
                  int priv)
 {
     /* This function should not be called for an already initialized thread. */
-    KASSERT(!(tp->flags & SCHED_IN_USE_FLAG),
+    KASSERT(!(thread_flags_is_set(tp, SCHED_IN_USE_FLAG)),
             "Can't init thread that is already in use.");
 
 #ifdef configSCHED_TINY
@@ -281,9 +281,9 @@ static void thread_set_inheritance(struct thread_info * new_child,
 void thread_set_current_insys(int s)
 {
     if (s)
-        current_thread->flags |= SCHED_INSYS_FLAG;
+        thread_flags_set(current_thread, SCHED_INSYS_FLAG);
     else
-        current_thread->flags &= ~SCHED_INSYS_FLAG;
+        thread_flags_clear(current_thread, SCHED_INSYS_FLAG);
 }
 
 pthread_t thread_fork(void)
@@ -350,7 +350,7 @@ void thread_release(struct thread_info * thread)
     }
 
     if (old_val == 1) {
-        thread->flags &= ~SCHED_WAIT_FLAG;
+        thread_flags_clear(thread, SCHED_WAIT_FLAG);
         sched_thread_set_exec(thread->id);
     }
 }
@@ -429,7 +429,7 @@ int thread_set_priority(pthread_t thread_id, int priority)
 {
     struct thread_info * tp = sched_get_thread_info(thread_id);
 
-    if (!tp || (tp->flags & SCHED_IN_USE_FLAG) == 0) {
+    if (!tp || thread_flags_not_set(tp, SCHED_IN_USE_FLAG)) {
         return -ESRCH;
     }
 
@@ -442,7 +442,7 @@ int thread_get_priority(pthread_t thread_id)
 {
     struct thread_info * tp = sched_get_thread_info(thread_id);
 
-    if (!tp || (tp->flags & SCHED_IN_USE_FLAG) == 0) {
+    if (!tp || thread_flags_not_set(tp, SCHED_IN_USE_FLAG)) {
         return NICE_ERR;
     }
 
@@ -451,17 +451,8 @@ int thread_get_priority(pthread_t thread_id)
 
 void thread_die(intptr_t retval)
 {
-    istate_t s;
-
-    /* TODO This part is not quite clever nor MP safe. */
-    s = get_interrupt_state();
-    disable_interrupt();
-
     current_thread->retval = retval;
-    current_thread->flags |= SCHED_ZOMBIE_FLAG;
-
-    set_interrupt_state(s);
-
+    thread_flags_set(current_thread, SCHED_ZOMBIE_FLAG);
     sched_sleep_current_thread(SCHED_PERMASLEEP);
 }
 
@@ -472,7 +463,7 @@ int thread_terminate(pthread_t thread_id)
     struct thread_info * child;
     struct thread_info * prev_child;
 
-    if (!thread || !SCHED_TEST_TERMINATE_OK(thread->flags)) {
+    if (!thread || !SCHED_TEST_TERMINATE_OK(thread_flags_get(thread))) {
         return -EPERM;
     }
 
@@ -490,14 +481,16 @@ int thread_terminate(pthread_t thread_id)
             }
 
             /* Fix child list */
-            if (child->flags &&
-                    (thread->inh.first_child->flags == 0)) {
+            if (thread_flags_is_set(child, SCHED_IN_USE_FLAG) &&
+                thread_flags_not_set(thread->inh.first_child,
+                                     SCHED_IN_USE_FLAG)) {
                 thread->inh.first_child = child;
                 prev_child = child;
-            } else if (child->flags && prev_child) {
+            } else if (thread_flags_is_set(child, SCHED_IN_USE_FLAG) &&
+                       prev_child) {
                 prev_child->inh.next_child = child;
                 prev_child = child;
-            } else if (child->flags) {
+            } else if (thread_flags_is_set(child, SCHED_IN_USE_FLAG)) {
                 prev_child = child;
             }
         } while ((child = child->inh.next_child) != NULL);
@@ -509,17 +502,17 @@ int thread_terminate(pthread_t thread_id)
      * it's not, then it will release some resources but left the thread
      * struct mostly intact.
      */
-    thread->flags |= SCHED_ZOMBIE_FLAG;
-    thread->flags &= ~SCHED_EXEC_FLAG;
+    thread_flags_set(thread, SCHED_ZOMBIE_FLAG);
+    thread_flags_clear(thread, SCHED_EXEC_FLAG);
 
     /* Remove thread completely if it is a detached zombie, its parent is a
      * detached zombie thread or the thread is parentles for any reason.
      * Otherwise we left the thread struct intact for now.
      */
-    if (SCHED_TEST_DETACHED_ZOMBIE(thread->flags) ||
-            (thread->inh.parent == 0)             ||
-            ((thread->inh.parent != 0)            &&
-            SCHED_TEST_DETACHED_ZOMBIE((thread->inh.parent)->flags))) {
+    if (SCHED_TEST_DETACHED_ZOMBIE(thread_flags_get(thread)) ||
+        (thread->inh.parent == NULL)    ||
+        ((thread->inh.parent != NULL)   &&
+         SCHED_TEST_DETACHED_ZOMBIE(thread_flags_get(thread->inh.parent)))) {
 
         /* Release wait timeout timer */
         if (thread->wait_tim >= 0) {
