@@ -461,7 +461,6 @@ int thread_terminate(pthread_t thread_id)
 {
     struct thread_info * thread = sched_get_thread_info(thread_id);
     struct thread_info * child;
-    struct thread_info * prev_child;
 
     if (!thread || !SCHED_TEST_TERMINATE_OK(thread_flags_get(thread))) {
         return -EPERM;
@@ -469,43 +468,36 @@ int thread_terminate(pthread_t thread_id)
 
     /* Remove all child threads from execution */
     child = thread->inh.first_child;
-    prev_child = NULL;
-    if (child != NULL) {
+    if (child) {
+        struct thread_info * next_child = NULL;
+
         do {
-            if (thread_terminate(child->id) != 0) {
+            next_child = child->inh.next_child;
+
+            if (thread_terminate(child->id)) {
                 /*
                  * Child is now orphan, it was probably a kworker that couldn't
                  * be killed.
                  */
                 child->inh.parent = NULL;
+                child->inh.next_child = NULL;
             }
+            thread->inh.first_child = next_child;
+            child = next_child;
 
-            /* Fix child list */
-            if (thread_flags_is_set(child, SCHED_IN_USE_FLAG) &&
-                thread_flags_not_set(thread->inh.first_child,
-                                     SCHED_IN_USE_FLAG)) {
-                thread->inh.first_child = child;
-                prev_child = child;
-            } else if (thread_flags_is_set(child, SCHED_IN_USE_FLAG) &&
-                       prev_child) {
-                prev_child->inh.next_child = child;
-                prev_child = child;
-            } else if (thread_flags_is_set(child, SCHED_IN_USE_FLAG)) {
-                prev_child = child;
-            }
-        } while ((child = child->inh.next_child) != NULL);
+        } while (child);
     }
 
     /*
-     * We set this thread as a zombie. If detach is also set then
-     * sched_thread_remove() will remove this thread immediately but usually
-     * it's not, then it will release some resources but left the thread
-     * struct mostly intact.
+     * Set this thread as a zombie. If detach is also set then next step
+     * after this will remove the thread immediately but otherwise we are
+     * expecting a second call to this function.
      */
     thread_flags_set(thread, SCHED_ZOMBIE_FLAG);
     thread_flags_clear(thread, SCHED_EXEC_FLAG);
 
-    /* Remove thread completely if it is a detached zombie, its parent is a
+    /*
+     * Remove thread completely if it is a detached zombie, its parent is a
      * detached zombie thread or the thread is parentles for any reason.
      * Otherwise we left the thread struct intact for now.
      */
