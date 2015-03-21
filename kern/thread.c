@@ -89,9 +89,6 @@ void sched_handler(void)
      */
     sched_schedule();
     if (current_thread != prev_thread) {
-#ifdef configSCHED_DEBUG
-        KERROR(KERROR_DEBUG, "%x\n", current_thread->kstack_region);
-#endif
         mmu_map_region(&(current_thread->kstack_region->b_mmu));
     }
 
@@ -203,17 +200,19 @@ void thread_init(struct thread_info * tp, pthread_t thread_id,
     /* Update parent and child pointers */
     thread_set_inheritance(tp, parent);
 
-    /* So errno is at the last address of stack area.
+    /*
+     * So errno is at the last address of stack area.
      * Note that this should also agree with core specific
-     * init_stack_frame() function. */
+     * init_stack_frame() function.
+     */
     tp->errno_uaddr = (void *)((uintptr_t)(thread_def->stack_addr)
             + thread_def->stack_size
             - sizeof(errno_t));
 
-    /* Create kstack */
+    /* Create kstack. */
     thread_init_kstack(tp);
 
-    /* Select master page table used on startup */
+    /* Select master page table used on startup. */
     if (!parent) {
         tp->curr_mpt = &mmu_pagetable_master;
     } else {
@@ -225,6 +224,8 @@ void thread_init(struct thread_info * tp, pthread_t thread_id,
 
         tp->curr_mpt = &proc->mm.mpt;
     }
+
+    tp->sched.policy = SCHED_OTHER;
 
     /* Call thread constructors */
     void ** thread_ctor_p;
@@ -291,6 +292,7 @@ pthread_t thread_fork(void)
     struct thread_info * const old_thread = current_thread;
     struct thread_info * new_thread;
     struct thread_info tmp;
+    sched_int_data_t tmp_data;
     pthread_t new_id;
     void ** fork_handler_p;
 
@@ -300,12 +302,16 @@ pthread_t thread_fork(void)
 
     /* Get next free thread_id */
     new_id = sched_new_tid();
-    if (new_id < 0) {
-        return -ENOMEM;
-    }
+    if (new_id < 0)
+        return new_id;
+
+    new_thread = sched_get_thread_info(new_id);
+    if (!new_thread)
+        panic("Failed to get newly created thread struct\n");
 
     /* New thread is kept in tmp until it's ready for execution. */
     memcpy(&tmp, old_thread, sizeof(struct thread_info));
+    memcpy(&tmp_data, &new_thread->sched, sizeof(sched_int_data_t));
     tmp.flags &= ~SCHED_EXEC_FLAG; /* Disable exec for now. */
     tmp.flags &= ~SCHED_INSYS_FLAG;
     tmp.id = new_id;
@@ -313,17 +319,14 @@ pthread_t thread_fork(void)
     thread_set_inheritance(&tmp, old_thread);
 
     memcpy(&tmp.sframe[SCHED_SFRAME_SYS], &old_thread->sframe[SCHED_SFRAME_SVC],
-            sizeof(sw_stack_frame_t));
+           sizeof(sw_stack_frame_t));
 
     SET_FOREACH(fork_handler_p, thread_fork_handlers) {
         sched_task_t task = *(thread_cdtor_t *)fork_handler_p;
         task(&tmp);
     }
 
-    new_thread = sched_get_thread_info(new_id);
-    if (!new_thread)
-        panic("Failed to get newly created thread struct\n");
-
+    memcpy(&tmp.sched, &tmp_data, sizeof(sched_int_data_t));
     memcpy(new_thread, &tmp, sizeof(struct thread_info));
     thread_init_kstack(new_thread);
 

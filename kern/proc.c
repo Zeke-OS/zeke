@@ -581,7 +581,6 @@ static int sys_proc_wait(void * user_args)
         proc_info_t * last_node;
         proc_info_t * tmp;
 
-
         p = proc_get_struct_l(args.pid);
         tmp = curproc->inh.first_child;
         if (!p || !tmp) {
@@ -628,10 +627,12 @@ static int sys_proc_wait(void * user_args)
 
     while (*state != PROC_STATE_ZOMBIE) {
 #if 0
-        /* This is what we'd like to do but it wont work if signal is sent
+        /*
+         * This is what we'd like to do but it wont work if signal is sent
          * between (*state != PROC_STATE_ZOMBIE) and
          * ksignal_sigwait(&retval, &set) the signal will be ignored and
          * we'll stay in thread_wait() forever.
+         */
         sigset_t set;
 
         sigemptyset(&set);
@@ -639,10 +640,6 @@ static int sys_proc_wait(void * user_args)
         ksignal_sigwait(&retval, &set);
         /* Thus we are doing that :( \/ */
 #endif
-        /*
-         * idle_sleep();
-         * yield seems to work better.
-         */
         sched_current_thread_yield(SCHED_YIELD_LAZY);
 
         /*

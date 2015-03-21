@@ -119,7 +119,7 @@ int sched_init(void)
 
     /* Create the idle task as task 0 */
     thread_init(&task_table[0], 0, &tdef_idle, NULL, 1);
-    current_thread = 0; /* To initialize it later on sched_handler. */
+    current_thread = NULL; /* To initialize it later on sched_handler. */
 
     /* Initialize locks */
     rwlock_init(&loadavg_lock);

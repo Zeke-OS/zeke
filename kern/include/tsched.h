@@ -137,10 +137,8 @@
 #define SCHED_SFRAME_ABO        2   /*!< Stack frame for aborts. */
 #define SCHED_SFRAME_ARR_SIZE   3
 
-#if configSCHED_CDS != 0
-RB_HEAD(sched_threads, thread_info);
-RB_HEAD(sched_ready, thread_info);
-RB_HEAD(sched_exec, thread_info);
+#if configSCHED_TINY
+#include <sched_tiny.h>
 #endif
 
 /**
@@ -170,15 +168,7 @@ struct thread_info {
     int sigwait_retval;             /*!< Return value for sigwait() */
 
     /* Scheduler specific data */
-#if configSCHED_CDS != 0
-    struct sched {
-        unsigned policy;                            /*!< Scheduling policy. */
-        RB_ENTRY(thread_info)   threads_entry;
-        RB_ENTRY(thread_info)   ready_entry;
-        RB_ENTRY(thread_info)   exec_entry;
-        llist_nodedsc_t         fifo_exec_entry;
-    } sched;
-#endif
+    sched_int_data_t sched;
 
     /**
      * Thread inheritance; Parent and child thread pointers.
@@ -220,15 +210,6 @@ enum sched_eyield_strategy {
 extern struct thread_info * current_thread;
 
 /* Public function prototypes *************************************************/
-
-#if configSCHED_CDS != 0
-int sched_tid_comp(struct thread_info * a, struct thread_info * b);
-int sched_nice_comp(struct thread_info * a, struct thread_info * b);
-int sched_ts_comp(struct thread_info * a, struct thread_info * b);
-RB_PROTOTYPE(sched_threads, thread_info, sched.threads, sched_tid_comp);
-RB_PROTOTYPE(sched_ready, thread_info, sched.ready, sched_nice_comp);
-RB_PROTOTYPE(sched_exec, thread_info, sched.exec, sched_ts_comp);
-#endif
 
 /**
  * Return load averages in integer format scaled to 100.

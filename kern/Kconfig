@@ -123,8 +123,6 @@ choice
     default configSCHED_TINY
 config configSCHED_TINY
     bool "sched_tiny"
-config configSCHED_CDS
-    bool "sched_cds"
 endchoice
 
 config configSCHED_HZ
@@ -159,19 +157,11 @@ config configSCHED_DEBUG
         Enable debugging invariants and messages in thread scheduling related
         functions.
 
-if configSCHED_TINY
 config configSCHED_MAX_THREADS
     int "Maximum number of threads"
     default 10
     ---help---
     sched_tiny supports only a fixed number of threads in execution.
-endif
-
-if configSCHED_CDS
-config configSCHED_CDS_EPOCHLEN
-    int "CDS epoch length"
-    default 100
-endif
 
 endmenu
 
