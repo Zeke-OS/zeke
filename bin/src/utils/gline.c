@@ -55,7 +55,7 @@ char * gline(char * str, int num)
         /* TODO Handle arrow keys and delete */
 
         /* Handle return */
-        if (ch == '\n' || ch == '\r' || i == num) {
+        if (ch == '\n' || ch == '\r' || i == num - 1) {
             str[i] = '\0';
             buf[0] = '\n';
             write(STDOUT_FILENO, buf, sizeof(buf));

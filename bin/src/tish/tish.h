@@ -51,6 +51,5 @@ struct tish_builtin {
     DATA_SET(tish_cmd, fun##_st)
 
 int tish(void);
-char * gline(char * str, int num);
 
 #endif /* TISH_H */

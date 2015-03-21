@@ -45,5 +45,6 @@ struct optarr {
 char * catopt(char * s0, char * s1);
 unsigned long opt2flags(struct optarr * optnames, size_t n_elem,
                         char ** options);
+char * gline(char * str, int num);
 
 #endif /* UTILS_H */

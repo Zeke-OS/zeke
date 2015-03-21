@@ -40,6 +40,7 @@
 #include <unistd.h>
 #include <sys/resource.h>
 #include <syscall.h>
+#include "../utils.h"
 #include "tish.h"
 
 SET_DECLARE(tish_cmd, struct tish_builtin);
