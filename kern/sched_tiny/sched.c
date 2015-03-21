@@ -228,8 +228,10 @@ void sched_schedule(void)
         current_thread = *priority_queue.a;
 
         if (!SCHED_TEST_CSW_OK(current_thread->flags)) {
-            /* Remove the top thread from the priority queue as it is
-             * either in sleep or deleted */
+            /*
+             * Remove the top thread from the priority queue as it is
+             * either in sleep or deleted
+             */
             (void)heap_del_max(&priority_queue);
 
             if (SCHED_TEST_DETACHED_ZOMBIE(current_thread->flags)) {
@@ -244,8 +246,10 @@ void sched_schedule(void)
                     /* and its priority is yet better than minimum */
                     && (current_thread->priority > NICE_MIN))
         {
-            /* Give a penalty: Set lower priority
-             * and perform reschedule operation on heap. */
+            /*
+             * Give a penalty: Set lower priority
+             * and perform reschedule operation on heap.
+             */
             heap_reschedule_root(&priority_queue, NICE_MIN);
 
             continue; /* Select next thread */
@@ -254,10 +258,12 @@ void sched_schedule(void)
         /* Thread is skipped if its EXEC or IN_USE flags are unset. */
     } while (!SCHED_TEST_CSW_OK(current_thread->flags));
 
-    /* ts_counter is used to determine how many time slices has been used by the
+    /*
+     * ts_counter is used to determine how many time slices has been used by the
      * process between idle/sleep states. We can assume that this measure is
      * quite accurate even it's not confirmed that one tick has been elapsed
-     * before this line. */
+     * before this line.
+     */
     current_thread->ts_counter--;
 }
 
@@ -390,14 +396,13 @@ void sched_thread_remove(pthread_t tt_id)
 
 int sched_thread_detach(pthread_t thread_id)
 {
-    struct thread_info * tp = &task_table[thread_id];
+    struct thread_info * thread = &task_table[thread_id];
 
-    if (thread_flags_not_set(tp, SCHED_IN_USE_FLAG)) {
+    if (thread_flags_not_set(thread, SCHED_IN_USE_FLAG))
         return -EINVAL;
-    }
 
-    thread_flags_set(tp, SCHED_DETACH_FLAG);
-    if (SCHED_TEST_DETACHED_ZOMBIE(thread_flags_get(tp))) {
+    thread_flags_set(thread, SCHED_DETACH_FLAG);
+    if (SCHED_TEST_DETACHED_ZOMBIE(thread_flags_get(thread))) {
         /* Workaround to remove the thread without locking the system now
          * because we don't want to disable interrupts here for too long time
          * and we have no other proctection in the scheduler right now. */
@@ -409,7 +414,7 @@ int sched_thread_detach(pthread_t thread_id)
 
         i = heap_find(&priority_queue, thread_id);
         if (i < 0)
-            (void)heap_insert(&priority_queue, tp);
+            (void)heap_insert(&priority_queue, thread);
 
         /* It will be now definitely gc'ed at some point. */
         set_interrupt_state(s);
