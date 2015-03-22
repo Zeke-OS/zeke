@@ -33,6 +33,7 @@ clean: $(CLEANDIRS)
 	$(RM) libc/manifest
 	$(RM) mman/manifest
 	$(RM) tty/manifest
+	$(RM) pthreads/manifest
 	$(RM) unistd/manifest
 
 .PHONY: $(DIRS) $(CLEANDIRS) clean
