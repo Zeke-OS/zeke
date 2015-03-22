@@ -133,11 +133,9 @@ typedef struct proc_info {
      */
     struct inh {
         struct proc_info * parent;      /*!< Parent thread. */
-        struct proc_info * first_child; /*!< Link to the first child of this
-                                         *   process. */
-        struct proc_info * next_child;  /*!< Next child of the common parent. */
-        mtx_t lock;                     /*!< Lock for all children inh structs
-                                         *   of this process. */
+        SLIST_HEAD(proc_child_list, proc_info) child_list_head;
+        SLIST_ENTRY(proc_info) child_list_entry;
+        mtx_t lock; /*!< Lock for children (child_list_entry) of this proc. */
     } inh;
 
     struct thread_info * main_thread; /*!< Main thread of this process. */

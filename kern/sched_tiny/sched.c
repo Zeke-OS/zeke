@@ -138,8 +138,10 @@ static void init_thread_id_queue(void)
     pthread_t i = 1;
     int q_ok;
 
-    next_thread_id_queue_cb = queue_create(next_thread_id_queue, sizeof(pthread_t),
-            sizeof(next_thread_id_queue));
+    next_thread_id_queue_cb =
+        queue_create(next_thread_id_queue,
+                     sizeof(pthread_t),
+                     sizeof(next_thread_id_queue));
 
     /* Fill the queue */
     do {
@@ -303,18 +305,18 @@ static void _sched_thread_set_exec(pthread_t thread_id, int pri)
     struct thread_info * thread = &task_table[thread_id];
     istate_t s;
 
-    /* Check that given thread is in use but not in execution */
-    if (SCHED_TEST_WAKEUP_OK(thread_flags_get(thread))) {
-        s = get_interrupt_state();
-        disable_interrupt();
+    if (!SCHED_TEST_WAKEUP_OK(thread_flags_get(thread)))
+        return;
 
-        thread->ts_counter = (-NICE_PENALTY + pri) >> 1;
-        thread->priority = pri;
-        thread_flags_set(thread, SCHED_EXEC_FLAG);
-        (void)heap_insert(&priority_queue, thread);
+    s = get_interrupt_state();
+    disable_interrupt();
 
-        set_interrupt_state(s);
-    }
+    thread->ts_counter = (-NICE_PENALTY + pri) >> 1;
+    thread->priority = pri;
+    thread_flags_set(thread, SCHED_EXEC_FLAG);
+    (void)heap_insert(&priority_queue, thread);
+
+    set_interrupt_state(s);
 }
 
 void sched_sleep_current_thread(int permanent)

@@ -106,8 +106,7 @@ static void heapify(heap_t * heap, int i)
 void heap_del_max(heap_t * heap)
 {
 #ifdef HEAP_BOUNDS_CHECK
-    if (heap->size <= 0)
-        panic("sched heap out of bounds");
+    KASSERT(heap->size > 0, "sched heap out of bounds");
 #endif
 
     heap->a[0] = heap->a[heap->size];
@@ -122,8 +121,7 @@ void heap_insert(heap_t * heap, struct thread_info * k)
     heap->size++;
 
 #ifdef HEAP_BOUNDS_CHECK
-    if (heap->size > configSCHED_MAX_THREADS)
-        panic("sched heap out of bounds");
+    KASSERT(heap->size <= configSCHED_MAX_THREADS, "sched heap out of bounds");
 #endif
 
     i = heap->size;

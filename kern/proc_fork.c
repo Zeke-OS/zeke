@@ -98,11 +98,11 @@ static int clone_oth_regions(proc_info_t * new_proc, proc_info_t * old_proc)
     /*
      * Copy other region pointers.
      * As an iteresting sidenote, what we are doing here and earlier when L1
-     * page table was cloned is that we are losing link between the region
-     * structs and the actual L1 page table of this process. However it
-     * doesn't matter at all because we are doing COW anyway so no information
-     * is ever completely lost but we have to just keep in mind that COW regions
-     * are bit incomplete and L1 is not completely reconstructable by using just
+     * page table was cloned is that we are losing a link between the region
+     * structs and the actual L1 page table of this process. However it doesn't
+     * matter much since we are doing COW anyway so no information is ever
+     * completely lost but we have to just keep in mind that COW regions are bit
+     * incomplete and L1 is not completely reconstructable by using just
      * buf struct.
      *
      * Many BSD variants have fully reconstructable L1 tables but we don't have
@@ -114,17 +114,19 @@ static int clone_oth_regions(proc_info_t * new_proc, proc_info_t * old_proc)
         if (!vm_reg_tmp || (vm_reg_tmp->b_flags & B_NOTSHARED))
             continue;
 
+        /* Take ref */
         if (vm_reg_tmp->vm_ops && vm_reg_tmp->vm_ops->rref)
             vm_reg_tmp->vm_ops->rref(vm_reg_tmp);
 
         (*new_proc->mm.regions)[i] = vm_reg_tmp;
 
-        /* Skip for regions in system page table */
+        /* Skip regions in system page table */
         if ((*new_proc->mm.regions)[i]->b_mmu.vaddr <= MMU_VADDR_KERNEL_END)
             continue;
 
         /* Set COW bit */
         if ((*new_proc->mm.regions)[i]->b_uflags & VM_PROT_WRITE) {
+            /* TODO Not very safe */
             (*new_proc->mm.regions)[i]->b_uflags |= VM_PROT_COW;
         }
 
@@ -157,7 +159,7 @@ pid_t proc_fork(pid_t pid)
     }
 
     new_proc = clone_proc_info(old_proc);
-    if (!new_proc) { /* Check that clone was ok */
+    if (!new_proc) {
         retval = -ENOMEM;
         goto out;
     }
@@ -481,38 +483,18 @@ static int clone_stack(proc_info_t * new_proc, proc_info_t * old_proc)
 
 static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc)
 {
-    proc_info_t * last_node;
-    proc_info_t * tmp;
-
 #ifdef configPROC_DEBUG
     KERROR(KERROR_DEBUG, "Updating inheriance attributes of new_proc\n");
 #endif
 
     mtx_init(&new_proc->inh.lock, PROC_INH_LOCK_TYPE);
-
-    /* Initial values */
     new_proc->inh.parent = old_proc;
-    new_proc->inh.first_child = NULL;
-    new_proc->inh.next_child = NULL;
+    SLIST_INIT(&new_proc->inh.child_list_head);
 
-    if (old_proc->inh.first_child == NULL) {
-        /* This is the first child of this parent */
-        old_proc->inh.first_child = new_proc;
-        new_proc->inh.next_child = NULL;
-
-        return; /* All done */
-    }
-
-    /* Find the last child process
-     * Assuming first_child is a valid pointer
-     */
-    tmp = old_proc->inh.first_child;
-    do {
-        last_node = tmp;
-    } while ((tmp = last_node->inh.next_child) != NULL);
-
-    /* Set the newly forked process as the last child in chain. */
-    last_node->inh.next_child = new_proc;
+    mtx_lock(&old_proc->inh.lock);
+    SLIST_INSERT_HEAD(&old_proc->inh.child_list_head, new_proc,
+                      inh.child_list_entry);
+    mtx_unlock(&old_proc->inh.lock);
 }
 
 pid_t proc_get_random_pid(void)

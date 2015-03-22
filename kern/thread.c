@@ -146,7 +146,7 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
     struct thread_info * tp = sched_get_thread_info(tid);
 
     if (tid < 0 || !tp)
-        return -1;
+        return -EAGAIN;
 
     thread_init(tp,
                 tid,                    /* Index of the thread created */
@@ -225,8 +225,6 @@ void thread_init(struct thread_info * tp, pthread_t thread_id,
         tp->curr_mpt = &proc->mm.mpt;
     }
 
-    tp->sched.policy = SCHED_OTHER;
-
     /* Call thread constructors */
     void ** thread_ctor_p;
     SET_FOREACH(thread_ctor_p, thread_ctors) {
@@ -267,7 +265,8 @@ static void thread_set_inheritance(struct thread_info * new_child,
         return; /* All done */
     }
 
-    /* Find the last child thread
+    /*
+     * Find the last child thread
      * Assuming first_child is a valid thread pointer
      */
     tmp = parent->inh.first_child;
@@ -464,49 +463,44 @@ int thread_terminate(pthread_t thread_id)
 {
     struct thread_info * thread = sched_get_thread_info(thread_id);
     struct thread_info * child;
+    struct thread_info * next_child;
 
-    if (!thread || !SCHED_TEST_TERMINATE_OK(thread_flags_get(thread))) {
+    if (!thread)
+        return -EINVAL;
+
+    if (!SCHED_TEST_TERMINATE_OK(thread_flags_get(thread))) {
         return -EPERM;
     }
 
+    thread_flags_clear(thread, SCHED_EXEC_FLAG);
+
     /* Remove all child threads from execution */
     child = thread->inh.first_child;
-    if (child) {
-        struct thread_info * next_child = NULL;
+    while (child) {
+        next_child = child->inh.next_child;
 
-        do {
-            next_child = child->inh.next_child;
+        if (thread_terminate(child->id) == -EPERM) {
+            /*
+             * The child is now orphan, it was probably a kworker that couldn't
+             * be killed.
+             */
+            child->inh.parent = NULL;
+            child->inh.next_child = NULL;
+        }
 
-            if (thread_terminate(child->id)) {
-                /*
-                 * Child is now orphan, it was probably a kworker that couldn't
-                 * be killed.
-                 */
-                child->inh.parent = NULL;
-                child->inh.next_child = NULL;
-            }
-            thread->inh.first_child = next_child;
-            child = next_child;
-
-        } while (child);
+        thread->inh.first_child = next_child;
+        child = next_child;
     }
-
-    /*
-     * Set this thread as a zombie. If detach is also set then next step
-     * after this will remove the thread immediately but otherwise we are
-     * expecting a second call to this function.
-     */
-    thread_flags_set(thread, SCHED_ZOMBIE_FLAG);
-    thread_flags_clear(thread, SCHED_EXEC_FLAG);
 
     /*
      * Remove thread completely if it is a detached zombie, its parent is a
      * detached zombie thread or the thread is parentles for any reason.
      * Otherwise we left the thread struct intact for now.
      */
-    if (SCHED_TEST_DETACHED_ZOMBIE(thread_flags_get(thread)) ||
-        (thread->inh.parent == NULL)    ||
-        ((thread->inh.parent != NULL)   &&
+    if (SCHED_TEST_DETACHED_ZOMBIE(
+                thread_flags_get(thread) | SCHED_ZOMBIE_FLAG) ||
+        !thread->inh.parent ||
+        (thread->inh.parent &&
          SCHED_TEST_DETACHED_ZOMBIE(thread_flags_get(thread->inh.parent)))) {
 
         /* Release wait timeout timer */
@@ -531,6 +525,13 @@ int thread_terminate(pthread_t thread_id)
         sched_thread_remove(thread_id);
     }
 
+    /*
+     * Set the thread as a zombie. If detach is also set then next step
+     * after this will remove the thread immediately but otherwise we are
+     * expecting a second call to this function.
+     */
+    thread_flags_set(thread, SCHED_ZOMBIE_FLAG);
+
     return 0;
 }
 
@@ -545,11 +546,17 @@ DATA_SET(thread_dtors, dummycd);
 static int sys_thread_create(void * user_args)
 {
     struct _sched_pthread_create_args args;
+    pthread_t tid;
     int err;
 
     err = copyin(user_args, &args, sizeof(args));
     if (err) {
         set_errno(EFAULT);
+        return -1;
+    }
+
+    if (args.stack_size < 40) {
+        set_errno(EINVAL);
         return -1;
     }
 
@@ -563,7 +570,12 @@ static int sys_thread_create(void * user_args)
         return -1;
     }
 
-    return (int)thread_create(&args, 0);
+    tid = thread_create(&args, 0);
+    if (tid < 0) {
+        set_errno(-tid);
+        return -1;
+    }
+    return tid;
 }
 
 static int sys_thread_terminate(void * user_args)

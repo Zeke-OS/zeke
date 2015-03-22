@@ -295,23 +295,9 @@ static void proc_remove(struct proc_info * proc)
      */
     parent = proc->inh.parent;
     if (parent) {
-        struct proc_info * tmp;
-        struct proc_info * prev_node = NULL;
-
         mtx_lock(&parent->inh.lock);
-
-        tmp = parent->inh.first_child;
-        do {
-            if (tmp == proc) {
-                if (!prev_node)
-                    parent->inh.first_child = proc->inh.next_child;
-                else
-                    prev_node->inh.next_child = proc->inh.next_child;
-                break;
-            }
-            prev_node = tmp;
-        } while ((tmp = prev_node->inh.next_child) != NULL);
-
+        SLIST_REMOVE(&parent->inh.child_list_head, proc, proc_info,
+                     inh.child_list_entry);
         mtx_unlock(&parent->inh.lock);
     }
 
@@ -567,7 +553,7 @@ static int sys_proc_wait(void * user_args)
         set_errno(ENOTSUP);
         return -1;
     } else if (args.pid == -1) {
-        child = curproc->inh.first_child;
+        child = SLIST_FIRST(&curproc->inh.child_list_head);
     } else if (args.pid < -1) {
         /*
          * TODO
@@ -582,7 +568,7 @@ static int sys_proc_wait(void * user_args)
         proc_info_t * tmp;
 
         p = proc_get_struct_l(args.pid);
-        tmp = curproc->inh.first_child;
+        tmp = SLIST_FIRST(&curproc->inh.child_list_head);
         if (!p || !tmp) {
             set_errno(ECHILD);
             return -1;
@@ -592,13 +578,13 @@ static int sys_proc_wait(void * user_args)
          * Check that p is a child of curproc.
          */
         mtx_lock(&curproc->inh.lock);
-        do {
+        SLIST_FOREACH(tmp, &curproc->inh.child_list_head, inh.child_list_entry)
+        {
             if (tmp->pid == p->pid) {
                 child = p;
                 break;
             }
-            last_node = tmp;
-        } while ((tmp = last_node->inh.next_child) != NULL);
+        }
         mtx_unlock(&curproc->inh.lock);
     }
 
@@ -650,7 +636,7 @@ static int sys_proc_wait(void * user_args)
 
     /*
      * Construct a status value.
-     * TODO Evaluate rest of needed codes like signals etc.
+     * TODO Other needed codes like signals etc?
      */
     args.status = (child->exit_code & 0xff) << 8;
 
