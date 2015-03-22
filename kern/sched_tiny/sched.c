@@ -96,8 +96,6 @@ static void init_thread_id_queue(void);
 static void _sched_thread_set_exec(pthread_t thread_id, int pri);
 /* End of Static function declarations ***************************************/
 
-/* Functions called from outside of kernel context ***************************/
-
 /**
  * Initialize the scheduler
  */
@@ -150,7 +148,6 @@ static void init_thread_id_queue(void)
     } while (q_ok);
 }
 
-/* End of Functions called from outside of kernel context ********************/
 
 /**
  * Idle task specific for this scheduler.
