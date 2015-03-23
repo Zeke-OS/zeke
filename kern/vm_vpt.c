@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    vm.c
+ * @file    vm_vpt.c
  * @author  Olli Vanhoja
  * @brief   VM functions.
  * @section LICENSE
