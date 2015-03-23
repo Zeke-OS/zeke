@@ -156,6 +156,8 @@ int _mtx_sleep(mtx_t * mtx, long timeout, char * whr)
     int retval;
 
     if (timeout > 0) {
+        KASSERT(current_thread->wait_tim < 0,
+                "Can't have multiple wait timers per thread");
         current_thread->wait_tim = timers_add(mtx_wakeup, mtx,
                 TIMERS_FLAG_ONESHOT, timeout);
         if (current_thread->wait_tim < 0)
