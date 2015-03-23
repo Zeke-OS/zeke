@@ -107,7 +107,7 @@ static int clone_oth_regions(proc_info_t * new_proc, proc_info_t * old_proc)
      * it directly that way because shared regions can't properly point to more
      * than one page table struct.
      */
-    for (int i = MM_HEAP_REGION; i < old_proc->mm.nr_regions; i++) {
+    for (size_t i = MM_HEAP_REGION; i < old_proc->mm.nr_regions; i++) {
         vm_reg_tmp = (*old_proc->mm.regions)[i];
         if (!vm_reg_tmp || (vm_reg_tmp->b_flags & B_NOTSHARED))
             continue;
@@ -249,7 +249,7 @@ pid_t proc_fork(pid_t pid)
     }
     new_proc->files->count = nofile_max;
     /* Copy and ref old file descriptors */
-    for (int i = 0; i < old_proc->files->count; i++) {
+    for (size_t i = 0; i < old_proc->files->count; i++) {
         new_proc->files->fd[i] = old_proc->files->fd[i];
         fs_fildes_ref(new_proc->files, i, 1); /* null pointer safe */
     }
