@@ -132,6 +132,24 @@ struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr);
 void ptlist_free(struct ptlist * ptlist_head);
 
 /**
+ * @return  Returns positive value indicating number of copied page tables;
+ *          Zero idicating that no page tables were copied;
+ *          Negative value idicating that copying page tables failed.
+ */
+int vm_ptlist_clone(struct ptlist * new_head, mmu_pagetable_t * new_mpt,
+                    struct ptlist * old_head);
+
+/**
+ * Clone and attach a vm_pt.
+ * @param old_vpt is the vm_pt to be cloned.
+ * @param mpt is the master page table for the new vm_pt.
+ * @return Returns a pointer to a newly malloc'd, ptmap'd and attached vm_pt;
+ *         In case of an error a NULL pointer is returned.
+ */
+struct vm_pt * vm_pt_clone_attach(struct vm_pt * old_vpt,
+                                  mmu_pagetable_t * mpt);
+
+/**
  * @addtogroup copy copyin, copyout, copyinstr
  * Kernel copy functions.
  *

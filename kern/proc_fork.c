@@ -52,8 +52,6 @@
 static pid_t proc_lastpid;  /*!< last allocated pid. */
 
 static proc_info_t * clone_proc_info(proc_info_t * const old_proc);
-static int clone_L2_pt(proc_info_t * const new_proc,
-        proc_info_t * const old_proc);
 static int clone_stack(proc_info_t * new_proc, proc_info_t * old_proc);
 static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc);
 
@@ -192,7 +190,8 @@ pid_t proc_fork(pid_t pid)
     }
 
     /* Clone L2 page tables. */
-    if (clone_L2_pt(new_proc, old_proc) < 0) {
+    if (vm_ptlist_clone(&new_proc->mm.ptlist_head, &new_proc->mm.mpt,
+                        &old_proc->mm.ptlist_head) < 0) {
         retval = -ENOMEM;
         goto free_res;
     }
@@ -364,66 +363,6 @@ static proc_info_t * clone_proc_info(proc_info_t * const old_proc)
     memcpy(new_proc, old_proc, sizeof(proc_info_t));
 
     return new_proc;
-}
-
-/**
- * Clone L2 page tables of a process.
- * @param new_proc is the target process.
- * @param old_proc is a the source process.
- * @return  Returns positive value indicating number of copied page tables;
- *          Zero idicating that no page tables were copied;
- *          Negative value idicating that copying page tables failed.
- */
-static int clone_L2_pt(proc_info_t * const new_proc,
-        proc_info_t * const old_proc)
-{
-    struct vm_pt * old_vpt;
-    struct vm_pt * new_vpt;
-    int retval = 0;
-
-    /* Clone L2 page tables. */
-    RB_INIT(&(new_proc->mm.ptlist_head));
-    if (RB_EMPTY(&(old_proc->mm.ptlist_head))) {
-        goto out;
-    }
-    RB_FOREACH(old_vpt, ptlist, &(old_proc->mm.ptlist_head)) {
-        /* TODO for some reason linkcount might be invalid! */
-#if 0
-        if (old_vpt->linkcount <= 0) {
-            continue; /* Skip unused page tables; ie. page tables that are
-                       * not referenced by any region. */
-        }
-#endif
-
-        new_vpt = kmalloc(sizeof(struct vm_pt));
-        if (!new_vpt) {
-            retval = -ENOMEM;
-            goto out;
-        }
-
-        new_vpt->linkcount = 1;
-        new_vpt->pt.vaddr = old_vpt->pt.vaddr;
-        new_vpt->pt.master_pt_addr = new_proc->mm.mpt.pt_addr;
-        new_vpt->pt.type = MMU_PTT_COARSE;
-        new_vpt->pt.dom = old_vpt->pt.dom;
-
-        /* Allocate the actual page table, this will also set pt_addr. */
-        if (ptmapper_alloc(&(new_vpt->pt))) {
-            retval = -ENOMEM;
-            goto out;
-        }
-
-        mmu_ptcpy(&(new_vpt->pt), &(old_vpt->pt));
-
-        /* Insert vpt (L2 page table) to the new new process. */
-        RB_INSERT(ptlist, &(new_proc->mm.ptlist_head), new_vpt);
-        mmu_attach_pagetable(&(new_vpt->pt));
-
-        retval++; /* Increment vpt copied count. */
-    }
-
-out:
-    return retval;
 }
 
 static int clone_stack(proc_info_t * new_proc, proc_info_t * old_proc)

@@ -569,7 +569,6 @@ static int sys_proc_wait(void * user_args)
         return -1;
     } else if (args.pid > 0) {
         proc_info_t * p;
-        proc_info_t * last_node;
         proc_info_t * tmp;
 
         p = proc_get_struct_l(args.pid);
