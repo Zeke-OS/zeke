@@ -142,8 +142,10 @@ void heap_inc_key(heap_t * heap, int i)
 
 void heap_dec_key(heap_t * heap, int i)
 {
-    /* Only heapify is actually needed priority is already set
-     * to its new value */
+    /*
+     * Only heapify is actually needed, priority is already set
+     * to its new value.
+     */
     heapify(heap, i);
 }
 

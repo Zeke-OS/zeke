@@ -315,7 +315,7 @@ void _proc_free(proc_info_t * p)
 
     /* Free files */
     if (p->files) {
-        for (int i = 0; i < p->files->count; i++) {
+        for (size_t i = 0; i < p->files->count; i++) {
             fs_fildes_ref(p->files, i, -1); /* null pointer safe */
             /*
              * TODO Should we call?
@@ -326,9 +326,13 @@ void _proc_free(proc_info_t * p)
     }
 
     /* Free regions */
+    /*
+     * TODO Locking here is pointless because waiter may/will get invalid data
+     * after release.
+     */
     mtx_lock(&p->mm.regions_lock);
     if (p->mm.regions) {
-        for (int i = 0; i < p->mm.nr_regions; i++) {
+        for (size_t i = 0; i < p->mm.nr_regions; i++) {
             if ((*p->mm.regions)[i]->vm_ops->rfree)
                     (*p->mm.regions)[i]->vm_ops->rfree((*p->mm.regions)[i]);
         }
@@ -343,6 +347,7 @@ void _proc_free(proc_info_t * p)
         /* RFE should not unlock regions? */
     }
 
+    /* Free mpt */
     if (p->mm.mpt.pt_addr)
         ptmapper_free(&(p->mm.mpt));
 
