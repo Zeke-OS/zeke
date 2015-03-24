@@ -33,7 +33,6 @@
 
 #include <kstring.h>
 #include <libkern.h>
-#include <tsched.h>
 #include <thread.h>
 #include <kerror.h>
 #include <kinit.h>
@@ -301,7 +300,7 @@ pid_t proc_fork(pid_t pid)
 #ifdef configPROC_DEBUG
             KERROR(KERROR_DEBUG, "\tthread_fork() fork OK\n");
 #endif
-            new_proc->main_thread = sched_get_thread_info(new_tid);
+            new_proc->main_thread = thread_lookup(new_tid);
             new_proc->main_thread->pid_owner = new_proc->pid;
             new_proc->main_thread->curr_mpt = &new_proc->mm.mpt;
         } else {
@@ -329,9 +328,9 @@ pid_t proc_fork(pid_t pid)
 
     if (new_proc->main_thread) {
 #ifdef configPROC_DEBUG
-        KERROR(KERROR_DEBUG, "exec new_proc->main_thread\n");
+        KERROR(KERROR_DEBUG, "Run new_proc->main_thread\n");
 #endif
-        sched_thread_set_exec(new_proc->main_thread->id);
+        thread_ready(new_proc->main_thread->id);
     }
 
 #ifdef configPROC_DEBUG
@@ -426,7 +425,7 @@ static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc)
     KERROR(KERROR_DEBUG, "Updating inheriance attributes of new_proc\n");
 #endif
 
-    mtx_init(&new_proc->inh.lock, PROC_INH_LOCK_TYPE);
+    mtx_init(&new_proc->inh.lock, PROC_INH_LOCK_TYPE, 0);
     new_proc->inh.parent = old_proc;
     SLIST_INIT(&new_proc->inh.child_list_head);
 

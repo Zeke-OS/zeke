@@ -189,12 +189,13 @@ vnode_ops_t ramfs_vnode_ops = {
 int ramfs_init(void) __attribute__((constructor));
 int ramfs_init(void)
 {
+    SUBSYS_DEP(fs_init);
     SUBSYS_DEP(proc_init);
     SUBSYS_INIT("ramfs");
 
     ramfs_vdev_minor = ATOMIC_INIT(0);
     fs_inherit_vnops(&ramfs_vnode_ops, &nofs_vnode_ops);
-    mtx_init(&ramfs_fs.fs_giant, MTX_TYPE_TICKET);
+    FS_GIANT_INIT(&ramfs_fs.fs_giant);
     fs_register(&ramfs_fs);
 
     return 0;
@@ -277,12 +278,15 @@ out:
 int ramfs_umount(struct fs_superblock * fs_sb)
 {
     ramfs_sb_t * rsb = get_rfsb_of_sb(fs_sb);
+    mtx_t * lock = &ramfs_fs.fs_giant;
 
-    mtx_lock(&ramfs_fs.fs_giant);
-    if (!RAMFS_SB_IS_HEALTHY(rsb))
+    mtx_lock(lock);
+    if (!RAMFS_SB_IS_HEALTHY(rsb)) {
+        mtx_unlock(lock);
         return -EBUSY;
+    }
     rsb->ramfs_flags = RAMFS_SB_FLAG_DYING;
-    mtx_unlock(&ramfs_fs.fs_giant);
+    mtx_unlock(lock);
 
     /*
      * TODO Check that there is no more references to any vnodes of

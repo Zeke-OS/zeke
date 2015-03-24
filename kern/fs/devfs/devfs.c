@@ -86,6 +86,8 @@ int devfs_init(void)
     SUBSYS_DEP(ramfs_init);
     SUBSYS_INIT("devfs");
 
+    FS_GIANT_INIT(&devfs_fs.fs_giant);
+
     /*
      * Inherit ramfs and override what's needed.
      */

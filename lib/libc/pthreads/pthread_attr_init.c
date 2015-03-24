@@ -34,10 +34,13 @@
 
 int pthread_attr_init(pthread_attr_t * attr)
 {
-    attr->tpriority = 0;
-    attr->stack_addr = NULL;
-    attr->stack_size = 0;
-    attr->flags = PTHREAD_CREATE_JOINABLE;
+    *attr = (pthread_attr_t){
+        .param.sched_policy = SCHED_OTHER,
+        .param.sched_priority = 0,
+        .stack_addr = NULL,
+        .stack_size = 0,
+        .flags = PTHREAD_CREATE_JOINABLE,
+    };
 
     return 0;
 }

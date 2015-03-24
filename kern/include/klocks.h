@@ -63,27 +63,55 @@
  * @{
  */
 
-#define MTX_TYPE(mtx, typ) (((mtx)->mtx_tflags & (typ)) != 0)
+#define MTX_OPT(mtx, typ) (((mtx)->mtx_flags & (typ)) != 0)
 
-/* Mutex types */
-#define MTX_TYPE_UNDEF      0x00 /*!< mtx un-initialized. */
-#define MTX_TYPE_SPIN       0x01 /*!< Spin lock. */
-#define MTX_TYPE_TICKET     0x02 /*!< Use ticket spin locking. */
-#define MTX_TYPE_SLEEP      0x10 /*!< Allow timeouted waiting. */
-#define MTX_TYPE_PRICEIL    0x20 /*!< Use priority ceiling. */
+/*
+ * Mutex types
+ * ===========
+ *
+ * Lock type            Supported options
+ * -----------------------------------------------------------------------------
+ * MTX_TYPE_UNDEF       -
+ * MTX_TYPE_SPIN        MTX_OPT_SLEEP, MTX_OPT_PRICEIL, MTX_OPT_INTSUP
+ * MTX_TYPE_TICKET      MTX_OPT_PRICEIL, MTX_OPT_INTSUP
+ */
+
+/**
+ * Lock type.
+ */
+enum mtx_type {
+    MTX_TYPE_UNDEF = 0,     /*!< mtx un-initialized. */
+    MTX_TYPE_SPIN,          /*!< Spin lock. */
+    MTX_TYPE_TICKET,        /*!< Use ticket spin locking. */
+};
+
+
+#define MTX_OPT_SLEEP   0x10 /*!< Allow timeouted waiting. */
+#define MTX_OPT_PRICEIL 0x20 /*!< Use priority ceiling.
+                              * Can be only used if lock is always used in
+                              * a thread kernel mode and never in
+                              * a interrupt handler or during
+                              * initialization.
+                              */
+#define MTX_OPT_DINT    0x40 /*!< Interrupt handler friendly locking.
+                              * If this option is used the locking code will
+                              * handle cases where a lock can be used in thread
+                              * kernel mode as well as in interrupt handler,
+                              * otherwise deadlocks may occur if locking is not
+                              * carefully planned.
+                              * This option will also work on MP.
+                              * @note When locked, all interrupts are
+                              * disabled.
+                              * TODO Not yet MP safe
+                              */
 
 /**
  * Sleep/spin mutex.
- *
- * All mutex implementations must always have a member called mtx_lock.
- * Other locking primitive structures are not allowed to use this name
- * for their members.
- * If this rule needs to change, the bits in the mutex implementation must
- * be modified appropriately.
  */
 typedef struct mtx {
     intptr_t _alignment;
-    unsigned int mtx_tflags;    /*!< Type flags. */
+    enum mtx_type mtx_type;     /*!< Lock type. */
+    unsigned int mtx_flags;     /*!< Option flags. */
     volatile int mtx_lock;      /*!< Lock value for regular (spin)lock. */
     struct ticket {
         atomic_t queue;
@@ -114,10 +142,9 @@ int _mtx_trylock(mtx_t * mtx, char * whr);
 
 /**
  * Initialize a kernel mutex.
- * @param mtx is a mutex struct.
- * @param type is the type of the mutex.
+ * @param mtx is a pointer to a mutex struct.
  */
-void mtx_init(mtx_t * mtx, unsigned int type);
+void mtx_init(mtx_t * mtx, enum mtx_type type, unsigned int opt);
 
 /**
  * Release kernel mtx lock.

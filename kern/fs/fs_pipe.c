@@ -51,9 +51,9 @@
  * MP system.
  */
 #if configMP
-#define PIPE_YIELD_STRATEGY SCHED_YIELD_LAZY
+#define PIPE_YIELD_STRATEGY THREAD_YIELD_LAZY
 #else
-#define PIPE_YIELD_STRATEGY SCHED_YIELD_IMMEDIATE
+#define PIPE_YIELD_STRATEGY THREAD_YIELD_IMMEDIATE
 #endif
 
 /**
@@ -104,6 +104,7 @@ int fs_pipe_init(void)
     SUBSYS_DEP(ramfs_init);
     SUBSYS_INIT("fs_pipe");
 
+    FS_GIANT_INIT(&fs_pipe_fs.fs_giant);
     fs_inherit_vnops(&fs_pipe_ops, &nofs_vnode_ops);
 
     return 0;
@@ -223,7 +224,7 @@ ssize_t fs_pipe_write(file_t * file, const void * buf, size_t count)
     for (size_t i = 0; i < count;) {
         if (queue_push(&pipe->q, buf + i))
             i++;
-        sched_current_thread_yield(PIPE_YIELD_STRATEGY);
+        thread_yield(PIPE_YIELD_STRATEGY);
     }
 
     return count;
@@ -239,7 +240,7 @@ ssize_t fs_pipe_read(file_t * file, void * buf, size_t count)
     for (size_t i = 0; i < count;) {
         if (queue_pop(&pipe->q, buf + i))
             i++;
-        sched_current_thread_yield(PIPE_YIELD_STRATEGY);
+        thread_yield(PIPE_YIELD_STRATEGY);
     }
 
     return count;

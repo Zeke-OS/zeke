@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    tsched.h
+ * @file    sched.h
  * @author  Olli Vanhoja
- * @brief   Kernel scheduler header file for sched.c.
+ * @brief   Scheduling header file.
  * @section LICENSE
  * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
@@ -40,19 +40,25 @@
 #ifndef SCHED_H
 #define SCHED_H
 
-/* Nice leves */
-#define NICE_ERR        (100)   /*!< Cant't determine. */
-#define NICE_MAX        (20)    /*!< Realtime. */
-#define NICE_DEF        (NZERO) /*!< Normal value. */
-#define NICE_MIN        (-19)
-#define NICE_YIELD      (-20)
-#define NICE_IDLE       (-21)
-#define NICE_PENALTY    (-22)   /*!< Penalty for some schedulers. Shall not be used as
-                                 * an actual nice value. */
+/**
+ * Scheduling parameters.
+ */
+struct sched_param {
+    int sched_policy;   /*!< Thread  scheduling policy. */
+    int sched_priority; /*!< Thread priority inside its policy class. */
+};
 
 /* Scheduling policies */
+#if 0
 #define SCHED_FIFO  1
+#endif
+#define SCHED_RR    0
 #define SCHED_OTHER 0
+
+#define NICE_MAX    20
+#define NICE_DEF    0
+#define NICE_MIN    (-20)
+#define NICE_ERR    (-100) /*!< Thread doesn't exist or error */
 
 #endif /* SCHED_H */
 

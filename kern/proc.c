@@ -37,7 +37,8 @@
 #include <fcntl.h>
 #include <sys/sysctl.h>
 #include <sys/wait.h>
-#include <tsched.h>
+#include <thread.h>
+#include <ksched.h>
 #include <kstring.h>
 #include <libkern.h>
 #include <kerror.h>
@@ -50,7 +51,6 @@
 #include <dynmem.h>
 #include <kmalloc.h>
 #include <buf.h>
-#include <thread.h>
 #include <exec.h>
 #include <proc.h>
 #include "_proc.h"
@@ -167,8 +167,8 @@ static void init_kernel_proc(void)
     kprocvm_code->b_mmu = mmu_region_kernel;
     kprocvm_heap->b_mmu = mmu_region_kdata;
 
-    mtx_init(&(kprocvm_code->lock), MTX_TYPE_SPIN);
-    mtx_init(&(kprocvm_heap->lock), MTX_TYPE_SPIN);
+    mtx_init(&(kprocvm_code->lock), MTX_TYPE_SPIN, 0);
+    mtx_init(&(kprocvm_heap->lock), MTX_TYPE_SPIN, 0);
 
     mtx_lock(&kernel_proc->mm.regions_lock);
     (*kernel_proc->mm.regions)[MM_CODE_REGION] = kprocvm_code;
@@ -213,7 +213,7 @@ static void init_kernel_proc(void)
 
     init_rlims(&kernel_proc->rlim);
 
-    mtx_init(&kernel_proc->inh.lock, PROC_INH_LOCK_TYPE);
+    mtx_init(&kernel_proc->inh.lock, PROC_INH_LOCK_TYPE, 0);
 }
 
 void procarr_realloc(void)
@@ -441,7 +441,7 @@ void proc_thread_removed(pid_t pid, pthread_t thread_id)
 
 void proc_update_times(void)
 {
-    if (current_thread->flags & SCHED_INSYS_FLAG)
+    if (thread_flags_is_set(current_thread, SCHED_INSYS_FLAG))
         curproc->tms.tms_stime++;
     else
         curproc->tms.tms_utime++;
@@ -630,7 +630,7 @@ static int sys_proc_wait(void * user_args)
         ksignal_sigwait(&retval, &set);
         /* Thus we are doing that :( \/ */
 #endif
-        sched_current_thread_yield(SCHED_YIELD_LAZY);
+        thread_yield(THREAD_YIELD_LAZY);
 
         /*
          * TODO In some cases we have to return early without waiting.
@@ -672,7 +672,7 @@ static int sys_proc_exit(void * user_args)
     curproc->exit_code = get_errno();
 
     (void)ksignal_sendsig(&curproc->inh.parent->sigs, SIGCHLD, SI_KERNEL);
-    sched_thread_detach(current_thread->id);
+    thread_flags_set(current_thread, SCHED_DETACH_FLAG);
     thread_die(curproc->exit_code);
 
     return 0; /* Never reached */

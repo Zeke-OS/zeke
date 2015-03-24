@@ -47,7 +47,7 @@
 #include <kstring.h>
 #endif
 #include <stddef.h>
-#include <tsched.h>
+#include <thread.h>
 #include "../hal_mcu.h"
 #include "cortex_m.h"
 

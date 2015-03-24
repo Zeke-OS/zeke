@@ -173,7 +173,7 @@ static int dynmem_init(void)
 
     mark_reserved_areas();
 
-    mtx_init(&dynmem_region_lock, MTX_TYPE_SPIN);
+    mtx_init(&dynmem_region_lock, MTX_TYPE_SPIN, 0);
 
     return 0;
 }

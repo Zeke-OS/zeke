@@ -93,7 +93,7 @@ int pty_init(void)
 
     _next_pty_id = ATOMIC_INIT(0);
     RB_INIT(&ptys_head);
-    mtx_init(&pty_lock, MTX_TYPE_TICKET);
+    mtx_init(&pty_lock, MTX_TYPE_TICKET, 0);
 
     dev_ptmx = kcalloc(1, sizeof(struct tty));
     if (!dev_ptmx)

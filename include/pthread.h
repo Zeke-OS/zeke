@@ -183,7 +183,7 @@ typedef struct pthread_once pthread_once_t;
  * Argument struct for SYSCALL_SCHED_THREAD_CREATE
  */
 struct _sched_pthread_create_args {
-    int             tpriority;  /*!< initial thread priority */
+    struct sched_param param;
     void          * stack_addr; /*!< Stack address */
     size_t          stack_size; /*!< Size of stack reserved for the thread. */
     unsigned        flags;      /*!< Thread creation flags */
@@ -326,9 +326,10 @@ int     pthread_mutexattr_getprotocol(pthread_mutexattr_t *, int *);
 int     pthread_mutexattr_setprotocol(pthread_mutexattr_t *, int);
 
 int     pthread_attr_getinheritsched(const pthread_attr_t *, int *);
-int     pthread_attr_getschedparam(const pthread_attr_t *,
-            struct sched_param *);
-int     pthread_attr_getschedpolicy(const pthread_attr_t *, int *);
+int pthread_attr_getschedparam(const pthread_attr_t *,
+                               struct sched_param *);
+int pthread_attr_getschedpolicy(const pthread_attr_t * restrict attr,
+                                int * restrict policy);
 int     pthread_attr_getscope(const pthread_attr_t *, int *);
 int     pthread_attr_setinheritsched(pthread_attr_t *, int);
 int     pthread_attr_setschedparam(pthread_attr_t *,

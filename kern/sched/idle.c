@@ -1,10 +1,12 @@
 /**
  *******************************************************************************
- * @file    thread_flags.h
+ * @file    idle.c
  * @author  Olli Vanhoja
- * @brief   Manipulate thread flags.
+ * @brief   Kernel idle thread and idle coroutine management.
  * @section LICENSE
- * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2012, 2013 Ninjaware Oy,
+ *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,70 +32,54 @@
  *******************************************************************************
  */
 
+#include <errno.h>
 #include <hal/core.h>
-#include <thread.h>
+#include <kerror.h>
+#include <ksched.h>
+#include <idle.h>
 
-int thread_flags_set(struct thread_info * thread, uint32_t flags_mask)
+SET_DECLARE(_idle_tasks, struct _idle_task_desc);
+
+struct thread_info * idle_info;
+
+/**
+ * Kernel idle thread.
+ * @note sw stacked registers are invalid when this thread executes for the
+ * first time.
+ */
+void * idle_thread(/*@unused@*/ void * arg)
 {
-    istate_t s;
+    struct _idle_task_desc ** desc_p;
 
-    KASSERT(thread != NULL, "thread must be set");
+    while (1) {
+        /* Execute idle coroutines */
+        SET_FOREACH(desc_p, _idle_tasks) {
+             struct _idle_task_desc * desc = *desc_p;
 
-    s = get_interrupt_state();
-    disable_interrupt();
+            desc->fn(desc->arg);
+        }
 
-    thread->flags |= flags_mask;
+        idle_sleep();
+    }
+}
 
-    set_interrupt_state(s);
+static int idle_insert(struct thread_info * thread)
+{
+    if (idle_info)
+        return -ENOTSUP;
+
+    idle_info = thread;
 
     return 0;
 }
 
-int thread_flags_clear(struct thread_info * thread, uint32_t flags_mask)
+static void idle_schedule(void)
 {
-    istate_t s;
-
-    KASSERT(thread != NULL, "thread must be set");
-
-    s = get_interrupt_state();
-    disable_interrupt();
-
-    thread->flags &= ~flags_mask;
-
-    set_interrupt_state(s);
-
-    return 0;
+    current_thread = idle_info;
 }
 
-uint32_t thread_flags_get(struct thread_info * thread)
-{
-    istate_t s;
-    uint32_t flags;
-
-    KASSERT(thread != NULL, "thread must be set");
-
-    s = get_interrupt_state();
-    disable_interrupt();
-
-    flags = thread->flags;
-
-    set_interrupt_state(s);
-
-    return flags;
-}
-
-int thread_flags_is_set(struct thread_info * thread, uint32_t flags_mask)
-{
-    uint32_t flags;
-
-    flags = thread_flags_get(thread);
-    return (flags & flags_mask) == flags_mask;
-}
-
-int thread_flags_not_set(struct thread_info * thread, uint32_t flags_mask)
-{
-    uint32_t flags;
-
-    flags = thread_flags_get(thread);
-    return (flags & flags_mask) == 0;
-}
+struct scheduler sched_idle = {
+    .name = "sched_idle",
+    .insert = idle_insert,
+    .run = idle_schedule,
+};

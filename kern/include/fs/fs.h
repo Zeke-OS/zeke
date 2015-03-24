@@ -150,7 +150,8 @@ typedef struct vnode {
     mtx_t vn_lock;
 } vnode_t;
 
-#define VN_LOCK_MODES (MTX_TYPE_TICKET | MTX_TYPE_SLEEP)
+#define VN_LOCK_TYPE    MTX_TYPE_TICKET
+#define VN_LOCK_OPT     MTX_OPT_SLEEP
 /* Test macros for vnodes */
 #define VN_IS_FSROOT(vn) ((vn)->sb->root == (vn))
 /* Op macros for vnodes */
@@ -192,6 +193,10 @@ typedef struct files_struct {
  * @param n is a file count.
  */
 #define SIZEOF_FILES(n) (sizeof(files_t) + (n) * sizeof(file_t *))
+
+#define FS_GIANT_TYPE    MTX_TYPE_TICKET
+#define FS_GIANT_OPT     0
+#define FS_GIANT_INIT(_x_) mtx_init(_x_, FS_GIANT_TYPE, FS_GIANT_OPT)
 
 /**
  * File system.

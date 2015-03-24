@@ -56,27 +56,28 @@
 #include <sys/times.h>
 #include <sys/resource.h>
 #include <sys/priv.h>
-#include <tsched.h> /* Needed for struct thread_info and threading functions */
 #include <hal/mmu.h>
 #include <vm/vm.h>
 #include <fs/fs.h>
 #include <bitmap.h>
 #include <klocks.h>
+#include <thread.h>
 
 #define PROC_STATE_INITIAL  0
 #if 0
 #define PROC_STATE_RUNNING  1
 #endif
-#define PROC_STATE_READY    2   /* Can be woken up, ready to run */
+#define PROC_STATE_READY    2   /*!< Can be woken up, ready to run. */
 #if 0
-#define PROC_STATE_WAITING  3   /* Can't be woken up */
+#define PROC_STATE_WAITING  3   /*!< Can't be woken up. */
 #endif
-#define PROC_STATE_STOPPED  4   /* Stopped with a signal SIGSTOP */
+#define PROC_STATE_STOPPED  4   /*!< Stopped with a signal SIGSTOP. */
 #define PROC_STATE_ZOMBIE   5
-#define PROC_STATE_DEFUNCT  6   /* Process waiting for the final cleanup. */
+#define PROC_STATE_DEFUNCT  6   /*!< Process waiting for the final cleanup. */
 
 #define PROC_NAME_LEN       10
 
+struct thread_info;
 
 /**
  * Process Control Block.
@@ -158,7 +159,7 @@ extern mtx_t proclock;
 #define PROC_LOCK()         mtx_lock(&proclock)
 #define PROC_UNLOCK()       mtx_unlock(&proclock)
 #define PROC_TESTLOCK()     mtx_test(&proclock)
-#define PROC_LOCK_INIT()    mtx_init(&proclock, MTX_TYPE_SPIN)
+#define PROC_LOCK_INIT()    mtx_init(&proclock, MTX_TYPE_SPIN, 0)
 
 /**
  * Init process handling subsystem.

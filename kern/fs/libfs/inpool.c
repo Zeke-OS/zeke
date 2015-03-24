@@ -46,7 +46,7 @@ int inpool_init(inpool_t * pool, struct fs_superblock * sb,
 {
     int retval = 0;
 
-    mtx_init(&pool->lock, MTX_TYPE_SPIN);
+    mtx_init(&pool->lock, MTX_TYPE_SPIN, 0);
     mtx_lock(&pool->lock);
 
     pool->ip_max = max;

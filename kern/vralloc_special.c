@@ -47,8 +47,8 @@ static uintptr_t get_ksect_addr(size_t region_size)
 {
     uintptr_t retval;
 
-    if (l_ksect_next.mtx_tflags == MTX_TYPE_UNDEF)
-        mtx_init(&l_ksect_next, MTX_TYPE_SPIN);
+    if (l_ksect_next.mtx_type == MTX_TYPE_UNDEF)
+        mtx_init(&l_ksect_next, MTX_TYPE_SPIN, 0);
 
     mtx_lock(&l_ksect_next);
 

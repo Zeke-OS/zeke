@@ -63,8 +63,8 @@ void _bio_init(void)
      * TODO We'd like to use MTX_TYPE_TICKET here but bio_clean() makes it
      * impossible right now.
      */
-    mtx_init(&cache_lock, MTX_TYPE_SPIN | MTX_TYPE_SLEEP | MTX_TYPE_PRICEIL);
-    cache_lock.pri.p_lock = NICE_MAX;
+    mtx_init(&cache_lock, MTX_TYPE_SPIN, MTX_OPT_SLEEP | MTX_OPT_PRICEIL);
+    cache_lock.pri.p_lock = NICE_MIN;
 
     /*
      * Init released buffers list.
@@ -335,7 +335,7 @@ retry:
      * busy by some other thread.
      */
     while (bp->b_flags & B_BUSY)
-        sched_current_thread_yield(SCHED_YIELD_LAZY);
+        thread_yield(THREAD_YIELD_LAZY);
     BUF_LOCK(bp);
     if (bp->b_flags & B_BUSY) {
         BUF_UNLOCK(bp);

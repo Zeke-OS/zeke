@@ -38,9 +38,24 @@
 #include <thread.h>
 #include <klocks.h>
 
+#ifdef configLOCK_DEBUG
+#define MTX_TYPE_NOTSUP() do {                                       \
+    KERROR(KERROR_ERR, "In %s%s not supported for lock type (%u)\n", \
+            whr, __func__, mtx->mtx_type);                           \
+} while (0)
+#else
+#define MTX_TYPE_NOTSUP()
+#endif
+
+/**
+ * istate for MTX_OPT_DINT.
+ * TODO Per CPU.
+ */
+istate_t cpu_istate;
+
 static void priceil_set(mtx_t * mtx)
 {
-    if (MTX_TYPE(mtx, MTX_TYPE_PRICEIL)) {
+    if (MTX_OPT(mtx, MTX_OPT_PRICEIL)) {
         mtx->pri.p_saved = thread_get_priority(current_thread->id);
         thread_set_priority(current_thread->id, mtx->pri.p_lock);
     }
@@ -48,7 +63,7 @@ static void priceil_set(mtx_t * mtx)
 
 static void priceil_restore(mtx_t * mtx)
 {
-    if (MTX_TYPE(mtx, MTX_TYPE_PRICEIL)) {
+    if (MTX_OPT(mtx, MTX_OPT_PRICEIL)) {
         /*
          * XXX There is a very rare race condition if some other thread tries to
          * set a new priority for this thread just after this if clause.
@@ -58,17 +73,10 @@ static void priceil_restore(mtx_t * mtx)
     }
 }
 
-void mtx_init(mtx_t * mtx, unsigned int type)
+void mtx_init(mtx_t * mtx, enum mtx_type type, unsigned int opt)
 {
-    const unsigned test = type & (MTX_TYPE_SPIN | MTX_TYPE_TICKET);
-
-    if (test == 0) {
-        panic("Select mtx type");
-    } else if (test == (MTX_TYPE_SPIN | MTX_TYPE_TICKET)) {
-        panic("Select either MTX_TYPE_SPIN or MTX_TYPE_TICKET");
-    }
-
-    mtx->mtx_tflags = type;
+    mtx->mtx_type = type;
+    mtx->mtx_flags = opt;
     mtx->mtx_lock = 0;
     mtx->ticket.queue = ATOMIC_INIT(0);
     mtx->ticket.dequeue = ATOMIC_INIT(0);
@@ -83,29 +91,33 @@ int mtx_lock(mtx_t * mtx)
 int _mtx_lock(mtx_t * mtx, char * whr)
 #endif
 {
-    const int ticket_mode = MTX_TYPE(mtx, MTX_TYPE_TICKET);
     int ticket;
-    const int sleep_mode = MTX_TYPE(mtx, MTX_TYPE_SLEEP);
+    const int sleep_mode = MTX_OPT(mtx, MTX_OPT_SLEEP);
 #ifdef configLOCK_DEBUG
     unsigned deadlock_cnt = 0;
 #endif
 
-    if (ticket_mode) {
-        ticket = atomic_inc(&(mtx->ticket.queue));
+    if (mtx->mtx_type == MTX_TYPE_TICKET) {
+        ticket = atomic_inc(&mtx->ticket.queue);
+    }
+
+    if (MTX_OPT(mtx, MTX_OPT_DINT)) {
+        cpu_istate = get_interrupt_state();
+        disable_interrupt();
     }
 
     while (1) {
 #ifdef configLOCK_DEBUG
         /*
-         * TODO deadlock detection threshold should depend on lock type and
+         * TODO Deadlock detection threshold should depend on lock type and
          *      current priorities.
          */
         if (++deadlock_cnt >= configSCHED_HZ * (configKLOCK_DLTHRES + 1)) {
             char * lwhr = (mtx->mtx_ldebug) ? mtx->mtx_ldebug : "?";
 
             KERROR(KERROR_DEBUG,
-                     "Deadlock detected:\n%s WAITING\n%s LOCKED\n",
-                     whr, lwhr);
+                   "Deadlock detected:\n%s WAITING\n%s LOCKED\n",
+                   whr, lwhr);
 
             deadlock_cnt = 0;
         }
@@ -114,22 +126,34 @@ int _mtx_lock(mtx_t * mtx, char * whr)
         if (sleep_mode && (current_thread->wait_tim == -2))
             return -EWOULDBLOCK;
 
-        if (ticket_mode) {
-            if (atomic_read(&(mtx->ticket.dequeue)) == ticket) {
+        switch (mtx->mtx_type) {
+        case MTX_TYPE_SPIN:
+            if (!test_and_set((int *)(&mtx->mtx_lock)))
+                goto out;
+            break;
+
+        case MTX_TYPE_TICKET:
+            if (atomic_read(&mtx->ticket.dequeue) == ticket) {
                 mtx->mtx_lock = 1;
-                break;
+                goto out;
             }
 
-            sched_current_thread_yield(SCHED_YIELD_LAZY);
-        } else {
-            if (!test_and_set((int *)(&(mtx->mtx_lock))))
-                break;
+            thread_yield(THREAD_YIELD_LAZY);
+            break;
+
+        default:
+            MTX_TYPE_NOTSUP();
+            if (MTX_OPT(mtx, MTX_OPT_DINT))
+                set_interrupt_state(cpu_istate);
+
+            return -ENOTSUP;
         }
 
 #ifdef configMP
         cpu_wfe(); /* Sleep until event. */
 #endif
     }
+out:
 
     /* Handle priority ceiling. */
     priceil_set(mtx);
@@ -155,28 +179,26 @@ int _mtx_sleep(mtx_t * mtx, long timeout, char * whr)
 {
     int retval;
 
+    if (MTX_OPT(mtx, MTX_OPT_DINT))
+        goto fail;
+
     if (timeout > 0) {
         KASSERT(current_thread->wait_tim < 0,
                 "Can't have multiple wait timers per thread");
-        current_thread->wait_tim = timers_add(mtx_wakeup, mtx,
-                TIMERS_FLAG_ONESHOT, timeout);
+        current_thread->wait_tim =
+            timers_add(mtx_wakeup, mtx, TIMERS_FLAG_ONESHOT, timeout);
         if (current_thread->wait_tim < 0)
             return -EWOULDBLOCK;
 
         retval = mtx_lock(mtx);
         timers_release(current_thread->wait_tim);
         current_thread->wait_tim = -1;
-    } else if (MTX_TYPE(mtx, MTX_TYPE_SPIN)) {
+    } else if (mtx->mtx_type == MTX_TYPE_SPIN) {
         retval = mtx_lock(mtx);
     } else {
-#ifdef configLOCK_DEBUG
-        char buf[80];
-
-        ksprintf(buf, sizeof(buf), "Invalid lock type. Caller: %s", whr);
-        panic(buf);
-#else
-        panic("Invalid lock type.");
-#endif
+fail:
+        MTX_TYPE_NOTSUP();
+        return -ENOTSUP;
     }
 
     return retval;
@@ -188,26 +210,38 @@ int mtx_trylock(mtx_t * mtx)
 int _mtx_trylock(mtx_t * mtx, char * whr)
 #endif
 {
+    int ticket;
     int retval;
 
-    if (MTX_TYPE(mtx, MTX_TYPE_SPIN)) {
-        retval = test_and_set((int *)(&(mtx->mtx_lock)));
-    } else if (MTX_TYPE(mtx, MTX_TYPE_TICKET)) {
-        int ticket = atomic_inc(&(mtx->ticket.queue));
+    if (MTX_OPT(mtx, MTX_OPT_DINT)) {
+        cpu_istate = get_interrupt_state();
+        disable_interrupt();
+    }
 
-        if (atomic_read(&(mtx->ticket.dequeue)) == ticket) {
+    switch (mtx->mtx_type) {
+    case MTX_TYPE_SPIN:
+        retval = test_and_set((int *)(&mtx->mtx_lock));
+        break;
+
+    case MTX_TYPE_TICKET:
+        ticket = atomic_inc(&mtx->ticket.queue);
+
+        if (atomic_read(&mtx->ticket.dequeue) == ticket) {
             mtx->mtx_lock = 1;
             return 0; /* Got it */
         } else {
-            atomic_dec(&(mtx->ticket.queue));
+            atomic_dec(&mtx->ticket.queue);
+             if (MTX_OPT(mtx, MTX_OPT_DINT))
+                set_interrupt_state(cpu_istate);
             return 1; /* No luck */
         }
-    } else {
-#ifdef configLOCK_DEBUG
-        KERROR(KERROR_ERR,
-                 "mtx_trylock() not supported for this lock type (%s)\n",
-                 whr);
-#endif
+        break;
+
+    default:
+        MTX_TYPE_NOTSUP();
+        if (MTX_OPT(mtx, MTX_OPT_DINT))
+            set_interrupt_state(cpu_istate);
+
         return -ENOTSUP;
     }
 
@@ -223,7 +257,7 @@ int _mtx_trylock(mtx_t * mtx, char * whr)
 
 void mtx_unlock(mtx_t * mtx)
 {
-    if (MTX_TYPE(mtx, MTX_TYPE_SLEEP) && (current_thread->wait_tim >= 0)) {
+    if (MTX_OPT(mtx, MTX_OPT_SLEEP) && (current_thread->wait_tim >= 0)) {
         timers_release(current_thread->wait_tim);
         current_thread->wait_tim = -1;
     }
@@ -232,10 +266,12 @@ void mtx_unlock(mtx_t * mtx)
     mtx->mtx_ldebug = NULL;
 #endif
 
-    if (MTX_TYPE(mtx, MTX_TYPE_TICKET)) {
-        atomic_inc(&(mtx->ticket.dequeue));
-    }
+    if (mtx->mtx_type == MTX_TYPE_TICKET)
+        atomic_inc(&mtx->ticket.dequeue);
     mtx->mtx_lock = 0;
+
+    if (MTX_OPT(mtx, MTX_OPT_DINT))
+        set_interrupt_state(cpu_istate);
 
     /* Restore priority ceiling. */
     priceil_restore(mtx);
@@ -247,14 +283,14 @@ void mtx_unlock(mtx_t * mtx)
 
 int mtx_test(mtx_t * mtx)
 {
-    return test_lock((int *)(&(mtx->mtx_lock)));
+    return test_lock((int *)(&mtx->mtx_lock));
 }
 
 void rwlock_init(rwlock_t * l)
 {
     l->state = 0;
     l->wr_waiting = 0;
-    mtx_init(&(l->lock), MTX_TYPE_SPIN);
+    mtx_init(&l->lock, MTX_TYPE_SPIN, 0);
 }
 
 void rwlock_wrlock(rwlock_t * l)
@@ -265,37 +301,37 @@ void rwlock_wrlock(rwlock_t * l)
     } else {
         l->wr_waiting++;
     }
-    mtx_unlock(&(l->lock));
+    mtx_unlock(&l->lock);
 
     /* Try to minimize locked time. */
     while (1) {
         if (l->state == 0) {
-            mtx_lock(&(l->lock));
+            mtx_lock(&l->lock);
             if (l->state == 0) {
                 l->wr_waiting--;
                 goto get_wrlock;
             }
-            mtx_unlock(&(l->lock));
+            mtx_unlock(&l->lock);
         }
     }
 
 get_wrlock:
     l->state = -1;
-    mtx_unlock(&(l->lock));
+    mtx_unlock(&l->lock);
 }
 
 int rwlock_trywrlock(rwlock_t * l)
 {
     int retval = 1;
 
-    if (mtx_trylock(&(l->lock)))
+    if (mtx_trylock(&l->lock))
         goto out;
 
     if (l->state == 0) {
         l->state = -1;
         retval = 0;
     }
-    mtx_unlock(&(l->lock));
+    mtx_unlock(&l->lock);
 
 out:
     return retval;
@@ -307,7 +343,7 @@ void rwlock_wrunlock(rwlock_t * l)
     if (l->state == -1) {
         l->state = 0;
     }
-    mtx_unlock(&(l->lock));
+    mtx_unlock(&l->lock);
 }
 
 void rwlock_rdlock(rwlock_t * l)
@@ -346,7 +382,7 @@ int rwlock_tryrdlock(rwlock_t * l)
         l->state++;
         retval = 0;
     }
-    mtx_unlock(&(l->lock));
+    mtx_unlock(&l->lock);
 
 out:
     return retval;
@@ -354,9 +390,9 @@ out:
 
 void rwlock_rdunlock(rwlock_t * l)
 {
-    mtx_lock(&(l->lock));
+    mtx_lock(&l->lock);
     if (l->state > 0) {
         l->state--;
     }
-    mtx_unlock(&(l->lock));
+    mtx_unlock(&l->lock);
 }

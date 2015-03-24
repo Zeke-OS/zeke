@@ -41,7 +41,6 @@ int pthread_create(pthread_t * thread, const pthread_attr_t * attr,
                    void * (*start_routine)(void *), void * arg)
 {
     struct _sched_pthread_create_args args = {
-        .tpriority  = attr->tpriority,
         .stack_addr = attr->stack_addr,
         .stack_size = attr->stack_size,
         .flags      = attr->flags,
@@ -50,6 +49,7 @@ int pthread_create(pthread_t * thread, const pthread_attr_t * attr,
         .del_thread = pthread_exit
     };
     pthread_t tid;
+    args.param = attr->param;
 
     tid = (pthread_t)syscall(SYSCALL_THREAD_CREATE, &args);
     req_context_switch();

@@ -81,7 +81,7 @@ static mtx_t sysctllock;
 
 #define SYSCTL_LOCK()       mtx_lock(&sysctllock)
 #define SYSCTL_UNLOCK()     mtx_unlock(&sysctllock)
-#define SYSCTL_LOCK_INIT()  mtx_init(&sysctllock, MTX_TYPE_SPIN)
+#define SYSCTL_LOCK_INIT()  mtx_init(&sysctllock, MTX_TYPE_SPIN, 0)
 
 
 static struct sysctl_oid * sysctl_find_oidname(const char * name,
@@ -1075,7 +1075,7 @@ int userland_sysctl(pid_t pid, int * name, unsigned int namelen,
         SYSCTL_UNLOCK();
         if (error != EAGAIN)
             break;
-        sched_current_thread_yield(SCHED_YIELD_IMMEDIATE);
+        thread_yield(THREAD_YIELD_IMMEDIATE);
     }
 
     /* TODO ?? */

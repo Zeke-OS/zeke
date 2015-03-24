@@ -1,7 +1,6 @@
 # Base system
 base-SRC-y += $(wildcard ./*.c)
-base-SRC-$(configSCHED_TINY) += $(wildcard sched_tiny/*.c)
-base-SRC-$(configSCHED_CDS) += $(wildcard sched_cds/*.c)
+base-SRC-y += $(wildcard sched/*.c)
 
 # Kernel logging
 base-SRC-$(configKLOGGER) += kerror/kerror.c

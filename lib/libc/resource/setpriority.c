@@ -39,16 +39,14 @@
 
 int setpriority(int which, id_t who, int prio)
 {
+    struct _sched_set_priority_args args;
+
     switch (which) {
     case PRIO_THREAD:
-        {
-            struct _sched_set_priority_args ds = {
-                .thread_id = who,
-                .priority = prio
-            };
+        args.thread_id = who;
+        args.priority = prio;
 
-        return (int)syscall(SYSCALL_THREAD_SETPRIORITY, &ds);
-        }
+        return (int)syscall(SYSCALL_THREAD_SETPRIORITY, &args);
     default:
         errno = EINVAL;
         return -1;
