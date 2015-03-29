@@ -92,6 +92,11 @@ enum thread_state {
 #define SCHED_INTERNAL_FLAG 0x20000000u /*!< Immortal internal kernel thread. */
 
 /**
+ * No timer assigned.
+ */
+#define TMNOVAL (-1)
+
+/**
  * Thread state info struct.
  * Thread Control Block structure.
  */
@@ -120,8 +125,6 @@ struct thread_info {
     void * errno_uaddr;             /*!< Address of the thread local errno. */
     intptr_t retval;                /*!< Return value of the thread. */
 
-    atomic_t a_wait_count;          /*!< Wait counter.
-                                     *   value < 0 is permanent sleep. */
     int wait_tim;                   /*!< Reference to a timeout timer. */
     struct sched_param param;       /*!< Scheduling parameters set by user. */
 
@@ -244,7 +247,7 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
 struct thread_info * thread_lookup(pthread_t thread_id);
 
 /**
- * Fork current thread.
+ * Fork the current thread.
  * @note Cloned thread is set to sleep state and caller of this function should
  * set it to exec state. Caller is also expected to handle user stack issues as
  * as well. The new thread is exact clone of the current thread but with a new
@@ -256,7 +259,7 @@ struct thread_info * thread_lookup(pthread_t thread_id);
 pthread_t thread_fork(void);
 
 /**
- * Mark thread ready.
+ * Mark a thread ready.
  */
 int thread_ready(pthread_t thread_id);
 
@@ -266,19 +269,19 @@ int thread_ready(pthread_t thread_id);
 struct thread_info * thread_remove_ready(void);
 
 /**
- * Wait for event.
+ * Wait for an event.
  * Put current_thread on sleep until thread_release().
  * Can be called multiple times, eg. from interrupt handler.
  */
 void thread_wait(void);
 
 /**
- * Release thread waiting state.
+ * Release a waiting thread.
  */
-void thread_release(struct thread_info * thread);
+void thread_release(pthread_t thread_id);
 
 /**
- * Sleep current thread for millisec.
+ * Sleep the current thread for millisec.
  * @param millisec is the sleep time.
  */
 void thread_sleep(long millisec);

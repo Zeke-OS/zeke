@@ -179,9 +179,7 @@ static void thread_init(struct thread_info * tp, pthread_t thread_id,
          tp->flags |= SCHED_KWORKER_FLAG;
     }
 
-    /* Clear signal flags & wait states */
-    tp->a_wait_count    = ATOMIC_INIT(0);
-    tp->wait_tim        = -1;
+    tp->wait_tim        = TMNOVAL;
 
     /* Update parent and child pointers */
     thread_set_inheritance(tp, parent);
@@ -354,7 +352,7 @@ pthread_t thread_fork(void)
     KASSERT(old_thread, "current_thread not set\n");
 #endif
 
-    /* Get next free thread_id */
+    /* Get next free thread_id. */
     new_id = atomic_inc(&next_thread_id);
     if (new_id < 0)
         panic("Out of thread IDs");
@@ -363,7 +361,6 @@ pthread_t thread_fork(void)
     if (!new_thread)
         return -EAGAIN;
 
-    /* New thread is kept in tmp until it's ready for execution. */
     memcpy(new_thread, old_thread, sizeof(struct thread_info));
     new_thread->id       = new_id;
     new_thread->flags   &= ~SCHED_INSYS_FLAG;
@@ -433,7 +430,6 @@ struct thread_info * thread_remove_ready(void)
 
 void thread_wait(void)
 {
-    atomic_inc(&current_thread->a_wait_count);
     thread_state_set(current_thread, THREAD_STATE_BLOCKED);
 
     /*
@@ -447,20 +443,9 @@ void thread_wait(void)
     }
 }
 
-void thread_release(struct thread_info * thread)
+void thread_release(pthread_t thread_id)
 {
-    int old_val;
-
-    old_val = atomic_dec(&thread->a_wait_count);
-
-    if (old_val == 0) {
-        atomic_inc(&thread->a_wait_count);
-        old_val = 1;
-    }
-
-    if (old_val == 1) {
-        thread_ready(thread->id);
-    }
+    thread_ready(thread_id);
 }
 
 static void thread_event_timer(void * event_arg)
@@ -468,9 +453,9 @@ static void thread_event_timer(void * event_arg)
     struct thread_info * thread = (struct thread_info *)event_arg;
 
     timers_release(thread->wait_tim);
-    thread->wait_tim = -1;
+    thread->wait_tim = TMNOVAL;
 
-    thread_release(thread);
+    thread_release(thread->id);
 }
 
 void thread_sleep(long millisec)

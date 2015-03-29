@@ -245,12 +245,6 @@ void sched_handler(void)
          thread = thread_remove_ready()) {
         enum thread_state state = thread_state_get(thread);
 
-        if (state != THREAD_STATE_READY) {
-            KERROR(KERROR_DEBUG, "Thread not ready (%d)\n", thread->id);
-            /* TODO Handle state properly */
-            continue;
-        }
-
         thread_state_set(thread, THREAD_STATE_EXEC);
         if (sched_arr[thread->param.sched_policy]->insert(thread)) {
             KERROR(KERROR_ERR, "Failed to schedule a thread (%d)", thread->id);
@@ -258,7 +252,7 @@ void sched_handler(void)
     }
 
     /*
-     * Call the actual context switcher function that schedules the next thread.
+     * Run schedulers until next runnable thread is found.
      */
     current_thread = NULL;
     for (size_t i = 0; i < num_elem(sched_arr); i++) {
@@ -266,14 +260,18 @@ void sched_handler(void)
         if (current_thread)
             break;
     }
+#if configSCHED_DEBUG
     if (!current_thread) {
         panic("Nothing to schedule");
     }
+#endif
     if (current_thread != prev_thread) {
         mmu_map_region(&(current_thread->kstack_region->b_mmu));
     }
 
-    /* Post-scheduling tasks */
+    /*
+     * Post-scheduling tasks
+     */
     SET_FOREACH(task_p, post_sched_tasks) {
         sched_task_t task = *(sched_task_t *)task_p;
         task();

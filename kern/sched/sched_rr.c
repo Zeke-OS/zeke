@@ -95,8 +95,8 @@ static void rr_thread_act(struct thread_info * thread)
 
 static void rr_schedule(void)
 {
-    struct thread_info * next = NULL;
-    struct thread_info * tmp = NULL;
+    struct thread_info * next;
+    struct thread_info * tmp;
 
     TAILQ_FOREACH_SAFE(next, &runq_head, RRRUNQ_ENTRY, tmp) {
         if (sched_csw_ok(next)) {

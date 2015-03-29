@@ -89,7 +89,7 @@
 #define KSIG_EXEC_IF(thread_, signum_) do {                     \
     int blocked = ksignal_isblocked(&thread_->sigs, signum_);   \
     int swait = sigismember(&thread_->sigs.s_wait, signum_);    \
-    if (blocked && swait) thread_release(thread_);              \
+    if (blocked && swait) thread_release(thread_->id);          \
     else if (!blocked) thread_ready(thread_->id);               \
 } while (0)
 
