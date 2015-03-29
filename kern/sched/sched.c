@@ -76,12 +76,7 @@
 #define SCALE_LOAD(x) (((x + (FIXED_1 / 200)) * 100) >> FSHIFT)
 
 /* sysctl node for scheduler */
-SYSCTL_DECL(_kern_sched);
 SYSCTL_NODE(_kern, OID_AUTO, sched, CTLFLAG_RW, 0, "Scheduler");
-
-static unsigned nr_threads;
-SYSCTL_UINT(_kern_sched, OID_AUTO, nr_threads, CTLFLAG_RD,
-            &nr_threads, 0, "Number of threads.");
 
 /**
  * Pointer to the currently active thread.
@@ -151,14 +146,6 @@ int sched_csw_ok(struct thread_info * thread)
 
     return (1 == 1);
 }
-
-static void idle_task(uintptr_t arg)
-{
-    unsigned tmp_nr_threads = 0;
-
-    /* TODO Update nr_threads */
-}
-IDLE_TASK(idle_task, 0);
 
 /**
  * Calculate load averages

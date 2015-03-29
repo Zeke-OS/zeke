@@ -74,6 +74,10 @@ extern struct scheduler sched_idle;
 /* Scheduler task type */
 typedef void (*sched_task_t)();
 
+#ifdef _SYS_SYSCTL_H_
+SYSCTL_DECL(_kern_sched);
+#endif
+
 /**
  * Return load averages in integer format scaled to 100.
  * @param[out] loads load averages.

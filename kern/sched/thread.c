@@ -35,6 +35,7 @@
 #include <machine/atomic.h>
 #include <sys/linker_set.h>
 #include <errno.h>
+#include <sys/sysctl.h>
 #include <syscall.h>
 #include <libkern.h>
 #include <kstring.h>
@@ -43,6 +44,7 @@
 #include <buf.h>
 #include <kerror.h>
 #include <timers.h>
+#include <idle.h>
 #include <proc.h>
 #include <ksched.h>
 
@@ -66,6 +68,10 @@ struct cpu_threads {
 
 static struct cpu_threads cpu[1];
 #define CURRENT_CPU (&cpu[0])
+
+static unsigned nr_threads;
+SYSCTL_UINT(_kern_sched, OID_AUTO, nr_threads, CTLFLAG_RD,
+            &nr_threads, 0, "Number of threads.");
 
 static void init_sched_data(struct sched_thread_data * data);
 static void thread_set_inheritance(struct thread_info * child,
@@ -94,6 +100,23 @@ int thread_id_compare(struct thread_info * a, struct thread_info * b)
 
     return a->id - b->id;
 }
+
+static void count_nr_threads(uintptr_t arg)
+{
+    struct thread_info * thread;
+    unsigned tmp_nr_threads = 0;
+
+    RB_FOREACH(thread, threadmap, &CURRENT_CPU->threadmap_head) {
+        enum thread_state state;
+
+        state = thread_state_get(thread);
+        if (state != THREAD_STATE_DEAD)
+            tmp_nr_threads++;
+    }
+
+    nr_threads = tmp_nr_threads;
+}
+IDLE_TASK(count_nr_threads, 0);
 
 /**
  * Enter kernel mode.
