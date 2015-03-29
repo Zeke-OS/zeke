@@ -73,7 +73,7 @@ int mmu_init(void)
 
 #ifdef configMP
     mmu_lock_init();
-    mtx_init(&_pfrc_lock, MTX_TYPE_SPIN);
+    mtx_init(&_pfrc_lock, MTX_TYPE_SPIN, 0);
 #endif
 
     /* Set MMU_DOM_KERNEL as client and others to generate error. */

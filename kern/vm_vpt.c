@@ -53,7 +53,7 @@ struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr)
 {
     struct ptlist * const ptlist_head = &mm->ptlist_head;
     mmu_pagetable_t * const mpt = &mm->mpt;
-    struct vm_pt * vpt = 0;
+    struct vm_pt * vpt = NULL;
     struct vm_pt filter = {
         .pt.vaddr = MMU_CPT_VADDR(vaddr)
     }; /* Used as a search filter */

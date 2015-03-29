@@ -35,6 +35,7 @@
 #include <kinit.h>
 #include <kerror.h>
 #include <kstring.h>
+#include <ksched.h>
 #include <proc.h>
 #include <hal/core.h>
 
@@ -50,8 +51,10 @@ HW_PREINIT_ENTRY(arm_interrupt_preinit);
  */
 __attribute__ ((naked, aligned(32))) static void interrupt_vectors(void)
 {
-    /* Processor will never jump to bad_exception when reset is hit because
-     * interrupt vector offset is set back to 0x0 on reset. */
+    /*
+     * Processor will never jump to bad_exception when reset is hit because
+     * interrupt vector offset is set back to 0x0 on reset.
+     */
     __asm__ volatile (          /* Event                    Pri LnAddr Mode */
         "b bad_exception\n\t"   /* Reset                    1   8      abt  */
         "b undef_handler\n\t"   /* Undefined instruction    6   0      und  */
@@ -78,7 +81,8 @@ __attribute__ ((naked)) void undef_handler(void)
     ksprintf(buf, sizeof(buf), "Undefined instruction @ %x, lr: %x\n",
              addr, lr);
 
-    if (!current_thread || current_thread->flags & SCHED_INSYS_FLAG ||
+    if (!current_thread ||
+        thread_flags_is_set(current_thread, SCHED_INSYS_FLAG) ||
         current_thread->curr_mpt != &curproc->mm.mpt /* Probably in interrupt */
        ) {
         /*
@@ -92,11 +96,12 @@ __attribute__ ((naked)) void undef_handler(void)
 
         KERROR(KERROR_ERR, "%s", buf);
 
-        /* Kill the current thread
+        /*
+         * Kill the current thread
          * TODO Should we punish only the thread or whole process?
          */
         ksignal_sendsig_fatal(curproc, SIGILL);
-        sched_sleep_current_thread(0);
+        thread_wait();
     }
 }
 

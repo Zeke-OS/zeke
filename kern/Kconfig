@@ -119,7 +119,7 @@ endmenu
 menu "Thread Scheduling"
 
 choice
-    prompt "Sceduler"
+    prompt "Default sceduling policy"
     default configSCHED_TINY
 config configSCHED_TINY
     bool "sched_tiny"

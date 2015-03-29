@@ -134,7 +134,8 @@
 int * __error(void);
 #define errno (*__error())
 #else /* KERNEL_INTERNAL */
-#include <tsched.h>
+#include <vm/vm.h>
+#include <thread.h>
 
 /**
  * A type for errno.

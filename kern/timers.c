@@ -34,7 +34,7 @@
 
 #include <kinit.h>
 #include <sys/linker_set.h>
-#include <tsched.h>
+#include <thread.h>
 #include <timers.h>
 
 /** Timer allocation struct */
@@ -66,7 +66,7 @@ int timers_init(void)
 {
     SUBSYS_INIT("timers");
 
-    mtx_init(&timers_lock, MTX_TYPE_SPIN);
+    mtx_init(&timers_lock, MTX_TYPE_SPIN, 0);
 
     return 0;
 }

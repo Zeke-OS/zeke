@@ -113,6 +113,8 @@ int procfs_init(void)
     SUBSYS_DEP(ramfs_init);
     SUBSYS_INIT("procfs");
 
+    FS_GIANT_INIT(&procfs_fs.fs_giant);
+
     /*
      * Inherit unimplemented vnops from ramfs.
      */

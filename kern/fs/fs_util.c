@@ -48,20 +48,20 @@ void fs_init_superblock(struct fs_superblock * sb, struct fs * fs)
 
 void fs_insert_superblock(struct fs * fs, struct fs_superblock * new_sb)
 {
-    mtx_lock(&fs->fs_giant);
+    mtx_t * lock = &fs->fs_giant;
 
+    mtx_lock(lock);
     SLIST_INSERT_HEAD(&fs->sblist_head, new_sb, _sblist);
-
-    mtx_unlock(&fs->fs_giant);
+    mtx_unlock(lock);
 }
 
 void fs_remove_superblock(struct fs * fs, struct fs_superblock * sb)
 {
-    mtx_lock(&fs->fs_giant);
+    mtx_t * lock = &fs->fs_giant;
 
+    mtx_lock(lock);
     SLIST_REMOVE(&fs->sblist_head, sb, fs_superblock, _sblist);
-
-    mtx_unlock(&fs->fs_giant);
+    mtx_unlock(lock);
 }
 
 struct fs_superblock *
@@ -103,7 +103,7 @@ vnode_t * fs_create_pseudofs_root(fs_t * newfs, int majornum)
     /* Temp root dir */
     rootnode->vn_next_mountpoint = rootnode;
     vrefset(rootnode, 1);
-    mtx_init(&rootnode->vn_lock, VN_LOCK_MODES);
+    mtx_init(&rootnode->vn_lock, VN_LOCK_TYPE, VN_LOCK_OPT);
 
     err = fs_mount(rootnode, "", "ramfs", 0, "", 1);
     if (err) {
@@ -152,7 +152,7 @@ void fs_vnode_init(vnode_t * vnode, ino_t vn_num, struct fs_superblock * sb,
     vnode->vn_prev_mountpoint = vnode;
     vnode->sb = sb;
     vnode->vnode_ops = (vnode_ops_t *)vnops;
-    mtx_init(&vnode->vn_lock, VN_LOCK_MODES);
+    mtx_init(&vnode->vn_lock, VN_LOCK_TYPE, VN_LOCK_OPT);
 }
 
 void fs_vnode_cleanup(vnode_t * vnode)

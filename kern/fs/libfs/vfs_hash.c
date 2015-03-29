@@ -52,7 +52,7 @@ int vfs_hashinit(void)
     SUBSYS_INIT("vfs_hash");
 
     vfs_hash_tbl = hashinit(desiredvnodes, &vfs_hash_mask);
-    mtx_init(&vfs_hash_mtx, MTX_TYPE_SPIN);
+    mtx_init(&vfs_hash_mtx, MTX_TYPE_SPIN, 0);
     LIST_INIT(&vfs_hash_side);
 
     return 0;

@@ -33,7 +33,6 @@
 #include <kerror.h>
 #include <proc.h>
 #include <thread.h>
-#include <tsched.h>
 #include <libkern.h>
 #include <kstring.h>
 #include <kmalloc.h>
@@ -91,7 +90,8 @@ void exec_fini_array(void)
 static pthread_t create_uinit_main(void * stack_addr)
 {
     struct _sched_pthread_create_args init_ds = {
-        .tpriority  = configUSRINIT_PRI,
+        .param.sched_policy = SCHED_OTHER,
+        .param.sched_priority = configUSRINIT_PRI,
         .stack_addr = stack_addr,
         .stack_size = configUSRINIT_SSIZE,
         .flags      = 0,
@@ -146,7 +146,7 @@ int kinit(void)
         panic(buf);
     }
 
-    struct thread_info * const init_thread = sched_get_thread_info(tid);
+    struct thread_info * const init_thread = thread_lookup(tid);
     if (!init_thread) {
         panic("Can't get thread descriptor of init_thread!");
     }
@@ -206,7 +206,7 @@ static void mount_rootfs(void)
     kernel_proc->croot = tmp;
     kernel_proc->croot->vn_next_mountpoint = kernel_proc->croot;
     kernel_proc->croot->vn_prev_mountpoint = kernel_proc->croot;
-    mtx_init(&tmp->vn_lock, MTX_TYPE_SPIN);
+    mtx_init(&tmp->vn_lock, MTX_TYPE_SPIN, 0);
     vrefset(kernel_proc->croot, 2);
 
     ret = fs_mount(kernel_proc->croot, "", "ramfs", 0,

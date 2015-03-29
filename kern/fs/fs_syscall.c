@@ -45,8 +45,8 @@
 #include <kmalloc.h>
 #include <vm/vm.h>
 #include <vm/vm_copyinstruct.h>
+#include <thread.h>
 #include <proc.h>
-#include <tsched.h>
 #include <sys/priv.h>
 #include <ksignal.h>
 #include <fs/fs.h>

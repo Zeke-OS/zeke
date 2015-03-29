@@ -215,7 +215,7 @@ struct buf * geteblk(size_t size)
     if (!bp)
         return NULL; /* Can't allocate vm_region struct */
 
-    mtx_init(&bp->lock, MTX_TYPE_TICKET);
+    mtx_init(&bp->lock, MTX_TYPE_TICKET, 0);
 
     /* Update target struct */
     bp->b_mmu.paddr = VREG_I2ADDR(vreg, iblock);

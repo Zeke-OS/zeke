@@ -73,7 +73,8 @@ static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp)
     struct buf * stack_region = (*curproc->mm.regions)[MM_STACK_REGION];
     struct buf * code_region = (*curproc->mm.regions)[MM_CODE_REGION];
     struct _sched_pthread_create_args args = {
-        .tpriority  = configUSRINIT_PRI,
+        .param.sched_policy = SCHED_OTHER, /* TODO Inherit */
+        .param.sched_priority = 0, /* TODO Inherit */
         .stack_addr = (void *)(stack_region->b_mmu.vaddr),
         .stack_size = MMU_SIZEOF_REGION(&stack_region->b_mmu),
         .flags      = 0,
@@ -144,8 +145,8 @@ out:
          */
         current_thread->inh.first_child = NULL;
         current_thread->inh.parent = NULL;
-        curproc->main_thread = sched_get_thread_info(tid);
-        sched_thread_detach(current_thread->id);
+        curproc->main_thread = thread_lookup(tid);
+        thread_flags_set(current_thread, SCHED_DETACH_FLAG);
 
         /* Don't return but die. */
         thread_die(0);

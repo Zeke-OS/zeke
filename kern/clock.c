@@ -60,7 +60,8 @@ int clock_init(void) __attribute__((constructor));
 int clock_init(void)
 {
     SUBSYS_INIT("clock");
-    mtx_init(&timelock, MTX_TYPE_SPIN);
+
+    mtx_init(&timelock, MTX_TYPE_SPIN, 0);
 
     return 0;
 }

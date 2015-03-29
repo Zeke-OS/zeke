@@ -33,11 +33,9 @@
  *******************************************************************************
  */
 
-#include <stdbool.h>
 #include <libkern.h>
 #include <kstring.h>
 #include <thread.h>
-#include <tsched.h>
 #include <proc.h>
 #include <hal/core.h>
 #include <kerror.h>
@@ -89,7 +87,7 @@ void syscall_handler(void)
     const uint32_t major = SYSCALL_MAJOR(type);
     intptr_t retval;
 
-    thread_set_current_insys(true);
+    thread_flags_set(current_thread, SCHED_INSYS_FLAG);
 
     if ((major >= num_elem(syscall_callmap)) || !syscall_callmap[major]) {
         const uint32_t minor = SYSCALL_MINOR(type);
@@ -107,6 +105,6 @@ void syscall_handler(void)
         retval = syscall_callmap[major](type, p);
     }
 
-    thread_set_current_insys(false);
+    thread_flags_clear(current_thread, SCHED_INSYS_FLAG);
     svc_setretval(retval);
 }

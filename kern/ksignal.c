@@ -67,29 +67,30 @@
  *******************************************************************************
  */
 
+#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/tree.h>
+#include <sys/priv.h>
+#include <sys/sysctl.h>
+#include <errno.h>
 #include <kstring.h>
 #include <libkern.h>
-#include <syscall.h>
-#include <thread.h>
-#include <tsched.h>
-#include <proc.h>
 #include <kmalloc.h>
 #include <vm/vm.h>
+#include <syscall.h>
+#include <ksched.h>
+#include <proc.h>
 #include <timers.h>
-#include <errno.h>
-#include <sys/priv.h>
-#include <sys/param.h>
-#include <sys/sysctl.h>
 #include "ksignal.h"
 
-#define KSIG_LOCK_FLAGS (MTX_TYPE_TICKET | MTX_TYPE_SLEEP | MTX_TYPE_PRICEIL)
+#define KSIG_LOCK_TYPE  MTX_TYPE_TICKET
+#define KSIG_LOCK_FLAGS (MTX_OPT_SLEEP | MTX_OPT_PRICEIL)
 
 #define KSIG_EXEC_IF(thread_, signum_) do {                     \
     int blocked = ksignal_isblocked(&thread_->sigs, signum_);   \
     int swait = sigismember(&thread_->sigs.s_wait, signum_);    \
-    if (blocked && swait) thread_release(thread_);              \
-    else if (!blocked) sched_thread_set_exec(thread_->id);      \
+    if (blocked && swait) thread_release(thread_->id);          \
+    else if (!blocked) thread_ready(thread_->id);               \
 } while (0)
 
 static int kern_logsigexit = 1;
@@ -191,7 +192,7 @@ void ksignal_signals_ctor(struct signals * sigs)
      */
     STAILQ_INIT(&sigs->s_pendqueue);
     RB_INIT(&sigs->sa_tree);
-    mtx_init(&sigs->s_lock.l, KSIG_LOCK_FLAGS);
+    mtx_init(&sigs->s_lock.l, KSIG_LOCK_TYPE, KSIG_LOCK_FLAGS);
 }
 
 static void ksignal_thread_ctor(struct thread_info * th)
@@ -235,7 +236,7 @@ void ksignal_signals_fork_reinit(struct signals * sigs)
     /*
      * Reinit mutex lock.
      */
-    mtx_init(&sigs->s_lock.l, KSIG_LOCK_FLAGS);
+    mtx_init(&sigs->s_lock.l, KSIG_LOCK_TYPE, KSIG_LOCK_FLAGS);
 }
 
 static void ksignal_fork_handler(struct thread_info * th)
@@ -255,11 +256,11 @@ DATA_SET(thread_fork_handlers, ksignal_fork_handler);
 static int push_to_thread_stack(struct thread_info * thread, const void * src,
         size_t size, void ** old_thread_sp)
 {
-    const int insys = (thread->flags & SCHED_INSYS_FLAG) ? 1 : 0;
+    const int insys = thread_flags_is_set(thread, SCHED_INSYS_FLAG);
     const int framenum = (insys) ? SCHED_SFRAME_SVC : SCHED_SFRAME_SYS;
     sw_stack_frame_t * sframe = &thread->sframe[framenum];
     void * old_sp = (void *)sframe->sp;
-    void * new_sp = old_sp -  memalign(size);
+    void * new_sp = old_sp - memalign(size);
     int err;
 
     KASSERT(size > 0, "size should be greater than zero.\n");
@@ -291,7 +292,7 @@ static int push_to_thread_stack(struct thread_info * thread, const void * src,
 static int pop_from_thread_stack(struct thread_info * thread, void * dest,
         size_t size)
 {
-    const int insys = (thread->flags & SCHED_INSYS_FLAG) ? 1 : 0;
+    const int insys = thread_flags_is_set(thread, SCHED_INSYS_FLAG);
     const int framenum = (insys) ? SCHED_SFRAME_SVC : SCHED_SFRAME_SYS;
     const void * sp = (void *)thread->sframe[framenum].sp;
     int err;
@@ -417,7 +418,7 @@ static void ksignal_post_scheduling(void)
      * Can't handle signals now as the thread is in syscall and we don't want to
      * export data from kernel registers to the user space stack.
      */
-    if (current_thread->flags & SCHED_INSYS_FLAG)
+    if (thread_flags_is_set(current_thread, SCHED_INSYS_FLAG))
         return;
 
     /*
@@ -857,7 +858,7 @@ static int sys_signal_tkill(void * user_args)
 
     /* TODO if thread_id == 0 then send to all threads */
 
-    thread = sched_get_thread_info(args.thread_id);
+    thread = thread_lookup(args.thread_id);
     if (!thread) {
         set_errno(ESRCH);
         return -1;
@@ -1148,7 +1149,7 @@ static int sys_signal_return(void * user_args)
          */
         ksignal_sendsig_fatal(curproc, SIGILL);
         while (1) {
-            sched_sleep_current_thread(0); /* TODO ?? */
+            thread_wait();
             /* Should not return to here */
         }
     }

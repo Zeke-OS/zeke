@@ -36,8 +36,8 @@
 #include <kstring.h>
 #include <kmalloc.h>
 #include <vm/vm.h>
+#include <thread.h>
 #include <proc.h>
-#include <tsched.h>
 #include <ksignal.h>
 #include <buf.h>
 #include <errno.h>
@@ -55,7 +55,7 @@ mtx_t fslock;
 #define FS_LOCK()       mtx_lock(&fslock)
 #define FS_UNLOCK()     mtx_unlock(&fslock)
 #define FS_TESTLOCK()   mtx_test(&fslock)
-#define FS_LOCK_INIT()  mtx_init(&fslock, MTX_TYPE_SPIN)
+#define FS_LOCK_INIT()  mtx_init(&fslock, MTX_TYPE_SPIN, 0)
 
 SYSCTL_NODE(, CTL_VFS, vfs, CTLFLAG_RW, 0,
         "File system");
@@ -72,7 +72,8 @@ SYSCTL_INT(_vfs_limits, OID_AUTO, path_max, CTLFLAG_RD, 0, PATH_MAX,
 /**
  * Linked list of registered file systems.
  */
-static SLIST_HEAD(fs_list, fs) fs_list_head = SLIST_HEAD_INITIALIZER(fs_list_head);
+static SLIST_HEAD(fs_list, fs) fs_list_head =
+    SLIST_HEAD_INITIALIZER(fs_list_head);
 
 
 int fs_init(void) __attribute__((constructor));

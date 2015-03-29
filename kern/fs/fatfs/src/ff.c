@@ -2225,7 +2225,7 @@ FRESULT f_mount (
         clear_lock(cfs);
 #endif
 #if _FS_REENTRANT                       /* Discard sync object of the current volume */
-        fs->sobj.mtx_tflags = MTX_TYPE_UNDEF;
+        fs->sobj.mtx_type = MTX_TYPE_UNDEF;
 #endif
         cfs->fs_type = 0;               /* Clear old fs object */
     }
@@ -2233,7 +2233,7 @@ FRESULT f_mount (
     if (fs) {
         fs->fs_type = 0;                /* Clear new fs object */
 #if _FS_REENTRANT                       /* Create sync object for the new volume */
-        mtx_init(&fs->sobj, MTX_TYPE_TICKET);
+        mtx_init(&fs->sobj, MTX_TYPE_TICKET, 0);
 #endif
     }
     FatFs[vol] = fs;                    /* Register new fs object */

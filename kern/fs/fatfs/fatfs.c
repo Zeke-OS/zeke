@@ -94,6 +94,7 @@ int fatfs_init(void)
 {
     int err;
 
+    SUBSYS_DEP(fs_init);
     SUBSYS_DEP(proc_init);
     SUBSYS_INIT("fatfs");
 
@@ -107,7 +108,7 @@ int fatfs_init(void)
     if (err)
         return err;
 
-    mtx_init(&fatfs_fs.fs_giant, MTX_TYPE_TICKET);
+    FS_GIANT_INIT(&fatfs_fs.fs_giant);
     fs_register(&fatfs_fs);
 
     return 0;

@@ -329,7 +329,7 @@ int realloc_mm_regions(struct vm_mm_struct * mm, int new_count)
 
     if (i == 0) {
         /* TODO ticket lock? */
-        mtx_init(&mm->regions_lock, MTX_TYPE_SPIN);
+        mtx_init(&mm->regions_lock, MTX_TYPE_SPIN, 0);
     }
     mtx_lock(&mm->regions_lock);
 

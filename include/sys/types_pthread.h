@@ -37,6 +37,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <sched.h>
 #include <sys/_sigset.h>
 
 typedef int pthread_t; /*!< Thread ID. */
@@ -62,7 +63,7 @@ typedef void * (*start_routine)(void *);
  * Thread Definition structure contains startup information of a thread.
  */
 typedef struct pthread_attr {
-    int             tpriority;  /*!< initial thread priority */
+    struct sched_param param;
     void *          stack_addr; /*!< Stack address */
     size_t          stack_size; /*!< Size of stack reserved for the thread. */
     unsigned        flags;
