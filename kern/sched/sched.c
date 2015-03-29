@@ -230,8 +230,6 @@ void sched_handler(void)
     for (struct thread_info * thread = thread_remove_ready();
          thread;
          thread = thread_remove_ready()) {
-        enum thread_state state = thread_state_get(thread);
-
         thread_state_set(thread, THREAD_STATE_EXEC);
         if (sched_arr[thread->param.sched_policy]->insert(thread)) {
             KERROR(KERROR_ERR, "Failed to schedule a thread (%d)", thread->id);

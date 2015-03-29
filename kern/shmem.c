@@ -30,8 +30,9 @@
  *******************************************************************************
  */
 
-#include <libkern.h>
+#include <sys/sysctl.h>
 #include <errno.h>
+#include <libkern.h>
 #include <kerror.h>
 #include <thread.h>
 #include <kinit.h>
@@ -43,6 +44,10 @@
 #include <sys/mman.h>
 
 static mtx_t sync_lock;
+
+int shmem_sync_enabled = 1;
+SYSCTL_INT(_vm, OID_AUTO, shmem_sync_enabled, CTLFLAG_RW | CTLFLAG_SECURE2,
+           &shmem_sync_enabled, 0, "Shmem sync enabled");
 
 /**
  * Periodic sync list.
@@ -244,13 +249,17 @@ int shmem_munmap(struct buf * bp, size_t size)
     return 0;
 }
 
-int shmem_sync_enabled = 1;
 static void * shmem_sync_thread(void * arg)
 {
     struct buf * bp;
 
-    while (shmem_sync_enabled) {
+    while (1) {
         thread_sleep(500);
+        if (!shmem_sync_enabled) {
+            thread_sleep(1000);
+            continue;
+        }
+
         mtx_lock(&sync_lock);
 
         bp = shmem_sync_list->head;
@@ -260,7 +269,6 @@ static void * shmem_sync_thread(void * arg)
         do {
             bio_writeout(bp);
         } while ((bp = bp->lentry_.next));
-
 skip:
         mtx_unlock(&sync_lock);
     }
