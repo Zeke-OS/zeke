@@ -34,7 +34,7 @@ echo-SRC-y := src/echo.c
 ls-SRC-y := src/ls.c
 mount-SRC-y := src/mount.c src/utils/opt.c
 stty-SRC-y := src/stty.c
-tish-SRC-y := $(wildcard src/tish/*.c)
+tish-SRC-y := $(wildcard src/tish/*.c) src/utils/gline.c
 umount-SRC-y := src/umount.c src/utils/opt.c
 uptime-SRC-y := src/uptime.c
 
