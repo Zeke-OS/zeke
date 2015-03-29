@@ -1,0 +1,36 @@
+menu "Thread Scheduling"
+
+config configSCHED_HZ
+    int "Scheduler frequency in Hz."
+    default 100
+    range 5 1000
+
+choice
+    prompt "Load averages calculation period"
+    default configSCHED_LAVGPERIOD_11SEC
+config configSCHED_LAVGPERIOD_5SEC
+    bool "5 sec"
+config configSCHED_LAVGPERIOD_11SEC
+    bool "11 sec"
+endchoice
+
+config configIDLE_TH_STACK_SIZE
+    int "Idle thread stack size"
+    default 4096
+    ---help---
+        Stack size of the kernel idle thread. Idle thread is executed
+        when there is no other runnable tasks, besides idling and going
+        to power saving mode idle thread is running some kernel space
+        maintenance functions and so it may require a quite big stack.
+        Required stack size strongly depends on selected kernel feature set
+        as many statically built features will register an idle task.
+
+config configSCHED_DEBUG
+    bool "Thread scheduler debugging"
+    default n
+    ---help---
+        Enable debugging invariants and messages in thread scheduling related
+        functions.
+
+endmenu
+
