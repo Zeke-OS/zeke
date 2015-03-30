@@ -50,20 +50,24 @@
  * from the same CPU, interrupts disabled.
  */
 struct scheduler {
-    char name[10];
+    char name[10];  /*!< Scheduler name. */
+    void * data;    /*!< Scheduler specific control data. */
+
     /**
      * Insert thread for scheduling with this policy.
      */
-    int (*insert)(struct thread_info * thread);
+    int (*insert)(struct scheduler * sobj, struct thread_info * thread);
     /**
      * Run the scheduler.
      */
-    void (*run)(void);
-    unsigned (*get_nr_active_threads)(void);
+    void (*run)(struct scheduler * sobj);
+    unsigned (*get_nr_active_threads)(struct scheduler * sobj);
 };
 
-extern struct scheduler sched_rr;
-extern struct scheduler sched_idle;
+typedef struct scheduler * sched_constructor(void);
+
+struct scheduler * sched_create_rr(void);
+struct scheduler * sched_create_idle(void);
 
 /**
  * Test if it is ok to terminate.

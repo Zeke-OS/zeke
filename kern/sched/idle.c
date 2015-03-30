@@ -38,6 +38,14 @@
 #include <ksched.h>
 #include <idle.h>
 
+#if configIDLE_TH_STACK_SIZE < 40
+#error Idle thread stack (configIDLE_TH_STACK_SIZE) should be at least 40 bytes
+#endif
+/** Stack for the idle thread */
+static char sched_idle_stack[sizeof(sw_stack_frame_t) +
+                             sizeof(hw_stack_frame_t) +
+                             configIDLE_TH_STACK_SIZE];
+
 SET_DECLARE(_idle_tasks, struct _idle_task_desc);
 
 struct thread_info * idle_info;
@@ -63,7 +71,7 @@ void * idle_thread(/*@unused@*/ void * arg)
     }
 }
 
-static int idle_insert(struct thread_info * thread)
+static int idle_insert(struct scheduler * sobj, struct thread_info * thread)
 {
     if (idle_info)
         return -ENOTSUP;
@@ -73,12 +81,12 @@ static int idle_insert(struct thread_info * thread)
     return 0;
 }
 
-static void idle_schedule(void)
+static void idle_schedule(struct scheduler * sobj)
 {
     current_thread = idle_info;
 }
 
-static unsigned get_nr_active(void)
+static unsigned get_nr_active(struct scheduler * sobj)
 {
     return 0;
 }
@@ -89,3 +97,21 @@ struct scheduler sched_idle = {
     .run = idle_schedule,
     .get_nr_active_threads = get_nr_active,
 };
+
+struct scheduler * sched_create_idle(void)
+{
+    struct _sched_pthread_create_args tdef_idle = {
+        .param.sched_policy   = SCHED_OTHER + 1,
+        .param.sched_priority = NZERO,
+        .stack_addr = sched_idle_stack,
+        .stack_size = sizeof(sched_idle_stack),
+        .flags      = 0,
+        .start      = idle_thread,
+        .arg1       = 0,
+        .del_thread = NULL,
+    };
+
+    thread_create(&tdef_idle, 1);
+
+    return &sched_idle;
+}

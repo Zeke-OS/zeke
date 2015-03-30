@@ -50,6 +50,31 @@
 #include <ptmapper.h>
 #include <timers.h>
 
+/**
+ * Array of scheduler constructors in order of desired execution order.
+ */
+static sched_constructor * sched_ctor_arr[] = {
+    &sched_create_rr,
+    &sched_create_idle,
+};
+#define NR_SCHEDULERS num_elem(sched_ctor_arr)
+
+/**
+ * CPU scheduling object descriptor.
+ */
+struct cpu_sched {
+    RB_HEAD(threadmap, thread_info) threadmap_head;
+    STAILQ_HEAD(readyq_head, thread_info) readyq;
+    /**
+     * Array of schedulers in order of execution.
+     */
+    struct scheduler * sched_arr[NR_SCHEDULERS];
+    mtx_t lock;
+};
+
+static struct cpu_sched cpu[1];
+#define CURRENT_CPU (&cpu[0])
+
 #define KSTACK_SIZE ((MMU_VADDR_TKSTACK_END - MMU_VADDR_TKSTACK_START) + 1)
 
 /* Linker sets for thread constructors and destructors. */
@@ -61,15 +86,6 @@ SET_DECLARE(thread_fork_handlers, void);
  * Next thread id.
  */
 static atomic_t next_thread_id = ATOMIC_INIT(0);
-
-struct cpu_threads {
-    RB_HEAD(threadmap, thread_info) threadmap_head;
-    STAILQ_HEAD(readyq_head, thread_info) readyq;
-    mtx_t lock;
-};
-
-static struct cpu_threads cpu[1];
-#define CURRENT_CPU (&cpu[0])
 
 static unsigned nr_threads;
 SYSCTL_UINT(_kern_sched, OID_AUTO, nr_threads, CTLFLAG_RD,
@@ -117,24 +133,6 @@ static uint32_t loadavg[3] = { 0, 0, 0 }; /*!< CPU load averages */
 SET_DECLARE(pre_sched_tasks, void);
 SET_DECLARE(post_sched_tasks, void);
 
-#if configIDLE_TH_STACK_SIZE < 40
-#error Idle thread stack (configIDLE_TH_STACK_SIZE) should be at least 40
-#endif
-/** Stack for the idle thread */
-static char sched_idle_stack[sizeof(sw_stack_frame_t) +
-                             sizeof(hw_stack_frame_t) +
-                             configIDLE_TH_STACK_SIZE];
-
-/**
- * Array of schedulers in order of execution.
- */
-static struct scheduler * sched_arr[] = {
-    &sched_rr,
-    &sched_idle,
-};
-
-extern void * idle_thread(void * arg);
-
 static void init_sched_data(struct sched_thread_data * data);
 static void thread_set_inheritance(struct thread_info * child,
                                    struct thread_info * parent);
@@ -150,30 +148,27 @@ int sched_init(void)
     SUBSYS_DEP(vralloc_init);
     SUBSYS_INIT("sched");
 
-    struct _sched_pthread_create_args tdef_idle = {
-        .param.sched_policy   = SCHED_OTHER + 1,
-        .param.sched_priority = NZERO,
-        .stack_addr = sched_idle_stack,
-        .stack_size = sizeof(sched_idle_stack),
-        .flags      = 0,
-        .start      = idle_thread,
-        .arg1       = 0,
-        .del_thread = NULL,
-    };
-
-    /* Initialize locks */
+    /* Initialize locks. */
     rwlock_init(&loadavg_lock);
 
-    for (size_t i = 0; i < num_elem(cpu); i++) {
-        mtx_init(&cpu[0].lock, MTX_TYPE_SPIN, MTX_OPT_DINT);
-        RB_INIT(&cpu[0].threadmap_head);
-        STAILQ_INIT(&cpu[0].readyq);
-    }
-
     /*
-     * Create idle thread.
+     * Init cpu schedulers.
      */
-    thread_create(&tdef_idle, 1);
+    for (size_t i = 0; i < num_elem(cpu); i++) {
+        mtx_init(&cpu[i].lock, MTX_TYPE_SPIN, MTX_OPT_DINT);
+        RB_INIT(&cpu[i].threadmap_head);
+        STAILQ_INIT(&cpu[i].readyq);
+
+        for (size_t j = 0; j < NR_SCHEDULERS; j++) {
+            struct scheduler * sched;
+
+            sched = sched_ctor_arr[j]();
+            if (!sched)
+                return -ENOMEM;
+
+            cpu[i].sched_arr[j] = sched;
+        }
+    }
 
     return 0;
 }
@@ -227,10 +222,11 @@ static void sched_calc_loads(void)
     if (rwlock_trywrlock(&loadavg_lock) == 0) {
         count = LOAD_FREQ;
 
-        for (size_t i = 0; i < num_elem(sched_arr); i++) {
+        for (size_t i = 0; i < NR_SCHEDULERS; i++) {
+            struct scheduler * sched = CURRENT_CPU->sched_arr[i];
             unsigned nr;
 
-            nr = sched_arr[i]->get_nr_active_threads();
+            nr = sched->get_nr_active_threads(sched);
             active_threads += (uint32_t)nr * FIXED_1;
         }
 
@@ -303,8 +299,13 @@ void sched_handler(void)
     for (struct thread_info * thread = thread_remove_ready();
          thread;
          thread = thread_remove_ready()) {
+        const size_t policy = thread->param.sched_policy;
+        struct scheduler * sched;
+
+        KASSERT(policy < num_elem(CURRENT_CPU->sched_arr), "policy is valid");
+        sched = CURRENT_CPU->sched_arr[policy];
         thread_state_set(thread, THREAD_STATE_EXEC);
-        if (sched_arr[thread->param.sched_policy]->insert(thread)) {
+        if (sched->insert(sched, thread)) {
             KERROR(KERROR_ERR, "Failed to schedule a thread (%d)", thread->id);
         }
     }
@@ -313,8 +314,10 @@ void sched_handler(void)
      * Run schedulers until next runnable thread is found.
      */
     current_thread = NULL;
-    for (size_t i = 0; i < num_elem(sched_arr); i++) {
-        sched_arr[i]->run();
+    for (size_t i = 0; i < num_elem(CURRENT_CPU->sched_arr); i++) {
+        struct scheduler * sched = CURRENT_CPU->sched_arr[i];
+
+        sched->run(sched);
         if (current_thread)
             break;
     }
