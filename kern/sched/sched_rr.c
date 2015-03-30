@@ -46,12 +46,15 @@
 TAILQ_HEAD(runq, thread_info) runq_head =
     TAILQ_HEAD_INITIALIZER(runq_head);
 
+static unsigned nr_active;
+
 static int rr_insert(struct thread_info * thread)
 {
     if (!TEST_POLF(thread, RR_POLF_INRRRQ)) {
         TAILQ_INSERT_TAIL(&runq_head, thread, RRRUNQ_ENTRY);
         thread->sched.ts_counter = 1; /* TODO */
         thread->sched.policy_flags |= RR_POLF_INRRRQ;
+        nr_active++;
     }
 
     return 0;
@@ -62,6 +65,7 @@ static void rr_remove(struct thread_info * thread)
     if (TEST_POLF(thread, RR_POLF_INRRRQ)) {
         TAILQ_REMOVE(&runq_head, thread, RRRUNQ_ENTRY);
         thread->sched.policy_flags &= ~RR_POLF_INRRRQ;
+        nr_active--;
     }
 }
 
@@ -108,8 +112,14 @@ static void rr_schedule(void)
     }
 }
 
+static unsigned get_nr_active(void)
+{
+    return nr_active;
+}
+
 struct scheduler sched_rr = {
     .name = "sched_rr",
     .insert = rr_insert,
     .run = rr_schedule,
+    .get_nr_active_threads = get_nr_active,
 };

@@ -78,8 +78,14 @@ static void idle_schedule(void)
     current_thread = idle_info;
 }
 
+static unsigned get_nr_active(void)
+{
+    return 0;
+}
+
 struct scheduler sched_idle = {
     .name = "sched_idle",
     .insert = idle_insert,
     .run = idle_schedule,
+    .get_nr_active_threads = get_nr_active,
 };

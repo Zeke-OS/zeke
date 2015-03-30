@@ -59,6 +59,7 @@ struct scheduler {
      * Run the scheduler.
      */
     void (*run)(void);
+    unsigned (*get_nr_active_threads)(void);
 };
 
 extern struct scheduler sched_rr;

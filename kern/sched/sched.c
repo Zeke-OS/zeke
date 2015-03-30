@@ -156,36 +156,41 @@ int sched_csw_ok(struct thread_info * thread)
 static void sched_calc_loads(void)
 {
     static int count = LOAD_FREQ;
-    uint32_t active_threads; /* Fixed-point */
+    uint32_t active_threads = 0; /* Fixed-point */
 
-    /* Run only on kernel tick */
+    /* Run only on a kernel tick */
     if (!flag_kernel_tick)
         return;
 
     count--;
-    if (count < 0) {
-        if (rwlock_trywrlock(&loadavg_lock) == 0) {
-            count = LOAD_FREQ; /* Count is only reset if we get write lock so
-                                * we can try again each time. */
-            /* TODO */
-#if 0
-            active_threads = (uint32_t)(priority_queue.size * FIXED_1);
-#endif
+    if (count >= 0)
+        return;
 
-            /* Load averages */
-            CALC_LOAD(loadavg[0], FEXP_1, active_threads);
-            CALC_LOAD(loadavg[1], FEXP_5, active_threads);
-            CALC_LOAD(loadavg[2], FEXP_15, active_threads);
+    if (rwlock_trywrlock(&loadavg_lock) == 0) {
+        count = LOAD_FREQ;
 
-            rwlock_wrunlock(&loadavg_lock);
+        for (size_t i = 0; i < num_elem(sched_arr); i++) {
+            unsigned nr;
 
-            /* On the following lines we cheat a little bit to get the write
-             * lock faster. This should be ok as we know that this function
-             * is the only one trying to write. */
-            loadavg_lock.wr_waiting = 0;
-        } else if (loadavg_lock.wr_waiting == 0) {
-            loadavg_lock.wr_waiting = 1;
+            nr = sched_arr[i]->get_nr_active_threads();
+            active_threads += (uint32_t)nr * FIXED_1;
         }
+
+        /* Load averages */
+        CALC_LOAD(loadavg[0], FEXP_1, active_threads);
+        CALC_LOAD(loadavg[1], FEXP_5, active_threads);
+        CALC_LOAD(loadavg[2], FEXP_15, active_threads);
+
+        rwlock_wrunlock(&loadavg_lock);
+
+        /*
+         * On the following lines we cheat a little bit to get the write lock
+         * faster. This should be ok as long as we know that this function is
+         * the only one trying to write.
+         */
+        loadavg_lock.wr_waiting = 0;
+    } else if (loadavg_lock.wr_waiting == 0) {
+        loadavg_lock.wr_waiting = 1;
     }
 }
 DATA_SET(post_sched_tasks, sched_calc_loads);
