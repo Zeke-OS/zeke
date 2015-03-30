@@ -454,9 +454,9 @@ pid_t proc_get_random_pid(void)
      * maxproc
      */
     do {
-        long d = last_maxproc - proc_lastpid;
+        long d = last_maxproc - proc_lastpid - 1;
 
-        if (d <= 2) {
+        if (d <= 1) {
             proc_lastpid = 2;
             continue;
         }
