@@ -32,6 +32,8 @@
  *******************************************************************************
  */
 
+/* TODO Idle thread/sched is not MP safe. */
+
 #include <errno.h>
 #include <hal/core.h>
 #include <kerror.h>
