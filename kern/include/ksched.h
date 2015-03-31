@@ -51,7 +51,6 @@
  */
 struct scheduler {
     char name[10];  /*!< Scheduler name. */
-    void * data;    /*!< Scheduler specific control data. */
 
     /**
      * Insert thread for scheduling with this policy.

@@ -31,6 +31,7 @@
  */
 
 #include <stddef.h>
+#include <libkern.h>
 #include <kmalloc.h>
 #include <ksched.h>
 
@@ -44,20 +45,21 @@
 
 #define RRRUNQ_ENTRY        sched.rrrunq_entry_
 
-struct rr_data {
+struct sched_rr {
+    struct scheduler sched;
     TAILQ_HEAD(runq, thread_info) runq_head;
     unsigned nr_active;
 };
 
 static int rr_insert(struct scheduler * sobj, struct thread_info * thread)
 {
-    struct rr_data * data = (struct rr_data *)sobj->data;
+    struct sched_rr * rr = container_of(sobj, struct sched_rr, sched);
 
     if (!TEST_POLF(thread, RR_POLF_INRRRQ)) {
-        TAILQ_INSERT_TAIL(&data->runq_head, thread, RRRUNQ_ENTRY);
+        TAILQ_INSERT_TAIL(&rr->runq_head, thread, RRRUNQ_ENTRY);
         thread->sched.ts_counter = 1; /* TODO */
         thread->sched.policy_flags |= RR_POLF_INRRRQ;
-        data->nr_active++;
+        rr->nr_active++;
     }
 
     return 0;
@@ -65,12 +67,12 @@ static int rr_insert(struct scheduler * sobj, struct thread_info * thread)
 
 static void rr_remove(struct scheduler * sobj, struct thread_info * thread)
 {
-    struct rr_data * data = (struct rr_data *)sobj->data;
+    struct sched_rr * rr = container_of(sobj, struct sched_rr, sched);
 
     if (TEST_POLF(thread, RR_POLF_INRRRQ)) {
-        TAILQ_REMOVE(&data->runq_head, thread, RRRUNQ_ENTRY);
+        TAILQ_REMOVE(&rr->runq_head, thread, RRRUNQ_ENTRY);
         thread->sched.policy_flags &= ~RR_POLF_INRRRQ;
-        data->nr_active--;
+        rr->nr_active--;
     }
 }
 
@@ -104,11 +106,11 @@ static void rr_thread_act(struct scheduler * sobj, struct thread_info * thread)
 
 static struct thread_info * rr_schedule(struct scheduler * sobj)
 {
+    struct sched_rr * rr = container_of(sobj, struct sched_rr, sched);
     struct thread_info * next;
     struct thread_info * tmp;
-    struct rr_data * data = (struct rr_data *)sobj->data;
 
-    TAILQ_FOREACH_SAFE(next, &data->runq_head, RRRUNQ_ENTRY, tmp) {
+    TAILQ_FOREACH_SAFE(next, &rr->runq_head, RRRUNQ_ENTRY, tmp) {
         if (sched_csw_ok(next)) {
             return next;
         } else {
@@ -121,35 +123,28 @@ static struct thread_info * rr_schedule(struct scheduler * sobj)
 
 static unsigned get_nr_active(struct scheduler * sobj)
 {
-    struct rr_data * data = (struct rr_data *)sobj->data;
+    struct sched_rr * rr = container_of(sobj, struct sched_rr, sched);
 
-    return data->nr_active;
+    return rr->nr_active;
 }
+
+const struct sched_rr sched_rr_init = {
+    .sched.name = "sched_rr",
+    .sched.insert = rr_insert,
+    .sched.run = rr_schedule,
+    .sched.get_nr_active_threads = get_nr_active,
+};
 
 struct scheduler * sched_create_rr(void)
 {
-    const struct scheduler sched_rr_init = {
-        .name = "sched_rr",
-        .insert = rr_insert,
-        .run = rr_schedule,
-        .get_nr_active_threads = get_nr_active,
-    };
-    struct scheduler * sched;
-    struct rr_data * data;
+    struct sched_rr * sched;
 
-    sched = kmalloc(sizeof(struct scheduler) + sizeof(struct rr_data));
+    sched = kmalloc(sizeof(struct sched_rr));
     if (!sched)
         return NULL;
 
     *sched = sched_rr_init;
-    data = (void *)((char *)sched + sizeof(struct scheduler));
-    sched->data = data;
+    TAILQ_INIT(&sched->runq_head);
 
-    /*
-     * Init data.
-     */
-    TAILQ_INIT(&data->runq_head);
-    data->nr_active = 0;
-
-    return sched;
+    return &sched->sched;
 }

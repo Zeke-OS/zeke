@@ -615,6 +615,7 @@ static int sys_proc_wait(void * user_args)
 
     /* TODO Implement options WCONTINUED and WUNTRACED. */
 
+    /* TODO sigblock here? */
     while (*state != PROC_STATE_ZOMBIE) {
 #if 0
         /*
