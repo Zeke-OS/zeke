@@ -111,6 +111,7 @@ SET_DECLARE(thread_fork_handlers, void);
  */
 static atomic_t next_thread_id = ATOMIC_INIT(0);
 
+static atomic_t anr_threads = ATOMIC_INIT(0);
 static unsigned nr_threads;
 SYSCTL_UINT(_kern_sched, OID_AUTO, nr_threads, CTLFLAG_RD,
             &nr_threads, 0, "Number of threads.");
@@ -204,25 +205,11 @@ int thread_id_compare(struct thread_info * a, struct thread_info * b)
     return a->id - b->id;
 }
 
-/**
- * Calculate number of threads in the system.
- */
-static void count_nr_threads(uintptr_t arg)
+static void update_nr_threads(uintptr_t arg)
 {
-    struct thread_info * thread;
-    unsigned tmp_nr_threads = 0;
-
-    RB_FOREACH(thread, threadmap, &CURRENT_CPU->threadmap_head) {
-        enum thread_state state;
-
-        state = thread_state_get(thread);
-        if (state != THREAD_STATE_DEAD)
-            tmp_nr_threads++;
-    }
-
-    nr_threads = tmp_nr_threads;
+    nr_threads = atomic_read(&anr_threads);
 }
-IDLE_TASK(count_nr_threads, 0);
+IDLE_TASK(update_nr_threads, 0);
 
 /**
  * Calculate load averages
@@ -467,6 +454,7 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
                 current_thread,         /* Pointer to the parent thread. */
                 priv);                  /* kworker flag. */
 
+    atomic_inc(&anr_threads);
     return tid;
 }
 
@@ -617,6 +605,7 @@ pthread_t thread_fork(void)
     /* TODO Increment resource refcounters(?) */
 
     /* The newly created thread shall remain in init state for now. */
+    atomic_inc(&anr_threads);
     return new_id;
 }
 
@@ -856,6 +845,7 @@ void thread_remove(pthread_t thread_id)
     mtx_unlock(&CURRENT_CPU->lock);
 
     kfree(thread);
+    atomic_dec(&anr_threads);
 }
 
 static void dummycd(struct thread_info * th)
