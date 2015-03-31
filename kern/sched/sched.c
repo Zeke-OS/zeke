@@ -53,20 +53,44 @@
 /**
  * Array of scheduler constructors in order of desired execution order.
  */
-static sched_constructor * sched_ctor_arr[] = {
+static sched_constructor * const sched_ctor_arr[] = {
     &sched_create_rr,
     &sched_create_idle,
 };
 #define NR_SCHEDULERS num_elem(sched_ctor_arr)
 
 /**
- * CPU scheduling object descriptor.
+ * CPU scheduling object.
+ * This is the generic part of per CPU scheduling implementation,
+ * containing map of threads scheduled in the context of this processor,
+ * list of schedulers for the processor, and queue of threads ready for
+ * execution but not yet assigned to any scheduler.
+ *
+ * Normally a set of threads is assigned to a particular scheduler based
+ * on the selected policy. Then each scheduler is expected to select the
+ * next thread from the union of given set and already existing thread set,
+ * given previously and still executing or ready to run, when run() is called.
+ * run() shall return a pointer to the next thread to be executed, selected by
+ * what ever policy or algorithm the scheduler is implementing, but if the next
+ * thread cannot be selected from the given set a NULL pointer is returned.
+ * If a NULL pointer is returned a next scheduler in order will be called, and
+ * finally if any of the scheduler cannot select a thread to be executed the
+ * idle scheduler will be called, which is expected to always select a thread
+ * for execution, namely the idle thread.
  */
 struct cpu_sched {
+    /**
+     * A map of threads scheduled in the context of this processor.
+     */
     RB_HEAD(threadmap, thread_info) threadmap_head;
+    /**
+     * A queue of threads ready for execution, and waiting for timer interrupt.
+     */
     STAILQ_HEAD(readyq_head, thread_info) readyq;
     /**
-     * Array of schedulers in order of execution.
+     * An array of schedulers in order of execution.
+     * Order of schedulers is dictated by the order of scheduler constructors in
+     * sched_ctor_arr.
      */
     struct scheduler * sched_arr[NR_SCHEDULERS];
     mtx_t lock;
@@ -317,7 +341,7 @@ void sched_handler(void)
     for (size_t i = 0; i < num_elem(CURRENT_CPU->sched_arr); i++) {
         struct scheduler * sched = CURRENT_CPU->sched_arr[i];
 
-        sched->run(sched);
+        current_thread = sched->run(sched);
         if (current_thread)
             break;
     }

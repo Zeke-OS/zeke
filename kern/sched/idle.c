@@ -81,9 +81,9 @@ static int idle_insert(struct scheduler * sobj, struct thread_info * thread)
     return 0;
 }
 
-static void idle_schedule(struct scheduler * sobj)
+static struct thread_info * idle_schedule(struct scheduler * sobj)
 {
-    current_thread = idle_info;
+    return idle_info;
 }
 
 static unsigned get_nr_active(struct scheduler * sobj)

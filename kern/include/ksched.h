@@ -59,8 +59,10 @@ struct scheduler {
     int (*insert)(struct scheduler * sobj, struct thread_info * thread);
     /**
      * Run the scheduler.
+     * @return  Returns the next thread to be executed;
+     *          Or a NULL pointer if the next thread can't be selected.
      */
-    void (*run)(struct scheduler * sobj);
+    struct thread_info * (*run)(struct scheduler * sobj);
     unsigned (*get_nr_active_threads)(struct scheduler * sobj);
 };
 

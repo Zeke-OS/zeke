@@ -102,7 +102,7 @@ static void rr_thread_act(struct scheduler * sobj, struct thread_info * thread)
     }
 }
 
-static void rr_schedule(struct scheduler * sobj)
+static struct thread_info * rr_schedule(struct scheduler * sobj)
 {
     struct thread_info * next;
     struct thread_info * tmp;
@@ -110,12 +110,13 @@ static void rr_schedule(struct scheduler * sobj)
 
     TAILQ_FOREACH_SAFE(next, &data->runq_head, RRRUNQ_ENTRY, tmp) {
         if (sched_csw_ok(next)) {
-            current_thread = next;
-            return;
+            return next;
         } else {
             rr_thread_act(sobj, next);
         }
     }
+
+    return NULL;
 }
 
 static unsigned get_nr_active(struct scheduler * sobj)
