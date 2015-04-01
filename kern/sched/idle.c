@@ -93,7 +93,7 @@ static unsigned get_nr_active(struct scheduler * sobj)
     return 0;
 }
 
-struct scheduler sched_idle = {
+static struct scheduler sched_idle = {
     .name = "sched_idle",
     .insert = idle_insert,
     .run = idle_schedule,

@@ -128,7 +128,7 @@ static unsigned get_nr_active(struct scheduler * sobj)
     return rr->nr_active;
 }
 
-const struct sched_rr sched_rr_init = {
+static const struct sched_rr sched_rr_init = {
     .sched.name = "sched_rr",
     .sched.insert = rr_insert,
     .sched.run = rr_schedule,

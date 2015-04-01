@@ -2,7 +2,7 @@
  *******************************************************************************
  * @file    ksched.h
  * @author  Olli Vanhoja
- * @brief   Scheduler implementation header file.
+ * @brief   Kernel thread scheduler header file.
  * @section LICENSE
  * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
@@ -54,28 +54,33 @@ struct scheduler {
 
     /**
      * Insert thread for scheduling with this policy.
+     * @param sobj is a pointer to the scheduling object.
+     * @param thread is a pointer to the thread to be inserted.
+     * @return  Zero if succeeded; Otherwise a negative errno code is returned.
      */
     int (*insert)(struct scheduler * sobj, struct thread_info * thread);
     /**
      * Run the scheduler.
+     * @param sobj is a pointer to the scheduling object.
      * @return  Returns the next thread to be executed;
      *          Or a NULL pointer if the next thread can't be selected.
+     * @return  A pointer to the next thread; If there is no schedudable threads
+     *          a NULL pointer is returned.
      */
     struct thread_info * (*run)(struct scheduler * sobj);
+    /**
+     * Get number of active threads in scheduling by this scheduler object.
+     * @param sobj is a pointer to the scheduling object.
+     * @return  Number of threads scheduled in the context of sobj.
+     */
     unsigned (*get_nr_active_threads)(struct scheduler * sobj);
 };
 
-typedef struct scheduler * sched_constructor(void);
-
-struct scheduler * sched_create_rr(void);
-struct scheduler * sched_create_idle(void);
-
 /**
- * Test if it is ok to terminate.
- * @param x is the flags of the thread tested.
+ * The type of scheduler constructor creating a new thread scheduler object.
+ * @return  Returns a pointer to a new thread scheduler; Otherwise -ENOMEM.
  */
-#define SCHED_TEST_TERMINATE_OK(x) \
-    (((x) & (SCHED_IN_USE_FLAG | SCHED_INTERNAL_FLAG)) == SCHED_IN_USE_FLAG)
+typedef struct scheduler * sched_constructor(void);
 
 /* Scheduler task type */
 typedef void (*sched_task_t)();
@@ -90,6 +95,17 @@ SYSCTL_DECL(_kern_sched);
  */
 void sched_get_loads(uint32_t loads[3]);
 
+/**
+ * Test if it is ok to terminate.
+ * @param _x_ is the flags of the thread tested.
+ */
+#define SCHED_TEST_TERMINATE_OK(_x_) \
+    (((_x_) & (SCHED_IN_USE_FLAG | SCHED_INTERNAL_FLAG)) == SCHED_IN_USE_FLAG)
+
+/**
+ * Test if context switch a a given thread s ok.
+ * @param thread is a pointer to a thread to be tested.
+ */
 int sched_csw_ok(struct thread_info * thread);
 
 #endif /* KSCHED_H */

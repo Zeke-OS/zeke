@@ -2,7 +2,7 @@
  *******************************************************************************
  * @file    sched.c
  * @author  Olli Vanhoja
- * @brief   Scheduler dispatcher.
+ * @brief   Kernel scheduler, the generic part of thread scheduling.
  * @section LICENSE
  * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
@@ -50,8 +50,14 @@
 #include <ptmapper.h>
 #include <timers.h>
 
+/*
+ * Scheduler constructors.
+ */
+extern struct scheduler * sched_create_rr(void);
+extern struct scheduler * sched_create_idle(void);
+
 /**
- * Array of scheduler constructors in order of desired execution order.
+ * An array of scheduler constructors in order of desired execution order.
  */
 static sched_constructor * const sched_ctor_arr[] = {
     &sched_create_rr,
@@ -101,7 +107,9 @@ static struct cpu_sched cpu[1];
 
 #define KSTACK_SIZE ((MMU_VADDR_TKSTACK_END - MMU_VADDR_TKSTACK_START) + 1)
 
-/* Linker sets for thread constructors and destructors. */
+/*
+ * Linker sets for thread constructors and destructors.
+ */
 SET_DECLARE(thread_ctors, void);
 SET_DECLARE(thread_dtors, void);
 SET_DECLARE(thread_fork_handlers, void);
@@ -111,6 +119,9 @@ SET_DECLARE(thread_fork_handlers, void);
  */
 static atomic_t next_thread_id = ATOMIC_INIT(0);
 
+/*
+ * Total number of threads.
+ */
 static atomic_t anr_threads = ATOMIC_INIT(0);
 static unsigned nr_threads;
 SYSCTL_UINT(_kern_sched, OID_AUTO, nr_threads, CTLFLAG_RD,
@@ -143,7 +154,7 @@ SYSCTL_UINT(_kern_sched, OID_AUTO, nr_threads, CTLFLAG_RD,
 /** Scales fixed-point load average value to a integer format scaled to 100 */
 #define SCALE_LOAD(x) (((x + (FIXED_1 / 200)) * 100) >> FSHIFT)
 
-/* sysctl node for scheduler */
+/* sysctl node for scheduler. */
 SYSCTL_NODE(_kern, OID_AUTO, sched, CTLFLAG_RW, 0, "Scheduler");
 
 /**
@@ -152,17 +163,13 @@ SYSCTL_NODE(_kern, OID_AUTO, sched, CTLFLAG_RW, 0, "Scheduler");
 struct thread_info * current_thread;
 
 static rwlock_t loadavg_lock;
-static uint32_t loadavg[3] = { 0, 0, 0 }; /*!< CPU load averages */
+static uint32_t loadavg[3] = { 0, 0, 0 }; /*!< CPU load averages. */
 
-/* Linker sets for pre- and post-scheduling tasks */
+/*
+ * Linker sets for pre- and post-scheduling tasks.
+ */
 SET_DECLARE(pre_sched_tasks, void);
 SET_DECLARE(post_sched_tasks, void);
-
-static void init_sched_data(struct sched_thread_data * data);
-static void thread_set_inheritance(struct thread_info * child,
-                                   struct thread_info * parent);
-static void thread_init_kstack(struct thread_info * tp);
-static void thread_free_kstack(struct thread_info * tp);
 
 RB_PROTOTYPE_STATIC(threadmap, thread_info, sched.ttentry_, thread_id_compare);
 RB_GENERATE_STATIC(threadmap, thread_info, sched.ttentry_, thread_id_compare);
@@ -353,6 +360,92 @@ void sched_handler(void)
 /* Thread creation ************************************************************/
 
 /**
+ * Initialize a sched data structure.
+ */
+static void init_sched_data(struct sched_thread_data * data)
+{
+    memset(data, '\0', sizeof(struct sched_thread_data));
+    mtx_init(&data->tdlock, MTX_TYPE_SPIN, MTX_OPT_DINT);
+    data->state = THREAD_STATE_INIT;
+}
+
+/**
+ * Set thread inheritance.
+ * Sets linking from the parent thread to the thread id.
+ */
+static void thread_set_inheritance(struct thread_info * child,
+                                   struct thread_info * parent)
+{
+    struct thread_info * last_node;
+    struct thread_info * tmp;
+
+    /* Initial values for all threads */
+    child->inh.parent = parent;
+    child->inh.first_child = NULL;
+    child->inh.next_child = NULL;
+
+    if (parent == NULL) {
+        child->pid_owner = 0;
+        return;
+    }
+    child->pid_owner = parent->pid_owner;
+
+    if (parent->inh.first_child == NULL) {
+        /* This is the first child of this parent */
+        parent->inh.first_child = child;
+        child->inh.next_child = NULL;
+
+        return; /* done */
+    }
+
+    /*
+     * Find the last child thread.
+     * Assuming first_child is a valid thread pointer.
+     */
+    tmp = parent->inh.first_child;
+    do {
+        last_node = tmp;
+    } while ((tmp = last_node->inh.next_child) != NULL);
+
+    /* Set newly created thread as the last child in chain. */
+    last_node->inh.next_child = child;
+}
+
+/**
+ * Initialize thread kernel mode stack.
+ * @param tp is a pointer to the thread.
+ */
+static void thread_init_kstack(struct thread_info * tp)
+{
+    struct buf * kstack;
+
+#ifdef configSCHED_DEBUG
+    KASSERT(tp, "tp not set\n");
+#endif
+
+    /* Create a kstack */
+    kstack = geteblk(KSTACK_SIZE);
+    if (!kstack) {
+        panic("OOM during thread creation\n");
+    }
+
+    kstack->b_uflags    = 0;
+    kstack->b_mmu.vaddr = MMU_VADDR_TKSTACK_START;
+    kstack->b_mmu.pt    = &mmu_pagetable_system;
+    kstack->b_mmu.control |= MMU_CTRL_XN;
+
+    tp->kstack_region = kstack;
+}
+
+/**
+ * Free thread kstack.
+ */
+static void thread_free_kstack(struct thread_info * tp)
+{
+    tp->kstack_region->vm_ops->rfree(tp->kstack_region);
+}
+
+/**
  * Set thread initial configuration.
  * @note This function should not be called for already initialized threads.
  * @param tp           is a pointer to the thread struct.
@@ -458,106 +551,6 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
     return tid;
 }
 
-/**
- * Initialize a sched data structure.
- */
-static void init_sched_data(struct sched_thread_data * data)
-{
-    memset(data, '\0', sizeof(struct sched_thread_data));
-    mtx_init(&data->tdlock, MTX_TYPE_SPIN, MTX_OPT_DINT);
-    data->state = THREAD_STATE_INIT;
-}
-
-/**
- * Set thread inheritance.
- * Sets linking from the parent thread to the thread id.
- */
-static void thread_set_inheritance(struct thread_info * child,
-                                   struct thread_info * parent)
-{
-    struct thread_info * last_node;
-    struct thread_info * tmp;
-
-    /* Initial values for all threads */
-    child->inh.parent = parent;
-    child->inh.first_child = NULL;
-    child->inh.next_child = NULL;
-
-    if (parent == NULL) {
-        child->pid_owner = 0;
-        return;
-    }
-    child->pid_owner = parent->pid_owner;
-
-    if (parent->inh.first_child == NULL) {
-        /* This is the first child of this parent */
-        parent->inh.first_child = child;
-        child->inh.next_child = NULL;
-
-        return; /* done */
-    }
-
-    /*
-     * Find the last child thread.
-     * Assuming first_child is a valid thread pointer.
-     */
-    tmp = parent->inh.first_child;
-    do {
-        last_node = tmp;
-    } while ((tmp = last_node->inh.next_child) != NULL);
-
-    /* Set newly created thread as the last child in chain. */
-    last_node->inh.next_child = child;
-}
-
-/**
- * Initialize thread kernel mode stack.
- * @param tp is a pointer to the thread.
- */
-static void thread_init_kstack(struct thread_info * tp)
-{
-    struct buf * kstack;
-
-#ifdef configSCHED_DEBUG
-    KASSERT(tp, "tp not set\n");
-#endif
-
-    /* Create a kstack */
-    kstack = geteblk(KSTACK_SIZE);
-    if (!kstack) {
-        panic("OOM during thread creation\n");
-    }
-
-    kstack->b_uflags    = 0;
-    kstack->b_mmu.vaddr = MMU_VADDR_TKSTACK_START;
-    kstack->b_mmu.pt    = &mmu_pagetable_system;
-    kstack->b_mmu.control |= MMU_CTRL_XN;
-
-    tp->kstack_region = kstack;
-}
-
-/**
- * Free thread kstack.
- */
-static void thread_free_kstack(struct thread_info * tp)
-{
-    tp->kstack_region->vm_ops->rfree(tp->kstack_region);
-}
-
-struct thread_info * thread_lookup(pthread_t thread_id)
-{
-    struct thread_info * thread = NULL;
-    struct thread_info find = { .id = thread_id };
-
-    mtx_lock(&CURRENT_CPU->lock);
-    if (!RB_EMPTY(&CURRENT_CPU->threadmap_head)) {
-        thread = RB_FIND(threadmap, &CURRENT_CPU->threadmap_head, &find);
-    }
-    mtx_unlock(&CURRENT_CPU->lock);
-
-    return thread;
-}
-
 pthread_t thread_fork(void)
 {
     struct thread_info * const old_thread = current_thread;
@@ -610,6 +603,20 @@ pthread_t thread_fork(void)
 }
 
 /* Thread state ***************************************************************/
+
+struct thread_info * thread_lookup(pthread_t thread_id)
+{
+    struct thread_info * thread = NULL;
+    struct thread_info find = { .id = thread_id };
+
+    mtx_lock(&CURRENT_CPU->lock);
+    if (!RB_EMPTY(&CURRENT_CPU->threadmap_head)) {
+        thread = RB_FIND(threadmap, &CURRENT_CPU->threadmap_head, &find);
+    }
+    mtx_unlock(&CURRENT_CPU->lock);
+
+    return thread;
+}
 
 int thread_ready(pthread_t thread_id)
 {
