@@ -132,6 +132,20 @@ int ksignal_sigwait(int * retval, sigset_t * set);
 int ksignal_isblocked(struct signals * sigs, int signum);
 
 /**
+ * Manipulate sigs signal mask.
+ * This is same as user space sigprocmask but in kernel space and directly uses
+ * signals struct.
+ * @param sigs is a pointer to a signals struct; will be locked in this func.
+ * @param how is SIG_BLOCK, SIG_SETMASK, or SIG_UNBLOCK.
+ * @param set is the new set.
+ * @param oldset is where the old set will be copied if oldset is set;
+ *               Can be NULL.
+ * @returns Returns 0 if succeed; Otherwise a negative error code is returned.
+ */
+int ksignal_sigsmask(struct signals * sigs, int how,
+                     const sigset_t * set, sigset_t * oldset);
+
+/**
  * Get copy of a signal action struct.
  * @param action[out] is a pointer to a struct than will be modified.
  * @param sigs[in]    is a pointer to a signals struct, that's already locked.
@@ -205,17 +219,19 @@ int sigffs(sigset_t * set);
 /**
  * Take union of sigset a and b to target.
  */
-sigset_t * sigunion(sigset_t * target, sigset_t * a, sigset_t * b);
+sigset_t * sigunion(sigset_t * target, const sigset_t * a,
+                    const sigset_t * b);
 
 /**
  * Take intersection of sigset a and b to target.
  */
-sigset_t * sigintersect(sigset_t * target, sigset_t * a, sigset_t * b);
+sigset_t * sigintersect(sigset_t * target, const sigset_t * a,
+                        const sigset_t * b);
 
 /**
  * Take complement of sigset set to target.
  */
-sigset_t * sigcompl(sigset_t * target, sigset_t * set);
+sigset_t * sigcompl(sigset_t * target, const sigset_t * set);
 
 /**
  * @}

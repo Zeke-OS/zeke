@@ -110,7 +110,7 @@ int sigffs(sigset_t * set)
     return -1;
 }
 
-sigset_t * sigunion(sigset_t * target, sigset_t * a, sigset_t * b)
+sigset_t * sigunion(sigset_t * target, const sigset_t * a, const sigset_t * b)
 {
     size_t i;
     sigset_t tmp;
@@ -123,7 +123,8 @@ sigset_t * sigunion(sigset_t * target, sigset_t * a, sigset_t * b)
     return target;
 }
 
-sigset_t * sigintersect(sigset_t * target, sigset_t * a, sigset_t * b)
+sigset_t * sigintersect(sigset_t * target, const sigset_t * a,
+                        const sigset_t * b)
 {
     size_t i;
     sigset_t tmp;
@@ -136,7 +137,7 @@ sigset_t * sigintersect(sigset_t * target, sigset_t * a, sigset_t * b)
     return target;
 }
 
-sigset_t * sigcompl(sigset_t * target, sigset_t * set)
+sigset_t * sigcompl(sigset_t * target, const sigset_t * set)
 {
     size_t i;
     sigset_t tmp;
