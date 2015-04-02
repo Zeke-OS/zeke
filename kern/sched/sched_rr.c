@@ -45,6 +45,8 @@
 
 #define RRRUNQ_ENTRY        sched.rrrunq_entry_
 
+#define GET_TTS(x) (21 + (x)->param.sched_priority)
+
 struct sched_rr {
     struct scheduler sched;
     TAILQ_HEAD(runq, thread_info) runq_head;
@@ -57,7 +59,7 @@ static int rr_insert(struct scheduler * sobj, struct thread_info * thread)
 
     if (!TEST_POLF(thread, RR_POLF_INRRRQ)) {
         TAILQ_INSERT_TAIL(&rr->runq_head, thread, RRRUNQ_ENTRY);
-        thread->sched.ts_counter = 1; /* TODO */
+        thread->sched.ts_counter = GET_TTS(thread);
         thread->sched.policy_flags |= RR_POLF_INRRRQ;
         rr->nr_active++;
     }
@@ -87,7 +89,7 @@ static void rr_thread_act(struct scheduler * sobj, struct thread_info * thread)
         break;
     case THREAD_STATE_EXEC:
         if (thread->sched.ts_counter <= 0) {
-            thread->sched.ts_counter = 1; /* TODO */
+            thread->sched.ts_counter = GET_TTS(thread);
         }
         break;
     case THREAD_STATE_BLOCKED:
