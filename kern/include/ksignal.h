@@ -120,7 +120,10 @@ int ksignal_sendsig_fatal(struct proc_info * p, int signum);
 /**
  * Wait for signal(s) specified in set.
  */
-int ksignal_sigwait(int * retval, sigset_t * set);
+int ksignal_sigwait(int * retval, const sigset_t * restrict set);
+
+int ksignal_sigtimedwait(int * retval, const sigset_t * restrict set,
+                         const struct timespec * restrict timeout);
 
 /**
  * Check if a signal is blocked.
@@ -143,7 +146,8 @@ int ksignal_isblocked(struct signals * sigs, int signum);
  * @returns Returns 0 if succeed; Otherwise a negative error code is returned.
  */
 int ksignal_sigsmask(struct signals * sigs, int how,
-                     const sigset_t * set, sigset_t * oldset);
+                     const sigset_t * restrict set,
+                     sigset_t * restrict oldset);
 
 /**
  * Get copy of a signal action struct.

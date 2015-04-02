@@ -675,7 +675,7 @@ void thread_release(pthread_t thread_id)
     thread_ready(thread_id);
 }
 
-static void thread_event_timer(void * event_arg)
+static void timer_event_sleep(void * event_arg)
 {
     struct thread_info * thread = (struct thread_info *)event_arg;
 
@@ -690,13 +690,44 @@ void thread_sleep(long millisec)
     int timer_id;
 
     do {
-        timer_id = timers_add(thread_event_timer, current_thread,
+        timer_id = timers_add(timer_event_sleep, current_thread,
             TIMERS_FLAG_ONESHOT, millisec * 1000);
     } while (timer_id < 0);
-    current_thread->wait_tim = timer_id;
 
+    current_thread->wait_tim = timer_id;
     timers_start(timer_id);
     thread_wait();
+}
+
+static void timer_event_alarm(void * event_arg)
+{
+    struct thread_info * thread = (struct thread_info *)event_arg;
+
+    thread_release(thread->id);
+}
+
+int thread_alarm(long millisec)
+{
+    int timer_id;
+
+    timer_id = timers_add(timer_event_alarm, current_thread,
+            TIMERS_FLAG_ONESHOT, millisec * 1000);
+    if (timer_id < 0) {
+        return -EAGAIN;
+    }
+
+    current_thread->wait_tim = timer_id;
+    timers_start(timer_id);
+
+    return timer_id;
+}
+
+void thread_alarm_rele(int timer_id)
+{
+    timers_release(timer_id);
+
+    if (current_thread->wait_tim == timer_id)
+        current_thread->wait_tim = TMNOVAL;
 }
 
 void thread_yield(enum thread_eyield_strategy strategy)

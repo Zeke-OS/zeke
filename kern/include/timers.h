@@ -44,12 +44,13 @@
 #include <stdint.h>
 
 /* User Flag Bits */
-#define TIMERS_FLAG_ENABLED     0x1
+#define TIMERS_FLAG_INUSE       0x1
+#define TIMERS_FLAG_ENABLED     0x2
 #define TIMERS_FLAG_ONESHOT     0x0
-#define TIMERS_FLAG_PERIODIC    0x2
+#define TIMERS_FLAG_PERIODIC    0x4
 #define TIMERS_EXT_FLAGS        (TIMERS_FLAG_ENABLED | TIMERS_FLAG_PERIODIC)
 
-typedef uint32_t timers_flags_t;
+typedef int timers_flags_t;
 
 void timers_run(void);
 
@@ -61,7 +62,7 @@ void timers_run(void);
  * @param return -1 if allocation failed.
  */
 int timers_add(void (*event_fn)(void *), void * event_arg,
-        timers_flags_t flags, uint64_t usec);
+               timers_flags_t flags, uint64_t usec);
 
 void timers_start(int tim);
 void timers_release(int tim);

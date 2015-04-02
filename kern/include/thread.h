@@ -126,6 +126,7 @@ struct thread_info {
     intptr_t retval;                /*!< Return value of the thread. */
 
     int wait_tim;                   /*!< Reference to a timeout timer. */
+    int lock_tim;                   /*!< Timer used by klocks. */
     struct sched_param param;       /*!< Scheduling parameters set by user. */
 
     /* Signals */
@@ -285,6 +286,16 @@ void thread_release(pthread_t thread_id);
  * @param millisec is the sleep time.
  */
 void thread_sleep(long millisec);
+
+/**
+ * Wake-up thread if still sleeping after millisec.
+ * The timer created with this function shall be relased by calling
+ * thread_alarm_rele().
+ * @returns Returns an id that shall be used to release the timer.
+ */
+int thread_alarm(long millisec);
+
+void thread_alarm_rele(int timer_id);
 
 /**
  * Yield turn.

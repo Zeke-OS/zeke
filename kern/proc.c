@@ -615,23 +615,19 @@ static int sys_proc_wait(void * user_args)
 
     /* TODO Implement options WCONTINUED and WUNTRACED. */
 
-    /* TODO sigblock here? */
     while (*state != PROC_STATE_ZOMBIE) {
-#if 0
-        /*
-         * This is what we'd like to do but it wont work if signal is sent
-         * between (*state != PROC_STATE_ZOMBIE) and
-         * ksignal_sigwait(&retval, &set) the signal will be ignored and
-         * we'll stay in thread_wait() forever.
-         */
         sigset_t set;
+        const struct timespec ts = { .tv_sec = 1, .tv_nsec = 0 };
+        int sigretval;
 
+        /*
+         * We may have already miss SIGCHLD that's ignored by default,
+         * so we have to use timedwait and periodically check is the
+         * child is zombie.
+         */
         sigemptyset(&set);
         sigaddset(&set, SIGCHLD);
-        ksignal_sigwait(&retval, &set);
-        /* Thus we are doing that :( \/ */
-#endif
-        thread_yield(THREAD_YIELD_LAZY);
+        ksignal_sigtimedwait(&sigretval, &set, &ts);
 
         /*
          * TODO In some cases we have to return early without waiting.

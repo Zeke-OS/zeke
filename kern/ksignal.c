@@ -84,7 +84,7 @@
 #include "ksignal.h"
 
 #define KSIG_LOCK_TYPE  MTX_TYPE_TICKET
-#define KSIG_LOCK_FLAGS (MTX_OPT_SLEEP | MTX_OPT_PRICEIL)
+#define KSIG_LOCK_FLAGS (MTX_OPT_DINT)
 
 #define KSIG_EXEC_IF(thread_, signum_) do {                     \
     int blocked = ksignal_isblocked(&thread_->sigs, signum_);   \
@@ -629,7 +629,7 @@ int ksignal_sendsig_fatal(struct proc_info * p, int signum)
     return err;
 }
 
-int ksignal_sigwait(int * retval, sigset_t * set)
+int ksignal_sigwait(int * retval, const sigset_t * restrict set)
 {
     struct signals * sigs = &current_thread->sigs;
     ksigmtx_t * s_lock = &sigs->s_lock;
@@ -669,6 +669,28 @@ out:
     return 0;
 }
 
+int ksignal_sigtimedwait(int * retval, const sigset_t * restrict set,
+                         const struct timespec * restrict timeout)
+{
+    int sigret, timer_id, err;
+
+    current_thread->sigwait_retval = -1;
+
+    timer_id = thread_alarm(timeout->tv_sec * 1000 +
+                            timeout->tv_nsec / 1000000);
+    if (timer_id < 0)
+        return timer_id;
+
+    err = ksignal_sigwait(&sigret, set);
+    thread_alarm_rele(timer_id);
+
+    if (err)
+        return err;
+    if (sigret == -1)
+        return -EAGAIN;
+    return 0;
+}
+
 int ksignal_isblocked(struct signals * sigs, int signum)
 {
     KASSERT(mtx_test(&sigs->s_lock.l), "sigs should be locked\n");
@@ -691,7 +713,8 @@ int ksignal_isblocked(struct signals * sigs, int signum)
 }
 
 int ksignal_sigsmask(struct signals * sigs, int how,
-                     const sigset_t * set, sigset_t * oldset)
+                     const sigset_t * restrict set,
+                     sigset_t * restrict oldset)
 {
     sigset_t tmpset;
     sigset_t * cursigset;

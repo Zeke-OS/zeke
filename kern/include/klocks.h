@@ -72,8 +72,8 @@
  * Lock type            Supported options
  * -----------------------------------------------------------------------------
  * MTX_TYPE_UNDEF       -
- * MTX_TYPE_SPIN        MTX_OPT_SLEEP, MTX_OPT_PRICEIL, MTX_OPT_INTSUP
- * MTX_TYPE_TICKET      MTX_OPT_PRICEIL, MTX_OPT_INTSUP
+ * MTX_TYPE_SPIN        MTX_OPT_SLEEP, MTX_OPT_PRICEIL, MTX_OPT_DINT
+ * MTX_TYPE_TICKET      MTX_OPT_PRICEIL, MTX_OPT_DINT
  */
 
 /**
@@ -86,7 +86,9 @@ enum mtx_type {
 };
 
 
-#define MTX_OPT_SLEEP   0x10 /*!< Allow timeouted waiting. */
+#define MTX_OPT_SLEEP   0x10 /*!< Allow timeouted waiting.
+                              * Can't be used in interrupt handlers.
+                              */
 #define MTX_OPT_PRICEIL 0x20 /*!< Use priority ceiling.
                               * Can be only used if lock is always used in
                               * a thread kernel mode and never in

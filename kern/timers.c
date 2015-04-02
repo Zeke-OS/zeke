@@ -32,14 +32,17 @@
  *******************************************************************************
  */
 
-#include <kinit.h>
+/* TODO MP version, per CPU timers */
+
 #include <sys/linker_set.h>
+#include <machine/atomic.h>
+#include <kinit.h>
 #include <thread.h>
 #include <timers.h>
 
 /** Timer allocation struct */
 struct timer_cb {
-    timers_flags_t flags;       /*!< Timer flags:
+    atomic_t flags;             /*!< Timer flags:
                                  * + 0 = Timer state
                                  *     + 0 = disabled
                                  *     + 1 = enabled
@@ -53,11 +56,6 @@ struct timer_cb {
     uint64_t start;             /*!< Timer start value. */
 };
 
-/*
- * Lock to be used between threads accessing timer data structures. Scheduler
- * should not try to spin on this lock as it would hang the kernel.
- */
-static mtx_t timers_lock;
 static struct timer_cb timers_array[configTIMERS_MAX];
 #define VALID_TIMER_ID(x) ((x) < configTIMERS_MAX && (x) >= 0)
 
@@ -66,7 +64,9 @@ int timers_init(void)
 {
     SUBSYS_INIT("timers");
 
-    mtx_init(&timers_lock, MTX_TYPE_SPIN, 0);
+    for (size_t i = 0; i < configTIMERS_MAX; i++) {
+        timers_array[i].flags = ATOMIC_INIT(0);
+    }
 
     return 0;
 }
@@ -75,19 +75,22 @@ void timers_run(void)
 {
     size_t i = 0;
     uint64_t now = get_utime();
+    const int enflags = TIMERS_FLAG_INUSE | TIMERS_FLAG_ENABLED;
 
-    /* TODO Not MP safe? */
     do {
-        if (timers_array[i].flags & TIMERS_FLAG_ENABLED) {
-            if ((now - timers_array[i].start) >= timers_array[i].interval) {
-                timers_array[i].event_fn(timers_array[i].event_arg);
+        struct timer_cb * const timer = &timers_array[i];
+        timers_flags_t flags = atomic_read(&timer->flags);
 
-                if (!(timers_array[i].flags & TIMERS_FLAG_PERIODIC)) {
+        if ((flags & enflags) == enflags) {
+            if ((now - timer->start) >= timer->interval) {
+                timer->event_fn(timer->event_arg);
+
+                if (!(flags & TIMERS_FLAG_PERIODIC)) {
                     /* Stop the timer */
-                    timers_array[i].flags &= ~TIMERS_FLAG_ENABLED;
+                    timer->flags &= ~TIMERS_FLAG_ENABLED;
                 } else {
                     /* Repeating timer */
-                    timers_array[i].start = get_utime();
+                    timer->start = get_utime();
                 }
             }
         }
@@ -96,29 +99,29 @@ void timers_run(void)
 DATA_SET(pre_sched_tasks, timers_run);
 
 int timers_add(void (*event_fn)(void *), void * event_arg,
-        timers_flags_t flags, uint64_t usec)
+               timers_flags_t flags, uint64_t usec)
 {
+    struct timer_cb * timer;
     size_t i = 0;
-    int retval = -1;
 
     flags &= TIMERS_EXT_FLAGS; /* Allow only external flags to be set */
 
-    mtx_lock(&timers_lock);
     do { /* Locate first free timer */
-        if (timers_array[i].event_fn == 0) {
-            timers_array[i].event_fn = event_fn; /* reserve */
-            timers_array[i].event_arg = event_arg;
-            timers_array[i].interval = usec;
-            timers_array[i].start = get_utime();
-            timers_array[i].flags = flags; /* enable */
+        timer = &timers_array[i];
 
-            retval = i;
-            break;
+        if (atomic_cmpxchg(&timer->flags, 0, flags) == 0) {
+            timer->event_fn = event_fn;
+            timer->event_arg = event_arg;
+            timer->interval = usec;
+            timer->start = get_utime();
+            flags |= TIMERS_FLAG_INUSE;
+            atomic_set(&timer->flags, flags);
+
+            return i;
         }
     } while (++i < configTIMERS_MAX);
-    mtx_unlock(&timers_lock);
 
-    return retval;
+    return -1;
 }
 
 void timers_start(int tim)
@@ -126,7 +129,7 @@ void timers_start(int tim)
     if (!VALID_TIMER_ID(tim))
         return;
 
-    timers_array[tim].flags |= TIMERS_FLAG_ENABLED;
+    atomic_add(&timers_array[tim].flags, TIMERS_FLAG_ENABLED);
 }
 
 void timers_release(int tim)
@@ -134,7 +137,5 @@ void timers_release(int tim)
     if (!VALID_TIMER_ID(tim))
         return;
 
-    /* Release the timer */
-    timers_array[tim].flags = 0;
-    timers_array[tim].event_fn = 0;
+    atomic_set(&timers_array[tim].flags, 0);
 }
