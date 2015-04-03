@@ -1,0 +1,1 @@
+console=ttyS0,115200 root=/dev/emmc0p1 rootfstype=fatfs
