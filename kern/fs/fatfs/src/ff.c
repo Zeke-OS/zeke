@@ -2176,13 +2176,11 @@ FRESULT validate (  /* FR_OK(0): The object is valid, !=0: Invalid */
     FIL *fil = (FIL*)obj;   /* Assuming offset of .fs and .id in the FIL/DIR structure is identical */
 
 
-    if (!fil || !fil->fs || !fil->fs->fs_type || fil->fs->id != fil->id)
+    if (!fil || !fil->fs || !fil->fs->fs_type || fil->fs->id != fil->id ||
+            (fatfs_disk_status(fil->fs->drv) & STA_NOINIT))
         return FR_INVALID_OBJECT;
 
     ENTER_FF(fil->fs);      /* Lock file system */
-
-    if (fatfs_disk_status(fil->fs->drv) & STA_NOINIT)
-        return FR_NOT_READY;
 
     return FR_OK;
 }
