@@ -18,11 +18,21 @@ function dir2img {
     done
 }
 
-mkfs.msdos -C "$IMG" -F 16 16384
+mkfs.msdos -C "$IMG" -F 32 40960
 if [ $? -ne 0 ]; then
     exit 1
 fi
 
+# Copy bootloader and kernel image
+# TODO Get bootloader as an argument
+BOOT="boot/rpi/bootcode.bin boot/rpi/fixup.dat boot/rpi/start.elf \
+    boot/rpi/LICENSE.broadcom boot/rpi/cmdline.txt kernel.img"
+for file in $BOOT; do
+    mcopy -i "$IMG" -s "$file" "::"
+    basename "$file"
+done
+
+# Copy binaries
 mmd -i "$IMG" dev
 mmd -i "$IMG" mnt
 mmd -i "$IMG" opt
