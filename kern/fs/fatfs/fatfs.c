@@ -201,9 +201,8 @@ static int fatfs_mount(const char * source, uint32_t mode,
     sbp->umount = NULL;
 
     if (!sbp->root) {
-#ifdef configFATFS_DEBUG
-        KERROR(KERROR_DEBUG, "Root of fatfs not found\n");
-#endif
+        KERROR(KERROR_ERR, "Root of fatfs not found\n");
+
         return -EIO;
     }
 
@@ -305,6 +304,9 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
         vn_mode = S_IFDIR;
         err = f_opendir(&in->dp, in->in_fpath);
         if (err) {
+#ifdef configFATFS_DEBUG
+            KERROR(KERROR_DEBUG, "Can't open a dir (err: %d)\n", err);
+#endif
             retval = fresult2errno(err);
             goto fail;
         }
@@ -321,6 +323,9 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
         vn_mode = S_IFREG;
         err = f_open(&in->fp, in->in_fpath, fomode);
         if (err) {
+#ifdef configFATFS_DEBUG
+            KERROR(KERROR_DEBUG, "Can't open a file (err: %d)\n", err);
+#endif
             retval = fresult2errno(err);
             goto fail;
         }
@@ -345,8 +350,8 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
     if (xvp) {
         /* TODO No idea what to do now */
         KERROR(KERROR_WARN,
-                "create_inode(): Found it during insert: \"%s\"\n",
-                fpath);
+               "create_inode(): Found it during insert: \"%s\"\n",
+               fpath);
     }
 
 #ifdef configFATFS_DEBUG
@@ -354,12 +359,11 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
 #endif
 
     *result = in;
-    vrefset(vn, 1); /* Ref for caller. */
+    vrefset(vn, 1); /* Make ref for the caller. */
     return 0;
 fail:
 #ifdef configFATFS_DEBUG
-    KERROR(KERROR_DEBUG, "create_inode(): err %i, retval %i\n",
-           err, retval);
+    KERROR(KERROR_DEBUG, "create_inode(): retval %i\n", retval);
 #endif
 
     kfree(in);
@@ -383,7 +387,7 @@ static vnode_t * create_root(struct fs_superblock * sb)
     err = create_inode(&in, get_ffsb_of_sb(sb), rootpath, vn_hash,
                        O_DIRECTORY | O_RDWR);
     if (err) {
-        KERROR(KERROR_ERR, "Failed to get a root for fatfs\n");
+        KERROR(KERROR_ERR, "Failed to init a root vnode for fatfs (%d)\n", err);
         return NULL;
     }
 

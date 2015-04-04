@@ -2966,10 +2966,8 @@ FRESULT f_opendir (
 )
 {
     FRESULT res;
-    FATFS* fs;
+    FATFS * fs;
     DEF_NAMEBUF;
-
-    if (!dp) return FR_INVALID_OBJECT;
 
     /* Get logical drive number */
     res = find_volume(&fs, &path, 0);
@@ -2987,10 +2985,17 @@ FRESULT f_opendir (
 
     /* Follow completed */
     if (dp->dir) { /* It is not the origin directory itself */
-        if (dp->dir[DIR_Attr] & AM_DIR) /* The object is a sub directory */
-            dp->sclust = ld_clust(fs, dp->dir);
-        else                            /* The object is a file */
+        /*
+         * The following check is unfortunately ambiguous because AM_DIR
+         * is actually meant to mark a subdirectory but eg. the root is not
+         * a subdirectory.
+         */
+#if 0
+        if ((dp->dir[DIR_Attr] & AM_DIR) == 0) /* The object is a file */
             res = FR_NO_PATH;
+        else
+#endif
+        dp->sclust = ld_clust(fs, dp->dir);
     }
     if (res != FR_OK)
         goto fail;
