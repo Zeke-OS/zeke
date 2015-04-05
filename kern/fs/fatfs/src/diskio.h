@@ -23,26 +23,17 @@ typedef enum {
 	RES_PARERR		/* 4: Invalid Parameter */
 } DRESULT;
 
-
-/*---------------------------------------*/
 /* Prototypes for disk control functions */
-
-
 DSTATUS fatfs_disk_initialize(BYTE pdrv);
 DSTATUS fatfs_disk_status(BYTE pdrv);
 DRESULT fatfs_disk_read(BYTE pdrv, BYTE* buff, DWORD sector, UINT count);
-DRESULT fatfs_disk_write(BYTE pdrv, const BYTE* buff, DWORD sector, UINT count);
-DRESULT fatfs_disk_ioctl(BYTE pdrv, unsigned cmd, void* buff);
-
+DRESULT fatfs_disk_write(BYTE pdrv, const BYTE * buff, DWORD sector, UINT count);
+DRESULT fatfs_disk_ioctl(BYTE pdrv, unsigned cmd, void* buff, size_t bsize);
 
 /* Disk Status Bits (DSTATUS) */
-
 #define STA_NOINIT		0x01	/* Drive not initialized */
 #define STA_NODISK		0x02	/* No medium in the drive */
 #define STA_PROTECT		0x04	/* Write protected */
-
-
-/* Command code for disk_ioctrl fucntion */
 
 /* Generic command (used by FatFs) */
 #define CTRL_SYNC			0	/* Flush disk cache (for write functions) */

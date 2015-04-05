@@ -134,7 +134,7 @@ DRESULT fatfs_disk_write(BYTE pdrv, const BYTE* buff, DWORD sector, UINT count)
     return 0;
 }
 
-DRESULT fatfs_disk_ioctl(BYTE pdrv, unsigned cmd, void * buff)
+DRESULT fatfs_disk_ioctl(BYTE pdrv, unsigned cmd, void * buff, size_t bsize)
 {
     file_t * file;
     ssize_t err;
@@ -160,7 +160,7 @@ DRESULT fatfs_disk_ioctl(BYTE pdrv, unsigned cmd, void * buff)
         break;
     }
 
-    err = file->vnode->vnode_ops->ioctl(file, cmd, buff, sizeof(DWORD));
+    err = file->vnode->vnode_ops->ioctl(file, cmd, buff, bsize);
     if (err)
         return RES_ERROR;
 
