@@ -556,7 +556,9 @@ static void sd_power_off()
 static uint32_t sd_get_base_clock_hz()
 {
     uint32_t base_clock;
+#if configRPI_EMMC_BCM2708
     uint32_t * mailbuffer;
+#endif
 
 #if configRPI_EMMC_GENERIC
     capabilities_0 = mmio_read(EMMC_BASE + EMMC_CAPABILITIES_0);
