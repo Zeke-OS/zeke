@@ -4,7 +4,7 @@
  * @author Olli Vanhoja
  * @brief HW timer services.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,13 +37,13 @@
 void register_schedtimer_clear(void (*clear)(void));
 int schedtimer_clear(void);
 
-#define TIMEOUT_WAIT(stop_if_true, usec)            \
-do {                                                \
-    uint64_t __start_time = get_utime();            \
-    do {                                            \
-        if(stop_if_true)                            \
-            break;                                  \
-    } while((get_utime() - __start_time) >= usec);  \
-} while(0);
+#define TIMEOUT_WAIT(stop_if_true, usec)                \
+do {                                                    \
+    uint64_t i = (usec), __start_time = get_utime();    \
+    do {                                                \
+        if(stop_if_true)                                \
+            break;                                      \
+    } while((get_utime() - __start_time) >= i);         \
+} while(0)
 
 #endif /* HW_TIMERS_H */
