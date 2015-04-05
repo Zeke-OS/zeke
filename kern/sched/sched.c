@@ -415,7 +415,7 @@ static void thread_set_inheritance(struct thread_info * child,
  * Initialize thread kernel mode stack.
  * @param tp is a pointer to the thread.
  */
-static void thread_init_kstack(struct thread_info * tp)
+static void thread_init_kstack(struct thread_info * thread)
 {
     struct buf * kstack;
 
@@ -429,20 +429,20 @@ static void thread_init_kstack(struct thread_info * tp)
         panic("OOM during thread creation\n");
     }
 
-    kstack->b_uflags    = 0;
-    kstack->b_mmu.vaddr = MMU_VADDR_TKSTACK_START;
-    kstack->b_mmu.pt    = &mmu_pagetable_system;
-    kstack->b_mmu.control |= MMU_CTRL_XN;
+    kstack->b_uflags        = 0;
+    kstack->b_mmu.vaddr     = MMU_VADDR_TKSTACK_START;
+    kstack->b_mmu.pt        = &mmu_pagetable_system;
+    kstack->b_mmu.control  |= MMU_CTRL_XN;
 
-    tp->kstack_region = kstack;
+    thread->kstack_region = kstack;
 }
 
 /**
  * Free thread kstack.
  */
-static void thread_free_kstack(struct thread_info * tp)
+static void thread_free_kstack(struct thread_info * thread)
 {
-    tp->kstack_region->vm_ops->rfree(tp->kstack_region);
+    thread->kstack_region->vm_ops->rfree(thread->kstack_region);
 }
 
 /**
