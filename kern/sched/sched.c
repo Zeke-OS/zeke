@@ -420,7 +420,7 @@ static void thread_init_kstack(struct thread_info * thread)
     struct buf * kstack;
 
 #ifdef configSCHED_DEBUG
-    KASSERT(tp, "tp not set\n");
+    KASSERT(thread, "thread not set\n");
 #endif
 
     /* Create a kstack */

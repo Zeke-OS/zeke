@@ -30,20 +30,23 @@
  *******************************************************************************
  */
 
-#include <stdint.h>
+#include <machine/atomic.h>
 #include <stddef.h>
-#include <libkern.h>
-#include <kstring.h>
-#include <kerror.h>
+#include <stdint.h>
 #include <sys/sysctl.h>
 #include <dynmem.h>
 #include <idle.h>
+#include <kerror.h>
+#include <klocks.h>
+#include <kstring.h>
+#include <libkern.h>
 #include <kmalloc.h>
 
-#define KM_SIGNATURE_VALID      0XBAADF00D /*!< Signature for valid mblock
-                                            *   entry. */
-#define KM_SIGNATURE_INVALID    0xDEADF00D /*!< Signature for invalid mblock
-                                            *   entry. */
+/*
+ * Signatures
+ */
+#define KM_SIGNATURE_VALID      0XBAADF00D /*!< a valid mblock entry. */
+#define KM_SIGNATURE_INVALID    0xDEADF00D /*!< an invalid mblock entry. */
 
 /**
  * kmalloc statistics strcut.
@@ -84,7 +87,7 @@ typedef struct mblock {
     size_t size;            /* Size of data area of this block. */
     struct mblock * next;   /* Pointer to the next memory block desc. */
     struct mblock * prev;   /* Pointer to the previous memory block desc. */
-    int refcount;           /*!< Ref count. */
+    atomic_t refcount;      /*!< Ref count. */
     void * ptr;             /*!< Memory block desc validatation. ptr should
                              * point to the data section of this mblock. */
     char data[];
@@ -99,6 +102,8 @@ typedef struct mblock {
  * kmalloc base address.
  */
 void * kmalloc_base;
+
+static mtx_t kmalloc_giant_lock;
 
 /**
  * Get pointer to a memory block descriptor by memory block pointer.
@@ -125,6 +130,14 @@ static void update_stat_down(size_t * stat_act, size_t amount);
 #if 0
 static void update_stat_set(size_t * stat_act, size_t value);
 #endif
+
+/*
+ * This will be called before any other initializers.
+ */
+void kmalloc_init(void)
+{
+    mtx_init(&kmalloc_giant_lock, MTX_TYPE_TICKET, 0);
+}
 
 /**
  * Allocate more memory for kmalloc.
@@ -154,13 +167,13 @@ static mblock_t * extend(mblock_t * last, size_t s)
      * Data section of the block will be returned by kmalloc.
      */
     b->size = s - MBLOCK_SIZE;
-    b->next = 0;
+    b->next = NULL;
     b->prev = last;
     if (last)
         last->next = b;
     b->signature = KM_SIGNATURE_VALID;
     b->ptr = b->data;
-    b->refcount = 0;
+    b->refcount = ATOMIC_INIT(0);
 
     /* If there is still space left in the new region it has to be
      * marked as a block now. */
@@ -172,8 +185,8 @@ static mblock_t * extend(mblock_t * last, size_t s)
         bl->size = memfree_b - MBLOCK_SIZE;
         bl->signature = KM_SIGNATURE_VALID;
         bl->ptr = bl->data;
-        bl->refcount = 0;
-        bl->next = 0;
+        bl->refcount = ATOMIC_INIT(0);
+        bl->next = NULL;
         bl->prev = b;
 
         b->next = bl;
@@ -195,16 +208,16 @@ static mblock_t * find_mblock(mblock_t ** last, size_t size)
 
     do {
 #ifdef configKMALLOC_DEBUG
-        if (b->ptr == 0) {
+        if (b->ptr == NULL) {
             printf("Invalid mblock: p = %p sign = %x\n", b->ptr, b->signature);
-            b = 0;
+            b = NULL;
             break;
         }
 #endif
         *last = b;
-        if ((b->refcount == 0) && b->size >= size)
+        if ((atomic_read(&b->refcount) == 0) && b->size >= size)
             break;
-    } while ((b = b->next) != 0);
+    } while ((b = b->next) != NULL);
 
     return b;
 }
@@ -221,7 +234,7 @@ static void split_mblock(mblock_t * b, size_t s)
     nb->size = b->size - s - MBLOCK_SIZE;
     nb->next = b->next;
     nb->prev = b;
-    nb->refcount = 0;
+    nb->refcount = ATOMIC_INIT(0);
     nb->signature = KM_SIGNATURE_VALID;
     nb->ptr = nb->data;
 
@@ -239,7 +252,7 @@ static void split_mblock(mblock_t * b, size_t s)
  */
 static mblock_t * merge(mblock_t * b)
 {
-    if (b->next && (b->next->refcount == 0)) {
+    if (b->next && (atomic_read(&b->next->refcount) == 0)) {
         /* Don't merge if these blocks are not in contiguous memory space.
          * If they aren't it means that they are from diffent areas of dynmem */
         if ((void *)((size_t)(b->data) + b->size) != (void *)(b->next)) {
@@ -302,6 +315,7 @@ void * kmalloc(size_t size)
     mblock_t * last;
     size_t s = memalign(size);
 
+    mtx_lock(&kmalloc_giant_lock);
     if (kmalloc_base) {
         /* Find a mblock. */
         last = kmalloc_base;
@@ -316,19 +330,25 @@ void * kmalloc(size_t size)
         } else {
             /* No fitting block, allocate more memory. */
             b = extend(last, s);
-            if (!b)
-                return 0;
+            if (!b) {
+                mtx_unlock(&kmalloc_giant_lock);
+                return NULL;
+            }
         }
     } else { /* First kmalloc call or no pages allocated. */
-        b = extend(0, s);
-        if (!b)
-            return 0;
+        b = extend(NULL, s);
+        if (!b) {
+            mtx_unlock(&kmalloc_giant_lock);
+            return NULL;
+        }
         kmalloc_base = b;
     }
 
     update_stat_up(&(kmalloc_stat.kms_mem_alloc), b->size);
 
-    b->refcount = 1;
+    atomic_set(&b->refcount, 1);
+    mtx_unlock(&kmalloc_giant_lock);
+
     return b->data;
 }
 
@@ -350,47 +370,53 @@ void kfree(void * p)
 {
     mblock_t * b;
 
-    if (valid_addr(p)) {
-        b = get_mblock(p);
-        if (b->refcount <= 0) { /* Already freed. */
-            b->refcount = 0;
-            return;
-        }
+    if (!valid_addr(p))
+        return;
 
-        b->refcount--;
-        if (b->refcount > 0)
-            return;
-
-        update_stat_down(&(kmalloc_stat.kms_mem_alloc), b->size);
-
-        /* Try merge with previous mblock if possible. */
-        if (b->prev && (b->prev->refcount == 0)) {
-            b = merge(b->prev);
-        }
-
-        /* Then try merge with next. */
-        if (b->next) {
-            merge(b);
-        } else {
-            /* Free the last block. */
-            if (b->prev) {
-                b->prev->next = 0;
-            } else { /* All freed, no more memory allocated by kmalloc. */
-                kmalloc_base = 0;
-            }
-
-            /* This should work as b should be pointing to a begining of
-             * a region allocated with dynmem.
-             *
-             * Note: kfree is not bullet proof with non-contiguous dynmem
-             * regions because it doesn't do any traversal to find older
-             * allocations that are now free. Hopefully this doesn't matter
-             * and it might even give some performance boost in certain
-             * situations. */
-            dynmem_free_region(b);
-            /* TODO Update stat */
-        }
+    b = get_mblock(p);
+    if (atomic_read(&b->refcount) <= 0) { /* Already freed. */
+        return;
     }
+
+    atomic_dec(&b->refcount);
+    if (atomic_read(&b->refcount) > 0)
+        return;
+
+    mtx_lock(&kmalloc_giant_lock);
+
+    update_stat_down(&(kmalloc_stat.kms_mem_alloc), b->size);
+
+    /* Try merge with previous mblock if possible. */
+    if (b->prev && (atomic_read(&b->prev->refcount) == 0)) {
+        b = merge(b->prev);
+    }
+
+    /* Then try merge with next. */
+    if (b->next) {
+        merge(b);
+    } else {
+        /* Free the last block. */
+        if (b->prev) {
+            b->prev->next = NULL;
+        } else { /* All freed, no more memory allocated by kmalloc. */
+            kmalloc_base = NULL;
+        }
+
+        /* This should work as b should be pointing to a begining of
+         * a region allocated with dynmem.
+         *
+         * Note: kfree is not bullet proof with non-contiguous dynmem
+         * regions because it doesn't do any traversal to find older
+         * allocations that are now free. Hopefully this doesn't matter
+         * and it might even give some performance boost in certain
+         * situations. */
+        mtx_unlock(&kmalloc_giant_lock);
+        dynmem_free_region(b);
+        /* TODO Update stat */
+        return;
+    }
+
+    mtx_unlock(&kmalloc_giant_lock);
 }
 
 void * krealloc(void * p, size_t size)
@@ -399,64 +425,71 @@ void * krealloc(void * p, size_t size)
     mblock_t * b; /* Old block. */
     mblock_t * nb; /* New block. */
     void * np; /* Pointer to the data section of the new block. */
-    void * retval = 0;
+    void * retval = NULL;
 
     if (!p) {
-        /* realloc is specified to call malloc(s) if p == 0. */
+        /* realloc is specified to call malloc(s) if p == NULL. */
         retval = kmalloc(size);
         goto out;
     }
 
-    if (valid_addr(p)) {
-        s = memalign(size);
-        b = get_mblock(p);
+    if (!valid_addr(p))
+        return NULL;
 
-        if (b->size >= s) { /* Requested to shrink. */
+    s = memalign(size);
+    b = get_mblock(p);
+
+    if (b->size >= s) { /* Requested to shrink. */
+        if (b->size - s >= (MBLOCK_SIZE + sizeof(void *))) {
+            mtx_lock(&kmalloc_giant_lock);
+            split_mblock(b, s);
+            mtx_unlock(&kmalloc_giant_lock);
+        } /* else don't split. */
+    } else { /* new size is larger. */
+        /* Try to merge with next block. */
+        if (b->next && (atomic_read(&b->next->refcount) == 0) &&
+                ((b->size + MBLOCK_SIZE + b->next->size) >= s)) {
+            size_t old_size = b->size;
+
+            mtx_lock(&kmalloc_giant_lock);
+
+            merge(b);
+            if (b->size < s) {
+                mtx_unlock(&kmalloc_giant_lock);
+                /* Goto alloc_new_block if merge failed. */
+                goto alloc_new_block;
+            }
+
+            /* Substract from stat */
+            update_stat_down(&(kmalloc_stat.kms_mem_alloc), old_size);
+
+            /* Split new block if it's larger than needed */
             if (b->size - s >= (MBLOCK_SIZE + sizeof(void *))) {
                 split_mblock(b, s);
-            } /* else don't split. */
-        } else { /* new size is larger. */
-            /* Try to merge with next block. */
-            if (b->next && (b->next->refcount == 0) &&
-                    ((b->size + MBLOCK_SIZE + b->next->size) >= s)) {
-                size_t old_size = b->size;
+            }
 
-                merge(b);
-                if (b->size < s) {
-                    /* Goto alloc_new_block if merge failed. */
-                    goto alloc_new_block;
-                }
-
-                /* Substract from stat */
-                update_stat_down(&(kmalloc_stat.kms_mem_alloc), old_size);
-
-                /* Split new block if it's larger than needed */
-                if (b->size - s >= (MBLOCK_SIZE + sizeof(void *))) {
-                    split_mblock(b, s);
-                }
-
-                /* Add new size to stat */
-                update_stat_up(&(kmalloc_stat.kms_mem_alloc), b->size);
-            } else { /* realloc with a new mblock.
-                      * kmalloc & free will handle stat updates. */
+            /* Add new size to stat */
+            update_stat_up(&(kmalloc_stat.kms_mem_alloc), b->size);
+            mtx_unlock(&kmalloc_giant_lock);
+        } else { /* realloc with a new mblock.
+                  * kmalloc & free will handle stat updates. */
 alloc_new_block:
-                np = kmalloc(s);
-                if (!np) { /* Allocating new block failed,
-                            * don't touch the old one. */
-                    retval = 0;
-                    goto out;
-                }
-
-                nb = get_mblock(np);
-                memcpy(nb->data, b->data, b->size);
-                /* Free the old mblock. */
-                kfree(p);
-                retval = np;
+            np = kmalloc(s);
+            if (!np) { /* Allocating new block failed,
+                        * don't touch the old one. */
+                retval = NULL;
                 goto out;
             }
+
+            nb = get_mblock(np);
+            memcpy(nb->data, b->data, b->size);
+            /* Free the old mblock. */
+            kfree(p);
+            retval = np;
+            goto out;
         }
-        retval = p;
     }
+    retval = p;
 out:
     return retval;
 }
@@ -464,7 +497,7 @@ out:
 void * kpalloc(void * p)
 {
     if (valid_addr(p)) {
-        get_mblock(p)->refcount += 1;
+        atomic_inc(&(get_mblock(p)->refcount));
     }
     return p;
 }
@@ -524,7 +557,7 @@ static void stat_fragmentation(uintptr_t arg)
         return;
 
     do {
-        if (b->refcount == 0) {
+        if (atomic_read(&b->refcount) == 0) {
             blocks_free++;
         }
         blocks_total++;

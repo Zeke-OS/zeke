@@ -97,6 +97,10 @@ static void rr_thread_act(struct scheduler * sobj, struct thread_info * thread)
         break;
     case THREAD_STATE_DEAD:
         rr_remove(sobj, thread);
+        /*
+         * TODO Possible deadlock because thread_remove() uses kfree,
+         * should be cleaned in idle task.
+         */
         if (thread_flags_is_set(thread, SCHED_DETACH_FLAG))
             thread_remove(thread->id);
         break;

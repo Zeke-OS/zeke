@@ -51,7 +51,8 @@ extern int (*__init_array_end []) (void) __attribute__((weak));
 extern int (*__fini_array_start []) (void) __attribute__((weak));
 extern int (*__fini_array_end []) (void) __attribute__((weak));
 
-void * uinit(void * arg);
+extern void kmalloc_init(void);
+extern void * uinit(void * arg);
 static void mount_rootfs(void);
 static void exec_array(int (*a []) (void), int n);
 
@@ -67,6 +68,7 @@ int exec_init_array(void)
     n = __hw_preinit_array_end - __hw_preinit_array_start;
     exec_array(__hw_preinit_array_start, n);
 
+    kmalloc_init();
     n  = __init_array_end - __init_array_start;
     exec_array(__init_array_start, n);
 
