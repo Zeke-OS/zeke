@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Tiny Init Shell for debugging in init.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,28 +41,31 @@
 #include "tish.h"
 
 static void list_all(void);
-static void getset_parm(char * arg);
+static int getset_parm(char * arg);
 static void getset_svalue(int * oid, int len, size_t oval_len,
         char * nval, size_t nval_len);
 static void getset_ivalue(int * oid, int len, size_t oval_len,
         char * nval, size_t nval_len);
 static void print_mib_name(int * mib, int len);
 
-static void tish_sysctl_cmd(char ** args)
+static int tish_sysctl_cmd(char ** args)
 {
     char * arg = strtok_r(0, DELIMS, args);
+    int retval = 0;
 
     if (!strcmp(arg, "-a")) {
         list_all();
     } else {
         /* TODO do this correctly */
         /* We only support integer values by now */
-        getset_parm(arg);
+        retval = getset_parm(arg);
     }
+
+    return retval;
 }
 TISH_CMD(tish_sysctl_cmd, "sysctl");
 
-static void getset_parm(char * arg)
+static int getset_parm(char * arg)
 {
     char * name;
     char * value;
@@ -78,24 +81,29 @@ static void getset_parm(char * arg)
     value = strtok_r(0, "=", &rest);
     if (!name) {
         printf("Invalid argument\n");
-        return;
+
+        errno = EINVAL;
+        return -1;
     }
 
     const int mib_len = sysctlnametomib(name, mib, num_elem(mib));
     if (mib_len < 0) {
         printf("Node not found\n");
-        return;
+
+        return -1;
     }
 
     printf("%s = ", name);
 
     if (sysctloidfmt(mib, mib_len, fmt, &kind)) {
         printf("Invalid node\n");
-        return;
+
+        return -1;
     }
     if (sysctl(mib, mib_len, 0, &dlen, 0, 0)) {
         printf("Invalid node\n");
-        return;
+
+        return -1;
     }
 
     ctltype = (kind & CTLTYPE);
@@ -114,6 +122,8 @@ static void getset_parm(char * arg)
         printf("Data type not supported yet\n");
         break;
     }
+
+    return 0;
 }
 
 static void getset_svalue(int * oid, int len, size_t oval_len,
@@ -172,7 +182,7 @@ static void print_mib_name(int * mib, int len)
     printf("%s\n", strname);
 }
 
-static void tish_uname(char ** args)
+static int tish_uname(char ** args)
 {
     char * arg = strtok_r(0, DELIMS, args);
     int mib[2];
@@ -201,10 +211,12 @@ static void tish_uname(char ** args)
     }
 
     printf("%s\n", buf2);
+
+    return 0;
 }
 TISH_CMD(tish_uname, "uname");
 
-static void tish_ikut(char ** arg)
+static int tish_ikut(char ** arg)
 {
     int mib_test[5];
     int mib_cur[5];
@@ -236,5 +248,6 @@ static void tish_ikut(char ** arg)
     }
 
     printf("errno = %i\n", errno);
+    return 0;
 }
 TISH_CMD(tish_ikut, "ikut");

@@ -45,13 +45,13 @@
 #include <zeke.h>
 #include "tish.h"
 
-static void create_debug_thread(void);
+static int create_debug_thread(void);
 static void * test_thread(void * arg);
 static void thread_stat(void);
 
 static char invalid_arg[] = "Invalid argument\n";
 
-static void debug(char ** args)
+static int debug(char ** args)
 {
     char * arg = strtok_r(0, DELIMS, args);
 
@@ -59,7 +59,9 @@ static void debug(char ** args)
     if (!strcmp(arg, "thread")) {
         arg = strtok_r(0, DELIMS, args);
         if (!strcmp(arg, "create")) {
-            create_debug_thread();
+            int err = create_debug_thread();
+            if (err)
+                return -1;
         } else {
             printf("%s", invalid_arg);
         }
@@ -100,11 +102,14 @@ static void debug(char ** args)
     } else {
         printf("Invalid subcommand\n");
         errno = EINVAL;
+        return -1;
     }
+
+    return 0;
 }
 TISH_CMD(debug, "debug");
 
-static void create_debug_thread(void)
+static int create_debug_thread(void)
 {
     pthread_attr_t attr;
     static pthread_t test_tid;
@@ -115,7 +120,9 @@ static void create_debug_thread(void)
     stack = malloc(stack_size);
     if (!stack) {
         printf("Failed to create a stack\n");
-        return;
+
+        errno = ENOMEM;
+        return -1;
     }
     printf("New stack @ %p\n", stack);
 
@@ -125,9 +132,11 @@ static void create_debug_thread(void)
     errno = 0;
     if (pthread_create(&test_tid, &attr, test_thread, 0)) {
         printf("Thread creation failed\n");
-        return;
+        return -1;
     }
     printf("Thread created with id: %u and stack: %p\n", test_tid, stack);
+
+    return 0;
 }
 
 static void * test_thread(void * arg)

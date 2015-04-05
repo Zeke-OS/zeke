@@ -34,67 +34,76 @@
 #include <string.h>
 #include <limits.h>
 #include <unistd.h>
+#include <errno.h>
 #include <time.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include "tish.h"
 
-static void cd(char ** args)
+static int cd(char ** args)
 {
     char * arg = strtok_r(0, DELIMS, args);
-    if (!arg)
+
+    if (!arg) {
         fprintf(stderr, "cd missing argument.\n");
-    else
-        chdir(arg);
+        errno = EINVAL;
+        return -1;
+    }
+    chdir(arg);
+
+    return 0;
 }
 TISH_CMD(cd, "cd");
 
 char cwd_buf[PATH_MAX];
-static void pwd(char ** args)
+static int pwd(char ** args)
 {
     char * cwd;
 
     cwd = getcwd(cwd_buf, sizeof(cwd_buf));
-    if (!cwd)
+    if (!cwd) {
         perror("Failed to get cwd");
-    else
-        printf("%s\n", cwd);
+        return -1;
+    }
+    printf("%s\n", cwd);
+
+    return 0;
 }
 TISH_CMD(pwd, "pwd");
 
-static void touch(char ** args)
+static int touch(char ** args)
 {
     int fildes;
     char * path = strtok_r(0, DELIMS, args);
 
     fildes = creat(path, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if (fildes < 0)
-        return; /* err */
+        return -1; /* err */
 
-    close(fildes);
+    return close(fildes);
 }
 TISH_CMD(touch, "touch");
 
-static void tish_mkdir(char ** args)
+static int tish_mkdir(char ** args)
 {
     char * path = strtok_r(0, DELIMS, args);
 
-    mkdir(path, S_IRWXU | S_IRGRP | S_IXGRP);
+    return mkdir(path, S_IRWXU | S_IRGRP | S_IXGRP);
 }
 TISH_CMD(tish_mkdir, "mkdir");
 
-static void tish_rmdir(char ** args)
+static int tish_rmdir(char ** args)
 {
     char * path = strtok_r(0, DELIMS, args);
 
-    rmdir(path);
+    return rmdir(path);
 }
 TISH_CMD(tish_rmdir, "rmdir");
 
-static void tish_unlink(char ** args)
+static int tish_unlink(char ** args)
 {
     char * path = strtok_r(0, DELIMS, args);
 
-    unlink(path);
+    return unlink(path);
 }
 TISH_CMD(tish_unlink, "unlink");

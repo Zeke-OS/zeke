@@ -49,14 +49,13 @@ int tish_eof;
 
 /* Static functions */
 static size_t parse_args(char ** argv, char ** args, size_t arg_max);
-static void forkexec(char * path, char ** args);
+static int forkexec(char * path, char ** args);
 
 int tish(void)
 {
     static char line[MAX_LEN];
     char * cmd_name;
     char * strtok_lasts;
-    int err;
 
     while (1) {
         write(STDOUT_FILENO, "# ", 3);
@@ -65,20 +64,21 @@ int tish(void)
 
         if ((cmd_name = strtok_r(line, DELIMS, &strtok_lasts))) {
             struct tish_builtin ** cmd;
-            errno = 0;
+            int err;
 
             SET_FOREACH(cmd, tish_cmd) {
                 if (!strcmp(cmd_name, (*cmd)->name)) {
-                    (*cmd)->fn(&strtok_lasts);
+                    err = (*cmd)->fn(&strtok_lasts);
                     goto get_errno;
                 }
             }
 
             /* Assume fork & exec */
-            forkexec(cmd_name, &strtok_lasts);
+            err = forkexec(cmd_name, &strtok_lasts);
 
 get_errno:
-            if ((err = errno)) {
+            if (err) {
+                err = errno;
                 printf("\nFailed, errno: %u\n", err);
             }
 
@@ -90,13 +90,14 @@ get_errno:
     return 0;
 }
 
-static void tish_exit(char ** args)
+static int tish_exit(char ** args)
 {
     tish_eof = 1;
+    return 0;
 }
 TISH_CMD(tish_exit, "exit");
 
-static void help(char ** args)
+static int help(char ** args)
 {
     struct tish_builtin ** cmd;
 
@@ -105,6 +106,8 @@ static void help(char ** args)
     }
 
     printf("\n");
+
+    return 0;
 }
 TISH_CMD(help, "help");
 
@@ -178,7 +181,7 @@ static size_t parse_args(char ** argv, char ** args, size_t arg_max)
 }
 
 #define NARG_MAX 256
-static void forkexec(char * path, char ** args)
+static int forkexec(char * path, char ** args)
 {
     static char * argv[NARG_MAX];
     size_t argc;
@@ -188,7 +191,8 @@ static void forkexec(char * path, char ** args)
     argc = parse_args(argv, args, num_elem(argv) - 1);
     if (argc == 0) {
         fprintf(stderr, "Parsing arguments failed\n");
-        return;
+        errno = EINVAL;
+        return -1;
     }
 
     pid = fork();
@@ -213,4 +217,6 @@ static void forkexec(char * path, char ** args)
 
         printf("status: %u\n", status);
     }
+
+    return 0;
 }

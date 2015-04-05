@@ -38,17 +38,19 @@
 #include <time.h>
 #include "tish.h"
 
-static void tish_date(char ** args)
+static int tish_date(char ** args)
 {
     struct timespec ts = {0, 0};
     int sec, nsec;
 
     if (clock_gettime(CLOCK_REALTIME, &ts))
-        return;
+        return -1;
 
     sec = ts.tv_sec;
     nsec = ts.tv_nsec;
 
     printf("%u.%u\n", sec, nsec);
+
+    return 0;
 }
 TISH_CMD(tish_date, "date");

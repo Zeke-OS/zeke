@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Tiny Init Shell for debugging in init.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 
 struct tish_builtin {
     char name[10];
-    void (*fn)(char ** args);
+    int (*fn)(char ** args);
 };
 
 #define TISH_CMD(fun, cmdnamestr)           \
