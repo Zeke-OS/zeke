@@ -520,12 +520,15 @@ static void stat_fragmentation(uintptr_t arg)
     int blocks_free = 0;
     int blocks_total = 0;
 
+    if (!b)
+        return;
+
     do {
         if (b->refcount == 0) {
             blocks_free++;
         }
         blocks_total++;
-    } while ((b = b->next) != 0);
+    } while ((b = b->next));
 
     fragm_ratio = (blocks_free * 100) / blocks_total;
 }
