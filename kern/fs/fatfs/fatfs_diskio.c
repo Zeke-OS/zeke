@@ -140,8 +140,8 @@ DRESULT fatfs_disk_ioctl(BYTE pdrv, unsigned cmd, void * buff, size_t bsize)
     ssize_t err;
 #ifdef configFATFS_DEBUG
     KERROR(KERROR_DEBUG,
-            "fatfs_disk_ioctl(pdrv %u, cmd %u, buff %p)\n",
-            (uint32_t)pdrv, (uint32_t)cmd, buff);
+            "fatfs_disk_ioctl(pdrv %u, cmd %u, buff %p, bsize %u)\n",
+            (uint32_t)pdrv, (uint32_t)cmd, buff, (uint32_t)bsize);
 #endif
 
     if (pdrv >= configFATFS_MAX_MOUNTS || !fatfs_sb_arr[pdrv])

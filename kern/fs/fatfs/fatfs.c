@@ -176,7 +176,7 @@ static int fatfs_mount(const char * source, uint32_t mode,
     err = f_mount(&fatfs_sb->ff_fs, drive, 1);
     if (err) {
 #ifdef configFATFS_DEBUG
-        KERROR(KERROR_DEBUG, "Cant init a work area for FAT (%d)\n", err);
+        KERROR(KERROR_DEBUG, "Can't init a work area for FAT (%d)\n", err);
 #endif
         retval = fresult2errno(err);
         goto fail;
