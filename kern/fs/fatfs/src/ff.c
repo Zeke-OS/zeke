@@ -3370,7 +3370,7 @@ FRESULT f_mkdir (
 {
     FRESULT res;
     FF_DIR dj;
-    BYTE *dir, n;
+    BYTE * dir, n;
     DWORD dsc, dcl, pcl, tm = get_fattime();
     DEF_NAMEBUF;
 
@@ -3386,36 +3386,44 @@ FRESULT f_mkdir (
         if (res == FR_NO_FILE) {                /* Can create a new directory */
             dcl = create_chain(dj.fs, 0);       /* Allocate a cluster for the new directory table */
             res = FR_OK;
-            if (dcl == 0) res = FR_DENIED;      /* No space to allocate a new cluster */
-            if (dcl == 1) res = FR_INT_ERR;
-            if (dcl == 0xFFFFFFFF) res = FR_DISK_ERR;
+            if (dcl == 0)
+                res = FR_DENIED; /* No space to allocate a new cluster */
+            if (dcl == 1)
+                res = FR_INT_ERR;
+            if (dcl == 0xFFFFFFFF)
+                res = FR_DISK_ERR;
             if (res == FR_OK)                   /* Flush FAT */
                 res = sync_window(dj.fs);
             if (res == FR_OK) {                 /* Initialize the new directory table */
                 dsc = clust2sect(dj.fs, dcl);
                 dir = dj.fs->win;
                 memset(dir, 0, SS(dj.fs));
-                memset(dir+DIR_Name, ' ', 11); /* Create "." entry */
+                memset(dir + DIR_Name, ' ', 11); /* Create "." entry */
                 dir[DIR_Name] = '.';
                 dir[DIR_Attr] = AM_DIR;
-                ST_DWORD(dir+DIR_WrtTime, tm);
+                ST_DWORD(dir + DIR_WrtTime, tm);
                 st_clust(dir, dcl);
-                memcpy(dir+SZ_DIR, dir, SZ_DIR);   /* Create ".." entry */
-                dir[SZ_DIR+1] = '.'; pcl = dj.sclust;
+                memcpy(dir + SZ_DIR, dir, SZ_DIR);   /* Create ".." entry */
+                dir[SZ_DIR + 1] = '.'; pcl = dj.sclust;
                 if (dj.fs->fs_type == FS_FAT32 && pcl == dj.fs->dirbase)
                     pcl = 0;
-                st_clust(dir+SZ_DIR, pcl);
+                st_clust(dir + SZ_DIR, pcl);
                 for (n = dj.fs->csize; n; n--) {    /* Write dot entries and clear following sectors */
                     dj.fs->winsect = dsc++;
                     dj.fs->wflag = 1;
                     res = sync_window(dj.fs);
-                    if (res != FR_OK) break;
+                    if (res != FR_OK)
+                        break;
                     memset(dir, 0, SS(dj.fs));
                 }
             }
-            if (res == FR_OK) res = dir_register(&dj);  /* Register the object to the directoy */
+            if (res == FR_OK) {
+                /* Register the object to the directory. */
+                res = dir_register(&dj);
+            }
             if (res != FR_OK) {
-                remove_chain(dj.fs, dcl);           /* Could not register, remove cluster chain */
+                /* Could not register, remove cluster chain */
+                remove_chain(dj.fs, dcl);
             } else {
                 dir = dj.dir;
                 dir[DIR_Attr] = AM_DIR;             /* Attribute */

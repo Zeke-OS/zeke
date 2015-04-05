@@ -681,7 +681,7 @@ int fatfs_mkdir(vnode_t * dir,  const char * name, mode_t mode)
     struct fatfs_inode * indir = get_inode_of_vnode(dir);
     char * in_fpath;
     FRESULT err;
-    int retval;
+    int retval = 0;
 
     if (!S_ISDIR(dir->vn_mode))
         return -ENOTDIR;
@@ -693,8 +693,6 @@ int fatfs_mkdir(vnode_t * dir,  const char * name, mode_t mode)
     err = f_mkdir(in_fpath);
     if (err)
         retval = fresult2errno(err);
-    else
-        retval = 0;
 
     kfree(in_fpath);
     return retval;
