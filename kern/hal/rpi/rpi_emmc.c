@@ -1623,7 +1623,8 @@ static int rpi_emmc_card_init(struct emmc_block_dev ** edev)
         }
     }
 
-    /* Here we are supposed to check the response to CMD5 (HCSS 3.6)
+    /*
+     * Here we are supposed to check the response to CMD5 (HCSS 3.6)
      * It only returns if the card is a SDIO card.
      *
      * Note that a timeout error on the following command (CMD5) is
