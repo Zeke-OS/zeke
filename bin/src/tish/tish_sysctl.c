@@ -189,8 +189,8 @@ static int tish_uname(char ** args)
     int len;
     size_t str_len;
     char type[20];
-    char rele[20] = "";
-    char vers[20] = "";
+    char rele[40] = "";
+    char vers[40] = "";
 
     len = sysctlnametomib("kern.ostype", mib, num_elem(mib));
     str_len = sizeof(type);
