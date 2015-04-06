@@ -76,8 +76,10 @@ SYSCTL_UINT(_vm_kmalloc, OID_AUTO, alloc, CTLFLAG_RD,
 SYSCTL_UINT(_vm_kmalloc, OID_AUTO, alloc_max, CTLFLAG_RD,
         ((unsigned int *)&(kmalloc_stat.kms_mem_alloc_max)), 0,
         "Maximum peak amount of memory allocated with kmalloc");
+#if 0
 SYSCTL_INT(_vm_kmalloc, OID_AUTO, fragm_rat, CTLFLAG_RD,
         &fragm_ratio, 0, "Fragmentation percentage");
+#endif
 
 /**
  * Memory block descriptor.
@@ -544,6 +546,10 @@ static void update_stat_set(size_t * stat_act, size_t value)
 }
 #endif
 
+/*
+ * There is currently no way of making this safe and efficiently.
+ */
+#if 0
 /**
  * kmalloc fragmentation percentage stats.
  */
@@ -566,3 +572,4 @@ static void stat_fragmentation(uintptr_t arg)
     fragm_ratio = (blocks_free * 100) / blocks_total;
 }
 IDLE_TASK(stat_fragmentation, 0);
+#endif

@@ -48,6 +48,7 @@
 #include <libkern.h>
 #include <proc.h>
 #include <ptmapper.h>
+#include <queue_r.h>
 #include <timers.h>
 
 /*
@@ -171,6 +172,9 @@ static uint32_t loadavg[3] = { 0, 0, 0 }; /*!< CPU load averages. */
 SET_DECLARE(pre_sched_tasks, void);
 SET_DECLARE(post_sched_tasks, void);
 
+static queue_cb_t thread_free_queue;
+struct thread_info * thread_free_queue_data[10];
+
 RB_PROTOTYPE_STATIC(threadmap, thread_info, sched.ttentry_, thread_id_compare);
 RB_GENERATE_STATIC(threadmap, thread_info, sched.ttentry_, thread_id_compare);
 
@@ -182,6 +186,9 @@ int sched_init(void)
 
     /* Initialize locks. */
     rwlock_init(&loadavg_lock);
+
+    thread_free_queue = queue_create(thread_free_queue_data,
+            sizeof(struct thread_info *), sizeof(thread_free_queue_data));
 
     /*
      * Init cpu schedulers.
@@ -869,20 +876,25 @@ void thread_remove(pthread_t thread_id)
         proc_thread_removed(thread->pid_owner, thread_id);
     }
 
-    /* Call thread destructors */
+    /*
+     * Call thread destructors
+     * TODO Are these always interrupt handler safe?
+     */
     SET_FOREACH(thread_dtor_p, thread_dtors) {
         thread_cdtor_t dtor = *(thread_cdtor_t *)thread_dtor_p;
         if (dtor)
             dtor(thread);
     }
 
-    thread_free_kstack(thread);
-
     mtx_lock(&CURRENT_CPU->lock);
     RB_REMOVE(threadmap, &CURRENT_CPU->threadmap_head, thread);
     mtx_unlock(&CURRENT_CPU->lock);
 
-    kfree(thread);
+    if (!queue_push(&thread_free_queue, thread)) {
+        KERROR(KERROR_ERR,
+               "Can't free thread_info struct, consider increasing "
+               "thread_free_queue_data array\n");
+    }
     atomic_dec(&anr_threads);
 }
 
@@ -891,6 +903,19 @@ static void dummycd(struct thread_info * th)
 }
 DATA_SET(thread_ctors, dummycd);
 DATA_SET(thread_dtors, dummycd);
+
+static void free_threads(uintptr_t arg)
+{
+    struct thread_info * thread = NULL;
+
+    while (queue_pop(&thread_free_queue, thread)) {
+        if (!thread)
+            continue;
+        thread_free_kstack(thread);
+        kfree(thread);
+    }
+}
+IDLE_TASK(free_threads, 0);
 
 /* Threads csw ****************************************************************/
 
