@@ -55,7 +55,10 @@ SYSCTL_NODE(, OID_AUTO, security, CTLFLAG_RW, 0,
 #ifndef KERNEL_VERSION
 #define KERNEL_VERSION "0.0.0"
 #endif
-static const char osrelease[] = KERNEL_VERSION;
+#ifndef KERNEL_RELENAME
+#define KERNEL_RELENAME ""
+#endif
+static const char osrelease[] = KERNEL_RELENAME" "KERNEL_VERSION;
 SYSCTL_STRING(_kern, KERN_OSRELEASE, osrelease, CTLFLAG_RD | CTLFLAG_MPSAFE,
         (char *)osrelease, 0,
         "Operating system release");

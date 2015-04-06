@@ -187,7 +187,7 @@ static int tish_uname(char ** args)
     char * arg = strtok_r(0, DELIMS, args);
     int mib[2];
     int len;
-    char str[20];
+    char str[40];
     char buf1[40];
     char buf2[40];
     size_t str_len = sizeof(str);

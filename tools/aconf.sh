@@ -24,4 +24,5 @@ for conffile in "$@"; do
         sed 's/^/#define /' >>"$HFILE"
 done
 echo "#define KERNEL_VERSION \"$(git describe)\"" >>"$HFILE"
+echo "#define KERNEL_RELENAME \"Tanforan\"" >>"$HFILE"
 echo "#endif" >>"$HFILE"
