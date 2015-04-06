@@ -35,7 +35,9 @@
 # uncomment for composite PAL
 #sdtv_mode=2
 
-#uncomment to overclock the arm. 700 MHz is the default.
-#arm_freq=800
+# 700 MHz is the default.
+# This is a workaround for #77, otherwise reading/writing class 10 sd cards will
+# fail.
+arm_freq=250
 
 # for more options see http://elinux.org/RPi_config.txt
