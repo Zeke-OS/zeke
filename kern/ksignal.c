@@ -1170,6 +1170,57 @@ static int sys_signal_sigwait(void * user_args)
     return 0;
 }
 
+static int sys_signal_sigwaitinfo(void * user_args)
+{
+    struct _signal_sigwaitinfo_args args;
+    sigset_t set;
+    siginfo_t info;
+    int retval, err;
+
+    err = copyin(user_args, &args, sizeof(args));
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+    err = copyin(args.set, &set, sizeof(set));
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
+    if (args.twsec == -1) { /* sigwaitinfo */
+        err = ksignal_sigwait(&retval, &set);
+    } else { /* sigtimedwait */
+        /* TODO 0 case */
+        struct timespec timeout = {
+            .tv_sec = args.twsec,
+            .tv_nsec = args.twnsec,
+        };
+
+        err = ksignal_sigtimedwait(&retval, &set, &timeout);
+    }
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
+    /*
+     * TODO return siginfo
+     * Currenty we discard siginfo data on sigwait but we'd need
+     * to return it here...
+     */
+    info = (siginfo_t){
+        .si_signo = retval,
+    };
+    err = copyout(&info, args.info, sizeof(info));
+    if (err) {
+        set_errno(EINVAL);
+        return -1;
+    }
+
+    return 0;
+}
+
 static int sys_signal_return(void * user_args)
 {
     const sw_stack_frame_t * const sframe =
@@ -1214,6 +1265,7 @@ static const syscall_handler_t ksignal_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_ALTSTACK,   sys_signal_altstack),
     ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_SIGMASK,    sys_signal_sigmask),
     ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_SIGWAIT,    sys_signal_sigwait),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_SIGWAITNFO, sys_signal_sigwaitinfo),
     ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_RETURN,     sys_signal_return),
 };
 SYSCALL_HANDLERDEF(ksignal_syscall, ksignal_sysfnmap);

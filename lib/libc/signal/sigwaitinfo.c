@@ -1,6 +1,7 @@
+
 /**
  *******************************************************************************
- * @file    sigwait.c
+ * @file    sigtimedwait.c
  * @author  Olli Vanhoja
  * @brief   Wait for queued signals.
  * @section LICENSE
@@ -34,12 +35,13 @@
 #include <errno.h>
 #include <signal.h>
 
-int sigwait(const sigset_t * restrict set, int * restrict sig)
+int sigwaitinfo(const sigset_t * restrict set, siginfo_t * restrict info)
 {
-    int tmp;
-    struct _signal_sigwait_args args = {
+
+    struct _signal_sigwaitinfo_args args = {
         .set = set,
-        .sig = (sig) ? sig : &tmp,
+        .info = info,
+        .twsec = -1,
     };
 
     if (!set) {
@@ -47,5 +49,5 @@ int sigwait(const sigset_t * restrict set, int * restrict sig)
         return -1;
     }
 
-    return syscall(SYSCALL_SIGNAL_SIGWAIT, &args);
+    return syscall(SYSCALL_SIGNAL_SIGWAITNFO, &args);
 }

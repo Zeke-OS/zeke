@@ -313,6 +313,16 @@ struct _signal_sigwait_args {
     int * restrict sig;
 };
 
+/**
+ * Arguments for SYSCALL_S
+ */
+struct _signal_sigwaitinfo_args {
+    const sigset_t * restrict set;
+    siginfo_t * info;
+    long twsec; /*!< timedwat, -1 == not timed */
+    long twnsec;
+};
+
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
 
@@ -397,9 +407,7 @@ int sigsuspend(const sigset_t * sigmask);
 int sigtimedwait(const sigset_t * restrict set, siginfo_t * restrict info,
         const struct timespec * restrict timeout);
 int sigwait(const sigset_t * restrict set, int * restrict sig);
-/*
 int sigwaitinfo(const sigset_t * restrict set, siginfo_t *restrict info);
-*/
 
 /**
  * Return from a signal handler.

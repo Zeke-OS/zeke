@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Wait for queued signals.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,18 @@
 int sigtimedwait(const sigset_t * restrict set, siginfo_t * restrict info,
         const struct timespec * restrict timeout)
 {
-    /* TODO Implementation */
-    errno = ENOTSUP;
-    return -1;
+
+    struct _signal_sigwaitinfo_args args = {
+        .set = set,
+        .info = info,
+        .twsec = timeout->tv_sec,
+        .twnsec = timeout->tv_nsec,
+    };
+
+    if (!set) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    return syscall(SYSCALL_SIGNAL_SIGWAITNFO, &args);
 }
