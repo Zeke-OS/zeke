@@ -200,8 +200,8 @@ static int forkexec(char * path, char ** args)
         perror("Fork failed");
     } else if (pid == 0) {
         int err;
-        err = execvp(path, argv);
 
+        err = execvp(path, argv);
         if (err)
             perror("Exec failed");
 
