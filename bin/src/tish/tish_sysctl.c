@@ -187,30 +187,26 @@ static int tish_uname(char ** args)
     char * arg = strtok_r(0, DELIMS, args);
     int mib[2];
     int len;
-    char str[40];
-    char buf1[40];
-    char buf2[40];
-    size_t str_len = sizeof(str);
+    size_t str_len;
+    char type[20];
+    char rele[20] = "";
+    char vers[20] = "";
 
     len = sysctlnametomib("kern.ostype", mib, num_elem(mib));
-    sysctl(mib, len, &str, &str_len, 0, 0);
-    snprintf(buf2, sizeof(buf2), "%s", str);
+    str_len = sizeof(type);
+    sysctl(mib, len, &type, &str_len, 0, 0);
 
     if (!strcmp(arg, "-a")) {
         len = sysctlnametomib("kern.osrelease", mib, num_elem(mib));
-        str_len = sizeof(str);
-        sysctl(mib, len, &str, &str_len, 0, 0);
-        snprintf(buf1, sizeof(buf1), "%s %s", buf2, str);
-        memcpy(buf2, buf1, sizeof(buf1));
+        str_len = sizeof(rele);
+        sysctl(mib, len, &rele, &str_len, 0, 0);
 
         len = sysctlnametomib("kern.version", mib, num_elem(mib));
-        str_len = sizeof(str);
-        sysctl(mib, len, &str, &str_len, 0, 0);
-        snprintf(buf1, sizeof(buf1), "%s %s",buf2, str);
-        memcpy(buf2, buf1, sizeof(buf1));
+        str_len = sizeof(vers);
+        sysctl(mib, len, &vers, &str_len, 0, 0);
     }
 
-    printf("%s\n", buf2);
+    printf("%s %s %s\n", type, rele, vers);
 
     return 0;
 }
