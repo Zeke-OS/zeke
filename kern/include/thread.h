@@ -131,7 +131,7 @@ struct thread_info {
 
     /* Signals */
     struct signals sigs;            /*!< Signals. */
-    int sigwait_retval;             /*!< Return value for sigwait() */
+    struct ksiginfo * sigwait_retval; /*!< Return value for sigwait(). */
 
     /**
      * Thread inheritance; Parent and child thread pointers.

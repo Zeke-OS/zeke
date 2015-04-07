@@ -120,9 +120,9 @@ int ksignal_sendsig_fatal(struct proc_info * p, int signum);
 /**
  * Wait for signal(s) specified in set.
  */
-int ksignal_sigwait(int * retval, const sigset_t * restrict set);
+int ksignal_sigwait(siginfo_t * retval, const sigset_t * restrict set);
 
-int ksignal_sigtimedwait(int * retval, const sigset_t * restrict set,
+int ksignal_sigtimedwait(siginfo_t * retval, const sigset_t * restrict set,
                          const struct timespec * restrict timeout);
 
 /**

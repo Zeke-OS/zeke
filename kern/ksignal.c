@@ -449,17 +449,17 @@ static void ksignal_post_scheduling(void)
 
         /* Check if the thread is waiting for this signal */
         if (blocked && swait) {
-            current_thread->sigwait_retval = signum;
+            current_thread->sigwait_retval = ksiginfo;
             sigemptyset(&sigs->s_wait);
             STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
             ksig_unlock(&sigs->s_lock);
-            kfree(ksiginfo);
             return; /* There is a sigwait() for this signum. */
         }
 
         /* Check if signal is blocked */
         if (blocked) {
-            continue; /* This signal is currently blocked. */
+            /* This signal is currently blocked. */
+            continue;
         }
 
         nxt_state = eval_inkernel_action(&action);
@@ -467,7 +467,7 @@ static void ksignal_post_scheduling(void)
             /* Handling done */
             STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
             ksig_unlock(&sigs->s_lock);
-            kfree(ksiginfo);
+            kfree(ksiginfo); /* TODO May cause deadlock in interrupt handler */
             return;
         } else if (nxt_state < 0) {
             /* This signal can't be handled right now */
@@ -527,7 +527,7 @@ static void ksignal_post_scheduling(void)
      */
 
     ksig_unlock(&sigs->s_lock);
-    kfree(ksiginfo);
+    kfree(ksiginfo); /* TODO May cause deadlock in interrupt handler */
 }
 DATA_SET(post_sched_tasks, ksignal_post_scheduling);
 
@@ -629,7 +629,7 @@ int ksignal_sendsig_fatal(struct proc_info * p, int signum)
     return err;
 }
 
-int ksignal_sigwait(int * retval, const sigset_t * restrict set)
+int ksignal_sigwait(siginfo_t * retval, const sigset_t * restrict set)
 {
     struct signals * sigs = &current_thread->sigs;
     ksigmtx_t * s_lock = &sigs->s_lock;
@@ -650,7 +650,7 @@ int ksignal_sigwait(int * retval, const sigset_t * restrict set)
     /* Iterate through pending signals */
     STAILQ_FOREACH(ksiginfo, &sigs->s_pendqueue, _entry) {
         if (sigismember(set, ksiginfo->siginfo.si_signo)) {
-            current_thread->sigwait_retval = ksiginfo->siginfo.si_signo;
+            current_thread->sigwait_retval = ksiginfo;
             STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
             ksig_unlock(s_lock);
             goto out;
@@ -663,18 +663,24 @@ int ksignal_sigwait(int * retval, const sigset_t * restrict set)
 out:
     while (ksig_lock(s_lock));
     sigemptyset(&sigs->s_wait);
-    *retval = current_thread->sigwait_retval;
+    *retval = current_thread->sigwait_retval->siginfo;
     ksig_unlock(s_lock);
+    kfree(current_thread->sigwait_retval);
+    current_thread->sigwait_retval = NULL;
 
     return 0;
 }
 
-int ksignal_sigtimedwait(int * retval, const sigset_t * restrict set,
+int ksignal_sigtimedwait(siginfo_t * retval, const sigset_t * restrict set,
                          const struct timespec * restrict timeout)
 {
-    int sigret, timer_id, err;
+    int timer_id, err;
+    siginfo_t sigret = { .si_signo = -1 };
 
-    current_thread->sigwait_retval = -1;
+    /*
+     * TODO If timeout == 0 and there is no signals pending we should
+     * immediately exit with an error.
+     */
 
     timer_id = thread_alarm(timeout->tv_sec * 1000 +
                             timeout->tv_nsec / 1000000);
@@ -686,8 +692,9 @@ int ksignal_sigtimedwait(int * retval, const sigset_t * restrict set,
 
     if (err)
         return err;
-    if (sigret == -1)
+    if (sigret.si_signo == -1)
         return -EAGAIN;
+    *retval = sigret;
     return 0;
 }
 
@@ -1142,7 +1149,8 @@ static int sys_signal_sigwait(void * user_args)
 {
     struct _signal_sigwait_args args;
     sigset_t set;
-    int retval, err;
+    siginfo_t retval;
+    int err;
 
     err = copyin(user_args, &args, sizeof(args));
     if (err) {
@@ -1161,7 +1169,7 @@ static int sys_signal_sigwait(void * user_args)
         return -1;
     }
 
-    err = copyout(&retval, args.sig, sizeof(int));
+    err = copyout(&retval.si_signo, args.sig, sizeof(int));
     if (err) {
         set_errno(EINVAL);
         return -1;
@@ -1174,8 +1182,8 @@ static int sys_signal_sigwaitinfo(void * user_args)
 {
     struct _signal_sigwaitinfo_args args;
     sigset_t set;
-    siginfo_t info;
-    int retval, err;
+    siginfo_t retval;
+    int err;
 
     err = copyin(user_args, &args, sizeof(args));
     if (err) {
@@ -1191,7 +1199,6 @@ static int sys_signal_sigwaitinfo(void * user_args)
     if (args.twsec == -1) { /* sigwaitinfo */
         err = ksignal_sigwait(&retval, &set);
     } else { /* sigtimedwait */
-        /* TODO 0 case */
         struct timespec timeout = {
             .tv_sec = args.twsec,
             .tv_nsec = args.twnsec,
@@ -1204,15 +1211,7 @@ static int sys_signal_sigwaitinfo(void * user_args)
         return -1;
     }
 
-    /*
-     * TODO return siginfo
-     * Currenty we discard siginfo data on sigwait but we'd need
-     * to return it here...
-     */
-    info = (siginfo_t){
-        .si_signo = retval,
-    };
-    err = copyout(&info, args.info, sizeof(info));
+    err = copyout(&retval, args.info, sizeof(retval));
     if (err) {
         set_errno(EINVAL);
         return -1;

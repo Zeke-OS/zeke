@@ -618,7 +618,7 @@ static int sys_proc_wait(void * user_args)
     while (*state != PROC_STATE_ZOMBIE) {
         sigset_t set;
         const struct timespec ts = { .tv_sec = 1, .tv_nsec = 0 };
-        int sigretval;
+        siginfo_t sigretval;
 
         /*
          * We may have already miss SIGCHLD that's ignored by default,
