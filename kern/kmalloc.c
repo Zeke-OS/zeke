@@ -58,7 +58,9 @@ struct kmalloc_stat {
     size_t kms_mem_alloc_max; /*!< Maximum amount of allocated memory. */
 };
 struct kmalloc_stat kmalloc_stat;
+#if 0
 int fragm_ratio;
+#endif
 
 SYSCTL_DECL(_vm_kmalloc);
 SYSCTL_NODE(_vm, OID_AUTO, kmalloc, CTLFLAG_RW, 0,
