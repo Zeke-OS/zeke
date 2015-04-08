@@ -52,7 +52,7 @@ static uintptr_t get_ksect_addr(size_t region_size)
 
     mtx_lock(&l_ksect_next);
 
-    if (region_size < MMU_PGSIZE_SECTION)
+    if (region_size >= MMU_PGSIZE_SECTION)
         retval = memalign_size(ksect_next, MMU_PGSIZE_SECTION);
     else
         retval = memalign_size(ksect_next, MMU_PGSIZE_COARSE);
@@ -60,7 +60,7 @@ static uintptr_t get_ksect_addr(size_t region_size)
     if (retval > MMU_VADDR_KSECT_END)
         return 0;
 
-    ksect_next += retval;
+    ksect_next = retval + region_size;
 
     mtx_unlock(&l_ksect_next);
 
@@ -76,12 +76,20 @@ struct buf * geteblk_special(size_t size, uint32_t control)
 
     KASSERT(p, "Can't get the PCB of pid 0");
 
-    if (kvaddr == 0)
+    if (kvaddr == 0) {
+#if configBUF_DEBUG
+        KERROR(KERROR_DEBUG, "Returned kvaddr is NULL\n");
+#endif
         return NULL;
+    }
 
     buf = vm_newsect(kvaddr, size, VM_PROT_READ | VM_PROT_WRITE);
-    if (!buf)
+    if (!buf) {
+#if configBUF_DEBUG
+        KERROR(KERROR_DEBUG, "vm_newsect() failed\n");
+#endif
         return NULL;
+    }
 
     buf->b_mmu.control = control;
 
