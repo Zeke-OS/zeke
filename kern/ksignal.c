@@ -449,8 +449,8 @@ static void ksignal_post_scheduling(void)
 
         /* Check if the thread is waiting for this signal */
         if (blocked && swait) {
-            current_thread->sigwait_retval = ksiginfo;
             sigemptyset(&sigs->s_wait);
+            current_thread->sigwait_retval = ksiginfo;
             STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
             ksig_unlock(&sigs->s_lock);
             return; /* There is a sigwait() for this signum. */
@@ -503,8 +503,9 @@ static void ksignal_post_scheduling(void)
          * Thread has trashed its stack; Nothing we can do but give SIGILL.
          * TODO Should we punish only the thread or whole process?
          */
-        ksignal_sendsig_fatal(curproc, SIGILL);
         ksig_unlock(&sigs->s_lock);
+        kfree(ksiginfo);
+        ksignal_sendsig_fatal(curproc, SIGILL);
         return; /* TODO Is this ok? */
     }
     /* Don't push anything after this point. */
