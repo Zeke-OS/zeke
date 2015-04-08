@@ -30,15 +30,18 @@
  *******************************************************************************
  */
 
+#include <buf.h>
+#include <hal/core.h>
+#include <hal/fb.h>
+#include <hal/hw_timers.h>
+#include <hal/mmu.h>
+#include <kerror.h>
 #include <kinit.h>
 #include <kstring.h>
 #include <ptmapper.h>
-#include <hal/core.h>
-#include <hal/mmu.h>
-#include <hal/fb.h>
-#include <kerror.h>
 #include "bcm2835_mailbox.h"
 #include "bcm2835_mmio.h"
+#include "bcm2835_timers.h"
 
 #if configBCM_MB == 0
 #error configBCM_MB is required by the fb driver
@@ -58,11 +61,7 @@ struct bcm2835_fb_config {
     uint16_t cmap[256];
 };
 
-static void set_fb_config(struct bcm2835_fb_config * fb_config,
-        uint32_t width, uint32_t height);
-static void commit_fb_config(struct bcm2835_fb_config * fb_config);
-
-static struct bcm2835_fb_config fb_bcm  __attribute__((aligned (16)));
+static struct buf * fb_mailbuf;
 static mmu_region_t bcm2835_fb_region = {
     .num_pages  = 1, /* TODO We may want to calculate this */
     .ap         = MMU_AP_RWNA,
@@ -70,26 +69,46 @@ static mmu_region_t bcm2835_fb_region = {
     .pt         = &mmu_pagetable_master
 };
 
+static void set_fb_config(struct bcm2835_fb_config * fb_config,
+                          uint32_t width, uint32_t height);
+static int commit_fb_config(struct bcm2835_fb_config * fb_config,
+                            uint32_t maibuf_hwaddr);
+
 static int bcm2835_fb_init(void) __attribute__((constructor));
 static int bcm2835_fb_init(void)
 {
     SUBSYS_DEP(vralloc_init);
-    SUBSYS_DEP(bcm2835_mmio_init);
     SUBSYS_INIT("BCM2835_fb");
 
-    set_fb_config(&fb_bcm, 640, 480);
-    commit_fb_config(&fb_bcm);
-    bcm2835_fb_region.vaddr = fb_bcm.fb_paddr;
-    bcm2835_fb_region.paddr = fb_bcm.fb_paddr;
+    int err;
+    struct bcm2835_fb_config * fb_bcm;
+    struct fb_conf fb_gen;
+
+    fb_mailbuf = geteblk_special(sizeof(struct bcm2835_fb_config),
+                                 MMU_CTRL_MEMTYPE_SO);
+    if (!fb_mailbuf || fb_mailbuf->b_data == 0) {
+        KERROR(KERROR_ERR, "Unable to get a mailbuffer\n");
+
+        return -ENOMEM;
+    }
+
+    fb_bcm = (struct bcm2835_fb_config *)(fb_mailbuf->b_data);
+    set_fb_config(fb_bcm, 640, 480);
+    err = commit_fb_config(fb_bcm, fb_mailbuf->b_mmu.paddr);
+    if (err)
+        return err;
+
+    bcm2835_fb_region.vaddr = fb_bcm->fb_paddr;
+    bcm2835_fb_region.paddr = fb_bcm->fb_paddr;
     mmu_map_region(&bcm2835_fb_region);
 
     /* Register new frame buffer */
-    struct fb_conf fb_gen = {
-        .width  = fb_bcm.width,
-        .height = fb_bcm.height,
-        .pitch = fb_bcm.pitch,
-        .depth = fb_bcm.depth,
-        .base = fb_bcm.fb_paddr
+    fb_gen = (struct fb_conf){
+        .width  = fb_bcm->width,
+        .height = fb_bcm->height,
+        .pitch  = fb_bcm->pitch,
+        .depth  = fb_bcm->depth,
+        .base   = fb_bcm->fb_paddr
     };
     fb_register(&fb_gen);
 
@@ -97,7 +116,7 @@ static int bcm2835_fb_init(void)
 }
 
 static void set_fb_config(struct bcm2835_fb_config * fb,
-        uint32_t width, uint32_t height)
+                          uint32_t width, uint32_t height)
 {
     memset(fb, 0, sizeof(struct bcm2835_fb_config));
     fb->width = width;
@@ -109,20 +128,28 @@ static void set_fb_config(struct bcm2835_fb_config * fb,
     fb->y_offset = 0;
 }
 
-static void commit_fb_config(struct bcm2835_fb_config * fb)
+static int commit_fb_config(struct bcm2835_fb_config * fb,
+                            uint32_t mailbuf_hwaddr)
 {
-    char buf[120];
+    uint32_t err;
 
-    bcm2835_writemailbox(BCM2835_MBCH_FB, (uint32_t)fb);
-    if (!bcm2835_readmailbox(BCM2835_MBCH_FB)) {
-        /* TODO */
-        KERROR(KERROR_DEBUG, "GPU init failed?\n");
+    cpu_dmb();
+    /*
+     * Adding 0x40000000 to the address tells the GPU to flush its cache after
+     * writing a response.
+     */
+    bcm2835_writemailbox(BCM2835_MBCH_FB, mailbuf_hwaddr + 0x40000000);
+    err = bcm2835_readmailbox(BCM2835_MBCH_FB);
+    if (err) {
+        KERROR(KERROR_DEBUG, "\tGPU init failed (%u)\n", err);
+        return -EIO;
     }
 
-    ksprintf(buf, sizeof(buf),
+    KERROR(KERROR_INFO,
             "BCM_FB: addr = %p, width = %u, height = %u, "
             "bpp = %u, pitch = %u, size = %u\n",
             (void *)fb->fb_paddr, fb->width, fb->height,
             fb->depth, fb->pitch, fb->size);
-    KERROR(KERROR_INFO, buf);
+
+    return 0;
 }

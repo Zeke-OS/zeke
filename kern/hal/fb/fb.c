@@ -66,6 +66,12 @@ static void newline(void);
 static void draw_glyph(const char * font_glyph, size_t * consx, size_t * consy);
 
 /* TODO Should support multiple frame buffers or fail */
+/*
+ * TODO If fb is a default kerror output device then a fb should be registered
+ * before kerror is initialized but there is no obvious way to do that, since
+ * we definitely want to keep fb constructors in driver files to support
+ * dynamic loading, in the future, just for example.
+ */
 void fb_register(struct fb_conf * fb)
 {
     fb_main = kmalloc(sizeof(struct fb_conf));

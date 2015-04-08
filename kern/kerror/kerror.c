@@ -69,9 +69,6 @@ static int klogger_change(size_t new_id, size_t old_id);
 int kerror_init(void) __attribute__((constructor));
 int kerror_init(void)
 {
-#if (configDEF_KLOGGER == KERROR_FB)
-    SUBSYS_DEP(fb_init);
-#endif
     SUBSYS_INIT("kerror logger");
 
     fs_inherit_vnops(&kerror_vops, &nofs_vnode_ops);
