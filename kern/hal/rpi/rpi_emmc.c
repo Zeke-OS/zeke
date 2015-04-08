@@ -505,7 +505,7 @@ int rpi_emmc_init(void)
     mailbuf = geteblk_special(10 * sizeof(uint32_t),
             MMU_CTRL_MEMTYPE_SO);
     if (!mailbuf || mailbuf->b_data == 0) {
-        KERROR(KERROR_ERR, "Unable to get mailbuffer");
+        KERROR(KERROR_ERR, "Unable to get a mailbuffer\n");
 
         return -ENOMEM;
     }
@@ -515,6 +515,7 @@ int rpi_emmc_init(void)
     if (err)
         return err;
 
+    /* TODO Block cache not implemented */
 #ifdef ENABLE_BLOCK_CACHE
     struct dev_info * c_dev = sd_edev->dev;
     uintptr_t cache_start = alloc_buf(BLOCK_CACHE_SIZE);
@@ -525,13 +526,13 @@ int rpi_emmc_init(void)
 
     /* Register with devfs */
     if (dev_make(&sd_edev->dev, 0, 0, 0666, &vnode)) {
-        KERROR(KERROR_ERR, "Failed to register a new emmc dev");
+        KERROR(KERROR_ERR, "Failed to register a new emmc dev\n");
     }
 
 #ifdef configMBR
     fd = fs_fildes_create_curproc(vnode, O_RDONLY);
     if (fd < 0) {
-        KERROR(KERROR_ERR, "Failed to open the device");
+        KERROR(KERROR_ERR, "Failed to open the device\n");
 
         return -ENOENT;
     }
