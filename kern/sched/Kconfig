@@ -25,6 +25,14 @@ config configIDLE_TH_STACK_SIZE
         Required stack size strongly depends on selected kernel feature set
         as many statically built features will register an idle task.
 
+config configSCHED_FREEQ_SIZE
+    int "Free queue size"
+    default 10
+    ---help---
+        Dead theads are freed in interrupt handler so the actually freeing of
+        resources happens in the idle thread. This option controls the size of
+        the queue to store garbage thread_info pointers.
+
 config configSCHED_DEBUG
     bool "Thread scheduler debugging"
     default n

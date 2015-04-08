@@ -94,12 +94,25 @@ struct cpu_sched {
      * A queue of threads ready for execution, and waiting for timer interrupt.
      */
     STAILQ_HEAD(readyq_head, thread_info) readyq;
+
     /**
      * An array of schedulers in order of execution.
      * Order of schedulers is dictated by the order of scheduler constructors in
      * sched_ctor_arr.
      */
     struct scheduler * sched_arr[NR_SCHEDULERS];
+
+    /*
+     * A queue for freed thread_info structs that shall be kfreed in the idle
+     * thread.
+     * Dead threads are mainly removed in interrupt handling code but that
+     * introduces because resources can't be usually freed in an interrupt
+     * handler. The solution is to push garbage thread_info structs to a queue
+     * and free them later in the idle thread.
+     */
+    queue_cb_t thread_free_queue;
+    struct thread_info * thread_free_queue_data[configSCHED_FREEQ_SIZE];
+
     mtx_t lock;
 };
 
@@ -172,9 +185,6 @@ static uint32_t loadavg[3] = { 0, 0, 0 }; /*!< CPU load averages. */
 SET_DECLARE(pre_sched_tasks, void);
 SET_DECLARE(post_sched_tasks, void);
 
-static queue_cb_t thread_free_queue;
-struct thread_info * thread_free_queue_data[10];
-
 RB_PROTOTYPE_STATIC(threadmap, thread_info, sched.ttentry_, thread_id_compare);
 RB_GENERATE_STATIC(threadmap, thread_info, sched.ttentry_, thread_id_compare);
 
@@ -187,9 +197,6 @@ int sched_init(void)
     /* Initialize locks. */
     rwlock_init(&loadavg_lock);
 
-    thread_free_queue = queue_create(thread_free_queue_data,
-            sizeof(struct thread_info *), sizeof(thread_free_queue_data));
-
     /*
      * Init cpu schedulers.
      */
@@ -197,6 +204,11 @@ int sched_init(void)
         mtx_init(&cpu[i].lock, MTX_TYPE_SPIN, MTX_OPT_DINT);
         RB_INIT(&cpu[i].threadmap_head);
         STAILQ_INIT(&cpu[i].readyq);
+
+        cpu[i].thread_free_queue =
+            queue_create(cpu[i].thread_free_queue_data,
+                         sizeof(struct thread_info *),
+                         configSCHED_FREEQ_SIZE * sizeof(struct thread_info *));
 
         for (size_t j = 0; j < NR_SCHEDULERS; j++) {
             struct scheduler * sched;
@@ -890,7 +902,7 @@ void thread_remove(pthread_t thread_id)
     RB_REMOVE(threadmap, &CURRENT_CPU->threadmap_head, thread);
     mtx_unlock(&CURRENT_CPU->lock);
 
-    if (!queue_push(&thread_free_queue, thread)) {
+    if (!queue_push(&CURRENT_CPU->thread_free_queue, thread)) {
         KERROR(KERROR_ERR,
                "Can't free thread_info struct, consider increasing "
                "thread_free_queue_data array\n");
@@ -904,11 +916,14 @@ static void dummycd(struct thread_info * th)
 DATA_SET(thread_ctors, dummycd);
 DATA_SET(thread_dtors, dummycd);
 
+/**
+ * Free old thread data.
+ */
 static void free_threads(uintptr_t arg)
 {
     struct thread_info * thread = NULL;
 
-    while (queue_pop(&thread_free_queue, thread)) {
+    while (queue_pop(&CURRENT_CPU->thread_free_queue, thread)) {
         if (!thread)
             continue;
         thread_free_kstack(thread);
