@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Definitions.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,8 +41,8 @@
 #define SPECNAMELEN     20      /*!< Max length of devicename. */
 
 
-#define DEV_MAJORDEVS   16 /*!< Number of major devs 2^nbr_of_marjor_bits */
-#define DEV_MINORBITS   28 /*!< Number of minor bits */
+#define DEV_MAJORDEVS   256     /*!< Number of major devs 2^nr_marjor_bits */
+#define DEV_MINORBITS   24      /*!< Number of minor bits */
 #define DEV_MINORMASK   ((1u << DEV_MINORBITS) - 1) /*!< Minor bits mask */
 
 /**
