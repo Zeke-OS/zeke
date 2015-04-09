@@ -82,7 +82,7 @@ static int bcm2835_fb_init(void)
 
     int err;
     struct bcm2835_fb_config * fb_bcm;
-    struct fb_conf fb_gen;
+    struct fb_conf * fb_gen;
 
     fb_mailbuf = geteblk_special(sizeof(struct bcm2835_fb_config),
                                  MMU_CTRL_MEMTYPE_SO);
@@ -102,15 +102,16 @@ static int bcm2835_fb_init(void)
     bcm2835_fb_region.paddr = fb_bcm->fb_paddr;
     mmu_map_region(&bcm2835_fb_region);
 
-    /* Register new frame buffer */
-    fb_gen = (struct fb_conf){
+    /* Register a new frame buffer */
+    fb_gen = kmalloc(sizeof(struct fb_conf));
+    *fb_gen = (struct fb_conf){
         .width  = fb_bcm->width,
         .height = fb_bcm->height,
         .pitch  = fb_bcm->pitch,
         .depth  = fb_bcm->depth,
         .base   = fb_bcm->fb_paddr
     };
-    fb_register(&fb_gen);
+    fb_register(fb_gen);
 
     return 0;
 }

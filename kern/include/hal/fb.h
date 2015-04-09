@@ -38,25 +38,46 @@
 #include <stdint.h>
 #include <sys/linker_set.h>
 
+struct fb_console {
+    size_t max_cols;
+    size_t max_rows;
+    struct cons_state {
+        size_t consx;
+        size_t consy;
+        uint32_t fg_color; /*!< Current fg color. */
+        uint32_t bg_color; /*!< Current bg color. */
+    } state;
+};
+
 struct fb_conf {
+    struct buf * mem;
     size_t width;
     size_t height;
     size_t pitch;
     size_t depth;
     size_t base;
-    struct cons {
-        size_t max_cols;
-        size_t max_rows;
-        struct cons_state {
-            size_t consx;
-            size_t consy;
-            uint32_t fg_color; /*!< Current fg color. */
-            uint32_t bg_color; /*!< Current bg color. */
-        } state;
-    } cons;
+    struct fb_console con;
 };
+
+extern struct fb_conf * fb_main;
 
 void fb_register(struct fb_conf * fb);
 void fb_console_write(char *text);
+
+/**
+ * Set rgb pixel.
+ * addr = y * pitch + x * 3
+ * TODO Hw dependant and should be moved
+ */
+#define set_pixel(base, x, y, rgb) do {                         \
+            const uintptr_t addr = base + y * pitch + x * 3;    \
+            *(char *)((addr) + 0) = ((rgb) >> 16) & 0xff;       \
+            *(char *)((addr) + 1) = ((rgb) >> 8) & 0xff;        \
+            *(char *)((addr) + 2) = (rgb) & 0xff;               \
+} while (0)
+
+#ifdef FB_INTERNAL
+void init_console(struct fb_conf * fb);
+#endif
 
 #endif /* FB_H */
