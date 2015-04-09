@@ -41,7 +41,7 @@ int schedtimer_clear(void);
 do {                                                    \
     uint64_t i = (usec), __start_time = get_utime();    \
     do {                                                \
-        if(stop_if_true)                                \
+        if((stop_if_true))                              \
             break;                                      \
     } while((get_utime() - __start_time) >= i);         \
 } while(0)

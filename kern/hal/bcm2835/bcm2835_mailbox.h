@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Access to BCM2835 mailboxes.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -53,16 +53,17 @@
 /**
  * Read from BCM2835 mailbox.
  * @param channel is a channel number.
- * @return  Returns received mailbox value;
- *          If no data is received 0xffffffff is returned.
+ * @param data contains the received mailbox value.
+ * @return Return 0 if succeed; Otherwise -EIO is returned.
  */
-uint32_t bcm2835_readmailbox(unsigned int channel);
+int bcm2835_readmailbox(unsigned int channel, uint32_t * data);
 
 /**
  * Write to BCM2835 mailbox.
  * @param channel   is a channel number.
  * @param data      is the data to be written.
+ * @return Return 0 if succeed; Otherwise -EIO is returned.
  */
-void bcm2835_writemailbox(unsigned int channel, uint32_t data);
+int bcm2835_writemailbox(unsigned int channel, uint32_t data);
 
 #endif /* BCM2835_MAILBOX_H */

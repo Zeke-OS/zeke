@@ -589,8 +589,8 @@ static uint32_t sd_get_base_clock_hz()
                          (uint32_t)(mailbuf->b_mmu.paddr));
 
     /* read the response */
-    bcm2835_readmailbox(BCM2835_MBCH_PROP_OUT);
-
+    uint32_t resp;
+    bcm2835_readmailbox(BCM2835_MBCH_PROP_OUT, &resp);
     if (mailbuffer[1] != BCM2835_STATUS_SUCCESS) {
         KERROR(KERROR_ERR,
                "EMMC: property mailbox did not return a valid response.\n");
@@ -626,6 +626,7 @@ static uint32_t sd_get_base_clock_hz()
 static int bcm_2708_power_off()
 {
     uint32_t * mailbuffer = (uint32_t *)(mailbuf->b_data);
+    uint32_t resp;
 
     /* Power off the SD card */
     /* set up the buffer */
@@ -647,8 +648,7 @@ static int bcm_2708_power_off()
                          (uint32_t)(mailbuf->b_mmu.paddr));
 
     /* read the response */
-    bcm2835_readmailbox(BCM2835_MBCH_PROP_OUT);
-
+    bcm2835_readmailbox(BCM2835_MBCH_PROP_OUT, &resp);
     if (mailbuffer[1] != BCM2835_STATUS_SUCCESS) {
         KERROR(KERROR_ERR,
                "EMMC: bcm_2708_power_off(): property mailbox did not return "
@@ -679,9 +679,8 @@ static int bcm_2708_power_off()
 
 static int bcm_2708_power_on()
 {
-    uint32_t * mailbuffer;
-
-    mailbuffer = (uint32_t *)(mailbuf->b_data);
+    uint32_t * mailbuffer = (uint32_t *)(mailbuf->b_data);
+    uint32_t resp;
 
     /* Power on the SD card */
     /* set up the buffer */
@@ -703,8 +702,7 @@ static int bcm_2708_power_on()
                          (uint32_t)(mailbuf->b_mmu.paddr));
 
     /* read the response */
-    bcm2835_readmailbox(BCM2835_MBCH_PROP_OUT);
-
+    bcm2835_readmailbox(BCM2835_MBCH_PROP_OUT, &resp);
     if (mailbuffer[1] != BCM2835_STATUS_SUCCESS) {
         KERROR(KERROR_ERR,
                "EMMC: bcm_2708_power_on(): property mailbox did not return "
@@ -827,6 +825,8 @@ static uint32_t sd_get_clock_divider(uint32_t base_clock, uint32_t target_rate)
 static int sd_switch_clock_rate(uint32_t base_clock, uint32_t target_rate)
 {
     uint32_t divider, control1;
+    istate_t s_entry;
+    uint32_t ret;
 
     /* Decide on an appropriate divider */
     divider = sd_get_clock_divider(base_clock, target_rate);
@@ -839,25 +839,35 @@ static int sd_switch_clock_rate(uint32_t base_clock, uint32_t target_rate)
     }
 
     /* Wait for the command inhibit (CMD and DAT) bits to clear */
-    while (mmio_read(EMMC_BASE + EMMC_STATUS) & 0x3) {
+    do {
+        mmio_start(&s_entry);
+        ret = mmio_read(EMMC_BASE + EMMC_STATUS);
+        mmio_end(&s_entry);
         bcm_udelay(1000);
-    }
+    } while (ret & 0x3);
 
     /* Set the SD clock off */
     control1 = mmio_read(EMMC_BASE + EMMC_CONTROL1);
     control1 &= ~(1 << 2);
+
+    mmio_start(&s_entry);
     mmio_write(EMMC_BASE + EMMC_CONTROL1, control1);
+    mmio_end(&s_entry);
     bcm_udelay(2000);
 
     /* Write the new divider */
     control1 &= ~0xffe0;        /* Clear old setting + clock generator select */
     control1 |= divider;
+    mmio_start(&s_entry);
     mmio_write(EMMC_BASE + EMMC_CONTROL1, control1);
+    mmio_end(&s_entry);
     bcm_udelay(2000);
 
     /* Enable the SD clock */
     control1 |= (1 << 2);
+    mmio_start(&s_entry);
     mmio_write(EMMC_BASE + EMMC_CONTROL1, control1);
+    mmio_end(&s_entry);
     bcm_udelay(2000);
 
 #ifdef configRPI_EMMC_DEBUG
@@ -874,13 +884,21 @@ static int sd_switch_clock_rate(uint32_t base_clock, uint32_t target_rate)
 static int sd_reset_cmd()
 {
     uint32_t control1;
+    istate_t s_entry;
 
+    mmio_start(&s_entry);
     control1 = mmio_read(EMMC_BASE + EMMC_CONTROL1);
-    control1 |= SD_RESET_CMD;
-    mmio_write(EMMC_BASE + EMMC_CONTROL1, control1);
+    mmio_end(&s_entry);
 
+    control1 |= SD_RESET_CMD;
+    mmio_start(&s_entry);
+    mmio_write(EMMC_BASE + EMMC_CONTROL1, control1);
+    mmio_end(&s_entry);
+
+    mmio_start(&s_entry);
     TIMEOUT_WAIT((mmio_read(EMMC_BASE + EMMC_CONTROL1) & SD_RESET_CMD) == 0,
                  1000000);
+    mmio_end(&s_entry);
     /* TODO That won't work. */
 #if 0
     if (mmio_read(EMMC_BASE + EMMC_CONTROL1) & SD_RESET_CMD) {
@@ -897,13 +915,24 @@ static int sd_reset_cmd()
 static int sd_reset_dat()
 {
     uint32_t control1;
+    uint32_t d;
+    istate_t s_entry;
 
+    mmio_start(&s_entry);
     control1 = mmio_read(EMMC_BASE + EMMC_CONTROL1);
+    mmio_end(&s_entry);
+
     control1 |= SD_RESET_DAT;
+    mmio_start(&s_entry);
     mmio_write(EMMC_BASE + EMMC_CONTROL1, control1);
-    TIMEOUT_WAIT((mmio_read(EMMC_BASE + EMMC_CONTROL1) & SD_RESET_DAT) == 0,
-                 1000000);
-    if ((mmio_read(EMMC_BASE + EMMC_CONTROL1) & SD_RESET_DAT) != 0) {
+    mmio_end(&s_entry);
+
+    mmio_start(&s_entry);
+    TIMEOUT_WAIT(
+            (d = (mmio_read(EMMC_BASE + EMMC_CONTROL1) & SD_RESET_DAT)) == 0,
+            1000000);
+    mmio_end(&s_entry);
+    if (d != 0) {
         KERROR(KERROR_ERR, "EMMC: DAT line did not reset properly\n");
 
         return -EIO;
@@ -918,6 +947,7 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
     int is_sdma = 0;
     uint32_t blksizecnt, irpts;
     const int sd_cmd_udelay = 1000;
+    istate_t s_entry;
 
     dev->last_cmd_reg = cmd_reg;
     dev->last_cmd_success = 0;
@@ -925,26 +955,39 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
     /* This is as per HCSS 3.7.1.1/3.7.2.2 */
 
     /* Check Command Inhibit */
+    mmio_start(&s_entry);
     while (mmio_read(EMMC_BASE + EMMC_STATUS) & 0x1) {
+        mmio_end(&s_entry);
         bcm_udelay(sd_cmd_udelay);
+        mmio_start(&s_entry);
     }
+    mmio_end(&s_entry);
 
     /* Is the command with busy and not and abort command? */
     if (((cmd_reg & SD_CMD_RSPNS_TYPE_MASK) == SD_CMD_RSPNS_TYPE_48B) &&
         ((cmd_reg & SD_CMD_TYPE_MASK) != SD_CMD_TYPE_ABORT)) {
 
         /* Wait for the data line to be free */
+        mmio_start(&s_entry);
         while (mmio_read(EMMC_BASE + EMMC_STATUS) & 0x2) {
+            mmio_end(&s_entry);
             bcm_udelay(sd_cmd_udelay);
+            mmio_start(&s_entry);
         }
+        mmio_end(&s_entry);
     }
 
     /* Is this a DMA transfer? */
     if ((cmd_reg & SD_CMD_ISDATA) && (dev->use_sdma)) {
 #ifdef configRPI_EMMC_DEBUG
+        uint32_t d;
+
+        mmio_start(&s_entry);
+        d = mmio_read(EMMC_BASE + EMMC_INTERRUPT);
+        mmio_end(&s_entry);
+
         KERROR(KERROR_DEBUG,
-               "SD: performing SDMA transfer, current INTERRUPT: %x\n",
-               (uint32_t)mmio_read(EMMC_BASE + EMMC_INTERRUPT));
+               "SD: performing SDMA transfer, current INTERRUPT: %x\n", d);
 #endif
 
         is_sdma = 1;
@@ -975,10 +1018,12 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
         return;
     }
     blksizecnt = dev->block_size | (dev->blocks_to_transfer << 16);
+    mmio_start(&s_entry);
     mmio_write(EMMC_BASE + EMMC_BLKSIZECNT, blksizecnt);
 
     /* Set argument 1 reg */
     mmio_write(EMMC_BASE + EMMC_ARG1, argument);
+    mmio_end(&s_entry);
 
     if (is_sdma) {
         /* Set Transfer mode register */
@@ -986,14 +1031,18 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
     }
 
     /* Set command reg */
+    mmio_start(&s_entry);
     mmio_write(EMMC_BASE + EMMC_CMDTM, cmd_reg);
+    mmio_end(&s_entry);
     bcm_udelay(2 * sd_cmd_udelay);
 
     /* Wait for command complete interrupt */
+    mmio_start(&s_entry);
     TIMEOUT_WAIT(mmio_read(EMMC_BASE + EMMC_INTERRUPT) & 0x8001, timeout);
     irpts = mmio_read(EMMC_BASE + EMMC_INTERRUPT);
     /* Clear command complete status */
     mmio_write(EMMC_BASE + EMMC_INTERRUPT, 0xffff0001);
+    mmio_end(&s_entry);
 
     /* Test for errors */
     if ((irpts & 0xffff0001) != 0x1) {
@@ -1013,14 +1062,18 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
     switch (cmd_reg & SD_CMD_RSPNS_TYPE_MASK) {
     case SD_CMD_RSPNS_TYPE_48:
     case SD_CMD_RSPNS_TYPE_48B:
+        mmio_start(&s_entry);
         dev->last_r0 = mmio_read(EMMC_BASE + EMMC_RESP0);
+        mmio_end(&s_entry);
         break;
 
     case SD_CMD_RSPNS_TYPE_136:
+        mmio_start(&s_entry);
         dev->last_r0 = mmio_read(EMMC_BASE + EMMC_RESP0);
         dev->last_r1 = mmio_read(EMMC_BASE + EMMC_RESP1);
         dev->last_r2 = mmio_read(EMMC_BASE + EMMC_RESP2);
         dev->last_r3 = mmio_read(EMMC_BASE + EMMC_RESP3);
+        mmio_end(&s_entry);
         break;
     }
 
@@ -1043,11 +1096,13 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
         while (cur_block < dev->blocks_to_transfer) {
             size_t cur_byte_no;
 
+            mmio_start(&s_entry);
             TIMEOUT_WAIT(
                     mmio_read(EMMC_BASE + EMMC_INTERRUPT) & (wr_irpt | 0x8000),
                     timeout);
             irpts = mmio_read(EMMC_BASE + EMMC_INTERRUPT);
             mmio_write(EMMC_BASE + EMMC_INTERRUPT, 0xffff0000 | wr_irpt);
+            mmio_end(&s_entry);
 
             if ((irpts & (0xffff0000 | wr_irpt)) != wr_irpt) {
 #ifdef configRPI_EMMC_DEBUG
@@ -1068,9 +1123,13 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
 
                 if (is_write) {
                     data = read_word((uint8_t *)cur_buf_addr, 0);
+                    mmio_start(&s_entry);
                     mmio_write(EMMC_BASE + EMMC_DATA, data);
+                    mmio_end(&s_entry);
                 } else {
+                    mmio_start(&s_entry);
                     data = mmio_read(EMMC_BASE + EMMC_DATA);
+                    mmio_end(&s_entry);
                     write_word(data, (uint8_t *)cur_buf_addr, 0);
                 }
                 cur_byte_no += 4;
@@ -1085,13 +1144,16 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
     if ((((cmd_reg & SD_CMD_RSPNS_TYPE_MASK) == SD_CMD_RSPNS_TYPE_48B) ||
        (cmd_reg & SD_CMD_ISDATA)) && (is_sdma == 0)) {
         /* First check command inhibit (DAT) is not already 0 */
+        mmio_start(&s_entry);
         if ((mmio_read(EMMC_BASE + EMMC_STATUS) & 0x2) == 0) {
             mmio_write(EMMC_BASE + EMMC_INTERRUPT, 0xffff0002);
+            mmio_end(&s_entry);
         } else {
             TIMEOUT_WAIT(mmio_read(EMMC_BASE + EMMC_INTERRUPT) & 0x8002,
                          timeout);
             irpts = mmio_read(EMMC_BASE + EMMC_INTERRUPT);
             mmio_write(EMMC_BASE + EMMC_INTERRUPT, 0xffff0002);
+            mmio_end(&s_entry);
 
             /*
              * Handle the case where both data timeout and transfer complete
@@ -1108,7 +1170,9 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
                 dev->last_interrupt = irpts;
                 return;
             }
+            mmio_start(&s_entry);
             mmio_write(EMMC_BASE + EMMC_INTERRUPT, 0xffff0002);
+            mmio_end(&s_entry);
         }
     } else if (is_sdma) {
         /*
@@ -1117,13 +1181,16 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
          */
 
         /* First check command inhibit (DAT) is not already 0 */
+        mmio_start(&s_entry);
         if ((mmio_read(EMMC_BASE + EMMC_STATUS) & 0x2) == 0) {
             mmio_write(EMMC_BASE + EMMC_INTERRUPT, 0xffff000a);
+            mmio_end(&s_entry);
         } else {
             TIMEOUT_WAIT(mmio_read(EMMC_BASE + EMMC_INTERRUPT) & 0x800a,
                          timeout);
             irpts = mmio_read(EMMC_BASE + EMMC_INTERRUPT);
             mmio_write(EMMC_BASE + EMMC_INTERRUPT, 0xffff000a);
+            mmio_end(&s_entry);
 
             /* Detect errors */
             if ((irpts & 0x8000) && ((irpts & 0x2) != 0x2)) {
@@ -1177,16 +1244,20 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
                        (uint32_t)mmio_read(EMMC_BASE + EMMC_STATUS));
 #endif
 
-                if ((irpts == 0) &&
-                        ((mmio_read(EMMC_BASE + EMMC_STATUS) & 0x3) == 0x2)) {
+                mmio_start(&s_entry);
+                uint32_t d = mmio_read(EMMC_BASE + EMMC_STATUS) & 0x3;
+                mmio_end(&s_entry);
+                if (irpts == 0 && d == 2) {
                     /*
                      * The data transfer is ongoing and we should stop it.
                      */
 #ifdef configRPI_EMMC_DEBUG
                     KERROR(KERROR_DEBUG, "SD: aborting transfer\n");
 #endif
+                    mmio_start(&s_entry);
                     mmio_write(EMMC_BASE + EMMC_CMDTM,
                                sd_commands[STOP_TRANSMISSION]);
+                    mmio_end(&s_entry);
 
 #ifdef configRPI_EMMC_DEBUG
                     /* pause to let us read the screen */
@@ -1242,8 +1313,11 @@ static void sd_handle_interrupts(struct emmc_block_dev *dev)
 {
     uint32_t irpts;
     uint32_t reset_mask = 0;
+    istate_t s_entry;
 
+    mmio_start(&s_entry);
     irpts = mmio_read(EMMC_BASE + EMMC_INTERRUPT);
+    mmio_end(&s_entry);
     if (irpts & SD_COMMAND_COMPLETE) {
 #ifdef configRPI_EMMC_DEBUG
         KERROR(KERROR_DEBUG, "SD: spurious command complete interrupt\n");
@@ -1319,7 +1393,9 @@ static void sd_handle_interrupts(struct emmc_block_dev *dev)
         reset_mask |= 0xffff0000;
     }
 
+    mmio_start(&s_entry);
     mmio_write(EMMC_BASE + EMMC_INTERRUPT, reset_mask);
+    mmio_end(&s_entry);
 }
 
 static void sd_issue_command(struct emmc_block_dev *dev, uint32_t command,
@@ -1402,7 +1478,8 @@ static void sd_issue_command(struct emmc_block_dev *dev, uint32_t command,
 static int rpi_emmc_card_init(struct emmc_block_dev ** edev)
 {
     uint32_t ver, vendor, sdversion, slot_status;
-    uint32_t control1;
+    uint32_t control1, d;
+    istate_t s_entry;
 
 #if configRPI_EMMC_BCM2708
     /* Power cycle the card to ensure its in its startup state */
@@ -1418,7 +1495,9 @@ static int rpi_emmc_card_init(struct emmc_block_dev ** edev)
 #endif
 
     /* Read the controller version */
+    mmio_start(&s_entry);
     ver = mmio_read(EMMC_BASE + EMMC_SLOTISR_VER);
+    mmio_end(&s_entry);
     vendor = ver >> 24;
     sdversion = (ver >> 16) & 0xff;
     slot_status = ver & 0xff;
@@ -1438,31 +1517,43 @@ static int rpi_emmc_card_init(struct emmc_block_dev ** edev)
 #ifdef configRPI_EMMC_DEBUG
     KERROR(KERROR_DEBUG, "EMMC: resetting controller\n");
 #endif
+    mmio_start(&s_entry);
     control1 = mmio_read(EMMC_BASE + EMMC_CONTROL1);
+    mmio_end(&s_entry);
     control1 |= (1 << 24);
+
     /* Disable clock */
     control1 &= ~(1 << 2);
     control1 &= ~(1 << 0);
+    mmio_start(&s_entry);
     mmio_write(EMMC_BASE + EMMC_CONTROL1, control1);
-    TIMEOUT_WAIT((mmio_read(EMMC_BASE + EMMC_CONTROL1) & (0x7 << 24)) == 0,
+
+    TIMEOUT_WAIT((d = (mmio_read(EMMC_BASE + EMMC_CONTROL1) & (0x7 << 24))) == 0,
                  1000000);
-    if ((mmio_read(EMMC_BASE + EMMC_CONTROL1) & (0x7 << 24)) != 0) {
+    mmio_end(&s_entry);
+    if (d != 0) {
         KERROR(KERROR_ERR, "EMMC: controller did not reset properly\n");
 
         return -EIO;
     }
 
 #ifdef configRPI_EMMC_DEBUG
+    uint32_t c0, c1, c2;
+
+    mmio_start(&s_entry);
+    c0 = mmio_read(EMMC_BASE + EMMC_CONTROL0);
+    c1 = mmio_read(EMMC_BASE + EMMC_CONTROL1);
+    c2 = mmio_read(EMMC_BASE + EMMC_CONTROL2);
+    mmio_end(&s_entry);
     KERROR(KERROR_DEBUG,
-           "EMMC: control0: %x, control1: %x, control2: %x\n",
-           (uint32_t)mmio_read(EMMC_BASE + EMMC_CONTROL0),
-           (uint32_t)mmio_read(EMMC_BASE + EMMC_CONTROL1),
-           (uint32_t)mmio_read(EMMC_BASE + EMMC_CONTROL2));
+           "EMMC: control0: %x, control1: %x, control2: %x\n", c0, c1, c2);
 #endif
 
     /* Read the capabilities registers */
+    mmio_start(&s_entry);
     capabilities_0 = mmio_read(EMMC_BASE + EMMC_CAPABILITIES_0);
     capabilities_1 = mmio_read(EMMC_BASE + EMMC_CAPABILITIES_1);
+    mmio_end(&s_entry);
 #ifdef configRPI_EMMC_DEBUG
     KERROR(KERROR_DEBUG, "EMMC: capabilities: %x, %x\n",
            (uint32_t)capabilities_1, (uint32_t)capabilities_0);
@@ -1472,9 +1563,12 @@ static int rpi_emmc_card_init(struct emmc_block_dev ** edev)
 #ifdef configRPI_EMMC_DEBUG
     KERROR(KERROR_DEBUG, "EMMC: checking for an inserted card\n");
 #endif
-    TIMEOUT_WAIT(mmio_read(EMMC_BASE + EMMC_STATUS) & (1 << 16),
+    uint32_t status_reg;
+
+    mmio_start(&s_entry);
+    TIMEOUT_WAIT((status_reg = mmio_read(EMMC_BASE + EMMC_STATUS)) & (1 << 16),
                  DEFAULT_CMD_TIMEOUT);
-    uint32_t status_reg = mmio_read(EMMC_BASE + EMMC_STATUS);
+    mmio_end(&s_entry);
     if ((status_reg & (1 << 16)) == 0) {
         KERROR(KERROR_ERR, "EMMC: no card inserted\n");
 
@@ -1485,7 +1579,9 @@ static int rpi_emmc_card_init(struct emmc_block_dev ** edev)
 #endif
 
     /* Clear control2 */
+    mmio_start(&s_entry);
     mmio_write(EMMC_BASE + EMMC_CONTROL2, 0);
+    mmio_end(&s_entry);
 
     /* Get the base clock rate */
     uint32_t base_clock = sd_get_base_clock_hz();
@@ -1499,7 +1595,9 @@ static int rpi_emmc_card_init(struct emmc_block_dev ** edev)
 #ifdef configRPI_EMMC_DEBUG
     KERROR(KERROR_DEBUG, "EMMC: setting clock rate\n");
 #endif
+    mmio_start(&s_entry);
     control1 = mmio_read(EMMC_BASE + EMMC_CONTROL1);
+    mmio_end(&s_entry);
     control1 |= 1;            /* enable clock */
 
     /* Set to identification frequency (400 kHz) */
@@ -1513,9 +1611,11 @@ static int rpi_emmc_card_init(struct emmc_block_dev ** edev)
     control1 |= f_id;
 
     control1 |= (7 << 16);        /* data timeout = TMCLK * 2^10 */
+    mmio_start(&s_entry);
     mmio_write(EMMC_BASE + EMMC_CONTROL1, control1);
-    TIMEOUT_WAIT(mmio_read(EMMC_BASE + EMMC_CONTROL1) & 0x2, 0x1000000);
-    if ((mmio_read(EMMC_BASE + EMMC_CONTROL1) & 0x2) == 0) {
+    TIMEOUT_WAIT(d = (mmio_read(EMMC_BASE + EMMC_CONTROL1) & 0x2), 0x1000000);
+    mmio_end(&s_entry);
+    if (d == 0) {
         KERROR(KERROR_ERR,
                "EMMC: controller's clock did not stabilise within 1 second\n");
 
@@ -1534,22 +1634,28 @@ static int rpi_emmc_card_init(struct emmc_block_dev ** edev)
     bcm_udelay(2000);
     control1 = mmio_read(EMMC_BASE + EMMC_CONTROL1);
     control1 |= 4;
+    mmio_start(&s_entry);
     mmio_write(EMMC_BASE + EMMC_CONTROL1, control1);
+    mmio_end(&s_entry);
     bcm_udelay(2000);
 #ifdef configRPI_EMMC_DEBUG
     KERROR(KERROR_DEBUG, "EMMC: SD clock enabled\n");
 #endif
 
     /* Mask off sending interrupts to the ARM */
+    mmio_start(&s_entry);
     mmio_write(EMMC_BASE + EMMC_IRPT_EN, 0);
     /* Reset interrupts */
     mmio_write(EMMC_BASE + EMMC_INTERRUPT, 0xffffffff);
+    mmio_end(&s_entry);
     /* Have all interrupts sent to the INTERRUPT register */
     uint32_t irpt_mask = 0xffffffff & (~SD_CARD_INTERRUPT);
 #ifdef configRPI_EMMC_SD_CARD_INTERRUPTS
     irpt_mask |= SD_CARD_INTERRUPT;
 #endif
+    mmio_start(&s_entry);
     mmio_write(EMMC_BASE + EMMC_IRPT_MASK, irpt_mask);
+    mmio_end(&s_entry);
 
 #ifdef configRPI_EMMC_DEBUG
     KERROR(KERROR_DEBUG, "EMMC: interrupts disabled\n");
@@ -1606,7 +1712,11 @@ static int rpi_emmc_card_init(struct emmc_block_dev ** edev)
         err = sd_reset_cmd();
         if (err)
             return err;
+
+        mmio_start(&s_entry);
         mmio_write(EMMC_BASE + EMMC_INTERRUPT, SD_ERR_MASK_CMD_TIMEOUT);
+        mmio_end(&s_entry);
+
         v2_later = 0;
     } else if (FAIL(ret)) {
         KERROR(KERROR_ERR, "SD: failure sending CMD8 (%x)\n",
@@ -1641,7 +1751,9 @@ static int rpi_emmc_card_init(struct emmc_block_dev ** edev)
         if (err)
             return err;
 
+        mmio_start(&s_entry);
         mmio_write(EMMC_BASE + EMMC_INTERRUPT, SD_ERR_MASK_CMD_TIMEOUT);
+        mmio_end(&s_entry);
     } else {
         KERROR(KERROR_ERR,
                "SD: SDIO card detected - not currently supported\n");
@@ -1750,12 +1862,18 @@ static int rpi_emmc_card_init(struct emmc_block_dev ** edev)
         }
 
         /* Disable SD clock */
+        mmio_start(&s_entry);
         control1 = mmio_read(EMMC_BASE + EMMC_CONTROL1);
+        mmio_end(&s_entry);
         control1 &= ~(1 << 2);
+        mmio_start(&s_entry);
         mmio_write(EMMC_BASE + EMMC_CONTROL1, control1);
+        mmio_end(&s_entry);
 
         /* Check DAT[3:0] */
+        mmio_start(&s_entry);
         status_reg = mmio_read(EMMC_BASE + EMMC_STATUS);
+        mmio_end(&s_entry);
         uint32_t dat30 = (status_reg >> 20) & 0xf;
         if (dat30 != 0) {
 #ifdef configRPI_EMMC_DEBUG
@@ -1767,15 +1885,19 @@ static int rpi_emmc_card_init(struct emmc_block_dev ** edev)
         }
 
         /* Set 1.8V signal enable to 1 */
+        mmio_start(&s_entry);
         uint32_t control0 = mmio_read(EMMC_BASE + EMMC_CONTROL0);
         control0 |= (1 << 8);
         mmio_write(EMMC_BASE + EMMC_CONTROL0, control0);
+        mmio_end(&s_entry);
 
         /* Wait 5 ms */
         bcm_udelay(5000);
 
         /* Check the 1.8V signal enable is set */
+        mmio_start(&s_entry);
         control0 = mmio_read(EMMC_BASE + EMMC_CONTROL0);
+        mmio_end(&s_entry);
         if (((control0 >> 8) & 0x1) == 0) {
 #ifdef configRPI_EMMC_DEBUG
             KERROR(KERROR_DEBUG,
@@ -1787,15 +1909,21 @@ static int rpi_emmc_card_init(struct emmc_block_dev ** edev)
         }
 
         /* Re-enable the SD clock */
+        mmio_start(&s_entry);
         control1 = mmio_read(EMMC_BASE + EMMC_CONTROL1);
+        mmio_end(&s_entry);
         control1 |= (1 << 2);
+        mmio_start(&s_entry);
         mmio_write(EMMC_BASE + EMMC_CONTROL1, control1);
+        mmio_end(&s_entry);
 
         /* Wait 1 ms */
         bcm_udelay(10000);
 
         /* Check DAT[3:0] */
+        mmio_start(&s_entry);
         status_reg = mmio_read(EMMC_BASE + EMMC_STATUS);
+        mmio_end(&s_entry);
         dat30 = (status_reg >> 20) & 0xf;
         if (dat30 != 0xf) {
 #ifdef configRPI_EMMC_DEBUG
@@ -1921,10 +2049,15 @@ static int rpi_emmc_card_init(struct emmc_block_dev ** edev)
         }
     }
 
+    mmio_start(&s_entry);
     uint32_t controller_block_size = mmio_read(EMMC_BASE + EMMC_BLKSIZECNT);
+    mmio_end(&s_entry);
+
     controller_block_size &= (~0xfff);
     controller_block_size |= 0x200;
+    mmio_start(&s_entry);
     mmio_write(EMMC_BASE + EMMC_BLKSIZECNT, controller_block_size);
+    mmio_end(&s_entry);
 
     /* Get the cards SCR register */
     ret->scr = kmalloc(sizeof(struct sd_scr));
@@ -1990,9 +2123,13 @@ static int rpi_emmc_card_init(struct emmc_block_dev ** edev)
 #endif
 
         /* Disable card interrupt in host */
+        mmio_start(&s_entry);
         uint32_t old_irpt_mask = mmio_read(EMMC_BASE + EMMC_IRPT_MASK);
+        mmio_end(&s_entry);
         uint32_t new_iprt_mask = old_irpt_mask & ~(1 << 8);
+        mmio_start(&s_entry);
         mmio_write(EMMC_BASE + EMMC_IRPT_MASK, new_iprt_mask);
+        mmio_end(&s_entry);
 
         /* Send ACMD6 to change the card's bit mode */
         sd_issue_command(ret, SET_BUS_WIDTH, 0x2, DEFAULT_CMD_TIMEOUT);
@@ -2000,12 +2137,17 @@ static int rpi_emmc_card_init(struct emmc_block_dev ** edev)
             KERROR(KERROR_ERR, "SD: switch to 4-bit data mode failed\n");
         } else {
             /* Change bit mode for Host */
+            mmio_start(&s_entry);
             uint32_t control0 = mmio_read(EMMC_BASE + EMMC_CONTROL0);
-            control0 |= 0x2;
-            mmio_write(EMMC_BASE + EMMC_CONTROL0, control0);
+            mmio_end(&s_entry);
 
+            control0 |= 0x2;
+
+            mmio_start(&s_entry);
+            mmio_write(EMMC_BASE + EMMC_CONTROL0, control0);
             /* Re-enable card interrupt in host */
             mmio_write(EMMC_BASE + EMMC_IRPT_MASK, old_irpt_mask);
+            mmio_end(&s_entry);
 
 #ifdef configRPI_EMMC_DEBUG
             KERROR(KERROR_DEBUG, "SD: switch to 4-bit complete\n");
@@ -2023,7 +2165,9 @@ static int rpi_emmc_card_init(struct emmc_block_dev ** edev)
 #endif
 
     /* Reset interrupt register */
+    mmio_start(&s_entry);
     mmio_write(EMMC_BASE + EMMC_INTERRUPT, 0xffffffff);
+    mmio_end(&s_entry);
 
     *edev = ret;
 

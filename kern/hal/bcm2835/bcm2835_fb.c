@@ -133,17 +133,24 @@ static void set_fb_config(struct bcm2835_fb_config * fb,
 static int commit_fb_config(struct bcm2835_fb_config * fb,
                             uint32_t mailbuf_hwaddr)
 {
-    uint32_t err;
+    int err;
+    uint32_t resp;
 
     cpu_dmb();
     /*
      * Adding 0x40000000 to the address tells the GPU to flush its cache after
      * writing a response.
      */
-    bcm2835_writemailbox(BCM2835_MBCH_FB, mailbuf_hwaddr + 0x40000000);
-    err = bcm2835_readmailbox(BCM2835_MBCH_FB);
+    err = bcm2835_writemailbox(BCM2835_MBCH_FB, mailbuf_hwaddr + 0x40000000);
     if (err) {
-        KERROR(KERROR_DEBUG, "\tGPU init failed (%u)\n", err);
+        KERROR(KERROR_DEBUG, "\tGPU init failed (err: %u)\n", err);
+        return -EIO;
+    }
+
+    err = bcm2835_readmailbox(BCM2835_MBCH_FB, &resp);
+    if (err || resp) {
+        KERROR(KERROR_DEBUG, "\tGPU init failed (err: %u, resp: %u)\n",
+               err, resp);
         return -EIO;
     }
 

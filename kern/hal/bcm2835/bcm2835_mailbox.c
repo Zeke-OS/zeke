@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Access to BCM2835 mailboxes.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,6 +30,8 @@
  *******************************************************************************
  */
 
+#include <errno.h>
+#include <hal/hw_timers.h>
 #include "bcm2835_mmio.h"
 #include "bcm2835_mailbox.h"
 
@@ -50,10 +52,10 @@
 #define MBSTAT_FULL     0x80000000 /*!< Write mailbox full status mask. */
 #define MBSTAT_EMPTY    0x40000000 /*!< Read mailbox is empty stataus mask. */
 
-uint32_t bcm2835_readmailbox(unsigned int channel)
+int bcm2835_readmailbox(unsigned int channel, uint32_t * data)
 {
     unsigned int count = 0;
-    unsigned int data;
+    uint32_t d;
     uint32_t mb_status;
     istate_t s_entry;
 
@@ -64,33 +66,36 @@ uint32_t bcm2835_readmailbox(unsigned int channel)
             mb_status = mmio_read(MAILBOX0_STATUS);
             mmio_end(&s_entry);
 
-            if(count++ >(1 << 25)) {
-                return 0xffffffff; /* no luck */
+            if (count++ > (1 << 25)) {
+                return -EIO; /* no luck */
             }
         } while (mb_status & MBSTAT_EMPTY);
 
-        /* read data */
+        /* Read data. */
         mmio_start(&s_entry);
-        data = mmio_read(MAILBOX0_READ);
+        d = mmio_read(MAILBOX0_READ);
         mmio_end(&s_entry);
-    } while ((data & MBWR_CHANNEL) != channel);
+    } while ((d & MBWR_CHANNEL) != channel);
 
-    return (data & MBWR_DATA);
+    *data = (d & MBWR_DATA);
+    return 0;
 }
 
-void bcm2835_writemailbox(unsigned int channel, uint32_t data)
+int bcm2835_writemailbox(unsigned int channel, uint32_t data)
 {
     uint32_t mb_status;
     istate_t s_entry;
 
-    /* Wait until mailbox is not full */
-    do {
-        mmio_start(&s_entry);
-        mb_status = mmio_read(MAILBOX0_STATUS);
-        mmio_end(&s_entry);
-    } while (mb_status & MBSTAT_FULL);
-
     mmio_start(&s_entry);
+    /* Wait until mailbox is not full */
+    TIMEOUT_WAIT((mb_status = mmio_read(MAILBOX0_STATUS)), 2000);
+    if (mb_status & MBSTAT_FULL) {
+        mmio_end(&s_entry);
+        return -EIO;
+    }
+
     mmio_write(MAILBOX0_WRITE, (data | channel));
     mmio_end(&s_entry);
+
+    return 0;
 }
