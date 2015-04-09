@@ -457,7 +457,8 @@ static void bio_clean(uintptr_t freebufs)
             _bio_writeout(bp);
         }
 
-        if (freebufs && !(bp->b_flags & B_LOCKED) &&
+        if (freebufs &&
+                !(bp->b_flags & B_LOCKED) &&
                 !VN_TRYLOCK(file->vnode)) {
             struct buf * bp_prev = bp->lentry_.prev;
 
@@ -476,6 +477,13 @@ static void bio_clean(uintptr_t freebufs)
 out:
     mtx_unlock(&cache_lock);
 }
+/*
+ * Idle task for cleaning up buffers.
+ * TODO Disabled for now at it seems to hang the kernel occassionally.
+ */
+#if 0
+IDLE_TASK(bio_clean, 0);
+#endif
 
 int bio_geterror(struct buf * bp)
 {
@@ -494,8 +502,3 @@ int bio_geterror(struct buf * bp)
 
     return error;
 }
-
-/*
- * Idle task for cleaning up buffers.
- */
-IDLE_TASK(bio_clean, 0);
