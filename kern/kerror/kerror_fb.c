@@ -56,9 +56,9 @@ static void kerror_fb_puts(const char * str)
 
 static const struct kerror_klogger klogger_fb = {
     .id     = KERROR_FB,
-    .init   = 0,
+    .init   = NULL,
     .puts   = &kerror_fb_puts,
-    .read   = 0,
-    .flush  = 0
+    .read   = NULL,
+    .flush  = NULL
 };
 DATA_SET(klogger_set, klogger_fb);

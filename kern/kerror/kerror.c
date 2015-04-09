@@ -71,13 +71,17 @@ int kerror_init(void)
 {
     SUBSYS_INIT("kerror logger");
 
+    int err;
+
     fs_inherit_vnops(&kerror_vops, &nofs_vnode_ops);
 
     /*
      * We can now change from klogger buffer to the actual logger selected at
      * compilation time.
      */
-    klogger_change(configDEF_KLOGGER, curr_klogger_id);
+    err = klogger_change(configDEF_KLOGGER, curr_klogger_id);
+    if (err)
+        return err;
 
     return 0;
 }
@@ -97,10 +101,10 @@ static void nolog_puts(const char * str)
 
 static const struct kerror_klogger klogger_nolog = {
     .id     = KERROR_NOLOG,
-    .init   = 0,
+    .init   = NULL,
     .puts   = &nolog_puts,
-    .read   = 0,
-    .flush  = 0
+    .read   = NULL,
+    .flush  = NULL
 };
 DATA_SET(klogger_set, klogger_nolog);
 
@@ -121,8 +125,8 @@ static int klogger_change(size_t new_id, size_t old_id)
     struct kerror_klogger * new = get_klogger(new_id);
     struct kerror_klogger * old = get_klogger(old_id);
 
-    if (new == 0 || old == 0)
-        return EINVAL;
+    if (!new || !old)
+        return -EINVAL;
 
     if (new->init)
         new->init();

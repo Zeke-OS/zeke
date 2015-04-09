@@ -64,7 +64,7 @@ static const struct kerror_klogger klogger_uart = {
     .id     = KERROR_UARTLOG,
     .init   = &kerror_uart_init,
     .puts   = &kerror_uart_puts,
-    .read   = 0,
-    .flush  = 0
+    .read   = NULL,
+    .flush  = NULL
 };
 DATA_SET(klogger_set, klogger_uart);
