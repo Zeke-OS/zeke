@@ -38,6 +38,8 @@
 #include <stdint.h>
 #include <sys/linker_set.h>
 
+struct dev_info;
+
 struct fb_console {
     size_t max_cols;
     size_t max_rows;
@@ -57,12 +59,25 @@ struct fb_conf {
     size_t depth;
     size_t base;
     struct fb_console con;
+
+    /**
+     * Change screen resolution.
+     * @param width is the screen width.
+     * @param height is the screen height.
+     * @param depth is the color depth.
+     * @param nr_pages is the number of pages that will be needed.
+     */
+    int (*set_resolution)(size_t width, size_t height, size_t depth,
+                          size_t nr_pages);
+
+    /**
+     * Change current page.
+     */
+    int (*page_change)(size_t i);
 };
 
-extern struct fb_conf * fb_main;
-
 void fb_register(struct fb_conf * fb);
-void fb_console_write(char *text);
+void fb_console_write(struct fb_conf * fb, char * text);
 
 /**
  * Set rgb pixel.
@@ -77,7 +92,17 @@ void fb_console_write(char *text);
 } while (0)
 
 #ifdef FB_INTERNAL
-void init_console(struct fb_conf * fb);
+/**
+ * Initialize fb_console struct in fb_conf struct.
+ * This function can be only called after (or by) fb_register() has been called
+ * and normally this function shall be called only by fb_register().
+ */
+void fb_console_init(struct fb_conf * fb);
+
+int fb_console_maketty(struct fb_conf * fb);
+
+int fb_ioctl(struct dev_info * devnfo, uint32_t request,
+             void * arg, size_t arg_len);
 #endif
 
 #endif /* FB_H */

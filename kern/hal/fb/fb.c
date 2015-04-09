@@ -40,12 +40,7 @@
 #include <hal/fb.h>
 #include "splash.h"
 
-/*
- * TODO Array or list?
- */
-struct fb_conf * fb_main;
-
-static void draw_splash(void);
+static void draw_splash(struct fb_conf * fbb);
 
 /* TODO Should support multiple frame buffers or fail */
 /*
@@ -56,17 +51,19 @@ static void draw_splash(void);
  */
 void fb_register(struct fb_conf * fb)
 {
-    init_console(fb);
-    fb_main = fb;
+    fb_console_init(fb);
+    if (fb_console_maketty(fb)) {
+        KERROR(KERROR_ERR, "FB maketty failed\n");
+    }
 
-    draw_splash();
-    fb_console_write("FB ready\r\n");
+    draw_splash(fb);
+    fb_console_write(fb, "FB ready\r\n");
 }
 
-static void draw_splash(void)
+static void draw_splash(struct fb_conf * fb)
 {
-    const size_t pitch = fb_main->pitch;
-    const size_t base = fb_main->base;
+    const size_t pitch = fb->pitch;
+    const size_t base = fb->base;
     size_t col = 0;
     size_t row = 0;
 
@@ -83,4 +80,15 @@ static void draw_splash(void)
         SPLASH_PIXEL(splash_data, pxl);
         set_pixel(base, col, row, (pxl[0] << 16) | (pxl[1] << 8) | pxl[2]);
     }
+}
+
+int fb_ioctl(struct dev_info * devnfo, uint32_t request,
+             void * arg, size_t arg_len)
+{
+    switch (request) {
+    default:
+        return -EINVAL;
+    }
+
+    return 0;
 }

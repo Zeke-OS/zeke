@@ -37,6 +37,7 @@
 #include <hal/mmu.h>
 #include <kerror.h>
 #include <kinit.h>
+#include <kmalloc.h>
 #include <kstring.h>
 #include <ptmapper.h>
 #include "bcm2835_mailbox.h"
