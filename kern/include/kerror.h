@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Kernel error logging.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,7 +40,6 @@
 #define KERROR_NOLOG    0
 #define KERROR_BUF      1
 #define KERROR_UARTLOG  2
-#define KERROR_FB       3
 
 /* Log levels */
 #define KERROR_CRIT     '0' /*!< Critical error system is halted. */

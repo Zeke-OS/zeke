@@ -17,11 +17,6 @@ config configKERROR_UART
     default y
     depends on configUART
 
-config configKERROR_FB
-    bool "Print to FB support"
-    default n
-    depends on configFB
-
 config configDEF_KLOGGER
     int "Default klogger method"
     range 0 3
@@ -30,7 +25,6 @@ config configDEF_KLOGGER
         0 = No logger
         1 = Kerror buffer
         2 = UART0
-        3 = FB
 
 choice
     prompt "Log level"
