@@ -39,6 +39,18 @@
 #ifndef SYS_FB_H
 #define SYS_FB_H
 
+/**
+ * Set rgb pixel.
+ * addr = y * pitch + x * 3
+ * TODO Hw dependant
+ */
+#define set_rgb_pixel(base, x, y, rgb) do {                     \
+            const uintptr_t addr = base + y * pitch + x * 3;    \
+            *(char *)((addr) + 0) = ((rgb) >> 16) & 0xff;       \
+            *(char *)((addr) + 1) = ((rgb) >> 8) & 0xff;        \
+            *(char *)((addr) + 2) = (rgb) & 0xff;               \
+} while (0)
+
 struct fb_resolution {
     size_t width;
     size_t height;

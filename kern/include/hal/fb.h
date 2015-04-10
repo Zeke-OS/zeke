@@ -75,18 +75,6 @@ struct fb_conf {
 void fb_register(struct fb_conf * fb);
 void fb_console_write(struct fb_conf * fb, char * text);
 
-/**
- * Set rgb pixel.
- * addr = y * pitch + x * 3
- * TODO Hw dependant and should be moved
- */
-#define set_pixel(base, x, y, rgb) do {                         \
-            const uintptr_t addr = base + y * pitch + x * 3;    \
-            *(char *)((addr) + 0) = ((rgb) >> 16) & 0xff;       \
-            *(char *)((addr) + 1) = ((rgb) >> 8) & 0xff;        \
-            *(char *)((addr) + 2) = (rgb) & 0xff;               \
-} while (0)
-
 #ifdef FB_INTERNAL
 /**
  * Initialize fb_console struct in fb_conf struct.

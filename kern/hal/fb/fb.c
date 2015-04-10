@@ -82,7 +82,7 @@ static void draw_splash(struct fb_conf * fb)
         }
 
         SPLASH_PIXEL(splash_data, pxl);
-        set_pixel(base, col, row, (pxl[0] << 16) | (pxl[1] << 8) | pxl[2]);
+        set_rgb_pixel(base, col, row, (pxl[0] << 16) | (pxl[1] << 8) | pxl[2]);
     }
 }
 
