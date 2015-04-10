@@ -59,7 +59,15 @@ config configBCM_FB
     depends on configBCM2835 && configBCM_MB
     select configRPI_HW
 
+config configBCM_PM
+    bool "BCM2835 PM support"
+    default n
+    depends on configBCM2835 && configBCM_MB
+    ---help---
+    Enable BCM2835 Power Management support.
+
 endmenu
+
 
 menu "Raspberry PI drivers"
 

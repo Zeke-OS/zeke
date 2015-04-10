@@ -50,6 +50,30 @@
 
 #define BCM2835_STATUS_SUCCESS  0x80000000
 
+/*
+ * Mailbox message format:
+ * -----------------------
+ *
+ * mb[0]    Buffer size in bytes
+ * mb[1]    Buffer req code:
+ *                 0 == request
+ *                 resp code:
+ *                 0x80000000 Request successful
+ *                 0x80000001 Error
+ * mb[2]    Tags
+ * mb[n]    0x0 End tag
+ *
+ * Tag format
+ * ----------
+ *
+ *  mb[i + 0]   Tag id
+ *  mb[i + 1]   Value buffer size in bytes
+ *  mb[i + 2]   1 bit MSB req/resp indicator (0 == request, 1 == response)
+ *              32 bit LSB value length in bytes
+ *  mb[i + n]   value
+ */
+
+
 /**
  * Read from BCM2835 mailbox.
  * @param channel is a channel number.
