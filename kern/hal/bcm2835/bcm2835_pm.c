@@ -34,10 +34,6 @@
 #include <hal/hw_timers.h>
 #include "bcm2835_prop.h"
 
-/**
- * @return  Returns 0 or 1 depending if the device power state is on or off;
- *          Otherwise a negative errno value is returned.
- */
 int bcm2835_pm_get_power_state(uint32_t devid)
 {
     /*
@@ -106,7 +102,7 @@ int bcm2835_pm_set_power_state(uint32_t devid, int state)
  * @param devid is the id of the device.
  * @return Returns a wait time in usec.
  */
-static int bcm2835_pm_get_timing(uint32_t devid)
+int bcm2835_pm_get_timing(uint32_t devid)
 {
     uint32_t mbuf[7] __attribute__((aligned (16)));
     int err;

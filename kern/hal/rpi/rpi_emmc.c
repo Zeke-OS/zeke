@@ -62,29 +62,27 @@
  * Broadcom BCM2835 Peripherals Guide
  */
 
-#include <sys/types.h>
-#include <sys/ioctl.h>
-#include <fcntl.h>
-#include <kinit.h>
-#include <stdint.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <stdint.h>
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <fs/dev_major.h>
+#include <fs/devfs.h>
+#include <fs/mbr.h>
+#include <hal/hw_timers.h>
+#include <kerror.h>
+#include <kinit.h>
+#include <kmalloc.h>
 #include <kstring.h>
 #include <libkern.h>
-#include <kmalloc.h>
 #include <vm/vm.h>
-#include <buf.h>
-#include <kerror.h>
-#include <hal/hw_timers.h>
-#include <fs/devfs.h>
-#include <fs/dev_major.h>
-#include <fs/mbr.h>
 #include "../bcm2835/bcm2835_mmio.h"
-#include "../bcm2835/bcm2835_timers.h"
-#include "../bcm2835/bcm2835_mailbox.h"
-
-#if configBCM_MB == 0
-#error configBCM_MB is required by rpi_emmc driver
+#if configRPI_EMMC_BCM2708
+#include "../bcm2835/bcm2835_prop.h"
+#include "../bcm2835/bcm2835_pm.h"
 #endif
+#include "../bcm2835/bcm2835_timers.h"
 
 /* SD Clock Frequencies (in Hz) */
 #define SD_CLOCK_ID         400000
@@ -104,8 +102,6 @@ static const char device_name[] = "emmc0";
 static uint32_t hci_ver;
 static uint32_t capabilities_0;
 static uint32_t capabilities_1;
-
-static struct buf * mailbuf;
 
 struct sd_scr {
     uint32_t    scr[2];
@@ -502,14 +498,6 @@ int rpi_emmc_init(void)
 #endif
     int err;
 
-    mailbuf = geteblk_special(10 * sizeof(uint32_t),
-            MMU_CTRL_MEMTYPE_SO);
-    if (!mailbuf || mailbuf->b_data == 0) {
-        KERROR(KERROR_ERR, "Unable to get a mailbuffer\n");
-
-        return -ENOMEM;
-    }
-
     struct emmc_block_dev * sd_edev = NULL;
     err = rpi_emmc_card_init(&sd_edev);
     if (err)
@@ -558,54 +546,39 @@ static uint32_t sd_get_base_clock_hz()
 {
     uint32_t base_clock;
 #if configRPI_EMMC_BCM2708
-    uint32_t * mailbuffer;
+    uint32_t mb[8];
 #endif
 
 #if configRPI_EMMC_GENERIC
     capabilities_0 = mmio_read(EMMC_BASE + EMMC_CAPABILITIES_0);
     base_clock = ((capabilities_0 >> 8) & 0xff) * 1000000;
 #elif configRPI_EMMC_BCM2708
-    mailbuffer = (uint32_t *)(mailbuf->b_data);
-
-    /*
-     * Get the base clock rate
-     * set up the buffer
-     */
-    mailbuffer[0] = 8 * 4;      /* size of this message */
-    mailbuffer[1] = 0;          /* this is a request */
-
+    mb[0] = sizeof(mb); /* size of this message */
+    mb[1] = 0;
     /* next comes the first tag */
-    mailbuffer[2] = 0x00030002; /* get clock rate tag */
-    mailbuffer[3] = 0x8;        /* value buffer size */
-    mailbuffer[4] = 0x4;        /* is a request, value length = 4 */
-    mailbuffer[5] = 0x1;        /* clock id + space to return clock id */
-    mailbuffer[6] = 0;          /* space to return rate (in Hz) */
-
+    mb[2] = 0x00030002; /* get clock rate tag */
+    mb[3] = 0x8;        /* value buffer size */
+    mb[4] = 0x4;        /* is a request, value length = 4 */
+    mb[5] = 0x1;        /* clock id + space to return clock id */
+    mb[6] = 0;          /* space to return rate (in Hz) */
     /* closing tag */
-    mailbuffer[7] = 0;
+    mb[7] = 0;
 
-    /* send the message */
-    bcm2835_writemailbox(BCM2835_MBCH_PROP_OUT,
-                         (uint32_t)(mailbuf->b_mmu.paddr));
-
-    /* read the response */
-    uint32_t resp;
-    bcm2835_readmailbox(BCM2835_MBCH_PROP_OUT, &resp);
-    if (mailbuffer[1] != BCM2835_STATUS_SUCCESS) {
+    if (bcm2835_prop_request(mb)) {
         KERROR(KERROR_ERR,
                "EMMC: property mailbox did not return a valid response.\n");
 
         return 0;
     }
 
-    if (mailbuffer[5] != 0x1) {
+    if (mb[5] != 0x1) {
         KERROR(KERROR_ERR,
                "EMMC: property mailbox did not return a valid clock id.\n");
 
         return 0;
     }
 
-    base_clock = mailbuffer[6];
+    base_clock = mb[6];
 #else
     KERROR(KERROR_ERR,
            "EMMC: get_base_clock_hz() is not implemented for this "
@@ -623,122 +596,21 @@ static uint32_t sd_get_base_clock_hz()
 }
 
 #if configRPI_EMMC_BCM2708
-static int bcm_2708_power_off()
-{
-    uint32_t * mailbuffer = (uint32_t *)(mailbuf->b_data);
-    uint32_t resp;
-
-    /* Power off the SD card */
-    /* set up the buffer */
-    mailbuffer[0] = 8 * 4;  /* size of this message */
-    mailbuffer[1] = 0;      /* this is a request */
-
-    /* next comes the first tag */
-    mailbuffer[2] = 0x00028001; /* set power state tag */
-    mailbuffer[3] = 0x8;        /* value buffer size */
-    mailbuffer[4] = 0x8;        /* is a request, value length = 8 */
-    mailbuffer[5] = 0x0;        /* device id and device id also returned here */
-    mailbuffer[6] = 0x2;  /* set power off, wait for stable and returns state */
-
-    /* closing tag */
-    mailbuffer[7] = 0;
-
-    /* send the message */
-    bcm2835_writemailbox(BCM2835_MBCH_PROP_OUT,
-                         (uint32_t)(mailbuf->b_mmu.paddr));
-
-    /* read the response */
-    bcm2835_readmailbox(BCM2835_MBCH_PROP_OUT, &resp);
-    if (mailbuffer[1] != BCM2835_STATUS_SUCCESS) {
-        KERROR(KERROR_ERR,
-               "EMMC: bcm_2708_power_off(): property mailbox did not return "
-               "a valid response.\n");
-
-        return -EIO;
-    }
-
-    if (mailbuffer[5] != 0x0) {
-        KERROR(KERROR_ERR, "EMMC: property mailbox did not return "
-                           "a valid device id.\n");
-
-        return -EIO;
-    }
-
-    if ((mailbuffer[6] & 0x3) != 0) {
-#ifdef configRPI_EMMC_DEBUG
-        KERROR(KERROR_DEBUG,
-               "EMMC: bcm_2708_power_off(): "
-               "device did not power off successfully (%x).\n",
-               (uint32_t)mailbuffer[6]);
-#endif
-        return 1;
-    }
-
-    return 0;
-}
-
-static int bcm_2708_power_on()
-{
-    uint32_t * mailbuffer = (uint32_t *)(mailbuf->b_data);
-    uint32_t resp;
-
-    /* Power on the SD card */
-    /* set up the buffer */
-    mailbuffer[0] = 8 * 4;      /* size of this message */
-    mailbuffer[1] = 0;          /* this is a request */
-
-    /* next comes the first tag */
-    mailbuffer[2] = 0x00028001; /* set power state tag */
-    mailbuffer[3] = 0x8;        /* value buffer size */
-    mailbuffer[4] = 0x8;        /* is a request, value length = 8 */
-    mailbuffer[5] = 0x0;        /* device id and device id also returned here */
-    mailbuffer[6] = 0x3;  /* set power off, wait for stable and returns state */
-
-    /* closing tag */
-    mailbuffer[7] = 0;
-
-    /* send the message */
-    bcm2835_writemailbox(BCM2835_MBCH_PROP_OUT,
-                         (uint32_t)(mailbuf->b_mmu.paddr));
-
-    /* read the response */
-    bcm2835_readmailbox(BCM2835_MBCH_PROP_OUT, &resp);
-    if (mailbuffer[1] != BCM2835_STATUS_SUCCESS) {
-        KERROR(KERROR_ERR,
-               "EMMC: bcm_2708_power_on(): property mailbox did not return "
-               "a valid response.\n");
-
-        return -EIO;
-    }
-
-    if (mailbuffer[5] != 0x0) {
-        KERROR(KERROR_ERR,
-               "EMMC: property mailbox did not return a valid device id.\n");
-
-        return -EIO;
-    }
-
-    if ((mailbuffer[6] & 0x3) != 1) {
-#ifdef configRPI_EMMC_DEBUG
-        KERROR(KERROR_DEBUG,
-                 "EMMC: bcm_2708_power_on(): "
-                 "device did not power on successfully (%x).\n",
-                 (uint32_t)mailbuffer[6]);
-#endif
-        return EIO;
-    }
-
-    return 0;
-}
-
 static int bcm_2708_power_cycle()
 {
-    if (bcm_2708_power_off() < 0)
+    int resp;
+
+    resp = bcm2835_pm_set_power_state(BCM2835_SD, 0);
+    if (resp != 0)
         return -EIO;
 
     bcm_udelay(5000);
 
-    return bcm_2708_power_on();
+    resp = bcm2835_pm_set_power_state(BCM2835_SD, 1);
+    if (resp != 1)
+        return -EIO;
+
+    return 0;
 }
 #endif
 

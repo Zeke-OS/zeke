@@ -15,9 +15,11 @@ ifeq ($(configBCM2835),y)
 	hal-SRC-y += hal/bcm2835/bcm2835_gpio.c
 	hal-SRC-y += hal/bcm2835/bcm2835_timers.c
 	hal-SRC-$(configBCM_MB) += hal/bcm2835/bcm2835_mailbox.c
+	hal-SRC-$(configBCM_MB) += hal/bcm2835/bcm2835_prop.c
 	hal-SRC-$(configUART) += hal/bcm2835/bcm2835_uart.c
 	hal-SRC-$(configBCM_FB) += hal/bcm2835/bcm2835_fb.c
 	hal-SRC-$(configBCM_JTAG) += hal/bcm2835/bcm2835_jtag.c
+	hal-SRC-$(configBCM_PM) += hal/bcm2835/bcm2835_pm.c
 	#should have rpi flag
 	hal-SRC-$(configRPI_LEDS) += hal/rpi/rpi_leds.c
 	hal-SRC-$(configRPI_EMMC) += hal/rpi/rpi_emmc.c

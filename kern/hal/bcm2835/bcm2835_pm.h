@@ -49,6 +49,9 @@
 
 /**
  * Get device power state.
+ * @return  Returns 0 or 1 depending if the device power state is on or off;
+ *          Otherwise a negative errno value is returned.
+ *
  */
 int bcm2835_pm_get_power_state(uint32_t devid);
 
