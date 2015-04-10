@@ -92,12 +92,52 @@ int shmem_init(void)
     return 0;
 }
 
+/**
+ * @param file is the file to be memory mapped.
+ * @param bp_out is a pointer to a buf pointer than should be written if
+ *               mmap is succesful.
+ * @param Return 0 if succeed; Otherwise a negative errno value is returned.
+ */
+static int mmap_file(file_t * file, size_t blkno, size_t bsize,
+                     int flags, struct buf ** bp_out)
+{
+    vnode_t * vnode = file->vnode;
+    struct buf * bp = NULL;
+
+    /*
+     * We have to do a clone or something because we don't want to share
+     * a global buffer.
+     */
+    bp = geteblk(bsize);
+    if (!bp)
+        return -ENOMEM;
+
+    BUF_LOCK(bp);
+    bp->b_file.fdflags = file->fdflags;
+    bp->b_file.oflags = file->oflags;
+    bp->b_file.refcount = 1;
+    bp->b_file.vnode = vnode;
+    bp->b_file.stream = file->stream;
+    bp->b_blkno = blkno;
+
+    if (!(flags & MAP_SHARED))
+        bp->b_flags |= B_NOTSHARED;
+    if (flags & MAP_PRIVATE)
+        bp->b_flags |= B_NOSYNC;
+    BUF_UNLOCK(bp);
+
+    bio_readin(bp);
+
+    *bp_out = bp;
+    return 0;
+}
+
 int shmem_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
              int flags, int fildes, off_t off, struct buf ** out, char ** uaddr)
 {
     struct buf * bp = NULL;
     int err;
-    struct stat statbuf = { .st_blksize = 0 };
+    size_t blksize = 0;
 
     KASSERT(out, "out buffer pointer must be set");
 
@@ -129,51 +169,32 @@ int shmem_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
     } else { /* Map a file */
         file_t * file;
         vnode_t * vnode;
+        struct stat statbuf;
         size_t blkno;
+        int err;
 
         file = fs_fildes_ref(proc->files, fildes, 1);
         if (!file)
             return -EBADF;
         vnode = file->vnode;
 
-        if (!(vnode->vnode_ops->stat && vnode->vnode_ops->read))
-            return -ENOTSUP; /* We'll need these operations */
-
         /*
          * Calculate block number.
          */
-        vnode->vnode_ops->stat(vnode, &statbuf);
+        err = vnode->vnode_ops->stat(vnode, &statbuf);
+        if (err)
+            return err;
+        blksize = statbuf.st_blksize;
+        bsize = memalign_size(bsize, blksize);
+
         if (!S_ISREG(vnode->vn_mode))
-            blkno = off / statbuf.st_blksize;
+            blkno = off / blksize;
         else
-            blkno = off & ~(statbuf.st_blksize - 1);
+            blkno = off & ~(blksize - 1);
 
-        /* Fix bsize alignment. */
-        bsize = memalign_size(bsize, statbuf.st_blksize);
-
-        /*
-         * We have to do a clone or something because we don't want to share
-         * a global buffer.
-         */
-        bp = geteblk(bsize);
-        if (!bp) {
-            return -ENOMEM;
-        }
-        BUF_LOCK(bp);
-        bp->b_file.fdflags = file->fdflags;
-        bp->b_file.oflags = file->oflags;
-        bp->b_file.refcount = 1;
-        bp->b_file.vnode = vnode;
-        bp->b_file.stream = file->stream;
-        bp->b_blkno = blkno;
-
-        if (!(flags & MAP_SHARED))
-            bp->b_flags |= B_NOTSHARED;
-        if (flags & MAP_PRIVATE)
-            bp->b_flags |= B_NOSYNC;
-        BUF_UNLOCK(bp);
-
-        bio_readin(bp);
+        err = mmap_file(file, blkno, bsize, flags, &bp);
+        if (err)
+            return err;
 
         fs_fildes_ref(proc->files, fildes, -1);
     }
@@ -207,9 +228,9 @@ int shmem_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
     }
 
     /* Set uaddr */
-    if (statbuf.st_blksize > 0) {
+    if (blksize > 0) {
         /* Adjust returned uaddr by off */
-        *uaddr = (char *)(bp->b_mmu.vaddr + off % statbuf.st_blksize);
+        *uaddr = (char *)(bp->b_mmu.vaddr + off % blksize);
     } else {
         *uaddr = (char *)(bp->b_mmu.vaddr);
     }
