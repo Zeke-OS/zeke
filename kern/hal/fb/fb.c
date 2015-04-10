@@ -33,11 +33,15 @@
 #define FB_INTERNAL
 
 #include <stddef.h>
-#include <kstring.h>
-#include <kmalloc.h>
-#include <kinit.h>
-#include <kerror.h>
+#include <termios.h>
+#include <sys/ioctl.h>
+#include <fs/devfs.h>
 #include <hal/fb.h>
+#include <kerror.h>
+#include <kinit.h>
+#include <kmalloc.h>
+#include <kstring.h>
+#include <tty.h>
 #include "splash.h"
 
 static void draw_splash(struct fb_conf * fbb);
@@ -85,7 +89,31 @@ static void draw_splash(struct fb_conf * fb)
 int fb_ioctl(struct dev_info * devnfo, uint32_t request,
              void * arg, size_t arg_len)
 {
+    struct tty * tty = (struct tty *)devnfo->opt_data;
+    struct fb_conf * fb = (struct fb_conf *)tty->opt_data;
+
     switch (request) {
+    case IOCTL_FB_GETRES: /* Get framebuffer resolution */
+        if (arg_len < sizeof(struct fb_resolution)) {
+            return -EINVAL;
+        } else {
+            struct fb_resolution * fbres = (struct fb_resolution *)arg;
+
+            fbres->width = fb->width;
+            fbres->height = fb->height;
+            fbres->depth = fb->depth;
+        }
+        break;
+    case IOCTL_FB_SETRES: /* Set framebuffer resolution. */
+        if (arg_len < sizeof(struct fb_resolution)) {
+            return -EINVAL;
+        } else {
+            struct fb_resolution * fbres = (struct fb_resolution *)arg;
+
+            return fb->set_resolution(fb, fbres->width, fbres->height,
+                                      fbres->depth);
+        }
+        break;
     default:
         return -EINVAL;
     }

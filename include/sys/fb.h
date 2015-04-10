@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    ioctl.h
+ * @file    sys/fb.h
  * @author  Olli Vanhoja
- * @brief   Control devices.
+ * @brief   Generic frame buffer interface.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,51 +35,17 @@
  * @{
  */
 
-#ifndef IOCTL_H
-#define IOCTL_H
+#pragma once
+#ifndef SYS_FB_H
+#define SYS_FB_H
 
-#include <stddef.h>
-#include <stdint.h>
-
-/*
- * IOCTL request codes.
- * Get requests shall be odd and set request shall be even, this information can
- * be then used to optimize the syscall.
- */
-/* termio */
-#define IOCTL_GTERMIOS        1 /*!< Get termios struct. */
-#define IOCTL_STERMIOS        2 /*!< Set termios struct. */
-#define IOCTL_TTYFLUSH        3 /*!< TTY flush controls. */
-#define IOCTL_TCSBRK          4 /*!< Send a break. */
-/* dev */
-#define IOCTL_GETBLKSIZE     11 /*!< Get device block size. */
-#define IOCTL_GETBLKCNT      13 /*!< Get device block count. */
-/* pty */
-#define IOCTL_PTY_CREAT      50 /*!< Create a new pty master-slave pair. */
-/* dev/fb */
-#define IOCTL_FB_GETRES     101 /*!< Get the frame buffer resolution. */
-#define IOCTL_FB_SETRES     102 /*!< Change the framebuffer resolution. */
-
-struct _ioctl_get_args {
-    int fd;
-    unsigned request;
-    void * arg;
-    size_t arg_len;
+struct fb_resolution {
+    size_t width;
+    size_t height;
+    size_t depth;
 };
 
-#ifndef KERNEL_INTERNAL
-__BEGIN_DECLS
-
-/**
- * ioctl.
- * @note This is a non-POSIX implementation of ioctl.
- */
-int _ioctl(int fildes, unsigned request, void * arg, size_t arg_len);
-
-__END_DECLS
-#endif
-
-#endif /* IOCTL_H */
+#endif /* SYS_FB_H */
 
 /**
  * @}

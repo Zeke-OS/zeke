@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    fb.c
+ * @file    fb.h
  * @author  Olli Vanhoja
  * @brief   Generic frame buffer driver.
  * @section LICENSE
@@ -31,11 +31,12 @@
  */
 
 #pragma once
-#ifndef FB_H
-#define FB_H
+#ifndef HAL_FB_H
+#define HAL_FB_H
 
 #include <stddef.h>
 #include <stdint.h>
+#include <sys/fb.h>
 #include <sys/linker_set.h>
 
 struct dev_info;
@@ -62,18 +63,13 @@ struct fb_conf {
 
     /**
      * Change screen resolution.
+     * This should be set by the actual hw driver.
      * @param width is the screen width.
      * @param height is the screen height.
      * @param depth is the color depth.
-     * @param nr_pages is the number of pages that will be needed.
      */
-    int (*set_resolution)(size_t width, size_t height, size_t depth,
-                          size_t nr_pages);
-
-    /**
-     * Change current page.
-     */
-    int (*page_change)(size_t i);
+    int (*set_resolution)(struct fb_conf * fb, size_t width, size_t height,
+                          size_t depth);
 };
 
 void fb_register(struct fb_conf * fb);
@@ -105,4 +101,4 @@ int fb_ioctl(struct dev_info * devnfo, uint32_t request,
              void * arg, size_t arg_len);
 #endif
 
-#endif /* FB_H */
+#endif /* HAL_FB_H */

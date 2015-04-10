@@ -70,6 +70,8 @@ static mmu_region_t bcm2835_fb_region = {
     .pt         = &mmu_pagetable_master
 };
 
+static int set_resolution(struct fb_conf * fb, size_t width, size_t height,
+                          size_t depth);
 static void set_fb_config(struct bcm2835_fb_config * fb_config,
                           uint32_t width, uint32_t height, size_t depth);
 static int commit_fb_config(struct bcm2835_fb_config * fb_config);
@@ -85,7 +87,7 @@ static int bcm2835_fb_init(void)
     struct fb_conf * fb;
 
     fb_mbuf = geteblk_special(sizeof(struct bcm2835_fb_config),
-                           MMU_CTRL_MEMTYPE_SO);
+                              MMU_CTRL_MEMTYPE_SO);
     if (!fb_mbuf || fb_mbuf->b_data == 0) {
         KERROR(KERROR_ERR, "Unable to get a mailbuffer\n");
 
@@ -108,11 +110,22 @@ static int bcm2835_fb_init(void)
         .height = fb_bcm.height,
         .pitch  = fb_bcm.pitch,
         .depth  = fb_bcm.depth,
-        .base   = fb_bcm.fb_paddr
+        .base   = fb_bcm.fb_paddr,
+        .set_resolution = set_resolution,
     };
     fb_register(fb);
 
     return 0;
+}
+
+static int set_resolution(struct fb_conf * fb, size_t width, size_t height,
+                          size_t depth)
+{
+    struct bcm2835_fb_config fb_bcm;
+
+    set_fb_config(&fb_bcm, width, height, depth);
+
+    return commit_fb_config(&fb_bcm);
 }
 
 static void set_fb_config(struct bcm2835_fb_config * fb,
