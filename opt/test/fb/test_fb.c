@@ -32,7 +32,7 @@ static char * test_mmap_fb(void)
 
     errno = 0;
     fb = mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_PRIVATE,
-                fileno(fp), 0);
+              fileno(fp), 0);
     errno_save = errno;
 
     pu_assert("A new memory region returned", fb != MAP_FAILED);

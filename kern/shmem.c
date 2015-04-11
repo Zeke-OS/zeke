@@ -220,15 +220,13 @@ errout:
     if (flags & MAP_FIXED) {
         bp->b_mmu.vaddr = vaddr & ~(MMU_PGSIZE_COARSE - 1);
         err = vm_insert_region(proc, bp, VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
-        if (err > 0) /* err >i= 0 => region nr returned; err < -errorno code */
+        if (err > 0) /* err >i= 0 => region nr returned; err < -errno code */
             err = 0;
     } else {
         /* Randomly map bp somewhere into the process address space. */
-        if (vm_rndsect(proc, 0 /* Ignored */, 0 /* Ignored */, bp)) {
-            err = 0;
-        } else {
+        err = 0;
+        if (!vm_rndsect(proc, 0 /* Ignored */, 0 /* Ignored */, bp))
             err = -ENOMEM;
-        }
     }
     if (err && bp->vm_ops->rfree) {
         bp->vm_ops->rfree(bp);
@@ -246,7 +244,7 @@ errout:
     }
 
     /*
-     * Insert bp to the periodic sync list.
+     * Insert bp to the periodic sync list if necessary/allowed.
      */
     if (!(bp->b_flags & B_NOSYNC)) {
         mtx_lock(&sync_lock);
@@ -275,7 +273,8 @@ int shmem_munmap(struct buf * bp, size_t size)
         bio_writeout(bp);
     }
 
-    vrfree(bp);
+    if (bp->vm_ops->rfree)
+        bp->vm_ops->rfree(bp);
 
     return 0;
 }
@@ -340,16 +339,8 @@ static int sys_mmap(void * user_args)
     retval = 0;
 fail:
     err = copyout(&args, user_args, sizeof(args));
-    if (err)
-        retval = -EFAULT;
-
-    if (retval != 0) {
-        if (bp && bp->vm_ops->rfree) {
-            bp->vm_ops->rfree(bp);
-        }
-
-        set_errno(-retval);
-        retval = -1;
+    if (err) {
+        panic("mmap failed");
     }
 
     return retval;
