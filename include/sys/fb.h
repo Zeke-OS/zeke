@@ -44,11 +44,11 @@
  * addr = y * pitch + x * 3
  * TODO Hw dependant
  */
-#define set_rgb_pixel(base, x, y, rgb) do {                     \
-            const uintptr_t addr = base + y * pitch + x * 3;    \
-            *(char *)((addr) + 0) = ((rgb) >> 16) & 0xff;       \
-            *(char *)((addr) + 1) = ((rgb) >> 8) & 0xff;        \
-            *(char *)((addr) + 2) = (rgb) & 0xff;               \
+#define set_rgb_pixel(_base, _pitch, _x, _y, _rgb) do {                        \
+            const uintptr_t d = (uintptr_t)_base + (_y) * (_pitch) + (_x) * 3; \
+            *(char *)(d + 0) = ((_rgb) >> 16) & 0xff;                          \
+            *(char *)(d + 1) = ((_rgb) >> 8) & 0xff;                           \
+            *(char *)(d + 2) = (_rgb) & 0xff;                                  \
 } while (0)
 
 struct fb_resolution {

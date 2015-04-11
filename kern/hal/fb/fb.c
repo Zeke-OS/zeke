@@ -110,10 +110,16 @@ void fb_mm_initbuf(struct fb_conf * fb)
 void fb_mm_updatebuf(struct fb_conf * restrict fb,
                      const mmu_region_t * restrict region)
 {
-    fb->mem.b_mmu = *region;
+    /*
+     * TODO The following is not a good idea but vpt doesn't support sections
+     * yet.
+     */
+    fb->mem.b_mmu.num_pages = region->num_pages * 256;
+    fb->mem.b_mmu.paddr = region->paddr;
+    fb->mem.b_mmu.control = region->control;
     fb->mem.b_data = region->vaddr;
     fb->mem.b_bufsize = mmu_sizeof_region(region);
-    fb->mem.b_bcount = 4 * fb->width * fb->height;
+    fb->mem.b_bcount = fb->mem.b_bufsize;
 }
 
 static void fb_mm_ref(struct buf * this)
@@ -176,7 +182,8 @@ static void draw_splash(struct fb_conf * fb)
         }
 
         SPLASH_PIXEL(splash_data, pxl);
-        set_rgb_pixel(base, col, row, (pxl[0] << 16) | (pxl[1] << 8) | pxl[2]);
+        set_rgb_pixel(base, pitch, col, row,
+                      (pxl[0] << 16) | (pxl[1] << 8) | pxl[2]);
     }
 }
 

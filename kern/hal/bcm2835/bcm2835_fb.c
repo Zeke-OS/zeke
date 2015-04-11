@@ -39,6 +39,7 @@
 #include <kinit.h>
 #include <kmalloc.h>
 #include <kstring.h>
+#include <libkern.h>
 #include <ptmapper.h>
 #include "bcm2835_mailbox.h"
 #include "bcm2835_mmio.h"
@@ -64,7 +65,6 @@ struct bcm2835_fb_config {
 
 static struct buf * fb_mbuf;
 static mmu_region_t bcm2835_fb_region = {
-    .num_pages  = 2, /* TODO We may want to calculate this */
     .ap         = MMU_AP_RWNA,
     .control    = (MMU_CTRL_MEMTYPE_DEV | MMU_CTRL_XN),
     .pt         = &mmu_pagetable_master
@@ -151,10 +151,15 @@ static void set_fb_config(struct bcm2835_fb_config * bcm_fb,
  */
 static void update_fb_mm(struct fb_conf * fb, struct bcm2835_fb_config * bcm_fb)
 {
+    size_t size = memalign_size(bcm_fb->size, MMU_PGSIZE_SECTION);
+
     bcm2835_fb_region.vaddr = bcm_fb->fb_paddr;
     bcm2835_fb_region.paddr = bcm_fb->fb_paddr;
+    bcm2835_fb_region.num_pages = size / MMU_PGSIZE_SECTION;
     mmu_map_region(&bcm2835_fb_region); /* Map for the kernel */
     fb_mm_updatebuf(fb, &bcm2835_fb_region);
+
+    KERROR(KERROR_DEBUG, "num of video pages: %u\n", bcm2835_fb_region.num_pages);
 }
 
 static int commit_fb_config(struct bcm2835_fb_config * fb)

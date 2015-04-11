@@ -157,7 +157,7 @@ static void draw_glyph(struct fb_conf * fb, const char * font_glyph,
             else
                 rgb = bg_color;
 
-            set_rgb_pixel(base, (*consx * CHARSIZE_X + glyph_x),
+            set_rgb_pixel(base, pitch, (*consx * CHARSIZE_X + glyph_x),
                           (row + *consy * CHARSIZE_Y), rgb);
 
             glyph_x++;
