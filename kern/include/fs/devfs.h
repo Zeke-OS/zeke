@@ -64,10 +64,17 @@ struct dev_info {
                      uint8_t * buf, size_t bcount, int oflags);
     /**
      * ioctl for the device driver.
-     * This function is optional and can be NULL.
+     * @note This function is optional and can be NULL.
      */
     int (*ioctl)(struct dev_info * devnfo, uint32_t request,
                  void * arg, size_t arg_len);
+
+    /**
+     * mmap a device.
+     * @note This function is optional and can be NULL.
+     */
+    int (*mmap)(struct dev_info * devnfo, size_t blkno, size_t bsize, int flags,
+                struct buf ** bp_out);
 
     /**
      * The function is called if set and vnode deletion is triggered by

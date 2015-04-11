@@ -2,6 +2,10 @@ comment "Optional applications"
 
 menu "Testing"
 
+config configTESTS_FB
+    bool "Framebuffer tests"
+    default n
+
 config configTESTS_LIBC
     bool "Libc unit tests"
     default n

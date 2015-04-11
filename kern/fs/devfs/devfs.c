@@ -57,7 +57,7 @@ static int devfs_umount(struct fs_superblock * fs_sb);
 static int devfs_file_opened(struct proc_info * p, vnode_t * vnode);
 static void devfs_file_closed(struct proc_info * p, file_t * file);
 static int dev_ioctl(file_t * file, unsigned request,
-        void * arg, size_t arg_len);
+                     void * arg, size_t arg_len);
 
 vnode_ops_t devfs_vnode_ops = {
     .write = dev_write,

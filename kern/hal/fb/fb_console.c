@@ -33,18 +33,15 @@
 #define FB_INTERNAL
 
 #include <errno.h>
-#include <machine/atomic.h>
 #include <termios.h>
-#include <fs/dev_major.h>
 #include <fs/devfs.h>
+#include <buf.h>
 #include <kstring.h>
 #include <kmalloc.h>
 #include <sys/ioctl.h>
 #include <tty.h>
 #include <hal/fb.h>
 #include "fonteng.h"
-
-atomic_t fb_minor = ATOMIC_INIT(0);
 
 /*
  * Current fg/bg color.
@@ -57,6 +54,8 @@ static ssize_t fb_console_tty_read(struct tty * tty, off_t blkno, uint8_t * buf,
 static ssize_t fb_console_tty_write(struct tty * tty, off_t blkno,
                                     uint8_t * buf, size_t bcount, int oflags);
 static void fb_console_setconf(struct termios * conf);
+static int fb_tty_ioctl(struct dev_info * devnfo, uint32_t request,
+                        void * arg, size_t arg_len);
 
 void fb_console_init(struct fb_conf * fb)
 {
@@ -72,11 +71,9 @@ void fb_console_init(struct fb_conf * fb)
     fb->con.state.bg_color = def_bg_color;
 }
 
-int fb_console_maketty(struct fb_conf * fb)
+int fb_console_maketty(struct fb_conf * fb, dev_t dev_id)
 {
     struct tty * tty;
-    const int minor = atomic_inc(&fb_minor);
-    dev_t dev_id;
     char dev_name[SPECNAMELEN];
 
     tty = kcalloc(1, sizeof(struct tty));
@@ -84,15 +81,14 @@ int fb_console_maketty(struct fb_conf * fb)
         return -ENOMEM;
     }
 
-    dev_id = DEV_MMTODEV(VDEV_MJNR_FB, minor);
-    ksprintf(dev_name, sizeof(dev_name), "fb%i", minor);
+    ksprintf(dev_name, sizeof(dev_name), "fb%i", DEV_MINOR(dev_id));
     tty->opt_data = fb;
     tty->read = fb_console_tty_read;
     tty->write = fb_console_tty_write;
     tty->setconf = fb_console_setconf;
-    tty->ioctl = fb_ioctl;
+    tty->ioctl = fb_tty_ioctl;
 
-    if (make_ttydev(tty, "fb", dev_id, dev_name)) {
+    if (make_ttydev(tty, "fb_tty", dev_id, dev_name)) {
         kfree(tty);
         return -ENODEV;
     }
@@ -109,6 +105,7 @@ int fb_console_maketty(struct fb_conf * fb)
  */
 static void newline(struct fb_conf * fb)
 {
+    const uintptr_t base = fb->mem.b_data;
     int * source;
     /* Number of bytes in a character row */
     const unsigned int rowbytes = CHARSIZE_Y * fb->pitch;
@@ -127,11 +124,11 @@ static void newline(struct fb_conf * fb)
      */
 
     /* Calculate the address to copy the screen data from */
-    source = (int *)(fb->base + rowbytes);
-    memmove((void *)fb->base, source, (max_rows - 1) * rowbytes);
+    source = (int *)(base + rowbytes);
+    memmove((void *)base, source, (max_rows - 1) * rowbytes);
 
     /* Clear last line on screen */
-    memset((void *)(fb->base + (max_rows - 1) * rowbytes), 0, rowbytes);
+    memset((void *)(base + (max_rows - 1) * rowbytes), 0, rowbytes);
 }
 
 /**
@@ -145,7 +142,7 @@ static void draw_glyph(struct fb_conf * fb, const char * font_glyph,
 {
     size_t col, row;
     const size_t pitch = fb->pitch;
-    const uintptr_t base = fb->base;
+    const uintptr_t base = fb->mem.b_data;
     const uint32_t fg_color = fb->con.state.fg_color;
     const uint32_t bg_color = fb->con.state.bg_color;
 
@@ -241,4 +238,16 @@ void fb_console_write(struct fb_conf * fb, char * text)
 
 static void fb_console_setconf(struct termios * conf)
 {
+    /* TODO */
+}
+
+static int fb_tty_ioctl(struct dev_info * devnfo, uint32_t request,
+                        void * arg, size_t arg_len)
+{
+    struct tty * tty = (struct tty *)devnfo->opt_data;
+    struct fb_conf * fb = (struct fb_conf *)tty->opt_data;
+
+    /* TODO */
+
+    return -EINVAL;
 }

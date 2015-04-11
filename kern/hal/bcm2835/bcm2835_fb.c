@@ -74,6 +74,8 @@ static int set_resolution(struct fb_conf * fb, size_t width, size_t height,
                           size_t depth);
 static void set_fb_config(struct bcm2835_fb_config * fb_config,
                           uint32_t width, uint32_t height, size_t depth);
+static void update_fb_mm(struct fb_conf * fb,
+                         struct bcm2835_fb_config * bcm_fb);
 static int commit_fb_config(struct bcm2835_fb_config * fb_config);
 
 static int bcm2835_fb_init(void) __attribute__((constructor));
@@ -83,7 +85,7 @@ static int bcm2835_fb_init(void)
     SUBSYS_INIT("BCM2835_fb");
 
     int err;
-    struct bcm2835_fb_config fb_bcm;
+    struct bcm2835_fb_config bcm_fb;
     struct fb_conf * fb;
 
     fb_mbuf = geteblk_special(sizeof(struct bcm2835_fb_config),
@@ -94,25 +96,22 @@ static int bcm2835_fb_init(void)
         return -ENOMEM;
     }
 
-    set_fb_config(&fb_bcm, 640, 480, 24);
-    err = commit_fb_config(&fb_bcm);
+    set_fb_config(&bcm_fb, 640, 480, 24);
+    err = commit_fb_config(&bcm_fb);
     if (err)
         return err;
-
-    bcm2835_fb_region.vaddr = fb_bcm.fb_paddr;
-    bcm2835_fb_region.paddr = fb_bcm.fb_paddr;
-    mmu_map_region(&bcm2835_fb_region);
 
     /* Register a new frame buffer */
     fb = kmalloc(sizeof(struct fb_conf));
     *fb = (struct fb_conf){
-        .width  = fb_bcm.width,
-        .height = fb_bcm.height,
-        .pitch  = fb_bcm.pitch,
-        .depth  = fb_bcm.depth,
-        .base   = fb_bcm.fb_paddr,
+        .width  = bcm_fb.width,
+        .height = bcm_fb.height,
+        .pitch  = bcm_fb.pitch,
+        .depth  = bcm_fb.depth,
         .set_resolution = set_resolution,
     };
+    fb_mm_initbuf(fb);
+    update_fb_mm(fb, &bcm_fb);
     fb_register(fb);
 
     return 0;
@@ -121,24 +120,41 @@ static int bcm2835_fb_init(void)
 static int set_resolution(struct fb_conf * fb, size_t width, size_t height,
                           size_t depth)
 {
-    struct bcm2835_fb_config fb_bcm;
+    struct bcm2835_fb_config bcm_fb;
+    int err;
 
-    set_fb_config(&fb_bcm, width, height, depth);
+    set_fb_config(&bcm_fb, width, height, depth);
+    err = commit_fb_config(&bcm_fb);
+    if (err)
+        return err;
 
-    return commit_fb_config(&fb_bcm);
+    update_fb_mm(fb, &bcm_fb);
+
+    return 0;
 }
 
-static void set_fb_config(struct bcm2835_fb_config * fb,
+static void set_fb_config(struct bcm2835_fb_config * bcm_fb,
                           uint32_t width, uint32_t height, size_t depth)
 {
-    memset(fb, 0, sizeof(struct bcm2835_fb_config));
-    fb->width = width;
-    fb->height = height;
-    fb->virtual_width = width;
-    fb->virtual_height = height;
-    fb->depth = depth;
-    fb->x_offset = 0;
-    fb->y_offset = 0;
+    memset(bcm_fb, 0, sizeof(struct bcm2835_fb_config));
+    bcm_fb->width = width;
+    bcm_fb->height = height;
+    bcm_fb->virtual_width = width;
+    bcm_fb->virtual_height = height;
+    bcm_fb->depth = depth;
+    bcm_fb->x_offset = 0;
+    bcm_fb->y_offset = 0;
+}
+
+/**
+ * Update memory region information.
+ */
+static void update_fb_mm(struct fb_conf * fb, struct bcm2835_fb_config * bcm_fb)
+{
+    bcm2835_fb_region.vaddr = bcm_fb->fb_paddr;
+    bcm2835_fb_region.paddr = bcm_fb->fb_paddr;
+    mmu_map_region(&bcm2835_fb_region); /* Map for the kernel */
+    fb_mm_updatebuf(fb, &bcm2835_fb_region);
 }
 
 static int commit_fb_config(struct bcm2835_fb_config * fb)

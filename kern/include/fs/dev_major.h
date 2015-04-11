@@ -45,6 +45,7 @@
 #define VDEV_MJNR_PTY        5
 #define VDEV_MJNR_RPI_EMMC   8
 #define VDEV_MJNR_FB        29
+#define VDEV_MJNR_FBMM      30
 
 /* File system major numbers */
 #define VDEV_MJNR_RAMFS     10

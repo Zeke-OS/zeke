@@ -1,6 +1,9 @@
 include $(ROOT_DIR)/genconfig/buildconf.mk
 
 DIRS =#
+ifeq ($(configTESTS_FB),y)
+DIRS += fb
+endif
 ifeq ($(configTESTS_LIBC),y)
 DIRS += libc
 endif
@@ -30,6 +33,7 @@ $(CLEANDIRS):
 clean: $(CLEANDIRS)
 	find . -type f -name "*.bc" -exec rm -f {} \;
 	find . -type f -name "*.d" -exec rm -f {} \;
+	$(RM) fb/manifest
 	$(RM) libc/manifest
 	$(RM) mman/manifest
 	$(RM) tty/manifest

@@ -35,16 +35,36 @@
 #include <stddef.h>
 #include <termios.h>
 #include <sys/ioctl.h>
+#include <machine/atomic.h>
+#include <buf.h>
+#include <fs/dev_major.h>
 #include <fs/devfs.h>
+#include <fs/devspecial.h>
 #include <hal/fb.h>
 #include <kerror.h>
 #include <kinit.h>
 #include <kmalloc.h>
 #include <kstring.h>
+#include <proc.h>
 #include <tty.h>
 #include "splash.h"
 
-static void draw_splash(struct fb_conf * fbb);
+atomic_t fb_minor = ATOMIC_INIT(0);
+
+static void fb_mm_ref(struct buf * this);
+static void fb_mm_rfree(struct buf * this);
+static int fb_makemmdev(struct fb_conf * fb, dev_t dev_id);
+static void draw_splash(struct fb_conf * fb);
+static int fb_mm_ioctl(struct dev_info * devnfo, uint32_t request,
+                       void * arg, size_t arg_len);
+static int fb_mmap(struct dev_info * devnfo, size_t blkno, size_t bsize,
+                   int flags, struct buf ** bp_out);
+
+struct vm_ops fb_mm_bufops = {
+    .rref = fb_mm_ref,
+    .rclone = NULL, /* What ever, but we don't like clones */
+    .rfree = fb_mm_rfree, /* You can try me but it will be never free */
+};
 
 /* TODO Should support multiple frame buffers or fail */
 /*
@@ -55,19 +75,93 @@ static void draw_splash(struct fb_conf * fbb);
  */
 void fb_register(struct fb_conf * fb)
 {
+    const int minor = atomic_inc(&fb_minor);
+    dev_t devid_tty;
+    dev_t devid_mm;
+
+    devid_tty = DEV_MMTODEV(VDEV_MJNR_FB, minor);
+    devid_mm = DEV_MMTODEV(VDEV_MJNR_FBMM, minor);
+
     fb_console_init(fb);
-    if (fb_console_maketty(fb)) {
-        KERROR(KERROR_ERR, "FB maketty failed\n");
+    if (fb_console_maketty(fb, devid_tty)) {
+        KERROR(KERROR_ERR, "FB: maketty failed\n");
+    }
+    if (fb_makemmdev(fb, devid_mm)) {
+        KERROR(KERROR_ERR, "FB: makemmdev failed\n");
     }
 
     draw_splash(fb);
     fb_console_write(fb, "FB ready\r\n");
 }
 
+void fb_mm_initbuf(struct fb_conf * fb)
+{
+    struct buf * bp = &fb->mem;
+
+    memset(bp, 0, sizeof(struct buf));
+
+    mtx_init(&bp->lock, MTX_TYPE_TICKET, 0);
+
+    bp->b_flags = B_BUSY;
+    bp->refcount = 1;
+    bp->vm_ops = &fb_mm_bufops;
+}
+
+void fb_mm_updatebuf(struct fb_conf * restrict fb,
+                     const mmu_region_t * restrict region)
+{
+    fb->mem.b_mmu = *region;
+    fb->mem.b_data = region->vaddr;
+    fb->mem.b_bufsize = mmu_sizeof_region(region);
+    fb->mem.b_bcount = 4 * fb->width * fb->height;
+}
+
+static void fb_mm_ref(struct buf * this)
+{
+    mtx_lock(&this->lock);
+    this->refcount++;
+    mtx_unlock(&this->lock);
+}
+
+static void fb_mm_rfree(struct buf * this)
+{
+    mtx_lock(&this->lock);
+    this->refcount--;
+    if (this->refcount <= 0)
+        this->refcount = 1;
+    mtx_unlock(&this->lock);
+}
+
+static int fb_makemmdev(struct fb_conf * fb, dev_t dev_id)
+{
+    struct dev_info * dev;
+
+    dev = kcalloc(1, sizeof(struct dev_info));
+    if (!dev)
+        return -ENOMEM;
+
+    dev->dev_id = dev_id;
+    dev->drv_name = "fb_mm";
+    ksprintf(dev->dev_name, SPECNAMELEN, "fbmm%i", DEV_MINOR(dev_id));
+    dev->flags = 0;
+    dev->block_size = 1;
+    dev->read = devnull_read;
+    dev->write = devfull_write;
+    dev->ioctl = fb_mm_ioctl;
+    dev->mmap = fb_mmap;
+    dev->opt_data = fb;
+
+    if (dev_make(dev, 0, 0, 0666, NULL)) {
+        return -ENODEV;
+    }
+
+    return 0;
+}
+
 static void draw_splash(struct fb_conf * fb)
 {
     const size_t pitch = fb->pitch;
-    const size_t base = fb->base;
+    const size_t base = fb->mem.b_data;
     size_t col = 0;
     size_t row = 0;
 
@@ -86,11 +180,12 @@ static void draw_splash(struct fb_conf * fb)
     }
 }
 
-int fb_ioctl(struct dev_info * devnfo, uint32_t request,
-             void * arg, size_t arg_len)
+static int fb_mm_ioctl(struct dev_info * devnfo, uint32_t request,
+                       void * arg, size_t arg_len)
 {
-    struct tty * tty = (struct tty *)devnfo->opt_data;
-    struct fb_conf * fb = (struct fb_conf *)tty->opt_data;
+    struct fb_conf * fb = (struct fb_conf *)devnfo->opt_data;
+
+    KASSERT((uintptr_t)fb > 4096, "fb should be set to some meaningful value");
 
     switch (request) {
     case IOCTL_FB_GETRES: /* Get framebuffer resolution */
@@ -117,6 +212,18 @@ int fb_ioctl(struct dev_info * devnfo, uint32_t request,
     default:
         return -EINVAL;
     }
+
+    return 0;
+}
+
+static int fb_mmap(struct dev_info * devnfo, size_t blkno, size_t bsize,
+                   int flags, struct buf ** bp_out)
+{
+    struct fb_conf * fb = (struct fb_conf *)devnfo->opt_data;
+
+    KASSERT((uintptr_t)fb > 4096, "fb should be set to some meaningful value");
+
+    *bp_out = &fb->mem;
 
     return 0;
 }

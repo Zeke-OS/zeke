@@ -40,6 +40,7 @@
 #include <sys/linker_set.h>
 
 struct dev_info;
+struct buf;
 
 struct fb_console {
     size_t max_cols;
@@ -53,12 +54,11 @@ struct fb_console {
 };
 
 struct fb_conf {
-    struct buf * mem;
+    struct buf mem; /* This will be used for user space mappings. */
     size_t width;
     size_t height;
     size_t pitch;
     size_t depth;
-    size_t base;
     struct fb_console con;
 
     /**
@@ -72,6 +72,18 @@ struct fb_conf {
                           size_t depth);
 };
 
+
+/**
+ * Init fb buffer struct used for user space mappings.
+ */
+void fb_mm_initbuf(struct fb_conf * fb);
+
+/**
+ * Update buffer attributes in mem struct.
+ */
+void fb_mm_updatebuf(struct fb_conf * restrict fb,
+                     const mmu_region_t * restrict region);
+
 void fb_register(struct fb_conf * fb);
 void fb_console_write(struct fb_conf * fb, char * text);
 
@@ -83,10 +95,7 @@ void fb_console_write(struct fb_conf * fb, char * text);
  */
 void fb_console_init(struct fb_conf * fb);
 
-int fb_console_maketty(struct fb_conf * fb);
-
-int fb_ioctl(struct dev_info * devnfo, uint32_t request,
-             void * arg, size_t arg_len);
+int fb_console_maketty(struct fb_conf * fb, dev_t dev_id);
 #endif
 
 #endif /* HAL_FB_H */

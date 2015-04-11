@@ -31,15 +31,16 @@
  */
 
 #include <sys/sysctl.h>
-#include <errno.h>
-#include <libkern.h>
-#include <kerror.h>
-#include <thread.h>
-#include <kinit.h>
-#include <dllist.h>
-#include <syscall.h>
-#include <proc.h>
 #include <buf.h>
+#include <dllist.h>
+#include <errno.h>
+#include <fs/devfs.h>
+#include <kerror.h>
+#include <kinit.h>
+#include <libkern.h>
+#include <proc.h>
+#include <syscall.h>
+#include <thread.h>
 #include <vm/vm.h>
 #include <sys/mman.h>
 
@@ -124,6 +125,7 @@ static int mmap_file(file_t * file, size_t blkno, size_t bsize,
         bp->b_flags |= B_NOTSHARED;
     if (flags & MAP_PRIVATE)
         bp->b_flags |= B_NOSYNC;
+    bp->b_mmu.control = MMU_CTRL_MEMTYPE_WB;
     BUF_UNLOCK(bp);
 
     bio_readin(bp);
@@ -165,10 +167,12 @@ int shmem_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
 
         BUF_LOCK(bp);
         bp->b_flags |= B_NOSYNC;
+        bp->b_mmu.control = MMU_CTRL_MEMTYPE_WB;
         BUF_UNLOCK(bp);
     } else { /* Map a file */
         file_t * file;
         vnode_t * vnode;
+        struct dev_info * devnfo; /* If it's a device */
         struct stat statbuf;
         size_t blkno;
         int err;
@@ -183,7 +187,8 @@ int shmem_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
          */
         err = vnode->vnode_ops->stat(vnode, &statbuf);
         if (err)
-            return err;
+            goto errout;
+
         blksize = statbuf.st_blksize;
         bsize = memalign_size(bsize, blksize);
 
@@ -192,15 +197,20 @@ int shmem_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
         else
             blkno = off & ~(blksize - 1);
 
-        err = mmap_file(file, blkno, bsize, flags, &bp);
+        devnfo = (struct dev_info *)vnode->vn_specinfo;
+        if ((S_ISBLK(statbuf.st_mode) || S_ISCHR(statbuf.st_mode)) &&
+                devnfo->mmap) { /* Device specific mmap function. */
+            err = devnfo->mmap(devnfo, blkno, bsize, flags, &bp);
+        } else { /* Use the generic mmap function. */
+            err = mmap_file(file, blkno, bsize, flags, &bp);
+        }
+        fs_fildes_ref(proc->files, fildes, -1);
+errout:
         if (err)
             return err;
-
-        fs_fildes_ref(proc->files, fildes, -1);
     }
 
     bp->b_uflags = prot & (VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE);
-    bp->b_mmu.control = MMU_CTRL_MEMTYPE_WB;
 
     if (flags & MAP_FIXED && vaddr < configEXEC_BASE_LIMIT) {
         /* No low mem mappings */
