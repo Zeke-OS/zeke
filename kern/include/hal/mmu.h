@@ -130,30 +130,33 @@
  * Page Table Control Block - PTCB
  */
 typedef struct {
-    uint32_t vaddr;     /*!< identifies a starting virtual address of a 1MB
+    uintptr_t vaddr;    /*!< Odentifies a starting virtual address of a 1MB
                          * section. (Only meaningful with coarse tables) */
-    uint32_t pt_addr;   /*!< is the address where the page table is located in
+    uintptr_t pt_addr;  /*!< The address where the page table is located in
                          * physical memory. */
-    uint32_t master_pt_addr; /*!< is the address of a parent master L1 page
-                              * table. If the table is an L1 table, then the
-                              * value is same as pt_addr. */
-    uint32_t type;      /*!< identifies the type of the page table. */
-    uint32_t dom;       /*!< is the domain of the page table. */
+    size_t nr_tables;   /*!< Size of the page table block in system tables. */
+    uintptr_t master_pt_addr; /*!< The address of a parent master L1 page
+                               * table. If the table is an L1 table, then
+                               * the value is same as pt_addr. */
+    uint32_t type;      /*!< Odentifies the type of the page table. */
+    uint32_t dom;       /*!< The domain of the page table. */
 } mmu_pagetable_t;
 
 /**
  * Region Control Block - RCB
  */
 typedef struct mmu_region {
-    uint32_t vaddr;     /*!< is the virtual address that begins the region in
+    uintptr_t vaddr;    /*!< The virtual address that begins the region in
                          * virtual memory. */
-    uint32_t num_pages; /*!< is the number of pages in the region or region size
-                          in mega bytes if pt points to a master page table. */
-    uint32_t ap;        /*!< selects the region access permissions. */
-    uint32_t control;   /*!< selects the cache, write buffer, execution and
-                         * sharing (nG, S) attributes. */
-    uint32_t paddr;     /*!< is the physical starting address of the region. */
-    mmu_pagetable_t * pt; /*!< is a pointer to the page table struct in which
+    size_t num_pages;   /*!< The number of pages in the region or region size
+                         *   in mega bytes if pt points to a master page table.
+                         */
+    uint32_t ap;        /*!< Selects the region access permissions. */
+    uint32_t control;   /*!< Selects the cache, write buffer, execution and
+                         *   sharing (nG, S) attributes.
+                         */
+    uintptr_t paddr;      /*!< The physical starting address of the region. */
+    mmu_pagetable_t * pt; /*!< A pointer to the page table struct in which
                            * the region resides. */
 } mmu_region_t;
 
