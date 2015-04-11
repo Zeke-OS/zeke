@@ -70,47 +70,68 @@ int bcm2835_prop_init(void)
     return 0;
 }
 
-int bcm2835_prop_request(uint32_t * request)
+static int select_mbuf_index(void)
 {
-    uint32_t resp;
-    size_t ind = 0;
-    uint32_t * buf;
-    uint32_t buf_hwaddr;
+    int index = 0;
 
-    /*
-     * Select a mailbuffer index to be used.
-     */
     do {
         for (size_t i = 0; i < num_elem(mb_res); i++) {
             int old = atomic_set(&mb_res[i], 1);
             if (old == 0) {
-                ind = i;
+                index = i;
                 break;
             }
         }
-    } while (ind == 0);
+    } while (index == 0);
+
+    return index;
+}
+
+int bcm2835_prop_request(uint32_t * request)
+{
+    uint32_t resp;
+    size_t i;
+    size_t offset;
+    uint32_t * buf;
+    uint32_t buf_hwaddr;
+    int err;
+
+    i = select_mbuf_index();
+    offset = i * MB_SECSIZE;
+    buf = (uint32_t *)(mbuf->b_data + offset);
+    buf_hwaddr = (uint32_t)(mbuf->b_mmu.paddr) + offset;
 
     /*
      * Copy request to a buffer.
      */
-    buf = (uint32_t *)(mbuf->b_data + ind * MB_SECSIZE);
-    buf_hwaddr = (uint32_t)(mbuf->b_mmu.paddr) + ind * MB_SECSIZE;
+    memset(buf, 0, MB_SECSIZE);
     memcpy(buf, request, request[0]);
+    buf[1] = 0x0; /* Ensure it will be a request. */
 
-    /* Read the message. */
-    bcm2835_writemailbox(BCM2835_MBCH_PROP_OUT,
-                         (uint32_t)(mbuf->b_mmu.paddr));
+    /* Write. */
+    err = bcm2835_writemailbox(BCM2835_MBCH_PROP_OUT, buf_hwaddr);
+    if (err) {
+        KERROR(KERROR_ERR, "Failed to write to a prop mbox (%d)\n", err);
 
-    /* Read the response. */
-    bcm2835_readmailbox(BCM2835_MBCH_PROP_OUT, &resp);
+        return -EIO;
+    }
+
+    /* Get response. */
+    err = bcm2835_readmailbox(BCM2835_MBCH_PROP_OUT, &resp);
+    if (err) {
+        KERROR(KERROR_DEBUG, "Failed to read from a prop mbox (%d)\n", err);
+
+        return err;
+    }
     if (buf[1] != BCM2835_STATUS_SUCCESS) {
-        KERROR(KERROR_ERR, "Invalid response from a property mailbox\n");
+        KERROR(KERROR_ERR, "Invalid prop mbox response (status: %u)\n",
+               buf[1]);
 
         return -EIO;
     }
 
     memcpy(request, buf, buf[0]);
 
-    atomic_set(&mb_res[ind], 0); /* Release the mb. */
+    atomic_set(&mb_res[i], 0); /* Release the mb. */
     return 0;
 }

@@ -40,7 +40,7 @@ int bcm2835_pm_get_power_state(uint32_t devid)
      * Doesn't necessarily need to be aligned but it may make memcpy faster
      * in when passed to prop interface.
      */
-    uint32_t mbuf[7] __attribute__((aligned (16)));
+    uint32_t mbuf[8] __attribute__((aligned (16)));
     int err;
 
     /* Format a message */
@@ -51,24 +51,24 @@ int bcm2835_pm_get_power_state(uint32_t devid)
     mbuf[2] = 0x00020001;
     mbuf[3] = 8;            /* Value buf size and req/resp */
     mbuf[4] = 4;            /* Value size */
-    mbuf[4] = devid;
-    mbuf[5] = 0;            /* Space for response */
+    mbuf[5] = devid;
+    mbuf[6] = 0;            /* Space for the response */
 
-    mbuf[6] = 0x0;          /* End tag */
+    mbuf[7] = 0x0;          /* End tag */
 
     err = bcm2835_prop_request(mbuf);
     if (err)
         return err;
 
-    if ((mbuf[5] & 0x2))
+    if ((mbuf[6] & 0x2))
         return -ENODEV; /* Device doesn't exist */
 
-    return (mbuf[5] & 1);
+    return (mbuf[6] & 1);
 }
 
 int bcm2835_pm_set_power_state(uint32_t devid, int state)
 {
-    uint32_t mbuf[7] __attribute__((aligned (16)));
+    uint32_t mbuf[8] __attribute__((aligned (16)));
 
     int err;
 
@@ -80,19 +80,19 @@ int bcm2835_pm_set_power_state(uint32_t devid, int state)
     mbuf[2] = 0x00028001;
     mbuf[3] = 8;            /* Value buf size and req/resp */
     mbuf[4] = 8;            /* Value size */
-    mbuf[4] = devid;
-    mbuf[5] = (state) ? 3 : 0; /* power on and wait/power off */
+    mbuf[5] = devid;
+    mbuf[6] = (state) ? 3 : 2; /* power on and wait/power off and wait */
 
-    mbuf[6] = 0x0;          /* End tag */
+    mbuf[7] = 0x0;          /* End tag */
 
     err = bcm2835_prop_request(mbuf);
     if (err)
         return err;
 
-    if ((mbuf[5] & 0x2))
+    if ((mbuf[6] & 0x2))
         return -ENODEV; /* Device doesn't exist */
 
-    return (mbuf[5] & 1);
+    return (mbuf[6] & 1);
 }
 
 /**

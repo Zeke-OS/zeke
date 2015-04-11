@@ -49,6 +49,7 @@
 #define BCM2835_MBCG_PROP_IN    9   /*!< Property tags from VC */
 
 #define BCM2835_STATUS_SUCCESS  0x80000000
+#define BCM2835_STATUS_FAILED   0x80000001
 
 /*
  * Mailbox message format:

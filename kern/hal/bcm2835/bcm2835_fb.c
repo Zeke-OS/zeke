@@ -166,13 +166,13 @@ static int commit_fb_config(struct bcm2835_fb_config * fb)
         return -EIO;
     }
 
+    memcpy(fb, (char *)fb_mbuf->b_data, sizeof(struct bcm2835_fb_config));
+
     KERROR(KERROR_INFO,
            "BCM_FB: addr = %p, width = %u, height = %u, "
            "bpp = %u, pitch = %u, size = %u\n",
            (void *)fb->fb_paddr, fb->width, fb->height,
            fb->depth, fb->pitch, fb->size);
-
-    memcpy(fb, (char *)fb_mbuf->b_data, sizeof(struct bcm2835_fb_config));
 
     return 0;
 }

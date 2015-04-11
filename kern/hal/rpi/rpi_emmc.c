@@ -601,14 +601,18 @@ static int bcm_2708_power_cycle()
     int resp;
 
     resp = bcm2835_pm_set_power_state(BCM2835_SD, 0);
-    if (resp != 0)
+    if (resp < 0) {
+        KERROR(KERROR_ERR, "Failed to power off (%d)\n", resp);
         return -EIO;
+    }
 
     bcm_udelay(5000);
 
     resp = bcm2835_pm_set_power_state(BCM2835_SD, 1);
-    if (resp != 1)
+    if (resp != 1) {
+        KERROR(KERROR_ERR, "Failed to power on (%d)\n", resp);
         return -EIO;
+    }
 
     return 0;
 }
