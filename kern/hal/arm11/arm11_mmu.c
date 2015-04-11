@@ -165,10 +165,7 @@ int mmu_map_region(const mmu_region_t * region)
     if (!region->pt)
         panic("region->pt must be set");
 
-#if configDEBUG >= KERROR_DEBUG
-    if (region->num_pages == 0)
-        panic("region->num_pages can't be zero.");
-#endif
+    KASSERT(region->num_pages > 0, "num_pages must be greater than zero");
 
     switch (region->pt->type) {
     case MMU_PTT_MASTER:    /* Map section in L1 page table */
@@ -196,11 +193,12 @@ static void mmu_map_section_region(const mmu_region_t * region)
     int i;
     uint32_t * p_pte;
     uint32_t pte;
+    const int pages = (region->num_pages - 1) & 4095;
     istate_t s;
 
     p_pte = (uint32_t *)region->pt->pt_addr; /* Page table base address */
-    p_pte += region->vaddr >> 20; /* Set to first pte in region */
-    p_pte += region->num_pages - 1; /* Set to last pte in region */
+    p_pte += region->vaddr >> 20;            /* Set to first pte in region */
+    p_pte += pages;                          /* Set to last pte in region */
 
     pte = region->paddr & 0xfff00000;       /* Set physical address */
     pte |= (region->ap & 0x3) << 10;        /* Set access permissions (AP) */
@@ -216,7 +214,7 @@ static void mmu_map_section_region(const mmu_region_t * region)
     s = get_interrupt_state();
     mmu_disable_ints();
 
-    for (i = region->num_pages - 1; i >= 0; i--) {
+    for (i = pages; i >= 0; i--) {
         *p_pte-- = pte + (i << 20); /* i = 1 MB section */
     }
 
@@ -236,11 +234,12 @@ static void mmu_map_coarse_region(const mmu_region_t * region)
     int i;
     uint32_t * p_pte;
     uint32_t pte;
+    const int pages = (region->num_pages - 1) & 255;
     istate_t s;
 
     p_pte = (uint32_t *)region->pt->pt_addr;    /* Page table base address */
-    p_pte += (region->vaddr & 0x000ff000) >> 12;    /* First */
-    p_pte += region->num_pages - 1;                 /* Last pte */
+    p_pte += (region->vaddr & 0xff000) >> 12;   /* First */
+    p_pte += pages;                             /* Last pte */
 
     KASSERT(p_pte, "p_pte is null");
 
@@ -257,7 +256,7 @@ static void mmu_map_coarse_region(const mmu_region_t * region)
     s = get_interrupt_state();
     mmu_disable_ints();
 
-    for (i = region->num_pages - 1; i >= 0; i--) {
+    for (i = pages; i >= 0; i--) {
         *p_pte-- = pte + (i << 12); /* i = 4 KB small page */
     }
 
