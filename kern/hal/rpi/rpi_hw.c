@@ -34,6 +34,9 @@
 #include <ptmapper.h>
 #include <dynmem.h>
 
+#define MMU_VADDR_RPIHW_START   0x20000000
+#define MMU_VADDR_RPIHW_END     0x20FFFFFF
+
 mmu_region_t mmu_region_rpihw = {
     .vaddr          = MMU_VADDR_RPIHW_START,
     .num_pages      = MMU_PAGE_CNT_BY_RANGE(MMU_VADDR_RPIHW_START, \

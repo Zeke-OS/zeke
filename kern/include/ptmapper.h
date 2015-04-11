@@ -69,12 +69,6 @@
 #define MMU_VADDR_KERNEL_END    configKERNEL_END
 #endif
 
-/* TODO These shouldn't be here actually */
-#ifdef configBCM2835
-#define MMU_VADDR_RPIHW_START   0x20000000
-#define MMU_VADDR_RPIHW_END     0x20FFFFFF
-#endif
-
 /*
  * Kernel dynamic sections.
  */
