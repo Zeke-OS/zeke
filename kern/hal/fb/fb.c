@@ -102,8 +102,8 @@ void fb_mm_initbuf(struct fb_conf * fb)
 
     mtx_init(&bp->lock, MTX_TYPE_TICKET, 0);
 
-    bp->b_flags = B_BUSY;
     bp->refcount = 1;
+    fb->mem.b_flags = B_BUSY | B_NOSYNC | B_NOTSHARED | B_NOCORE;
     bp->vm_ops = &fb_mm_bufops;
 }
 

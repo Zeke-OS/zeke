@@ -64,7 +64,7 @@ struct bcm2835_fb_config {
 
 static struct buf * fb_mbuf;
 static mmu_region_t bcm2835_fb_region = {
-    .num_pages  = 1, /* TODO We may want to calculate this */
+    .num_pages  = 2, /* TODO We may want to calculate this */
     .ap         = MMU_AP_RWNA,
     .control    = (MMU_CTRL_MEMTYPE_DEV | MMU_CTRL_XN),
     .pt         = &mmu_pagetable_master
