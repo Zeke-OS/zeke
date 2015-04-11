@@ -178,6 +178,7 @@ void cpu_set_cid(uint32_t cid)
     }
 }
 
+static char stack_dump_buf[400];
 void stack_dump(sw_stack_frame_t frame)
 {
     const char sdump[] = {
@@ -200,8 +201,9 @@ void stack_dump(sw_stack_frame_t frame)
         "pc  = %x\n"
     };
 
-    KERROR(KERROR_ERR, sdump,
-            frame.psr, frame.r0, frame.r1, frame.r2, frame.r3, frame.r4,
-            frame.r5, frame.r6, frame.r7, frame.r8, frame.r9, frame.r10,
-            frame.r11, frame.r12, frame.sp, frame.lr, frame.pc);
+    ksprintf(stack_dump_buf, sizeof(stack_dump_buf), sdump,
+             frame.psr, frame.r0, frame.r1, frame.r2, frame.r3, frame.r4,
+             frame.r5, frame.r6, frame.r7, frame.r8, frame.r9, frame.r10,
+             frame.r11, frame.r12, frame.sp, frame.lr, frame.pc);
+    kputs(stack_dump_buf);
 }

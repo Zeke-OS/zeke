@@ -647,21 +647,25 @@ static int dab_buserr(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
 static int dab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
         struct thread_info * thread)
 {
-    char buf[140];
+    char buf[200];
 
-    ksprintf(buf, sizeof(buf), "Can't handle data abort\n"
-            "pc  : %x\n"
-            "fsr : %x (%s)\n"
-            "far : %x\n"
+    ksprintf(buf, sizeof(buf),
+            "pc: %x\n"
+            "fsr: %x (%s)\n"
+            "far: %x\n"
             "proc info:\n"
-            "pid : %u\n"
-            "tid : %u",
+            "pid: %u\n"
+            "tid: %u\n"
+            "insys: %u\n",
             lr,
             fsr, get_dab_strerror(fsr),
             far,
             current_process_id,
-            thread->id);
-    panic(buf);
+            thread->id,
+            thread_flags_is_set(thread, SCHED_INSYS_FLAG));
+    KERROR(KERROR_CRIT, "Fatal DAB\n");
+    kputs(buf);
+    panic("Can't handle data abort");
 
     return -1; /* XXX Doesn't return yet as we panic but this makes split happy */
 }
