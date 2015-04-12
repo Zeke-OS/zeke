@@ -101,7 +101,7 @@ static void open_tty(void)
     close(STDOUT_FILENO);
     close(STDERR_FILENO);
     r0 = open(tty_path, O_RDONLY);
-    r1 = open(tty_path, O_WRONLY);
+    r1 = open("/dev/fb0", O_WRONLY);
     r2 = open(tty_path, O_WRONLY);
 
     printf("fd: %i, %i, %i\n", r0, r1, r2);
