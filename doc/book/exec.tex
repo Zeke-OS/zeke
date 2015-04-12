@@ -1,0 +1,13 @@
+\part{Executable File Formats}
+
+The kernel has a support for implementing loader functions for any new
+executable format but currently only 32bit \acf{elf} support exist. The image
+loading after exec syscall is called happens in \verb+load_image()+ function in
+\verb+kern/exec.c+ file. New loader functions can be advertised with
+\verb+EXEC_LOADFN+ macro.
+
+\chapter{ELF32}
+
+The \acs{elf} loader in Zeke can be used to load statically linked executables
+as well as anything linked dynamically. Currently only two loadable sections can
+be loaded, code region and heap region.

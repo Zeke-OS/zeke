@@ -3,17 +3,17 @@
 Zeke is a portable operating system for ARM processors.\footnote{Zeke is
 portable to at least in a sense of portability between different ARM cores
 and architectures.} Figure \ref{figure:zeke} illustrates architectural layers
-of Zeke. Scope of Zeke project is to implement a portable
-Unix-like\footnote{Project is aiming to implement the core set of kernel
+of the operating system. Scope of Zeke project is to implement a portable
+Unix-like\footnote{The project is aiming to implement the core set of kernel
 features specified in \ac{POSIX} standard.} operating system from
 scratch\footnote{At least almost from scratch, some functionality is derived
-from freeBSD as well as some libraries are taken from other sources.} that
+from BSD kernels as well as some libraries are taken from other sources.} that
 is optimized for ARM architectures and is free of legacy.
 
 In addition to portability another goal has been configurability and adjustable
-footprint of the kernel binary. This is achieved by modular kernel architecture
-and static compile time configuration. Like for example \ac{HAL} is already
-almost fully locked in compilation phase.
+footprint of the kernel binary as well as the whole OS image. This is achieved
+by modular kernel architecture and static compile time configuration. Like for
+example \ac{HAL} selection is already almost fully locked at compilation time.
 
 \begin{figure}
   \includegraphics[width=10cm]{pics/zeke}

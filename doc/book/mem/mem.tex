@@ -4,18 +4,17 @@
 
 This chapter briefly introduces the architectural layout of memory management
 in Zeke at very generic level. Specifically we do not cover memory map layout or
-anything hardware specific things here.
+anything hardware specific.
 
-Zeke as well as most of major operating systems does its memory management and
-mapping in multiple stages. In the kernel stages are built into following layers
-of abstraction \ac{MMU} abstraction, \verb+dynmem+ handling dynamic allocation
-of contiguous blocks of memory and \verb+kmalloc+ that allocates memory for the
-kernel itself. These are the most important parts of the memory management in
-Zeke as other parts of the kernel are only utilizing these to allocate or map
-memory for use anywhere in the system.
+Zeke as well as most of major operating systems divides its memory management
+and mapping to several layers. In Zeke these layers are \ac{MMU} abstraction,
+\verb+dynmem+ handling dynamic allocation of contiguous blocks of memory and
+\verb+kmalloc+ that allocates memory for the kernel itself, and probably most
+importantly \verb+vralloc/buf/bio+ system that's handling all allocations for
+processes and IO buffers.
 
-Figure \ref{figure:mm_layers} shows the memory management stack from
-top to bottom.
+Figure \ref{figure:mm_layers} shows the memory management stacking from kmalloc's
+perspective.
 
 \begin{figure}
   \input{pics/mm_layers}
@@ -30,20 +29,6 @@ top to bottom.
 \item[dynmem] is a block allocator that always allocates memory in block size of
   $1 \:\textrm{MB}$. See fig. \ref{figure:dynmem_blocks}.
 \end{description}
-
-Lets assume that some part of the kernel needs a new chunk of memory for some
-temporal use, there is no more space left at any of the higher levels and most
-importantly the code uses \verb+kmalloc+ to allocate the block. What happens
-next is that memory allocation request is eventually passed to dynmem memory
-allocator.
-
-dynmem tries to locate the first free memory region in the dynmem memory section
-that satisfies the condition
-$\textrm{requested size} \le n \times 1 \:\textrm{MB}$. If dynmem finds a free
-region it is then reserved and returned to \verb+kmalloc+. \verb+kmalloc+ will
-then allocate memory from that and possibly other closely located reservations
-for the original caller by using its own algorithm, which is at the moment quite
-naive first fit algorithm.
 
 kmalloc stores its linked list of reserved and free blocks in the same memory
 that is used to allocate memory for its clients. Listing \ref{list:mblockt}

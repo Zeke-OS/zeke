@@ -13,25 +13,25 @@ as on most of modern Unices today.
 
 In Zeke vnodes are always used as a primary access method to the files in
 a file system, inodes are only accessed internally within the file system
-implementation code if the file system supports those. Expected behavior is
-that a vnode and a vnode number exist in the system as long as some process owns
-a reference to that vnode. After there is no more references to a vnode it's
-not guaranteed that the vnode exist in the memory and it cannot be retrieved
-by using its vnode number. In fact normally vnodes can't be accessed by their
-vnode number but a vnode number is guaranteed to be unique within a one file
-system, superblock + vnode, but same vnode might be in use with another fs and
-it can be reused.
+implementation code if the file system supports/uses inodes. Expected behavior
+is that a vnode and a vnode number exist in the system as long as some process
+owns a reference to that vnode. After there is no more references to a vnode
+it's not guaranteed that the vnode exist in the memory and it cannot be
+retrieved by using its vnode number. In fact normally vnodes can't be accessed
+by their vnode number but a vnode number is guaranteed to be unique within
+a single file system, superblock + vnode, but same vnode might be in use within
+another file system and the number can be also reused.
 
-To simplifify understanding how vfs works in Zeke it can be described as an
-object storage where file objects are first searched, found and the associated
-(open) with a process. When a file is opened the process owns a pointer to the
-file descriptor that contains some state information and pointer to the actual
-file vnode. The vnode of the file is itself an object that knows where contents
-of the file is stored (physical file system, superblock pointer) and who knows
-how to manipulate the data (pointer to the vnode operations struct). In fact
-vnode number itself is pretty much redundant and legacy information for Zeke
-that is only provided for compatibility reasons, the actual access method is
-always by a pointer reference to an object.
+To simplifify understanding how \acs{vfs} works in Zeke it can be described as
+an object storage where file objects are first searched, found and the
+associated (open) with a process. When a file is opened the process owns a
+pointer to the file descriptor that contains some state information and pointer
+to the actual file vnode. The vnode of the file is itself an object that knows
+where contents of the file is stored (physical file system, superblock pointer)
+and who knows how to manipulate the data (pointer to the vnode operations struct).
+In fact vnode number itself is pretty much redundant and legacy information for
+Zeke that is only provided for compatibility reasons, the actual access method
+is always by a pointer reference to an object.
 
 \section{Kernel Interface}
 
@@ -60,6 +60,12 @@ modifying file contents or adding new hard links to a directory node.
 \verb+vfs_hash+ is an optional hashmap used for vnode caching for physically
 slow file systems. VFS itself doesn't use this caching for any purpose so
 it is completely optional to insert anything into there.
+
+\chapter{fatfs}
+\input{fs/fatfs}
+
+\chapter{procfs}
+\input{fs/procfs}
 
 \chapter{ramfs}
 \input{fs/ramfs}

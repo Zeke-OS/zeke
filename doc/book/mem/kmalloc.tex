@@ -1,7 +1,7 @@
 \chapter{kmalloc}
 
-The current implementation of the generic kernel memory allocator is largely
-based on tutorial written by Marwan Burrelle\cite{Burelle:malloc}.
+The current implementation of a generic kernel memory allocator is largely
+based on a tutorial written by Marwan Burrelle\cite{Burelle:malloc}.
 
 \section{Brief Description}
 
@@ -9,24 +9,23 @@ The current kernel memory allocator implementation is somewhat naive and
 exploits some very simple techniques like the first fit algorithm for allocating
 memory.
 
-Idea of the first fit algorithm is to find a first large enough free block of
-memory from an already allocated region of memory. This is done by traversing
-the list of memory blocks and looking for sufficiently large block. This is
-of course quite sub-optimal and better solutions has to be considered.
-
-When a large enough block is found it's split in two halves so that the left
-one corresponds to requested size and the right block is left free. All data
+The idea of the first fit algorithm is to find a first large enough free block
+of memory from an already allocated region of memory. This is done by traversing
+the list of memory blocks and looking for a sufficiently large block. This is
+of course quite sub-optimal and better solutions has to be considered in the
+future. When a large enough block is found it's split in two halves so that the
+left one corresponds to requested size and the right block is left free. All data
 blocks are aligned to 4 byte access.
 
-Fragmentation of memory blocks is tried to keep minimal by merging newly freed
-block with neighboring blocks. This will at least keep all free blocks between
-reserved blocks free but it doesn't help much if there is allocations of
-different sizes that are freed independently. So current implementation is very
-sub-optimal also in this area.
+Fragmentation of memory blocks is kept minimal by immediately merging newly freed
+block with neighboring blocks. This approach will keep all free blocks between
+reserved blocks contiguous but it doesn't work if there is lot of allocations of
+different sizes that are freed independently. Therefore the current implementation
+will definitely suffer some fragmentation over time.
 
 When kmalloc is out of (large enough) memory blocks it will expand its memory
-usage by allocating a new region of memory from dynmem. Allocation is done in
-1 MB blocks (naturally) and always rounded  to a next 1 MB.
+space by allocating a new block of memory from dynmem. Allocation is commited in
+1 MB blocks (naturally) and always rounded to the next 1 MB.
 
 \begin{figure}
 \begin{verbatim}
@@ -41,18 +40,18 @@ usage by allocating a new region of memory from dynmem. Allocation is done in
 \label{figure:kmalloc_blocks}
 \end{figure}
 
-Descriptors are used to store the size of the data block, reference counters and
-pointers to neighbouring block descriptors.
+Descriptor structs are used to store the size of the data block, reference counters,
+and pointers to neighbouring block descriptors.
 
 
 \section{Suggestions for Further Development}
 
 \subsection{Memory allocation algorithms}
 
-Current implementation of kmalloc relies on first-fit algorithm and variable
+The current implementation of kmalloc relies on first-fit algorithm and variable
 sized blocks, that are processed as a linked list, which is obviously inefficient.
 
-One possible improvement could be adding a second data structure that would
+One achievable improvement could be adding a second data structure that would
 maintain information about free memory blocks that could be used to store the
 most common object sizes. This data structure could be also used to implement
 something like best-fit instead of first-fit and possibly with even smaller
@@ -80,9 +79,9 @@ time complexity than the current implementation.
   \end{algorithmic}
 \end{algorithm}
 
-This is however completely untested and intuitively derived method but it
-seems to give a nice looking curves for hypothetical memory allocations as seen
-in figure \ref{figure:realloc}.
+Figure \ref{figure:realloc} shows "simulations" for a over committing realloc
+function. This is however completely untested and intuitively derived method
+but it seems to perform sufficiently well for hypothetical memory allocations.
 
 \begin{figure}
   \center

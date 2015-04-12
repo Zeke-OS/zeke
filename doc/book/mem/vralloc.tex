@@ -1,8 +1,9 @@
 \chapter{vralloc}
 
-\acf{vralloc} is a memory allocator targeted to allocate blocks of memory
+\acf{vralloc} is a memory allocator used to allocate blocks of memory
 that can be mapped in virtual address space of a user processes or used for
-file system buffering.
+file system buffering. Vralloc implements the \verb+geteblk()+ part of the interface
+described by \verb+buf.h+, meaning allocating memory for generic use.
 
 \verb+vreg+ struct is the intrenal representation of a generic page aligned
 allocation made from dynmem and \verb+struct buf+ is the external interface

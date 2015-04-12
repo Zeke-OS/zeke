@@ -1,0 +1,16 @@
+Procfs is an implementation of a traditional process debugging interface in
+Zeke. Procfs is a special file system containing entries for each process
+in the system as well as some extra entries for runtime system information that
+doesn't have any other obvious interface, like mounts file.
+
+\subparagraph{System files}
+\begin{itemize}
+    \item mounts    - Showing all file system mounts in the system.
+\end{itemize}
+
+\subparagraph{Process specific files}
+\begin{itemize}
+    \item status    - Process status information.
+    \item regions   - Contains information about memory regions mapped to
+                      the process address space.
+\end{itemize}
