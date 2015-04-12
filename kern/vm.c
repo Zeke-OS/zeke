@@ -208,7 +208,7 @@ struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot,
         struct buf * old_bp)
 {
     size_t nr_regions;
-    const size_t bits = NBITS(MMU_PGSIZE_COARSE);
+    const size_t bits = NBITS(MMU_PGSIZE_SECTION);
     const uintptr_t addr_min = configEXEC_BASE_LIMIT;
     uintptr_t addr_max = 0xEFFFFFFF; /* TODO ??? */
     int overlap;

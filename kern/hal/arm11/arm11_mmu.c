@@ -235,8 +235,10 @@ static void mmu_map_coarse_region(const mmu_region_t * region)
     uint32_t * p_pte;
     uint32_t pte;
     /* TODO Transitional hack to support nr_blocks = 0 */
+#if 0
     const size_t nr_tables_raw = region->pt->nr_tables;
     const size_t nr_tables = (nr_tables_raw == 0) ? 1 : nr_tables_raw;
+#endif
     const int pages = region->num_pages - 1;
     istate_t s;
 
@@ -245,11 +247,7 @@ static void mmu_map_coarse_region(const mmu_region_t * region)
     p_pte += (region->vaddr & 0xff000) >> 12;   /* First */
     p_pte += pages;                             /* Last pte */
 
-    KASSERT(p_pte, "p_pte is null");
-    KASSERT(((uint32_t)p_pte >= region->pt->pt_addr) &&
-            ((uint32_t)p_pte <=
-             region->pt->pt_addr + nr_tables * MMU_PTSZ_COARSE),
-            "p_pte > pt end addr");
+    KASSERT(p_pte, "p_pte not null");
 
     pte = region->paddr & 0xfffff000;       /* Set physical address */
     pte |= (region->ap & 0x3) << 4;         /* Set access permissions (AP) */

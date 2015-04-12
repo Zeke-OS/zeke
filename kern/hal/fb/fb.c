@@ -105,6 +105,8 @@ void fb_mm_initbuf(struct fb_conf * fb)
     bp->refcount = 1;
     fb->mem.b_flags = B_BUSY | B_NOSYNC | B_NOTSHARED | B_NOCORE;
     bp->vm_ops = &fb_mm_bufops;
+    bp->b_mmu.vaddr = 0; /* Will be set when mapped. */
+    bp->b_mmu.pt = NULL; /* Will be set when mapped. */
 }
 
 void fb_mm_updatebuf(struct fb_conf * restrict fb,
