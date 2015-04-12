@@ -15,7 +15,7 @@ config configBCM_JTAG
 config configBCM_FB
     bool "BCM2835 FB support"
     default n
-    depends on configBCM2835 && configBCM_MB
+    depends on configFB && configBCM2835 && configBCM_MB
     select configRPI_HW
 
 config configBCM_PM
