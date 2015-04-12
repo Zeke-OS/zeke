@@ -23,7 +23,7 @@ void plasma(void)
         t3 = p3;
         t4 = p4;
         for (x = 0; x < 640; x++) {
-            const uintptr_t d = (uintptr_t)fb + (y) * (PITCH) + (x) * 3;
+            const uintptr_t d = (uintptr_t)fb + y * PITCH + x * 3;
             int c, r, g, b;
 
             c = cosinus[t1] + cosinus[t2] + cosinus[t3] + cosinus[t4];
@@ -55,6 +55,7 @@ void prep_pal(void)
 {
     for (x = 0, y = 0; x < 63 * 3; x += 3, y++) {
         pal[x] = y;
+    }
     for (x = 63 * 3, y = 63; x < 127 * 3; x += 3, y--) {
         pal[x] = y;
     }
