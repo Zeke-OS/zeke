@@ -130,16 +130,17 @@
  * Page Table Control Block - PTCB
  */
 typedef struct {
-    uintptr_t vaddr;    /*!< Odentifies a starting virtual address of a 1MB
+    uintptr_t vaddr;    /*!< Identifies a starting virtual address of a 1MB
                          * section. (Only meaningful with coarse tables) */
     uintptr_t pt_addr;  /*!< The address where the page table is located in
                          * physical memory. */
-    size_t nr_tables;   /*!< Size of the page table block in system tables. */
+    size_t nr_tables;   /*!< Size of the page table block in system tables.
+                         *   (Only meaningful with coarse tables) */
     uintptr_t master_pt_addr; /*!< The address of a parent master L1 page
                                * table. If the table is an L1 table, then
                                * the value is same as pt_addr. */
-    uint32_t type;      /*!< Odentifies the type of the page table. */
-    uint32_t dom;       /*!< The domain of the page table. */
+    uint32_t pt_type;   /*!< Odentifies the type of the page table. */
+    uint32_t pt_dom;    /*!< The domain of the page table. */
 } mmu_pagetable_t;
 
 /**
@@ -167,7 +168,7 @@ typedef struct mmu_region {
  * @return Size of the region in bytes.
  */
 #define MMU_SIZEOF_REGION(reg) \
-    ((reg)->num_pages * (((reg)->pt->type == MMU_PTE_COARSE) \
+    ((reg)->num_pages * (((reg)->pt->pt_type == MMU_PTE_COARSE) \
       ? MMU_PGSIZE_COARSE : MMU_PGSIZE_SECTION))
 
 /**

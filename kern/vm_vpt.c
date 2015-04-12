@@ -75,14 +75,14 @@ struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr)
         int err;
 
         vpt = kcalloc(1, sizeof(struct vm_pt));
-        if (!vpt) {
+        if (!vpt)
             return NULL;
-        }
 
         vpt->pt.vaddr = filter.pt.vaddr;
+        vpt->pt.nr_tables = 1; /* TODO Support bigger page tables. */
         vpt->pt.master_pt_addr = mpt->pt_addr;
-        vpt->pt.type = MMU_PTT_COARSE;
-        vpt->pt.dom = MMU_DOM_USER;
+        vpt->pt.pt_type = MMU_PTT_COARSE;
+        vpt->pt.pt_dom = MMU_DOM_USER;
 
         /* Allocate the actual page table, this will also set pt_addr. */
         if (ptmapper_alloc(&(vpt->pt))) {
@@ -162,9 +162,10 @@ struct vm_pt * vm_pt_clone_attach(struct vm_pt * old_vpt, mmu_pagetable_t * mpt)
 
     new_vpt->linkcount = 1;
     new_vpt->pt.vaddr = old_vpt->pt.vaddr;
+    new_vpt->pt.nr_tables = old_vpt->pt.nr_tables;
     new_vpt->pt.master_pt_addr = mpt->pt_addr;
-    new_vpt->pt.type = MMU_PTT_COARSE;
-    new_vpt->pt.dom = old_vpt->pt.dom;
+    new_vpt->pt.pt_type = MMU_PTT_COARSE;
+    new_vpt->pt.pt_dom = old_vpt->pt.pt_dom;
 
     /* Allocate the actual page table, this will also set pt_addr. */
     if (ptmapper_alloc(&(new_vpt->pt))) {

@@ -47,17 +47,19 @@ HW_PREINIT_ENTRY(ptmapper_init);
 mmu_pagetable_t mmu_pagetable_master = {
     .vaddr          = 0,
     .pt_addr        = 0, /* These will be set       */
+    .nr_tables      = 1,
     .master_pt_addr = 0, /* later in the init phase */
-    .type           = MMU_PTT_MASTER,
-    .dom            = MMU_DOM_KERNEL
+    .pt_type        = MMU_PTT_MASTER,
+    .pt_dom         = MMU_DOM_KERNEL
 };
 
 mmu_pagetable_t mmu_pagetable_system = {
-    .vaddr          = 0,
+    .vaddr          = 0, /* Start */
     .pt_addr        = 0, /* Will be set later */
+    .nr_tables      = 0, /* Will be set later */
     .master_pt_addr = 0, /* Will be set later */
-    .type           = MMU_PTT_COARSE,
-    .dom            = MMU_DOM_KERNEL
+    .pt_type        = MMU_PTT_COARSE,
+    .pt_dom         = MMU_DOM_KERNEL
 };
 
 struct vm_pt vm_pagetable_system;
@@ -201,6 +203,8 @@ int ptmapper_init(void)
     }
 
     mmu_pagetable_system.master_pt_addr = mmu_pagetable_master.master_pt_addr;
+    mmu_pagetable_system.nr_tables =
+        (MMU_VADDR_KERNEL_END + 1) / MMU_PGSIZE_SECTION;
     if (ptmapper_alloc(&mmu_pagetable_system)) {
         panic("Can't allocate memory for system page table.\n");
     }
@@ -226,10 +230,10 @@ int ptmapper_init(void)
         mmu_region_t ** regp;
 #if configPTMAPPER_DEBUG
         const char str_type[2][9] = {"sections", "pages"};
-#define PRINTMAPREG(region)                         \
-        KERROR(KERROR_DEBUG, "Mapped %s: %u %s\n",  \
-            #region, region.num_pages,              \
-            (region.pt->type == MMU_PTT_MASTER) ?   \
+#define PRINTMAPREG(region)                             \
+        KERROR(KERROR_DEBUG, "Mapped %s: %u %s\n",      \
+            #region, region.num_pages,                  \
+            (region.pt->pt_type == MMU_PTT_MASTER) ?    \
                 str_type[0] : str_type[1]);
 #else
 #define PRINTMAPREG(region)
@@ -279,15 +283,19 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
     size_t balign;
     int retval = 0;
 
-    switch (pt->type) {
+    /* TODO Transitional fix */
+    if (pt->nr_tables == 0)
+        pt->nr_tables = 1;
+
+    switch (pt->pt_type) {
     case MMU_PTT_MASTER:
-        size = PTM_MASTER;
-        bsize = MMU_PTSZ_MASTER;
+        size = pt->nr_tables * PTM_MASTER;
+        bsize = pt->nr_tables * MMU_PTSZ_MASTER;
         balign = PTM_MASTER;
         break;
     case MMU_PTT_COARSE:
-        size = PTM_COARSE;
-        bsize = MMU_PTSZ_COARSE;
+        size = pt->nr_tables * PTM_COARSE;
+        bsize = pt->nr_tables * MMU_PTSZ_COARSE;
         balign = PTM_COARSE;
         break;
     default:
@@ -302,7 +310,7 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
                 "Alloc pt %u bytes @ %x\n", bsize, addr);
 #endif
         pt->pt_addr = addr;
-        if (pt->type == MMU_PTT_MASTER) {
+        if (pt->pt_type == MMU_PTT_MASTER) {
             pt->master_pt_addr = addr;
         }
 
@@ -325,7 +333,7 @@ void ptmapper_free(mmu_pagetable_t * pt)
     size_t size = 0; /* Size in bitmap */
     size_t bsize = 0; /* Size in bytes */
 
-    switch (pt->type) {
+    switch (pt->pt_type) {
     case MMU_PTT_MASTER:
         size = PTM_MASTER;
         bsize = MMU_PTSZ_MASTER;

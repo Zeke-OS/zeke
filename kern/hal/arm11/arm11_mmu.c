@@ -56,21 +56,22 @@ static mtx_t mmu_lock;
  */
 #define DAB_WAS_USERMODE(psr)   (((psr) & PSR_MODE_MASK) == PSR_MODE_USER)
 
-typedef int (*dab_handler)(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-        struct thread_info * thread);
+typedef int (*dab_handler)(uint32_t fsr, uint32_t far, uint32_t psr,
+                           uint32_t lr, struct thread_info * thread);
 
 static void mmu_map_section_region(const mmu_region_t * region);
 static void mmu_map_coarse_region(const mmu_region_t * region);
 static void mmu_unmap_section_region(const mmu_region_t * region);
 static void mmu_unmap_coarse_region(const mmu_region_t * region);
+static void attach_coarse_pagetable(const mmu_pagetable_t * restrict pt);
 
 /* Data abort handlers */
 static int dab_align(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-        struct thread_info * thread);
+                     struct thread_info * thread);
 static int dab_buserr(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-        struct thread_info * thread);
+                     struct thread_info * thread);
 static int dab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-        struct thread_info * thread);
+                     struct thread_info * thread);
 
 static const char * get_dab_strerror(uint32_t fsr);
 
@@ -123,7 +124,7 @@ int mmu_init_pagetable(const mmu_pagetable_t * pt)
         return -EINVAL;
     }
 
-    switch (pt->type) {
+    switch (pt->pt_type) {
     case MMU_PTT_COARSE:
         i = nr_tables * MMU_PTSZ_COARSE / 4 / 32; break;
     case MMU_PTT_MASTER:
@@ -167,7 +168,7 @@ int mmu_map_region(const mmu_region_t * region)
     KASSERT(region->pt != NULL, "region->pt is set");
     KASSERT(region->num_pages > 0, "num_pages must be greater than zero");
 
-    switch (region->pt->type) {
+    switch (region->pt->pt_type) {
     case MMU_PTT_MASTER:    /* Map section in L1 page table */
         mmu_map_section_region(region);
         break;
@@ -193,10 +194,7 @@ static void mmu_map_section_region(const mmu_region_t * region)
     int i;
     uint32_t * p_pte;
     uint32_t pte;
-    /* TODO Transitional hack to support nr_blocks = 0 */
-    const size_t nr_tables_raw = region->pt->nr_tables;
-    const size_t nr_tables = (nr_tables_raw == 0) ? 1 : nr_tables_raw;
-    const int pages = (region->num_pages - 1) & (nr_tables * 4096 - 1);
+    const int pages = region->num_pages - 1;
     istate_t s;
 
     p_pte = (uint32_t *)region->pt->pt_addr; /* Page table base address */
@@ -206,7 +204,7 @@ static void mmu_map_section_region(const mmu_region_t * region)
     pte = region->paddr & 0xfff00000;       /* Set physical address */
     pte |= (region->ap & 0x3) << 10;        /* Set access permissions (AP) */
     pte |= (region->ap & 0x4) << 13;        /* Set access permissions (APX) */
-    pte |= (region->pt->dom & 0x7) << 5;    /* Set domain */
+    pte |= (region->pt->pt_dom & 0x7) << 5; /* Set domain */
     pte |= (region->control & 0x3) << 16;   /* Set nG & S bits */
     pte |= (region->control & 0x10);        /* Set XN bit */
     pte |= (region->control & 0x60) >> 3;   /* Set C & B bits */
@@ -234,20 +232,24 @@ static void mmu_map_section_region(const mmu_region_t * region)
  */
 static void mmu_map_coarse_region(const mmu_region_t * region)
 {
-    int i;
     uint32_t * p_pte;
     uint32_t pte;
     /* TODO Transitional hack to support nr_blocks = 0 */
     const size_t nr_tables_raw = region->pt->nr_tables;
     const size_t nr_tables = (nr_tables_raw == 0) ? 1 : nr_tables_raw;
-    const int pages = (region->num_pages - 1) & (nr_tables * 256 - 1);
+    const int pages = region->num_pages - 1;
     istate_t s;
 
-    p_pte = (uint32_t *)region->pt->pt_addr;    /* Page table base address */
+    /* Page table base address */
+    p_pte  = (uint32_t *)region->pt->pt_addr;
     p_pte += (region->vaddr & 0xff000) >> 12;   /* First */
     p_pte += pages;                             /* Last pte */
 
     KASSERT(p_pte, "p_pte is null");
+    KASSERT(((uint32_t)p_pte >= region->pt->pt_addr) &&
+            ((uint32_t)p_pte <=
+             region->pt->pt_addr + nr_tables * MMU_PTSZ_COARSE),
+            "p_pte > pt end addr");
 
     pte = region->paddr & 0xfffff000;       /* Set physical address */
     pte |= (region->ap & 0x3) << 4;         /* Set access permissions (AP) */
@@ -262,7 +264,7 @@ static void mmu_map_coarse_region(const mmu_region_t * region)
     s = get_interrupt_state();
     mmu_disable_ints();
 
-    for (i = pages; i >= 0; i--) {
+    for (int i = pages; i >= 0; i--) {
         *p_pte-- = pte + (i << 12); /* i = 4 KB small page */
     }
 
@@ -277,9 +279,7 @@ static void mmu_map_coarse_region(const mmu_region_t * region)
  */
 int mmu_unmap_region(const mmu_region_t * region)
 {
-    int retval = 0;
-
-    switch (region->pt->type) {
+    switch (region->pt->pt_type) {
     case MMU_PTE_SECTION:
         mmu_unmap_section_region(region);
         break;
@@ -287,10 +287,10 @@ int mmu_unmap_region(const mmu_region_t * region)
         mmu_unmap_coarse_region(region);
         break;
     default:
-        retval = -1;
+        return -EINVAL;
     }
 
-    return retval;
+    return 0;
 }
 
 /**
@@ -299,20 +299,20 @@ int mmu_unmap_region(const mmu_region_t * region)
  */
 static void mmu_unmap_section_region(const mmu_region_t * region)
 {
-    int i;
     uint32_t * p_pte;
     const uint32_t pte = MMU_PTE_FAULT;
+    const uint32_t pages = region->num_pages - 1;
     istate_t s;
 
-    p_pte = (uint32_t *)region->pt->pt_addr; /* Page table base address */
-    p_pte += region->vaddr >> 20; /* Set to first pte in region */
-    p_pte += region->num_pages - 1; /* Set to last pte in region */
+    p_pte = (uint32_t *)region->pt->pt_addr;    /* Page table base address */
+    p_pte += region->vaddr >> 20;               /* Set to first pte in region */
+    p_pte += pages;                             /* Set to last pte in region */
 
     MMU_LOCK();
     s = get_interrupt_state();
     mmu_disable_ints();
 
-    for (i = region->num_pages - 1; i >= 0; i--) {
+    for (int i = pages; i >= 0; i--) {
         *p_pte-- = pte + (i << 20); /* i = 1 MB section */
     }
 
@@ -327,47 +327,27 @@ static void mmu_unmap_section_region(const mmu_region_t * region)
  */
 static void mmu_unmap_coarse_region(const mmu_region_t * region)
 {
-    int i;
     uint32_t * p_pte;
     const uint32_t pte = MMU_PTE_FAULT;
+    const uint32_t pages = region->num_pages - 1;
     istate_t s;
 
-    p_pte = (uint32_t *)region->pt->pt_addr; /* Page table base address */
+    /* Page table base address */
+    p_pte  = (uint32_t *)region->pt->pt_addr;
     p_pte += (region->vaddr & 0x000ff000) >> 12;    /* First */
-    p_pte += region->num_pages - 1;                 /* Last pte */
+    p_pte += pages;                                 /* Last pte */
 
     MMU_LOCK();
     s = get_interrupt_state();
     mmu_disable_ints();
 
-    for (i = region->num_pages - 1; i >= 0; i--) {
+    for (int i = pages; i >= 0; i--) {
         *p_pte-- = pte + (i << 12); /* i = 4 KB small page */
     }
 
     cpu_invalidate_caches();
     set_interrupt_state(s);
     MMU_UNLOCK();
-}
-
-static void attach_coarse_pagetable(const mmu_pagetable_t * restrict pt)
-{
-    uint32_t * ttb;
-    /* TODO Transitional */
-    const size_t nr_tables = (pt->nr_tables == 0) ? 1 : pt->nr_tables;
-    size_t i, j;
-
-    ttb = (uint32_t *)(pt->master_pt_addr);
-
-    for (j = 0; j < nr_tables; j++) {
-        uint32_t pte;
-
-        pte = ((pt->pt_addr + j * MMU_PTSZ_COARSE) & 0xfffffc00);
-        pte |= pt->dom << 5;
-        pte |= MMU_PTE_COARSE;
-
-        i = (pt->vaddr + j * MMU_PGSIZE_SECTION) >> 20;
-        ttb[i] = pte;
-    }
 }
 
 /**
@@ -388,7 +368,7 @@ int mmu_attach_pagetable(const mmu_pagetable_t * pt)
     s = get_interrupt_state();
     mmu_disable_ints();
 
-    switch (pt->type) {
+    switch (pt->pt_type) {
     case MMU_PTT_MASTER:
         /* TTB -> CP15:c2:c0,0 : TTBR0 */
         __asm__ volatile (
@@ -413,6 +393,27 @@ int mmu_attach_pagetable(const mmu_pagetable_t * pt)
     return retval;
 }
 
+static void attach_coarse_pagetable(const mmu_pagetable_t * restrict pt)
+{
+    uint32_t * ttb;
+    /* TODO Transitional */
+    const size_t nr_tables = (pt->nr_tables == 0) ? 1 : pt->nr_tables;
+    size_t i, j;
+
+    ttb = (uint32_t *)pt->master_pt_addr;
+
+    for (j = 0; j < nr_tables; j++) {
+        uint32_t pte;
+
+        pte = ((pt->pt_addr + j * MMU_PTSZ_COARSE) & 0xfffffc00);
+        pte |= pt->pt_dom << 5;
+        pte |= MMU_PTE_COARSE;
+
+        i = (pt->vaddr + j * MMU_PGSIZE_SECTION) >> 20;
+        ttb[i] = pte;
+    }
+}
+
 /**
  * Detach a L2 page table from a L1 master page table.
  * @param pt    A page table descriptor structure.
@@ -426,7 +427,7 @@ int mmu_detach_pagetable(const mmu_pagetable_t * pt)
     uint32_t i, j;
     istate_t s;
 
-    if (pt->type == MMU_PTT_MASTER) {
+    if (pt->pt_type == MMU_PTT_MASTER) {
         KERROR(KERROR_ERR, "Cannot detach a master pt\n");
 
         return -EPERM;
@@ -522,7 +523,7 @@ void * mmu_translate_vaddr(const mmu_pagetable_t * pt, uintptr_t vaddr)
     size_t page_size;
     size_t offset = (size_t)(vaddr - (uintptr_t)(pt->vaddr));
 
-    switch (pt->type) {
+    switch (pt->pt_type) {
     case MMU_PTT_MASTER:
         page_size = MMU_PGSIZE_SECTION;
         mask    = 0xfff00000;

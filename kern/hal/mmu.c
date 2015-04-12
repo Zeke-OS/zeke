@@ -97,13 +97,17 @@ HW_PREINIT_ENTRY(mmu_init);
 size_t mmu_sizeof_pt(const mmu_pagetable_t * pt)
 {
     size_t size;
+    size_t nr_tables;
 
-    switch (pt->type) {
+    /* TODO Transitional */
+    nr_tables = (pt->nr_tables == 0) ? 1 : pt->nr_tables;
+
+    switch (pt->pt_type) {
     case MMU_PTT_MASTER:
-        size = MMU_PTSZ_MASTER;
+        size = nr_tables * MMU_PTSZ_MASTER;
         break;
     case MMU_PTT_COARSE:
-        size = MMU_PTSZ_COARSE;
+        size = nr_tables * MMU_PTSZ_COARSE;
         break;
     default:
         size = 0;
@@ -122,11 +126,11 @@ size_t mmu_sizeof_region(const mmu_region_t * region)
     if (!region->pt)
         return 0;
 
-    switch (region->pt->type) {
+    switch (region->pt->pt_type) {
     case MMU_PTT_COARSE:
-        return region->num_pages * 4096; /* Cool guys hard code values. */
+        return region->num_pages * MMU_PGSIZE_COARSE;
     case MMU_PTT_MASTER:
-        return region->num_pages * 1024 * 1024;
+        return region->num_pages * MMU_PGSIZE_SECTION;
     default:
         return 0;
     }

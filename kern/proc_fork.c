@@ -58,8 +58,9 @@ static int alloc_master_pt(proc_info_t * new_proc)
 {
     /* Allocate a master page table for the new process. */
     new_proc->mm.mpt.vaddr = 0;
-    new_proc->mm.mpt.type = MMU_PTT_MASTER;
-    new_proc->mm.mpt.dom = MMU_DOM_USER;
+    new_proc->mm.mpt.nr_tables = 1;
+    new_proc->mm.mpt.pt_type = MMU_PTT_MASTER;
+    new_proc->mm.mpt.pt_dom = MMU_DOM_USER;
 
     if (ptmapper_alloc(&(new_proc->mm.mpt)))
         return -ENOMEM;
