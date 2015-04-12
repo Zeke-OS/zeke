@@ -35,7 +35,7 @@ include $(ROOT_DIR)/genconfig/dist.mk
 # Supress warnings about C11 extensions in libc
 CCFLAGS += -Wno-c11-extensions
 
-LIBS = crt0 crt1 libc
+LIBS := crt0 crt1 libc libm
 
 # AR flags #####################################################################
 
@@ -43,7 +43,9 @@ libc-ARFLAGS = \
 $(patsubst %.c,%.o,$(crt0-SRC-y)) \
 $(patsubst %.S,%.o,$(crt0-ASRC-y))
 
-LIBS = crt0 crt1 libc
+libm-ARFLAGS = \
+$(patsubst %.c,%.o,$(crt0-SRC-y)) \
+$(patsubst %.S,%.o,$(crt0-ASRC-y))
 
 # Source Files #################################################################
 ifeq ($(configARCH_ARM),y)
@@ -84,6 +86,9 @@ $(wildcard libc/mman/*.c)
 
 libc-ASRC-$(configARCH_ARM) = \
 $(wildcard libc/setjmp/arm/*.S)
+
+libm-SRC-y = \
+$(wildcard libm/*.c)
 ################################################################################
 # Available selections for source code files:
 SRC-	=# C sources
@@ -143,6 +148,5 @@ manifest: $(LIBSA)
 
 clean:
 	$(RM) $(ASOBJS) $(OBJS) $(DEPS)
-	rm -rf crt0_o
 	$(RM) *.a
 	$(RM) manifest

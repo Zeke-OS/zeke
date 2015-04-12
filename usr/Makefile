@@ -27,10 +27,13 @@ include $(ROOT_DIR)/makefiles/user_head.mk
 
 # Binaries #####################################################################
 ifeq ($(configUSR_GAMES),y)
-BIN := games/banner
+BIN := games/banner games/plasma
 endif
 
 # Source Files #################################################################
 games/banner-SRC-$(configUSR_GAMES) := games/banner.c
+games/plasma-SRC-$(configUSR_GAMES) := games/plasma.c
+
+games/plasma-LDFLAGS := -lm
 
 include $(ROOT_DIR)/makefiles/user_tail.mk
