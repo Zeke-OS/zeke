@@ -27,9 +27,9 @@ void plasma(void)
             int c, r, g, b;
 
             c = cosinus[t1] + cosinus[t2] + cosinus[t3] + cosinus[t4];
-            r = pal[((c) >> 16) & 0xff];
-            g = pal[(((c) >> 8) & 0xff) + 1];
-            b = pal[((c) & 0xff) + 2];
+            r = pal[(((c) >> 16) & 0xff) * 3];
+            g = pal[(((c) >> 8) & 0xff) * 3 + 1];
+            b = pal[((c) & 0xff) * 3 + 2];
 
             r = pal[((c) >> 16) & 0xff];
             g = pal[(((c) >> 8) & 0xff) + 1];
