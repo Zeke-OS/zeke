@@ -104,7 +104,6 @@ int bcm2835_prop_request(uint32_t * request)
     /*
      * Copy request to a buffer.
      */
-    memset(buf, 0, MB_SECSIZE);
     memcpy(buf, request, request[0]);
     buf[1] = 0x0; /* Ensure it will be a request. */
 

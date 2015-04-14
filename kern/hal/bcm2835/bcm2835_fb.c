@@ -43,6 +43,7 @@
 #include <ptmapper.h>
 #include "bcm2835_mailbox.h"
 #include "bcm2835_mmio.h"
+#include "bcm2835_prop.h"
 #include "bcm2835_timers.h"
 
 #if configBCM_MB == 0
@@ -63,12 +64,19 @@ struct bcm2835_fb_config {
     uint16_t cmap[256];
 };
 
-static struct buf * fb_mbuf;
+/*
+ * Data buffer between ARM and VC.
+ */
+static struct buf * fb_databuf;
 static mmu_region_t bcm2835_fb_region = {
     .ap         = MMU_AP_RWNA,
     .control    = (MMU_CTRL_MEMTYPE_DEV | MMU_CTRL_XN),
     .pt         = &mmu_pagetable_master
 };
+#define fb_mailbuf              ((uint32_t *)fb_databuf->b_data)
+#define fb_mailbuf_paddr        (fb_databuf->b_mmu.paddr)
+#define fb_cursor_data          ((uint32_t *)(fb_databuf->b_data + 1024))
+#define fb_cursor_data_paddr    (fb_databuf->b_mmu.paddr + 1024)
 
 static int set_resolution(struct fb_conf * fb, size_t width, size_t height,
                           size_t depth);
@@ -77,6 +85,8 @@ static void set_fb_config(struct bcm2835_fb_config * fb_config,
 static void update_fb_mm(struct fb_conf * fb,
                          struct bcm2835_fb_config * bcm_fb);
 static int commit_fb_config(struct bcm2835_fb_config * fb_config);
+static int set_cursor_state(int enable, int x, int y);
+static int set_cursor_info(void);
 
 static int bcm2835_fb_init(void) __attribute__((constructor));
 static int bcm2835_fb_init(void)
@@ -84,13 +94,13 @@ static int bcm2835_fb_init(void)
     SUBSYS_DEP(vralloc_init);
     SUBSYS_INIT("BCM2835_fb");
 
-    int err;
     struct bcm2835_fb_config bcm_fb;
     struct fb_conf * fb;
+    int err;
 
-    fb_mbuf = geteblk_special(sizeof(struct bcm2835_fb_config),
+    fb_databuf = geteblk_special(sizeof(struct bcm2835_fb_config),
                               MMU_CTRL_MEMTYPE_SO);
-    if (!fb_mbuf || fb_mbuf->b_data == 0) {
+    if (!fb_databuf || fb_databuf->b_data == 0) {
         KERROR(KERROR_ERR, "Unable to get a mailbuffer\n");
 
         return -ENOMEM;
@@ -104,11 +114,13 @@ static int bcm2835_fb_init(void)
     /* Register a new frame buffer */
     fb = kmalloc(sizeof(struct fb_conf));
     *fb = (struct fb_conf){
+        .feature = 0, /* TODO HW cursor flag */
         .width  = bcm_fb.width,
         .height = bcm_fb.height,
         .pitch  = bcm_fb.pitch,
         .depth  = bcm_fb.depth,
         .set_resolution = set_resolution,
+        .set_hw_cursor_state = set_cursor_state,
     };
     fb_mm_initbuf(fb);
     update_fb_mm(fb, &bcm_fb);
@@ -159,7 +171,8 @@ static void update_fb_mm(struct fb_conf * fb, struct bcm2835_fb_config * bcm_fb)
     mmu_map_region(&bcm2835_fb_region); /* Map for the kernel */
     fb_mm_updatebuf(fb, &bcm2835_fb_region);
 
-    KERROR(KERROR_DEBUG, "num of video pages: %u\n", bcm2835_fb_region.num_pages);
+    KERROR(KERROR_INFO, "Number of fb pages: %u\n",
+           bcm2835_fb_region.num_pages);
 }
 
 static int commit_fb_config(struct bcm2835_fb_config * fb)
@@ -167,14 +180,14 @@ static int commit_fb_config(struct bcm2835_fb_config * fb)
     int err;
     uint32_t resp;
 
-    memcpy((char *)fb_mbuf->b_data, fb, sizeof(struct bcm2835_fb_config));
+    memcpy(fb_mailbuf, fb, sizeof(struct bcm2835_fb_config));
 
     /*
      * Adding 0x40000000 to the address tells the GPU to flush its cache after
      * writing a response.
      */
     err = bcm2835_writemailbox(BCM2835_MBCH_FB,
-                               fb_mbuf->b_mmu.paddr + 0x40000000);
+                               fb_mailbuf_paddr + 0x40000000);
     if (err) {
         KERROR(KERROR_DEBUG, "\tGPU init failed (err: %u)\n", err);
         return -EIO;
@@ -187,7 +200,7 @@ static int commit_fb_config(struct bcm2835_fb_config * fb)
         return -EIO;
     }
 
-    memcpy(fb, (char *)fb_mbuf->b_data, sizeof(struct bcm2835_fb_config));
+    memcpy(fb, fb_mailbuf, sizeof(struct bcm2835_fb_config));
 
     KERROR(KERROR_INFO,
            "BCM_FB: addr = %p, width = %u, height = %u, "
@@ -196,4 +209,88 @@ static int commit_fb_config(struct bcm2835_fb_config * fb)
            fb->depth, fb->pitch, fb->size);
 
     return 0;
+}
+
+static int blank_screen(int state)
+{
+    uint32_t mbuf[7] __attribute__((aligned (16)));
+    int err;
+
+    /* Format a message */
+    mbuf[0] = sizeof(mbuf); /* Size */
+    mbuf[1] = 0;            /* Request */
+    /* Tags */
+    /* Blank screen */
+    mbuf[2] = 0x00040002;
+    mbuf[3] = 4;            /* Value buf size and req/resp */
+    mbuf[4] = 4;            /* Value size */
+    mbuf[5] = (state) ? 1 : 0;
+
+    mbuf[6] = 0x0;          /* End tag */
+
+    err = bcm2835_prop_request(mbuf);
+    if (err)
+        return err;
+
+    return (mbuf[5] & 1);
+}
+
+static int set_cursor_state(int enable, int x, int y)
+{
+    uint32_t mbuf[10] __attribute__((aligned (16)));
+    int err;
+
+    /* Format a message */
+    mbuf[0] = sizeof(mbuf); /* Size */
+    mbuf[1] = 0;            /* Request */
+    /* Tags */
+    /* Set cursor state */
+    mbuf[2] = 0x00008010;
+    mbuf[3] = 16;           /* Value buf size and req/resp */
+    mbuf[4] = 16;           /* Value size */
+    mbuf[5] = (enable) ? 1 : 0;
+    mbuf[6] = x;
+    mbuf[7] = y;
+    mbuf[8] = 0;            /* Flags: 0 = disp coords; 1 = fb coords */
+
+    mbuf[9] = 0x0;          /* End tag */
+
+    err = bcm2835_prop_request(mbuf);
+    if (err)
+        return err;
+
+    return (mbuf[5] & 1) ? -EINVAL : 0;
+}
+
+/* TODO Fix me */
+static int set_cursor_info(void)
+{
+
+    uint32_t mbuf[12] __attribute__((aligned (16)));
+    int err;
+
+    memset(fb_cursor_data, 0x77, 512);
+
+    /* Format a message */
+    mbuf[0] = sizeof(mbuf); /* Size */
+    mbuf[1] = 0;            /* Request */
+    /* Tags */
+    /* Set cursor info */
+    mbuf[2] = 0x00008011;
+    mbuf[3] = 24;           /* Value buf size and req/resp */
+    mbuf[4] = 24;           /* Value size */
+    mbuf[5] = 16;           /* width */
+    mbuf[6] = 16;           /* height */
+    mbuf[7] = 0;            /* unused */
+    mbuf[8] = fb_cursor_data_paddr;
+    mbuf[9] = 0;            /* hotspotX */
+    mbuf[10] = 0;           /* hotspotY */
+
+    mbuf[11] = 0x0;          /* End tag */
+
+    err = bcm2835_prop_request(mbuf);
+    if (err)
+        return err;
+
+    return (mbuf[5] & 1) ? -EINVAL : 0;
 }

@@ -35,20 +35,41 @@
  * @{
  */
 
-#pragma once
 #ifndef SYS_FB_H
 #define SYS_FB_H
 
+#define FB_COLOR_MASK   0xffffff00
+
 /**
- * Set rgb pixel.
+ * Get RGB pixel value.
+ */
+static inline uint32_t get_rgb_pixel(base, pitch, x, y)
+{
+    const uintptr_t d = (uintptr_t)base + y * pitch + x * 3;
+    char r = *(char *)(d);
+    char g = *(char *)(d + 1);
+    char b = *(char *)(d + 2);
+    uint32_t rgb = r << 16 | g << 8 | b;
+
+    return rgb;
+}
+
+/**
+ * Set RGB pixel value.
  * addr = y * pitch + x * 3
  * TODO Hw dependant
  */
-#define set_rgb_pixel(_base, _pitch, _x, _y, _rgb) do {                        \
-            const uintptr_t d = (uintptr_t)_base + (_y) * (_pitch) + (_x) * 3; \
-            *(char *)(d + 0) = ((_rgb) >> 16) & 0xff;                          \
-            *(char *)(d + 1) = ((_rgb) >> 8) & 0xff;                           \
-            *(char *)(d + 2) = (_rgb) & 0xff;                                  \
+#define set_rgb_pixel(_base, _pitch, _x, _y, _rgb) do {                \
+    const uintptr_t d = (uintptr_t)_base + (_y) * (_pitch) + (_x) * 3; \
+    *(char *)(d + 0) = ((_rgb) >> 16) & 0xff;                          \
+    *(char *)(d + 1) = ((_rgb) >> 8) & 0xff;                           \
+    *(char *)(d + 2) = (_rgb) & 0xff;                                  \
+} while (0)
+
+#define invert_pixel(_base, _pitch, _x, _y) do {    \
+    uint32_t * dp = (uint32_t *)((uintptr_t)_base + \
+            (_y) * (_pitch) + (_x) * 3);            \
+    *dp ^= FB_COLOR_MASK;                           \
 } while (0)
 
 struct fb_resolution {

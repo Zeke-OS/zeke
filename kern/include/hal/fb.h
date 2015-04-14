@@ -42,13 +42,20 @@
 struct dev_info;
 struct buf;
 
+/*
+ * Console option flags.
+ */
+#define FB_CONSOLE_WRAP 0x01 /*!< Wrap lines. */
+
 /**
  * Frame buffer console state and configuration.
  */
 struct fb_console {
+    unsigned flags;
     size_t max_cols;
     size_t max_rows;
-    struct cons_state {
+    struct fb_console_state {
+        int cursor_state;
         size_t consx;
         size_t consy;
         uint32_t fg_color; /*!< Current fg color. */
@@ -56,10 +63,16 @@ struct fb_console {
     } state;
 };
 
+/*
+ * FB feature flags.
+ */
+#define FB_CONF_FEATURE_HW_CURSOR   0x01
+
 /**
  * Frame buffer configuration.
  */
 struct fb_conf {
+    int feature;
     struct buf mem; /* This will be used for user space mappings. */
     size_t width;
     size_t height;
@@ -76,8 +89,8 @@ struct fb_conf {
      */
     int (*set_resolution)(struct fb_conf * fb, size_t width, size_t height,
                           size_t depth);
+    int (*set_hw_cursor_state)(int enable, int x, int y);
 };
-
 
 /**
  * Init fb buffer struct used for user space mappings.
@@ -108,6 +121,8 @@ void fb_register(struct fb_conf * fb);
  * @param text is a pointer to a C string.
  */
 void fb_console_write(struct fb_conf * fb, char * text);
+
+int fb_console_set_cursor(struct fb_conf * fb, int state, int col, int row);
 
 #ifdef FB_INTERNAL
 /**

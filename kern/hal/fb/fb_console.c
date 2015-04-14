@@ -49,6 +49,9 @@
 const uint32_t def_fg_color = 0x00cc00;
 const uint32_t def_bg_color = 0x000000;
 
+static void draw_glyph(struct fb_conf * fb, const char * font_glyph,
+                       size_t consx, size_t consy);
+static void invert_glyph(struct fb_conf * fb, int x, int y);
 static ssize_t fb_console_tty_read(struct tty * tty, off_t blkno, uint8_t * buf,
                     size_t bcount, int oflags);
 static ssize_t fb_console_tty_write(struct tty * tty, off_t blkno,
@@ -61,14 +64,17 @@ void fb_console_init(struct fb_conf * fb)
 {
     const size_t left_margin = 0;
     const size_t upper_margin = (27 + 8) / CHARSIZE_Y + 1;
+    struct fb_console * con = &fb->con;
 
-    fb->con.max_cols = fb->width  / CHARSIZE_X;
-    fb->con.max_rows = fb->height / CHARSIZE_Y;
+    con->flags = FB_CONSOLE_WRAP;
+    con->max_cols = fb->width  / CHARSIZE_X;
+    con->max_rows = fb->height / CHARSIZE_Y;
 
-    fb->con.state.consx = left_margin;
-    fb->con.state.consy = upper_margin;
-    fb->con.state.fg_color = def_fg_color;
-    fb->con.state.bg_color = def_bg_color;
+    con->state.cursor_state = 1; /* TODO Not by default? */
+    con->state.consx = left_margin;
+    con->state.consy = upper_margin;
+    con->state.fg_color = def_fg_color;
+    con->state.bg_color = def_bg_color;
 }
 
 int fb_console_maketty(struct fb_conf * fb, dev_t dev_id)
@@ -96,11 +102,9 @@ int fb_console_maketty(struct fb_conf * fb, dev_t dev_id)
     return 0;
 }
 
-/*
- * TODO This function is partially BCM2835 specific and parts of it should be
- * moved into hardware specific files.
- */
-/* Move to a new line, and, if at the bottom of the screen, scroll the
+/**
+ * New line.
+ * Move to a new line, and, if at the bottom of the screen, scroll the
  * framebuffer 1 character row upwards, discarding the top row
  */
 static void newline(struct fb_conf * fb)
@@ -110,25 +114,30 @@ static void newline(struct fb_conf * fb)
     /* Number of bytes in a character row */
     const unsigned int rowbytes = CHARSIZE_Y * fb->pitch;
     const size_t max_rows = fb->con.max_rows;
-    size_t *const consx = &fb->con.state.consx;
-    size_t *const consy = &fb->con.state.consy;
+    size_t * const consx = &fb->con.state.consx;
+    size_t * const consy = &fb->con.state.consy;
+    const int cursor_prev_state = fb->con.state.cursor_state;
 
-    *consx = 0;
     if (*consy < (max_rows - 1)) {
-        (*consy)++;
+        fb_console_set_cursor(fb, cursor_prev_state, 0, *consy + 1);
         return;
     }
 
-    /* Copy a screen's worth of data (minus 1 character row) from the
-     * second row to the first
+    /*
+     * Set cursor to a known position and hide it until scrolling is done.
+     * This is only needed for SW cursor...
      */
+    fb_console_set_cursor(fb, 0, 0, *consy);
 
     /* Calculate the address to copy the screen data from */
     source = (int *)(base + rowbytes);
     memmove((void *)base, source, (max_rows - 1) * rowbytes);
 
-    /* Clear last line on screen */
+    /* Clear last line on the screen */
     memset((void *)(base + (max_rows - 1) * rowbytes), 0, rowbytes);
+
+    /* Reset cursor state */
+    fb_console_set_cursor(fb, cursor_prev_state, *consx, *consy);
 }
 
 /**
@@ -138,7 +147,7 @@ static void newline(struct fb_conf * fb)
  * @param consy         is a pointer to the y coord of console.
  */
 static void draw_glyph(struct fb_conf * fb, const char * font_glyph,
-                       size_t * consx, size_t * consy)
+                       size_t consx, size_t consy)
 {
     size_t col, row;
     const size_t pitch = fb->pitch;
@@ -152,17 +161,115 @@ static void draw_glyph(struct fb_conf * fb, const char * font_glyph,
         for (col = 0; col < CHARSIZE_X; col++) {
             uint32_t rgb;
 
-            if (row < (CHARSIZE_Y) && (font_glyph[row] & (1 << col)))
-                rgb = fg_color;
-            else
-                rgb = bg_color;
-
-            set_rgb_pixel(base, pitch, (*consx * CHARSIZE_X + glyph_x),
-                          (row + *consy * CHARSIZE_Y), rgb);
+            rgb = (font_glyph[row] & (1 << col)) ? fg_color : bg_color;
+            set_rgb_pixel(base, pitch, (consx * CHARSIZE_X + glyph_x),
+                          (row + consy * CHARSIZE_Y), rgb);
 
             glyph_x++;
         }
     }
+}
+
+static void invert_glyph(struct fb_conf * fb, int x, int y)
+{
+    int col, row;
+    const size_t pitch = fb->pitch;
+    const uintptr_t base = fb->mem.b_data;
+
+    for (row = 0; row < CHARSIZE_Y; row++) {
+        int glyph_x = 0;
+
+        for (col = 0; col < CHARSIZE_X; col++) {
+            size_t x_pos = x * CHARSIZE_X + glyph_x;
+            size_t y_pos = row + y * CHARSIZE_Y;
+
+            invert_pixel(base, pitch, x_pos, y_pos);
+
+            glyph_x++;
+        }
+    }
+}
+
+/*
+ * TODO This could be easily converted to support unicode
+ */
+void fb_console_write(struct fb_conf * fb, char * text)
+{
+    size_t * const consx = &fb->con.state.consx;
+    size_t * const consy = &fb->con.state.consy;
+    int cursor_state = fb->con.state.cursor_state;
+    size_t cur_x;
+    uint16_t ch;
+
+    while ((ch = *text)) {
+        cur_x = *consx;
+        text++;
+
+        /* Deal with control codes */
+        switch (ch) {
+        case 0x5: /* ENQ */
+            continue;
+        case 0x8: /* BS */
+            if (cur_x > 0)
+                fb_console_set_cursor(fb, cursor_state, cur_x - 1, *consy);
+            continue;
+        case 0x9: /* TAB */
+            fb_console_write(fb, "        ");
+        case 0xd: /* CR */
+            fb_console_set_cursor(fb, cursor_state, 0, *consy);
+            continue;
+        case 0xa: /* FF */
+        case 0xb: /* VT */
+        case 0xc: /* LF */
+            newline(fb);
+            *consx = cur_x;
+            continue;
+        }
+
+        if (ch < 32)
+            ch = 0;
+
+        fb_console_set_cursor(fb, cursor_state, cur_x + 1, *consy);
+        draw_glyph(fb, fonteng_getglyph(ch), cur_x, *consy);
+
+        if (fb->con.flags & FB_CONSOLE_WRAP && *consx >= fb->con.max_cols) {
+            newline(fb);
+        }
+    }
+}
+
+int fb_console_set_cursor(struct fb_conf * fb, int state, int col, int row)
+{
+    static int cursor_old_col = -1;
+    static int cursor_old_row;
+    struct fb_console * con = &fb->con;
+
+    if (!(0 <= col && col <= con->max_cols) &&
+         (0 <= row && row <= con->max_rows)) {
+        return -EINVAL;
+    }
+
+    if (fb->feature & FB_CONF_FEATURE_HW_CURSOR) {
+        fb->set_hw_cursor_state(state, col * CHARSIZE_X, row * CHARSIZE_Y);
+    } else { /* SW cursor */
+        if (!state) {
+            if (fb->con.state.cursor_state && cursor_old_col != -1)
+                invert_glyph(fb, cursor_old_col, cursor_old_row);
+            cursor_old_col = -1;
+        } else  {
+            if (cursor_old_col != -1)
+                invert_glyph(fb, cursor_old_col, cursor_old_row);
+            invert_glyph(fb, col, row);
+            cursor_old_col = col;
+            cursor_old_row = row;
+        }
+
+    }
+    fb->con.state.cursor_state = state;
+    con->state.consx = col;
+    con->state.consy = row;
+
+    return 0;
 }
 
 static ssize_t fb_console_tty_read(struct tty * tty, off_t blkno,
@@ -186,54 +293,6 @@ static ssize_t fb_console_tty_write(struct tty * tty, off_t blkno,
     }
 
     return bcount;
-}
-
-/*
- * TODO This function is partially BCM2835 specific and parts of it should be
- * moved into hardware specific files.
- * TODO This could be easily converted to support unicode
- */
-void fb_console_write(struct fb_conf * fb, char * text)
-{
-    size_t * const consx = &fb->con.state.consx;
-    size_t * const consy = &fb->con.state.consy;
-    uint16_t ch;
-
-    while ((ch = *text)) {
-        text++;
-
-        /* Deal with control codes */
-        switch (ch) {
-        case 0x5: /* ENQ */
-            continue;
-        case 0x8: /* BS */
-            if (*consx > 0)
-                (*consx)--;
-            continue;
-        case 0x9: /* TAB */
-            fb_console_write(fb, "        ");
-        case 0xd: /* CR */
-            *consx = 0;
-            continue;
-        case 0xa: /* FF */
-        case 0xb: /* VT */
-        case 0xc: /* LF */
-            {
-            int tmp = *consx;
-            newline(fb);
-            *consx = tmp;
-            }
-            continue;
-        }
-
-        if (ch < 32)
-            ch = 0;
-
-        draw_glyph(fb, fonteng_getglyph(ch), consx, consy);
-
-        if (++(*consx) >= fb->con.max_cols)
-            newline(fb);
-    }
 }
 
 static void fb_console_setconf(struct termios * conf)
