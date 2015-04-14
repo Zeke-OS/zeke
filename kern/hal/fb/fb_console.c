@@ -156,16 +156,12 @@ static void draw_glyph(struct fb_conf * fb, const char * font_glyph,
     const uint32_t bg_color = fb->con.state.bg_color;
 
     for (row = 0; row < CHARSIZE_Y; row++) {
-        int glyph_x = 0;
-
         for (col = 0; col < CHARSIZE_X; col++) {
             uint32_t rgb;
 
             rgb = (font_glyph[row] & (1 << col)) ? fg_color : bg_color;
-            set_rgb_pixel(base, pitch, (consx * CHARSIZE_X + glyph_x),
+            set_rgb_pixel(base, pitch, (consx * CHARSIZE_X + col),
                           (row + consy * CHARSIZE_Y), rgb);
-
-            glyph_x++;
         }
     }
 }
@@ -175,17 +171,14 @@ static void invert_glyph(struct fb_conf * fb, int x, int y)
     int col, row;
     const size_t pitch = fb->pitch;
     const uintptr_t base = fb->mem.b_data;
+    const uint32_t fg_color = fb->con.state.fg_color;
 
     for (row = 0; row < CHARSIZE_Y; row++) {
-        int glyph_x = 0;
-
         for (col = 0; col < CHARSIZE_X; col++) {
-            size_t x_pos = x * CHARSIZE_X + glyph_x;
-            size_t y_pos = row + y * CHARSIZE_Y;
+            const size_t x_pos = x * CHARSIZE_X + col;
+            const size_t y_pos = row + y * CHARSIZE_Y;
 
-            invert_pixel(base, pitch, x_pos, y_pos);
-
-            glyph_x++;
+            xor_pixel(base, pitch, x_pos, y_pos, fg_color);
         }
     }
 }

@@ -59,17 +59,17 @@ static inline uint32_t get_rgb_pixel(base, pitch, x, y)
  * addr = y * pitch + x * 3
  * TODO Hw dependant
  */
-#define set_rgb_pixel(_base, _pitch, _x, _y, _rgb) do {                \
-    const uintptr_t d = (uintptr_t)_base + (_y) * (_pitch) + (_x) * 3; \
-    *(char *)(d + 0) = ((_rgb) >> 16) & 0xff;                          \
-    *(char *)(d + 1) = ((_rgb) >> 8) & 0xff;                           \
-    *(char *)(d + 2) = (_rgb) & 0xff;                                  \
+#define set_rgb_pixel(_base, _pitch, _x, _y, _rgb) do {                     \
+    const uintptr_t d = (uintptr_t)(_base) + (_y) * (_pitch) + (_x) * 3;    \
+    *(char *)(d + 0) = ((_rgb) >> 16) & 0xff;                               \
+    *(char *)(d + 1) = ((_rgb) >> 8) & 0xff;                                \
+    *(char *)(d + 2) = (_rgb) & 0xff;                                       \
 } while (0)
 
-#define invert_pixel(_base, _pitch, _x, _y) do {    \
-    uint32_t * dp = (uint32_t *)((uintptr_t)_base + \
-            (_y) * (_pitch) + (_x) * 3);            \
-    *dp ^= FB_COLOR_MASK;                           \
+#define xor_pixel(_base, _pitch, _x, _y, _val) do {     \
+    uint32_t * dp = (uint32_t *)((uintptr_t)(_base) +   \
+            (_y) * (_pitch) + (_x) * 3);                \
+    *dp ^= (_val);                                      \
 } while (0)
 
 struct fb_resolution {
