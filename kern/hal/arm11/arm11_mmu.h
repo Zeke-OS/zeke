@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   MMU headers.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,15 +30,18 @@
  *******************************************************************************
  */
 
-/** @addtogroup HAL
+/**
+ * @addtogroup HAL
  * @{
  */
 
-/** @addtogroup MMU
+/**
+ * @addtogroup MMU
  * @{
  */
 
-/** @addtogroup ARM11
+/**
+ * @addtogroup ARM11
  * @{
  */
 
@@ -62,8 +65,10 @@
  */
 #define MMU_TTBCR_N         0
 
-/* L1 Page Table Entry Types
- * These corresponds directly to the bits of first-level descriptor on ARMv6 */
+/*
+ * L1 Page Table Entry Types
+ * These corresponds directly to the bits of first-level descriptor on ARMv6
+ */
 #define MMU_PTE_FAULT       0 /*!< Translation fault. */
 #define MMU_PTE_COARSE      1 /*!< Coarse page table. */
 #define MMU_PTE_SECTION     2 /*!< Section entry. */
@@ -73,13 +78,25 @@
 #define MMU_PTSZ_COARSE     0x0400 /*!< Coarse page table size. */
 #define MMU_PTSZ_MASTER     0x4000 /*!< L1 master page table size. */
 
-/* Page sizes in bytes */
+/*
+ * Page sizes in bytes
+ */
 #define MMU_PGSIZE_COARSE   4096    /*!< Size of a coarse page table page. */
 #define MMU_PGSIZE_SECTION  1048576 /*!< Size of a master page table section. */
 
-/* Domain Access Control Macros */
+/*
+ * Number of enties in different page table types.
+ */
+/** Number of page table entries in a coarse page table. */
+#define MMU_NR_COARSE_ENTR  (MMU_PTSZ_COARSE / 4)
+/** Number of page table entries in master page table. */
+#define MMU_NR_SECTION_ENTR (MMU_PTSZ_MASTER / 4)
+
+/*
+ * Domain Access Control Macros
+ */
 #define MMU_DOMAC_NA        0x0 /*!< Any access generates a domain fault. */
-#define MMU_DOMAC_CL        0x1 /*!< Client. Access is checked against the ap bits in TLB. */
+#define MMU_DOMAC_CL        0x1 /*!< Client. Access is checked against ap bits in TLB. */
 #define MMU_DOMAC_MA        0x3 /*!< Manager. No access permission checks performed. */
 
 /**
@@ -113,7 +130,8 @@
 
 /* End of DAC Macros */
 
-/* MMU C1 Control bits
+/*
+ * MMU C1 Control bits
  * This list contains only those settings that are usable with Zeke.
  */
 #define MMU_C1_CR_ENMMU     0x00000001 /*!< Enables the MMU. */
@@ -126,10 +144,14 @@
 #define MMU_C1_CR_VE        0x01000000 /*!< Enables the VIC interface */
 #define MMU_C1_CR_TR        0x10000000 /*!< Enables TEX remap. */
 #define MMU_C1_CR_FA        0x20000000 /*!< Force AP bits */ /* TODO? */
-/** Default MMU C1 configuration for Zeke */
+
+/**
+ * Default MMU C1 configuration for Zeke
+ */
 #define MMU_ZEKE_C1_DEFAULTS \
     (MMU_C1_CR_ENMMU | MMU_C1_CR_DCACHE | MMU_C1_CR_ICACHE | \
      MMU_C1_CR_XP | MMU_C1_CR_TR)
+
 /* End of MMU C1 Control Bits */
 
 #endif /* ARM11_MMU_H */

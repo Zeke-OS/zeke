@@ -42,6 +42,9 @@
 struct dev_info;
 struct buf;
 
+/**
+ * Frame buffer console state and configuration.
+ */
 struct fb_console {
     size_t max_cols;
     size_t max_rows;
@@ -53,6 +56,9 @@ struct fb_console {
     } state;
 };
 
+/**
+ * Frame buffer configuration.
+ */
 struct fb_conf {
     struct buf mem; /* This will be used for user space mappings. */
     size_t width;
@@ -75,16 +81,32 @@ struct fb_conf {
 
 /**
  * Init fb buffer struct used for user space mappings.
+ * This function must be called only once when creating a new FB.
+ * @param fb is a pointer to the frame buffer device configuration.
  */
 void fb_mm_initbuf(struct fb_conf * fb);
 
 /**
  * Update buffer attributes in mem struct.
+ * This fnuction must be called after changing FB hardware configuration.
+ * @param fb is a pointer to the frame buffer device configuration.
+ * @param region is a pointer to the memory region used to access frame buffer
+ *               memory.
  */
 void fb_mm_updatebuf(struct fb_conf * restrict fb,
                      const mmu_region_t * restrict region);
 
+/**
+ * Register a new initialized frame buffer device with the kernel.
+ * @param fb is a pointer to the frame buffer device configuration.
+ */
 void fb_register(struct fb_conf * fb);
+
+/**
+ * Write text to a frame buffer console.
+ * @param fb is a pointer to the frame buffer device configuration.
+ * @param text is a pointer to a C string.
+ */
 void fb_console_write(struct fb_conf * fb, char * text);
 
 #ifdef FB_INTERNAL
@@ -95,6 +117,12 @@ void fb_console_write(struct fb_conf * fb, char * text);
  */
 void fb_console_init(struct fb_conf * fb);
 
+/**
+ * Make a tty console device for a frame buffer.
+ * This is called by fb_register() to create a tty file for the console.
+ * @param fb is a pointer to the frame buffer device configuration.
+ * @param dv_id is the device identification number used for this tty.
+ */
 int fb_console_maketty(struct fb_conf * fb, dev_t dev_id);
 #endif
 

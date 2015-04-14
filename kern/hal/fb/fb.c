@@ -49,6 +49,11 @@
 #include <tty.h>
 #include "splash.h"
 
+/**
+ * Minor number for the next frame buffer device.
+ * The minor number is shared between a tty and a mm device but
+ * the major number is, of course, different.
+ */
 atomic_t fb_minor = ATOMIC_INIT(0);
 
 static void fb_mm_ref(struct buf * this);
@@ -60,10 +65,14 @@ static int fb_mm_ioctl(struct dev_info * devnfo, uint32_t request,
 static int fb_mmap(struct dev_info * devnfo, size_t blkno, size_t bsize,
                    int flags, struct buf ** bp_out);
 
+/**
+ * Frame buffer buffer operations.
+ * Used for mmap access.
+ */
 struct vm_ops fb_mm_bufops = {
     .rref = fb_mm_ref,
-    .rclone = NULL, /* What ever, but we don't like clones */
-    .rfree = fb_mm_rfree, /* You can try me but it will be never free */
+    .rclone = NULL, /* What ever, but we don't like clones. */
+    .rfree = fb_mm_rfree, /* You can try me but it will be never free. */
 };
 
 /* TODO Should support multiple frame buffers or fail */
@@ -98,6 +107,7 @@ void fb_mm_initbuf(struct fb_conf * fb)
 {
     struct buf * bp = &fb->mem;
 
+    /* Just to make sure we don't have anything fancy there. */
     memset(bp, 0, sizeof(struct buf));
 
     mtx_init(&bp->lock, MTX_TYPE_TICKET, 0);
@@ -113,17 +123,23 @@ void fb_mm_updatebuf(struct fb_conf * restrict fb,
                      const mmu_region_t * restrict region)
 {
     /*
-     * TODO The following is not a good idea but vpt doesn't support sections
-     * yet.
+     * The following is not a very good idea but vpt doesn't support
+     * sections.
      */
-    fb->mem.b_mmu.num_pages = region->num_pages * 256;
+    fb->mem.b_mmu.num_pages = region->num_pages * MMU_NR_COARSE_ENTR;
     fb->mem.b_mmu.paddr = region->paddr;
     fb->mem.b_mmu.control = region->control;
-    fb->mem.b_data = region->vaddr;
+    fb->mem.b_data = region->vaddr; /* This is an access point for the kernel
+                                     * if needed. But also marks in-core state.
+                                     */
     fb->mem.b_bufsize = mmu_sizeof_region(region);
     fb->mem.b_bcount = fb->mem.b_bufsize;
 }
 
+/**
+ * Ref function for mmap buf.
+ * @see fb_mm_bufops.
+ */
 static void fb_mm_ref(struct buf * this)
 {
     mtx_lock(&this->lock);
@@ -131,6 +147,10 @@ static void fb_mm_ref(struct buf * this)
     mtx_unlock(&this->lock);
 }
 
+/**
+ * Fre function for mmap buf.
+ * @see fb_mm_bufops.
+ */
 static void fb_mm_rfree(struct buf * this)
 {
     mtx_lock(&this->lock);
@@ -140,6 +160,11 @@ static void fb_mm_rfree(struct buf * this)
     mtx_unlock(&this->lock);
 }
 
+/**
+ * Make a fb memory mapping device.
+ * @param fb is a pointer to the frame buffer device configuration.
+ * @param dev_id is the device identification number used for this device.
+ */
 static int fb_makemmdev(struct fb_conf * fb, dev_t dev_id)
 {
     struct dev_info * dev;
@@ -166,6 +191,9 @@ static int fb_makemmdev(struct fb_conf * fb, dev_t dev_id)
     return 0;
 }
 
+/**
+ * Draw a splash screen.
+ */
 static void draw_splash(struct fb_conf * fb)
 {
     const size_t pitch = fb->pitch;
@@ -189,6 +217,9 @@ static void draw_splash(struct fb_conf * fb)
     }
 }
 
+/**
+ * Ioctl function for rame buffer memory mapping device.
+ */
 static int fb_mm_ioctl(struct dev_info * devnfo, uint32_t request,
                        void * arg, size_t arg_len)
 {
@@ -225,12 +256,20 @@ static int fb_mm_ioctl(struct dev_info * devnfo, uint32_t request,
     return 0;
 }
 
+/**
+ * Mmap function for rame buffer memory mapping device.
+ */
 static int fb_mmap(struct dev_info * devnfo, size_t blkno, size_t bsize,
                    int flags, struct buf ** bp_out)
 {
     struct fb_conf * fb = (struct fb_conf *)devnfo->opt_data;
 
     KASSERT((uintptr_t)fb > 4096, "fb should be set to some meaningful value");
+
+    /*
+     * We only need to return a pointer to the buffer and shmem/mmap will handle
+     * the rest, like mapping it to the process memory space.
+     */
 
     *bp_out = &fb->mem;
 
