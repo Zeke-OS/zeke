@@ -50,8 +50,8 @@ const uint32_t def_fg_color = 0x00cc00;
 const uint32_t def_bg_color = 0x000000;
 
 static void draw_glyph(struct fb_conf * fb, const char * font_glyph,
-                       size_t consx, size_t consy);
-static void invert_glyph(struct fb_conf * fb, int x, int y);
+                       int consx, int consy);
+static void invert_glyph(struct fb_conf * fb, int consx, int consy);
 static ssize_t fb_console_tty_read(struct tty * tty, off_t blkno, uint8_t * buf,
                     size_t bcount, int oflags);
 static ssize_t fb_console_tty_write(struct tty * tty, off_t blkno,
@@ -141,17 +141,19 @@ static void newline(struct fb_conf * fb)
 }
 
 /**
- * Draw font glyph.
+ * Draw font glyph to a character position (consx, consy).
  * @param font_glyph    is a pointer to the glyph from a font.
- * @param consx         is a pointer to the x coord of console.
- * @param consy         is a pointer to the y coord of console.
+ * @param consx         is a pointer to the character x position.
+ * @param consy         is a pointer to the character y position.
  */
 static void draw_glyph(struct fb_conf * fb, const char * font_glyph,
-                       size_t consx, size_t consy)
+                       int consx, int consy)
 {
-    size_t col, row;
+    int col, row;
     const size_t pitch = fb->pitch;
     const uintptr_t base = fb->mem.b_data;
+    const size_t base_x = consx * CHARSIZE_X;
+    const size_t base_y = consy * CHARSIZE_Y;
     const uint32_t fg_color = fb->con.state.fg_color;
     const uint32_t bg_color = fb->con.state.bg_color;
 
@@ -160,25 +162,26 @@ static void draw_glyph(struct fb_conf * fb, const char * font_glyph,
             uint32_t rgb;
 
             rgb = (font_glyph[row] & (1 << col)) ? fg_color : bg_color;
-            set_rgb_pixel(base, pitch, (consx * CHARSIZE_X + col),
-                          (row + consy * CHARSIZE_Y), rgb);
+            set_rgb_pixel(base, pitch, base_x + col, base_y + row, rgb);
         }
     }
 }
 
-static void invert_glyph(struct fb_conf * fb, int x, int y)
+/**
+ * Invert glyph on character position (consx, consy).
+ */
+static void invert_glyph(struct fb_conf * fb, int consx, int consy)
 {
     int col, row;
     const size_t pitch = fb->pitch;
     const uintptr_t base = fb->mem.b_data;
+    const size_t base_x = consx * CHARSIZE_X;
+    const size_t base_y = consy * CHARSIZE_Y;
     const uint32_t fg_color = fb->con.state.fg_color;
 
     for (row = 0; row < CHARSIZE_Y; row++) {
         for (col = 0; col < CHARSIZE_X; col++) {
-            const size_t x_pos = x * CHARSIZE_X + col;
-            const size_t y_pos = row + y * CHARSIZE_Y;
-
-            xor_pixel(base, pitch, x_pos, y_pos, fg_color);
+            xor_pixel(base, pitch, base_x + col, base_y + row, fg_color);
         }
     }
 }
