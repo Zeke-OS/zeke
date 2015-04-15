@@ -47,6 +47,13 @@
 #include <kern_ipc.h>
 
 /*
+ * TODO
+ * - We should guarantee atomicity for transactions uder PIPE_BUF bytes
+ * - Setting O_ASYNC should cause SIGIO to be sent if new input becomes
+ *   available
+ */
+
+/*
  * Just a humble guess that lazy yield may render improved performance on
  * MP system.
  */
