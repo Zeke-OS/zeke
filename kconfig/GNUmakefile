@@ -23,8 +23,9 @@ O=$(TOPDIR)/$(SRCDIR)
 
 # Build configuration
 KBUILD_KCONFIG=Kconfig
-KBUILD_CONFIG_DIR=configs
+ifndef KBUILD_DEFCONFIG
 KBUILD_DEFCONFIG=defconfig
+endif
 
 # Product information (exported)
 export PRODUCT_ENV=KCONFIG

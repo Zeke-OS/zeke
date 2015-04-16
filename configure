@@ -7,6 +7,7 @@ if [ -z $1 ]; then
     exit 1
 fi
 
+export KBUILD_CONFIG_DIR=defconfigs
 kconfig/config.sh $1
 
 for f in $CONFFILES; do
