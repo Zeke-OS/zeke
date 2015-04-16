@@ -13,7 +13,6 @@ $(ASOBJS): $(ASRC-y) $(AUTOCONF_H)
 
 $(OBJS): %.o: %.c $(AUTOCONF_H)
 	@echo "CC $@"
-	# NAME for flags
 	$(eval NAME := $(basename $(notdir $@)))
 	$(eval CUR_BC := $*.bc)
 	$(eval SP := s|\(^.*\)\.bc|$@|)
