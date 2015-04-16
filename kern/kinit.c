@@ -69,6 +69,7 @@ int exec_init_array(void)
     exec_array(__hw_preinit_array_start, n);
 
     kmalloc_init();
+
     n  = __init_array_end - __init_array_start;
     exec_array(__init_array_start, n);
 
