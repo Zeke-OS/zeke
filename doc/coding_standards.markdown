@@ -7,24 +7,25 @@ new code for Zeke.
 Source Tree Directory Structure
 --------------------------------
 
-+ kern/                 Most of the kernel code.
 + /kern/include/        Most of the shared kernel header files.
++ kern/                 Most of the kernel code.
++ kern/fs/              Virtual file system abstraction and other file systems.
++ kern/hal/             Harware abstraction layer.
++ kern/kunit/           In-kernel unit test framework (KUnit).
 + kern/libkern/         Kernel "standard" library.
 + kern/libkern/kstring/ String functions.
-+ kern/hal/             Harware abstraction layer.
-+ kern/fs/              Virtual file system abstraction and other file systems.
-+ kern/sched_X/         Thread scheduler implementations.
++ kern/sched/           Thread scheduling.
 + kern/test/            Kernel space unit tests.
-+ kern/kunit/           In-kernel unit test framework (KUnit).
++ bin/                  Essential commands.
++ config/               Kernel build config.
 + include/              User space library headers.
 + lib/                  C runtime libraries and user space libraries.
-+ config/               Kernel build config.
 + modmakefiles/         Kernel module makefiles.
-+ bin/                  Essential commands.
 + sbin/                 Essential system utilities.
-+ tools/                Build tools and scripts.
 + test/                 User space unit tests.
 + test/punit/           User space unit test framework (PUnit).
++ tools/                Build tools and scripts.
++ usr/games/            Sources for games and demos.
 
 
 Root Filesystem Hierarchy
@@ -37,6 +38,7 @@ Root Filesystem Hierarchy
 + /proc/                Virtual filesystem providing process information.
 + /sbin/                Essential system binaries.
 + /tmp/                 Temporary files.
++ /usr/games/           Games and demos.
 + kernel.img            The kernel image.
 
 
@@ -45,22 +47,23 @@ Naming Conventions
 
 ### File names
 
-+ `module.c|h`  Any module that implements some functionality
-+ `kmodule.c|h` Kernel scope source module that provides some external
++ `subsys.c|h`  Any module that implements some functionality
++ `subsys.c|h`  Kernel scope source module that provides some external
                 sycallable functionality
++ `ksubsys.c`   Kernel part of a well known subsystem, for example `ksignal.c`
 + `lowlevel.S`  Assembly source code; Note that capital S for user files as file
                 names ending with small s are reserved for compilation time
                 files
 
-*Warning:* Assembly sources with small suffix (.s) might be removed by
+*Warning:* Assembly sources with small suffix (.s) will be removed by
 `make clean` as those are considered as automatically generated files.
 
 ### Global variables
 
-Historically there has been both naming conventions in use mixed case with
-underline between module name and rest of the name and everyting writen small
-with underlines. Third conventions is some very ugly that was inherited from
-CMSIS which we are now trying to get rid of. All new source code should use
+Historically both naming conventions have been used mixed case with underline
+between module name and rest of the name, and everyting writen small case with
+underlines. Third conventions was some ugly convention inherited from CMSIS,
+which was somewhat hard to get rid of. All new source code must use the
 following naming convention:
 
 + `module_feature_name`
@@ -69,7 +72,7 @@ following naming convention:
 
 + `module_comp_function` + module = name that also appears in filename
                          + comp   = component/functionality eg. thread
-                                   components will change thread status
+                                    components will change thread status
 
 
 Standard Data Types
@@ -77,9 +80,11 @@ Standard Data Types
 
 ### Typedefs
 
-Typedefs are historically used in Zeke for most of the structs and for some
-portability where we may want or have to change the actual type on different
-hardware platforms. Usually there should be no need to use typedef for structs.
+Typedefs were historically used in Zeke for most of the structs and portable
+types. New code should only use typedefs for portability where we may want
+or have to change the actual underlying type depending on the actual hardware
+platform. Usually there should be no need to use typedef for structs unles it's
+stated in POSIX or some other standard we wan't to follow.
 
 ### Enums
 
@@ -133,40 +138,29 @@ Kernel Initialization
 
 Kernel initialization order is defined as follows:
 
-For Cortex-M:
-+ `SystemInit` - the clock system intitialization and other mandatory hw inits
-+ `__libc_init_array` - Static constructors
-+ `kinit` - Kernel initialization and load user code
-
-For ARM11:
 + `hw_preinit`
-+ `constructors`
++ `kmalloc_init()`
++ constructors
 + `hw_postinit`
-+ `kinit`
++ `kinit()`
 
-After kinit, scheduler will kick in and initialization continues in a special
-init process.
+After kinit, scheduler will kick in and initialization continues in sinit(8)
+process.
 
 Every initializer function should contain `SUBSYS_INIT("XXXX init");` as a first
 line of the function and optionally `SUBSYS_DEP(YYYY_init);` lines declaring
 subsystem initialization dependencies.
 
-### Kernel module initializers
+### Kernel module/subsystem initializers
 
-There is four kind of initializers supported at the moment:
+There are four kind of initializers supported at the moment:
 
 + *hw_preinit* for mainly hardware related initializers
 + *hw_postinit* for hardware related initializers
 + *constructor* (or init) for generic initialization
 
-Optional kernel modules may use C static constructors and destructors to
-generate init and fini code that will be run before any user code is loaded.
-Constructors are also the preferred method to attach module with the kernel.
-
-Currently there is no support for module unloading and any fini functions will
-not be called in any case. Still decalaring destructors doesn't generate
-compilation error and array of fini functions is still generated and might be
-supported in the future.
+descturctors are not yet supported in Zeke but if there ever will be LKM
+support the destructors will be called when unloading the module.
 
 Following example shows constructor/intializer notation supported by Zeke:
 
@@ -184,13 +178,13 @@ Following example shows constructor/intializer notation supported by Zeke:
     void mod_deinit(void)
     { ... }
 
-Constructor prioritizing is not supported for constructor pointers but however
-linker uses SORT, which may or may not work as expected.
+Constructor prioritizing is not supported and `SUBSYS_DEP` should be used to
+tell dependencies between intializers.
 
 ### hw_preinit and hw_postinit
 
 hw_preinit and hw_postinit can be used by including kinit.h header file and
-using following notation:
+using the following notation:
 
     void mod_preinit(void)
     {
@@ -208,17 +202,9 @@ using following notation:
 Makefiles
 ---------
 
-The main Makefile is responsible of recursively compiling all parts of Zeke.
-
-`kern/Makefile`is responsible of compiling the kernel and parsing module
+`kern/Makefile`is responsible of compiling the kernel and parsing kmod
 makefiles. Module makefiles are following the naming convention `<module>.mk`
 and are located under `kern/kmodmakefiles` directory.
-
-Note that in context of Zeke there is two kinds of modules, the core/top level
-subsystems that are packed as static library files and then there is kind of
-submodules (often referred as modules too) that are optional compilation units
-or compilation unit groups. Both are configured in the kernel configuration.
-What Zeke doesn't support currently is dynamically loaded modules.
 
 Module makefiles are parsed like normal makefiles but care should be taken when
 changing global variables in these makefiles. Module makefiles are mainly
@@ -226,7 +212,7 @@ allowed to only append IDIR variable and all other variables should be more or
 less specific to the module makefile itself and should begin with the name of
 the module.
 
-Example of a module makefile (test.mk):
+An example of a module makefile (test.mk):
 
     # Test module
     # Mandatory file
@@ -245,27 +231,10 @@ compile a new static library based on the compilation units in the list. Name of
 the library is derived from the makefile's name and so should be the first word
 of the source file list name.
 
-### User space Makefiles
+### Userland Makefiles
 
-User space makefiles are constructed from `user_head.mk`, `user_tail.mk` and
+Userland makefiles are constructed from `user_head.mk`, `user_tail.mk` and
 the actual targets between includes. A good example of a user space Makefile
 is `bin/Makefile` that compiles tools under `/bin`. A manifest file is
 automatically generated by the make system and it will be used for creating
 a rootfs image with `tools/mkrootfs.sh` script.
-
-### Target specific compilation options
-
-Because we don't want to put any target specific configuration into the main
-makefile we are using another makefile called `target.mk`. This file contains
-the target specific compilation options for different phases of compilation.
-`target.mk` doesn't need to be changed if Zeke is compiled for a different
-platform but it has to be updated if support for a new hardware platform is to
-be implemented. `target.mk` is generic in a way that it can be used to configure
-kernel compilation as well as user space utility compilation.
-
-`target.mk` should define at least following target specific variables:
-+ `ASFLAGS`:    Containing CPU architecture flags
-+ `CRT`:        Specifying CRT library used with the target
-
-and optionally:
-+ `LLCFLAGS`: containing any target specific flags
