@@ -2,7 +2,12 @@
 
 CONFFILES="buildconf.mk dist.mk"
 
-kconfig/config.sh menuconfig
+if [ -z $1 ]; then
+    echo No config option specified
+    exit 1
+fi
+
+kconfig/config.sh $1
 
 for f in $CONFFILES; do
     CURFILES="genconfig/$f.default genconfig/$f"
