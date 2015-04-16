@@ -89,6 +89,7 @@ To successfully compile Zeke, you'll need the following packages/tools:
 - `bash`
 - `mkdosfs` and `mtools` for creating a rootfs image
 - `cloc` for source code stats
+- `ncurses-devel`
 
 doc-book target:
 

@@ -1,0 +1,2 @@
+config configTISH
+    bool "TISH terminal"

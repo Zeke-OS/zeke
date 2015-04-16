@@ -43,8 +43,6 @@ static void reap(void);
 static void reboot(void);
 static void spawn(char *const []);
 
-const char tty_path[] = "/dev/ttyS0";
-
 static struct {
     int sig;
     void (*handler)(void);
@@ -100,9 +98,9 @@ static void open_tty(void)
     close(STDIN_FILENO);
     close(STDOUT_FILENO);
     close(STDERR_FILENO);
-    r0 = open(tty_path, O_RDONLY);
-    r1 = open("/dev/fb0", O_WRONLY);
-    r2 = open(tty_path, O_WRONLY);
+    r0 = open(configSINIT_STDIN, O_RDONLY);
+    r1 = open(configSINIT_STDOUT, O_WRONLY);
+    r2 = open(configSINIT_STDERR, O_WRONLY);
 
     printf("fd: %i, %i, %i\n", r0, r1, r2);
 }

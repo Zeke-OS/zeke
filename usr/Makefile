@@ -34,6 +34,11 @@ endif
 games/banner-SRC-$(configUSR_GAMES) := games/banner.c
 games/plasma-SRC-$(configUSR_GAMES) := games/plasma.c
 
+# CCFLAGS ######################################################################
+
+# LDFLAGS ######################################################################
 games/plasma-LDFLAGS := -lm
+
+# End
 
 include $(ROOT_DIR)/makefiles/user_tail.mk

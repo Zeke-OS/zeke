@@ -1,2 +1,15 @@
-config configTISH
-    bool "TISH terminal"
+menu sinit
+
+config configSINIT_STDIN
+    string "stdin device"
+    default "/dev/ttyS0"
+
+config configSINIT_STDOUT
+    string "stdout device"
+    default "/dev/ttyS0"
+
+config configSINIT_STDERR
+    string "stderr device"
+    default "/dev/ttyS0"
+
+endmenu

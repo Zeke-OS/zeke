@@ -13,9 +13,11 @@ $(ASOBJS): $(ASRC-y) $(AUTOCONF_H)
 
 $(OBJS): %.o: %.c $(AUTOCONF_H)
 	@echo "CC $@"
+	# NAME for flags
+	$(eval NAME := $(basename $(notdir $@)))
 	$(eval CUR_BC := $*.bc)
 	$(eval SP := s|\(^.*\)\.bc|$@|)
-	@$(CC) $(CCFLAGS) $(IDIR) -c $*.c -o $(CUR_BC)
+	@$(CC) $(CCFLAGS) $($(NAME)-CCFLAGS) $(IDIR) -c $*.c -o $(CUR_BC)
 	@sed -i "$(SP)" "$*.d"
 	@$(OPT) $(OFLAGS) $(CUR_BC) -o - | $(LLC) $(LLCFLAGS) - -o - | \
 		$(GNUARCH)-as - -o $@ $(ASFLAGS)

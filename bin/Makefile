@@ -38,4 +38,10 @@ tish-SRC-y := $(wildcard src/tish/*.c) src/utils/gline.c
 umount-SRC-y := src/umount.c src/utils/opt.c
 uptime-SRC-y := src/uptime.c
 
+# CCFLAGS ######################################################################
+
+# LDFLAGS ######################################################################
+
+# End
+
 include $(ROOT_DIR)/makefiles/user_tail.mk
