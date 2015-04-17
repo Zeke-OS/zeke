@@ -84,7 +84,7 @@ static int debug(char ** args)
 
                 printf("original\n");
                 wait(&status);
-                printf("status: %u\n", status);
+                printf("status: %i\n", status);
             }
         } else {
             puts(invalid_arg);

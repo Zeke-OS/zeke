@@ -42,10 +42,10 @@
 
 static void list_all(void);
 static int getset_parm(char * arg);
-static void getset_svalue(int * oid, int len, size_t oval_len,
-        char * nval, size_t nval_len);
-static void getset_ivalue(int * oid, int len, size_t oval_len,
-        char * nval, size_t nval_len);
+static int getset_svalue(int * oid, int len, size_t oval_len,
+                         char * nval, size_t nval_len);
+static int getset_ivalue(int * oid, int len, size_t oval_len,
+                         char * nval, size_t nval_len);
 static void print_mib_name(int * mib, int len);
 
 static int tish_sysctl_cmd(char ** args)
@@ -109,12 +109,10 @@ static int getset_parm(char * arg)
     ctltype = (kind & CTLTYPE);
     switch (ctltype) {
     case CTLTYPE_STRING:
-        getset_svalue(mib, mib_len, dlen, value, strnlen(value, 80));
-        break;
+        return getset_svalue(mib, mib_len, dlen, value, strnlen(value, 80));
     case CTLTYPE_INT:
     case CTLTYPE_UINT:
-        getset_ivalue(mib, mib_len, dlen, value, sizeof(int));
-        break;
+        return getset_ivalue(mib, mib_len, dlen, value, sizeof(int));
     case CTLTYPE_LONG:
     case CTLTYPE_ULONG:
     case CTLTYPE_S64:
@@ -126,36 +124,38 @@ static int getset_parm(char * arg)
     return 0;
 }
 
-static void getset_svalue(int * oid, int len, size_t oval_len,
-        char * nval, size_t nval_len)
+static int getset_svalue(int * oid, int len, size_t oval_len,
+                         char * nval, size_t nval_len)
 {
     char ovalbuf[oval_len + 1];
 
-    if (sysctl(oid, len, ovalbuf, &oval_len, (void *)nval, nval_len)) {
-        /* Failed, errno set */
-        return;
-    }
+    if (sysctl(oid, len, ovalbuf, &oval_len, (void *)nval, nval_len))
+        return -1; /* Failed, errno set */
+
     printf("%s\n", ovalbuf);
+
+    return 0;
 }
 
-static void getset_ivalue(int * oid, int len, size_t oval_len,
-        char * nval, size_t nval_len)
+static int getset_ivalue(int * oid, int len, size_t oval_len,
+                         char * nval, size_t nval_len)
 {
     int x;
     size_t x_len = sizeof(x);
 
     /* Get value */
-    if (sysctl(oid, len, &x, &x_len, 0, 0)) {
-        /* Failed, errno set */
-        return;
-    }
-    printf("%u\n", x);
+    if (sysctl(oid, len, &x, &x_len, 0, 0))
+        return -1; /* Failed, errno set */
+    printf("%i\n", x);
 
     /* Set value */
     if (nval) {
         x = atoi(nval);
-        sysctl(oid, len, 0, 0, (void *)(&x), sizeof(int));
+        if (sysctl(oid, len, 0, 0, (void *)(&x), sizeof(int)))
+            return -1;
     }
+
+    return 0;
 }
 
 static void list_all(void)
@@ -169,7 +169,7 @@ static void list_all(void)
         len = len_next;
         print_mib_name(mib, len);
     }
-    if (errno == ENOENT)
+    if (err && errno == ENOENT)
         errno = 0;
 }
 
@@ -243,7 +243,6 @@ static int tish_ikut(char ** arg)
         sysctl(mib_cur, len_cur, 0, 0, (void *)(&one), sizeof(one));
     }
 
-    printf("errno = %i\n", errno);
     return 0;
 }
 TISH_CMD(tish_ikut, "ikut");

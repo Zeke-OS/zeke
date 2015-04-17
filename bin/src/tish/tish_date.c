@@ -41,7 +41,7 @@
 static int tish_date(char ** args)
 {
     struct timespec ts = {0, 0};
-    int sec, nsec;
+    unsigned sec, nsec;
 
     if (clock_gettime(CLOCK_REALTIME, &ts))
         return -1;

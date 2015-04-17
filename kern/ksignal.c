@@ -248,8 +248,8 @@ DATA_SET(thread_fork_handlers, ksignal_fork_handler);
 /**
  * Push 'src' to thread stack.
  * @param thread    thread.
- * @param src       data to be pushed.
- * @param size      size of data.
+ * @param src       is a pointer to to data to be pushed.
+ * @param size      is the size of data pointer by src.
  * @param old_thread_sp[in] returns the old thread stack pointer, can be NULL.
  * @return Error code or zero.
  */

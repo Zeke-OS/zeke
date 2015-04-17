@@ -34,11 +34,13 @@
 
 char * gline(char * str, int num)
 {
-    int err, i = 0;
+    int i = 0;
     char ch;
     char buf[2] = {'\0', '\0'};
 
     while (1) {
+        int err;
+
         err = read(STDIN_FILENO, &ch, sizeof(ch));
         if (err <= 0)
             continue;

@@ -79,7 +79,7 @@ int tish(void)
 get_errno:
             if (err) {
                 err = errno;
-                printf("\nFailed, errno: %u\n", err);
+                printf("\nFailed, errno: %i\n", err);
             }
 
             if (tish_eof)
@@ -215,7 +215,7 @@ static int forkexec(char * path, char ** args)
             free(argv[i]);
         }
 
-        printf("status: %u\n", status);
+        printf("status: %i\n", status);
     }
 
     return 0;
