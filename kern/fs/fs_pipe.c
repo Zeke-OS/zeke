@@ -229,7 +229,7 @@ ssize_t fs_pipe_write(file_t * file, const void * buf, size_t count)
         return -EBADF;
 
     for (size_t i = 0; i < count;) {
-        if (queue_push(&pipe->q, buf + i))
+        if (queue_push(&pipe->q, (char *)buf + i))
             i++;
         thread_yield(PIPE_YIELD_STRATEGY);
     }
@@ -245,7 +245,7 @@ ssize_t fs_pipe_read(file_t * file, void * buf, size_t count)
         return -EBADF;
 
     for (size_t i = 0; i < count;) {
-        if (queue_pop(&pipe->q, buf + i))
+        if (queue_pop(&pipe->q, (char *)buf + i))
             i++;
         thread_yield(PIPE_YIELD_STRATEGY);
     }
