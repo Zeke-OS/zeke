@@ -562,7 +562,9 @@ void mmu_data_abort_handler(void)
     uint32_t fsr; /*!< Fault status */
     const uint32_t spsr = current_thread->sframe[SCHED_SFRAME_ABO].psr;
     const uint32_t lr = current_thread->sframe[SCHED_SFRAME_ABO].pc;
+#if 0
     const istate_t s_old = spsr & PSR_INT_MASK; /*!< Old interrupt state */
+#endif
     istate_t s_entry; /*!< Int state in handler entry. */
     struct thread_info * const thread = (struct thread_info *)current_thread;
     int err;
@@ -576,16 +578,20 @@ void mmu_data_abort_handler(void)
 
     mmu_pf_event();
 
-    /* TODO Change master page table */
-
-    /* TODO We may want to block the process owning this thread and possibly
+    /*
+     * RFE Block the thread owner
+     * We may want to block the process owning this thread and possibly
      * make sure that this instance is the only one handling page fault of the
-     * same kind. */
+     * same kind.
+     */
 
+    /* TODO Handle DAB in preemptible state. */
     /* Handle this data abort in pre-emptible state if possible. */
     if (DAB_WAS_USERMODE(spsr)) {
         s_entry = get_interrupt_state();
-        //set_interrupt_state(s_old);
+#if 0
+        set_interrupt_state(s_old);
+#endif
     }
 
     if (data_aborts[fsr & FSR_MASK]) {
@@ -603,7 +609,9 @@ void mmu_data_abort_handler(void)
        dab_fatal(fsr, far, spsr, lr, thread);
     }
 
-    /* TODO In the future we may wan't to support copy on read too
+    /*
+     *  TODO COR Support here
+     *  In the future we may wan't to support copy on read too
      * (ie. page swaping). To suppor cor, and actually anyway, we should test
      * if error appeared during reading or writing etc.
      */
