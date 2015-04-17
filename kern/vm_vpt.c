@@ -106,13 +106,14 @@ void ptlist_free(struct ptlist * ptlist_head)
     struct vm_pt * var;
     struct vm_pt * nxt;
 
-    if (!RB_EMPTY(ptlist_head)) {
-        for (var = RB_MIN(ptlist, ptlist_head); var != 0;
-                var = nxt) {
-            nxt = RB_NEXT(ptlist, ptlist_head, var);
-            ptmapper_free(&(var->pt));
-            kfree(var);
-        }
+    if (RB_EMPTY(ptlist_head))
+        return;
+
+    for (var = RB_MIN(ptlist, ptlist_head); var != 0;
+            var = nxt) {
+        nxt = RB_NEXT(ptlist, ptlist_head, var);
+        ptmapper_free(&(var->pt));
+        kfree(var);
     }
 }
 
@@ -120,7 +121,6 @@ int vm_ptlist_clone(struct ptlist * new_head, mmu_pagetable_t * new_mpt,
                     struct ptlist * old_head)
 {
     struct vm_pt * old_vpt;
-    struct vm_pt * new_vpt;
     int count = 0;
 
     RB_INIT(new_head);
@@ -129,6 +129,8 @@ int vm_ptlist_clone(struct ptlist * new_head, mmu_pagetable_t * new_mpt,
         return 0;
 
     RB_FOREACH(old_vpt, ptlist, old_head) {
+        struct vm_pt * new_vpt;
+
         /* TODO for some reason linkcount might be invalid! */
 #if 0
         if (old_vpt->linkcount <= 0) {
