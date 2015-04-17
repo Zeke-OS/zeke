@@ -34,6 +34,7 @@
 #ifndef _SYSCRED_H
 #define _SYSCRED_H
 
+#include <signal.h>
 #include <sys/priv.h>
 
 static const struct _proc_credctl_args ds_init = { -1, -1, -1, -1, -1, -1 };
@@ -41,8 +42,7 @@ static const struct _proc_credctl_args ds_init = { -1, -1, -1, -1, -1, -1 };
 #define SYS_GETCRED(var, cred) do {         \
     struct _proc_credctl_args ds = ds_init; \
     if (syscall(SYSCALL_PROC_CRED, &ds)) {  \
-        /* TODO Shouldn't fail? */          \
-        while (1);                          \
+        kill(SIGKILL, getpid());            \
     }                                       \
     (var) = ds.cred;                        \
 } while (0)
