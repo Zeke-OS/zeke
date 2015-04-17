@@ -260,8 +260,7 @@ static int push_to_thread_stack(struct thread_info * thread, const void * src,
     const int framenum = (insys) ? SCHED_SFRAME_SVC : SCHED_SFRAME_SYS;
     sw_stack_frame_t * sframe = &thread->sframe[framenum];
     void * old_sp = (void *)sframe->sp;
-    void * new_sp = old_sp - memalign(size);
-    int err;
+    void * new_sp = (char *)old_sp - memalign(size);
 
     KASSERT(size > 0, "size should be greater than zero.\n");
 
@@ -269,6 +268,8 @@ static int push_to_thread_stack(struct thread_info * thread, const void * src,
         return -EFAULT;
 
     if (insys) {
+        int err;
+
         err = copyout(src, new_sp, size);
         if (err)
             return -EFAULT;
@@ -295,12 +296,13 @@ static int pop_from_thread_stack(struct thread_info * thread, void * dest,
     const int insys = thread_flags_is_set(thread, SCHED_INSYS_FLAG);
     const int framenum = (insys) ? SCHED_SFRAME_SVC : SCHED_SFRAME_SYS;
     const void * sp = (void *)thread->sframe[framenum].sp;
-    int err;
 
     if (!sp)
         return -EFAULT;
 
     if (insys) {
+        int err;
+
         err = copyin(sp, dest, size);
         if (err)
             return err;
@@ -408,7 +410,7 @@ static int eval_inkernel_action(struct ksigaction * action)
  */
 static void ksignal_post_scheduling(void)
 {
-    int signum, blocked, swait;
+    int signum;
     struct signals * sigs = &current_thread->sigs;
     struct ksigaction action;
     struct ksiginfo * ksiginfo;
@@ -433,7 +435,7 @@ static void ksignal_post_scheduling(void)
 
     /* Get next pending signal. */
     STAILQ_FOREACH(ksiginfo, &sigs->s_pendqueue, _entry) {
-        int nxt_state;
+        int blocked, swait, nxt_state;
 
         signum = ksiginfo->siginfo.si_signo;
         blocked = ksignal_isblocked(sigs, signum);
@@ -826,14 +828,15 @@ int ksignal_reset_ksigaction(struct signals * sigs, int signum)
  */
 int ksignal_set_ksigaction(struct signals * sigs, struct ksigaction * action)
 {
+    int signum;
     struct ksigaction * p_action;
-    const int signum = action->ks_signum;
     struct sigaction * sigact = NULL;
 
     KASSERT(mtx_test(&sigs->s_lock.l), "sigs should be locked\n");
 
     if (!action)
         return -EINVAL;
+    signum = action->ks_signum;
 
     if (action->ks_signum < 0)
         return -EINVAL;
