@@ -26,7 +26,7 @@ int main(int argc, char ** argv)
     int fflg = 0;
     FILE *fi;
     int c;
-    int dev, ino = -1;
+    int dev = 0, ino = -1;
     struct stat statb;
     int retval = 0;
 
@@ -169,7 +169,7 @@ top:
 
 static int fastcat(int fd)
 {
-    int    buffsize, n, nwritten, offset;
+    int    buffsize, n, nwritten;
     char   *buff;
 
     if (obsize)
@@ -190,7 +190,7 @@ static int fastcat(int fd)
      * In this case, multiple writes are required.
      */
     while ((n = read(fd, buff, buffsize)) > 0) {
-        offset = 0;
+        int offset = 0;
         do {
             nwritten = write(fileno(stdout), &buff[offset], n);
             if (nwritten <= 0) {
