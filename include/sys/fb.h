@@ -43,7 +43,7 @@
 /**
  * Get RGB pixel value.
  */
-static inline uint32_t get_rgb_pixel(base, pitch, x, y)
+static inline uint32_t get_rgb_pixel(void * base, size_t pitch, int x, int y)
 {
     const uintptr_t d = (uintptr_t)base + y * pitch + x * 3;
     char r = *(char *)(d);
