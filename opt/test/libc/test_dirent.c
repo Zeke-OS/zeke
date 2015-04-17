@@ -4,12 +4,16 @@
 #include <dirent.h>
 #include "punit.h"
 
+DIR * dp;
+
 static void setup()
 {
+    dp = NULL;
 }
 
 static void teardown()
 {
+    closedir(dp);
 }
 
 static char * test_opendir()
