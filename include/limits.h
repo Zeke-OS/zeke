@@ -38,7 +38,7 @@
 #ifndef _LIMITS_H_
 #define _LIMITS_H_
 
-#include <sys/_limits.h>
+#include_next <limits.h> /* Include the compiler header file. */
 
 /* Runtime Invariant Values */
 #define HOST_NAME_MAX   255
