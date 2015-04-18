@@ -84,7 +84,6 @@ static int load_section(struct buf ** region, file_t * file,
 {
     int prot;
     struct buf * sect;
-    int err;
 
     if (phdr->p_memsz < phdr->p_filesz)
         return -ENOEXEC;
@@ -95,6 +94,7 @@ static int load_section(struct buf ** region, file_t * file,
         return -ENOMEM;
 
     if (phdr->p_filesz > 0) {
+        int err;
         void * ldp;
 
         ldp = (void *)(sect->b_data + (phdr->p_vaddr - sect->b_mmu.vaddr));
@@ -121,12 +121,12 @@ int load_elf32(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base)
     uintptr_t rbase;
     int retval = 0;
 
+    if (!vaddr_base)
+        return -EINVAL;
+
     elfhdr = kmalloc(sizeof(struct elf32_header));
     if (!elfhdr)
         return -ENOMEM;
-
-    if (!vaddr_base)
-        return -EINVAL;
 
     /* Read elf header */
     file->seek_pos = 0;
