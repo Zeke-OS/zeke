@@ -112,7 +112,7 @@ int main(int argc, char * argv[])
         dup(pty[1]);
         dup(pty[1]);
 
-        if (execvp(argv[3], argv + 3))
+        if (execvp(argv[2], argv + 2))
             perror("Exec failed");
 
         exit(EXIT_FAILURE);
