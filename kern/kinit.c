@@ -53,7 +53,6 @@ extern int (*__fini_array_end []) (void) __attribute__((weak));
 
 extern void kmalloc_init(void);
 extern void * uinit(void * arg);
-static void mount_rootfs(void);
 static void exec_array(int (*a []) (void), int n);
 
 /**
@@ -110,86 +109,6 @@ static pthread_t create_uinit_main(void * stack_addr)
     return thread_create(&init_ds, 0);
 }
 
-/**
- * Create init process.
- */
-int kinit(void) __attribute__((constructor));
-int kinit(void)
-{
-    SUBSYS_DEP(sched_init);
-    SUBSYS_DEP(proc_init);
-    SUBSYS_DEP(ramfs_init);
-    SUBSYS_INIT("kinit");
-
-    char buf[80]; /* Buffer for panic messages. */
-
-    mount_rootfs();
-
-    /* User stack for init */
-    struct buf * init_vmstack = geteblk(configUSRINIT_SSIZE);
-    if (!init_vmstack)
-        panic("Can't allocate a stack for init");
-
-    init_vmstack->b_uflags = VM_PROT_READ | VM_PROT_WRITE;
-    init_vmstack->b_mmu.vaddr = init_vmstack->b_mmu.paddr;
-    init_vmstack->b_mmu.ap = MMU_AP_RWRW;
-    init_vmstack->b_mmu.control = MMU_CTRL_XN;
-
-    /* Create a thread for init */
-    pthread_t tid = create_uinit_main((void *)(init_vmstack->b_mmu.paddr));
-    if (tid < 0) {
-        ksprintf(buf, sizeof(buf), "Can't create a thread for init. %i", tid);
-        panic(buf);
-    }
-
-    /* pid of init */
-    const pid_t pid = proc_fork(0);
-    if (pid <= 0) {
-        ksprintf(buf, sizeof(buf), "Can't fork a process for init. %i", pid);
-        panic(buf);
-    }
-
-    struct thread_info * const init_thread = thread_lookup(tid);
-    if (!init_thread) {
-        panic("Can't get thread descriptor of init_thread!");
-    }
-
-    proc_info_t * const init_proc = proc_get_struct_l(pid);
-    if (!init_proc || (init_proc->state == PROC_STATE_INITIAL)) {
-        panic("Failed to get proc struct or invalid struct");
-    }
-
-    init_thread->pid_owner = pid;
-    init_thread->curr_mpt = &init_proc->mm.mpt;
-
-    /* Map previously created user stack with init process page table. */
-    {
-        struct vm_pt * vpt;
-
-        (*init_proc->mm.regions)[MM_STACK_REGION] = init_vmstack;
-        vm_updateusr_ap(init_vmstack);
-
-        vpt = ptlist_get_pt(&init_proc->mm, init_vmstack->b_mmu.vaddr);
-        if (vpt == 0)
-            panic("Couldn't get vpt for init stack");
-
-        init_vmstack->b_mmu.pt = &(vpt->pt);
-        vm_map_region(init_vmstack, vpt);
-    }
-
-    /* Map tkstack of init with mmu_pagetable_system */
-    mmu_map_region(&(init_thread->kstack_region->b_mmu));
-    init_proc->main_thread = init_thread;
-
-#if configDEBUG >= KERROR_INFO
-    KERROR(KERROR_DEBUG,
-            "Init created with pid: %u, tid: %u, stack: %x\n",
-            pid, tid, init_vmstack->b_mmu.vaddr);
-#endif
-
-    return 0;
-}
-
 static void mount_rootfs(void)
 {
     const char failed[] = "Failed to mount rootfs";
@@ -226,6 +145,120 @@ static void mount_rootfs(void)
 
 out:
     kfree(tmp);
+}
+
+static struct buf * create_vmstack(void)
+{
+    struct buf * vmstack;
+
+    vmstack = geteblk(configUSRINIT_SSIZE);
+    if (!vmstack)
+        return NULL;
+
+    vmstack->b_uflags = VM_PROT_READ | VM_PROT_WRITE;
+    vmstack->b_mmu.vaddr = vmstack->b_mmu.paddr;
+    vmstack->b_mmu.ap = MMU_AP_RWRW;
+    vmstack->b_mmu.control = MMU_CTRL_XN;
+
+    return vmstack;
+}
+
+/**
+ * Map vmstack to proc.
+ */
+static void map_vmstack2proc(struct proc_info * proc, struct buf * vmstack)
+{
+    struct vm_pt * vpt;
+
+    (*proc->mm.regions)[MM_STACK_REGION] = vmstack;
+    vm_updateusr_ap(vmstack);
+
+    vpt = ptlist_get_pt(&proc->mm, vmstack->b_mmu.vaddr);
+    if (vpt == 0)
+        panic("Couldn't get vpt for init stack");
+
+    vmstack->b_mmu.pt = &(vpt->pt);
+    vm_map_region(vmstack, vpt);
+}
+
+/**
+ * Create init process.
+ */
+int kinit(void) __attribute__((constructor));
+int kinit(void)
+{
+    SUBSYS_DEP(sched_init);
+    SUBSYS_DEP(proc_init);
+    SUBSYS_DEP(ramfs_init);
+    SUBSYS_INIT("kinit");
+
+    char strbuf[80]; /* Buffer for panic messages. */
+    struct buf * init_vmstack;
+    pthread_t tid;
+    pid_t pid;
+    struct thread_info * init_thread;
+    proc_info_t * init_proc;
+
+    mount_rootfs();
+
+    /*
+     * User stack for init
+     */
+    init_vmstack = create_vmstack();
+    if (!init_vmstack)
+        panic("Can't allocate a stack for init");
+
+    /*
+     * Create a thread for init
+     */
+    tid = create_uinit_main((void *)(init_vmstack->b_mmu.paddr));
+    if (tid < 0) {
+        ksprintf(strbuf, sizeof(strbuf), "Can't create a thread for init. %i",
+                 tid);
+        panic(strbuf);
+    }
+
+    /*
+     * pid of init
+     */
+    pid = proc_fork(0);
+    if (pid <= 0) {
+        ksprintf(strbuf, sizeof(strbuf), "Can't fork a process for init. %i",
+                 pid);
+        panic(strbuf);
+    }
+
+    init_thread = thread_lookup(tid);
+    if (!init_thread) {
+        panic("Can't get thread descriptor of init_thread!");
+    }
+
+    init_proc = proc_get_struct_l(pid);
+    if (!init_proc || (init_proc->state == PROC_STATE_INITIAL)) {
+        panic("Failed to get proc struct or invalid struct");
+    }
+
+    init_thread->pid_owner = pid;
+    init_thread->curr_mpt = &init_proc->mm.mpt;
+
+    /*
+     * Map the previously created user stack with init process page table.
+     */
+    map_vmstack2proc(init_proc, init_vmstack);
+
+    /*
+     * Map tkstack of init with mmu_pagetable_system
+     */
+    mmu_map_region(&(init_thread->kstack_region->b_mmu));
+    init_proc->main_thread = init_thread;
+
+#if configDEBUG >= KERROR_INFO
+    KERROR(KERROR_DEBUG,
+           "Init created with pid: %u, tid: %u, stack: %x\n",
+           pid, tid, init_vmstack->b_mmu.vaddr);
+#endif
+
+    return 0;
 }
 
 /**
