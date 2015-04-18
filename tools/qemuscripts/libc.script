@@ -1,0 +1,5 @@
+cd /opt/test/libc
+test_dirent
+test_setjmp
+test_snprintf
+test_tss
