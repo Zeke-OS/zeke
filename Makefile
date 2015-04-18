@@ -57,11 +57,14 @@ doc-book:
 
 
 # target_comp: tools - Build tools.
-tools: $(UNIFDEF)
+tools: $(UNIFDEF) tools/exec_qemu
 #
 
 $(UNIFDEF):
 	$(MAKE) -C tools/unifdef unifdef
+
+tools/exec_qemu: tools/exec_qemu.c
+	$(CC) tools/exec_qemu.c -o tools/exec_qemu
 # End of Tools
 
 $(AUTOCONF_H): config
