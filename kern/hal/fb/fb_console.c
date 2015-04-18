@@ -194,11 +194,10 @@ void fb_console_write(struct fb_conf * fb, char * text)
     size_t * const consx = &fb->con.state.consx;
     size_t * const consy = &fb->con.state.consy;
     int cursor_state = fb->con.state.cursor_state;
-    size_t cur_x;
     uint16_t ch;
 
     while ((ch = *text)) {
-        cur_x = *consx;
+        size_t cur_x = *consx;
         text++;
 
         /* Deal with control codes */
@@ -236,8 +235,6 @@ void fb_console_write(struct fb_conf * fb, char * text)
 
 int fb_console_set_cursor(struct fb_conf * fb, int state, int col, int row)
 {
-    static int cursor_old_col = -1;
-    static int cursor_old_row;
     struct fb_console * con = &fb->con;
 
     if (!(0 <= col && col <= con->max_cols) &&
@@ -248,6 +245,9 @@ int fb_console_set_cursor(struct fb_conf * fb, int state, int col, int row)
     if (fb->feature & FB_CONF_FEATURE_HW_CURSOR) {
         fb->set_hw_cursor_state(state, col * CHARSIZE_X, row * CHARSIZE_Y);
     } else { /* SW cursor */
+        static int cursor_old_col = -1;
+        static int cursor_old_row;
+
         if (!state) {
             if (fb->con.state.cursor_state && cursor_old_col != -1)
                 invert_glyph(fb, cursor_old_col, cursor_old_row);
@@ -293,16 +293,18 @@ static ssize_t fb_console_tty_write(struct tty * tty, off_t blkno,
 
 static void fb_console_setconf(struct termios * conf)
 {
-    /* TODO */
+    /* TODO Implement setconf for fb_console */
 }
 
 static int fb_tty_ioctl(struct dev_info * devnfo, uint32_t request,
                         void * arg, size_t arg_len)
 {
+#if 0
     struct tty * tty = (struct tty *)devnfo->opt_data;
     struct fb_conf * fb = (struct fb_conf *)tty->opt_data;
+#endif
 
-    /* TODO */
+    /* TODO Implement ioctl for fb_console */
 
     return -EINVAL;
 }
