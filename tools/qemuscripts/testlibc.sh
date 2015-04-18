@@ -2,4 +2,4 @@
 
 TESTDIR=tools/qemuscripts
 
-$TESTDIR/runscript.sh $TESTDIR/libc.script
+$TESTDIR/runscript.sh $TESTDIR/libc.script 30
