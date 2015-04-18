@@ -35,7 +35,9 @@ int main(int argc, char * argv[])
 {
     int pip[2];
     pid_t pid;
-    int err;
+    int err, sig;
+    struct timespec timeout;
+    sigset_t sigset;
 
     if (argc < 4) {
         printf("Usage: %s FILE TIMEOUT args\n", argv[0]);
@@ -66,20 +68,20 @@ int main(int argc, char * argv[])
     close(pip[0]);
     send_commands(pip[1], argv[1]);
 
-    sigset_t sigset;
-    struct timespec timeout = {
+    err = 0;
+    timeout = (struct timespec){
         .tv_sec = atoi(argv[2]),
         .tv_nsec = 0,
     };
-    int sig;
-
     sigemptyset(&sigset);
     sigaddset(&sigset, SIGCHLD);
     sig = sigtimedwait(&sigset, NULL, &timeout);
-    if (sig < 0)
+    if (sig < 0) {
         kill(pid, SIGINT);
+        err = EXIT_FAILURE;
+    }
     wait(NULL);
     close(pip[1]);
 
-    return 0;
+    return err;
 }
