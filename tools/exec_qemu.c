@@ -13,8 +13,6 @@ void send_commands(int dest_fildes, char * file)
     FILE * fp;
     char * line = NULL;
     size_t len = 0;
-    ssize_t read;
-    int count = -1;
 
     fp = fopen(file, "r");
     if (!fp) {
@@ -22,7 +20,7 @@ void send_commands(int dest_fildes, char * file)
         exit(EXIT_FAILURE);
     }
 
-    while ((read = getline(&line, &len, fp)) != -1) {
+    while (getline(&line, &len, fp) != -1) {
         if (strcmp(line, "exit")) {
             line[len - 1] = '\n';
         }
