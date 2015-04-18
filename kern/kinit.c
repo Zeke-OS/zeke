@@ -113,9 +113,10 @@ static void mount_rootfs(void)
 {
     const char failed[] = "Failed to mount rootfs";
     vnode_t * tmp = NULL;
-    proc_info_t * kernel_proc = proc_get_struct_l(0);
+    proc_info_t * kernel_proc;
     int ret;
 
+    kernel_proc = proc_get_struct_l(0);
     if (!kernel_proc) {
         panic(failed);
     }
@@ -131,8 +132,7 @@ static void mount_rootfs(void)
     mtx_init(&tmp->vn_lock, MTX_TYPE_SPIN, 0);
     vrefset(kernel_proc->croot, 2);
 
-    ret = fs_mount(kernel_proc->croot, "", "ramfs", 0,
-                   "", 1);
+    ret = fs_mount(kernel_proc->croot, "", "ramfs", 0, "", 1);
     if (ret) {
         KERROR(KERROR_ERR, "%s : %i\n", failed, ret);
         goto out;
