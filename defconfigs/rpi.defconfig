@@ -5,15 +5,15 @@ configBCM_FB=y
 configBCM_PM=y
 configRPI_EMMC=y
 configRPI_EMMC_WRITE_SUPPORT=y
-configSCHED_DEBUG=y
 configMAXPROC=10
-configPROC_DEBUG=y
 configKASSERT=y
 configLOCK_DEBUG=y
 configDEBUG_DEBUG=y
 configFATFS=y
 configFATFS_LFN=y
+configPROCCAP=y
 # configBUNDLE_STATIC is not set
 configTISH=y
+configSINIT_STDOUT="/dev/fb0"
 configUSR_GAMES=y
 configTESTS_FB=y
