@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ -z "$1" -o ]; then
+if [ -z "$1" ]; then
     echo Usage: $0 SCRIPTFILE
     exit 1
 fi
