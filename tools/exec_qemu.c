@@ -1,15 +1,17 @@
 #define _XOPEN_SOURCE 700
 #define _BSD_SOURCE
+#include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <termios.h>
-#include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/wait.h>
+#include <termios.h>
 #include <time.h>
 #include <unistd.h>
+
+int pty_timeout;
 
 int getpty(int pty[2])
 {
@@ -59,14 +61,18 @@ void send_commands(int fildes, char * file)
         };
 
         retval = select(fildes + 1, &rfds, NULL, NULL, &timeout);
-        if (retval == -1 || retval == 0)
+        if (retval == -1 || retval == 0) {
+            pty_timeout = 1;
             break;
+        }
         if (read(fildes, &input, sizeof(char)) <= 0)
             break;
         write(STDOUT_FILENO, &input, sizeof(char));
 
         if (input == '#' && (len = getline(&line, &n, fp)) != -1) {
             write(fildes, line, len);
+            if (!strcmp(line, "exit\n"))
+                break;
         } else if (len == -1) {
             break;
         }
@@ -80,12 +86,9 @@ int main(int argc, char * argv[])
 {
     int pty[2];
     pid_t pid;
-    struct timespec timeout;
-    sigset_t sigset;
-    int sig, err;
 
-    if (argc < 4) {
-        printf("Usage: %s FILE TIMEOUT args\n", argv[0]);
+    if (argc < 3) {
+        printf("Usage: %s FILE args\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
@@ -117,22 +120,9 @@ int main(int argc, char * argv[])
 
     close(pty[1]); /* Close the slave side */
     send_commands(pty[0], argv[1]);
-
-    err = 0;
-    timeout = (struct timespec){
-        .tv_sec = atoi(argv[2]),
-        .tv_nsec = 0,
-    };
-    sigemptyset(&sigset);
-    sigaddset(&sigset, SIGCHLD);
-    sig = sigtimedwait(&sigset, NULL, &timeout);
-    if (sig < 0) {
-        kill(pid, SIGINT);
-        fprintf(stderr, "Timeout after %u sec\n", (unsigned)timeout.tv_sec);
-        err = EXIT_FAILURE;
-    }
+    kill(pid, SIGINT);
     wait(NULL);
     close(pty[0]);
 
-    return err;
+    return (pty_timeout) ? EXIT_FAILURE : 0;
 }

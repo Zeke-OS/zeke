@@ -2,4 +2,4 @@
 
 TESTDIR=tools/qemuscripts
 
-exec $TESTDIR/runscript.sh $TESTDIR/mman.script 30
+exec $TESTDIR/runscript.sh $TESTDIR/mman.script
