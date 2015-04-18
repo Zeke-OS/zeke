@@ -1,18 +1,46 @@
-#define _GNU_SOURCE
+#define _XOPEN_SOURCE 700
+#define _BSD_SOURCE
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <termios.h>
+#include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
 
-void send_commands(int dest_fildes, char * file)
+int getpty(int pty[2])
+{
+    int fdm, fds;
+
+    fdm = posix_openpt(O_RDWR);
+    if (fdm < 0)
+        return -1;
+
+    if (grantpt(fdm))
+        return -1;
+
+    if (unlockpt(fdm))
+        return -1;
+
+    fds = open(ptsname(fdm), O_RDWR);
+
+    pty[0] = fdm;
+    pty[1] = fds;
+
+    return 0;
+}
+
+void send_commands(int fildes, char * file)
 {
     FILE * fp;
+    fd_set rfds;
+    struct timeval timeout;
+    char input;
     char * line = NULL;
-    size_t len = 0;
+    size_t n, len = 0;
 
     fp = fopen(file, "r");
     if (!fp) {
@@ -20,11 +48,28 @@ void send_commands(int dest_fildes, char * file)
         exit(EXIT_FAILURE);
     }
 
-    while (getline(&line, &len, fp) != -1) {
-        if (strcmp(line, "exit")) {
-            line[len - 1] = '\n';
+    while (1) {
+        int retval;
+
+        FD_ZERO(&rfds);
+        FD_SET(fildes, &rfds);
+        timeout = (struct timeval){
+            .tv_sec = 5,
+            .tv_usec = 0,
+        };
+
+        retval = select(fildes + 1, &rfds, NULL, NULL, &timeout);
+        if (retval == -1 || retval == 0)
+            break;
+        if (read(fildes, &input, sizeof(char)) <= 0)
+            break;
+        write(STDOUT_FILENO, &input, sizeof(char));
+
+        if (input == '#' && (len = getline(&line, &n, fp)) != -1) {
+            write(fildes, line, len);
+        } else if (len == -1) {
+            break;
         }
-        write(dest_fildes, line, len);
     }
 
     free(line);
@@ -33,20 +78,19 @@ void send_commands(int dest_fildes, char * file)
 
 int main(int argc, char * argv[])
 {
-    int pip[2];
+    int pty[2];
     pid_t pid;
-    int err, sig;
     struct timespec timeout;
     sigset_t sigset;
+    int sig, err;
 
     if (argc < 4) {
         printf("Usage: %s FILE TIMEOUT args\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
-    err = pipe(pip);
-    if (err) {
-        perror("Failed to create a pipe");
+    if (getpty(pty)) {
+        fprintf(stderr, "Failed to get pty\n");
         exit(EXIT_FAILURE);
     }
 
@@ -55,18 +99,24 @@ int main(int argc, char * argv[])
         perror("Fork failed");
         exit(EXIT_FAILURE);
     } else if (pid == 0) {
-        close(STDIN_FILENO);
-        dup2(pip[0], STDIN_FILENO);
+        struct termios new_term;
 
-        err = execvp(argv[3], argv + 3);
-        if (err)
+        close(pty[0]); /* Close the master side */
+        cfmakeraw(&new_term);
+        tcsetattr(pty[1], TCSANOW, &new_term);
+        close(0);
+        close(1);
+        dup(pty[1]);
+        dup(pty[1]);
+
+        if (execvp(argv[3], argv + 3))
             perror("Exec failed");
 
         exit(EXIT_FAILURE);
     }
 
-    close(pip[0]);
-    send_commands(pip[1], argv[1]);
+    close(pty[1]); /* Close the slave side */
+    send_commands(pty[0], argv[1]);
 
     err = 0;
     timeout = (struct timespec){
@@ -78,10 +128,11 @@ int main(int argc, char * argv[])
     sig = sigtimedwait(&sigset, NULL, &timeout);
     if (sig < 0) {
         kill(pid, SIGINT);
+        fprintf(stderr, "Timeout after %u sec\n", (unsigned)timeout.tv_sec);
         err = EXIT_FAILURE;
     }
     wait(NULL);
-    close(pip[1]);
+    close(pty[0]);
 
     return err;
 }
