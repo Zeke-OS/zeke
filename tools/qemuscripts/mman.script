@@ -1,0 +1,3 @@
+cd /opt/test/mman
+test_mmap
+exit

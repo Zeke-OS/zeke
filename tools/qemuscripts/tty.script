@@ -1,0 +1,3 @@
+cd /opt/test/tty
+test_pty
+exit

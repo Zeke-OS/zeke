@@ -3,3 +3,4 @@ test_dirent
 test_setjmp
 test_snprintf
 test_tss
+exit
