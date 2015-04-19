@@ -9,7 +9,7 @@
  * isinf(x) returns 1 is x is inf, -1 if x is -inf, else 0;
  * no branching!
  */
-int isinf (double x)
+int isinf(double x)
 {
     long hx, lx;
 

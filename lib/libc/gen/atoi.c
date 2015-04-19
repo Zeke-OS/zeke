@@ -1,12 +1,10 @@
 int atoi(char * p)
 {
-    int n;
-    int f;
+    int n = 0;
+    int f = 0;
 
-    n = 0;
-    f = 0;
-    for(;;p++) {
-        switch(*p) {
+    for (;; p++) {
+        switch (*p) {
         case ' ':
         case '\t':
             continue;
@@ -17,8 +15,9 @@ int atoi(char * p)
         }
         break;
     }
-    while(*p >= '0' && *p <= '9')
+    while (*p >= '0' && *p <= '9') {
         n = n * 10 + *p++ - '0';
+    }
 
-    return(f? -n: n);
+    return (f) ? -n : n;
 }
