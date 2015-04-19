@@ -50,7 +50,6 @@ void * hashinit_flags(int elements, unsigned long * hashmask, int flags)
 {
     long hashsize;
     struct generic * hashtbl;
-    int i;
 
     KASSERT(elements > 0, "bad elements");
     /* Exactly one of HASH_WAITOK and HASH_NOWAIT must be set. */
@@ -62,13 +61,14 @@ void * hashinit_flags(int elements, unsigned long * hashmask, int flags)
     }
     hashsize >>= 1;
 
-    if (flags & HASH_NOWAIT)
-        hashtbl = kmalloc((unsigned long)hashsize * sizeof(*hashtbl));
-    else
-        hashtbl = kmalloc((unsigned long)hashsize * sizeof(*hashtbl));
+    /* TODO No support for NOWAIT atm
+     * if (flags & HASH_NOWAIT)
+     */
+
+    hashtbl = kmalloc((unsigned long)hashsize * sizeof(*hashtbl));
 
     if (hashtbl != NULL) {
-        for (i = 0; i < hashsize; i++) {
+        for (size_t i = 0; i < hashsize; i++) {
             LIST_INIT(&hashtbl[i]);
         }
 

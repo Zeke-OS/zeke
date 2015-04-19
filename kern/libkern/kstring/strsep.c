@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1990, 1993
  *  The Regents of the University of California.  All rights reserved.
  *
@@ -38,15 +38,16 @@
 char * strsep(char ** stringp, const char * delim)
 {
     char * s;
-    const char * spanp;
-    int c, sc;
     char * tok;
 
     if ((s = *stringp) == NULL)
         return (NULL);
+
     for (tok = s;;) {
-        c = (int)(*s++);
-        spanp = delim;
+        int c = (int)(*s++);
+        const char * spanp = delim;
+        int sc;
+
         do {
             if ((sc = *spanp++) == c) {
                 if (c == 0)
@@ -54,7 +55,7 @@ char * strsep(char ** stringp, const char * delim)
                 else
                     s[-1] = 0;
                 *stringp = s;
-                return (tok);
+                return tok;
             }
         } while (sc != 0);
     }

@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   uitoah32 function.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,13 +35,14 @@
 int uitoah32(char * str, uint32_t value)
 {
     int i = 2, n;
-    char c;
     uint32_t mask = 0xF0000000;
 
     str[0] = '0';
     str[1] = 'x';
 
     for (n = 28; n >= 0; n -= 4) {
+        char c;
+
         c = (char)((value & mask) >> n);
         c = (c < (char)10) ? '0' + c : 'a' + (c - (char)10);
         str[i++] = c;
