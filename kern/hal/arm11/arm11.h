@@ -175,9 +175,13 @@ void wr_thread_stack_ptr(void * ptr);
 /**
  * Halt due to kernel panic.
  */
-#define panic_halt() do {                   \
-    __asm__ volatile ("BKPT #01");          \
-} while (0)
+static inline void panic_halt(void) __attribute__((noreturn));
+static inline void panic_halt(void)
+{
+    __asm__ volatile ("BKPT #01");
+    while (1); /* Just in case */
+    __builtin_unreachable();
+}
 
 #define DEBUG_PRINT_CALLER() do {                           \
     intptr_t tmp;                                           \

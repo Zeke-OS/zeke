@@ -103,7 +103,7 @@ extern const char * const _kernel_panic_msg;
     KERROR(KERROR_CRIT, "%s", _kernel_panic_msg);   \
     KERROR(KERROR_CRIT, "%s", msg);                 \
     panic_halt();                                   \
-} while(1)
+} while(0)
 
 #ifdef configKASSERT
 #define KASSERT(invariant, msg) do {    \
