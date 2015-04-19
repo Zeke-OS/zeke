@@ -13,10 +13,13 @@ int isinf (double x)
 {
     long hx, lx;
 
-        lx = *(unsigned long long*) &x;
-        hx = (*(unsigned long long*) &x) >> 32;
+    /* cppcheck-suppress invalidPointerCast */
+    lx = *(unsigned long long *)&x;
+    /* cppcheck-suppress invalidPointerCast */
+    hx = (*(unsigned long long *)&x) >> 32;
 
     lx |= (hx & 0x7fffffff) ^ 0x7ff00000;
     lx |= -lx;
+
     return ~(lx >> 31) & (hx >> 30);
 }

@@ -1,9 +1,7 @@
 #include <math.h>
 
-double
-ldexp(double fr, int exp)
+double ldexp(double fr, int exp)
 {
-    double  huge    = 1.701411834604692293e38;
     int neg;
     int i;
 
@@ -14,31 +12,32 @@ ldexp(double fr, int exp)
     }
     fr = frexp(fr, &i);
     while (fr < 0.5) {
-        fr = 2*fr;
-        i = i-1;
+        fr = 2 * fr;
+        i = i - 1;
     }
-    exp = exp+i;
+    exp = exp + i;
     if (exp > 127) {
+        const double huge = 1.701411834604692293e38;
         if (neg)
-            return(-huge);
+            return -huge;
         else
-            return(huge);
+            return huge;
         }
     if (exp < -127)
-        return(0);
+        return 0;
     while (exp > 30) {
-        fr = fr*(1L<<30);
-        exp = exp-30;
+        fr = fr * (1L << 30);
+        exp = exp - 30;
     }
     while (exp < -30) {
-        fr = fr/(1L<<30);
-        exp = exp+30;
+        fr = fr / (1L << 30);
+        exp = exp + 30;
     }
     if (exp > 0)
-        fr = fr*(1L<<exp);
+        fr = fr * (1L << exp);
     if (exp < 0)
-        fr = fr/(1L<<-exp);
+        fr = fr / (1L << -exp);
     if (neg)
             fr = -fr;
-    return(fr);
+    return fr;
 }

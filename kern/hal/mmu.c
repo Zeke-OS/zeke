@@ -195,7 +195,6 @@ void mmu_pf_event(void)
 static void mmu_calc_pfcps(void)
 {
     static int count = PFC_FREQ;
-    unsigned long pfc;
 
     /* Run only on kernel tick */
     if (!flag_kernel_tick)
@@ -209,6 +208,8 @@ static void mmu_calc_pfcps(void)
 
     count--;
     if (count < 0) {
+        unsigned long pfc;
+
         count = PFC_FREQ;
         pfc = (_pf_raw_count * FIXED_1);
         CALC_PFC(mmu_pfps, pfc);

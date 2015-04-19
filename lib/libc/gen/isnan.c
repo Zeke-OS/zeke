@@ -17,8 +17,10 @@ int isnan(double x)
 {
     long hx, lx;
 
-    lx = *(unsigned long long *) &x;
-    hx = (*(unsigned long long *) &x) >> 32;
+    /* cppcheck-suppress invalidPointerCast */
+    lx = *(unsigned long long *)&x;
+    /* cppcheck-suppress invalidPointerCast */
+    hx = (*(unsigned long long *)&x) >> 32;
 
     hx &= 0x7fffffff;
     hx |= (unsigned long) (lx | (-lx)) >> 31;

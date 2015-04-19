@@ -11,15 +11,18 @@
 
 /* Get two 32 bit ints from a double.  */
 
-#define EXTRACT_WORDS(high,low,d) \
-        high = *(unsigned long long*) &d; \
-        low  = (*(unsigned long long*) &d) >> 32
+#define EXTRACT_WORDS(high, low, d) do {            \
+    high = *(unsigned long long *)&d;               \
+    low  = (*(unsigned long long *)&d) >> 32;       \
+} while (0)
 
 
 /* Set a double from two 32 bit ints.  */
 
-#define INSERT_WORDS(d,high,low) \
-        *(unsigned long long*) &(x) = (unsigned long long) (high) << 32 | (low)
+#define INSERT_WORDS(d, high, low) do {             \
+    *(unsigned long long *)&(x) =                   \
+        (unsigned long long)(high) << 32 | (low);   \
+} while (0)
 
 /*
  * modf(double x, double *iptr)
@@ -37,6 +40,7 @@ double modf (double x, double *iptr)
     long i0, i1, j0;
     unsigned long i;
 
+    /* cppcheck-suppress invalidPointerCast */
     EXTRACT_WORDS (i0, i1, x);
     j0 = ((i0 >> 20) & 0x7ff) - 0x3ff;  /* exponent of x */
     if (j0 < 20) {              /* integer part in high x */
