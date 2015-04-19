@@ -362,6 +362,7 @@ static int sys_munmap(void * user_args)
     regnr = vm_find_reg(curproc, (uintptr_t)args.addr, &bp);
     if (!bp) {
         retval = -EINVAL;
+        goto fail;
     }
     vm_replace_region(curproc, NULL, regnr, 0);
 
