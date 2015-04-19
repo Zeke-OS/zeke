@@ -543,17 +543,24 @@ static void sd_power_off()
     mmio_write(EMMC_BASE + EMMC_CONTROL0, control0);
 }
 
-static uint32_t sd_get_base_clock_hz()
+#if configRPI_EMMC_GENERIC
+static uint32_t sd_get_base_clock_hz(void)
 {
     uint32_t base_clock;
-#if configRPI_EMMC_BCM2708
-    uint32_t mb[8];
-#endif
 
-#if configRPI_EMMC_GENERIC
     capabilities_0 = mmio_read(EMMC_BASE + EMMC_CAPABILITIES_0);
     base_clock = ((capabilities_0 >> 8) & 0xff) * 1000000;
-#elif configRPI_EMMC_BCM2708
+
+    return base_clock;
+}
+#endif
+
+#if configRPI_EMMC_BCM2708
+static uint32_t sd_get_base_clock_hz(void)
+{
+    uint32_t base_clock;
+    uint32_t mb[8];
+
     mb[0] = sizeof(mb); /* size of this message */
     mb[1] = 0;
     /* next comes the first tag */
@@ -580,13 +587,6 @@ static uint32_t sd_get_base_clock_hz()
     }
 
     base_clock = mb[6];
-#else
-    KERROR(KERROR_ERR,
-           "EMMC: get_base_clock_hz() is not implemented for this "
-           "architecture.\n");
-
-    return 0;
-#endif
 
 #ifdef configRPI_EMMC_DEBUG
     KERROR(KERROR_DEBUG, "EMMC: base clock rate is %u Hz\n",
@@ -595,6 +595,7 @@ static uint32_t sd_get_base_clock_hz()
 
     return base_clock;
 }
+#endif
 
 #if configRPI_EMMC_BCM2708
 static int bcm_2708_power_cycle()
