@@ -205,14 +205,14 @@ static int fatfs_mount(const char * source, uint32_t mode,
 
         return -EIO;
     }
-
     fs_insert_superblock(&fatfs_fs, &fatfs_sb->sb);
 
-    goto out;
 fail:
-    fatfs_sb_arr[DEV_MINOR(sbp->vdev_id)] = NULL;
-    kfree(fatfs_sb);
-out:
+    if (retval) {
+        fatfs_sb_arr[DEV_MINOR(sbp->vdev_id)] = NULL;
+        kfree(fatfs_sb);
+    }
+
     *sb = &(fatfs_sb->sb);
     return retval;
 }
@@ -663,7 +663,7 @@ int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
 
     if (result)
         *result = &res->in_vnode;
-    fatfs_chmod(*result, mode);
+    fatfs_chmod(&res->in_vnode, mode);
 
 #ifdef configFATFS_DEBUG
     KERROR(KERROR_DEBUG, "mkdod() ok\n");
@@ -723,7 +723,7 @@ int fatfs_rmdir(vnode_t * dir,  const char * name)
 
     ferr = fatfs_unlink(dir, name);
 
-    return fresult2errno(err);
+    return fresult2errno(ferr);
 }
 
 int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
