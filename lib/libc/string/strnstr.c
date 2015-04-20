@@ -38,15 +38,14 @@
  * Find the first occurrence of find in s, where the search is limited to the
  * first slen characters of s.
  */
-char *
-strnstr(const char *s, const char *find, size_t slen)
+char * strnstr(const char *s, const char *find, size_t slen)
 {
-	char c, sc;
-	size_t len;
+	char c;
 
 	if ((c = *find++) != '\0') {
-		len = strlen(find);
+		size_t len = strlen(find);
 		do {
+            char sc;
 			do {
 				if (slen-- < 1 || (sc = *s++) == '\0')
 					return (NULL);
@@ -56,5 +55,6 @@ strnstr(const char *s, const char *find, size_t slen)
 		} while (strncmp(s, find, len) != 0);
 		s--;
 	}
+
 	return ((char *)s);
 }

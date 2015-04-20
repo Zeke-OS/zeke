@@ -50,14 +50,12 @@ void * memcpy(void * restrict destination, const void * source, size_t num)
 #else
     char * dst = destination;
     const char * src = source;
-    long * aligned_dst;
-    const long * aligned_src;
 
     /* If the size is small, or either SRC or DST is unaligned,
      * then punt into the byte copy loop.  This should be rare.  */
     if (!TOO_SMALL(num) && !UNALIGNED (src, dst)) {
-        aligned_dst = (long*)dst;
-        aligned_src = (long*)src;
+        long * aligned_dst = (long*)dst;
+        const long * aligned_src = (long*)src;
 
 #ifdef ARM_OPTIMIZATION
         while (num >= BIGBLOCKSIZE) {

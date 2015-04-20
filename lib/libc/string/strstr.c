@@ -36,15 +36,15 @@
 /*
  * Find the first occurrence of find in s.
  */
-char *
-strstr(const char *s, const char *find)
+char * strstr(const char *s, const char *find)
 {
-    char c, sc;
-    size_t len;
+    char c;
 
     if ((c = *find++) != '\0') {
-        len = strlen(find);
+        size_t len = strlen(find);
         do {
+            char sc;
+
             do {
                 if ((sc = *s++) == '\0')
                     return (NULL);
@@ -52,5 +52,6 @@ strstr(const char *s, const char *find)
         } while (strncmp(s, find, len) != 0);
         s--;
     }
+
     return ((char *)s);
 }

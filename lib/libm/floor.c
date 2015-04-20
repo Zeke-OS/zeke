@@ -4,26 +4,24 @@
  */
 #include <math.h>
 
-double
-floor(d)
-        double d;
+double floor(double d)
 {
-	double fract;
+    if (d < 0.0) {
+        double fract;
 
-	if (d<0.0) {
-		d = -d;
-		fract = modf(d, &d);
-		if (fract != 0.0)
-			d += 1;
-		d = -d;
-	} else
-		modf(d, &d);
-	return(d);
+        d = -d;
+        fract = modf(d, &d);
+        if (fract != 0.0)
+            d += 1;
+        d = -d;
+    } else {
+        modf(d, &d);
+    }
+
+    return d;
 }
 
-double
-ceil(d)
-        double d;
+double ceil(double d)
 {
-	return(-floor(-d));
+    return -floor(-d);
 }
