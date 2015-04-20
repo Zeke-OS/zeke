@@ -32,81 +32,81 @@
 
 double jn(int n, double x)
 {
-	int i;
-	double a, b;
-	double xsq, t;
+    int i;
+    double a, b;
+    double xsq, t;
 
-	if (n < 0) {
-		n = -n;
-		x = -x;
-	}
-	if (n == 0)
+    if (n < 0) {
+        n = -n;
+        x = -x;
+    }
+    if (n == 0)
         return j0(x);
-	if (n == 1)
+    if (n == 1)
         return j1(x);
-	if (x == 0.)
+    if (x == 0.)
         return(0.);
-	if (n > x)
+    if (n > x)
         goto recurs;
 
-	a = j0(x);
-	b = j1(x);
-	for (i = 1; i < n; i++) {
-		double temp = b;
+    a = j0(x);
+    b = j1(x);
+    for (i = 1; i < n; i++) {
+        double temp = b;
 
-		b = (2. * i / x) * b - a;
-		a = temp;
-	}
+        b = (2. * i / x) * b - a;
+        a = temp;
+    }
 
-	return b;
+    return b;
 
 recurs:
-	xsq = x * x;
-	for (t = 0, i = n + 16; i > n; i--) {
-		t = xsq / (2. * i - t);
-	}
-	t = x / (2. * n - t);
+    xsq = x * x;
+    for (t = 0, i = n + 16; i > n; i--) {
+        t = xsq / (2. * i - t);
+    }
+    t = x / (2. * n - t);
 
-	a = t;
-	b = 1;
-	for (i = n - 1; i > 0; i--) {
+    a = t;
+    b = 1;
+    for (i = n - 1; i > 0; i--) {
         double temp;
 
-		temp = b;
-		b = (2. * i / x) * b - a;
-		a = temp;
-	}
-	return (t * j0(x) / b);
+        temp = b;
+        b = (2. * i / x) * b - a;
+        a = temp;
+    }
+    return (t * j0(x) / b);
 }
 
 double yn(int n, double x)
 {
-	int i;
-	int sign;
-	double a, b, temp;
+    int i;
+    int sign;
+    double a, b;
 
-	if (x <= 0) {
-		errno = EDOM;
-		return -HUGE;
-	}
-	sign = 1;
-	if (n < 0) {
-		n = -n;
-		if(n % 2 == 1)
+    if (x <= 0) {
+        errno = EDOM;
+        return -HUGE;
+    }
+    sign = 1;
+    if (n < 0) {
+        n = -n;
+        if(n % 2 == 1)
             sign = -1;
-	}
-	if (n == 0)
+    }
+    if (n == 0)
         return y0(x);
-	if (n == 1)
+    if (n == 1)
         return (sign * y1(x));
 
-	a = y0(x);
-	b = y1(x);
+    a = y0(x);
+    b = y1(x);
 
-	for (i = 1; i < n; i++) {
-		temp = b;
-		b = (2. * i / x) * b - a;
-		a = temp;
-	}
-	return (sign * b);
+    for (i = 1; i < n; i++) {
+        double temp = b;
+        b = (2. * i / x) * b - a;
+        a = temp;
+    }
+    return (sign * b);
 }

@@ -21,7 +21,6 @@ extern char * _findenv(const char * name, size_t * offset);
  */
 int setenv(const char * name, const char * value, int rewrite)
 {
-    static int alloced;     /* if allocated space before */
     char * c;
     const char * e;
     size_t l_value, offset;
@@ -38,6 +37,7 @@ int setenv(const char * name, const char * value, int rewrite)
             return 0;
         }
     } else {                  /* create new slot */
+        static int alloced;     /* if allocated space before */
         size_t cnt;
         char ** p;
 
