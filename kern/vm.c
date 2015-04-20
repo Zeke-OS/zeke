@@ -211,7 +211,6 @@ struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot,
     const size_t bits = NBITS(MMU_PGSIZE_SECTION);
     const uintptr_t addr_min = configEXEC_BASE_LIMIT;
     uintptr_t addr_max = 0xEFFFFFFF; /* TODO ??? */
-    int overlap;
     uintptr_t vaddr;
     struct buf * bp;
     int err;
@@ -222,6 +221,7 @@ struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot,
     mtx_lock(&proc->mm.regions_lock);
     nr_regions = proc->mm.nr_regions;
     do {
+        int overlap;
         uintptr_t newreg_end;
 
         vaddr = addr_min +
