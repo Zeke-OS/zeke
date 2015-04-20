@@ -26,78 +26,87 @@
  * yn(n,x) is similar in all respects, except
  * that forward recursion is used for all values of n>1.
  */
+
 #include <math.h>
 #include <errno.h>
 
-int	errno;
-
-double
-jn(n,x) int n; double x;{
+double jn(int n, double x)
+{
 	int i;
-	double a, b, temp;
+	double a, b;
 	double xsq, t;
-	double j0(), j1();
 
-	if(n<0){
+	if (n < 0) {
 		n = -n;
 		x = -x;
 	}
-	if(n==0) return(j0(x));
-	if(n==1) return(j1(x));
-	if(x == 0.) return(0.);
-	if(n>x) goto recurs;
+	if (n == 0)
+        return j0(x);
+	if (n == 1)
+        return j1(x);
+	if (x == 0.)
+        return(0.);
+	if (n > x)
+        goto recurs;
 
 	a = j0(x);
 	b = j1(x);
-	for(i=1;i<n;i++){
-		temp = b;
-		b = (2.*i/x)*b - a;
+	for (i = 1; i < n; i++) {
+		double temp = b;
+
+		b = (2. * i / x) * b - a;
 		a = temp;
 	}
-	return(b);
+
+	return b;
 
 recurs:
-	xsq = x*x;
-	for(t=0,i=n+16;i>n;i--){
-		t = xsq/(2.*i - t);
+	xsq = x * x;
+	for (t = 0, i = n + 16; i > n; i--) {
+		t = xsq / (2. * i - t);
 	}
-	t = x/(2.*n-t);
+	t = x / (2. * n - t);
 
 	a = t;
 	b = 1;
-	for(i=n-1;i>0;i--){
+	for (i = n - 1; i > 0; i--) {
+        double temp;
+
 		temp = b;
-		b = (2.*i/x)*b - a;
+		b = (2. * i / x) * b - a;
 		a = temp;
 	}
-	return(t*j0(x)/b);
+	return (t * j0(x) / b);
 }
 
-double
-yn(n,x) int n; double x;{
+double yn(int n, double x)
+{
 	int i;
 	int sign;
 	double a, b, temp;
-	double y0(), y1();
 
 	if (x <= 0) {
 		errno = EDOM;
-		return(-HUGE);
+		return -HUGE;
 	}
 	sign = 1;
-	if(n<0){
+	if (n < 0) {
 		n = -n;
-		if(n%2 == 1) sign = -1;
+		if(n % 2 == 1)
+            sign = -1;
 	}
-	if(n==0) return(y0(x));
-	if(n==1) return(sign*y1(x));
+	if (n == 0)
+        return y0(x);
+	if (n == 1)
+        return (sign * y1(x));
 
 	a = y0(x);
 	b = y1(x);
-	for(i=1;i<n;i++){
+
+	for (i = 1; i < n; i++) {
 		temp = b;
-		b = (2.*i/x)*b - a;
+		b = (2. * i / x) * b - a;
 		a = temp;
 	}
-	return(sign*b);
+	return (sign * b);
 }
