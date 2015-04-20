@@ -369,7 +369,7 @@ int realloc_mm_regions(struct vm_mm_struct * mm, int new_count)
 static int vm_insert_region_ref(struct vm_mm_struct * mm, struct buf * region)
 {
     size_t nr_regions = mm->nr_regions;
-    int slot = -1, err;
+    int slot = -1;
 
     mtx_lock(&mm->regions_lock);
     for (size_t i = 0; i < nr_regions; i++) {
@@ -381,6 +381,8 @@ static int vm_insert_region_ref(struct vm_mm_struct * mm, struct buf * region)
     mtx_unlock(&mm->regions_lock);
 
     if (slot == -1) {
+        int err;
+
         slot = nr_regions;
         err = realloc_mm_regions(mm, nr_regions + 1);
         if (err)

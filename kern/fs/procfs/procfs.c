@@ -292,7 +292,6 @@ void procfs_rmentry(pid_t pid)
     vnode_t * pdir;
     char name[PROCFS_NAMELEN_MAX];
     struct procfs_file ** file;
-    int err;
 
     if (!vn_procfs)
         return; /* Not yet initialized. */
@@ -305,8 +304,7 @@ void procfs_rmentry(pid_t pid)
 
     vref(vn_procfs);
 
-    err = vn_procfs->vnode_ops->lookup(vn_procfs, name, &pdir);
-    if (err) {
+    if (vn_procfs->vnode_ops->lookup(vn_procfs, name, &pdir)) {
 #ifdef configPROCFS_DEBUG
         KERROR(KERROR_DEBUG, "pid dir doesn't exist\n");
 #endif
@@ -322,10 +320,10 @@ void procfs_rmentry(pid_t pid)
 
 
     vrele(pdir);
-    err = vn_procfs->vnode_ops->rmdir(vn_procfs, name);
 #ifdef configPROCFS_DEBUG
-    if (err)
+    if (vn_procfs->vnode_ops->rmdir(vn_procfs, name)) {
         KERROR(KERROR_DEBUG, "Can't rmdir(%s)\n", name);
+    }
 #endif
 
     vrele(vn_procfs);

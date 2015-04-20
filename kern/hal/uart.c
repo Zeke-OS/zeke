@@ -148,7 +148,6 @@ static ssize_t uart_read(struct tty * tty, off_t blkno, uint8_t * buf,
 {
     struct uart_port * port = (struct uart_port *)tty->opt_data;
     size_t n = 0;
-    int ret;
 
     if (!port)
         return -ENODEV;
@@ -161,7 +160,7 @@ static ssize_t uart_read(struct tty * tty, off_t blkno, uint8_t * buf,
     }
 
     while (n < bcount) {
-        ret = port->ugetc(port);
+        int ret = port->ugetc(port);
         if (ret == -1)
             break;
         buf[n++] = (char)ret;

@@ -277,7 +277,6 @@ int ptmapper_init(void)
 int ptmapper_alloc(mmu_pagetable_t * pt)
 {
     size_t block;
-    size_t addr;
     size_t size = 0; /* Size in bitmap */
     size_t bsize = 0; /* Size in bytes */
     size_t balign;
@@ -304,7 +303,7 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
 
     /* Try to allocate a new page table */
     if (!PTM_ALLOC(&block, size, balign)) {
-        addr = PTM_BLOCK2ADDR(block);
+        size_t addr = PTM_BLOCK2ADDR(block);
 #if configPTMAPPER_DEBUG
         KERROR(KERROR_DEBUG,
                 "Alloc pt %u bytes @ %x\n", bsize, addr);

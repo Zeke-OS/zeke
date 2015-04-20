@@ -359,11 +359,10 @@ void * kmalloc(size_t size)
 void * kcalloc(size_t nelem, size_t elsize)
 {
     size_t * p;
-    size_t s4;
 
     p = kmalloc(nelem * elsize);
     if (p) {
-        s4 = memalign(nelem * elsize);
+        size_t s4 = memalign(nelem * elsize);
         memset(p, 0, s4);
     }
 

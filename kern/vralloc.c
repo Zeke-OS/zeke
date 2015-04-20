@@ -56,10 +56,10 @@
  */
 struct vregion {
     llist_nodedsc_t node;
-    intptr_t kaddr; /*!< Kernel address of the block allocated from dynmem. */
-    size_t count;   /*!< Reserved pages count. */
-    size_t size;    /*!< Size of allocation bitmap in bytes. */
-    bitmap_t map[0]; /*!< Bitmap of reserved pages. */
+    intptr_t kaddr;     /*!< Kernel address of the allocated dynmem block. */
+    int count;          /*!< Reserved pages count. */
+    size_t size;        /*!< Size of allocation bitmap in bytes. */
+    bitmap_t map[0];    /*!< Bitmap of reserved pages. */
 };
 
 #define VREG_SIZE(count) \

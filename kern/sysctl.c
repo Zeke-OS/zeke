@@ -179,31 +179,26 @@ void sysctl_register_oid(struct sysctl_oid * oidp)
 void sysctl_unregister_oid(struct sysctl_oid * oidp)
 {
     struct sysctl_oid * p;
-    int error;
 
     //SYSCTL_ASSERT_XLOCKED();
-    error = ENOENT;
     if (oidp->oid_number == OID_AUTO) {
-        error = EINVAL;
-    } else {
-        SLIST_FOREACH(p, oidp->oid_parent, oid_link) {
-            if (p == oidp) {
-                SLIST_REMOVE(oidp->oid_parent, oidp,
-                    sysctl_oid, oid_link);
-                error = 0;
-                break;
-            }
-        }
+        /* TODO */
+        /*
+         * This can happen when a module fails to register and is
+         * being unloaded afterwards.  It should not be a panic()
+         * for normal use.
+         */
+        /* printf("%s: failed to unregister sysctl\n", __func__); */
+        return;
     }
 
-    /*
-     * This can happen when a module fails to register and is
-     * being unloaded afterwards.  It should not be a panic()
-     * for normal use.
-     */
-    /* TODO */
-    //if (error)
-    //    printf("%s: failed to unregister sysctl\n", __func__);
+    SLIST_FOREACH(p, oidp->oid_parent, oid_link) {
+        if (p == oidp) {
+            SLIST_REMOVE(oidp->oid_parent, oidp,
+                         sysctl_oid, oid_link);
+            break;
+        }
+    }
 }
 
 int sysctl_find_oid(int * name, unsigned int namelen, struct sysctl_oid ** noid,
@@ -421,12 +416,11 @@ static int name2oid(char * name, int * oid, int * len,
 {
     struct sysctl_oid * oidp;
     struct sysctl_oid_list * lsp = &sysctl__children;
-    char * p;
 
     //SYSCTL_ASSERT_XLOCKED();
 
     for (*len = 0; *len < CTL_MAXNAME;) {
-        p = strsep(&name, ".");
+        char * p = strsep(&name, ".");
 
         oidp = SLIST_FIRST(lsp);
         for (;; oidp = SLIST_NEXT(oidp, oid_link)) {
@@ -808,9 +802,6 @@ int kernel_sysctl(pid_t pid, int * name, unsigned int namelen,
     error = sysctl_root(0, name, namelen, &req);
     SYSCTL_UNLOCK();
 
-    //if (req.lock == REQ_WIRED && req.validlen > 0)
-    //        vsunlock(req.oldptr, req.validlen);
-
     if (error && error != ENOMEM)
         return error;
 
@@ -852,7 +843,6 @@ int kernel_sysctlbyname(pid_t pid, char * name, void * old,
 static int sysctl_old_user(struct sysctl_req * req, const void * p, size_t l)
 {
     size_t i, len, origidx;
-    int error;
 
     origidx = req->oldidx;
     req->oldidx += l;
@@ -864,12 +854,11 @@ static int sysctl_old_user(struct sysctl_req * req, const void * p, size_t l)
     if (len <= origidx) {
         i = 0;
     } else {
+        int error;
+
         if (i > len - origidx)
             i = len - origidx;
-        if (req->lock == REQ_WIRED) {
-            error = -copyout(p, (char *)req->oldptr + origidx, i);
-        } else
-            error = -copyout(p, (char *)req->oldptr + origidx, i);
+        error = -copyout(p, (char *)req->oldptr + origidx, i);
         if (error != 0)
             return error;
     }
@@ -892,39 +881,6 @@ static int sysctl_new_user(struct sysctl_req * req, void * p, size_t l)
 
     return error;
 }
-
-#if 0
-/**
- * Wire the user space destination buffer.  If set to a value greater than
- * zero, the len parameter limits the maximum amount of wired memory.
- */
-int sysctl_wire_old_buffer(struct sysctl_req * req, size_t len)
-{
-    int ret;
-    size_t wiredlen;
-
-    wiredlen = (len > 0 && len < req->oldlen) ? len : req->oldlen;
-    ret = 0;
-    if (req->lock != REQ_WIRED && req->oldptr &&
-        req->oldfunc == sysctl_old_user) {
-        /* TODO Check if needed */
-#if 0
-        if (wiredlen != 0) {
-            ret = vslock(req->oldptr, wiredlen);
-            if (ret != 0) {
-                if (ret != ENOMEM)
-                    return ret;
-                    wiredlen = 0;
-                }
-        }
-#endif
-        req->lock = REQ_WIRED;
-        req->validlen = wiredlen;
-    }
-
-    return 0;
-}
-#endif
 
 /*
  * Traverse our tree, and find the right node, execute whatever it points
@@ -1079,8 +1035,6 @@ int userland_sysctl(pid_t pid, int * name, unsigned int namelen,
     }
 
     /* TODO ?? */
-    //if (req.lock == REQ_WIRED && req.validlen > 0)
-    //    vsunlock(req.oldptr, req.validlen);
     //if (memlocked)
     //    sx_xunlock(&sysctlmemlock);
 

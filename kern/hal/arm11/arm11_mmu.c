@@ -396,12 +396,12 @@ static void attach_coarse_pagetable(const mmu_pagetable_t * restrict pt)
     uint32_t * ttb;
     /* TODO Transitional */
     const size_t nr_tables = (pt->nr_tables == 0) ? 1 : pt->nr_tables;
-    size_t i, j;
 
     ttb = (uint32_t *)pt->master_pt_addr;
 
-    for (j = 0; j < nr_tables; j++) {
+    for (size_t j = 0; j < nr_tables; j++) {
         uint32_t pte;
+        size_t i;
 
         pte = ((pt->pt_addr + j * MMU_PTSZ_COARSE) & 0xfffffc00);
         pte |= pt->pt_dom << 5;
@@ -567,7 +567,6 @@ void mmu_data_abort_handler(void)
 #endif
     istate_t s_entry; /*!< Int state in handler entry. */
     struct thread_info * const thread = (struct thread_info *)current_thread;
-    int err;
 
     __asm__ volatile (
         "MRC p15, 0, %[reg], c6, c0, 0"
@@ -595,6 +594,8 @@ void mmu_data_abort_handler(void)
     }
 
     if (data_aborts[fsr & FSR_MASK]) {
+        int err;
+
         if ((err = data_aborts[fsr & FSR_MASK](fsr, far, spsr, lr, thread))) {
             /* TODO Handle this nicer... signal? */
             KERROR(KERROR_CRIT, "DAB handling failed: %i\n", err);

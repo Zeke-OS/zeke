@@ -228,7 +228,6 @@ int sysctltstmib(int * left, int * right, int len);
 
 /* definitions for sysctl_req 'lock' member */
 #define REQ_UNWIRED 1
-#define REQ_WIRED   2
 
 /**
  * Sysctl request.
