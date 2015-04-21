@@ -38,11 +38,7 @@ int getpty(int pty[2])
 void send_commands(int fildes, char * file)
 {
     FILE * fp;
-    fd_set rfds;
-    struct timeval timeout;
-    char input;
     char * line = NULL;
-    size_t n, len = 0;
 
     fp = fopen(file, "r");
     if (!fp) {
@@ -51,14 +47,14 @@ void send_commands(int fildes, char * file)
     }
 
     while (1) {
+        char input;
+        size_t n, len;
+        fd_set rfds;
+        struct timeval timeout = { .tv_sec = 5, .tv_usec = 0, };
         int retval;
 
         FD_ZERO(&rfds);
         FD_SET(fildes, &rfds);
-        timeout = (struct timeval){
-            .tv_sec = 5,
-            .tv_usec = 0,
-        };
 
         retval = select(fildes + 1, &rfds, NULL, NULL, &timeout);
         if (retval == -1 || retval == 0) {

@@ -51,11 +51,12 @@ const char *__progname = "";
 static void
 finalizer(void)
 {
-    void (*fn)(void);
-    size_t array_size, n;
+    size_t array_size;
 
     array_size = __fini_array_end - __fini_array_start;
-    for (n = array_size; n > 0; n--) {
+    for (size_t n = array_size; n > 0; n--) {
+        void (*fn)(void);
+
         fn = __fini_array_start[n - 1];
         if ((uintptr_t)fn != 0 && (uintptr_t)fn != 1)
             (fn)();
@@ -65,8 +66,7 @@ finalizer(void)
 static inline void
 handle_static_init(int argc, char ** argv, char ** env)
 {
-    void (*fn)(int, char **, char **);
-    size_t array_size, n;
+    size_t array_size;
 
 #if 0
     if (&_DYNAMIC != NULL)
@@ -76,14 +76,18 @@ handle_static_init(int argc, char ** argv, char ** env)
     atexit(finalizer);
 
     array_size = __preinit_array_end - __preinit_array_start;
-    for (n = 0; n < array_size; n++) {
+    for (size_t n = 0; n < array_size; n++) {
+        void (*fn)(int, char **, char **);
+
         fn = __preinit_array_start[n];
         if ((uintptr_t)fn != 0 && (uintptr_t)fn != 1)
             fn(argc, argv, env);
     }
 
     array_size = __init_array_end - __init_array_start;
-    for (n = 0; n < array_size; n++) {
+    for (size_t n = 0; n < array_size; n++) {
+        void (*fn)(int, char **, char **);
+
         fn = __init_array_start[n];
         if ((uintptr_t)fn != 0 && (uintptr_t)fn != 1)
             fn(argc, argv, env);
@@ -93,12 +97,12 @@ handle_static_init(int argc, char ** argv, char ** env)
 static inline void
 handle_argv(int argc, char * argv[], char ** env)
 {
-    const char * s;
-
     if (environ == NULL)
         environ = env;
 
     if (argc > 0 && argv[0] != NULL) {
+        const char * s;
+
         __progname = argv[0];
 
         /* Discard path from progname */

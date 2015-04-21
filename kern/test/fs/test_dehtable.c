@@ -13,12 +13,12 @@
 
 dh_table_t table;
 
-static void setup()
+static void setup(void)
 {
     memset(table, 0, sizeof(dh_table_t));
 }
 
-static void teardown()
+static void teardown(void)
 {
 }
 
@@ -39,7 +39,8 @@ static char * test_link(void)
     }
     ku_assert("Created chain found.", dea != 0);
 
-    ku_assert_equal("Entry has a correct vnode number.", (int)dea[0].dh_ino, (int)vnode.vn_num);
+    ku_assert_equal("Entry has a correct vnode number.",
+                    (int)dea[0].dh_ino, (int)vnode.vn_num);
 
 #undef str
     return 0;
@@ -71,9 +72,11 @@ static char * test_link_chain(void)
     }
     ku_assert("Created chain found.", dea != 0);
 
-    ku_assert_equal("First entry has a correct vnode number.", (int)get_dirent(dea, 0)->dh_ino, (int)vnode1.vn_num);
+    ku_assert_equal("First entry has a correct vnode number.",
+                    (int)get_dirent(dea, 0)->dh_ino, (int)vnode1.vn_num);
     offset = get_dirent(dea, 0)->dh_size;
-    ku_assert_equal("Second entry has a correct vnode number.", (int)get_dirent(dea, offset)->dh_ino, (int)vnode2.vn_num);
+    ku_assert_equal("Second entry has a correct vnode number.",
+                    (int)get_dirent(dea, offset)->dh_ino, (int)vnode2.vn_num);
 
 #undef str1
 #undef str2
@@ -141,19 +144,18 @@ static char * test_iterator(void)
     /* Actual test */
     {
         dh_dir_iter_t it; /* dirent hash table iterator. */
-        size_t i;
-        dh_dirent_t * entry;
         ino_t fnd_inodes[4] = {0, 0, 0, 0};
 
         /* Get an iterator */
         it = dh_get_iter(&table);
 
         /* Loop the iterator */
-        for (i = 0; i < DEHTABLE_SIZE; i++) {
-            entry = dh_iter_next(&it);
-            if (entry == 0)
+        for (size_t i = 0; i < DEHTABLE_SIZE; i++) {
+            dh_dirent_t * entry = dh_iter_next(&it);
+
+            if (!entry)
                 break;
-            ku_assert("inode number is not larger than largest given inode number.",
+            ku_assert("inode number is not larger than the largest given inode number.",
                     entry->dh_ino < 4);
             fnd_inodes[entry->dh_ino]++;
         }

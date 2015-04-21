@@ -11,7 +11,6 @@
 int cosinus[256];
 unsigned char p1, p2, p3, p4, t1, t2, t3, t4;
 int x, y;
-int pal[768];
 char * fb;
 
 void plasma(void)
@@ -27,13 +26,9 @@ void plasma(void)
             int c, r, g, b;
 
             c = cosinus[t1] + cosinus[t2] + cosinus[t3] + cosinus[t4];
-            r = pal[(((c) >> 16) & 0xff) * 3];
-            g = pal[(((c) >> 8) & 0xff) * 3 + 1];
-            b = pal[((c) & 0xff) * 3 + 2];
-
-            r = pal[((c) >> 16) & 0xff];
-            g = pal[(((c) >> 8) & 0xff) + 1];
-            b = pal[((c) & 0xff) + 2];
+            r = ((c) >> 16) & 0xff;
+            g = (((c) >> 8) & 0xff) + 1;
+            b = ((c) & 0xff) + 2;
 
             *(char *)(d + 0) = r;
             *(char *)(d + 1) = g;
@@ -49,22 +44,6 @@ void plasma(void)
     p2 -= 2;
     p3 += 3;
     p4 -= 4;
-}
-
-void prep_pal(void)
-{
-    for (x = 0, y = 0; x < 63 * 3; x += 3, y++) {
-        pal[x] = y;
-    }
-    for (x = 63 * 3, y = 63; x < 127 * 3; x += 3, y--) {
-        pal[x] = y;
-    }
-    for (x = 127 * 3, y = 0; x < 191 * 3; x += 3, y++) {
-        pal[x + 1] = y;
-    }
-    for (x = 191 * 3, y = 191; x < 255 * 3; x += 3, y--) {
-        pal[x + 1] = y;
-    }
 }
 
 void pre_calc(void)
@@ -88,7 +67,6 @@ int main(void)
     fb = mmap(NULL, 0x100000, PROT_READ | PROT_WRITE, MAP_PRIVATE,
               fileno(fp), 0);
 
-    prep_pal();
     pre_calc();
 
     for (i = 0; i < 1000; i++) {

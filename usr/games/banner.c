@@ -4,12 +4,9 @@
  *
  * Written by Vadim Antonov, MSU 28.09.1985
  * Ported to RetroBSD by Serge Vakulenko, 2012
+ * Ported to Zeke by Olli Vanhoja, 2015
  */
-#ifdef CROSS
-#   include </usr/include/stdio.h>
-#else
-#   include <stdio.h>
-#endif
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -24,7 +21,7 @@ struct font_t {
 };
 
 int width = DWIDTH; /* -w option: scrunch letters to 80 columns */
-char *punch = DPUNCH;   /* -p option: punch symbol, default # */
+char * punch = DPUNCH;   /* -p option: punch symbol, default # */
 int trace;
 char line [DWIDTH], *linep;
 char message [MAXMSG];
@@ -798,13 +795,14 @@ const struct font_t font[] = {
  */
 int setchar(char * linep, const char glyph[7])
 {
-    register int mask, w, c, morebits;
+    int mask, w, morebits;
 
     w = 0;
     morebits = glyph[0] | glyph[1] | glyph[2] | glyph[3] |
                glyph[4] | glyph[5] | glyph[6];
     for (mask = 0x80; morebits && mask != 0; mask >>= 1) {
-        c = 0;
+        int c = 0;
+
         if (glyph[0] & mask)
             c |= 0x01;
         if (glyph[1] & mask)
@@ -829,10 +827,8 @@ int setchar(char * linep, const char glyph[7])
 
 int main(int argc, char ** argv)
 {
-    int i, j;
-
     if (argc > 1 && argv[1][0] == '-') {
-        switch(argv[1][1]) {
+        switch (argv[1][1]) {
         case 'w':
             width = atoi(&argv[1][2]);
             if (width == 0)
@@ -857,7 +853,7 @@ int main(int argc, char ** argv)
     /* Have now read in the data. Next get the message to be printed. */
     if (argc > 1) {
         strcpy(message, argv[1]);
-        for (i=2; i<argc; i++) {
+        for (int i = 2; i < argc; i++) {
             strcat(message, " ");
             strcat(message, argv[i]);
         }
@@ -873,15 +869,16 @@ int main(int argc, char ** argv)
     /*
      * Clear image.
      */
-    for (j=0; j<DWIDTH; j++)
+    for (int j = 0; j < DWIDTH; j++) {
                 line[j] = 0;
+    }
 
     /*
      * Now have message. Draw it one character at a time.
      */
     linep = line;
-    for (i=0; i<nchars; i++) {
-        const struct font_t *f;
+    for (int i = 0; i < nchars; i++) {
+        const struct font_t * f;
         char c = message[i];
 
         if (linep >= line + width)
@@ -892,9 +889,9 @@ int main(int argc, char ** argv)
             linep += SPACEW;
             continue;
         }
-        for (f=font; f->code!=0; f++) {
+        for (f = font; f->code != 0; f++) {
             if (f->code == c) {
-                linep += setchar (linep, f->glyph) + 1;
+                linep += setchar(linep, f->glyph) + 1;
                 break;
             }
         }
@@ -903,17 +900,19 @@ int main(int argc, char ** argv)
     /*
      * Print the resulting image.
      */
-    for (i = 1; i < 0200 ; i <<= 1) {
-        char *limit = &line[width-1];
-        while (! (*limit & i))
+    for (int i = 1; i < 0200; i <<= 1) {
+        char *limit = &line[width - 1];
+
+        while (!(*limit & i)) {
             limit--;
+        }
         for (linep = line; linep <= limit; linep++) {
             if (*linep & i)
-                fputs (punch, stdout);
+                fputs(punch, stdout);
             else
-                putchar (' ');
+                putchar(' ');
         }
-        putchar ('\n');
+        putchar('\n');
     }
 
     exit(0);
