@@ -6,17 +6,17 @@
 
 DIR * dp;
 
-static void setup()
+static void setup(void)
 {
     dp = NULL;
 }
 
-static void teardown()
+static void teardown(void)
 {
     closedir(dp);
 }
 
-static char * test_opendir()
+static char * test_opendir(void)
 {
     DIR * dp;
 
@@ -26,7 +26,7 @@ static char * test_opendir()
     return NULL;
 }
 
-static char * test_readdir()
+static char * test_readdir(void)
 {
     DIR * dp;
     struct dirent * dep;
@@ -44,13 +44,13 @@ static char * test_readdir()
     return NULL;
 }
 
-static void all_tests()
+static void all_tests(void)
 {
     pu_def_test(test_opendir, PU_RUN);
     pu_def_test(test_readdir, PU_RUN);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
     return pu_run_tests(&all_tests);
 }
