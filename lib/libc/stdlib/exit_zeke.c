@@ -40,4 +40,5 @@ void _exit(int status)
 
     errno = status;
     syscall(SYSCALL_PROC_EXIT, 0);
+    __builtin_unreachable();
 }
