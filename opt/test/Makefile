@@ -1,30 +1,18 @@
 include $(ROOT_DIR)/genconfig/buildconf.mk
 
 DIRS =#
-ifeq ($(configTESTS_FB),y)
-DIRS += fb
-endif
-ifeq ($(configTESTS_LIBC),y)
-DIRS += libc
-endif
-ifeq ($(configTESTS_MMAN),y)
-DIRS += mman
-endif
-ifeq ($(configTESTS_TTY),y)
-DIRS += tty
-endif
-ifeq ($(configTESTS_PTHREADS),y)
-DIRS += pthreads
-endif
-ifeq ($(configTESTS_UNISTD),y)
-DIRS += unistd
-endif
+DIRS-$(configTESTS_FB) += fb
+DIRS-$(configTESTS_LIBC) += libc
+DIRS-$(configTESTS_MMAN) += mman
+DIRS-$(configTESTS_TTY) += tty
+DIRS-$(configTESTS_PTHREADS) += pthreads
+DIRS-$(configTESTS_UNISTD) += unistd
 
-CLEANDIRS := $(patsubst %,%.clean,$(subst :, ,$(DIRS)))
+CLEANDIRS := $(patsubst %,%.clean,$(subst :, ,$(DIRS-y)))
 
-all: $(DIRS)
+all: $(DIRS-y)
 
-$(DIRS):
+$(DIRS-y):
 	$(MAKE) -C $@
 
 $(CLEANDIRS):
@@ -40,4 +28,4 @@ clean: $(CLEANDIRS)
 	$(RM) pthreads/manifest
 	$(RM) unistd/manifest
 
-.PHONY: $(DIRS) $(CLEANDIRS) clean
+.PHONY: $(DIRS-y) $(CLEANDIRS) clean
