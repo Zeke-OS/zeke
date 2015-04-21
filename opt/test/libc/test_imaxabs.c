@@ -3,11 +3,19 @@
 #include <limits.h>
 #include "punit.h"
 
+static void setup(void)
+{
+}
+
+static void teardown(void)
+{
+}
+
 static char * test_imaxabs(void)
 {
-    punit_assert("", imaxabs((intmax_t)0) == 0);
-    punit_assert("", imaxabs(INTMAX_MAX) == INTMAX_MAX);
-    punit_assert("", imaxabs(INTMAX_MIN + 1) == -(INTMAX_MIN + 1));
+    pu_assert("", imaxabs((intmax_t)0) == 0);
+    pu_assert("", imaxabs(INTMAX_MAX) == INTMAX_MAX);
+    pu_assert("", imaxabs(INTMAX_MIN + 1) == -(INTMAX_MIN + 1));
 
     return NULL;
 }
