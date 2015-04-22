@@ -1,3 +1,0 @@
-[submodule "opt/test/punit"]
-	path = opt/test/punit
-	url = git@github.com:OlliV/punit.git

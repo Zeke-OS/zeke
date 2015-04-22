@@ -2,6 +2,23 @@ comment "Optional applications"
 
 menu "Testing"
 
+config configPU_UU
+    bool "PUnit Unix Unit"
+    default n
+
+config configPU_LMATH
+    bool "Link math"
+    default n
+
+config configPU_REPORT_ORIENTED
+    bool "Report oriented"
+    default n
+    ---help---
+    Report oriented mode prints more additional information like test module and
+    test case descriptions.
+
+comment "Test Suites"
+
 config configTESTS_FB
     bool "Framebuffer tests"
     default n

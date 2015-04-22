@@ -1,0 +1,105 @@
+# PUnit #######################################################################
+# PUnit, a portable unit testing framework for C.
+# Inspired by: http://www.jera.com/techinfo/jtns/jtn002.html
+#
+# Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+# Copyright (c) 2012 Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this
+#    list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+
+include $(ROOT_DIR)/genconfig/buildconf.mk
+include $(ROOT_DIR)/genconfig/dist.mk
+
+# Dirs ########################################################################
+IDIR += $(ROOT_DIR)/include
+IDIR += ../punit
+IDIR := $(patsubst %,-I%,$(subst :, ,$(IDIR)))
+IDIR_TEST := $(patsubst %,-I%,$(subst :, ,$(IDIR_TEST)))
+###############################################################################
+
+# PUnit #######################################################################
+# Sources
+PU-SRC-y += ../punit/punit.c
+PU-SRC-$(configPU_UU) += ../punit/unixunit.c
+
+# Objs
+PU-OBJ = $(PU-SRC-y:.c=.o)
+################################################################################
+
+# Tests ########################################################################
+include $(wildcard *.mk)
+################################################################################
+
+CCFLAGS-y = -Wall -pedantic -DPU_TEST_BUILD
+CCFLAGS-$(PU_LMATH) += -lm -DPU_LMATH
+CCFLAGS-$(configPU_REPORT_ORIENTED) += -DPU_REPORT_ORIENTED
+CCFLAGS += $(CCFLAGS-y)
+
+# Clever way to get space char
+space = $(empty) $(empty)
+
+# List of existing test
+TEST_LIST = $(filter-out test,$(subst _,$(space),$(basename $(notdir $(TEST-SRC)))))
+SRC = $(sort $(foreach name,$(TEST_LIST),$($(name)-SRC))) $(TEST-SRC)
+OBJ = $(SRC:.c=.o)
+
+TEST_EXECUTABLES = $(TEST-SRC:%.c=%)
+
+# Set test set name if not set yet
+TSETNAME ?= ${shell pwd | sed 's|.*/||'}
+
+# TEST-SRC test sources
+# SRC = MUT source modules
+
+#### Targets ###################################################################
+all: $(PU-OBJ) $(OBJ) $(TEST_EXECUTABLES) manifest
+
+$(PU-OBJ): $(PU-SRC-y)
+	@echo "CC $@"
+	$(eval CUR_SRC := $(@:.o=.c))
+	$(eval CUR_BC := $*.bc)
+	@$(CC) $(IDIR) $(CCFLAGS) -c $(CUR_SRC) -o $(CUR_BC)
+	@$(LLC) $(LLCFLAGS) $(CUR_BC) -o - | $(GNUARCH)-as - -o $@ $(ASFLAGS)
+
+$(OBJ): $(SRC)
+	@echo "CC $@"
+	$(eval CUR_SRC := $(@:.o=.c))
+	$(eval CUR_BC := $*.bc)
+	@$(CC) $(IDIR) $(IDIR_TEST) $(CCFLAGS) -c $(CUR_SRC) -o $(CUR_BC)
+	@$(LLC) $(LLCFLAGS) $(CUR_BC) -o - | $(GNUARCH)-as - -o $@ $(ASFLAGS)
+
+# Tests
+$(TEST_EXECUTABLES): $(PU-OBJ) $(OBJ)
+	@echo "LD $@"
+	$(eval TESTNAME := $(filter-out test,$(subst _,$(space),$(basename $(notdir $@)))))
+	$(eval CUR_OBJS := $(patsubst %.c, %.o, $($(TESTNAME)-SRC)) $(PU-OBJ))
+	@$(GNUARCH)-ld -o $@ -T $(ROOT_DIR)/$(ELFLD) $(LDFLAGS) \
+		$(ROOT_DIR)/lib/crt1.a $(LDIR) $@.o $(CUR_OBJS) -lc
+
+manifest: $(TEST_EXECUTABLES)
+	echo "$(TEST_EXECUTABLES)" > manifest
+
+clean:
+	$(RM) $(TEST_EXECUTABLES)
+
+.PHONY: clean

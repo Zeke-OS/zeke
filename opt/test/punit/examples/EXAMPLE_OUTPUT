@@ -1,0 +1,77 @@
+Build unit test framework
+==================================================================
+gcc -I../../include -I../../src -I../../src/hal -I../../config -I../punit -Wall -pedantic -MMD -DMU_TEST_BUILD -c ../punit/punit.c -o ./obj/punit.o
+==================================================================
+Build MUT: obj/heap.o
+==================================================================
+gcc -I../../include -I../../src -I../../src/hal -I../../config -I../punit -Wall -pedantic -MMD -DMU_TEST_BUILD -c ../../src/heap.c -o obj/heap.o
+In file included from ../../src/sched.h:17:0,
+                 from ../../src/heap.c:11:
+../../include/kernel.h:17:1: warning: C++ style comments are not allowed in ISO C90 [enabled by default]
+../../include/kernel.h:17:1: warning: (this will be reported only once per input file) [enabled by default]
+../../src/heap.c: In function ‘heap_insert’:
+../../src/heap.c:86:5: warning: ISO C90 forbids mixed declarations and code [-pedantic]
+==================================================================
+Build MUT: obj/sched.o
+==================================================================
+gcc -I../../include -I../../src -I../../src/hal -I../../config -I../punit -Wall -pedantic -MMD -DMU_TEST_BUILD -c ../../src/heap.c -o obj/sched.o
+In file included from ../../src/sched.h:17:0,
+                 from ../../src/heap.c:11:
+../../include/kernel.h:17:1: warning: C++ style comments are not allowed in ISO C90 [enabled by default]
+../../include/kernel.h:17:1: warning: (this will be reported only once per input file) [enabled by default]
+../../src/heap.c: In function ‘heap_insert’:
+../../src/heap.c:86:5: warning: ISO C90 forbids mixed declarations and code [-pedantic]
+==================================================================
+Build test: bin/test_heap
+==================================================================
+gcc -Wall -pedantic -MMD -DMU_TEST_BUILD -I../../include -I../../src -I../../src/hal -I../../config -I../punit test_heap.c obj/punit.o ./obj/heap.o -o ./bin/test_heap
+In file included from ../../src/sched.h:17:0,
+                 from ../../src/heap.h:16,
+                 from test_heap.c:8:
+../../include/kernel.h:17:1: warning: C++ style comments are not allowed in ISO C90 [enabled by default]
+../../include/kernel.h:17:1: warning: (this will be reported only once per input file) [enabled by default]
+test_heap.c: In function ‘all_tests’:
+test_heap.c:97:5: warning: ISO C90 forbids mixed declarations and code [-pedantic]
+test_heap.c:98:5: warning: ISO C90 forbids mixed declarations and code [-pedantic]
+test_heap.c:99:5: warning: ISO C90 forbids mixed declarations and code [-pedantic]
+test_heap.c:100:5: warning: ISO C90 forbids mixed declarations and code [-pedantic]
+==================================================================
+Build test: bin/test_sched
+==================================================================
+gcc -Wall -pedantic -MMD -DMU_TEST_BUILD -I../../include -I../../src -I../../src/hal -I../../config -I../punit test_sched.c obj/punit.o ./obj/sched.o -o ./bin/test_sched
+In file included from ../../src/sched.h:17:0,
+                 from ../../src/heap.h:16,
+                 from ../../src/sched.c:21,
+                 from test_sched.c:12:
+../../include/kernel.h:17:1: warning: C++ style comments are not allowed in ISO C90 [enabled by default]
+../../include/kernel.h:17:1: warning: (this will be reported only once per input file) [enabled by default]
+In file included from test_sched.c:12:0:
+../../src/sched.c: In function ‘sched_start’:
+../../src/sched.c:78:16: warning: unused variable ‘s’ [-Wunused-variable]
+../../src/sched.c: In function ‘sched_thread_set_inheritance’:
+../../src/sched.c:272:5: warning: ISO C90 forbids mixed declarations and code [-pedantic]
+../../src/sched.c: In function ‘sched_ThreadCreate’:
+../../src/sched.c:319:30: warning: passing argument 4 of ‘sched_thread_set’ discards ‘volatile’ qualifier from pointer target type [enabled by default]
+../../src/sched.c:220:6: note: expected ‘struct threadInfo_t *’ but argument is of type ‘volatile struct threadInfo_t *’
+../../src/sched.c:311:16: warning: unused variable ‘s’ [-Wunused-variable]
+test_sched.c: In function ‘all_tests’:
+test_sched.c:151:5: warning: ISO C90 forbids mixed declarations and code [-pedantic]
+test_sched.c:152:5: warning: ISO C90 forbids mixed declarations and code [-pedantic]
+==================================================================
+Run all tests
+==================================================================
+bin/test_heap:
+	test_heap_insert
+	test_heap_del_max
+	test_heap_inc_key
+	test_heap_dec_key
+ALL TESTS PASSED
+Tests run: 4
+
+bin/test_sched:
+	test_sched_ThreadCreate
+	test_sched_thread_set_inheritance
+ALL TESTS PASSED
+Tests run: 2
+
+'make all' done
