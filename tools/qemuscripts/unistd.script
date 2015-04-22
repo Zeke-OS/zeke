@@ -1,4 +1,0 @@
-cd /opt/test/unistd
-test_hostname
-test_pipe
-exit

@@ -1,3 +1,0 @@
-cd /opt/test/pthreads
-test_create
-exit

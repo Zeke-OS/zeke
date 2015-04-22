@@ -1,8 +1,0 @@
-cd /opt/test/libc
-test_bsearch
-test_dirent
-test_imaxabs
-test_setjmp
-test_snprintf
-test_tss
-exit
