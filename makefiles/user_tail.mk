@@ -22,10 +22,10 @@ $(OBJS): %.o: %.c $(AUTOCONF_H)
 		$(GNUARCH)-as - -o $@ $(ASFLAGS)
 
 $(BIN): $(OBJS)
+	@echo "LD $@"
 	$(eval CUR_BIN := $(basename $@))
 	$(eval CUR_OBJS += $(patsubst %.S, %.o, $($(CUR_BIN)-ASRC-y)))
 	$(eval CUR_OBJS := $(patsubst %.c, %.o, $($(CUR_BIN)-SRC-y)))
-	@echo "LD $@"
 	@$(GNUARCH)-ld -o $@ -T $(ROOT_DIR)/$(ELFLD) $(LDFLAGS) \
 		$(ROOT_DIR)/lib/crt1.a $(LDIR) $(CUR_OBJS) $($(CUR_BIN)-LDFLAGS) -lc
 
