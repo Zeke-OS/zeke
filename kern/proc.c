@@ -429,7 +429,7 @@ void proc_thread_removed(pid_t pid, pthread_t thread_id)
 {
     proc_info_t * p;
 
-    if (!(p = proc_get_struct(pid)))
+    if (!(p = proc_get_struct_l(pid)))
         return;
 
     /* Go zombie if removed thread was main() */

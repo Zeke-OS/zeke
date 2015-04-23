@@ -764,13 +764,6 @@ void thread_yield(enum thread_eyield_strategy strategy)
      */
 }
 
-void thread_die(intptr_t retval)
-{
-    current_thread->retval = retval;
-    thread_terminate(current_thread->id);
-    thread_wait();
-}
-
 pthread_t get_current_tid(void)
 {
     if (current_thread)
@@ -832,17 +825,59 @@ int thread_get_priority(pthread_t thread_id)
     return thread->param.sched_priority;
 }
 
+void thread_die(intptr_t retval)
+{
+    current_thread->retval = retval;
+    (void)thread_terminate(current_thread->id);
+    thread_wait();
+}
+
+int thread_join(pthread_t thread_id, intptr_t * retval)
+{
+    struct thread_info * thread = thread_lookup(thread_id);
+
+    if (!thread)
+        return -ESRCH; /* Thread doesn't exist */
+
+    if (thread_flags_is_set(thread, SCHED_DETACH_FLAG))
+        return -ENOTSUP; /* join not supported for detached threads */
+
+    while (thread_state_get(thread) != THREAD_STATE_DEAD) {
+        sigset_t set;
+        /* TODO Maybe shorter timeout for thread_join? */
+        const struct timespec ts = { .tv_sec = 1, .tv_nsec = 0 };
+        siginfo_t sigretval;
+
+        sigemptyset(&set);
+        sigaddset(&set, SIGCHLDTHRD);
+        ksignal_sigtimedwait(&sigretval, &set, &ts);
+
+#if 0
+        if (sigretval->siginfo.si_code != thread_id)
+            continue;
+#endif
+    }
+
+    *retval = thread->retval;
+    thread_remove(thread_id);
+
+    return 0;
+}
+
 int thread_terminate(pthread_t thread_id)
 {
     struct thread_info * thread = thread_lookup(thread_id);
     struct thread_info * child;
     struct thread_info * next_child;
+    struct thread_info * parent;
 
     if (!thread)
         return -EINVAL;
 
     if (!SCHED_TEST_TERMINATE_OK(thread_flags_get(thread)))
         return -EPERM;
+
+    parent = thread->inh.parent;
 
     /* Remove all child threads from execution */
     child = thread->inh.first_child;
@@ -863,6 +898,18 @@ int thread_terminate(pthread_t thread_id)
     }
 
     thread_state_set(thread, THREAD_STATE_DEAD);
+
+    /*
+     * Deliver a signal to the parent thread.
+     * The delivery may fail if sigs can't be locked.
+     * RFE We expect here that the parent thread won't die during the call.
+     */
+    if (parent) {
+        struct signals * sigs = &parent->sigs;
+        const int si_code = thread_id;
+
+        ksignal_sendsig(sigs, SIGCHLDTHRD, si_code);
+    }
 
     return 0;
 }
@@ -915,6 +962,8 @@ static void dummycd(struct thread_info * th)
 }
 DATA_SET(thread_ctors, dummycd);
 DATA_SET(thread_dtors, dummycd);
+
+/* Automated tasks ************************************************************/
 
 /**
  * Free old thread data.
@@ -1051,35 +1100,6 @@ static int sys_thread_terminate(void * user_args)
     return thread_terminate(thread_id);
 }
 
-static int sys_thread_sleep_ms(void * user_args)
-{
-    uint32_t val;
-    int err;
-
-    err = copyin(user_args, &val, sizeof(uint32_t));
-    if (err) {
-        set_errno(EFAULT);
-        return -EFAULT;
-    }
-
-    thread_sleep(val);
-
-    return 0; /* TODO Return value might be incorrect */
-}
-
-static int sys_get_current_tid(void * user_args)
-{
-    return (int)get_current_tid();
-}
-
-/**
- * Get the address of thread errno.
- */
-static intptr_t sys_geterrno(void * user_args)
-{
-    return (intptr_t)current_thread->errno_uaddr;
-}
-
 static int sys_thread_die(void * user_args)
 {
     thread_die((intptr_t)user_args);
@@ -1112,6 +1132,45 @@ static int sys_thread_detach(void * user_args)
     thread_flags_set(thread, SCHED_DETACH_FLAG);
 
     return 0;
+}
+
+static int sys_thread_join(void * user_args)
+{
+    struct _sched_pthread_join_args args;
+    intptr_t retval;
+    int err;
+
+    err = copyin(user_args, &args, sizeof(args));
+    if (err) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    thread_join(args.thread_id, &retval);
+
+    err = copyout(&retval, args.retval, sizeof(intptr_t));
+    if (err) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    return 0;
+}
+
+static int sys_thread_sleep_ms(void * user_args)
+{
+    uint32_t val;
+    int err;
+
+    err = copyin(user_args, &val, sizeof(uint32_t));
+    if (err) {
+        set_errno(EFAULT);
+        return -EFAULT;
+    }
+
+    thread_sleep(val);
+
+    return 0; /* TODO Return value might be incorrect */
 }
 
 static int sys_thread_setpriority(void * user_args)
@@ -1166,15 +1225,29 @@ static int sys_thread_getpriority(void * user_args)
     return prio;
 }
 
+static int sys_get_current_tid(void * user_args)
+{
+    return (int)get_current_tid();
+}
+
+/**
+ * Get the address of thread errno.
+ */
+static intptr_t sys_geterrno(void * user_args)
+{
+    return (intptr_t)current_thread->errno_uaddr;
+}
+
 static const syscall_handler_t thread_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_CREATE, sys_thread_create),
     ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_TERMINATE, sys_thread_terminate),
-    ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_SLEEP_MS, sys_thread_sleep_ms),
-    ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_GETTID, sys_get_current_tid),
-    ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_GETERRNO, sys_geterrno),
     ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_DIE, sys_thread_die),
     ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_DETACH, sys_thread_detach),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_JOIN, sys_thread_join),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_SLEEP_MS, sys_thread_sleep_ms),
     ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_SETPRIORITY, sys_thread_setpriority),
-    ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_GETPRIORITY, sys_thread_getpriority)
+    ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_GETPRIORITY, sys_thread_getpriority),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_GETTID, sys_get_current_tid),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_GETERRNO, sys_geterrno),
 };
 SYSCALL_HANDLERDEF(thread_syscall, thread_sysfnmap)

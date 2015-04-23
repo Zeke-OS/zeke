@@ -1,6 +1,9 @@
-#include <stdio.h>
+#include <errno.h>
 #include <pthread.h>
 #include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include "punit.h"
 
 char * thread_stack;
@@ -20,7 +23,7 @@ static void * thread(void * arg)
     signal(SIGUSR1, catch_sig);
 
     sigaddset(&waitset, SIGUSR2);
-    sigwait(waitset, &sig);
+    sigwait(&waitset, &sig);
     thread_signum_received[1] = sig;
 
     thread_id = 0;
@@ -32,8 +35,11 @@ static void setup()
     pthread_attr_t attr;
     const size_t stack_size = 4096;
 
+    thread_signum_received[0] = 0;
+    thread_signum_received[1] = 0;
+
     thread_stack = malloc(stack_size);
-    if (!stack) {
+    if (!thread_stack) {
         perror("Failed to create a stack\n");
         _exit(1);
     }
@@ -56,12 +62,15 @@ static void teardown()
         pthread_kill(thread_id, SIGKILL);
         pthread_join(thread_id, &retval);
     }
-    free(stack);
+    free(thread_stack);
 }
 
 static char * test_kill_thread(void)
 {
     /* TODO Test USR1 (handler) and USR1 (sigwait) */
+    pthread_kill(thread_id, SIGUSR1);
+    pu_assert_equal("", thread_signum_received[0], SIGUSR1);
+    pu_assert_equal("", thread_signum_received[1], 0);
 
     return NULL;
 }

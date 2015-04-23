@@ -303,14 +303,6 @@ void thread_alarm_rele(int timer_id);
 void thread_yield(enum thread_eyield_strategy strategy);
 
 /**
- * Terminate current thread.
- * This makes current_thread a zombie that should be either killed by the
- * parent thread or will be killed at least when the parent is killed.
- * @param retval is a return value from the thread.
- */
-void thread_die(intptr_t retval);
-
-/**
  * Get thread id of the current thread.
  */
 pthread_t get_current_tid(void);
@@ -347,6 +339,22 @@ int thread_set_priority(pthread_t thread_id, int priority);
  * @return Returns the thread priory value or NICE_ERR if thread doesn't exist.
  */
 int thread_get_priority(pthread_t thread_id);
+
+/**
+ * Terminate current thread.
+ * This makes current_thread a zombie that should be either killed by the
+ * parent thread or will be killed at least when the parent is killed.
+ * @param retval is a return value from the thread.
+ */
+void thread_die(intptr_t retval);
+
+/**
+ * Wait for thread to die or to be terminated.
+ * @param thread_id is the thread id.
+ * @param[out] retval returns the thread return value.
+ * @return 0; Negative errno.
+ */
+int thread_join(pthread_t thread_id, intptr_t * retval);
 
 /**
  * Terminate a thread and its childs.

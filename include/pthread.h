@@ -195,6 +195,15 @@ struct _sched_pthread_create_args {
     void (*del_thread)(void *); /*!< Thread exit function. */
 };
 
+/**
+ * Argument struct for SYSCALL_SCHED_THREAD_JOIN
+ */
+struct _sched_pthread_join_args {
+    pthread_t       thread_id;
+    intptr_t      * retval; /* thread return value
+                             * (a pointer by POSIX definition) */
+};
+
 __BEGIN_DECLS
 /*
 int     pthread_atfork(void (*)(void), void (*)(void), void (*)(void));
@@ -251,8 +260,13 @@ int     pthread_equal(pthread_t, pthread_t);
 void    *pthread_getspecific(pthread_key_t);
 /*
 int     pthread_getcpuclockid(pthread_t, clockid_t *);
-int     pthread_join(pthread_t, void **);
 */
+
+/**
+ * Wait for thread termination.
+ */
+int     pthread_join(pthread_t thread, void ** value_ptr);
+
 /**
  * Create a thread specific data key.
  * @param[out]  key
