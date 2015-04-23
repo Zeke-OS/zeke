@@ -60,7 +60,7 @@ static void teardown()
 
     if (thread_id) {
         pthread_kill(thread_id, SIGKILL);
-        pthread_join(thread_id, &retval);
+        pthread_join(thread_id, (void **)(&retval));
     }
     free(thread_stack);
 }
