@@ -30,7 +30,6 @@ static char * test_create(void)
 {
     pthread_attr_t attr;
     pthread_t tid;
-    pthread_t * ret;
 
     pthread_attr_init(&attr);
     pthread_attr_setstack(&attr, stack, sizeof(stack));

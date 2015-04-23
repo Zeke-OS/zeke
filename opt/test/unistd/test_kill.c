@@ -56,7 +56,7 @@ static void setup()
 
 static void teardown()
 {
-    int retval;
+    int * retval;
 
     if (thread_id) {
         pthread_kill(thread_id, SIGKILL);
