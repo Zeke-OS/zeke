@@ -20,8 +20,6 @@ static void teardown(void)
 static void * thread(void * arg)
 {
     test_tid = pthread_self();
-    printf("penis\n");
-    /* TODO Remove */
 
     return &test_tid;
 }
