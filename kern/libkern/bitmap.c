@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   bitmap allocation functions.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -72,7 +72,7 @@ int bitmap_block_search_s(size_t start, size_t * retval, size_t block_len,
     return 1;
 }
 
-int bitmap_status(bitmap_t * bitmap, size_t pos, size_t size)
+int bitmap_status(const bitmap_t * bitmap, size_t pos, size_t size)
 {
     size_t k = BIT2WORDI(pos);
     size_t n = BIT2WBITOFF(pos);

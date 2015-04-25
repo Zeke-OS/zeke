@@ -324,6 +324,18 @@ int securelevel_gt(int level);
 int priv_check(const struct cred * cred, int priv);
 
 /**
+ * Check credentials to change the state of an object protected by tocred.
+ * @param fromcred is the accessing credential.
+ * @param tocred is the target.
+ * @param priv is a PRIV.
+ * @return Typically, 0 will be returned for success, and -EPERM will be
+ *         returned on failure. In case of invalid arguments -EINVAL is
+ *         returned.
+ */
+int priv_check_cred(const struct cred * fromcred, const struct cred * tocred,
+                    int priv);
+
+/**
  * @}
  */
 

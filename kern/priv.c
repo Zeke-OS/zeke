@@ -68,8 +68,7 @@ int securelevel_gt(int level)
  * Check a credential for privilege. Lots of good reasons to deny privilege;
  * only a few to grant it.
  */
-int
-priv_check(const struct cred * cred, int priv)
+int priv_check(const struct cred * cred, int priv)
 {
     int error;
 
@@ -142,6 +141,36 @@ priv_check(const struct cred * cred, int priv)
     error = -EPERM;
 out:
     return error;
+}
+
+int priv_check_cred(const struct cred * fromcred, const struct cred * tocred,
+                    int priv)
+{
+#ifdef configPROCCAP
+    int error;
+
+    /* Check if capability is disabled. */
+    error = bitmap_status(fromcred->pcap_restrmap, priv, _PRIV_MLEN);
+    if (error) {
+        if (error != -EINVAL)
+            error = -EPERM;
+        return error;
+    }
+#endif
+
+    switch (priv) {
+    case PRIV_SIGNAL_OTHER:
+            if ((fromcred->euid != tocred->uid &&
+                 fromcred->euid != tocred->suid) &&
+                (fromcred->uid  != tocred->uid &&
+                 fromcred->uid  != tocred->suid)) {
+                return -EPERM;
+            }
+    default:
+            return priv_check(fromcred, priv);
+    }
+
+    return 0;
 }
 
 #ifdef configPROCCAP

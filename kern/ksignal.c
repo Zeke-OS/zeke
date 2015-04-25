@@ -901,14 +901,9 @@ static int sys_signal_pkill(void * user_args)
     /*
      * Check if process is privileged to signal other users.
      */
-    if ((curproc->cred.euid != proc->cred.uid &&
-         curproc->cred.euid != proc->cred.suid) &&
-        (curproc->cred.uid  != proc->cred.uid &&
-         curproc->cred.uid  != proc->cred.suid)) {
-        if (priv_check(&curproc->cred, PRIV_SIGNAL_OTHER)) {
-            set_errno(EPERM);
-            return -1;
-        }
+    if (priv_check_cred(&curproc->cred, &proc->cred, PRIV_SIGNAL_OTHER)) {
+        set_errno(EPERM);
+        return -1;
     }
 
     /*
@@ -969,14 +964,9 @@ static int sys_signal_tkill(void * user_args)
     /*
      * Check if process is privileged to signal other users.
      */
-    if ((curproc->cred.euid != proc->cred.uid &&
-         curproc->cred.euid != proc->cred.suid) &&
-        (curproc->cred.uid  != proc->cred.uid &&
-         curproc->cred.uid  != proc->cred.suid)) {
-        if (priv_check(&curproc->cred, PRIV_SIGNAL_OTHER)) {
-            set_errno(EPERM);
-            return -1;
-        }
+    if (priv_check_cred(&curproc->cred, &proc->cred, PRIV_SIGNAL_OTHER)) {
+        set_errno(EPERM);
+        return -1;
     }
 
     /*
