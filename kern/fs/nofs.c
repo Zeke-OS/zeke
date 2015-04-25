@@ -84,12 +84,12 @@ int fs_enotsup_ioctl(file_t * file, unsigned request, void * arg,
     return -ENOTTY;
 }
 
-int fs_enotsup_file_opened(proc_info_t * p, vnode_t * vnode)
+int fs_enotsup_file_opened(struct proc_info * p, vnode_t * vnode)
 {
     return 0;
 }
 
-void fs_enotsup_file_closed(proc_info_t * p, file_t * file)
+void fs_enotsup_file_closed(struct proc_info * p, file_t * file)
 {
 }
 

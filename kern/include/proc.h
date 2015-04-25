@@ -75,14 +75,14 @@
 #define PROC_STATE_ZOMBIE   5
 #define PROC_STATE_DEFUNCT  6   /*!< Process waiting for the final cleanup. */
 
-#define PROC_NAME_LEN       10
+#define PROC_NAME_LEN       16
 
 struct thread_info;
 
 /**
  * Process Control Block.
  */
-typedef struct proc_info {
+struct proc_info {
     pid_t pid;
     char name[PROC_NAME_LEN];   /*!< Process name. */
     int state;                  /*!< Process state. */
@@ -109,13 +109,6 @@ typedef struct proc_info {
 
     struct signals sigs;        /*!< Per process signals. */
 
-    /* notes:
-     * - main_thread already has a linked list of child threads
-     * - file_t fd's
-     * - tty
-     * - etc.
-     */
-
     /**
      * Process inheritance; Parent and child thread pointers.
      * inh : Parent and child process relations
@@ -135,7 +128,7 @@ typedef struct proc_info {
     } inh;
 
     struct thread_info * main_thread; /*!< Main thread of this process. */
-} proc_info_t;
+};
 
 #define PROC_INH_LOCK_TYPE (MTX_TYPE_SPIN)
 
@@ -143,7 +136,7 @@ extern int maxproc;                 /*!< Maximum # of processes, set. */
 extern int act_maxproc;             /*!< Effective maxproc. */
 extern int nprocs;                  /*!< Current # of procs. */
 extern pid_t current_process_id;    /*!< PID of current process. */
-extern proc_info_t * curproc;       /*!< PCB of the current process. */
+extern struct proc_info * curproc;  /*!< PCB of the current process. */
 
 /* proclock - Protects proc array, data structures and variables in proc. */
 /** proclock.
@@ -171,7 +164,7 @@ int proc_init(void) __attribute__((constructor));
  * @param thread_it should be initialized to NULL.
  * @return next thread or NULL.
  */
-struct thread_info * proc_iterate_threads(proc_info_t * proc,
+struct thread_info * proc_iterate_threads(struct proc_info * proc,
         struct thread_info ** thread_it);
 
 /**
@@ -200,20 +193,20 @@ pid_t proc_update(void);
 /**
  * Free a process PCB and other related resources.
  */
-void _proc_free(proc_info_t * p);
+void _proc_free(struct proc_info * p);
 
 /**
  * Get pointer to a internal proc_info structure by first locking it.
  * Caller of this function should be the owner/parent of requested data or it
  * shall first disable interrupts to prevent removal of the data while using it.
  */
-proc_info_t * proc_get_struct_l(pid_t pid);
+struct proc_info * proc_get_struct_l(pid_t pid);
 
 /**
  * Get pointer to a internal proc_info structure.
  * @note Requires PROC_LOCK.
  */
-proc_info_t * proc_get_struct(pid_t pid);
+struct proc_info * proc_get_struct(pid_t pid);
 
 struct vm_mm_struct * proc_get_locked_mm(pid_t pid);
 

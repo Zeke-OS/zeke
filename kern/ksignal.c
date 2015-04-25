@@ -127,7 +127,13 @@ static const uint8_t default_sigproptbl[] = {
     SA_KILL|SA_CORE,    /*!< SIGSYS */
     SA_IGNORE,          /*!< SIGURG */
     SA_IGNORE,          /*!< SIGINFO */
-    SA_KILL             /*!< SIGPWR */
+    SA_KILL,            /*!< SIGPWR */
+    SA_IGNORE,          /*!< SIGCHLDTHRD */
+    SA_IGNORE,          /*!< 27 */
+    SA_IGNORE,          /*!< 28 */
+    SA_IGNORE,          /*!< 29 */
+    SA_IGNORE,          /*!< 30 */
+    SA_IGNORE,          /*!< _SIGMTX */
 };
 
 static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code);
@@ -487,8 +493,10 @@ static void ksignal_post_scheduling(void)
     /*
      * Continue to handle the signal in user space handler.
      */
+#if configKSIGNAL_DEBUG
     KERROR(KERROR_DEBUG, "Pass sig %d to the user space.\n",
            ksiginfo->siginfo.si_signo);
+#endif
 
     if (/* Push current stack frame to the user space thread stack. */
         push_to_thread_stack(current_thread,
@@ -570,7 +578,7 @@ static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
         return 0;
 
     /*
-     * SA_KILL is handled here because post_scheduling hander can't change
+     * SA_KILL is handled here because post_scheduling handler can't change
      * next thread.
      */
     if (action.ks_action.sa_flags & SA_KILL) {
@@ -839,7 +847,7 @@ int ksignal_set_ksigaction(struct signals * sigs, struct ksigaction * action)
         return -EINVAL;
     signum = action->ks_signum;
 
-    if (action->ks_signum < 0)
+    if (!(action->ks_signum > 0 && action->ks_signum < _SIG_MAX_))
         return -EINVAL;
 
     if (!RB_EMPTY(&sigs->sa_tree) &&
@@ -879,7 +887,7 @@ int ksignal_set_ksigaction(struct signals * sigs, struct ksigaction * action)
 static int sys_signal_pkill(void * user_args)
 {
     struct _pkill_args args;
-    proc_info_t * proc;
+    struct proc_info * proc;
     struct signals * sigs;
     int err;
 
@@ -896,7 +904,6 @@ static int sys_signal_pkill(void * user_args)
         set_errno(ESRCH);
         return -1;
     }
-    sigs = &proc->sigs;
 
     /*
      * Check if process is privileged to signal other users.
@@ -915,6 +922,7 @@ static int sys_signal_pkill(void * user_args)
     if (args.sig == 0)
         return 0;
 
+    sigs = &proc->sigs;
     if (ksig_lock(&sigs->s_lock)) {
         set_errno(EAGAIN);
         return -1;
@@ -936,7 +944,7 @@ static int sys_signal_tkill(void * user_args)
 {
     struct _tkill_args args;
     struct thread_info * thread;
-    proc_info_t * proc;
+    struct proc_info * proc;
     struct signals * sigs;
     int err;
 
@@ -946,14 +954,13 @@ static int sys_signal_tkill(void * user_args)
         return -1;
     }
 
-    /* TODO if thread_id == 0 then send to all threads */
+    /* TODO if thread_id == 0 then send to all (child/group?) threads */
 
     thread = thread_lookup(args.thread_id);
     if (!thread) {
         set_errno(ESRCH);
         return -1;
     }
-    sigs = &thread->sigs;
 
     proc = proc_get_struct_l(thread->pid_owner);
     if (!proc) {
@@ -978,6 +985,7 @@ static int sys_signal_tkill(void * user_args)
     if (args.sig == 0)
         return 0;
 
+    sigs = &thread->sigs;
     if (ksig_lock(&sigs->s_lock)) {
         set_errno(EAGAIN);
         return -1;
@@ -990,6 +998,7 @@ static int sys_signal_tkill(void * user_args)
         return -1;
     }
     KSIG_EXEC_IF(thread, args.sig);
+
     ksig_unlock(&sigs->s_lock);
 
     return 0;
@@ -1000,6 +1009,7 @@ static int sys_signal_signal(void * user_args)
     struct _signal_signal_args args;
     struct ksigaction action;
     void * old_handler;
+    struct signals * sigs;
     int err;
 
     if (priv_check(&curproc->cred, PRIV_SIGNAL_ACTION)) {
@@ -1013,23 +1023,28 @@ static int sys_signal_signal(void * user_args)
         return -1;
     }
 
-    if (ksig_lock(&current_thread->sigs.s_lock)) {
+    /*
+     * Since signal() is not clearly defined to work for multi-threaded
+     * processes, we just use sigs struct of the current_thread and hope
+     * that's what the caller wanted to alter.
+     */
+    sigs = &current_thread->sigs;
+    if (ksig_lock(&sigs->s_lock)) {
         set_errno(EAGAIN);
         return -1;
     }
 
     /* Get current sigaction */
-    ksignal_get_ksigaction(&action, &current_thread->sigs, args.signum);
+    ksignal_get_ksigaction(&action, sigs, args.signum);
 
     /* Swap handler pointers */
     old_handler = action.ks_action.sa_handler;
     action.ks_action.sa_handler = args.handler;
     args.handler = old_handler;
 
-    /* Set new handler */
-    err = ksignal_set_ksigaction(&current_thread->sigs, &action);
-
-    ksig_unlock(&current_thread->sigs.s_lock);
+    /* Set new handler and unlock sigs */
+    err = ksignal_set_ksigaction(sigs, &action);
+    ksig_unlock(&sigs->s_lock);
     if (err) {
         set_errno(-err);
         return -1;

@@ -2,9 +2,9 @@
  *******************************************************************************
  * @file    _proc.h
  * @author  Olli Vanhoja
- * @brief   Header file shared between proc_XXX.c
+ * @brief   Header file shared between proc_XXX.c files.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -46,7 +46,7 @@ void procarr_realloc(void);
  * Insert a new process to _procarr.
  * @param proc is a pointer to the new process.
  */
-void procarr_insert(proc_info_t * new_proc);
+void procarr_insert(struct proc_info * new_proc);
 
 /**
  * Get a random PID for a new process.

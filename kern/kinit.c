@@ -113,7 +113,7 @@ static void mount_rootfs(void)
 {
     const char failed[] = "Failed to mount rootfs";
     vnode_t * tmp = NULL;
-    proc_info_t * kernel_proc;
+    struct proc_info * kernel_proc;
     int ret;
 
     kernel_proc = proc_get_struct_l(0);
@@ -197,7 +197,7 @@ int kinit(void)
     pthread_t tid;
     pid_t pid;
     struct thread_info * init_thread;
-    proc_info_t * init_proc;
+    struct proc_info * init_proc;
 
     mount_rootfs();
 

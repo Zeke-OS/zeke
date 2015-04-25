@@ -316,6 +316,7 @@ void sched_handler(void)
             panic("No thread 0\n");
     }
 
+    /* Update process times struct now. */
     proc_update_times();
 
     /*
@@ -528,7 +529,7 @@ static void thread_init(struct thread_info * tp, pthread_t thread_id,
     if (!parent) {
         tp->curr_mpt = &mmu_pagetable_master;
     } else {
-        proc_info_t * proc;
+        struct proc_info * proc;
 
         proc = proc_get_struct_l(parent->pid_owner);
         if (!proc)

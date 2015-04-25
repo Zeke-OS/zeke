@@ -50,11 +50,13 @@
 
 static pid_t proc_lastpid;  /*!< last allocated pid. */
 
-static proc_info_t * clone_proc_info(proc_info_t * const old_proc);
-static int clone_stack(proc_info_t * new_proc, proc_info_t * old_proc);
-static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc);
+static struct proc_info * clone_proc_info(struct proc_info * const old_proc);
+static int clone_stack(struct proc_info * new_proc,
+        struct proc_info * old_proc);
+static void set_proc_inher(struct proc_info * old_proc,
+        struct proc_info * new_proc);
 
-static int alloc_master_pt(proc_info_t * new_proc)
+static int alloc_master_pt(struct proc_info * new_proc)
 {
     /* Allocate a master page table for the new process. */
     new_proc->mm.mpt.vaddr = 0;
@@ -68,7 +70,8 @@ static int alloc_master_pt(proc_info_t * new_proc)
     return 0;
 }
 
-static int clone_code_region(proc_info_t * new_proc, proc_info_t * old_proc)
+static int clone_code_region(struct proc_info * new_proc,
+        struct proc_info * old_proc)
 {
     struct buf * vm_reg_tmp;
 
@@ -88,7 +91,8 @@ static int clone_code_region(proc_info_t * new_proc, proc_info_t * old_proc)
     return 0;
 }
 
-static int clone_oth_regions(proc_info_t * new_proc, proc_info_t * old_proc)
+static int clone_oth_regions(struct proc_info * new_proc,
+        struct proc_info * old_proc)
 {
     struct buf * vm_reg_tmp;
     int err;
@@ -146,8 +150,8 @@ pid_t proc_fork(pid_t pid)
     KERROR(KERROR_DEBUG, "fork(%u)\n", pid);
 #endif
 
-    proc_info_t * const old_proc = proc_get_struct_l(pid);
-    proc_info_t * new_proc;
+    struct proc_info * const old_proc = proc_get_struct_l(pid);
+    struct proc_info * new_proc;
     pid_t retval;
 
     /* Check that the old PID was valid. */
@@ -348,24 +352,24 @@ out:
 /**
  * Clone old process descriptor.
  */
-static proc_info_t * clone_proc_info(proc_info_t * const old_proc)
+static struct proc_info * clone_proc_info(struct proc_info * const old_proc)
 {
-    proc_info_t * new_proc;
+    struct proc_info * new_proc;
 
 #ifdef configPROC_DEBUG
     KERROR(KERROR_DEBUG, "clone_proc_info of pid %u\n", old_proc->pid);
 #endif
 
-    new_proc = kmalloc(sizeof(proc_info_t));
+    new_proc = kmalloc(sizeof(struct proc_info));
     if (!new_proc) {
         return 0;
     }
-    memcpy(new_proc, old_proc, sizeof(proc_info_t));
+    memcpy(new_proc, old_proc, sizeof(struct proc_info));
 
     return new_proc;
 }
 
-static int clone_stack(proc_info_t * new_proc, proc_info_t * old_proc)
+static int clone_stack(struct proc_info * new_proc, struct proc_info * old_proc)
 {
     struct buf * const old_region = (*old_proc->mm.regions)[MM_STACK_REGION];
     struct buf * new_region = 0;
@@ -420,7 +424,8 @@ static int clone_stack(proc_info_t * new_proc, proc_info_t * old_proc)
     return 0;
 }
 
-static void set_proc_inher(proc_info_t * old_proc, proc_info_t * new_proc)
+static void set_proc_inher(struct proc_info * old_proc,
+        struct proc_info * new_proc)
 {
 #ifdef configPROC_DEBUG
     KERROR(KERROR_DEBUG, "Updating inheriance attributes of new_proc\n");

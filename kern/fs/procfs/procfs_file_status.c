@@ -39,7 +39,7 @@
 static ssize_t procfs_read_status(struct procfs_info * spec, char ** retbuf)
 {
     ssize_t bytes;
-    proc_info_t * proc;
+    struct proc_info * proc;
     char * tmpbuf;
     const size_t bufsz = 200;
 

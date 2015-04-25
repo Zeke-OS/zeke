@@ -55,18 +55,18 @@
 #include <vm/vm_copyinstruct.h>
 #include "_proc.h"
 
-static proc_info_t *(*_procarr)[];  /*!< processes indexed by pid */
+static struct proc_info *(*_procarr)[];  /*!< processes indexed by pid */
 int maxproc = configMAXPROC;        /*!< Maximum # of processes, set. */
 int act_maxproc;                    /*!< Effective maxproc. */
 int nprocs = 1;                     /*!< Current # of procs. */
 pid_t current_process_id;           /*!< PID of current process. */
-proc_info_t * curproc;              /*!< PCB of the current process. */
+struct proc_info * curproc;              /*!< PCB of the current process. */
 
 extern vnode_t kerror_vnode;
 
 extern void * __bss_break __attribute__((weak));
 
-#define SIZEOF_PROCARR()    ((maxproc + 1) * sizeof(proc_info_t *))
+#define SIZEOF_PROCARR()    ((maxproc + 1) * sizeof(struct proc_info *))
 
 /**
  * proclock.
@@ -131,10 +131,10 @@ static void init_rlims(struct rlimit (*rlim)[_RLIMIT_ARR_COUNT])
 static void init_kernel_proc(void)
 {
     const char panic_msg[] = "Can't init kernel process";
-    proc_info_t * kernel_proc;
+    struct proc_info * kernel_proc;
     int err;
 
-    (*_procarr)[0] = kcalloc(1, sizeof(proc_info_t));
+    (*_procarr)[0] = kcalloc(1, sizeof(struct proc_info));
     kernel_proc = (*_procarr)[0];
 
     kernel_proc->pid = 0;
@@ -218,7 +218,7 @@ static void init_kernel_proc(void)
 
 void procarr_realloc(void)
 {
-    proc_info_t * (*tmp)[];
+    struct proc_info * (*tmp)[];
 
     /* Skip if size is not changed */
     if (maxproc == act_maxproc)
@@ -243,7 +243,7 @@ void procarr_realloc(void)
     PROC_UNLOCK();
 }
 
-void procarr_insert(proc_info_t * new_proc)
+void procarr_insert(struct proc_info * new_proc)
 {
     KASSERT(new_proc, "new_proc can't be NULL");
 
@@ -305,7 +305,7 @@ static void proc_remove(struct proc_info * proc)
     procarr_remove(proc->pid);
 }
 
-void _proc_free(proc_info_t * p)
+void _proc_free(struct proc_info * p)
 {
     if (!p) {
         KERROR(KERROR_WARN, "Got NULL as a proc_info struct, double free?\n");
@@ -354,10 +354,10 @@ void _proc_free(proc_info_t * p)
     kfree(p);
 }
 
-proc_info_t * proc_get_struct_l(pid_t pid)
+struct proc_info * proc_get_struct_l(pid_t pid)
 {
     istate_t s;
-    proc_info_t * retval;
+    struct proc_info * retval;
 
     s = get_interrupt_state();
     if (!(s & PSR_INT_I))
@@ -369,7 +369,7 @@ proc_info_t * proc_get_struct_l(pid_t pid)
     return retval;
 }
 
-proc_info_t * proc_get_struct(pid_t pid)
+struct proc_info * proc_get_struct(pid_t pid)
 {
     istate_t s;
 
@@ -408,7 +408,7 @@ struct vm_mm_struct * proc_get_locked_mm(pid_t pid)
     return mm;
 }
 
-struct thread_info * proc_iterate_threads(proc_info_t * proc,
+struct thread_info * proc_iterate_threads(struct proc_info * proc,
         struct thread_info ** thread_it)
 {
     if (*thread_it == NULL) {
@@ -427,7 +427,7 @@ struct thread_info * proc_iterate_threads(proc_info_t * proc,
 /* Called when thread is completely removed from the scheduler */
 void proc_thread_removed(pid_t pid, pthread_t thread_id)
 {
-    proc_info_t * p;
+    struct proc_info * p;
 
     if (!(p = proc_get_struct_l(pid)))
         return;
@@ -441,7 +441,13 @@ void proc_thread_removed(pid_t pid, pthread_t thread_id)
 
 void proc_update_times(void)
 {
-    if (thread_flags_is_set(current_thread, SCHED_INSYS_FLAG))
+    /*
+     * TODO Inaccurate proc times calculation
+     * A thread is sometimes also blocked in a actual syscall waiting for some
+     * event causing a tick to fall in utime.
+     */
+    if (thread_flags_is_set(current_thread, SCHED_INSYS_FLAG) &&
+        thread_state_get(current_thread) != THREAD_STATE_BLOCKED)
         curproc->tms.tms_stime++;
     else
         curproc->tms.tms_utime++;
@@ -452,7 +458,7 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
 {
     const pid_t pid = thread->pid_owner;
     const uintptr_t vaddr = far;
-    proc_info_t * pcb;
+    struct proc_info * pcb;
     struct vm_mm_struct * mm;
 
 #ifdef configPROC_DEBUG
@@ -540,7 +546,7 @@ static int sys_proc_wait(void * user_args)
 {
     struct _proc_wait_args args;
     pid_t pid_child;
-    proc_info_t * child = NULL;
+    struct proc_info * child = NULL;
     int * state;
 
     if (!useracc(user_args, sizeof(args), VM_PROT_WRITE) ||
@@ -568,8 +574,8 @@ static int sys_proc_wait(void * user_args)
         set_errno(ENOTSUP);
         return -1;
     } else if (args.pid > 0) {
-        proc_info_t * p;
-        proc_info_t * tmp;
+        struct proc_info * p;
+        struct proc_info * tmp;
 
         p = proc_get_struct_l(args.pid);
         tmp = SLIST_FIRST(&curproc->inh.child_list_head);

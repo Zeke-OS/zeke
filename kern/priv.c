@@ -182,7 +182,7 @@ int priv_check_cred(const struct cred * fromcred, const struct cred * tocred,
 static int sys_priv_pcap(void * user_args)
 {
     struct _priv_pcap_args args;
-    proc_info_t * proc;
+    struct proc_info * proc;
     struct cred * proccred;
     int err;
 
