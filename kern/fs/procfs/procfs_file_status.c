@@ -66,8 +66,8 @@ static ssize_t procfs_read_status(struct procfs_info * spec, char ** retbuf)
                      proc->name,
                      proc->state,
                      proc->pid,
-                     proc->uid, proc->euid, proc->suid,
-                     proc->gid, proc->egid, proc->sgid,
+                     proc->cred.uid, proc->cred.euid, proc->cred.suid,
+                     proc->cred.gid, proc->cred.egid, proc->cred.sgid,
                      proc->tms.tms_utime, proc->tms.tms_stime,
                      proc->brk_start, proc->brk_stop);
 

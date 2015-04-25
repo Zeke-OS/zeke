@@ -37,22 +37,22 @@
 #include <fcntl.h>
 #include <sys/sysctl.h>
 #include <sys/wait.h>
-#include <thread.h>
+#include <buf.h>
+#include <dynmem.h>
+#include <exec.h>
+#include <fs/procfs.h>
+#include <kerror.h>
+#include <kinit.h>
+#include <kmalloc.h>
 #include <ksched.h>
 #include <kstring.h>
 #include <libkern.h>
-#include <kerror.h>
-#include <kinit.h>
+#include <proc.h>
+#include <ptmapper.h>
 #include <syscall.h>
+#include <thread.h>
 #include <vm/vm.h>
 #include <vm/vm_copyinstruct.h>
-#include <fs/procfs.h>
-#include <ptmapper.h>
-#include <dynmem.h>
-#include <kmalloc.h>
-#include <buf.h>
-#include <exec.h>
-#include <proc.h>
 #include "_proc.h"
 
 static proc_info_t *(*_procarr)[];  /*!< processes indexed by pid */
@@ -685,70 +685,70 @@ static int sys_proc_exit(void * user_args)
  */
 static int sys_proc_getsetcred(void * user_args)
 {
-    struct _proc_credctl_args cred;
-    uid_t ruid = curproc->uid;
-    /*uid_t euid = curproc->euid;*/
-    uid_t suid = curproc->suid;
-    gid_t rgid = curproc->gid;
-    gid_t sgid = curproc->sgid;
+    struct _proc_credctl_args pcred;
+    uid_t ruid = curproc->cred.uid;
+    /*uid_t euid = curproc->cred.euid;*/
+    uid_t suid = curproc->cred.suid;
+    gid_t rgid = curproc->cred.gid;
+    gid_t sgid = curproc->cred.sgid;
     int retval = 0;
 
-    if (!useracc(user_args, sizeof(cred), VM_PROT_WRITE)) {
+    if (!useracc(user_args, sizeof(pcred), VM_PROT_WRITE)) {
         set_errno(EFAULT);
         return -1;
     }
-    copyin(user_args, &cred, sizeof(cred));
+    copyin(user_args, &pcred, sizeof(pcred));
 
     /* Set uid */
-    if (cred.ruid >= 0) {
-        if (priv_check(curproc, PRIV_CRED_SETUID) == 0)
-            curproc->uid = cred.ruid;
+    if (pcred.ruid >= 0) {
+        if (priv_check(&curproc->cred, PRIV_CRED_SETUID) == 0)
+            curproc->cred.uid = pcred.ruid;
         else
             retval = -1;
     }
 
     /* Set euid */
-    if (cred.euid >= 0) {
-        uid_t new_euid = cred.euid;
+    if (pcred.euid >= 0) {
+        uid_t new_euid = pcred.euid;
 
-        if ((priv_check(curproc, PRIV_CRED_SETEUID) == 0) ||
+        if ((priv_check(&curproc->cred, PRIV_CRED_SETEUID) == 0) ||
                 new_euid == ruid || new_euid == suid)
-            curproc->euid = new_euid;
+            curproc->cred.euid = new_euid;
         else
             retval = -1;
     }
 
     /* Set suid */
-    if (cred.suid >= 0) {
-        if (priv_check(curproc, PRIV_CRED_SETSUID) == 0)
-            curproc->suid = cred.suid;
+    if (pcred.suid >= 0) {
+        if (priv_check(&curproc->cred, PRIV_CRED_SETSUID) == 0)
+            curproc->cred.suid = pcred.suid;
         else
             retval = -1;
     }
 
     /* Set gid */
-    if (cred.rgid >= 0) {
-        if (priv_check(curproc, PRIV_CRED_SETGID) == 0)
-            curproc->gid = cred.rgid;
+    if (pcred.rgid >= 0) {
+        if (priv_check(&curproc->cred, PRIV_CRED_SETGID) == 0)
+            curproc->cred.gid = pcred.rgid;
         else
             retval = -1;
     }
 
     /* Set egid */
-    if (cred.egid >= 0) {
-        gid_t new_egid = cred.egid;
+    if (pcred.egid >= 0) {
+        gid_t new_egid = pcred.egid;
 
-        if ((priv_check(curproc, PRIV_CRED_SETEGID) == 0) ||
+        if ((priv_check(&curproc->cred, PRIV_CRED_SETEGID) == 0) ||
                 new_egid == rgid || new_egid == sgid)
-            curproc->egid = cred.egid;
+            curproc->cred.egid = pcred.egid;
         else
             retval = -1;
     }
 
     /* Set sgid */
-    if (cred.sgid >= 0) {
-        if (priv_check(curproc, PRIV_CRED_SETSGID) == 0)
-            curproc->sgid = cred.sgid;
+    if (pcred.sgid >= 0) {
+        if (priv_check(&curproc->cred, PRIV_CRED_SETSGID) == 0)
+            curproc->cred.sgid = pcred.sgid;
         else
             retval = -1;
     }
@@ -757,14 +757,14 @@ static int sys_proc_getsetcred(void * user_args)
         set_errno(EPERM);
 
     /* Get current values */
-    cred.ruid = curproc->uid;
-    cred.euid = curproc->euid;
-    cred.suid = curproc->suid;
-    cred.rgid = curproc->gid;
-    cred.egid = curproc->egid;
-    cred.sgid = curproc->sgid;
+    pcred.ruid = curproc->cred.uid;
+    pcred.euid = curproc->cred.euid;
+    pcred.suid = curproc->cred.suid;
+    pcred.rgid = curproc->cred.gid;
+    pcred.egid = curproc->cred.egid;
+    pcred.sgid = curproc->cred.sgid;
 
-    copyout(&cred, user_args, sizeof(cred));
+    copyout(&pcred, user_args, sizeof(pcred));
 
     return retval;
 }

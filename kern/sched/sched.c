@@ -1178,7 +1178,7 @@ static int sys_thread_setpriority(void * user_args)
     int err;
     struct _sched_set_priority_args args;
 
-    err = priv_check(curproc, PRIV_SCHED_SETPRIORITY);
+    err = priv_check(&curproc->cred, PRIV_SCHED_SETPRIORITY);
     if (err) {
         set_errno(EPERM);
         return -1;
@@ -1190,7 +1190,7 @@ static int sys_thread_setpriority(void * user_args)
         return -1;
     }
 
-    if (args.priority < 0 && curproc->euid != 0) {
+    if (args.priority < 0 && curproc->cred.euid != 0) {
         set_errno(EPERM);
         return -1;
     }

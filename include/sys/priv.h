@@ -273,7 +273,14 @@ struct _priv_pcap_args {
 
 #ifdef KERNEL_INTERNAL
 
-struct proc_info;
+struct cred {
+    uid_t uid, euid, suid;
+    gid_t gid, egid, sgid;
+#ifdef configPROCCAP
+    bitmap_t pcap_restrmap[_PRIV_MLEN]; /*!< Privilege restrict bitmap. */
+    bitmap_t pcap_grantmap[_PRIV_MLEN]; /*!< Privilege grant bitmap. */
+#endif
+};
 
 /**
  * Test active securelevel.
@@ -312,7 +319,7 @@ int securelevel_gt(int level);
  *         returned on failure. In case of invalid arguments -EINVAL is
  *         returned.
  */
-int priv_check(struct proc_info * proc, int priv);
+int priv_check(const struct cred * cred, int priv);
 
 /**
  * @}

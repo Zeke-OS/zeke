@@ -141,7 +141,7 @@ static int tty_ioctl(struct dev_info * devnfo, uint32_t request,
         if (arg_len < sizeof(struct termios))
             return -EINVAL;
 
-        err = priv_check(curproc, PRIV_TTY_SETA);
+        err = priv_check(&curproc->cred, PRIV_TTY_SETA);
         if (err)
             return err;
 

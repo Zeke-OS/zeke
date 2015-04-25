@@ -88,12 +88,7 @@ typedef struct proc_info {
     int state;                  /*!< Process state. */
     int priority;               /*!< We may want to prioritize processes too. */
     int exit_code, exit_signal;
-    uid_t uid, euid, suid;
-    gid_t gid, egid, sgid;
-#ifdef configPROCCAP
-    bitmap_t pcap_restrmap[_PRIV_MLEN]; /*!< Privilege restrict bitmap. */
-    bitmap_t pcap_grantmap[_PRIV_MLEN]; /*!< Privilege grant bitmap. */
-#endif
+    struct cred cred;           /*!< Process credentials. */
 
     /* Accounting */
     unsigned long timeout;          /*!< Absolute timeout of the process. */

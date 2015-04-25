@@ -186,8 +186,8 @@ int fs_pipe_curproc_creat(struct files_struct * files, int fildes[2],
     /* Init queue */
     pipe->bp = bp;
     pipe->q = queue_create((char *)bp->b_data, sizeof(char), len);
-    pipe->owner = curproc->euid;
-    pipe->group = curproc->egid;
+    pipe->owner = curproc->cred.euid;
+    pipe->group = curproc->cred.egid;
 
     /* Init vnode */
     fs_vnode_init(vnode, 0, &fs_pipe_sb, &fs_pipe_ops);

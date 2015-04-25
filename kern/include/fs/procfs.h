@@ -47,6 +47,8 @@
                                              *   an procfs entry.
                                              */
 
+struct proc_info;
+
 /**
  * Procfs file types.
  */
@@ -95,7 +97,7 @@ struct procfs_file {
  * Create an entry for a process into procfs.
  * @param proc is a PCB to be described in procfs.
  */
-int procfs_mkentry(const proc_info_t * proc);
+int procfs_mkentry(const struct proc_info * proc);
 
 /**
  * Remove a process entry strored in procfs.

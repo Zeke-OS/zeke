@@ -773,11 +773,11 @@ int kernel_sysctl(pid_t pid, int * name, unsigned int namelen,
     memset(&req, 0, sizeof req);
 
     PROC_LOCK();
-    req.proc = proc_get_struct(pid);
+    req.cred = &proc_get_struct(pid)->cred;
     req.flags = flags;
     PROC_UNLOCK();
 
-    if (!req.proc)
+    if (!req.cred)
         return -EINVAL;
 
     if (oldlenp) {
@@ -912,8 +912,6 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
     if (req->newptr && !(oid->oid_kind & CTLFLAG_WR))
         return EPERM;
 
-    //KASSERT(req->proc != NULL, ("sysctl_root(): req->proc == NULL"));
-
     /* Is this sysctl sensitive to securelevels? */
     if (req->newptr && (oid->oid_kind & CTLFLAG_SECURE)) {
         int lvl = (oid->oid_kind & CTLMASK_SECURE) >> CTLSHIFT_SECURE;
@@ -927,7 +925,7 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
         int priv;
 
         priv = PRIV_SYSCTL_WRITE;
-        error = priv_check(req->proc, priv);
+        error = priv_check(req->cred, priv);
         if (error)
             return error;
     }
@@ -973,18 +971,21 @@ int userland_sysctl(pid_t pid, int * name, unsigned int namelen,
         void * old, size_t * oldlenp, int inkernel, void * new,
         size_t newlen, size_t * retval, int flags)
 {
-    int error = 0; //, memlocked;
+    const struct proc_info * proc;
     struct sysctl_req req;
+    int error = 0;
 
     memset(&req, 0, sizeof(req));
 
     PROC_LOCK();
-    req.proc = proc_get_struct(pid);
+    proc = proc_get_struct(pid);
+    if (!proc) {
+        PROC_UNLOCK();
+        return -EINVAL;
+    }
+    req.cred = &proc->cred;
     req.flags = flags;
     PROC_UNLOCK();
-
-    if (!req.proc)
-        return -EINVAL;
 
     if (oldlenp) {
         if (inkernel) {
@@ -1014,15 +1015,6 @@ int userland_sysctl(pid_t pid, int * name, unsigned int namelen,
     req.newfunc = sysctl_new_user;
     req.lock = REQ_UNWIRED;
 
-    // TODO ?
-#if 0
-    if (req.oldlen > PAGE_SIZE) {
-        memlocked = 1;
-        sx_xlock(&sysctlmemlock);
-    } else
-        memlocked = 0;
-#endif
-
     for (;;) {
         req.oldidx = 0;
         req.newidx = 0;
@@ -1034,13 +1026,9 @@ int userland_sysctl(pid_t pid, int * name, unsigned int namelen,
         thread_yield(THREAD_YIELD_IMMEDIATE);
     }
 
-    /* TODO ?? */
-    //if (memlocked)
-    //    sx_xunlock(&sysctlmemlock);
-
     if (error && error != ENOMEM) {
         if (error > 0)
-            error = -error; /* Compatibility fix */
+            error = -error; /* TODO Compatibility fix */
         return error;
     }
 
@@ -1052,6 +1040,6 @@ int userland_sysctl(pid_t pid, int * name, unsigned int namelen,
     }
 
     if (error > 0)
-        error = -error; /* Compatibility fix */
+        error = -error; /* TODO Compatibility fix */
     return error;
 }

@@ -31,8 +31,9 @@
  */
 
 #include <errno.h>
-#include <syscall.h>
 #include <sys/sysctl.h>
+#include <syscall.h>
+#include <proc.h>
 
 intptr_t sysctl_syscall(uint32_t type, void * p)
 {

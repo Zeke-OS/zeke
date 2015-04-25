@@ -592,8 +592,9 @@ static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
         .siginfo.si_signo = signum,
         .siginfo.si_code = si_code,
         .siginfo.si_errno = 0, /* TODO */
+        .siginfo.si_tid = current_thread->id,
         .siginfo.si_pid = current_process_id,
-        .siginfo.si_uid = curproc->uid,
+        .siginfo.si_uid = curproc->cred.uid,
         .siginfo.si_addr = 0, /* TODO */
         .siginfo.si_status = 0, /* TODO */
         .siginfo.si_value = { 0 }, /* TODO */
@@ -900,9 +901,11 @@ static int sys_signal_pkill(void * user_args)
     /*
      * Check if process is privileged to signal other users.
      */
-    if ((curproc->euid != proc->uid && curproc->euid != proc->suid) &&
-        (curproc->uid  != proc->uid && curproc->uid  != proc->suid)) {
-        if (priv_check(curproc, PRIV_SIGNAL_OTHER)) {
+    if ((curproc->cred.euid != proc->cred.uid &&
+         curproc->cred.euid != proc->cred.suid) &&
+        (curproc->cred.uid  != proc->cred.uid &&
+         curproc->cred.uid  != proc->cred.suid)) {
+        if (priv_check(&curproc->cred, PRIV_SIGNAL_OTHER)) {
             set_errno(EPERM);
             return -1;
         }
@@ -966,9 +969,11 @@ static int sys_signal_tkill(void * user_args)
     /*
      * Check if process is privileged to signal other users.
      */
-    if ((curproc->euid != proc->uid && curproc->euid != proc->suid) &&
-        (curproc->uid  != proc->uid && curproc->uid  != proc->suid)) {
-        if (priv_check(curproc, PRIV_SIGNAL_OTHER)) {
+    if ((curproc->cred.euid != proc->cred.uid &&
+         curproc->cred.euid != proc->cred.suid) &&
+        (curproc->cred.uid  != proc->cred.uid &&
+         curproc->cred.uid  != proc->cred.suid)) {
+        if (priv_check(&curproc->cred, PRIV_SIGNAL_OTHER)) {
             set_errno(EPERM);
             return -1;
         }
@@ -1007,7 +1012,7 @@ static int sys_signal_signal(void * user_args)
     void * old_handler;
     int err;
 
-    if (priv_check(curproc, PRIV_SIGNAL_ACTION)) {
+    if (priv_check(&curproc->cred, PRIV_SIGNAL_ACTION)) {
         set_errno(ENOTSUP);
         return -1;
     }
@@ -1054,7 +1059,7 @@ static int sys_signal_action(void * user_args)
     struct _signal_action_args args;
     int err;
 
-    if (priv_check(curproc, PRIV_SIGNAL_ACTION)) {
+    if (priv_check(&curproc->cred, PRIV_SIGNAL_ACTION)) {
         set_errno(ENOTSUP);
         return -1;
     }

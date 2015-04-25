@@ -69,13 +69,13 @@ int securelevel_gt(int level)
  * only a few to grant it.
  */
 int
-priv_check(struct proc_info * proc, int priv)
+priv_check(const struct cred * cred, int priv)
 {
     int error;
 
 #ifdef configPROCCAP
     /* Check if capability is disabled. */
-    error = bitmap_status(proc->pcap_restrmap, priv, _PRIV_MLEN);
+    error = bitmap_status(cred->pcap_restrmap, priv, _PRIV_MLEN);
     if (error) {
         if (error != -EINVAL)
             error = -EPERM;
@@ -99,13 +99,13 @@ priv_check(struct proc_info * proc, int priv)
         case PRIV_MAXFILES:
         case PRIV_MAXPROC:
         case PRIV_PROC_LIMIT:
-            if (proc->uid == 0) {
+            if (cred->uid == 0) {
                 error = 0;
                 goto out;
             }
             break;
         default:
-            if (proc->euid == 0) {
+            if (cred->euid == 0) {
                 error = 0;
                 goto out;
             }
@@ -125,7 +125,7 @@ priv_check(struct proc_info * proc, int priv)
 
 #ifdef configPROCCAP
     /* Check if we should grant privilege. */
-    error = bitmap_status(proc->pcap_grantmap, priv, _PRIV_MLEN);
+    error = bitmap_status(cred->pcap_grantmap, priv, _PRIV_MLEN);
     if (error < 0) {
         goto out;
     } else if (error > 0) {
@@ -154,9 +154,10 @@ static int sys_priv_pcap(void * user_args)
 {
     struct _priv_pcap_args args;
     proc_info_t * proc;
+    struct cred * proccred;
     int err;
 
-    err = priv_check(curproc, PRIV_ALTPCAP);
+    err = priv_check(&curproc->cred, PRIV_ALTPCAP);
     if (err) {
         set_errno(EPERM);
         return -1;
@@ -173,25 +174,26 @@ static int sys_priv_pcap(void * user_args)
         set_errno(ESRCH);
         return -1;
     }
+    proccred = &proc->cred;
 
     switch (args.mode) {
     case PRIV_PCAP_MODE_GETR: /* Get restr */
-        err = bitmap_status(proc->pcap_restrmap, args.priv, _PRIV_MLEN);
+        err = bitmap_status(proccred->pcap_restrmap, args.priv, _PRIV_MLEN);
         break;
     case PRIV_PCAP_MODE_SETR: /* Set restr */
-        err = bitmap_set(proc->pcap_restrmap, args.priv, _PRIV_MLEN);
+        err = bitmap_set(proccred->pcap_restrmap, args.priv, _PRIV_MLEN);
         break;
     case PRIV_PCAP_MODE_CLRR: /* Clear restr */
-        err = bitmap_clear(proc->pcap_restrmap, args.priv, _PRIV_MLEN);
+        err = bitmap_clear(proccred->pcap_restrmap, args.priv, _PRIV_MLEN);
         break;
     case PRIV_PCAP_MODE_GETG: /* Get grant */
-        err = bitmap_status(proc->pcap_grantmap, args.priv, _PRIV_MLEN);
+        err = bitmap_status(proccred->pcap_grantmap, args.priv, _PRIV_MLEN);
         break;
     case PRIV_PCAP_MODE_SETG: /* Set grant */
-        err = bitmap_set(proc->pcap_grantmap, args.priv, _PRIV_MLEN);
+        err = bitmap_set(proccred->pcap_grantmap, args.priv, _PRIV_MLEN);
         break;
     case PRIV_PCAP_MODE_CLRG: /* Clear grant */
-        err = bitmap_clear(proc->pcap_grantmap, args.priv, _PRIV_MLEN);
+        err = bitmap_clear(proccred->pcap_grantmap, args.priv, _PRIV_MLEN);
         break;
     default:
         set_errno(EINVAL);

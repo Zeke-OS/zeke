@@ -35,9 +35,9 @@
 #define EXEC_H
 
 #include <sys/linker_set.h>
+#include <proc.h>
 #include <fs/fs.h>
 
-struct proc_info;
 struct buf;
 
 struct exec_loadfn {

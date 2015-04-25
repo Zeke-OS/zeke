@@ -221,7 +221,8 @@ int sysctltstmib(int * left, int * right, int len);
 
 #ifdef KERNEL_INTERNAL
 #include <sys/linker_set.h>
-#include <proc.h>
+#include <sys/types.h>
+#include <sys/priv.h>
 
 #define SYSCTL_HANDLER_ARGS struct sysctl_oid * oidp, void * arg1, \
         intptr_t arg2, struct sysctl_req * req
@@ -235,8 +236,8 @@ int sysctltstmib(int * left, int * right, int len);
  * so that we can use the interface from the kernel or from user-space.
  */
 struct sysctl_req {
-    proc_info_t * proc; /* used for access checking */
-    int lock;           /* wiring state */
+    const struct cred * cred;   /* used for access checking */
+    int lock;                   /* wiring state */
     void * oldptr;
     size_t oldlen;
     size_t oldidx;

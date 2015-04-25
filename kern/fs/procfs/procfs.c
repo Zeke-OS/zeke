@@ -219,7 +219,7 @@ static int procfs_updatedir(vnode_t * dir)
          * directories that should not exist anymore.
          */
         for (int i = 0; i <= act_maxproc; i++) {
-            const proc_info_t * proc = proc_get_struct(i);
+            const struct proc_info * proc = proc_get_struct(i);
 
             if (proc)
                 err = procfs_mkentry(proc);
@@ -233,7 +233,7 @@ static int procfs_updatedir(vnode_t * dir)
     return err;
 }
 
-int procfs_mkentry(const proc_info_t * proc)
+int procfs_mkentry(const struct proc_info * proc)
 {
 #ifdef configPROCFS_DEBUG
     const char fail[] = "Failed to create a procfs entry\n";

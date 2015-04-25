@@ -35,6 +35,7 @@
 #include <stdint.h>
 #include <sys/sysctl.h>
 #include <dynmem.h>
+#include <hal/mmu.h>
 #include <idle.h>
 #include <kerror.h>
 #include <klocks.h>

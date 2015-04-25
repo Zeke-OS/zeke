@@ -31,8 +31,9 @@
  */
 
 #include <errno.h>
-#include <sys/types_pthread.h>
+#include <sys/param.h>
 #include <sys/sysctl.h>
+#include <sys/types_pthread.h>
 #include <kactype.h>
 
 SYSCTL_NODE(, 0, sysctl, CTLFLAG_RW, 0,

@@ -57,7 +57,7 @@ static int sys_read(void * user_args)
     char * buf = NULL;
     int err, retval;
 
-    err = priv_check(curproc, PRIV_VFS_READ);
+    err = priv_check(&curproc->cred, PRIV_VFS_READ);
     if (err) {
         set_errno(EPERM);
         retval = -1;
@@ -108,7 +108,7 @@ static int sys_write(void * user_args)
     char * buf = 0;
     int err, retval;
 
-    err = priv_check(curproc, PRIV_VFS_WRITE);
+    err = priv_check(&curproc->cred, PRIV_VFS_WRITE);
     if (err) {
         set_errno(EPERM);
         return -1;
@@ -581,7 +581,7 @@ static int sys_filestat(void * user_args)
     struct stat stat_buf;
     int err, filref = 0, vnref = 0, retval = -1;
 
-    err = priv_check(curproc, PRIV_VFS_STAT);
+    err = priv_check(&curproc->cred, PRIV_VFS_STAT);
     if (err) {
         set_errno(EPERM);
         return -1;
@@ -709,11 +709,11 @@ static int sys_access(void * user_args)
     }
 
     if (args->flag & AT_EACCESS) {
-        euid = curproc->euid;
-        egid = curproc->egid;
+        euid = curproc->cred.euid;
+        egid = curproc->cred.egid;
     } else {
-        euid = curproc->uid;
-        egid = curproc->gid;
+        euid = curproc->cred.uid;
+        egid = curproc->cred.gid;
     }
 
     if (args->amode & F_OK) {
@@ -786,7 +786,7 @@ static int sys_chown(void * user_args)
     struct _fs_chown_args args;
     int err;
 
-    err = priv_check(curproc, PRIV_VFS_CHOWN);
+    err = priv_check(&curproc->cred, PRIV_VFS_CHOWN);
     if (err) {
         set_errno(EPERM);
         return -1;
@@ -826,7 +826,7 @@ static int sys_mount(void * user_args)
     int err;
     int retval = -1;
 
-    err = priv_check(curproc, PRIV_VFS_MOUNT);
+    err = priv_check(&curproc->cred, PRIV_VFS_MOUNT);
     if (err) {
         set_errno(EPERM);
         return -1;
@@ -878,7 +878,7 @@ static int sys_umount(void * user_args)
     struct fs_superblock * sb;
     int err, retval = -1;
 
-    err = priv_check(curproc, PRIV_VFS_UNMOUNT);
+    err = priv_check(&curproc->cred, PRIV_VFS_UNMOUNT);
     if (err) {
         set_errno(EPERM);
         return -1;
@@ -920,7 +920,7 @@ static int sys_chroot(void * user_args)
 {
     int err;
 
-    err = priv_check(curproc, PRIV_VFS_CHROOT);
+    err = priv_check(&curproc->cred, PRIV_VFS_CHROOT);
     if (err) {
         set_errno(-err);
         return -1;

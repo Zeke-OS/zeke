@@ -443,8 +443,8 @@ static void init_inode_attr(ramfs_inode_t * inode, mode_t mode)
 #endif
     vrefset(&inode->in_vnode, 2); /* One ref for ramfs, one ref for caller. */
     inode->in_nlink = 0;
-    inode->in_uid = curproc->euid;
-    inode->in_gid = curproc->egid; /* TODO or to egid of the parent dir */
+    inode->in_uid = curproc->cred.euid;
+    inode->in_gid = curproc->cred.egid; /* TODO or to egid of the parent dir */
     /* TODO set times */
     inode->in_blocks = 0;
     inode->in_blksize = MMU_PGSIZE_COARSE;

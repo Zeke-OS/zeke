@@ -143,7 +143,7 @@ int shmem_mmap(struct proc_info * proc, uintptr_t vaddr, size_t bsize, int prot,
 
     KASSERT(out, "out buffer pointer must be set");
 
-    if ((prot & PROT_EXEC) && priv_check(curproc, PRIV_VM_PROT_EXEC)) {
+    if ((prot & PROT_EXEC) && priv_check(&curproc->cred, PRIV_VM_PROT_EXEC)) {
         return -EPERM;
     }
 

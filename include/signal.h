@@ -186,12 +186,13 @@ struct sigevent {
 
 
 typedef struct __siginfo {
-    int si_signo;           /*!< signal number. */
-    int si_code;            /*!< signal code. */
-    int si_errno;           /*!< errno association. */
-    pid_t si_pid;           /*!< sending process. */
-    uid_t si_uid;           /*!< sender's ruid. */
-    void * si_addr;         /*!< faulting instruction. */
+    int si_signo;           /*!< Signal number. */
+    int si_code;            /*!< Signal code. */
+    int si_errno;           /*!< Errno association. */
+    pthread_t si_tid;       /*!< Sending thread. */
+    pid_t si_pid;           /*!< Sending process. */
+    uid_t si_uid;           /*!< Sender's ruid. */
+    void * si_addr;         /*!< Faulting instruction. */
     int si_status;          /*!< Exit value or signal. */
     union sigval si_value;  /*!< Signal value. */
 } siginfo_t;

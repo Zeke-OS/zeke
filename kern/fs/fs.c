@@ -479,16 +479,16 @@ int chkperm(struct stat * stat, uid_t euid, gid_t egid, int oflags)
 
 int chkperm_curproc(struct stat * stat, int oflags)
 {
-    uid_t euid = curproc->euid;
-    gid_t egid = curproc->egid;
+    uid_t euid = curproc->cred.euid;
+    gid_t egid = curproc->cred.egid;
 
     return chkperm(stat, euid, egid, oflags);
 }
 
 int chkperm_vnode_curproc(vnode_t * vnode, int oflags)
 {
-    uid_t euid = curproc->euid;
-    gid_t egid = curproc->egid;
+    uid_t euid = curproc->cred.euid;
+    gid_t egid = curproc->cred.egid;
 
     return chkperm_vnode(vnode, euid, egid, oflags);
 }
@@ -530,7 +530,7 @@ int fs_fildes_create_curproc(vnode_t * vnode, int oflags)
         return -EINVAL;
     vref(vnode);
 
-    if (curproc->euid == 0)
+    if (curproc->cred.euid == 0)
         goto perms_ok;
 
     /* Check if user perms gives access */
@@ -835,7 +835,7 @@ int fs_unlink_curproc(int fd, const char * path, size_t path_len, int atflags)
         vrele(fnode);
         if (err)
             goto out;
-        if (S_ISDIR(stat.st_mode) && curproc->euid != 0) {
+        if (S_ISDIR(stat.st_mode) && curproc->cred.euid != 0) {
             err = -EPERM;
             goto out;
         }
@@ -988,7 +988,7 @@ int fs_chflags_curproc(int fildes, fflags_t flags)
         retval = -EPERM;
         goto out;
     }
-    retval = priv_check(curproc, PRIV_VFS_SYSFLAGS);
+    retval = priv_check(&curproc->cred, PRIV_VFS_SYSFLAGS);
     if (retval)
         goto out;
 
