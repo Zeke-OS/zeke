@@ -273,6 +273,8 @@ struct _priv_pcap_args {
 
 #ifdef KERNEL_INTERNAL
 
+#include <bitmap.h>
+
 struct cred {
     uid_t uid, euid, suid;
     gid_t gid, egid, sgid;
