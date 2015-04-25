@@ -129,7 +129,7 @@ static const uint8_t default_sigproptbl[] = {
     SA_IGNORE,          /*!< SIGINFO */
     SA_KILL,            /*!< SIGPWR */
     SA_IGNORE,          /*!< SIGCHLDTHRD */
-    SA_IGNORE,          /*!< 27 */
+    SA_KILL,            /*!< 27 */
     SA_IGNORE,          /*!< 28 */
     SA_IGNORE,          /*!< 29 */
     SA_IGNORE,          /*!< 30 */
@@ -190,7 +190,7 @@ static void ksig_unlock(ksigmtx_t * lock)
     mtx_unlock(&lock->l);
 }
 
-void ksignal_signals_ctor(struct signals * sigs)
+void ksignal_signals_ctor(struct signals * sigs, enum signals_owner owner_type)
 {
     /* TODO Use as a ctor for sigs structs in threads and procs.
      * Also create similar function for forking and make sure that all data
@@ -199,11 +199,12 @@ void ksignal_signals_ctor(struct signals * sigs)
     STAILQ_INIT(&sigs->s_pendqueue);
     RB_INIT(&sigs->sa_tree);
     mtx_init(&sigs->s_lock.l, KSIG_LOCK_TYPE, KSIG_LOCK_FLAGS);
+    sigs->s_owner_type = owner_type;
 }
 
 static void ksignal_thread_ctor(struct thread_info * th)
 {
-    ksignal_signals_ctor(&th->sigs);
+    ksignal_signals_ctor(&th->sigs, SIGNALS_OWNER_THREAD);
 }
 DATA_SET(thread_ctors, ksignal_thread_ctor);
 
@@ -582,8 +583,24 @@ static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
      * next thread.
      */
     if (action.ks_action.sa_flags & SA_KILL) {
-        /* TODO not always curproc? */
-        thread_terminate(curproc->main_thread->id);
+        struct thread_info * thread;
+
+        /*
+         * Get the thread to be terminated.
+         */
+        switch (sigs->s_owner_type) {
+        case SIGNALS_OWNER_PROCESS:
+            thread = container_of(sigs, struct proc_info, sigs)->main_thread;
+            break;
+        case SIGNALS_OWNER_THREAD:
+            thread = container_of(sigs, struct thread_info, sigs);
+            break;
+        default:
+            panic("Invalid sigs owner type");
+        }
+        KASSERT(thread != NULL, "thread must be set");
+
+        thread_terminate(thread->id);
 
         return 0;
     }

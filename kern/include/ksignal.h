@@ -73,10 +73,17 @@ typedef struct _ksigmtx_ {
     mtx_t l;
 } ksigmtx_t;
 
+enum signals_owner {
+    SIGNALS_OWNER_UNSET = 0,
+    SIGNALS_OWNER_PROCESS,
+    SIGNALS_OWNER_THREAD,
+};
+
 /**
  * Thread signals struct.
  */
 struct signals {
+    enum signals_owner s_owner_type;    /*!< Type of the owner container. */
     sigset_t s_block;                   /*!< List of blocked signals. */
     sigset_t s_wait;                    /*!< Signal wait mask. */
     sigset_t s_running;                 /*!< Signals running mask. */
@@ -94,7 +101,7 @@ int signum_comp(struct ksigaction * a, struct ksigaction * b);
 /**
  * Sigs struct constructor.
  */
-void ksignal_signals_ctor(struct signals * sigs);
+void ksignal_signals_ctor(struct signals * sigs, enum signals_owner owner_type);
 
 /**
  * Re-init sigs on thread fork.

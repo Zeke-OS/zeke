@@ -184,7 +184,7 @@ static void init_kernel_proc(void)
         + mmu_sizeof_region(&(kprocvm_heap->b_mmu)) - 1);
 
     /* Call constructor for signals struct */
-    ksignal_signals_ctor(&kernel_proc->sigs);
+    ksignal_signals_ctor(&kernel_proc->sigs, SIGNALS_OWNER_PROCESS);
 
     /*
      * File descriptors

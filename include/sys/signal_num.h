@@ -83,6 +83,7 @@
 #define SIGPWR      25      /*!< (T) System power failure. */
 #define SIGCHLDTHRD 26      /*!< (I) Child thread terminated.
                              * (Only delivered to the parent thread) */
+#define SIGCANCEL   27      /*!< Cancel a thread. */
 #define _SIGMTX     31      /*!< (I) Wakeup mutex. */
 
 #define _SIG_MAX_ 32
