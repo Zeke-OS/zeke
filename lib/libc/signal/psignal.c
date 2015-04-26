@@ -61,7 +61,9 @@ const char * const sys_signames[] = {
     "SIGSYS",
     "SIGURG",
     "SIGINFO",
-    "SIGPWR"
+    "SIGPWR",
+    "SIGCHLDTHRD",
+    "SIGCANCEL",
 };
 
 const char * const sys_siglist[] = {
@@ -89,7 +91,9 @@ const char * const sys_siglist[] = {
     "Bad system call",
     "Urgent I/O condition",
     "Information request",
-    "Power failure"
+    "Power failure",
+    "Child thread exited",
+    "Thread cancelled",
 };
 
 void psignal(int signum, const char * message)
