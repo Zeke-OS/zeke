@@ -89,7 +89,6 @@ struct signals {
     sigset_t s_running;                 /*!< Signals running mask. */
     struct sigwait_queue s_pendqueue;   /*!< Signals pending for handling. */
     struct sigaction_tree sa_tree;      /*!< Configured signal actions. */
-    uintptr_t s_usigret;    /*!< Address of the sigret() function in uspace. */
     ksigmtx_t s_lock;
 };
 

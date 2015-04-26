@@ -34,9 +34,8 @@
 #ifndef DEVFS_H
 #define DEVFS_H
 
-#include <stddef.h>
-#include <stdint.h>
 #include <sys/param.h>
+#include <sys/types.h>
 #include <fs/fs.h>
 
 #define DEVFS_FSNAME            "devfs" /*!< Name of the devfs in vfs. */

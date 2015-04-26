@@ -192,10 +192,6 @@ static void ksig_unlock(ksigmtx_t * lock)
 
 void ksignal_signals_ctor(struct signals * sigs, enum signals_owner owner_type)
 {
-    /* TODO Use as a ctor for sigs structs in threads and procs.
-     * Also create similar function for forking and make sure that all data
-     * is cloned instead of reuse.
-     */
     STAILQ_INIT(&sigs->s_pendqueue);
     RB_INIT(&sigs->sa_tree);
     mtx_init(&sigs->s_lock.l, KSIG_LOCK_TYPE, KSIG_LOCK_FLAGS);
@@ -395,7 +391,7 @@ static int eval_inkernel_action(struct ksigaction * action)
     case (int)(SIG_IGN):
         return 0;
     case (int)(SIG_ERR):
-        /* TODO */
+        /* TODO eval SIG_ERR */
     case (int)(SIG_HOLD):
         return -1;
     }
@@ -411,6 +407,28 @@ static int eval_inkernel_action(struct ksigaction * action)
 }
 
 /**
+ * Set the next stack frame properly for branching to a signal handler
+ * defined by sigaction.
+ */
+static void set_next_frame(int signum, struct ksigaction * action,
+                           void * old_thread_sp)
+{
+    const uintptr_t usigret = curproc->usigret;
+    sw_stack_frame_t * next_frame = &current_thread->sframe[SCHED_SFRAME_SYS];
+
+    if (usigret < configEXEC_BASE_LIMIT) {
+        KERROR(KERROR_WARN, "usigret addr probably invalid (%x)\n", usigret);
+    }
+
+    next_frame->pc = (uintptr_t)action->ks_action.sa_sigaction;
+    next_frame->r0 = signum;                    /* arg1 = signum */
+    next_frame->r1 = next_frame->sp;            /* arg2 = siginfo */
+    next_frame->r2 = 0;                         /* arg3 = TODO context */
+    next_frame->r9 = (uintptr_t)old_thread_sp;  /* frame pointer */
+    next_frame->lr = curproc->usigret;
+}
+
+/**
  * Post thread scheduling handler that updates thread stack frame if a signal
  * is pending. After this handler the thread will enter to signal handler
  * instead of returning to normal execution.
@@ -422,7 +440,6 @@ static void ksignal_post_scheduling(void)
     struct ksigaction action;
     struct ksiginfo * ksiginfo;
     void * old_thread_sp; /* Note: in user space */
-    sw_stack_frame_t * next_frame;
 
     forward_proc_signals();
 
@@ -512,7 +529,7 @@ static void ksignal_post_scheduling(void)
        ) {
         /*
          * Thread has trashed its stack; Nothing we can do but give SIGILL.
-         * TODO Should we punish only the thread or whole process?
+         * RFE Should we punish only the thread or the whole process?
          */
         ksig_unlock(&sigs->s_lock);
         kfree(ksiginfo);
@@ -521,16 +538,8 @@ static void ksignal_post_scheduling(void)
     }
     /* Don't push anything after this point. */
 
-    /*
-     * Update next stack frame.
-     */
-    next_frame = &current_thread->sframe[SCHED_SFRAME_SYS];
-    next_frame->pc = (uintptr_t)action.ks_action.sa_sigaction;
-    next_frame->r0 = signum;                    /* arg1 = signum */
-    next_frame->r1 = next_frame->sp;            /* arg2 = siginfo */
-    next_frame->r2 = 0;                         /* arg3 = TODO context */
-    next_frame->r9 = (uintptr_t)old_thread_sp;  /* frame pointer */
-    next_frame->lr = sigs->s_usigret;
+    /* Update the next stack frame. */
+    set_next_frame(signum, &action, old_thread_sp);
 
     /*
      * TODO
@@ -539,7 +548,7 @@ static void ksignal_post_scheduling(void)
      */
 
     ksig_unlock(&sigs->s_lock);
-    kfree(ksiginfo); /* TODO May cause deadlock in interrupt handler */
+    kfree(ksiginfo); /* TODO May cause a deadlock in interrupt handler */
 }
 DATA_SET(post_sched_tasks, ksignal_post_scheduling);
 
@@ -1251,6 +1260,18 @@ static int sys_signal_sigwaitinfo(void * user_args)
     return 0;
 }
 
+static int sys_signal_set_return(void * user_args)
+{
+    int err;
+
+    err = copyin(user_args, &curproc->usigret, sizeof(uintptr_t));
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+    return 0;
+}
+
 static int sys_signal_return(void * user_args)
 {
     const sw_stack_frame_t * const sframe =
@@ -1296,6 +1317,7 @@ static const syscall_handler_t ksignal_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_SIGMASK,    sys_signal_sigmask),
     ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_SIGWAIT,    sys_signal_sigwait),
     ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_SIGWAITNFO, sys_signal_sigwaitinfo),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_SETRETURN,  sys_signal_set_return),
     ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_RETURN,     sys_signal_return),
 };
 SYSCALL_HANDLERDEF(ksignal_syscall, ksignal_sysfnmap);

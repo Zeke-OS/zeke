@@ -108,7 +108,10 @@ struct proc_info {
     void * brk_start;           /*!< Break start address. (end of heap data) */
     void * brk_stop;            /*!< Break stop address. (end of heap region) */
 
+    /* Signals */
     struct signals sigs;        /*!< Per process signals. */
+    uintptr_t usigret;          /*!< Address of the sigret() function in
+                                 *   user space. */
 
     /**
      * Process inheritance; Parent and child thread pointers.
