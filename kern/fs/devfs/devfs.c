@@ -30,20 +30,20 @@
  *******************************************************************************
  */
 
-#include <hal/core.h>
-#include <sys/ioctl.h>
-#include <kinit.h>
-#include <kmalloc.h>
-#include <libkern.h>
-#include <kstring.h>
 #include <errno.h>
-#include <kerror.h>
-#include <proc.h>
+#include <sys/ioctl.h>
+#include <fs/dev_major.h>
+#include <fs/devfs.h>
 #include <fs/fs.h>
 #include <fs/fs_util.h>
 #include <fs/ramfs.h>
-#include <fs/devfs.h>
-#include <fs/dev_major.h>
+#include <hal/core.h>
+#include <kerror.h>
+#include <kinit.h>
+#include <kmalloc.h>
+#include <kstring.h>
+#include <libkern.h>
+#include <proc.h>
 
 /**
  * Max tries in case of block read/write returns 0.

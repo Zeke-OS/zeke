@@ -67,20 +67,20 @@
  *******************************************************************************
  */
 
-#include <sys/types.h>
+#include <errno.h>
 #include <sys/param.h>
-#include <sys/tree.h>
 #include <sys/priv.h>
 #include <sys/sysctl.h>
-#include <errno.h>
+#include <sys/tree.h>
+#include <sys/types.h>
+#include <kmalloc.h>
+#include <ksched.h>
 #include <kstring.h>
 #include <libkern.h>
-#include <kmalloc.h>
-#include <vm/vm.h>
-#include <syscall.h>
-#include <ksched.h>
 #include <proc.h>
+#include <syscall.h>
 #include <timers.h>
+#include <vm/vm.h>
 #include "ksignal.h"
 
 #define KSIG_LOCK_TYPE  MTX_TYPE_TICKET

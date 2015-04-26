@@ -34,9 +34,8 @@
 #ifndef DEVFS_H
 #define DEVFS_H
 
-#include <stdint.h>
 #include <stddef.h>
-#include <sys/types.h>
+#include <stdint.h>
 #include <sys/param.h>
 #include <fs/fs.h>
 

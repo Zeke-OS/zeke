@@ -37,11 +37,11 @@
 #ifndef KSIGNAL_H
 #define KSIGNAL_H
 
+#include <signal.h>
+#include <stdint.h>
 #include <sys/queue.h>
 #include <sys/tree.h>
-#include <stdint.h>
 #include <klocks.h>
-#include <signal.h>
 
 struct proc_info;
 

@@ -30,6 +30,7 @@
  *******************************************************************************
  */
 
+#include <sys/types.h>
 #include <kerror.h>
 #include <proc.h>
 #include <thread.h>

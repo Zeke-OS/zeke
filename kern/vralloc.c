@@ -30,20 +30,20 @@
  *******************************************************************************
  */
 
-#include <libkern.h>
-#include <kinit.h>
+#include <sys/sysctl.h>
 #include <bitmap.h>
+#include <buf.h>
 #include <dllist.h>
-#include <ptmapper.h>
 #include <dynmem.h>
-#include <kmalloc.h>
-#include <kstring.h>
 #include <errno.h>
 #include <kerror.h>
+#include <kinit.h>
+#include <kmalloc.h>
+#include <kstring.h>
+#include <libkern.h>
 #include <proc.h>
-#include <sys/sysctl.h>
+#include <ptmapper.h>
 #include <vm/vm.h>
-#include <buf.h>
 
 /* TODO Locks to protect global data structures. */
 

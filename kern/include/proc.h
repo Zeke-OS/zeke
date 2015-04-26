@@ -51,17 +51,18 @@
 #ifndef PROC_H
 #define PROC_H
 
-#include <sys/param.h>
+#include <sys/types.h>
 #include <sys/types_pthread.h>
-#include <sys/times.h>
-#include <sys/resource.h>
+#include <sys/param.h>
 #include <sys/priv.h>
-#include <hal/mmu.h>
-#include <vm/vm.h>
-#include <fs/fs.h>
+#include <sys/resource.h>
+#include <sys/times.h>
 #include <bitmap.h>
+#include <fs/fs.h>
+#include <hal/mmu.h>
 #include <klocks.h>
 #include <thread.h>
+#include <vm/vm.h>
 
 #define PROC_STATE_INITIAL  0
 #if 0

@@ -30,8 +30,9 @@
  *******************************************************************************
  */
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
+#include <sys/types.h>
 #include <proc.h>
 #include <vm/vm.h>
 #include <kmalloc.h>

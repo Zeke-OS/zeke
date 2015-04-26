@@ -31,12 +31,11 @@
  *******************************************************************************
  */
 
-#include <sys/types.h>
-#include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/sysctl.h>
 #include <sys/wait.h>
+#include <unistd.h>
 #include <buf.h>
 #include <dynmem.h>
 #include <exec.h>
@@ -50,8 +49,6 @@
 #include <proc.h>
 #include <ptmapper.h>
 #include <syscall.h>
-#include <thread.h>
-#include <vm/vm.h>
 #include <vm/vm_copyinstruct.h>
 #include "_proc.h"
 

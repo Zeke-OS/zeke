@@ -30,19 +30,19 @@
  *******************************************************************************
  */
 
+#include <errno.h>
+#include <sys/mman.h>
 #include <sys/sysctl.h>
+#include <syscall.h>
 #include <buf.h>
 #include <dllist.h>
-#include <errno.h>
 #include <fs/devfs.h>
 #include <kerror.h>
 #include <kinit.h>
 #include <libkern.h>
 #include <proc.h>
-#include <syscall.h>
 #include <thread.h>
 #include <vm/vm.h>
-#include <sys/mman.h>
 
 static mtx_t sync_lock;
 

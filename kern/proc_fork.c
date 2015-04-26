@@ -31,21 +31,19 @@
  *******************************************************************************
  */
 
-#include <kstring.h>
-#include <libkern.h>
-#include <thread.h>
+#include <errno.h>
+#include <sys/sysctl.h>
+#include <buf.h>
+#include <dynmem.h>
+#include <fs/procfs.h>
 #include <kerror.h>
 #include <kinit.h>
-#include <syscall.h>
-#include <errno.h>
-#include <vm/vm.h>
-#include <sys/sysctl.h>
-#include <fs/procfs.h>
-#include <ptmapper.h>
-#include <dynmem.h>
 #include <kmalloc.h>
-#include <buf.h>
+#include <kstring.h>
+#include <libkern.h>
 #include <proc.h>
+#include <ptmapper.h>
+#include <syscall.h>
 #include "_proc.h"
 
 static pid_t proc_lastpid;  /*!< last allocated pid. */

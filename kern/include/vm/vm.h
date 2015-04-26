@@ -34,11 +34,11 @@
 #ifndef _VM_VM_H
 #define _VM_VM_H
 
-#include <llist.h>
-#include <sys/tree.h>
+#include <fs/fs.h>
 #include <hal/mmu.h>
 #include <klocks.h>
-#include <fs/fs.h>
+#include <llist.h>
+#include <sys/tree.h>
 
 #define VM_PROT_READ    0x1 /*!< Read. */
 #define VM_PROT_WRITE   0x2 /*!< Write. */
