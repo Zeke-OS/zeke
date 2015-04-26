@@ -128,8 +128,16 @@ int ksignal_sendsig_fatal(struct proc_info * p, int signum);
  */
 int ksignal_sigwait(siginfo_t * retval, const sigset_t * restrict set);
 
+/**
+ * Wait for signal(s) specified in set until timeout.
+ */
 int ksignal_sigtimedwait(siginfo_t * retval, const sigset_t * restrict set,
                          const struct timespec * restrict timeout);
+
+/**
+ * Sleep until timeout or a non-ignored signal is received.
+ */
+int ksignal_sigsleep(const struct timespec * restrict timeout);
 
 /**
  * Check if a signal is blocked.

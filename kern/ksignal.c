@@ -439,7 +439,7 @@ static void ksignal_post_scheduling(void)
     struct signals * sigs = &current_thread->sigs;
     struct ksigaction action;
     struct ksiginfo * ksiginfo;
-    void * old_thread_sp; /* Note: in user space */
+    void * old_thread_sp; /* Note: This is the user space address */
 
     forward_proc_signals();
 
@@ -479,6 +479,10 @@ static void ksignal_post_scheduling(void)
             current_thread->sigwait_retval = ksiginfo;
             STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
             ksig_unlock(&sigs->s_lock);
+#if configKSIGNAL_DEBUG
+            KERROR(KERROR_DEBUG, "Detected a sigwait() for %d, returning\n",
+                   signum);
+#endif
             return; /* There is a sigwait() for this signum. */
         }
 
@@ -493,7 +497,10 @@ static void ksignal_post_scheduling(void)
             /* Handling done */
             STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
             ksig_unlock(&sigs->s_lock);
-            kfree(ksiginfo); /* TODO May cause deadlock in interrupt handler */
+            kfree(ksiginfo); /* TODO May cause a deadlock in int handler */
+#if configKSIGNAL_DEBUG
+            KERROR(KERROR_DEBUG, "Signal %d handled in kernel space\n", signum);
+#endif
             return;
         } else if (nxt_state < 0) {
             /* This signal can't be handled right now */
@@ -512,7 +519,7 @@ static void ksignal_post_scheduling(void)
      * Continue to handle the signal in user space handler.
      */
 #if configKSIGNAL_DEBUG
-    KERROR(KERROR_DEBUG, "Pass sig %d to the user space.\n",
+    KERROR(KERROR_DEBUG, "Pass a signal %d to the user space\n",
            ksiginfo->siginfo.si_signo);
 #endif
 
@@ -531,6 +538,10 @@ static void ksignal_post_scheduling(void)
          * Thread has trashed its stack; Nothing we can do but give SIGILL.
          * RFE Should we punish only the thread or the whole process?
          */
+#if configKSIGNAL_DEBUG
+         KERROR(KERROR_DEBUG,
+                "Thread has trashed its stack, sending a fatal signal\n");
+#endif
         ksig_unlock(&sigs->s_lock);
         kfree(ksiginfo);
         ksignal_sendsig_fatal(curproc, SIGILL);
@@ -571,6 +582,10 @@ static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
     struct ksiginfo * ksiginfo;
 
     KASSERT(mtx_test(&sigs->s_lock.l), "sigs should be locked\n");
+
+#if configKSIGNAL_DEBUG
+    KERROR(KERROR_DEBUG, "Queuing a signum %d to sigs: %p\n", signum, sigs);
+#endif
 
     if (signum <= 0 || signum > _SIG_MAXSIG) {
         return -EINVAL;
@@ -733,6 +748,42 @@ int ksignal_sigtimedwait(siginfo_t * retval, const sigset_t * restrict set,
     if (sigret.si_signo == -1)
         return -EAGAIN;
     *retval = sigret;
+    return 0;
+}
+
+int ksignal_sigsleep(const struct timespec * restrict timeout)
+{
+    struct signals * sigs = &current_thread->sigs;
+    ksigmtx_t * s_lock = &sigs->s_lock;
+    struct ksiginfo * ksiginfo;
+    int timer_id;
+
+    forward_proc_signals();
+
+    if (ksig_lock(s_lock))
+        return -EAGAIN;
+
+    /*
+     * Check if any signals pending already.
+     */
+    ksiginfo = STAILQ_FIRST(&sigs->s_pendqueue);
+    if (ksiginfo) {
+        ksig_unlock(s_lock);
+        return timeout->tv_sec;
+    }
+
+    ksig_unlock(s_lock);
+
+    timer_id = thread_alarm(timeout->tv_sec * 1000 +
+                            timeout->tv_nsec / 1000000);
+    if (timer_id < 0)
+        return timer_id;
+
+    thread_wait();
+    thread_alarm_rele(timer_id);
+
+    /* TODO Return the unslept time */
+
     return 0;
 }
 
@@ -1260,6 +1311,26 @@ static int sys_signal_sigwaitinfo(void * user_args)
     return 0;
 }
 
+static int sys_signal_sigsleep(void * user_args)
+{
+    struct _signal_sigsleep_args args;
+    struct timespec timeout;
+    int err;
+
+    err = copyin(user_args, &args, sizeof(args));
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
+    timeout = (struct timespec){
+        .tv_sec = args.tsec,
+        .tv_nsec = args.tnsec,
+    };
+
+    return ksignal_sigsleep(&timeout);
+}
+
 static int sys_signal_set_return(void * user_args)
 {
     int err;
@@ -1317,6 +1388,7 @@ static const syscall_handler_t ksignal_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_SIGMASK,    sys_signal_sigmask),
     ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_SIGWAIT,    sys_signal_sigwait),
     ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_SIGWAITNFO, sys_signal_sigwaitinfo),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_SIGSLEEP,   sys_signal_sigsleep),
     ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_SETRETURN,  sys_signal_set_return),
     ARRDECL_SYSCALL_HNDL(SYSCALL_SIGNAL_RETURN,     sys_signal_return),
 };

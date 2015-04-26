@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Sleep functions.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -32,18 +32,16 @@
  *******************************************************************************
 */
 
+#include <signal.h>
 #include <syscall.h>
-#include <zeke.h>
 #include <unistd.h>
-
-unsigned msleep(unsigned millisec)
-{
-    return (unsigned)syscall(SYSCALL_THREAD_SLEEP_MS, &millisec);
-}
 
 unsigned sleep(unsigned seconds)
 {
-    unsigned int millisec = seconds * 1000;
+    struct _signal_sigsleep_args args = {
+        .tsec = seconds,
+        .tnsec = 0,
+    };
 
-    return (unsigned)syscall(SYSCALL_THREAD_SLEEP_MS, &millisec);
+    return (unsigned)syscall(SYSCALL_SIGNAL_SIGSLEEP, &args);
 }

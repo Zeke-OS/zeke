@@ -315,13 +315,21 @@ struct _signal_sigwait_args {
 };
 
 /**
- * Arguments for SYSCALL_S
+ * Arguments for SYSCALL_SIGNAL_SIGWAITINFO
  */
 struct _signal_sigwaitinfo_args {
     const sigset_t * restrict set;
     siginfo_t * info;
     long twsec; /*!< timedwat, -1 == not timed */
     long twnsec;
+};
+
+/**
+ * Arguments for SYSCALL_SIGNAL_SIGSLEEP
+ */
+struct _signal_sigsleep_args {
+    long tsec;
+    long tnsec;
 };
 
 #ifndef KERNEL_INTERNAL

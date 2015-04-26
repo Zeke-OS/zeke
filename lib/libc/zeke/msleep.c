@@ -1,10 +1,12 @@
 /**
  *******************************************************************************
- * @file    zeke.h
+ * @file    msleep.c
  * @author  Olli Vanhoja
- * @brief   Zeke specific system functions.
+ * @brief   Sleep functions.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2012, 2013 Ninjaware Oy,
+ *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,47 +30,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************
- */
+*/
 
-/**
- * @addtogroup LIBC
- * @{
- */
+#include <signal.h>
+#include <syscall.h>
+#include <zeke.h>
 
-#ifndef ZEKE_H
-#define ZEKE_H
+unsigned msleep(unsigned millisec)
+{
+    struct _signal_sigsleep_args args = {
+        .tsec = millisec / 1000,
+        .tnsec = (millisec % 1000) * 1000000,
+    };
 
-#ifndef KERNEL_INTERNAL
-__BEGIN_DECLS
-
-/**
- * Blocking sleep.
- * Sleeps time specified by seconds regardless of incoming signals.
- * Only a fatal signal may interrupt the sleep.
- */
-unsigned bsleep(unsigned seconds);
-
-/**
- * Blocking sleep.
- * Sleeps time specified by millisec regardless of incoming signals.
- * Only a fatal signal may interrupt the sleep.
- */
-unsigned bmsleep(unsigned seconds);
-
-unsigned msleep(unsigned millisec);
-
-/**
- * Change root directory.
- * Change root directory to current process working directory.
- * Requires root permission and/or PRIV_VFS_CHROOT depending on configuration.
- */
-int chrootcwd(void);
-
-__END_DECLS
-#endif /* !KERNEL_INTERNAL */
-
-#endif /* ZEKE_H */
-
-/**
- * @}
- */
+    return (unsigned)syscall(SYSCALL_SIGNAL_SIGSLEEP, &args);
+}

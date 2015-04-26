@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    zeke.h
+ * @file    sigreturn.c
  * @author  Olli Vanhoja
- * @brief   Zeke specific system functions.
+ * @brief   Return from a signal handler.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,45 +30,17 @@
  *******************************************************************************
  */
 
-/**
- * @addtogroup LIBC
- * @{
- */
+#include <syscall.h>
+#include <signal.h>
 
-#ifndef ZEKE_H
-#define ZEKE_H
+static void init_sigreturn(void) __attribute__((constructor));
+static void init_sigreturn(void)
+{
+    syscall(SYSCALL_SIGNAL_SETRETURN, sigreturn);
+}
 
-#ifndef KERNEL_INTERNAL
-__BEGIN_DECLS
-
-/**
- * Blocking sleep.
- * Sleeps time specified by seconds regardless of incoming signals.
- * Only a fatal signal may interrupt the sleep.
- */
-unsigned bsleep(unsigned seconds);
-
-/**
- * Blocking sleep.
- * Sleeps time specified by millisec regardless of incoming signals.
- * Only a fatal signal may interrupt the sleep.
- */
-unsigned bmsleep(unsigned seconds);
-
-unsigned msleep(unsigned millisec);
-
-/**
- * Change root directory.
- * Change root directory to current process working directory.
- * Requires root permission and/or PRIV_VFS_CHROOT depending on configuration.
- */
-int chrootcwd(void);
-
-__END_DECLS
-#endif /* !KERNEL_INTERNAL */
-
-#endif /* ZEKE_H */
-
-/**
- * @}
- */
+void sigreturn(void)
+{
+    syscall(SYSCALL_SIGNAL_RETURN, NULL);
+    __builtin_unreachable();
+}

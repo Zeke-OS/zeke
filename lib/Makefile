@@ -82,7 +82,8 @@ $(wildcard libc/unistd/*.c) \
 $(wildcard libc/uchar/*.c) \
 $(wildcard libc/wchar/*.c) \
 $(wildcard libc/wctype/*.c) \
-$(wildcard libc/mman/*.c)
+$(wildcard libc/mman/*.c) \
+$(wildcard libc/zeke/*.c)
 
 libc-ASRC-$(configARCH_ARM) = \
 $(wildcard libc/setjmp/arm/*.S)

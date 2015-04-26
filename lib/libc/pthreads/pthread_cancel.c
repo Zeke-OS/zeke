@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    zeke.h
+ * @file    pthread_cancel.c
  * @author  Olli Vanhoja
- * @brief   Zeke specific system functions.
+ * @brief   Zero Kernel user space code
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,47 +28,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************
- */
+*/
 
-/**
- * @addtogroup LIBC
- * @{
- */
+#include <errno.h>
+#include <signal.h>
+#include <syscall.h>
+#include <pthread.h>
 
-#ifndef ZEKE_H
-#define ZEKE_H
-
-#ifndef KERNEL_INTERNAL
-__BEGIN_DECLS
-
-/**
- * Blocking sleep.
- * Sleeps time specified by seconds regardless of incoming signals.
- * Only a fatal signal may interrupt the sleep.
- */
-unsigned bsleep(unsigned seconds);
-
-/**
- * Blocking sleep.
- * Sleeps time specified by millisec regardless of incoming signals.
- * Only a fatal signal may interrupt the sleep.
- */
-unsigned bmsleep(unsigned seconds);
-
-unsigned msleep(unsigned millisec);
-
-/**
- * Change root directory.
- * Change root directory to current process working directory.
- * Requires root permission and/or PRIV_VFS_CHROOT depending on configuration.
- */
-int chrootcwd(void);
-
-__END_DECLS
-#endif /* !KERNEL_INTERNAL */
-
-#endif /* ZEKE_H */
-
-/**
- * @}
- */
+int pthread_cancel(pthread_t thread)
+{
+    return pthread_kill(thread, SIGCANCEL);
+}
