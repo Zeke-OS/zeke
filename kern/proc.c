@@ -31,6 +31,8 @@
  *******************************************************************************
  */
 
+#define PROC_INTERNAL
+
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/sysctl.h>
@@ -50,14 +52,13 @@
 #include <ptmapper.h>
 #include <syscall.h>
 #include <vm/vm_copyinstruct.h>
-#include "_proc.h"
 
-static struct proc_info *(*_procarr)[];  /*!< processes indexed by pid */
-int maxproc = configMAXPROC;        /*!< Maximum # of processes, set. */
-int act_maxproc;                    /*!< Effective maxproc. */
-int nprocs = 1;                     /*!< Current # of procs. */
-pid_t current_process_id;           /*!< PID of current process. */
-struct proc_info * curproc;              /*!< PCB of the current process. */
+static struct proc_info *(*_procarr)[]; /*!< processes indexed by pid */
+int maxproc = configMAXPROC;            /*!< Maximum # of processes, set. */
+int act_maxproc;                        /*!< Effective maxproc. */
+int nprocs = 1;                         /*!< Current # of procs. */
+pid_t current_process_id;               /*!< PID of current process. */
+struct proc_info * curproc;             /*!< PCB of the current process. */
 
 extern vnode_t kerror_vnode;
 

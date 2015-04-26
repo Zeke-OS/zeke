@@ -220,6 +220,30 @@ struct vm_mm_struct * proc_get_locked_mm(pid_t pid);
  */
 pid_t proc_fork(pid_t pid);
 
+#ifdef PROC_INTERNAL
+
+/**
+ * Realloc procarr.
+ * Realloc _procarr based on maxproc sysctl variable if necessary.
+ * @note    This should be generally called before selecting next pid
+ *          from the array.
+ */
+void procarr_realloc(void);
+
+/**
+ * Insert a new process to _procarr.
+ * @param proc is a pointer to the new process.
+ */
+void procarr_insert(struct proc_info * new_proc);
+
+/**
+ * Get a random PID for a new process.
+ * @return Returns a random PID.
+ */
+pid_t proc_get_random_pid(void);
+
+#endif /* PROC_INTERNAL */
+
 #endif /* PROC_H */
 
 /**

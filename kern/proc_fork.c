@@ -31,6 +31,8 @@
  *******************************************************************************
  */
 
+#define PROC_INTERNAL
+
 #include <errno.h>
 #include <sys/sysctl.h>
 #include <buf.h>
@@ -44,7 +46,6 @@
 #include <proc.h>
 #include <ptmapper.h>
 #include <syscall.h>
-#include "_proc.h"
 
 static pid_t proc_lastpid;  /*!< last allocated pid. */
 
