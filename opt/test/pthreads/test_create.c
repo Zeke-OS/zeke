@@ -1,8 +1,9 @@
-#include <stdio.h>
-#include <stdint.h>
-#include <stddef.h>
-#include <unistd.h>
 #include <pthread.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <zeke.h>
 #include "punit.h"
 
 char stack[4096];
@@ -36,7 +37,7 @@ static char * test_create(void)
     pu_assert_equal("Thread created",
             pthread_create(&tid, &attr, thread, 0), 0);
 
-    sleep(2);
+    bsleep(2);
 
     pu_assert_equal("Thread IDs are equal", tid, test_tid);
 
