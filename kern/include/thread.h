@@ -46,7 +46,9 @@
 #include <hal/mmu.h>
 #include <ksignal.h>
 
-/* Stack frames */
+/*
+ * Stack frames
+ */
 #define SCHED_SFRAME_SYS        0   /*!< Sys int/Scheduling stack frame. */
 #define SCHED_SFRAME_SVC        1   /*!< Syscall stack frame. */
 #define SCHED_SFRAME_ABO        2   /*!< Stack frame for aborts. */

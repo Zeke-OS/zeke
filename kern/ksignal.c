@@ -249,6 +249,29 @@ static void ksignal_fork_handler(struct thread_info * th)
 DATA_SET(thread_fork_handlers, ksignal_fork_handler);
 
 /**
+ * Get a pointer to the stack frame that will return to user space.
+ */
+static sw_stack_frame_t * get_usr_sframe(struct thread_info * thread)
+{
+    /*
+     * We expect one of these stack frame is the stack frame returning to
+     * the user space. Order is somewhat important because we might be
+     * reading some old data and return a pointer to a wrong stack frame.
+     * RFE We must double check if there is any corner cases where a wrong
+     * stack frame is returned.
+     */
+    for (size_t i = 0; i < SCHED_SFRAME_ARR_SIZE; i++) {
+        sw_stack_frame_t * sframe;
+
+        sframe = &thread->sframe[i];
+        if ((sframe->psr & USER_PSR) == USER_PSR)
+            return sframe;
+    }
+
+    return NULL;
+}
+
+/**
  * Push 'src' to thread stack.
  * @param thread    thread.
  * @param src       is a pointer to to data to be pushed.
@@ -256,32 +279,28 @@ DATA_SET(thread_fork_handlers, ksignal_fork_handler);
  * @param old_thread_sp[in] returns the old thread stack pointer, can be NULL.
  * @return Error code or zero.
  */
-static int push_to_thread_stack(struct thread_info * thread, const void * src,
-        size_t size, void ** old_thread_sp)
+static int thread_stack_push(struct thread_info * thread, const void * src,
+                             size_t size, void ** old_thread_sp)
 {
-    const int insys = thread_flags_is_set(thread, SCHED_INSYS_FLAG);
-    const int framenum = (insys) ? SCHED_SFRAME_SVC : SCHED_SFRAME_SYS;
-    sw_stack_frame_t * sframe = &thread->sframe[framenum];
-    void * old_sp = (void *)sframe->sp;
-    void * new_sp = (char *)old_sp - memalign(size);
+    sw_stack_frame_t * sframe;
+    void * old_sp;
+    void * new_sp;
+    int err;
 
     KASSERT(size > 0, "size should be greater than zero.\n");
 
+    sframe = get_usr_sframe(thread);
+    if (!sframe)
+        panic("Can't determine the user space stack frame.");
+
+    old_sp = (void *)sframe->sp;
+    new_sp = (char *)old_sp - memalign(size);
     if (!old_sp || !new_sp)
         return -EFAULT;
 
-    if (insys) {
-        int err;
-
-        err = copyout(src, new_sp, size);
-        if (err)
-            return -EFAULT;
-    } else {
-        if (!kernacc(old_sp, size, VM_PROT_READ | VM_PROT_WRITE))
-            return -EFAULT;
-
-        memmove(new_sp, src, size);
-    }
+    err = copyout(src, new_sp, size);
+    if (err)
+        return -EFAULT;
 
     sframe->sp = (uintptr_t)new_sp;
     if (old_thread_sp)
@@ -290,33 +309,30 @@ static int push_to_thread_stack(struct thread_info * thread, const void * src,
     return 0;
 }
 
+
 /**
  * Pop from thread stack to dest.
  */
-static int pop_from_thread_stack(struct thread_info * thread, void * dest,
-        size_t size)
+static int thread_stack_pop(struct thread_info * thread, void * buf,
+                            size_t size)
 {
-    const int insys = thread_flags_is_set(thread, SCHED_INSYS_FLAG);
-    const int framenum = (insys) ? SCHED_SFRAME_SVC : SCHED_SFRAME_SYS;
-    const void * sp = (void *)thread->sframe[framenum].sp;
+    sw_stack_frame_t * sframe;
+    void * sp;
+    int err;
 
+    sframe = get_usr_sframe(thread);
+    if (!sframe)
+        panic("Can't determine the user space stack frame.");
+
+    sp = (void *)sframe->sp;
     if (!sp)
         return -EFAULT;
 
-    if (insys) {
-        int err;
+    err = copyin(sp, buf, size);
+    if (err)
+        return err;
 
-        err = copyin(sp, dest, size);
-        if (err)
-            return err;
-    } else {
-        if (!kernacc(sp, size, VM_PROT_READ | VM_PROT_WRITE))
-            return -EFAULT;
-
-        memmove(dest, sp, size);
-    }
-
-    thread->sframe[framenum].sp += memalign(size);
+    sframe->sp += memalign(size);
 
     return 0;
 }
@@ -444,15 +460,9 @@ static void ksignal_post_scheduling(void)
     forward_proc_signals();
 
     /*
-     * Can't handle signals now as the thread is in syscall and we don't want to
-     * export data from kernel registers to the user space stack.
-     */
-    if (thread_flags_is_set(current_thread, SCHED_INSYS_FLAG))
-        return;
-
-    /*
      * Can't handle signals right now if we can't get lock to sigs of
      * the current thread.
+     * RFE Can this cause any unexpected returns?
      */
     if (ksig_lock(&sigs->s_lock))
         return;
@@ -524,15 +534,15 @@ static void ksignal_post_scheduling(void)
 #endif
 
     if (/* Push current stack frame to the user space thread stack. */
-        push_to_thread_stack(current_thread,
-                             &current_thread->sframe[SCHED_SFRAME_SYS],
-                             sizeof(sw_stack_frame_t),
-                             NULL) ||
+        thread_stack_push(current_thread,
+                          &current_thread->sframe[SCHED_SFRAME_SYS],
+                          sizeof(sw_stack_frame_t),
+                          NULL) ||
         /* Push siginfo struct. */
-        push_to_thread_stack(current_thread,
-                             &ksiginfo->siginfo,
-                             sizeof(ksiginfo->siginfo),
-                             &old_thread_sp /* Address of the prev sframe. */)
+        thread_stack_push(current_thread,
+                          &ksiginfo->siginfo,
+                          sizeof(ksiginfo->siginfo),
+                          &old_thread_sp /* Address of the prev sframe. */)
        ) {
         /*
          * Thread has trashed its stack; Nothing we can do but give SIGILL.
@@ -1358,9 +1368,9 @@ static int sys_signal_return(void * user_args)
      */
 
     current_thread->sframe[SCHED_SFRAME_SYS].sp = sframe->r9;
-    err = pop_from_thread_stack(current_thread,
-                                &current_thread->sframe[SCHED_SFRAME_SYS],
-                                sizeof(const sw_stack_frame_t));
+    err = thread_stack_pop(current_thread,
+                           &current_thread->sframe[SCHED_SFRAME_SYS],
+                           sizeof(const sw_stack_frame_t));
     if (err) {
         /*
          * TODO Should we punish only the thread or whole process?
