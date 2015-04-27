@@ -35,12 +35,14 @@
 #include <stdint.h>
 #include <sys/sysctl.h>
 #include <dynmem.h>
+#include <hal/core.h>
 #include <hal/mmu.h>
 #include <idle.h>
 #include <kerror.h>
 #include <klocks.h>
 #include <kstring.h>
 #include <libkern.h>
+#include <queue_r.h>
 #include <kmalloc.h>
 
 /*
@@ -110,6 +112,13 @@ void * kmalloc_base;
 
 static mtx_t kmalloc_giant_lock;
 
+/*
+ * CB and data pointer array for lazy freeing data.
+ * Lazy in this context means freeing data where there is no risk of deadlock.
+ */
+static struct queue_cb lazy_free_queue;
+static uintptr_t lazy_free_queue_data[100];
+
 /**
  * Get pointer to a memory block descriptor by memory block pointer.
  * @param p is the memory block address.
@@ -142,6 +151,8 @@ static void update_stat_set(size_t * stat_act, size_t value);
 void kmalloc_init(void)
 {
     mtx_init(&kmalloc_giant_lock, MTX_TYPE_TICKET, 0);
+    lazy_free_queue = queue_create(lazy_free_queue_data, sizeof(uintptr_t),
+                                   sizeof(lazy_free_queue_data));
 }
 
 /**
@@ -422,6 +433,40 @@ void kfree(void * p)
 
     mtx_unlock(&kmalloc_giant_lock);
 }
+
+void kfree_lazy(void * p)
+{
+    istate_t istate;
+    const uintptr_t addr = (uintptr_t)p;
+
+    /*
+     * This is not a complete protection against concurrent access but we trust
+     * the caller knows how this works.
+     */
+    istate = get_interrupt_state();
+    disable_interrupt();
+
+    if (!queue_push(&lazy_free_queue, &addr)) {
+        mblock_t * b = get_mblock(p);
+        KERROR(KERROR_WARN, "kfree lazy queue full, leaked %u bytes\n",
+               (uint32_t)b->size);
+    }
+
+    set_interrupt_state(istate);
+}
+
+/*
+ * RFE We could take cpu as an argument and have this lazy free for each core.
+ */
+static void idle_lazy_free(uintptr_t arg)
+{
+    uintptr_t addr;
+
+    if (!queue_pop(&lazy_free_queue, &addr)) {
+        kfree((void *)addr);
+    }
+}
+IDLE_TASK(idle_lazy_free, 0);
 
 void * krealloc(void * p, size_t size)
 {

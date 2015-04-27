@@ -70,6 +70,14 @@ void * kcalloc(size_t nelem, size_t elsize);
 void kfree(void * p);
 
 /**
+ * Deallocate memory when idling.
+ * This function is mainly useful for situation where a deadlock could occur,
+ * especially when a thread calling any of kmalloc functions was interrutped and
+ * call to kfree() must be done in interrupt handler (or scheduler).
+ */
+void kfree_lazy(void * p);
+
+/**
  * Reallocate memory block.
  * Changes the size of the memory block pointed to by p.
  * @note This function behaves like C99 realloc.
