@@ -507,7 +507,7 @@ static void ksignal_post_scheduling(void)
             /* Handling done */
             STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
             ksig_unlock(&sigs->s_lock);
-            kfree(ksiginfo); /* TODO May cause a deadlock in int handler */
+            kfree_lazy(ksiginfo);
 #if configKSIGNAL_DEBUG
             KERROR(KERROR_DEBUG, "Signal %d handled in kernel space\n", signum);
 #endif
@@ -553,7 +553,7 @@ static void ksignal_post_scheduling(void)
                 "Thread has trashed its stack, sending a fatal signal\n");
 #endif
         ksig_unlock(&sigs->s_lock);
-        kfree(ksiginfo);
+        kfree_lazy(ksiginfo);
         ksignal_sendsig_fatal(curproc, SIGILL);
         return; /* TODO Is this ok? */
     }
@@ -569,7 +569,7 @@ static void ksignal_post_scheduling(void)
      */
 
     ksig_unlock(&sigs->s_lock);
-    kfree(ksiginfo); /* TODO May cause a deadlock in interrupt handler */
+    kfree_lazy(ksiginfo);
 }
 DATA_SET(post_sched_tasks, ksignal_post_scheduling);
 
@@ -967,6 +967,8 @@ int ksignal_set_ksigaction(struct signals * sigs, struct ksigaction * action)
 
     return 0;
 }
+
+/* System calls ***************************************************************/
 
 /**
  * Send a signal to a process or a group of processes.
