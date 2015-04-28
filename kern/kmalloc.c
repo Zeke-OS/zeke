@@ -462,6 +462,11 @@ static void idle_lazy_free(uintptr_t arg)
 {
     uintptr_t addr;
 
+    /**
+     * Free only one allocation per call to allow other tasks run as well.
+     * Locking shouldn't be a problem since no other process should have lock
+     * to our giant lock.
+     */
     if (!queue_pop(&lazy_free_queue, &addr)) {
         kfree((void *)addr);
     }

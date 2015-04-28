@@ -498,13 +498,13 @@ static void ksignal_post_scheduling(void)
 
         /* Check if signal is blocked */
         if (blocked) {
-            /* This signal is currently blocked. */
+            /* This signal is currently blocked and can't be handled. */
             continue;
         }
 
         nxt_state = eval_inkernel_action(&action);
         if (nxt_state == 0 || action.ks_action.sa_flags & SA_IGNORE) {
-            /* Handling done */
+            /* Signal handling done */
             STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
             ksig_unlock(&sigs->s_lock);
             kfree_lazy(ksiginfo);
@@ -514,6 +514,9 @@ static void ksignal_post_scheduling(void)
             return;
         } else if (nxt_state < 0) {
             /* This signal can't be handled right now */
+#if configKSIGNAL_DEBUG
+            KERROR(KERROR_DEBUG, "Postponing handling of signal %d\n", signum);
+#endif
             continue;
         }
         break;
@@ -522,12 +525,12 @@ static void ksignal_post_scheduling(void)
         ksig_unlock(&sigs->s_lock);
         return; /* All signals blocked or no signals pending */
     }
-    /* Else the pending singal should be handled now. */
+    /*
+     * Else the pending singal should be handled now but in user space, so
+     * continue to handle the signal in user space handler.
+     */
     STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
 
-    /*
-     * Continue to handle the signal in user space handler.
-     */
 #if configKSIGNAL_DEBUG
     KERROR(KERROR_DEBUG, "Pass a signal %d to the user space\n",
            ksiginfo->siginfo.si_signo);
