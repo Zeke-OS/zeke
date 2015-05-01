@@ -86,13 +86,6 @@
 #define KSIG_LOCK_TYPE  MTX_TYPE_TICKET
 #define KSIG_LOCK_FLAGS (MTX_OPT_DINT)
 
-#define KSIG_EXEC_IF(thread_, signum_) do {                     \
-    int blocked = ksignal_isblocked(&thread_->sigs, signum_);   \
-    int swait = sigismember(&thread_->sigs.s_wait, signum_);    \
-    if (blocked && swait) thread_release(thread_->id);          \
-    else if (!blocked) thread_ready(thread_->id);               \
-} while (0)
-
 static int kern_logsigexit = 1;
 SYSCTL_INT(_kern, KERN_LOGSIGEXIT, logsigexit, CTLFLAG_RW,
            &kern_logsigexit, 0,
@@ -129,7 +122,7 @@ static const uint8_t default_sigproptbl[] = {
     SA_IGNORE,          /*!< SIGINFO */
     SA_KILL,            /*!< SIGPWR */
     SA_IGNORE,          /*!< SIGCHLDTHRD */
-    SA_KILL,            /*!< 27 */
+    SA_KILL,            /*!< SIGCANCEL */
     SA_IGNORE,          /*!< 28 */
     SA_IGNORE,          /*!< 29 */
     SA_IGNORE,          /*!< 30 */
@@ -147,7 +140,7 @@ int signum_comp(struct ksigaction * a, struct ksigaction * b)
 {
     KASSERT((a && b), "a & b must be set");
 
-     return a->ks_signum - b->ks_signum;
+    return a->ks_signum - b->ks_signum;
 }
 
 #ifdef configLOCK_DEBUG
@@ -188,6 +181,20 @@ static int ksig_lock(ksigmtx_t * lock)
 static void ksig_unlock(ksigmtx_t * lock)
 {
     mtx_unlock(&lock->l);
+}
+
+/**
+ * Execute thread if signal conditions are met.
+ */
+static void ksignal_exec_cond(struct thread_info * thread, int signum)
+{
+    const int blocked = ksignal_isblocked(&thread->sigs, signum);
+    const int swait = sigismember(&thread->sigs.s_wait, signum);
+
+    if (blocked && swait)
+        thread_release(thread->id);
+    else if (!blocked)
+        thread_ready(thread->id);
 }
 
 void ksignal_signals_ctor(struct signals * sigs, enum signals_owner owner_type)
@@ -380,7 +387,7 @@ static void forward_proc_signals(void)
             STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
             STAILQ_INSERT_TAIL(&thread->sigs.s_pendqueue, ksiginfo, _entry);
             if (thread != current_thread)
-                KSIG_EXEC_IF(thread, ksiginfo->siginfo.si_signo);
+                ksignal_exec_cond(thread, ksiginfo->siginfo.si_signo);
             ksig_unlock(&thread->sigs.s_lock);
             ksig_unlock(&sigs->s_lock);
             return; /* Safer than break? */
@@ -557,7 +564,7 @@ static void ksignal_post_scheduling(void)
 #endif
         ksig_unlock(&sigs->s_lock);
         kfree_lazy(ksiginfo);
-        ksignal_sendsig_fatal(curproc, SIGILL);
+        ksignal_sendsig_fatal(curproc, SIGILL); /* TODO Possible deadlock? */
         return; /* TODO Is this ok? */
     }
     /* Don't push anything after this point. */
@@ -777,12 +784,21 @@ int ksignal_sigsleep(const struct timespec * restrict timeout)
         return -EAGAIN;
 
     /*
-     * Check if any signals pending already.
+     * Iterate through pending signals and check if there is any actions
+     * defined, possible thread termination is handled elsewhere.
      */
-    ksiginfo = STAILQ_FIRST(&sigs->s_pendqueue);
-    if (ksiginfo) {
-        ksig_unlock(s_lock);
-        return timeout->tv_sec;
+    STAILQ_FOREACH(ksiginfo, &sigs->s_pendqueue, _entry) {
+        if (!sigismember(&sigs->s_block, ksiginfo->siginfo.si_signo)) {
+            struct ksigaction action;
+            void (*sa_handler)(int);
+
+            ksignal_get_ksigaction(&action, sigs, ksiginfo->siginfo.si_signo);
+            sa_handler = action.ks_action.sa_handler;
+            if (sa_handler != SIG_IGN && sa_handler != SIG_DFL) {
+                ksig_unlock(s_lock);
+                return timeout->tv_sec;
+            }
+        }
     }
 
     ksig_unlock(s_lock);
@@ -1089,7 +1105,7 @@ static int sys_signal_tkill(void * user_args)
         set_errno(-err);
         return -1;
     }
-    KSIG_EXEC_IF(thread, args.sig);
+    ksignal_exec_cond(thread, args.sig);
 
     ksig_unlock(&sigs->s_lock);
 
