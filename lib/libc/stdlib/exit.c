@@ -30,5 +30,4 @@ void exit(int status)
     }
 
     _Exit(status);
-     __attribute__((noreturn));
 }
