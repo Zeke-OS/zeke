@@ -1173,6 +1173,8 @@ static int sys_signal_signal(void * user_args)
 static int sys_signal_action(void * user_args)
 {
     struct _signal_action_args args;
+    struct signals * sigs;
+    struct ksigaction old_ksigaction;
     int err;
 
     if (priv_check(&curproc->cred, PRIV_SIGNAL_ACTION)) {
@@ -1186,20 +1188,29 @@ static int sys_signal_action(void * user_args)
         return -1;
     }
 
-    if (ksig_lock(&current_thread->sigs.s_lock)) {
+    sigs = &current_thread->sigs;
+    if (ksig_lock(&sigs->s_lock)) {
         set_errno(EAGAIN);
         return -1;
     }
-
+    ksignal_get_ksigaction(&old_ksigaction, sigs, args.signum);
+    memcpy(&args.old_action, &old_ksigaction.ks_action,
+           sizeof(args.old_action));
     err = ksignal_set_ksigaction(
-            &current_thread->sigs,
+            sigs,
             &(struct ksigaction){
                 .ks_signum = args.signum,
-                .ks_action = args.action
+                .ks_action = args.new_action
             });
-    ksig_unlock(&current_thread->sigs.s_lock);
+    ksig_unlock(&sigs->s_lock);
     if (err) {
         set_errno(-err);
+        return -1;
+    }
+
+    err = copyout(&args, user_args, sizeof(args));
+    if (err) {
+        set_errno(EFAULT);
         return -1;
     }
 

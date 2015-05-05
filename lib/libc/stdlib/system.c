@@ -1,55 +1,59 @@
 /*
- * system( const char * )
+ * system(const char *)
  *
  * This file is part of the Public Domain C Library (PDCLib).
  * Permission is granted to use, modify, and / or redistribute at will.
  */
 
+#include <errno.h>
+#include <paths.h>
+#include <signal.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
-/*
- * This is an example implementation of system() fit for use with POSIX kernels.
- */
-
-extern int fork( void );
-extern int execve( const char * filename, char * const argv[], char * const envp[] );
-extern int wait( int * status );
-
-int system(const char * string)
+int system(const char * cmd)
 {
-    char const * const argv[] = { "sh", "-c", (char const * const)string, NULL };
-    if (string != NULL) {
-        int pid = fork();
-        if (pid == 0) {
-            execve("/bin/sh", (char ** const)argv, NULL);
-        }
-        else if (pid > 0)
-        {
-            while(wait( NULL ) != pid );
+    int stat;
+    pid_t pid;
+    struct sigaction sa, savintr, savequit;
+    sigset_t saveblock;
+
+    if (!cmd)
+        return 1;
+
+    sa.sa_handler = SIG_IGN;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    sigemptyset(&savintr.sa_mask);
+    sigemptyset(&savequit.sa_mask);
+    sigaction(SIGINT, &sa, &savintr);
+    sigaction(SIGQUIT, &sa, &savequit);
+    sigaddset(&sa.sa_mask, SIGCHLD);
+    sigprocmask(SIG_BLOCK, &sa.sa_mask, &saveblock);
+
+    if ((pid = fork()) == 0) {
+        sigaction(SIGINT, &savintr, (struct sigaction *)0);
+        sigaction(SIGQUIT, &savequit, (struct sigaction *)0);
+        sigprocmask(SIG_SETMASK, &saveblock, (sigset_t *)0);
+        execl(_PATH_BSHELL, "sh", "-c", cmd, (char *)0);
+
+        _exit(127);
+    }
+    if (pid == -1) {
+        stat = -1; /* errno comes from fork() */
+    } else {
+        while (waitpid(pid, &stat, 0) == -1) {
+            if (errno != EINTR) {
+                stat = -1;
+                break;
+            }
         }
     }
-    return -1;
+    sigaction(SIGINT, &savintr, (struct sigaction *)0);
+    sigaction(SIGQUIT, &savequit, (struct sigaction *)0);
+    sigprocmask(SIG_SETMASK, &saveblock, (sigset_t *)0);
+
+    return stat;
 }
-
-#ifdef TEST
-#include <_PDCLIB_test.h>
-
-#define SHELLCOMMAND "echo 'SUCCESS testing system()'"
-
-int main( void )
-{
-    FILE * fh;
-    char buffer[25];
-    buffer[24] = 'x';
-    TESTCASE( ( fh = freopen( testfile, "wb+", stdout ) ) != NULL );
-    TESTCASE( system( SHELLCOMMAND ) );
-    rewind( fh );
-    TESTCASE( fread( buffer, 1, 24, fh ) == 24 );
-    TESTCASE( memcmp( buffer, "SUCCESS testing system()", 24 ) == 0 );
-    TESTCASE( buffer[24] == 'x' );
-    TESTCASE( fclose( fh ) == 0 );
-    TESTCASE( remove( testfile ) == 0 );
-    return TEST_RESULTS;
-}
-
-#endif

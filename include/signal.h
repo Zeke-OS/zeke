@@ -293,7 +293,8 @@ struct _signal_signal_args {
  */
 struct _signal_action_args {
     int signum;
-    struct sigaction action;
+    struct sigaction new_action;
+    struct sigaction old_action;
 };
 
 /**
@@ -350,10 +351,8 @@ int pthread_sigmask(int how, const sigset_t * restrict set,
         sigset_t * restrict oset);
 #endif
 int raise(int sig);
-#if 0
 int sigaction(int sig, const struct sigaction * restrict act,
         struct sigaction * restrict oact);
-#endif
 
 /**
  * @addtogroup sigsetops
