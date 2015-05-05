@@ -348,56 +348,56 @@ static int thread_stack_pop(struct thread_info * thread, void * buf,
 }
 
 /**
- * Forward signals pending in proc sigs struct.
+ * Forward signals pending in proc sigs struct to thread pendqueue.
  */
 static void forward_proc_signals(void)
 {
-    struct signals * sigs = &curproc->sigs;
+    struct signals * proc_sigs = &curproc->sigs;
     struct ksiginfo * ksiginfo;
     struct ksiginfo * tmp;
 
-    if (ksig_lock(&sigs->s_lock))
+    if (ksig_lock(&proc_sigs->s_lock))
         return;
 
     /* Get next pending signal. */
-    STAILQ_FOREACH_SAFE(ksiginfo, &sigs->s_pendqueue, _entry, tmp) {
+    STAILQ_FOREACH_SAFE(ksiginfo, &proc_sigs->s_pendqueue, _entry, tmp) {
         struct thread_info * thread;
         struct thread_info * thread_it = NULL;
 
         while ((thread = proc_iterate_threads(curproc, &thread_it))) {
             int signum;
             int blocked, swait;
+            struct signals * thread_sigs = &thread->sigs;
 
             /*
              * Check if signal is not blocked for the thread.
              */
-            if (ksig_lock(&thread->sigs.s_lock)) {
-                ksig_unlock(&sigs->s_lock);
-                return; /* Try again later */
+            if (ksig_lock(&thread_sigs->s_lock)) {
+                goto out; /* Try again later */
             }
-            signum = ksiginfo->siginfo.si_signo;
-            blocked = ksignal_isblocked(&thread->sigs, signum);
-            swait = sigismember(&thread->sigs.s_wait, signum);
+            signum  = ksiginfo->siginfo.si_signo;
+            blocked = ksignal_isblocked(thread_sigs, signum);
+            swait   = sigismember(&thread_sigs->s_wait, signum);
 
             if (!(blocked && swait) && blocked) {
-                ksig_unlock(&thread->sigs.s_lock);
+                ksig_unlock(&thread_sigs->s_lock);
                 continue; /* check next thread */
             }
 
             /*
              * The signal should be processed by thread.
              */
-            STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
-            STAILQ_INSERT_TAIL(&thread->sigs.s_pendqueue, ksiginfo, _entry);
+            STAILQ_REMOVE(&proc_sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
+            STAILQ_INSERT_TAIL(&thread_sigs->s_pendqueue, ksiginfo, _entry);
             if (thread != current_thread)
                 ksignal_exec_cond(thread, ksiginfo->siginfo.si_signo);
-            ksig_unlock(&thread->sigs.s_lock);
-            ksig_unlock(&sigs->s_lock);
-            return; /* Safer than break? */
+            ksig_unlock(&thread_sigs->s_lock);
+            goto out;
         }
     }
 
-    ksig_unlock(&sigs->s_lock);
+out:
+    ksig_unlock(&proc_sigs->s_lock);
 }
 
 /**
