@@ -363,9 +363,9 @@ static void forward_proc_signals(void)
     STAILQ_FOREACH_SAFE(ksiginfo, &proc_sigs->s_pendqueue, _entry, tmp) {
         struct thread_info * thread;
         struct thread_info * thread_it = NULL;
+        const int signum = ksiginfo->siginfo.si_signo;
 
         while ((thread = proc_iterate_threads(curproc, &thread_it))) {
-            int signum;
             int blocked, swait;
             struct signals * thread_sigs = &thread->sigs;
 
@@ -373,9 +373,9 @@ static void forward_proc_signals(void)
              * Check if signal is not blocked for the thread.
              */
             if (ksig_lock(&thread_sigs->s_lock)) {
+                /* RFE Could we just continue? */
                 goto out; /* Try again later */
             }
-            signum  = ksiginfo->siginfo.si_signo;
             blocked = ksignal_isblocked(thread_sigs, signum);
             swait   = sigismember(&thread_sigs->s_wait, signum);
 
@@ -392,6 +392,12 @@ static void forward_proc_signals(void)
             if (thread != current_thread)
                 ksignal_exec_cond(thread, ksiginfo->siginfo.si_signo);
             ksig_unlock(&thread_sigs->s_lock);
+            /*
+             * We probably can't break and continue signal forwarding here
+             * because otherwise we may give one tread signals that can't
+             * be handled rightaway (blocking) even there might be another
+             * thread capable of handling those.
+             */
             goto out;
         }
     }
@@ -401,35 +407,34 @@ out:
 }
 
 /**
- * @return  0 = signal handled;
+ * @return  0 = signal handling ready;
  *         -1 = signal can't be handled right now;
  *          1 = signal handling shall continue
+ * TODO This function should be probably removed
  */
 static int eval_inkernel_action(struct ksigaction * action)
 {
-    int retval = 0;
-
-    /* Take a sig action request? */
+    /*
+     * RFE Take a sig action request?
+     */
     switch ((int)(action->ks_action.sa_handler)) {
     case (int)(SIG_DFL):
-        retval = 1;
-        break;
+        /*
+         * SA_KILL should be handled before queuing.
+         */
+        if (action->ks_action.sa_flags & SA_KILL) {
+            panic("post_scheduling can't handle SA_KILL");
+        }
+        return 1;
     case (int)(SIG_IGN):
         return 0;
     case (int)(SIG_ERR):
         /* TODO eval SIG_ERR */
     case (int)(SIG_HOLD):
         return -1;
+    default:
+        return 1;
     }
-
-    /*
-     * SA_KILL should be handled before queuing.
-     */
-    if (action->ks_action.sa_flags & SA_KILL) {
-        panic("post_scheduling can't handle SA_KILL");
-    }
-
-    return retval;
 }
 
 /**
@@ -629,7 +634,8 @@ static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
      * SA_KILL is handled here because post_scheduling handler can't change
      * next thread.
      */
-    if (action.ks_action.sa_flags & SA_KILL) {
+    if ((action.ks_action.sa_handler == SIG_DFL) &&
+            (action.ks_action.sa_flags & SA_KILL)) {
         struct thread_info * thread;
 
         /*

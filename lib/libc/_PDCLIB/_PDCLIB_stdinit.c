@@ -15,11 +15,14 @@
 #include <locale.h>
 #include <limits.h>
 #include <unistd.h>
+#include <syscall.h> /* for sireturn init */
 
 #include <sys/_PDCLIB_io.h>
 #include <sys/_PDCLIB_locale.h>
 #include <sys/_PDCLIB_clocale.h>
 #include <threads.h>
+
+extern void sigreturn(void); /* for init */
 
 /* TODO: This is proof-of-concept, requires finetuning. */
 static char _PDCLIB_sin_buffer[BUFSIZ];
@@ -469,4 +472,5 @@ __attribute__((constructor)) void init_stdio(void)
     mtx_init(&stdin->lock,  mtx_recursive);
     mtx_init(&stdout->lock, mtx_recursive);
     mtx_init(&stderr->lock, mtx_recursive);
+    syscall(SYSCALL_SIGNAL_SETRETURN, sigreturn);
 }

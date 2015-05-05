@@ -33,12 +33,6 @@
 #include <syscall.h>
 #include <signal.h>
 
-static void init_sigreturn(void) __attribute__((constructor));
-static void init_sigreturn(void)
-{
-    syscall(SYSCALL_SIGNAL_SETRETURN, sigreturn);
-}
-
 void sigreturn(void)
 {
     syscall(SYSCALL_SIGNAL_RETURN, NULL);
