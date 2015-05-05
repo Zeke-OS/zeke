@@ -201,6 +201,9 @@ void ksignal_signals_ctor(struct signals * sigs, enum signals_owner owner_type)
 {
     STAILQ_INIT(&sigs->s_pendqueue);
     RB_INIT(&sigs->sa_tree);
+    sigemptyset(&sigs->s_block);
+    sigemptyset(&sigs->s_wait);
+    sigemptyset(&sigs->s_running);
     mtx_init(&sigs->s_lock.l, KSIG_LOCK_TYPE, KSIG_LOCK_FLAGS);
     sigs->s_owner_type = owner_type;
 }
