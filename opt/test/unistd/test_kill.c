@@ -25,6 +25,7 @@ static void * thread(void * arg)
 
     signal(SIGUSR1, catch_sig);
 
+    fprintf(stderr, ".");
     thread_sleepret = sleep(10);
 
     sigemptyset(&waitset);
@@ -73,14 +74,19 @@ static void teardown(void)
 
 static char * test_kill_thread(void)
 {
+    fprintf(stderr, ".");
     sleep(2);
+    fprintf(stderr, ".");
     pthread_kill(thread_id, SIGUSR1);
     sleep(1);
+    fprintf(stderr, ".");
     pu_assert_equal("", thread_signum_received[0], SIGUSR1);
 
     sleep(1);
+    fprintf(stderr, ".");
     pthread_kill(thread_id, SIGUSR2);
     sleep(1);
+    fprintf(stderr, ".");
     pu_assert_equal("", thread_signum_received[1], SIGUSR2);
 
     return NULL;
