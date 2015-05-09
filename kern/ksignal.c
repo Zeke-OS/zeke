@@ -358,6 +358,7 @@ static int eval_inkernel_action(struct ksigaction * action)
          */
         if (action->ks_action.sa_flags & SA_KILL) {
             KERROR(KERROR_ERR, "post_scheduling can't handle SA_KILL (yet)");
+            return 0;
         }
         return 1;
     case (int)(SIG_IGN):
