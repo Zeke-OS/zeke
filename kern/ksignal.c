@@ -357,7 +357,7 @@ static int eval_inkernel_action(struct ksigaction * action)
          * SA_KILL should be handled before queuing.
          */
         if (action->ks_action.sa_flags & SA_KILL) {
-            panic("post_scheduling can't handle SA_KILL");
+            KERROR(KERROR_ERR, "post_scheduling can't handle SA_KILL (yet)");
         }
         return 1;
     case (int)(SIG_IGN):
@@ -465,7 +465,7 @@ static int push_stack_frame(int signum,
                           sizeof(siginfo_t),
                           &old_thread_sp /* Address of the prev sframe. */)
        ) {
-        KERROR(KERROR_ERR, "Failed to push\n");
+        KERROR(KERROR_ERR, "Failed to push signum %i\n", signum);
 
         return -EINVAL;
     }
@@ -508,7 +508,7 @@ static void ksignal_post_scheduling(void)
         return;
 
     /*
-     * Can't handle signals now as the thread is in syscall.
+     * Check if thread is in uninterruptible syscall.
      */
     if (thread_flags_is_set(current_thread, SCHED_INSYS_FLAG) &&
         !KSIGFLAG_IS_SET(sigs, KSIGFLAG_INTERRUPTIBLE)) {
@@ -660,7 +660,8 @@ static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
      * next thread.
      */
     if ((action.ks_action.sa_handler == SIG_DFL) &&
-            (action.ks_action.sa_flags & SA_KILL)) {
+            (action.ks_action.sa_flags & SA_KILL) &&
+            !sigismember(&sigs->s_wait, signum)) {
         struct thread_info * thread;
 
         /*
@@ -678,6 +679,10 @@ static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
         }
         KASSERT(thread != NULL, "thread must be set");
 
+#if configKSIGNAL_DEBUG
+        KERROR(KERROR_DEBUG, "Thread %u will be terminated by signum %d\n",
+               thread->id, signum);
+#endif
         thread_terminate(thread->id);
 
         return 0;
@@ -744,15 +749,13 @@ int ksignal_sigwait(siginfo_t * retval, const sigset_t * restrict set)
 
     KASSERT(retval, "retval must be set");
 
-    if (ksig_lock(s_lock))
-        return -EAGAIN;
+    while (ksig_lock(s_lock));
     memcpy(&sigs->s_wait, set, sizeof(sigs->s_wait));
     ksig_unlock(s_lock);
 
     forward_proc_signals();
 
-    if (ksig_lock(s_lock))
-        return -EAGAIN;
+    while (ksig_lock(s_lock));
 
     /* Iterate through pending signals */
     STAILQ_FOREACH(ksiginfo, &sigs->s_pendqueue, _entry) {
@@ -766,13 +769,15 @@ int ksignal_sigwait(siginfo_t * retval, const sigset_t * restrict set)
 
     KSIGFLAG_SET(sigs, KSIGFLAG_INTERRUPTIBLE);
     ksig_unlock(s_lock);
-    thread_wait();
+    thread_wait(); /* Wait for wakeup */
     KSIGFLAG_CLEAR(sigs, KSIGFLAG_INTERRUPTIBLE);
 
 out:
     while (ksig_lock(s_lock));
     sigemptyset(&sigs->s_wait);
-    *retval = current_thread->sigwait_retval->siginfo;
+    /* TODO Sometimes sigwait_retval is not set? */
+    if (current_thread->sigwait_retval)
+        *retval = current_thread->sigwait_retval->siginfo;
     ksig_unlock(s_lock);
     kfree(current_thread->sigwait_retval);
     current_thread->sigwait_retval = NULL;
@@ -817,28 +822,38 @@ int ksignal_sigsleep(const struct timespec * restrict timeout)
 
     forward_proc_signals();
 
-    if (ksig_lock(s_lock))
-        return -EAGAIN;
+    while (ksig_lock(s_lock));
 
     /*
      * Iterate through pending signals and check if there is any actions
      * defined, possible thread termination is handled elsewhere.
      */
     STAILQ_FOREACH(ksiginfo, &sigs->s_pendqueue, _entry) {
-        if (!sigismember(&sigs->s_block, ksiginfo->siginfo.si_signo)) {
+        int signum = ksiginfo->siginfo.si_signo;
+
+        if (!sigismember(&sigs->s_block, signum)) {
             struct ksigaction action;
             void (*sa_handler)(int);
 
-            ksignal_get_ksigaction(&action, sigs, ksiginfo->siginfo.si_signo);
+            ksignal_get_ksigaction(&action, sigs, signum);
             sa_handler = action.ks_action.sa_handler;
-            if (sa_handler != SIG_IGN && sa_handler != SIG_DFL) {
+
+            /*
+             * _SIGMTX must be a special case here because it's not something
+             * the user can have a control on and we may have one or more in
+             * queue.
+             * RFE Not sure if _SIGMTX requires some other special attention
+             * still?
+             */
+            if (sa_handler != SIG_IGN && sa_handler != SIG_DFL &&
+                    signum != _SIGMTX) {
                 ksig_unlock(s_lock);
                 return timeout->tv_sec;
             }
         }
     }
 
-    usec = timeout->tv_sec * 1000 * 1000 + timeout->tv_nsec / 1000;
+    usec = timeout->tv_sec * 1000000 + timeout->tv_nsec / 1000;
     timer_id = thread_alarm(usec / 1000);
     if (timer_id < 0)
         return timer_id;
@@ -852,8 +867,7 @@ int ksignal_sigsleep(const struct timespec * restrict timeout)
     unslept = usec - timers_get_split(timer_id);
     thread_alarm_rele(timer_id);
 
-    if (ksig_lock(s_lock))
-        return -EAGAIN; /* TODO ?? */
+    while (ksig_lock(s_lock));
     KSIGFLAG_CLEAR(sigs, KSIGFLAG_INTERRUPTIBLE);
     if (KSIGFLAG_IS_SET(sigs, KSIGFLAG_SIGHANDLER)) {
         /* Sleep was interrupted by a signal that will execute a handler */
@@ -865,7 +879,7 @@ int ksignal_sigsleep(const struct timespec * restrict timeout)
     ksig_unlock(s_lock);
 
     if (unslept > 0)
-        return unslept;
+        return unslept / 1000000;
     return 0;
 }
 

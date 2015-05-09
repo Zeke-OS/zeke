@@ -116,6 +116,7 @@ static void on_sigmtx(int i)
      */
     init_mtxsigset(&set);
     sigprocmask(SIG_BLOCK, &set, NULL);
+    pthread_sigmask(SIG_BLOCK, &set, NULL);
 
     /* Let's try again. */
     raise(_SIGMTX);

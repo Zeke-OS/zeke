@@ -4,36 +4,40 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <zeke.h>
 #include "punit.h"
 
 char * thread_stack;
 pthread_t thread_id;
+int thread_sleepret;
 int thread_signum_received[2];
 
 static void catch_sig(int signum)
 {
+    /*printf("sighandler called, sig: %i\n", signum);*/
     thread_signum_received[0] = signum;
 }
 
 static void * thread(void * arg)
 {
     sigset_t waitset;
-    int sig;
+    int signum;
 
-#if 0
     signal(SIGUSR1, catch_sig);
-#endif
 
+    thread_sleepret = sleep(10);
+
+    sigemptyset(&waitset);
     sigaddset(&waitset, SIGUSR2);
-    //sigwait(&waitset, &sig);
-    thread_signum_received[1] = sig;
+    pthread_sigmask(SIG_BLOCK, &waitset, NULL);
+    sigwait(&waitset, &signum);
+    thread_signum_received[1] = signum;
 
-    thread_id = 0;
 
     return NULL;
 }
 
-static void setup()
+static void setup(void)
 {
     pthread_attr_t attr;
     const size_t stack_size = 4096;
@@ -58,37 +62,33 @@ static void setup()
     sleep(1);
 }
 
-static void teardown()
+static void teardown(void)
 {
     int * retval;
 
-    if (thread_id) {
-        pthread_kill(thread_id, SIGKILL);
-    }
+    pthread_cancel(thread_id);
     pthread_join(thread_id, (void **)(&retval));
     free(thread_stack);
 }
 
 static char * test_kill_thread(void)
 {
-#if 0
+    sleep(2);
     pthread_kill(thread_id, SIGUSR1);
     sleep(1);
     pu_assert_equal("", thread_signum_received[0], SIGUSR1);
-    pu_assert_equal("", thread_signum_received[1], 0);
 
-    pthread_kill(thread_id, SIGUSR2);
-#endif
     sleep(1);
-    /*pu_assert_equal("", thread_signum_received[0], SIGUSR1);*/
+    pthread_kill(thread_id, SIGUSR2);
+    sleep(1);
     pu_assert_equal("", thread_signum_received[1], SIGUSR2);
 
     return NULL;
 }
 
-static void all_tests()
+static void all_tests(void)
 {
-    pu_def_test(test_kill_thread, PU_SKIP);
+    pu_def_test(test_kill_thread, PU_RUN);
 }
 
 int main(int argc, char ** argv)

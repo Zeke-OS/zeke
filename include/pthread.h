@@ -315,7 +315,9 @@ int     pthread_spin_destroy(pthread_spinlock_t *__spin);
 int     pthread_spin_lock(pthread_spinlock_t *__spin);
 int     pthread_spin_trylock(pthread_spinlock_t *__spin);
 int     pthread_spin_unlock(pthread_spinlock_t *__spin);
+*/
 int     pthread_cancel(pthread_t);
+/*
 int     pthread_setcancelstate(int, int *);
 int     pthread_setcanceltype(int, int *);
 void    pthread_testcancel(void);

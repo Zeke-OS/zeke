@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    pthread_sigprocmask.c
+ * @file    pthread_sigmask.c
  * @author  Olli Vanhoja
  * @brief   Examine and change blocked signals.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,7 +33,7 @@
 #include <syscall.h>
 #include <signal.h>
 
-int pthread_sigprocmask(int how, const sigset_t * restrict set,
+int pthread_sigmask(int how, const sigset_t * restrict set,
                         sigset_t * restrict oset)
 {
     struct _signal_sigmask_args args = {

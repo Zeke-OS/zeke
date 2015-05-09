@@ -346,10 +346,9 @@ void psiginfo(const siginfo_t * pinfo, const char * message);
 void psignal(int signum, const char * message);
 
 int pthread_kill(pthread_t thread, int sig);
-#if 0
 int pthread_sigmask(int how, const sigset_t * restrict set,
         sigset_t * restrict oset);
-#endif
+
 int raise(int sig);
 int sigaction(int sig, const struct sigaction * restrict act,
         struct sigaction * restrict oact);
