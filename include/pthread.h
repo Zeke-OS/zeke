@@ -442,13 +442,6 @@ int pthread_mutexattr_init(pthread_mutexattr_t * attr);
  */
 int pthread_kill(pthread_t thread, int sig);
 
-/* TODO Legacy */
-
-/// Terminate execution of a thread and remove it from Active Threads.
-/// \param[in]     thread_id   thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
-/// \return status code that indicates the execution status of the function.
-int osThreadTerminate(pthread_t thread_id);
-
 __END_DECLS
 
 #endif /* PTHREAD_H */
