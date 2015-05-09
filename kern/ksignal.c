@@ -454,7 +454,6 @@ static int push_stack_frame(int signum,
     void * old_thread_sp; /* this is used to revert signal handling state
                            * and return to normal execution. */
 
-    /* TODO Exposes kernel data to the usr stack */
     if (/* Push current stack frame to the user space thread stack. */
         thread_stack_push(current_thread,
                           tsfp,
