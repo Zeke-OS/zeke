@@ -79,8 +79,14 @@ enum signals_owner {
     SIGNALS_OWNER_THREAD,
 };
 
-#define KSIGFLAG_INTERRUPTIBLE  0x01
-#define KSIGFLAG_SIGHANDLER     0x02 /* Going to or in a usr signal handler */
+/*
+ * Ksignal sigs flags.
+ */
+#define KSIGFLAG_INTERRUPTIBLE  0x01 /*!< Interruptible syscall
+                                      *   @note The syscall must handle this
+                                      *   properly if set by the syscall!
+                                      */
+#define KSIGFLAG_SIGHANDLER     0x02 /*!< Going to or in a usr signal handler */
 
 #define KSIGFLAG_IS_SET(_sigs_, _flag_) \
     (((_sigs_)->s_flags & (_flag_)) == (_flag_))
