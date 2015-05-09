@@ -282,72 +282,6 @@ static sw_stack_frame_t * get_usr_sframe(struct thread_info * thread)
 }
 
 /**
- * Push 'src' to thread stack.
- * @param thread    thread.
- * @param src       is a pointer to to data to be pushed.
- * @param size      is the size of data pointer by src.
- * @param old_thread_sp[in] returns the old thread stack pointer, can be NULL.
- * @return Error code or zero.
- */
-static int thread_stack_push(struct thread_info * thread, const void * src,
-                             size_t size, void ** old_thread_sp)
-{
-    sw_stack_frame_t * sframe;
-    void * old_sp;
-    void * new_sp;
-    int err;
-
-    KASSERT(size > 0, "size should be greater than zero.\n");
-
-    sframe = get_usr_sframe(thread);
-    if (!sframe)
-        panic("Can't determine the user space stack frame.");
-
-    old_sp = (void *)sframe->sp;
-    new_sp = (char *)old_sp - memalign(size);
-    if (!old_sp || !new_sp)
-        return -EFAULT;
-
-    err = copyout(src, new_sp, size);
-    if (err)
-        return -EFAULT;
-
-    sframe->sp = (uintptr_t)new_sp;
-    if (old_thread_sp)
-        *old_thread_sp = old_sp;
-
-    return 0;
-}
-
-
-/**
- * Pop from thread stack to dest.
- */
-static int thread_stack_pop(struct thread_info * thread, void * buf,
-                            size_t size)
-{
-    sw_stack_frame_t * sframe;
-    void * sp;
-    int err;
-
-    sframe = get_usr_sframe(thread);
-    if (!sframe)
-        panic("Can't determine the user space stack frame.");
-
-    sp = (void *)sframe->sp;
-    if (!sp)
-        return -EFAULT;
-
-    err = copyin(sp, buf, size);
-    if (err)
-        return err;
-
-    sframe->sp += memalign(size);
-
-    return 0;
-}
-
-/**
  * Forward signals pending in proc sigs struct to thread pendqueue.
  */
 static void forward_proc_signals(void)
@@ -438,25 +372,118 @@ static int eval_inkernel_action(struct ksigaction * action)
 }
 
 /**
+ * Push 'src' to thread stack.
+ * @param thread    thread.
+ * @param src       is a pointer to to data to be pushed.
+ * @param size      is the size of data pointer by src.
+ * @param old_thread_sp[in] returns the old thread stack pointer, can be NULL.
+ * @return Error code or zero.
+ */
+static int thread_stack_push(struct thread_info * thread, const void * src,
+                             size_t size, void ** old_thread_sp)
+{
+    sw_stack_frame_t * sframe;
+    void * old_sp;
+    void * new_sp;
+    int err;
+
+    KASSERT(size > 0, "size should be greater than zero.\n");
+
+    sframe = get_usr_sframe(thread);
+    if (!sframe)
+        return -EINVAL;
+
+    old_sp = (void *)sframe->sp;
+    new_sp = (void *)((uintptr_t)old_sp - memalign(size));
+    if (!old_sp)
+        return -EFAULT;
+
+    err = copyout(src, new_sp, size);
+    if (err)
+        return -EFAULT;
+
+    sframe->sp = (uintptr_t)new_sp;
+    if (old_thread_sp)
+        *old_thread_sp = old_sp;
+
+    return 0;
+}
+
+/**
+ * Pop from thread stack to dest.
+ */
+static int thread_stack_pop(struct thread_info * thread, void * buf,
+                            size_t size)
+{
+    sw_stack_frame_t * sframe;
+    void * sp;
+    int err;
+
+    KASSERT(size > 0, "size should be greater than zero.\n");
+
+    sframe = get_usr_sframe(thread);
+    if (!sframe)
+        return -EINVAL;
+
+    sp = (void *)sframe->sp;
+    if (!sp)
+        return -EFAULT;
+
+    err = copyin(sp, buf, size);
+    if (err)
+        return err;
+
+    sframe->sp += memalign(size);
+
+    return 0;
+}
+
+/**
  * Set the next stack frame properly for branching to a signal handler
  * defined by sigaction.
+ * @param signum        is the signal number interrupting the normal execution.
+ * @param action        describes the signal action and it's used to determine
+ *                      the next pc value.
  */
-static void set_next_frame(int signum, struct ksigaction * action,
-                           void * old_thread_sp)
+static int push_stack_frame(int signum,
+                            const struct ksigaction * restrict action,
+                            const siginfo_t * siginfo)
 {
     const uintptr_t usigret = curproc->usigret;
-    sw_stack_frame_t * next_frame = &current_thread->sframe[SCHED_SFRAME_SYS];
+    sw_stack_frame_t * tsfp = get_usr_sframe(current_thread);
+    void * old_thread_sp; /* this is used to revert signal handling state
+                           * and return to normal execution. */
 
-    if (usigret < configEXEC_BASE_LIMIT) {
-        KERROR(KERROR_WARN, "usigret addr probably invalid (%x)\n", usigret);
+    /* TODO Exposes kernel data to the usr stack */
+    if (/* Push current stack frame to the user space thread stack. */
+        thread_stack_push(current_thread,
+                          tsfp,
+                          sizeof(sw_stack_frame_t),
+                          NULL) ||
+        /* Push siginfo struct. */
+        thread_stack_push(current_thread,
+                          siginfo,
+                          sizeof(siginfo_t),
+                          &old_thread_sp /* Address of the prev sframe. */)
+       ) {
+        KERROR(KERROR_ERR, "Failed to push\n");
+
+        return -EINVAL;
     }
 
-    next_frame->pc = (uintptr_t)action->ks_action.sa_sigaction;
-    next_frame->r0 = signum;                    /* arg1 = signum */
-    next_frame->r1 = next_frame->sp;            /* arg2 = siginfo */
-    next_frame->r2 = 0;                         /* arg3 = TODO context */
-    next_frame->r9 = (uintptr_t)old_thread_sp;  /* frame pointer */
-    next_frame->lr = curproc->usigret;
+    if (usigret < configEXEC_BASE_LIMIT) {
+        KERROR(KERROR_WARN, "usigret addr probably invalid (%x) for proc %i\n",
+               usigret, (int)curproc->pid);
+    }
+
+    tsfp->pc = (uintptr_t)action->ks_action.sa_sigaction;
+    tsfp->r0 = signum;                      /* arg1 = signum */
+    tsfp->r1 = tsfp->sp;                    /* arg2 = siginfo */
+    tsfp->r2 = 0;                           /* arg3 = TODO context */
+    tsfp->r9 = (uintptr_t)old_thread_sp;    /* old stack frame */
+    tsfp->lr = usigret;
+
+    return 0;
 }
 
 /**
@@ -470,7 +497,6 @@ static void ksignal_post_scheduling(void)
     struct signals * sigs = &current_thread->sigs;
     struct ksigaction action;
     struct ksiginfo * ksiginfo;
-    void * old_thread_sp; /* Note: This is the user space address */
 
     forward_proc_signals();
 
@@ -481,6 +507,15 @@ static void ksignal_post_scheduling(void)
      */
     if (ksig_lock(&sigs->s_lock))
         return;
+
+    /*
+     * Can't handle signals now as the thread is in syscall.
+     */
+    if (thread_flags_is_set(current_thread, SCHED_INSYS_FLAG) &&
+        !KSIGFLAG_IS_SET(sigs, KSIGFLAG_INTERRUPTIBLE)) {
+        ksig_unlock(&sigs->s_lock);
+        return;
+    }
 
     /* Get next pending signal. */
     STAILQ_FOREACH(ksiginfo, &sigs->s_pendqueue, _entry) {
@@ -503,6 +538,7 @@ static void ksignal_post_scheduling(void)
             sigemptyset(&sigs->s_wait);
             current_thread->sigwait_retval = ksiginfo;
             STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
+            KSIGFLAG_CLEAR(sigs, KSIGFLAG_INTERRUPTIBLE);
             ksig_unlock(&sigs->s_lock);
 #if configKSIGNAL_DEBUG
             KERROR(KERROR_DEBUG, "Detected a sigwait() for %d, returning\n",
@@ -521,6 +557,7 @@ static void ksignal_post_scheduling(void)
         if (nxt_state == 0 || action.ks_action.sa_flags & SA_IGNORE) {
             /* Signal handling done */
             STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
+            KSIGFLAG_CLEAR(sigs, KSIGFLAG_INTERRUPTIBLE);
             ksig_unlock(&sigs->s_lock);
             kfree_lazy(ksiginfo);
 #if configKSIGNAL_DEBUG
@@ -551,17 +588,8 @@ static void ksignal_post_scheduling(void)
            ksiginfo->siginfo.si_signo);
 #endif
 
-    if (/* Push current stack frame to the user space thread stack. */
-        thread_stack_push(current_thread,
-                          &current_thread->sframe[SCHED_SFRAME_SYS],
-                          sizeof(sw_stack_frame_t),
-                          NULL) ||
-        /* Push siginfo struct. */
-        thread_stack_push(current_thread,
-                          &ksiginfo->siginfo,
-                          sizeof(ksiginfo->siginfo),
-                          &old_thread_sp /* Address of the prev sframe. */)
-       ) {
+    /* Push data and set next stack frame. */
+    if (push_stack_frame(signum, &action, &ksiginfo->siginfo)) {
         /*
          * Thread has trashed its stack; Nothing we can do but give SIGILL.
          * RFE Should we punish only the thread or the whole process?
@@ -575,10 +603,6 @@ static void ksignal_post_scheduling(void)
         ksignal_sendsig_fatal(curproc, SIGILL); /* TODO Possible deadlock? */
         return; /* TODO Is this ok? */
     }
-    /* Don't push anything after this point. */
-
-    /* Update the next stack frame. */
-    set_next_frame(signum, &action, old_thread_sp);
 
     /*
      * TODO
@@ -586,6 +610,8 @@ static void ksignal_post_scheduling(void)
      *  -- Change to alt stack if requested
      */
 
+    KSIGFLAG_SET(sigs, KSIGFLAG_SIGHANDLER);
+    KSIGFLAG_CLEAR(sigs, KSIGFLAG_INTERRUPTIBLE);
     ksig_unlock(&sigs->s_lock);
     kfree_lazy(ksiginfo);
 }
@@ -739,8 +765,10 @@ int ksignal_sigwait(siginfo_t * retval, const sigset_t * restrict set)
         }
     }
 
+    KSIGFLAG_SET(sigs, KSIGFLAG_INTERRUPTIBLE);
     ksig_unlock(s_lock);
     thread_wait();
+    KSIGFLAG_CLEAR(sigs, KSIGFLAG_INTERRUPTIBLE);
 
 out:
     while (ksig_lock(s_lock));
@@ -785,6 +813,7 @@ int ksignal_sigsleep(const struct timespec * restrict timeout)
     struct signals * sigs = &current_thread->sigs;
     ksigmtx_t * s_lock = &sigs->s_lock;
     struct ksiginfo * ksiginfo;
+    int64_t usec, unslept;
     int timer_id;
 
     forward_proc_signals();
@@ -810,18 +839,34 @@ int ksignal_sigsleep(const struct timespec * restrict timeout)
         }
     }
 
-    ksig_unlock(s_lock);
-
-    timer_id = thread_alarm(timeout->tv_sec * 1000 +
-                            timeout->tv_nsec / 1000000);
+    usec = timeout->tv_sec * 1000 * 1000 + timeout->tv_nsec / 1000;
+    timer_id = thread_alarm(usec / 1000);
     if (timer_id < 0)
         return timer_id;
 
+    /* This syscall callable function is now interruptible */
+    KSIGFLAG_SET(sigs, KSIGFLAG_INTERRUPTIBLE);
+    ksig_unlock(s_lock);
+
     thread_wait();
+    timers_stop(timer_id);
+    unslept = usec - timers_get_split(timer_id);
     thread_alarm_rele(timer_id);
 
-    /* TODO Return the unslept time */
+    if (ksig_lock(s_lock))
+        return -EAGAIN; /* TODO ?? */
+    KSIGFLAG_CLEAR(sigs, KSIGFLAG_INTERRUPTIBLE);
+    if (KSIGFLAG_IS_SET(sigs, KSIGFLAG_SIGHANDLER)) {
+        /* Sleep was interrupted by a signal that will execute a handler */
+        /* TODO Set the return value of this syscall */
+        ksig_unlock(s_lock);
 
+        return get_usr_sframe(current_thread)->r0;
+    }
+    ksig_unlock(s_lock);
+
+    if (unslept > 0)
+        return unslept;
     return 0;
 }
 
@@ -1384,33 +1429,27 @@ static int sys_signal_sigsleep(void * user_args)
 
 static int sys_signal_set_return(void * user_args)
 {
-    int err;
+    curproc->usigret = (uintptr_t)user_args;
 
-    err = copyin(user_args, &curproc->usigret, sizeof(uintptr_t));
-    if (err) {
-        set_errno(-err);
-        return -1;
-    }
     return 0;
 }
 
 static int sys_signal_return(void * user_args)
 {
-    const sw_stack_frame_t * const sframe =
-        &current_thread->sframe[SCHED_SFRAME_SYS];
+    sw_stack_frame_t * sframe = &current_thread->sframe[SCHED_SFRAME_SVC];
+    sw_stack_frame_t next;
+    uintptr_t sp;
     int err;
 
     /*
      * TODO
      * Return from signal handler
-     * - get address of the old frame pointer
      * - revert stack frame and alt stack
-     * - reset pc and oth registers
      */
 
-    current_thread->sframe[SCHED_SFRAME_SYS].sp = sframe->r9;
+    sframe->sp = sframe->r9;
     err = thread_stack_pop(current_thread,
-                           &current_thread->sframe[SCHED_SFRAME_SYS],
+                           &next,
                            sizeof(const sw_stack_frame_t));
     if (err) {
         /*
@@ -1422,6 +1461,9 @@ static int sys_signal_return(void * user_args)
             /* Should not return to here */
         }
     }
+    sp = sframe->sp;
+    memcpy(sframe, &next, sizeof(const sw_stack_frame_t));
+    sframe->sp = sp;
 
     /*
      * We return for now but the actual return from this system call will

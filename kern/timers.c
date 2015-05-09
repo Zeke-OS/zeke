@@ -124,12 +124,34 @@ int timers_add(void (*event_fn)(void *), void * event_arg,
     return -1;
 }
 
+int64_t timers_get_split(int tim)
+{
+    uint64_t now;
+    struct timer_cb * timer;
+
+    if (!VALID_TIMER_ID(tim))
+        return -1;
+
+    now = get_utime();
+    timer = &timers_array[tim];
+
+    return now - timer->start;
+}
+
 void timers_start(int tim)
 {
     if (!VALID_TIMER_ID(tim))
         return;
 
     atomic_add(&timers_array[tim].flags, TIMERS_FLAG_ENABLED);
+}
+
+void timers_stop(int tim)
+{
+    if (!VALID_TIMER_ID(tim))
+        return;
+
+    atomic_sub(&timers_array[tim].flags, TIMERS_FLAG_ENABLED);
 }
 
 void timers_release(int tim)

@@ -64,7 +64,9 @@ void timers_run(void);
 int timers_add(void (*event_fn)(void *), void * event_arg,
                timers_flags_t flags, uint64_t usec);
 
+int64_t timers_get_split(int tim);
 void timers_start(int tim);
+void timers_stop(int tim);
 void timers_release(int tim);
 
 #endif /* TIMERS_H */

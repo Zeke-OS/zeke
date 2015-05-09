@@ -79,11 +79,24 @@ enum signals_owner {
     SIGNALS_OWNER_THREAD,
 };
 
+#define KSIGFLAG_INTERRUPTIBLE  0x01
+#define KSIGFLAG_SIGHANDLER     0x02 /* Going to or in a usr signal handler */
+
+#define KSIGFLAG_IS_SET(_sigs_, _flag_) \
+    (((_sigs_)->s_flags & (_flag_)) == (_flag_))
+
+#define KSIGFLAG_SET(_sigs_, _flag_) \
+    ((_sigs_)->s_flags |= (_flag_))
+
+#define KSIGFLAG_CLEAR(_sigs_, _flag_) \
+    ((_sigs_)->s_flags &= ~(_flag_))
+
 /**
  * Thread signals struct.
  */
 struct signals {
     enum signals_owner s_owner_type;    /*!< Type of the owner container. */
+    unsigned s_flags;                   /*!< Sigs flags */
     sigset_t s_block;                   /*!< List of blocked signals. */
     sigset_t s_wait;                    /*!< Signal wait mask. */
     sigset_t s_running;                 /*!< Signals running mask. */
