@@ -9,7 +9,7 @@
 
 char * thread_stack;
 pthread_t thread_id;
-int thread_sleepret;
+int thread_unslept;
 int thread_signum_received[2];
 
 static void catch_sig(int signum)
@@ -26,7 +26,7 @@ static void * thread(void * arg)
     signal(SIGUSR1, catch_sig);
 
     fprintf(stderr, ".");
-    thread_sleepret = sleep(10);
+    thread_unslept = sleep(10);
 
     sigemptyset(&waitset);
     sigaddset(&waitset, SIGUSR2);
@@ -81,6 +81,8 @@ static char * test_kill_thread(void)
     sleep(1);
     fprintf(stderr, ".");
     pu_assert_equal("", thread_signum_received[0], SIGUSR1);
+    printf("%d\n", thread_unslept);
+    pu_assert("Sleep was interrupted", thread_unslept > 0);
 
     sleep(1);
     fprintf(stderr, ".");

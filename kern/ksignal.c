@@ -868,20 +868,8 @@ int ksignal_sigsleep(const struct timespec * restrict timeout)
     unslept = usec - timers_get_split(timer_id);
     thread_alarm_rele(timer_id);
 
-    while (ksig_lock(s_lock));
-    KSIGFLAG_CLEAR(sigs, KSIGFLAG_INTERRUPTIBLE);
-    if (KSIGFLAG_IS_SET(sigs, KSIGFLAG_SIGHANDLER)) {
-        /* Sleep was interrupted by a signal that will execute a handler */
-        /* TODO Set the return value of this syscall */
-        ksig_unlock(s_lock);
-
-        return get_usr_sframe(current_thread)->r0;
-    }
-    ksig_unlock(s_lock);
-
-    if (unslept > 0)
-        return unslept / 1000000;
-    return 0;
+    unslept = (unslept > 0) ? unslept / 1000000 : 0;
+    return ksignal_syscall_exit(unslept);
 }
 
 int ksignal_isblocked(struct signals * sigs, int signum)
@@ -1053,6 +1041,36 @@ int ksignal_set_ksigaction(struct signals * sigs, struct ksigaction * action)
     }
 
     return 0;
+}
+
+int ksignal_syscall_exit(int retval)
+{
+    struct signals * sigs = &current_thread->sigs;
+
+    while (ksig_lock(&sigs->s_lock));
+    KSIGFLAG_CLEAR(sigs, KSIGFLAG_INTERRUPTIBLE);
+
+    if (KSIGFLAG_IS_SET(sigs, KSIGFLAG_SIGHANDLER)) {
+        /*
+         * The syscall was interrupted by a signal that will cause a
+         * branch to a signal handler before returning to the caller.
+         */
+        sw_stack_frame_t * sframe = get_usr_sframe(current_thread);
+        sw_stack_frame_t caller;
+
+        KASSERT(sframe != NULL, "Must have exitting sframe");
+
+        /* Set return value for the syscall. */
+        copyin((sw_stack_frame_t *)sframe->r9, &caller, sizeof(caller));
+        caller.r0 = retval;
+        copyout(&caller, (sw_stack_frame_t *)sframe->r9, sizeof(caller));
+
+        /* Set first argument for the signal handler. */
+        retval = sframe->r0;
+    }
+
+    ksig_unlock(&sigs->s_lock);
+    return retval;
 }
 
 /* System calls ***************************************************************/
@@ -1483,7 +1501,7 @@ static int sys_signal_return(void * user_args)
      * We return for now but the actual return from this system call will
      * happen to the place that was originally interrupted by a signal.
      */
-    return 0;
+    return sframe->r0;
 }
 
 static const syscall_handler_t ksignal_sysfnmap[] = {

@@ -209,6 +209,21 @@ int ksignal_reset_ksigaction(struct signals * sigs, int signum);
 int ksignal_set_ksigaction(struct signals * sigs, struct ksigaction * action);
 
 /**
+ * Exit from an interruptible syscall that was presumably interrupted.
+ * This function determines if we are going to execute a signal handler
+ * after returning from this syscall or return to the caller and adjusts
+ * stack and return values accordingly.
+ * KSIGFLAG_INTERRUPTIBLE is cleared by this function and
+ * KSIGFLAG_SIGHANDLER selects the action.
+ * @param retval is the return value that shall be returned to the original
+ *               caller.
+ * @returns Returns a value that should be immediately returned with return,
+ *          this value is will be either a return value to the caller or an
+ *          argument to the signal handler executed next.
+ */
+int ksignal_syscall_exit(int retval);
+
+/**
  * @addtogroup kernel_sigsetops
  * sigsetops
  * Manipulate signal sets.
