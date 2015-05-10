@@ -11,3 +11,29 @@ fashion, a bit like how packet forwarding works.
   \caption{Signal stack.}
   \label{figure:sigstack}
 \end{figure}
+
+\begin{figure}
+\begin{verbatim}
+  \/        usr | kernel
++-----------+           +---------+
+| syscall() |------...->| sys_xxx | <- KSIGFLAG_SIGHANDLER
++-----------+           +---------+    syscall handler interrupted
+                |              |
+                               \/
++-------------+ |   +------------------------+
+| sig_handler |<----| ksignal_syscall_exit() |  
++-------------+ |   +------------------------+
+       |
+       \/       |
++-------------+     +---------------------+
+| sigreturn() |---->| sys_signal_return() |
++-------------+ |   +---------------------+
+                              |
+                |            /
+ return to <-----------------
+ the original   |
+ syscall() on top (EINTR)
+\end{verbatim}
+\caption{Interruption of system calls when a signal is caught.}
+\label{figure:syscallint}
+\end{figure}
