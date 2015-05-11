@@ -197,6 +197,8 @@ typedef struct __siginfo {
     union sigval si_value;  /*!< Signal value. */
 } siginfo_t;
 
+#pragma clang diagnostic push
+#pragma GCC diagnostic ignored "-Wc11-extensions"
 struct sigaction {
     /**
      * Additional set of signals to be blocked during execution
@@ -217,6 +219,7 @@ struct sigaction {
         void (*sa_sigaction)(int, siginfo_t *, void *);
     };
 };
+#pragma clang diagnostic pop
 
 /*
  * Type of a signal handling function.
