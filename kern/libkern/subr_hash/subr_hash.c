@@ -61,14 +61,15 @@ void * hashinit_flags(int elements, unsigned long * hashmask, int flags)
     }
     hashsize >>= 1;
 
-    /* TODO No support for NOWAIT atm
+    /*
+     * TODO No support for NOWAIT atm
      * if (flags & HASH_NOWAIT)
      */
 
     hashtbl = kmalloc((unsigned long)hashsize * sizeof(*hashtbl));
 
     if (hashtbl != NULL) {
-        for (size_t i = 0; i < hashsize; i++) {
+        for (long i = 0; i < hashsize; i++) {
             LIST_INIT(&hashtbl[i]);
         }
 
