@@ -97,8 +97,7 @@ __attribute__ ((naked)) void undef_handler(void)
         KERROR(KERROR_ERR, "%s", buf);
 
         /*
-         * Kill the current thread
-         * TODO Should we punish only the thread or whole process?
+         * Kill the current process.
          */
         ksignal_sendsig_fatal(curproc, SIGILL);
         thread_wait();
