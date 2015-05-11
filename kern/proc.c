@@ -313,7 +313,7 @@ void _proc_free(struct proc_info * p)
 
     /* Free files */
     if (p->files) {
-        for (size_t i = 0; i < p->files->count; i++) {
+        for (int i = 0; i < p->files->count; i++) {
             fs_fildes_ref(p->files, i, -1); /* null pointer safe */
             /*
              * TODO Should we call?
@@ -330,7 +330,7 @@ void _proc_free(struct proc_info * p)
      */
     mtx_lock(&p->mm.regions_lock);
     if (p->mm.regions) {
-        for (size_t i = 0; i < p->mm.nr_regions; i++) {
+        for (int i = 0; i < p->mm.nr_regions; i++) {
             if ((*p->mm.regions)[i]->vm_ops->rfree)
                     (*p->mm.regions)[i]->vm_ops->rfree((*p->mm.regions)[i]);
         }
@@ -470,7 +470,7 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
     mm = &pcb->mm;
 
     mtx_lock(&mm->regions_lock);
-    for (size_t i = 0; i < mm->nr_regions; i++) {
+    for (int i = 0; i < mm->nr_regions; i++) {
         struct buf * region = (*mm->regions)[i];
         struct buf * new_region;
         uintptr_t reg_start, reg_end;

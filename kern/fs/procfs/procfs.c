@@ -167,10 +167,10 @@ static ssize_t procfs_read(file_t * file, void * vbuf, size_t bcount)
 
     bytes = fn(spec, &buf);
     if (bytes > 0 && file->seek_pos <= bytes) {
-        const size_t count = min(bcount, bytes - file->seek_pos);
+        const ssize_t count = min(bcount, bytes - file->seek_pos);
 
         if (count <= bytes) {
-            size_t sz;
+            ssize_t sz;
 
             sz = strlcpy((char *)vbuf, buf + file->seek_pos, count);
             sz++;

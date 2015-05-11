@@ -54,7 +54,7 @@ static ssize_t procfs_read_regions(struct procfs_info * spec, char ** retbuf)
     if (!mm)
         return -ENOLINK;
 
-    for (size_t i = 0; i < mm->nr_regions; i++) {
+    for (int i = 0; i < mm->nr_regions; i++) {
         struct buf * region = (*mm->regions)[i];
         uintptr_t reg_start, reg_end;
         char uap[5];

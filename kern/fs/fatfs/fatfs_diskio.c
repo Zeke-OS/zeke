@@ -70,7 +70,7 @@ DSTATUS fatfs_disk_status(BYTE pdrv)
  * @param count     is the number of bytes to read.
  *
  */
-DRESULT fatfs_disk_read(BYTE pdrv, BYTE* buff, DWORD sector, UINT count)
+DRESULT fatfs_disk_read(BYTE pdrv, BYTE * buff, DWORD sector, UINT count)
 {
     file_t * file;
     ssize_t retval;
@@ -90,7 +90,7 @@ DRESULT fatfs_disk_read(BYTE pdrv, BYTE* buff, DWORD sector, UINT count)
         return RES_ERROR;
     }
 
-    if (retval != count) {
+    if (retval != (ssize_t)count) {
 #ifdef configFATFS_DEBUG
         KERROR(KERROR_WARN, "retval(%i) != count(%i)\n",
                 (uint32_t)retval, (uint32_t)count);
@@ -108,7 +108,7 @@ DRESULT fatfs_disk_read(BYTE pdrv, BYTE* buff, DWORD sector, UINT count)
  * @param sector    is a sector address in LBA.
  * @param count     is the number of bytes to write.
  */
-DRESULT fatfs_disk_write(BYTE pdrv, const BYTE* buff, DWORD sector, UINT count)
+DRESULT fatfs_disk_write(BYTE pdrv, const BYTE * buff, DWORD sector, UINT count)
 {
     file_t * file;
     ssize_t retval;
@@ -128,7 +128,7 @@ DRESULT fatfs_disk_write(BYTE pdrv, const BYTE* buff, DWORD sector, UINT count)
         return RES_ERROR;
     }
 
-    if (retval != count)
+    if (retval != (ssize_t)count)
         return RES_PARERR;
 
     return 0;

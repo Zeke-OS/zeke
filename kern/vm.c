@@ -163,7 +163,7 @@ int vm_find_reg(struct proc_info * proc, uintptr_t uaddr, struct buf ** bp)
     uintptr_t reg_start, reg_end;
 
     mtx_lock(&mm->regions_lock);
-    for (size_t i = 0; i < mm->nr_regions; i++) {
+    for (int i = 0; i < mm->nr_regions; i++) {
         region = (*mm->regions)[i];
         if (!region)
             continue;
@@ -319,7 +319,7 @@ void vm_updateusr_ap(struct buf * region)
 int realloc_mm_regions(struct vm_mm_struct * mm, int new_count)
 {
     struct buf * (*new_regions)[];
-    size_t i = mm->nr_regions;
+    int i = mm->nr_regions;
 
 #ifdef configVM_DEBUG
     KERROR(KERROR_DEBUG,
@@ -547,7 +547,7 @@ int vm_unload_regions(struct proc_info * proc, int start, int end)
     }
     mtx_unlock(&proc->mm.regions_lock);
 
-    for (size_t i = start; i < end; i++) {
+    for (int i = start; i < end; i++) {
         mtx_lock(&mm->regions_lock);
         struct buf * region = (*mm->regions)[i];
         if (!region)
