@@ -350,7 +350,7 @@ static const _PDCLIB_ctype_t global_ctype[] = {
 
 extern const struct _PDCLIB_charcodec _PDCLIB_ascii_codec;
 struct _PDCLIB_locale _PDCLIB_global_locale = {
-    ._Codec = &_PDCLIB_ascii_codec,
+    ._Codec = (const _PDCLIB_charcodec_t)(&_PDCLIB_ascii_codec),
     ._Conv  = {
         /* decimal_point      */ (char *)".",
         /* thousands_sep      */ (char *)"",
