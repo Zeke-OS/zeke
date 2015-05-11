@@ -102,9 +102,10 @@ static pthread_t create_uinit_main(void * stack_addr)
                               * and mount the rootfs.
                               */
         .arg1       = 0,
-        .del_thread = 0xBADBAD /* TODO  Should be libc pthread_exit but we don't
-                                *       yet know where it will be.
-                                */
+        .del_thread = (void (*)(void *))(0xBADBAD)
+        /* TODO  Should be libc pthread_exit
+         *   but we don't yet know where it will be.
+         */
     };
 
     return thread_create(&init_ds, 0);
