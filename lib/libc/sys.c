@@ -5,7 +5,7 @@
  *
  * @brief   System API.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -35,7 +35,7 @@
 
 #include <syscall.h>
 
-#if __ARM6__ || __ARM6K__ || __ARM6M__
+#if defined(__ARM6__) || defined(__ARM6K__) || defined(__ARM6M__)
 intptr_t syscall(uint32_t type, void * p)
 {
     register uint32_t arg0 __asm__("r0") = type;
@@ -44,7 +44,7 @@ intptr_t syscall(uint32_t type, void * p)
 
     __asm__ volatile (
         "SVC    #0\n\t"
-#if __ARM6M__
+#if defined(__ARM6M__)
         "DSB\n\t"           /* Ensure write is completed (architecturally
                              * required, but not strictly required for
                              * existing Cortex-M processors) */
@@ -61,4 +61,3 @@ intptr_t syscall(uint32_t type, void * p)
 #else
 #error Selected core is not suported by this libc
 #endif
-

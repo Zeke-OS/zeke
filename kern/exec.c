@@ -96,7 +96,7 @@ int exec_file(int fd, char name[PROC_NAME_LEN], struct buf * env_bp,
     pthread_t tid;
     int err, retval = 0;
 
-#if configEXEC_DEBUG
+#if defined(configEXEC_DEBUG)
     KERROR(KERROR_DEBUG, "exec_file(fd %i, name \"%s\", env_bp %p, "
            "uargc %d, uargv %x,  uenvp %x)\n",
            fd, name, env_bp, uargc, (uint32_t)uargv, (uint32_t)uenvp);
@@ -213,7 +213,7 @@ static int sys_exec(void * user_args)
     uintptr_t envp;
     int err, retval;
 
-#if configEXEC_DEBUG
+#if defined(configEXEC_DEBUG)
     KERROR(KERROR_DEBUG, "exec\n");
 #endif
 
@@ -245,7 +245,7 @@ static int sys_exec(void * user_args)
     /* Clone argv */
     err = clone_aa(env_bp, (char *)args.argv, args.nargv, &arg_offset);
     if (err) {
-#if configEXEC_DEBUG
+#if defined(configEXEC_DEBUG)
         KERROR(KERROR_DEBUG, "Failed to clone args (%d)\n", err);
 #endif
         set_errno(-err);
@@ -258,7 +258,7 @@ static int sys_exec(void * user_args)
     /* Clone env */
     err = clone_aa(env_bp, (char *)args.env, args.nenv, &arg_offset);
     if (err) {
-#if configEXEC_DEBUG
+#if defined(configEXEC_DEBUG)
         KERROR(KERROR_DEBUG, "Failed to clone env (%d)\n", err);
 #endif
         set_errno(-err);

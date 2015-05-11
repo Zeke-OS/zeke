@@ -77,7 +77,7 @@ struct buf * geteblk_special(size_t size, uint32_t control)
     KASSERT(p, "Can't get the PCB of pid 0");
 
     if (kvaddr == 0) {
-#if configBUF_DEBUG
+#ifdef configBUF_DEBUG
         KERROR(KERROR_DEBUG, "Returned kvaddr is NULL\n");
 #endif
         return NULL;
@@ -85,7 +85,7 @@ struct buf * geteblk_special(size_t size, uint32_t control)
 
     buf = vm_newsect(kvaddr, size, VM_PROT_READ | VM_PROT_WRITE);
     if (!buf) {
-#if configBUF_DEBUG
+#ifdef configBUF_DEBUG
         KERROR(KERROR_DEBUG, "vm_newsect() failed\n");
 #endif
         return NULL;

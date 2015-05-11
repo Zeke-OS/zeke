@@ -189,7 +189,7 @@ static int fatfs_mount(const char * source, uint32_t mode,
     fs_init_superblock(&fatfs_sb->sb, &fatfs_fs);
     /* TODO Detect if target dev is rdonly */
     sbp->mode_flags = mode;
-#if configFATFS_READONLY
+#ifdef configFATFS_READONLY
     sbp->mode_flags |= MNT_RDONLY;
 #endif
     sbp->root = create_root(sbp);
@@ -598,7 +598,7 @@ int fatfs_create(vnode_t * dir, const char * name, mode_t mode,
 
 int fatfs_unlink(vnode_t * dir, const char * name)
 {
-#if !configFATFS_READONLY
+#if !defined(configFATFS_READONLY)
     struct fatfs_inode * indir = get_inode_of_vnode(dir);
     char * in_fpath;
     FRESULT err;
@@ -629,7 +629,7 @@ int fatfs_unlink(vnode_t * dir, const char * name)
 int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
                 vnode_t ** result)
 {
-#if !configFATFS_READONLY
+#if !defined(configFATFS_READONLY)
     struct fatfs_inode * indir = get_inode_of_vnode(dir);
     struct fatfs_inode * res = NULL;
     char * in_fpath;
@@ -677,7 +677,7 @@ int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
 
 int fatfs_mkdir(vnode_t * dir,  const char * name, mode_t mode)
 {
-#if !configFATFS_READONLY
+#if !defined(configFATFS_READONLY)
     struct fatfs_inode * indir = get_inode_of_vnode(dir);
     char * in_fpath;
     FRESULT err;
@@ -857,7 +857,7 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
 
 int fatfs_chmod(vnode_t * vnode, mode_t mode)
 {
-#if !configFATFS_READONLY
+#if !defined(configFATFS_READONLY)
     struct fatfs_inode * in = get_inode_of_vnode(vnode);
     BYTE attr = 0;
     const BYTE mask = AM_RDO;
@@ -880,7 +880,7 @@ int fatfs_chmod(vnode_t * vnode, mode_t mode)
  */
 int fatfs_chflags(vnode_t * vnode, fflags_t flags)
 {
-#if !configFATFS_READONLY
+#if !defined(configFATFS_READONLY)
     struct fatfs_inode * in = get_inode_of_vnode(vnode);
     BYTE attr = 0;
     const BYTE mask = AM_RDO | AM_ARC | AM_SYS | AM_HID;

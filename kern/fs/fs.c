@@ -369,7 +369,7 @@ again:  /* Get vnode by name in this dir. */
         }
         retval = 0;
 
-#if configFS_DEBUG
+#ifdef configFS_DEBUG
         KASSERT(*result != NULL, "vfs is in inconsistent state");
 #endif
     } while ((nodename = kstrtok(0, PATH_DELIMS, &lasts)));
@@ -740,7 +740,7 @@ int fs_creat_curproc(const char * pathname, mode_t mode, vnode_t ** result)
     vnode_t * dir = NULL;
     int retval = 0;
 
-#if configFS_DEBUG
+#ifdef configFS_DEBUG
     KERROR(KERROR_DEBUG, "fs_creat_curproc(pathname \"%s\", mode %u)\n",
            pathname, (unsigned)mode);
 #endif
@@ -755,7 +755,7 @@ int fs_creat_curproc(const char * pathname, mode_t mode, vnode_t ** result)
     mode &= ~curproc->files->umask;
     retval = dir->vnode_ops->create(dir, name, mode, result);
 
-#if configFS_DEBUG
+#ifdef configFS_DEBUG
     KERROR(KERROR_DEBUG, "\tresult: %p\n", *result);
 #endif
 
@@ -1049,7 +1049,7 @@ int vref(vnode_t * vnode)
 
     prev = atomic_read(&vnode->vn_refcount);
     if (prev < 0) {
-#if configFS_VREF_DEBUG
+#ifdef configFS_VREF_DEBUG
         KERROR_VREF(KERROR_ERR, "Failed, vnode will be freed soon or it's "
                                 "orphan (%d)\n",
                     prev);
@@ -1059,7 +1059,7 @@ int vref(vnode_t * vnode)
 
     prev = atomic_inc(&vnode->vn_refcount);
 
-#if configFS_VREF_DEBUG
+#ifdef configFS_VREF_DEBUG
     KERROR_VREF(KERROR_DEBUG, "%d\n", prev);
 #endif
 
@@ -1072,7 +1072,7 @@ void vrele(vnode_t * vnode)
 
     prev = atomic_dec(&vnode->vn_refcount);
 
-#if configFS_VREF_DEBUG
+#ifdef configFS_VREF_DEBUG
     KERROR_VREF(KERROR_DEBUG, "%d\n", prev);
 #endif
 

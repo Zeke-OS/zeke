@@ -48,11 +48,11 @@
 #include <stdint.h>
 #include <hal/core.h>
 
-#if configARM_PROFILE_M != 0
+#if defined(configARM_PROFILE_M)
 #error ARM Cortex-M profile is not supported by this layer.
 #endif
 
-#if configMMU == 0
+#if !defined(configMMU)
 #error MMU must be enabled when compiling for ARM11.
 #endif
 
@@ -131,7 +131,7 @@ void cpu_set_cid(uint32_t cid);
 } while (0)
 
 
-#if configMP != 0
+#if defined(configMP)
 
 /**
  * Wait for event.

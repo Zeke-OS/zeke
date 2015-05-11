@@ -153,7 +153,7 @@ static int ksig_lock(ksigmtx_t * lock)
     istate_t s;
     int retval;
 
-#if configLOCK_DEBUG
+#if defined(configLOCK_DEBUG)
 #define _ksig_lock_(mtx)    _mtx_lock(&mtx->l, whr)
 #define _ksig_trylock_(mtx) _mtx_trylock(&mtx->l, whr)
 #else
@@ -168,7 +168,7 @@ static int ksig_lock(ksigmtx_t * lock)
         retval = _ksig_lock_(lock);
     }
 
-#if configLOCK_DEBUG
+#if defined(configLOCK_DEBUG)
     if (retval == 0) {
         lock->l.mtx_ldebug = whr;
     }
@@ -540,7 +540,7 @@ static void ksignal_post_scheduling(void)
             STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
             KSIGFLAG_CLEAR(sigs, KSIGFLAG_INTERRUPTIBLE);
             ksig_unlock(&sigs->s_lock);
-#if configKSIGNAL_DEBUG
+#if defined(configKSIGNAL_DEBUG)
             KERROR(KERROR_DEBUG, "Detected a sigwait() for %d, returning\n",
                    signum);
 #endif
@@ -560,13 +560,13 @@ static void ksignal_post_scheduling(void)
             KSIGFLAG_CLEAR(sigs, KSIGFLAG_INTERRUPTIBLE);
             ksig_unlock(&sigs->s_lock);
             kfree_lazy(ksiginfo);
-#if configKSIGNAL_DEBUG
+#if defined(configKSIGNAL_DEBUG)
             KERROR(KERROR_DEBUG, "Signal %d handled in kernel space\n", signum);
 #endif
             return;
         } else if (nxt_state < 0) {
             /* This signal can't be handled right now */
-#if configKSIGNAL_DEBUG
+#if defined(configKSIGNAL_DEBUG)
             KERROR(KERROR_DEBUG, "Postponing handling of signal %d\n", signum);
 #endif
             continue;
@@ -583,7 +583,7 @@ static void ksignal_post_scheduling(void)
      */
     STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
 
-#if configKSIGNAL_DEBUG
+#if defined(configKSIGNAL_DEBUG)
     KERROR(KERROR_DEBUG, "Pass a signal %d to the user space\n",
            ksiginfo->siginfo.si_signo);
 #endif
@@ -594,7 +594,7 @@ static void ksignal_post_scheduling(void)
          * Thread has trashed its stack; Nothing we can do but give SIGILL.
          * RFE Should we punish only the thread or the whole process?
          */
-#if configKSIGNAL_DEBUG
+#if defined(configKSIGNAL_DEBUG)
          KERROR(KERROR_DEBUG,
                 "Thread has trashed its stack, sending a fatal signal\n");
 #endif
@@ -637,7 +637,7 @@ static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
 
     KASSERT(mtx_test(&sigs->s_lock.l), "sigs should be locked\n");
 
-#if configKSIGNAL_DEBUG
+#if defined(configKSIGNAL_DEBUG)
     KERROR(KERROR_DEBUG, "Queuing a signum %d to sigs: %p\n", signum, sigs);
 #endif
 
@@ -680,7 +680,7 @@ static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
         }
         KASSERT(thread != NULL, "thread must be set");
 
-#if configKSIGNAL_DEBUG
+#if defined(configKSIGNAL_DEBUG)
         KERROR(KERROR_DEBUG, "Thread %u will be terminated by signum %d\n",
                thread->id, signum);
 #endif

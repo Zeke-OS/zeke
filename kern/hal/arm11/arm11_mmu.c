@@ -38,7 +38,7 @@
 #include "arm11.h"
 #include <hal/mmu.h>
 
-#if configMP != 0
+#ifdef configMP
 static mtx_t mmu_lock;
 #define MMU_LOCK() mtx_spinlock(&mmu_lock)
 #define MMU_UNLOCK() mtx_unlock(&mmu_lock)
@@ -94,7 +94,7 @@ static const dab_handler data_aborts[] = {
     proc_dab_handler           /* Permission Page fault */
 };
 
-#if configMP != 0
+#ifdef configMP
 void mmu_lock_init(void);
 
 void mmu_lock_init(void)
@@ -118,7 +118,7 @@ int mmu_init_pagetable(const mmu_pagetable_t * pt)
     uint32_t * p_pte = (uint32_t *)pt->pt_addr; /* points to a pt entry in PT */
 
     if (!p_pte) {
-#if config_DEBUG >= KERROR_DEBUG
+#if configDEBUG >= KERROR_DEBUG
         KERROR(KERROR_ERR, "Page table address can't be null.\n");
 #endif
         return -EINVAL;

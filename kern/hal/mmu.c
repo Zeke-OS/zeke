@@ -53,7 +53,7 @@
 /* End of Definitions for Page fault counter **********************************/
 
 static unsigned long _pf_raw_count; /*!< Raw page fault counter. */
-#if configMP != 0
+#ifdef configMP
 static mtx_t _pfrc_lock; /*!< Mutex for _pf_raw_count */
 #endif
 unsigned long mmu_pfps; /*!< Page faults per second average. Fixed point, 11

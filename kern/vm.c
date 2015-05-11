@@ -321,7 +321,7 @@ int realloc_mm_regions(struct vm_mm_struct * mm, int new_count)
     struct buf * (*new_regions)[];
     size_t i = mm->nr_regions;
 
-#if configVM_DEBUG
+#ifdef configVM_DEBUG
     KERROR(KERROR_DEBUG,
            "realloc_mm_regions(mm %p, new_count %d), old %d\n",
            mm, new_count, i);
@@ -480,7 +480,7 @@ int vm_replace_region(struct proc_info * proc, struct buf * region,
     (*mm->regions)[region_nr] = region;
     mtx_unlock(&mm->regions_lock);
 
-#if configVM_DEBUG
+#ifdef configVM_DEBUG
     KERROR(KERROR_DEBUG, "Mapped sect %d to %x (phys:%x)\n",
              region_nr, region->b_mmu.vaddr, region->b_mmu.paddr);
 #endif

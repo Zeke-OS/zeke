@@ -123,9 +123,7 @@ typedef struct {
 #if _FS_LOCK
     UINT    lockid;         /* File lock ID origin from 1 (index of file semaphore table Files[]) */
 #endif
-#if !_FS_TINY
     BYTE    buf[_MAX_SS];   /* File private data read/write window */
-#endif
 } FIL;
 
 

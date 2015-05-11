@@ -12,7 +12,7 @@ config configCOMMON_CCFLAGS
 
 config configKERNEL_CCFLAGS
     string "Kernel CCFLAGS"
-    default "-g"
+    default "-g -Wundef"
 
 config configUSER_CCFLAGS
     string "Userland CCFLAGS"

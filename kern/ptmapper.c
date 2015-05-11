@@ -193,7 +193,7 @@ SYSCTL_UINT(_vm, OID_AUTO, ptm_mem_tot, CTLFLAG_RD,
 int ptmapper_init(void)
 {
     SUBSYS_INIT("ptmapper");
-#if configPTMAPPER_DEBUG
+#if defined(configPTMAPPER_DEBUG)
     kputs("\n");
 #endif
 
@@ -228,7 +228,7 @@ int ptmapper_init(void)
     /* Fill page tables with translations & attributes */
     {
         mmu_region_t ** regp;
-#if configPTMAPPER_DEBUG
+#if defined(configPTMAPPER_DEBUG)
         const char str_type[2][9] = {"sections", "pages"};
 #define PRINTMAPREG(region)                             \
         KERROR(KERROR_DEBUG, "Mapped %s: %u %s\n",      \
@@ -263,11 +263,11 @@ int ptmapper_init(void)
 
     /* Activate page tables */
     mmu_attach_pagetable(&mmu_pagetable_master); /* Load L1 TTB */
-#if configPTMAPPER_DEBUG
+#if defined(configPTMAPPER_DEBUG)
     KERROR(KERROR_DEBUG, "Attached TTB mmu_pagetable_master\n");
 #endif
     mmu_attach_pagetable(&mmu_pagetable_system); /* Add L2 pte into L1 mpt */
-#if configPTMAPPER_DEBUG
+#if defined(configPTMAPPER_DEBUG)
     KERROR(KERROR_DEBUG, "Attached mmu_pagetable_system\n");
 #endif
 
@@ -304,7 +304,7 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
     /* Try to allocate a new page table */
     if (!PTM_ALLOC(&block, size, balign)) {
         size_t addr = PTM_BLOCK2ADDR(block);
-#if configPTMAPPER_DEBUG
+#if defined(configPTMAPPER_DEBUG)
         KERROR(KERROR_DEBUG,
                 "Alloc pt %u bytes @ %x\n", bsize, addr);
 #endif

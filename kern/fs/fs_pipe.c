@@ -57,7 +57,7 @@
  * Just a humble guess that lazy yield may render improved performance on
  * MP system.
  */
-#if configMP
+#ifdef configMP
 #define PIPE_YIELD_STRATEGY THREAD_YIELD_LAZY
 #else
 #define PIPE_YIELD_STRATEGY THREAD_YIELD_IMMEDIATE

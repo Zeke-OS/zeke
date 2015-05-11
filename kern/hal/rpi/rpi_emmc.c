@@ -78,7 +78,7 @@
 #include <libkern.h>
 #include <vm/vm.h>
 #include "../bcm2835/bcm2835_mmio.h"
-#if configRPI_EMMC_BCM2708
+#ifdef configRPI_EMMC_BCM2708
 #include "../bcm2835/bcm2835_prop.h"
 #include "../bcm2835/bcm2835_pm.h"
 #endif
@@ -494,7 +494,7 @@ int rpi_emmc_init(void)
     SUBSYS_INIT("rpi_emc");
 
     vnode_t * vnode;
-#if configMBR
+#ifdef configMBR
     int fd;
 #endif
     int err;
@@ -543,7 +543,7 @@ static void sd_power_off()
     mmio_write(EMMC_BASE + EMMC_CONTROL0, control0);
 }
 
-#if configRPI_EMMC_GENERIC
+#ifdef configRPI_EMMC_GENERIC
 static uint32_t sd_get_base_clock_hz(void)
 {
     uint32_t base_clock;
@@ -555,7 +555,7 @@ static uint32_t sd_get_base_clock_hz(void)
 }
 #endif
 
-#if configRPI_EMMC_BCM2708
+#ifdef configRPI_EMMC_BCM2708
 static uint32_t sd_get_base_clock_hz(void)
 {
     uint32_t base_clock;
@@ -597,7 +597,7 @@ static uint32_t sd_get_base_clock_hz(void)
 }
 #endif
 
-#if configRPI_EMMC_BCM2708
+#ifdef configRPI_EMMC_BCM2708
 static int bcm_2708_power_cycle()
 {
     int resp;
@@ -1359,7 +1359,7 @@ static int rpi_emmc_card_init(struct emmc_block_dev ** edev)
     uint32_t control1, d;
     istate_t s_entry;
 
-#if configRPI_EMMC_BCM2708
+#ifdef configRPI_EMMC_BCM2708
     /* Power cycle the card to ensure its in its startup state */
     if (bcm_2708_power_cycle() != 0) {
         KERROR(KERROR_ERR,

@@ -215,7 +215,7 @@ int ramsfs_mount(const char * source, uint32_t mode,
     ramfs_sb_t * ramfs_sb;
     int err, retval;
 
-#if configRAMFS_DEBUG
+#ifdef configRAMFS_DEBUG
     KERROR(KERROR_DEBUG, "ramfs_mount()\n");
 #endif
 
@@ -239,7 +239,7 @@ int ramsfs_mount(const char * source, uint32_t mode,
     ramfs_sb->ramfs_iarr_size = RAMFS_INODE_POOL_SIZE;
 
     /* Initialize the inode pool. */
-#if configRAMFS_DEBUG
+#ifdef configRAMFS_DEBUG
     KERROR(KERROR_DEBUG, "Initialize the inode pool.\n");
 #endif
     err = inpool_init(&(ramfs_sb->ramfs_ipool), &ramfs_sb->sb,
@@ -254,7 +254,7 @@ int ramsfs_mount(const char * source, uint32_t mode,
         DEV_MMTODEV(VDEV_MJNR_RAMFS, atomic_inc(&ramfs_vdev_minor));
 
     /* Create the root inode */
-#if configRAMFS_DEBUG
+#ifdef configRAMFS_DEBUG
     KERROR(KERROR_DEBUG, "Create the root inode\n");
 #endif
     ramfs_sb->sb.root = create_root(ramfs_sb);
@@ -311,7 +311,7 @@ int ramfs_get_vnode(struct fs_superblock * sb, ino_t * vnode_num,
     ramfs_sb_t * ramfs_sb;
 
     if (strcmp(sb->fs->fsname, RAMFS_FSNAME)) {
-#if configRAMFS_DEBUG
+#ifdef configRAMFS_DEBUG
         KERROR(KERROR_DEBUG, "Invalid fs: %s\n", sb->fs->fsname);
 #endif
         return -EINVAL;
@@ -321,7 +321,7 @@ int ramfs_get_vnode(struct fs_superblock * sb, ino_t * vnode_num,
     ramfs_sb = get_rfsb_of_sb(sb);
 
     if (*vnode_num >= (ino_t)(ramfs_sb->ramfs_iarr_size)) {
-#if configRAMFS_DEBUG
+#ifdef configRAMFS_DEBUG
         KERROR(KERROR_DEBUG, "invalid vnode num (%d)\n",
                (unsigned)(*vnode_num));
 #endif
@@ -335,7 +335,7 @@ int ramfs_get_vnode(struct fs_superblock * sb, ino_t * vnode_num,
 
         in = ramfs_sb->ramfs_iarr[vnnum];
         if (!in) {
-#if configRAMFS_DEBUG
+#ifdef configRAMFS_DEBUG
             KERROR(KERROR_DEBUG, "inode's NULL\n");
 #endif
             return -ENOENT;
@@ -367,13 +367,13 @@ int ramfs_delete_vnode(vnode_t * vnode)
 
     KASSERT(inode != NULL, "inode should be set");
 
-#if configRAMFS_DEBUG
+#ifdef configRAMFS_DEBUG
     KERROR(KERROR_DEBUG, "%s, ramfs_delete_vnode(%u)\n", vnode->sb->fs->fsname,
            (unsigned)vnode->vn_num);
 #endif
 
     if (inode->in_nlink > 0) {
-#if configRAMFS_DEBUG
+#ifdef configRAMFS_DEBUG
         KERROR(KERROR_DEBUG, "\tNot removing, (nlink: %d)\n",
                (int)inode->in_nlink);
 #endif
@@ -383,7 +383,7 @@ int ramfs_delete_vnode(vnode_t * vnode)
     vrele_nunlink(vnode);
     refcount = vrefcnt(&inode->in_vnode);
     if (refcount > 1) {
-#if configRAMFS_DEBUG
+#ifdef configRAMFS_DEBUG
         KERROR(KERROR_DEBUG, "\tNot removing, (refcount: %d)\n",
                refcount);
 #endif
@@ -458,7 +458,7 @@ int ramfs_create(vnode_t * dir, const char * name, mode_t mode,
     ramfs_inode_t * inode;
     int err;
 
-#if configRAMFS_DEBUG
+#ifdef configRAMFS_DEBUG
         KERROR(KERROR_DEBUG, "ramfs_create(name \"%s\", mode %u)\n",
                name, mode);
 #endif
@@ -480,7 +480,7 @@ int ramfs_create(vnode_t * dir, const char * name, mode_t mode,
     init_inode_attr(inode, S_IFREG | mode);
     err = ramfs_set_filesize(inode, 1 * MMU_PGSIZE_COARSE);
     if (err) {
-#if configRAMFS_DEBUG
+#ifdef configRAMFS_DEBUG
         KERROR(KERROR_DEBUG, "ramfs_set_filesize() failed on inode creation\n");
 #endif
         destroy_inode(inode);
@@ -491,7 +491,7 @@ int ramfs_create(vnode_t * dir, const char * name, mode_t mode,
     insert_inode(inode); /* Insert into the lookup table of the super block. */
     err = ramfs_link(dir, vnode, name);
     if (err) { /* Hard link creation failed. */
-#if configRAMFS_DEBUG
+#ifdef configRAMFS_DEBUG
         KERROR(KERROR_DEBUG, "ramfs_link() failed on inode creation\n");
 #endif
         destroy_inode(inode);
@@ -654,7 +654,7 @@ int ramfs_rmdir(vnode_t * dir,  const char * name)
     size_t nr_entries;
     int err;
 
-#if configRAMFS_DEBUG
+#ifdef configRAMFS_DEBUG
     KERROR(KERROR_DEBUG, "ramfs_rmdir(dir %p, name \"%s\")\n",
            dir, name);
 #endif
@@ -678,7 +678,7 @@ int ramfs_rmdir(vnode_t * dir,  const char * name)
 
     nr_entries = dh_nr_entries(in->in.dir);
     if (nr_entries > 2) {
-#if configRAMFS_DEBUG
+#ifdef configRAMFS_DEBUG
         KERROR(KERROR_DEBUG, "ENOTEMPTY (%u)\n", (unsigned)nr_entries);
 #endif
         return -ENOTEMPTY;
@@ -949,7 +949,7 @@ retry:
         tmp_iarr = (ramfs_inode_t **)krealloc(ramfs_sb->ramfs_iarr,
                 new_size * sizeof(ramfs_inode_t *));
         if (!tmp_iarr) {
-#if configRAMFS_DEBUG
+#ifdef configRAMFS_DEBUG
             KERROR(KERROR_DEBUG, "ENOSPC\n");
 #endif
             /* Can't allocate more memory for a inode lookup table */

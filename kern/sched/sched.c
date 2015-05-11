@@ -359,7 +359,7 @@ void sched_handler(void)
         if (current_thread)
             break;
     }
-#if configSCHED_DEBUG
+#ifdef configSCHED_DEBUG
     if (!current_thread) {
         panic("Nothing to schedule");
     }

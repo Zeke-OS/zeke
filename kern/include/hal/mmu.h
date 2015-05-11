@@ -47,7 +47,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#if configMMU == 0
+#if !defined(configMMU)
 #error MMU not enabled but header was included in some file.
 #endif
 
@@ -177,7 +177,7 @@ typedef struct mmu_region {
  */
 #define MMU_CPT_VADDR(x) ((x) & 0xFFF00000)
 
-#if __ARM6__ || __ARM6K__ /* ARM11 uses ARMv6 arch */
+#if defined(__ARM6__) || defined(__ARM6K__) /* ARM11 uses ARMv6 arch */
 #include "../../hal/arm11/arm11_mmu.h"
 #else
     #error MMU for selected ARM profile/architecture is not supported
