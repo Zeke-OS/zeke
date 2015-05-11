@@ -10,6 +10,7 @@
 char * thread_stack;
 pthread_t thread_id;
 int thread_unslept;
+uintptr_t sp_before, sp_after;
 int thread_signum_received[2];
 
 static void catch_sig(int signum)
@@ -25,8 +26,16 @@ static void * thread(void * arg)
 
     signal(SIGUSR1, catch_sig);
 
+    __asm__ volatile (
+        "mov %[reg], sp\n\t"
+        : [reg]"=r" (sp_before));
+
     fprintf(stderr, ".");
     thread_unslept = sleep(10);
+
+    __asm__ volatile (
+        "mov %[reg], sp\n\t"
+        : [reg]"=r" (sp_after));
 
     sigemptyset(&waitset);
     sigaddset(&waitset, SIGUSR2);
@@ -81,8 +90,8 @@ static char * test_kill_thread(void)
     sleep(1);
     fprintf(stderr, ".");
     pu_assert_equal("", thread_signum_received[0], SIGUSR1);
-    printf("%d\n", thread_unslept);
     pu_assert("Sleep was interrupted", thread_unslept > 0);
+    pu_assert_equal("sp was preserved properly", sp_before, sp_after);
 
     sleep(1);
     fprintf(stderr, ".");
