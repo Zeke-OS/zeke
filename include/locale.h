@@ -15,7 +15,7 @@
 #include <sys/_PDCLIB_int.h>
 __BEGIN_DECLS
 
-#include <sys/_null.h>
+#include <sys/types/_null.h>
 
 /* The structure returned by localeconv().
 
@@ -103,7 +103,7 @@ struct lconv * localeconv( void ) _PDCLIB_nothrow;
                           LC_NUMERIC_MASK | LC_TIME_MASK)
 
 /* POSIX locale type */
-#include <sys/_locale_t.h>
+#include <sys/types/_locale_t.h>
 
 /* Global locale */
 extern struct _PDCLIB_locale _PDCLIB_global_locale;

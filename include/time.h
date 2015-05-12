@@ -38,14 +38,14 @@
 #ifndef TIME_H
 #define TIME_H
 
-#include <sys/_clock_t.h>
-#include <sys/_clockid_t.h>
-#include <sys/_locale_t.h>
-#include <sys/_null.h>
-#include <sys/_pid_t.h>
-#include <sys/_size_t.h>
-#include <sys/_timer_t.h>
-#include <sys/_timespec.h>
+#include <sys/types/_clock_t.h>
+#include <sys/types/_clockid_t.h>
+#include <sys/types/_locale_t.h>
+#include <sys/types/_null.h>
+#include <sys/types/_pid_t.h>
+#include <sys/types/_size_t.h>
+#include <sys/types/_timer_t.h>
+#include <sys/types/_timespec.h>
 
 struct tm {
     int tm_sec;     /*!< Seconds [0,60]. */

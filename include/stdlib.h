@@ -15,8 +15,8 @@
 #include <sys/_PDCLIB_int.h>
 __BEGIN_DECLS
 
-#include <sys/_size_t.h>
-#include <sys/_null.h>
+#include <sys/types/_size_t.h>
+#include <sys/types/_null.h>
 
 #ifndef _PDCLIB_MB_CUR_MAX_DEFINED
 #define _PDCLIB_MB_CUR_MAX_DEFINED

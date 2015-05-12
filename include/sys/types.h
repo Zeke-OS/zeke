@@ -40,32 +40,32 @@
 
 typedef size_t blkcnt_t; /*!< Used for file block counts. */
 typedef int blksize_t; /*!< Used for block sizes. */
-#include <sys/_clock_t.h>
-#include <sys/_clockid_t.h>
+#include <sys/types/_clock_t.h>
+#include <sys/types/_clockid_t.h>
 typedef uint32_t dev_t; /*!< Device identifier */
 typedef size_t fsblkcnt_t; /*!< Used for file system block counts. */
 typedef size_t fsfilcnt_t; /*!< Used for file system file counts. */
-#include <sys/_uid_t.h>
-#include <sys/_gid_t.h>
+#include <sys/types/_uid_t.h>
+#include <sys/types/_gid_t.h>
 typedef int id_t; /*!< Used as a general identifier; can be used to contain at
                     least a pid_t, uid_t, or gid_t. */
 #define id_t id_t
 typedef uint64_t ino_t; /*!< Used for file serial numbers.*/
 typedef uint32_t key_t; /*!< Used for XSI interprocess communication. */
 typedef uint32_t fflags_t;     /*!< file flags */
-#include <sys/_mode_t.h>
+#include <sys/types/_mode_t.h>
 typedef int nlink_t; /*!< Used for link counts. */
-#include <sys/_off_t.h>
+#include <sys/types/_off_t.h>
 #ifdef _UOFF_T_DECLARED
 #define _UOFF_T_DECLARED
 typedef uint64_t uoff_t;
 #endif
-#include <sys/_pid_t.h>
-#include <sys/_ssize_t.h>
-#include <sys/_time_t.h>
-#include <sys/_useconds_t.h>
-#include <sys/_suseconds_t.h>
-#include <sys/_timer_t.h>
+#include <sys/types/_pid_t.h>
+#include <sys/types/_ssize_t.h>
+#include <sys/types/_time_t.h>
+#include <sys/types/_useconds_t.h>
+#include <sys/types/_suseconds_t.h>
+#include <sys/types/_timer_t.h>
 
 /* TODO Missing types:
  * - trace_attr_t

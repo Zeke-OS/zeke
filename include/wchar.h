@@ -29,7 +29,7 @@ typedef _PDCLIB_mbstate_t mbstate_t;
 
 struct tm;
 
-#include <sys/_null.h>
+#include <sys/types/_null.h>
 
 #ifndef _PDCLIB_WCHAR_MIN_MAX_DEFINED
 #define _PDCLIB_WCHAR_MIN_MAX_DEFINED

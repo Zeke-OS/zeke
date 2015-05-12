@@ -17,10 +17,10 @@
 #include <sys/_PDCLIB_int.h>
 __BEGIN_DECLS
 
-#include <sys/_null.h>
-#include <sys/_off_t.h>
-#include <sys/_size_t.h>
-#include <sys/_ssize_t.h>
+#include <sys/types/_null.h>
+#include <sys/types/_off_t.h>
+#include <sys/types/_size_t.h>
+#include <sys/types/_ssize_t.h>
 
 /* See setvbuf(), third argument */
 #define _IOFBF 1

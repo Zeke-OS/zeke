@@ -22,7 +22,7 @@ __BEGIN_DECLS
  * library
  */
 
-#include <sys/_size_t.h>
+#include <sys/types/_size_t.h>
 
 #ifndef _PDCLIB_MBSTATE_T_DEFINED
 #define _PDCLIB_MBSTATE_T_DEFINED _PDCLIB_MBSTATE_T_DEFINED

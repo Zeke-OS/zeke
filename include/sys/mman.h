@@ -33,9 +33,9 @@
 #ifndef _SYS_MMAN_H_
 #define _SYS_MMAN_H_
 
-#include <sys/_off_t.h>
-#include <sys/_size_t.h>
-#include <sys/_mode_t.h>
+#include <sys/types/_off_t.h>
+#include <sys/types/_size_t.h>
+#include <sys/types/_mode_t.h>
 
 #if __BSD_VISIBLE
 /*

@@ -34,7 +34,7 @@
 #define SYS_TIME_H
 
 #include <time.h>
-#include <sys/_suseconds_t.h>
+#include <sys/types/_suseconds_t.h>
 
 #ifndef TIMEVAL_DEFINED
 #define TIMEVAL_DEFINED

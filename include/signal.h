@@ -76,11 +76,11 @@
 #define SIGNAL_H
 
 #include <stdint.h>
-#include <sys/_pid_t.h>
+#include <sys/types/_pid_t.h>
 #include <sys/_sigset.h>
-#include <sys/_size_t.h>
-#include <sys/_timespec.h>
-#include <sys/_uid_t.h>
+#include <sys/types/_size_t.h>
+#include <sys/types/_timespec.h>
+#include <sys/types/_uid_t.h>
 #include <sys/signal_num.h>
 #include <sys/types_pthread.h>
 
