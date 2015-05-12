@@ -136,9 +136,11 @@ static void bcm2835_uart_setconf(struct termios * conf)
     mmio_start(&s_entry);
 
     /* Mask all interrupts. */
-    /*mmio_write(UART0_IMSC, (1 << 1) | (1 << 4) | (1 << 5) |
+#if 0
+    /mio_write(UART0_IMSC, (1 << 1) | (1 << 4) | (1 << 5) |
             (1 << 6) | (1 << 7) | (1 << 8) |
-            (1 << 9) | (1 << 10));*/
+            (1 << 9) | (1 << 10));
+#endif
 
     /* Enable UART0, receive & transfer part of the UART.*/
     mmio_write(UART0_CR, (1 << 0) | (1 << 8) |
@@ -150,7 +152,8 @@ static void bcm2835_uart_setconf(struct termios * conf)
 
 static void set_baudrate(unsigned int baud_rate)
 {
-    /* Integer & fractional part of baud rate.
+    /*
+     * Integer & fractional part of baud rate.
      * divider = UART_CLOCK / (16 * 115200)
      * fraction = (divider mod 1 * 64) + 0.5
      * UART_CLOCK = 3000000
