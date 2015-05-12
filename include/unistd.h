@@ -35,13 +35,17 @@
  * @{
  */
 
-
 #ifndef UNISTD_H
 #define UNISTD_H
 
+#include <stdint.h> /* We only need intptr_t but that's not possible */
+#include <sys/_gid_t.h>
 #include <sys/_null.h>
-
-#include <sys/types.h> /* TODO REMOVE */
+#include <sys/_off_t.h>
+#include <sys/_pid_t.h>
+#include <sys/_size_t.h>
+#include <sys/_ssize_t.h>
+#include <sys/_uid_t.h>
 
 /* Options and option groups */
 #define _POSIX_THREAD_ATTR_STACKADDR    200809L

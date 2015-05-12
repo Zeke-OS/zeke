@@ -15,11 +15,7 @@
 #include <sys/_PDCLIB_int.h>
 __BEGIN_DECLS
 
-#if !defined(_SIZE_T)
-#define _SIZE_T
-typedef __SIZE_TYPE__ size_t;
-#endif
-
+#include <sys/_size_t.h>
 #include <sys/_null.h>
 
 #ifndef _PDCLIB_MB_CUR_MAX_DEFINED

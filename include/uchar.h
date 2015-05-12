@@ -1,4 +1,5 @@
-/* 7.28 <uchar.h>
+/*
+ * 7.28 <uchar.h>
  *
  * This file is part of the Public Domain C Library (PDCLib).
  * Permission is granted to use, modify, and / or redistribute at will.
@@ -21,10 +22,7 @@ __BEGIN_DECLS
  * library
  */
 
-#if !defined(_SIZE_T)
-#define _SIZE_T
-typedef __SIZE_TYPE__ size_t;
-#endif
+#include <sys/_size_t.h>
 
 #ifndef _PDCLIB_MBSTATE_T_DEFINED
 #define _PDCLIB_MBSTATE_T_DEFINED _PDCLIB_MBSTATE_T_DEFINED

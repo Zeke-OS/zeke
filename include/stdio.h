@@ -1,4 +1,5 @@
-/* 7.19 Input/output <stdio.h>
+/*
+ * 7.19 Input/output <stdio.h>
  *
  * This file is part of the Public Domain C Library (PDCLib).
  * Permission is granted to use, modify, and / or redistribute at will.
@@ -16,12 +17,10 @@
 #include <sys/_PDCLIB_int.h>
 __BEGIN_DECLS
 
-#if !defined(_SIZE_T)
-#define _SIZE_T
-typedef __SIZE_TYPE__ size_t;
-#endif
-
 #include <sys/_null.h>
+#include <sys/_off_t.h>
+#include <sys/_size_t.h>
+#include <sys/_ssize_t.h>
 
 /* See setvbuf(), third argument */
 #define _IOFBF 1

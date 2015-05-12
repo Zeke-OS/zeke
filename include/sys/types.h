@@ -47,8 +47,8 @@ typedef int clockid_t; /*!< Used for clock ID type in the clock and
 typedef uint32_t dev_t; /*!< Device identifier */
 typedef size_t fsblkcnt_t; /*!< Used for file system block counts. */
 typedef size_t fsfilcnt_t; /*!< Used for file system file counts. */
-typedef int uid_t; /*!< Used for user IDs. */
-typedef int gid_t; /*!< Used for group IDs. */
+#include <sys/_uid_t.h>
+#include <sys/_gid_t.h>
 typedef int id_t; /*!< Used as a general identifier; can be used to contain at
                     least a pid_t, uid_t, or gid_t. */
 #define id_t id_t
@@ -60,23 +60,13 @@ typedef int mode_t; /*!< Used for some file attributes. */
 #define _MODE_T_DECLARED
 #endif
 typedef int nlink_t; /*!< Used for link counts. */
-#ifndef _OFF_T_DECLARED
-typedef int64_t off_t; /*!< Used for file sizes. */
-#define _OFF_T_DECLARED
+#include <sys/_off_t.h>
+#ifdef _UOFF_T_DECLARED
+#define _UOFF_T_DECLARED
 typedef uint64_t uoff_t;
 #endif
-#ifndef _PID_T_DECLARED
-typedef int pid_t; /*!< Process ID. */
-#define _PID_T_DECLARED
-#endif
-#ifndef _SSIZE_T_DECLARED
-#ifndef SSIZE_MAX
-#define SSIZE_MAX INT32_MAX
-typedef int32_t ssize_t; /*!< Used for a count of bytes or an error
-                          *   indication. */
-#endif
-#define _SSIZE_T_DECLARED
-#endif
+#include <sys/_pid_t.h>
+#include <sys/_ssize_t.h>
 typedef int64_t time_t; /*!< Used for time in seconds. */
 typedef int64_t useconds_t; /*!< Used for time in microseconds. */
 typedef int64_t suseconds_t; /*!< Used for time in microseconds */
