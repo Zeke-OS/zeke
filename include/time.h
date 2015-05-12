@@ -38,8 +38,14 @@
 #ifndef TIME_H
 #define TIME_H
 
+#include <sys/_clock_t.h>
+#include <sys/_clockid_t.h>
+#include <sys/_locale_t.h>
 #include <sys/_null.h>
-#include "sys/types.h" /* TODO Not OK, instead of this only needed types should be defined */
+#include <sys/_pid_t.h>
+#include <sys/_size_t.h>
+#include <sys/_timer_t.h>
+#include <sys/_timespec.h>
 
 struct tm {
     int tm_sec;     /*!< Seconds [0,60]. */
@@ -51,11 +57,6 @@ struct tm {
     int tm_wday;    /*!< Day of week [0,6] (Sunday =0). */
     int tm_yday;    /*!< Day of year [0,365]. */
     int tm_isdst;   /*!< Daylight Savings flag. */
-};
-
-struct timespec {
-    time_t tv_sec;  /*!< Seconds. */
-    long tv_nsec;   /*!< Nanoseconds. */
 };
 
 struct itimerspec {

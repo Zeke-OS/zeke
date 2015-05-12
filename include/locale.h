@@ -103,7 +103,7 @@ struct lconv * localeconv( void ) _PDCLIB_nothrow;
                           LC_NUMERIC_MASK | LC_TIME_MASK)
 
 /* POSIX locale type */
-typedef _PDCLIB_locale_t locale_t;
+#include <sys/_locale_t.h>
 
 /* Global locale */
 extern struct _PDCLIB_locale _PDCLIB_global_locale;

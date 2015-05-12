@@ -67,20 +67,22 @@
  * @{
  */
 
-#ifndef SIGNAL_H
-#define SIGNAL_H
-
-#include <time.h> /* TODO Header shall define the timespec structure as
-                   *      described in time.h */
-
 /**
  * @addtogroup Signals
  * @{
  */
 
-#include <sys/types_pthread.h>
-#include <sys/signal_num.h>
+#ifndef SIGNAL_H
+#define SIGNAL_H
+
+#include <stdint.h>
+#include <sys/_pid_t.h>
 #include <sys/_sigset.h>
+#include <sys/_size_t.h>
+#include <sys/_timespec.h>
+#include <sys/_uid_t.h>
+#include <sys/signal_num.h>
+#include <sys/types_pthread.h>
 
 /*
  * Signal properties and actions, acording to IEEE Std 1003.1, 2004 Edition

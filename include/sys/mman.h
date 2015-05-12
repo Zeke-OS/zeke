@@ -33,9 +33,9 @@
 #ifndef _SYS_MMAN_H_
 #define _SYS_MMAN_H_
 
-#include <sys/types.h> /* TODO Shouldn't be included here, some types should
-                        *      be defined in this file instead.
-                        */
+#include <sys/_off_t.h>
+#include <sys/_size_t.h>
+#include <sys/_mode_t.h>
 
 #if __BSD_VISIBLE
 /*
