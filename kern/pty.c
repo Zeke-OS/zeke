@@ -38,18 +38,19 @@
  * semantics inside the kernel.
  */
 
+#include <errno.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
 #include <sys/tree.h>
-#include <queue_r.h>
+#include <termios.h>
+#include <fs/dev_major.h>
+#include <fs/devfs.h>
+#include <kerror.h>
 #include <kinit.h>
 #include <klocks.h>
-#include <errno.h>
 #include <kmalloc.h>
 #include <proc.h>
-#include <fcntl.h>
-#include <fs/devfs.h>
-#include <fs/dev_major.h>
-#include <termios.h>
-#include <sys/ioctl.h>
+#include <queue_r.h>
 #include <pty.h>
 
 static const char drv_name[] = "PTY";

@@ -16,9 +16,10 @@
 /-----------------------------------------------------------------------------/
  */
 
-#include <kmalloc.h>
-#include <sys/ioctl.h>
 #include <errno.h>
+#include <sys/ioctl.h>
+#include <kmalloc.h>
+#include <kstring.h>
 #include "ff.h"         /* Declarations of FatFs API */
 #include "diskio.h"     /* Declarations of disk I/O functions */
 

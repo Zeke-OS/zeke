@@ -36,6 +36,7 @@
 #include <sys/ioctl.h>
 #include <dirent.h>
 #include <sys/hash.h>
+#include <kerror.h>
 #include <kinit.h>
 #include <kstring.h>
 #include <fs/fs.h>

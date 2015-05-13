@@ -31,6 +31,7 @@
  */
 
 #include <hal/core.h>
+#include <kerror.h>
 #include <thread.h>
 
 int thread_flags_set(struct thread_info * thread, uint32_t flags_mask)

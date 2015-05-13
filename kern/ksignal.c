@@ -73,6 +73,7 @@
 #include <sys/sysctl.h>
 #include <sys/tree.h>
 #include <sys/types.h>
+#include <kerror.h>
 #include <kmalloc.h>
 #include <ksched.h>
 #include <kstring.h>

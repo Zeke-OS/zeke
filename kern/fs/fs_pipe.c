@@ -30,20 +30,20 @@
  *******************************************************************************
  */
 
+#include <errno.h>
+#include <fcntl.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <errno.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <libkern.h>
-#include <kerror.h>
-#include <kinit.h>
 #include <buf.h>
-#include <kmalloc.h>
-#include <queue_r.h>
-#include <proc.h>
 #include <fs/fs.h>
 #include <fs/fs_util.h>
+#include <kerror.h>
+#include <kinit.h>
+#include <kmalloc.h>
+#include <libkern.h>
+#include <proc.h>
+#include <queue_r.h>
 #include <kern_ipc.h>
 
 /*

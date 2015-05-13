@@ -30,15 +30,16 @@
  *******************************************************************************
  */
 
-#include <libkern.h>
-#include <kstring.h>
-#include <kmalloc.h>
-#include <buf.h>
-#include <thread.h>
-#include <proc.h>
 #include <unistd.h>
 #include <errno.h>
+#include <buf.h>
+#include <kerror.h>
+#include <kmalloc.h>
+#include <kstring.h>
+#include <libkern.h>
+#include <proc.h>
 #include <syscall.h>
+#include <thread.h>
 #include <exec.h>
 
 SET_DECLARE(exec_loader, struct exec_loadfn);

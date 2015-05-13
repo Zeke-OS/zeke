@@ -32,6 +32,7 @@
 
 #include <stddef.h>
 #include <libkern.h>
+#include <kerror.h>
 #include <kmalloc.h>
 #include <ksched.h>
 

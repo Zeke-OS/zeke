@@ -35,6 +35,7 @@
 #include <sys/sysctl.h>
 #include <sys/types_pthread.h>
 #include <kactype.h>
+#include <kstring.h>
 
 SYSCTL_NODE(, 0, sysctl, CTLFLAG_RW, 0,
         "Sysctl internal magic");

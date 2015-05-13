@@ -35,6 +35,7 @@
 #include <kstring.h>
 #include <vm/vm.h>
 #include <buf.h>
+#include <kerror.h>
 #include <thread.h>
 #include <proc.h>
 #include <exec.h>
