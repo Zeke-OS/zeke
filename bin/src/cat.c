@@ -18,45 +18,48 @@
 int bflg, eflg, nflg, sflg, tflg, uflg, vflg;
 int spaced, col, lno, inlin, ibsize, obsize;
 
-static void copyopt(FILE * f);
-static int fastcat(int fd);
+static int copyopt(FILE * file);
+static int unbufcat(FILE * file);
+static int fastcat(FILE * file);
 
 int main(int argc, char ** argv)
 {
     int fflg = 0;
-    FILE *fi;
-    int c;
+    FILE * fi;
     int dev = 0, ino = -1;
     struct stat statb;
     int retval = 0;
+    int (*catfn)(FILE * file);
+
+    fprintf(stderr, "argc %d\n", argc);
 
     lno = 1;
     for ( ; argc > 1 && argv[1][0] == '-'; argc--, argv++) {
         switch (argv[1][1]) {
         case 0:
             break;
-        case 'u':
+        case 'u': /* Unbuffered output. */
             setbuf(stdout, (char *)NULL);
             uflg++;
             continue;
-        case 'n':
+        case 'n': /* Numbered lines. */
             nflg++;
             continue;
-        case 'b':
+        case 'b': /* Omit line numbers for empty lines and set -n. */
             bflg++;
             nflg++;
             continue;
-        case 'v':
+        case 'v': /* Display non-printable characters. */
             vflg++;
             continue;
-        case 's':
+        case 's': /* Remove adjacent empty lines. */
             sflg++;
             continue;
-        case 'e':
+        case 'e': /* Display $ at the end of each line. */
             eflg++;
             vflg++;
             continue;
-        case 't':
+        case 't': /* Display tabs as ^I. */
             tflg++;
             vflg++;
             continue;
@@ -77,15 +80,21 @@ int main(int argc, char ** argv)
         argc = 2;
         fflg++;
     }
+    if (nflg || sflg || vflg) {
+        catfn = copyopt;
+    } else if (uflg) {
+        catfn = unbufcat;
+    } else { /* no flags specified */
+        catfn = fastcat;
+    }
+
     while (--argc > 0) {
         if (fflg || ((*++argv)[0] == '-' && (*argv)[1] == '\0')) {
             fi = stdin;
-        } else {
-            if ((fi = fopen(*argv, "r")) == NULL) {
-                perror(*argv);
-                retval = 1;
-                continue;
-            }
+        } else if ((fi = fopen(*argv, "r")) == NULL) {
+            perror(*argv);
+            retval = 1;
+            continue;
         }
         if (fstat(fileno(fi), &statb) == 0) {
             if ((statb.st_mode & S_IFMT) == S_IFREG &&
@@ -100,18 +109,13 @@ int main(int argc, char ** argv)
         } else {
             ibsize = 0;
         }
-        if (nflg || sflg || vflg)
-            copyopt(fi);
-        else if (uflg) {
-            while ((c = getc(fi)) != EOF) {
-                putchar(c);
-            }
-        } else
-            retval |= fastcat(fileno(fi));  /* no flags specified */
+
+        retval |= catfn(fi);
+
         if (fi != stdin)
             fclose(fi);
         else
-            clearerr(fi);       /* reset sticky eof */
+            clearerr(fi);       /* reset sticky EOF */
         if (ferror(stdout)) {
             fprintf(stderr, "cat: output write error\n");
             retval = 1;
@@ -121,14 +125,14 @@ int main(int argc, char ** argv)
     exit(retval);
 }
 
-static void copyopt(FILE * f)
+static int copyopt(FILE * file)
 {
     int c;
 
 top:
-    c = getc(f);
+    c = getc(file);
     if (c == EOF)
-        return;
+        return 0;
     if (c == '\n') {
         if (inlin == 0) {
             if (sflg && spaced)
@@ -167,10 +171,23 @@ top:
     goto top;
 }
 
-static int fastcat(int fd)
+static int unbufcat(FILE * file)
 {
-    int    buffsize, n, nwritten;
-    char   *buff;
+    int c;
+
+    while ((c = getc(file)) != EOF) {
+        putchar(c);
+    }
+
+    return 0;
+}
+
+static int fastcat(FILE * file)
+{
+    int    fd, buffsize, n, nwritten;
+    char   * buff;
+
+    fd = fileno(file);
 
     if (obsize)
         buffsize = obsize;  /* common case, use output blksize */
