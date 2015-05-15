@@ -248,11 +248,13 @@ ssize_t fs_pipe_read(file_t * file, void * buf, size_t count)
     if (!(file->oflags & O_RDONLY))
         return -EBADF;
 
-    if (atomic_read(&pipe->file1.refcount) < 1) {
-        return -EPIPE;
-    }
-
     for (size_t i = 0; i < count;) {
+        if (queue_isempty(&pipe->q) && atomic_read(&pipe->file1.refcount) < 1) {
+            if (i == 0)
+                return -EPIPE;
+            return i;
+        }
+
         if (queue_pop(&pipe->q, (char *)buf + i))
             i++;
         thread_yield(PIPE_YIELD_STRATEGY);
