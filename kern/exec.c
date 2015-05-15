@@ -273,7 +273,7 @@ static int sys_exec(void * user_args)
     /*
      * Execute.
      */
-    err = exec_file(args.fd, name, env_bp, args.nargv, env_bp->b_mmu.vaddr,
+    err = exec_file(args.fd, name, env_bp, args.nargv - 1, env_bp->b_mmu.vaddr,
                     envp);
     if (err) {
         set_errno(-err);
