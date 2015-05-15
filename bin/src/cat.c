@@ -15,6 +15,7 @@
 #include <time.h>
 #include <sys/stat.h>
 
+char * cmd;
 int bflg, eflg, nflg, sflg, tflg, uflg, vflg;
 int spaced, col, lno, inlin, ibsize, obsize;
 
@@ -31,7 +32,7 @@ int main(int argc, char ** argv)
     int retval = 0;
     int (*catfn)(FILE * file);
 
-    fprintf(stderr, "argc %d\n", argc);
+    cmd = argv[0];
 
     lno = 1;
     for ( ; argc > 1 && argv[1][0] == '-'; argc--, argv++) {
@@ -99,7 +100,7 @@ int main(int argc, char ** argv)
         if (fstat(fileno(fi), &statb) == 0) {
             if ((statb.st_mode & S_IFMT) == S_IFREG &&
                 statb.st_dev == dev && statb.st_ino == ino) {
-                fprintf(stderr, "cat: input %s is output\n",
+                fprintf(stderr, "%s: input %s is output\n", cmd,
                    fflg ? "-" : *argv);
                 fclose(fi);
                 retval = 1;
@@ -117,7 +118,7 @@ int main(int argc, char ** argv)
         else
             clearerr(fi);       /* reset sticky EOF */
         if (ferror(stdout)) {
-            fprintf(stderr, "cat: output write error\n");
+            fprintf(stderr, "%s: output write error\n", cmd);
             retval = 1;
             break;
         }
