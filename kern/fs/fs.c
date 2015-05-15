@@ -516,7 +516,7 @@ int fs_fildes_set(file_t * fildes, vnode_t * vnode, int oflags)
 
     fildes->vnode = vnode;
     fildes->oflags = oflags;
-    fildes->refcount = 1;
+    fildes->refcount = ATOMIC_INIT(1);
 
     return 0;
 }

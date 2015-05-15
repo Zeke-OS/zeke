@@ -70,8 +70,8 @@ struct stream_pipe {
     struct vnode vnode;
     struct queue_cb q;
     struct buf * bp;
-    file_t file0;
-    file_t file1;
+    file_t file0; /*!< Read end. */
+    file_t file1; /*!< Write end. */
     uid_t owner;
     gid_t group;
 };
@@ -228,6 +228,10 @@ ssize_t fs_pipe_write(file_t * file, const void * buf, size_t count)
     if (!(file->oflags & O_WRONLY))
         return -EBADF;
 
+    if (atomic_read(&pipe->file0.refcount) < 1) {
+        return -EPIPE;
+    }
+
     for (size_t i = 0; i < count;) {
         if (queue_push(&pipe->q, (char *)buf + i))
             i++;
@@ -243,6 +247,10 @@ ssize_t fs_pipe_read(file_t * file, void * buf, size_t count)
 
     if (!(file->oflags & O_RDONLY))
         return -EBADF;
+
+    if (atomic_read(&pipe->file1.refcount) < 1) {
+        return -EPIPE;
+    }
 
     for (size_t i = 0; i < count;) {
         if (queue_pop(&pipe->q, (char *)buf + i))
