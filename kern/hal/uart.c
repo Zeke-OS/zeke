@@ -69,7 +69,7 @@ int uart_init(void)
      * Register all UART devices with devfs that were registered with UART
      * subsystem before devfs was initialized.
      */
-    for (size_t i = 0; i < uart_nr_ports; i++) {
+    for (int i = 0; i < uart_nr_ports; i++) {
         struct uart_port * port = uart_ports[i];
 
         if (!(port->flags & UART_PORT_FLAG_FS))
