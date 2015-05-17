@@ -246,6 +246,14 @@ ssize_t fs_pipe_write(file_t * file, const void * buf, size_t count)
 ssize_t fs_pipe_read(file_t * file, void * buf, size_t count)
 {
     struct stream_pipe * pipe = (struct stream_pipe *)file->stream;
+    int trycount = 0;
+
+    /*
+     * TODO Atomic pipes
+     *
+     * Instead of using that trycount we should actually make pipes atomic per
+     * PIPE_BUF and return immediately after some data is received.
+     */
 
     if (!(file->oflags & O_RDONLY))
         return -EBADF;
@@ -253,7 +261,9 @@ ssize_t fs_pipe_read(file_t * file, void * buf, size_t count)
     /* TODO Implement O_NONBLOCK */
 
     for (size_t i = 0; i < count;) {
-        if (queue_isempty(&pipe->q) && atomic_read(&pipe->file1.refcount) < 1) {
+        if (queue_isempty(&pipe->q) &&
+                ((trycount++ > 5 && i > 0) ||
+                 atomic_read(&pipe->file1.refcount) < 1)) {
             return i;
         }
 
