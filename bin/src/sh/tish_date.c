@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    tish_fs.c
+ * @file    tish_date.c
  * @author  Olli Vanhoja
- * @brief   File system manipulation commands for tish/Zeke.
+ * @brief   date command for tish.
  * @section LICENSE
  * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -31,79 +31,26 @@
  */
 
 #include <stdio.h>
-#include <string.h>
-#include <limits.h>
+#include <stdlib.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include <errno.h>
 #include <time.h>
-#include <fcntl.h>
-#include <sys/stat.h>
 #include "tish.h"
 
-static int cd(char ** args)
+static int tish_date(char * argv[])
 {
-    char * arg = strtok_r(0, DELIMS, args);
+    struct timespec ts = {0, 0};
+    unsigned sec, nsec;
 
-    if (!arg) {
-        fprintf(stderr, "cd missing argument.\n");
-        errno = EINVAL;
+    if (clock_gettime(CLOCK_REALTIME, &ts))
         return -1;
-    }
-    chdir(arg);
+
+    sec = ts.tv_sec;
+    nsec = ts.tv_nsec;
+
+    printf("%u.%u\n", sec, nsec);
 
     return 0;
 }
-TISH_CMD(cd, "cd");
-
-char cwd_buf[PATH_MAX];
-static int pwd(char ** args)
-{
-    char * cwd;
-
-    cwd = getcwd(cwd_buf, sizeof(cwd_buf));
-    if (!cwd) {
-        perror("Failed to get cwd");
-        return -1;
-    }
-    printf("%s\n", cwd);
-
-    return 0;
-}
-TISH_CMD(pwd, "pwd");
-
-static int touch(char ** args)
-{
-    int fildes;
-    char * path = strtok_r(0, DELIMS, args);
-
-    fildes = creat(path, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-    if (fildes < 0)
-        return -1; /* err */
-
-    return close(fildes);
-}
-TISH_CMD(touch, "touch");
-
-static int tish_mkdir(char ** args)
-{
-    char * path = strtok_r(0, DELIMS, args);
-
-    return mkdir(path, S_IRWXU | S_IRGRP | S_IXGRP);
-}
-TISH_CMD(tish_mkdir, "mkdir");
-
-static int tish_rmdir(char ** args)
-{
-    char * path = strtok_r(0, DELIMS, args);
-
-    return rmdir(path);
-}
-TISH_CMD(tish_rmdir, "rmdir");
-
-static int tish_unlink(char ** args)
-{
-    char * path = strtok_r(0, DELIMS, args);
-
-    return unlink(path);
-}
-TISH_CMD(tish_unlink, "unlink");
+TISH_CMD(tish_date, "date");

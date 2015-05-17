@@ -48,9 +48,9 @@ static int getset_ivalue(int * oid, int len, size_t oval_len,
                          char * nval, size_t nval_len);
 static void print_mib_name(int * mib, int len);
 
-static int tish_sysctl_cmd(char ** args)
+static int tish_sysctl_cmd(char * argv[])
 {
-    char * arg = strtok_r(0, DELIMS, args);
+    char * arg = argv[1];
     int retval = 0;
 
     if (!strcmp(arg, "-a")) {
@@ -182,9 +182,9 @@ static void print_mib_name(int * mib, int len)
     printf("%s\n", strname);
 }
 
-static int tish_uname(char ** args)
+static int tish_uname(char * argv[])
 {
-    char * arg = strtok_r(0, DELIMS, args);
+    char * arg = argv[1];
     int mib[2];
     int len;
     size_t str_len;
@@ -196,7 +196,7 @@ static int tish_uname(char ** args)
     str_len = sizeof(type);
     sysctl(mib, len, &type, &str_len, 0, 0);
 
-    if (!strcmp(arg, "-a")) {
+    if (arg && !strcmp(arg, "-a")) {
         len = sysctlnametomib("kern.osrelease", mib, num_elem(mib));
         str_len = sizeof(rele);
         sysctl(mib, len, &rele, &str_len, 0, 0);
@@ -212,7 +212,7 @@ static int tish_uname(char ** args)
 }
 TISH_CMD(tish_uname, "uname");
 
-static int tish_ikut(char ** arg)
+static int tish_ikut(char * argv[])
 {
     int mib_test[5];
     int mib_cur[5];

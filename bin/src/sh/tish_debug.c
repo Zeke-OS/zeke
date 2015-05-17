@@ -51,37 +51,45 @@ static void thread_stat(void);
 
 static char invalid_arg[] = "Invalid argument\n";
 
-static int debug(char ** args)
+static int debug(char * argv[])
 {
-    char * arg = strtok_r(0, DELIMS, args);
+    char * arg = argv[1];
+
+    if (!arg) {
+        goto fail;
+    }
 
     /* Thread debug commands */
-    if (!strcmp(arg, "thread")) {
-        arg = strtok_r(0, DELIMS, args);
-        if (!strcmp(arg, "create")) {
+    else if (!strcmp(arg, "thread")) {
+        arg = argv[2];
+
+        if (arg && !strcmp(arg, "create")) {
             int err = create_debug_thread();
             if (err)
-                return -1;
+                return EXIT_FAILURE;
         } else {
-            printf("%s", invalid_arg);
+            fprintf(stderr, "%s", invalid_arg);
         }
+
+        return 0;
     /* Data Abort Commands */
     } else if (!strcmp(arg, "dab")) {
-        arg = strtok_r(0, DELIMS, args);
-        if (!strcmp(arg, "fatal")) {
+        arg = argv[2];
+
+        if (arg && !strcmp(arg, "fatal")) {
             printf("Trying fatal DAB\n");
             int * x = (void *)0xfffffff;
             *x = 1;
         } else {
-            printf("%s", invalid_arg);
+            fprintf(stderr, "%s", invalid_arg);
         }
-    } else {
-        printf("Invalid subcommand\n");
-        errno = EINVAL;
-        return -1;
+
+        return 0;
     }
 
-    return 0;
+fail:
+    fprintf(stderr, "Invalid subcommand\n");
+    return EXIT_FAILURE;
 }
 TISH_CMD(debug, "debug");
 

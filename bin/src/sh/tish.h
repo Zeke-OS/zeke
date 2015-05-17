@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    tish_date.c
+ * @file    tish.h
  * @author  Olli Vanhoja
- * @brief   date command for tish.
+ * @brief   Tiny Init Shell for debugging in init.
  * @section LICENSE
  * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,27 +30,26 @@
  *******************************************************************************
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <errno.h>
-#include <time.h>
-#include "tish.h"
+#pragma once
+#ifndef TISH_H
+#define TISH_H
 
-static int tish_date(char ** args)
-{
-    struct timespec ts = {0, 0};
-    unsigned sec, nsec;
+#include <sys/linker_set.h>
 
-    if (clock_gettime(CLOCK_REALTIME, &ts))
-        return -1;
+#define MAX_LEN 80
+#define DELIMS  " \t\r\n"
 
-    sec = ts.tv_sec;
-    nsec = ts.tv_nsec;
+struct tish_builtin {
+    char name[10];
+    int (*fn)(char * argv[]);
+};
 
-    printf("%u.%u\n", sec, nsec);
+#define TISH_CMD(fun, cmdnamestr)           \
+    static struct tish_builtin fun##_st = { \
+        .name = cmdnamestr, .fn = fun       \
+    };                                      \
+    DATA_SET(tish_cmd, fun##_st)
 
-    return 0;
-}
-TISH_CMD(tish_date, "date");
+int tish(void);
+
+#endif /* TISH_H */

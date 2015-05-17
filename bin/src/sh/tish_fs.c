@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    tish.h
+ * @file    tish_fs.c
  * @author  Olli Vanhoja
- * @brief   Tiny Init Shell for debugging in init.
+ * @brief   File system manipulation commands for tish/Zeke.
  * @section LICENSE
  * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,26 +30,77 @@
  *******************************************************************************
  */
 
-#pragma once
-#ifndef TISH_H
-#define TISH_H
+#include <stdio.h>
+#include <string.h>
+#include <limits.h>
+#include <unistd.h>
+#include <errno.h>
+#include <time.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include "tish.h"
 
-#include <sys/linker_set.h>
+char cwd_buf[PATH_MAX];
+static int pwd(char * argv[])
+{
+    char * cwd;
 
-#define MAX_LEN 80
-#define DELIMS  " \t\r\n"
+    cwd = getcwd(cwd_buf, sizeof(cwd_buf));
+    if (!cwd) {
+        perror("Failed to get cwd");
+        return -1;
+    }
+    printf("%s\n", cwd);
 
-struct tish_builtin {
-    char name[10];
-    int (*fn)(char ** args);
-};
+    return 0;
+}
+TISH_CMD(pwd, "pwd");
 
-#define TISH_CMD(fun, cmdnamestr)           \
-    static struct tish_builtin fun##_st = { \
-        .name = cmdnamestr, .fn = fun       \
-    };                                      \
-    DATA_SET(tish_cmd, fun##_st)
+static int touch(char * argv[])
+{
+    int fildes;
+    char * path = argv[1];
 
-int tish(void);
+    if (!path)
+        fprintf(stderr, "%s: missing file operand\n", argv[0]);
 
-#endif /* TISH_H */
+    fildes = creat(path, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    if (fildes < 0)
+        return -1; /* err */
+
+    return close(fildes);
+}
+TISH_CMD(touch, "touch");
+
+static int tish_mkdir(char * argv[])
+{
+    char * path = argv[1];
+
+    if (!path)
+        fprintf(stderr, "%s: missing file operand\n", argv[0]);
+
+    return mkdir(path, S_IRWXU | S_IRGRP | S_IXGRP);
+}
+TISH_CMD(tish_mkdir, "mkdir");
+
+static int tish_rmdir(char * argv[])
+{
+    char * path = argv[1];
+
+    if (!path)
+        fprintf(stderr, "%s: missing file operand\n", argv[0]);
+
+    return rmdir(path);
+}
+TISH_CMD(tish_rmdir, "rmdir");
+
+static int tish_unlink(char * argv[])
+{
+    char * path = argv[1];
+
+    if (!path)
+        fprintf(stderr, "%s: missing file operand\n", argv[0]);
+
+    return unlink(path);
+}
+TISH_CMD(tish_unlink, "unlink");
