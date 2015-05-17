@@ -26,7 +26,6 @@ static int fastcat(FILE * file);
 int main(int argc, char ** argv)
 {
     int fflg = 0;
-    FILE * fi;
     int dev = 0, ino = -1;
     struct stat statb;
     int retval = 0;
@@ -90,6 +89,9 @@ int main(int argc, char ** argv)
     }
 
     while (--argc > 0) {
+        FILE * fi;
+
+        /* Select fi */
         if (fflg || ((*++argv)[0] == '-' && (*argv)[1] == '\0')) {
             fi = stdin;
         } else if ((fi = fopen(*argv, "r")) == NULL) {
@@ -97,6 +99,7 @@ int main(int argc, char ** argv)
             retval = 1;
             continue;
         }
+
         if (fstat(fileno(fi), &statb) == 0) {
             if ((statb.st_mode & S_IFMT) == S_IFREG &&
                 statb.st_dev == dev && statb.st_ino == ino) {
