@@ -662,13 +662,6 @@ ssize_t fs_readwrite_curproc(int fildes, void * buf, size_t nbyte, int oper)
 
     KASSERT((oper & O_ACCMODE) != (O_RDONLY | O_WRONLY),
             "Only read or write selected");
-#if 0
-    if ((oper & O_ACCMODE) == (O_RDONLY | O_WRONLY)) {
-        /* Invalid operation code */
-        retval = -ENOTSUP;
-        goto out;
-    }
-#endif
 
     if (oper & O_RDONLY) {
         retval = vnode->vnode_ops->read(file, buf, nbyte);
