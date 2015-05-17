@@ -126,7 +126,8 @@ int main(int argc, char ** argv)
             break;
         }
     }
-    exit(retval);
+
+    return retval;
 }
 
 static int copyopt(FILE * file)
