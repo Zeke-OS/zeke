@@ -86,6 +86,7 @@ enum mtx_type {
 };
 
 
+#define MTX_OPT_DEFAULT 0x00 /*!< Default options, none */
 #define MTX_OPT_SLEEP   0x10 /*!< Allow timeouted waiting.
                               * Can't be used in interrupt handlers.
                               */
@@ -128,6 +129,12 @@ typedef struct mtx {
 #endif
 } mtx_t;
 
+/**
+ * Initialize a kernel mutex.
+ * @param mtx is a pointer to a mutex struct.
+ */
+void mtx_init(mtx_t * mtx, enum mtx_type type, unsigned int opt);
+
 /* Mutex functions */
 #ifndef configLOCK_DEBUG
 int mtx_lock(mtx_t * mtx);
@@ -141,12 +148,6 @@ int _mtx_lock(mtx_t * mtx, char * whr);
 int _mtx_sleep(mtx_t * mtx, long timeout, char * whr);
 int _mtx_trylock(mtx_t * mtx, char * whr);
 #endif
-
-/**
- * Initialize a kernel mutex.
- * @param mtx is a pointer to a mutex struct.
- */
-void mtx_init(mtx_t * mtx, enum mtx_type type, unsigned int opt);
 
 /**
  * Release kernel mtx lock.
@@ -227,6 +228,29 @@ int rwlock_tryrdlock(rwlock_t * l);
 void rwlock_rdunlock(rwlock_t * l);
 
 #endif /* !_KLOCKS_H_ */
+
+/**
+ * @}
+ */
+
+/**
+ * @addtogroup cpulock cpulocks
+ * Per CPU serialization lock.
+ * @sa mtx
+ * @{
+ */
+
+/**
+ * cpulock descriptor.
+ */
+typedef struct cpulock {
+    struct mtx mtx[0];
+} cpulock_t;
+
+cpulock_t * cpulock_create(void);
+void cpulock_destroy(cpulock_t * lock);
+int cpulock_lock(cpulock_t * lock);
+void cpulock_unlock(cpulock_t * lock);
 
 /**
  * @}

@@ -49,7 +49,7 @@
 
 /**
  * istate for MTX_OPT_DINT.
- * TODO Per CPU.
+ * TODO Per CPU istate.
  */
 istate_t cpu_istate;
 
@@ -284,115 +284,4 @@ void mtx_unlock(mtx_t * mtx)
 int mtx_test(mtx_t * mtx)
 {
     return test_lock((int *)(&mtx->mtx_lock));
-}
-
-void rwlock_init(rwlock_t * l)
-{
-    l->state = 0;
-    l->wr_waiting = 0;
-    mtx_init(&l->lock, MTX_TYPE_SPIN, 0);
-}
-
-void rwlock_wrlock(rwlock_t * l)
-{
-    mtx_lock(&(l->lock));
-    if (l->state == 0) {
-        goto get_wrlock;
-    } else {
-        l->wr_waiting++;
-    }
-    mtx_unlock(&l->lock);
-
-    /* Try to minimize locked time. */
-    while (1) {
-        if (l->state == 0) {
-            mtx_lock(&l->lock);
-            if (l->state == 0) {
-                l->wr_waiting--;
-                goto get_wrlock;
-            }
-            mtx_unlock(&l->lock);
-        }
-    }
-
-get_wrlock:
-    l->state = -1;
-    mtx_unlock(&l->lock);
-}
-
-int rwlock_trywrlock(rwlock_t * l)
-{
-    int retval = 1;
-
-    if (mtx_trylock(&l->lock))
-        goto out;
-
-    if (l->state == 0) {
-        l->state = -1;
-        retval = 0;
-    }
-    mtx_unlock(&l->lock);
-
-out:
-    return retval;
-}
-
-void rwlock_wrunlock(rwlock_t * l)
-{
-    mtx_lock(&(l->lock));
-    if (l->state == -1) {
-        l->state = 0;
-    }
-    mtx_unlock(&l->lock);
-}
-
-void rwlock_rdlock(rwlock_t * l)
-{
-    mtx_lock(&(l->lock));
-    /* Don't take lock if any writer is waiting. */
-    if (l->wr_waiting == 0 && l->state >= 0) {
-        goto get_rdlock;
-    }
-    mtx_unlock(&(l->lock));
-
-    /* Try to minimize locked time. */
-    while (1) {
-        if (l->wr_waiting == 0 && l->state >= 0) {
-            mtx_lock(&(l->lock));
-            if (l->wr_waiting == 0 && l->state >= 0) {
-                goto get_rdlock;
-            }
-            mtx_unlock(&(l->lock));
-        }
-    }
-
-get_rdlock:
-    l->state++;
-    mtx_unlock(&(l->lock));
-}
-
-int rwlock_tryrdlock(rwlock_t * l)
-{
-    int retval = 1;
-
-    if (mtx_trylock(&(l->lock)))
-        goto out;
-
-    if (l->wr_waiting == 0 && l->state >= 0) {
-        l->state++;
-        retval = 0;
-    }
-    mtx_unlock(&l->lock);
-
-out:
-    return retval;
-}
-
-void rwlock_rdunlock(rwlock_t * l)
-{
-    mtx_lock(&l->lock);
-    if (l->state > 0) {
-        l->state--;
-    }
-    mtx_unlock(&l->lock);
 }

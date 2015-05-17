@@ -117,7 +117,7 @@ struct cpu_sched {
 };
 
 static struct cpu_sched cpu[1];
-#define CURRENT_CPU (&cpu[0])
+#define CURRENT_CPU (&cpu[get_cpu_index()])
 
 #define KSTACK_SIZE ((MMU_VADDR_TKSTACK_END - MMU_VADDR_TKSTACK_START) + 1)
 
@@ -229,6 +229,16 @@ int thread_id_compare(struct thread_info * a, struct thread_info * b)
     KASSERT(a && b, "a & b must be set");
 
     return a->id - b->id;
+}
+
+int get_cpu_count(void)
+{
+    return num_elem(cpu);
+}
+
+int get_cpu_index(void)
+{
+    return 0; /* TODO Return CPU index. */
 }
 
 static void update_nr_threads(uintptr_t arg)

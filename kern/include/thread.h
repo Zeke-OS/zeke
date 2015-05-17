@@ -177,6 +177,16 @@ typedef void (*thread_cdtor_t)(struct thread_info * td);
 extern struct thread_info * current_thread;
 
 /**
+ * Get the number of CPUs.
+ */
+int get_cpu_count(void);
+
+/**
+ * Get index of the current CPU core.
+ */
+int get_cpu_index(void);
+
+/**
  * Compare two thread_info structs.
  * @param a is the left node.
  * @param b is the right node.
