@@ -303,6 +303,19 @@ static void proc_remove(struct proc_info * proc)
     procarr_remove(proc->pid);
 }
 
+/**
+ * Close all file descriptors and free files struct.
+ */
+static void free_files(struct proc_info * p)
+{
+    if (p->files) {
+        for (int i = 0; i < p->files->count; i++) {
+            fs_fildes_close(p, i);
+        }
+        kfree(p->files);
+    }
+}
+
 void _proc_free(struct proc_info * p)
 {
     if (!p) {
@@ -312,16 +325,7 @@ void _proc_free(struct proc_info * p)
     }
 
     /* Free files */
-    if (p->files) {
-        for (int i = 0; i < p->files->count; i++) {
-            fs_fildes_ref(p->files, i, -1); /* null pointer safe */
-            /*
-             * TODO Should we call?
-             * fs_fildes_close_curproc(int fildes);
-             */
-        }
-        kfree(p->files);
-    }
+    free_files(p);
 
     /* Free regions */
     /*
@@ -434,6 +438,11 @@ void proc_thread_removed(pid_t pid, pthread_t thread_id)
     if (p->main_thread && (p->main_thread->id == thread_id)) {
         p->main_thread = NULL;
         p->state = PROC_STATE_ZOMBIE;
+
+        /*
+         * Close file descriptors to signal everyone that the process is dead.
+         */
+        free_files(p);
     }
 }
 
