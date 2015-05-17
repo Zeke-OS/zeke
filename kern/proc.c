@@ -304,15 +304,14 @@ static void proc_remove(struct proc_info * proc)
 }
 
 /**
- * Close all file descriptors and free files struct.
+ * Close all file descriptors.
  */
-static void free_files(struct proc_info * p)
+static void close_files(struct proc_info * p)
 {
     if (p->files) {
         for (int i = 0; i < p->files->count; i++) {
             fs_fildes_close(p, i);
         }
-        kfree(p->files);
     }
 }
 
@@ -324,8 +323,9 @@ void _proc_free(struct proc_info * p)
         return;
     }
 
-    /* Free files */
-    free_files(p);
+    /* Close all file descriptors and free files struct. */
+    close_files(p);
+    kfree(p->files);
 
     /* Free regions */
     /*
@@ -442,7 +442,7 @@ void proc_thread_removed(pid_t pid, pthread_t thread_id)
         /*
          * Close file descriptors to signal everyone that the process is dead.
          */
-        free_files(p);
+        close_files(p);
     }
 }
 
