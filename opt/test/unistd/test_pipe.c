@@ -57,7 +57,7 @@ static char * test_eof(void)
     close(fd[1]);
     fd[1] = 0;
 
-    pu_assert("EOF returned", read(fd[0], str, sizeof(str)) == EOF);
+    pu_assert("Nothing to read", read(fd[0], str, sizeof(str)) == 0);
 
     return NULL;
 }
@@ -101,7 +101,6 @@ static char * test_pipe_after_fork(void)
 
         close(fd[1]);
         while ((n = read(fd[0], str + i, 1))) {
-            pu_assert("Not end of file yet", n != EOF);
             pu_assert("Only one char was read", n == 1);
             pu_assert_equal("Proper char was received", *(str + i), tstr[i]);
             if (++i == sizeof(str))
