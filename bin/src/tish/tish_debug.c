@@ -65,30 +65,6 @@ static int debug(char ** args)
         } else {
             printf("%s", invalid_arg);
         }
-    /* Process debug commands */
-    } else if (!strcmp(arg, "proc")) {
-        arg = strtok_r(0, DELIMS, args);
-        if (!strcmp(arg, "fork")) {
-            pid_t pid = fork();
-            if (pid == -1) {
-                printf("fork() failed\n");
-            } else if (pid == 0) {
-                printf("Hello from the child process\n");
-                for (int i = 0; i < 10; i++) {
-                    printf(".");
-                    msleep(500);
-                }
-                exit(0);
-            } else {
-                int status;
-
-                printf("original\n");
-                wait(&status);
-                printf("status: %i\n", status);
-            }
-        } else {
-            puts(invalid_arg);
-        }
     /* Data Abort Commands */
     } else if (!strcmp(arg, "dab")) {
         arg = strtok_r(0, DELIMS, args);
