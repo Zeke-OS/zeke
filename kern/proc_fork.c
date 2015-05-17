@@ -47,13 +47,18 @@
 #include <ptmapper.h>
 #include <syscall.h>
 
+#ifdef configCOW_ENABLED
+#define COW_ENABLED_DEFAULT 1
+#else
+#define COW_ENABLED_DEFAULT 0
+#endif
+
+/** Enable copy on write for processses. */
+static int cow_enabled = COW_ENABLED_DEFAULT;
 static pid_t proc_lastpid;  /*!< last allocated pid. */
 
-static struct proc_info * clone_proc_info(struct proc_info * const old_proc);
-static int clone_stack(struct proc_info * new_proc,
-        struct proc_info * old_proc);
-static void set_proc_inher(struct proc_info * old_proc,
-        struct proc_info * new_proc);
+SYSCTL_INT(_kern, OID_AUTO, cow_enabled, CTLFLAG_RW,
+           &cow_enabled, 0, "Enable copy on write for proc");
 
 static int alloc_master_pt(struct proc_info * new_proc)
 {
@@ -99,7 +104,7 @@ static int clone_oth_regions(struct proc_info * new_proc,
     /*
      * Copy other region pointers.
      * As an iteresting sidenote, what we are doing here and earlier when L1
-     * page table was cloned is that we are losing a link between the region
+     * page table was cloned is that we are removing a link between the region
      * structs and the actual L1 page table of this process. However it doesn't
      * matter much since we are doing COW anyway so no information is ever
      * completely lost but we have to just keep in mind that COW regions are bit
@@ -125,10 +130,18 @@ static int clone_oth_regions(struct proc_info * new_proc,
         if ((*new_proc->mm.regions)[i]->b_mmu.vaddr <= MMU_VADDR_KERNEL_END)
             continue;
 
-        /* Set COW bit */
         if ((*new_proc->mm.regions)[i]->b_uflags & VM_PROT_WRITE) {
-            /* TODO Not very safe */
-            (*new_proc->mm.regions)[i]->b_uflags |= VM_PROT_COW;
+            if (cow_enabled) { /* Set COW bit */
+                (*new_proc->mm.regions)[i]->b_uflags |= VM_PROT_COW;
+            } else { /* Copy immediately */
+                if (vm_reg_tmp->vm_ops->rclone) {
+                    (*new_proc->mm.regions)[i] =
+                        vm_reg_tmp->vm_ops->rclone(vm_reg_tmp);
+                } else {
+                    KERROR(KERROR_ERR, "Can't clone a memory region (%p)\n",
+                           vm_reg_tmp);
+                }
+            }
         }
 
         err = vm_mapproc_region(new_proc, (*new_proc->mm.regions)[i]);
@@ -137,215 +150,6 @@ static int clone_oth_regions(struct proc_info * new_proc,
     }
 
     return 0;
-}
-
-pid_t proc_fork(pid_t pid)
-{
-    /*
-     * http://pubs.opengroup.org/onlinepubs/9699919799/functions/fork.html
-     */
-
-#ifdef configPROC_DEBUG
-    KERROR(KERROR_DEBUG, "fork(%u)\n", pid);
-#endif
-
-    struct proc_info * const old_proc = proc_get_struct_l(pid);
-    struct proc_info * new_proc;
-    pid_t retval;
-
-    /* Check that the old PID was valid. */
-    if (!old_proc || (old_proc->state == PROC_STATE_INITIAL)) {
-        retval = -EINVAL;
-        goto out;
-    }
-
-    new_proc = clone_proc_info(old_proc);
-    if (!new_proc) {
-        retval = -ENOMEM;
-        goto out;
-    }
-
-    procarr_realloc();
-
-    /* Clear some things required to be zeroed at this point */
-    new_proc->state = PROC_STATE_INITIAL;
-    new_proc->files = NULL;
-    /* ..and then start to fix things. */
-
-    /* Allocate a master page table for the new process. */
-    retval = alloc_master_pt(new_proc);
-    if (retval)
-        goto free_res;
-
-    /* Allocate an array for regions. */
-    new_proc->mm.regions = NULL;
-    new_proc->mm.nr_regions = 0;
-    realloc_mm_regions(&new_proc->mm, old_proc->mm.nr_regions);
-    if (!new_proc->mm.regions) {
-        retval = -ENOMEM;
-        goto free_res;
-    }
-
-    /* Clone master page table. */
-    if (mmu_ptcpy(&(new_proc->mm.mpt), &(old_proc->mm.mpt))) {
-        retval = -EAGAIN; // Actually more like -EINVAL
-        goto free_res;
-    }
-
-    /* Clone L2 page tables. */
-    if (vm_ptlist_clone(&new_proc->mm.ptlist_head, &new_proc->mm.mpt,
-                        &old_proc->mm.ptlist_head) < 0) {
-        retval = -ENOMEM;
-        goto free_res;
-    }
-
-    /* Copy code region pointer. */
-    retval = clone_code_region(new_proc, old_proc);
-    if (retval)
-        goto free_res;
-
-    /* Clone stack region */
-    retval = clone_stack(new_proc, old_proc);
-    if (retval) {
-#ifdef configPROC_DEBUG
-        KERROR(KERROR_DEBUG, "Cloning stack region failed.\n");
-#endif
-        goto free_res;
-    }
-
-    retval = clone_oth_regions(new_proc, old_proc);
-    if (retval)
-        goto free_res;
-
-    /*
-     * Breaks.
-     */
-    new_proc->brk_start = (void *)(
-            (*new_proc->mm.regions)[MM_HEAP_REGION]->b_mmu.vaddr +
-            (*new_proc->mm.regions)[MM_HEAP_REGION]->b_bcount);
-    new_proc->brk_stop = (void *)(
-            (*new_proc->mm.regions)[MM_HEAP_REGION]->b_mmu.vaddr +
-            (*new_proc->mm.regions)[MM_HEAP_REGION]->b_bufsize);
-
-    /* fork() signals */
-    ksignal_signals_fork_reinit(&new_proc->sigs);
-
-    /* Copy file descriptors */
-#ifdef configPROC_DEBUG
-    KERROR(KERROR_DEBUG, "Copy file descriptors\n");
-#endif
-    int nofile_max = old_proc->rlim[RLIMIT_NOFILE].rlim_max;
-    if (nofile_max < 0) {
-#if configRLIMIT_NOFILE < 0
-#error configRLIMIT_NOFILE can't be negative.
-#endif
-        nofile_max = configRLIMIT_NOFILE;
-    }
-    new_proc->files = kmalloc(SIZEOF_FILES(nofile_max));
-    if (!new_proc->files) {
-#ifdef configPROC_DEBUG
-        KERROR(KERROR_DEBUG,
-               "\tENOMEM when tried to allocate memory for file descriptors\n");
-#endif
-        retval = -ENOMEM;
-        goto free_res;
-    }
-    new_proc->files->count = nofile_max;
-    /* Copy and ref old file descriptors */
-    for (int i = 0; i < old_proc->files->count; i++) {
-        new_proc->files->fd[i] = old_proc->files->fd[i];
-        fs_fildes_ref(new_proc->files, i, 1); /* null pointer safe */
-    }
-#ifdef configPROC_DEBUG
-    KERROR(KERROR_DEBUG, "All file descriptors copied\n");
-#endif
-
-    /* Select PID */
-    if (nprocs != 1) { /* Tecnically it would be good idea to have lock on
-                        * nprocs before reading it but I think this should
-                        * work fine... */
-        new_proc->pid = proc_get_random_pid();
-    } else { /* Proc is init */
-#ifdef configPROC_DEBUG
-        KERROR(KERROR_DEBUG, "Assuming this process to be init\n");
-#endif
-        new_proc->pid = 1;
-    }
-
-    if (new_proc->cwd) {
-#ifdef configPROC_DEBUG
-        KERROR(KERROR_DEBUG, "Increment refcount for the cwd\n");
-#endif
-        vref(new_proc->cwd); /* Increment refcount for the cwd */
-    }
-
-    /* A process shall be created with a single thread. If a multi-threaded
-     * process calls fork(), the new process shall contain a replica of the
-     * calling thread.
-     * We left main_thread null if calling process has no main thread.
-     */
-#ifdef configPROC_DEBUG
-    KERROR(KERROR_DEBUG, "Handle main_thread\n");
-#endif
-    if (old_proc->main_thread) {
-#ifdef configPROC_DEBUG
-        KERROR(KERROR_DEBUG,
-               "Call thread_fork() to get a new main thread for the fork.\n");
-#endif
-        //pthread_t old_tid = get_current_tid();
-        pthread_t new_tid = thread_fork();
-        if (new_tid < 0) {
-#ifdef configPROC_DEBUG
-            KERROR(KERROR_DEBUG, "thread_fork() failed\n");
-#endif
-            retval = -EAGAIN; /* TODO ?? */
-            goto free_res;
-        } else if (new_tid > 0) { /* thread of the forking process returning */
-#ifdef configPROC_DEBUG
-            KERROR(KERROR_DEBUG, "\tthread_fork() fork OK\n");
-#endif
-            new_proc->main_thread = thread_lookup(new_tid);
-            new_proc->main_thread->pid_owner = new_proc->pid;
-            new_proc->main_thread->curr_mpt = &new_proc->mm.mpt;
-        } else {
-            panic("\tThread forking failed");
-        }
-    } else {
-#ifdef configPROC_DEBUG
-        KERROR(KERROR_DEBUG, "No main thread to fork.\n");
-#endif
-        new_proc->main_thread = NULL;
-    }
-    retval = new_proc->pid;
-
-    /* Update inheritance attributes */
-    set_proc_inher(old_proc, new_proc);
-
-    new_proc->state = PROC_STATE_READY;
-
-    /* Insert the new process into the process array */
-    procarr_insert(new_proc);
-
-#ifdef configPROCFS
-    procfs_mkentry(new_proc);
-#endif
-
-    if (new_proc->main_thread) {
-#ifdef configPROC_DEBUG
-        KERROR(KERROR_DEBUG, "Run new_proc->main_thread\n");
-#endif
-        thread_ready(new_proc->main_thread->id);
-    }
-
-#ifdef configPROC_DEBUG
-    KERROR(KERROR_DEBUG, "Fork created.\n");
-#endif
-
-    goto out; /* Fork created. */
-free_res:
-    _proc_free(new_proc);
-out:
-    return retval;
 }
 
 /**
@@ -479,4 +283,214 @@ pid_t proc_get_random_pid(void)
 #endif
 
     return newpid;
+}
+
+pid_t proc_fork(pid_t pid)
+{
+    /*
+     * http://pubs.opengroup.org/onlinepubs/9699919799/functions/fork.html
+     */
+
+#ifdef configPROC_DEBUG
+    KERROR(KERROR_DEBUG, "fork(%u)\n", pid);
+#endif
+
+    struct proc_info * const old_proc = proc_get_struct_l(pid);
+    struct proc_info * new_proc;
+    pid_t retval;
+
+    /* Check that the old PID was valid. */
+    if (!old_proc || (old_proc->state == PROC_STATE_INITIAL)) {
+        retval = -EINVAL;
+        goto out;
+    }
+
+    new_proc = clone_proc_info(old_proc);
+    if (!new_proc) {
+        retval = -ENOMEM;
+        goto out;
+    }
+
+    procarr_realloc();
+
+    /* Clear some things required to be zeroed at this point */
+    new_proc->state = PROC_STATE_INITIAL;
+    new_proc->files = NULL;
+    /* ..and then start to fix things. */
+
+    /* Allocate a master page table for the new process. */
+    retval = alloc_master_pt(new_proc);
+    if (retval)
+        goto free_res;
+
+    /* Allocate an array for regions. */
+    new_proc->mm.regions = NULL;
+    new_proc->mm.nr_regions = 0;
+    realloc_mm_regions(&new_proc->mm, old_proc->mm.nr_regions);
+    if (!new_proc->mm.regions) {
+        retval = -ENOMEM;
+        goto free_res;
+    }
+
+    /* Clone master page table. */
+    if (mmu_ptcpy(&(new_proc->mm.mpt), &(old_proc->mm.mpt))) {
+        retval = -EAGAIN; // Actually more like -EINVAL
+        goto free_res;
+    }
+
+    /* Clone L2 page tables. */
+    if (vm_ptlist_clone(&new_proc->mm.ptlist_head, &new_proc->mm.mpt,
+                        &old_proc->mm.ptlist_head) < 0) {
+        retval = -ENOMEM;
+        goto free_res;
+    }
+
+    /* Copy code region pointer. */
+    retval = clone_code_region(new_proc, old_proc);
+    if (retval)
+        goto free_res;
+
+    /* Clone stack region */
+    retval = clone_stack(new_proc, old_proc);
+    if (retval) {
+#ifdef configPROC_DEBUG
+        KERROR(KERROR_DEBUG, "Cloning stack region failed.\n");
+#endif
+        goto free_res;
+    }
+
+    /* Clone other regions */
+    retval = clone_oth_regions(new_proc, old_proc);
+    if (retval)
+        goto free_res;
+
+    /*
+     * Breaks.
+     */
+    new_proc->brk_start = (void *)(
+            (*new_proc->mm.regions)[MM_HEAP_REGION]->b_mmu.vaddr +
+            (*new_proc->mm.regions)[MM_HEAP_REGION]->b_bcount);
+    new_proc->brk_stop = (void *)(
+            (*new_proc->mm.regions)[MM_HEAP_REGION]->b_mmu.vaddr +
+            (*new_proc->mm.regions)[MM_HEAP_REGION]->b_bufsize);
+
+    /* fork() signals */
+    ksignal_signals_fork_reinit(&new_proc->sigs);
+
+    /* Copy file descriptors */
+#ifdef configPROC_DEBUG
+    KERROR(KERROR_DEBUG, "Copy file descriptors\n");
+#endif
+    int nofile_max = old_proc->rlim[RLIMIT_NOFILE].rlim_max;
+    if (nofile_max < 0) {
+#if configRLIMIT_NOFILE < 0
+#error configRLIMIT_NOFILE can't be negative.
+#endif
+        nofile_max = configRLIMIT_NOFILE;
+    }
+    new_proc->files = kmalloc(SIZEOF_FILES(nofile_max));
+    if (!new_proc->files) {
+#ifdef configPROC_DEBUG
+        KERROR(KERROR_DEBUG,
+               "\tENOMEM when tried to allocate memory for file descriptors\n");
+#endif
+        retval = -ENOMEM;
+        goto free_res;
+    }
+    new_proc->files->count = nofile_max;
+    /* Copy and ref old file descriptors */
+    for (int i = 0; i < old_proc->files->count; i++) {
+        new_proc->files->fd[i] = old_proc->files->fd[i];
+        fs_fildes_ref(new_proc->files, i, 1); /* null pointer safe */
+    }
+#ifdef configPROC_DEBUG
+    KERROR(KERROR_DEBUG, "All file descriptors copied\n");
+#endif
+
+    /* Select PID */
+    if (nprocs != 1) { /* Tecnically it would be good idea to have lock on
+                        * nprocs before reading it but I think this should
+                        * work fine... */
+        new_proc->pid = proc_get_random_pid();
+    } else { /* Proc is init */
+#ifdef configPROC_DEBUG
+        KERROR(KERROR_DEBUG, "Assuming this process to be init\n");
+#endif
+        new_proc->pid = 1;
+    }
+
+    if (new_proc->cwd) {
+#ifdef configPROC_DEBUG
+        KERROR(KERROR_DEBUG, "Increment refcount for the cwd\n");
+#endif
+        vref(new_proc->cwd); /* Increment refcount for the cwd */
+    }
+
+    /* A process shall be created with a single thread. If a multi-threaded
+     * process calls fork(), the new process shall contain a replica of the
+     * calling thread.
+     * We left main_thread null if calling process has no main thread.
+     */
+#ifdef configPROC_DEBUG
+    KERROR(KERROR_DEBUG, "Handle main_thread\n");
+#endif
+    if (old_proc->main_thread) {
+#ifdef configPROC_DEBUG
+        KERROR(KERROR_DEBUG,
+               "Call thread_fork() to get a new main thread for the fork.\n");
+#endif
+        //pthread_t old_tid = get_current_tid();
+        pthread_t new_tid = thread_fork();
+        if (new_tid < 0) {
+#ifdef configPROC_DEBUG
+            KERROR(KERROR_DEBUG, "thread_fork() failed\n");
+#endif
+            retval = -EAGAIN; /* TODO ?? */
+            goto free_res;
+        } else if (new_tid > 0) { /* thread of the forking process returning */
+#ifdef configPROC_DEBUG
+            KERROR(KERROR_DEBUG, "\tthread_fork() fork OK\n");
+#endif
+            new_proc->main_thread = thread_lookup(new_tid);
+            new_proc->main_thread->pid_owner = new_proc->pid;
+            new_proc->main_thread->curr_mpt = &new_proc->mm.mpt;
+        } else {
+            panic("\tThread forking failed");
+        }
+    } else {
+#ifdef configPROC_DEBUG
+        KERROR(KERROR_DEBUG, "No main thread to fork.\n");
+#endif
+        new_proc->main_thread = NULL;
+    }
+    retval = new_proc->pid;
+
+    /* Update inheritance attributes */
+    set_proc_inher(old_proc, new_proc);
+
+    new_proc->state = PROC_STATE_READY;
+
+    /* Insert the new process into the process array */
+    procarr_insert(new_proc);
+
+#ifdef configPROCFS
+    procfs_mkentry(new_proc);
+#endif
+
+    if (new_proc->main_thread) {
+#ifdef configPROC_DEBUG
+        KERROR(KERROR_DEBUG, "Run new_proc->main_thread\n");
+#endif
+        thread_ready(new_proc->main_thread->id);
+    }
+
+#ifdef configPROC_DEBUG
+    KERROR(KERROR_DEBUG, "Fork created.\n");
+#endif
+
+    goto out; /* Fork created. */
+free_res:
+    _proc_free(new_proc);
+out:
+    return retval;
 }

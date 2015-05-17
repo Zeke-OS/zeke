@@ -508,6 +508,9 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
                                     VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
             if (err)
                 return err;
+#ifdef configPROC_DEBUG
+            KERROR(KERROR_DEBUG, "COW done\n");
+#endif
 
             return 0; /* COW done. */
         }

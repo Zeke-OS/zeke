@@ -94,7 +94,7 @@ config configKSECT_START
 config configKSECT_END
     hex "V ksect end"
     default 0x50000000
-
+ 
 endmenu
 
 menu "User process memory layout"
@@ -125,6 +125,13 @@ config configMAXPROC
     ---help---
     Default maximum number of processes. This is a sysctl tunable variable
     and thus can be changed on runtime.
+
+config configCOW_ENABLED
+    bool "Enable copy-on-write for processes"
+    default n
+    ---help---
+    Selects whether process memory regions shall be copied on demand as COW
+    (Copy-On-Write) or immediately when a process is forked.
 
 config configPROC_DEBUG
     bool "Proc debug"
