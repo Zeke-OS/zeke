@@ -362,6 +362,8 @@ void vrfree(struct buf * bp)
     size_t iblock;
     const size_t bcount = VREG_PCOUNT(bp->b_bufsize);
 
+    KASSERT(bp != NULL, "bp can't be NULL");
+
     /*
      * TODO Locking this doesn't actually provide much safety.
      */
