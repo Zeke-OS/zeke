@@ -443,8 +443,8 @@ int ff_init(void)
 /*-----------------------------------------------------------------------*/
 
 /* Check if chr is contained in the string */
-static
-int chk_chr (const char* str, int chr) {
+static int chk_chr(const char * str, int chr)
+{
     while (*str && *str != chr) str++;
     return *str;
 }
@@ -454,20 +454,19 @@ int chk_chr (const char* str, int chr) {
 /* Request/Release grant to access the volume                            */
 /*-----------------------------------------------------------------------*/
 #if _FS_REENTRANT
-static
-int lock_fs (
-    FATFS* fs       /* File system object */
-)
+/**
+ * @param fs File system object.
+ */
+static int lock_fs(FATFS * fs)
 {
     return mtx_lock(&fs->sobj);
 }
 
-
-static
-void unlock_fs (
-    FATFS* fs,      /* File system object */
-    FRESULT res     /* Result code to be returned */
-)
+/**
+ * @param fs File system object.
+ * @param res Result code to be returned.
+ */
+static void unlock_fs(FATFS * fs, FRESULT res)
 {
     if (fs &&
         res != FR_NOT_ENABLED &&
@@ -487,11 +486,12 @@ void unlock_fs (
 /*-----------------------------------------------------------------------*/
 #if _FS_LOCK
 
-static
-FRESULT chk_lock (  /* Check if the file can be accessed */
-    FF_DIR * dp,        /* Directory object pointing the file to be checked */
-    int acc         /* Desired access type (0:Read, 1:Write, 2:Delete/Rename) */
-)
+/**
+ * Check if the file can be accessed.
+ * @param dp Directory object pointing the file to be checked.
+ * @param acc Desired access type (0:Read, 1:Write, 2:Delete/Rename).
+ */
+static FRESULT chk_lock(FF_DIR * dp, int acc)
 {
     UINT i, be;
 
@@ -505,16 +505,20 @@ FRESULT chk_lock (  /* Check if the file can be accessed */
             be = 1;
         }
     }
-    if (i == _FS_LOCK)  /* The object is not opened */
-        return (be || acc == 2) ? FR_OK : FR_TOO_MANY_OPEN_FILES;   /* Is there a blank entry for new object? */
+    if (i == _FS_LOCK) { /* The object is not opened */
+        /* Is there a blank entry for new object? */
+        return (be || acc == 2) ? FR_OK : FR_TOO_MANY_OPEN_FILES;
+    }
 
-    /* The object has been opened. Reject any open against writing file and all write mode open */
+    /*
+     * The object has been opened. Reject any open against writing file and all
+     * write mode open.
+     */
     return (acc || Files[i].ctr == 0x100) ? FR_LOCKED : FR_OK;
 }
 
 
-static
-int enq_lock (void) /* Check if an entry is available for a new object */
+static int enq_lock(void) /* Check if an entry is available for a new object */
 {
     UINT i;
 
@@ -522,12 +526,12 @@ int enq_lock (void) /* Check if an entry is available for a new object */
     return (i == _FS_LOCK) ? 0 : 1;
 }
 
-
-static
-UINT inc_lock ( /* Increment object open counter and returns its index (0:Internal error) */
-    FF_DIR * dp,    /* Directory object pointing the file to register or increment */
-    int acc     /* Desired access (0:Read, 1:Write, 2:Delete/Rename) */
-)
+/**
+ * Increment object open counter and returns its index (0:Internal error).
+ * @param dp Directory object pointing the file to register or increment.
+ * @param acc Desired access (0:Read, 1:Write, 2:Delete/Rename).
+ */
+static UINT inc_lock(FF_DIR * dp, int acc)
 {
     UINT i;
 
@@ -554,39 +558,42 @@ UINT inc_lock ( /* Increment object open counter and returns its index (0:Intern
     return i + 1;
 }
 
-
-static
-FRESULT dec_lock (  /* Decrement object open counter */
-    UINT i          /* Semaphore index (1..) */
-)
+/**
+ * Decrement object open counter.
+ * @param i Semaphore index (1..).
+ */
+static FRESULT dec_lock(UINT i)
 {
-    WORD n;
     FRESULT res;
 
-
     if (--i < _FS_LOCK) {   /* Shift index number origin from 0 */
-        n = Files[i].ctr;
-        if (n == 0x100) n = 0;      /* If write mode open, delete the entry */
-        if (n) n--;                 /* Decrement read mode open count */
+        WORD n = Files[i].ctr;
+
+        if (n == 0x100)
+            n = 0;      /* If write mode open, delete the entry */
+        if (n)
+            n--;                 /* Decrement read mode open count */
         Files[i].ctr = n;
-        if (!n) Files[i].fs = 0;    /* Delete the entry if open count gets zero */
+        if (!n)
+            Files[i].fs = 0;    /* Delete the entry if open count gets zero */
         res = FR_OK;
     } else {
         res = FR_INT_ERR;           /* Invalid index nunber */
     }
+
     return res;
 }
 
-
-static
-void clear_lock (   /* Clear lock entries of the volume */
-    FATFS *fs
-)
+/**
+ * Clear lock entries of the volume.
+ */
+static void clear_lock(FATFS * fs)
 {
     UINT i;
 
     for (i = 0; i < _FS_LOCK; i++) {
-        if (Files[i].fs == fs) Files[i].fs = 0;
+        if (Files[i].fs == fs)
+            Files[i].fs = 0;
     }
 }
 #endif
@@ -598,37 +605,37 @@ void clear_lock (   /* Clear lock entries of the volume */
 /* Move/Flush disk access window in the file system object               */
 /*-----------------------------------------------------------------------*/
 #if !_FS_READONLY
-static
-FRESULT sync_window (
-    FATFS* fs       /* File system object */
-)
+/**
+ * @param fs File system object.
+ */
+static FRESULT sync_window(FATFS * fs)
 {
     DWORD wsect;
     UINT nf;
-
 
     if (fs->wflag) {    /* Write back the sector if it is dirty */
         wsect = fs->winsect;    /* Current sector number */
         if (fatfs_disk_write(fs->drv, fs->win, wsect, SS(fs)))
             return FR_DISK_ERR;
         fs->wflag = 0;
-        if (wsect - fs->fatbase < fs->fsize) {      /* Is it in the FAT area? */
-            for (nf = fs->n_fats; nf >= 2; nf--) {  /* Reflect the change to all FAT copies */
+        if (wsect - fs->fatbase < fs->fsize) { /* Is it in the FAT area? */
+            /* Reflect the change to all FAT copies */
+            for (nf = fs->n_fats; nf >= 2; nf--) {
                 wsect += fs->fsize;
                 fatfs_disk_write(fs->drv, fs->win, wsect, SS(fs));
             }
         }
     }
+
     return FR_OK;
 }
 #endif
 
-
-static
-FRESULT move_window (
-    FATFS* fs,      /* File system object */
-    DWORD sector    /* Sector number to make appearance in the fs->win[] */
-)
+/**
+ * @param fs File system object.
+ * @param sector Sector number to make appearance in the fs->win[].
+ */
+static FRESULT move_window(FATFS * fs, DWORD sector)
 {
     if (sector != fs->winsect) {    /* Changed current window */
 #if !_FS_READONLY
@@ -650,13 +657,13 @@ FRESULT move_window (
 /* Synchronize file system and strage device                             */
 /*-----------------------------------------------------------------------*/
 #if !_FS_READONLY
-static
-FRESULT sync_fs (   /* FR_OK: successful, FR_DISK_ERR: failed */
-    FATFS* fs       /* File system object */
-)
+/**
+ * @param fs File system object.
+ * @return FR_OK: successful, FR_DISK_ERR: failed
+ */
+static FRESULT sync_fs(FATFS * fs)
 {
     FRESULT res;
-
 
     res = sync_window(fs);
     if (res == FR_OK) {
