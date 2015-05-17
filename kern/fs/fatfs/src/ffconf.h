@@ -210,12 +210,11 @@
 
 #define _FS_REENTRANT   1       /* 0:Disable or 1:Enable */
 #define _FS_TIMEOUT     1000    /* Timeout period in unit of time tick */
-#define _SYNC_t         mtx_t   /* O/S dependent sync object type. */
 /*
  * The _FS_REENTRANT option switches the re-entrancy (thread safe) of
  * the FatFs module.
  *
- *  0: Disable re-entrancy. _FS_TIMEOUT and _SYNC_t have no effect.
+ *  0: Disable re-entrancy. _FS_TIMEOUT and mtx_t have no effect.
  *  1: Enable re-entrancy. Also user provided synchronization handlers,
  *     ff_req_grant(), ff_rel_grant(), ff_del_syncobj() and ff_cre_syncobj()
  *     function must be added to the project.

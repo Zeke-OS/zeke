@@ -2263,7 +2263,7 @@ FRESULT f_mount(FATFS * fs, const TCHAR * path, BYTE opt)
     if (fs) {
         fs->fs_type = 0;    /* Clear new fs object */
 #if _FS_REENTRANT           /* Create sync object for the new volume */
-        mtx_init(&fs->sobj, MTX_TYPE_TICKET, 0);
+        mtx_init(&fs->sobj, MTX_TYPE_TICKET, MTX_OPT_PRICEIL);
 #endif
     }
     FatFs[vol] = fs;        /* Register new fs object */
