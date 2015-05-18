@@ -45,8 +45,7 @@ static struct mtx               vfs_hash_mtx;
 
 static int desiredvnodes = configVFS_HASH_DESIREDVNODES;
 
-int vfs_hashinit(void) __attribute__((constructor));
-int vfs_hashinit(void)
+int __kinit__ vfs_hashinit(void)
 {
     SUBSYS_DEP(proc_init);
     SUBSYS_INIT("vfs_hash");

@@ -186,8 +186,7 @@ static void map_vmstack2proc(struct proc_info * proc, struct buf * vmstack)
 /**
  * Create init process.
  */
-int kinit(void) __attribute__((constructor));
-int kinit(void)
+int __kinit__ kinit(void)
 {
     SUBSYS_DEP(sched_init);
     SUBSYS_DEP(proc_init);

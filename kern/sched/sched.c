@@ -188,8 +188,7 @@ SET_DECLARE(post_sched_tasks, void);
 RB_PROTOTYPE_STATIC(threadmap, thread_info, sched.ttentry_, thread_id_compare);
 RB_GENERATE_STATIC(threadmap, thread_info, sched.ttentry_, thread_id_compare);
 
-int sched_init(void) __attribute__((constructor));
-int sched_init(void)
+int __kinit__ sched_init(void)
 {
     SUBSYS_DEP(vralloc_init);
     SUBSYS_INIT("sched");

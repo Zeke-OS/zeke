@@ -153,11 +153,6 @@ extern mtx_t proclock;
 #define PROC_TESTLOCK()     mtx_test(&proclock)
 #define PROC_LOCK_INIT()    mtx_init(&proclock, MTX_TYPE_SPIN, 0)
 
-/**
- * Init process handling subsystem.
- */
-int proc_init(void) __attribute__((constructor));
-
 /*
  * proc.c
  * Process scheduling and sys level management

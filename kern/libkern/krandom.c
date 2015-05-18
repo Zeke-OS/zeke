@@ -90,8 +90,7 @@ uint32_t kunirand(unsigned long n)
     return draw / part_size;
 }
 
-int random_init(void) __attribute__((constructor));
-int random_init(void)
+int __kinit__ random_init(void)
 {
     SUBSYS_INIT("krandom");
 

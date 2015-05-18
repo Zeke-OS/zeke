@@ -486,8 +486,7 @@ static uint32_t sd_acommands[] = {
 
 static int rpi_emmc_card_init(struct emmc_block_dev ** edev);
 
-int rpi_emmc_init(void) __attribute__((constructor));
-int rpi_emmc_init(void)
+int __kinit__ rpi_emmc_init(void)
 {
     SUBSYS_DEP(bcm2835_prop_init);
     SUBSYS_DEP(fs_init);

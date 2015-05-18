@@ -83,8 +83,7 @@ static int ptydev_comp(struct pty_device * a, struct pty_device * b)
 RB_PROTOTYPE_STATIC(ptytree, pty_device, _entry, ptydev_comp);
 RB_GENERATE_STATIC(ptytree, pty_device, _entry, ptydev_comp);
 
-int pty_init(void) __attribute__((constructor));
-int pty_init(void)
+int __kinit__ pty_init(void)
 {
     dev_t dev_id = DEV_MMTODEV(VDEV_MJNR_PTY, 0);
     char dev_name[] = "ptmx";

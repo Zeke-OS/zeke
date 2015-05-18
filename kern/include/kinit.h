@@ -45,6 +45,11 @@
 void (*kputs)(const char *);
 
 /**
+ * Mark function as a kernel initializer function.
+ */
+#define __kinit__   __attribute__((constructor))
+
+/**
  * Subsystem initializer prologue.
  * @param name is the subsystem name.
  */
@@ -71,13 +76,15 @@ void (*kputs)(const char *);
  * hw_preinit initializer functions are run before any other kernel initializer
  * functions.
  */
-#define HW_PREINIT_ENTRY(fn) static int (*fp_##fn)(void) __attribute__ ((section (".hw_preinit_array"), __used__)) = fn;
+#define HW_PREINIT_ENTRY(fn) static int (*fp_##fn)(void) \
+    __attribute__ ((section (".hw_preinit_array"), __used__)) = fn;
 
 /**
  * hw_post_init initializer are run after all other kernel initializer so post
  * init is ideal for example initializing hw timers and interrupts.
  */
-#define HW_POSTINIT_ENTRY(fn) static int (*fp_##fn)(void) __attribute__ ((section (".hw_postinit_array"), __used__)) = fn;
+#define HW_POSTINIT_ENTRY(fn) static int (*fp_##fn)(void) \
+    __attribute__ ((section (".hw_postinit_array"), __used__)) = fn;
 
 void exec_initfn(int (*fn)(void));
 

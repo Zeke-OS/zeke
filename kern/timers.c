@@ -59,8 +59,7 @@ struct timer_cb {
 static struct timer_cb timers_array[configTIMERS_MAX];
 #define VALID_TIMER_ID(x) ((x) < configTIMERS_MAX && (x) >= 0)
 
-int timers_init(void) __attribute__((constructor));
-int timers_init(void)
+int __kinit__ timers_init(void)
 {
     SUBSYS_INIT("timers");
 

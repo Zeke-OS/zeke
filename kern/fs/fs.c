@@ -76,8 +76,7 @@ static SLIST_HEAD(fs_list, fs) fs_list_head =
     SLIST_HEAD_INITIALIZER(fs_list_head);
 
 
-int fs_init(void) __attribute__((constructor));
-int fs_init(void)
+int __kinit__ fs_init(void)
 {
     SUBSYS_INIT("fs");
 

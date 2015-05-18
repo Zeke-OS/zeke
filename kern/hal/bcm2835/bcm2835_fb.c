@@ -88,8 +88,7 @@ static int commit_fb_config(struct bcm2835_fb_config * fb_config);
 static int set_cursor_state(int enable, int x, int y);
 static int set_cursor_info(void);
 
-static int bcm2835_fb_init(void) __attribute__((constructor));
-static int bcm2835_fb_init(void)
+static int __kinit__ bcm2835_fb_init(void)
 {
     SUBSYS_DEP(vralloc_init);
     SUBSYS_INIT("BCM2835_fb");

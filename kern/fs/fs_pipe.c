@@ -105,8 +105,7 @@ static struct fs_superblock fs_pipe_sb = {
     .umount = NULL,
 };
 
-int fs_pipe_init(void) __attribute__((constructor));
-int fs_pipe_init(void)
+int __kinit__ fs_pipe_init(void)
 {
     SUBSYS_DEP(ramfs_init);
     SUBSYS_INIT("fs_pipe");

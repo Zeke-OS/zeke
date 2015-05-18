@@ -187,8 +187,7 @@ vnode_ops_t ramfs_vnode_ops = {
     .chown = ramfs_chown
 };
 
-int ramfs_init(void) __attribute__((constructor));
-int ramfs_init(void)
+int __kinit__ ramfs_init(void)
 {
     SUBSYS_DEP(fs_init);
     SUBSYS_DEP(proc_init);

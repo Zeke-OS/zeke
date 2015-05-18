@@ -83,7 +83,7 @@ static void procarr_remove(pid_t pid);
 static void proc_remove(struct proc_info * proc);
 pid_t proc_update(void); /* Used in HAL, so not static but not in headeaders. */
 
-int proc_init(void)
+int __kinit__ proc_init(void)
 {
     SUBSYS_DEP(vralloc_init);
     SUBSYS_INIT("proc");

@@ -90,8 +90,7 @@ vnode_ops_t fatfs_vnode_ops = {
     .chflags = fatfs_chflags,
 };
 
-int fatfs_init(void) __attribute__((constructor));
-int fatfs_init(void)
+int __kinit__ fatfs_init(void)
 {
     int err;
 

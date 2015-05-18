@@ -57,8 +57,7 @@ static struct llist * shmem_sync_list;
 
 static void * shmem_sync_thread(void * arg);
 
-int shmem_init(void) __attribute__((constructor));
-int shmem_init(void)
+int __kinit__ shmem_init(void)
 {
     SUBSYS_DEP(proc_init);
     SUBSYS_INIT("shmem");

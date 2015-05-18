@@ -50,8 +50,7 @@ atomic_t mb_res[8];
 
 static struct buf * mbuf;
 
-int bcm2835_prop_init(void) __attribute__((constructor));
-int bcm2835_prop_init(void)
+int __kinit__ bcm2835_prop_init(void)
 {
     SUBSYS_DEP(vralloc_init);
     SUBSYS_INIT("BCM2835_prop");

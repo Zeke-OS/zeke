@@ -102,8 +102,7 @@ static int sysctl_new_user(struct sysctl_req * req, void * p, size_t l);
 static int sysctl_root(SYSCTL_HANDLER_ARGS);
 
 
-int sysctl_init(void) __attribute__((constructor));
-int sysctl_init(void)
+int __kinit__ sysctl_init(void)
 {
     struct sysctl_oid ** oidp;
     SUBSYS_INIT("sysctl");

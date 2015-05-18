@@ -107,8 +107,7 @@ static int init_files()
     return 0;
 }
 
-int procfs_init(void) __attribute__((constructor));
-int procfs_init(void)
+int __kinit__ procfs_init(void)
 {
     SUBSYS_DEP(ramfs_init);
     SUBSYS_INIT("procfs");

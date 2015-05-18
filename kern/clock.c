@@ -56,8 +56,7 @@ static uint64_t sec_next;
 
 static void _update_realtime(void);
 
-int clock_init(void) __attribute__((constructor));
-int clock_init(void)
+int __kinit__ clock_init(void)
 {
     SUBSYS_INIT("clock");
 

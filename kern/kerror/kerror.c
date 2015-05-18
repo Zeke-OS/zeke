@@ -66,8 +66,7 @@ static size_t curr_klogger_id = KERROR_BUF;     /* Boot value */
 
 static int klogger_change(size_t new_id, size_t old_id);
 
-int kerror_init(void) __attribute__((constructor));
-int kerror_init(void)
+int __kinit__ kerror_init(void)
 {
     SUBSYS_INIT("kerror logger");
 

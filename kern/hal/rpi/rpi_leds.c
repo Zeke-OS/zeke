@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Raspberry Pi leds.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,8 +40,7 @@
 
 void rpi_led_invert(void);
 
-int rpi_leds_init(void) __attribute__((constructor));
-int rpi_leds_init(void)
+int __kinit__ rpi_leds_init(void)
 {
     SUBSYS_DEP(bcm2835_mmio_init);
     SUBSYS_INIT("rpi_leds");

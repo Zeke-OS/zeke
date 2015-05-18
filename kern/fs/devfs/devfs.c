@@ -78,8 +78,7 @@ vnode_t * vn_devfs;
 
 static int devfs_delete_vnode(vnode_t * vnode);
 
-int devfs_init(void) __attribute__((constructor));
-int devfs_init(void)
+int __kinit__ devfs_init(void)
 {
     struct fs_superblock * sb;
 
