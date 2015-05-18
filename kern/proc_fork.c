@@ -131,9 +131,9 @@ static int clone_oth_regions(struct proc_info * new_proc,
             continue;
 
         if ((*new_proc->mm.regions)[i]->b_uflags & VM_PROT_WRITE) {
-            if (cow_enabled) { /* Set COW bit */
+            if (cow_enabled) { /* Set COW bit if the feature is enabled. */
                 (*new_proc->mm.regions)[i]->b_uflags |= VM_PROT_COW;
-            } else { /* Copy immediately */
+            } else { /* copy immediately */
                 if (vm_reg_tmp->vm_ops->rclone) {
                     (*new_proc->mm.regions)[i] =
                         vm_reg_tmp->vm_ops->rclone(vm_reg_tmp);

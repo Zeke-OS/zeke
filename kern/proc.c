@@ -465,18 +465,19 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
 {
     const pid_t pid = thread->pid_owner;
     const uintptr_t vaddr = far;
-    struct proc_info * pcb;
+    struct proc_info * proc;
     struct vm_mm_struct * mm;
+    int err;
 
 #ifdef configPROC_DEBUG
     KERROR(KERROR_DEBUG, "proc_dab_handler(): MOO, %x @ %x\n", vaddr, lr);
 #endif
 
-    pcb = proc_get_struct_l(pid);
-    if (!pcb || (pcb->state == PROC_STATE_INITIAL)) {
+    proc = proc_get_struct_l(pid);
+    if (!proc || (proc->state == PROC_STATE_INITIAL)) {
         return -ESRCH; /* Process doesn't exist. */
     }
-    mm = &pcb->mm;
+    mm = &proc->mm;
 
     mtx_lock(&mm->regions_lock);
     for (int i = 0; i < mm->nr_regions; i++) {
@@ -496,37 +497,37 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
 #endif
 
         if (VM_ADDR_IS_IN_RANGE(vaddr, reg_start, reg_end)) {
-            int err;
-
             /* Test for COW flag. */
             if ((region->b_uflags & VM_PROT_COW) != VM_PROT_COW) {
-                mtx_unlock(&mm->regions_lock);
-                return -EACCES; /* Memory protection error. */
+                err = -EACCES; /* Memory protection error. */
+                goto fail;
             }
 
             if (!(region->vm_ops->rclone)
                     || !(new_region = region->vm_ops->rclone(region))) {
                 /* Can't clone region; COW clone failed. */
-                mtx_unlock(&mm->regions_lock);
-                return -ENOMEM;
+                err = -ENOMEM;
+                goto fail;
             }
 
             new_region->b_uflags &= ~VM_PROT_COW; /* No more COW. */
             mtx_unlock(&mm->regions_lock);
-            err = vm_replace_region(pcb, new_region, i,
+            err = vm_replace_region(proc, new_region, i,
                                     VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
-            if (err)
-                return err;
+
 #ifdef configPROC_DEBUG
             KERROR(KERROR_DEBUG, "COW done\n");
 #endif
 
-            return 0; /* COW done. */
+            return err; /* COW done. */
         }
     }
+
+    err = -EFAULT;
+fail:
     mtx_unlock(&mm->regions_lock);
 
-    return -EFAULT; /* Not found */
+    return err; /* Not found or error occured. */
 }
 
 pid_t proc_update(void)
