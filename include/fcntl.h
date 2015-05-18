@@ -103,6 +103,11 @@ typedef int pid_t; /*!< Process ID. */
  * @}
  */
 
+#ifndef SEEK_SET
+#define SEEK_SET        0 /*!< Beginning of file. */
+#define SEEK_CUR        1 /*!< Current position */
+#define SEEK_END        2 /*!< End of file. */
+#endif
 
 /* open() oflags */
 #define O_CLOEXEC       0x0001 /*!< Close the file descriptor upon execution of

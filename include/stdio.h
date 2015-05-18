@@ -37,7 +37,8 @@ typedef _PDCLIB_file_t FILE;
 #define L_tmpnam _PDCLIB_L_tmpnam
 #define TMP_MAX _PDCLIB_TMP_MAX
 
-/* See fseek(), third argument
+/*
+ * See fseek(), third argument
  *
  * Some system headers (e.g. windows) also define the SEEK_* values. Check for
  * this and validate that they're the same value

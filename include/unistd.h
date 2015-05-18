@@ -52,7 +52,8 @@
 #define _POSIX_THREAD_ATTR_STACKSIZE    200809L
 #define _POSIX_THREADS                  200809L
 
-/* Access test flags.
+/*
+ * Access test flags.
  * For compatibility with oflags these are defined to have same values so they
  * are interchangeable, except F_OK which obviously doesn't exist for oflags.
  */
