@@ -1091,7 +1091,8 @@ static int ramfs_set_filesize(ramfs_inode_t * file, off_t new_size)
             size_t i;
 
             for (i = 0; i < file->in_blocks; i++) {
-                vrfree(bpp[i]);
+                if (bpp[i])
+                    vrfree(bpp[i]);
             }
         }
     } else { /* Extend */

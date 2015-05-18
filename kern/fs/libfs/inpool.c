@@ -30,10 +30,10 @@
  *******************************************************************************
  */
 
-#include <stddef.h>
 #include <errno.h>
 #include <kerror.h>
 #include <kmalloc.h>
+#include <stddef.h>
 #include <fs/fs.h>
 #include <fs/inpool.h>
 
@@ -132,8 +132,9 @@ static size_t inpool_fill(inpool_t * pool, size_t count)
     /*
      * First fill from the "dirty" list.
      * Purpose of the dirty list is to try avoid remapping or destroying a vnode
-     * that may still undergo some access by some process. TODO We still should
-     * try to come up with a better solution here for concurrency safety.
+     * that may still undergo some access by some process.
+     * TODO We should still come up with a better solution for concurrency
+     *      safety.
      */
     TAILQ_FOREACH_SAFE(vnode, &pool->ip_dirtylist, vn_inqueue, vnode_temp) {
         if (vrefcnt(vnode) > 1)
