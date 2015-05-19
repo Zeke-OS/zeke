@@ -25,6 +25,11 @@ config configMP
 config configMMU
     bool "MMU support"
 
+config configMMU_DEBUG
+    bool "MMU debugging"
+    default n
+    depends on configMMU
+
 config configUART
     bool "UART support"
     default y

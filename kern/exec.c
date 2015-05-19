@@ -87,6 +87,10 @@ static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp)
         .del_thread = NULL /* Not needed for main(). */
     };
 
+    if (args.stack_size == 0) {
+        panic("Invalid stack size\n");
+    }
+
     return thread_create(&args, 0);
 }
 

@@ -110,7 +110,10 @@ size_t mmu_sizeof_pt(const mmu_pagetable_t * pt)
         break;
     default:
         KERROR(KERROR_ERR,
-               "Can't determine the sizeof of a uninitialized page table\n");
+               "mmu_sizeof_pt(%p) failed, pt is uninitialized\n", pt);
+#ifdef configMMU_DEBUG
+        KERROR_DBG_PRINT_RET_ADDR();
+#endif
         return 0;
     }
 }
@@ -125,7 +128,10 @@ size_t mmu_sizeof_region(const mmu_region_t * region)
     const size_t num_pages = region->num_pages;
 
     if (!region->pt) {
-        KERROR(KERROR_ERR, "pt must be set\n");
+#ifdef configMMU_DEBUG
+        KERROR(KERROR_WARN, "pt for region %p not set\n", region);
+        KERROR_DBG_PRINT_RET_ADDR();
+#endif
         return 0;
     }
 
@@ -136,7 +142,11 @@ size_t mmu_sizeof_region(const mmu_region_t * region)
         return num_pages * MMU_PGSIZE_SECTION;
     default:
         KERROR(KERROR_ERR,
-               "Can't determine the sizeof a uninitialized region\n");
+               "mmu_sizeof_region(%p) failed, region is uninitialized\n",
+               region);
+#ifdef configMMU_DEBUG
+        KERROR_DBG_PRINT_RET_ADDR();
+#endif
         return 0;
     }
 }

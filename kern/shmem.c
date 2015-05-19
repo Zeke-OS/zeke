@@ -224,7 +224,7 @@ errout:
     } else {
         /* Randomly map bp somewhere into the process address space. */
         err = 0;
-        if (!vm_rndsect(proc, 0 /* Ignored */, 0 /* Ignored */, bp))
+        if (!vm_rndsect(proc, bsize, 0 /* Ignored */, bp))
             err = -ENOMEM;
     }
     if (err && bp->vm_ops->rfree) {
