@@ -177,6 +177,7 @@ config configRLIMIT_FSIZE
 
 config configRLIMIT_NOFILE
     int "RLIMIT_NOFILE"
+    range 8 1024
     default 16
     ---help---
     Limit on number of open files.
