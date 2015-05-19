@@ -22,7 +22,7 @@
 /* any other return value is "implementation-defined", i.e. your environment  */
 /* is not required to handle it gracefully. Set your definitions here.        */
 #define _PDCLIB_SUCCESS 0
-#define _PDCLIB_FAILURE -1
+#define _PDCLIB_FAILURE 1
 
 /* qsort() in <stdlib.h> requires a function that swaps two memory areas.     */
 /* Below is a naive implementation that can be improved significantly for     */
