@@ -215,16 +215,8 @@ struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot,
     struct buf * bp;
     int err;
 
-    if (old_bp && size == 0) {
-        size_t mmu_size;
-
-        mmu_size = mmu_sizeof_region(&old_bp->b_mmu);
-        if (mmu_size == 0) {
-            KERROR(KERROR_ERR, "Uninitialized b_mmu for bp: %p\n", old_bp);
-            return NULL;
-        }
-        size = mmu_size;
-    }
+    if (old_bp && size == 0)
+        size = old_bp->b_bufsize;
 
     mtx_lock(&proc->mm.regions_lock);
     nr_regions = proc->mm.nr_regions;
