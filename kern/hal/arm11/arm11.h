@@ -69,8 +69,10 @@
 #define PSR_MODE_UNDEF  0x1bu
 #define PSR_MODE_SUP    0x13u
 
-/* Possible PSR start values for threads.
- * 2.10 The program status registers in ARM1176JZF-S Technical Reference Manual */
+/*
+ * Possible PSR start values for threads.
+ * 2.10 The program status registers in ARM1176JZF-S Technical Reference Manual
+ */
 #define USER_PSR        0x40000010u /*!< User mode. */
 #define SYSTEM_PSR      0x4000001fu /*!< Kernel mode. (System) */
 #define UNDEFINED_PSR   0x4000001bu /*!< Kernel startup mode. (Undefined) */
@@ -179,12 +181,6 @@ static inline void panic_halt(void)
     while (1); /* Just in case */
     __builtin_unreachable();
 }
-
-#define DEBUG_PRINT_CALLER() do {                           \
-    intptr_t tmp;                                           \
-    __asm__ volatile ("mov %[tmp], lr" : [tmp]"=r" (tmp));  \
-    KERROR(KERROR_DEBUG, "caller = %x\n", tmp - 4);         \
-} while (0)
 
 #endif /* ARM11_H */
 

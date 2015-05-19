@@ -95,6 +95,13 @@ extern const char * const _kernel_panic_msg;
 #endif
 
 /**
+ * Print return address of the current function.
+ */
+#define KERROR_DBG_PRINT_RET_ADDR() do { \
+        KERROR(KERROR_DEBUG, "ret_addr = %p\n", __builtin_return_address(0)); \
+} while (0)
+
+/**
  * Kernel panic with message.
  * @param msg is a message to be logged before halt.
  */
