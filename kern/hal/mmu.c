@@ -96,7 +96,6 @@ HW_PREINIT_ENTRY(mmu_init);
  */
 size_t mmu_sizeof_pt(const mmu_pagetable_t * pt)
 {
-    size_t size;
     size_t nr_tables;
 
     /* TODO Transitional */
@@ -104,16 +103,16 @@ size_t mmu_sizeof_pt(const mmu_pagetable_t * pt)
 
     switch (pt->pt_type) {
     case MMU_PTT_MASTER:
-        size = nr_tables * MMU_PTSZ_MASTER;
+        return nr_tables * MMU_PTSZ_MASTER;
         break;
     case MMU_PTT_COARSE:
-        size = nr_tables * MMU_PTSZ_COARSE;
+        return nr_tables * MMU_PTSZ_COARSE;
         break;
     default:
-        size = 0;
+        KERROR(KERROR_ERR,
+               "Can't determine the sizeof of a uninitialized page table\n");
+        return 0;
     }
-
-    return size;
 }
 
 /**
@@ -123,16 +122,19 @@ size_t mmu_sizeof_pt(const mmu_pagetable_t * pt)
  */
 size_t mmu_sizeof_region(const mmu_region_t * region)
 {
+    const size_t num_pages = region->num_pages;
+
     if (!region->pt)
         return 0;
 
     switch (region->pt->pt_type) {
     case MMU_PTT_COARSE:
-        return region->num_pages * MMU_PGSIZE_COARSE;
+        return num_pages * MMU_PGSIZE_COARSE;
     case MMU_PTT_MASTER:
-        return region->num_pages * MMU_PGSIZE_SECTION;
+        return num_pages * MMU_PGSIZE_SECTION;
     default:
-        KERROR(KERROR_ERR, "Can't determine sizeof a uninitialized region\n");
+        KERROR(KERROR_ERR,
+               "Can't determine the sizeof a uninitialized region\n");
         return 0;
     }
 }
