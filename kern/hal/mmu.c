@@ -124,8 +124,10 @@ size_t mmu_sizeof_region(const mmu_region_t * region)
 {
     const size_t num_pages = region->num_pages;
 
-    if (!region->pt)
+    if (!region->pt) {
+        KERROR(KERROR_ERR, "pt must be set\n");
         return 0;
+    }
 
     switch (region->pt->pt_type) {
     case MMU_PTT_COARSE:
