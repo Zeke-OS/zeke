@@ -63,7 +63,7 @@ main(void)
     size_t i;
 
     if (getpid() != 1)
-        return 1;
+        return EXIT_FAILURE;
 
     chdir("/");
     sigfillset(&set);
