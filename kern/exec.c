@@ -77,7 +77,7 @@ static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp)
         .param.sched_policy = SCHED_OTHER, /* TODO Inherit */
         .param.sched_priority = 0, /* TODO Inherit */
         .stack_addr = (void *)(stack_region->b_mmu.vaddr),
-        .stack_size = MMU_SIZEOF_REGION(&stack_region->b_mmu),
+        .stack_size = mmu_sizeof_region(&stack_region->b_mmu),
         .flags      = 0,
         .start      = (void *(*)(void *))(code_region->b_mmu.vaddr),
         .arg1       = uargc,

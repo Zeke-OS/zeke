@@ -489,7 +489,7 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
             continue;
 
         reg_start = region->b_mmu.vaddr;
-        reg_end = region->b_mmu.vaddr + MMU_SIZEOF_REGION(&region->b_mmu) - 1;
+        reg_end = region->b_mmu.vaddr + mmu_sizeof_region(&region->b_mmu) - 1;
 
 #ifdef configPROC_DEBUG
         KERROR(KERROR_DEBUG, "reg_vaddr %x, reg_end %x\n",

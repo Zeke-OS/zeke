@@ -132,6 +132,7 @@ size_t mmu_sizeof_region(const mmu_region_t * region)
     case MMU_PTT_MASTER:
         return region->num_pages * MMU_PGSIZE_SECTION;
     default:
+        KERROR(KERROR_ERR, "Can't determine sizeof a uninitialized region\n");
         return 0;
     }
 }

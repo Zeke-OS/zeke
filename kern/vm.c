@@ -169,7 +169,7 @@ int vm_find_reg(struct proc_info * proc, uintptr_t uaddr, struct buf ** bp)
             continue;
 
         reg_start = region->b_mmu.vaddr;
-        reg_end = region->b_mmu.vaddr + MMU_SIZEOF_REGION(&region->b_mmu) - 1;
+        reg_end = region->b_mmu.vaddr + mmu_sizeof_region(&region->b_mmu) - 1;
 
         if (VM_ADDR_IS_IN_RANGE(uaddr, reg_start, reg_end)) {
             mtx_unlock(&mm->regions_lock);
@@ -216,7 +216,7 @@ struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot,
     int err;
 
     if (old_bp)
-        size = MMU_SIZEOF_REGION(&old_bp->b_mmu);
+        size = mmu_sizeof_region(&old_bp->b_mmu);
 
     mtx_lock(&proc->mm.regions_lock);
     nr_regions = proc->mm.nr_regions;
@@ -238,7 +238,7 @@ struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot,
                 continue;
 
             reg_start = region->b_mmu.vaddr;
-            reg_end = region->b_mmu.vaddr + MMU_SIZEOF_REGION(&region->b_mmu)-1;
+            reg_end = region->b_mmu.vaddr + mmu_sizeof_region(&region->b_mmu)-1;
 
             if (VM_RANGE_IS_OVERLAPPING(reg_start, reg_end,
                                         vaddr, newreg_end)) {
@@ -649,7 +649,7 @@ int useracc_proc(const void * addr, size_t len, struct proc_info * proc, int rw)
         return 0;
 
     start = region->b_mmu.vaddr;
-    end = region->b_mmu.vaddr + MMU_SIZEOF_REGION(&region->b_mmu) - 1;
+    end = region->b_mmu.vaddr + mmu_sizeof_region(&region->b_mmu) - 1;
     if (uaddr >= start && uaddr <= end)
         return test_ap_user(rw, region->b_mmu.ap, region->b_mmu.control);
     return 0;

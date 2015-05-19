@@ -192,7 +192,7 @@ static int clone_stack(struct proc_info * new_proc, struct proc_info * old_proc)
             return -ENOMEM;
         }
     } else if (old_region) { /* Try to clone the stack manually. */
-        const size_t rsize = MMU_SIZEOF_REGION(&(old_region->b_mmu));
+        const size_t rsize = mmu_sizeof_region(&(old_region->b_mmu));
 
 #ifdef configPROC_DEBUG
         KERROR(KERROR_DEBUG, "Cloning stack manually\n");
