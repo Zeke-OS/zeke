@@ -461,7 +461,7 @@ void proc_update_times(void)
 }
 
 int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-        struct thread_info * thread)
+                     struct thread_info * thread)
 {
     const pid_t pid = thread->pid_owner;
     const uintptr_t vaddr = far;
@@ -470,7 +470,8 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
     int err;
 
 #ifdef configPROC_DEBUG
-    KERROR(KERROR_DEBUG, "proc_dab_handler(): MOO, %x @ %x\n", vaddr, lr);
+    KERROR(KERROR_DEBUG, "proc_dab_handler(): MOO, %x @ %x by %d\n", vaddr, lr,
+           current_process_id);
 #endif
 
     proc = proc_get_struct_l(pid);

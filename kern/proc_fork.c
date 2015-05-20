@@ -120,31 +120,54 @@ static int clone_oth_regions(struct proc_info * new_proc,
         if (!vm_reg_tmp || (vm_reg_tmp->b_flags & B_NOTSHARED))
             continue;
 
-        /* Take ref */
+        /* Take a ref */
         if (vm_reg_tmp->vm_ops && vm_reg_tmp->vm_ops->rref)
             vm_reg_tmp->vm_ops->rref(vm_reg_tmp);
 
-        (*new_proc->mm.regions)[i] = vm_reg_tmp;
-
-        /* Skip regions in system page table */
-        if ((*new_proc->mm.regions)[i]->b_mmu.vaddr <= MMU_VADDR_KERNEL_END)
+        /* Skip cloning regions in system page table */
+        if (vm_reg_tmp->b_mmu.vaddr <= MMU_VADDR_KERNEL_END) {
+            (*new_proc->mm.regions)[i] = vm_reg_tmp;
             continue;
+        }
 
-        if ((*new_proc->mm.regions)[i]->b_uflags & VM_PROT_WRITE) {
+        /*
+         * If the region is writable we want to either clone it or mark it as
+         * copy-on-write.
+         */
+        if (vm_reg_tmp->b_uflags & VM_PROT_WRITE) {
             if (cow_enabled) { /* Set COW bit if the feature is enabled. */
-                (*new_proc->mm.regions)[i]->b_uflags |= VM_PROT_COW;
+                vm_reg_tmp->b_uflags |= VM_PROT_COW;
             } else { /* copy immediately */
-                if (vm_reg_tmp->vm_ops->rclone) {
-                    (*new_proc->mm.regions)[i] =
-                        vm_reg_tmp->vm_ops->rclone(vm_reg_tmp);
+                if (vm_reg_tmp->vm_ops && vm_reg_tmp->vm_ops->rclone) {
+                    struct buf * old_bp = vm_reg_tmp;
+                    struct buf * new_bp;
+
+                    /*
+                     * Ref is no more needed, we can actually remove it early
+                     * since its not going anywhere during the fork.
+                     */
+                    if (old_bp->vm_ops && old_bp->vm_ops->rfree)
+                        old_bp->vm_ops->rfree(old_bp);
+
+                    new_bp = old_bp->vm_ops->rclone(old_bp);
+                    if (!new_bp) {
+                        KERROR(KERROR_ERR,
+                               "Failed to clone a memory region (%p)\n",
+                               old_bp);
+                        continue;
+                    }
+
+                    vm_reg_tmp = new_bp;
                 } else {
                     KERROR(KERROR_ERR, "Can't clone a memory region (%p)\n",
                            vm_reg_tmp);
+                    continue;
                 }
             }
         }
+        (*new_proc->mm.regions)[i] = vm_reg_tmp;
 
-        err = vm_mapproc_region(new_proc, (*new_proc->mm.regions)[i]);
+        err = vm_mapproc_region(new_proc, vm_reg_tmp);
         if (err)
             return -ENOMEM;
     }

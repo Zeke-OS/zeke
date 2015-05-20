@@ -39,10 +39,6 @@
 #include <proc.h>
 #include <hal/core.h>
 
-int arm_interrupt_preinit(void);
-
-HW_PREINIT_ENTRY(arm_interrupt_preinit);
-
 /**
  * Interrupt vectors.
  *
@@ -125,3 +121,4 @@ int arm_interrupt_preinit(void)
 
     return 0;
 }
+HW_PREINIT_ENTRY(arm_interrupt_preinit);

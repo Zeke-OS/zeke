@@ -613,8 +613,8 @@ void mmu_data_abort_handler(void)
     }
 
     /*
-     *  TODO COR Support here
-     *  In the future we may wan't to support copy on read too
+     * TODO COR Support here
+     * In the future we may wan't to support copy on read too
      * (ie. page swaping). To suppor cor, and actually anyway, we should test
      * if error appeared during reading or writing etc.
      */
