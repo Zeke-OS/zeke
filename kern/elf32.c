@@ -103,7 +103,8 @@ static int load_section(struct buf ** region, file_t * file,
         file->seek_pos = phdr->p_offset;
         err = file->vnode->vnode_ops->read(file, ldp, phdr->p_filesz);
         if (err < 0) {
-            sect->vm_ops->rfree(sect);
+            if (sect->vm_ops->rfree)
+                sect->vm_ops->rfree(sect);
             return -ENOEXEC;
         }
     }

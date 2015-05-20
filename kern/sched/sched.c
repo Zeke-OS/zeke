@@ -471,6 +471,10 @@ static void thread_init_kstack(struct thread_info * thread)
  */
 static void thread_free_kstack(struct thread_info * thread)
 {
+    /*
+     * No need to check if rfree is defined because we know how the stack buffer
+     * was created.
+     */
     thread->kstack_region->vm_ops->rfree(thread->kstack_region);
 }
 

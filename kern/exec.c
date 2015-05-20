@@ -116,7 +116,7 @@ int exec_file(int fd, char name[PROC_NAME_LEN], struct buf * env_bp,
     /* Map new environment */
     err = vm_insert_region(curproc, env_bp, VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
     if (err < 0) {
-        if (env_bp->vm_ops && env_bp->vm_ops->rfree)
+        if (env_bp->vm_ops->rfree)
             env_bp->vm_ops->rfree(env_bp);
         else {
             KERROR(KERROR_ERR, "Can't free env_bp\n");

@@ -60,8 +60,9 @@ int nprocs = 1;                         /*!< Current # of procs. */
 pid_t current_process_id;               /*!< PID of current process. */
 struct proc_info * curproc;             /*!< PCB of the current process. */
 
-extern vnode_t kerror_vnode;
+static const struct vm_ops sys_vm_ops; /* NOOP struct for system regions. */
 
+extern vnode_t kerror_vnode;
 extern void * __bss_break __attribute__((weak));
 
 #define SIZEOF_PROCARR()    ((maxproc + 1) * sizeof(struct proc_info *))
@@ -143,7 +144,7 @@ static void init_kernel_proc(void)
 
     /* Copy master page table descriptor */
     memcpy(&(kernel_proc->mm.mpt), &mmu_pagetable_master,
-            sizeof(mmu_pagetable_t));
+           sizeof(mmu_pagetable_t));
 
     /*
      * Create regions
@@ -164,6 +165,9 @@ static void init_kernel_proc(void)
 
     kprocvm_code->b_mmu = mmu_region_kernel;
     kprocvm_heap->b_mmu = mmu_region_kdata;
+
+    kprocvm_code->vm_ops = &sys_vm_ops;
+    kprocvm_heap->vm_ops = &sys_vm_ops;
 
     mtx_init(&(kprocvm_code->lock), MTX_TYPE_SPIN, 0);
     mtx_init(&(kprocvm_heap->lock), MTX_TYPE_SPIN, 0);
@@ -523,8 +527,8 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
             err = -ENOMEM; /* Can't clone region; COW failed. */
             goto fail;
         }
+        /* The old region remains COW as it would be racy to change its state */
 
-        region->b_uflags &= ~VM_PROT_COW; /* No more COW. */
         mtx_unlock(&mm->regions_lock);
         err = vm_replace_region(proc, region, i,
                                 VM_INSOP_SET_PT | VM_INSOP_MAP_REG);

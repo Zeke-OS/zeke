@@ -77,7 +77,12 @@ struct buf {
     int b_error;            /*!< Negative errno returned after I/O. */
     size_t b_resid;         /*!< words not transferred after an error. */
 
-    /** Operations */
+    /**
+     * Operations.
+     * This pointer must be always set to something, but members of it can
+     * be set to NULL and caller must always check whether a function pointer is
+     * a NULL pointer.
+     */
     const struct vm_ops * vm_ops;
 
     void * allocator_data;  /*!< Allocator specific data. */
@@ -90,10 +95,13 @@ struct buf {
 
 /**
  * VM operations.
+ * All members can be set NULL and caller must always verify whether
+ * the function pointer is NULL.
  */
 typedef struct vm_ops {
     /**
      * Increment region reference count.
+     * @note Can be null.
      */
     void (*rref)(struct buf * this);
 

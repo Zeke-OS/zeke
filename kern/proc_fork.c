@@ -87,7 +87,7 @@ static int clone_code_region(struct proc_info * new_proc,
     }
 
     /* Incr ref */
-    if (vm_reg_tmp->vm_ops)
+    if (vm_reg_tmp->vm_ops->rref)
         vm_reg_tmp->vm_ops->rref(vm_reg_tmp);
 
     (*new_proc->mm.regions)[MM_CODE_REGION] = vm_reg_tmp;
@@ -121,7 +121,7 @@ static int clone_oth_regions(struct proc_info * new_proc,
             continue;
 
         /* Take a ref */
-        if (vm_reg_tmp->vm_ops && vm_reg_tmp->vm_ops->rref)
+        if (vm_reg_tmp->vm_ops->rref)
             vm_reg_tmp->vm_ops->rref(vm_reg_tmp);
 
         /* Skip cloning regions in system page table */
@@ -138,7 +138,7 @@ static int clone_oth_regions(struct proc_info * new_proc,
             if (cow_enabled) { /* Set COW bit if the feature is enabled. */
                 vm_reg_tmp->b_uflags |= VM_PROT_COW;
             } else { /* copy immediately */
-                if (vm_reg_tmp->vm_ops && vm_reg_tmp->vm_ops->rclone) {
+                if (vm_reg_tmp->vm_ops->rclone) {
                     struct buf * old_bp = vm_reg_tmp;
                     struct buf * new_bp;
 
@@ -146,7 +146,7 @@ static int clone_oth_regions(struct proc_info * new_proc,
                      * Ref is no more needed, we can actually remove it early
                      * since its not going anywhere during the fork.
                      */
-                    if (old_bp->vm_ops && old_bp->vm_ops->rfree)
+                    if (old_bp->vm_ops->rfree)
                         old_bp->vm_ops->rfree(old_bp);
 
                     new_bp = old_bp->vm_ops->rclone(old_bp);
@@ -201,14 +201,10 @@ static int clone_stack(struct proc_info * new_proc, struct proc_info * old_proc)
     struct buf * new_region = 0;
     int err;
 
-    if (old_region && old_region->vm_ops) { /* Only if vmp_ops are defined. */
+    if (old_region && old_region->vm_ops->rclone) {
 #ifdef configPROC_DEBUG
         KERROR(KERROR_DEBUG, "Cloning stack\n");
 #endif
-        if (!old_region->vm_ops->rclone) {
-            KERROR(KERROR_ERR, "No clone operation\n");
-            return -ENOMEM;
-        }
 
         new_region = old_region->vm_ops->rclone(old_region);
         if (!new_region) {
