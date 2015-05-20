@@ -492,8 +492,10 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
         reg_end = region->b_mmu.vaddr + mmu_sizeof_region(&region->b_mmu) - 1;
 
 #ifdef configPROC_DEBUG
-        KERROR(KERROR_DEBUG, "reg_vaddr %x, reg_end %x\n",
-               reg_start, reg_end);
+        char uap[5];
+        vm_get_uapstring(uap, region);
+        KERROR(KERROR_DEBUG, "sect %d: vaddr: %x - %x, phys: %x, uap: %s\n",
+               i, reg_start, reg_end, region->b_mmu.paddr, uap);
 #endif
 
         if (VM_ADDR_IS_IN_RANGE(vaddr, reg_start, reg_end)) {
@@ -503,10 +505,14 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
                 goto fail;
             }
 
-            if (!(region->vm_ops->rclone)
-                    || !(new_region = region->vm_ops->rclone(region))) {
-                /* Can't clone region; COW clone failed. */
-                err = -ENOMEM;
+            if (!region->vm_ops->rclone) {
+                err = -ENOTSUP; /* rclone() not supported. */
+                goto fail;
+            }
+
+            new_region = region->vm_ops->rclone(region);
+            if (!new_region) {
+                err = -ENOMEM; /* Can't clone region; COW failed. */
                 goto fail;
             }
 

@@ -568,9 +568,11 @@ void mmu_data_abort_handler(void)
     istate_t s_entry; /*!< Int state in handler entry. */
     struct thread_info * const thread = (struct thread_info *)current_thread;
 
+    /* Get fault address */
     __asm__ volatile (
         "MRC p15, 0, %[reg], c6, c0, 0"
         : [reg]"=r" (far));
+    /* Get fault status */
     __asm__ volatile (
         "MRC p15, 0, %[reg], c5, c0, 0"
         : [reg]"=r" (fsr));
