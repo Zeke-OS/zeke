@@ -396,7 +396,7 @@ static int vm_insert_region_ref(struct vm_mm_struct * mm, struct buf * region)
     return slot;
 }
 
-int vm_insert_region(struct proc_info * proc, struct buf * region, int op)
+int vm_insert_region(struct proc_info * proc, struct buf * region, int insop)
 {
     int slot, err;
 
@@ -406,7 +406,7 @@ int vm_insert_region(struct proc_info * proc, struct buf * region, int op)
     if (slot < 0)
         return slot;
 
-    err = vm_replace_region(proc, region, slot, op);
+    err = vm_replace_region(proc, region, slot, insop);
     if (err)
         return err;
 
@@ -414,7 +414,7 @@ int vm_insert_region(struct proc_info * proc, struct buf * region, int op)
 }
 
 int vm_replace_region(struct proc_info * proc, struct buf * region,
-                      int region_nr, int op)
+                      int region_nr, int insop)
 {
     struct vm_mm_struct * const mm = &proc->mm;
     struct vm_pt * vpt;
@@ -450,7 +450,7 @@ int vm_replace_region(struct proc_info * proc, struct buf * region,
      * Free the old region as this process no longer uses it.
      * (Usually decrements some internal refcount)
      */
-    if (((op & VM_INSOP_NOFREE) == 0) && old_region && old_region->vm_ops &&
+    if (((insop & VM_INSOP_NOFREE) == 0) && old_region &&
         old_region->vm_ops->rfree) {
         old_region->vm_ops->rfree(old_region);
     }
@@ -458,7 +458,7 @@ int vm_replace_region(struct proc_info * proc, struct buf * region,
     /*
      * Get & set page table.
      */
-    if (op & VM_INSOP_SET_PT) {
+    if (insop & VM_INSOP_SET_PT) {
         vpt = ptlist_get_pt(mm, region->b_mmu.vaddr);
         if (!vpt)
             return -ENOMEM;
@@ -468,9 +468,9 @@ int vm_replace_region(struct proc_info * proc, struct buf * region,
 
     err = 0;
     const int mask = VM_INSOP_SET_PT | VM_INSOP_MAP_REG;
-    if ((op & mask) == mask) {
+    if ((insop & mask) == mask) {
         err = vm_map_region(region, vpt);
-    } else if (op & VM_INSOP_MAP_REG) {
+    } else if (insop & VM_INSOP_MAP_REG) {
         err = vm_mapproc_region(proc, region);
     }
     if (err)

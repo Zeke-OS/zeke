@@ -80,9 +80,9 @@ struct vm_mm_struct {
 };
 
 /* Region insert operations */
-#define VM_INSOP_SET_PT  0x01 /*!< Set default page tabe from process vpt. */
-#define VM_INSOP_MAP_REG 0x02 /*!< Map the region to the given proc. */
-#define VM_INSOP_NOFREE  0x10 /*!< Don't free the old region. */
+#define VM_INSOP_SET_PT  0x0001 /*!< Set default page tabe from process vpt. */
+#define VM_INSOP_MAP_REG 0x0002 /*!< Map the region to the given proc. */
+#define VM_INSOP_NOFREE  0x0010 /*!< Don't free the old region. */
 
 /**
  * Test if ADDR is between RANGE_START and RANGE_END;
@@ -275,7 +275,7 @@ int realloc_mm_regions(struct vm_mm_struct * mm, int new_count);
  * @returns value >= 0 succeed and value is the region nr;
  *          value < 0 failed with an error code.
  */
-int vm_insert_region(struct proc_info * proc, struct buf * region, int op);
+int vm_insert_region(struct proc_info * proc, struct buf * region, int insop);
 
 /**
  * Replace a region in process running image.
@@ -287,7 +287,7 @@ int vm_insert_region(struct proc_info * proc, struct buf * region, int op);
  * @return Zero if succeed; non-zero error code otherwise.
  */
 int vm_replace_region(struct proc_info * proc, struct buf * region,
-                      int region_nr, int op);
+                      int region_nr, int insop);
 
 /**
  * Map a VM region with the given page table.
