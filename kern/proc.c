@@ -482,51 +482,56 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
     mtx_lock(&mm->regions_lock);
     for (int i = 0; i < mm->nr_regions; i++) {
         struct buf * region = (*mm->regions)[i];
-        struct buf * new_region;
         uintptr_t reg_start, reg_end;
+#ifdef configPROC_DEBUG
+        char uap[5];
+#endif
 
         if (!region)
             continue;
 
         reg_start = region->b_mmu.vaddr;
-        reg_end = region->b_mmu.vaddr + mmu_sizeof_region(&region->b_mmu) - 1;
+        reg_end = region->b_mmu.vaddr + region->b_bufsize - 1;
 
 #ifdef configPROC_DEBUG
-        char uap[5];
         vm_get_uapstring(uap, region);
-        KERROR(KERROR_DEBUG, "sect %d: vaddr: %x - %x, phys: %x, uap: %s\n",
+        KERROR(KERROR_DEBUG, "sect %d: vaddr: %x - %x, paddr: %x, uap: %s\n",
                i, reg_start, reg_end, region->b_mmu.paddr, uap);
 #endif
 
-        if (VM_ADDR_IS_IN_RANGE(vaddr, reg_start, reg_end)) {
-            /* Test for COW flag. */
-            if ((region->b_uflags & VM_PROT_COW) != VM_PROT_COW) {
-                err = -EACCES; /* Memory protection error. */
-                goto fail;
-            }
+        if (!VM_ADDR_IS_IN_RANGE(vaddr, reg_start, reg_end))
+            continue; /* if not in range then try next region. */
 
-            if (!region->vm_ops->rclone) {
-                err = -ENOTSUP; /* rclone() not supported. */
-                goto fail;
-            }
+        /*
+         * This is the correct region.
+         */
 
-            new_region = region->vm_ops->rclone(region);
-            if (!new_region) {
-                err = -ENOMEM; /* Can't clone region; COW failed. */
-                goto fail;
-            }
+        /* Test for COW flag. */
+        if ((region->b_uflags & VM_PROT_COW) != VM_PROT_COW) {
+            err = -EACCES; /* Memory protection error. */
+            goto fail;
+        }
 
-            new_region->b_uflags &= ~VM_PROT_COW; /* No more COW. */
-            mtx_unlock(&mm->regions_lock);
-            err = vm_replace_region(proc, new_region, i,
-                                    VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
+        if (!region->vm_ops->rclone) {
+            err = -ENOTSUP; /* rclone() not supported. */
+            goto fail;
+        }
+
+        region = region->vm_ops->rclone(region);
+        if (!region) {
+            err = -ENOMEM; /* Can't clone region; COW failed. */
+            goto fail;
+        }
+
+        region->b_uflags &= ~VM_PROT_COW; /* No more COW. */
+        mtx_unlock(&mm->regions_lock);
+        err = vm_replace_region(proc, region, i,
+                                VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
 
 #ifdef configPROC_DEBUG
-            KERROR(KERROR_DEBUG, "COW done\n");
+        KERROR(KERROR_DEBUG, "COW done\n");
 #endif
-
-            return err; /* COW done. */
-        }
+        return err; /* COW done. */
     }
 
     err = -EFAULT;
