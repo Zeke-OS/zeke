@@ -129,7 +129,7 @@ int exec_file(int fd, char name[PROC_NAME_LEN], struct buf * env_bp,
     strlcpy(curproc->name, name, sizeof(curproc->name));
 
     /* Create main() */
-    tid = new_main_thread(uargc, uargv, uenvp);
+    tid = new_main_thread(uargc - 1, uargv, uenvp);
     if (tid <= 0) {
         panic("Exec failed");
     }
@@ -245,7 +245,7 @@ static int sys_exec(void * user_args)
 
     /* Currently copyin_aa() requires vaddr to be set. */
     env_bp->b_mmu.vaddr = configUENV_BASE_ADDR;
-    env_bp->b_uflags = VM_PROT_READ;
+    env_bp->b_uflags = VM_PROT_READ | VM_PROT_WRITE;
 
     /* Clone argv */
     err = clone_aa(env_bp, (char *)args.argv, args.nargv, &arg_offset);
@@ -277,7 +277,7 @@ static int sys_exec(void * user_args)
     /*
      * Execute.
      */
-    err = exec_file(args.fd, name, env_bp, args.nargv - 1, env_bp->b_mmu.vaddr,
+    err = exec_file(args.fd, name, env_bp, args.nargv, env_bp->b_mmu.vaddr,
                     envp);
     if (err) {
         set_errno(-err);
