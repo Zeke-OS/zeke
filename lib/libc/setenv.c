@@ -36,8 +36,8 @@ int setenv(const char * name, const char * value, int rewrite)
             while ((*c++ = *value++));
             return 0;
         }
-    } else {                  /* create new slot */
-        static int alloced;     /* if allocated space before */
+    } else {                /* create new slot */
+        static int alloced; /* if allocated space before */
         size_t cnt;
         char ** p;
 
@@ -49,7 +49,7 @@ int setenv(const char * name, const char * value, int rewrite)
                 return -1;
             }
         } else {              /* get new space */
-            alloced = 1;        /* copy old entries into it */
+            alloced = 1;      /* copy old entries into it */
             p = malloc((sizeof(char *) * (cnt + 2)));
             if (!p) {
                 errno = ENOMEM;
