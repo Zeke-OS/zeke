@@ -30,6 +30,11 @@
  *  @(#)sysexits.h  8.1 (Berkeley) 6/2/93
  */
 
+/**
+ * @addtogroup LIBC
+ * @{
+ */
+
 #ifndef _SYSEXITS_H_
 #define _SYSEXITS_H_
 
@@ -163,3 +168,7 @@
 #define EX__MAX 78  /* maximum listed value */
 
 #endif /* !_SYSEXITS_H_ */
+
+/**
+ * @}
+ */

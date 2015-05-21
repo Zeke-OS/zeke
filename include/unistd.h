@@ -35,8 +35,8 @@
  * @{
  */
 
-#ifndef UNISTD_H
-#define UNISTD_H
+#ifndef _UNISTD_H
+#define _UNISTD_H
 
 #include <stdint.h> /* We only need intptr_t but that's not possible */
 #include <sys/types/_gid_t.h>
@@ -453,7 +453,7 @@ int getopt(int nargc, char * const nargv[], const char * ostr);
 __END_DECLS
 #endif /* !KERNEL_INTERNAL */
 
-#endif /* UNISTD_H */
+#endif /* _UNISTD_H */
 
 /**
  * @}
