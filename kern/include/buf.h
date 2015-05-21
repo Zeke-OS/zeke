@@ -55,7 +55,8 @@
  * This struct type is used to manage memory regions in the vm system.
  */
 struct buf {
-    uintptr_t b_data;       /*!< Address in kernel space. */
+    uintptr_t b_data;       /*!< Address in kernel space. Set to 0 if not in
+                             *   memory. */
     size_t b_bufsize;       /*!< Allocated buffer size. */
     size_t b_bcount;        /*!< Originally requested buffer size, can be used
                              *   for bounds check. */
@@ -295,6 +296,14 @@ int bio_geterror(struct buf * bp);
  *          Otherwise zero.
  */
 struct buf * vr_rclone(struct buf * old_region);
+
+/**
+ * Clone any buf region into a new equally sized vrallocated buffer.
+ * @param src is the source region to be cloned.
+ * @param[out] out is the target variable where the new region is returned to.
+ * @reuturn Returns zero if succeed; Otherwise a negative errno is returned.
+ */
+int clone2vr(struct buf * src, struct buf ** out);
 
 /**
  * Free allocated vregion.

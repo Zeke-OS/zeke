@@ -390,3 +390,46 @@ void vrfree(struct buf * bp)
         vreg_free_node(vreg);
     }
 }
+
+int clone2vr(struct buf * src, struct buf ** out)
+{
+    struct buf * new;
+
+    KASSERT(src != NULL, "src arg must be set");
+    KASSERT(out != NULL, "out arg must be set");
+
+    if (src->vm_ops == &vra_ops && src->vm_ops->rclone) {
+        /* If the buffer is vrallocated already we can just call rclone(). */
+        new = src->vm_ops->rclone(src);
+        if (!new) {
+            return -ENOMEM;
+        }
+    } else if (src->b_data != 0) {
+        /*
+         * Not vregion, try to clone manually.
+         * b_data is expected to be zero if the data is not in memory.
+         */
+        const size_t rsize = mmu_sizeof_region(&(src->b_mmu));
+
+        new = geteblk(rsize);
+        if (!new) {
+            return -ENOMEM;
+        }
+
+        /* RFE new->b_data instead? */
+        memcpy((void *)(new->b_mmu.paddr), (void *)(src->b_data), rsize);
+        new->b_uflags = VM_PROT_READ | VM_PROT_WRITE;
+        new->b_mmu.vaddr = src->b_mmu.vaddr;
+        new->b_mmu.ap = src->b_mmu.ap;
+        new->b_mmu.control = src->b_mmu.control;
+        /* paddr already set */
+        new->b_mmu.pt = src->b_mmu.pt;
+        vm_updateusr_ap(new);
+    } else {
+        /* TODO else if data not in mem */
+        return -ENOTSUP;
+    }
+
+    *out = new;
+    return 0;
+}

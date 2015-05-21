@@ -527,7 +527,10 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
             err = -ENOMEM; /* Can't clone region; COW failed. */
             goto fail;
         }
-        /* The old region remains COW as it would be racy to change its state */
+        /*
+         * The old region remains marked as COW as it would be racy to change
+         * its state.
+         */
 
         mtx_unlock(&mm->regions_lock);
         err = vm_replace_region(proc, region, i,

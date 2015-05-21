@@ -198,40 +198,14 @@ static struct proc_info * clone_proc_info(struct proc_info * const old_proc)
 static int clone_stack(struct proc_info * new_proc, struct proc_info * old_proc)
 {
     struct buf * const old_region = (*old_proc->mm.regions)[MM_STACK_REGION];
-    struct buf * new_region = 0;
+    struct buf * new_region;
     int err;
 
-    if (old_region && old_region->vm_ops->rclone) {
-#ifdef configPROC_DEBUG
-        KERROR(KERROR_DEBUG, "Cloning stack\n");
-#endif
-
-        new_region = old_region->vm_ops->rclone(old_region);
-        if (!new_region) {
-            return -ENOMEM;
-        }
-    } else if (old_region) { /* Try to clone the stack manually. */
-        const size_t rsize = mmu_sizeof_region(&(old_region->b_mmu));
-
-#ifdef configPROC_DEBUG
-        KERROR(KERROR_DEBUG, "Cloning stack manually\n");
-#endif
-
-        new_region = geteblk(rsize);
-        if (!new_region) {
-            return -ENOMEM;
-        }
-
-        memcpy((void *)(new_region->b_mmu.paddr), (void *)(old_region->b_data),
-                rsize);
-        new_region->b_uflags = VM_PROT_READ | VM_PROT_WRITE;
-        new_region->b_mmu.vaddr = old_region->b_mmu.vaddr;
-        new_region->b_mmu.ap = old_region->b_mmu.ap;
-        new_region->b_mmu.control = old_region->b_mmu.control;
-        /* paddr already set */
-        new_region->b_mmu.pt = old_region->b_mmu.pt;
-        vm_updateusr_ap(new_region);
-    } else { /* else: NO STACK */
+    if (old_region) {
+        err = clone2vr(old_region, &new_region);
+        if (err)
+            return err;
+    } else { /* NO STACK */
 #ifdef configPROC_DEBUG
         KERROR(KERROR_DEBUG, "fork(): No stack created\n");
 #endif
