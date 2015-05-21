@@ -35,12 +35,12 @@
 #include <sys/linker_set.h>
 #include <strcbuf.h>
 
-static char strbuf[configKERROR_BUF_SIZE];
+static char kerror_strbuf[configKERROR_BUF_SIZE];
 static struct strcbuf klogbuf = {
     .start = 0,
     .end = 0,
-    .len = sizeof(strbuf),
-    .data = strbuf
+    .len = sizeof(kerror_strbuf),
+    .data = kerror_strbuf
 };
 
 static void kerror_buf_init(void)
