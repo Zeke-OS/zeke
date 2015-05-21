@@ -1,8 +1,9 @@
 cat
 echo
+env
 ls
 mount
 stty
-tish
+sh
 umount
 uptime
