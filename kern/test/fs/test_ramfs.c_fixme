@@ -25,7 +25,6 @@ int ramfs_delete_vnode(vnode_t * vnode);
 
 static void setup()
 {
-    ramfs_fs.sbl_head = 0;
 }
 
 static void teardown()
@@ -64,7 +63,7 @@ static char * test_mount(void)
 #undef MOUNT_POINT
 #undef MODE_FLAGS
 
-    return 0;
+    return NULL;
 }
 
 static char * test_lookup(void)
@@ -77,21 +76,25 @@ static char * test_lookup(void)
     struct fs_superblock * sb;
     vnode_t * root;
     vnode_t * result;
+    int err;
 
     ku_test_description("Test vnode lookup by hard link name works.");
 
-    sb = ramfs_fs.mount(KM_STRING(MOUNT_POINT), MODE_FLAGS, 0, "");
+    err = ramfs_fs.mount(KM_STRING(MOUNT_POINT), MODE_FLAGS, "", 0, &sb);
+    pu_assert_equal("No errors should be returned by mount.", err, 0);
     root = sb->root;
     ku_assert("Root exist", root != 0);
 
     root->vnode_ops->lookup(root, DOT, sizeof(DOT) - 1, &result);
     ku_assert_ptr_equal(DOT" -> root", result, root);
     ku_assert_equal("Lookup ok",
-            root->vnode_ops->lookup(root, DOTDOT, sizeof(DOTDOT) - 1, &result), 0);
+            root->vnode_ops->lookup(root, DOTDOT, sizeof(DOTDOT) - 1, &result),
+            0);
     ku_assert_ptr_equal(DOTDOT" -> root", result, root);
 
     ku_assert("Doesn't find a link that doesn't exist.",
-            root->vnode_ops->lookup(root, F_NAME, sizeof(F_NAME) - 1, &result) != 0);
+            root->vnode_ops->lookup(root, F_NAME, sizeof(F_NAME) - 1, &result)
+            != 0);
 
 
 #undef MOUNT_POINT
@@ -99,7 +102,7 @@ static char * test_lookup(void)
 #undef DOT
 #undef DOTDOT
 #undef F_NAME
-    return 0;
+    return NULL;
 }
 
 static char * test_create_inode(void)
@@ -126,7 +129,7 @@ static char * test_create_inode(void)
 #undef MOUNT_POINT
 #undef MODE_FLAGS
 #undef TEST_FILE
-    return 0;
+    return NULL;
 }
 
 static char * test_create_multiple(void)
@@ -178,7 +181,7 @@ static char * test_create_multiple(void)
 #undef TST2
 #undef TST3
 #undef TST4
-    return 0;
+    return NULL;
 }
 
 static char * test_write_read_reg(void)
@@ -220,7 +223,7 @@ static char * test_write_read_reg(void)
 #undef MODE_FLAGS
 #undef FILENAME
 #undef str_src
-    return 0;
+    return NULL;
 }
 
 static char * test_mkdir(void)
@@ -271,7 +274,7 @@ static char * test_mkdir(void)
 #undef DIR_2
 #undef DIR_3
 
-    return 0;
+    return NULL;
 }
 
 static char * test_readdir(void)
@@ -341,7 +344,7 @@ static char * test_readdir(void)
 
     walk_dirtree(root, 1);
 
-    return 0;
+    return NULL;
 }
 
 #define iprintf(indent, fmt, ...) do { char buf[80];                    \

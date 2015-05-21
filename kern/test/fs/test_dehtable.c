@@ -7,7 +7,7 @@
 #include <ktest_mib.h>
 #include <kmalloc.h>
 #include <fs/fs.h>
-#include "../../fs/dehtable.h"
+#include <fs/dehtable.h>
 
 #define get_dirent(dea, offset) ((dh_dirent_t *)((size_t)(dea) + (offset)))
 
@@ -32,7 +32,7 @@ static char * test_link(void)
     ku_test_description("Test that dh_link works correctly.");
 
     vnode.vn_num = 10;
-    dh_link(&table, &vnode, str, sizeof(str) - 1);
+    dh_link(&table, vnode.vn_num, str);
 
     for (i = 0; i < DEHTABLE_SIZE; i++) {
         if ((dea = table[i]) != 0) break;
@@ -43,7 +43,7 @@ static char * test_link(void)
                     (int)dea[0].dh_ino, (int)vnode.vn_num);
 
 #undef str
-    return 0;
+    return NULL;
 }
 
 static char * test_link_chain(void)
@@ -62,9 +62,9 @@ static char * test_link_chain(void)
     vnode1.vn_num = 10;
     vnode2.vn_num = 11;
 
-    res = dh_link(&table, &vnode1, str1, sizeof(str1) - 1);
+    res = dh_link(&table, vnode1.vn_num, str1);
     ku_assert_equal("Insert succeeded.", res, 0);
-    res = dh_link(&table, &vnode2, str2, sizeof(str2) - 1);
+    res = dh_link(&table, vnode2.vn_num, str2);
     ku_assert_equal("Insert succeeded.", res, 0);
 
     for (i = 0; i < DEHTABLE_SIZE; i++) {
@@ -80,7 +80,7 @@ static char * test_link_chain(void)
 
 #undef str1
 #undef str2
-    return 0;
+    return NULL;
 }
 
 static char * test_lookup(void)
@@ -97,18 +97,18 @@ static char * test_lookup(void)
     vnode1.vn_num = 10;
     vnode2.vn_num = 11;
 
-    res = dh_link(&table, &vnode1, str1, sizeof(str1) - 1);
+    res = dh_link(&table, vnode1.vn_num, str1);
     ku_assert_equal("Insert succeeded.", res, 0);
-    res = dh_link(&table, &vnode2, str2, sizeof(str2) - 1);
+    res = dh_link(&table, vnode2.vn_num, str2);
     ku_assert_equal("Insert succeeded.", res, 0);
 
     ku_assert_equal("No error",
-            dh_lookup(&table, str2, sizeof(str2) - 1, &nnum), 0);
+            dh_lookup(&table, str2, &nnum), 0);
     ku_assert_equal("vnode num equal.", (int)nnum, (int)vnode2.vn_num);
 
 #undef str1
 #undef str2
-    return 0;
+    return NULL;
 }
 
 static char * test_iterator(void)
@@ -133,16 +133,17 @@ static char * test_iterator(void)
 
     /* Insert entries */
     ku_assert_equal("Insert OK.",
-            dh_link(&table, &vnode1, str1, sizeof(str1) - 1), 0);
+            dh_link(&table, vnode1.vn_num, str1), 0);
     ku_assert_equal("Insert OK.",
-            dh_link(&table, &vnode2, str2, sizeof(str2) - 1), 0);
+            dh_link(&table, vnode2.vn_num, str2), 0);
     ku_assert_equal("Insert OK.",
-            dh_link(&table, &vnode3, str3, sizeof(str3) - 1), 0);
+            dh_link(&table, vnode3.vn_num, str3), 0);
     ku_assert_equal("Insert OK.",
-            dh_link(&table, &vnode4, str4, sizeof(str4) - 1), 0);
+            dh_link(&table, vnode4.vn_num, str4), 0);
 
     /* Actual test */
     {
+        size_t i;
         dh_dir_iter_t it; /* dirent hash table iterator. */
         ino_t fnd_inodes[4] = {0, 0, 0, 0};
 
@@ -150,7 +151,7 @@ static char * test_iterator(void)
         it = dh_get_iter(&table);
 
         /* Loop the iterator */
-        for (size_t i = 0; i < DEHTABLE_SIZE; i++) {
+        for (i = 0; i < DEHTABLE_SIZE; i++) {
             dh_dirent_t * entry = dh_iter_next(&it);
 
             if (!entry)
@@ -165,7 +166,7 @@ static char * test_iterator(void)
         }
     }
 
-    return 0;
+    return NULL;
 }
 
 static void all_tests() {

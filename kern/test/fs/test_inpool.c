@@ -8,7 +8,7 @@
 #include <libkern.h>
 #include <kmalloc.h>
 #include <fs/fs.h>
-#include "../../fs/inpool.h"
+#include <fs/inpool.h>
 
 typedef struct inode {
     vnode_t in_vnode;
@@ -16,10 +16,10 @@ typedef struct inode {
 } inode_t;
 
 static vnode_t * create_tst(const struct fs_superblock * sb, ino_t * num);
-static int delete_tst(vnode_t * vnode);
+static void delete_tst(vnode_t * vnode);
 
 struct fs_superblock sb_tst = {
-   .delete_vnode = delete_tst
+   .delete_vnode = delete_tst,
 };
 
 static void setup()
@@ -33,19 +33,14 @@ static void teardown()
 static char * test_inpool_init(void)
 {
     inpool_t pool;
-#define POOL_MAX 10
+    int err;
 
     ku_test_description("Test that inpool_init initializes the inode pool struct correctly.");
 
-    inpool_init(&pool, &sb_tst, create_tst, POOL_MAX);
+    err = inpool_init(&pool, &sb_tst, create_tst, delete_tst, 10);
+    ku_assert_equal("inpool created succesfully", err, 0);
 
-    ku_assert("Pool array is initialized", pool.ip_arr != 0);
-    ku_assert_ptr_equal("Pool array contains some inodes", pool.ip_arr[0]->sb, &sb_tst);
-    ku_assert_ptr_equal("Pool array contains some inodes", pool.ip_arr[3]->sb, &sb_tst);
-
-#undef POOL_MAX
-
-    return 0;
+    return NULL;
 }
 
 static char * test_inpool_destroy(void)
@@ -54,13 +49,12 @@ static char * test_inpool_destroy(void)
 
     ku_test_description("Test that inode pool is destroyed correctly.");
 
-    inpool_init(&pool, &sb_tst, create_tst, 5);
+    inpool_init(&pool, &sb_tst, create_tst, delete_tst, 5);
     inpool_destroy(&pool);
 
     ku_assert_equal("Pool max size is set to zero.", pool.ip_max, 0);
-    ku_assert_ptr_equal("Pool array pointer is set to null.", pool.ip_arr, (void *)0);
 
-    return 0;
+    return NULL;
 }
 
 static char * test_inpool_get(void)
@@ -68,24 +62,19 @@ static char * test_inpool_get(void)
     inpool_t pool;
     vnode_t * vnode;
     inode_t * inode;
-    size_t old_value;
-#define POOL_MAX 10
 
     ku_test_description("Test that it's possible to get inodes from the pool.");
 
-    inpool_init(&pool, &sb_tst, create_tst, POOL_MAX);
+    inpool_init(&pool, &sb_tst, create_tst, delete_tst, 10);
 
-    old_value = pool.ip_rd;
     vnode = inpool_get_next(&pool);
     ku_assert("Got vnode", vnode != 0);
-    ku_assert("Rd index was updated", pool.ip_rd != old_value);
 
     inode = container_of(vnode, inode_t, in_vnode);
     ku_assert_ptr_equal("sb is set", inode->in_vnode.sb, &sb_tst);
     ku_assert_equal("Preset data is ok", inode->data, 16);
 
-#undef POOL_MAX
-    return 0;
+    return NULL;
 }
 
 static char * test_inpool_insert(void)
@@ -96,14 +85,14 @@ static char * test_inpool_insert(void)
 
     ku_test_description("Test that inode recycling works correctly.");
 
-    inpool_init(&pool, &sb_tst, create_tst, 1);
+    inpool_init(&pool, &sb_tst, create_tst, delete_tst, 10);
     vnode = inpool_get_next(&pool);
     ku_assert("Got vnode", vnode != 0);
     inpool_insert(&pool, vnode);
     vnode1 = inpool_get_next(&pool);
     ku_assert_ptr_equal("Got same vnode", vnode1, vnode);
 
-    return 0;
+    return NULL;
 }
 
 static void all_tests() {
@@ -121,7 +110,7 @@ static vnode_t * create_tst(const struct fs_superblock * sb, ino_t * num)
 
     inode = kcalloc(1, sizeof(inode_t));
     if (inode == 0) {
-        return 0;
+        return NULL;
     }
 
     inode->in_vnode.vn_num = *num;
@@ -132,8 +121,7 @@ static vnode_t * create_tst(const struct fs_superblock * sb, ino_t * num)
     return &(inode->in_vnode);
 }
 
-static int delete_tst(vnode_t * vnode)
+static void delete_tst(vnode_t * vnode)
 {
     kfree(container_of(vnode, inode_t, in_vnode));
-    return 0;
 }
