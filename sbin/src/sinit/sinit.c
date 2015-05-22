@@ -94,6 +94,7 @@ static void open_tty(void)
 
     setenv("PATH", _PATH_STDPATH, 1);
     setenv("HOME", "/", 1);
+    setenv("TERM", "vt100", 1);
 
     close(STDIN_FILENO);
     close(STDOUT_FILENO);

@@ -41,6 +41,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <linenoise.h>
 #include "../utils.h"
 #include "tish.h"
 
@@ -58,7 +59,6 @@ char banner[] = "\
 
 static const char msg[] = "Zeke " KERNEL_VERSION;
 
-static char line[1024]; /*!< Command line buffer. */
 static int n; /*!< number of calls to command(). */
 static char * args[512]; /*!< Args for exec. */
 
@@ -217,6 +217,9 @@ static int run(char * cmd, int input, int first, int last)
 
 int main(int argc, char * argv[], char * envp[])
 {
+    const char prompt[] = "# ";
+    char * line;
+
     printf("args[%d]:", argc);
     for (char ** s = argv; *s; s++) {
         printf(" %s", *s);
@@ -228,15 +231,12 @@ int main(int argc, char * argv[], char * envp[])
     }
     printf("\n%s%s\n", banner, msg);
 
-    while (1) {
-        const char prompt[] = "# ";
+
+    fflush(NULL);
+    while ((line = linenoise(prompt)) != NULL) {
         char * next;
         int input = 0;
         int first = 1;
-
-        write(STDOUT_FILENO, prompt, sizeof(prompt));
-        fflush(NULL);
-        gline(line, sizeof(line));
 
         next = line;
         do {
@@ -256,6 +256,8 @@ int main(int argc, char * argv[], char * envp[])
 
         cleanup(n);
         n = 0;
+        free(line);
+        fflush(NULL);
     }
 
     return 0;
