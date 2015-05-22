@@ -35,7 +35,7 @@ include $(ROOT_DIR)/genconfig/dist.mk
 # Supress warnings about C11 extensions in libc
 CCFLAGS += -Wno-c11-extensions
 
-LIBS := crt0 crt1 libc libm
+LIBS := crt0 crt1 libc libm liblinenoise
 
 # AR flags #####################################################################
 
@@ -90,6 +90,9 @@ $(wildcard libc/setjmp/arm/*.S)
 
 libm-SRC-y = \
 $(wildcard libm/*.c)
+
+liblinenoise-SRC-y = \
+liblinenoise/linenoise.c
 ################################################################################
 # Available selections for source code files:
 SRC-	=# C sources
