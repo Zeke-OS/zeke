@@ -82,6 +82,14 @@ int make_ttydev(struct tty * tty, const char * drv_name, dev_t dev_id,
      * lfags: -
      */
 
+    /* TODO Better winsize support. */
+    tty->winsize = (struct winsize){
+        .ws_row = 24,
+        .ws_col = 80,
+        .ws_xpixel = 0,
+        .ws_ypixel = 0,
+    };
+
     if (dev_make(dev, 0, 0, 0666, NULL)) {
         KERROR(KERROR_ERR, "Failed to make a tty dev.\n");
         return -ENODEV;
@@ -147,6 +155,20 @@ static int tty_ioctl(struct dev_info * devnfo, uint32_t request,
 
         memcpy(&(tty->conf), arg, sizeof(struct termios));
         tty->setconf(&tty->conf);
+        break;
+
+    case IOCTL_TIOCGWINSZ:
+        if (arg_len < sizeof(struct winsize))
+            return -EINVAL;
+
+        memcpy(arg, &(tty->winsize), sizeof(struct winsize));
+        break;
+
+    case IOCTL_TIOCSWINSZ:
+        if (arg_len < sizeof(struct winsize))
+            return -EINVAL;
+
+        memcpy(&(tty->winsize), arg, sizeof(struct winsize));
         break;
 
     /*

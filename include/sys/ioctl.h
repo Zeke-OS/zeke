@@ -59,7 +59,32 @@
 /* dev/fb */
 #define IOCTL_FB_GETRES     101 /*!< Get the frame buffer resolution. */
 #define IOCTL_FB_SETRES     102 /*!< Change the framebuffer resolution. */
+/* Get and set window size */
+#define IOCTL_TIOCGWINSZ    103 /*!< Get window size. */
+#define IOCTL_TIOCSWINSZ    104 /*!< Set window size. */
 
+/* Linux compat */
+#ifndef KERNEL_INTERNAL
+
+/* Get and set terminal attributes */
+#define TCGETS              0x5401
+#define TCSETS              0x5402
+#define TCSETSW             0x5403
+#define TCSETSF             0x5404
+
+/* Get and set window size */
+#define TIOCGWINSZ IOCTL_TIOCGWINSZ /*!< Get window size. */
+#define TIOCSWINSZ IOCTL_TIOCSWINSZ /*!< Set window size. */
+#endif
+
+struct winsize {
+   unsigned short ws_row;
+   unsigned short ws_col;
+   unsigned short ws_xpixel;
+   unsigned short ws_ypixel;
+};
+
+/** Args for ioctl syscall */
 struct _ioctl_get_args {
     int fd;
     unsigned request;
@@ -75,6 +100,8 @@ __BEGIN_DECLS
  * @note This is a non-POSIX implementation of ioctl.
  */
 int _ioctl(int fildes, unsigned request, void * arg, size_t arg_len);
+
+int ioctl(int fildes, int request, ... /* arg */);
 
 __END_DECLS
 #endif

@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    ioctl.c
+ * @file    _ioctl.c
  * @author  Olli Vanhoja
  * @brief   ioctl libc functions.
  * @section LICENSE
@@ -31,39 +31,17 @@
 */
 
 #include <errno.h>
-#include <stdarg.h>
-#include <sys/ioctl.h>
 #include <syscall.h>
-#include <termios.h>
+#include <sys/ioctl.h>
 
-int ioctl(int fildes, int request, ... /* arg */)
+int _ioctl(int fildes, unsigned request, void * arg, size_t arg_len)
 {
-    va_list ap;
-    void * arg;
-    size_t arg_len;
+    struct _ioctl_get_args args = {
+        .fd = fildes,
+        .request = request,
+        .arg = arg,
+        .arg_len = arg_len
+    };
 
-    va_start(ap, request);
-    switch (request) {
-    case TCGETS:
-        return tcgetattr(fildes, va_arg(ap, struct termios *));
-    case TCSETS:
-        return tcsetattr(fildes, TCSANOW, va_arg(ap, struct termios *));
-    case TCSETSW:
-        return tcsetattr(fildes, TCSADRAIN, va_arg(ap, struct termios *));
-    case TCSETSF:
-        return tcsetattr(fildes, TCSAFLUSH, va_arg(ap, struct termios *));
-    case TIOCGWINSZ:
-    case TIOCSWINSZ:
-        arg = va_arg(ap, struct winsize *);
-        arg_len = sizeof(struct winsize);
-        break;
-    default:
-        errno = EINVAL;
-        return -1;
-    }
-    va_end(ap);
-
-    _ioctl(fildes, request, arg, arg_len);
-
-    return 0;
+    return syscall(SYSCALL_IOCTL_GETSET, &args);
 }

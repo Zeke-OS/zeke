@@ -37,9 +37,11 @@
 #include <stdint.h>
 
 struct termios;
+struct winsize;
 
 struct tty {
     struct termios conf;
+    struct winsize winsize;
 
     void * opt_data;
 
