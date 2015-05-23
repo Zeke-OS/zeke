@@ -201,7 +201,7 @@ static int clone_stack(struct proc_info * new_proc, struct proc_info * old_proc)
     struct buf * new_region;
     int err;
 
-    if (old_region) {
+    if (likely(old_region)) {
         err = clone2vr(old_region, &new_region);
         if (err)
             return err;
@@ -401,9 +401,9 @@ pid_t proc_fork(pid_t pid)
 #endif
 
     /* Select PID */
-    if (nprocs != 1) { /* Tecnically it would be good idea to have lock on
-                        * nprocs before reading it but I think this should
-                        * work fine... */
+    if (likely(nprocs != 1)) { /* Tecnically it would be good idea to have lock
+                                * on nprocs before reading it but I think this
+                                * should work fine... */
         new_proc->pid = proc_get_random_pid();
     } else { /* Proc is init */
 #ifdef configPROC_DEBUG
