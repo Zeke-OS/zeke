@@ -1,0 +1,32 @@
+
+--- /dev/hda
+Block device, size 27.95 GiB (30005821440 bytes)
+Apple partition map, 5 entries
+Partition 1: 31.50 KiB (32256 bytes, 63 sectors from 1)
+  Type "Apple_partition_map"
+Partition 2: 800 KiB (819200 bytes, 1600 sectors from 64)
+  Type "Apple_Bootstrap"
+  HFS file system
+    Volume name "Untitled"
+    Volume size 797 KiB (816128 bytes, 1594 blocks of 512 bytes)
+Partition 3: 127.2 MiB (133398528 bytes, 260544 sectors from 1664)
+  Type "Apple_UNIX_SVR2"
+  Linux swap, version 2, subversion 1, 4 KiB pages, big-endian
+    Swap size 127.2 MiB (133390336 bytes, 32566 pages of 4 KiB)
+Partition 4: 13.88 GiB (14898167808 bytes, 29097984 sectors from 262208)
+  Type "Apple_HFS"
+  HFS Plus file system
+    Volume size 13.88 GiB (14898167808 bytes, 3637248 blocks of 4 KiB)
+Partition 5: 13.95 GiB (14973403136 bytes, 29244928 sectors from 29360192)
+  Type "Apple_UNIX_SVR2"
+  ReiserFS file system (new 3.6 format, standard journal, starts at 64 KiB)
+    UUID nil
+    Volume size 13.95 GiB (14973403136 bytes, 3655616 blocks of 4 KiB)
+  Linux swap, version 2, subversion 1, 4 KiB pages, big-endian
+    Swap size 13.95 GiB (14973394944 bytes, 3655614 pages of 4 KiB)
+Partition 6: 0. GiB (0 bytes, 0 sectors from 0)
+  Type "Apple_UNIX_SVR2"
+  Ext 3 file system bla blubs - manual fake
+    UUID nil
+    Volume size 0.0 GiB (0 bytes, 0 blocks of 4 KiB)
+

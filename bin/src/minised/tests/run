@@ -1,0 +1,55 @@
+#!/bin/sh
+
+verbose=1
+time=0
+if [ "$1" = -v ]; then
+	verbose=0
+	shift
+fi
+
+if [ "$1" = -t ]; then
+        time=1
+	shift
+fi
+
+if [ -z "$1" ]; then
+	echo "You need to specify a sed."
+	exit
+fi
+
+tmp=`mktemp || mktemp -t tmp.XXXXXXXXXX`
+errors=0
+
+for x in *.sed; do
+	x=${x%.sed}
+	printf "Running test $x ..."
+	$1 -f $x.sed $x.in > $tmp 2>&1
+	error=$?
+
+	if [ ! -f $x.out -a $error != 0 ]; then
+		echo " Failed (as expected)"
+	elif [ ! -f $x.out ]; then
+		echo " Passed (unexpected)"
+		: $((errors++))
+	elif cmp $tmp $x.out 2>&1 >/dev/null; then
+		echo " Passed"
+	else
+		echo " Failed !!!"
+		[ $verbose -eq 1 ] && diff -u $x.out $tmp
+		: $((errors++))
+	fi
+done
+
+if [ $errors -ne 0 ]; then
+	echo -e "\n\t$errors error(s) total!\n"
+	[ $time -ne 0 ] && echo "(timing supressed due to errors)"
+elif [ $time -ne 0 ]; then
+	echo "Timing:"
+	time for x in *.sed ; do
+		x=${x%.sed}
+		echo -n . >&2
+		$1 -f $x.sed $x.in > $tmp
+	done
+fi
+
+rm -f $tmp

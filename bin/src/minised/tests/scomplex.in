@@ -1,0 +1,10 @@
+TEOF	1	end of file
+TNL	0	newline
+TSEMI	0	";"
+TBACKGND 0	"&"
+TAND	0	"&&"
+TOR	0	"||"
+TPIPE	0	"|"
+TLP	0	"("
+TRP	1	")"
+

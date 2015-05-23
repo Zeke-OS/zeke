@@ -1,0 +1,4 @@
+don't print this to stderr
+print this to stderr, but don't include it in the output
+print this too, but *do* include it
+this is just filler
