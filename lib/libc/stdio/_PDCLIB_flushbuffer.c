@@ -69,7 +69,7 @@ int _PDCLIB_flushbuffer(FILE * stream)
                  * we have spare space in buffer. Shift everything 1char and
                  * insert \r
                  */
-                memmove(&stream->buffer[pos+1], &stream->buffer[pos],
+                memmove(&stream->buffer[pos + 1], &stream->buffer[pos],
                         stream->bufidx - pos);
                 stream->buffer[pos] = '\r';
 

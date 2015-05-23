@@ -25,6 +25,8 @@ FILE * _PDCLIB_fvopen(
 {
     size_t filename_len;
     FILE * rc;
+    size_t allocsize;
+
     if (mode == 0)
     {
         /* Mode invalid */
@@ -32,21 +34,21 @@ FILE * _PDCLIB_fvopen(
     }
     /*
      * To reduce the number of malloc calls, all data fields are concatenated:
-     * * the FILE structure itself,
-     * * ungetc buffer,
-     * * filename buffer,
-     * * data buffer.
+     * - the FILE structure itself,
+     * - ungetc buffer,
+     * - filename buffer,
+     * - data buffer.
      * Data buffer comes last because it might change in size ( setvbuf() ).
      */
     filename_len = filename ? strlen( filename ) + 1 : 1;
-    if  ((rc = calloc(1, sizeof(FILE) + _PDCLIB_UNGETCBUFSIZE + filename_len +
-                      BUFSIZ)) == NULL)
-    {
+    allocsize = sizeof(FILE) + _PDCLIB_UNGETCBUFSIZE + filename_len + BUFSIZ;
+    rc = calloc(1, allocsize);
+    if (!rc) {
         /* no memory */
         return NULL;
     }
 
-    if(mtx_init(&rc->lock, mtx_recursive) != thrd_success) {
+    if (mtx_init(&rc->lock, mtx_recursive) != thrd_success) {
         free(rc);
         return NULL;
     }
@@ -55,11 +57,12 @@ FILE * _PDCLIB_fvopen(
     rc->ops    = ops;
     rc->handle = fd;
     /* Setting pointers into the memory block allocated above */
-    rc->ungetbuf = (unsigned char *)rc + sizeof(FILE);
-    rc->filename = (char *)rc->ungetbuf + _PDCLIB_UNGETCBUFSIZE;
-    rc->buffer   = rc->filename + filename_len;
+    rc->ungetbuf = (char *)((uintptr_t)rc + sizeof(FILE));
+    rc->filename = (char *)((uintptr_t)rc->ungetbuf + _PDCLIB_UNGETCBUFSIZE);
+    rc->buffer   = (char *)((uintptr_t)rc->filename + filename_len);
     /* Copying filename to FILE structure */
-    if(filename) strcpy( rc->filename, filename );
+    if (filename)
+        strlcpy(rc->filename, filename, filename_len);
     /* Initializing the rest of the structure */
     rc->bufsize = BUFSIZ;
     rc->bufidx = 0;
@@ -74,6 +77,7 @@ FILE * _PDCLIB_fvopen(
     /* Adding to list of open files */
     rc->next = _PDCLIB_filelist;
     _PDCLIB_filelist = rc;
+
     return rc;
 }
 
