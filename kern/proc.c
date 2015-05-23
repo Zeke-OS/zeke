@@ -74,8 +74,6 @@ extern void * __bss_break __attribute__((weak));
  */
 mtx_t proclock;
 
-SYSCTL_INT(_kern, KERN_MAXPROC, maxproc, CTLFLAG_RW,
-    &maxproc, 0, "Maximum number of processes");
 SYSCTL_INT(_kern, OID_AUTO, nprocs, CTLFLAG_RD,
     &nprocs, 0, "Current number of processes");
 
@@ -558,6 +556,24 @@ pid_t proc_update(void)
 
     return current_process_id;
 }
+
+static int sysctl_proc_maxproc(SYSCTL_HANDLER_ARGS)
+{
+    int error;
+    int new_maxproc = maxproc;
+
+    error = sysctl_handle_int(oidp, &new_maxproc, sizeof(new_maxproc), req);
+    if (!error && req->newptr) {
+        if (new_maxproc < nprocs)
+            error = -EINVAL;
+        else
+            maxproc = new_maxproc;
+    }
+
+    return error;
+}
+SYSCTL_PROC(_kern, KERN_MAXPROC, maxproc, CTLTYPE_INT | CTLFLAG_RW,
+            NULL, 0, sysctl_proc_maxproc, "I", "Maximum number of processes");
 
 /* Syscall handlers ***********************************************************/
 
