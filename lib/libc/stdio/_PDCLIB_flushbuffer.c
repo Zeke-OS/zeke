@@ -31,11 +31,12 @@ static int flushsubbuffer(FILE * stream, size_t length)
         }
     }
 
-    /*
-     * RFE stream->bufidx - written may underflow, any issues with that?
-     */
-    stream->bufidx -= written;
-    memmove(stream->buffer, stream->buffer + written, stream->bufidx);
+    memmove(stream->buffer, stream->buffer + written,
+            stream->bufsize - written);
+    if ((stream->bufidx - written) > stream->bufidx)
+        stream->bufidx = 0;
+    else
+        stream->bufidx -= written;
 
     return rv;
 }
