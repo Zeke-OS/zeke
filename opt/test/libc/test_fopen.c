@@ -45,7 +45,7 @@ char * test_fopen(void)
 
 static void all_tests(void)
 {
-        pu_def_test(test_fopen, PU_RUN);
+        pu_def_test(test_fopen, PU_SKIP);
 }
 
 int main(int argc, char ** argv)
