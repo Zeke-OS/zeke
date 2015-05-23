@@ -68,7 +68,7 @@ void send_commands(int fildes, char * file)
         if (input == '#' && (len = getline(&line, &n, fp)) != -1) {
             line[len - 1] = '\r';
             write(fildes, line, len);
-            if (!strcmp(line, "exit\n"))
+            if (!strcmp(line, "exit\r"))
                 break;
         } else if (len == -1) {
             break;
