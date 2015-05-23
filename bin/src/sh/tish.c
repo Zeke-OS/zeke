@@ -48,6 +48,9 @@
 #define READ  0
 #define WRITE 1
 
+/* TODO should be without prefix but FAT doesn't support ot */
+#define HISTFILE "tish.histfile"
+
 char banner[] = "\
 |'''''||                    \n\
     .|'   ...'||            \n\
@@ -215,6 +218,21 @@ static int run(char * cmd, int input, int first, int last)
     return 0;
 }
 
+void init_hist(void)
+{
+    char * histsize;
+    int len;
+
+    histsize = getenv("HISTSIZE");
+    if (histsize) {
+        len = atoi(histsize);
+    } else {
+        len = 1000;
+    }
+    linenoiseHistorySetMaxLen(len);
+    linenoiseHistoryLoad(HISTFILE);
+}
+
 int main(int argc, char * argv[], char * envp[])
 {
     const char prompt[] = "# ";
@@ -231,6 +249,7 @@ int main(int argc, char * argv[], char * envp[])
     }
     printf("\n%s%s\n", banner, msg);
 
+    init_hist();
 
     fflush(NULL);
     while ((line = linenoise(prompt)) != NULL) {
@@ -238,6 +257,12 @@ int main(int argc, char * argv[], char * envp[])
         int input = 0;
         int first = 1;
 
+        linenoiseHistoryAdd(line);
+        linenoiseHistorySave(HISTFILE);
+
+        /*
+         * Parse line.
+         */
         next = line;
         do {
             char * cmd = next;
