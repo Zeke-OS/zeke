@@ -9,20 +9,22 @@
 #include <sys/_PDCLIB_glue.h>
 #include <sys/_PDCLIB_io.h>
 
-int _PDCLIB_fillbuffer( FILE * stream )
+int _PDCLIB_fillbuffer(FILE * stream)
 {
     size_t bytesRead;
-    bool ok = stream->ops->read( stream->handle, stream->buffer, stream->bufsize,
-                        &bytesRead);
+    bool ok = stream->ops->read(stream->handle, stream->buffer, stream->bufsize,
+                                &bytesRead);
 
-    if( ok ) {
-        if( bytesRead == 0 ) {
+    if (ok) {
+        if (bytesRead == 0) {
             stream->status |= _PDCLIB_EOFFLAG;
+
             return EOF;
         }
         stream->pos.offset += bytesRead;
         stream->bufend = bytesRead;
         stream->bufidx = 0;
+
         return 0;
     } else {
         stream->status |= _PDCLIB_ERRORFLAG;
