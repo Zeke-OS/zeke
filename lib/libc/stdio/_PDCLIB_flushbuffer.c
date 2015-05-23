@@ -10,28 +10,30 @@
 #include <sys/_PDCLIB_glue.h>
 #include <sys/_PDCLIB_io.h>
 
-static int flushsubbuffer( FILE * stream, size_t length )
+static int flushsubbuffer(FILE * stream, size_t length)
 {
     size_t written = 0;
     int rv = 0;
 
     while (written != length)
     {
-        size_t justWrote;
+        size_t justWrote = 0;
         size_t toWrite = length - written;
         bool res = stream->ops->write(stream->handle, stream->buffer + written,
                                       toWrite, &justWrote);
         written += justWrote;
         stream->pos.offset += justWrote;
 
-        if (!res)
-        {
+        if (!res) {
             stream->status |= _PDCLIB_ERRORFLAG;
             rv = EOF;
             break;
         }
     }
 
+    /*
+     * RFE stream->bufidx - written may underflow, any issues with that?
+     */
     stream->bufidx -= written;
     memmove(stream->buffer, stream->buffer + written, stream->bufidx);
 
