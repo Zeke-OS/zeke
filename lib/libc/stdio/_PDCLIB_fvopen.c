@@ -1,10 +1,9 @@
-/* $Id$ */
-
-/* _PDCLIB_fvopen( _PDCLIB_fd_t fd, _PDCLIB_fileops_t *  )
-
-   This file is part of the Public Domain C Library (PDCLib).
-   Permission is granted to use, modify, and / or redistribute at will.
-*/
+/*
+ * _PDCLIB_fvopen( _PDCLIB_fd_t fd, _PDCLIB_fileops_t *  )
+ *
+ * This file is part of the Public Domain C Library (PDCLib).
+ * Permission is granted to use, modify, and / or redistribute at will.
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,20 +25,22 @@ FILE * _PDCLIB_fvopen(
 {
     size_t filename_len;
     FILE * rc;
-    if ( mode == 0 )
+    if (mode == 0)
     {
         /* Mode invalid */
         return NULL;
     }
-    /* To reduce the number of malloc calls, all data fields are concatenated:
-       * the FILE structure itself,
-       * ungetc buffer,
-       * filename buffer,
-       * data buffer.
-       Data buffer comes last because it might change in size ( setvbuf() ).
-    */
+    /*
+     * To reduce the number of malloc calls, all data fields are concatenated:
+     * * the FILE structure itself,
+     * * ungetc buffer,
+     * * filename buffer,
+     * * data buffer.
+     * Data buffer comes last because it might change in size ( setvbuf() ).
+     */
     filename_len = filename ? strlen( filename ) + 1 : 1;
-    if ( ( rc = calloc( 1, sizeof( FILE ) + _PDCLIB_UNGETCBUFSIZE + filename_len + BUFSIZ ) ) == NULL )
+    if  ((rc = calloc(1, sizeof(FILE) + _PDCLIB_UNGETCBUFSIZE + filename_len +
+                      BUFSIZ)) == NULL)
     {
         /* no memory */
         return NULL;
@@ -54,7 +55,7 @@ FILE * _PDCLIB_fvopen(
     rc->ops    = ops;
     rc->handle = fd;
     /* Setting pointers into the memory block allocated above */
-    rc->ungetbuf = (unsigned char *)rc + sizeof( FILE );
+    rc->ungetbuf = (unsigned char *)rc + sizeof(FILE);
     rc->filename = (char *)rc->ungetbuf + _PDCLIB_UNGETCBUFSIZE;
     rc->buffer   = rc->filename + filename_len;
     /* Copying filename to FILE structure */
@@ -63,10 +64,11 @@ FILE * _PDCLIB_fvopen(
     rc->bufsize = BUFSIZ;
     rc->bufidx = 0;
     rc->ungetidx = 0;
-    /* Setting buffer to _IOLBF because "when opened, a stream is fully
-       buffered if and only if it can be determined not to refer to an
-       interactive device."
-    */
+    /*
+     * Setting buffer to _IOLBF because "when opened, a stream is fully
+     * buffered if and only if it can be determined not to refer to an
+     * interactive device."
+     */
     rc->status |= _IOLBF;
     /* TODO: Setting mbstate */
     /* Adding to list of open files */
