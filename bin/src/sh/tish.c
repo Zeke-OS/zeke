@@ -242,7 +242,7 @@ void init_hist(void)
     } else {
         strcpy(histfilepath, "/");
     }
-    len = strlen(home) - 1;
+    len = strlen(histfilepath) - 1;
     if (histfilepath[len - 1] != '/')
         histfilepath[len] = '/';
     strcpy(histfilepath + len + 1, HISTFILENAME);
