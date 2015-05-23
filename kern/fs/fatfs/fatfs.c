@@ -546,7 +546,6 @@ ssize_t fatfs_write(file_t * file, const void * buf, size_t count)
     struct fatfs_inode * in = get_inode_of_vnode(file->vnode);
     size_t count_out;
     int err;
-    ssize_t retval;
 
     if (!S_ISREG(file->vnode->vn_mode))
         return -EOPNOTSUPP;
@@ -560,9 +559,8 @@ ssize_t fatfs_write(file_t * file, const void * buf, size_t count)
         return fresult2errno(err);
 
     file->seek_pos = f_tell(&in->fp);
-    retval = count_out;
 
-    return retval;
+    return count_out;
 #endif
 }
 
