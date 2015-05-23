@@ -1,11 +1,12 @@
 #ifndef __PDCLIB_AUX_H
 #define __PDCLIB_AUX_H __PDCLIB_AUX_H
 
-/* Auxiliary PDCLib code <_PDCLIB_aux.h>
-
-   This file is part of the Public Domain C Library (PDCLib).
-   Permission is granted to use, modify, and / or redistribute at will.
-*/
+/*
+ * Auxiliary PDCLib code <_PDCLIB_aux.h>
+ *
+ * This file is part of the Public Domain C Library (PDCLib).
+ * Permission is granted to use, modify, and / or redistribute at will.
+ */
 
 /* -------------------------------------------------------------------------- */
 /* You should not have to edit anything in this file; if you DO have to, it   */
@@ -40,7 +41,6 @@
    #define _PDCLIB_CXX_VERSION 0
 #elif __cplusplus == 201103L
     #define _PDCLIB_CXX_VERSION 2011
-    /* TODO: Do we want this? */
     #if _PDCLIB_C_VERSION < 2011
         #undef _PDCLIB_C_VERSION
         #define _PDCLIB_C_VERSION 2011
