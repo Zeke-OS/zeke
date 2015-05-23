@@ -40,7 +40,7 @@ char * test_vprintf(void)
 
 static void all_tests(void)
 {
-    pu_def_test(test_vprintf, PU_RUN);
+    pu_def_test(test_vprintf, PU_SKIP);
 }
 
 int main(int argc, char ** argv)
