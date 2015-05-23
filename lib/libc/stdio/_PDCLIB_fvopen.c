@@ -57,7 +57,7 @@ FILE * _PDCLIB_fvopen(
     rc->ops    = ops;
     rc->handle = fd;
     /* Setting pointers into the memory block allocated above */
-    rc->ungetbuf = (char *)((uintptr_t)rc + sizeof(FILE));
+    rc->ungetbuf = (unsigned char *)((uintptr_t)rc + sizeof(FILE));
     rc->filename = (char *)((uintptr_t)rc->ungetbuf + _PDCLIB_UNGETCBUFSIZE);
     rc->buffer   = (char *)((uintptr_t)rc->filename + filename_len);
     /* Copying filename to FILE structure */
