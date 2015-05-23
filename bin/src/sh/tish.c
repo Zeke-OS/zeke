@@ -49,7 +49,7 @@
 #define WRITE 1
 
 /* TODO should be without prefix but FAT doesn't support ot */
-#define HISTFILE "tish.histfile"
+#define HISTFILENAME "tish.histfile"
 
 char banner[] = "\
 |'''''||                    \n\
@@ -64,6 +64,7 @@ static const char msg[] = "Zeke " KERNEL_VERSION;
 
 static int n; /*!< number of calls to command(). */
 static char * args[512]; /*!< Args for exec. */
+static char histfilepath[256];
 
 SET_DECLARE(tish_cmd, struct tish_builtin);
 
@@ -221,6 +222,7 @@ static int run(char * cmd, int input, int first, int last)
 void init_hist(void)
 {
     char * histsize;
+    char * home;
     int len;
 
     histsize = getenv("HISTSIZE");
@@ -230,7 +232,22 @@ void init_hist(void)
         len = 1000;
     }
     linenoiseHistorySetMaxLen(len);
-    linenoiseHistoryLoad(HISTFILE);
+
+    home = getenv("HOME");
+    if (home) {
+        if (strlcpy(histfilepath, home, sizeof(histfilepath)) >
+            (sizeof(histfilepath) - sizeof(HISTFILENAME) - 1)) {
+            exit(EXIT_FAILURE);
+        }
+    } else {
+        strcpy(histfilepath, "/");
+    }
+    len = strlen(home) - 1;
+    if (histfilepath[len - 1] != '/')
+        histfilepath[len] = '/';
+    strcpy(histfilepath + len + 1, HISTFILENAME);
+
+    linenoiseHistoryLoad(histfilepath);
 }
 
 int main(int argc, char * argv[], char * envp[])
@@ -258,7 +275,7 @@ int main(int argc, char * argv[], char * envp[])
         int first = 1;
 
         linenoiseHistoryAdd(line);
-        linenoiseHistorySave(HISTFILE);
+        linenoiseHistorySave(histfilepath);
 
         /*
          * Parse line.
