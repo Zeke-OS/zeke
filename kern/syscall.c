@@ -62,7 +62,7 @@
  * Declare prototypes of syscall handlers.
  */
 #define DECLARE_SCHANDLER(major, function) \
-    extern intptr_t function(uint32_t type, void * p);
+    extern intptr_t function(uint32_t type, __user void * p);
 FOR_ALL_SYSCALL_GROUPS(DECLARE_SCHANDLER)
 #undef DECLARE_SCHANDLER
 
@@ -82,8 +82,9 @@ static const kernel_syscall_handler_t syscall_callmap[] = {
  */
 void syscall_handler(void)
 {
-    const uint32_t type = (uint32_t)current_thread->sframe[SCHED_SFRAME_SVC].r0;
-    void * p = (void *)current_thread->sframe[SCHED_SFRAME_SVC].r1;
+    sw_stack_frame_t * sframe = &current_thread->sframe[SCHED_SFRAME_SVC];
+    const uint32_t type = (uint32_t)sframe->r0;
+    __user void * p = (__user void *)sframe->r1;
     const uint32_t major = SYSCALL_MAJOR(type);
     intptr_t retval;
 
@@ -97,7 +98,7 @@ void syscall_handler(void)
                  major, minor,
                  (unsigned)current_process_id,
                  (unsigned)current_thread->id,
-                 current_thread->sframe[SCHED_SFRAME_SVC].pc);
+                 sframe->pc);
 
         set_errno(ENOSYS); /* Not supported. */
         retval = -1;

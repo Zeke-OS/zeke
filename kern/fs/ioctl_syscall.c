@@ -41,7 +41,7 @@
 #include <syscall.h>
 #include <sys/ioctl.h>
 
-static int sys_ioctl(void * user_args)
+static int sys_ioctl(__user void * user_args)
 {
     struct _ioctl_get_args args;
     file_t * file;
@@ -68,14 +68,15 @@ static int sys_ioctl(void * user_args)
         }
 
         if (args.request & 1) { /* Get request */
-            if (!useracc(args.arg, args.arg_len, VM_PROT_WRITE)) {
+            if (!useracc((__user void *)args.arg, args.arg_len,
+                         VM_PROT_WRITE)) {
                 set_errno(EFAULT);
                 goto out;
             }
             /* Get request doesn't need copyin */
         } else { /* Set request */
             /* Set operation needs copyin */
-            err = copyin(args.arg, ioargs, args.arg_len);
+            err = copyin((__user void *)args.arg, ioargs, args.arg_len);
             if (err) {
                 set_errno(EFAULT);
                 goto out;
@@ -91,7 +92,7 @@ static int sys_ioctl(void * user_args)
 
     /* Copyout if request type was get. */
     if (args.request & 1)
-        copyout(ioargs, args.arg, args.arg_len);
+        copyout(ioargs, (__user void *)args.arg, args.arg_len);
 
 out:
     kfree(ioargs);
@@ -99,14 +100,10 @@ out:
     return retval;
 }
 
-intptr_t ioctl_syscall(uint32_t type, void * p)
-{
-    switch (type) {
-    case SYSCALL_IOCTL_GETSET:
-        return (uintptr_t)sys_ioctl(p);
-
-    default:
-        set_errno(ENOSYS);
-        return (uintptr_t)NULL;
-    }
-}
+/**
+ * Declarations of fs syscall functions.
+ */
+static const syscall_handler_t fs_sysfnmap[] = {
+    ARRDECL_SYSCALL_HNDL(SYSCALL_IOCTL_GETSET, sys_ioctl),
+};
+SYSCALL_HANDLERDEF(ioctl_syscall, fs_sysfnmap);

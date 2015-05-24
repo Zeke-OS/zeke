@@ -606,8 +606,8 @@ int kernel_sysctl(pid_t pid, int * name, unsigned int namelen,
         size_t * retval, int flags);
 int sys___sysctl(pid_t pid, struct _sysctl_args * uap);
 int userland_sysctl(pid_t pid, int * name, unsigned int namelen,
-        void * old, size_t * oldlenp, int inkernel, void * new, size_t newlen,
-        size_t * retval, int flags);
+        __user void * old, __user size_t * oldlenp, int inkernel,
+        __user void * new, size_t newlen, size_t * retval, int flags);
 
 #endif /* KERNEL_INTERNAL */
 

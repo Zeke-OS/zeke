@@ -577,7 +577,7 @@ SYSCTL_PROC(_kern, KERN_MAXPROC, maxproc, CTLTYPE_INT | CTLFLAG_RW,
 
 /* Syscall handlers ***********************************************************/
 
-static int sys_proc_fork(void * user_args)
+static int sys_proc_fork(__user void * user_args)
 {
     pid_t pid = proc_fork(current_process_id);
     if (pid < 0) {
@@ -588,7 +588,7 @@ static int sys_proc_fork(void * user_args)
     }
 }
 
-static int sys_proc_wait(void * user_args)
+static int sys_proc_wait(__user void * user_args)
 {
     struct _proc_wait_args args;
     pid_t pid_child;
@@ -714,7 +714,7 @@ static int sys_proc_wait(void * user_args)
     return (uintptr_t)pid_child;
 }
 
-static int sys_proc_exit(void * user_args)
+static int sys_proc_exit(__user void * user_args)
 {
     KASSERT(curproc->inh.parent, "parent should exist");
 
@@ -735,7 +735,7 @@ static int sys_proc_exit(void * user_args)
  * - getegid(), getgid()
  * - setgid(), setegid(), setregid()
  */
-static int sys_proc_getsetcred(void * user_args)
+static int sys_proc_getsetcred(__user void * user_args)
 {
     struct _proc_credctl_args pcred;
     uid_t ruid = curproc->cred.uid;
@@ -821,7 +821,7 @@ static int sys_proc_getsetcred(void * user_args)
     return retval;
 }
 
-static int sys_proc_getpid(void * user_args)
+static int sys_proc_getpid(__user void * user_args)
 {
     if (copyout(&curproc->pid, user_args, sizeof(pid_t))) {
         set_errno(EFAULT);
@@ -831,7 +831,7 @@ static int sys_proc_getpid(void * user_args)
     return 0;
 }
 
-static int sys_proc_getppid(void * user_args)
+static int sys_proc_getppid(__user void * user_args)
 {
     pid_t parent;
 
@@ -848,13 +848,13 @@ static int sys_proc_getppid(void * user_args)
     return 0;
 }
 
-static int sys_proc_alarm(void * user_args)
+static int sys_proc_alarm(__user void * user_args)
 {
     set_errno(ENOSYS);
     return -1;
 }
 
-static int sys_proc_chdir(void * user_args)
+static int sys_proc_chdir(__user void * user_args)
 {
     struct _proc_chdir_args * args = 0;
     vnode_t * vn;
@@ -899,19 +899,19 @@ out:
     return retval;
 }
 
-static int sys_proc_setpriority(void * user_args)
+static int sys_proc_setpriority(__user void * user_args)
 {
     set_errno(ENOSYS);
     return -1;
 }
 
-static int sys_proc_getpriority(void * user_args)
+static int sys_proc_getpriority(__user void * user_args)
 {
     set_errno(ENOSYS);
     return -1;
 }
 
-static int sys_proc_times(void * user_args)
+static int sys_proc_times(__user void * user_args)
 {
     if (copyout(&curproc->tms, user_args, sizeof(struct tms))) {
         set_errno(EFAULT);
@@ -921,7 +921,7 @@ static int sys_proc_times(void * user_args)
     return 0;
 }
 
-static int sys_proc_getbreak(void * user_args)
+static int sys_proc_getbreak(__user void * user_args)
 {
     struct _proc_getbreak_args args;
     int err;

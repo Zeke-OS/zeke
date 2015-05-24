@@ -36,7 +36,7 @@
 #include <proc.h>
 #include <kern_ipc.h>
 
-static int sys_pipe(void * user_args)
+static int sys_pipe(__user void * user_args)
 {
     struct _ipc_pipe_args args;
     int err;

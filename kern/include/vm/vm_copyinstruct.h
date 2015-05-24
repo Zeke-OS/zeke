@@ -111,7 +111,7 @@
  * @return      0 if succeed; Negative error code representing errno in case of
  *              failure.
  */
-int copyinstruct(void * usr, void ** kern, size_t bytes, ...);
+int copyinstruct(__user void * usr, __kernel void ** kern, size_t bytes, ...);
 
 /**
  * Free a structure and copied members allocated with copyinstruct().

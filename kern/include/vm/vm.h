@@ -167,7 +167,7 @@ struct vm_pt * vm_pt_clone_attach(struct vm_pt * old_vpt,
  * @param       len  is the length of source.
  * @return 0 if succeeded; otherwise -EFAULT.
  */
-int copyin(const void * uaddr, void * kaddr, size_t len);
+int copyin(__user const void * uaddr, __kernel void * kaddr, size_t len);
 
 /**
  * Copy data from kernel-space to user-space.
@@ -178,7 +178,7 @@ int copyin(const void * uaddr, void * kaddr, size_t len);
  * @param       len is the length of source.
  * @return 0 if succeeded; otherwise -EFAULT.
  */
-int copyout(const void * kaddr, void * uaddr, size_t len);
+int copyout(__kernel const void * kaddr, __user void * uaddr, size_t len);
 
 /**
  * Copy a string from user-space to kernel-space.
@@ -192,21 +192,22 @@ int copyout(const void * kaddr, void * uaddr, size_t len);
  * @return  0 if succeeded; or -ENAMETOOLONG if the string is longer than len
  *          bytes; or any of the return values defined for copyin().
  */
-int copyinstr(const char * uaddr, char * kaddr, size_t len, size_t * done);
+int copyinstr(__user const char * uaddr, __kernel char * kaddr, size_t len,
+              size_t * done);
 
 /**
  * Copyin from a process specified by proc argument.
  * Arguments same as for copyin() except proc.
  */
-int copyin_proc(struct proc_info * proc, const void * uaddr, void * kaddr,
-        size_t len);
+int copyin_proc(struct proc_info * proc, __user const void * uaddr,
+                __kernel void * kaddr, size_t len);
 
 /**
  * Copyout to a process specified by proc argument.
  * Arguments same as for copyout() except proc.
  */
-int copyout_proc(struct proc_info * proc, const void * kaddr, void * uaddr,
-        size_t len);
+int copyout_proc(struct proc_info * proc, __kernel const void * kaddr,
+                 __user void * uaddr, size_t len);
 
 /**
  * @}
@@ -346,20 +347,21 @@ int vm_unload_regions(struct proc_info * proc, int start, int end);
  * @return  Boolean true if the type of access specified by rw is permitted;
  *          Otherwise boolean false.
  */
-int kernacc(const void * addr, int len, int rw);
+int kernacc(__kernel const void * addr, int len, int rw);
 
 /**
  * Check user space memory region for accessibility.
  * @return  Boolean true if the type of access specified by rw is permitted;
  *          Otherwise boolean false.
  */
-int useracc(const void * addr, size_t len, int rw);
+int useracc(__user const void * addr, size_t len, int rw);
 
 /**
  * Check user space memory region of a process for accessibility.
  * Same as useracc but proc is specified.
  */
-int useracc_proc(const void * addr, size_t len, struct proc_info * proc, int rw);
+int useracc_proc(__user const void * addr, size_t len, struct proc_info * proc,
+                 int rw);
 
 /**
  * @}

@@ -857,7 +857,7 @@ static int sysctl_old_user(struct sysctl_req * req, const void * p, size_t l)
 
         if (i > len - origidx)
             i = len - origidx;
-        error = -copyout(p, (char *)req->oldptr + origidx, i);
+        error = -copyout(p, (__user char *)req->oldptr + origidx, i);
         if (error != 0)
             return error;
     }
@@ -875,7 +875,7 @@ static int sysctl_new_user(struct sysctl_req * req, void * p, size_t l)
     if (req->newlen - req->newidx < l)
         return EINVAL;
 
-    error = -copyin((char *)req->newptr + req->newidx, p, l);
+    error = -copyin((__user char *)req->newptr + req->newidx, p, l);
     req->newidx += l;
 
     return error;
@@ -967,8 +967,8 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
 }
 
 int userland_sysctl(pid_t pid, int * name, unsigned int namelen,
-        void * old, size_t * oldlenp, int inkernel, void * new,
-        size_t newlen, size_t * retval, int flags)
+        __user void * old, __user size_t * oldlenp, int inkernel,
+        __user void * new, size_t newlen, size_t * retval, int flags)
 {
     const struct proc_info * proc;
     struct sysctl_req req;
@@ -1000,14 +1000,14 @@ int userland_sysctl(pid_t pid, int * name, unsigned int namelen,
     if (old) {
         if (!useracc(old, req.oldlen, VM_PROT_WRITE))
             return -EFAULT;
-        req.oldptr = old;
+        req.oldptr = (void *)old;
     }
 
     if (new != NULL) {
         if (!useracc(new, newlen, VM_PROT_READ))
             return -EFAULT;
         req.newlen = newlen;
-        req.newptr = new;
+        req.newptr = (void *)new;
     }
 
     req.oldfunc = sysctl_old_user;

@@ -124,7 +124,7 @@ void getnanotime(struct timespec * tsp)
 
 /* Syscall handlers ***********************************************************/
 
-static int sys_gettime(void * user_args)
+static int sys_gettime(__user void * user_args)
 {
     struct _time_gettime_args args;
     struct timespec ts;
@@ -141,7 +141,8 @@ static int sys_gettime(void * user_args)
         /* TODO Currently same as CLOCK_REALTIME */
     case CLOCK_REALTIME:
         nanotime(&ts);
-        err = copyout(&ts, args.tp, sizeof(struct timespec));
+        err = copyout(&ts, (__user struct timespec *)args.tp,
+                      sizeof(struct timespec));
         if (err) {
             set_errno(EFAULT);
             return -1;

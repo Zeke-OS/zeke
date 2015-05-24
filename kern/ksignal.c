@@ -400,7 +400,7 @@ static int thread_stack_push(struct thread_info * thread, const void * src,
     if (!old_sp)
         return -EFAULT;
 
-    err = copyout(src, new_sp, size);
+    err = copyout(src, (__user void *)new_sp, size);
     if (err)
         return -EFAULT;
 
@@ -418,7 +418,7 @@ static int thread_stack_pop(struct thread_info * thread, void * buf,
                             size_t size)
 {
     sw_stack_frame_t * sframe;
-    void * sp;
+    __user void * sp;
     int err;
 
     KASSERT(size > 0, "size should be greater than zero.\n");
@@ -427,7 +427,7 @@ static int thread_stack_pop(struct thread_info * thread, void * buf,
     if (!sframe)
         return -EINVAL;
 
-    sp = (void *)sframe->sp;
+    sp = (__user void *)sframe->sp;
     if (!sp)
         return -EFAULT;
 
@@ -1062,9 +1062,9 @@ int ksignal_syscall_exit(int retval)
         KASSERT(sframe != NULL, "Must have exitting sframe");
 
         /* Set return value for the syscall. */
-        copyin((sw_stack_frame_t *)sframe->r9, &caller, sizeof(caller));
+        copyin((__user sw_stack_frame_t *)sframe->r9, &caller, sizeof(caller));
         caller.r0 = retval;
-        copyout(&caller, (sw_stack_frame_t *)sframe->r9, sizeof(caller));
+        copyout(&caller, (__user sw_stack_frame_t *)sframe->r9, sizeof(caller));
 
         /* Set first argument for the signal handler. */
         retval = sframe->r0;
@@ -1079,7 +1079,7 @@ int ksignal_syscall_exit(int retval)
 /**
  * Send a signal to a process or a group of processes.
  */
-static int sys_signal_pkill(void * user_args)
+static int sys_signal_pkill(__user void * user_args)
 {
     struct _pkill_args args;
     struct proc_info * proc;
@@ -1135,7 +1135,7 @@ static int sys_signal_pkill(void * user_args)
 /**
  * Send a signal to a thread or threads.
  */
-static int sys_signal_tkill(void * user_args)
+static int sys_signal_tkill(__user void * user_args)
 {
     struct _tkill_args args;
     struct thread_info * thread;
@@ -1199,7 +1199,7 @@ static int sys_signal_tkill(void * user_args)
     return 0;
 }
 
-static int sys_signal_signal(void * user_args)
+static int sys_signal_signal(__user void * user_args)
 {
     struct _signal_signal_args args;
     struct ksigaction action;
@@ -1254,7 +1254,7 @@ static int sys_signal_signal(void * user_args)
     return 0;
 }
 
-static int sys_signal_action(void * user_args)
+static int sys_signal_action(__user void * user_args)
 {
     struct _signal_action_args args;
     struct signals * sigs;
@@ -1301,7 +1301,7 @@ static int sys_signal_action(void * user_args)
     return 0;
 }
 
-static int sys_signal_altstack(void * user_args)
+static int sys_signal_altstack(__user void * user_args)
 {
     /*
      * TODO Implement altstack syscall that can be used to set alternative
@@ -1314,7 +1314,7 @@ static int sys_signal_altstack(void * user_args)
 /**
  * Examine and change blocked signals of the thread or the current process.
  */
-static int sys_signal_sigmask(void * user_args)
+static int sys_signal_sigmask(__user void * user_args)
 {
     struct _signal_sigmask_args args;
     sigset_t set;
@@ -1330,7 +1330,7 @@ static int sys_signal_sigmask(void * user_args)
     }
 
     if (args.set) {
-        err = copyin(args.set, &set, sizeof(sigset_t));
+        err = copyin((__user sigset_t *)args.set, &set, sizeof(sigset_t));
         if (err) {
             set_errno(-err);
             return -1;
@@ -1354,7 +1354,7 @@ static int sys_signal_sigmask(void * user_args)
 
     if (args.oset) {
         /* Copy the current set to usr oset. */
-        err = copyout(&oldset, (void *)args.oset,
+        err = copyout(&oldset, (__user void *)args.oset,
                       sizeof(struct _signal_sigmask_args));
         if (err) {
             set_errno(-err);
@@ -1365,7 +1365,7 @@ static int sys_signal_sigmask(void * user_args)
     return 0;
 }
 
-static int sys_signal_sigwait(void * user_args)
+static int sys_signal_sigwait(__user void * user_args)
 {
     struct _signal_sigwait_args args;
     sigset_t set;
@@ -1377,7 +1377,7 @@ static int sys_signal_sigwait(void * user_args)
         set_errno(-err);
         return -1;
     }
-    err = copyin(args.set, &set, sizeof(set));
+    err = copyin((__user sigset_t *)args.set, &set, sizeof(set));
     if (err) {
         set_errno(-err);
         return -1;
@@ -1389,7 +1389,7 @@ static int sys_signal_sigwait(void * user_args)
         return -1;
     }
 
-    err = copyout(&retval.si_signo, args.sig, sizeof(int));
+    err = copyout(&retval.si_signo, (__user int *)args.sig, sizeof(int));
     if (err) {
         set_errno(EINVAL);
         return -1;
@@ -1398,7 +1398,7 @@ static int sys_signal_sigwait(void * user_args)
     return 0;
 }
 
-static int sys_signal_sigwaitinfo(void * user_args)
+static int sys_signal_sigwaitinfo(__user void * user_args)
 {
     struct _signal_sigwaitinfo_args args;
     sigset_t set;
@@ -1410,7 +1410,7 @@ static int sys_signal_sigwaitinfo(void * user_args)
         set_errno(-err);
         return -1;
     }
-    err = copyin(args.set, &set, sizeof(set));
+    err = copyin((__user sigset_t *)args.set, &set, sizeof(set));
     if (err) {
         set_errno(-err);
         return -1;
@@ -1431,7 +1431,7 @@ static int sys_signal_sigwaitinfo(void * user_args)
         return -1;
     }
 
-    err = copyout(&retval, args.info, sizeof(retval));
+    err = copyout(&retval, (__user siginfo_t *)args.info, sizeof(retval));
     if (err) {
         set_errno(EINVAL);
         return -1;
@@ -1440,7 +1440,7 @@ static int sys_signal_sigwaitinfo(void * user_args)
     return 0;
 }
 
-static int sys_signal_sigsleep(void * user_args)
+static int sys_signal_sigsleep(__user void * user_args)
 {
     struct _signal_sigsleep_args args;
     struct timespec timeout;
@@ -1460,14 +1460,14 @@ static int sys_signal_sigsleep(void * user_args)
     return ksignal_sigsleep(&timeout);
 }
 
-static int sys_signal_set_return(void * user_args)
+static int sys_signal_set_return(__user void * user_args)
 {
     curproc->usigret = (uintptr_t)user_args;
 
     return 0;
 }
 
-static int sys_signal_return(void * user_args)
+static int sys_signal_return(__user void * user_args)
 {
     sw_stack_frame_t * sframe = &current_thread->sframe[SCHED_SFRAME_SVC];
     sw_stack_frame_t next;

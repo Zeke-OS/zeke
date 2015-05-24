@@ -164,7 +164,7 @@ out:
  * Clone an array of strings and remap to a new section mapped in user space.
  * @note vaddr must be set to the final value by the caller.
  */
-static int clone_aa(struct buf * bp, char * uarr, size_t n_entries,
+static int clone_aa(struct buf * bp, __user char * uarr, size_t n_entries,
                     size_t * doffset)
 {
     char ** arg = (char **)(bp->b_data + *doffset);
@@ -193,7 +193,8 @@ static int clone_aa(struct buf * bp, char * uarr, size_t n_entries,
         if (!arg[i])
             continue;
 
-        err = copyinstr(arg[i], val + offset, bytesleft, &copied);
+        err = copyinstr((__user char *)arg[i], val + offset, bytesleft,
+                        &copied);
         if (err)
             return err;
 
@@ -209,7 +210,7 @@ static int clone_aa(struct buf * bp, char * uarr, size_t n_entries,
     return 0;
 }
 
-static int sys_exec(void * user_args)
+static int sys_exec(__user void * user_args)
 {
     struct _exec_args args;
     char name[PROC_NAME_LEN];
@@ -248,7 +249,7 @@ static int sys_exec(void * user_args)
     env_bp->b_uflags = VM_PROT_READ | VM_PROT_WRITE;
 
     /* Clone argv */
-    err = clone_aa(env_bp, (char *)args.argv, args.nargv, &arg_offset);
+    err = clone_aa(env_bp, (__user char *)args.argv, args.nargv, &arg_offset);
     if (err) {
 #if defined(configEXEC_DEBUG)
         KERROR(KERROR_DEBUG, "Failed to clone args (%d)\n", err);
@@ -261,7 +262,7 @@ static int sys_exec(void * user_args)
     envp = env_bp->b_mmu.vaddr + arg_offset;
 
     /* Clone env */
-    err = clone_aa(env_bp, (char *)args.env, args.nenv, &arg_offset);
+    err = clone_aa(env_bp, (__user char *)args.env, args.nenv, &arg_offset);
     if (err) {
 #if defined(configEXEC_DEBUG)
         KERROR(KERROR_DEBUG, "Failed to clone env (%d)\n", err);

@@ -54,7 +54,7 @@ struct _cpyin_gc_node {
 /**
  * Usage: copyinst(usr, &kern, sizeof(usr), GET_STRUCT_OFFSETS(struct x, a, a_len, c, c_len));
  */
-int copyinstruct(void * usr, void ** kern, size_t bytes, ...)
+int copyinstruct(__user void * usr, __kernel void ** kern, size_t bytes, ...)
 {
     va_list ap;
     struct _cpyin_struct * token;
@@ -93,7 +93,7 @@ int copyinstruct(void * usr, void ** kern, size_t bytes, ...)
             continue;
         }
 
-        if (!useracc(*src, len, VM_PROT_READ)) {
+        if (!useracc((__user void *)(*src), len, VM_PROT_READ)) {
             retval = -EFAULT;
             break;
         }
@@ -106,7 +106,7 @@ int copyinstruct(void * usr, void ** kern, size_t bytes, ...)
         token->gc_lst->insert_tail(token->gc_lst, gc_node);
         dst = gc_node->data;
 
-        copyin(*src, dst, len);
+        copyin((__user void *)(*src), dst, len);
         *src = dst;
     };
     va_end(ap);

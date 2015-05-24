@@ -35,7 +35,7 @@
 #include <syscall.h>
 #include <proc.h>
 
-intptr_t sysctl_syscall(uint32_t type, void * p)
+intptr_t sysctl_syscall(uint32_t type, __user void * p)
 {
     int err, name[CTL_MAXNAME];
     size_t j;
@@ -57,21 +57,21 @@ intptr_t sysctl_syscall(uint32_t type, void * p)
         return -1;
     }
 
-    err = copyin(uap.name, &name, uap.namelen * sizeof(int));
+    err = copyin((__user void *)uap.name, &name, uap.namelen * sizeof(int));
     if (err) {
         set_errno(EFAULT);
         return -1;
     }
 
     err = userland_sysctl(current_process_id, name, uap.namelen,
-                          uap.old, uap.oldlenp, 0,
-                          uap.new, uap.newlen, &j, 0);
+                          (__user void *)uap.old, (__user size_t *)uap.oldlenp,
+                          0, (__user void *)uap.new, uap.newlen, &j, 0);
     if (err && err != -ENOMEM) {
         set_errno(-err);
         return -1;
     }
     if (uap.oldlenp) {
-        err = copyout(&j, uap.oldlenp, sizeof(j));
+        err = copyout(&j, (__user size_t *)uap.oldlenp, sizeof(j));
         if (err) {
             set_errno(-err);
             return -1;

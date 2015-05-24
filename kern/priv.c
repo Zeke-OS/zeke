@@ -180,7 +180,7 @@ int priv_check_cred(const struct cred * fromcred, const struct cred * tocred,
  *          0 if status was zero or operation succeed;
  *          greater than zero status was one.
  */
-static int sys_priv_pcap(void * user_args)
+static int sys_priv_pcap(__user void * user_args)
 {
     struct _priv_pcap_args args;
     struct proc_info * proc;

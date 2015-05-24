@@ -51,7 +51,7 @@
 #include <ksignal.h>
 #include <fs/fs.h>
 
-static int sys_read(void * user_args)
+static int sys_read(__user void * user_args)
 {
     struct _fs_readwrite_args args;
     char * buf = NULL;
@@ -72,7 +72,7 @@ static int sys_read(void * user_args)
     }
 
     /* Buffer */
-    if (!useracc(args.buf, args.nbytes, VM_PROT_WRITE)) {
+    if (!useracc((__user void *)args.buf, args.nbytes, VM_PROT_WRITE)) {
         /* No permission to read/write */
         set_errno(EFAULT);
         retval = -1;
@@ -90,7 +90,7 @@ static int sys_read(void * user_args)
         set_errno(-retval);
         retval = -1;
     } else {
-        err = copyout(buf, args.buf, retval);
+        err = copyout(buf, (__user void *)args.buf, retval);
         if (err) {
             set_errno(-err);
             retval = -1;
@@ -102,7 +102,7 @@ out:
     return retval;
 }
 
-static int sys_write(void * user_args)
+static int sys_write(__user void * user_args)
 {
     struct _fs_readwrite_args args;
     char * buf = 0;
@@ -129,7 +129,7 @@ static int sys_write(void * user_args)
         retval = -1;
         goto out;
     }
-    err = copyin(args.buf, buf, args.nbytes);
+    err = copyin((__user void *)args.buf, buf, args.nbytes);
     if (err) {
         KERROR(KERROR_ERR, "efault %u\n", args.nbytes);
         set_errno(EFAULT);
@@ -148,7 +148,7 @@ out:
     return retval;
 }
 
-static int sys_lseek(void * user_args)
+static int sys_lseek(__user void * user_args)
 {
     struct _fs_lseek_args args;
     file_t * file;
@@ -212,7 +212,7 @@ static int sys_lseek(void * user_args)
     return retval;
 }
 
-static int sys_open(void * user_args)
+static int sys_open(__user void * user_args)
 {
     struct _fs_open_args * args = 0;
     vnode_t * vn_file = NULL;
@@ -268,7 +268,7 @@ out:
     return retval;
 }
 
-static int sys_close(void * p)
+static int sys_close(__user void * p)
 {
     int err;
     int fildes = (int)p;
@@ -282,7 +282,7 @@ static int sys_close(void * p)
     return 0;
 }
 
-static int sys_getdents(void * user_args)
+static int sys_getdents(__user void * user_args)
 {
     struct _fs_getdents_args args;
     struct dirent * dents;
@@ -299,7 +299,7 @@ static int sys_getdents(void * user_args)
     }
 
     /* We must have a write access to the given buffer. */
-    if (!useracc(args.buf, args.nbytes, VM_PROT_WRITE)) {
+    if (!useracc((__user void *)args.buf, args.nbytes, VM_PROT_WRITE)) {
         set_errno(EFAULT);
         return -1;
     }
@@ -336,7 +336,7 @@ static int sys_getdents(void * user_args)
     }
 
     if (count > 0)
-        copyout(dents, args.buf, count * sizeof(struct dirent));
+        copyout(dents, (__user void *)args.buf, count * sizeof(struct dirent));
     kfree(dents);
 
 out:
@@ -344,7 +344,7 @@ out:
     return count;
 }
 
-static int sys_fcntl(void * user_args)
+static int sys_fcntl(__user void * user_args)
 {
     struct _fs_fcntl_args args;
     file_t * file;
@@ -443,7 +443,7 @@ out:
     return retval;
 }
 
-static int sys_link(void * user_args)
+static int sys_link(__user void * user_args)
 {
     struct _fs_link_args * args;
     int err, retval = -1;
@@ -478,7 +478,7 @@ out:
     return retval;
 }
 
-static int sys_unlink(void * user_args)
+static int sys_unlink(__user void * user_args)
 {
     struct _fs_unlink_args * args;
     int err, retval = -1;
@@ -510,7 +510,7 @@ out:
     return retval;
 }
 
-static int sys_mkdir(void * user_args)
+static int sys_mkdir(__user void * user_args)
 {
     struct _fs_mkdir_args * args = 0;
     int err, retval = -1;
@@ -542,7 +542,7 @@ out:
     return retval;
 }
 
-static int sys_rmdir(void * user_args)
+static int sys_rmdir(__user void * user_args)
 {
     struct _fs_rmdir_args * args = 0;
     int err, retval = -1;
@@ -574,7 +574,7 @@ out:
     return retval;
 }
 
-static int sys_filestat(void * user_args)
+static int sys_filestat(__user void * user_args)
 {
     struct _fs_stat_args * args = NULL;
     vnode_t * vnode = NULL;
@@ -596,7 +596,8 @@ static int sys_filestat(void * user_args)
         goto out;
     }
 
-    if (!useracc(args->buf, sizeof(struct stat), VM_PROT_WRITE)) {
+    if (!useracc((__user struct stat *)args->buf, sizeof(struct stat),
+                 VM_PROT_WRITE)) {
         set_errno(EFAULT);
         goto out;
     }
@@ -666,13 +667,13 @@ out:
         fs_fildes_ref(curproc->files, args->fd, -1);
     if (vnref)
         vrele(vnode);
-    copyout(&stat_buf, args->buf, sizeof(struct stat));
+    copyout(&stat_buf, (__user struct stat *)args->buf, sizeof(struct stat));
     freecpystruct(args);
 
     return retval;
 }
 
-static int sys_access(void * user_args)
+static int sys_access(__user void * user_args)
 {
     struct _fs_access_args * args = 0;
     vnode_t * vnode = NULL;
@@ -728,7 +729,7 @@ out:
     return retval;
 }
 
-static int sys_utimes(void * user_args)
+static int sys_utimes(__user void * user_args)
 {
     struct _fs_utimes_args args;
     int err;
@@ -747,7 +748,7 @@ static int sys_utimes(void * user_args)
  * Only fchmod() is implemented at the kernel level and rest must be implemented
  * in user space.
  */
-static int sys_chmod(void * user_args)
+static int sys_chmod(__user void * user_args)
 {
     struct _fs_chmod_args args;
     int err;
@@ -762,7 +763,7 @@ static int sys_chmod(void * user_args)
     return fs_chmod_curproc(args.fd, args.mode);
 }
 
-static int sys_chflags(void * user_args)
+static int sys_chflags(__user void * user_args)
 {
     struct _fs_chflags_args args;
     int err;
@@ -781,7 +782,7 @@ static int sys_chflags(void * user_args)
  * Only fchown() is implemented at the kernel level and rest must be implemented
  * in user space.
  */
-static int sys_chown(void * user_args)
+static int sys_chown(__user void * user_args)
 {
     struct _fs_chown_args args;
     int err;
@@ -802,7 +803,7 @@ static int sys_chown(void * user_args)
     return fs_chown_curproc(args.fd, args.owner, args.group);
 }
 
-static int sys_umask(void * user_args)
+static int sys_umask(__user void * user_args)
 {
     struct _fs_umask_args args;
 
@@ -819,7 +820,7 @@ static int sys_umask(void * user_args)
     return 0;
 }
 
-static int sys_mount(void * user_args)
+static int sys_mount(__user void * user_args)
 {
     struct _fs_mount_args * args = NULL;
     vnode_t * mpt = NULL;
@@ -871,7 +872,7 @@ out:
     return retval;
 }
 
-static int sys_umount(void * user_args)
+static int sys_umount(__user void * user_args)
 {
     struct _fs_umount_args * args = NULL;
     vnode_t * mpt;
@@ -916,7 +917,7 @@ out:
     return retval;
 }
 
-static int sys_chroot(void * user_args)
+static int sys_chroot(__user void * user_args)
 {
     int err;
 

@@ -53,12 +53,13 @@ extern mmu_region_t mmu_region_kernel;
 static int test_ap_priv(uint32_t rw, uint32_t ap);
 static int test_ap_user(uint32_t rw, uint32_t mmu_ap, uint32_t mmu_control);
 
-int copyin(const void * uaddr, void * kaddr, size_t len)
+int copyin(__user const void * uaddr, __kernel void * kaddr, size_t len)
 {
     return copyin_proc(curproc, uaddr, kaddr, len);
 }
 
-int copyin_proc(struct proc_info * proc, const void * uaddr, void * kaddr,
+int copyin_proc(struct proc_info * proc, __user const void * uaddr,
+                __kernel void * kaddr,
         size_t len)
 {
     struct vm_pt * vpt;
@@ -81,13 +82,13 @@ int copyin_proc(struct proc_info * proc, const void * uaddr, void * kaddr,
     return 0;
 }
 
-int copyout(const void * kaddr, void * uaddr, size_t len)
+int copyout(__kernel const void * kaddr, __user void * uaddr, size_t len)
 {
     return copyout_proc(curproc, kaddr, uaddr, len);
 }
 
-int copyout_proc(struct proc_info * proc, const void * kaddr, void * uaddr,
-        size_t len)
+int copyout_proc(struct proc_info * proc, __kernel const void * kaddr,
+                 __user void * uaddr, size_t len)
 {
     /* TODO Handle possible cow flag? */
     struct vm_pt * vpt;
@@ -109,7 +110,8 @@ int copyout_proc(struct proc_info * proc, const void * kaddr, void * uaddr,
     return 0;
 }
 
-int copyinstr(const char * uaddr, char * kaddr, size_t len, size_t * done)
+int copyinstr(__user const char * uaddr, __kernel char * kaddr, size_t len,
+              size_t * done)
 {
     uintptr_t last_prefix = UINTPTR_MAX;
     char * phys_uaddr;
@@ -560,7 +562,7 @@ int vm_unload_regions(struct proc_info * proc, int start, int end)
     return 0;
 }
 
-int kernacc(const void * addr, int len, int rw)
+int kernacc(__kernel const void * addr, int len, int rw)
 {
     size_t reg_start, reg_size;
     uint32_t ap;
@@ -628,7 +630,7 @@ static int test_ap_priv(uint32_t rw, uint32_t ap)
     return 0;
 }
 
-int useracc(const void * addr, size_t len, int rw)
+int useracc(__user const void * addr, size_t len, int rw)
 {
     if (!curproc)
         return 0;
@@ -636,7 +638,8 @@ int useracc(const void * addr, size_t len, int rw)
     return useracc_proc(addr, len, curproc, rw);
 }
 
-int useracc_proc(const void * addr, size_t len, struct proc_info * proc, int rw)
+int useracc_proc(__user const void * addr, size_t len, struct proc_info * proc,
+                 int rw)
 {
     /* TODO Currently we don't allow addr to span over multiple regions */
 

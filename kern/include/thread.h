@@ -124,7 +124,7 @@ struct thread_info {
     sw_stack_frame_t sframe[SCHED_SFRAME_ARR_SIZE];
     struct buf * kstack_region;     /*!< Thread kernel stack region. */
     mmu_pagetable_t * curr_mpt;     /*!< Current master pt (proc or kern) */
-    void * errno_uaddr;             /*!< Address of the thread local errno. */
+    __user void * errno_uaddr;      /*!< Address of the thread local errno. */
     intptr_t retval;                /*!< Return value of the thread. */
 
     int wait_tim;                   /*!< Reference to a timeout timer. */

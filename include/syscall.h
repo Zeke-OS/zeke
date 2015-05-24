@@ -148,15 +148,15 @@
 
 /* Kernel scope */
 #ifdef KERNEL_INTERNAL
-typedef intptr_t (*kernel_syscall_handler_t)(uint32_t type, void * p);
-typedef intptr_t (*syscall_handler_t)(void * p);
+typedef intptr_t (*kernel_syscall_handler_t)(uint32_t type, __user void * p);
+typedef intptr_t (*syscall_handler_t)(__user void * p);
 #define ARRDECL_SYSCALL_HNDL(SYSCALL_NR, fn) [SYSCALL_MINOR(SYSCALL_NR)] = fn
 
 /**
  * Define a syscall handler that calls functions from a function pointer array.
  */
 #define SYSCALL_HANDLERDEF(groupfnname, callmaparray)                       \
-    intptr_t groupfnname(uint32_t type, void * p) {                         \
+    intptr_t groupfnname(uint32_t type, __user void * p) {                  \
         uint32_t minor = SYSCALL_MINOR(type);                               \
                                                                             \
         if ((minor >= num_elem(callmaparray)) || !(callmaparray)[minor]) {  \

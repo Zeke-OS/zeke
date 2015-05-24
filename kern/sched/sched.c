@@ -531,7 +531,7 @@ static void thread_init(struct thread_info * tp, pthread_t thread_id,
      * Note that this should also agree with core specific
      * init_stack_frame() function.
      */
-    tp->errno_uaddr     = (void *)((uintptr_t)(thread_def->stack_addr)
+    tp->errno_uaddr     = (__user void *)((uintptr_t)(thread_def->stack_addr)
                           + thread_def->stack_size
                           - sizeof(errno_t));
 
@@ -1040,7 +1040,7 @@ mmu_pagetable_t * _thread_resume(void)
 
 /* Scheduler syscalls *********************************************************/
 
-static int sys_sched_get_loadavg(void * user_args)
+static int sys_sched_get_loadavg(__user void * user_args)
 {
     uint32_t arr[3];
     int err;
@@ -1063,7 +1063,7 @@ SYSCALL_HANDLERDEF(sched_syscall, sched_sysfnmap)
 
 /* Thread syscalls ************************************************************/
 
-static int sys_thread_create(void * user_args)
+static int sys_thread_create(__user void * user_args)
 {
     struct _sched_pthread_create_args args;
     pthread_t tid;
@@ -1080,12 +1080,14 @@ static int sys_thread_create(void * user_args)
         return -1;
     }
 
-    if (!useracc(args.stack_addr, args.stack_size, VM_PROT_WRITE)) {
+    if (!useracc((__user void *)args.stack_addr, args.stack_size,
+                 VM_PROT_WRITE)) {
         set_errno(EINVAL);
         return -1;
     }
 
-    if (!useracc(args.start, sizeof(void *), VM_PROT_READ | VM_PROT_EXECUTE)) {
+    if (!useracc((__user void *)args.start, sizeof(void *),
+                 VM_PROT_READ | VM_PROT_EXECUTE)) {
         set_errno(EINVAL);
         return -1;
     }
@@ -1100,7 +1102,7 @@ static int sys_thread_create(void * user_args)
     return tid;
 }
 
-static int sys_thread_terminate(void * user_args)
+static int sys_thread_terminate(__user void * user_args)
 {
     pthread_t thread_id;
     int err;
@@ -1114,7 +1116,7 @@ static int sys_thread_terminate(void * user_args)
     return thread_terminate(thread_id);
 }
 
-static int sys_thread_die(void * user_args)
+static int sys_thread_die(__user void * user_args)
 {
     thread_die((intptr_t)user_args);
 
@@ -1125,7 +1127,7 @@ static int sys_thread_die(void * user_args)
 /**
  * TODO Not completely thread safe.
  */
-static int sys_thread_detach(void * user_args)
+static int sys_thread_detach(__user void * user_args)
 {
     pthread_t thread_id;
     struct thread_info * thread;
@@ -1148,7 +1150,7 @@ static int sys_thread_detach(void * user_args)
     return 0;
 }
 
-static int sys_thread_join(void * user_args)
+static int sys_thread_join(__user void * user_args)
 {
     struct _sched_pthread_join_args args;
     intptr_t retval;
@@ -1162,7 +1164,7 @@ static int sys_thread_join(void * user_args)
 
     thread_join(args.thread_id, &retval);
 
-    err = copyout(&retval, args.retval, sizeof(intptr_t));
+    err = copyout(&retval, (__user intptr_t *)args.retval, sizeof(intptr_t));
     if (err) {
         set_errno(EFAULT);
         return -1;
@@ -1171,7 +1173,7 @@ static int sys_thread_join(void * user_args)
     return 0;
 }
 
-static int sys_thread_sleep_ms(void * user_args)
+static int sys_thread_sleep_ms(__user void * user_args)
 {
     uint32_t val;
     int err;
@@ -1187,7 +1189,7 @@ static int sys_thread_sleep_ms(void * user_args)
     return 0; /* TODO Return value might be incorrect */
 }
 
-static int sys_thread_setpriority(void * user_args)
+static int sys_thread_setpriority(__user void * user_args)
 {
     int err;
     struct _sched_set_priority_args args;
@@ -1218,7 +1220,7 @@ static int sys_thread_setpriority(void * user_args)
     return 0;
 }
 
-static int sys_thread_getpriority(void * user_args)
+static int sys_thread_getpriority(__user void * user_args)
 {
     int prio;
     pthread_t thread_id;
@@ -1239,7 +1241,7 @@ static int sys_thread_getpriority(void * user_args)
     return prio;
 }
 
-static int sys_get_current_tid(void * user_args)
+static int sys_get_current_tid(__user void * user_args)
 {
     return (int)get_current_tid();
 }
@@ -1247,7 +1249,7 @@ static int sys_get_current_tid(void * user_args)
 /**
  * Get the address of thread errno.
  */
-static intptr_t sys_geterrno(void * user_args)
+static intptr_t sys_geterrno(__user void * user_args)
 {
     return (intptr_t)current_thread->errno_uaddr;
 }

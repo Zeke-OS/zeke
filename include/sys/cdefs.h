@@ -36,6 +36,23 @@
 
 #define __ZEKE__
 
+#ifdef KERNEL_INTERNAL
+
+/*
+ * Branch prediction hint macros.
+ */
+#define likely(x)   __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)
+
+/**
+ * Address spaces.
+ */
+# define __kernel   __attribute__((address_space(0)))
+# define __user     __attribute__((address_space(1)))
+# define __iomem    __attribute__((address_space(2)))
+
+#endif
+
 /*
  * Testing against Clang-specific extensions.
  */

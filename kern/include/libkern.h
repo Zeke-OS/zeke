@@ -45,12 +45,6 @@
 #include <stddef.h>
 #include <sys/types.h>
 
-/*
- * Branch prediction hint macros.
- */
-#define likely(x)   __builtin_expect(!!(x), 1)
-#define unlikely(x) __builtin_expect(!!(x), 0)
-
 /**
  * Returns a container of ptr, which is a element in some struct.
  * @param ptr       is a pointer to a element in struct.

@@ -305,7 +305,7 @@ skip:
     return NULL;
 }
 
-static int sys_mmap(void * user_args)
+static int sys_mmap(__user void * user_args)
 {
     struct _shmem_mmap_args args;
     struct buf * bp = NULL;
@@ -345,7 +345,7 @@ fail:
     return retval;
 }
 
-static int sys_munmap(void * user_args)
+static int sys_munmap(__user void * user_args)
 {
     struct _shmem_munmap_args args;
     struct buf * bp;
