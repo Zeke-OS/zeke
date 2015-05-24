@@ -37,7 +37,7 @@
 #define __ZEKE__
 
 #ifdef KERNEL_INTERNAL
-
+#if defined(__clang__)
 /*
  * Branch prediction hint macros.
  */
@@ -50,7 +50,13 @@
 # define __kernel   __attribute__((address_space(0)))
 # define __user     __attribute__((address_space(1)))
 # define __iomem    __attribute__((address_space(2)))
-
+#else
+#define likely(x) x
+#define unlikely(x) x
+#define __kernel
+#define __user
+#define __iomem
+#endif
 #endif
 
 /*
