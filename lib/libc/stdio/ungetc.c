@@ -1,4 +1,3 @@
-/* $Id$ */
 /*
  * ungetc( int, FILE * )
  *
@@ -11,8 +10,7 @@
 
 int _PDCLIB_ungetc_unlocked(int c, FILE * stream)
 {
-    if (c == EOF || stream->ungetidx == _PDCLIB_UNGETCBUFSIZE)
-    {
+    if (c == EOF || stream->ungetidx == _PDCLIB_UNGETCBUFSIZE) {
         return -1;
     }
 
@@ -25,7 +23,6 @@ int ungetc(int c, FILE * stream)
 
     _PDCLIB_flockfile(stream);
     r = _PDCLIB_ungetc_unlocked(c, stream);
-
     _PDCLIB_funlockfile(stream);
 
     return r;
