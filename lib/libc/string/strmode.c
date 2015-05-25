@@ -33,10 +33,9 @@
 #include <sys/stat.h>
 #include <string.h>
 
-void
-strmode(/* mode_t */ int mode, char *p)
+void strmode(/* mode_t */ int mode, char * p)
 {
-     /* print type */
+     /* type */
     switch (mode & S_IFMT) {
     case S_IFDIR:           /* directory */
         *p++ = 'd';
@@ -70,7 +69,7 @@ strmode(/* mode_t */ int mode, char *p)
         *p++ = '?';
         break;
     }
-    /* usr */
+    /* user */
     if (mode & S_IRUSR)
         *p++ = 'r';
     else
