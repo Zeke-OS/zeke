@@ -55,7 +55,6 @@ static char ** buildargv(va_list ap, const char * arg, char ***  envpp)
             memsize += 50;  /* Starts out at 0. */
             memsize *= 2;   /* Ramp up fast. */
             if (!(argv = realloc(argv, memsize * sizeof(char *)))) {
-                memsize = 0;
                 free(argv);
                 return NULL;
             }
@@ -67,9 +66,11 @@ static char ** buildargv(va_list ap, const char * arg, char ***  envpp)
         if (!(argv[off] = va_arg(ap, char *)))
             break;
     }
+
     /* Get environment pointer if user supposed to provide one. */
     if (envpp)
         *envpp = va_arg(ap, char **);
+
     return argv;
 }
 
