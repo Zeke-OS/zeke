@@ -57,6 +57,7 @@ static char ** buildargv(va_list ap, const char * arg, char ***  envpp)
             memsize *= 2;   /* Ramp up fast. */
             if (!(argv = realloc(argv, memsize * sizeof(char *)))) {
                 memsize = 0;
+                free(argv);
                 return NULL;
             }
             if (off == 0) {
