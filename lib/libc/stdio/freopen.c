@@ -6,8 +6,6 @@
  */
 
 #include <stdio.h>
-
-#ifndef REGTEST
 #include <sys/_PDCLIB_io.h>
 #include <sys/_PDCLIB_glue.h>
 #include <stdlib.h>
