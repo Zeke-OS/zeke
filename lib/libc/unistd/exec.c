@@ -52,10 +52,12 @@ static char ** buildargv(va_list ap, const char * arg, char ***  envpp)
 
     for (off = 0;; ++off) {
         if (off >= memsize) {
+            char ** tmp = argv;
+
             memsize += 50;  /* Starts out at 0. */
             memsize *= 2;   /* Ramp up fast. */
             if (!(argv = realloc(argv, memsize * sizeof(char *)))) {
-                free(argv);
+                free(tmp);
                 return NULL;
             }
             if (off == 0) {
