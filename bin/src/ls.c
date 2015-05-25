@@ -62,12 +62,14 @@ int main(int argc, char * argv[], char * envp[])
     while ((count = getdents(fildes, (char *)dbuf, sizeof(dbuf))) > 0) {
         for (int i = 0; i < count; i++) {
             struct stat stat;
+            char mode[12];
 
             fstatat(fildes, dbuf[i].d_name, &stat, 0);
 
-            printf("% 7u %o %u:%u %s\n",
-                     (uint32_t)dbuf[i].d_ino, (uint32_t)stat.st_mode,
-                     (uint32_t)stat.st_uid, (uint32_t)stat.st_gid,
+            strmode(stat.st_mode, mode);
+            printf("% 7u %s %u:%u %s\n",
+                     (unsigned)dbuf[i].d_ino, mode,
+                     (unsigned)stat.st_uid, (unsigned)stat.st_gid,
                      dbuf[i].d_name);
         }
     }
