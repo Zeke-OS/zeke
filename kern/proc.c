@@ -848,12 +848,6 @@ static int sys_proc_getppid(__user void * user_args)
     return 0;
 }
 
-static int sys_proc_alarm(__user void * user_args)
-{
-    set_errno(ENOSYS);
-    return -1;
-}
-
 static int sys_proc_chdir(__user void * user_args)
 {
     struct _proc_chdir_args * args = 0;
@@ -901,13 +895,62 @@ out:
 
 static int sys_proc_setpriority(__user void * user_args)
 {
+    /* TODO Implement sys_proc_setpriority() */
     set_errno(ENOSYS);
     return -1;
 }
 
 static int sys_proc_getpriority(__user void * user_args)
 {
+    /* TODO Implement sys_proc_getpriority() */
     set_errno(ENOSYS);
+    return -1;
+}
+
+static int sys_proc_getrlim(__user void * user_args)
+{
+    struct _proc_rlim_args args;
+
+    if (!useracc(user_args, sizeof(args), VM_PROT_WRITE) ||
+            copyin(user_args, &args, sizeof(args))) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    if (args.resource < 0 || args.resource >= _RLIMIT_ARR_COUNT) {
+        set_errno(EINVAL);
+        return -1;
+    }
+
+    memcpy(&args.rlimit, &curproc->rlim[args.resource], sizeof(struct rlimit));
+    copyout(&args, user_args, sizeof(args));
+
+    return 0;
+}
+
+static int sys_proc_setrlim(__user void * user_args)
+{
+    struct _proc_rlim_args args;
+
+    if (priv_check(&curproc->cred, PRIV_PROC_SETRLIMIT)) {
+        set_errno(EPERM);
+        return -1;
+    }
+
+    if (copyin(user_args, &args, sizeof(args))) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    if (args.resource < 0 || args.resource >= _RLIMIT_ARR_COUNT) {
+        set_errno(EINVAL);
+        return -1;
+    }
+
+    /* TODO Validate limits before setting, any locks needed */
+
+    memcpy(&curproc->rlim[args.resource], &args.rlimit, sizeof(struct rlimit));
+
     return -1;
 }
 
@@ -950,10 +993,11 @@ static const syscall_handler_t proc_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_CRED, sys_proc_getsetcred),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETPID, sys_proc_getpid),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETPPID, sys_proc_getppid),
-    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_ALARM, sys_proc_alarm),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_CHDIR, sys_proc_chdir),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_SETPRIORITY, sys_proc_setpriority),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETPRIORITY, sys_proc_getpriority),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETRLIM, sys_proc_getrlim),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_SETRLIM, sys_proc_setrlim),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_TIMES, sys_proc_times),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETBREAK, sys_proc_getbreak),
 };

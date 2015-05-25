@@ -31,6 +31,7 @@
 */
 
 #include <errno.h>
+#include <sys/resource.h>
 #include <sys/sysctl.h>
 #include <syscall.h>
 #include <unistd.h>
@@ -41,6 +42,7 @@ long sysconf(int name)
     int sysctl_len;
     size_t len;
     long value = -1;
+    struct rlimit rl;
 
     switch (name) {
     case _SC_AIO_LISTIO_MAX:
@@ -53,7 +55,10 @@ long sysconf(int name)
         /* TODO */
         break;
     case _SC_ARG_MAX:
-        /* TODO */
+        sysctl_mib[0] = CTL_KERN;
+        sysctl_mib[1] = KERN_ARGMAX;
+        if (sysctl(sysctl_mib, 2, &value, &len, NULL, 0) == -1)
+            value = -1;
         break;
     case _SC_ATEXIT_MAX:
         /* TODO */
@@ -71,13 +76,12 @@ long sysconf(int name)
         /* TODO */
         break;
     case _SC_CHILD_MAX:
-        /* TODO */
         break;
     case _SC_CLK_TCK:
         sysctl_len = sysctlnametomib("kern.hz", sysctl_mib,
                                      num_elem(sysctl_mib));
         len = sizeof(value);
-        if (sysctl(sysctl_mib, sysctl_len, &value, &len, 0, 0)) {
+        if (sysctl(sysctl_mib, sysctl_len, &value, &len, NULL, 0)) {
             value = -1;
             errno = EINVAL;
         }
@@ -119,7 +123,14 @@ long sysconf(int name)
         /* TODO */
         break;
     case _SC_OPEN_MAX:
-        /* TODO */
+        if ((getrlimit(RLIMIT_NOFILE, &rl) != 0) ||
+            (rl.rlim_cur == RLIM_INFINITY))
+            break;
+        if (rl.rlim_cur > LONG_MAX) {
+            errno = EOVERFLOW;
+            break;
+        }
+        value = (long)rl.rlim_cur;
         break;
     case _SC_ADVISORY_INFO:
         /* TODO */
@@ -194,7 +205,7 @@ long sysconf(int name)
         /* TODO */
         break;
     case _SC_SPAWN:
-        /* TODO */
+        /* RFE Probably won't be supported */
         break;
     case _SC_SPIN_LOCKS:
         /* TODO */
@@ -242,6 +253,7 @@ long sysconf(int name)
         /* TODO */
         break;
     case _SC_THREADS:
+        value = _POSIX_THREADS;
         /* TODO */
         break;
     case _SC_TIMEOUTS:

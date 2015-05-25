@@ -49,8 +49,6 @@ SYSCTL_NODE(, CTL_HW, hw, CTLFLAG_RW, 0,
         "hardware");
 SYSCTL_NODE(, CTL_MACHDEP, machdep, CTLFLAG_RW, 0,
         "machine dependent");
-SYSCTL_NODE(, CTL_USER, user, CTLFLAG_RW, 0,
-        "user-level");
 SYSCTL_NODE(, OID_AUTO, security, CTLFLAG_RW, 0,
         "Security");
 

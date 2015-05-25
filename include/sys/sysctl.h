@@ -446,7 +446,6 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
 #define CTL_DEBUG               5   /* debugging parameters */
 #define CTL_HW                  6   /* generic cpu/io */
 #define CTL_MACHDEP             7   /* machine dependent */
-#define CTL_USER                8   /* user-level */
 #define CTL_P1003_1B            9   /* POSIX 1003.1B */
 #define CTL_MAXID               10  /* number of valid top-level ids */
 
@@ -552,31 +551,6 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
 #define HW_REALMEM              12  /* int: 'real' memory */
 #define HW_MAXID                13  /* number of valid hw ids */
 
-/*
- * CTL_USER definitions
- */
-#define USER_CS_PATH            1   /* string: _CS_PATH */
-#define USER_BC_BASE_MAX        2   /* int: BC_BASE_MAX */
-#define USER_BC_DIM_MAX         3   /* int: BC_DIM_MAX */
-#define USER_BC_SCALE_MAX       4   /* int: BC_SCALE_MAX */
-#define USER_BC_STRING_MAX      5   /* int: BC_STRING_MAX */
-#define USER_COLL_WEIGHTS_MAX   6   /* int: COLL_WEIGHTS_MAX */
-#define USER_EXPR_NEST_MAX      7   /* int: EXPR_NEST_MAX */
-#define USER_LINE_MAX           8   /* int: LINE_MAX */
-#define USER_RE_DUP_MAX         9   /* int: RE_DUP_MAX */
-#define USER_POSIX2_VERSION     10  /* int: POSIX2_VERSION */
-#define USER_POSIX2_C_BIND      11  /* int: POSIX2_C_BIND */
-#define USER_POSIX2_C_DEV       12  /* int: POSIX2_C_DEV */
-#define USER_POSIX2_CHAR_TERM   13  /* int: POSIX2_CHAR_TERM */
-#define USER_POSIX2_FORT_DEV    14  /* int: POSIX2_FORT_DEV */
-#define USER_POSIX2_FORT_RUN    15  /* int: POSIX2_FORT_RUN */
-#define USER_POSIX2_LOCALEDEF   16  /* int: POSIX2_LOCALEDEF */
-#define USER_POSIX2_SW_DEV      17  /* int: POSIX2_SW_DEV */
-#define USER_POSIX2_UPE         18  /* int: POSIX2_UPE */
-#define USER_STREAM_MAX         19  /* int: POSIX2_STREAM_MAX */
-#define USER_TZNAME_MAX         20  /* int: POSIX2_TZNAME_MAX */
-#define USER_MAXID              21  /* number of valid user ids */
-
 #ifdef KERNEL_INTERNAL
 
 /*
@@ -590,7 +564,6 @@ SYSCTL_DECL(_vfs);
 SYSCTL_DECL(_debug);
 SYSCTL_DECL(_hw);
 SYSCTL_DECL(_machdep);
-SYSCTL_DECL(_user);
 SYSCTL_DECL(_security);
 
 void sysctl_register_oid(struct sysctl_oid * oidp);

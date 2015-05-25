@@ -139,11 +139,19 @@ struct rusage {
  * Argument struct for SYSCALL_SCHED_THREAD_SETPRIORITY
  */
 struct _sched_set_priority_args {
-    pthread_t thread_id;    /*!< Thread id */
-    int priority;           /*!< Thread priority */
+    pthread_t thread_id;    /*!< Thread id. */
+    int priority;           /*!< Thread priority. */
 };
 
 #endif
+
+/**
+ * Arguments struct for SYSCALL_PROC_GETRLIM and SYSCALL_PROC_SETRLIM
+ */
+struct _proc_rlim_args {
+    int resource;
+    struct rlimit rlimit;
+};
 
 /**
  * Get program scheduling priority.
@@ -155,20 +163,22 @@ int getpriority(int which, id_t who);
  */
 int setpriority(int which, id_t who, int prio);
 
-#if 0
 /**
  * Get resource limit.
  */
-int getrlimit(int, struct rlimit *);
+int getrlimit(int resource, struct rlimit * rlp);
+
+#if 0
 /**
  * Get resource usage.
  */
 int getrusage(int, struct rusage *);
+#endif
+
 /**
  * Set resource limit.
  */
-int setrlimit(int, const struct rlimit *);
-#endif
+int setrlimit(int resource, const struct rlimit * rlp);
 
 /**
  * Get system load averages.
