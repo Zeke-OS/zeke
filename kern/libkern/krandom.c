@@ -66,7 +66,7 @@ uint32_t krandom(void)
     if ((x = randseed) == 0)
         x = 123459876;
 
-    result = randseed * 1103515245;
+    result = x * 1103515245;
     result = result + 12345;
     result = result % 2147483648;
     result = result & 0x7fffffff;
