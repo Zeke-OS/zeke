@@ -46,11 +46,10 @@ extern char ** environ;
 
 static char ** buildargv(va_list ap, const char * arg, char ***  envpp)
 {
-    static int memsize;
-    static char ** argv;
-    register int off;
+    int memsize = 0;
+    char ** argv = NULL;
+    int off;
 
-    argv = NULL;
     for (off = 0;; ++off) {
         if (off >= memsize) {
             memsize += 50;  /* Starts out at 0. */
