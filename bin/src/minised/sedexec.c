@@ -1,6 +1,7 @@
 /* sedexec.c -- axecute compiled form of stream editor commands
    Copyright (C) 1995-2003 Eric S. Raymond
    Copyright (C) 2004-2014 Rene Rebe
+   Copyright (C) 2015 Olli Vanhoja
 
    The single entry point of this module is the function execute(). It
 may take a string argument (the name of a file to be used as text)  or
@@ -9,7 +10,7 @@ the compiled commands in cmds[] on each line in turn.
    The function command() does most of the work.  match() and advance()
 are used for matching text against precompiled regular expressions and
 dosub() does right-hand-side substitution.  Getline() does text input;
-readout() and memcmp() are output and string-comparison utilities.  
+readout() and memcmp() are output and string-comparison utilities.
 */
 
 #include <stdlib.h>	/* exit */
@@ -83,7 +84,7 @@ void execute(char* file)
 	register sedcmd		*ipc;		/* ptr to current command */
 	char			*execp;		/* ptr to source */
 
-	if (file != NULL)	/* filter text from a named file */ 
+	if (file != NULL)	/* filter text from a named file */
 		if (freopen(file, "r", stdin) == NULL)
 			fprintf(stderr, "sed: can't open %s\n", file);
 
@@ -197,7 +198,8 @@ static int selected(sedcmd *ipc)
 /* match RE at expbuf against linebuf; if gf set, copy linebuf from genbuf */
 static int _match(char *expbuf, int gf)	/* uses genbuf */
 {
-	char *p1, *p2, c;
+	char *p1;
+    char *p2;
 
 	if (!gf)
 	{
@@ -214,7 +216,7 @@ static int _match(char *expbuf, int gf)	/* uses genbuf */
 		}
 		locs = p1 = loc2;
 	}
-	
+
 	p2 = expbuf;
 	if (*p2++)
 	{
@@ -227,6 +229,8 @@ static int _match(char *expbuf, int gf)	/* uses genbuf */
 	/* quick check for 1st character if it's literal */
 	if (*p2 == CCHR)
 	{
+        char c;
+
 		c = p2[1];		/* pull out character to search for */
 		do {
 			if (*p1 != c)
@@ -251,7 +255,7 @@ static int match(char *expbuf, int gf)	/* uses genbuf */
 {
 	const char *loc2i = loc2;
 	const int ret = _match(expbuf, gf);
-	
+
 	/* if last match was zero length, do not allow a follpwing zero match */
 	if (loc2i && loc1 == loc2i && loc2 - loc1 == 0) {
 		loc2++;
@@ -265,7 +269,7 @@ static int match(char *expbuf, int gf)	/* uses genbuf */
    ep:	regular expression element ptr */
 static int advance(char* lp, char* ep, char** eob)
 {
-	char	*curlp;		/* save ptr for closures */ 
+	char	*curlp;		/* save ptr for closures */
 	char	c;		/* scratch character holder */
 	char	*bbeg;
 	int	ct;
@@ -372,7 +376,7 @@ static int advance(char* lp, char* ep, char** eob)
 
 		case CDOT|STAR:		/* match .* */
 			curlp = lp;		/* save closure start loc */
-			while (*lp++);		/* match anything */ 
+			while (*lp++);		/* match anything */
 			goto star;		/* now look for followers */
 
 		case CCHR|STAR:		/* match <literal char>* */
@@ -588,7 +592,7 @@ static void command(sedcmd *ipc)
 	case CCMD:		/* change pattern space */
 		delete = TRUE;
 		if (!ipc->flags.inrange || lastline)
-			printf("%s\n", ipc->u.lhs);		
+			printf("%s\n", ipc->u.lhs);
 		break;
 
 	case DCMD:		/* delete pattern space */
@@ -771,8 +775,6 @@ static char *sed_getline(char *buf, int max)
 {
 	if (fgets(buf, max, stdin) != NULL)
 	{
-		int c;
-
 		lnum++;			/* note that we got another line */
 		/* find the end of the input and overwrite a possible '\n' */
 		while (*buf != '\n' && *buf != 0)
@@ -782,6 +784,8 @@ static char *sed_getline(char *buf, int max)
 
 		/* detect last line - but only if the address was used in a command */
 		if  (last_line_used) {
+          int c;
+
 		  if ((c = fgetc(stdin)) != EOF)
 			ungetc (c, stdin);
 		  else {
@@ -790,7 +794,7 @@ static char *sed_getline(char *buf, int max)
 		  }
 		}
 
-		return buf;		/* return ptr to terminating null */ 
+		return buf;		/* return ptr to terminating null */
 	}
 	else
 	{

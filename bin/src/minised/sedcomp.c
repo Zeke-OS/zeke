@@ -1,6 +1,7 @@
 /* sedcomp.c -- stream editor main and compilation phase
    Copyright (C) 1995-2003 Eric S. Raymond
    Copyright (C) 2004-2014 Rene Rebe
+   Copyright (C) 2015 Olli Vanhoja
 
    The stream editor compiles its command input  (from files or -e options)
 into an internal form using compile() then executes the compiled form using
@@ -12,7 +13,7 @@ regular-expression and text-data pool, plus a command code and g & p flags.
 In the special case that the command is a label the struct  will hold a ptr
 into the labels array labels[] during most of the compile,  until resolve()
 resolves references at the end.
-   The operation of execute() is described in its source module. 
+   The operation of execute() is described in its source module.
 */
 
 #include <stdlib.h>		/* exit */
@@ -24,14 +25,14 @@ resolves references at the end.
 /***** public stuff ******/
 
 #define MAXCMDS		200	/* maximum number of compiled commands */
-#define MAXLINES	256	/* max # numeric addresses to compile */ 
+#define MAXLINES	256	/* max # numeric addresses to compile */
 
 /* main data areas */
 char	linebuf[MAXBUF+1];	/* current-line buffer */
 sedcmd	cmds[MAXCMDS+1];	/* hold compiled commands */
 long	linenum[MAXLINES];	/* numeric-addresses table */
 
-/* miscellaneous shared variables */ 
+/* miscellaneous shared variables */
 int	nflag;			/* -n option flag */
 int	eargc;			/* scratch copy of argument count */
 sedcmd	*pending	= NULL;	/* next command to be executed */
@@ -95,11 +96,11 @@ static const char* cclasses[] = {
 	"graph", "!-\x7e",
 	"punct", "!-/:-@[-`{-\x7e",
 	NULL, NULL};
- 
+
 typedef struct			/* represent a command label */
 {
 	char		*name;		/* the label name */
-	sedcmd		*last;		/* it's on the label search list */  
+	sedcmd		*last;		/* it's on the label search list */
 	sedcmd		*address;	/* pointer to the cmd it labels */
 } label;
 
@@ -200,7 +201,7 @@ int main(int argc, char *argv[])
 }
 
 #define	H	0x80	/* 128 bit, on if there's really code for command */
-#define LOWCMD	56	/* = '8', lowest char indexed in cmdmask */ 
+#define LOWCMD	56	/* = '8', lowest char indexed in cmdmask */
 
 /* indirect through this to get command internal code, if it exists */
 static char	cmdmask[] =
@@ -317,11 +318,11 @@ static int cmdcomp(char cchar)
 	int		i;			/* indexing dummy used in w */
 	sedcmd		*sp1, *sp2;		/* temps for label searches */
 	label		*lpt;			/* ditto, and the searcher */
-	char		redelim;		/* current RE delimiter */
+	char		redelim = 0;		/* current RE delimiter */
 
 	fout[0] = stdout;
 	fout[1] = stderr;
-	
+
 	fname[0] = "/dev/stdout";
 	fname[1] = "/dev/stderr";
 
@@ -368,7 +369,7 @@ static int cmdcomp(char cchar)
 		if (*cp == '\0')	/* if branch is to start of cmds... */
 		{
 			/* add current command to end of label last */
-			if ((sp1 = lablst->last)) 
+			if ((sp1 = lablst->last))
 			{
 				while((sp2 = sp1->u.link))
 					sp1 = sp2;
@@ -418,10 +419,10 @@ static int cmdcomp(char cchar)
 			die(RETER);
 		else
 			redelim = *cp++;
-		
+
 		if ((fp = recomp(cmdp->u.lhs = fp, redelim)) == BAD)
 			die(CGMSG);
-		if (fp == cmdp->u.lhs) {	/* if compiled RE zero len */ 
+		if (fp == cmdp->u.lhs) {	/* if compiled RE zero len */
 			if (lastre) {
 				cmdp->u.lhs = lastre;	/* use the previous one */
 				cp++;                   /*   skip delim */
@@ -431,7 +432,7 @@ static int cmdcomp(char cchar)
 		}
 		else				/* otherwise */
 			lastre = cmdp->u.lhs;	/*   save the one just found */
-		
+
 		if ((cmdp->rhs = fp) > poolend) die(TMTXT);
 		if ((fp = rhscomp(cmdp->rhs, redelim)) == BAD) die(CGMSG);
 		if (gflag) cmdp->flags.global++;
@@ -444,7 +445,7 @@ static int cmdcomp(char cchar)
 			{
 				if (cmdp->nth)
 					break; /* no multiple n args */
-				
+
 				cmdp->nth = atoi(cp); /* check 0? */
 				while (isdigit(*cp)) cp++;
 			}
@@ -733,7 +734,7 @@ static char *recomp(char *expbuf, char redelim)	/* uses cp, bcount */
 			if (negclass)
 				for(classct = 0; classct < 16; classct++)
 					ep[classct] ^= 0xFF;
-			ep[0] &= 0xFE;		/* never match ASCII 0 */ 
+			ep[0] &= 0xFE;		/* never match ASCII 0 */
 			ep += 16;		/* advance ep past set mask */
 			continue;
 
@@ -775,7 +776,7 @@ static int cmdline(char	*cbuf)		/* uses eflag, eargc, cmdf */
 						continue;
 				}
 				else if (*cbuf == '\n')	/* end of 1 cmd line */
-				{ 
+				{
 					*cbuf = '\0';
 					return savep = p, 1;
 					/* we'll be back for the rest... */
@@ -807,7 +808,7 @@ static int cmdline(char	*cbuf)		/* uses eflag, eargc, cmdf */
 
 	/* if no -e flag read from command file descriptor */
 	while((inc = getc(cmdf)) != EOF)		/* get next char */
-		if ((*++cbuf = inc) == '\\')		/* if it's escape */ 
+		if ((*++cbuf = inc) == '\\')		/* if it's escape */
 			*++cbuf = inc = getc(cmdf);	/* get next char */
 		else if (*cbuf == '\n')			/* end on newline */
 			return *cbuf = '\0', 1;	/* cap the string */
@@ -818,7 +819,6 @@ static int cmdline(char	*cbuf)		/* uses eflag, eargc, cmdf */
 /* expand an address at *cp... into expbuf, return ptr at following char */
 static char *address(char *expbuf)		/* uses cp, linenum */
 {
-	static int	numl = 0;	/* current ind in addr-number table */
 	register char	*rcp;		/* temp compile ptr for forwd look */
 	long		lno;		/* computed value of numeric address */
 
@@ -839,13 +839,15 @@ static char *address(char *expbuf)		/* uses cp, linenum */
 
 	if (rcp > cp)			/* if we caught a number... */
 	{
+	    static int	numl = 0;	/* current ind in addr-number table */
+
 		*expbuf++ = CLNUM;	/* put a numeric-address marker */
 		*expbuf++ = numl;	/* and the address table index */
 		linenum[numl++] = lno;	/* and set the table entry */
 		if (numl >= MAXLINES)	/* oh-oh, address table overflow */
 			die(TMLNR);	/*   abort with error message */
 		*expbuf++ = CEOF;	/* write the end-of-address marker */
-		cp = rcp;		/* point compile past the address */ 
+		cp = rcp;		/* point compile past the address */
 		return expbuf;		/* we're done */
 	}
 
