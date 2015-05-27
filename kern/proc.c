@@ -947,7 +947,17 @@ static int sys_proc_setrlim(__user void * user_args)
         return -1;
     }
 
-    /* TODO Validate limits before setting, any locks needed */
+    /*
+     * Validate limit values.
+     */
+    switch (args.resource) {
+    case RLIMIT_CORE ... RLIMIT_AS:
+        if ((args.rlimit.rlim_cur < RLIM_INFINITY) ||
+            (args.rlimit.rlim_max < RLIM_INFINITY)) {
+            set_errno(EINVAL);
+            return -1;
+        }
+    }
 
     memcpy(&curproc->rlim[args.resource], &args.rlimit, sizeof(struct rlimit));
 
