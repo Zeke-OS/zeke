@@ -931,11 +931,7 @@ static int sys_proc_getrlim(__user void * user_args)
 static int sys_proc_setrlim(__user void * user_args)
 {
     struct _proc_rlim_args args;
-
-    if (priv_check(&curproc->cred, PRIV_PROC_SETRLIMIT)) {
-        set_errno(EPERM);
-        return -1;
-    }
+    rlim_t current_rlim_max;
 
     if (copyin(user_args, &args, sizeof(args))) {
         set_errno(EFAULT);
@@ -944,6 +940,19 @@ static int sys_proc_setrlim(__user void * user_args)
 
     if (args.resource < 0 || args.resource >= _RLIMIT_ARR_COUNT) {
         set_errno(EINVAL);
+        return -1;
+    }
+
+    /*
+     * rlim_max is the ceiling value for rlim_cur if the current process is
+     * unprivileged. A privileged process may make arbitrary changes to either
+     * limit value.
+     */
+    current_rlim_max = curproc->rlim[args.resource].rlim_max;
+    if ((args.rlimit.rlim_cur > current_rlim_max ||
+         args.rlimit.rlim_max > current_rlim_max) &&
+        priv_check(&curproc->cred, PRIV_PROC_SETRLIMIT)) {
+        set_errno(EPERM);
         return -1;
     }
 
