@@ -5,10 +5,10 @@
  * specifies the terms and conditions for redistribution.
  */
 
-double fabs(double arg)
+float fabsf(float arg)
 {
-#if __has_builtin(__builtin_fabs)
-    return __builtin_fabs((arg));
+#if __has_builtin(__builtin_fabsf)
+    return __builtin_fabsf((arg));
 #else
     return (arg < 0) ? -arg : arg;
 #endif
