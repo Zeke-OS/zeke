@@ -35,15 +35,11 @@ include $(ROOT_DIR)/genconfig/dist.mk
 # Supress warnings about C11 extensions in libc
 CCFLAGS += -Wno-c11-extensions
 
-LIBS := crt0 crt1 libc libm liblinenoise
+LIBS := crt0 crt1 libc liblinenoise
 
 # AR flags #####################################################################
 
 libc-ARFLAGS = \
-$(patsubst %.c,%.o,$(crt0-SRC-y)) \
-$(patsubst %.S,%.o,$(crt0-ASRC-y))
-
-libm-ARFLAGS = \
 $(patsubst %.c,%.o,$(crt0-SRC-y)) \
 $(patsubst %.S,%.o,$(crt0-ASRC-y))
 
@@ -82,14 +78,12 @@ $(wildcard libc/unistd/*.c) \
 $(wildcard libc/uchar/*.c) \
 $(wildcard libc/wchar/*.c) \
 $(wildcard libc/wctype/*.c) \
+$(wildcard libc/math/*.c) \
 $(wildcard libc/mman/*.c) \
 $(wildcard libc/zeke/*.c)
 
 libc-ASRC-$(configARCH_ARM) = \
 $(wildcard libc/setjmp/arm/*.S)
-
-libm-SRC-y = \
-$(wildcard libm/*.c)
 
 liblinenoise-SRC-y = \
 liblinenoise/linenoise.c

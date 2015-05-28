@@ -5,22 +5,21 @@
  * sinh and cosh are called except for large arguments, which
  * would cause overflow improperly.
  */
+
 #include <math.h>
 
-double
-tanh(arg)
-        double arg;
+double tanh(double arg)
 {
-	double sign;
+    double sign;
 
-	sign = 1.;
-	if(arg < 0.){
-		arg = -arg;
-		sign = -1.;
-	}
+    sign = 1.;
+    if (arg < 0.) {
+        arg = -arg;
+        sign = -1.;
+    }
 
-	if(arg > 21.)
-		return(sign);
+    if (arg > 21.)
+        return sign;
 
-	return(sign*sinh(arg)/cosh(arg));
+    return sign * sinh(arg) / cosh(arg);
 }

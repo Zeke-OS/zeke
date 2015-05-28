@@ -27,8 +27,8 @@
  * that forward recursion is used for all values of n>1.
  */
 
-#include <math.h>
 #include <errno.h>
+#include <math.h>
 
 double jn(int n, double x)
 {
@@ -45,7 +45,7 @@ double jn(int n, double x)
     if (n == 1)
         return j1(x);
     if (x == 0.)
-        return(0.);
+        return 0.;
     if (n > x)
         goto recurs;
 
@@ -76,7 +76,7 @@ recurs:
         b = (2. * i / x) * b - a;
         a = temp;
     }
-    return (t * j0(x) / b);
+    return t * j0(x) / b;
 }
 
 double yn(int n, double x)
@@ -92,13 +92,13 @@ double yn(int n, double x)
     sign = 1;
     if (n < 0) {
         n = -n;
-        if(n % 2 == 1)
+        if (n % 2 == 1)
             sign = -1;
     }
     if (n == 0)
         return y0(x);
     if (n == 1)
-        return (sign * y1(x));
+        return sign * y1(x);
 
     a = y0(x);
     b = y1(x);
@@ -108,5 +108,5 @@ double yn(int n, double x)
         b = (2. * i / x) * b - a;
         a = temp;
     }
-    return (sign * b);
+    return sign * b;
 }

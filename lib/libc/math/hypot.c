@@ -18,19 +18,18 @@ double hypot(double a, double b)
         b = t;
     }
     if (b == 0)
-        return (0.);
+        return 0.;
     a /= b;
 
     /*
      * pathological overflow possible
      * in the next line.
      */
-    return (b * sqrt(1. + a * a));
+    return b * sqrt(1. + a * a);
 }
 
 #if 0
-struct  complex
-{
+struct  complex {
     double  r;
     double  i;
 };

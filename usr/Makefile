@@ -37,7 +37,6 @@ games/plasma-SRC-$(configUSR_GAMES) := games/plasma.c
 # CCFLAGS ######################################################################
 
 # LDFLAGS ######################################################################
-games/plasma-LDFLAGS := -lm
 
 # End
 

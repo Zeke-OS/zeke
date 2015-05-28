@@ -18,14 +18,15 @@
  *
  * Coefficients for large x are #5667 from Hart & Cheney (18.72D).
  */
+
+#include <errno.h>
 #include <math.h>
 
 #define M 7
 #define N 9
 
-int errno;
-static double torp = 1.1283791670955125738961589031;
-static double p1[] = {
+static const double torp = 1.1283791670955125738961589031;
+static const double p1[] = {
     0.804373630960840172832162e5,
     0.740407142710151470082064e4,
     0.301782788536507577809226e4,
@@ -34,7 +35,7 @@ static double p1[] = {
     -.288805137207594084924010e0,
     0.007547728033418631287834e0,
 };
-static double q1[]  = {
+static const double q1[]  = {
     0.804373630960840172826266e5,
     0.342165257924628539769006e5,
     0.637960017324428279487120e4,
@@ -43,7 +44,7 @@ static double q1[]  = {
     0.100000000000000000000000e1,
     0.0,
 };
-static double p2[]  = {
+static const double p2[]  = {
     0.18263348842295112592168999e4,
     0.28980293292167655611275846e4,
     0.2320439590251635247384768711e4,
@@ -54,7 +55,7 @@ static double p2[]  = {
     0.5641877825507397413087057563e0,
     0.0,
 };
-static double q2[]  = {
+static const double q2[]  = {
     0.18263348842295112595576438e4,
     0.495882756472114071495438422e4,
     0.60895424232724435504633068e4,
@@ -66,13 +67,10 @@ static double q2[]  = {
     1.0,
 };
 
-double erfc(double arg);
-
 double erf(double arg)
 {
     int sign;
 
-    errno = 0;
     sign = 1;
     if (arg < 0.) {
         arg = -arg;
@@ -83,16 +81,16 @@ double erf(double arg)
         double argsq, d, n;
 
         argsq = arg * arg;
-        for(n = 0, d = 0, i = M - 1; i >= 0; i--) {
+        for (n = 0, d = 0, i = M - 1; i >= 0; i--) {
             n = n * argsq + p1[i];
             d = d * argsq + q1[i];
         }
 
-        return (sign * torp * arg * n / d);
+        return sign * torp * arg * n / d;
     }
     if (arg >= 10.)
-        return (sign * 1.);
-    return (sign * (1. - erfc(arg)));
+        return sign * 1.;
+    return sign * (1. - erfc(arg));
 }
 
 double erfc(double arg)
@@ -100,19 +98,21 @@ double erfc(double arg)
     double n, d;
     int i;
 
-    errno = 0;
     if (arg < 0.)
-        return(2. - erfc(-arg));
-/*
-    if(arg < 0.5)
-        return(1. - erf(arg));
-*/
+        return 2. - erfc(-arg);
+
+#if 0
+    if (arg < 0.5)
+        return 1. - erf(arg);
+#endif
+
     if (arg >= 10.)
-        return(0.);
+        return 0.;
 
     for (n = 0, d = 0, i = N - 1; i >= 0; i--) {
         n = n * arg + p2[i];
         d = d * arg + q2[i];
     }
-    return (exp(-arg * arg) * n / d);
+
+    return exp(-arg * arg) * n / d;
 }

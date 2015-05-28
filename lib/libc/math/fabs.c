@@ -6,5 +6,5 @@
 
 double fabs(double arg)
 {
-    return arg < 0 ? -arg : arg;
+    return (arg < 0) ? -arg : arg;
 }

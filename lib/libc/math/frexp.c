@@ -35,5 +35,5 @@ double frexp(double x, int * i)
     if (neg)
         x = -x;
 
-    return(x);
+    return x;
 }
