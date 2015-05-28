@@ -1,11 +1,12 @@
-/* _PDCLIB_mbsrtoc32s(
-    char32_t        *restrict   dst,
-    const char     **restrict   src,
-    size_t                              len,
-    mbstate_t       *restrict   ps);
-
-   This file is part of the Public Domain C Library (PDCLib).
-   Permission is granted to use, modify, and / or redistribute at will.
+/*
+ * _PDCLIB_mbsrtoc32s(
+ *  char32_t        *restrict   dst,
+ *  const char     **restrict   src,
+ *  size_t                              len,
+ *  mbstate_t       *restrict   ps);
+ *
+ * This file is part of the Public Domain C Library (PDCLib).
+ * Permission is granted to use, modify, and / or redistribute at will.
 */
 
 #include <uchar.h>
@@ -17,10 +18,10 @@
 
 size_t _PDCLIB_mbsrtoc32s_l
 (
-    char32_t        *restrict   dst,
-    const char     **restrict   src,
+    char32_t        * restrict  dst,
+    const char     ** restrict  src,
     size_t                      len,
-    mbstate_t       *restrict   ps,
+    mbstate_t       * restrict  ps,
     locale_t         restrict   l
 )
 {
@@ -28,19 +29,19 @@ size_t _PDCLIB_mbsrtoc32s_l
     char32_t *restrict *restrict dstp = dst ? &dst : NULL;
 
     size_t                     srclen = strlen(*src);
-    if(l->_Codec->__mbstoc32s(dstp, &dstlen, src, &srclen, ps)) {
+    if (l->_Codec->__mbstoc32s(dstp, &dstlen, src, &srclen, ps)) {
         return len - dstlen;
     } else {
         errno = EILSEQ;
-        return (size_t) -1;
+        return (size_t)-1;
     }
 }
 
 size_t _PDCLIB_mbsrtoc32s(
-    char32_t        *restrict   dst,
-    const char     **restrict   src,
+    char32_t        * restrict  dst,
+    const char     ** restrict  src,
     size_t                      len,
-    mbstate_t       *restrict   ps
+    mbstate_t       * restrict  ps
 )
 {
     return _PDCLIB_mbsrtoc32s_l(dst, src, len, ps, _PDCLIB_threadlocale());

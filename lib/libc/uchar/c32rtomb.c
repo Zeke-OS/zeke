@@ -1,11 +1,12 @@
-/* c32rtomb(
-    char        *restrict   s,
-    char32_t                c32,
-    mbstate_t   *restrict   ps);
-
-   This file is part of the Public Domain C Library (PDCLib).
-   Permission is granted to use, modify, and / or redistribute at will.
-*/
+/*
+ * c32rtomb(
+ *  char        *restrict   s,
+ *  char32_t                c32,
+ *  mbstate_t   *restrict   ps);
+ *
+ * This file is part of the Public Domain C Library (PDCLib).
+ * Permission is granted to use, modify, and / or redistribute at will.
+ */
 
 #include <uchar.h>
 #include <errno.h>
@@ -16,22 +17,22 @@
 #include <sys/_PDCLIB_locale.h>
 
 size_t c32rtomb_l(
-    char        *restrict   s,
+    char        * restrict  s,
     char32_t                c32,
-    mbstate_t   *restrict   ps,
+    mbstate_t   * restrict  ps,
     locale_t     restrict   l
 )
 {
     char buf[s ? 0 : MB_CUR_MAX];
     s =      s ? s : buf;
 
-    const char32_t *restrict psrc = &c32;
+    const char32_t * restrict psrc = &c32;
     size_t srcsz  = 1;
     size_t dstsz  = MB_CUR_MAX;
     size_t dstrem = dstsz;
 
-    if(l->_Codec->__c32stombs(&s, &dstrem, &psrc, &srcsz, ps)) {
-        // Successful conversion
+    if (l->_Codec->__c32stombs(&s, &dstrem, &psrc, &srcsz, ps)) {
+        /* Successful conversion */
         return dstsz - dstrem;
     } else {
         errno = EILSEQ;
@@ -40,9 +41,9 @@ size_t c32rtomb_l(
 }
 
 size_t c32rtomb(
-    char        *restrict   s,
+    char        * restrict  s,
     char32_t                c32,
-    mbstate_t   *restrict   ps
+    mbstate_t   * restrict  ps
 )
 {
     return c32rtomb_l(s, c32, ps, _PDCLIB_threadlocale());

@@ -1,40 +1,30 @@
-/* $Id$ */
-
-/* _PDCLIB_rename( const char *, const char * )
-
-   This file is part of the Public Domain C Library (PDCLib).
-   Permission is granted to use, modify, and / or redistribute at will.
+/*
+ * _PDCLIB_rename( const char *, const char * )
+ *
+ * This file is part of the Public Domain C Library (PDCLib).
+ * Permission is granted to use, modify, and / or redistribute at will.
 */
 
 #include <stdio.h>
+#include <unistd.h>
 
 #ifndef REGTEST
 #include <sys/_PDCLIB_glue.h>
 #include <errno.h>
 
-extern int unlink( const char * pathname );
-extern int link( const char * old, const char * new );
-
-int _PDCLIB_rename( const char * old, const char * new )
+int _PDCLIB_rename(const char * old, const char * new)
 {
-    /* Note that the behaviour if new file exists is implementation-defined.
-       There is nothing wrong with either overwriting it or failing the
-       operation, but you might want to document whichever you chose.
-       This example fails if new file exists.
-    */
-    if ( link( old, new ) == 0 )
+    /*
+     * TODO if new exists it should be unlink'd first.
+     */
+    if (link(old, new) == 0)
     {
-        if ( unlink( old ) == EOF )
-        {
+        if (unlink(old) == EOF) {
             return -1;
-        }
-        else
-        {
+        } else {
             return 0;
         }
-    }
-    else
-    {
+    } else {
         return EOF;
     }
 }

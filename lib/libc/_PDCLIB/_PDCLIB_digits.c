@@ -1,8 +1,9 @@
-/* _PDCLIB_digits
-
-   This file is part of the Public Domain C Library (PDCLib).
-   Permission is granted to use, modify, and / or redistribute at will.
-*/
+/*
+ *  _PDCLIB_digits
+ *
+ * This file is part of the Public Domain C Library (PDCLib).
+ * Permission is granted to use, modify, and / or redistribute at will.
+ */
 
 #include <sys/_PDCLIB_int.h>
 

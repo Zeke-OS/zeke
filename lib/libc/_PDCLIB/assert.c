@@ -1,9 +1,8 @@
-/* $Id$ */
-
-/* _PDCLIB_assert( char const * )
-
-   This file is part of the Public Domain C Library (PDCLib).
-   Permission is granted to use, modify, and / or redistribute at will.
+/*
+ *  _PDCLIB_assert(char const *)
+ *
+ * This file is part of the Public Domain C Library (PDCLib).
+ * Permission is granted to use, modify, and / or redistribute at will.
 */
 
 #include <stdio.h>
@@ -14,17 +13,18 @@
 
 #include <sys/_PDCLIB_aux.h>
 
-void _PDCLIB_assert99( char const * const message1, char const * const function, char const * const message2 )
+void _PDCLIB_assert99(char const * const message1, char const * const function,
+                       char const * const message2)
 {
-    fputs( message1, stderr );
-    fputs( function, stderr );
-    fputs( message2, stderr );
+    fputs(message1, stderr);
+    fputs(function, stderr);
+    fputs(message2, stderr);
     abort();
 }
 
-void _PDCLIB_assert89( char const * const message )
+void _PDCLIB_assert89(char const * const message)
 {
-    fputs( message, stderr );
+    fputs(message, stderr);
     abort();
 }
 

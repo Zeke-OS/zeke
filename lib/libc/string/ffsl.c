@@ -33,8 +33,7 @@
 /*
  * Find First Set bit
  */
-int
-ffsl(long mask)
+int ffsl(long mask)
 {
     int bit;
 

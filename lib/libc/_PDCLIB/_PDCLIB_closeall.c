@@ -1,4 +1,5 @@
-/* _PDCLIB_closeall( void )
+/*
+ * _PDCLIB_closeall( void )
  *
  * This file is part of the Public Domain C Library (PDCLib).
  * Permission is granted to use, modify, and / or redistribute at will.
