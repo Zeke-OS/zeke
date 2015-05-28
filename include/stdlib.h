@@ -25,7 +25,7 @@ __BEGIN_DECLS
 
 /* Numeric conversion functions */
 
-/* TODO: atof(), strtof(), strtod(), strtold() */
+/* TODO: strtof(), strtod(), strtold() */
 
 double atof( const char * nptr ) _PDCLIB_nothrow;
 double strtod( const char * _PDCLIB_restrict nptr, char * * _PDCLIB_restrict endptr ) _PDCLIB_nothrow;
