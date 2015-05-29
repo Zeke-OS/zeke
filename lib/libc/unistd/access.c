@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Standard functions.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -32,12 +32,14 @@
  *******************************************************************************
 */
 
-#include <unistd.h>
+#include <fcntl.h>
 #include <syscall.h>
+#include <unistd.h>
 
 int access(const char * path, int amode)
 {
     struct _fs_access_args args = {
+        .fd = AT_FDCWD,
         .path = path,
         .amode = amode,
         .flag = 0

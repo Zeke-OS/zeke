@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    link.c
+ * @file    linkat.c
  * @author  Olli Vanhoja
  * @brief   Standard functions.
  * @section LICENSE
@@ -37,16 +37,17 @@
 #include <unistd.h>
 #include <syscall.h>
 
-int link(const char * path1, const char * path2)
+int linkat(int fd1, const char * path1,
+           int fd2, const char * path2, int flag)
 {
     struct _fs_link_args args = {
-        .fd1 = AT_FDCWD,
+        .fd1 = fd1,
         .path1 = path1,
         .path1_len = strlen(path1) + 1,
-        .fd2 = AT_FDCWD,
+        .fd2 = fd2,
         .path2 = path2,
         .path2_len = strlen(path2) + 1,
-        .flag = 0,
+        .flag = flag,
     };
 
     return (int)syscall(SYSCALL_FS_LINK, &args);

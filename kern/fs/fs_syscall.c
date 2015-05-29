@@ -460,13 +460,14 @@ static int sys_link(__user void * user_args)
 
     /* Validate strings */
     if (!strvalid(args->path1, args->path1_len) ||
-                  !strvalid(args->path2, args->path2_len)) {
+        !strvalid(args->path2, args->path2_len)) {
         set_errno(ENAMETOOLONG);
         goto out;
     }
 
-    err = fs_link_curproc(args->path1, args->path1_len,
-                args->path2, args->path2_len);
+    err = fs_link_curproc(args->fd1, args->path1, args->path1_len,
+                          args->fd2, args->path2, args->path2_len,
+                          args->flag);
     if (err) {
         set_errno(-err);
         goto out;
@@ -695,18 +696,10 @@ static int sys_access(__user void * user_args)
         goto out;
     }
 
-    if (!(args->flag & AT_FDARG)) { /* access() */
-        err = fs_namei_proc(&vnode, -1, args->path, AT_FDCWD);
-        if (err) {
-            set_errno(-err);
-            goto out;
-        }
-    } else { /* faccessat() */
-        fs_namei_proc(&vnode, args->fd, args->path, AT_FDARG);
-        if (err) {
-            set_errno(-err);
-            goto out;
-        }
+    fs_namei_proc(&vnode, args->fd, args->path, AT_FDARG);
+    if (err) {
+        set_errno(-err);
+        goto out;
     }
 
     if (args->flag & AT_EACCESS) {

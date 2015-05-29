@@ -407,7 +407,7 @@ int fs_namei_proc(vnode_t ** result, int fd, const char * path, int atflags)
             *result = start;
             return 0;
         }
-    } else if (atflags & AT_FDARG) { /* AT_FDARG */
+    } else if (atflags & AT_FDARG && fd != AT_FDCWD) { /* AT_FDARG */
         file_t * file;
 
         file = fs_fildes_ref(curproc->files, fd, 1);
@@ -759,8 +759,9 @@ out:
     return retval;
 }
 
-int fs_link_curproc(const char * path1, size_t path1_len,
-        const char * path2, size_t path2_len)
+int fs_link_curproc(int fd1, const char * path1, size_t path1_len,
+                    int fd2, const char * path2, size_t path2_len
+                    int atflags)
 {
     char * targetname = NULL;
     vnode_t * vn_src = NULL;
@@ -768,7 +769,7 @@ int fs_link_curproc(const char * path1, size_t path1_len,
     int err;
 
     /* Get the source vnode */
-    err = fs_namei_proc(&vn_src, -1, path1, AT_FDCWD);
+    err = fs_namei_proc(&vn_src, fd1, path1, AT_FDARG);
     if (err)
         return err;
 
@@ -776,6 +777,12 @@ int fs_link_curproc(const char * path1, size_t path1_len,
     err = chkperm_vnode_curproc(vn_src, O_WRONLY);
     if (err)
         goto out;
+
+     /* TODO fd2 and atflags support for link */
+    if (fd2 != AT_FDCWD) {
+        err = -ENOTSUP;
+        goto out;
+    }
 
     /* Get vnode of the target directory */
     err = getvndir(path2, &vndir_dst, &targetname, O_CREAT);

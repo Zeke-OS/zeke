@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   File control.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,7 +42,8 @@ int openat(int fd, const char * path, int oflags, ...)
         .name = path,
         .name_len = strlen(path) + 1,
         .oflags = oflags,
-        .atflags = (fd == AT_FDCWD) ? AT_FDCWD : AT_FDARG
+        .atflags = (fd == AT_FDCWD) ? AT_FDCWD : AT_FDARG /* RFE Shouldn't be
+                                                           * needed */
     };
 
     if (oflags & O_CREAT) {

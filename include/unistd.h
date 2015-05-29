@@ -199,10 +199,13 @@ struct _fs_chown_args {
  * Arguments for SYSCALL_FS_LINK
  */
 struct _fs_link_args {
+    int fd1;
     const char * path1;
     size_t path1_len;
+    int fd2;
     const char * path2;
     size_t path2_len;
+    int flag;
 };
 
 /**
@@ -377,9 +380,15 @@ off_t lseek(int fildes, off_t offset, int whence);
 int close(int fildes);
 
 /**
- * Create a new link for the existing file.
+ * Create a new link to a existing file.
  */
 int link(const char * path1, const char * path2);
+
+/**
+ * Create a new link relative to file descriptors.
+ */
+int linkat(int fd1, const char * path1,
+           int fd2, const char * path2, int flag)
 
 /**
  * Remove a directory entry.
@@ -391,6 +400,9 @@ int unlink(const char * path);
  */
 int unlinkat(int fd, const char * path, int flag);
 
+/**
+ * Remove a directory.
+ */
 int rmdir(const char * path);
 
 /**

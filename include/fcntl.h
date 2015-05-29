@@ -133,10 +133,10 @@ typedef int pid_t; /*!< Process ID. */
 #define O_SEARCH        0x8000 /*!< Open directory for search only. */
 #define O_EXEC          0x4000 /*!< Open for execute only. */
 
-#define AT_FDCWD            0x01 /*!< Use the current working directory to
-                                  *   determine the target of relative file
-                                  *   paths. */
-#define AT_FDARG            0x02 /*!< Use the file descriptor given as an
+#define AT_FDCWD            0x40000000 /*!< Use the current working directory to
+                                        *   determine the target of relative
+                                        *   file paths. */
+#define AT_FDARG            0x01 /*!< Use the file descriptor given as an
                                   *   argument to determine the target of
                                   *   relative file paths. */
 #define AT_EACCESS          0x10 /*!< Check access using effective user and

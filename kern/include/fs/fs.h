@@ -573,9 +573,13 @@ int fs_creat_curproc(const char * path, mode_t mode, vnode_t ** result);
 
 /**
  * Create a new link to existing vnode.
+ * @param fd1           fildes or AT_FDCWD
+ * @param fd            fildes or AT_FDCWD
+ * @param atfllags
  */
-int fs_link_curproc(const char * path1, size_t path1_len,
-                    const char * path2, size_t path2_len);
+int fs_link_curproc(int fd1, const char * path1, size_t path1_len,
+                    int fd2, const char * path2, size_t path2_len
+                    int atflags);
 
 /**
  * Remove link to a file.
