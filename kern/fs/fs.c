@@ -760,7 +760,7 @@ out:
 }
 
 int fs_link_curproc(int fd1, const char * path1, size_t path1_len,
-                    int fd2, const char * path2, size_t path2_len
+                    int fd2, const char * path2, size_t path2_len,
                     int atflags)
 {
     char * targetname = NULL;

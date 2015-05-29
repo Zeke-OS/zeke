@@ -388,7 +388,7 @@ int link(const char * path1, const char * path2);
  * Create a new link relative to file descriptors.
  */
 int linkat(int fd1, const char * path1,
-           int fd2, const char * path2, int flag)
+           int fd2, const char * path2, int flag);
 
 /**
  * Remove a directory entry.
