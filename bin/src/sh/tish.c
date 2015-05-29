@@ -152,42 +152,6 @@ static void cleanup(int n)
     }
 }
 
-static char * skipwhite(char * s)
-{
-    while (isspace(*s)) {
-        ++s;
-    }
-
-    return s;
-}
-
-static void split(char * cmd)
-{
-    cmd = skipwhite(cmd);
-    char * next;
-    int i = 0;
-
-    next = strchr(cmd, ' ');
-
-    while (next) {
-        next[0] = '\0';
-        args[i] = cmd;
-        ++i;
-        cmd = skipwhite(next + 1);
-        next = strchr(cmd, ' ');
-    }
-
-    if (cmd[0] != '\0') {
-        args[i] = cmd;
-        next = strchr(cmd, '\n');
-        if (next)
-            next[0] = '\0';
-        ++i;
-    }
-
-    args[i] = NULL;
-}
-
 static void cd(char * argv[])
 {
     char * arg = (argv[1]) ? argv[1] : getenv("HOME");
@@ -202,7 +166,7 @@ static void cd(char * argv[])
 
 static int run(char * cmd, int input, int first, int last)
 {
-    split(cmd);
+    split(cmd, args, num_elem(args));
 
     if (args[0]) {
         if (strcmp(args[0], "exit") == 0)

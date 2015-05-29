@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    tish.h
+ * @file    split.c
  * @author  Olli Vanhoja
- * @brief   Tiny Init Shell for debugging in init.
+ * @brief   Tiny shell.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,23 +30,58 @@
  *******************************************************************************
  */
 
-#pragma once
-#ifndef TISH_H
-#define TISH_H
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
 
-#include <sys/linker_set.h>
+size_t split(char * buffer, char * argv[], size_t argc_max)
+{
+    char * p;
+    char * start_of_word;
+    enum states { DULL, IN_WORD, IN_STRING } state;
+    char quote;
+    size_t argc = 0;
 
-struct tish_builtin {
-    char name[10];
-    int (*fn)(char * argv[]);
-};
+    state = DULL;
+    for (p = buffer; argc < argc_max && *p != '\0'; p++) {
+        int c = (unsigned char) *p;
+        switch (state) {
+        case DULL:
+            if (isspace(c)) {
+                continue;
+            }
 
-#define TISH_CMD(fun, cmdnamestr)           \
-    static struct tish_builtin fun##_st = { \
-        .name = cmdnamestr, .fn = fun       \
-    };                                      \
-    DATA_SET(tish_cmd, fun##_st)
+            if (c == '"' || c == '\'') {
+                quote = c;
+                state = IN_STRING;
+                start_of_word = p + 1;
+                continue;
+            }
+            state = IN_WORD;
+            start_of_word = p;
+            continue;
 
-size_t split(char * buffer, char * argv[], size_t argc_max);
+        case IN_STRING:
+            if (c == quote) {
+                *p = 0;
+                argv[argc++] = start_of_word;
+                state = DULL;
+            }
+            continue;
 
-#endif /* TISH_H */
+        case IN_WORD:
+            if (isspace(c)) {
+                *p = 0;
+                argv[argc++] = start_of_word;
+                state = DULL;
+            }
+            continue;
+        }
+    }
+
+    if (state != DULL && argc < argc_max)
+        argv[argc++] = start_of_word;
+    argv[(argc < argc_max) ? argc : argc_max - 1] = NULL;
+
+    return argc;
+}
