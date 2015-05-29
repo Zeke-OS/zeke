@@ -41,6 +41,8 @@ struct tish_builtin {
     int (*fn)(char * argv[]);
 };
 
+SET_DECLARE(tish_cmd, struct tish_builtin);
+
 #define TISH_CMD(fun, cmdnamestr)           \
     static struct tish_builtin fun##_st = { \
         .name = cmdnamestr, .fn = fun       \
@@ -48,5 +50,6 @@ struct tish_builtin {
     DATA_SET(tish_cmd, fun##_st)
 
 size_t split(char * buffer, char * argv[], size_t argc_max);
+void run_line(char * line);
 
 #endif /* TISH_H */

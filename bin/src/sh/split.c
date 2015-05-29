@@ -30,9 +30,10 @@
  *******************************************************************************
  */
 
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
-#include <ctype.h>
+#include "tish.h"
 
 size_t split(char * buffer, char * argv[], size_t argc_max)
 {
