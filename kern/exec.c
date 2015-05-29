@@ -45,7 +45,7 @@
 
 SET_DECLARE(exec_loader, struct exec_loadfn);
 
-SYSCTL_INT(_kern, KERN_ARGMAX, hz, CTLFLAG_RD, 0, MMU_PGSIZE_COARSE,
+SYSCTL_INT(_kern, KERN_ARGMAX, argmax, CTLFLAG_RD, 0, MMU_PGSIZE_COARSE,
            "Max args to exec");
 
 static int load_image(int fd, uintptr_t * vaddr_base)
