@@ -6,7 +6,7 @@
  * See linenoise.c for more information.
  *
  * ------------------------------------------------------------------------
- *
+ * Copyright (c) 2015,      Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2010-2014, Salvatore Sanfilippo <antirez at gmail dot com>
  * Copyright (c) 2010-2013, Pieter Noordhuis <pcnoordhuis at gmail dot com>
  *
@@ -38,6 +38,8 @@
 
 #ifndef __LINENOISE_H
 #define __LINENOISE_H
+
+#include <sys/types/_size_t.h>
 
 #ifdef __cplusplus
 extern "C" {
