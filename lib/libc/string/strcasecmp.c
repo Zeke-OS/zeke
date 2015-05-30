@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1987 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
@@ -45,27 +46,22 @@ static char charmap[] = {
     '\370', '\371', '\372', '\373', '\374', '\375', '\376', '\377',
 };
 
-int
-strcasecmp(s1, s2)
-    register const char *s1, *s2;
+int strcasecmp(const char * s1, const char * s2)
 {
-    register char *cm = charmap;
+    char * cm = charmap;
 
     while (cm[(unsigned char)*s1] == cm[(unsigned char)*s2++])
         if (*s1++ == '\0')
-            return(0);
-    return(cm[(unsigned char)*s1] - cm[(unsigned char)*--s2]);
+            return 0;
+    return cm[(unsigned char)*s1] - cm[(unsigned char)*--s2];
 }
 
-int
-strncasecmp(s1, s2, n)
-    register const char *s1, *s2;
-    register size_t n;
+int strncasecmp(const char * s1, const char * s2, size_t n)
 {
-    register char *cm = charmap;
+    char *cm = charmap;
 
     while (n-- > 0 && cm[(unsigned char)*s1] == cm[(unsigned char)*s2++])
         if (*s1++ == '\0')
-            return(0);
-    return(n == -1 ? 0 : cm[(unsigned char)*s1] - cm[(unsigned char)*--s2]);
+            return 0;
+    return n == -1 ? 0 : cm[(unsigned char)*s1] - cm[(unsigned char)*--s2];
 }
