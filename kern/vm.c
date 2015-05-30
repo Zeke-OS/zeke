@@ -43,9 +43,11 @@
 #include <vm/vm.h>
 
 /*
- * TODO
- * Add configHAVE_HW_PAGETABLES or similar config flag and implement a default
- * lookup function for uaddr to kaddr that doesn't need HAL support.
+ * TODO Add configHAVE_HW_PAGETABLES or similar config flag and implement
+ *      a default lookup function for uaddr to kaddr that doesn't need
+ *      HAL support.
+ *
+ * TODO Reduce the amount of locking and unlocking where possible
  */
 
 extern mmu_region_t mmu_region_kernel;
