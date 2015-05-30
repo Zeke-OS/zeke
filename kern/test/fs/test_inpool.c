@@ -17,9 +17,14 @@ typedef struct inode {
 
 static vnode_t * create_tst(const struct fs_superblock * sb, ino_t * num);
 static void delete_tst(vnode_t * vnode);
+static int delete_tst_vnode(vnode_t * vnode)
+{
+    delete_tst(vnode);
+    return 0;
+}
 
 struct fs_superblock sb_tst = {
-   .delete_vnode = delete_tst,
+   .delete_vnode = delete_tst_vnode,
 };
 
 static void setup()
