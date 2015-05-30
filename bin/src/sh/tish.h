@@ -36,17 +36,29 @@
 
 #include <sys/linker_set.h>
 
+#define TISH_NOFORK 0x1
+
+typedef int builtin_cmd_t(char * argv[]);
+
 struct tish_builtin {
     char name[10];
-    int (*fn)(char * argv[]);
+    unsigned flags;
+    builtin_cmd_t * fn;
 };
 
 SET_DECLARE(tish_cmd, struct tish_builtin);
 
-#define TISH_CMD(fun, cmdnamestr)           \
-    static struct tish_builtin fun##_st = { \
-        .name = cmdnamestr, .fn = fun       \
-    };                                      \
+#define TISH_CMD(fun, cmdnamestr)                   \
+    static struct tish_builtin fun##_st = {         \
+        .name = cmdnamestr, .flags = 0, .fn = fun   \
+    };                                              \
+    DATA_SET(tish_cmd, fun##_st)
+
+#define TISH_NOFORK_CMD(fun, cmdnamestr)            \
+    static struct tish_builtin fun##_st = {         \
+        .name = cmdnamestr, .flags = TISH_NOFORK,   \
+        .fn = fun                                   \
+    };                                              \
     DATA_SET(tish_cmd, fun##_st)
 
 size_t split(char * buffer, char * argv[], size_t argc_max);

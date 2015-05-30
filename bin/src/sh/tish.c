@@ -33,6 +33,7 @@
  */
 
 #include <autoconf.h> /* for KERNEL_VERSION */
+#include <fcntl.h>
 #include <linenoise.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -91,26 +92,46 @@ int main(int argc, char * argv[], char * envp[])
     const char prompt[] = "# ";
     char * line;
 
-    printf("argv[%d]:", argc);
-    for (char ** s = argv; *s; s++) {
-        printf(" %s", *s);
-    }
+    /* TODO get opts */
+    argv += 1;
 
-    printf("\nenviron:");
-    for (char ** s = envp; *s; s++) {
-        printf(" %s", *s);
-    }
-    printf("\n%s%s\n", banner, msg);
+    if (argc == 2) {
+        /* File mode */
+        int fd;
+        FILE * fp;
+        const size_t line_size = 80;
 
-    init_hist();
+        printf("File parsing mode\n");
+        fd = open(argv[0], O_EXEC | O_RDONLY | O_CLOEXEC);
+        if (fd == -1) {
+            exit(EXIT_FAILURE);
+        }
+        fp = fdopen(fd, "r");
+        if (!fp) {
+            exit(EXIT_FAILURE);
+        }
+        line = malloc(line_size);
+        if (!line) {
+            exit(EXIT_FAILURE);
+        }
 
-    fflush(NULL);
-    while ((line = linenoise(prompt)) != NULL) {
-        linenoiseHistoryAdd(line);
-        linenoiseHistorySave(histfilepath);
+        while (fgets(line, line_size, fp)) {
+            run_line(line);
+        }
+    } else {
+        /* Interactive mode */
+        printf("\n%s%s\n", banner, msg);
 
-        run_line(line);
+        init_hist();
+
         fflush(NULL);
+        while ((line = linenoise(prompt)) != NULL) {
+            linenoiseHistoryAdd(line);
+            linenoiseHistorySave(histfilepath);
+
+            run_line(line);
+            free(line);
+        }
     }
 
     return 0;
