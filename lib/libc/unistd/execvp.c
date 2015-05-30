@@ -31,16 +31,18 @@
  *******************************************************************************
  */
 
+#include <errno.h>
+#include <paths.h>
+#include <stdarg.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
-#include <paths.h>
 #include <syscall.h>
 #include <unistd.h>
 
 #define NARG_MAX 256
 
+extern char ** __buildargv(va_list ap, const char * arg, char ***  envpp);
 extern char ** environ;
 
 static char * execat(char * s1, const char * s2, char * si)

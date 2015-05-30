@@ -32,66 +32,13 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/param.h>
-#include <sys/types.h>
 #include <errno.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <paths.h>
 #include <stdarg.h>
+#include <stdlib.h>
+#include <unistd.h>
 
+extern char ** __buildargv(va_list ap, const char * arg, char ***  envpp);
 extern char ** environ;
-
-static char ** buildargv(va_list ap, const char * arg, char ***  envpp)
-{
-    int memsize = 0;
-    char ** argv = NULL;
-    int off;
-
-    for (off = 0;; ++off) {
-        if (off >= memsize) {
-            char ** tmp = argv;
-
-            memsize += 50;  /* Starts out at 0. */
-            memsize *= 2;   /* Ramp up fast. */
-            if (!(argv = realloc(argv, memsize * sizeof(char *)))) {
-                free(tmp);
-                return NULL;
-            }
-            if (off == 0) {
-                argv[0] = (char *)arg;
-                off = 1;
-            }
-        }
-        if (!(argv[off] = va_arg(ap, char *)))
-            break;
-    }
-
-    /* Get environment pointer if user supposed to provide one. */
-    if (envpp)
-        *envpp = va_arg(ap, char **);
-
-    return argv;
-}
-
-int execl(const char *name, const char *arg, ...)
-{
-    va_list ap;
-    int sverrno;
-    char ** argv;
-
-    va_start(ap, arg);
-    if ((argv = buildargv(ap, arg, NULL)))
-        (void)execve(name, argv, environ);
-    va_end(ap);
-    sverrno = errno;
-    free(argv);
-    errno = sverrno;
-
-    return -1;
-}
 
 int execle(const char * name, const char * arg, ...)
 {
@@ -101,25 +48,8 @@ int execle(const char * name, const char * arg, ...)
     char ** envp;
 
     va_start(ap, arg);
-    if ((argv = buildargv(ap, arg, &envp)))
+    if ((argv = __buildargv(ap, arg, &envp)))
         (void)execve(name, argv, envp);
-    va_end(ap);
-    sverrno = errno;
-    free(argv);
-    errno = sverrno;
-
-    return -1;
-}
-
-int execlp(const char * name, const char * arg, ...)
-{
-    va_list ap;
-    int sverrno;
-    char ** argv;
-
-    va_start(ap, arg);
-    if ((argv = buildargv(ap, arg, NULL)))
-        (void)execvp(name, argv);
     va_end(ap);
     sverrno = errno;
     free(argv);
