@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    elf32.c
+ * @file    exec_elf32.c
  * @author  Olli Vanhoja
  * @brief   32bit ELF loading.
  * @section LICENSE
@@ -113,78 +113,15 @@ static int load_section(struct buf ** region, file_t * file,
     return 0;
 }
 
-int load_elf32(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base)
+static int load_sections(struct proc_info * proc, file_t * file,
+                         struct elf32_header * elfhdr, struct elf32_phdr * phdr,
+                         uintptr_t rbase, uintptr_t * vaddr_base)
 {
-    struct elf32_header * elfhdr = NULL;
-    ssize_t slen;
-    struct elf32_phdr * phdr = NULL;
-    size_t phsize, nr_newsections;
-    int e_type;
-    uintptr_t rbase;
-    int retval = 0;
+    int e_type = elfhdr->e_type;
+    size_t phnum = elfhdr->e_phnum;
+    int err;
 
-    if (!vaddr_base)
-        return -EINVAL;
-
-    elfhdr = kmalloc(sizeof(struct elf32_header));
-    if (!elfhdr)
-        return -ENOMEM;
-
-    /* Read elf header */
-    file->seek_pos = 0;
-    slen = file->vnode->vnode_ops->read(file, elfhdr,
-            sizeof(struct elf32_header));
-    if (slen != sizeof(struct elf32_header)) {
-        retval = -ENOEXEC;
-        goto out;
-    }
-
-    /* Verify elf header */
-    retval = check_header(elfhdr);
-    if (retval)
-        goto out;
-
-    e_type = elfhdr->e_type;
-    if (e_type == ET_DYN) {
-        rbase = *vaddr_base;
-    } else if (e_type == ET_EXEC) {
-        rbase = 0;
-    } else {
-        retval = -ENOEXEC;
-        goto out;
-    }
-
-    /* Read program headers */
-    phsize = elfhdr->e_phnum * sizeof(struct elf32_phdr);
-    phdr = kmalloc(phsize);
-    if (!phdr) {
-        retval = -ENOMEM;
-        goto out;
-    }
-    file->seek_pos = elfhdr->e_phoff;
-    if (file->vnode->vnode_ops->read(file, phdr, phsize) != (ssize_t)phsize) {
-        retval = -ENOEXEC;
-        goto out;
-    }
-
-    /* Count loadable sections. */
-    nr_newsections = 0;
-    for (size_t i = 0; i < elfhdr->e_phnum; i++) {
-        if (phdr[i].p_type == PT_LOAD && phdr[i].p_memsz != 0)
-            nr_newsections++;
-
-        /* Check that no section is going to be mapped below the base limit. */
-        if (phdr[i].p_vaddr + rbase < configEXEC_BASE_LIMIT)
-            return -ENOEXEC;
-    }
-    if (nr_newsections > 2)
-        return -ENOEXEC;
-
-    /* Unload regions above HEAP */
-    vm_unload_regions(proc, MM_HEAP_REGION + 1, -1);
-
-    /* Load sections */
-    for (size_t i = 0; i < elfhdr->e_phnum; i++) {
+    for (size_t i = 0; i < phnum; i++) {
         const char * const panicmsg = "Failed to map a section while in exec.";
         struct buf * sect;
         int err;
@@ -192,9 +129,8 @@ int load_elf32(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base)
         if (!(phdr[i].p_type == PT_LOAD && phdr[i].p_memsz != 0))
             continue;
 
-        retval = load_section(&sect, file, rbase, &phdr[i]);
-        if (retval)
-            goto out;
+        if ((err = load_section(&sect, file, rbase, &phdr[i])))
+            return err;
 
         if (e_type == ET_EXEC && i < 2) {
             const int reg_nr = (i == 0) ? MM_CODE_REGION : MM_HEAP_REGION;
@@ -215,10 +151,83 @@ int load_elf32(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base)
         }
     }
 
-    goto out;
+    return 0;
+}
+
+int load_elf32(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base)
+{
+    struct elf32_header elfhdr;
+    ssize_t slen;
+    struct elf32_phdr * phdr = NULL;
+    size_t phsize, nr_newsections;
+    uintptr_t rbase;
+    int retval;
+
+    if (!vaddr_base)
+        return -EINVAL;
+
+    /* Read elf header */
+    file->seek_pos = 0;
+    slen = file->vnode->vnode_ops->read(file, &elfhdr, sizeof(elfhdr));
+    if (slen != sizeof(elfhdr)) {
+        return -ENOEXEC;
+    }
+
+    /* Verify elf header */
+    retval = check_header(&elfhdr);
+    if (retval)
+        return retval;
+
+    switch (elfhdr.e_type) {
+    case ET_DYN:
+        rbase = *vaddr_base;
+        break;
+    case ET_EXEC:
+        rbase = 0;
+        break;
+    default:
+        return -ENOEXEC;
+    }
+
+    /* Read program headers */
+    phsize = elfhdr.e_phnum * sizeof(struct elf32_phdr);
+    phdr = kmalloc(phsize);
+    if (!phdr) {
+        retval = -ENOMEM;
+        goto out;
+    }
+    file->seek_pos = elfhdr.e_phoff;
+    if (file->vnode->vnode_ops->read(file, phdr, phsize) != (ssize_t)phsize) {
+        retval = -ENOEXEC;
+        goto out;
+    }
+
+    /* Count loadable sections. */
+    nr_newsections = 0;
+    for (size_t i = 0; i < elfhdr.e_phnum; i++) {
+        if (phdr[i].p_type == PT_LOAD && phdr[i].p_memsz != 0)
+            nr_newsections++;
+
+        /* Check that no section is going to be mapped below the base limit. */
+        if (phdr[i].p_vaddr + rbase < configEXEC_BASE_LIMIT) {
+            retval = -ENOEXEC;
+            goto out;
+        }
+    }
+    if (nr_newsections > 2) {
+        retval = -ENOEXEC;
+        goto out;
+    }
+
+    /* Unload regions above HEAP */
+    (void)vm_unload_regions(proc, MM_HEAP_REGION + 1, -1);
+
+    if ((retval = load_sections(proc, file, &elfhdr, phdr, rbase, vaddr_base)))
+        goto out;
+
+    retval = 0;
 out:
     kfree(phdr);
-    kfree(elfhdr);
 
     return retval;
 }
