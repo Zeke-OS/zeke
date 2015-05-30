@@ -118,6 +118,11 @@ int fclose( FILE * stream ) _PDCLIB_nothrow;
 int fflush( FILE * stream ) _PDCLIB_nothrow;
 
 /**
+ * Associate a stream with a file descriptor.
+ */
+FILE * fdopen(int fildes, const char * mode);
+
+/**
  * Open the file with the given filename in the given mode, and return a stream
  * handle for it in which error and end-of-file indicator are cleared. Defined
  * values for mode are:

@@ -12,9 +12,8 @@
 
 extern const _PDCLIB_fileops_t _PDCLIB_fileops;
 
-bool _PDCLIB_open(
-   _PDCLIB_fd_t* fd, const _PDCLIB_fileops_t** ops,
-   char const * filename, unsigned int mode)
+bool _PDCLIB_open(_PDCLIB_fd_t * fd, const _PDCLIB_fileops_t ** ops,
+                  char const * filename, unsigned int mode)
 {
     int osmode;
     switch (mode & (_PDCLIB_FREAD | _PDCLIB_FWRITE | _PDCLIB_FAPPEND |
