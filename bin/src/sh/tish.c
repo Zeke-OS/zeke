@@ -99,7 +99,6 @@ int main(int argc, char * argv[], char * envp[])
         /* File mode */
         int fd;
         FILE * fp;
-        const size_t line_size = 80;
 
         printf("File parsing mode\n");
         fd = open(argv[0], O_EXEC | O_RDONLY | O_CLOEXEC);
@@ -110,12 +109,12 @@ int main(int argc, char * argv[], char * envp[])
         if (!fp) {
             exit(EXIT_FAILURE);
         }
-        line = malloc(line_size);
+        line = malloc(MAX_INPUT);
         if (!line) {
             exit(EXIT_FAILURE);
         }
 
-        while (fgets(line, line_size, fp)) {
+        while (fgets(line, MAX_INPUT, fp)) {
             run_line(line);
         }
     } else {

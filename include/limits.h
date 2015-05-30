@@ -46,8 +46,11 @@
 /* Pathname Variable Values */
 #define FILESIZEBITS    32
 #define LINK_MAX        _POSIX_LINK_MAX
+#define MAX_INPUT       255
 #define NAME_MAX        255     /*!< Maximum file name length. */
 #define PATH_MAX        4096    /*!< Maximum path length. */
+
+/* TODO PIPE_BUF */
 
 /* Runtime Increasable Values */
 /* Maximum Values */
