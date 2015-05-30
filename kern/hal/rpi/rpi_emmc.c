@@ -84,6 +84,13 @@
 #endif
 #include "../bcm2835/bcm2835_timers.h"
 
+/* Delays */
+#ifdef configQEMU_GUEST
+#define SD_CMD_UDELAY 0
+#else
+#define SD_CMD_UDELAY 1000
+#endif
+
 /* SD Clock Frequencies (in Hz) */
 #define SD_CLOCK_ID         400000
 #define SD_CLOCK_NORMAL     25000000
@@ -823,7 +830,7 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
 {
     int is_sdma = 0;
     uint32_t blksizecnt, irpts;
-    const int sd_cmd_udelay = 1000;
+    const int sd_cmd_udelay = SD_CMD_UDELAY;
     istate_t s_entry;
 
     dev->last_cmd_reg = cmd_reg;
@@ -1135,11 +1142,6 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
                     mmio_write(EMMC_BASE + EMMC_CMDTM,
                                sd_commands[STOP_TRANSMISSION]);
                     mmio_end(&s_entry);
-
-#ifdef configRPI_EMMC_DEBUG
-                    /* pause to let us read the screen */
-                    bcm_udelay(2000000);
-#endif
                 }
                 dev->last_error = irpts & 0xffff0000;
                 dev->last_interrupt = irpts;
