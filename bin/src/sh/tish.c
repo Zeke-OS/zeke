@@ -34,6 +34,7 @@
 
 #include <autoconf.h> /* for KERNEL_VERSION */
 #include <fcntl.h>
+#include <limits.h>
 #include <linenoise.h>
 #include <stdio.h>
 #include <stdlib.h>
