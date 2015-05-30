@@ -559,8 +559,8 @@ pid_t proc_update(void)
 
 static int sysctl_proc_maxproc(SYSCTL_HANDLER_ARGS)
 {
-    int error;
     int new_maxproc = maxproc;
+    int error;
 
     error = sysctl_handle_int(oidp, &new_maxproc, sizeof(new_maxproc), req);
     if (!error && req->newptr) {

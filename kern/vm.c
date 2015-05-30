@@ -320,7 +320,7 @@ void vm_updateusr_ap(struct buf * region)
     mtx_unlock(&region->lock);
 }
 
-int realloc_mm_regions(struct vm_mm_struct * mm, int new_count)
+static int realloc_mm_regions_locked(struct vm_mm_struct * mm, int new_count)
 {
     struct buf * (*new_regions)[];
     int i = mm->nr_regions;
@@ -331,14 +331,8 @@ int realloc_mm_regions(struct vm_mm_struct * mm, int new_count)
            mm, new_count, i);
 #endif
 
-    if (i == 0) {
-        /* TODO ticket lock? */
-        mtx_init(&mm->regions_lock, MTX_TYPE_SPIN, 0);
-    }
-    mtx_lock(&mm->regions_lock);
-
     if (new_count <= i) {
-        KERROR(KERROR_DEBUG,
+        KERROR(KERROR_WARN,
                "realloc_mm_regions cancelled %d <= %d\n",
                new_count, i);
 
@@ -356,9 +350,24 @@ int realloc_mm_regions(struct vm_mm_struct * mm, int new_count)
     mm->regions = new_regions;
     mm->nr_regions = new_count;
 
-    mtx_unlock(&mm->regions_lock);
-
     return 0;
+}
+
+int realloc_mm_regions(struct vm_mm_struct * mm, int new_count)
+{
+    mtx_t * lock;
+    int retval;
+
+    lock = &mm->regions_lock;
+    if (mm->nr_regions == 0) {
+        /* TODO ticket lock? */
+        mtx_init(lock, MTX_TYPE_SPIN, 0);
+    }
+    mtx_lock(lock);
+    retval = realloc_mm_regions_locked(mm, new_count);
+    mtx_unlock(lock);
+
+    return retval;
 }
 
 /* TODO Verify that the mapping will be valid */
@@ -382,18 +391,16 @@ static int vm_insert_region_ref(struct vm_mm_struct * mm, struct buf * region)
             break;
         }
     }
-    mtx_unlock(&mm->regions_lock);
 
     if (slot == -1) {
         int err;
 
         slot = nr_regions;
-        err = realloc_mm_regions(mm, nr_regions + 1);
+        err = realloc_mm_regions_locked(mm, nr_regions + 1);
         if (err)
             return err;
     }
 
-    mtx_lock(&mm->regions_lock);
     (*mm->regions)[slot] = region;
     mtx_unlock(&mm->regions_lock);
 
