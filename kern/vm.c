@@ -538,26 +538,34 @@ int vm_unmapproc_region(struct proc_info * proc, struct buf * region)
 int vm_unload_regions(struct proc_info * proc, int start, int end)
 {
     struct vm_mm_struct * const mm = &proc->mm;
+    int locked = 0;
 
     mtx_lock(&mm->regions_lock);
     if (start < 0 || start >= mm->nr_regions || end >= mm->nr_regions) {
-        mtx_unlock(&proc->mm.regions_lock);
+        mtx_unlock(&mm->regions_lock);
         return -EINVAL;
     }
     if (end == -1) {
         end = mm->nr_regions - 1;
     }
-    mtx_unlock(&proc->mm.regions_lock);
+    mtx_unlock(&mm->regions_lock);
 
     for (int i = start; i < end; i++) {
-        mtx_lock(&mm->regions_lock);
-        struct buf * region = (*mm->regions)[i];
+        struct buf * region;
+
+        if (!locked)
+            mtx_lock(&mm->regions_lock);
+        locked = 1;
+        region = (*mm->regions)[i];
         if (!region)
             continue;
 
-        mtx_unlock(&proc->mm.regions_lock);
+        mtx_unlock(&mm->regions_lock);
+        locked = 0;
         vm_replace_region(proc, NULL, i, 0);
     }
+    if (locked)
+        mtx_unlock(&mm->regions_lock);
 
     return 0;
 }
