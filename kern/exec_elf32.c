@@ -119,7 +119,6 @@ static int load_sections(struct proc_info * proc, file_t * file,
 {
     int e_type = elfhdr->e_type;
     size_t phnum = elfhdr->e_phnum;
-    int err;
 
     for (size_t i = 0; i < phnum; i++) {
         const char * const panicmsg = "Failed to map a section while in exec.";

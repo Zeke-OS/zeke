@@ -48,24 +48,17 @@ SET_DECLARE(exec_loader, struct exec_loadfn);
 SYSCTL_INT(_kern, KERN_ARGMAX, argmax, CTLFLAG_RD, 0, MMU_PGSIZE_COARSE,
            "Max args to exec");
 
-static int load_image(int fd, uintptr_t * vaddr_base)
+static int load_image(struct proc_info * proc, file_t * file,
+                    uintptr_t * vaddr_base)
 {
-    file_t * file;
     struct exec_loadfn ** loader;
-    int err;
-
-    file = fs_fildes_ref(curproc->files, fd, 1);
-    if (!file) {
-        set_errno(EBADF);
-        return -1;
-    }
+    int err = 0;
 
     SET_FOREACH(loader, exec_loader) {
-        err = (*loader)->fn(curproc, file, vaddr_base);
+        err = (*loader)->fn(proc, file, vaddr_base);
         if (err == 0 || err != -ENOEXEC)
             break;
     }
-    fs_fildes_ref(curproc->files, fd, -1);
 
     return err;
 }
@@ -98,10 +91,15 @@ static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp)
     return thread_create(&args, 0);
 }
 
-int exec_file(int fd, char name[PROC_NAME_LEN], struct buf * env_bp,
+/**
+ * Execute a file.
+ * File can be elf binary, she-bang file, etc.
+ * @param file  is the executable file.
+ */
+int exec_file(file_t * file, char name[PROC_NAME_LEN], struct buf * env_bp,
               int uargc, uintptr_t uargv, uintptr_t uenvp)
 {
-    uintptr_t vaddr = 0; /* TODO Shouldn't matter if elf is not dyn? */
+    uintptr_t vaddr = 0; /* RFE Shouldn't matter if elf is not dyn? */
     pthread_t tid;
     int err, retval = 0;
 
@@ -111,7 +109,7 @@ int exec_file(int fd, char name[PROC_NAME_LEN], struct buf * env_bp,
            fd, name, env_bp, uargc, (uint32_t)uargv, (uint32_t)uenvp);
 #endif
 
-    err = load_image(fd, &vaddr);
+    err = load_image(curproc, file, &vaddr);
     if (err) {
         retval = err;
         goto fail;
@@ -216,6 +214,7 @@ static int clone_aa(struct buf * bp, __user char * uarr, size_t n_entries,
 
 static int sys_exec(__user void * user_args)
 {
+    file_t * file;
     struct _exec_args args;
     char name[PROC_NAME_LEN];
     struct buf * env_bp;
@@ -282,8 +281,15 @@ static int sys_exec(__user void * user_args)
     /*
      * Execute.
      */
-    err = exec_file(args.fd, name, env_bp, args.nargv, env_bp->b_mmu.vaddr,
+    file = fs_fildes_ref(curproc->files, args.fd, 1);
+    if (!file) {
+        set_errno(EBADF);
+        retval = -1;
+        goto out;
+    }
+    err = exec_file(file, name, env_bp, args.nargv, env_bp->b_mmu.vaddr,
                     envp);
+    fs_fildes_ref(curproc->files, args.fd, -1);
     if (err) {
         set_errno(-err);
         retval = -1;
