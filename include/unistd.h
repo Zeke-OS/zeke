@@ -294,6 +294,11 @@ int chdir(const char * path);
 
 pid_t fork(void);
 
+/*
+ * Note only exevp() and axeclp() can properly handle scripts with and without
+ * shebang. This is also a requirement set by POSIX.
+ */
+
 extern char **environ;
 int execl(const char *path, const char *arg0, ... /*, (char *)0 */);
 int execle(const char *path, const char *arg0, ...

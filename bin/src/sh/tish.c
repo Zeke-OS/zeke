@@ -101,7 +101,6 @@ int main(int argc, char * argv[], char * envp[])
         int fd;
         FILE * fp;
 
-        printf("File parsing mode\n");
         fd = open(argv[0], O_EXEC | O_RDONLY | O_CLOEXEC);
         if (fd == -1) {
             exit(EXIT_FAILURE);
