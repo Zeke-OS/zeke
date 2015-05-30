@@ -493,7 +493,7 @@ int vm_replace_region(struct proc_info * proc, struct buf * region,
 
 #ifdef configVM_DEBUG
     KERROR(KERROR_DEBUG, "Mapped sect %d to %x (phys:%x)\n",
-             region_nr, region->b_mmu.vaddr, region->b_mmu.paddr);
+           region_nr, region->b_mmu.vaddr, region->b_mmu.paddr);
 #endif
 
     return 0;
