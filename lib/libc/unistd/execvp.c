@@ -31,6 +31,8 @@
  *******************************************************************************
  */
 
+#include <stdio.h>
+#include <ctype.h>
 #include <errno.h>
 #include <paths.h>
 #include <stdarg.h>
@@ -62,12 +64,76 @@ static char * execat(char * s1, const char * s2, char * si)
     return *s1 ? ++s1 : NULL;
 }
 
+static char * skipwhite(char * s)
+{
+    while (isspace(*s)) {
+        ++s;
+    }
+
+    return s;
+}
+
+static int exec_script(char * const argv[], char * fname)
+{
+    FILE * fp;
+    char * newargs[NARG_MAX];
+    char line[MAX_INPUT];
+    size_t skip;
+
+    memset(line, '\0', sizeof(line));
+    fp = fopen(fname, "r");
+    if (!fgets(line, sizeof(line), fp))
+        return -ENOEXEC;
+    fclose(fp);
+
+    if (line[0] == '#' && line[1] == '!' && line[2] != '\0') {
+        /* Parse shebang line */
+        char * arg0 = skipwhite(line + 2);
+        char * arg1;
+
+        arg1 = arg0;
+        while (arg1 < line + sizeof(line)) {
+            if (*arg1 == '\0' || isspace(*arg1)) {
+                *arg1 = '\0';
+                break;
+            }
+            arg1++;
+        }
+        arg1++;
+        if (arg1 < (line + sizeof(line)) && *arg1 != '\0') {
+            newargs[0] = arg0;
+            newargs[1] = arg1;
+            newargs[2] = fname;
+            skip = 3;
+        } else {
+            newargs[0] = arg0;
+            newargs[1] = fname;
+            skip = 2;
+        }
+    } else { /* Try fallback to sh */
+        newargs[0] = "sh";
+        newargs[1] = fname;
+        skip = 1;
+    }
+
+    /* Handle args */
+    for (size_t i = 1; (newargs[i + skip] = argv[i]); i++) {
+        if (i >= NARG_MAX - 2) {
+            errno = E2BIG;
+            return -1;
+        }
+    }
+
+    execve(_PATH_BSHELL, newargs, environ);
+
+    return 0;
+}
+
 int execvp(const char * name, char * const argv[])
 {
     char * pathstr;
     char * cp;
-    char fname[128];
-    char * newargs[NARG_MAX];
+    char fname[NAME_MAX];
     unsigned etxtbsy = 1;
     int eacces = 0;
 
@@ -82,16 +148,7 @@ int execvp(const char * name, char * const argv[])
         execve(fname, argv, environ);
         switch (errno) {
         case ENOEXEC:
-            newargs[0] = "sh";
-            newargs[1] = fname;
-            for (size_t i = 1; (newargs[i + 1] = argv[i]); i++) {
-                if (i >= NARG_MAX - 2) {
-                    errno = E2BIG;
-                    return -1;
-                }
-            }
-            execve(_PATH_BSHELL, newargs, environ);
-            return -1;
+            return exec_script(argv, fname);
         case ETXTBSY:
             if (++etxtbsy > 5)
                 return -1;
