@@ -151,7 +151,7 @@ int bcm_interrupt_postinit(void)
 
     if (enable_arm_timer())
         panic("No timer for kernel ticks");
-    register_schedtimer_clear(bcm2835_timers_handler);
+    hal_schedtimer_clear = bcm2835_timers_handler;
 
     return 0;
 }

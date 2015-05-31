@@ -34,7 +34,8 @@
 #ifndef HW_TIMERS_H
 #define HW_TIMERS_H
 
-void register_schedtimer_clear(void (*clear)(void));
+extern void (*hal_schedtimer_clear)();
+
 int schedtimer_clear(void);
 
 #define TIMEOUT_WAIT(stop_if_true, usec)                \
