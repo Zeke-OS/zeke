@@ -112,19 +112,18 @@ static int make_uartdev(struct uart_port * port, int port_num)
 
 int uart_register_port(struct uart_port * port)
 {
-    int i, retval = -1;
+    int i;
 
     i = uart_nr_ports;
-    if (i < UART_PORTS_MAX) {
-        uart_ports[i] = port;
-        uart_nr_ports++;
-        retval = i;
-    }
+    if (i >= UART_PORTS_MAX)
+        return -1;
 
+    uart_ports[i] = port;
+    uart_nr_ports++;
     if (vfs_ready)
         make_uartdev(port, i);
 
-    return retval;
+    return i;
 }
 
 int uart_nports(void)
@@ -134,7 +133,7 @@ int uart_nports(void)
 
 struct uart_port * uart_getport(int port_num)
 {
-    struct uart_port * retval = 0;
+    struct uart_port * retval = NULL;
 
     if (port_num < uart_nr_ports)
         retval = uart_ports[port_num];

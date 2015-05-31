@@ -18,6 +18,11 @@ config configBCM_FB
     depends on configFB && configBCM2835 && configBCM_MB
     select configRPI_HW
 
+config configBCM_INFO
+    bool "BCM2835 info"
+    default n
+    depends on configBCM2835 && configBCM_MB
+
 config configBCM_PM
     bool "BCM2835 PM support"
     default n

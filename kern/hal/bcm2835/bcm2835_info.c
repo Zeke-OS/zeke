@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    bcm2835_prop.c
+ * @file    bcm2835_info.c
  * @author  Olli Vanhoja
- * @brief   BCM2835 Property interface.
+ * @brief   BCM2835 Info.
  * @section LICENSE
  * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,33 +30,61 @@
  *******************************************************************************
  */
 
-#pragma once
-#ifndef BCM2835_PROP_H
-#define BCM2835_PROP_H
+#include <errno.h>
+#include <kerror.h>
+#include <kinit.h>
+#include <libkern.h>
+#include "bcm2835_prop.h"
 
-#include <stdint.h>
-
-#define BCM2835_PROP_REQUEST 0x0
-#define BCM2835_PROP_TAG_END 0x0
-
-/* VideoCore & HW */
-#define BCM2835_PROP_TAG_GET_FIRMWARE           0x00000001
-#define BCM2835_PROP_TAG_GET_GET_BOARD_MODEL    0x00010001
-#define BCM2835_PROP_TAG_GET_BOARD_REVISION     0x00010002
-#define BCM2835_PROP_TAG_GET_MAC_ADDRESS        0x00010003
-#define BCM2835_PROP_TAG_GET_BOARD_SERIAL       0x00010004
-#define BCM2835_PROP_TAG_GET_ARM_MEMORY         0x00010005
-#define BCM2835_PROP_TAG_GET_VC_MEMORY          0x00010006
-#define BCM2835_PROP_TAG_GET_CLOCKS             0x00010007
+/*
+ * TODO This should provide an alternative for atags, sysinfo data.
+ *      Maybe we should somehow cause a compilation error
+ *      if there is multiple sysinfo provides.
+ */
 
 /**
- * Make a property request to BCM2835 VC.
- * @param request is a regularly formatted property request but it doesn't
- *                have to be in any special memory region as the subsystem
- *                will handle that part.
- * @return Returns 0 if succeed and copies response data to request;
- *         Otherwise returns an error code, a negative errno value.
+ * @param name is prined before the tag value.
+ * @param tag is the tag id.
+ * @param wc is the size of the property in words.
  */
-int bcm2835_prop_request(uint32_t * request);
+static void print_prop(char * name, uint32_t tag, size_t wc)
+{
+    uint32_t mbuf[6 + wc] __attribute__((aligned (16)));
+    int err;
+    char buf[80];
+    char * s;
 
-#endif /* BCM2835_PROP_H */
+    mbuf[0] = sizeof(mbuf);         /* Size */
+    mbuf[1] = BCM2835_PROP_REQUEST; /* Request */
+    /* Tags */
+    mbuf[2] = tag;
+    mbuf[3] = wc * 4;
+    mbuf[4] = 0; /* Request len always zero */
+    mbuf[5 + wc] = BCM2835_PROP_TAG_END;
+
+    err = bcm2835_prop_request(mbuf);
+    if (err) {
+        KERROR(KERROR_INFO, "bcm2835_info %s: ERR %d\n", name, err);
+        return;
+    }
+
+    s = buf;
+    for (size_t i = 0; i < wc; i++) {
+        s += ksprintf(s, buf + sizeof(buf) - s, "%x ", mbuf[5 + i]) - 1;
+    }
+    KERROR(KERROR_INFO, "bcm2835_info %s: %s\n", name, buf);
+}
+
+int __kinit__ bcm2835_info_init(void)
+{
+    SUBSYS_DEP(bcm2835_prop_init);
+    SUBSYS_INIT("BCM2835_info");
+
+    kputs("\n");
+    print_prop("firmware", 0x00000001, 1);
+    print_prop("board model", 0x00010001, 1);
+    print_prop("board rev", 0x00010002, 1);
+    print_prop("board serial", 0x00010004, 2);
+
+    return 0;
+}

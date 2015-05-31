@@ -41,7 +41,7 @@
 #include <sys/linker_set.h>
 #include <kerror.h>
 
-#if configKLOGGER != 0
+#ifdef configKLOGGER
 const char * const _kernel_panic_msg = "Oops, Kernel panic\n";
 #endif
 
