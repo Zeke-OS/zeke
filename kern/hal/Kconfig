@@ -44,6 +44,8 @@ config configUART_MAX_PORTS
 
 endif
 
+source "kern/hal/emmc/Kconfig"
+
 source "kern/hal/fb/Kconfig"
 
 source "kern/hal/bcm2835/Kconfig"

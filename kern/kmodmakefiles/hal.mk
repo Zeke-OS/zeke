@@ -22,8 +22,9 @@ ifeq ($(configBCM2835),y)
 	hal-SRC-$(configBCM_PM) += hal/bcm2835/bcm2835_pm.c
 	#should have rpi flag
 	hal-SRC-$(configRPI_LEDS) += hal/rpi/rpi_leds.c
-	hal-SRC-$(configRPI_EMMC) += hal/rpi/rpi_emmc.c
-	hal-SRC-$(configRPI_HW)   += hal/rpi/rpi_hw.c
+	hal-SRC-$(configRPI_HW) += hal/rpi/rpi_hw.c
+	hal-SRC-$(configEMMC) += hal/emmc/emmc.c
+	hal-SRC-$(configEMMC_BCM2708) += hal/emmc/bcm2708_emmc.c
 endif
 ifeq ($(configJZ4780),y)
 	MEMMAP = memmap_jz4780.ld

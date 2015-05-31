@@ -43,7 +43,7 @@
 #define VDEV_MJNR_SPECIAL    1
 #define VDEV_MJNR_UART       4
 #define VDEV_MJNR_PTY        5
-#define VDEV_MJNR_RPI_EMMC   8
+#define VDEV_MJNR_EMMC       8
 #define VDEV_MJNR_FB        29
 #define VDEV_MJNR_FBMM      30
 

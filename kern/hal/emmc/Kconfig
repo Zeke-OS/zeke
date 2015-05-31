@@ -1,0 +1,63 @@
+# kern/hal/emmc/Kconfig
+
+# TODO Shouln't depend on BCM
+menuconfig configEMMC
+    bool "EMMC driver"
+    depends on configBCM2835 && configBCM_MB
+    default n
+
+if configEMMC
+
+config configEMMC_SD_1_8V_SUPPORT
+    bool "Enable 1.8V support"
+    default y
+
+config configEMMC_SD_4BIT_DATA
+    bool "Enable 4-bit support"
+    default y
+
+config configEMMC_SDXC_MAXIMUM_PERFORMANCE
+    bool "Enable SDXC maximum performance mode"
+    default n
+    ---help---
+        Enables SDXC maximum performance mode.
+        This option requires 150 mA current.
+
+        If unsure, say N.
+
+config configEMMC_SDMA_SUPPORT
+    bool "Enable SDMA support"
+    default n
+
+config configEMMC_SD_CARD_INTERRUPTS
+    bool "Enable card interrupts"
+    default n
+
+config configEMMC_WRITE_SUPPORT
+    bool "Enable SD card write support (EXPERIMENTAL)"
+    default n
+    ---help---
+        Enable EXPERIMENTAL and possibly DANGEROUS SD card write support.
+
+        If unsure, say N.
+
+choice
+    prompt "EMMC Implementation"
+    default configEMMC_GENERIC if configQEMU_GUEST
+    default configEMMC_BCM2708 if configBCM2835
+    default configEMMC_GENERIC
+
+config configEMMC_GENERIC
+    bool "Generic EMMC"
+
+config configEMMC_BCM2708
+    bool "BCM2708 EMMC"
+    depends on configBCM2835 && configBCM_MB && configBCM_PM
+
+endchoice
+
+config configEMMC_DEBUG
+    bool "Debugging mode"
+    default n
+
+endif
