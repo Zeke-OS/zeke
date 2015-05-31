@@ -131,14 +131,6 @@ int vm_ptlist_clone(struct ptlist * new_head, mmu_pagetable_t * new_mpt,
     RB_FOREACH(old_vpt, ptlist, old_head) {
         struct vm_pt * new_vpt;
 
-        /* TODO for some reason linkcount might be invalid! */
-#if 0
-        if (old_vpt->linkcount <= 0) {
-            continue; /* Skip unused page tables; ie. page tables that are
-                       * not referenced by any region. */
-        }
-#endif
-
         new_vpt = vm_pt_clone_attach(old_vpt, new_mpt);
         if (!new_vpt)
             return -ENOMEM;
@@ -162,7 +154,6 @@ struct vm_pt * vm_pt_clone_attach(struct vm_pt * old_vpt, mmu_pagetable_t * mpt)
     if (!new_vpt)
         return NULL;
 
-    new_vpt->linkcount = 1;
     new_vpt->pt.vaddr = old_vpt->pt.vaddr;
     new_vpt->pt.nr_tables = old_vpt->pt.nr_tables;
     new_vpt->pt.master_pt_addr = mpt->pt_addr;

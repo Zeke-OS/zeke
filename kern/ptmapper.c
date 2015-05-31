@@ -259,7 +259,6 @@ int ptmapper_init(void)
      * TODO Maybe we'd like to do some major refactoring some day.
      */
     vm_pagetable_system.pt = mmu_pagetable_system;
-    vm_pagetable_system.linkcount = 1;
 
     /* Activate page tables */
     mmu_attach_pagetable(&mmu_pagetable_master); /* Load L1 TTB */

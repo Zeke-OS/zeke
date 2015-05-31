@@ -53,7 +53,6 @@ struct proc_info;
 struct vm_pt {
     RB_ENTRY(vm_pt) entry_;
     mmu_pagetable_t pt;
-    int linkcount; /*!< Links to this page table */
 };
 
 /* struct ptlist */
