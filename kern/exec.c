@@ -48,14 +48,13 @@ SET_DECLARE(exec_loader, struct exec_loadfn);
 SYSCTL_INT(_kern, KERN_ARGMAX, argmax, CTLFLAG_RD, 0, MMU_PGSIZE_COARSE,
            "Max args to exec");
 
-static int load_image(struct proc_info * proc, file_t * file,
-                    uintptr_t * vaddr_base)
+static int load_proc_image(file_t * file, uintptr_t * vaddr_base)
 {
     struct exec_loadfn ** loader;
     int err = 0;
 
     SET_FOREACH(loader, exec_loader) {
-        err = (*loader)->fn(proc, file, vaddr_base);
+        err = (*loader)->fn(curproc, file, vaddr_base);
         if (err == 0 || err != -ENOEXEC)
             break;
     }
@@ -71,8 +70,8 @@ static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp)
     struct buf * stack_region = (*curproc->mm.regions)[MM_STACK_REGION];
     struct buf * code_region = (*curproc->mm.regions)[MM_CODE_REGION];
     struct _sched_pthread_create_args args = {
-        .param.sched_policy = SCHED_OTHER, /* TODO Inherit */
-        .param.sched_priority = 0, /* TODO Inherit */
+        .param.sched_policy = current_thread->param.sched_policy,
+        .param.sched_priority = current_thread->param.sched_priority,
         .stack_addr = (void *)(stack_region->b_mmu.vaddr),
         .stack_size = mmu_sizeof_region(&stack_region->b_mmu),
         .flags      = 0,
@@ -109,7 +108,7 @@ int exec_file(file_t * file, char name[PROC_NAME_LEN], struct buf * env_bp,
            fd, name, env_bp, uargc, (uint32_t)uargv, (uint32_t)uenvp);
 #endif
 
-    err = load_image(curproc, file, &vaddr);
+    err = load_proc_image(file, &vaddr);
     if (err) {
         retval = err;
         goto fail;
