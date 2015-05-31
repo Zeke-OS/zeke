@@ -34,9 +34,14 @@
 #ifndef HW_TIMERS_H
 #define HW_TIMERS_H
 
-extern void (*hal_schedtimer_clear)();
+typedef void hal_schedtimer_clear_t();
+
+extern hal_schedtimer_clear_t * hal_schedtimer_clear;
 
 int schedtimer_clear(void);
+
+#define DECLARE_HAL_SCHEDTIMER_CLEAR(fun)               \
+    hal_schedtimer_clear_t * hal_schedtimer_clear = fun
 
 #define TIMEOUT_WAIT(stop_if_true, usec)                \
 do {                                                    \

@@ -90,6 +90,7 @@ void bcm2835_timers_handler(void)
     }
     mmio_end(&s_entry);
 }
+DECLARE_HAL_SCHEDTIMER_CLEAR(bcm2835_timers_handler);
 
 static int enable_arm_timer(void)
 {
@@ -151,7 +152,6 @@ int bcm_interrupt_postinit(void)
 
     if (enable_arm_timer())
         panic("No timer for kernel ticks");
-    hal_schedtimer_clear = bcm2835_timers_handler;
 
     return 0;
 }

@@ -33,7 +33,7 @@
 #include <hal/core.h>
 #include <hal/hw_timers.h>
 
-void (*hal_schedtimer_clear)();
+hal_schedtimer_clear_t * hal_schedtimer_clear;
 
 int schedtimer_clear(void)
 {
