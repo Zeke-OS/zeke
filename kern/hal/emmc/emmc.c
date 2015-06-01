@@ -298,6 +298,12 @@ static const char * err_irpts[] = {
 
 #define DEFAULT_CMD_TIMEOUT 500000
 
+/* TODO Not the best way to implement this */
+uint32_t emmc_sd_get_base_clock_hz(void);
+
+/* TODO This should be abstracted away */
+int bcm2708_emmc_power_cycle(void);
+
 static ssize_t sd_read(struct dev_info * dev, off_t offset, uint8_t * buf,
                        size_t count, int oflags);
 static ssize_t sd_write(struct dev_info * dev, off_t offset, uint8_t * buf,
@@ -553,7 +559,7 @@ static void sd_power_off()
 }
 
 #ifdef configEMMC_GENERIC
-static uint32_t sd_get_base_clock_hz(void)
+uint32_t emmc_sd_get_base_clock_hz(void)
 {
     uint32_t base_clock;
 
@@ -1300,7 +1306,7 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
 
 #ifdef configEMMC_BCM2708
     /* Power cycle the card to ensure its in its startup state */
-    if (bcm_2708_power_cycle() != 0) {
+    if (bcm2708_emmc_power_cycle() != 0) {
         KERROR(KERROR_ERR,
                 "EMMC: BCM2708 controller did not power cycle successfully\n");
 
@@ -1401,7 +1407,7 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
     mmio_end(&s_entry);
 
     /* Get the base clock rate */
-    uint32_t base_clock = sd_get_base_clock_hz();
+    uint32_t base_clock = emmc_sd_get_base_clock_hz();
     if (base_clock == 0) {
         KERROR(KERROR_INFO, "EMMC: assuming clock rate to be 100MHz\n");
 

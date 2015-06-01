@@ -51,7 +51,14 @@
  *******************************************************************************
  */
 
-static uint32_t sd_get_base_clock_hz(void)
+#include <errno.h>
+#include <stdint.h>
+#include <kerror.h>
+#include "../bcm2835/bcm2835_pm.h"
+#include "../bcm2835/bcm2835_prop.h"
+#include "../bcm2835/bcm2835_timers.h"
+
+uint32_t emmc_sd_get_base_clock_hz(void)
 {
     uint32_t base_clock;
     uint32_t mb[8];
@@ -91,7 +98,7 @@ static uint32_t sd_get_base_clock_hz(void)
     return base_clock;
 }
 
-static int bcm_2708_power_cycle()
+int bcm2708_emmc_power_cycle(void)
 {
     int resp;
 
