@@ -45,8 +45,6 @@ SYSCTL_NODE(, CTL_VM, vm, CTLFLAG_RW, 0,
         "Virtual memory");
 SYSCTL_NODE(, CTL_DEBUG, debug, CTLFLAG_RW, 0,
         "Debugging");
-SYSCTL_NODE(, CTL_HW, hw, CTLFLAG_RW, 0,
-        "hardware");
 SYSCTL_NODE(, CTL_MACHDEP, machdep, CTLFLAG_RW, 0,
         "machine dependent");
 SYSCTL_NODE(, OID_AUTO, security, CTLFLAG_RW, 0,

@@ -1,6 +1,7 @@
 # Common to all platforms
-hal-SRC-y += hal/sysinfo.c
+hal-SRC-y += hal/hw_mib.c
 hal-SRC-y += hal/hw_timers.c
+hal-SRC-y += hal/sysinfo.c
 hal-SRC-$(configATAG) += hal/atag.c
 hal-SRC-$(configMMU) += hal/mmu.c
 hal-SRC-$(configUART) += hal/uart.c

@@ -31,8 +31,10 @@
  */
 
 #include <errno.h>
+#include <sys/sysctl.h>
 #include <hal/hw_timers.h>
 #include "bcm2835_prop.h"
+#include "bcm2835_pm.h"
 
 int bcm2835_pm_get_power_state(uint32_t devid)
 {
@@ -129,3 +131,25 @@ int bcm2835_pm_get_timing(uint32_t devid)
 
     return mbuf[5];
 }
+
+#define SYSCTL_PM_BCM2835_PSTATE(name, udid)                                   \
+static int bcm2835_ ## name ##_power_state(SYSCTL_HANDLER_ARGS)                \
+{                                                                              \
+    int new_state = bcm2835_pm_get_power_state(udid);                          \
+    int error = sysctl_handle_int(oidp, &new_state, sizeof(new_state), req);   \
+    if (!error && req->newptr) bcm2835_pm_set_power_state(udid, new_state);    \
+    return error;                                                              \
+}                                                                              \
+SYSCTL_PROC(_hw_pm, OID_AUTO, bcm2835_ ## name ## _power_state,                \
+            CTLTYPE_INT | CTLFLAG_RW, NULL, 0,                                 \
+            bcm2835_ ## name ## _power_state, "I",                             \
+            "BCM2835 " #name " power state")
+
+SYSCTL_PM_BCM2835_PSTATE(sd, BCM2835_SD);
+SYSCTL_PM_BCM2835_PSTATE(uart0, BCM2835_UART0);
+SYSCTL_PM_BCM2835_PSTATE(uart1, BCM2835_UART1);
+SYSCTL_PM_BCM2835_PSTATE(usb, BCM2835_USB);
+SYSCTL_PM_BCM2835_PSTATE(i2c0, BCM2835_I2C0);
+SYSCTL_PM_BCM2835_PSTATE(i2c1, BCM2835_I2C1);
+SYSCTL_PM_BCM2835_PSTATE(spi, BCM2835_SPI);
+SYSCTL_PM_BCM2835_PSTATE(cpp2tx, BCM2835_CCP2TX);

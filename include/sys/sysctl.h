@@ -563,6 +563,7 @@ SYSCTL_DECL(_vm);
 SYSCTL_DECL(_vfs);
 SYSCTL_DECL(_debug);
 SYSCTL_DECL(_hw);
+SYSCTL_DECL(_hw_pm);
 SYSCTL_DECL(_machdep);
 SYSCTL_DECL(_security);
 
