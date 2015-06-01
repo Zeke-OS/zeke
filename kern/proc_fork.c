@@ -188,7 +188,7 @@ static struct proc_info * clone_proc_info(struct proc_info * const old_proc)
 
     new_proc = kmalloc(sizeof(struct proc_info));
     if (!new_proc) {
-        return 0;
+        return NULL;
     }
     memcpy(new_proc, old_proc, sizeof(struct proc_info));
 
@@ -429,13 +429,15 @@ pid_t proc_fork(pid_t pid)
         KERROR(KERROR_DEBUG,
                "Call thread_fork() to get a new main thread for the fork.\n");
 #endif
-        //pthread_t old_tid = get_current_tid();
+#if 0
+        pthread_t old_tid = get_current_tid();
+#endif
         pthread_t new_tid = thread_fork();
         if (new_tid < 0) {
 #ifdef configPROC_DEBUG
             KERROR(KERROR_DEBUG, "thread_fork() failed\n");
 #endif
-            retval = -EAGAIN; /* TODO ?? */
+            retval = -EAGAIN; /* RFE What should we return? */
             goto free_res;
         } else if (new_tid > 0) { /* thread of the forking process returning */
 #ifdef configPROC_DEBUG
