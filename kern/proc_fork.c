@@ -201,23 +201,20 @@ static int clone_stack(struct proc_info * new_proc, struct proc_info * old_proc)
     struct buf * new_region;
     int err;
 
-    if (likely(old_region)) {
-        err = clone2vr(old_region, &new_region);
-        if (err)
-            return err;
-    } else { /* NO STACK */
+    if (unlikely(!old_region)) {
 #ifdef configPROC_DEBUG
         KERROR(KERROR_DEBUG, "fork(): No stack created\n");
 #endif
         return 0;
     }
 
-    err = vm_replace_region(new_proc, new_region, MM_STACK_REGION,
-            (VM_INSOP_SET_PT | VM_INSOP_MAP_REG));
+    err = clone2vr(old_region, &new_region);
     if (err)
         return err;
 
-    return 0;
+    err = vm_replace_region(new_proc, new_region, MM_STACK_REGION,
+                            (VM_INSOP_SET_PT | VM_INSOP_MAP_REG));
+    return err;
 }
 
 static void set_proc_inher(struct proc_info * old_proc,

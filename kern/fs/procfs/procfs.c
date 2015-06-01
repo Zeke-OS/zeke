@@ -79,7 +79,10 @@ static procfs_writefn_t ** procfs_write_funcs;
 
 #define PANIC_MSG "procfs_init(): "
 
-static int init_files()
+/**
+ * Initialize procfs files.
+ */
+static int init_files(void)
 {
     struct procfs_file ** file;
 

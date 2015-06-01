@@ -172,12 +172,18 @@ static void init_kernel_proc(void)
 
     mtx_lock(&kernel_proc->mm.regions_lock);
     (*kernel_proc->mm.regions)[MM_CODE_REGION] = kprocvm_code;
+    /*
+     * proc 0 stack shouldn't be set here because NULL for
+     * MM_STACK_REGION is a special case for intialization because
+     * proc 1 is really not forked from the kernel but rather just
+     * spawned and constructed by hand in kinit.
+     */
     (*kernel_proc->mm.regions)[MM_STACK_REGION] = NULL;
     (*kernel_proc->mm.regions)[MM_HEAP_REGION] = kprocvm_heap;
     mtx_unlock(&kernel_proc->mm.regions_lock);
 
     /*
-     * Break values
+     * Break values.
      */
     kernel_proc->brk_start = &__bss_break;
     kernel_proc->brk_stop = (void *)(kprocvm_heap->b_mmu.vaddr
@@ -187,7 +193,7 @@ static void init_kernel_proc(void)
     ksignal_signals_ctor(&kernel_proc->sigs, SIGNALS_OWNER_PROCESS);
 
     /*
-     * File descriptors
+     * File descriptors.
      *
      * We have a hard limit of 8 files here now but this is actually tunable
      * for child processes by using setrlimit().
@@ -199,16 +205,18 @@ static void init_kernel_proc(void)
     kernel_proc->files->count = 8;
     kernel_proc->files->umask = CMASK; /* File creation mask. */
 
-    /* TODO Do this correctly */
+    /* RFE Is there still something wrong? */
     kernel_proc->files->fd[STDIN_FILENO] = 0;
     kernel_proc->files->fd[STDOUT_FILENO] = 0;
     /* stderr */
+#ifdef configKLOGGER
     kernel_proc->files->fd[STDERR_FILENO] = kcalloc(1, sizeof(file_t));
-#if configKLOGGER != 0
     if (fs_fildes_set(kernel_proc->files->fd[STDERR_FILENO],
                       &kerror_vnode, O_WRONLY)) {
         panic(panic_msg);
     }
+#else
+    kernel_proc->files->fd[STDERR_FILENO] = 0;
 #endif
 
     init_rlims(&kernel_proc->rlim);
@@ -332,10 +340,11 @@ void _proc_free(struct proc_info * p)
     /*
      * Free regions
      *
-     * TODO Locking here is pointless because a thread wating for this lock
-     * may/will get invalid data after we release the lock.
+     * We don't use lock here because the lock date is invalidated soon and any
+     * thread trying to wait for it will break anyway, so we just hope there
+     * is no-one trying to lock this process anymore. Technically there
+     * shouldn't be any threads locking this process struct anymore.
      */
-    mtx_lock(&p->mm.regions_lock);
     if (p->mm.regions) {
         for (int i = 0; i < p->mm.nr_regions; i++) {
             if ((*p->mm.regions)[i]->vm_ops->rfree)
@@ -384,9 +393,12 @@ struct proc_info * proc_get_struct(pid_t pid)
                 "proclock is required before entering proc_get_struct()\n");
     }
 
-    /* TODO do state check properly */
+    /*
+     * Note that we don't do any process state checks here because this function
+     * is used in places where the state is invalid and also because doing state
+     * check here is jus overhead.
+     */
     if (pid > act_maxproc) {
-        /* Following may cause nasty things if pid is out of bounds */
         KERROR(KERROR_ERR, "Invalid PID (%d > %d)\n", pid, act_maxproc);
 
         return NULL;
@@ -558,6 +570,11 @@ pid_t proc_update(void)
     return current_process_id;
 }
 
+/**
+ * Get/Set maxproc value.
+ * Note that setting the value doesn't cause procarr to be resized until
+ * it's actually necessary.
+ */
 static int sysctl_proc_maxproc(SYSCTL_HANDLER_ARGS)
 {
     int new_maxproc = maxproc;
