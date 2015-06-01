@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Font engine for frame buffer.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,7 +50,7 @@ const char * fonteng_getglyph(uint16_t ch)
 {
     if (ch >= 0x0020 && ch <= 0x007F) {
         return (const char *)(&font8x8_basic[ch-0x20]);
-#if configFB_FONT_LATIN
+#ifdef configFB_FONT_LATIN
     } else if (ch >= 0x00A0 && ch <= 0x00FF) {
         return (const char *)(&font8x8_latin[ch]);
 #endif
@@ -66,7 +66,7 @@ const char * fonteng_getglyph(uint16_t ch)
     } else if (ch >= 0x3040 && ch <= 0x309F) {
         return (const char *)(&font8x8_hiragana[ch]);
 #endif
-    } else {
-        return (const char *)(&space);
     }
+
+    return (const char *)(&space);
 }
