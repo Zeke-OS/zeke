@@ -113,7 +113,8 @@ struct ctlname {
 #define        CTLFLAG_SECURE2        (CTLFLAG_SECURE | (1 << CTLSHIFT_SECURE))
 #define        CTLFLAG_SECURE3        (CTLFLAG_SECURE | (2 << CTLSHIFT_SECURE))
 
-/*
+/**
+ * Automatic OID number assignment.
  * USE THIS instead of a hardwired number from the categories below
  * to get dynamically assigned sysctl entries using the linker-set
  * technology. This is the way nearly all new sysctl variables should
@@ -324,9 +325,9 @@ SYSCTL_ALLOWED_TYPES(INT64, int64_t *a; long long *b; );
 SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
 
 #ifdef notyet
-#define        SYSCTL_ADD_ASSERT_TYPE(type, ptr)        \
+#define        SYSCTL_ADD_ASSERT_TYPE(type, ptr)                \
     __sysctl_assert_ ## type (ptr)
-#define        SYSCTL_ASSERT_TYPE(type, ptr, parent, name)        \
+#define        SYSCTL_ASSERT_TYPE(type, ptr, parent, name)      \
     _SYSCTL_ASSERT_TYPE(type, ptr, __LINE__, parent##_##name)
 #else
 #define        SYSCTL_ADD_ASSERT_TYPE(type, ptr)        ptr
@@ -420,9 +421,9 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
  * @param name is the name of the node.
  * @param access CTLTYPE and CTLFLAGs.
  */
-#define SYSCTL_PROC(parent, nbr, name, access, ptr, arg, handler, fmt, descr) \
-    CTASSERT(((access) & CTLTYPE) != 0);                \
-    SYSCTL_OID(parent, nbr, name, (access), \
+#define SYSCTL_PROC(parent, nbr, name, access, ptr, arg, handler, fmt, descr)  \
+    CTASSERT(((access) & CTLTYPE) != 0);                                       \
+    SYSCTL_OID(parent, nbr, name, (access),                                    \
         ptr, arg, handler, fmt, descr)
 
 /*
@@ -490,39 +491,6 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
 #define KERN_HOSTUUID           36  /* string: host UUID identifier */
 #define KERN_ARND               37  /* int: from arc4rand() */
 #define KERN_MAXID              38  /* number of valid kern ids */
-/*
- * KERN_PROC subtypes
- */
-#define KERN_PROC_ALL           0   /* everything */
-#define KERN_PROC_PID           1   /* by process id */
-#define KERN_PROC_PGRP          2   /* by process group id */
-#define KERN_PROC_SESSION       3   /* by session of pid */
-#define KERN_PROC_TTY           4   /* by controlling tty */
-#define KERN_PROC_UID           5   /* by effective uid */
-#define KERN_PROC_RUID          6   /* by real uid */
-#define KERN_PROC_ARGS          7   /* get/set arguments/proctitle */
-#define KERN_PROC_PROC          8   /* only return procs */
-#define KERN_PROC_SV_NAME       9   /* get syscall vector name */
-#define KERN_PROC_RGID          10  /* by real group id */
-#define KERN_PROC_GID           11  /* by effective group id */
-#define KERN_PROC_PATHNAME      12  /* path to executable */
-#define KERN_PROC_OVMMAP        13  /* Old VM map entries for process */
-#define KERN_PROC_OFILEDESC     14  /* Old file descriptors for process */
-#define KERN_PROC_KSTACK        15  /* Kernel stacks for process */
-#define KERN_PROC_INC_THREAD    0x10 /*!< modifier for pid, pgrp, tty, uid,
-                                      *   ruid, gid, rgid and proc
-                                      *   This effectively uses 16-31
-                                      */
-#define KERN_PROC_VMMAP         32  /* VM map entries for process */
-#define KERN_PROC_FILEDESC      33  /* File descriptors for process */
-#define KERN_PROC_GROUPS        34  /* process groups */
-#define KERN_PROC_ENV           35  /* get environment */
-#define KERN_PROC_AUXV          36  /* get ELF auxiliary vector */
-#define KERN_PROC_RLIMIT        37  /* process resource limits */
-#define KERN_PROC_PS_STRINGS    38  /* get ps_strings location */
-#define KERN_PROC_UMASK         39  /* process umask */
-#define KERN_PROC_OSREL         40  /* osreldate for process binary */
-#define KERN_PROC_SIGTRAMP      41  /* signal trampoline location */
 
 /*
  * KERN_IPC identifiers
@@ -545,7 +513,6 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
 #define HW_PHYSMEM              5   /* int: total memory */
 #define HW_USERMEM              6   /* int: non-kernel memory */
 #define HW_PAGESIZE             7   /* int: software page size */
-#define HW_DISKNAMES            8   /* strings: disk drive names */
 #define HW_FLOATINGPT           10  /* int: has HW floating point? */
 #define HW_MACHINE_ARCH         11  /* string: machine architecture */
 #define HW_REALMEM              12  /* int: 'real' memory */

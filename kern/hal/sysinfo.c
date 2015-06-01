@@ -31,8 +31,10 @@
  */
 
 #include <kstring.h>
+#include <machine/endian.h>
 #include <kerror.h>
 #include <sys/sysctl.h>
+#include <hal/mmu.h> /* to get MMU_PGSIZE_COARSE */
 #include <hal/sysinfo.h>
 
 sysinfo_t sysinfo = {
@@ -40,6 +42,28 @@ sysinfo_t sysinfo = {
     .console = "/dev/ttyS0",
     .root = configROOTFS_PATH " " configROOTFS_NAME,
 };
+
+/* TODO HW_MODEL */
+
+SYSCTL_INT(_hw, HW_BYTEORDER, byteorder, CTLFLAG_RD, 0, _BYTE_ORDER,
+              "Byte order");
+
+/* TODO HW_NCPU */
+
+SYSCTL_INT(_hw, HW_PHYSMEM, physmem, CTLFLAG_RD, &sysinfo.mem.size, 0,
+           "Total memory");
+
+/* TODO HW_USERMEM */
+
+SYSCTL_INT(_hw, HW_PAGESIZE, pagesize, CTLFLAG_RD, 0, MMU_PGSIZE_COARSE,
+           "Page size");
+
+SYSCTL_INT(_hw, HW_FLOATINGPT, floatingpt, CTLFLAG_RD, 0, configHAVE_HFP,
+           "Hardware floating point");
+
+/* TODO HW_MACHINE_ARCH */
+
+/* TODO HW_REALMEM but maybe not here? */
 
 SYSCTL_STRING(_kern, OID_AUTO, root, CTLFLAG_RD, &sysinfo.root, 0,
               "Root fs and type");
