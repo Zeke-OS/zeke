@@ -49,14 +49,12 @@ int bcm2835_pm_get_power_state(uint32_t devid)
     mbuf[0] = sizeof(mbuf); /* Size */
     mbuf[1] = 0;            /* Request */
     /* Tags */
-    /* Get power state */
-    mbuf[2] = 0x00020001;
+    mbuf[2] = BCM2835_PROP_TAG_GET_PWR_STATE;
     mbuf[3] = 8;            /* Value buf size and req/resp */
     mbuf[4] = 4;            /* Value size */
     mbuf[5] = devid;
     mbuf[6] = 0;            /* Space for the response */
-
-    mbuf[7] = 0x0;          /* End tag */
+    mbuf[7] = BCM2835_PROP_TAG_END;
 
     err = bcm2835_prop_request(mbuf);
     if (err)
@@ -78,14 +76,12 @@ int bcm2835_pm_set_power_state(uint32_t devid, int state)
     mbuf[0] = sizeof(mbuf); /* Size */
     mbuf[1] = 0;            /* Request */
     /* Tags */
-    /* Set power state */
-    mbuf[2] = 0x00028001;
+    mbuf[2] = BCM2835_PROP_TAG_SET_PWR_STATE;
     mbuf[3] = 8;            /* Value buf size and req/resp */
     mbuf[4] = 8;            /* Value size */
     mbuf[5] = devid;
     mbuf[6] = (state) ? 3 : 2; /* power on and wait/power off and wait */
-
-    mbuf[7] = 0x0;          /* End tag */
+    mbuf[7] = BCM2835_PROP_TAG_END;
 
     err = bcm2835_prop_request(mbuf);
     if (err)
@@ -113,14 +109,12 @@ int bcm2835_pm_get_timing(uint32_t devid)
     mbuf[0] = sizeof(mbuf); /* Size */
     mbuf[1] = 0;            /* Request */
     /* Tags */
-    /* Get timing */
-    mbuf[2] = 0x00020002;
+    mbuf[2] = BCM2835_PROP_TAG_GET_TIMING;
     mbuf[3] = 8;            /* Value buf size and req/resp */
     mbuf[4] = 4;            /* Value size */
     mbuf[4] = devid;
     mbuf[5] = 0;            /* Space for response */
-
-    mbuf[6] = 0x0;          /* End tag */
+    mbuf[6] = BCM2835_PROP_TAG_END;
 
     err = bcm2835_prop_request(mbuf);
     if (err)

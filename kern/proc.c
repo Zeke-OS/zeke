@@ -329,10 +329,11 @@ void _proc_free(struct proc_info * p)
     close_files(p);
     kfree(p->files);
 
-    /* Free regions */
     /*
-     * TODO Locking here is pointless because waiter may/will get invalid data
-     * after release.
+     * Free regions
+     *
+     * TODO Locking here is pointless because a thread wating for this lock
+     * may/will get invalid data after we release the lock.
      */
     mtx_lock(&p->mm.regions_lock);
     if (p->mm.regions) {

@@ -219,13 +219,11 @@ static int blank_screen(int state)
     mbuf[0] = sizeof(mbuf); /* Size */
     mbuf[1] = 0;            /* Request */
     /* Tags */
-    /* Blank screen */
-    mbuf[2] = 0x00040002;
+    mbuf[2] = BCM2835_PROP_TAG_FB_BLANK_SCREEN;
     mbuf[3] = 4;            /* Value buf size and req/resp */
     mbuf[4] = 4;            /* Value size */
     mbuf[5] = (state) ? 1 : 0;
-
-    mbuf[6] = 0x0;          /* End tag */
+    mbuf[6] = BCM2835_PROP_TAG_END;
 
     err = bcm2835_prop_request(mbuf);
     if (err)
@@ -251,8 +249,7 @@ static int set_cursor_state(int enable, int x, int y)
     mbuf[6] = x;
     mbuf[7] = y;
     mbuf[8] = 0;            /* Flags: 0 = disp coords; 1 = fb coords */
-
-    mbuf[9] = 0x0;          /* End tag */
+    mbuf[9] = BCM2835_PROP_TAG_END;
 
     err = bcm2835_prop_request(mbuf);
     if (err)
@@ -274,8 +271,7 @@ static int set_cursor_info(void)
     mbuf[0] = sizeof(mbuf); /* Size */
     mbuf[1] = 0;            /* Request */
     /* Tags */
-    /* Set cursor info */
-    mbuf[2] = 0x00008011;
+    mbuf[2] = BCM2835_PROP_TAG_FB_SET_CURSOR_INFO;
     mbuf[3] = 24;           /* Value buf size and req/resp */
     mbuf[4] = 24;           /* Value size */
     mbuf[5] = 16;           /* width */
@@ -284,8 +280,7 @@ static int set_cursor_info(void)
     mbuf[8] = fb_cursor_data_paddr;
     mbuf[9] = 0;            /* hotspotX */
     mbuf[10] = 0;           /* hotspotY */
-
-    mbuf[11] = 0x0;          /* End tag */
+    mbuf[11] = BCM2835_PROP_TAG_END;
 
     err = bcm2835_prop_request(mbuf);
     if (err)

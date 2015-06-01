@@ -59,13 +59,13 @@ static uint32_t sd_get_base_clock_hz(void)
     mb[0] = sizeof(mb); /* size of this message */
     mb[1] = 0;
     /* next comes the first tag */
-    mb[2] = 0x00030002; /* get clock rate tag */
+    mb[2] = BCM2835_PROP_TAG_GET_CLK_RATE;
     mb[3] = 0x8;        /* value buffer size */
     mb[4] = 0x4;        /* is a request, value length = 4 */
     mb[5] = 0x1;        /* clock id + space to return clock id */
     mb[6] = 0;          /* space to return rate (in Hz) */
     /* closing tag */
-    mb[7] = 0;
+    mb[7] = BCM2835_PROP_TAG_END;
 
     if (bcm2835_prop_request(mb)) {
         KERROR(KERROR_ERR,
