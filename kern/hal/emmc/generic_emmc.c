@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    bcm2708_emmc.c
+ * @file    generic_emmc.c
  * @author  Olli Vanhoja
- * @brief   BCM2708 specific emmc driver functions.
+ * @brief   Generic emmc driver functions.
  * @section LICENSE
  * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -51,70 +51,20 @@
  *******************************************************************************
  */
 
-#include <errno.h>
-#include <kerror.h>
-#include "../bcm2835/bcm2835_pm.h"
-#include "../bcm2835/bcm2835_prop.h"
-#include "../bcm2835/bcm2835_timers.h"
+#include "../bcm2835/bcm2835_mmio.h"
 #include "emmc.h"
 
 static int emmc_power_cycle(void)
 {
-    int resp;
-
-    resp = bcm2835_pm_set_power_state(BCM2835_SD, 0);
-    if (resp < 0) {
-        KERROR(KERROR_ERR, "Failed to power off (%d)\n", resp);
-        return -EIO;
-    }
-
-    bcm_udelay(5000);
-
-    resp = bcm2835_pm_set_power_state(BCM2835_SD, 1);
-    if (resp != 1) {
-        KERROR(KERROR_ERR, "Failed to power on (%d)\n", resp);
-        return -EIO;
-    }
-
     return 0;
 }
 
-static uint32_t emmc_sd_get_base_clock_hz(struct emmc_capabilities * cap)
+static uint32_t sd_get_base_clock_hz(struct emmc_capabilities * cap)
 {
     uint32_t base_clock;
-    uint32_t mb[8];
 
-    mb[0] = sizeof(mb); /* size of this message */
-    mb[1] = 0;
-    /* next comes the first tag */
-    mb[2] = BCM2835_PROP_TAG_GET_CLK_RATE;
-    mb[3] = 0x8;        /* value buffer size */
-    mb[4] = 0x4;        /* is a request, value length = 4 */
-    mb[5] = 0x1;        /* clock id + space to return clock id */
-    mb[6] = 0;          /* space to return rate (in Hz) */
-    /* closing tag */
-    mb[7] = BCM2835_PROP_TAG_END;
-
-    if (bcm2835_prop_request(mb)) {
-        KERROR(KERROR_ERR,
-               "EMMC: property mailbox did not return a valid response.\n");
-
-        return 0;
-    }
-
-    if (mb[5] != 0x1) {
-        KERROR(KERROR_ERR,
-               "EMMC: property mailbox did not return a valid clock id.\n");
-
-        return 0;
-    }
-
-    base_clock = mb[6];
-
-#ifdef configEMMC_DEBUG
-    KERROR(KERROR_DEBUG, "EMMC: base clock rate is %u Hz\n",
-           base_clock);
-#endif
+    cap->capabilities[0] = mmio_read(EMMC_BASE + EMMC_CAPABILITIES_0);
+    base_clock = ((cap->capabilities[0] >> 8) & 0xff) * 1000000;
 
     return base_clock;
 }

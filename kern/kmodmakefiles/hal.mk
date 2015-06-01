@@ -6,6 +6,8 @@ hal-SRC-$(configATAG) += hal/atag.c
 hal-SRC-$(configMMU) += hal/mmu.c
 hal-SRC-$(configUART) += hal/uart.c
 hal-SRC-$(configFB) += $(wildcard hal/fb/*.c)
+hal-SRC-$(configEMMC) += hal/emmc/emmc.c
+hal-SRC-$(configEMMC_GENERIC) += hal/emmc/generic_emmc.c
 
 # Target model specific modules
 ifeq ($(configBCM2835),y)
@@ -25,7 +27,6 @@ ifeq ($(configBCM2835),y)
 	#should have rpi flag
 	hal-SRC-$(configRPI_LEDS) += hal/rpi/rpi_leds.c
 	hal-SRC-$(configRPI_HW) += hal/rpi/rpi_hw.c
-	hal-SRC-$(configEMMC) += hal/emmc/emmc.c
 	hal-SRC-$(configEMMC_BCM2708) += hal/emmc/bcm2708_emmc.c
 endif
 ifeq ($(configJZ4780),y)

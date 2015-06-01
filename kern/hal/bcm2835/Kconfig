@@ -2,16 +2,6 @@
 
 menu "BCM drivers"
 
-config configBCM_MB
-    bool "BCM2835 mailbox support"
-    default y if configBCM2835
-    depends on configBCM2835
-
-config configBCM_JTAG
-    bool "BCM2835 JTAG support"
-    default n
-    depends on configBCM2835
-
 config configBCM_FB
     bool "BCM2835 FB support"
     default n
@@ -22,6 +12,16 @@ config configBCM_INFO
     bool "BCM2835 info"
     default n
     depends on configBCM2835 && configBCM_MB
+
+config configBCM_JTAG
+    bool "BCM2835 JTAG support"
+    default n
+    depends on configBCM2835
+
+config configBCM_MB
+    bool "BCM2835 mailbox support"
+    default y if configBCM2835
+    depends on configBCM2835
 
 config configBCM_PM
     bool "BCM2835 PM support"
