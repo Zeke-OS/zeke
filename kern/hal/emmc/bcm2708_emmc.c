@@ -79,7 +79,7 @@ static int emmc_power_cycle(void)
     return 0;
 }
 
-static uint32_t emmc_sd_get_base_clock_hz(struct emmc_capabilities * cap)
+static uint32_t sd_get_base_clock_hz(struct emmc_capabilities * cap)
 {
     uint32_t base_clock;
     uint32_t mb[8];
