@@ -253,14 +253,13 @@ long sysconf(int name)
         /* TODO */
         break;
     case _SC_THREAD_SAFE_FUNCTIONS:
-        /* TODO */
+        value = _POSIX_THREAD_SAFE_FUNCTIONS;
         break;
     case _SC_THREAD_SPORADIC_SERVER:
-        /* TODO */
+        value = _POSIX_SPORADIC_SERVER;
         break;
     case _SC_THREADS:
         value = _POSIX_THREADS;
-        /* TODO */
         break;
     case _SC_TIMEOUTS:
         /* TODO */

@@ -676,7 +676,8 @@ static int dab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
     kputs(buf);
     panic("Can't handle data abort");
 
-    return -1; /* XXX Doesn't return yet as we panic but this makes split happy */
+    /* Doesn't return */
+    return -1;
 }
 
 static const char * dab_fsr_strerr[] = {
