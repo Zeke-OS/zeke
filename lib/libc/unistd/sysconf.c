@@ -136,7 +136,7 @@ long sysconf(int name)
         value = (long)rl.rlim_cur;
         break;
     case _SC_ADVISORY_INFO:
-        /* TODO */
+        value = _POSIX_ADVISORY_INFO;
         break;
     case _SC_BARRIERS:
         /* TODO */
@@ -163,7 +163,7 @@ long sysconf(int name)
             value = -1;
         break;
     case _SC_MAPPED_FILES:
-        /* TODO */
+        value = _POSIX_MAPPED_FILES;
         break;
     case _SC_MEMLOCK:
         /* TODO */
@@ -184,7 +184,7 @@ long sysconf(int name)
         /* TODO */
         break;
     case _SC_PRIORITY_SCHEDULING:
-        /* TODO */
+        value = _POSIX_PRIORITY_SCHEDULING;
         break;
     case _SC_RAW_SOCKETS:
         /* TODO */
@@ -206,6 +206,9 @@ long sysconf(int name)
         break;
     case _SC_SHARED_MEMORY_OBJECTS:
         /* TODO */
+        break;
+    case _SC_SHELL:
+        value = _POSIX_SHELL;
         break;
     case _SC_SPAWN:
         /* RFE Probably won't be supported */

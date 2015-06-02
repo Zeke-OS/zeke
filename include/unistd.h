@@ -48,9 +48,15 @@
 #include <sys/types/_uid_t.h>
 
 /* Options and option groups */
+#define _POSIX_ADVISORY_INFO            -1
+#define _POSIX_MAPPED_FILES             200809L
+#define _POSIX_PRIORITY_SCHEDULING      200809L
+#define _POSIX_SHELL                    1
 #define _POSIX_THREAD_ATTR_STACKADDR    200809L
 #define _POSIX_THREAD_ATTR_STACKSIZE    200809L
 #define _POSIX_THREADS                  200809L
+#define _POSIX2_C_BIND                  200809L
+#define _POSIX2_C_DEV                   -1
 
 /*
  * Access test flags.
@@ -121,6 +127,7 @@
 #define _SC_SAVED_IDS                   45
 #define _SC_SEMAPHORES                  46
 #define _SC_SHARED_MEMORY_OBJECTS       47
+#define _SC_SHELL                       48
 #define _SC_SPAWN                       49
 #define _SC_SPIN_LOCKS                  50
 #define _SC_SPORADIC_SERVER             51
