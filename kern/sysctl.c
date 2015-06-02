@@ -126,7 +126,9 @@ void sysctl_register_oid(struct sysctl_oid * oidp)
      * First check if another oid with the same name already
      * exists in the parent's list.
      */
-    //SYSCTL_ASSERT_XLOCKED();
+#if 0
+    SYSCTL_ASSERT_XLOCKED();
+#endif
     p = sysctl_find_oidname(oidp->oid_name, parent);
     if (p != NULL) {
         if ((p->oid_kind & CTLTYPE) == CTLTYPE_NODE) {
@@ -153,12 +155,10 @@ void sysctl_register_oid(struct sysctl_oid * oidp)
             panic("out of oids");
         }
     }
-#if 0
     else if (oidp->oid_number >= CTL_AUTO_START) {
         /* do not panic; this happens when unregistering sysctl sets */
-        printf("static sysctl oid too high: %d", oidp->oid_number);
+        KERROR(KERROR_WARN, "static sysctl oid too high: %d", oidp->oid_number);
     }
-#endif
 
     /*
      * Insert the oid into the parent's list in order.
@@ -179,15 +179,16 @@ void sysctl_unregister_oid(struct sysctl_oid * oidp)
 {
     struct sysctl_oid * p;
 
-    //SYSCTL_ASSERT_XLOCKED();
+#if 0
+    SYSCTL_ASSERT_XLOCKED();
+#endif
     if (oidp->oid_number == OID_AUTO) {
-        /* TODO */
         /*
          * This can happen when a module fails to register and is
          * being unloaded afterwards.  It should not be a panic()
          * for normal use.
          */
-        /* printf("%s: failed to unregister sysctl\n", __func__); */
+        KERROR(KERROR_WARN, "%s: failed to unregister sysctl\n", __func__);
         return;
     }
 
@@ -207,7 +208,9 @@ int sysctl_find_oid(int * name, unsigned int namelen, struct sysctl_oid ** noid,
     struct sysctl_oid * oid;
     int indx;
 
-    //SYSCTL_ASSERT_XLOCKED();
+#if 0
+    SYSCTL_ASSERT_XLOCKED();
+#endif
     lsp = &sysctl__children;
     indx = 0;
     while (indx < CTL_MAXNAME) {
@@ -252,7 +255,9 @@ static struct sysctl_oid * sysctl_find_oidname(const char * name,
 {
     struct sysctl_oid * oidp;
 
-    //SYSCTL_ASSERT_XLOCKED();
+#if 0
+    SYSCTL_ASSERT_XLOCKED();
+#endif
     SLIST_FOREACH(oidp, list, oid_link) {
         if (strcmp(oidp->oid_name, name) == 0) {
             return oidp;
@@ -331,7 +336,9 @@ static int sysctl_sysctl_next_ls(struct sysctl_oid_list * lsp, int * name,
 {
     struct sysctl_oid *oidp;
 
-    //SYSCTL_ASSERT_XLOCKED();
+#if 0
+    SYSCTL_ASSERT_XLOCKED();
+#endif
     *len = level;
     SLIST_FOREACH(oidp, lsp, oid_link) {
         *next = oidp->oid_number;
@@ -416,7 +423,9 @@ static int name2oid(char * name, int * oid, int * len,
     struct sysctl_oid * oidp;
     struct sysctl_oid_list * lsp = &sysctl__children;
 
-    //SYSCTL_ASSERT_XLOCKED();
+#if 0
+    SYSCTL_ASSERT_XLOCKED();
+#endif
 
     for (*len = 0; *len < CTL_MAXNAME;) {
         char * p = strsep(&name, ".");
@@ -891,7 +900,9 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
     struct sysctl_oid * oid;
     int error, indx;
 
-    //SYSCTL_ASSERT_XLOCKED();
+#if 0
+    SYSCTL_ASSERT_XLOCKED();
+#endif
 
     error = sysctl_find_oid(arg1, arg2, &oid, &indx, req);
     if (error)
@@ -943,7 +954,7 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
     oid->oid_running++;
     SYSCTL_UNLOCK();
 
-    // TODO
+    /* TODO */
 #if 0
     if (!(oid->oid_kind & CTLFLAG_MPSAFE))
         mtx_lock(&Giant);
@@ -954,11 +965,9 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
         mtx_unlock(&Giant);
 #endif
 
-    //KFAIL_POINT_ERROR(_debug_fail_point, sysctl_running, error);
-
     SYSCTL_LOCK();
     oid->oid_running--;
-    // TODO
+    /* TODO */
 #if 0
     if (oid->oid_running == 0 && (oid->oid_kind & CTLFLAG_DYING) != 0)
         wakeup(&oid->oid_running);
