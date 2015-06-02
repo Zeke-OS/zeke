@@ -47,22 +47,29 @@
 #include <stddef.h>
 
 /**
- * Allocate memory block.
- * @param size is the size of memory block in bytes.
- * @return A pointer to the memory block allocated; 0 if failed to allocate.
+ * Allocate a memory block.
+ * @param size is the size of the new memory block in bytes.
+ * @return A pointer to the memory block allocated; NULL if failed to allocate.
  */
 void * kmalloc(size_t size);
 
 /**
- * Allocate and zero-intialize array.
+ * Allocate and zero-intialize an array.
  * @param nelem is the number of elements to allocate.
  * @param size  is the of each element.
- * @return A pointer to the memory block allocted; 0 if failed to allocate.
+ * @return A pointer to the memory block allocted; NULL if failed to allocate.
  */
 void * kcalloc(size_t nelem, size_t elsize);
 
 /**
- * Deallocate memory block.
+ * Allocate and zero-initialize a block.
+ * @param size is the size of the new memory block in bytes.
+ * @return A pointer to the memory block allocated; NULL if failed to allocate.
+ */
+void * kzalloc(size_t size);
+
+/**
+ * Deallocate a memory block.
  * Deallocates a memory block previously allocted with kmalloc, kcalloc or
  * krealloc.
  * @param p is a pointer to a previously allocated memory block.
@@ -70,7 +77,7 @@ void * kcalloc(size_t nelem, size_t elsize);
 void kfree(void * p);
 
 /**
- * Deallocate memory when idling.
+ * Deallocate a memory block when idling.
  * This function is mainly useful for situation where a deadlock could occur,
  * especially when a thread calling any of kmalloc functions was interrutped and
  * call to kfree() must be done in interrupt handler (or scheduler).
@@ -78,14 +85,14 @@ void kfree(void * p);
 void kfree_lazy(void * p);
 
 /**
- * Reallocate memory block.
+ * Reallocate a memory block.
  * Changes the size of the memory block pointed to by p.
  * @note This function behaves like C99 realloc.
  * @param p     is a pointer to a memory block previously allocated with
  *              kmalloc, kcalloc or krealloc.
  * @param size  is the new size for the memory block, in bytes.
  * @return  Returns a pointer to the reallocated memory block, which may be
- *          either the same as p or a new location. 0 indicates that the
+ *          either the same as p or a new location. NULL indicates that the
  *          function failed to allocate memory, and p was not modified.
  */
 void * krealloc(void * p, size_t size);
