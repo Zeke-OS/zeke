@@ -63,7 +63,7 @@ SYSCTL_INT(_kern, OID_AUTO, cow_enabled, CTLFLAG_RW,
 static int alloc_master_pt(struct proc_info * new_proc)
 {
     /* Allocate a master page table for the new process. */
-    new_proc->mm.mpt.vaddr = 0;
+    new_proc->mm.mpt.vaddr = 0; /* mpt always starts from zero */
     new_proc->mm.mpt.nr_tables = 1;
     new_proc->mm.mpt.pt_type = MMU_PTT_MASTER;
     new_proc->mm.mpt.pt_dom = MMU_DOM_USER;

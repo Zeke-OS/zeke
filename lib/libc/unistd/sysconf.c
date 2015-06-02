@@ -96,19 +96,22 @@ long sysconf(int name)
         /* TODO */
         break;
     case _SC_HOST_NAME_MAX:
-        /* TODO */
+        value = (long)HOST_NAME_MAX;
         break;
     case _SC_IOV_MAX:
         /* TODO */
         break;
     case _SC_LINE_MAX:
-        /* TODO */
+        value = (long)LINE_MAX;
         break;
     case _SC_LOGIN_NAME_MAX:
         /* TODO */
         break;
     case _SC_NGROUPS_MAX:
-        /* TODO */
+        sysctl_mib[0] = CTL_KERN;
+        sysctl_mib[1] = KERN_NGROUPS;
+        if (sysctl(sysctl_mib, 2, &value, &len, NULL, 0) == -1)
+            value = -1;
         break;
     case _SC_GETGR_R_SIZE_MAX:
         /* TODO */
@@ -154,7 +157,10 @@ long sysconf(int name)
         /* TODO */
         break;
     case _SC_JOB_CONTROL:
-        /* TODO */
+        sysctl_mib[0] = CTL_KERN;
+        sysctl_mib[1] = KERN_JOB_CONTROL;
+        if (sysctl(sysctl_mib, 2, &value, &len, NULL, 0) == -1)
+            value = -1;
         break;
     case _SC_MAPPED_FILES:
         /* TODO */
@@ -199,9 +205,6 @@ long sysconf(int name)
         /* TODO */
         break;
     case _SC_SHARED_MEMORY_OBJECTS:
-        /* TODO */
-        break;
-    case _SC_SHELL:
         /* TODO */
         break;
     case _SC_SPAWN:

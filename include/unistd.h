@@ -121,7 +121,6 @@
 #define _SC_SAVED_IDS                   45
 #define _SC_SEMAPHORES                  46
 #define _SC_SHARED_MEMORY_OBJECTS       47
-#define _SC_SHELL                       48
 #define _SC_SPAWN                       49
 #define _SC_SPIN_LOCKS                  50
 #define _SC_SPORADIC_SERVER             51
