@@ -95,7 +95,7 @@ int __kinit__ pty_init(void)
     RB_INIT(&ptys_head);
     mtx_init(&pty_lock, MTX_TYPE_TICKET, 0);
 
-    dev_ptmx = kcalloc(1, sizeof(struct tty));
+    dev_ptmx = kzalloc(sizeof(struct tty));
     if (!dev_ptmx)
         return -ENOMEM;
 
@@ -142,7 +142,7 @@ static int creat_pty(void)
     struct pty_device * ptydev;
     int err;
 
-    ptydev = kcalloc(1, sizeof(struct pty_device));
+    ptydev = kzalloc(sizeof(struct pty_device));
     if (!ptydev)
         return -ENOMEM;
 

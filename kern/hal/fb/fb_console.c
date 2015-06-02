@@ -82,7 +82,7 @@ int fb_console_maketty(struct fb_conf * fb, dev_t dev_id)
     struct tty * tty;
     char dev_name[SPECNAMELEN];
 
-    tty = kcalloc(1, sizeof(struct tty));
+    tty = kzalloc(sizeof(struct tty));
     if (!tty) {
         return -ENOMEM;
     }

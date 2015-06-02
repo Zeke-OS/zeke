@@ -55,7 +55,7 @@ int make_ttydev(struct tty * tty, const char * drv_name, dev_t dev_id,
 {
     struct dev_info * dev;
 
-    dev = kcalloc(1, sizeof(struct dev_info));
+    dev = kzalloc(sizeof(struct dev_info));
     if (!dev)
         return -ENOMEM;
 

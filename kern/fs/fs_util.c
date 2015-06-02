@@ -96,7 +96,7 @@ vnode_t * fs_create_pseudofs_root(fs_t * newfs, int majornum)
      * destroyed after succesful mount.
      */
 
-    rootnode = kcalloc(1, sizeof(vnode_t));
+    rootnode = kzalloc(sizeof(vnode_t));
     if (!rootnode)
         return NULL;
 

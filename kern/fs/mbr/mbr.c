@@ -215,7 +215,7 @@ int mbr_register(int fd, int * part_count)
             continue;
         }
 
-        d = kcalloc(1, sizeof(struct mbr_dev));
+        d = kzalloc(sizeof(struct mbr_dev));
         if (!d) {
             KERROR(KERROR_ERR, "MBR: Out of memory");
 

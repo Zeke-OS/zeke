@@ -87,7 +87,7 @@ static int make_uartdev(struct uart_port * port, int port_num)
     dev_t dev_id;
     char dev_name[SPECNAMELEN];
 
-    tty = kcalloc(1, sizeof(struct tty));
+    tty = kzalloc(sizeof(struct tty));
     if (!tty) {
         return -ENOMEM;
     }

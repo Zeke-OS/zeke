@@ -322,7 +322,7 @@ static int rm_node(dh_dirent_t ** chain, const char * name)
     if (chinfo.i_size < sizeof(void *))
         return -ENOENT;
 
-    new_chain = kcalloc(1, chinfo.i_size);
+    new_chain = kzalloc(chinfo.i_size);
     if (!new_chain)
         return -ENOMEM;
 

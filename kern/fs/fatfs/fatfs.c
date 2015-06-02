@@ -156,7 +156,7 @@ static int fatfs_mount(const char * source, uint32_t mode,
         return -ENOTBLK;
 
     /* Allocate superblock */
-    fatfs_sb = kcalloc(1, sizeof(struct fatfs_sb));
+    fatfs_sb = kzalloc(sizeof(struct fatfs_sb));
     if (!fatfs_sb)
         return -ENOMEM;
 
@@ -271,7 +271,7 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
              fpath, (uint32_t)vn_hash);
 #endif
 
-    in = kcalloc(1, sizeof(struct fatfs_inode));
+    in = kzalloc(sizeof(struct fatfs_inode));
     if (!in) {
         retval = -ENOMEM;
         goto fail;

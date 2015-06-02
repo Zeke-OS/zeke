@@ -570,7 +570,7 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
     const pthread_t tid = atomic_inc(&next_thread_id);
     struct thread_info * thread;
 
-    thread = kcalloc(1, sizeof(struct thread_info));
+    thread = kzalloc(sizeof(struct thread_info));
     if (!thread)
         return -EAGAIN;
 
@@ -600,7 +600,7 @@ pthread_t thread_fork(void)
     if (new_id < 0)
         panic("Out of thread IDs");
 
-    new_thread = kcalloc(1, sizeof(struct thread_info));
+    new_thread = kzalloc(sizeof(struct thread_info));
     if (!new_thread)
         return -EAGAIN;
 

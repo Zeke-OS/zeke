@@ -131,7 +131,7 @@ static void init_kernel_proc(void)
     struct proc_info * kernel_proc;
     int err;
 
-    (*_procarr)[0] = kcalloc(1, sizeof(struct proc_info));
+    (*_procarr)[0] = kzalloc(sizeof(struct proc_info));
     kernel_proc = (*_procarr)[0];
 
     kernel_proc->pid = 0;
@@ -155,8 +155,8 @@ static void init_kernel_proc(void)
     /*
      * Copy region descriptors
      */
-    struct buf * kprocvm_code = kcalloc(1, sizeof(struct buf));
-    struct buf * kprocvm_heap = kcalloc(1, sizeof(struct buf));
+    struct buf * kprocvm_code = kzalloc(sizeof(struct buf));
+    struct buf * kprocvm_heap = kzalloc(sizeof(struct buf));
     if (!(kprocvm_code && kprocvm_heap)) {
         panic(panic_msg);
     }
@@ -198,7 +198,7 @@ static void init_kernel_proc(void)
      * We have a hard limit of 8 files here now but this is actually tunable
      * for child processes by using setrlimit().
      */
-    kernel_proc->files = kcalloc(1, SIZEOF_FILES(8));
+    kernel_proc->files = kzalloc(SIZEOF_FILES(8));
     if (!kernel_proc->files) {
         panic(panic_msg);
     }
@@ -210,7 +210,7 @@ static void init_kernel_proc(void)
     kernel_proc->files->fd[STDOUT_FILENO] = 0;
     /* stderr */
 #ifdef configKLOGGER
-    kernel_proc->files->fd[STDERR_FILENO] = kcalloc(1, sizeof(file_t));
+    kernel_proc->files->fd[STDERR_FILENO] = kzalloc(sizeof(file_t));
     if (fs_fildes_set(kernel_proc->files->fd[STDERR_FILENO],
                       &kerror_vnode, O_WRONLY)) {
         panic(panic_msg);

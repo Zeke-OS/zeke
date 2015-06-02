@@ -550,7 +550,7 @@ perms_ok:
     if (retval < 0)
         goto out;
 
-    new_fildes = kcalloc(1, sizeof(file_t));
+    new_fildes = kzalloc(sizeof(file_t));
     if (!new_fildes) {
         retval = -ENOMEM;
         goto out;

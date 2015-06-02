@@ -169,7 +169,7 @@ int fs_pipe_curproc_creat(struct files_struct * files, int fildes[2],
      *                               +-------+
      *                               |       |
      */
-    pipe = kcalloc(1, sizeof(struct stream_pipe));
+    pipe = kzalloc(sizeof(struct stream_pipe));
     bp = geteblk(len);
     if (!(pipe && bp)) {
         kfree(pipe);

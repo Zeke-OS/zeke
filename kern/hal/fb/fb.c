@@ -169,7 +169,7 @@ static int fb_makemmdev(struct fb_conf * fb, dev_t dev_id)
 {
     struct dev_info * dev;
 
-    dev = kcalloc(1, sizeof(struct dev_info));
+    dev = kzalloc(sizeof(struct dev_info));
     if (!dev)
         return -ENOMEM;
 

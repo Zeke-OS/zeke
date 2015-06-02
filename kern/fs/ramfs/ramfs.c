@@ -219,7 +219,7 @@ int ramsfs_mount(const char * source, uint32_t mode,
     KERROR(KERROR_DEBUG, "ramfs_mount()\n");
 #endif
 
-    ramfs_sb = kcalloc(1, sizeof(ramfs_sb_t));
+    ramfs_sb = kzalloc(sizeof(ramfs_sb_t));
     if (!ramfs_sb) {
         retval = -ENOMEM;
         goto out;
@@ -623,7 +623,7 @@ int ramfs_mkdir(vnode_t * dir, const char * name, mode_t mode)
     init_inode_attr(inode_new, S_IFDIR | mode);
 
     /* Create a dh_table */
-    inode_new->in.dir = kcalloc(1, sizeof(dh_table_t));
+    inode_new->in.dir = kzalloc(sizeof(dh_table_t));
     if (!inode_new->in.dir) {
         destroy_inode(inode_new);
         return -ENOSPC; /* Cant allocate dh_table */
@@ -799,7 +799,7 @@ static vnode_t * create_root(ramfs_sb_t * ramfs_sb)
         return NULL; /* Can't create */
     inode = get_inode_of_vnode(vn);
 
-    inode->in.dir = kcalloc(1, sizeof(dh_table_t)); /* Create a dh_table */
+    inode->in.dir = kzalloc(sizeof(dh_table_t)); /* Create a dh_table */
     /* Root is a directory. */
     vn->vn_mode = S_IFDIR | S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;
     /* TODO Any other settings? */

@@ -133,7 +133,7 @@ static struct vregion * vreg_alloc_node(size_t count)
 {
     struct vregion * vreg;
 
-    vreg = kcalloc(1, VREG_SIZE(count));
+    vreg = kzalloc(VREG_SIZE(count));
     if (!vreg)
         return 0;
 
@@ -210,7 +210,7 @@ struct buf * geteblk(size_t size)
     if (get_iblocks(&iblock, pcount, &vreg))
         return NULL;
 
-    bp = kcalloc(1, sizeof(struct buf));
+    bp = kzalloc(sizeof(struct buf));
     if (!bp)
         return NULL; /* Can't allocate vm_region struct */
 

@@ -343,7 +343,7 @@ static int create_proc_file(vnode_t * pdir, pid_t pid, const char * filename,
 
     KASSERT(pdir != NULL, "pdir must be set");
 
-    spec = kcalloc(1, sizeof(struct procfs_info));
+    spec = kzalloc(sizeof(struct procfs_info));
     if (!spec)
         return -ENOMEM;
 

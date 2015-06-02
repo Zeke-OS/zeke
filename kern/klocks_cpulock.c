@@ -42,7 +42,7 @@ cpulock_t * cpulock_create(void)
     const int n = get_cpu_count();
     cpulock_t * lock;
 
-    lock = kcalloc(1, sizeof(cpulock_t) + n * sizeof(mtx_t));
+    lock = kzalloc(sizeof(cpulock_t) + n * sizeof(mtx_t));
     if (!lock)
         return NULL;
 

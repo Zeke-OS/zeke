@@ -74,7 +74,7 @@ struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr)
     if (!vpt) { /* Create a new pt if a sufficient pt not found. */
         int err;
 
-        vpt = kcalloc(1, sizeof(struct vm_pt));
+        vpt = kzalloc(sizeof(struct vm_pt));
         if (!vpt)
             return NULL;
 
