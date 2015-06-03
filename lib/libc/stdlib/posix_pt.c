@@ -53,18 +53,8 @@ int posix_openpt(int flags)
         return fd;
     }
 
-    ret = _ioctl(fd, IOCTL_PTY_CREAT, NULL, 0);
-    if (ret < 0) {
-        errno = EAGAIN;
-        return -1;
-    }
+    last_ptyid = lseek(fd, 0, SEEK_CUR);
 
-    /*
-     * Seek to the correct pty id.
-     */
-    lseek(fd, (off_t)last_ptyid, SEEK_SET);
-
-    last_ptyid = ret;
     return fd;
 }
 

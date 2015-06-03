@@ -51,10 +51,10 @@ static int uart_nr_ports;
 static int vfs_ready;
 
 static int make_uartdev(struct uart_port * port, int port_num);
-static ssize_t uart_read(struct tty * tty, off_t blkno, uint8_t * buf,
-                         size_t bcount, int oflags);
-static ssize_t uart_write(struct tty * tty, off_t blkno, uint8_t * buf,
-                          size_t bcount, int oflags);
+static ssize_t uart_read(struct tty * tty, off_t blkno,
+                         uint8_t * buf, size_t bcount, int oflags);
+static ssize_t uart_write(struct tty * tty, off_t blkno,
+                          uint8_t * buf, size_t bcount, int oflags);
 static int uart_ioctl(struct dev_info * devnfo, uint32_t request,
                       void * arg, size_t arg_len);
 
@@ -141,8 +141,8 @@ struct uart_port * uart_getport(int port_num)
     return retval;
 }
 
-static ssize_t uart_read(struct tty * tty, off_t blkno, uint8_t * buf,
-                         size_t bcount, int oflags)
+static ssize_t uart_read(struct tty * tty, off_t blkno,
+                         uint8_t * buf, size_t bcount, int oflags)
 {
     struct uart_port * port = (struct uart_port *)tty->opt_data;
     size_t n = 0;
@@ -169,8 +169,8 @@ static ssize_t uart_read(struct tty * tty, off_t blkno, uint8_t * buf,
     return n;
 }
 
-static ssize_t uart_write(struct tty * tty, off_t blkno, uint8_t * buf,
-                          size_t bcount, int oflags)
+static ssize_t uart_write(struct tty * tty, off_t blkno,
+                          uint8_t * buf, size_t bcount, int oflags)
 {
     struct uart_port * port = (struct uart_port *)tty->opt_data;
     const unsigned block = !(oflags & O_NONBLOCK);

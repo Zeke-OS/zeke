@@ -52,8 +52,8 @@ const uint32_t def_bg_color = 0x000000;
 static void draw_glyph(struct fb_conf * fb, const char * font_glyph,
                        int consx, int consy);
 static void invert_glyph(struct fb_conf * fb, int consx, int consy);
-static ssize_t fb_console_tty_read(struct tty * tty, off_t blkno, uint8_t * buf,
-                    size_t bcount, int oflags);
+static ssize_t fb_console_tty_read(struct tty * tty, off_t blkno,
+                                   uint8_t * buf, size_t bcount, int oflags);
 static ssize_t fb_console_tty_write(struct tty * tty, off_t blkno,
                                     uint8_t * buf, size_t bcount, int oflags);
 static void fb_console_setconf(struct termios * conf);

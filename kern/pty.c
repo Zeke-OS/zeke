@@ -33,7 +33,7 @@
 /*
  * This is the pseudo terminal device driver for Zeke.
  * New ptys are created as per POSIX by calling posix_openpt(), we do
- * have a ptmx device file but there is no intention to support pty
+ * have a ptmx device file but there is currently no intention to support pty
  * creation by opening the file since we don't have the traditional open()
  * semantics inside the kernel.
  */
@@ -49,9 +49,20 @@
 #include <kinit.h>
 #include <klocks.h>
 #include <kmalloc.h>
+#include <libkern.h>
 #include <proc.h>
 #include <queue_r.h>
-#include <pty.h>
+#include <tty.h>
+
+struct pty_device {
+    int pty_id;
+    struct tty tty_slave;
+    struct queue_cb chbuf_ms;
+    struct queue_cb chbuf_sm;
+    char _cbuf_ms[256];
+    char _cbuf_sm[256];
+    RB_ENTRY(pty_device) _entry;
+};
 
 static const char drv_name[] = "PTY";
 
@@ -62,6 +73,7 @@ mtx_t pty_lock;
 
 static unsigned next_ptyid(void);
 static struct pty_device * pty_get(unsigned id);
+static void creat_pty(file_t * file, struct tty * tty);
 static int ptymaster_read(struct tty * tty, off_t blkno,
                           uint8_t * buf, size_t bcount, int oflags);
 static int ptymaster_write(struct tty * tty, off_t blkno,
@@ -70,8 +82,6 @@ static int ptyslave_read(struct tty * tty, off_t blkno,
                          uint8_t * buf, size_t bcount, int oflags);
 static int ptyslave_write(struct tty * tty, off_t blkno,
                           uint8_t * buf, size_t bcount, int oflags);
-static int pty_ioctl(struct dev_info * devnfo, uint32_t request,
-                     void * arg, size_t arg_len);
 
 static int ptydev_comp(struct pty_device * a, struct pty_device * b)
 {
@@ -99,7 +109,8 @@ int __kinit__ pty_init(void)
 
     dev_ptmx->read = ptymaster_read;
     dev_ptmx->write = ptymaster_write;
-    dev_ptmx->ioctl = pty_ioctl;
+    dev_ptmx->open_callback = creat_pty;
+    /* TODO close_callback */
 
     if (make_ttydev(dev_ptmx, drv_name, dev_id, dev_name)) {
         KERROR(KERROR_ERR, "Failed to make /dev/ptmx");
@@ -140,9 +151,8 @@ static int make_ptyslave(int pty_id, struct tty * tty_slave)
     ksprintf(dev_name, sizeof(dev_name), "pty%i", pty_id);
     tty_slave->read = ptyslave_read;
     tty_slave->write = ptyslave_write;
-    tty_slave->ioctl = pty_ioctl;
 
-    /* TODO Should be created under pts? */
+    /* TODO a slave pty should be created under pts dir */
     if (make_ttydev(tty_slave, drv_name, dev_id, dev_name))
         return -ENODEV;
 
@@ -152,21 +162,24 @@ static int make_ptyslave(int pty_id, struct tty * tty_slave)
 /**
  * Create a new pty master/slave pair.
  */
-static int creat_pty(void)
+static void creat_pty(file_t * file, struct tty * tty)
 {
-    const int pty_id = next_ptyid();
+    int pty_id;
     struct pty_device * ptydev;
     int err;
 
     ptydev = kzalloc(sizeof(struct pty_device));
-    if (!ptydev)
-        return -ENOMEM;
+    if (!ptydev) {
+        panic("Not enough memory to create a pty device");
+    }
 
+    pty_id = next_ptyid();
     err = make_ptyslave(pty_id, &ptydev->tty_slave);
     if (err) {
         kfree(ptydev);
-        return err;
+        panic("Failed to make a ptyslave device");
     }
+    file->seek_pos = pty_id;
 
     ptydev->chbuf_ms = queue_create(ptydev->_cbuf_ms, sizeof(char),
             sizeof(ptydev->_cbuf_ms));
@@ -176,16 +189,14 @@ static int creat_pty(void)
     mtx_lock(&pty_lock);
     RB_INSERT(ptytree, &ptys_head, ptydev);
     mtx_unlock(&pty_lock);
-
-    return pty_id;
 }
 
 /*
  * TODO Check owner before read/write
  */
 
-static int ptymaster_read(struct tty * tty, off_t blkno,
-                          uint8_t * buf, size_t bcount, int oflags)
+static int ptymaster_read(struct tty * tty, off_t blkno, uint8_t * buf,
+                          size_t bcount, int oflags)
 {
     int pty_id = blkno;
     struct pty_device * ptydev = pty_get(pty_id);
@@ -199,8 +210,8 @@ static int ptymaster_read(struct tty * tty, off_t blkno,
     return i;
 }
 
-static int ptymaster_write(struct tty * tty, off_t blkno,
-                           uint8_t * buf, size_t bcount, int oflags)
+static int ptymaster_write(struct tty * tty, off_t blkno, uint8_t * buf,
+                           size_t bcount, int oflags)
 {
     int pty_id = blkno;
     struct pty_device * ptydev = pty_get(pty_id);
@@ -217,9 +228,10 @@ static int ptymaster_write(struct tty * tty, off_t blkno,
 static int ptyslave_read(struct tty * tty, off_t blkno,
                          uint8_t * buf, size_t bcount, int oflags)
 {
-    int pty_id = blkno;
-    struct pty_device * ptydev = pty_get(pty_id);
+    struct pty_device * ptydev;
     size_t i;
+
+    ptydev = container_of(tty, struct pty_device, tty_slave);
 
     for (i = 0; i < bcount; i++) {
         if (!queue_pop(&ptydev->chbuf_ms, &buf[i]))
@@ -232,9 +244,10 @@ static int ptyslave_read(struct tty * tty, off_t blkno,
 static int ptyslave_write(struct tty * tty, off_t blkno,
                           uint8_t * buf, size_t bcount, int oflags)
 {
-    int pty_id = blkno;
-    struct pty_device * ptydev = pty_get(pty_id);
+    struct pty_device * ptydev;
     size_t i;
+
+    ptydev = container_of(tty, struct pty_device, tty_slave);
 
     for (i = 0; i < bcount; i++) {
         if (!queue_push(&ptydev->chbuf_sm, &buf[i]))
@@ -242,23 +255,4 @@ static int ptyslave_write(struct tty * tty, off_t blkno,
     }
 
     return i;
-}
-
-static int pty_ioctl(struct dev_info * devnfo, uint32_t request,
-                     void * arg, size_t arg_len)
-{
-    struct pty_device * pty_slave = pty_get(DEV_MINOR(devnfo->dev_id));
-
-    if (!pty_slave && request == IOCTL_PTY_CREAT)
-        return creat_pty();
-
-    if (!pty_slave)
-        return -EINVAL;
-
-    switch (request) {
-    default:
-        return -EINVAL;
-    }
-
-    return 0;
 }

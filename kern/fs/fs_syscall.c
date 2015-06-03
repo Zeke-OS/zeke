@@ -175,6 +175,15 @@ static int sys_lseek(__user void * user_args)
         return -1;
     }
 
+    /*
+     * TODO Some unices will return the umber of written  characters if
+     * whence is SEEK_SET and the file is a tty. Here we probably should
+     * just fail with ESPIPE.
+     *
+     * TODO 0, SEEK_CUR on tty should return the pty slave id of the current
+     *      file.
+     */
+
     if (args.whence == SEEK_SET)
         file->seek_pos = args.offset;
     else if (args.whence == SEEK_CUR)
