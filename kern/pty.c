@@ -62,8 +62,6 @@ mtx_t pty_lock;
 
 static unsigned next_ptyid(void);
 static struct pty_device * pty_get(unsigned id);
-static int creat_pty(void);
-static int make_ptyslave(int pty_id, struct tty * tty_slave);
 static int ptymaster_read(struct tty * tty, off_t blkno,
                           uint8_t * buf, size_t bcount, int oflags);
 static int ptymaster_write(struct tty * tty, off_t blkno,
@@ -113,7 +111,7 @@ int __kinit__ pty_init(void)
 
 static unsigned next_ptyid(void)
 {
-    /* TODO Implement restart */
+    /* TODO Implement restart for ptyid */
     return atomic_inc(&_next_pty_id);
 }
 
@@ -131,6 +129,24 @@ static struct pty_device * pty_get(unsigned id)
 
 out:
     return res;
+}
+
+static int make_ptyslave(int pty_id, struct tty * tty_slave)
+{
+    dev_t dev_id;
+    char dev_name[SPECNAMELEN];
+
+    dev_id = DEV_MMTODEV(VDEV_MJNR_PTY, pty_id);
+    ksprintf(dev_name, sizeof(dev_name), "pty%i", pty_id);
+    tty_slave->read = ptyslave_read;
+    tty_slave->write = ptyslave_write;
+    tty_slave->ioctl = pty_ioctl;
+
+    /* TODO Should be created under pts? */
+    if (make_ttydev(tty_slave, drv_name, dev_id, dev_name))
+        return -ENODEV;
+
+    return 0;
 }
 
 /**
@@ -162,24 +178,6 @@ static int creat_pty(void)
     mtx_unlock(&pty_lock);
 
     return pty_id;
-}
-
-static int make_ptyslave(int pty_id, struct tty * tty_slave)
-{
-    dev_t dev_id;
-    char dev_name[SPECNAMELEN];
-
-    dev_id = DEV_MMTODEV(VDEV_MJNR_PTY, pty_id);
-    ksprintf(dev_name, sizeof(dev_name), "pty%i", pty_id);
-    tty_slave->read = ptyslave_read;
-    tty_slave->write = ptyslave_write;
-    tty_slave->ioctl = pty_ioctl;
-
-    /* TODO Should be created under pts? */
-    if (make_ttydev(tty_slave, drv_name, dev_id, dev_name))
-        return -ENODEV;
-
-    return 0;
 }
 
 /*

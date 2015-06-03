@@ -546,7 +546,11 @@ perms_ok:
         goto out;
     }
 
-    retval = vnode->vnode_ops->file_opened(curproc, vnode);
+    /*
+     * File opened event call, if this fails we must cancel the
+     * file open procedure.
+     */
+    retval = vnode->vnode_ops->event_file_opened(curproc, vnode);
     if (retval < 0)
         goto out;
 
@@ -567,6 +571,11 @@ perms_ok:
     }
     fs_fildes_set(curproc->files->fd[fd], vnode, oflags);
     new_fildes->fdflags |= FD_KFREEABLE;
+
+    /*
+     * File descriptor ready, make an event call to the fs.
+     */
+    vnode->vnode_ops->event_fd_created(curproc, new_fildes);
 
     retval = fd;
 out:
@@ -630,7 +639,7 @@ int fs_fildes_close(struct proc_info * p, int fildes)
     if (!fd)
         return -EBADF;
 
-    fd->vnode->vnode_ops->file_closed(p, fd);
+    fd->vnode->vnode_ops->event_file_closed(p, fd);
 
     fs_fildes_ref(p->files, fildes, -2);
     p->files->fd[fildes] = NULL;

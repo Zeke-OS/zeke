@@ -54,8 +54,8 @@ static int devfs_mount(const char * source, uint32_t mode,
                        const char * parm, int parm_len,
                        struct fs_superblock ** sb);
 static int devfs_umount(struct fs_superblock * fs_sb);
-static int devfs_file_opened(struct proc_info * p, vnode_t * vnode);
-static void devfs_file_closed(struct proc_info * p, file_t * file);
+static int devfs_event_file_opened(struct proc_info * p, vnode_t * vnode);
+static void devfs_event_file_closed(struct proc_info * p, file_t * file);
 static int dev_ioctl(file_t * file, unsigned request,
                      void * arg, size_t arg_len);
 
@@ -63,8 +63,8 @@ vnode_ops_t devfs_vnode_ops = {
     .write = dev_write,
     .read = dev_read,
     .ioctl = dev_ioctl,
-    .file_opened = devfs_file_opened,
-    .file_closed = devfs_file_closed,
+    .event_file_opened = devfs_event_file_opened,
+    .event_file_closed = devfs_event_file_closed,
 };
 
 static fs_t devfs_fs = {
@@ -173,7 +173,7 @@ static int devfs_delete_vnode(vnode_t * vnode)
     return err;
 }
 
-static int devfs_file_opened(struct proc_info * p, vnode_t * vnode)
+static int devfs_event_file_opened(struct proc_info * p, vnode_t * vnode)
 {
     struct dev_info * devnfo = (struct dev_info *)vnode->vn_specinfo;
 
@@ -182,7 +182,7 @@ static int devfs_file_opened(struct proc_info * p, vnode_t * vnode)
     return 0;
 }
 
-static void devfs_file_closed(struct proc_info * p, file_t * file)
+static void devfs_event_file_closed(struct proc_info * p, file_t * file)
 {
     struct vnode * vnode = file->vnode;
     struct dev_info * devnfo = (struct dev_info *)vnode->vn_specinfo;
