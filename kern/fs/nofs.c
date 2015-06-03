@@ -40,9 +40,9 @@ const vnode_ops_t nofs_vnode_ops = {
     .read = fs_enotsup_read,
     .write = fs_enotsup_write,
     .ioctl = fs_enotsup_ioctl,
-    .event_file_opened = fs_enotsup_event_file_opened,
+    .event_vnode_opened = fs_enotsup_event_vnode_opened,
     .event_fd_created = fs_enotsup_event_fd_created,
-    .event_file_closed = fs_enotsup_event_file_closed,
+    .event_fd_closed = fs_enotsup_event_fd_closed,
     .create = fs_enotsup_create,
     .mknod = fs_enotsup_mknod,
     .lookup = fs_enotsup_lookup,
@@ -85,7 +85,7 @@ int fs_enotsup_ioctl(file_t * file, unsigned request, void * arg,
     return -ENOTTY;
 }
 
-int fs_enotsup_event_file_opened(struct proc_info * p, vnode_t * vnode)
+int fs_enotsup_event_vnode_opened(struct proc_info * p, vnode_t * vnode)
 {
     return 0;
 }
@@ -94,7 +94,7 @@ void fs_enotsup_event_fd_created(struct proc_info * p, file_t * file)
 {
 }
 
-void fs_enotsup_event_file_closed(struct proc_info * p, file_t * file)
+void fs_enotsup_event_fd_closed(struct proc_info * p, file_t * file)
 {
 }
 

@@ -83,18 +83,18 @@ struct dev_info {
     /**
      * The function is called whenever a file associated with tihs device is
      * opened.
-     * @note Can be NULL.
-     * @return Return 0 if opening the device is ok; Otherwise a negative
-     * errno shall be returned.
+     * @note This function pointer can be NULL.
      */
-    int (*opened_callback)(struct proc_info * p, struct dev_info * devnfo);
+    void (*open_callback)(struct proc_info * p, file_t * file,
+                          struct dev_info * devnfo);
 
     /**
      * The function is called whenever a file associated with this device is
      * closed.
      * @note Can be NULL.
      */
-    void (*closed_callback)(struct proc_info * p, struct dev_info * devnfo);
+    void (*close_callback)(struct proc_info * p, file_t * file,
+                           struct dev_info * devnfo);
 };
 
 void _devfs_create_specials(void);

@@ -301,7 +301,8 @@ typedef struct vnode_ops {
      */
     int (*ioctl)(file_t * file, unsigned request, void * arg, size_t arg_len);
     /**
-     * File opened callback.
+     * Vnode opened callback.
+     * Vnode opened to create a file descriptor for it.
      * @param p     is the process that called fs_fildes_create_curproc() for
      *              file.
      * @param vnode is the vnode that will be opened and referenced by
@@ -312,13 +313,13 @@ typedef struct vnode_ops {
      */
     /* Event handlers
      * -------------- */
-    int (*event_file_opened)(struct proc_info * p, vnode_t * vnode);
+    int (*event_vnode_opened)(struct proc_info * p, vnode_t * vnode);
     /**
      * File descriptor created for the opened file.
      * @note        Opening the file nor file descriptor creation can't be
      *              cancelled anymore at this point, if a file system
      *              needs to be able to cancel the opening procedure that
-     *              must be done by registering a file_opened() function.
+     *              must be done by registering a event_vnode_opened() function.
      * @param p     is the process that owns the new file descriptor.
      * @param file  is the new file descriptor.
      */
@@ -338,7 +339,7 @@ typedef struct vnode_ops {
      *              file.
      * @param file  is the file that was closed by p.
      */
-    void (*event_file_closed)(struct proc_info * p, file_t * file);
+    void (*event_fd_closed)(struct proc_info * p, file_t * file);
     /* Directory file operations
      * ------------------------- */
     /**
@@ -700,9 +701,9 @@ ssize_t fs_enotsup_write(file_t * file, const void * buf, size_t count);
 ssize_t fs_enotsup_read(file_t * file, void * buf, size_t count);
 int fs_enotsup_ioctl(file_t * file, unsigned request, void * arg,
                      size_t arg_len);
-int fs_enotsup_event_file_opened(struct proc_info * p, vnode_t * vnode);
+int fs_enotsup_event_vnode_opened(struct proc_info * p, vnode_t * vnode);
 void fs_enotsup_event_fd_created(struct proc_info * p, file_t * file);
-void fs_enotsup_event_file_closed(struct proc_info * p, file_t * file);
+void fs_enotsup_event_fd_closed(struct proc_info * p, file_t * file);
 int fs_enotsup_create(vnode_t * dir, const char * name, mode_t mode,
                       vnode_t ** result);
 int fs_enotsup_mknod(vnode_t * dir, const char * name, int mode,

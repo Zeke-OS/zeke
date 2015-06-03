@@ -59,6 +59,9 @@ int posix_openpt(int flags)
         return -1;
     }
 
+    /*
+     * Seek to the correct pty id.
+     */
     lseek(fd, (off_t)last_ptyid, SEEK_SET);
 
     last_ptyid = ret;

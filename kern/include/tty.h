@@ -36,6 +36,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+struct file;
 struct termios;
 struct winsize;
 
@@ -55,6 +56,18 @@ struct tty {
 
     ssize_t (*write)(struct tty * tty, off_t blkno, uint8_t * buf,
                      size_t bcount, int oflags);
+
+    /**
+     * TTY opened callback.
+     * @note Can be NULL.
+     */
+    void (*open_callback)(struct file * file, struct tty * tty);
+
+    /**
+     * TTY closed callback.
+     * @note Can be NULL.
+     */
+    void (*close_callback)(struct file * file, struct tty * tty);
 
     /**
      * Overriding ioctl.

@@ -47,6 +47,10 @@ static ssize_t tty_read(struct dev_info * devnfo, off_t blkno, uint8_t * buf,
                         size_t bcount, int oflags);
 static ssize_t tty_write(struct dev_info * devnfo, off_t blkno, uint8_t * buf,
                          size_t bcount, int oflags);
+static void tty_open_callback(struct proc_info * p, file_t * file,
+                              struct dev_info * devnfo);
+static void tty_close_callback(struct proc_info * p, file_t * file,
+                               struct dev_info * devnfo);
 static int tty_ioctl(struct dev_info * devnfo, uint32_t request,
                      void * arg, size_t arg_len);
 
@@ -66,6 +70,8 @@ int make_ttydev(struct tty * tty, const char * drv_name, dev_t dev_id,
     dev->block_size = 1;
     dev->read = tty_read;
     dev->write = tty_write;
+    dev->open_callback = tty_open_callback;
+    dev->close_callback = tty_close_callback;
     dev->ioctl = tty_ioctl;
     dev->opt_data = tty;
     /*
@@ -103,7 +109,7 @@ static ssize_t tty_read(struct dev_info * devnfo, off_t blkno, uint8_t * buf,
 {
     struct tty * tty = (struct tty *)devnfo->opt_data;
 
-    KASSERT(tty, "opt_data should have tty");
+    KASSERT(tty, "opt_data should have a tty");
 
     return tty->read(tty, blkno, buf, bcount, oflags);
 }
@@ -113,9 +119,31 @@ static ssize_t tty_write(struct dev_info * devnfo, off_t blkno, uint8_t * buf,
 {
     struct tty * tty = (struct tty *)devnfo->opt_data;
 
-    KASSERT(tty, "opt_data should have tty");
+    KASSERT(tty, "opt_data should have a tty");
 
     return tty->write(tty, blkno, buf, bcount, oflags);
+}
+
+static void tty_open_callback(struct proc_info * p, file_t * file,
+                              struct dev_info * devnfo)
+{
+    struct tty * tty = (struct tty *)devnfo->opt_data;
+
+    KASSERT(tty, "opt_data should have a tty");
+
+    if (tty->open_callback)
+        tty->open_callback(file, tty);
+}
+
+static void tty_close_callback(struct proc_info * p, file_t * file,
+                               struct dev_info * devnfo)
+{
+    struct tty * tty = (struct tty *)devnfo->opt_data;
+
+    KASSERT(tty, "opt_data should have a tty");
+
+    if (tty->close_callback)
+        tty->close_callback(file, tty);
 }
 
 static int tty_ioctl(struct dev_info * devnfo, uint32_t request,
