@@ -39,12 +39,9 @@
 #include <sys/ioctl.h>
 #include <errno.h>
 
-static unsigned last_ptyid;
-
-/* TODO Not re-entrant */
 int posix_openpt(int flags)
 {
-    int fd, ret;
+    int fd;
 
     fd = open("/dev/ptmx", flags & (O_RDWR | O_NOCTTY));
     if (fd < 0) {
@@ -52,8 +49,6 @@ int posix_openpt(int flags)
             errno = EAGAIN;
         return fd;
     }
-
-    last_ptyid = lseek(fd, 0, SEEK_CUR);
 
     return fd;
 }
@@ -81,6 +76,7 @@ char * ptsname(int fildes)
     const char devpath[] = "/dev/";
     char * path;
     const size_t size = sizeof(devpath) + SPECNAMELEN;
+    int pty_id;
 
     path = malloc(size);
     if (!path) {
@@ -88,7 +84,8 @@ char * ptsname(int fildes)
         return NULL;
     }
 
-    snprintf(path, size, "/dev/pty%u", last_ptyid);
+    pty_id = lseek(fildes, 0, SEEK_CUR);
+    snprintf(path, size, "/dev/pty%u", pty_id);
 
     return path;
 }
