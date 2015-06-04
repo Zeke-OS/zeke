@@ -30,16 +30,9 @@
  *******************************************************************************
  */
 
-/*
- * This is the pseudo terminal device driver for Zeke.
- * New ptys are created as per POSIX by calling posix_openpt(), we do
- * have a ptmx device file but there is currently no intention to support pty
- * creation by opening the file since we don't have the traditional open()
- * semantics inside the kernel.
- */
-
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <sys/ioctl.h>
 #include <sys/tree.h>
 #include <termios.h>
@@ -54,34 +47,29 @@
 #include <queue_r.h>
 #include <tty.h>
 
+/**
+ * Struct describing a single PTY device.
+ */
 struct pty_device {
     int pty_id;
     struct tty tty_slave;
     struct queue_cb chbuf_ms;
     struct queue_cb chbuf_sm;
-    char _cbuf_ms[256];
-    char _cbuf_sm[256];
+    char _cbuf_ms[MAX_INPUT]; /* RFE is MAX_INPUT enough for pty? */
+    char _cbuf_sm[MAX_INPUT];
     RB_ENTRY(pty_device) _entry;
 };
 
 static const char drv_name[] = "PTY";
+static const char dev_name[] = "ptmx";
 
-static struct tty * dev_ptmx;
-static atomic_t _next_pty_id;
+/*
+ * pty state variables.
+ */
+static struct tty * dev_ptmx; /*!< PTY mux device. */
+static atomic_t _next_pty_id; /*!< Next PTY id. */
 RB_HEAD(ptytree, pty_device) ptys_head = RB_INITIALIZER(_head);
-mtx_t pty_lock;
-
-static unsigned next_ptyid(void);
-static struct pty_device * pty_get(unsigned id);
-static void creat_pty(file_t * file, struct tty * tty);
-static int ptymaster_read(struct tty * tty, off_t blkno,
-                          uint8_t * buf, size_t bcount, int oflags);
-static int ptymaster_write(struct tty * tty, off_t blkno,
-                           uint8_t * buf, size_t bcount, int oflags);
-static int ptyslave_read(struct tty * tty, off_t blkno,
-                         uint8_t * buf, size_t bcount, int oflags);
-static int ptyslave_write(struct tty * tty, off_t blkno,
-                          uint8_t * buf, size_t bcount, int oflags);
+mtx_t pty_lock; /*!< Lock for protecting global PTY data. */
 
 static int ptydev_comp(struct pty_device * a, struct pty_device * b)
 {
@@ -90,35 +78,6 @@ static int ptydev_comp(struct pty_device * a, struct pty_device * b)
 
 RB_PROTOTYPE_STATIC(ptytree, pty_device, _entry, ptydev_comp);
 RB_GENERATE_STATIC(ptytree, pty_device, _entry, ptydev_comp);
-
-int __kinit__ pty_init(void)
-{
-    dev_t dev_id = DEV_MMTODEV(VDEV_MJNR_PTY, 0);
-    char dev_name[] = "ptmx";
-
-    SUBSYS_DEP(devfs_init);
-    SUBSYS_INIT("pty");
-
-    _next_pty_id = ATOMIC_INIT(0);
-    RB_INIT(&ptys_head);
-    mtx_init(&pty_lock, MTX_TYPE_TICKET, 0);
-
-    dev_ptmx = kzalloc(sizeof(struct tty));
-    if (!dev_ptmx)
-        return -ENOMEM;
-
-    dev_ptmx->read = ptymaster_read;
-    dev_ptmx->write = ptymaster_write;
-    dev_ptmx->open_callback = creat_pty;
-    /* TODO close_callback */
-
-    if (make_ttydev(dev_ptmx, drv_name, dev_id, dev_name)) {
-        KERROR(KERROR_ERR, "Failed to make /dev/ptmx");
-        return -ENODEV;
-    }
-
-    return 0;
-}
 
 static unsigned next_ptyid(void)
 {
@@ -140,55 +99,6 @@ static struct pty_device * pty_get(unsigned id)
 
 out:
     return res;
-}
-
-static int make_ptyslave(int pty_id, struct tty * tty_slave)
-{
-    dev_t dev_id;
-    char dev_name[SPECNAMELEN];
-
-    dev_id = DEV_MMTODEV(VDEV_MJNR_PTY, pty_id);
-    ksprintf(dev_name, sizeof(dev_name), "pty%i", pty_id);
-    tty_slave->read = ptyslave_read;
-    tty_slave->write = ptyslave_write;
-
-    /* TODO a slave pty should be created under pts dir */
-    if (make_ttydev(tty_slave, drv_name, dev_id, dev_name))
-        return -ENODEV;
-
-    return 0;
-}
-
-/**
- * Create a new pty master/slave pair.
- */
-static void creat_pty(file_t * file, struct tty * tty)
-{
-    int pty_id;
-    struct pty_device * ptydev;
-    int err;
-
-    ptydev = kzalloc(sizeof(struct pty_device));
-    if (!ptydev) {
-        panic("Not enough memory to create a pty device");
-    }
-
-    pty_id = next_ptyid();
-    err = make_ptyslave(pty_id, &ptydev->tty_slave);
-    if (err) {
-        kfree(ptydev);
-        panic("Failed to make a ptyslave device");
-    }
-    file->seek_pos = pty_id;
-
-    ptydev->chbuf_ms = queue_create(ptydev->_cbuf_ms, sizeof(char),
-            sizeof(ptydev->_cbuf_ms));
-    ptydev->chbuf_sm = queue_create(ptydev->_cbuf_sm, sizeof(char),
-            sizeof(ptydev->_cbuf_sm));
-
-    mtx_lock(&pty_lock);
-    RB_INSERT(ptytree, &ptys_head, ptydev);
-    mtx_unlock(&pty_lock);
 }
 
 /*
@@ -255,4 +165,123 @@ static int ptyslave_write(struct tty * tty, off_t blkno,
     }
 
     return i;
+}
+
+/**
+ * Create a new pty slave device.
+ */
+static int make_ptyslave(int pty_id, struct tty * tty_slave)
+{
+    dev_t dev_id;
+    char dev_name[SPECNAMELEN];
+
+    dev_id = DEV_MMTODEV(VDEV_MJNR_PTY, pty_id);
+    ksprintf(dev_name, sizeof(dev_name), "pty%i", pty_id);
+    tty_slave->read = ptyslave_read;
+    tty_slave->write = ptyslave_write;
+
+    /* TODO a slave pty should be created under pts dir */
+    if (make_ttydev(tty_slave, drv_name, dev_id, dev_name))
+        return -ENODEV;
+
+    return 0;
+}
+
+/**
+ * Create a new pty master/slave pair.
+ */
+static void creat_pty(file_t * file, struct tty * tty)
+{
+    int pty_id;
+    struct pty_device * ptydev;
+    int err;
+
+    ptydev = kzalloc(sizeof(struct pty_device));
+    if (!ptydev) {
+        panic("Not enough memory to create a pty device");
+    }
+
+    pty_id = next_ptyid();
+    err = make_ptyslave(pty_id, &ptydev->tty_slave);
+    if (err) {
+        kfree(ptydev);
+        panic("Failed to make a ptyslave device");
+    }
+    file->seek_pos = pty_id;
+
+    ptydev->chbuf_ms = queue_create(ptydev->_cbuf_ms, sizeof(char),
+            sizeof(ptydev->_cbuf_ms));
+    ptydev->chbuf_sm = queue_create(ptydev->_cbuf_sm, sizeof(char),
+            sizeof(ptydev->_cbuf_sm));
+
+    mtx_lock(&pty_lock);
+    RB_INSERT(ptytree, &ptys_head, ptydev);
+    mtx_unlock(&pty_lock);
+}
+
+/*
+ * TODO if user unlinks the pty slave we will leak some memory.
+ * As a solution, we should have a delete event hanlder here
+ * that can do the same as close. This may or may not require adding
+ * a DELETING flag to somewhere.
+ */
+static void close_pty_slave(file_t * file, struct tty * tty)
+{
+    KERROR(KERROR_DEBUG, "pty master closed\n");
+    /*
+     * TODO The following code closes pty_slave from slave end but the proper
+     * way is to close it when master end is closed.
+     */
+#if 0
+    vnode_t * vn = file->vnode;
+    int (*delete_vnode)(vnode_t * vnode) = vn->sb->delete_vnode;
+    struct pty_device * ptydev;
+
+    KERROR(KERROR_DEBUG, "Delete pty slave vnode %d\n", (int)vn->vn_refcount);
+    delete_vnode(vn);
+
+    ptydev = container_of(tty, struct pty_device, tty_slave);
+    mtx_lock(&pty_lock);
+    RB_REMOVE(ptytree, &ptys_head, ptydev);
+    mtx_unlock(&pty_lock);
+    kfree(tty);
+#endif
+}
+
+/**
+ * Create the pty master mux device.
+ * @note This function should be called only once, that's from
+ * the pty init function.
+ */
+static int make_ptmx(void)
+{
+    dev_t dev_id = DEV_MMTODEV(VDEV_MJNR_PTY, 0);
+
+    dev_ptmx = kzalloc(sizeof(struct tty));
+    if (!dev_ptmx)
+        return -ENOMEM;
+
+    dev_ptmx->read = ptymaster_read;
+    dev_ptmx->write = ptymaster_write;
+    dev_ptmx->open_callback = creat_pty;
+    dev_ptmx->close_callback = close_pty_slave;
+
+    if (make_ttydev(dev_ptmx, drv_name, dev_id, dev_name)) {
+        KERROR(KERROR_ERR, "Failed to make /dev/ptmx");
+        return -ENODEV;
+    }
+
+    return 0;
+}
+
+int __kinit__ pty_init(void)
+{
+    SUBSYS_DEP(devfs_init);
+    SUBSYS_INIT("pty");
+
+    _next_pty_id = ATOMIC_INIT(0);
+    RB_INIT(&ptys_head);
+    mtx_init(&pty_lock, MTX_TYPE_TICKET, 0);
+
+    return make_ptmx();
 }
