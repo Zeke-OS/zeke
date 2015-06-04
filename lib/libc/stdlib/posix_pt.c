@@ -85,7 +85,9 @@ char * ptsname(int fildes)
     }
 
     pty_id = lseek(fildes, 0, SEEK_CUR);
-    snprintf(path, size, "/dev/pty%u", pty_id);
+    if (pty_id < 0)
+        return NULL;
+    snprintf(path, size, "/dev/pty%u", (unsigned)pty_id);
 
     return path;
 }
