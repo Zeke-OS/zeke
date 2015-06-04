@@ -78,15 +78,17 @@ char * ptsname(int fildes)
     const size_t size = sizeof(devpath) + SPECNAMELEN;
     int pty_id;
 
+    pty_id = lseek(fildes, 0, SEEK_CUR);
+    if (pty_id < 0) {
+        return NULL;
+    }
+
     path = malloc(size);
     if (!path) {
         errno = ENOMEM;
         return NULL;
     }
 
-    pty_id = lseek(fildes, 0, SEEK_CUR);
-    if (pty_id < 0)
-        return NULL;
     snprintf(path, size, "/dev/pty%u", (unsigned)pty_id);
 
     return path;
