@@ -126,6 +126,8 @@ ssize_t dev_read(file_t * file, void * vbuf, size_t bcount);
  */
 ssize_t dev_write(file_t * file, const void * vbuf, size_t bcount);
 
+off_t dev_lseek(file_t * file, off_t offset, int whence);
+
 /**
  * Device control.
  * @param file      is a pointer the device file written.

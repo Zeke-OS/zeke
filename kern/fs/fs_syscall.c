@@ -50,6 +50,7 @@
 #include <sys/priv.h>
 #include <ksignal.h>
 #include <fs/fs.h>
+#include <fs/devfs.h>
 
 static int sys_read(__user void * user_args)
 {
@@ -152,6 +153,7 @@ static int sys_lseek(__user void * user_args)
 {
     struct _fs_lseek_args args;
     file_t * file;
+    vnode_t * vn;
     int retval = 0;
 
     if (!useracc(user_args, sizeof(args), VM_PROT_WRITE)) {
@@ -167,22 +169,24 @@ static int sys_lseek(__user void * user_args)
         set_errno(EBADF);
         return -1;
     }
+    vn = file->vnode;
 
-    /* can't seek if fifo, pipe or socket */
-    if (file->vnode->vn_mode & (S_IFIFO | S_IFSOCK)) {
+    if (vn->vn_mode & (S_IFIFO | S_IFSOCK)) {
+        /* Can't seek if fifo, pipe or socket. */
         fs_fildes_ref(curproc->files, args.fd, -1);
         set_errno(ESPIPE);
         return -1;
+    } else if (vn->vn_mode & (S_IFBLK | S_IFCHR)) {
+        off_t ret;
+
+        ret = dev_lseek(file, args.offset, args.whence);
+        if (ret < 0) {
+            set_errno(-ret);
+            return -1;
+        }
+        return ret;
     }
 
-    /*
-     * TODO Some unices will return the umber of written  characters if
-     * whence is SEEK_SET and the file is a tty. Here we probably should
-     * just fail with ESPIPE.
-     *
-     * TODO 0, SEEK_CUR on tty should return the pty slave id of the current
-     *      file.
-     */
 
     if (args.whence == SEEK_SET)
         file->seek_pos = args.offset;
@@ -192,7 +196,7 @@ static int sys_lseek(__user void * user_args)
         struct stat stat_buf;
         int err;
 
-        err = file->vnode->vnode_ops->stat(file->vnode, &stat_buf);
+        err = vn->vnode_ops->stat(vn, &stat_buf);
         if (!err) {
             const off_t new_offset = stat_buf.st_size + args.offset;
 
