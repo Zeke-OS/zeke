@@ -221,7 +221,7 @@ static void creat_pty(file_t * file, struct tty * tty)
 
 /*
  * TODO if user unlinks the pty slave we will leak some memory.
- * As a solution, we should have a delete event hanlder here
+ * As a solution, we should have a delete event handler here
  * that can do the same as close. This may or may not require adding
  * a DELETING flag to somewhere.
  */
@@ -232,6 +232,8 @@ static void close_pty_slave(file_t * file, struct tty * tty)
      * TODO The following code closes pty_slave from slave end but the proper
      * way is to close it when master end is closed.
      */
+    /*struct pty_device * ptydev = pty_get(file->seek_pos);*/
+
 #if 0
     vnode_t * vn = file->vnode;
     int (*delete_vnode)(vnode_t * vnode) = vn->sb->delete_vnode;

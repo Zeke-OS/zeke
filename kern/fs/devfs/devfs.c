@@ -131,7 +131,7 @@ static int devfs_umount(struct fs_superblock * fs_sb)
 }
 
 int dev_make(struct dev_info * devnfo, uid_t uid, gid_t gid, int perms,
-        vnode_t ** result)
+             vnode_t ** result)
 {
     vnode_t * res;
     int retval;
