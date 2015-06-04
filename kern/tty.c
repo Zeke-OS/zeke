@@ -72,6 +72,7 @@ int make_ttydev(struct tty * tty, const char * drv_name, dev_t dev_id,
     dev->block_size = 1;
     dev->read = tty_read;
     dev->write = tty_write;
+    dev->lseek = tty_lseek;
     dev->open_callback = tty_open_callback;
     dev->close_callback = tty_close_callback;
     dev->ioctl = tty_ioctl;
