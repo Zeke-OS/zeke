@@ -19,8 +19,10 @@ static int flushsubbuffer(FILE * stream, size_t length)
     {
         size_t justWrote = 0;
         size_t toWrite = length - written;
-        bool res = stream->ops->write(stream->handle, stream->buffer + written,
-                                      toWrite, &justWrote);
+        bool res;
+
+        res = stream->ops->write(stream->handle, stream->buffer + written,
+                                 toWrite, &justWrote);
         written += justWrote;
         stream->pos.offset += justWrote;
 
@@ -33,10 +35,11 @@ static int flushsubbuffer(FILE * stream, size_t length)
 
     memmove(stream->buffer, stream->buffer + written,
             stream->bufsize - written);
-    if ((stream->bufidx - written) > stream->bufidx)
+    if ((stream->bufidx - written) > stream->bufidx) {
         stream->bufidx = 0;
-    else
+    } else {
         stream->bufidx -= written;
+    }
 
     return rv;
 }
@@ -51,11 +54,10 @@ static int flushsubbuffer(FILE * stream, size_t length)
 int _PDCLIB_flushbuffer(FILE * stream)
 {
     /* if a text stream, and this platform needs EOL translation, well... */
-    if (!(stream->status & _PDCLIB_FBIN) && _PDCLIB_NEED_EOL_TRANSLATION)
-    {
+    if (!(stream->status & _PDCLIB_FBIN) && _PDCLIB_NEED_EOL_TRANSLATION) {
         size_t pos;
-        for ( pos = 0; pos < stream->bufidx; pos++ )
-        {
+
+        for (pos = 0; pos < stream->bufidx; pos++) {
             if (stream->buffer[pos] == '\n') {
                 if (stream->bufidx == stream->bufend) {
                     /*
