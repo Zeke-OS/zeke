@@ -12,7 +12,7 @@
 int _PDCLIB_prepwrite(FILE * stream)
 {
     if ((stream->bufidx < stream->bufend) || (stream->ungetidx > 0) ||
-         (stream->status & (PDCLIB_FREAD | _PDCLIB_ERRORFLAG |
+         (stream->status & (_PDCLIB_FREAD | _PDCLIB_ERRORFLAG |
                             _PDCLIB_WIDESTREAM | _PDCLIB_EOFFLAG)) ||
          !(stream->status & (_PDCLIB_FWRITE | _PDCLIB_FAPPEND | _PDCLIB_FRW))) {
         /*
