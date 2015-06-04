@@ -175,16 +175,17 @@ static int sys_lseek(__user void * user_args)
         /* Can't seek if fifo, pipe or socket. */
         fs_fildes_ref(curproc->files, args.fd, -1);
         set_errno(ESPIPE);
-        return -1;
+        retval = -1;
+        goto out;
     } else if (vn->vn_mode & (S_IFBLK | S_IFCHR)) {
-        off_t ret;
+        off_t new_offset;
 
-        ret = dev_lseek(file, args.offset, args.whence);
-        if (ret < 0) {
-            set_errno(-ret);
-            return -1;
+        new_offset = dev_lseek(file, args.offset, args.whence);
+        if (new_offset < 0) {
+            set_errno(-new_offset);
+            retval = -1;
         }
-        return ret;
+        goto out;
     }
 
 
@@ -215,6 +216,7 @@ static int sys_lseek(__user void * user_args)
         retval = -1;
     }
 
+out:
     /* Resulting offset is stored to args */
     args.offset = file->seek_pos;
 

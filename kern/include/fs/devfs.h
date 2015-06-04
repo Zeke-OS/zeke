@@ -60,6 +60,15 @@ struct dev_info {
                     uint8_t * buf, size_t bcount, int oflags);
     ssize_t (*write)(struct dev_info * devnfo, off_t blkno,
                      uint8_t * buf, size_t bcount, int oflags);
+
+    /**
+     * Seek a device.
+     * The function shall set file->seek_pos to a new value.
+     * @param This function is optional and can be NULL.
+     */
+    off_t (*lseek)(file_t * file, struct dev_info * devnfo, off_t offset,
+                   int whence);
+
     /**
      * ioctl for the device driver.
      * @note This function is optional and can be NULL.
@@ -126,6 +135,9 @@ ssize_t dev_read(file_t * file, void * vbuf, size_t bcount);
  */
 ssize_t dev_write(file_t * file, const void * vbuf, size_t bcount);
 
+/**
+ * Seek a device file.
+ */
 off_t dev_lseek(file_t * file, off_t offset, int whence);
 
 /**

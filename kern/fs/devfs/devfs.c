@@ -300,16 +300,14 @@ out:
 
 off_t dev_lseek(file_t * file, off_t offset, int whence)
 {
-    /*
-     * Some unices will return the umber of written  characters if whence is
-     * SEEK_SET and the file is a tty. We don't currently support that in Zeke,
-     * thus we just fail with ESPIPE.
-     *
-     * TODO 0, SEEK_CUR on tty should return the pty slave id of the current
-     *      file.
-     */
+    struct dev_info * devnfo = (struct dev_info *)file->vnode->vn_specinfo;
 
-    return -ESPIPE;
+    if (devnfo->lseek) {
+        return devnfo->lseek(file, devnfo, offset, whence);
+    } else {
+        file->seek_pos = offset;
+        return offset;
+    }
 }
 
 static int dev_ioctl(file_t * file, unsigned request, void * arg, size_t arg_len)

@@ -47,6 +47,8 @@ static ssize_t tty_read(struct dev_info * devnfo, off_t blkno, uint8_t * buf,
                         size_t bcount, int oflags);
 static ssize_t tty_write(struct dev_info * devnfo, off_t blkno, uint8_t * buf,
                          size_t bcount, int oflags);
+static off_t tty_lseek(file_t * file, struct dev_info * devnfo, off_t offset,
+                        int whence);
 static void tty_open_callback(struct proc_info * p, file_t * file,
                               struct dev_info * devnfo);
 static void tty_close_callback(struct proc_info * p, file_t * file,
@@ -122,6 +124,20 @@ static ssize_t tty_write(struct dev_info * devnfo, off_t blkno, uint8_t * buf,
     KASSERT(tty, "opt_data should have a tty");
 
     return tty->write(tty, blkno, buf, bcount, oflags);
+}
+
+static off_t tty_lseek(file_t * file, struct dev_info * devnfo, off_t offset,
+                       int whence)
+{
+    /*
+     * Some unices will return the umber of written characters if whence is
+     * SEEK_SET and the file is a tty. We don't currently support that in Zeke,
+     * thus we just fail with ESPIPE.
+     * RFE Support SEEK_SET for tty?
+     */
+    if (offset == 0 && whence == SEEK_CUR)
+        return file->seek_pos;
+    return -ESPIPE;
 }
 
 static void tty_open_callback(struct proc_info * p, file_t * file,
