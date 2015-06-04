@@ -87,21 +87,21 @@ static int make_uartdev(struct uart_port * port, int port_num)
     dev_t dev_id;
     char dev_name[SPECNAMELEN];
 
-    tty = kzalloc(sizeof(struct tty));
+    dev_id = DEV_MMTODEV(VDEV_MJNR_UART, port_num);
+    ksprintf(dev_name, sizeof(dev_name), "ttyS%i", port_num);
+    tty = tty_alloc(drv_name, dev_id, dev_name);
     if (!tty) {
         return -ENOMEM;
     }
 
-    dev_id = DEV_MMTODEV(VDEV_MJNR_UART, port_num);
-    ksprintf(dev_name, sizeof(dev_name), "ttyS%i", port_num);
     tty->opt_data = port;
     tty->read = uart_read;
     tty->write = uart_write;
     tty->setconf = port->setconf;
     tty->ioctl = uart_ioctl;
 
-    if (make_ttydev(tty, drv_name, dev_id, dev_name)) {
-        kfree(tty);
+    if (make_ttydev(tty)) {
+        tty_free(tty);
         return -ENODEV;
     }
 

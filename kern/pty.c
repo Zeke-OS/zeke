@@ -52,7 +52,7 @@
  */
 struct pty_device {
     int pty_id;
-    struct tty tty_slave;
+    struct tty * tty_slave;
     struct queue_cb chbuf_ms;
     struct queue_cb chbuf_sm;
     char _cbuf_ms[MAX_INPUT]; /* RFE is MAX_INPUT enough for pty? */
@@ -170,20 +170,29 @@ static int ptyslave_write(struct tty * tty, off_t blkno,
 /**
  * Create a new pty slave device.
  */
-static int make_ptyslave(int pty_id, struct tty * tty_slave)
+static int make_ptyslave(int pty_id, struct tty ** tty_slave_out)
 {
     dev_t dev_id;
     char dev_name[SPECNAMELEN];
+    struct tty * tty_slave;
+
 
     dev_id = DEV_MMTODEV(VDEV_MJNR_PTY, pty_id);
     ksprintf(dev_name, sizeof(dev_name), "pty%i", pty_id);
+    tty_slave = tty_alloc(drv_name, dev_id, dev_name);
+    if (!tty_slave)
+        return -ENOMEM;
+
     tty_slave->read = ptyslave_read;
     tty_slave->write = ptyslave_write;
 
     /* TODO a slave pty should be created under pts dir */
-    if (make_ttydev(tty_slave, drv_name, dev_id, dev_name))
+    if (make_ttydev(tty_slave)) {
+        tty_free(tty_slave);
         return -ENODEV;
+    }
 
+    *tty_slave_out = tty_slave;
     return 0;
 }
 
@@ -259,7 +268,7 @@ static int make_ptmx(void)
 {
     dev_t dev_id = DEV_MMTODEV(VDEV_MJNR_PTY, 0);
 
-    dev_ptmx = kzalloc(sizeof(struct tty));
+    dev_ptmx = tty_alloc(drv_name, dev_id, dev_name);
     if (!dev_ptmx)
         return -ENOMEM;
 
@@ -268,8 +277,9 @@ static int make_ptmx(void)
     dev_ptmx->open_callback = creat_pty;
     dev_ptmx->close_callback = close_pty_slave;
 
-    if (make_ttydev(dev_ptmx, drv_name, dev_id, dev_name)) {
+    if (make_ttydev(dev_ptmx)) {
         KERROR(KERROR_ERR, "Failed to make /dev/ptmx");
+        tty_free(dev_ptmx);
         return -ENODEV;
     }
 

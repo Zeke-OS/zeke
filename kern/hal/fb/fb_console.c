@@ -81,25 +81,26 @@ int fb_console_maketty(struct fb_conf * fb, dev_t dev_id)
 {
     struct tty * tty;
     char dev_name[SPECNAMELEN];
+    int err;
 
-    tty = kzalloc(sizeof(struct tty));
+    ksprintf(dev_name, sizeof(dev_name), "fb%i", DEV_MINOR(dev_id));
+    tty = tty_alloc("fb_tty", dev_id, dev_name);
     if (!tty) {
         return -ENOMEM;
     }
 
-    ksprintf(dev_name, sizeof(dev_name), "fb%i", DEV_MINOR(dev_id));
     tty->opt_data = fb;
     tty->read = fb_console_tty_read;
     tty->write = fb_console_tty_write;
     tty->setconf = fb_console_setconf;
     tty->ioctl = fb_tty_ioctl;
 
-    if (make_ttydev(tty, "fb_tty", dev_id, dev_name)) {
-        kfree(tty);
-        return -ENODEV;
+    err = make_ttydev(tty);
+    if (err) {
+        tty_free(tty);
     }
 
-    return 0;
+    return err;
 }
 
 /**

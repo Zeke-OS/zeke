@@ -78,10 +78,21 @@ struct tty {
 };
 
 /**
+ * Allocate a prefilled dev + tty struct.
  * @param drv_name should be allocated from heap, refereced.
  * @param dev_name device name, copied.
  */
-int make_ttydev(struct tty * tty, const char * drv_name, dev_t dev_id,
-                const char * dev_name);
+struct tty * tty_alloc(const char * drv_name, dev_t dev_id,
+                       const char * dev_name);
+
+/**
+ * Free a device struct.
+ */
+void tty_free(struct tty * tty);
+
+/**
+ * Create a tty device.
+ */
+int make_ttydev(struct tty * tty);
 
 #endif /* TTY_H */

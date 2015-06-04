@@ -56,14 +56,16 @@ static void tty_close_callback(struct proc_info * p, file_t * file,
 static int tty_ioctl(struct dev_info * devnfo, uint32_t request,
                      void * arg, size_t arg_len);
 
-int make_ttydev(struct tty * tty, const char * drv_name, dev_t dev_id,
-                const char * dev_name)
+struct tty * tty_alloc(const char * drv_name, dev_t dev_id,
+                       const char * dev_name)
 {
     struct dev_info * dev;
+    struct tty * tty;
 
-    dev = kzalloc(sizeof(struct dev_info));
+    dev = kzalloc(sizeof(struct dev_info) + sizeof(struct tty));
     if (!dev)
-        return -ENOMEM;
+        return NULL;
+    tty = (struct tty *)((uintptr_t)dev + sizeof(struct dev_info));
 
     dev->dev_id = dev_id;
     dev->drv_name = drv_name;
@@ -98,6 +100,24 @@ int make_ttydev(struct tty * tty, const char * drv_name, dev_t dev_id,
         .ws_xpixel = 0,
         .ws_ypixel = 0,
     };
+
+    return tty;
+}
+
+void tty_free(struct tty * tty)
+{
+    struct dev_info * dev;
+
+    dev = (struct dev_info *)((uintptr_t)tty - sizeof(struct dev_info));
+    kfree(dev);
+}
+
+int make_ttydev(struct tty * tty)
+{
+    struct dev_info * dev;
+
+    dev = (struct dev_info *)((uintptr_t)tty - sizeof(struct dev_info));
+    KASSERT(dev->opt_data == tty, "opt_data changed or invalid tty");
 
     if (dev_make(dev, 0, 0, 0666, NULL)) {
         KERROR(KERROR_ERR, "Failed to make a tty dev.\n");
