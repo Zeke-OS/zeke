@@ -70,28 +70,39 @@ enum thread_state {
 /*
  * Scheduler flags
  * ===============
- *
- * SCHED_IN_USE_FLAG
+ */
+/**
+ * Thread struct is in use and valid.
  * 1 = Thread is in use and can be rescheduled to execute at some point.
  * 0 = Thread is beign removed from the system.
- *
- * SCHED_INTERNAL_FLAG
- * Thread cannot be killed if this flag is set.
  */
-#define SCHED_IN_USE_FLAG   0x00000001u /*!< Thread struct is in use and valid.
-                                         */
-#define SCHED_DETACH_FLAG   0x00000002u /*!< Detached thread. If thread exits
-                                         *   it will be immediately destroyed
-                                         *   without storing the return value.
-                                         */
-#define SCHED_INSYS_FLAG    0x01000000u /*!< Thread in system call.
-                                             In system call if set;
-                                         *   Otherwise usr. This can be used for
-                                         *   counting process times or as
-                                         *   a state information.
-                                         */
-#define SCHED_KWORKER_FLAG  0x10000000u /*!< Thread is a kworker. */
-#define SCHED_INTERNAL_FLAG 0x20000000u /*!< Immortal internal kernel thread. */
+#define SCHED_IN_USE_FLAG   0x00000001u
+/**
+ * Detached thread.
+ * If thread exits it will be immediately destroyed without storing
+ * the return value or any statistics.
+ */
+#define SCHED_DETACH_FLAG   0x00000002u
+/**
+ * Thread is in a system call.
+ * If set the thread is in a sysctem call; Otherwise in user mode.
+ * This flag can be used for counting process times or as a state information
+ * for non-critical purposes.
+ * @note The flag doesn't exactly tell if a thread is in a sys mode because
+ *       it's set somewhat late during entering to a system call at which
+ *       point the system is already interruptible.
+ *
+ */
+#define SCHED_INSYS_FLAG    0x01000000u
+/**
+ * Thread is a kworker.
+ */
+#define SCHED_KWORKER_FLAG  0x10000000u
+/**
+ * Immortal internal kernel thread.
+ * A thread cannot be killed if this flag is set.
+ */
+#define SCHED_INTERNAL_FLAG 0x20000000u
 
 /**
  * No timer assigned.
