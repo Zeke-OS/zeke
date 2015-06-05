@@ -47,6 +47,12 @@
 #include <queue_r.h>
 #include <tty.h>
 
+/*
+ * TODO Create all ptys at init and just reset the pty
+ *      on close. This way we get rid of costly mem allocs
+ *      and hard closing/removal procedures.
+ */
+
 /**
  * Struct describing a single PTY device.
  */
@@ -168,60 +174,54 @@ static int ptyslave_write(struct tty * tty, off_t blkno,
 }
 
 /**
- * Create a new pty slave device.
- */
-static int make_ptyslave(int pty_id, struct tty ** tty_slave_out)
-{
-    dev_t dev_id;
-    char dev_name[SPECNAMELEN];
-    struct tty * tty_slave;
-
-
-    dev_id = DEV_MMTODEV(VDEV_MJNR_PTY, pty_id);
-    ksprintf(dev_name, sizeof(dev_name), "pty%i", pty_id);
-    tty_slave = tty_alloc(drv_name, dev_id, dev_name);
-    if (!tty_slave)
-        return -ENOMEM;
-
-    tty_slave->read = ptyslave_read;
-    tty_slave->write = ptyslave_write;
-
-    /* TODO a slave pty should be created under pts dir */
-    if (make_ttydev(tty_slave)) {
-        tty_free(tty_slave);
-        return -ENODEV;
-    }
-
-    *tty_slave_out = tty_slave;
-    return 0;
-}
-
-/**
  * Create a new pty master/slave pair.
  */
 static void creat_pty(file_t * file, struct tty * tty)
 {
     int pty_id;
+    dev_t slave_dev_id;
+    char slave_dev_name[SPECNAMELEN];
+    struct tty * slave_tty;
     struct pty_device * ptydev;
-    int err;
-
-    ptydev = kzalloc(sizeof(struct pty_device));
-    if (!ptydev) {
-        panic("Not enough memory to create a pty device");
-    }
 
     pty_id = next_ptyid();
-    err = make_ptyslave(pty_id, &ptydev->tty_slave);
-    if (err) {
-        kfree(ptydev);
-        panic("Failed to make a ptyslave device");
-    }
+
+    /*
+     * Slave device id and name.
+     */
+    slave_dev_id = DEV_MMTODEV(VDEV_MJNR_PTY, pty_id);
+    ksprintf(slave_dev_name, sizeof(slave_dev_name), "pty%i", pty_id);
+
+    slave_tty = tty_alloc(drv_name, slave_dev_id, slave_dev_name,
+                          sizeof(struct pty_device));
+    if (!slave_tty)
+        panic("Not enough memory to create a pty device");
+    ptydev = (struct pty_device *)((uintptr_t)slave_tty + sizeof(struct tty));
+
+    /*
+     * Slave functions.
+     */
+    slave_tty->read = ptyslave_read;
+    slave_tty->write = ptyslave_write;
+
+    /*
+     * Set master muxing id.
+     */
     file->seek_pos = pty_id;
 
+    /*
+     * Create queues.
+     */
     ptydev->chbuf_ms = queue_create(ptydev->_cbuf_ms, sizeof(char),
             sizeof(ptydev->_cbuf_ms));
     ptydev->chbuf_sm = queue_create(ptydev->_cbuf_sm, sizeof(char),
             sizeof(ptydev->_cbuf_sm));
+
+    /* TODO a slave pty should be created under pts dir */
+    if (make_ttydev(slave_tty)) {
+        tty_free(slave_tty);
+        panic("ENODEV while creating a pty");
+    }
 
     mtx_lock(&pty_lock);
     RB_INSERT(ptytree, &ptys_head, ptydev);
@@ -268,7 +268,7 @@ static int make_ptmx(void)
 {
     dev_t dev_id = DEV_MMTODEV(VDEV_MJNR_PTY, 0);
 
-    dev_ptmx = tty_alloc(drv_name, dev_id, dev_name);
+    dev_ptmx = tty_alloc(drv_name, dev_id, dev_name, 0);
     if (!dev_ptmx)
         return -ENOMEM;
 

@@ -89,7 +89,7 @@ static int make_uartdev(struct uart_port * port, int port_num)
 
     dev_id = DEV_MMTODEV(VDEV_MJNR_UART, port_num);
     ksprintf(dev_name, sizeof(dev_name), "ttyS%i", port_num);
-    tty = tty_alloc(drv_name, dev_id, dev_name);
+    tty = tty_alloc(drv_name, dev_id, dev_name, 0);
     if (!tty) {
         return -ENOMEM;
     }

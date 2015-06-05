@@ -84,7 +84,7 @@ int fb_console_maketty(struct fb_conf * fb, dev_t dev_id)
     int err;
 
     ksprintf(dev_name, sizeof(dev_name), "fb%i", DEV_MINOR(dev_id));
-    tty = tty_alloc("fb_tty", dev_id, dev_name);
+    tty = tty_alloc("fb_tty", dev_id, dev_name, 0);
     if (!tty) {
         return -ENOMEM;
     }

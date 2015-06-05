@@ -57,12 +57,12 @@ static int tty_ioctl(struct dev_info * devnfo, uint32_t request,
                      void * arg, size_t arg_len);
 
 struct tty * tty_alloc(const char * drv_name, dev_t dev_id,
-                       const char * dev_name)
+                       const char * dev_name, size_t data_size)
 {
     struct dev_info * dev;
     struct tty * tty;
 
-    dev = kzalloc(sizeof(struct dev_info) + sizeof(struct tty));
+    dev = kzalloc(sizeof(struct dev_info) + sizeof(struct tty) + data_size);
     if (!dev)
         return NULL;
     tty = (struct tty *)((uintptr_t)dev + sizeof(struct dev_info));

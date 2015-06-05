@@ -83,9 +83,14 @@ struct tty {
  * Allocate a prefilled dev + tty struct.
  * @param drv_name should be allocated from heap, refereced.
  * @param dev_name device name, copied.
+ * @param data_size is an additional allication made after the tty data that can
+ *                  be used by the caller to store some driver specific data.
+ *                  The idea is to simplify memory management and allocation
+ *                  overhead by allocating memory in bigger blocks and less
+ *                  often.
  */
 struct tty * tty_alloc(const char * drv_name, dev_t dev_id,
-                       const char * dev_name);
+                       const char * dev_name, size_t data_size);
 
 /**
  * Free a device struct.
