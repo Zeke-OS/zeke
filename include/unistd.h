@@ -385,9 +385,17 @@ int fchownat(int fd, const char * path, uid_t owner, gid_t group,
              int flag);
 int fchown(int fildes, uid_t owner, gid_t group);
 
+/**
+ * Read from a file descriptor.
+ */
 ssize_t read(int fildes, void * buf, size_t nbytes);
+
 ssize_t pwrite(int fildes, const void *buf, size_t nbyte,
     off_t offset);
+
+/**
+ * Write to a file descriptor.
+ */
 ssize_t write(int fildes, const void * buf, size_t nbyte);
 
 /**
@@ -412,6 +420,10 @@ ssize_t write(int fildes, const void * buf, size_t nbyte);
  */
 off_t lseek(int fildes, off_t offset, int whence);
 
+/**
+ * Close a file descriptor.
+ * @param fildes is the file descriptor number.
+ */
 int close(int fildes);
 
 /**
