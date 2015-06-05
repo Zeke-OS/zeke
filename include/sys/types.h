@@ -56,7 +56,7 @@ typedef uint32_t fflags_t;     /*!< file flags */
 #include <sys/types/_mode_t.h>
 typedef int nlink_t; /*!< Used for link counts. */
 #include <sys/types/_off_t.h>
-#ifdef _UOFF_T_DECLARED
+#ifndef _UOFF_T_DECLARED
 #define _UOFF_T_DECLARED
 typedef uint64_t uoff_t;
 #endif
