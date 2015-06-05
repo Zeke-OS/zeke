@@ -141,23 +141,40 @@ static ssize_t tty_write(struct dev_info * devnfo, off_t blkno, uint8_t * buf,
                          size_t bcount, int oflags)
 {
     struct tty * tty = (struct tty *)devnfo->opt_data;
+    ssize_t retval;
 
     KASSERT(tty, "opt_data should have a tty");
 
-    return tty->write(tty, blkno, buf, bcount, oflags);
+    retval = tty->write(tty, blkno, buf, bcount, oflags);
+    if (retval > 0) {
+        off_t n = tty->write_count + retval;
+        tty->write_count = (n < 0) ? -n : n;
+    }
+
+    return retval;
 }
 
 static off_t tty_lseek(file_t * file, struct dev_info * devnfo, off_t offset,
                        int whence)
 {
+    struct tty * tty = (struct tty *)devnfo->opt_data;
+
     /*
-     * Some unices will return the umber of written characters if whence is
-     * SEEK_SET and the file is a tty. We don't currently support that in Zeke,
-     * thus we just fail with ESPIPE.
-     * RFE Support SEEK_SET for tty?
+     * Many unices will return the number of written characters if whence is
+     * SEEK_SET and the file is a tty, and some will return -ESPIPE. We support
+     * the write count.
+     */
+    if (whence == SEEK_SET)
+        return tty->write_count;
+
+    /*
+     * Some drivers may use seek_pos as an index variable and on this kernel
+     * we promise to return it if lseek is called with offset zero and SEEK_CUR
+     * set as a whence.
      */
     if (offset == 0 && whence == SEEK_CUR)
         return file->seek_pos;
+
     return -ESPIPE;
 }
 

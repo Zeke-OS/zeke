@@ -389,7 +389,29 @@ ssize_t read(int fildes, void * buf, size_t nbytes);
 ssize_t pwrite(int fildes, const void *buf, size_t nbyte,
     off_t offset);
 ssize_t write(int fildes, const void * buf, size_t nbyte);
+
+/**
+ * Reposition read/write file offset.
+ * The lseek function repositions the offset of the file descriptor fildes
+ * to the argument offset according to the directive whence as follows:
+ *
+ * - SEEK_SET The offset is set to offset bytes.
+ * - SEEK_CUR The offset is set to its current location plus offset bytes.
+ * - SEEK_END The offset is set to the size of the file plus offset bytes.
+ *
+ * Some devices may or may not support seeking and there is no general agreement
+ * on which devices should support seeking. Many unices will return the number
+ * of characters written to a tty if SEEK_SET is used to it. Zeke follows this
+ * convention.
+ *
+ * @param fildes is the file descriptor number.
+ * @param offset is the offset from whence to seek.
+ * @param whence is the directive specifying start location for seeking.
+ * @returns A successful seek returns the resulting offset from the begining of
+ *          the file; Otherwise (off_t)-1 and errno is returned.
+ */
 off_t lseek(int fildes, off_t offset, int whence);
+
 int close(int fildes);
 
 /**

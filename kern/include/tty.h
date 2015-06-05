@@ -44,6 +44,8 @@ struct tty {
     struct termios conf;
     struct winsize winsize;
 
+    off_t write_count;
+
     void * opt_data;
 
     void (* setconf)(struct termios * conf);
