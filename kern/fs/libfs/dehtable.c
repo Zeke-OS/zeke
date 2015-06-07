@@ -43,13 +43,14 @@
  * ------
  *
  * Dirent hash table uses chaining to solve collisions. Chains are dh_dirent
- * arrays that are dynamically resized when needed.
+ * arrays that are dynamically resized when necessary.
  *
  * To keep a chain unbroken there shall be no empty slots between two entries.
- * If one entry is removed the chain must be restructured so that empty slot is
- * filled. There is no need to free the space left after restructuring a chain
- * because it will either completely reused on next link or of partly freed if
- * more than one entries have been removed before next insert.
+ * If an entry is removed in the middle the chain must be restructured so that
+ * empty slot is filled. There is no need to free the space left after
+ * restructuring a chain because it will either completely reused on next link
+ * or of partly freed if more than one entries have been removed before the next
+ * insert.
  *
  * dh_link tag must be used to mark the end of chain.
  */
@@ -66,11 +67,6 @@ typedef struct chain_info {
 
 #define CH_NOLINK   0
 #define CH_LINK     1
-
-static chain_info_t find_last_node(dh_dirent_t * chain);
-static dh_dirent_t * find_node(dh_dirent_t * chain, const char * name);
-static int rm_node(dh_dirent_t ** chain, const char * name);
-static size_t hash_fname(const char * str, size_t len);
 
 /**
  * Get reference to a directory entry in array.
@@ -89,6 +85,138 @@ static size_t hash_fname(const char * str, size_t len);
  */
 #define is_invalid_offset(denode) \
     ((denode)->dh_size > (DIRENT_SIZE + NAME_MAX + 1))
+
+/**
+ * Hash function.
+ * @param str is the string to be hashed.
+ * @param len is the length of str.
+ * @return Hash value.
+ */
+static size_t hash_fname(const char * str, size_t len)
+{
+#if DEHTABLE_SIZE == 16
+    size_t hash = (size_t)(str[0] ^ str[len - 1]) & (size_t)(DEHTABLE_SIZE - 1);
+#else
+#error No suitable hash function for selected DEHTABLE_SIZE.
+#endif
+
+    return hash;
+}
+
+/**
+ * Find a specific dirent node in chain.
+ * @param chain     is the chain array.
+ * @param name      is the name of the node searched for.
+ * @param name_len  is the length of the name.
+ * @return Returns a pointer to the node; Or null if node not found.
+ */
+static dh_dirent_t * find_node(dh_dirent_t * chain, const char * name)
+{
+    size_t name_len = strlenn(name, NAME_MAX + 1) + 1;
+    size_t offset = 0;
+    dh_dirent_t * node;
+    dh_dirent_t * retval = 0;
+
+    do {
+        node = get_dirent(chain, offset);
+        if (is_invalid_offset(node)) {
+            KERROR(KERROR_ERR, "Invalid offset in deh node");
+            break;
+        }
+
+        if (strncmp(node->dh_name, name, name_len) == 0) {
+            retval = node;
+            break;
+        }
+        offset += node->dh_size;
+    } while (node->dh_link == CH_LINK);
+
+    return retval;
+}
+
+/**
+ * Find the last node of the chain.
+ * @param chain is the dirent chain array.
+ * @return Returns the updated chain_info struct.
+ */
+static chain_info_t find_last_node(dh_dirent_t * chain)
+{
+    dh_dirent_t * node;
+    chain_info_t chinfo;
+
+    chinfo.i_size = 0;
+    do {
+        node = get_dirent(chain, chinfo.i_size);
+        if (is_invalid_offset(node)) {
+            KERROR(KERROR_ERR, "Invalid offset in deh node: %u",
+                     node->dh_size);
+
+            break;
+        }
+        chinfo.i_size += node->dh_size;
+    } while (node->dh_link == CH_LINK);
+    chinfo.i_last = chinfo.i_size - node->dh_size;
+
+    return chinfo;
+}
+
+static int rm_node(dh_dirent_t ** chain, const char * name)
+{
+    const chain_info_t chinfo = find_last_node(*chain);
+    size_t old_offset = 0, new_offset = 0, prev_noffset = 0;
+    dh_dirent_t * new_chain;
+    int match = 0;
+
+    if (chinfo.i_size < sizeof(void *))
+        return -ENOENT;
+
+    new_chain = kzalloc(chinfo.i_size);
+    if (!new_chain)
+        return -ENOMEM;
+
+    /* Initial empty first entry. */
+    *get_dirent(new_chain, 0) = (dh_dirent_t){ .dh_size = 0 };
+
+    while (1) {
+        const dh_dirent_t * const node = get_dirent(*chain, old_offset);
+
+        if (is_invalid_offset(node)) {
+            KERROR(KERROR_ERR, "Invalid offset in deh node");
+
+            kfree(new_chain);
+            return -ENOTRECOVERABLE;
+        }
+
+        /* Copy if no match or already matched. */
+        if (match || strncmp(node->dh_name, name, NAME_MAX + 1) != 0) {
+            dh_dirent_t * new_node = get_dirent(new_chain, new_offset);
+
+            memcpy(new_node, node, node->dh_size);
+            prev_noffset = new_offset;
+            new_offset += node->dh_size;
+        } else {
+            match = 1;
+        }
+        old_offset += node->dh_size;
+
+        if (node->dh_link == CH_NOLINK)
+            break;
+    }
+
+    get_dirent(new_chain, prev_noffset)->dh_link = CH_NOLINK;
+
+    /* Check if new_chain is empty */
+    if (get_dirent(new_chain, 0)->dh_size == 0) {
+        kfree(new_chain);
+        new_chain = NULL;
+    }
+
+    /* Replace old chain. */
+    kfree(*chain);
+    *chain = new_chain;
+
+    return 0;
+}
 
 int dh_link(dh_table_t * dir, ino_t vnode_num, const char * name)
 {
@@ -164,6 +292,7 @@ void dh_destroy_all(dh_table_t * dir)
             kfree((*dir)[i]);
     }
 }
+
 
 int dh_lookup(dh_table_t * dir, const char * name, ino_t * vnode_num)
 {
@@ -253,136 +382,4 @@ size_t dh_nr_entries(dh_table_t * dir)
     }
 
     return n;
-}
-
-/**
- * Find the last node of the chain.
- * @param chain is the dirent chain array.
- * @return Returns the updated chain_info struct.
- */
-static chain_info_t find_last_node(dh_dirent_t * chain)
-{
-    dh_dirent_t * node;
-    chain_info_t chinfo;
-
-    chinfo.i_size = 0;
-    do {
-        node = get_dirent(chain, chinfo.i_size);
-        if (is_invalid_offset(node)) {
-            KERROR(KERROR_ERR, "Invalid offset in deh node: %u",
-                     node->dh_size);
-
-            break;
-        }
-        chinfo.i_size += node->dh_size;
-    } while (node->dh_link == CH_LINK);
-    chinfo.i_last = chinfo.i_size - node->dh_size;
-
-    return chinfo;
-}
-
-/**
- * Find a specific dirent node in chain.
- * @param chain     is the chain array.
- * @param name      is the name of the node searched for.
- * @param name_len  is the length of the name.
- * @return Returns a pointer to the node; Or null if node not found.
- */
-static dh_dirent_t * find_node(dh_dirent_t * chain, const char * name)
-{
-    size_t name_len = strlenn(name, NAME_MAX + 1) + 1;
-    size_t offset = 0;
-    dh_dirent_t * node;
-    dh_dirent_t * retval = 0;
-
-    do {
-        node = get_dirent(chain, offset);
-        if (is_invalid_offset(node)) {
-            KERROR(KERROR_ERR, "Invalid offset in deh node");
-            break;
-        }
-
-        if (strncmp(node->dh_name, name, name_len) == 0) {
-            retval = node;
-            break;
-        }
-        offset += node->dh_size;
-    } while (node->dh_link == CH_LINK);
-
-    return retval;
-}
-
-static int rm_node(dh_dirent_t ** chain, const char * name)
-{
-    const chain_info_t chinfo = find_last_node(*chain);
-    size_t old_offset = 0, new_offset = 0, prev_noffset = 0;
-    dh_dirent_t * new_chain;
-    int match = 0;
-
-    if (chinfo.i_size < sizeof(void *))
-        return -ENOENT;
-
-    new_chain = kzalloc(chinfo.i_size);
-    if (!new_chain)
-        return -ENOMEM;
-
-    /* Initial empty first entry. */
-    *get_dirent(new_chain, 0) = (dh_dirent_t){ .dh_size = 0 };
-
-    while (1) {
-        const dh_dirent_t * const node = get_dirent(*chain, old_offset);
-
-        if (is_invalid_offset(node)) {
-            KERROR(KERROR_ERR, "Invalid offset in deh node");
-
-            kfree(new_chain);
-            return -ENOTRECOVERABLE;
-        }
-
-        /* Copy if no match or already matched. */
-        if (match || strncmp(node->dh_name, name, NAME_MAX + 1) != 0) {
-            dh_dirent_t * new_node = get_dirent(new_chain, new_offset);
-
-            memcpy(new_node, node, node->dh_size);
-            prev_noffset = new_offset;
-            new_offset += node->dh_size;
-        } else {
-            match = 1;
-        }
-        old_offset += node->dh_size;
-
-        if (node->dh_link == CH_NOLINK)
-            break;
-    }
-
-    get_dirent(new_chain, prev_noffset)->dh_link = CH_NOLINK;
-
-    /* Check if new_chain is empty */
-    if (get_dirent(new_chain, 0)->dh_size == 0) {
-        kfree(new_chain);
-        new_chain = NULL;
-    }
-
-    /* Replace old chain. */
-    kfree(*chain);
-    *chain = new_chain;
-
-    return 0;
-}
-
-/**
- * Hash function.
- * @param str is the string to be hashed.
- * @param len is the length of str.
- * @return Hash value.
- */
-static size_t hash_fname(const char * str, size_t len)
-{
-#if DEHTABLE_SIZE == 16
-    size_t hash = (size_t)(str[0] ^ str[len - 1]) & (size_t)(DEHTABLE_SIZE - 1);
-#else
-#error No suitable hash function for selected DEHTABLE_SIZE.
-#endif
-
-    return hash;
 }
