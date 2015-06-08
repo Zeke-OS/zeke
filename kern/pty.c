@@ -47,18 +47,11 @@
 #include <queue_r.h>
 #include <tty.h>
 
-/*
- * TODO Create all ptys at init and just reset the pty
- *      on close. This way we get rid of costly mem allocs
- *      and hard closing/removal procedures.
- */
-
 /**
  * Struct describing a single PTY device.
  */
 struct pty_device {
     int pty_id;
-    struct tty * tty_slave;
     struct queue_cb chbuf_ms;
     struct queue_cb chbuf_sm;
     char _cbuf_ms[MAX_INPUT]; /* RFE is MAX_INPUT enough for pty? */
@@ -68,6 +61,12 @@ struct pty_device {
 
 static const char drv_name[] = "PTY";
 static const char dev_name[] = "ptmx";
+
+#define SLAVE_TTY2PTY(_tty_) \
+    (struct pty_device *)((uintptr_t)(_tty_) + sizeof(struct tty))
+
+#define SLAVE_PTY2TTY(_pty_) \
+    (struct tty *)((uintptr_t)(_pty_) - sizeof(struct tty))
 
 /*
  * pty state variables.
@@ -91,20 +90,39 @@ static unsigned next_ptyid(void)
     return atomic_inc(&_next_pty_id);
 }
 
+/**
+ * Get a pty device by id.
+ */
 static struct pty_device * pty_get(unsigned id)
 {
     struct pty_device find = { .pty_id = id };
-    struct pty_device * res = NULL;
-
-    if (id == 0)
-        goto out;
+    struct pty_device * res;
 
     mtx_lock(&pty_lock);
     res = RB_FIND(ptytree, &ptys_head, &find);
     mtx_unlock(&pty_lock);
 
-out:
     return res;
+}
+
+/**
+ * Insert a pty device.
+ */
+void pty_insert(struct pty_device * ptydev)
+{
+    mtx_lock(&pty_lock);
+    RB_INSERT(ptytree, &ptys_head, ptydev);
+    mtx_unlock(&pty_lock);
+}
+
+/**
+ * Remove a pty device.
+ */
+void pty_remove(struct pty_device * ptydev)
+{
+    mtx_lock(&pty_lock);
+    RB_REMOVE(ptytree, &ptys_head, ptydev);
+    mtx_unlock(&pty_lock);
 }
 
 /*
@@ -147,7 +165,7 @@ static int ptyslave_read(struct tty * tty, off_t blkno,
     struct pty_device * ptydev;
     size_t i;
 
-    ptydev = container_of(tty, struct pty_device, tty_slave);
+    ptydev = SLAVE_TTY2PTY(tty);
 
     for (i = 0; i < bcount; i++) {
         if (!queue_pop(&ptydev->chbuf_ms, &buf[i]))
@@ -163,7 +181,7 @@ static int ptyslave_write(struct tty * tty, off_t blkno,
     struct pty_device * ptydev;
     size_t i;
 
-    ptydev = container_of(tty, struct pty_device, tty_slave);
+    ptydev = SLAVE_TTY2PTY(tty);
 
     for (i = 0; i < bcount; i++) {
         if (!queue_push(&ptydev->chbuf_sm, &buf[i]))
@@ -173,6 +191,38 @@ static int ptyslave_write(struct tty * tty, off_t blkno,
     return i;
 }
 
+/**
+ * Close the pty slave when the master end is closed.
+ */
+static void close_pty_slave(file_t * file, struct tty * tty)
+{
+    KERROR(KERROR_DEBUG, "pty master closed\n");
+    /*
+     * TODO The following code closes pty_slave from slave end but the proper
+     * way is to close it when master end is closed.
+     */
+    struct pty_device * ptydev = pty_get(file->seek_pos);
+    struct tty * slave_tty;
+
+    KASSERT(ptydev != NULL, "ptydev should be set");
+
+    slave_tty = SLAVE_PTY2TTY(ptydev);
+
+    pty_remove(ptydev);
+
+    destroy_ttydev(slave_tty);
+    /* TODO ttydev can't be freed before device removal is really implemented */
+#if 0
+    tty_free(slave_tty);
+#endif
+}
+
+/*
+ * TODO if user unlinks the pty slave we will leak some memory.
+ * As a solution, we should have a delete event handler here
+ * that can do the same as close. This may or may not require adding
+ * a DELETING flag to somewhere.
+ */
 /**
  * Create a new pty master/slave pair.
  */
@@ -196,7 +246,7 @@ static void creat_pty(file_t * file, struct tty * tty)
                           sizeof(struct pty_device));
     if (!slave_tty)
         panic("Not enough memory to create a pty device");
-    ptydev = (struct pty_device *)((uintptr_t)slave_tty + sizeof(struct tty));
+    ptydev = SLAVE_TTY2PTY(slave_tty);
 
     /*
      * Slave functions.
@@ -217,46 +267,12 @@ static void creat_pty(file_t * file, struct tty * tty)
     ptydev->chbuf_sm = queue_create(ptydev->_cbuf_sm, sizeof(char),
             sizeof(ptydev->_cbuf_sm));
 
-    /* TODO a slave pty should be created under pts dir */
     if (make_ttydev(slave_tty)) {
         tty_free(slave_tty);
         panic("ENODEV while creating a pty");
     }
 
-    mtx_lock(&pty_lock);
-    RB_INSERT(ptytree, &ptys_head, ptydev);
-    mtx_unlock(&pty_lock);
-}
-
-/*
- * TODO if user unlinks the pty slave we will leak some memory.
- * As a solution, we should have a delete event handler here
- * that can do the same as close. This may or may not require adding
- * a DELETING flag to somewhere.
- */
-static void close_pty_slave(file_t * file, struct tty * tty)
-{
-    KERROR(KERROR_DEBUG, "pty master closed\n");
-    /*
-     * TODO The following code closes pty_slave from slave end but the proper
-     * way is to close it when master end is closed.
-     */
-    /*struct pty_device * ptydev = pty_get(file->seek_pos);*/
-
-#if 0
-    vnode_t * vn = file->vnode;
-    int (*delete_vnode)(vnode_t * vnode) = vn->sb->delete_vnode;
-    struct pty_device * ptydev;
-
-    KERROR(KERROR_DEBUG, "Delete pty slave vnode %d\n", (int)vn->vn_refcount);
-    delete_vnode(vn);
-
-    ptydev = container_of(tty, struct pty_device, tty_slave);
-    mtx_lock(&pty_lock);
-    RB_REMOVE(ptytree, &ptys_head, ptydev);
-    mtx_unlock(&pty_lock);
-    kfree(tty);
-#endif
+    pty_insert(ptydev);
 }
 
 /**

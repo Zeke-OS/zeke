@@ -184,7 +184,7 @@ static int fb_makemmdev(struct fb_conf * fb, dev_t dev_id)
     dev->mmap = fb_mmap;
     dev->opt_data = fb;
 
-    if (dev_make(dev, 0, 0, 0666, NULL)) {
+    if (make_dev(dev, 0, 0, 0666, NULL)) {
         return -ENODEV;
     }
 

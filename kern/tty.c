@@ -109,22 +109,41 @@ void tty_free(struct tty * tty)
     struct dev_info * dev;
 
     dev = (struct dev_info *)((uintptr_t)tty - sizeof(struct dev_info));
+    KASSERT(dev->opt_data == tty, "opt_data changed or invalid tty");
+
     kfree(dev);
 }
 
 int make_ttydev(struct tty * tty)
 {
     struct dev_info * dev;
+    vnode_t * vn;
 
     dev = (struct dev_info *)((uintptr_t)tty - sizeof(struct dev_info));
     KASSERT(dev->opt_data == tty, "opt_data changed or invalid tty");
 
-    if (dev_make(dev, 0, 0, 0666, NULL)) {
+    if (tty->tty_vn != NULL) {
+        KERROR(KERROR_ERR, "A device file is already created for this tty\n");
+        return -EMLINK;
+    }
+
+    if (make_dev(dev, 0, 0, 0666, &vn)) {
         KERROR(KERROR_ERR, "Failed to make a tty dev.\n");
         return -ENODEV;
     }
+    tty->tty_vn = vn;
 
     return 0;
+}
+
+void destroy_ttydev(struct tty * tty)
+{
+    struct dev_info * dev;
+
+    dev = (struct dev_info *)((uintptr_t)tty - sizeof(struct dev_info));
+    KASSERT(dev->opt_data == tty, "opt_data changed or invalid tty");
+
+    destroy_dev(tty->tty_vn);
 }
 
 static ssize_t tty_read(struct dev_info * devnfo, off_t blkno, uint8_t * buf,

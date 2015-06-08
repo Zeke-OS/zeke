@@ -108,8 +108,17 @@ struct dev_info {
 
 void _devfs_create_specials(void);
 
-int dev_make(struct dev_info * devnfo, uid_t uid, gid_t gid, int perms,
+/**
+ * Create a new device.
+ * @param devnfo is a pointer to the device descriptor.
+ */
+int make_dev(struct dev_info * devnfo, uid_t uid, gid_t gid, int perms,
         vnode_t ** result);
+
+/**
+ * Destroy a device.
+ */
+void destroy_dev(vnode_t * vn);
 
 /**
  * Get a string indicating the device name by device vnode.

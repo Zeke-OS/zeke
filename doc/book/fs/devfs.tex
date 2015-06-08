@@ -11,8 +11,8 @@ Device registration with devfs starts from static init function of a subsystem,
 device detection routine or some other triggering method. The device
 identification/creation function shall, by some way, create a \verb+dev_info+
 struct that describes the device and provides necessary function pointers for
-reading and writing. Then \verb+dev_make(devXXX_info, 0, 0, 0666)+ is called
-to register the device created. \verb+dev_make()+ then creates a fs node that is
+reading and writing. Then \verb+make_dev(devXXX_info, 0, 0, 0666)+ is called
+to register the device created. \verb+make_dev()+ then creates a fs node that is
 contains a pointer to the provided \verb+dev_info+ in \verb+vn_specinfo+ of the
 device.
 
@@ -24,7 +24,7 @@ for anything actually.\footnote{Some drivers may still use those internally but
 there is no external interface provided. Uart is one of those using minor
 numbers for internal indexing.} So devices can't be accessed by creating
 a device file anywhere in the system, device files in Zeke are very special and
-only ones that are created with \verb+dev_make()+ are valid, since the object
+only ones that are created with \verb+make_dev()+ are valid, since the object
 oriented model of Zeke VFS.
 
 Another difference is that Zeke does not have character and block device

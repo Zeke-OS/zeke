@@ -269,7 +269,7 @@ int mbr_register(int fd, int * part_count)
                d->start_block, d->blocks, p_offset);
 #endif
 
-        dev_make(&d->dev, 0, 0, 0666, NULL);
+        make_dev(&d->dev, 0, 0, 0666, NULL);
         mbr_dev_count++;
         parts++;
 

@@ -543,22 +543,40 @@ int ramfs_lookup(vnode_t * dir, const char * name, vnode_t ** result)
     return 0;
 }
 
-int ramfs_link(vnode_t * dir, vnode_t * vnode, const char * name)
+/*
+ * TODO This could be added to vnode_ops as well and nofs should maybe implement
+ *      a generic less optimal version of this.
+ */
+int ramfs_revlookup(vnode_t * dir, ino_t * ino, char * name, size_t name_len)
 {
-    ramfs_inode_t * inode;
     ramfs_inode_t * inode_dir;
     int err;
 
     if (!S_ISDIR(dir->vn_mode))
-        return -ENOTDIR; /* No a directory entry. */
+        return -ENOTDIR;
 
-    inode = get_inode_of_vnode(vnode);
     inode_dir = get_inode_of_vnode(dir);
+    err = dh_revlookup(inode_dir->in.dir, *ino, name, name_len);
+
+    return err;
+}
+
+int ramfs_link(vnode_t * dir, vnode_t * vnode, const char * name)
+{
+    ramfs_inode_t * inode_dir;
+    ramfs_inode_t * inode;
+    int err;
+
+    if (!S_ISDIR(dir->vn_mode))
+        return -ENOTDIR;
+
+    inode_dir = get_inode_of_vnode(dir);
+    inode = get_inode_of_vnode(vnode);
     err = dh_link(inode_dir->in.dir, vnode->vn_num, name);
     if (err)
         return err;
 
-    inode->in_nlink++; /* Increment hard link count. */
+    inode->in_nlink++; /* Increment the hard link count. */
 
     return 0;
 }

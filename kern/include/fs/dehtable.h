@@ -71,11 +71,18 @@ typedef struct dh_dir_iter {
 /**
  * Insert a new directory entry link.
  * @param dir       is a directory entry table.
- * @param vnode     is the vnode where the new hard link will point.
+ * @param vnode_num is the inode number.
  * @param name      is the name of the hard link.
- * @return Returns 0 if succeed; Otherwise value other than zero.
+ * @return Returns 0 if succeed; Otherwise a negative errno code is returned.
  */
 int dh_link(dh_table_t * dir, ino_t vnode_num, const char * name);
+
+/**
+ * Remove a directory entry link.
+ * @param dir       is the dh_table of a directory.
+ * @param name      is the name of directory entry.
+ * @return Returns 0 if succeed; Otherwise a negative errno code is returned.
+ */
 int dh_unlink(dh_table_t * dir, const char * name);
 
 /**
@@ -91,9 +98,20 @@ void dh_destroy_all(dh_table_t * dir);
  * @param name_len  is the length of name.
  * @param vnode_num is the vnode number the link is pointing to.
  * @return Returns zero if link with specified name was found;
- *         Otherwise value other than zero indicating type of error.
+ *         Otherwise a negative errno code is returned.
  */
 int dh_lookup(dh_table_t * dir, const char * name, ino_t * vnode_num);
+
+/**
+ * Reverse lookup for directory entry name in dh_table by ino.
+ * @param dir       is the dh_table of a directory.
+ * @param ino       is the inode number of the vnode.
+ * @param[out] name is destination string.
+ * @param name_len  is the size of name_len
+ * @return Returns zero if link with specified inode number was found;
+ *         Otherwise a negative errno code is returned.
+ */
+int dh_revlookup(dh_table_t * dir, ino_t ino, char * name, size_t name_len);
 
 /**
  * Get a dirent hashtable iterator.

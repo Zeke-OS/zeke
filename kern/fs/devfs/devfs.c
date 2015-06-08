@@ -130,10 +130,10 @@ static int devfs_umount(struct fs_superblock * fs_sb)
     return -EBUSY;
 }
 
-int dev_make(struct dev_info * devnfo, uid_t uid, gid_t gid, int perms,
+int make_dev(struct dev_info * devnfo, uid_t uid, gid_t gid, int perms,
              vnode_t ** result)
 {
-    vnode_t * res;
+    vnode_t * vn;
     int retval;
 
     if (!vn_devfs->vnode_ops->lookup(vn_devfs, devnfo->dev_name, NULL)) {
@@ -141,24 +141,28 @@ int dev_make(struct dev_info * devnfo, uid_t uid, gid_t gid, int perms,
     }
     retval = vn_devfs->vnode_ops->mknod(vn_devfs, devnfo->dev_name,
             ((devnfo->block_size > 1) ? S_IFBLK : S_IFCHR) | perms,
-            devnfo, &res);
+            devnfo, &vn);
     if (retval)
         return retval;
 
     /* Replace ops with our own */
-    res->vnode_ops = &devfs_vnode_ops;
+    vn->vnode_ops = &devfs_vnode_ops;
 
-    res->vnode_ops->chown(res, uid, gid);
+    vn->vnode_ops->chown(vn, uid, gid);
 
     if (result)
-        *result = res;
+        *result = vn;
 
     return 0;
 }
 
-void dev_destroy(struct dev_info * devnfo)
+void destroy_dev(vnode_t * vn)
 {
-    /* TODO Implementation of dev_destroy() */
+    char name[NAME_MAX];
+
+    /* TODO Should be called via vnode_ops */
+    ramfs_revlookup(vn_devfs, &vn->vn_num, name, sizeof(name));
+    vn_devfs->vnode_ops->unlink(vn_devfs, name);
 }
 
 static int devfs_delete_vnode(vnode_t * vnode)

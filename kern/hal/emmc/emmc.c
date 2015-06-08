@@ -344,7 +344,7 @@ int __kinit__ emmc_init(void)
 #endif
 
     /* Register with devfs */
-    if (dev_make(&sd_edev->dev, 0, 0, 0666, &vnode)) {
+    if (make_dev(&sd_edev->dev, 0, 0, 0666, &vnode)) {
         KERROR(KERROR_ERR, "Failed to register a new emmc dev\n");
     }
 

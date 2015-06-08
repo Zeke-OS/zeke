@@ -318,6 +318,25 @@ out:
     return retval;
 }
 
+int dh_revlookup(dh_table_t * dir, ino_t ino, char * name, size_t name_len)
+{
+    dh_dir_iter_t it = dh_get_iter(dir);
+    dh_dirent_t * de;
+
+    while ((de = dh_iter_next(&it))) {
+        if (de->dh_ino == ino) {
+            size_t len;
+
+            len = strlcpy(name, de->dh_name, name_len);
+            if (len >= name_len)
+                return -ENAMETOOLONG;
+            return 0;
+        }
+    }
+
+    return -ENOENT;
+}
+
 dh_dir_iter_t dh_get_iter(dh_table_t * dir)
 {
     dh_dir_iter_t it = {

@@ -37,6 +37,7 @@
 #include <stdint.h>
 
 struct file;
+struct vnode;
 struct termios;
 struct winsize;
 
@@ -45,6 +46,14 @@ struct tty {
     struct winsize winsize;
 
     off_t write_count;
+
+    /**
+     * A pointer back to the vnode.
+     * Having this pointer prevents us having multiple vnode end points to a tty
+     * device, though ttys are usually end-to-end anyway so I don't see a big
+     * problem there.
+     */
+    struct vnode * tty_vn;
 
     void * opt_data;
 
@@ -94,12 +103,23 @@ struct tty * tty_alloc(const char * drv_name, dev_t dev_id,
 
 /**
  * Free a device struct.
+ * @note Pointer tty is invalid after calling this function so destroy_ttydev()
+ *       must be called before calling this function if make_ttydev() was
+ *       called for tty.
  */
 void tty_free(struct tty * tty);
 
 /**
  * Create a tty device.
+ * Usually you can create multiple end points to a device by calling make_dev()
+ * multiple times but make_ttydev() only supports one end point per struct tty.
  */
 int make_ttydev(struct tty * tty);
+
+/**
+ * Destroy a tty device.
+ * @note tty_free() must not be called before this function.
+ */
+void destroy_ttydev(struct tty * tty);
 
 #endif /* TTY_H */

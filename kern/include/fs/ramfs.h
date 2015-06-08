@@ -62,6 +62,7 @@ int ramfs_create(struct vnode * dir, const char * name, mode_t mode,
 int ramfs_mknod(struct vnode * dir, const char * name, int mode,
                 void * specinfo, struct vnode ** result);
 int ramfs_lookup(struct vnode * dir, const char * name, struct vnode ** result);
+int ramfs_revlookup(vnode_t * dir, ino_t * ino, char * name, size_t name_len);
 int ramfs_link(struct vnode * dir, struct vnode * vnode, const char * name);
 int ramfs_unlink(struct vnode * dir, const char * name);
 int ramfs_mkdir(struct vnode * dir,  const char * name, mode_t mode);

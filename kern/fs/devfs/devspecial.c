@@ -66,15 +66,15 @@ struct dev_info devfull_info = {
 
 void _devfs_create_specials()
 {
-    if (dev_make(&devnull_info, 0, 0, 0666, NULL)) {
+    if (make_dev(&devnull_info, 0, 0, 0666, NULL)) {
         KERROR(KERROR_ERR, "Failed to init dev/null\n");
     }
 
-    if (dev_make(&devzero_info, 0, 0, 0666, NULL)) {
+    if (make_dev(&devzero_info, 0, 0, 0666, NULL)) {
         KERROR(KERROR_ERR, "Failed to init dev/zero\n");
     }
 
-    if (dev_make(&devfull_info, 0, 0, 0666, NULL)) {
+    if (make_dev(&devfull_info, 0, 0, 0666, NULL)) {
         KERROR(KERROR_ERR, "Failed to init dev/full\n");
     }
 }
