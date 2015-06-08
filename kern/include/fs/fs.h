@@ -373,6 +373,15 @@ typedef struct vnode_ops {
      */
     int (*lookup)(vnode_t * dir, const char * name, vnode_t ** result);
     /**
+     * Reverse lookup for a hard link name by its inode number.
+     * @param dir       is a directory in the file system.
+     * @param ino       is the inode number.
+     * @param[out] name is a buffer for the file name.
+     * @param name_len  is the size of the name buffer in bytes.
+     * @return Returns 0 if a vnode was found.
+     */
+    int (*revlookup)(vnode_t * dir, ino_t * ino, char * name, size_t name_len);
+    /**
      * Create a hard link.
      * Link vnode into dir with the specified name.
      * @param dir       is the directory where entry will be created.
@@ -709,6 +718,7 @@ int fs_enotsup_create(vnode_t * dir, const char * name, mode_t mode,
 int fs_enotsup_mknod(vnode_t * dir, const char * name, int mode,
                      void * specinfo, vnode_t ** result);
 int fs_enotsup_lookup(vnode_t * dir, const char * name, vnode_t ** result);
+int nofs_revlookup(vnode_t * dir, ino_t * ino, char * name, size_t name_len);
 int fs_enotsup_link(vnode_t * dir, vnode_t * vnode, const char * name);
 int fs_enotsup_unlink(vnode_t * dir, const char * name);
 int fs_enotsup_mkdir(vnode_t * dir,  const char * name, mode_t mode);

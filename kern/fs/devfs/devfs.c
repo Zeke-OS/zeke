@@ -160,8 +160,7 @@ void destroy_dev(vnode_t * vn)
 {
     char name[NAME_MAX];
 
-    /* TODO Should be called via vnode_ops */
-    ramfs_revlookup(vn_devfs, &vn->vn_num, name, sizeof(name));
+    vn_devfs->vnode_ops->revlookup(vn_devfs, &vn->vn_num, name, sizeof(name));
     vn_devfs->vnode_ops->unlink(vn_devfs, name);
 }
 

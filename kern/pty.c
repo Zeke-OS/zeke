@@ -196,11 +196,6 @@ static int ptyslave_write(struct tty * tty, off_t blkno,
  */
 static void close_pty_slave(file_t * file, struct tty * tty)
 {
-    KERROR(KERROR_DEBUG, "pty master closed\n");
-    /*
-     * TODO The following code closes pty_slave from slave end but the proper
-     * way is to close it when master end is closed.
-     */
     struct pty_device * ptydev = pty_get(file->seek_pos);
     struct tty * slave_tty;
 
@@ -211,10 +206,7 @@ static void close_pty_slave(file_t * file, struct tty * tty)
     pty_remove(ptydev);
 
     destroy_ttydev(slave_tty);
-    /* TODO ttydev can't be freed before device removal is really implemented */
-#if 0
     tty_free(slave_tty);
-#endif
 }
 
 /*

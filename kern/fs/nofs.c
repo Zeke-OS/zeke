@@ -46,6 +46,7 @@ const vnode_ops_t nofs_vnode_ops = {
     .create = fs_enotsup_create,
     .mknod = fs_enotsup_mknod,
     .lookup = fs_enotsup_lookup,
+    .revlookup = nofs_revlookup,
     .link = fs_enotsup_link,
     .unlink = fs_enotsup_unlink,
     .mkdir = fs_enotsup_mkdir,
@@ -113,6 +114,38 @@ int fs_enotsup_mknod(vnode_t * dir, const char * name, int mode,
 int fs_enotsup_lookup(vnode_t * dir, const char * name, vnode_t ** result)
 {
     return -ENOTSUP;
+}
+
+int nofs_revlookup(vnode_t * dir, ino_t * ino, char * name, size_t name_len)
+{
+    struct dirent d;
+    off_t doff = DIRENT_SEEK_START;
+    int err;
+
+    /*
+     * Note: This doesn't handle symbolic links and we dont't even check
+     * st_dev here.
+     * TODO Support symbolic links.
+     */
+
+    do {
+        err = dir->vnode_ops->readdir(dir, &d, &doff);
+        if (!err) {
+            if (d.d_ino == *ino) {
+                size_t len;
+
+                len = strlcpy(name, d.d_name, name_len);
+                if (len >= name_len)
+                    return -ENAMETOOLONG;
+
+                return 0;
+            }
+        }
+    } while (!err);
+
+    if (err == -ESPIPE)
+        return -ENOENT;
+    return err;
 }
 
 int fs_enotsup_link(vnode_t * dir, vnode_t * vnode, const char * name)

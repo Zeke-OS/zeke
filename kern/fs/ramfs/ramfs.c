@@ -177,6 +177,7 @@ vnode_ops_t ramfs_vnode_ops = {
     .create = ramfs_create,
     .mknod = ramfs_mknod,
     .lookup = ramfs_lookup,
+    .revlookup = ramfs_revlookup,
     .link = ramfs_link,
     .unlink = ramfs_unlink,
     .mkdir = ramfs_mkdir,
