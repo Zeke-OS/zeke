@@ -87,7 +87,7 @@ struct _PDCLIB_locale {
     struct lconv                 _Conv;
 
     /* ctype / wctype */
-    /* XXX: Maybe re-evaluate constness of these later on? */
+    /* RFE Maybe re-evaluate constness of these later on? */
     const _PDCLIB_wcinfo_t      *_WCType;
     __SIZE_TYPE__               _WCTypeSize;
     const _PDCLIB_ctype_t       *_CType;

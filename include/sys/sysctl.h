@@ -453,7 +453,7 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
 /*
  * Identifiers here are mostly compatible with BSD but we don't support structs
  * so those identifiers are left out.
- * XXX Many of these identifiers are not yet actually mapped but these are left
+ * RFE Many of these identifiers are not yet actually mapped but these are left
  * here as a reservations for future use.
  */
 

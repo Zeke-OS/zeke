@@ -16,10 +16,10 @@
  *   -2     : Partial character (only lead surrogate in buffer)
  */
 static inline int _PDCLIB_c16rtoc32(
-            _PDCLIB_char32_t    *_PDCLIB_restrict   out, 
+            _PDCLIB_char32_t    *_PDCLIB_restrict   out,
     const   _PDCLIB_char16_t    *_PDCLIB_restrict   in,
             _PDCLIB_size_t                          bufsize,
-            _PDCLIB_mbstate_t   *_PDCLIB_restrict   ps  
+            _PDCLIB_mbstate_t   *_PDCLIB_restrict   ps
 )
 {
     if(ps->_Surrogate) {
@@ -87,15 +87,15 @@ static inline _PDCLIB_size_t _PDCLIB_c32rtoc16(
 }
 
 struct _PDCLIB_charcodec {
-    /* Reads at most *_P_insz code units from *_P_inbuf and writes the result 
-     * into *_P_outbuf, writing at most *_P_outsz code units. Updates 
+    /* Reads at most *_P_insz code units from *_P_inbuf and writes the result
+     * into *_P_outbuf, writing at most *_P_outsz code units. Updates
      * *_P_outbuf, *_P_outsz, *_P_inbuf, *_P_outsz with the resulting state
      *
-     * If _P_outbuf is NULL, then the input must be processed but no output 
+     * If _P_outbuf is NULL, then the input must be processed but no output
      * generated. _P_outsz may be processed as normal.
      *
-     * Returns true if the conversion completed successfully (i.e. one of 
-     * _P_outsize or _P_insize reached zero and no coding errors were 
+     * Returns true if the conversion completed successfully (i.e. one of
+     * _P_outsize or _P_insize reached zero and no coding errors were
      * encountered), else return false.
      */
 
@@ -120,7 +120,7 @@ struct _PDCLIB_charcodec {
         _PDCLIB_mbstate_t                        *_PDCLIB_restrict  _P_ps
     );
 
-    /* UTF-16 variants; same as above except optional. 
+    /* UTF-16 variants; same as above except optional.
      *
      * If not provided, _PDCLib will internally synthesize on top of the UCS-4
      * variants above, albeit at a performance cost.
@@ -148,37 +148,37 @@ struct _PDCLIB_charcodec {
 /* mbstate _PendState values */
 enum {
     /* Nothing pending; _PendChar ignored */
-    _PendClear = 0, 
+    _PendClear = 0,
 
-    /* Process the character stored in _PendChar before reading the buffer 
+    /* Process the character stored in _PendChar before reading the buffer
      * passed for the conversion
      */
     _PendPrefix = 1,
 };
 
-/* XXX Defining these here is temporary - will move to xlocale in future */
+/* TODO Defining these here is temporary - will move to xlocale in future */
 size_t mbrtoc16_l(
         char16_t    *_PDCLIB_restrict   pc16,
-        const char  *_PDCLIB_restrict   s, 
+        const char  *_PDCLIB_restrict   s,
         size_t                          n,
         mbstate_t   *_PDCLIB_restrict   ps,
 _PDCLIB_locale_t     _PDCLIB_restrict   l);
 
 size_t c16rtomb_l(
-        char        *_PDCLIB_restrict   s, 
-        char16_t                        c16, 
+        char        *_PDCLIB_restrict   s,
+        char16_t                        c16,
         mbstate_t   *_PDCLIB_restrict   ps,
 _PDCLIB_locale_t     _PDCLIB_restrict   l);
 
 size_t mbrtoc32_l(
         char32_t    *_PDCLIB_restrict   pc32,
-        const char  *_PDCLIB_restrict   s, 
+        const char  *_PDCLIB_restrict   s,
         size_t                          n,
         mbstate_t   *_PDCLIB_restrict   ps,
 _PDCLIB_locale_t     _PDCLIB_restrict   l);
 
 size_t c32rtomb_l(
-        char        *_PDCLIB_restrict   s, 
+        char        *_PDCLIB_restrict   s,
         char32_t                        c32,
         mbstate_t   *_PDCLIB_restrict   ps,
 _PDCLIB_locale_t     _PDCLIB_restrict   l);

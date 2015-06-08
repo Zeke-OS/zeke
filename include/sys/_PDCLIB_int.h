@@ -210,7 +210,7 @@ typedef struct _PDCLIB_file     _PDCLIB_file_t; // Rename to _PDCLIB_FILE?
 /* Status structure required by _PDCLIB_print(). */
 struct _PDCLIB_status_t
 {
-    /* XXX This structure is horrible now. scanf needs its own */
+    /* FIXME This structure is horrible now. scanf needs its own */
 
     int              base;   /* base to which the value shall be converted   */
     _PDCLIB_int_fast32_t flags; /* flags and length modifiers                */

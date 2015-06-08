@@ -136,7 +136,7 @@
 
 #define __GNUCLIKE_BUILTIN_MEMCPY 1
 
-/* XXX: if __GNUC__ >= 2: not tested everywhere originally, where replaced */
+/* RFE if __GNUC__ >= 2: not tested everywhere originally, where replaced */
 #define __CC_SUPPORTS_INLINE 1
 #define __CC_SUPPORTS___INLINE 1
 #define __CC_SUPPORTS___INLINE__ 1
@@ -248,7 +248,7 @@
 #define        __dead2                __attribute__((__noreturn__))
 #define        __pure2                __attribute__((__const__))
 #define        __unused
-/* XXX Find out what to do for __packed, __aligned and __section */
+/* RFE Find out what to do for __packed, __aligned and __section */
 #endif
 #if __GNUC_PREREQ__(2, 7)
 #define        __dead2                __attribute__((__noreturn__))
@@ -285,7 +285,7 @@
     __has_extension(cxx_alignas)
 #define        _Alignas(x)                alignas(x)
 #else
-/* XXX: Only emulates _Alignas(constant-expression); not _Alignas(type-name). */
+/* RFE Only emulates _Alignas(constant-expression); not _Alignas(type-name). */
 #define        _Alignas(x)                __aligned(x)
 #endif
 #endif
@@ -324,7 +324,7 @@
 #endif
 
 #if !__has_extension(c_thread_local)
-/* XXX: Change this to test against C++11 when clang in base supports it. */
+/* RFE Change this to test against C++11 when clang in base supports it. */
 #if /* (defined(__cplusplus) && __cplusplus >= 201103L) || */ \
     __has_extension(cxx_thread_local)
 #define        _Thread_local                thread_local
@@ -391,7 +391,7 @@
 #define        __returns_twice
 #endif
 
-/* XXX: should use `#if __STDC_VERSION__ < 199901'. */
+/* RFE should use `#if __STDC_VERSION__ < 199901'. */
 #if !__GNUC_PREREQ__(2, 7) && !defined(__INTEL_COMPILER)
 #define        __func__        NULL
 #endif

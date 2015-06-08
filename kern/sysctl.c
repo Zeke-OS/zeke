@@ -326,7 +326,7 @@ static int sysctl_sysctl_name(SYSCTL_HANDLER_ARGS)
 }
 
 /*
- * XXXRW/JA: Shouldn't return name data for nodes that we don't permit in
+ * RFE RW/JA: Shouldn't return name data for nodes that we don't permit in
  * capability mode.
  */
 static SYSCTL_NODE(_sysctl, 1, name, CTLFLAG_RD | CTLFLAG_CAPRD,
@@ -413,7 +413,7 @@ static int sysctl_sysctl_next(SYSCTL_HANDLER_ARGS)
 }
 
 /*
- * XXXRW/JA: Shouldn't return next data for nodes that we don't permit in
+ * RFE RW/JA: Shouldn't return next data for nodes that we don't permit in
  * capability mode.
  */
 static SYSCTL_NODE(_sysctl, 2, next, CTLFLAG_RD | CTLFLAG_CAPRD,
@@ -494,7 +494,7 @@ static int sysctl_sysctl_name2oid(SYSCTL_HANDLER_ARGS)
 }
 
 /*
- * XXXRW/JA: Shouldn't return name2oid data for nodes that we don't permit in
+ * RFE RW/JA: Shouldn't return name2oid data for nodes that we don't permit in
  * capability mode.
  */
 SYSCTL_PROC(_sysctl, 3, name2oid,

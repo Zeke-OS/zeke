@@ -65,7 +65,7 @@ static void priceil_restore(mtx_t * mtx)
 {
     if (MTX_OPT(mtx, MTX_OPT_PRICEIL)) {
         /*
-         * XXX There is a very rare race condition if some other thread tries to
+         * RFE There is a very rare race condition if some other thread tries to
          * set a new priority for this thread just after this if clause.
          */
         if (thread_get_priority(current_thread->id) == mtx->pri.p_lock)

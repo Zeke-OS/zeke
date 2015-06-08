@@ -160,7 +160,7 @@
 #endif /* __BSD_VISIBLE */
 
 /*
- * XXX missing POSIX_TYPED_MEM_* macros and
+ * RFE missing POSIX_TYPED_MEM_* macros and
  * posix_typed_mem_info structure.
  */
 #if __POSIX_VISIBLE >= 200112
@@ -189,7 +189,7 @@ struct _shmem_munmap_args {
 __BEGIN_DECLS
 
 /*
- * XXX not yet implemented: posix_mem_offset(), posix_typed_mem_get_info(),
+ * RFE not yet implemented: posix_mem_offset(), posix_typed_mem_get_info(),
  * posix_typed_mem_open().
  */
 #if __BSD_VISIBLE
