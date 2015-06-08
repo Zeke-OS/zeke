@@ -13,6 +13,7 @@
 static int flushsubbuffer(FILE * stream, size_t length)
 {
     size_t written = 0;
+    char * buf = stream->buffer;
     int rv = 0;
 
     while (written != length)
@@ -21,7 +22,7 @@ static int flushsubbuffer(FILE * stream, size_t length)
         size_t toWrite = length - written;
         bool res;
 
-        res = stream->ops->write(stream->handle, stream->buffer + written,
+        res = stream->ops->write(stream->handle, buf + written,
                                  toWrite, &justWrote);
         written += justWrote;
         stream->pos.offset += justWrote;
@@ -33,8 +34,7 @@ static int flushsubbuffer(FILE * stream, size_t length)
         }
     }
 
-    memmove(stream->buffer, stream->buffer + written,
-            stream->bufsize - written);
+    memmove(buf, buf + written, stream->bufsize - written);
     if ((stream->bufidx - written) > stream->bufidx) {
         stream->bufidx = 0;
     } else {
