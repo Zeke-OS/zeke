@@ -768,8 +768,8 @@ out:
     return retval;
 }
 
-int fs_link_curproc(int fd1, const char * path1, size_t path1_len,
-                    int fd2, const char * path2, size_t path2_len,
+int fs_link_curproc(int fd1, const char * path1,
+                    int fd2, const char * path2,
                     int atflags)
 {
     char * targetname = NULL;
@@ -823,7 +823,7 @@ out:
     return err;
 }
 
-int fs_unlink_curproc(int fd, const char * path, size_t path_len, int atflags)
+int fs_unlink_curproc(int fd, const char * path, int atflags)
 {
     char * dirpath = NULL;
     char * filename = NULL;
@@ -1058,8 +1058,8 @@ int vref(vnode_t * vnode)
     prev = atomic_read(&vnode->vn_refcount);
     if (prev < 0) {
 #ifdef configFS_VREF_DEBUG
-        KERROR_VREF(KERROR_ERR, "Failed, vnode will be freed soon or it's "
-                                "orphan (%d)\n",
+        KERROR_VREF(KERROR_ERR,
+                    "Failed, vnode will be freed soon or it's orphan (%d)\n",
                     prev);
 #endif
         return -ENOLINK;

@@ -480,8 +480,8 @@ static int sys_link(__user void * user_args)
         goto out;
     }
 
-    err = fs_link_curproc(args->fd1, args->path1, args->path1_len,
-                          args->fd2, args->path2, args->path2_len,
+    err = fs_link_curproc(args->fd1, args->path1,
+                          args->fd2, args->path2,
                           args->flag);
     if (err) {
         set_errno(-err);
@@ -514,7 +514,7 @@ static int sys_unlink(__user void * user_args)
         goto out;
     }
 
-    err = fs_unlink_curproc(args->fd, args->path, args->path_len, args->flag);
+    err = fs_unlink_curproc(args->fd, args->path, args->flag);
     if (err) {
         set_errno(-err);
         goto out;
