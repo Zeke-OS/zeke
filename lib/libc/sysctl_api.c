@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Zero Kernel sysctl API.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Copyright (c) 1993
@@ -41,7 +41,7 @@
 #include <sys/sysctl.h>
 
 int sysctl(int * name, unsigned int namelen, void * oldp, size_t * oldlenp,
-        void * newp, size_t newlen)
+           void * newp, size_t newlen)
 {
     struct _sysctl_args args = {
         .name = name,
@@ -57,7 +57,7 @@ int sysctl(int * name, unsigned int namelen, void * oldp, size_t * oldlenp,
 
 int sysctlnametomib(char * name, int * oidp, int lenp)
 {
-    int qoid[2] = {0, 3}; /* Magic: name2oid lookup */
+    int qoid[2] = {0, _CTLMAGIC_NAME2OID}; /* Magic: name2oid lookup */
     int i;
     size_t j;
 
@@ -73,8 +73,8 @@ int sysctlmibtoname(int * oid, int len, char * strname, size_t * strname_len)
     int qoid[len + 2];
     int i;
 
-    qoid[0] = 0; /* Magic:       */
-    qoid[1] = 1; /* Get str name */
+    qoid[0] = 0;                /* Magic:       */
+    qoid[1] = _CTLMAGIC_NAME;   /* Get str name */
     memcpy(qoid + 2, oid, len * sizeof(int));
 
     i = sysctl(qoid, len + 2, strname, strname_len, 0, 0);
@@ -88,8 +88,8 @@ int sysctloidfmt(int * oid, int len, char * fmt, unsigned int * kind)
     int i;
     size_t j;
 
-    qoid[0] = 0; /* Magic:            */
-    qoid[1] = 4; /* oid format lookup */
+    qoid[0] = 0;                /* Magic:            */
+    qoid[1] = _CTLMAGIC_OIDFMT; /* oid format lookup */
     memcpy(qoid + 2, oid, len * sizeof(int));
 
     j = sizeof(buf);
@@ -108,11 +108,11 @@ int sysctloidfmt(int * oid, int len, char * fmt, unsigned int * kind)
 
 int sysctlgetdesc(int * oid, int len, char * str, size_t * str_len)
 {
-int qoid[len + 2];
+    int qoid[len + 2];
     int i;
 
-    qoid[0] = 0; /* Magic:       */
-    qoid[1] = 5; /* Get str name */
+    qoid[0] = 0;                    /* Magic:       */
+    qoid[1] = _CTLMAGIC_OIDDESCR;
     memcpy(qoid + 2, oid, len * sizeof(int));
 
     i = sysctl(qoid, len + 2, str, str_len, 0, 0);
@@ -125,7 +125,7 @@ int sysctlgetnext(int * oid, int len, int * oidn, size_t * lenn)
     int err;
 
     name[0] = 0;
-    name[1] = 2;
+    name[1] = _CTLMAGIC_NEXT;
     if (len > 0) {
         memcpy(name + 2, oid, len * sizeof(int));
         len += 2;

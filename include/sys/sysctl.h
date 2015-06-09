@@ -458,6 +458,17 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
  */
 
 /*
+ * _sysctl
+ */
+#define _CTLMAGIC_NAME          1   /* Get the name of a MIB variable. */
+#define _CTLMAGIC_NEXT          2   /* Get the next variable from MIB tree. */
+#define _CTLMAGIC_NAME2OID      3   /* String name to integer name of
+                                     * the variable. */
+#define _CTLMAGIC_OIDFMT        4   /* Get format and type of a MIB variable. */
+#define _CTLMAGIC_OIDDESCR      5   /* Get description string of a MIB
+                                     * variable. */
+
+/*
  * CTL_KERN identifiers
  */
 #define KERN_OSTYPE             1   /* string: system version */
