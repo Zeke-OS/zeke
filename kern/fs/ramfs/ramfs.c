@@ -127,8 +127,8 @@ static atomic_t ramfs_vdev_minor;
 static void ramfs_init_sb(ramfs_sb_t * ramfs_sb, uint32_t mode);
 static vnode_t * create_root(ramfs_sb_t * ramfs_sb);
 static void destroy_superblock(ramfs_sb_t * ramfs_sb);
-vnode_t * ramfs_raw_create_inode(const struct fs_superblock * sb,
-                                 ino_t * num);
+static vnode_t * ramfs_raw_create_inode(const struct fs_superblock * sb,
+                                        ino_t * num);
 static void init_inode(ramfs_inode_t * inode, ramfs_sb_t * ramfs_sb,
                        ino_t * num);
 static void destroy_vnode(vnode_t * vnode);
@@ -202,14 +202,6 @@ int __kinit__ ramfs_init(void)
     return 0;
 }
 
-/**
- * Mount a new ramfs.
- * @param mode      mount flags.
- * @param param     contains optional mount parameters.
- * @param parm_len  length of param string.
- * @param[out] sb   Returns the superblock of the new mount.
- * @return error code, -errno.
- */
 int ramsfs_mount(const char * source, uint32_t mode,
                  const char * parm, int parm_len, struct fs_superblock ** sb)
 {
@@ -271,11 +263,6 @@ out:
     return retval;
 }
 
-/**
- * Unmount a ramfs.
- * @param fs_sb is the superblock to be unmounted.
- * @return Returns zero if succeed; Otherwise value other than zero.
- */
 int ramfs_umount(struct fs_superblock * fs_sb)
 {
     ramfs_sb_t * rsb = get_rfsb_of_sb(fs_sb);
@@ -299,13 +286,6 @@ int ramfs_umount(struct fs_superblock * fs_sb)
     return 0;
 }
 
-/**
- * Get the vnode struct linked to a vnode number.
- * @param[in] sb        is the superblock.
- * @param[in] vnode_num is the vnode number.
- * @param[out] vnode    is a pointer to the vnode, can be NULL.
- * @return Returns 0 if no error; Otherwise value other than zero.
- */
 int ramfs_get_vnode(struct fs_superblock * sb, ino_t * vnode_num,
                     vnode_t ** vnode)
 {
@@ -351,13 +331,6 @@ int ramfs_get_vnode(struct fs_superblock * sb, ino_t * vnode_num,
     return 0;
 }
 
-/**
- * Delete a vnode reference.
- * Deletes a reference to a vnode and destroys the inode corresponding to the
- * inode if there is no more links and references to it.
- * @param[in] vnode is the vnode.
- * @return Returns 0 if no error; Otherwise value other than zero.
- */
 int ramfs_delete_vnode(vnode_t * vnode)
 {
     ramfs_inode_t * inode;
@@ -872,7 +845,8 @@ static void destroy_superblock(ramfs_sb_t * ramfs_sb)
  * @param num   is the inode number.
  * @return Returns the newly created inode or null pointer if failed.
  */
-vnode_t * ramfs_raw_create_inode(const struct fs_superblock * sb, ino_t * num)
+static vnode_t * ramfs_raw_create_inode(const struct fs_superblock * sb,
+                                        ino_t * num)
 {
     ramfs_inode_t * inode;
     ramfs_sb_t * ramfs_sb;
@@ -896,7 +870,8 @@ vnode_t * ramfs_raw_create_inode(const struct fs_superblock * sb, ino_t * num)
  * @param ramfs_sb  is the current superblock.
  * @param num       is the inode number to be used.
  */
-static void init_inode(ramfs_inode_t * inode, ramfs_sb_t * ramfs_sb, ino_t * num)
+static void init_inode(ramfs_inode_t * inode, ramfs_sb_t * ramfs_sb,
+                       ino_t * num)
 {
     memset((void *)inode, 0, sizeof(ramfs_inode_t));
     fs_vnode_init(&inode->in_vnode, *num, &ramfs_sb->sb,

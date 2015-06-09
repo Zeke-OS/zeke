@@ -440,9 +440,9 @@ static int sys_fcntl(__user void * user_args)
         retval = 0;
         break;
     case F_GETOWN:
-        /* TODO */
+        /* TODO F_GETOWN needed for sockets */
     case F_SETOWN:
-        /* TODO */
+        /* TODO F_SETOWN needed for sockets */
     case F_GETLK:
         /* TODO */
     case F_SETLK:

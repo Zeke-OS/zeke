@@ -51,23 +51,23 @@
 /*
  * File system global locking.
  */
-mtx_t fslock;
+static mtx_t fslock;
 #define FS_LOCK()       mtx_lock(&fslock)
 #define FS_UNLOCK()     mtx_unlock(&fslock)
 #define FS_TESTLOCK()   mtx_test(&fslock)
 #define FS_LOCK_INIT()  mtx_init(&fslock, MTX_TYPE_SPIN, 0)
 
 SYSCTL_NODE(, CTL_VFS, vfs, CTLFLAG_RW, 0,
-        "File system");
+            "File system");
 
 SYSCTL_DECL(_vfs_limits);
 SYSCTL_NODE(_vfs, OID_AUTO, limits, CTLFLAG_RD, 0,
-        "File system limits and information");
+            "File system limits and information");
 
 SYSCTL_INT(_vfs_limits, OID_AUTO, name_max, CTLFLAG_RD, 0, NAME_MAX,
-        "Limit for the length of a file name component.");
+           "Limit for the length of a file name component.");
 SYSCTL_INT(_vfs_limits, OID_AUTO, path_max, CTLFLAG_RD, 0, PATH_MAX,
-        "Limit for for length of an entire file name.");
+           "Limit for for length of an entire file name.");
 
 /**
  * Linked list of registered file systems.
@@ -85,10 +85,6 @@ int __kinit__ fs_init(void)
     return 0;
 }
 
-/**
- * Register a new file system driver.
- * @param fs file system control struct.
- */
 int fs_register(fs_t * fs)
 {
 #ifdef configFS_DEBUG

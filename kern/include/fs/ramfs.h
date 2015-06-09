@@ -46,14 +46,51 @@ struct vnode_ops;
 
 extern struct vnode_ops ramfs_vnode_ops;
 
-/* fs ops */
+/*
+ * fs ops
+ */
+
+/**
+ * Mount a new ramfs.
+ * @param mode      mount flags.
+ * @param param     contains optional mount parameters.
+ * @param parm_len  length of param string.
+ * @param[out] sb   Returns the superblock of the new mount.
+ * @return error code, -errno.
+ */
 int ramsfs_mount(const char * source, uint32_t mode,
                  const char * parm, int parm_len, struct fs_superblock ** sb);
+
+/**
+ * Unmount a ramfs.
+ * @param fs_sb is the superblock to be unmounted.
+ * @return Returns zero if succeed; Otherwise value other than zero.
+ */
 int ramfs_umount(struct fs_superblock * fs_sb);
-/* sb ops */
+
+/*
+ * sb ops
+ */
+
+/**
+ * Get the vnode struct linked to a vnode number.
+ * @param[in] sb        is the superblock.
+ * @param[in] vnode_num is the vnode number.
+ * @param[out] vnode    is a pointer to the vnode, can be NULL.
+ * @return Returns 0 if no error; Otherwise value other than zero.
+ */
 int ramfs_get_vnode(struct fs_superblock * sb, ino_t * vnode_num,
                     struct vnode ** vnode);
+
+/**
+ * Delete a vnode reference.
+ * Deletes a reference to a vnode and destroys the inode corresponding to the
+ * inode if there is no more links and references to it.
+ * @param[in] vnode is the vnode.
+ * @return Returns 0 if no error; Otherwise value other than zero.
+ */
 int ramfs_delete_vnode(struct vnode * vnode);
+
 /* vnode ops */
 ssize_t ramfs_write(struct file * file, const void * buf, size_t count);
 ssize_t ramfs_read(struct file * file, void * buf, size_t count);
