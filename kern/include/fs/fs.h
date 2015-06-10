@@ -90,7 +90,9 @@
 
 struct proc_info;
 
-/* Types for buffer pointer storage object in vnode. */
+/*
+ * Types for buffer pointer storage object in vnode.
+ */
 SPLAY_HEAD(bufhd_splay, buf);
 struct bufhd {
     struct bufhd_splay sroot;
@@ -101,7 +103,8 @@ typedef struct vnode {
     unsigned vn_hash;           /*!< Hash for using vfs hashing. */
     atomic_t vn_refcount;
 
-    /** Pointer to the next vnode in mounted file system.
+    /**
+     * Pointer to the next vnode in mounted file system.
      * If no fs is mounted on this vnode then this is a self pointing pointer.
      */
     struct vnode * vn_next_mountpoint;
@@ -176,7 +179,7 @@ typedef struct file {
 } file_t;
 
 /**
- * Files that a process has open.
+ * Open file descriptors.
  */
 typedef struct files_struct {
         int count;
@@ -188,12 +191,16 @@ typedef struct files_struct {
                               *   [2] = stderr
                               */
 } files_t;
+
 /**
  * Size of files struct in bytes.
  * @param n is a file count.
  */
 #define SIZEOF_FILES(n) (sizeof(files_t) + (n) * sizeof(file_t *))
 
+/*
+ * Macros for fs giant locks.
+ */
 #define FS_GIANT_TYPE    MTX_TYPE_TICKET
 #define FS_GIANT_OPT     0
 #define FS_GIANT_INIT(_x_) mtx_init(_x_, FS_GIANT_TYPE, FS_GIANT_OPT)
@@ -219,12 +226,12 @@ typedef struct fs {
  * File system superblock.
  */
 struct fs_superblock {
-    fs_t * fs;
+    fs_t * fs;              /*!< A pointer to the file system implementation. */
     dev_t vdev_id;          /*!< Virtual dev_id. */
 #ifdef configVFS_HASH
-    unsigned sb_hashseed;   /*!< Seed for using vfs hashing */
+    unsigned sb_hashseed;   /*!< Seed for using vfs hashing. */
 #endif
-    uint32_t mode_flags;    /*!< Mount mode flags */
+    uint32_t mode_flags;    /*!< Mount mode flags. */
     vnode_t * root;         /*!< Root of this fs mount. */
     vnode_t * mountpoint;   /*!< Mount point where this sb is mounted on.
                              *   (only vfs should touch this) */
@@ -253,6 +260,10 @@ struct fs_superblock {
 
     /**
      * Unmount the file system.
+     * @param this_sb is a pointer to the calling superblock.
+     * @return  Returns 0 if the file system superblock was unmounted;
+     *          Otherwise a negative errno codes is returned.
+     *
      */
     int (*umount)(struct fs_superblock * this_sb);
 
@@ -261,6 +272,10 @@ struct fs_superblock {
 
 /**
  * vnode operations struct.
+ * These are usually defined per file system type but some operations might
+ * be inherited from other file sytems and ultimately if no new implementation
+ * is provided the function shall be inherited from nofs. Inherit should be
+ * done by calling fs_inherit_vnops() declared in fs_util.h.
  */
 typedef struct vnode_ops {
     /* Operation for open files
@@ -272,8 +287,8 @@ typedef struct vnode_ops {
      * @param file      is a file stored in the file system.
      * @param buf       is a buffer bytes are written to.
      * @param count     is the number of bytes to be read.
-     * @return  Returns the number of bytes read; Otherwise a negative errno
-     *          is returned.
+     * @return  Returns the number of bytes read;
+     *          Otherwise a negative errno code is returned.
      */
     ssize_t (*read)(file_t * file, void * buf, size_t count);
     /**
@@ -285,24 +300,28 @@ typedef struct vnode_ops {
      * @param file      is a file stored in the file system.
      * @param buf       is a buffer where bytes are read from.
      * @param count     is the number of bytes buf contains.
-     * @return  Returns the number of bytes written; Otherwise a negative errno
-     *          is returned.
+     * @return  Returns the number of bytes written;
+     *          Otherwise a negative errno code is returned.
      */
     ssize_t (*write)(file_t * file, const void * buf, size_t count);
     /**
      * IO Control.
-     * Only defined for devices and shall point to fs_enotsup_ioctl if not
+     * Only defined for devices and shall point to fs_enotsup_ioctl() if not
      * supported.
      * @param file      is the open file accessed.
      * @param request   is the request number.
      * @param arg       is a pointer to the argument (struct).
      * @param ar_len    is the length of arg.
-     * @return          0 if succeed; Otherwise a negative errno is returned.
+     * @return          0 if succeed;
+     *                  Otherwise a negative errno code is returned.
      */
     int (*ioctl)(file_t * file, unsigned request, void * arg, size_t arg_len);
+    /* Event handlers
+     * -------------- */
     /**
      * Vnode opened callback.
-     * Vnode opened to create a file descriptor for it.
+     * Vnode was opened in a syscall by a process to create a file descriptor
+     * for it.
      * @param p     is the process that called fs_fildes_create_curproc() for
      *              file.
      * @param vnode is the vnode that will be opened and referenced by
@@ -311,11 +330,9 @@ typedef struct vnode_ops {
      *              returned to indicate an error and thus cancel the file
      *              opening procedure.
      */
-    /* Event handlers
-     * -------------- */
     int (*event_vnode_opened)(struct proc_info * p, vnode_t * vnode);
     /**
-     * File descriptor created for the opened file.
+     * File descriptor created for the previously opened file.
      * @note        Opening the file nor file descriptor creation can't be
      *              cancelled anymore at this point, if a file system
      *              needs to be able to cancel the opening procedure that
@@ -349,27 +366,33 @@ typedef struct vnode_ops {
      *                  the hard link created.
      * @param name      is the name of the hard link.
      * @param[out] result is a pointer to the resulting vnode.
-     * @return  Zero in case of operation succeed; Otherwise value other than
-     *          zero.
+     * @return  Zero in case of operation succeed;
+     *          Otherwise a negative errno code is returned.
      */
     int (*create)(vnode_t * dir, const char * name, mode_t mode,
             vnode_t ** result);
     /**
      * Create a special vnode.
-     * @note ops must be set manually after creation of a vnode.
+     * @note vn_ops must be set by the caller manually after creation of
+     *       the vnode.
      * @param specinfo  is a pointer to the special info struct.
      * @param mode      is the mode of the new file.
+     * @param specinfo  is a pointer to a optional data that can be access via
+     *                  the vnode, can be set to NULL.
+     * @param[out] result will return the resulting vnode.
+     * @return  Zero in case of operation succeed;
+     *          Otherwise a negative errno code is returned.
      */
     int (*mknod)(vnode_t * dir, const char * name, int mode, void * specinfo,
             vnode_t ** result);
     /**
      * Lookup for a hard linked vnode in a directory vnode.
      * @param dir       is a directory in the file system.
-     * @param name      is a filename.
-     * @param[out] result is the result of lookup.
-     * @return Returns 0 if a vnode was found;
-     *         If vnode is same as dir (root dir) -EDOM shall be returned;
-     *         Otherwise value other than zero.
+     * @param name      is the filename to be searched for.
+     * @param[out] result will be set to the result of the lookup.
+     * @return  Returns 0 if a vnode was found;
+     *          If vnode is same as dir (root dir) -EDOM shall be returned;
+     *          Otherwise a negative errno code is returned.
      */
     int (*lookup)(vnode_t * dir, const char * name, vnode_t ** result);
     /**
@@ -387,13 +410,17 @@ typedef struct vnode_ops {
      * @param dir       is the directory where entry will be created.
      * @param vnode     is a vnode where the link will point.
      * @param name      is the name of the hard link.
-     * @return  Returns 0 if creating a link succeeded; Otherwise value other
-     *          than zero.
+     * @return  Returns 0 if creating a link succeeded;
+     *          Otherwise a negative errno code is returned.
      */
     int (*link)(vnode_t * dir, vnode_t * vnode, const char * name);
     /**
      * Unlink a hard link.
      * Unlink a hard link in the directory specified.
+     * @param dir       is the directory where the vnode is linked to.
+     * @param name      is the name of the link in the directory.
+     * @return  Returns 0 if the link was removed;
+     *          Otherwise a negative errno code is returned.
      */
     int (*unlink)(vnode_t * dir, const char * name);
     /**
@@ -403,13 +430,17 @@ typedef struct vnode_ops {
      * @param dir       is a directory in the file system.
      * @param name      is the name of the new directory.
      * @param mode      is the file mode of the new directory.
-     * @return  Zero in case of operation succeed; Otherwise value other than
-     *          zero.
+     * @return  Returns zero if a new directory wit the specified name was
+     *          created; Otherwise a negative errno code is returned.
      */
     int (*mkdir)(vnode_t * dir,  const char * name, mode_t mode);
     /**
      * Remove a directory.
      * Shall fail if named directory is a mountpoint to another file system.
+     * @param dir       is a directory in the file system.
+     * @param name      is the name of the directory to be removed.
+     * @return  Returns 0 if the directory was removed;
+     *          Otherwise a negative errno code is returned.
      */
     int (*rmdir)(vnode_t * dir,  const char * name);
     /**
@@ -422,26 +453,37 @@ typedef struct vnode_ops {
      *          -ESPIPE if end of dir.
      */
     int (*readdir)(vnode_t * dir, struct dirent * d, off_t * off);
-
-    /* Operations specified for any file type */
+    /* Operations specified for any file type
+     * -------------------------------------- */
     /**
      * Get file status.
+     * @param vnode     is a pointer to a vnode existing in the file system.
+     * @param[out] buf  is a pointer to a buffer that can hold struct stat for
+     *                  the vnode.
+     * @return  Returns 0 if stat was written to buf;
+     *          Otherwise a negative errno code is returned.
      */
     int (*stat)(vnode_t * vnode, struct stat * buf);
     /**
      * Set file access and modification times.
+     * @param vnode     is a pointer to a vnode existing in the file system.
+     * @return  Returns 0 if utimes were changed succefully;
+     *          Otherwise a negative errno code is returned.
      */
     int (*utimes)(vnode_t * vnode, const struct timespec times[2]);
     /**
      * Change file mode.
+     * @param vnode     is a pointer to a vnode existing in the file system.
      */
     int (*chmod)(vnode_t * vnode, mode_t mode);
     /**
      * Change file flags.
+     * @param vnode     is a pointer to a vnode existing in the file system.
      */
     int (*chflags)(vnode_t * vnode, fflags_t flags);
     /**
      * Change file owner and group.
+     * @param vnode     is a pointer to a vnode existing in the file system.
      */
     int (*chown)(vnode_t * vnode, uid_t owner, gid_t group);
 } vnode_ops_t;
@@ -479,14 +521,21 @@ fs_t * fs_iterate(fs_t * fsp);
  * @param fsname    is the name of the file system type to mount. This
  *                  argument is optional and if left out fs_mount() tries
  *                  to determine the file system type from existing information.
+ * @param flags
+ * @param parm
+ * @param parm_len  is the size of parm in bytes.
  */
 int fs_mount(vnode_t * target, const char * source, const char * fsname,
         uint32_t flags, const char * parm, int parm_len);
 
+/**
+ * Unmount a file system superblock.
+ * @param sb is a pointer to a superblock of a file system.
+ */
 int fs_umount(struct fs_superblock * sb);
 
 /**
- * Lookup for vnode by path.
+ * Lookup for a vnode by path.
  * @param[out]  result  is the target where vnode struct is stored.
  * @param[in]   root    is the vnode where search is started from.
  * @param       str     is the path.
