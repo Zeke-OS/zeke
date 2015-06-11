@@ -121,8 +121,7 @@ interrupt_sys:
     .globl  interrupt_pabt
     .type   interrupt_pabt,%function
 interrupt_pabt:
-    subs    pc, lr, #0x4
-
+    subs    lr, lr, #0x4
 
 @ Data Abort handler
     .globl  interrupt_dabt

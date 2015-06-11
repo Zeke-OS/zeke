@@ -554,6 +554,10 @@ void mmu_data_abort_handler(void)
 
     mmu_pf_event();
 
+    if (!thread) {
+        panic("Thread not set on DAB");
+    }
+
     /*
      * RFE Block the thread owner
      * We may want to block the process owning this thread and possibly
@@ -568,10 +572,6 @@ void mmu_data_abort_handler(void)
 #if 0
         set_interrupt_state(s_old);
 #endif
-    }
-
-    if (!thread) {
-        panic("Thread not set on DAB");
     }
 
     /* RFE Might be enough to get curproc. */
@@ -611,25 +611,26 @@ void mmu_data_abort_handler(void)
 static int dab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
                      struct proc_info * proc, struct thread_info * thread)
 {
-    char buf[200];
-
-    ksprintf(buf, sizeof(buf),
-            "pc: %x\n"
-            "fsr: %x (%s)\n"
-            "far: %x\n"
-            "proc info:\n"
-            "pid: %i\n"
-            "tid: %i\n"
-            "insys: %u\n",
-            lr,
-            fsr, get_dab_strerror(fsr),
-            far,
-            (proc) ? proc->pid : -1,
-            thread->id,
-            thread_flags_is_set(thread, SCHED_INSYS_FLAG));
-    KERROR(KERROR_CRIT, "Fatal DAB\n");
-    kputs(buf);
+    KERROR(KERROR_CRIT,
+           "Fatal DAB:\n"
+           "pc: %x\n"
+           "fsr: %x (%s)\n"
+           "far: %x\n"
+           "proc info:\n"
+           "pid: %i\n"
+           "tid: %i\n"
+           "insys: %i\n",
+           lr,
+           fsr, get_dab_strerror(fsr),
+           far,
+           (int32_t)((proc) ? proc->pid : -1),
+           (int32_t)thread->id,
+           (int32_t)thread_flags_is_set(thread, SCHED_INSYS_FLAG));
+#if 0
     panic("Can't handle data abort");
+#endif
+    /* FIXME BKPT won't always work here for some reason. */
+    while (1);
 
     /* Doesn't return */
     return -ENOTRECOVERABLE;
