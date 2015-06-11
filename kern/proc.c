@@ -476,23 +476,21 @@ void proc_update_times(void)
 }
 
 int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-                     struct thread_info * thread)
+                     struct proc_info * proc, struct thread_info * thread)
 {
-    const pid_t pid = thread->pid_owner;
     const uintptr_t vaddr = far;
-    struct proc_info * proc;
     struct vm_mm_struct * mm;
     int err;
 
+    if (!proc) {
+        return -ESRCH;
+    }
+
 #ifdef configPROC_DEBUG
     KERROR(KERROR_DEBUG, "proc_dab_handler(): MOO, %x @ %x by %d\n", vaddr, lr,
-           current_process_id);
+           proc->pid);
 #endif
 
-    proc = proc_get_struct_l(pid);
-    if (!proc || (proc->state == PROC_STATE_INITIAL)) {
-        return -ESRCH; /* Process doesn't exist. */
-    }
     mm = &proc->mm;
 
     mtx_lock(&mm->regions_lock);
@@ -548,7 +546,7 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
                                 VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
 
 #ifdef configPROC_DEBUG
-        KERROR(KERROR_DEBUG, "COW done\n");
+        KERROR(KERROR_DEBUG, "COW done (%d)\n", err);
 #endif
         return err; /* COW done. */
     }

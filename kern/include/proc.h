@@ -180,7 +180,7 @@ void proc_update_times(void);
  * Usually this handler is executed because of cow page table.
  */
 int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-        struct thread_info * thread);
+                     struct proc_info * proc, struct thread_info * thread);
 
 /**
  * Update process system state.

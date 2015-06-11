@@ -56,43 +56,15 @@ static mtx_t mmu_lock;
  */
 #define DAB_WAS_USERMODE(psr)   (((psr) & PSR_MODE_MASK) == PSR_MODE_USER)
 
-typedef int (*dab_handler)(uint32_t fsr, uint32_t far, uint32_t psr,
-                           uint32_t lr, struct thread_info * thread);
-
 static void mmu_map_section_region(const mmu_region_t * region);
 static void mmu_map_coarse_region(const mmu_region_t * region);
 static void mmu_unmap_section_region(const mmu_region_t * region);
 static void mmu_unmap_coarse_region(const mmu_region_t * region);
 static void attach_coarse_pagetable(const mmu_pagetable_t * restrict pt);
 
-/* Data abort handlers */
-static int dab_align(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-                     struct thread_info * thread);
-static int dab_buserr(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-                     struct thread_info * thread);
-static int dab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-                     struct thread_info * thread);
-
 static const char * get_dab_strerror(uint32_t fsr);
 
-static const dab_handler data_aborts[] = {
-    dab_fatal,  /* no function, reset value */
-    dab_align,  /* Alignment fault */
-    dab_fatal,  /* Instruction debug event */
-    proc_dab_handler,          /* Access bit fault on Section */
-    dab_buserr, /* ICache maintanance op fault */
-    proc_dab_handler,  /* Translation Section Fault */ /* TODO not really buserr */
-    proc_dab_handler,          /* Access bit fault on Page */
-    proc_dab_handler,  /* Translation Page fault */ /* TODO not really buserr */
-    dab_buserr, /* Precise external abort */
-    dab_buserr,  /* Domain Section fault */ /* TODO not really buserr */
-    dab_fatal,  /* no function */
-    dab_buserr,  /* Domain Page fault */ /* TODO Not really buserr */
-    dab_buserr, /* External abort on translation, first level */
-    proc_dab_handler,          /* Permission Section fault */
-    dab_buserr, /* External abort on translation, second level */
-    proc_dab_handler           /* Permission Page fault */
-};
+static dab_handler * const data_aborts[];
 
 #ifdef configMP
 void mmu_lock_init(void);
@@ -554,7 +526,7 @@ out:
 }
 
 /**
- * Data abort handler
+ * Data abort handler.
  */
 void mmu_data_abort_handler(void)
 {
@@ -567,6 +539,9 @@ void mmu_data_abort_handler(void)
 #endif
     istate_t s_entry; /*!< Int state in handler entry. */
     struct thread_info * const thread = (struct thread_info *)current_thread;
+    struct proc_info * proc;
+    dab_handler * handler;
+    dab_handler * fatal = data_aborts[0];
 
     /* Get fault address */
     __asm__ volatile (
@@ -595,21 +570,27 @@ void mmu_data_abort_handler(void)
 #endif
     }
 
-    if (data_aborts[fsr & FSR_MASK]) {
+    if (!thread) {
+        panic("Thread not set on DAB");
+    }
+
+    /* RFE Might be enough to get curproc. */
+    proc = proc_get_struct_l(thread->pid_owner); /* Can be NULL */
+    handler = data_aborts[fsr & FSR_MASK];
+    if (handler) {
         int err;
 
-        if ((err = data_aborts[fsr & FSR_MASK](fsr, far, spsr, lr, thread))) {
-            /* TODO Handle this nicer... signal? */
+        if ((err = handler(fsr, far, spsr, lr, proc, thread))) {
             KERROR(KERROR_CRIT, "DAB handling failed: %i\n", err);
 
             stack_dump(current_thread->sframe[SCHED_SFRAME_ABO]);
-            dab_fatal(fsr, far, spsr, lr, thread);
+            fatal(fsr, far, spsr, lr, proc, thread);
         }
     } else {
        KERROR(KERROR_CRIT,
               "DAB handling failed, no sufficient handler found.\n");
 
-       dab_fatal(fsr, far, spsr, lr, thread);
+       fatal(fsr, far, spsr, lr, proc, thread);
     }
 
     /*
@@ -625,36 +606,10 @@ void mmu_data_abort_handler(void)
 }
 
 /**
- * DAB handler for alignment aborts.
- */
-static int dab_align(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-        struct thread_info * thread)
-{
-    /* Kernel mode alignment fault is fatal. */
-    if (!DAB_WAS_USERMODE(psr)) {
-        dab_fatal(fsr, far, psr, lr, thread);
-    }
-
-    /* TODO Deliver SIGBUS */
-    return -1;
-}
-
-static int dab_buserr(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-        struct thread_info * thread)
-{
-    if (!DAB_WAS_USERMODE(psr)) {
-        dab_fatal(fsr, far, psr, lr, thread);
-    }
-
-    /* TODO Deliver SIGBUS */
-    return -1;
-}
-
-/**
  * DAB handler for fatal aborts.
  */
 static int dab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-        struct thread_info * thread)
+                     struct proc_info * proc, struct thread_info * thread)
 {
     char buf[200];
 
@@ -663,13 +618,13 @@ static int dab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
             "fsr: %x (%s)\n"
             "far: %x\n"
             "proc info:\n"
-            "pid: %u\n"
-            "tid: %u\n"
+            "pid: %i\n"
+            "tid: %i\n"
             "insys: %u\n",
             lr,
             fsr, get_dab_strerror(fsr),
             far,
-            current_process_id,
+            (proc) ? proc->pid : -1,
             thread->id,
             thread_flags_is_set(thread, SCHED_INSYS_FLAG));
     KERROR(KERROR_CRIT, "Fatal DAB\n");
@@ -677,8 +632,70 @@ static int dab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
     panic("Can't handle data abort");
 
     /* Doesn't return */
-    return -1;
+    return -ENOTRECOVERABLE;
 }
+
+/**
+ * DAB handler for alignment aborts.
+ */
+static int dab_align(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
+                     struct proc_info * proc, struct thread_info * thread)
+{
+    /* Some cases are always fatal if */
+    if (!DAB_WAS_USERMODE(psr) /* it is a kernel mode alignment fault, */ ||
+        (thread->pid_owner <= 1))  /* the proc is kernel or init */ {
+        return -ENOTRECOVERABLE;
+    }
+
+    if (!proc)
+        return -ESRCH;
+
+    /*
+     * Deliver SIGBUS.
+     * TODO Instead of sending a signal we should probably try to handle the
+     *      error first.
+     */
+    ksignal_sendsig_fatal(proc, SIGBUS);
+
+    return 0;
+}
+
+static int dab_buserr(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
+                      struct proc_info * proc, struct thread_info * thread)
+{
+    /* Some cases are always fatal */
+    if (!DAB_WAS_USERMODE(psr) /* it happened in kernel mode */ ||
+        (thread->pid_owner <= 1)) /* the proc is kernel or init */ {
+        return -ENOTRECOVERABLE;
+    }
+
+    if (!proc)
+        return -ESRCH;
+
+    /* Deliver SIGBUS. */
+    ksignal_sendsig_fatal(proc, SIGBUS);
+
+    return 0;
+}
+
+static dab_handler * const data_aborts[] = {
+    dab_fatal,          /* no function, reset value */
+    dab_align,          /* Alignment fault */
+    dab_fatal,          /* Instruction debug event */
+    proc_dab_handler,   /* Access bit fault on Section */
+    dab_buserr,         /* ICache maintanance op fault */
+    proc_dab_handler,   /* Translation Section Fault */
+    proc_dab_handler,   /* Access bit fault on Page */
+    proc_dab_handler,   /* Translation Page fault */
+    dab_buserr,         /* Precise external abort */
+    dab_buserr,         /* Domain Section fault */ /* TODO not really buserr */
+    dab_fatal,          /* no function */
+    dab_buserr,         /* Domain Page fault */ /* TODO Not really buserr */
+    dab_buserr,         /* External abort on translation, first level */
+    proc_dab_handler,   /* Permission Section fault */
+    dab_buserr,         /* External abort on translation, second level */
+    proc_dab_handler    /* Permission Page fault */
+};
 
 static const char * dab_fsr_strerr[] = {
     /* String                       FSR[10,3:0] */
