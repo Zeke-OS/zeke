@@ -121,6 +121,17 @@ interrupt_sys:
     .globl  interrupt_pabt
     .type   interrupt_pabt,%function
 interrupt_pabt:
+    pushcontext #2          /* Push context to SCHED_SFRAME_ABO */
+    enter_kernel
+
+    cps     #0x1f           /* Change to system mode */
+    change_to_tkstack
+
+    bl      mmu_prefetch_abort_handler
+
+    exit_kernel
+
+    popcontext #2           /* Pop context from SCHED_SFRAME_ABO */
     subs    lr, lr, #0x4
 
 @ Data Abort handler
@@ -128,7 +139,6 @@ interrupt_pabt:
     .type   interrupt_dabt,%function
 interrupt_dabt:
     pushcontext #2          /* Push context to SCHED_SFRAME_ABO */
-
     enter_kernel
 
     cps     #0x1f           /* Change to system mode */

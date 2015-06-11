@@ -35,7 +35,7 @@
 #include <kerror.h>
 #include <klocks.h>
 #include <proc.h>
-#include "arm11.h"
+#include <hal/core.h>
 #include <hal/mmu.h>
 
 #ifdef configMP
@@ -52,9 +52,9 @@ static mtx_t mmu_lock;
 #define FSR_MASK                0x0f
 
 /**
- * Test if DAB came from user mode.
+ * Test if abort came from user mode.
  */
-#define DAB_WAS_USERMODE(psr)   (((psr) & PSR_MODE_MASK) == PSR_MODE_USER)
+#define ABO_WAS_USERMODE(psr)   (((psr) & PSR_MODE_MASK) == PSR_MODE_USER)
 
 static void mmu_map_section_region(const mmu_region_t * region);
 static void mmu_map_coarse_region(const mmu_region_t * region);
@@ -64,6 +64,7 @@ static void attach_coarse_pagetable(const mmu_pagetable_t * restrict pt);
 
 static const char * get_dab_strerror(uint32_t fsr);
 
+static pab_handler * const prefetch_aborts[];
 static dab_handler * const data_aborts[];
 
 #ifdef configMP
@@ -526,12 +527,132 @@ out:
 }
 
 /**
+ * Prefetch abort handler.
+ */
+void mmu_prefetch_abort_handler(void)
+{
+    uint32_t fsr; /*!< Fault status */
+    uint32_t ifar; /*!< Fault address */
+    const uint32_t spsr = current_thread->sframe[SCHED_SFRAME_ABO].psr;
+    const uint32_t lr = current_thread->sframe[SCHED_SFRAME_ABO].pc;
+#if 0
+    const istate_t s_old = spsr & PSR_INT_MASK; /*!< Old interrupt state */
+#endif
+    istate_t s_entry; /*!< Int state in handler entry. */
+    struct thread_info * const thread = (struct thread_info *)current_thread;
+    struct proc_info * proc;
+    pab_handler * handler;
+    pab_handler * fatal = prefetch_aborts[0];
+
+    /* Get fault status */
+    __asm__ volatile (
+        "MRC p15, 0, %[reg], c5, c0, 1"
+        : [reg]"=r" (fsr));
+    /*
+     * Get fault address
+     * TODO IFAR is not updated if FSR == 2 (debug abourt)
+     */
+    __asm__ volatile (
+        "MRC p15, 0, %[reg], c6, c0, 2"
+        : [reg]"=r" (ifar));
+
+    if (!thread) {
+        panic("Thread not set on PAB");
+    }
+
+    /* TODO Handle DAB in preemptible state. */
+    /* Handle this data abort in pre-emptible state if possible. */
+    if (ABO_WAS_USERMODE(spsr)) {
+        s_entry = get_interrupt_state();
+#if 0
+        set_interrupt_state(s_old);
+#endif
+    }
+
+    /*
+     * TODO If the abort came from user space and it was BKPT then it was for
+     *      a debugger.
+     */
+
+    /* RFE Might be enough to get curproc. */
+    proc = proc_get_struct_l(thread->pid_owner); /* Can be NULL */
+    handler = prefetch_aborts[fsr & FSR_MASK];
+    if (handler) {
+        int err;
+
+        if ((err = handler(fsr, ifar, spsr, lr, proc, thread))) {
+            KERROR(KERROR_CRIT, "PAB handling failed: %i\n", err);
+
+            stack_dump(current_thread->sframe[SCHED_SFRAME_ABO]);
+            fatal(fsr, ifar, spsr, lr, proc, thread);
+        }
+    } else {
+       KERROR(KERROR_CRIT,
+              "PAB handling failed, no sufficient handler found.\n");
+
+       fatal(fsr, ifar, spsr, lr, proc, thread);
+    }
+
+    /*
+     * TODO COR Support here
+     * In the future we may wan't to support copy on read too
+     * (ie. page swaping). To suppor cor, and actually anyway, we should test
+     * if error appeared during reading or writing etc.
+     */
+
+    if (ABO_WAS_USERMODE(spsr)) {
+        set_interrupt_state(s_entry);
+    }
+}
+
+/**
+ * PAB handler for fatal aborts.
+ */
+static int pab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
+                     struct proc_info * proc, struct thread_info * thread)
+{
+    KERROR(KERROR_CRIT, "A fatal prefetch abort occured @ %x.\n", far);
+    stack_dump(current_thread->sframe[SCHED_SFRAME_ABO]);
+    disable_interrupt();
+#if defined(configMP)
+    /* TODO Handle MP */
+    cpu_wfe();
+#else
+    idle_sleep();
+#endif
+    while (1);
+
+    /* Doesn't return */
+    return -ENOTRECOVERABLE;
+}
+
+static pab_handler * const prefetch_aborts[] = {
+    pab_fatal,  /* No function, reset value */
+    pab_fatal,  /* Alignment fault */
+    pab_fatal,  /* Debug event fault */
+    pab_fatal,  /* Access Flag fault on Section */
+    pab_fatal,  /* No function */
+    pab_fatal,  /* Translation fault on Section */
+    pab_fatal,  /* Access Flag fault on Page */
+    pab_fatal,  /* Translation fault on Page */
+    pab_fatal,  /* Precise External Abort */
+    pab_fatal,  /* Domain fault on Section */
+    pab_fatal,  /* No function */
+    pab_fatal,  /* Domain fault on Page */
+    pab_fatal,  /* External abort on translation, first level */
+    pab_fatal,  /* Permission fault on Section */
+    pab_fatal,  /* External abort on translation, second level */
+    pab_fatal   /* Permission fault on Page */
+};
+
+
+/**
  * Data abort handler.
  */
 void mmu_data_abort_handler(void)
 {
-    uint32_t far; /*!< Fault address */
     uint32_t fsr; /*!< Fault status */
+    uint32_t far; /*!< Fault address */
     const uint32_t spsr = current_thread->sframe[SCHED_SFRAME_ABO].psr;
     const uint32_t lr = current_thread->sframe[SCHED_SFRAME_ABO].pc;
 #if 0
@@ -543,14 +664,14 @@ void mmu_data_abort_handler(void)
     dab_handler * handler;
     dab_handler * fatal = data_aborts[0];
 
-    /* Get fault address */
-    __asm__ volatile (
-        "MRC p15, 0, %[reg], c6, c0, 0"
-        : [reg]"=r" (far));
     /* Get fault status */
     __asm__ volatile (
         "MRC p15, 0, %[reg], c5, c0, 0"
         : [reg]"=r" (fsr));
+    /* Get fault address */
+    __asm__ volatile (
+        "MRC p15, 0, %[reg], c6, c0, 0"
+        : [reg]"=r" (far));
 
     mmu_pf_event();
 
@@ -567,7 +688,7 @@ void mmu_data_abort_handler(void)
 
     /* TODO Handle DAB in preemptible state. */
     /* Handle this data abort in pre-emptible state if possible. */
-    if (DAB_WAS_USERMODE(spsr)) {
+    if (ABO_WAS_USERMODE(spsr)) {
         s_entry = get_interrupt_state();
 #if 0
         set_interrupt_state(s_old);
@@ -600,7 +721,7 @@ void mmu_data_abort_handler(void)
      * if error appeared during reading or writing etc.
      */
 
-    if (DAB_WAS_USERMODE(spsr)) {
+    if (ABO_WAS_USERMODE(spsr)) {
         set_interrupt_state(s_entry);
     }
 }
@@ -626,11 +747,7 @@ static int dab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
            (int32_t)((proc) ? proc->pid : -1),
            (int32_t)thread->id,
            (int32_t)thread_flags_is_set(thread, SCHED_INSYS_FLAG));
-#if 0
     panic("Can't handle data abort");
-#endif
-    /* FIXME BKPT won't always work here for some reason. */
-    while (1);
 
     /* Doesn't return */
     return -ENOTRECOVERABLE;
@@ -643,7 +760,7 @@ static int dab_align(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
                      struct proc_info * proc, struct thread_info * thread)
 {
     /* Some cases are always fatal if */
-    if (!DAB_WAS_USERMODE(psr) /* it is a kernel mode alignment fault, */ ||
+    if (!ABO_WAS_USERMODE(psr) /* it is a kernel mode alignment fault, */ ||
         (thread->pid_owner <= 1))  /* the proc is kernel or init */ {
         return -ENOTRECOVERABLE;
     }
@@ -665,7 +782,7 @@ static int dab_buserr(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
                       struct proc_info * proc, struct thread_info * thread)
 {
     /* Some cases are always fatal */
-    if (!DAB_WAS_USERMODE(psr) /* it happened in kernel mode */ ||
+    if (!ABO_WAS_USERMODE(psr) /* it happened in kernel mode */ ||
         (thread->pid_owner <= 1)) /* the proc is kernel or init */ {
         return -ENOTRECOVERABLE;
     }
