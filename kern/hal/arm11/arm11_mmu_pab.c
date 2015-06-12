@@ -34,6 +34,7 @@
 #include <kstring.h>
 #include <kerror.h>
 #include <klocks.h>
+#include <ksignal.h>
 #include <proc.h>
 #include <hal/core.h>
 #include <hal/mmu.h>
@@ -174,13 +175,36 @@ static int pab_fatal(uint32_t ifsr, uint32_t ifar, uint32_t psr, uint32_t lr,
     return -ENOTRECOVERABLE;
 }
 
+static int pab_buserr(uint32_t ifsr, uint32_t ifar, uint32_t psr, uint32_t lr,
+                      struct proc_info * proc, struct thread_info * thread)
+{
+    /* Some cases are always fatal */
+    if (!ABO_WAS_USERMODE(psr) /* it happened in kernel mode */ ||
+        (thread->pid_owner <= 1)) /* the proc is kernel or init */ {
+        return -ENOTRECOVERABLE;
+    }
+
+    if (!proc)
+        return -ESRCH;
+
+#if configDEBUG >= KERROR_DEBUG
+    KERROR(KERROR_DEBUG, "%s: Send a fatal SIGBUS\n", __func__);
+#endif
+
+    /* Deliver SIGBUS. */
+    ksignal_sendsig_fatal(proc, SIGBUS);
+    mmu_die_on_fatal_abort();
+
+    return 0;
+}
+
 static pab_handler * const prefetch_aborts[] = {
     pab_fatal,  /* No function, reset value */
     pab_fatal,  /* Alignment fault */
     pab_fatal,  /* Debug event fault */
     pab_fatal,  /* Access Flag fault on Section */
     pab_fatal,  /* No function */
-    pab_fatal,  /* Translation fault on Section */
+    pab_buserr, /* Translation fault on Section */
     pab_fatal,  /* Access Flag fault on Page */
     pab_fatal,  /* Translation fault on Page */
     pab_fatal,  /* Precise External Abort */
@@ -190,5 +214,5 @@ static pab_handler * const prefetch_aborts[] = {
     pab_fatal,  /* External abort on translation, first level */
     pab_fatal,  /* Permission fault on Section */
     pab_fatal,  /* External abort on translation, second level */
-    pab_fatal   /* Permission fault on Page */
+    pab_buserr  /* Permission fault on Page */
 };

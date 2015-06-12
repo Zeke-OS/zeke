@@ -717,7 +717,8 @@ void vrefset(vnode_t * vnode, int refcnt);
  */
 int vref(vnode_t * vnode);
 
-/** @addtogroup vput, vrele, vunref
+/**
+ * @addtogroup vput, vrele, vunref
  * Decrement the refcount for a vnode.
  * @{
  */

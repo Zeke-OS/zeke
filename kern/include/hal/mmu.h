@@ -207,6 +207,9 @@ void mmu_pf_event(void);
 size_t mmu_sizeof_pt(const mmu_pagetable_t * region);
 size_t mmu_sizeof_region(const mmu_region_t * region);
 int mmu_ptcpy(mmu_pagetable_t * dest, const mmu_pagetable_t * src);
+
+void mmu_die_on_fatal_abort(void);
+
 #endif /* MMU_H */
 
 /**

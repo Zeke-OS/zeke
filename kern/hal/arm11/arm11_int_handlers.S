@@ -95,7 +95,7 @@ interrupt_sys:
     /* Run scheduler */
     bl      sched_handler
 
-    /* End of kernel tick */
+    /* End of a kernel tick */
     ldr     r5, =flag_kernel_tick
     mov     r0, #0
     str     r0, [r5]

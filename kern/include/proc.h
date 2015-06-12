@@ -64,17 +64,20 @@
 #include <thread.h>
 #include <vm/vm.h>
 
-#define PROC_STATE_INITIAL  0
-#if 0
-#define PROC_STATE_RUNNING  1
-#endif
-#define PROC_STATE_READY    2   /*!< Can be woken up, ready to run. */
-#if 0
-#define PROC_STATE_WAITING  3   /*!< Can't be woken up. */
-#endif
-#define PROC_STATE_STOPPED  4   /*!< Stopped with a signal SIGSTOP. */
-#define PROC_STATE_ZOMBIE   5
-#define PROC_STATE_DEFUNCT  6   /*!< Process waiting for the final cleanup. */
+enum proc_state {
+    PROC_STATE_INITIAL  = 0,
+    #if 0
+    PROC_STATE_RUNNING  = 1,
+    #endif
+    PROC_STATE_READY    = 2, /*!< Can be woken up, ready to run. */
+    #if 0
+    PROC_STATE_WAITING  = 3, /*!< Can't be woken up. */
+    #endif
+    PROC_STATE_STOPPED  = 4, /*!< Stopped with a signal SIGSTOP. */
+    PROC_STATE_ZOMBIE   = 5,
+    PROC_STATE_DEFUNCT  = 6  /*!< Process waiting for the final cleanup. */
+
+};
 
 #define PROC_NAME_LEN       16
 
@@ -86,7 +89,7 @@ struct thread_info;
 struct proc_info {
     pid_t pid;
     char name[PROC_NAME_LEN];   /*!< Process name. */
-    int state;                  /*!< Process state. */
+    enum proc_state state;      /*!< Process state. */
     int priority;               /*!< We may want to prioritize processes too. */
     int exit_code, exit_signal;
     struct cred cred;           /*!< Process credentials. */

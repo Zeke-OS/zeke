@@ -505,9 +505,11 @@ static void ksignal_post_scheduling(void)
      * Can't handle signals right now if we can't get lock to sigs of
      * the current thread.
      * RFE Can this cause any unexpected returns?
+     * TODO What if there is a fatal signal?
      */
-    if (ksig_lock(&sigs->s_lock))
+    if (ksig_lock(&sigs->s_lock)) {
         return;
+    }
 
     /*
      * Check if thread is in uninterruptible syscall.
@@ -721,8 +723,7 @@ int ksignal_sendsig_fatal(struct proc_info * p, int signum)
     int err;
 
     if (ksig_lock(&sigs->s_lock)) {
-        set_errno(EAGAIN);
-        return -1;
+        return -EAGAIN;
     }
 
     /* Change signal action to default to make this signal fatal. */

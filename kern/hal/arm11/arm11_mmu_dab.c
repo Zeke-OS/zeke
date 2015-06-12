@@ -210,12 +210,17 @@ static int dab_align(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
     if (!proc)
         return -ESRCH;
 
+#if configDEBUG >= KERROR_DEBUG
+    KERROR(KERROR_DEBUG, "%s: Send a fatal SIGBUS\n", __func__);
+#endif
+
     /*
      * Deliver SIGBUS.
      * TODO Instead of sending a signal we should probably try to handle the
      *      error first.
      */
     ksignal_sendsig_fatal(proc, SIGBUS);
+    mmu_die_on_fatal_abort();
 
     return 0;
 }
@@ -232,8 +237,13 @@ static int dab_buserr(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
     if (!proc)
         return -ESRCH;
 
+#if configDEBUG >= KERROR_DEBUG
+    KERROR(KERROR_DEBUG, "%s: Send a fatal SIGBUS\n", __func__);
+#endif
+
     /* Deliver SIGBUS. */
     ksignal_sendsig_fatal(proc, SIGBUS);
+    mmu_die_on_fatal_abort();
 
     return 0;
 }
