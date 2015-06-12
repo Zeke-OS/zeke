@@ -188,6 +188,22 @@ static int pab_buserr(uint32_t ifsr, uint32_t ifar, uint32_t psr, uint32_t lr,
         return -ESRCH;
 
 #if configDEBUG >= KERROR_DEBUG
+    KERROR(KERROR_CRIT,
+           "Fatal PAB:\n"
+           "pc: %x\n"
+           "ifsr: %x (%s)\n"
+           "ifar: %x\n"
+           "proc info:\n"
+           "pid: %i\n"
+           "tid: %i\n"
+           "insys: %i\n",
+           lr,
+           ifsr, get_pab_strerror(ifsr),
+           ifar,
+           (int32_t)((proc) ? proc->pid : -1),
+           (int32_t)thread->id,
+           (int32_t)thread_flags_is_set(thread, SCHED_INSYS_FLAG));
+    stack_dump(current_thread->sframe[SCHED_SFRAME_ABO]);
     KERROR(KERROR_DEBUG, "%s: Send a fatal SIGBUS\n", __func__);
 #endif
 
