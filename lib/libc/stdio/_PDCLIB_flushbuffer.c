@@ -1,5 +1,5 @@
 /*
- * _PDCLIB_flushbuffer( struct _PDCLIB_file_t * )
+ * _PDCLIB_flushbuffer(struct _PDCLIB_file_t *)
  *
  * This file is part of the Public Domain C Library (PDCLib).
  * Permission is granted to use, modify, and / or redistribute at will.
@@ -12,18 +12,21 @@
 
 static int flushsubbuffer(FILE * stream, size_t length)
 {
-    size_t written = 0;
+    _PDCLIB_fd_t pfd = stream->handle;
     char * buf = stream->buffer;
+    size_t written = 0;
     int rv = 0;
 
-    while (written != length)
-    {
+    if (length > stream->bufsize) {
+        length = stream->bufsize;
+    }
+
+    while (written != length) {
         size_t justWrote = 0;
         size_t toWrite = length - written;
         bool res;
 
-        res = stream->ops->write(stream->handle, buf + written,
-                                 toWrite, &justWrote);
+        res = stream->ops->write(pfd, buf + written, toWrite, &justWrote);
         written += justWrote;
         stream->pos.offset += justWrote;
 
