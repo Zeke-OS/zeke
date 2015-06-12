@@ -30,6 +30,16 @@
  *******************************************************************************
  */
 
+/**
+ * @addtogroup libkern
+ * @{
+ */
+
+/**
+ * @addtogroup segtree
+ * @{
+ */
+
 #pragma once
 #ifndef SEGTREE_H
 #define SEGTREE_H
@@ -84,3 +94,11 @@ void segt_alt(struct segt * s, size_t k, void * x);
 void * segt_find(struct segt * s, size_t a, size_t b);
 
 #endif /* SEGTREE_H */
+
+/**
+ * @}
+ */
+
+/**
+ * @}
+ */

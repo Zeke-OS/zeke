@@ -54,7 +54,7 @@ void * hashinit_flags(int elements, unsigned long * hashmask, int flags)
     KASSERT(elements > 0, "bad elements");
     /* Exactly one of HASH_WAITOK and HASH_NOWAIT must be set. */
     KASSERT((flags & HASH_WAITOK) ^ (flags & HASH_NOWAIT),
-        "Bad flags passed to hashinit_flags");
+            "Bad flags passed to hashinit_flags");
 
     for (hashsize = 1; hashsize <= elements; hashsize <<= 1) {
         continue;

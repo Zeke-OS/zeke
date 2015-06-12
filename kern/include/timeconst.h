@@ -2,6 +2,11 @@
  * 5.2.1 (2.11BSD) 1996/11/29
  */
 
+/**
+ * @addtogroup time
+ * @{
+ */
+
 #pragma once
 #ifndef TZFILE_H
 #define TZFILE_H
@@ -51,3 +56,7 @@
 #define isleap(y) ((((y) % 4) == 0 && ((y) % 100) != 0) || ((y) % 400) == 0)
 
 #endif /* TZFILE_H */
+
+/**
+ * @}
+ */

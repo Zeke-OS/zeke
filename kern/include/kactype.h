@@ -6,6 +6,16 @@
  * 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  */
 
+/**
+ * @addtogroup libkern
+ * @{
+ */
+
+/**
+ * @addtogroup kactype
+ * @{
+ */
+
 #pragma once
 #ifndef KACTYPE_H
 #define KACTYPE_H
@@ -38,3 +48,11 @@ extern char _kactype_[];
 #define ka_toascii(c)   ((c)&0177)
 
 #endif /* KACTYPE_H */
+
+/**
+ * @}
+ */
+
+/**
+ * @}
+ */

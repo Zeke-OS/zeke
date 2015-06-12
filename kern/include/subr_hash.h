@@ -33,6 +33,16 @@
  * SUCH DAMAGE.
  */
 
+/**
+ * @addtogroup libkern
+ * @{
+ */
+
+/**
+ * @addtogroup subr_hash
+ * @{
+ */
+
 #pragma once
 #ifndef SUBR_HASH_H
 #define SUBR_HASH_H
@@ -67,3 +77,11 @@ void hashdestroy(void *, unsigned long);
 void * phashinit(int count, unsigned long * nentries);
 
 #endif /* SUBR_HASH_H */
+
+/**
+ * @}
+ */
+
+/**
+ * @}
+ */

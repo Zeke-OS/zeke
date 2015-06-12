@@ -78,7 +78,8 @@ void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t control);
  * @param control Control settings.
  * @return  address to the allocated region.
  */
-void * dynmem_alloc_force(void * addr, size_t size, uint32_t ap, uint32_t control);
+void * dynmem_alloc_force(void * addr, size_t size, uint32_t ap,
+                          uint32_t control);
 
 /**
  * Add reference to the already allocated region.

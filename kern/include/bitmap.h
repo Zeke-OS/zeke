@@ -30,13 +30,15 @@
  *******************************************************************************
  */
 
-/** @addtogroup libkern
-  * @{
-  */
+/**
+ * @addtogroup libkern
+ * @{
+ */
 
-/** @addtogroup bitmap
-  * @{
-  */
+/**
+ * @addtogroup bitmap
+ * @{
+ */
 
 #pragma once
 #ifndef BITMAP_H
@@ -75,7 +77,8 @@ typedef uint32_t bitmap_t;
  * @return  Returns zero if a free block found; Value other than zero if there
  *          is no free contiguous block of requested length.
  */
-int bitmap_block_search(size_t * retval, size_t block_len, bitmap_t * bitmap, size_t size);
+int bitmap_block_search(size_t * retval, size_t block_len, bitmap_t * bitmap,
+                        size_t size);
 
 /**
  * Search for a contiguous block of block_len in bitmap.
@@ -125,7 +128,8 @@ int bitmap_clear(bitmap_t * bitmap, size_t pos, size_t size);
  * @param start     is the starting bit position in bitmap.
  * @param len       is the length of the block being updated.
  */
-void bitmap_block_update(bitmap_t * bitmap, unsigned int mark, size_t start, size_t len);
+void bitmap_block_update(bitmap_t * bitmap, unsigned int mark, size_t start,
+                         size_t len);
 
 /**
  * Set a contiguous block of zeroed bits to ones and return starting index.
@@ -136,7 +140,8 @@ void bitmap_block_update(bitmap_t * bitmap, unsigned int mark, size_t start, siz
  * @return  Returns zero if a free block found; Value other than zero if there
  *          is no free contiguous block of requested length.
  */
-int bitmap_block_alloc(size_t * start, size_t len, bitmap_t * bitmap, size_t size);
+int bitmap_block_alloc(size_t * start, size_t len, bitmap_t * bitmap,
+                       size_t size);
 
 /**
  * Allocate a contiguous aligned block of bits from bitmap.

@@ -33,6 +33,11 @@
  */
 
 /**
+ * @addtogroup libkern
+ * @{
+ */
+
+/**
  * @addtogroup queue_r
  * @{
  */
@@ -64,7 +69,8 @@ typedef struct queue_cb {
  * @param arra_size the size of the data_array in bytes.
  * @return a new queue_cb_t queue control block structure.
  */
-queue_cb_t queue_create(void * data_array, size_t block_size, size_t array_size);
+queue_cb_t queue_create(void * data_array, size_t block_size,
+                        size_t array_size);
 
 /**
  * Push element to the queue.
@@ -122,6 +128,10 @@ int queue_isfull(queue_cb_t * cb);
 int seek(queue_cb_t * cb, size_t i, void * element);
 
 #endif /* QUEUE_H */
+
+/**
+ * @}
+ */
 
 /**
  * @}
