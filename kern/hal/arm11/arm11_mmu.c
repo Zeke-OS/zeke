@@ -49,12 +49,6 @@ static mtx_t mmu_lock;
 
 #define mmu_disable_ints() __asm__ volatile ("cpsid if")
 
-static void mmu_map_section_region(const mmu_region_t * region);
-static void mmu_map_coarse_region(const mmu_region_t * region);
-static void mmu_unmap_section_region(const mmu_region_t * region);
-static void mmu_unmap_coarse_region(const mmu_region_t * region);
-static void attach_coarse_pagetable(const mmu_pagetable_t * restrict pt);
-
 #ifdef configMP
 void mmu_lock_init(void);
 
@@ -115,33 +109,6 @@ int mmu_init_pagetable(const mmu_pagetable_t * pt)
         : [pte]"r" (pte)
         : "r4", "r5", "r6", "r7"
     );
-
-    return 0;
-}
-
-/**
- * Map memory region.
- * @param region    Structure that specifies the memory region.
- * @return  Zero if succeed; non-zero error code otherwise.
- */
-int mmu_map_region(const mmu_region_t * region)
-{
-    KASSERT(region->pt != NULL, "region->pt is set");
-    KASSERT(region->num_pages > 0, "num_pages must be greater than zero");
-
-    switch (region->pt->pt_type) {
-    case MMU_PTT_MASTER:    /* Map section in L1 page table */
-        mmu_map_section_region(region);
-        break;
-    case MMU_PTT_COARSE:    /* Map PTE to point to a L2 coarse page table */
-        mmu_map_coarse_region(region);
-        break;
-    default:
-#if configDEBUG >= KERROR_DEBUG
-        KERROR(KERROR_ERR, "Invalid mmu_region struct.\n");
-#endif
-        return -EINVAL;
-    }
 
     return 0;
 }
@@ -233,19 +200,26 @@ static void mmu_map_coarse_region(const mmu_region_t * region)
 }
 
 /**
- * Unmap mapped memory region.
- * @param region    Original descriptor structure for the region.
+ * Map memory region.
+ * @param region    Structure that specifies the memory region.
+ * @return  Zero if succeed; non-zero error code otherwise.
  */
-int mmu_unmap_region(const mmu_region_t * region)
+int mmu_map_region(const mmu_region_t * region)
 {
+    KASSERT(region->pt != NULL, "region->pt is set");
+    KASSERT(region->num_pages > 0, "num_pages must be greater than zero");
+
     switch (region->pt->pt_type) {
-    case MMU_PTE_SECTION:
-        mmu_unmap_section_region(region);
+    case MMU_PTT_MASTER:    /* Map section in L1 page table */
+        mmu_map_section_region(region);
         break;
-    case MMU_PTE_COARSE:
-        mmu_unmap_coarse_region(region);
+    case MMU_PTT_COARSE:    /* Map PTE to point to a L2 coarse page table */
+        mmu_map_coarse_region(region);
         break;
     default:
+#if configDEBUG >= KERROR_DEBUG
+        KERROR(KERROR_ERR, "Invalid mmu_region struct.\n");
+#endif
         return -EINVAL;
     }
 
@@ -310,6 +284,47 @@ static void mmu_unmap_coarse_region(const mmu_region_t * region)
 }
 
 /**
+ * Unmap mapped memory region.
+ * @param region    Original descriptor structure for the region.
+ */
+int mmu_unmap_region(const mmu_region_t * region)
+{
+    switch (region->pt->pt_type) {
+    case MMU_PTE_SECTION:
+        mmu_unmap_section_region(region);
+        break;
+    case MMU_PTE_COARSE:
+        mmu_unmap_coarse_region(region);
+        break;
+    default:
+        return -EINVAL;
+    }
+
+    return 0;
+}
+
+static void attach_coarse_pagetable(const mmu_pagetable_t * restrict pt)
+{
+    uint32_t * ttb;
+    /* TODO Transitional */
+    const size_t nr_tables = (pt->nr_tables == 0) ? 1 : pt->nr_tables;
+
+    ttb = (uint32_t *)pt->master_pt_addr;
+
+    for (size_t j = 0; j < nr_tables; j++) {
+        uint32_t pte;
+        size_t i;
+
+        pte = ((pt->pt_addr + j * MMU_PTSZ_COARSE) & 0xfffffc00);
+        pte |= pt->pt_dom << 5;
+        pte |= MMU_PTE_COARSE;
+
+        i = (pt->vaddr + j * MMU_PGSIZE_SECTION) >> 20;
+        ttb[i] = pte;
+    }
+}
+
+/**
  * Attach a L2 page table to a L1 master page table or attach a L1 page table.
  * @param pt    A page table descriptor structure.
  * @return  Zero if attach succeed; non-zero error code if invalid page table
@@ -350,27 +365,6 @@ int mmu_attach_pagetable(const mmu_pagetable_t * pt)
     MMU_UNLOCK();
 
     return retval;
-}
-
-static void attach_coarse_pagetable(const mmu_pagetable_t * restrict pt)
-{
-    uint32_t * ttb;
-    /* TODO Transitional */
-    const size_t nr_tables = (pt->nr_tables == 0) ? 1 : pt->nr_tables;
-
-    ttb = (uint32_t *)pt->master_pt_addr;
-
-    for (size_t j = 0; j < nr_tables; j++) {
-        uint32_t pte;
-        size_t i;
-
-        pte = ((pt->pt_addr + j * MMU_PTSZ_COARSE) & 0xfffffc00);
-        pte |= pt->pt_dom << 5;
-        pte |= MMU_PTE_COARSE;
-
-        i = (pt->vaddr + j * MMU_PGSIZE_SECTION) >> 20;
-        ttb[i] = pte;
-    }
 }
 
 /**

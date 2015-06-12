@@ -60,7 +60,7 @@ static const char * pab_fsr_strerr[] = {
     "Page permission fault"
 };
 
-static int pab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
+static int pab_fatal(uint32_t ifsr, uint32_t ifar, uint32_t psr, uint32_t lr,
                      struct proc_info * proc, struct thread_info * thread);
 
 static const char * get_pab_strerror(uint32_t ifsr)
@@ -68,6 +68,26 @@ static const char * get_pab_strerror(uint32_t ifsr)
     return pab_fsr_strerr[ifsr & FSR_STATUS_MASK];
 }
 
+static void pab_dump(uint32_t ifsr, uint32_t ifar, uint32_t psr, uint32_t lr,
+                     struct proc_info * proc, struct thread_info * thread)
+{
+    KERROR(KERROR_CRIT,
+           "Fatal PAB:\n"
+           "pc: %x\n"
+           "ifsr: %x (%s)\n"
+           "ifar: %x\n"
+           "proc info:\n"
+           "pid: %i\n"
+           "tid: %i\n"
+           "insys: %i\n",
+           lr,
+           ifsr, get_pab_strerror(ifsr),
+           ifar,
+           (int32_t)((proc) ? proc->pid : -1),
+           (int32_t)thread->id,
+           (int32_t)thread_flags_is_set(thread, SCHED_INSYS_FLAG));
+    stack_dump(current_thread->sframe[SCHED_SFRAME_ABO]);
+}
 
 /**
  * Prefetch abort handler.
@@ -153,22 +173,7 @@ void mmu_prefetch_abort_handler(void)
 static int pab_fatal(uint32_t ifsr, uint32_t ifar, uint32_t psr, uint32_t lr,
                      struct proc_info * proc, struct thread_info * thread)
 {
-    KERROR(KERROR_CRIT,
-           "Fatal PAB:\n"
-           "pc: %x\n"
-           "ifsr: %x (%s)\n"
-           "ifar: %x\n"
-           "proc info:\n"
-           "pid: %i\n"
-           "tid: %i\n"
-           "insys: %i\n",
-           lr,
-           ifsr, get_pab_strerror(ifsr),
-           ifar,
-           (int32_t)((proc) ? proc->pid : -1),
-           (int32_t)thread->id,
-           (int32_t)thread_flags_is_set(thread, SCHED_INSYS_FLAG));
-    stack_dump(current_thread->sframe[SCHED_SFRAME_ABO]);
+    pab_dump(ifsr, ifar, psr, lr, proc, thread);
     panic_halt();
 
     /* Doesn't return */
@@ -188,22 +193,7 @@ static int pab_buserr(uint32_t ifsr, uint32_t ifar, uint32_t psr, uint32_t lr,
         return -ESRCH;
 
 #if configDEBUG >= KERROR_DEBUG
-    KERROR(KERROR_CRIT,
-           "Fatal PAB:\n"
-           "pc: %x\n"
-           "ifsr: %x (%s)\n"
-           "ifar: %x\n"
-           "proc info:\n"
-           "pid: %i\n"
-           "tid: %i\n"
-           "insys: %i\n",
-           lr,
-           ifsr, get_pab_strerror(ifsr),
-           ifar,
-           (int32_t)((proc) ? proc->pid : -1),
-           (int32_t)thread->id,
-           (int32_t)thread_flags_is_set(thread, SCHED_INSYS_FLAG));
-    stack_dump(current_thread->sframe[SCHED_SFRAME_ABO]);
+    pab_dump(ifsr, ifar, psr, lr, proc, thread);
     KERROR(KERROR_DEBUG, "%s: Send a fatal SIGBUS\n", __func__);
 #endif
 
