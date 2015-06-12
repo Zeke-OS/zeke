@@ -255,18 +255,21 @@ struct _proc_credctl_args {
     gid_t sgid;
 };
 
+enum priv_pcap_mode {
+    PRIV_PCAP_MODE_GETR = 0, /* get restr */
+    PRIV_PCAP_MODE_SETR = 1, /* set restr */
+    PRIV_PCAP_MODE_CLRR = 2, /* clear restr */
+    PRIV_PCAP_MODE_GETG = 3, /* get grant */
+    PRIV_PCAP_MODE_SETG = 4, /* set grant */
+    PRIV_PCAP_MODE_CLRG = 5  /* clear grant */
+};
+
 /**
  * Argument struct for SYSCALL_PRIV_PCAP
  */
 struct _priv_pcap_args {
     pid_t pid;
-    int mode;
-#define PRIV_PCAP_MODE_GETR 0 /* get restr */
-#define PRIV_PCAP_MODE_SETR 1 /* set restr */
-#define PRIV_PCAP_MODE_CLRR 2 /* clear restr */
-#define PRIV_PCAP_MODE_GETG 3 /* get grant */
-#define PRIV_PCAP_MODE_SETG 4 /* set grant */
-#define PRIV_PCAP_MODE_CLRG 5 /* clear grant */
+    enum priv_pcap_mode mode;
     size_t priv;
 };
 
