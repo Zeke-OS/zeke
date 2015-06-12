@@ -78,6 +78,16 @@
 #define UNDEFINED_PSR   0x4000001bu /*!< Kernel startup mode. (Undefined) */
 #define SUPERVISOR_PSR  0x40000013u /*!< Kernel mode. (Supervisor) */
 
+/**
+ * (I)FSR Status Mask
+ */
+#define FSR_STATUS_MASK 0x0f
+
+/**
+ * Test if abort came from user mode.
+ */
+#define ABO_WAS_USERMODE(psr)   (((psr) & PSR_MODE_MASK) == PSR_MODE_USER)
+
 /** Stack frame saved by the hardware (Left here for compatibility reasons) */
 typedef struct {
 } hw_stack_frame_t;
@@ -177,8 +187,14 @@ void cpu_set_cid(uint32_t cid);
 static inline void panic_halt(void) __attribute__((noreturn));
 static inline void panic_halt(void)
 {
-    __asm__ volatile ("BKPT #01");
-    while (1); /* Just in case */
+    disable_interrupt();
+#if defined(configMP)
+    /* TODO Handle MP */
+    cpu_wfe();
+#else
+    idle_sleep();
+#endif
+    while (1);
     __builtin_unreachable();
 }
 
