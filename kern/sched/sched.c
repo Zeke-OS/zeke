@@ -607,6 +607,7 @@ pthread_t thread_fork(void)
     memcpy(new_thread, old_thread, sizeof(struct thread_info));
     new_thread->id       = new_id;
     new_thread->flags   &= ~SCHED_INSYS_FLAG;
+    new_thread->flags   |= SCHED_DETACH_FLAG; /* New main must be detached. */
     init_sched_data(&new_thread->sched);
     thread_set_inheritance(new_thread, old_thread);
 
