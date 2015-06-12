@@ -40,15 +40,40 @@
 
 static pab_handler * const prefetch_aborts[];
 
+static const char * pab_fsr_strerr[] = {
+    "",
+    "Alignment",
+    "Instruction debug event",
+    "Section AP fault",
+    "", /* Not function */
+    "Section translation",
+    "Page AP fault",
+    "Page translation",
+    "Precise external abort",
+    "Domain section fault",
+    "",
+    "Domain page fault",
+    "Extrenal first-level abort",
+    "Section permission fault",
+    "External second-evel abort",
+    "Page permission fault"
+};
+
 static int pab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
                      struct proc_info * proc, struct thread_info * thread);
+
+static const char * get_pab_strerror(uint32_t ifsr)
+{
+    return pab_fsr_strerr[ifsr & FSR_STATUS_MASK];
+}
+
 
 /**
  * Prefetch abort handler.
  */
 void mmu_prefetch_abort_handler(void)
 {
-    uint32_t fsr; /*!< Fault status */
+    uint32_t ifsr; /*!< Fault status */
     uint32_t ifar; /*!< Fault address */
     const uint32_t spsr = current_thread->sframe[SCHED_SFRAME_ABO].psr;
     const uint32_t lr = current_thread->sframe[SCHED_SFRAME_ABO].pc;
@@ -63,7 +88,7 @@ void mmu_prefetch_abort_handler(void)
     /* Get fault status */
     __asm__ volatile (
         "MRC p15, 0, %[reg], c5, c0, 1"
-        : [reg]"=r" (fsr));
+        : [reg]"=r" (ifsr));
     /*
      * Get fault address
      * TODO IFAR is not updated if FSR == 2 (debug abourt)
@@ -92,21 +117,21 @@ void mmu_prefetch_abort_handler(void)
 
     /* RFE Might be enough to get curproc. */
     proc = proc_get_struct_l(thread->pid_owner); /* Can be NULL */
-    handler = prefetch_aborts[fsr & FSR_STATUS_MASK];
+    handler = prefetch_aborts[ifsr & FSR_STATUS_MASK];
     if (handler) {
         int err;
 
-        if ((err = handler(fsr, ifar, spsr, lr, proc, thread))) {
+        if ((err = handler(ifsr, ifar, spsr, lr, proc, thread))) {
             KERROR(KERROR_CRIT, "PAB handling failed: %i\n", err);
 
             stack_dump(current_thread->sframe[SCHED_SFRAME_ABO]);
-            pab_fatal(fsr, ifar, spsr, lr, proc, thread);
+            pab_fatal(ifsr, ifar, spsr, lr, proc, thread);
         }
     } else {
        KERROR(KERROR_CRIT,
               "PAB handling failed, no sufficient handler found.\n");
 
-       pab_fatal(fsr, ifar, spsr, lr, proc, thread);
+       pab_fatal(ifsr, ifar, spsr, lr, proc, thread);
     }
 
     /*
@@ -124,10 +149,24 @@ void mmu_prefetch_abort_handler(void)
 /**
  * PAB handler for fatal aborts.
  */
-static int pab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
+static int pab_fatal(uint32_t ifsr, uint32_t ifar, uint32_t psr, uint32_t lr,
                      struct proc_info * proc, struct thread_info * thread)
 {
-    KERROR(KERROR_CRIT, "A fatal prefetch abort occured @ %x.\n", far);
+    KERROR(KERROR_CRIT,
+           "Fatal PAB:\n"
+           "pc: %x\n"
+           "ifsr: %x (%s)\n"
+           "ifar: %x\n"
+           "proc info:\n"
+           "pid: %i\n"
+           "tid: %i\n"
+           "insys: %i\n",
+           lr,
+           ifsr, get_pab_strerror(ifsr),
+           ifar,
+           (int32_t)((proc) ? proc->pid : -1),
+           (int32_t)thread->id,
+           (int32_t)thread_flags_is_set(thread, SCHED_INSYS_FLAG));
     stack_dump(current_thread->sframe[SCHED_SFRAME_ABO]);
     panic_halt();
 
