@@ -609,7 +609,7 @@ static int sys_proc_wait(__user void * user_args)
     struct _proc_wait_args args;
     pid_t pid_child;
     struct proc_info * child = NULL;
-    int * state;
+    enum proc_state * state;
 
     if (!useracc(user_args, sizeof(args), VM_PROT_WRITE) ||
             copyin(user_args, &args, sizeof(args))) {
