@@ -78,6 +78,8 @@ static const char * dab_fsr_strerr[] = {
 
 static int dab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
                      struct proc_info * proc, struct thread_info * thread);
+static int dab_buserr(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
+                      struct proc_info * proc, struct thread_info * thread);
 
 static const char * get_dab_strerror(uint32_t fsr)
 {
@@ -144,10 +146,17 @@ void mmu_data_abort_handler(void)
         int err;
 
         if ((err = handler(fsr, far, spsr, lr, proc, thread))) {
-            KERROR(KERROR_CRIT, "DAB handling failed: %i\n", err);
-
-            stack_dump(current_thread->sframe[SCHED_SFRAME_ABO]);
-            dab_fatal(fsr, far, spsr, lr, proc, thread);
+            switch (err) {
+            case -EACCES:
+            case -EFAULT:
+                dab_buserr(fsr, far, spsr, lr, proc, thread);
+                /* Doesn't return */
+                break;
+            default:
+                KERROR(KERROR_CRIT, "DAB handling failed: %i\n", err);
+                stack_dump(current_thread->sframe[SCHED_SFRAME_ABO]);
+                dab_fatal(fsr, far, spsr, lr, proc, thread);
+            }
         }
     } else {
        KERROR(KERROR_CRIT,
@@ -170,6 +179,7 @@ void mmu_data_abort_handler(void)
 
 /**
  * DAB handler for fatal aborts.
+ * @return Doesn't return.
  */
 static int dab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
                      struct proc_info * proc, struct thread_info * thread)

@@ -62,6 +62,8 @@ static const char * pab_fsr_strerr[] = {
 
 static int pab_fatal(uint32_t ifsr, uint32_t ifar, uint32_t psr, uint32_t lr,
                      struct proc_info * proc, struct thread_info * thread);
+static int pab_buserr(uint32_t ifsr, uint32_t ifar, uint32_t psr, uint32_t lr,
+                      struct proc_info * proc, struct thread_info * thread);
 
 static const char * get_pab_strerror(uint32_t ifsr)
 {
@@ -143,10 +145,17 @@ void mmu_prefetch_abort_handler(void)
         int err;
 
         if ((err = handler(ifsr, ifar, spsr, lr, proc, thread))) {
-            KERROR(KERROR_CRIT, "PAB handling failed: %i\n", err);
-
-            stack_dump(current_thread->sframe[SCHED_SFRAME_ABO]);
-            pab_fatal(ifsr, ifar, spsr, lr, proc, thread);
+            switch (err) {
+            case -EACCES:
+            case -EFAULT:
+                pab_buserr(ifsr, ifar, spsr, lr, proc, thread);
+                /* Doesn't return */
+                break;
+            default:
+                KERROR(KERROR_CRIT, "PAB handling failed: %i\n", err);
+                stack_dump(current_thread->sframe[SCHED_SFRAME_ABO]);
+                pab_fatal(ifsr, ifar, spsr, lr, proc, thread);
+            }
         }
     } else {
        KERROR(KERROR_CRIT,
@@ -169,6 +178,7 @@ void mmu_prefetch_abort_handler(void)
 
 /**
  * PAB handler for fatal aborts.
+ * @return Doesn't return.
  */
 static int pab_fatal(uint32_t ifsr, uint32_t ifar, uint32_t psr, uint32_t lr,
                      struct proc_info * proc, struct thread_info * thread)
