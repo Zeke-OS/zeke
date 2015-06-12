@@ -182,6 +182,12 @@ int mmu_ptcpy(mmu_pagetable_t * dest, const mmu_pagetable_t * src)
     return 0;
 }
 
+void mmu_die_on_fatal_abort(void)
+{
+    enable_interrupt();
+    idle_sleep();
+}
+
 /**
  * Signal a page fault event for the pf/s counter.
  */

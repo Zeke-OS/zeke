@@ -507,9 +507,3 @@ void * mmu_translate_vaddr(const mmu_pagetable_t * pt, uintptr_t vaddr)
 out:
     return retval;
 }
-
-void mmu_die_on_fatal_abort(void)
-{
-    enable_interrupt();
-    idle_sleep();
-}

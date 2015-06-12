@@ -208,6 +208,13 @@ size_t mmu_sizeof_pt(const mmu_pagetable_t * region);
 size_t mmu_sizeof_region(const mmu_region_t * region);
 int mmu_ptcpy(mmu_pagetable_t * dest, const mmu_pagetable_t * src);
 
+/**
+ * Die on fatal MMU related abort.
+ * This can be called from an DAB/PAB interrupt handler when the
+ * interrupted thread must be killed by a signal.
+ * ksignal_sendsig_fatal() must be called before calling this
+ * function.
+ */
 void mmu_die_on_fatal_abort(void);
 
 #endif /* MMU_H */
