@@ -25,7 +25,10 @@ static char * test_fork_created(void)
     if (pid == 0) {
         exit(0);
     } else {
-        wait(NULL);
+        int status;
+
+        wait(&status);
+        pu_assert("Child wasn't killed by a signal", WIFSIGNALED(status) == 0);
         pid = 0;
     }
 

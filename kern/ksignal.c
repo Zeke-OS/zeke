@@ -687,6 +687,7 @@ static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
         KERROR(KERROR_DEBUG, "Thread %u will be terminated by signum %d\n",
                thread->id, signum);
 #endif
+        thread->exit_signal = signum;
         thread_terminate(thread->id);
 
         return 0;

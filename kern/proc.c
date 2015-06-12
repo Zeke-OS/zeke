@@ -451,6 +451,9 @@ void proc_thread_removed(pid_t pid, pthread_t thread_id)
 
     /* Go zombie if removed thread was main() */
     if (p->main_thread && (p->main_thread->id == thread_id)) {
+        /* Propagate exit signal */
+        p->exit_signal = p->main_thread->exit_signal;
+
         p->main_thread = NULL;
         p->state = PROC_STATE_ZOMBIE;
 
@@ -705,9 +708,8 @@ static int sys_proc_wait(__user void * user_args)
 
     /*
      * Construct a status value.
-     * TODO Other needed codes like signals etc?
      */
-    args.status = (child->exit_code & 0xff) << 8;
+    args.status = (child->exit_code & 0xff) << 8 | (child->exit_signal & 0177);
 
     if (args.options & WNOWAIT) {
         /* Leave the proc around, available for later waits. */

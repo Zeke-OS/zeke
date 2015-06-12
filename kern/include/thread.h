@@ -137,6 +137,8 @@ struct thread_info {
     mmu_pagetable_t * curr_mpt;     /*!< Current master pt (proc or kern) */
     __user void * errno_uaddr;      /*!< Address of the thread local errno. */
     intptr_t retval;                /*!< Return value of the thread. */
+    int exit_signal;                /*!< The signum that killed the thread.
+                                         (0 == wasn't killed) */
 
     int wait_tim;                   /*!< Reference to a timeout timer. */
     int lock_tim;                   /*!< Timer used by klocks. */
