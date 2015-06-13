@@ -34,7 +34,7 @@
 #include <errno.h>
 #include <time.h>
 
-/* TODO Proper implementation */
+/* TODO Proper implementation of time() */
 time_t time(time_t * t)
 {
     if (t)
