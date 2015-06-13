@@ -131,8 +131,9 @@ interrupt_pabt:
 
     exit_kernel
 
+    cps     #0x17           /* Back to ABT mode */
     popcontext #2           /* Pop context from SCHED_SFRAME_ABO */
-    subs    lr, lr, #0x4
+    subs    pc, lr, #0x4
 
 @ Data Abort handler
     .globl  interrupt_dabt
@@ -148,6 +149,7 @@ interrupt_dabt:
 
     exit_kernel
 
+    cps     #0x17           /* Back to ABT mode */
     popcontext #2           /* Pop context from SCHED_SFRAME_ABO */
     subs    pc, lr, #0x8
 
