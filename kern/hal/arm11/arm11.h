@@ -83,6 +83,22 @@
  */
 #define FSR_STATUS_MASK 0x0f
 
+/*
+ * Aborts and registers.
+ * Type                     ABT PRECISE IFSR    IFAR    DFSR    FAR WFAR
+ * ---------------------------------------------------------------------
+ * Int MMU fault            PAB X       X       X
+ * Int debug abort          PAB X       X
+ * Int ext abort on tr      PAB X       X       X
+ * Int ext abort            PAB X       X       X
+ * Int cache maint. op      DAB X                       X       X
+ * Data MMU fault           DAB X                       X       X
+ * Data debug abort         DAB                         X       X
+ * Data ext abort on tr     DAB X                       X       X
+ * Data ext abort           DAB                         X       X
+ * Data cache maint. op     DAB X                       X       X
+ */
+
 /**
  * Test if abort came from user mode.
  */
