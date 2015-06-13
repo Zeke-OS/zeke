@@ -27,29 +27,31 @@ compared to any other Unix-like OS implementation.
 Key Features
 ------------
 - Kernel
+    - Fully pre-emptible kernel mode
     - Object-oriented thread scheduling system
     - One-to-one kernel threads for user processes
-    - Fully pre-emptible kernel mode
     - freeBSD-like sysctl interface
 - Processes
-    - Unix-like fork and exec
-    - Per process capabilities
     - ASLR
+    - Copy-On-Write virtual memory
+    - Per process capabilities
+    - Unix-like fork and exec
     - elf32 support
 - IPC
     - Signals
     - mmap
+    - pipes
     - pty
 - File Systems
     - Complete file system abstraction (VFS)
-    - freeBSD-like device file interface
-    - MBR support
     - FAT12/16/32 support
     - Fast RAM file system
+    - MBR support
+    - freeBSD-like device file interface
 - Userland
     - Mostly C99 compliant libc
-    - System call based kernel services
     - Standard user application separation by using POSIX processes
+    - System call based kernel services
 
 News
 ----
