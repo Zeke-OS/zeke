@@ -310,8 +310,7 @@ void procfs_rmentry(pid_t pid)
 #ifdef configPROCFS_DEBUG
         KERROR(KERROR_DEBUG, "pid dir doesn't exist\n");
 #endif
-        vrele(vn_procfs);
-        return;
+        goto out;
     }
 
     SET_FOREACH(file, procfs_files) {
@@ -322,12 +321,13 @@ void procfs_rmentry(pid_t pid)
 
 
     vrele(pdir);
-#ifdef configPROCFS_DEBUG
     if (vn_procfs->vnode_ops->rmdir(vn_procfs, name)) {
+#ifdef configPROCFS_DEBUG
         KERROR(KERROR_DEBUG, "Can't rmdir(%s)\n", name);
-    }
 #endif
+    }
 
+out:
     vrele(vn_procfs);
 }
 
