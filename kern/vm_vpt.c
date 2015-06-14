@@ -56,7 +56,7 @@ struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr)
     struct vm_pt * vpt = NULL;
     struct vm_pt filter = {
         .pt.vaddr = MMU_CPT_VADDR(vaddr)
-    }; /* Used as a search filter */
+    }; /* Used as a search filter. */
 
     KASSERT(mpt, "mpt can't be null");
 
@@ -94,7 +94,7 @@ struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr)
         RB_INSERT(ptlist, ptlist_head, vpt);
         err = mmu_attach_pagetable(&(vpt->pt));
         if (err) {
-            panic("Can't attach new pt");
+            panic("Can't attach a new pt");
         }
     }
 

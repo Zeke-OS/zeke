@@ -153,6 +153,8 @@ struct vm_pt * vm_pt_clone_attach(struct vm_pt * old_vpt,
  * @note This function doesn't check if the process has access to the address.
  * @param proc  is a pointer to the process.
  * @param uaddr is the user space address in context of proc.
+ * @return Returns a pointer in kernel space that points to the same data as
+ *         uaddr.
  */
 __kernel void * vm_uaddr2kaddr(struct proc_info * proc,
                                __user const void * uaddr);
