@@ -55,6 +55,21 @@ extern mmu_region_t mmu_region_kernel;
 static int test_ap_priv(uint32_t rw, uint32_t ap);
 static int test_ap_user(uint32_t rw, uint32_t mmu_ap, uint32_t mmu_control);
 
+__kernel void * vm_uaddr2kaddr(struct proc_info * proc,
+                               __user const void * uaddr)
+{
+    struct vm_pt * vpt;
+    void * phys_uaddr;
+
+    vpt = ptlist_get_pt(&proc->mm, (uintptr_t)uaddr);
+    if (!vpt)
+        return NULL;
+
+    phys_uaddr = mmu_translate_vaddr(&(vpt->pt), (uintptr_t)uaddr);
+
+    return phys_uaddr;
+}
+
 int copyin(__user const void * uaddr, __kernel void * kaddr, size_t len)
 {
     return copyin_proc(curproc, uaddr, kaddr, len);
@@ -64,18 +79,13 @@ int copyin_proc(struct proc_info * proc, __user const void * uaddr,
                 __kernel void * kaddr,
         size_t len)
 {
-    struct vm_pt * vpt;
     void * phys_uaddr;
 
     if (!useracc_proc(uaddr, len, proc, VM_PROT_READ)) {
         return -EFAULT;
     }
 
-    vpt = ptlist_get_pt(&curproc->mm, (uintptr_t)uaddr);
-    if (!vpt)
-        panic("Can't copyin()");
-
-    phys_uaddr = mmu_translate_vaddr(&(vpt->pt), (uintptr_t)uaddr);
+    phys_uaddr = vm_uaddr2kaddr(proc, uaddr);
     if (!phys_uaddr) {
         return -EFAULT;
     }
@@ -93,18 +103,13 @@ int copyout_proc(struct proc_info * proc, __kernel const void * kaddr,
                  __user void * uaddr, size_t len)
 {
     /* TODO Handle possible cow flag? */
-    struct vm_pt * vpt;
     void * phys_uaddr;
 
     if (!useracc_proc(uaddr, len, proc, VM_PROT_WRITE)) {
         return -EFAULT;
     }
 
-    vpt = ptlist_get_pt(&proc->mm, (uintptr_t)uaddr);
-    if (!vpt)
-        panic("Can't copyout()");
-
-    phys_uaddr = mmu_translate_vaddr(&(vpt->pt), (uintptr_t)uaddr);
+    phys_uaddr = vm_uaddr2kaddr(proc, uaddr);
     if (!phys_uaddr)
         return -EFAULT;
 
@@ -124,19 +129,13 @@ int copyinstr(__user const char * uaddr, __kernel char * kaddr, size_t len,
 
     while (off < len) {
         if (((uintptr_t)uaddr >> NBITS(MMU_PGSIZE_COARSE)) != last_prefix) {
-            struct vm_pt * vpt;
-
             if (!useracc(uaddr, 1, VM_PROT_READ)) {
                 return -EFAULT;
             }
 
-            vpt = ptlist_get_pt(&curproc->mm, (uintptr_t)uaddr);
-            if (!vpt)
-                panic("Can't copyinstr()");
-
             last_prefix = (uintptr_t)uaddr >> NBITS(MMU_PGSIZE_COARSE);
 
-            phys_uaddr = mmu_translate_vaddr(&(vpt->pt), (uintptr_t)uaddr);
+            phys_uaddr = vm_uaddr2kaddr(curproc, uaddr);
             if (!phys_uaddr) {
                 return -EFAULT;
             }

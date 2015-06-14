@@ -149,6 +149,15 @@ struct vm_pt * vm_pt_clone_attach(struct vm_pt * old_vpt,
                                   mmu_pagetable_t * mpt);
 
 /**
+ * Get kernel accessible address from user space address of a process.
+ * @note This function doesn't check if the process has access to the address.
+ * @param proc  is a pointer to the process.
+ * @param uaddr is the user space address in context of proc.
+ */
+__kernel void * vm_uaddr2kaddr(struct proc_info * proc,
+                               __user const void * uaddr);
+
+/**
  * @addtogroup copy copyin, copyout, copyinstr
  * Kernel copy functions.
  *
