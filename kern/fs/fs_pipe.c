@@ -242,6 +242,10 @@ static ssize_t fs_pipe_write_ubuf(file_t * file, __user const void * buf,
     for (size_t i = 0; i < count;) {
         if (queue_push(&pipe->q, buf_addr + i))
             i++;
+        /*
+         * FIXME Yielding is really needed but currently there seems to some
+         *       strange performance issues.
+         */
 #if 0
         thread_yield(PIPE_YIELD_STRATEGY);
 #endif
@@ -278,6 +282,10 @@ static ssize_t fs_pipe_read_ubuf(file_t * file, __user void * buf, size_t count)
 
         if (queue_pop(&pipe->q, buf_addr + i))
             i++;
+        /*
+         * FIXME Yielding is really needed but currently there seems to some
+         *       strange performance issues.
+         */
 #if 0
         thread_yield(PIPE_YIELD_STRATEGY);
 #endif
