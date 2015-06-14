@@ -153,6 +153,12 @@ static int sys_write(__user void * user_args)
         return -1;
     }
 
+    /* Check that we have read permission to the user buffer. */
+    if (!useracc((__user void *)args.buf, args.nbytes, VM_PROT_READ)) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
     file = fs_fildes_ref(curproc->files, args.fildes, 1);
     if (!file)
         return -EBADF;
