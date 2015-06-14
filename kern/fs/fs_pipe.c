@@ -257,12 +257,10 @@ ssize_t fs_pipe_read(file_t * file, void * buf, size_t count)
     if (!(file->oflags & O_RDONLY))
         return -EBADF;
 
-    /* TODO Implement O_NONBLOCK */
-
     for (size_t i = 0; i < count;) {
         if (queue_isempty(&pipe->q) &&
-                ((trycount++ > 5 && i > 0) ||
-                 atomic_read(&pipe->file1.refcount) < 1)) {
+            ((trycount++ > 5 && (i > 0 || (file->oflags & O_NONBLOCK))) ||
+            atomic_read(&pipe->file1.refcount) < 1)) {
             return i;
         }
 

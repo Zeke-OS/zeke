@@ -643,51 +643,16 @@ int fs_fildes_close(struct proc_info * p, int fildes)
     return 0;
 }
 
-ssize_t fs_readwrite_curproc(int fildes, void * buf, size_t nbyte, int oper)
-{
-    vnode_t * vnode;
-    file_t * file;
-    ssize_t retval = -1;
-
-    KASSERT(buf != NULL, "buf should be set\n");
-
-    file = fs_fildes_ref(curproc->files, fildes, 1);
-    if (!file)
-        return -EBADF;
-    vnode = file->vnode;
-
-    /*
-     * Check that file is opened with a correct mode and the vnode exist.
-     */
-    if (!(file->oflags & oper) || !vnode) {
-        retval = -EBADF;
-        goto out;
-    }
-
-    KASSERT((oper & O_ACCMODE) != (O_RDONLY | O_WRONLY),
-            "Only read or write selected");
-
-    if (oper & O_RDONLY) {
-        retval = vnode->vnode_ops->read(file, buf, nbyte);
-    } else {
-        retval = vnode->vnode_ops->write(file, buf, nbyte);
-        if (retval == 0)
-            retval = -EIO;
-    }
-
-out:
-    fs_fildes_ref(curproc->files, fildes, -1);
-    return retval;
-}
-
 /**
  * Get directory vnode of a target file and the actual directory entry name.
  * @param[in]   pathname    is a path to the target.
  * @param[out]  dir         is the directory containing the entry.
  * @param[out]  filename    is the actual file name / directory entry name.
- * @param[in]   flag        0 = file should exist; O_CREAT = file should not exist.
+ * @param[in]   flag        0 = file should exist; O_CREAT = file should not
+ *                          exist.
  */
-static int getvndir(const char * pathname, vnode_t ** dir, char ** filename, int flag)
+static int getvndir(const char * pathname, vnode_t ** dir, char ** filename,
+                    int flag)
 {
     vnode_t * vn_file;
     char * path = NULL;

@@ -291,6 +291,7 @@ typedef struct vnode_ops {
      *          Otherwise a negative errno code is returned.
      */
     ssize_t (*read)(file_t * file, void * buf, size_t count);
+    ssize_t (*read_ubuf)(file_t * file, __user void * buf, size_t count);
     /**
      * Write transfers bytes from buf into file.
      * Writing is begin from offset and ended at offset + count. buf must
@@ -304,6 +305,7 @@ typedef struct vnode_ops {
      *          Otherwise a negative errno code is returned.
      */
     ssize_t (*write)(file_t * file, const void * buf, size_t count);
+    ssize_t (*write_ubuf)(file_t * file, __user const void * buf, size_t count);
     /**
      * IO Control.
      * Only defined for devices and shall point to fs_enotsup_ioctl() if not
@@ -620,18 +622,6 @@ file_t * fs_fildes_ref(files_t * files, int fd, int count);
 int fs_fildes_close(struct proc_info * p, int fildes);
 
 /**
- * Read or write to a open file of the current process.
- * @param fildes    is the file descriptor nuber.
- * @param buf       is the buffer.
- * @param nbytes    is the amount of bytes to be read/writted.
- * @param oper      is the file operation, either O_RDONLY or O_WRONLY.
- * @return  Return the number of bytes actually read/written from/to the file
- *          associated with fildes; Otherwise a negative value representing
- *          errno.
- */
-ssize_t fs_readwrite_curproc(int fildes, void * buf, size_t nbyte, int oper);
-
-/**
  * Create a new file by using fs specific create() function.
  * File will be created relative to the attributes of a current process.
  * @param[in]   path    is a path to the new file.
@@ -759,8 +749,11 @@ void vunref(vnode_t * vnode);
 /* Not sup vnops (in nofs.c) */
 int fs_enotsup_lock(file_t * file);
 int fs_enotsup_release(file_t * file);
-ssize_t fs_enotsup_write(file_t * file, const void * buf, size_t count);
 ssize_t fs_enotsup_read(file_t * file, void * buf, size_t count);
+ssize_t fs_enotsup_read_ubuf(file_t * file, __user void * buf, size_t count);
+ssize_t fs_enotsup_write(file_t * file, const void * buf, size_t count);
+ssize_t fs_enotsup_write_ubuf(file_t * file, __user const void * buf,
+                              size_t count);
 int fs_enotsup_ioctl(file_t * file, unsigned request, void * arg,
                      size_t arg_len);
 int fs_enotsup_event_vnode_opened(struct proc_info * p, vnode_t * vnode);

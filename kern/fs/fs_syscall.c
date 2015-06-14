@@ -55,58 +55,89 @@
 static int sys_read(__user void * user_args)
 {
     struct _fs_readwrite_args args;
-    char * buf = NULL;
     int err, retval;
+    vnode_t * vnode;
+    file_t * file;
 
     err = priv_check(&curproc->cred, PRIV_VFS_READ);
     if (err) {
         set_errno(EPERM);
-        retval = -1;
-        goto out;
+        return -1;
     }
 
+    /* Copyin args. */
     err = copyin(user_args, &args, sizeof(args));
     if (err) {
         set_errno(EFAULT);
-        retval = -1;
-        goto out;
+        return -1;
     }
 
-    /* Buffer */
+    /* Check that we have write permission to the user buffer. */
     if (!useracc((__user void *)args.buf, args.nbytes, VM_PROT_WRITE)) {
-        /* No permission to read/write */
         set_errno(EFAULT);
-        retval = -1;
-        goto out;
+        return -1;
     }
-    buf = kmalloc(args.nbytes);
-    if (!buf) {
-        set_errno(ENOMEM);
-        retval = -1;
+
+    file = fs_fildes_ref(curproc->files, args.fildes, 1);
+    if (!file)
+        return -EBADF;
+    vnode = file->vnode;
+
+    /*
+     * Check that file is opened with a correct mode and the vnode exist.
+     */
+    if (!((file->oflags & O_RDONLY) && vnode)) {
+        retval = -EBADF;
         goto out;
     }
 
-    retval = fs_readwrite_curproc(args.fildes, buf, args.nbytes, O_RDONLY);
-    if (retval < 0) {
-        set_errno(-retval);
-        retval = -1;
-    } else {
+    if (vnode->vnode_ops->read_ubuf == fs_enotsup_read_ubuf) {
+        /* fs doesn't support read_ubuf() */
+        void * buf;
+
+        buf = kmalloc(args.nbytes);
+        if (!buf) {
+            set_errno(ENOMEM);
+            retval = -1;
+            goto out;
+        }
+
+        retval = vnode->vnode_ops->read(file, buf, args.nbytes);
+        if (retval < 0) {
+            kfree(buf);
+            set_errno(-retval);
+            retval = -1;
+            goto out;
+        }
+
         err = copyout(buf, (__user void *)args.buf, retval);
+        kfree(buf);
         if (err) {
             set_errno(-err);
             retval = -1;
+            goto out;
+        }
+    } else {
+        /* fs supports read_ubuf() */
+        retval = vnode->vnode_ops->read_ubuf(file, (__user void *)args.buf,
+                                             args.nbytes);
+        if (retval < 0) {
+            set_errno(-retval);
+            retval = -1;
+            goto out;
         }
     }
 
 out:
-    kfree(buf);
+    fs_fildes_ref(curproc->files, args.fildes, -1);
     return retval;
 }
 
 static int sys_write(__user void * user_args)
 {
     struct _fs_readwrite_args args;
-    char * buf = 0;
+    vnode_t * vnode;
+    file_t * file;
     int err, retval;
 
     err = priv_check(&curproc->cred, PRIV_VFS_WRITE);
@@ -115,37 +146,66 @@ static int sys_write(__user void * user_args)
         return -1;
     }
 
-    /* Args */
+    /* Copyin args. */
     err = copyin(user_args, &args, sizeof(args));
     if (err) {
         set_errno(EFAULT);
-        retval = -1;
+        return -1;
+    }
+
+    file = fs_fildes_ref(curproc->files, args.fildes, 1);
+    if (!file)
+        return -EBADF;
+    vnode = file->vnode;
+
+    /*
+     * Check that file is opened with a correct mode and the vnode exist.
+     */
+    if (!((file->oflags & O_WRONLY) && vnode)) {
+        retval = -EBADF;
         goto out;
     }
 
-    /* Buffer */
-    buf = kmalloc(args.nbytes);
-    if (!buf) {
-        set_errno(ENOMEM);
-        retval = -1;
-        goto out;
-    }
-    err = copyin((__user void *)args.buf, buf, args.nbytes);
-    if (err) {
-        KERROR(KERROR_ERR, "efault %u\n", args.nbytes);
-        set_errno(EFAULT);
-        retval = -1;
-        goto out;
-    }
+    if (vnode->vnode_ops->write_ubuf == fs_enotsup_write_ubuf) {
+        /* fs doesn't support write_ubuf() */
+        void * buf;
 
-    retval = fs_readwrite_curproc(args.fildes, buf, args.nbytes, O_WRONLY);
-    if (retval < 0) {
-        set_errno(-retval);
-        retval = -1;
+        buf = kmalloc(args.nbytes);
+        if (!buf) {
+            set_errno(ENOMEM);
+            retval = -1;
+            goto out;
+        }
+
+        err = copyin((__user const void *)args.buf, buf, args.nbytes);
+        if (err) {
+            kfree(buf);
+            set_errno(EFAULT);
+            retval = -1;
+            goto out;
+        }
+
+        retval = vnode->vnode_ops->write(file, buf, args.nbytes);
+        if (retval < 0) {
+            kfree(buf);
+            set_errno(-retval);
+            retval = -1;
+            goto out;
+        }
+    } else {
+        /* fs supports write_ubuf() */
+        retval = vnode->vnode_ops->write_ubuf(file,
+                                              (__user const void *)args.buf,
+                                              args.nbytes);
+        if (retval < 0) {
+            set_errno(-err);
+            retval = -1;
+            goto out;
+        }
     }
 
 out:
-    kfree(buf);
+    fs_fildes_ref(curproc->files, args.fildes, -1);
     return retval;
 }
 
