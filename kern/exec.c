@@ -103,9 +103,9 @@ int exec_file(file_t * file, char name[PROC_NAME_LEN], struct buf * env_bp,
     int err, retval = 0;
 
 #if defined(configEXEC_DEBUG)
-    KERROR(KERROR_DEBUG, "exec_file(fd %i, name \"%s\", env_bp %p, "
+    KERROR(KERROR_DEBUG, "exec_file(file %p, name \"%s\", env_bp %p, "
            "uargc %d, uargv %x,  uenvp %x)\n",
-           fd, name, env_bp, uargc, (uint32_t)uargv, (uint32_t)uenvp);
+           file, name, env_bp, uargc, (uint32_t)uargv, (uint32_t)uenvp);
 #endif
 
     err = load_proc_image(file, &vaddr);

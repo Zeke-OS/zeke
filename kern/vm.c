@@ -52,9 +52,6 @@
 
 extern mmu_region_t mmu_region_kernel;
 
-static int test_ap_priv(uint32_t rw, uint32_t ap);
-static int test_ap_user(uint32_t rw, uint32_t mmu_ap, uint32_t mmu_control);
-
 __kernel void * vm_uaddr2kaddr(struct proc_info * proc,
                                __user const void * uaddr)
 {
@@ -578,32 +575,6 @@ int vm_unload_regions(struct proc_info * proc, int start, int end)
     return 0;
 }
 
-int kernacc(__kernel const void * addr, int len, int rw)
-{
-    size_t reg_start, reg_size;
-    uint32_t ap;
-
-    reg_start = mmu_region_kernel.vaddr;
-    reg_size = mmu_sizeof_region(&mmu_region_kernel);
-    if (((size_t)addr >= reg_start) && ((size_t)addr < reg_start + reg_size))
-        return (1 == 1);
-
-    /* TODO Check other static regions as well */
-
-    if ((ap = dynmem_acc(addr, len))) {
-        if (test_ap_priv(rw, ap)) {
-            return (1 == 1);
-        }
-    }
-
-#if (configDEBUG >= KERROR_WARN)
-    KERROR(KERROR_WARN,
-           "Can't fully verify access to address (%p) in kernacc()\n", addr);
-#endif
-
-    return (1 == 1);
-}
-
 /**
  * Test for priv mode access permissions.
  *
@@ -646,36 +617,36 @@ static int test_ap_priv(uint32_t rw, uint32_t ap)
     return 0;
 }
 
-int useracc(__user const void * addr, size_t len, int rw)
+int kernacc(__kernel const void * addr, int len, int rw)
 {
-    if (!curproc)
-        return 0;
+    size_t reg_start, reg_size;
+    uint32_t ap;
 
-    return useracc_proc(addr, len, curproc, rw);
+    reg_start = mmu_region_kernel.vaddr;
+    reg_size = mmu_sizeof_region(&mmu_region_kernel);
+    if (((size_t)addr >= reg_start) && ((size_t)addr < reg_start + reg_size))
+        return (1 == 1);
+
+    /* TODO Check other static regions as well */
+
+    if ((ap = dynmem_acc(addr, len))) {
+        if (test_ap_priv(rw, ap)) {
+            return (1 == 1);
+        }
+    }
+
+#if (configDEBUG >= KERROR_WARN)
+    KERROR(KERROR_WARN,
+           "Can't fully verify access to address (%p) in kernacc()\n", addr);
+#endif
+
+    return (1 == 1);
 }
 
-int useracc_proc(__user const void * addr, size_t len, struct proc_info * proc,
-                 int rw)
+static int test_ap_user(uint32_t rw, struct buf * bp)
 {
-    /* TODO Currently we don't allow addr to span over multiple regions */
-
-    struct buf * region = NULL;
-    uintptr_t uaddr, start, end;
-
-    uaddr = (uintptr_t)addr;
-    (void)vm_find_reg(proc, uaddr, &region);
-    if (!region)
-        return 0;
-
-    start = region->b_mmu.vaddr;
-    end = region->b_mmu.vaddr + mmu_sizeof_region(&region->b_mmu) - 1;
-    if (uaddr >= start && uaddr <= end)
-        return test_ap_user(rw, region->b_mmu.ap, region->b_mmu.control);
-    return 0;
-}
-
-static int test_ap_user(uint32_t rw, uint32_t mmu_ap, uint32_t mmu_control)
-{
+    uint32_t mmu_ap = bp->b_mmu.ap;
+    uint32_t mmu_control = bp->b_mmu.control;
     int retval = 0;
 
     if (rw & VM_PROT_EXECUTE) {
@@ -687,19 +658,59 @@ static int test_ap_user(uint32_t rw, uint32_t mmu_ap, uint32_t mmu_control)
     }
 
     if (rw & VM_PROT_WRITE) { /* Test for xxRW */
-        if (mmu_ap & MMU_AP_RWRW)
+        if (mmu_ap & MMU_AP_RWRW) {
             return (1 == 1);
-        else
+        } else {
             return 0;
+        }
     } else if (rw & VM_PROT_READ) { /* Test for xxRO */
-        if ((mmu_ap & MMU_AP_RWRO) || (mmu_ap & MMU_AP_RWRW) ||
-            (mmu_ap & MMU_AP_RORO))
+        if ((mmu_ap & MMU_AP_RWRO) ||
+            (mmu_ap & MMU_AP_RWRW) ||
+            (mmu_ap & MMU_AP_RORO)) {
             return (1 == 1);
-        else
+        } else {
             return 0;
+        }
     }
 
     return retval;
+}
+
+int useracc(__user const void * addr, size_t len, int rw)
+{
+    if (!curproc)
+        return 0;
+
+    return useracc_proc(addr, len, curproc, rw);
+}
+
+int useracc_proc(__user const void * addr, size_t len, struct proc_info * proc,
+                 int rw)
+{
+    /* TODO Currently we don't allow addr + len to span over multiple regions */
+
+    struct buf * region = NULL;
+    uintptr_t uaddr, start, end;
+
+    uaddr = (uintptr_t)addr;
+    (void)vm_find_reg(proc, uaddr, &region);
+    if (!region)
+        return 0;
+
+    start = region->b_mmu.vaddr;
+
+    /*
+     * Unfortunately sometimes the b_count is invalid.
+     */
+    if (region->b_bcount == 0)
+        end = mmu_sizeof_region(&region->b_mmu);
+    else
+        end = region->b_bcount;
+    end += region->b_mmu.vaddr - 1;
+
+    if (start <= uaddr && uaddr <= end)
+        return test_ap_user(rw, region);
+    return 0;
 }
 
 void vm_get_uapstring(char str[5], struct buf * bp)
