@@ -292,18 +292,16 @@ pid_t proc_fork(pid_t pid)
 
     struct proc_info * const old_proc = proc_get_struct_l(pid);
     struct proc_info * new_proc;
-    pid_t retval;
+    pid_t retval = 0;
 
     /* Check that the old PID was valid. */
     if (!old_proc || (old_proc->state == PROC_STATE_INITIAL)) {
-        retval = -EINVAL;
-        goto out;
+        return -EINVAL;
     }
 
     new_proc = clone_proc_info(old_proc);
     if (!new_proc) {
-        retval = -ENOMEM;
-        goto out;
+        return -ENOMEM;
     }
 
     procarr_realloc();
@@ -316,7 +314,7 @@ pid_t proc_fork(pid_t pid)
     /* Allocate a master page table for the new process. */
     retval = alloc_master_pt(new_proc);
     if (retval)
-        goto free_res;
+        goto out;
 
     /* Allocate an array for regions. */
     new_proc->mm.regions = NULL;
@@ -324,13 +322,13 @@ pid_t proc_fork(pid_t pid)
     realloc_mm_regions(&new_proc->mm, old_proc->mm.nr_regions);
     if (!new_proc->mm.regions) {
         retval = -ENOMEM;
-        goto free_res;
+        goto out;
     }
 
     /* Clone master page table. */
     if (mmu_ptcpy(&(new_proc->mm.mpt), &(old_proc->mm.mpt))) {
         retval = -EAGAIN;
-        goto free_res;
+        goto out;
     }
 
     /*
@@ -342,12 +340,12 @@ pid_t proc_fork(pid_t pid)
     if (vm_ptlist_clone(&new_proc->mm.ptlist_head, &new_proc->mm.mpt,
                         &old_proc->mm.ptlist_head) < 0) {
         retval = -ENOMEM;
-        goto free_res;
+        goto out;
     }
 
     retval = clone_code_region(new_proc, old_proc);
     if (retval)
-        goto free_res;
+        goto out;
 
     /* Clone stack region */
     retval = clone_stack(new_proc, old_proc);
@@ -355,13 +353,13 @@ pid_t proc_fork(pid_t pid)
 #ifdef configPROC_DEBUG
         KERROR(KERROR_DEBUG, "Cloning stack region failed.\n");
 #endif
-        goto free_res;
+        goto out;
     }
 
     /* Clone other regions */
     retval = clone_regions_from(new_proc, old_proc, MM_HEAP_REGION);
     if (retval)
-        goto free_res;
+        goto out;
 
     /*
      * Breaks.
@@ -394,7 +392,7 @@ pid_t proc_fork(pid_t pid)
                "\tENOMEM when tried to allocate memory for file descriptors\n");
 #endif
         retval = -ENOMEM;
-        goto free_res;
+        goto out;
     }
     new_proc->files->count = nofile_max;
     /* Copy and ref old file descriptors */
@@ -447,7 +445,7 @@ pid_t proc_fork(pid_t pid)
             KERROR(KERROR_DEBUG, "thread_fork() failed\n");
 #endif
             retval = -EAGAIN; /* RFE What should we return? */
-            goto free_res;
+            goto out;
         } else if (new_tid > 0) { /* thread of the forking process returning */
 #ifdef configPROC_DEBUG
             KERROR(KERROR_DEBUG, "\tthread_fork() fork OK\n");
@@ -489,9 +487,9 @@ pid_t proc_fork(pid_t pid)
     KERROR(KERROR_DEBUG, "Fork created.\n");
 #endif
 
-    goto out; /* Fork created. */
-free_res:
-    _proc_free(new_proc);
 out:
+    if (unlikely(retval < 0)) {
+        _proc_free(new_proc);
+    }
     return retval;
 }
