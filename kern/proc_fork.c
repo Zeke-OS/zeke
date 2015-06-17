@@ -75,7 +75,7 @@ static int alloc_master_pt(struct proc_info * new_proc)
 }
 
 static int clone_code_region(struct proc_info * new_proc,
-        struct proc_info * old_proc)
+                             struct proc_info * old_proc)
 {
     struct buf * vm_reg_tmp;
 
@@ -83,10 +83,14 @@ static int clone_code_region(struct proc_info * new_proc,
     vm_reg_tmp = (*old_proc->mm.regions)[MM_CODE_REGION];
     if (!vm_reg_tmp) {
         KERROR(KERROR_ERR, "Old proc code region can't be null\n");
-        return -EINVAL; /* Not allowed but this shouldn't happen */
+        return -EINVAL; /* Not allowed but this shouldn't happen. */
     }
 
-    /* Incr ref */
+    /*
+     * In Zeke we always have at least one read-only code region by design so
+     * we don't have to COW it or do anything fancy with it, instead we just
+     * take a reference to the code region of the old process.
+     */
     if (vm_reg_tmp->vm_ops->rref)
         vm_reg_tmp->vm_ops->rref(vm_reg_tmp);
 
@@ -95,14 +99,15 @@ static int clone_code_region(struct proc_info * new_proc,
     return 0;
 }
 
-static int clone_oth_regions(struct proc_info * new_proc,
-        struct proc_info * old_proc)
+static int clone_regions_from(struct proc_info * new_proc,
+                              struct proc_info * old_proc,
+                              int index)
 {
     struct buf * vm_reg_tmp;
     int err;
 
     /*
-     * Copy other region pointers.
+     * Copy other region pointers from index to nr_regions.
      * As an iteresting sidenote, what we are doing here and earlier when L1
      * page table was cloned is that we are removing a link between the region
      * structs and the actual L1 page table of this process. However it doesn't
@@ -115,7 +120,7 @@ static int clone_oth_regions(struct proc_info * new_proc,
      * it directly that way because shared regions can't properly point to more
      * than one page table struct.
      */
-    for (int i = MM_HEAP_REGION; i < old_proc->mm.nr_regions; i++) {
+    for (int i = index; i < old_proc->mm.nr_regions; i++) {
         vm_reg_tmp = (*old_proc->mm.regions)[i];
         if (!vm_reg_tmp || (vm_reg_tmp->b_flags & B_NOTSHARED))
             continue;
@@ -124,7 +129,7 @@ static int clone_oth_regions(struct proc_info * new_proc,
         if (vm_reg_tmp->vm_ops->rref)
             vm_reg_tmp->vm_ops->rref(vm_reg_tmp);
 
-        /* Skip cloning regions in system page table */
+        /* Don't clone regions in system page table */
         if (vm_reg_tmp->b_mmu.vaddr <= MMU_VADDR_KERNEL_END) {
             (*new_proc->mm.regions)[i] = vm_reg_tmp;
             continue;
@@ -218,7 +223,7 @@ static int clone_stack(struct proc_info * new_proc, struct proc_info * old_proc)
 }
 
 static void set_proc_inher(struct proc_info * old_proc,
-        struct proc_info * new_proc)
+                           struct proc_info * new_proc)
 {
 #ifdef configPROC_DEBUG
     KERROR(KERROR_DEBUG, "Updating inheriance attributes of new_proc\n");
@@ -324,18 +329,22 @@ pid_t proc_fork(pid_t pid)
 
     /* Clone master page table. */
     if (mmu_ptcpy(&(new_proc->mm.mpt), &(old_proc->mm.mpt))) {
-        retval = -EAGAIN; // Actually more like -EINVAL
+        retval = -EAGAIN;
         goto free_res;
     }
 
-    /* Clone L2 page tables. */
+    /*
+     * Clone L2 page tables.
+     * This is probably something we would like to get rid of but we are
+     * stuck with because it's the easiest way to keep some static kernel
+     * mappings valid between processes.
+     */
     if (vm_ptlist_clone(&new_proc->mm.ptlist_head, &new_proc->mm.mpt,
                         &old_proc->mm.ptlist_head) < 0) {
         retval = -ENOMEM;
         goto free_res;
     }
 
-    /* Copy code region pointer. */
     retval = clone_code_region(new_proc, old_proc);
     if (retval)
         goto free_res;
@@ -350,7 +359,7 @@ pid_t proc_fork(pid_t pid)
     }
 
     /* Clone other regions */
-    retval = clone_oth_regions(new_proc, old_proc);
+    retval = clone_regions_from(new_proc, old_proc, MM_HEAP_REGION);
     if (retval)
         goto free_res;
 

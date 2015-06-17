@@ -73,8 +73,7 @@ int copyin(__user const void * uaddr, __kernel void * kaddr, size_t len)
 }
 
 int copyin_proc(struct proc_info * proc, __user const void * uaddr,
-                __kernel void * kaddr,
-        size_t len)
+                __kernel void * kaddr, size_t len)
 {
     void * phys_uaddr;
 
@@ -168,6 +167,10 @@ int vm_find_reg(struct proc_info * proc, uintptr_t uaddr, struct buf ** bp)
         if (!region)
             continue;
 
+        /*
+         * TODO Would be good idea to use region size instead of mmu alloc size
+         *      but before that it has to be fixed everywhere in the codebase.
+         */
         reg_start = region->b_mmu.vaddr;
         reg_end = region->b_mmu.vaddr + mmu_sizeof_region(&region->b_mmu) - 1;
 
@@ -702,7 +705,7 @@ int useracc_proc(__user const void * addr, size_t len, struct proc_info * proc,
     /*
      * Unfortunately sometimes the b_count is invalid.
      */
-    if (region->b_bcount == 0)
+    if (unlikely(region->b_bcount == 0))
         end = mmu_sizeof_region(&region->b_mmu);
     else
         end = region->b_bcount;
