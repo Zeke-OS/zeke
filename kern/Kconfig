@@ -128,7 +128,7 @@ config configMAXPROC
 
 config configCOW_ENABLED
     bool "Enable copy-on-write for processes"
-    default n
+    default y
     ---help---
     Selects whether process memory regions shall be copied on demand as COW
     (Copy-On-Write) or immediately when a process is forked.
