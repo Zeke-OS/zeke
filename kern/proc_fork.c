@@ -142,6 +142,16 @@ static int clone_regions_from(struct proc_info * new_proc,
         if (vm_reg_tmp->b_uflags & VM_PROT_WRITE) {
             if (cow_enabled) { /* Set COW bit if the feature is enabled. */
                 vm_reg_tmp->b_uflags |= VM_PROT_COW;
+
+                /*
+                 * Remap the region to old_proc to apply VM_PROT_COW.
+                 */
+                err = vm_mapproc_region(old_proc, vm_reg_tmp);
+                if (err) {
+                    KERROR(KERROR_ERR,
+                           "Error while remapping a region for old_rpc (%d)\n",
+                            err);
+                }
             } else { /* copy immediately */
                 if (vm_reg_tmp->vm_ops->rclone) {
                     struct buf * old_bp = vm_reg_tmp;
@@ -172,9 +182,15 @@ static int clone_regions_from(struct proc_info * new_proc,
         }
         (*new_proc->mm.regions)[i] = vm_reg_tmp;
 
+        /*
+         * Map the region to new_proc.
+         */
         err = vm_mapproc_region(new_proc, vm_reg_tmp);
-        if (err)
-            return -ENOMEM;
+        if (err) {
+            KERROR(KERROR_ERR,
+                   "Error while mapping a region to new_proc (%d)\n",
+                   err);
+        }
     }
 
     return 0;
@@ -362,7 +378,7 @@ pid_t proc_fork(pid_t pid)
         goto out;
 
     /*
-     * Breaks.
+     * Set break values.
      */
     new_proc->brk_start = (void *)(
             (*new_proc->mm.regions)[MM_HEAP_REGION]->b_mmu.vaddr +
