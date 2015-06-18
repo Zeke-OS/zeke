@@ -1,14 +1,15 @@
 configQEMU_GUEST=y
 __ARM6K__=y
-configRPI_HW=y
 configEMMC=y
 configEMMC_SDXC_MAXIMUM_PERFORMANCE=y
+configEMMC_WRITE_SUPPORT=y
+configRPI_HW=y
 configMAXPROC=10
+configTIMERS_MAX=256
 configKASSERT=y
 configLOCK_DEBUG=y
 configDEBUG_DEBUG=y
 configFATFS=y
-configFATFS_READONLY=y
 configFATFS_LFN=y
 configPROCCAP=y
 configKUNIT=y
