@@ -79,9 +79,7 @@ typedef struct {
     WORD    id;             /* File system mount ID */
     WORD    n_rootdir;      /* Number of root directory entries (FAT12/16) */
     WORD    ssize;          /* uint8_ts per sector (512, 1024, 2048 or 4096) */
-#if _FS_REENTRANT
     mtx_t   sobj;           /* Identifier of sync object */
-#endif
 #if !_FS_READONLY
     DWORD   last_clust;     /* Last allocated cluster */
     DWORD   free_clust;     /* Number of free clusters */
