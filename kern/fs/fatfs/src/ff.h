@@ -84,9 +84,6 @@ typedef struct {
     DWORD   last_clust;     /* Last allocated cluster */
     DWORD   free_clust;     /* Number of free clusters */
 #endif
-#if _FS_RPATH
-    DWORD   cdir;           /* Current directory start cluster (0:root) */
-#endif
     DWORD   n_fatent;       /* Number of FAT entries, = number of clusters + 2 */
     DWORD   fsize;          /* Sectors per FAT */
     DWORD   volbase;        /* Volume start sector */

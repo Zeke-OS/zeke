@@ -106,18 +106,6 @@
  */
 
 
-#define _FS_RPATH       0   /* 0 to 2 */
-/*
- * The _FS_RPATH option configures relative path feature.
- *
- *  0: Disable relative path feature and remove related functions.
- *  1: Enable relative path. f_chdrive() and f_chdir() function are available.
- *  2: f_getcwd() function is available in addition to 1.
- *
- * Note that output of the f_readdir() fnction is affected by this option.
- */
-
-
 /*---------------------------------------------------------------------------/
  * Drive/Volume Configurations
  *--------------------------------------------------------------------------*/

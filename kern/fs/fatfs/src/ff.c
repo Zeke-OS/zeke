@@ -382,10 +382,6 @@ static FATFS *FatFs[_VOLUMES];
 
 static WORD Fsid;           /* File system mount ID */
 
-#if _FS_RPATH && _VOLUMES >= 2
-static uint8_t CurrVol;     /* Current drive */
-#endif
-
 #if _FS_LOCK
 static FILESEM * Files;     /* Open object lock semaphores */
 #endif
@@ -1406,7 +1402,7 @@ static FRESULT dir_read(FF_DIR * dp, int vol)
         }    /* Reached to end of table */
         a = dir[DIR_Attr] & AM_MASK;
 #if configFATFS_LFN    /* LFN configuration */
-        if (c == DDE || (!_FS_RPATH && c == '.') || (int)(a == AM_VOL) != vol) {
+        if (c == DDE || c == '.' || (int)(a == AM_VOL) != vol) {
             /* An entry without valid data */
             ord = 0xFF;
         } else {
@@ -1424,8 +1420,11 @@ static FRESULT dir_read(FF_DIR * dp, int vol)
                 break;
             }
         }
-#else       /* Non LFN configuration */
-        if (c != DDE && (_FS_RPATH || c != '.') && a != AM_LFN && (int)(a == AM_VOL) == vol)    /* Is it a valid entry? */
+#else       /*
+             * Non LFN configuration.
+             * Is it a valid entry?
+             */
+        if (c != DDE && c != '.' && a != AM_LFN && (int)(a == AM_VOL) == vol)
             break;
 #endif
         res = dir_next(dp, 0);              /* Next entry */
@@ -1456,9 +1455,6 @@ static FRESULT dir_register(FF_DIR * dp)
 
     fn = dp->fn; lfn = dp->lfn;
     memcpy(sn, fn, 12);
-
-    if (_FS_RPATH && (sn[NS] & NS_DOT))     /* Cannot create dot entry */
-        return FR_INVALID_NAME;
 
     if (sn[NS] & NS_LOSS) {
         /* When LFN is out of 8.3 format, generate a numbered name */
@@ -1685,16 +1681,7 @@ static FRESULT create_name (FF_DIR * dp, const TCHAR ** path)
     }
     *path = &p[si];                     /* Return pointer to the next segment */
     cf = (w < ' ') ? NS_LAST : 0;       /* Set last segment flag if end of path */
-#if _FS_RPATH
-    if ((di == 1 && lfn[di-1] == '.') || /* Is this a dot entry? */
-        (di == 2 && lfn[di-1] == '.' && lfn[di-2] == '.')) {
-        lfn[di] = 0;
-        for (i = 0; i < 11; i++)
-            dp->fn[i] = (i < di) ? '.' : ' ';
-        dp->fn[i] = cf | NS_DOT;        /* This is a dot entry */
-        return FR_OK;
-    }
-#endif
+
     while (di) {                        /* Strip trailing spaces and dots */
         w = lfn[di-1];
         if (w != ' ' && w != '.')
@@ -1801,21 +1788,7 @@ static FRESULT create_name (FF_DIR * dp, const TCHAR ** path)
     sfn = dp->fn;
     memset(sfn, ' ', 11);
     si = i = b = 0; ni = 8;
-#if _FS_RPATH
-    if (p[si] == '.') { /* Is this a dot entry? */
-        for (;;) {
-            c = (uint8_t)p[si++];
-            if (c != '.' || si >= 3)
-                break;
-            sfn[i++] = c;
-        }
-        if (c != '/' && c != '\\' && c > ' ')
-            return FR_INVALID_NAME;
-        *path = &p[si];                                 /* Return pointer to the next segment */
-        sfn[NS] = (c <= ' ') ? NS_LAST | NS_DOT : NS_DOT;   /* Set last segment flag if end of path */
-        return FR_OK;
-    }
-#endif
+
     for (;;) {
         c = (uint8_t)p[si++];
         if (c <= ' ' || c == '/' || c == '\\')
@@ -1888,18 +1861,9 @@ static FRESULT follow_path(FF_DIR * dp, const TCHAR * path)
     uint8_t * dir;
     FRESULT res;
 
-#if _FS_RPATH
-    if (*path == '/' || *path == '\\') {    /* There is a heading separator */
-        path++;
-        dp->sclust = 0;             /* Strip it and start from the root directory */
-    } else {                                /* No heading separator */
-        dp->sclust = dp->fs->cdir;          /* Start from the current directory */
-    }
-#else
     if (*path == '/' || *path == '\\')      /* Strip heading separator if exist */
         path++;
     dp->sclust = 0;                         /* Always start from the root directory */
-#endif
 
     if ((unsigned int)*path < ' ') {
         /* Null path name is the origin directory itself */
@@ -1914,14 +1878,10 @@ static FRESULT follow_path(FF_DIR * dp, const TCHAR * path)
             ns = dp->fn[NS];
             if (res != FR_OK) {             /* Failed to find the object */
                 if (res == FR_NO_FILE) {    /* Object is not found */
-                    if (_FS_RPATH && (ns & NS_DOT)) {   /* If dot entry is not exist, */
-                        dp->sclust = 0; dp->dir = 0;    /* it is the root directory and stay there */
-                        if (!(ns & NS_LAST))
-                            continue;  /* Continue to follow if not last segment */
-                        res = FR_OK;                    /* Ended at the root directroy. Function completed. */
-                    } else {                            /* Could not find the object */
-                        if (!(ns & NS_LAST))
-                            res = FR_NO_PATH;  /* Adjust error code if not last segment */
+                    /* Could not find the object */
+                    if (!(ns & NS_LAST)) {
+                        /* Adjust error code if not last segment */
+                        res = FR_NO_PATH;
                     }
                 }
                 break;
@@ -1967,11 +1927,8 @@ static int get_ldnumber(const TCHAR ** path)
 
             return vol;
         }
-#if _FS_RPATH && _VOLUMES >= 2
-        vol = CurrVol;  /* Current drive */
-#else
+
         vol = 0;        /* Drive 0 */
-#endif
     }
 
     return vol;
@@ -2187,9 +2144,6 @@ static FRESULT find_volume (FATFS ** rfs, const TCHAR ** path, uint8_t wmode)
 #endif
     fs->fs_type = fmt;  /* FAT sub-type */
     fs->id = ++Fsid;    /* File system mount ID */
-#if _FS_RPATH
-    fs->cdir = 0;       /* Set current directory to root */
-#endif
 #if _FS_LOCK            /* Clear file lock semaphores */
     clear_lock(fs);
 #endif
@@ -2666,147 +2620,6 @@ FRESULT f_close(FIL * fp)
     return res;
 }
 
-#if _FS_RPATH >= 1
-#if _VOLUMES >= 2
-/**
- * Change Current Directory or Current Drive, Get Current Directory.
- * @param path Drive number.
- */
-FRESULT f_chdrive(const TCHAR * path)
-{
-    int vol;
-
-
-    vol = get_ldnumber(&path);
-    if (vol < 0) return FR_INVALID_DRIVE;
-
-    CurrVol = (uint8_t)vol;
-
-    return FR_OK;
-}
-#endif
-
-/**
- * Change Current Directory.
- * @param path Pointer to the directory path.
- */
-FRESULT f_chdir(const TCHAR * path)
-{
-    FRESULT res;
-    FF_DIR dj;
-    DEF_NAMEBUF;
-
-    /* Get logical drive number */
-    res = find_volume(&dj.fs, &path, 0);
-    if (res != FR_OK)
-        goto fail;
-
-    INIT_BUF(dj);
-    res = follow_path(&dj, path);       /* Follow the path */
-    FREE_BUF();
-    if (res == FR_OK) {                 /* Follow completed */
-        if (!dj.dir) {
-            dj.fs->cdir = dj.sclust;    /* Start directory itself */
-        } else {
-            if (dj.dir[DIR_Attr] & AM_DIR)  /* Reached to the directory */
-                dj.fs->cdir = ld_clust(dj.fs, dj.dir);
-            else
-                res = FR_NO_PATH;       /* Reached but a file */
-        }
-    }
-    if (res == FR_NO_FILE)
-        res = FR_NO_PATH;
-
-fail:
-    LEAVE_FF(dj.fs, res);
-}
-
-#if _FS_RPATH >= 2
-/**
- * @param buff Pointer to the directory path.
- * @param len Size of path.
- */
-FRESULT f_getcwd(TCHAR * buff, unsigned int len)
-{
-    FRESULT res;
-    FF_DIR dj;
-    unsigned int i, n;
-    DWORD ccl;
-    TCHAR * tp;
-    FILINFO fno;
-    DEF_NAMEBUF;
-
-    *buff = 0;
-    /* Get logical drive number */
-    res = find_volume(&dj.fs, (const TCHAR**)&buff, 0); /* Get current volume */
-    if (res == FR_OK) {
-        INIT_BUF(dj);
-        i = len;            /* Bottom of buffer (directory stack base) */
-        dj.sclust = dj.fs->cdir;            /* Start to follow upper directory from current directory */
-        while ((ccl = dj.sclust) != 0) {    /* Repeat while current directory is a sub-directory */
-            res = dir_sdi(&dj, 1);          /* Get parent directory */
-            if (res != FR_OK)
-                break;
-            res = dir_read(&dj, 0);
-            if (res != FR_OK)
-                break;
-            dj.sclust = ld_clust(dj.fs, dj.dir);    /* Goto parent directory */
-            res = dir_sdi(&dj, 0);
-            if (res != FR_OK)
-                break;
-            do {                            /* Find the entry links to the child directory */
-                res = dir_read(&dj, 0);
-                if (res != FR_OK)
-                    break;
-                if (ccl == ld_clust(dj.fs, dj.dir))
-                    break;  /* Found the entry */
-                res = dir_next(&dj, 0);
-            } while (res == FR_OK);
-            if (res == FR_NO_FILE) res = FR_INT_ERR;/* It cannot be 'not found'. */
-            if (res != FR_OK)
-                break;
-#if configFATFS_LFN
-            fno.lfname = buff;
-            fno.lfsize = i;
-#endif
-            get_fileinfo(&dj, &fno);        /* Get the directory name and push it to the buffer */
-            tp = fno.fname;
-#if configFATFS_LFN
-            if (*buff) tp = buff;
-#endif
-            for (n = 0; tp[n]; n++) ;
-            if (i < n + 3) {
-                res = FR_NOT_ENOUGH_CORE;
-                break;
-            }
-            while (n)
-                buff[--i] = tp[--n];
-            buff[--i] = '/';
-        }
-        tp = buff;
-        if (res == FR_OK) {
-#if _VOLUMES >= 2
-            *tp++ = '0' + CurrVol;          /* Put drive number */
-            *tp++ = ':';
-#endif
-            if (i == len) {                 /* Root-directory */
-                *tp++ = '/';
-            } else {                        /* Sub-directroy */
-                do      /* Add stacked path str */
-                    *tp++ = buff[i++];
-                while (i < len);
-            }
-        }
-        *tp = 0;
-        FREE_BUF();
-    }
-
-    LEAVE_FF(dj.fs, res);
-}
-#endif /* _FS_RPATH >= 2 */
-#endif /* _FS_RPATH >= 1 */
-
-
 /**
  * Seek File R/W Pointer.
  * @param fp Pointer to the file object.
@@ -3252,8 +3065,6 @@ FRESULT f_unlink(const TCHAR * path)
     if (res == FR_OK) {
         INIT_BUF(dj);
         res = follow_path(&dj, path);       /* Follow the file path */
-        if (_FS_RPATH && res == FR_OK && (dj.fn[NS] & NS_DOT))
-            res = FR_INVALID_NAME;          /* Cannot remove dot entry */
 #if _FS_LOCK
         if (res == FR_OK) res = chk_lock(&dj, 2);   /* Cannot remove open file */
 #endif
@@ -3275,11 +3086,8 @@ FRESULT f_unlink(const TCHAR * path)
                     res = dir_sdi(&sdj, 2);     /* Exclude dot entries */
                     if (res == FR_OK) {
                         res = dir_read(&sdj, 0);    /* Read an item */
-                        if (res == FR_OK        /* Not empty directory */
-#if _FS_RPATH
-                        || dclst == dj.fs->cdir /* Current directory */
-#endif
-                        ) res = FR_DENIED;
+                        if (res == FR_OK) /* Not empty directory */
+                            res = FR_DENIED;
                         if (res == FR_NO_FILE) res = FR_OK; /* Empty */
                     }
                 }
@@ -3311,15 +3119,15 @@ FRESULT f_mkdir(const TCHAR * path)
     DWORD dsc, dcl, pcl, tm = get_fattime();
     DEF_NAMEBUF;
 
-
     /* Get logical drive number */
     res = find_volume(&dj.fs, &path, 1);
     if (res == FR_OK) {
         INIT_BUF(dj);
         res = follow_path(&dj, path);           /* Follow the file path */
-        if (res == FR_OK) res = FR_EXIST;       /* Any object with same name is already existing */
-        if (_FS_RPATH && res == FR_NO_FILE && (dj.fn[NS] & NS_DOT))
-            res = FR_INVALID_NAME;
+        if (res == FR_OK) {
+            /* Any object with same name is already existing */
+            res = FR_EXIST;
+        }
         if (res == FR_NO_FILE) {                /* Can create a new directory */
             dcl = create_chain(dj.fs, 0);       /* Allocate a cluster for the new directory table */
             res = FR_OK;
@@ -3395,8 +3203,6 @@ FRESULT f_chmod(const TCHAR * path, uint8_t value, uint8_t mask)
         INIT_BUF(dj);
         res = follow_path(&dj, path);       /* Follow the file path */
         FREE_BUF();
-        if (_FS_RPATH && res == FR_OK && (dj.fn[NS] & NS_DOT))
-            res = FR_INVALID_NAME;
         if (res == FR_OK) {
             dir = dj.dir;
             if (!dir) {                     /* Is it a root directory? */
@@ -3431,8 +3237,6 @@ FRESULT f_utime(const TCHAR * path, const FILINFO * fno)
         INIT_BUF(dj);
         res = follow_path(&dj, path);   /* Follow the file path */
         FREE_BUF();
-        if (_FS_RPATH && res == FR_OK && (dj.fn[NS] & NS_DOT))
-            res = FR_INVALID_NAME;
         if (res == FR_OK) {
             dir = dj.dir;
             if (!dir) {                 /* Root directory */
@@ -3468,8 +3272,6 @@ FRESULT f_rename(const TCHAR * path_old, const TCHAR * path_new)
         djn.fs = djo.fs;
         INIT_BUF(djo);
         res = follow_path(&djo, path_old);      /* Check old object */
-        if (_FS_RPATH && res == FR_OK && (djo.fn[NS] & NS_DOT))
-            res = FR_INVALID_NAME;
 #if _FS_LOCK
         if (res == FR_OK) res = chk_lock(&djo, 2);
 #endif
