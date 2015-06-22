@@ -45,7 +45,7 @@
 /**
  * @param pdrv is a (physical) drive nmuber to identify the drive.
  */
-DSTATUS fatfs_disk_initialize(BYTE pdrv)
+DSTATUS fatfs_disk_initialize(uint8_t pdrv)
 {
     /* Not needed */
 
@@ -55,7 +55,7 @@ DSTATUS fatfs_disk_initialize(BYTE pdrv)
 /**
  * @param pdrv is a (physical) drive nmuber to identify the drive.
  */
-DSTATUS fatfs_disk_status(BYTE pdrv)
+DSTATUS fatfs_disk_status(uint8_t pdrv)
 {
     /* TODO Must fail if invalid pdrv */
 
@@ -70,7 +70,7 @@ DSTATUS fatfs_disk_status(BYTE pdrv)
  * @param count     is the number of bytes to read.
  *
  */
-DRESULT fatfs_disk_read(BYTE pdrv, BYTE * buff, DWORD sector, UINT count)
+DRESULT fatfs_disk_read(uint8_t pdrv, uint8_t * buff, DWORD sector, unsigned int count)
 {
     file_t * file;
     ssize_t retval;
@@ -108,7 +108,8 @@ DRESULT fatfs_disk_read(BYTE pdrv, BYTE * buff, DWORD sector, UINT count)
  * @param sector    is a sector address in LBA.
  * @param count     is the number of bytes to write.
  */
-DRESULT fatfs_disk_write(BYTE pdrv, const BYTE * buff, DWORD sector, UINT count)
+DRESULT fatfs_disk_write(uint8_t pdrv, const uint8_t * buff, DWORD sector,
+                         unsigned int count)
 {
     file_t * file;
     ssize_t retval;
@@ -134,7 +135,7 @@ DRESULT fatfs_disk_write(BYTE pdrv, const BYTE * buff, DWORD sector, UINT count)
     return 0;
 }
 
-DRESULT fatfs_disk_ioctl(BYTE pdrv, unsigned cmd, void * buff, size_t bsize)
+DRESULT fatfs_disk_ioctl(uint8_t pdrv, unsigned cmd, void * buff, size_t bsize)
 {
     file_t * file;
     ssize_t err;

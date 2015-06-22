@@ -173,7 +173,7 @@ static int fatfs_mount(const char * source, uint32_t mode,
 #ifdef configFATFS_DEBUG
     KERROR(KERROR_DEBUG, "Mount drive letter: \"%s\"\n", drive);
 #endif
-    err = f_mount(&fatfs_sb->ff_fs, drive, 1);
+    err = f_mount(&fatfs_sb->ff_fs, drive, 0);
     if (err) {
 #ifdef configFATFS_DEBUG
         KERROR(KERROR_DEBUG, "Can't init a work area for FAT (%d)\n", err);
@@ -857,8 +857,8 @@ int fatfs_chmod(vnode_t * vnode, mode_t mode)
 {
 #if !defined(configFATFS_READONLY)
     struct fatfs_inode * in = get_inode_of_vnode(vnode);
-    BYTE attr = 0;
-    const BYTE mask = AM_RDO;
+    uint8_t attr = 0;
+    const uint8_t mask = AM_RDO;
     FRESULT fresult;
 
     if (!(mode & (S_IWUSR | S_IWGRP | S_IWOTH)))
@@ -880,8 +880,8 @@ int fatfs_chflags(vnode_t * vnode, fflags_t flags)
 {
 #if !defined(configFATFS_READONLY)
     struct fatfs_inode * in = get_inode_of_vnode(vnode);
-    BYTE attr = 0;
-    const BYTE mask = AM_RDO | AM_ARC | AM_SYS | AM_HID;
+    uint8_t attr = 0;
+    const uint8_t mask = AM_RDO | AM_ARC | AM_SYS | AM_HID;
     FRESULT fresult;
 
     if (flags & UF_SYSTEM)

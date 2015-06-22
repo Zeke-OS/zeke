@@ -12,7 +12,7 @@
 
 
 /* Status of Disk Functions */
-typedef BYTE	DSTATUS;
+typedef uint8_t	DSTATUS;
 
 /* Results of Disk Functions */
 typedef enum {
@@ -24,11 +24,13 @@ typedef enum {
 } DRESULT;
 
 /* Prototypes for disk control functions */
-DSTATUS fatfs_disk_initialize(BYTE pdrv);
-DSTATUS fatfs_disk_status(BYTE pdrv);
-DRESULT fatfs_disk_read(BYTE pdrv, BYTE* buff, DWORD sector, UINT count);
-DRESULT fatfs_disk_write(BYTE pdrv, const BYTE * buff, DWORD sector, UINT count);
-DRESULT fatfs_disk_ioctl(BYTE pdrv, unsigned cmd, void* buff, size_t bsize);
+DSTATUS fatfs_disk_initialize(uint8_t pdrv);
+DSTATUS fatfs_disk_status(uint8_t pdrv);
+DRESULT fatfs_disk_read(uint8_t pdrv, uint8_t * buff, DWORD sector,
+                        unsigned int count);
+DRESULT fatfs_disk_write(uint8_t pdrv, const uint8_t * buff, DWORD sector,
+                         unsigned int count);
+DRESULT fatfs_disk_ioctl(uint8_t pdrv, unsigned cmd, void * buff, size_t bsize);
 
 /* Disk Status Bits (DSTATUS) */
 #define STA_NOINIT		0x01	/* Drive not initialized */

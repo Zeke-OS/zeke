@@ -10915,12 +10915,12 @@ const WCHAR oem2uni[] = {
 
 
 
-WCHAR ff_convert (  /* Converted code, 0 means conversion error */
+WCHAR ff_convert(  /* Converted code, 0 means conversion error */
     WCHAR   chr,    /* Character code to be converted */
-    UINT    dir     /* 0: Unicode to OEMCP, 1: OEMCP to Unicode */
+    unsigned int dir     /* 0: Unicode to OEMCP, 1: OEMCP to Unicode */
 )
 {
-    const WCHAR *p;
+    const WCHAR * p;
     WCHAR c;
     int i, n, li, hi;
 
