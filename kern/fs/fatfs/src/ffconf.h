@@ -25,29 +25,8 @@
  * f_rename(), f_truncate() and useless f_getfree().
  */
 
-
-#define _FS_MINIMIZE    0   /* 0 to 3 */
-/*
- * The _FS_MINIMIZE option defines minimization level to remove API functions.
- *
- *  0: All basic functions are enabled.
- *  1: f_stat(), f_getfree(), f_unlink(), f_mkdir(), f_chmod(), f_utime(),
- *     f_truncate() and f_rename() function are removed.
- *  2: f_opendir(), f_readdir() and f_closedir() are removed in addition to 1.
- *  3: f_lseek() function is removed in addition to 2.
- */
-
-#define _USE_MKFS       0   /* 0:Disable or 1:Enable */
-/* To enable f_mkfs() function, set _USE_MKFS to 1 and set _FS_READONLY to 0 */
-
-
 #define _USE_FASTSEEK   0   /* 0:Disable or 1:Enable */
 /* To enable fast seek feature, set _USE_FASTSEEK to 1. */
-
-
-#define _USE_LABEL      0   /* 0:Disable or 1:Enable */
-/* To enable volume label functions, set _USE_LAVEL to 1 */
-
 
 #define _USE_FORWARD    0   /* 0:Disable or 1:Enable */
 /*
