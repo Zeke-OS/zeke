@@ -199,7 +199,6 @@ FRESULT f_open (FIL* fp, const TCHAR* path, uint8_t mode);             /* Open o
 FRESULT f_close (FIL* fp);                                          /* Close an open file object */
 FRESULT f_read (FIL* fp, void* buff, unsigned int btr, unsigned int * br); /* Read data from a file */
 FRESULT f_write (FIL* fp, const void* buff, unsigned int btw, unsigned int * bw);    /* Write data to a file */
-FRESULT f_forward (FIL* fp, unsigned int(*func)(const uint8_t *, unsigned int), unsigned int btf, unsigned int * bf); /* Forward data to the stream */
 FRESULT f_lseek (FIL* fp, DWORD ofs);                               /* Move file pointer of a file object */
 FRESULT f_truncate (FIL* fp);                                       /* Truncate file */
 FRESULT f_sync (FIL* fp);                                           /* Flush cached data of a writing file */
