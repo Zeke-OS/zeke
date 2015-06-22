@@ -136,7 +136,7 @@ static int fatfs_vncmp(struct vnode * vp, void * arg)
 static int fatfs_mount(const char * source, uint32_t mode,
         const char * parm, int parm_len, struct fs_superblock ** sb)
 {
-    static dev_t fatfs_vdev_minor = 0;
+    static dev_t fatfs_vdev_minor;
     struct fatfs_sb * fatfs_sb = NULL;
     struct fs_superblock * sbp;
     vnode_t * vndev;
@@ -487,8 +487,9 @@ static int fatfs_lookup(vnode_t * dir, const char * name, vnode_t ** result)
         } else {
             size_t i = strlenn(in_fpath, NAME_MAX) - 4;
 
-            while (in_fpath[i] != '/')
+            while (in_fpath[i] != '/') {
                 i--;
+            }
             in_fpath[i] = '\0';
         }
     }

@@ -70,7 +70,8 @@ DSTATUS fatfs_disk_status(uint8_t pdrv)
  * @param count     is the number of bytes to read.
  *
  */
-DRESULT fatfs_disk_read(uint8_t pdrv, uint8_t * buff, DWORD sector, unsigned int count)
+DRESULT fatfs_disk_read(uint8_t pdrv, uint8_t * buff, DWORD sector,
+                        unsigned int count)
 {
     file_t * file;
     ssize_t retval;
