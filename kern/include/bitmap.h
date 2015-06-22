@@ -54,9 +54,7 @@ typedef uint32_t bitmap_t;
  * @param bmap Bitmap.
  * @return Size of given bitmap in bits.
  */
-#define SIZEOF_BITMAP(bmap) (sizeof(bmap) * 8)
-
-#define SIZEOF_BITMAP_T (sizeof(bitmap_t) * 8)
+#define SIZEOF_BITMAP(bmap) (8 * sizeof(bmap))
 
 /**
  * Convert from number of entries to bitmap size.
@@ -65,7 +63,7 @@ typedef uint32_t bitmap_t;
  * @param entries Number of entries needed.
  * @return Correct size for a bitmap_t array.
  */
-#define E2BITMAP_SIZE(entries) ((entries) / (4*8))
+#define E2BITMAP_SIZE(entries) ((entries) / (4 * 8))
 
 /**
  * Search for a contiguous block of block_len in bitmap.
