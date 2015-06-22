@@ -18,6 +18,7 @@
 
 #include <errno.h>
 #include <sys/ioctl.h>
+#include <kactype.h>
 #include <kmalloc.h>
 #include <kstring.h>
 #include "ff.h"         /* Declarations of FatFs API */
@@ -33,13 +34,8 @@
     ((_dp_)->index + ld_clust((_dp_)->fs, (_dp_)->dir))
 
 /* Reentrancy related */
-#if _FS_REENTRANT
 #define ENTER_FF(fs)        { if (lock_fs(fs)) return FR_TIMEOUT; }
 #define LEAVE_FF(fs, res)   { unlock_fs(fs, res); return res; }
-#else
-#define ENTER_FF(fs)
-#define LEAVE_FF(fs, res)   return res
-#endif
 
 #define ABORT(fs, res)      { fp->err = (uint8_t)(res); LEAVE_FF(fs, res); }
 
@@ -57,7 +53,7 @@
 #error _FS_LOCK must be 0 at read-only cfg.
 #endif
 typedef struct {
-    FATFS *fs;      /* Object ID 1, volume (NULL:blank entry) */
+    FATFS * fs;     /* Object ID 1, volume (NULL:blank entry) */
     DWORD clu;      /* Object ID 2, directory (0:root) */
     WORD idx;       /* Object ID 3, directory index */
     WORD ctr;       /* Object open counter, 0:none, 0x01..0xFF:read mode open count, 0x100:write mode */
@@ -262,12 +258,6 @@ typedef struct {
 
 #endif
 
-
-/* Character code support macros */
-#define IsUpper(c)  (((c)>='A')&&((c)<='Z'))
-#define IsLower(c)  (((c)>='a')&&((c)<='z'))
-#define IsDigit(c)  (((c)>='0')&&((c)<='9'))
-
 #if _DF1S       /* Code page is DBCS */
 
 #ifdef _DF2S    /* Two 1st byte areas */
@@ -442,7 +432,7 @@ int ff_init(void)
  * Request/Release grant to access the volume
  *-------------------------------------------
  */
-#if _FS_REENTRANT
+
 /**
  * @param fs File system object.
  */
@@ -462,7 +452,6 @@ static void unlock_fs(FATFS * fs, FRESULT res)
         mtx_unlock(&fs->sobj);
     }
 }
-#endif
 
 /*
  * File lock control functions
@@ -510,7 +499,7 @@ static int enq_lock(void)
     unsigned int i;
 
     for (i = 0; i < _FS_LOCK && Files[i].fs; i++) ;
-    return (i == _FS_LOCK) ? 0 : 1;
+    return i != _FS_LOCK;
 }
 
 /**
@@ -1602,7 +1591,7 @@ static void get_fileinfo(FF_DIR * dp, FILINFO * fno)
             if (i == 9)
                 *p++ = '.';         /* Insert a . if extension is exist */
 #if configFATFS_LFN
-            if (IsUpper(c) && (dir[DIR_NTres] & (i >= 9 ? NS_EXT : NS_BODY)))
+            if (ka_isupper(c) && (dir[DIR_NTres] & (i >= 9 ? NS_EXT : NS_BODY)))
                 c += 0x20;          /* To lower */
 #if _LFN_UNICODE
             if (IsDBCS1(c) && i != 8 && i != 11 && IsDBCS2(dir[i]))
@@ -1771,10 +1760,10 @@ static FRESULT create_name (FF_DIR * dp, const TCHAR ** path)
             if (!w || kstrchr("+,;=[]", w)) {   /* Replace illegal characters for SFN */
                 w = '_'; cf |= NS_LOSS | NS_LFN;/* Lossy conversion */
             } else {
-                if (IsUpper(w)) {       /* ASCII large capital */
+                if (ka_isupper(w)) {       /* ASCII large capital */
                     b |= 2;
                 } else {
-                    if (IsLower(w)) {   /* ASCII small capital */
+                    if (ka_islower(w)) {   /* ASCII small capital */
                         b |= 1; w -= 0x20;
                     }
                 }
@@ -1857,10 +1846,10 @@ static FRESULT create_name (FF_DIR * dp, const TCHAR ** path)
         } else {                        /* Single byte code */
             if (kstrchr("\"*+,:;<=>\?[]|\x7F", c))  /* Reject illegal chrs for SFN */
                 return FR_INVALID_NAME;
-            if (IsUpper(c)) {           /* ASCII large capital? */
+            if (ka_isupper(c)) {           /* ASCII large capital? */
                 b |= 2;
             } else {
-                if (IsLower(c)) {       /* ASCII small capital? */
+                if (ka_islower(c)) {       /* ASCII small capital? */
                     b |= 1; c -= 0x20;
                 }
             }
@@ -2257,17 +2246,15 @@ FRESULT f_mount(FATFS * fs, const TCHAR * path, uint8_t opt)
 #if _FS_LOCK
         clear_lock(cfs);
 #endif
-#if _FS_REENTRANT           /* Discard sync object of the current volume */
+        /* Discard sync object of the current volume */
         fs->sobj.mtx_type = MTX_TYPE_UNDEF;
-#endif
         cfs->fs_type = 0;   /* Clear old fs object */
     }
 
     if (fs) {
         fs->fs_type = 0;    /* Clear new fs object */
-#if _FS_REENTRANT           /* Create sync object for the new volume */
+        /* Create sync object for the new volume */
         mtx_init(&fs->sobj, MTX_TYPE_TICKET, MTX_OPT_PRICEIL);
-#endif
     }
     FatFs[vol] = fs;        /* Register new fs object */
 
@@ -2654,6 +2641,7 @@ fail:
  */
 FRESULT f_close(FIL * fp)
 {
+    FATFS * fs;
     FRESULT res;
 
 #if !_FS_READONLY
@@ -2666,17 +2654,14 @@ FRESULT f_close(FIL * fp)
     if (res != FR_OK)
         return res;
 
-#if _FS_REENTRANT
-        FATFS *fs = fp->fs;
-#endif
+    fs = fp->fs;
 #if _FS_LOCK
     res = dec_lock(fp->lockid); /* Decrement file open counter */
     if (res == FR_OK)
 #endif
         fp->fs = NULL;          /* Invalidate file object */
-#if _FS_REENTRANT
+
     unlock_fs(fs, FR_OK);       /* Unlock volume */
-#endif
 
     return res;
 }
@@ -3044,24 +3029,22 @@ fail:
  */
 FRESULT f_closedir(FF_DIR * dp)
 {
+    FATFS * fs;
     FRESULT res;
 
     res = validate(dp);
     if (res != FR_OK)
         return res;
 
-#if _FS_REENTRANT
-    FATFS *fs = dp->fs;
-#endif
+    fs = dp->fs;
 #if _FS_LOCK
     if (dp->lockid)             /* Decrement sub-directory open counter */
         res = dec_lock(dp->lockid);
     if (res == FR_OK)
 #endif
         dp->fs = 0;             /* Invalidate directory object */
-#if _FS_REENTRANT
+
     unlock_fs(fs, FR_OK);       /* Unlock volume */
-#endif
 
     return res;
 }
@@ -3636,17 +3619,24 @@ FRESULT f_setlabel(const TCHAR * label)
 #if configFATFS_LFN
             w = ff_convert(ff_wtoupper(ff_convert(w, 1)), 0);
 #else
-            if (IsLower(w)) w -= 0x20;          /* To upper ASCII characters */
+            if (ka_islower(w))
+                w -= 0x20; /* To upper ASCII characters */
 #ifdef _EXCVT
-            if (w >= 0x80) w = ExCvt[w - 0x80]; /* To upper extended characters (SBCS cfg) */
+            if (w >= 0x80) {
+                /* To upper extended characters (SBCS cfg) */
+                w = ExCvt[w - 0x80];
+            }
 #else
-            if (!_DF1S && w >= 0x80) w = 0;     /* Reject extended characters (ASCII cfg) */
+            if (!_DF1S && w >= 0x80)
+                w = 0; /* Reject extended characters (ASCII cfg) */
 #endif
 #endif
 #endif
             if (!w || kstrchr("\"*+,.:;<=>\?[]|\x7F", w) ||
-                j >= (unsigned int)((w >= 0x100) ? 10 : 11)) /* Reject invalid characters for volume label */
+                j >= (unsigned int)((w >= 0x100) ? 10 : 11)) {
+                /* Reject invalid characters for volume label */
                 LEAVE_FF(dj.fs, FR_INVALID_NAME);
+            }
             if (w >= 0x100) vn[j++] = (uint8_t)(w >> 8);
             vn[j++] = (uint8_t)w;
         } while (i < sl);
