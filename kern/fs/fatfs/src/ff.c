@@ -2262,8 +2262,7 @@ FRESULT f_open(FIL * fp, const TCHAR * path, uint8_t mode)
 #endif
                 mode |= FA_CREATE_ALWAYS;       /* File is created */
                 dir = dj.dir;                   /* New entry */
-            }
-            else {                              /* Any object is already existing */
+            } else { /* Any object is already existing */
                 if (dir[DIR_Attr] & (AM_RDO | AM_DIR)) {    /* Cannot overwrite it (R/O or DIR) */
                     res = FR_DENIED;
                 } else {
@@ -2940,18 +2939,20 @@ fail:
  * @param nclst Pointer to a variable to return number of free clusters.
  * @param fatfs Pointer to return pointer to corresponding file system object.
  */
-FRESULT f_getfree (const TCHAR * path, DWORD * nclst, FATFS ** fatfs)
+FRESULT f_getfree(const TCHAR * path, DWORD * nclst, FATFS ** fatfs)
 {
     FRESULT res;
-    FATFS *fs;
+    FATFS * fs;
     DWORD n, clst, sect, stat;
     unsigned int i;
-    uint8_t fat, *p;
-
+    uint8_t fat;
+    uint8_t * p;
 
     /* Get logical drive number */
-    res = find_volume(fatfs, &path, 0);
-    fs = *fatfs;
+    res = find_volume(&fs, &path, 0);
+    if (fatfs) {
+        *fatfs = fs;
+    }
     if (res == FR_OK) {
         /* If free_clust is valid, return it without full cluster scan */
         if (fs->free_clust <= fs->n_fatent - 2) {

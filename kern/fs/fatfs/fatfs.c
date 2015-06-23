@@ -134,7 +134,8 @@ static int fatfs_vncmp(struct vnode * vp, void * arg)
  * @return error code, -errno.
  */
 static int fatfs_mount(const char * source, uint32_t mode,
-        const char * parm, int parm_len, struct fs_superblock ** sb)
+                       const char * parm, int parm_len,
+                       struct fs_superblock ** sb)
 {
     static dev_t fatfs_vdev_minor;
     struct fatfs_sb * fatfs_sb = NULL;
@@ -183,6 +184,11 @@ static int fatfs_mount(const char * source, uint32_t mode,
     }
 #ifdef configFATFS_DEBUG
     KERROR(KERROR_DEBUG, "Initialized a work area for FAT\n");
+#endif
+#if (_FS_NOFSINFO == 0) /* Commit full scan of free clusters */
+    DWORD nclst;
+
+    f_getfree(drive, &nclst, NULL);
 #endif
 
     /* Init super block */
