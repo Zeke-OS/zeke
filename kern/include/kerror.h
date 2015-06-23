@@ -68,13 +68,18 @@
 #if configKLOGGER == 0
 #define _KERROR_FN(level, where, fmt, ...) ((void)0)
 #else
+size_t _kerror_acquire_buf(char ** buf);
+void _kerror_release_buf(size_t index);
+
 #define _KERROR_FN(level, where, fmt, ...) do {                             \
-    char _kerror_buf[configKERROR_MAXLEN];                                  \
-    size_t _kerror_i = ksprintf(_kerror_buf, sizeof(_kerror_buf), "%c:%s",  \
-                                level, where);                              \
-    ksprintf(_kerror_buf + _kerror_i - 1, sizeof(_kerror_buf) - _kerror_i,  \
+    size_t _kerror_strindex, _kerror_i; char * _kerror_buf;                 \
+    _kerror_strindex = _kerror_acquire_buf(&_kerror_buf);                   \
+    _kerror_i = ksprintf(_kerror_buf, configKERROR_MAXLEN, "%c:%s",         \
+                         level, where);                                     \
+    ksprintf(_kerror_buf + _kerror_i - 1, configKERROR_MAXLEN - _kerror_i,  \
             fmt, ##__VA_ARGS__);                                            \
     kputs(_kerror_buf);                                                     \
+    _kerror_release_buf(_kerror_strindex);                                  \
 } while (0)
 #endif
 

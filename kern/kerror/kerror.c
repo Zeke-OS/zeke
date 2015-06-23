@@ -45,6 +45,9 @@
 const char * const _kernel_panic_msg = "Oops, Kernel panic\n";
 #endif
 
+static char kerror_printbuf_str[configKERROR_MAXLEN * 8];
+static isema_t kerror_printbuf_sema[8];
+
 static ssize_t kerror_fdwrite(file_t * file, const void * buf, size_t count);
 
 vnode_ops_t kerror_vops = {
@@ -72,6 +75,8 @@ int __kinit__ kerror_init(void)
 
     int err;
 
+    isema_init(kerror_printbuf_sema, num_elem(kerror_printbuf_sema));
+
     fs_inherit_vnops(&kerror_vops, &nofs_vnode_ops);
 
     /*
@@ -83,6 +88,21 @@ int __kinit__ kerror_init(void)
         return err;
 
     return 0;
+}
+
+size_t _kerror_acquire_buf(char ** buf)
+{
+    size_t i;
+
+    i = isema_acquire(kerror_printbuf_sema, num_elem(kerror_printbuf_sema));
+    *buf = &kerror_printbuf_str[i * configKERROR_MAXLEN];
+
+    return i;
+}
+
+void _kerror_release_buf(size_t index)
+{
+    isema_release(kerror_printbuf_sema, index);
 }
 
 /**

@@ -227,8 +227,6 @@ int rwlock_tryrdlock(rwlock_t * l);
  */
 void rwlock_rdunlock(rwlock_t * l);
 
-#endif /* !_KLOCKS_H_ */
-
 /**
  * @}
  */
@@ -299,3 +297,5 @@ static inline void isema_release(isema_t * isema, size_t index)
 /**
  * @}
  */
+
+#endif /* !_KLOCKS_H_ */
