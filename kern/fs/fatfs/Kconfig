@@ -17,11 +17,6 @@ config configFATFS_MAX_MOUNTS
     default 1
     range 1 10
 
-config configFATFS_READONLY
-    bool "Read-only FAT driver"
-    ---help---
-    Strips out write support from the FatFs driver.
-
 config configFATFS_CODEPAGE
     int "Code page for FAT"
     default 437

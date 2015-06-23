@@ -65,7 +65,7 @@ typedef char TCHAR;
 
 #endif
 
-
+#define FATFS_READONLY 0x01
 
 /* File system object structure (FATFS) */
 
@@ -80,10 +80,9 @@ typedef struct {
     WORD    n_rootdir;      /* Number of root directory entries (FAT12/16) */
     WORD    ssize;          /* uint8_ts per sector (512, 1024, 2048 or 4096) */
     mtx_t   sobj;           /* Identifier of sync object */
-#if !_FS_READONLY
+    int     readonly;       /* Set if the file system is read-only */
     DWORD   last_clust;     /* Last allocated cluster */
     DWORD   free_clust;     /* Number of free clusters */
-#endif
     DWORD   n_fatent;       /* Number of FAT entries, = number of clusters + 2 */
     DWORD   fsize;          /* Sectors per FAT */
     DWORD   volbase;        /* Volume start sector */
@@ -109,10 +108,8 @@ typedef struct {
     DWORD   sclust;         /* File start cluster (0:no cluster chain, always 0 when fsize is 0) */
     DWORD   clust;          /* Current cluster of fpter (not valid when fprt is 0) */
     DWORD   dsect;          /* Sector number appearing in buf[] (0:invalid) */
-#if !_FS_READONLY
     DWORD   dir_sect;       /* Sector number containing the directory entry */
     uint8_t * dir_ptr;      /* Pointer to the directory entry in the win[] */
-#endif
 #if _USE_FASTSEEK
     DWORD * cltbl;          /* Pointer to the cluster link map table (Nulled on file open) */
 #endif
@@ -239,9 +236,7 @@ TCHAR* f_gets (TCHAR* buff, int len, FIL* fp);                      /* Get a str
 /* Additional user defined functions                            */
 
 /* RTC function */
-#if !_FS_READONLY
 DWORD get_fattime(void);
-#endif
 
 /* Unicode support functions */
 #if configFATFS_LFN                     /* Unicode - OEM code conversion */
