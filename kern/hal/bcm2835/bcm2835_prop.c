@@ -46,7 +46,7 @@
  * small.
  */
 #define MB_SECSIZE 512
-atomic_t mb_res[8];
+isema_t mb_res[8];
 
 static struct buf * mbuf;
 
@@ -62,28 +62,9 @@ int __kinit__ bcm2835_prop_init(void)
         return -ENOMEM;
     }
 
-    for (size_t i = 0; i < num_elem(mb_res); i++) {
-        mb_res[i] = ATOMIC_INIT(0);
-    }
+    isema_init(mb_res, num_elem(mb_res));
 
     return 0;
-}
-
-static int select_mbuf_index(void)
-{
-    int index = 0;
-
-    do {
-        for (size_t i = 0; i < num_elem(mb_res); i++) {
-            int old = atomic_set(&mb_res[i], 1);
-            if (old == 0) {
-                index = i;
-                break;
-            }
-        }
-    } while (index == 0);
-
-    return index;
 }
 
 int bcm2835_prop_request(uint32_t * request)
@@ -95,7 +76,7 @@ int bcm2835_prop_request(uint32_t * request)
     uint32_t buf_hwaddr;
     int err;
 
-    i = select_mbuf_index();
+    i = isema_acquire(mb_res, num_elem(mb_res));
     offset = i * MB_SECSIZE;
     buf = (uint32_t *)(mbuf->b_data + offset);
     buf_hwaddr = (uint32_t)(mbuf->b_mmu.paddr) + offset;
@@ -130,6 +111,6 @@ int bcm2835_prop_request(uint32_t * request)
 
     memcpy(request, buf, buf[0]);
 
-    atomic_set(&mb_res[i], 0); /* Release the mb. */
+    isema_release(mb_res, i); /* Release the mb. */
     return 0;
 }

@@ -257,5 +257,45 @@ void cpulock_unlock(cpulock_t * lock);
  */
 
 /**
+ * @addtogroup isema
+ * Index semaphores.
+ * @sa mtx
+ * @{
+ */
+
+/**
+ * Index semaphore descriptor.
+ */
+typedef atomic_t isema_t;
+
+/**
+ * Initialize a index semaphore.
+ * @param isema is a pointer to a isema_t array.
+ * @param isema_n num_elem() of isema.
+ */
+void isema_init(isema_t * isema, size_t isema_n);
+
+/**
+ * Acquire index from isema array.
+ * @param isema is a pointer to a isema_t array.
+ * @param isema_n num_elem() of isema.
+ */
+size_t isema_acquire(isema_t * isema, size_t isema_n);
+
+/**
+ * Release an index returned by isema_acquire().
+ * @param isema is a pointer to a isema_t array.
+ * @param index is an index returned by isema_acquire().
+ */
+static inline void isema_release(isema_t * isema, size_t index)
+{
+    atomic_set(&isema[index], 0);
+}
+
+/**
+ * @}
+ */
+
+/**
  * @}
  */
