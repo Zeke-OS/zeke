@@ -389,7 +389,7 @@ int fs_namei_proc(vnode_t ** result, int fd, const char * path, int atflags)
 
 #ifdef configFS_DEBUG
     KERROR(KERROR_DEBUG,
-           "fs_namei_proc(result %p, fd %d, path \"%s\", atflags %d)\n",
+           "fs_namei_proc(result %p, fd %d, path \"%s\", atflags %x)\n",
            result, fd, path, atflags);
 #endif
 
