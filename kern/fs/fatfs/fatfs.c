@@ -313,9 +313,12 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
         unsigned char fomode = 0;
 
         fomode |= (oflags & O_CREAT) ? FA_OPEN_ALWAYS : FA_OPEN_EXISTING;
+        fomode |= FA_READ | FA_WRITE;
+#if 0
         fomode |= (oflags & O_RDONLY) ? FA_READ : 0;
         fomode |= (oflags & O_WRONLY) ? ((fno.fattrib & AM_RDO) ?
                                          0 : FA_WRITE) : 0;
+#endif
 
         vn_mode = S_IFREG;
         err = f_open(&in->fp, &sb->ff_fs, in->in_fpath, fomode);
@@ -505,6 +508,10 @@ static int fatfs_lookup(vnode_t * dir, const char * name, vnode_t ** result)
         goto fail;
     }
     if (vn) { /* found it in vfs_hash */
+#ifdef configFATFS_DEBUG
+        KERROR(KERROR_DEBUG, "vn found in vfs_hash (%p)\n", vn);
+#endif
+
         *result = vn;
         retval = 0;
     } else { /* not cached */
