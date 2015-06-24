@@ -2160,90 +2160,96 @@ FRESULT f_open(FF_FIL * fp, FATFS * fs, const TCHAR * path, uint8_t mode)
     fp->fs = NULL;
     dj.fs = fs;
 
-    mode &= FA_READ | FA_WRITE | FA_CREATE_ALWAYS | FA_OPEN_ALWAYS |
-            FA_CREATE_NEW;
-    res = find_volume(dj.fs, get_ldnumber(fs), mode);
+    if (!fs->readonly) {
+        mode &= FA_READ | FA_WRITE | FA_CREATE_ALWAYS | FA_OPEN_ALWAYS |
+                FA_CREATE_NEW;
+        res = find_volume(dj.fs, get_ldnumber(fs), (uint8_t)(mode & ~FA_READ));
+    } else {
+        mode &= FA_READ;
+        res = find_volume(dj.fs, get_ldnumber(fs), 0);
+    }
     if (res == FR_OK) {
         INIT_BUF(dj);
         res = follow_path(&dj, path);   /* Follow the file path */
         dir = dj.dir;
-        if ((mode & FA_WRITE) && res == FR_OK) {
-            if (!dir)   /* Default directory itself */
-                res = FR_INVALID_NAME;
+        if (!fs->readonly) {
+            if (res == FR_OK) {
+                if (!dir)   /* Default directory itself */
+                    res = FR_INVALID_NAME;
 #if _FS_LOCK
-            else
-                res = chk_lock(&dj, (mode & ~FA_READ) ? 1 : 0);
+                else
+                    res = chk_lock(&dj, (mode & ~FA_READ) ? 1 : 0);
 #endif
-        }
-        /* Create or Open a file */
-        if (mode & (FA_CREATE_ALWAYS | FA_OPEN_ALWAYS | FA_CREATE_NEW)) {
-            DWORD dw, cl;
-
-            if (res != FR_OK) {                 /* No file, create new */
-                if (res == FR_NO_FILE)          /* There is no file to open, create a new entry */
-#if _FS_LOCK
-                    res = enq_lock() ? dir_register(&dj) : FR_TOO_MANY_OPEN_FILES;
-#else
-                    res = dir_register(&dj);
-#endif
-                mode |= FA_CREATE_ALWAYS;       /* File is created */
-                dir = dj.dir;                   /* New entry */
-            } else { /* Any object is already existing */
-                if (dir[DIR_Attr] & (AM_RDO | AM_DIR)) {    /* Cannot overwrite it (R/O or DIR) */
-                    res = FR_DENIED;
-                } else {
-                    if (mode & FA_CREATE_NEW)   /* Cannot create as new file */
-                        res = FR_EXIST;
-                }
             }
-            if (res == FR_OK && (mode & FA_CREATE_ALWAYS)) {    /* Truncate it if overwrite mode */
-                dw = get_fattime();             /* Created time */
-                ST_DWORD(dir+DIR_CrtTime, dw);
-                dir[DIR_Attr] = 0;              /* Reset attribute */
-                ST_DWORD(dir+DIR_FileSize, 0);  /* size = 0 */
-                cl = ld_clust(dj.fs, dir);      /* Get start cluster */
-                st_clust(dir, 0);               /* cluster = 0 */
-                dj.fs->wflag = 1;
-                if (cl) {                       /* Remove the cluster chain if exist */
-                    dw = dj.fs->winsect;
-                    res = remove_chain(dj.fs, cl);
-                    if (res == FR_OK) {
-                        dj.fs->last_clust = cl - 1; /* Reuse the cluster hole */
-                        res = move_window(dj.fs, dw);
+            /* Create or Open a file */
+            if (mode & (FA_CREATE_ALWAYS | FA_OPEN_ALWAYS | FA_CREATE_NEW)) {
+                DWORD dw, cl;
+
+                if (res != FR_OK) {                 /* No file, create new */
+                    if (res == FR_NO_FILE)          /* There is no file to open, create a new entry */
+#if _FS_LOCK
+                        res = enq_lock() ? dir_register(&dj) : FR_TOO_MANY_OPEN_FILES;
+#else
+                        res = dir_register(&dj);
+#endif
+                    mode |= FA_CREATE_ALWAYS;       /* File is created */
+                    dir = dj.dir;                   /* New entry */
+                } else { /* Any object is already existing */
+                    if (dir[DIR_Attr] & (AM_RDO | AM_DIR)) {    /* Cannot overwrite it (R/O or DIR) */
+                        res = FR_DENIED;
+                    } else {
+                        if (mode & FA_CREATE_NEW)   /* Cannot create as new file */
+                            res = FR_EXIST;
+                    }
+                }
+                if (res == FR_OK && (mode & FA_CREATE_ALWAYS)) {    /* Truncate it if overwrite mode */
+                    dw = get_fattime();             /* Created time */
+                    ST_DWORD(dir+DIR_CrtTime, dw);
+                    dir[DIR_Attr] = 0;              /* Reset attribute */
+                    ST_DWORD(dir+DIR_FileSize, 0);  /* size = 0 */
+                    cl = ld_clust(dj.fs, dir);      /* Get start cluster */
+                    st_clust(dir, 0);               /* cluster = 0 */
+                    dj.fs->wflag = 1;
+                    if (cl) {                       /* Remove the cluster chain if exist */
+                        dw = dj.fs->winsect;
+                        res = remove_chain(dj.fs, cl);
+                        if (res == FR_OK) {
+                            dj.fs->last_clust = cl - 1; /* Reuse the cluster hole */
+                            res = move_window(dj.fs, dw);
+                        }
                     }
                 }
             }
-        }
-        else {  /* Open an existing file */
-            if (res == FR_OK) {                 /* Follow succeeded */
-                if (dir[DIR_Attr] & AM_DIR) {   /* It is a directory */
-                    res = FR_NO_FILE;
-                } else {
-                    if ((mode & FA_WRITE) && (dir[DIR_Attr] & AM_RDO)) /* R/O violation */
-                        res = FR_DENIED;
+            else {  /* Open an existing file */
+                if (res == FR_OK) {                 /* Follow succeeded */
+                    if (dir[DIR_Attr] & AM_DIR) {   /* It is a directory */
+                        res = FR_NO_FILE;
+                    } else {
+                        if ((mode & FA_WRITE) && (dir[DIR_Attr] & AM_RDO)) /* R/O violation */
+                            res = FR_DENIED;
+                    }
                 }
             }
-        }
-        if (res == FR_OK) {
-            if (mode & FA_CREATE_ALWAYS)        /* Set file change flag if created or overwritten */
-                mode |= FA__WRITTEN;
-            fp->dir_sect = dj.fs->winsect;      /* Pointer to the directory entry */
-            fp->dir_ptr = dir;
+            if (res == FR_OK) {
+                if (mode & FA_CREATE_ALWAYS)        /* Set file change flag if created or overwritten */
+                    mode |= FA__WRITTEN;
+                fp->dir_sect = dj.fs->winsect;      /* Pointer to the directory entry */
+                fp->dir_ptr = dir;
 #if _FS_LOCK
-            fp->lockid = inc_lock(&dj, (mode & ~FA_READ) ? 1 : 0);
-            if (!fp->lockid) res = FR_INT_ERR;
+                fp->lockid = inc_lock(&dj, (mode & ~FA_READ) ? 1 : 0);
+                if (!fp->lockid) res = FR_INT_ERR;
 #endif
-        }
-
-        /* R/O configuration */
-        if ((mode & FA_READ) && res == FR_OK) {
-            /* Follow succeeded */
-            dir = dj.dir;
-            if (!dir) {                     /* Current directory itself */
-                res = FR_INVALID_NAME;
-            } else {
-                if (dir[DIR_Attr] & AM_DIR) /* It is a directory */
-                    res = FR_NO_FILE;
+            }
+        } else { /* RO fs */
+            if (res == FR_OK) {
+                /* Follow succeeded */
+                dir = dj.dir;
+                if (!dir) {                     /* Current directory itself */
+                    res = FR_INVALID_NAME;
+                } else {
+                    if (dir[DIR_Attr] & AM_DIR) /* It is a directory */
+                        res = FR_NO_FILE;
+                }
             }
         }
 
