@@ -48,7 +48,7 @@ struct fatfs_inode {
      * file pointer or directory pointer, check in_vnode->vn_mode.
      */
     union {
-    FIL fp;
+    FF_FIL fp;
     FF_DIR dp;
     };
 };

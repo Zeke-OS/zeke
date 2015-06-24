@@ -890,7 +890,7 @@ static DWORD create_chain(FATFS * fs, DWORD clst)
  * @param ofs File offset to be converted to cluster#.
  * @return <2:Error, >=2:Cluster number.
  */
-static DWORD clmt_clust(FIL * fp, DWORD ofs)
+static DWORD clmt_clust(FF_FIL * fp, DWORD ofs)
 {
     DWORD cl, ncl;
     DWORD * tbl;
@@ -2139,7 +2139,7 @@ static FRESULT validate(void * obj)
 {
 
    /* Assuming offset of .fs and .id in the FIL/DIR structure is identical */
-   FIL * fil = (FIL *)obj;
+   FF_FIL * fil = (FF_FIL *)obj;
 
     if (!fil || !fil->fs || !fil->fs->fs_type || fil->fs->id != fil->id ||
             (fatfs_disk_status(fil->fs->drv) & STA_NOINIT)) {
@@ -2184,7 +2184,7 @@ FRESULT f_mount(FATFS * fs, const TCHAR * path, uint8_t opt)
  * @param path Pointer to the file name.
  * @param mode Access mode and file open mode flags.
  */
-FRESULT f_open(FIL * fp, FATFS * fs, const TCHAR * path, uint8_t mode)
+FRESULT f_open(FF_FIL * fp, FATFS * fs, const TCHAR * path, uint8_t mode)
 {
     FRESULT res;
     FF_DIR dj;
@@ -2311,7 +2311,7 @@ FRESULT f_open(FIL * fp, FATFS * fs, const TCHAR * path, uint8_t mode)
  * @param btr Number of bytes to read.
  * @param br Pointer to number of bytes read.
  */
-FRESULT f_read(FIL * fp, void * buff, unsigned int btr, unsigned int * br)
+FRESULT f_read(FF_FIL * fp, void * buff, unsigned int btr, unsigned int * br)
 {
     FRESULT res;
     DWORD clst, sect, remain;
@@ -2403,7 +2403,7 @@ FRESULT f_read(FIL * fp, void * buff, unsigned int btr, unsigned int * br)
  * @param btw Number of bytes to write.
  * @param bw Pointer to number of bytes written.
  */
-FRESULT f_write(FIL * fp, const void * buff, unsigned int btw,
+FRESULT f_write(FF_FIL * fp, const void * buff, unsigned int btw,
                 unsigned int * bw)
 {
     FRESULT res;
@@ -2507,7 +2507,7 @@ FRESULT f_write(FIL * fp, const void * buff, unsigned int btw,
  * Synchronize the File.
  * @param fp Pointer to the file object.
  */
-FRESULT f_sync(FIL * fp)
+FRESULT f_sync(FF_FIL * fp)
 {
     FRESULT res;
     DWORD tm;
@@ -2550,7 +2550,7 @@ fail:
  * Close File.
  * @param fp Pointer to the file object to be closed.
  */
-FRESULT f_close(FIL * fp)
+FRESULT f_close(FF_FIL * fp)
 {
     FATFS * fs;
     FRESULT res;
@@ -2583,7 +2583,7 @@ FRESULT f_close(FIL * fp)
  * @param fp Pointer to the file object.
  * @param ofs File pointer from top of file.
  */
-FRESULT f_lseek(FIL * fp, DWORD ofs)
+FRESULT f_lseek(FF_FIL * fp, DWORD ofs)
 {
     FRESULT res;
 
@@ -2958,7 +2958,7 @@ FRESULT f_getfree(FATFS * fs, const TCHAR * path, DWORD * nclst)
  * Truncate File.
  * @param fp Pointer to the file object.
  */
-FRESULT f_truncate(FIL * fp)
+FRESULT f_truncate(FF_FIL * fp)
 {
     FRESULT res;
     DWORD ncl;

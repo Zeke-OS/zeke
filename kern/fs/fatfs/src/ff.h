@@ -118,7 +118,7 @@ typedef struct {
                              *  semaphore table Files[]) */
 #endif
     uint8_t buf[_MAX_SS];   /* File private data read/write window */
-} FIL;
+} FF_FIL;
 
 
 
@@ -192,14 +192,14 @@ typedef enum {
 
 int ff_init(void);
 
-FRESULT f_open(FIL * fp, FATFS * fs, const TCHAR * path, uint8_t mode);
-FRESULT f_close(FIL * fp);
-FRESULT f_read(FIL * fp, void * buff, unsigned int btr, unsigned int * br);
-FRESULT f_write(FIL * fp, const void * buff, unsigned int btw,
+FRESULT f_open(FF_FIL * fp, FATFS * fs, const TCHAR * path, uint8_t mode);
+FRESULT f_close(FF_FIL * fp);
+FRESULT f_read(FF_FIL * fp, void * buff, unsigned int btr, unsigned int * br);
+FRESULT f_write(FF_FIL * fp, const void * buff, unsigned int btw,
                 unsigned int * bw);
-FRESULT f_lseek(FIL * fp, DWORD ofs);
-FRESULT f_truncate(FIL * fp);
-FRESULT f_sync(FIL * fp);
+FRESULT f_lseek(FF_FIL * fp, DWORD ofs);
+FRESULT f_truncate(FF_FIL * fp);
+FRESULT f_sync(FF_FIL * fp);
 FRESULT f_opendir(FF_DIR * dp, FATFS * fs, const TCHAR * path);
 FRESULT f_closedir(FF_DIR * dp);
 FRESULT f_readdir(FF_DIR * dp, FILINFO * fno);
