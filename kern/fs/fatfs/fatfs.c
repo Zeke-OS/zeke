@@ -52,7 +52,7 @@ static int fatfs_mount(const char * source, uint32_t mode,
 static char * format_fpath(struct fatfs_inode * indir, const char * name);
 static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
                         char * fpath, long vn_hash, int oflags);
-static vnode_t * create_root(struct fs_superblock * sb);
+static vnode_t * create_root(struct fatfs_sb * fatfs_sb);
 static int fatfs_delete_vnode(vnode_t * vnode);
 static int fatfs_event_vnode_opened(struct proc_info * p, vnode_t * vnode);
 static void fatfs_event_file_closed(struct proc_info * p, file_t * file);
@@ -139,7 +139,6 @@ static int fatfs_mount(const char * source, uint32_t mode,
 {
     static dev_t fatfs_vdev_minor;
     struct fatfs_sb * fatfs_sb = NULL;
-    struct fs_superblock * sbp;
     vnode_t * vndev;
     char pdrv;
     char drive[5];
@@ -161,15 +160,14 @@ static int fatfs_mount(const char * source, uint32_t mode,
     if (!fatfs_sb)
         return -ENOMEM;
 
-    sbp = &fatfs_sb->sb;
     fs_fildes_set(&fatfs_sb->ff_devfile, vndev, O_RDWR);
-    sbp->vdev_id = DEV_MMTODEV(VDEV_MJNR_FATFS, fatfs_vdev_minor++);
+    fatfs_sb->sb.vdev_id = DEV_MMTODEV(VDEV_MJNR_FATFS, fatfs_vdev_minor++);
 
     /* Insert sb to fatfs_sb_arr lookup array */
-    fatfs_sb_arr[DEV_MINOR(sbp->vdev_id)] = fatfs_sb;
+    fatfs_sb_arr[DEV_MINOR(fatfs_sb->sb.vdev_id)] = fatfs_sb;
 
     /* Mount */
-    pdrv = (char)DEV_MINOR(sbp->vdev_id);
+    pdrv = (char)DEV_MINOR(fatfs_sb->sb.vdev_id);
     ksprintf(drive, sizeof(drive), "%u:", pdrv);
 #ifdef configFATFS_DEBUG
     KERROR(KERROR_DEBUG, "Mount drive letter: \"%s\"\n", drive);
@@ -185,28 +183,26 @@ static int fatfs_mount(const char * source, uint32_t mode,
 #ifdef configFATFS_DEBUG
     KERROR(KERROR_DEBUG, "Initialized a work area for FAT\n");
 #endif
+
 #if (_FS_NOFSINFO == 0) /* Commit full scan of free clusters */
     DWORD nclst;
 
-    f_getfree(drive, &nclst, NULL);
+    f_getfree(&fatfs_sb->ff_fs, drive, &nclst);
 #endif
 
     /* Init super block */
     fs_init_superblock(&fatfs_sb->sb, &fatfs_fs);
     /* TODO Detect if target dev is rdonly */
-    sbp->mode_flags = mode;
-#ifdef configFATFS_READONLY
-    sbp->mode_flags |= MNT_RDONLY;
-#endif
-    sbp->root = create_root(sbp);
-    sbp->sb_dev = vndev;
-    sbp->sb_hashseed = sbp->vdev_id;
+    fatfs_sb->sb.mode_flags = mode;
+    fatfs_sb->sb.root = create_root(fatfs_sb);
+    fatfs_sb->sb.sb_dev = vndev;
+    fatfs_sb->sb.sb_hashseed = fatfs_sb->sb.vdev_id;
     /* Function pointers to superblock methods */
-    sbp->get_vnode = NULL; /* Not implemented for FAT. */
-    sbp->delete_vnode = fatfs_delete_vnode;
-    sbp->umount = NULL;
+    fatfs_sb->sb.get_vnode = NULL; /* Not implemented for FAT. */
+    fatfs_sb->sb.delete_vnode = fatfs_delete_vnode;
+    fatfs_sb->sb.umount = NULL;
 
-    if (!sbp->root) {
+    if (!fatfs_sb->sb.root) {
         KERROR(KERROR_ERR, "Root of fatfs not found\n");
 
         return -EIO;
@@ -215,11 +211,11 @@ static int fatfs_mount(const char * source, uint32_t mode,
 
 fail:
     if (retval) {
-        fatfs_sb_arr[DEV_MINOR(sbp->vdev_id)] = NULL;
+        fatfs_sb_arr[DEV_MINOR(fatfs_sb->sb.vdev_id)] = NULL;
         kfree(fatfs_sb);
     }
 
-    *sb = &(fatfs_sb->sb);
+    *sb = &fatfs_sb->sb;
     return retval;
 }
 
@@ -297,7 +293,7 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
         if (sb->sb.mode_flags & MNT_RDONLY)
             return -EROFS;
     } else {
-        err = f_stat(fpath, &fno);
+        err = f_stat(&sb->ff_fs, fpath, &fno);
         if (err) {
             retval = fresult2errno(err);
             goto fail;
@@ -308,7 +304,7 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
     if (fno.fattrib & AM_DIR) {
         /* it's a directory */
         vn_mode = S_IFDIR;
-        err = f_opendir(&in->dp, in->in_fpath);
+        err = f_opendir(&in->dp, &sb->ff_fs, in->in_fpath);
         if (err) {
 #ifdef configFATFS_DEBUG
             KERROR(KERROR_DEBUG, "Can't open a dir (err: %d)\n", err);
@@ -327,7 +323,7 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
                                          0 : FA_WRITE) : 0;
 
         vn_mode = S_IFREG;
-        err = f_open(&in->fp, in->in_fpath, fomode);
+        err = f_open(&in->fp, &sb->ff_fs, in->in_fpath, fomode);
         if (err) {
 #ifdef configFATFS_DEBUG
             KERROR(KERROR_DEBUG, "Can't open a file (err: %d)\n", err);
@@ -376,8 +372,9 @@ fail:
     return retval;
 }
 
-static vnode_t * create_root(struct fs_superblock * sb)
+static vnode_t * create_root(struct fatfs_sb * fatfs_sb)
 {
+    struct fs_superblock * sb = &fatfs_sb->sb;
     char * rootpath;
     long vn_hash;
     struct fatfs_inode * in;
@@ -390,7 +387,7 @@ static vnode_t * create_root(struct fs_superblock * sb)
     ksprintf(rootpath, sizeof(rootpath), "%u:", DEV_MINOR(sb->vdev_id));
     vn_hash = hash32_str(rootpath, 0);
 
-    err = create_inode(&in, get_ffsb_of_sb(sb), rootpath, vn_hash,
+    err = create_inode(&in, fatfs_sb, rootpath, vn_hash,
                        O_DIRECTORY | O_RDWR);
     if (err) {
         KERROR(KERROR_ERR, "Failed to init a root vnode for fatfs (%d)\n", err);
@@ -547,9 +544,6 @@ fail:
 
 ssize_t fatfs_write(file_t * file, const void * buf, size_t count)
 {
-#ifdef configFATFS_READONLY
-    return -ENOTSUP;
-#else
     struct fatfs_inode * in = get_inode_of_vnode(file->vnode);
     size_t count_out;
     int err;
@@ -568,7 +562,6 @@ ssize_t fatfs_write(file_t * file, const void * buf, size_t count)
     file->seek_pos = f_tell(&in->fp);
 
     return count_out;
-#endif
 }
 
 ssize_t fatfs_read(file_t * file, void * buf, size_t count)
@@ -603,7 +596,7 @@ int fatfs_create(vnode_t * dir, const char * name, mode_t mode,
 
 int fatfs_unlink(vnode_t * dir, const char * name)
 {
-#if !defined(configFATFS_READONLY)
+    struct fatfs_sb * ffsb = get_ffsb_of_sb(dir->sb);
     struct fatfs_inode * indir = get_inode_of_vnode(dir);
     char * in_fpath;
     FRESULT err;
@@ -618,7 +611,7 @@ int fatfs_unlink(vnode_t * dir, const char * name)
 
     /* TODO May need checks if file/dir is opened */
 
-    err = f_unlink(in_fpath);
+    err = f_unlink(&ffsb->ff_fs, in_fpath);
     if (err)
         retval = fresult2errno(err);
     else
@@ -626,15 +619,11 @@ int fatfs_unlink(vnode_t * dir, const char * name)
 
     kfree(in_fpath);
     return retval;
-#else
-    return -EROFS;
-#endif
 }
 
 int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
                 vnode_t ** result)
 {
-#if !defined(configFATFS_READONLY)
     struct fatfs_inode * indir = get_inode_of_vnode(dir);
     struct fatfs_inode * res = NULL;
     char * in_fpath;
@@ -675,14 +664,11 @@ int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
 #endif
 
     return 0;
-#else
-    return -EROFS;
-#endif
 }
 
 int fatfs_mkdir(vnode_t * dir,  const char * name, mode_t mode)
 {
-#if !defined(configFATFS_READONLY)
+    struct fatfs_sb * ffsb = get_ffsb_of_sb(dir->sb);
     struct fatfs_inode * indir = get_inode_of_vnode(dir);
     char * in_fpath;
     FRESULT err;
@@ -695,15 +681,12 @@ int fatfs_mkdir(vnode_t * dir,  const char * name, mode_t mode)
     if (!in_fpath)
         return -ENOMEM;
 
-    err = f_mkdir(in_fpath);
+    err = f_mkdir(&ffsb->ff_fs, in_fpath);
     if (err)
         retval = fresult2errno(err);
 
     kfree(in_fpath);
     return retval;
-#else
-    return -EROFS;
-#endif
 }
 
 int fatfs_rmdir(vnode_t * dir,  const char * name)
@@ -796,11 +779,11 @@ static fflags_t fattrib2uflags(unsigned fattrib)
 
 int fatfs_stat(vnode_t * vnode, struct stat * buf)
 {
+    struct fatfs_sb * ffsb = get_ffsb_of_sb(vnode->sb);
     struct fatfs_inode * in = get_inode_of_vnode(vnode);
     FILINFO fno;
-    struct fatfs_sb * fat_sb = get_ffsb_of_sb(vnode->sb);
     struct stat mp_stat = { .st_uid = 0, .st_gid = 0 };
-    size_t blksize = fat_sb->ff_fs.ssize;
+    size_t blksize = ffsb->ff_fs.ssize;
     int err;
 
     memset(&fno, 0, sizeof(fno));
@@ -829,12 +812,12 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
         return 0;
     }
 
-    err = f_stat(in->in_fpath, &fno);
+    err = f_stat(&ffsb->ff_fs, in->in_fpath, &fno);
     if (err) {
 #ifdef configFATFS_DEBUG
         KERROR(KERROR_DEBUG,
-                 "f_stat(fpath \"%s\", fno %p) failed\n",
-                 in->in_fpath, &fno);
+                 "f_stat(fs %p, fpath \"%s\", fno %p) failed\n",
+                 &ffsb->ff_fs, in->in_fpath, &fno);
 #endif
         return fresult2errno(err);
     }
@@ -862,7 +845,7 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
 
 int fatfs_chmod(vnode_t * vnode, mode_t mode)
 {
-#if !defined(configFATFS_READONLY)
+    struct fatfs_sb * ffsb = get_ffsb_of_sb(vnode->sb);
     struct fatfs_inode * in = get_inode_of_vnode(vnode);
     uint8_t attr = 0;
     const uint8_t mask = AM_RDO;
@@ -871,12 +854,9 @@ int fatfs_chmod(vnode_t * vnode, mode_t mode)
     if (!(mode & (S_IWUSR | S_IWGRP | S_IWOTH)))
         attr |= AM_RDO;
 
-    fresult = f_chmod(in->in_fpath, attr, mask);
+    fresult = f_chmod(&ffsb->ff_fs, in->in_fpath, attr, mask);
 
     return fresult2errno(fresult);
-#else
-    return -EROFS;
-#endif
 }
 
 /*
@@ -885,7 +865,7 @@ int fatfs_chmod(vnode_t * vnode, mode_t mode)
  */
 int fatfs_chflags(vnode_t * vnode, fflags_t flags)
 {
-#if !defined(configFATFS_READONLY)
+    struct fatfs_sb * ffsb = get_ffsb_of_sb(vnode->sb);
     struct fatfs_inode * in = get_inode_of_vnode(vnode);
     uint8_t attr = 0;
     const uint8_t mask = AM_RDO | AM_ARC | AM_SYS | AM_HID;
@@ -900,12 +880,9 @@ int fatfs_chflags(vnode_t * vnode, fflags_t flags)
     if (flags & UF_HIDDEN)
         attr |= AM_HID;
 
-    fresult = f_chmod(in->in_fpath, attr, mask);
+    fresult = f_chmod(&ffsb->ff_fs, in->in_fpath, attr, mask);
 
     return fresult2errno(fresult);
-#else
-    return -EROFS;
-#endif
 }
 
 /**

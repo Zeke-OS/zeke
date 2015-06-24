@@ -382,13 +382,6 @@ typedef struct {
  * linker or start-up routine is out of ANSI-C standard.
  */
 
-#if _VOLUMES >= 1 || _VOLUMES <= 10
-/* Pointer to the file system objects (logical drives) */
-static FATFS *FatFs[_VOLUMES];
-#else
-#error Number of volumes must be 1 to 10.
-#endif
-
 static WORD Fsid;           /* File system mount ID */
 
 #if _FS_LOCK
@@ -1892,6 +1885,7 @@ static FRESULT follow_path(FF_DIR * dp, const TCHAR * path)
 }
 
 /**
+ * TODO Remove this function when not needed anymore.
  * Get logical drive number from path name.
  * @param path Pointer to pointer to the path name.
  * @return Returns logical drive number (-1:invalid drive).
@@ -1950,37 +1944,28 @@ static uint8_t check_fs(FATFS * fs, DWORD sect)
 }
 
 /**
- * Find logical drive and check if the volume is mounted.
- * @param rfs Pointer to pointer to the found file system object.
- * @param path Pointer to pointer to the path name (drive number).
+ * Lock the logical drive and check if the volume is mounted.
+ * @param vol is the volume number. RFE Is this actually needed?
  * @param wmode !=0: Check write protection for write access.
  * @return FR_OK(0): successful, !=0: any error occurred.
  */
-static FRESULT find_volume(FATFS ** rfs, const TCHAR ** path, uint8_t wmode)
+static FRESULT find_volume(FATFS * fs, int vol, uint8_t wmode)
 {
     uint8_t fmt;
-    int vol;
     DSTATUS stat;
     DWORD bsect, fasize, tsect, sysect, nclst, szbfat;
     WORD nrsv;
-    FATFS * fs;
     DRESULT derr;
 
-    /* Get logical drive number from the path name */
-    *rfs = NULL;
-    vol = get_ldnumber(path);
     if (vol < 0)
         return FR_INVALID_DRIVE;
 
-    /* Check if the file system object is valid or not */
-    fs = FatFs[vol]; /* Get pointer to the file system object */
-    if (!fs) /* Is the file system object available? */
+    if (!fs)
         return FR_NOT_ENABLED;
 
-    ENTER_FF(fs);   /* Lock the volume */
-    *rfs = fs;      /* Return pointer to the file system object */
+    ENTER_FF(fs); /* Lock the volume */
 
-    if (fs->fs_type) {                  /* If the volume has been mounted */
+    if (fs->fs_type) { /* If the volume has been mounted */
         stat = fatfs_disk_status(fs->drv);
         /* and the physical drive is kept initialized */
         if (!(stat & STA_NOINIT)) {
@@ -2173,13 +2158,10 @@ static FRESULT validate(void * obj)
  */
 
 /**
- * Mount/Unmount a Logical Drive
- * @param fs Pointer to the file system object (NULL:unmount).
- * @param path Logical drive number to be mounted/unmounted.
+ * Mount a Logical Drive
  */
 FRESULT f_mount(FATFS * fs, const TCHAR * path, uint8_t opt)
 {
-    FATFS * cfs;
     int vol;
     FRESULT res;
     const TCHAR * rp = path;
@@ -2188,30 +2170,11 @@ FRESULT f_mount(FATFS * fs, const TCHAR * path, uint8_t opt)
     if (vol < 0)
         return FR_INVALID_DRIVE;
 
-    cfs = FatFs[vol];       /* Pointer to fs object */
+    fs->fs_type = 0;
+    fs->readonly = (opt & FATFS_READONLY) == FATFS_READONLY;
+    mtx_init(&fs->sobj, MTX_TYPE_TICKET, MTX_OPT_PRICEIL);
 
-    if (cfs) {
-#if _FS_LOCK
-        clear_lock(cfs);
-#endif
-        /* Discard sync object of the current volume */
-        fs->sobj.mtx_type = MTX_TYPE_UNDEF;
-        cfs->fs_type = 0;   /* Clear old fs object */
-    }
-
-    if (fs) {
-        fs->fs_type = 0;    /* Clear new fs object */
-        fs->readonly = (opt & FATFS_READONLY) == FATFS_READONLY;
-
-        /* Create sync object for the new volume */
-        mtx_init(&fs->sobj, MTX_TYPE_TICKET, MTX_OPT_PRICEIL);
-    }
-    FatFs[vol] = fs;        /* Register new fs object */
-
-    if (!fs)
-        return FR_OK;
-
-    res = find_volume(&fs, &path, 0);
+    res = find_volume(fs, vol, 0);
     LEAVE_FF(fs, res);
 }
 
@@ -2221,7 +2184,7 @@ FRESULT f_mount(FATFS * fs, const TCHAR * path, uint8_t opt)
  * @param path Pointer to the file name.
  * @param mode Access mode and file open mode flags.
  */
-FRESULT f_open(FIL * fp, const TCHAR * path, uint8_t mode)
+FRESULT f_open(FIL * fp, FATFS * fs, const TCHAR * path, uint8_t mode)
 {
     FRESULT res;
     FF_DIR dj;
@@ -2230,13 +2193,12 @@ FRESULT f_open(FIL * fp, const TCHAR * path, uint8_t mode)
 
     if (!fp)
         return FR_INVALID_OBJECT;
-    fp->fs = NULL;         /* Clear file object */
+    fp->fs = NULL;
+    dj.fs = fs;
 
-    /* Get logical drive number */
     mode &= FA_READ | FA_WRITE | FA_CREATE_ALWAYS | FA_OPEN_ALWAYS |
             FA_CREATE_NEW;
-    res = find_volume(&dj.fs, &path, mode);
-
+    res = find_volume(dj.fs, get_ldnumber(&path), mode);
     if (res == FR_OK) {
         INIT_BUF(dj);
         res = follow_path(&dj, path);   /* Follow the file path */
@@ -2772,14 +2734,12 @@ FRESULT f_lseek(FIL * fp, DWORD ofs)
  * @param dp Pointer to directory object to create.
  * @param path Pointer to the directory path.
  */
-FRESULT f_opendir(FF_DIR * dp, const TCHAR* path)
+FRESULT f_opendir(FF_DIR * dp, FATFS * fs, const TCHAR* path)
 {
     FRESULT res;
-    FATFS * fs;
     DEF_NAMEBUF;
 
-    /* Get logical drive number */
-    res = find_volume(&fs, &path, 0);
+    res = find_volume(fs, get_ldnumber(&path), 0);
     if (res != FR_OK)
         goto fail;
 
@@ -2903,15 +2863,16 @@ fail:
  * @param path Pointer to the file path.
  * @param fno Pointer to file information to return.
  */
-FRESULT f_stat(const TCHAR * path, FILINFO * fno)
+FRESULT f_stat(FATFS * fs, const TCHAR * path, FILINFO * fno)
 {
     FRESULT res;
     FF_DIR dj;
     DEF_NAMEBUF;
 
+    dj.fs = fs;
 
     /* Get logical drive number */
-    res = find_volume(&dj.fs, &path, 0);
+    res = find_volume(dj.fs, get_ldnumber(&path), 0);
     if (res != FR_OK)
         goto fail;
 
@@ -2937,22 +2898,18 @@ fail:
  * Get Number of Free Clusters.
  * @param path Path name of the logical drive number.
  * @param nclst Pointer to a variable to return number of free clusters.
- * @param fatfs Pointer to return pointer to corresponding file system object.
  */
-FRESULT f_getfree(const TCHAR * path, DWORD * nclst, FATFS ** fatfs)
+FRESULT f_getfree(FATFS * fs, const TCHAR * path, DWORD * nclst)
 {
     FRESULT res;
-    FATFS * fs;
     DWORD n, clst, sect, stat;
     unsigned int i;
     uint8_t fat;
     uint8_t * p;
 
     /* Get logical drive number */
-    res = find_volume(&fs, &path, 0);
-    if (fatfs) {
-        *fatfs = fs;
-    }
+    res = find_volume(fs, get_ldnumber(&path), 0);
+
     if (res == FR_OK) {
         /* If free_clust is valid, return it without full cluster scan */
         if (fs->free_clust <= fs->n_fatent - 2) {
@@ -3051,7 +3008,7 @@ FRESULT f_truncate(FIL * fp)
  * Delete a File or Directory.
  * @param path Pointer to the file or directory path.
  */
-FRESULT f_unlink(const TCHAR * path)
+FRESULT f_unlink(FATFS * fs, const TCHAR * path)
 {
     FRESULT res;
     FF_DIR dj, sdj;
@@ -3059,8 +3016,9 @@ FRESULT f_unlink(const TCHAR * path)
     DWORD dclst;
     DEF_NAMEBUF;
 
-    /* Get logical drive number */
-    res = find_volume(&dj.fs, &path, 1);
+    dj.fs = fs;
+
+    res = find_volume(dj.fs, get_ldnumber(&path), 1);
     if (res == FR_OK) {
         INIT_BUF(dj);
         res = follow_path(&dj, path);       /* Follow the file path */
@@ -3110,7 +3068,7 @@ FRESULT f_unlink(const TCHAR * path)
  * Create a Directory.
  * @param path Pointer to the directory path.
  */
-FRESULT f_mkdir(const TCHAR * path)
+FRESULT f_mkdir(FATFS * fs, const TCHAR * path)
 {
     FRESULT res;
     FF_DIR dj;
@@ -3118,8 +3076,9 @@ FRESULT f_mkdir(const TCHAR * path)
     DWORD dsc, dcl, pcl, tm = get_fattime();
     DEF_NAMEBUF;
 
-    /* Get logical drive number */
-    res = find_volume(&dj.fs, &path, 1);
+    dj.fs = fs;
+
+    res = find_volume(dj.fs, get_ldnumber(&path), 1);
     if (res == FR_OK) {
         INIT_BUF(dj);
         res = follow_path(&dj, path);           /* Follow the file path */
@@ -3189,15 +3148,16 @@ FRESULT f_mkdir(const TCHAR * path)
  * @param value Attribute bits.
  * @param mask  Attribute mask to change.
  */
-FRESULT f_chmod(const TCHAR * path, uint8_t value, uint8_t mask)
+FRESULT f_chmod(FATFS * fs, const TCHAR * path, uint8_t value, uint8_t mask)
 {
     FRESULT res;
     FF_DIR dj;
     uint8_t * dir;
     DEF_NAMEBUF;
 
-    /* Get logical drive number */
-    res = find_volume(&dj.fs, &path, 1);
+    dj.fs = fs;
+
+    res = find_volume(dj.fs, get_ldnumber(&path), 1);
     if (res == FR_OK) {
         INIT_BUF(dj);
         res = follow_path(&dj, path);       /* Follow the file path */
@@ -3223,15 +3183,16 @@ FRESULT f_chmod(const TCHAR * path, uint8_t value, uint8_t mask)
  * @param path Pointer to the file/directory name.
  * @param fno Pointer to the time stamp to be set.
  */
-FRESULT f_utime(const TCHAR * path, const FILINFO * fno)
+FRESULT f_utime(FATFS * fs, const TCHAR * path, const FILINFO * fno)
 {
     FRESULT res;
     FF_DIR dj;
     uint8_t * dir;
     DEF_NAMEBUF;
 
-    /* Get logical drive number */
-    res = find_volume(&dj.fs, &path, 1);
+    dj.fs = fs;
+
+    res = find_volume(dj.fs, get_ldnumber(&path), 1);
     if (res == FR_OK) {
         INIT_BUF(dj);
         res = follow_path(&dj, path);   /* Follow the file path */
@@ -3257,7 +3218,7 @@ FRESULT f_utime(const TCHAR * path, const FILINFO * fno)
  * @param path_old Pointer to the object to be renamed.
  * @param path_new Pointer to the new name.
  */
-FRESULT f_rename(const TCHAR * path_old, const TCHAR * path_new)
+FRESULT f_rename(FATFS * fs, const TCHAR * path_old, const TCHAR * path_new)
 {
     FRESULT res;
     FF_DIR djo, djn;
@@ -3265,8 +3226,9 @@ FRESULT f_rename(const TCHAR * path_old, const TCHAR * path_new)
     DWORD dw;
     DEF_NAMEBUF;
 
-    /* Get logical drive number of the source object */
-    res = find_volume(&djo.fs, &path_old, 1);
+    djo.fs = fs;
+
+    res = find_volume(djo.fs, get_ldnumber(&path_old), 1);
     if (res == FR_OK) {
         djn.fs = djo.fs;
         INIT_BUF(djo);
@@ -3329,15 +3291,15 @@ FRESULT f_rename(const TCHAR * path_old, const TCHAR * path_new)
  * @param label Pointer to a buffer to return the volume label.
  * @param vsn Pointer to a variable to return the volume serial number.
  */
-FRESULT f_getlabel(const TCHAR * path, TCHAR * label, DWORD * vsn)
+FRESULT f_getlabel(FATFS * fs, const TCHAR * path, TCHAR * label, DWORD * vsn)
 {
     FRESULT res;
     FF_DIR dj;
     unsigned int i, j;
 
+    dj.fs = fs;
 
-    /* Get logical drive number */
-    res = find_volume(&dj.fs, &path, 0);
+    res = find_volume(dj.fs, get_ldnumber(&path), 0);
 
     /* Get volume label */
     if (res == FR_OK && label) {
@@ -3387,7 +3349,7 @@ FRESULT f_getlabel(const TCHAR * path, TCHAR * label, DWORD * vsn)
  * Set volume label.
  * @param label Pointer to the volume label to set.
  */
-FRESULT f_setlabel(const TCHAR * label)
+FRESULT f_setlabel(FATFS * fs, const TCHAR * label)
 {
     FRESULT res;
     FF_DIR dj;
@@ -3396,9 +3358,9 @@ FRESULT f_setlabel(const TCHAR * label)
     WCHAR w;
     DWORD tm;
 
+    dj.fs = fs;
 
-    /* Get logical drive number */
-    res = find_volume(&dj.fs, &label, 1);
+    res = find_volume(dj.fs, get_ldnumber(&label), 1);
     if (res) LEAVE_FF(dj.fs, res);
 
     /* Create a volume label in directory form */
