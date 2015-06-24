@@ -141,7 +141,6 @@ static int fatfs_mount(const char * source, uint32_t mode,
     struct fatfs_sb * fatfs_sb = NULL;
     vnode_t * vndev;
     char pdrv;
-    char drive[5];
     int err, retval = 0;
 
     /* Get device vnode */
@@ -168,11 +167,7 @@ static int fatfs_mount(const char * source, uint32_t mode,
 
     /* Mount */
     pdrv = (char)DEV_MINOR(fatfs_sb->sb.vdev_id);
-    ksprintf(drive, sizeof(drive), "%u:", pdrv);
-#ifdef configFATFS_DEBUG
-    KERROR(KERROR_DEBUG, "Mount drive letter: \"%s\"\n", drive);
-#endif
-    err = f_mount(&fatfs_sb->ff_fs, drive, 0);
+    err = f_mount(&fatfs_sb->ff_fs, 0);
     if (err) {
 #ifdef configFATFS_DEBUG
         KERROR(KERROR_DEBUG, "Can't init a work area for FAT (%d)\n", err);
@@ -187,7 +182,7 @@ static int fatfs_mount(const char * source, uint32_t mode,
 #if (_FS_NOFSINFO == 0) /* Commit full scan of free clusters */
     DWORD nclst;
 
-    f_getfree(&fatfs_sb->ff_fs, drive, &nclst);
+    f_getfree(&fatfs_sb->ff_fs, &nclst);
 #endif
 
     /* Init super block */
@@ -374,19 +369,16 @@ fail:
 
 static vnode_t * create_root(struct fatfs_sb * fatfs_sb)
 {
-    struct fs_superblock * sb = &fatfs_sb->sb;
     char * rootpath;
     long vn_hash;
     struct fatfs_inode * in;
     int err;
 
-    rootpath = kmalloc(5);
+    rootpath = kzalloc(2);
     if (!rootpath)
         return NULL;
 
-    ksprintf(rootpath, sizeof(rootpath), "%u:", DEV_MINOR(sb->vdev_id));
     vn_hash = hash32_str(rootpath, 0);
-
     err = create_inode(&in, fatfs_sb, rootpath, vn_hash,
                        O_DIRECTORY | O_RDWR);
     if (err) {

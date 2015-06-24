@@ -1885,41 +1885,6 @@ static FRESULT follow_path(FF_DIR * dp, const TCHAR * path)
 }
 
 /**
- * TODO Remove this function when not needed anymore.
- * Get logical drive number from path name.
- * @param path Pointer to pointer to the path name.
- * @return Returns logical drive number (-1:invalid drive).
- */
-static int get_ldnumber(const TCHAR ** path)
-{
-    const TCHAR * tp, * tt;
-    unsigned int i;
-    int vol = -1;
-
-    if (*path) {    /* If the pointer is not a null */
-        for (tt = *path; (unsigned int)*tt >= (configFATFS_LFN ? ' ' : '!') &&
-                         *tt != ':'; tt++) ; /* Find ':' in the path */
-        if (*tt == ':') {   /* If a ':' is exist in the path name */
-            tp = *path;
-            i = *tp++ - '0';
-            if (i < 10 && tp == tt) {   /* Is there a numeric drive id? */
-                if (i < _VOLUMES) {
-                    /* If a drive id is found, get the value and strip it */
-                    vol = (int)i;
-                    *path = ++tt;
-                }
-            }
-
-            return vol;
-        }
-
-        vol = 0;        /* Drive 0 */
-    }
-
-    return vol;
-}
-
-/**
  * Load a sector and check if it is an FAT boot sector.
  * @param fs File system object.
  * @param sect Sector# (lba) to check if it is an FAT boot record or not.
@@ -2160,13 +2125,12 @@ static FRESULT validate(void * obj)
 /**
  * Mount a Logical Drive
  */
-FRESULT f_mount(FATFS * fs, const TCHAR * path, uint8_t opt)
+FRESULT f_mount(FATFS * fs, uint8_t opt)
 {
     int vol;
     FRESULT res;
-    const TCHAR * rp = path;
 
-    vol = get_ldnumber(&rp);
+    vol = get_ldnumber(fs);
     if (vol < 0)
         return FR_INVALID_DRIVE;
 
@@ -2198,7 +2162,7 @@ FRESULT f_open(FF_FIL * fp, FATFS * fs, const TCHAR * path, uint8_t mode)
 
     mode &= FA_READ | FA_WRITE | FA_CREATE_ALWAYS | FA_OPEN_ALWAYS |
             FA_CREATE_NEW;
-    res = find_volume(dj.fs, get_ldnumber(&path), mode);
+    res = find_volume(dj.fs, get_ldnumber(fs), mode);
     if (res == FR_OK) {
         INIT_BUF(dj);
         res = follow_path(&dj, path);   /* Follow the file path */
@@ -2739,7 +2703,7 @@ FRESULT f_opendir(FF_DIR * dp, FATFS * fs, const TCHAR* path)
     FRESULT res;
     DEF_NAMEBUF;
 
-    res = find_volume(fs, get_ldnumber(&path), 0);
+    res = find_volume(fs, get_ldnumber(fs), 0);
     if (res != FR_OK)
         goto fail;
 
@@ -2872,7 +2836,7 @@ FRESULT f_stat(FATFS * fs, const TCHAR * path, FILINFO * fno)
     dj.fs = fs;
 
     /* Get logical drive number */
-    res = find_volume(dj.fs, get_ldnumber(&path), 0);
+    res = find_volume(dj.fs, get_ldnumber(fs), 0);
     if (res != FR_OK)
         goto fail;
 
@@ -2896,10 +2860,9 @@ fail:
 
 /**
  * Get Number of Free Clusters.
- * @param path Path name of the logical drive number.
  * @param nclst Pointer to a variable to return number of free clusters.
  */
-FRESULT f_getfree(FATFS * fs, const TCHAR * path, DWORD * nclst)
+FRESULT f_getfree(FATFS * fs, DWORD * nclst)
 {
     FRESULT res;
     DWORD n, clst, sect, stat;
@@ -2908,7 +2871,7 @@ FRESULT f_getfree(FATFS * fs, const TCHAR * path, DWORD * nclst)
     uint8_t * p;
 
     /* Get logical drive number */
-    res = find_volume(fs, get_ldnumber(&path), 0);
+    res = find_volume(fs, get_ldnumber(fs), 0);
 
     if (res == FR_OK) {
         /* If free_clust is valid, return it without full cluster scan */
@@ -3018,7 +2981,7 @@ FRESULT f_unlink(FATFS * fs, const TCHAR * path)
 
     dj.fs = fs;
 
-    res = find_volume(dj.fs, get_ldnumber(&path), 1);
+    res = find_volume(dj.fs, get_ldnumber(fs), 1);
     if (res == FR_OK) {
         INIT_BUF(dj);
         res = follow_path(&dj, path);       /* Follow the file path */
@@ -3078,7 +3041,7 @@ FRESULT f_mkdir(FATFS * fs, const TCHAR * path)
 
     dj.fs = fs;
 
-    res = find_volume(dj.fs, get_ldnumber(&path), 1);
+    res = find_volume(dj.fs, get_ldnumber(fs), 1);
     if (res == FR_OK) {
         INIT_BUF(dj);
         res = follow_path(&dj, path);           /* Follow the file path */
@@ -3157,7 +3120,7 @@ FRESULT f_chmod(FATFS * fs, const TCHAR * path, uint8_t value, uint8_t mask)
 
     dj.fs = fs;
 
-    res = find_volume(dj.fs, get_ldnumber(&path), 1);
+    res = find_volume(dj.fs, get_ldnumber(fs), 1);
     if (res == FR_OK) {
         INIT_BUF(dj);
         res = follow_path(&dj, path);       /* Follow the file path */
@@ -3192,7 +3155,7 @@ FRESULT f_utime(FATFS * fs, const TCHAR * path, const FILINFO * fno)
 
     dj.fs = fs;
 
-    res = find_volume(dj.fs, get_ldnumber(&path), 1);
+    res = find_volume(dj.fs, get_ldnumber(fs), 1);
     if (res == FR_OK) {
         INIT_BUF(dj);
         res = follow_path(&dj, path);   /* Follow the file path */
@@ -3228,7 +3191,7 @@ FRESULT f_rename(FATFS * fs, const TCHAR * path_old, const TCHAR * path_new)
 
     djo.fs = fs;
 
-    res = find_volume(djo.fs, get_ldnumber(&path_old), 1);
+    res = find_volume(djo.fs, get_ldnumber(fs), 1);
     if (res == FR_OK) {
         djn.fs = djo.fs;
         INIT_BUF(djo);
@@ -3240,22 +3203,32 @@ FRESULT f_rename(FATFS * fs, const TCHAR * path_old, const TCHAR * path_new)
             if (!djo.dir) {                     /* Is root dir? */
                 res = FR_NO_FILE;
             } else {
-                memcpy(buf, djo.dir+DIR_Attr, 21);     /* Save the object information except name */
-                memcpy(&djn, &djo, sizeof (DIR));      /* Duplicate the directory object */
-                if (get_ldnumber(&path_new) >= 0)       /* Snip drive number off and ignore it */
-                    res = follow_path(&djn, path_new);  /* and check if new object is exist */
-                else
-                    res = FR_INVALID_DRIVE;
-                if (res == FR_OK) res = FR_EXIST;       /* The new object name is already existing */
-                if (res == FR_NO_FILE) {                /* Is it a valid path and no name collision? */
-/* Start critical section that any interruption can cause a cross-link */
+                /* Save the object information except name */
+                memcpy(buf, djo.dir + DIR_Attr, 21);
+
+                /* Duplicate the directory object */
+                memcpy(&djn, &djo, sizeof(DIR));
+
+                /* check if new object is exist */
+                res = follow_path(&djn, path_new);
+                if (res == FR_OK) {
+                    /* The new object name is already existing */
+                    res = FR_EXIST;
+                } else if (res == FR_NO_FILE) {
+                    /*
+                     * Is it a valid path and no name collision?
+                     * Start critical section that any interruption can cause
+                     * a cross-link
+                     */
                     res = dir_register(&djn);           /* Register the new entry */
                     if (res == FR_OK) {
                         dir = djn.dir;                  /* Copy object information except name */
-                        memcpy(dir+13, buf+2, 19);
+                        memcpy(dir + 13, buf + 2, 19);
                         dir[DIR_Attr] = buf[0] | AM_ARC;
                         djo.fs->wflag = 1;
-                        if (djo.sclust != djn.sclust && (dir[DIR_Attr] & AM_DIR)) {     /* Update .. entry in the directory if needed */
+                        if (djo.sclust != djn.sclust &&
+                            (dir[DIR_Attr] & AM_DIR)) {
+                            /* Update .. entry in the directory if needed */
                             dw = clust2sect(djo.fs, ld_clust(djo.fs, dir));
                             if (!dw) {
                                 res = FR_INT_ERR;
@@ -3263,7 +3236,9 @@ FRESULT f_rename(FATFS * fs, const TCHAR * path_old, const TCHAR * path_new)
                                 res = move_window(djo.fs, dw);
                                 dir = djo.fs->win+SZ_DIR;   /* .. entry */
                                 if (res == FR_OK && dir[1] == '.') {
-                                    dw = (djo.fs->fs_type == FS_FAT32 && djn.sclust == djo.fs->dirbase) ? 0 : djn.sclust;
+                                    dw = (djo.fs->fs_type == FS_FAT32 &&
+                                          djn.sclust == djo.fs->dirbase) ?
+                                            0 : djn.sclust;
                                     st_clust(dir, dw);
                                     djo.fs->wflag = 1;
                                 }
@@ -3299,7 +3274,7 @@ FRESULT f_getlabel(FATFS * fs, const TCHAR * path, TCHAR * label, DWORD * vsn)
 
     dj.fs = fs;
 
-    res = find_volume(dj.fs, get_ldnumber(&path), 0);
+    res = find_volume(dj.fs, get_ldnumber(fs), 0);
 
     /* Get volume label */
     if (res == FR_OK && label) {
@@ -3360,7 +3335,7 @@ FRESULT f_setlabel(FATFS * fs, const TCHAR * label)
 
     dj.fs = fs;
 
-    res = find_volume(dj.fs, get_ldnumber(&label), 1);
+    res = find_volume(dj.fs, get_ldnumber(fs), 1);
     if (res) LEAVE_FF(dj.fs, res);
 
     /* Create a volume label in directory form */

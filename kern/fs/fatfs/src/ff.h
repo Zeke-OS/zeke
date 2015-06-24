@@ -35,13 +35,14 @@ typedef struct {
 extern PARTITION VolToPart[];   /* Volume - Partition resolution table */
 #define LD2PD(vol) (VolToPart[vol].pd)  /* Get physical drive number */
 #define LD2PT(vol) (VolToPart[vol].pt)  /* Get partition index */
+#error "We don't have a working solution for get_ldnumber()"
 
 #else                           /* Single partition configuration */
 #define LD2PD(vol) (uint8_t)(vol)  /* Each logical drive is bound to the same physical drive number */
 #define LD2PT(vol) 0            /* Find first valid partition or in SFD */
+#define get_ldnumber(_fatfs_) ((_fatfs_)->drv)
 
 #endif
-
 
 
 /* Type of path name strings on FatFs API */
@@ -211,10 +212,10 @@ FRESULT f_chmod(FATFS * fs, const TCHAR * path, uint8_t value, uint8_t mask);
 FRESULT f_utime(FATFS * fs, const TCHAR * path, const FILINFO * fno);
 FRESULT f_chdir(const TCHAR * path);
 FRESULT f_chdrive(const TCHAR * path);
-FRESULT f_getfree(FATFS * fs, const TCHAR * path, DWORD * nclst);
+FRESULT f_getfree(FATFS * fs, DWORD * nclst);
 FRESULT f_getlabel(FATFS * fs, const TCHAR * path, TCHAR * label, DWORD * vsn);
 FRESULT f_setlabel(FATFS * fs, const TCHAR * label);
-FRESULT f_mount(FATFS * fs, const TCHAR * path, uint8_t opt);
+FRESULT f_mount(FATFS * fs, uint8_t opt);
 
 #define f_eof(fp) (((fp)->fptr == (fp)->fsize) ? 1 : 0)
 #define f_error(fp) ((fp)->err)
