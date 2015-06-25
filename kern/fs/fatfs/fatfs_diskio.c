@@ -43,26 +43,6 @@
 #include "fatfs.h"
 
 /**
- * @param pdrv is a (physical) drive nmuber to identify the drive.
- */
-DSTATUS fatfs_disk_initialize(uint8_t pdrv)
-{
-    /* Not needed */
-
-    return 0;
-}
-
-/**
- * @param pdrv is a (physical) drive nmuber to identify the drive.
- */
-DSTATUS fatfs_disk_status(uint8_t pdrv)
-{
-    /* TODO Must fail if invalid pdrv */
-
-    return 0;
-}
-
-/**
  * Read sector(s).
  * @param pdrv      is a (physical) drive nmuber to identify the drive.
  * @param buff      is a data buffer to store read data.

@@ -1917,7 +1917,6 @@ static uint8_t check_fs(FATFS * fs, DWORD sect)
 static FRESULT access_volume(FATFS * fs, uint8_t wmode)
 {
     int vol = get_ldnumber(fs);
-    DSTATUS stat;
 
     if (vol < 0)
         return FR_INVALID_DRIVE;
@@ -1927,23 +1926,18 @@ static FRESULT access_volume(FATFS * fs, uint8_t wmode)
 
     ENTER_FF(fs); /* Lock the volume */
 
-    if (fs->fs_type) { /* If the volume has been mounted */
-        stat = fatfs_disk_status(fs->drv);
-        /* and the physical drive is kept initialized */
-        if (!(stat & STA_NOINIT)) {
-            /* Check write protection if needed */
-            if (!fs->readonly && (wmode & FA_READ) && (stat & STA_PROTECT))
-                return FR_WRITE_PROTECTED;
-            return FR_OK; /* The file system object is valid */
-        }
-    }
+    if (fs->fs_type == 0) /* If the volume has been mounted */
+        return FR_DISK_ERR;
 
-    return FR_DISK_ERR;
+    /* Check write protection if needed */
+    if ((wmode & FA_WRITE) && fs->readonly)
+        return FR_WRITE_PROTECTED;
+
+    return FR_OK; /* The file system object is valid */
 }
 
-static FRESULT prepare_volume(FATFS * fs, int vol, uint8_t wmode)
+static FRESULT prepare_volume(FATFS * fs, int vol)
 {
-    DSTATUS stat;
     uint8_t fmt;
     DWORD bsect, fasize, tsect, sysect, nclst, szbfat;
     WORD nrsv;
@@ -1956,13 +1950,6 @@ static FRESULT prepare_volume(FATFS * fs, int vol, uint8_t wmode)
 
     fs->fs_type = 0;                    /* Clear the file system object */
     fs->drv = LD2PD(vol);               /* Bind the logical drive and a physical drive */
-    stat = fatfs_disk_initialize(fs->drv);    /* Initialize the physical drive */
-    if (stat & STA_NOINIT)              /* Check if the initialization succeeded */
-        return FR_NOT_READY;            /* Failed to initialize due to no medium or hard error */
-
-    /* Check disk write protection if needed */
-    if (!fs->readonly && wmode && (stat & STA_PROTECT))
-        return FR_WRITE_PROTECTED;
 
     /*
      * Get sector size
@@ -2116,10 +2103,8 @@ static FRESULT validate(void * obj)
    /* Assuming offset of .fs and .id in the FIL/DIR structure is identical */
    FF_FIL * fil = (FF_FIL *)obj;
 
-    if (!fil || !fil->fs || !fil->fs->fs_type || fil->fs->id != fil->id ||
-            (fatfs_disk_status(fil->fs->drv) & STA_NOINIT)) {
+    if (!fil || !fil->fs || !fil->fs->fs_type || fil->fs->id != fil->id)
         return FR_INVALID_OBJECT;
-    }
 
     ENTER_FF(fil->fs);      /* Lock file system */
 
@@ -2148,7 +2133,7 @@ FRESULT f_mount(FATFS * fs, uint8_t opt)
     fs->readonly = (opt & FATFS_READONLY) == FATFS_READONLY;
     mtx_init(&fs->sobj, MTX_TYPE_TICKET, MTX_OPT_PRICEIL);
 
-    res = prepare_volume(fs, vol, 0);
+    res = prepare_volume(fs, vol);
     LEAVE_FF(fs, res);
 }
 
