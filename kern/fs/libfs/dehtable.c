@@ -88,19 +88,32 @@ typedef struct chain_info {
 
 /**
  * Hash function.
+ * @note Only upto 32 bits.
  * @param str is the string to be hashed.
- * @param len is the length of str.
  * @return Hash value.
  */
-static size_t hash_fname(const char * str, size_t len)
+static size_t hash_fname(const char * str)
 {
-#if DEHTABLE_SIZE == 16
-    size_t hash = (size_t)(str[0] ^ str[len - 1]) & (size_t)(DEHTABLE_SIZE - 1);
-#else
-#error No suitable hash function for selected DEHTABLE_SIZE.
-#endif
+    uint32_t hash = 5381, retval = 0;
+    int chunks = NBITS(DEHTABLE_SIZE);
+    int c, mask;
 
-    return hash;
+    /* djb2 */
+    while ((c = *str++)) {
+        hash = ((hash << 5) + hash) + c;
+    }
+
+    /* fold */
+    mask = (DEHTABLE_SIZE - 1);
+    while (chunks--) {
+        retval += hash & mask;
+        mask <<= (DEHTABLE_SIZE - 1);
+    }
+
+    /* truncate */
+    retval &= (DEHTABLE_SIZE - 1);
+
+    return retval;
 }
 
 /**
@@ -221,7 +234,7 @@ static int rm_node(dh_dirent_t ** chain, const char * name)
 int dh_link(dh_table_t * dir, ino_t vnode_num, const char * name)
 {
     size_t name_len = strlenn(name, NAME_MAX + 1) + 1;
-    const size_t h = hash_fname(name, name_len);
+    const size_t h = hash_fname(name);
     const size_t entry_size = memalign(DIRENT_SIZE + name_len);
     dh_dirent_t * dea;
     chain_info_t chinfo;
@@ -266,8 +279,7 @@ out:
 
 int dh_unlink(dh_table_t * dir, const char * name)
 {
-    size_t name_len = strlenn(name, NAME_MAX + 1) + 1;
-    const size_t h = hash_fname(name, name_len);
+    const size_t h = hash_fname(name);
     dh_dirent_t ** dea;
     int err;
 
@@ -296,8 +308,7 @@ void dh_destroy_all(dh_table_t * dir)
 
 int dh_lookup(dh_table_t * dir, const char * name, ino_t * vnode_num)
 {
-    size_t name_len = strlenn(name, NAME_MAX + 1) + 1;
-    const size_t h = hash_fname(name, name_len);
+    const size_t h = hash_fname(name);
     dh_dirent_t * dea;
     dh_dirent_t * dent;
     int retval = -ENOENT;
