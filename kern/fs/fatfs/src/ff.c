@@ -2232,7 +2232,8 @@ FRESULT f_open(FF_FIL * fp, FATFS * fs, const TCHAR * path, uint8_t mode)
                 fp->dir_ptr = dir;
 #if _FS_LOCK
                 fp->lockid = inc_lock(&dj, (mode & ~FA_READ) ? 1 : 0);
-                if (!fp->lockid) res = FR_INT_ERR;
+                if (!fp->lockid)
+                    res = FR_INT_ERR;
 #endif
             }
         } else { /* RO fs */
@@ -2405,11 +2406,17 @@ FRESULT f_write(FF_FIL * fp, const void * buff, unsigned int btw,
 #endif
                         clst = create_chain(fp->fs, fp->clust); /* Follow or stretch cluster chain on the FAT */
                 }
-                if (clst == 0) break;       /* Could not allocate a new cluster (disk full) */
-                if (clst == 1) ABORT(fp->fs, FR_INT_ERR);
-                if (clst == 0xFFFFFFFF) ABORT(fp->fs, FR_DISK_ERR);
+                if (clst == 0)
+                    break; /* Could not allocate a new cluster (disk full) */
+                if (clst == 1)
+                    ABORT(fp->fs, FR_INT_ERR);
+                if (clst == 0xFFFFFFFF)
+                    ABORT(fp->fs, FR_DISK_ERR);
                 fp->clust = clst;           /* Update current cluster */
-                if (fp->sclust == 0) fp->sclust = clst; /* Set start cluster if the first write */
+                if (fp->sclust == 0) {
+                    /* Set start cluster if the first write */
+                    fp->sclust = clst;
+                }
             }
 
             if (fp->flag & FA__DIRTY) {     /* Write-back sector cache */
@@ -2421,7 +2428,8 @@ FRESULT f_write(FF_FIL * fp, const void * buff, unsigned int btw,
             }
 
             sect = clust2sect(fp->fs, fp->clust);   /* Get current sector */
-            if (!sect) ABORT(fp->fs, FR_INT_ERR);
+            if (!sect)
+                ABORT(fp->fs, FR_INT_ERR);
             sect += csect;
             cc = btw / SS(fp->fs); /* When remaining bytes >= sector size, */
             if (cc) { /* Write maximum contiguous sectors directly */
@@ -2573,11 +2581,14 @@ FRESULT f_lseek(FF_FIL * fp, DWORD ofs)
                     do {
                         pcl = cl; ncl++;
                         cl = get_fat(fp->fs, cl);
-                        if (cl <= 1) ABORT(fp->fs, FR_INT_ERR);
-                        if (cl == 0xFFFFFFFF) ABORT(fp->fs, FR_DISK_ERR);
+                        if (cl <= 1)
+                            ABORT(fp->fs, FR_INT_ERR);
+                        if (cl == 0xFFFFFFFF)
+                            ABORT(fp->fs, FR_DISK_ERR);
                     } while (cl == pcl + 1);
                     if (ulen <= tlen) {     /* Store the length and top of the fragment */
-                        *tbl++ = ncl; *tbl++ = tcl;
+                        *tbl++ = ncl;
+                        *tbl++ = tcl;
                     }
                 } while (cl < fp->fs->n_fatent);    /* Repeat until end of chain */
             }
@@ -2594,7 +2605,8 @@ FRESULT f_lseek(FF_FIL * fp, DWORD ofs)
             if (ofs) {
                 fp->clust = clmt_clust(fp, ofs - 1);
                 dsc = clust2sect(fp->fs, fp->clust);
-                if (!dsc) ABORT(fp->fs, FR_INT_ERR);
+                if (!dsc)
+                    ABORT(fp->fs, FR_INT_ERR);
                 dsc += (ofs - 1) / SS(fp->fs) & (fp->fs->csize - 1);
                 if (fp->fptr % SS(fp->fs) && dsc != fp->dsect) {    /* Refill sector cache if needed */
                     if (!fp->fs->readonly && fp->flag & FA__DIRTY) {
@@ -2640,8 +2652,10 @@ FRESULT f_lseek(FF_FIL * fp, DWORD ofs)
                 if (!fp->fs->readonly && clst == 0) {
                     /* If no cluster chain, create a new chain */
                     clst = create_chain(fp->fs, 0);
-                    if (clst == 1) ABORT(fp->fs, FR_INT_ERR);
-                    if (clst == 0xFFFFFFFF) ABORT(fp->fs, FR_DISK_ERR);
+                    if (clst == 1)
+                        ABORT(fp->fs, FR_INT_ERR);
+                    if (clst == 0xFFFFFFFF)
+                        ABORT(fp->fs, FR_DISK_ERR);
                     fp->sclust = clst;
                 }
                 fp->clust = clst;
@@ -2657,8 +2671,10 @@ FRESULT f_lseek(FF_FIL * fp, DWORD ofs)
                     } else {
                         clst = get_fat(fp->fs, clst);   /* Follow cluster chain if not in write mode */
                     }
-                    if (clst == 0xFFFFFFFF) ABORT(fp->fs, FR_DISK_ERR);
-                    if (clst <= 1 || clst >= fp->fs->n_fatent) ABORT(fp->fs, FR_INT_ERR);
+                    if (clst == 0xFFFFFFFF)
+                        ABORT(fp->fs, FR_DISK_ERR);
+                    if (clst <= 1 || clst >= fp->fs->n_fatent)
+                        ABORT(fp->fs, FR_INT_ERR);
                     fp->clust = clst;
                     fp->fptr += bcs;
                     ofs -= bcs;
@@ -2666,7 +2682,8 @@ FRESULT f_lseek(FF_FIL * fp, DWORD ofs)
                 fp->fptr += ofs;
                 if (ofs % SS(fp->fs)) {
                     nsect = clust2sect(fp->fs, clst);   /* Current sector */
-                    if (!nsect) ABORT(fp->fs, FR_INT_ERR);
+                    if (!nsect)
+                        ABORT(fp->fs, FR_INT_ERR);
                     nsect += ofs / SS(fp->fs);
                 }
             }
@@ -2886,9 +2903,16 @@ FRESULT f_getfree(FATFS * fs, DWORD * nclst)
                 clst = 2;
                 do {
                     stat = get_fat(fs, clst);
-                    if (stat == 0xFFFFFFFF) { res = FR_DISK_ERR; break; }
-                    if (stat == 1) { res = FR_INT_ERR; break; }
-                    if (stat == 0) n++;
+                    if (stat == 0xFFFFFFFF) {
+                        res = FR_DISK_ERR;
+                        break;
+                    }
+                    if (stat == 1) {
+                        res = FR_INT_ERR;
+                        break;
+                    }
+                    if (stat == 0)
+                        n++;
                 } while (++clst < fs->n_fatent);
             } else {
                 clst = fs->n_fatent;
@@ -2897,12 +2921,14 @@ FRESULT f_getfree(FATFS * fs, DWORD * nclst)
                 do {
                     if (!i) {
                         res = move_window(fs, sect++);
-                        if (res != FR_OK) break;
+                        if (res != FR_OK)
+                            break;
                         p = fs->win;
                         i = SS(fs);
                     }
                     if (fat == FS_FAT16) {
-                        if (LD_WORD(p) == 0) n++;
+                        if (LD_WORD(p) == 0)
+                            n++;
                         p += 2; i -= 2;
                     } else {
                         if ((LD_DWORD(p) & 0x0FFFFFFF) == 0) n++;
@@ -2947,11 +2973,14 @@ FRESULT f_truncate(FF_FIL * fp)
             } else {                /* When truncate a part of the file, remove remaining clusters */
                 ncl = get_fat(fp->fs, fp->clust);
                 res = FR_OK;
-                if (ncl == 0xFFFFFFFF) res = FR_DISK_ERR;
-                if (ncl == 1) res = FR_INT_ERR;
+                if (ncl == 0xFFFFFFFF)
+                    res = FR_DISK_ERR;
+                if (ncl == 1)
+                    res = FR_INT_ERR;
                 if (res == FR_OK && ncl < fp->fs->n_fatent) {
                     res = put_fat(fp->fs, fp->clust, 0x0FFFFFFF);
-                    if (res == FR_OK) res = remove_chain(fp->fs, ncl);
+                    if (res == FR_OK)
+                        res = remove_chain(fp->fs, ncl);
                 }
             }
 
@@ -2987,7 +3016,8 @@ FRESULT f_unlink(FATFS * fs, const TCHAR * path)
         INIT_BUF(dj);
         res = follow_path(&dj, path);       /* Follow the file path */
 #if _FS_LOCK
-        if (res == FR_OK) res = chk_lock(&dj, 2);   /* Cannot remove open file */
+        if (res == FR_OK)
+            res = chk_lock(&dj, 2);   /* Cannot remove open file */
 #endif
         if (res == FR_OK) {                 /* The object is accessible */
             dir = dj.dir;
@@ -3018,7 +3048,8 @@ FRESULT f_unlink(FATFS * fs, const TCHAR * path)
                 if (res == FR_OK) {
                     if (dclst)              /* Remove the cluster chain if exist */
                         res = remove_chain(dj.fs, dclst);
-                    if (res == FR_OK) res = sync_fs(dj.fs);
+                    if (res == FR_OK)
+                        res = sync_fs(dj.fs);
                 }
             }
         }
@@ -3094,7 +3125,7 @@ FRESULT f_mkdir(FATFS * fs, const TCHAR * path)
             } else {
                 dir = dj.dir;
                 dir[DIR_Attr] = AM_DIR;             /* Attribute */
-                ST_DWORD(dir+DIR_WrtTime, tm);      /* Created time */
+                ST_DWORD(dir + DIR_WrtTime, tm);    /* Created time */
                 st_clust(dir, dcl);                 /* Table start cluster */
                 dj.fs->wflag = 1;
                 res = sync_fs(dj.fs);
@@ -3299,7 +3330,8 @@ FRESULT f_getlabel(FATFS * fs, const TCHAR * path, TCHAR * label, DWORD * vsn)
                 j = 11;
                 do {
                     label[j] = 0;
-                    if (!j) break;
+                    if (!j)
+                        break;
                 } while (label[--j] == ' ');
             }
             if (res == FR_NO_FILE) {    /* No label, return nul string */
@@ -3373,7 +3405,8 @@ FRESULT f_setlabel(FATFS * fs, const TCHAR * label)
                 /* Reject invalid characters for volume label */
                 LEAVE_FF(dj.fs, FR_INVALID_NAME);
             }
-            if (w >= 0x100) vn[j++] = (uint8_t)(w >> 8);
+            if (w >= 0x100)
+                vn[j++] = (uint8_t)(w >> 8);
             vn[j++] = (uint8_t)w;
         } while (i < sl);
         while (j < 11) vn[j++] = ' ';
