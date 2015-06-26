@@ -313,12 +313,12 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
         unsigned char fomode = 0;
 
         fomode |= (oflags & O_CREAT) ? FA_OPEN_ALWAYS : FA_OPEN_EXISTING;
-        fomode |= FA_READ | FA_WRITE;
-#if 0
-        fomode |= (oflags & O_RDONLY) ? FA_READ : 0;
-        fomode |= (oflags & O_WRONLY) ? ((fno.fattrib & AM_RDO) ?
-                                         0 : FA_WRITE) : 0;
-#endif
+        /* The kernel should always have RW if possible. */
+        if (sb->sb.mode_flags & MNT_RDONLY) {
+            fomode |= FA_READ;
+        } else {
+            fomode |= FA_READ | FA_WRITE;
+        }
 
         vn_mode = S_IFREG;
         err = f_open(&in->fp, &sb->ff_fs, in->in_fpath, fomode);

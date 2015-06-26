@@ -2214,17 +2214,24 @@ FRESULT f_open(FF_FIL * fp, FATFS * fs, const TCHAR * path, uint8_t mode)
                         }
                     }
                 }
-            }
-            else {  /* Open an existing file */
-                if (res == FR_OK) {                 /* Follow succeeded */
-                    if (dir[DIR_Attr] & AM_DIR) {   /* It is a directory */
-                        res = FR_NO_FILE;
-                    } else {
-                        if ((mode & FA_WRITE) && (dir[DIR_Attr] & AM_RDO)) /* R/O violation */
-                            res = FR_DENIED;
+            } else if (res == FR_OK) {
+                /* Open an existing file if follow succeeded */
+                if (dir[DIR_Attr] & AM_DIR) {   /* It is a directory */
+                    res = FR_NO_FILE;
+                } else {
+                    /*
+                     * NO RO check is needed because the actual check is done
+                     * elsewhere.
+                     */
+#if 0
+                    if ((mode & FA_WRITE) && (dir[DIR_Attr] & AM_RDO)) {
+                        /* R/O violation */
+                        res = FR_DENIED;
                     }
+#endif
                 }
             }
+
             if (res == FR_OK) {
                 if (mode & FA_CREATE_ALWAYS)        /* Set file change flag if created or overwritten */
                     mode |= FA__WRITTEN;
@@ -2716,7 +2723,7 @@ FRESULT f_lseek(FF_FIL * fp, DWORD ofs)
  * @param dp Pointer to directory object to create.
  * @param path Pointer to the directory path.
  */
-FRESULT f_opendir(FF_DIR * dp, FATFS * fs, const TCHAR* path)
+FRESULT f_opendir(FF_DIR * dp, FATFS * fs, const TCHAR * path)
 {
     FRESULT res;
     DEF_NAMEBUF;
