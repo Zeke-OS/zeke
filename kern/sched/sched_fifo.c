@@ -2,7 +2,7 @@
  *******************************************************************************
  * @file    sched_fifo.c
  * @author  Olli Vanhoja
- * @brief   RR scheduler.
+ * @brief   FIFO scheduler.
  * @section LICENSE
  * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -62,9 +62,20 @@ static int fifo_insert(struct scheduler * sobj, struct thread_info * thread)
     if (!SCHED_TEST_POLFLAG(thread, SCHED_POLFLAG_INFIFORQ)) {
         RB_INSERT(fiforunq, &fifo->runq_head, thread);
         thread->sched.ts_counter = -1; /* Not used. */
+
+        /*
+         * The priority of a process is static until it's removed from the queue
+         * and it can only change on reinsert.
+         */
         thread->sched.fifo.prio = thread->param.sched_priority;
+
         thread->sched.policy_flags |= SCHED_POLFLAG_INFIFORQ;
         fifo->nr_active++;
+    } else {
+        /* Reinsert should update the priority. */
+        RB_REMOVE(fiforunq, &fifo->runq_head, thread);
+        thread->sched.fifo.prio = thread->param.sched_priority;
+        RB_INSERT(fiforunq, &fifo->runq_head, thread);
     }
 
     return 0;
@@ -85,6 +96,9 @@ static struct thread_info * fifo_schedule(struct scheduler * sobj)
 {
     struct sched_fifo * fifo = container_of(sobj, struct sched_fifo, sched);
     struct thread_info * thread;
+
+    if (RB_EMPTY(&fifo->runq_head))
+        return NULL;
 
     while ((thread = RB_MIN(fiforunq, &fifo->runq_head))) {
         const enum thread_state state = thread_state_get(thread);
