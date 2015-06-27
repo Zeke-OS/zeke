@@ -54,6 +54,7 @@
 /*
  * Scheduler constructors.
  */
+extern struct scheduler * sched_create_fifo(void);
 extern struct scheduler * sched_create_rr(void);
 extern struct scheduler * sched_create_idle(void);
 
@@ -61,6 +62,7 @@ extern struct scheduler * sched_create_idle(void);
  * An array of scheduler constructors in order of desired execution order.
  */
 static sched_constructor * const sched_ctor_arr[] = {
+    &sched_create_fifo,
     &sched_create_rr,
     &sched_create_idle,
 };
@@ -225,8 +227,6 @@ int __kinit__ sched_init(void)
 
 int thread_id_compare(struct thread_info * a, struct thread_info * b)
 {
-    KASSERT(a && b, "a & b must be set");
-
     return a->id - b->id;
 }
 

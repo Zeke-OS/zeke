@@ -125,11 +125,24 @@ struct thread_info {
     struct sched_thread_data {
         enum thread_state state;
         unsigned policy_flags;
-        int ts_counter;
-        mtx_t tdlock;                   /*!< Lock for data in this substruct. */
+        int ts_counter;             /*!< Thread time slice counter;
+                                     *   Set to -1 if not used. */
+        mtx_t tdlock;               /*!< Lock for data in this substruct. */
         RB_ENTRY(thread_info) ttentry_; /*!< Thread table entry. */
         STAILQ_ENTRY(thread_info) readyq_entry_;
-        TAILQ_ENTRY(thread_info) rrrunq_entry_;
+
+        /* Scheduler policy specific data. */
+        union {
+            /* FIFO */
+            struct thread_sched_fifo {
+                int prio;
+                RB_ENTRY(thread_info) runq_entry_;
+            } fifo;
+            /* RR */
+            struct thread_sched_rr {
+                TAILQ_ENTRY(thread_info) runq_entry_;
+            } rr;
+        };
     } sched;
 
     sw_stack_frame_t sframe[SCHED_SFRAME_ARR_SIZE];

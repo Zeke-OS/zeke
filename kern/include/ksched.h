@@ -96,6 +96,12 @@ SYSCTL_DECL(_kern_sched);
 void sched_get_loads(uint32_t loads[3]);
 
 /**
+ * Test if policy flag is set.
+ */
+#define SCHED_TEST_POLFLAG(_thread_, _flag_) \
+    ((thread->sched.policy_flags & _flag_) == _flag_)
+
+/**
  * Test if it is ok to terminate.
  * @param _x_ is the flags of the thread tested.
  */

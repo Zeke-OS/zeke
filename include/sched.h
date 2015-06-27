@@ -49,11 +49,9 @@ struct sched_param {
 };
 
 /* Scheduling policies */
-#if 0
-#define SCHED_FIFO  1
-#endif
-#define SCHED_RR    0
-#define SCHED_OTHER 0
+#define SCHED_FIFO  0
+#define SCHED_RR    1
+#define SCHED_OTHER 1
 
 #define NICE_MAX    20
 #define NICE_DEF    0

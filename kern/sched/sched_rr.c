@@ -31,37 +31,31 @@
  */
 
 #include <stddef.h>
-#include <libkern.h>
 #include <kerror.h>
 #include <kmalloc.h>
+#include <libkern.h>
 #include <ksched.h>
 
-#define RR_POLF_INRRRQ      0x01    /*!< Thread in rr run queue. */
+#define SCHED_POLFLAG_INRRRQ  0x01 /*!< Thread in run queue. */
 
-/**
- * Test if policy flag is set.
- */
-#define TEST_POLF(_thread_, _flag_) \
-    ((thread->sched.policy_flags & _flag_) == _flag_)
-
-#define RRRUNQ_ENTRY        sched.rrrunq_entry_
+#define RRRUNQ_ENTRY    sched.rr.runq_entry_
 
 #define GET_TTS(x) (21 + (x)->param.sched_priority)
 
 struct sched_rr {
     struct scheduler sched;
-    TAILQ_HEAD(runq, thread_info) runq_head;
     unsigned nr_active;
+    TAILQ_HEAD(runq, thread_info) runq_head;
 };
 
 static int rr_insert(struct scheduler * sobj, struct thread_info * thread)
 {
     struct sched_rr * rr = container_of(sobj, struct sched_rr, sched);
 
-    if (!TEST_POLF(thread, RR_POLF_INRRRQ)) {
+    if (!SCHED_TEST_POLFLAG(thread, SCHED_POLFLAG_INRRRQ)) {
         TAILQ_INSERT_TAIL(&rr->runq_head, thread, RRRUNQ_ENTRY);
         thread->sched.ts_counter = GET_TTS(thread);
-        thread->sched.policy_flags |= RR_POLF_INRRRQ;
+        thread->sched.policy_flags |= SCHED_POLFLAG_INRRRQ;
         rr->nr_active++;
     }
 
@@ -72,9 +66,9 @@ static void rr_remove(struct scheduler * sobj, struct thread_info * thread)
 {
     struct sched_rr * rr = container_of(sobj, struct sched_rr, sched);
 
-    if (TEST_POLF(thread, RR_POLF_INRRRQ)) {
+    if (SCHED_TEST_POLFLAG(thread, SCHED_POLFLAG_INRRRQ)) {
         TAILQ_REMOVE(&rr->runq_head, thread, RRRUNQ_ENTRY);
-        thread->sched.policy_flags &= ~RR_POLF_INRRRQ;
+        thread->sched.policy_flags &= ~SCHED_POLFLAG_INRRRQ;
         rr->nr_active--;
     }
 }
@@ -98,10 +92,6 @@ static void rr_thread_act(struct scheduler * sobj, struct thread_info * thread)
         break;
     case THREAD_STATE_DEAD:
         rr_remove(sobj, thread);
-        /*
-         * TODO Possible deadlock because thread_remove() uses kfree,
-         * should be cleaned in idle task.
-         */
         if (thread_flags_is_set(thread, SCHED_DETACH_FLAG))
             thread_remove(thread->id);
         break;
@@ -135,6 +125,9 @@ static unsigned get_nr_active(struct scheduler * sobj)
     return rr->nr_active;
 }
 
+/**
+ * Initializer struct for a rr scheduler.
+ */
 static const struct sched_rr sched_rr_init = {
     .sched.name = "sched_rr",
     .sched.insert = rr_insert,
@@ -150,7 +143,7 @@ struct scheduler * sched_create_rr(void)
     if (!sched)
         return NULL;
 
-    *sched = sched_rr_init;
+    *sched = sched_rr_init; /* init */
     TAILQ_INIT(&sched->runq_head);
 
     return &sched->sched;
