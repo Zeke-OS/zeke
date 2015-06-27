@@ -2938,7 +2938,8 @@ FRESULT f_getfree(FATFS * fs, DWORD * nclst)
                             n++;
                         p += 2; i -= 2;
                     } else {
-                        if ((LD_DWORD(p) & 0x0FFFFFFF) == 0) n++;
+                        if ((LD_DWORD(p) & 0x0FFFFFFF) == 0)
+                            n++;
                         p += 4; i -= 4;
                     }
                 } while (--clst);
@@ -2974,10 +2975,14 @@ FRESULT f_truncate(FF_FIL * fp)
         if (fp->fsize > fp->fptr) {
             fp->fsize = fp->fptr;   /* Set file size to current R/W point */
             fp->flag |= FA__WRITTEN;
-            if (fp->fptr == 0) {    /* When set file size to zero, remove entire cluster chain */
+            if (fp->fptr == 0) {
+                /* When set file size to zero, remove entire cluster chain */
                 res = remove_chain(fp->fs, fp->sclust);
                 fp->sclust = 0;
-            } else {                /* When truncate a part of the file, remove remaining clusters */
+            } else {
+                /*
+                 * When truncate a part of the file, remove remaining clusters
+                 */
                 ncl = get_fat(fp->fs, fp->clust);
                 res = FR_OK;
                 if (ncl == 0xFFFFFFFF)
@@ -3029,17 +3034,20 @@ FRESULT f_unlink(FATFS * fs, const TCHAR * path)
         if (res == FR_OK) {                 /* The object is accessible */
             dir = dj.dir;
             if (!dir) {
-                res = FR_INVALID_NAME;      /* Cannot remove the start directory */
+                res = FR_INVALID_NAME; /* Cannot remove the start directory */
             } else {
                 if (dir[DIR_Attr] & AM_RDO)
-                    res = FR_DENIED;        /* Cannot remove R/O object */
+                    res = FR_DENIED; /* Cannot remove R/O object */
             }
             dclst = ld_clust(dj.fs, dir);
-            if (res == FR_OK && (dir[DIR_Attr] & AM_DIR)) { /* Is it a sub-dir? */
+
+            /* Is it a sub-dir? */
+            if (res == FR_OK && (dir[DIR_Attr] & AM_DIR)) {
                 if (dclst < 2) {
                     res = FR_INT_ERR;
                 } else {
-                    memcpy(&sdj, &dj, sizeof (DIR));   /* Check if the sub-directory is empty or not */
+                    /* Check if the sub-directory is empty or not */
+                    memcpy(&sdj, &dj, sizeof(DIR));
                     sdj.sclust = dclst;
                     res = dir_sdi(&sdj, 2);     /* Exclude dot entries */
                     if (res == FR_OK) {
@@ -3051,9 +3059,9 @@ FRESULT f_unlink(FATFS * fs, const TCHAR * path)
                 }
             }
             if (res == FR_OK) {
-                res = dir_remove(&dj);      /* Remove the directory entry */
+                res = dir_remove(&dj); /* Remove the directory entry */
                 if (res == FR_OK) {
-                    if (dclst)              /* Remove the cluster chain if exist */
+                    if (dclst) /* Remove the cluster chain if exist */
                         res = remove_chain(dj.fs, dclst);
                     if (res == FR_OK)
                         res = sync_fs(dj.fs);
@@ -3083,13 +3091,14 @@ FRESULT f_mkdir(FATFS * fs, const TCHAR * path)
     res = access_volume(dj.fs, 1);
     if (res == FR_OK) {
         INIT_BUF(dj);
-        res = follow_path(&dj, path);           /* Follow the file path */
+        res = follow_path(&dj, path); /* Follow the file path */
         if (res == FR_OK) {
             /* Any object with same name is already existing */
             res = FR_EXIST;
         }
-        if (res == FR_NO_FILE) {                /* Can create a new directory */
-            dcl = create_chain(dj.fs, 0);       /* Allocate a cluster for the new directory table */
+        if (res == FR_NO_FILE) { /* Can create a new directory */
+            /* Allocate a cluster for the new directory table */
+            dcl = create_chain(dj.fs, 0);
             res = FR_OK;
             if (dcl == 0)
                 res = FR_DENIED; /* No space to allocate a new cluster */
@@ -3099,7 +3108,7 @@ FRESULT f_mkdir(FATFS * fs, const TCHAR * path)
                 res = FR_DISK_ERR;
             if (res == FR_OK)                   /* Flush FAT */
                 res = sync_window(dj.fs);
-            if (res == FR_OK) {                 /* Initialize the new directory table */
+            if (res == FR_OK) { /* Initialize the new directory table */
                 dsc = clust2sect(dj.fs, dcl);
                 dir = dj.fs->win;
                 memset(dir, 0, SS(dj.fs));
@@ -3113,7 +3122,8 @@ FRESULT f_mkdir(FATFS * fs, const TCHAR * path)
                 if (dj.fs->fs_type == FS_FAT32 && pcl == dj.fs->dirbase)
                     pcl = 0;
                 st_clust(dir + SZ_DIR, pcl);
-                for (n = dj.fs->csize; n; n--) {    /* Write dot entries and clear following sectors */
+                for (n = dj.fs->csize; n; n--) {
+                    /* Write dot entries and clear following sectors */
                     dj.fs->winsect = dsc++;
                     dj.fs->wflag = 1;
                     res = sync_window(dj.fs);
@@ -3162,15 +3172,19 @@ FRESULT f_chmod(FATFS * fs, const TCHAR * path, uint8_t value, uint8_t mask)
     res = access_volume(dj.fs, 1);
     if (res == FR_OK) {
         INIT_BUF(dj);
-        res = follow_path(&dj, path);       /* Follow the file path */
+        res = follow_path(&dj, path); /* Follow the file path */
         FREE_BUF();
         if (res == FR_OK) {
             dir = dj.dir;
-            if (!dir) {                     /* Is it a root directory? */
+            if (!dir) { /* Is it a root directory? */
                 res = FR_INVALID_NAME;
-            } else {                        /* File or sub directory */
-                mask &= AM_RDO|AM_HID|AM_SYS|AM_ARC;    /* Valid attribute mask */
-                dir[DIR_Attr] = (value & mask) | (dir[DIR_Attr] & (uint8_t)~mask); /* Apply attribute change */
+            } else { /* File or sub directory */
+                mask &= AM_RDO|AM_HID|AM_SYS|AM_ARC; /* Valid attribute mask */
+
+                /* Apply attribute change */
+                dir[DIR_Attr] = (value & mask) |
+                                (dir[DIR_Attr] & (uint8_t)~mask);
+
                 dj.fs->wflag = 1;
                 res = sync_fs(dj.fs);
             }
@@ -3259,9 +3273,9 @@ FRESULT f_rename(FATFS * fs, const TCHAR * path_old, const TCHAR * path_new)
                      * Start critical section that any interruption can cause
                      * a cross-link
                      */
-                    res = dir_register(&djn);           /* Register the new entry */
+                    res = dir_register(&djn); /* Register the new entry */
                     if (res == FR_OK) {
-                        dir = djn.dir;                  /* Copy object information except name */
+                        dir = djn.dir; /* Copy object information except name */
                         memcpy(dir + 13, buf + 2, 19);
                         dir[DIR_Attr] = buf[0] | AM_ARC;
                         djo.fs->wflag = 1;
@@ -3284,7 +3298,7 @@ FRESULT f_rename(FATFS * fs, const TCHAR * path_old, const TCHAR * path_new)
                             }
                         }
                         if (res == FR_OK) {
-                            res = dir_remove(&djo);     /* Remove old entry */
+                            res = dir_remove(&djo); /* Remove old entry */
                             if (res == FR_OK)
                                 res = sync_fs(djo.fs);
                         }
@@ -3341,7 +3355,8 @@ FRESULT f_getlabel(FATFS * fs, const TCHAR * path, TCHAR * label, DWORD * vsn)
                         break;
                 } while (label[--j] == ' ');
             }
-            if (res == FR_NO_FILE) {    /* No label, return nul string */
+            if (res == FR_NO_FILE) {
+                /* No label, return nul string */
                 label[0] = 0;
                 res = FR_OK;
             }
@@ -3376,7 +3391,8 @@ FRESULT f_setlabel(FATFS * fs, const TCHAR * label)
     dj.fs = fs;
 
     res = access_volume(dj.fs, 1);
-    if (res) LEAVE_FF(dj.fs, res);
+    if (res)
+        LEAVE_FF(dj.fs, res);
 
     /* Create a volume label in directory form */
     vn[0] = 0;
@@ -3390,7 +3406,8 @@ FRESULT f_setlabel(FATFS * fs, const TCHAR * label)
 #else
             w = (uint8_t)label[i++];
             if (IsDBCS1(w))
-                w = (j < 10 && i < sl && IsDBCS2(label[i])) ? w << 8 | (uint8_t)label[i++] : 0;
+                w = (j < 10 && i < sl && IsDBCS2(label[i])) ?
+                    w << 8 | (uint8_t)label[i++] : 0;
 #if configFATFS_LFN
             w = ff_convert(ff_wtoupper(ff_convert(w, 1)), 0);
 #else
@@ -3416,7 +3433,9 @@ FRESULT f_setlabel(FATFS * fs, const TCHAR * label)
                 vn[j++] = (uint8_t)(w >> 8);
             vn[j++] = (uint8_t)w;
         } while (i < sl);
-        while (j < 11) vn[j++] = ' ';
+        while (j < 11) {
+            vn[j++] = ' ';
+        }
     }
 
     /* Set volume label */
@@ -3434,11 +3453,12 @@ FRESULT f_setlabel(FATFS * fs, const TCHAR * label)
             }
             dj.fs->wflag = 1;
             res = sync_fs(dj.fs);
-        } else {                    /* No volume label is found or error */
+        } else { /* No volume label is found or error */
             if (res == FR_NO_FILE) {
                 res = FR_OK;
-                if (vn[0]) {                /* Create volume label as new */
-                    res = dir_alloc(&dj, 1);    /* Allocate an entry for volume label */
+                if (vn[0]) { /* Create volume label as new */
+                    /* Allocate an entry for volume label */
+                    res = dir_alloc(&dj, 1);
                     if (res == FR_OK) {
                         memset(dj.dir, 0, SZ_DIR); /* Set volume label */
                         memcpy(dj.dir, vn, 11);
