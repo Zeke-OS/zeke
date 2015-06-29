@@ -119,26 +119,26 @@ struct thread_info {
     pid_t pid_owner;                /*!< Owner process of this thread. */
 
     /**
-     * Scheduler data,
+     * Scheduler data.
      * Data that shouldn't be cloned to any other thread.
      */
     struct sched_thread_data {
-        enum thread_state state;
-        unsigned policy_flags;
+        enum thread_state state;    /*!< Thread execution state. */
+        unsigned policy_flags;      /*!< Scheduling policy specific flags */
         int ts_counter;             /*!< Thread time slice counter;
                                      *   Set to -1 if not used. */
         mtx_t tdlock;               /*!< Lock for data in this substruct. */
         RB_ENTRY(thread_info) ttentry_; /*!< Thread table entry. */
         STAILQ_ENTRY(thread_info) readyq_entry_;
 
-        /* Scheduler policy specific data. */
+        /* Scheduling policy specific data. */
         union {
-            /* FIFO */
+            /* FIFO policy */
             struct thread_sched_fifo {
-                int prio;
+                int prio;           /*!< EXEC time priority. */
                 RB_ENTRY(thread_info) runq_entry_;
             } fifo;
-            /* RR */
+            /* RR policy */
             struct thread_sched_rr {
                 TAILQ_ENTRY(thread_info) runq_entry_;
             } rr;

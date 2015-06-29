@@ -45,6 +45,11 @@ struct exec_loadfn {
     int (*fn)(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base);
 };
 
+/**
+ * Declare a executable loader function.
+ * @param fun is the name of the function.
+ * @param namestr is a C string containing the name of the executable type.
+ */
 #define EXEC_LOADFN(fun, namestr)           \
     static struct exec_loadfn fun##_st = {  \
         .name = namestr, .fn = fun          \

@@ -212,6 +212,17 @@ typedef struct fs {
     char fsname[8];
     mtx_t fs_giant;
 
+    /**
+     * Mount a new super block of this fs type.
+     * @param source    is a pointer to the source path/URI if applicable to
+     *                  the file system.
+     * @param mode      contains MNT_ mount flags defined in mount.h.
+     * @param parm      is a pointer to file system specific parameters, parm
+     *                  doesn't need to be C string.
+     * @param parm_len  is the size of parm in bytes.
+     * @param[out] sb   is a pointer to a pointer where a pointer to the
+     *                  resulting super block will be returned.
+     */
     int (*mount)(const char * source, uint32_t mode,
                  const char * parm, int parm_len, struct fs_superblock ** sb);
 
@@ -518,13 +529,14 @@ fs_t * fs_iterate(fs_t * fsp);
 /**
  * Mount file system.
  * @param target    is the target mount point directory.
- * @param vonde_dev is a vnode of a device or other mountable file system
- *                  device.
+ * @param source    is a pointer to the source path/URI if applicable to
+ *                  the file system.
  * @param fsname    is the name of the file system type to mount. This
  *                  argument is optional and if left out fs_mount() tries
  *                  to determine the file system type from existing information.
- * @param flags
- * @param parm
+ * @param flags     contains MNT_ mount flags defined in mount.h.
+ * @param parm      is a pointer to file system specific parameters, parm
+ *                  doesn't need to be C string.
  * @param parm_len  is the size of parm in bytes.
  */
 int fs_mount(vnode_t * target, const char * source, const char * fsname,
@@ -552,6 +564,7 @@ int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str,
  * Walks the file system for a process and tries to locate vnode corresponding
  * to a given path.
  * @param fd        is the optional starting point for relative search.
+ * @param path      is a pointer to the path C string.
  * @param atflags   if this is set to AT_FDARG then fd is used;
  *                  AT_FDCWD is implicit rule for this function.
  *                  AT_SYMLINK_NOFOLLOW is optional and AT_SYMLINK_FOLLOW is
