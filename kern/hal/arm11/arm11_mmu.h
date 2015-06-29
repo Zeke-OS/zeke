@@ -96,8 +96,10 @@
  * Domain Access Control Macros
  */
 #define MMU_DOMAC_NA        0x0 /*!< Any access generates a domain fault. */
-#define MMU_DOMAC_CL        0x1 /*!< Client. Access is checked against ap bits in TLB. */
-#define MMU_DOMAC_MA        0x3 /*!< Manager. No access permission checks performed. */
+#define MMU_DOMAC_CL        0x1 /*!< Client.
+                                 * Access is checked against AP bits in TLB. */
+#define MMU_DOMAC_MA        0x3 /*!< Manager.
+                                 * No access permission checks performed. */
 
 /**
  * Domain number to domain mask.
@@ -143,7 +145,7 @@
 #define MMU_C1_CR_U         0x00400000 /*!< Unaligned data access operations. */
 #define MMU_C1_CR_VE        0x01000000 /*!< Enables the VIC interface */
 #define MMU_C1_CR_TR        0x10000000 /*!< Enables TEX remap. */
-#define MMU_C1_CR_FA        0x20000000 /*!< Force AP bits */ /* TODO? */
+#define MMU_C1_CR_FA        0x20000000 /*!< Force AP bits */
 
 /**
  * Default MMU C1 configuration for Zeke

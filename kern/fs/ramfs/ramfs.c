@@ -412,13 +412,14 @@ static void init_inode_attr(ramfs_inode_t * inode, mode_t mode)
 {
     inode->in_vnode.vn_mode = mode;
     inode->in_vnode.vn_len = 0;
+    /* TODO other flags etc. */
 #if 0
-    inode->in_vnode->mutex = /* TODO other flags etc. */
+    inode->in_vnode->mutex =
 #endif
     vrefset(&inode->in_vnode, 2); /* One ref for ramfs, one ref for caller. */
     inode->in_nlink = 0;
     inode->in_uid = curproc->cred.euid;
-    inode->in_gid = curproc->cred.egid; /* TODO or to egid of the parent dir */
+    inode->in_gid = curproc->cred.egid; /* RFE or to egid of the parent dir */
     /* TODO set times */
     inode->in_blocks = 0;
     inode->in_blksize = MMU_PGSIZE_COARSE;
@@ -517,10 +518,6 @@ int ramfs_lookup(vnode_t * dir, const char * name, vnode_t ** result)
     return 0;
 }
 
-/*
- * TODO This could be added to vnode_ops as well and nofs should maybe implement
- *      a generic less optimal version of this.
- */
 int ramfs_revlookup(vnode_t * dir, ino_t * ino, char * name, size_t name_len)
 {
     ramfs_inode_t * inode_dir;

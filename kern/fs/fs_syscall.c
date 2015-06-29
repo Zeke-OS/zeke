@@ -510,11 +510,11 @@ static int sys_fcntl(__user void * user_args)
     case F_SETOWN:
         /* TODO F_SETOWN needed for sockets */
     case F_GETLK:
-        /* TODO */
+        /* TODO F_GETLK */
     case F_SETLK:
-        /* TODO */
+        /* TODO F_SETLK */
     case F_SETLKW:
-        /* TODO */
+        /* TODO F_SETLKW */
     default:
         set_errno(EINVAL);
     }

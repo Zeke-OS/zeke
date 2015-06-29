@@ -350,7 +350,7 @@ again:  /* Get vnode by name in this dir. */
             orig_vn = vnode;
 
             /*
-             * TODO
+             * TODO soft links and O_NOFOLLOW for lookup_vnode()
              * - soft links support
              * - if O_NOFOLLOW we should fail on soft link and return
              *   (-ELOOP)
