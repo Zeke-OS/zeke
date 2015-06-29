@@ -67,10 +67,11 @@ void mmu_lock_init(void)
 int mmu_init_pagetable(const mmu_pagetable_t * pt)
 {
     int i;
-    /* TODO Transitional hack to support nr_blocks = 0 */
-    const size_t nr_tables = (pt->nr_tables == 0) ? 1 : pt->nr_tables;
+    const size_t nr_tables = pt->nr_tables;
     const uint32_t pte = MMU_PTE_FAULT;
     uint32_t * p_pte = (uint32_t *)pt->pt_addr; /* points to a pt entry in PT */
+
+    KASSERT(nr_tables > 0, "nr_tables must be greater than zero");
 
     if (!p_pte) {
 #if configDEBUG >= KERROR_DEBUG
@@ -162,11 +163,6 @@ static void mmu_map_coarse_region(const mmu_region_t * region)
 {
     uint32_t * p_pte;
     uint32_t pte;
-    /* TODO Transitional hack to support nr_blocks = 0 */
-#if 0
-    const size_t nr_tables_raw = region->pt->nr_tables;
-    const size_t nr_tables = (nr_tables_raw == 0) ? 1 : nr_tables_raw;
-#endif
     const int pages = region->num_pages - 1;
     istate_t s;
 
@@ -306,12 +302,12 @@ int mmu_unmap_region(const mmu_region_t * region)
 static void attach_coarse_pagetable(const mmu_pagetable_t * restrict pt)
 {
     uint32_t * ttb;
-    /* TODO Transitional */
-    const size_t nr_tables = (pt->nr_tables == 0) ? 1 : pt->nr_tables;
+
+    KASSERT(pt->nr_tables > 0, "nr_tables must be greater than zero");
 
     ttb = (uint32_t *)pt->master_pt_addr;
 
-    for (size_t j = 0; j < nr_tables; j++) {
+    for (size_t j = 0; j < pt->nr_tables; j++) {
         uint32_t pte;
         size_t i;
 
@@ -375,10 +371,11 @@ int mmu_attach_pagetable(const mmu_pagetable_t * pt)
 int mmu_detach_pagetable(const mmu_pagetable_t * pt)
 {
     uint32_t * ttb;
-    /* TODO Transitional */
-    const size_t nr_tables = (pt->nr_tables == 0) ? 1 : pt->nr_tables;
+    const size_t nr_tables = pt->nr_tables;
     uint32_t i, j;
     istate_t s;
+
+    KASSERT(nr_tables > 0, "nr_tables must be greater than zero");
 
     if (pt->pt_type == MMU_PTT_MASTER) {
         KERROR(KERROR_ERR, "Cannot detach a master pt\n");
