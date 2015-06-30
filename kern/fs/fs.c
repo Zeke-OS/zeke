@@ -88,7 +88,7 @@ int __kinit__ fs_init(void)
 int fs_register(fs_t * fs)
 {
 #ifdef configFS_DEBUG
-    KERROR(KERROR_DEBUG, "fs_register(fs:\"%s\")\n", fs->fsname);
+    KERROR(KERROR_DEBUG, "%s(fs \"%s\")\n", __func__, fs->fsname);
 #endif
 
     FS_LOCK();
@@ -179,9 +179,9 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
 
 #ifdef configFS_DEBUG
      KERROR(KERROR_DEBUG,
-            "fs_mount(target \"%p\", source \"%s\", fsname \"%s\", "
+            "%s(target \"%p\", source \"%s\", fsname \"%s\", "
             "flags %x, parm \"%s\", parm_len %d)\n",
-            target, source, fsname, flags, parm, parm_len);
+            __func__, target, source, fsname, flags, parm, parm_len);
 #endif
     KASSERT(target, "target must be set");
 
@@ -246,7 +246,7 @@ int fs_umount(struct fs_superblock * sb)
     vnode_t * next;
 
 #ifdef configFS_DEBUG
-    KERROR(KERROR_DEBUG, "fs_umount(sb:%p)\n", sb);
+    KERROR(KERROR_DEBUG, "%s(sb:%p)\n", __func__, sb);
 #endif
     KASSERT(sb, "sb is set");
     KASSERT(sb->fs && sb->root && sb->root->vn_prev_mountpoint &&
@@ -389,8 +389,8 @@ int fs_namei_proc(vnode_t ** result, int fd, const char * path, int atflags)
 
 #ifdef configFS_DEBUG
     KERROR(KERROR_DEBUG,
-           "fs_namei_proc(result %p, fd %d, path \"%s\", atflags %x)\n",
-           result, fd, path, atflags);
+           "%s(result %p, fd %d, path \"%s\", atflags %x)\n",
+           __func__, result, fd, path, atflags);
 #endif
 
     if (path[0] == '\0')
@@ -703,8 +703,8 @@ int fs_creat_curproc(const char * pathname, mode_t mode, vnode_t ** result)
     int retval = 0;
 
 #ifdef configFS_DEBUG
-    KERROR(KERROR_DEBUG, "fs_creat_curproc(pathname \"%s\", mode %u)\n",
-           pathname, (unsigned)mode);
+    KERROR(KERROR_DEBUG, "%s(pathname \"%s\", mode %u)\n",
+           __func__, pathname, (unsigned)mode);
 #endif
 
     retval = getvndir(pathname, &dir, &name, O_CREAT);
@@ -718,7 +718,7 @@ int fs_creat_curproc(const char * pathname, mode_t mode, vnode_t ** result)
     retval = dir->vnode_ops->create(dir, name, mode, result);
 
 #ifdef configFS_DEBUG
-    KERROR(KERROR_DEBUG, "\tresult: %p\n", *result);
+    KERROR(KERROR_DEBUG, "%s() result: %p\n", __func__, *result);
 #endif
 
 out:

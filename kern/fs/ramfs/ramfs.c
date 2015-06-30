@@ -278,7 +278,7 @@ int ramfs_umount(struct fs_superblock * fs_sb)
 
     /*
      * TODO Check that there is no more references to any vnodes of
-     * this super block before destroying everyting related to it.
+     * this super block before destroying everything related to it.
      */
     fs_remove_superblock(&ramfs_fs, &rsb->sb);
     destroy_superblock(rsb); /* Destroy all data. */
@@ -298,7 +298,7 @@ int ramfs_get_vnode(struct fs_superblock * sb, ino_t * vnode_num,
         return -EINVAL;
     }
 
-    /* Get pointer to the ramfs_sb from generic sb. */
+    /* Get a pointer to the ramfs_sb from generic sb. */
     ramfs_sb = get_rfsb_of_sb(sb);
 
     if (*vnode_num >= (ino_t)(ramfs_sb->ramfs_iarr_size)) {
@@ -342,7 +342,7 @@ int ramfs_delete_vnode(vnode_t * vnode)
     KASSERT(inode != NULL, "inode should be set");
 
 #ifdef configRAMFS_DEBUG
-    KERROR(KERROR_DEBUG, "%s, ramfs_delete_vnode(%u)\n", vnode->sb->fs->fsname,
+    KERROR(KERROR_DEBUG, "%s::%s(%u)\n", vnode->sb->fs->fsname, __func__,
            (unsigned)vnode->vn_num);
 #endif
 
@@ -395,12 +395,12 @@ ssize_t ramfs_read(file_t * file, void * buf, size_t count)
     size_t bytes_rd = 0;
 
     switch (file->vnode->vn_mode & S_IFMT) {
-    case S_IFREG: /* File is a regular file. */
+    case S_IFREG: /* file is a regular file. */
         bytes_rd = ramfs_rd_regular(file->vnode, &(file->seek_pos), buf, count);
         break;
     case S_IFDIR:
         return -EISDIR;
-    default: /* File type not supported. */
+    default: /* file type not supported. */
         return -EOPNOTSUPP;
     }
 
@@ -416,7 +416,9 @@ static void init_inode_attr(ramfs_inode_t * inode, mode_t mode)
 #if 0
     inode->in_vnode->mutex =
 #endif
-    vrefset(&inode->in_vnode, 2); /* One ref for ramfs, one ref for caller. */
+    /* One ref for ramfs and one ref for the caller. */
+    vrefset(&inode->in_vnode, 2);
+
     inode->in_nlink = 0;
     inode->in_uid = curproc->cred.euid;
     inode->in_gid = curproc->cred.egid; /* RFE or to egid of the parent dir */
@@ -434,8 +436,8 @@ int ramfs_create(vnode_t * dir, const char * name, mode_t mode,
     int err;
 
 #ifdef configRAMFS_DEBUG
-        KERROR(KERROR_DEBUG, "ramfs_create(name \"%s\", mode %u)\n",
-               name, mode);
+        KERROR(KERROR_DEBUG, "%s(name \"%s\", mode %u)\n",
+               __func__, name, mode);
 #endif
 
     if (!S_ISDIR(dir->vn_mode))
@@ -445,13 +447,16 @@ int ramfs_create(vnode_t * dir, const char * name, mode_t mode,
     if (!RAMFS_SB_IS_HEALTHY(ramfs_sb))
         return -EROFS; /* fs is beign umounted or it's broken. */
 
+    /*
+     * Get a fresh inode for the file.
+     */
     vnode = inpool_get_next(&(ramfs_sb->ramfs_ipool));
     if (!vnode)
-        return -ENOSPC; /* Can't create */
+        return -ENOSPC;
 
     inode = get_inode_of_vnode(vnode);
 
-    /* Init file data section. */
+    /* Init the file data section. */
     init_inode_attr(inode, S_IFREG | mode);
     err = ramfs_set_filesize(inode, 1 * MMU_PGSIZE_COARSE);
     if (err) {
@@ -506,8 +511,8 @@ int ramfs_lookup(vnode_t * dir, const char * name, vnode_t ** result)
         return -ENOENT; /* Link not found. */
 
     if (ramfs_get_vnode(dir->sb, &vnode_num, result)) {
-        return -ENOLINK; /* Could not translate vnode_num to a vnode;
-                          * Broken link? */
+        /* Translation from vnode_num to a vnode failed; Broken link? */
+        return -ENOLINK;
     }
 
     if (*result == dir) {
@@ -580,7 +585,7 @@ int ramfs_unlink(vnode_t * dir, const char * name)
     if (err)
         return err;
 
-    inode->in_nlink--; /* Decrement hard link count. */
+    inode->in_nlink--; /* Decrement the hard link count. */
     vrele_nunlink(vn);
     if (inode->in_nlink <= 0)
         ramfs_delete_vnode(vn);
@@ -622,7 +627,7 @@ int ramfs_mkdir(vnode_t * dir, const char * name, mode_t mode)
     ramfs_link(&(inode_new->in_vnode), &(inode_new->in_vnode), RFS_DOT);
     ramfs_link(&(inode_new->in_vnode), &(inode_dir->in_vnode), RFS_DOTDOT);
 
-    /* Insert inode to the inode lookup table of its super block. */
+    /* Insert the inode to the inode lookup table of its super block. */
     insert_inode(inode_new);
     err = ramfs_link(&(inode_dir->in_vnode), vnode_new, name);
     if (err) {
@@ -644,8 +649,8 @@ int ramfs_rmdir(vnode_t * dir,  const char * name)
     int err;
 
 #ifdef configRAMFS_DEBUG
-    KERROR(KERROR_DEBUG, "ramfs_rmdir(dir %p, name \"%s\")\n",
-           dir, name);
+    KERROR(KERROR_DEBUG, "%s(dir %p, name \"%s\")\n",
+           __func__, dir, name);
 #endif
 
     if (!S_ISDIR(dir->vn_mode))
@@ -676,7 +681,9 @@ int ramfs_rmdir(vnode_t * dir,  const char * name)
     dh_unlink(in->in.dir, RFS_DOT);
     dh_unlink(in->in.dir, RFS_DOTDOT);
     dh_unlink(inode_dir->in.dir, name);
-    vrele(vn); /* This will call delete if it shall be deleted. */
+
+    /* The following will call delete if the vnode should be deleted now. */
+    vrele(vn);
 
     return 0;
 }
@@ -767,6 +774,7 @@ static void ramfs_init_sb(ramfs_sb_t * ramfs_sb, uint32_t mode)
 
     fs_init_superblock(sb, &ramfs_fs);
     sb->mode_flags = mode;
+
     /* Function pointers to superblock methods: */
     sb->get_vnode = ramfs_get_vnode;
     sb->delete_vnode = ramfs_delete_vnode;
