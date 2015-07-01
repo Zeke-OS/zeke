@@ -98,18 +98,6 @@ struct dynmem_desc {
 
 /**
  * Dynmemmap allocation table.
- *
- * dynmemmap format
- * ----------------
- *
- * |31       16| 15|14 13|12  10|9       0|
- * +-----------+---+-----+------+---------+
- * | ref count | X | RL  |  AP  | Control |
- * +-----------+---+-----+------+---------+
- *
- * RL = Region link
- * AP = Access Permissions
- * X  = Don't care
  */
 static struct dynmem_desc dynmemmap[DYNMEM_MAPSIZE];
 static uint32_t dynmemmap_bitmap[DYNMEM_BITMAPSIZE];
