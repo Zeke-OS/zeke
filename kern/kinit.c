@@ -39,6 +39,7 @@
 #include <kmalloc.h>
 #include <buf.h>
 #include <kinit.h>
+#include "uinit.h"
 
 extern int (*__hw_preinit_array_start[]) (void) __attribute__((weak));
 extern int (*__hw_preinit_array_end[]) (void) __attribute__((weak));
@@ -53,7 +54,6 @@ extern int (*__fini_array_start []) (void) __attribute__((weak));
 extern int (*__fini_array_end []) (void) __attribute__((weak));
 
 extern void kmalloc_init(void);
-extern void * uinit(void * arg);
 static void exec_array(int (*a []) (void), int n);
 
 /**
@@ -102,10 +102,7 @@ static pthread_t create_uinit_main(void * stack_addr)
                               * and mount the rootfs.
                               */
         .arg1       = 0,
-        .del_thread = (void (*)(void *))(0xBADBAD)
-        /* TODO  Should be libc pthread_exit
-         *   but we don't yet know where it will be.
-         */
+        .del_thread = (void (*)(void *))uinit_exit,
     };
 
     return thread_create(&init_ds, 0);
