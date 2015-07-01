@@ -240,6 +240,12 @@ config configBUF_DEBUG
     ---help---
     Enable buf and bio debug messages and additional asserts.
 
+config configDYNEM_DEBUG
+    bool "dynmem debugging"
+    default n
+    ---help---
+    Enable dynmem debug messages and asserts.
+
 config configEXEC_DEBUG
     bool "Exec debugging"
     default n

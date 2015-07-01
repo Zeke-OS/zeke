@@ -67,11 +67,9 @@ static size_t dynmem_end = (DYNMEM_START + configDYNMEM_SAFE_SIZE - 1);
  * Region Link bits
  */
 /** No Link */
-#define DYNMEM_RL_NL        0x0
-/** Begin Link/Continue Link */
-#define DYNMEM_RL_BL        0x1
-/** End Link */
-#define DYNMEM_RL_EL        0x2
+#define DYNMEM_RL_NIL       0x0
+/** Link */
+#define DYNMEM_RL_LINK      0x1
 
 /**
  * Dynmemmap size.
@@ -91,8 +89,8 @@ static size_t dynmem_end = (DYNMEM_START + configDYNMEM_SAFE_SIZE - 1);
 struct dynmem_desc {
     unsigned control    : 10;
     unsigned ap         : 3;
-    unsigned rl         : 2;
-    unsigned _padding   : 1;
+    unsigned rl         : 1;
+    unsigned _padding   : 2;
     unsigned refcount   : 16;
 };
 
@@ -316,8 +314,6 @@ static void * kmap_allocation(size_t base, size_t size, uint32_t ap,
                               uint32_t ctrl)
 {
     size_t i;
-    const uint32_t rlb = (size > 1) ? DYNMEM_RL_BL : DYNMEM_RL_NL;
-    const uint32_t rle = (size > 1) ? DYNMEM_RL_EL : DYNMEM_RL_NL;
     const uint32_t addr = DYNMEM_START + base * DYNMEM_PAGE_SIZE;
     const struct dynmem_desc desc = {
         .control = ctrl,
@@ -327,10 +323,10 @@ static void * kmap_allocation(size_t base, size_t size, uint32_t ap,
 
     for (i = base; i < base + size - 1; i++) {
         dynmemmap[i] = desc;
-        dynmemmap[i].rl = rlb;
+        dynmemmap[i].rl = DYNMEM_RL_LINK;
     }
     dynmemmap[i] = desc;
-    dynmemmap[i].rl = rle;
+    dynmemmap[i].rl = DYNMEM_RL_NIL;
 
     /* Map memory region to the kernel memory space */
     dynmem_region.vaddr = addr;
@@ -358,7 +354,7 @@ static int update_dynmem_region_struct(void * base)
     uint32_t reg_end;
     struct dynmem_desc flags;
 
-#if configDEBUG >= KERROR_ERR
+#ifdef configDYNEM_DEBUG
     if (!validate_addr(base, 1)) {
         KERROR(KERROR_ERR, "Invalid dynmem region addr: %x\n", (uint32_t)base);
 
@@ -367,12 +363,11 @@ static int update_dynmem_region_struct(void * base)
 #endif
 
     i = reg_start;
-    if (dynmemmap[i].rl == DYNMEM_RL_BL) {
+    if (dynmemmap[i].rl == DYNMEM_RL_LINK) {
         /* Region linking begins */
         while (++i <= dynmem_end) {
-            if (!(dynmemmap[i].rl == DYNMEM_RL_EL)) {
+            if (!(dynmemmap[i].rl == DYNMEM_RL_NIL)) {
                 /* This was the last entry of this region */
-                i--;
                 break;
             }
         }
@@ -382,7 +377,7 @@ static int update_dynmem_region_struct(void * base)
 
     dynmem_region.vaddr = (uint32_t)base; /* 1:1 mapping by default */
     dynmem_region.paddr = (uint32_t)base;
-    dynmem_region.num_pages = reg_end - reg_start + 1;
+    dynmem_region.num_pages = reg_end - reg_start;
     dynmem_region.ap = flags.ap;
     dynmem_region.control = flags.control;
     dynmem_region.pt = &mmu_pagetable_master;
@@ -400,7 +395,7 @@ void * dynmem_clone(void * addr)
      * dynmem_free_region() call.
      */
     if (dynmem_ref(addr)) {
-#if configDEBUG >= KERROR_ERR
+#ifdef configDYNEM_DEBUG
         KERROR(KERROR_ERR, "Can't clone given dynmem area @ %x\n",
                (uint32_t)addr);
 #endif
@@ -410,10 +405,11 @@ void * dynmem_clone(void * addr)
     /* Take a copy of dynmem_region struct for this region. */
     mtx_lock(&dynmem_region_lock);
     if (update_dynmem_region_struct(addr)) { /* error */
-#if configDEBUG  >= KERROR_ERR
+#ifdef configDYNEM_DEBUG
         KERROR(KERROR_ERR, "Clone failed @ %x\n", (uint32_t)addr);
 #endif
         mtx_unlock(&dynmem_region_lock);
+
         return 0;
     }
     cln = dynmem_region;
@@ -422,7 +418,7 @@ void * dynmem_clone(void * addr)
     /* Allocate a new region. */
     new_region = dynmem_alloc_region(cln.num_pages, cln.ap, cln.control);
     if (new_region == 0) {
-#if configDEBUG >= KERROR_ERR
+#ifdef configDYNEM_DEBUG
         KERROR(KERROR_ERR, "Out of dynmem while cloning @ %x",
                (uint32_t)addr);
 #endif
@@ -430,7 +426,7 @@ void * dynmem_clone(void * addr)
     }
 
     /*
-     * NOTE: We don't need lock here as dynmem_ref quarantees that the region is
+     * NOTE: We don't need lock here as dynmem_ref guarantees that the region is
      * not removed during copy operation.
      */
     memcpy(new_region, (void *)(cln.paddr), cln.num_pages * DYNMEM_PAGE_SIZE);
@@ -450,23 +446,22 @@ uint32_t dynmem_acc(const void * addr, size_t len)
 
     mtx_lock(&dynmem_region_lock);
     if (update_dynmem_region_struct((void *)addr)) { /* error */
-#if configDEBUG >= KERROR_ERR
+#ifdef configDYNEM_DEBUG
         KERROR(KERROR_DEBUG, "dynmem_acc() check failed for: %x\n",
             (uint32_t)addr);
 #endif
         goto out;
     }
 
-    /* Get size */
+    /* Get size of the region */
     if (!(size = mmu_sizeof_region(&dynmem_region))) {
-#if configDEBUG >= KERROR_WARN
-        KERROR(KERROR_ERR, "Possible dynmem corruption at: %x\n",
+        KERROR(KERROR_WARN, "Possible dynmem corruption at: %x\n",
                 (uint32_t)addr);
-#endif
+
         goto out; /* Error in size calculation. */
     }
-    if ((size_t)addr < dynmem_region.paddr
-            || (size_t)addr > (dynmem_region.paddr + size)) {
+    if ((size_t)addr < dynmem_region.paddr ||
+        (size_t)addr > (dynmem_region.paddr + size)) {
         goto out; /* Not in region range. */
     }
 
