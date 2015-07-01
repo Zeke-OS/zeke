@@ -63,37 +63,15 @@ static size_t dynmem_end = (DYNMEM_START + configDYNMEM_SAFE_SIZE - 1);
  */
 #define DYNMEM_PT_SIZE      MMU_PTSZ_COARSE
 
-/** Refcount pos */
-#define DYNMEM_RC_POS       16
-/** Region link pos */
-#define DYNMEM_RL_POS       13
-/** Region ap pos */
-#define DYNMEM_AP_POS       10
-/* Region control pos */
-#define DYNMEM_CTRL_POS     0
-
-/** Ref count mask */
-#define DYNMEM_RC_MASK      (0xFFFF0000)
-/** Region Link mask */
-#define DYNMEM_RL_MASK      (0x003 << DYNMEM_RL_POS)
-/** Region access permissions mask */
-#define DYNMEM_AP_MASK      (0x007 << DYNMEM_AP_POS)
-/** Region control mask */
-#define DYNMEM_CTRL_MASK    (0x3FF << DYNMEM_CTRL_POS)
-
-/* Region Link bits */
+/*
+ * Region Link bits
+ */
 /** No Link */
-#define DYNMEM_RL_NL        (0x0 << DYNMEM_RL_POS)
+#define DYNMEM_RL_NL        0x0
 /** Begin Link/Continue Link */
-#define DYNMEM_RL_BL        (0x1 << DYNMEM_RL_POS)
+#define DYNMEM_RL_BL        0x1
 /** End Link */
-#define DYNMEM_RL_EL        (0x2 << DYNMEM_RL_POS)
-
-/* RFE Is there any reason to store AP & Control here? */
-#define FLAGS_TO_MAP(AP, CTRL)  \
-    ((((AP) & 0x7) << DYNMEM_AP_POS) | ((CTRL) & 0x3FF))
-#define MAP_TO_AP(VAL)          (((VAL) & DYNMEM_AP_MASK) >> DYNMEM_AP_POS)
-#define MAP_TO_CTRL(VAL)        (((VAL) & DYNMEM_CTRL_MASK) >> DYNMEM_CTRL_POS)
+#define DYNMEM_RL_EL        0x2
 
 /**
  * Dynmemmap size.
@@ -110,6 +88,14 @@ static size_t dynmem_end = (DYNMEM_START + configDYNMEM_SAFE_SIZE - 1);
 #define SIZEOF_DYNMEMMAP        (DYNMEM_MAPSIZE * sizeof(uint32_t))
 #define SIZEOF_DYNMEMMAP_BITMAP (DYNMEM_BITMAPSIZE * sizeof(uint32_t))
 
+struct dynmem_desc {
+    unsigned control    : 10;
+    unsigned ap         : 3;
+    unsigned rl         : 2;
+    unsigned _padding   : 1;
+    unsigned refcount   : 16;
+};
+
 /**
  * Dynmemmap allocation table.
  *
@@ -125,7 +111,7 @@ static size_t dynmem_end = (DYNMEM_START + configDYNMEM_SAFE_SIZE - 1);
  * AP = Access Permissions
  * X  = Don't care
  */
-static uint32_t dynmemmap[DYNMEM_MAPSIZE];
+static struct dynmem_desc dynmemmap[DYNMEM_MAPSIZE];
 static uint32_t dynmemmap_bitmap[DYNMEM_BITMAPSIZE];
 
 /**
@@ -195,7 +181,7 @@ static int validate_addr(const void * addr, int test)
     if ((size_t)addr < DYNMEM_START || (size_t)addr > dynmem_end)
         return 0; /* Not in range */
 
-    if (test && (((dynmemmap[i] & DYNMEM_RC_MASK) >> DYNMEM_RC_POS) == 0))
+    if (test && dynmemmap[i].refcount == 0)
         return 0; /* Not allocated */
 
     return (1 == 1);
@@ -276,11 +262,11 @@ void * dynmem_ref(void * addr)
 
         return 0;
     }
-    if ((dynmemmap[i] & DYNMEM_RC_MASK) == 0)
+    if (dynmemmap[i].refcount == 0)
         return 0;
 
     mtx_lock(&dynmem_region_lock);
-    dynmemmap[i] += 1 << DYNMEM_RC_POS;
+    dynmemmap[i].refcount++;
     mtx_unlock(&dynmem_region_lock);
 
     return addr;
@@ -297,14 +283,14 @@ void dynmem_free_region(void * addr)
     }
 
     i = (uint32_t)addr - DYNMEM_START;
-    rc = (dynmemmap[i] & DYNMEM_RC_MASK) >> DYNMEM_RC_POS;
+    rc = dynmemmap[i].refcount;
 
     /* Get lock to dynmem_region */
     mtx_lock(&dynmem_region_lock);
 
     /* Check if there is any references */
     if (rc > 1) {
-        dynmemmap[i] -= 1 << DYNMEM_RC_POS;
+        dynmemmap[i].refcount--;
         goto out; /* Do not free yet. */
     }
 
@@ -318,7 +304,7 @@ void dynmem_free_region(void * addr)
 
     /* Mark the region as unused. */
     for (j = i; j < dynmem_region.num_pages; j++) {
-        dynmemmap[j] = 0;
+        memset(&dynmemmap[j], 0, sizeof(struct dynmem_desc));
     }
     bitmap_block_update(dynmemmap_bitmap, 1, j, dynmem_region.num_pages);
 
@@ -342,16 +328,21 @@ static void * kmap_allocation(size_t base, size_t size, uint32_t ap,
                               uint32_t ctrl)
 {
     size_t i;
-    const uint32_t mapflags = FLAGS_TO_MAP(ap, ctrl);
     const uint32_t rlb = (size > 1) ? DYNMEM_RL_BL : DYNMEM_RL_NL;
     const uint32_t rle = (size > 1) ? DYNMEM_RL_EL : DYNMEM_RL_NL;
-    const uint32_t rc = (1 << DYNMEM_RC_POS);
     const uint32_t addr = DYNMEM_START + base * DYNMEM_PAGE_SIZE;
+    const struct dynmem_desc desc = {
+        .control = ctrl,
+        .ap = ap,
+        .refcount = 1,
+    };
 
     for (i = base; i < base + size - 1; i++) {
-        dynmemmap[i] = rc | rlb | mapflags;
+        dynmemmap[i] = desc;
+        dynmemmap[i].rl = rlb;
     }
-    dynmemmap[i] = rc | rle | mapflags;
+    dynmemmap[i] = desc;
+    dynmemmap[i].rl = rle;
 
     /* Map memory region to the kernel memory space */
     dynmem_region.vaddr = addr;
@@ -374,9 +365,10 @@ static void * kmap_allocation(size_t base, size_t size, uint32_t ap,
  */
 static int update_dynmem_region_struct(void * base)
 {
-    uint32_t i, flags;
+    uint32_t i;
     uint32_t reg_start = (uint32_t)base - DYNMEM_START;
     uint32_t reg_end;
+    struct dynmem_desc flags;
 
 #if configDEBUG >= KERROR_ERR
     if (!validate_addr(base, 1)) {
@@ -387,10 +379,10 @@ static int update_dynmem_region_struct(void * base)
 #endif
 
     i = reg_start;
-    if (dynmemmap[i] & DYNMEM_RL_BL) {
+    if (dynmemmap[i].rl == DYNMEM_RL_BL) {
         /* Region linking begins */
         while (++i <= dynmem_end) {
-            if (!(dynmemmap[i] & DYNMEM_RL_EL)) {
+            if (!(dynmemmap[i].rl == DYNMEM_RL_EL)) {
                 /* This was the last entry of this region */
                 i--;
                 break;
@@ -403,8 +395,8 @@ static int update_dynmem_region_struct(void * base)
     dynmem_region.vaddr = (uint32_t)base; /* 1:1 mapping by default */
     dynmem_region.paddr = (uint32_t)base;
     dynmem_region.num_pages = reg_end - reg_start + 1;
-    dynmem_region.ap = MAP_TO_AP(flags);
-    dynmem_region.control = MAP_TO_CTRL(flags);
+    dynmem_region.ap = flags.ap;
+    dynmem_region.control = flags.control;
     dynmem_region.pt = &mmu_pagetable_master;
 
     return 0;
