@@ -352,7 +352,6 @@ static void * kmap_allocation(size_t base, size_t size, uint32_t ap,
 static int update_dynmem_region_struct(void * base)
 {
     uint32_t reg_start = (uint32_t)base - DYNMEM_START;
-    uint32_t reg_end;
     uint32_t num_pages;
     struct dynmem_desc * dp;
     struct dynmem_desc flags;
