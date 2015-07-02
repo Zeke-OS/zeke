@@ -103,6 +103,9 @@ void dynmem_free_region(void * addr);
  */
 void * dynmem_clone(void * addr);
 
+#define DYNMEM_XN       0x8
+#define DYNMEM_AP_MASK  0x7
+
 /**
  * Test for dynmem access.
  * Return value format:

@@ -590,10 +590,10 @@ int vm_unload_regions(struct proc_info * proc, int start, int end)
 static int test_ap_priv(uint32_t rw, uint32_t ap)
 {
     if (rw & VM_PROT_EXECUTE) {
-        if (ap & 0x8)
+        if (ap & DYNMEM_XN)
             return 0; /* XN bit set. */
     }
-    ap &= ~0x8; /* Discard XN bit. */
+    ap &= DYNMEM_AP_MASK; /* Take only AP bits. */
 
     if (rw & VM_PROT_WRITE) { /* Test for RWxx */
         switch (ap) {

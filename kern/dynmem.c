@@ -426,8 +426,8 @@ void * dynmem_clone(void * addr)
     }
 
     /*
-     * NOTE: We don't need lock here as dynmem_ref guarantees that the region is
-     * not removed during copy operation.
+     * NOTE: We don't need lock here as dynmem_ref guarantees that the region
+     * won't be removed during copy operation.
      */
     memcpy(new_region, (void *)(cln.paddr), cln.num_pages * DYNMEM_PAGE_SIZE);
 
@@ -469,8 +469,9 @@ uint32_t dynmem_acc(const void * addr, size_t len)
      * Access seems to be ok.
      * Calc ap + xn as a return value for further testing.
      */
-    retval = dynmem_region.ap |
-        (((dynmem_region.control & MMU_CTRL_XN) >> MMU_CTRL_XN_OFFSET) << 3);
+    retval  = dynmem_region.ap;
+    retval |= ((dynmem_region.control & MMU_CTRL_XN) == MMU_CTRL_XN) ?
+              DYNMEM_XN : 0;
 
     mtx_unlock(&dynmem_region_lock);
 out:
