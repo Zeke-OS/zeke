@@ -82,8 +82,9 @@ void * dynmem_alloc_force(void * addr, size_t size, uint32_t ap,
                           uint32_t control);
 
 /**
- * Add reference to the already allocated region.
- * @return Address to the allocated region; Otherwise 0.
+ * Get a reference to an already allocated region.
+ * @param addr is the address of the already allocated dynmem region.
+ * @return Address to the region; Otherwise NULL.
  */
 void * dynmem_ref(void * addr);
 
@@ -95,24 +96,30 @@ void * dynmem_ref(void * addr);
 void dynmem_free_region(void * addr);
 
 /**
- * Clones a dynemem region.
+ * Clone a dynemem region.
  * Makes 1:1 copy of a given dynmem region to a new location in memory.
  * @param addr is the dynmem region address.
- * @return  Returns pointer to a clone of the dynmem area; Otherwise 0 in case
+ * @return  Returns pointer to a clone of the dynmem area; Otherwise NULL in case
  *          of cloning failed.
  */
 void * dynmem_clone(void * addr);
 
-#define DYNMEM_XN       0x8
-#define DYNMEM_AP_MASK  0x7
+/*
+ * Bit fields of the return value of dynmem_acc().
+ */
+#define DYNMEM_XN       0x8 /*!< Dynmem execute never bit. */
+#define DYNMEM_AP_MASK  0x7 /*!< Dynmem mask for MMU AP bits. */
 
 /**
  * Test for dynmem access.
  * Return value format:
- *   3 2   0
- * +--+----+
- * |XN| AP |
- * +--+----+
+ *
+ *     3 2   0
+ *   +--+----+
+ *   |XN| AP |
+ *   +--+----+
+ *
+ * AP is in same format as in mmu.h and XN is DYNMEM_XN.
  * @param addr  is the physical base address.
  * @param len   is the size of block tested.
  * @return Returns 0 if addr is invalid; Otherwise returns ap flags + xn bit.

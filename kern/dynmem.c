@@ -155,9 +155,9 @@ HW_PREINIT_ENTRY(dynmem_init);
 
 /**
  * Check that the given address is in dynmem range.
- * @param addr  is the address.
- * @param test  if 1 tests if actually allocted; Otherwise only tests validity
- *              of addr.
+ * @param addr  is the address of the dynmem allocation.
+ * @param test  if 1 tests if actually allocated;
+ *              Otherwise only tests validity of addr.
  * @return Boolean true if valid; Otherwise false/0.
  */
 static int validate_addr(const void * addr, int test)
@@ -228,7 +228,7 @@ void * dynmem_alloc_force(void * addr, size_t size, uint32_t ap, uint32_t ctrl)
         KERROR(KERROR_ERR, "Invalid address; dynmem_alloc_force(): %x\n",
                (uint32_t)addr);
 
-        return 0;
+        return NULL;
     }
 
     mtx_lock(&dynmem_region_lock);
@@ -246,10 +246,10 @@ void * dynmem_ref(void * addr)
     if (!validate_addr(addr, 1)) {
         KERROR(KERROR_ERR, "Invalid address: %x\n", (uint32_t)addr);
 
-        return 0;
+        return NULL;
     }
     if (dynmemmap[i].refcount == 0)
-        return 0;
+        return NULL;
 
     mtx_lock(&dynmem_region_lock);
     dynmemmap[i].refcount++;
@@ -260,7 +260,8 @@ void * dynmem_ref(void * addr)
 
 void dynmem_free_region(void * addr)
 {
-    uint32_t i, j, rc;
+    struct dynmem_desc * dp;
+    uint32_t i, rc;
 
     if (!validate_addr(addr, 1)) {
         KERROR(KERROR_ERR, "Invalid address: %x\n", (uint32_t)addr);
@@ -269,14 +270,15 @@ void dynmem_free_region(void * addr)
     }
 
     i = (uint32_t)addr - DYNMEM_START;
-    rc = dynmemmap[i].refcount;
+    dp = dynmemmap + i;
+    rc = dp->refcount;
 
     /* Get lock to dynmem_region */
     mtx_lock(&dynmem_region_lock);
 
     /* Check if there is any references */
     if (rc > 1) {
-        dynmemmap[i].refcount--;
+        dp->refcount--;
         goto out; /* Do not free yet. */
     }
 
@@ -289,10 +291,8 @@ void dynmem_free_region(void * addr)
     mmu_unmap_region(&dynmem_region);
 
     /* Mark the region as unused. */
-    for (j = i; j < dynmem_region.num_pages; j++) {
-        memset(&dynmemmap[j], 0, sizeof(struct dynmem_desc));
-    }
-    bitmap_block_update(dynmemmap_bitmap, 1, j, dynmem_region.num_pages);
+    memset(dp, 0, dynmem_region.num_pages * sizeof(struct dynmem_desc));
+    bitmap_block_update(dynmemmap_bitmap, 1, i, dynmem_region.num_pages);
 
     /* Update sysctl stats */
     dynmem_free += dynmem_region.num_pages * DYNMEM_PAGE_SIZE;
@@ -322,8 +322,10 @@ static void * kmap_allocation(size_t base, size_t size, uint32_t ap,
     };
 
     for (i = base; i < base + size - 1; i++) {
-        dynmemmap[i] = desc;
-        dynmemmap[i].rl = DYNMEM_RL_LINK;
+        struct dynmem_desc * dp = dynmemmap + i;
+
+        *dp = desc;
+        dp->rl = DYNMEM_RL_LINK;
     }
     dynmemmap[i] = desc;
     dynmemmap[i].rl = DYNMEM_RL_NIL;
@@ -349,9 +351,10 @@ static void * kmap_allocation(size_t base, size_t size, uint32_t ap,
  */
 static int update_dynmem_region_struct(void * base)
 {
-    uint32_t i;
     uint32_t reg_start = (uint32_t)base - DYNMEM_START;
     uint32_t reg_end;
+    uint32_t num_pages;
+    struct dynmem_desc * dp;
     struct dynmem_desc flags;
 
 #ifdef configDYNEM_DEBUG
@@ -362,22 +365,17 @@ static int update_dynmem_region_struct(void * base)
     }
 #endif
 
-    i = reg_start;
-    if (dynmemmap[i].rl == DYNMEM_RL_LINK) {
-        /* Region linking begins */
-        while (++i <= dynmem_end) {
-            if (!(dynmemmap[i].rl == DYNMEM_RL_NIL)) {
-                /* This was the last entry of this region */
-                break;
-            }
-        }
-    } /* else this was the only section in this region. */
-    reg_end = i;
+    num_pages = 1;
+    dp = dynmemmap + reg_start;
+    while (dp->rl == DYNMEM_RL_LINK) {
+        dp++;
+        num_pages++;
+    }
     flags = dynmemmap[reg_start];
 
     dynmem_region.vaddr = (uint32_t)base; /* 1:1 mapping by default */
     dynmem_region.paddr = (uint32_t)base;
-    dynmem_region.num_pages = reg_end - reg_start;
+    dynmem_region.num_pages = num_pages;
     dynmem_region.ap = flags.ap;
     dynmem_region.control = flags.control;
     dynmem_region.pt = &mmu_pagetable_master;
@@ -399,7 +397,7 @@ void * dynmem_clone(void * addr)
         KERROR(KERROR_ERR, "Can't clone given dynmem area @ %x\n",
                (uint32_t)addr);
 #endif
-        return 0;
+        return NULL;
     }
 
     /* Take a copy of dynmem_region struct for this region. */
@@ -410,19 +408,19 @@ void * dynmem_clone(void * addr)
 #endif
         mtx_unlock(&dynmem_region_lock);
 
-        return 0;
+        return NULL;
     }
     cln = dynmem_region;
     mtx_unlock(&dynmem_region_lock);
 
     /* Allocate a new region. */
     new_region = dynmem_alloc_region(cln.num_pages, cln.ap, cln.control);
-    if (new_region == 0) {
+    if (new_region == NULL) {
 #ifdef configDYNEM_DEBUG
         KERROR(KERROR_ERR, "Out of dynmem while cloning @ %x",
                (uint32_t)addr);
 #endif
-        return 0;
+        return NULL;
     }
 
     /*
