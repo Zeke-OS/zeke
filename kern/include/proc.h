@@ -142,7 +142,6 @@ struct proc_info {
 extern int maxproc;                 /*!< Maximum # of processes, set. */
 extern int act_maxproc;             /*!< Effective maxproc. */
 extern int nprocs;                  /*!< Current # of procs. */
-extern pid_t current_process_id;    /*!< PID of current process. */
 extern struct proc_info * curproc;  /*!< PCB of the current process. */
 
 /* proclock - Protects proc array, data structures and variables in proc. */
@@ -187,7 +186,7 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
 
 /**
  * Update process system state.
- * Updates current_process_id and curproc.
+ * Updates curproc.
  * @note This function is called by interrupt handler(s).
  */
 pid_t proc_update(void);

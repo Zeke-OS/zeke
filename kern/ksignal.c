@@ -706,7 +706,7 @@ static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
         .siginfo.si_code = si_code,
         .siginfo.si_errno = 0, /* TODO */
         .siginfo.si_tid = current_thread->id,
-        .siginfo.si_pid = current_process_id,
+        .siginfo.si_pid = curproc->pid,
         .siginfo.si_uid = curproc->cred.uid,
         .siginfo.si_addr = 0, /* TODO */
         .siginfo.si_status = 0, /* TODO */

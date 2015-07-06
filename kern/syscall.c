@@ -96,7 +96,7 @@ void syscall_handler(void)
         KERROR(KERROR_WARN,
                  "syscall %u:%u not supported, (pid:%u, tid:%u, pc:%x)\n",
                  major, minor,
-                 (unsigned)current_process_id,
+                 (unsigned)curproc->pid,
                  (unsigned)current_thread->id,
                  sframe->pc);
 

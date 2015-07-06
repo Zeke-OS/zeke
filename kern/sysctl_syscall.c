@@ -63,7 +63,7 @@ intptr_t sysctl_syscall(uint32_t type, __user void * p)
         return -1;
     }
 
-    err = userland_sysctl(current_process_id, name, uap.namelen,
+    err = userland_sysctl(curproc->pid, name, uap.namelen,
                           (__user void *)uap.old, (__user size_t *)uap.oldlenp,
                           0, (__user void *)uap.new, uap.newlen, &j, 0);
     if (err && err != -ENOMEM) {

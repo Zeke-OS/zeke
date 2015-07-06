@@ -57,7 +57,6 @@ static struct proc_info *(*_procarr)[]; /*!< processes indexed by pid */
 int maxproc = configMAXPROC;            /*!< Maximum # of processes, set. */
 int act_maxproc;                        /*!< Effective maxproc. */
 int nprocs = 1;                         /*!< Current # of procs. */
-pid_t current_process_id;               /*!< PID of current process. */
 struct proc_info * curproc;             /*!< PCB of the current process. */
 
 static const struct vm_ops sys_vm_ops; /* NOOP struct for system regions. */
@@ -94,7 +93,6 @@ int __kinit__ proc_init(void)
     init_kernel_proc();
 
     /* Do here same as proc_update() would do when running. */
-    current_process_id = 0;
     curproc = (*_procarr)[0];
 
     return 0;
@@ -563,12 +561,14 @@ fail:
 
 pid_t proc_update(void)
 {
-    current_process_id = current_thread->pid_owner;
-    curproc = proc_get_struct_l(current_process_id);
+    pid_t current_pid;
+
+    current_pid = current_thread->pid_owner;
+    curproc = proc_get_struct_l(current_pid);
 
     KASSERT(curproc, "curproc should be valid");
 
-    return current_process_id;
+    return current_pid;
 }
 
 /**
@@ -598,7 +598,7 @@ SYSCTL_PROC(_kern, KERN_MAXPROC, maxproc, CTLTYPE_INT | CTLFLAG_RW,
 
 static int sys_proc_fork(__user void * user_args)
 {
-    pid_t pid = proc_fork(current_process_id);
+    pid_t pid = proc_fork(curproc->pid);
     if (pid < 0) {
         set_errno(-pid);
         return -1;
