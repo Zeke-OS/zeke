@@ -130,6 +130,11 @@ typedef struct {
 } sw_stack_frame_t;
 
 void cpu_invalidate_caches(void);
+
+/**
+ * Set Context ID.
+ * @param cid new Context ID.
+ */
 void cpu_set_cid(uint32_t cid);
 
 /**

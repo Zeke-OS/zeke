@@ -148,7 +148,7 @@ struct thread_info {
     sw_stack_frame_t sframe[SCHED_SFRAME_ARR_SIZE];
     struct buf * kstack_region;     /*!< Thread kernel stack region. */
     mmu_pagetable_t * curr_mpt;     /*!< Current master pt (proc or kern) */
-    __user void * errno_uaddr;      /*!< Address of the thread local errno. */
+    __user struct _sched_tls_desc * tls_uaddr; /*!< Thread local storage. */
     intptr_t retval;                /*!< Return value of the thread. */
     int exit_signal;                /*!< The signum that killed the thread.
                                          (0 == wasn't killed) */

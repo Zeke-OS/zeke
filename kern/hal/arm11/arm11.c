@@ -43,12 +43,12 @@
 volatile uint32_t flag_kernel_tick = 0;
 
 void init_stack_frame(struct _sched_pthread_create_args * thread_def,
-        sw_stack_frame_t * sframe, int priv)
+        sw_stack_frame_t * sframe, size_t tls_size, int priv)
 {
     /* Note that scheduler must have the same mapping. */
     uint32_t stack_start = ((uint32_t)(thread_def->stack_addr)
             + thread_def->stack_size
-            - sizeof(errno_t));
+            - tls_size);
 
     sframe->r0  = (uint32_t)(thread_def->arg1);
     sframe->r1  = (uint32_t)(thread_def->arg2);
@@ -154,10 +154,6 @@ void cpu_invalidate_caches(void)
     );
 }
 
-/**
- * Set Context ID.
- * @param cid new Context ID.
- */
 void cpu_set_cid(uint32_t cid)
 {
     const int rd = 0;
@@ -177,6 +173,36 @@ void cpu_set_cid(uint32_t cid)
         );
     }
 }
+
+__user struct _sched_tls_desc * core_get_tls_addr(void)
+{
+    __user struct _sched_tls_desc * tls;
+
+    /* Read User Read Only Thread and Proc. ID Register */
+    __asm__ volatile (
+        "MRC    p15, 0, %[tls], c13, c0, 3"
+        :  [tls]"=r" (tls));
+
+    return tls;
+}
+
+void core_set_tls_addr(__user struct _sched_tls_desc * tls)
+{
+    /* Write User Read Only Thread and Proc. ID Register */
+    __asm__ volatile (
+        "MCR    p15, 0, %[tls], c13, c0, 3"
+        : : [tls]"r" (tls));
+}
+
+static void arm11_sched_update_hw_tls(void)
+{
+    /*
+     * TODO Preserve p15, c13, c0, 2 between threads or processes as it's user
+     * modifiable.
+     */
+    core_set_tls_addr(current_thread->tls_uaddr);
+}
+DATA_SET(post_sched_tasks, arm11_sched_update_hw_tls);
 
 static char stack_dump_buf[400];
 void stack_dump(sw_stack_frame_t frame)

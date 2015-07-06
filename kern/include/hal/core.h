@@ -64,10 +64,15 @@ extern volatile size_t flag_kernel_tick;
  * Init stack frame.
  * @param thread_def    contains the thread definitions.
  * @param sframe        is the stack frame used when the thread is put to sleep.
+ * @param tls_size      is the size of the thread local storage area in stack.
  * @param priv          set thread as privileged/kernel mode thread.
  */
 void init_stack_frame(struct _sched_pthread_create_args * thread_def,
-        sw_stack_frame_t * sframe, int priv);
+        sw_stack_frame_t * sframe, size_t tls_size, int priv);
+
+__user struct _sched_tls_desc * core_get_tls_addr(void);
+
+void core_set_tls_addr(__user struct _sched_tls_desc * tls);
 
 void svc_setretval(intptr_t retval);
 

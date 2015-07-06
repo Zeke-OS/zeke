@@ -127,17 +127,13 @@
 #define ENOTBLK         81  /*!< Block device required */
 
 #ifndef KERNEL_INTERNAL
-
-/**
- * Get pointer to the thread local errno.
- */
-int * __error(void);
-#define errno (*__error())
+extern int * __errno;
+#define errno (*__errno)
 #else /* KERNEL_INTERNAL */
 #include <vm/vm.h>
 #include <thread.h>
 
-/**
+/*
  * A type for errno.
  * Even this is a type definition it doesn't mean that type of errno is subject
  * to change but this just makes some parts of the code easier to read.
@@ -146,7 +142,7 @@ int * __error(void);
  * POSIX then suggests that errno should be thread local, which is why we have
  * that __erno() defined.
  */
-typedef int errno_t;
+#include <sys/types/_errno_t.h>
 
 /**
  * Set errno of the current thread.
@@ -154,7 +150,7 @@ typedef int errno_t;
  */
 inline void set_errno(int new_value)
 {
-    copyout(&new_value, current_thread->errno_uaddr, sizeof(errno_t));
+    copyout(&new_value, &current_thread->tls_uaddr->errno_val, sizeof(errno_t));
 }
 
 /**
@@ -165,7 +161,7 @@ inline errno_t get_errno(void)
 {
     errno_t value;
 
-    copyin(current_thread->errno_uaddr, &value, sizeof(errno_t));
+    copyin(&current_thread->tls_uaddr->errno_val, &value, sizeof(errno_t));
 
     return value;
 }

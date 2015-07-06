@@ -1,8 +1,10 @@
 #ifndef _PDCLIB_THREADS_H
 #define _PDCLIB_THREADS_H
+
 #include <sys/_PDCLIB_int.h>
 #include <sys/_PDCLIB_threadconfig.h>
 #include <time.h>
+
 __BEGIN_DECLS
 
 #define thread_local _Thread_local
@@ -80,7 +82,8 @@ int thrd_sleep(const struct timespec *duration, struct timespec *remaining) _PDC
 void thrd_yield(void) _PDCLIB_nothrow;
 #endif
 
-/* The behaviour of tss_t is woefully underspecified in the C11 standard. In
+/*
+ * The behaviour of tss_t is woefully underspecified in the C11 standard. In
  * particular, it never specifies where/when/<b>if</b> destructors are called.
  *
  * In lieu of any clarification, we assume the behaviour of POSIX pthread_key_t

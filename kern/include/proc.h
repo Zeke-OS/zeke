@@ -135,6 +135,7 @@ struct proc_info {
     } inh;
 
     struct thread_info * main_thread; /*!< Main thread of this process. */
+    size_t tls_size; /*!< Thread local storage size. */
 };
 
 #define PROC_INH_LOCK_TYPE (MTX_TYPE_SPIN)

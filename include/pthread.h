@@ -75,6 +75,7 @@
 #define PTHREAD_H
 
 #include <sys/types_pthread.h>
+#include <sys/types/_errno_t.h>
 #include <sched.h>
 #include <time.h>
 
@@ -178,6 +179,14 @@ struct _pthread_cleanup_info {
 
 typedef int pthread_key_t;
 typedef struct pthread_once pthread_once_t;
+
+/**
+ * A struct for thread local storage.
+ */
+struct _sched_tls_desc {
+    errno_t errno_val;
+    char var_data[];
+};
 
 /**
  * Argument struct for SYSCALL_SCHED_THREAD_CREATE

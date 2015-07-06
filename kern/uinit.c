@@ -38,6 +38,7 @@
 #include <sysexits.h>
 #include <unistd.h>
 #include <kstring.h>
+#include <hal/core.h>
 #include "uinit.h"
 
 #include <../lib/libc/sys.c>
@@ -129,6 +130,15 @@ static void fail(char * str)
     uinit_exit();
 }
 
+static void init_errno(void)
+{
+    struct _sched_tls_desc * tls;
+
+    tls = (__kernel struct _sched_tls_desc *)core_get_tls_addr();
+
+    ep = &tls->errno_val;
+}
+
 /**
  * A function to initialize the user space and execute the actual init process.
  * This function is kind of special because it's executed in a separate context
@@ -140,7 +150,7 @@ void * uinit(void * arg)
     char * env[] = {  NULL };
     int err;
 
-    ep = (int *)syscall(SYSCALL_THREAD_GETERRNO, NULL);
+    init_errno();
 
     _mkdir("/dev", S_IRWXU | S_IRGRP | S_IXGRP);
     err = _mount("", "/dev", "devfs");
