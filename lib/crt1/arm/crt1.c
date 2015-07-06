@@ -67,19 +67,6 @@ extern int etext;
 
 void __start(int argc, char ** argv, char ** envp, void (*cleanup)(void));
 
-int errno;
-
-static void _init_tls(void)
-{
-    struct _sched_tls_desc * tls;
-
-    __asm__ volatile (
-        "MRC    p15, 0, %[tls], c13, c0, 3"
-        :  [tls]"=r" (tls));
-
-    __errno = &tls->errno_val;
-}
-
 /* The entry function. */
 __asm(" .text           \n"
 "   .align  0           \n"
@@ -96,8 +83,6 @@ __asm(" .text           \n"
 void __start(int argc, char ** argv, char ** envp, void (*cleanup)(void))
 {
     handle_argv(argc, argv, envp);
-
-    _init_tls();
 
     /* if (&_DYNAMIC != NULL) */
     if (cleanup)

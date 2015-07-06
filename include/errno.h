@@ -127,8 +127,11 @@
 #define ENOTBLK         81  /*!< Block device required */
 
 #ifndef KERNEL_INTERNAL
-extern int * __errno;
-#define errno (*__errno)
+/**
+ * Get pointer to the thread local errno.
+ */
+int * __error(void);
+#define errno (*__error())
 #else /* KERNEL_INTERNAL */
 #include <vm/vm.h>
 #include <thread.h>
