@@ -484,7 +484,6 @@ static void thread_free_kstack(struct thread_info * thread)
  * @param tp            is a pointer to the thread struct.
  * @param thread_id     Thread id
  * @param thread_def    Thread definitions
- * @param tls_size      is the size of the tls area.
  * @param parent        Parent thread id, NULL = doesn't have a parent
  * @param priv          If set thread is initialized as a kernel mode thread
  *                      (kworker).
@@ -492,13 +491,11 @@ static void thread_free_kstack(struct thread_info * thread)
  */
 static void thread_init(struct thread_info * tp, pthread_t thread_id,
                         struct _sched_pthread_create_args * thread_def,
-                        size_t tls_size,
                         struct thread_info * parent,
                         int priv)
 {
     /* Init core specific stack frame for user space */
-    init_stack_frame(thread_def, &(tp->sframe[SCHED_SFRAME_SYS]),
-                     tls_size, priv);
+    init_stack_frame(thread_def, &(tp->sframe[SCHED_SFRAME_SYS]), priv);
 
     /*
      * Mark this thread as used.
@@ -536,7 +533,7 @@ static void thread_init(struct thread_info * tp, pthread_t thread_id,
     tp->tls_uaddr       = (__user struct _sched_tls_desc *)(
                             (uintptr_t)(thread_def->stack_addr)
                           + thread_def->stack_size
-                          - tls_size);
+                          - sizeof(struct _sched_tls_desc));
 
     /* Create kstack. */
     thread_init_kstack(tp);
@@ -572,21 +569,14 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
 {
     const pthread_t tid = atomic_inc(&next_thread_id);
     struct thread_info * thread;
-    size_t tls_size;
 
     thread = kzalloc(sizeof(struct thread_info));
     if (!thread)
         return -EAGAIN;
 
-    if (likely(curproc))
-        tls_size = curproc->tls_size;
-    else
-        tls_size = memalign(sizeof(struct _sched_tls_desc));
-
     thread_init(thread,
                 tid,                    /* Index of the thread created */
                 thread_def,             /* Thread definition. */
-                tls_size,
                 current_thread,         /* Pointer to the parent thread. */
                 priv);                  /* kworker flag. */
 

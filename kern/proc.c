@@ -219,8 +219,6 @@ static void init_kernel_proc(void)
 
     init_rlims(&kernel_proc->rlim);
 
-    kernel_proc->tls_size = memalign(sizeof(struct _sched_tls_desc));
-
     mtx_init(&kernel_proc->inh.lock, PROC_INH_LOCK_TYPE, 0);
 }
 

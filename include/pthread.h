@@ -185,7 +185,6 @@ typedef struct pthread_once pthread_once_t;
  */
 struct _sched_tls_desc {
     errno_t errno_val;
-    char var_data[];
 };
 
 /**

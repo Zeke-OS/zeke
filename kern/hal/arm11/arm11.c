@@ -43,12 +43,12 @@
 volatile uint32_t flag_kernel_tick = 0;
 
 void init_stack_frame(struct _sched_pthread_create_args * thread_def,
-        sw_stack_frame_t * sframe, size_t tls_size, int priv)
+        sw_stack_frame_t * sframe, int priv)
 {
     /* Note that scheduler must have the same mapping. */
     uint32_t stack_start = ((uint32_t)(thread_def->stack_addr)
             + thread_def->stack_size
-            - tls_size);
+            - sizeof(struct _sched_tls_desc));
 
     sframe->r0  = (uint32_t)(thread_def->arg1);
     sframe->r1  = (uint32_t)(thread_def->arg2);
@@ -172,6 +172,26 @@ void cpu_set_cid(uint32_t cid)
             : : [rd]"r" (rd), [cid]"r" (cid)
         );
     }
+}
+
+uint32_t core_get_user_tls(void)
+{
+    uint32_t value;
+
+    /* Read User Read/Write Thread and Proc. ID Register */
+    __asm__ volatile (
+        "MRC    p15, 0, %[value], c13, c0, 2"
+        : [value]"=r" (value));
+
+    return value;
+}
+
+void core_set_user_tls(uint32_t value)
+{
+    /* Write User Read/Write Thread and Proc. ID Register */
+    __asm__ volatile (
+        "MCR    p15, 0, %[value], c13, c0, 2"
+        : : [value]"r" (value));
 }
 
 __user struct _sched_tls_desc * core_get_tls_addr(void)
