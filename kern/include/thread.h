@@ -146,6 +146,7 @@ struct thread_info {
     } sched;
 
     sw_stack_frame_t sframe[SCHED_SFRAME_ARR_SIZE];
+    struct tls_regs tls_regs;
     struct buf * kstack_region;     /*!< Thread kernel stack region. */
     mmu_pagetable_t * curr_mpt;     /*!< Current master pt (proc or kern) */
     __user struct _sched_tls_desc * tls_uaddr; /*!< Thread local storage. */

@@ -214,15 +214,24 @@ void core_set_tls_addr(__user struct _sched_tls_desc * tls)
         : : [tls]"r" (tls));
 }
 
-static void arm11_sched_update_hw_tls(void)
+/*
+ * HW TLS in this context means anything that needs to be thread local and
+ * is stored in any of the ARM11 hardware registers like floating-point
+ * registers and process id registers etc. that are not used in the kernel
+ * but are needed by user space processes.
+ */
+static void arm11_sched_push_hw_tls(void)
 {
-    /*
-     * TODO Preserve p15, c13, c0, 2 between threads or processes as it's user
-     * modifiable.
-     */
+    current_thread->tls_regs.utls = core_get_user_tls();
+}
+DATA_SET(pre_sched_tasks, arm11_sched_push_hw_tls);
+
+static void arm11_sched_pop_hw_tls(void)
+{
+    core_set_user_tls(current_thread->tls_regs.utls);
     core_set_tls_addr(current_thread->tls_uaddr);
 }
-DATA_SET(post_sched_tasks, arm11_sched_update_hw_tls);
+DATA_SET(post_sched_tasks, arm11_sched_pop_hw_tls);
 
 static char stack_dump_buf[400];
 void stack_dump(sw_stack_frame_t frame)

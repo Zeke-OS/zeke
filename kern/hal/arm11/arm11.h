@@ -129,6 +129,12 @@ typedef struct {
     uint32_t pc;    /*!< r15/lr return point */
 } sw_stack_frame_t;
 
+/** Other registers requiring sw backups */
+struct tls_regs {
+    /* TODO Floating-point registers */
+    uint32_t utls; /* cp15 c13 2 */
+};
+
 void cpu_invalidate_caches(void);
 
 /**
@@ -136,6 +142,11 @@ void cpu_invalidate_caches(void);
  * @param cid new Context ID.
  */
 void cpu_set_cid(uint32_t cid);
+
+uint32_t core_get_user_tls(void);
+void core_set_user_tls(uint32_t value);
+__user struct _sched_tls_desc * core_get_tls_addr(void);
+void core_set_tls_addr(__user struct _sched_tls_desc * tls);
 
 /**
  * Disable all interrupts except NMI (set PRIMASK)
@@ -199,7 +210,7 @@ void cpu_set_cid(uint32_t cid);
     int tmp = 0;                            \
     __asm__ volatile (                      \
         "MCR p15, 0, %[tmp], c7, c10, 5"    \
-        : [tmp]"+r" (tmp));                \
+        : [tmp]"+r" (tmp));                 \
 } while (0)
 
 /**
