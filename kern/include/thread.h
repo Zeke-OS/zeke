@@ -195,10 +195,6 @@ enum thread_eyield_strategy {
     THREAD_YIELD_LAZY
 };
 
-#define THREAD_TLS_UADDR(thread, member) \
-    ((__user char *)((thread)->tls_uaddr) + \
-     offsetof(struct _sched_tls_desc, member))
-
 /**
  * Type for thread constructor and destructor functions.
  */
