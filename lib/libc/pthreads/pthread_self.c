@@ -4,8 +4,8 @@
  * @author  Olli Vanhoja
  * @brief   Zero Kernel user space code
  * @section LICENSE
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2013 Joni Hauhia <joni.hauhia@cs.helsinki.fi>
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -33,10 +33,10 @@
  *******************************************************************************
 */
 
-#include <syscall.h>
+#include <machine/tls.h>
 #include <pthread.h>
 
 pthread_t pthread_self(void)
 {
-    return (pthread_t)syscall(SYSCALL_THREAD_GETTID, NULL);
+    return mach_get_tls_addr()->thread_id;
 }

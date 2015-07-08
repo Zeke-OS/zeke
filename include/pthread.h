@@ -184,7 +184,8 @@ typedef struct pthread_once pthread_once_t;
  * A struct for thread local storage.
  */
 struct _sched_tls_desc {
-    errno_t errno_val;
+    pthread_t thread_id;    /*!< Thread id of the current thread. */
+    errno_t errno_val;      /*!< Thread local errno. */
 };
 
 /**

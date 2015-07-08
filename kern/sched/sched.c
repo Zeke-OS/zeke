@@ -494,6 +494,8 @@ static void thread_init(struct thread_info * tp, pthread_t thread_id,
                         struct thread_info * parent,
                         int priv)
 {
+    void ** thread_ctor_p;
+
     /* Init core specific stack frame for user space */
     init_stack_frame(thread_def, &(tp->sframe[SCHED_SFRAME_SYS]), priv);
 
@@ -528,31 +530,41 @@ static void thread_init(struct thread_info * tp, pthread_t thread_id,
 
     /*
      * The user space address of thread local storage is at the end of
-     * the thread stack region.
+     * the thread stack area.
      */
     tp->tls_uaddr       = (__user struct _sched_tls_desc *)(
                             (uintptr_t)(thread_def->stack_addr)
                           + thread_def->stack_size
                           - sizeof(struct _sched_tls_desc));
 
-    /* Create kstack. */
+    /* Create a kstack. */
     thread_init_kstack(tp);
 
     /* Select master page table used on startup. */
-    if (!parent) {
+    if (unlikely(!parent)) {
+        /*
+         * This branch is only taken during init or when a kernel mode thread
+         * is created.
+         */
         tp->curr_mpt = &mmu_pagetable_master;
     } else {
         struct proc_info * proc;
 
         proc = proc_get_struct_l(parent->pid_owner);
-        if (!proc)
-            panic("Owner must exist");
+        if (!proc) {
+            panic("Parent thread must have a owner process");
+        }
 
         tp->curr_mpt = &proc->mm.mpt;
+
+        /*
+         * Set thread local variables.
+         */
+        copyout_proc(proc, &tp->id, &tp->tls_uaddr->thread_id,
+                     sizeof(pthread_t));
     }
 
     /* Call thread constructors */
-    void ** thread_ctor_p;
     SET_FOREACH(thread_ctor_p, thread_ctors) {
         thread_cdtor_t ctor = *(thread_cdtor_t *)thread_ctor_p;
         ctor(tp);
