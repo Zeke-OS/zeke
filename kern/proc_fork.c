@@ -452,9 +452,6 @@ pid_t proc_fork(pid_t pid)
         KERROR(KERROR_DEBUG,
                "Call thread_fork() to get a new main thread for the fork.\n");
 #endif
-#if 0
-        pthread_t old_tid = get_current_tid();
-#endif
         pthread_t new_tid = thread_fork();
         if (new_tid < 0) {
 #ifdef configPROC_DEBUG

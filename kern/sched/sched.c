@@ -791,13 +791,6 @@ void thread_yield(enum thread_eyield_strategy strategy)
      */
 }
 
-pthread_t get_current_tid(void)
-{
-    if (current_thread)
-        return (pthread_t)(current_thread->id);
-    return 0;
-}
-
 void * thread_get_curr_stackframe(size_t ind)
 {
     if (current_thread && (ind < SCHED_SFRAME_ARR_SIZE))
@@ -1254,11 +1247,6 @@ static int sys_thread_getpriority(__user void * user_args)
     return prio;
 }
 
-static int sys_get_current_tid(__user void * user_args)
-{
-    return (int)get_current_tid();
-}
-
 static const syscall_handler_t thread_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_CREATE, sys_thread_create),
     ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_TERMINATE, sys_thread_terminate),
@@ -1268,6 +1256,5 @@ static const syscall_handler_t thread_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_SLEEP_MS, sys_thread_sleep_ms),
     ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_SETPRIORITY, sys_thread_setpriority),
     ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_GETPRIORITY, sys_thread_getpriority),
-    ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_GETTID, sys_get_current_tid),
 };
 SYSCALL_HANDLERDEF(thread_syscall, thread_sysfnmap)

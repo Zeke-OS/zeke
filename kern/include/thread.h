@@ -342,11 +342,6 @@ void thread_alarm_rele(int timer_id);
 void thread_yield(enum thread_eyield_strategy strategy);
 
 /**
- * Get thread id of the current thread.
- */
-pthread_t get_current_tid(void);
-
-/**
  * Get a stack frame of the current thread.
  * @param ind is the stack frame index.
  * @return  Returns an address to the stack frame of the current thread;
