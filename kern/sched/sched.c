@@ -560,7 +560,7 @@ static void thread_init(struct thread_info * tp, pthread_t thread_id,
         /*
          * Set thread local variables.
          */
-        copyout_proc(proc, &tp->id, &tp->tls_uaddr->thread_id,
+        copyout_proc(proc, &tp->id, THREAD_TLS_UADDR(current_thread, thread_id),
                      sizeof(pthread_t));
     }
 

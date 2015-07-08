@@ -153,7 +153,8 @@ int * __error(void);
  */
 inline void set_errno(int new_value)
 {
-    copyout(&new_value, &current_thread->tls_uaddr->errno_val, sizeof(errno_t));
+    copyout(&new_value, THREAD_TLS_UADDR(current_thread, errno_val),
+            sizeof(errno_t));
 }
 
 /**
@@ -164,7 +165,8 @@ inline errno_t get_errno(void)
 {
     errno_t value;
 
-    copyin(&current_thread->tls_uaddr->errno_val, &value, sizeof(errno_t));
+    copyin(THREAD_TLS_UADDR(current_thread, errno_val), &value,
+           sizeof(errno_t));
 
     return value;
 }
