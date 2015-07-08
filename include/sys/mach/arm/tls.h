@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    tls.c
+ * @file    tls.h
  * @author  Olli Vanhoja
  * @brief   Thread local storage.
  * @section LICENSE
@@ -30,9 +30,12 @@
  *******************************************************************************
  */
 
+#ifndef _MACH_TLS_H_
+#define _MACH_TLS_H_
+
 #include <pthread.h>
 
-struct _sched_tls_desc * mach_get_tls_addr(void)
+static inline struct _sched_tls_desc * mach_get_tls_addr(void)
 {
     struct _sched_tls_desc * tls;
 
@@ -43,3 +46,5 @@ struct _sched_tls_desc * mach_get_tls_addr(void)
 
     return tls;
 }
+
+#endif /* _MACH_TLS_H_ */
