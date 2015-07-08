@@ -75,13 +75,11 @@ config configTKSTACK_START
 config configTKSTACK_END
     hex "V tkstack vaddr end"
     default 0x00000fff
-    range 0x00000fff 0x00000fff
+    range 0x00000fff 0x00001fff
     depends on configMMU
     ---help---
-    Thread kernel stack starts from here, unfortunately, at the moment, this has
-    to be manually set to at least kern/hal/arm11/arm11.inc with + 1.
-    Currently this stack addr must be within the first megabyte of the virtual
-    memory address space.
+    Thread kernel stack starts from here. Currently this stack addr must be
+    within the first megabyte of the virtual memory address space.
 
 config configKSECT_START
     hex "V ksect start"

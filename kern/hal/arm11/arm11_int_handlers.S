@@ -34,6 +34,8 @@
 
 #include <autoconf.h>
 
+#define change_to_tkstack ldr     sp, =(configTKSTACK_END + 1)
+
     .syntax unified
     .text
     .arch armv6k

@@ -80,10 +80,6 @@
     ldr     lr, [lr, #60]  /* Restore lr */
 .endm
 
-.macro change_to_tkstack
-    ldr     sp, =0x00001000 /* vaddr of tkstack. */
-.endm
-
 /**
 * Attach kernel master page table.
 */
