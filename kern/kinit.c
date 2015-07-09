@@ -247,7 +247,7 @@ int __kinit__ kinit(void)
     /*
      * Map tkstack of init with mmu_pagetable_system
      */
-    mmu_map_region(&(init_thread->kstack_region->b_mmu));
+    mmu_map_region(&init_thread->kstack_region->b_mmu);
     init_proc->main_thread = init_thread;
 
 #if configDEBUG >= KERROR_INFO

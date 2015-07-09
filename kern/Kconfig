@@ -67,7 +67,7 @@ menu "Kernel virtual layout"
 config configTKSTACK_START
     hex "V tkstack vaddr start"
     default 0x00000000
-    range 0x00000000 0x00000000
+    range 0x00000000 0x00001000
     depends on configMMU
     ---help---
     See help on configTKSTACK_END.

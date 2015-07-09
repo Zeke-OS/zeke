@@ -105,7 +105,7 @@ struct cpu_sched {
     struct scheduler * sched_arr[NR_SCHEDULERS];
 
     /*
-     * A queue for freed thread_info structs that shall be kfreed in the idle
+     * A queue for freed thread_info structs that shall be freed in the idle
      * thread.
      * Dead threads are mainly removed in interrupt handling code but that
      * introduces because resources can't be usually freed in an interrupt
@@ -121,7 +121,7 @@ struct cpu_sched {
 static struct cpu_sched cpu[1];
 #define CURRENT_CPU (&cpu[get_cpu_index()])
 
-#define KSTACK_SIZE ((MMU_VADDR_TKSTACK_END - MMU_VADDR_TKSTACK_START) + 1)
+#define TKSTACK_SIZE ((MMU_VADDR_TKSTACK_END - MMU_VADDR_TKSTACK_START) + 1)
 
 /*
  * Linker sets for thread constructors and destructors.
@@ -389,6 +389,64 @@ void sched_handler(void)
 /* Thread creation ************************************************************/
 
 /**
+ * Initialize thread kernel mode stack.
+ * @param tp is a pointer to the thread.
+ */
+static struct thread_info * thread_init_kstack(void)
+{
+    struct buf * kstack;
+    struct thread_info * thread;
+
+    /* Create a kstack */
+    kstack = geteblk(TKSTACK_SIZE);
+    if (!kstack)
+        return NULL;
+
+    kstack->b_uflags        = 0;
+    kstack->b_mmu.vaddr     = MMU_VADDR_TKSTACK_START;
+    kstack->b_mmu.pt        = &mmu_pagetable_system;
+    kstack->b_mmu.control  |= MMU_CTRL_XN;
+
+    thread = kzalloc(sizeof(struct thread_info));
+    //thread = (struct thread_info *)kstack->b_data;
+    thread->kstack_region = kstack;
+
+    return thread;
+}
+
+static struct thread_info * thread_clone_kstack(struct thread_info * old_thread)
+{
+    struct buf * kstack;
+    struct thread_info * new_thread;
+
+    new_thread = thread_init_kstack();
+    if (!new_thread)
+        return NULL;
+
+    kstack = new_thread->kstack_region;
+    memcpy(new_thread, old_thread, sizeof(struct thread_info));
+    new_thread->kstack_region = kstack;
+
+    return new_thread;
+}
+
+/**
+ * Free thread kstack.
+ */
+static void thread_free_kstack(struct thread_info * thread)
+{
+    struct buf * bp = thread->kstack_region;
+
+    /* TODO Remove */
+    kfree(thread);
+    /*
+     * No need to check if rfree is defined because we know how the stack buffer
+     * was created.
+     */
+    bp->vm_ops->rfree(bp);
+}
+
+/**
  * Initialize a sched data structure.
  */
 static void init_sched_data(struct sched_thread_data * data)
@@ -440,44 +498,6 @@ static void thread_set_inheritance(struct thread_info * child,
     last_node->inh.next_child = child;
 }
 
-/**
- * Initialize thread kernel mode stack.
- * @param tp is a pointer to the thread.
- */
-static void thread_init_kstack(struct thread_info * thread)
-{
-    struct buf * kstack;
-
-#ifdef configSCHED_DEBUG
-    KASSERT(thread, "thread not set\n");
-#endif
-
-    /* Create a kstack */
-    kstack = geteblk(KSTACK_SIZE);
-    if (!kstack) {
-        panic("OOM during thread creation\n");
-    }
-
-    kstack->b_uflags        = 0;
-    kstack->b_mmu.vaddr     = MMU_VADDR_TKSTACK_START;
-    kstack->b_mmu.pt        = &mmu_pagetable_system;
-    kstack->b_mmu.control  |= MMU_CTRL_XN;
-
-    thread->kstack_region = kstack;
-}
-
-/**
- * Free thread kstack.
- */
-static void thread_free_kstack(struct thread_info * thread)
-{
-    /*
-     * No need to check if rfree is defined because we know how the stack buffer
-     * was created.
-     */
-    thread->kstack_region->vm_ops->rfree(thread->kstack_region);
-}
-
 static void thread_init_tls(struct thread_info * tp)
 {
     struct proc_info * proc;
@@ -501,23 +521,23 @@ static void thread_init_tls(struct thread_info * tp)
 DATA_SET(thread_ctors, thread_init_tls);
 DATA_SET(thread_fork_handlers, thread_init_tls);
 
-/**
- * Set thread initial configuration.
- * @note This function should not be called for already initialized threads.
- * @param tp            is a pointer to the thread struct.
- * @param thread_id     Thread id
- * @param thread_def    Thread definitions
- * @param parent        Parent thread id, NULL = doesn't have a parent
- * @param priv          If set thread is initialized as a kernel mode thread
- *                      (kworker).
- * @todo what if parent is stopped before this function is called?
- */
-static void thread_init(struct thread_info * tp, pthread_t thread_id,
-                        struct _sched_pthread_create_args * thread_def,
-                        struct thread_info * parent,
+pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
                         int priv)
 {
+    pthread_t thread_id;
+    struct thread_info * parent = current_thread;
+    struct thread_info * tp;
     void ** thread_ctor_p;
+
+    /* TODO The following shouldn't never happen. */
+    thread_id = atomic_inc(&next_thread_id);
+    if (thread_id < 0)
+        panic("Out of thread IDs");
+
+    /* Create a kstack. */
+    tp = thread_init_kstack();
+    if (!tp)
+        return -EAGAIN;
 
     /* Init core specific stack frame for user space */
     init_stack_frame(thread_def, &(tp->sframe[SCHED_SFRAME_SYS]), priv);
@@ -530,9 +550,9 @@ static void thread_init(struct thread_info * tp, pthread_t thread_id,
     tp->param   = thread_def->param;
     init_sched_data(&tp->sched);
 
-     mtx_lock(&CURRENT_CPU->lock);
-     RB_INSERT(threadmap, &CURRENT_CPU->threadmap_head, tp);
-     mtx_unlock(&CURRENT_CPU->lock);
+    mtx_lock(&CURRENT_CPU->lock);
+    RB_INSERT(threadmap, &CURRENT_CPU->threadmap_head, tp);
+    mtx_unlock(&CURRENT_CPU->lock);
 
     if (thread_def->flags & PTHREAD_CREATE_DETACHED) {
         tp->flags |= SCHED_DETACH_FLAG;
@@ -559,9 +579,6 @@ static void thread_init(struct thread_info * tp, pthread_t thread_id,
                             (uintptr_t)(thread_def->stack_addr)
                           + thread_def->stack_size
                           - sizeof(struct _sched_tls_desc));
-
-    /* Create a kstack. */
-    thread_init_kstack(tp);
 
     /* Select master page table used on startup. */
     if (unlikely(!parent)) {
@@ -591,26 +608,9 @@ static void thread_init(struct thread_info * tp, pthread_t thread_id,
     if (thread_ready(tp->id)) {
         panic("Failed to make new_thread ready");
     }
-}
-
-pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
-                        int priv)
-{
-    const pthread_t tid = atomic_inc(&next_thread_id);
-    struct thread_info * thread;
-
-    thread = kzalloc(sizeof(struct thread_info));
-    if (!thread)
-        return -EAGAIN;
-
-    thread_init(thread,
-                tid,                    /* Index of the thread created */
-                thread_def,             /* Thread definition. */
-                current_thread,         /* Pointer to the parent thread. */
-                priv);                  /* kworker flag. */
 
     atomic_inc(&anr_threads);
-    return tid;
+    return thread_id;
 }
 
 pthread_t thread_fork(void)
@@ -621,7 +621,7 @@ pthread_t thread_fork(void)
     void ** fork_handler_p;
 
 #ifdef configSCHED_DEBUG
-    KASSERT(old_thread, "current_thread not set\n");
+    KASSERT(old_thread, "current_thread not set, can't fork\n");
 #endif
 
     /* Get next free thread_id. */
@@ -629,11 +629,10 @@ pthread_t thread_fork(void)
     if (new_id < 0)
         panic("Out of thread IDs");
 
-    new_thread = kzalloc(sizeof(struct thread_info));
+    new_thread = thread_clone_kstack(old_thread);
     if (!new_thread)
         return -EAGAIN;
 
-    memcpy(new_thread, old_thread, sizeof(struct thread_info));
     new_thread->id       = new_id;
     new_thread->flags   &= ~SCHED_INSYS_FLAG;
     new_thread->flags   |= SCHED_DETACH_FLAG; /* New main must be detached. */
@@ -655,8 +654,6 @@ pthread_t thread_fork(void)
         sched_task_t task = *(thread_cdtor_t *)fork_handler_p;
         task(new_thread);
     }
-
-    thread_init_kstack(new_thread);
 
     /* TODO Increment resource refcounters(?) */
 
@@ -1013,7 +1010,6 @@ static void free_threads(uintptr_t arg)
         if (!thread)
             continue;
         thread_free_kstack(thread);
-        kfree(thread);
     }
 }
 IDLE_TASK(free_threads, 0);
