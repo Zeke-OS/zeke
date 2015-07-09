@@ -69,6 +69,7 @@ void * idle_thread(/*@unused@*/ void * arg)
             desc->fn(desc->arg);
         }
 
+
         idle_sleep();
     }
 }
@@ -78,6 +79,7 @@ static int idle_insert(struct scheduler * sobj, struct thread_info * thread)
     if (idle_info)
         return -ENOTSUP;
 
+    thread_flags_set(thread, SCHED_INTERNAL_FLAG);
     idle_info = thread;
 
     return 0;

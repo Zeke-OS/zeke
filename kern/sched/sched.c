@@ -392,10 +392,9 @@ void sched_handler(void)
  * Initialize thread kernel mode stack.
  * @param tp is a pointer to the thread.
  */
-static struct thread_info * thread_init_kstack(void)
+static struct buf * thread_alloc_kstack(void)
 {
     struct buf * kstack;
-    struct thread_info * thread;
 
     /* Create a kstack */
     kstack = geteblk(TKSTACK_SIZE);
@@ -407,38 +406,17 @@ static struct thread_info * thread_init_kstack(void)
     kstack->b_mmu.pt        = &mmu_pagetable_system;
     kstack->b_mmu.control  |= MMU_CTRL_XN;
 
-    thread = kzalloc(sizeof(struct thread_info));
-    //thread = (struct thread_info *)kstack->b_data;
-    thread->kstack_region = kstack;
-
-    return thread;
-}
-
-static struct thread_info * thread_clone_kstack(struct thread_info * old_thread)
-{
-    struct buf * kstack;
-    struct thread_info * new_thread;
-
-    new_thread = thread_init_kstack();
-    if (!new_thread)
-        return NULL;
-
-    kstack = new_thread->kstack_region;
-    memcpy(new_thread, old_thread, sizeof(struct thread_info));
-    new_thread->kstack_region = kstack;
-
-    return new_thread;
+    return kstack;
 }
 
 /**
  * Free thread kstack.
  */
-static void thread_free_kstack(struct thread_info * thread)
+static void thread_free_kstack(struct buf * bp)
 {
-    struct buf * bp = thread->kstack_region;
+    if (!bp)
+        return;
 
-    /* TODO Remove */
-    kfree(thread);
     /*
      * No need to check if rfree is defined because we know how the stack buffer
      * was created.
@@ -534,10 +512,14 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
     if (thread_id < 0)
         panic("Out of thread IDs");
 
-    /* Create a kstack. */
-    tp = thread_init_kstack();
+    tp = kzalloc(sizeof(struct thread_info));
     if (!tp)
         return -EAGAIN;
+
+    if (!(tp->kstack_region = thread_alloc_kstack())) {
+        kfree(tp);
+        return -EAGAIN;
+    }
 
     /* Init core specific stack frame for user space */
     init_stack_frame(thread_def, &(tp->sframe[SCHED_SFRAME_SYS]), priv);
@@ -629,15 +611,22 @@ pthread_t thread_fork(void)
     if (new_id < 0)
         panic("Out of thread IDs");
 
-    new_thread = thread_clone_kstack(old_thread);
+    new_thread = kmalloc(sizeof(struct thread_info));
     if (!new_thread)
         return -EAGAIN;
 
+    memcpy(new_thread, old_thread, sizeof(struct thread_info));
     new_thread->id       = new_id;
     new_thread->flags   &= ~SCHED_INSYS_FLAG;
     new_thread->flags   |= SCHED_DETACH_FLAG; /* New main must be detached. */
     init_sched_data(&new_thread->sched);
     thread_set_inheritance(new_thread, old_thread);
+
+    /* New thread kstack */
+    if (!(new_thread->kstack_region = thread_alloc_kstack())) {
+        kfree(new_thread);
+        return -EAGAIN;
+    }
 
     mtx_lock(&CURRENT_CPU->lock);
     RB_INSERT(threadmap, &CURRENT_CPU->threadmap_head, new_thread);
@@ -956,6 +945,12 @@ void thread_remove(pthread_t thread_id)
     if (thread_flags_not_set(thread, SCHED_IN_USE_FLAG))
         return; /* Already freed */
 
+    if (thread_flags_is_set(thread, SCHED_INTERNAL_FLAG)) {
+        KERROR(KERROR_WARN, "Attempt to remove internal thread %u\n",
+               thread->id);
+        return;
+    }
+
     thread->flags = 0; /* Clear all flags */
     thread->param.sched_priority = NICE_ERR;
 
@@ -983,7 +978,7 @@ void thread_remove(pthread_t thread_id)
     RB_REMOVE(threadmap, &CURRENT_CPU->threadmap_head, thread);
     mtx_unlock(&CURRENT_CPU->lock);
 
-    if (!queue_push(&CURRENT_CPU->thread_free_queue, thread)) {
+    if (!queue_push(&CURRENT_CPU->thread_free_queue, &thread)) {
         KERROR(KERROR_ERR,
                "Can't free thread_info struct, consider increasing "
                "thread_free_queue_data array\n");
@@ -1006,10 +1001,9 @@ static void free_threads(uintptr_t arg)
 {
     struct thread_info * thread = NULL;
 
-    while (queue_pop(&CURRENT_CPU->thread_free_queue, thread)) {
-        if (!thread)
-            continue;
-        thread_free_kstack(thread);
+    while (queue_pop(&CURRENT_CPU->thread_free_queue, &thread)) {
+        thread_free_kstack(thread->kstack_region);
+        kfree(thread);
     }
 }
 IDLE_TASK(free_threads, 0);
