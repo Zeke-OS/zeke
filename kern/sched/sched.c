@@ -478,6 +478,29 @@ static void thread_free_kstack(struct thread_info * thread)
     thread->kstack_region->vm_ops->rfree(thread->kstack_region);
 }
 
+static void thread_init_tls(struct thread_info * tp)
+{
+    struct proc_info * proc;
+
+    if (tp->pid_owner == 0) {
+        /* Can't init a TLS for proc 0 nor it's needed. */
+        return;
+    }
+
+    proc = proc_get_struct_l(tp->pid_owner);
+    if (!proc) {
+        panic("Thread must have a owner process");
+    }
+
+    /*
+     * Set thread local variables.
+     */
+    copyout_proc(proc, &tp->id, &tp->tls_uaddr->thread_id,
+                 sizeof(pthread_t));
+}
+DATA_SET(thread_ctors, thread_init_tls);
+DATA_SET(thread_fork_handlers, thread_init_tls);
+
 /**
  * Set thread initial configuration.
  * @note This function should not be called for already initialized threads.
@@ -556,12 +579,6 @@ static void thread_init(struct thread_info * tp, pthread_t thread_id,
         }
 
         tp->curr_mpt = &proc->mm.mpt;
-
-        /*
-         * Set thread local variables.
-         */
-        copyout_proc(proc, &tp->id, &tp->tls_uaddr->thread_id,
-                     sizeof(pthread_t));
     }
 
     /* Call thread constructors */
