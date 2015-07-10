@@ -35,6 +35,7 @@
 /* TODO Idle thread/sched is not MP safe. */
 
 #include <errno.h>
+#include <buf.h>
 #include <hal/core.h>
 #include <kerror.h>
 #include <ksched.h>
@@ -43,10 +44,6 @@
 #if configIDLE_TH_STACK_SIZE < 40
 #error Idle thread stack (configIDLE_TH_STACK_SIZE) should be at least 40 bytes
 #endif
-/** Stack for the idle thread */
-static char sched_idle_stack[sizeof(sw_stack_frame_t) +
-                             sizeof(hw_stack_frame_t) +
-                             configIDLE_TH_STACK_SIZE];
 
 SET_DECLARE(_idle_tasks, struct _idle_task_desc);
 
@@ -63,7 +60,6 @@ void * idle_thread(void * arg)
 
             desc->fn(desc->arg);
         }
-
 
         idle_sleep();
     }
@@ -99,11 +95,18 @@ static struct scheduler sched_idle = {
 
 struct scheduler * sched_create_idle(void)
 {
-    struct _sched_pthread_create_args tdef_idle = {
+    struct _sched_pthread_create_args tdef_idle;
+    struct buf * bp;
+
+    bp = geteblk(sizeof(sw_stack_frame_t) +
+                        sizeof(hw_stack_frame_t) +
+                        configIDLE_TH_STACK_SIZE);
+
+    tdef_idle = (struct _sched_pthread_create_args){
         .param.sched_policy   = SCHED_OTHER + 1,
         .param.sched_priority = NZERO,
-        .stack_addr = sched_idle_stack,
-        .stack_size = sizeof(sched_idle_stack),
+        .stack_addr = (void *)bp->b_data,
+        .stack_size = bp->b_bufsize,
         .flags      = 0,
         .start      = idle_thread,
         .arg1       = 0,
