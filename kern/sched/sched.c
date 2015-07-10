@@ -644,8 +644,6 @@ pthread_t thread_fork(void)
         task(new_thread);
     }
 
-    /* TODO Increment resource refcounters(?) */
-
     /* The newly created thread shall remain in init state for now. */
     atomic_inc(&anr_threads);
     return new_id;
@@ -1003,7 +1001,7 @@ static void free_threads(uintptr_t arg)
 
     while (queue_pop(&CURRENT_CPU->thread_free_queue, &thread)) {
         thread_free_kstack(thread->kstack_region);
-        kfree(thread);
+        kfree_lazy(thread);
     }
 }
 IDLE_TASK(free_threads, 0);

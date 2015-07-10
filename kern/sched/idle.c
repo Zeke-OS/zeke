@@ -52,19 +52,14 @@ SET_DECLARE(_idle_tasks, struct _idle_task_desc);
 
 struct thread_info * idle_info;
 
-/**
- * Kernel idle thread.
- * @note sw stacked registers are invalid when this thread executes for the
- * first time.
- */
-void * idle_thread(/*@unused@*/ void * arg)
+void * idle_thread(void * arg)
 {
     struct _idle_task_desc ** desc_p;
 
     while (1) {
         /* Execute idle coroutines */
         SET_FOREACH(desc_p, _idle_tasks) {
-             struct _idle_task_desc * desc = *desc_p;
+            struct _idle_task_desc * desc = *desc_p;
 
             desc->fn(desc->arg);
         }

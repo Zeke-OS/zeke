@@ -36,18 +36,18 @@
 #include <stdint.h>
 #include <sys/linker_set.h>
 
-typedef void (*idle_task_t)(uintptr_t arg);
+typedef void idle_task_t(uintptr_t arg);
 
 struct _idle_task_desc {
-    idle_task_t fn;
+    idle_task_t * fn;
     const uintptr_t arg;
 };
 
-#define IDLE_TASK(_IDLE_TASK_FN_, _ARG_)                    \
-struct _idle_task_desc _idle_task_##_IDLE_TASK_FN_ = {      \
-    .fn = _IDLE_TASK_FN_,                                   \
-    .arg = _ARG_,                                           \
-};                                                          \
-DATA_SET(_idle_tasks, _idle_task_##_IDLE_TASK_FN_)
+#define IDLE_TASK(_fun_, _arg_)                 \
+struct _idle_task_desc _idle_task_##_fun_ = {   \
+    .fn = _fun_,                                \
+    .arg = _arg_,                               \
+};                                              \
+DATA_SET(_idle_tasks, _idle_task_##_fun_)
 
 #endif /* IDLE_H */
