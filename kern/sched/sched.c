@@ -1025,10 +1025,12 @@ void _thread_enter_kernel(void)
  */
 mmu_pagetable_t * _thread_exit_kernel(void)
 {
-    KASSERT(current_thread->curr_mpt != NULL, "curr_mpt must be set");
+    mmu_pagetable_t * next;
 
-    current_thread->curr_mpt = &curproc->mm.mpt;
-    return current_thread->curr_mpt;
+    next = &curproc->mm.mpt;
+    current_thread->curr_mpt = next;
+
+    return next;
 }
 
 /**
@@ -1046,8 +1048,6 @@ void _thread_suspend(void)
  */
 mmu_pagetable_t * _thread_resume(void)
 {
-    KASSERT(current_thread->curr_mpt != NULL, "curr_mpt must be set");
-
     return current_thread->curr_mpt;
 }
 
