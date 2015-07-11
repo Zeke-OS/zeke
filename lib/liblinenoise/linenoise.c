@@ -349,7 +349,7 @@ static void freeCompletions(linenoiseCompletions *lc) {
  * structure as described in the structure definition. */
 static int completeLine(struct linenoiseState *ls) {
     linenoiseCompletions lc = { 0, NULL };
-    int nread, nwritten;
+    int nwritten;
     char c = 0;
 
     completionCallback(ls->buf,&lc);
@@ -359,6 +359,8 @@ static int completeLine(struct linenoiseState *ls) {
         size_t stop = 0, i = 0;
 
         while(!stop) {
+            int nread;
+
             /* Show completion or original buffer */
             if (i < lc.len) {
                 struct linenoiseState saved = *ls;
@@ -962,23 +964,28 @@ static int linenoiseRaw(char *buf, size_t buflen, const char *prompt) {
  * something even in the most desperate of the conditions. */
 char *linenoise(const char *prompt) {
     char buf[LINENOISE_MAX_LINE];
-    int count;
 
     if (isUnsupportedTerm()) {
         size_t len;
 
         printf("%s",prompt);
         fflush(stdout);
-        if (fgets(buf,LINENOISE_MAX_LINE,stdin) == NULL) return NULL;
+        if (fgets(buf,LINENOISE_MAX_LINE,stdin) == NULL)
+            return NULL;
+
         len = strlen(buf);
         while(len && (buf[len-1] == '\n' || buf[len-1] == '\r')) {
             len--;
             buf[len] = '\0';
         }
+
         return strdup(buf);
     } else {
+        int count;
+
         count = linenoiseRaw(buf,LINENOISE_MAX_LINE,prompt);
-        if (count == -1) return NULL;
+        if (count == -1)
+            return NULL;
         return strdup(buf);
     }
 }
