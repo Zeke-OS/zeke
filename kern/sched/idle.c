@@ -98,9 +98,7 @@ struct scheduler * sched_create_idle(void)
     struct _sched_pthread_create_args tdef_idle;
     struct buf * bp;
 
-    bp = geteblk(sizeof(sw_stack_frame_t) +
-                        sizeof(hw_stack_frame_t) +
-                        configIDLE_TH_STACK_SIZE);
+    bp = geteblk(MMU_PGSIZE_COARSE);
 
     tdef_idle = (struct _sched_pthread_create_args){
         .param.sched_policy   = SCHED_OTHER + 1,
