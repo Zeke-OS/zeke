@@ -189,6 +189,7 @@ static int ksig_testlock(ksigmtx_t * lock)
     return mtx_test(&lock->l);
 }
 
+#if defined(configKSIGNAL_DEBUG)
 static char * ksignal_str_owner_type(struct signals * sigs)
 {
     switch (sigs->s_owner_type) {
@@ -200,6 +201,7 @@ static char * ksignal_str_owner_type(struct signals * sigs)
         return "unknown";
     }
 }
+#endif
 
 /**
  * Execute thread if signal conditions are met.
