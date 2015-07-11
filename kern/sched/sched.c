@@ -1074,6 +1074,31 @@ SYSCALL_HANDLERDEF(sched_syscall, sched_sysfnmap)
 
 /* Thread syscalls ************************************************************/
 
+int sched_priv_check_param(struct sched_param * param)
+{
+    struct sched_param * current_param = &current_thread->param;
+
+    /*
+     * If any other params are ever added PRIV_SCHED_SETPARAM should be checked
+     * for those.
+     */
+
+    if (/* Permission to set scheduling policy. */
+        (param->sched_policy != SCHED_OTHER &&
+         !priv_check(&curproc->cred, PRIV_SCHED_SETPOLICY)) ||
+        /* Permission to set a real time policy/priority. */
+        ((param->sched_policy == SCHED_FIFO ||
+          param->sched_priority < NZERO) &&
+         !priv_check(&curproc->cred, PRIV_SCHED_RTPRIO)) ||
+        /* Permission to set a lower priority. */
+        (param->sched_priority < current_param->sched_priority &&
+         !priv_check(&curproc->cred, PRIV_SCHED_SETPRIORITY))) {
+        return -EPERM;
+    }
+
+    return 0;
+}
+
 static int sys_thread_create(__user void * user_args)
 {
     struct _sched_pthread_create_args args;
@@ -1081,36 +1106,42 @@ static int sys_thread_create(__user void * user_args)
     int err;
 
     err = copyin(user_args, &args, sizeof(args));
-    if (err) {
-        set_errno(EFAULT);
-        return -1;
-    }
+    if (err)
+        goto fail;
 
-    if (args.stack_size < 40) {
-        set_errno(EINVAL);
-        return -1;
+    /* Minimum stack size is just a guess. */
+    if (args.stack_size < 512) {
+        err = -EINVAL;
+        goto fail;
     }
 
     if (!useracc((__user void *)args.stack_addr, args.stack_size,
                  VM_PROT_WRITE)) {
-        set_errno(EINVAL);
-        return -1;
+        err = -EINVAL;
+        goto fail;
     }
 
     if (!useracc((__user void *)args.start, sizeof(void *),
                  VM_PROT_READ | VM_PROT_EXECUTE)) {
-        set_errno(EINVAL);
-        return -1;
+        err = -EINVAL;
+        goto fail;
     }
 
-    /* TODO Check policy */
+    /* Check credentials. */
+    err = sched_priv_check_param(&args.param);
+    if (err) {
+        goto fail;
+    }
 
     tid = thread_create(&args, 0);
     if (tid < 0) {
-        set_errno(-tid);
-        return -1;
+        err = tid;
+        goto fail;
     }
     return tid;
+fail:
+    set_errno(-err);
+    return -1;
 }
 
 static int sys_thread_terminate(__user void * user_args)
