@@ -41,10 +41,6 @@
 #include <ksched.h>
 #include <idle.h>
 
-#if configIDLE_TH_STACK_SIZE < 40
-#error Idle thread stack (configIDLE_TH_STACK_SIZE) should be at least 40 bytes
-#endif
-
 SET_DECLARE(_idle_tasks, struct _idle_task_desc);
 
 struct thread_info * idle_info;
