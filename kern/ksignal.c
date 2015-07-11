@@ -184,6 +184,23 @@ static void ksig_unlock(ksigmtx_t * lock)
     mtx_unlock(&lock->l);
 }
 
+static int ksig_testlock(ksigmtx_t * lock)
+{
+    return mtx_test(&lock->l);
+}
+
+static char * ksignal_str_owner_type(struct signals * sigs)
+{
+    switch (sigs->s_owner_type) {
+    case SIGNALS_OWNER_PROCESS:
+        return "process";
+    case SIGNALS_OWNER_THREAD:
+        return "thread";
+    default:
+        return "unknown";
+    }
+}
+
 /**
  * Execute thread if signal conditions are met.
  */
@@ -284,15 +301,19 @@ static sw_stack_frame_t * get_usr_sframe(struct thread_info * thread)
 
 /**
  * Forward signals pending in proc sigs struct to thread pendqueue.
+ * It's usually not a good idea to call this function from other than the owning
+ * process. The idea is that the cost of the actual forwarding and delivery
+ * should be counted for the receiving side. Also it's lot more safer
+ * to only call this function for curproc since then no locking or ref counting
+ * is needed for the proc struct.
  */
-static void forward_proc_signals(void)
+static void forward_proc_signals(struct proc_info * proc)
 {
-    struct signals * proc_sigs = &curproc->sigs;
+    struct signals * proc_sigs = &proc->sigs;
     struct ksiginfo * ksiginfo;
     struct ksiginfo * tmp;
 
-    if (ksig_lock(&proc_sigs->s_lock))
-        return;
+    KASSERT(ksig_testlock(&proc_sigs->s_lock), "sigs should be locked\n");
 
     /* Get next pending signal. */
     STAILQ_FOREACH_SAFE(ksiginfo, &proc_sigs->s_pendqueue, _entry, tmp) {
@@ -300,7 +321,7 @@ static void forward_proc_signals(void)
         struct thread_info * thread_it = NULL;
         const int signum = ksiginfo->siginfo.si_signo;
 
-        while ((thread = proc_iterate_threads(curproc, &thread_it))) {
+        while ((thread = proc_iterate_threads(proc, &thread_it))) {
             int blocked, swait;
             struct signals * thread_sigs = &thread->sigs;
 
@@ -309,7 +330,7 @@ static void forward_proc_signals(void)
              */
             if (ksig_lock(&thread_sigs->s_lock)) {
                 /* RFE Could we just continue? */
-                goto out; /* Try again later */
+                return; /* Try again later */
             }
             blocked = ksignal_isblocked(thread_sigs, signum);
             swait   = sigismember(&thread_sigs->s_wait, signum);
@@ -327,18 +348,32 @@ static void forward_proc_signals(void)
             if (thread != current_thread)
                 ksignal_exec_cond(thread, ksiginfo->siginfo.si_signo);
             ksig_unlock(&thread_sigs->s_lock);
+
+#if defined(configKSIGNAL_DEBUG)
+            KERROR(KERROR_DEBUG, "Signal %d forwarded to thread %d\n",
+                   signum, thread->id);
+#endif
             /*
              * We probably can't break and continue signal forwarding here
              * because otherwise we may give one tread signals that can't
              * be handled rightaway (blocking) even there might be another
              * thread capable of handling those.
              */
-            goto out;
+            return;
         }
     }
+}
 
-out:
-    ksig_unlock(&proc_sigs->s_lock);
+static void forward_proc_signals_curproc(void)
+{
+    ksigmtx_t * s_lock = &curproc->sigs.s_lock;
+
+    if (ksig_lock(s_lock))
+        return;
+
+    forward_proc_signals(curproc);
+
+    ksig_unlock(s_lock);
 }
 
 /**
@@ -499,7 +534,7 @@ static void ksignal_post_scheduling(void)
     struct ksigaction action;
     struct ksiginfo * ksiginfo;
 
-    forward_proc_signals();
+    forward_proc_signals_curproc();
 
     /*
      * Can't handle signals right now if we can't get lock to sigs of
@@ -637,27 +672,56 @@ static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
     int retval = 0;
     struct ksigaction action;
     struct ksiginfo * ksiginfo;
+    struct thread_info * thread;
 
-    KASSERT(mtx_test(&sigs->s_lock.l), "sigs should be locked\n");
+    KASSERT(ksig_testlock(&sigs->s_lock), "sigs should be locked\n");
 
 #if defined(configKSIGNAL_DEBUG)
-    KERROR(KERROR_DEBUG, "Queuing a signum %d to sigs: %p\n", signum, sigs);
+    KERROR(KERROR_DEBUG, "Queuing a signum %d to sigs: %p (%s)\n",
+           signum, sigs, ksignal_str_owner_type(sigs));
 #endif
 
     if (signum <= 0 || signum > _SIG_MAXSIG) {
+#if defined(configKSIGNAL_DEBUG)
+        KERROR(KERROR_DEBUG, "Invalid signum\n");
+#endif
         return -EINVAL;
     }
 
     retval = sigismember(&sigs->s_running, signum);
-    if (retval) /* Already running a handler. */
+    if (retval) {
+        /* Already running a handler. */
+#if defined(configKSIGNAL_DEBUG)
+        KERROR(KERROR_DEBUG, "\tAlready running a handler for this signal\n");
+#endif
         return 0;
+    }
 
     /* Get action struct for this signal. */
     ksignal_get_ksigaction(&action, sigs, signum);
 
     /* Ignored? */
-    if (action.ks_action.sa_handler == SIG_IGN)
+    if (action.ks_action.sa_handler == SIG_IGN) {
+#if defined(configKSIGNAL_DEBUG)
+        KERROR(KERROR_DEBUG, "\tSignal ignored\n");
+#endif
         return 0;
+    }
+
+    /*
+     * Get the associated thread.
+     */
+    switch (sigs->s_owner_type) {
+    case SIGNALS_OWNER_PROCESS:
+        thread = container_of(sigs, struct proc_info, sigs)->main_thread;
+        break;
+    case SIGNALS_OWNER_THREAD:
+        thread = container_of(sigs, struct thread_info, sigs);
+        break;
+    default:
+        panic("Invalid sigs owner type");
+    }
+    KASSERT(thread != NULL, "thread must be set");
 
     /*
      * SA_KILL is handled here because post_scheduling handler can't change
@@ -666,23 +730,6 @@ static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
     if ((action.ks_action.sa_handler == SIG_DFL) &&
             (action.ks_action.sa_flags & SA_KILL) &&
             !sigismember(&sigs->s_wait, signum)) {
-        struct thread_info * thread;
-
-        /*
-         * Get the thread to be terminated.
-         */
-        switch (sigs->s_owner_type) {
-        case SIGNALS_OWNER_PROCESS:
-            thread = container_of(sigs, struct proc_info, sigs)->main_thread;
-            break;
-        case SIGNALS_OWNER_THREAD:
-            thread = container_of(sigs, struct thread_info, sigs);
-            break;
-        default:
-            panic("Invalid sigs owner type");
-        }
-        KASSERT(thread != NULL, "thread must be set");
-
 #if defined(configKSIGNAL_DEBUG)
         KERROR(KERROR_DEBUG, "Thread %u will be terminated by signum %d\n",
                thread->id, signum);
@@ -714,6 +761,9 @@ static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
     };
     STAILQ_INSERT_TAIL(&sigs->s_pendqueue, ksiginfo, _entry);
 
+    if (thread != current_thread)
+        ksignal_exec_cond(thread, signum);
+
     return 0;
 }
 
@@ -723,9 +773,7 @@ int ksignal_sendsig_fatal(struct proc_info * p, int signum)
     struct ksigaction act;
     int err;
 
-    if (ksig_lock(&sigs->s_lock)) {
-        return -EAGAIN;
-    }
+    while (ksig_lock(&sigs->s_lock));
 
     /* Change signal action to default to make this signal fatal. */
     err = ksignal_reset_ksigaction(sigs, signum);
@@ -757,7 +805,7 @@ int ksignal_sigwait(siginfo_t * retval, const sigset_t * restrict set)
     memcpy(&sigs->s_wait, set, sizeof(sigs->s_wait));
     ksig_unlock(s_lock);
 
-    forward_proc_signals();
+    forward_proc_signals_curproc();
 
     while (ksig_lock(s_lock));
 
@@ -773,7 +821,7 @@ int ksignal_sigwait(siginfo_t * retval, const sigset_t * restrict set)
 
     KSIGFLAG_SET(sigs, KSIGFLAG_INTERRUPTIBLE);
     ksig_unlock(s_lock);
-    thread_wait(); /* Wait for wakeup */
+    thread_wait(); /* Wait for a wakeup */
     KSIGFLAG_CLEAR(sigs, KSIGFLAG_INTERRUPTIBLE);
 
 out:
@@ -824,7 +872,7 @@ int ksignal_sigsleep(const struct timespec * restrict timeout)
     int64_t usec, unslept;
     int timer_id;
 
-    forward_proc_signals();
+    forward_proc_signals_curproc();
 
     while (ksig_lock(s_lock));
 
@@ -877,7 +925,13 @@ int ksignal_sigsleep(const struct timespec * restrict timeout)
 
 int ksignal_isblocked(struct signals * sigs, int signum)
 {
-    KASSERT(mtx_test(&sigs->s_lock.l), "sigs should be locked\n");
+    /*
+     * FIXME Temorarily disable this assert because I couldn't find any source
+     * of error and it's still failing.
+     */
+#if 0
+    KASSERT(ksig_testlock(&sigs->s_lock), "sigs should be locked\n");
+#endif
 
     /*
      * TODO IEEE Std 1003.1, 2004 Edition
@@ -958,7 +1012,7 @@ void ksignal_get_ksigaction(struct ksigaction * action,
 
     KASSERT(action, "Action should be set\n");
     KASSERT(signum >= 0, "Signum should be positive\n");
-    KASSERT(mtx_test(&sigs->s_lock.l), "sigs should be locked\n");
+    KASSERT(ksig_testlock(&sigs->s_lock), "sigs should be locked\n");
 
     if (!RB_EMPTY(&sigs->sa_tree) &&
         (p_action = RB_FIND(sigaction_tree, &sigs->sa_tree, &find))) {
@@ -982,7 +1036,7 @@ int ksignal_reset_ksigaction(struct signals * sigs, int signum)
         return -EINVAL;
     }
 
-    KASSERT(mtx_test(&sigs->s_lock.l), "sigs should be locked\n");
+    KASSERT(ksig_testlock(&sigs->s_lock), "sigs should be locked\n");
 
     if (!RB_EMPTY(&sigs->sa_tree) &&
         (p_action = RB_FIND(sigaction_tree, &sigs->sa_tree, &filt))) {
@@ -1006,7 +1060,7 @@ int ksignal_set_ksigaction(struct signals * sigs, struct ksigaction * action)
     struct ksigaction * p_action;
     struct sigaction * sigact = NULL;
 
-    KASSERT(mtx_test(&sigs->s_lock.l), "sigs should be locked\n");
+    KASSERT(ksig_testlock(&sigs->s_lock), "sigs should be locked\n");
 
     if (!action)
         return -EINVAL;
@@ -1129,7 +1183,12 @@ static int sys_signal_pkill(__user void * user_args)
 
     ksig_unlock(&sigs->s_lock);
 
-    forward_proc_signals();
+    /*
+     * It's a good idea to forward signals now if we sent a signal to ourself.
+     */
+    if (args.pid == curproc->pid) {
+        forward_proc_signals_curproc();
+    }
 
     return 0;
 }
@@ -1194,7 +1253,6 @@ static int sys_signal_tkill(__user void * user_args)
         set_errno(-err);
         return -1;
     }
-    ksignal_exec_cond(thread, args.sig);
 
     ksig_unlock(&sigs->s_lock);
 

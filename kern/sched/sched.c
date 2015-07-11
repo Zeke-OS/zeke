@@ -865,7 +865,6 @@ int thread_join(pthread_t thread_id, intptr_t * retval)
 
     while (thread_state_get(thread) != THREAD_STATE_DEAD) {
         sigset_t set;
-        /* TODO Maybe shorter timeout for thread_join? */
         const struct timespec ts = { .tv_sec = 1, .tv_nsec = 0 };
         siginfo_t sigretval;
 
@@ -964,7 +963,7 @@ void thread_remove(pthread_t thread_id)
 
     /*
      * Call thread destructors
-     * TODO Are these always interrupt handler safe?
+     * RFE Are these always interrupt handler safe?
      */
     SET_FOREACH(thread_dtor_p, thread_dtors) {
         thread_cdtor_t dtor = *(thread_cdtor_t *)thread_dtor_p;
