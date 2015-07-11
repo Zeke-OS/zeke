@@ -66,7 +66,7 @@ struct vm_pt vm_pagetable_system;
 
 /* Fixed Regions **************************************************************/
 
-/** Kernel mode stacks. */
+/** Kernel mode stacks, other than thread kernel stack. */
 const mmu_region_t mmu_region_kstack = {
     .vaddr          = MMU_VADDR_KSTACK_START,
     .num_pages      = MMU_PAGE_CNT_BY_RANGE(
@@ -83,8 +83,8 @@ extern void *  _rodata_end __attribute__((weak));
 mmu_region_t mmu_region_kernel = {
     .vaddr          = MMU_VADDR_KERNEL_START,
     .num_pages      = 0, /* Set in init */
-    .ap             = MMU_AP_RORO, /* TODO this must be changed later to RONA */
-    .control        = MMU_CTRL_MEMTYPE_SO,
+    .ap             = MMU_AP_RONA,
+    .control        = MMU_CTRL_MEMTYPE_WB,
     .paddr          = MMU_VADDR_KERNEL_START,
     .pt             = &mmu_pagetable_system
 };
@@ -100,7 +100,7 @@ extern void * _end __attribute__((weak));
 mmu_region_t mmu_region_kdata = {
     .vaddr          = 0, /* Set in init */
     .num_pages      = 0, /* Set in init */
-    .ap             = MMU_AP_RWRW, /* TODO */
+    .ap             = MMU_AP_RWNA,
     .control        = MMU_CTRL_MEMTYPE_WB | MMU_CTRL_XN,
     .paddr          = 0, /* Set in init */
     .pt             = &mmu_pagetable_system

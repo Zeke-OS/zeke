@@ -105,7 +105,7 @@ static pthread_t create_uinit_main(void * stack_addr)
         .del_thread = (void (*)(void *))uinit_exit,
     };
 
-    return thread_create(&init_ds, 0);
+    return thread_create(&init_ds, 1);
 }
 
 static void mount_rootfs(void)
