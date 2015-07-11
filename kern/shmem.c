@@ -64,7 +64,7 @@ int __kinit__ shmem_init(void)
 
     mtx_init(&sync_lock, MTX_TYPE_SPIN,
              MTX_OPT_SLEEP | MTX_OPT_PRICEIL);
-    sync_lock.pri.p_lock = NICE_MAX;
+    sync_lock.pri.p_lock = NICE_MIN;
 
     shmem_sync_list = dllist_create(struct buf, lentry_);
 
@@ -77,7 +77,7 @@ int __kinit__ shmem_init(void)
         panic("Can't allocate a stack for shmem sync thread.");
 
     struct _sched_pthread_create_args tdef_shmem = {
-        .param.sched_policy = SCHED_RR,
+        .param.sched_policy = SCHED_FIFO,
         .param.sched_priority = NICE_DEF,
         .stack_addr = (void *)bp_stack->b_data,
         .stack_size = bp_stack->b_bcount,
