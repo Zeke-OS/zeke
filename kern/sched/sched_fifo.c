@@ -109,6 +109,9 @@ static struct thread_info * fifo_schedule(struct scheduler * sobj)
             break;
         case THREAD_STATE_EXEC:
             return thread; /* select */
+        case THREAD_STATE_BLOCKED:
+            fifo_remove(sobj, thread);
+            break;
         case THREAD_STATE_DEAD:
             fifo_remove(sobj, thread);
             if (thread_flags_is_set(thread, SCHED_DETACH_FLAG))
