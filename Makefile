@@ -112,11 +112,12 @@ clean-all: clean clean-tools clean-doc
 # target_clean: clean - Clean.
 clean:
 	$(RM) $(AUTOCONF_H)
-	$(MAKE) -C lib clean
-	$(MAKE) -C kern clean
 	$(MAKE) -C bin clean
-	$(MAKE) -C sbin clean
+	$(MAKE) -C kern clean
+	$(MAKE) -C lib clean
 	$(MAKE) -C opt/test clean
+	$(MAKE) -C sbin clean
+	$(MAKE) -C usr clean
 	find . -type f -name "*.o" -exec rm -f {} \;
 	find . -type f -name "*.bc" -exec rm -f {} \;
 	$(RM) *.bin
