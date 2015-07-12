@@ -59,7 +59,7 @@ int main(int argc, char * argv[])
     argc -= optind;
     argv += optind;
 
-    if (argc < 2) {
+    if (argc < 1) {
         usage();
     }
     target = argv[0];
