@@ -640,8 +640,8 @@ static void ksignal_post_scheduling(void)
 #endif
         ksig_unlock(&sigs->s_lock);
         kfree_lazy(ksiginfo);
-        ksignal_sendsig_fatal(curproc, SIGILL); /* TODO Possible deadlock? */
-        return; /* TODO Is this ok? */
+        ksignal_sendsig_fatal(curproc, SIGILL); /* RFE Possible deadlock? */
+        return; /* RFE Is this ok? */
     }
 
     /*
@@ -753,13 +753,13 @@ static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
     *ksiginfo = (struct ksiginfo){
         .siginfo.si_signo = signum,
         .siginfo.si_code = si_code,
-        .siginfo.si_errno = 0, /* TODO */
+        .siginfo.si_errno = 0, /* TODO siginfo errno */
         .siginfo.si_tid = current_thread->id,
         .siginfo.si_pid = curproc->pid,
         .siginfo.si_uid = curproc->cred.uid,
-        .siginfo.si_addr = 0, /* TODO */
-        .siginfo.si_status = 0, /* TODO */
-        .siginfo.si_value = { 0 }, /* TODO */
+        .siginfo.si_addr = 0, /* TODO siginfo addr */
+        .siginfo.si_status = 0, /* TODO siginfo status */
+        .siginfo.si_value = { 0 }, /* TODO siginfo value */
     };
     STAILQ_INSERT_TAIL(&sigs->s_pendqueue, ksiginfo, _entry);
 
@@ -1548,7 +1548,7 @@ static int sys_signal_return(__user void * user_args)
                            sizeof(const sw_stack_frame_t));
     if (err) {
         /*
-         * TODO Should we punish only the thread or whole process?
+         * RFE Should we punish only the thread or whole process?
          */
         ksignal_sendsig_fatal(curproc, SIGILL);
         while (1) {
