@@ -108,13 +108,11 @@ static const char * sd_versions[] = {
 };
 
 #ifdef configEMMC_DEBUG
-#if 0
 static const char * err_irpts[] = {
     "CMD_TIMEOUT", "CMD_CRC", "CMD_END_BIT", "CMD_INDEX",
     "DATA_TIMEOUT", "DATA_CRC", "DATA_END_BIT", "CURRENT_LIMIT",
     "AUTO_CMD12", "ADMA", "TUNING", "RSVD"
 };
-#endif
 #endif
 
 #define DEFAULT_CMD_TIMEOUT 500000
@@ -1083,20 +1081,14 @@ static void sd_issue_command(struct emmc_block_dev *dev, uint32_t command,
 #ifdef configEMMC_DEBUG
     if (FAIL(dev)) {
         KERROR(KERROR_DEBUG,
-               "SD: error issuing command: interrupts %x%s\n",
-               (uint32_t)dev->last_interrupt,
-               (dev->last_error == 0) ? ", TIMEOUT" : "");
-#if 0
-        else {
-            for (int i = 0; i < SD_ERR_RSVD; i++) {
-                if (dev->last_error & (1 << (i + 16))) {
-                    printf(err_irpts[i]);
-                    printf(" ");
-                }
+           "SD: error issuing command: interrupts %x%s\n",
+           (uint32_t)dev->last_interrupt,
+           (dev->last_error == 0) ? ", TIMEOUT" : "");
+        for (int i = 0; i < SD_ERR_RSVD; i++) {
+            if (dev->last_error & (1 << (i + 16))) {
+                KERROR(KERROR_DEBUG, "%s\n", err_irpts[i]);
             }
         }
-        printf("\n");
-#endif
     }
 #endif
 }
