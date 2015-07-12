@@ -50,11 +50,25 @@ struct stat {
     nlink_t   st_nlink;     /*!< Number of links to the file */
     uid_t     st_uid;       /*!< User ID of file. */
     gid_t     st_gid;       /*!< Group ID of file. */
-    dev_t     st_rdev;      /*!< Device ID (if file is character or block special). */
-    off_t     st_size;      /*!< File size in bytes (if file is a regular file). */
-    struct timespec st_atime;     /*!< Time of last access. */
-    struct timespec st_mtime;     /*!< Time of last data modification. */
-    struct timespec st_ctime;     /*!< Time of last status change. */
+    dev_t     st_rdev;      /*!< Device ID (if file is character or block
+                             *   special). */
+    off_t     st_size;      /*!< File size in bytes (if file is a regular file).
+                             */
+    struct timespec st_atime;     /*!< Time of last access.
+                                   *   atime is updated when the file is opened.
+                                   */
+    struct timespec st_mtime;     /*!< Time of last data modification.
+                                   *   mtime is updated whenever the file is
+                                   *   written.
+                                   */
+    struct timespec st_ctime;     /*!< Time of last status change.
+                                   *   ctime is updated when the file attributes
+                                   *   are changed, when the file is moved or
+                                   *   when the file is written. ctime is
+                                   *   different from mtime if the file
+                                   *   attributes are changed and thus only
+                                   *   ctime get updated.
+                                   */
     struct timespec st_birthtime; /*!< Time file created. */
     fflags_t  st_flags;    /*!< User defined flags for file */
     blksize_t st_blksize;   /*!< A filesystem-specific preferred I/O block size

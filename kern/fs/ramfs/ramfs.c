@@ -34,6 +34,7 @@
 #include <errno.h>
 #include <machine/atomic.h>
 #include <stdint.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <time.h>
 #include <kerror.h>
@@ -76,6 +77,7 @@ typedef struct ramfs_inode {
     struct timespec in_atime;   /*!< Time of last access. */
     struct timespec in_mtime;   /*!< Time of last data modification. */
     struct timespec in_ctime;   /*!< Time of last status change. */
+    struct timespec in_birthtime;
     blksize_t   in_blksize; /*!< Preferred I/O block size for this object.
                                  This is allowed to vary from file to file. */
     blkcnt_t    in_blocks;  /*!< Number of blocks allocated for this object. */
@@ -172,8 +174,9 @@ fs_t ramfs_fs = {
  * Vnode operations implemented for ramfs.
  */
 vnode_ops_t ramfs_vnode_ops = {
-    .write = ramfs_write,
     .read = ramfs_read,
+    .write = ramfs_write,
+    .event_vnode_opened = ramfs_event_vnode_opened,
     .create = ramfs_create,
     .mknod = ramfs_mknod,
     .lookup = ramfs_lookup,
@@ -200,6 +203,49 @@ int __kinit__ ramfs_init(void)
     fs_register(&ramfs_fs);
 
     return 0;
+}
+
+/*
+ * Set initial values for timespec structs in inode.
+ */
+static void init_times(ramfs_inode_t * inode)
+{
+    struct timespec ts;
+
+    nanotime(&ts);
+
+    inode->in_atime = ts;
+    inode->in_mtime = ts;
+    inode->in_ctime = ts;
+    inode->in_birthtime = ts;
+}
+
+static void ramfs_vnode_accessed(vnode_t * vnode)
+{
+    ramfs_inode_t * inode = get_inode_of_vnode(vnode);
+
+    if (!((vnode->sb->mode_flags & MNT_NOATIME) == MNT_NOATIME)) {
+        nanotime(&inode->in_atime);
+    }
+}
+
+static void ramfs_vnode_modified(vnode_t * vnode)
+{
+    ramfs_inode_t * inode = get_inode_of_vnode(vnode);
+    struct timespec ts;
+
+    nanotime(&ts);
+    inode->in_mtime = ts;
+    inode->in_ctime = ts;
+}
+
+static void ramfs_vnode_changed(vnode_t * vnode)
+{
+    ramfs_inode_t * inode = get_inode_of_vnode(vnode);
+    struct timespec ts;
+
+    nanotime(&ts);
+    inode->in_ctime = ts;
 }
 
 int ramsfs_mount(const char * source, uint32_t mode,
@@ -374,22 +420,6 @@ int ramfs_delete_vnode(vnode_t * vnode)
     return 0;
 }
 
-ssize_t ramfs_write(file_t * file, const void * buf, size_t count)
-{
-    size_t bytes_wr = 0;
-
-    switch (file->vnode->vn_mode & S_IFMT) {
-    case S_IFREG: /* File is a regular file. */
-        bytes_wr = ramfs_wr_regular(file->vnode, &(file->seek_pos), buf, count);
-        break;
-    default: /* File type not supported. */
-        return -EOPNOTSUPP;
-    }
-
-    file->seek_pos += bytes_wr;
-    return bytes_wr;
-}
-
 ssize_t ramfs_read(file_t * file, void * buf, size_t count)
 {
     size_t bytes_rd = 0;
@@ -408,6 +438,31 @@ ssize_t ramfs_read(file_t * file, void * buf, size_t count)
     return bytes_rd;
 }
 
+ssize_t ramfs_write(file_t * file, const void * buf, size_t count)
+{
+    size_t bytes_wr = 0;
+
+    switch (file->vnode->vn_mode & S_IFMT) {
+    case S_IFREG: /* File is a regular file. */
+        bytes_wr = ramfs_wr_regular(file->vnode, &(file->seek_pos), buf, count);
+        break;
+    default: /* File type not supported. */
+        return -EOPNOTSUPP;
+    }
+
+    ramfs_vnode_modified(file->vnode);
+
+    file->seek_pos += bytes_wr;
+    return bytes_wr;
+}
+
+int ramfs_event_vnode_opened(struct proc_info * p, vnode_t * vnode)
+{
+    ramfs_vnode_accessed(vnode);
+
+    return 0;
+}
+
 static void init_inode_attr(ramfs_inode_t * inode, mode_t mode)
 {
     inode->in_vnode.vn_mode = mode;
@@ -422,7 +477,7 @@ static void init_inode_attr(ramfs_inode_t * inode, mode_t mode)
     inode->in_nlink = 0;
     inode->in_uid = curproc->cred.euid;
     inode->in_gid = curproc->cred.egid; /* RFE or to egid of the parent dir */
-    /* TODO set times */
+    init_times(inode);
     inode->in_blocks = 0;
     inode->in_blksize = MMU_PGSIZE_COARSE;
 }
@@ -478,8 +533,9 @@ int ramfs_create(vnode_t * dir, const char * name, mode_t mode,
         return err;
     }
 
-    *result = vnode;
+    ramfs_vnode_modified(dir);
 
+    *result = vnode;
     return 0;
 }
 
@@ -552,6 +608,8 @@ int ramfs_link(vnode_t * dir, vnode_t * vnode, const char * name)
     if (err)
         return err;
 
+    ramfs_vnode_modified(dir);
+
     inode->in_nlink++; /* Increment the hard link count. */
 
     return 0;
@@ -584,6 +642,8 @@ int ramfs_unlink(vnode_t * dir, const char * name)
     err = dh_unlink(inode_dir->in.dir, name);
     if (err)
         return err;
+
+    ramfs_vnode_modified(dir);
 
     inode->in_nlink--; /* Decrement the hard link count. */
     vrele_nunlink(vn);
@@ -636,6 +696,8 @@ int ramfs_mkdir(vnode_t * dir, const char * name, mode_t mode)
         return err;
     }
 
+    ramfs_vnode_modified(dir);
+
     return 0;
 }
 
@@ -681,6 +743,8 @@ int ramfs_rmdir(vnode_t * dir,  const char * name)
     dh_unlink(in->in.dir, RFS_DOT);
     dh_unlink(in->in.dir, RFS_DOTDOT);
     dh_unlink(inode_dir->in.dir, name);
+
+    ramfs_vnode_modified(dir);
 
     /* The following will call delete if the vnode should be deleted now. */
     vrele(vn);
@@ -750,6 +814,8 @@ int ramfs_stat(vnode_t * vnode, struct stat * buf)
 int ramfs_chmod(vnode_t * vnode, mode_t mode)
 {
     vnode->vn_mode = mode;
+    ramfs_vnode_changed(vnode);
+
     return 0;
 }
 
@@ -759,6 +825,7 @@ int ramfs_chown(vnode_t * vnode, uid_t owner, gid_t group)
 
     inode->in_uid = owner;
     inode->in_gid = group;
+    ramfs_vnode_changed(vnode);
 
     return 0;
 }
@@ -985,8 +1052,10 @@ static ssize_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
     struct ramfs_dp dp;
     size_t bytes_wr = 0;
 
-    /* No file type check is needed as this function is called only for regular
-     * files. */
+    /*
+     * No file type check is needed as this function is called only for regular
+     * files.
+     */
 
     do {
         const size_t remain = count - bytes_wr;
