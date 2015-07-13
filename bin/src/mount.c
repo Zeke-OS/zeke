@@ -32,10 +32,11 @@
  * SUCH DAMAGE.
  */
 
+#include <mount.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sysexits.h>
 #include <unistd.h>
-#include <mount.h>
 #include "utils.h"
 
 struct optarr optnames[] = {
@@ -51,7 +52,7 @@ static void usage(void)
 {
     fprintf(stderr,
             "usage: mount [-rw] [-o options] [-t type] [source] dest\n");
-    exit(1);
+    exit(EX_USAGE);
 }
 
 int main(int argc, char * argv[])
@@ -90,9 +91,9 @@ int main(int argc, char * argv[])
     if (!vfstype)
         vfstype = "auto";
 
-    if (argc == 2) {
+    if (argc == 1) {
         dst = argv[0];
-    } else if (argc == 3) {
+    } else if (argc == 2) {
         src = argv[0];
         dst = argv[1];
     } else {
@@ -107,7 +108,7 @@ int main(int argc, char * argv[])
 
     if (mount(src, dst, vfstype, flags, options)) {
         perror("mount: failed");
-        return 1;
+        return EX_OSERR;
     }
 
     return 0;

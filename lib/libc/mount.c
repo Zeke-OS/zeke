@@ -30,6 +30,7 @@
  *******************************************************************************
 */
 
+#define _SYSCALL_DEFS_
 #include <syscall.h>
 #include <string.h>
 #include <mount.h>
