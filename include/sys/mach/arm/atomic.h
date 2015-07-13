@@ -35,6 +35,21 @@
 
 typedef int atomic_t;
 
+#define __ATOMIC_DOP_FN(fn_name, opcode_str)                    \
+static inline int fn_name(atomic_t * v, int i) {                \
+    int old, new, err = 0;                                      \
+    __asm__ volatile ("try%=:\n\t"                              \
+                      "LDREX    %[old], [%[addr]]\n\t"          \
+                      opcode_str " %[new], %[old], %[i]\n\t"    \
+                      "STREX    %[res], %[new], [%[addr]]\n\t"  \
+                      "CMP      %[res], #0\n\t"                 \
+                      "BNE      try%="                          \
+                      : [old]"+r" (old), [new]"+r" (new),       \
+                        [res]"+r" (err),                        \
+                        [addr]"+r" (v), [i]"+r" (i)             \
+    ); return old;                                              \
+}
+
 #define ATOMIC_INIT(i) (i)
 
 static inline int atomic_read(atomic_t * v)
@@ -67,41 +82,9 @@ static inline int atomic_set(atomic_t * v, int i)
     return old;
 }
 
-static inline int atomic_add(atomic_t * v, int i)
-{
-    int old, new, err = 0;
+__ATOMIC_DOP_FN(atomic_add, "ADD");
 
-    __asm__ volatile (
-        "try%=:\n\t"
-        "LDREX      %[old], [%[addr]]\n\t"
-        "ADD        %[new], %[old], %[i]\n\t"
-        "STREX      %[res], %[new], [%[addr]]\n\t"
-        "CMP        %[res], #0\n\t"
-        "BNE        try%="
-        : [old]"+r" (old), [new]"+r" (new), [res]"+r" (err),
-          [addr]"+r" (v), [i]"+r" (i)
-    );
-
-    return old;
-}
-
-static inline int atomic_sub(atomic_t * v, int i)
-{
-    int old, new, err;
-
-    __asm__ volatile (
-        "try%=:\n\t"
-        "LDREX      %[old], [%[addr]]\n\t"
-        "SUB        %[new], %[old], %[i]\n\t"
-        "STREX      %[res], %[new], [%[addr]]\n\t"
-        "CMP        %[res], #0\n\t"
-        "BNE        try%="
-        : [old]"+r" (old), [new]"+r" (new), [res]"+r" (err),
-          [addr]"+r" (v), [i]"+r" (i)
-    );
-
-    return old;
-}
+__ATOMIC_DOP_FN(atomic_sub, "SUB");
 
 static inline int atomic_inc(atomic_t * v)
 {
@@ -111,6 +94,26 @@ static inline int atomic_inc(atomic_t * v)
 static inline int atomic_dec(atomic_t * v)
 {
     return atomic_sub(v, 1);
+}
+
+__ATOMIC_DOP_FN(atomic_and, "AND");
+
+__ATOMIC_DOP_FN(atomic_or, "ORR");
+
+__ATOMIC_DOP_FN(atomic_xor, "EOR");
+
+static inline int atomic_set_bit(atomic_t * v, int i)
+{
+    int mask = 1 << i;
+
+    return atomic_or(v, mask);
+}
+
+static inline int atomic_clear_bit(atomic_t * v, int i)
+{
+    int mask = ~(1 << i);
+
+    return atomic_and(v, mask);
 }
 
 static inline int atomic_cmpxchg(atomic_t * v, int expect, int new)
