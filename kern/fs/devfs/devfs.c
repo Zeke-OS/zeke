@@ -126,8 +126,9 @@ static int devfs_mount(const char * source, uint32_t mode,
 
 static int devfs_umount(struct fs_superblock * fs_sb)
 {
-    /* TODO Implementation of devfs_umount() */
-    return -EBUSY;
+    /* NOP, everything relevant is handled by the vfs. */
+
+    return 0;
 }
 
 int make_dev(struct dev_info * devnfo, uid_t uid, gid_t gid, int perms,
