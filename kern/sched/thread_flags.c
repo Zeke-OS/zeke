@@ -38,9 +38,7 @@ int thread_flags_set(struct thread_info * thread, uint32_t flags_mask)
 {
     KASSERT(thread != NULL, "thread must be set");
 
-    mtx_lock(&thread->sched.tdlock);
-    thread->flags |= flags_mask;
-    mtx_unlock(&thread->sched.tdlock);
+    atomic_or((atomic_t *)(&thread->flags), flags_mask);
 
     return 0;
 }
@@ -49,9 +47,7 @@ int thread_flags_clear(struct thread_info * thread, uint32_t flags_mask)
 {
     KASSERT(thread != NULL, "thread must be set");
 
-    mtx_lock(&thread->sched.tdlock);
-    thread->flags &= ~flags_mask;
-    mtx_unlock(&thread->sched.tdlock);
+    atomic_and((atomic_t *)(&thread->flags), ~flags_mask);
 
     return 0;
 }
@@ -62,9 +58,7 @@ uint32_t thread_flags_get(struct thread_info * thread)
 
     KASSERT(thread != NULL, "thread must be set");
 
-    mtx_lock(&thread->sched.tdlock);
-    flags = thread->flags;
-    mtx_unlock(&thread->sched.tdlock);
+    flags = atomic_read((atomic_t *)(&thread->flags));
 
     return flags;
 }
@@ -74,6 +68,7 @@ int thread_flags_is_set(struct thread_info * thread, uint32_t flags_mask)
     uint32_t flags;
 
     flags = thread_flags_get(thread);
+
     return (flags & flags_mask) == flags_mask;
 }
 
@@ -82,6 +77,7 @@ int thread_flags_not_set(struct thread_info * thread, uint32_t flags_mask)
     uint32_t flags;
 
     flags = thread_flags_get(thread);
+
     return (flags & flags_mask) == 0;
 }
 
