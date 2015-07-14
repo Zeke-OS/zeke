@@ -30,6 +30,7 @@
  *******************************************************************************
 */
 
+#define __SYSCALL_DEFS__
 #include <sys/types.h>
 #include <syscall.h>
 #include <sys/wait.h>

@@ -45,7 +45,7 @@
 #define MNT_NOSUID      0x0008 /*!< Set uid bits not honored. */
 #define MNT_NOATIME     0x0100 /*!< Don't update file access times. */
 
-#if defined(_SYSCALL_DEFS_) || defined(KERNEL_INTERNAL)
+#if defined(__SYSCALL_DEFS__) || defined(KERNEL_INTERNAL)
 #include <stddef.h>
 #include <stdint.h>
 
@@ -70,7 +70,7 @@ struct _fs_umount_args {
     const char * target;
     size_t target_len; /*!< in bytes */
 };
-#endif /* _SYSCALL_DEFS_ */
+#endif /* __SYSCALL_DEFS__ */
 
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS

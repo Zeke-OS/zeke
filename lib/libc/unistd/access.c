@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    unistd.c
+ * @file    access.c
  * @author  Olli Vanhoja
  * @brief   Standard functions.
  * @section LICENSE
@@ -32,6 +32,7 @@
  *******************************************************************************
 */
 
+#define __SYSCALL_DEFS__
 #include <fcntl.h>
 #include <syscall.h>
 #include <unistd.h>

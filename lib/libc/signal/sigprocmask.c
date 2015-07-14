@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Examine and change blocked signals.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,8 +30,9 @@
  *******************************************************************************
  */
 
-#include <syscall.h>
+#define __SYSCALL_DEFS__
 #include <signal.h>
+#include <syscall.h>
 
 int sigprocmask(int how, const sigset_t * restrict set,
                 sigset_t * restrict oset)

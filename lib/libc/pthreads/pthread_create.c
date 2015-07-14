@@ -33,6 +33,7 @@
  *******************************************************************************
 */
 
+#define __SYSCALL_DEFS__
 #include <errno.h>
 #include <syscall.h>
 #include <pthread.h>

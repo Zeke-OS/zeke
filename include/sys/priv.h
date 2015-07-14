@@ -242,6 +242,7 @@
 #define _PRIV_MENT 200
 #define _PRIV_MLEN E2BITMAP_SIZE(_PRIV_MENT)
 
+#if defined(__SYSCALL_DEFS__) || defined(KERNEL_INTERNAL)
 /**
  * Arguments struct for SYSCALL_PROC_CRED
  * Set value to -1 for get only.
@@ -272,6 +273,7 @@ struct _priv_pcap_args {
     enum priv_pcap_mode mode;
     size_t priv;
 };
+#endif
 
 
 #ifdef KERNEL_INTERNAL

@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    unistd.c
+ * @file    pipe.c
  * @author  Olli Vanhoja
  * @brief   Standard functions.
  * @section LICENSE
@@ -30,6 +30,7 @@
  *******************************************************************************
 */
 
+#define __SYSCALL_DEFS__
 #include <sys/_PDCLIB_config.h>
 #include <unistd.h>
 #include <syscall.h>

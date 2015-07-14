@@ -133,7 +133,8 @@ struct rusage {
     struct timeval ru_stime; /*!< System time used. */
 };
 
-#ifdef TYPES_PTHREAD_H
+#if defined(__SYSCALL_DEFS__) || defined(KERNEL_INTERNAL)
+#include <sys/types_pthread.h>
 
 /**
  * Argument struct for SYSCALL_SCHED_THREAD_SETPRIORITY
@@ -143,8 +144,6 @@ struct _sched_set_priority_args {
     int priority;           /*!< Thread priority. */
 };
 
-#endif
-
 /**
  * Arguments struct for SYSCALL_PROC_GETRLIM and SYSCALL_PROC_SETRLIM
  */
@@ -152,6 +151,7 @@ struct _proc_rlim_args {
     int resource;
     struct rlimit rlimit;
 };
+#endif
 
 /**
  * Get program scheduling priority.

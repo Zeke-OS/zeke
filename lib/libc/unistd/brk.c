@@ -30,6 +30,7 @@
  *******************************************************************************
 */
 
+#define __SYSCALL_DEFS__
 #include <syscall.h>
 #include <errno.h>
 #include <string.h>
@@ -40,7 +41,8 @@ static void * curr_break;
 
 static int getbrk(void)
 {
-    /* Following syscall just gets the start and stop limits for the brk
+    /*
+     * The following syscall just gets the start and stop limits for the brk
      * functionality. Actual brk operation is solely implemented in
      * userland.
      */

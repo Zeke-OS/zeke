@@ -30,9 +30,10 @@
  *******************************************************************************
  */
 
-#include <syscall.h>
+#define __SYSCALL_DEFS__
 #include <errno.h>
 #include <signal.h>
+#include <syscall.h>
 
 int sigwait(const sigset_t * restrict set, int * restrict sig)
 {

@@ -66,6 +66,7 @@ struct dirent {
 #define IFTODT(mode)    (((mode) & 0170000) >> 12)
 #define DTTOIF(dirtype) ((dirtype) << 12)
 
+#if defined(__SYSCALL_DEFS__) || defined(KERNEL_INTERNAL)
 /**
  * Arguments for SYSCALL_FS_GETDENTS
  */
@@ -74,6 +75,7 @@ struct _fs_getdents_args {
     char * buf;
     size_t nbytes;
 };
+#endif
 
 /*
  * Definitions for library routines operating on directories.

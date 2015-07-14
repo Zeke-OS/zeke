@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    tclock_gettime.c
+ * @file    clock_gettime.c
  * @author  Olli Vanhoja
  * @brief   time.
  * @section LICENSE
@@ -30,6 +30,7 @@
  *******************************************************************************
  */
 
+#define __SYSCALL_DEFS__
 #include <syscall.h>
 #include <errno.h>
 #include <time.h>

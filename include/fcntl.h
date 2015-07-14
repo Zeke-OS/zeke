@@ -157,6 +157,8 @@ struct flock {
                          *   returned with F_GETLK. */
 };
 
+#if defined(__SYSCALL_DEFS__) || defined(KERNEL_INTERNAL)
+
 /**
  * Arguments struct for SYSCALL_FS_FCNTL
  */
@@ -180,6 +182,8 @@ struct _fs_open_args {
     int atflags; /* AT_FDCWD or AT_FDARG */
     mode_t mode;
 };
+
+#endif
 
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS

@@ -30,6 +30,7 @@
  *******************************************************************************
  */
 
+#define __SYSCALL_DEFS__
 #include <syscall.h>
 #include <errno.h>
 #include <signal.h>

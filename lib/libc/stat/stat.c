@@ -30,6 +30,7 @@
  *******************************************************************************
 */
 
+#define __SYSCALL_DEFS__
 #include <string.h>
 #include <syscall.h>
 #include <time.h>

@@ -30,6 +30,7 @@
  *******************************************************************************
  */
 
+#define __SYSCALL_DEFS__
 #include <sys/resource.h>
 #include <syscall.h>
 

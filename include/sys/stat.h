@@ -148,9 +148,8 @@ struct stat {
 #define SF_NOUNLINK     0x00100000  /*!< file may not be removed or renamed. */
 #define SF_SNAPSHOT     0x00200000  /*!< Snapshot inode. */
 
-/**
- * Arguments for SYSCALL_FS_STAT
- */
+#if defined(__SYSCALL_DEFS__) || defined(KERNEL_INTERNAL)
+/** Arguments for SYSCALL_FS_STAT */
 struct _fs_stat_args {
     int fd;
     const char * path;
@@ -192,10 +191,12 @@ struct _fs_rmdir_args {
     size_t path_len;
 };
 
+/** Arguments for SYSCALL_FS_UMASK */
 struct _fs_umask_args {
     mode_t newumask;
     mode_t oldumask;
 };
+#endif
 
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS

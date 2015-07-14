@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    stat.c
+ * @file    rmdir.c
  * @author  Olli Vanhoja
- * @brief   File status functions.
+ * @brief   Remove a directory.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,6 +30,7 @@
  *******************************************************************************
 */
 
+#define __SYSCALL_DEFS__
 #include <string.h>
 #include <syscall.h>
 #include <time.h>

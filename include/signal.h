@@ -269,6 +269,7 @@ typedef struct __ucontext {
                              *   context. */
 } ucontext_t;
 
+#if defined(__SYSCALL_DEFS__) || defined(KERNEL_INTERNAL)
 /**
  * Arguments struct for SYSCALL_SIGNAL_PKILL
  */
@@ -337,6 +338,7 @@ struct _signal_sigsleep_args {
     long tsec;
     long tnsec;
 };
+#endif
 
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS

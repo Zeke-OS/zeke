@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Set function to handle signal.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,9 +30,10 @@
  *******************************************************************************
  */
 
-#include <syscall.h>
+#define __SYSCALL_DEFS__
 #include <errno.h>
 #include <signal.h>
+#include <syscall.h>
 
 void (*signal(int sig, void (*func)(int)))(int)
 {

@@ -84,6 +84,7 @@ struct winsize {
    unsigned short ws_ypixel;
 };
 
+#if defined(__SYSCALL_DEFS__) || defined(KERNEL_INTERNAL)
 /** Args for ioctl syscall */
 struct _ioctl_get_args {
     int fd;
@@ -91,6 +92,7 @@ struct _ioctl_get_args {
     void * arg;
     size_t arg_len;
 };
+#endif
 
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS

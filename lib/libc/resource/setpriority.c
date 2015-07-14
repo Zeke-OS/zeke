@@ -32,10 +32,11 @@
  *******************************************************************************
 */
 
-#include <syscall.h>
+#define __SYSCALL_DEFS__
 #include <errno.h>
-#include <sys/types_pthread.h>
 #include <sys/resource.h>
+#include <sys/types_pthread.h>
+#include <syscall.h>
 
 int setpriority(int which, id_t who, int prio)
 {

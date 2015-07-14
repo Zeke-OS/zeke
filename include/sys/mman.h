@@ -171,6 +171,7 @@
 #define POSIX_MADV_DONTNEED _MADV_DONTNEED
 #endif
 
+#if defined(__SYSCALL_DEFS__) || defined(KERNEL_INTERNAL)
 struct _shmem_mmap_args {
     void * addr;
     size_t bsize;
@@ -184,6 +185,7 @@ struct _shmem_munmap_args {
     void * addr;
     size_t size;
 };
+#endif
 
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS

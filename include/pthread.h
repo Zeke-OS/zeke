@@ -188,6 +188,7 @@ struct _sched_tls_desc {
     errno_t errno_val;      /*!< Thread local errno. */
 };
 
+#if defined(__SYSCALL_DEFS__) || defined(KERNEL_INTERNAL)
 /**
  * Argument struct for SYSCALL_SCHED_THREAD_CREATE
  */
@@ -212,6 +213,7 @@ struct _sched_pthread_join_args {
     intptr_t      * retval; /* thread return value
                              * (a pointer by POSIX definition) */
 };
+#endif
 
 __BEGIN_DECLS
 /*

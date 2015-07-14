@@ -30,8 +30,9 @@
  *******************************************************************************
 */
 
-#include <syscall.h>
+#define __SYSCALL_DEFS__
 #include <dirent.h>
+#include <syscall.h>
 
 int getdents(int fd, char * buf, int nbytes)
 {

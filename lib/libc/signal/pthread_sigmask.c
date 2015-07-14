@@ -30,8 +30,9 @@
  *******************************************************************************
  */
 
-#include <syscall.h>
+#define __SYSCALL_DEFS__
 #include <signal.h>
+#include <syscall.h>
 
 int pthread_sigmask(int how, const sigset_t * restrict set,
                         sigset_t * restrict oset)

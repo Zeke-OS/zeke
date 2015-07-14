@@ -55,12 +55,14 @@
 #define WIFSTOPPED(x)   (_WSTATUS(x) == _WSTOPPED)
 #define WSTOPSIG(x)     ((x) >> 8)
 
-/* Arguments for SYSCALL_PROC_WAIT */
+#if defined(__SYSCALL_DEFS__) || defined(KERNEL_INTERNAL)
+/** Arguments for SYSCALL_PROC_WAIT */
 struct _proc_wait_args {
     pid_t pid;
     int status;
     int options;
 };
+#endif
 
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS

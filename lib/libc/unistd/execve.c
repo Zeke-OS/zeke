@@ -30,6 +30,7 @@
  *******************************************************************************
  */
 
+#define __SYSCALL_DEFS__
 #include <stddef.h>
 #include <syscall.h>
 #include <fcntl.h>

@@ -71,6 +71,7 @@ struct itimerspec {
 
 #define CLOCKS_PER_SEC              1000000
 
+#if defined(__SYSCALL_DEFS__) || defined(KERNEL_INTERNAL)
 /**
  * Argument struct for SYSCALL_TIME_GETTIME
  */
@@ -78,6 +79,7 @@ struct _time_gettime_args {
     clockid_t clk_id;
     struct timespec * tp;
 };
+#endif
 
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS

@@ -165,27 +165,22 @@
 #define _SC_V7_LPBIG_OFFBIG             81
 /* End of sysconf variables */
 
-/**
- * Arguments struct for SYSCALL_FS_WRITE
- */
+#if defined(__SYSCALL_DEFS__) || defined(KERNEL_INTERNAL)
+/** Arguments struct for SYSCALL_FS_WRITE */
 struct _fs_readwrite_args {
     int fildes;
     void * buf;
     size_t nbytes;
 };
 
-/**
- * Arguments struct for SYSCALL_FS_LSEEK
- */
+/** Arguments struct for SYSCALL_FS_LSEEK */
 struct _fs_lseek_args {
     int fd;
     off_t offset; /* input and return value */
     int whence;
 };
 
-/**
- * Arguments for SYSCALL_FS_ACCESS
- */
+/** Arguments for SYSCALL_FS_ACCESS */
 struct _fs_access_args {
     int fd;
     const char * path;
@@ -194,18 +189,14 @@ struct _fs_access_args {
     int flag;
 };
 
-/**
- * Arguments for SYSCALL_FS_CHOWN
- */
+/** Arguments for SYSCALL_FS_CHOWN */
 struct _fs_chown_args {
     int fd;
     uid_t owner;
     gid_t group;
 };
 
-/**
- * Arguments for SYSCALL_FS_LINK
- */
+/** Arguments for SYSCALL_FS_LINK */
 struct _fs_link_args {
     int fd1;
     const char * path1;
@@ -216,9 +207,7 @@ struct _fs_link_args {
     int flag;
 };
 
-/**
- * Arguments for SYSCALL_FS_UNLINK
- */
+/** Arguments for SYSCALL_FS_UNLINK */
 struct _fs_unlink_args {
     int fd;             /*!< File descriptor number. */
     const char * path;
@@ -226,9 +215,7 @@ struct _fs_unlink_args {
     int flag;
 };
 
-/**
- * Arguments for SYSCALL_FS_CHDIR
- */
+/** Arguments for SYSCALL_FS_CHDIR */
 struct _proc_chdir_args {
     int fd; /* if AT_FDARG */
     const char * name;
@@ -236,17 +223,13 @@ struct _proc_chdir_args {
     int atflags;
 };
 
-/**
- * Arguments for SYSCALL_IPC_PIPE
- */
+/** Arguments for SYSCALL_IPC_PIPE */
 struct _ipc_pipe_args {
     int fildes[2]; /*!< returned file descriptors. */
     size_t len; /*!< Preferred minumum size of the pipe buf. */
 };
 
-/**
- * Arguments for SYSCALL_EXEC_EXEC
- */
+/** Arguments for SYSCALL_EXEC_EXEC */
 struct _exec_args {
     int fd;
     char * const * argv;
@@ -262,6 +245,7 @@ struct _proc_getbreak_args {
     void * start;
     void * stop;
 };
+#endif
 
 
 #ifndef KERNEL_INTERNAL

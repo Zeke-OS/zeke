@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    priv_setpcap.c
+ * @file    priv_getpcap.c
  * @author  Olli Vanhoja
  * @brief   Process credentials.
  * @section LICENSE
@@ -30,6 +30,7 @@
  *******************************************************************************
 */
 
+#define __SYSCALL_DEFS__
 #include <stddef.h>
 #include <sys/types.h>
 #include <sys/_syscred.h>

@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    unistd.c
+ * @file    pwrite.c
  * @author  Olli Vanhoja
  * @brief   Standard functions.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -32,11 +32,13 @@
  *******************************************************************************
 */
 
+#define __SYSCALL_DEFS__
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <syscall.h>
 
+/* TODO Pwrite implementation */
 #if 0
 ssize_t pwrite(int fildes, const void * buf, size_t nbyte,
         off_t offset)

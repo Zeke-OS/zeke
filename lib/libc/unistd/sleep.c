@@ -32,6 +32,7 @@
  *******************************************************************************
 */
 
+#define __SYSCALL_DEFS__
 #include <signal.h>
 #include <syscall.h>
 #include <unistd.h>

@@ -30,6 +30,7 @@
  *******************************************************************************
 */
 
+#define __SYSCALL_DEFS__
 #include <stddef.h>
 #include <sys/types.h>
 #include <sys/_syscred.h>

@@ -36,6 +36,7 @@
  *******************************************************************************
 */
 
+#define __SYSCALL_DEFS__
 #include <syscall.h>
 #include <string.h>
 #include <sys/sysctl.h>

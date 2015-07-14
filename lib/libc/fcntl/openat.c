@@ -30,6 +30,7 @@
  *******************************************************************************
 */
 
+#define __SYSCALL_DEFS__
 #include <stdarg.h>
 #include <string.h>
 #include <syscall.h>
