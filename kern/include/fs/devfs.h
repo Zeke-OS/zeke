@@ -133,7 +133,7 @@ const char * devtoname(struct vnode * dev);
  * @param count     is the byte count to read.
  * @return  Returns number of bytes read from the device.
  */
-ssize_t dev_read(file_t * file, void * vbuf, size_t bcount);
+ssize_t dev_read(file_t * file, off_t * offset, void * vbuf, size_t bcount);
 
 /**
  * Write to a device.
@@ -142,7 +142,8 @@ ssize_t dev_read(file_t * file, void * vbuf, size_t bcount);
  * @param count     is the byte count to write.
  * @return  Returns number of bytes written to the device.
  */
-ssize_t dev_write(file_t * file, const void * vbuf, size_t bcount);
+ssize_t dev_write(file_t * file, off_t * offset, const void * vbuf,
+                  size_t bcount);
 
 /**
  * Seek a device file.

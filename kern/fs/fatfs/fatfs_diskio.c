@@ -63,7 +63,7 @@ DRESULT fatfs_disk_read(uint8_t pdrv, uint8_t * buff, DWORD sector,
     file->seek_pos = sector;
 
     KASSERT(file->vnode->vnode_ops->read, "read() is defined");
-    retval = file->vnode->vnode_ops->read(file, buff, count);
+    retval = file->vnode->vnode_ops->read(file, &file->seek_pos, buff, count);
     if (retval < 0) {
 #ifdef configFATFS_DEBUG
         KERROR(KERROR_ERR, "fatfs_disk_read(): err %i\n", retval);
@@ -101,7 +101,7 @@ DRESULT fatfs_disk_write(uint8_t pdrv, const uint8_t * buff, DWORD sector,
     file = &fatfs_sb_arr[pdrv]->ff_devfile;
     file->seek_pos = sector;
 
-    retval = file->vnode->vnode_ops->write(file, buff, count);
+    retval = file->vnode->vnode_ops->write(file, &file->seek_pos, buff, count);
     if (retval < 0) {
 #ifdef configFATFS_DEBUG
         KERROR(KERROR_ERR, "fatfs_disk_write(): err %i\n", retval);

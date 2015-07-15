@@ -170,7 +170,9 @@ typedef struct vnode {
  * File descriptor.
  */
 typedef struct file {
-    off_t seek_pos;     /*!< Seek pointer. */
+    off_t seek_pos;     /*!< Seek pointer. In general this shouldn't be touched
+                         *   by file system drivers, instead offset pointer
+                         *   should be accessed. */
     int fdflags;        /*!< File descriptor flags. */
     int oflags;         /*!< File status flags. */
     atomic_t refcount;  /*!< Reference count. */
@@ -296,13 +298,15 @@ typedef struct vnode_ops {
     /**
      * Read transfers bytes from file into buf.
      * @param file      is a file stored in the file system.
+     * @param[in, out] offset is the offset to start from.
      * @param buf       is a buffer bytes are written to.
      * @param count     is the number of bytes to be read.
      * @return  Returns the number of bytes read;
      *          Otherwise a negative errno code is returned.
      */
-    ssize_t (*read)(file_t * file, void * buf, size_t count);
-    ssize_t (*read_ubuf)(file_t * file, __user void * buf, size_t count);
+    ssize_t (*read)(file_t * file, off_t * offset, void * buf, size_t count);
+    ssize_t (*read_ubuf)(file_t * file, off_t * offset, __user void * buf,
+                         size_t count);
     /**
      * Write transfers bytes from buf into file.
      * Writing is begin from offset and ended at offset + count. buf must
@@ -310,13 +314,16 @@ typedef struct vnode_ops {
      * current file the file will be extended; If offset is smaller than file
      * length, the existing data will be overwriten.
      * @param file      is a file stored in the file system.
+     * @param[in, out] offset is the offset to start from.
      * @param buf       is a buffer where bytes are read from.
      * @param count     is the number of bytes buf contains.
      * @return  Returns the number of bytes written;
      *          Otherwise a negative errno code is returned.
      */
-    ssize_t (*write)(file_t * file, const void * buf, size_t count);
-    ssize_t (*write_ubuf)(file_t * file, __user const void * buf, size_t count);
+    ssize_t (*write)(file_t * file, off_t * offset, const void * buf,
+                     size_t count);
+    ssize_t (*write_ubuf)(file_t * file, off_t * offset,
+                          __user const void * buf, size_t count);
     /**
      * IO Control.
      * Only defined for devices and shall point to fs_enotsup_ioctl() if not
@@ -762,11 +769,14 @@ void vunref(vnode_t * vnode);
 /* Not sup vnops (in nofs.c) */
 int fs_enotsup_lock(file_t * file);
 int fs_enotsup_release(file_t * file);
-ssize_t fs_enotsup_read(file_t * file, void * buf, size_t count);
-ssize_t fs_enotsup_read_ubuf(file_t * file, __user void * buf, size_t count);
-ssize_t fs_enotsup_write(file_t * file, const void * buf, size_t count);
-ssize_t fs_enotsup_write_ubuf(file_t * file, __user const void * buf,
-                              size_t count);
+ssize_t fs_enotsup_read(file_t * file, off_t * offset, void * buf,
+                        size_t count);
+ssize_t fs_enotsup_read_ubuf(file_t * file, off_t * offset, __user void * buf,
+                             size_t count);
+ssize_t fs_enotsup_write(file_t * file, off_t * offset, const void * buf,
+                         size_t count);
+ssize_t fs_enotsup_write_ubuf(file_t * file, off_t * offset,
+                              __user const void * buf, size_t count);
 int fs_enotsup_ioctl(file_t * file, unsigned request, void * arg,
                      size_t arg_len);
 int fs_enotsup_event_vnode_opened(struct proc_info * p, vnode_t * vnode);

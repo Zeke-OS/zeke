@@ -420,13 +420,13 @@ int ramfs_delete_vnode(vnode_t * vnode)
     return 0;
 }
 
-ssize_t ramfs_read(file_t * file, void * buf, size_t count)
+ssize_t ramfs_read(file_t * file, off_t * offset, void * buf, size_t count)
 {
     size_t bytes_rd = 0;
 
     switch (file->vnode->vn_mode & S_IFMT) {
     case S_IFREG: /* file is a regular file. */
-        bytes_rd = ramfs_rd_regular(file->vnode, &(file->seek_pos), buf, count);
+        bytes_rd = ramfs_rd_regular(file->vnode, offset, buf, count);
         break;
     case S_IFDIR:
         return -EISDIR;
@@ -434,17 +434,18 @@ ssize_t ramfs_read(file_t * file, void * buf, size_t count)
         return -EOPNOTSUPP;
     }
 
-    file->seek_pos += bytes_rd;
+    *offset += bytes_rd;
     return bytes_rd;
 }
 
-ssize_t ramfs_write(file_t * file, const void * buf, size_t count)
+ssize_t ramfs_write(file_t * file, off_t * offset, const void * buf,
+                    size_t count)
 {
     size_t bytes_wr = 0;
 
     switch (file->vnode->vn_mode & S_IFMT) {
     case S_IFREG: /* File is a regular file. */
-        bytes_wr = ramfs_wr_regular(file->vnode, &(file->seek_pos), buf, count);
+        bytes_wr = ramfs_wr_regular(file->vnode, offset, buf, count);
         break;
     default: /* File type not supported. */
         return -EOPNOTSUPP;
@@ -452,7 +453,7 @@ ssize_t ramfs_write(file_t * file, const void * buf, size_t count)
 
     ramfs_vnode_modified(file->vnode);
 
-    file->seek_pos += bytes_wr;
+    *offset += bytes_wr;
     return bytes_wr;
 }
 

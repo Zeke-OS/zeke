@@ -76,10 +76,10 @@ struct stream_pipe {
     gid_t group;
 };
 
-static ssize_t fs_pipe_write_ubuf(file_t * file, __user const void * buf,
-                                  size_t count);
-static ssize_t fs_pipe_read_ubuf(file_t * file, __user void * buf,
-                                 size_t count);
+static ssize_t fs_pipe_write_ubuf(file_t * file, off_t * offset,
+                                  __user const void * buf, size_t count);
+static ssize_t fs_pipe_read_ubuf(file_t * file, off_t * offset,
+                                 __user void * buf, size_t count);
 static int fs_pipe_stat(vnode_t * vnode, struct stat * stat);
 static int fs_pipe_chmod(vnode_t * vnode, mode_t mode);
 static int fs_pipe_chown(vnode_t * vnode, uid_t owner, gid_t group);
@@ -222,8 +222,8 @@ int fs_pipe_destroy(vnode_t * vnode)
     return 0;
 }
 
-static ssize_t fs_pipe_write_ubuf(file_t * file, __user const void * buf,
-                                  size_t count)
+static ssize_t fs_pipe_write_ubuf(file_t * file, off_t * offset,
+                                  __user const void * buf, size_t count)
 {
     struct stream_pipe * pipe = (struct stream_pipe *)file->stream;
     char * buf_addr;
@@ -254,7 +254,8 @@ static ssize_t fs_pipe_write_ubuf(file_t * file, __user const void * buf,
     return count;
 }
 
-static ssize_t fs_pipe_read_ubuf(file_t * file, __user void * buf, size_t count)
+static ssize_t fs_pipe_read_ubuf(file_t * file, off_t * offset,
+                                 __user void * buf, size_t count)
 {
     struct stream_pipe * pipe = (struct stream_pipe *)file->stream;
     char * buf_addr;
