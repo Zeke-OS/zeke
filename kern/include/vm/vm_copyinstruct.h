@@ -263,8 +263,8 @@
  * @param       bytes   is the size of the container struct in bytes.
  * @param       ...     byte offset of members to be copied and sizes of the
  *                      members. (offset, len)
- * @return      0 if succeed; Negative error code representing errno in case of
- *              failure.
+ * @return      0 if succeed;
+ *              Otherwise a negative errno value is returned.
  */
 int copyinstruct(__user void * usr, __kernel void ** kern, size_t bytes, ...);
 
