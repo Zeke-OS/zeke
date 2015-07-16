@@ -72,26 +72,23 @@ int fs_enotsup_release(file_t * file)
     return -ENOTSUP;
 }
 
-ssize_t fs_enotsup_read(file_t * file, off_t * offset, void * buf,
-                        size_t count)
+ssize_t fs_enotsup_read(file_t * file, void * buf, size_t count)
 {
     return -ENOTSUP;
 }
 
-ssize_t fs_enotsup_read_ubuf(file_t * file, off_t * offset, __user void * buf,
-                             size_t count)
+ssize_t fs_enotsup_read_ubuf(file_t * file, __user void * buf, size_t count)
 {
     return -ENOTSUP;
 }
 
-ssize_t fs_enotsup_write(file_t * file, off_t * offset, const void * buf,
-                         size_t count)
+ssize_t fs_enotsup_write(file_t * file, const void * buf, size_t count)
 {
     return -ENOTSUP;
 }
 
-ssize_t fs_enotsup_write_ubuf(file_t * file, off_t * offset,
-                              __user const void * buf, size_t count)
+ssize_t fs_enotsup_write_ubuf(file_t * file, __user const void * buf,
+                              size_t count)
 {
     return -ENOTSUP;
 }

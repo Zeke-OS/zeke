@@ -49,10 +49,8 @@ static int procfs_mount(const char * source, uint32_t mode,
                         const char * parm, int parm_len,
                         struct fs_superblock ** sb);
 static int procfs_umount(struct fs_superblock * fs_sb);
-static ssize_t procfs_read(file_t * file, off_t * offset, void * vbuf,
-                           size_t bcount);
-static ssize_t procfs_write(file_t * file, off_t * offset, const void * vbuf,
-                            size_t bcount);
+static ssize_t procfs_read(file_t * file, void * vbuf, size_t bcount);
+static ssize_t procfs_write(file_t * file, const void * vbuf, size_t bcount);
 static int procfs_updatedir(vnode_t * dir);
 static int create_proc_file(vnode_t * pdir, pid_t pid, const char * filename,
                             enum procfs_filetype ftype);
@@ -151,8 +149,7 @@ static int procfs_umount(struct fs_superblock * fs_sb)
 /**
  * Override read() function.
  */
-static ssize_t procfs_read(file_t * file, off_t * offset, void * vbuf,
-                           size_t bcount)
+static ssize_t procfs_read(file_t * file, void * vbuf, size_t bcount)
 {
     struct procfs_info * spec;
     procfs_readfn_t * fn;
@@ -171,16 +168,16 @@ static ssize_t procfs_read(file_t * file, off_t * offset, void * vbuf,
         return -ENOTSUP;
 
     bytes = fn(spec, &buf);
-    if (bytes > 0 && *offset <= bytes) {
-        const ssize_t count = min(bcount, bytes - *offset);
+    if (bytes > 0 && file->seek_pos <= bytes) {
+        const ssize_t count = min(bcount, bytes - file->seek_pos);
 
         if (count <= bytes) {
             ssize_t sz;
 
-            sz = strlcpy((char *)vbuf, buf + *offset, count);
+            sz = strlcpy((char *)vbuf, buf + file->seek_pos, count);
             sz++;
             bytes = (sz >= count) ? count : sz;
-            *offset += bytes;
+            file->seek_pos += bytes;
         }
     }
 
@@ -191,8 +188,7 @@ static ssize_t procfs_read(file_t * file, off_t * offset, void * vbuf,
 /**
  * Override write() function.
  */
-static ssize_t procfs_write(file_t * file, off_t * offset, const void * vbuf,
-                            size_t bcount)
+static ssize_t procfs_write(file_t * file, const void * vbuf, size_t bcount)
 {
     struct procfs_info * spec;
     procfs_writefn_t * fn;

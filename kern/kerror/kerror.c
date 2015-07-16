@@ -48,8 +48,7 @@ const char * const _kernel_panic_msg = "Oops, Kernel panic\n";
 static char kerror_printbuf_str[configKERROR_MAXLEN * 8];
 static isema_t kerror_printbuf_sema[8];
 
-static ssize_t kerror_fdwrite(file_t * file, off_t * offset, const void * buf,
-                              size_t count);
+static ssize_t kerror_fdwrite(file_t * file, const void * buf, size_t count);
 
 vnode_ops_t kerror_vops = {
     .write = kerror_fdwrite,
@@ -109,8 +108,7 @@ void _kerror_release_buf(size_t index)
 /**
  * Kernel fake fd write function to print kerror messages from usr mode threads.
  */
-static ssize_t kerror_fdwrite(file_t * file, off_t * offset, const void * buf,
-                              size_t count)
+static ssize_t kerror_fdwrite(file_t * file, const void * buf, size_t count)
 {
     kputs(buf);
     return count;

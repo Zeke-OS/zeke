@@ -137,8 +137,7 @@ static void _bio_readin(struct buf * bp)
     bp->b_flags &= ~B_DONE;
 
     file->seek_pos = bp->b_blkno;
-    file->vnode->vnode_ops->read(file, &file->seek_pos, (void *)bp->b_data,
-                                 bp->b_bcount);
+    file->vnode->vnode_ops->read(file, (void *)bp->b_data, bp->b_bcount);
 
     bp->b_flags |= B_DONE;
 }
@@ -173,8 +172,7 @@ static void _bio_writeout(struct buf * bp)
     }
 
     file->seek_pos = bp->b_blkno;
-    file->vnode->vnode_ops->write(file, &file->seek_pos, (void *)bp->b_data,
-                                  bp->b_bcount);
+    file->vnode->vnode_ops->write(file, (void *)bp->b_data, bp->b_bcount);
 
 out:
     bp->b_flags |= B_DONE;

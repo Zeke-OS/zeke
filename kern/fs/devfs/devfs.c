@@ -204,10 +204,10 @@ const char * devtoname(struct vnode * dev)
     return devnfo->dev_name;
 }
 
-ssize_t dev_read(file_t * file, off_t * offset_p, void * vbuf, size_t bcount)
+ssize_t dev_read(file_t * file, void * vbuf, size_t bcount)
 {
     vnode_t * const vnode = file->vnode;
-    const off_t offset = *offset_p;
+    const off_t offset = file->seek_pos;
     const int oflags = file->oflags;
     struct dev_info * devnfo = (struct dev_info *)vnode->vn_specinfo;
     uint8_t * buf = (uint8_t *)vbuf;
@@ -249,15 +249,14 @@ ssize_t dev_read(file_t * file, off_t * offset_p, void * vbuf, size_t bcount)
 
     bytes_rd = buf_offset;
 out:
-    *offset_p += bytes_rd;
+    file->seek_pos += bytes_rd;
     return bytes_rd;
 }
 
-ssize_t dev_write(file_t * file, off_t * offset_p, const void * vbuf,
-                  size_t bcount)
+ssize_t dev_write(file_t * file, const void * vbuf, size_t bcount)
 {
     vnode_t * const vnode = file->vnode;
-    const off_t offset = *offset_p;
+    const off_t offset = file->seek_pos;
     const int oflags = file->oflags;
     struct dev_info * devnfo = (struct dev_info *)vnode->vn_specinfo;
     uint8_t * buf = (uint8_t *)vbuf;
@@ -299,11 +298,10 @@ ssize_t dev_write(file_t * file, off_t * offset_p, const void * vbuf,
 
     bytes_wr = buf_offset;
 out:
-    *offset_p += bytes_wr;
+    file->seek_pos += bytes_wr;
     return bytes_wr;
 }
 
-/* TODO To be replaced with the common per fs interface */
 off_t dev_lseek(file_t * file, off_t offset, int whence)
 {
     struct dev_info * devnfo = (struct dev_info *)file->vnode->vn_specinfo;

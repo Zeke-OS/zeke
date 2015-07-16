@@ -541,7 +541,29 @@ fail:
     return retval;
 }
 
-ssize_t fatfs_read(file_t * file, off_t * offset, void * buf, size_t count)
+ssize_t fatfs_write(file_t * file, const void * buf, size_t count)
+{
+    struct fatfs_inode * in = get_inode_of_vnode(file->vnode);
+    size_t count_out;
+    int err;
+
+    if (!S_ISREG(file->vnode->vn_mode))
+        return -EOPNOTSUPP;
+
+    err = f_lseek(&in->fp, file->seek_pos);
+    if (err)
+        return -EIO;
+
+    err = f_write(&in->fp, buf, count, &count_out);
+    if (err)
+        return fresult2errno(err);
+
+    file->seek_pos = f_tell(&in->fp);
+
+    return count_out;
+}
+
+ssize_t fatfs_read(file_t * file, void * buf, size_t count)
 {
     struct fatfs_inode * in = get_inode_of_vnode(file->vnode);
     size_t count_out;
@@ -551,7 +573,7 @@ ssize_t fatfs_read(file_t * file, off_t * offset, void * buf, size_t count)
     if (!S_ISREG(file->vnode->vn_mode))
         return -EOPNOTSUPP;
 
-    err = f_lseek(&in->fp, *offset);
+    err = f_lseek(&in->fp, file->seek_pos);
     if (err)
         return -EIO;
 
@@ -559,33 +581,10 @@ ssize_t fatfs_read(file_t * file, off_t * offset, void * buf, size_t count)
     if (err)
         return fresult2errno(err);
 
-    *offset = f_tell(&in->fp);
+    file->seek_pos = f_tell(&in->fp);
     retval = count_out;
 
     return retval;
-}
-
-ssize_t fatfs_write(file_t * file, off_t * offset, const void * buf,
-                    size_t count)
-{
-    struct fatfs_inode * in = get_inode_of_vnode(file->vnode);
-    size_t count_out;
-    int err;
-
-    if (!S_ISREG(file->vnode->vn_mode))
-        return -EOPNOTSUPP;
-
-    err = f_lseek(&in->fp, *offset);
-    if (err)
-        return -EIO;
-
-    err = f_write(&in->fp, buf, count, &count_out);
-    if (err)
-        return fresult2errno(err);
-
-    *offset = f_tell(&in->fp);
-
-    return count_out;
 }
 
 int fatfs_create(vnode_t * dir, const char * name, mode_t mode,

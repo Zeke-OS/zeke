@@ -102,8 +102,7 @@ static int sys_read(__user void * user_args)
             goto out;
         }
 
-        retval = vnode->vnode_ops->read(file, &file->seek_pos, buf,
-                                        args.nbytes);
+        retval = vnode->vnode_ops->read(file, buf, args.nbytes);
         if (retval < 0) {
             kfree(buf);
             set_errno(-retval);
@@ -120,8 +119,7 @@ static int sys_read(__user void * user_args)
         }
     } else {
         /* fs supports read_ubuf() */
-        retval = vnode->vnode_ops->read_ubuf(file, &file->seek_pos,
-                                             (__user void *)args.buf,
+        retval = vnode->vnode_ops->read_ubuf(file, (__user void *)args.buf,
                                              args.nbytes);
         if (retval < 0) {
             set_errno(-retval);
@@ -193,8 +191,7 @@ static int sys_write(__user void * user_args)
             goto out;
         }
 
-        retval = vnode->vnode_ops->write(file, &file->seek_pos, buf,
-                                         args.nbytes);
+        retval = vnode->vnode_ops->write(file, buf, args.nbytes);
         if (retval < 0) {
             kfree(buf);
             set_errno(-retval);
@@ -203,7 +200,7 @@ static int sys_write(__user void * user_args)
         }
     } else {
         /* fs supports write_ubuf() */
-        retval = vnode->vnode_ops->write_ubuf(file, &file->seek_pos,
+        retval = vnode->vnode_ops->write_ubuf(file,
                                               (__user const void *)args.buf,
                                               args.nbytes);
         if (retval < 0) {
@@ -249,7 +246,6 @@ static int sys_lseek(__user void * user_args)
     } else if (vn->vn_mode & (S_IFBLK | S_IFCHR)) {
         off_t new_offset;
 
-        /* TODO To be replaced by the common per fs interface */
         new_offset = dev_lseek(file, args.offset, args.whence);
         if (new_offset < 0) {
             set_errno(-new_offset);
