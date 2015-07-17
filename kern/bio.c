@@ -188,7 +188,7 @@ int bwrite(struct buf * bp)
     vnode = bp->b_file.vnode;
 
     /* Sanity check */
-    if(!(vnode && vnode->vnode_ops && vnode->vnode_ops->write)) {
+    if (!vnode) {
         BUF_LOCK(bp);
         bp->b_flags |= B_ERROR;
         bp->b_error = -EIO;
