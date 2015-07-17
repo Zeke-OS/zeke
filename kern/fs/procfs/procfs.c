@@ -49,8 +49,8 @@ static int procfs_mount(const char * source, uint32_t mode,
                         const char * parm, int parm_len,
                         struct fs_superblock ** sb);
 static int procfs_umount(struct fs_superblock * fs_sb);
-static ssize_t procfs_read(file_t * file, void * vbuf, size_t bcount);
-static ssize_t procfs_write(file_t * file, const void * vbuf, size_t bcount);
+static ssize_t procfs_read(file_t * file, struct fs_uio * uio, size_t bcount);
+static ssize_t procfs_write(file_t * file, struct fs_uio * uio, size_t bcount);
 static int procfs_updatedir(vnode_t * dir);
 static int create_proc_file(vnode_t * pdir, pid_t pid, const char * filename,
                             enum procfs_filetype ftype);
@@ -149,12 +149,14 @@ static int procfs_umount(struct fs_superblock * fs_sb)
 /**
  * Override read() function.
  */
-static ssize_t procfs_read(file_t * file, void * vbuf, size_t bcount)
+static ssize_t procfs_read(file_t * file, struct fs_uio * uio, size_t bcount)
 {
     struct procfs_info * spec;
     procfs_readfn_t * fn;
     ssize_t bytes;
+    void * vbuf;
     char * buf;
+    int err;
 
     spec = (struct procfs_info *)file->vnode->vn_specinfo;
     if (!spec)
@@ -166,6 +168,10 @@ static ssize_t procfs_read(file_t * file, void * vbuf, size_t bcount)
     fn = procfs_read_funcs[spec->ftype];
     if (!fn)
         return -ENOTSUP;
+
+    err = fs_uio_get_kaddr(uio, &vbuf);
+    if (err)
+        return err;
 
     bytes = fn(spec, &buf);
     if (bytes > 0 && file->seek_pos <= bytes) {
@@ -188,10 +194,12 @@ static ssize_t procfs_read(file_t * file, void * vbuf, size_t bcount)
 /**
  * Override write() function.
  */
-static ssize_t procfs_write(file_t * file, const void * vbuf, size_t bcount)
+static ssize_t procfs_write(file_t * file, struct fs_uio * uio, size_t bcount)
 {
     struct procfs_info * spec;
     procfs_writefn_t * fn;
+    void * vbuf;
+    int err;
 
     spec = (struct procfs_info *)file->vnode->vn_specinfo;
     if (!spec)
@@ -203,7 +211,12 @@ static ssize_t procfs_write(file_t * file, const void * vbuf, size_t bcount)
     fn = procfs_write_funcs[spec->ftype];
     if (!fn)
         return -ENOTSUP;
-    return fn(spec, (char *)vbuf, bcount);
+
+    err = fs_uio_get_kaddr(uio, &vbuf);
+    if (err)
+        return err;
+
+    return fn(spec, vbuf, bcount);
 }
 
 static int procfs_updatedir(vnode_t * dir)

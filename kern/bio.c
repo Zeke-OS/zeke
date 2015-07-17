@@ -121,6 +121,7 @@ void bio_readin(struct buf * bp)
 static void _bio_readin(struct buf * bp)
 {
     file_t * file;
+    struct fs_uio uio;
 
     KASSERT(mtx_test(&bp->lock), "bp should be locked\n");
 
@@ -136,8 +137,9 @@ static void _bio_readin(struct buf * bp)
 
     bp->b_flags &= ~B_DONE;
 
+    fs_uio_buf2kuio(bp, &uio);
     file->seek_pos = bp->b_blkno;
-    file->vnode->vnode_ops->read(file, (void *)bp->b_data, bp->b_bcount);
+    file->vnode->vnode_ops->read(file, &uio, bp->b_bcount);
 
     bp->b_flags |= B_DONE;
 }
@@ -155,6 +157,7 @@ void bio_writeout(struct buf * bp)
 static void _bio_writeout(struct buf * bp)
 {
     file_t * file;
+    struct fs_uio uio;
 
     KASSERT(mtx_test(&bp->lock), "bp should be locked\n");
 
@@ -171,8 +174,9 @@ static void _bio_writeout(struct buf * bp)
         file = &bp->b_file;
     }
 
+    fs_uio_buf2kuio(bp, &uio);
     file->seek_pos = bp->b_blkno;
-    file->vnode->vnode_ops->write(file, (void *)bp->b_data, bp->b_bcount);
+    file->vnode->vnode_ops->write(file, &uio, bp->b_bcount);
 
 out:
     bp->b_flags |= B_DONE;

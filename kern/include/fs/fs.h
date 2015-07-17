@@ -42,6 +42,7 @@
 #define FS_H
 
 #include <dirent.h>
+#include <fs/fs_uio.h>
 #include <limits.h>
 #include <machine/atomic.h>
 #include <mount.h>
@@ -296,13 +297,11 @@ typedef struct vnode_ops {
     /**
      * Read transfers bytes from file into buf.
      * @param file      is a file stored in the file system.
-     * @param buf       is a buffer bytes are written to.
      * @param count     is the number of bytes to be read.
      * @return  Returns the number of bytes read;
      *          Otherwise a negative errno code is returned.
      */
-    ssize_t (*read)(file_t * file, void * buf, size_t count);
-    ssize_t (*read_ubuf)(file_t * file, __user void * buf, size_t count);
+    ssize_t (*read)(file_t * file, struct fs_uio * uio, size_t count);
     /**
      * Write transfers bytes from buf into file.
      * Writing is begin from offset and ended at offset + count. buf must
@@ -310,13 +309,11 @@ typedef struct vnode_ops {
      * current file the file will be extended; If offset is smaller than file
      * length, the existing data will be overwriten.
      * @param file      is a file stored in the file system.
-     * @param buf       is a buffer where bytes are read from.
      * @param count     is the number of bytes buf contains.
      * @return  Returns the number of bytes written;
      *          Otherwise a negative errno code is returned.
      */
-    ssize_t (*write)(file_t * file, const void * buf, size_t count);
-    ssize_t (*write_ubuf)(file_t * file, __user const void * buf, size_t count);
+    ssize_t (*write)(file_t * file, struct fs_uio * uio, size_t count);
     /**
      * IO Control.
      * Only defined for devices and shall point to fs_enotsup_ioctl() if not
@@ -563,7 +560,7 @@ int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str,
 /**
  * Walks the file system for a process and tries to locate vnode corresponding
  * to a given path.
- * @param fd        is the optional starting point for relative search.
+ * @param fd        is an optional starting point for relative search.
  * @param path      is a pointer to the path C string.
  * @param atflags   if this is set to AT_FDARG then fd is used;
  *                  AT_FDCWD is implicit rule for this function.
@@ -762,11 +759,8 @@ void vunref(vnode_t * vnode);
 /* Not sup vnops (in nofs.c) */
 int fs_enotsup_lock(file_t * file);
 int fs_enotsup_release(file_t * file);
-ssize_t fs_enotsup_read(file_t * file, void * buf, size_t count);
-ssize_t fs_enotsup_read_ubuf(file_t * file, __user void * buf, size_t count);
-ssize_t fs_enotsup_write(file_t * file, const void * buf, size_t count);
-ssize_t fs_enotsup_write_ubuf(file_t * file, __user const void * buf,
-                              size_t count);
+ssize_t fs_enotsup_read(file_t * file, struct fs_uio * uio, size_t count);
+ssize_t fs_enotsup_write(file_t * file, struct fs_uio * uio, size_t count);
 int fs_enotsup_ioctl(file_t * file, unsigned request, void * arg,
                      size_t arg_len);
 int fs_enotsup_event_vnode_opened(struct proc_info * p, vnode_t * vnode);

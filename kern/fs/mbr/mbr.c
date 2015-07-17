@@ -79,10 +79,13 @@ static int mbr_write(struct dev_info * devnfo, off_t offset,
 
 static int read_block_0(uint8_t * block_0, file_t * file)
 {
+    struct fs_uio uio;
     int ret;
 
+    fs_uio_init_kbuf(&uio, block_0, 512);
+
     /* Read the first 512 bytes. */
-    ret = dev_read(file, block_0, 512);
+    ret = dev_read(file, &uio, 512);
     if (ret < 0) {
         KERROR(KERROR_ERR, "MBR: block_read failed (%i)\n", ret);
 
@@ -122,7 +125,7 @@ int mbr_register(int fd, int * part_count)
     int parts = 0;
     int retval = 0;
 
-#if configMBR_DEBUG
+#ifdef configMBR_DEBUG
     KERROR(KERROR_DEBUG, "mbr_register(fd: %d, part_count: %p)\n",
            fd, part_count);
 #endif

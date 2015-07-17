@@ -204,19 +204,24 @@ const char * devtoname(struct vnode * dev)
     return devnfo->dev_name;
 }
 
-ssize_t dev_read(file_t * file, void * vbuf, size_t bcount)
+ssize_t dev_read(file_t * file, struct fs_uio * uio, size_t bcount)
 {
     vnode_t * const vnode = file->vnode;
     const off_t offset = file->seek_pos;
     const int oflags = file->oflags;
     struct dev_info * devnfo = (struct dev_info *)vnode->vn_specinfo;
-    uint8_t * buf = (uint8_t *)vbuf;
+    uint8_t * buf;
     size_t buf_offset;
     off_t block_offset;
     ssize_t bytes_rd;
+    int err;
 
     if (!devnfo->read)
         return -EOPNOTSUPP;
+
+    err = fs_uio_get_kaddr(uio, (void **)(&buf));
+    if (err)
+        return err;
 
     if ((devnfo->flags & DEV_FLAGS_MB_READ) &&
             ((bcount / devnfo->block_size) > 1)) {
@@ -253,19 +258,24 @@ out:
     return bytes_rd;
 }
 
-ssize_t dev_write(file_t * file, const void * vbuf, size_t bcount)
+ssize_t dev_write(file_t * file, struct fs_uio * uio, size_t bcount)
 {
     vnode_t * const vnode = file->vnode;
     const off_t offset = file->seek_pos;
     const int oflags = file->oflags;
     struct dev_info * devnfo = (struct dev_info *)vnode->vn_specinfo;
-    uint8_t * buf = (uint8_t *)vbuf;
+    uint8_t * buf;
     size_t buf_offset;
     off_t block_offset;
     ssize_t bytes_wr;
+    int err;
 
     if (!devnfo->write)
         return -EOPNOTSUPP;
+
+    err = fs_uio_get_kaddr(uio, (void **)(&buf));
+    if (err)
+        return err;
 
     if ((devnfo->flags & DEV_FLAGS_MB_WRITE) &&
             ((bcount / devnfo->block_size) > 1)) {

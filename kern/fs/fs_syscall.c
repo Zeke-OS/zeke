@@ -58,6 +58,7 @@ static int sys_read(__user void * user_args)
     int err, retval;
     vnode_t * vnode;
     file_t * file;
+    struct fs_uio uio;
 
     err = priv_check(&curproc->cred, PRIV_VFS_READ);
     if (err) {
@@ -72,8 +73,10 @@ static int sys_read(__user void * user_args)
         return -1;
     }
 
-    /* Check that we have write permission to the user buffer. */
-    if (!useracc((__user void *)args.buf, args.nbytes, VM_PROT_WRITE)) {
+    /* Init uio struct. */
+    err = fs_uio_init_ubuf(&uio, (__user void *)args.buf, args.nbytes,
+                           VM_PROT_READ);
+    if (err) {
         set_errno(EFAULT);
         return -1;
     }
@@ -91,41 +94,10 @@ static int sys_read(__user void * user_args)
         goto out;
     }
 
-    if (vnode->vnode_ops->read_ubuf == fs_enotsup_read_ubuf) {
-        /* fs doesn't support read_ubuf() */
-        void * buf;
-
-        buf = kmalloc(args.nbytes);
-        if (!buf) {
-            set_errno(ENOMEM);
-            retval = -1;
-            goto out;
-        }
-
-        retval = vnode->vnode_ops->read(file, buf, args.nbytes);
-        if (retval < 0) {
-            kfree(buf);
-            set_errno(-retval);
-            retval = -1;
-            goto out;
-        }
-
-        err = copyout(buf, (__user void *)args.buf, retval);
-        kfree(buf);
-        if (err) {
-            set_errno(-err);
-            retval = -1;
-            goto out;
-        }
-    } else {
-        /* fs supports read_ubuf() */
-        retval = vnode->vnode_ops->read_ubuf(file, (__user void *)args.buf,
-                                             args.nbytes);
-        if (retval < 0) {
-            set_errno(-retval);
-            retval = -1;
-            goto out;
-        }
+    retval = vnode->vnode_ops->read(file, &uio, args.nbytes);
+    if (retval < 0) {
+        set_errno(-retval);
+        retval = -1;
     }
 
 out:
@@ -136,9 +108,10 @@ out:
 static int sys_write(__user void * user_args)
 {
     struct _fs_readwrite_args args;
+    int err, retval;
     vnode_t * vnode;
     file_t * file;
-    int err, retval;
+    struct fs_uio uio;
 
     err = priv_check(&curproc->cred, PRIV_VFS_WRITE);
     if (err) {
@@ -153,8 +126,9 @@ static int sys_write(__user void * user_args)
         return -1;
     }
 
-    /* Check that we have read permission to the user buffer. */
-    if (!useracc((__user void *)args.buf, args.nbytes, VM_PROT_READ)) {
+    err = fs_uio_init_ubuf(&uio, (__user void *)args.buf, args.nbytes,
+                           VM_PROT_WRITE);
+    if (err) {
         set_errno(EFAULT);
         return -1;
     }
@@ -172,42 +146,10 @@ static int sys_write(__user void * user_args)
         goto out;
     }
 
-    if (vnode->vnode_ops->write_ubuf == fs_enotsup_write_ubuf) {
-        /* fs doesn't support write_ubuf() */
-        void * buf;
-
-        buf = kmalloc(args.nbytes);
-        if (!buf) {
-            set_errno(ENOMEM);
-            retval = -1;
-            goto out;
-        }
-
-        err = copyin((__user const void *)args.buf, buf, args.nbytes);
-        if (err) {
-            kfree(buf);
-            set_errno(EFAULT);
-            retval = -1;
-            goto out;
-        }
-
-        retval = vnode->vnode_ops->write(file, buf, args.nbytes);
-        if (retval < 0) {
-            kfree(buf);
-            set_errno(-retval);
-            retval = -1;
-            goto out;
-        }
-    } else {
-        /* fs supports write_ubuf() */
-        retval = vnode->vnode_ops->write_ubuf(file,
-                                              (__user const void *)args.buf,
-                                              args.nbytes);
-        if (retval < 0) {
-            set_errno(-err);
-            retval = -1;
-            goto out;
-        }
+    retval = vnode->vnode_ops->write(file, &uio, args.nbytes);
+    if (retval < 0) {
+        set_errno(-err);
+        retval = -1;
     }
 
 out:

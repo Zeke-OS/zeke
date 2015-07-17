@@ -76,10 +76,8 @@ struct stream_pipe {
     gid_t group;
 };
 
-static ssize_t fs_pipe_write_ubuf(file_t * file, __user const void * buf,
-                                  size_t count);
-static ssize_t fs_pipe_read_ubuf(file_t * file, __user void * buf,
-                                 size_t count);
+static ssize_t fs_pipe_write(file_t * file, struct fs_uio * uio, size_t count);
+static ssize_t fs_pipe_read(file_t * file, struct fs_uio * uio, size_t count);
 static int fs_pipe_stat(vnode_t * vnode, struct stat * stat);
 static int fs_pipe_chmod(vnode_t * vnode, mode_t mode);
 static int fs_pipe_chown(vnode_t * vnode, uid_t owner, gid_t group);
@@ -87,8 +85,8 @@ static int fs_pipe_get_vnode(struct fs_superblock * sb, ino_t * vnode_num,
                              vnode_t ** vnode);
 
 static vnode_ops_t fs_pipe_ops = {
-    .write_ubuf = fs_pipe_write_ubuf,
-    .read_ubuf = fs_pipe_read_ubuf,
+    .write = fs_pipe_write,
+    .read = fs_pipe_read,
     .stat = fs_pipe_stat,
     .chmod = fs_pipe_chmod,
     .chown = fs_pipe_chown,
@@ -222,11 +220,11 @@ int fs_pipe_destroy(vnode_t * vnode)
     return 0;
 }
 
-static ssize_t fs_pipe_write_ubuf(file_t * file, __user const void * buf,
-                                  size_t count)
+static ssize_t fs_pipe_write(file_t * file, struct fs_uio * uio, size_t count)
 {
     struct stream_pipe * pipe = (struct stream_pipe *)file->stream;
     char * buf_addr;
+    int err;
 
     if (!(file->oflags & O_WRONLY))
         return -EBADF;
@@ -235,7 +233,9 @@ static ssize_t fs_pipe_write_ubuf(file_t * file, __user const void * buf,
         return -EPIPE;
     }
 
-    buf_addr = vm_uaddr2kaddr(curproc, buf);
+    err = fs_uio_get_kaddr(uio, (void **)(&buf_addr));
+    if (err)
+        return err;
 
     /* TODO Implement O_NONBLOCK */
 
@@ -254,12 +254,13 @@ static ssize_t fs_pipe_write_ubuf(file_t * file, __user const void * buf,
     return count;
 }
 
-static ssize_t fs_pipe_read_ubuf(file_t * file, __user void * buf, size_t count)
+static ssize_t fs_pipe_read(file_t * file, struct fs_uio * uio, size_t count)
 {
     struct stream_pipe * pipe = (struct stream_pipe *)file->stream;
     char * buf_addr;
     int oflags = file->oflags;
     int trycount = 0;
+    int err;
 
     /*
      * TODO Atomic pipes
@@ -271,7 +272,9 @@ static ssize_t fs_pipe_read_ubuf(file_t * file, __user void * buf, size_t count)
     if (!(oflags & O_RDONLY))
         return -EBADF;
 
-    buf_addr = vm_uaddr2kaddr(curproc, buf);
+    err = fs_uio_get_kaddr(uio, (void **)(&buf_addr));
+    if (err)
+        return err;
 
     for (size_t i = 0; i < count;) {
         if (queue_isempty(&pipe->q) &&

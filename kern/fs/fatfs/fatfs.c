@@ -541,8 +541,9 @@ fail:
     return retval;
 }
 
-ssize_t fatfs_read(file_t * file, void * buf, size_t count)
+ssize_t fatfs_read(file_t * file, struct fs_uio * uio, size_t count)
 {
+    void * buf;
     struct fatfs_inode * in = get_inode_of_vnode(file->vnode);
     size_t count_out;
     int err;
@@ -553,6 +554,10 @@ ssize_t fatfs_read(file_t * file, void * buf, size_t count)
     err = f_lseek(&in->fp, file->seek_pos);
     if (err)
         return -EIO;
+
+    err = fs_uio_get_kaddr(uio, &buf);
+    if (err)
+        return err;
 
     err = f_read(&in->fp, buf, count, &count_out);
     if (err)
@@ -562,8 +567,9 @@ ssize_t fatfs_read(file_t * file, void * buf, size_t count)
     return count_out;
 }
 
-ssize_t fatfs_write(file_t * file, const void * buf, size_t count)
+ssize_t fatfs_write(file_t * file, struct fs_uio * uio, size_t count)
 {
+    void * buf;
     struct fatfs_inode * in = get_inode_of_vnode(file->vnode);
     size_t count_out;
     int err;
@@ -574,6 +580,10 @@ ssize_t fatfs_write(file_t * file, const void * buf, size_t count)
     err = f_lseek(&in->fp, file->seek_pos);
     if (err)
         return -EIO;
+
+    err = fs_uio_get_kaddr(uio, &buf);
+    if (err)
+        return err;
 
     err = f_write(&in->fp, buf, count, &count_out);
     if (err)

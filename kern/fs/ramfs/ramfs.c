@@ -138,9 +138,9 @@ static void destroy_inode(ramfs_inode_t * inode);
 static void destroy_inode_data(ramfs_inode_t * inode);
 static int insert_inode(ramfs_inode_t * inode);
 static ssize_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
-                                const void * buf, size_t count);
+                                struct fs_uio * uio, size_t count);
 static ssize_t ramfs_rd_regular(vnode_t * file, const off_t * restrict offset,
-                                void * buff, size_t count);
+                                struct fs_uio * uio, size_t count);
 static int ramfs_set_filesize(ramfs_inode_t * inode, off_t size);
 static struct ramfs_dp get_dp_by_offset(ramfs_inode_t * inode, off_t offset);
 
@@ -281,7 +281,7 @@ int ramsfs_mount(const char * source, uint32_t mode,
 #ifdef configRAMFS_DEBUG
     KERROR(KERROR_DEBUG, "Initialize the inode pool.\n");
 #endif
-    err = inpool_init(&(ramfs_sb->ramfs_ipool), &ramfs_sb->sb,
+    err = inpool_init(&ramfs_sb->ramfs_ipool, &ramfs_sb->sb,
             ramfs_raw_create_inode, destroy_vnode, RAMFS_INODE_POOL_SIZE);
     if (err) {
         retval = -ENOMEM;
@@ -412,7 +412,7 @@ int ramfs_delete_vnode(vnode_t * vnode)
 
     /* TODO Clear mutexes, queues etc. */
     destroy_inode_data(inode);
-    vn_tmp = &(inode->in_vnode);
+    vn_tmp = &inode->in_vnode;
 
     /* Recycle this inode */
     inpool_insert(&(get_rfsb_of_sb(vn_tmp->sb)->ramfs_ipool), vn_tmp);
@@ -420,13 +420,13 @@ int ramfs_delete_vnode(vnode_t * vnode)
     return 0;
 }
 
-ssize_t ramfs_read(file_t * file, void * buf, size_t count)
+ssize_t ramfs_read(file_t * file, struct fs_uio * uio, size_t count)
 {
     size_t bytes_rd = 0;
 
     switch (file->vnode->vn_mode & S_IFMT) {
     case S_IFREG: /* file is a regular file. */
-        bytes_rd = ramfs_rd_regular(file->vnode, &(file->seek_pos), buf, count);
+        bytes_rd = ramfs_rd_regular(file->vnode, &file->seek_pos, uio, count);
         break;
     case S_IFDIR:
         return -EISDIR;
@@ -438,13 +438,13 @@ ssize_t ramfs_read(file_t * file, void * buf, size_t count)
     return bytes_rd;
 }
 
-ssize_t ramfs_write(file_t * file, const void * buf, size_t count)
+ssize_t ramfs_write(file_t * file, struct fs_uio * uio, size_t count)
 {
     size_t bytes_wr = 0;
 
     switch (file->vnode->vn_mode & S_IFMT) {
     case S_IFREG: /* File is a regular file. */
-        bytes_wr = ramfs_wr_regular(file->vnode, &(file->seek_pos), buf, count);
+        bytes_wr = ramfs_wr_regular(file->vnode, &file->seek_pos, uio, count);
         break;
     default: /* File type not supported. */
         return -EOPNOTSUPP;
@@ -505,7 +505,7 @@ int ramfs_create(vnode_t * dir, const char * name, mode_t mode,
     /*
      * Get a fresh inode for the file.
      */
-    vnode = inpool_get_next(&(ramfs_sb->ramfs_ipool));
+    vnode = inpool_get_next(&ramfs_sb->ramfs_ipool);
     if (!vnode)
         return -ENOSPC;
 
@@ -668,7 +668,7 @@ int ramfs_mkdir(vnode_t * dir, const char * name, mode_t mode)
     if (!RAMFS_SB_IS_HEALTHY(ramfs_sb))
         return -EROFS;
 
-    vnode_new = inpool_get_next(&(ramfs_sb->ramfs_ipool));
+    vnode_new = inpool_get_next(&ramfs_sb->ramfs_ipool);
     if (!vnode_new)
         return -ENOSPC; /* Can't create a new dir. */
     inode_dir = get_inode_of_vnode(dir);
@@ -684,12 +684,12 @@ int ramfs_mkdir(vnode_t * dir, const char * name, mode_t mode)
     }
 
     /* Create links according to POSIX. */
-    ramfs_link(&(inode_new->in_vnode), &(inode_new->in_vnode), RFS_DOT);
-    ramfs_link(&(inode_new->in_vnode), &(inode_dir->in_vnode), RFS_DOTDOT);
+    ramfs_link(&inode_new->in_vnode, &inode_new->in_vnode, RFS_DOT);
+    ramfs_link(&inode_new->in_vnode, &inode_dir->in_vnode, RFS_DOTDOT);
 
     /* Insert the inode to the inode lookup table of its super block. */
     insert_inode(inode_new);
-    err = ramfs_link(&(inode_dir->in_vnode), vnode_new, name);
+    err = ramfs_link(&inode_dir->in_vnode, vnode_new, name);
     if (err) {
         vrele_nunlink(vnode_new);
         ramfs_delete_vnode(vnode_new);
@@ -837,7 +837,7 @@ int ramfs_chown(vnode_t * vnode, uid_t owner, gid_t group)
  */
 static void ramfs_init_sb(ramfs_sb_t * ramfs_sb, uint32_t mode)
 {
-    struct fs_superblock * sb = &(ramfs_sb->sb);
+    struct fs_superblock * sb = &ramfs_sb->sb;
 
     fs_init_superblock(sb, &ramfs_fs);
     sb->mode_flags = mode;
@@ -858,7 +858,7 @@ static vnode_t * create_root(ramfs_sb_t * ramfs_sb)
     ramfs_inode_t * inode;
     vnode_t * vn;
 
-    vn = inpool_get_next(&(ramfs_sb->ramfs_ipool));
+    vn = inpool_get_next(&ramfs_sb->ramfs_ipool);
     if (!vn)
         return NULL; /* Can't create */
     inode = get_inode_of_vnode(vn);
@@ -906,7 +906,7 @@ static void destroy_superblock(ramfs_sb_t * ramfs_sb)
     }
 
     /* Destroy inode pool */
-    inpool_destroy(&(ramfs_sb->ramfs_ipool));
+    inpool_destroy(&ramfs_sb->ramfs_ipool);
 
     kfree(ramfs_sb);
 }
@@ -933,7 +933,7 @@ static vnode_t * ramfs_raw_create_inode(const struct fs_superblock * sb,
 
     init_inode(inode, ramfs_sb, num);
 
-    return &(inode->in_vnode);
+    return &inode->in_vnode;
 }
 
 /**
@@ -1045,7 +1045,7 @@ retry:
  * @return Returns the number of bytes written.
  */
 static ssize_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
-                                const void * buf, size_t count)
+                                struct fs_uio * uio, size_t count)
 {
     ramfs_inode_t * inode = get_inode_of_vnode(file);
     const blksize_t blksize = inode->in_blksize;
@@ -1060,6 +1060,7 @@ static ssize_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
     do {
         const size_t remain = count - bytes_wr;
         size_t curr_wr_len;
+        int err;
 
         /* Get next block pointer. */
         dp = get_dp_by_offset(inode, *offset + bytes_wr);
@@ -1078,7 +1079,9 @@ static ssize_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
          * Max per iteration is the size of the current block.
          */
         curr_wr_len = min(remain, dp.len);
-        memcpy(dp.p, ((char *)buf + bytes_wr), curr_wr_len);
+        err = fs_uio_copyin(uio, dp.p, bytes_wr, curr_wr_len);
+        if (err)
+            return err;
         bytes_wr += curr_wr_len;
     } while (bytes_wr < count);
 
@@ -1090,12 +1093,11 @@ static ssize_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
  * Transfers bytes from a regular file into buf.
  * @param file      is a regular file.
  * @param offset    is the offset form SEEK_START.
- * @param buf       is a buffer where bytes are written to.
  * @param count     is the requested number of bytes to be read.
  * @return Returns the number of bytes read from the file.
  */
 static ssize_t ramfs_rd_regular(vnode_t * file, const off_t * restrict offset,
-                                void * buf, size_t count)
+                                struct fs_uio * uio, size_t count)
 {
     ramfs_inode_t * inode = get_inode_of_vnode(file);
     struct ramfs_dp dp;
@@ -1109,6 +1111,7 @@ static ssize_t ramfs_rd_regular(vnode_t * file, const off_t * restrict offset,
     do {
         const size_t remain = count - bytes_rd;
         size_t curr_rd_len;
+        int err;
 
         if ((*offset + bytes_rd) >= file->vn_len) {
             break; /* EOF */
@@ -1122,7 +1125,9 @@ static ssize_t ramfs_rd_regular(vnode_t * file, const off_t * restrict offset,
 
         /* Read bytes from the block. */
         curr_rd_len = min(remain, dp.len);
-        memcpy(((char *)buf + bytes_rd), dp.p, curr_rd_len);
+        err = fs_uio_copyout(dp.p, uio, bytes_rd, curr_rd_len);
+        if (err)
+            return err;
         bytes_rd += curr_rd_len;
     } while (bytes_rd < count);
 
