@@ -205,6 +205,9 @@ int copyout(__kernel const void * kaddr, __user void * uaddr, size_t len);
 int copyinstr(__user const char * uaddr, __kernel char * kaddr, size_t len,
               size_t * done);
 
+int copyoutstr(__kernel char * kaddr, __user const char * uaddr, size_t len,
+               size_t * done);
+
 /**
  * Copyin from a process specified by proc argument.
  * Arguments same as for copyin() except proc.

@@ -155,6 +155,48 @@ int copyinstr(__user const char * uaddr, __kernel char * kaddr, size_t len,
     return 0;
 }
 
+int copyoutstr(__kernel char * kaddr, __user const char * uaddr, size_t len,
+               size_t * done)
+{
+    uintptr_t last_prefix = UINTPTR_MAX;
+    char * phys_uaddr;
+    size_t off = 0;
+
+    KASSERT(uaddr != NULL, "uaddr shall be set");
+    KASSERT(kaddr != NULL, "kaddr shall be set");
+
+    while (off < len) {
+        if (((uintptr_t)uaddr >> NBITS(MMU_PGSIZE_COARSE)) != last_prefix) {
+            if (!useracc(uaddr, 1, VM_PROT_READ)) {
+                return -EFAULT;
+            }
+
+            last_prefix = (uintptr_t)uaddr >> NBITS(MMU_PGSIZE_COARSE);
+
+            phys_uaddr = vm_uaddr2kaddr(curproc, uaddr);
+            if (!phys_uaddr) {
+                return -EFAULT;
+            }
+        }
+
+        *phys_uaddr++ = kaddr[off];
+        uaddr += ++off;
+
+        if (kaddr[off - 1] == '\0')
+            break;
+    }
+
+    if (done)
+        *done = off;
+
+    if (kaddr[off - 1] != '\0') {
+        kaddr[off - 1] = '\0';
+        return -ENAMETOOLONG;
+    }
+
+    return 0;
+}
+
 int vm_find_reg(struct proc_info * proc, uintptr_t uaddr, struct buf ** bp)
 {
     struct buf * region = NULL;
