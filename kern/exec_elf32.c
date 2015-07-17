@@ -31,16 +31,15 @@
  */
 
 #include <errno.h>
+#include <buf.h>
+#include <elf32.h>
+#include <exec.h>
+#include <kerror.h>
 #include <kmalloc.h>
 #include <kstring.h>
-#include <vm/vm.h>
-#include <buf.h>
-#include <kerror.h>
-#include <thread.h>
 #include <proc.h>
-#include <exec.h>
-#include <elf_common.h>
-#include <elf32.h>
+#include <thread.h>
+#include <vm/vm.h>
 
 static int check_header(const struct elf32_header * hdr)
 {

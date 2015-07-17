@@ -30,18 +30,18 @@
  *******************************************************************************
  */
 
+#include <errno.h>
+#include <fcntl.h>
+#include <idle.h>
+#include <kstring.h>
 #include <sys/linker_set.h>
 #include <sys/tree.h>
 #include <sys/types.h>
-#include <kstring.h>
+#include <buf.h>
 #include <dllist.h>
-#include <idle.h>
-#include <fcntl.h>
-#include <errno.h>
+#include <fs/devfs.h>
 #include <kerror.h>
 #include <kmalloc.h>
-#include <fs/devfs.h>
-#include <buf.h>
 
 static mtx_t cache_lock;            /* Used to protect access caching data
                                      * structures and synchronizing access
