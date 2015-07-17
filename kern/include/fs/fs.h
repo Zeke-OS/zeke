@@ -41,17 +41,17 @@
 #ifndef FS_H
 #define FS_H
 
-#include <stdint.h>
+#include <dirent.h>
 #include <limits.h>
-#include <sys/types.h>
-#include <sys/queue.h>
-#include <sys/tree.h>
 #include <machine/atomic.h>
+#include <mount.h>
+#include <stdint.h>
+#include <sys/queue.h>
 #include <time.h>
 #include <sys/stat.h>
-#include <dirent.h>
+#include <sys/tree.h>
+#include <sys/types.h>
 #include <klocks.h>
-#include <mount.h>
 
 #define FS_FLAG_INIT    0x01 /*!< File system initialized. */
 #define FS_FLAG_FAIL    0x08 /*!< File system has failed. */
@@ -383,7 +383,7 @@ typedef struct vnode_ops {
      *          Otherwise a negative errno code is returned.
      */
     int (*create)(vnode_t * dir, const char * name, mode_t mode,
-            vnode_t ** result);
+                  vnode_t ** result);
     /**
      * Create a special vnode.
      * @note vn_ops must be set by the caller manually after creation of
@@ -397,7 +397,7 @@ typedef struct vnode_ops {
      *          Otherwise a negative errno code is returned.
      */
     int (*mknod)(vnode_t * dir, const char * name, int mode, void * specinfo,
-            vnode_t ** result);
+                 vnode_t ** result);
     /**
      * Lookup for a hard linked vnode in a directory vnode.
      * @param dir       is a directory in the file system.
@@ -540,7 +540,7 @@ fs_t * fs_iterate(fs_t * fsp);
  * @param parm_len  is the size of parm in bytes.
  */
 int fs_mount(vnode_t * target, const char * source, const char * fsname,
-        uint32_t flags, const char * parm, int parm_len);
+             uint32_t flags, const char * parm, int parm_len);
 
 /**
  * Unmount a file system superblock.
