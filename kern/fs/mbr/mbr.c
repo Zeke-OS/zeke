@@ -60,6 +60,8 @@
 #include <proc.h>
 #include <fs/mbr.h>
 
+#define MBR_SIZE 512
+
 struct mbr_dev {
     struct dev_info dev;
     struct dev_info * parent;
@@ -82,18 +84,18 @@ static int read_block_0(uint8_t * block_0, file_t * file)
     struct fs_uio uio;
     int ret;
 
-    fs_uio_init_kbuf(&uio, block_0, 512);
+    fs_uio_init_kbuf(&uio, block_0, MBR_SIZE);
 
     /* Read the first 512 bytes. */
-    ret = dev_read(file, &uio, 512);
+    ret = dev_read(file, &uio, MBR_SIZE);
     if (ret < 0) {
         KERROR(KERROR_ERR, "MBR: block_read failed (%i)\n", ret);
 
         return ret;
-    } else if (ret != 512) {
+    } else if (ret != MBR_SIZE) {
         KERROR(KERROR_ERR,
-                 "MBR: unable to read the first 512 bytes, "
-                 "only %d bytes read\n", ret);
+               "MBR: Failed to read %d bytes, only %d bytes read\n",
+               MBR_SIZE, ret);
 
         return -ENOENT;
     }
@@ -107,7 +109,7 @@ static int check_signature(uint8_t * block_0)
 {
     if ((block_0[0x1fe] != 0x55) || (block_0[0x1ff] != 0xaa)) {
         KERROR(KERROR_ERR,
-               "MBR: Invalid signature (bytes are %x %x)\n",
+               "MBR: Invalid signature (%x %x)\n",
                block_0[0x1fe], block_0[0x1ff]);
 
         return -ENOENT;
@@ -126,7 +128,7 @@ int mbr_register(int fd, int * part_count)
     int retval = 0;
 
 #ifdef configMBR_DEBUG
-    KERROR(KERROR_DEBUG, "mbr_register(fd: %d, part_count: %p)\n",
+    KERROR(KERROR_DEBUG, "%s(fd: %d, part_count: %p)\n", __func__,
            fd, part_count);
 #endif
 
@@ -149,7 +151,7 @@ int mbr_register(int fd, int * part_count)
         goto fail;
     }
 
-    block_0 = kmalloc(512);
+    block_0 = kmalloc(MBR_SIZE);
     if (!block_0) {
         retval = -ENOMEM;
         goto fail;
@@ -174,10 +176,10 @@ int mbr_register(int fd, int * part_count)
 #endif
 
     /*
-     * If parent block size is not 512, we have to coerce start_block
+     * If parent block size is not MBR_SIZE, we have to coerce start_block
      * and blocks to fit.
      */
-    if (parent->block_size < 512) {
+    if (parent->block_size < MBR_SIZE) {
         /* We do not support parent device block sizes < 512 */
         KERROR(KERROR_ERR,
                  "MBR: block size of %s is too small (%i)\n",
@@ -187,8 +189,8 @@ int mbr_register(int fd, int * part_count)
         goto fail;
     }
 
-    uint32_t block_size_adjust = parent->block_size / 512;
-    if (parent->block_size % 512) {
+    uint32_t block_size_adjust = parent->block_size / MBR_SIZE;
+    if (parent->block_size % MBR_SIZE) {
         /*
          * We do not support parent device block sizes that are not
          * multiples of 512.
