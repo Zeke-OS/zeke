@@ -67,7 +67,7 @@ extern volatile size_t flag_kernel_tick;
  * @param priv          set thread as privileged/kernel mode thread.
  */
 void init_stack_frame(struct _sched_pthread_create_args * thread_def,
-        sw_stack_frame_t * sframe, int priv);
+                      sw_stack_frame_t * sframe, int priv);
 
 void svc_setretval(intptr_t retval);
 

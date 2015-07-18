@@ -194,11 +194,13 @@ void mmu_die_on_fatal_abort(void)
 void mmu_pf_event(void)
 {
 #ifdef configMP
-    /* By using spinlock here there should be no risk of deadlock because even
+    /*
+     * By using spinlock here there should be no risk of deadlock because even
      * that this event is basically called only when one core is in interrupts
      * disabled state the call should not ever nest. If it nests something
      * is badly broken anyway. E.g. it could nest if this function would cause
-     * another abort. */
+     * another abort.
+     */
     mtx_spinlock(&_pfrc_lock);
 #endif
 
