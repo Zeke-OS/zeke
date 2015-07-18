@@ -315,6 +315,14 @@ typedef struct vnode_ops {
      */
     ssize_t (*write)(file_t * file, struct fs_uio * uio, size_t count);
     /**
+     * Seek a file.
+     * @param file      is a file stored in the file system.
+     * @param offset    is the seek offset.
+     * @param whence    is the location to start seeking from either
+     *                  SEEK_SET, SEEK_CUR, or SEEK_END.
+     */
+    off_t (*lseek)(file_t * file, off_t offset, int whence);
+    /**
      * IO Control.
      * Only defined for devices and shall point to fs_enotsup_ioctl() if not
      * supported.
@@ -761,6 +769,7 @@ int fs_enotsup_lock(file_t * file);
 int fs_enotsup_release(file_t * file);
 ssize_t fs_enotsup_read(file_t * file, struct fs_uio * uio, size_t count);
 ssize_t fs_enotsup_write(file_t * file, struct fs_uio * uio, size_t count);
+off_t fs_enotsup_lseek(file_t * file, off_t offset, int whence);
 int fs_enotsup_ioctl(file_t * file, unsigned request, void * arg,
                      size_t arg_len);
 int fs_enotsup_event_vnode_opened(struct proc_info * p, vnode_t * vnode);

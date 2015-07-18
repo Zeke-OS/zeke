@@ -162,6 +162,7 @@ static int sys_lseek(__user void * user_args)
     struct _fs_lseek_args args;
     file_t * file;
     vnode_t * vn;
+    off_t new_offset;
     int retval = 0;
 
     if (!useracc(user_args, sizeof(args), VM_PROT_WRITE)) {
@@ -185,42 +186,11 @@ static int sys_lseek(__user void * user_args)
         set_errno(ESPIPE);
         retval = -1;
         goto out;
-    } else if (vn->vn_mode & (S_IFBLK | S_IFCHR)) {
-        off_t new_offset;
-
-        new_offset = dev_lseek(file, args.offset, args.whence);
-        if (new_offset < 0) {
-            set_errno(-new_offset);
-            retval = -1;
-        }
-        goto out;
     }
 
-
-    if (args.whence == SEEK_SET)
-        file->seek_pos = args.offset;
-    else if (args.whence == SEEK_CUR)
-        file->seek_pos += args.offset;
-    else if (args.whence == SEEK_END) {
-        struct stat stat_buf;
-        int err;
-
-        err = vn->vnode_ops->stat(vn, &stat_buf);
-        if (!err) {
-            const off_t new_offset = stat_buf.st_size + args.offset;
-
-            if (new_offset >= stat_buf.st_size)
-                file->seek_pos = new_offset;
-            else {
-                set_errno(EOVERFLOW);
-                retval = -1;
-            }
-        } else {
-            set_errno(EBADF);
-            retval = -1;
-        }
-    } else {
-        set_errno(EINVAL);
+    new_offset = vn->vnode_ops->lseek(file, args.offset, args.whence);
+    if (new_offset < 0) {
+        set_errno(-new_offset);
         retval = -1;
     }
 

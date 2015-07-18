@@ -62,6 +62,7 @@ static int dev_ioctl(file_t * file, unsigned request,
 vnode_ops_t devfs_vnode_ops = {
     .write = dev_write,
     .read = dev_read,
+    .lseek = dev_lseek,
     .ioctl = dev_ioctl,
     .event_fd_created = devfs_event_fd_created,
     .event_fd_closed = devfs_event_fd_closed,

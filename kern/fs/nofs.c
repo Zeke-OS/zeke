@@ -31,6 +31,7 @@
  */
 
 #include <errno.h>
+#include <fcntl.h>
 #include <proc.h>
 #include <fs/fs.h>
 
@@ -39,6 +40,7 @@ const vnode_ops_t nofs_vnode_ops = {
     .release = fs_enotsup_release,
     .read = fs_enotsup_read,
     .write = fs_enotsup_write,
+    .lseek = fs_enotsup_lseek,
     .ioctl = fs_enotsup_ioctl,
     .event_vnode_opened = fs_enotsup_event_vnode_opened,
     .event_fd_created = fs_enotsup_event_fd_created,
@@ -78,6 +80,37 @@ ssize_t fs_enotsup_read(file_t * file, struct fs_uio * uio, size_t count)
 ssize_t fs_enotsup_write(file_t * file, struct fs_uio * uio, size_t count)
 {
     return -ENOTSUP;
+}
+
+off_t fs_enotsup_lseek(file_t * file, off_t offset, int whence)
+{
+    vnode_t * vn = file->vnode;
+
+    if (whence == SEEK_SET)
+        file->seek_pos = offset;
+    else if (whence == SEEK_CUR)
+        file->seek_pos += offset;
+    else if (whence == SEEK_END) {
+        struct stat stat_buf;
+        int err;
+
+        err = vn->vnode_ops->stat(vn, &stat_buf);
+        if (!err) {
+            const off_t new_offset = stat_buf.st_size + offset;
+
+            if (new_offset >= stat_buf.st_size)
+                file->seek_pos = new_offset;
+            else {
+                return -EOVERFLOW;
+            }
+        } else {
+            return -EBADF;
+        }
+    } else {
+        return -EINVAL;
+    }
+
+    return file->seek_pos;
 }
 
 int fs_enotsup_ioctl(file_t * file, unsigned request, void * arg,
