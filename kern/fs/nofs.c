@@ -85,28 +85,25 @@ ssize_t fs_enotsup_write(file_t * file, struct fs_uio * uio, size_t count)
 off_t fs_enotsup_lseek(file_t * file, off_t offset, int whence)
 {
     vnode_t * vn = file->vnode;
+    struct stat stat_buf;
+    off_t new_offset;
 
-    if (whence == SEEK_SET)
+    switch (whence) {
+    case SEEK_SET:
         file->seek_pos = offset;
-    else if (whence == SEEK_CUR)
+    case SEEK_CUR:
         file->seek_pos += offset;
-    else if (whence == SEEK_END) {
-        struct stat stat_buf;
-        int err;
-
-        err = vn->vnode_ops->stat(vn, &stat_buf);
-        if (!err) {
-            const off_t new_offset = stat_buf.st_size + offset;
-
-            if (new_offset >= stat_buf.st_size)
-                file->seek_pos = new_offset;
-            else {
-                return -EOVERFLOW;
-            }
-        } else {
+    case SEEK_END:
+        if (vn->vnode_ops->stat(vn, &stat_buf))
             return -EBADF;
-        }
-    } else {
+
+        new_offset = stat_buf.st_size + offset;
+
+        if (new_offset >= stat_buf.st_size)
+            file->seek_pos = new_offset;
+        else
+            return -EOVERFLOW;
+    default:
         return -EINVAL;
     }
 
