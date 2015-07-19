@@ -35,6 +35,11 @@
  * @{
  */
 
+/**
+ * @addtogroup uio
+ * @{
+ */
+
 #ifndef FS_UIO_H
 #define FS_UIO_H
 
@@ -96,6 +101,10 @@ int fs_uio_copyin(struct fs_uio * uio, void * dst, size_t offset, size_t size);
 int fs_uio_get_kaddr(struct fs_uio * uio, __kernel void ** addr);
 
 #endif /* FS_UIO_H */
+
+/**
+ * @}
+ */
 
 /**
  * @}

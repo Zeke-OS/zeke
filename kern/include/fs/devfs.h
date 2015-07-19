@@ -30,6 +30,16 @@
  *******************************************************************************
  */
 
+/**
+ * @addtogroup fs
+ * @{
+ */
+
+/**
+ * @addtogroup devfs
+ * @{
+ */
+
 #pragma once
 #ifndef DEVFS_H
 #define DEVFS_H
@@ -158,3 +168,11 @@ off_t dev_lseek(file_t * file, off_t offset, int whence);
 int ioctl(file_t * file, uint32_t request, void * arg);
 
 #endif /* DEVFS_H */
+
+/**
+ * @}
+ */
+
+/**
+ * @}
+ */

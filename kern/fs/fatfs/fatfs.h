@@ -30,6 +30,16 @@
  *******************************************************************************
  */
 
+/**
+ * @addtogroup fs
+ * @{
+ */
+
+/**
+ * @addtogroup fatfs
+ * @{
+ */
+
 #ifndef FATFS_H
 #define FATFS_H
 
@@ -95,3 +105,11 @@ int fatfs_chmod(vnode_t * vnode, mode_t mode);
 int fatfs_chflags(vnode_t * vnode, fflags_t flags);
 
 #endif /* FATFS_H */
+
+/**
+ * @}
+ */
+
+/**
+ * @}
+ */

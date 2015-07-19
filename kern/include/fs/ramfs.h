@@ -30,6 +30,16 @@
  *******************************************************************************
  */
 
+/**
+ * @addtogroup fs
+ * @{
+ */
+
+/**
+ * @addtogroup ramfs
+ * @{
+ */
+
 #pragma once
 #ifndef FS_RAMFS_H
 #define FS_RAMFS_H
@@ -111,3 +121,11 @@ int ramfs_chmod(struct vnode * vnode, mode_t mode);
 int ramfs_chown(struct vnode * vnode, uid_t owner, gid_t group);
 
 #endif /* FS_RAMFS_H */
+
+/**
+ * @}
+ */
+
+/**
+ * @}
+ */

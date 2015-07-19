@@ -30,6 +30,16 @@
  *******************************************************************************
  */
 
+/**
+ * @addtogroup fs
+ * @{
+ */
+
+/**
+ * @addtogroup procfs
+ * @{
+ */
+
 #pragma once
 #ifndef PROCFS_H
 #define PROCFS_H
@@ -106,3 +116,11 @@ int procfs_mkentry(const struct proc_info * proc);
 void procfs_rmentry(pid_t pid);
 
 #endif /* PROCFS_H */
+
+/**
+ * @}
+ */
+
+/**
+ * @}
+ */
