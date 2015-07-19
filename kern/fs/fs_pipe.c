@@ -34,6 +34,7 @@
 #include <fcntl.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <buf.h>
 #include <fs/fs.h>
@@ -74,6 +75,10 @@ struct stream_pipe {
     file_t file1; /*!< Write end. */
     uid_t owner;
     gid_t group;
+    struct timespec sp_atime;   /*!< Time of last access. */
+    struct timespec sp_mtime;   /*!< Time of last data modification. */
+    struct timespec sp_ctime;   /*!< Time of last status change. */
+    struct timespec sp_birthtime;
 };
 
 static ssize_t fs_pipe_write(file_t * file, struct fs_uio * uio, size_t count);
@@ -123,6 +128,17 @@ static void init_file(file_t * file, vnode_t * vn, struct stream_pipe * pipe,
 
     file->fdflags &= ~FD_CLOEXEC;
     file->stream = pipe;
+}
+
+static void init_times(struct stream_pipe * pipe)
+{
+    struct timespec ts;
+
+    nanotime(&ts);
+    pipe->sp_atime = ts;
+    pipe->sp_mtime = ts;
+    pipe->sp_ctime = ts;
+    pipe->sp_birthtime = ts;
 }
 
 /**
@@ -309,12 +325,10 @@ int fs_pipe_stat(vnode_t * vnode, struct stat * stat)
     stat->st_gid = pipe->group;
     stat->st_rdev = 0;
     stat->st_size = pipe->bp->b_bcount;
-#if 0
-    stat->st_atime; /* TODO times */
-    stat->st_mtime;
-    stat->st_ctime;
-    stat->st_birthtime;
-#endif
+    stat->st_atime = pipe->sp_atime;
+    stat->st_mtime = pipe->sp_mtime;
+    stat->st_ctime = pipe->sp_ctime;
+    stat->st_birthtime = pipe->sp_birthtime;
     stat->st_flags = 0;
     stat->st_blksize = sizeof(char);
     stat->st_blocks = stat->st_size;
