@@ -215,6 +215,8 @@ int fs_pipe_curproc_creat(struct files_struct * files, int fildes[2],
     init_file(file0, vnode, pipe, O_RDONLY);
     init_file(file1, vnode, pipe, O_WRONLY);
 
+    init_times(pipe);
+
     /* ... and we are ready */
     fildes[0] = fs_fildes_curproc_next(file0, 0);
     fildes[1] = fs_fildes_curproc_next(file1, 0);
