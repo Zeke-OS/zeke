@@ -81,8 +81,8 @@ struct stream_pipe {
     struct timespec sp_birthtime;
 };
 
-static ssize_t fs_pipe_write(file_t * file, struct fs_uio * uio, size_t count);
-static ssize_t fs_pipe_read(file_t * file, struct fs_uio * uio, size_t count);
+static ssize_t fs_pipe_write(file_t * file, struct uio * uio, size_t count);
+static ssize_t fs_pipe_read(file_t * file, struct uio * uio, size_t count);
 static int fs_pipe_stat(vnode_t * vnode, struct stat * stat);
 static int fs_pipe_chmod(vnode_t * vnode, mode_t mode);
 static int fs_pipe_chown(vnode_t * vnode, uid_t owner, gid_t group);
@@ -238,7 +238,7 @@ int fs_pipe_destroy(vnode_t * vnode)
     return 0;
 }
 
-static ssize_t fs_pipe_write(file_t * file, struct fs_uio * uio, size_t count)
+static ssize_t fs_pipe_write(file_t * file, struct uio * uio, size_t count)
 {
     struct stream_pipe * pipe = (struct stream_pipe *)file->stream;
     char * buf_addr;
@@ -251,7 +251,7 @@ static ssize_t fs_pipe_write(file_t * file, struct fs_uio * uio, size_t count)
         return -EPIPE;
     }
 
-    err = fs_uio_get_kaddr(uio, (void **)(&buf_addr));
+    err = uio_get_kaddr(uio, (void **)(&buf_addr));
     if (err)
         return err;
 
@@ -272,7 +272,7 @@ static ssize_t fs_pipe_write(file_t * file, struct fs_uio * uio, size_t count)
     return count;
 }
 
-static ssize_t fs_pipe_read(file_t * file, struct fs_uio * uio, size_t count)
+static ssize_t fs_pipe_read(file_t * file, struct uio * uio, size_t count)
 {
     struct stream_pipe * pipe = (struct stream_pipe *)file->stream;
     char * buf_addr;
@@ -290,7 +290,7 @@ static ssize_t fs_pipe_read(file_t * file, struct fs_uio * uio, size_t count)
     if (!(oflags & O_RDONLY))
         return -EBADF;
 
-    err = fs_uio_get_kaddr(uio, (void **)(&buf_addr));
+    err = uio_get_kaddr(uio, (void **)(&buf_addr));
     if (err)
         return err;
 

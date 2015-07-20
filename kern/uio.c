@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    fs_uio.c
+ * @file    uio.c
  * @author  Olli Vanhoja
- * @brief   Virtual file system user io.
+ * @brief   User io.
  * @section LICENSE
  * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -32,13 +32,13 @@
 
 #include <errno.h>
 #include <buf.h>
-#include <fs/fs_uio.h>
+#include <uio.h>
 #include <proc.h>
 #include <vm/vm.h>
 
-int fs_uio_init_kbuf(struct fs_uio * uio, __kernel void * kbuf, size_t size)
+int uio_init_kbuf(struct uio * uio, __kernel void * kbuf, size_t size)
 {
-    *uio = (struct fs_uio){
+    *uio = (struct uio){
         .kbuf = kbuf,
         .ubuf = NULL,
         .proc = NULL,
@@ -48,7 +48,7 @@ int fs_uio_init_kbuf(struct fs_uio * uio, __kernel void * kbuf, size_t size)
     return 0;
 }
 
-int fs_uio_init_ubuf(struct fs_uio * uio, __user void * ubuf, size_t size,
+int uio_init_ubuf(struct uio * uio, __user void * ubuf, size_t size,
                      int rw)
 {
     struct proc_info * proc = curproc;
@@ -58,7 +58,7 @@ int fs_uio_init_ubuf(struct fs_uio * uio, __user void * ubuf, size_t size,
     if (!useracc_proc(ubuf, size, proc, rw))
         return -EFAULT;
 
-    *uio = (struct fs_uio){
+    *uio = (struct uio){
         .kbuf = NULL,
         .ubuf = ubuf,
         .proc = proc,
@@ -68,17 +68,17 @@ int fs_uio_init_ubuf(struct fs_uio * uio, __user void * ubuf, size_t size,
     return 0;
 }
 
-void fs_uio_buf2kuio(struct buf * bp, struct fs_uio * uio)
+void uio_buf2kuio(struct buf * bp, struct uio * uio)
 {
     if (bp->b_data == 0) {
         KERROR(KERROR_ERR, "buf %p not in memory\n", bp);
         return; /* RFE Maybe an error code should be returned? */
     }
 
-    fs_uio_init_kbuf(uio, (__kernel void *)bp->b_data, bp->b_bcount);
+    uio_init_kbuf(uio, (__kernel void *)bp->b_data, bp->b_bcount);
 }
 
-int fs_uio_copyout(const void * src, struct fs_uio * uio, size_t offset,
+int uio_copyout(const void * src, struct uio * uio, size_t offset,
                    size_t size)
 {
     int retval;
@@ -99,7 +99,7 @@ int fs_uio_copyout(const void * src, struct fs_uio * uio, size_t offset,
     return retval;
 }
 
-int fs_uio_copyin(struct fs_uio * uio, void * dst, size_t offset, size_t size)
+int uio_copyin(struct uio * uio, void * dst, size_t offset, size_t size)
 {
     int retval;
 
@@ -119,7 +119,7 @@ int fs_uio_copyin(struct fs_uio * uio, void * dst, size_t offset, size_t size)
     return retval;
 }
 
-int fs_uio_get_kaddr(struct fs_uio * uio, __kernel void ** addr)
+int uio_get_kaddr(struct uio * uio, __kernel void ** addr)
 {
     int retval = 0;
 

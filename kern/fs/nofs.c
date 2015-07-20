@@ -72,12 +72,12 @@ int fs_enotsup_release(file_t * file)
     return -ENOTSUP;
 }
 
-ssize_t fs_enotsup_read(file_t * file, struct fs_uio * uio, size_t count)
+ssize_t fs_enotsup_read(file_t * file, struct uio * uio, size_t count)
 {
     return -ENOTSUP;
 }
 
-ssize_t fs_enotsup_write(file_t * file, struct fs_uio * uio, size_t count)
+ssize_t fs_enotsup_write(file_t * file, struct uio * uio, size_t count)
 {
     return -ENOTSUP;
 }

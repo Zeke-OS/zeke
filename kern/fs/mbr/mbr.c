@@ -81,10 +81,10 @@ static int mbr_write(struct dev_info * devnfo, off_t offset,
 
 static int read_block_0(uint8_t * block_0, file_t * file)
 {
-    struct fs_uio uio;
+    struct uio uio;
     int ret;
 
-    fs_uio_init_kbuf(&uio, block_0, MBR_SIZE);
+    uio_init_kbuf(&uio, block_0, MBR_SIZE);
 
     /* Read the first 512 bytes. */
     ret = dev_read(file, &uio, MBR_SIZE);

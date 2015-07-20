@@ -97,11 +97,11 @@ static int load_section(struct buf ** region, file_t * file,
     if (phdr->p_filesz > 0) {
         int err;
         void * ldp;
-        struct fs_uio uio;
+        struct uio uio;
 
         file->seek_pos = phdr->p_offset;
         ldp = (void *)(sect->b_data + (phdr->p_vaddr - sect->b_mmu.vaddr));
-        fs_uio_init_kbuf(&uio, ldp, phdr->p_filesz);
+        uio_init_kbuf(&uio, ldp, phdr->p_filesz);
         err = file->vnode->vnode_ops->read(file, &uio, phdr->p_filesz);
         if (err < 0) {
             if (sect->vm_ops->rfree)
@@ -156,7 +156,7 @@ static int load_sections(struct proc_info * proc, file_t * file,
 
 int load_elf32(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base)
 {
-    struct fs_uio uio;
+    struct uio uio;
     struct elf32_header elfhdr;
     ssize_t slen;
     struct elf32_phdr * phdr = NULL;
@@ -169,7 +169,7 @@ int load_elf32(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base)
 
     /* Read elf header */
     file->seek_pos = 0;
-    fs_uio_init_kbuf(&uio, &elfhdr, sizeof(elfhdr));
+    uio_init_kbuf(&uio, &elfhdr, sizeof(elfhdr));
     slen = file->vnode->vnode_ops->read(file, &uio, sizeof(elfhdr));
     if (slen != sizeof(elfhdr)) {
         return -ENOEXEC;
@@ -199,7 +199,7 @@ int load_elf32(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base)
         goto out;
     }
     file->seek_pos = elfhdr.e_phoff;
-    fs_uio_init_kbuf(&uio, phdr, phsize);
+    uio_init_kbuf(&uio, phdr, phsize);
     if (file->vnode->vnode_ops->read(file, &uio, phsize) != (ssize_t)phsize) {
         retval = -ENOEXEC;
         goto out;

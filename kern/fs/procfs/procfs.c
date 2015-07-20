@@ -49,8 +49,8 @@ static int procfs_mount(const char * source, uint32_t mode,
                         const char * parm, int parm_len,
                         struct fs_superblock ** sb);
 static int procfs_umount(struct fs_superblock * fs_sb);
-static ssize_t procfs_read(file_t * file, struct fs_uio * uio, size_t bcount);
-static ssize_t procfs_write(file_t * file, struct fs_uio * uio, size_t bcount);
+static ssize_t procfs_read(file_t * file, struct uio * uio, size_t bcount);
+static ssize_t procfs_write(file_t * file, struct uio * uio, size_t bcount);
 static int procfs_updatedir(vnode_t * dir);
 static int create_proc_file(vnode_t * pdir, pid_t pid, const char * filename,
                             enum procfs_filetype ftype);
@@ -149,7 +149,7 @@ static int procfs_umount(struct fs_superblock * fs_sb)
 /**
  * Override read() function.
  */
-static ssize_t procfs_read(file_t * file, struct fs_uio * uio, size_t bcount)
+static ssize_t procfs_read(file_t * file, struct uio * uio, size_t bcount)
 {
     struct procfs_info * spec;
     procfs_readfn_t * fn;
@@ -169,7 +169,7 @@ static ssize_t procfs_read(file_t * file, struct fs_uio * uio, size_t bcount)
     if (!fn)
         return -ENOTSUP;
 
-    err = fs_uio_get_kaddr(uio, &vbuf);
+    err = uio_get_kaddr(uio, &vbuf);
     if (err)
         return err;
 
@@ -194,7 +194,7 @@ static ssize_t procfs_read(file_t * file, struct fs_uio * uio, size_t bcount)
 /**
  * Override write() function.
  */
-static ssize_t procfs_write(file_t * file, struct fs_uio * uio, size_t bcount)
+static ssize_t procfs_write(file_t * file, struct uio * uio, size_t bcount)
 {
     struct procfs_info * spec;
     procfs_writefn_t * fn;
@@ -212,7 +212,7 @@ static ssize_t procfs_write(file_t * file, struct fs_uio * uio, size_t bcount)
     if (!fn)
         return -ENOTSUP;
 
-    err = fs_uio_get_kaddr(uio, &vbuf);
+    err = uio_get_kaddr(uio, &vbuf);
     if (err)
         return err;
 

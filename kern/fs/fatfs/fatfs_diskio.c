@@ -54,7 +54,7 @@ DRESULT fatfs_disk_read(uint8_t pdrv, uint8_t * buff, DWORD sector,
                         unsigned int count)
 {
     file_t * file;
-    struct fs_uio uio;
+    struct uio uio;
     ssize_t retval;
 
     if (pdrv >= configFATFS_MAX_MOUNTS || !fatfs_sb_arr[pdrv])
@@ -63,7 +63,7 @@ DRESULT fatfs_disk_read(uint8_t pdrv, uint8_t * buff, DWORD sector,
     file = &fatfs_sb_arr[pdrv]->ff_devfile;
     file->seek_pos = sector;
 
-    fs_uio_init_kbuf(&uio, buff, count);
+    uio_init_kbuf(&uio, buff, count);
     retval = file->vnode->vnode_ops->read(file, &uio, count);
     if (retval < 0) {
 #ifdef configFATFS_DEBUG
@@ -94,7 +94,7 @@ DRESULT fatfs_disk_write(uint8_t pdrv, const uint8_t * buff, DWORD sector,
                          unsigned int count)
 {
     file_t * file;
-    struct fs_uio uio;
+    struct uio uio;
     ssize_t retval;
 
     if (pdrv >= configFATFS_MAX_MOUNTS || !fatfs_sb_arr[pdrv])
@@ -103,7 +103,7 @@ DRESULT fatfs_disk_write(uint8_t pdrv, const uint8_t * buff, DWORD sector,
     file = &fatfs_sb_arr[pdrv]->ff_devfile;
     file->seek_pos = sector;
 
-    fs_uio_init_kbuf(&uio, (void *)buff, count);
+    uio_init_kbuf(&uio, (void *)buff, count);
     retval = file->vnode->vnode_ops->write(file, &uio, count);
     if (retval < 0) {
 #ifdef configFATFS_DEBUG

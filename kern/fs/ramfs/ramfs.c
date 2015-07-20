@@ -138,9 +138,9 @@ static void destroy_inode(ramfs_inode_t * inode);
 static void destroy_inode_data(ramfs_inode_t * inode);
 static int insert_inode(ramfs_inode_t * inode);
 static ssize_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
-                                struct fs_uio * uio, size_t count);
+                                struct uio * uio, size_t count);
 static ssize_t ramfs_rd_regular(vnode_t * file, const off_t * restrict offset,
-                                struct fs_uio * uio, size_t count);
+                                struct uio * uio, size_t count);
 static int ramfs_set_filesize(ramfs_inode_t * inode, off_t size);
 static struct ramfs_dp get_dp_by_offset(ramfs_inode_t * inode, off_t offset);
 
@@ -420,7 +420,7 @@ int ramfs_delete_vnode(vnode_t * vnode)
     return 0;
 }
 
-ssize_t ramfs_read(file_t * file, struct fs_uio * uio, size_t count)
+ssize_t ramfs_read(file_t * file, struct uio * uio, size_t count)
 {
     size_t bytes_rd = 0;
 
@@ -438,7 +438,7 @@ ssize_t ramfs_read(file_t * file, struct fs_uio * uio, size_t count)
     return bytes_rd;
 }
 
-ssize_t ramfs_write(file_t * file, struct fs_uio * uio, size_t count)
+ssize_t ramfs_write(file_t * file, struct uio * uio, size_t count)
 {
     size_t bytes_wr = 0;
 
@@ -1045,7 +1045,7 @@ retry:
  * @return Returns the number of bytes written.
  */
 static ssize_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
-                                struct fs_uio * uio, size_t count)
+                                struct uio * uio, size_t count)
 {
     ramfs_inode_t * inode = get_inode_of_vnode(file);
     const blksize_t blksize = inode->in_blksize;
@@ -1079,7 +1079,7 @@ static ssize_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
          * Max per iteration is the size of the current block.
          */
         curr_wr_len = min(remain, dp.len);
-        err = fs_uio_copyin(uio, dp.p, bytes_wr, curr_wr_len);
+        err = uio_copyin(uio, dp.p, bytes_wr, curr_wr_len);
         if (err)
             return err;
         bytes_wr += curr_wr_len;
@@ -1097,7 +1097,7 @@ static ssize_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
  * @return Returns the number of bytes read from the file.
  */
 static ssize_t ramfs_rd_regular(vnode_t * file, const off_t * restrict offset,
-                                struct fs_uio * uio, size_t count)
+                                struct uio * uio, size_t count)
 {
     ramfs_inode_t * inode = get_inode_of_vnode(file);
     struct ramfs_dp dp;
@@ -1125,7 +1125,7 @@ static ssize_t ramfs_rd_regular(vnode_t * file, const off_t * restrict offset,
 
         /* Read bytes from the block. */
         curr_rd_len = min(remain, dp.len);
-        err = fs_uio_copyout(dp.p, uio, bytes_rd, curr_rd_len);
+        err = uio_copyout(dp.p, uio, bytes_rd, curr_rd_len);
         if (err)
             return err;
         bytes_rd += curr_rd_len;

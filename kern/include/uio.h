@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    fs_uio.h
+ * @file    uio.h
  * @author  Olli Vanhoja
  * @brief   Virtual file system user io headers.
  * @section LICENSE
@@ -40,8 +40,8 @@
  * @{
  */
 
-#ifndef FS_UIO_H
-#define FS_UIO_H
+#ifndef uio_H
+#define uio_H
 
 #include <stddef.h>
 
@@ -51,7 +51,7 @@ struct proc_info;
 /**
  * File system IO buffer descriptor.
  */
-struct fs_uio {
+struct uio {
     __kernel void * kbuf;
     __user void * ubuf;
     struct proc_info * proc;
@@ -65,7 +65,7 @@ struct fs_uio {
  * @param size is the size of the buffer at kbuf.
  * @return Returns 0 if succeed; Otherwise a negative errno code.
  */
-int fs_uio_init_kbuf(struct fs_uio * uio, __kernel void * kbuf, size_t size);
+int uio_init_kbuf(struct uio * uio, __kernel void * kbuf, size_t size);
 
 /**
  * Initialize a user IO buffer with a user address.
@@ -74,7 +74,7 @@ int fs_uio_init_kbuf(struct fs_uio * uio, __kernel void * kbuf, size_t size);
  * @param size is the size of the buffer at ubuf.
  * @return Returns 0 if succeed; Otherwise a negative errno code.
  */
-int fs_uio_init_ubuf(struct fs_uio * uio, __user void * ubuf, size_t size,
+int uio_init_ubuf(struct uio * uio, __user void * ubuf, size_t size,
                      int rw);
 
 /**
@@ -82,25 +82,25 @@ int fs_uio_init_ubuf(struct fs_uio * uio, __user void * ubuf, size_t size,
  * @param[in] bp is a buffer allocated from core.
  * @param[out] uio is the target uio struct.
  */
-void fs_uio_buf2kuio(struct buf * bp, struct fs_uio * uio);
+void uio_buf2kuio(struct buf * bp, struct uio * uio);
 
 /**
  * Copy from fs to uio buffer.
  */
-int fs_uio_copyout(const void * src, struct fs_uio * uio, size_t offset,
+int uio_copyout(const void * src, struct uio * uio, size_t offset,
                    size_t size);
 
 /**
  * Copy form uio buffer to fs.
  */
-int fs_uio_copyin(struct fs_uio * uio, void * dst, size_t offset, size_t size);
+int uio_copyin(struct uio * uio, void * dst, size_t offset, size_t size);
 
 /**
  * Get uio kernel address.
  */
-int fs_uio_get_kaddr(struct fs_uio * uio, __kernel void ** addr);
+int uio_get_kaddr(struct uio * uio, __kernel void ** addr);
 
-#endif /* FS_UIO_H */
+#endif /* uio_H */
 
 /**
  * @}

@@ -58,7 +58,7 @@ static int sys_read(__user void * user_args)
     int err, retval;
     vnode_t * vnode;
     file_t * file;
-    struct fs_uio uio;
+    struct uio uio;
 
     err = priv_check(&curproc->cred, PRIV_VFS_READ);
     if (err) {
@@ -74,7 +74,7 @@ static int sys_read(__user void * user_args)
     }
 
     /* Init uio struct. */
-    err = fs_uio_init_ubuf(&uio, (__user void *)args.buf, args.nbytes,
+    err = uio_init_ubuf(&uio, (__user void *)args.buf, args.nbytes,
                            VM_PROT_READ);
     if (err) {
         set_errno(EFAULT);
@@ -111,7 +111,7 @@ static int sys_write(__user void * user_args)
     int err, retval;
     vnode_t * vnode;
     file_t * file;
-    struct fs_uio uio;
+    struct uio uio;
 
     err = priv_check(&curproc->cred, PRIV_VFS_WRITE);
     if (err) {
@@ -126,7 +126,7 @@ static int sys_write(__user void * user_args)
         return -1;
     }
 
-    err = fs_uio_init_ubuf(&uio, (__user void *)args.buf, args.nbytes,
+    err = uio_init_ubuf(&uio, (__user void *)args.buf, args.nbytes,
                            VM_PROT_WRITE);
     if (err) {
         set_errno(EFAULT);
