@@ -83,9 +83,8 @@ static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp)
         .del_thread = NULL /* Not needed for main(). */
     };
 
-    if (args.stack_size == 0) {
-        panic("Invalid stack size\n");
-    }
+    KASSERT(args.stack_size != 0,
+            "Size of the main stack must be greater than zero\n");
 
     return thread_create(&args, 0);
 }
@@ -129,10 +128,13 @@ int exec_file(file_t * file, char name[PROC_NAME_LEN], struct buf * env_bp,
     /* Change proc name */
     strlcpy(curproc->name, name, sizeof(curproc->name));
 
-    /* Create main() */
+    /* Create main() thread */
     tid = new_main_thread(uargc - 1, uargv, uenvp);
     if (tid <= 0) {
-        panic("Exec failed");
+        if (ksignal_sendsig_fatal(curproc, SIGKILL)) {
+            /* Panic if the signal delivery fails. */
+            panic("Exec failed");
+        }
     }
     err = 0;
 
