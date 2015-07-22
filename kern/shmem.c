@@ -73,8 +73,10 @@ int __kinit__ shmem_init(void)
      */
 
     struct buf * bp_stack = geteblk(MMU_PGSIZE_COARSE);
-    if (!bp_stack)
-        panic("Can't allocate a stack for shmem sync thread.");
+    if (!bp_stack) {
+        KERROR(KERROR_ERR, "Can't allocate a stack for shmem sync thread.");
+        return -ENOMEM;
+    }
 
     struct _sched_pthread_create_args tdef_shmem = {
         .param.sched_policy = SCHED_FIFO,
@@ -86,8 +88,10 @@ int __kinit__ shmem_init(void)
         .arg1       = 0,
     };
     const pthread_t tid = thread_create(&tdef_shmem, 1);
-    if (tid < 0)
-        panic("Failed to create a thread for shmem sync");
+    if (tid < 0) {
+        KERROR(KERROR_ERR, "Failed to create a thread for shmem sync");
+        return tid;
+    }
 
     return 0;
 }
