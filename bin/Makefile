@@ -26,7 +26,7 @@
 include $(ROOT_DIR)/makefiles/user_head.mk
 
 # Binaries #####################################################################
-BIN := cat echo env ls minised mount sh stty umount uptime
+BIN := cat echo env ls minised mount sh stty umount uptime wc
 
 # Source Files #################################################################
 cat-SRC-y := src/cat.c
@@ -39,6 +39,7 @@ sh-SRC-y := $(wildcard src/sh/*.c) src/utils/gline.c
 stty-SRC-y := src/stty.c
 umount-SRC-y := src/umount.c src/utils/opt.c
 uptime-SRC-y := src/uptime.c
+wc-SRC-y := src/wc.c
 
 # CCFLAGS ######################################################################
 
