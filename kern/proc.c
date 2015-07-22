@@ -86,8 +86,12 @@ int __kinit__ proc_init(void)
     SUBSYS_DEP(vralloc_init);
     SUBSYS_INIT("proc");
 
+    int err;
+
     PROC_LOCK_INIT();
-    procarr_realloc();
+    err = procarr_realloc();
+    if (err) /* This is a critical failure so we just panic. */
+        panic("proc initialization failed");
     memset(_procarr, 0, SIZEOF_PROCARR());
 
     init_kernel_proc();
@@ -222,13 +226,13 @@ static void init_kernel_proc(void)
     mtx_init(&kernel_proc->inh.lock, PROC_INH_LOCK_TYPE, 0);
 }
 
-void procarr_realloc(void)
+int procarr_realloc(void)
 {
     struct proc_info * (*tmp)[];
 
     /* Skip if size is not changed */
     if (maxproc == act_maxproc)
-        return;
+        return 0;
 
 #ifdef configPROC_DEBUG
     KERROR(KERROR_DEBUG, "realloc procarr maxproc = %u, act_maxproc = %u\n",
@@ -238,15 +242,16 @@ void procarr_realloc(void)
     PROC_LOCK();
     tmp = krealloc(_procarr, SIZEOF_PROCARR());
     if ((tmp == 0) && (_procarr == 0)) {
-        char buf[80];
-        ksprintf(buf, sizeof(buf),
-                 "Unable to allocate _procarr (%u bytes)",
-                 SIZEOF_PROCARR());
-        panic(buf);
+        KERROR(KERROR_WARN, "Unable to allocate _procarr (%u bytes)",
+               SIZEOF_PROCARR());
+
+        return -ENOMEM;
     }
     _procarr = tmp;
     act_maxproc = maxproc;
     PROC_UNLOCK();
+
+    return 0;
 }
 
 void procarr_insert(struct proc_info * new_proc)

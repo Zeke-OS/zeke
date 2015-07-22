@@ -227,8 +227,9 @@ pid_t proc_fork(pid_t pid);
  * Realloc _procarr based on maxproc sysctl variable if necessary.
  * @note    This should be generally called before selecting next pid
  *          from the array.
+ * @return  Returns zero if succeed; Otherwise -ENOMEM.
  */
-void procarr_realloc(void);
+int procarr_realloc(void);
 
 /**
  * Insert a new process to _procarr.

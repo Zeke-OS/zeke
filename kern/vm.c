@@ -305,7 +305,7 @@ struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot,
     }
     err = vm_insert_region(proc, bp, VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
     if (err < 0)
-        panic("Failed to insert region"); /* TODO Handle error */
+        panic("Failed to insert a region"); /* TODO error handling */
 
     return bp;
 }
@@ -494,7 +494,7 @@ int vm_replace_region(struct proc_info * proc, struct buf * region,
          */
         if (old_region->b_mmu.vaddr != mmu_region_kernel.vaddr &&
             old_region->b_mmu.vaddr != mmu_region_kdata.vaddr) {
-            vm_unmapproc_region(proc, old_region);
+            (void)vm_unmapproc_region(proc, old_region);
         }
     }
 
@@ -575,8 +575,10 @@ int vm_unmapproc_region(struct proc_info * proc, struct buf * region)
 
     mtx_lock(&region->lock);
     vpt = ptlist_get_pt(&proc->mm, region->b_mmu.vaddr);
-    if (!vpt)
-        panic("Can't unmap a region");
+    if (!vpt) {
+        KERROR(KERROR_ERR, "Can't unmap a region (%p)\n", region);
+        return -EIDRM; /* RFE Correct errno? */
+    }
 
     mmu_region = region->b_mmu;
     mmu_region.pt = &(vpt->pt);

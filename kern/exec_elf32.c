@@ -122,7 +122,6 @@ static int load_sections(struct proc_info * proc, file_t * file,
     size_t phnum = elfhdr->e_phnum;
 
     for (size_t i = 0; i < phnum; i++) {
-        const char * const panicmsg = "Failed to map a section while in exec.";
         struct buf * sect;
         int err;
 
@@ -140,13 +139,15 @@ static int load_sections(struct proc_info * proc, file_t * file,
             err = vm_replace_region(proc, sect, reg_nr,
                                     VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
             if (err) {
-                panic(panicmsg);
+                KERROR(KERROR_ERR, "Failed to replace a region\n");
+                return err;
             }
         } else {
             err = vm_insert_region(proc, sect,
                                    VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
             if (err < 0) {
-                panic(panicmsg);
+                KERROR(KERROR_ERR, "Failed to insert a region\n");
+                return -1;
             }
         }
     }
@@ -225,7 +226,8 @@ int load_elf32(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base)
     /* Unload regions above HEAP */
     (void)vm_unload_regions(proc, MM_HEAP_REGION + 1, -1);
 
-    if ((retval = load_sections(proc, file, &elfhdr, phdr, rbase, vaddr_base)))
+    retval = load_sections(proc, file, &elfhdr, phdr, rbase, vaddr_base);
+    if (retval)
         goto out;
 
     retval = 0;

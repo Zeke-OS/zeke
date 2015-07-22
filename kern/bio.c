@@ -79,8 +79,8 @@ void _bio_init(void)
 int biobuf_compar(struct buf * a, struct buf * b)
 {
 #ifdef configBUF_DEBUG
-    if (a->b_file.vnode != b->b_file.vnode)
-        panic("vnodes differ in the same tree");
+    KASSERT(a->b_file.vnode == b->b_file.vnode,
+            "vnodes differ in the same tree");
 #endif
 
     return (a->b_blkno - b->b_blkno);

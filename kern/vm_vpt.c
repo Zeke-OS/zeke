@@ -94,7 +94,12 @@ struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr)
         RB_INSERT(ptlist, ptlist_head, vpt);
         err = mmu_attach_pagetable(&(vpt->pt));
         if (err) {
-            panic("Can't attach a new pt");
+            RB_REMOVE(ptlist, ptlist_head, vpt);
+            kfree(vpt);
+            KERROR(KERROR_ERR, "Can't attach a new pt to a ptlist (%p)\n",
+                   ptlist_head);
+
+            return NULL;
         }
     }
 

@@ -199,6 +199,7 @@ int ptmapper_init(void)
 
     /* Allocate memory for mmu_pagetable_master */
     if (ptmapper_alloc(&mmu_pagetable_master)) {
+        /* Critical failure */
         panic("Can't allocate memory for master page table.\n");
     }
 
@@ -206,6 +207,7 @@ int ptmapper_init(void)
     mmu_pagetable_system.nr_tables =
         (MMU_VADDR_KERNEL_END + 1) / MMU_PGSIZE_SECTION;
     if (ptmapper_alloc(&mmu_pagetable_system)) {
+        /* Critical failure */
         panic("Can't allocate memory for system page table.\n");
     }
 
@@ -213,7 +215,10 @@ int ptmapper_init(void)
     mmu_init_pagetable(&mmu_pagetable_master);
     mmu_init_pagetable(&mmu_pagetable_system);
 
-    /* Init regions */
+    /*
+     * Init regions
+     */
+
     /* Kernel ro region */
     mmu_region_kernel.num_pages  = MMU_PAGE_CNT_BY_RANGE(
             MMU_VADDR_KERNEL_START, (intptr_t)(&_rodata_end) - 1,

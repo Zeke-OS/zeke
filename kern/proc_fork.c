@@ -309,6 +309,7 @@ pid_t proc_fork(pid_t pid)
     struct proc_info * const old_proc = proc_get_struct_l(pid);
     struct proc_info * new_proc;
     pid_t retval = 0;
+    int err;
 
     /* Check that the old PID was valid. */
     if (!old_proc || (old_proc->state == PROC_STATE_INITIAL)) {
@@ -320,7 +321,9 @@ pid_t proc_fork(pid_t pid)
         return -ENOMEM;
     }
 
-    procarr_realloc();
+    err = procarr_realloc();
+    if (err)
+        return err;
 
     /* Clear some things required to be zeroed at this point */
     new_proc->state = PROC_STATE_INITIAL;
@@ -467,6 +470,12 @@ pid_t proc_fork(pid_t pid)
             new_proc->main_thread->pid_owner = new_proc->pid;
             new_proc->main_thread->curr_mpt = &new_proc->mm.mpt;
         } else {
+            /*
+             * TODO Shouldn't panic here.
+             * To remove this panic here the thread forking must be moved after
+             * the process is registered/inserted so send a fatal signal
+             * instead.
+             */
             panic("\tThread forking failed");
         }
     } else {

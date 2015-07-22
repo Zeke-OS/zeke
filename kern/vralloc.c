@@ -302,8 +302,7 @@ void allocbuf(struct buf * bp, size_t size)
     size_t bcount = VREG_PCOUNT(bp->b_bufsize);
     struct vregion * vreg = bp->allocator_data;
 
-    if (!vreg)
-        panic("bp->allocator_data not set");
+    KASSERT(vreg, "bp->allocator_data should be always set");
 
     if (bp->b_bufsize == new_size)
         return;
@@ -321,8 +320,13 @@ void allocbuf(struct buf * bp, size_t size)
                 struct vregion * nvreg;
                 uintptr_t new_addr;
 
-                if (get_iblocks(&iblock, pcount, &nvreg))
+                if (get_iblocks(&iblock, pcount, &nvreg)) {
+                    /*
+                     * RFE It's not nice to panic here but we don't have any
+                     * method to inform the caller about OOM.
+                     */
                     panic("OOM during allocbuf()");
+                }
 
                 new_addr = VREG_I2ADDR(nvreg, iblock);
                 memcpy((void *)(new_addr), (void *)(bp->b_data), bp->b_bufsize);
