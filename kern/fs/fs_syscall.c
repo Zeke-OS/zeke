@@ -97,6 +97,12 @@ static int sys_read(__user void * user_args)
     if (!args.poper) {
         retval = vnode->vnode_ops->read(file, &uio, args.nbytes);
     } else {
+        if (args.offset < 0) {
+            set_errno(EINVAL);
+            retval = -1;
+            goto out;
+        }
+
         retval = vnode->vnode_ops->pread(file, &uio, args.nbytes, args.offset);
     }
     if (retval < 0) {
@@ -153,6 +159,12 @@ static int sys_write(__user void * user_args)
     if (!args.poper) {
         retval = vnode->vnode_ops->write(file, &uio, args.nbytes);
     } else {
+        if (args.offset < 0) {
+            set_errno(EINVAL);
+            retval = -1;
+            goto out;
+        }
+
         retval = vnode->vnode_ops->pwrite(file, &uio, args.nbytes, args.offset);
     }
     if (retval < 0) {
