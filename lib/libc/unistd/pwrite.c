@@ -33,23 +33,19 @@
 */
 
 #define __SYSCALL_DEFS__
-#include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <syscall.h>
 
-/* TODO Pwrite implementation */
-#if 0
-ssize_t pwrite(int fildes, const void * buf, size_t nbyte,
-        off_t offset)
+ssize_t pwrite(int fildes, const void * buf, size_t nbyte, off_t offset)
 {
     struct _fs_readwrite_args args = {
+        .poper = 1,
         .fildes = fildes,
         .buf = (void *)buf,
-        .nbytes = nbyte
+        .nbytes = nbyte,
+        .offset = offset,
     };
 
-    /* TODO Seek first */
     return (ssize_t)syscall(SYSCALL_FS_WRITE, &args);
 }
-#endif

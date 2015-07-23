@@ -39,7 +39,9 @@ const vnode_ops_t nofs_vnode_ops = {
     .lock = fs_enotsup_lock,
     .release = fs_enotsup_release,
     .read = fs_enotsup_read,
+    .pread = fs_enotsup_pread,
     .write = fs_enotsup_write,
+    .pwrite = fs_enotsup_pwrite,
     .lseek = fs_enotsup_lseek,
     .ioctl = fs_enotsup_ioctl,
     .event_vnode_opened = fs_enotsup_event_vnode_opened,
@@ -77,7 +79,19 @@ ssize_t fs_enotsup_read(file_t * file, struct uio * uio, size_t count)
     return -ENOTSUP;
 }
 
+ssize_t fs_enotsup_pread(file_t * file, struct uio * uio, size_t count,
+                         off_t offset)
+{
+    return -ENOTSUP;
+}
+
 ssize_t fs_enotsup_write(file_t * file, struct uio * uio, size_t count)
+{
+    return -ENOTSUP;
+}
+
+ssize_t fs_enotsup_pwrite(file_t * file, struct uio * uio, size_t count,
+                          off_t offset)
 {
     return -ENOTSUP;
 }

@@ -40,6 +40,7 @@
 ssize_t read(int fildes, void * buf, size_t nbytes)
 {
     struct _fs_readwrite_args args = {
+        .poper = 0,
         .fildes = fildes,
         .buf = buf,
         .nbytes = nbytes

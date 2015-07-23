@@ -302,6 +302,8 @@ typedef struct vnode_ops {
      *          Otherwise a negative errno code is returned.
      */
     ssize_t (*read)(file_t * file, struct uio * uio, size_t count);
+    ssize_t (*pread)(file_t * file, struct uio * uio, size_t count,
+                     off_t offset);
     /**
      * Write transfers bytes from buf into file.
      * Writing is begin from offset and ended at offset + count. buf must
@@ -314,6 +316,8 @@ typedef struct vnode_ops {
      *          Otherwise a negative errno code is returned.
      */
     ssize_t (*write)(file_t * file, struct uio * uio, size_t count);
+    ssize_t (*pwrite)(file_t * file, struct uio * uio, size_t count,
+                      off_t offset);
     /**
      * Seek a file.
      * @param file      is a file stored in the file system.
@@ -768,7 +772,11 @@ void vunref(vnode_t * vnode);
 int fs_enotsup_lock(file_t * file);
 int fs_enotsup_release(file_t * file);
 ssize_t fs_enotsup_read(file_t * file, struct uio * uio, size_t count);
+ssize_t fs_enotsup_pread(file_t * file, struct uio * uio, size_t count,
+                         off_t offset);
 ssize_t fs_enotsup_write(file_t * file, struct uio * uio, size_t count);
+ssize_t fs_enotsup_pwrite(file_t * file, struct uio * uio, size_t count,
+                          off_t offset);
 off_t fs_enotsup_lseek(file_t * file, off_t offset, int whence);
 int fs_enotsup_ioctl(file_t * file, unsigned request, void * arg,
                      size_t arg_len);

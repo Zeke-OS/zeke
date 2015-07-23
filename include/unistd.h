@@ -166,11 +166,15 @@
 /* End of sysconf variables */
 
 #if defined(__SYSCALL_DEFS__) || defined(KERNEL_INTERNAL)
-/** Arguments struct for SYSCALL_FS_WRITE */
+/**
+ * Arguments struct for SYSCALL_FS_READ and SYSCALL_FS_WRITE
+ */
 struct _fs_readwrite_args {
+    char poper; /*!< Set if pread() or pwrite(). */
     int fildes;
     void * buf;
     size_t nbytes;
+    off_t offset; /*!< Used if poper != 0 */
 };
 
 /** Arguments struct for SYSCALL_FS_LSEEK */
@@ -369,13 +373,14 @@ int fchownat(int fd, const char * path, uid_t owner, gid_t group,
              int flag);
 int fchown(int fildes, uid_t owner, gid_t group);
 
+ssize_t pread(int fildes, void * buf, size_t nbytes, off_t offset);
+
 /**
  * Read from a file descriptor.
  */
 ssize_t read(int fildes, void * buf, size_t nbytes);
 
-ssize_t pwrite(int fildes, const void *buf, size_t nbyte,
-    off_t offset);
+ssize_t pwrite(int fildes, const void *buf, size_t nbyte, off_t offset);
 
 /**
  * Write to a file descriptor.
