@@ -53,16 +53,18 @@ crt1-SRC-$(configARCH_ARM) += $(wildcard crt1/arm/*.c)
 crt1-ASRC-$(configARCH_ARM) := $(wildcard crt1/arm/*.S)
 
 libc-SRC-y = \
-$(wildcard libc/_PDCLIB/*.c) \
 $(wildcard libc/*.c) \
+$(wildcard libc/_PDCLIB/*.c) \
 $(wildcard libc/basecodecs/*.c) \
 $(wildcard libc/ctype/*.c) \
 $(wildcard libc/dirent/*.c) \
 $(wildcard libc/fcntl/*.c) \
-$(wildcard libc/gen/*.c) \
 $(wildcard libc/inttypes/*.c) \
+$(wildcard libc/libgen/*.c) \
 $(wildcard libc/locale/*.c) \
 $(wildcard libc/malloc/*.c) \
+$(wildcard libc/math/*.c) \
+$(wildcard libc/mman/*.c) \
 $(wildcard libc/priv/*.c) \
 $(wildcard libc/pthreads/*.c) \
 $(wildcard libc/resource/*.c) \
@@ -74,12 +76,10 @@ $(wildcard libc/stdlib/*.c) \
 $(wildcard libc/string/*.c) \
 $(wildcard libc/termios/*.c) \
 $(wildcard libc/time/*.c) \
-$(wildcard libc/unistd/*.c) \
 $(wildcard libc/uchar/*.c) \
+$(wildcard libc/unistd/*.c) \
 $(wildcard libc/wchar/*.c) \
 $(wildcard libc/wctype/*.c) \
-$(wildcard libc/math/*.c) \
-$(wildcard libc/mman/*.c) \
 $(wildcard libc/zeke/*.c)
 
 libc-ASRC-$(configARCH_ARM) = \
