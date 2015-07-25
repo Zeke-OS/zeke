@@ -26,7 +26,7 @@ static char * argv0;
 static int copy(char * from, char * to);
 static int rcopy(char * from, char * to);
 static int setimes(char * path, struct stat * statp);
-static void Perror(char * s);
+static void cp_perror(const char * s);
 
 int main(int argc, char ** argv)
 {
@@ -73,66 +73,77 @@ int main(int argc, char ** argv)
     for (i = 0; i < argc - 1; i++) {
         rc |= copy(argv[i], argv[argc - 1]);
     }
-    exit(rc);
+
+    return (rc) ? 1 : 0;
 usage:
-    fprintf(stderr,
-        "Usage: cp [-ip] f1 f2; or: cp [-irp] f1 ... fn d2\n");
-    exit(1);
+    fprintf(stderr, "Usage: %s [-ip] f1 f2; or: cp [-irp] f1 ... fn d2\n",
+            argv0);
+
+    return 0;
 }
 
 #define MAXBSIZE 1000
 static int copy(char * from, char * to)
 {
     int fold, fnew, n, exists;
-    char destname[MAXPATHLEN + 1], buf[MAXBSIZE];
+    char * destname = NULL;
+    char * buf = NULL;
     struct stat stfrom, stto;
+    int retval = 0;
 
     fold = open(from, O_RDONLY);
     if (fold < 0) {
-        Perror(from);
-        return 1;
+        cp_perror(from);
+        retval = 1;
+        goto out;
     }
     if (fstat(fold, &stfrom) < 0) {
-        Perror(from);
+        cp_perror(from);
         (void)close(fold);
-        return 1;
+        retval = 1;
+        goto out;
     }
     if (stat(to, &stto) >= 0 &&
         (stto.st_mode&S_IFMT) == S_IFDIR) {
         char * last;
 
-        last  = strrchr(from, '/');
+        last = strrchr(from, '/');
         if (last)
             last++;
         else
             last = from;
-        if (strlen(to) + strlen(last) >= sizeof destname - 1) {
-            fprintf(stderr, "%s: %s/%s: Name too long", argv0, to, last);
+        destname = malloc(strlen(to) + strlen(last));
+        if (!destname) {
+            fprintf(stderr, "%s: %s/%s: Name too long\n", argv0, to, last);
             (void)close(fold);
-            return 1;
+            retval = 1;
+            goto out;
         }
         (void)sprintf(destname, "%s/%s", to, last);
         to = destname;
     }
     if (rflag && (stfrom.st_mode & S_IFMT) == S_IFDIR) {
-        int fixmode = 0;    /* cleanup mode after rcopy */
+        int fixmode = 0; /* cleanup mode after rcopy */
 
         (void)close(fold);
         if (stat(to, &stto) < 0) {
             if (mkdir(to, (stfrom.st_mode & 07777) | 0700) < 0) {
-                Perror(to);
-                return 1;
+                cp_perror(to);
+                retval = 1;
+                goto out;
             }
             fixmode = 1;
         } else if ((stto.st_mode & S_IFMT) != S_IFDIR) {
             fprintf(stderr, "%s: %s: Not a directory.\n", argv0, to);
-            return 1;
+            retval = 1;
+            goto out;
         } else if (pflag)
             fixmode = 1;
         n = rcopy(from, to);
         if (fixmode)
             (void)chmod(to, stfrom.st_mode & 07777);
-        return n;
+        retval = n;
+        goto out;
     }
 
     if ((stfrom.st_mode & S_IFMT) == S_IFDIR) {
@@ -147,7 +158,8 @@ static int copy(char * from, char * to)
             fprintf(stderr, "%s: %s and %s are identical (not copied).\n",
                     argv0, from, to);
             (void)close(fold);
-            return 1;
+            retval = 1;
+            goto out;
         }
         if (iflag && isatty(fileno(stdin))) {
             int i, c;
@@ -159,40 +171,49 @@ static int copy(char * from, char * to)
             }
             if (i != 'y') {
                 (void)close(fold);
-                return 1;
+                retval = 1;
+                goto out;
             }
         }
     }
     fnew = creat(to, stfrom.st_mode & 07777);
     if (fnew < 0) {
-        Perror(to);
-        (void)close(fold); return(1);
+        cp_perror(to);
+        (void)close(fold);
+        retval = 1;
+        goto out;
     }
     if (exists && pflag)
         (void)fchmod(fnew, stfrom.st_mode & 07777);
 
+    buf = malloc(MAXBSIZE);
     for (;;) {
-        n = read(fold, buf, sizeof buf);
+        n = read(fold, buf, sizeof(buf));
         if (n == 0)
             break;
         if (n < 0) {
-            Perror(from);
+            cp_perror(from);
             (void)close(fold);
             (void)close(fnew);
-            return 1;
+            retval = 1;
+            goto out;
         }
         if (write(fnew, buf, n) != n) {
-            Perror(to);
+            cp_perror(to);
             (void)close(fold);
             (void)close(fnew);
-            return 1;
+            retval = 1;
+            goto out;
         }
     }
     (void)close(fold);
     (void)close(fnew);
     if (pflag)
-        return setimes(to, &stfrom);
-    return 0;
+        retval = setimes(to, &stfrom);
+out:
+    free(destname);
+    free(buf);
+    return retval;
 }
 
 static int rcopy(char * from, char * to)
@@ -203,7 +224,7 @@ static int rcopy(char * from, char * to)
     char fromname[MAXPATHLEN + 1];
 
     if (fold == 0 || (pflag && fstat(fold->dd_fd, &statb) < 0)) {
-        Perror(from);
+        cp_perror(from);
         return 1;
     }
     for (;;) {
@@ -220,7 +241,7 @@ static int rcopy(char * from, char * to)
             continue;
         if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, ".."))
             continue;
-        if (strlen(from) + 1 + strlen(dp->d_name) >= sizeof fromname - 1) {
+        if (strlen(from) + 1 + strlen(dp->d_name) >= sizeof(fromname) - 1) {
             fprintf(stderr, "%s: %s/%s: Name too long.\n",
                     argv0, from, dp->d_name);
             errs++;
@@ -238,13 +259,13 @@ static int setimes(char * path, struct stat * statp)
     times[0] = statp->st_atime;
     times[1] = statp->st_mtime;
     if (utimensat(AT_FDCWD, path, times, 0)) {
-        Perror(path);
+        cp_perror(path);
         return 1;
     }
     return 0;
 }
 
-static void Perror(char * s)
+static void cp_perror(const char * s)
 {
     fprintf(stderr, "%s: ", argv0);
     perror(s);
