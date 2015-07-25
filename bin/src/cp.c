@@ -41,11 +41,13 @@ int main(int argc, char ** argv)
         while (**argv) {
             switch (*(*argv)++) {
             case 'i':
-                iflag++; break;
+                iflag++;
+                break;
 
             case 'R':
             case 'r':
-                rflag++; break;
+                rflag++;
+                break;
 
             case 'p':   /* preserve mtimes, atimes, and modes */
                 pflag++;
@@ -56,7 +58,8 @@ int main(int argc, char ** argv)
                 goto usage;
             }
         }
-        argc--; argv++;
+        argc--;
+        argv++;
     }
     if (argc < 2)
         goto usage;
@@ -95,7 +98,7 @@ static int copy(char * from, char * to)
         return 1;
     }
     if (stat(to, &stto) >= 0 &&
-       (stto.st_mode&S_IFMT) == S_IFDIR) {
+        (stto.st_mode&S_IFMT) == S_IFDIR) {
         char * last;
 
         last  = strrchr(from, '/');
@@ -121,7 +124,7 @@ static int copy(char * from, char * to)
                 return 1;
             }
             fixmode = 1;
-        } else if ((stto.st_mode&S_IFMT) != S_IFDIR) {
+        } else if ((stto.st_mode & S_IFMT) != S_IFDIR) {
             fprintf(stderr, "%s: %s: Not a directory.\n", argv0, to);
             return 1;
         } else if (pflag)
@@ -132,7 +135,7 @@ static int copy(char * from, char * to)
         return n;
     }
 
-    if ((stfrom.st_mode&S_IFMT) == S_IFDIR) {
+    if ((stfrom.st_mode & S_IFMT) == S_IFDIR) {
         fprintf(stderr, "%s: %s: Is a directory (copying as plain file).\n",
                 argv0, from);
     }
@@ -217,7 +220,7 @@ static int rcopy(char * from, char * to)
             continue;
         if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, ".."))
             continue;
-        if (strlen(from)+1+strlen(dp->d_name) >= sizeof fromname - 1) {
+        if (strlen(from) + 1 + strlen(dp->d_name) >= sizeof fromname - 1) {
             fprintf(stderr, "%s: %s/%s: Name too long.\n",
                     argv0, from, dp->d_name);
             errs++;
