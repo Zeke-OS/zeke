@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    paths.h
+ * @file    grp.h
  * @author  Olli Vanhoja
- * @brief
+ * @brief   Group database.
  * @section LICENSE
  * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -35,25 +35,33 @@
  * @{
  */
 
-#ifndef _PATHS_H_
-#define _PATHS_H_
+#ifndef GRP_H
+#define GRP_H
 
-/* Default search path. */
-#define _PATH_DEFPATH   "/usr/bin:/bin:"
+#include <sys/types/_gid_t.h>
+#include <sys/types/_size_t.h>
 
-#define _PATH_PASSWD    "/etc/passwd"
-#define _PATH_SHADOW    "/etc/shadow"
-#define _PATH_GROUP     "/etc/group"
+struct group {
+    char   *gr_name;    /*!< The name of the group. */
+    gid_t   gr_gid;     /*!< Numerical group ID. */
+    char  **gr_mem;     /*!< Pointer to a null-terminated array of character
+                         *   pointers to member names. */
+};
 
-/**
- * All standard utilities path.
- */
-#define _PATH_STDPATH   "/usr/bin:/bin:/usr/sbin:/sbin:"
+#ifndef KERNEL_INTERNAL
+__BEGIN_DECLS
 
-/* Utils */
-#define _PATH_BSHELL    "/bin/sh"
+struct group * getgrent(void);
+struct group * getgrgid(gid_t gid);
+struct group * getgrnam(const char * name);
+int getgrouplist(char * uname, gid_t agroup, gid_t * groups, int * grpcnt);
+void endgrent(void);
+void setgrent(void);
 
-#endif /* _PATHS_H_ */
+__END_DECLS
+#endif /* !KERNEL_INTERNAL */
+
+#endif /* GRP_H */
 
 /**
  * @}

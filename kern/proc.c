@@ -131,6 +131,7 @@ static void init_kernel_proc(void)
 {
     const char panic_msg[] = "Can't init kernel process";
     struct proc_info * kernel_proc;
+    struct session * ses;
     int err;
 
     (*_procarr)[0] = kzalloc(sizeof(struct proc_info));
@@ -139,6 +140,16 @@ static void init_kernel_proc(void)
     kernel_proc->pid = 0;
     kernel_proc->state = PROC_STATE_READY;
     strcpy(kernel_proc->name, "kernel");
+
+    /*
+     * Initialize a session.
+     */
+    ses = proc_session_create(kernel_proc, "root");
+    kernel_proc->pgrp = proc_pgrp_create(ses, kernel_proc);
+    if (!kernel_proc->pgrp) {
+        panic(panic_msg);
+    }
+
     priv_cred_init(&kernel_proc->cred);
 
     RB_INIT(&(kernel_proc->mm.ptlist_head));
@@ -369,6 +380,7 @@ void _proc_free(struct proc_info * p)
     if (p->mm.mpt.pt_addr)
         ptmapper_free(&(p->mm.mpt));
 
+    proc_pgrp_remove(p);
     kfree(p);
 }
 
@@ -864,6 +876,16 @@ static int sys_proc_getgroups(__user void * user_args)
     return 0;
 }
 
+static int sys_proc_getlogin(__user void * user_args)
+{
+    if (copyout(curproc->pgrp->pg_session->s_login, user_args, MAXLOGNAME)) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    return 0;
+}
+
 static int sys_proc_getpid(__user void * user_args)
 {
     if (copyout(&curproc->pid, user_args, sizeof(pid_t))) {
@@ -1054,6 +1076,7 @@ static const syscall_handler_t proc_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_EXIT, sys_proc_exit),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_CRED, sys_proc_getsetcred),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETGROUPS, sys_proc_getgroups),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETLOGIN, sys_proc_getlogin),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETPID, sys_proc_getpid),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETPPID, sys_proc_getppid),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_CHDIR, sys_proc_chdir),

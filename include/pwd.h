@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    paths.h
+ * @file    pwd.h
  * @author  Olli Vanhoja
- * @brief
+ * @brief   Password structure.
  * @section LICENSE
  * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -35,25 +35,37 @@
  * @{
  */
 
-#ifndef _PATHS_H_
-#define _PATHS_H_
+#ifndef PWD_H
+#define PWD_H
 
-/* Default search path. */
-#define _PATH_DEFPATH   "/usr/bin:/bin:"
+#include <sys/types/_gid_t.h>
+#include <sys/types/_size_t.h>
+#include <sys/types/_uid_t.h>
 
-#define _PATH_PASSWD    "/etc/passwd"
-#define _PATH_SHADOW    "/etc/shadow"
-#define _PATH_GROUP     "/etc/group"
+struct passwd {
+    char    *pw_name;   /*!< User's login name. */
+    char    *pw_passwd; /*!< Encrypted password. */
+    uid_t    pw_uid;    /*!< Numerical user ID. */
+    gid_t    pw_gid;    /*!< Numerical group ID. */
+    char    *pw_gecos;  /*!< Real name. */
+    char    *pw_dir;    /*!< Initial working directory. */
+    char    *pw_shell;  /*!< Program to use as shell. */
+};
 
-/**
- * All standard utilities path.
- */
-#define _PATH_STDPATH   "/usr/bin:/bin:/usr/sbin:/sbin:"
+#ifndef KERNEL_INTERNAL
+__BEGIN_DECLS
 
-/* Utils */
-#define _PATH_BSHELL    "/bin/sh"
+struct passwd * getpwent(void);
+struct passwd * getpwnam(char * nam);
+struct passwd * getpwuid(uid_t uid);
+int setpwent(void);
+int setpassent(int stayopen);
+void endpwent(void);
 
-#endif /* _PATHS_H_ */
+__END_DECLS
+#endif /* !KERNEL_INTERNAL */
+
+#endif /* PWD_H */
 
 /**
  * @}

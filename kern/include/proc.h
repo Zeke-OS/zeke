@@ -84,6 +84,29 @@ enum proc_state {
 struct thread_info;
 
 /**
+ * Session.
+ */
+struct session {
+    struct  proc_info * s_leader; /*!< Session leader. */
+    vnode_t * s_ttyvp;          /*!< Vnode of controlling terminal. */
+    char s_login[MAXLOGNAME];   /*!< Setlogin() name. */
+    atomic_t s_refcount;        /*!< Ref count; pgrps in session. */
+    TAILQ_HEAD(pgrp_list, pgrp) s_pgrp_list_head;
+};
+
+/**
+ * Process group descriptor.
+ */
+struct pgrp {
+    struct session * pg_session; /*!< Pointer to the session. */
+    pid_t pg_id;                /*!< Pgrp id. */
+    int pg_jobc;                /*!< # procs qualifying pgrp for job control */
+    TAILQ_HEAD(proc_list, proc_info) pg_proc_list_head;
+    atomic_t pg_refcount;       /*!< Ref count; procs in group. */
+    TAILQ_ENTRY(pgrp) pg_pgrp_entry_;
+};
+
+/**
  * Process Control Block.
  */
 struct proc_info {
@@ -92,6 +115,7 @@ struct proc_info {
     enum proc_state state;      /*!< Process state. */
     int priority;               /*!< We may want to prioritize processes too. */
     int exit_code, exit_signal;
+    struct  pgrp * pgrp;        /*!< Process group. */
     struct cred cred;           /*!< Process credentials. */
 
     /* Accounting */
@@ -133,6 +157,8 @@ struct proc_info {
         SLIST_ENTRY(proc_info) child_list_entry;
         mtx_t lock; /*!< Lock for children (child_list_entry) of this proc. */
     } inh;
+
+    TAILQ_ENTRY(proc_info) pgrp_proc_entry_;
 
     struct thread_info * main_thread; /*!< Main thread of this process. */
 };
@@ -242,6 +268,22 @@ void procarr_insert(struct proc_info * new_proc);
  * @return Returns a random PID.
  */
 pid_t proc_get_random_pid(void);
+
+/*
+ * Session management
+ */
+
+/**
+ * Create a new session.
+ */
+struct session * proc_session_create(struct proc_info * leader,
+                                     char s_login[MAXLOGNAME]);
+/**
+ * Create a new process group.
+ */
+struct pgrp * proc_pgrp_create(struct session * s, struct proc_info * proc);
+void proc_pgrp_insert(struct pgrp * pgrp, struct proc_info * proc);
+void proc_pgrp_remove(struct proc_info * proc);
 
 #endif /* PROC_INTERNAL */
 

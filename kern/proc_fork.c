@@ -320,6 +320,8 @@ pid_t proc_fork(pid_t pid)
         return -ENOMEM;
     }
 
+    proc_pgrp_insert(old_proc->pgrp, new_proc);
+
     retval = procarr_realloc();
     if (retval)
         goto out;

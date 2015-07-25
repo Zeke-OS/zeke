@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    paths.h
+ * @file    getlogin.c
  * @author  Olli Vanhoja
- * @brief
+ * @brief   Standard functions.
  * @section LICENSE
  * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -28,33 +28,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************
- */
+*/
 
-/**
- * @addtogroup LIBC
- * @{
- */
+#include <sys/param.h>
+#include <unistd.h>
 
-#ifndef _PATHS_H_
-#define _PATHS_H_
+char * getlogin(void)
+{
+    static char name[MAXLOGNAME];
 
-/* Default search path. */
-#define _PATH_DEFPATH   "/usr/bin:/bin:"
-
-#define _PATH_PASSWD    "/etc/passwd"
-#define _PATH_SHADOW    "/etc/shadow"
-#define _PATH_GROUP     "/etc/group"
-
-/**
- * All standard utilities path.
- */
-#define _PATH_STDPATH   "/usr/bin:/bin:/usr/sbin:/sbin:"
-
-/* Utils */
-#define _PATH_BSHELL    "/bin/sh"
-
-#endif /* _PATHS_H_ */
-
-/**
- * @}
- */
+    if (getlogin_r(name, sizeof(name)))
+        return NULL;
+    return name;
+}

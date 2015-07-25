@@ -1,0 +1,12 @@
+#include <sys/types.h>
+#include <grp.h>
+
+struct group * getgrgid(gid_t gid)
+{
+    struct group * p;
+
+    setgrent();
+    while ((p = getgrent()) && p->gr_gid != gid);
+    endgrent();
+    return p;
+}
