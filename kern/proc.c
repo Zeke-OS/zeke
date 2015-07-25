@@ -139,6 +139,7 @@ static void init_kernel_proc(void)
     kernel_proc->pid = 0;
     kernel_proc->state = PROC_STATE_READY;
     strcpy(kernel_proc->name, "kernel");
+    priv_cred_init(&kernel_proc->cred);
 
     RB_INIT(&(kernel_proc->mm.ptlist_head));
 
@@ -844,6 +845,25 @@ static int sys_proc_getsetcred(__user void * user_args)
     return retval;
 }
 
+static int sys_proc_getgroups(__user void * user_args)
+{
+    struct _proc_getgroups_args args;
+    const size_t max = NGROUPS_MAX * sizeof(gid_t);
+
+    if (copyin(user_args, &args, sizeof(args))) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    if (copyout(&curproc->cred.sup_gid, (__user gid_t *)args.grouplist,
+                (args.size < max) ? args.size : max)) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    return 0;
+}
+
 static int sys_proc_getpid(__user void * user_args)
 {
     if (copyout(&curproc->pid, user_args, sizeof(pid_t))) {
@@ -1033,6 +1053,7 @@ static const syscall_handler_t proc_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_WAIT, sys_proc_wait),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_EXIT, sys_proc_exit),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_CRED, sys_proc_getsetcred),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETGROUPS, sys_proc_getgroups),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETPID, sys_proc_getpid),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETPPID, sys_proc_getppid),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_CHDIR, sys_proc_chdir),

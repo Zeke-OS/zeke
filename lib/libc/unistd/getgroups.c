@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    param.h
+ * @file    getgroups.c
  * @author  Olli Vanhoja
- * @brief   Definitions.
+ * @brief   Standard functions.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,40 +28,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************
- */
+*/
 
-#ifndef _SYS_PARAM_H_
-#define _SYS_PARAM_H_
+#define __SYSCALL_DEFS__
+#include <syscall.h>
+#include <unistd.h>
 
-#include <limits.h>
+int getgroups(int gidsetsize, gid_t grouplist[])
+{
+    struct _proc_getgroups_args args = {
+        .grouplist = grouplist,
+        .size = gidsetsize * sizeof(gid_t),
+    };
 
-#define MAXCOMLEN       19      /*!< Max command name remembered. */
-#define MAXHOSTNAMELEN  HOST_NAME_MAX /*!< Max hostname size. */
-#define MAXLOGNAME      33      /*!< max login name length (incl. NUL). */
-#define MAXPATHLEN      PATH_MAX
-#define SPECNAMELEN     20      /*!< Max length of devicename. */
-
-#define NOGROUP         65535   /*!< Empty group set member. */
-
-#define DEV_MAJORDEVS   256     /*!< Number of major devs 2^nr_marjor_bits */
-#define DEV_MINORBITS   24      /*!< Number of minor bits */
-#define DEV_MINORMASK   ((1u << DEV_MINORBITS) - 1) /*!< Minor bits mask */
-
-/**
- * Get major number from osDev_t.
- */
-#define DEV_MAJOR(dev)  ((unsigned int)((dev) >> DEV_MINORBITS))
-
-/**
- * Get minor number from osDev_t.
- */
-#define DEV_MINOR(dev)  ((unsigned int)((dev) & DEV_MINORMASK))
-
-/**
- * Convert major, minor pair into osDev_t.
- */
-#define DEV_MMTODEV(ma, mi) (((ma) << DEV_MINORBITS) | (mi))
-
-#define CMASK 022 /*!< File creation mask: S_IWGRP|S_IWOTH */
-
-#endif /* _SYS_PARAM_H_ */
+    return (int)syscall(SYSCALL_PROC_GETGROUPS, &args);
+}

@@ -217,12 +217,18 @@ struct _fs_unlink_args {
     int flag;
 };
 
-/** Arguments for SYSCALL_FS_CHDIR */
+/** Arguments for SYSCALL_PROC_CHDIR */
 struct _proc_chdir_args {
     int fd; /* if AT_FDARG */
     const char * name;
     size_t name_len; /*!< in bytes */
     int atflags;
+};
+
+/** Arguments for SYSCALL_PROC_GETGROUPS */
+struct _proc_getgroups_args {
+    gid_t * grouplist;
+    size_t size; /*!< Size of grouplist in bytes. */
 };
 
 /** Arguments for SYSCALL_IPC_PIPE */
@@ -322,6 +328,8 @@ int setegid(gid_t gid);
 int          setreuid(uid_t, uid_t);
 int          setregid(gid_t, gid_t);
 #endif
+
+int getgroups(int gidsetsize, gid_t grouplist[]);
 
 /**
  * Get the Process ID.

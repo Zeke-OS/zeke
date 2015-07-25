@@ -50,6 +50,7 @@
 #define MAX_INPUT       255
 #define NAME_MAX        255         /*!< Maximum file name length. */
 #define PATH_MAX        4096        /*!< Maximum path length. */
+#define NGROUPS_MAX     16
 
 /* TODO PIPE_BUF */
 

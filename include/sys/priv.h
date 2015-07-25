@@ -278,16 +278,33 @@ struct _priv_pcap_args {
 
 #ifdef KERNEL_INTERNAL
 
+#include <sys/param.h>
 #include <bitmap.h>
 
 struct cred {
     uid_t uid, euid, suid;
     gid_t gid, egid, sgid;
+    gid_t sup_gid[NGROUPS_MAX];
 #ifdef configPROCCAP
     bitmap_t pcap_restrmap[_PRIV_MLEN]; /*!< Privilege restrict bitmap. */
     bitmap_t pcap_grantmap[_PRIV_MLEN]; /*!< Privilege grant bitmap. */
 #endif
 };
+
+/**
+ * Initialize a cred struct.
+ * Clears supplementary groups and doesn't touch anything else.
+ * @param cred is a pointer to an uninitialized cred struct.
+ */
+static inline void priv_cred_init(struct cred * cred)
+{
+    size_t i = 0;
+    gid_t * gid = cred->sup_gid;
+
+    for (i = 0; i < NGROUPS_MAX; i++) {
+        gid[i] = NOGROUP;
+    }
+}
 
 /**
  * Test active securelevel.

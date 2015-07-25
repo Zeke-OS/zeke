@@ -108,10 +108,13 @@ long sysconf(int name)
         /* TODO */
         break;
     case _SC_NGROUPS_MAX:
+#if 0
         sysctl_mib[0] = CTL_KERN;
         sysctl_mib[1] = KERN_NGROUPS;
         if (sysctl(sysctl_mib, 2, &value, &len, NULL, 0) == -1)
             value = -1;
+#endif
+        value = NGROUPS_MAX;
         break;
     case _SC_GETGR_R_SIZE_MAX:
         /* TODO */

@@ -59,6 +59,7 @@ $(wildcard libc/basecodecs/*.c) \
 $(wildcard libc/ctype/*.c) \
 $(wildcard libc/dirent/*.c) \
 $(wildcard libc/fcntl/*.c) \
+$(wildcard libc/grp/*.c) \
 $(wildcard libc/inttypes/*.c) \
 $(wildcard libc/libgen/*.c) \
 $(wildcard libc/locale/*.c) \
@@ -67,6 +68,7 @@ $(wildcard libc/math/*.c) \
 $(wildcard libc/mman/*.c) \
 $(wildcard libc/priv/*.c) \
 $(wildcard libc/pthreads/*.c) \
+$(wildcard libc/pwd/*.c) \
 $(wildcard libc/resource/*.c) \
 $(wildcard libc/setjmp/*.c) \
 $(wildcard libc/signal/*.c) \
