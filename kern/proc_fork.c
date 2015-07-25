@@ -309,7 +309,6 @@ pid_t proc_fork(pid_t pid)
     struct proc_info * const old_proc = proc_get_struct_l(pid);
     struct proc_info * new_proc;
     pid_t retval = 0;
-    int err;
 
     /* Check that the old PID was valid. */
     if (!old_proc || (old_proc->state == PROC_STATE_INITIAL)) {
@@ -321,9 +320,9 @@ pid_t proc_fork(pid_t pid)
         return -ENOMEM;
     }
 
-    err = procarr_realloc();
-    if (err)
-        return err;
+    retval = procarr_realloc();
+    if (retval)
+        goto out;
 
     /* Clear some things required to be zeroed at this point */
     new_proc->state = PROC_STATE_INITIAL;
