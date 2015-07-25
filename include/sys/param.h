@@ -36,8 +36,9 @@
 #include <limits.h>
 
 #define MAXCOMLEN       19      /*!< Max command name remembered. */
-#define MAXLOGNAME      33      /*!< max login name length (incl. NUL). */
 #define MAXHOSTNAMELEN  HOST_NAME_MAX /*!< Max hostname size. */
+#define MAXLOGNAME      33      /*!< max login name length (incl. NUL). */
+#define MAXPATHLEN      PATH_MAX
 #define SPECNAMELEN     20      /*!< Max length of devicename. */
 
 

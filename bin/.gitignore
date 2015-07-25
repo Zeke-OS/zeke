@@ -1,10 +1,12 @@
 /cat
+/cp
 /echo
 /env
 /ls
-/mount
 /minised
-/stty
+/mount
 /sh
+/stty
 /umount
 /uptime
+/wc

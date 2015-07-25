@@ -45,11 +45,11 @@
 
 /* Pathname Variable Values */
 #define FILESIZEBITS    32
-#define LINK_MAX        _POSIX_LINK_MAX
-#define LINE_MAX        _POSIX2_LINE_MAX
+#define LINK_MAX        16
+#define LINE_MAX        4096
 #define MAX_INPUT       255
-#define NAME_MAX        255                 /*!< Maximum file name length. */
-#define PATH_MAX        _XOPEN_PATH_MAX     /*!< Maximum path length. */
+#define NAME_MAX        255         /*!< Maximum file name length. */
+#define PATH_MAX        4096        /*!< Maximum path length. */
 
 /* TODO PIPE_BUF */
 
@@ -57,9 +57,9 @@
 /* Runtime Increasable Values */
 /* Maximum Values */
 /* Minimum Values */
-#define _POSIX_LINK_MAX     16
-#define _POSIX2_LINE_MAX    4096
-#define _XOPEN_PATH_MAX     4096
+#define _POSIX_LINK_MAX     LINK_MAX
+#define _POSIX2_LINE_MAX    LINE_MAX
+#define _XOPEN_PATH_MAX     PATH_MAX
 
 /* Other Invariant Values */
 #define NZERO           0       /*!< Default process priority. */
