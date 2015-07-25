@@ -420,18 +420,13 @@ int ramfs_delete_vnode(vnode_t * vnode)
     return 0;
 }
 
-/**
- * Function to handle both read() and pread().
- * @param[in,out] offset is the offset param that is first read and the written.
- */
-static ssize_t ramfs_int_read(file_t * file, struct uio * uio, size_t count,
-                              off_t * offset)
+ssize_t ramfs_read(file_t * file, struct uio * uio, size_t count)
 {
     size_t bytes_rd = 0;
 
     switch (file->vnode->vn_mode & S_IFMT) {
     case S_IFREG: /* file is a regular file. */
-        bytes_rd = ramfs_rd_regular(file->vnode, offset, uio, count);
+        bytes_rd = ramfs_rd_regular(file->vnode, &file->seek_pos, uio, count);
         break;
     case S_IFDIR:
         return -EISDIR;
@@ -439,32 +434,17 @@ static ssize_t ramfs_int_read(file_t * file, struct uio * uio, size_t count,
         return -EOPNOTSUPP;
     }
 
-    *offset += bytes_rd;
+    file->seek_pos += bytes_rd;
     return bytes_rd;
 }
 
-ssize_t ramfs_read(file_t * file, struct uio * uio, size_t count)
-{
-    return ramfs_int_read(file, uio, count, &file->seek_pos);
-}
-
-ssize_t ramfs_pread(file_t * file, struct uio * uio, size_t count, off_t offset)
-{
-    return ramfs_int_read(file, uio, count, &offset);
-}
-
-/**
- * Function to handle both write() and pwrite().
- * @param[in,out] offset is the offset param that is first read and the written.
- */
-static ssize_t ramfs_int_write(file_t * file, struct uio * uio, size_t count,
-                               off_t * offset)
+ssize_t ramfs_write(file_t * file, struct uio * uio, size_t count)
 {
     size_t bytes_wr = 0;
 
     switch (file->vnode->vn_mode & S_IFMT) {
     case S_IFREG: /* File is a regular file. */
-        bytes_wr = ramfs_wr_regular(file->vnode, offset, uio, count);
+        bytes_wr = ramfs_wr_regular(file->vnode, &file->seek_pos, uio, count);
         break;
     default: /* File type not supported. */
         return -EOPNOTSUPP;
@@ -472,19 +452,8 @@ static ssize_t ramfs_int_write(file_t * file, struct uio * uio, size_t count,
 
     ramfs_vnode_modified(file->vnode);
 
-    *offset += bytes_wr;
+    file->seek_pos += bytes_wr;
     return bytes_wr;
-}
-
-ssize_t ramfs_write(file_t * file, struct uio * uio, size_t count)
-{
-    return ramfs_int_write(file, uio, count, &file->seek_pos);
-}
-
-ssize_t ramfs_pwrite(file_t * file, struct uio * uio, size_t count,
-                     off_t offset)
-{
-    return ramfs_int_write(file, uio, count, &offset);
 }
 
 int ramfs_event_vnode_opened(struct proc_info * p, vnode_t * vnode)

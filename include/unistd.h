@@ -170,11 +170,9 @@
  * Arguments struct for SYSCALL_FS_READ and SYSCALL_FS_WRITE
  */
 struct _fs_readwrite_args {
-    char poper; /*!< Set if pread() or pwrite(). */
     int fildes;
     void * buf;
     size_t nbytes;
-    off_t offset; /*!< Used if poper != 0 */
 };
 
 /** Arguments struct for SYSCALL_FS_LSEEK */
@@ -380,7 +378,7 @@ ssize_t pread(int fildes, void * buf, size_t nbytes, off_t offset);
  */
 ssize_t read(int fildes, void * buf, size_t nbytes);
 
-ssize_t pwrite(int fildes, const void *buf, size_t nbyte, off_t offset);
+ssize_t pwrite(int fildes, const void *buf, size_t nbytes, off_t offset);
 
 /**
  * Write to a file descriptor.

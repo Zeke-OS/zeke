@@ -32,20 +32,23 @@
  *******************************************************************************
 */
 
-#define __SYSCALL_DEFS__
+#include <fcntl.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <syscall.h>
 
 ssize_t pread(int fildes, void * buf, size_t nbytes, off_t offset)
 {
-    struct _fs_readwrite_args args = {
-        .poper = 1,
-        .fildes = fildes,
-        .buf = buf,
-        .nbytes = nbytes,
-        .offset = offset,
-    };
+    off_t old;
+    ssize_t retval;
 
-    return (ssize_t)syscall(SYSCALL_FS_READ, &args);
+    if ((old = lseek(fildes, offset, SEEK_SET)) == -1)
+        return -1;
+
+    if ((retval = read(fildes, buf, nbytes)) == -1)
+        return -1;
+
+    if (lseek(fildes, old, SEEK_SET) == -1)
+        return -1;
+
+    return retval;
 }
