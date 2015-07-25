@@ -81,7 +81,7 @@ usage:
 static int copy(char * from, char * to)
 {
     int fold, fnew, n, exists;
-    char *last, destname[MAXPATHLEN + 1], buf[MAXBSIZE];
+    char destname[MAXPATHLEN + 1], buf[MAXBSIZE];
     struct stat stfrom, stto;
 
     fold = open(from, O_RDONLY);
@@ -96,7 +96,9 @@ static int copy(char * from, char * to)
     }
     if (stat(to, &stto) >= 0 &&
        (stto.st_mode&S_IFMT) == S_IFDIR) {
-        last = strrchr(from, '/');
+        char * last;
+
+        last  = strrchr(from, '/');
         if (last)
             last++;
         else
@@ -193,7 +195,6 @@ static int copy(char * from, char * to)
 static int rcopy(char * from, char * to)
 {
     DIR *fold = opendir(from);
-    struct dirent *dp;
     struct stat statb;
     int errs = 0;
     char fromname[MAXPATHLEN + 1];
@@ -203,6 +204,8 @@ static int rcopy(char * from, char * to)
         return 1;
     }
     for (;;) {
+        struct dirent * dp;
+
         dp = readdir(fold);
         if (dp == 0) {
             closedir(fold);
