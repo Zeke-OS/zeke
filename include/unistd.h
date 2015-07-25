@@ -330,6 +330,8 @@ int          setregid(gid_t, gid_t);
 #endif
 
 int getgroups(int gidsetsize, gid_t grouplist[]);
+char * getlogin(void);
+int getlogin_r(char * name, size_t namesize);
 
 /**
  * Get the Process ID.

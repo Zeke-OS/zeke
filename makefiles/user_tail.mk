@@ -32,7 +32,7 @@ $(BIN): $(OBJS)
 -include $(DEPS)
 
 manifest: $(BIN)
-	echo "$(BIN)" > manifest
+	echo "$(strip $(BIN) $(FILES))" > manifest
 
 clean:
 	$(RM) $(ASOBJS) $(OBJS) $(DEPS) $(BIN)

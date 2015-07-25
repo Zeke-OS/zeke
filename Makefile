@@ -40,7 +40,9 @@ include $(ROOT_DIR)/genconfig/buildconf.mk
 
 # target_comp: all - Make config and compile kernel.
 all: tools kernel.img world
-.PHONY: tools lib kernel.img sbin bin world clean-all clean clean-doc clean-tools clean-man
+.PHONY: $(DIRS_TARGETS) kernel.img world \
+	bin sbin etc lib tools \
+	clean-all clean clean-doc clean-tools clean-man
 
 # target_doc: doc - Compile all documentation.
 doc: doc-book doc-man
@@ -76,10 +78,13 @@ kernel.img: | tools $(AUTOCONF_H) lib
 	$(MAKE) -C kern all
 
 # target_comp: world - Compile user space stuff.
-world: lib bin sbin usr
+world: lib bin etc sbin usr
 
 bin: lib
 	$(MAKE) -C bin all
+
+etc:
+	$(MAKE) -C etc all
 
 lib: $(AUTOCONF_H)
 	$(MAKE) -C lib all
@@ -113,6 +118,7 @@ clean-all: clean clean-tools clean-doc
 clean:
 	$(RM) $(AUTOCONF_H)
 	$(MAKE) -C bin clean
+	$(MAKE) -C etc clean
 	$(MAKE) -C kern clean
 	$(MAKE) -C lib clean
 	$(MAKE) -C opt/test clean
