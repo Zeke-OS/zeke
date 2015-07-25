@@ -218,7 +218,6 @@ static int tish_ikut(char * argv[])
     int mib_cur[5];
     int mib_next[5];
     size_t len_cur, len_next;
-    int  err;
     const int one = 1;
 
     const size_t len_test = sysctlnametomib("debug.test", mib_test,
@@ -231,7 +230,7 @@ static int tish_ikut(char * argv[])
     len_cur = len_test;
 
     while ((len_next = sizeof(mib_next)),
-            (err = sysctlgetnext(mib_cur, len_cur, mib_next, &len_next)) == 0) {
+           sysctlgetnext(mib_cur, len_cur, mib_next, &len_next) == 0) {
         if (!sysctltstmib(mib_next, mib_test, len_test)) {
             printf("End of tests\n");
             break; /* EOF debug.test */
