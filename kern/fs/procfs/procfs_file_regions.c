@@ -51,8 +51,10 @@ static ssize_t procfs_read_regions(struct procfs_info * spec, char ** retbuf)
         return -ENOMEM;
 
     mm = proc_get_locked_mm(spec->pid);
-    if (!mm)
+    if (!mm) {
+        kfree(buf);
         return -ENOLINK;
+    }
 
     for (int i = 0; i < mm->nr_regions; i++) {
         struct buf * region = (*mm->regions)[i];

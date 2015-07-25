@@ -51,6 +51,7 @@ static ssize_t procfs_read_status(struct procfs_info * spec, char ** retbuf)
     proc = proc_get_struct(spec->pid);
     if (!proc) {
         PROC_UNLOCK();
+        kfree(tmpbuf);
         return -ENOLINK;
     }
 
