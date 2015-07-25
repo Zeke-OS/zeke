@@ -31,11 +31,10 @@
 */
 
 #define __SYSCALL_DEFS__
-#include <string.h>
-#include <syscall.h>
 #include <fcntl.h>
-#include <time.h>
+#include <string.h>
 #include <sys/stat.h>
+#include <syscall.h>
 
 int fstatat(int fd, const char * restrict path,
             struct stat * restrict buf, int flag)

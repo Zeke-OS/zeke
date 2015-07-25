@@ -33,11 +33,12 @@
  */
 
 #include <sys/param.h>
-#include <unistd.h>
-#include <syscall.h>
+#include <sys/resource.h>
 #include <sys/time.h>
 #include <sys/times.h>
-#include <sys/resource.h>
+#include <syscall.h>
+#include <time.h>
+#include <unistd.h>
 
 /*
  * Convert usec to clock ticks; could do (usec * CLK_TCK) / 1000000,

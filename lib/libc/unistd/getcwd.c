@@ -5,13 +5,12 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#include <sys/param.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <time.h>
-#include <sys/stat.h>
 #include <dirent.h>
+#include <errno.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/param.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 /*

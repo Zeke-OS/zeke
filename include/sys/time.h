@@ -33,29 +33,26 @@
 #ifndef SYS_TIME_H
 #define SYS_TIME_H
 
-#include <time.h>
 #include <sys/types/_suseconds_t.h>
+#include <sys/types/_time_t.h>
+#include <sys/types/_timeval.h>
 
-#ifndef TIMEVAL_DEFINED
-#define TIMEVAL_DEFINED
-/**
- * timeval.
- */
-struct timeval {
-    time_t tv_sec;          /*!< Seconds. */
-    suseconds_t tv_usec;    /*!< Microseconds. */
+struct itimerval {
+    struct timeval it_interval; /*!< Timer interval. */
+    struct timeval it_value;    /*!< Current value. */
 };
-#endif
 
 #ifndef KERNEL_INTERNAL
 
 /**
  * Set file access and modification times.
  */
-int utimes(const char * path, const struct timespec times[2]);
+int utimes(const char * path, const struct timeval times[2]);
 
 
 #else
+
+#include <time.h>
 
 /**
  * Update realtime counters.

@@ -32,9 +32,8 @@
 
 #define __SYSCALL_DEFS__
 #include <errno.h>
-#include <syscall.h>
-#include <time.h>
 #include <sys/stat.h>
+#include <syscall.h>
 
 int futimens(int fd, const struct timespec times[2])
 {

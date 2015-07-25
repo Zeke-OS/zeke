@@ -28,10 +28,9 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/types.h>
-#include <time.h>
-#include <sys/stat.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 void strmode(/* mode_t */ int mode, char * p)
 {

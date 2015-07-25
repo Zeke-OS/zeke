@@ -31,11 +31,10 @@
 */
 
 #define __SYSCALL_DEFS__
+#include <fcntl.h>
+#include <sys/stat.h>
 #include <syscall.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <time.h>
-#include <sys/stat.h>
 
 int fchmod(int fd, mode_t mode)
 {

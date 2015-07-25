@@ -32,13 +32,14 @@
 
 #define __SYSCALL_DEFS__
 #include <errno.h>
-#include <syscall.h>
-#include <unistd.h>
 #include <fcntl.h>
-#include <time.h>
 #include <sys/stat.h>
+#include <sys/time.h>
+#include <syscall.h>
+#include <time.h>
+#include <unistd.h>
 
-int utimes(const char * path, const struct timespec times[2])
+int utimes(const char * path, const struct timeval times[2])
 {
     int err;
     struct _fs_utimes_args args;
@@ -48,8 +49,10 @@ int utimes(const char * path, const struct timespec times[2])
         return -1;
     }
 
-    args.times[0] = times[0];
-    args.times[1] = times[1];
+    args.times[0].tv_sec = times[0].tv_sec;
+    args.times[0].tv_nsec = times[0].tv_usec;
+    args.times[1].tv_sec = times[1].tv_sec;
+    args.times[1].tv_nsec = times[1].tv_usec;
 
     args.fd = open(path, O_WRONLY);
     if (args.fd < 0)

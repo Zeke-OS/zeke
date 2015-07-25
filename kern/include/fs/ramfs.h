@@ -103,7 +103,11 @@ int ramfs_delete_vnode(struct vnode * vnode);
 
 /* vnode ops */
 ssize_t ramfs_read(struct file * file, struct uio * uio, size_t count);
+ssize_t ramfs_pread(file_t * file, struct uio * uio, size_t count,
+                    off_t offset);
 ssize_t ramfs_write(struct file * file, struct uio * uio, size_t count);
+ssize_t ramfs_pwrite(file_t * file, struct uio * uio, size_t count,
+                     off_t offset);
 int ramfs_event_vnode_opened(struct proc_info * p, vnode_t * vnode);
 int ramfs_create(struct vnode * dir, const char * name, mode_t mode,
                  struct vnode ** result);

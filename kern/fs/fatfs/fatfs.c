@@ -30,12 +30,11 @@
  *******************************************************************************
  */
 
-#include <time.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
 #include <dirent.h>
+#include <fcntl.h>
 #include <sys/hash.h>
+#include <sys/ioctl.h>
+#include <sys/stat.h>
 #include <kerror.h>
 #include <kinit.h>
 #include <kstring.h>

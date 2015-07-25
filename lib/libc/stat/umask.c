@@ -31,9 +31,8 @@
 */
 
 #define __SYSCALL_DEFS__
-#include <syscall.h>
-#include <time.h>
 #include <sys/stat.h>
+#include <syscall.h>
 
 mode_t umask(mode_t cmask)
 {

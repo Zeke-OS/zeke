@@ -37,7 +37,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h> /* file test */
-#include <time.h> /* file test */
 #include <sys/stat.h> /* file test */
 #include <errno.h>
 #include <pthread.h>

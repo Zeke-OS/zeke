@@ -32,11 +32,10 @@
 
 #define __SYSCALL_DEFS__
 #include <errno.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 #include <syscall.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <time.h>
-#include <sys/stat.h>
 
 int utimensat(int fd, const char * path, const struct timespec times[2],
               int flag)

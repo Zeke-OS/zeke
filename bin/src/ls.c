@@ -38,7 +38,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <dirent.h>
-#include <time.h>
 #include <sys/stat.h>
 
 int main(int argc, char * argv[], char * envp[])

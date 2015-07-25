@@ -42,16 +42,15 @@
 #define FS_H
 
 #include <dirent.h>
-#include <uio.h>
 #include <limits.h>
 #include <machine/atomic.h>
 #include <mount.h>
 #include <stdint.h>
 #include <sys/queue.h>
-#include <time.h>
 #include <sys/stat.h>
 #include <sys/tree.h>
 #include <sys/types.h>
+#include <uio.h>
 #include <klocks.h>
 
 #define FS_FLAG_INIT    0x01 /*!< File system initialized. */

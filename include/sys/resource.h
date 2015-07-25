@@ -33,6 +33,7 @@
 #ifndef _SYS_RESOURCES_H
 #define _SYS_RESOURCES_H
 
+#include <sys/types/_timeval.h>
 #include <sys/types.h>
 
 #define _RLIMIT_ARR_COUNT 7
@@ -115,18 +116,6 @@ struct rlimit {
 #define RUSAGE_SELF     1 /*!< Returns information about the current process. */
 #define RUSAGE_CHILDREN 2 /*!< Returns information about children of the current
                            *   process. */
-
-#ifndef TIMEVAL_DEFINED
-#define TIMEVAL_DEFINED
-/**
- * timeval.
- */
-struct timeval {
-    time_t tv_sec;          /*!< Seconds. */
-    suseconds_t tv_usec;    /*!< Microseconds. */
-};
-#endif
-
 
 struct rusage {
     struct timeval ru_utime; /*!< User time used. */
