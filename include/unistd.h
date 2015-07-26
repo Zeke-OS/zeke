@@ -231,6 +231,13 @@ struct _proc_getgroups_args {
     size_t size; /*!< Size of grouplist in bytes. */
 };
 
+
+/** Arguments for SYSCALL_PROC_SETGROUPS */
+struct _proc_setgroups_args {
+    const gid_t * grouplist;
+    size_t size; /*!< Size of grouplist in bytes. */
+};
+
 /** Arguments for SYSCALL_IPC_PIPE */
 struct _ipc_pipe_args {
     int fildes[2]; /*!< returned file descriptors. */
@@ -339,13 +346,42 @@ int seteuid(uid_t uid);
 int setgid(gid_t gid);
 int setegid(gid_t gid);
 #if 0
-int          setreuid(uid_t, uid_t);
-int          setregid(gid_t, gid_t);
+int setreuid(uid_t, uid_t);
+int setregid(gid_t, gid_t);
 #endif
 
+/**
+ * @addtogroup getgroups getgroups setgroups
+ * @{
+ */
+
 int getgroups(int gidsetsize, gid_t grouplist[]);
+int setgroups(int gidsetsize, const gid_t grouplist[]);
+
+/**
+ * @}
+ */
+
+/**
+ * @addtogroup getlogin getlogin setlogin
+ * @{
+ */
+
+/**
+ * Get the login name associated with the current session.
+ */
 char * getlogin(void);
 int getlogin_r(char * name, size_t namesize);
+
+/**
+ * Set the login name associated with the current session.
+ * This call is restricted to the super-use.
+ */
+int setlogin(const char * name);
+
+/**
+ * @}
+ */
 
 /**
  * Get the Process ID.

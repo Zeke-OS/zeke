@@ -876,9 +876,60 @@ static int sys_proc_getgroups(__user void * user_args)
     return 0;
 }
 
+static int sys_proc_setgroups(__user void * user_args)
+{
+    struct _proc_setgroups_args args;
+    const size_t max = NGROUPS_MAX * sizeof(gid_t);
+    int err;
+
+    err = priv_check(&curproc->cred, PRIV_CRED_SETGROUPS);
+    if (err) {
+        set_errno(EPERM);
+        return -1;
+    }
+
+    if (copyin(user_args, &args, sizeof(args))) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    if (copyin((__user gid_t *)args.grouplist, &curproc->cred.sup_gid,
+               (args.size < max) ? args.size : max)) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    return 0;
+}
+
+
 static int sys_proc_getlogin(__user void * user_args)
 {
+    KASSERT(curproc->pgrp && curproc->pgrp->pg_session,
+            "Session is valid");
+
     if (copyout(curproc->pgrp->pg_session->s_login, user_args, MAXLOGNAME)) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    return 0;
+}
+
+static int sys_proc_setlogin(__user void * user_args)
+{
+    int err;
+
+    KASSERT(curproc->pgrp && curproc->pgrp->pg_session,
+            "Session is valid");
+
+    err = priv_check(&curproc->cred, PRIV_PROC_SETLOGIN);
+    if (err) {
+        set_errno(EPERM);
+        return -1;
+    }
+
+    if (copyin(user_args, curproc->pgrp->pg_session->s_login, MAXLOGNAME)) {
         set_errno(EFAULT);
         return -1;
     }
@@ -1093,7 +1144,9 @@ static const syscall_handler_t proc_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_EXIT, sys_proc_exit),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_CRED, sys_proc_getsetcred),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETGROUPS, sys_proc_getgroups),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_SETGROUPS, sys_proc_setgroups),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETLOGIN, sys_proc_getlogin),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_SETLOGIN, sys_proc_setlogin),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETPID, sys_proc_getpid),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETPPID, sys_proc_getppid),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_CHDIR, sys_proc_chdir),
