@@ -292,13 +292,6 @@ struct cred {
 };
 
 /**
- * Initialize a cred struct.
- * Clears supplementary groups and doesn't touch anything else.
- * @param cred is a pointer to an uninitialized cred struct.
- */
-void priv_cred_init(struct cred * cred);
-
-/**
  * Test active securelevel.
  * Test whether or not the active security level is greater than or equal to
  * the supplied level.
@@ -326,6 +319,14 @@ int securelevel_gt(int level);
  * (or sometimes read) UID having a value of 0 and process capability maps.
  * @{
  */
+
+int priv_grp_is_member(const struct cred * cred, gid_t gid);
+
+/**
+ * Initialize a cred struct.
+ * @param cred is a pointer to an uninitialized cred struct.
+ */
+void priv_cred_init(struct cred * cred);
 
 /**
  * Check privileges.

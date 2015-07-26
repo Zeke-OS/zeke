@@ -64,6 +64,22 @@ int securelevel_gt(int level)
     return (securelevel > level ? -EPERM : 0);
 }
 
+int priv_grp_is_member(const struct cred * cred, gid_t gid)
+{
+    size_t i;
+
+    if (cred->egid == gid)
+        return 1;
+
+    for (i = 0; i < NGROUPS_MAX; i++) {
+        if (cred->sup_gid[i] == gid) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 #ifdef configPROCCAP
 static int priv_cred_grant_get(const struct cred * cred, int priv)
 {

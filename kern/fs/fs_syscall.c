@@ -684,8 +684,7 @@ static int sys_access(__user void * user_args)
 {
     struct _fs_access_args * args = 0;
     vnode_t * vnode = NULL;
-    uid_t euid;
-    gid_t egid;
+    struct cred tmp_cred;
     int err, retval = -1;
 
     err = copyinstruct(user_args, (void **)(&args),
@@ -708,19 +707,17 @@ static int sys_access(__user void * user_args)
         goto out;
     }
 
-    if (args->flag & AT_EACCESS) {
-        euid = curproc->cred.euid;
-        egid = curproc->cred.egid;
-    } else {
-        euid = curproc->cred.uid;
-        egid = curproc->cred.gid;
+    tmp_cred = curproc->cred;
+    if (!(args->flag & AT_EACCESS)) {
+        tmp_cred.euid = curproc->cred.uid;
+        tmp_cred.egid = curproc->cred.gid;
     }
 
     if (args->amode & F_OK) {
         retval = 0;
         goto out;
     }
-    retval = chkperm_vnode(vnode, euid, egid, args->amode);
+    retval = chkperm_vnode(vnode, &tmp_cred, args->amode);
 
 out:
     if (vnode)

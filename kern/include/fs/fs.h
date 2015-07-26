@@ -88,6 +88,7 @@
 
 /* End of macros **************************************************************/
 
+struct cred;
 struct proc_info;
 
 /*
@@ -576,7 +577,7 @@ int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str,
  */
 int fs_namei_proc(vnode_t ** result, int fd, const char * path, int atflags);
 
-int chkperm(struct stat * stat, uid_t uid, gid_t gid, int amode);
+int chkperm(struct stat * stat, const struct cred * cred, int oflags);
 
 /**
  * Check file permissions against oflag(s).
@@ -598,7 +599,7 @@ int chkperm_vnode_curproc(vnode_t * vnode, int oflags);
 /**
  * Check permissions to a vnode by given euid and egid.
  */
-int chkperm_vnode(vnode_t * vnode, uid_t euid, gid_t egid, int oflags);
+int chkperm_vnode(vnode_t * vnode, struct cred * cred, int oflags);
 
 /**
  * Set parameters of a file descriptor.

@@ -426,8 +426,13 @@ int fs_namei_proc(vnode_t ** result, int fd, const char * path, int atflags)
     return retval;
 }
 
-int chkperm(struct stat * stat, uid_t euid, gid_t egid, int oflags)
+int chkperm(struct stat * stat, const struct cred * cred, int oflags)
 {
+    const uid_t euid = curproc->cred.euid;
+    const gid_t egid = curproc->cred.egid;
+    const int is_grp_member = stat->st_gid == egid ||
+                              priv_grp_is_member(cred, stat->st_gid);
+
     oflags &= O_ACCMODE;
 
     if (oflags & R_OK) {
@@ -435,7 +440,7 @@ int chkperm(struct stat * stat, uid_t euid, gid_t egid, int oflags)
 
         if (stat->st_uid == euid)
             req_perm |= S_IRUSR;
-        if (stat->st_gid == egid)
+        if (is_grp_member)
             req_perm |= S_IRGRP;
         req_perm |= S_IROTH;
 
@@ -448,7 +453,7 @@ int chkperm(struct stat * stat, uid_t euid, gid_t egid, int oflags)
 
         if (stat->st_uid == euid)
             req_perm |= S_IWUSR;
-        if (stat->st_gid == egid)
+        if (is_grp_member)
             req_perm |= S_IWGRP;
         req_perm |= S_IWOTH;
 
@@ -461,7 +466,7 @@ int chkperm(struct stat * stat, uid_t euid, gid_t egid, int oflags)
 
         if (stat->st_uid == euid)
             req_perm |= S_IXUSR;
-        if (stat->st_gid == egid)
+        if (is_grp_member)
             req_perm |= S_IXGRP;
         req_perm |= S_IXOTH;
 
@@ -474,21 +479,15 @@ int chkperm(struct stat * stat, uid_t euid, gid_t egid, int oflags)
 
 int chkperm_curproc(struct stat * stat, int oflags)
 {
-    uid_t euid = curproc->cred.euid;
-    gid_t egid = curproc->cred.egid;
-
-    return chkperm(stat, euid, egid, oflags);
+    return chkperm(stat, &curproc->cred, oflags);
 }
 
 int chkperm_vnode_curproc(vnode_t * vnode, int oflags)
 {
-    uid_t euid = curproc->cred.euid;
-    gid_t egid = curproc->cred.egid;
-
-    return chkperm_vnode(vnode, euid, egid, oflags);
+    return chkperm_vnode(vnode, &curproc->cred, oflags);
 }
 
-int chkperm_vnode(vnode_t * vnode, uid_t euid, gid_t egid, int oflags)
+int chkperm_vnode(vnode_t * vnode, struct cred * cred, int oflags)
 {
     struct stat stat;
     int err;
@@ -499,7 +498,7 @@ int chkperm_vnode(vnode_t * vnode, uid_t euid, gid_t egid, int oflags)
     if (err)
         return err;
 
-    err = chkperm(&stat, euid, egid, oflags);
+    err = chkperm(&stat, cred, oflags);
 
     return err;
 }
