@@ -138,10 +138,8 @@ int ksignal_sendsig(struct signals * sigs, int signum, int si_code);
  * Kill process by sending a fatal signal that can't be blocked.
  * @param p is the process to be signaled.
  * @param signum is the signum used.
- * @returns Returns 0 if succeed;
- *          Otherwise a negative error code is returned.
  */
-int ksignal_sendsig_fatal(struct proc_info * p, int signum);
+void ksignal_sendsig_fatal(struct proc_info * p, int signum);
 
 /**
  * Wait for signal(s) specified in set.

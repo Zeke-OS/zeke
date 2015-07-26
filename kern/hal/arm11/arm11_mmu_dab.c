@@ -248,7 +248,8 @@ static int dab_buserr(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
         return -ESRCH;
 
 #if configDEBUG >= KERROR_DEBUG
-    KERROR(KERROR_DEBUG, "%s: Send a fatal SIGBUS\n", __func__);
+    KERROR(KERROR_DEBUG, "%s: Send a fatal SIGBUS to %d\n",
+           __func__, proc->pid);
 #endif
 
     /* Deliver SIGBUS. */

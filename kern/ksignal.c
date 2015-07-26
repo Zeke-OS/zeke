@@ -769,7 +769,7 @@ static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
     return 0;
 }
 
-int ksignal_sendsig_fatal(struct proc_info * p, int signum)
+void ksignal_sendsig_fatal(struct proc_info * p, int signum)
 {
     struct signals * sigs = &p->sigs;
     struct ksigaction act;
@@ -779,8 +779,13 @@ int ksignal_sendsig_fatal(struct proc_info * p, int signum)
 
     /* Change signal action to default to make this signal fatal. */
     err = ksignal_reset_ksigaction(sigs, signum);
-    if (err)
-        return err;
+    if (err) {
+        KERROR(KERROR_ERR,
+               "%s: Failed to reset sigaction (pid: %d, signum: %d, err: %d)\n",
+               __func__, p->pid, signum, err);
+        return;
+    }
+
     ksignal_get_ksigaction(&act, sigs, signum);
     if (!(act.ks_action.sa_flags & SA_KILL)) {
         KERROR(KERROR_WARN, "%d requested a fatal signal for %d"
@@ -792,7 +797,11 @@ int ksignal_sendsig_fatal(struct proc_info * p, int signum)
 
     ksig_unlock(&sigs->s_lock);
 
-    return err;
+    if (err) {
+        KERROR(KERROR_ERR,
+               "%s: Failed to send a fatal signal (pid: %d, signum: %d, err: %d)\n",
+               __func__, p->pid, signum, err);
+    }
 }
 
 int ksignal_sigwait(siginfo_t * retval, const sigset_t * restrict set)

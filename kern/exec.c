@@ -74,7 +74,7 @@ static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp)
         .param.sched_priority = current_thread->param.sched_priority,
         .stack_addr = (void *)(stack_region->b_mmu.vaddr),
         .stack_size = mmu_sizeof_region(&stack_region->b_mmu),
-        .flags      = 0,
+        .flags      = PTHREAD_CREATE_DETACHED,
         .start      = (void *(*)(void *))(code_region->b_mmu.vaddr),
         .arg1       = uargc,
         .arg2       = uargv,
@@ -131,10 +131,7 @@ int exec_file(file_t * file, char name[PROC_NAME_LEN], struct buf * env_bp,
     /* Create main() thread */
     tid = new_main_thread(uargc - 1, uargv, uenvp);
     if (tid <= 0) {
-        if (ksignal_sendsig_fatal(curproc, SIGKILL)) {
-            /* Panic if the signal delivery fails. */
-            panic("Exec failed");
-        }
+        ksignal_sendsig_fatal(curproc, SIGKILL);
     }
     err = 0;
 
