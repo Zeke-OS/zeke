@@ -35,7 +35,7 @@ include $(ROOT_DIR)/genconfig/dist.mk
 # Supress warnings about C11 extensions in libc
 CCFLAGS += -Wno-c11-extensions
 
-LIBS := crt0 crt1 libc liblinenoise
+LIBS := crt0 crt1 libc libcrypt liblinenoise
 
 # AR flags #####################################################################
 
@@ -87,6 +87,28 @@ $(wildcard libc/zeke/*.c)
 libc-ASRC-$(configARCH_ARM) = \
 $(wildcard libc/setjmp/arm/*.S)
 
+libcrypt-SRC-y = \
+libcrypt/crypt-md5.c \
+libcrypt/crypt-nthash.c \
+libcrypt/crypt-sha256.c \
+libcrypt/crypt-sha512.c \
+libcrypt/crypt.c \
+libcrypt/md4c.c \
+libcrypt/md4hl.c \
+libcrypt/md5c.c \
+libcrypt/md5hl.c \
+libcrypt/misc.c \
+libcrypt/rmd160c.c \
+libcrypt/rmd160hl.c \
+libcrypt/sha0c.c  \
+libcrypt/sha0hl.c \
+libcrypt/sha1c.c \
+libcrypt/sha1hl.c \
+libcrypt/sha256c.c \
+libcrypt/sha256hl.c \
+libcrypt/sha512c.c \
+libcrypt/sha512hl.c
+
 liblinenoise-SRC-y = \
 liblinenoise/linenoise.c
 ################################################################################
@@ -117,6 +139,10 @@ LIBSA = $(addsuffix .a, $(LIBS))
 
 
 all: $(LIBSA) manifest
+
+# Generate libcrypt sources
+$(libcrypt-SRC-y):
+	$(MAKE) -C libcrypt all
 
 $(ASOBJS): %.o: %.S $(AUTOCONF_H)
 	@echo "AS $@"
@@ -150,3 +176,4 @@ clean:
 	$(RM) $(ASOBJS) $(OBJS) $(DEPS)
 	$(RM) *.a
 	$(RM) manifest
+	$(MAKE) -C libcrypt clean
