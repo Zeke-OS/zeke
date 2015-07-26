@@ -275,6 +275,19 @@ static int sys_close(__user void * p)
     return 0;
 }
 
+static int sys_close_all(__user void * p)
+{
+    int start = curproc->files->count - 1;
+    int fdstop = (int)p;
+    int i;
+
+    for (i = start; i > fdstop; i--) {
+        fs_fildes_close(curproc, i);
+    }
+
+    return 0;
+}
+
 static int sys_getdents(__user void * user_args)
 {
     struct _fs_getdents_args args;
@@ -903,28 +916,13 @@ out:
     return retval;
 }
 
-static int sys_chroot(__user void * user_args)
-{
-    int err;
-
-    err = priv_check(&curproc->cred, PRIV_VFS_CHROOT);
-    if (err) {
-        set_errno(-err);
-        return -1;
-    }
-
-    /* TODO Should we free or take some new refs? */
-    curproc->croot = curproc->cwd;
-
-    return 0;
-}
-
 /**
  * Declarations of fs syscall functions.
  */
 static const syscall_handler_t fs_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_OPEN, sys_open),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_CLOSE, sys_close),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_CLOSE_ALL, sys_close_all),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_READ, sys_read),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_WRITE, sys_write),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_LSEEK, sys_lseek),
@@ -943,6 +941,5 @@ static const syscall_handler_t fs_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_UMASK, sys_umask),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_MOUNT, sys_mount),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_UMOUNT, sys_umount),
-    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_CHROOT, sys_chroot),
 };
 SYSCALL_HANDLERDEF(fs_syscall, fs_sysfnmap)

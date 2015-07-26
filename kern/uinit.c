@@ -87,7 +87,7 @@ static int _chdir(char * path)
 
 static int _chrootcwd(void)
 {
-    return syscall(SYSCALL_FS_CHROOT, NULL);
+    return syscall(SYSCALL_PROC_CHROOT, NULL);
 }
 
 static int _execve(const char * path, char * const argv[], size_t nargv,

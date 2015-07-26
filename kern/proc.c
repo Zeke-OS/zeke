@@ -958,6 +958,23 @@ out:
     return retval;
 }
 
+static int sys_chroot(__user void * user_args)
+{
+    int err;
+
+    err = priv_check(&curproc->cred, PRIV_VFS_CHROOT);
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
+    /* TODO Should we free or take some new refs? */
+    curproc->croot = curproc->cwd;
+
+    return 0;
+}
+
+
 static int sys_proc_setpriority(__user void * user_args)
 {
     /* TODO Implement sys_proc_setpriority() */
@@ -1080,6 +1097,7 @@ static const syscall_handler_t proc_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETPID, sys_proc_getpid),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETPPID, sys_proc_getppid),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_CHDIR, sys_proc_chdir),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_CHROOT, sys_chroot),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_SETPRIORITY, sys_proc_setpriority),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETPRIORITY, sys_proc_getpriority),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETRLIM, sys_proc_getrlim),

@@ -64,6 +64,11 @@ unsigned msleep(unsigned millisec);
  */
 int chrootcwd(void);
 
+/**
+ * Close all file descriptors above fildes.
+ */
+int closeall(int fildes);
+
 __END_DECLS
 #endif /* !KERNEL_INTERNAL */
 
