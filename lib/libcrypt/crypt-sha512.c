@@ -39,7 +39,7 @@
 #include <sys/endian.h>
 #include <sys/param.h>
 
-#include "crypt.h"
+#include <libcrypt/crypt.h>
 
 /* Define our magic string to mark salt for SHA512 "encryption" replacement. */
 static const char sha512_salt_prefix[] = "$6$";

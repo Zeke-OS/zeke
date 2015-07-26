@@ -31,7 +31,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "crypt.h"
+#include <libcrypt/crypt.h>
 
 /*
  * List of supported crypt(3) formats.

@@ -34,7 +34,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "crypt.h"
+#include <libcrypt/crypt.h>
 
 /*
  * NT HASH = md4(str2unicode(pw))

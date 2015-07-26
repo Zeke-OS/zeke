@@ -32,7 +32,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "crypt.h"
+#include <libcrypt/crypt.h>
 
 /*
  * UNIX password

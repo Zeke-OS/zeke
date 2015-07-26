@@ -288,6 +288,20 @@ void * sbrk(intptr_t incr);
 long sysconf(int name);
 
 /**
+ * @addtogroup crypt
+ * Trapdoor encryption.
+ * @{
+ */
+
+char * crypt(const char *key, const char * salt);
+const char * crypt_get_format(void);
+int crypt_set_format(const char * string);
+
+/**
+ * @}
+ */
+
+/**
  * Change working directory.
  */
 int chdir(const char * path);

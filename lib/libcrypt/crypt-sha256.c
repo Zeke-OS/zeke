@@ -39,7 +39,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "crypt.h"
+#include <libcrypt/crypt.h>
 
 /* Define our magic string to mark salt for SHA256 "encryption" replacement. */
 static const char sha256_salt_prefix[] = "$5$";
