@@ -64,6 +64,72 @@ int securelevel_gt(int level)
     return (securelevel > level ? -EPERM : 0);
 }
 
+#ifdef configPROCCAP
+static int priv_cred_grant_get(const struct cred * cred, int priv)
+{
+    return bitmap_status(cred->pcap_grantmap, priv, _PRIV_MLEN);
+}
+
+static int priv_cred_grant_set(struct cred * cred, int priv)
+{
+    return bitmap_set(cred->pcap_grantmap, priv, _PRIV_MLEN);
+}
+
+static int priv_cred_grant_clear(struct cred * cred, int priv)
+{
+    return bitmap_clear(cred->pcap_grantmap, priv, _PRIV_MLEN);
+}
+
+static int priv_cred_restr_get(const struct cred * cred, int priv)
+{
+    return bitmap_status(cred->pcap_restrmap, priv, _PRIV_MLEN);
+}
+
+static int priv_cred_restr_set(struct cred * cred, int priv)
+{
+    return bitmap_set(cred->pcap_restrmap, priv, _PRIV_MLEN);
+}
+
+static int priv_cred_restr_clear(struct cred * cred, int priv)
+{
+    return bitmap_clear(cred->pcap_restrmap, priv, _PRIV_MLEN);
+}
+#endif
+
+void priv_cred_init(struct cred * cred)
+{
+    size_t i = 0;
+    gid_t * gid = cred->sup_gid;
+
+    /*
+     * Clear supplementary groups.
+     */
+    for (i = 0; i < NGROUPS_MAX; i++) {
+        gid[i] = NOGROUP;
+    }
+
+    /*
+     * Default grants.
+     * Some permissions are just needed for normal operation
+     * but sometimes we wan't to restrict these too.
+     */
+#ifdef configPROCCAP
+    int privs[] = { PRIV_VFS_READ,
+                    PRIV_VFS_WRITE,
+                    PRIV_VFS_EXEC,
+                    PRIV_VFS_LOOKUP,
+                    PRIV_VFS_CHROOT,
+                    PRIV_VFS_STAT,
+                    0
+    };
+    int * priv;
+
+    for (priv = privs; *priv; priv++) {
+        priv_cred_grant_set(cred, *priv);
+    }
+#endif
+}
+
 /*
  * Check a credential for privilege. Lots of good reasons to deny privilege;
  * only a few to grant it.
@@ -74,7 +140,7 @@ int priv_check(const struct cred * cred, int priv)
 
 #ifdef configPROCCAP
     /* Check if capability is disabled. */
-    error = bitmap_status(cred->pcap_restrmap, priv, _PRIV_MLEN);
+    error = priv_cred_restr_get(cred, priv);
     if (error) {
         if (error != -EINVAL)
             error = -EPERM;
@@ -124,7 +190,7 @@ int priv_check(const struct cred * cred, int priv)
 
 #ifdef configPROCCAP
     /* Check if we should grant privilege. */
-    error = bitmap_status(cred->pcap_grantmap, priv, _PRIV_MLEN);
+    error = priv_cred_grant_get(cred, priv);
     if (error < 0) {
         goto out;
     } else if (error > 0) {
@@ -150,7 +216,7 @@ int priv_check_cred(const struct cred * fromcred, const struct cred * tocred,
     int error;
 
     /* Check if capability is disabled. */
-    error = bitmap_status(fromcred->pcap_restrmap, priv, _PRIV_MLEN);
+    error = priv_cred_restr_get(fromcred, priv);
     if (error) {
         if (error != -EINVAL)
             error = -EPERM;
@@ -207,22 +273,22 @@ static int sys_priv_pcap(__user void * user_args)
 
     switch (args.mode) {
     case PRIV_PCAP_MODE_GETR: /* Get restr */
-        err = bitmap_status(proccred->pcap_restrmap, args.priv, _PRIV_MLEN);
+        err = priv_cred_restr_get(proccred, args.priv);
         break;
     case PRIV_PCAP_MODE_SETR: /* Set restr */
-        err = bitmap_set(proccred->pcap_restrmap, args.priv, _PRIV_MLEN);
+        err = priv_cred_restr_set(proccred, args.priv);
         break;
     case PRIV_PCAP_MODE_CLRR: /* Clear restr */
-        err = bitmap_clear(proccred->pcap_restrmap, args.priv, _PRIV_MLEN);
+        err = priv_cred_restr_clear(proccred, args.priv);
         break;
     case PRIV_PCAP_MODE_GETG: /* Get grant */
-        err = bitmap_status(proccred->pcap_grantmap, args.priv, _PRIV_MLEN);
+        err = priv_cred_grant_get(proccred, args.priv);
         break;
     case PRIV_PCAP_MODE_SETG: /* Set grant */
-        err = bitmap_set(proccred->pcap_grantmap, args.priv, _PRIV_MLEN);
+        err = priv_cred_grant_set(proccred, args.priv);
         break;
     case PRIV_PCAP_MODE_CLRG: /* Clear grant */
-        err = bitmap_clear(proccred->pcap_grantmap, args.priv, _PRIV_MLEN);
+        priv_cred_grant_clear(proccred, args.priv);
         break;
     default:
         set_errno(EINVAL);

@@ -296,15 +296,7 @@ struct cred {
  * Clears supplementary groups and doesn't touch anything else.
  * @param cred is a pointer to an uninitialized cred struct.
  */
-static inline void priv_cred_init(struct cred * cred)
-{
-    size_t i = 0;
-    gid_t * gid = cred->sup_gid;
-
-    for (i = 0; i < NGROUPS_MAX; i++) {
-        gid[i] = NOGROUP;
-    }
-}
+void priv_cred_init(struct cred * cred);
 
 /**
  * Test active securelevel.
