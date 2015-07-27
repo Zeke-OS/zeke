@@ -67,7 +67,7 @@ static int load_proc_image(file_t * file, uintptr_t * vaddr_base)
  */
 static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp)
 {
-    struct buf * stack_region = (*curproc->mm.regions)[MM_STACK_REGION];
+    struct buf * stack_region;
     struct buf * code_region = (*curproc->mm.regions)[MM_CODE_REGION];
     struct _sched_pthread_create_args args;
 

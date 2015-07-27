@@ -36,7 +36,7 @@
 
 int setgroups(int gidsetsize, const gid_t grouplist[])
 {
-    struct _proc_getgroups_args args = {
+    struct _proc_setgroups_args args = {
         .grouplist = grouplist,
         .size = gidsetsize * sizeof(gid_t),
     };
