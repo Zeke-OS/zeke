@@ -43,31 +43,54 @@ RB_GENERATE(ptlist, vm_pt, entry_, ptlist_compare);
 
 int ptlist_compare(struct vm_pt * a, struct vm_pt * b)
 {
-    ptrdiff_t vaddr_a;
-    ptrdiff_t vaddr_b;
+    uintptr_t a_start;
+    uintptr_t b_start;
 
     KASSERT(a && b, "vm_pts are set");
 
-    vaddr_a = (ptrdiff_t)(a->pt.vaddr);
-    vaddr_b = (ptrdiff_t)(b->pt.vaddr);
+    a_start = a->pt.vaddr;
+    b_start = b->pt.vaddr;
 
-    return (int)(vaddr_a - vaddr_b);
+    /*
+     * In case we are searching with a filter we are interested wheter
+     * the filter vm_pt is inside the range of an entry in the tree.
+     */
+    if (a->flags & VM_PT_FLAG_FILTER) {
+        uintptr_t b_end = b->pt.vaddr + mmu_sizeof_pt_img(&b->pt) - 1;
+
+        if (VM_ADDR_IS_IN_RANGE(a_start, b_start, b_end))
+            return 0;
+    } else if (b->flags & VM_PT_FLAG_FILTER) {
+        uintptr_t a_end = a->pt.vaddr +  mmu_sizeof_pt_img(&a->pt) - 1;
+
+        if (VM_ADDR_IS_IN_RANGE(b_start, a_start, a_end))
+            return 0;
+    }
+
+    return (int)((ptrdiff_t)a_start - (ptrdiff_t)b_start);
 }
 
-struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr)
+struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr,
+                             size_t minsize)
 {
     struct ptlist * const ptlist_head = &mm->ptlist_head;
     mmu_pagetable_t * const mpt = &mm->mpt;
     struct vm_pt * vpt = NULL;
     struct vm_pt filter = {
-        .pt.vaddr = MMU_CPT_VADDR(vaddr)
+        .pt.vaddr = MMU_CPT_VADDR(vaddr),
+        .pt.nr_tables = 1,
+        .flags = VM_PT_FLAG_FILTER,
     }; /* Used as a search filter. */
+    size_t nr_tables;
 
     KASSERT(mpt, "mpt can't be null");
+
+    nr_tables = memalign_size(minsize, MMU_PGSIZE_SECTION) / MMU_PGSIZE_SECTION;
 
     /*
      * Check if the requested page table is actually the system pagetable.
      */
+    /* TODO Better to check the actual size */
     if (vaddr < MMU_PGSIZE_SECTION) {
         return &vm_pagetable_system;
     }
@@ -75,6 +98,14 @@ struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr)
     /* Look for existing page table. */
     if (!RB_EMPTY(ptlist_head)) {
         vpt = RB_FIND(ptlist, ptlist_head, &filter);
+        if (vpt && vpt->pt.nr_tables < nr_tables) {
+            /*
+             * FIXME If the returned vpt is too small then we need to do
+             *       something.
+             */
+            KERROR(KERROR_ERR, "Too small vpt %d < %d\n",
+                   mmu_sizeof_pt_img(&vpt->pt), minsize);
+        }
     }
     if (!vpt) { /* Create a new pt if a sufficient pt not found. */
         int err;
@@ -84,7 +115,7 @@ struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr)
             return NULL;
 
         vpt->pt.vaddr = filter.pt.vaddr;
-        vpt->pt.nr_tables = 1; /* TODO Support bigger page tables. */
+        vpt->pt.nr_tables = nr_tables;
         vpt->pt.master_pt_addr = mpt->pt_addr;
         vpt->pt.pt_type = MMU_PTT_COARSE;
         vpt->pt.pt_dom = MMU_DOM_USER;

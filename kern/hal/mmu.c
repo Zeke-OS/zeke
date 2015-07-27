@@ -89,11 +89,6 @@ int mmu_init(void)
 }
 HW_PREINIT_ENTRY(mmu_init);
 
-/**
- * Get size of a page table.
- * @param pt is the page table.
- * @return Return the size of the page table or zero in case of error.
- */
 size_t mmu_sizeof_pt(const mmu_pagetable_t * pt)
 {
     size_t nr_tables;
@@ -118,11 +113,30 @@ size_t mmu_sizeof_pt(const mmu_pagetable_t * pt)
     }
 }
 
-/**
- * Calculate size of a vm region.
- * @param region is a pointer to the region control block.
- * @return Returns the size of the region in bytes.
- */
+size_t mmu_sizeof_pt_img(const mmu_pagetable_t * pt)
+{
+    size_t nr_tables;
+
+    /* TODO Transitional */
+    nr_tables = (pt->nr_tables == 0) ? 1 : pt->nr_tables;
+
+    switch (pt->pt_type) {
+    case MMU_PTT_MASTER:
+        return MMU_NR_SECTION_ENTR * MMU_PGSIZE_SECTION;
+        break;
+    case MMU_PTT_COARSE:
+        return nr_tables * MMU_PGSIZE_SECTION;
+        break;
+    default:
+        KERROR(KERROR_ERR,
+               "mmu_sizeof_pt(%p) failed, pt is uninitialized\n", pt);
+#ifdef configMMU_DEBUG
+        KERROR_DBG_PRINT_RET_ADDR();
+#endif
+        return 0;
+    }
+}
+
 size_t mmu_sizeof_region(const mmu_region_t * region)
 {
     const size_t num_pages = region->num_pages;

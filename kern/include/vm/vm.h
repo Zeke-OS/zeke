@@ -53,7 +53,10 @@ struct proc_info;
 struct vm_pt {
     RB_ENTRY(vm_pt) entry_;
     mmu_pagetable_t pt;
+    unsigned flags;
 };
+
+#define VM_PT_FLAG_FILTER 0x01 /*!< This vm_pt struct is a search filter. */
 
 /* struct ptlist */
 RB_HEAD(ptlist, vm_pt);
@@ -121,9 +124,15 @@ RB_PROTOTYPE(ptlist, vm_pt, entry_, ptlist_compare);
  * Get a page table for a given virtual address.
  * @param vaddr         is the virtual address that will be mapped into
  *                      a returned page table.
- * @return Returs a page table where vaddr can be mapped.
+ * @param minsize       is the minumum size in bytes that the returned
+ *                      page table must be able to map.
+ * @return  Returns a page table where vaddr can be mapped;
+ *          Returns NULL if no sufficient page table is found nor can be
+ *          allocated.
+ *
  */
-struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr);
+struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr,
+                             size_t minsize);
 
 /**
  * Free ptlist and its page tables.

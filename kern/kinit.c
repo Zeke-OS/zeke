@@ -172,7 +172,7 @@ static void map_vmstack2proc(struct proc_info * proc, struct buf * vmstack)
     (*proc->mm.regions)[MM_STACK_REGION] = vmstack;
     vm_updateusr_ap(vmstack);
 
-    vpt = ptlist_get_pt(&proc->mm, vmstack->b_mmu.vaddr);
+    vpt = ptlist_get_pt(&proc->mm, vmstack->b_mmu.vaddr, MMU_PGSIZE_COARSE);
     if (vpt == 0)
         panic("Couldn't get vpt for init stack");
 

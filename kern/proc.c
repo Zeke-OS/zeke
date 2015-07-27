@@ -528,7 +528,7 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
 
 #ifdef configPROC_DEBUG
         vm_get_uapstring(uap, region);
-        KERROR(KERROR_DEBUG, "sect %d: vaddr: %x - %x, paddr: %x, uap: %s\n",
+        KERROR(KERROR_DEBUG, "sect %d: vaddr: %x - %x paddr: %x uap: %s\n",
                i, reg_start, reg_end, region->b_mmu.paddr, uap);
 #endif
 
@@ -538,6 +538,18 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
         /*
          * This is the correct region.
          */
+
+        /* FIXME This is ARM11 specific and should be fixed. */
+        if (fsr  == 0x7) { /* Translation fault */
+            mtx_unlock(&mm->regions_lock);
+            vm_mapproc_region(curproc, region);
+
+            KERROR(KERROR_WARN,
+                   "DAB \"%s\" of a valid memory region (%d) fixed by remapping the region\n",
+                   get_dab_strerror(fsr), i);
+
+            return 0;
+        }
 
         /* Test for COW flag. */
         if ((region->b_uflags & VM_PROT_COW) != VM_PROT_COW) {

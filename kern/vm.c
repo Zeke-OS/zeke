@@ -58,7 +58,7 @@ __kernel void * vm_uaddr2kaddr(struct proc_info * proc,
     struct vm_pt * vpt;
     void * phys_uaddr;
 
-    vpt = ptlist_get_pt(&proc->mm, (uintptr_t)uaddr);
+    vpt = ptlist_get_pt(&proc->mm, (uintptr_t)uaddr, MMU_PGSIZE_COARSE);
     if (!vpt)
         return NULL;
 
@@ -556,7 +556,7 @@ int vm_replace_region(struct proc_info * proc, struct buf * region,
      * Get & set page table.
      */
     if (insop & VM_INSOP_SET_PT) {
-        vpt = ptlist_get_pt(mm, region->b_mmu.vaddr);
+        vpt = ptlist_get_pt(mm, region->b_mmu.vaddr, region->b_bufsize);
         if (!vpt)
             return -ENOMEM;
 
@@ -606,7 +606,7 @@ int vm_mapproc_region(struct proc_info * proc, struct buf * region)
 {
     struct vm_pt * vpt;
 
-    vpt = ptlist_get_pt(&proc->mm, region->b_mmu.vaddr);
+    vpt = ptlist_get_pt(&proc->mm, region->b_mmu.vaddr, region->b_bufsize);
     if (!vpt)
         return -ENOMEM;
 
@@ -619,7 +619,7 @@ int vm_unmapproc_region(struct proc_info * proc, struct buf * region)
     mmu_region_t mmu_region;
 
     mtx_lock(&region->lock);
-    vpt = ptlist_get_pt(&proc->mm, region->b_mmu.vaddr);
+    vpt = ptlist_get_pt(&proc->mm, region->b_mmu.vaddr, region->b_bufsize);
     if (!vpt) {
         KERROR(KERROR_ERR, "Can't unmap a region (%p)\n", region);
         return -EIDRM; /* RFE Correct errno? */

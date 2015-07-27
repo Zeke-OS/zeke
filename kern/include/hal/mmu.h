@@ -207,7 +207,26 @@ const char * get_pab_strerror(uint32_t ifsr);
 
 /* Generic for all, implemented in mmu.c */
 void mmu_pf_event(void);
+
+/**
+ * Get the size of a page table entry.
+ * @param pt is the page table.
+ * @return Returns the size of the page table or zero in case of error.
+ */
 size_t mmu_sizeof_pt(const mmu_pagetable_t * region);
+
+/**
+ * Get the size of a page table image.
+ * @param pt is the page table.
+ * @return Retunrs the  size og the page table image.
+ */
+size_t mmu_sizeof_pt_img(const mmu_pagetable_t * pt);
+
+/**
+ * Calculate size of a vm region.
+ * @param region is a pointer to the region control block.
+ * @return Returns the size of the region in bytes.
+ */
 size_t mmu_sizeof_region(const mmu_region_t * region);
 int mmu_ptcpy(mmu_pagetable_t * dest, const mmu_pagetable_t * src);
 

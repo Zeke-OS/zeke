@@ -302,7 +302,7 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
         balign = PTM_COARSE;
         break;
     default:
-        panic("pt size can't be zero");
+        panic("Invalid pt type");
     }
 
     /* Try to allocate a new page table */
@@ -333,19 +333,13 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
 void ptmapper_free(mmu_pagetable_t * pt)
 {
     size_t block;
-    size_t size = 0; /* Size in bitmap */
-    size_t bsize = 0; /* Size in bytes */
+    size_t size; /* Size in bitmap */
+    size_t bsize; /* Size in bytes */
 
-    switch (pt->pt_type) {
-    case MMU_PTT_MASTER:
-        size = PTM_MASTER;
-        bsize = MMU_PTSZ_MASTER;
-        break;
-    case MMU_PTT_COARSE:
-        size = PTM_COARSE;
-        bsize = MMU_PTSZ_COARSE;
-        break;
-    default:
+    bsize = mmu_sizeof_pt(pt);
+    size = bsize / MMU_PTSZ_COARSE;
+
+    if (size == 0) {
         KERROR(KERROR_ERR, "Attemp to free an invalid page table.\n");
         return;
     }
