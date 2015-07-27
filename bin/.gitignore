@@ -3,6 +3,7 @@
 /echo
 /env
 /id
+/login
 /ls
 /minised
 /mount

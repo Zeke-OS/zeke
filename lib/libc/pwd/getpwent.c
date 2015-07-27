@@ -26,22 +26,21 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-static FILE *_pw_fp;
-static struct passwd _pw_entry;
-static int _pw_stayopen;
-static char *_pw_file = _PATH_PASSWD;
+static FILE *pw_fp;
+static struct passwd pw_entry;
+static int pw_stayopen;
 
 #define MAXLINELENGTH   256
 static char line[MAXLINELENGTH];
 
 static int start_pw(void)
 {
-    if (_pw_fp) {
-        rewind(_pw_fp);
+    if (pw_fp) {
+        rewind(pw_fp);
         return 1;
     }
-    _pw_fp = fopen(_pw_file, "r");
-    if (_pw_fp)
+    pw_fp = fopen(_PATH_PASSWD, "r");
+    if (pw_fp)
         return 1;
     return 0;
 }
@@ -53,37 +52,38 @@ static int scanpw(void)
     int ch;
 
     for (;;) {
-        if (!(fgets(line, sizeof(line), _pw_fp)))
+        if (!(fgets(line, sizeof(line), pw_fp)))
             return 0;
         /* skip lines that are too big */
         cp = strchr(line, '\n');
         if (!cp) {
-            while ((ch = fgetc(_pw_fp)) != '\n' && ch != EOF)
+            while ((ch = fgetc(pw_fp)) != '\n' && ch != EOF)
                 ;
             continue;
         }
         *cp = '\0';
         bp = line;
-        _pw_entry.pw_name = strsep(&bp, ":");
-        _pw_entry.pw_passwd = strsep(&bp, ":");
+        pw_entry.pw_name = strsep(&bp, ":");
+        pw_entry.pw_passwd = strsep(&bp, ":");
         cp = strsep(&bp, ":");
         if (!cp)
             continue;
-        _pw_entry.pw_uid = atoi(cp);
+        pw_entry.pw_uid = atoi(cp);
         cp = strsep(&bp, ":");
         if (!cp)
             continue;
-        _pw_entry.pw_gid = atoi(cp);
-        _pw_entry.pw_gecos = strsep(&bp, ":");
-        _pw_entry.pw_dir = strsep(&bp, ":");
-        _pw_entry.pw_shell = strsep(&bp, ":");
-        if (!_pw_entry.pw_shell)
+        pw_entry.pw_gid = atoi(cp);
+        pw_entry.pw_gecos = strsep(&bp, ":");
+        pw_entry.pw_dir = strsep(&bp, ":");
+        pw_entry.pw_shell = strsep(&bp, ":");
+        if (!pw_entry.pw_shell)
             continue;
         return 1;
     }
     /* NOTREACHED */
 }
 
+/* TODO Just do a lookup */
 static void getpw(void)
 {
     static char pwbuf[50];
@@ -93,25 +93,26 @@ static void getpw(void)
 
     if (geteuid())
         return;
-    /*
-     * special case; if it's the official password file, look in
-     * the master password file, otherwise, look in the file itself.
-     */
-    p = strcmp(_pw_file, _PATH_PASSWD) == 0 ? _PATH_SHADOW : _pw_file;
-    if ((fd = open(p, O_RDONLY, 0)) < 0)
+
+    if ((fd = open(_PATH_SHADOW, O_RDONLY, 0)) < 0) {
         return;
-    pos = atol(_pw_entry.pw_passwd);
-    if (lseek(fd, pos, SEEK_SET) != pos)
+    }
+
+    pos = atol(pw_entry.pw_passwd);
+    if (lseek(fd, pos, SEEK_SET) != pos) {
         goto bad;
-    if ((n = read(fd, pwbuf, sizeof(pwbuf) - 1)) < 0)
+    }
+    if ((n = read(fd, pwbuf, sizeof(pwbuf) - 1)) < 0) {
         goto bad;
+    }
     pwbuf[n] = '\0';
-    for (p = pwbuf; *p; ++p)
+    for (p = pwbuf; *p; ++p) {
         if (*p == ':') {
             *p = '\0';
-            _pw_entry.pw_passwd = pwbuf;
+            pw_entry.pw_passwd = pwbuf;
             break;
         }
+    }
 bad:
     (void)close(fd);
 }
@@ -120,13 +121,13 @@ struct passwd * getpwent(void)
 {
     int rval;
 
-    if (!_pw_fp && !start_pw())
-        return (struct passwd *)NULL;
+    if (!pw_fp && !start_pw())
+        return NULL;
     rval = scanpw();
     if (!rval)
-            return 0;
+        return 0;
     getpw();
-    return &_pw_entry;
+    return &pw_entry;
 }
 
 struct passwd * getpwnam(char * nam)
@@ -134,19 +135,21 @@ struct passwd * getpwnam(char * nam)
     int rval;
 
     if (!start_pw())
-        return (struct passwd *)NULL;
-        for (rval = 0; scanpw();) {
-                if (!strcmp(nam, _pw_entry.pw_name)) {
-                        rval = 1;
-                        break;
-                }
+        return NULL;
+    for (rval = 0; scanpw();) {
+        if (!strcmp(nam, pw_entry.pw_name)) {
+            rval = 1;
+            break;
         }
-    if (!_pw_stayopen)
+    }
+    if (!pw_stayopen)
         endpwent();
     if (!rval)
-            return 0;
+        return NULL;
+
+    /* TODO call getpw() only if password is x */
     getpw();
-    return &_pw_entry;
+    return &pw_entry;
 }
 
 struct passwd * getpwuid(uid_t uid)
@@ -154,19 +157,19 @@ struct passwd * getpwuid(uid_t uid)
     int rval;
 
     if (!start_pw())
-        return (struct passwd *)NULL;
+        return NULL;
     for (rval = 0; scanpw();) {
-        if (_pw_entry.pw_uid == uid) {
+        if (pw_entry.pw_uid == uid) {
             rval = 1;
             break;
         }
     }
-    if (!_pw_stayopen)
+    if (!pw_stayopen)
         endpwent();
     if (!rval)
         return 0;
     getpw();
-    return &_pw_entry;
+    return &pw_entry;
 }
 
 int setpwent(void)
@@ -178,14 +181,14 @@ int setpassent(int stayopen)
 {
     if (!start_pw())
         return 0;
-    _pw_stayopen = stayopen;
+    pw_stayopen = stayopen;
     return 1;
 }
 
 void endpwent(void)
 {
-    if (_pw_fp) {
-        (void)fclose(_pw_fp);
-        _pw_fp = 0;
+    if (pw_fp) {
+        (void)fclose(pw_fp);
+        pw_fp = 0;
     }
 }

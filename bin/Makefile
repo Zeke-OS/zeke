@@ -26,7 +26,7 @@
 include $(ROOT_DIR)/makefiles/user_head.mk
 
 # Binaries #####################################################################
-BIN := cat cp echo env id ls minised mount sh stty umount uptime wc
+BIN := cat cp echo env id login ls minised mount sh stty umount uptime wc
 
 # Source Files #################################################################
 cat-SRC-y := src/cat.c
@@ -34,6 +34,7 @@ cp-SRC-y := src/cp.c
 echo-SRC-y := src/echo.c
 env-SRC-y := src/env.c
 id-SRC-y := src/id.c
+login-SRC-y := src/login.c
 ls-SRC-y := src/ls.c
 minised-SRC-y := src/minised/sedcomp.c src/minised/sedexec.c
 mount-SRC-y := src/mount.c src/utils/opt.c
@@ -50,6 +51,7 @@ FILES := whoami
 
 # LDFLAGS ######################################################################
 sh-LDFLAGS := -llinenoise
+login-LDFLAGS := -lcrypt
 
 # End
 
