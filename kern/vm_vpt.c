@@ -43,8 +43,13 @@ RB_GENERATE(ptlist, vm_pt, entry_, ptlist_compare);
 
 int ptlist_compare(struct vm_pt * a, struct vm_pt * b)
 {
-    const ptrdiff_t vaddr_a = (a) ? (ptrdiff_t)(a->pt.vaddr) : 0;
-    const ptrdiff_t vaddr_b = (b) ? (ptrdiff_t)(b->pt.vaddr) : 0;
+    ptrdiff_t vaddr_a;
+    ptrdiff_t vaddr_b;
+
+    KASSERT(a && b, "vm_pts are set");
+
+    vaddr_a = (ptrdiff_t)(a->pt.vaddr);
+    vaddr_b = (ptrdiff_t)(b->pt.vaddr);
 
     return (int)(vaddr_a - vaddr_b);
 }
