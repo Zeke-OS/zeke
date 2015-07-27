@@ -541,12 +541,25 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
 
         /* FIXME This is ARM11 specific and should be fixed. */
         if (fsr  == 0x7) { /* Translation fault */
+            /*
+             * Sometimes we see translation faults due to ordering of region
+             * replacements during exec. This is something we have to accept
+             * with the current implementation if we want to make exec more
+             * robust in failure cases.
+             * This may happen if new section A is bigger that old_A and
+             * due to that old_B is close to old_A and also overlaps A. Now
+             * if old_A is replaced with A but old_B is unmapped later in time
+             * it will cause the unmap operation to unmap some of the pages
+             * now belonging to A.
+             */
             mtx_unlock(&mm->regions_lock);
             vm_mapproc_region(curproc, region);
 
-            KERROR(KERROR_WARN,
+#ifdef configPROC_DEBUG
+            KERROR(KERROR_DEBUG,
                    "DAB \"%s\" of a valid memory region (%d) fixed by remapping the region\n",
                    get_dab_strerror(fsr), i);
+#endif
 
             return 0;
         }
