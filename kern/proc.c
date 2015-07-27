@@ -506,8 +506,8 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
     }
 
 #ifdef configPROC_DEBUG
-    KERROR(KERROR_DEBUG, "proc_dab_handler(): MOO, %x @ %x by %d\n", vaddr, lr,
-           proc->pid);
+    KERROR(KERROR_DEBUG, "%s: MOO, (%u) %x @ %x by %d\n",
+           __func__, fsr, vaddr, lr, proc->pid);
 #endif
 
     mm = &proc->mm;

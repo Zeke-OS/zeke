@@ -260,7 +260,15 @@ struct buf * vm_newsect(uintptr_t vaddr, size_t size, int prot);
  * @return Returns a new section that is mapped to the given process.
  */
 struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot,
-        struct buf * old_bp);
+                        struct buf * old_bp);
+
+/**
+ * Create a new user space stack for the current process.
+ * Create and map new user stack, free the old stack.
+ * @param size is the minimum size of the new stack.
+ * @return Returns the new buf struct if allocated; Otherwise NULL.
+ */
+struct buf * vm_new_userstack_curproc(size_t size);
 
 /**
  * Update usr access permissions based on b_uflags.

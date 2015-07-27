@@ -171,7 +171,8 @@ extern int nprocs;                  /*!< Current # of procs. */
 extern struct proc_info * curproc;  /*!< PCB of the current process. */
 
 /* proclock - Protects proc array, data structures and variables in proc. */
-/** proclock.
+/**
+ * proclock.
  * Protects proc array, data structures and variables in proc.
  * This should be only touched by using macros defined in proc.h file.
  */

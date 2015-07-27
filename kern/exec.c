@@ -69,7 +69,14 @@ static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp)
 {
     struct buf * stack_region = (*curproc->mm.regions)[MM_STACK_REGION];
     struct buf * code_region = (*curproc->mm.regions)[MM_CODE_REGION];
-    struct _sched_pthread_create_args args = {
+    struct _sched_pthread_create_args args;
+
+    /* TODO A better way to select stack size */
+    stack_region = vm_new_userstack_curproc(8192);
+    if (!stack_region)
+        return -ENOMEM;
+
+    args = (struct _sched_pthread_create_args){
         .param.sched_policy = current_thread->param.sched_policy,
         .param.sched_priority = current_thread->param.sched_priority,
         .stack_addr = (void *)(stack_region->b_mmu.vaddr),
