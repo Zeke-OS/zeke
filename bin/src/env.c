@@ -44,7 +44,7 @@ int main(int argc, char ** argv)
     char * cleanenv[1];
     int ch;
 
-    while ((ch = getopt(argc, argv, "-i")) != -1)
+    while ((ch = getopt(argc, argv, "-i")) != EOF)
         switch ((char)ch) {
         case '-':           /* obsolete */
         case 'i':
