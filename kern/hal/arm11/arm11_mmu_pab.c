@@ -65,7 +65,7 @@ static int pab_fatal(uint32_t ifsr, uint32_t ifar, uint32_t psr, uint32_t lr,
 static int pab_buserr(uint32_t ifsr, uint32_t ifar, uint32_t psr, uint32_t lr,
                       struct proc_info * proc, struct thread_info * thread);
 
-static const char * get_pab_strerror(uint32_t ifsr)
+const char * get_pab_strerror(uint32_t ifsr)
 {
     return pab_fsr_strerr[ifsr & FSR_STATUS_MASK];
 }

@@ -81,7 +81,7 @@ static int dab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
 static int dab_buserr(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
                       struct proc_info * proc, struct thread_info * thread);
 
-static const char * get_dab_strerror(uint32_t fsr)
+const char * get_dab_strerror(uint32_t fsr)
 {
     uint32_t tmp;
 

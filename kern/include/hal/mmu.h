@@ -191,7 +191,7 @@ typedef int dab_handler(uint32_t fsr, uint32_t far, uint32_t psr,
 
 extern mmu_pagetable_t mmu_pagetable_master;
 
-/* "Generic" MMU interface */
+/* "Generic" MMU interface, must be implemented by HAL */
 int mmu_init_pagetable(const mmu_pagetable_t * pt);
 int mmu_map_region(const mmu_region_t * region);
 int mmu_unmap_region(const mmu_region_t * region);
@@ -201,6 +201,9 @@ uint32_t mmu_domain_access_get(void);
 void mmu_domain_access_set(uint32_t value, uint32_t mask);
 void mmu_control_set(uint32_t value, uint32_t mask);
 void * mmu_translate_vaddr(const mmu_pagetable_t * pt, uintptr_t vaddr);
+
+const char * get_dab_strerror(uint32_t fsr);
+const char * get_pab_strerror(uint32_t ifsr);
 
 /* Generic for all, implemented in mmu.c */
 void mmu_pf_event(void);
