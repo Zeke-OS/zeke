@@ -18,7 +18,8 @@ chgrp(const char *path, struct stat *st, void *data, struct recursor *r)
     char *chownf_name;
     int (*chownf)(const char *, uid_t, gid_t);
 
-    if (r->follow == 'P' || (r->follow == 'H' && r->depth) || (hflag && !(r->depth))) {
+    if (r->follow == 'P' || (r->follow == 'H' && r->depth) ||
+        (hflag && !(r->depth))) {
         chownf_name = "lchown";
         chownf = lchown;
     } else {

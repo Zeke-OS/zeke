@@ -14,7 +14,6 @@ usage(void)
 int
 main(int argc, char *argv[])
 {
-    ssize_t off;
     char *p;
 
     argv0 = argv[0], argc--, argv++;
@@ -24,6 +23,8 @@ main(int argc, char *argv[])
 
     p = basename(argv[0]);
     if (argc == 2) {
+        ssize_t off;
+
         off = strlen(p) - strlen(argv[1]);
         if (off > 0 && !strcmp(p + off, argv[1]))
             p[off] = '\0';

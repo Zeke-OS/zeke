@@ -47,10 +47,10 @@ static int start_pw(void)
 
 static char * get_next_line(FILE * fp)
 {
-    char * cp;
-    int ch;
-
     while (fgets(line, sizeof(line), fp)) {
+        char * cp;
+        int ch;
+
         cp = strchr(line, '\n');
         if (cp) {
             *cp = '\0';

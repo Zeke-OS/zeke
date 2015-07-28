@@ -92,14 +92,14 @@ cksum(FILE *fp, const char *s)
 int
 main(int argc, char *argv[])
 {
-    FILE *fp;
-
     argv0 = argv[0], argc--, argv++;
 
     if (!argc) {
         cksum(stdin, NULL);
     } else {
         for (; *argv; argc--, argv++) {
+            FILE *fp;
+
             if (!strcmp(*argv, "-")) {
                 *argv = "<stdin>";
                 fp = stdin;
