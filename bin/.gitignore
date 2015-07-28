@@ -1,4 +1,4 @@
-/basename 
+/basename
 /cat 
 /chgrp 
 /chmod 
@@ -12,6 +12,7 @@
 /env 
 /hostname 
 /id 
+/kill
 /login 
 /logname 
 /ls 
