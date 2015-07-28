@@ -17,12 +17,11 @@ int recurse_status = 0;
 void
 recurse(const char *path, void *data, struct recursor *r)
 {
-    struct dirent *d;
     struct history *new, *h;
     struct stat st, dst;
     DIR *dp;
     int (*statf)(const char *, struct stat *);
-    char subpath[PATH_MAX], *statf_name;
+    char *statf_name;
 
     if (r->follow == 'P' || (r->follow == 'H' && r->depth)) {
         statf_name = "lstat";
@@ -66,6 +65,11 @@ recurse(const char *path, void *data, struct recursor *r)
         (r->fn)(path, &st, data, r);
 
     if (!r->maxdepth || r->depth + 1 < r->maxdepth) {
+        struct dirent *d;
+        char * subpath;
+
+        subpath = malloc(PATH_MAX);
+
         while ((d = readdir(dp))) {
             if (r->follow == 'H') {
                 statf_name = "lstat";
@@ -90,6 +94,8 @@ recurse(const char *path, void *data, struct recursor *r)
                 r->depth--;
             }
         }
+
+        free(subpath);
     }
 
     if (!r->depth) {

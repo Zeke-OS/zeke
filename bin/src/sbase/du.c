@@ -43,14 +43,16 @@ du(const char *path, struct stat *st, void *total, struct recursor *r)
         recurse(path, &subtotal, r);
     *((off_t *)total) += subtotal + nblks(st ? st->st_blocks : 0);
 
-    if (!sflag && r->depth <= maxdepth && r->depth && st && (S_ISDIR(st->st_mode) || aflag))
+    if (!sflag && r->depth <= maxdepth && r->depth && st &&
+        (S_ISDIR(st->st_mode) || aflag))
         printpath(subtotal + nblks(st->st_blocks), path);
 }
 
 static void
 usage(void)
 {
-    eprintf("usage: %s [-a | -s] [-d depth] [-h] [-k] [-H | -L | -P] [-x] [file ...]\n", argv0);
+    eprintf("usage: %s [-a | -s] [-d depth] [-h] [-k] [-H | -L | -P] [-x] [file ...]\n",
+            argv0);
 }
 
 int
