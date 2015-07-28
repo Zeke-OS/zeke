@@ -46,8 +46,8 @@ CCFLAGS += $(subst $\",,$(configUSER_CCFLAGS))
 # (A)SRC- and (A)SRC-n won't be compiled
 
 # Automatically generated list of sources
-SRC-y = $(foreach var,$(BIN), $($(var)-SRC-y))
-ASRC-y = $(foreach var,$(BIN), $($(var)-ASRC-y))
+SRC-y = $(foreach var,$(BIN-y), $($(var)-SRC-y))
+ASRC-y = $(foreach var,$(BIN-y), $($(var)-ASRC-y))
 
 # Assembly Obj files
 ASOBJS = $(patsubst %.S, %.o, $(ASRC-y))

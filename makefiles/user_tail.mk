@@ -5,7 +5,7 @@ SRC-y := $(sort $(SRC-y))
 OBJS := $(patsubst %.c, %.o, $(SRC-y))
 DEPS := $(patsubst %.c, %.d, $(SRC-y))
 
-all: $(BIN) manifest
+all: $(BIN-y) manifest
 
 $(ASOBJS): $(ASRC-y) $(AUTOCONF_H)
 	@echo "AS $@"
@@ -21,7 +21,7 @@ $(OBJS): %.o: %.c $(AUTOCONF_H)
 	@$(OPT) $(OFLAGS) $(CUR_BC) -o - | $(LLC) $(LLCFLAGS) - -o - | \
 		$(GNUARCH)-as - -o $@ $(ASFLAGS)
 
-$(BIN): $(OBJS)
+$(BIN-y): $(OBJS)
 	@echo "LD $@"
 	$(eval CUR_BIN := $(basename $@))
 	$(eval CUR_OBJS += $(patsubst %.S, %.o, $($(CUR_BIN)-ASRC-y)))
@@ -31,10 +31,10 @@ $(BIN): $(OBJS)
 
 -include $(DEPS)
 
-manifest: $(BIN)
-	echo "$(strip $(BIN) $(FILES))" > manifest
+manifest: $(BIN-y)
+	echo "$(strip $(BIN-y) $(FILES))" > manifest
 
 clean:
-	$(RM) $(ASOBJS) $(OBJS) $(DEPS) $(BIN)
+	$(RM) $(ASOBJS) $(OBJS) $(DEPS) $(BIN-y)
 	$(RM) manifest
 
