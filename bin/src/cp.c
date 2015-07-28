@@ -256,8 +256,8 @@ static int setimes(char * path, struct stat * statp)
 {
     struct timespec times[2];
 
-    times[0] = statp->st_atime;
-    times[1] = statp->st_mtime;
+    times[0] = statp->st_atim;
+    times[1] = statp->st_mtim;
     if (utimensat(AT_FDCWD, path, times, 0)) {
         cp_perror(path);
         return 1;
