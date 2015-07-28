@@ -47,9 +47,9 @@ static int start_pw(void)
 
 static char * get_next_line(FILE * fp)
 {
-    char * cp;
 
     while (fgets(line, sizeof(line), fp)) {
+        char * cp;
         int ch;
 
         cp = strchr(line, '\n');
@@ -57,19 +57,20 @@ static char * get_next_line(FILE * fp)
             *cp = '\0';
             return line;
         }
+
         /* skip lines that are too long */
         while ((ch = fgetc(fp)) != '\n' && ch != EOF);
-    } while (!cp);
+    }
 
     return NULL;
 }
 
 static int scanpw(void)
 {
-    char * cp;
-    char * bp;
-
     while (get_next_line(pw_fp)) {
+        char * cp;
+        char * bp;
+
         bp = line;
         pw_entry.pw_name = strsep(&bp, ":");
         pw_entry.pw_passwd = strsep(&bp, ":");
@@ -86,6 +87,7 @@ static int scanpw(void)
         pw_entry.pw_shell = strsep(&bp, ":");
         if (!pw_entry.pw_shell)
             continue;
+
         return 1;
     }
 
