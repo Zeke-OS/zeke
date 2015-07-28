@@ -69,6 +69,7 @@ $(wildcard libc/mman/*.c) \
 $(wildcard libc/priv/*.c) \
 $(wildcard libc/pthreads/*.c) \
 $(wildcard libc/pwd/*.c) \
+$(wildcard libc/regexp/*.c) \
 $(wildcard libc/resource/*.c) \
 $(wildcard libc/setjmp/*.c) \
 $(wildcard libc/signal/*.c) \
