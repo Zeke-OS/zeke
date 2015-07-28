@@ -57,7 +57,7 @@ static void setup(void)
 
     thread_stack = malloc(stack_size);
     if (!thread_stack) {
-        perror("Failed to create a stack\n");
+        perror("Failed to create a stack");
         _exit(1);
     }
 
@@ -66,7 +66,7 @@ static void setup(void)
 
     errno = 0;
     if (pthread_create(&thread_id, &attr, thread, 0)) {
-        perror("Thread creation failed\n");
+        perror("Thread creation failed");
         _exit(1);
     }
     sleep(1);
