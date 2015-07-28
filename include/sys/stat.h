@@ -53,14 +53,16 @@ struct stat {
                              *   special). */
     off_t     st_size;      /*!< File size in bytes (if file is a regular file).
                              */
-    struct timespec st_atime;     /*!< Time of last access.
+    struct timespec st_atim;      /*!< Time of last access.
                                    *   atime is updated when the file is opened.
                                    */
-    struct timespec st_mtime;     /*!< Time of last data modification.
+#define st_atime st_atim.tv_sec
+    struct timespec st_mtim;      /*!< Time of last data modification.
                                    *   mtime is updated whenever the file is
                                    *   written.
                                    */
-    struct timespec st_ctime;     /*!< Time of last status change.
+#define st_mtime st_mtim.tv_sec
+    struct timespec st_ctim;      /*!< Time of last status change.
                                    *   ctime is updated when the file attributes
                                    *   are changed, when the file is moved or
                                    *   when the file is written. ctime is
@@ -68,6 +70,7 @@ struct stat {
                                    *   attributes are changed and thus only
                                    *   ctime get updated.
                                    */
+#define st_ctime st_ctim.tv_sec
     struct timespec st_birthtime; /*!< Time file created. */
     fflags_t  st_flags;    /*!< User defined flags for file */
     blksize_t st_blksize;   /*!< A filesystem-specific preferred I/O block size

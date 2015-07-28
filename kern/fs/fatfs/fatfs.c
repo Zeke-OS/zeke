@@ -836,9 +836,9 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
     buf->st_size = fno.fsize;
     /* TODO Times */
 #if 0
-    buf->st_atime;
-    buf->st_mtime;
-    buf->st_ctime;
+    buf->st_atim;
+    buf->st_mtim;
+    buf->st_ctim;
     buf->st_birthtime;
 #endif
     buf->st_flags = fattrib2uflags(fno.fattrib);

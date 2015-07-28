@@ -802,9 +802,9 @@ int ramfs_stat(vnode_t * vnode, struct stat * buf)
     buf->st_gid     = inode->in_gid;
     buf->st_rdev    = VNOVAL;
     buf->st_size    = vnode->vn_len;
-    buf->st_atime   = inode->in_atime;
-    buf->st_mtime   = inode->in_mtime;
-    buf->st_ctime   = inode->in_ctime;
+    buf->st_atim    = inode->in_atime;
+    buf->st_mtim    = inode->in_mtime;
+    buf->st_ctim    = inode->in_ctime;
     buf->st_blksize = inode->in_blksize;
     buf->st_blocks  = inode->in_blocks;
 
@@ -813,7 +813,7 @@ int ramfs_stat(vnode_t * vnode, struct stat * buf)
 
 int ramfs_chmod(vnode_t * vnode, mode_t mode)
 {
-    vnode->vn_mode = mode;
+    vnode->vn_mode = (vnode->vn_mode & S_IFMT) | (mode & ~S_IFMT);
     ramfs_vnode_changed(vnode);
 
     return 0;

@@ -327,9 +327,9 @@ int fs_pipe_stat(vnode_t * vnode, struct stat * stat)
     stat->st_gid = pipe->group;
     stat->st_rdev = 0;
     stat->st_size = pipe->bp->b_bcount;
-    stat->st_atime = pipe->sp_atime;
-    stat->st_mtime = pipe->sp_mtime;
-    stat->st_ctime = pipe->sp_ctime;
+    stat->st_atim = pipe->sp_atime;
+    stat->st_mtim = pipe->sp_mtime;
+    stat->st_ctim = pipe->sp_ctime;
     stat->st_birthtime = pipe->sp_birthtime;
     stat->st_flags = 0;
     stat->st_blksize = sizeof(char);
