@@ -153,7 +153,6 @@ void mmu_prefetch_abort_handler(void)
                 break;
             default:
                 KERROR(KERROR_CRIT, "PAB handling failed: %i\n", err);
-                stack_dump(current_thread->sframe[SCHED_SFRAME_ABO]);
                 pab_fatal(ifsr, ifar, spsr, lr, proc, thread);
             }
         }

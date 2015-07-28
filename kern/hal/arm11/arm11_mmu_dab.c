@@ -154,7 +154,6 @@ void mmu_data_abort_handler(void)
                 break;
             default:
                 KERROR(KERROR_CRIT, "DAB handling failed: %i\n", err);
-                stack_dump(current_thread->sframe[SCHED_SFRAME_ABO]);
                 dab_fatal(fsr, far, spsr, lr, proc, thread);
             }
         }
