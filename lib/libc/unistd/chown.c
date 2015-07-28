@@ -32,27 +32,21 @@
  *******************************************************************************
 */
 
-#define __SYSCALL_DEFS__
 #include <sys/types.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <syscall.h>
 
 int chown(const char *path, uid_t owner, gid_t group)
 {
-    int err;
-    struct _fs_chown_args args = {
-        .owner = owner,
-        .group = group
-    };
+    int fd, err;
 
-    args.fd = open(path, O_WRONLY);
-    if (args.fd < 0)
+    fd = open(path, O_WRONLY);
+    if (fd < 0)
         return -1;
 
-    err = syscall(SYSCALL_FS_CHOWN, &args);
+    err = fchown(fd, owner, group);
 
-    close(args.fd);
+    close(fd);
 
     return err;
 }

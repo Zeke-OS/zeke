@@ -32,32 +32,26 @@
  *******************************************************************************
 */
 
-#define __SYSCALL_DEFS__
 #include <sys/types.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <syscall.h>
 
 int lchown(const char *path, uid_t owner, gid_t group)
 {
-    int err;
-    struct _fs_chown_args args = {
-        .owner = owner,
-        .group = group
-    };
+    int fd, err;
 
     /*
      * FIXME Instead of O_NOFOLLOW lchown should open the actual symbolic link
      * file, but currently there is no way to say that nor do we support
      * symlinks.
      */
-    args.fd = open(path, O_WRONLY | O_NOFOLLOW);
-    if (args.fd < 0)
+    fd = open(path, O_WRONLY | O_NOFOLLOW);
+    if (fd < 0)
         return -1;
 
-    err = syscall(SYSCALL_FS_CHOWN, &args);
+    err = fchown(fd, owner, group);
 
-    close(args.fd);
+    close(fd);
 
     return err;
 }
