@@ -84,6 +84,8 @@
 #include <vm/vm.h>
 #include "ksignal.h"
 
+#include <sys/_signames.c>
+
 #define KSIG_LOCK_TYPE  MTX_TYPE_TICKET
 #define KSIG_LOCK_FLAGS (MTX_OPT_DINT)
 
@@ -202,6 +204,13 @@ static char * ksignal_str_owner_type(struct signals * sigs)
     }
 }
 #endif
+
+const char * ksignal_signum2str(int signum)
+{
+    if (signum < 0 || signum >= (int)(sizeof(sys_signames)))
+        return "INVALID";
+    return sys_signames[signum];
+}
 
 /**
  * Execute thread if signal conditions are met.
@@ -352,8 +361,8 @@ static void forward_proc_signals(struct proc_info * proc)
             ksig_unlock(&thread_sigs->s_lock);
 
 #if defined(configKSIGNAL_DEBUG)
-            KERROR(KERROR_DEBUG, "Signal %d forwarded to thread %d\n",
-                   signum, thread->id);
+            KERROR(KERROR_DEBUG, "Signal %s forwarded to thread %d\n",
+                   ksignal_signum2str(signum), thread->id);
 #endif
             /*
              * We probably can't break and continue signal forwarding here
@@ -504,7 +513,8 @@ static int push_stack_frame(int signum,
                           sizeof(siginfo_t),
                           &old_thread_sp /* Address of the prev sframe. */)
        ) {
-        KERROR(KERROR_ERR, "Failed to push signum %i\n", signum);
+        KERROR(KERROR_ERR, "Failed to push signum %s\n",
+               ksignal_signum2str(signum));
 
         return -EINVAL;
     }
@@ -581,8 +591,8 @@ static void ksignal_post_scheduling(void)
             KSIGFLAG_CLEAR(sigs, KSIGFLAG_INTERRUPTIBLE);
             ksig_unlock(&sigs->s_lock);
 #if defined(configKSIGNAL_DEBUG)
-            KERROR(KERROR_DEBUG, "Detected a sigwait() for %d, returning\n",
-                   signum);
+            KERROR(KERROR_DEBUG, "Detected a sigwait() for %s, returning\n",
+                   ksignal_signum2str(signum));
 #endif
             return; /* There is a sigwait() for this signum. */
         }
@@ -601,13 +611,15 @@ static void ksignal_post_scheduling(void)
             ksig_unlock(&sigs->s_lock);
             kfree_lazy(ksiginfo);
 #if defined(configKSIGNAL_DEBUG)
-            KERROR(KERROR_DEBUG, "Signal %d handled in kernel space\n", signum);
+            KERROR(KERROR_DEBUG, "Signal %s handled in kernel space\n",
+                   ksignal_signum2str(signum));
 #endif
             return;
         } else if (nxt_state < 0) {
             /* This signal can't be handled right now */
 #if defined(configKSIGNAL_DEBUG)
-            KERROR(KERROR_DEBUG, "Postponing handling of signal %d\n", signum);
+            KERROR(KERROR_DEBUG, "Postponing handling of signal %s\n",
+                   ksignal_signum2str(signum));
 #endif
             continue;
         }
@@ -624,8 +636,8 @@ static void ksignal_post_scheduling(void)
     STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
 
 #if defined(configKSIGNAL_DEBUG)
-    KERROR(KERROR_DEBUG, "Pass a signal %d to the user space\n",
-           ksiginfo->siginfo.si_signo);
+    KERROR(KERROR_DEBUG, "Pass a signal %s to the user space\n",
+           ksignal_signum2str(ksiginfo->siginfo.si_signo));
 #endif
 
     /* Push data and set next stack frame. */
@@ -679,8 +691,8 @@ static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
     KASSERT(ksig_testlock(&sigs->s_lock), "sigs should be locked\n");
 
 #if defined(configKSIGNAL_DEBUG)
-    KERROR(KERROR_DEBUG, "Queuing a signum %d to sigs: %p (%s)\n",
-           signum, sigs, ksignal_str_owner_type(sigs));
+    KERROR(KERROR_DEBUG, "Queuing a signum %s to sigs: %p (%s)\n",
+           ksignal_signum2str(signum), sigs, ksignal_str_owner_type(sigs));
 #endif
 
     if (signum <= 0 || signum > _SIG_MAXSIG) {
@@ -733,8 +745,8 @@ static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
             (action.ks_action.sa_flags & SA_KILL) &&
             !sigismember(&sigs->s_wait, signum)) {
 #if defined(configKSIGNAL_DEBUG)
-        KERROR(KERROR_DEBUG, "Thread %u will be terminated by signum %d\n",
-               thread->id, signum);
+        KERROR(KERROR_DEBUG, "Thread %u will be terminated by signum %s\n",
+               thread->id, ksignal_signum2str(signum));
 #endif
         thread->exit_signal = signum;
         thread_terminate(thread->id);
@@ -781,16 +793,16 @@ void ksignal_sendsig_fatal(struct proc_info * p, int signum)
     err = ksignal_reset_ksigaction(sigs, signum);
     if (err) {
         KERROR(KERROR_ERR,
-               "%s: Failed to reset sigaction (pid: %d, signum: %d, err: %d)\n",
-               __func__, p->pid, signum, err);
+               "%s: Failed to reset sigaction (pid: %d, signum: %s, err: %d)\n",
+               __func__, p->pid, ksignal_signum2str(signum), err);
         return;
     }
 
     ksignal_get_ksigaction(&act, sigs, signum);
     if (!(act.ks_action.sa_flags & SA_KILL)) {
         KERROR(KERROR_WARN, "%d requested a fatal signal for %d"
-                 "but dfl action for signum %d is not SA_KILL\n",
-                 curproc->pid, p->pid, signum);
+                 "but dfl action for signum %s is not SA_KILL\n",
+                 curproc->pid, p->pid, ksignal_signum2str(signum));
     }
 
     err = ksignal_queue_sig(sigs, signum, SI_KERNEL);
@@ -799,8 +811,8 @@ void ksignal_sendsig_fatal(struct proc_info * p, int signum)
 
     if (err) {
         KERROR(KERROR_ERR,
-               "%s: Failed to send a fatal signal (pid: %d, signum: %d, err: %d)\n",
-               __func__, p->pid, signum, err);
+               "%s: Failed to send a fatal signal (pid: %d, signum: %s, err: %d)\n",
+               __func__, p->pid, ksignal_signum2str(signum), err);
     }
 }
 

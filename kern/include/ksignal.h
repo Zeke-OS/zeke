@@ -117,6 +117,11 @@ RB_PROTOTYPE(sigaction_tree, ksigaction, _entry, signum_comp);
 int signum_comp(struct ksigaction * a, struct ksigaction * b);
 
 /**
+ * Get a string name for a signal number.
+ */
+const char * ksignal_signum2str(int signum);
+
+/**
  * Sigs struct constructor.
  */
 void ksignal_signals_ctor(struct signals * sigs, enum signals_owner owner_type);
