@@ -1,4 +1,4 @@
-wheel:*:0:root
-daemon:*:1:daemon
-sys:*:2:
-tty:*:3:
+wheel:0:root
+daemon:1:daemon
+sys:2:
+tty:3:

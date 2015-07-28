@@ -21,7 +21,8 @@ chownpwgr(const char *path, struct stat *st, void *data, struct recursor *r)
     char *chownf_name;
     int (*chownf)(const char *, uid_t, gid_t);
 
-    if (r->follow == 'P' || (r->follow == 'H' && r->depth) || (hflag && !(r->depth))) {
+    if (r->follow == 'P' || (r->follow == 'H' && r->depth) ||
+        (hflag && !(r->depth))) {
         chownf_name = "lchown";
         chownf = lchown;
     } else {
@@ -40,7 +41,8 @@ chownpwgr(const char *path, struct stat *st, void *data, struct recursor *r)
 static void
 usage(void)
 {
-    eprintf("usage: %s [-h] [-R [-H | -L | -P]] [owner][:[group]] file ...\n", argv0);
+    eprintf("usage: %s [-h] [-R [-H | -L | -P]] [owner][:[group]] file ...\n",
+            argv0);
 }
 
 int
@@ -48,8 +50,9 @@ main(int argc, char *argv[])
 {
     struct group *gr;
     struct passwd *pw;
-    struct recursor r = { .fn = chownpwgr, .hist = NULL, .depth = 0, .maxdepth = 1,
-                          .follow = 'P', .flags = 0 };
+    struct recursor r = {
+        .fn = chownpwgr, .hist = NULL, .depth = 0,
+        .maxdepth = 1, .follow = 'P', .flags = 0 };
     char *owner, *group;
 
     ARGBEGIN {

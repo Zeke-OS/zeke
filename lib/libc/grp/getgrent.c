@@ -6,7 +6,6 @@
 
 #define MAXGRP  200
 
-static char GROUP[] = _PATH_GROUP;
 static FILE *grf;
 static char line[256 + 1];
 static struct group group;
@@ -15,7 +14,7 @@ static char *gr_mem[MAXGRP];
 void setgrent(void)
 {
     if (!grf)
-        grf = fopen(GROUP, "r");
+        grf = fopen(_PATH_GROUP, "r");
     else
         rewind(grf);
 }
@@ -40,9 +39,9 @@ static char * grskip(char * p, int c)
 
 struct group * getgrent(void)
 {
-    register char *p, **q;
+    char *p, **q;
 
-    if (!grf && !(grf = fopen(GROUP, "r")))
+    if (!grf && !(grf = fopen(_PATH_GROUP, "r")))
         return NULL;
     if (!(p = fgets(line, sizeof(line) - 1, grf)))
         return NULL;
