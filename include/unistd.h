@@ -431,6 +431,8 @@ int fchownat(int fd, const char * path, uid_t owner, gid_t group,
              int flag);
 int fchown(int fildes, uid_t owner, gid_t group);
 
+int lchown(const char *path, uid_t owner, gid_t group);
+
 ssize_t pread(int fildes, void * buf, size_t nbytes, off_t offset);
 
 /**

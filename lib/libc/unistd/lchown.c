@@ -1,10 +1,12 @@
 /**
  *******************************************************************************
- * @file    wait.h
+ * @file    lchown.c
  * @author  Olli Vanhoja
- * @brief   Declarations for waiting.
+ * @brief   Standard functions.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2012, 2013 Ninjaware Oy,
+ *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,56 +30,34 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************
- */
+*/
 
-/**
- * @addtogroup libc
- * @{
- */
+#define __SYSCALL_DEFS__
+#include <sys/types.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <syscall.h>
 
-#ifndef WAIT_H
-#define WAIT_H
+int lchown(const char *path, uid_t owner, gid_t group)
+{
+    int err;
+    struct _fs_chown_args args = {
+        .owner = owner,
+        .group = group
+    };
 
-#include <sys/types/_pid_t.h>
+    /*
+     * FIXME Instead of O_NOFOLLOW lchown should open the actual symbolic link
+     * file, but currently there is no way to say that nor do we support
+     * symlinks.
+     */
+    args.fd = open(path, O_WRONLY | O_NOFOLLOW);
+    if (args.fd < 0)
+        return -1;
 
-#define WCONTINUED  0x1 /*!< Report a continued process. */
-#define WNOHANG     0x2 /*!< Don't hang in wait. */
-#define WUNTRACED   0x4 /*!< Tell about stopped, untraced children. */
-#define WNOWAIT     0x8 /*!< Poll only. */
+    err = syscall(SYSCALL_FS_CHOWN, &args);
 
+    close(args.fd);
 
-#define _WSTATUS(x) ((x) & 0177)
-#define _WSTOPPED   0177
-
-#define WIFEXITED(x)    (_WSTATUS(x) == 0)
-#define WEXITSTATUS(x)  ((x) >> 8)
-#define WIFSIGNALED(x)  (_WSTATUS(x) != _WSTOPPED && _WSTATUS(x) != 0 \
-                         && (x) != 0x13)
-#define WTERMSIG(x)     (_WSTATUS(x))
-#define WIFSTOPPED(x)   (_WSTATUS(x) == _WSTOPPED)
-#define WSTOPSIG(x)     ((x) >> 8)
-
-#if defined(__SYSCALL_DEFS__) || defined(KERNEL_INTERNAL)
-/** Arguments for SYSCALL_PROC_WAIT */
-struct _proc_wait_args {
-    pid_t pid;
-    int status;
-    int options;
-};
-#endif
-
-#ifndef KERNEL_INTERNAL
-__BEGIN_DECLS
-pid_t wait(int * status);
-#if 0
-int    waitid(idtype_t, id_t, siginfo_t *, int);
-#endif
-pid_t waitpid(pid_t pid, int * status, int options);
-__END_DECLS
-#endif /* !KERNEL_INTERNAL */
-
-#endif /* WAIT_H */
-
-/**
- * @}
- */
+    return err;
+}

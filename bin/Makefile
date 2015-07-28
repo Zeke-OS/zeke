@@ -26,15 +26,44 @@
 include $(ROOT_DIR)/makefiles/user_head.mk
 
 # Binaries #####################################################################
-BIN := cat cp echo env id login ls minised mount sh stty umount uptime wc
+BIN := basename cat chgrp chmod chown cksum cmp cp dirname du echo env \
+	hostname id kill login logname ls minised mount sh stty umount uptime wc
+
+SBASELUTIL := src/sbase/libutil
+SBASELUTF  := src/sbase/libutf
 
 # Source Files #################################################################
+basename-SRC-y := src/sbase/basename.c $(SBASELUTIL)/eprintf.c \
+	$(SBASELUTIL)/fshut.c
 cat-SRC-y := src/cat.c
+chgrp-SRC-y := src/sbase/chgrp.c $(SBASELUTIL)/eprintf.c \
+	$(SBASELUTIL)/recurse.c $(SBASELUTIL)/ealloc.c $(SBASELUTIL)/strlcat.c \
+	$(SBASELUTIL)/strlcpy.c
+chmod-SRC-y := src/sbase/chmod.c \
+	$(SBASELUTIL)/eprintf.c $(SBASELUTIL)/mode.c $(SBASELUTIL)/recurse.c \
+	$(SBASELUTIL)/ealloc.c $(SBASELUTIL)/strlcat.c $(SBASELUTIL)/strlcpy.c
+chown-SRC-y := src/sbase/chown.c \
+	$(SBASELUTIL)/eprintf.c $(SBASELUTIL)/mode.c $(SBASELUTIL)/recurse.c \
+	$(SBASELUTIL)/ealloc.c $(SBASELUTIL)/strlcat.c $(SBASELUTIL)/strlcpy.c \
+	$(SBASELUTIL)/strtonum.c
+cksum-SRC-y := src/sbase/cksum.c $(SBASELUTIL)/eprintf.c $(SBASELUTIL)/fshut.c
+cmp-SRC-y := src/sbase/cmp.c $(SBASELUTIL)/eprintf.c $(SBASELUTIL)/fshut.c
 cp-SRC-y := src/cp.c
+dirname-SRC-y := src/sbase/dirname.c $(SBASELUTIL)/eprintf.c \
+	$(SBASELUTIL)/fshut.c
+du-SRC-y := src/sbase/du.c $(SBASELUTIL)/eprintf.c $(SBASELUTIL)/fshut.c \
+	$(SBASELUTIL)/strtonum.c $(SBASELUTIL)/recurse.c $(SBASELUTIL)/strlcat.c \
+	$(SBASELUTIL)/strlcpy.c $(SBASELUTIL)/ealloc.c $(SBASELUTIL)/human.c
 echo-SRC-y := src/echo.c
 env-SRC-y := src/env.c
+hostname-SRC-y := src/sbase/hostname.c $(SBASELUTIL)/eprintf.c \
+	$(SBASELUTIL)/fshut.c
 id-SRC-y := src/id.c
+kill-SRC-y := src/sbase/kill.c $(SBASELUTIL)/eprintf.c $(SBASELUTIL)/fshut.c \
+	$(SBASELUTIL)/strtonum.c
 login-SRC-y := src/login.c
+logname-SRC-y := src/sbase/logname.c $(SBASELUTIL)/eprintf.c \
+	$(SBASELUTIL)/fshut.c
 ls-SRC-y := src/ls.c
 minised-SRC-y := src/minised/sedcomp.c src/minised/sedexec.c
 mount-SRC-y := src/mount.c src/utils/opt.c
