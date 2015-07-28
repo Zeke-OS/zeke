@@ -45,6 +45,7 @@ struct session * proc_session_create(struct proc_info * leader,
 
     TAILQ_INIT(&s->s_pgrp_list_head);
     s->s_refcount = ATOMIC_INIT(0);
+    strlcpy(s->s_login, s_login, sizeof(s->s_login));
 
     return s;
 }

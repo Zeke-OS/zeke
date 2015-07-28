@@ -40,7 +40,7 @@ int getlogin_r(char * name, size_t namesize)
     char lname[MAXLOGNAME];
     int err;
 
-    err = syscall(SYSCALL_PROC_GETLOGIN, &lname);
+    err = syscall(SYSCALL_PROC_GETLOGIN, lname);
     if (err)
         return err;
     strlcpy(name, lname, namesize);
