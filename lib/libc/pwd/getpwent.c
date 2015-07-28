@@ -47,8 +47,9 @@ static int start_pw(void)
 
 static char * get_next_line(FILE * fp)
 {
+    char * cp;
+
     while (fgets(line, sizeof(line), fp)) {
-        char * cp;
         int ch;
 
         cp = strchr(line, '\n');
