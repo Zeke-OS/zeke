@@ -77,6 +77,7 @@ void init_hist(void)
     if (home) {
         if (strlcpy(histfilepath, home, sizeof(histfilepath)) >
             (sizeof(histfilepath) - sizeof(HISTFILENAME) - 1)) {
+            fprintf(stderr, "%s: Failed to get histfile path\n", argv0);
             exit(EXIT_FAILURE);
         }
     } else {
@@ -182,7 +183,7 @@ int main(int argc, char * argv[], char * envp[])
     argv0 = argv[0];
 
     /* TODO get opts */
-    argv += 1;
+    argv++;
 
     if (argc == 2) {
         /* File mode */
@@ -219,6 +220,8 @@ int main(int argc, char * argv[], char * envp[])
             run_line(line);
             free(line);
         }
+
+        perror("Failed to read stdin");
     }
 
     return 0;
