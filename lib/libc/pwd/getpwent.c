@@ -45,23 +45,30 @@ static int start_pw(void)
     return 0;
 }
 
+static char * get_next_line(FILE * fp)
+{
+    char * cp;
+    int ch;
+
+    while (fgets(line, sizeof(line), fp)) {
+        cp = strchr(line, '\n');
+        if (cp) {
+            *cp = '\0';
+            return line;
+        }
+        /* skip lines that are too long */
+        while ((ch = fgetc(fp)) != '\n' && ch != EOF);
+    } while (!cp);
+
+    return NULL;
+}
+
 static int scanpw(void)
 {
     char * cp;
     char * bp;
-    int ch;
 
-    for (;;) {
-        if (!(fgets(line, sizeof(line), pw_fp)))
-            return 0;
-        /* skip lines that are too big */
-        cp = strchr(line, '\n');
-        if (!cp) {
-            while ((ch = fgetc(pw_fp)) != '\n' && ch != EOF)
-                ;
-            continue;
-        }
-        *cp = '\0';
+    while (get_next_line(pw_fp)) {
         bp = line;
         pw_entry.pw_name = strsep(&bp, ":");
         pw_entry.pw_passwd = strsep(&bp, ":");
@@ -80,10 +87,10 @@ static int scanpw(void)
             continue;
         return 1;
     }
-    /* NOTREACHED */
+
+    return 0;
 }
 
-/* TODO Just do a lookup */
 static void getpw(void)
 {
     static char pwbuf[50];
@@ -119,12 +126,9 @@ bad:
 
 struct passwd * getpwent(void)
 {
-    int rval;
-
     if (!pw_fp && !start_pw())
         return NULL;
-    rval = scanpw();
-    if (!rval)
+    if (!scanpw())
         return 0;
     getpw();
     return &pw_entry;
@@ -147,8 +151,8 @@ struct passwd * getpwnam(char * nam)
     if (!rval)
         return NULL;
 
-    /* TODO call getpw() only if password is x */
-    getpw();
+    if (pw_entry.pw_passwd[0] != '$')
+        getpw();
     return &pw_entry;
 }
 

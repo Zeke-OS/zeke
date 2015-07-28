@@ -42,6 +42,23 @@
 #include <sys/types/_size_t.h>
 #include <sys/types/_uid_t.h>
 
+/*
+ * /etc/passwd file format
+ *
+ * The file contains newline separated records, each line containing
+ * colon (`:') separated fields. The fields are as follows:
+ *
+ * 1. Username: Used as a login username. 1 to MAXLOGNAME characters in length,
+ *              shouldn't start with dash (`-').
+ * 2. Password: A number value indicates that encrypted password is stored in
+ *              /etc/shadow file with an offset indicated by the number.
+ * 3. UID:      User ID. Zero (0) is reserved for root.
+ * 4. GID:      The primary group. (Stored in /etc/group)
+ * 5. GECOS:    Full name.
+ * 6. Home dir: User's home directory.
+ * 7. Shell:    The command that's executed when the user logs in.
+ */
+
 struct passwd {
     char    *pw_name;   /*!< User's login name. */
     char    *pw_passwd; /*!< Encrypted password. */
