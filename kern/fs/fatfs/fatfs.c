@@ -854,14 +854,16 @@ int fatfs_chmod(vnode_t * vnode, mode_t mode)
     struct fatfs_inode * in = get_inode_of_vnode(vnode);
     uint8_t attr = 0;
     const uint8_t mask = AM_RDO;
-    FRESULT fresult;
+    int err;
 
     if (!(mode & (S_IWUSR | S_IWGRP | S_IWOTH)))
         attr |= AM_RDO;
 
-    fresult = f_chmod(&ffsb->ff_fs, in->in_fpath, attr, mask);
+    err = fresult2errno(f_chmod(&ffsb->ff_fs, in->in_fpath, attr, mask));
+    if (!err)
+        vnode->vn_mode = mode;
 
-    return fresult2errno(fresult);
+    return err;
 }
 
 /*
@@ -908,13 +910,14 @@ static void init_fatfs_vnode(vnode_t * vnode, ino_t inum, mode_t mode,
     fs_vnode_init(vnode, inum, sb, &fatfs_vnode_ops);
 
     vnode->vn_hash = vn_hash;
-    /* TODO Correct modes */
+
     if (S_ISDIR(mode))
         mode |= S_IRWXU | S_IXGRP | S_IXOTH;
     vnode->vn_mode = mode | S_IRUSR | S_IRGRP | S_IROTH;
-
     fatfs_stat(vnode, &stat);
     vnode->vn_len = stat.st_size;
+    if ((stat.st_flags & UF_READONLY) == 0)
+        vnode->vn_mode |= S_IWUSR | S_IWGRP | S_IWOTH;
 }
 
 /**
