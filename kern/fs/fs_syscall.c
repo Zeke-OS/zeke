@@ -82,15 +82,18 @@ static int sys_read(__user void * user_args)
     }
 
     file = fs_fildes_ref(curproc->files, args.fildes, 1);
-    if (!file)
-        return -EBADF;
+    if (!file) {
+        set_errno(EBADF);
+        return -1;
+    }
     vnode = file->vnode;
 
     /*
      * Check that file is opened with a correct mode and the vnode exist.
      */
     if (!((file->oflags & O_RDONLY) && vnode)) {
-        retval = -EBADF;
+        set_errno(EBADF);
+        retval = -1;
         goto out;
     }
 
@@ -134,15 +137,18 @@ static int sys_write(__user void * user_args)
     }
 
     file = fs_fildes_ref(curproc->files, args.fildes, 1);
-    if (!file)
-        return -EBADF;
+    if (!file) {
+        set_errno(EBADF);
+        return -1;
+    }
     vnode = file->vnode;
 
     /*
      * Check that file is opened with a correct mode and the vnode exist.
      */
     if (!((file->oflags & O_WRONLY) && vnode)) {
-        retval = -EBADF;
+        set_errno(EBADF);
+        retval = -1;
         goto out;
     }
 

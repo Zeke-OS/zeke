@@ -38,7 +38,7 @@ FILE * _PDCLIB_fvopen(
      * - data buffer.
      * Data buffer comes last because it might change in size ( setvbuf() ).
      */
-    filename_len = filename ? strlen( filename ) + 1 : 1;
+    filename_len = filename ? strlen(filename) + 1 : 1;
     allocsize = sizeof(FILE) + _PDCLIB_UNGETCBUFSIZE + filename_len + BUFSIZ;
     rc = calloc(1, allocsize);
     if (!rc) {

@@ -1,5 +1,5 @@
 /*
- * fflush( FILE * )
+ * fflush(FILE *)
  *
  * This file is part of the Public Domain C Library (PDCLib).
  * Permission is granted to use, modify, and / or redistribute at will.
@@ -16,8 +16,10 @@ int _PDCLIB_fflush_unlocked(FILE * stream)
         int rc = 0;
 
         stream = _PDCLIB_filelist;
-        /* TODO Check what happens when fflush( NULL ) encounters write errors,
-         *      in other libs */
+        /*
+         * TODO Check what happens when fflush( NULL ) encounters write errors,
+         *      in other libs
+         */
         while (stream != NULL) {
             if (stream->status & _PDCLIB_FWRITE)
             {
@@ -29,7 +31,7 @@ int _PDCLIB_fflush_unlocked(FILE * stream)
         }
         return rc;
     } else {
-        return _PDCLIB_flushbuffer( stream );
+        return _PDCLIB_flushbuffer(stream);
     }
 }
 
