@@ -39,7 +39,7 @@ struct flags {
     int f           : 1;
     int p           : 1;
     int ask         : 1;
-    int passwd_req  : 1;
+    int passwd_nreq : 1;
 } flags;
 
 static char hostname[HOST_NAME_MAX];
@@ -258,10 +258,10 @@ int main(int argc, char * argv[])
         if (flags.f) {
             uid_t uid = getuid();
 
-            flags.passwd_req = pwd->pw_uid == 0 || (uid && uid != pwd->pw_uid);
+            flags.passwd_nreq = pwd->pw_uid != 0 || uid == pwd->pw_uid;
         }
 
-        if (!flags.passwd_req || !*pwd->pw_passwd) {
+        if (flags.passwd_nreq || !*pwd->pw_passwd) {
             break;
         }
 
