@@ -31,7 +31,7 @@ $(BIN-y): $(OBJS)
 
 -include $(DEPS)
 
-manifest: $(BIN-y)
+manifest: $(BIN-y) $(FILES)
 	echo "$(strip $(BIN-y) $(FILES))" > manifest
 
 clean:

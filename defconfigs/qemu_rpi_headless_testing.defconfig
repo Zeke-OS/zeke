@@ -18,8 +18,8 @@ configKUNIT_GENERIC=y
 configKUNIT_HAL=y
 configKUNIT_KSTRING=y
 configKUNIT_VM=y
+configETC_TESTING=y
 # configBUNDLE_STATIC is not set
-configTISH=y
 configTESTS_LIBC=y
 configTESTS_MMAN=y
 configTESTS_TTY=y

@@ -23,12 +23,16 @@ menu "Kernel"
 source "kern/Kconfig"
 endmenu
 
-menu "lib"
-source "lib/Kconfig"
-endmenu
-
 menu "bin"
 source bin/Kconfig
+endmenu
+
+menu "etc"
+source etc/Kconfig
+endmenu
+
+menu "lib"
+source "lib/Kconfig"
 endmenu
 
 menu "sbin"
@@ -42,3 +46,4 @@ endmenu
 menu "opt"
 source opt/Kconfig
 endmenu
+

@@ -40,3 +40,10 @@ FILES := gettytab group passwd
 # End
 
 include $(ROOT_DIR)/makefiles/user_tail.mk
+
+gettytab: gettytab.normal gettytab.testing
+ifeq ($(configETC_TESTING), y)
+	cp -f gettytab.testing gettytab
+else
+	cp -f gettytab.normal gettytab
+endif
