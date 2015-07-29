@@ -32,12 +32,6 @@
 #include <unistd.h>
 #include <paths.h>
 
-/* Needed for tty handling */
-#include <fcntl.h>
-
-#define LEN(x) (sizeof(x) / sizeof(*(x)))
-
-static void open_tty(void);
 static void poweroff(void);
 static void reap(void);
 static void reboot(void);
@@ -69,13 +63,11 @@ main(void)
     sigfillset(&set);
     sigprocmask(SIG_BLOCK, &set, NULL);
 
-    open_tty();
-
     spawn(rcinitcmd);
 
     while (1) {
         sigwait(&set, &sig);
-        for (i = 0; i < LEN(sigmap); i++) {
+        for (i = 0; i < num_elem(sigmap); i++) {
             if (sigmap[i].sig == sig) {
                 sigmap[i].handler();
                 break;
@@ -85,25 +77,6 @@ main(void)
 
     /* not reachable */
     return 0;
-}
-
-/* This is needed until we have better way to handle ttys */
-static void open_tty(void)
-{
-    int r0, r1, r2;
-
-    setenv("PATH", _PATH_STDPATH, 1);
-    setenv("HOME", "/", 1);
-    setenv("TERM", "vt100", 1);
-
-    close(STDIN_FILENO);
-    close(STDOUT_FILENO);
-    close(STDERR_FILENO);
-    r0 = open(configSINIT_STDIN, O_RDONLY);
-    r1 = open(configSINIT_STDOUT, O_WRONLY);
-    r2 = open(configSINIT_STDERR, O_WRONLY);
-
-    printf("fd: %i, %i, %i\n", r0, r1, r2);
 }
 
 static void

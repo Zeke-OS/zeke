@@ -26,9 +26,10 @@
 include $(ROOT_DIR)/makefiles/user_head.mk
 
 # Binaries #####################################################################
-BIN-y := sinit
+BIN-y := getty sinit
 
 # Source Files #################################################################
+getty-SRC-y := src/getty.c
 sinit-SRC-y := src/sinit/sinit.c
 
 # CCFLAGS ######################################################################

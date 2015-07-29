@@ -320,6 +320,7 @@ nouser:
     setenv("HOME", pwd->pw_dir, 1);
     setenv("SHELL", pwd->pw_shell, 1);
     /* TODO (void)setenv("TERM", term, 0); */
+    setenv("TERM", "vt100", 1);
     (void)setenv("USER", pwd->pw_name, 1);
     (void)setenv("PATH", _PATH_STDPATH, 0);
 
