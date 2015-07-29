@@ -130,20 +130,23 @@ static size_t read_gettytab(void)
     FILE * fp;
     struct gettytab_entry entry;
     struct gettytab_entry * tty = NULL;
-    size_t i = 1;
+    size_t i = 0;
 
     fp = fopen("/etc/gettytab", "r");
     if (!fp)
-        return 0;
+        goto fail;
 
     while (next_entry(fp, &entry)) {
         tty_arr = realloc(tty, (i + 1) * sizeof(struct gettytab_entry));
-        if (!tty_arr)
-            return 0;
+        if (!tty_arr) {
+            i = 0;
+            goto fail;
+        }
 
         tty_arr[i++] = entry;
     }
 
+fail:
     fclose(fp);
 
     nr_tty = i;
