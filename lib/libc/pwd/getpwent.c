@@ -29,9 +29,7 @@
 static FILE *pw_fp;
 static struct passwd pw_entry;
 static int pw_stayopen;
-
-#define MAXLINELENGTH   256
-static char line[MAXLINELENGTH];
+static char line[256];
 
 static int start_pw(void)
 {
@@ -47,7 +45,6 @@ static int start_pw(void)
 
 static char * get_next_line(FILE * fp)
 {
-
     while (fgets(line, sizeof(line), fp)) {
         char * cp;
         int ch;
@@ -133,7 +130,10 @@ struct passwd * getpwent(void)
         return NULL;
     if (!scanpw())
         return 0;
-    getpw();
+
+    if (pw_entry.pw_passwd[0] != '$')
+        getpw();
+
     return &pw_entry;
 }
 
@@ -156,6 +156,7 @@ struct passwd * getpwnam(char * nam)
 
     if (pw_entry.pw_passwd[0] != '$')
         getpw();
+
     return &pw_entry;
 }
 
@@ -175,7 +176,10 @@ struct passwd * getpwuid(uid_t uid)
         endpwent();
     if (!rval)
         return 0;
-    getpw();
+
+    if (pw_entry.pw_passwd[0] != '$')
+        getpw();
+
     return &pw_entry;
 }
 
