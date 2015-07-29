@@ -130,13 +130,15 @@ void priv_cred_init(struct cred * cred)
      * but sometimes we wan't to restrict these too.
      */
 #ifdef configPROCCAP
-    int privs[] = { PRIV_VFS_READ,
-                    PRIV_VFS_WRITE,
-                    PRIV_VFS_EXEC,
-                    PRIV_VFS_LOOKUP,
-                    PRIV_VFS_CHROOT,
-                    PRIV_VFS_STAT,
-                    0
+    int privs[] = {
+        PRIV_TTY_SETA,
+        PRIV_VFS_READ,
+        PRIV_VFS_WRITE,
+        PRIV_VFS_EXEC,
+        PRIV_VFS_LOOKUP,
+        PRIV_VFS_CHROOT,
+        PRIV_VFS_STAT,
+        0
     };
     int * priv;
 
