@@ -7,10 +7,7 @@
 
 int main(int argc, char * argv[])
 {
-    pid_t pid;
-#if 0
-    pid_t sid;
-#endif
+    pid_t pid, sid;
     FILE * fp;
 
     pid = fork();
@@ -24,13 +21,10 @@ int main(int argc, char * argv[])
     }
 
     umask(0);
-    /* TODO setsid() not supported yet */
-#if 0
     sid = setsid();
     if (sid < 0) {
         exit(1);
     }
-#endif
 
     chdir("/");
     close(STDIN_FILENO);

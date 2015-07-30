@@ -166,6 +166,9 @@ static int open_tty(struct gettytab_entry * entry)
     close(STDIN_FILENO);
     close(STDOUT_FILENO);
     close(STDERR_FILENO);
+
+    setsid();
+
     fd[0] = open(filename, O_RDONLY);
     fd[1] = open(filename, O_WRONLY);
     fd[2] = open(filename, O_WRONLY);
