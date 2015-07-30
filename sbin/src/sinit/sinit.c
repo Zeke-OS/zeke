@@ -23,14 +23,12 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include <sys/types.h>
-#include <sys/wait.h>
-
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
-#include <paths.h>
 
 static void poweroff(void);
 static void reap(void);
