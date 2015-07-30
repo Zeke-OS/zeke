@@ -63,7 +63,7 @@ struct dynmem_reserved_area {
  * @param size      Region size in 1MB blocks.
  * @param ap        Access permission.
  * @param control   Control settings.
- * @return  Address to the allocated region. Returns 0 if out of memory.
+ * @return  Address to the allocated region. Returns NULL if out of memory.
  */
 void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t control);
 

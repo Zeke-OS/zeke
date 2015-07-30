@@ -198,6 +198,9 @@ void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t ctrl)
     size_t pos;
     void * retval = 0;
 
+    if (size == 0)
+        return NULL;
+
     mtx_lock(&dynmem_region_lock);
 
     if (bitmap_block_search(&pos, size, dynmemmap_bitmap,
@@ -222,6 +225,9 @@ void * dynmem_alloc_force(void * addr, size_t size, uint32_t ap, uint32_t ctrl)
 {
     size_t pos = (size_t)addr - DYNMEM_START;
     void * retval;
+
+    if (size == 0)
+        return NULL;
 
     if (!validate_addr(addr, 0)) {
         KERROR(KERROR_ERR, "%s(): Invalid address; %p\n", __func__, addr);
