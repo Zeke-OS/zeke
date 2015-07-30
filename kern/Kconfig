@@ -119,7 +119,7 @@ menu "Processes"
 
 config configMAXPROC
     int "maxproc"
-    default 5
+    default 50
     ---help---
     Default maximum number of processes. This is a sysctl tunable variable
     and thus can be changed on runtime.
