@@ -155,10 +155,10 @@ size_t mmu_sizeof_region(const mmu_region_t * region)
     case MMU_PTT_MASTER:
         return num_pages * MMU_PGSIZE_SECTION;
     default:
+#ifdef configMMU_DEBUG
         KERROR(KERROR_ERR,
                "mmu_sizeof_region(%p) failed, region is uninitialized\n",
                region);
-#ifdef configMMU_DEBUG
         KERROR_DBG_PRINT_RET_ADDR();
 #endif
         return 0;

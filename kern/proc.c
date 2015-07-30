@@ -186,7 +186,15 @@ static void init_kernel_proc(void)
     }
 
     kprocvm_code->b_mmu = mmu_region_kernel;
+    kprocvm_code->b_bufsize = mmu_sizeof_region(&mmu_region_kernel);
     kprocvm_heap->b_mmu = mmu_region_kdata;
+    /*
+     * FIXME For some unkown reason the kernel fails
+     *       if kprocvm_heap->b_bufsize != 0
+     */
+#if 0
+    kprocvm_heap->b_bufsize = mmu_sizeof_region(&mmu_region_kdata);
+#endif
 
     kprocvm_code->vm_ops = &sys_vm_ops;
     kprocvm_heap->vm_ops = &sys_vm_ops;

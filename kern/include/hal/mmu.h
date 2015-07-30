@@ -158,7 +158,9 @@ typedef struct mmu_region {
                          */
     uintptr_t paddr;      /*!< The physical starting address of the region. */
     mmu_pagetable_t * pt; /*!< A pointer to the page table struct in which
-                           * the region resides. */
+                           * the region resides. This is mostly a broken concept
+                           * for vm subsystem but for now it's easier to keep it
+                           * around than completely removing it. */
 } mmu_region_t;
 
 /**

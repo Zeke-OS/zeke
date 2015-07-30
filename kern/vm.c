@@ -214,7 +214,7 @@ int vm_find_reg(struct proc_info * proc, uintptr_t uaddr, struct buf ** bp)
          *      but before that it has to be fixed everywhere in the codebase.
          */
         reg_start = region->b_mmu.vaddr;
-        reg_end = region->b_mmu.vaddr + mmu_sizeof_region(&region->b_mmu) - 1;
+        reg_end = region->b_mmu.vaddr + region->b_bufsize - 1;
 
         if (VM_ADDR_IS_IN_RANGE(uaddr, reg_start, reg_end)) {
             mtx_unlock(&mm->regions_lock);
@@ -282,7 +282,7 @@ static uintptr_t rnd_addr(struct proc_info * proc, size_t size)
                 continue;
 
             reg_start = bp->b_mmu.vaddr;
-            reg_end = bp->b_mmu.vaddr + mmu_sizeof_region(&bp->b_mmu) - 1;
+            reg_end = bp->b_mmu.vaddr + bp->b_bufsize - 1;
 
             if (VM_RANGE_IS_OVERLAPPING(reg_start, reg_end,
                                         vaddr, newreg_end)) {
@@ -715,6 +715,7 @@ int kernacc(__kernel const void * addr, int len, int rw)
     uint32_t ap;
 
     reg_start = mmu_region_kernel.vaddr;
+    /* This is the only case where mmu_sizeof_region() is ok */
     reg_size = mmu_sizeof_region(&mmu_region_kernel);
     if (((size_t)addr >= reg_start) && ((size_t)addr < reg_start + reg_size))
         return (1 == 1);
@@ -784,6 +785,9 @@ int useracc_proc(__user const void * addr, size_t len, struct proc_info * proc,
     struct buf * region = NULL;
     uintptr_t uaddr, start, end;
 
+    if (addr == NULL)
+        return 0;
+
     uaddr = (uintptr_t)addr;
     (void)vm_find_reg(proc, uaddr, &region);
     if (!region)
@@ -794,10 +798,12 @@ int useracc_proc(__user const void * addr, size_t len, struct proc_info * proc,
     /*
      * Unfortunately sometimes the b_count is invalid.
      */
-    if (unlikely(region->b_bcount == 0))
+    if (unlikely(region->b_bcount == 0)) {
+        /* TODO and this is probably wrong too */
         end = mmu_sizeof_region(&region->b_mmu);
-    else
+    } else {
         end = region->b_bcount;
+    }
     end += region->b_mmu.vaddr - 1;
 
     if (start <= uaddr && uaddr <= end)
