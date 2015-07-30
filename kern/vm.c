@@ -513,7 +513,6 @@ int vm_replace_region(struct proc_info * proc, struct buf * region,
                       int region_nr, int insop)
 {
     struct vm_mm_struct * const mm = &proc->mm;
-    struct vm_pt * vpt;
     struct buf * old_region;
     int err;
 
