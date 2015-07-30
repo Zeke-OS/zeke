@@ -35,6 +35,6 @@ manifest: $(BIN-y) $(FILES)
 	echo "$(strip $(BIN-y) $(FILES))" > manifest
 
 clean:
-	$(RM) $(ASOBJS) $(OBJS) $(DEPS) $(BIN-y)
+	$(RM) $(ASOBJS) $(OBJS) $(DEPS) $(BIN-y) $(CLEAN_FILES)
 	$(RM) manifest
 
