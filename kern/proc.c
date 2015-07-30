@@ -73,6 +73,16 @@ extern void * __bss_break __attribute__((weak));
  */
 mtx_t proclock;
 
+static const char * const proc_state_names[] = {
+    "PROC_STATE_INITIAL",
+    "PROC_STATE_RUNNING", /* not used atm */
+    "PROC_STATE_READY",
+    "PROC_STATE_WAITING", /* not used atm */
+    "PROC_STATE_STOPPED",
+    "PROC_STATE_ZOMBIE",
+    "PROC_STATE_DEFUNCT",
+};
+
 SYSCTL_INT(_kern, OID_AUTO, nprocs, CTLFLAG_RD,
     &nprocs, 0, "Current number of processes");
 
@@ -439,6 +449,13 @@ struct vm_mm_struct * proc_get_locked_mm(pid_t pid)
     PROC_UNLOCK();
 
     return mm;
+}
+
+const char * proc_state2str(enum proc_state state)
+{
+    if ((unsigned)state > sizeof(proc_state_names))
+        return NULL;
+    return proc_state_names[state];
 }
 
 struct thread_info * proc_iterate_threads(struct proc_info * proc,

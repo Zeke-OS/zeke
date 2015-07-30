@@ -238,6 +238,11 @@ struct proc_info * proc_get_struct(pid_t pid);
 
 struct vm_mm_struct * proc_get_locked_mm(pid_t pid);
 
+/**
+ * Process state enum to string name of the state.
+ */
+const char * proc_state2str(enum proc_state state);
+
 /* proc_fork.c */
 
 /**

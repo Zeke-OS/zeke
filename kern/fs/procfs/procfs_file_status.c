@@ -57,7 +57,7 @@ static ssize_t procfs_read_status(struct procfs_info * spec, char ** retbuf)
 
     bytes = ksprintf(tmpbuf, bufsz,
                      "Name: %s\n"
-                     "State: %u\n"
+                     "State: %s\n"
                      "Pid: %u\n"
                      "Uid: %u %u %u\n"
                      "Gid: %u %u %u\n"
@@ -65,7 +65,7 @@ static ssize_t procfs_read_status(struct procfs_info * spec, char ** retbuf)
                      "Sys: %u\n"
                      "Break: %p %p\n",
                      proc->name,
-                     proc->state,
+                     proc_state2str(proc->state),
                      proc->pid,
                      proc->cred.uid, proc->cred.euid, proc->cred.suid,
                      proc->cred.gid, proc->cred.egid, proc->cred.sgid,
