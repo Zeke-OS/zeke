@@ -72,19 +72,40 @@ void proc_session_remove(struct session * s)
     proc_session_rele(s);
 }
 
+struct pgrp * proc_session_search_pg(struct session * s, pid_t pg_id)
+{
+    struct pgrp * pg;
+
+    KASSERT(PROC_TESTLOCK(),
+            "proc lock is needed before calling this function.");
+
+    TAILQ_FOREACH(pg, &s->s_pgrp_list_head, pg_pgrp_entry_) {
+        if (pg->pg_id == pg_id)
+            return pg;
+    }
+
+    return NULL;
+}
+
 struct pgrp * proc_pgrp_create(struct session * s, struct proc_info * proc)
 {
     struct pgrp * pgrp;
 
+    /*
+     * RFE This might be racy.
+     */
+    proc_session_ref(s);
+
     pgrp = kzalloc(sizeof(struct pgrp));
-    if (!pgrp)
+    if (!pgrp) {
+        proc_session_rele(s);
         return NULL;
+    }
 
     TAILQ_INIT(&pgrp->pg_proc_list_head);
     pgrp->pg_id = proc->pid;
     pgrp->pg_refcount = ATOMIC_INIT(0);
 
-    proc_session_ref(s);
     pgrp->pg_session = s;
     TAILQ_INSERT_TAIL(&s->s_pgrp_list_head, pgrp, pg_pgrp_entry_);
     proc_pgrp_insert(pgrp, proc);
@@ -113,14 +134,14 @@ static void proc_pgrp_rele(struct pgrp * pgrp)
 
 void proc_pgrp_insert(struct pgrp * pgrp, struct proc_info * proc)
 {
+    KASSERT(PROC_TESTLOCK(),
+            "proc lock is needed before calling this function.");
+
     if (proc->pgrp)
         proc_pgrp_remove(proc);
 
     proc_pgrp_ref(pgrp);
-    /* We take proc lock here to protect PCBs. */
-    PROC_LOCK();
     TAILQ_INSERT_TAIL(&pgrp->pg_proc_list_head, proc, pgrp_proc_entry_);
-    PROC_UNLOCK();
     proc->pgrp = pgrp;
 }
 
@@ -128,8 +149,9 @@ void proc_pgrp_remove(struct proc_info * proc)
 {
     struct pgrp * pgrp = proc->pgrp;
 
-    PROC_LOCK();
+    KASSERT(PROC_TESTLOCK(),
+            "proc lock is needed before calling this function.");
+
     TAILQ_REMOVE(&pgrp->pg_proc_list_head, proc, pgrp_proc_entry_);
-    PROC_UNLOCK();
     proc_pgrp_rele(pgrp);
 }

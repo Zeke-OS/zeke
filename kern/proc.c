@@ -155,7 +155,9 @@ static void init_kernel_proc(void)
      * Initialize a session.
      */
     ses = proc_session_create(kernel_proc, "root");
-    kernel_proc->pgrp = proc_pgrp_create(ses, kernel_proc);
+    PROC_LOCK();
+    proc_pgrp_create(ses, kernel_proc);
+    PROC_UNLOCK();
     if (!kernel_proc->pgrp) {
         panic(panic_msg);
     }
@@ -400,7 +402,9 @@ void _proc_free(struct proc_info * p)
     if (p->mm.mpt.pt_addr)
         ptmapper_free(&(p->mm.mpt));
 
+    PROC_LOCK();
     proc_pgrp_remove(p);
+    PROC_UNLOCK();
     kfree(p);
 }
 
@@ -983,6 +987,10 @@ static int sys_proc_setsid(__user void * user_args)
     struct session * s = NULL;
     struct pgrp * pg = NULL;
 
+    /*
+     * RFE Technically not any process group id should match with this PID but
+     *     we can't check it very efficiently right now.
+     */
     if (pid == curproc->pgrp->pg_id ||
         pid == curproc->pgrp->pg_session->s_leader) {
         set_errno(EPERM);
@@ -996,7 +1004,9 @@ static int sys_proc_setsid(__user void * user_args)
         return -1;
     }
 
+    PROC_LOCK();
     pg = proc_pgrp_create(s, curproc);
+    PROC_UNLOCK();
     if (!pg) {
         proc_session_remove(s);
         set_errno(ENOMEM);
@@ -1013,9 +1023,76 @@ static int sys_proc_getpgrp(__user void * user_args)
 
 static int sys_prog_setpgid(__user void * user_args)
 {
-    /* TODO setpgid() implementation */
-    set_errno(ENOSYS);
-    return -1;
+    struct _proc_setpgid_args args;
+    struct proc_info * proc;
+    pid_t pg_id;
+    int retval = -1;
+
+    if (copyin(user_args, &args, sizeof(args))) {
+            set_errno(EFAULT);
+            return -1;
+    }
+
+    if (args.pg_id < 0) {
+        set_errno(EINVAL);
+        return -1;
+    }
+
+    PROC_LOCK();
+
+    if (args.pid == 0 || args.pid == curproc->pid) {
+        proc = curproc;
+    } else {
+        proc = proc_get_struct(args.pid);
+        if (proc) {
+            if (proc->inh.parent != curproc) {
+                /*
+                 * proc must be the current process or a child of the curproc
+                 * as per POSIX.
+                 */
+                proc = NULL;
+            } else if (proc->pgrp->pg_session != curproc->pgrp->pg_session) {
+                set_errno(EPERM);
+                goto fail;
+            } /* TODO else if already called exec */
+        }
+    }
+    if (!proc) {
+        set_errno(ESRCH);
+        goto fail;
+    }
+    if (proc->pid == proc->pgrp->pg_session->s_leader) {
+        set_errno(EPERM);
+        goto fail;
+    }
+
+    if (args.pg_id == 0)
+        pg_id = curproc->pid;
+    else
+        pg_id = args.pg_id;
+
+    /*
+     * Either insert to an existing group or create a new group.
+     */
+    if (pg_id != proc->pid) {
+        struct pgrp * pg;
+
+        pg = proc_session_search_pg(proc->pgrp->pg_session, pg_id);
+        if (!pg) {
+            set_errno(EPERM);
+            goto fail;
+        }
+
+        proc_pgrp_insert(pg, proc);
+    } else if (!proc_pgrp_create(curproc->pgrp->pg_session, proc)) {
+        set_errno(ENOMEM);
+        goto fail;
+    }
+
+    retval = 0;
+fail:
+    PROC_UNLOCK();
+    return retval;
 }
 
 static int sys_proc_getlogin(__user void * user_args)

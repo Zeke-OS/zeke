@@ -321,7 +321,9 @@ pid_t proc_fork(pid_t pid)
     }
 
     new_proc->pgrp = NULL; /* Must be NULL so we don't free the old ref. */
+    PROC_LOCK();
     proc_pgrp_insert(old_proc->pgrp, new_proc);
+    PROC_UNLOCK();
 
     retval = procarr_realloc();
     if (retval)

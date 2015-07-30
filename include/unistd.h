@@ -225,12 +225,17 @@ struct _proc_chdir_args {
     int atflags;
 };
 
+/** Arguments for SYSCALL_PROC_SETPGID */
+struct _proc_setpgid_args {
+    pid_t pid;
+    pid_t pg_id;
+};
+
 /** Arguments for SYSCALL_PROC_GETGROUPS */
 struct _proc_getgroups_args {
     gid_t * grouplist;
     size_t size; /*!< Size of grouplist in bytes. */
 };
-
 
 /** Arguments for SYSCALL_PROC_SETGROUPS */
 struct _proc_setgroups_args {
@@ -365,6 +370,7 @@ int setgroups(int gidsetsize, const gid_t grouplist[]);
 pid_t getsid(pid_t pid);
 pid_t setsid(void);
 pid_t getpgrp(void);
+int set_pggid(pid_t pid, pid_t pgid);
 
 /**
  * @addtogroup getlogin getlogin setlogin

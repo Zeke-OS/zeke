@@ -324,7 +324,6 @@ nouser:
     chmod(ttyn, 0620);
 #endif
 
-    /* TODO Create a new session */
     setgid(pwd->pw_gid);
     initgroups(username, pwd->pw_gid);
 

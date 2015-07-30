@@ -100,7 +100,6 @@ struct session {
 struct pgrp {
     pid_t pg_id;                /*!< Pgrp id. */
     struct session * pg_session; /*!< Pointer to the session. */
-    int pg_jobc;                /*!< # procs qualifying pgrp for job control */
     TAILQ_HEAD(proc_list, proc_info) pg_proc_list_head;
     atomic_t pg_refcount;       /*!< Ref count; procs in group. */
     TAILQ_ENTRY(pgrp) pg_pgrp_entry_;
@@ -151,7 +150,7 @@ struct proc_info {
      * + next_child is a child thread attribute containing address of a next
      *   child node of the common parent thread
      */
-    struct inh {
+    struct proc_inh {
         struct proc_info * parent;      /*!< Parent thread. */
         SLIST_HEAD(proc_child_list, proc_info) child_list_head;
         SLIST_ENTRY(proc_info) child_list_entry;
@@ -285,11 +284,28 @@ pid_t proc_get_random_pid(void);
 struct session * proc_session_create(struct proc_info * leader,
                                      char s_login[MAXLOGNAME]);
 /**
+ * Remove a reference to the session s.
+ */
+void proc_session_remove(struct session * s);
+/**
+ * Search for a process group in a session.
+ * @note Requires PROC_LOCK.
+ */
+struct pgrp * proc_session_search_pg(struct session * s, pid_t pg_id);
+/**
  * Create a new process group.
+ * @note Requires PROC_LOCK.
  */
 struct pgrp * proc_pgrp_create(struct session * s, struct proc_info * proc);
-void proc_session_remove(struct session * s);
+/**
+ * Insert a process into the process group pgrp.
+ * @note Requires PROC_LOCK.
+ */
 void proc_pgrp_insert(struct pgrp * pgrp, struct proc_info * proc);
+/**
+ * Remove a process group reference.
+ * @note Requires PROC_LOCK.
+ */
 void proc_pgrp_remove(struct proc_info * proc);
 
 #endif /* PROC_INTERNAL */
