@@ -32,6 +32,9 @@ BIN-y := getty sinit
 getty-SRC-y := src/getty.c
 sinit-SRC-y := src/sinit/sinit.c
 
+# Other files ##################################################################
+FILES := poweroff rc.init reboot
+
 # CCFLAGS ######################################################################
 sinit-CCFLAGS := -include $(AUTOCONF_H)
 

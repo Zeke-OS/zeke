@@ -1,0 +1,8 @@
+#!/bin/sh
+echo
+echo
+echo "         Zeke booting"
+
+# TODO read /etc/rc.conf, fsck, set hostname etc
+
+/sbin/getty
