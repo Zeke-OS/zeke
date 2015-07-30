@@ -439,7 +439,8 @@ static void init_sched_data(struct sched_thread_data * data)
  * Sets linking from the parent thread to the thread id.
  */
 static void thread_set_inheritance(struct thread_info * child,
-                                   struct thread_info * parent)
+                                   struct thread_info * parent,
+                                   pid_t pid_owner)
 {
     struct thread_info * last_node;
     struct thread_info * tmp;
@@ -449,11 +450,10 @@ static void thread_set_inheritance(struct thread_info * child,
     child->inh.first_child = NULL;
     child->inh.next_child = NULL;
 
-    if (parent == NULL) {
-        child->pid_owner = 0;
+    child->pid_owner = pid_owner;
+
+    if (parent == NULL)
         return;
-    }
-    child->pid_owner = parent->pid_owner;
 
     if (parent->inh.first_child == NULL) {
         /* This is the first child of this parent */
@@ -551,7 +551,7 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
     tp->wait_tim        = TMNOVAL;
 
     /* Update parent and child pointers */
-    thread_set_inheritance(tp, parent);
+    thread_set_inheritance(tp, parent, (parent) ? parent->pid_owner : 0);
 
     /*
      * The user space address of thread local storage is at the end of
@@ -595,7 +595,7 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
     return thread_id;
 }
 
-pthread_t thread_fork(void)
+pthread_t thread_fork(pid_t new_pid)
 {
     struct thread_info * const old_thread = current_thread;
     struct thread_info * new_thread;
@@ -620,7 +620,7 @@ pthread_t thread_fork(void)
     new_thread->flags   &= ~SCHED_INSYS_FLAG;
     new_thread->flags   |= SCHED_DETACH_FLAG; /* New main must be detached. */
     init_sched_data(&new_thread->sched);
-    thread_set_inheritance(new_thread, old_thread);
+    thread_set_inheritance(new_thread, NULL, new_pid);
 
     /* New thread kstack */
     if (!(new_thread->kstack_region = thread_alloc_kstack())) {

@@ -443,6 +443,12 @@ pid_t proc_fork(pid_t pid)
         vref(new_proc->cwd); /* Increment refcount for the cwd */
     }
 
+    /* Update inheritance attributes */
+    set_proc_inher(old_proc, new_proc);
+
+    /* Insert the new process into the process array */
+    procarr_insert(new_proc);
+
     /* A process shall be created with a single thread. If a multi-threaded
      * process calls fork(), the new process shall contain a replica of the
      * calling thread.
@@ -456,7 +462,7 @@ pid_t proc_fork(pid_t pid)
         KERROR(KERROR_DEBUG,
                "Call thread_fork() to get a new main thread for the fork.\n");
 #endif
-        pthread_t new_tid = thread_fork();
+        pthread_t new_tid = thread_fork(new_proc->pid);
         if (new_tid < 0) {
 #ifdef configPROC_DEBUG
             KERROR(KERROR_DEBUG, "thread_fork() failed\n");
@@ -487,13 +493,7 @@ pid_t proc_fork(pid_t pid)
     }
     retval = new_proc->pid;
 
-    /* Update inheritance attributes */
-    set_proc_inher(old_proc, new_proc);
-
     new_proc->state = PROC_STATE_READY;
-
-    /* Insert the new process into the process array */
-    procarr_insert(new_proc);
 
 #ifdef configPROCFS
     procfs_mkentry(new_proc);

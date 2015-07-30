@@ -1,5 +1,9 @@
 comment "Multi-user util"
 
+config configUSR_EXAMPLES
+    bool "Examples"
+    default n
+
 config configUSR_GAMES
     bool "Games"
     default n

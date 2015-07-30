@@ -26,9 +26,11 @@
 include $(ROOT_DIR)/makefiles/user_head.mk
 
 # Binaries #####################################################################
+BIN-$(configUSR_EXAMPLES) := examples/daemon
 BIN-$(configUSR_GAMES) := games/banner games/plasma
 
 # Source Files #################################################################
+examples/daemon-SRC-$(configUSR_EXAMPLES) := examples/daemon.c
 games/banner-SRC-$(configUSR_GAMES) := games/banner.c
 games/plasma-SRC-$(configUSR_GAMES) := games/plasma.c
 
