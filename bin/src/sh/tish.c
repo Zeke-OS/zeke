@@ -44,18 +44,9 @@
 #include "../utils.h"
 #include "tish.h"
 
-/* TODO should be without prefix but FAT doesn't support ot */
+/* TODO should be without prefix but FAT doesn't support it */
 #define HISTFILENAME "tish.histfile"
 
-char banner[] = "\
-|'''''||                    \n\
-    .|'   ...'||            \n\
-   ||   .|...|||  ..  ....  \n\
- .|'    ||    || .' .|...|| \n\
-||......|'|...||'|. ||      \n\
-             .||. ||.'|...'\n\n\
-";
-static const char msg[] = "Zeke " KERNEL_VERSION;
 static char histfilepath[256];
 static char * argv0;
 
@@ -207,9 +198,6 @@ int main(int argc, char * argv[], char * envp[])
             run_line(line);
         }
     } else {
-        /* Interactive mode */
-        printf("\n%s%s\n", banner, msg);
-
         init_hist();
 
         fflush(NULL);

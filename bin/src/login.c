@@ -181,6 +181,22 @@ toomany:
     return 0;
 }
 
+static void print_motd(void)
+{
+    FILE * fp;
+    char buf[80];
+
+    fp = fopen("/etc/motd", "r");
+    if (!fp)
+        return;
+
+    while (fgets(buf, sizeof(buf), fp)) {
+        printf("%s", buf);
+    }
+
+    fclose(fp);
+}
+
 static void usage(void)
 {
     fprintf(stderr, "usage: %s [-fp] [username]\n", argv0);
@@ -324,7 +340,7 @@ nouser:
     (void)setenv("USER", pwd->pw_name, 1);
     (void)setenv("PATH", _PATH_STDPATH, 0);
 
-    /* TODO motd */
+    print_motd();
 
     reset_sighandlers();
 
