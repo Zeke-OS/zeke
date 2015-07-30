@@ -117,7 +117,10 @@ void proc_pgrp_insert(struct pgrp * pgrp, struct proc_info * proc)
         proc_pgrp_remove(proc);
 
     proc_pgrp_ref(pgrp);
+    /* We take proc lock here to protect PCBs. */
+    PROC_LOCK();
     TAILQ_INSERT_TAIL(&pgrp->pg_proc_list_head, proc, pgrp_proc_entry_);
+    PROC_UNLOCK();
     proc->pgrp = pgrp;
 }
 
@@ -125,6 +128,8 @@ void proc_pgrp_remove(struct proc_info * proc)
 {
     struct pgrp * pgrp = proc->pgrp;
 
+    PROC_LOCK();
     TAILQ_REMOVE(&pgrp->pg_proc_list_head, proc, pgrp_proc_entry_);
+    PROC_UNLOCK();
     proc_pgrp_rele(pgrp);
 }

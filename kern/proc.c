@@ -239,7 +239,6 @@ static void init_kernel_proc(void)
 
     /* RFE Is there still something wrong? */
     kernel_proc->files->fd[STDIN_FILENO] = 0;
-    kernel_proc->files->fd[STDOUT_FILENO] = 0;
     /* stderr */
 #ifdef configKLOGGER
     kernel_proc->files->fd[STDERR_FILENO] = kzalloc(sizeof(file_t));
@@ -247,7 +246,10 @@ static void init_kernel_proc(void)
                       &kerror_vnode, O_WRONLY)) {
         panic(panic_msg);
     }
+    kernel_proc->files->fd[STDOUT_FILENO] = fs_fildes_ref(kernel_proc->files,
+                                                          STDERR_FILENO, 1);
 #else
+    kernel_proc->files->fd[STDOUT_FILENO] = 0;
     kernel_proc->files->fd[STDERR_FILENO] = 0;
 #endif
 
