@@ -611,8 +611,7 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
          */
 
         mtx_unlock(&mm->regions_lock);
-        err = vm_replace_region(proc, region, i,
-                                VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
+        err = vm_replace_region(proc, region, i, VM_INSOP_MAP_REG);
 
 #ifdef configPROC_DEBUG
         KERROR(KERROR_DEBUG, "COW done (%d)\n", err);

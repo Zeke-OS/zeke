@@ -234,7 +234,7 @@ static int clone_stack(struct proc_info * new_proc, struct proc_info * old_proc)
         return err;
 
     err = vm_replace_region(new_proc, new_region, MM_STACK_REGION,
-                            (VM_INSOP_SET_PT | VM_INSOP_MAP_REG));
+                            VM_INSOP_MAP_REG);
     return err;
 }
 

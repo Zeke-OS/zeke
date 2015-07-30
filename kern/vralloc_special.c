@@ -93,7 +93,7 @@ struct buf * geteblk_special(size_t size, uint32_t control)
 
     buf->b_mmu.control = control;
 
-    err = vm_insert_region(p, buf, VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
+    err = vm_insert_region(p, buf, VM_INSOP_MAP_REG);
     if (err < 0) {
         panic("Mapping a kernel special buffer failed");
     }

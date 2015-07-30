@@ -413,7 +413,7 @@ int clone2vr(struct buf * src, struct buf ** out)
          * Not vregion, try to clone manually.
          * b_data is expected to be zero if the data is not in memory.
          */
-        const size_t rsize = mmu_sizeof_region(&(src->b_mmu));
+        const size_t rsize = src->b_bufsize;
 
         new = geteblk(rsize);
         if (!new) {

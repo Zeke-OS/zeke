@@ -318,7 +318,7 @@ struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot,
     } else {
         bp = vm_newsect(vaddr, size, prot);
     }
-    err = vm_insert_region(proc, bp, VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
+    err = vm_insert_region(proc, bp, VM_INSOP_MAP_REG);
     if (err < 0)
         panic("Failed to insert a region"); /* TODO error handling */
 
@@ -349,8 +349,7 @@ struct buf * vm_new_userstack_curproc(size_t size)
      */
     mtx_unlock(&curproc->mm.regions_lock);
 
-    vm_replace_region(curproc, vmstack, MM_STACK_REGION,
-                      VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
+    vm_replace_region(curproc, vmstack, MM_STACK_REGION, VM_INSOP_MAP_REG);
 
     return vmstack;
 }
@@ -552,24 +551,9 @@ int vm_replace_region(struct proc_info * proc, struct buf * region,
         old_region->vm_ops->rfree(old_region);
     }
 
-    /*
-     * Get & set page table.
-     */
-    if (insop & VM_INSOP_SET_PT) {
-        vpt = ptlist_get_pt(mm, region->b_mmu.vaddr, region->b_bufsize);
-        if (!vpt)
-            return -ENOMEM;
-
-        region->b_mmu.pt = &vpt->pt;
-    }
-
     err = 0;
-    const int mask = VM_INSOP_SET_PT | VM_INSOP_MAP_REG;
-    if ((insop & mask) == mask) {
-        err = vm_map_region(region, vpt);
-    } else if (insop & VM_INSOP_MAP_REG) {
+    if (insop & VM_INSOP_MAP_REG)
         err = vm_mapproc_region(proc, region);
-    }
     if (err)
         return err;
 

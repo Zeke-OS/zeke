@@ -136,15 +136,13 @@ static int load_sections(struct proc_info * proc, file_t * file,
 
             if (i == 0)
                 *vaddr_base = phdr[i].p_vaddr + rbase;
-            err = vm_replace_region(proc, sect, reg_nr,
-                                    VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
+            err = vm_replace_region(proc, sect, reg_nr, VM_INSOP_MAP_REG);
             if (err) {
                 KERROR(KERROR_ERR, "Failed to replace a region\n");
                 return err;
             }
         } else {
-            err = vm_insert_region(proc, sect,
-                                   VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
+            err = vm_insert_region(proc, sect, VM_INSOP_MAP_REG);
             if (err < 0) {
                 KERROR(KERROR_ERR, "Failed to insert a region\n");
                 return -1;

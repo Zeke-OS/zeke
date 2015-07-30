@@ -222,7 +222,7 @@ errout:
 
     if (flags & MAP_FIXED) {
         bp->b_mmu.vaddr = vaddr & ~(MMU_PGSIZE_COARSE - 1);
-        err = vm_insert_region(proc, bp, VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
+        err = vm_insert_region(proc, bp, VM_INSOP_MAP_REG);
         if (err > 0) /* err >i= 0 => region nr returned; err < -errno code */
             err = 0;
     } else {

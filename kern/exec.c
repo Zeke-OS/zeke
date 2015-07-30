@@ -80,7 +80,7 @@ static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp)
         .param.sched_policy = current_thread->param.sched_policy,
         .param.sched_priority = current_thread->param.sched_priority,
         .stack_addr = (void *)(stack_region->b_mmu.vaddr),
-        .stack_size = mmu_sizeof_region(&stack_region->b_mmu),
+        .stack_size = stack_region->b_bufsize,
         .flags      = PTHREAD_CREATE_DETACHED,
         .start      = (void *(*)(void *))(code_region->b_mmu.vaddr),
         .arg1       = uargc,
@@ -121,7 +121,7 @@ int exec_file(file_t * file, char name[PROC_NAME_LEN], struct buf * env_bp,
     }
 
     /* Map new environment */
-    err = vm_insert_region(curproc, env_bp, VM_INSOP_SET_PT | VM_INSOP_MAP_REG);
+    err = vm_insert_region(curproc, env_bp, VM_INSOP_MAP_REG);
     if (err < 0) {
         if (env_bp->vm_ops->rfree)
             env_bp->vm_ops->rfree(env_bp);

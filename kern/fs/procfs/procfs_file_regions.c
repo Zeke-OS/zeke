@@ -75,7 +75,7 @@ static ssize_t procfs_read_regions(struct procfs_info * spec, char ** retbuf)
         p = buf + bytes;
 
         reg_start = region->b_mmu.vaddr;
-        reg_end = region->b_mmu.vaddr + mmu_sizeof_region(&region->b_mmu) - 1;
+        reg_end = region->b_mmu.vaddr + region->b_bufsize - 1;
         vm_get_uapstring(uap, region);
 
         bytes += ksprintf(p, bytes + maxline, "%x %x %s\n",
