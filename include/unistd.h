@@ -362,6 +362,10 @@ int setgroups(int gidsetsize, const gid_t grouplist[]);
  * @}
  */
 
+pid_t getsid(pid_t pid);
+pid_t setsid(void);
+pid_t getpgrp(void);
+
 /**
  * @addtogroup getlogin getlogin setlogin
  * @{

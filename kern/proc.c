@@ -951,6 +951,70 @@ static int sys_proc_setgroups(__user void * user_args)
     return 0;
 }
 
+static int sys_proc_getsid(__user void * user_args)
+{
+    pid_t pid = (pid_t)user_args;
+    pid_t sid = -1;
+
+    if (pid == 0) {
+        sid = curproc->pgrp->pg_session->s_leader;
+    } else {
+        struct proc_info * proc;
+
+        PROC_LOCK();
+        proc = proc_get_struct(pid);
+        if (proc) {
+            sid = proc->pgrp->pg_session->s_leader;
+        }
+        PROC_UNLOCK();
+    }
+
+    if (sid == -1)
+        set_errno(ESRCH);
+    return sid;
+}
+
+static int sys_proc_setsid(__user void * user_args)
+{
+    pid_t pid = curproc->pid;
+    char logname[MAXLOGNAME];
+    struct session * s = NULL;
+    struct pgrp * pg = NULL;
+
+    if (pid == curproc->pgrp->pg_id ||
+        pid == curproc->pgrp->pg_session->s_leader) {
+        set_errno(EPERM);
+        return -1;
+    }
+
+    strlcpy(logname, curproc->pgrp->pg_session->s_login, sizeof(logname));
+    s = proc_session_create(curproc, logname);
+    if (!s) {
+        set_errno(ENOMEM);
+        return -1;
+    }
+
+    pg = proc_pgrp_create(s, curproc);
+    if (!pg) {
+        proc_session_remove(s);
+        set_errno(ENOMEM);
+        return -1;
+    }
+
+    return pid;
+}
+
+static int sys_proc_getpgrp(__user void * user_args)
+{
+    return curproc->pgrp->pg_id;
+}
+
+static int sys_prog_setpgid(__user void * user_args)
+{
+    /* TODO setpgid() implementation */
+    set_errno(ENOSYS);
+    return -1;
+}
 
 static int sys_proc_getlogin(__user void * user_args)
 {
@@ -1194,6 +1258,10 @@ static const syscall_handler_t proc_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_CRED, sys_proc_getsetcred),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETGROUPS, sys_proc_getgroups),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_SETGROUPS, sys_proc_setgroups),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETSID, sys_proc_getsid),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_SETSID, sys_proc_setsid),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETPGRP, sys_proc_getpgrp),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_SETPGID, sys_prog_setpgid),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETLOGIN, sys_proc_getlogin),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_SETLOGIN, sys_proc_setlogin),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETPID, sys_proc_getpid),

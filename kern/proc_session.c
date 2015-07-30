@@ -34,6 +34,8 @@
 #include <proc.h>
 #include <kmalloc.h>
 
+/* TODO List of sessions? */
+
 struct session * proc_session_create(struct proc_info * leader,
                                      char s_login[MAXLOGNAME])
 {
@@ -44,8 +46,9 @@ struct session * proc_session_create(struct proc_info * leader,
         return NULL;
 
     TAILQ_INIT(&s->s_pgrp_list_head);
-    s->s_refcount = ATOMIC_INIT(0);
+    s->s_leader = leader->pid;
     strlcpy(s->s_login, s_login, sizeof(s->s_login));
+    s->s_refcount = ATOMIC_INIT(0);
 
     return s;
 }
@@ -62,6 +65,11 @@ static void proc_session_rele(struct session * s)
     rc = atomic_dec(&s->s_refcount);
     if (rc <= 1)
         kfree(s);
+}
+
+void proc_session_remove(struct session * s)
+{
+    proc_session_rele(s);
 }
 
 struct pgrp * proc_pgrp_create(struct session * s, struct proc_info * proc)
@@ -105,6 +113,9 @@ static void proc_pgrp_rele(struct pgrp * pgrp)
 
 void proc_pgrp_insert(struct pgrp * pgrp, struct proc_info * proc)
 {
+    if (proc->pgrp)
+        proc_pgrp_remove(proc);
+
     proc_pgrp_ref(pgrp);
     TAILQ_INSERT_TAIL(&pgrp->pg_proc_list_head, proc, pgrp_proc_entry_);
     proc->pgrp = pgrp;

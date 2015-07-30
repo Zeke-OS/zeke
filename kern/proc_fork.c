@@ -320,6 +320,7 @@ pid_t proc_fork(pid_t pid)
         return -ENOMEM;
     }
 
+    new_proc->pgrp = NULL; /* Must be NULL so we don't free the old ref. */
     proc_pgrp_insert(old_proc->pgrp, new_proc);
 
     retval = procarr_realloc();

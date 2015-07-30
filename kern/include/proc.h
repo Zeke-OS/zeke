@@ -87,7 +87,7 @@ struct thread_info;
  * Session.
  */
 struct session {
-    struct  proc_info * s_leader; /*!< Session leader. */
+    pid_t s_leader;             /*!< Session leader. */
     vnode_t * s_ttyvp;          /*!< Vnode of controlling terminal. */
     char s_login[MAXLOGNAME];   /*!< Setlogin() name. */
     atomic_t s_refcount;        /*!< Ref count; pgrps in session. */
@@ -98,8 +98,8 @@ struct session {
  * Process group descriptor.
  */
 struct pgrp {
-    struct session * pg_session; /*!< Pointer to the session. */
     pid_t pg_id;                /*!< Pgrp id. */
+    struct session * pg_session; /*!< Pointer to the session. */
     int pg_jobc;                /*!< # procs qualifying pgrp for job control */
     TAILQ_HEAD(proc_list, proc_info) pg_proc_list_head;
     atomic_t pg_refcount;       /*!< Ref count; procs in group. */
@@ -115,7 +115,7 @@ struct proc_info {
     enum proc_state state;      /*!< Process state. */
     int priority;               /*!< We may want to prioritize processes too. */
     int exit_code, exit_signal;
-    struct  pgrp * pgrp;        /*!< Process group. */
+    struct pgrp * pgrp;         /*!< Process group. */
     struct cred cred;           /*!< Process credentials. */
 
     /* Accounting */
@@ -288,6 +288,7 @@ struct session * proc_session_create(struct proc_info * leader,
  * Create a new process group.
  */
 struct pgrp * proc_pgrp_create(struct session * s, struct proc_info * proc);
+void proc_session_remove(struct session * s);
 void proc_pgrp_insert(struct pgrp * pgrp, struct proc_info * proc);
 void proc_pgrp_remove(struct proc_info * proc);
 
