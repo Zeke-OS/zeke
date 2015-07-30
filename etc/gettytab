@@ -1,2 +1,0 @@
-#tty dev name:speed:bits:control bits:login cmd
-ttyS0:115200:8::/bin/login
