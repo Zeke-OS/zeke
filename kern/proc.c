@@ -336,7 +336,7 @@ static void proc_remove(struct proc_info * proc)
 #endif
 
     /*
-     * Remove inheritance.
+     * Remove from parent's child list.
      */
     parent = proc->inh.parent;
     if (parent) {
@@ -344,6 +344,33 @@ static void proc_remove(struct proc_info * proc)
         SLIST_REMOVE(&parent->inh.child_list_head, proc, proc_info,
                      inh.child_list_entry);
         mtx_unlock(&parent->inh.lock);
+    }
+
+    /*
+     * Adopt children to PID 1 if any.
+     */
+    if (!SLIST_EMPTY(&proc->inh.child_list_head)) {
+        struct proc_info * init;
+        struct proc_info * child;
+        struct proc_info * child_tmp;
+
+        init = proc_get_struct_l(1);
+        if (!init)
+            panic("init not found\n");
+
+        mtx_lock(&proc->inh.lock);
+        SLIST_FOREACH_SAFE(child, &proc->inh.child_list_head,
+                           inh.child_list_entry, child_tmp) {
+            SLIST_REMOVE(&proc->inh.child_list_head, child,
+                         proc_info, inh.child_list_entry);
+
+            child->inh.parent = init; /* re-parent */
+            mtx_lock(&init->inh.lock);
+            SLIST_INSERT_HEAD(&init->inh.child_list_head, child,
+                              inh.child_list_entry);
+           mtx_unlock(&init->inh.lock);
+        }
+        mtx_unlock(&proc->inh.lock);
     }
 
     _proc_free(proc);
