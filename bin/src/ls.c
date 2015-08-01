@@ -30,25 +30,56 @@
  *******************************************************************************
  */
 
+#include <dirent.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <dirent.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <sysexits.h>
+#include <unistd.h>
+
+char * argv0;
+struct {
+    int l : 1;
+    int a : 1;
+} flags;
+
+static void usage(void)
+{
+    fprintf(stderr, "usage: %s [-la] [dir]\n", argv0);
+
+    exit(EX_USAGE);
+}
 
 int main(int argc, char * argv[], char * envp[])
 {
     char * path = NULL;
-    int fildes, count;
+    int ch, fildes, count;
     struct dirent dbuf[10];
 
-    if (argc > 1)
-        path = argv[1];
+    argv0 = argv[0];
 
+    while ((ch = getopt(argc, argv, "la")) != EOF) {
+        switch (ch) {
+        case 'l':
+            flags.l = 1;
+            break;
+        case 'a':
+            flags.a = 1;
+            break;
+        case '?':
+        default:
+            usage();
+        }
+    }
+    argc -= optind;
+    argv += optind;
+
+    if (*argv)
+        path = argv[1];
     if (path == NULL || !strcmp(path, ""))
         path = "./";
 
@@ -60,16 +91,22 @@ int main(int argc, char * argv[], char * envp[])
 
     while ((count = getdents(fildes, (char *)dbuf, sizeof(dbuf))) > 0) {
         for (int i = 0; i < count; i++) {
-            struct stat stat;
-            char mode[12];
+            if (!flags.a && dbuf[i].d_name[0] == '.')
+                continue;
 
-            fstatat(fildes, dbuf[i].d_name, &stat, 0);
+            if (flags.l) {
+                struct stat stat;
+                char mode[12];
 
-            strmode(stat.st_mode, mode);
-            printf("% 7u %s %u:%u %s\n",
-                     (unsigned)dbuf[i].d_ino, mode,
-                     (unsigned)stat.st_uid, (unsigned)stat.st_gid,
-                     dbuf[i].d_name);
+                fstatat(fildes, dbuf[i].d_name, &stat, 0);
+                strmode(stat.st_mode, mode);
+                printf("% 7u %s %u:%u %s\n",
+                         (unsigned)dbuf[i].d_ino, mode,
+                         (unsigned)stat.st_uid, (unsigned)stat.st_gid,
+                         dbuf[i].d_name);
+            } else {
+                printf("%s ", dbuf[i].d_name);
+            }
         }
     }
     printf("\n");
