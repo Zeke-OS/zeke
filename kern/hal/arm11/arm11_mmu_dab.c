@@ -247,12 +247,12 @@ static int dab_buserr(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
         return -ESRCH;
 
 #if configDEBUG >= KERROR_DEBUG
-    KERROR(KERROR_DEBUG, "%s: Send a fatal SIGBUS to %d\n",
+    KERROR(KERROR_DEBUG, "%s: Send a fatal SIGSEGV to %d\n",
            __func__, proc->pid);
 #endif
 
-    /* Deliver SIGBUS. */
-    ksignal_sendsig_fatal(proc, SIGBUS);
+    /* Deliver SIGSEGV. */
+    ksignal_sendsig_fatal(proc, SIGSEGV);
     mmu_die_on_fatal_abort();
 
     return 0;
