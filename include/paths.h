@@ -52,6 +52,7 @@
 
 /* Utils */
 #define _PATH_BSHELL    "/bin/sh"
+#define _PATH_ECHO      "/bin/echo"
 
 #endif /* _PATHS_H_ */
 

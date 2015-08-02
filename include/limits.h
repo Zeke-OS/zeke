@@ -58,8 +58,9 @@
 /* Runtime Increasable Values */
 /* Maximum Values */
 /* Minimum Values */
-#define _POSIX_LINK_MAX     LINK_MAX
 #define _POSIX2_LINE_MAX    LINE_MAX
+#define _POSIX_ARG_MAX      ARG_MAX
+#define _POSIX_LINK_MAX     LINK_MAX
 #define _XOPEN_PATH_MAX     PATH_MAX
 
 /* Other Invariant Values */
