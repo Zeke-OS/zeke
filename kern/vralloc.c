@@ -263,7 +263,8 @@ struct buf * vr_rclone(struct buf * old_region)
 
     new_region = geteblk(rsize);
     if (!new_region) {
-        KERROR(KERROR_ERR, "Out of memory\n");
+        KERROR(KERROR_ERR, "%s: Out of memory, tried to allocate %d bytes\n",
+                __func__, rsize);
         return NULL;
     }
 
