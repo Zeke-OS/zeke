@@ -79,7 +79,7 @@ int main(int argc, char * argv[], char * envp[])
     argv += optind;
 
     if (*argv)
-        path = argv[1];
+        path = *argv;
     if (path == NULL || !strcmp(path, ""))
         path = "./";
 
