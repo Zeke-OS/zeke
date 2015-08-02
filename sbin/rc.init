@@ -5,4 +5,9 @@ echo "         Zeke booting"
 
 # TODO read /etc/rc.conf, fsck, set hostname etc
 
+# Since the rootfs is FAT we need to do chmod +x for /bin before users can login
+cd /bin
+ls | xargs chmod +x
+cd /
+
 /sbin/getty
