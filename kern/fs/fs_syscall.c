@@ -283,13 +283,7 @@ static int sys_close(__user void * p)
 
 static int sys_close_all(__user void * p)
 {
-    int start = curproc->files->count - 1;
-    int fdstop = (int)p;
-    int i;
-
-    for (i = start; i > fdstop; i--) {
-        fs_fildes_close(curproc, i);
-    }
+    fs_fildes_close_all(curproc, (int)p);
 
     return 0;
 }

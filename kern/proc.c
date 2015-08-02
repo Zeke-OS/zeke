@@ -377,18 +377,6 @@ static void proc_remove(struct proc_info * proc)
     procarr_remove(proc->pid);
 }
 
-/**
- * Close all file descriptors.
- */
-static void close_files(struct proc_info * p)
-{
-    if (p->files) {
-        for (int i = 0; i < p->files->count; i++) {
-            fs_fildes_close(p, i);
-        }
-    }
-}
-
 void _proc_free(struct proc_info * p)
 {
     if (!p) {
@@ -398,13 +386,13 @@ void _proc_free(struct proc_info * p)
     }
 
     /* Close all file descriptors and free files struct. */
-    close_files(p);
+    fs_fildes_close_all(p, 0);
     kfree(p->files);
 
     /*
      * Free regions
      *
-     * We don't use lock here because the lock date is invalidated soon and any
+     * We don't use lock here because the lock data is invalidated soon and any
      * thread trying to wait for it will break anyway, so we just hope there
      * is no-one trying to lock this process anymore. Technically there
      * shouldn't be any threads locking this process struct anymore.
@@ -417,7 +405,7 @@ void _proc_free(struct proc_info * p)
         p->mm.nr_regions = 0;
 
         /* Free page table list */
-        ptlist_free(&(p->mm.ptlist_head));
+        ptlist_free(&p->mm.ptlist_head);
 
         /* Free regions array */
         kfree(p->mm.regions);
@@ -427,7 +415,7 @@ void _proc_free(struct proc_info * p)
 
     /* Free mpt */
     if (p->mm.mpt.pt_addr)
-        ptmapper_free(&(p->mm.mpt));
+        ptmapper_free(&p->mm.mpt);
 
     PROC_LOCK();
     proc_pgrp_remove(p);
@@ -534,7 +522,7 @@ void proc_thread_removed(pid_t pid, pthread_t thread_id)
         /*
          * Close file descriptors to signal everyone that the process is dead.
          */
-        close_files(p);
+        fs_fildes_close_all(p, 0);
     }
 }
 
