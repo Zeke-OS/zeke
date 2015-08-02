@@ -221,8 +221,8 @@ int load_elf32(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base)
         goto out;
     }
 
-    /* Unload regions above HEAP */
-    (void)vm_unload_regions(proc, MM_HEAP_REGION + 1, -1);
+    /* Unload user regions */
+    (void)vm_unload_regions(proc, MM_HEAP_REGION, -1);
 
     retval = load_sections(proc, file, &elfhdr, phdr, rbase, vaddr_base);
     if (retval)

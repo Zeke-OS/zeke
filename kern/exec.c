@@ -101,46 +101,60 @@ static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp)
  * File can be elf binary, she-bang file, etc.
  * @param file  is the executable file.
  */
-int exec_file(file_t * file, char name[PROC_NAME_LEN], struct buf * env_bp,
+int exec_file(int fildes, char name[PROC_NAME_LEN], struct buf * env_bp,
               int uargc, uintptr_t uargv, uintptr_t uenvp)
 {
+    file_t * file;
     uintptr_t vaddr = 0; /* RFE Shouldn't matter if elf is not dyn? */
     pthread_t tid;
-    int err, retval = 0;
+    int err;
 
 #if defined(configEXEC_DEBUG)
-    KERROR(KERROR_DEBUG, "exec_file(file %p, name \"%s\", env_bp %p, "
+    KERROR(KERROR_DEBUG, "exec_file(fildes %d, name \"%s\", env_bp %p, "
            "uargc %d, uargv %x,  uenvp %x)\n",
-           file, name, env_bp, uargc, (uint32_t)uargv, (uint32_t)uenvp);
+           fildes, name, env_bp, uargc, (uint32_t)uargv, (uint32_t)uenvp);
 #endif
 
+    file = fs_fildes_ref(curproc->files, fildes, 1);
+    if (!file) {
+        err = -EBADF;
+        goto fail;
+    }
+
+    /* Load image and close the file */
     err = load_proc_image(file, &vaddr);
-    if (err) {
-        retval = err;
+    fs_fildes_ref(curproc->files, fildes, -1);
+    if (err || (err = fs_fildes_close(curproc, fildes))) {
         goto fail;
     }
 
     /* Map new environment */
     err = vm_insert_region(curproc, env_bp, VM_INSOP_MAP_REG);
     if (err < 0) {
+#if defined(configEXEC_DEBUG)
+        KERROR(KERROR_DEBUG, "Unable to map a new env\n");
+#endif
         if (env_bp->vm_ops->rfree)
             env_bp->vm_ops->rfree(env_bp);
         else {
             KERROR(KERROR_ERR, "Can't free env_bp\n");
         }
-        retval = err;
         goto fail;
     }
 
     /* Change proc name */
     strlcpy(curproc->name, name, sizeof(curproc->name));
 
-    /* Create main() thread */
+    /* Create a new main() thread */
     tid = new_main_thread(uargc - 1, uargv, uenvp);
     if (tid <= 0) {
         ksignal_sendsig_fatal(curproc, SIGKILL);
     }
     err = 0;
+
+#if defined(configEXEC_DEBUG)
+    KERROR(KERROR_DEBUG, "Changing main()\n");
+#endif
 
     goto out;
 fail:
@@ -164,7 +178,7 @@ out:
         thread_die(0);
     }
 
-    return retval;
+    return err;
 }
 
 /**
@@ -180,6 +194,11 @@ static int clone_aa(struct buf * bp, __user char * uarr, size_t n_entries,
     size_t offset = *doffset;
     int err;
 
+#if defined(configEXEC_DEBUG)
+    KERROR(KERROR_DEBUG, "%s(bp %p, uarr %p, n_entries %u, doffset %p)\n",
+           __func__, bp, uarr, n_entries, doffset);
+#endif
+
     if (n_entries == 0)
         return 0;
 
@@ -190,11 +209,10 @@ static int clone_aa(struct buf * bp, __user char * uarr, size_t n_entries,
     if (err)
         return err;
 
-    arg[n_entries - 1] = NULL;
     offset = n_entries * sizeof(char *) + sizeof(char *);
     bytesleft -= offset;
 
-    for (size_t i = 0; i < n_entries; i++) {
+    for (size_t i = 0; i < n_entries - 1; i++) {
         size_t copied;
 
         if (!arg[i])
@@ -211,6 +229,7 @@ static int clone_aa(struct buf * bp, __user char * uarr, size_t n_entries,
         offset += copied;
         bytesleft -= copied;
     }
+    arg[n_entries - 1] = NULL;
 
     *doffset = offset;
 
@@ -219,7 +238,6 @@ static int clone_aa(struct buf * bp, __user char * uarr, size_t n_entries,
 
 static int sys_exec(__user void * user_args)
 {
-    file_t * file;
     struct _exec_args args;
     char name[PROC_NAME_LEN];
     struct buf * env_bp;
@@ -228,7 +246,7 @@ static int sys_exec(__user void * user_args)
     int err, retval;
 
 #if defined(configEXEC_DEBUG)
-    KERROR(KERROR_DEBUG, "exec\n");
+    KERROR(KERROR_DEBUG, "%s: curpid: %d\n", __func__, curproc->pid);
 #endif
 
     err = copyin(user_args, &args, sizeof(args));
@@ -286,20 +304,8 @@ static int sys_exec(__user void * user_args)
     /*
      * Execute.
      */
-    file = fs_fildes_ref(curproc->files, args.fd, 1);
-    if (!file) {
-        set_errno(EBADF);
-        retval = -1;
-        goto out;
-    }
-    err = exec_file(file, name, env_bp, args.nargv, env_bp->b_mmu.vaddr,
+    err = exec_file(args.fd, name, env_bp, args.nargv, env_bp->b_mmu.vaddr,
                     envp);
-    fs_fildes_ref(curproc->files, args.fd, -1);
-    if (err) {
-        set_errno(-err);
-        retval = -1;
-        goto out;
-    }
 
     retval = 0;
 out:
