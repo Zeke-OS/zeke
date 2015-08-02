@@ -56,7 +56,7 @@
  */
 struct vregion {
     llist_nodedsc_t node;
-    intptr_t kaddr;     /*!< Kernel address of the allocated dynmem block. */
+    uintptr_t kaddr;    /*!< Kernel address of the allocated dynmem block. */
     int count;          /*!< Reserved pages count. */
     size_t size;        /*!< Size of allocation bitmap in bytes. */
     bitmap_t map[0];    /*!< Bitmap of reserved pages. */
@@ -73,6 +73,8 @@ struct vregion {
 
 #define VREG_I2ADDR(vreg_, iblock_) \
     ((vreg_)->kaddr + VREG_BYTESIZE(iblock_))
+
+#define ROUND_UP(N, S) ((((N) + (S) - 1) / (S)) * (S))
 
 static llist_t * vrlist; /*!< List of all allocations done by vralloc. */
 static struct vregion * last_vreg; /*!< Last node that contained empty pages. */
@@ -126,22 +128,25 @@ int __kinit__ vralloc_init(void)
 
 /**
  * Allocate a new vregion node/chunk and memory for the region.
- * @param count is the page count (4kB pages). Should be multiple of 256.
+ * @param count is the page count (4kB pages). Should be multiple of 256;
+ *        Otherwise it will be rounded up.
  * @return Rerturns a pointer to the newly allocated region; Otherwise 0.
  */
 static struct vregion * vreg_alloc_node(size_t count)
 {
     struct vregion * vreg;
 
+    count = ROUND_UP(count, 256);
+
     vreg = kzalloc(VREG_SIZE(count));
     if (!vreg)
-        return 0;
+        return NULL;
 
-    vreg->kaddr = (intptr_t)dynmem_alloc_region(count / 256, MMU_AP_RWNA,
-            MMU_CTRL_MEMTYPE_WB);
+    vreg->kaddr = (uintptr_t)dynmem_alloc_region(count / 256, MMU_AP_RWNA,
+                                                 MMU_CTRL_MEMTYPE_WB);
     if (vreg->kaddr == 0) {
         kfree(vreg);
-        return 0;
+        return NULL;
     }
 
     vreg->size = E2BITMAP_SIZE(count) * sizeof(bitmap_t);
@@ -207,12 +212,22 @@ struct buf * geteblk(size_t size)
     struct vregion * vreg;
     struct buf * bp = NULL;
 
-    if (get_iblocks(&iblock, pcount, &vreg))
-        return NULL;
-
     bp = kzalloc(sizeof(struct buf));
-    if (!bp)
-        return NULL; /* Can't allocate vm_region struct */
+    if (!bp) {
+#if defined(configBUF_DEBUG)
+        KERROR(KERROR_DEBUG, "%s: Can't allocate vm_region struct\n", __func__);
+#endif
+        return NULL;
+    }
+
+    if (get_iblocks(&iblock, pcount, &vreg)) {
+#if defined(configBUF_DEBUG)
+        KERROR(KERROR_DEBUG, "%s: Can't get vregion for a new buffer\n",
+               __func__);
+#endif
+        kfree(bp);
+        return NULL;
+    }
 
     mtx_init(&bp->lock, MTX_TYPE_TICKET, 0);
 
