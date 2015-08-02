@@ -550,19 +550,24 @@ int vm_replace_region(struct proc_info * proc, struct buf * region,
         old_region->vm_ops->rfree(old_region);
     }
 
-    err = 0;
-    if (insop & VM_INSOP_MAP_REG)
-        err = vm_mapproc_region(proc, region);
-    if (err)
+    if ((insop & VM_INSOP_MAP_REG) &&
+        (err = vm_mapproc_region(proc, region))) {
         return err;
+    }
 
     mtx_lock(&mm->regions_lock);
     (*mm->regions)[region_nr] = region;
     mtx_unlock(&mm->regions_lock);
 
 #ifdef configVM_DEBUG
-    KERROR(KERROR_DEBUG, "Mapped sect %d to %x (phys:%x)\n",
-           region_nr, region->b_mmu.vaddr, region->b_mmu.paddr);
+    if (region) {
+        KERROR(KERROR_DEBUG, "%s: proc %d, mapped sect %d to %x (phys:%x)\n",
+               __func__, proc->pid, region_nr, region->b_mmu.vaddr,
+               region->b_mmu.paddr);
+    } else {
+        KERROR(KERROR_DEBUG, "%s: proc %d, Clear region %d\n", __func__,
+               proc->pid, region_nr);
+    }
 #endif
 
     return 0;
