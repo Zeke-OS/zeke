@@ -96,11 +96,6 @@ static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp)
     return thread_create(&args, 0);
 }
 
-/**
- * Execute a file.
- * File can be elf binary, she-bang file, etc.
- * @param file  is the executable file.
- */
 int exec_file(int fildes, char name[PROC_NAME_LEN], struct buf * env_bp,
               int uargc, uintptr_t uargv, uintptr_t uenvp)
 {
@@ -125,6 +120,9 @@ int exec_file(int fildes, char name[PROC_NAME_LEN], struct buf * env_bp,
     err = load_proc_image(file, &vaddr);
     fs_fildes_ref(curproc->files, fildes, -1);
     if (err || (err = fs_fildes_close(curproc, fildes))) {
+#if defined(configEXEC_DEBUG)
+        KERROR(KERROR_DEBUG, "Failed to load a new process image (%d)\n", err);
+#endif
         goto fail;
     }
 
@@ -148,14 +146,17 @@ int exec_file(int fildes, char name[PROC_NAME_LEN], struct buf * env_bp,
     /* Create a new main() thread */
     tid = new_main_thread(uargc - 1, uargv, uenvp);
     if (tid <= 0) {
+#if defined(configEXEC_DEBUG)
+        KERROR(KERROR_DEBUG, "Failed to create a new main() (%d)\n", tid);
+#endif
         ksignal_sendsig_fatal(curproc, SIGKILL);
     }
-    err = 0;
 
 #if defined(configEXEC_DEBUG)
     KERROR(KERROR_DEBUG, "Changing main()\n");
 #endif
 
+    err = 0;
     goto out;
 fail:
 out:
@@ -243,7 +244,7 @@ static int sys_exec(__user void * user_args)
     struct buf * env_bp;
     size_t arg_offset = 0;
     uintptr_t envp;
-    int err, retval;
+    int err;
 
 #if defined(configEXEC_DEBUG)
     KERROR(KERROR_DEBUG, "%s: curpid: %d\n", __func__, curproc->pid);
@@ -266,8 +267,7 @@ static int sys_exec(__user void * user_args)
     env_bp = geteblk(MMU_PGSIZE_COARSE);
     if (!env_bp) {
         set_errno(ENOMEM);
-        retval = -1;
-        goto out;
+        return -1;
     }
 
     /* Currently copyin_aa() requires vaddr to be set. */
@@ -281,8 +281,7 @@ static int sys_exec(__user void * user_args)
         KERROR(KERROR_DEBUG, "Failed to clone args (%d)\n", err);
 #endif
         set_errno(-err);
-        retval = -1;
-        goto out;
+        return -1;
     }
     arg_offset = memalign(arg_offset);
     envp = env_bp->b_mmu.vaddr + arg_offset;
@@ -294,8 +293,7 @@ static int sys_exec(__user void * user_args)
         KERROR(KERROR_DEBUG, "Failed to clone env (%d)\n", err);
 #endif
         set_errno(-err);
-        retval = -1;
-        goto out;
+        return -1;
     }
 
     strlcpy(name, (char *)(env_bp->b_data) + (args.nargv + 1) * sizeof(char *),
@@ -307,9 +305,7 @@ static int sys_exec(__user void * user_args)
     err = exec_file(args.fd, name, env_bp, args.nargv, env_bp->b_mmu.vaddr,
                     envp);
 
-    retval = 0;
-out:
-    return retval;
+    return err;
 }
 
 static const syscall_handler_t exec_sysfnmap[] = {
