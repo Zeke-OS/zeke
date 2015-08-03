@@ -82,25 +82,38 @@ struct vm_ops fb_mm_bufops = {
  * we definitely want to keep fb constructors in driver files to support
  * dynamic loading, in the future, just for example.
  */
-void fb_register(struct fb_conf * fb)
+int fb_register(struct fb_conf * fb)
 {
     const int minor = atomic_inc(&fb_minor);
     dev_t devid_tty;
     dev_t devid_mm;
+    int err;
 
     devid_tty = DEV_MMTODEV(VDEV_MJNR_FB, minor);
     devid_mm = DEV_MMTODEV(VDEV_MJNR_FBMM, minor);
 
+    /* FIXME FB TTY breaks the boot. */
+#if 0
     fb_console_init(fb);
-    if (fb_console_maketty(fb, devid_tty)) {
+    err = fb_console_maketty(fb, devid_tty);
+    if (err) {
         KERROR(KERROR_ERR, "FB: maketty failed\n");
+        return err;
     }
-    if (fb_makemmdev(fb, devid_mm)) {
+#endif
+
+    err = fb_makemmdev(fb, devid_mm);
+    if (err) {
         KERROR(KERROR_ERR, "FB: makemmdev failed\n");
+        return err;
     }
 
+#if 0
     draw_splash(fb);
     fb_console_write(fb, "FB ready\r\n");
+#endif
+
+    return 0;
 }
 
 void fb_mm_initbuf(struct fb_conf * fb)

@@ -113,7 +113,7 @@ void fb_mm_updatebuf(struct fb_conf * restrict fb,
  * Register a new initialized frame buffer device with the kernel.
  * @param fb is a pointer to the frame buffer device configuration.
  */
-void fb_register(struct fb_conf * fb);
+int fb_register(struct fb_conf * fb);
 
 /**
  * Write text to a frame buffer console.
