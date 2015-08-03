@@ -1,10 +1,9 @@
-/* $Id$ */
-
-/* fseek( FILE *, long offset, int )
-
-   This file is part of the Public Domain C Library (PDCLib).
-   Permission is granted to use, modify, and / or redistribute at will.
-*/
+/*
+ * fseek( FILE *, long offset, int )
+ *
+ *This file is part of the Public Domain C Library (PDCLib).
+ * Permission is granted to use, modify, and / or redistribute at will.
+ */
 
 #include <stdio.h>
 #include <stdint.h>
@@ -13,36 +12,32 @@
 #ifndef REGTEST
 #include <sys/_PDCLIB_io.h>
 
-int _PDCLIB_fseek_unlocked( FILE * stream, long loffset, int whence )
+int _PDCLIB_fseek_unlocked(FILE * stream, long loffset, int whence)
 {
     int64_t offset = loffset;
-    if ( stream->status & _PDCLIB_FWRITE )
-    {
-        if ( _PDCLIB_flushbuffer( stream ) == EOF )
-        {
+    if (stream->status & _PDCLIB_FWRITE) {
+        if (_PDCLIB_flushbuffer(stream) == EOF) {
             return EOF;
         }
     }
     stream->status &= ~ _PDCLIB_EOFFLAG;
-    if ( stream->status & _PDCLIB_FRW )
-    {
-        stream->status &= ~ ( _PDCLIB_FREAD | _PDCLIB_FWRITE );
+    if (stream->status & _PDCLIB_FRW) {
+        stream->status &= ~ (_PDCLIB_FREAD | _PDCLIB_FWRITE);
     }
 
-    if ( whence == SEEK_CUR )
-    {
+    if (whence == SEEK_CUR) {
         whence  = SEEK_SET;
-        offset += _PDCLIB_ftell64_unlocked( stream );
+        offset += _PDCLIB_ftell64_unlocked(stream);
     }
 
-    return ( _PDCLIB_seek( stream, offset, whence ) != EOF ) ? 0 : EOF;
+    return (_PDCLIB_seek(stream, offset, whence) != EOF) ? 0 : EOF;
 }
 
-int fseek( FILE * stream, long loffset, int whence )
+int fseek(FILE * stream, long loffset, int whence)
 {
-    _PDCLIB_flockfile( stream );
-    int r = _PDCLIB_fseek_unlocked( stream, loffset, whence );
-    _PDCLIB_funlockfile( stream );
+    _PDCLIB_flockfile(stream);
+    int r = _PDCLIB_fseek_unlocked(stream, loffset, whence);
+    _PDCLIB_funlockfile(stream);
     return r;
 }
 

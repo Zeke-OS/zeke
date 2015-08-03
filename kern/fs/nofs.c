@@ -91,8 +91,10 @@ off_t fs_enotsup_lseek(file_t * file, off_t offset, int whence)
     switch (whence) {
     case SEEK_SET:
         file->seek_pos = offset;
+        break;
     case SEEK_CUR:
         file->seek_pos += offset;
+        break;
     case SEEK_END:
         if (vn->vnode_ops->stat(vn, &stat_buf))
             return -EBADF;
@@ -103,6 +105,7 @@ off_t fs_enotsup_lseek(file_t * file, off_t offset, int whence)
             file->seek_pos = new_offset;
         else
             return -EOVERFLOW;
+        break;
     default:
         return -EINVAL;
     }
