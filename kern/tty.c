@@ -69,7 +69,7 @@ struct tty * tty_alloc(const char * drv_name, dev_t dev_id,
 
     dev->dev_id = dev_id;
     dev->drv_name = drv_name;
-    strcpy(dev->dev_name, dev_name);
+    strlcpy(dev->dev_name, dev_name, sizeof(dev->dev_name));
     dev->flags = DEV_FLAGS_MB_READ | DEV_FLAGS_WR_BT_MASK;
     dev->block_size = 1;
     dev->read = tty_read;

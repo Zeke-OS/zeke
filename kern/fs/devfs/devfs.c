@@ -136,16 +136,14 @@ int make_dev(struct dev_info * devnfo, uid_t uid, gid_t gid, int perms,
              vnode_t ** result)
 {
     vnode_t * vn;
-    int retval;
+    int err, mode = ((devnfo->block_size > 1) ? S_IFBLK : S_IFCHR) | perms;
 
-    if (!vn_devfs->vnode_ops->lookup(vn_devfs, devnfo->dev_name, NULL)) {
+    if (!vn_devfs->vnode_ops->lookup(vn_devfs, devnfo->dev_name, NULL))
         return -EEXIST;
-    }
-    retval = vn_devfs->vnode_ops->mknod(vn_devfs, devnfo->dev_name,
-            ((devnfo->block_size > 1) ? S_IFBLK : S_IFCHR) | perms,
-            devnfo, &vn);
-    if (retval)
-        return retval;
+
+    err = devfs_vnode_ops.mknod(vn_devfs, devnfo->dev_name, mode, devnfo, &vn);
+    if (err)
+        return err;
 
     /* Replace ops with our own */
     vn->vnode_ops = &devfs_vnode_ops;
