@@ -40,6 +40,8 @@
 #ifndef SCHED_H
 #define SCHED_H
 
+#include <sys/types/_pid_t.h>
+
 /**
  * Scheduling parameters.
  */
@@ -58,7 +60,28 @@ struct sched_param {
 #define NICE_MIN    (-20)
 #define NICE_ERR    (-100) /*!< Thread doesn't exist or error */
 
+#if defined(__SYSCALL_DEFS__) || defined(KERNEL_INTERNAL)
+#include <sys/types/_id_t.h>
+#include <sys/types/_pthread_t.h>
+
+/**
+ * Argument struct for SYSCALL_SCHED_SETPOLICY
+ */
+struct _setpolicy_args {
+    id_t id;
+    int policy;
+};
+#endif
+
 #endif /* SCHED_H */
+
+/**
+ * Set scheduling policy and parameters.
+ * @note sched_policy of param is ignored since policy is already given as
+ *       an argument.
+ */
+int sched_setscheduler(pid_t pid, int policy, const struct sched_param * param);
+int sched_setparam(pid_t pid, const struct sched_param * param);
 
 /**
  * @}

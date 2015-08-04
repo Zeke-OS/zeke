@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    resource.c
+ * @file    setpriority.c
  * @author  Olli Vanhoja
- * @brief   Zero Kernel user space code.
+ * @brief   Set nice values.
  * @section LICENSE
  * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy
@@ -34,22 +34,34 @@
 
 #define __SYSCALL_DEFS__
 #include <errno.h>
+#include <pthread.h>
 #include <sys/resource.h>
 #include <sys/types_pthread.h>
 #include <syscall.h>
+#include <unistd.h>
 
 int setpriority(int which, id_t who, int prio)
 {
-    struct _sched_set_priority_args args;
+    struct _set_priority_args args = {
+        .priority = prio,
+    };
+    uint32_t scallnum;
 
     switch (which) {
+    case PRIO_PROCESS:
+        if (who == 0)
+            who = getpid();
+        scallnum = SYSCALL_PROC_SETPRIORITY;
+        break;
     case PRIO_THREAD:
-        args.thread_id = who;
-        args.priority = prio;
-
-        return (int)syscall(SYSCALL_THREAD_SETPRIORITY, &args);
+        if (who == 0)
+            who = pthread_self();
+        scallnum = SYSCALL_THREAD_SETPRIORITY;
+        break;
     default:
         errno = EINVAL;
         return -1;
     }
+    args.id = who;
+    return (int)syscall(scallnum, &args);
 }

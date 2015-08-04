@@ -39,8 +39,7 @@
 #include <stdint.h>
 #include <sched.h>
 #include <sys/_sigset.h>
-
-typedef int pthread_t; /*!< Thread ID. */
+#include <sys/types/_pthread_t.h>
 
 /* TODO Missing types:
  * - pthread_barrier_t

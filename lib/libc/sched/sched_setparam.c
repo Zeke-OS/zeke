@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    pthread_kill.c
+ * @file    sched_setparam.c
  * @author  Olli Vanhoja
- * @brief   Send a signal to the executing process.
+ * @brief   Set scheduling parameters.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,15 +31,22 @@
  */
 
 #define __SYSCALL_DEFS__
+#include <sched.h>
+#include <sys/resource.h>
 #include <syscall.h>
-#include <signal.h>
 
-int pthread_kill(pthread_t thread, int sig)
+int sched_setparam(pid_t pid, const struct sched_param * param)
 {
-    struct _tkill_args args = {
-        .thread_id = thread,
-        .sig = sig
+    struct _setpolicy_args pol = {
+        .id = pid,
+        .policy = param->sched_policy,
     };
+    int err;
 
-    return (int)syscall(SYSCALL_SIGNAL_TKILL, &args);
+    if ((err = (int)syscall(SYSCALL_PROC_SETPOLICY, &pol)) ||
+        (err = setpriority(PRIO_PROCESS, pid, param->sched_priority))) {
+        return err;
+    }
+
+    return 0;
 }

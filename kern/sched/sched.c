@@ -1230,16 +1230,52 @@ static int sys_thread_sleep_ms(__user void * user_args)
     return 0; /* TODO Return value might be incorrect */
 }
 
-static int sys_thread_setpriority(__user void * user_args)
+static int sys_thread_setpolicy(__user void * user_args)
 {
+    struct _setpolicy_args args;
+    struct thread_info * thread;
     int err;
-    struct _sched_set_priority_args args;
 
-    err = priv_check(&curproc->cred, PRIV_SCHED_SETPRIORITY);
-    if (err) {
-        set_errno(EPERM);
+    if ((err = copyin(user_args, &args, sizeof(args)))) {
+        set_errno(-err);
         return -1;
     }
+
+    thread = thread_lookup(args.id);
+    if (!thread) {
+        set_errno(ESRCH);
+        return -1;
+    }
+
+    if (((curproc->pid != thread->pid_owner || args.policy != SCHED_OTHER) &&
+         (err = priv_check(&curproc->cred, PRIV_SCHED_SETPOLICY))) ||
+        (err = thread_set_policy(args.id, args.policy))) {
+        set_errno(-err);
+        return -1;
+    }
+
+    return 0;
+}
+
+static int sys_thread_getpolicy(__user void * user_args)
+{
+    pthread_t tid = (pthread_t)user_args;
+    int policy;
+
+    policy = thread_get_policy(tid);
+    if (policy < 0) {
+        set_errno(-policy);
+        return -1;
+    }
+
+    return policy;
+}
+
+static int sys_thread_setpriority(__user void * user_args)
+{
+    struct _set_priority_args args;
+    struct thread_info * thread;
+    int err;
 
     err = copyin(user_args, &args, sizeof(args));
     if (err) {
@@ -1247,12 +1283,19 @@ static int sys_thread_setpriority(__user void * user_args)
         return -1;
     }
 
-    if (args.priority < 0 && curproc->cred.euid != 0) {
+    thread = thread_lookup(args.id);
+    if (!thread) {
+        set_errno(ESRCH);
+        return -1;
+    }
+
+    if ((curproc->pid != thread->pid_owner || args.priority < 0) &&
+        priv_check(&curproc->cred, PRIV_SCHED_SETPRIORITY)) {
         set_errno(EPERM);
         return -1;
     }
 
-    err = (uintptr_t)thread_set_priority(args.thread_id, args.priority);
+    err = (uintptr_t)thread_set_priority(args.id, args.priority);
     if (err) {
         set_errno(-err);
         return -1;
@@ -1264,16 +1307,8 @@ static int sys_thread_setpriority(__user void * user_args)
 static int sys_thread_getpriority(__user void * user_args)
 {
     int prio;
-    pthread_t thread_id;
-    int err;
 
-    err = copyin(user_args, &thread_id, sizeof(pthread_t));
-    if (err) {
-        set_errno(ESRCH);
-        return -1;
-    }
-
-    prio = (uintptr_t)thread_get_priority(thread_id);
+    prio = (uintptr_t)thread_get_priority((pthread_t)user_args);
     if (prio == NICE_ERR) {
         set_errno(ESRCH);
         prio = -1; /* Note: -1 might be also legitimate prio value. */
@@ -1289,6 +1324,8 @@ static const syscall_handler_t thread_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_DETACH, sys_thread_detach),
     ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_JOIN, sys_thread_join),
     ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_SLEEP_MS, sys_thread_sleep_ms),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_SETPOLICY, sys_thread_setpolicy),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_GETPOLICY, sys_thread_getpolicy),
     ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_SETPRIORITY, sys_thread_setpriority),
     ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_GETPRIORITY, sys_thread_getpriority),
 };

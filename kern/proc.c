@@ -1232,19 +1232,135 @@ static int sys_chroot(__user void * user_args)
     return 0;
 }
 
+static int sys_proc_setpolicy(__user void * user_args)
+{
+    struct _setpolicy_args args;
+    struct proc_info * p;
+    uid_t p_euid;
+    pthread_t tid;
+    int err;
+
+    if ((err = copyin(user_args, &args, sizeof(args)))) {
+        set_errno(-err);
+        return -1;
+    }
+
+    if (args.id == 0) {
+        set_errno(ESRCH);
+        return -1;
+    }
+
+    PROC_LOCK();
+    p = proc_get_struct(args.id);
+    if (!p || !p->main_thread) {
+        set_errno(ESRCH);
+        PROC_UNLOCK();
+        return -1;
+    }
+    p_euid = p->cred.euid;
+    tid = p->main_thread->id;
+    PROC_UNLOCK();
+
+    if (((args.policy != SCHED_OTHER || curproc->cred.euid != p_euid) &&
+         (err = priv_check(&curproc->cred, PRIV_SCHED_SETPOLICY))) ||
+        (err = thread_set_policy(tid, args.policy))) {
+        set_errno(-err);
+        return -1;
+    }
+
+    return 0;
+}
+
+static int sys_proc_getpolicy(__user void * user_args)
+{
+    pid_t pid = (pid_t)user_args;
+    struct proc_info * p;
+    int policy;
+
+    if (pid == 0) {
+        set_errno(ESRCH);
+        return -1;
+    }
+
+    PROC_LOCK();
+    p = proc_get_struct(pid);
+    if (!p || !p->main_thread ||
+        (policy = thread_get_policy(p->main_thread->id)) < 0) {
+        set_errno(ESRCH);
+        policy = -1;
+    }
+    PROC_UNLOCK();
+
+    return policy;
+}
 
 static int sys_proc_setpriority(__user void * user_args)
 {
-    /* TODO Implement sys_proc_setpriority() */
-    set_errno(ENOSYS);
-    return -1;
+    struct _set_priority_args args;
+    struct proc_info * p;
+    uid_t p_euid;
+    pthread_t tid;
+    int err;
+
+    err = copyin(user_args, &args, sizeof(args));
+    if (err) {
+        set_errno(ESRCH);
+        return -1;
+    }
+
+
+    if (args.id == 0) {
+        set_errno(ESRCH);
+        return -1;
+    }
+
+    PROC_LOCK();
+    p = proc_get_struct(args.id);
+    if (!p || !p->main_thread) {
+        set_errno(ESRCH);
+        PROC_UNLOCK();
+        return -1;
+    }
+    p_euid = p->cred.euid;
+    tid = p->main_thread->id;
+    PROC_UNLOCK();
+
+    if ((args.priority < 0 || curproc->cred.euid != p_euid) &&
+        priv_check(&curproc->cred, PRIV_SCHED_SETPRIORITY)) {
+        set_errno(ESRCH);
+        return -1;
+    }
+
+    err = thread_set_priority(tid, args.priority);
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+
+    return 0;
 }
 
 static int sys_proc_getpriority(__user void * user_args)
 {
-    /* TODO Implement sys_proc_getpriority() */
-    set_errno(ENOSYS);
-    return -1;
+    pid_t pid = (pid_t)user_args;
+    struct proc_info * p;
+    int prio;
+
+    if (pid == 0) {
+        set_errno(ESRCH);
+        return -1;
+    }
+
+    PROC_LOCK();
+    p = proc_get_struct(pid);
+    if (!p || !p->main_thread ||
+        (prio = thread_get_priority(p->main_thread->id)) == NICE_ERR) {
+        set_errno(ESRCH);
+        prio = -1;
+    }
+    PROC_UNLOCK();
+
+    return prio;
 }
 
 static int sys_proc_getrlim(__user void * user_args)
@@ -1362,6 +1478,8 @@ static const syscall_handler_t proc_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETPPID, sys_proc_getppid),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_CHDIR, sys_proc_chdir),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_CHROOT, sys_chroot),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_SETPOLICY, sys_proc_setpolicy),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETPOLICY, sys_proc_getpolicy),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_SETPRIORITY, sys_proc_setpriority),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETPRIORITY, sys_proc_getpriority),
     ARRDECL_SYSCALL_HNDL(SYSCALL_PROC_GETRLIM, sys_proc_getrlim),

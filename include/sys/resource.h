@@ -33,8 +33,9 @@
 #ifndef _SYS_RESOURCES_H
 #define _SYS_RESOURCES_H
 
-#include <sys/types/_timeval.h>
 #include <sys/types.h>
+#include <sys/types/_id_t.h>
+#include <sys/types/_timeval.h>
 
 #define _RLIMIT_ARR_COUNT 7
 
@@ -104,9 +105,6 @@
 #define PRIO_THREAD     4 /*!< Identifies the who argument as a thread id. */
 
 typedef int rlim_t;
-#ifndef id_t
-typedef int id_t;
-#endif
 
 struct rlimit {
     rlim_t  rlim_cur;   /*!< Current (soft) limit */
@@ -126,11 +124,12 @@ struct rusage {
 #include <sys/types_pthread.h>
 
 /**
- * Argument struct for SYSCALL_SCHED_THREAD_SETPRIORITY
+ * Argument struct for SYSCALL_SCHED_THREAD_SETPRIORITY and
+ * SYSCALL_PROC_SETPRIORITY
  */
-struct _sched_set_priority_args {
-    pthread_t thread_id;    /*!< Thread id. */
-    int priority;           /*!< Thread priority. */
+struct _set_priority_args {
+    id_t id;        /*!< Thread id or process id. */
+    int priority;   /*!< Thread priority. */
 };
 
 /**

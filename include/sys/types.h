@@ -47,9 +47,7 @@ typedef size_t fsblkcnt_t; /*!< Used for file system block counts. */
 typedef size_t fsfilcnt_t; /*!< Used for file system file counts. */
 #include <sys/types/_uid_t.h>
 #include <sys/types/_gid_t.h>
-typedef int id_t; /*!< Used as a general identifier; can be used to contain at
-                    least a pid_t, uid_t, or gid_t. */
-#define id_t id_t
+#include <sys/types/_id_t.h>
 typedef uint64_t ino_t; /*!< Used for file serial numbers.*/
 typedef uint32_t key_t; /*!< Used for XSI interprocess communication. */
 typedef uint32_t fflags_t;     /*!< file flags */

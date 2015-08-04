@@ -2,9 +2,9 @@
  *******************************************************************************
  * @file    getpriority.c
  * @author  Olli Vanhoja
- * @brief   Zero Kernel user space code
+ * @brief   Get nice values.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -32,18 +32,32 @@
  *******************************************************************************
 */
 
-#include <syscall.h>
+#define __SYSCALL_DEFS__
 #include <errno.h>
-#include <sys/types_pthread.h>
+#include <pthread.h>
 #include <sys/resource.h>
+#include <sys/types_pthread.h>
+#include <syscall.h>
+#include <unistd.h>
 
 int  getpriority(int which, id_t who)
 {
+    uint32_t scallnum;
+
     switch (which) {
+    case PRIO_PROCESS:
+        if (who == 0)
+            who = getpid();
+        scallnum = SYSCALL_PROC_GETPRIORITY;
+        break;
     case PRIO_THREAD:
-        return (int)syscall(SYSCALL_THREAD_GETPRIORITY, &who);
+        if (who == 0)
+            who = pthread_self();
+        scallnum = SYSCALL_THREAD_GETPRIORITY;
+        break;
     default:
         errno = EINVAL;
         return -1;
     }
+    return (int)syscall(scallnum, (void *)who);
 }
