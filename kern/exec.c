@@ -30,18 +30,18 @@
  *******************************************************************************
  */
 
-#include <unistd.h>
 #include <errno.h>
+#include <sys/sysctl.h>
+#include <syscall.h>
+#include <unistd.h>
 #include <buf.h>
+#include <exec.h>
 #include <kerror.h>
 #include <kmalloc.h>
 #include <kstring.h>
 #include <libkern.h>
 #include <proc.h>
-#include <syscall.h>
-#include <sys/sysctl.h>
 #include <thread.h>
-#include <exec.h>
 
 SET_DECLARE(exec_loader, struct exec_loadfn);
 
@@ -54,10 +54,15 @@ static int load_proc_image(file_t * file, uintptr_t * vaddr_base)
     int err = 0;
 
     SET_FOREACH(loader, exec_loader) {
-        err = (*loader)->fn(curproc, file, vaddr_base);
+        err = (*loader)->test(file);
         if (err == 0 || err != -ENOEXEC)
             break;
     }
+
+    /* Unload user regions before loading a new image. */
+    (void)vm_unload_regions(curproc, MM_HEAP_REGION, -1);
+
+    err = (*loader)->load(curproc, file, vaddr_base);
 
     return err;
 }

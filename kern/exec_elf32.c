@@ -31,6 +31,7 @@
  */
 
 #include <errno.h>
+#include <fcntl.h>
 #include <buf.h>
 #include <elf32.h>
 #include <exec.h>
@@ -66,6 +67,77 @@ static int check_header(const struct elf32_header * hdr)
     return 0;
 }
 
+/**
+ * Read elf32 headers.
+ * @param[out] elfhdr is the target struct for elf headers.
+ * @param file is the file containing an elf image.
+ */
+static int read_elf32_header(struct elf32_header * elfhdr, file_t * file)
+{
+    vnode_t * vn = file->vnode;
+    struct uio uio;
+    const size_t elf32_header_size = sizeof(struct elf32_header);
+
+    /* Read elf header */
+    if (vn->vnode_ops->lseek(file, 0, SEEK_SET) < 0)
+        return -ENOEXEC;
+    uio_init_kbuf(&uio, elfhdr, elf32_header_size);
+    if (vn->vnode_ops->read(file, &uio, elf32_header_size) != elf32_header_size)
+        return -ENOEXEC;
+
+    /* Verify elf header */
+    return check_header(elfhdr);
+}
+
+/**
+ * Read elf32 program headers.
+ */
+static struct elf32_phdr * read_program_headers(file_t * file,
+                                                struct elf32_header * elfhdr)
+{
+     vnode_t * vn = file->vnode;
+    struct uio uio;
+    size_t phsize;
+    struct elf32_phdr * phdr;
+
+    phsize = elfhdr->e_phnum * sizeof(struct elf32_phdr);
+    phdr = kmalloc(phsize);
+    if (!phdr)
+        return NULL;
+
+    if (vn->vnode_ops->lseek(file, elfhdr->e_phoff, SEEK_SET) < 0)
+        return NULL;
+
+    uio_init_kbuf(&uio, phdr, phsize);
+    if (vn->vnode_ops->read(file, &uio, phsize) != (ssize_t)phsize)
+        return NULL;
+
+    return phdr;
+}
+
+/**
+ * Count and verify loadable sections.
+ */
+static int verify_loadable_sections(struct elf32_header * elfhdr,
+                                    struct elf32_phdr * phdr, uintptr_t rbase)
+{
+    size_t i, nr_newsections = 0;
+
+    for (i = 0; i < elfhdr->e_phnum; i++) {
+        if (phdr[i].p_type == PT_LOAD && phdr[i].p_memsz != 0)
+            nr_newsections++;
+
+        /* Check that no section is going to be mapped below the base limit. */
+        if (phdr[i].p_vaddr + rbase < configEXEC_BASE_LIMIT)
+            return -ENOEXEC;
+    }
+
+    if (nr_newsections > 2)
+        return -ENOEXEC;
+
+    return 0;
+}
+
 static int elf32_trans_prot(uint32_t flags)
 {
     int prot = 0;
@@ -81,8 +153,9 @@ static int elf32_trans_prot(uint32_t flags)
 }
 
 static int load_section(struct buf ** region, file_t * file,
-        uintptr_t rbase, struct elf32_phdr * phdr)
+                        uintptr_t rbase, struct elf32_phdr * phdr)
 {
+    vnode_t * vn = file->vnode;
     int prot;
     struct buf * sect;
 
@@ -99,10 +172,12 @@ static int load_section(struct buf ** region, file_t * file,
         void * ldp;
         struct uio uio;
 
-        file->seek_pos = phdr->p_offset;
+        if (vn->vnode_ops->lseek(file, phdr->p_offset, SEEK_SET) < 0)
+            return -ENOEXEC;
+
         ldp = (void *)(sect->b_data + (phdr->p_vaddr - sect->b_mmu.vaddr));
         uio_init_kbuf(&uio, ldp, phdr->p_filesz);
-        err = file->vnode->vnode_ops->read(file, &uio, phdr->p_filesz);
+        err = vn->vnode_ops->read(file, &uio, phdr->p_filesz);
         if (err < 0) {
             if (sect->vm_ops->rfree)
                 sect->vm_ops->rfree(sect);
@@ -153,31 +228,25 @@ static int load_sections(struct proc_info * proc, file_t * file,
     return 0;
 }
 
+int test_elf32(file_t * file)
+{
+    struct elf32_header elfhdr;
+
+    return read_elf32_header(&elfhdr, file);
+}
+
 int load_elf32(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base)
 {
-    struct uio uio;
     struct elf32_header elfhdr;
-    ssize_t slen;
     struct elf32_phdr * phdr = NULL;
-    size_t phsize, nr_newsections;
     uintptr_t rbase;
     int retval;
 
     if (!vaddr_base)
         return -EINVAL;
 
-    /* Read elf header */
-    file->seek_pos = 0;
-    uio_init_kbuf(&uio, &elfhdr, sizeof(elfhdr));
-    slen = file->vnode->vnode_ops->read(file, &uio, sizeof(elfhdr));
-    if (slen != sizeof(elfhdr)) {
+    if (read_elf32_header(&elfhdr, file))
         return -ENOEXEC;
-    }
-
-    /* Verify elf header */
-    retval = check_header(&elfhdr);
-    if (retval)
-        return retval;
 
     switch (elfhdr.e_type) {
     case ET_DYN:
@@ -190,42 +259,13 @@ int load_elf32(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base)
         return -ENOEXEC;
     }
 
-    /* Read program headers */
-    phsize = elfhdr.e_phnum * sizeof(struct elf32_phdr);
-    phdr = kmalloc(phsize);
+    phdr = read_program_headers(file, &elfhdr);
     if (!phdr) {
-        retval = -ENOMEM;
-        goto out;
-    }
-    file->seek_pos = elfhdr.e_phoff;
-    uio_init_kbuf(&uio, phdr, phsize);
-    if (file->vnode->vnode_ops->read(file, &uio, phsize) != (ssize_t)phsize) {
-        retval = -ENOEXEC;
-        goto out;
+        return -ENOEXEC;
     }
 
-    /* Count loadable sections. */
-    nr_newsections = 0;
-    for (size_t i = 0; i < elfhdr.e_phnum; i++) {
-        if (phdr[i].p_type == PT_LOAD && phdr[i].p_memsz != 0)
-            nr_newsections++;
-
-        /* Check that no section is going to be mapped below the base limit. */
-        if (phdr[i].p_vaddr + rbase < configEXEC_BASE_LIMIT) {
-            retval = -ENOEXEC;
-            goto out;
-        }
-    }
-    if (nr_newsections > 2) {
-        retval = -ENOEXEC;
-        goto out;
-    }
-
-    /* Unload user regions */
-    (void)vm_unload_regions(proc, MM_HEAP_REGION, -1);
-
-    retval = load_sections(proc, file, &elfhdr, phdr, rbase, vaddr_base);
-    if (retval)
+    if ((retval = verify_loadable_sections(&elfhdr, phdr, rbase)) ||
+        (retval = load_sections(proc, file, &elfhdr, phdr, rbase, vaddr_base)))
         goto out;
 
     retval = 0;
@@ -234,4 +274,5 @@ out:
 
     return retval;
 }
-EXEC_LOADFN(load_elf32, "elf32");
+
+EXEC_LOADER(test_elf32, load_elf32, "elf32");

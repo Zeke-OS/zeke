@@ -42,7 +42,8 @@ struct buf;
 
 struct exec_loadfn {
     char name[10];
-    int (*fn)(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base);
+    int (*test)(file_t * file);
+    int (*load)(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base);
 };
 
 /**
@@ -50,11 +51,11 @@ struct exec_loadfn {
  * @param fun is the name of the function.
  * @param namestr is a C string containing the name of the executable type.
  */
-#define EXEC_LOADFN(fun, namestr)           \
-    static struct exec_loadfn fun##_st = {  \
-        .name = namestr, .fn = fun          \
-    };                                      \
-    DATA_SET(exec_loader, fun##_st)
+#define EXEC_LOADER(_test, _load, _namestr)             \
+    static struct exec_loadfn _load##_st = {            \
+        .name = _namestr, .test = _test, .load = _load  \
+    };                                                  \
+    DATA_SET(exec_loader, _load##_st)
 
 /**
  * Execute a file.
