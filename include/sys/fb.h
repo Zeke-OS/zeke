@@ -76,6 +76,7 @@ struct fb_resolution {
     size_t width;
     size_t height;
     size_t depth;
+    size_t pitch; /* Only a return value, can't be set. */
 };
 
 #endif /* SYS_FB_H */

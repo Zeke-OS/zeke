@@ -250,6 +250,7 @@ static int fb_mm_ioctl(struct dev_info * devnfo, uint32_t request,
             fbres->width = fb->width;
             fbres->height = fb->height;
             fbres->depth = fb->depth;
+            fbres->pitch = fb->pitch;
         }
         break;
     case IOCTL_FB_SETRES: /* Set framebuffer resolution. */

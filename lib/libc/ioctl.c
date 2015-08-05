@@ -33,6 +33,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <sys/ioctl.h>
+#include <sys/fb.h>
 #include <syscall.h>
 #include <termios.h>
 
@@ -52,6 +53,11 @@ int ioctl(int fildes, int request, ... /* arg */)
         return tcsetattr(fildes, TCSADRAIN, va_arg(ap, struct termios *));
     case TCSETSF:
         return tcsetattr(fildes, TCSAFLUSH, va_arg(ap, struct termios *));
+    case IOCTL_FB_GETRES:
+    case IOCTL_FB_SETRES:
+        arg = va_arg(ap, struct fb_resolution *);
+        arg_len = sizeof(struct fb_resolution);
+        break;
     case TIOCGWINSZ:
     case TIOCSWINSZ:
         arg = va_arg(ap, struct winsize *);
