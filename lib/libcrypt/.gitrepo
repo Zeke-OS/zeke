@@ -1,0 +1,11 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = git@github.com:Zeke-OS/libcrypt.git
+	branch = master
+	commit = befcd91a01a6a0053e926d25413970a5c529e3b1
+	parent = 5673f55f2ab26fce6605972ca30dffdbd78ed9f7
+	cmdver = 0.2.2
