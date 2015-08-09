@@ -5,6 +5,8 @@ SRC-y := $(sort $(SRC-y))
 OBJS := $(patsubst %.c, %.o, $(SRC-y))
 DEPS := $(patsubst %.c, %.d, $(SRC-y))
 
+FILES += $(FILES-y)
+
 all: $(BIN-y) manifest
 
 $(ASOBJS): $(ASRC-y) $(AUTOCONF_H)
