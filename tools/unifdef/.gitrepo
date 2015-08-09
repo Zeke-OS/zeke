@@ -1,0 +1,11 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = git@github.com:Zeke-OS/unifdef.git
+	branch = master
+	commit = c9f57f97620a6ab68b397f934760712df1387abe
+	parent = 4b1ab5feccb1e84e303775e7efb4376759d751d0
+	cmdver = 0.2.2
