@@ -1,0 +1,11 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = git@github.com:Zeke-OS/linenoise.git
+	branch = zeke
+	commit = 74e9b8133666072e6112f90d21891579c38e7079
+	parent = b6f43db2b7a676354740434eec406e0e47bf9bd8
+	cmdver = 0.2.2
