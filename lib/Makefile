@@ -35,83 +35,13 @@ include $(ROOT_DIR)/genconfig/dist.mk
 # Supress warnings about C11 extensions in libc
 CCFLAGS += -Wno-c11-extensions
 
-LIBS := crt0 crt1 libc libcrypt liblinenoise
+# Generate a list of library names
+LIBS := $(patsubst %/,%,$(shell ls -d */))
+# Include library makefiles
+include $(patsubst %,%/lib.mk,$(LIBS))
+# LIB_IDIRs to IDIR
+IDIR += $(patsubst %,-I%,$(LIB_IDIR))
 
-# AR flags #####################################################################
-
-libc-ARFLAGS = \
-$(patsubst %.c,%.o,$(crt0-SRC-y)) \
-$(patsubst %.S,%.o,$(crt0-ASRC-y))
-
-# Source Files #################################################################
-ifeq ($(configARCH_ARM),y)
-include crt0/crt0.mk.arm
-endif
-
-crt1-SRC-y = $(wildcard crt1/*.c)
-crt1-SRC-$(configARCH_ARM) += $(wildcard crt1/arm/*.c)
-crt1-ASRC-$(configARCH_ARM) := $(wildcard crt1/arm/*.S)
-
-libc-SRC-y = \
-$(wildcard libc/*.c) \
-$(wildcard libc/_PDCLIB/*.c) \
-$(wildcard libc/basecodecs/*.c) \
-$(wildcard libc/ctype/*.c) \
-$(wildcard libc/dirent/*.c) \
-$(wildcard libc/fcntl/*.c) \
-$(wildcard libc/grp/*.c) \
-$(wildcard libc/inttypes/*.c) \
-$(wildcard libc/libgen/*.c) \
-$(wildcard libc/locale/*.c) \
-$(wildcard libc/malloc/*.c) \
-$(wildcard libc/math/*.c) \
-$(wildcard libc/mman/*.c) \
-$(wildcard libc/priv/*.c) \
-$(wildcard libc/pthreads/*.c) \
-$(wildcard libc/pwd/*.c) \
-$(wildcard libc/regexp/*.c) \
-$(wildcard libc/resource/*.c) \
-$(wildcard libc/setjmp/*.c) \
-$(wildcard libc/signal/*.c) \
-$(wildcard libc/stat/*.c) \
-$(wildcard libc/stdio/*.c) \
-$(wildcard libc/stdlib/*.c) \
-$(wildcard libc/string/*.c) \
-$(wildcard libc/termios/*.c) \
-$(wildcard libc/time/*.c) \
-$(wildcard libc/uchar/*.c) \
-$(wildcard libc/unistd/*.c) \
-$(wildcard libc/wchar/*.c) \
-$(wildcard libc/wctype/*.c) \
-$(wildcard libc/zeke/*.c)
-
-libc-ASRC-$(configARCH_ARM) = \
-$(wildcard libc/setjmp/arm/*.S)
-
-libcrypt-SRC-y = \
-libcrypt/crypt-md5.c \
-libcrypt/crypt-nthash.c \
-libcrypt/crypt-sha256.c \
-libcrypt/crypt-sha512.c \
-libcrypt/crypt.c \
-libcrypt/md4c.c \
-libcrypt/md4hl.c \
-libcrypt/md5c.c \
-libcrypt/md5hl.c \
-libcrypt/misc.c \
-libcrypt/rmd160c.c \
-libcrypt/rmd160hl.c \
-libcrypt/sha0c.c  \
-libcrypt/sha0hl.c \
-libcrypt/sha1c.c \
-libcrypt/sha1hl.c \
-libcrypt/sha256c.c \
-libcrypt/sha256hl.c \
-libcrypt/sha512c.c \
-libcrypt/sha512hl.c
-
-liblinenoise-SRC-y = \
-liblinenoise/linenoise.c
 ################################################################################
 # Available selections for source code files:
 SRC-	=# C sources
@@ -139,11 +69,16 @@ DEPS := $(patsubst %.c, %.d, $(SRC-y))
 LIBSA = $(addsuffix .a, $(LIBS))
 
 
-all: $(LIBSA) manifest
+all: $(LIBSA) lib_idir.gen.mk manifest
+.PHONY: prepare $(LIBS) clean
 
-# Generate libcrypt sources
-$(libcrypt-SRC-y):
-	$(MAKE) -C libcrypt all
+# Make subdirs, should be called before making all
+prepare: $(LIBS)
+$(LIBS):
+	@if [ -f $@/Makefile ]; then $(MAKE) -C $@ all; fi
+
+lib_idir.gen.mk:
+	echo "LIB_IDIR += $(LIB_IDIR)" > lib_idir.gen.mk
 
 $(ASOBJS): %.o: %.S $(AUTOCONF_H)
 	@echo "AS $@"
@@ -176,5 +111,6 @@ manifest: $(LIBSA)
 clean:
 	$(RM) $(ASOBJS) $(OBJS) $(DEPS)
 	$(RM) *.a
+	$(RM) lib_idir.gen.mk
 	$(RM) manifest
-	$(MAKE) -C libcrypt clean
+	$(foreach dir,$(LIBS),if [ -f $(dir)/Makefile ]; then $(MAKE) -C $(dir) clean; fi;)

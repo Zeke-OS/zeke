@@ -1,4 +1,1 @@
-CMSIS
-Discovery
-STM32F0xx
-STR912
+lib_idir.gen.mk

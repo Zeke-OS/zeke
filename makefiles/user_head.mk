@@ -28,7 +28,7 @@
 include $(ROOT_DIR)/genconfig/buildconf.mk
 include $(ROOT_DIR)/genconfig/dist.mk
 ################################################################################
-
+include $(ROOT_DIR)/makefiles/user_idir.mk
 ################################################################################
 # We use suffixes because it's fun
 .SUFFIXES:                      # Delete the default suffixes

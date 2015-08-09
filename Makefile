@@ -87,6 +87,7 @@ etc:
 	$(MAKE) -C etc all
 
 lib: $(AUTOCONF_H)
+	$(MAKE) -C lib prepare
 	$(MAKE) -C lib all
 
 sbin: lib

@@ -1,4 +1,3 @@
-/* crypto/ripemd/ripemd.h */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -54,76 +53,114 @@
  * derivative of this code cannot be changed.  i.e. this code cannot simply be
  * copied and put under another distribution licence
  * [including the GNU Public Licence.]
- */
-
-/*
+ *
  * $FreeBSD$
  */
 
-#ifndef HEADER_RIPEMD_H
-#define HEADER_RIPEMD_H
+#ifndef _SHA_H_
+#define _SHA_H_     1
 
-#include <sys/cdefs.h>
-#include <sys/types.h>		/* XXX switch to machine/ansi.h and __ types */
+#include <stdint.h>
+#include <sys/types.h>      /* XXX switch to machine/ansi.h and __ types */
 
-#define RIPEMD160_CBLOCK	64
-#define RIPEMD160_LBLOCK	16
-#define RIPEMD160_BLOCK		16
-#define RIPEMD160_LAST_BLOCK	56
-#define RIPEMD160_LENGTH_BLOCK	8
-#define RIPEMD160_DIGEST_LENGTH	20
+#define SHA_CBLOCK  64
+#define SHA_LBLOCK  16
+#define SHA_BLOCK   16
+#define SHA_LAST_BLOCK  56
+#define SHA_LENGTH_BLOCK 8
+#define SHA_DIGEST_LENGTH 20
 
-typedef struct RIPEMD160state_st {
-	uint32_t A,B,C,D,E;
-	uint32_t Nl,Nh;
-	uint32_t data[RIPEMD160_LBLOCK];
-	int num;
-} RIPEMD160_CTX;
+typedef struct SHAstate_st {
+    uint32_t h0, h1, h2, h3, h4;
+    uint32_t Nl, Nh;
+    uint32_t data[SHA_LBLOCK];
+    int num;
+} SHA_CTX;
+#define SHA1_CTX    SHA_CTX
 
 __BEGIN_DECLS
 
 /* Ensure libmd symbols do not clash with libcrypto */
 
-#ifndef RIPEMD160_Init
-#define RIPEMD160_Init		_libmd_RIPEMD160_Init
+#ifndef SHA_Init
+#define SHA_Init    _libmd_SHA_Init
 #endif
-#ifndef RIPEMD160_Update
-#define RIPEMD160_Update	_libmd_RIPEMD160_Update
+#ifndef SHA_Update
+#define SHA_Update  _libmd_SHA_Update
 #endif
-#ifndef RIPEMD160_Final
-#define RIPEMD160_Final		_libmd_RIPEMD160_Final
+#ifndef SHA_Final
+#define SHA_Final   _libmd_SHA_Final
 #endif
-#ifndef RIPEMD160_End
-#define RIPEMD160_End		_libmd_RIPEMD160_End
+#ifndef SHA_End
+#define SHA_End     _libmd_SHA_End
 #endif
-#ifndef RIPEMD160_File
-#define RIPEMD160_File		_libmd_RIPEMD160_File
+#ifndef SHA_File
+#define SHA_File    _libmd_SHA_File
 #endif
-#ifndef RIPEMD160_FileChunk
-#define RIPEMD160_FileChunk	_libmd_RIPEMD160_FileChunk
+#ifndef SHA_FileChunk
+#define SHA_FileChunk   _libmd_SHA_FileChunk
 #endif
-#ifndef RIPEMD160_Data
-#define RIPEMD160_Data		_libmd_RIPEMD160_Data
-#endif
-
-#ifndef RIPEMD160_Transform
-#define RIPEMD160_Transform	_libmd_RIPEMD160_Transform
-#endif
-#ifndef RMD160_version
-#define RMD160_version		_libmd_RMD160_version
-#endif
-#ifndef ripemd160_block
-#define ripemd160_block		_libmd_ripemd160_block
+#ifndef SHA_Data
+#define SHA_Data    _libmd_SHA_Data
 #endif
 
-void	RIPEMD160_Init(RIPEMD160_CTX *c);
-void	RIPEMD160_Update(RIPEMD160_CTX *c, const void *data,
-			 size_t len);
-void	RIPEMD160_Final(unsigned char *md, RIPEMD160_CTX *c);
-char   *RIPEMD160_End(RIPEMD160_CTX *, char *);
-char   *RIPEMD160_File(const char *, char *);
-char   *RIPEMD160_FileChunk(const char *, char *, off_t, off_t);
-char   *RIPEMD160_Data(const void *, unsigned int, char *);
+#ifndef SHA_Transform
+#define SHA_Transform   _libmd_SHA_Transform
+#endif
+#ifndef SHA_version
+#define SHA_version _libmd_SHA_version
+#endif
+#ifndef sha_block
+#define sha_block   _libmd_sha_block
+#endif
+
+#ifndef SHA1_Init
+#define SHA1_Init   _libmd_SHA1_Init
+#endif
+#ifndef SHA1_Update
+#define SHA1_Update _libmd_SHA1_Update
+#endif
+#ifndef SHA1_Final
+#define SHA1_Final  _libmd_SHA1_Final
+#endif
+#ifndef SHA1_End
+#define SHA1_End    _libmd_SHA1_End
+#endif
+#ifndef SHA1_File
+#define SHA1_File   _libmd_SHA1_File
+#endif
+#ifndef SHA1_FileChunk
+#define SHA1_FileChunk  _libmd_SHA1_FileChunk
+#endif
+#ifndef SHA1_Data
+#define SHA1_Data   _libmd_SHA1_Data
+#endif
+
+#ifndef SHA1_Transform
+#define SHA1_Transform  _libmd_SHA1_Transform
+#endif
+#ifndef SHA1_version
+#define SHA1_version    _libmd_SHA1_version
+#endif
+#ifndef sha1_block
+#define sha1_block  _libmd_sha1_block
+#endif
+
+void    SHA_Init(SHA_CTX *c);
+void    SHA_Update(SHA_CTX *c, const void *data, size_t len);
+void    SHA_Final(unsigned char *md, SHA_CTX *c);
+char   *SHA_End(SHA_CTX *, char *);
+char   *SHA_File(const char *, char *);
+char   *SHA_FileChunk(const char *, char *, off_t, off_t);
+char   *SHA_Data(const void *, unsigned int, char *);
+
+void    SHA1_Init(SHA_CTX *c);
+void    SHA1_Update(SHA_CTX *c, const void *data, size_t len);
+void    SHA1_Final(unsigned char *md, SHA_CTX *c);
+char   *SHA1_End(SHA_CTX *, char *);
+char   *SHA1_File(const char *, char *);
+char   *SHA1_FileChunk(const char *, char *, off_t, off_t);
+char   *SHA1_Data(const void *, unsigned int, char *);
 __END_DECLS
 
-#endif
+#endif /* !_SHA_H_ */
