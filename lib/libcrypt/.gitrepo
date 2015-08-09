@@ -6,6 +6,6 @@
 [subrepo]
 	remote = git@github.com:Zeke-OS/libcrypt.git
 	branch = master
-	commit = befcd91a01a6a0053e926d25413970a5c529e3b1
-	parent = 5673f55f2ab26fce6605972ca30dffdbd78ed9f7
+	commit = 
+	parent = cc2406fd875a79de09e7e9ce0fb51a8561aeaedf
 	cmdver = 0.2.2
