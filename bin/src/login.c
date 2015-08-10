@@ -151,6 +151,22 @@ static void getpass(void)
         fclose(fi);
 }
 
+static int pwcmp(const char * str1, const char * str2)
+{
+    const unsigned char *u1 = (const unsigned char *)str1;
+    const unsigned char *u2 = (const unsigned char *)str2;
+    int retval = 0;
+
+    if (strlen(str1) != strlen(str2))
+        return 1;
+
+    while (*u1) {
+        retval |= (*u1++ ^ *u2++);
+    }
+
+    return !!retval;
+}
+
 static int initgroups(char * uname, int agroup)
 {
     gid_t groups[NGROUPS_MAX];
@@ -284,8 +300,8 @@ int main(int argc, char * argv[])
 nouser:
         getpass();
         p = crypt(password, salt);
-        memset(password, 0, sizeof(password));
-        if (pwd && !strcmp(p, pwd->pw_passwd))
+        memset(password, '\0', sizeof(password));
+        if (pwd && !pwcmp(p, pwd->pw_passwd))
             break;
 
         printf("Login incorrect\n");
