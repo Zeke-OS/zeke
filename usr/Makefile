@@ -27,14 +27,17 @@ include $(ROOT_DIR)/makefiles/user_head.mk
 
 # Binaries #####################################################################
 BIN-$(configUSR_EXAMPLES) := examples/daemon
-BIN-$(configUSR_GAMES) := games/banner games/plasma
+BIN-$(configUSR_GAMES) := games/banner games/fbdemo games/plasma
 
 # Source Files #################################################################
 examples/daemon-SRC-$(configUSR_EXAMPLES) := examples/daemon.c
 games/banner-SRC-$(configUSR_GAMES) := games/banner.c
+games/fbdemo-SRC-$(configUSR_GAMES) := games/fbdemo-src/main.c \
+	games/fbdemo-src/bitmap.c
 games/plasma-SRC-$(configUSR_GAMES) := games/plasma.c
 
 # Other files ##################################################################
+FILES-$(configUSR_GAMES) := games/ball.bmp
 
 # CCFLAGS ######################################################################
 
