@@ -135,7 +135,6 @@ size_t len;
 			}
 		else
 			{
-			int ew,ec;
 
 			c->num+=(int)len;
 			if ((sc+len) < 4) /* ugly, add char's to a word */
@@ -146,6 +145,8 @@ size_t len;
 				}
 			else
 				{
+			    int ew,ec;
+
 				ew=(c->num>>2);
 				ec=(c->num&0x03);
 				l= p[sw];

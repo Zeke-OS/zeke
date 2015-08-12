@@ -183,7 +183,6 @@ static void current(void)
     uid_t id, eid, lastid;
     int ngroups;
     gid_t groups[NGROUPS_MAX];
-    char *fmt;
 
     id = getuid();
     printf("uid=%u", id);
@@ -207,7 +206,7 @@ static void current(void)
     if (ngroups > 0) {
         int cnt;
 
-        for (fmt = " groups=%u", lastid = -1, cnt = 0; cnt < ngroups;
+        for (char * fmt = " groups=%u", lastid = -1, cnt = 0; cnt < ngroups;
             fmt = ", %u", lastid = id) {
             id = groups[cnt++];
             if (lastid == id)
@@ -222,10 +221,10 @@ static void current(void)
 
 static void user(struct passwd * pw)
 {
-    struct group *gr;
+    struct group * gr;
     gid_t groups[NGROUPS_MAX + 1];
     int cnt, id, lastid, ngroups;
-    char *fmt;
+    char * fmt;
 
     id = pw->pw_uid;
     printf("uid=%d(%s)", id, pw->pw_name);

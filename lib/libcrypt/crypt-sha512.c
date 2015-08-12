@@ -60,12 +60,10 @@ static char *
 crypt_sha512_r(const char *key, const char *salt, char *buffer, int buflen)
 {
 	unsigned long srounds;
-	int n;
 	uint8_t alt_result[64], temp_result[64];
 	SHA512_CTX ctx, alt_ctx;
 	size_t salt_len, key_len, cnt, rounds;
 	char *cp, *copied_key, *copied_salt, *p_bytes, *s_bytes, *endp;
-	const char *num;
 	bool rounds_custom;
 
 	copied_key = NULL;
@@ -83,7 +81,7 @@ crypt_sha512_r(const char *key, const char *salt, char *buffer, int buflen)
 
 	if (strncmp(salt, sha512_rounds_prefix, sizeof(sha512_rounds_prefix) - 1)
 	    == 0) {
-		num = salt + sizeof(sha512_rounds_prefix) - 1;
+		const char *num = salt + sizeof(sha512_rounds_prefix) - 1;
 		srounds = strtoul(num, &endp, 10);
 
 		if (*endp == '$') {
@@ -211,6 +209,8 @@ crypt_sha512_r(const char *key, const char *salt, char *buffer, int buflen)
 	buflen -= sizeof(sha512_salt_prefix) - 1;
 
 	if (rounds_custom) {
+        int n;
+
 		n = snprintf(cp, MAX(0, buflen), "%s%zu$",
 			 sha512_rounds_prefix, rounds);
 
