@@ -156,6 +156,22 @@
 
 /* End of MMU C1 Control Bits */
 
+/* RFE The following is a bit kludgy. */
+
+/*
+ * Common MMU Abort Types (Common to DAB and PAB)
+ */
+
+#define ARM11_MMU_SECTION_TRANSLATION_FAULT 0x5
+#define ARM11_MMU_PAGE_TRANSLATION_FAULT    0x7
+
+/*
+ * MMU Abort FSR Test Macros
+ */
+#define MMU_ABORT_IS_TRANSLATION_FAULT(_fsr)            \
+    ((_fsr) == ARM11_MMU_SECTION_TRANSLATION_FAULT ||   \
+     (_fsr) == ARM11_MMU_PAGE_TRANSLATION_FAULT)        \
+
 #endif /* ARM11_MMU_H */
 
 /**

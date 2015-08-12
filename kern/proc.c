@@ -585,8 +585,7 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
          * This is the correct region.
          */
 
-        /* FIXME This is ARM11 specific and should be fixed. */
-        if (fsr  == 0x7 || fsr == 0x5) { /* Translation fault */
+        if (MMU_ABORT_IS_TRANSLATION_FAULT(fsr)) { /* Translation fault */
             /*
              * Sometimes we see translation faults due to ordering of region
              * replacements during exec. This is something we have to accept
