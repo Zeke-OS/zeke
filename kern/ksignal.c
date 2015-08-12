@@ -957,10 +957,6 @@ int ksignal_sigsleep(const struct timespec * restrict timeout)
 
 int ksignal_isblocked(struct signals * sigs, int signum)
 {
-    /*
-     * FIXME Temporarily disable this assert because I couldn't find any source
-     * of error and it's still failing.
-     */
     KASSERT(ksig_testlock(&sigs->s_lock), "sigs should be locked\n");
 
     /*
