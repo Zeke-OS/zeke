@@ -205,9 +205,10 @@ static void current(void)
     ngroups = getgroups(NGROUPS_MAX, groups);
     if (ngroups > 0) {
         int cnt;
+        char * fmt;
 
-        for (char * fmt = " groups=%u", lastid = -1, cnt = 0; cnt < ngroups;
-            fmt = ", %u", lastid = id) {
+        for (fmt = " groups=%u", lastid = -1, cnt = 0; cnt < ngroups;
+             fmt = ", %u", lastid = id) {
             id = groups[cnt++];
             if (lastid == id)
                 continue;
