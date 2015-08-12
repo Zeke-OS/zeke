@@ -217,6 +217,8 @@ const char * ksignal_signum2str(int signum)
  */
 static void ksignal_exec_cond(struct thread_info * thread, int signum)
 {
+    KASSERT(ksig_testlock(&thread->sigs.s_lock), "sigs should be locked\n");
+
     const int blocked = ksignal_isblocked(&thread->sigs, signum);
     const int swait = sigismember(&thread->sigs.s_wait, signum);
 
@@ -775,8 +777,15 @@ static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
     };
     STAILQ_INSERT_TAIL(&sigs->s_pendqueue, ksiginfo, _entry);
 
-    if (thread != current_thread)
-        ksignal_exec_cond(thread, signum);
+    if (thread != current_thread) {
+        if (sigs != &thread->sigs) {
+            while (ksig_lock(&thread->sigs.s_lock));
+            ksignal_exec_cond(thread, signum);
+            ksig_unlock(&thread->sigs.s_lock);
+        } else { /* Sigs already locked */
+            ksignal_exec_cond(thread, signum);
+        }
+    }
 
     return 0;
 }
@@ -949,12 +958,10 @@ int ksignal_sigsleep(const struct timespec * restrict timeout)
 int ksignal_isblocked(struct signals * sigs, int signum)
 {
     /*
-     * FIXME Temorarily disable this assert because I couldn't find any source
+     * FIXME Temporarily disable this assert because I couldn't find any source
      * of error and it's still failing.
      */
-#if 0
     KASSERT(ksig_testlock(&sigs->s_lock), "sigs should be locked\n");
-#endif
 
     /*
      * TODO IEEE Std 1003.1, 2004 Edition
