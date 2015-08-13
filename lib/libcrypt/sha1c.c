@@ -141,7 +141,7 @@ SHA1_Update(c, in, len)
     size_t len;
 {
     uint32_t *p;
-    int ew,ec,sw,sc;
+    int ew,ec,sw;
     uint32_t l;
     const unsigned char *data = in;
 
@@ -155,6 +155,8 @@ SHA1_Update(c, in, len)
 
     if (c->num != 0)
         {
+        int sc;
+
         p=c->data;
         sw=c->num>>2;
         sc=c->num&0x03;
