@@ -98,21 +98,24 @@ static struct elf32_phdr * read_program_headers(file_t * file,
      vnode_t * vn = file->vnode;
     struct uio uio;
     size_t phsize;
-    struct elf32_phdr * phdr;
+    struct elf32_phdr * phdr = NULL;
 
     phsize = elfhdr->e_phnum * sizeof(struct elf32_phdr);
     phdr = kmalloc(phsize);
     if (!phdr)
-        return NULL;
+        goto fail;
 
     if (vn->vnode_ops->lseek(file, elfhdr->e_phoff, SEEK_SET) < 0)
-        return NULL;
+        goto fail;
 
     uio_init_kbuf(&uio, phdr, phsize);
     if (vn->vnode_ops->read(file, &uio, phsize) != (ssize_t)phsize)
-        return NULL;
+        goto fail;
 
     return phdr;
+fail:
+    kfree(phdr);
+    return NULL;
 }
 
 /**
