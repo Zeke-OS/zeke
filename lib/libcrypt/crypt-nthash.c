@@ -44,40 +44,40 @@
 char *
 crypt_nthash(const char *pw, const char *salt __unused)
 {
-	size_t unipwLen;
-	int i, j;
-	static char hexconvtab[] = "0123456789abcdef";
-	static const char *magic = "$3$";
-	static char passwd[120];
-	uint16_t unipw[128];
-	char final[MD4_SIZE*2 + 1];
-	unsigned char hash[MD4_SIZE];
-	const char *s;
-	MD4_CTX	ctx;
+    size_t unipwLen;
+    int i, j;
+    static char hexconvtab[] = "0123456789abcdef";
+    static const char *magic = "$3$";
+    static char passwd[120];
+    uint16_t unipw[128];
+    char final[MD4_SIZE*2 + 1];
+    unsigned char hash[MD4_SIZE];
+    const char *s;
+    MD4_CTX ctx;
 
-	memset(unipw, '\0', sizeof(unipw));
-	/* convert to unicode (thanx Archie) */
-	unipwLen = 0;
-	for (s = pw; unipwLen < sizeof(unipw) / 2 && *s; s++)
-		unipw[unipwLen++] = __htons(*s << 8);
+    memset(unipw, '\0', sizeof(unipw));
+    /* convert to unicode (thanx Archie) */
+    unipwLen = 0;
+    for (s = pw; unipwLen < sizeof(unipw) / 2 && *s; s++)
+        unipw[unipwLen++] = __htons(*s << 8);
 
-	/* Compute MD4 of Unicode password */
- 	MD4Init(&ctx);
-	MD4Update(&ctx, (unsigned char *)unipw, unipwLen*sizeof(uint16_t));
-	MD4Final(hash, &ctx);
+    /* Compute MD4 of Unicode password */
+    MD4Init(&ctx);
+    MD4Update(&ctx, (unsigned char *)unipw, unipwLen*sizeof(uint16_t));
+    MD4Final(hash, &ctx);
 
-	for (i = j = 0; i < MD4_SIZE; i++) {
-		final[j++] = hexconvtab[hash[i] >> 4];
-		final[j++] = hexconvtab[hash[i] & 15];
-	}
-	final[j] = '\0';
+    for (i = j = 0; i < MD4_SIZE; i++) {
+        final[j++] = hexconvtab[hash[i] >> 4];
+        final[j++] = hexconvtab[hash[i] & 15];
+    }
+    final[j] = '\0';
 
-	strcpy(passwd, magic);
-	strcat(passwd, "$");
-	strncat(passwd, final, MD4_SIZE*2);
+    strcpy(passwd, magic);
+    strcat(passwd, "$");
+    strncat(passwd, final, MD4_SIZE*2);
 
-	/* Don't leave anything around in vm they could use. */
-	memset(final, 0, sizeof(final));
+    /* Don't leave anything around in vm they could use. */
+    memset(final, 0, sizeof(final));
 
-	return (passwd);
+    return (passwd);
 }

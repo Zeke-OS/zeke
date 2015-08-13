@@ -43,30 +43,30 @@
  * and it needs to be the default for backward compatibility.
  */
 static const struct crypt_format {
-	const char *const name;
-	char *(*const func)(const char *, const char *);
-	const char *const magic;
+    const char *const name;
+    char *(*const func)(const char *, const char *);
+    const char *const magic;
 } crypt_formats[] = {
-	{ "md5",	crypt_md5,		"$1$"	},
+    { "md5",    crypt_md5,      "$1$"   },
 #ifdef HAS_BLOWFISH
-	{ "blf",	crypt_blowfish,		"$2"	},
+    { "blf",    crypt_blowfish,     "$2"    },
 #endif
-	{ "nth",	crypt_nthash,		"$3$"	},
-	{ "sha256",	crypt_sha256,		"$5$"	},
-	{ "sha512",	crypt_sha512,		"$6$"	},
+    { "nth",    crypt_nthash,       "$3$"   },
+    { "sha256", crypt_sha256,       "$5$"   },
+    { "sha512", crypt_sha512,       "$6$"   },
 #ifdef HAS_DES
-	{ "des",	crypt_des,		"_"	},
+    { "des",    crypt_des,      "_" },
 #endif
 
-	/* sentinel */
-	{ NULL,		NULL,			NULL	}
+    /* sentinel */
+    { NULL,     NULL,           NULL    }
 };
 
 static const struct crypt_format *crypt_format =
     &crypt_formats[(sizeof crypt_formats / sizeof *crypt_formats) - 2];
 
 #define DES_SALT_ALPHABET \
-	"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+    "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
 /*
  * Returns the name of the currently selected format.
@@ -75,7 +75,7 @@ const char *
 crypt_get_format(void)
 {
 
-	return (crypt_format->name);
+    return (crypt_format->name);
 }
 
 /*
@@ -84,15 +84,15 @@ crypt_get_format(void)
 int
 crypt_set_format(const char *format)
 {
-	const struct crypt_format *cf;
+    const struct crypt_format *cf;
 
-	for (cf = crypt_formats; cf->name != NULL; ++cf) {
-		if (strcasecmp(cf->name, format) == 0) {
-			crypt_format = cf;
-			return (1);
-		}
-	}
-	return (0);
+    for (cf = crypt_formats; cf->name != NULL; ++cf) {
+        if (strcasecmp(cf->name, format) == 0) {
+            crypt_format = cf;
+            return (1);
+        }
+    }
+    return (0);
 }
 
 /*
@@ -103,18 +103,18 @@ crypt_set_format(const char *format)
 char *
 crypt(const char *passwd, const char *salt)
 {
-	const struct crypt_format *cf;
+    const struct crypt_format *cf;
 #ifdef HAS_DES
-	int len;
+    int len;
 #endif
 
-	for (cf = crypt_formats; cf->name != NULL; ++cf)
-		if (cf->magic != NULL && strstr(salt, cf->magic) == salt)
-			return (cf->func(passwd, salt));
+    for (cf = crypt_formats; cf->name != NULL; ++cf)
+        if (cf->magic != NULL && strstr(salt, cf->magic) == salt)
+            return (cf->func(passwd, salt));
 #ifdef HAS_DES
-	len = strlen(salt);
-	if ((len == 13 || len == 2) && strspn(salt, DES_SALT_ALPHABET) == len)
-		return (crypt_des(passwd, salt));
+    len = strlen(salt);
+    if ((len == 13 || len == 2) && strspn(salt, DES_SALT_ALPHABET) == len)
+        return (crypt_des(passwd, salt));
 #endif
-	return (crypt_format->func(passwd, salt));
+    return (crypt_format->func(passwd, salt));
 }

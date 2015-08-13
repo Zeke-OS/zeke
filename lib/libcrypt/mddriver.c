@@ -41,27 +41,27 @@
 static void
 MDString(char *string)
 {
-	char buf[33];
+    char buf[33];
 
-	printf("MD%d (\"%s\") = %s\n",
-	       MD, string, MDData(string, strlen(string), buf));
+    printf("MD%d (\"%s\") = %s\n",
+           MD, string, MDData(string, strlen(string), buf));
 }
 
 /* Digests a reference suite of strings and prints the results. */
 int
 main(void)
 {
-	printf("MD%d test suite:\n", MD);
+    printf("MD%d test suite:\n", MD);
 
-	MDString("");
-	MDString("a");
-	MDString("abc");
-	MDString("message digest");
-	MDString("abcdefghijklmnopqrstuvwxyz");
-	MDString("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-		"abcdefghijklmnopqrstuvwxyz0123456789");
-	MDString("1234567890123456789012345678901234567890"
-		"1234567890123456789012345678901234567890");
+    MDString("");
+    MDString("a");
+    MDString("abc");
+    MDString("message digest");
+    MDString("abcdefghijklmnopqrstuvwxyz");
+    MDString("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "abcdefghijklmnopqrstuvwxyz0123456789");
+    MDString("1234567890123456789012345678901234567890"
+        "1234567890123456789012345678901234567890");
 
-	return 0;
+    return 0;
 }

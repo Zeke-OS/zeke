@@ -43,26 +43,26 @@
 static void
 SHAString(char *string)
 {
-	char buf[2*64 + 1];
+    char buf[2*64 + 1];
 
-	printf("SHA-%d (\"%s\") = %s\n",
-	       SHA, string, SHA_Data(string, strlen(string), buf));
+    printf("SHA-%d (\"%s\") = %s\n",
+           SHA, string, SHA_Data(string, strlen(string), buf));
 }
 
 /* Digests a reference suite of strings and prints the results. */
 int
 main(void)
 {
-	printf("SHA-%d test suite:\n", SHA);
+    printf("SHA-%d test suite:\n", SHA);
 
-	SHAString("");
-	SHAString("abc");
-	SHAString("message digest");
-	SHAString("abcdefghijklmnopqrstuvwxyz");
-	SHAString("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-		  "abcdefghijklmnopqrstuvwxyz0123456789");
-	SHAString("1234567890123456789012345678901234567890"
-		  "1234567890123456789012345678901234567890");
+    SHAString("");
+    SHAString("abc");
+    SHAString("message digest");
+    SHAString("abcdefghijklmnopqrstuvwxyz");
+    SHAString("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+          "abcdefghijklmnopqrstuvwxyz0123456789");
+    SHAString("1234567890123456789012345678901234567890"
+          "1234567890123456789012345678901234567890");
 
-	return 0;
+    return 0;
 }
