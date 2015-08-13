@@ -59,13 +59,10 @@ static const char sha256_rounds_prefix[] = "rounds=";
 static char *
 crypt_sha256_r(const char *key, const char *salt, char *buffer, int buflen)
 {
-	unsigned long srounds;
-	int n;
 	uint8_t alt_result[32], temp_result[32];
 	SHA256_CTX ctx, alt_ctx;
 	size_t salt_len, key_len, cnt, rounds;
 	char *cp, *copied_key, *copied_salt, *p_bytes, *s_bytes, *endp;
-	const char *num;
 	bool rounds_custom;
 
 	copied_key = NULL;
@@ -83,6 +80,9 @@ crypt_sha256_r(const char *key, const char *salt, char *buffer, int buflen)
 
 	if (strncmp(salt, sha256_rounds_prefix, sizeof(sha256_rounds_prefix) - 1)
 	    == 0) {
+        const char *num;
+	    unsigned long srounds;
+
 		num = salt + sizeof(sha256_rounds_prefix) - 1;
 		srounds = strtoul(num, &endp, 10);
 
@@ -211,6 +211,8 @@ crypt_sha256_r(const char *key, const char *salt, char *buffer, int buflen)
 	buflen -= sizeof(sha256_salt_prefix) - 1;
 
 	if (rounds_custom) {
+        int n;
+
 		n = snprintf(cp, MAX(0, buflen), "%s%zu$",
 			 sha256_rounds_prefix, rounds);
 

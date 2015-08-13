@@ -59,7 +59,6 @@ static const char sha512_rounds_prefix[] = "rounds=";
 static char *
 crypt_sha512_r(const char *key, const char *salt, char *buffer, int buflen)
 {
-	unsigned long srounds;
 	uint8_t alt_result[64], temp_result[64];
 	SHA512_CTX ctx, alt_ctx;
 	size_t salt_len, key_len, cnt, rounds;
@@ -81,7 +80,9 @@ crypt_sha512_r(const char *key, const char *salt, char *buffer, int buflen)
 
 	if (strncmp(salt, sha512_rounds_prefix, sizeof(sha512_rounds_prefix) - 1)
 	    == 0) {
+        unsigned long srounds;
 		const char *num = salt + sizeof(sha512_rounds_prefix) - 1;
+
 		srounds = strtoul(num, &endp, 10);
 
 		if (*endp == '$') {
