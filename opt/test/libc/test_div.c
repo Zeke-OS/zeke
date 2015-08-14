@@ -28,7 +28,7 @@ char * test_div(void)
     pu_assert_equal"", (sizeof(result.quot), sizeof(int));
     pu_assert_equal("", sizeof(result.rem), sizeof(int));
 
-    return TEST_RESULTS;
+    return NULL;
 }
 
 static void all_tests(void)
