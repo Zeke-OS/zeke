@@ -25,7 +25,7 @@ char * test_div(void)
 
     result = div(5, -2);
     pu_assert("", result.quot == -2 && result.rem == 1);
-    pu_assert_equal"", (sizeof(result.quot), sizeof(int));
+    pu_assert_equal("", sizeof(result.quot), sizeof(int));
     pu_assert_equal("", sizeof(result.rem), sizeof(int));
 
     return NULL;
