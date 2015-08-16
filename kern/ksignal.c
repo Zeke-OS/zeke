@@ -751,7 +751,25 @@ static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
                thread->id, ksignal_signum2str(signum));
 #endif
         thread->exit_signal = signum;
-        thread_terminate(thread->id);
+        /*
+         * If the thread is in a system call we should wait until it's exiting
+         * to make sure we don't left any locks or extra refcounts.
+         */
+        if (thread_flags_is_set(current_thread, SCHED_INSYS_FLAG)) {
+            if (sigs != &thread->sigs) {
+                while (ksig_lock(&thread->sigs.s_lock));
+                KSIGFLAG_SET(&thread->sigs, KSIGFLAG_SA_KILL);
+                ksig_unlock(&thread->sigs.s_lock);
+            } else {
+                KSIGFLAG_SET(sigs, KSIGFLAG_SA_KILL);
+            }
+        } else {
+            /*
+             * Otherwise the thread is in user mode and we can just terminate
+             * it immediately.
+             */
+            thread_terminate(thread->id);
+        }
 
         return 0;
     }
@@ -952,7 +970,7 @@ int ksignal_sigsleep(const struct timespec * restrict timeout)
     thread_alarm_rele(timer_id);
 
     unslept = (unslept > 0) ? unslept / 1000000 : 0;
-    return ksignal_syscall_exit(unslept);
+    return unslept;
 }
 
 int ksignal_isblocked(struct signals * sigs, int signum)
@@ -1126,12 +1144,30 @@ int ksignal_set_ksigaction(struct signals * sigs, struct ksigaction * action)
     return 0;
 }
 
+void ksignal_syscall_enter(void)
+{
+    struct signals * sigs = &current_thread->sigs;
+
+    while (ksig_lock(&sigs->s_lock));
+
+    thread_flags_set(current_thread, SCHED_INSYS_FLAG);
+
+    ksig_unlock(&sigs->s_lock);
+}
+
 int ksignal_syscall_exit(int retval)
 {
     struct signals * sigs = &current_thread->sigs;
 
     while (ksig_lock(&sigs->s_lock));
+
     KSIGFLAG_CLEAR(sigs, KSIGFLAG_INTERRUPTIBLE);
+
+    if (KSIGFLAG_IS_SET(sigs, KSIGFLAG_SA_KILL)) {
+        ksig_unlock(&sigs->s_lock);
+        thread_die(current_thread->retval);
+        /* Won't return */
+    }
 
     if (KSIGFLAG_IS_SET(sigs, KSIGFLAG_SIGHANDLER)) {
         /*
@@ -1151,6 +1187,8 @@ int ksignal_syscall_exit(int retval)
         /* Set first argument for the signal handler. */
         retval = sframe->r0;
     }
+
+    thread_flags_clear(current_thread, SCHED_INSYS_FLAG);
 
     ksig_unlock(&sigs->s_lock);
     return retval;

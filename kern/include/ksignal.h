@@ -93,6 +93,9 @@ enum signals_owner {
                                       *   properly if set by the syscall!
                                       */
 #define KSIGFLAG_SIGHANDLER     0x02 /*!< Going to or in a usr signal handler */
+#define KSIGFLAG_SA_KILL        0x10 /*!< The thread should be terminated
+                                      *   as soon as possible.
+                                      */
 
 #define KSIGFLAG_IS_SET(_sigs_, _flag_) \
     (((_sigs_)->s_flags & (_flag_)) == (_flag_))
@@ -219,6 +222,7 @@ int ksignal_sigtimedwait(siginfo_t * retval, const sigset_t * restrict set,
 
 /**
  * Sleep until timeout or a non-ignored signal is received.
+ * Only for syscalls.
  */
 int ksignal_sigsleep(const struct timespec * restrict timeout);
 
@@ -273,12 +277,24 @@ int ksignal_reset_ksigaction(struct signals * sigs, int signum);
 int ksignal_set_ksigaction(struct signals * sigs, struct ksigaction * action);
 
 /**
- * Exit from an interruptible syscall that was presumably interrupted.
- * This function determines if we are going to execute a signal handler
- * after returning from this syscall or return to the caller and adjusts
- * stack and return values accordingly.
- * KSIGFLAG_INTERRUPTIBLE is cleared by this function and
- * KSIGFLAG_SIGHANDLER selects the action.
+ * Enter to a syscall.
+ * This function must be called before entering a syscall (and is called in
+ * syscall.c). This function also sets SCHED_INSYS_FLAG for the current thread
+ * because its synchronization with ksignal system is somewhat important to
+ * determine the correct behavior.
+ */
+void ksignal_syscall_enter(void);
+
+/**
+ * Exit from a syscall.
+ * Determines if there is any postponed actions to be performed due to received
+ * signals before we can return to the caller in user mode.
+ * - If KSIGFLAG_SA_KILL is set the thread will be terminated immediately.
+ * - This function determines if we are going to execute a signal handler
+ *   after returning from this syscall or return to the caller and adjusts
+ *   stack and return values accordingly.
+ * -- KSIGFLAG_INTERRUPTIBLE is cleared by this function and
+ *    KSIGFLAG_SIGHANDLER selects the action.
  * @param retval is the return value that shall be returned to the original
  *               caller.
  * @returns Returns a value that should be immediately returned with return,

@@ -88,7 +88,7 @@ void syscall_handler(void)
     const uint32_t major = SYSCALL_MAJOR(type);
     intptr_t retval;
 
-    thread_flags_set(current_thread, SCHED_INSYS_FLAG);
+    ksignal_syscall_enter();
 
     if ((major >= num_elem(syscall_callmap)) || !syscall_callmap[major]) {
         const uint32_t minor = SYSCALL_MINOR(type);
@@ -106,6 +106,6 @@ void syscall_handler(void)
         retval = syscall_callmap[major](type, p);
     }
 
-    thread_flags_clear(current_thread, SCHED_INSYS_FLAG);
+    retval = ksignal_syscall_exit(retval);
     svc_setretval(retval);
 }
