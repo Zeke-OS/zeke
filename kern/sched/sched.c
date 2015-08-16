@@ -904,10 +904,11 @@ int thread_terminate(pthread_t thread_id)
     while (child) {
         next_child = child->inh.next_child;
 
-        if (thread_terminate(child->id) == -EPERM) {
+        if (!SCHED_TEST_TERMINATE_OK(thread_flags_get(thread))
+            || ksignal_sendsig(&child->sigs, SIGKILL, SI_UNKNOWN)) {
             /*
-             * The child is now orphan, it was probably a kworker that couldn't
-             * be killed.
+             * The child is now orphan, it was probably a kworker that
+             * couldn't be killed.
              */
             child->inh.parent = NULL;
             child->inh.next_child = NULL;
@@ -1143,20 +1144,6 @@ fail:
     return -1;
 }
 
-static int sys_thread_terminate(__user void * user_args)
-{
-    pthread_t thread_id;
-    int err;
-
-    err = copyin(user_args, &thread_id, sizeof(pthread_t));
-    if (err) {
-        set_errno(EFAULT);
-        return -1;
-    }
-
-    return thread_terminate(thread_id);
-}
-
 static int sys_thread_die(__user void * user_args)
 {
     thread_die((intptr_t)user_args);
@@ -1319,7 +1306,6 @@ static int sys_thread_getpriority(__user void * user_args)
 
 static const syscall_handler_t thread_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_CREATE, sys_thread_create),
-    ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_TERMINATE, sys_thread_terminate),
     ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_DIE, sys_thread_die),
     ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_DETACH, sys_thread_detach),
     ARRDECL_SYSCALL_HNDL(SYSCALL_THREAD_JOIN, sys_thread_join),
