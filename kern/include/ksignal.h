@@ -33,6 +33,12 @@
  *******************************************************************************
  */
 
+/**
+ * @addtogroup ksignal
+ * Signal management.
+ * @{
+ */
+
 #pragma once
 #ifndef KSIGNAL_H
 #define KSIGNAL_H
@@ -110,6 +116,58 @@ struct signals {
     struct sigaction_tree sa_tree;      /*!< Configured signal actions. */
     ksigmtx_t s_lock;
 };
+
+/**
+ * @addtogroup ksignal_pendqueue
+ * Operations for ksignal pending signals queue.
+ * @{
+ */
+
+/**
+ * Initialize a new signal queue.
+ */
+#define KSIGNAL_PENDQUEUE_INIT(_sigs) \
+    STAILQ_INIT(&(_sigs)->s_pendqueue)
+
+/**
+ * Test if a queue is empty.
+ */
+#define KSIGNAL_PENDQUEUE_EMPTY(_sigs) \
+    STAILQ_EMPTY(&(_sigs)->s_pendqueue)
+
+/**
+ * Foreach.
+ */
+#define KSIGNAL_PENDQUEUE_FOREACH(_var, _sigs) \
+    STAILQ_FOREACH((_var), &(_sigs)->s_pendqueue, _entry)
+
+/**
+ * Removal safe foreach.
+ */
+#define KSIGNAL_PENDQUEUE_FOREACH_SAFE(_var, _sigs, _tmp) \
+    STAILQ_FOREACH_SAFE((_var), &(_sigs)->s_pendqueue, _entry, (_tmp))
+
+/**
+ * Insert to head.
+ */
+#define KSIGNAL_PENDQUEUE_INSERT_HEAD(_sigs, _elm) \
+    STAILQ_INSERT_HEAD(&(_sigs)->s_pendqueue, (_elm), _entry)
+
+/**
+ * Insert to tail.
+ */
+#define KSIGNAL_PENDQUEUE_INSERT_TAIL(_sigs, _elm) \
+    STAILQ_INSERT_TAIL(&(_sigs)->s_pendqueue, (_elm), _entry)
+
+/**
+ * Remove an element from a queue.
+ */
+#define KSIGNAL_PENDQUEUE_REMOVE(_sigs, _elm) \
+    STAILQ_REMOVE(&(_sigs)->s_pendqueue, (_elm), ksiginfo, _entry)
+
+/**
+ * @}
+ */
 
 struct thread_info;
 
@@ -297,3 +355,6 @@ sigset_t * sigcompl(sigset_t * target, const sigset_t * set);
 
 #endif /* KSIGNAL_H */
 
+/**
+ * @}
+ */

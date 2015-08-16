@@ -230,7 +230,7 @@ static void ksignal_exec_cond(struct thread_info * thread, int signum)
 
 void ksignal_signals_ctor(struct signals * sigs, enum signals_owner owner_type)
 {
-    STAILQ_INIT(&sigs->s_pendqueue);
+    KSIGNAL_PENDQUEUE_INIT(sigs);
     RB_INIT(&sigs->sa_tree);
     sigemptyset(&sigs->s_block);
     sigemptyset(&sigs->s_wait);
@@ -262,7 +262,7 @@ void ksignal_signals_fork_reinit(struct signals * sigs)
         n1 = n2;
     }
 #endif
-    STAILQ_INIT(&sigs->s_pendqueue);
+    KSIGNAL_PENDQUEUE_INIT(sigs);
 
     /*
      * Clone configured signal actions.
@@ -329,7 +329,7 @@ static void forward_proc_signals(struct proc_info * proc)
     KASSERT(ksig_testlock(&proc_sigs->s_lock), "sigs should be locked\n");
 
     /* Get next pending signal. */
-    STAILQ_FOREACH_SAFE(ksiginfo, &proc_sigs->s_pendqueue, _entry, tmp) {
+    KSIGNAL_PENDQUEUE_FOREACH_SAFE(ksiginfo, proc_sigs, tmp) {
         struct thread_info * thread;
         struct thread_info * thread_it = NULL;
         const int signum = ksiginfo->siginfo.si_signo;
@@ -356,8 +356,8 @@ static void forward_proc_signals(struct proc_info * proc)
             /*
              * The signal should be processed by thread.
              */
-            STAILQ_REMOVE(&proc_sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
-            STAILQ_INSERT_TAIL(&thread_sigs->s_pendqueue, ksiginfo, _entry);
+            KSIGNAL_PENDQUEUE_REMOVE(proc_sigs, ksiginfo);
+            KSIGNAL_PENDQUEUE_INSERT_TAIL(thread_sigs, ksiginfo);
             if (thread != current_thread)
                 ksignal_exec_cond(thread, ksiginfo->siginfo.si_signo);
             ksig_unlock(&thread_sigs->s_lock);
@@ -570,7 +570,7 @@ static void ksignal_post_scheduling(void)
     }
 
     /* Get next pending signal. */
-    STAILQ_FOREACH(ksiginfo, &sigs->s_pendqueue, _entry) {
+    KSIGNAL_PENDQUEUE_FOREACH(ksiginfo, sigs) {
         int blocked, swait, nxt_state;
 
         signum = ksiginfo->siginfo.si_signo;
@@ -589,7 +589,7 @@ static void ksignal_post_scheduling(void)
         if (blocked && swait) {
             sigemptyset(&sigs->s_wait);
             current_thread->sigwait_retval = ksiginfo;
-            STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
+            KSIGNAL_PENDQUEUE_REMOVE(sigs, ksiginfo);
             KSIGFLAG_CLEAR(sigs, KSIGFLAG_INTERRUPTIBLE);
             ksig_unlock(&sigs->s_lock);
 #if defined(configKSIGNAL_DEBUG)
@@ -608,7 +608,7 @@ static void ksignal_post_scheduling(void)
         nxt_state = eval_inkernel_action(&action);
         if (nxt_state == 0 || action.ks_action.sa_flags & SA_IGNORE) {
             /* Signal handling done */
-            STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
+            KSIGNAL_PENDQUEUE_REMOVE(sigs, ksiginfo);
             KSIGFLAG_CLEAR(sigs, KSIGFLAG_INTERRUPTIBLE);
             ksig_unlock(&sigs->s_lock);
             kfree_lazy(ksiginfo);
@@ -635,7 +635,7 @@ static void ksignal_post_scheduling(void)
      * Else the pending singal should be handled now but in user space, so
      * continue to handle the signal in user space handler.
      */
-    STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
+    KSIGNAL_PENDQUEUE_REMOVE(sigs, ksiginfo);
 
 #if defined(configKSIGNAL_DEBUG)
     KERROR(KERROR_DEBUG, "Pass a signal %s to the user space\n",
@@ -775,7 +775,7 @@ static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
         .siginfo.si_status = 0, /* TODO siginfo status */
         .siginfo.si_value = { 0 }, /* TODO siginfo value */
     };
-    STAILQ_INSERT_TAIL(&sigs->s_pendqueue, ksiginfo, _entry);
+    KSIGNAL_PENDQUEUE_INSERT_TAIL(sigs, ksiginfo);
 
     if (thread != current_thread) {
         if (sigs != &thread->sigs) {
@@ -842,10 +842,10 @@ int ksignal_sigwait(siginfo_t * retval, const sigset_t * restrict set)
     while (ksig_lock(s_lock));
 
     /* Iterate through pending signals */
-    STAILQ_FOREACH(ksiginfo, &sigs->s_pendqueue, _entry) {
+    KSIGNAL_PENDQUEUE_FOREACH(ksiginfo, sigs) {
         if (sigismember(set, ksiginfo->siginfo.si_signo)) {
             current_thread->sigwait_retval = ksiginfo;
-            STAILQ_REMOVE(&sigs->s_pendqueue, ksiginfo, ksiginfo, _entry);
+            KSIGNAL_PENDQUEUE_REMOVE(sigs, ksiginfo);
             ksig_unlock(s_lock);
             goto out;
         }
@@ -912,7 +912,7 @@ int ksignal_sigsleep(const struct timespec * restrict timeout)
      * Iterate through pending signals and check if there is any actions
      * defined, possible thread termination is handled elsewhere.
      */
-    STAILQ_FOREACH(ksiginfo, &sigs->s_pendqueue, _entry) {
+    KSIGNAL_PENDQUEUE_FOREACH(ksiginfo, sigs) {
         int signum = ksiginfo->siginfo.si_signo;
 
         if (!sigismember(&sigs->s_block, signum)) {
