@@ -272,11 +272,7 @@ static int sys_close(__user void * p)
     int err;
     int fildes = (int)p;
 
-    if (fildes >= 0) {
-        err = fs_fildes_close(curproc, fildes);
-    } else {
-        err = -EBADF;
-    }
+    err = fs_fildes_close(curproc, fildes);
     if (err) {
         set_errno(-err);
         return -1;
@@ -287,7 +283,9 @@ static int sys_close(__user void * p)
 
 static int sys_close_all(__user void * p)
 {
-    fs_fildes_close_all(curproc, (int)p);
+    int fildes = (int)p;
+
+    fs_fildes_close_all(curproc, fildes);
 
     return 0;
 }

@@ -599,6 +599,14 @@ int fs_fildes_curproc_next(file_t * new_file, int start)
     return -ENFILE;
 }
 
+/**
+ * Check if the give fd number is in the valid range.
+ */
+static int fs_fildes_is_in_range(files_t * files, int fd)
+{
+    return (fd >= 0 || fd < files->count);
+}
+
 file_t * fs_fildes_ref(files_t * files, int fd, int count)
 {
     file_t * file;
@@ -606,7 +614,7 @@ file_t * fs_fildes_ref(files_t * files, int fd, int count)
 
     KASSERT(files != NULL, "files should be set");
 
-    if (fd < 0 || fd >= files->count)
+    if (!fs_fildes_is_in_range(files, fd))
         return NULL;
 
     file = files->fd[fd];
@@ -647,6 +655,9 @@ void fs_fildes_close_all(struct proc_info * p, int fildes_begin)
     int start = p->files->count - 1;
     int fdstop = fildes_begin;
     int i;
+
+    if (!fs_fildes_is_in_range(p->files, fdstop))
+        return;
 
     for (i = start; i > fdstop; i--) {
         fs_fildes_close(p, i);
