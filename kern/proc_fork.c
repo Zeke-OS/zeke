@@ -260,6 +260,7 @@ pid_t proc_get_random_pid(void)
 
     pid_t last_maxproc;
     pid_t newpid;
+    int count = 0;
 
 #ifdef configPROC_DEBUG
     KERROR(KERROR_DEBUG, "proc_get_random_pid()");
@@ -276,13 +277,15 @@ pid_t proc_get_random_pid(void)
     do {
         long d = last_maxproc - proc_lastpid - 1;
 
-        if (d <= 1) {
+        if (d <= 1 || count == 20) {
             proc_lastpid = 2;
+            count = 0;
             continue;
         }
         if (newpid + 1 > last_maxproc)
             newpid = proc_lastpid + kunirand(d);
         newpid++;
+        count++;
     } while (proc_get_struct(newpid));
 
     proc_lastpid = newpid;
