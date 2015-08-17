@@ -59,6 +59,9 @@ static int load_proc_image(file_t * file, uintptr_t * vaddr_base)
             break;
     }
 
+    if (err)
+        return err;
+
     /* Unload user regions before loading a new image. */
     (void)vm_unload_regions(curproc, MM_HEAP_REGION, -1);
 
@@ -315,8 +318,11 @@ static int sys_exec(__user void * user_args)
      */
     err = exec_file(args.fd, name, env_bp, args.nargv, env_bp->b_mmu.vaddr,
                     envp);
-
-    return err;
+    if (err) {
+        set_errno(-err);
+        return -1;
+    }
+    return 0;
 }
 
 static const syscall_handler_t exec_sysfnmap[] = {
