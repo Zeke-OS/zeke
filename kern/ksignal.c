@@ -1186,6 +1186,8 @@ int ksignal_syscall_exit(int retval)
 
         /* Set first argument for the signal handler. */
         retval = sframe->r0;
+
+        KSIGFLAG_CLEAR(sigs, KSIGFLAG_SIGHANDLER);
     }
 
     thread_flags_clear(current_thread, SCHED_INSYS_FLAG);

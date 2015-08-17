@@ -92,7 +92,8 @@ enum signals_owner {
                                       *   @note The syscall must handle this
                                       *   properly if set by the syscall!
                                       */
-#define KSIGFLAG_SIGHANDLER     0x02 /*!< Going to or in a usr signal handler */
+#define KSIGFLAG_SIGHANDLER     0x02 /*!< Going to user space signal handler
+                                      *   after a syscall exit. */
 #define KSIGFLAG_SA_KILL        0x10 /*!< The thread should be terminated
                                       *   as soon as possible.
                                       */
