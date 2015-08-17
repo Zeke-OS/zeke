@@ -4,4 +4,4 @@ test_*
 *.s
 *.o
 *.d
-runner.script
+/run.sh

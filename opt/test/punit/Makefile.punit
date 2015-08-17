@@ -72,7 +72,7 @@ TSETNAME ?= ${shell pwd | sed 's|.*/||'}
 # SRC = MUT source modules
 
 #### Targets ###################################################################
-all: $(PU-OBJ) $(OBJ) $(TEST_EXECUTABLES) manifest runner.script
+all: $(PU-OBJ) $(OBJ) $(TEST_EXECUTABLES) manifest
 
 $(PU-OBJ): $(PU-SRC-y)
 	@echo "CC $@"
@@ -99,12 +99,8 @@ $(TEST_EXECUTABLES): $(PU-OBJ) $(OBJ)
 manifest: $(TEST_EXECUTABLES)
 	echo "$(TEST_EXECUTABLES)" > manifest
 
-runner.script: $(TEST_EXECUTABLES)
-	@echo "cd opt/test/$(TSETNAME)" > $@
-	@for ex in $(TEST_EXECUTABLES); do echo "$$ex" >> $@; done
-	@echo "exit" >> $@
 
 clean:
-	$(RM) $(TEST_EXECUTABLES) manifest runner.script
+	$(RM) $(TEST_EXECUTABLES) manifest
 
 .PHONY: clean
