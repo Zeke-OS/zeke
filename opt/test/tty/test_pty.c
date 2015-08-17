@@ -21,10 +21,10 @@ static void teardown()
     printf("errno: %d, masterfd: %d\n", errno, masterfd);
 #endif
 
-    if (slavefd)
+    if (slavefd >= 0)
         close(slavefd);
 
-    if (masterfd)
+    if (masterfd >= 0)
         close(masterfd);
 }
 

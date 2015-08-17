@@ -606,7 +606,7 @@ file_t * fs_fildes_ref(files_t * files, int fd, int count)
 
     KASSERT(files != NULL, "files should be set");
 
-    if (fd >= files->count)
+    if (fd < 0 || fd >= files->count)
         return NULL;
 
     file = files->fd[fd];
