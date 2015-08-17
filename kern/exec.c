@@ -121,6 +121,12 @@ int exec_file(int fildes, char name[PROC_NAME_LEN], struct buf * env_bp,
         goto fail;
     }
 
+    if (!S_ISREG(file->vnode->vn_mode)) {
+        fs_fildes_ref(curproc->files, fildes, -1);
+        err = -ENOEXEC;
+        goto fail;
+    }
+
     /* Load image and close the file */
     err = load_proc_image(file, &vaddr);
     fs_fildes_ref(curproc->files, fildes, -1);
