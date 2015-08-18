@@ -396,11 +396,9 @@ static int sys_fcntl(__user void * user_args)
             goto out;
         }
 
-        if (curproc->files->fd[new_fd]) {
-            if (fs_fildes_close(curproc, new_fd)) {
-                set_errno(EIO);
-                goto out;
-            }
+        if (fs_fildes_close(curproc, new_fd) != -EBADF) {
+            set_errno(EIO);
+            goto out;
         }
 
         new_fd = fs_fildes_curproc_next(file, new_fd);
