@@ -28,9 +28,9 @@ static void teardown()
         close(masterfd);
 }
 
-static char * test_open_pty(void)
+static char * open_pty(void)
 {
-    masterfd = posix_openpt(O_RDWR|O_NOCTTY);
+    masterfd = posix_openpt(O_RDWR | O_NOCTTY);
     pu_assert("master tty opened", masterfd > 0);
 
     pu_assert("grant", grantpt(masterfd) == 0);
@@ -39,15 +39,62 @@ static char * test_open_pty(void)
     slavedev = ptsname(masterfd);
     pu_assert("get ptsname", slavedev != NULL);
 
-    slavefd = open(slavedev, O_RDWR|O_NOCTTY);
+    slavefd = open(slavedev, O_RDWR | O_NOCTTY);
     pu_assert("slave tty opened", slavefd > 0);
 
     return NULL;
 }
 
-static void all_tests()
+static char * test_open_pty(void)
+{
+    return open_pty();
+}
+
+static char * test_master2slave(void)
+{
+    char wr[] = "test";
+    char rd[sizeof(wr)];
+    char * res;
+    ssize_t retval;
+
+    res = open_pty();
+    if (res)
+        return res;
+
+    retval = write(masterfd, wr, sizeof(wr));
+    pu_assert_equal("write to master ok", retval, sizeof(wr));
+
+    retval = read(slavefd, rd, sizeof(wr));
+    pu_assert_equal("read from slave ok", retval, sizeof(wr));
+
+    return NULL;
+}
+
+static char * test_slave2master(void)
+{
+    char wr[] = "test";
+    char rd[sizeof(wr)];
+    char * res;
+    ssize_t retval;
+
+    res = open_pty();
+    if (res)
+        return res;
+
+    retval = write(slavefd, wr, sizeof(wr));
+    pu_assert_equal("write to slave ok", retval, sizeof(wr));
+
+    retval = read(masterfd, rd, sizeof(wr));
+    pu_assert_equal("read from master ok", retval, sizeof(wr));
+
+    return NULL;
+}
+
+static void all_tests(void)
 {
     pu_run_test(test_open_pty);
+    pu_run_test(test_master2slave);
+    pu_run_test(test_slave2master);
 }
 
 int main(int argc, char **argv)

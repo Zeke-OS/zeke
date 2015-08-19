@@ -38,6 +38,7 @@
 #include <termios.h>
 #include <fs/dev_major.h>
 #include <fs/devfs.h>
+#include <fs/fs_util.h>
 #include <kerror.h>
 #include <kinit.h>
 #include <klocks.h>
@@ -46,6 +47,16 @@
 #include <proc.h>
 #include <queue_r.h>
 #include <tty.h>
+
+static ssize_t ptymaster_read(struct file * file, struct uio * uio,
+                              size_t count);
+static ssize_t ptymaster_write(struct file * file, struct uio * uio,
+                               size_t count);
+
+static vnode_ops_t ptmx_vnode_ops = {
+    .read = ptymaster_read,
+    .write = ptymaster_write,
+};
 
 /**
  * Struct describing a single PTY device.
@@ -127,16 +138,22 @@ void pty_remove(struct pty_device * ptydev)
 
 /*
  * TODO Check owner before read/write
+ * TODO blocking mode
  */
 
-static int ptymaster_read(struct tty * tty, off_t blkno, uint8_t * buf,
-                          size_t bcount, int oflags)
+static ssize_t ptymaster_read(struct file * file, struct uio * uio,
+                              size_t count)
 {
-    int pty_id = blkno;
-    struct pty_device * ptydev = pty_get(pty_id);
-    size_t i;
+    int err;
+    struct pty_device * ptydev = (struct pty_device *)file->stream;
+    uint8_t * buf;
+    ssize_t i;
 
-    for (i = 0; i < bcount; i++) {
+    err = uio_get_kaddr(uio, (void **)(&buf));
+    if (err)
+        return err;
+
+    for (i = 0; i < (ssize_t)count; i++) {
         if (!queue_pop(&ptydev->chbuf_sm, &buf[i]))
             break;
     }
@@ -144,14 +161,19 @@ static int ptymaster_read(struct tty * tty, off_t blkno, uint8_t * buf,
     return i;
 }
 
-static int ptymaster_write(struct tty * tty, off_t blkno, uint8_t * buf,
-                           size_t bcount, int oflags)
+static ssize_t ptymaster_write(struct file * file, struct uio * uio,
+                               size_t count)
 {
-    int pty_id = blkno;
-    struct pty_device * ptydev = pty_get(pty_id);
-    size_t i;
+    int err;
+    struct pty_device * ptydev = (struct pty_device *)file->stream;
+    uint8_t * buf;
+    ssize_t i;
 
-    for (i = 0; i < bcount; i++) {
+    err = uio_get_kaddr(uio, (void **)(&buf));
+    if (err)
+        return err;
+
+    for (i = 0; i < (ssize_t)count; i++) {
         if (!queue_push(&ptydev->chbuf_ms, &buf[i]))
             break;
     }
@@ -162,10 +184,8 @@ static int ptymaster_write(struct tty * tty, off_t blkno, uint8_t * buf,
 static int ptyslave_read(struct tty * tty, off_t blkno,
                          uint8_t * buf, size_t bcount, int oflags)
 {
-    struct pty_device * ptydev;
+    struct pty_device * ptydev = SLAVE_TTY2PTY(tty);
     size_t i;
-
-    ptydev = SLAVE_TTY2PTY(tty);
 
     for (i = 0; i < bcount; i++) {
         if (!queue_pop(&ptydev->chbuf_ms, &buf[i]))
@@ -178,10 +198,8 @@ static int ptyslave_read(struct tty * tty, off_t blkno,
 static int ptyslave_write(struct tty * tty, off_t blkno,
                           uint8_t * buf, size_t bcount, int oflags)
 {
-    struct pty_device * ptydev;
+    struct pty_device * ptydev = SLAVE_TTY2PTY(tty);
     size_t i;
-
-    ptydev = SLAVE_TTY2PTY(tty);
 
     for (i = 0; i < bcount; i++) {
         if (!queue_push(&ptydev->chbuf_sm, &buf[i]))
@@ -189,24 +207,6 @@ static int ptyslave_write(struct tty * tty, off_t blkno,
     }
 
     return i;
-}
-
-/**
- * Close the pty slave when the master end is closed.
- */
-static void close_pty_slave(file_t * file, struct tty * tty)
-{
-    struct pty_device * ptydev = pty_get(file->seek_pos);
-    struct tty * slave_tty;
-
-    KASSERT(ptydev != NULL, "ptydev should be set");
-
-    slave_tty = SLAVE_PTY2TTY(ptydev);
-
-    pty_remove(ptydev);
-
-    destroy_ttydev(slave_tty);
-    tty_free(slave_tty);
 }
 
 /*
@@ -226,6 +226,8 @@ static void creat_pty(file_t * file, struct tty * tty)
     struct tty * slave_tty;
     struct pty_device * ptydev;
 
+    file->stream = NULL; /* Just in case we fail to create a new pty device. */
+
     pty_id = next_ptyid();
 
     /*
@@ -236,8 +238,11 @@ static void creat_pty(file_t * file, struct tty * tty)
 
     slave_tty = tty_alloc(drv_name, slave_dev_id, slave_dev_name,
                           sizeof(struct pty_device));
-    if (!slave_tty)
-        panic("Not enough memory to create a pty device");
+    if (!slave_tty) {
+        KERROR(KERROR_ERR, "%s(): Not enough memory to create a pty device",
+               __func__);
+        return;
+    }
     ptydev = SLAVE_TTY2PTY(slave_tty);
 
     /*
@@ -247,24 +252,48 @@ static void creat_pty(file_t * file, struct tty * tty)
     slave_tty->write = ptyslave_write;
 
     /*
-     * Set master muxing id.
-     */
-    file->seek_pos = pty_id;
-
-    /*
      * Create queues.
      */
     ptydev->chbuf_ms = queue_create(ptydev->_cbuf_ms, sizeof(char),
-            sizeof(ptydev->_cbuf_ms));
+                                    sizeof(ptydev->_cbuf_ms));
     ptydev->chbuf_sm = queue_create(ptydev->_cbuf_sm, sizeof(char),
-            sizeof(ptydev->_cbuf_sm));
+                                    sizeof(ptydev->_cbuf_sm));
 
     if (make_ttydev(slave_tty)) {
         tty_free(slave_tty);
-        panic("ENODEV while creating a pty");
+        KERROR(KERROR_ERR, "%s(): Failed to create a pty", __func__);
+        return;
     }
 
+    /*
+     * seek_pos must be set to pty_id so the user space can figure out
+     * the slave device name matching with this file descriptor.
+     */
+    file->seek_pos = pty_id;
+    file->stream = ptydev; /* ptydev is the stream */
+
     pty_insert(ptydev);
+}
+
+/**
+ * Close the pty slave end when the master end is closed.
+ */
+static void close_ptmx(file_t * file, struct tty * tty)
+{
+    struct pty_device * ptydev = (struct pty_device *)file->stream;
+    struct tty * slave_tty;
+
+    if (!ptydev) {
+        KERROR(KERROR_ERR, "%s(): Pointer to ptydev missing\n", __func__);
+        return;
+    }
+
+    slave_tty = SLAVE_PTY2TTY(ptydev);
+
+    pty_remove(ptydev);
+
+    destroy_ttydev(slave_tty);
+    tty_free(slave_tty);
 }
 
 /**
@@ -280,16 +309,23 @@ static int make_ptmx(void)
     if (!dev_ptmx)
         return -ENOMEM;
 
-    dev_ptmx->read = ptymaster_read;
-    dev_ptmx->write = ptymaster_write;
+    dev_ptmx->read = NULL;  /* Not needed because we override dev and tty. */
+    dev_ptmx->write = NULL; /* -"- */
     dev_ptmx->open_callback = creat_pty;
-    dev_ptmx->close_callback = close_pty_slave;
+    dev_ptmx->close_callback = close_ptmx;
 
     if (make_ttydev(dev_ptmx)) {
         KERROR(KERROR_ERR, "Failed to make /dev/ptmx");
         tty_free(dev_ptmx);
         return -ENODEV;
     }
+
+    /*
+     * We need to create our own vnode ops for ptymx to handle muxing and
+     * remove unnecessary overhead caused by devfs + tty abstraction.
+     */
+    fs_inherit_vnops(&ptmx_vnode_ops, dev_ptmx->tty_vn->vnode_ops);
+    dev_ptmx->tty_vn->vnode_ops = &ptmx_vnode_ops; /* and replace. */
 
     return 0;
 }

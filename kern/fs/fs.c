@@ -638,11 +638,11 @@ file_t * fs_fildes_ref(files_t * files, int fd, int count)
 
 int fs_fildes_close(struct proc_info * p, int fildes)
 {
-    file_t * fd = fs_fildes_ref(p->files, fildes, 1);
-    if (!fd)
+    file_t * file = fs_fildes_ref(p->files, fildes, 1);
+    if (!file)
         return -EBADF;
 
-    fd->vnode->vnode_ops->event_fd_closed(p, fd);
+    file->vnode->vnode_ops->event_fd_closed(p, file);
 
     fs_fildes_ref(p->files, fildes, -2);
     p->files->fd[fildes] = NULL;

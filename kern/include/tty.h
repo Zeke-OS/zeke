@@ -110,6 +110,12 @@ struct tty * tty_alloc(const char * drv_name, dev_t dev_id,
 void tty_free(struct tty * tty);
 
 /**
+ * Get the device info struct of a tty device.
+ * @param tty is a pointer to the tty device.
+ */
+struct dev_info * tty_get_dev(struct tty * tty);
+
+/**
  * Create a tty device.
  * Usually you can create multiple end points to a device by calling make_dev()
  * multiple times but make_ttydev() only supports one end point per struct tty.

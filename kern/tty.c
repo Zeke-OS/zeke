@@ -114,6 +114,11 @@ void tty_free(struct tty * tty)
     kfree(dev);
 }
 
+struct dev_info * tty_get_dev(struct tty * tty)
+{
+    return (struct dev_info *)((uintptr_t)tty - sizeof(struct dev_info));
+}
+
 int make_ttydev(struct tty * tty)
 {
     struct dev_info * dev;
