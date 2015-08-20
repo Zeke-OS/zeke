@@ -88,6 +88,8 @@ __attribute__ ((naked)) void undef_handler(void)
          */
         panic(buf);
     } else {
+        const struct ksignal_param sigparm = { .si_code = ILL_ILLOPC };
+
         enable_interrupt();
 
         KERROR(KERROR_ERR, "%s", buf);
@@ -95,7 +97,7 @@ __attribute__ ((naked)) void undef_handler(void)
         /*
          * Kill the current process.
          */
-        ksignal_sendsig_fatal(curproc, SIGILL);
+        ksignal_sendsig_fatal(curproc, SIGILL, &sigparm);
         thread_wait();
     }
 }

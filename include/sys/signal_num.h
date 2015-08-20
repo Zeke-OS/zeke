@@ -69,8 +69,8 @@
 #define SIGPIPE     13  /*!< (T) Write on a pipe with no one to read it. */
 #define SIGALRM     14  /*!< (T) Alarm clock. */
 #define SIGTERM     15  /*!< (T) Termination signal. */
-#define SIGSTOP     16  /*!< (S) Stop executing (cannot be caught or
-                         *       ignored). */
+#define SIGSTOP     16  /*!< (S) Stop executing
+                         *       (cannot be caught or ignored). */
 #define SIGTSTP     17  /*!< (S) Terminal stop signal. */
 #define SIGTTIN     18  /*!< (S) Background process attempting read. */
 #define SIGTTOU     19  /*!< (S) Background process attempting write. */
@@ -83,10 +83,12 @@
 #define SIGPWR      25  /*!< (T) System power failure. */
 #define SIGCHLDTHRD 26  /*!< (I) Child thread terminated.
                          *       (Only delivered to the parent thread) */
-#define SIGCANCEL   27  /*!< Cancel a thread. */
-#define _SIGMTX     31  /*!< (I) Wakeup mutex. */
+#define SIGCANCEL   27  /*!< (A) Cancel a thread. */
+#define _SIGMTX     28  /*!< (I) Wakeup mutex. */
+#define _SIGKERN    31  /*!< (I) Kernel's internal event signaling. */
 
-#define _SIG_MAX_ 32
+#define _SIG_UMAX_  31  /*!< User signal number limit */
+#define _SIG_MAX_   32  /*!< Global signal number limit. */
 
 /**
  * @}

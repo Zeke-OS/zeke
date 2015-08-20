@@ -192,6 +192,11 @@ static int pab_fatal(uint32_t ifsr, uint32_t ifar, uint32_t psr, uint32_t lr,
 static int pab_buserr(uint32_t ifsr, uint32_t ifar, uint32_t psr, uint32_t lr,
                       struct proc_info * proc, struct thread_info * thread)
 {
+    const struct ksignal_param sigparm = {
+        .si_code = SEGV_MAPERR,
+        .si_addr = (void *)ifar,
+    };
+
     /* Some cases are always fatal */
     if (!ABO_WAS_USERMODE(psr) /* it happened in kernel mode */ ||
         (thread->pid_owner <= 1)) /* the proc is kernel or init */ {
@@ -207,7 +212,7 @@ static int pab_buserr(uint32_t ifsr, uint32_t ifar, uint32_t psr, uint32_t lr,
 #endif
 
     /* Deliver SIGSEGV. */
-    ksignal_sendsig_fatal(proc, SIGSEGV);
+    ksignal_sendsig_fatal(proc, SIGSEGV, &sigparm);
     mmu_die_on_fatal_abort();
 
     return 0;

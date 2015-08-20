@@ -160,10 +160,14 @@ int exec_file(int fildes, char name[PROC_NAME_LEN], struct buf * env_bp,
     /* Create a new main() thread */
     tid = new_main_thread(uargc - 1, uargv, uenvp);
     if (tid <= 0) {
+        const struct ksignal_param sigparm = {
+           .si_code = SI_USER,
+        };
+
 #if defined(configEXEC_DEBUG)
         KERROR(KERROR_DEBUG, "Failed to create a new main() (%d)\n", tid);
 #endif
-        ksignal_sendsig_fatal(curproc, SIGKILL);
+        ksignal_sendsig_fatal(curproc, SIGKILL, &sigparm);
     }
 
 #if defined(configEXEC_DEBUG)

@@ -121,6 +121,15 @@ struct signals {
     ksigmtx_t s_lock;
 };
 
+struct ksignal_param {
+    int si_code;
+    int si_errno;
+    void * si_addr;
+    int si_status;
+    long si_band;
+    union sigval si_value;
+};
+
 /**
  * @addtogroup ksignal_pendqueue
  * Operations for ksignal pending signals queue.
@@ -197,16 +206,17 @@ void ksignal_signals_fork_reinit(struct signals * sigs);
  * Send signal to a process or thread.
  * @param sigs is a sigs struct owned by a process or thread.
  * @param signum is the signal number to be signald.
- * @param si_code is a SI_ code indentifying the sender of the signal.
  */
-int ksignal_sendsig(struct signals * sigs, int signum, int si_code);
+int ksignal_sendsig(struct signals * sigs, int signum,
+                    const struct ksignal_param * param);
 
 /**
  * Kill process by sending a fatal signal that can't be blocked.
  * @param p is the process to be signaled.
  * @param signum is the signum used.
  */
-void ksignal_sendsig_fatal(struct proc_info * p, int signum);
+void ksignal_sendsig_fatal(struct proc_info * p, int signum,
+                           const struct ksignal_param * param);
 
 /**
  * Wait for signal(s) specified in set.

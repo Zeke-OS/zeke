@@ -132,7 +132,8 @@ static const uint8_t default_sigproptbl[] = {
     SA_IGNORE,          /*!< _SIGMTX */
 };
 
-static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code);
+static int ksignal_queue_sig(struct signals * sigs, int signum,
+                             const struct ksignal_param * param);
 
 RB_GENERATE(sigaction_tree, ksigaction, _entry, signum_comp);
 
@@ -644,6 +645,8 @@ static void ksignal_post_scheduling(void)
 
     /* Push data and set next stack frame. */
     if (push_stack_frame(signum, &action, &ksiginfo->siginfo)) {
+        const struct ksignal_param sigparm = { .si_code = ILL_BADSTK };
+
         /*
          * Thread has trashed its stack; Nothing we can do but give SIGILL.
          * RFE Should we punish only the thread or the whole process?
@@ -654,7 +657,8 @@ static void ksignal_post_scheduling(void)
 #endif
         ksig_unlock(&sigs->s_lock);
         kfree_lazy(ksiginfo);
-        ksignal_sendsig_fatal(curproc, SIGILL); /* RFE Possible deadlock? */
+        /* RFE Possible deadlock? */
+        ksignal_sendsig_fatal(curproc, SIGILL, &sigparm);
         return; /* RFE Is this ok? */
     }
 
@@ -671,19 +675,21 @@ static void ksignal_post_scheduling(void)
 }
 DATA_SET(post_sched_tasks, ksignal_post_scheduling);
 
-int ksignal_sendsig(struct signals * sigs, int signum, int si_code)
+int ksignal_sendsig(struct signals * sigs, int signum,
+                    const struct ksignal_param * param)
 {
     int retval;
 
     if (ksig_lock(&sigs->s_lock))
         return -EAGAIN;
-    retval = ksignal_queue_sig(sigs, signum, si_code);
+    retval = ksignal_queue_sig(sigs, signum, param);
     ksig_unlock(&sigs->s_lock);
 
     return retval;
 }
 
-static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
+static int ksignal_queue_sig(struct signals * sigs, int signum,
+                             const struct ksignal_param * param)
 {
     int retval = 0;
     struct ksigaction action;
@@ -784,14 +790,14 @@ static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
         return -ENOMEM;
     *ksiginfo = (struct ksiginfo){
         .siginfo.si_signo = signum,
-        .siginfo.si_code = si_code,
-        .siginfo.si_errno = 0, /* TODO siginfo errno */
+        .siginfo.si_code = param->si_code,
+        .siginfo.si_errno = param->si_errno,
         .siginfo.si_tid = current_thread->id,
         .siginfo.si_pid = curproc->pid,
         .siginfo.si_uid = curproc->cred.uid,
-        .siginfo.si_addr = 0, /* TODO siginfo addr */
-        .siginfo.si_status = 0, /* TODO siginfo status */
-        .siginfo.si_value = { 0 }, /* TODO siginfo value */
+        .siginfo.si_addr = param->si_addr,
+        .siginfo.si_status = param->si_status,
+        .siginfo.si_value = param->si_value,
     };
     KSIGNAL_PENDQUEUE_INSERT_TAIL(sigs, ksiginfo);
 
@@ -808,7 +814,8 @@ static int ksignal_queue_sig(struct signals * sigs, int signum, int si_code)
     return 0;
 }
 
-void ksignal_sendsig_fatal(struct proc_info * p, int signum)
+void ksignal_sendsig_fatal(struct proc_info * p, int signum,
+                           const struct ksignal_param * param)
 {
     struct signals * sigs = &p->sigs;
     struct ksigaction act;
@@ -832,7 +839,7 @@ void ksignal_sendsig_fatal(struct proc_info * p, int signum)
                  curproc->pid, p->pid, ksignal_signum2str(signum));
     }
 
-    err = ksignal_queue_sig(sigs, signum, SI_KERNEL);
+    err = ksignal_queue_sig(sigs, signum, param);
 
     ksig_unlock(&sigs->s_lock);
 
@@ -1196,6 +1203,11 @@ int ksignal_syscall_exit(int retval)
     return retval;
 }
 
+static int is_valid_usignum(int signum)
+{
+    return (0 < signum && signum < _SIG_UMAX_);
+}
+
 /* System calls ***************************************************************/
 
 /**
@@ -1239,13 +1251,19 @@ static int sys_signal_pkill(__user void * user_args)
     if (args.sig == 0)
         return 0;
 
+    if (!is_valid_usignum(args.sig)) {
+        set_errno(EINVAL);
+        return -1;
+    }
+
     sigs = &proc->sigs;
     if (ksig_lock(&sigs->s_lock)) {
         set_errno(EAGAIN);
         return -1;
     }
 
-    ksignal_queue_sig(sigs, args.sig, SI_USER);
+    ksignal_queue_sig(sigs, args.sig,
+                      &(struct ksignal_param){ .si_code = SI_USER });
 
     ksig_unlock(&sigs->s_lock);
 
@@ -1307,13 +1325,19 @@ static int sys_signal_tkill(__user void * user_args)
     if (args.sig == 0)
         return 0;
 
+    if (!is_valid_usignum(args.sig)) {
+        set_errno(EINVAL);
+        return -1;
+    }
+
     sigs = &thread->sigs;
     if (ksig_lock(&sigs->s_lock)) {
         set_errno(EAGAIN);
         return -1;
     }
 
-    err = ksignal_queue_sig(sigs, args.sig, SI_USER);
+    err = ksignal_queue_sig(sigs, args.sig,
+                            &(struct ksignal_param){ .si_code = SI_USER });
     if (err) {
         ksig_unlock(&sigs->s_lock);
         set_errno(-err);
@@ -1341,6 +1365,11 @@ static int sys_signal_signal(__user void * user_args)
     err = copyin(user_args, &args, sizeof(args));
     if (err) {
         set_errno(EFAULT);
+        return -1;
+    }
+
+    if (!is_valid_usignum(args.signum)) {
+        set_errno(EINVAL);
         return -1;
     }
 
@@ -1395,6 +1424,11 @@ static int sys_signal_action(__user void * user_args)
     err = copyin(user_args, &args, sizeof(args));
     if (err) {
         set_errno(EFAULT);
+        return -1;
+    }
+
+    if (!is_valid_usignum(args.signum)) {
+        set_errno(EINVAL);
         return -1;
     }
 
@@ -1611,10 +1645,12 @@ static int sys_signal_return(__user void * user_args)
                            &next,
                            sizeof(const sw_stack_frame_t));
     if (err) {
+        const struct ksignal_param sigparm = { .si_code = ILL_BADSTK };
+
         /*
          * RFE Should we punish only the thread or whole process?
          */
-        ksignal_sendsig_fatal(curproc, SIGILL);
+        ksignal_sendsig_fatal(curproc, SIGILL, &sigparm);
         while (1) {
             thread_wait();
             /* Should not return to here */

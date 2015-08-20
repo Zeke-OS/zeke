@@ -210,6 +210,11 @@ static int dab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
 static int dab_align(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
                      struct proc_info * proc, struct thread_info * thread)
 {
+    const struct ksignal_param sigparm = {
+        .si_code = BUS_ADRALN,
+        .si_addr = (void *)far,
+    };
+
     /* Some cases are always fatal if */
     if (!ABO_WAS_USERMODE(psr) /* it is a kernel mode alignment fault, */ ||
         (thread->pid_owner <= 1))  /* the proc is kernel or init */ {
@@ -228,7 +233,7 @@ static int dab_align(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
      * TODO Instead of sending a signal we should probably try to handle the
      *      error first.
      */
-    ksignal_sendsig_fatal(proc, SIGBUS);
+    ksignal_sendsig_fatal(proc, SIGBUS, &sigparm);
     mmu_die_on_fatal_abort();
 
     return 0;
@@ -237,6 +242,11 @@ static int dab_align(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
 static int dab_buserr(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
                       struct proc_info * proc, struct thread_info * thread)
 {
+    const struct ksignal_param sigparm = {
+        .si_code = SEGV_MAPERR,
+        .si_addr = (void *)far,
+    };
+
     /* Some cases are always fatal */
     if (!ABO_WAS_USERMODE(psr) /* it happened in kernel mode */ ||
         (thread->pid_owner <= 1)) /* the proc is kernel or init */ {
@@ -252,7 +262,7 @@ static int dab_buserr(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
 #endif
 
     /* Deliver SIGSEGV. */
-    ksignal_sendsig_fatal(proc, SIGSEGV);
+    ksignal_sendsig_fatal(proc, SIGSEGV, &sigparm);
     mmu_die_on_fatal_abort();
 
     return 0;

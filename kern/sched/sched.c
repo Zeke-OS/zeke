@@ -873,7 +873,7 @@ int thread_join(pthread_t thread_id, intptr_t * retval)
         ksignal_sigtimedwait(&sigretval, &set, &ts);
 
 #if 0
-        if (sigretval->siginfo.si_code != thread_id)
+        if (sigretval->siginfo.si_value.sival_int != thread_id)
             continue;
 #endif
     }
@@ -902,10 +902,14 @@ int thread_terminate(pthread_t thread_id)
     /* Remove all child threads from execution */
     child = thread->inh.first_child;
     while (child) {
+        const struct ksignal_param sigparm = {
+            .si_code = SI_UNKNOWN,
+        };
+
         next_child = child->inh.next_child;
 
-        if (!SCHED_TEST_TERMINATE_OK(thread_flags_get(thread))
-            || ksignal_sendsig(&child->sigs, SIGKILL, SI_UNKNOWN)) {
+        if (!SCHED_TEST_TERMINATE_OK(thread_flags_get(thread)) ||
+            ksignal_sendsig(&child->sigs, SIGKILL, &sigparm)) {
             /*
              * The child is now orphan, it was probably a kworker that
              * couldn't be killed.
@@ -927,9 +931,11 @@ int thread_terminate(pthread_t thread_id)
      */
     if (parent) {
         struct signals * sigs = &parent->sigs;
-        const int si_code = thread_id;
+        const struct ksignal_param sigparm = {
+            .si_value.sival_int = thread_id,
+        };
 
-        ksignal_sendsig(sigs, SIGCHLDTHRD, si_code);
+        ksignal_sendsig(sigs, SIGCHLDTHRD, &sigparm);
     }
 
     return 0;

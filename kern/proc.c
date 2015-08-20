@@ -821,11 +821,15 @@ static int sys_proc_wait(__user void * user_args)
 
 static int sys_proc_exit(__user void * user_args)
 {
+    const struct ksignal_param sigparm = {
+        .si_code = SI_USER,
+    };
+
     KASSERT(curproc->inh.parent, "parent should exist");
 
     curproc->exit_code = get_errno();
 
-    (void)ksignal_sendsig(&curproc->inh.parent->sigs, SIGCHLD, SI_KERNEL);
+    (void)ksignal_sendsig(&curproc->inh.parent->sigs, SIGCHLD, &sigparm);
     thread_flags_set(current_thread, SCHED_DETACH_FLAG);
     thread_die(curproc->exit_code);
 
