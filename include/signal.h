@@ -215,13 +215,6 @@ struct sigevent {
 #define CLD_TRAPPED     28 /*!< Traced child has trapped. */
 #define CLD_STOPPED     29 /*!< Child has topped. */
 #define CLD_CONTINUED   30 /*!< Stopped child has continued. */
-/* SIGPOLL */
-#define POLL_IN         31 /*!< Data input available. */
-#define POLL_OUT        32 /*!< Output buffers available. */
-#define POLL_MSG        33 /*!< Input message available. */
-#define POLL_ERR        34 /*!< I/O error. */
-#define POLL_PRI        35 /*!< Gifg priority input available. */
-#define POLL_HUP        36 /*!< Device disconnected. */
 /* Any signal */
 #define SI_USER     1 /*!< The signal was send from a user thread. */
 #define SI_QUEUE    2 /*!< The signal was sent by the sigqueue() function. */
@@ -239,7 +232,6 @@ typedef struct __siginfo {
     uid_t si_uid;           /*!< Sender's ruid. */
     void * si_addr;         /*!< Faulting instruction. (SIGILL, SIGSEV) */
     int si_status;          /*!< Exit value or signal. (SIGCHLD) */
-    long si_band;           /*!< Band event for POLL_IN, POLL_OUT, POL_MSG. */
     union sigval si_value;  /*!< Signal value. */
 } siginfo_t;
 
