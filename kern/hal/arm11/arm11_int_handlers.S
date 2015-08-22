@@ -47,6 +47,7 @@
     .type   interrupt_svc,%function
 interrupt_svc:
     pushcontext #1          /* Push context to SCHED_SFRAME_SVC */
+    clrex
 
     /* Attach kernel master page table */
     enter_kernel
@@ -78,6 +79,7 @@ interrupt_svc:
     .type   interrupt_sys,%function
 interrupt_sys:
     pushcontext #0          /* Push context to SCHED_SFRAME_SYS */
+    clrex
 
     /* Suspend process and attach kernel master page table */
     attach_kernel_mptable
@@ -124,6 +126,8 @@ interrupt_sys:
     .type   interrupt_pabt,%function
 interrupt_pabt:
     pushcontext #2          /* Push context to SCHED_SFRAME_ABO */
+    clrex
+
     enter_kernel
 
     cps     #0x1f           /* Change to system mode */
@@ -142,6 +146,8 @@ interrupt_pabt:
     .type   interrupt_dabt,%function
 interrupt_dabt:
     pushcontext #2          /* Push context to SCHED_SFRAME_ABO */
+    clrex
+
     enter_kernel
 
     cps     #0x1f           /* Change to system mode */

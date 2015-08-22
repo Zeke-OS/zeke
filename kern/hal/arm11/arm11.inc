@@ -93,7 +93,6 @@
  */
 .macro enter_kernel
     attach_kernel_mptable
-    clrex
     bl      _thread_enter_kernel
 .endm
 
