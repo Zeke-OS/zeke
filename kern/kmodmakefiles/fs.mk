@@ -1,25 +1,25 @@
 # File systems
-base-SRC-y += $(wildcard fs/*.c)
+fs-SRC-y += $(wildcard fs/*.c)
 # inode pools
-base-SRC-$(configFS_INPOOL) += fs/libfs/inpool.c
+fs-SRC-$(configFS_INPOOL) += fs/libfs/inpool.c
 # dehtable
-base-SRC-$(configFS_DEHTABLE) += fs/libfs/dehtable.c
+fs-SRC-$(configFS_DEHTABLE) += fs/libfs/dehtable.c
 # VFS hash
-base-SRC-$(configVFS_HASH) += fs/libfs/vfs_hash.c
+fs-SRC-$(configVFS_HASH) += fs/libfs/vfs_hash.c
 
 # mbr
-base-SRC-$(configMBR) += $(wildcard fs/mbr/*.c)
+fs-SRC-$(configMBR) += $(wildcard fs/mbr/*.c)
 
 # ramfs
-base-SRC-$(configRAMFS) += $(wildcard fs/ramfs/*.c)
+fs-SRC-$(configRAMFS) += $(wildcard fs/ramfs/*.c)
 
 # devfs
-base-SRC-$(configDEVFS) += $(wildcard fs/devfs/*.c)
+fs-SRC-$(configDEVFS) += $(wildcard fs/devfs/*.c)
 # procfs
-base-SRC-$(configPROCFS) += $(wildcard fs/procfs/*.c)
+fs-SRC-$(configPROCFS) += $(wildcard fs/procfs/*.c)
 
 
 # fatfs
-base-SRC-$(configFATFS) += $(wildcard fs/fatfs/*.c)
-base-SRC-$(configFATFS) += $(wildcard fs/fatfs/src/*.c)
-base-SRC-$(configFATFS) += fs/fatfs/src/utf/unicode.c
+fs-SRC-$(configFATFS) += $(wildcard fs/fatfs/*.c)
+fs-SRC-$(configFATFS) += $(wildcard fs/fatfs/src/*.c)
+fs-SRC-$(configFATFS) += fs/fatfs/src/utf/unicode.c
