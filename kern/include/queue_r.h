@@ -43,11 +43,10 @@
  */
 
 #pragma once
-#ifndef QUEUE_H
-#define QUEUE_H
+#ifndef QUEUE_R_H
+#define QUEUE_R_H
 
 #include <stddef.h>
-#include <kstring.h>
 
 /**
  * Queue control block.
@@ -73,8 +72,8 @@ queue_cb_t queue_create(void * data_array, size_t block_size,
                         size_t array_size);
 
 /**
- * Push element to the queue.
- * @param cb the queue control block.
+ * Push an element to the queue.
+ * @param cb is a pointer to the queue control block.
  * @param element the new element to be copied.
  * @return 0 if queue is already full; otherwise operation was succeed.
  * @note element is always copied to the queue, so it is safe to remove the
@@ -83,51 +82,80 @@ queue_cb_t queue_create(void * data_array, size_t block_size,
 int queue_push(queue_cb_t * cb, const void * element);
 
 /**
- * Pop element from the queue.
- * @param cb the queue control block.
- * @param element location where element is copied to from the queue.
+ * Allocate an element from the queue.
+ * @param cb is a pointer to the queue control block.
+ * @return A pointer to the element in the queue.
+ */
+void * queue_alloc_get(queue_cb_t * cb);
+
+/**
+ * Commit previous allocation from the queue.
+ * @note queue_push() should not be called between calls to queue_alloc_get()
+ *       and queue_alloc_commit().
+ */
+void queue_alloc_commit(queue_cb_t * cb);
+
+/**
+ * Pop an element from the queue.
+ * @param cb is a pointer to the queue control block.
+ * @param element is the location where element is copied to from the queue.
  * @return 0 if queue is empty; otherwise operation was succeed.
  */
 int queue_pop(queue_cb_t * cb, void * element);
 
 /**
+ * Peek an element from the queue.
+ * @param cb is a pointer to the queue control block.
+ * @param element is the location where element is copied to from the queue.
+ * @return 0 if queue is empty; otherwise operation was succeed.
+ */
+int queue_peek(queue_cb_t * cb, void ** element);
+
+/**
+ * Skip n number of elements in the queue.
+ * @param cb is a pointer to the queue control block.
+ * @return Returns the number of elements skipped.
+ */
+int queue_skip(queue_cb_t * cb, size_t n);
+
+/**
  * Clear the queue.
  * This operation is considered safe when committed from the push end thread.
- * @param cb the queue control block.
+ * @param cb is a pointer to the queue control block.
  */
 void queue_clear_from_push_end(queue_cb_t * cb);
 
 /**
  * Clear the queue.
  * This operation is considered safe when committed from the pop end thread.
- * @param cb the queue control block.
+ * @param cb is a pointer to the queue control block.
  */
 void queue_clear_from_pop_end(queue_cb_t * cb);
 
 /**
  * Check if the queue is empty.
- * @param cb the queue control block.
+ * @param cb is a pointer to the queue control block.
  * @return 0 if the queue is not empty.
  */
 int queue_isempty(queue_cb_t * cb);
 
 /**
  * Check if the queue is full.
- * @param cb the queue control block.
+ * @param cb is a pointer to the queue control block.
  * @return 0 if the queue is not full.
  */
 int queue_isfull(queue_cb_t * cb);
 
 /**
  * Seek queue.
- * @param cb the queue control block.
+ * @param cb is a pointer to the queue control block.
  * @param i index.
  * @param[in] element returned element.
  * @return 0 if failed; otherwise succeed.
  */
 int seek(queue_cb_t * cb, size_t i, void * element);
 
-#endif /* QUEUE_H */
+#endif /* QUEUE_R_H */
 
 /**
  * @}
