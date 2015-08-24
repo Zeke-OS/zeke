@@ -134,7 +134,37 @@ static inline int atomic_cmpxchg(atomic_t * v, int expect, int new)
     return old;
 }
 
-static inline void * atomic_cmpxchg_ptr(void * ptr, void * expect, void * new)
+static inline void * atomic_read_ptr(void ** v)
+{
+    void * value;
+
+    __asm__ volatile (
+        "LDREX      %[val], [%[addr]]\n\t"
+        "CLREX"
+        : [val]"+r" (value)
+        : [addr]"r" (v)
+    );
+
+    return value;
+}
+
+static inline void * atomic_set_ptr(void ** v, void * new)
+{
+   void * old;
+   int err = 0;
+
+    __asm__ volatile (
+        "try%=:\n\t"
+        "LDREX      %[old], [%[addr]]\n\t"
+        "STREX      %[res], %[new], [%[addr]]\n\t"
+        "CMP        %[res], #0\n\t"
+        "BNE        try%="
+        : [old]"+r" (old), [new]"+r" (new), [res]"+r" (err), [addr]"+r" (v)
+    );
+
+    return old;
+}
+static inline void * atomic_cmpxchg_ptr(void ** ptr, void * expect, void * new)
 {
     void * old;
     int err = 0;
