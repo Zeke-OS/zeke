@@ -38,6 +38,7 @@
 #include <termios.h>
 #include <fs/dev_major.h>
 #include <fs/devfs.h>
+#include <fs/fs_queue.h>
 #include <fs/fs_util.h>
 #include <kerror.h>
 #include <kinit.h>
@@ -45,7 +46,6 @@
 #include <kmalloc.h>
 #include <libkern.h>
 #include <proc.h>
-#include <queue_r.h>
 #include <tty.h>
 
 static ssize_t ptymaster_read(struct file * file, struct uio * uio,
@@ -63,10 +63,8 @@ static vnode_ops_t ptmx_vnode_ops = {
  */
 struct pty_device {
     int pty_id;
-    struct queue_cb chbuf_ms;
-    struct queue_cb chbuf_sm;
-    char _cbuf_ms[MAX_INPUT]; /* RFE is MAX_INPUT enough for pty? */
-    char _cbuf_sm[MAX_INPUT];
+    struct fs_queue * fsq_ms;
+    struct fs_queue * fsq_sm;
     RB_ENTRY(pty_device) _entry;
 };
 
@@ -138,75 +136,54 @@ void pty_remove(struct pty_device * ptydev)
 
 /*
  * TODO Check owner before read/write
- * TODO blocking mode
  */
 
 static ssize_t ptymaster_read(struct file * file, struct uio * uio,
                               size_t count)
 {
     int err;
+    const int flags = oflags2fsq_flags(file->oflags);
     struct pty_device * ptydev = (struct pty_device *)file->stream;
     uint8_t * buf;
-    ssize_t i;
 
     err = uio_get_kaddr(uio, (void **)(&buf));
     if (err)
         return err;
 
-    for (i = 0; i < (ssize_t)count; i++) {
-        if (!queue_pop(&ptydev->chbuf_sm, &buf[i]))
-            break;
-    }
-
-    return i;
+    return fs_queue_read(ptydev->fsq_sm, buf, count, flags);
 }
 
 static ssize_t ptymaster_write(struct file * file, struct uio * uio,
                                size_t count)
 {
     int err;
+    const int flags = oflags2fsq_flags(file->oflags);
     struct pty_device * ptydev = (struct pty_device *)file->stream;
     uint8_t * buf;
-    ssize_t i;
 
     err = uio_get_kaddr(uio, (void **)(&buf));
     if (err)
         return err;
 
-    for (i = 0; i < (ssize_t)count; i++) {
-        if (!queue_push(&ptydev->chbuf_ms, &buf[i]))
-            break;
-    }
-
-    return i;
+    return fs_queue_write(ptydev->fsq_ms, buf, count, flags);
 }
 
 static int ptyslave_read(struct tty * tty, off_t blkno,
                          uint8_t * buf, size_t bcount, int oflags)
 {
+    const int flags = oflags2fsq_flags(oflags);
     struct pty_device * ptydev = SLAVE_TTY2PTY(tty);
-    size_t i;
 
-    for (i = 0; i < bcount; i++) {
-        if (!queue_pop(&ptydev->chbuf_ms, &buf[i]))
-            break;
-    }
-
-    return i;
+    return fs_queue_read(ptydev->fsq_ms, buf, bcount, flags);
 }
 
 static int ptyslave_write(struct tty * tty, off_t blkno,
                           uint8_t * buf, size_t bcount, int oflags)
 {
+    const int flags = oflags2fsq_flags(oflags);
     struct pty_device * ptydev = SLAVE_TTY2PTY(tty);
-    size_t i;
 
-    for (i = 0; i < bcount; i++) {
-        if (!queue_push(&ptydev->chbuf_sm, &buf[i]))
-            break;
-    }
-
-    return i;
+    return fs_queue_write(ptydev->fsq_sm, buf, bcount, flags);
 }
 
 /*
@@ -253,11 +230,17 @@ static void creat_pty(file_t * file, struct tty * tty)
 
     /*
      * Create queues.
+     * TODO Get block size from somewhere else maybe
      */
-    ptydev->chbuf_ms = queue_create(ptydev->_cbuf_ms, sizeof(char),
-                                    sizeof(ptydev->_cbuf_ms));
-    ptydev->chbuf_sm = queue_create(ptydev->_cbuf_sm, sizeof(char),
-                                    sizeof(ptydev->_cbuf_sm));
+    ptydev->fsq_ms = fs_queue_create(3, 512);
+    ptydev->fsq_sm = fs_queue_create(3, 512);
+    if (!ptydev->fsq_ms || !ptydev->fsq_sm) {
+        fs_queue_destroy(ptydev->fsq_ms);
+        fs_queue_destroy(ptydev->fsq_sm);
+
+        KERROR(KERROR_ERR, "%s(): Failed to init a fsq\n", __func__);
+        return;
+    }
 
     if (make_ttydev(slave_tty)) {
         tty_free(slave_tty);
@@ -291,6 +274,9 @@ static void close_ptmx(file_t * file, struct tty * tty)
     slave_tty = SLAVE_PTY2TTY(ptydev);
 
     pty_remove(ptydev);
+
+    fs_queue_destroy(ptydev->fsq_ms);
+    fs_queue_destroy(ptydev->fsq_sm);
 
     destroy_ttydev(slave_tty);
     tty_free(slave_tty);

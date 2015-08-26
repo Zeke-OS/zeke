@@ -6,6 +6,8 @@ fs-SRC-$(configFS_INPOOL) += fs/libfs/inpool.c
 fs-SRC-$(configFS_DEHTABLE) += fs/libfs/dehtable.c
 # VFS hash
 fs-SRC-$(configVFS_HASH) += fs/libfs/vfs_hash.c
+# FS queue
+fs-SRC-y += fs/libfs/fs_queue.c
 
 # mbr
 fs-SRC-$(configMBR) += $(wildcard fs/mbr/*.c)
