@@ -125,6 +125,7 @@ fail:
     return retval;
 }
 
+__weak_reference(bcm_udelay, udelay);
 void bcm_udelay(uint32_t delay)
 {
     volatile uint64_t * ts = (uint64_t *)SYS_TIMER_CLO;
