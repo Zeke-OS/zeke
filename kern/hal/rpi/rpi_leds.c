@@ -32,7 +32,7 @@
 
 #include <kinit.h>
 #include <kerror.h>
-#include "../bcm2835/bcm2835_timers.h"
+#include <hal/hw_timers.h>
 #include "../bcm2835/bcm2835_mmio.h"
 #include "../bcm2835/bcm2835_gpio.h"
 
@@ -71,14 +71,14 @@ int __kinit__ rpi_leds_init(void)
      */
     mmio_write(GPIO_GPPUD, 2);
     mmio_end(&s_entry);
-    bcm_udelay(150);
+    udelay(150);
 
     /* Set the pull up/down clock for pin 14 */
     mmio_start(&s_entry);
     mmio_write(GPIO_PUDCLK0, 1 << 14);
     mmio_write(GPIO_PUDCLK1, 0);
     mmio_end(&s_entry);
-    bcm_udelay(150);
+    udelay(150);
 
     /* Disable pull-up control and reset the clock registers. */
     mmio_start(&s_entry);
@@ -89,7 +89,7 @@ int __kinit__ rpi_leds_init(void)
 
     for (int i = 0; i < 4; i++) {
         rpi_led_invert();
-        bcm_udelay(20000);
+        udelay(20000);
     }
 
     return 0;
