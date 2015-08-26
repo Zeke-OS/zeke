@@ -100,14 +100,6 @@ istate_t get_interrupt_state(void);
  */
 void set_interrupt_state(istate_t state);
 
-/**
- * Get us timestamp.
- * @return Returns us timestamp.
- */
-uint64_t get_utime(void);
-
-void udelay(uint32_t delay);
-
 void stack_dump(sw_stack_frame_t frame);
 
 /*

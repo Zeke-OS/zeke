@@ -36,6 +36,7 @@
 
 #include <sys/linker_set.h>
 #include <machine/atomic.h>
+#include <hal/hw_timers.h>
 #include <kinit.h>
 #include <thread.h>
 #include <timers.h>

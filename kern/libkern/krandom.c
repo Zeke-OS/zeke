@@ -36,7 +36,7 @@
 
 #include <limits.h>
 #include <kinit.h>
-#include <hal/core.h>
+#include <hal/hw_timers.h>
 #include "libkern.h"
 
 #define NSHUFF 50 /* to drop some "seed -> 1st value" linearity */

@@ -472,7 +472,7 @@ static int sd_switch_clock_rate(uint32_t base_clock, uint32_t target_rate)
         mmio_start(&s_entry);
         ret = mmio_read(EMMC_BASE + EMMC_STATUS);
         mmio_end(&s_entry);
-        bcm_udelay(1000);
+        udelay(1000);
     } while (ret & 0x3);
 
     /* Set the SD clock off */
@@ -482,7 +482,7 @@ static int sd_switch_clock_rate(uint32_t base_clock, uint32_t target_rate)
     mmio_start(&s_entry);
     mmio_write(EMMC_BASE + EMMC_CONTROL1, control1);
     mmio_end(&s_entry);
-    bcm_udelay(2000);
+    udelay(2000);
 
     /* Write the new divider */
     control1 &= ~0xffe0;        /* Clear old setting + clock generator select */
@@ -490,14 +490,14 @@ static int sd_switch_clock_rate(uint32_t base_clock, uint32_t target_rate)
     mmio_start(&s_entry);
     mmio_write(EMMC_BASE + EMMC_CONTROL1, control1);
     mmio_end(&s_entry);
-    bcm_udelay(2000);
+    udelay(2000);
 
     /* Enable the SD clock */
     control1 |= (1 << 2);
     mmio_start(&s_entry);
     mmio_write(EMMC_BASE + EMMC_CONTROL1, control1);
     mmio_end(&s_entry);
-    bcm_udelay(2000);
+    udelay(2000);
 
 #ifdef configEMMC_DEBUG
     KERROR(KERROR_DEBUG,
@@ -587,7 +587,7 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
     mmio_start(&s_entry);
     while (mmio_read(EMMC_BASE + EMMC_STATUS) & 0x1) {
         mmio_end(&s_entry);
-        bcm_udelay(sd_cmd_udelay);
+        udelay(sd_cmd_udelay);
         mmio_start(&s_entry);
     }
     mmio_end(&s_entry);
@@ -600,7 +600,7 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
         mmio_start(&s_entry);
         while (mmio_read(EMMC_BASE + EMMC_STATUS) & 0x2) {
             mmio_end(&s_entry);
-            bcm_udelay(sd_cmd_udelay);
+            udelay(sd_cmd_udelay);
             mmio_start(&s_entry);
         }
         mmio_end(&s_entry);
@@ -663,7 +663,7 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
     mmio_start(&s_entry);
     mmio_write(EMMC_BASE + EMMC_CMDTM, cmd_reg);
     mmio_end(&s_entry);
-    bcm_udelay(2 * sd_cmd_udelay);
+    udelay(2 * sd_cmd_udelay);
 
     /* Wait for command complete interrupt */
     mmio_start(&s_entry);
@@ -685,7 +685,7 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
         return;
     }
 
-    bcm_udelay(2 * sd_cmd_udelay);
+    udelay(2 * sd_cmd_udelay);
 
     /* Get response data */
     switch (cmd_reg & SD_CMD_RSPNS_TYPE_MASK) {
@@ -1247,13 +1247,13 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
 #ifdef configEMMC_DEBUG
     KERROR(KERROR_DEBUG, "EMMC: enabling SD clock\n");
 #endif
-    bcm_udelay(2000);
+    udelay(2000);
     control1 = mmio_read(EMMC_BASE + EMMC_CONTROL1);
     control1 |= 4;
     mmio_start(&s_entry);
     mmio_write(EMMC_BASE + EMMC_CONTROL1, control1);
     mmio_end(&s_entry);
-    bcm_udelay(2000);
+    udelay(2000);
 #ifdef configEMMC_DEBUG
     KERROR(KERROR_DEBUG, "EMMC: SD clock enabled\n");
 #endif
@@ -1276,7 +1276,7 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
 #ifdef configEMMC_DEBUG
     KERROR(KERROR_DEBUG, "EMMC: interrupts disabled\n");
 #endif
-    bcm_udelay(2000);
+    udelay(2000);
 
     /* Prepare the device structure */
     struct emmc_block_dev * ret;
@@ -1439,7 +1439,7 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
 #ifdef configEMMC_DEBUG
             KERROR(KERROR_DEBUG, "SD: card is busy, retrying\n");
 #endif
-            bcm_udelay(500000);
+            udelay(500000);
         }
     }
 
@@ -1457,7 +1457,7 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
     sd_switch_clock_rate(base_clock, SD_CLOCK_NORMAL);
 
     /* A small wait before the voltage switch */
-    bcm_udelay(5000);
+    udelay(5000);
 
     /* Switch to 1.8V mode if possible */
     if (ret->card_supports_18v) {
@@ -1508,7 +1508,7 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
         mmio_end(&s_entry);
 
         /* Wait 5 ms */
-        bcm_udelay(5000);
+        udelay(5000);
 
         /* Check the 1.8V signal enable is set */
         mmio_start(&s_entry);
@@ -1534,7 +1534,7 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
         mmio_end(&s_entry);
 
         /* Wait 1 ms */
-        bcm_udelay(10000);
+        udelay(10000);
 
         /* Check DAT[3:0] */
         mmio_start(&s_entry);

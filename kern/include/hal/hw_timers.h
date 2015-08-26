@@ -34,9 +34,19 @@
 #ifndef HW_TIMERS_H
 #define HW_TIMERS_H
 
+#include <stdint.h>
+
 typedef void hal_schedtimer_clear_t();
 
 extern hal_schedtimer_clear_t * hal_schedtimer_clear;
+
+/**
+ * Get us timestamp.
+ * @return Returns us timestamp.
+ */
+uint64_t get_utime(void);
+
+void udelay(uint32_t delay);
 
 int schedtimer_clear(void);
 

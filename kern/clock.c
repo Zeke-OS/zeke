@@ -33,7 +33,7 @@
 #include <sys/linker_set.h>
 #include <kinit.h>
 #include <errno.h>
-#include <hal/core.h>
+#include <hal/hw_timers.h>
 #include <libkern.h>
 #include <kstring.h>
 #include <klocks.h>
