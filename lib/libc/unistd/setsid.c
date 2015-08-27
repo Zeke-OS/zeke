@@ -36,5 +36,5 @@
 
 pid_t setsid(void)
 {
-    return (pid_t)syscall(SYSCALL_PROC_GETSID, 0);
+    return (pid_t)syscall(SYSCALL_PROC_SETSID, 0);
 }
