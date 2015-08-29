@@ -4,7 +4,7 @@ class procListPrint(gdb.Command):
     "Print process list"
 
     def __init__(self):
-        super(procListPrint, self).__init__("print-proc-list", gdb.COMMAND_USER)
+        super(procListPrint, self).__init__("print-proc-list", gdb.COMMAND_DATA)
 
     def invoke(self, arg, from_tty):
         try:

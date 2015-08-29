@@ -4,7 +4,8 @@ class TAILQPrint(gdb.Command):
     "Print a TAILQ\nArgs: <head> <field>"
 
     def __init__(self):
-        super(TAILQPrint, self).__init__("print-tailq", gdb.COMMAND_USER)
+        super(TAILQPrint, self).__init__("print-tailq", 
+                gdb.COMMAND_DATA, gdb.COMPLETE_SYMBOL)
 
     def invoke(self, arg, from_tty):
         args = gdb.string_to_argv(arg)
