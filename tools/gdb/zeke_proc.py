@@ -10,6 +10,9 @@ class sessionPrinter:
         self.val = val
 
     def to_string(self):
+        if self.val.address == 0:
+            return "NULL"
+
         s_leader = self.val['s_leader']
         s_login = self.val['s_login']
         s_refcount = self.val['s_refcount']
@@ -29,6 +32,9 @@ class pgrpPrinter:
         self.val = val
 
     def to_string(self):
+        if self.val.address == 0:
+            return "NULL"
+        
         pg_id = self.val['pg_id']
         pg_sid = self.val['pg_session'].dereference()['s_leader']
         pg_refcount = self.val['pg_refcount']
@@ -46,6 +52,9 @@ class proc_infoPrinter:
         self.val = val
 
     def to_string(self):
+        if self.val.address == 0:
+            return "NULL"
+
         p_pid = self.val['pid']
         p_name = str(self.val['name']).split('\\000', 1)[0] + '"'
         p_state = self.val['state']
@@ -69,8 +78,7 @@ class proc_infoPrinter:
 
 
 def build_pretty_printer():
-    pp = gdb.printing.RegexpCollectionPrettyPrinter(
-            "zeke_proc")
+    pp = gdb.printing.RegexpCollectionPrettyPrinter("zeke_proc")
     pp.add_printer('session', '^session$', sessionPrinter)
     pp.add_printer('pgrp', '^pgrp$', pgrpPrinter)
     pp.add_printer('proc_info', '^proc_info$', proc_infoPrinter)
