@@ -115,8 +115,10 @@ static void fsq_sigwait_init(struct fs_queue * fsq, enum wait4end ep,
 /**
  * Wait for a signal.
  */
-static inline void fsq_sigwait(siginfo_t * retval)
+static inline void fsq_sigwait(void)
 {
+    siginfo_t retval;
+
     sigset_t newset = get_fsq_sigset();
 
     /*
@@ -124,9 +126,7 @@ static inline void fsq_sigwait(siginfo_t * retval)
      * everything to hang.
      */
 
-#if 0
-    ksignal_sigwait(retval, &newset);
-#endif
+    ksignal_sigwait(&retval, &newset);
 }
 
 /**
@@ -186,7 +186,6 @@ ssize_t fs_queue_write(struct fs_queue * fsq, uint8_t * buf, size_t count,
                 goto out;
             } else { /* Blocking IO */
                 sigset_t oldset;
-                siginfo_t retval;
 
                 fsq_sigwait_init(fsq, FSQ_WAIT4READ, &oldset);
                 while (1) {
@@ -198,7 +197,7 @@ ssize_t fs_queue_write(struct fs_queue * fsq, uint8_t * buf, size_t count,
                      * Queue is full.
                      * Wait for reading end to free some space.
                      */
-                    fsq_sigwait(&retval);
+                    fsq_sigwait();
                 }
 
                 /* Reset sigmask and wait state. */
@@ -269,7 +268,6 @@ ssize_t fs_queue_read(struct fs_queue * fsq, uint8_t * buf, size_t count,
             goto out;
         } else { /* Blocking IO */
             sigset_t oldset;
-            siginfo_t retval;
 
             fsq_sigwait_init(fsq, FSQ_WAIT4WRITE, &oldset);
             while (1) {
@@ -280,7 +278,7 @@ ssize_t fs_queue_read(struct fs_queue * fsq, uint8_t * buf, size_t count,
                  * Queue is empty.
                  * Wait for writing end to write something.
                  */
-                fsq_sigwait(&retval);
+                fsq_sigwait();
             }
 
             /* Reset sigmask and wait state. */
