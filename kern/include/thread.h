@@ -71,38 +71,40 @@ enum thread_state {
  * Scheduler flags
  * ===============
  */
-/**
- * Thread struct is in use and valid.
- * 1 = Thread is in use and can be rescheduled to execute at some point.
- * 0 = Thread is beign removed from the system.
- */
-#define SCHED_IN_USE_FLAG   0x00000001u
-/**
- * Detached thread.
- * If thread exits it will be immediately destroyed without storing
- * the return value or any statistics.
- */
-#define SCHED_DETACH_FLAG   0x00000002u
-/**
- * Thread is in a system call.
- * If set the thread is in a sysctem call; Otherwise in user mode.
- * This flag can be used for counting process times or as a state information
- * for non-critical purposes.
- * @note The flag doesn't exactly tell if a thread is in a sys mode because
- *       it's set somewhat late during entering to a system call at which
- *       point the system is already interruptible.
- *
- */
-#define SCHED_INSYS_FLAG    0x01000000u
-/**
- * Thread is a kworker.
- */
-#define SCHED_KWORKER_FLAG  0x10000000u
-/**
- * Immortal internal kernel thread.
- * A thread cannot be killed if this flag is set.
- */
-#define SCHED_INTERNAL_FLAG 0x20000000u
+enum {
+    /**
+     * Thread struct is in use and valid.
+     * 1 = Thread is in use and can be rescheduled to execute at some point.
+     * 0 = Thread is beign removed from the system.
+     */
+    SCHED_IN_USE_FLAG   = 1 << 0,
+    /**
+     * Detached thread.
+     * If thread exits it will be immediately destroyed without storing
+     * the return value or any statistics.
+     */
+    SCHED_DETACH_FLAG   = 1 << 1,
+    /**
+    * Thread is in a system call.
+    * If set the thread is in a sysctem call; Otherwise in user mode.
+    * This flag can be used for counting process times or as a state information
+    * for non-critical purposes.
+    * @note The flag doesn't exactly tell if a thread is in a sys mode because
+    *       it's set somewhat late during entering to a system call at which
+    *       point the system is already interruptible.
+    *
+    */
+    SCHED_INSYS_FLAG    = 1 << 2,
+    /**
+    * Thread is a kworker.
+    */
+    SCHED_KWORKER_FLAG  = 1 << 3,
+    /**
+     * Immortal internal kernel thread.
+     * A thread cannot be killed if this flag is set.
+     */
+    SCHED_INTERNAL_FLAG = 1 << 4,
+};
 
 /**
  * No timer assigned.
@@ -144,6 +146,11 @@ struct thread_info {
             } rr;
         };
     } sched;
+    struct sched_param param;       /*!< Scheduling parameters set by user. */
+
+    /* Timers */
+    int wait_tim;                   /*!< Reference to a timeout timer. */
+    int lock_tim;                   /*!< Timer used by klocks. */
 
     sw_stack_frame_t sframe[SCHED_SFRAME_ARR_SIZE];
     struct tls_regs tls_regs;
@@ -153,10 +160,6 @@ struct thread_info {
     intptr_t retval;                /*!< Return value of the thread. */
     int exit_signal;                /*!< The signum that killed the thread.
                                          (0 == wasn't killed) */
-
-    int wait_tim;                   /*!< Reference to a timeout timer. */
-    int lock_tim;                   /*!< Timer used by klocks. */
-    struct sched_param param;       /*!< Scheduling parameters set by user. */
 
     /* Signals */
     struct signals sigs;            /*!< Signals. */

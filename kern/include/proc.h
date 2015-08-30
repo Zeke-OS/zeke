@@ -142,16 +142,9 @@ struct proc_info {
     /**
      * Process inheritance; Parent and child thread pointers.
      * inh : Parent and child process relations
-     * ----------------------------------------
-     * + first_child is a parent process attribute containing address to a first
-     *   child of the parent process
-     * + parent is a child process attribute containing address of the parent
-     *   process of the child thread
-     * + next_child is a child thread attribute containing address of a next
-     *   child node of the common parent thread
      */
     struct proc_inh {
-        struct proc_info * parent;      /*!< Parent thread. */
+        struct proc_info * parent;      /*!< A pointer to the parent process. */
         SLIST_HEAD(proc_child_list, proc_info) child_list_head;
         SLIST_ENTRY(proc_info) child_list_entry;
         mtx_t lock; /*!< Lock for children (child_list_entry) of this proc. */
