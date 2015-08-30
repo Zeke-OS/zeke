@@ -103,6 +103,7 @@ def _getQUEUE(head, field, head_field, next_field):
     return q
 
 
+# Register commands
 QueuePrint()
 SLISTPrint()
 LISTPrint()
