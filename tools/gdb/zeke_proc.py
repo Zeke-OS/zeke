@@ -96,6 +96,22 @@ class ProcPrint(gdb.Command):
         super(ProcPrint, self).__init__("print-proc",
                 gdb.COMMAND_DATA, gdb.COMPLETE_NONE, True)
 
+class ProcPidPrint(gdb.Command):
+    "Print process by PID"
+
+    def __init__(self):
+        super(ProcPidPrint, self).__init__("print-proc pid",
+                gdb.COMMAND_DATA)
+
+    def invoke(self, arg, from_tty):
+        try:
+            pid = gdb.string_to_argv(arg)[0]
+            proc = gdb.parse_and_eval('*(*_procarr)[' + str(pid) + ']')
+            print '((struct proc_info *)' +  str(proc.address) + ')' + str(proc)
+        except:
+            gdb.write('Invalid PID\n')
+            return
+
 class ProcListPrint(gdb.Command):
     "Print process list"
 
@@ -152,5 +168,6 @@ def ProcTreeToString(proc, d):
 
 # Register commands
 ProcPrint()
+ProcPidPrint()
 ProcTreePrint()
 ProcListPrint()
