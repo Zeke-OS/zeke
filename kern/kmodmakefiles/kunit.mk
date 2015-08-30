@@ -1,5 +1,5 @@
 # KUnit unit test framework.
-kuinit-SRC-$(configKUNIT) += $(wildcard kunit/*.c)
+kunit-SRC-$(configKUNIT) += $(wildcard kunit/*.c)
 kunit-SRC-$(configKUNIT) += $(wildcard test/*.c)
 kunit-SRC-$(configKUNIT_BIO) += $(wildcard test/bio/*.c)
 kunit-SRC-$(configKUNIT_FS) += $(wildcard test/fs/*.c)

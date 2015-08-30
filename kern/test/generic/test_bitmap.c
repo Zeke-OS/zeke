@@ -15,11 +15,11 @@
 static void rnd_allocs(int n);
 #endif
 
-static void setup()
+static void setup(void)
 {
 }
 
-static void teardown()
+static void teardown(void)
 {
 }
 
@@ -34,7 +34,7 @@ static char * test_search(void)
     ku_assert_equal("No error", err, 0);
     ku_assert_equal("retval ok", retval, 0);
 
-    return 0;
+    return NULL;
 }
 
 static char * test_alloc(void)
@@ -48,7 +48,7 @@ static char * test_alloc(void)
     ku_assert_equal("No error on allocation", err, 0);
     ku_assert_equal("4 bits allocated from bitmap", bmap[0], 0xf);
 
-    return 0;
+    return NULL;
 }
 
 #if 0
@@ -110,11 +110,12 @@ static char * perf_test(void)
         printf("\tn = %i: %i ms\n", n, result / trials);
     }
 
-    return 0;
+    return NULL;
 }
 #endif
 
-static void all_tests() {
+static void all_tests(void)
+{
     ku_def_test(test_search, KU_RUN);
     ku_def_test(test_alloc, KU_RUN);
 #if 0

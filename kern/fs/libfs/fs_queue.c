@@ -117,9 +117,8 @@ static void fsq_sigwait_init(struct fs_queue * fsq, enum wait4end ep,
  */
 static inline void fsq_sigwait(void)
 {
-    siginfo_t retval;
-
     sigset_t newset = get_fsq_sigset();
+    siginfo_t retval;
 
     /*
      * FIXME We should wait for a signal here but for some reason it causes
@@ -195,7 +194,7 @@ ssize_t fs_queue_write(struct fs_queue * fsq, uint8_t * buf, size_t count,
 
                     /*
                      * Queue is full.
-                     * Wait for reading end to free some space.
+                     * Wait for the reading end to free some space.
                      */
                     fsq_sigwait();
                 }
@@ -276,7 +275,7 @@ ssize_t fs_queue_read(struct fs_queue * fsq, uint8_t * buf, size_t count,
 
                 /*
                  * Queue is empty.
-                 * Wait for writing end to write something.
+                 * Wait for the writing end to write something.
                  */
                 fsq_sigwait();
             }

@@ -16,12 +16,12 @@ typedef struct {
 
 llist_t * lst;
 
-static void setup()
+static void setup(void)
 {
     lst = dllist_create(tst_t, llist_node);
 }
 
-static void teardown()
+static void teardown(void)
 {
     dllist_destroy(lst);
 }
@@ -48,7 +48,7 @@ static char * test_insert_head(void)
     ku_assert_ptr_equal("Node x1->next == null", x1->llist_node.next, 0);
     ku_assert_ptr_equal("Node x1->prev == x2", x1->llist_node.prev, x2);
 
-    return 0;
+    return NULL;
 }
 
 static char * test_insert_tail(void)
@@ -74,10 +74,11 @@ static char * test_insert_tail(void)
     ku_assert_ptr_equal("Node x2->next == null", x2->llist_node.next, 0);
     ku_assert_ptr_equal("Node x2->prev == x1", x2->llist_node.prev, x1);
 
-    return 0;
+    return NULL;
 }
 
-static void all_tests() {
+static void all_tests(void)
+{
     ku_def_test(test_insert_head, KU_RUN);
     ku_def_test(test_insert_tail, KU_RUN);
 }
