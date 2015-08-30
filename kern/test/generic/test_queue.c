@@ -49,7 +49,7 @@ static char * test_queue_single_pop(void)
 
     err = queue_pop(&queue, &y);
     ku_assert("error, pop failed", err != 0);
-    ku_assert_equal("error, different value was returned with pop that pushed with push", x, y);
+    ku_assert_equal("Returned value is same as pushed", x, y);
 
     return NULL;
 }
@@ -107,6 +107,46 @@ static char * test_queue_skip_one(void)
     return NULL;
 }
 
+static char * test_queue_alloc(void)
+{
+    int * p;
+    int y;
+    int err;
+
+    p = queue_alloc_get(&queue);
+    ku_assert("Alloc not null", p != NULL);
+
+    *p = 5;
+
+    err = queue_pop(&queue, &y);
+    ku_assert("pop should fail", err == 0);
+
+    queue_alloc_commit(&queue);
+
+    err = queue_pop(&queue, &y);
+    ku_assert("error, pop failed", err != 0);
+    ku_assert_equal("Returned value is same as pushed", 5, y);
+
+    return NULL;
+}
+
+static char * test_queue_is_empty(void)
+{
+    ku_assert("Queue is empty", queue_isempty(&queue) != 0);
+
+    return NULL;
+}
+
+static char * test_queue_is_not_empty(void)
+{
+    int x = 1;
+
+    queue_push(&queue, &x);
+    ku_assert("Queue is empty", queue_isempty(&queue) == 0);
+
+    return NULL;
+}
+
 static void all_tests(void)
 {
     ku_def_test(test_queue_single_push, KU_RUN);
@@ -115,6 +155,9 @@ static void all_tests(void)
     ku_def_test(test_queue_peek_ok, KU_RUN);
     ku_def_test(test_queue_peek_fail, KU_RUN);
     ku_def_test(test_queue_skip_one, KU_RUN);
+    ku_def_test(test_queue_alloc, KU_RUN);
+    ku_def_test(test_queue_is_empty, KU_RUN);
+    ku_def_test(test_queue_is_not_empty, KU_RUN);
 }
 
 SYSCTL_TEST(generic, queue);
