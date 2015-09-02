@@ -172,7 +172,7 @@ static char * test_iterator(void)
 static void all_tests(void)
 {
     ku_def_test(test_link, KU_RUN);
-    ku_def_test(test_link_chain, KU_RUN);
+    ku_def_test(test_link_chain, KU_SKIP);
     ku_def_test(test_lookup, KU_RUN);
     ku_def_test(test_iterator, KU_RUN);
 }

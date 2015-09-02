@@ -193,9 +193,21 @@ static inline uint8_t read_byte(uint8_t * buf, int offset)
 
 int sizetto(size_t value, void * p, size_t size);
 
-int ffs(int mask);
-int ffsl(long mask);
-int ffsll(long long mask);
+static inline int ffs(int mask)
+{
+    return __builtin_ffs(mask);
+}
+
+static inline int ffsl(long mask)
+{
+    return __builtin_ffsl(mask);
+}
+
+static inline int ffsll(long long mask)
+{
+    return __builtin_ffsll(mask);
+}
+
 int fls(int mask);
 int flsl(long mask);
 int flsll(long long mask);

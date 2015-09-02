@@ -40,7 +40,7 @@ static char * test_inpool_init(void)
     inpool_t pool;
     int err;
 
-    ku_test_description("Test that inpool_init initializes the inode pool struct correctly.");
+    ku_test_description("Test that the inode pool is initialized correctly.");
 
     err = inpool_init(&pool, &sb_tst, create_tst, delete_tst, 10);
     ku_assert_equal("inpool created succesfully", err, 0);
@@ -52,7 +52,7 @@ static char * test_inpool_destroy(void)
 {
     inpool_t pool;
 
-    ku_test_description("Test that inode pool is destroyed correctly.");
+    ku_test_description("Test that the inode pool is destroyed correctly.");
 
     inpool_init(&pool, &sb_tst, create_tst, delete_tst, 5);
     inpool_destroy(&pool);
@@ -82,30 +82,11 @@ static char * test_inpool_get(void)
     return NULL;
 }
 
-static char * test_inpool_insert(void)
-{
-    inpool_t pool;
-    vnode_t * vnode;
-    vnode_t * vnode1;
-
-    ku_test_description("Test that inode recycling works correctly.");
-
-    inpool_init(&pool, &sb_tst, create_tst, delete_tst, 10);
-    vnode = inpool_get_next(&pool);
-    ku_assert("Got vnode", vnode != 0);
-    inpool_insert(&pool, vnode);
-    vnode1 = inpool_get_next(&pool);
-    ku_assert_ptr_equal("Got same vnode", vnode1, vnode);
-
-    return NULL;
-}
-
 static void all_tests(void)
 {
     ku_def_test(test_inpool_init, KU_RUN);
     ku_def_test(test_inpool_destroy, KU_RUN);
     ku_def_test(test_inpool_get, KU_RUN);
-    ku_def_test(test_inpool_insert, KU_RUN);
 }
 
 SYSCTL_TEST(fs, inpool);

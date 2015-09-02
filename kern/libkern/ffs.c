@@ -31,6 +31,10 @@
 #include <libkern.h>
 
 /*
+ * The following code is replaced with builtins but left as a reference.
+ */
+#if 0
+/*
  * Find First Set bit
  */
 int ffs(int mask)
@@ -80,6 +84,7 @@ int ffsll(long long mask)
 
     return bit;
 }
+#endif /* 0 */
 
 /*
  * Find Last Set bit
