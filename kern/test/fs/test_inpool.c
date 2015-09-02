@@ -27,11 +27,11 @@ struct fs_superblock sb_tst = {
    .delete_vnode = delete_tst_vnode,
 };
 
-static void setup()
+static void setup(void)
 {
 }
 
-static void teardown()
+static void teardown(void)
 {
 }
 
@@ -100,7 +100,8 @@ static char * test_inpool_insert(void)
     return NULL;
 }
 
-static void all_tests() {
+static void all_tests(void)
+{
     ku_def_test(test_inpool_init, KU_RUN);
     ku_def_test(test_inpool_destroy, KU_RUN);
     ku_def_test(test_inpool_get, KU_RUN);

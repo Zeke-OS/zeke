@@ -7,11 +7,11 @@
 #include <ktest_mib.h>
 #include <kstring.h>
 
-static void setup()
+static void setup(void)
 {
 }
 
-static void teardown()
+static void teardown(void)
 {
 }
 
@@ -31,10 +31,11 @@ static char * test_strcpy(void)
 #undef TSTRING2
 #undef TCSTRING
 
-    return 0;
+    return NULL;
 }
 
-static void all_tests() {
+static void all_tests(void)
+{
     ku_def_test(test_strcpy, KU_RUN);
 }
 

@@ -11,11 +11,11 @@
 #define NTOSTR(s) _NTOSTR(s)
 #define _NTOSTR(s) #s
 
-static void setup()
+static void setup(void)
 {
 }
 
-static void teardown()
+static void teardown(void)
 {
 }
 
@@ -28,16 +28,18 @@ static char * test_uitoa32(void)
 
     retVal = uitoa32(actual, (uint32_t)UINTVAL);
 
-    ku_assert_str_equal("Unsigned integer was converted to string.", actual, expected);
-    ku_assert_equal("return value is number of printable characters in the string.", \
-            (int)retVal, (int)(sizeof(expected) - 1));
+    ku_assert_str_equal("Unsigned integer was converted to string.", actual,
+                        expected);
+    ku_assert_equal("Returned the number of printable characters in the string.",
+                    (int)retVal, (int)(sizeof(expected) - 1));
 
 #undef UINTVAL
 
-    return 0;
+    return NULL;
 }
 
-static void all_tests() {
+static void all_tests(void)
+{
     ku_def_test(test_uitoa32, KU_RUN);
 }
 

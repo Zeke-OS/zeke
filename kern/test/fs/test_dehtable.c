@@ -11,7 +11,7 @@
 
 #define get_dirent(dea, offset) ((dh_dirent_t *)((size_t)(dea) + (offset)))
 
-dh_table_t table;
+static dh_table_t table;
 
 static void setup(void)
 {
@@ -157,7 +157,7 @@ static char * test_iterator(void)
             if (!entry)
                 break;
             ku_assert("inode number is not larger than the largest given inode number.",
-                    entry->dh_ino < 4);
+                      entry->dh_ino < 4);
             fnd_inodes[entry->dh_ino]++;
         }
         ku_assert_equal("Found 4 entries with the iterator.", i, 4);
@@ -169,7 +169,8 @@ static char * test_iterator(void)
     return NULL;
 }
 
-static void all_tests() {
+static void all_tests(void)
+{
     ku_def_test(test_link, KU_RUN);
     ku_def_test(test_link_chain, KU_RUN);
     ku_def_test(test_lookup, KU_RUN);

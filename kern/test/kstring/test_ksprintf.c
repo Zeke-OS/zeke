@@ -14,11 +14,11 @@
 
 #define JUNK "junkjunkjunkjunkjunkjunkjunkjunkjunkjunkjunkjunkjunkjunkjunkjunk"
 
-static void setup()
+static void setup(void)
 {
 }
 
-static void teardown()
+static void teardown(void)
 {
 }
 
@@ -37,7 +37,7 @@ static char * test_uint(void)
 #undef UINTVAL1
 #undef EXPECTED
 
-    return 0;
+    return NULL;
 }
 
 static char * test_hex(void)
@@ -47,7 +47,8 @@ static char * test_hex(void)
 #define EXPECTED TSTRING1 NTOSTR(HEXVALUE) TSTRING1
     char actual[80] = JUNK;
 
-    ksprintf(actual, sizeof(actual), TSTRING1 "%x" TSTRING1, (uint32_t)HEXVALUE);
+    ksprintf(actual, sizeof(actual), TSTRING1 "%x" TSTRING1,
+             (uint32_t)HEXVALUE);
 
     ku_assert_str_equal("String composed correctly.", actual, EXPECTED);
 
@@ -55,7 +56,7 @@ static char * test_hex(void)
 #undef HEXVALUE
 #undef EXPECTED
 
-    return 0;
+    return NULL;
 }
 
 static char * test_char(void)
@@ -74,7 +75,7 @@ static char * test_char(void)
 #undef TSTRING
 #undef TCHAR
 
-    return 0;
+    return NULL;
 }
 
 static char * test_string(void)
@@ -87,13 +88,14 @@ static char * test_string(void)
 
     ksprintf(actual, sizeof(actual), TSTRING1 "%s" TSTRING1, TSTRING2);
 
-    ku_assert_str_equal("Strings were concatenated correctly", actual, expected);
+    ku_assert_str_equal("Strings were concatenated correctly", actual,
+                        expected);
 
 #undef TSTRING1
 #undef TSTRING2
 #undef EXPECTED
 
-    return 0;
+    return NULL;
 }
 
 static char * test_percent(void)
@@ -104,14 +106,16 @@ static char * test_percent(void)
 
     ksprintf(actual, sizeof(actual), "%%" TSTRING "%%");
 
-    ku_assert_str_equal("Strings were concatenated correctly", actual, expected);
+    ku_assert_str_equal("Strings were concatenated correctly", actual,
+                        expected);
 
 #undef TSTRING
 
-    return 0;
+    return NULL;
 }
 
-static void all_tests() {
+static void all_tests(void)
+{
     ku_mod_description("Test kstring functions.");
     ku_def_test(test_uint, KU_RUN);
     ku_def_test(test_hex, KU_RUN);

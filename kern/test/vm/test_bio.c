@@ -9,11 +9,11 @@
 #include <fs/fs.h>
 #include <buf.h>
 
-static void setup()
+static void setup(void)
 {
 }
 
-static void teardown()
+static void teardown(void)
 {
 }
 
@@ -32,7 +32,7 @@ static char * test_geteblk(void)
 
     brelse(bp);
 
-    return 0;
+    return NULL;
 }
 
 static char * test_getblk(void)
@@ -42,8 +42,9 @@ static char * test_getblk(void)
 
     ku_test_description("Test that getblk() returns a device backed buffer.");
 
-    ku_assert("lookup failed", !lookup_vnode(&vndev, proc_get_struct_l(0)->croot,
-                                             "dev/zero", O_RDWR));
+    ku_assert("lookup failed",
+               !lookup_vnode(&vndev, proc_get_struct_l(0)->croot, "dev/zero",
+                             O_RDWR));
     bp = getblk(vndev, 0, 4096, 0);
     ku_assert("got a buffer", bp);
 
@@ -51,7 +52,7 @@ static char * test_getblk(void)
 
     brelse(bp);
 
-    return 0;
+    return NULL;
 }
 
 static char * test_bread(void)
@@ -74,10 +75,10 @@ static char * test_bread(void)
         ku_assert_equal("SBZ", ((uint8_t *)bp->b_data)[i], 0);
     }
 
-    return 0;
+    return NULL;
 }
 
-static void all_tests()
+static void all_tests(void)
 {
     ku_def_test(test_geteblk, KU_RUN);
     ku_def_test(test_getblk, KU_RUN);

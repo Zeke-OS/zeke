@@ -7,11 +7,11 @@
 #include <ktest_mib.h>
 #include <kstring.h>
 
-static void setup()
+static void setup(void)
 {
 }
 
-static void teardown()
+static void teardown(void)
 {
 }
 
@@ -31,7 +31,7 @@ static char * test_strnncat_two_strings(void)
 #undef TSTRING2
 #undef TCSTRING
 
-    return 0;
+    return NULL;
 }
 
 static char * test_strnncat_same_array(void)
@@ -42,12 +42,13 @@ static char * test_strnncat_same_array(void)
 
     strnncat(str, 20, str, 20);
 
-    ku_assert_str_equal("String can be concatenated with it self.", str, TCSTRING);
+    ku_assert_str_equal("String can be concatenated with it self.", str,
+                        TCSTRING);
 
 #undef TSTRING
 #undef TCSTRING
 
-    return 0;
+    return NULL;
 }
 
 static char * test_strnncat_limit1(void)
@@ -65,7 +66,7 @@ static char * test_strnncat_limit1(void)
 #undef TSTRING2
 #undef TCSTRING
 
-    return 0;
+    return NULL;
 }
 
 static char * test_strnncat_limit2(void)
@@ -84,10 +85,11 @@ static char * test_strnncat_limit2(void)
 #undef TSTRING2
 #undef TCSTRING
 
-    return 0;
+    return NULL;
 }
 
-static void all_tests() {
+static void all_tests(void)
+{
     ku_def_test(test_strnncat_two_strings, KU_RUN);
     ku_def_test(test_strnncat_same_array, KU_RUN);
     ku_def_test(test_strnncat_limit1, KU_RUN);
