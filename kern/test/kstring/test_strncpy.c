@@ -58,7 +58,7 @@ static char * test_strncpy_2(void)
     return NULL;
 }
 
-static void all_tests(NULL)
+static void all_tests(void)
 {
     ku_def_test(test_strncpy_1, KU_RUN);
     ku_def_test(test_strncpy_2, KU_RUN);

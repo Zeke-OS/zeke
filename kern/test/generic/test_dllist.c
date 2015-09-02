@@ -1,8 +1,3 @@
-/**
- * @file test_queue.c
- * @brief Test generic thread-safe queue implementation.
- */
-
 #include <kunit.h>
 #include <ktest_mib.h>
 #include <kmalloc.h>

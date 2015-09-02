@@ -215,7 +215,8 @@ int flsll(long long mask);
 /**
  * Parse path and file name from a complete path.
  * <path>/<name>
- * Out args can be NULL.
+ * Out arguments are kmalloc'd and should be freed by the caller after use;
+ * Out arguments can be NULL.
  * @param pathname  is a complete path to a file or directory.
  * @param path[out] is the expected dirtory part of the path.
  * @param name[out] is the file or directory name parsed from the full path.
