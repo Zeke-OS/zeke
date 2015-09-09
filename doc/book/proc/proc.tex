@@ -1,5 +1,24 @@
 \part{Process and Thread Management}
 
+The process and thread management in Zeke is based on an idea
+that a process is a container for threads owned by the process
+and it manages the memory space used by its threads. Naturally
+this means that a process must always have at least one thread
+which is the main thread and all other threads are children of
+that thread. Any process not having a main thread is immediately
+removed from the system because there is nothing to execute.
+
+Calling \verb+fork+ syscall causes a creation of a new process
+container, cloning of the currently executing thread as a new
+main thread as well as marking all current memory regions as
+copy-on-write regions for both processes, to trivially get rid
+of race conditions.
+
+When a process calls \verb+exec+ syscall the current main thread
+is replaced by a new clean main thread that's pointing to the
+new process image, ie. \acs{PC} is set to the proper entry point of
+the new image.
+
 \chapter{Thread Management Concept}
 
 \begin{figure}
@@ -81,4 +100,18 @@ Killing of \verb+child_2+ causes \verb+child_2_1+ to be killed first.
 
 \chapter{Thread Scheduler}
 
-TODO
+The scheduler in Zeke is conceptually object oriented and all
+scheduling entities, CPUs as well as scheduling policies are
+implemented as objects in the scheduling system. Each CPU can
+be technically populated with a different set of scheduling
+policies that are then only executable on that particular
+CPU, see figure \ref{figure:objscheds}.
+
+\begin{figure}
+  \center
+  \includegraphics[width=5cm]{proc/objscheds}
+  \caption{Scheduler CPU objects for two processor cores and
+           per scheduler object scheduling policy objects in
+           priority order.}
+  \label{figure:objscheds}
+\end{figure}

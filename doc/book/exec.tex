@@ -1,10 +1,18 @@
 \part{Executable File Formats}
 
+\chapter{Introduction}
+
 The kernel has a support for implementing loader functions for any new
-executable format but currently only 32bit \acf{elf} support exist. The image
-loading after exec syscall is called happens in \verb+load_image()+ function in
-\verb+kern/exec.c+ file. New loader functions can be advertised with
-\verb+EXEC_LOADFN+ macro.
+executable format but currently only 32bit \acf{elf} support exist. 
+Loading of a new process image is invoked by calling exec syscall call that
+calls \verb+load_image()+ function in \verb+kern/exec.c+ file.
+Process image loaders are advertised by using \verb+EXEC_LOADER+ macro.
+
+\section{Memory Map}
+
+Memory map of an executable loaded in Zeke is defined by the exec subsystem.
+
+TODO
 
 \chapter{ELF32}
 
