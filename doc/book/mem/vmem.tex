@@ -1,11 +1,10 @@
 \chapter{Virtual Memory}
 
-\section{Introduction to vmem in Zeke}
-
-Memory managagement is abstracted in Zeke to hide away hardware differences
-and obscurities. The page table system in the kernel is relatively light
-abstraction but it still allows things that are not usually directly included
-in harware implementations, like variable sized page tables.
+In Zeke, memory management is abstracted under several layers to hide away
+hardware differences and obscurities. The page table abstraction system in
+the kernel is relatively light but it still allows things that are not usually
+directly achievable with a plain harware implementation, eg. variable sized
+page tables.
 
 Each process has its own master page table, in contrast to some kernels where
 there might be only one master page table or one partial master page table,
@@ -13,10 +12,10 @@ and varying number of level two page tables. The hernel, also known as proc 0,
 has its own master page table that is used when a process executes in kernel
 mode, as well as when ever a kernel thread is executing. Static or fixed
 page table entries are copied to all master page tables created.
-A process shares its master page table with its childs on fork() and
-exec() will trigger a creation of a new master page table.
+A process shares its master page table with its childs on \verb+fork()+ while
+\verb+exec()+ will trigger a creation of a new master page table.
 
-\textbf{ARM note:} Only 4 kB pages are used with L2 page tables thus
+\textbf{ARM11 note:} Only 4 kB pages are used with L2 page tables thus
 XN (Execute-Never) bit is always usable also for L2 pages.
 
 \subsection{Domains}
@@ -65,15 +64,15 @@ W   | MMU & coProcessor |
 Virtual memory is managed as virtual memory buffers (\verb+struct buf+) that
 are suitable for in-kernel buffers, IO buffers as well as user space memory
 mappings. Additionlly the buffer system supports copy-on-write as well as
-allocated defined schemes where a part of the memory is stored on a secondary
+allocator schemes where a part of the memory is stored on a secondary
 storage (i.e. paging).
 
-Due to the fact that \verb+buf+ structures are used in different
-allocators there is no global knowledge of the actual state of a particular
-allocation, instead each allocator should/may keep track of allocation structs
-if desired so. Ideally the same struct can be reused when moving data from a
-secondary storage allocator to vralloc memory (physical memory). However we
-always know wheter a buffer is currently in core or not (\verb+b_data+) and
+Due to the fact that \verb+buf+ structures are used in different allocators
+there is no global knowledge of the actual state of a particular allocation,
+instead each allocator should/may keep track of allocation structs if desired
+so. Ideally the same struct can be reused when moving data from a secondary
+storage allocator to vralloc memory (physical memory). However we
+always know whether a buffer is currently in core or not (\verb+b_data+) and
 we also know if a buffer can be swapped to a different allocator
 (\verb+B_BUSY+ flag).
 
@@ -82,12 +81,15 @@ See figure \ref{figure:vmsubsys}.
 \begin{itemize}
   \item \verb+kmalloc+  - is a kernel level memory allocation service, used
                         solely for memory allocations in kernel space.
-  \item \verb+vralloc+  - VRAlloc is a special memory allocator targeted to
-                        allocate blocks of memory that will be mapped in virtual
-                        address space of a processes it returns \verb+buf+
-                        structs instead of just base address of the allocation.
-  \item \verb+bio+      - is a IO buffer system, mostly compatible with BSD
-                        kernels, utilizing vralloc and buf system.
+  \item \verb+vralloc+  - VRAlloc is a memory allocator targeted to allocate
+                        blocks of memory that will be mapped in virtual
+                        address space of a processes, but it's widely used
+                        as a generic allocator for medium size allocations,
+                        it returns a \verb+buf+ structs that are used to
+                        describe the allocation and its state.
+  \item \verb+bio+      - is a IO buffer system, mostly compatible with the
+                        corresponding interface in BSD kernels,
+                        utilizing vralloc and buf system.
   \item \verb+dynmem+   - is a dynamic memory allocation system that allocates
                         \& frees contiguous blocks of physical memory (1 MB).
   \item \verb+ptmapper+ - owns all statically allocated page tables
