@@ -5,7 +5,7 @@ Here is some misc documentation and general guidelines on topic of how to write
 new code for Zeke.
 
 Source Tree Directory Structure
---------------------------------
+-------------------------------
 
 + /kern/include/        Most of the shared kernel header files.
 + kern/                 Most of the kernel code.
