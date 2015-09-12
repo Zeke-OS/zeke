@@ -1,17 +1,6 @@
 \part{System Calls}
 
 \chapter{Introduction}
-User scope stub wrappers are located in \verb+src/usrscope+ directory.
-\verb+hal_core.h+ can be included to provide core specific system call
-functions.
-
-User scope syscall code is allowed to call the following functions in
-\verb+hal_core+ to implement syscall functionality:
-
-\begin{itemize}
-  \item \verb+uint32_t syscall(int type, void * p)+
-  \item \verb+req_context_switch()+
-\end{itemize}
 
 \section{Syscall Flow Sequence}
 
@@ -21,24 +10,21 @@ User scope syscall code is allowed to call the following functions in
       module/compilation unit name, YYY is a function name and args is a
       syscall dataset structure in format declared in \verb+syscalldef.h+.
 
-\item After interrupt handler and other hardware specific code execution enters
-      to \verb+_intSyscall_handler()+ function where thread local \verb+errno+
-      is first reset and then syscall handler of the correct compilation unit is
-      resolved according to \verb+syscall_callmap+.
+\item The interrupt handler calls \verb+_intSyscall_handler()+ function where
+      syscall handler of the correct subsystem is resolved from
+      \verb+syscall_callmap+.
 
-\item Execution enters to compilation unit specific \verb+XXX_syscall()+
-      function where it is handled any way wanted, usually by switch\ldots case
-      structure and a function call.
+\item Execution enters to the subsystem specific \verb+XXX_syscall()+
+      function where the system call is either handled directly or a next level
+      system call function is called according to minor number of
+      the system call.
 
 \item \verb+XXX_syscall()+ returns a \verb+uint32_t+ value which is, after
       multiple return steps, returned back to the caller which should know
       what type the returned value actually represents. In the future return
       value should be always integer value having the same size as register
       in the architecture. Everything else shall be passed both ways by using
-      dataset structs, thus unifying the return value. This means that in
-      general pointers shouldn't be returned as a return value because it's
-      portability is hard to guarantee and it creates ambiguous system calls
-      in user space.
+      args structs, thus unifying the return value.
 \end{enumerate}
 
 
