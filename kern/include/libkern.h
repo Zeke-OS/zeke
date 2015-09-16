@@ -133,6 +133,10 @@ size_t memalign_size(size_t size, size_t bytes);
  * @{
  */
 
+/**
+ * Seed the pseudo-random number generator.
+ * @param seed is the seed to be used.
+ */
 void ksrandom(unsigned long seed);
 
 /**
@@ -193,24 +197,56 @@ static inline uint8_t read_byte(uint8_t * buf, int offset)
 
 int sizetto(size_t value, void * p, size_t size);
 
+/**
+ * @addtogroup ffs ffs, ffsl, ffsll, fls, flsl, flsll
+ * @{
+ */
+
+/**
+ * Find first bit set in a word.
+ * @return the position of the first bit set, or 0 if no bits are set in mask.
+ */
 static inline int ffs(int mask)
 {
     return __builtin_ffs(mask);
 }
 
+/**
+ * Find first bit set in a word.
+ * @return the position of the first bit set, or 0 if no bits are set in mask.
+ */
 static inline int ffsl(long mask)
 {
     return __builtin_ffsl(mask);
 }
 
+/**
+ * Find first bit set in a word.
+ * @return the position of the first bit set, or 0 if no bits are set in mask.
+ */
 static inline int ffsll(long long mask)
 {
     return __builtin_ffsll(mask);
 }
 
+/**
+ * Find the last bit set in a word.
+ */
 int fls(int mask);
+
+/**
+ * Find the last bit set in a word.
+ */
 int flsl(long mask);
+
+/**
+ * Find the last bit set in a word.
+ */
 int flsll(long long mask);
+
+/**
+ * @}
+ */
 
 /**
  * Parse path and file name from a complete path.
