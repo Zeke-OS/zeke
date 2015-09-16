@@ -67,7 +67,7 @@ class ThreadTreePrint(gdb.Command):
             gdb.write('No symbol "%s" in current context.\n' % str(args[0]))
             return
 
-        print nodeToString(th, 0)
+        print(nodeToString(th, 0))
 
 def nodeToString(th, d):
         if th.address == 0:

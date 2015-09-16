@@ -19,7 +19,7 @@ class SLISTPrint(gdb.Command):
         if args is None:
             return
 
-        print getSLIST(args[0], args[1])
+        print(getSLIST(args[0], args[1]))
 
 class LISTPrint(gdb.Command):
     "Print LIST\nArgs: <head> <field>"
@@ -33,7 +33,7 @@ class LISTPrint(gdb.Command):
         if args is None:
             return
 
-        print getLIST(args[0], args[1])
+        print(getLIST(args[0], args[1]))
 
 class STAILQPrint(gdb.Command):
     "Print STAILQ\nArgs: <head> <field>"
@@ -47,7 +47,7 @@ class STAILQPrint(gdb.Command):
         if args is None:
             return
 
-        print getSTAILQ(args[0], args[1])
+        print(getSTAILQ(args[0], args[1]))
 
 class TAILQPrint(gdb.Command):
     "Print TAILQ\nArgs: <head> <field>"
@@ -61,7 +61,7 @@ class TAILQPrint(gdb.Command):
         if args is None:
             return
 
-        print getTAILQ(args[0], args[1])
+        print(getTAILQ(args[0], args[1]))
 
 def getArgs(arg):
     args = gdb.string_to_argv(arg)

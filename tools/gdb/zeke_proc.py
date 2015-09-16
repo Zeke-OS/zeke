@@ -107,7 +107,7 @@ class ProcPidPrint(gdb.Command):
         try:
             pid = gdb.string_to_argv(arg)[0]
             proc = gdb.parse_and_eval('*(*_procarr)[' + str(pid) + ']')
-            print '((struct proc_info *)' +  str(proc.address) + ')' + str(proc)
+            print('((struct proc_info *)%s)%s' % str(proc.address), str(proc))
         except:
             gdb.write('Invalid PID\n')
             return
@@ -149,7 +149,7 @@ print-proc tree <proc_info> Prints children of the process.
         else:
             proc = proc_arr = gdb.parse_and_eval('*_procarr')[0].dereference()
 
-        print ProcTreeToString(proc, 1)
+        print(ProcTreeToString(proc, 1))
 
 def ProcTreeToString(proc, d):
     if proc.address == 0:
