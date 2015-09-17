@@ -28,7 +28,7 @@ static char * test_tss_get()
 
 static void all_tests()
 {
-    pu_run_test(test_tss_get);
+    pu_def_test(test_tss_get, PU_RUN);
 }
 
 int main(int argc, char **argv)

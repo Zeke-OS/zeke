@@ -3,36 +3,39 @@
 #include <stdio.h>
 #include "punit.h"
 
-static void setup()
+static void setup(void)
 {
 }
 
-static void teardown()
+static void teardown(void)
 {
 }
 
-static char * test_ok()
+static char * test_ok(void)
 {
     char * arr1[] = {"one", "two", "three"};
     char * arr2[] = {"one", "two", "three"};
 
-    pu_assert_str_array_equal("Arrays are equal", arr1, arr2, sizeof(arr1)/sizeof(*arr1));
-    return 0;
+    pu_assert_str_array_equal("Arrays are equal", arr1, arr2,
+                              sizeof(arr1) / sizeof(*arr1));
+
+    return NULL;
 }
 
-static char * test_fail()
+static char * test_fail(void)
 {
     char * arr1[] = {"one", "two", "three"};
     char * arr2[] = {"one", "three", "four"};
 
-    pu_assert_str_array_equal("Arrays are equal", arr1, arr2, sizeof(arr1)/sizeof(*arr1));
-    return 0;
+    pu_assert_str_array_equal("Arrays are equal", arr1, arr2,
+                              sizeof(arr1) / sizeof(*arr1));
+    return NULL;
 }
 
-static void all_tests()
+static void all_tests(void)
 {
-    pu_run_test(test_ok);
-    pu_run_test(test_fail);
+    pu_def_test(test_ok, PU_RUN);
+    pu_def_test(test_fail, PU_RUN);
 }
 
 int main(int argc, char **argv)

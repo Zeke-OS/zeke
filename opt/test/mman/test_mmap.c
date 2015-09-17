@@ -86,9 +86,9 @@ static char * test_mmap_file(void)
 
 static void all_tests()
 {
-    pu_run_test(test_mmap_anon);
-    pu_run_test(test_mmap_anon_fixed);
-    pu_run_test(test_mmap_file);
+    pu_def_test(test_mmap_anon, PU_RUN);
+    pu_def_test(test_mmap_anon_fixed, PU_RUN);
+    pu_def_test(test_mmap_file, PU_RUN);
 }
 
 int main(int argc, char **argv)

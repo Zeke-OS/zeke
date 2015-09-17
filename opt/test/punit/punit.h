@@ -240,13 +240,6 @@
     } else pu_tests_passed++;                       \
 } while (0)
 
-/**
- * Run tests.
- * @deprecated Same as pu_def_test(test, PU_RUN).
- * @param test to be run.
- */
-#define pu_run_test(test) pu_def_test(test, PU_RUN)
-
 #define PU_TEST_BUILD 1 /*!< This definition can be used to exclude included
                          * files and souce code that are not needed for unit
                          * tests. */

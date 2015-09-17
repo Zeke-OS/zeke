@@ -55,7 +55,7 @@ static char * test_mmap_fb(void)
 
 static void all_tests()
 {
-    pu_run_test(test_mmap_fb);
+    pu_def_test(test_mmap_fb, PU_RUN);
 }
 
 int main(int argc, char **argv)

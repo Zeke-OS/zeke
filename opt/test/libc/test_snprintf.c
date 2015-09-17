@@ -28,7 +28,7 @@ static char * test_retlen()
 
 static void all_tests()
 {
-    pu_run_test(test_retlen);
+    pu_def_test(test_retlen, PU_RUN);
 }
 
 int main(int argc, char **argv)
