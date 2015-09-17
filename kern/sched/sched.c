@@ -1003,7 +1003,7 @@ DATA_SET(thread_dtors, dummycd);
  */
 static void free_threads(uintptr_t arg)
 {
-    struct thread_info * thread = NULL;
+    struct thread_info * thread;
 
     while (queue_pop(&CURRENT_CPU->thread_free_queue, &thread)) {
         thread_free_kstack(thread->kstack_region);

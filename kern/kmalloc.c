@@ -447,7 +447,6 @@ void kfree(void * p)
 void kfree_lazy(void * p)
 {
     istate_t istate;
-    const uintptr_t addr = (uintptr_t)p;
 
     /*
      * This is not a complete protection against concurrent access but we trust
@@ -456,7 +455,7 @@ void kfree_lazy(void * p)
     istate = get_interrupt_state();
     disable_interrupt();
 
-    if (!queue_push(&lazy_free_queue, &addr)) {
+    if (!queue_push(&lazy_free_queue, &p)) {
         mblock_t * b = get_mblock(p);
         KERROR(KERROR_WARN, "kfree lazy queue full, leaked %u bytes\n",
                (uint32_t)b->size);
@@ -470,15 +469,15 @@ void kfree_lazy(void * p)
  */
 static void idle_lazy_free(uintptr_t arg)
 {
-    uintptr_t addr;
+    void * addr;
 
     /**
      * Free only one allocation per call to allow other tasks run as well.
      * Locking shouldn't be a problem since no other process should have lock
      * to our giant lock.
      */
-    if (!queue_pop(&lazy_free_queue, &addr)) {
-        kfree((void *)addr);
+    if (queue_pop(&lazy_free_queue, &addr)) {
+        kfree(addr);
     }
 }
 IDLE_TASK(idle_lazy_free, 0);
