@@ -113,27 +113,6 @@ int test_lock(int * lock)
     return value;
 }
 
-int test_and_set(int * lock)
-{
-    int err = 1;
-
-    __asm__ volatile (
-        "MOV        r1, #1\n\t"             /* locked value to r1 */
-        "try%=:\n\t"
-        "LDREX      r2, [%[addr]]\n\t"      /* load value of the lock */
-        "CMP        r2, r1\n\t"             /* if already set */
-        "STREXNE    %[res], r1, [%[addr]]\n\t" /* Sets err = 0
-                                                * if store op ok */
-        "CMPNE      %[res], #1\n\t"         /* Try again if strex failed */
-        "BEQ        try%="
-        : [res]"+r" (err)
-        : [addr]"r" (lock)
-        : "r1", "r2"
-    );
-
-    return err;
-}
-
 /**
  * Invalidate all caches.
  */

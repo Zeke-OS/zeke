@@ -213,6 +213,24 @@ void core_set_tls_addr(__user struct _sched_tls_desc * tls);
         : [tmp]"+r" (tmp));                 \
 } while (0)
 
+static inline int test_and_set(int * lock)
+{
+    int err = 1;
+
+    __asm__ volatile (
+        "MOV        r1, #1\n\t"             /* locked value to r1 */
+        "LDREX      r2, [%[addr]]\n\t"      /* load value of the lock */
+        "CMP        r2, r1\n\t"             /* if already set */
+        "STREXNE    %[res], r1, [%[addr]]\n\t" /* Sets err = 0
+                                                * if store op ok */
+        : [res]"+r" (err)
+        : [addr]"r" (lock)
+        : "r1", "r2"
+    );
+
+    return err;
+}
+
 /**
  * Halt due to kernel panic.
  */
