@@ -1,12 +1,13 @@
 #ifndef _PDCLIB_CONFIG_H
 #define _PDCLIB_CONFIG_H
 
-/* Internal PDCLib configuration <_PDCLIB_config.h>
-   (POSIX platform)
-
-   This file is part of the Public Domain C Library (PDCLib).
-   Permission is granted to use, modify, and / or redistribute at will.
-*/
+/*
+ *  Internal PDCLib configuration <_PDCLIB_config.h>
+ *  (POSIX platform)
+ *
+ * This file is part of the Public Domain C Library (PDCLib).
+ * Permission is granted to use, modify, and / or redistribute at will.
+ */
 
 /* -------------------------------------------------------------------------- */
 /* Misc                                                                       */
@@ -297,21 +298,6 @@ struct _PDCLIB_imaxdiv_t
 /* the capabilities and requirements of your OS.                              */
 /* The actual *functions* of the OS interface are declared in _PDCLIB_glue.h. */
 /* -------------------------------------------------------------------------- */
-
-/* Memory management -------------------------------------------------------- */
-
-/* Set this to the page size of your OS. If your OS does not support paging, set
-   to an appropriate value. (Too small, and malloc() will call the kernel too
-   often. Too large, and you will waste memory.)
-*/
-#define _PDCLIB_MALLOC_PAGESIZE 4096
-#define _PDCLIB_MALLOC_ALIGN 16
-#define _PDCLIB_MALLOC_GRANULARITY 64*1024
-#define _PDCLIB_MALLOC_TRIM_THRESHOLD 2*1024*1024
-#define _PDCLIB_MALLOC_MMAP_THRESHOLD 256*1024
-#define _PDCLIB_MALLOC_RELEASE_CHECK_RATE 4095
-
-/* TODO: Better document these */
 
 /* Locale --------------------------------------------------------------------*/
 
