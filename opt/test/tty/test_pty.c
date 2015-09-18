@@ -93,8 +93,8 @@ static char * test_slave2master(void)
 static void all_tests(void)
 {
     pu_def_test(test_open_pty, PU_RUN);
-    pu_def_test(test_master2slave, PU_SKIP);
-    pu_def_test(test_slave2master, PU_SKIP);
+    pu_def_test(test_master2slave, PU_RUN);
+    pu_def_test(test_slave2master, PU_RUN);
 }
 
 int main(int argc, char **argv)

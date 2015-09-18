@@ -43,6 +43,9 @@ struct fs_queue_packet {
     char data[];
 };
 
+/**
+ * fsq object descriptor.
+ */
 struct fs_queue {
     struct queue_cb qcb;
     struct buf * bp; /*!< self */
@@ -57,13 +60,20 @@ struct fs_queue {
 };
 
 /*
- * Flags.
+ * FSQ Flags.
  */
 #define FS_QUEUE_FLAGS_NONBLOCK 0x02
 #define FS_QUEUE_FLAGS_PACKET   0x01
 
+/**
+ * Create a fs queue object.
+ */
 struct fs_queue * fs_queue_create(size_t nr_blocks, size_t block_size);
 
+/**
+ * Destroy a fs queue object.
+ * @param fsq is a pointer to the fs queue object.
+ */
 void fs_queue_destroy(struct fs_queue * fsq);
 
 static inline int oflags2fsq_flags(int oflags)
@@ -72,7 +82,8 @@ static inline int oflags2fsq_flags(int oflags)
 }
 
 /**
- * Write toa fs queue.
+ * Write to a fs queue.
+ * @param fsq is a pointer to the fs queue object.
  */
 ssize_t fs_queue_write(struct fs_queue * fsq, uint8_t * buf, size_t count,
                        int flags);
@@ -80,6 +91,7 @@ ssize_t fs_queue_write(struct fs_queue * fsq, uint8_t * buf, size_t count,
  * Read from a fs queue.
  *
  * - count == 0 and FS_QUEUE_FLAGS_PACKET: Discard one packet
+ * @param fsq is a pointer to the fs queue object.
  */
 ssize_t fs_queue_read(struct fs_queue * fsq, uint8_t * buf, size_t count,
                       int flags);

@@ -76,6 +76,12 @@ void fs_queue_destroy(struct fs_queue * fsq)
         bp->vm_ops->rfree(bp);
 }
 
+/**
+ * Get a pointer to the end point signals pointer.
+ * @param fsq is a pointer to the fs queue object.
+ * @param ep selects the end point.
+ * @return A pointer to a corresponding signals struct pointer.
+ */
 static struct signals ** fsq_get_sigs(struct fs_queue * fsq, enum wait4end ep)
 {
     switch (ep) {
@@ -88,7 +94,11 @@ static struct signals ** fsq_get_sigs(struct fs_queue * fsq, enum wait4end ep)
     }
 }
 
-static sigset_t get_fsq_sigset(void)
+/**
+ * Create a sigset to be used for fsq signal waiting.
+ * @return A sigset_t with necessary signals set.
+ */
+static sigset_t create_fsq_sigset(void)
 {
     sigset_t sigset;
 
@@ -97,14 +107,16 @@ static sigset_t get_fsq_sigset(void)
 
     return sigset;
 }
+
 /**
  * Initialize sigwait cond for the current thread.
+ * @param fsq is a pointer to the fs queue object.
  * @param[out] oldset is the original signal set blocked.
  */
 static void fsq_sigwait_init(struct fs_queue * fsq, enum wait4end ep,
                              sigset_t * oldset)
 {
-    sigset_t newset = get_fsq_sigset();
+    sigset_t newset = create_fsq_sigset();
     struct signals * sigs = &current_thread->sigs;
     struct signals ** waitsigsp = fsq_get_sigs(fsq, ep);
 
@@ -113,11 +125,11 @@ static void fsq_sigwait_init(struct fs_queue * fsq, enum wait4end ep,
 }
 
 /**
- * Wait for a signal.
+ * Wait for a signal telling us to continue the ongoing fsq operation.
  */
 static inline void fsq_sigwait(void)
 {
-    sigset_t newset = get_fsq_sigset();
+    sigset_t newset = create_fsq_sigset();
     siginfo_t retval;
 
     /*
@@ -130,6 +142,7 @@ static inline void fsq_sigwait(void)
 
 /**
  * Clear sigwait cond of the current thread.
+ * @param fsq is a pointer to the fs queue object.
  */
 static void fsq_sigwait_clear(struct fs_queue * fsq, enum wait4end ep,
                               sigset_t * oldset)
@@ -143,6 +156,7 @@ static void fsq_sigwait_clear(struct fs_queue * fsq, enum wait4end ep,
 
 /**
  * Send a signal to the other end if a tread is waiting there.
+ * @param fsq is a pointer to the fs queue object.
  */
 static void fsq_sigsend(struct fs_queue * fsq, enum wait4end ep)
 {
@@ -187,10 +201,7 @@ ssize_t fs_queue_write(struct fs_queue * fsq, uint8_t * buf, size_t count,
                 sigset_t oldset;
 
                 fsq_sigwait_init(fsq, FSQ_WAIT4READ, &oldset);
-                while (1) {
-                    p = queue_alloc_get(&fsq->qcb);
-                    if (p)
-                        break;
+                while (!(p = queue_alloc_get(&fsq->qcb))) {
 
                     /*
                      * Queue is full.
@@ -269,10 +280,7 @@ ssize_t fs_queue_read(struct fs_queue * fsq, uint8_t * buf, size_t count,
             sigset_t oldset;
 
             fsq_sigwait_init(fsq, FSQ_WAIT4WRITE, &oldset);
-            while (1) {
-                if (queue_peek(&fsq->qcb, (void **)(&p)))
-                    break;
-
+            while (!queue_peek(&fsq->qcb, (void **)(&p))) {
                 /*
                  * Queue is empty.
                  * Wait for the writing end to write something.
