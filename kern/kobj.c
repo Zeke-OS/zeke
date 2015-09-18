@@ -91,7 +91,6 @@ void kobj_unref(struct kobj * p)
     prev = atomic_dec(&p->ko_refcount);
     if (prev == 1) {
         atomic_set(&p->ko_refcount, -1);
-        prev = atomic_read(&p->ko_refcount);
         p->ko_free(p);
     } else {
         kobj_fast_unlock(p);
