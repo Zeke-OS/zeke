@@ -101,18 +101,6 @@ void set_interrupt_state(istate_t state)
         : "r1");
 }
 
-int test_lock(int * lock)
-{
-    int value;
-
-    __asm__ volatile (
-        "LDREX      %[val], [%[addr]]"
-        : [val]"+r" (value)
-        : [addr]"r" (lock));
-
-    return value;
-}
-
 /**
  * Invalidate all caches.
  */

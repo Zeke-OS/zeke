@@ -115,7 +115,7 @@ typedef struct mtx {
     intptr_t _alignment;
     enum mtx_type mtx_type;     /*!< Lock type. */
     unsigned int mtx_flags;     /*!< Option flags. */
-    volatile int mtx_lock;      /*!< Lock value for regular (spin)lock. */
+    atomic_t mtx_lock;          /*!< Lock value for regular (spin)lock. */
     struct ticket {
         atomic_t queue;
         atomic_t dequeue;

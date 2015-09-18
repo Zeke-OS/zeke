@@ -72,20 +72,6 @@ void init_stack_frame(struct _sched_pthread_create_args * thread_def,
 void svc_setretval(intptr_t retval);
 
 /**
- * Test if locked.
- * @param lock is pointer to a lock variable.
- * @return Lock value.
- */
-int test_lock(int * lock);
-
-/**
- * Test and set.
- * @param lock is pointer to a lock variable.
- * @return 0 if set succeeded.
- */
-int test_and_set(int * lock);
-
-/**
  * Get interrupt disable state.
  * This function can be called before calling disable_interrupt() to preserve
  * current state of interrupt flags.

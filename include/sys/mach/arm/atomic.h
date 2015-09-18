@@ -82,6 +82,24 @@ static inline int atomic_set(atomic_t * v, int i)
     return old;
 }
 
+static inline int atomic_test_and_set(atomic_t * lock)
+{
+    int err = 1;
+
+    __asm__ volatile (
+        "MOV        r1, #1\n\t"             /* locked value to r1 */
+        "LDREX      r2, [%[addr]]\n\t"      /* load value of the lock */
+        "CMP        r2, r1\n\t"             /* if already set */
+        "STREXNE    %[res], r1, [%[addr]]\n\t" /* Sets err = 0
+                                                * if store op ok */
+        : [res]"+r" (err)
+        : [addr]"r" (lock)
+        : "r1", "r2"
+    );
+
+    return err;
+}
+
 __ATOMIC_DOP_FN(atomic_add, "ADD");
 
 __ATOMIC_DOP_FN(atomic_sub, "SUB");

@@ -77,7 +77,7 @@ void mtx_init(mtx_t * mtx, enum mtx_type type, unsigned int opt)
 {
     mtx->mtx_type = type;
     mtx->mtx_flags = opt;
-    mtx->mtx_lock = 0;
+    mtx->mtx_lock = ATOMIC_INIT(0);
     mtx->ticket.queue = ATOMIC_INIT(0);
     mtx->ticket.dequeue = ATOMIC_INIT(0);
 #ifdef configLOCK_DEBUG
@@ -128,13 +128,13 @@ int _mtx_lock(mtx_t * mtx, char * whr)
 
         switch (mtx->mtx_type) {
         case MTX_TYPE_SPIN:
-            if (!test_and_set((int *)(&mtx->mtx_lock)))
+            if (!atomic_test_and_set(&mtx->mtx_lock))
                 goto out;
             break;
 
         case MTX_TYPE_TICKET:
             if (atomic_read(&mtx->ticket.dequeue) == ticket) {
-                mtx->mtx_lock = 1;
+                atomic_set(&mtx->mtx_lock, 1);
                 goto out;
             }
 
@@ -220,14 +220,14 @@ int _mtx_trylock(mtx_t * mtx, char * whr)
 
     switch (mtx->mtx_type) {
     case MTX_TYPE_SPIN:
-        retval = test_and_set((int *)(&mtx->mtx_lock));
+        retval = atomic_test_and_set(&mtx->mtx_lock);
         break;
 
     case MTX_TYPE_TICKET:
         ticket = atomic_inc(&mtx->ticket.queue);
 
         if (atomic_read(&mtx->ticket.dequeue) == ticket) {
-            mtx->mtx_lock = 1;
+            atomic_set(&mtx->mtx_lock, 1);
             return 0; /* Got it */
         } else {
             atomic_dec(&mtx->ticket.queue);
@@ -268,7 +268,7 @@ void mtx_unlock(mtx_t * mtx)
 
     if (mtx->mtx_type == MTX_TYPE_TICKET)
         atomic_inc(&mtx->ticket.dequeue);
-    mtx->mtx_lock = 0;
+    atomic_set(&mtx->mtx_lock, 0);
 
     if (MTX_OPT(mtx, MTX_OPT_DINT))
         set_interrupt_state(cpu_istate);
@@ -283,5 +283,5 @@ void mtx_unlock(mtx_t * mtx)
 
 int mtx_test(mtx_t * mtx)
 {
-    return test_lock((int *)(&mtx->mtx_lock));
+    return atomic_read(&mtx->mtx_lock);
 }
