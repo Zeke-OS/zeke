@@ -179,7 +179,8 @@ static mblock_t * extend(mblock_t * last, size_t s)
 
     update_stat_up(&(kmalloc_stat.kms_mem_res), MB_TO_BYTES(s_mbytes));
 
-    /* First mblock in the newly allocated section.
+    /*
+     * First mblock in the newly allocated section.
      * Data section of the block will be returned by kmalloc.
      */
     b->size = s - MBLOCK_SIZE;
@@ -191,8 +192,10 @@ static mblock_t * extend(mblock_t * last, size_t s)
     b->ptr = b->data;
     b->refcount = ATOMIC_INIT(0);
 
-    /* If there is still space left in the new region it has to be
-     * marked as a block now. */
+    /*
+     * If there is still space left in the new region it has to be
+     * marked as a block now.
+     */
     memfree_b = (MB_TO_BYTES(s_mbytes)) - s;
     if (memfree_b) {
         mblock_t * bl;
@@ -269,8 +272,10 @@ static void split_mblock(mblock_t * b, size_t s)
 static mblock_t * merge(mblock_t * b)
 {
     if (b->next && (atomic_read(&b->next->refcount) == 0)) {
-        /* Don't merge if these blocks are not in contiguous memory space.
-         * If they aren't it means that they are from diffent areas of dynmem */
+        /*
+         * Don't merge if these blocks are not in contiguous memory space.
+         * If they aren't it means that they are from diffent areas of dynmem
+         */
         if ((void *)((size_t)(b->data) + b->size) != (void *)(b->next)) {
             goto out;
         }
@@ -297,32 +302,20 @@ out:
  */
 static int valid_addr(void * p)
 {
-#define ADDR_VALIDATION(_p_) \
-    (_p_ == (get_mblock(_p_)->ptr) \
-        && get_mblock(_p_)->signature == KM_SIGNATURE_VALID)
-
-    int retval = 0;
-
     if (!p)
         return 0;
 
-    /* TODO what if get_mblock returns invalid address? */
-    if (kmalloc_base) { /* If base is not set it's impossible that we would have
-                         * any allocated blocks. */
-#ifdef configKMALLOC_DEBUG
-        if ((retval = ADDR_VALIDATION(p))) { /* Validation. */
-            printf("VALID\n");
-        } else {
-            printf("INVALID %p\n", p);
-        }
-#else
-        retval = ADDR_VALIDATION(p); /* Validation. */
-#endif
-    }
+    /* RFE what if get_mblock returns invalid address? */
+    /*
+     * If the base is not set it's impossible that we would have any allocated
+     * blocks.
+     */
+    if (!kmalloc_base)
+        return 0;
 
-    return retval;
-#undef ADDR_VALIDATION
-#undef PRINT_VALID
+    /* Validation */
+    return (p == (get_mblock(p)->ptr) &&
+            get_mblock(p)->signature == KM_SIGNATURE_VALID);
 }
 
 void * kmalloc(size_t size)
@@ -427,14 +420,16 @@ void kfree(void * p)
             kmalloc_base = NULL;
         }
 
-        /* This should work as b should be pointing to a begining of
+        /*
+         * This should work as b should be pointing to a begining of
          * a region allocated with dynmem.
          *
          * Note: kfree is not bullet proof with non-contiguous dynmem
          * regions because it doesn't do any traversal to find older
          * allocations that are now free. Hopefully this doesn't matter
          * and it might even give some performance boost in certain
-         * situations. */
+         * situations.
+         */
         mtx_unlock(&kmalloc_giant_lock);
         dynmem_free_region(b);
         /* TODO Update stat */
@@ -465,13 +460,13 @@ void kfree_lazy(void * p)
 }
 
 /*
- * RFE We could take cpu as an argument and have this lazy free for each core.
+ * TODO We should take cpu as an argument and have this lazy free for each core.
  */
 static void idle_lazy_free(uintptr_t arg)
 {
     void * addr;
 
-    /**
+    /*
      * Free only one allocation per call to allow other tasks run as well.
      * Locking shouldn't be a problem since no other process should have lock
      * to our giant lock.
