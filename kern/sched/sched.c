@@ -454,6 +454,7 @@ static void thread_set_inheritance(struct thread_info * child,
 
     if (parent == NULL)
         return;
+    kpalloc(parent);
 
     if (parent->inh.first_child == NULL) {
         /* This is the first child of this parent */
@@ -936,6 +937,7 @@ int thread_terminate(pthread_t thread_id)
         };
 
         ksignal_sendsig(sigs, SIGCHLDTHRD, &sigparm);
+        kfree(parent);
     }
 
     return 0;

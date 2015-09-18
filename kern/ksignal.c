@@ -229,6 +229,11 @@ static void ksignal_exec_cond(struct thread_info * thread, int signum)
         thread_ready(thread->id);
 }
 
+static void ksignal_free(struct kobj * p)
+{
+    /* NOP at least for now */
+}
+
 void ksignal_signals_ctor(struct signals * sigs, enum signals_owner owner_type)
 {
     KSIGNAL_PENDQUEUE_INIT(sigs);
@@ -237,6 +242,7 @@ void ksignal_signals_ctor(struct signals * sigs, enum signals_owner owner_type)
     sigemptyset(&sigs->s_wait);
     sigemptyset(&sigs->s_running);
     mtx_init(&sigs->s_lock.l, KSIG_LOCK_TYPE, KSIG_LOCK_FLAGS);
+    kobj_init(&sigs->s_obj, ksignal_free);
     sigs->s_owner_type = owner_type;
 }
 
@@ -245,6 +251,17 @@ static void ksignal_thread_ctor(struct thread_info * th)
     ksignal_signals_ctor(&th->sigs, SIGNALS_OWNER_THREAD);
 }
 DATA_SET(thread_ctors, ksignal_thread_ctor);
+
+void ksignal_signals_dtor(struct signals * sigs)
+{
+    kobj_unref(&sigs->s_obj);
+}
+
+static void ksignal_thread_dtor(struct thread_info * th)
+{
+    ksignal_signals_dtor(&th->sigs);
+}
+DATA_SET(thread_dtors, ksignal_thread_dtor);
 
 void ksignal_signals_fork_reinit(struct signals * sigs)
 {
@@ -680,10 +697,14 @@ int ksignal_sendsig(struct signals * sigs, int signum,
 {
     int retval;
 
-    if (ksig_lock(&sigs->s_lock))
+    if ((retval = kobj_ref(&sigs->s_obj)) || ksig_lock(&sigs->s_lock)) {
+        if (!retval)
+            kobj_unref(&sigs->s_obj);
         return -EAGAIN;
+    }
     retval = ksignal_queue_sig(sigs, signum, param);
     ksig_unlock(&sigs->s_lock);
+    kobj_unref(&sigs->s_obj);
 
     return retval;
 }
@@ -821,6 +842,12 @@ void ksignal_sendsig_fatal(struct proc_info * p, int signum,
     struct ksigaction act;
     int err;
 
+    if (kobj_ref(&sigs->s_obj)) {
+        KERROR(KERROR_ERR,
+               "%s: Failed to send a fatal signal %s to pid: %d\n",
+               __func__, ksignal_signum2str(signum), p->pid);
+        return;
+    }
     while (ksig_lock(&sigs->s_lock));
 
     /* Change signal action to default to make this signal fatal. */
@@ -829,7 +856,7 @@ void ksignal_sendsig_fatal(struct proc_info * p, int signum,
         KERROR(KERROR_ERR,
                "%s: Failed to reset sigaction (pid: %d, signum: %s, err: %d)\n",
                __func__, p->pid, ksignal_signum2str(signum), err);
-        return;
+        goto out;
     }
 
     ksignal_get_ksigaction(&act, sigs, signum);
@@ -848,6 +875,9 @@ void ksignal_sendsig_fatal(struct proc_info * p, int signum,
                "%s: Failed to send a fatal signal (pid: %d, signum: %s, err: %d)\n",
                __func__, p->pid, ksignal_signum2str(signum), err);
     }
+
+out:
+    kobj_unref(&sigs->s_obj);
 }
 
 int ksignal_sigwait(siginfo_t * retval, const sigset_t * restrict set)
@@ -991,7 +1021,7 @@ int ksignal_isblocked(struct signals * sigs, int signum)
      * the duration of the signal-catching function (or until a call to either
      * sigprocmask() or sigsuspend() is made). This mask is formed by taking
      * the union of the current signal mask and the value of the sa_mask for
-     * the signal being delivered [XSI]   unless SA_NODEFER or SA_RESETHAND
+     * the signal being delivered [XSI] unless SA_NODEFER or SA_RESETHAND
      * is set, and then including the signal being delivered. If and when
      * the user's signal handler returns normally, the original signal
      * mask is restored.
@@ -1007,10 +1037,13 @@ int ksignal_sigsmask(struct signals * sigs, int how,
 {
     sigset_t tmpset;
     sigset_t * cursigset;
-    int retval = 0;
+    int err, retval = 0;
 
-    if (ksig_lock(&sigs->s_lock))
+    if ((err = kobj_ref(&sigs->s_obj)) || ksig_lock(&sigs->s_lock)) {
+        if (!err)
+            kobj_unref(&sigs->s_obj);
         return -EAGAIN;
+    }
 
     cursigset = &sigs->s_block;
 
@@ -1052,6 +1085,8 @@ int ksignal_sigsmask(struct signals * sigs, int how,
 
 out:
     ksig_unlock(&sigs->s_lock);
+    kobj_unref(&sigs->s_obj);
+
     return 0;
 }
 
@@ -1257,15 +1292,19 @@ static int sys_signal_pkill(__user void * user_args)
     }
 
     sigs = &proc->sigs;
-    if (ksig_lock(&sigs->s_lock)) {
+    if ((err = kobj_ref(&sigs->s_obj)) || ksig_lock(&sigs->s_lock)) {
+        if (!err)
+            kobj_unref(&sigs->s_obj);
         set_errno(EAGAIN);
         return -1;
     }
 
+    /* RFE Check errors? */
     ksignal_queue_sig(sigs, args.sig,
                       &(struct ksignal_param){ .si_code = SI_USER });
 
     ksig_unlock(&sigs->s_lock);
+    kobj_unref(&sigs->s_obj);
 
     /*
      * It's a good idea to forward signals now if we sent a signal to ourself.
@@ -1331,20 +1370,21 @@ static int sys_signal_tkill(__user void * user_args)
     }
 
     sigs = &thread->sigs;
-    if (ksig_lock(&sigs->s_lock)) {
+    if ((err = kobj_ref(&sigs->s_obj)) || ksig_lock(&sigs->s_lock)) {
+        if (!err)
+            kobj_unref(&sigs->s_obj);
         set_errno(EAGAIN);
         return -1;
     }
 
     err = ksignal_queue_sig(sigs, args.sig,
                             &(struct ksignal_param){ .si_code = SI_USER });
+    ksig_unlock(&sigs->s_lock);
+    kobj_unref(&sigs->s_obj);
     if (err) {
-        ksig_unlock(&sigs->s_lock);
         set_errno(-err);
         return -1;
     }
-
-    ksig_unlock(&sigs->s_lock);
 
     return 0;
 }

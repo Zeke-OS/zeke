@@ -48,6 +48,7 @@
 #include <sys/queue.h>
 #include <sys/tree.h>
 #include <klocks.h>
+#include <kobj.h>
 
 struct proc_info;
 
@@ -119,6 +120,7 @@ struct signals {
     struct sigwait_queue s_pendqueue;   /*!< Signals pending for handling. */
     struct sigaction_tree sa_tree;      /*!< Configured signal actions. */
     ksigmtx_t s_lock;
+    struct kobj s_obj;
 };
 
 struct ksignal_param {
@@ -201,6 +203,8 @@ void ksignal_signals_ctor(struct signals * sigs, enum signals_owner owner_type);
  * Re-init sigs on thread fork.
  */
 void ksignal_signals_fork_reinit(struct signals * sigs);
+
+void ksignal_signals_dtor(struct signals * sigs);
 
 /**
  * Send signal to a process or thread.

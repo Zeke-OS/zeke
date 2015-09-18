@@ -520,6 +520,11 @@ void proc_thread_removed(pid_t pid, pthread_t thread_id)
         p->state = PROC_STATE_ZOMBIE;
 
         /*
+         * Invalidate sigs.
+         */
+        ksignal_signals_dtor(&p->sigs);
+
+        /*
          * Close file descriptors to signal everyone that the process is dead.
          */
         fs_fildes_close_all(p, 0);
