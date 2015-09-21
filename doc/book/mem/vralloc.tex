@@ -24,15 +24,8 @@ used to pass allocated memory for external users.
 \end{figure}
 
 \begin{figure}
-\begin{verbatim}
-+-----------------+     +-----------+
-| struct buf b    |  -> |  vreg     |
-+-----------------+  |  +-----------+
-| ...             |  |  | .paddr    |
-| .allocator_data | --  | .count    |
-|                 |     | .map[]    |
-+-----------------+     +-----------+
-\end{verbatim}
-\caption{vralloc and buffer interface.}
-\label{figure:vrregbufapi}
+  \center
+  \includegraphics[width=10cm]{gfx/vralloc-buffer}
+  \caption{vralloc and buffer interface.}
+  \label{figure:vrregbufapi}
 \end{figure}

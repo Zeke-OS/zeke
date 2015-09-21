@@ -28,13 +28,13 @@
 \tikzset{
 >=stealth',
   punktchain/.style={
-    rectangle, 
-    rounded corners, 
+    rectangle,
+    rounded corners,
     % fill=black!10,
     draw=black, very thick,
-    text width=10em, 
-    minimum height=3em, 
-    text centered, 
+    text width=10em,
+    minimum height=3em,
+    text centered,
     on chain},
   line/.style={draw, thick, <-},
   element/.style={
@@ -43,9 +43,9 @@
     bottom color=blue!50!black!60!,
     minimum width=8em,
     draw=blue!40!black!90, very thick,
-    text width=10em, 
-    minimum height=3.5em, 
-    text centered, 
+    text width=10em,
+    minimum height=3.5em,
+    text centered,
     on chain},
   every join/.style={->, thick,shorten >=1pt},
   decoration={brace},
@@ -61,7 +61,7 @@
   Zeke\\
   A kernel for ARM processors
 }
-\author{% 
+\author{%
   Olli Vanhoja\\
   \texttt{olli.vanhoja@cs.helsinki.fi}
 }
@@ -73,7 +73,7 @@ Generated: \today
 \begin{document}
   \maketitle
   \tableofcontents
-  
+
   \include{intro}
   \input{mem/mem}
   \input{proc/proc}
@@ -81,9 +81,9 @@ Generated: \today
   \input{ipc/ipc}
   \input{libc/libc}
   \input{fs/fs}
-  \input{exec}
+  \input{exec/exec}
   \input{test/test}
-  
+
   \bibliography{zeke.bib}{}
   \bibliographystyle{plain}
 

@@ -7,69 +7,36 @@
   \label{figure:procstates}
 \end{figure}
 
-The process and thread management in Zeke is based on an idea
-that a process is a container for threads owned by the process
-and it manages the memory space used by its threads. Naturally
-this means that a process must always have at least one thread
-which is the main thread and all other threads are children of
-that thread. Any process not having a main thread is immediately
-removed from the system because there is nothing to execute.
+The process and thread management in Zeke is based on an idea that
+a process is a container for threads owned by the process and it manages
+the memory space used by its threads. Naturally this means that a process
+must always have at least one thread which is the main thread and all other
+threads are children of that thread. Any process not having a main thread is
+immediately removed from the system because there is nothing to execute.
 
-Calling \verb+fork+ syscall causes a creation of a new process
-container, cloning of the currently executing thread as a new
-main thread as well as marking all current memory regions as
-copy-on-write regions for both processes, to trivially get rid
-of race conditions.
+Since a process is a container for the main thread, and other threads, there
+is no global running state for the process as it doesn't make much sense.
+Some operating systems may use the main thread status as the process state
+but Zeke mostly isolates process state and thread state. A currently running
+process is mostlikely in \verb+READY+ state for most of the time. Figure
+\ref{figure:procstates} shows all state transitions of a process in Zeke.
 
-When a process calls \verb+exec+ syscall the current main thread
-is replaced by a new clean main thread that's pointing to the
-new process image, ie. \acs{PC} is set to the proper entry point of
-the new image.
+Calling \verb+fork+ syscall causes a creation of a new process container,
+cloning of the currently executing thread as a new main thread as well as
+marking all current memory regions as copy-on-write regions for both processes,
+to trivially get rid of race conditions.
+
+When a process calls \verb+exec+ syscall the current main thread is replaced by
+a new clean main thread that's pointing to the new process image, ie. \acs{PC}
+is set to the proper entry point of the new image.
 
 \chapter{Thread Management Concept}
 
 \begin{figure}
-\begin{verbatim}
-+-------------+
-| process_a   |
-+-------------+
-| pid = pid_a |  +-------------------+
-| main_thread |->| main              |
-+-------------+  +-------------------+
-                 | id = tid_a        |
-                 | pid_owner = pid_a |
-                 | inh.parent = 0    |  +---------------------+
-                 | inh.first_child   |->| child_1             |
-                 | inh.next_child    |  +---------------------+
-                 +--------^----------+  | id = tid_b          |
-                          |             | pid_owner = pid_a   |
-                          +-------------| inh.parent          |
-                          |             | inh.first_child = 0 |
-                          |             | inh.next_child      |---
-                          |             +---------------------+  |
-                          |                                      |
-                          |             +---------------------+  |
-                          |         --->| child_2             |<--
-                          |         |   +---------------------+
-                          |         |   | id = tid_c          |
-                          |         |   | pid_owner = pid_a   |
-                          --------- | --| inh.parent          |
-                                    |   | inh.first_child     |---
-                                    |   | inh.next_child = 0  |  |
-                                    |   +---------------------+  |
-                                    |                            |
-                                    |   +---------------------+  |
-                                    |   | child_2_1           |<--
-                                    |   +---------------------+
-                                    |   | id = tid_d          |
-                                    |   | pid_owner = pid_a   |
-                                    ----| inh.parent          |
-                                        | inh.first_child = 0 |
-                                        | inh.next_child = 0  |
-                                        +---------------------+
-\end{verbatim}
-\caption{Thread tree example.}
-\label{figure:thtree}
+  \center
+  \includegraphics[width=7cm]{gfx/proc-classdiag}
+  \caption{Thread tree example.}
+  \label{figure:thtree}
 \end{figure}
 
 \begin{itemize}
