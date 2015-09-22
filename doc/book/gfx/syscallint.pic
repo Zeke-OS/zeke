@@ -1,0 +1,51 @@
+.PS
+copy "sequence.pic";
+
+movewid = 1.5;
+
+boxwid=1.0;
+object(U,":user");
+object(H,":syscall handler");
+object(S,":ksignal");
+object(X,":subsystem X");
+
+step();
+
+active(U);
+message(U,H,"syscall()");
+inactive(U);
+active(H);
+
+step();
+
+active(X);
+message(X,H,"interrupt (simplified)");
+inactive(X);
+
+message(H,S,"ksignal_syscall_exit()");
+active(S);
+return_message(S,H,"alter sf");
+inactive(S);
+
+return_message(H,U,"sig_handler()");
+active(U);
+inactive(H);
+
+step();
+
+message(U,U,"sigreturn()");
+message(U,S,"sys_signal_return()");
+active(S);
+inactive(U);
+return_message(S,U,"return EINTR");
+inactive(S);
+active(U);
+
+step();
+
+complete(U);
+complete(H);
+complete(S);
+complete(X);
+
+.PE

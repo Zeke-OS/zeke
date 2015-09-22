@@ -23,27 +23,8 @@ a signal is received in a middle of a system call and the system call
 is interrupted to immediately run the user space signal hanlder.
 
 \begin{figure}
-\begin{verbatim}
-  \/        usr | kernel
-+-----------+           +---------+
-| syscall() |------...->| sys_xxx | <- KSIGFLAG_SIGHANDLER
-+-----------+           +---------+    syscall handler interrupted
-                |              |
-                               \/
-+-------------+ |   +------------------------+
-| sig_handler |<----| ksignal_syscall_exit() |  
-+-------------+ |   +------------------------+
-       |
-       \/       |
-+-------------+     +---------------------+
-| sigreturn() |---->| sys_signal_return() |
-+-------------+ |   +---------------------+
-                              |
-                |            /
- return to <-----------------
- the original   |
- syscall() on top (EINTR)
-\end{verbatim}
-\caption{Interruption of a system call when a signal is caught.}
-\label{figure:syscallint}
+    \center
+    \includegraphics[width=10cm]{gfx/syscallint}
+    \caption{Interruption of a system call when a signal is caught.}
+    \label{figure:syscallint}
 \end{figure}

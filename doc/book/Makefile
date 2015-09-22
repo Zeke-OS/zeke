@@ -38,4 +38,4 @@ book.pdf: book.tex $(PLOTS) $(DOT_OUT) $(PIC_OUT)
 
 clean:
 	latexmk -C
-	$(RM) $(DOT_OUT) $(PLOTS)
+	$(RM) $(PLOTS) $(DOT_OUT) $(PIC_OUT)
