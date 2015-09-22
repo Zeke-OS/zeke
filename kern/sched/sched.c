@@ -937,6 +937,10 @@ int thread_terminate(pthread_t thread_id)
         };
 
         ksignal_sendsig(sigs, SIGCHLDTHRD, &sigparm);
+        /*
+         * kfree() is called for the parent because we originally called
+         * kpalloc() for it.
+         */
         kfree(parent);
     }
 
