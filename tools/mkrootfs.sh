@@ -13,7 +13,7 @@ function dir2img {
     for file in $files; do
         local d=$(dirname $file | sed 's|^\./||')
         mmd -i "$IMG" -D sS "$d"
-        echo "$d/$(basename $file)"
+        echo "INSTALL $d/$(basename $file)"
         mcopy -i "$IMG" -s $file "::$d"
     done
 }
