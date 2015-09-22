@@ -389,14 +389,15 @@ static int sys_fcntl(__user void * user_args)
     }
     case F_DUP2FD:
     {
-        int new_fd = args.third.ival;
+        int err, new_fd = args.third.ival;
 
         if (args.fd == new_fd) {
             retval = new_fd;
             goto out;
         }
 
-        if (fs_fildes_close(curproc, new_fd) != -EBADF) {
+        err = fs_fildes_close(curproc, new_fd);
+        if (err != 0 && err != -EBADF) {
             set_errno(EIO);
             goto out;
         }
