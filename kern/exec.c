@@ -104,6 +104,9 @@ static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp)
     return thread_create(&args, 0);
 }
 
+/*
+ * TODO Close files that should be closed on exec.
+ */
 int exec_file(int fildes, char name[PROC_NAME_LEN], struct buf * env_bp,
               int uargc, uintptr_t uargv, uintptr_t uenvp)
 {
