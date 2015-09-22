@@ -28,14 +28,15 @@ space by allocating a new block of memory from dynmem. Allocation is commited in
 1 MB blocks (naturally) and always rounded to the next 1 MB.
 
 \begin{figure}
-\begin{verbatim}
-    +-+------+-+---------+-+-------+
-    |d|      |d|         |d|       |
-    |e| DATA |e|  FREE   |e| DATA  |
-    |s|      |s|         |s|       |
-    |c|      |c|         |c|       |
-    +-+------+-+---------+-+-------+
-\end{verbatim}
+\begin{bytefield}{16}
+    \wordbox{1}{Descriptor} \\
+    \wordbox[lrt]{1}{Free} \\
+    \skippedwords \\
+    \wordbox[lrb]{1}{} \\
+    \wordbox{1}{Descriptor} \\
+    \wordbox[lrt]{2}{Data} \\
+    \skippedwords
+\end{bytefield}
 \caption{Kmalloc blocks.}
 \label{figure:kmalloc_blocks}
 \end{figure}
