@@ -247,7 +247,7 @@ static ssize_t fs_pipe_write(file_t * file, struct uio * uio, size_t count)
     if (!(file->oflags & O_WRONLY))
         return -EBADF;
 
-    if (atomic_read(&pipe->file0.refcount) < 1) {
+    if (kobj_ref(&pipe->file0.f_obj)) {
         return -EPIPE;
     }
 
@@ -297,7 +297,7 @@ static ssize_t fs_pipe_read(file_t * file, struct uio * uio, size_t count)
     for (size_t i = 0; i < count;) {
         if (queue_isempty(&pipe->q) &&
             ((trycount++ > 5 && (i > 0 || (oflags & O_NONBLOCK))) ||
-            atomic_read(&pipe->file1.refcount) < 1)) {
+            kobj_ref(&pipe->file1.f_obj))) {
             return i;
         }
 

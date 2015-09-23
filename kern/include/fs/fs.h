@@ -50,8 +50,9 @@
 #include <sys/stat.h>
 #include <sys/tree.h>
 #include <sys/types.h>
-#include <uio.h>
 #include <klocks.h>
+#include <kobj.h>
+#include <uio.h>
 
 #define FS_FLAG_INIT    0x01 /*!< File system initialized. */
 #define FS_FLAG_FAIL    0x08 /*!< File system has failed. */
@@ -174,9 +175,9 @@ typedef struct file {
     off_t seek_pos;     /*!< Seek pointer. */
     int fdflags;        /*!< File descriptor flags. */
     int oflags;         /*!< File status flags. */
-    atomic_t refcount;  /*!< Reference count. */
     vnode_t * vnode;
     void * stream;      /*!< Pointer to a special file stream data or info. */
+    struct kobj f_obj;
 } file_t;
 
 /**

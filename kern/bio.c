@@ -268,8 +268,6 @@ static struct buf * create_blk(vnode_t * vnode, size_t blkno, size_t size,
                                int slptimeo)
 {
     struct buf * bp = geteblk(size);
-    struct file file;
-    struct file devfile;
 
     if (!bp)
         return NULL;
@@ -277,27 +275,22 @@ static struct buf * create_blk(vnode_t * vnode, size_t blkno, size_t size,
     bp->b_blkno = blkno;
 
     /* fd for the file */
-    file.vnode = vnode;
-    file.oflags = O_RDWR;
-    file.refcount = 1;
-    file.stream = NULL;
+    fs_fildes_set(&bp->b_file, vnode, O_RDWR);
+    bp->b_file.stream = NULL;
+
+    fs_fildes_set(&bp->b_devfile, vnode, O_RDWR);
+    bp->b_devfile.stream = NULL;
 
     /* fd for the device */
     if (!S_ISBLK(vnode->vn_mode) && !S_ISCHR(vnode->vn_mode)) {
-        if (file.vnode->sb && file.vnode->sb->sb_dev)
-            devfile.vnode = file.vnode->sb->sb_dev;
+        if (bp->b_file.vnode->sb && bp->b_file.vnode->sb->sb_dev)
+            bp->b_devfile.vnode = bp->b_file.vnode->sb->sb_dev;
         else
             panic("file->vnode->sb->sb_dev not set");
-
-        devfile.oflags = O_RDWR;
-        devfile.refcount = 1;
-        devfile.stream = NULL;
     } else {
-        devfile.vnode = NULL;
+        bp->b_devfile.vnode = NULL;
     }
 
-    bp->b_file = file;
-    bp->b_devfile = devfile;
     bp->b_flags |= B_DONE;
     bp->b_flags &= ~B_BUSY; /* Unbusy for now */
 
