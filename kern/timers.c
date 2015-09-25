@@ -121,7 +121,7 @@ int timers_add(void (*event_fn)(void *), void * event_arg,
         }
     } while (++i < configTIMERS_MAX);
 
-    return -1;
+    return TMNOVAL;
 }
 
 int64_t timers_get_split(int tim)
