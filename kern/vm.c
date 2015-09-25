@@ -616,8 +616,9 @@ int vm_unmapproc_region(struct proc_info * proc, struct buf * region)
     mtx_lock(&region->lock);
     vpt = ptlist_get_pt(&proc->mm, region->b_mmu.vaddr, region->b_bufsize);
     if (!vpt) {
-        KERROR(KERROR_ERR, "Can't unmap a region (%p)\n", region);
-        return -EIDRM; /* RFE Correct errno? */
+        KERROR(KERROR_ERR, "Can't unmap a region %p for pid %d\n",
+               region, proc->pid);
+        return -EINVAL;
     }
 
     mmu_region = region->b_mmu;
