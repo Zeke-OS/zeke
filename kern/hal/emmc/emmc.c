@@ -1895,7 +1895,7 @@ static int sd_ensure_data_mode(struct emmc_block_dev *edev)
 
 #ifdef configEMMC_SDMA_SUPPORT
 /* We only support DMA transfers to buffers aligned on a 4 kiB boundary */
-static int sd_suitable_for_dma(void *buf)
+static inline int sd_suitable_for_dma(void *buf)
 {
     if ((uintptr_t)buf & 0xfff)
         return 0;
