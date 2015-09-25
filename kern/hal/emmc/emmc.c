@@ -61,8 +61,6 @@
  * HCSS     - SD Group Host Controller Simplified Specification ver 3.00
  *
  * Broadcom BCM2835 Peripherals Guide
- *
- * TODO Still lot of BCM2708 dependencies in this driver
  */
 
 #include <errno.h>
@@ -79,8 +77,9 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <vm/vm.h>
+#ifdef configBCM2835
 #include "../bcm2835/bcm2835_mmio.h"
-#include "../bcm2835/bcm2835_timers.h"
+#endif
 #include "emmc.h"
 
 
@@ -317,7 +316,9 @@ static int emmc_card_init(struct emmc_block_dev ** edev);
 
 int __kinit__ emmc_init(void)
 {
+#ifdef configBCM2835
     SUBSYS_DEP(bcm2835_prop_init);
+#endif
     SUBSYS_DEP(fs_init);
     SUBSYS_INIT("emmc");
 
