@@ -107,7 +107,7 @@ class ProcPidPrint(gdb.Command):
         try:
             pid = gdb.string_to_argv(arg)[0]
             proc = gdb.parse_and_eval('*(*_procarr)[' + str(pid) + ']')
-            print('((struct proc_info *)%s)%s' % str(proc.address), str(proc))
+            print('((struct proc_info *)%s)%s' % (str(proc.address), str(proc)))
         except:
             gdb.write('Invalid PID\n')
             return
