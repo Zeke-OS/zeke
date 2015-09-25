@@ -347,10 +347,11 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
         goto fail;
     }
     if (xvp) {
-        /* TODO No idea what to do now */
-        KERROR(KERROR_WARN,
+        KERROR(KERROR_ERR,
                "create_inode(): Found it during insert: \"%s\"\n",
                fpath);
+        retval = ENOTRECOVERABLE;
+        goto fail;
     }
 
 #ifdef configFATFS_DEBUG
@@ -396,26 +397,6 @@ static vnode_t * create_root(struct fatfs_sb * fatfs_sb)
 
 static int fatfs_delete_vnode(vnode_t * vnode)
 {
-    /* TODO Implementation of fatfs_delete_vnode() */
-#if 0
-    struct fatfs_inode * in = get_inode_of_vnode(vnode);
-    char * dirname;
-    char * name;
-
-    /* TODO Remove only from memory in there is links or refs */
-
-    dirname = kstrdup(in->in_fpath, PATH_MAX);
-    name = kstrrchr(in->in_fpath, '/');
-    if (!name)
-        return -EINVAL;
-    name = '\0';
-    name++;
-
-    vrele_nunlink(vnode);
-    fatfs_unkink(dir, name);
-    kfree(dirname);
-#endif
-
     return -ENOTSUP;
 }
 
