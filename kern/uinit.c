@@ -148,43 +148,36 @@ void * uinit(void * arg)
 {
     char * argv[] = { "/sbin/sinit", NULL };
     char * env[] = {  NULL };
-    int err;
 
     init_errno();
 
     _mkdir("/dev", S_IRWXU | S_IRGRP | S_IXGRP);
-    err = _mount("", "/dev", "devfs");
-    if (err)
+    if (_mount("", "/dev", "devfs"))
         fail("can't mount /dev");
 
      /* TODO Should use sysctl to get rootfs path and type */
      _mkdir("/mnt", S_IRWXU | S_IRGRP | S_IXGRP);
-     err = _mount(configROOTFS_PATH, "/mnt", configROOTFS_NAME);
-     if (err)
+     if (_mount(configROOTFS_PATH, "/mnt", configROOTFS_NAME))
         fail("can't mount sd card");
 
      _chdir("/mnt");
     _chrootcwd();
 
 #if configDEVFS
-    err = _mount("", "/dev", "devfs");
-    if (err)
+    if (_mount("", "/dev", "devfs"))
         fail("Failed to mount /dev");
 #endif
 
 #if configPROCFS
-    err = _mount("", "/proc", "procfs");
-    if (err)
+    if (_mount("", "/proc", "procfs"))
         fail("Failed to mount /proc");
 #endif
 
-    err = _mount("", "/tmp", "ramfs");
-    if (err)
+    if (_mount("", "/tmp", "ramfs"))
         fail("Failed to mount /tmp");
 
     /* Exec init */
-    err = _execve(argv[0], argv, num_elem(argv), env, num_elem(env));
-    if (err)
+    if (_execve(argv[0], argv, num_elem(argv), env, num_elem(env)))
         fail("exec init failed");
 
     return NULL;
