@@ -411,7 +411,6 @@ int ramfs_delete_vnode(vnode_t * vnode)
         return 0;
     }
 
-    /* TODO Clear mutexes, queues etc. */
     destroy_inode_data(inode);
     vn_tmp = &inode->in_vnode;
 
