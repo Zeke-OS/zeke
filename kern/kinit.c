@@ -30,6 +30,7 @@
  *******************************************************************************
  */
 
+#include <sys/sysctl.h>
 #include <sys/types.h>
 #include <kerror.h>
 #include <proc.h>
@@ -55,6 +56,13 @@ extern int (*__fini_array_end []) (void) __attribute__((weak));
 
 extern void kmalloc_init(void);
 static void exec_array(int (*a []) (void), int n);
+
+/*
+ * Root fs to be mounted by uinit.
+ * Note that the default value might be needed in case of read from sysctl
+ * fails.
+ */
+static char kinit_rootfs[40] = configROOTFS_PATH " " configROOTFS_NAME;
 
 /**
  * Run all kernel module initializers.
@@ -88,24 +96,6 @@ void exec_fini_array(void)
 {
     int n = __fini_array_end - __fini_array_start;
     exec_array(__fini_array_start, n);
-}
-
-static pthread_t create_uinit_main(void * stack_addr)
-{
-    struct _sched_pthread_create_args init_ds = {
-        .param.sched_policy = SCHED_OTHER,
-        .param.sched_priority = configUSRINIT_PRI,
-        .stack_addr = stack_addr,
-        .stack_size = configUSRINIT_SSIZE,
-        .flags      = 0,
-        .start      = uinit, /* We have to first get into user space to use exec
-                              * and mount the rootfs.
-                              */
-        .arg1       = 0,
-        .del_thread = (void (*)(void *))uinit_exit,
-    };
-
-    return thread_create(&init_ds, 1);
 }
 
 static void mount_rootfs(void)
@@ -162,6 +152,24 @@ static struct buf * create_vmstack(void)
     return vmstack;
 }
 
+static pthread_t create_uinit_main(void * stack_addr)
+{
+    struct _sched_pthread_create_args init_ds = {
+        .param.sched_policy = SCHED_OTHER,
+        .param.sched_priority = configUSRINIT_PRI,
+        .stack_addr = stack_addr,
+        .stack_size = configUSRINIT_SSIZE,
+        .flags      = 0,
+        .start      = uinit, /* We have to first get into user space to use exec
+                              * and mount the rootfs.
+                              */
+        .arg1       = (uintptr_t)kinit_rootfs,
+        .del_thread = (void (*)(void *))uinit_exit,
+    };
+
+    return thread_create(&init_ds, 1);
+}
+
 /**
  * Map vmstack to proc.
  */
@@ -188,6 +196,7 @@ int __kinit__ kinit(void)
     SUBSYS_DEP(sched_init);
     SUBSYS_DEP(proc_init);
     SUBSYS_DEP(ramfs_init);
+    SUBSYS_DEP(sysctl_init);
     SUBSYS_INIT("kinit");
 
     char strbuf[80]; /* Buffer for panic messages. */
@@ -196,8 +205,18 @@ int __kinit__ kinit(void)
     pid_t pid;
     struct thread_info * init_thread;
     struct proc_info * init_proc;
+    size_t rootfs_len = sizeof(kinit_rootfs);
 
     mount_rootfs();
+
+    /*
+     * Get params for the actual root file systems.
+     */
+    if (kernel_sysctlbyname(0, "kern.root", kinit_rootfs, &rootfs_len, NULL, 0,
+                            NULL, 0)) {
+        KERROR(KERROR_ERR,
+               "Unable to get rootfs params, fallback to defaults\n");
+    }
 
     /*
      * User stack for init
