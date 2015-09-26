@@ -1,6 +1,11 @@
 Zero Kernel    {#mainpage}
 ===========
 
+Build:
+[![Build Status](http://xstack.io:8080/buildStatus/icon?job=Zeke-Build)](http://xstack.io:8080/job/Zeke-Build)
+Testing:
+[![Build Status](http://xstack.io:8080/buildStatus/icon?job=Zeke-QEMU-RPI-tests)](http://xstack.io:8080/job/Zeke-QEMU-RPI-tests)
+
     |'''''||
         .|'   ...'||
        ||   .|...|||  ..  .... 
