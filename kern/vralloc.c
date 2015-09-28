@@ -113,14 +113,19 @@ int __kinit__ vralloc_init(void)
     SUBSYS_INIT("vrallloc");
     struct vregion * reg;
 
+    mtx_init(&vr_big_lock, MTX_TYPE_TICKET, 0);
+
     vrlist = dllist_create(struct vregion, node);
+
+    mtx_lock(&vr_big_lock);
     reg = vreg_alloc_node(256);
     if (!(vrlist && reg)) {
+        /* No need to unlock big lock */
         return -ENOMEM;
     }
+    mtx_unlock(&vr_big_lock);
 
     last_vreg = reg;
-    mtx_init(&vr_big_lock, MTX_TYPE_TICKET, 0);
 
     _bio_init();
 
@@ -137,6 +142,8 @@ static struct vregion * vreg_alloc_node(size_t count)
 {
     struct vregion * vreg;
 
+    KASSERT(mtx_test(&vr_big_lock), "vr_big_lock should be locked\n");
+
     count = ROUND_UP(count, 256);
 
     vreg = kzalloc(VREG_SIZE(count));
@@ -152,11 +159,9 @@ static struct vregion * vreg_alloc_node(size_t count)
 
     vreg->size = E2BITMAP_SIZE(count) * sizeof(bitmap_t);
 
-    mtx_lock(&vr_big_lock);
     vrlist->insert_head(vrlist, vreg);
     /* Update stats */
     vmem_all += VREG_BYTESIZE(count);
-    mtx_unlock(&vr_big_lock);
 
     return vreg;
 }
