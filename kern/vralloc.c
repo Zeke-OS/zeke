@@ -45,8 +45,6 @@
 #include <ptmapper.h>
 #include <vm/vm.h>
 
-/* TODO Locks to protect global data structures. */
-
 /**
  * vralloc region struct.
  * Struct describing a single dynmem alloc block of vrallocated memory.
