@@ -76,6 +76,8 @@ int uio_buf2kuio(struct buf * bp, struct uio * uio)
     }
 
     uio_init_kbuf(uio, (__kernel void *)bp->b_data, bp->b_bcount);
+
+    return 0;
 }
 
 int uio_copyout(const void * src, struct uio * uio, size_t offset,
