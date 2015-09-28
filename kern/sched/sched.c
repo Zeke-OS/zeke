@@ -353,7 +353,8 @@ void sched_handler(void)
         sched = CURRENT_CPU->sched_arr[policy];
         thread_state_set(thread, THREAD_STATE_EXEC);
         if (sched->insert(sched, thread)) {
-            KERROR(KERROR_ERR, "Failed to schedule a thread (%d)", thread->id);
+            KERROR(KERROR_ERR, "Failed to schedule a thread (%d)\n",
+                   thread->id);
         }
     }
 
