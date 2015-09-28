@@ -271,15 +271,6 @@ void ksignal_signals_fork_reinit(struct signals * sigs)
     /*
      * Clear pending signals as required by POSIX.
      */
-#if 0
-    /* Not ok but can be reused for kill */
-    n1  = STAILQ_FIRST(&sigs->s_pendqueue);
-    while (n1 != NULL) {
-        n2 = STAILQ_NEXT(n1, _entry);
-        kfree(n1);
-        n1 = n2;
-    }
-#endif
     KSIGNAL_PENDQUEUE_INIT(sigs);
 
     /*
@@ -411,13 +402,9 @@ static void forward_proc_signals_curproc(void)
  * @return  0 = signal handling ready;
  *         -1 = signal can't be handled right now;
  *          1 = signal handling shall continue
- * TODO This function should be probably removed
  */
 static int eval_inkernel_action(struct ksigaction * action)
 {
-    /*
-     * RFE Take a sig action request?
-     */
     switch ((int)(action->ks_action.sa_handler)) {
     case (int)(SIG_DFL):
         /*
