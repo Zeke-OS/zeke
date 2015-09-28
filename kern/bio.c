@@ -137,7 +137,10 @@ static void _bio_readin(struct buf * bp)
 
     bp->b_flags &= ~B_DONE;
 
-    uio_buf2kuio(bp, &uio);
+    if (uio_buf2kuio(bp, &uio)) {
+        /* TODO Error handling */
+        return;
+    }
     file->seek_pos = bp->b_blkno;
     file->vnode->vnode_ops->read(file, &uio, bp->b_bcount);
 
@@ -174,7 +177,10 @@ static void _bio_writeout(struct buf * bp)
         file = &bp->b_file;
     }
 
-    uio_buf2kuio(bp, &uio);
+    if (uio_buf2kuio(bp, &uio)) {
+        /* TODO Error handling */
+        return;
+    }
     file->seek_pos = bp->b_blkno;
     file->vnode->vnode_ops->write(file, &uio, bp->b_bcount);
 
