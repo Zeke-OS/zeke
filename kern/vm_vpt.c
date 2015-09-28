@@ -90,8 +90,7 @@ struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr,
     /*
      * Check if the requested page table is actually the system pagetable.
      */
-    /* TODO Better to check the actual size */
-    if (vaddr < MMU_PGSIZE_SECTION) {
+    if (vaddr < mmu_sizeof_pt_img(&vm_pagetable_system.pt)) {
         return &vm_pagetable_system;
     }
 

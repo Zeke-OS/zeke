@@ -219,6 +219,7 @@ size_t mmu_sizeof_pt(const mmu_pagetable_t * region);
 
 /**
  * Get the size of a page table image.
+ * The size of the mapping pointed by pt.
  * @param pt is the page table.
  * @return Retunrs the  size og the page table image.
  */
