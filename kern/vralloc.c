@@ -76,8 +76,15 @@ struct vregion {
 
 #define ROUND_UP(N, S) ((((N) + (S) - 1) / (S)) * (S))
 
+static struct vregion * vreg_alloc_node(size_t count);
+static void vreg_free_node(struct vregion * reg);
+static int get_iblocks(size_t * iblock, size_t pcount,
+                      struct vregion ** vreg_ret);
+static void vrref(struct buf * region);
+
 static llist_t * vrlist; /*!< List of all allocations done by vralloc. */
 static struct vregion * last_vreg; /*!< Last node that contained empty pages. */
+static mtx_t vr_big_lock;
 
 static size_t vmem_all;
 SYSCTL_UINT(_vm, OID_AUTO, vmem_all, CTLFLAG_RD, &vmem_all, 0,
@@ -87,13 +94,7 @@ static size_t vmem_used;
 SYSCTL_UINT(_vm, OID_AUTO, vmem_used, CTLFLAG_RD, &vmem_used, 0,
     "Amount of memory used");
 
-static struct vregion * vreg_alloc_node(size_t count);
-static void vreg_free_node(struct vregion * reg);
-static int get_iblocks(size_t * iblock, size_t pcount,
-                      struct vregion ** vreg_ret);
-static void vrref(struct buf * region);
 
-extern void _bio_init(void);
 
 /**
  * VRA specific operations for allocated vm regions.
@@ -110,16 +111,18 @@ static const vm_ops_t vra_ops = {
  */
 int __kinit__ vralloc_init(void)
 {
+    extern void _bio_init(void);
     SUBSYS_INIT("vrallloc");
     struct vregion * reg;
 
     vrlist = dllist_create(struct vregion, node);
     reg = vreg_alloc_node(256);
     if (!(vrlist && reg)) {
-        panic("Can't initialize vralloc.");
+        return -ENOMEM;
     }
 
     last_vreg = reg;
+    mtx_init(&vr_big_lock, MTX_TYPE_TICKET, 0);
 
     _bio_init();
 
@@ -150,10 +153,12 @@ static struct vregion * vreg_alloc_node(size_t count)
     }
 
     vreg->size = E2BITMAP_SIZE(count) * sizeof(bitmap_t);
-    vrlist->insert_head(vrlist, vreg);
 
+    mtx_lock(&vr_big_lock);
+    vrlist->insert_head(vrlist, vreg);
     /* Update stats */
     vmem_all += VREG_BYTESIZE(count);
+    mtx_unlock(&vr_big_lock);
 
     return vreg;
 }
@@ -164,17 +169,22 @@ static struct vregion * vreg_alloc_node(size_t count)
  */
 static void vreg_free_node(struct vregion * vreg)
 {
+
+    mtx_lock(&vr_big_lock);
     /* Update stats */
     vmem_all -= vreg->size * (4 * 8) * MMU_PGSIZE_COARSE;
 
     /* Free node */
     vrlist->remove(vrlist, vreg);
+    mtx_unlock(&vr_big_lock);
+
     dynmem_free_region((void *)vreg->kaddr);
     kfree(vreg);
 }
 
 /**
  * Get pcount number of unallocated pages.
+ * @note needs to get vr_big_lock.
  * @param[out] iblock is the returned index of the allocation made.
  * @param pcount is the number of pages requested.
  * @param vreg_ret[out] returns a pointer to the allocated vreg.
@@ -183,6 +193,9 @@ static int get_iblocks(size_t * iblock, size_t pcount,
                        struct vregion ** vreg_ret)
 {
     struct vregion * vreg = last_vreg;
+    int retval;
+
+    mtx_lock(&vr_big_lock);
 
 retry_vra:
     do {
@@ -192,15 +205,20 @@ retry_vra:
 
     if (!vreg) { /* Not found */
         vreg = vreg_alloc_node(pcount);
-        if (!vreg)
-            return -ENOMEM;
+        if (!vreg) {
+            retval = -ENOMEM;
+            goto out;
+        }
         goto retry_vra;
     }
 
     bitmap_block_update(vreg->map, 1, *iblock, pcount);
     *vreg_ret = vreg;
 
-    return 0;
+    retval = 0;
+out:
+    mtx_unlock(&vr_big_lock);
+    return retval;
 }
 
 struct buf * geteblk(size_t size)
@@ -248,8 +266,10 @@ struct buf * geteblk(size_t size)
     vreg->count += pcount;
 
     /* Update stats */
+    mtx_lock(&vr_big_lock);
     vmem_used += size;
     last_vreg = vreg;
+    mtx_unlock(&vr_big_lock);
 
     /* Clear allocated pages. */
     memset((void *)bp->b_data, 0, bp->b_bufsize);
@@ -338,7 +358,7 @@ void allocbuf(struct buf * bp, size_t size)
 
                 if (get_iblocks(&iblock, pcount, &nvreg)) {
                     /*
-                     * RFE It's not nice to panic here but we don't have any
+                     * It's not nice to panic here but we don't have any
                      * method to inform the caller about OOM.
                      */
                     panic("OOM during allocbuf()");
@@ -360,8 +380,11 @@ void allocbuf(struct buf * bp, size_t size)
             }
         }
     } else {
-#if 0 /* We don't usually want to shrunk because it's hard to get memory back. */
-        const size_t sblock = VREG_PCOUNT((bp->b_data - vreg->kaddr)) + bcount + blockdiff;
+#if 0 /*
+       * We don't usually want to shrunk because it's hard to get memory back.
+       */
+        const size_t sblock = VREG_PCOUNT((bp->b_data - vreg->kaddr)) + bcount +
+                              blockdiff;
 
         bitmap_block_update(vreg->map, 0, sblock, -blockdiff);
 #endif
@@ -380,6 +403,7 @@ void vrfree(struct buf * bp)
     struct vregion * vreg;
     size_t iblock;
     const size_t bcount = VREG_PCOUNT(bp->b_bufsize);
+    struct vregion * last;
 
     KASSERT(bp != NULL, "bp can't be NULL");
 
@@ -402,11 +426,17 @@ void vrfree(struct buf * bp)
 
     bitmap_block_update(vreg->map, 0, iblock, bcount);
     vreg->count -= bcount;
+
+    mtx_lock(&vr_big_lock);
     vmem_used -= bp->b_bufsize; /* Update stats */
+    mtx_unlock(&vr_big_lock);
 
     kfree(bp);
 
-    if (vreg->count <= 0 && last_vreg != vreg) {
+    mtx_lock(&vr_big_lock);
+    last = last_vreg;
+    mtx_unlock(&vr_big_lock);
+    if (vreg->count <= 0 && last != vreg) {
         vreg_free_node(vreg);
     }
 }
