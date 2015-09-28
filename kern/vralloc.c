@@ -75,7 +75,6 @@ struct vregion {
 #define ROUND_UP(N, S) ((((N) + (S) - 1) / (S)) * (S))
 
 static struct vregion * vreg_alloc_node(size_t count);
-static void vreg_free_node(struct vregion * reg);
 static int get_iblocks(size_t * iblock, size_t pcount,
                       struct vregion ** vreg_ret);
 static void vrref(struct buf * region);
@@ -167,25 +166,6 @@ static struct vregion * vreg_alloc_node(size_t count)
 }
 
 /**
- * Free a vregion node.
- * @param vreg is a pointer to vregion.
- */
-static void vreg_free_node(struct vregion * vreg)
-{
-
-    mtx_lock(&vr_big_lock);
-    /* Update stats */
-    vmem_all -= vreg->size * (4 * 8) * MMU_PGSIZE_COARSE;
-
-    /* Free node */
-    vrlist->remove(vrlist, vreg);
-    mtx_unlock(&vr_big_lock);
-
-    dynmem_free_region((void *)vreg->kaddr);
-    kfree(vreg);
-}
-
-/**
  * Get pcount number of unallocated pages.
  * @note needs to get vr_big_lock.
  * @param[out] iblock is the returned index of the allocation made.
@@ -224,6 +204,52 @@ out:
     return retval;
 }
 
+/**
+ * vregion free callback.
+ * This function is called by kobj.
+ */
+static void vreg_free_callback(struct kobj * obj)
+{
+    struct buf * bp = container_of(obj, struct buf, b_obj);
+    const size_t bcount = VREG_PCOUNT(bp->b_bufsize);
+    struct vregion * vreg;
+    size_t iblock;
+
+    /*
+     * Get vreg pointer and iblock no.
+     */
+    vreg = (struct vregion *)(bp->allocator_data);
+    iblock = VREG_PCOUNT(bp->b_data - vreg->kaddr);
+
+    bitmap_block_update(vreg->map, 0, iblock, bcount);
+    vreg->count -= bcount;
+
+    mtx_lock(&vr_big_lock);
+    vmem_used -= bp->b_bufsize; /* Update stats */
+    mtx_unlock(&vr_big_lock);
+
+    kfree(bp);
+    /* Don't use bp beoynd this point */
+
+    mtx_lock(&vr_big_lock);
+    if (vreg->count <= 0 && vreg == last_vreg) {
+        /**
+         * Free the vregion node.
+         */
+        /* Update stats */
+        vmem_all -= vreg->size * (4 * 8) * MMU_PGSIZE_COARSE;
+
+        /* Free node */
+        vrlist->remove(vrlist, vreg);
+        mtx_unlock(&vr_big_lock);
+
+        dynmem_free_region((void *)vreg->kaddr);
+        kfree(vreg);
+    } else {
+        mtx_unlock(&vr_big_lock);
+    }
+}
+
 struct buf * geteblk(size_t size)
 {
     size_t iblock; /* Block index of the allocation */
@@ -260,7 +286,7 @@ struct buf * geteblk(size_t size)
     bp->b_bufsize = VREG_BYTESIZE(pcount);
     bp->b_bcount = orig_size;
     bp->b_flags = B_BUSY;
-    bp->refcount = 1;
+    kobj_init(&bp->b_obj, vreg_free_callback);
     bp->allocator_data = vreg;
     bp->vm_ops = &vra_ops;
     bp->b_uflags = VM_PROT_READ | VM_PROT_WRITE;
@@ -284,11 +310,9 @@ struct buf * geteblk(size_t size)
  * Increment reference count of a vr allocated vm_region.
  * @param region is a vregion.
  */
-static void vrref(struct buf * region)
+static void vrref(struct buf * bp)
 {
-    mtx_lock(&region->lock);
-    region->refcount++;
-    mtx_unlock(&region->lock);
+    kobj_ref(&bp->b_obj);
 }
 
 struct buf * vr_rclone(struct buf * old_region)
@@ -403,45 +427,9 @@ void allocbuf(struct buf * bp, size_t size)
 
 void vrfree(struct buf * bp)
 {
-    struct vregion * vreg;
-    size_t iblock;
-    const size_t bcount = VREG_PCOUNT(bp->b_bufsize);
-    struct vregion * last;
-
     KASSERT(bp != NULL, "bp can't be NULL");
 
-    /*
-     * TODO Locking this doesn't actually provide much safety.
-     */
-    mtx_lock(&bp->lock);
-    bp->refcount--;
-    if (bp->refcount > 0) {
-        mtx_unlock(&bp->lock);
-        return;
-    }
-    mtx_unlock(&bp->lock);
-
-    /*
-     * Get vreg pointer and iblock no.
-     */
-    vreg = (struct vregion *)(bp->allocator_data);
-    iblock = VREG_PCOUNT(bp->b_data - vreg->kaddr);
-
-    bitmap_block_update(vreg->map, 0, iblock, bcount);
-    vreg->count -= bcount;
-
-    mtx_lock(&vr_big_lock);
-    vmem_used -= bp->b_bufsize; /* Update stats */
-    mtx_unlock(&vr_big_lock);
-
-    kfree(bp);
-
-    mtx_lock(&vr_big_lock);
-    last = last_vreg;
-    mtx_unlock(&vr_big_lock);
-    if (vreg->count <= 0 && last != vreg) {
-        vreg_free_node(vreg);
-    }
+    kobj_unref(&bp->b_obj);
 }
 
 int clone2vr(struct buf * src, struct buf ** out)

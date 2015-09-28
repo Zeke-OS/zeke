@@ -64,7 +64,6 @@ int kobj_ref(struct kobj * p);
 /**
  * Decrement the refcount of a kobj object descriptor.
  * @param p is a pointer to the kobj object descriptor.
- * @return Returns zero if succeed; Otherwise a negative ernno is returned.
  */
 void kobj_unref(struct kobj * p);
 

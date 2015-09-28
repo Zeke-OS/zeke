@@ -45,6 +45,7 @@
 #include <kinit.h>
 #include <kmalloc.h>
 #include <kstring.h>
+#include <libkern.h>
 #include <proc.h>
 #include <tty.h>
 #include "splash.h"
@@ -116,6 +117,13 @@ int fb_register(struct fb_conf * fb)
     return 0;
 }
 
+static void fb_mm_free_callback(struct kobj * obj)
+{
+    struct buf * bp = container_of(obj, struct buf, b_obj);
+
+    KERROR(KERROR_ERR, "FB buf object (%p) freed!\n", bp);
+}
+
 void fb_mm_initbuf(struct fb_conf * fb)
 {
     struct buf * bp = &fb->mem;
@@ -125,7 +133,8 @@ void fb_mm_initbuf(struct fb_conf * fb)
 
     mtx_init(&bp->lock, MTX_TYPE_TICKET, 0);
 
-    bp->refcount = 1;
+    /* TODO We must implement a generic initializer for this */
+    kobj_init(&bp->b_obj, fb_mm_free_callback);
     fb->mem.b_flags = B_BUSY | B_NOSYNC | B_NOTSHARED | B_NOCORE;
     bp->vm_ops = &fb_mm_bufops;
     bp->b_mmu.vaddr = 0; /* Will be set when mapped. */
@@ -155,9 +164,7 @@ void fb_mm_updatebuf(struct fb_conf * restrict fb,
  */
 static void fb_mm_ref(struct buf * this)
 {
-    mtx_lock(&this->lock);
-    this->refcount++;
-    mtx_unlock(&this->lock);
+    kobj_ref(&this->b_obj);
 }
 
 /**
@@ -166,11 +173,7 @@ static void fb_mm_ref(struct buf * this)
  */
 static void fb_mm_rfree(struct buf * this)
 {
-    mtx_lock(&this->lock);
-    this->refcount--;
-    if (this->refcount <= 0)
-        this->refcount = 1;
-    mtx_unlock(&this->lock);
+    kobj_unref(&this->b_obj);
 }
 
 /**
