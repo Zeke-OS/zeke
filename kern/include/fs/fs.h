@@ -646,6 +646,12 @@ int fs_fildes_close(struct proc_info * p, int fildes);
 void fs_fildes_close_all(struct proc_info * p, int fildes_begin);
 
 /**
+ * Close files marked with FD_CLOEXEC and O_CLOEXEC.
+ * @param p is a pointer to the process.
+ */
+void fs_fildes_close_exec(struct proc_info * p);
+
+/**
  * Create a new file by using fs specific create() function.
  * File will be created relative to the attributes of a current process.
  * @param[in]   path    is a path to the new file.

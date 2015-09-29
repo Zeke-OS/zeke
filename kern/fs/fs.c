@@ -687,6 +687,20 @@ void fs_fildes_close_all(struct proc_info * p, int fildes_begin)
     }
 }
 
+void fs_fildes_close_exec(struct proc_info * p)
+{
+    const int end = p->files->count;
+    int i;
+
+    for (i = 0; i < end; i++) {
+        file_t * file = p->files->fd[i];
+
+        if (file && (file->fdflags & FD_CLOEXEC || file->oflags & O_CLOEXEC)) {
+            fs_fildes_close(p, i);
+        }
+    }
+}
+
 /**
  * Get directory vnode of a target file and the actual directory entry name.
  * @param[in]   pathname    is a path to the target.
