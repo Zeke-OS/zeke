@@ -94,7 +94,7 @@ static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp)
         .arg1       = uargc,
         .arg2       = uargv,
         .arg3       = uenvp,
-        .arg4       = 0, /* TODO */
+        .arg4       = 0, /* Not used */
         .del_thread = NULL /* Not needed for main(). */
     };
 
