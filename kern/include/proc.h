@@ -61,6 +61,7 @@
 #include <fs/fs.h>
 #include <hal/mmu.h>
 #include <klocks.h>
+#include <kobj.h>
 #include <thread.h>
 #include <vm/vm.h>
 
@@ -90,7 +91,7 @@ struct session {
     pid_t s_leader;             /*!< Session leader. */
     vnode_t * s_ttyvp;          /*!< Vnode of controlling terminal. */
     char s_login[MAXLOGNAME];   /*!< Setlogin() name. */
-    atomic_t s_refcount;        /*!< Ref count; pgrps in session. */
+    struct kobj s_obj;
     TAILQ_HEAD(pgrp_list, pgrp) s_pgrp_list_head;
 };
 
@@ -101,7 +102,7 @@ struct pgrp {
     pid_t pg_id;                /*!< Pgrp id. */
     struct session * pg_session; /*!< Pointer to the session. */
     TAILQ_HEAD(proc_list, proc_info) pg_proc_list_head;
-    atomic_t pg_refcount;       /*!< Ref count; procs in group. */
+    struct kobj pg_obj;
     TAILQ_ENTRY(pgrp) pg_pgrp_entry_;
 };
 
