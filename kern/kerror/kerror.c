@@ -66,6 +66,7 @@ SET_DECLARE(klogger_set, struct kerror_klogger);
 extern void kerror_buf_puts(const char * str);
 void (*kputs)(const char *) = &kerror_buf_puts; /* Boot value */
 static size_t curr_klogger_id = KERROR_BUF;     /* Boot value */
+static char klogger_level = KERROR_INFO;
 
 static int klogger_change(size_t new_id, size_t old_id);
 
@@ -74,6 +75,21 @@ int __kinit__ kerror_init(void)
     SUBSYS_INIT("kerror logger");
 
     int err;
+
+    klogger_level =
+#if defined(configDEBUG_CRIT)
+        KERROR_CRIT;
+#elif defined(configDEBUG_ERR)
+        KERROR_ERR;
+#elif defined(configDEBUG_WARN)
+        KERROR_WARN;
+#elif defined(configDEBUG_INFO)
+        KERROR_INFO;
+#elif defined(configDEBUG_DEBUG)
+        KERROR_DEBUG;
+#else
+        KERROR_INFO;
+#endif
 
     isema_init(kerror_printbuf_sema, num_elem(kerror_printbuf_sema));
 
@@ -88,6 +104,11 @@ int __kinit__ kerror_init(void)
         return err;
 
     return 0;
+}
+
+int _kerror_log_level_ge(char level)
+{
+    return klogger_level >= level;
 }
 
 size_t _kerror_acquire_buf(char ** buf)
@@ -167,10 +188,14 @@ static int klogger_change(size_t new_id, size_t old_id)
     return 0;
 }
 
+SYSCTL_DECL(_kern_klogger);
+SYSCTL_NODE(_kern, OID_AUTO, klogger, CTLFLAG_RD, 0,
+            "Kernel logger");
+
 /**
  * sysctl function to read current klogger and change it.
  */
-static int sysctl_kern_klogger(SYSCTL_HANDLER_ARGS)
+static int sysctl_kern_klogger_type(SYSCTL_HANDLER_ARGS)
 {
     int error;
     size_t new_klogger = curr_klogger_id;
@@ -183,7 +208,24 @@ static int sysctl_kern_klogger(SYSCTL_HANDLER_ARGS)
 
     return error;
 }
+SYSCTL_PROC(_kern_klogger, OID_AUTO, type, CTLTYPE_INT | CTLFLAG_RW,
+            NULL, 0, sysctl_kern_klogger_type, "I", "Kernel logger type.");
 
-SYSCTL_PROC(_kern, OID_AUTO, klogger, CTLTYPE_INT | CTLFLAG_RW,
-        NULL, 0, sysctl_kern_klogger, "I", "Kernel logger type.");
+static int sysctl_kern_klogger_level(SYSCTL_HANDLER_ARGS)
+{
+    int error;
+    int new_level = klogger_level - '0';
 
+    error = sysctl_handle_int(oidp, &new_level, sizeof(int), req);
+    if (!error && req->newptr) {
+        if (new_level >= 0 && new_level <= 4) {
+            klogger_level = '0' + (char)new_level;
+        } else {
+            error = -EINVAL;
+        }
+    }
+
+    return error;
+}
+SYSCTL_PROC(_kern_klogger, OID_AUTO, level, CTLTYPE_INT | CTLFLAG_RW,
+            NULL, 0, sysctl_kern_klogger_level, "I", "Kernel logger level.");
