@@ -452,7 +452,6 @@ int realloc_mm_regions(struct vm_mm_struct * mm, int new_count)
 
     lock = &mm->regions_lock;
     if (mm->nr_regions == 0) {
-        /* TODO ticket lock? */
         mtx_init(lock, MTX_TYPE_SPIN, 0);
     }
     mtx_lock(lock);
@@ -715,16 +714,21 @@ static int test_ap_priv(uint32_t rw, uint32_t ap)
 
 int kernacc(__kernel const void * addr, int len, int rw)
 {
-    size_t reg_start, reg_size;
+    mmu_region_t ** regp;
     uint32_t ap;
 
-    reg_start = mmu_region_kernel.vaddr;
-    /* This is the only case where mmu_sizeof_region() is ok */
-    reg_size = mmu_sizeof_region(&mmu_region_kernel);
-    if (((size_t)addr >= reg_start) && ((size_t)addr < reg_start + reg_size))
-        return (1 == 1);
+    SET_FOREACH(regp, ptmapper_fixed_regions) {
+        size_t reg_start, reg_size;
 
-    /* TODO Check other static regions as well */
+        reg_start = mmu_region_kernel.vaddr;
+        /* This is the only case where mmu_sizeof_region() is ok */
+        reg_size = mmu_sizeof_region(&mmu_region_kernel);
+
+        if (((size_t)addr >= reg_start) &&
+            ((size_t)addr < reg_start + reg_size)) {
+            return (1 == 1);
+        }
+    }
 
     if ((ap = dynmem_acc(addr, len))) {
         if (test_ap_priv(rw, ap)) {
