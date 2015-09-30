@@ -32,6 +32,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <machine/endian.h>
 #include <buf.h>
 #include <elf32.h>
 #include <exec.h>
@@ -45,9 +46,18 @@
 
 static int check_header(const struct elf32_header * hdr)
 {
+    const uint8_t elf_endian =
+#if (_BYTE_ORDER == _LITTLE_ENDIAN)
+    ELFDATA2LSB;
+#elif (_BYTE_ORDER == BIG_ENDIAN)
+    ELFDATA2MSB;
+#else
+#error Unsuported endianess
+#endif
+
     if (!IS_ELF(hdr) ||
         hdr->e_ident[EI_CLASS]      != ELFCLASS32 ||
-        hdr->e_ident[EI_DATA]       != ELFDATA2LSB || /* TODO conf */
+        hdr->e_ident[EI_DATA]       != elf_endian ||
         hdr->e_ident[EI_VERSION]    != EV_CURRENT ||
         hdr->e_phentsize            != sizeof(struct elf32_phdr) ||
         hdr->e_version              != EV_CURRENT)
