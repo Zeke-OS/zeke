@@ -88,6 +88,7 @@ mmu_region_t mmu_region_kernel = {
     .paddr          = MMU_VADDR_KERNEL_START,
     .pt             = &mmu_pagetable_system
 };
+PTMAPPER_FIXED_REGION(mmu_region_kernel);
 
 /** Start of the kernel rw region. */
 extern void * _data_start __attribute__((weak));
@@ -105,6 +106,7 @@ mmu_region_t mmu_region_kdata = {
     .paddr          = 0, /* Set in init */
     .pt             = &mmu_pagetable_system
 };
+PTMAPPER_FIXED_REGION(mmu_region_kdata);
 
 #define PTREGION_SIZE \
     MMU_PAGE_CNT_BY_RANGE(PTMAPPER_PT_START, PTMAPPER_PT_END, MMU_PGSIZE_SECTION)
@@ -116,8 +118,7 @@ mmu_region_t mmu_region_page_tables = {
     .paddr          = PTMAPPER_PT_START,
     .pt             = &mmu_pagetable_master
 };
-
-SET_DECLARE(ptmapper_fixed_regions, mmu_region_t);
+PTMAPPER_FIXED_REGION(mmu_region_page_tables);
 
 /**
  * Coarse page tables per MB.
@@ -246,13 +247,10 @@ int ptmapper_init(void)
 #define MAP_REGION(reg)         \
         mmu_map_region(&reg);   \
         PRINTMAPREG(reg)
-
         MAP_REGION(mmu_region_kstack);
-        MAP_REGION(mmu_region_kernel);
-        MAP_REGION(mmu_region_kdata);
-        MAP_REGION(mmu_region_page_tables);
 #undef MAP_REGION
 #undef PRINTMAPREG
+
         SET_FOREACH(regp, ptmapper_fixed_regions) {
             mmu_map_region(*regp);
         }

@@ -538,23 +538,31 @@ int vm_replace_region(struct proc_info * proc, struct buf * region,
     mtx_unlock(&mm->regions_lock);
 
     if (old_region) {
+        mmu_region_t ** regp;
+        int unmap = 1;
+
         /*
-         * TODO This is not the best solution but we don't want to unmap static
-         * kernel regions from the process.
+         * We don't want to unmap static kernel regions from the process
+         * memory map.
          */
-        if (old_region->b_mmu.vaddr != mmu_region_kernel.vaddr &&
-            old_region->b_mmu.vaddr != mmu_region_kdata.vaddr) {
+        SET_FOREACH(regp, ptmapper_fixed_regions) {
+            if (old_region->b_mmu.vaddr == (*regp)->vaddr) {
+                unmap = 0;
+                break;
+            }
+        }
+        if (unmap) {
             (void)vm_unmapproc_region(proc, old_region);
         }
-    }
 
-    /*
-     * Free the old region as this process no longer uses it.
-     * (Usually decrements some internal refcount)
-     */
-    if (((insop & VM_INSOP_NOFREE) == 0) && old_region &&
-        old_region->vm_ops->rfree) {
-        old_region->vm_ops->rfree(old_region);
+        /*
+         * Free the old region as this process no longer uses it.
+         * (Usually decrements some internal refcount)
+         */
+        if (((insop & VM_INSOP_NOFREE) != VM_INSOP_NOFREE) &&
+            old_region->vm_ops->rfree) {
+            old_region->vm_ops->rfree(old_region);
+        }
     }
 
     if ((insop & VM_INSOP_MAP_REG) &&
