@@ -250,6 +250,12 @@ config configEXEC_DEBUG
     ---help---
     Enable exec debug messages.
 
+config configKINIT_DEBUG
+    bool "kinit debugging"
+    default n
+    ---help---
+    Enable kinit debug messages.
+
 config configKSIGNAL_DEBUG
     bool "Ksignal debugging"
     default n

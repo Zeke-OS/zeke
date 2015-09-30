@@ -269,7 +269,7 @@ int __kinit__ kinit(void)
     mmu_map_region(&init_thread->kstack_region->b_mmu);
     init_proc->main_thread = init_thread;
 
-#if configDEBUG >= KERROR_INFO
+#ifdef configKINIT_DEBUG
     KERROR(KERROR_DEBUG,
            "Init created with pid: %u, tid: %u, stack: %x\n",
            pid, tid, init_vmstack->b_mmu.vaddr);

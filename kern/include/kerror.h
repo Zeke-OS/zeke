@@ -48,18 +48,6 @@
 #define KERROR_INFO     '3' /*!< Normal informational message. */
 #define KERROR_DEBUG    '4' /*!< Debug message. */
 
-#if defined(configDEBUG_CRIT)
-#define configDEBUG KERROR_CRIT
-#elif defined(configDEBUG_ERR)
-#define configDEBUG KERROR_ERR
-#elif defined(configDEBUG_WARN)
-#define configDEBUG KERROR_WARN
-#elif defined(configDEBUG_INFO)
-#define configDEBUG KERROR_INFO
-#elif defined(configDEBUG_DEBUG)
-#define configDEBUG KERROR_DEBUG
-#endif
-
 /* Line number as a string */
 #define _KERROR_S(x) #x
 #define _KERROR_S2(x) _KERROR_S(x)

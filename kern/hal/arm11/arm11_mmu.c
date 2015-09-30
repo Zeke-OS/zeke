@@ -74,9 +74,8 @@ int mmu_init_pagetable(const mmu_pagetable_t * pt)
     KASSERT(nr_tables > 0, "nr_tables must be greater than zero");
 
     if (!p_pte) {
-#if configDEBUG >= KERROR_DEBUG
         KERROR(KERROR_ERR, "Page table address can't be null.\n");
-#endif
+
         return -EINVAL;
     }
 
@@ -213,9 +212,7 @@ int mmu_map_region(const mmu_region_t * region)
         mmu_map_coarse_region(region);
         break;
     default:
-#if configDEBUG >= KERROR_DEBUG
         KERROR(KERROR_ERR, "Invalid mmu_region struct.\n");
-#endif
         return -EINVAL;
     }
 
@@ -489,9 +486,7 @@ void * mmu_translate_vaddr(const mmu_pagetable_t * pt, uintptr_t vaddr)
         p_pte  += (vaddr & 0x000ff000) >> 12;
         break;
     default:
-#if configDEBUG >= KERROR_DEBUG
         KERROR(KERROR_ERR, "Invalid pt type.\n");
-#endif
         goto out;
     }
 

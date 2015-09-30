@@ -319,9 +319,7 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
         ptm_nr_pt++;
         ptm_mem_free -= bsize;
     } else {
-#if configDEBUG >= KERROR_ERR
         KERROR(KERROR_ERR, "Out of pt memory\n");
-#endif
         retval = -1;
     }
 

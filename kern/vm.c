@@ -736,10 +736,8 @@ int kernacc(__kernel const void * addr, int len, int rw)
         }
     }
 
-#if (configDEBUG >= KERROR_WARN)
     KERROR(KERROR_WARN,
            "Can't fully verify access to address (%p) in kernacc()\n", addr);
-#endif
 
     return (1 == 1);
 }

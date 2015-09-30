@@ -187,12 +187,12 @@ void * uinit(void * arg)
     _chdir("/mnt");
     _chrootcwd();
 
-#if configDEVFS
+#ifdef configDEVFS
     if (_mount("", "/dev", "devfs"))
         fail("Failed to mount /dev");
 #endif
 
-#if configPROCFS
+#ifdef configPROCFS
     if (_mount("", "/proc", "procfs"))
         fail("Failed to mount /proc");
 #endif
