@@ -511,7 +511,7 @@ static void fs_fildes_dtor(struct kobj * obj)
     file_t * file = container_of(obj, struct file, f_obj);
     vnode_t * vn = file->vnode;
 
-    if (file->fdflags & FD_KFREEABLE)
+    if (file->oflags & O_KFREEABLE)
         kfree(file);
     file = NULL;
     vrele(vn);
@@ -579,7 +579,7 @@ perms_ok:
         goto out;
     }
     fs_fildes_set(curproc->files->fd[fd], vnode, oflags);
-    new_fildes->fdflags |= FD_KFREEABLE;
+    new_fildes->oflags |= O_KFREEABLE;
 
     /*
      * File descriptor ready, make an event call to the fs.
@@ -695,7 +695,7 @@ void fs_fildes_close_exec(struct proc_info * p)
     for (i = 0; i < end; i++) {
         file_t * file = p->files->fd[i];
 
-        if (file && (file->fdflags & FD_CLOEXEC || file->oflags & O_CLOEXEC)) {
+        if (file && file->oflags & O_CLOEXEC) {
             fs_fildes_close(p, i);
         }
     }

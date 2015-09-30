@@ -117,7 +117,6 @@ static int mmap_file(file_t * file, size_t blkno, size_t bsize,
         return -ENOMEM;
 
     BUF_LOCK(bp);
-    bp->b_file.fdflags = file->fdflags;
     fs_fildes_set(&bp->b_file, vnode, file->oflags);
     bp->b_file.stream = file->stream;
     bp->b_blkno = blkno;

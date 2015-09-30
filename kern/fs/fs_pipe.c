@@ -126,7 +126,7 @@ static void init_file(file_t * file, vnode_t * vn, struct stream_pipe * pipe,
 {
     fs_fildes_set(file, vn, oflags);
 
-    file->fdflags &= ~FD_CLOEXEC;
+    file->oflags &= ~O_CLOEXEC;
     file->stream = pipe;
 }
 

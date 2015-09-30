@@ -173,7 +173,6 @@ typedef struct vnode {
  */
 typedef struct file {
     off_t seek_pos;     /*!< Seek pointer. */
-    int fdflags;        /*!< File descriptor flags. */
     int oflags;         /*!< File status flags. */
     vnode_t * vnode;
     void * stream;      /*!< Pointer to a special file stream data or info. */
