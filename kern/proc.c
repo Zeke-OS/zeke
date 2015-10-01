@@ -239,8 +239,7 @@ static void init_kernel_proc(void)
     kernel_proc->files->count = 8;
     kernel_proc->files->umask = CMASK; /* File creation mask. */
 
-    /* RFE Is there still something wrong? */
-    kernel_proc->files->fd[STDIN_FILENO] = 0;
+    kernel_proc->files->fd[STDIN_FILENO] = NULL;
     /* stderr */
 #ifdef configKLOGGER
     kernel_proc->files->fd[STDERR_FILENO] = kzalloc(sizeof(file_t));
@@ -251,8 +250,8 @@ static void init_kernel_proc(void)
     kernel_proc->files->fd[STDOUT_FILENO] = fs_fildes_ref(kernel_proc->files,
                                                           STDERR_FILENO, 1);
 #else
-    kernel_proc->files->fd[STDOUT_FILENO] = 0;
-    kernel_proc->files->fd[STDERR_FILENO] = 0;
+    kernel_proc->files->fd[STDOUT_FILENO] = NULL;
+    kernel_proc->files->fd[STDERR_FILENO] = NULL;
 #endif
 
     init_rlims(&kernel_proc->rlim);
@@ -409,8 +408,6 @@ void _proc_free(struct proc_info * p)
 
         /* Free regions array */
         kfree(p->mm.regions);
-
-        /* RFE should not unlock regions? */
     }
 
     /* Free mpt */
