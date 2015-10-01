@@ -48,9 +48,13 @@ SET_DECLARE(exec_loader, struct exec_loadfn);
 SYSCTL_INT(_kern, KERN_ARGMAX, argmax, CTLFLAG_RD, 0, MMU_PGSIZE_COARSE,
            "Max args to exec");
 
-static int usrstack_default = 8192;
-SYSCTL_INT(_kern, KERN_USRSTACK_DEFAULT, usrstack_default, CTLFLAG_RW,
-           &usrstack_default, 0, "Usrstack default size");
+static int main_stack_dfl = configPROC_STACK_DFL;
+SYSCTL_INT(_kern, KERN_DFLSIZ, dflsiz, CTLFLAG_RW,
+           &main_stack_dfl, 0, "Default main() stack size");
+
+static int main_stack_max = 2 * configPROC_STACK_DFL;
+SYSCTL_INT(_kern, KERN_MAXSIZ, maxsiz, CTLFLAG_RW,
+           &main_stack_max, 0, "Max main() stack size");
 
 static int load_proc_image(file_t * file, uintptr_t * vaddr_base)
 {
@@ -74,6 +78,19 @@ static int load_proc_image(file_t * file, uintptr_t * vaddr_base)
     return err;
 }
 
+size_t get_new_main_stack_size(ssize_t emin)
+{
+    const ssize_t kmin = main_stack_dfl;
+    const ssize_t kmax = main_stack_max;
+    const ssize_t rlim = curproc->rlim[RLIMIT_STACK].rlim_cur;
+    ssize_t dmin, dmax;
+
+    dmin = (emin > 0 && emin > kmin) ? emin : kmin;
+    dmax = (rlim > 0 && rlim < kmax) ? rlim : kmax;
+
+    return min(dmin, dmax);
+}
+
 /**
  * Create a new thread for executing main()
  */
@@ -83,8 +100,8 @@ static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp)
     struct buf * code_region = (*curproc->mm.regions)[MM_CODE_REGION];
     struct _sched_pthread_create_args args;
 
-    /* TODO Optional way to get this from elf headers or notes. */
-    stack_region = vm_new_userstack_curproc(usrstack_default);
+    /* TODO min provided by the elf */
+    stack_region = vm_new_userstack_curproc(get_new_main_stack_size(-1));
     if (!stack_region)
         return -ENOMEM;
 

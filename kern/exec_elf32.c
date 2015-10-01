@@ -33,8 +33,8 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <machine/endian.h>
+#include <sys/elf32.h>
 #include <buf.h>
-#include <elf32.h>
 #include <exec.h>
 #include <fs/fs.h>
 #include <kerror.h>

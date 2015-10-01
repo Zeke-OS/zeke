@@ -475,24 +475,25 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
 #define KERN_OSREV              3   /*!< int: system revision */
 #define KERN_VERSION            4   /*!< string: compile time info */
 #define KERN_MAXPROC            5   /*!< int: max processes */
-#define KERN_MAXFILES           6   /*!< int: max open files */
-#define KERN_ARGMAX             7   /*!< int: max arguments to exec */
-#define KERN_HOSTNAME           8   /*!< string: hostname */
-#define KERN_HOSTID             9   /*!< int: host identifier */
-#define KERN_PROF               10  /*!< node: kernel profiling info */
-#define KERN_POSIX1             11  /*!< int: POSIX.1 version */
-#define KERN_NGROUPS            12  /*!< int: # of supplemental group ids */
-#define KERN_JOB_CONTROL        13  /*!< int: is job control available */
-#define KERN_SAVED_IDS          14  /*!< int: saved set-user/group-ID */
-#define KERN_OSRELDATE          15  /*!< int: kernel release date */
-#define KERN_NTP_PLL            16  /*!< node: NTP PLL control */
-#define KERN_BOOTFILE           17  /*!< string: name of booted kernel */
-#define KERN_MAXFILESPERPROC    18  /*!< int: max open files per proc */
-#define KERN_IPC                19  /*!< node: anything related to IPC */
-#define KERN_USRSTACK_DEFAULT   20  /*!< int: Default size of the usr stack */
-#define KERN_LOGSIGEXIT         21  /*!< int: do we log sigexit procs? */
-#define KERN_HOSTUUID           22  /*!< string: host UUID identifier */
-#define KERN_MAXID              23  /*!< number of valid kern ids */
+#define KERN_DFLSIZ             6   /*!< int: default main() stack size */
+#define KERN_MAXSIZ             7   /*!< int: max main() stack size */
+#define KERN_MAXFILES           8   /*!< int: max open files */
+#define KERN_ARGMAX             9   /*!< int: max arguments to exec */
+#define KERN_HOSTNAME           10  /*!< string: hostname */
+#define KERN_HOSTID             11  /*!< int: host identifier */
+#define KERN_PROF               12  /*!< node: kernel profiling info */
+#define KERN_POSIX1             13  /*!< int: POSIX.1 version */
+#define KERN_NGROUPS            14  /*!< int: # of supplemental group ids */
+#define KERN_JOB_CONTROL        15  /*!< int: is job control available */
+#define KERN_SAVED_IDS          16  /*!< int: saved set-user/group-ID */
+#define KERN_OSRELDATE          17  /*!< int: kernel release date */
+#define KERN_NTP_PLL            18  /*!< node: NTP PLL control */
+#define KERN_BOOTFILE           19  /*!< string: name of booted kernel */
+#define KERN_MAXFILESPERPROC    20  /*!< int: max open files per proc */
+#define KERN_IPC                21  /*!< node: anything related to IPC */
+#define KERN_LOGSIGEXIT         22  /*!< int: do we log sigexit procs? */
+#define KERN_HOSTUUID           23  /*!< string: host UUID identifier */
+#define KERN_MAXID              24  /*!< number of valid kern ids */
 
 /*
  * KERN_IPC identifiers
