@@ -48,6 +48,10 @@ SET_DECLARE(exec_loader, struct exec_loadfn);
 SYSCTL_INT(_kern, KERN_ARGMAX, argmax, CTLFLAG_RD, 0, MMU_PGSIZE_COARSE,
            "Max args to exec");
 
+static int usrstack_default = 8192;
+SYSCTL_INT(_kern, KERN_USRSTACK_DEFAULT, usrstack_default, CTLFLAG_RW,
+           &usrstack_default, 0, "Usrstack default size");
+
 static int load_proc_image(file_t * file, uintptr_t * vaddr_base)
 {
     struct exec_loadfn ** loader;
@@ -79,8 +83,8 @@ static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp)
     struct buf * code_region = (*curproc->mm.regions)[MM_CODE_REGION];
     struct _sched_pthread_create_args args;
 
-    /* TODO A better way to select stack size */
-    stack_region = vm_new_userstack_curproc(8192);
+    /* TODO Optional way to get this from elf headers or notes. */
+    stack_region = vm_new_userstack_curproc(usrstack_default);
     if (!stack_region)
         return -ENOMEM;
 
