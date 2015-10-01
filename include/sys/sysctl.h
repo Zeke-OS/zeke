@@ -78,30 +78,32 @@ struct ctlname {
 };
 
 /* CTL types */
-#define CTLTYPE         0xf      /*!< Mask for the type. */
-#define CTLTYPE_NODE    1        /*!< Name is a node (parent for other nodes). */
-#define CTLTYPE_INT     2        /*!< Name describes an signed integer */
-#define CTLTYPE_STRING  3        /*!< Name describes a string */
-#define CTLTYPE_S64     4        /*!< Name describes a signed 64-bit number */
-#define CTLTYPE_UINT    6        /*!< Name describes an unsigned integer */
-#define CTLTYPE_LONG    7        /*!< Name describes a long */
-#define CTLTYPE_ULONG   8        /*!< Name describes an unsigned long */
-#define CTLTYPE_U64     9        /*!< Name describes an unsigned 64-bit number */
+#define CTLTYPE         0xf /*!< Mask for the type. */
+#define CTLTYPE_NODE    1   /*!< Name is a node (parent for other nodes). */
+#define CTLTYPE_INT     2   /*!< Name describes an signed integer */
+#define CTLTYPE_STRING  3   /*!< Name describes a string */
+#define CTLTYPE_S64     4   /*!< Name describes a signed 64-bit number */
+#define CTLTYPE_UINT    6   /*!< Name describes an unsigned integer */
+#define CTLTYPE_LONG    7   /*!< Name describes a long */
+#define CTLTYPE_ULONG   8   /*!< Name describes an unsigned long */
+#define CTLTYPE_U64     9   /*!< Name describes an unsigned 64-bit number */
 
 /* CTL flags */
 #define CTLFLAG_RD      0x80000000  /*!< Allow reads of variable */
 #define CTLFLAG_WR      0x40000000  /*!< Allow writes to the variable */
-#define CTLFLAG_RW      (CTLFLAG_RD|CTLFLAG_WR)
+#define CTLFLAG_RW      (CTLFLAG_RD | CTLFLAG_WR)
 #define CTLFLAG_ANYBODY 0x10000000  /*!< All users can set this var */
 #define CTLFLAG_SECURE  0x08000000  /*!< Permit set only if securelevel<=0 */
+/* Dyn not supported atm */
+#if 0
 #define CTLFLAG_DYN     0x02000000  /*!< Dynamic oid - can be freed */
+#endif
 #define CTLFLAG_SKIP    0x01000000  /*!< Skip this sysctl when listing */
 #define CTLMASK_SECURE  0x00F00000  /*!< Secure level */
-#define CTLFLAG_MPSAFE  0x00040000  /*!< Handler is MP safe */
 #define CTLFLAG_DYING   0x00010000  /*!< Oid is being removed */
 #define CTLFLAG_CAPRD   0x00008000  /*!< Can be read in capability mode */
 #define CTLFLAG_CAPWR   0x00004000  /*!< Can be written in capability mode */
-#define CTLFLAG_CAPRW   (CTLFLAG_CAPRD|CTLFLAG_CAPWR)
+#define CTLFLAG_CAPRW   (CTLFLAG_CAPRD | CTLFLAG_CAPWR)
 
 /*
  * Secure level.   Note that CTLFLAG_SECURE == CTLFLAG_SECURE1.
@@ -158,7 +160,7 @@ struct _sysctl_args {
  * @param newlen    is the lenght of newp or 0.
  */
 int sysctl(int * name, unsigned int namelen, void * oldp, size_t * oldlenp,
-          void * newp, size_t newlen);
+           void * newp, size_t newlen);
 
 /**
  * Lookup for a MIB node by ASCII name.
@@ -230,9 +232,6 @@ int sysctltstmib(int * left, int * right, int len);
 #define SYSCTL_HANDLER_ARGS struct sysctl_oid * oidp, void * arg1, \
         intptr_t arg2, struct sysctl_req * req
 
-/* definitions for sysctl_req 'lock' member */
-#define REQ_UNWIRED 1
-
 /**
  * Sysctl request.
  * This describes the access space for a sysctl request.  This is needed
@@ -240,7 +239,6 @@ int sysctltstmib(int * left, int * right, int len);
  */
 struct sysctl_req {
     const struct cred * cred;   /* used for access checking */
-    int lock;                   /* wiring state */
     void * oldptr;
     size_t oldlen;
     size_t oldidx;
@@ -384,35 +382,35 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
 #define SYSCTL_INT(parent, nbr, name, access, ptr, val, descr)  \
         SYSCTL_ASSERT_TYPE(INT, ptr, parent, name);             \
         SYSCTL_OID(parent, nbr, name,                           \
-            CTLTYPE_INT | CTLFLAG_MPSAFE | (access),            \
+            CTLTYPE_INT | (access),                             \
             ptr, val, sysctl_handle_int, "I", descr)
 
 /* Oid for an unsigned int.  If ptr is NULL, val is returned. */
 #define SYSCTL_UINT(parent, nbr, name, access, ptr, val, descr) \
         SYSCTL_ASSERT_TYPE(UINT, ptr, parent, name);            \
         SYSCTL_OID(parent, nbr, name,                           \
-            CTLTYPE_UINT | CTLFLAG_MPSAFE | (access),           \
+            CTLTYPE_UINT | (access),                            \
             ptr, val, sysctl_handle_int, "IU", descr)
 
 /* Oid for a long.  The pointer must be non NULL. */
 #define SYSCTL_LONG(parent, nbr, name, access, ptr, val, descr) \
         SYSCTL_ASSERT_TYPE(LONG, ptr, parent, name);            \
         SYSCTL_OID(parent, nbr, name,                           \
-            CTLTYPE_LONG | CTLFLAG_MPSAFE | (access),           \
+            CTLTYPE_LONG | (access),                            \
             ptr, val, sysctl_handle_long, "L", descr)
 
 /* Oid for an unsigned long.  The pointer must be non NULL. */
 #define SYSCTL_ULONG(parent, nbr, name, access, ptr, val, descr)    \
         SYSCTL_ASSERT_TYPE(ULONG, ptr, parent, name);               \
         SYSCTL_OID(parent, nbr, name,                               \
-            CTLTYPE_ULONG | CTLFLAG_MPSAFE | (access),              \
+            CTLTYPE_ULONG | (access),                               \
             ptr, val, sysctl_handle_long, "LU", descr)
 
 /* Oid for a 64-bit unsigned counter(9).  The pointer must be non NULL. */
 #define SYSCTL_COUNTER_U64(parent, nbr, name, access, ptr, val, descr)  \
         SYSCTL_ASSERT_TYPE(UINT64, ptr, parent, name);                  \
         SYSCTL_OID(parent, nbr, name,                                   \
-            CTLTYPE_U64 | CTLFLAG_MPSAFE | (access),                    \
+            CTLTYPE_U64 | (access),                                     \
             ptr, val, sysctl_handle_counter_u64, "QU", descr)
 
 /**
@@ -449,8 +447,7 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
 #define CTL_DEBUG               5   /* debugging parameters */
 #define CTL_HW                  6   /* generic cpu/io */
 #define CTL_MACHDEP             7   /* machine dependent */
-#define CTL_P1003_1B            9   /* POSIX 1003.1B */
-#define CTL_MAXID               10  /* number of valid top-level ids */
+#define CTL_MAXID               8   /* number of valid top-level ids */
 
 /*
  * Identifiers here are mostly compatible with BSD but we don't support structs
@@ -473,63 +470,55 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
 /*
  * CTL_KERN identifiers
  */
-#define KERN_OSTYPE             1   /* string: system version */
-#define KERN_OSRELEASE          2   /* string: system release */
-#define KERN_OSREV              3   /* int: system revision */
-#define KERN_VERSION            4   /* string: compile time info */
-#define KERN_MAXVNODES          5   /* int: max vnodes */
-#define KERN_MAXPROC            6   /* int: max processes */
-#define KERN_MAXFILES           7   /* int: max open files */
-#define KERN_ARGMAX             8   /* int: max arguments to exec */
-#define KERN_HOSTNAME           10  /* string: hostname */
-#define KERN_HOSTID             11  /* int: host identifier */
-#define KERN_PROF               16  /* node: kernel profiling info */
-#define KERN_POSIX1             17  /* int: POSIX.1 version */
-#define KERN_NGROUPS            18  /* int: # of supplemental group ids */
-#define KERN_JOB_CONTROL        19  /* int: is job control available */
-#define KERN_SAVED_IDS          20  /* int: saved set-user/group-ID */
-#define KERN_UPDATEINTERVAL     23  /* int: update process sleep time */
-#define KERN_OSRELDATE          24  /* int: kernel release date */
-#define KERN_NTP_PLL            25  /* node: NTP PLL control */
-#define KERN_BOOTFILE           26  /* string: name of booted kernel */
-#define KERN_MAXFILESPERPROC    27  /* int: max open files per proc */
-#define KERN_MAXPROCPERUID      28  /* int: max processes per uid */
-#define KERN_DUMPDEV            29  /* struct cdev *: device to dump on */
-#define KERN_IPC                30  /* node: anything related to IPC */
-#define KERN_DUMMY              31  /* unused */
-#define KERN_PS_STRINGS         32  /* int: address of PS_STRINGS */
-#define KERN_USRSTACK           33  /* int: address of USRSTACK */
-#define KERN_LOGSIGEXIT         34  /* int: do we log sigexit procs? */
-#define KERN_IOV_MAX            35  /* int: value of UIO_MAXIOV */
-#define KERN_HOSTUUID           36  /* string: host UUID identifier */
-#define KERN_ARND               37  /* int: from arc4rand() */
-#define KERN_MAXID              38  /* number of valid kern ids */
+#define KERN_OSTYPE             1   /*!< string: system version */
+#define KERN_OSRELEASE          2   /*!< string: system release */
+#define KERN_OSREV              3   /*!< int: system revision */
+#define KERN_VERSION            4   /*!< string: compile time info */
+#define KERN_MAXPROC            5   /*!< int: max processes */
+#define KERN_MAXFILES           6   /*!< int: max open files */
+#define KERN_ARGMAX             7   /*!< int: max arguments to exec */
+#define KERN_HOSTNAME           8   /*!< string: hostname */
+#define KERN_HOSTID             9   /*!< int: host identifier */
+#define KERN_PROF               10  /*!< node: kernel profiling info */
+#define KERN_POSIX1             11  /*!< int: POSIX.1 version */
+#define KERN_NGROUPS            12  /*!< int: # of supplemental group ids */
+#define KERN_JOB_CONTROL        13  /*!< int: is job control available */
+#define KERN_SAVED_IDS          14  /*!< int: saved set-user/group-ID */
+#define KERN_OSRELDATE          15  /*!< int: kernel release date */
+#define KERN_NTP_PLL            16  /*!< node: NTP PLL control */
+#define KERN_BOOTFILE           17  /*!< string: name of booted kernel */
+#define KERN_MAXFILESPERPROC    18  /*!< int: max open files per proc */
+#define KERN_IPC                19  /*!< node: anything related to IPC */
+#define KERN_USRSTACK_DEFAULT   20  /*!< int: Default size of the usr stack */
+#define KERN_LOGSIGEXIT         21  /*!< int: do we log sigexit procs? */
+#define KERN_HOSTUUID           22  /*!< string: host UUID identifier */
+#define KERN_MAXID              23  /*!< number of valid kern ids */
 
 /*
  * KERN_IPC identifiers
  */
-#define KIPC_MAXSOCKBUF         1   /* int: max size of a socket buffer */
-#define KIPC_SOCKBUF_WASTE      2   /* int: wastage factor in sockbuf */
-#define KIPC_SOMAXCONN          3   /* int: max length of connection q */
-#define KIPC_MAX_LINKHDR        4   /* int: max length of link header */
-#define KIPC_MAX_PROTOHDR       5   /* int: max length of network header */
-#define KIPC_MAX_HDR            6   /* int: max total length of headers */
-#define KIPC_MAX_DATALEN        7   /* int: max length of data? */
+#define KIPC_MAXSOCKBUF         1   /*!< int: max size of a socket buffer */
+#define KIPC_SOCKBUF_WASTE      2   /*!< int: wastage factor in sockbuf */
+#define KIPC_SOMAXCONN          3   /*!< int: max length of connection q */
+#define KIPC_MAX_LINKHDR        4   /*!< int: max length of link header */
+#define KIPC_MAX_PROTOHDR       5   /*!< int: max length of network header */
+#define KIPC_MAX_HDR            6   /*!< int: max total length of headers */
+#define KIPC_MAX_DATALEN        7   /*!< int: max length of data? */
 
 /*
  * CTL_HW identifiers
  */
-#define HW_MACHINE              1   /* string: machine class */
-#define HW_MODEL                2   /* string: specific machine model */
-#define HW_NCPU                 3   /* int: number of cpus */
-#define HW_BYTEORDER            4   /* int: machine byte order */
-#define HW_PHYSMEM              5   /* int: total memory */
-#define HW_USERMEM              6   /* int: non-kernel memory */
-#define HW_PAGESIZE             7   /* int: software page size */
-#define HW_FLOATINGPT           10  /* int: has HW floating point? */
-#define HW_MACHINE_ARCH         11  /* string: machine architecture */
-#define HW_REALMEM              12  /* int: 'real' memory */
-#define HW_MAXID                13  /* number of valid hw ids */
+#define HW_MACHINE              1   /*!< string: machine class */
+#define HW_MODEL                2   /*!< string: specific machine model */
+#define HW_NCPU                 3   /*!< int: number of cpus */
+#define HW_BYTEORDER            4   /*!< int: machine byte order */
+#define HW_PHYSMEM              5   /*!< int: total memory */
+#define HW_USERMEM              6   /*!< int: non-kernel memory */
+#define HW_PAGESIZE             7   /*!< int: software page size */
+#define HW_FLOATINGPT           8   /*!< int: has HW floating point? */
+#define HW_MACHINE_ARCH         9   /*!< string: machine architecture */
+#define HW_REALMEM              10  /*!< int: 'real' memory */
+#define HW_MAXID                11  /*!< number of valid hw ids */
 
 #ifdef KERNEL_INTERNAL
 

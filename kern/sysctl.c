@@ -494,12 +494,11 @@ static int sysctl_sysctl_name2oid(SYSCTL_HANDLER_ARGS)
 }
 
 /*
- * RFE RW/JA: Shouldn't return name2oid data for nodes that we don't permit in
- * capability mode.
+ * TODO Shouldn't return name2oid data for nodes that we don't permit in capability mode.
  */
 SYSCTL_PROC(_sysctl, _CTLMAGIC_NAME2OID, name2oid,
-            CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_ANYBODY | CTLFLAG_MPSAFE |
-            CTLFLAG_CAPRW, 0, 0, sysctl_sysctl_name2oid, "I", "");
+            CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_ANYBODY | CTLFLAG_CAPRW,
+            0, 0, sysctl_sysctl_name2oid, "I", "");
 
 static int sysctl_sysctl_oidfmt(SYSCTL_HANDLER_ARGS)
 {
@@ -527,7 +526,7 @@ static int sysctl_sysctl_oidfmt(SYSCTL_HANDLER_ARGS)
 
 
 static SYSCTL_NODE(_sysctl, _CTLMAGIC_OIDFMT, oidfmt,
-                   CTLFLAG_RD | CTLFLAG_MPSAFE | CTLFLAG_CAPRD,
+                   CTLFLAG_RD | CTLFLAG_CAPRD,
                    sysctl_sysctl_oidfmt, "");
 
 static int sysctl_sysctl_oiddescr(SYSCTL_HANDLER_ARGS)
@@ -807,7 +806,6 @@ int kernel_sysctl(pid_t pid, int * name, unsigned int namelen,
 
     req.oldfunc = sysctl_old_kernel;
     req.newfunc = sysctl_new_kernel;
-    req.lock = REQ_UNWIRED;
 
     SYSCTL_LOCK();
     error = sysctl_root(0, name, namelen, &req);
@@ -957,16 +955,7 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
     oid->oid_running++;
     SYSCTL_UNLOCK();
 
-    /* TODO */
-#if 0
-    if (!(oid->oid_kind & CTLFLAG_MPSAFE))
-        mtx_lock(&Giant);
-#endif
     error = oid->oid_handler(oid, arg1, arg2, req);
-#if 0
-    if (!(oid->oid_kind & CTLFLAG_MPSAFE))
-        mtx_unlock(&Giant);
-#endif
 
     SYSCTL_LOCK();
     oid->oid_running--;
@@ -1025,7 +1014,6 @@ int userland_sysctl(pid_t pid, int * name, unsigned int namelen,
 
     req.oldfunc = sysctl_old_user;
     req.newfunc = sysctl_new_user;
-    req.lock = REQ_UNWIRED;
 
     for (;;) {
         req.oldidx = 0;
