@@ -26,6 +26,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <sys/elf_common.h>
 #include <sys/param.h>
 #include "notes.h"
 
@@ -51,16 +52,5 @@
  *
  * These steps are done in the invididual Makefiles for each applicable arch.
  */
-static const struct {
-    int32_t namesz;
-    int32_t descsz;
-    int32_t type;
-    char    name[sizeof(NOTE_VENDOR)];
-    int32_t desc;
-} abitag __attribute__ ((section (NOTE_SECTION), aligned(4))) __used = {
-    .namesz = sizeof(NOTE_VENDOR),
-    .descsz = sizeof(int32_t),
-    .type = ABI_NOTETYPE,
-    .name = NOTE_VENDOR,
-    .desc = 0
-};
+
+NOTE_INT(".note.zeke.ident", NOTE_VENDOR_ZEKE, NT_VERSION, os_version, 0);

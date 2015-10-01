@@ -1,5 +1,5 @@
 /*-
- * Copyright 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright 2012 Konstantin Belousov <kib@FreeBSD.org>
  * All rights reserved.
  *
@@ -28,12 +28,39 @@
 #ifndef CSU_COMMON_NOTES_H
 #define CSU_COMMON_NOTES_H
 
-#define NOTE_VENDOR         "Zeke"
+#define NOTE_VENDOR_ZEKE    "Zeke"
 
-#define NOTE_SECTION        ".note.tag"
+#define NOTE_INT(_section_, _vendor_, _type_, _name_, _value_)      \
+    static const struct {                                           \
+        int32_t namesz;                                             \
+        int32_t descsz;                                             \
+        int32_t type;                                               \
+        char name[sizeof(_vendor_)];                                \
+        int32_t desc;                                               \
+    } _name_ __attribute__ ((section (_section_), aligned(4)))      \
+      __used = {                                                    \
+        .namesz = sizeof(_vendor_),                                 \
+        .descsz = sizeof(int32_t),                                  \
+        .type = (_type_),                                           \
+        .name = (_vendor_),                                         \
+        .desc = (_value_)                                           \
+    }
 
-#define ABI_NOTETYPE        1
-#define CRT_NOINIT_NOTETYPE 2
-#define ARCH_NOTETYPE       3
+#define NOTE_STR(_section_, _vendor_, _type_, _name_, _str_)        \
+    static const struct {                                           \
+        int32_t namesz;                                             \
+        int32_t descsz;                                             \
+        int32_t type;                                               \
+        char name[sizeof(_vendor_)];                                \
+        char desc[];                                                \
+    } _name_ __attribute__ ((section (_section_), aligned(4)))      \
+      __used = {                                                    \
+        .namesz = sizeof(_vendor_),                                 \
+        .descsz = sizeof(_str_),                                    \
+        .type = (_type_),                                           \
+        .name = (_vendor_),                                         \
+        .desc = _str_                                               \
+    }
 
-#endif
+
+#endif /* CSU_COMMON_NOTES_H */

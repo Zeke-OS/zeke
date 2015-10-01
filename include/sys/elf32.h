@@ -36,7 +36,7 @@
 #define _ELF32_H_
 
 #include <stdint.h>
-#include <elf_common.h>
+#include <sys/elf_common.h>
 
 /**
  * ELF header.

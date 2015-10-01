@@ -513,6 +513,9 @@ typedef struct {
 #define NT_PROCSTAT_PSSTRINGS   15  /* Procstat ps_strings data. */
 #define NT_PROCSTAT_AUXV    16  /* Procstat auxv data. */
 
+/* Values for n_type.  Used in object files. */
+#define NT_VERSION      1   /* Version string. */
+
 /* Symbol Binding - ELFNN_ST_BIND - st_info */
 #define STB_LOCAL       0   /* Local symbol */
 #define STB_GLOBAL      1   /* Global symbol */
