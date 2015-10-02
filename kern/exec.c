@@ -78,6 +78,10 @@ static int load_proc_image(file_t * file, uintptr_t * vaddr_base)
     return err;
 }
 
+/**
+ * Calculate the stack size for main().
+ * @param emin is the required stack size idicated by the executable.
+ */
 size_t get_new_main_stack_size(ssize_t emin)
 {
     const ssize_t kmin = main_stack_dfl;

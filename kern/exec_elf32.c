@@ -40,9 +40,23 @@
 #include <kerror.h>
 #include <kmalloc.h>
 #include <kstring.h>
+#include <libkern.h>
 #include <proc.h>
 #include <thread.h>
 #include <vm/vm.h>
+
+/**
+ * Elf parsing context.
+ */
+struct elf_ctx {
+    file_t * file;
+    struct elf32_header elfhdr;
+    struct elf32_phdr * phdr;
+    uintptr_t rbase;
+    /* out */
+    uintptr_t vaddr_base;
+    size_t stack_size;
+};
 
 static int check_header(const struct elf32_header * hdr)
 {
@@ -102,53 +116,30 @@ static int read_elf32_header(struct elf32_header * elfhdr, file_t * file)
 /**
  * Read elf32 program headers.
  */
-static struct elf32_phdr * read_program_headers(file_t * file,
-                                                struct elf32_header * elfhdr)
+static int read_program_headers(struct elf_ctx * ctx)
 {
-     vnode_t * vn = file->vnode;
+    vnode_t * vn = ctx->file->vnode;
+    struct elf32_phdr * phdr = NULL;
     struct uio uio;
     size_t phsize;
-    struct elf32_phdr * phdr = NULL;
 
-    phsize = elfhdr->e_phnum * sizeof(struct elf32_phdr);
+    phsize = ctx->elfhdr.e_phnum * sizeof(struct elf32_phdr);
     phdr = kmalloc(phsize);
     if (!phdr)
         goto fail;
 
-    if (vn->vnode_ops->lseek(file, elfhdr->e_phoff, SEEK_SET) < 0)
+    if (vn->vnode_ops->lseek(ctx->file, ctx->elfhdr.e_phoff, SEEK_SET) < 0)
         goto fail;
 
     uio_init_kbuf(&uio, phdr, phsize);
-    if (vn->vnode_ops->read(file, &uio, phsize) != (ssize_t)phsize)
+    if (vn->vnode_ops->read(ctx->file, &uio, phsize) != (ssize_t)phsize)
         goto fail;
 
-    return phdr;
+    ctx->phdr = phdr;
+    return 0;
 fail:
     kfree(phdr);
-    return NULL;
-}
-
-/**
- * Count and verify loadable sections.
- */
-static int verify_loadable_sections(struct elf32_header * elfhdr,
-                                    struct elf32_phdr * phdr, uintptr_t rbase)
-{
-    size_t i, nr_newsections = 0;
-
-    for (i = 0; i < elfhdr->e_phnum; i++) {
-        if (phdr[i].p_type == PT_LOAD && phdr[i].p_memsz != 0)
-            nr_newsections++;
-
-        /* Check that no section is going to be mapped below the base limit. */
-        if (phdr[i].p_vaddr + rbase < configEXEC_BASE_LIMIT)
-            return -ENOEXEC;
-    }
-
-    if (nr_newsections > 2)
-        return -ENOEXEC;
-
-    return 0;
+    return -ENOEXEC;
 }
 
 static int elf32_trans_prot(uint32_t flags)
@@ -165,76 +156,127 @@ static int elf32_trans_prot(uint32_t flags)
     return prot;
 }
 
-static int load_section(struct buf ** region, file_t * file,
-                        uintptr_t rbase, struct elf32_phdr * phdr)
+/**
+ * Count and verify loadable sections.
+ */
+static int verify_loadable_sections(struct elf_ctx * ctx)
 {
-    vnode_t * vn = file->vnode;
-    int prot;
-    struct buf * sect;
+    size_t i, nr_newsections = 0;
 
-    if (phdr->p_memsz < phdr->p_filesz)
+    for (i = 0; i < ctx->elfhdr.e_phnum; i++) {
+        if (ctx->phdr[i].p_type == PT_LOAD && ctx->phdr[i].p_memsz != 0)
+            nr_newsections++;
+
+        /* Check that no section is going to be mapped below the base limit. */
+        if (ctx->phdr[i].p_vaddr + ctx->rbase < configEXEC_BASE_LIMIT)
+            return -ENOEXEC;
+    }
+
+    if (nr_newsections > 2)
         return -ENOEXEC;
 
+    return 0;
+}
+
+/**
+ * Read section from an elf file to memory.
+ */
+static ssize_t read_section(struct elf_ctx * ctx, size_t sect_index,
+                            void * out, size_t size)
+{
+    vnode_t * vn = ctx->file->vnode;
+    struct elf32_phdr * phdr = &ctx->phdr[sect_index];
+    struct uio uio;
+
+    if (phdr->p_filesz == 0)
+        return -ENOEXEC;
+
+    if (vn->vnode_ops->lseek(ctx->file, phdr->p_offset, SEEK_SET) < 0)
+        return -ENOEXEC;
+
+    uio_init_kbuf(&uio, out, min(size, phdr->p_filesz));
+    return vn->vnode_ops->read(ctx->file, &uio, phdr->p_filesz);
+}
+
+/**
+ * Create a memory region and load a section to it.
+ */
+static int load_section(struct elf_ctx * ctx, size_t sect_index,
+                        struct buf ** region)
+{
+    struct elf32_phdr * phdr = &ctx->phdr[sect_index];
+    struct buf * sect;
+    void * ldp;
+    int prot, err;
+
+    if (phdr->p_memsz < phdr->p_filesz) {
+        return -ENOEXEC;
+    }
+
     prot = elf32_trans_prot(phdr->p_flags);
-    sect = vm_newsect(phdr->p_vaddr + rbase, phdr->p_memsz, prot);
-    if (!sect)
+    sect = vm_newsect(phdr->p_vaddr + ctx->rbase, phdr->p_memsz, prot);
+    if (!sect) {
         return -ENOMEM;
+    }
 
-    if (phdr->p_filesz > 0) {
-        int err;
-        void * ldp;
-        struct uio uio;
-
-        if (vn->vnode_ops->lseek(file, phdr->p_offset, SEEK_SET) < 0)
-            return -ENOEXEC;
-
-        ldp = (void *)(sect->b_data + (phdr->p_vaddr - sect->b_mmu.vaddr));
-        uio_init_kbuf(&uio, ldp, phdr->p_filesz);
-        err = vn->vnode_ops->read(file, &uio, phdr->p_filesz);
-        if (err < 0) {
-            if (sect->vm_ops->rfree)
-                sect->vm_ops->rfree(sect);
-            return -ENOEXEC;
+    ldp = (void *)(sect->b_data + (phdr->p_vaddr - sect->b_mmu.vaddr));
+    err = read_section(ctx, sect_index, ldp, phdr->p_memsz);
+    if (err < 0) {
+        if (sect->vm_ops->rfree) {
+            sect->vm_ops->rfree(sect);
         }
+        return -ENOEXEC;
     }
 
     *region = sect;
     return 0;
 }
 
-static int load_sections(struct proc_info * proc, file_t * file,
-                         struct elf32_header * elfhdr, struct elf32_phdr * phdr,
-                         uintptr_t rbase, uintptr_t * vaddr_base)
+/**
+ * Parse all supported elf sections.
+ */
+static int parse_sections(struct proc_info * proc, struct elf_ctx * ctx)
 {
-    int e_type = elfhdr->e_type;
-    size_t phnum = elfhdr->e_phnum;
+    int e_type = ctx->elfhdr.e_type;
+    size_t phnum = ctx->elfhdr.e_phnum;
+    size_t i, nr_exec = 0;
 
-    for (size_t i = 0; i < phnum; i++) {
+    for (i = 0; i < phnum; i++) {
+        struct elf32_phdr * phdr = &ctx->phdr[i];
         struct buf * sect;
         int err;
 
-        if (!(phdr[i].p_type == PT_LOAD && phdr[i].p_memsz != 0))
-            continue;
+        switch (phdr->p_type) {
+        case PT_LOAD:
+            if (phdr->p_memsz == 0)
+                break;
 
-        if ((err = load_section(&sect, file, rbase, &phdr[i])))
-            return err;
-
-        if (e_type == ET_EXEC && i < 2) {
-            const int reg_nr = (i == 0) ? MM_CODE_REGION : MM_HEAP_REGION;
-
-            if (i == 0)
-                *vaddr_base = phdr[i].p_vaddr + rbase;
-            err = vm_replace_region(proc, sect, reg_nr, VM_INSOP_MAP_REG);
-            if (err) {
-                KERROR(KERROR_ERR, "Failed to replace a region\n");
+            if ((err = load_section(ctx, i, &sect)))
                 return err;
+
+            if (e_type == ET_EXEC && nr_exec < 2) {
+                const int reg_nr = (i == 0) ? MM_CODE_REGION : MM_HEAP_REGION;
+
+                if (nr_exec == 0)
+                    ctx->vaddr_base = phdr->p_vaddr + ctx->rbase;
+                err = vm_replace_region(proc, sect, reg_nr, VM_INSOP_MAP_REG);
+                if (err) {
+                    KERROR(KERROR_ERR, "Failed to replace a region\n");
+                    return err;
+                }
+            } else {
+                err = vm_insert_region(proc, sect, VM_INSOP_MAP_REG);
+                if (err < 0) {
+                    KERROR(KERROR_ERR, "Failed to insert a region\n");
+                    return -1;
+                }
             }
-        } else {
-            err = vm_insert_region(proc, sect, VM_INSOP_MAP_REG);
-            if (err < 0) {
-                KERROR(KERROR_ERR, "Failed to insert a region\n");
-                return -1;
-            }
+
+            nr_exec++;
+            break;
+        case PT_NOTE:
+        default:
+            break;
         }
     }
 
@@ -250,40 +292,40 @@ int test_elf32(file_t * file)
 
 int load_elf32(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base)
 {
-    struct elf32_header elfhdr;
-    struct elf32_phdr * phdr = NULL;
-    uintptr_t rbase;
+    struct elf_ctx ctx = {
+        .file = file,
+        .phdr = NULL,
+    };
     int retval;
 
     if (!vaddr_base)
         return -EINVAL;
 
-    if (read_elf32_header(&elfhdr, file))
+    if (read_elf32_header(&ctx.elfhdr, file))
         return -ENOEXEC;
 
-    switch (elfhdr.e_type) {
+    switch (ctx.elfhdr.e_type) {
     case ET_DYN:
-        rbase = *vaddr_base;
+        ctx.rbase = *vaddr_base;
         break;
     case ET_EXEC:
-        rbase = 0;
+        ctx.rbase = 0;
         break;
     default:
         return -ENOEXEC;
     }
 
-    phdr = read_program_headers(file, &elfhdr);
-    if (!phdr) {
+    if (read_program_headers(&ctx)) {
         return -ENOEXEC;
     }
 
-    if ((retval = verify_loadable_sections(&elfhdr, phdr, rbase)) ||
-        (retval = load_sections(proc, file, &elfhdr, phdr, rbase, vaddr_base)))
+    if ((retval = verify_loadable_sections(&ctx)) ||
+        (retval = parse_sections(proc, &ctx)))
         goto out;
 
     retval = 0;
 out:
-    kfree(phdr);
+    kfree(ctx.phdr);
 
     return retval;
 }
