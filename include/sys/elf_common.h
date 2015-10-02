@@ -515,6 +515,10 @@ typedef struct {
 
 /* Values for n_type.  Used in object files. */
 #define NT_VERSION      1   /* Version string. */
+#define NT_ARCH         2   /* Architecture string. */
+
+/* Values for n_type.  Used by Zeke */
+#define NT_STACKSIZE    3
 
 /* Symbol Binding - ELFNN_ST_BIND - st_info */
 #define STB_LOCAL       0   /* Local symbol */
