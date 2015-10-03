@@ -56,7 +56,8 @@ static int main_stack_max = 2 * configPROC_STACK_DFL;
 SYSCTL_INT(_kern, KERN_MAXSIZ, maxsiz, CTLFLAG_RW,
            &main_stack_max, 0, "Max main() stack size");
 
-static int load_proc_image(file_t * file, uintptr_t * vaddr_base)
+static int load_proc_image(file_t * file, uintptr_t * vaddr_base,
+                           size_t * stack_size)
 {
     struct exec_loadfn ** loader;
     int err = 0;
@@ -73,7 +74,7 @@ static int load_proc_image(file_t * file, uintptr_t * vaddr_base)
     /* Unload user regions before loading a new image. */
     (void)vm_unload_regions(curproc, MM_HEAP_REGION, -1);
 
-    err = (*loader)->load(curproc, file, vaddr_base);
+    err = (*loader)->load(curproc, file, vaddr_base, stack_size);
 
     return err;
 }
@@ -97,15 +98,19 @@ size_t get_new_main_stack_size(ssize_t emin)
 
 /**
  * Create a new thread for executing main()
+ * @param stack_size is the preferred stack size;
+ *                   0 if the system default shall be used.
  */
-static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp)
+static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp,
+                                 size_t stack_size)
 {
     struct buf * stack_region;
     struct buf * code_region = (*curproc->mm.regions)[MM_CODE_REGION];
     struct _sched_pthread_create_args args;
 
     /* TODO min provided by the elf */
-    stack_region = vm_new_userstack_curproc(get_new_main_stack_size(-1));
+    stack_size = get_new_main_stack_size(stack_size);
+    stack_region = vm_new_userstack_curproc(stack_size);
     if (!stack_region)
         return -ENOMEM;
 
@@ -134,6 +139,7 @@ int exec_file(int fildes, char name[PROC_NAME_LEN], struct buf * env_bp,
 {
     file_t * file;
     uintptr_t vaddr = 0; /* RFE Shouldn't matter if elf is not dyn? */
+    size_t stack_size;
     pthread_t tid;
     int err;
 
@@ -156,7 +162,7 @@ int exec_file(int fildes, char name[PROC_NAME_LEN], struct buf * env_bp,
     }
 
     /* Load image and close the file */
-    err = load_proc_image(file, &vaddr);
+    err = load_proc_image(file, &vaddr, &stack_size);
     fs_fildes_ref(curproc->files, fildes, -1);
     if (err || (err = fs_fildes_close(curproc, fildes))) {
 #if defined(configEXEC_DEBUG)
@@ -186,7 +192,7 @@ int exec_file(int fildes, char name[PROC_NAME_LEN], struct buf * env_bp,
     strlcpy(curproc->name, name, sizeof(curproc->name));
 
     /* Create a new main() thread */
-    tid = new_main_thread(uargc - 1, uargv, uenvp);
+    tid = new_main_thread(uargc - 1, uargv, uenvp, stack_size);
     if (tid <= 0) {
         const struct ksignal_param sigparm = {
            .si_code = SI_USER,

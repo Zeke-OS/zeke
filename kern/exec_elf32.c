@@ -55,7 +55,7 @@ struct elf_ctx {
     uintptr_t rbase;
     /* out */
     uintptr_t vaddr_base;
-    size_t stack_size;
+    size_t stack_size; /*!< Preferred minimum stack size. */
 };
 
 static int check_header(const struct elf32_header * hdr)
@@ -194,8 +194,9 @@ static ssize_t read_section(struct elf_ctx * ctx, size_t sect_index,
     if (vn->vnode_ops->lseek(ctx->file, phdr->p_offset, SEEK_SET) < 0)
         return -ENOEXEC;
 
-    uio_init_kbuf(&uio, out, min(size, phdr->p_filesz));
-    return vn->vnode_ops->read(ctx->file, &uio, phdr->p_filesz);
+    size = min(size, phdr->p_filesz);
+    uio_init_kbuf(&uio, out, size);
+    return vn->vnode_ops->read(ctx->file, &uio, size);
 }
 
 /**
@@ -232,10 +233,94 @@ static int load_section(struct elf_ctx * ctx, size_t sect_index,
     return 0;
 }
 
+#if defined(configEXEC_DEBUG)
+static void nt_version(Elf_Note * note, size_t align)
+{
+    char * vendor = (char *)note + sizeof(Elf_Note);
+    char * value = vendor + memalign_size(note->n_namesz, align);
+
+    KERROR(KERROR_DEBUG, "Vendor: %s, Value: %s\n", vendor, value);
+}
+#endif
+
+static size_t nt_stacksize(Elf_Note * note, size_t align)
+{
+    char * vendor = (char *)note + sizeof(Elf_Note);
+    uint32_t value = *(uint32_t *)(vendor + memalign_size(note->n_namesz,
+                                                          align));
+#if defined(configEXEC_DEBUG)
+    KERROR(KERROR_DEBUG, "Vendor: %s, Value: %u\n", vendor, value);
+#endif
+
+    return value;
+}
+
+static int load_notes(struct elf_ctx * ctx, size_t sect_index)
+{
+    struct elf32_phdr * phdr = &ctx->phdr[sect_index];
+    const size_t align = phdr->p_align;
+    size_t off = 0;
+    uint8_t * sect;
+    int retval;
+
+    sect = kzalloc(phdr->p_memsz);
+    if (!sect) {
+        retval = -ENOMEM;
+        goto out;
+    }
+
+    if (read_section(ctx, sect_index, sect, phdr->p_memsz) < 0) {
+#if defined(configEXEC_DEBUG)
+        KERROR(KERROR_DEBUG, "Failed to read a notes\n");
+#endif
+        retval = -ENOEXEC;
+        goto out;
+    }
+
+    do {
+        Elf_Note * note = (Elf_Note *)(sect + off);
+        size_t note_size;
+
+        if ((uintptr_t)note & (align - 1)) {
+            /* Incorrect alignment */
+#if defined(configEXEC_DEBUG)
+            KERROR(KERROR_DEBUG, "Aligment fault %p %p\n", note, sect);
+#endif
+            retval = -ENOEXEC;
+            goto out;
+        }
+        note_size = sizeof(Elf_Note) + memalign_size(note->n_namesz, align) +
+                    memalign_size(note->n_descsz, align);
+        if (off + note_size > phdr->p_memsz) {
+            retval = -ENOEXEC;
+            goto out;
+        }
+
+        switch (note->n_type) {
+        case NT_VERSION:
+#if defined(configEXEC_DEBUG)
+            nt_version(note, align);
+#endif
+            break;
+        case NT_STACKSIZE: /* Preferred minimum stack size */
+            ctx->stack_size = nt_stacksize(note, align);
+            break;
+        default:
+            break;
+        }
+        off += note_size;
+    } while (off < phdr->p_memsz);
+
+    retval = 0;
+out:
+    kfree(sect);
+    return retval;
+}
+
 /**
  * Parse all supported elf sections.
  */
-static int parse_sections(struct proc_info * proc, struct elf_ctx * ctx)
+static int parse_pheaders(struct proc_info * proc, struct elf_ctx * ctx)
 {
     int e_type = ctx->elfhdr.e_type;
     size_t phnum = ctx->elfhdr.e_phnum;
@@ -275,6 +360,8 @@ static int parse_sections(struct proc_info * proc, struct elf_ctx * ctx)
             nr_exec++;
             break;
         case PT_NOTE:
+            err = load_notes(ctx, i);
+            break;
         default:
             break;
         }
@@ -290,11 +377,13 @@ int test_elf32(file_t * file)
     return read_elf32_header(&elfhdr, file);
 }
 
-int load_elf32(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base)
+int load_elf32(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base,
+               size_t * stack_size)
 {
     struct elf_ctx ctx = {
         .file = file,
         .phdr = NULL,
+        .stack_size = 0,
     };
     int retval;
 
@@ -320,9 +409,10 @@ int load_elf32(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base)
     }
 
     if ((retval = verify_loadable_sections(&ctx)) ||
-        (retval = parse_sections(proc, &ctx)))
+        (retval = parse_pheaders(proc, &ctx)))
         goto out;
 
+    *stack_size = ctx.stack_size;
     retval = 0;
 out:
     kfree(ctx.phdr);

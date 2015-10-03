@@ -31,7 +31,8 @@
 
 #include <sys/elf_common.h>
 
-#define ELFNOTE_VENDOR_ZEKE "Zeke"
+#define ELFNOTE_VENDOR_ZEKE     "Zeke"
+#define ELFNOTE_SECT_ZEKE_CONF  ".note.zeke.conf"
 
 #define __ELF_NOTE_STRUCT_HEAD(_vendor_)                            \
         int32_t namesz;                                             \
@@ -42,6 +43,9 @@
 #define __ELF_NOTE_STRUCT_DEF(_section_, _name_)                    \
     _name_ __attribute__ ((section (_section_), aligned(4))) __used
 
+/**
+ * Note integer.
+ */
 #define ELFNOTE_INT(_section_, _vendor_, _type_, _name_, _value_)   \
     static const struct {                                           \
         __ELF_NOTE_STRUCT_HEAD(_vendor_)                            \
@@ -56,8 +60,8 @@
 
 /**
  * Note string.
- * @param _str_ is the string literal to be stored. The size must
- *              be a multiple of 4.
+ * @param _str_ is the string literal to be stored. The size must be
+ *              a multiple of the word size.
  */
 #define ELFNOTE_STR(_section_, _vendor_, _type_, _name_, _str_)     \
     static const struct {                                           \
@@ -71,11 +75,16 @@
         .desc = _str_                                               \
     }
 
-#define ELFNOTE_STACK_SIZE(_stack_size_)                            \
+/**
+ * Request a minimum stack size of _stack_size_ bytes.
+ * @param _stack_size_ is the minumum stack size required by
+ *                     the executable.
+ */
+#define ELFNOTE_STACKSIZE(_stack_size_)                             \
     static const struct {                                           \
         __ELF_NOTE_STRUCT_HEAD(ELFNOTE_VENDOR_ZEKE)                 \
         uint32_t desc;                                              \
-    } __ELF_NOTE_STRUCT_DEF(".note.zeke.conf", _name_) = {          \
+    } __ELF_NOTE_STRUCT_DEF(ELFNOTE_SECT_ZEKE_CONF, _name_) = {     \
         .namesz = sizeof(ELFNOTE_VENDOR_ZEKE),                      \
         .descsz = sizeof(uint32_t),                                 \
         .type = NT_STACKSIZE,                                       \
