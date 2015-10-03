@@ -17,12 +17,10 @@ class sessionPrinter:
 
         s_leader = self.val['s_leader']
         s_login = self.val['s_login']
-        s_refcount = self.val['s_refcount']
         pgrp_list = zeke_queue.getTAILQ(self.val['s_pgrp_list_head'], 'pg_pgrp_entry_')
 
         session = '{Session leader: ' + str(s_leader) + \
             ', login: '     + str(s_login) + \
-            ', refcount: '  + str(s_refcount) + \
             ', pgroups: '   + str(pgrp_list) + '}'
 
         return session
@@ -39,11 +37,9 @@ class pgrpPrinter:
         
         pg_id = self.val['pg_id']
         pg_sid = self.val['pg_session'].dereference()['s_leader']
-        pg_refcount = self.val['pg_refcount']
 
         pgrp = '{pg_id: '   + str(self.val['pg_id']) + \
-            ', sid: '       + str(pg_sid) + \
-            ', refcount: '  + str(pg_refcount) + '}'
+            ', sid: '       + str(pg_sid) + '}'
 
         return pgrp
 
@@ -107,7 +103,7 @@ class ProcPidPrint(gdb.Command):
         try:
             pid = gdb.string_to_argv(arg)[0]
             proc = gdb.parse_and_eval('*(*_procarr)[' + str(pid) + ']')
-            print('((struct proc_info *)%s)%s' % str(proc.address), str(proc))
+            print('((struct proc_info *)%s)%s' % (str(proc.address), str(proc)))
         except:
             gdb.write('Invalid PID\n')
             return

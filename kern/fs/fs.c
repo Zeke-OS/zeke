@@ -503,6 +503,20 @@ int chkperm_vnode(vnode_t * vnode, struct cred * cred, int oflags)
     return err;
 }
 
+/**
+ * Automatically called destructor for file descriptors.
+ */
+static void fs_fildes_dtor(struct kobj * obj)
+{
+    file_t * file = container_of(obj, struct file, f_obj);
+    vnode_t * vn = file->vnode;
+
+    if (file->oflags & O_KFREEABLE)
+        kfree(file);
+    file = NULL;
+    vrele(vn);
+}
+
 int fs_fildes_set(file_t * fildes, vnode_t * vnode, int oflags)
 {
     if (!(fildes && vnode))
@@ -510,7 +524,7 @@ int fs_fildes_set(file_t * fildes, vnode_t * vnode, int oflags)
 
     fildes->vnode = vnode;
     fildes->oflags = oflags;
-    fildes->refcount = ATOMIC_INIT(1);
+    kobj_init(&fildes->f_obj, fs_fildes_dtor);
 
     return 0;
 }
@@ -565,7 +579,7 @@ perms_ok:
         goto out;
     }
     fs_fildes_set(curproc->files->fd[fd], vnode, oflags);
-    new_fildes->fdflags |= FD_KFREEABLE;
+    new_fildes->oflags |= O_KFREEABLE;
 
     /*
      * File descriptor ready, make an event call to the fs.
@@ -600,7 +614,7 @@ int fs_fildes_curproc_next(file_t * new_file, int start)
 }
 
 /**
- * Check if the give fd number is in the valid range.
+ * Check if the given fd number is in the valid range.
  */
 static int fs_fildes_is_in_range(files_t * files, int fd)
 {
@@ -610,7 +624,7 @@ static int fs_fildes_is_in_range(files_t * files, int fd)
 file_t * fs_fildes_ref(files_t * files, int fd, int count)
 {
     file_t * file;
-    int old_refcount;
+    int orig_refcount;
 
     KASSERT(files != NULL, "files should be set");
 
@@ -621,16 +635,23 @@ file_t * fs_fildes_ref(files_t * files, int fd, int count)
     if (!file)
         return NULL;
 
-    old_refcount = atomic_add(&file->refcount, count);
-    if ((old_refcount + count) <= 0) {
-        vnode_t * vn = file->vnode;
-
-        if (file->fdflags & FD_KFREEABLE)
-            kfree(file);
-        vrele(vn);
+    orig_refcount = kobj_refcnt(&file->f_obj);
+    if (orig_refcount <= 0) {
         files->fd[fd] = NULL;
+        file = NULL;
+    } else if (count > 0) {
+        if (kobj_ref_v(&file->f_obj, count)) {
+            files->fd[fd] = NULL;
+            file = NULL;
+        }
+    } else if (count < 0) {
+        count = min(orig_refcount, -count);
 
-        return NULL;
+        kobj_unref_p(&file->f_obj, count);
+        if (count == orig_refcount) {
+            files->fd[fd] = NULL;
+            file = NULL;
+        }
     }
 
     return file;
@@ -645,6 +666,8 @@ int fs_fildes_close(struct proc_info * p, int fildes)
     file->vnode->vnode_ops->event_fd_closed(p, file);
 
     fs_fildes_ref(p->files, fildes, -2);
+
+    /* File pointer is set to NULL for closed files regardless of refcount. */
     p->files->fd[fildes] = NULL;
 
     return 0;
@@ -661,6 +684,20 @@ void fs_fildes_close_all(struct proc_info * p, int fildes_begin)
 
     for (i = start; i > fdstop; i--) {
         fs_fildes_close(p, i);
+    }
+}
+
+void fs_fildes_close_exec(struct proc_info * p)
+{
+    const int end = p->files->count;
+    int i;
+
+    for (i = 0; i < end; i++) {
+        file_t * file = p->files->fd[i];
+
+        if (file && file->oflags & O_CLOEXEC) {
+            fs_fildes_close(p, i);
+        }
     }
 }
 

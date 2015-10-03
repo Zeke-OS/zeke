@@ -124,6 +124,12 @@ config configMAXPROC
     Default maximum number of processes. This is a sysctl tunable variable
     and thus can be changed on runtime.
 
+config configPROC_STACK_DFL
+    int "Stack default size"
+    default 8192
+    ---help---
+    Default stack size of a new process main().
+
 config configCOW_ENABLED
     bool "Enable copy-on-write for processes"
     default y
@@ -249,6 +255,12 @@ config configEXEC_DEBUG
     default n
     ---help---
     Enable exec debug messages.
+
+config configKINIT_DEBUG
+    bool "kinit debugging"
+    default n
+    ---help---
+    Enable kinit debug messages.
 
 config configKSIGNAL_DEBUG
     bool "Ksignal debugging"

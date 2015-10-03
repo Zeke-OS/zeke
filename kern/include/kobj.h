@@ -57,6 +57,7 @@ int kobj_refcnt(struct kobj * p);
 /**
  * Increment the refcount of a kobj object descriptor.
  * @param p is a pointer to the kobj object descriptor.
+ * @return Returns zero if succeed; Otherwise a negative ernno is returned.
  */
 int kobj_ref(struct kobj * p);
 
@@ -65,5 +66,19 @@ int kobj_ref(struct kobj * p);
  * @param p is a pointer to the kobj object descriptor.
  */
 void kobj_unref(struct kobj * p);
+
+/**
+ * Increase the refcount of a kobj by count.
+ * @param p is a pointer to the kobj object descriptor.
+ * @return Returns zero if succeed; Otherwise a negative ernno is returned.
+ */
+int kobj_ref_v(struct kobj * p, unsigned count);
+
+/**
+ * Decrease the refcount of a kobj by count.
+ * @param p is a pointer to the kobj object descriptor.
+ * @return Returns zero if succeed; Otherwise a negative ernno is returned.
+ */
+void kobj_unref_p(struct kobj * p, unsigned count);
 
 #endif /* _KOBJ_H_ */

@@ -78,11 +78,12 @@ int uio_init_ubuf(struct uio * uio, __user void * ubuf, size_t size,
                      int rw);
 
 /**
- * Initialize a user IO buffer from struct buf.
+ * INITIAlize a user IO buffer from struct buf.
  * @param[in] bp is a buffer allocated from core.
  * @param[out] uio is the target uio struct.
+ * @return Returns 0 if succeed; Otherwise a negative errno code.
  */
-void uio_buf2kuio(struct buf * bp, struct uio * uio);
+int uio_buf2kuio(struct buf * bp, struct uio * uio);
 
 /**
  * Copy from fs to uio buffer.

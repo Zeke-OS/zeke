@@ -372,7 +372,7 @@ static int sys_fcntl(__user void * user_args)
 
     switch (args.cmd) {
     case F_DUPFD_CLOEXEC:
-        file->fdflags = FD_CLOEXEC;
+        file->oflags |= O_CLOEXEC & O_USERMASK;
     case F_DUPFD:
     {
         int new_fd;
@@ -389,14 +389,15 @@ static int sys_fcntl(__user void * user_args)
     }
     case F_DUP2FD:
     {
-        int new_fd = args.third.ival;
+        int err, new_fd = args.third.ival;
 
         if (args.fd == new_fd) {
             retval = new_fd;
             goto out;
         }
 
-        if (fs_fildes_close(curproc, new_fd) != -EBADF) {
+        err = fs_fildes_close(curproc, new_fd);
+        if (err != 0 && err != -EBADF) {
             set_errno(EIO);
             goto out;
         }
@@ -417,17 +418,19 @@ static int sys_fcntl(__user void * user_args)
         break;
     }
     case F_GETFD:
-        retval = file->fdflags;
+        retval = file->oflags & O_CLOEXEC;
         break;
     case F_SETFD:
-        file->fdflags = args.third.ival;
+        file->oflags &= ~O_CLOEXEC;
+        file->oflags |= args.third.ival & O_CLOEXEC;
         break;
     case F_GETFL:
-        retval = file->oflags;
+        retval = file->oflags & O_USERMASK;
         break;
     case F_SETFL:
         /* TODO sync will need some operations to be done */
-        file->oflags = args.third.ival & (O_APPEND | O_SYNC | O_NONBLOCK);
+        file->oflags &= ~(O_APPEND | O_SYNC | O_NONBLOCK);
+        file->oflags |= args.third.ival & (O_APPEND | O_SYNC | O_NONBLOCK);
         retval = 0;
         break;
     case F_GETOWN:

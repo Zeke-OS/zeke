@@ -85,14 +85,6 @@ typedef int pid_t; /*!< Process ID. */
 /* fcntl() fdflags */
 #define FD_CLOEXEC      0x1 /*!< Close the file descriptor upon execution of
                              *   an exec family function. */
-#ifdef KERNEL_INTERNAL
-#define FD_KFREEABLE    0x2 /*!< Can be freed with kfree() by fs_fildes_ref(),
-                             *   if not set the file won't be freed by fs
-                             *   subystem. This flag is useful if the file
-                             *   descriptor is static or freed by other
-                             *   subsystem.
-                             */
-#endif
 
 /* fcntl() l_type arg */
 #define F_RDLCK         0   /*!< Shared or read lock. */
@@ -132,6 +124,15 @@ typedef int pid_t; /*!< Process ID. */
 #define O_RDWR          0x3000 /*!< Open for reading and writing. */
 #define O_SEARCH        0x8000 /*!< Open directory for search only. */
 #define O_EXEC          0x4000 /*!< Open for execute only. */
+#ifdef KERNEL_INTERNAL /* Internal flags */
+#define O_USERMASK      0x0ffff
+#define O_KFREEABLE     0x10000 /*!< Can be freed with kfree() by
+                                 *   fs_fildes_ref(), if not set the file won't
+                                 *   be freed by fs subystem. This flag is
+                                 *   useful if the file descriptor is static or
+                                 *   freed by other subsystem.
+                                 */
+#endif
 
 #define AT_FDCWD            0x40000000 /*!< Use the current working directory to
                                         *   determine the target of relative

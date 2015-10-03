@@ -43,8 +43,11 @@ int openat(int fd, const char * path, int oflags, ...)
         .name = path,
         .name_len = strlen(path) + 1,
         .oflags = oflags,
-        .atflags = (fd == AT_FDCWD) ? AT_FDCWD : AT_FDARG /* RFE Shouldn't be
-                                                           * needed */
+        /*
+         * atflags isn't necessarily needed but it makes
+         * API calls more consistent.
+         */
+        .atflags = (fd == AT_FDCWD) ? AT_FDCWD : AT_FDARG
     };
 
     if (oflags & O_CREAT) {

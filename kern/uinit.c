@@ -139,52 +139,69 @@ static void init_errno(void)
     ep = &tls->errno_val;
 }
 
+static void get_rootfs(char * root, char * fsname, const char * rootfs)
+{
+    const char delim[] = " ";
+    char str[40];
+    char * strp = str;
+    char * token;
+
+    strlcpy(str, rootfs, sizeof(str));
+
+    /* Set first bytes in case of strsep() fails */
+    root[0] = '\0';
+    fsname[0] = '\0';
+
+    token = strsep(&strp, delim);
+    if (token)
+        strlcpy(root, token, 40);
+    token = strsep(&strp, delim);
+    if (token)
+        strlcpy(fsname, token, 10);
+}
+
 /**
  * A function to initialize the user space and execute the actual init process.
  * This function is kind of special because it's executed in a separate context
  * from the kernel but still the binary is located in the kernel vm region.
+ * @param arg is the value of kern.root sysctl.
  */
 void * uinit(void * arg)
 {
+    char root[40];
+    char fsname[10];
     char * argv[] = { "/sbin/sinit", NULL };
     char * env[] = {  NULL };
-    int err;
 
     init_errno();
 
     _mkdir("/dev", S_IRWXU | S_IRGRP | S_IXGRP);
-    err = _mount("", "/dev", "devfs");
-    if (err)
+    if (_mount("", "/dev", "devfs"))
         fail("can't mount /dev");
 
-     /* TODO Should use sysctl to get rootfs path and type */
-     _mkdir("/mnt", S_IRWXU | S_IRGRP | S_IXGRP);
-     err = _mount(configROOTFS_PATH, "/mnt", configROOTFS_NAME);
-     if (err)
+    _mkdir("/mnt", S_IRWXU | S_IRGRP | S_IXGRP);
+    get_rootfs(root, fsname, (char *)arg);
+    if (_mount(root, "/mnt", fsname))
         fail("can't mount sd card");
 
-     _chdir("/mnt");
+    _chdir("/mnt");
     _chrootcwd();
 
-#if configDEVFS
-    err = _mount("", "/dev", "devfs");
-    if (err)
+#ifdef configDEVFS
+    if (_mount("", "/dev", "devfs"))
         fail("Failed to mount /dev");
 #endif
 
-#if configPROCFS
-    err = _mount("", "/proc", "procfs");
-    if (err)
+#ifdef configPROCFS
+    if (_mount("", "/proc", "procfs"))
         fail("Failed to mount /proc");
 #endif
 
-    err = _mount("", "/tmp", "ramfs");
-    if (err)
+    if (_mount("", "/tmp", "ramfs"))
         fail("Failed to mount /tmp");
 
     /* Exec init */
-    err = _execve(argv[0], argv, num_elem(argv), env, num_elem(env));
-    if (err)
+    if (_execve(argv[0], argv, num_elem(argv), env, num_elem(env)))
         fail("exec init failed");
 
     return NULL;

@@ -43,7 +43,8 @@ struct buf;
 struct exec_loadfn {
     char name[10];
     int (*test)(file_t * file);
-    int (*load)(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base);
+    int (*load)(struct proc_info * proc, file_t * file, uintptr_t * vaddr_base,
+                size_t * stack_size);
 };
 
 /**

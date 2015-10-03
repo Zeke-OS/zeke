@@ -224,9 +224,7 @@ static int dab_align(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
     if (!proc)
         return -ESRCH;
 
-#if configDEBUG >= KERROR_DEBUG
     KERROR(KERROR_DEBUG, "%s: Send a fatal SIGBUS\n", __func__);
-#endif
 
     /*
      * Deliver SIGBUS.
@@ -256,10 +254,8 @@ static int dab_buserr(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
     if (!proc)
         return -ESRCH;
 
-#if configDEBUG >= KERROR_DEBUG
     KERROR(KERROR_DEBUG, "%s: Send a fatal SIGSEGV to %d\n",
            __func__, proc->pid);
-#endif
 
     /* Deliver SIGSEGV. */
     ksignal_sendsig_fatal(proc, SIGSEGV, &sigparm);

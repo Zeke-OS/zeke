@@ -57,23 +57,23 @@ SYSCTL_NODE(, OID_AUTO, security, CTLFLAG_RW, 0,
 #define KERNEL_RELENAME ""
 #endif
 static const char osrelease[] = KERNEL_RELENAME" "KERNEL_VERSION;
-SYSCTL_STRING(_kern, KERN_OSRELEASE, osrelease, CTLFLAG_RD | CTLFLAG_MPSAFE,
+SYSCTL_STRING(_kern, KERN_OSRELEASE, osrelease, CTLFLAG_RD,
         (char *)osrelease, 0,
         "Operating system release");
 
 /* TODO Arch */
 static const char version[] = "ARCH" " " __DATE__;
-SYSCTL_STRING(_kern, KERN_VERSION, version, CTLFLAG_RD | CTLFLAG_MPSAFE,
+SYSCTL_STRING(_kern, KERN_VERSION, version, CTLFLAG_RD,
         (char *)version, 0,
         "Kernel version");
 
 static const char compiler_version[] =  __VERSION__;
-SYSCTL_STRING(_kern, OID_AUTO, compiler_version, CTLFLAG_RD | CTLFLAG_MPSAFE,
+SYSCTL_STRING(_kern, OID_AUTO, compiler_version, CTLFLAG_RD,
         (char *)compiler_version, 0,
         "Version of compiler used to compile kernel");
 
 static const char ostype[] = "Zeke";
-SYSCTL_STRING(_kern, KERN_OSTYPE, ostype, CTLFLAG_RD | CTLFLAG_MPSAFE,
+SYSCTL_STRING(_kern, KERN_OSTYPE, ostype, CTLFLAG_RD,
         (char *)ostype, 0,
         "Operating system type");
 

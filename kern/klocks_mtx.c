@@ -192,7 +192,7 @@ int _mtx_sleep(mtx_t * mtx, long timeout, char * whr)
 
         retval = mtx_lock(mtx);
         timers_release(current_thread->wait_tim);
-        current_thread->wait_tim = -1;
+        current_thread->wait_tim = TMNOVAL;
     } else if (mtx->mtx_type == MTX_TYPE_SPIN) {
         retval = mtx_lock(mtx);
     } else {
@@ -259,7 +259,7 @@ void mtx_unlock(mtx_t * mtx)
 {
     if (MTX_OPT(mtx, MTX_OPT_SLEEP) && (current_thread->wait_tim >= 0)) {
         timers_release(current_thread->wait_tim);
-        current_thread->wait_tim = -1;
+        current_thread->wait_tim = TMNOVAL;
     }
 
 #ifdef configLOCK_DEBUG

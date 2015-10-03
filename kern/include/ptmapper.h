@@ -101,6 +101,8 @@
     DATA_SET(ptmapper_fixed_regions, _region_name)
 /* End of Page Table Region Macros ********************************************/
 
+SET_DECLARE(ptmapper_fixed_regions, mmu_region_t);
+
 extern mmu_pagetable_t mmu_pagetable_master;
 extern mmu_pagetable_t mmu_pagetable_system;
 struct vm_pt;

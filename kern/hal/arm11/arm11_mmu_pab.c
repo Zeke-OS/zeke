@@ -206,10 +206,8 @@ static int pab_buserr(uint32_t ifsr, uint32_t ifar, uint32_t psr, uint32_t lr,
     if (!proc)
         return -ESRCH;
 
-#if configDEBUG >= KERROR_DEBUG
     pab_dump(ifsr, ifar, psr, lr, proc, thread);
     KERROR(KERROR_DEBUG, "%s: Send a fatal SIGSEGV\n", __func__);
-#endif
 
     /* Deliver SIGSEGV. */
     ksignal_sendsig_fatal(proc, SIGSEGV, &sigparm);

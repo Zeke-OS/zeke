@@ -473,7 +473,7 @@ pid_t proc_fork(pid_t pid)
 #ifdef configPROC_DEBUG
             KERROR(KERROR_DEBUG, "thread_fork() failed\n");
 #endif
-            retval = -EAGAIN; /* RFE What should we return? */
+            retval = -EAGAIN;
             goto out;
         } else if (new_tid > 0) { /* thread of the forking process returning */
 #ifdef configPROC_DEBUG
@@ -484,12 +484,12 @@ pid_t proc_fork(pid_t pid)
             new_proc->main_thread->curr_mpt = &new_proc->mm.mpt;
         } else {
             /*
-             * TODO Shouldn't panic here.
-             * To remove this panic here the thread forking must be moved after
-             * the process is registered/inserted so send a fatal signal
-             * instead.
+             * This should never happen but in case it still happens
+             * we just exit with an error code.
              */
-            panic("\tThread forking failed");
+            new_proc->main_thread = NULL;
+            new_proc->state = PROC_STATE_ZOMBIE;
+            retval = -EAGAIN;
         }
     } else {
 #ifdef configPROC_DEBUG

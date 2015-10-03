@@ -31,10 +31,18 @@
  */
 
 #define PROC_INTERNAL
-#include <proc.h>
 #include <kmalloc.h>
+#include <libkern.h>
+#include <proc.h>
 
 /* TODO List of sessions? */
+
+static void proc_session_free_callback(struct kobj * obj)
+{
+    struct session * s = container_of(obj, struct session, s_obj);
+
+    kfree(s);
+}
 
 struct session * proc_session_create(struct proc_info * leader,
                                      char s_login[MAXLOGNAME])
@@ -48,23 +56,19 @@ struct session * proc_session_create(struct proc_info * leader,
     TAILQ_INIT(&s->s_pgrp_list_head);
     s->s_leader = leader->pid;
     strlcpy(s->s_login, s_login, sizeof(s->s_login));
-    s->s_refcount = ATOMIC_INIT(0);
+    kobj_init(&s->s_obj, proc_session_free_callback);
 
     return s;
 }
 
 static void proc_session_ref(struct session * s)
 {
-    atomic_inc(&s->s_refcount);
+    kobj_ref(&s->s_obj);
 }
 
 static void proc_session_rele(struct session * s)
 {
-    int rc;
-
-    rc = atomic_dec(&s->s_refcount);
-    if (rc <= 1)
-        kfree(s);
+    kobj_unref(&s->s_obj);
 }
 
 void proc_session_remove(struct session * s)
@@ -87,6 +91,17 @@ struct pgrp * proc_session_search_pg(struct session * s, pid_t pg_id)
     return NULL;
 }
 
+static void proc_pgrp_free_callback(struct kobj * obj)
+{
+    struct pgrp * pgrp = container_of(obj, struct pgrp, pg_obj);
+    struct session * s = pgrp->pg_session;
+
+    TAILQ_REMOVE(&s->s_pgrp_list_head, pgrp, pg_pgrp_entry_);
+    proc_session_rele(s);
+
+    kfree(pgrp);
+}
+
 struct pgrp * proc_pgrp_create(struct session * s, struct proc_info * proc)
 {
     struct pgrp * pgrp;
@@ -104,7 +119,7 @@ struct pgrp * proc_pgrp_create(struct session * s, struct proc_info * proc)
 
     TAILQ_INIT(&pgrp->pg_proc_list_head);
     pgrp->pg_id = proc->pid;
-    pgrp->pg_refcount = ATOMIC_INIT(0);
+    kobj_init(&pgrp->pg_obj, proc_pgrp_free_callback);
 
     pgrp->pg_session = s;
     TAILQ_INSERT_TAIL(&s->s_pgrp_list_head, pgrp, pg_pgrp_entry_);
@@ -115,21 +130,12 @@ struct pgrp * proc_pgrp_create(struct session * s, struct proc_info * proc)
 
 static void proc_pgrp_ref(struct pgrp * pgrp)
 {
-    atomic_inc(&pgrp->pg_refcount);
+    kobj_ref(&pgrp->pg_obj);
 }
 
 static void proc_pgrp_rele(struct pgrp * pgrp)
 {
-    int rc;
-
-    rc = atomic_dec(&pgrp->pg_refcount);
-    if (rc <= 1) {
-        struct session * s = pgrp->pg_session;
-
-        TAILQ_REMOVE(&s->s_pgrp_list_head, pgrp, pg_pgrp_entry_);
-        proc_session_rele(s);
-        kfree(pgrp);
-    }
+    kobj_unref(&pgrp->pg_obj);
 }
 
 void proc_pgrp_insert(struct pgrp * pgrp, struct proc_info * proc)

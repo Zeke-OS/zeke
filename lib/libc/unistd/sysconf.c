@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Zero Kernel user space code
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,12 +36,26 @@
 #include <syscall.h>
 #include <unistd.h>
 
+static long sysconf_getpagesize(void)
+{
+    int mib[] = { CTL_HW, HW_PAGESIZE };
+    static long pagesize;
+    size_t len = sizeof(pagesize);
+
+    if (pagesize)
+        return pagesize;
+
+    if (sysctl(mib, num_elem(mib), &pagesize, &len, NULL, 0) == -1)
+        return 4096; /* Safe fallback value */
+    return pagesize;
+}
+
 long sysconf(int name)
 {
     int sysctl_mib[2];
-    int sysctl_len;
-    size_t len;
+    int sysctl_len = num_elem(sysctl_mib);
     long value = -1;
+    size_t len = sizeof(value);
     struct rlimit rl;
 
     switch (name) {
@@ -57,7 +71,7 @@ long sysconf(int name)
     case _SC_ARG_MAX:
         sysctl_mib[0] = CTL_KERN;
         sysctl_mib[1] = KERN_ARGMAX;
-        if (sysctl(sysctl_mib, 2, &value, &len, NULL, 0) == -1)
+        if (sysctl(sysctl_mib, sysctl_len, &value, &len, NULL, 0) == -1)
             value = -1;
         break;
     case _SC_ATEXIT_MAX:
@@ -80,7 +94,6 @@ long sysconf(int name)
     case _SC_CLK_TCK:
         sysctl_len = sysctlnametomib("kern.hz", sysctl_mib,
                                      num_elem(sysctl_mib));
-        len = sizeof(value);
         if (sysctl(sysctl_mib, sysctl_len, &value, &len, NULL, 0)) {
             value = -1;
             errno = EINVAL;
@@ -111,7 +124,7 @@ long sysconf(int name)
 #if 0
         sysctl_mib[0] = CTL_KERN;
         sysctl_mib[1] = KERN_NGROUPS;
-        if (sysctl(sysctl_mib, 2, &value, &len, NULL, 0) == -1)
+        if (sysctl(sysctl_mib, sysctl_len, &value, &len, NULL, 0) == -1)
             value = -1;
 #endif
         value = NGROUPS_MAX;
@@ -162,7 +175,7 @@ long sysconf(int name)
     case _SC_JOB_CONTROL:
         sysctl_mib[0] = CTL_KERN;
         sysctl_mib[1] = KERN_JOB_CONTROL;
-        if (sysctl(sysctl_mib, 2, &value, &len, NULL, 0) == -1)
+        if (sysctl(sysctl_mib, sysctl_len, &value, &len, NULL, 0) == -1)
             value = -1;
         break;
     case _SC_MAPPED_FILES:
@@ -311,6 +324,10 @@ long sysconf(int name)
         break;
     case _SC_V7_LPBIG_OFFBIG:
         /* TODO */
+        break;
+    case _SC_PAGE_SIZE:
+    case _SC_PAGESIZE:
+        value = sysconf_getpagesize();
         break;
     default:
         errno = EINVAL;

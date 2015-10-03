@@ -38,7 +38,7 @@
 int pipe(int fildes[2])
 {
     struct _ipc_pipe_args args = {
-        .len = _PDCLIB_MALLOC_PAGESIZE
+        .len = sysconf(_SC_PAGESIZE),
     };
     int err;
 

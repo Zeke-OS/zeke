@@ -452,7 +452,6 @@ int realloc_mm_regions(struct vm_mm_struct * mm, int new_count)
 
     lock = &mm->regions_lock;
     if (mm->nr_regions == 0) {
-        /* TODO ticket lock? */
         mtx_init(lock, MTX_TYPE_SPIN, 0);
     }
     mtx_lock(lock);
@@ -538,23 +537,31 @@ int vm_replace_region(struct proc_info * proc, struct buf * region,
     mtx_unlock(&mm->regions_lock);
 
     if (old_region) {
+        mmu_region_t ** regp;
+        int unmap = 1;
+
         /*
-         * TODO This is not the best solution but we don't want to unmap static
-         * kernel regions from the process.
+         * We don't want to unmap static kernel regions from the process
+         * memory map.
          */
-        if (old_region->b_mmu.vaddr != mmu_region_kernel.vaddr &&
-            old_region->b_mmu.vaddr != mmu_region_kdata.vaddr) {
+        SET_FOREACH(regp, ptmapper_fixed_regions) {
+            if (old_region->b_mmu.vaddr == (*regp)->vaddr) {
+                unmap = 0;
+                break;
+            }
+        }
+        if (unmap) {
             (void)vm_unmapproc_region(proc, old_region);
         }
-    }
 
-    /*
-     * Free the old region as this process no longer uses it.
-     * (Usually decrements some internal refcount)
-     */
-    if (((insop & VM_INSOP_NOFREE) == 0) && old_region &&
-        old_region->vm_ops->rfree) {
-        old_region->vm_ops->rfree(old_region);
+        /*
+         * Free the old region as this process no longer uses it.
+         * (Usually decrements some internal refcount)
+         */
+        if (((insop & VM_INSOP_NOFREE) != VM_INSOP_NOFREE) &&
+            old_region->vm_ops->rfree) {
+            old_region->vm_ops->rfree(old_region);
+        }
     }
 
     if ((insop & VM_INSOP_MAP_REG) &&
@@ -616,8 +623,9 @@ int vm_unmapproc_region(struct proc_info * proc, struct buf * region)
     mtx_lock(&region->lock);
     vpt = ptlist_get_pt(&proc->mm, region->b_mmu.vaddr, region->b_bufsize);
     if (!vpt) {
-        KERROR(KERROR_ERR, "Can't unmap a region (%p)\n", region);
-        return -EIDRM; /* RFE Correct errno? */
+        KERROR(KERROR_ERR, "Can't unmap a region %p for pid %d\n",
+               region, proc->pid);
+        return -EINVAL;
     }
 
     mmu_region = region->b_mmu;
@@ -706,16 +714,21 @@ static int test_ap_priv(uint32_t rw, uint32_t ap)
 
 int kernacc(__kernel const void * addr, int len, int rw)
 {
-    size_t reg_start, reg_size;
+    mmu_region_t ** regp;
     uint32_t ap;
 
-    reg_start = mmu_region_kernel.vaddr;
-    /* This is the only case where mmu_sizeof_region() is ok */
-    reg_size = mmu_sizeof_region(&mmu_region_kernel);
-    if (((size_t)addr >= reg_start) && ((size_t)addr < reg_start + reg_size))
-        return (1 == 1);
+    SET_FOREACH(regp, ptmapper_fixed_regions) {
+        size_t reg_start, reg_size;
 
-    /* TODO Check other static regions as well */
+        reg_start = mmu_region_kernel.vaddr;
+        /* This is the only case where mmu_sizeof_region() is ok */
+        reg_size = mmu_sizeof_region(&mmu_region_kernel);
+
+        if (((size_t)addr >= reg_start) &&
+            ((size_t)addr < reg_start + reg_size)) {
+            return (1 == 1);
+        }
+    }
 
     if ((ap = dynmem_acc(addr, len))) {
         if (test_ap_priv(rw, ap)) {
@@ -723,10 +736,8 @@ int kernacc(__kernel const void * addr, int len, int rw)
         }
     }
 
-#if (configDEBUG >= KERROR_WARN)
     KERROR(KERROR_WARN,
            "Can't fully verify access to address (%p) in kernacc()\n", addr);
-#endif
 
     return (1 == 1);
 }

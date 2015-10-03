@@ -379,8 +379,8 @@ static int update_dynmem_region_struct(void * base)
     }
     flags = dynmemmap[reg_start];
 
-    dynmem_region.vaddr = (uint32_t)base; /* 1:1 mapping by default */
-    dynmem_region.paddr = (uint32_t)base; /* TODO Type conv. */
+    dynmem_region.vaddr = (uintptr_t)base; /* 1:1 mapping by default */
+    dynmem_region.paddr = (uintptr_t)base;
     dynmem_region.num_pages = num_pages;
     dynmem_region.ap = flags.ap;
     dynmem_region.control = flags.control;

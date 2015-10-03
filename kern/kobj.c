@@ -96,3 +96,25 @@ void kobj_unref(struct kobj * p)
         kobj_fast_unlock(p);
     }
 }
+
+int kobj_ref_v(struct kobj * p, unsigned count)
+{
+    unsigned i;
+    int err = 0;
+
+    for (i = 0; i < count; i++) {
+        if ((err = kobj_ref(p)))
+            break;
+    }
+
+    return err;
+}
+
+void kobj_unref_p(struct kobj * p, unsigned count)
+{
+    unsigned i;
+
+    for (i = 0; i < count; i++) {
+        kobj_unref(p);
+    }
+}

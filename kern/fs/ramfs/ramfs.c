@@ -95,6 +95,7 @@ typedef struct ramfs_inode {
         struct buf ** data;
         dh_table_t * dir;
     } in;
+    rwlock_t in_lock;
 } ramfs_inode_t;
 
 /**
@@ -410,7 +411,6 @@ int ramfs_delete_vnode(vnode_t * vnode)
         return 0;
     }
 
-    /* TODO Clear mutexes, queues etc. */
     destroy_inode_data(inode);
     vn_tmp = &inode->in_vnode;
 
@@ -556,14 +556,19 @@ int ramfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
 
 int ramfs_lookup(vnode_t * dir, const char * name, vnode_t ** result)
 {
-    dh_table_t * dh_dir;
+    ramfs_inode_t * inode_dir;
     ino_t vnode_num;
+    int err;
 
     if (!S_ISDIR(dir->vn_mode))
         return -ENOTDIR; /* No a directory entry. */
 
-    dh_dir = get_inode_of_vnode(dir)->in.dir;
-    if (dh_lookup(dh_dir, name, &vnode_num))
+    inode_dir = get_inode_of_vnode(dir);
+
+    rwlock_rdlock(&inode_dir->in_lock);
+    err = dh_lookup(inode_dir->in.dir, name, &vnode_num);
+    rwlock_rdunlock(&inode_dir->in_lock);
+    if (err)
         return -ENOENT; /* Link not found. */
 
     if (ramfs_get_vnode(dir->sb, &vnode_num, result)) {
@@ -588,7 +593,10 @@ int ramfs_revlookup(vnode_t * dir, ino_t * ino, char * name, size_t name_len)
         return -ENOTDIR;
 
     inode_dir = get_inode_of_vnode(dir);
+
+    rwlock_rdlock(&inode_dir->in_lock);
     err = dh_revlookup(inode_dir->in.dir, *ino, name, name_len);
+    rwlock_rdunlock(&inode_dir->in_lock);
 
     return err;
 }
@@ -604,13 +612,18 @@ int ramfs_link(vnode_t * dir, vnode_t * vnode, const char * name)
 
     inode_dir = get_inode_of_vnode(dir);
     inode = get_inode_of_vnode(vnode);
+
+    rwlock_rdlock(&inode_dir->in_lock);
     err = dh_link(inode_dir->in.dir, vnode->vn_num, name);
+    rwlock_rdunlock(&inode_dir->in_lock);
     if (err)
         return err;
 
     ramfs_vnode_modified(dir);
 
+    rwlock_wrlock(&inode_dir->in_lock);
     inode->in_nlink++; /* Increment the hard link count. */
+    rwlock_wrunlock(&inode_dir->in_lock);
 
     return 0;
 }
@@ -618,16 +631,19 @@ int ramfs_link(vnode_t * dir, vnode_t * vnode, const char * name)
 int ramfs_unlink(vnode_t * dir, const char * name)
 {
     ramfs_inode_t * inode_dir;
-    ino_t vnum;
-    vnode_t * vn;
     ramfs_inode_t * inode;
+    vnode_t * vn;
+    ino_t vnum;
     int err;
 
     if (!S_ISDIR(dir->vn_mode))
         return -ENOTDIR; /* No a directory entry. */
 
     inode_dir = get_inode_of_vnode(dir);
+
+    rwlock_rdlock(&inode_dir->in_lock);
     err = dh_lookup(inode_dir->in.dir, name, &vnum);
+    rwlock_rdunlock(&inode_dir->in_lock);
     if (err)
         return err;
 
@@ -639,13 +655,17 @@ int ramfs_unlink(vnode_t * dir, const char * name)
     /* Mandatory cleanup. */
     fs_vnode_cleanup(vn);
 
+    rwlock_wrlock(&inode_dir->in_lock);
     err = dh_unlink(inode_dir->in.dir, name);
+    rwlock_wrunlock(&inode_dir->in_lock);
     if (err)
         return err;
 
     ramfs_vnode_modified(dir);
 
+    rwlock_wrlock(&inode_dir->in_lock);
     inode->in_nlink--; /* Decrement the hard link count. */
+    rwlock_wrunlock(&inode_dir->in_lock);
     vrele_nunlink(vn);
     if (inode->in_nlink <= 0)
         ramfs_delete_vnode(vn);
@@ -719,7 +739,10 @@ int ramfs_rmdir(vnode_t * dir,  const char * name)
         return -ENOTDIR; /* No a directory entry. */
 
     inode_dir = get_inode_of_vnode(dir);
+
+    rwlock_rdlock(&inode_dir->in_lock);
     err = dh_lookup(inode_dir->in.dir, name, &vnum);
+    rwlock_rdunlock(&inode_dir->in_lock);
     if (err)
         return err;
 
@@ -732,7 +755,9 @@ int ramfs_rmdir(vnode_t * dir,  const char * name)
     if (vn->vn_next_mountpoint != vn)
         return -EBUSY; /* It's a mount point. */
 
+    rwlock_rdlock(&inode_dir->in_lock);
     nr_entries = dh_nr_entries(in->in.dir);
+    rwlock_rdunlock(&inode_dir->in_lock);
     if (nr_entries > 2) {
 #ifdef configRAMFS_DEBUG
         KERROR(KERROR_DEBUG, "ENOTEMPTY (%u)\n", (unsigned)nr_entries);
@@ -740,9 +765,11 @@ int ramfs_rmdir(vnode_t * dir,  const char * name)
         return -ENOTEMPTY;
     }
 
+    rwlock_wrlock(&inode_dir->in_lock);
     dh_unlink(in->in.dir, RFS_DOT);
     dh_unlink(in->in.dir, RFS_DOTDOT);
     dh_unlink(inode_dir->in.dir, name);
+    rwlock_wrunlock(&inode_dir->in_lock);
 
     ramfs_vnode_modified(dir);
 
@@ -946,6 +973,7 @@ static void init_inode(ramfs_inode_t * inode, ramfs_sb_t * ramfs_sb,
                        ino_t * num)
 {
     memset((void *)inode, 0, sizeof(ramfs_inode_t));
+    rwlock_init(&inode->in_lock);
     fs_vnode_init(&inode->in_vnode, *num, &ramfs_sb->sb,
                   &ramfs_vnode_ops);
 }

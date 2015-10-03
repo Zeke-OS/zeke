@@ -163,6 +163,8 @@
 #define _SC_V7_ILP32_OFFBIG             79
 #define _SC_V7_LP64_OFF64               80
 #define _SC_V7_LPBIG_OFFBIG             81
+#define _SC_PAGE_SIZE                   82
+#define _SC_PAGESIZE                    83
 /* End of sysconf variables */
 
 #if defined(__SYSCALL_DEFS__) || defined(KERNEL_INTERNAL)

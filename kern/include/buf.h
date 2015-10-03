@@ -34,9 +34,10 @@
 #ifndef BUF_H
 #define BUF_H
 
-#include <llist.h>
-#include <hal/mmu.h>
 #include <fs/fs.h>
+#include <hal/mmu.h>
+#include <kobj.h>
+#include <llist.h>
 #include <vm/vm.h>
 
 /**
@@ -90,7 +91,7 @@ struct buf {
     SPLAY_ENTRY(buf) sentry_;
     llist_nodedsc_t lentry_;
 
-    int refcount;
+    struct kobj b_obj;
     mtx_t lock;
 };
 

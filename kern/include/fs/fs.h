@@ -50,8 +50,9 @@
 #include <sys/stat.h>
 #include <sys/tree.h>
 #include <sys/types.h>
-#include <uio.h>
 #include <klocks.h>
+#include <kobj.h>
+#include <uio.h>
 
 #define FS_FLAG_INIT    0x01 /*!< File system initialized. */
 #define FS_FLAG_FAIL    0x08 /*!< File system has failed. */
@@ -172,11 +173,10 @@ typedef struct vnode {
  */
 typedef struct file {
     off_t seek_pos;     /*!< Seek pointer. */
-    int fdflags;        /*!< File descriptor flags. */
     int oflags;         /*!< File status flags. */
-    atomic_t refcount;  /*!< Reference count. */
     vnode_t * vnode;
     void * stream;      /*!< Pointer to a special file stream data or info. */
+    struct kobj f_obj;
 } file_t;
 
 /**
@@ -643,6 +643,12 @@ int fs_fildes_close(struct proc_info * p, int fildes);
  * Close all file descriptors above fildes_begin.
  */
 void fs_fildes_close_all(struct proc_info * p, int fildes_begin);
+
+/**
+ * Close files marked with FD_CLOEXEC and O_CLOEXEC.
+ * @param p is a pointer to the process.
+ */
+void fs_fildes_close_exec(struct proc_info * p);
 
 /**
  * Create a new file by using fs specific create() function.

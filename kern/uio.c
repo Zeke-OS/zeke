@@ -68,14 +68,16 @@ int uio_init_ubuf(struct uio * uio, __user void * ubuf, size_t size,
     return 0;
 }
 
-void uio_buf2kuio(struct buf * bp, struct uio * uio)
+int uio_buf2kuio(struct buf * bp, struct uio * uio)
 {
     if (bp->b_data == 0) {
         KERROR(KERROR_ERR, "buf %p not in memory\n", bp);
-        return; /* RFE Maybe an error code should be returned? */
+        return -EINVAL;
     }
 
     uio_init_kbuf(uio, (__kernel void *)bp->b_data, bp->b_bcount);
+
+    return 0;
 }
 
 int uio_copyout(const void * src, struct uio * uio, size_t offset,
