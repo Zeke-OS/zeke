@@ -252,6 +252,9 @@ static size_t nt_stacksize(Elf_Note * note, size_t align)
     KERROR(KERROR_DEBUG, "Vendor: %s, Value: %u\n", vendor, value);
 #endif
 
+    if (strncmp(vendor, "Zeke", note->n_namesz))
+        return 0; /* Not ours */
+
     return value;
 }
 
