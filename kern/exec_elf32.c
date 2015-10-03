@@ -34,6 +34,7 @@
 #include <fcntl.h>
 #include <machine/endian.h>
 #include <sys/elf32.h>
+#include <sys/elf_notes.h>
 #include <buf.h>
 #include <exec.h>
 #include <fs/fs.h>
@@ -252,7 +253,7 @@ static size_t nt_stacksize(Elf_Note * note, size_t align)
     KERROR(KERROR_DEBUG, "Vendor: %s, Value: %u\n", vendor, value);
 #endif
 
-    if (strncmp(vendor, "Zeke", note->n_namesz))
+    if (strncmp(vendor, ELFNOTE_VENDOR_ZEKE, note->n_namesz))
         return 0; /* Not ours */
 
     return value;
