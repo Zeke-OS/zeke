@@ -291,14 +291,6 @@ int biowait(struct buf * bp);
 int bio_geterror(struct buf * bp);
 
 /**
- * Clone a vregion.
- * @param old_region is the old region to be cloned.
- * @return  Returns pointer to the new vregion if operation was successful;
- *          Otherwise zero.
- */
-struct buf * vr_rclone(struct buf * old_region);
-
-/**
  * Clone any buf region into a new equally sized vrallocated buffer.
  * @param src is the source region to be cloned.
  * @param[out] out is the target variable where the new region is returned to.

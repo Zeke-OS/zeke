@@ -30,13 +30,13 @@
  *******************************************************************************
  */
 
-#include <libkern.h>
-#include <kstring.h>
-#include <hal/mmu.h>
-#include <ptmapper.h>
-#include <kmalloc.h>
-#include <kerror.h>
 #include <errno.h>
+#include <hal/mmu.h>
+#include <kerror.h>
+#include <kmalloc.h>
+#include <kstring.h>
+#include <libkern.h>
+#include <ptmapper.h>
 #include <vm/vm.h>
 
 RB_GENERATE(ptlist, vm_pt, entry_, ptlist_compare);
@@ -90,7 +90,9 @@ struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr,
     /*
      * Check if the requested page table is actually the system pagetable.
      */
-    if (vaddr < mmu_sizeof_pt_img(&vm_pagetable_system.pt)) {
+    if (vaddr >= vm_pagetable_system.pt.vaddr &&
+        vaddr < (vm_pagetable_system.pt.vaddr +
+                 mmu_sizeof_pt_img(&vm_pagetable_system.pt))) {
         return &vm_pagetable_system;
     }
 

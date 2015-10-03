@@ -78,6 +78,7 @@ static struct vregion * vreg_alloc_node(size_t count);
 static int get_iblocks(size_t * iblock, size_t pcount,
                       struct vregion ** vreg_ret);
 static void vrref(struct buf * region);
+static struct buf * vr_rclone(struct buf * old_region);
 
 static llist_t * vrlist; /*!< List of all allocations done by vralloc. */
 static struct vregion * last_vreg; /*!< Last node that contained empty pages. */
@@ -90,8 +91,6 @@ SYSCTL_UINT(_vm, OID_AUTO, vmem_all, CTLFLAG_RD, &vmem_all, 0,
 static size_t vmem_used;
 SYSCTL_UINT(_vm, OID_AUTO, vmem_used, CTLFLAG_RD, &vmem_used, 0,
     "Amount of memory used");
-
-
 
 /**
  * VRA specific operations for allocated vm regions.
@@ -135,7 +134,7 @@ int __kinit__ vralloc_init(void)
  * Allocate a new vregion node/chunk and memory for the region.
  * @param count is the page count (4kB pages). Should be multiple of 256;
  *        Otherwise it will be rounded up.
- * @return Rerturns a pointer to the newly allocated region; Otherwise 0.
+ * @return Rerturns a pointer to the newly allocated region; Otherwise NULL.
  */
 static struct vregion * vreg_alloc_node(size_t count)
 {
@@ -171,6 +170,7 @@ static struct vregion * vreg_alloc_node(size_t count)
  * @param[out] iblock is the returned index of the allocation made.
  * @param pcount is the number of pages requested.
  * @param vreg_ret[out] returns a pointer to the allocated vreg.
+ * @return Return 0 if successful; Otherwise a negative errno code is returned.
  */
 static int get_iblocks(size_t * iblock, size_t pcount,
                        struct vregion ** vreg_ret)
@@ -308,14 +308,20 @@ struct buf * geteblk(size_t size)
 
 /**
  * Increment reference count of a vr allocated vm_region.
- * @param region is a vregion.
+ * @param region is a pointer to the vregion.
  */
 static void vrref(struct buf * bp)
 {
     kobj_ref(&bp->b_obj);
 }
 
-struct buf * vr_rclone(struct buf * old_region)
+/**
+ * Clone a vregion.
+ * @param old_region is the old region to be cloned.
+ * @return  Returns a pointer to the new vregion if operation was successful;
+ *          Otherwise zero.
+ */
+static struct buf * vr_rclone(struct buf * old_region)
 {
     struct buf * new_region;
     const size_t rsize = old_region->b_bufsize;
@@ -326,7 +332,7 @@ struct buf * vr_rclone(struct buf * old_region)
     new_region = geteblk(rsize);
     if (!new_region) {
         KERROR(KERROR_ERR, "%s: Out of memory, tried to allocate %d bytes\n",
-                __func__, rsize);
+               __func__, rsize);
         return NULL;
     }
 
@@ -337,7 +343,7 @@ struct buf * vr_rclone(struct buf * old_region)
 
     /* Copy data */
     memcpy((void *)(new_region->b_data), (void *)(old_region->b_data),
-            rsize);
+           rsize);
 
     /* Copy attributes */
     new_region->b_uflags = ~VM_PROT_COW & old_region->b_uflags;
@@ -349,7 +355,7 @@ struct buf * vr_rclone(struct buf * old_region)
     new_region->b_mmu.pt = old_region->b_mmu.pt;
     vm_updateusr_ap(new_region);
 
-    /* Release "lock". */
+    /* Release the "lock". */
     vrfree(old_region);
 
     return new_region;
@@ -447,7 +453,7 @@ int clone2vr(struct buf * src, struct buf ** out)
         }
     } else if (src->b_data != 0) {
         /*
-         * Not vregion, try to clone manually.
+         * Not a vregion, try to clone manually.
          * b_data is expected to be zero if the data is not in memory.
          */
         const size_t rsize = src->b_bufsize;
