@@ -42,10 +42,10 @@
 
 volatile uint32_t flag_kernel_tick = 0;
 
-void init_stack_frame(struct _sched_pthread_create_args * thread_def,
-        sw_stack_frame_t * sframe, int priv)
+__user void * init_stack_frame(struct _sched_pthread_create_args * thread_def,
+                               sw_stack_frame_t * sframe, int priv)
 {
-    /* Note that scheduler must have the same mapping. */
+    /* Note that the scheduler must have the same mapping. */
     uint32_t stack_start = ((uint32_t)(thread_def->stack_addr)
             + thread_def->stack_size
             - sizeof(struct _sched_tls_desc));
@@ -59,6 +59,12 @@ void init_stack_frame(struct _sched_pthread_create_args * thread_def,
     sframe->pc  = ((uint32_t)(thread_def->start)) + 4;
     sframe->lr  = (uint32_t)(thread_def->del_thread);
     sframe->psr = priv ? SYSTEM_PSR : USER_PSR;
+
+    /*
+     * The user space address of thread local storage is at the end of
+     * the thread stack area.
+     */
+    return (__user void *)stack_start;
 }
 
 /**
@@ -66,7 +72,7 @@ void init_stack_frame(struct _sched_pthread_create_args * thread_def,
  */
 static void fork_init_stack_frame(struct thread_info * th)
 {
-    th->sframe[SCHED_SFRAME_SYS].r0  = 0;
+    th->sframe[SCHED_SFRAME_SYS].r0  = 0; /* retval of fork() */
     th->sframe[SCHED_SFRAME_SYS].pc += 4;
 }
 DATA_SET(thread_fork_handlers, fork_init_stack_frame);

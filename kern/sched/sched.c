@@ -524,7 +524,9 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
     }
 
     /* Init core specific stack frame for user space */
-    init_stack_frame(thread_def, &(tp->sframe[SCHED_SFRAME_SYS]), priv);
+    tp->tls_uaddr = init_stack_frame(thread_def,
+                                     &(tp->sframe[SCHED_SFRAME_SYS]),
+                                     priv);
 
     /*
      * Mark this thread as used.
@@ -554,15 +556,6 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
 
     /* Update parent and child pointers */
     thread_set_inheritance(tp, parent, (parent) ? parent->pid_owner : 0);
-
-    /*
-     * The user space address of thread local storage is at the end of
-     * the thread stack area.
-     */
-    tp->tls_uaddr       = (__user struct _sched_tls_desc *)(
-                            (uintptr_t)(thread_def->stack_addr)
-                          + thread_def->stack_size
-                          - sizeof(struct _sched_tls_desc));
 
     /* Select master page table used on startup. */
     if (unlikely(!parent)) {
@@ -604,9 +597,7 @@ pthread_t thread_fork(pid_t new_pid)
     pthread_t new_id;
     void ** fork_handler_p;
 
-#ifdef configSCHED_DEBUG
     KASSERT(old_thread, "current_thread not set, can't fork\n");
-#endif
 
     /* Get next free thread_id. */
     new_id = atomic_inc(&next_thread_id);

@@ -65,9 +65,10 @@ extern volatile size_t flag_kernel_tick;
  * @param thread_def    contains the thread definitions.
  * @param sframe        is the stack frame used when the thread is put to sleep.
  * @param priv          set thread as privileged/kernel mode thread.
+ * @return Returns the TLS address.
  */
-void init_stack_frame(struct _sched_pthread_create_args * thread_def,
-                      sw_stack_frame_t * sframe, int priv);
+__user void * init_stack_frame(struct _sched_pthread_create_args * thread_def,
+                               sw_stack_frame_t * sframe, int priv);
 
 void svc_setretval(intptr_t retval);
 

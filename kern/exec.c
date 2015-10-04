@@ -93,7 +93,7 @@ size_t get_new_main_stack_size(ssize_t emin)
     dmin = (emin > 0 && emin > kmin) ? emin : kmin;
     dmax = (rlim > 0 && rlim < kmax) ? rlim : kmax;
 
-    return min(dmin, dmax);
+    return memalign_size(min(dmin, dmax), MMU_PGSIZE_COARSE);
 }
 
 /**
