@@ -30,6 +30,16 @@
  *******************************************************************************
  */
 
+/**
+ * @addtogroup LIBC
+ * @{
+ */
+
+/**
+ * @addtogroup param
+ * @{
+ */
+
 #ifndef _SYS_PARAM_H_
 #define _SYS_PARAM_H_
 
@@ -65,3 +75,11 @@
 #define CMASK 022 /*!< File creation mask: S_IWGRP|S_IWOTH */
 
 #endif /* _SYS_PARAM_H_ */
+
+/**
+ * @}
+ */
+
+/**
+ * @}
+ */

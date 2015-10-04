@@ -68,7 +68,7 @@
  */
 
 /**
- * @addtogroup Signals
+ * @addtogroup signal
  * @{
  */
 

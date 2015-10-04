@@ -11,7 +11,7 @@
  */
 
 /**
- * @addtogroup stdio.h
+ * @addtogroup stdio
  * @{
  */
 

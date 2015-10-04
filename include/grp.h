@@ -35,6 +35,11 @@
  * @{
  */
 
+/**
+ * @addtogroup grp
+ * @{
+ */
+
 #ifndef GRP_H
 #define GRP_H
 
@@ -62,6 +67,10 @@ __END_DECLS
 #endif /* !KERNEL_INTERNAL */
 
 #endif /* GRP_H */
+
+/**
+ * @}
+ */
 
 /**
  * @}

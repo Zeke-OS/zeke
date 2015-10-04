@@ -10,7 +10,7 @@
  */
 
 /**
- * @addtogroup stdlib.h
+ * @addtogroup stdlib
  * @{
  */
 

@@ -35,6 +35,11 @@
  * @{
  */
 
+/**
+ * @addtogroup termios
+ * @{
+ */
+
 #ifndef TERMIOS_H
 #define TERMIOS_H
 
@@ -211,6 +216,10 @@ __END_DECLS
 #endif
 
 #endif /* TERMIOS_H */
+
+/**
+ * @}
+ */
 
 /**
  * @}

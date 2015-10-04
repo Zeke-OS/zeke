@@ -7,7 +7,7 @@ new code for Zeke.
 Source Tree Directory Structure
 -------------------------------
 
-+ /kern/include/        Most of the shared kernel header files.
++ kern/include/         Most of the shared kernel header files.
 + kern/                 Most of the kernel code.
 + kern/fs/              Virtual file system abstraction and other file systems.
 + kern/hal/             Harware abstraction layer.

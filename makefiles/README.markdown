@@ -4,6 +4,8 @@ Makefiles
 Userland Makefiles
 ------------------
 
+The folloawing variables can be used in userland makefiles.
+
 ### Variables
 
 - `BIN-y`: A list of binaries compiled by this Makefile.

@@ -33,6 +33,16 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @addtogroup LIBC
+ * @{
+ */
+
+/**
+ * @addtogroup priv
+ * @{
+ */
+
 #ifndef _SYS_PRIV_H_
 #define _SYS_PRIV_H_
 
@@ -360,3 +370,11 @@ int priv_getcap(pid_t pid, int grant, size_t priv);
 #endif
 
 #endif /* !_SYS_PRIV_H_ */
+
+/**
+ * @}
+ */
+
+/**
+ * @}
+ */

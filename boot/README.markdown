@@ -1,0 +1,4 @@
+/boot
+=====
+
+Platform specific bootloaders.

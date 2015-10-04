@@ -37,6 +37,11 @@
  * @{
  */
 
+/**
+ * @addtogroup syscall
+ * @{
+ */
+
 #ifndef SYSCALL_H
 #define SYSCALL_H
 
@@ -194,6 +199,10 @@ intptr_t syscall(uint32_t type, void * p);
 #endif /* !KERNEL_INTERNAL */
 
 #endif /* SYSCALL_H */
+
+/**
+ * @}
+ */
 
 /**
  * @}

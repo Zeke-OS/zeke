@@ -35,6 +35,11 @@
  * @{
  */
 
+/**
+ * @addtogroup ioctl
+ * @{
+ */
+
 #ifndef IOCTL_H
 #define IOCTL_H
 
@@ -103,12 +108,19 @@ __BEGIN_DECLS
  */
 int _ioctl(int fildes, unsigned request, void * arg, size_t arg_len);
 
+/**
+ * ioctl.
+ */
 int ioctl(int fildes, int request, ... /* arg */);
 
 __END_DECLS
 #endif
 
 #endif /* IOCTL_H */
+
+/**
+ * @}
+ */
 
 /**
  * @}

@@ -26,6 +26,16 @@
  *
  */
 
+/**
+ * @addtogroup LIBC
+ * @{
+ */
+
+/**
+ * @addtogroup endian
+ * @{
+ */
+
 #ifndef _SYS_ENDIAN_H_
 #define _SYS_ENDIAN_H_
 
@@ -182,3 +192,11 @@ le64enc(void *pp, uint64_t u)
 }
 
 #endif	/* _SYS_ENDIAN_H_ */
+
+/**
+ * @}
+ */
+
+/**
+ * @}
+ */

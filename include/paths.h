@@ -35,15 +35,22 @@
  * @{
  */
 
+/**
+ * @addtogroup paths
+ * @{
+ */
+
 #ifndef _PATHS_H_
 #define _PATHS_H_
 
-/* Default search path. */
+/**
+ * Default search path.
+ */
 #define _PATH_DEFPATH   "/usr/bin:/bin:"
 
-#define _PATH_PASSWD    "/etc/passwd"
-#define _PATH_SHADOW    "/etc/shadow"
-#define _PATH_GROUP     "/etc/group"
+#define _PATH_PASSWD    "/etc/passwd"   /*!< passwd file location. */
+#define _PATH_SHADOW    "/etc/shadow"   /*!< shadow file location. */
+#define _PATH_GROUP     "/etc/group"    /*!< group file location. */
 
 /**
  * All standard utilities path.
@@ -51,10 +58,14 @@
 #define _PATH_STDPATH   "/usr/bin:/bin:/usr/sbin:/sbin:"
 
 /* Utils */
-#define _PATH_BSHELL    "/bin/sh"
-#define _PATH_ECHO      "/bin/echo"
+#define _PATH_BSHELL    "/bin/sh"       /*!< Default shell location. */
+#define _PATH_ECHO      "/bin/echo"     /*!< Echo command location. */
 
 #endif /* _PATHS_H_ */
+
+/**
+ * @}
+ */
 
 /**
  * @}

@@ -35,6 +35,11 @@
  * @{
  */
 
+/**
+ * @addtogroup unistd
+ * @{
+ */
+
 #ifndef _UNISTD_H
 #define _UNISTD_H
 
@@ -574,6 +579,10 @@ __END_DECLS
 #endif /* !KERNEL_INTERNAL */
 
 #endif /* _UNISTD_H */
+
+/**
+ * @}
+ */
 
 /**
  * @}

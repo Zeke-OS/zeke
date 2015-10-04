@@ -35,13 +35,18 @@
  * @{
  */
 
+/**
+ * @addtogroup libgen
+ * @{
+ */
+
 #ifndef LIBGEN_H
 #define LIBGEN_H
 
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
 
-char * basename_r(const char *path, char *bname);
+char * basename_r(const char * path, char * bname);
 char * basename(const char * path);
 char * dirname(const char * path);
 
@@ -49,6 +54,10 @@ __END_DECLS
 #endif /* !KERNEL_INTERNAL */
 
 #endif /* LIBGEN_H */
+
+/**
+ * @}
+ */
 
 /**
  * @}

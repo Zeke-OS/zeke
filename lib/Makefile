@@ -77,6 +77,7 @@ prepare: $(LIBS)
 $(LIBS):
 	@if [ -f $@/Makefile ]; then $(MAKE) -C $@ all; fi
 
+# Generate list of include directories required by the libraries
 lib_idir.gen.mk:
 	echo "LIB_IDIR += $(LIB_IDIR)" > lib_idir.gen.mk
 
