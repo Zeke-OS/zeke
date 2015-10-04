@@ -30,14 +30,23 @@
  *******************************************************************************
  */
 
+/**
+ * @addtogroup kobj
+ * @{
+ */
+
 #ifndef _KOBJ_H_
 #define _KOBJ_H_
 
 #include <machine/atomic.h>
 
+/**
+ * kobj descriptor struct.
+ */
 struct kobj {
     void (*ko_free)(struct kobj *);
-    int ko_fast_lock;
+    atomic_t ko_flags;
+    atomic_t ko_fast_lock;
     atomic_t ko_refcount;
 };
 
@@ -81,4 +90,15 @@ int kobj_ref_v(struct kobj * p, unsigned count);
  */
 void kobj_unref_p(struct kobj * p, unsigned count);
 
+/**
+ * Decrement the refcount of a kobj object descriptor and
+ * prevent further increments.
+ * @param p is a pointer to the kobj object descriptor.
+ */
+void kobj_destroy(struct kobj * p);
+
 #endif /* _KOBJ_H_ */
+
+/**
+ * @}
+ */

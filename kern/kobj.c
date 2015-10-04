@@ -34,9 +34,12 @@
 #include <kobj.h>
 #include <libkern.h>
 
+#define KO_FLAG_DYING 0x01
+
 void kobj_init(struct kobj * p, void (*ko_free)(struct kobj * p))
 {
     p->ko_free = ko_free;
+    p->ko_flags = ATOMIC_INIT(0);
     p->ko_fast_lock = ATOMIC_INIT(0);
     p->ko_refcount = ATOMIC_INIT(1);
 }
@@ -65,20 +68,26 @@ int kobj_refcnt(struct kobj * p)
 
 int kobj_ref(struct kobj * p)
 {
-    int prev;
+    int prev, retval = -EIDRM;
 
     if (kobj_fast_lock(p))
-        return -EIDRM;
+        return retval;
+
+    if (atomic_read(&p->ko_flags) & KO_FLAG_DYING) {
+        goto out;
+    }
 
     prev = atomic_inc(&p->ko_refcount);
     if (prev <= 0) {
         atomic_set(&p->ko_refcount, -1);
-        return -EIDRM;
+        goto out;
     }
 
+    retval = 0;
+out:
     kobj_fast_unlock(p);
 
-    return 0;
+    return retval;
 }
 
 void kobj_unref(struct kobj * p)
@@ -90,6 +99,7 @@ void kobj_unref(struct kobj * p)
 
     prev = atomic_dec(&p->ko_refcount);
     if (prev == 1) {
+        atomic_or(&p->ko_flags, KO_FLAG_DYING);
         atomic_set(&p->ko_refcount, -1);
         p->ko_free(p);
     } else {
@@ -117,4 +127,10 @@ void kobj_unref_p(struct kobj * p, unsigned count)
     for (i = 0; i < count; i++) {
         kobj_unref(p);
     }
+}
+
+void kobj_destroy(struct kobj * p)
+{
+    atomic_or(&p->ko_flags, KO_FLAG_DYING);
+    kobj_unref(p);
 }

@@ -68,6 +68,18 @@ static char * test_free(void)
     return NULL;
 }
 
+static char * test_destroy(void)
+{
+    int err;
+
+    kobj_ref(&o.ko);
+    kobj_destroy(&o.ko);
+    err = kobj_ref(&o.ko);
+    ku_assert("ref failed", err != 0);
+
+    return NULL;
+}
+
 static void all_tests(void)
 {
     ku_def_test(test_init, KU_RUN);
@@ -75,6 +87,7 @@ static void all_tests(void)
     ku_def_test(test_unref, KU_RUN);
     ku_def_test(test_refcnt, KU_RUN);
     ku_def_test(test_free, KU_RUN);
+    ku_def_test(test_destroy, KU_RUN);
 }
 
 SYSCTL_TEST(generic, kobj);
