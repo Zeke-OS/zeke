@@ -42,7 +42,8 @@
 #include <sys/types/_size_t.h>
 #include <sys/types/_uid_t.h>
 
-/*
+/**
+ * @addtogroup pwd
  * /etc/passwd file format
  *
  * The file contains newline separated records, each line containing
@@ -57,8 +58,12 @@
  * 5. GECOS:    Full name.
  * 6. Home dir: User's home directory.
  * 7. Shell:    The command that's executed when the user logs in.
+ * @{
  */
 
+/**
+ * The passwd struct.
+ */
 struct passwd {
     char    *pw_name;   /*!< User's login name. */
     char    *pw_passwd; /*!< Encrypted password. */
@@ -81,6 +86,10 @@ void endpwent(void);
 
 __END_DECLS
 #endif /* !KERNEL_INTERNAL */
+
+/**
+ * @}
+ */
 
 #endif /* PWD_H */
 

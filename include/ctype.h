@@ -1,4 +1,5 @@
-/* 7.4 Character handling <ctype.h>
+/*
+ * 7.4 Character handling <ctype.h>
  *
  * This file is part of the Public Domain C Library (PDCLib).
  * Permission is granted to use, modify, and / or redistribute at will.
@@ -15,15 +16,17 @@
 #include <sys/_PDCLIB_int.h>
 __BEGIN_DECLS
 
-/* Character classification functions */
-
-/*
+/**
+ * @addtogroup isalnum
+ * Character classification functions
+ *
  * Note that there is a difference between "whitespace" (any printing, non-
  * graph character, like horizontal and vertical tab), and "blank" (the literal
  * ' ' space character).
  *
  * There will be masking macros for each of these later on, but right now I
  * focus on the functions only.
+ * @{
  */
 
 /* Returns isalpha( c ) || isdigit( c ) */
@@ -104,6 +107,10 @@ int tolower( int c ) _PDCLIB_nothrow;
  * is not a lowercase letter remains unchanged.
 */
 int toupper( int c ) _PDCLIB_nothrow;
+
+/**
+ * @}
+ */
 
 __END_DECLS
 #endif

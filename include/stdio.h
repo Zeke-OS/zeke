@@ -10,6 +10,10 @@
  * @{
  */
 
+/**
+ * @addtogroup stdio.h
+ * @{
+ */
 
 #ifndef _PDCLIB_STDIO_H
 #define _PDCLIB_STDIO_H _PDCLIB_STDIO_H
@@ -978,6 +982,10 @@ _PDCLIB_uint_fast64_t _PDCLIB_ftell64_unlocked( FILE * stream ) _PDCLIB_nothrow;
 
 __END_DECLS
 #endif
+
+/**
+ * @}
+ */
 
 /**
  * @}

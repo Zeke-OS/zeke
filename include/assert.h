@@ -16,6 +16,12 @@
 #include <sys/_PDCLIB_config.h>
 __BEGIN_DECLS
 
+/**
+ * @addtogroup assert
+ * Abort the program if assertion is false.
+ * @{
+ */
+
 /* Functions _NOT_ tagged noreturn as this hampers debugging */
 void _PDCLIB_assert99( char const * const, char const * const, char const * const );
 void _PDCLIB_assert89( char const * const );
@@ -29,6 +35,11 @@ void _PDCLIB_assert89( char const * const );
     } while(0)
 
 #elif _PDCLIB_C_MIN(99)
+/**
+ * Assertion.
+ * If the macro NDEBUG is not defined, the assert() macro generates an error
+ * check that aborts the program if the condition is false.
+ */
 #define assert(expression) \
     do { if(!(expression)) { \
         _PDCLIB_assert99("Assertion failed: " _PDCLIB_symbol2string(expression)\
@@ -51,6 +62,10 @@ void _PDCLIB_assert89( char const * const );
       } \
     } while(0)
 #endif
+
+/**
+ * @}
+ */
 
 __END_DECLS
 #endif

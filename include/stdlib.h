@@ -7,7 +7,12 @@
 /**
  * @addtogroup LIBC
  * @{
-  */
+ */
+
+/**
+ * @addtogroup stdlib.h
+ * @{
+ */
 
 #ifndef _PDCLIB_STDLIB_H
 #define _PDCLIB_STDLIB_H _PDCLIB_STDLIB_H
@@ -262,6 +267,10 @@ char * ptsname(int fildes);
 
 __END_DECLS
 #endif
+
+/**
+ * @}
+ */
 
 /**
  * @}
