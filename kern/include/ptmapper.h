@@ -103,9 +103,9 @@
 
 SET_DECLARE(ptmapper_fixed_regions, mmu_region_t);
 
-extern mmu_pagetable_t mmu_pagetable_master;
-extern mmu_pagetable_t mmu_pagetable_system;
 struct vm_pt;
+
+extern mmu_pagetable_t mmu_pagetable_master;
 extern struct vm_pt vm_pagetable_system;
 
 extern const mmu_region_t mmu_region_kstack;

@@ -264,7 +264,7 @@ int __kinit__ kinit(void)
     map_vmstack2proc(init_proc, init_vmstack);
 
     /*
-     * Map tkstack of init with mmu_pagetable_system
+     * Map tkstack of init with vm_pagetable_system.
      */
     mmu_map_region(&init_thread->kstack_region->b_mmu);
     init_proc->main_thread = init_thread;

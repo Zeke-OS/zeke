@@ -404,7 +404,7 @@ static struct buf * thread_alloc_kstack(void)
 
     kstack->b_uflags        = 0;
     kstack->b_mmu.vaddr     = MMU_VADDR_TKSTACK_START;
-    kstack->b_mmu.pt        = &mmu_pagetable_system;
+    kstack->b_mmu.pt        = &vm_pagetable_system.pt;
     kstack->b_mmu.control  |= MMU_CTRL_XN;
 
     return kstack;

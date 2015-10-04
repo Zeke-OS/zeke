@@ -53,16 +53,17 @@ mmu_pagetable_t mmu_pagetable_master = {
     .pt_dom         = MMU_DOM_KERNEL
 };
 
-mmu_pagetable_t mmu_pagetable_system = {
-    .vaddr          = 0, /* Start */
-    .pt_addr        = 0, /* Will be set later */
-    .nr_tables      = 0, /* Will be set later */
-    .master_pt_addr = 0, /* Will be set later */
-    .pt_type        = MMU_PTT_COARSE,
-    .pt_dom         = MMU_DOM_KERNEL
+struct vm_pt vm_pagetable_system = {
+    .pt = {
+        .vaddr          = 0, /* Start */
+        .pt_addr        = 0, /* Will be set later */
+        .nr_tables      = 0, /* Will be set later */
+        .master_pt_addr = 0, /* Will be set later */
+        .pt_type        = MMU_PTT_COARSE,
+        .pt_dom         = MMU_DOM_KERNEL
+    },
 };
 
-struct vm_pt vm_pagetable_system;
 
 /* Fixed Regions **************************************************************/
 
@@ -75,7 +76,7 @@ const mmu_region_t mmu_region_kstack = {
     .ap             = MMU_AP_RWNA,
     .control        = MMU_CTRL_MEMTYPE_WB | MMU_CTRL_XN,
     .paddr          = MMU_VADDR_KSTACK_START,
-    .pt             = &mmu_pagetable_system
+    .pt             = &vm_pagetable_system.pt
 };
 
 extern void *  _rodata_end __attribute__((weak));
@@ -86,7 +87,7 @@ mmu_region_t mmu_region_kernel = {
     .ap             = MMU_AP_RONA,
     .control        = MMU_CTRL_MEMTYPE_WB,
     .paddr          = MMU_VADDR_KERNEL_START,
-    .pt             = &mmu_pagetable_system
+    .pt             = &vm_pagetable_system.pt
 };
 PTMAPPER_FIXED_REGION(mmu_region_kernel);
 
@@ -104,7 +105,7 @@ mmu_region_t mmu_region_kdata = {
     .ap             = MMU_AP_RWNA,
     .control        = MMU_CTRL_MEMTYPE_WB | MMU_CTRL_XN,
     .paddr          = 0, /* Set in init */
-    .pt             = &mmu_pagetable_system
+    .pt             = &vm_pagetable_system.pt
 };
 PTMAPPER_FIXED_REGION(mmu_region_kdata);
 
@@ -204,17 +205,17 @@ int ptmapper_init(void)
         panic("Can't allocate memory for master page table.\n");
     }
 
-    mmu_pagetable_system.master_pt_addr = mmu_pagetable_master.master_pt_addr;
-    mmu_pagetable_system.nr_tables =
+    vm_pagetable_system.pt.master_pt_addr = mmu_pagetable_master.master_pt_addr;
+    vm_pagetable_system.pt.nr_tables =
         (MMU_VADDR_KERNEL_END + 1) / MMU_PGSIZE_SECTION;
-    if (ptmapper_alloc(&mmu_pagetable_system)) {
+    if (ptmapper_alloc(&vm_pagetable_system.pt)) {
         /* Critical failure */
         panic("Can't allocate memory for system page table.\n");
     }
 
     /* Initialize system page tables */
     mmu_init_pagetable(&mmu_pagetable_master);
-    mmu_init_pagetable(&mmu_pagetable_system);
+    mmu_init_pagetable(&vm_pagetable_system.pt);
 
     /*
      * Init regions
@@ -256,21 +257,14 @@ int ptmapper_init(void)
         }
     }
 
-    /*
-     * Copy system page table to vm version of it, this is the only easy way to
-     * solve some issues now.
-     * TODO Maybe we'd like to do some major refactoring some day.
-     */
-    vm_pagetable_system.pt = mmu_pagetable_system;
-
     /* Activate page tables */
     mmu_attach_pagetable(&mmu_pagetable_master); /* Load L1 TTB */
 #if defined(configPTMAPPER_DEBUG)
     KERROR(KERROR_DEBUG, "Attached TTB mmu_pagetable_master\n");
 #endif
-    mmu_attach_pagetable(&mmu_pagetable_system); /* Add L2 pte into L1 mpt */
+    mmu_attach_pagetable(&vm_pagetable_system.pt); /* Add L2 pte into L1 mpt */
 #if defined(configPTMAPPER_DEBUG)
-    KERROR(KERROR_DEBUG, "Attached mmu_pagetable_system\n");
+    KERROR(KERROR_DEBUG, "Attached vm_pagetable_system.pt\n");
 #endif
 
     return 0;
