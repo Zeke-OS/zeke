@@ -480,20 +480,15 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
 #define KERN_MAXFILES           8   /*!< int: max open files */
 #define KERN_ARGMAX             9   /*!< int: max arguments to exec */
 #define KERN_HOSTNAME           10  /*!< string: hostname */
-#define KERN_HOSTID             11  /*!< int: host identifier */
-#define KERN_PROF               12  /*!< node: kernel profiling info */
-#define KERN_POSIX1             13  /*!< int: POSIX.1 version */
-#define KERN_NGROUPS            14  /*!< int: # of supplemental group ids */
-#define KERN_JOB_CONTROL        15  /*!< int: is job control available */
-#define KERN_SAVED_IDS          16  /*!< int: saved set-user/group-ID */
-#define KERN_OSRELDATE          17  /*!< int: kernel release date */
-#define KERN_NTP_PLL            18  /*!< node: NTP PLL control */
-#define KERN_BOOTFILE           19  /*!< string: name of booted kernel */
-#define KERN_MAXFILESPERPROC    20  /*!< int: max open files per proc */
-#define KERN_IPC                21  /*!< node: anything related to IPC */
-#define KERN_LOGSIGEXIT         22  /*!< int: do we log sigexit procs? */
-#define KERN_HOSTUUID           23  /*!< string: host UUID identifier */
-#define KERN_MAXID              24  /*!< number of valid kern ids */
+#define KERN_PROF               11  /*!< node: kernel profiling info */
+#define KERN_POSIX1             12  /*!< int: POSIX.1 version */
+#define KERN_OSRELDATE          13  /*!< int: kernel release date */
+#define KERN_NTP_PLL            14  /*!< node: NTP PLL control */
+#define KERN_BOOTFILE           15  /*!< string: name of booted kernel */
+#define KERN_MAXFILESPERPROC    16  /*!< int: max open files per proc */
+#define KERN_IPC                17  /*!< node: anything related to IPC */
+#define KERN_LOGSIGEXIT         18  /*!< int: do we log sigexit procs? */
+#define KERN_HOSTUUID           19  /*!< string: host UUID identifier */
 
 /*
  * KERN_IPC identifiers
@@ -519,7 +514,6 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
 #define HW_FLOATINGPT           8   /*!< int: has HW floating point? */
 #define HW_MACHINE_ARCH         9   /*!< string: machine architecture */
 #define HW_REALMEM              10  /*!< int: 'real' memory */
-#define HW_MAXID                11  /*!< number of valid hw ids */
 
 #ifdef KERNEL_INTERNAL
 

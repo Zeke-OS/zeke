@@ -60,13 +60,13 @@ long sysconf(int name)
 
     switch (name) {
     case _SC_AIO_LISTIO_MAX:
-        /* TODO */
+        /* TODO _SC_AIO_LISTIO_MAX */
         break;
     case _SC_AIO_MAX:
-        /* TODO */
+        /* TODO _SC_AIO_MAX */
         break;
     case _SC_AIO_PRIO_DELTA_MAX:
-        /* TODO */
+        /* TODO _SC_AIO_PRIO_DELTA_MAX */
         break;
     case _SC_ARG_MAX:
         sysctl_mib[0] = CTL_KERN;
@@ -75,19 +75,19 @@ long sysconf(int name)
             value = -1;
         break;
     case _SC_ATEXIT_MAX:
-        /* TODO */
+        /* TODO _SC_ATEXIT_MAX */
         break;
     case _SC_BC_BASE_MAX:
-        /* TODO */
+        /* TODO _SC_BC_BASE_MAX */
         break;
     case _SC_BC_DIM_MAX:
-        /* TODO */
+        /* TODO _SC_BC_DIM_MAX */
         break;
     case _SC_BC_SCALE_MAX:
-        /* TODO */
+        /* TODO _SC_BC_SCALE_MAX */
         break;
     case _SC_BC_STRING_MAX:
-        /* TODO */
+        /* TODO _SC_BC_STRING_MAX */
         break;
     case _SC_CHILD_MAX:
         break;
@@ -100,46 +100,40 @@ long sysconf(int name)
         }
         break;
     case _SC_COLL_WEIGHTS_MAX:
-        /* TODO */
+        /* TODO _SC_COLL_WEIGHTS_MAX */
         break;
     case _SC_DELAYTIMER_MAX:
-        /* TODO */
+        /* TODO _SC_DELAYTIMER_MAX */
         break;
     case _SC_EXPR_NEST_MAX:
-        /* TODO */
+        /* TODO _SC_EXPR_NEST_MAX */
         break;
     case _SC_HOST_NAME_MAX:
         value = (long)HOST_NAME_MAX;
         break;
     case _SC_IOV_MAX:
-        /* TODO */
+        /* TODO _SC_IOV_MAX */
         break;
     case _SC_LINE_MAX:
         value = (long)LINE_MAX;
         break;
     case _SC_LOGIN_NAME_MAX:
-        /* TODO */
+        value = MAXLOGNAME;
         break;
     case _SC_NGROUPS_MAX:
-#if 0
-        sysctl_mib[0] = CTL_KERN;
-        sysctl_mib[1] = KERN_NGROUPS;
-        if (sysctl(sysctl_mib, sysctl_len, &value, &len, NULL, 0) == -1)
-            value = -1;
-#endif
         value = NGROUPS_MAX;
         break;
     case _SC_GETGR_R_SIZE_MAX:
-        /* TODO */
+        /* TODO _SC_GETGR_R_SIZE_MAX */
         break;
     case _SC_GETPW_R_SIZE_MAX:
-        /* TODO */
+        /* TODO _SC_GETPW_R_SIZE_MAX */
         break;
     case _SC_MQ_OPEN_MAX:
-        /* TODO */
+        /* TODO _SC_MQ_OPEN_MAX */
         break;
     case _SC_MQ_PRIO_MAX:
-        /* TODO */
+        /* TODO _SC_MQ_PRIO_MAX */
         break;
     case _SC_OPEN_MAX:
         if ((getrlimit(RLIMIT_NOFILE, &rl) != 0) ||
@@ -155,73 +149,70 @@ long sysconf(int name)
         value = _POSIX_ADVISORY_INFO;
         break;
     case _SC_BARRIERS:
-        /* TODO */
+        /* TODO _SC_BARRIERS */
         break;
     case _SC_ASYNCHRONOUS_IO:
-        /* TODO */
+        /* TODO _SC_ASYNCHRONOUS_IO */
         break;
     case _SC_CLOCK_SELECTION:
-        /* TODO */
+        /* TODO _SC_CLOCK_SELECTION */
         break;
     case _SC_CPUTIME:
-        /* TODO */
+        /* TODO _SC_CPUTIME */
         break;
     case _SC_FSYNC:
-        /* TODO */
+        /* TODO _SC_FSYNC */
         break;
     case _SC_IPV6:
-        /* TODO */
+        /* TODO _SC_IPV6 */
         break;
     case _SC_JOB_CONTROL:
-        sysctl_mib[0] = CTL_KERN;
-        sysctl_mib[1] = KERN_JOB_CONTROL;
-        if (sysctl(sysctl_mib, sysctl_len, &value, &len, NULL, 0) == -1)
-            value = -1;
+        value = -1; /* TODO support _SC_JOB_CONTROL? */
         break;
     case _SC_MAPPED_FILES:
         value = _POSIX_MAPPED_FILES;
         break;
     case _SC_MEMLOCK:
-        /* TODO */
+        /* TODO _SC_MEMLOCK */
         break;
     case _SC_MEMLOCK_RANGE:
-        /* TODO */
+        /* TODO _SC_MEMLOCK_RANGE */
         break;
     case _SC_MEMORY_PROTECTION:
-        /* TODO */
+        /* TODO _SC_MEMORY_PROTECTION */
         break;
     case _SC_MESSAGE_PASSING:
-        /* TODO */
+        /* TODO _SC_MESSAGE_PASSING */
         break;
     case _SC_MONOTONIC_CLOCK:
-        /* TODO */
+        /* TODO _SC_MONOTONIC_CLOCK */
         break;
     case _SC_PRIORITIZED_IO:
-        /* TODO */
+        /* TODO _SC_PRIORITIZED_IO */
         break;
     case _SC_PRIORITY_SCHEDULING:
         value = _POSIX_PRIORITY_SCHEDULING;
         break;
     case _SC_RAW_SOCKETS:
-        /* TODO */
+        /* TODO _SC_RAW_SOCKETS */
         break;
     case _SC_READER_WRITER_LOCKS:
-        /* TODO */
+        /* TODO _SC_READER_WRITER_LOCKS */
         break;
     case _SC_REALTIME_SIGNALS:
-        /* TODO */
+        /* TODO _SC_REALTIME_SIGNALS */
         break;
     case _SC_REGEXP:
-        /* TODO */
+        /* TODO _SC_REGEXP */
         break;
     case _SC_SAVED_IDS:
-        /* TODO */
+        value = 1;
         break;
     case _SC_SEMAPHORES:
-        /* TODO */
+        /* TODO _SC_SEMAPHORES */
         break;
     case _SC_SHARED_MEMORY_OBJECTS:
-        /* TODO */
+        /* TODO _SC_SHARED_MEMORY_OBJECTS */
         break;
     case _SC_SHELL:
         value = _POSIX_SHELL;
@@ -230,43 +221,43 @@ long sysconf(int name)
         /* RFE Probably won't be supported */
         break;
     case _SC_SPIN_LOCKS:
-        /* TODO */
+        /* TODO _SC_SPIN_LOCKS */
         break;
     case _SC_SPORADIC_SERVER:
-        /* TODO */
+        /* TODO _SC_SPORADIC_SERVER */
         break;
     case _SC_SS_REPL_MAX:
-        /* TODO */
+        /* TODO _SC_SS_REPL_MAX */
         break;
     case _SC_SYNCHRONIZED_IO:
-        /* TODO */
+        /* TODO _SC_SYNCHRONIZED_IO */
         break;
     case _SC_THREAD_ATTR_STACKADDR:
-        /* TODO */
+        /* TODO _SC_THREAD_ATTR_STACKADDR */
         break;
     case _SC_THREAD_ATTR_STACKSIZE:
-        /* TODO */
+        /* TODO _SC_THREAD_ATTR_STACKSIZE */
         break;
     case _SC_THREAD_CPUTIME:
-        /* TODO */
+        /* TODO _SC_THREAD_CPUTIME */
         break;
     case _SC_THREAD_PRIO_INHERIT:
-        /* TODO */
+        /* TODO _SC_THREAD_PRIO_INHERIT */
         break;
     case _SC_THREAD_PRIO_PROTECT:
-        /* TODO */
+        /* TODO _SC_THREAD_PRIO_PROTECT */
         break;
     case _SC_THREAD_PRIORITY_SCHEDULING:
-        /* TODO */
+        /* TODO _SC_THREAD_PRIORITY_SCHEDULING */
         break;
     case _SC_THREAD_PROCESS_SHARED:
-        /* TODO */
+        /* TODO _SC_THREAD_PROCESS_SHARED */
         break;
     case _SC_THREAD_ROBUST_PRIO_INHERIT:
-        /* TODO */
+        /* TODO _SC_THREAD_ROBUST_PRIO_INHERIT */
         break;
     case _SC_THREAD_ROBUST_PRIO_PROTECT:
-        /* TODO */
+        /* TODO _SC_THREAD_ROBUST_PRIO_PROTECT */
         break;
     case _SC_THREAD_SAFE_FUNCTIONS:
         value = _POSIX_THREAD_SAFE_FUNCTIONS;
@@ -278,52 +269,52 @@ long sysconf(int name)
         value = _POSIX_THREADS;
         break;
     case _SC_TIMEOUTS:
-        /* TODO */
+        /* TODO _SC_TIMEOUTS */
         break;
     case _SC_TIMERS:
-        /* TODO */
+        /* TODO _SC_TIMERS */
         break;
     case _SC_TRACE:
-        /* TODO */
+        /* TODO _SC_TRACE */
         break;
     case _SC_TRACE_EVENT_FILTER:
-        /* TODO */
+        /* TODO _SC_TRACE_EVENT_FILTER */
         break;
     case _SC_TRACE_EVENT_NAME_MAX:
-        /* TODO */
+        /* TODO _SC_TRACE_EVENT_NAME_MAX */
         break;
     case _SC_TRACE_INHERIT:
-        /* TODO */
+        /* TODO _SC_TRACE_INHERIT */
         break;
     case _SC_TRACE_LOG:
-        /* TODO */
+        /* TODO _SC_TRACE_LOG */
         break;
     case _SC_TRACE_NAME_MAX:
-        /* TODO */
+        /* TODO _SC_TRACE_NAME_MAX */
         break;
     case _SC_TRACE_SYS_MAX:
-        /* TODO */
+        /* TODO _SC_TRACE_SYS_MAX */
         break;
     case _SC_TRACE_USER_EVENT_MAX:
-        /* TODO */
+        /* TODO _SC_TRACE_USER_EVENT_MAX */
         break;
     case _SC_TYPED_MEMORY_OBJECTS:
-        /* TODO */
+        /* TODO _SC_TYPED_MEMORY_OBJECTS */
         break;
     case _SC_VERSION:
-        /* TODO */
+        /* TODO _SC_VERSION */
         break;
     case _SC_V7_ILP32_OFF32:
-        /* TODO */
+        /* TODO _SC_V7_ILP32_OFF32 */
         break;
     case _SC_V7_ILP32_OFFBIG:
-        /* TODO */
+        /* TODO _SC_V7_ILP32_OFFBIG */
         break;
     case _SC_V7_LP64_OFF64:
-        /* TODO */
+        /* TODO _SC_V7_LP64_OFF64 */
         break;
     case _SC_V7_LPBIG_OFFBIG:
-        /* TODO */
+        /* TODO _SC_V7_LPBIG_OFFBIG */
         break;
     case _SC_PAGE_SIZE:
     case _SC_PAGESIZE:
