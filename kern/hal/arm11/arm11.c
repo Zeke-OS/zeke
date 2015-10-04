@@ -45,7 +45,6 @@ volatile uint32_t flag_kernel_tick = 0;
 __user void * init_stack_frame(struct _sched_pthread_create_args * thread_def,
                                sw_stack_frame_t * sframe, int priv)
 {
-    /* Note that the scheduler must have the same mapping. */
     uint32_t stack_start = ((uint32_t)(thread_def->stack_addr)
             + thread_def->stack_size
             - sizeof(struct _sched_tls_desc));
