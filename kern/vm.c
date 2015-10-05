@@ -670,6 +670,20 @@ int vm_unload_regions(struct proc_info * proc, int start, int end)
     return 0;
 }
 
+void vm_fixmemmap_proc(struct proc_info * proc)
+{
+    struct vm_mm_struct * mm = &proc->mm;
+    size_t nr_regions = mm->nr_regions;
+
+    mtx_lock(&mm->regions_lock);
+    for (size_t i = 0; i < nr_regions; i++) {
+        if ((*mm->regions)[i]) {
+            vm_mapproc_region(proc, (*mm->regions)[i]);
+        }
+    }
+    mtx_unlock(&mm->regions_lock);
+}
+
 /**
  * Test for priv mode access permissions.
  *

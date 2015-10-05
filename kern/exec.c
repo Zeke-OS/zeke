@@ -184,6 +184,7 @@ int exec_file(int fildes, char name[PROC_NAME_LEN], struct buf * env_bp,
         }
         goto fail;
     }
+    vm_fixmemmap_proc(curproc);
 
     /* Close CLOEXEC files */
     fs_fildes_close_exec(curproc);

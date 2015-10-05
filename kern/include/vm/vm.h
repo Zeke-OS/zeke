@@ -358,6 +358,13 @@ int vm_unmapproc_region(struct proc_info * proc, struct buf * region);
 int vm_unload_regions(struct proc_info * proc, int start, int end);
 
 /**
+ * Remap everything that should be mapped to the proc.
+ * This can be used to fix racy remapping after a new process image has been
+ * loaded.
+ */
+void vm_fixmemmap_proc(struct proc_info * proc);
+
+/**
  * @addtogroup useracc kernacc, useracc, useracc_proc
  * Check memory regions for accessibility.
  *
