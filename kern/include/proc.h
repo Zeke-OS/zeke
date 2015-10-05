@@ -201,8 +201,7 @@ void proc_update_times(void);
  * Handle page fault caused by a process.
  * Usually this handler is executed because of cow page table.
  */
-int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-                     struct proc_info * proc, struct thread_info * thread);
+int proc_abo_handler(const struct mmu_abo_param * restrict abo);
 
 /**
  * Update process system state.

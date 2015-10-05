@@ -173,21 +173,17 @@
  * Abort handling functions common to PAB and DAB.
  */
 
-struct proc_info;
-struct thread_info;
+struct mmu_abo_param;
 
 /**
  * Print a dump to kerror.
  */
-void arm11_abo_dump(uint32_t ifsr, uint32_t ifar, uint32_t psr, uint32_t lr,
-                    struct proc_info * proc, struct thread_info * thread,
-                    const char * abo_type);
+void arm11_abo_dump(const struct mmu_abo_param * restrict abo);
 
 /*
  * Bus error.
  */
-int arm11_abo_buser(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-                    struct proc_info * proc, struct thread_info * thread);
+int arm11_abo_buser(const struct mmu_abo_param * restrict abo);
 
 #endif /* ARM11_MMU_H */
 

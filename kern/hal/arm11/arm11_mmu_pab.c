@@ -60,8 +60,7 @@ static const char * pab_fsr_strerr[] = {
     "Page permission fault"
 };
 
-static int pab_fatal(uint32_t ifsr, uint32_t ifar, uint32_t psr, uint32_t lr,
-                     struct proc_info * proc, struct thread_info * thread);
+static int pab_fatal(const struct mmu_abo_param * restrict abo);
 
 const char * get_pab_strerror(uint32_t ifsr)
 {
@@ -82,7 +81,7 @@ void mmu_prefetch_abort_handler(void)
 #endif
     istate_t s_entry; /*!< Int state in handler entry. */
     struct thread_info * const thread = (struct thread_info *)current_thread;
-    struct proc_info * proc;
+    struct mmu_abo_param abo;
     abo_handler * handler;
 
     /* Get fault status */
@@ -116,28 +115,36 @@ void mmu_prefetch_abort_handler(void)
      */
 
     /* RFE Might be enough to get curproc. */
-    proc = proc_get_struct_l(thread->pid_owner); /* Can be NULL */
     handler = prefetch_aborts[ifsr & FSR_STATUS_MASK];
+    abo = (struct mmu_abo_param){
+        .abo_type = MMU_ABO_PREFETCH,
+        .fsr = ifsr,
+        .far = ifar,
+        .psr = spsr,
+        .lr = lr,
+        .proc = proc_get_struct_l(thread->pid_owner), /* Can be NULL */
+        .thread = thread,
+    };
     if (handler) {
         int err;
 
-        if ((err = handler(ifsr, ifar, spsr, lr, proc, thread))) {
+        if ((err = handler(&abo))) {
             switch (err) {
             case -EACCES:
             case -EFAULT:
-                arm11_abo_buser(ifsr, ifar, spsr, lr, proc, thread);
+                arm11_abo_buser(&abo);
                 /* Doesn't return */
                 break;
             default:
                 KERROR(KERROR_CRIT, "PAB handling failed: %i\n", err);
-                pab_fatal(ifsr, ifar, spsr, lr, proc, thread);
+                pab_fatal(&abo);
             }
         }
     } else {
        KERROR(KERROR_CRIT,
               "PAB handling failed, no sufficient handler found.\n");
 
-       pab_fatal(ifsr, ifar, spsr, lr, proc, thread);
+       pab_fatal(&abo);
     }
 
     /*
@@ -156,10 +163,9 @@ void mmu_prefetch_abort_handler(void)
  * PAB handler for fatal aborts.
  * @return Doesn't return.
  */
-static int pab_fatal(uint32_t ifsr, uint32_t ifar, uint32_t psr, uint32_t lr,
-                     struct proc_info * proc, struct thread_info * thread)
+static int pab_fatal(const struct mmu_abo_param * restrict abo)
 {
-    arm11_abo_dump(ifsr, ifar, psr, lr, proc, thread, "PAB");
+    arm11_abo_dump(abo);
     panic_halt();
 
     /* Doesn't return */
@@ -170,17 +176,17 @@ static abo_handler * const prefetch_aborts[] = {
     pab_fatal,          /* No function, reset value */
     pab_fatal,          /* Alignment fault */
     pab_fatal,          /* Debug event fault */
-    proc_dab_handler,   /* Access Flag fault on Section */
+    proc_abo_handler,   /* Access Flag fault on Section */
     pab_fatal,          /* No function */
-    proc_dab_handler,   /* Translation fault on Section */
-    proc_dab_handler,   /* Access Flag fault on Page */
-    proc_dab_handler,   /* Translation fault on Page. */
+    proc_abo_handler,   /* Translation fault on Section */
+    proc_abo_handler,   /* Access Flag fault on Page */
+    proc_abo_handler,   /* Translation fault on Page. */
     pab_fatal,          /* Precise External Abort */
     pab_fatal,          /* Domain fault on Section */
     pab_fatal,          /* No function */
     pab_fatal,          /* Domain fault on Page */
     pab_fatal,          /* External abort on translation, first level */
-    proc_dab_handler,   /* Permission fault on Section */
+    proc_abo_handler,   /* Permission fault on Section */
     pab_fatal,          /* External abort on translation, second level */
-    proc_dab_handler    /* Permission fault on Page */
+    proc_abo_handler    /* Permission fault on Page */
 };

@@ -500,51 +500,53 @@ out:
     return retval;
 }
 
-void arm11_abo_dump(uint32_t ifsr, uint32_t ifar, uint32_t psr, uint32_t lr,
-                    struct proc_info * proc, struct thread_info * thread,
-                    const char * abo_type)
+void arm11_abo_dump(const struct mmu_abo_param * restrict abo)
 {
+    const char * const abo_type_str = (abo->abo_type == MMU_ABO_DATA) ? "DAB"
+                                                                      : "PAB";
+
     KERROR(KERROR_CRIT,
            "Fatal %s:\n"
            "pc: %x\n"
-           "ifsr: %x (%s)\n"
-           "ifar: %x\n"
+           "(i)fsr: %x (%s)\n"
+           "(i)far: %x\n"
            "proc info:\n"
            "pid: %i\n"
            "tid: %i\n"
            "insys: %i\n",
-           abo_type,
-           lr,
-           ifsr, get_pab_strerror(ifsr),
-           ifar,
-           (int32_t)((proc) ? proc->pid : -1),
-           (int32_t)thread->id,
-           (int32_t)thread_flags_is_set(thread, SCHED_INSYS_FLAG));
-    stack_dump(current_thread->sframe[SCHED_SFRAME_ABO]);
+           abo_type_str,
+           abo->lr,
+           abo->fsr,
+           (abo->abo_type == MMU_ABO_DATA) ? get_dab_strerror(abo->fsr)
+                                           : get_pab_strerror(abo->fsr),
+           abo->far,
+           (int32_t)((abo->proc) ? abo->proc->pid : -1),
+           (int32_t)abo->thread->id,
+           (int32_t)thread_flags_is_set(abo->thread, SCHED_INSYS_FLAG));
+    stack_dump(abo->thread->sframe[SCHED_SFRAME_ABO]);
 }
 
-int arm11_abo_buser(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-                    struct proc_info * proc, struct thread_info * thread)
+int arm11_abo_buser(const struct mmu_abo_param * restrict abo)
 {
     const struct ksignal_param sigparm = {
         .si_code = SEGV_MAPERR,
-        .si_addr = (void *)far,
+        .si_addr = (void *)abo->far,
     };
 
     /* Some cases are always fatal */
-    if (!ABO_WAS_USERMODE(psr) /* it happened in kernel mode */ ||
-        (thread->pid_owner <= 1)) /* the proc is kernel or init */ {
+    if (!ABO_WAS_USERMODE(abo->psr) /* it happened in kernel mode */ ||
+        (abo->thread->pid_owner <= 1)) /* the proc is kernel or init */ {
         return -ENOTRECOVERABLE;
     }
 
-    if (!proc)
+    if (!abo->proc)
         return -ESRCH;
 
     KERROR(KERROR_DEBUG, "%s: Send a fatal SIGSEGV to %d\n",
-           __func__, proc->pid);
+           __func__, abo->proc->pid);
 
     /* Deliver SIGSEGV. */
-    ksignal_sendsig_fatal(proc, SIGSEGV, &sigparm);
+    ksignal_sendsig_fatal(abo->proc, SIGSEGV, &sigparm);
     mmu_die_on_fatal_abort();
 
     return 0;

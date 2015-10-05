@@ -76,8 +76,7 @@ static const char * dab_fsr_strerr[] = {
     ""                              /* 0x01F */
 };
 
-static int dab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-                     struct proc_info * proc, struct thread_info * thread);
+static int dab_fatal(const struct mmu_abo_param * restrict abo);
 
 const char * get_dab_strerror(uint32_t fsr)
 {
@@ -103,7 +102,7 @@ void mmu_data_abort_handler(void)
 #endif
     istate_t s_entry; /*!< Int state in handler entry. */
     struct thread_info * const thread = (struct thread_info *)current_thread;
-    struct proc_info * proc;
+    struct mmu_abo_param abo;
     abo_handler * handler;
 
     /* Get fault status */
@@ -138,28 +137,36 @@ void mmu_data_abort_handler(void)
     }
 
     /* RFE Might be enough to get curproc. */
-    proc = proc_get_struct_l(thread->pid_owner); /* Can be NULL */
     handler = data_aborts[fsr & FSR_STATUS_MASK];
+    abo = (struct mmu_abo_param){
+        .abo_type = MMU_ABO_DATA,
+        .fsr = fsr,
+        .far = far,
+        .psr = spsr,
+        .lr = lr,
+        .proc = proc_get_struct_l(thread->pid_owner), /* Can be NULL */
+        .thread = thread,
+    };
     if (handler) {
         int err;
 
-        if ((err = handler(fsr, far, spsr, lr, proc, thread))) {
+        if ((err = handler(&abo))) {
             switch (err) {
             case -EACCES:
             case -EFAULT:
-                arm11_abo_buser(fsr, far, spsr, lr, proc, thread);
+                arm11_abo_buser(&abo);
                 /* Doesn't return */
                 break;
             default:
                 KERROR(KERROR_CRIT, "DAB handling failed: %i\n", err);
-                dab_fatal(fsr, far, spsr, lr, proc, thread);
+                dab_fatal(&abo);
             }
         }
     } else {
        KERROR(KERROR_CRIT,
               "DAB handling failed, no sufficient handler found.\n");
 
-       dab_fatal(fsr, far, spsr, lr, proc, thread);
+       dab_fatal(&abo);
     }
 
     /*
@@ -178,10 +185,9 @@ void mmu_data_abort_handler(void)
  * DAB handler for fatal aborts.
  * @return Doesn't return.
  */
-static int dab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-                     struct proc_info * proc, struct thread_info * thread)
+static int dab_fatal(const struct mmu_abo_param * restrict abo)
 {
-    arm11_abo_dump(fsr, far, psr, lr, proc, thread, "DAB");
+    arm11_abo_dump(abo);
     panic("Can't handle data abort");
 
     /* Doesn't return */
@@ -191,31 +197,31 @@ static int dab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
 /**
  * DAB handler for alignment aborts.
  */
-static int dab_align(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-                     struct proc_info * proc, struct thread_info * thread)
+static int dab_align(const struct mmu_abo_param * restrict abo)
 {
     const struct ksignal_param sigparm = {
         .si_code = BUS_ADRALN,
-        .si_addr = (void *)far,
+        .si_addr = (void *)abo->far,
     };
 
     /* Some cases are always fatal if */
-    if (!ABO_WAS_USERMODE(psr) /* it is a kernel mode alignment fault, */ ||
-        (thread->pid_owner <= 1))  /* the proc is kernel or init */ {
+    if (!ABO_WAS_USERMODE(abo->psr) /* it is a kernel mode alignment fault */ ||
+        (abo->thread->pid_owner <= 1))  /* the proc is kernel or init */ {
         return -ENOTRECOVERABLE;
     }
 
-    if (!proc)
+    if (!abo->proc)
         return -ESRCH;
 
-    KERROR(KERROR_DEBUG, "%s: Send a fatal SIGBUS\n", __func__);
+    KERROR(KERROR_DEBUG, "%s: Send a fatal SIGBUS to %d\n",
+           __func__, abo->proc->pid);
 
     /*
      * Deliver SIGBUS.
      * TODO Instead of sending a signal we should probably try to handle the
      *      error first.
      */
-    ksignal_sendsig_fatal(proc, SIGBUS, &sigparm);
+    ksignal_sendsig_fatal(abo->proc, SIGBUS, &sigparm);
     mmu_die_on_fatal_abort();
 
     return 0;
@@ -225,17 +231,17 @@ static abo_handler * const data_aborts[] = {
     dab_fatal,          /* no function, reset value */
     dab_align,          /* Alignment fault */
     dab_fatal,          /* Instruction debug event */
-    proc_dab_handler,   /* Access bit fault on Section */
+    proc_abo_handler,   /* Access bit fault on Section */
     arm11_abo_buser,    /* ICache maintanance op fault */
-    proc_dab_handler,   /* Translation Section Fault */
-    proc_dab_handler,   /* Access bit fault on Page */
-    proc_dab_handler,   /* Translation Page fault */
+    proc_abo_handler,   /* Translation Section Fault */
+    proc_abo_handler,   /* Access bit fault on Page */
+    proc_abo_handler,   /* Translation Page fault */
     arm11_abo_buser,    /* Precise external abort */
     arm11_abo_buser,    /* Domain Section fault */ /* TODO not really buserr */
     dab_fatal,          /* no function */
     arm11_abo_buser,    /* Domain Page fault */ /* TODO Not really buserr */
     arm11_abo_buser,    /* External abort on translation, first level */
-    proc_dab_handler,   /* Permission Section fault */
+    proc_abo_handler,   /* Permission Section fault */
     arm11_abo_buser,    /* External abort on translation, second level */
-    proc_dab_handler    /* Permission Page fault */
+    proc_abo_handler    /* Permission Page fault */
 };

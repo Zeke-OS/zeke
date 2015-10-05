@@ -178,12 +178,25 @@ typedef struct mmu_region {
 struct proc_info;
 struct thread_info;
 
+enum mmu_abo_type {
+    MMU_ABO_DATA,
+    MMU_ABO_PREFETCH,
+};
+
+struct mmu_abo_param {
+    enum mmu_abo_type abo_type;
+    uint32_t fsr;
+    uint32_t far;
+    uint32_t psr;
+    uint32_t lr;
+    struct proc_info * proc;
+    struct thread_info * thread;
+};
+
 /**
  * A typdef for prefetch and data abort handlers.
  */
-typedef int abo_handler(uint32_t fsr, uint32_t far, uint32_t psr,
-                        uint32_t lr, struct proc_info * proc,
-                        struct thread_info * thread);
+typedef int abo_handler(const struct mmu_abo_param * restrict abo);
 
 extern mmu_pagetable_t mmu_pagetable_master;
 

@@ -542,23 +542,26 @@ void proc_update_times(void)
         curproc->tms.tms_utime++;
 }
 
-int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-                     struct proc_info * proc, struct thread_info * thread)
+int proc_abo_handler(const struct mmu_abo_param * restrict abo)
 {
-    const uintptr_t vaddr = far;
+    const uintptr_t vaddr = abo->far;
     struct vm_mm_struct * mm;
+    const char * abo_str;
     int err;
 
-    if (!proc) {
+    if (!abo->proc) {
         return -ESRCH;
     }
 
+    abo_str = (abo->abo_type == MMU_ABO_DATA) ? get_dab_strerror(abo->fsr)
+                                              : get_pab_strerror(abo->fsr);
+
 #ifdef configPROC_DEBUG
     KERROR(KERROR_DEBUG, "%s: MOO, (%s) %x @ %x by %d\n",
-           __func__, get_dab_strerror(fsr), vaddr, lr, proc->pid);
+           __func__, abo_str, vaddr, abo->lr, abo->proc->pid);
 #endif
 
-    mm = &proc->mm;
+    mm = &abo->proc->mm;
 
     mtx_lock(&mm->regions_lock);
     for (int i = 0; i < mm->nr_regions; i++) {
@@ -587,7 +590,7 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
          * This is the correct region.
          */
 
-        if (MMU_ABORT_IS_TRANSLATION_FAULT(fsr)) { /* Translation fault */
+        if (MMU_ABORT_IS_TRANSLATION_FAULT(abo->fsr)) { /* Translation fault */
             /*
              * Sometimes we see translation faults due to ordering of region
              * replacements during exec. This is something we have to accept
@@ -600,12 +603,12 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
              * now belonging to A.
              */
             mtx_unlock(&mm->regions_lock);
-            vm_mapproc_region(curproc, region);
+            vm_mapproc_region(abo->proc, region);
 
 #ifdef configPROC_DEBUG
             KERROR(KERROR_DEBUG,
                    "DAB \"%s\" of a valid memory region (%d) fixed by remapping the region\n",
-                   get_dab_strerror(fsr), i);
+                   abo_str, i);
 #endif
 
             return 0;
@@ -633,7 +636,7 @@ int proc_dab_handler(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
          */
 
         mtx_unlock(&mm->regions_lock);
-        err = vm_replace_region(proc, region, i, VM_INSOP_MAP_REG);
+        err = vm_replace_region(abo->proc, region, i, VM_INSOP_MAP_REG);
 
 #ifdef configPROC_DEBUG
         KERROR(KERROR_DEBUG, "COW done (%d)\n", err);
