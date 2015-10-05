@@ -169,6 +169,26 @@
     ((_fsr) == ARM11_MMU_SECTION_TRANSLATION_FAULT ||   \
      (_fsr) == ARM11_MMU_PAGE_TRANSLATION_FAULT)        \
 
+/*
+ * Abort handling functions common to PAB and DAB.
+ */
+
+struct proc_info;
+struct thread_info;
+
+/**
+ * Print a dump to kerror.
+ */
+void arm11_abo_dump(uint32_t ifsr, uint32_t ifar, uint32_t psr, uint32_t lr,
+                    struct proc_info * proc, struct thread_info * thread,
+                    const char * abo_type);
+
+/*
+ * Bus error.
+ */
+int arm11_abo_buser(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
+                    struct proc_info * proc, struct thread_info * thread);
+
 #endif /* ARM11_MMU_H */
 
 /**

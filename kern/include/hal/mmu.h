@@ -179,15 +179,9 @@ struct proc_info;
 struct thread_info;
 
 /**
- * A typdef for prefetch abort handlers.
+ * A typdef for prefetch and data abort handlers.
  */
-typedef int pab_handler(uint32_t ifsr, uint32_t ifar, uint32_t psr,
-                        uint32_t lr, struct proc_info * proc,
-                        struct thread_info * thread);
-/**
- * A typdef for data abort handlers.
- */
-typedef int dab_handler(uint32_t fsr, uint32_t far, uint32_t psr,
+typedef int abo_handler(uint32_t fsr, uint32_t far, uint32_t psr,
                         uint32_t lr, struct proc_info * proc,
                         struct thread_info * thread);
 

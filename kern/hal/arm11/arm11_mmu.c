@@ -499,3 +499,53 @@ void * mmu_translate_vaddr(const mmu_pagetable_t * pt, uintptr_t vaddr)
 out:
     return retval;
 }
+
+void arm11_abo_dump(uint32_t ifsr, uint32_t ifar, uint32_t psr, uint32_t lr,
+                    struct proc_info * proc, struct thread_info * thread,
+                    const char * abo_type)
+{
+    KERROR(KERROR_CRIT,
+           "Fatal %s:\n"
+           "pc: %x\n"
+           "ifsr: %x (%s)\n"
+           "ifar: %x\n"
+           "proc info:\n"
+           "pid: %i\n"
+           "tid: %i\n"
+           "insys: %i\n",
+           abo_type,
+           lr,
+           ifsr, get_pab_strerror(ifsr),
+           ifar,
+           (int32_t)((proc) ? proc->pid : -1),
+           (int32_t)thread->id,
+           (int32_t)thread_flags_is_set(thread, SCHED_INSYS_FLAG));
+    stack_dump(current_thread->sframe[SCHED_SFRAME_ABO]);
+}
+
+int arm11_abo_buser(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
+                    struct proc_info * proc, struct thread_info * thread)
+{
+    const struct ksignal_param sigparm = {
+        .si_code = SEGV_MAPERR,
+        .si_addr = (void *)far,
+    };
+
+    /* Some cases are always fatal */
+    if (!ABO_WAS_USERMODE(psr) /* it happened in kernel mode */ ||
+        (thread->pid_owner <= 1)) /* the proc is kernel or init */ {
+        return -ENOTRECOVERABLE;
+    }
+
+    if (!proc)
+        return -ESRCH;
+
+    KERROR(KERROR_DEBUG, "%s: Send a fatal SIGSEGV to %d\n",
+           __func__, proc->pid);
+
+    /* Deliver SIGSEGV. */
+    ksignal_sendsig_fatal(proc, SIGSEGV, &sigparm);
+    mmu_die_on_fatal_abort();
+
+    return 0;
+}

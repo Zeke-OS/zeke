@@ -39,7 +39,7 @@
 #include <hal/core.h>
 #include <hal/mmu.h>
 
-static pab_handler * const prefetch_aborts[];
+static abo_handler * const prefetch_aborts[];
 
 static const char * pab_fsr_strerr[] = {
     "",
@@ -62,33 +62,10 @@ static const char * pab_fsr_strerr[] = {
 
 static int pab_fatal(uint32_t ifsr, uint32_t ifar, uint32_t psr, uint32_t lr,
                      struct proc_info * proc, struct thread_info * thread);
-static int pab_buserr(uint32_t ifsr, uint32_t ifar, uint32_t psr, uint32_t lr,
-                      struct proc_info * proc, struct thread_info * thread);
 
 const char * get_pab_strerror(uint32_t ifsr)
 {
     return pab_fsr_strerr[ifsr & FSR_STATUS_MASK];
-}
-
-static void pab_dump(uint32_t ifsr, uint32_t ifar, uint32_t psr, uint32_t lr,
-                     struct proc_info * proc, struct thread_info * thread)
-{
-    KERROR(KERROR_CRIT,
-           "Fatal PAB:\n"
-           "pc: %x\n"
-           "ifsr: %x (%s)\n"
-           "ifar: %x\n"
-           "proc info:\n"
-           "pid: %i\n"
-           "tid: %i\n"
-           "insys: %i\n",
-           lr,
-           ifsr, get_pab_strerror(ifsr),
-           ifar,
-           (int32_t)((proc) ? proc->pid : -1),
-           (int32_t)thread->id,
-           (int32_t)thread_flags_is_set(thread, SCHED_INSYS_FLAG));
-    stack_dump(current_thread->sframe[SCHED_SFRAME_ABO]);
 }
 
 /**
@@ -106,7 +83,7 @@ void mmu_prefetch_abort_handler(void)
     istate_t s_entry; /*!< Int state in handler entry. */
     struct thread_info * const thread = (struct thread_info *)current_thread;
     struct proc_info * proc;
-    pab_handler * handler;
+    abo_handler * handler;
 
     /* Get fault status */
     __asm__ volatile (
@@ -124,8 +101,8 @@ void mmu_prefetch_abort_handler(void)
         panic("Thread not set on PAB");
     }
 
-    /* TODO Handle DAB in preemptible state. */
-    /* Handle this data abort in pre-emptible state if possible. */
+    /* TODO Handle PAB in preemptible state. */
+    /* Handle this prefetch abort in pre-emptible state if possible. */
     if (ABO_WAS_USERMODE(spsr)) {
         s_entry = get_interrupt_state();
 #if 0
@@ -134,8 +111,8 @@ void mmu_prefetch_abort_handler(void)
     }
 
     /*
-     * TODO If the abort came from user space and it was BKPT then it was for
-     *      a debugger.
+     * TODO If the abort came from user space and it was BKPT then it was meant
+     *      for a debugger.
      */
 
     /* RFE Might be enough to get curproc. */
@@ -148,7 +125,7 @@ void mmu_prefetch_abort_handler(void)
             switch (err) {
             case -EACCES:
             case -EFAULT:
-                pab_buserr(ifsr, ifar, spsr, lr, proc, thread);
+                arm11_abo_buser(ifsr, ifar, spsr, lr, proc, thread);
                 /* Doesn't return */
                 break;
             default:
@@ -182,55 +159,28 @@ void mmu_prefetch_abort_handler(void)
 static int pab_fatal(uint32_t ifsr, uint32_t ifar, uint32_t psr, uint32_t lr,
                      struct proc_info * proc, struct thread_info * thread)
 {
-    pab_dump(ifsr, ifar, psr, lr, proc, thread);
+    arm11_abo_dump(ifsr, ifar, psr, lr, proc, thread, "PAB");
     panic_halt();
 
     /* Doesn't return */
     return -ENOTRECOVERABLE;
 }
 
-static int pab_buserr(uint32_t ifsr, uint32_t ifar, uint32_t psr, uint32_t lr,
-                      struct proc_info * proc, struct thread_info * thread)
-{
-    const struct ksignal_param sigparm = {
-        .si_code = SEGV_MAPERR,
-        .si_addr = (void *)ifar,
-    };
-
-    /* Some cases are always fatal */
-    if (!ABO_WAS_USERMODE(psr) /* it happened in kernel mode */ ||
-        (thread->pid_owner <= 1)) /* the proc is kernel or init */ {
-        return -ENOTRECOVERABLE;
-    }
-
-    if (!proc)
-        return -ESRCH;
-
-    pab_dump(ifsr, ifar, psr, lr, proc, thread);
-    KERROR(KERROR_DEBUG, "%s: Send a fatal SIGSEGV\n", __func__);
-
-    /* Deliver SIGSEGV. */
-    ksignal_sendsig_fatal(proc, SIGSEGV, &sigparm);
-    mmu_die_on_fatal_abort();
-
-    return 0;
-}
-
-static pab_handler * const prefetch_aborts[] = {
-    pab_fatal,  /* No function, reset value */
-    pab_fatal,  /* Alignment fault */
-    pab_fatal,  /* Debug event fault */
-    pab_fatal,  /* Access Flag fault on Section */
-    pab_fatal,  /* No function */
-    pab_buserr, /* Translation fault on Section */
-    pab_fatal,  /* Access Flag fault on Page */
-    pab_fatal,  /* Translation fault on Page */
-    pab_fatal,  /* Precise External Abort */
-    pab_fatal,  /* Domain fault on Section */
-    pab_fatal,  /* No function */
-    pab_fatal,  /* Domain fault on Page */
-    pab_fatal,  /* External abort on translation, first level */
-    pab_fatal,  /* Permission fault on Section */
-    pab_fatal,  /* External abort on translation, second level */
-    pab_buserr  /* Permission fault on Page */
+static abo_handler * const prefetch_aborts[] = {
+    pab_fatal,          /* No function, reset value */
+    pab_fatal,          /* Alignment fault */
+    pab_fatal,          /* Debug event fault */
+    proc_dab_handler,   /* Access Flag fault on Section */
+    pab_fatal,          /* No function */
+    proc_dab_handler,   /* Translation fault on Section */
+    proc_dab_handler,   /* Access Flag fault on Page */
+    proc_dab_handler,   /* Translation fault on Page. */
+    pab_fatal,          /* Precise External Abort */
+    pab_fatal,          /* Domain fault on Section */
+    pab_fatal,          /* No function */
+    pab_fatal,          /* Domain fault on Page */
+    pab_fatal,          /* External abort on translation, first level */
+    proc_dab_handler,   /* Permission fault on Section */
+    pab_fatal,          /* External abort on translation, second level */
+    proc_dab_handler    /* Permission fault on Page */
 };

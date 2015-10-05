@@ -38,7 +38,7 @@
 #include <hal/core.h>
 #include <hal/mmu.h>
 
-static dab_handler * const data_aborts[];
+static abo_handler * const data_aborts[];
 
 static const char * dab_fsr_strerr[] = {
     /* String                       FSR[10,3:0] */
@@ -78,8 +78,6 @@ static const char * dab_fsr_strerr[] = {
 
 static int dab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
                      struct proc_info * proc, struct thread_info * thread);
-static int dab_buserr(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-                      struct proc_info * proc, struct thread_info * thread);
 
 const char * get_dab_strerror(uint32_t fsr)
 {
@@ -106,7 +104,7 @@ void mmu_data_abort_handler(void)
     istate_t s_entry; /*!< Int state in handler entry. */
     struct thread_info * const thread = (struct thread_info *)current_thread;
     struct proc_info * proc;
-    dab_handler * handler;
+    abo_handler * handler;
 
     /* Get fault status */
     __asm__ volatile (
@@ -149,7 +147,7 @@ void mmu_data_abort_handler(void)
             switch (err) {
             case -EACCES:
             case -EFAULT:
-                dab_buserr(fsr, far, spsr, lr, proc, thread);
+                arm11_abo_buser(fsr, far, spsr, lr, proc, thread);
                 /* Doesn't return */
                 break;
             default:
@@ -183,21 +181,7 @@ void mmu_data_abort_handler(void)
 static int dab_fatal(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
                      struct proc_info * proc, struct thread_info * thread)
 {
-    KERROR(KERROR_CRIT,
-           "Fatal DAB:\n"
-           "pc: %x\n"
-           "fsr: %x (%s)\n"
-           "far: %x\n"
-           "proc info:\n"
-           "pid: %i\n"
-           "tid: %i\n"
-           "insys: %i\n",
-           lr,
-           fsr, get_dab_strerror(fsr),
-           far,
-           (int32_t)((proc) ? proc->pid : -1),
-           (int32_t)thread->id,
-           (int32_t)thread_flags_is_set(thread, SCHED_INSYS_FLAG));
+    arm11_abo_dump(fsr, far, psr, lr, proc, thread, "DAB");
     panic("Can't handle data abort");
 
     /* Doesn't return */
@@ -237,48 +221,21 @@ static int dab_align(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
     return 0;
 }
 
-static int dab_buserr(uint32_t fsr, uint32_t far, uint32_t psr, uint32_t lr,
-                      struct proc_info * proc, struct thread_info * thread)
-{
-    const struct ksignal_param sigparm = {
-        .si_code = SEGV_MAPERR,
-        .si_addr = (void *)far,
-    };
-
-    /* Some cases are always fatal */
-    if (!ABO_WAS_USERMODE(psr) /* it happened in kernel mode */ ||
-        (thread->pid_owner <= 1)) /* the proc is kernel or init */ {
-        return -ENOTRECOVERABLE;
-    }
-
-    if (!proc)
-        return -ESRCH;
-
-    KERROR(KERROR_DEBUG, "%s: Send a fatal SIGSEGV to %d\n",
-           __func__, proc->pid);
-
-    /* Deliver SIGSEGV. */
-    ksignal_sendsig_fatal(proc, SIGSEGV, &sigparm);
-    mmu_die_on_fatal_abort();
-
-    return 0;
-}
-
-static dab_handler * const data_aborts[] = {
+static abo_handler * const data_aborts[] = {
     dab_fatal,          /* no function, reset value */
     dab_align,          /* Alignment fault */
     dab_fatal,          /* Instruction debug event */
     proc_dab_handler,   /* Access bit fault on Section */
-    dab_buserr,         /* ICache maintanance op fault */
+    arm11_abo_buser,    /* ICache maintanance op fault */
     proc_dab_handler,   /* Translation Section Fault */
     proc_dab_handler,   /* Access bit fault on Page */
     proc_dab_handler,   /* Translation Page fault */
-    dab_buserr,         /* Precise external abort */
-    dab_buserr,         /* Domain Section fault */ /* TODO not really buserr */
+    arm11_abo_buser,    /* Precise external abort */
+    arm11_abo_buser,    /* Domain Section fault */ /* TODO not really buserr */
     dab_fatal,          /* no function */
-    dab_buserr,         /* Domain Page fault */ /* TODO Not really buserr */
-    dab_buserr,         /* External abort on translation, first level */
+    arm11_abo_buser,    /* Domain Page fault */ /* TODO Not really buserr */
+    arm11_abo_buser,    /* External abort on translation, first level */
     proc_dab_handler,   /* Permission Section fault */
-    dab_buserr,         /* External abort on translation, second level */
+    arm11_abo_buser,    /* External abort on translation, second level */
     proc_dab_handler    /* Permission Page fault */
 };
