@@ -238,7 +238,7 @@ static int load_section(struct elf_ctx * ctx, size_t sect_index,
 static void nt_version(Elf_Note * note, size_t align)
 {
     char * vendor = (char *)note + sizeof(Elf_Note);
-    char * value = vendor + memalign_size(note->n_namesz, align);
+    char * value = vendor + note->n_namesz;
 
     KERROR(KERROR_DEBUG, "Vendor: %s, Value: %s\n", vendor, value);
 }

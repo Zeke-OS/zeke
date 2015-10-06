@@ -210,9 +210,7 @@ int exec_file(int fildes, char name[PROC_NAME_LEN], struct buf * env_bp,
 #endif
 
     err = 0;
-    goto out;
 fail:
-out:
     if (err == 0) {
         disable_interrupt();
         /*
