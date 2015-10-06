@@ -500,6 +500,28 @@ out:
     return retval;
 }
 
+/* No reason to put these to a header file */
+const char * arm11_get_dab_strerror(uint32_t fsr);
+const char * arm11_get_pab_strerror(uint32_t ifsr);
+
+const char * mmu_abo_strerror(const struct mmu_abo_param * restrict abo)
+{
+    const char * str;
+
+    switch (abo->abo_type) {
+    case MMU_ABO_DATA:
+        str = arm11_get_dab_strerror(abo->fsr);
+        break;
+    case MMU_ABO_PREFETCH:
+        str = arm11_get_pab_strerror(abo->fsr);
+        break;
+    default:
+        str = "UNK";
+    }
+
+    return str;
+}
+
 void arm11_abo_dump(const struct mmu_abo_param * restrict abo)
 {
     const char * const abo_type_str = (abo->abo_type == MMU_ABO_DATA) ? "DAB"
@@ -516,9 +538,7 @@ void arm11_abo_dump(const struct mmu_abo_param * restrict abo)
            "insys: %i\n",
            abo_type_str,
            abo->lr,
-           abo->fsr,
-           (abo->abo_type == MMU_ABO_DATA) ? get_dab_strerror(abo->fsr)
-                                           : get_pab_strerror(abo->fsr),
+           abo->fsr, mmu_abo_strerror(abo),
            abo->far,
            (int32_t)((abo->proc) ? abo->proc->pid : -1),
            (int32_t)abo->thread->id,
@@ -542,6 +562,7 @@ int arm11_abo_buser(const struct mmu_abo_param * restrict abo)
     if (!abo->proc)
         return -ESRCH;
 
+    arm11_abo_dump(abo);
     KERROR(KERROR_DEBUG, "%s: Send a fatal SIGSEGV to %d\n",
            __func__, abo->proc->pid);
 

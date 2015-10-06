@@ -51,17 +51,30 @@
 #error MMU not enabled but header was included in some file.
 #endif
 
-/* Zeke Domains */
+/**
+ * Zeke Domains
+ * @{
+ */
 #define MMU_DOM_KERNEL  0 /*!< Kernel domain */
 #define MMU_DOM_USER    0 /*!< User domain */
+/**
+ * @}
+ */
 
 
-/* Page Table Types */
+/**
+ * Page Table Types
+ * @{
+ */
 #define MMU_PTT_COARSE  MMU_PTE_COARSE  /*!< Coarse page table type. */
 #define MMU_PTT_MASTER  MMU_PTE_SECTION /*!< Master page table type. */
+/**
+ * @}
+ */
 
 
-/* Access Permissions control
+/**
+ * Access Permissions control
  *      Priv    User
  *      R W     R W
  * NANA 0 0     0 0
@@ -70,6 +83,7 @@
  * RWRO 1 1     1 0
  * RWRW 1 1     1 1
  * RORO 1 0     1 0
+ * @{
  */
 #define MMU_AP_NANA    0x00 /*!< All accesses generate a permission fault */
 #define MMU_AP_RONA    0x05 /*!< Privileged read-only and User no access */
@@ -78,9 +92,13 @@
                              * faults */
 #define MMU_AP_RWRW    0x03 /*!< Full access */
 #define MMU_AP_RORO    0x06 /*!< Privileged and User read-only */
+/**
+ * @}
+ */
 
 
-/* Control bits
+/**
+ * Control bits
  * ============
  *
  * |31        |9       5|   4|  2|   1|  0|
@@ -93,6 +111,7 @@
  * XN       = Execute-Never, mark region not-executable.
  * MEMTYPE  = TEX C B
  *            987 6 5 b
+ * @{
  */
 
 /* S */
@@ -123,6 +142,9 @@
 /** Write-Back, shareable */
 #define MMU_CTRL_MEMTYPE_WB     (0x3 << MMU_CTRL_MEMTYPE_OFFSET)
 
+/**
+ * @}
+ */
 /* End of Control bits */
 
 
@@ -178,11 +200,17 @@ typedef struct mmu_region {
 struct proc_info;
 struct thread_info;
 
+/**
+ * MMU Abort type.
+ */
 enum mmu_abo_type {
     MMU_ABO_DATA,
     MMU_ABO_PREFETCH,
 };
 
+/**
+ * MMU Abort Parameters.
+ */
 struct mmu_abo_param {
     enum mmu_abo_type abo_type;
     uint32_t fsr;
@@ -194,13 +222,14 @@ struct mmu_abo_param {
 };
 
 /**
- * A typdef for prefetch and data abort handlers.
+ * A typedef for prefetch and data abort handlers.
  */
 typedef int abo_handler(const struct mmu_abo_param * restrict abo);
 
-extern mmu_pagetable_t mmu_pagetable_master;
-
-/* "Generic" MMU interface, must be implemented by HAL */
+/**
+ * "Generic" MMU interface, must be implemented by HAL
+ * @{
+ */
 int mmu_init_pagetable(const mmu_pagetable_t * pt);
 int mmu_map_region(const mmu_region_t * region);
 int mmu_unmap_region(const mmu_region_t * region);
@@ -211,10 +240,20 @@ void mmu_domain_access_set(uint32_t value, uint32_t mask);
 void mmu_control_set(uint32_t value, uint32_t mask);
 void * mmu_translate_vaddr(const mmu_pagetable_t * pt, uintptr_t vaddr);
 
-const char * get_dab_strerror(uint32_t fsr);
-const char * get_pab_strerror(uint32_t ifsr);
+/**
+ * Get error string for a MMU abort.
+ */
+const char * mmu_abo_strerror(const struct mmu_abo_param * restrict abo);
 
-/* Generic for all, implemented in mmu.c */
+/**
+ * @}
+ */
+
+/**
+ * Generic for all, implemented in mmu.c
+ * @{
+ */
+
 void mmu_pf_event(void);
 
 /**
@@ -248,6 +287,10 @@ int mmu_ptcpy(mmu_pagetable_t * dest, const mmu_pagetable_t * src);
  * function.
  */
 void mmu_die_on_fatal_abort(void);
+
+/**
+ * @}
+ */
 
 #endif /* MMU_H */
 

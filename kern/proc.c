@@ -546,15 +546,14 @@ int proc_abo_handler(const struct mmu_abo_param * restrict abo)
 {
     const uintptr_t vaddr = abo->far;
     struct vm_mm_struct * mm;
-    const char * abo_str;
+#ifdef configPROC_DEBUG
+    const char * abo_str = mmu_abo_strerror(abo);
+#endif
     int err;
 
     if (!abo->proc) {
         return -ESRCH;
     }
-
-    abo_str = (abo->abo_type == MMU_ABO_DATA) ? get_dab_strerror(abo->fsr)
-                                              : get_pab_strerror(abo->fsr);
 
 #ifdef configPROC_DEBUG
     KERROR(KERROR_DEBUG, "%s: MOO, (%s) %x @ %x by %d\n",

@@ -78,7 +78,7 @@ static const char * dab_fsr_strerr[] = {
 
 static int dab_fatal(const struct mmu_abo_param * restrict abo);
 
-const char * get_dab_strerror(uint32_t fsr)
+const char * arm11_get_dab_strerror(uint32_t fsr)
 {
     uint32_t tmp;
 
@@ -213,6 +213,7 @@ static int dab_align(const struct mmu_abo_param * restrict abo)
     if (!abo->proc)
         return -ESRCH;
 
+    arm11_abo_dump(abo);
     KERROR(KERROR_DEBUG, "%s: Send a fatal SIGBUS to %d\n",
            __func__, abo->proc->pid);
 

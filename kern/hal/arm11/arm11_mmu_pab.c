@@ -62,7 +62,7 @@ static const char * pab_fsr_strerr[] = {
 
 static int pab_fatal(const struct mmu_abo_param * restrict abo);
 
-const char * get_pab_strerror(uint32_t ifsr)
+const char * arm11_get_pab_strerror(uint32_t ifsr)
 {
     return pab_fsr_strerr[ifsr & FSR_STATUS_MASK];
 }
