@@ -50,6 +50,7 @@
  * IOCTL request codes.
  * Get requests shall be odd and set request shall be even, this information can
  * be then used to optimize the syscall.
+ * @{
  */
 /* termio */
 #define IOCTL_GTERMIOS        1 /*!< Get termios struct. */
@@ -67,6 +68,9 @@
 /* Get and set window size */
 #define IOCTL_TIOCGWINSZ    103 /*!< Get window size. */
 #define IOCTL_TIOCSWINSZ    104 /*!< Set window size. */
+/**
+ * @}
+ */
 
 /* Linux compat */
 #ifndef KERNEL_INTERNAL
@@ -103,6 +107,11 @@ struct _ioctl_get_args {
 __BEGIN_DECLS
 
 /**
+ * Control device.
+ * @{
+ */
+
+/**
  * ioctl.
  * @note This is a non-POSIX implementation of ioctl.
  */
@@ -112,6 +121,10 @@ int _ioctl(int fildes, unsigned request, void * arg, size_t arg_len);
  * ioctl.
  */
 int ioctl(int fildes, int request, ... /* arg */);
+
+/**
+ * @}
+ */
 
 __END_DECLS
 #endif

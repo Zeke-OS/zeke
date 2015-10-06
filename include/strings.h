@@ -62,39 +62,22 @@ __BEGIN_DECLS
  * @{
  */
 
-#if __XSI_VISIBLE
 /**
- * Find first bit set.
- * @param mask is the mask.
+ * @{
  */
+#if __XSI_VISIBLE
 int ffs(int mask) __pure2;
 #endif
 
 #if __BSD_VISIBLE
-/**
- *
- */
 int ffsl(long) __pure2;
-
-/**
- *
- */
 int ffsll(long long) __pure2;
-
-/**
- *
- */
 int fls(int) __pure2;
-
-/**
- *
- */
 int flsl(long) __pure2;
-
-/**
- *
- */
 int flsll(long long) __pure2;
+/**
+ * @}
+ */
 #endif
 
 /**

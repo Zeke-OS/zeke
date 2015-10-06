@@ -56,12 +56,19 @@ struct group {
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
 
+/**
+ * grp
+ * @{
+ */
 struct group * getgrent(void);
 struct group * getgrgid(gid_t gid);
 struct group * getgrnam(const char * name);
 int getgrouplist(char * uname, gid_t agroup, gid_t * groups, int * grpcnt);
 void endgrent(void);
 void setgrent(void);
+/**
+ * @}
+ */
 
 __END_DECLS
 #endif /* !KERNEL_INTERNAL */
