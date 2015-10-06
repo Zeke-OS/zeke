@@ -165,7 +165,7 @@ void mmu_prefetch_abort_handler(void)
  */
 static int pab_fatal(const struct mmu_abo_param * restrict abo)
 {
-    arm11_abo_dump(abo);
+    mmu_abo_dump(abo);
     panic_halt();
 
     /* Doesn't return */

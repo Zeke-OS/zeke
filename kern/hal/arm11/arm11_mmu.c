@@ -522,30 +522,6 @@ const char * mmu_abo_strerror(const struct mmu_abo_param * restrict abo)
     return str;
 }
 
-void arm11_abo_dump(const struct mmu_abo_param * restrict abo)
-{
-    const char * const abo_type_str = (abo->abo_type == MMU_ABO_DATA) ? "DAB"
-                                                                      : "PAB";
-
-    KERROR(KERROR_CRIT,
-           "Fatal %s:\n"
-           "pc: %x\n"
-           "(i)fsr: %x (%s)\n"
-           "(i)far: %x\n"
-           "proc info:\n"
-           "pid: %i\n"
-           "tid: %i\n"
-           "insys: %i\n",
-           abo_type_str,
-           abo->lr,
-           abo->fsr, mmu_abo_strerror(abo),
-           abo->far,
-           (int32_t)((abo->proc) ? abo->proc->pid : -1),
-           (int32_t)abo->thread->id,
-           (int32_t)thread_flags_is_set(abo->thread, SCHED_INSYS_FLAG));
-    stack_dump(abo->thread->sframe[SCHED_SFRAME_ABO]);
-}
-
 int arm11_abo_buser(const struct mmu_abo_param * restrict abo)
 {
     const struct ksignal_param sigparm = {
@@ -562,7 +538,7 @@ int arm11_abo_buser(const struct mmu_abo_param * restrict abo)
     if (!abo->proc)
         return -ESRCH;
 
-    arm11_abo_dump(abo);
+    mmu_abo_dump(abo);
     KERROR(KERROR_DEBUG, "%s: Send a fatal SIGSEGV to %d\n",
            __func__, abo->proc->pid);
 

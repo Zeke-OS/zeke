@@ -455,7 +455,8 @@ pid_t proc_fork(pid_t pid)
     /* Insert the new process into the process array */
     procarr_insert(new_proc);
 
-    /* A process shall be created with a single thread. If a multi-threaded
+    /*
+     * A process shall be created with a single thread. If a multi-threaded
      * process calls fork(), the new process shall contain a replica of the
      * calling thread.
      * We left main_thread null if calling process has no main thread.

@@ -205,11 +205,6 @@
 
 struct mmu_abo_param;
 
-/**
- * Print a stack dump to kerror.
- */
-void arm11_abo_dump(const struct mmu_abo_param * restrict abo);
-
 /*
  * Bus error handler.
  */

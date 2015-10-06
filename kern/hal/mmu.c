@@ -30,13 +30,14 @@
  *******************************************************************************
  */
 
-#include <kinit.h>
-#include <kstring.h>
-#include <sys/linker_set.h>
-#include <kerror.h>
-#include <klocks.h>
 #include <sys/sysctl.h>
+#include <sys/linker_set.h>
 #include <hal/mmu.h>
+#include <kerror.h>
+#include <kinit.h>
+#include <klocks.h>
+#include <kstring.h>
+#include <proc.h>
 
 /* Definitions for Page fault counter *****************************************/
 #define PFC_FREQ    (int)configSCHED_HZ /* We wan't to compute pf/s once per
@@ -200,6 +201,42 @@ void mmu_die_on_fatal_abort(void)
 {
     enable_interrupt();
     idle_sleep();
+}
+
+void mmu_abo_dump(const struct mmu_abo_param * restrict abo)
+{
+    int pid;
+    const char * proc_name;
+    const char * const abo_type_str = (abo->abo_type == MMU_ABO_DATA) ? "DAB"
+                                                                      : "PAB";
+
+    if (abo->proc) {
+        pid = abo->proc->pid;
+        proc_name = abo->proc->name;
+    } else {
+        pid = -1;
+        proc_name = "";
+    }
+
+    KERROR(KERROR_CRIT,
+           "Fatal %s:\n"
+           "pc: %x\n"
+           "(i)fsr: %x (%s)\n"
+           "(i)far: %x\n"
+           "proc info:\n"
+           "pid: %i\n"
+           "tid: %i\n"
+           "name: %s\n"
+           "insys: %i\n",
+           abo_type_str,
+           abo->lr,
+           abo->fsr, mmu_abo_strerror(abo),
+           abo->far,
+           pid,
+           (int32_t)abo->thread->id,
+           proc_name,
+           (int32_t)thread_flags_is_set(abo->thread, SCHED_INSYS_FLAG));
+    stack_dump(abo->thread->sframe[SCHED_SFRAME_ABO]);
 }
 
 /**

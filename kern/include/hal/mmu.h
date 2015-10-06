@@ -289,6 +289,11 @@ int mmu_ptcpy(mmu_pagetable_t * dest, const mmu_pagetable_t * src);
 void mmu_die_on_fatal_abort(void);
 
 /**
+ * Print a stack dump to kerror on MMU abort.
+ */
+void mmu_abo_dump(const struct mmu_abo_param * restrict abo);
+
+/**
  * @}
  */
 

@@ -187,7 +187,7 @@ void mmu_data_abort_handler(void)
  */
 static int dab_fatal(const struct mmu_abo_param * restrict abo)
 {
-    arm11_abo_dump(abo);
+    mmu_abo_dump(abo);
     panic("Can't handle data abort");
 
     /* Doesn't return */
@@ -213,7 +213,7 @@ static int dab_align(const struct mmu_abo_param * restrict abo)
     if (!abo->proc)
         return -ESRCH;
 
-    arm11_abo_dump(abo);
+    mmu_abo_dump(abo);
     KERROR(KERROR_DEBUG, "%s: Send a fatal SIGBUS to %d\n",
            __func__, abo->proc->pid);
 
