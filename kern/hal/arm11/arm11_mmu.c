@@ -516,7 +516,7 @@ const char * mmu_abo_strerror(const struct mmu_abo_param * restrict abo)
         str = arm11_get_pab_strerror(abo->fsr);
         break;
     default:
-        str = "UNK";
+        str = "Unkown abort type";
     }
 
     return str;

@@ -203,12 +203,22 @@ void mmu_die_on_fatal_abort(void)
     idle_sleep();
 }
 
+static const char * get_abo_type_str(const struct mmu_abo_param * restrict abo)
+{
+    switch (abo->abo_type) {
+    case MMU_ABO_DATA:
+        return "Data Abort";
+    case MMU_ABO_PREFETCH:
+        return "Prefetch Abort";
+    default:
+        return "Unkown abort type";
+    }
+}
+
 void mmu_abo_dump(const struct mmu_abo_param * restrict abo)
 {
     int pid;
     const char * proc_name;
-    const char * const abo_type_str = (abo->abo_type == MMU_ABO_DATA) ? "DAB"
-                                                                      : "PAB";
 
     if (abo->proc) {
         pid = abo->proc->pid;
@@ -228,7 +238,7 @@ void mmu_abo_dump(const struct mmu_abo_param * restrict abo)
            "tid: %i\n"
            "name: %s\n"
            "insys: %i\n",
-           abo_type_str,
+           get_abo_type_str(abo),
            abo->lr,
            abo->fsr, mmu_abo_strerror(abo),
            abo->far,
