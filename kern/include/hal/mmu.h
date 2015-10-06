@@ -147,6 +147,30 @@
  */
 /* End of Control bits */
 
+/**
+ *  Page Table Region Macros
+ */
+
+/**
+ * Page count by size of region.
+ * @param size  Size of region.
+ * @param psize Page size. 1024*1024 = 1 MB sections, 4096 = 4 KB small pages
+ * @return Region size in pages.
+ */
+#define MMU_PAGE_CNT_BY_SIZE(size, psize)           ((size)/(psize))
+
+/**
+ * Page count by address range.
+ * @param begin Region start address.
+ * @param end   Region end address.
+ * @param psize Page size. 1024*1024 = 1 MB sections, 4096 = 4 KB small pages
+ * @return Region size in pages.
+ */
+#define MMU_PAGE_CNT_BY_RANGE(begin, end, psize)    (((end)-(begin)+1)/(psize))
+
+/**
+ * @}
+ */
 
 /**
  * Page Table Control Block - PTCB

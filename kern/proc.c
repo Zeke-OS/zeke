@@ -37,6 +37,7 @@
 #include <fcntl.h>
 #include <sys/sysctl.h>
 #include <sys/wait.h>
+#include <syscall.h>
 #include <unistd.h>
 #include <buf.h>
 #include <dynmem.h>
@@ -45,12 +46,12 @@
 #include <kerror.h>
 #include <kinit.h>
 #include <kmalloc.h>
+#include <kmem.h>
 #include <ksched.h>
 #include <kstring.h>
 #include <libkern.h>
 #include <proc.h>
 #include <ptmapper.h>
-#include <syscall.h>
 #include <vm/vm_copyinstruct.h>
 
 static struct proc_info *(*_procarr)[]; /*!< processes indexed by pid */

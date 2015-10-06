@@ -67,7 +67,7 @@ extern void mmu_lock_init();
 int mmu_init(void)
 {
     SUBSYS_DEP(arm_interrupt_preinit);
-    SUBSYS_DEP(ptmapper_init);
+    SUBSYS_DEP(kmem_init);
     SUBSYS_INIT("MMU");
 
     uint32_t value, mask;

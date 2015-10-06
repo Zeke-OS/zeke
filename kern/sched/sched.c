@@ -32,22 +32,22 @@
  *******************************************************************************
  */
 
+#include <errno.h>
 #include <machine/atomic.h>
 #include <sys/linker_set.h>
 #include <sys/sysctl.h>
 #include <sys/tree.h>
-#include <errno.h>
 #include <syscall.h>
 #include <buf.h>
 #include <idle.h>
 #include <kerror.h>
 #include <kinit.h>
 #include <kmalloc.h>
+#include <kmem.h>
 #include <ksched.h>
 #include <kstring.h>
 #include <libkern.h>
 #include <proc.h>
-#include <ptmapper.h>
 #include <queue_r.h>
 #include <timers.h>
 
@@ -121,7 +121,7 @@ struct cpu_sched {
 static struct cpu_sched cpu[1];
 #define CURRENT_CPU (&cpu[get_cpu_index()])
 
-#define TKSTACK_SIZE ((MMU_VADDR_TKSTACK_END - MMU_VADDR_TKSTACK_START) + 1)
+#define TKSTACK_SIZE ((configTKSTACK_END - configTKSTACK_START) + 1)
 
 /*
  * Linker sets for thread constructors and destructors.
@@ -403,7 +403,7 @@ static struct buf * thread_alloc_kstack(void)
         return NULL;
 
     kstack->b_uflags        = 0;
-    kstack->b_mmu.vaddr     = MMU_VADDR_TKSTACK_START;
+    kstack->b_mmu.vaddr     = configTKSTACK_START;
     kstack->b_mmu.pt        = &vm_pagetable_system.pt;
     kstack->b_mmu.control  |= MMU_CTRL_XN;
 

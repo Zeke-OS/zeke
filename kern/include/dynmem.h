@@ -40,6 +40,7 @@
 #define DYNMEM_H
 
 #include <stddef.h>
+#include <stdint.h>
 #include <sys/linker_set.h>
 
 /**

@@ -30,16 +30,16 @@
  *******************************************************************************
  */
 
-#include <kinit.h>
-#include <kstring.h>
-#include <kerror.h>
-#include <klocks.h>
 #include <sys/sysctl.h>
 #include <bitmap.h>
-#include <hal/sysinfo.h>
-#include <hal/mmu.h>
-#include <ptmapper.h>
 #include <dynmem.h>
+#include <hal/mmu.h>
+#include <hal/sysinfo.h>
+#include <kerror.h>
+#include <kinit.h>
+#include <klocks.h>
+#include <kmem.h>
+#include <kstring.h>
 
 /**
  * Dynmem page/region size in bytes.

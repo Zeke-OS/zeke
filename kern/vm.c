@@ -30,16 +30,17 @@
  *******************************************************************************
  */
 
-#include <libkern.h>
-#include <kstring.h>
-#include <hal/mmu.h>
-#include <ptmapper.h>
-#include <dynmem.h>
-#include <kmalloc.h>
-#include <kerror.h>
 #include <errno.h>
-#include <proc.h>
 #include <buf.h>
+#include <dynmem.h>
+#include <hal/mmu.h>
+#include <kerror.h>
+#include <kmalloc.h>
+#include <kmem.h>
+#include <kstring.h>
+#include <libkern.h>
+#include <proc.h>
+#include <ptmapper.h>
 #include <vm/vm.h>
 
 /*
@@ -544,7 +545,7 @@ int vm_replace_region(struct proc_info * proc, struct buf * region,
          * We don't want to unmap static kernel regions from the process
          * memory map.
          */
-        SET_FOREACH(regp, ptmapper_fixed_regions) {
+        KMEM_FOREACH(regp) {
             if (old_region->b_mmu.vaddr == (*regp)->vaddr) {
                 unmap = 0;
                 break;
@@ -731,7 +732,7 @@ int kernacc(__kernel const void * addr, int len, int rw)
     mmu_region_t ** regp;
     uint32_t ap;
 
-    SET_FOREACH(regp, ptmapper_fixed_regions) {
+    KMEM_FOREACH(regp) {
         size_t reg_start, reg_size;
 
         reg_start = mmu_region_kernel.vaddr;

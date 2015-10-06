@@ -268,13 +268,23 @@ config configKSIGNAL_DEBUG
     ---help---
     Enable ksignal debug messages.
 
+config configKMEM_DEBUG
+    bool "kmem debug"
+    default n
+    ---help---
+    Enable kmem init debug messages.
+
 config configVM_DEBUG
     bool "vm debug"
     default n
+    ---help---
+    Enable vm debug messages.
 
 config configPTMAPPER_DEBUG
     bool "ptmapper debugging"
     default n
+    ---help---
+    Enable ptmapper debug messages.
 
 config configLOCK_DEBUG
     bool "klock debugging"

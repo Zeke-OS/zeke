@@ -34,6 +34,7 @@
 #include <hal/mmu.h>
 #include <kerror.h>
 #include <kmalloc.h>
+#include <kmem.h>
 #include <kstring.h>
 #include <libkern.h>
 #include <ptmapper.h>

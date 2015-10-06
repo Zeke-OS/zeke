@@ -30,9 +30,9 @@
  *******************************************************************************
  */
 
-#include <hal/mmu.h>
-#include <ptmapper.h>
 #include <dynmem.h>
+#include <hal/mmu.h>
+#include <kmem.h>
 
 #define MMU_VADDR_RPIHW_START   0x20000000
 #define MMU_VADDR_RPIHW_END     0x20FFFFFF
@@ -46,5 +46,5 @@ mmu_region_t mmu_region_rpihw = {
     .paddr          = MMU_VADDR_RPIHW_START,
     .pt             = &mmu_pagetable_master
 };
-PTMAPPER_FIXED_REGION(mmu_region_rpihw);
+KMEM_FIXED_REGION(mmu_region_rpihw);
 DYNMEM_RESERVED_AREA(rpihw, MMU_VADDR_RPIHW_START, MMU_VADDR_RPIHW_END);

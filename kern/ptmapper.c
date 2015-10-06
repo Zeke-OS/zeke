@@ -30,96 +30,26 @@
  *******************************************************************************
  */
 
-#include <sys/linker_set.h>
-#include <kinit.h>
-#include <kstring.h>
-#include <kerror.h>
-#include <bitmap.h>
 #include <sys/sysctl.h>
+#include <bitmap.h>
+#include <kerror.h>
+#include <kinit.h>
+#include <kmem.h>
+#include <kstring.h>
 #include <ptmapper.h>
 
-int ptmapper_init(void);
-HW_PREINIT_ENTRY(ptmapper_init);
-
-/* Fixed Page Tables **********************************************************/
-
-/* Kernel master page table (L1) */
-mmu_pagetable_t mmu_pagetable_master = {
-    .vaddr          = 0,
-    .pt_addr        = 0, /* These will be set       */
-    .nr_tables      = 1,
-    .master_pt_addr = 0, /* later in the init phase */
-    .pt_type        = MMU_PTT_MASTER,
-    .pt_dom         = MMU_DOM_KERNEL
-};
-
-struct vm_pt vm_pagetable_system = {
-    .pt = {
-        .vaddr          = 0, /* Start */
-        .pt_addr        = 0, /* Will be set later */
-        .nr_tables      = 0, /* Will be set later */
-        .master_pt_addr = 0, /* Will be set later */
-        .pt_type        = MMU_PTT_COARSE,
-        .pt_dom         = MMU_DOM_KERNEL
-    },
-};
-
-
-/* Fixed Regions **************************************************************/
-
-/** Kernel mode stacks, other than thread kernel stack. */
-const mmu_region_t mmu_region_kstack = {
-    .vaddr          = MMU_VADDR_KSTACK_START,
-    .num_pages      = MMU_PAGE_CNT_BY_RANGE(
-                        MMU_VADDR_KSTACK_START, MMU_VADDR_KSTACK_END,
-                        MMU_PGSIZE_COARSE),
-    .ap             = MMU_AP_RWNA,
-    .control        = MMU_CTRL_MEMTYPE_WB | MMU_CTRL_XN,
-    .paddr          = MMU_VADDR_KSTACK_START,
-    .pt             = &vm_pagetable_system.pt
-};
-
-extern void *  _rodata_end __attribute__((weak));
-/** Read-only kernel code &  ro-data */
-mmu_region_t mmu_region_kernel = {
-    .vaddr          = MMU_VADDR_KERNEL_START,
-    .num_pages      = 0, /* Set in init */
-    .ap             = MMU_AP_RONA,
-    .control        = MMU_CTRL_MEMTYPE_WB,
-    .paddr          = MMU_VADDR_KERNEL_START,
-    .pt             = &vm_pagetable_system.pt
-};
-PTMAPPER_FIXED_REGION(mmu_region_kernel);
-
-/** Start of the kernel rw region. */
-extern void * _data_start __attribute__((weak));
-/** Last static variable in bss. */
-extern void * __bss_break __attribute__((weak));
-/** End of kernel memory region by linker.
- * This variable is not actually very useful for anything as we'll anyway
- * end at full mega byte. */
-extern void * _end __attribute__((weak));
-mmu_region_t mmu_region_kdata = {
-    .vaddr          = 0, /* Set in init */
-    .num_pages      = 0, /* Set in init */
-    .ap             = MMU_AP_RWNA,
-    .control        = MMU_CTRL_MEMTYPE_WB | MMU_CTRL_XN,
-    .paddr          = 0, /* Set in init */
-    .pt             = &vm_pagetable_system.pt
-};
-PTMAPPER_FIXED_REGION(mmu_region_kdata);
-
 #define PTREGION_SIZE \
-    MMU_PAGE_CNT_BY_RANGE(PTMAPPER_PT_START, PTMAPPER_PT_END, MMU_PGSIZE_SECTION)
+    MMU_PAGE_CNT_BY_RANGE(configPT_AREA_START, configPT_AREA_END, \
+                          MMU_PGSIZE_SECTION)
 mmu_region_t mmu_region_page_tables = {
-    .vaddr          = PTMAPPER_PT_START,
+    .vaddr          = configPT_AREA_START,
     .num_pages      = PTREGION_SIZE,
     .ap             = MMU_AP_RWNA,
     .control        = MMU_CTRL_MEMTYPE_WT | MMU_CTRL_XN,
-    .paddr          = PTMAPPER_PT_START,
+    .paddr          = configPT_AREA_START,
     .pt             = &mmu_pagetable_master
 };
-PTMAPPER_FIXED_REGION(mmu_region_page_tables);
+KMEM_FIXED_REGION(mmu_region_page_tables);
 
 /**
  * Coarse page tables per MB.
@@ -162,12 +92,12 @@ SYSCTL_UINT(_vm, OID_AUTO, ptm_mem_tot, CTLFLAG_RD,
 /**
  * Convert a block index to an address.
  */
-#define PTM_BLOCK2ADDR(block) (PTMAPPER_PT_START + (block) * MMU_PTSZ_COARSE)
+#define PTM_BLOCK2ADDR(block) (configPT_AREA_START + (block) * MMU_PTSZ_COARSE)
 
 /**
  * Convert an address to a block index.
  */
-#define PTM_ADDR2BLOCK(addr) (((addr) - PTMAPPER_PT_START) / MMU_PTSZ_COARSE)
+#define PTM_ADDR2BLOCK(addr) (((addr) - configPT_AREA_START) / MMU_PTSZ_COARSE)
 
 /**
  * Allocate a free block in ptm_alloc_map.
@@ -188,87 +118,6 @@ SYSCTL_UINT(_vm, OID_AUTO, ptm_mem_tot, CTLFLAG_RD,
 #define PTM_FREE(block, len) \
     bitmap_block_update(ptm_alloc_map, 0, block, len)
 
-/**
- * Page table mapper init function.
- * @note This function should be called by mmu init.
- */
-int ptmapper_init(void)
-{
-    SUBSYS_INIT("ptmapper");
-#if defined(configPTMAPPER_DEBUG)
-    kputs("\n");
-#endif
-
-    /* Allocate memory for mmu_pagetable_master */
-    if (ptmapper_alloc(&mmu_pagetable_master)) {
-        /* Critical failure */
-        panic("Can't allocate memory for master page table.\n");
-    }
-
-    vm_pagetable_system.pt.master_pt_addr = mmu_pagetable_master.master_pt_addr;
-    vm_pagetable_system.pt.nr_tables =
-        (MMU_VADDR_KERNEL_END + 1) / MMU_PGSIZE_SECTION;
-    if (ptmapper_alloc(&vm_pagetable_system.pt)) {
-        /* Critical failure */
-        panic("Can't allocate memory for system page table.\n");
-    }
-
-    /* Initialize system page tables */
-    mmu_init_pagetable(&mmu_pagetable_master);
-    mmu_init_pagetable(&vm_pagetable_system.pt);
-
-    /*
-     * Init regions
-     */
-
-    /* Kernel ro region */
-    mmu_region_kernel.num_pages  = MMU_PAGE_CNT_BY_RANGE(
-            MMU_VADDR_KERNEL_START, (intptr_t)(&_rodata_end) - 1,
-            MMU_PGSIZE_COARSE);
-    /* Kernel rw data region */
-    mmu_region_kdata.vaddr      = (intptr_t)(&_data_start);
-    mmu_region_kdata.num_pages  = MMU_PAGE_CNT_BY_RANGE(
-            (intptr_t)(&_data_start), MMU_VADDR_KERNEL_END,
-            MMU_PGSIZE_COARSE);
-    mmu_region_kdata.paddr      = (intptr_t)(&_data_start);
-
-    /* Fill page tables with translations & attributes */
-    {
-        mmu_region_t ** regp;
-#if defined(configPTMAPPER_DEBUG)
-        const char str_type[2][9] = {"sections", "pages"};
-#define PRINTMAPREG(region)                             \
-        KERROR(KERROR_DEBUG, "Mapped %s: %u %s\n",      \
-            #region, region.num_pages,                  \
-            (region.pt->pt_type == MMU_PTT_MASTER) ?    \
-                str_type[0] : str_type[1]);
-#else
-#define PRINTMAPREG(region)
-#endif
-#define MAP_REGION(reg)         \
-        mmu_map_region(&reg);   \
-        PRINTMAPREG(reg)
-        MAP_REGION(mmu_region_kstack);
-#undef MAP_REGION
-#undef PRINTMAPREG
-
-        SET_FOREACH(regp, ptmapper_fixed_regions) {
-            mmu_map_region(*regp);
-        }
-    }
-
-    /* Activate page tables */
-    mmu_attach_pagetable(&mmu_pagetable_master); /* Load L1 TTB */
-#if defined(configPTMAPPER_DEBUG)
-    KERROR(KERROR_DEBUG, "Attached TTB mmu_pagetable_master\n");
-#endif
-    mmu_attach_pagetable(&vm_pagetable_system.pt); /* Add L2 pte into L1 mpt */
-#if defined(configPTMAPPER_DEBUG)
-    KERROR(KERROR_DEBUG, "Attached vm_pagetable_system.pt\n");
-#endif
-
-    return 0;
-}
 
 int ptmapper_alloc(mmu_pagetable_t * pt)
 {

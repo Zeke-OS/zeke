@@ -41,7 +41,7 @@
 /* TODO We may want to use bitmaps */
 
 mtx_t l_ksect_next;
-static uintptr_t ksect_next = MMU_VADDR_KSECT_START;
+static uintptr_t ksect_next = configKSECT_START;
 
 static uintptr_t get_ksect_addr(size_t region_size)
 {
@@ -57,7 +57,7 @@ static uintptr_t get_ksect_addr(size_t region_size)
     else
         retval = memalign_size(ksect_next, MMU_PGSIZE_COARSE);
 
-    if (retval > MMU_VADDR_KSECT_END)
+    if (retval > configKSECT_END)
         return 0;
 
     ksect_next = retval + region_size;

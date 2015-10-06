@@ -130,7 +130,7 @@ static int clone_regions_from(struct proc_info * new_proc,
             vm_reg_tmp->vm_ops->rref(vm_reg_tmp);
 
         /* Don't clone regions in system page table */
-        if (vm_reg_tmp->b_mmu.vaddr <= MMU_VADDR_KERNEL_END) {
+        if (vm_reg_tmp->b_mmu.vaddr <= configKERNEL_END) {
             (*new_proc->mm.regions)[i] = vm_reg_tmp;
             continue;
         }
