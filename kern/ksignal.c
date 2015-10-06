@@ -68,6 +68,7 @@
  */
 
 #include <errno.h>
+#include <sys/_signames.h>
 #include <sys/param.h>
 #include <sys/priv.h>
 #include <sys/sysctl.h>
@@ -83,8 +84,6 @@
 #include <timers.h>
 #include <vm/vm.h>
 #include "ksignal.h"
-
-#include <sys/_signames.c>
 
 #define KSIG_LOCK_TYPE  MTX_TYPE_TICKET
 #define KSIG_LOCK_FLAGS (MTX_OPT_DINT)
@@ -208,9 +207,7 @@ static char * ksignal_str_owner_type(struct signals * sigs)
 
 const char * ksignal_signum2str(int signum)
 {
-    if (signum < 0 || signum >= (int)(sizeof(sys_signames)))
-        return "INVALID";
-    return sys_signames[signum];
+    return _signal_signum2str(signum);
 }
 
 /**

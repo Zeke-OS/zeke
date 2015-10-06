@@ -137,8 +137,9 @@ static void cleanup(void)
         if (WIFEXITED(status) && exit_status != 0) {
             fprintf(stderr, "Child %d ret: %d\n", (int)pid, exit_status);
         } else if (WIFSIGNALED(status)) {
-            fprintf(stderr, "Child %d killed by signal %d\n", (int)pid,
-                    WTERMSIG(status));
+            int sig = WTERMSIG(status);
+            fprintf(stderr, "Child %d killed by signal %d (%s)\n",
+                    (int)pid, sig, strsignal(sig));
         }
     }
     fork_count = 0;

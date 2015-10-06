@@ -5,7 +5,7 @@
  * @section LICENSE
  * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1990, 1993
- *	The Regents of the University of California.  All rights reserved.
+ *  The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,7 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)string.h	8.1 (Berkeley) 6/2/93
+ *  @(#)string.h    8.1 (Berkeley) 6/2/93
  */
 
 /**
@@ -40,7 +40,7 @@
  */
 
 #ifndef _STRING_H_
-#define	_STRING_H_
+#define _STRING_H_
 
 #include <sys/types/_null.h>
 #include <sys/types.h>
@@ -48,80 +48,80 @@
 
 __BEGIN_DECLS
 #if __XSI_VISIBLE >= 600
-void	*memccpy(void * __restrict, const void * __restrict, int, size_t);
+void    *memccpy(void * __restrict, const void * __restrict, int, size_t);
 #endif
-void	*memchr(const void *, int, size_t) __pure;
+void    *memchr(const void *, int, size_t) __pure;
 #if __BSD_VISIBLE
-void	*memrchr(const void *, int, size_t) __pure;
+void    *memrchr(const void *, int, size_t) __pure;
 #endif
-int	 memcmp(const void *, const void *, size_t) __pure;
-void	*memcpy(void * __restrict, const void * __restrict, size_t);
+int  memcmp(const void *, const void *, size_t) __pure;
+void    *memcpy(void * __restrict, const void * __restrict, size_t);
 #if __BSD_VISIBLE
-void	*memmem(const void *, size_t, const void *, size_t) __pure;
+void    *memmem(const void *, size_t, const void *, size_t) __pure;
 #endif
-void	*memmove(void *, const void *, size_t);
-void	*memset(void *, int, size_t);
+void    *memmove(void *, const void *, size_t);
+void    *memset(void *, int, size_t);
 #if __POSIX_VISIBLE >= 200809
-char	*stpcpy(char * __restrict, const char * __restrict);
-char	*stpncpy(char * __restrict, const char * __restrict, size_t);
+char    *stpcpy(char * __restrict, const char * __restrict);
+char    *stpncpy(char * __restrict, const char * __restrict, size_t);
 #endif
 #if __BSD_VISIBLE
-char	*strcasestr(const char *, const char *) __pure;
+char    *strcasestr(const char *, const char *) __pure;
 #endif
-char	*strcat(char * __restrict, const char * __restrict);
-char	*strchr(const char *, int) __pure;
+char    *strcat(char * __restrict, const char * __restrict);
+char    *strchr(const char *, int) __pure;
 #if __BSD_VISIBLE
-char	*strchrnul(const char*, int) __pure;
+char    *strchrnul(const char*, int) __pure;
 #endif
-int	 strcmp(const char *, const char *) __pure;
-int	 strcoll(const char *, const char *);
-char	*strcpy(char * __restrict, const char * __restrict);
-size_t	 strcspn(const char *, const char *) __pure;
+int  strcmp(const char *, const char *) __pure;
+int  strcoll(const char *, const char *);
+char    *strcpy(char * __restrict, const char * __restrict);
+size_t   strcspn(const char *, const char *) __pure;
 #if __POSIX_VISIBLE >= 200112 || __XSI_VISIBLE
-char	*strdup(const char *) __malloc_like;
+char    *strdup(const char *) __malloc_like;
 #endif
-char	*strerror(int);
+char    *strerror(int);
 #if __POSIX_VISIBLE >= 200112
-int	 strerror_r(int, char *, size_t);
+int  strerror_r(int, char *, size_t);
 #endif
 #if __BSD_VISIBLE
-size_t	 strlcat(char * __restrict, const char * __restrict, size_t);
-size_t	 strlcpy(char * __restrict, const char * __restrict, size_t);
+size_t   strlcat(char * __restrict, const char * __restrict, size_t);
+size_t   strlcpy(char * __restrict, const char * __restrict, size_t);
 #endif
-size_t	 strlen(const char *) __pure;
+size_t   strlen(const char *) __pure;
 #if __BSD_VISIBLE
-void	 strmode(int, char *);
+void     strmode(int, char *);
 #endif
-char	*strncat(char * __restrict, const char * __restrict, size_t);
-int	 strncmp(const char *, const char *, size_t) __pure;
-char	*strncpy(char * __restrict, const char * __restrict, size_t);
+char    *strncat(char * __restrict, const char * __restrict, size_t);
+int  strncmp(const char *, const char *, size_t) __pure;
+char    *strncpy(char * __restrict, const char * __restrict, size_t);
 #if __POSIX_VISIBLE >= 200809
-char	*strndup(const char *, size_t) __malloc_like;
-size_t	 strnlen(const char *, size_t) __pure;
+char    *strndup(const char *, size_t) __malloc_like;
+size_t   strnlen(const char *, size_t) __pure;
 #endif
 #if __BSD_VISIBLE
-char	*strnstr(const char *, const char *, size_t) __pure;
+char    *strnstr(const char *, const char *, size_t) __pure;
 #endif
-char	*strpbrk(const char *, const char *) __pure;
-char	*strrchr(const char *, int) __pure;
+char    *strpbrk(const char *, const char *) __pure;
+char    *strrchr(const char *, int) __pure;
 #if __BSD_VISIBLE
-char	*strsep(char **, const char *);
+char    *strsep(char **, const char *);
 #endif
 #if __POSIX_VISIBLE >= 200809
-char	*strsignal(int);
+char *strsignal(int);
 #endif
-size_t	 strspn(const char *, const char *) __pure;
-char	*strstr(const char *, const char *) __pure;
-char	*strtok(char * __restrict, const char * __restrict);
+size_t   strspn(const char *, const char *) __pure;
+char    *strstr(const char *, const char *) __pure;
+char    *strtok(char * __restrict, const char * __restrict);
 #if __POSIX_VISIBLE >= 199506 || __XSI_VISIBLE >= 500
-char	*strtok_r(char *, const char *, char **);
+char    *strtok_r(char *, const char *, char **);
 #endif
-size_t	 strxfrm(char * __restrict, const char * __restrict, size_t);
+size_t   strxfrm(char * __restrict, const char * __restrict, size_t);
 #if __BSD_VISIBLE
 
 #ifndef _SWAB_DECLARED
 #define _SWAB_DECLARED
-void	 swab(const void * __restrict, void * __restrict, ssize_t);
+void     swab(const void * __restrict, void * __restrict, ssize_t);
 #endif /* _SWAB_DECLARED */
 
 #endif /* __BSD_VISIBLE */

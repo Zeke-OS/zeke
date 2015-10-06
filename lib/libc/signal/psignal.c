@@ -32,8 +32,6 @@
 #include <unistd.h>
 #include <signal.h>
 
-#include <sys/_signames.c>
-
 const char * const sys_siglist[] = {
     "Hangup",
     "Interrupt",
