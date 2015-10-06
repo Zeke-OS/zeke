@@ -606,8 +606,8 @@ int proc_abo_handler(const struct mmu_abo_param * restrict abo)
 
 #ifdef configPROC_DEBUG
             KERROR(KERROR_DEBUG,
-                   "DAB \"%s\" of a valid memory region (%d) fixed by remapping the region\n",
-                   abo_str, i);
+                   "%s \"%s\" of a valid memory region (%d) fixed by remapping the region\n",
+                   mmu_abo_type_str(abo), abo_str, i);
 #endif
 
             return 0;
