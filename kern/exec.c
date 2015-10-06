@@ -212,7 +212,8 @@ int exec_file(int fildes, char name[PROC_NAME_LEN], struct buf * env_bp,
     err = 0;
 fail:
     if (err == 0) {
-        disable_interrupt();
+        thread_flags_set(current_thread, SCHED_DETACH_FLAG);
+
         /*
          * Mark main thread for deletion, it's up to user space to kill any
          * children. If there however is any child threads those may or may
@@ -221,10 +222,10 @@ fail:
          * keep disable_interrupt() time as short as possible and POSIX seems
          * to be quite silent about this issue anyway.
          */
+        disable_interrupt();
         current_thread->inh.first_child = NULL;
         current_thread->inh.parent = NULL;
         curproc->main_thread = thread_lookup(tid);
-        thread_flags_set(current_thread, SCHED_DETACH_FLAG);
 
         /* Don't return but die. */
         thread_die(0);
