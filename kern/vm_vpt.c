@@ -142,6 +142,7 @@ struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr,
              */
             KERROR(KERROR_ERR, "Too small vpt %d < %d\n",
                    mmu_sizeof_pt_img(&vpt->pt), minsize);
+            return NULL;
         }
     }
     if (!vpt) { /* Create a new pt if a sufficient pt not found. */
