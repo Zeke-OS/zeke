@@ -42,6 +42,16 @@
 
 RB_GENERATE(ptlist, vm_pt, entry_, ptlist_compare);
 
+static inline size_t bsize2nr_tables(size_t bsize)
+{
+    return memalign_size(bsize, MMU_PGSIZE_SECTION) / MMU_PGSIZE_SECTION;
+}
+
+static inline size_t nr_tables2bsize(size_t nr_tables)
+{
+    return nr_tables * MMU_PGSIZE_SECTION;
+}
+
 int ptlist_compare(struct vm_pt * a, struct vm_pt * b)
 {
     uintptr_t a_start;
@@ -71,6 +81,31 @@ int ptlist_compare(struct vm_pt * a, struct vm_pt * b)
     return (int)((ptrdiff_t)a_start - (ptrdiff_t)b_start);
 }
 
+static struct vm_pt * vm_pt_alloc(size_t nr_tables)
+{
+    struct vm_pt * vpt = kzalloc(sizeof(struct vm_pt));
+    if (!vpt)
+        return NULL;
+
+    vpt->pt.nr_tables = nr_tables;
+    vpt->pt.pt_type = MMU_PTT_COARSE;
+    vpt->pt.pt_dom = MMU_DOM_USER;
+
+    /* Allocate the actual page table, this will also set pt_addr. */
+    if (ptmapper_alloc(&vpt->pt)) {
+        kfree(vpt);
+        return NULL;
+    }
+
+    return vpt;
+}
+
+static void vm_pt_free(struct vm_pt * vpt)
+{
+    ptmapper_free(&vpt->pt);
+    kfree(vpt);
+}
+
 struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr,
                              size_t minsize)
 {
@@ -86,7 +121,7 @@ struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr,
 
     KASSERT(mpt, "mpt can't be null");
 
-    nr_tables = memalign_size(minsize, MMU_PGSIZE_SECTION) / MMU_PGSIZE_SECTION;
+    nr_tables = bsize2nr_tables(minsize);
 
     /*
      * Check if the requested page table is actually the system pagetable.
@@ -112,28 +147,19 @@ struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr,
     if (!vpt) { /* Create a new pt if a sufficient pt not found. */
         int err;
 
-        vpt = kzalloc(sizeof(struct vm_pt));
+        vpt = vm_pt_alloc(nr_tables);
         if (!vpt)
             return NULL;
 
         vpt->pt.vaddr = filter.pt.vaddr;
-        vpt->pt.nr_tables = nr_tables;
         vpt->pt.master_pt_addr = mpt->pt_addr;
-        vpt->pt.pt_type = MMU_PTT_COARSE;
-        vpt->pt.pt_dom = MMU_DOM_USER;
-
-        /* Allocate the actual page table, this will also set pt_addr. */
-        if (ptmapper_alloc(&(vpt->pt))) {
-            kfree(vpt);
-            return NULL;
-        }
 
         /* Insert vpt (L2 page table) to the new new process. */
         RB_INSERT(ptlist, ptlist_head, vpt);
         err = mmu_attach_pagetable(&(vpt->pt));
         if (err) {
             RB_REMOVE(ptlist, ptlist_head, vpt);
-            kfree(vpt);
+            vm_pt_free(vpt);
             KERROR(KERROR_ERR, "Can't attach a new pt to a ptlist (%p)\n",
                    ptlist_head);
 
@@ -155,8 +181,7 @@ void ptlist_free(struct ptlist * ptlist_head)
     for (var = RB_MIN(ptlist, ptlist_head); var != 0;
             var = nxt) {
         nxt = RB_NEXT(ptlist, ptlist_head, var);
-        ptmapper_free(&(var->pt));
-        kfree(var);
+        vm_pt_free(var);
     }
 }
 
@@ -193,21 +218,14 @@ struct vm_pt * vm_pt_clone_attach(struct vm_pt * old_vpt, mmu_pagetable_t * mpt)
 
     KASSERT(old_vpt != NULL, "old_vpt should be set");
 
-    new_vpt = kmalloc(sizeof(struct vm_pt));
+    new_vpt = vm_pt_alloc(old_vpt->pt.nr_tables);
     if (!new_vpt)
         return NULL;
 
     new_vpt->pt.vaddr = old_vpt->pt.vaddr;
     new_vpt->pt.nr_tables = old_vpt->pt.nr_tables;
     new_vpt->pt.master_pt_addr = mpt->pt_addr;
-    new_vpt->pt.pt_type = MMU_PTT_COARSE;
     new_vpt->pt.pt_dom = old_vpt->pt.pt_dom;
-
-    /* Allocate the actual page table, this will also set pt_addr. */
-    if (ptmapper_alloc(&(new_vpt->pt))) {
-        kfree(new_vpt);
-        return NULL;
-    }
 
     mmu_ptcpy(&new_vpt->pt, &old_vpt->pt);
     mmu_attach_pagetable(&new_vpt->pt);
