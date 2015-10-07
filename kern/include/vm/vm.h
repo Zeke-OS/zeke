@@ -108,7 +108,12 @@ struct vm_mm_struct {
      ((A_START) <= (B_END)   && (B_END)   <= (A_END)))
 
 /**
- * Compare vmp_pt rb tree nodes.
+ * ptlist operations.
+ * @{
+ */
+
+/**
+ * Compare vm_pt rb tree nodes.
  * Compares virtual addresses of two page tables.
  * @param a is the left node.
  * @param b is the right node.
@@ -118,6 +123,7 @@ struct vm_mm_struct {
  *          Otherwise, value greater than zero is returned.
  */
 int ptlist_compare(struct vm_pt * a, struct vm_pt * b);
+
 RB_PROTOTYPE(ptlist, vm_pt, entry_, ptlist_compare);
 
 /**
@@ -148,14 +154,8 @@ int vm_ptlist_clone(struct ptlist * new_head, mmu_pagetable_t * new_mpt,
                     struct ptlist * old_head);
 
 /**
- * Clone and attach a vm_pt.
- * @param old_vpt is the vm_pt to be cloned.
- * @param mpt is the master page table for the new vm_pt.
- * @return Returns a pointer to a newly malloc'd, ptmap'd and attached vm_pt;
- *         In case of an error a NULL pointer is returned.
+ *@}
  */
-struct vm_pt * vm_pt_clone_attach(struct vm_pt * old_vpt,
-                                  mmu_pagetable_t * mpt);
 
 /**
  * Get kernel accessible address from user space address of a process.

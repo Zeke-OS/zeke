@@ -43,6 +43,12 @@
 #define READ  0
 #define WRITE 1
 
+enum runner_state {
+    CMD_FIRST,
+    CMD_MIDDLE,
+    CMD_LAST,
+};
+
 static int fork_count; /*!< number of forks. */
 static char * args[512]; /*!< Args for exec. */
 
@@ -60,19 +66,17 @@ static struct tish_builtin * get_builtin(char * name)
 
 /**
  * Handle commands separately.
- * @param input is the return value from previous command.
- * @param first should be set 1 if first command in pipe-sequence.
- * @param last should be set 1 if last command in pipe-sequence.
+ * @param input_fd is the return value from the previous call.
  */
-static int command(int input, int first, int last)
+static int command(int input_fd, enum runner_state state)
 {
     int pipettes[2];
     pid_t pid;
     struct tish_builtin * builtin = get_builtin(args[0]);
 
     if (builtin && builtin->flags & TISH_NOFORK) {
-        builtin->fn(args); /* TODO Handle return value */
-        return input;
+        builtin->fn(args); /* TODO Handle return value and piping */
+        return input_fd;
     }
 
     /*
@@ -85,16 +89,16 @@ static int command(int input, int first, int last)
     if (pid == -1) {
         perror("Fork failed");
     } else if (pid == 0) {
-        if (first == 1 && last == 0 && input == 0) {
+        if (state == CMD_FIRST && input_fd == STDIN_FILENO) {
             /* First command */
             dup2(pipettes[WRITE], STDOUT_FILENO);
-        } else if (first == 0 && last == 0 && input != 0) {
+        } else if (state == CMD_MIDDLE && input_fd != STDIN_FILENO) {
             /* Middle command */
-            dup2(input, STDIN_FILENO);
+            dup2(input_fd, STDIN_FILENO);
             dup2(pipettes[WRITE], STDOUT_FILENO);
         } else {
             /* Last command */
-            dup2(input, STDIN_FILENO);
+            dup2(input_fd, STDIN_FILENO);
         }
 
         /* Run builtin command */
@@ -108,14 +112,14 @@ static int command(int input, int first, int last)
         }
     }
 
-    if (input != 0)
-        close(input);
+    if (input_fd != STDIN_FILENO)
+        close(input_fd);
 
     /* Nothing more needs to be written. */
     close(pipettes[WRITE]);
 
     /* If it's the last command, nothing more needs to be read. */
-    if (last == 1)
+    if (state == CMD_LAST)
         close(pipettes[READ]);
     return pipettes[READ];
 }
@@ -171,7 +175,7 @@ static int tish_exit(char * argv[])
 }
 TISH_NOFORK_CMD(tish_exit, "exit");
 
-static int run(char * cmd, int input, int first, int last)
+static int run(char * cmd, int input_fd, enum runner_state state)
 {
     split(cmd, args, num_elem(args));
 
@@ -179,32 +183,30 @@ static int run(char * cmd, int input, int first, int last)
         return 0;
 
     if (args[0][0] == '#') {
-        return input;
+        return input_fd;
     }
 
-    return command(input, first, last);
+    return command(input_fd, state);
 }
 
 void run_line(char * line)
 {
     char * next;
-    int input = 0;
-    int first = 1;
+    int input_fd = STDIN_FILENO;
+    enum runner_state state = CMD_FIRST;
 
     next = line;
     do {
         char * cmd = next;
-        int last = 0;
 
         next = strchr(next, '|');
         if (next)
             *next = '\0';
         else
-            last = 1;
+            state = CMD_LAST;
 
-        input = run(cmd, input, first, last);
-
-        first = 0;
+        input_fd = run(cmd, input_fd, state);
+        state = CMD_MIDDLE;
     } while (next++);
 
     cleanup();

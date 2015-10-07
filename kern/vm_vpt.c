@@ -63,7 +63,7 @@ int ptlist_compare(struct vm_pt * a, struct vm_pt * b)
     b_start = b->pt.vaddr;
 
     /*
-     * In case we are searching with a filter we are interested wheter
+     * In case we are searching with a filter we are interested whether
      * the filter vm_pt is inside the range of an entry in the tree.
      */
     if (a->flags & VM_PT_FLAG_FILTER) {
@@ -155,9 +155,9 @@ struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr,
         vpt->pt.vaddr = filter.pt.vaddr;
         vpt->pt.master_pt_addr = mpt->pt_addr;
 
-        /* Insert vpt (L2 page table) to the new new process. */
+        /* Insert vpt (L2 page table) to the process. */
         RB_INSERT(ptlist, ptlist_head, vpt);
-        err = mmu_attach_pagetable(&(vpt->pt));
+        err = mmu_attach_pagetable(&vpt->pt);
         if (err) {
             RB_REMOVE(ptlist, ptlist_head, vpt);
             vm_pt_free(vpt);
@@ -186,6 +186,28 @@ void ptlist_free(struct ptlist * ptlist_head)
     }
 }
 
+static struct vm_pt * vm_pt_clone_attach(struct vm_pt * old_vpt,
+                                         mmu_pagetable_t * mpt)
+{
+    struct vm_pt * new_vpt;
+
+    KASSERT(old_vpt != NULL, "old_vpt should be set");
+
+    new_vpt = vm_pt_alloc(old_vpt->pt.nr_tables);
+    if (!new_vpt)
+        return NULL;
+
+    new_vpt->pt.vaddr = old_vpt->pt.vaddr;
+    new_vpt->pt.nr_tables = old_vpt->pt.nr_tables;
+    new_vpt->pt.master_pt_addr = mpt->pt_addr;
+    new_vpt->pt.pt_dom = old_vpt->pt.pt_dom;
+
+    mmu_ptcpy(&new_vpt->pt, &old_vpt->pt);
+    mmu_attach_pagetable(&new_vpt->pt);
+
+    return new_vpt;
+}
+
 int vm_ptlist_clone(struct ptlist * new_head, mmu_pagetable_t * new_mpt,
                     struct ptlist * old_head)
 {
@@ -211,25 +233,4 @@ int vm_ptlist_clone(struct ptlist * new_head, mmu_pagetable_t * new_mpt,
     }
 
     return count;
-}
-
-struct vm_pt * vm_pt_clone_attach(struct vm_pt * old_vpt, mmu_pagetable_t * mpt)
-{
-    struct vm_pt * new_vpt;
-
-    KASSERT(old_vpt != NULL, "old_vpt should be set");
-
-    new_vpt = vm_pt_alloc(old_vpt->pt.nr_tables);
-    if (!new_vpt)
-        return NULL;
-
-    new_vpt->pt.vaddr = old_vpt->pt.vaddr;
-    new_vpt->pt.nr_tables = old_vpt->pt.nr_tables;
-    new_vpt->pt.master_pt_addr = mpt->pt_addr;
-    new_vpt->pt.pt_dom = old_vpt->pt.pt_dom;
-
-    mmu_ptcpy(&new_vpt->pt, &old_vpt->pt);
-    mmu_attach_pagetable(&new_vpt->pt);
-
-    return new_vpt;
 }
