@@ -64,13 +64,12 @@
 
 /**
  * Page Table Types
- * @{
  */
-#define MMU_PTT_COARSE  MMU_PTE_COARSE  /*!< Coarse page table type. */
-#define MMU_PTT_MASTER  MMU_PTE_SECTION /*!< Master page table type. */
-/**
- * @}
- */
+enum mmu_ptt {
+    MMU_PTT_FAULT,
+    MMU_PTT_COARSE,  /*!< Coarse page table type. */
+    MMU_PTT_MASTER, /*!< Master page table type. */
+};
 
 
 /**
@@ -185,7 +184,7 @@ typedef struct {
     uintptr_t master_pt_addr; /*!< The address of a parent master L1 page
                                * table. If the table is an L1 table, then
                                * the value is same as pt_addr. */
-    uint32_t pt_type;   /*!< Odentifies the type of the page table. */
+    enum mmu_ptt pt_type; /*!< Identifies the type of the page table. */
     uint32_t pt_dom;    /*!< The domain of the page table. */
 } mmu_pagetable_t;
 

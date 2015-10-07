@@ -283,10 +283,10 @@ static void mmu_unmap_coarse_region(const mmu_region_t * region)
 int mmu_unmap_region(const mmu_region_t * region)
 {
     switch (region->pt->pt_type) {
-    case MMU_PTE_SECTION:
+    case MMU_PTT_MASTER:
         mmu_unmap_section_region(region);
         break;
-    case MMU_PTE_COARSE:
+    case MMU_PTT_COARSE:
         mmu_unmap_coarse_region(region);
         break;
     default:

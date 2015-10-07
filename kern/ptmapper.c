@@ -30,6 +30,7 @@
  *******************************************************************************
  */
 
+#include <errno.h>
 #include <sys/sysctl.h>
 #include <bitmap.h>
 #include <kerror.h>
@@ -77,6 +78,8 @@ SYSCTL_UINT(_vm, OID_AUTO, ptm_mem_tot, CTLFLAG_RD,
     (unsigned int *)(&ptm_mem_tot), 0,
     "Total size of the page table region.");
 
+mtx_t ptmapper_lock;
+
 #define PTM_SIZEOF_MAP sizeof(ptm_alloc_map)
 
 /**
@@ -119,6 +122,16 @@ SYSCTL_UINT(_vm, OID_AUTO, ptm_mem_tot, CTLFLAG_RD,
     bitmap_block_update(ptm_alloc_map, 0, block, len)
 
 
+int ptmapper_init(void)
+{
+    SUBSYS_INIT("ptmapper");
+
+    mtx_init(&ptmapper_lock, MTX_TYPE_SPIN, MTX_OPT_DEFAULT);
+
+    return 0;
+}
+
+
 int ptmapper_alloc(mmu_pagetable_t * pt)
 {
     size_t block;
@@ -143,12 +156,14 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
         balign = PTM_COARSE;
         break;
     default:
-        panic("Invalid pt type");
+        KERROR(KERROR_ERR, "Invalid pt type");
+        return -EINVAL;
     }
 
     /* Try to allocate a new page table */
+    mtx_lock(&ptmapper_lock);
     if (!PTM_ALLOC(&block, size, balign)) {
-        size_t addr = PTM_BLOCK2ADDR(block);
+        uintptr_t addr = PTM_BLOCK2ADDR(block);
 #if defined(configPTMAPPER_DEBUG)
         KERROR(KERROR_DEBUG,
                 "Alloc pt %u bytes @ %x\n", bsize, addr);
@@ -163,8 +178,9 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
         ptm_mem_free -= bsize;
     } else {
         KERROR(KERROR_ERR, "Out of pt memory\n");
-        retval = -1;
+        retval = -ENOMEM;
     }
+    mtx_unlock(&ptmapper_lock);
 
     return retval;
 }

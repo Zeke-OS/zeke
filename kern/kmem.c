@@ -105,6 +105,7 @@ KMEM_FIXED_REGION(mmu_region_kdata);
 
 int kmem_init(void)
 {
+    SUBSYS_DEP(ptmapper_init);
     SUBSYS_INIT("kmem");
 #if defined(configKMEM_DEBUG)
     kputs("\n");
