@@ -168,7 +168,7 @@ static void init_kernel_proc(void)
     RB_INIT(&(kernel_proc->mm.ptlist_head));
 
     /* Copy master page table descriptor */
-    memcpy(&(kernel_proc->mm.mpt), &mmu_pagetable_master,
+    memcpy(&kernel_proc->mm.mpt, &mmu_pagetable_master,
            sizeof(mmu_pagetable_t));
 
     /*

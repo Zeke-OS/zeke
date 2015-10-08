@@ -286,6 +286,14 @@ struct buf * vm_new_userstack_curproc(size_t size);
 void vm_updateusr_ap(struct buf * region);
 
 /**
+ * Initialize a mm struct.
+ * @param mm is a pointer to a mm struct.
+ * @param nr_regions is the initial number of regions.
+ * @return Returns zero if succeed; Otherwise a negative errno is returned.
+ */
+int vm_mm_init(struct vm_mm_struct * mm, int nr_regions);
+
+/**
  * Reallocate MM regions array to a new size given in new_count.
  * If new_count is smaller than the current size of regions array
  * calling this function will be NOP i.e. this function will only

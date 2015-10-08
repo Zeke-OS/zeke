@@ -168,10 +168,12 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
         KERROR(KERROR_DEBUG,
                 "Alloc pt %u bytes @ %x\n", bsize, addr);
 #endif
+
         pt->pt_addr = addr;
         if (pt->pt_type == MMU_PTT_MASTER) {
             pt->master_pt_addr = addr;
         }
+        mmu_init_pagetable(pt);
 
         /* Accounting for sysctl */
         ptm_nr_pt++;

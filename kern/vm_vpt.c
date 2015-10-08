@@ -226,7 +226,7 @@ int vm_ptlist_clone(struct ptlist * new_head, mmu_pagetable_t * new_mpt,
         if (!new_vpt)
             return -ENOMEM;
 
-        /* Insert new_vpt (L2 page table) to the new new process. */
+        /* Insert new_vpt (L2 page table) to new_head. */
         RB_INSERT(ptlist, new_head, new_vpt);
 
         count++; /* Increment vpt copied count. */

@@ -39,6 +39,7 @@
 #include <dynmem.h>
 #include <fs/procfs.h>
 #include <kerror.h>
+#include <kmem.h>
 #include <kinit.h>
 #include <kmalloc.h>
 #include <kstring.h>
@@ -59,20 +60,6 @@ static pid_t proc_lastpid;  /*!< last allocated pid. */
 
 SYSCTL_INT(_kern, OID_AUTO, cow_enabled, CTLFLAG_RW,
            &cow_enabled, 0, "Enable copy on write for proc");
-
-static int alloc_master_pt(struct proc_info * new_proc)
-{
-    /* Allocate a master page table for the new process. */
-    new_proc->mm.mpt.vaddr = 0; /* mpt always starts from zero */
-    new_proc->mm.mpt.nr_tables = 1;
-    new_proc->mm.mpt.pt_type = MMU_PTT_MASTER;
-    new_proc->mm.mpt.pt_dom = MMU_DOM_USER;
-
-    if (ptmapper_alloc(&(new_proc->mm.mpt)))
-        return -ENOMEM;
-
-    return 0;
-}
 
 static int clone_code_region(struct proc_info * new_proc,
                              struct proc_info * old_proc)
@@ -337,31 +324,23 @@ pid_t proc_fork(pid_t pid)
     new_proc->files = NULL;
     /* ..and then start to fix things. */
 
-    /* Allocate a master page table for the new process. */
-    retval = alloc_master_pt(new_proc);
+    /* Initialize the mm struct */
+    retval = vm_mm_init(&new_proc->mm, old_proc->mm.nr_regions);
     if (retval)
         goto out;
 
-    /* Allocate an array for regions. */
-    new_proc->mm.regions = NULL;
-    new_proc->mm.nr_regions = 0;
-    realloc_mm_regions(&new_proc->mm, old_proc->mm.nr_regions);
-    if (!new_proc->mm.regions) {
-        retval = -ENOMEM;
-        goto out;
-    }
-
-    /* Clone master page table. */
-    if (mmu_ptcpy(&(new_proc->mm.mpt), &(old_proc->mm.mpt))) {
+    /* Clone master page table.
+     * This is probably something we would like to get rid of but we are
+     * stuck with because it's the easiest way to keep some static kernel
+     * mappings valid between processes.
+     */
+    if (mmu_ptcpy(&new_proc->mm.mpt, &old_proc->mm.mpt)) {
         retval = -EAGAIN;
         goto out;
     }
 
     /*
      * Clone L2 page tables.
-     * This is probably something we would like to get rid of but we are
-     * stuck with because it's the easiest way to keep some static kernel
-     * mappings valid between processes.
      */
     if (vm_ptlist_clone(&new_proc->mm.ptlist_head, &new_proc->mm.mpt,
                         &old_proc->mm.ptlist_head) < 0) {

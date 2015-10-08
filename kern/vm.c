@@ -413,6 +413,27 @@ void vm_updateusr_ap(struct buf * region)
     mtx_unlock(&region->lock);
 }
 
+int vm_mm_init(struct vm_mm_struct * mm, int nr_regions)
+{
+    /* Allocate a master page table for the new process. */
+    mm->mpt.vaddr = 0; /* mpt always starts from zero */
+    mm->mpt.nr_tables = 1;
+    mm->mpt.pt_type = MMU_PTT_MASTER;
+    mm->mpt.pt_dom = MMU_DOM_USER;
+
+    if (ptmapper_alloc(&mm->mpt))
+        return -ENOMEM;
+
+    /* Allocate an array for regions. */
+    mm->regions = NULL;
+    mm->nr_regions = 0;
+    realloc_mm_regions(mm, nr_regions);
+    if (!mm->regions)
+        return -ENOMEM;
+
+    return 0;
+}
+
 static int realloc_mm_regions_locked(struct vm_mm_struct * mm, int new_count)
 {
     struct buf * (*new_regions)[];
