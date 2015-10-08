@@ -175,18 +175,26 @@ static int tish_exit(char * argv[])
 }
 TISH_NOFORK_CMD(tish_exit, "exit");
 
-static int run(char * cmd, int input_fd, enum runner_state state)
+static void line_cleanup(char * line)
 {
-    split(cmd, args, num_elem(args));
+    char * next;
+    char ch;
 
-    if (!args[0])
-        return 0;
-
-    if (args[0][0] == '#') {
-        return input_fd;
+    next = line;
+    while ((ch = *next) != '\0') {
+        switch (ch) {
+        case '#': /* Cut of from a comment marker. */
+            *next = '\0';
+            goto out;
+            break;
+        case '\n': /* Remove line endings. */
+            *next = '\0';
+            goto out;
+        }
+        next++;
     }
-
-    return command(input_fd, state);
+out:
+    return;
 }
 
 void run_line(char * line)
@@ -194,6 +202,12 @@ void run_line(char * line)
     char * next;
     int input_fd = STDIN_FILENO;
     enum runner_state state = CMD_FIRST;
+
+    line_cleanup(line);
+
+    /* Skip if nothing to run. */
+    if (strlen(line) == 0)
+        return;
 
     next = line;
     do {
@@ -205,7 +219,10 @@ void run_line(char * line)
         else
             state = CMD_LAST;
 
-        input_fd = run(cmd, input_fd, state);
+        split(cmd, args, num_elem(args));
+        if (args[0]) {
+            input_fd = command(input_fd, state);
+        }
         state = CMD_MIDDLE;
     } while (next++);
 

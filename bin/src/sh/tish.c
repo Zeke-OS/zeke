@@ -181,22 +181,17 @@ int main(int argc, char * argv[], char * envp[])
         int fd;
         FILE * fp;
 
-        fd = open(argv[0], O_EXEC | O_RDONLY | O_CLOEXEC);
-        if (fd == -1) {
-            exit(EXIT_FAILURE);
-        }
-        fp = fdopen(fd, "r");
-        if (!fp) {
-            exit(EXIT_FAILURE);
-        }
-        line = malloc(MAX_INPUT);
-        if (!line) {
+        if ((fd = open(argv[0], O_EXEC | O_RDONLY | O_CLOEXEC)) == -1 ||
+            !(fp = fdopen(fd, "r")) ||
+            !(line = malloc(MAX_INPUT))) {
             exit(EXIT_FAILURE);
         }
 
         while (fgets(line, MAX_INPUT, fp)) {
             run_line(line);
         }
+
+        fclose(fp);
     } else {
         init_hist();
 
