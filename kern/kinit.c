@@ -238,7 +238,7 @@ int __kinit__ kinit(void)
     /*
      * pid of init
      */
-    pid = proc_fork(0);
+    pid = proc_fork();
     if (pid <= 0) {
         ksprintf(strbuf, sizeof(strbuf), "Can't fork a process for init. %i",
                  pid);

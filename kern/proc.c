@@ -664,7 +664,7 @@ SYSCTL_PROC(_kern, KERN_MAXPROC, maxproc, CTLTYPE_INT | CTLFLAG_RW,
 
 static int sys_proc_fork(__user void * user_args)
 {
-    pid_t pid = proc_fork(curproc->pid);
+    pid_t pid = proc_fork();
     if (pid < 0) {
         set_errno(-pid);
         return -1;

@@ -282,17 +282,17 @@ pid_t proc_get_random_pid(void)
     return newpid;
 }
 
-pid_t proc_fork(pid_t pid)
+pid_t proc_fork(void)
 {
     /*
      * http://pubs.opengroup.org/onlinepubs/9699919799/functions/fork.html
      */
 
 #ifdef configPROC_DEBUG
-    KERROR(KERROR_DEBUG, "fork(%u)\n", pid);
+    KERROR(KERROR_DEBUG, "fork(%u)\n", curproc->pid);
 #endif
 
-    struct proc_info * const old_proc = proc_get_struct_l(pid);
+    struct proc_info * const old_proc = curproc;
     struct proc_info * new_proc;
     pid_t retval = 0;
 

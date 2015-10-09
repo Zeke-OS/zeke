@@ -238,11 +238,10 @@ const char * proc_state2str(enum proc_state state);
 /* proc_fork.c */
 
 /**
- * Create a new process.
- * @param pid   Process id.
+ * Create a new process by forking the current process.
  * @return  New PID; 0 if returning fork; -1 if unable to fork.
  */
-pid_t proc_fork(pid_t pid);
+pid_t proc_fork(void);
 
 #ifdef PROC_INTERNAL
 
