@@ -105,10 +105,12 @@ static void mount_rootfs(void)
     struct proc_info * kernel_proc;
     int ret;
 
-    kernel_proc = proc_get_struct_l(0);
+    kernel_proc = proc_ref(0, PROC_NOT_LOCKED);
     if (!kernel_proc) {
         panic(failed);
     }
+    /* No need to keep the ref because it won't go away. */
+    proc_unref(kernel_proc);
 
     /* Root dir */
     tmp = kmalloc(sizeof(vnode_t));
@@ -250,7 +252,7 @@ int __kinit__ kinit(void)
         panic("Can't get thread descriptor of init_thread!");
     }
 
-    init_proc = proc_get_struct_l(pid);
+    init_proc = proc_ref(pid, PROC_NOT_LOCKED);
     if (!init_proc || (init_proc->state == PROC_STATE_INITIAL)) {
         panic("Failed to get proc struct or invalid struct");
     }
@@ -274,6 +276,8 @@ int __kinit__ kinit(void)
            "Init created with pid: %u, tid: %u, stack: %x\n",
            pid, tid, init_vmstack->b_mmu.vaddr);
 #endif
+
+    proc_unref(init_proc);
 
     return 0;
 }

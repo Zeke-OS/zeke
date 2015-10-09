@@ -42,16 +42,17 @@
  *        @(#)kern_sysctl.c        8.4 (Berkeley) 4/14/94
  */
 
-#include <stdint.h>
 #include <errno.h>
-#include <kstring.h>
-#include <kmalloc.h>
+#include <stdint.h>
 #include <kerror.h>
 #include <kinit.h>
-#include <sys/queue.h>
-#include <proc.h>
 #include <klocks.h>
+#include <kmalloc.h>
+#include <kstring.h>
+#include <proc.h>
 #include <sys/priv.h>
+#include <sys/queue.h>
+#include <syscall.h>
 #include <vm/vm.h>
 #include <sys/sysctl.h>
 
@@ -72,10 +73,6 @@ SYSCTL_DECL(_sysctl);
  * sysctl_unlock() routines are provided for the few places in the kernel which
  * need to use that API rather than using the dynamic API. Use of the dynamic
  * API is strongly encouraged for most code.
- *
- * The sysctlmemlock is used to limit the amount of user memory wired for sysctl
- * requests. This is implemented by serializing any userland sysctl requests
- * larger than a single page via an exclusive lock.
  */
 static mtx_t sysctllock;
 
@@ -100,6 +97,10 @@ static int sysctl_new_kernel(struct sysctl_req * req, void * p, size_t l);
 static int sysctl_old_user(struct sysctl_req * req, const void * p, size_t l);
 static int sysctl_new_user(struct sysctl_req * req, void * p, size_t l);
 static int sysctl_root(SYSCTL_HANDLER_ARGS);
+static int userland_sysctl(const struct proc_info * proc, int * name,
+                    unsigned int namelen, __user void * old,
+                    __user size_t * oldlenp, int inkernel, __user void * new,
+                    size_t newlen, size_t * retval, int flags);
 
 
 int __kinit__ sysctl_init(void)
@@ -773,7 +774,7 @@ out:
     return retval;
 }
 
-int kernel_sysctl(pid_t pid, int * name, unsigned int namelen,
+int kernel_sysctl(struct cred * cred, int * name, unsigned int namelen,
                   void * old, size_t * oldlenp, void * new, size_t newlen,
                   size_t * retval, int flags)
 {
@@ -782,10 +783,8 @@ int kernel_sysctl(pid_t pid, int * name, unsigned int namelen,
 
     memset(&req, 0, sizeof(req));
 
-    PROC_LOCK();
-    req.cred = &proc_get_struct(pid)->cred;
+    req.cred = cred;
     req.flags = flags;
-    PROC_UNLOCK();
 
     if (!req.cred)
         return -EINVAL;
@@ -824,23 +823,24 @@ int kernel_sysctl(pid_t pid, int * name, unsigned int namelen,
     return error;
 }
 
-int kernel_sysctlbyname(pid_t pid, char * name, void * old, size_t * oldlenp,
-                        void * new, size_t newlen, size_t * retval, int flags)
+int kernel_sysctlbyname(struct cred * cred, char * name, void * old,
+                        size_t * oldlenp, void * new, size_t newlen,
+                        size_t * retval, int flags)
 {
     int oid[CTL_MAXNAME];
     size_t oidlen, plen;
     int error;
 
-    oid[0] = 0;                /* sysctl internal magic */
-    oid[1] = 3;                /* name2oid */
+    oid[0] = 0; /* sysctl internal magic */
+    oid[1] = _CTLMAGIC_NAME2OID;
     oidlen = sizeof(oid);
 
-    error = kernel_sysctl(pid, oid, 2, oid, &oidlen,
+    error = kernel_sysctl(cred, oid, 2, oid, &oidlen,
             (void *)name, strlenn(name, CTL_MAXSTRNAME), &plen, flags);
     if (error)
         return error;
 
-    error = kernel_sysctl(pid, oid, plen / sizeof(int), old, oldlenp,
+    error = kernel_sysctl(cred, oid, plen / sizeof(int), old, oldlenp,
             new, newlen, retval, flags);
 
     return error;
@@ -967,26 +967,18 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
     return error;
 }
 
-int userland_sysctl(pid_t pid, int * name, unsigned int namelen,
-                    __user void * old, __user size_t * oldlenp, int inkernel,
-                    __user void * new, size_t newlen, size_t * retval,
-                    int flags)
+static int userland_sysctl(const struct proc_info * proc, int * name,
+                    unsigned int namelen, __user void * old,
+                    __user size_t * oldlenp, int inkernel, __user void * new,
+                    size_t newlen, size_t * retval, int flags)
 {
-    const struct proc_info * proc;
     struct sysctl_req req;
     int error = 0;
 
     memset(&req, 0, sizeof(req));
 
-    PROC_LOCK();
-    proc = proc_get_struct(pid);
-    if (!proc) {
-        PROC_UNLOCK();
-        return -EINVAL;
-    }
     req.cred = &proc->cred;
     req.flags = flags;
-    PROC_UNLOCK();
 
     if (oldlenp) {
         if (inkernel) {
@@ -1037,4 +1029,50 @@ int userland_sysctl(pid_t pid, int * name, unsigned int namelen,
     }
 
     return error;
+}
+
+intptr_t sysctl_syscall(uint32_t type, __user void * p)
+{
+    int err, name[CTL_MAXNAME];
+    size_t j;
+    struct _sysctl_args uap;
+
+    if (type != SYSCALL_SYSCTL_SYSCTL) {
+        set_errno(ENOSYS);
+        return -1;
+    }
+
+    err = copyin(p, &uap, sizeof(uap));
+    if (err) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    if (uap.namelen > CTL_MAXNAME || uap.namelen < 2) {
+        set_errno(EINVAL);
+        return -1;
+    }
+
+    err = copyin((__user void *)uap.name, &name, uap.namelen * sizeof(int));
+    if (err) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    err = userland_sysctl(curproc, name, uap.namelen,
+                          (__user void *)uap.old, (__user size_t *)uap.oldlenp,
+                          0, (__user void *)uap.new, uap.newlen, &j, 0);
+    if (err && err != -ENOMEM) {
+        set_errno(-err);
+        return -1;
+    }
+    if (uap.oldlenp) {
+        err = copyout(&j, (__user size_t *)uap.oldlenp, sizeof(j));
+        if (err) {
+            set_errno(-err);
+            return -1;
+        }
+    }
+
+    return 0;
 }

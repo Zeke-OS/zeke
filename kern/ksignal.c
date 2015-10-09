@@ -1237,7 +1237,7 @@ static int sys_signal_pkill(__user void * user_args)
     struct _pkill_args args;
     struct proc_info * proc;
     struct signals * sigs;
-    int err;
+    int err, retval = -1;
 
     err = copyin(user_args, &args, sizeof(args));
     if (err) {
@@ -1247,7 +1247,7 @@ static int sys_signal_pkill(__user void * user_args)
 
     /* TODO if pid == 0 send signal to all procs */
 
-    proc = proc_get_struct_l(args.pid);
+    proc = proc_ref(args.pid, PROC_NOT_LOCKED);
     if (!proc) {
         set_errno(ESRCH);
         return -1;
@@ -1258,7 +1258,8 @@ static int sys_signal_pkill(__user void * user_args)
      */
     if (priv_check_cred(&curproc->cred, &proc->cred, PRIV_SIGNAL_OTHER)) {
         set_errno(EPERM);
-        return -1;
+        retval = -1;
+        goto out;
     }
 
     /*
@@ -1267,12 +1268,14 @@ static int sys_signal_pkill(__user void * user_args)
      *
      * If sig == 0 we can return immediately.
      */
-    if (args.sig == 0)
-        return 0;
+    if (args.sig == 0) {
+        retval = 0;
+        goto out;
+    }
 
     if (!is_valid_usignum(args.sig)) {
         set_errno(EINVAL);
-        return -1;
+        goto out;
     }
 
     sigs = &proc->sigs;
@@ -1280,7 +1283,7 @@ static int sys_signal_pkill(__user void * user_args)
         if (!err)
             kobj_unref(&sigs->s_obj);
         set_errno(EAGAIN);
-        return -1;
+        goto out;
     }
 
     /* RFE Check errors? */
@@ -1297,7 +1300,10 @@ static int sys_signal_pkill(__user void * user_args)
         forward_proc_signals_curproc();
     }
 
-    return 0;
+    retval = 0;
+out:
+    proc_unref(proc);
+    return retval;
 }
 
 /**
@@ -1309,7 +1315,7 @@ static int sys_signal_tkill(__user void * user_args)
     struct thread_info * thread;
     struct proc_info * proc;
     struct signals * sigs;
-    int err;
+    int err, retval = -1;
 
     err = copyin(user_args, &args, sizeof(args));
     if (err) {
@@ -1325,7 +1331,7 @@ static int sys_signal_tkill(__user void * user_args)
         return -1;
     }
 
-    proc = proc_get_struct_l(thread->pid_owner);
+    proc = proc_ref(thread->pid_owner, PROC_NOT_LOCKED);
     if (!proc) {
         set_errno(ESRCH);
         return -1;
@@ -1336,7 +1342,7 @@ static int sys_signal_tkill(__user void * user_args)
      */
     if (priv_check_cred(&curproc->cred, &proc->cred, PRIV_SIGNAL_OTHER)) {
         set_errno(EPERM);
-        return -1;
+        goto out;
     }
 
     /*
@@ -1345,12 +1351,14 @@ static int sys_signal_tkill(__user void * user_args)
      *
      * If sig == 0 we can return immediately.
      */
-    if (args.sig == 0)
-        return 0;
+    if (args.sig == 0) {
+        retval = 0;
+        goto out;
+    }
 
     if (!is_valid_usignum(args.sig)) {
         set_errno(EINVAL);
-        return -1;
+        goto out;
     }
 
     sigs = &thread->sigs;
@@ -1358,7 +1366,7 @@ static int sys_signal_tkill(__user void * user_args)
         if (!err)
             kobj_unref(&sigs->s_obj);
         set_errno(EAGAIN);
-        return -1;
+        goto out;
     }
 
     err = ksignal_queue_sig(sigs, args.sig,
@@ -1367,10 +1375,13 @@ static int sys_signal_tkill(__user void * user_args)
     kobj_unref(&sigs->s_obj);
     if (err) {
         set_errno(-err);
-        return -1;
+        goto out;
     }
 
-    return 0;
+    retval = 0;
+out:
+    proc_unref(proc);
+    return retval;
 }
 
 static int sys_signal_signal(__user void * user_args)

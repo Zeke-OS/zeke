@@ -282,7 +282,7 @@ static int sys_priv_pcap(__user void * user_args)
         return -1;
     }
 
-    proc = proc_get_struct(args.pid);
+    proc = proc_ref(args.pid, PROC_NOT_LOCKED);
     if (!proc) {
         set_errno(ESRCH);
         return -1;
@@ -310,9 +310,10 @@ static int sys_priv_pcap(__user void * user_args)
         break;
     default:
         set_errno(EINVAL);
-        return -1;
+        err = -1;
     }
 
+    proc_unref(proc);
     return err;
 }
 #endif

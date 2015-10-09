@@ -39,11 +39,15 @@ static char * test_getblk(void)
 {
     vnode_t * vndev;
     struct buf * bp;
+    struct proc_info * proc;
 
     ku_test_description("Test that getblk() returns a device backed buffer.");
 
+    proc = proc_ref(0, PROC_NOT_LOCKED);
+    proc_unref(proc);
+
     ku_assert("lookup failed",
-               !lookup_vnode(&vndev, proc_get_struct_l(0)->croot, "dev/zero",
+               !lookup_vnode(&vndev, proc->croot, "dev/zero",
                              O_RDWR));
     bp = getblk(vndev, 0, 4096, 0);
     ku_assert("got a buffer", bp);
@@ -59,12 +63,16 @@ static char * test_bread(void)
 {
     vnode_t * vndev;
     struct buf * bp;
+    struct proc_info * proc;
     int err;
 
     ku_test_description("Test that bread() reads.");
 
+    proc = proc_ref(0, PROC_NOT_LOCKED);
+    proc_unref(proc);
+
     ku_assert("lookup failed",
-              !lookup_vnode(&vndev, proc_get_struct_l(0)->croot,
+              !lookup_vnode(&vndev, proc->croot,
                             "dev/zero", O_RDWR));
     err = bread(vndev, 0, 4096, &bp);
     ku_assert_equal("no error", err, 0);

@@ -69,12 +69,13 @@ static uintptr_t get_ksect_addr(size_t region_size)
 
 struct buf * geteblk_special(size_t size, uint32_t control)
 {
-    struct proc_info * p = proc_get_struct_l(0);
+    struct proc_info * proc = proc_ref(0, PROC_NOT_LOCKED);
     const uintptr_t kvaddr = get_ksect_addr(size);
     struct buf * buf;
     int err;
 
-    KASSERT(p, "Can't get the PCB of pid 0");
+    KASSERT(proc, "Can't get the PCB of pid 0");
+    proc_unref(proc);
 
     if (kvaddr == 0) {
 #ifdef configBUF_DEBUG
@@ -93,7 +94,7 @@ struct buf * geteblk_special(size_t size, uint32_t control)
 
     buf->b_mmu.control = control;
 
-    err = vm_insert_region(p, buf, VM_INSOP_MAP_REG);
+    err = vm_insert_region(proc, buf, VM_INSOP_MAP_REG);
     if (err < 0) {
         panic("Mapping a kernel special buffer failed");
     }

@@ -535,17 +535,13 @@ void sysctl_register_oid(struct sysctl_oid * oidp);
 void sysctl_unregister_oid(struct sysctl_oid * oidp);
 int sysctl_find_oid(int * name, unsigned int namelen, struct sysctl_oid ** noid,
         int * nindx, struct sysctl_req * req);
-int kernel_sysctlbyname(pid_t pid, char * name, void * old,
-        size_t * oldlenp, void * new, size_t newlen, size_t * retval,
-        int flags);
-int sysctl_wire_old_buffer(struct sysctl_req * req, size_t len);
-int kernel_sysctl(pid_t pid, int * name, unsigned int namelen,
+int kernel_sysctlbyname(struct cred * cred, char * name, void * old,
+                        size_t * oldlenp, void * new, size_t newlen,
+                        size_t * retval, int flags);
+int kernel_sysctl(struct cred * cred, int * name, unsigned int namelen,
         void * old, size_t * oldlenp, void * new, size_t newlen,
         size_t * retval, int flags);
-int sys___sysctl(pid_t pid, struct _sysctl_args * uap);
-int userland_sysctl(pid_t pid, int * name, unsigned int namelen,
-        __user void * old, __user size_t * oldlenp, int inkernel,
-        __user void * new, size_t newlen, size_t * retval, int flags);
+int sys___sysctl(struct cred * cred, struct _sysctl_args * uap);
 
 #endif /* KERNEL_INTERNAL */
 

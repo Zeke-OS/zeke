@@ -138,15 +138,17 @@ void mmu_data_abort_handler(void)
 
     /* RFE Might be enough to get curproc. */
     handler = data_aborts[fsr & FSR_STATUS_MASK];
+
     abo = (struct mmu_abo_param){
         .abo_type = MMU_ABO_DATA,
         .fsr = fsr,
         .far = far,
         .psr = spsr,
         .lr = lr,
-        .proc = proc_get_struct_l(thread->pid_owner), /* Can be NULL */
+        .proc = proc_ref(thread->pid_owner, PROC_NOT_LOCKED), /* Can be NULL */
         .thread = thread,
     };
+
     if (handler) {
         int err;
 
@@ -175,6 +177,8 @@ void mmu_data_abort_handler(void)
      * (ie. page swaping). To suppor cor, and actually anyway, we should test
      * if error appeared during reading or writing etc.
      */
+
+    proc_unref(abo.proc);
 
     if (ABO_WAS_USERMODE(spsr)) {
         set_interrupt_state(s_entry);

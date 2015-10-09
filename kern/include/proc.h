@@ -173,7 +173,7 @@ extern mtx_t proclock;
 #define PROC_LOCK()         mtx_lock(&proclock)
 #define PROC_UNLOCK()       mtx_unlock(&proclock)
 #define PROC_TESTLOCK()     mtx_test(&proclock)
-#define PROC_LOCK_INIT()    mtx_init(&proclock, MTX_TYPE_SPIN, 0)
+#define PROC_LOCK_INIT()    mtx_init(&proclock, MTX_TYPE_SPIN, MTX_OPT_DINT)
 
 /*
  * proc.c
@@ -215,18 +215,16 @@ pid_t proc_update(void);
  */
 void _proc_free(struct proc_info * p);
 
-/**
- * Get pointer to a internal proc_info structure by first locking it.
- * Caller of this function should be the owner/parent of requested data or it
- * shall first disable interrupts to prevent removal of the data while using it.
- */
-struct proc_info * proc_get_struct_l(pid_t pid);
+enum proc_lock_mode {
+    PROC_NOT_LOCKED,
+    PROC_LOCKED,
+};
 
-/**
- * Get pointer to a internal proc_info structure.
- * @note Requires PROC_LOCK.
- */
-struct proc_info * proc_get_struct(pid_t pid);
+int proc_exists(pid_t pid, enum proc_lock_mode lmode);
+
+struct proc_info * proc_ref(pid_t pid, enum proc_lock_mode lmode);
+
+void proc_unref(struct proc_info * proc);
 
 struct vm_mm_struct * proc_get_locked_mm(pid_t pid);
 

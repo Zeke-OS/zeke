@@ -269,7 +269,7 @@ pid_t proc_get_random_pid(void)
             newpid = proc_lastpid + kunirand(d);
         newpid++;
         count++;
-    } while (proc_get_struct(newpid));
+    } while (proc_exists(newpid, PROC_LOCKED));
 
     proc_lastpid = newpid;
 

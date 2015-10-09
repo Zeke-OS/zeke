@@ -47,10 +47,8 @@ static ssize_t procfs_read_status(struct procfs_info * spec, char ** retbuf)
     if (!tmpbuf)
         return -EIO;
 
-    PROC_LOCK();
-    proc = proc_get_struct(spec->pid);
+    proc = proc_ref(spec->pid, PROC_NOT_LOCKED);
     if (!proc) {
-        PROC_UNLOCK();
         kfree(tmpbuf);
         return -ENOLINK;
     }
@@ -72,7 +70,8 @@ static ssize_t procfs_read_status(struct procfs_info * spec, char ** retbuf)
                      proc->tms.tms_utime, proc->tms.tms_stime,
                      proc->brk_start, proc->brk_stop);
 
-    PROC_UNLOCK();
+    proc_unref(proc);
+
     *retbuf = tmpbuf;
     return bytes;
 }

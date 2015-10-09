@@ -487,7 +487,7 @@ static void thread_init_tls(struct thread_info * tp)
         return;
     }
 
-    proc = proc_get_struct_l(tp->pid_owner);
+    proc = proc_ref(tp->pid_owner, PROC_NOT_LOCKED);
     if (!proc) {
         panic("Thread must have a owner process");
     }
@@ -497,6 +497,7 @@ static void thread_init_tls(struct thread_info * tp)
      */
     copyout_proc(proc, &tp->id, &tp->tls_uaddr->thread_id,
                  sizeof(pthread_t));
+    proc_unref(proc);
 }
 DATA_SET(thread_ctors, thread_init_tls);
 DATA_SET(thread_fork_handlers, thread_init_tls);
@@ -567,12 +568,13 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
     } else {
         struct proc_info * proc;
 
-        proc = proc_get_struct_l(parent->pid_owner);
+        proc = proc_ref(parent->pid_owner, PROC_NOT_LOCKED);
         if (!proc) {
             panic("Parent thread must have a owner process");
         }
 
         tp->curr_mpt = &proc->mm.mpt;
+        proc_unref(proc);
     }
 
     /* Call thread constructors */

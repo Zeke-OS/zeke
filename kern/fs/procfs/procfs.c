@@ -223,9 +223,10 @@ static int procfs_updatedir(vnode_t * dir)
 {
     int err = 0;
 
-    PROC_LOCK();
 
     if (dir == vn_procfs) {
+        PROC_LOCK();
+
         /*
          * This is the procfs root.
          *
@@ -234,16 +235,19 @@ static int procfs_updatedir(vnode_t * dir)
          * directories that should not exist anymore.
          */
         for (int i = 0; i <= act_maxproc; i++) {
-            const struct proc_info * proc = proc_get_struct(i);
+            struct proc_info * proc = proc_ref(i, PROC_LOCKED);
 
-            if (proc)
+            if (proc) {
                 err = procfs_mkentry(proc);
+                proc_unref(proc);
+            }
             else
                 procfs_rmentry(i);
         }
+
+        PROC_UNLOCK();
     }
 
-    PROC_UNLOCK();
 
     return err;
 }
