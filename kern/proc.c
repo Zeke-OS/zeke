@@ -464,28 +464,6 @@ void proc_unref(struct proc_info * proc)
     kfree(proc);
 }
 
-/**
- * TODO Should use proc pointer
- */
-struct vm_mm_struct * proc_get_locked_mm(pid_t pid)
-{
-    struct proc_info * proc;
-    struct vm_mm_struct * mm;
-
-    PROC_LOCK();
-    proc = proc_ref(pid, PROC_LOCKED);
-    if (!proc) {
-        PROC_UNLOCK();
-        return NULL;
-    }
-
-    mm = &proc->mm;
-    mtx_lock(&mm->regions_lock);
-    PROC_UNLOCK();
-
-    return mm;
-}
-
 const char * proc_state2str(enum proc_state state)
 {
     if ((unsigned)state > sizeof(proc_state_names))

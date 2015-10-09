@@ -175,6 +175,14 @@ extern mtx_t proclock;
 #define PROC_TESTLOCK()     mtx_test(&proclock)
 #define PROC_LOCK_INIT()    mtx_init(&proclock, MTX_TYPE_SPIN, MTX_OPT_DINT)
 
+/**
+ * Enum used by some functions to tell if the caller has locked proclock.
+ */
+enum proc_lock_mode {
+    PROC_NOT_LOCKED,
+    PROC_LOCKED,
+};
+
 /*
  * proc.c
  * Process scheduling and sys level management
@@ -215,18 +223,21 @@ pid_t proc_update(void);
  */
 void _proc_free(struct proc_info * p);
 
-enum proc_lock_mode {
-    PROC_NOT_LOCKED,
-    PROC_LOCKED,
-};
-
+/**
+ * Test if process exists.
+ */
 int proc_exists(pid_t pid, enum proc_lock_mode lmode);
 
+/**
+ * Get a reference to a proc_info struct.
+ */
 struct proc_info * proc_ref(pid_t pid, enum proc_lock_mode lmode);
 
+/**
+ * Uref a proc.
+ * @note Handles a NULL pointer.
+ */
 void proc_unref(struct proc_info * proc);
-
-struct vm_mm_struct * proc_get_locked_mm(pid_t pid);
 
 /**
  * Process state enum to string name of the state.

@@ -44,17 +44,20 @@ static ssize_t procfs_read_regions(struct procfs_info * spec, char ** retbuf)
     char * buf = NULL;
     const size_t maxline = 30;
     ssize_t bytes = 0;
+    struct proc_info * proc;
     struct vm_mm_struct * mm;
 
     buf = kcalloc(maxline, sizeof(char));
     if (!buf)
         return -ENOMEM;
 
-    mm = proc_get_locked_mm(spec->pid);
-    if (!mm) {
-        kfree(buf);
-        return -ENOLINK;
+    proc = proc_ref(spec->pid, PROC_NOT_LOCKED);
+    if (!proc) {
+        bytes = -ENOLINK;
+        goto out;
     }
+    mm = &proc->mm;
+    mtx_lock(&mm->regions_lock);
 
     for (int i = 0; i < mm->nr_regions; i++) {
         struct buf * region = (*mm->regions)[i];
@@ -68,8 +71,8 @@ static ssize_t procfs_read_regions(struct procfs_info * spec, char ** retbuf)
         p = krealloc(buf, bytes + maxline);
         if (!p) {
             mtx_unlock(&mm->regions_lock);
-            kfree(buf);
-            return -ENOMEM;
+            bytes = -ENOMEM;
+            goto out;
         }
         buf = p;
         p = buf + bytes;
@@ -84,6 +87,9 @@ static ssize_t procfs_read_regions(struct procfs_info * spec, char ** retbuf)
     mtx_unlock(&mm->regions_lock);
 
     *retbuf = buf;
+out:
+    proc_unref(proc);
+    kfree(buf);
     return bytes;
 }
 
