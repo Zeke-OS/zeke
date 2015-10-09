@@ -40,7 +40,6 @@
 #include <syscall.h>
 #include <unistd.h>
 #include <buf.h>
-#include <dynmem.h>
 #include <exec.h>
 #include <fs/procfs.h>
 #include <kerror.h>
@@ -51,7 +50,6 @@
 #include <kstring.h>
 #include <libkern.h>
 #include <proc.h>
-#include <ptmapper.h>
 #include <vm/vm_copyinstruct.h>
 
 static struct proc_info *(*_procarr)[]; /*!< processes indexed by pid */
@@ -389,31 +387,7 @@ void _proc_free(struct proc_info * p)
     fs_fildes_close_all(p, 0);
     kfree(p->files);
 
-    /*
-     * Free regions
-     *
-     * We don't use lock here because the lock data is invalidated soon and any
-     * thread trying to wait for it will break anyway, so we just hope there
-     * is no-one trying to lock this process anymore. Technically there
-     * shouldn't be any threads locking this process struct anymore.
-     */
-    if (p->mm.regions) {
-        for (int i = 0; i < p->mm.nr_regions; i++) {
-            if ((*p->mm.regions)[i]->vm_ops->rfree)
-                    (*p->mm.regions)[i]->vm_ops->rfree((*p->mm.regions)[i]);
-        }
-        p->mm.nr_regions = 0;
-
-        /* Free page table list */
-        ptlist_free(&p->mm.ptlist_head);
-
-        /* Free regions array */
-        kfree(p->mm.regions);
-    }
-
-    /* Free mpt */
-    if (p->mm.mpt.pt_addr)
-        ptmapper_free(&p->mm.mpt);
+    vm_mm_destroy(&p->mm);
 
     PROC_LOCK();
     proc_pgrp_remove(p);

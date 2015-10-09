@@ -294,6 +294,12 @@ void vm_updateusr_ap(struct buf * region);
 int vm_mm_init(struct vm_mm_struct * mm, int nr_regions);
 
 /**
+ * Destroy a mm struct.
+ * @param mm is a pointer to the mm struct.
+ */
+void vm_mm_destroy(struct vm_mm_struct * mm);
+
+/**
  * Reallocate MM regions array to a new size given in new_count.
  * If new_count is smaller than the current size of regions array
  * calling this function will be NOP i.e. this function will only

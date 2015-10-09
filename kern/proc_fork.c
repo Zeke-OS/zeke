@@ -36,17 +36,13 @@
 #include <errno.h>
 #include <sys/sysctl.h>
 #include <buf.h>
-#include <dynmem.h>
 #include <fs/procfs.h>
 #include <kerror.h>
-#include <kmem.h>
 #include <kinit.h>
 #include <kmalloc.h>
 #include <kstring.h>
 #include <libkern.h>
 #include <proc.h>
-#include <ptmapper.h>
-#include <syscall.h>
 
 #ifdef configCOW_ENABLED
 #define COW_ENABLED_DEFAULT 1

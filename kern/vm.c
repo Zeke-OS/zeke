@@ -434,6 +434,35 @@ int vm_mm_init(struct vm_mm_struct * mm, int nr_regions)
     return 0;
 }
 
+void vm_mm_destroy(struct vm_mm_struct * mm)
+{
+    /*
+     * Free regions
+     *
+     * We don't use lock here because the lock data is invalidated soon and any
+     * thread trying to wait for it will break anyway, so we just hope there
+     * is no-one trying to lock this process anymore. Technically there
+     * shouldn't be any threads locking this struct anymore.
+     */
+    if (mm->regions) {
+        for (int i = 0; i < mm->nr_regions; i++) {
+            if ((*mm->regions)[i]->vm_ops->rfree)
+                    (*mm->regions)[i]->vm_ops->rfree((*mm->regions)[i]);
+        }
+        mm->nr_regions = 0;
+
+        /* Free page table list. */
+        ptlist_free(&mm->ptlist_head);
+
+        /* Free regions array. */
+        kfree(mm->regions);
+    }
+
+    /* Free mpt. */
+    if (mm->mpt.pt_addr)
+        ptmapper_free(&mm->mpt);
+}
+
 static int realloc_mm_regions_locked(struct vm_mm_struct * mm, int new_count)
 {
     struct buf * (*new_regions)[];
