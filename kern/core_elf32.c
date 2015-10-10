@@ -205,7 +205,7 @@ static off_t dump_regions(file_t * file, const struct vm_mm_struct * mm)
     return off;
 }
 
-int core_dump(struct proc_info * proc, file_t * file)
+int core_dump2file(struct proc_info * proc, file_t * file)
 {
     vnode_t * vn = file->vnode;
     struct vm_mm_struct * mm;

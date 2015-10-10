@@ -54,6 +54,7 @@
 #define WIFSIGNALED(x)  (_WSTATUS(x) != _WSTOPPED && _WSTATUS(x) != 0 \
                          && (x) != 0x13)
 #define WTERMSIG(x)     (_WSTATUS(x))
+#define WCOREDUMP(x)    (((x) & 0200) != 0)
 #define WIFSTOPPED(x)   (_WSTATUS(x) == _WSTOPPED)
 #define WSTOPSIG(x)     ((x) >> 8)
 

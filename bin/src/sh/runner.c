@@ -32,6 +32,7 @@
  *******************************************************************************
  */
 
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -142,8 +143,13 @@ static void cleanup(void)
             fprintf(stderr, "Child %d ret: %d\n", (int)pid, exit_status);
         } else if (WIFSIGNALED(status)) {
             int sig = WTERMSIG(status);
-            fprintf(stderr, "Child %d killed by signal %d (%s)\n",
-                    (int)pid, sig, strsignal(sig));
+            char errmsg[80];
+
+            snprintf(errmsg, sizeof(errmsg),
+                     "Child %d killed by signal %d (%s)%s",
+                     (int)pid, sig, strsignal(sig),
+                     (WCOREDUMP(status)) ? " (core dumped)" : NULL);
+            psignal(sig, errmsg);
         }
     }
     fork_count = 0;

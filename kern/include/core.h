@@ -34,6 +34,11 @@
 #ifndef CORE_H
 #define CORE_H
 
-int core_dump(struct proc_info * proc, file_t * file);
+#include <fs/fs.h>
+
+struct proc;
+
+int core_dump_by_curproc(struct proc_info * child_proc);
+int core_dump2file(struct proc_info * proc, file_t * file);
 
 #endif /* CORE_H */
