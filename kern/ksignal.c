@@ -761,7 +761,9 @@ static int ksignal_queue_sig(struct signals * sigs, int signum,
         KERROR(KERROR_DEBUG, "Thread %u will be terminated by signum %s\n",
                thread->id, ksignal_signum2str(signum));
 #endif
-        thread->exit_signal = signum;
+        thread->exit_signal = signum |
+            ((action.ks_action.sa_flags & SA_CORE) ? KSIGNAL_EXIT_SIGNAL_CORE
+                                                   : 0);
         /*
          * If the thread is in a system call we should wait until it's exiting
          * to make sure we don't left any locks or extra refcounts.

@@ -603,8 +603,10 @@ pthread_t thread_fork(pid_t new_pid)
 
     /* Get next free thread_id. */
     new_id = atomic_inc(&next_thread_id);
-    if (new_id < 0)
-        panic("Out of thread IDs");
+    if (new_id < 0) {
+        KERROR(KERROR_ERR, "Out of thread IDs");
+        return -EAGAIN;
+    }
 
     new_thread = kmalloc(sizeof(struct thread_info));
     if (!new_thread)
@@ -640,6 +642,7 @@ pthread_t thread_fork(pid_t new_pid)
     }
 
     /* The newly created thread shall remain in init state for now. */
+
     atomic_inc(&anr_threads);
     return new_id;
 }

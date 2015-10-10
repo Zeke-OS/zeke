@@ -40,6 +40,7 @@
 #include <syscall.h>
 #include <unistd.h>
 #include <buf.h>
+#include <core.h>
 #include <exec.h>
 #include <fs/procfs.h>
 #include <kerror.h>
@@ -806,6 +807,53 @@ static int sys_proc_wait(__user void * user_args)
      */
     curproc->tms.tms_cutime += child->tms.tms_utime;
     curproc->tms.tms_cstime += child->tms.tms_stime;
+
+    if (child->exit_signal & KSIGNAL_EXIT_SIGNAL_CORE) {
+        char core_path[80]; /* TODO get this from somewhere maybe? */
+        char * fname;
+        vnode_t * vn = NULL;
+        int fd = -1;
+        file_t * file = NULL;
+
+        KERROR(KERROR_INFO, "Core dump requested for pid %d\n", child->pid);
+
+        parsenames(child->name, NULL, &fname); /* It's usually a path. */
+        ksprintf(core_path, sizeof(core_path), "/tmp/%s.core", fname);
+        kfree(fname);
+
+        if (fs_creat_curproc(core_path, curproc->files->umask, &vn)) {
+            KERROR(KERROR_ERR,
+                   "pid:%d: Failed to create a core file: \"%s\"\n",
+                   curproc->pid, core_path);
+            goto skip_core;
+        }
+
+        fd = fs_fildes_create_curproc(vn, O_RDWR);
+        if (fd < 0) {
+            KERROR(KERROR_ERR,
+                   "pid:%d: Failed to open a core file for write\n",
+                   curproc->pid);
+            goto skip_core;
+        }
+
+        file = fs_fildes_ref(curproc->files, fd, 1);
+        if (!file) {
+            KERROR(KERROR_ERR,
+                   "pid:%d: Failed to take a ref to a core file\n",
+                   curproc->pid);
+           goto skip_core;
+        }
+
+        core_dump(child, file);
+
+skip_core:
+        if (fd != -1)
+            fs_fildes_ref(curproc->files, fd, -1);
+        if (file)
+            fs_fildes_close(curproc, fd);
+        if (vn)
+            vrele(vn);
+    }
 
     copyout(&args, user_args, sizeof(args));
 

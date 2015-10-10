@@ -41,21 +41,22 @@ int parsenames(const char * pathname, char ** path, char ** name)
     char * path_act;
     char * fname;
     size_t i, j;
+    int retval;
 
     KASSERT(pathname != NULL, "pathname should be set\n");
 
     path_act = kstrdup(pathname, PATH_MAX);
     fname = kmalloc(NAME_MAX);
     if (!path_act || !fname) {
-        kfree(path_act);
-        kfree(fname);
-
-        return -ENOMEM;
+        retval = -ENOMEM;
+        goto fail;
     }
 
     i = strlenn(path_act, PATH_MAX);
-    if (path_act[i] != '\0')
+    if (path_act[i] != '\0') {
+        retval = -ENAMETOOLONG;
         goto fail;
+    }
 
     while (path_act[i] != '/') {
         path_act[i--] = '\0';
@@ -81,18 +82,24 @@ int parsenames(const char * pathname, char ** path, char ** name)
         j++;
     }
 
-    if (fname[j] != '\0')
+    if (fname[j] != '\0') {
+        retval = -ENAMETOOLONG;
         goto fail;
+    }
 
-    if (path)
+    if (path) {
         *path = path_act;
-    if (name)
+        path_act = NULL;
+    }
+
+    if (name) {
         *name = fname;
+        fname = NULL;
+    }
 
-    return 0;
-
+    retval = 0;
 fail:
     kfree(path_act);
     kfree(fname);
-    return -ENAMETOOLONG;
+    return retval;
 }

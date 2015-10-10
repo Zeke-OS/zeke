@@ -63,9 +63,9 @@ static int check_header(const struct elf32_header * hdr)
 {
     const uint8_t elf_endian =
 #if (_BYTE_ORDER == _LITTLE_ENDIAN)
-    ELFDATA2LSB;
+        ELFDATA2LSB;
 #elif (_BYTE_ORDER == BIG_ENDIAN)
-    ELFDATA2MSB;
+        ELFDATA2MSB;
 #else
 #error Unsuported endianess
 #endif
@@ -78,7 +78,10 @@ static int check_header(const struct elf32_header * hdr)
         hdr->e_version              != EV_CURRENT)
         return -ENOEXEC;
 
-    /* Make sure the machine type is supported */
+    /*
+     * Make sure the machine type is supported.
+     * TODO Get the machine type from somewhere.
+     */
     if (hdr->e_machine != EM_ARM)
         return -ENOEXEC;
 
