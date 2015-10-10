@@ -49,13 +49,43 @@
 #define _WSTATUS(x) ((x) & 0177)
 #define _WSTOPPED   0177
 
+/**
+ * Returns true if the child exited normally.
+ * Child returned by calling exit(), _exit() or some other normal way of
+ * exiting.
+ */
 #define WIFEXITED(x)    (_WSTATUS(x) == 0)
+
+/**
+ * Returns the exit status of the child.
+ */
 #define WEXITSTATUS(x)  ((x) >> 8)
+
+/**
+ * Returns true if the child was signaled.
+ */
 #define WIFSIGNALED(x)  (_WSTATUS(x) != _WSTOPPED && _WSTATUS(x) != 0 \
                          && (x) != 0x13)
+
+/**
+ * Returns the exit signal code.
+ */
 #define WTERMSIG(x)     (_WSTATUS(x))
+
+/**
+ * Returns true if the child produced a core dump.
+ * @remarks Not specified in POSIX.
+ */
 #define WCOREDUMP(x)    (((x) & 0200) != 0)
+
+/**
+ * Returns true if the child was stopped.
+ */
 #define WIFSTOPPED(x)   (_WSTATUS(x) == _WSTOPPED)
+
+/**
+ * Returns the signal number that stopped the child.
+ */
 #define WSTOPSIG(x)     ((x) >> 8)
 
 #if defined(__SYSCALL_DEFS__) || defined(KERNEL_INTERNAL)
