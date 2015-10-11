@@ -223,8 +223,8 @@ static char * format_fpath(struct fatfs_inode * indir, const char * name)
 
 #ifdef configFATFS_DEBUG
     KERROR(KERROR_DEBUG,
-             "format_fpath(indir \"%s\", name \"%s\")\n",
-             indir->in_fpath, name);
+             "%s(indir \"%s\", name \"%s\")\n",
+             __func__, indir->in_fpath, name);
 #endif
 
     fpath_size = strlenn(name, NAME_MAX + 1) +
@@ -263,8 +263,8 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
     int err = 0, retval = 0;
 
 #ifdef configFATFS_DEBUG
-    KERROR(KERROR_DEBUG, "create_inode(fpath \"%s\", vn_hash %u)\n",
-             fpath, (uint32_t)vn_hash);
+    KERROR(KERROR_DEBUG, "%s(fpath \"%s\", vn_hash %u)\n",
+           __func__, fpath, (uint32_t)vn_hash);
 #endif
 
     in = kzalloc(sizeof(struct fatfs_inode));
@@ -301,7 +301,8 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
         err = f_opendir(&in->dp, &sb->ff_fs, in->in_fpath);
         if (err) {
 #ifdef configFATFS_DEBUG
-            KERROR(KERROR_DEBUG, "Can't open a dir (err: %d)\n", err);
+            KERROR(KERROR_DEBUG, "%s: Can't open a dir (err: %d)\n",
+                   __func__, err);
 #endif
             retval = fresult2errno(err);
             goto fail;
@@ -323,7 +324,8 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
         err = f_open(&in->fp, &sb->ff_fs, in->in_fpath, fomode);
         if (err) {
 #ifdef configFATFS_DEBUG
-            KERROR(KERROR_DEBUG, "Can't open a file (err: %d)\n", err);
+            KERROR(KERROR_DEBUG, "%s: Can't open a file (err: %d)\n",
+                   __func__, err);
 #endif
             retval = fresult2errno(err);
             goto fail;
@@ -333,9 +335,9 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
 
 #ifdef configFATFS_DEBUG
     if (oflags & O_CREAT)
-        KERROR(KERROR_DEBUG, "ff: Create & open ok\n");
+        KERROR(KERROR_DEBUG, "%s: Create & open ok\n", __func__);
     else
-        KERROR(KERROR_DEBUG, "ff: Open ok\n");
+        KERROR(KERROR_DEBUG, "%s: Open ok\n", __func__);
 #endif
 
     init_fatfs_vnode(vn, inum, vn_mode, vn_hash, &(sb->sb));
@@ -348,14 +350,14 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
     }
     if (xvp) {
         KERROR(KERROR_ERR,
-               "create_inode(): Found it during insert: \"%s\"\n",
-               fpath);
+               "%s: Found it during insert: \"%s\"\n",
+               __func__, fpath);
         retval = ENOTRECOVERABLE;
         goto fail;
     }
 
 #ifdef configFATFS_DEBUG
-    KERROR(KERROR_DEBUG, "create_inode(): ok\n");
+    KERROR(KERROR_DEBUG, "%s: ok\n", __func__);
 #endif
 
     *result = in;
@@ -363,7 +365,7 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
     return 0;
 fail:
 #ifdef configFATFS_DEBUG
-    KERROR(KERROR_DEBUG, "create_inode(): retval %i\n", retval);
+    KERROR(KERROR_DEBUG, "%s: retval %i\n", __func__, retval);
 #endif
 
     kfree(in);
@@ -397,7 +399,25 @@ static vnode_t * create_root(struct fatfs_sb * fatfs_sb)
 
 static int fatfs_delete_vnode(vnode_t * vnode)
 {
-    return -ENOTSUP;
+    struct fatfs_inode * in = get_inode_of_vnode(vnode);
+
+    if (S_ISDIR(vnode->vn_mode))
+        return 0;
+
+#ifdef configFATFS_DEBUG
+    KERROR(KERROR_DEBUG, "%s: %s\n", __func__, in->in_fpath);
+#endif
+
+    /* TODO We'd like to do the followning */
+#if 0
+    vfs_hash_remove(vnode);
+    f_close(&in->fp);
+    kfree(in->in_fpath);
+#endif
+    /* but since it's not possible atm nor feasible, we do */
+    f_sync(&in->fp, 0);
+
+    return 0;
 }
 
 static int fatfs_event_vnode_opened(struct proc_info * p, vnode_t * vnode)

@@ -1943,8 +1943,6 @@ static FRESULT prepare_volume(FATFS * fs, int vol)
     WORD nrsv;
     DRESULT derr;
 
-    ENTER_FF(fs); /* Lock the volume */
-
     /* The file system object is not valid. */
     /* Following code attempts to mount the volume. (analyze BPB and initialize the fs object) */
 
@@ -2133,6 +2131,7 @@ FRESULT f_mount(FATFS * fs, uint8_t opt)
     fs->readonly = (opt & FATFS_READONLY) == FATFS_READONLY;
     mtx_init(&fs->sobj, MTX_TYPE_TICKET, MTX_OPT_PRICEIL);
 
+    ENTER_FF(fs); /* Lock the volume */
     res = prepare_volume(fs, vol);
     LEAVE_FF(fs, res);
 }
@@ -2302,7 +2301,8 @@ FRESULT f_read(FF_FIL * fp, void * buff, unsigned int btr, unsigned int * br)
     if (!(fp->flag & FA_READ))                  /* Check access mode */
         LEAVE_FF(fp->fs, FR_DENIED);
     remain = fp->fsize - fp->fptr;
-    if (btr > remain) btr = (unsigned int)remain;       /* Truncate btr by remaining bytes */
+    if (btr > remain)
+        btr = (unsigned int)remain;       /* Truncate btr by remaining bytes */
 
     for ( ;  btr;                               /* Repeat until all data read */
         rbuff += rcnt, fp->fptr += rcnt, *br += rcnt, btr -= rcnt) {
@@ -2487,15 +2487,17 @@ FRESULT f_write(FF_FIL * fp, const void * buff, unsigned int btw,
  * Synchronize the File.
  * @param fp Pointer to the file object.
  */
-FRESULT f_sync(FF_FIL * fp)
+FRESULT f_sync(FF_FIL * fp, int validated)
 {
     FRESULT res;
     DWORD tm;
     uint8_t * dir;
 
-    res = validate(fp);                 /* Check validity of the object */
-    if (res != FR_OK)
-        goto fail;
+    if (!validated) {
+        res = validate(fp); /* Check validity of the object */
+        if (res != FR_OK)
+            goto fail;
+    }
 
     if (fp->flag & FA__WRITTEN) {   /* Has the file been written? */
         /* Write-back dirty buffer */
@@ -2541,9 +2543,9 @@ FRESULT f_close(FF_FIL * fp)
     fs = fp->fs;
 
     if (!fs->readonly) {
-        res = f_sync(fp); /* Flush cached data */
+        res = f_sync(fp, 1); /* Flush cached data */
         if (res != FR_OK)
-            return res;
+            LEAVE_FF(fs, res);
     }
 
 
@@ -2553,9 +2555,7 @@ FRESULT f_close(FF_FIL * fp)
 #endif
         fp->fs = NULL;          /* Invalidate file object */
 
-    unlock_fs(fs, FR_OK);       /* Unlock volume */
-
-    return res;
+    LEAVE_FF(fs, FR_OK);
 }
 
 /**
@@ -2804,9 +2804,7 @@ FRESULT f_closedir(FF_DIR * dp)
 #endif
         dp->fs = NULL;          /* Invalidate directory object */
 
-    unlock_fs(fs, FR_OK);       /* Unlock volume */
-
-    return res;
+    LEAVE_FF(fs, FR_OK);
 }
 
 /**
@@ -2949,6 +2947,7 @@ FRESULT f_getfree(FATFS * fs, DWORD * nclst)
             *nclst = n;
         }
     }
+
     LEAVE_FF(fs, res);
 }
 
