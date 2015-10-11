@@ -82,7 +82,7 @@ static off_t write_elf_header(file_t * file, int phnum)
     hdr.e_ident[EI_VERSION] = EV_CURRENT;
     hdr.e_ident[EI_CLASS] = ELFCLASS32;
     hdr.e_ident[EI_DATA] = elf_endian;
-    hdr.e_ident[EI_OSABI] = ELFOSABI_STANDALONE; /* TODO */
+    hdr.e_ident[EI_OSABI] = ELFOSABI_NONE;
 
     /* Write the elf header. */
     return write2file(file, &hdr, elf32_header_size);
@@ -135,9 +135,9 @@ static int create_pheaders(const struct vm_mm_struct * mm, size_t notes_size,
     nr_core_regions = 0;
     for (i = 0; i < mm->nr_regions; i++) {
         struct buf * region = (*mm->regions)[i];
-        if (region->b_flags & B_NOCORE)
-            continue;
-        nr_core_regions++;
+
+        if (!(region->b_flags & B_NOCORE) && region->b_mmu.vaddr != 0)
+            nr_core_regions++;
     }
 
     phnum = 1 + nr_core_regions;
@@ -165,11 +165,11 @@ static int create_pheaders(const struct vm_mm_struct * mm, size_t notes_size,
     /*
      * Memory region headers.
      */
-    for (i = 0, hi = 1; i < mm->nr_regions; i++, hi++) {
+    for (i = 0, hi = 1; i < mm->nr_regions; i++) {
         struct buf * region = (*mm->regions)[i];
         struct elf32_phdr * phdr = phdr_arr + hi;
 
-        if (region->b_flags & B_NOCORE)
+        if (region->b_flags & B_NOCORE || region->b_mmu.vaddr == 0)
             continue;
 
         *phdr = (struct elf32_phdr){
@@ -183,6 +183,7 @@ static int create_pheaders(const struct vm_mm_struct * mm, size_t notes_size,
             .p_align = sizeof(uintptr_t),
         };
         offset += region->b_bufsize;
+        hi++;
     }
 
     *phdr_arr_out = phdr_arr;
