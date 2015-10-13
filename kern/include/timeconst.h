@@ -8,8 +8,8 @@
  */
 
 #pragma once
-#ifndef TZFILE_H
-#define TZFILE_H
+#ifndef TIMECONST_H
+#define TIMECONST_H
 
 #define SECS_PER_MIN    60
 #define MINS_PER_HOUR   60
@@ -49,13 +49,12 @@
 #define EPOCH_WDAY  TM_THURSDAY
 
 /*
-** Accurate only for the past couple of centuries;
-** that will probably do.
-*/
-
+ * Accurate only for the past couple of centuries;
+ * that will probably do.
+ */
 #define isleap(y) ((((y) % 4) == 0 && ((y) % 100) != 0) || ((y) % 400) == 0)
 
-#endif /* TZFILE_H */
+#endif /* TIMECONST_H */
 
 /**
  * @}
