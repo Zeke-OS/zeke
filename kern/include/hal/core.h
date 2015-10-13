@@ -70,6 +70,12 @@ extern volatile size_t flag_kernel_tick;
 __user void * init_stack_frame(struct _sched_pthread_create_args * thread_def,
                                sw_stack_frame_t * sframe, int priv);
 
+
+/**
+ * Get a pointer to the stack frame that will return to user space.
+ */
+sw_stack_frame_t * get_usr_sframe(sw_stack_frame_t * sframe_arr);
+
 void svc_setretval(intptr_t retval);
 
 /**

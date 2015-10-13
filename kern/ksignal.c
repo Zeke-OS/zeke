@@ -296,29 +296,6 @@ static void ksignal_fork_handler(struct thread_info * th)
 DATA_SET(thread_fork_handlers, ksignal_fork_handler);
 
 /**
- * Get a pointer to the stack frame that will return to user space.
- */
-static sw_stack_frame_t * get_usr_sframe(struct thread_info * thread)
-{
-    /*
-     * We expect one of these stack frame is the stack frame returning to
-     * the user space. Order is somewhat important because we might be
-     * reading some old data and return a pointer to a wrong stack frame.
-     * RFE We must double check if there is any corner cases where a wrong
-     * stack frame is returned.
-     */
-    for (size_t i = 0; i < SCHED_SFRAME_ARR_SIZE; i++) {
-        sw_stack_frame_t * sframe;
-
-        sframe = &thread->sframe[i];
-        if ((sframe->psr & USER_PSR) == USER_PSR)
-            return sframe;
-    }
-
-    return NULL;
-}
-
-/**
  * Forward signals pending in proc sigs struct to thread pendqueue.
  * It's usually not a good idea to call this function from other than the owning
  * process. The idea is that the cost of the actual forwarding and delivery
@@ -441,7 +418,7 @@ static int thread_stack_push(struct thread_info * thread, const void * src,
 
     KASSERT(size > 0, "size should be greater than zero.\n");
 
-    sframe = get_usr_sframe(thread);
+    sframe = get_usr_sframe(thread->sframe);
     if (!sframe)
         return -EINVAL;
 
@@ -473,7 +450,7 @@ static int thread_stack_pop(struct thread_info * thread, void * buf,
 
     KASSERT(size > 0, "size should be greater than zero.\n");
 
-    sframe = get_usr_sframe(thread);
+    sframe = get_usr_sframe(thread->sframe);
     if (!sframe)
         return -EINVAL;
 
@@ -502,7 +479,7 @@ static int push_stack_frame(int signum,
                             const siginfo_t * siginfo)
 {
     const uintptr_t usigret = curproc->usigret;
-    sw_stack_frame_t * tsfp = get_usr_sframe(current_thread);
+    sw_stack_frame_t * tsfp = get_usr_sframe(current_thread->sframe);
     void * old_thread_sp; /* this is used to revert signal handling state
                            * and return to normal execution. */
 
@@ -751,6 +728,24 @@ static int ksignal_queue_sig(struct signals * sigs, int signum,
     KASSERT(thread != NULL, "thread must be set");
 
     /*
+     * Build ksiginfo.
+     */
+    ksiginfo = kmalloc(sizeof(struct ksiginfo));
+    if (!ksiginfo)
+        return -ENOMEM;
+    *ksiginfo = (struct ksiginfo){
+        .siginfo.si_signo = signum,
+        .siginfo.si_code = param->si_code,
+        .siginfo.si_errno = param->si_errno,
+        .siginfo.si_tid = current_thread->id,
+        .siginfo.si_pid = curproc->pid,
+        .siginfo.si_uid = curproc->cred.uid,
+        .siginfo.si_addr = param->si_addr,
+        .siginfo.si_status = param->si_status,
+        .siginfo.si_value = param->si_value,
+    };
+
+    /*
      * SA_KILL is handled here because post_scheduling handler can't change
      * next thread.
      */
@@ -761,9 +756,13 @@ static int ksignal_queue_sig(struct signals * sigs, int signum,
         KERROR(KERROR_DEBUG, "Thread %u will be terminated by signum %s\n",
                thread->id, ksignal_signum2str(signum));
 #endif
-        thread->exit_signal = signum |
-            ((action.ks_action.sa_flags & SA_CORE) ? KSIGNAL_EXIT_SIGNAL_CORE
-                                                   : 0);
+
+        /* In case of SA_KILL we must change the si_code. */
+        ksiginfo->siginfo.si_code = (action.ks_action.sa_flags & SA_CORE) ?
+            CLD_DUMPED : CLD_KILLED;
+
+        thread->exit_ksiginfo = ksiginfo;
+
         /*
          * If the thread is in a system call we should wait until it's exiting
          * to make sure we don't left any locks or extra refcounts.
@@ -783,38 +782,22 @@ static int ksignal_queue_sig(struct signals * sigs, int signum,
              */
             thread_terminate(thread->id);
         }
+    } else { /* push to pending signals list. */
+        if (action.ks_action.sa_flags & SA_RESTART) {
+            KERROR(KERROR_ERR, "SA_RESTART is not yet supported\n");
+        }
 
-        return 0;
-    }
+        /* Not ignored so we can set the signal to pending state. */
+        KSIGNAL_PENDQUEUE_INSERT_TAIL(sigs, ksiginfo);
 
-    if (action.ks_action.sa_flags & SA_RESTART) {
-        KERROR(KERROR_ERR, "SA_RESTART is not yet supported\n");
-    }
-
-    /* Not ignored so we can set the signal to pending state. */
-    ksiginfo = kmalloc(sizeof(struct ksiginfo));
-    if (!ksiginfo)
-        return -ENOMEM;
-    *ksiginfo = (struct ksiginfo){
-        .siginfo.si_signo = signum,
-        .siginfo.si_code = param->si_code,
-        .siginfo.si_errno = param->si_errno,
-        .siginfo.si_tid = current_thread->id,
-        .siginfo.si_pid = curproc->pid,
-        .siginfo.si_uid = curproc->cred.uid,
-        .siginfo.si_addr = param->si_addr,
-        .siginfo.si_status = param->si_status,
-        .siginfo.si_value = param->si_value,
-    };
-    KSIGNAL_PENDQUEUE_INSERT_TAIL(sigs, ksiginfo);
-
-    if (thread != current_thread) {
-        if (sigs != &thread->sigs) {
-            while (ksig_lock(&thread->sigs.s_lock));
-            ksignal_exec_cond(thread, signum);
-            ksig_unlock(&thread->sigs.s_lock);
-        } else { /* Sigs already locked */
-            ksignal_exec_cond(thread, signum);
+        if (thread != current_thread) {
+            if (sigs != &thread->sigs) {
+                while (ksig_lock(&thread->sigs.s_lock));
+                ksignal_exec_cond(thread, signum);
+                ksig_unlock(&thread->sigs.s_lock);
+            } else { /* Sigs already locked */
+                ksignal_exec_cond(thread, signum);
+            }
         }
     }
 
@@ -1202,7 +1185,7 @@ int ksignal_syscall_exit(int retval)
          * The syscall was interrupted by a signal that will cause a
          * branch to a signal handler before returning to the caller.
          */
-        sw_stack_frame_t * sframe = get_usr_sframe(current_thread);
+        sw_stack_frame_t * sframe = get_usr_sframe(current_thread->sframe);
         sw_stack_frame_t caller;
 
         KASSERT(sframe != NULL, "Must have exitting sframe");

@@ -387,6 +387,9 @@ void _proc_free(struct proc_info * p)
         return;
     }
 
+    /* exit_ksiginfo isn't needed anymore */
+    kfree(p->exit_ksiginfo);
+
     /* Close all file descriptors and free files struct. */
     fs_fildes_close_all(p, 0);
     kfree(p->files);
@@ -499,7 +502,19 @@ void proc_thread_removed(pid_t pid, pthread_t thread_id)
     /* Go zombie if removed thread was main() */
     if (p->main_thread && (p->main_thread->id == thread_id)) {
         /* Propagate exit signal */
-        p->exit_signal = p->main_thread->exit_signal;
+        kpalloc(p->main_thread->exit_ksiginfo);
+        if (p->main_thread->exit_ksiginfo) {
+            sw_stack_frame_t * frame = get_usr_sframe(p->main_thread->sframe);
+
+            p->exit_ksiginfo = p->main_thread->exit_ksiginfo;
+
+            if (!frame) {
+                KERROR(KERROR_WARN, "Assuming SCHED_SFRAME_ABO for %d, %d\n",
+                       pid, thread_id);
+                frame = &p->main_thread->sframe[SCHED_SFRAME_ABO];
+            }
+            memcpy(&p->exit_frame, frame, sizeof(sw_stack_frame_t));
+        }
 
         p->main_thread = NULL;
         p->state = PROC_STATE_ZOMBIE;
@@ -793,10 +808,27 @@ static int sys_proc_wait(__user void * user_args)
     /*
      * Construct a status value.
      */
-    args.status = (child->exit_code & 0xff) << 8 | (child->exit_signal & 0177);
+    args.status = (child->exit_code & 0xff) << 8;
+    if (child->exit_ksiginfo) { /* if signaled. */
+        struct ksiginfo * ksig = child->exit_ksiginfo;
+
+        args.status |= ksig->siginfo.si_signo & 0177;
+
+        if (ksig->siginfo.si_code == CLD_DUMPED) {
+            if (core_dump_by_curproc(child) == 0) {
+                args.status |= 0200; /* for WCOREDUMP. */
+            } else {
+                ksig->siginfo.si_code = CLD_KILLED;
+            }
+        }
+    }
 
     if (args.options & WNOWAIT) {
-        /* Leave the proc around, available for later waits. */
+        /*
+         * Leave the proc around, available for later waits.
+         * Note that is a core dump was requested, it will be invoked
+         * again on each wait.
+         */
         copyout(&args, user_args, sizeof(args));
         return (uintptr_t)pid_child;
     }
@@ -808,14 +840,10 @@ static int sys_proc_wait(__user void * user_args)
     curproc->tms.tms_cutime += child->tms.tms_utime;
     curproc->tms.tms_cstime += child->tms.tms_stime;
 
-    if (child->exit_signal & KSIGNAL_EXIT_SIGNAL_CORE &&
-        core_dump_by_curproc(child) == 0) {
-        args.status |= 0200; /* for WCOREDUMP. */
-    }
 
     copyout(&args, user_args, sizeof(args));
 
-    /* Remove wait'd thread */
+    /* Remove the wait'd process */
     proc_remove(child);
 
     return (uintptr_t)pid_child;

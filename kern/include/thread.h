@@ -158,8 +158,8 @@ struct thread_info {
     mmu_pagetable_t * curr_mpt;     /*!< Current master pt (proc or kern) */
     __user struct _sched_tls_desc * tls_uaddr; /*!< Thread local storage. */
     intptr_t retval;                /*!< Return value of the thread. */
-    int exit_signal;                /*!< The signum that killed the thread.
-                                         (0 == wasn't killed) */
+    struct ksiginfo * exit_ksiginfo; /*!< The signal that killed the thread.
+                                          (NULL if wasn't killed) */
 
     /* Signals */
     struct signals sigs;            /*!< Signals. */

@@ -114,7 +114,9 @@ struct proc_info {
     char name[PROC_NAME_LEN];   /*!< Process name. */
     enum proc_state state;      /*!< Process state. */
     int priority;               /*!< We may want to prioritize processes too. */
-    int exit_code, exit_signal;
+    int exit_code;
+    struct ksiginfo * exit_ksiginfo; /*!< Set if killed with a signal. */
+    sw_stack_frame_t exit_frame; /*!< Registers copied if exit_ksignal set. */
     struct pgrp * pgrp;         /*!< Process group. */
     struct cred cred;           /*!< Process credentials. */
 

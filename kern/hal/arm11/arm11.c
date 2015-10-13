@@ -76,6 +76,26 @@ static void fork_init_stack_frame(struct thread_info * th)
 }
 DATA_SET(thread_fork_handlers, fork_init_stack_frame);
 
+sw_stack_frame_t * get_usr_sframe(sw_stack_frame_t * sframe_arr)
+{
+    /*
+     * We expect one of these stack frame is the stack frame returning to
+     * the user space. Order is somewhat important because we might be
+     * reading some old data and return a pointer to a wrong stack frame.
+     * RFE We must double check if there is any corner cases where a wrong
+     * stack frame is returned.
+     */
+    for (size_t i = 0; i < SCHED_SFRAME_ARR_SIZE; i++) {
+        sw_stack_frame_t * sframe;
+
+        sframe = &sframe_arr[i];
+        if ((sframe->psr & USER_PSR) == USER_PSR)
+            return sframe;
+    }
+
+    return NULL;
+}
+
 void svc_setretval(intptr_t retval)
 {
     current_thread->sframe[SCHED_SFRAME_SVC].r0 = retval;

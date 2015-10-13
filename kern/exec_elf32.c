@@ -238,18 +238,18 @@ static int load_section(struct elf_ctx * ctx, size_t sect_index,
 }
 
 #if defined(configEXEC_DEBUG)
-static void nt_version(Elf_Note * note, size_t align)
+static void nt_version(struct struct elf_note * note, size_t align)
 {
-    char * vendor = (char *)note + sizeof(Elf_Note);
+    char * vendor = (char *)note + sizeof(struct elf_note);
     char * value = vendor + note->n_namesz;
 
     KERROR(KERROR_DEBUG, "Vendor: %s, Value: %s\n", vendor, value);
 }
 #endif
 
-static size_t nt_stacksize(Elf_Note * note, size_t align)
+static size_t nt_stacksize(struct elf_note * note, size_t align)
 {
-    char * vendor = (char *)note + sizeof(Elf_Note);
+    char * vendor = (char *)note + sizeof(struct elf_note);
     uint32_t value = *(uint32_t *)(vendor + memalign_size(note->n_namesz,
                                                           align));
 #if defined(configEXEC_DEBUG)
@@ -285,7 +285,7 @@ static int load_notes(struct elf_ctx * ctx, size_t sect_index)
     }
 
     do {
-        Elf_Note * note = (Elf_Note *)(sect + off);
+        struct elf_note * note = (struct elf_note *)(sect + off);
         size_t note_size;
 
         if ((uintptr_t)note & (align - 1)) {
@@ -296,7 +296,8 @@ static int load_notes(struct elf_ctx * ctx, size_t sect_index)
             retval = -ENOEXEC;
             goto out;
         }
-        note_size = sizeof(Elf_Note) + memalign_size(note->n_namesz, align) +
+        note_size = sizeof(struct elf_note) +
+                    memalign_size(note->n_namesz, align) +
                     memalign_size(note->n_descsz, align);
         if (off + note_size > phdr->p_memsz) {
             retval = -ENOEXEC;

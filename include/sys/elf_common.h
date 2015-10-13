@@ -36,36 +36,100 @@
 #define _ELF_COMMON_H_ 1
 
 #include <stdint.h>
+#include <sys/types/_pid_t.h>
 
 /*
  * ELF definitions that are independent of architecture or word size.
  */
 
-/*
- * Note header.  The ".note" section contains an array of notes.  Each
+/**
+ * Note header.
+ * The ".note" section contains an array of notes.  Each
  * begins with this header, aligned to a word boundary.  Immediately
  * following the note header is n_namesz bytes of name, padded to the
  * next word boundary.  Then comes n_descsz bytes of descriptor, again
  * padded to a word boundary.  The values of n_namesz and n_descsz do
  * not include the padding.
  */
-
-typedef struct {
+struct elf_note {
     uint32_t n_namesz;      /*!< Length of name. */
     uint32_t n_descsz;      /*!< Length of descriptor. */
     uint32_t n_type;        /*!< Type of this note. */
-} Elf_Note;
+};
 
-/*
+/**
  * The header for GNU-style hash sections.
  */
-
 typedef struct {
     uint32_t gh_nbuckets;   /*!< Number of hash buckets. */
     uint32_t gh_symndx;     /*!< First visible symbol in .dynsym. */
     uint32_t gh_maskwords;  /*!< #maskwords used in bloom filter. */
     uint32_t gh_shift2;     /*!< Bloom filter shift count. */
 } Elf_GNU_Hash_Header;
+
+
+/* TODO These should be machine specific */
+typedef uintptr_t elf_gregset_t[18];
+typedef uintptr_t elf_fpregset_t[32];
+
+
+#include <sys/types/_timeval.h>
+#include <sys/types/_pid_t.h>
+#include <sys/types/_uid_t.h>
+#include <sys/types/_gid_t.h>
+
+struct elf_siginfo {
+    int si_signo;   /*!< Signal number. */
+    int si_code;    /*!< Signal code. */
+    int si_errno;   /*!< Errno. */
+};
+
+struct elf_timeval {
+    unsigned long tv_sec;
+    unsigned long tv_usec;
+};
+
+/**
+ * NT_PRSTATUS
+ */
+typedef struct elf_prstatus {
+    struct elf_siginfo pr_info;
+    short int pr_cursig;
+    unsigned long pr_sigpend;
+    unsigned long pr_sighold;
+    pid_t pr_pid;
+    pid_t pr_ppid;
+    pid_t pr_pgrp;
+    pid_t pr_sid;
+    struct elf_timeval pr_utime;
+    struct elf_timeval pr_stime;
+    struct elf_timeval pr_cutime;
+    struct elf_timeval pr_cstime;
+    elf_gregset_t pr_reg;
+    int pr_fpvalid;
+} prstatus_t;
+
+#define ELF_PRARGSZ     (80)
+
+/**
+ * NT_PRPSINFO
+ */
+typedef struct elf_prpsinfo {
+    char pr_state;  /*!< Numeric process state. */
+    char pr_sname;  /*!< char for pr_state. */
+    char pr_zomb;   /*!< Zombie. */
+    char pr_nice;   /*!< Nice value. */
+    unsigned long pr_flag; /*!< Flags. */
+    uid_t pr_uid;
+    gid_t pr_gid;
+    pid_t pr_pid;
+    pid_t pr_ppid;
+    pid_t pr_pgrp;
+    pid_t pr_sid;
+    char pr_fname[16];
+    char pr_psargs[ELF_PRARGSZ];
+} prpsinfo_t;
+
 
 /* Indexes into the e_ident array.  Keep synced with
    http://www.sco.com/developers/gabi/latest/ch4.eheader.html */
@@ -500,19 +564,21 @@ typedef struct {
 #define DF_1_NODEFLIB   0x00000800  /* Do not search default paths */
 
 /* Values for n_type.  Used in core files. */
-#define NT_PRSTATUS 1   /* Process status. */
-#define NT_FPREGSET 2   /* Floating point registers. */
-#define NT_PRPSINFO 3   /* Process state info. */
-#define NT_THRMISC  7   /* Thread miscellaneous info. */
-#define NT_PROCSTAT_PROC    8   /* Procstat proc data. */
-#define NT_PROCSTAT_FILES   9   /* Procstat files data. */
-#define NT_PROCSTAT_VMMAP   10  /* Procstat vmmap data. */
-#define NT_PROCSTAT_GROUPS  11  /* Procstat groups data. */
-#define NT_PROCSTAT_UMASK   12  /* Procstat umask data. */
-#define NT_PROCSTAT_RLIMIT  13  /* Procstat rlimit data. */
-#define NT_PROCSTAT_OSREL   14  /* Procstat osreldate data. */
-#define NT_PROCSTAT_PSSTRINGS   15  /* Procstat ps_strings data. */
-#define NT_PROCSTAT_AUXV    16  /* Procstat auxv data. */
+#define NT_PRSTATUS              1      /* Process status. */
+#define NT_FPREGSET              2      /* Floating point registers. */
+#define NT_PRPSINFO              3      /* Process state info. */
+#define NT_THRMISC               7      /* Thread miscellaneous info. */
+#define NT_PROCSTAT_PROC         8      /* Procstat proc data. */
+#define NT_PROCSTAT_FILES        9      /* Procstat files data. */
+#define NT_PROCSTAT_VMMAP       10      /* Procstat vmmap data. */
+#define NT_PROCSTAT_GROUPS      11      /* Procstat groups data. */
+#define NT_PROCSTAT_UMASK       12      /* Procstat umask data. */
+#define NT_PROCSTAT_RLIMIT      13      /* Procstat rlimit data. */
+#define NT_PROCSTAT_OSREL       14      /* Procstat osreldate data. */
+#define NT_PROCSTAT_PSSTRINGS   15      /* Procstat ps_strings data. */
+#define NT_PROCSTAT_AUXV        16      /* Procstat auxv data. */
+#define NT_ARM_VFP              0x400   /* ARM VFP/NEON registers */
+#define NT_ARM_TLS              0x401   /* ARM TLS register */
 
 /* Values for n_type.  Used in object files. */
 #define NT_VERSION      1   /* Version string. */

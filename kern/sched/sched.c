@@ -1016,6 +1016,7 @@ static void free_threads(uintptr_t arg)
 
     while (queue_pop(&CURRENT_CPU->thread_free_queue, &thread)) {
         thread_free_kstack(thread->kstack_region);
+        kfree(thread->exit_ksiginfo);
         kfree_lazy(thread);
     }
 }

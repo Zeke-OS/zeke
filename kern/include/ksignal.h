@@ -184,11 +184,6 @@ struct ksignal_param {
  * @}
  */
 
-/*
- * Additional signal codes OR'ed with exit_signal.
- */
-#define KSIGNAL_EXIT_SIGNAL_CORE    0x40000000 /*!< Hint to dump core. */
-
 struct thread_info;
 
 RB_PROTOTYPE(sigaction_tree, ksigaction, _entry, signum_comp);
