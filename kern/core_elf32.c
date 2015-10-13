@@ -103,7 +103,7 @@ static uint32_t uap2p_flags(struct buf * bp)
 
 static size_t put_note_header(void * note, size_t n_descsz, unsigned type)
 {
-    const char name[] = "CORE\0\0\0";
+    const char name[] = { 'C', 'O', 'R', 'E' };
     struct elf_note note_s = {
         .n_namesz = sizeof(name),
         .n_descsz = n_descsz,
@@ -204,7 +204,11 @@ static size_t build_note_prpsinfo(const struct proc_info * proc, void * note)
     };
 
     strlcpy(prpsinfo.pr_fname, proc->name, sizeof(prpsinfo.pr_fname));
-    prpsinfo.pr_psargs[0] = '\0'; /* TODO pr_psargs */
+    /*
+     * It's impossible to reliable get any args but at least we can provide
+     * the process name for GDB here.
+     */
+    strlcpy(prpsinfo.pr_psargs, proc->name, sizeof(prpsinfo.pr_psargs));
 
     bytes = put_note_header(note, sizeof(prpsinfo), NT_PRPSINFO);
     memcpy((uint8_t *)note + bytes, &prpsinfo, sizeof(prpsinfo));
@@ -221,7 +225,7 @@ static size_t build_notes(struct proc_info * proc, void ** notes_out)
     size_t off = 0;
     size_t (*note_builder[])(const struct proc_info * proc, void * note) = {
          build_note_prstatus,
-         /*build_note_prpsinfo,*/ /* TODO Breaks gdb */
+         build_note_prpsinfo,
     };
 
     /*
@@ -284,8 +288,8 @@ static int create_pheaders(const struct vm_mm_struct * mm, size_t notes_size,
         .p_paddr = 0,
         .p_filesz = notes_size,
         .p_memsz = 0,
-        .p_flags = PF_R,
-        .p_align = sizeof(uint32_t),
+        .p_flags = 0,
+        .p_align = 0,
     };
     offset += notes_size;
 
@@ -307,7 +311,7 @@ static int create_pheaders(const struct vm_mm_struct * mm, size_t notes_size,
             .p_filesz = region->b_bufsize,
             .p_memsz = region->b_bufsize,
             .p_flags = uap2p_flags(region),
-            .p_align = sizeof(uintptr_t),
+            .p_align = MMU_PGSIZE_COARSE,
         };
         offset += region->b_bufsize;
         hi++;

@@ -120,8 +120,8 @@ typedef struct elf_prpsinfo {
     char pr_zomb;   /*!< Zombie. */
     char pr_nice;   /*!< Nice value. */
     unsigned long pr_flag; /*!< Flags. */
-    uid_t pr_uid;
-    gid_t pr_gid;
+    short pr_uid;
+    short pr_gid;
     pid_t pr_pid;
     pid_t pr_ppid;
     pid_t pr_pgrp;
