@@ -76,7 +76,24 @@ __user void * init_stack_frame(struct _sched_pthread_create_args * thread_def,
  */
 sw_stack_frame_t * get_usr_sframe(thread_stack_frames_t * sframe_arr);
 
+/**
+ * Functions that can be calling while in a syscall.
+ * @{
+ */
+
+/**
+ * Get arguments of a syscall.
+ */
+void svc_getargs(uint32_t * type, uintptr_t * p);
+
+/**
+ * Set the return value of a system call.
+ */
 void svc_setretval(intptr_t retval);
+
+/**
+ * @}
+ */
 
 /**
  * Get interrupt disable state.

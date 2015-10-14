@@ -82,24 +82,25 @@ static const kernel_syscall_handler_t syscall_callmap[] = {
  */
 void syscall_handler(void)
 {
-    /* FIXME HW dependent. */
-    sw_stack_frame_t * sframe = &current_thread->sframe.s[SCHED_SFRAME_SVC];
-    const uint32_t type = (uint32_t)sframe->r0;
-    __user void * p = (__user void *)sframe->r1;
-    const uint32_t major = SYSCALL_MAJOR(type);
+    uint32_t type, major;
+    uintptr_t pu;
+    __user void * p;
     intptr_t retval;
 
     ksignal_syscall_enter();
+    svc_getargs(&type, &pu);
+    p = (__user void *)pu;
+    major = SYSCALL_MAJOR(type);
+
 
     if ((major >= num_elem(syscall_callmap)) || !syscall_callmap[major]) {
         const uint32_t minor = SYSCALL_MINOR(type);
 
         KERROR(KERROR_WARN,
-                 "syscall %u:%u not supported, (pid:%u, tid:%u, pc:%x)\n",
+                 "syscall %u:%u not supported, (pid:%u, tid:%u)\n",
                  major, minor,
                  (unsigned)curproc->pid,
-                 (unsigned)current_thread->id,
-                 sframe->pc);
+                 (unsigned)current_thread->id);
 
         set_errno(ENOSYS); /* Not supported. */
         retval = -1;

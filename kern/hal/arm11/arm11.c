@@ -98,6 +98,14 @@ sw_stack_frame_t * get_usr_sframe(thread_stack_frames_t * tsf)
     return NULL;
 }
 
+void svc_getargs(uint32_t * type, uintptr_t * p)
+{
+    sw_stack_frame_t * sframe = &current_thread->sframe.s[SCHED_SFRAME_SVC];
+
+    *type = sframe->r0;
+    *p = sframe->r1;
+}
+
 void svc_setretval(intptr_t retval)
 {
     current_thread->sframe.s[SCHED_SFRAME_SVC].r0 = retval;
