@@ -1237,25 +1237,25 @@ static int ramfs_set_filesize(ramfs_inode_t * file, off_t new_size)
 static struct ramfs_dp get_dp_by_offset(ramfs_inode_t * inode, off_t offset)
 {
     const blksize_t blksize = inode->in_blksize;
-    size_t bi; /* Block index. */
-    size_t di; /* Data index. */
-    char * block; /* Pointer to the block. */
     struct ramfs_dp dp = { .p = 0, .len = 0 }; /* Return value. */
 
-    if (offset > ((off_t)inode->in_blocks * (off_t)blksize))
-        goto out; /* Out of bounds. */
-    if (!inode->in.data)
-        goto out; /* No data array. */
+    if (/* Out of bounds check. */
+        !(offset >= ((off_t)inode->in_blocks * (off_t)blksize)) &&
+        /* Data array is set. */
+        inode->in.data) {
+        size_t bi; /* Block index. */
+        size_t di; /* Data index. */
+        char * block; /* Pointer to the block. */
 
-    bi = (size_t)((offset - (offset & ((off_t)(blksize - 1))))
-            / (off_t)blksize);
-    di = (size_t)(((size_t)offset) & (blksize - 1));
-    block = (char *)(inode->in.data[bi]->b_data);
+        bi = (size_t)((offset - (offset & ((off_t)(blksize - 1))))
+                / (off_t)blksize);
+        di = (size_t)(((size_t)offset) & (blksize - 1));
+        block = (char *)(inode->in.data[bi]->b_data);
 
-    /* Return value. */
-    dp.p = &(block[di]);
-    dp.len = blksize - di;
+        /* Return value. */
+        dp.p = &block[di];
+        dp.len = blksize - di;
+    }
 
-out:
     return dp;
 }
