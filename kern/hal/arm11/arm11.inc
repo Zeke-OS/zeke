@@ -97,7 +97,7 @@
 .endm
 
 /**
- * Exit from kernel mode (syscall)-
+ * Exit from kernel mode (syscall).
  */
 .macro exit_kernel
     bl      _thread_exit_kernel

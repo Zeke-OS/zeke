@@ -76,9 +76,7 @@ void mmu_prefetch_abort_handler(void)
     uint32_t ifar; /*!< Fault address */
     const uint32_t spsr = current_thread->sframe[SCHED_SFRAME_ABO].psr;
     const uint32_t lr = current_thread->sframe[SCHED_SFRAME_ABO].pc;
-#if 0
     const istate_t s_old = spsr & PSR_INT_MASK; /*!< Old interrupt state */
-#endif
     istate_t s_entry; /*!< Int state in handler entry. */
     struct thread_info * const thread = (struct thread_info *)current_thread;
     struct mmu_abo_param abo;
@@ -104,9 +102,7 @@ void mmu_prefetch_abort_handler(void)
     /* Handle this prefetch abort in pre-emptible state if possible. */
     if (ABO_WAS_USERMODE(spsr)) {
         s_entry = get_interrupt_state();
-#if 0
         set_interrupt_state(s_old);
-#endif
     }
 
     /*

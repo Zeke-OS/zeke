@@ -121,6 +121,27 @@ interrupt_sys:
     subs    pc, lr, #4      /* Return back (return address is PC+4) */
 
 
+@ Undefined Instruction handler
+    .globl interrupt_undef
+    .type  interrupt_undef,%function
+interrupt_undef:
+    pushcontext #2          /* A kind of abort too */
+    clrex
+
+    enter_kernel
+
+    cps     #0x1f           /* Change to system mode */
+    change_to_tkstack
+
+    bl  arm11_undef_handler
+
+    exit_kernel
+
+    cps #0x1b               /* Back to UNDEF mode */
+    popcontext #2           /* Pop context from SCHED_SFRAME_ABO */
+    subs    pc, lr, #0x4
+
+
 @ Prefetch Abort handler
     .globl  interrupt_pabt
     .type   interrupt_pabt,%function
@@ -140,6 +161,7 @@ interrupt_pabt:
     cps     #0x17           /* Back to ABT mode */
     popcontext #2           /* Pop context from SCHED_SFRAME_ABO */
     subs    pc, lr, #0x4
+
 
 @ Data Abort handler
     .globl  interrupt_dabt

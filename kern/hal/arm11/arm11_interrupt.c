@@ -53,7 +53,7 @@ __attribute__ ((naked, aligned(32))) static void interrupt_vectors(void)
      */
     __asm__ volatile (          /* Event                    Pri LnAddr Mode */
         "b bad_exception\n\t"   /* Reset                    1   8      abt  */
-        "b undef_handler\n\t"   /* Undefined instruction    6   0      und  */
+        "b interrupt_undef\n\t" /* Undefined instruction    6   0      und  */
         "b interrupt_svc\n\t"   /* Software interrupt       6   0      svc  */
         "b interrupt_pabt\n\t"  /* Prefetch abort           5   4      abt  */
         "b interrupt_dabt\n\t"  /* Data abort               2   8      abt  */
@@ -63,24 +63,26 @@ __attribute__ ((naked, aligned(32))) static void interrupt_vectors(void)
     );
 }
 
-__attribute__ ((naked)) void undef_handler(void)
+void arm11_undef_handler(void)
 {
     uintptr_t addr;
     uintptr_t lr;
     char buf[80];
 
-    __asm__ volatile (
-        "subs %[reg], r14, #4" : [reg] "=r" (addr) :: "r14");
-    __asm__ volatile (
-        "mov  %[reg], lr" : [reg] "=r" (lr) :: "lr");
+    /*
+     * RFE Verify these.
+     */
+    addr = current_thread->sframe[SCHED_SFRAME_ABO].pc;
+    lr = current_thread->sframe[SCHED_SFRAME_ABO].lr;
+
+    /*
+     * TODO Enable interrupts.
+     */
 
     ksprintf(buf, sizeof(buf), "Undefined instruction @ %x, lr: %x\n",
              addr, lr);
 
-    if (!current_thread ||
-        thread_flags_is_set(current_thread, SCHED_INSYS_FLAG) ||
-        current_thread->curr_mpt != &curproc->mm.mpt /* Probably in interrupt */
-       ) {
+    if (thread_flags_is_set(current_thread, SCHED_INSYS_FLAG)) {
         /*
          * TODO In some cases we could probably just kill the process/thread
          * and still maintain a stable system even though the issue was in
