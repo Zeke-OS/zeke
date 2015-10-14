@@ -525,9 +525,7 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
     }
 
     /* Init core specific stack frame for user space */
-    tp->tls_uaddr = init_stack_frame(thread_def,
-                                     &(tp->sframe[SCHED_SFRAME_SYS]),
-                                     priv);
+    tp->tls_uaddr = init_stack_frame(thread_def, &tp->sframe, priv);
 
     /*
      * Mark this thread as used.
@@ -631,9 +629,10 @@ pthread_t thread_fork(pid_t new_pid)
 
     /*
      * We wan't to return directly to the user space.
+     * FIXME HW dependent.
      */
-    memcpy(&new_thread->sframe[SCHED_SFRAME_SYS],
-           &old_thread->sframe[SCHED_SFRAME_SVC],
+    memcpy(&new_thread->sframe.s[SCHED_SFRAME_SYS],
+           &old_thread->sframe.s[SCHED_SFRAME_SVC],
            sizeof(sw_stack_frame_t));
 
     SET_FOREACH(fork_handler_p, thread_fork_handlers) {
@@ -798,8 +797,9 @@ void thread_yield(enum thread_eyield_strategy strategy)
 
 void * thread_get_curr_stackframe(size_t ind)
 {
+    /* FIXME HW dependent. */
     if (current_thread && (ind < SCHED_SFRAME_ARR_SIZE))
-        return &(current_thread->sframe[ind]);
+        return &(current_thread->sframe.s[ind]);
     return NULL;
 }
 

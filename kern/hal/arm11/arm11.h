@@ -129,6 +129,23 @@ typedef struct {
     uint32_t pc;    /*!< r15/lr return point */
 } sw_stack_frame_t;
 
+/**
+ * Stack frames.
+ * @{
+ */
+#define SCHED_SFRAME_SYS        0   /*!< Sys int/Scheduling stack frame. */
+#define SCHED_SFRAME_SVC        1   /*!< Syscall stack frame. */
+#define SCHED_SFRAME_ABO        2   /*!< Stack frame for aborts. */
+#define SCHED_SFRAME_ARR_SIZE   3
+
+typedef struct thread_stack_frames {
+    sw_stack_frame_t s[SCHED_SFRAME_ARR_SIZE];
+} thread_stack_frames_t;
+/**
+ * @}
+ */
+
+
 /** Other registers requiring sw backups */
 struct tls_regs {
     /* TODO Floating-point registers */

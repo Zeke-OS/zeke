@@ -72,8 +72,8 @@ void arm11_undef_handler(void)
     /*
      * RFE Verify these.
      */
-    addr = current_thread->sframe[SCHED_SFRAME_ABO].pc;
-    lr = current_thread->sframe[SCHED_SFRAME_ABO].lr;
+    addr = current_thread->sframe.s[SCHED_SFRAME_ABO].pc;
+    lr = current_thread->sframe.s[SCHED_SFRAME_ABO].lr;
 
     /*
      * TODO Enable interrupts.

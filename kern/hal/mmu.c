@@ -246,7 +246,8 @@ void mmu_abo_dump(const struct mmu_abo_param * restrict abo)
            (int32_t)abo->thread->id,
            proc_name,
            (int32_t)thread_flags_is_set(abo->thread, SCHED_INSYS_FLAG));
-    stack_dump(abo->thread->sframe[SCHED_SFRAME_ABO]);
+    /* FIXME Get the sframe from HAL */
+    stack_dump(abo->thread->sframe.s[SCHED_SFRAME_ABO]);
 }
 
 /**

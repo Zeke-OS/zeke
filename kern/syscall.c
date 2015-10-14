@@ -82,7 +82,8 @@ static const kernel_syscall_handler_t syscall_callmap[] = {
  */
 void syscall_handler(void)
 {
-    sw_stack_frame_t * sframe = &current_thread->sframe[SCHED_SFRAME_SVC];
+    /* FIXME HW dependent. */
+    sw_stack_frame_t * sframe = &current_thread->sframe.s[SCHED_SFRAME_SVC];
     const uint32_t type = (uint32_t)sframe->r0;
     __user void * p = (__user void *)sframe->r1;
     const uint32_t major = SYSCALL_MAJOR(type);

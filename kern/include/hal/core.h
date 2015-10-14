@@ -68,13 +68,13 @@ extern volatile size_t flag_kernel_tick;
  * @return Returns the TLS address.
  */
 __user void * init_stack_frame(struct _sched_pthread_create_args * thread_def,
-                               sw_stack_frame_t * sframe, int priv);
+                               thread_stack_frames_t * tsf, int priv);
 
 
 /**
  * Get a pointer to the stack frame that will return to user space.
  */
-sw_stack_frame_t * get_usr_sframe(sw_stack_frame_t * sframe_arr);
+sw_stack_frame_t * get_usr_sframe(thread_stack_frames_t * sframe_arr);
 
 void svc_setretval(intptr_t retval);
 
@@ -105,6 +105,8 @@ void stack_dump(sw_stack_frame_t frame);
  * and the following types:
  * + hw_stack_frame_t - is a struct that describes hardware backed stack frame.
  * + sw_stack_frame_t - is a struct that describes software backed stack frame.
+ * + thread_stack_frames_t - is a type defining a hardware specific stack frame
+ *   for threads.
  */
 
 #endif /* HAL_CORE_H */

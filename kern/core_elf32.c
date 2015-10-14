@@ -159,11 +159,12 @@ static size_t thread_prstatus(const struct proc_info * proc,
 
     }
 
-    sf = get_usr_sframe(thread->sframe);
+    sf = get_usr_sframe(&thread->sframe);
     if (!sf) {
         KERROR(KERROR_INFO,
                "get_usr_sframe() failed, assuming SCHED_SFRAME_ABO\n");
-        sf = &thread->sframe[SCHED_SFRAME_ABO];
+        /* FIXME HW dependant */
+        sf = &thread->sframe.s[SCHED_SFRAME_ABO];
     }
     elf_gregset_t gregs = {
         sf->r0,

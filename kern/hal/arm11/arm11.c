@@ -43,8 +43,9 @@
 volatile uint32_t flag_kernel_tick = 0;
 
 __user void * init_stack_frame(struct _sched_pthread_create_args * thread_def,
-                               sw_stack_frame_t * sframe, int priv)
+                               thread_stack_frames_t * tsf, int priv)
 {
+    sw_stack_frame_t * sframe = &tsf->s[SCHED_SFRAME_SYS];
     uint32_t stack_start = ((uint32_t)(thread_def->stack_addr)
             + thread_def->stack_size
             - sizeof(struct _sched_tls_desc));
@@ -71,12 +72,14 @@ __user void * init_stack_frame(struct _sched_pthread_create_args * thread_def,
  */
 static void fork_init_stack_frame(struct thread_info * th)
 {
-    th->sframe[SCHED_SFRAME_SYS].r0  = 0; /* retval of fork() */
-    th->sframe[SCHED_SFRAME_SYS].pc += 4;
+    sw_stack_frame_t * sframe = &th->sframe.s[SCHED_SFRAME_SYS];
+
+    sframe->r0  = 0; /* retval of fork() */
+    sframe->pc += 4;
 }
 DATA_SET(thread_fork_handlers, fork_init_stack_frame);
 
-sw_stack_frame_t * get_usr_sframe(sw_stack_frame_t * sframe_arr)
+sw_stack_frame_t * get_usr_sframe(thread_stack_frames_t * tsf)
 {
     /*
      * We expect one of these stack frame is the stack frame returning to
@@ -86,9 +89,8 @@ sw_stack_frame_t * get_usr_sframe(sw_stack_frame_t * sframe_arr)
      * stack frame is returned.
      */
     for (size_t i = 0; i < SCHED_SFRAME_ARR_SIZE; i++) {
-        sw_stack_frame_t * sframe;
+        sw_stack_frame_t * sframe = &tsf->s[i];
 
-        sframe = &sframe_arr[i];
         if ((sframe->psr & USER_PSR) == USER_PSR)
             return sframe;
     }
@@ -98,7 +100,7 @@ sw_stack_frame_t * get_usr_sframe(sw_stack_frame_t * sframe_arr)
 
 void svc_setretval(intptr_t retval)
 {
-    current_thread->sframe[SCHED_SFRAME_SVC].r0 = retval;
+    current_thread->sframe.s[SCHED_SFRAME_SVC].r0 = retval;
 }
 
 istate_t get_interrupt_state(void)

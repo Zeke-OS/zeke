@@ -95,8 +95,8 @@ void mmu_data_abort_handler(void)
 {
     uint32_t fsr; /*!< Fault status */
     uint32_t far; /*!< Fault address */
-    const uint32_t spsr = current_thread->sframe[SCHED_SFRAME_ABO].psr;
-    const uint32_t lr = current_thread->sframe[SCHED_SFRAME_ABO].pc;
+    const uint32_t spsr = current_thread->sframe.s[SCHED_SFRAME_ABO].psr;
+    const uint32_t lr = current_thread->sframe.s[SCHED_SFRAME_ABO].pc;
     const istate_t s_old = spsr & PSR_INT_MASK; /*!< Old interrupt state */
     istate_t s_entry; /*!< Int state in handler entry. */
     struct thread_info * const thread = (struct thread_info *)current_thread;

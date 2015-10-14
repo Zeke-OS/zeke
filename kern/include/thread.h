@@ -46,14 +46,6 @@
 #include <hal/mmu.h>
 #include <ksignal.h>
 
-/*
- * Stack frames
- */
-#define SCHED_SFRAME_SYS        0   /*!< Sys int/Scheduling stack frame. */
-#define SCHED_SFRAME_SVC        1   /*!< Syscall stack frame. */
-#define SCHED_SFRAME_ABO        2   /*!< Stack frame for aborts. */
-#define SCHED_SFRAME_ARR_SIZE   3
-
 /**
  * Thread state.
  */
@@ -152,7 +144,7 @@ struct thread_info {
     int wait_tim;                   /*!< Reference to a timeout timer. */
     int lock_tim;                   /*!< Timer used by klocks. */
 
-    sw_stack_frame_t sframe[SCHED_SFRAME_ARR_SIZE];
+    thread_stack_frames_t sframe;
     struct tls_regs tls_regs;
     struct buf * kstack_region;     /*!< Thread kernel stack region. */
     mmu_pagetable_t * curr_mpt;     /*!< Current master pt (proc or kern) */
