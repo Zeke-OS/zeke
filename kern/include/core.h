@@ -38,7 +38,7 @@
 
 struct proc;
 
-int core_dump_by_curproc(struct proc_info * child_proc);
+int core_dump_by_curproc(struct proc_info * proc);
 int core_dump2file(struct proc_info * proc, file_t * file);
 
 #endif /* CORE_H */

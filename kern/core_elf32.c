@@ -40,6 +40,10 @@
 #include <kmalloc.h>
 #include <proc.h>
 
+#define SKIP_REGION(_region) \
+    ((_region)->b_flags & B_NOCORE || (_region)->b_data == 0 || \
+     (_region)->b_mmu.vaddr == 0)
+
 static off_t write2file(file_t * file, void * p, size_t size)
 {
     vnode_t * vn = file->vnode;
@@ -119,15 +123,18 @@ static size_t put_note_header(void * note, size_t n_descsz, unsigned type)
 /**
  * Build prstatus note.
  * @param proc is a pointer to the process.
+ * @param thread is a pointer to the thread.
  * @param note is a pointer to the current note slot.
  * @return Returns the number of bytes written.
  */
-static size_t build_note_prstatus(const struct proc_info * proc, void * note)
+static size_t thread_prstatus(const struct proc_info * proc,
+                              struct thread_info * thread,
+                              void * note)
 {
     size_t bytes = 0;
     prstatus_t prstatus = {
         .pr_cursig = 0,
-        .pr_pid = proc->pid,
+        .pr_pid = thread->id, /* No separate thread IDs in Linux. */
         .pr_ppid = 0, /* TODO */
         .pr_pgrp = proc->pgrp->pg_id,
         .pr_sid = proc->pgrp->pg_session->s_leader,
@@ -139,8 +146,8 @@ static size_t build_note_prstatus(const struct proc_info * proc, void * note)
     /*
      * Restore the last stack frame and signal status.
      */
-    if (proc->exit_ksiginfo) {
-        siginfo_t * siginfo = &proc->exit_ksiginfo->siginfo;
+    if (thread->exit_ksiginfo) {
+        siginfo_t * siginfo = &thread->exit_ksiginfo->siginfo;
         struct elf_siginfo einfo = {
             .si_signo = siginfo->si_signo,
             .si_code = siginfo->si_code,
@@ -150,38 +157,59 @@ static size_t build_note_prstatus(const struct proc_info * proc, void * note)
         prstatus.pr_cursig = siginfo->si_signo;
         prstatus.pr_info = einfo;
 
-        sf = &proc->exit_frame;
-    } else if (proc->main_thread) {
-        sf = get_usr_sframe(proc->main_thread->sframe);
-    } /* else impossible to recover registers. */
-    if (sf) {
-        elf_gregset_t gregs = {
-            sf->r0,
-            sf->r1,
-            sf->r2,
-            sf->r3,
-            sf->r4,
-            sf->r5,
-            sf->r6,
-            sf->r7,
-            sf->r8,
-            sf->r9,
-            sf->r10,
-            sf->r11,
-            sf->r12,
-            sf->sp,
-            sf->lr,
-            sf->pc,
-            sf->psr,
-            -1,
-        };
-
-        memcpy(&prstatus.pr_reg, gregs, sizeof(elf_gregset_t));
     }
+
+    sf = get_usr_sframe(thread->sframe);
+    if (!sf) {
+        KERROR(KERROR_INFO,
+               "get_usr_sframe() failed, assuming SCHED_SFRAME_ABO\n");
+        sf = &thread->sframe[SCHED_SFRAME_ABO];
+    }
+    elf_gregset_t gregs = {
+        sf->r0,
+        sf->r1,
+        sf->r2,
+        sf->r3,
+        sf->r4,
+        sf->r5,
+        sf->r6,
+        sf->r7,
+        sf->r8,
+        sf->r9,
+        sf->r10,
+        sf->r11,
+        sf->r12,
+        sf->sp,
+        sf->lr,
+        sf->pc,
+        sf->psr,
+        -1,
+    };
+    memcpy(&prstatus.pr_reg, gregs, sizeof(elf_gregset_t));
 
     bytes = put_note_header(note, sizeof(prstatus), NT_PRSTATUS);
     memcpy((uint8_t *)note + bytes, &prstatus, sizeof(prstatus));
     bytes += sizeof(prstatus);
+
+    return bytes;
+}
+
+/**
+ * Iterate through threads and construct prstatus struct for each thread.
+ */
+static size_t build_note_prstatus(const struct proc_info * proc, void * note)
+{
+    struct thread_info * thread;
+    struct thread_info * thread_it = NULL;
+    size_t bytes = 0;
+
+    while ((thread = proc_iterate_threads(proc, &thread_it))) {
+        size_t off;
+
+        off = thread_prstatus(proc, thread, note);
+        note = (char *)note + off;
+        bytes += off;
+    }
 
     return bytes;
 }
@@ -228,15 +256,7 @@ static size_t build_notes(struct proc_info * proc, void ** notes_out)
          build_note_prpsinfo,
     };
 
-    /*
-     * TODO Support all threads
-     * Thread statuses can't be recovered if signaled, because thread structs
-     * are destroyed before wait() that will invoke the dump.
-     */
-
     /* TODO
-     * - proc status
-     * - thread status
      * - siginfo_t
      * - tls registers
      */
@@ -267,7 +287,7 @@ static int create_pheaders(const struct vm_mm_struct * mm, size_t notes_size,
     for (i = 0; i < mm->nr_regions; i++) {
         struct buf * region = (*mm->regions)[i];
 
-        if (!(region->b_flags & B_NOCORE) && region->b_mmu.vaddr != 0)
+        if (!SKIP_REGION(region))
             nr_core_regions++;
     }
 
@@ -300,7 +320,7 @@ static int create_pheaders(const struct vm_mm_struct * mm, size_t notes_size,
         struct buf * region = (*mm->regions)[i];
         struct elf32_phdr * phdr = phdr_arr + hi;
 
-        if (region->b_flags & B_NOCORE || region->b_mmu.vaddr == 0)
+        if (SKIP_REGION(region))
             continue;
 
         *phdr = (struct elf32_phdr){
@@ -327,6 +347,9 @@ static off_t dump_regions(file_t * file, const struct vm_mm_struct * mm)
 
     for (int i = 0; i < mm->nr_regions; i++) {
         struct buf * region = (*mm->regions)[i];
+
+        if (SKIP_REGION(region))
+            continue;
 
         err = write2file(file, (void *)region->b_data, region->b_bufsize);
         if (err != region->b_bufsize)

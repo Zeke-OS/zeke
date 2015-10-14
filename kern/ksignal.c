@@ -74,6 +74,7 @@
 #include <sys/sysctl.h>
 #include <sys/tree.h>
 #include <sys/types.h>
+#include <core.h>
 #include <kerror.h>
 #include <kmalloc.h>
 #include <ksched.h>
@@ -752,16 +753,27 @@ static int ksignal_queue_sig(struct signals * sigs, int signum,
     if ((action.ks_action.sa_handler == SIG_DFL) &&
             (action.ks_action.sa_flags & SA_KILL) &&
             !sigismember(&sigs->s_wait, signum)) {
+        struct proc_info * proc_owner;
+
 #if defined(configKSIGNAL_DEBUG)
         KERROR(KERROR_DEBUG, "Thread %u will be terminated by signum %s\n",
                thread->id, ksignal_signum2str(signum));
 #endif
 
-        /* In case of SA_KILL we must change the si_code. */
-        ksiginfo->siginfo.si_code = (action.ks_action.sa_flags & SA_CORE) ?
-            CLD_DUMPED : CLD_KILLED;
-
+        ksiginfo->siginfo.si_code = CLD_KILLED;
         thread->exit_ksiginfo = ksiginfo;
+
+        /*
+         * RFE Should we kill the process regardles of which thread it was?
+         * RFE Should we block all threads?
+         */
+        proc_owner = proc_ref(thread->pid_owner, PROC_NOT_LOCKED);
+        proc_unref(proc_owner); /* Won't be freed anyway. */
+        if (proc_owner && (action.ks_action.sa_flags & SA_CORE) &&
+            proc_owner->main_thread == thread) {
+            if (core_dump_by_curproc(proc_owner) == 0)
+                ksiginfo->siginfo.si_code = CLD_DUMPED;
+        }
 
         /*
          * If the thread is in a system call we should wait until it's exiting

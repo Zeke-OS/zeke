@@ -39,7 +39,7 @@
 #include <libkern.h>
 #include <proc.h>
 
-int core_dump_by_curproc(struct proc_info * child_proc)
+int core_dump_by_curproc(struct proc_info * proc)
 {
     char msghead[40];
     char core_path[80]; /* TODO get this from somewhere maybe? */
@@ -50,11 +50,11 @@ int core_dump_by_curproc(struct proc_info * child_proc)
     int err;
 
     ksprintf(msghead, sizeof(msghead), "%s(%d) by %d:",
-             __func__, child_proc->pid, curproc->pid);
+             __func__, proc->pid, curproc->pid);
 
     KERROR(KERROR_DEBUG, "%s Core dump requested\n", msghead);
 
-    parsenames(child_proc->name, NULL, &fname); /* It's usually a path. */
+    parsenames(proc->name, NULL, &fname); /* It's usually a path. */
     ksprintf(core_path, sizeof(core_path), "/tmp/%s.core", fname);
     kfree(fname);
 
@@ -84,11 +84,11 @@ int core_dump_by_curproc(struct proc_info * child_proc)
         goto out;
     }
 
-    core_dump2file(child_proc, file);
+    core_dump2file(proc, file);
 
     err = 0;
 out:
-    if (fd != -1)
+    if (fd >= 0)
         fs_fildes_ref(curproc->files, fd, -1);
     if (file)
         fs_fildes_close(curproc, fd);

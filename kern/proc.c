@@ -40,7 +40,6 @@
 #include <syscall.h>
 #include <unistd.h>
 #include <buf.h>
-#include <core.h>
 #include <exec.h>
 #include <fs/procfs.h>
 #include <kerror.h>
@@ -475,8 +474,8 @@ const char * proc_state2str(enum proc_state state)
     return proc_state_names[state];
 }
 
-struct thread_info * proc_iterate_threads(struct proc_info * proc,
-        struct thread_info ** thread_it)
+struct thread_info * proc_iterate_threads(const struct proc_info * proc,
+                                          struct thread_info ** thread_it)
 {
     if (*thread_it == NULL) {
         *thread_it = proc->main_thread;
@@ -502,18 +501,9 @@ void proc_thread_removed(pid_t pid, pthread_t thread_id)
     /* Go zombie if removed thread was main() */
     if (p->main_thread && (p->main_thread->id == thread_id)) {
         /* Propagate exit signal */
-        kpalloc(p->main_thread->exit_ksiginfo);
         if (p->main_thread->exit_ksiginfo) {
-            sw_stack_frame_t * frame = get_usr_sframe(p->main_thread->sframe);
-
+            kpalloc(p->main_thread->exit_ksiginfo);
             p->exit_ksiginfo = p->main_thread->exit_ksiginfo;
-
-            if (!frame) {
-                KERROR(KERROR_WARN, "Assuming SCHED_SFRAME_ABO for %d, %d\n",
-                       pid, thread_id);
-                frame = &p->main_thread->sframe[SCHED_SFRAME_ABO];
-            }
-            memcpy(&p->exit_frame, frame, sizeof(sw_stack_frame_t));
         }
 
         p->main_thread = NULL;
@@ -813,21 +803,14 @@ static int sys_proc_wait(__user void * user_args)
         struct ksiginfo * ksig = child->exit_ksiginfo;
 
         args.status |= ksig->siginfo.si_signo & 0177;
-
         if (ksig->siginfo.si_code == CLD_DUMPED) {
-            if (core_dump_by_curproc(child) == 0) {
-                args.status |= 0200; /* for WCOREDUMP. */
-            } else {
-                ksig->siginfo.si_code = CLD_KILLED;
-            }
+            args.status |= 0200; /* for WCOREDUMP. */
         }
     }
 
     if (args.options & WNOWAIT) {
         /*
          * Leave the proc around, available for later waits.
-         * Note that is a core dump was requested, it will be invoked
-         * again on each wait.
          */
         copyout(&args, user_args, sizeof(args));
         return (uintptr_t)pid_child;

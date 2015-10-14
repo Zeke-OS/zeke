@@ -116,7 +116,6 @@ struct proc_info {
     int priority;               /*!< We may want to prioritize processes too. */
     int exit_code;
     struct ksiginfo * exit_ksiginfo; /*!< Set if killed with a signal. */
-    sw_stack_frame_t exit_frame; /*!< Registers copied if exit_ksignal set. */
     struct pgrp * pgrp;         /*!< Process group. */
     struct cred cred;           /*!< Process credentials. */
 
@@ -195,8 +194,8 @@ enum proc_lock_mode {
  * @param thread_it should be initialized to NULL.
  * @return next thread or NULL.
  */
-struct thread_info * proc_iterate_threads(struct proc_info * proc,
-        struct thread_info ** thread_it);
+struct thread_info * proc_iterate_threads(const struct proc_info * proc,
+                                          struct thread_info ** thread_it);
 
 /**
  * Remove thread from a process.
