@@ -81,8 +81,6 @@ interrupt_sys:
     pushcontext #0          /* Push context to SCHED_SFRAME_SYS */
     clrex
 
-    /* Suspend process and attach kernel master page table */
-    attach_kernel_mptable
     bl      _thread_suspend
 
     /* Handler IRQ */

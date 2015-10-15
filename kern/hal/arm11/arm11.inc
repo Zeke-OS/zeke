@@ -33,7 +33,7 @@
  */
 
 /**
- * Save thread context.
+ * Save thread context and switch to kernel master page table.
  * @param ind is the stack frame index.
  */
 .macro pushcontext ind
@@ -42,6 +42,12 @@
     sub     sp, sp, #60
     mrs     r5, spsr        /* Preserve SPSR */
     mov     r6, lr          /* Preserve lr */
+
+    /* Attach kernel master page table */
+    ldr     r0, =mmu_pagetable_master
+    bl      mmu_attach_pagetable
+
+    /* Push preserved registers to the thread stack frame */
     mov     r0, \ind
     bl      thread_get_curr_stackframe
     cmp     r0, #0
@@ -81,18 +87,9 @@
 .endm
 
 /**
-* Attach kernel master page table.
-*/
-.macro attach_kernel_mptable
-    ldr     r0, =mmu_pagetable_master
-    bl      mmu_attach_pagetable
-.endm
-
-/**
  * Enter to kernel mode (syscall).
  */
 .macro enter_kernel
-    attach_kernel_mptable
     bl      _thread_enter_kernel
 .endm
 
