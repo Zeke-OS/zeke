@@ -125,7 +125,6 @@ void mmu_data_abort_handler(void)
      * same kind.
      */
 
-    /* TODO Handle DAB in preemptible state. */
     /* Handle this data abort in pre-emptible state if possible. */
     if (ABO_WAS_USERMODE(spsr)) {
         s_entry = get_interrupt_state();

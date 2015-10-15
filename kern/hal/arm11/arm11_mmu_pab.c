@@ -98,7 +98,6 @@ void mmu_prefetch_abort_handler(void)
         panic("Thread not set on PAB");
     }
 
-    /* TODO Handle PAB in preemptible state. */
     /* Handle this prefetch abort in pre-emptible state if possible. */
     if (ABO_WAS_USERMODE(spsr)) {
         s_entry = get_interrupt_state();
