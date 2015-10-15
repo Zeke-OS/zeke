@@ -92,7 +92,7 @@ interrupt_sys:
 
     /* Set Context ID to 0 (as we need ASID to be 0 in kernel mode) */
 1:  mov     r0, #0
-    bl      cpu_set_cid
+    bl      arm11_set_cid
 
     /* Run scheduler */
     bl      sched_handler
@@ -112,7 +112,8 @@ interrupt_sys:
 
     /* Set process Context ID to the value of current PID */
     mov     r0, r5
-    bl      cpu_set_cid
+    bl      arm11_set_cid
+    bl      arm11_set_current_thread_stackframe
 
 /* Load/Restore context */
 2:  popcontext #0           /* Pop context from SCHED_SFRAME_SYS */

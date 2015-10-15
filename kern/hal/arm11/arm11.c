@@ -99,16 +99,38 @@ sw_stack_frame_t * get_usr_sframe(thread_stack_frames_t * tsf)
 }
 
 /**
- * Get a stack frame of the current thread.
+ * Set the stack frame of the current thread to a privileged register.
+ * This is an optimization that makes fetching the stack frame address
+ * of the current thread a little bit faster.
+ */
+void arm11_set_current_thread_stackframe(void)
+{
+    sw_stack_frame_t * sfarr;
+
+    sfarr = (!current_thread) ? NULL : current_thread->sframe.s;
+
+    __asm__ volatile (
+        "MCR    p15, 0, %[sfarr], c13, c0, 4"
+        : : [sfarr]"r" (sfarr)
+    );
+}
+
+/**
+ * Get a specific stack frame of the current thread.
  * @param ind is the stack frame index.
  * @return  Returns an address to the stack frame of the current thread;
  *          Or NULL if current_thread is not set.
  */
 void * arm11_get_current_thread_stackframe(size_t ind)
 {
-    if (current_thread && (ind < SCHED_SFRAME_ARR_SIZE))
-        return &(current_thread->sframe.s[ind]);
-    return NULL;
+    sw_stack_frame_t * sfarr;
+
+    __asm__ volatile (
+        "MRC    p15, 0, %[sfarr], c13, c0, 4"
+        : [sfarr]"=r" (sfarr)
+    );
+
+    return (sfarr) ? &sfarr[ind] : NULL;
 }
 
 void svc_getargs(uint32_t * type, uintptr_t * p)
@@ -169,7 +191,12 @@ void cpu_invalidate_caches(void)
     );
 }
 
-void cpu_set_cid(uint32_t cid)
+/**
+ * Set Context ID.
+ * Should be only called from ARM11 specific interrupt handlers.
+ * @param cid new Context ID.
+ */
+void arm11_set_cid(uint32_t cid)
 {
     const int rd = 0;
     uint32_t curr_cid;

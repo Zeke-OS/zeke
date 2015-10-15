@@ -69,6 +69,10 @@ void arm11_undef_handler(void)
     uintptr_t lr;
     char buf[80];
 
+    if (!current_thread) {
+        panic("current thread not set");
+    }
+
     /*
      * RFE Verify these.
      */

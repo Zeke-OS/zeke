@@ -154,12 +154,6 @@ struct tls_regs {
 
 void cpu_invalidate_caches(void);
 
-/**
- * Set Context ID.
- * @param cid new Context ID.
- */
-void cpu_set_cid(uint32_t cid);
-
 uint32_t core_get_user_tls(void);
 void core_set_user_tls(uint32_t value);
 __user struct _sched_tls_desc * core_get_tls_addr(void);

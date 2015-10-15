@@ -47,12 +47,14 @@
     ldr     r0, =mmu_pagetable_master
     bl      mmu_attach_pagetable
 
-    /* Push preserved registers to the thread stack frame */
+    /* Get the stack frame */
     mov     r0, \ind
     bl      arm11_get_current_thread_stackframe
     cmp     r0, #0
     addeq   sp, sp, #60     /* Clear stack as we are skipping... */
     beq     1f              /* push if there is no stack frame. */
+
+    /* Push preserved registers to the thread stack frame */
     str     r5, [r0]        /* Store SPSR */
     add     r0, r0, #68     /* to the begining of the frame. */
     stmdb   r0!, {r6}       /* Push lr */
