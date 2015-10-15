@@ -145,7 +145,7 @@ struct thread_info {
     int lock_tim;                   /*!< Timer used by klocks. */
 
     thread_stack_frames_t sframe;
-    struct tls_regs tls_regs;
+    struct tls_regs tls_regs;       /*!< Thread local registers. */
     struct buf * kstack_region;     /*!< Thread kernel stack region. */
     mmu_pagetable_t * curr_mpt;     /*!< Current master pt (proc or kern) */
     __user struct _sched_tls_desc * tls_uaddr; /*!< Thread local storage. */
@@ -337,14 +337,6 @@ void thread_alarm_rele(int timer_id);
  * Yield turn.
  */
 void thread_yield(enum thread_eyield_strategy strategy);
-
-/**
- * Get a stack frame of the current thread.
- * @param ind is the stack frame index.
- * @return  Returns an address to the stack frame of the current thread;
- *          Or NULL if current_thread is not set.
- */
-void * thread_get_curr_stackframe(size_t ind);
 
 /**
  * Set thread scheduling policy.

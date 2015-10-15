@@ -148,8 +148,8 @@ typedef struct thread_stack_frames {
 
 /** Other registers requiring sw backups */
 struct tls_regs {
-    /* TODO Floating-point registers */
-    uint32_t utls; /* cp15 c13 2 */
+    /* TODO Add floating-point registers */
+    uint32_t utls; /* User rw: cp15 c13 2 */
 };
 
 void cpu_invalidate_caches(void);

@@ -98,6 +98,19 @@ sw_stack_frame_t * get_usr_sframe(thread_stack_frames_t * tsf)
     return NULL;
 }
 
+/**
+ * Get a stack frame of the current thread.
+ * @param ind is the stack frame index.
+ * @return  Returns an address to the stack frame of the current thread;
+ *          Or NULL if current_thread is not set.
+ */
+void * arm11_get_current_thread_stackframe(size_t ind)
+{
+    if (current_thread && (ind < SCHED_SFRAME_ARR_SIZE))
+        return &(current_thread->sframe.s[ind]);
+    return NULL;
+}
+
 void svc_getargs(uint32_t * type, uintptr_t * p)
 {
     sw_stack_frame_t * sframe = &current_thread->sframe.s[SCHED_SFRAME_SVC];

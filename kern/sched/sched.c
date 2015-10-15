@@ -795,14 +795,6 @@ void thread_yield(enum thread_eyield_strategy strategy)
      */
 }
 
-void * thread_get_curr_stackframe(size_t ind)
-{
-    /* FIXME HW dependent. */
-    if (current_thread && (ind < SCHED_SFRAME_ARR_SIZE))
-        return &(current_thread->sframe.s[ind]);
-    return NULL;
-}
-
 int thread_set_policy(pthread_t thread_id, unsigned policy)
 {
     struct thread_info * thread = thread_lookup(thread_id);

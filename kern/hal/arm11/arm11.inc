@@ -49,7 +49,7 @@
 
     /* Push preserved registers to the thread stack frame */
     mov     r0, \ind
-    bl      thread_get_curr_stackframe
+    bl      arm11_get_current_thread_stackframe
     cmp     r0, #0
     addeq   sp, sp, #60     /* Clear stack as we are skipping... */
     beq     1f              /* push if there is no stack frame. */
@@ -72,7 +72,7 @@
  */
 .macro popcontext ind
     mov     r0, \ind
-    bl      thread_get_curr_stackframe
+    bl      arm11_get_current_thread_stackframe
     mov     lr, r0
     add     lr, #4
 
