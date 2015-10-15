@@ -35,8 +35,12 @@
 #ifndef _ELF_COMMON_H_
 #define _ELF_COMMON_H_ 1
 
+#include <machine/regs.h>
 #include <stdint.h>
+#include <sys/types/_gid_t.h>
 #include <sys/types/_pid_t.h>
+#include <sys/types/_timeval.h>
+#include <sys/types/_uid_t.h>
 
 /*
  * ELF definitions that are independent of architecture or word size.
@@ -67,16 +71,6 @@ typedef struct {
     uint32_t gh_shift2;     /*!< Bloom filter shift count. */
 } Elf_GNU_Hash_Header;
 
-
-/* TODO These should be machine specific */
-typedef uintptr_t elf_gregset_t[18];
-typedef uintptr_t elf_fpregset_t[32];
-
-
-#include <sys/types/_timeval.h>
-#include <sys/types/_pid_t.h>
-#include <sys/types/_uid_t.h>
-#include <sys/types/_gid_t.h>
 
 struct elf_siginfo {
     int si_signo;   /*!< Signal number. */

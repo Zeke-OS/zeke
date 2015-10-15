@@ -33,6 +33,7 @@
 #include <signal.h>
 
 const char * const sys_siglist[] = {
+    "None",
     "Hangup",
     "Interrupt",
     "Quit",
