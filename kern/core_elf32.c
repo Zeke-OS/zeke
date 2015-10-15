@@ -247,6 +247,35 @@ static size_t build_note_prpsinfo(const struct proc_info * proc, void * note)
     return bytes;
 }
 
+static size_t build_note_siginfo(const struct proc_info * proc, void * note)
+{
+    size_t bytes = 0;
+
+    if (proc->main_thread && proc->main_thread->exit_ksiginfo) {
+        siginfo_t siginfo = proc->main_thread->exit_ksiginfo->siginfo;
+
+        bytes = put_note_header(note, sizeof(siginfo), NT_SIGINFO);
+        memcpy((uint8_t *)note + bytes, &siginfo, sizeof(siginfo));
+        bytes += sizeof(siginfo);
+    }
+
+    return bytes;
+}
+
+static size_t build_note_prcred(const struct proc_info * proc, void * note)
+{
+    size_t bytes;
+
+    bytes = put_note_header(note, sizeof(struct cred), NT_PRCRED);
+    memcpy((uint8_t *)note + bytes, &proc->cred, sizeof(struct cred));
+    bytes += sizeof(struct cred);
+
+    return bytes;
+}
+
+/**
+ * Add the full siginfo delivered to the main_thread if applicable.
+ */
 static size_t build_notes(struct proc_info * proc, void ** notes_out)
 {
     void * notes;
@@ -255,10 +284,11 @@ static size_t build_notes(struct proc_info * proc, void ** notes_out)
     size_t (*note_builder[])(const struct proc_info * proc, void * note) = {
          build_note_prstatus,
          build_note_prpsinfo,
+         build_note_siginfo,
+         build_note_prcred,
     };
 
     /* TODO
-     * - siginfo_t
      * - tls registers
      */
 

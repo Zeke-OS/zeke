@@ -562,15 +562,8 @@ typedef struct elf_prpsinfo {
 #define NT_FPREGSET              2      /* Floating point registers. */
 #define NT_PRPSINFO              3      /* Process state info. */
 #define NT_THRMISC               7      /* Thread miscellaneous info. */
-#define NT_PROCSTAT_PROC         8      /* Procstat proc data. */
-#define NT_PROCSTAT_FILES        9      /* Procstat files data. */
-#define NT_PROCSTAT_VMMAP       10      /* Procstat vmmap data. */
-#define NT_PROCSTAT_GROUPS      11      /* Procstat groups data. */
-#define NT_PROCSTAT_UMASK       12      /* Procstat umask data. */
-#define NT_PROCSTAT_RLIMIT      13      /* Procstat rlimit data. */
-#define NT_PROCSTAT_OSREL       14      /* Procstat osreldate data. */
-#define NT_PROCSTAT_PSSTRINGS   15      /* Procstat ps_strings data. */
-#define NT_PROCSTAT_AUXV        16      /* Procstat auxv data. */
+#define NT_PRCRED               14      /* Copy of struct cred. */
+#define NT_SIGINFO              0x53494749
 #define NT_ARM_VFP              0x400   /* ARM VFP/NEON registers */
 #define NT_ARM_TLS              0x401   /* ARM TLS register */
 
