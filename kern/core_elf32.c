@@ -37,6 +37,7 @@
 #include <sys/elf32.h>
 #include <buf.h>
 #include <fs/fs.h>
+#include <hal/sysinfo.h>
 #include <kmalloc.h>
 #include <proc.h>
 
@@ -135,11 +136,11 @@ static size_t thread_prstatus(const struct proc_info * proc,
     prstatus_t prstatus = {
         .pr_cursig = 0,
         .pr_pid = thread->id, /* No separate thread IDs in Linux. */
-        .pr_ppid = 0, /* TODO */
+        .pr_ppid = (proc->inh.parent) ? proc->inh.parent->pid : 0,
         .pr_pgrp = proc->pgrp->pg_id,
         .pr_sid = proc->pgrp->pg_session->s_leader,
         /* TODO set times */
-        .pr_fpvalid = 0, /* TODO */
+        .pr_fpvalid = (sysinfo.hfp) ? 1 : 0,
     };
     const sw_stack_frame_t * sf = NULL;
 
@@ -227,7 +228,7 @@ static size_t build_note_prpsinfo(const struct proc_info * proc, void * note)
         .pr_uid = proc->cred.uid, /* RFE or e? */
         .pr_gid = proc->cred.gid,
         .pr_pid = proc->pid,
-        .pr_ppid = 0, /* TODO */
+        .pr_ppid = (proc->inh.parent) ? proc->inh.parent->pid : 0,
         .pr_pgrp = proc->pgrp->pg_id,
         .pr_sid = proc->pgrp->pg_session->s_leader,
     };
@@ -248,7 +249,6 @@ static size_t build_note_prpsinfo(const struct proc_info * proc, void * note)
 
 static size_t build_notes(struct proc_info * proc, void ** notes_out)
 {
-    /* TODO Support all threads */
     void * notes;
     uint8_t * note;
     size_t off = 0;
@@ -262,6 +262,9 @@ static size_t build_notes(struct proc_info * proc, void ** notes_out)
      * - tls registers
      */
 
+    /*
+     * RFE How to determine how much memory is needed?
+     */
     notes = kzalloc(2048);
     note = (uint8_t *)notes;
     for (size_t i = 0; i < num_elem(note_builder); i++) {
