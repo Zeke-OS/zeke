@@ -38,6 +38,12 @@
 #include <hal/sysinfo.h>
 
 sysinfo_t sysinfo = {
+    .hfp =
+#ifdef configUSE_HFP
+        1,
+#else
+        0,
+#endif
     .mem.size = configDYNMEM_SAFE_SIZE,
     .console = "/dev/ttyS0",
     .root = configROOTFS_PATH " " configROOTFS_NAME,
@@ -46,20 +52,20 @@ sysinfo_t sysinfo = {
 /* TODO HW_MODEL */
 
 SYSCTL_INT(_hw, HW_BYTEORDER, byteorder, CTLFLAG_RD, 0, _BYTE_ORDER,
-              "Byte order");
+           "Byte order");
 
 /* TODO HW_NCPU */
 
-SYSCTL_INT(_hw, HW_PHYSMEM, physmem, CTLFLAG_RD, &sysinfo.mem.size, 0,
-           "Total memory");
+SYSCTL_UINT(_hw, HW_PHYSMEM, physmem, CTLFLAG_RD, &sysinfo.mem.size, 0,
+            "Total memory");
 
 /* TODO HW_USERMEM */
 
-SYSCTL_INT(_hw, HW_PAGESIZE, pagesize, CTLFLAG_RD, 0, MMU_PGSIZE_COARSE,
-           "Page size");
+SYSCTL_UINT(_hw, HW_PAGESIZE, pagesize, CTLFLAG_RD, 0, MMU_PGSIZE_COARSE,
+            "Page size");
 
-SYSCTL_INT(_hw, HW_FLOATINGPT, floatingpt, CTLFLAG_RD, 0, configHAVE_HFP,
-           "Hardware floating point");
+SYSCTL_UINT(_hw, HW_FLOATINGPT, floatingpt, CTLFLAG_RD, &sysinfo.hfp, 0,
+            "Hardware floating point");
 
 /* TODO HW_MACHINE_ARCH */
 

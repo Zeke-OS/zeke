@@ -45,6 +45,7 @@
 typedef struct {
     unsigned int fw;    /*!< Firmware version on platforms like rpi. */
     unsigned int mtype; /*!< ARM Linux Machine Type. */
+    unsigned int hfp;   /*!< Hardware Floating Point support in kernel. */
     struct meminfo {
         size_t start;
         size_t size;
