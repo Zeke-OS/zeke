@@ -1058,6 +1058,16 @@ void _thread_clear_insys_flag(void)
     thread_flags_clear(current_thread, SCHED_INSYS_FLAG);
 }
 
+void _thread_set_inabo_flag(void)
+{
+    thread_flags_set(current_thread, SCHED_INABO_FLAG);
+}
+
+void _thread_clear_inabo_flag(void)
+{
+    thread_flags_clear(current_thread, SCHED_INABO_FLAG);
+}
+
 /**
  * Suspend thread, enter scheduler.
  * Called by interrupt handler.

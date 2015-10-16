@@ -422,7 +422,7 @@ static int thread_stack_push(struct thread_info * thread, const void * src,
 
     KASSERT(size > 0, "size should be greater than zero.\n");
 
-    sframe = get_usr_sframe(&thread->sframe);
+    sframe = get_usr_sframe(thread);
     if (!sframe)
         return -EINVAL;
 
@@ -454,7 +454,7 @@ static int thread_stack_pop(struct thread_info * thread, void * buf,
 
     KASSERT(size > 0, "size should be greater than zero.\n");
 
-    sframe = get_usr_sframe(&thread->sframe);
+    sframe = get_usr_sframe(thread);
     if (!sframe)
         return -EINVAL;
 
@@ -483,7 +483,7 @@ static int push_stack_frame(int signum,
                             const siginfo_t * siginfo)
 {
     const uintptr_t usigret = curproc->usigret;
-    sw_stack_frame_t * tsfp = get_usr_sframe(&current_thread->sframe);
+    sw_stack_frame_t * tsfp = get_usr_sframe(current_thread);
     void * old_thread_sp; /* this is used to revert signal handling state
                            * and return to normal execution. */
 
@@ -1189,7 +1189,7 @@ int ksignal_syscall_exit(int retval)
          * The syscall was interrupted by a signal that will cause a
          * branch to a signal handler before returning to the caller.
          */
-        sw_stack_frame_t * sframe = get_usr_sframe(&current_thread->sframe);
+        sw_stack_frame_t * sframe = get_usr_sframe(current_thread);
         sw_stack_frame_t caller;
 
         KASSERT(sframe != NULL, "Must have exitting sframe");

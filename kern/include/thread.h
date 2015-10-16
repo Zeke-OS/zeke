@@ -78,24 +78,21 @@ enum {
     SCHED_DETACH_FLAG   = 1 << 1,
     /**
     * Thread is in a system call.
-    * If set the thread is in a sysctem call; Otherwise in user mode.
-    * This flag can be used for counting process times or as a state information
-    * for non-critical purposes.
-    * @note The flag doesn't exactly tell if a thread is in a sys mode because
-    *       it's set somewhat late during entering to a system call at which
-    *       point the system is already interruptible.
-    *
     */
     SCHED_INSYS_FLAG    = 1 << 2,
     /**
+     * Thread is in abort mode.
+     */
+    SCHED_INABO_FLAG    = 1 << 3,
+    /**
     * Thread is a kworker.
     */
-    SCHED_KWORKER_FLAG  = 1 << 3,
+    SCHED_KWORKER_FLAG  = 1 << 4,
     /**
      * Immortal internal kernel thread.
      * A thread cannot be killed if this flag is set.
      */
-    SCHED_INTERNAL_FLAG = 1 << 4,
+    SCHED_INTERNAL_FLAG = 1 << 5,
 };
 
 /**

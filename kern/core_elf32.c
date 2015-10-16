@@ -160,7 +160,7 @@ static size_t thread_prstatus(const struct proc_info * proc,
 
     }
 
-    sf = get_usr_sframe(&thread->sframe);
+    sf = get_usr_sframe(thread);
     if (!sf) {
         KERROR(KERROR_INFO,
                "get_usr_sframe() failed, assuming SCHED_SFRAME_ABO\n");

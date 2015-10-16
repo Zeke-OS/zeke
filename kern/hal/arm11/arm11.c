@@ -75,24 +75,32 @@ static void fork_init_stack_frame(struct thread_info * th)
     sw_stack_frame_t * sframe = &th->sframe.s[SCHED_SFRAME_SYS];
 
     sframe->r0  = 0; /* retval of fork() */
-    sframe->pc += 4;
+    sframe->pc += 4; /* ctx switch will substract 4 */
 }
 DATA_SET(thread_fork_handlers, fork_init_stack_frame);
 
-sw_stack_frame_t * get_usr_sframe(thread_stack_frames_t * tsf)
+static inline int is_psr_mode(uint32_t psr, uint32_t mode)
 {
-    /*
-     * We expect one of these stack frame is the stack frame returning to
-     * the user space. Order is somewhat important because we might be
-     * reading some old data and return a pointer to a wrong stack frame.
-     * RFE We must double check if there is any corner cases where a wrong
-     * stack frame is returned.
-     */
-    for (size_t i = 0; i < SCHED_SFRAME_ARR_SIZE; i++) {
-        sw_stack_frame_t * sframe = &tsf->s[i];
+    return (psr & mode) == mode;
+}
 
-        if ((sframe->psr & USER_PSR) == USER_PSR)
-            return sframe;
+sw_stack_frame_t * get_usr_sframe(struct thread_info * thread)
+{
+    sw_stack_frame_t * tsf = thread->sframe.s;
+
+    /*
+     * We hope one of these stack frames can be reliably recognized as
+     * the stack frame returning to the user mode, otherwise we are pretty
+     * much screwed.
+     */
+    if (thread_flags_is_set(thread, SCHED_INSYS_FLAG) &&
+        is_psr_mode(tsf[SCHED_SFRAME_SVC].psr, PSR_MODE_USER)) {
+        return &tsf[SCHED_SFRAME_SVC];
+    } else if (thread_flags_is_set(thread, SCHED_INABO_FLAG) &&
+               is_psr_mode(tsf[SCHED_SFRAME_SVC].psr, PSR_MODE_USER)) {
+        return &tsf[SCHED_SFRAME_ABO];
+    } else if (is_psr_mode(tsf[SCHED_SFRAME_SYS].psr, PSR_MODE_USER)) {
+        return &tsf[SCHED_SFRAME_SYS];
     }
 
     return NULL;

@@ -151,12 +151,14 @@ interrupt_pabt:
     clrex
 
     enter_kernel
+    bl _thread_set_inabo_flag
 
     cps     #0x1f           /* Change to system mode */
     change_to_tkstack
 
     bl      mmu_prefetch_abort_handler
 
+    bl _thread_clear_inabo_flag
     exit_kernel
 
     cps     #0x17           /* Back to ABT mode */
@@ -172,12 +174,14 @@ interrupt_dabt:
     clrex
 
     enter_kernel
+    bl _thread_set_inabo_flag
 
     cps     #0x1f           /* Change to system mode */
     change_to_tkstack
     
     bl      mmu_data_abort_handler
 
+    bl _thread_clear_inabo_flag
     exit_kernel
 
     cps     #0x17           /* Back to ABT mode */

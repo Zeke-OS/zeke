@@ -70,11 +70,11 @@ extern volatile size_t flag_kernel_tick;
 __user void * init_stack_frame(struct _sched_pthread_create_args * thread_def,
                                thread_stack_frames_t * tsf, int priv);
 
-
+struct thread_info;
 /**
  * Get a pointer to the stack frame that will return to user space.
  */
-sw_stack_frame_t * get_usr_sframe(thread_stack_frames_t * sframe_arr);
+sw_stack_frame_t * get_usr_sframe(struct thread_info * thread);
 
 /**
  * Functions that can be calling while in a syscall.
