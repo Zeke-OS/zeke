@@ -51,6 +51,7 @@ interrupt_svc:
 
     /* Attach kernel master page table */
     enter_kernel
+    bl _thread_set_insys_flag
     /* We could actually panic here if attach failed */
 
     cps     #0x1f           /* Change to system mode */
@@ -64,6 +65,7 @@ interrupt_svc:
      * This will also set the correct return value. */
     bl      syscall_handler
 
+    bl _thread_clear_insys_flag
     exit_kernel             /* Attach process master page table */
     cpsid   aif             /* Disable interrupts to prevent stack */
                             /* corruption */

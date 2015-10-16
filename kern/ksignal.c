@@ -221,6 +221,9 @@ static void ksignal_exec_cond(struct thread_info * thread, int signum)
     const int blocked = ksignal_isblocked(&thread->sigs, signum);
     const int swait = sigismember(&thread->sigs.s_wait, signum);
 
+    if (thread_state_get(thread) == THREAD_STATE_INIT)
+        return; /* Shouldn't wakeup a thread that is still in init state. */
+
     if (blocked && swait)
         thread_release(thread->id);
     else if (!blocked)
@@ -1167,17 +1170,6 @@ int ksignal_set_ksigaction(struct signals * sigs, struct ksigaction * action)
     return 0;
 }
 
-void ksignal_syscall_enter(void)
-{
-    struct signals * sigs = &current_thread->sigs;
-
-    while (ksig_lock(&sigs->s_lock));
-
-    thread_flags_set(current_thread, SCHED_INSYS_FLAG);
-
-    ksig_unlock(&sigs->s_lock);
-}
-
 int ksignal_syscall_exit(int retval)
 {
     struct signals * sigs = &current_thread->sigs;
@@ -1212,8 +1204,6 @@ int ksignal_syscall_exit(int retval)
 
         KSIGFLAG_CLEAR(sigs, KSIGFLAG_SIGHANDLER);
     }
-
-    thread_flags_clear(current_thread, SCHED_INSYS_FLAG);
 
     ksig_unlock(&sigs->s_lock);
     return retval;

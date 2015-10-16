@@ -292,15 +292,6 @@ int ksignal_reset_ksigaction(struct signals * sigs, int signum);
 int ksignal_set_ksigaction(struct signals * sigs, struct ksigaction * action);
 
 /**
- * Enter to a syscall.
- * This function must be called before entering a syscall (and is called in
- * syscall.c). This function also sets SCHED_INSYS_FLAG for the current thread
- * because its synchronization with ksignal system is somewhat important to
- * determine the correct behavior.
- */
-void ksignal_syscall_enter(void);
-
-/**
  * Exit from a syscall.
  * Determines if there is any postponed actions to be performed due to received
  * signals before we can return to the caller in user mode.

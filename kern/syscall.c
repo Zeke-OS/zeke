@@ -87,7 +87,6 @@ void syscall_handler(void)
     __user void * p;
     intptr_t retval;
 
-    ksignal_syscall_enter();
     svc_getargs(&type, &pu);
     p = (__user void *)pu;
     major = SYSCALL_MAJOR(type);

@@ -1014,7 +1014,10 @@ static void free_threads(uintptr_t arg)
 }
 IDLE_TASK(free_threads, 0);
 
-/* Threads csw ****************************************************************/
+/* Threads csw *****************************************************************
+ * These functions are and should be called from HAL, probably from a hw
+ * specific interrupt handler.
+ */
 
 /**
  * Enter kernel mode.
@@ -1037,6 +1040,22 @@ mmu_pagetable_t * _thread_exit_kernel(void)
     current_thread->curr_mpt = next;
 
     return next;
+}
+
+/**
+ * Set insys flag for the current thread.
+ * This function should be called right after _thread_enter_kernel().
+ * Setting this flag correctly is very important for ksignal to
+ * work correctly.
+ */
+void _thread_set_insys_flag(void)
+{
+    thread_flags_set(current_thread, SCHED_INSYS_FLAG);
+}
+
+void _thread_clear_insys_flag(void)
+{
+    thread_flags_clear(current_thread, SCHED_INSYS_FLAG);
 }
 
 /**
