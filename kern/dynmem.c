@@ -274,12 +274,12 @@ void dynmem_free_region(void * addr)
         return;
     }
 
+    /* Get lock to dynmem_region */
+    mtx_lock(&dynmem_region_lock);
+
     i = (size_t)addr - DYNMEM_START;
     dp = dynmemmap + i;
     rc = dp->refcount;
-
-    /* Get lock to dynmem_region */
-    mtx_lock(&dynmem_region_lock);
 
     /* Check if there is any references */
     if (rc > 1) {
