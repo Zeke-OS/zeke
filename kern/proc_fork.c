@@ -445,7 +445,7 @@ pid_t proc_fork(void)
                "Call thread_fork() to get a new main thread for the fork.\n");
 #endif
         pthread_t new_tid = thread_fork(new_proc->pid);
-        if (new_tid < 0) {
+        if (new_tid <= 0) {
 #ifdef configPROC_DEBUG
             KERROR(KERROR_DEBUG, "thread_fork() failed\n");
 #endif
@@ -458,18 +458,10 @@ pid_t proc_fork(void)
             new_proc->main_thread = thread_lookup(new_tid);
             new_proc->main_thread->pid_owner = new_proc->pid;
             new_proc->main_thread->curr_mpt = &new_proc->mm.mpt;
-        } else {
-            /*
-             * This should never happen but in case it still happens
-             * we just exit with an error code.
-             */
-            new_proc->main_thread = NULL;
-            new_proc->state = PROC_STATE_ZOMBIE;
-            retval = -EAGAIN;
         }
     } else {
 #ifdef configPROC_DEBUG
-        KERROR(KERROR_DEBUG, "No main thread to fork.\n");
+        KERROR(KERROR_DEBUG, "No thread to fork.\n");
 #endif
         new_proc->main_thread = NULL;
     }
