@@ -121,9 +121,10 @@ int __kinit__ vralloc_init(void)
         /* No need to unlock big lock */
         return -ENOMEM;
     }
-    mtx_unlock(&vr_big_lock);
 
     last_vreg = reg;
+    mtx_unlock(&vr_big_lock);
+
 
     _bio_init();
 
@@ -175,10 +176,11 @@ static struct vregion * vreg_alloc_node(size_t count)
 static int get_iblocks(size_t * iblock, size_t pcount,
                        struct vregion ** vreg_ret)
 {
-    struct vregion * vreg = last_vreg;
+    struct vregion * vreg;
     int retval;
 
     mtx_lock(&vr_big_lock);
+    vreg = last_vreg;
 
 retry_vra:
     do {
@@ -215,6 +217,8 @@ static void vreg_free_callback(struct kobj * obj)
     struct vregion * vreg;
     size_t iblock;
 
+    mtx_lock(&vr_big_lock);
+
     /*
      * Get vreg pointer and iblock no.
      */
@@ -224,23 +228,17 @@ static void vreg_free_callback(struct kobj * obj)
     bitmap_block_update(vreg->map, 0, iblock, bcount);
     vreg->count -= bcount;
 
-    mtx_lock(&vr_big_lock);
     vmem_used -= bp->b_bufsize; /* Update stats */
-    mtx_unlock(&vr_big_lock);
 
-    kfree(bp);
-    /* Don't use bp beoynd this point */
-
-    mtx_lock(&vr_big_lock);
-    if (vreg->count <= 0 && vreg == last_vreg) {
-        /**
-         * Free the vregion node.
-         */
+    /* Free the vregion node? */
+    if (vreg->count == 0 && vreg == last_vreg) {
         /* Update stats */
         vmem_all -= vreg->size * (4 * 8) * MMU_PGSIZE_COARSE;
 
         /* Free node */
         vrlist->remove(vrlist, vreg);
+
+        last_vreg = NULL;
         mtx_unlock(&vr_big_lock);
 
         dynmem_free_region((void *)vreg->kaddr);
@@ -248,6 +246,8 @@ static void vreg_free_callback(struct kobj * obj)
     } else {
         mtx_unlock(&vr_big_lock);
     }
+
+    kfree(bp);
 }
 
 struct buf * geteblk(size_t size)
@@ -377,6 +377,7 @@ void allocbuf(struct buf * bp, size_t size)
         return;
 
     mtx_lock(&bp->lock);
+    mtx_lock(&vr_big_lock);
 
     if (blockdiff > 0) {
         const size_t sblock = VREG_PCOUNT((bp->b_data - vreg->kaddr)) + bcount;
@@ -408,8 +409,6 @@ void allocbuf(struct buf * bp, size_t size)
                 /* Free blocks from old vreg */
                 bitmap_block_update(vreg->map, 0, iblock, bcount);
                 vreg = nvreg;
-
-                mtx_unlock(&bp->lock);
             }
         }
     } else {
@@ -429,6 +428,7 @@ void allocbuf(struct buf * bp, size_t size)
     bp->b_mmu.num_pages = pcount;
 
     mtx_unlock(&bp->lock);
+    mtx_unlock(&vr_big_lock);
 }
 
 void vrfree(struct buf * bp)
