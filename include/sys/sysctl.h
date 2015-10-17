@@ -275,6 +275,7 @@ struct sysctl_oid {
 #define SYSCTL_IN(r, p, l)  (r->newfunc)(r, p, l)
 #define SYSCTL_OUT(r, p, l) (r->oldfunc)(r, p, l)
 
+int sysctl_handle_bool(SYSCTL_HANDLER_ARGS);
 int sysctl_handle_int(SYSCTL_HANDLER_ARGS);
 int sysctl_handle_long(SYSCTL_HANDLER_ARGS);
 int sysctl_handle_32(SYSCTL_HANDLER_ARGS);
@@ -373,40 +374,67 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
     SYSCTL_OID(parent, nbr, name, CTLTYPE_NODE|(access),                \
     (void*)&SYSCTL_NODE_CHILDREN(parent, name), 0, handler, "N", descr)
 
-/* Oid for a string.  len can be 0 to indicate '\0' termination. */
+/**
+ * Oid for a string.
+ * @param len can be 0 to indicate '\0' termination.
+ */
 #define SYSCTL_STRING(parent, nbr, name, access, arg, len, descr)   \
         SYSCTL_OID(parent, nbr, name, CTLTYPE_STRING|(access),      \
                 arg, len, sysctl_handle_string, "A", descr)
 
-/* Oid for an int.  If ptr is NULL, val is returned. */
+/**
+ * Oid for a boolean.
+ */
+#define SYSCTL_BOOL(parent, nbr, name, access, ptr, val, descr) \
+        SYSCTL_ASSERT_TYPE(INT, ptr, parent, name);             \
+        SYSCTL_OID(parent, nbr, name,                           \
+            CTLTYPE_INT | (access),                             \
+            ptr, val, sysctl_handle_bool, "B", descr)
+
+/**
+ * Oid for an int.
+ * If ptr is NULL, val is returned.
+ */
 #define SYSCTL_INT(parent, nbr, name, access, ptr, val, descr)  \
         SYSCTL_ASSERT_TYPE(INT, ptr, parent, name);             \
         SYSCTL_OID(parent, nbr, name,                           \
             CTLTYPE_INT | (access),                             \
             ptr, val, sysctl_handle_int, "I", descr)
 
-/* Oid for an unsigned int.  If ptr is NULL, val is returned. */
+/**
+ * Oid for an unsigned int.
+ * If ptr is NULL, val is returned.
+ */
 #define SYSCTL_UINT(parent, nbr, name, access, ptr, val, descr) \
         SYSCTL_ASSERT_TYPE(UINT, ptr, parent, name);            \
         SYSCTL_OID(parent, nbr, name,                           \
             CTLTYPE_UINT | (access),                            \
             ptr, val, sysctl_handle_int, "IU", descr)
 
-/* Oid for a long.  The pointer must be non NULL. */
+/**
+ * Oid for a long.
+ * The pointer must be non NULL.
+ */
 #define SYSCTL_LONG(parent, nbr, name, access, ptr, val, descr) \
         SYSCTL_ASSERT_TYPE(LONG, ptr, parent, name);            \
         SYSCTL_OID(parent, nbr, name,                           \
             CTLTYPE_LONG | (access),                            \
             ptr, val, sysctl_handle_long, "L", descr)
 
-/* Oid for an unsigned long.  The pointer must be non NULL. */
+/**
+ * Oid for an unsigned long.
+ * The pointer must be non NULL.
+ */
 #define SYSCTL_ULONG(parent, nbr, name, access, ptr, val, descr)    \
         SYSCTL_ASSERT_TYPE(ULONG, ptr, parent, name);               \
         SYSCTL_OID(parent, nbr, name,                               \
             CTLTYPE_ULONG | (access),                               \
             ptr, val, sysctl_handle_long, "LU", descr)
 
-/* Oid for a 64-bit unsigned counter(9).  The pointer must be non NULL. */
+/**
+ * Oid for a 64-bit unsigned counter(9).
+ * The pointer must be non NULL.
+ */
 #define SYSCTL_COUNTER_U64(parent, nbr, name, access, ptr, val, descr)  \
         SYSCTL_ASSERT_TYPE(UINT64, ptr, parent, name);                  \
         SYSCTL_OID(parent, nbr, name,                                   \

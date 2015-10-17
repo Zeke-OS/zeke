@@ -90,9 +90,9 @@
 #define KSIG_LOCK_FLAGS (MTX_OPT_DINT)
 
 static int kern_logsigexit = 1;
-SYSCTL_INT(_kern, KERN_LOGSIGEXIT, logsigexit, CTLFLAG_RW,
-           &kern_logsigexit, 0,
-           "Log processes quitting on abnormal signals to syslog(3)");
+SYSCTL_BOOL(_kern, KERN_LOGSIGEXIT, logsigexit, CTLFLAG_RW,
+            &kern_logsigexit, 0,
+            "Log processes quitting on abnormal signals to syslog(3)");
 
 /*
  * Signal default actions.

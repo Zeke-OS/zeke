@@ -226,7 +226,7 @@ int sysctl_find_oid(int * name, unsigned int namelen, struct sysctl_oid ** noid,
 
         indx++;
         if ((oid->oid_kind & CTLTYPE) == CTLTYPE_NODE) {
-            if (oid->oid_handler != NULL || indx == namelen) {
+            if (oid->oid_handler != NULL || indx == (int)namelen) {
                 *noid = oid;
                 if (nindx != NULL)
                     *nindx = indx;
@@ -237,7 +237,7 @@ int sysctl_find_oid(int * name, unsigned int namelen, struct sysctl_oid ** noid,
                 return 0;
             }
             lsp = SYSCTL_CHILDREN(oid);
-        } else if (indx == namelen) {
+        } else if (indx == (int)namelen) {
             *noid = oid;
             if (nindx != NULL)
                 *nindx = indx;
@@ -556,6 +556,43 @@ static SYSCTL_NODE(_sysctl, _CTLMAGIC_OIDDESCR, oiddescr,
                    sysctl_sysctl_oiddescr, "");
 
 /**
+ * Boolean handler.
+ * Two cases:
+ * + a variable:  point arg1 at it.
+ * + a constant:  pass it in arg2.
+ */
+int sysctl_handle_bool(SYSCTL_HANDLER_ARGS)
+{
+    int tmpout, error = 0;
+
+    /*
+     * Attempt to get a coherent snapshot by making a copy of the data.
+     */
+    if (arg1)
+        tmpout = !!*(int *)arg1;
+    else
+        tmpout = !!arg2;
+    error = SYSCTL_OUT(req, &tmpout, sizeof(int));
+
+    if (error || !req->newptr)
+        goto out;
+
+    if (!arg1) {
+        error = -EPERM;
+    } else {
+        int new_val;
+
+        error = SYSCTL_IN(req, &new_val, sizeof(int));
+        if (!error) {
+            *(int *)arg1 = !!new_val;
+        }
+    }
+
+out:
+    return error;
+}
+
+/**
  * Integer handler.
  * Handle an int, signed or unsigned.
  * Two cases:
@@ -720,7 +757,7 @@ retry:
     if (error || !req->newptr)
         goto out;
 
-    if ((req->newlen - req->newidx) >= arg2) {
+    if ((req->newlen - req->newidx) >= (uintptr_t)arg2) {
         error = -EINVAL;
     } else {
         arg2 = (req->newlen - req->newidx);

@@ -54,8 +54,8 @@
 static int cow_enabled = COW_ENABLED_DEFAULT;
 static pid_t proc_lastpid;  /*!< last allocated pid. */
 
-SYSCTL_INT(_kern, OID_AUTO, cow_enabled, CTLFLAG_RW,
-           &cow_enabled, 0, "Enable copy on write for proc");
+SYSCTL_BOOL(_kern, OID_AUTO, cow_enabled, CTLFLAG_RW,
+            &cow_enabled, 0, "Enable copy on write for proc");
 
 static int clone_code_region(struct proc_info * new_proc,
                              struct proc_info * old_proc)
