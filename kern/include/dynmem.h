@@ -64,7 +64,7 @@ struct dynmem_reserved_area {
  * @param size      Region size in 1MB blocks.
  * @param ap        Access permission.
  * @param control   Control settings.
- * @return  Address to the allocated region. Returns NULL if out of memory.
+ * @returns Address to the allocated region. Returns NULL if out of memory.
  */
 void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t control);
 
@@ -77,7 +77,7 @@ void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t control);
  * @param size  Region size in 1MB blocks.
  * @param ap    Access permission.
  * @param control Control settings.
- * @return  address to the allocated region.
+ * @returns address to the allocated region.
  */
 void * dynmem_alloc_force(void * addr, size_t size, uint32_t ap,
                           uint32_t control);
@@ -85,9 +85,9 @@ void * dynmem_alloc_force(void * addr, size_t size, uint32_t ap,
 /**
  * Get a reference to an already allocated region.
  * @param addr is the address of the already allocated dynmem region.
- * @return Address to the region; Otherwise NULL.
+ * @returns 0 if succeed.
  */
-void * dynmem_ref(void * addr);
+int dynmem_ref(void * addr);
 
 /**
  * Decrement dynmem region reference counter. If the final value of a reference
@@ -100,7 +100,7 @@ void dynmem_free_region(void * addr);
  * Clone a dynemem region.
  * Makes 1:1 copy of a given dynmem region to a new location in memory.
  * @param addr is the dynmem region address.
- * @return  Returns pointer to a clone of the dynmem area; Otherwise NULL in case
+ * @returns Returns pointer to a clone of the dynmem area; Otherwise NULL in case
  *          of cloning failed.
  */
 void * dynmem_clone(void * addr);
@@ -123,7 +123,7 @@ void * dynmem_clone(void * addr);
  * AP is in same format as in mmu.h and XN is DYNMEM_XN.
  * @param addr  is the physical base address.
  * @param len   is the size of block tested.
- * @return Returns 0 if addr is invalid; Otherwise returns ap flags + xn bit.
+ * @returns Returns 0 if addr is invalid; Otherwise returns ap flags + xn bit.
  */
 uint32_t dynmem_acc(const void * addr, size_t len);
 
