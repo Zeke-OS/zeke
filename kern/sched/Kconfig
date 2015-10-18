@@ -16,7 +16,7 @@ endchoice
 
 config configSCHED_FREEQ_SIZE
     int "Free queue size"
-    default 30
+    default 100
     ---help---
         Dead theads are freed in interrupt handler so the actually freeing of
         resources happens in the idle thread. This option controls the size of
