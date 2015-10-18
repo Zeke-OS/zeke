@@ -230,15 +230,19 @@ static void vreg_free_callback(struct kobj * obj)
 
     vmem_used -= bp->b_bufsize; /* Update stats */
 
+    /*
+     * It's probably better if we don't free vreg nodes because vralloc
+     * is the main consumer of dynmem thus we'll soon allocate it back
+     * anyway. Also the current linked list makes it hard to free
+     * vregs anyway.
+     */
+#if 0
     /* Free the vregion node? */
     if (vreg->count == 0 && vreg == last_vreg) {
-        /* Update stats */
-        vmem_all -= vreg->size * (4 * 8) * MMU_PGSIZE_COARSE;
-
-        /* Free node */
         vrlist->remove(vrlist, vreg);
+        vmem_all -= vreg->size * (4 * 8) * MMU_PGSIZE_COARSE;
+        last_vreg = NULL; /* TODO Can't set to NULL */
 
-        last_vreg = NULL;
         mtx_unlock(&vr_big_lock);
 
         dynmem_free_region((void *)vreg->kaddr);
@@ -246,6 +250,9 @@ static void vreg_free_callback(struct kobj * obj)
     } else {
         mtx_unlock(&vr_big_lock);
     }
+#else
+    mtx_unlock(&vr_big_lock);
+#endif
 
     kfree(bp);
 }
@@ -297,7 +304,7 @@ struct buf * geteblk(size_t size)
     /* Update stats */
     mtx_lock(&vr_big_lock);
     vmem_used += size;
-    last_vreg = vreg;
+    /*last_vreg = vreg; TODO FIXME This concept is completely broken. */
     mtx_unlock(&vr_big_lock);
 
     /* Clear allocated pages. */
