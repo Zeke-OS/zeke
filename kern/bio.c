@@ -469,11 +469,8 @@ static void bio_clean(uintptr_t freebufs)
 }
 /*
  * Idle task for cleaning up buffers.
- * TODO Disabled for now at it seems to hang the kernel occassionally.
  */
-#if 0
 IDLE_TASK(bio_clean, 0);
-#endif
 
 int bio_geterror(struct buf * bp)
 {
