@@ -36,15 +36,11 @@ endif
 
 # Arhitecture and Profile specific sources
 ifeq ($(configARCH_ARM),y)
-	ifeq ($(configARM_PROFILE_M),y)
-		hal-SRC-y += $(wildcard hal/cortex_m/*.c)
-	else
-		# ARM11
-		ifneq "$(strip $(__ARM6__), $(__ARM6K__))" ""
-			AIDIR += hal/arm11/
-			hal-ASRC-y += $(filter-out $(STARTUP), $(wildcard hal/arm11/*.S))
-			hal-SRC-y += $(wildcard hal/arm11/*.c)
-		endif
+	# ARM11 is currently the only ARM supported
+	ifneq "$(strip $(__ARM6__), $(__ARM6K__))" ""
+		AIDIR += hal/arm11/
+		hal-ASRC-y += $(filter-out $(STARTUP), $(wildcard hal/arm11/*.S))
+		hal-SRC-y += $(wildcard hal/arm11/*.c)
 	endif
 endif
 
