@@ -196,6 +196,7 @@ retry:
 
     bitmap_block_update(vreg->map, 1, *iblock, pcount);
     vreg->count += pcount;
+    vmem_used += VREG_BYTESIZE(pcount);
 out:
     mtx_unlock(&vr_big_lock);
     return vreg;
@@ -279,13 +280,6 @@ struct buf * geteblk(size_t size)
     bp->vm_ops = &vra_ops;
     bp->b_uflags = VM_PROT_READ | VM_PROT_WRITE;
     vm_updateusr_ap(bp);
-
-    mtx_lock(&vr_big_lock);
-
-    /* Update stats */
-    vmem_used += size;
-
-    mtx_unlock(&vr_big_lock);
 
     /* Clear allocated pages. */
     memset((void *)bp->b_data, 0, bp->b_bufsize);
