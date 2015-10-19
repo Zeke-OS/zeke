@@ -37,7 +37,6 @@
 #include <fs/fs.h>
 #include <hal/mmu.h>
 #include <klocks.h>
-#include <llist.h>
 #include <sys/tree.h>
 
 #define VM_PROT_READ    0x1 /*!< Read. */
