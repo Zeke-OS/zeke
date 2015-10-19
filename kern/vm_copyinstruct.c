@@ -31,23 +31,23 @@
  *******************************************************************************
  */
 
-#include <stddef.h>
-#include <stdarg.h>
-#include <libkern.h>
-#include <dllist.h>
 #include <errno.h>
+#include <libkern.h>
+#include <stdarg.h>
+#include <stddef.h>
+#include <sys/queue.h>
 #include <kmalloc.h>
 #include <kerror.h>
 #include <vm/vm.h>
 #include <vm/vm_copyinstruct.h>
 
 struct _cpyin_struct {
-    llist_t * gc_lst;
+    STAILQ_HEAD(gc_list_head, _cpyin_gc_node) gc_list;
     char data[0];
 };
 
 struct _cpyin_gc_node {
-    llist_nodedsc_t llist_node;
+    STAILQ_ENTRY(_cpyin_gc_node) _entry;
     char data[0];
 };
 
@@ -67,7 +67,7 @@ int copyinstruct(__user void * usr, __kernel void ** kern, size_t bytes, ...)
     token = kmalloc(sizeof(struct _cpyin_struct) + bytes);
     if (!token)
         return -ENOMEM;
-    token->gc_lst = dllist_create(struct _cpyin_gc_node, llist_node);
+    STAILQ_INIT(&token->gc_list);
     *kern = token->data;
     copyin(usr, *kern, bytes);
 
@@ -82,8 +82,8 @@ int copyinstruct(__user void * usr, __kernel void ** kern, size_t bytes, ...)
 
         if ((offset == 0) && (len == 0) && (i != 0))
             break;
-        i++; /* This must be here to prevent it from getting optimized out as a
-              * break condition. */
+        i++; /* This must be here to prevent it from getting optimized out as
+              * a break condition. */
 
         src = ((void **)((size_t)(*kern) + offset));
         len = *((size_t *)((size_t)(*kern) + len));
@@ -103,12 +103,12 @@ int copyinstruct(__user void * usr, __kernel void ** kern, size_t bytes, ...)
             retval = -ENOMEM;
             break;
         }
-        token->gc_lst->insert_tail(token->gc_lst, gc_node);
+        STAILQ_INSERT_TAIL(&token->gc_list, gc_node, _entry);
         dst = gc_node->data;
 
         copyin((__user void *)(*src), dst, len);
         *src = dst;
-    };
+    }
     va_end(ap);
 
     return retval;
@@ -117,22 +117,16 @@ int copyinstruct(__user void * usr, __kernel void ** kern, size_t bytes, ...)
 void freecpystruct(void * p)
 {
     struct _cpyin_struct * token;
-    llist_t * lst;
+    struct _cpyin_gc_node * node;
+    struct _cpyin_gc_node * node_tmp;
 
     if (!p)
         return;
 
     token = container_of(p, struct _cpyin_struct, data);
-    lst = token->gc_lst;
-
-    if (lst && lst->head) {
-        struct _cpyin_gc_node * node;
-
-        while ((node = lst->remove(lst, lst->head))) {
-            kfree(node);
-        }
+    STAILQ_FOREACH_SAFE(node, &token->gc_list, _entry, node_tmp) {
+        kfree(node);
     }
 
-    dllist_destroy(lst);
     kfree(token);
 }
