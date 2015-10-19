@@ -396,7 +396,6 @@ void allocbuf(struct buf * bp, size_t size)
 
                 /* Free blocks from old vreg */
                 bitmap_block_update(vreg->map, 0, iblock, bcount);
-                vreg = nvreg;
             }
         }
     } else {
