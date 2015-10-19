@@ -42,6 +42,13 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/linker_set.h>
+#include <hal/mmu.h>
+
+/**
+ * Dynmem page/region size in bytes.
+ * In practice this should be always 1 MB.
+ */
+#define DYNMEM_PAGE_SIZE    MMU_PGSIZE_SECTION
 
 /**
  * Struct describing a reserved memory area that should not be used by

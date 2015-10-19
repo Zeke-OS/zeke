@@ -33,19 +33,12 @@
 #include <sys/sysctl.h>
 #include <bitmap.h>
 #include <dynmem.h>
-#include <hal/mmu.h>
 #include <hal/sysinfo.h>
 #include <kerror.h>
 #include <kinit.h>
 #include <klocks.h>
 #include <kmem.h>
 #include <kstring.h>
-
-/**
- * Dynmem page/region size in bytes.
- * In practice this should be always 1 MB.
- */
-#define DYNMEM_PAGE_SIZE    MMU_PGSIZE_SECTION
 
 /**
  * Dynmem area starts.
@@ -264,7 +257,7 @@ static void * kmap_allocation(size_t base, size_t size, uint32_t ap,
     dynmemmap[i] = desc;
     dynmemmap[i].rl = DYNMEM_RL_NIL;
 
-    /* Map memory region to the kernel memory space */
+    /* Map the memory region to the kernel memory space */
     dynmem_region.vaddr = addr;
     dynmem_region.paddr = addr;
     dynmem_region.num_pages = size;
