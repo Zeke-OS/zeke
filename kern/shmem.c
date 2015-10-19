@@ -35,7 +35,6 @@
 #include <sys/sysctl.h>
 #include <syscall.h>
 #include <buf.h>
-#include <dllist.h>
 #include <fs/devfs.h>
 #include <kerror.h>
 #include <kinit.h>
@@ -53,7 +52,8 @@ SYSCTL_INT(_vm, OID_AUTO, shmem_sync_enabled, CTLFLAG_RW | CTLFLAG_SECURE2,
 /**
  * Periodic sync list.
  */
-static struct llist * shmem_sync_list;
+static LIST_HEAD(shmem_sync_list_head, buf) shmem_sync_list =
+     LIST_HEAD_INITIALIZER(shmem_sync_list);
 
 static void * shmem_sync_thread(void * arg);
 
@@ -65,8 +65,6 @@ int __kinit__ shmem_init(void)
     mtx_init(&sync_lock, MTX_TYPE_SPIN,
              MTX_OPT_SLEEP | MTX_OPT_PRICEIL);
     sync_lock.pri.p_lock = NICE_MIN;
-
-    shmem_sync_list = dllist_create(struct buf, lentry_);
 
     /*
      * Create a thread for periodic syncing of mmap buffers.
@@ -248,7 +246,7 @@ errout:
      */
     if (!(bp->b_flags & B_NOSYNC)) {
         mtx_lock(&sync_lock);
-        shmem_sync_list->insert_tail(shmem_sync_list, bp);
+        LIST_INSERT_HEAD(&shmem_sync_list, bp, shmem_entry_);
         mtx_unlock(&sync_lock);
     }
 
@@ -268,7 +266,7 @@ int shmem_munmap(struct buf * bp, size_t size)
 
     if (!(flags & B_NOSYNC)) {
         mtx_lock(&sync_lock);
-        shmem_sync_list->remove(shmem_sync_list, bp);
+        LIST_REMOVE(bp, shmem_entry_);
         mtx_unlock(&sync_lock);
         bio_writeout(bp);
     }
@@ -292,14 +290,10 @@ static void * shmem_sync_thread(void * arg)
 
         mtx_lock(&sync_lock);
 
-        bp = shmem_sync_list->head;
-        if (!bp)
-            goto skip;
-
-        do {
+        LIST_FOREACH(bp, &shmem_sync_list, shmem_entry_) {
             bio_writeout(bp);
-        } while ((bp = bp->lentry_.next));
-skip:
+        }
+
         mtx_unlock(&sync_lock);
     }
 

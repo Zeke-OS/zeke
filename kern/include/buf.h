@@ -34,10 +34,10 @@
 #ifndef BUF_H
 #define BUF_H
 
+#include <sys/queue.h>
 #include <fs/fs.h>
 #include <hal/mmu.h>
 #include <kobj.h>
-#include <llist.h>
 #include <vm/vm.h>
 
 /**
@@ -89,7 +89,8 @@ struct buf {
 
     void * allocator_data;  /*!< Allocator specific data. */
     SPLAY_ENTRY(buf) sentry_;
-    llist_nodedsc_t lentry_;
+    LIST_ENTRY(buf) shmem_entry_; /*!< shmem sync list entry. */
+    TAILQ_ENTRY(buf) relse_entry_; /*!< bio relse list entry. */
 
     struct kobj b_obj;
     mtx_t lock;

@@ -38,7 +38,6 @@
 #include <sys/tree.h>
 #include <sys/types.h>
 #include <buf.h>
-#include <dllist.h>
 #include <fs/devfs.h>
 #include <kerror.h>
 #include <kmalloc.h>
@@ -46,7 +45,8 @@
 static mtx_t cache_lock;            /* Used to protect access caching data
                                      * structures and synchronizing access
                                      * to some functions. */
-static struct llist * relse_list;  /* Released buffers list. */
+static TAILQ_HEAD(bio_relse_list_head, buf) relse_list =
+     TAILQ_HEAD_INITIALIZER(relse_list);
 
 static void _bio_readin(struct buf * bp);
 static void _bio_writeout(struct buf * bp);
@@ -65,12 +65,6 @@ void _bio_init(void)
      */
     mtx_init(&cache_lock, MTX_TYPE_SPIN, MTX_OPT_SLEEP | MTX_OPT_PRICEIL);
     cache_lock.pri.p_lock = NICE_MIN;
-
-    /*
-     * Init released buffers list.
-     */
-
-    relse_list = dllist_create(struct buf, lentry_);
 }
 
 /*
@@ -345,7 +339,8 @@ retry:
         goto retry;
     }
     bp->b_flags |= B_BUSY;
-    relse_list->remove(relse_list, bp); /* Remove from the released list. */
+    /* Remove from the released list. */
+    TAILQ_REMOVE(&relse_list, bp, relse_entry_);
     BUF_UNLOCK(bp);
 
     allocbuf(bp, size); /* Resize if necessary */
@@ -389,7 +384,7 @@ static void bl_brelse(struct buf * bp)
     bp->b_flags &= ~B_BUSY;
 
     mtx_lock(&cache_lock);
-    relse_list->insert_tail(relse_list, bp);
+    TAILQ_INSERT_TAIL(&relse_list, bp, relse_entry_);
     mtx_unlock(&cache_lock);
 }
 
@@ -435,15 +430,12 @@ int biowait(struct buf * bp)
 static void bio_clean(uintptr_t freebufs)
 {
     struct buf * bp;
+    struct buf * bp_tmp;
 
     if (mtx_trylock(&cache_lock))
         return; /* Don't enter if we don't get exclusive access. */
 
-    bp = relse_list->head;
-    if (!bp)
-        goto out; /* no nodes. */
-
-    do {
+    TAILQ_FOREACH_SAFE(bp, &relse_list, relse_entry_, bp_tmp) {
         file_t * file;
 
         /* Skip if already locked or BUSY */
@@ -461,23 +453,18 @@ static void bio_clean(uintptr_t freebufs)
         }
 
         if (freebufs &&
-                !(bp->b_flags & B_LOCKED) &&
-                !VN_TRYLOCK(file->vnode)) {
-            struct buf * bp_prev = bp->lentry_.prev;
-
+            !(bp->b_flags & B_LOCKED) &&
+            !VN_TRYLOCK(file->vnode)) {
             SPLAY_REMOVE(bufhd_splay, &file->vnode->vn_bpo.sroot, bp);
+            TAILQ_REMOVE(&relse_list, bp, relse_entry_);
             vrfree(bp);
             VN_UNLOCK(file->vnode);
-
-            bp = bp_prev;
-            continue;
+        } else {
+            bp->b_flags &= ~B_BUSY;
+            BUF_UNLOCK(bp);
         }
+    }
 
-        bp->b_flags &= ~B_BUSY;
-        BUF_UNLOCK(bp);
-    } while ((bp = bp->lentry_.next));
-
-out:
     mtx_unlock(&cache_lock);
 }
 /*
