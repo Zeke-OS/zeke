@@ -65,16 +65,20 @@ KMEM_FIXED_REGION(mmu_region_page_tables);
 uint32_t ptm_alloc_map[E2BITMAP_SIZE(PTREGION_SIZE * PTS_PER_MB)];
 #undef PTS_PER_MB
 
+SYSCTL_DECL(_vm_ptmapper);
+SYSCTL_NODE(_vm, OID_AUTO, ptmapper, CTLFLAG_RW, 0,
+            "ptmapper stats");
+
 static int ptm_nr_pt = 0;
-SYSCTL_INT(_vm, OID_AUTO, ptm_nr_pt, CTLFLAG_RD, &ptm_nr_pt, 0,
+SYSCTL_INT(_vm_ptmapper, OID_AUTO, nr_pt, CTLFLAG_RD, &ptm_nr_pt, 0,
     "Total number of page tables allocated.");
 
 static size_t ptm_mem_free = PTREGION_SIZE * MMU_PGSIZE_SECTION;
-SYSCTL_UINT(_vm, OID_AUTO, ptm_mem_free, CTLFLAG_RD, &ptm_mem_free, 0,
+SYSCTL_UINT(_vm_ptmapper, OID_AUTO, mem_free, CTLFLAG_RD, &ptm_mem_free, 0,
     "Amount of free page table region memory.");
 
 static const size_t ptm_mem_tot = PTREGION_SIZE * MMU_PGSIZE_SECTION;
-SYSCTL_UINT(_vm, OID_AUTO, ptm_mem_tot, CTLFLAG_RD,
+SYSCTL_UINT(_vm_ptmapper, OID_AUTO, mem_tot, CTLFLAG_RD,
     (unsigned int *)(&ptm_mem_tot), 0,
     "Total size of the page table region.");
 

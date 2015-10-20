@@ -88,13 +88,17 @@ static LIST_HEAD(vrlisthead, vregion) vrlist_head =
     LIST_HEAD_INITIALIZER(vrlisthead);
 static mtx_t vr_big_lock;
 
-static size_t vmem_all;
-SYSCTL_UINT(_vm, OID_AUTO, vmem_all, CTLFLAG_RD, &vmem_all, 0,
-            "Amount of memory currently allocated");
+SYSCTL_DECL(_vm_vralloc);
+SYSCTL_NODE(_vm, OID_AUTO, vralloc, CTLFLAG_RW, 0,
+            "vralloc stats");
 
-static size_t vmem_used;
-SYSCTL_UINT(_vm, OID_AUTO, vmem_used, CTLFLAG_RD, &vmem_used, 0,
-            "Amount of memory used");
+static size_t vralloc_all;
+SYSCTL_UINT(_vm_vralloc, OID_AUTO, reserved, CTLFLAG_RD, &vralloc_all, 0,
+            "Amount of memory currently allocated for vralloc");
+
+static size_t vralloc_used;
+SYSCTL_UINT(_vm_vralloc, OID_AUTO, used, CTLFLAG_RD, &vralloc_used, 0,
+            "Amount of vralloc memory used");
 
 /**
  * VRA specific operations for allocated vm regions.
@@ -162,7 +166,7 @@ static struct vregion * vreg_alloc_node(size_t count)
     LIST_INSERT_HEAD(&vrlist_head, vreg, _entry);
 
     /* Update stats */
-    vmem_all += VREG_BYTESIZE(count);
+    vralloc_all += VREG_BYTESIZE(count);
 
     return vreg;
 }
@@ -196,7 +200,7 @@ retry:
 
     bitmap_block_update(vreg->map, 1, *iblock, pcount);
     vreg->count += pcount;
-    vmem_used += VREG_BYTESIZE(pcount);
+    vralloc_used += VREG_BYTESIZE(pcount);
 out:
     mtx_unlock(&vr_big_lock);
     return vreg;
@@ -221,11 +225,11 @@ static void vreg_free_callback(struct kobj * obj)
     bitmap_block_update(vreg->map, 0, iblock, bcount);
     vreg->count -= bcount;
 
-    vmem_used -= bp->b_bufsize; /* Update stats */
+    vralloc_used -= bp->b_bufsize; /* Update stats */
 
     if (vreg->count == 0) { /* Free the vregion node */
         LIST_REMOVE(vreg, _entry);
-        vmem_all -= vreg->size * (4 * 8) * MMU_PGSIZE_COARSE;
+        vralloc_all -= vreg->size * (4 * 8) * MMU_PGSIZE_COARSE;
 
         mtx_unlock(&vr_big_lock);
 

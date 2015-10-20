@@ -44,10 +44,11 @@
 #include <vm/vm.h>
 
 static mtx_t sync_lock;
+static pthread_t sync_thread_tid;
 
-int shmem_sync_enabled = 1;
-SYSCTL_INT(_vm, OID_AUTO, shmem_sync_enabled, CTLFLAG_RW | CTLFLAG_SECURE2,
-           &shmem_sync_enabled, 0, "Shmem sync enabled");
+SYSCTL_DECL(_vm_shmem);
+SYSCTL_NODE(_vm, OID_AUTO, shmem, CTLFLAG_RW, 0,
+            "shmem");
 
 /**
  * Periodic sync list.
@@ -85,10 +86,11 @@ int __kinit__ shmem_init(void)
         .start      = shmem_sync_thread,
         .arg1       = 0,
     };
-    const pthread_t tid = thread_create(&tdef_shmem, 1);
-    if (tid < 0) {
+
+    sync_thread_tid = thread_create(&tdef_shmem, 1);
+    if (sync_thread_tid < 0) {
         KERROR(KERROR_ERR, "Failed to create a thread for shmem sync");
-        return tid;
+        return sync_thread_tid;
     }
 
     return 0;
@@ -277,12 +279,37 @@ int shmem_munmap(struct buf * bp, size_t size)
     return 0;
 }
 
+int shmem_sync_enabled = 1;
+unsigned shmem_sync_period = 500;
+static int sysctl_shmem_sync_period(SYSCTL_HANDLER_ARGS)
+{
+    int new_period = shmem_sync_period;
+    int error;
+
+    error = sysctl_handle_int(oidp, &new_period, sizeof(new_period), req);
+    if (!error && req->newptr) {
+        if (new_period > 0) {
+            shmem_sync_enabled = 1;
+            shmem_sync_period = new_period;
+        } else {
+            shmem_sync_enabled = 0;
+            shmem_sync_period = 0;
+        }
+    }
+
+    return error;
+}
+
+SYSCTL_PROC(_vm_shmem, OID_AUTO, sync_period,
+            CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_SECURE2,
+            NULL, 0, sysctl_shmem_sync_period, "I", "Shmem sync period [ms]");
+
 static void * shmem_sync_thread(void * arg)
 {
     struct buf * bp;
 
     while (1) {
-        thread_sleep(500);
+        thread_sleep(shmem_sync_period);
         if (!shmem_sync_enabled) {
             thread_sleep(1000);
             continue;

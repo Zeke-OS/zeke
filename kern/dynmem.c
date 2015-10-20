@@ -110,24 +110,41 @@ static mtx_t dynmem_region_lock;
 SET_DECLARE(dynmem_reserved, struct dynmem_reserved_area);
 
 /*
- * Some sysctl stat variables.
+ * sysctl stat variables.
  */
-static size_t dynmem_free = configDYNMEM_SAFE_SIZE;
-SYSCTL_UINT(_vm, OID_AUTO, dynmem_free, CTLFLAG_RD, (void *)(&dynmem_free), 0,
-        "Amount of free dynmem");
 
-static const size_t dynmem_tot = configDYNMEM_SAFE_SIZE;
-SYSCTL_UINT(_vm, OID_AUTO, dynmem_tot, CTLFLAG_RD, (void *)(&dynmem_tot), 0,
-        "Total amount of dynmem");
+SYSCTL_DECL(_vm_dynmem);
+SYSCTL_NODE(_vm, OID_AUTO, dynmem, CTLFLAG_RW, 0,
+            "dynmem stats");
+
+static size_t dynmem_free = configDYNMEM_SAFE_SIZE;
+SYSCTL_UINT(_vm_dynmem, OID_AUTO, free, CTLFLAG_RD, &dynmem_free, 0,
+            "Amount of free dynmem");
+
+static size_t dynmem_tot = configDYNMEM_SAFE_SIZE;
+SYSCTL_UINT(_vm_dynmem, OID_AUTO, tot, CTLFLAG_RD, &dynmem_tot, 0,
+            "Total amount of dynmem");
+
+static size_t dynmem_nr_reserved;
+SYSCTL_UINT(_vm_dynmem, OID_AUTO, nr_reserved, CTLFLAG_RD,
+            &dynmem_nr_reserved, 0,
+            "Number of reserved areas");
+
+static size_t dynmem_reserved;
+SYSCTL_UINT(_vm_dynmem, OID_AUTO, reserved, CTLFLAG_RD, &dynmem_reserved, 0,
+            "Amount of reserved dynmem");
 
 static void mark_reserved_areas(void)
 {
     struct dynmem_reserved_area ** areap;
 
+    dynmem_nr_reserved = SET_COUNT(dynmem_reserved);
+
     SET_FOREACH(areap, dynmem_reserved) {
         struct dynmem_reserved_area * area = *areap;
         const size_t pos = (size_t)area->caddr_start - DYNMEM_START;
         uintptr_t end_addr;
+        size_t bytes;
         size_t blkcount;
 
         if (area->caddr_start > dynmem_end)
@@ -135,8 +152,11 @@ static void mark_reserved_areas(void)
 
         end_addr = (area->caddr_end > dynmem_end) ? dynmem_end :
                                                     area->caddr_end;
-        blkcount = (end_addr - area->caddr_start + 1) / DYNMEM_PAGE_SIZE;
+        bytes = (end_addr - area->caddr_start + 1);
+        blkcount = bytes / DYNMEM_PAGE_SIZE;
         bitmap_block_update(dynmemmap_bitmap, 1, pos, blkcount);
+        dynmem_free -= bytes;
+        dynmem_reserved += bytes;
     }
 }
 
@@ -282,7 +302,7 @@ void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t ctrl)
     if (bitmap_block_search(&pos, size, dynmemmap_bitmap,
                            SIZEOF_DYNMEMMAP_BITMAP)) {
         KERROR(KERROR_ERR, "%s(size %u): Out of dynmem, free %u/%u\n",
-               __func__, size, dynmem_free, dynmem_tot);
+               __func__, size, dynmem_free, configDYNMEM_SAFE_SIZE);
         goto out;
     }
 
