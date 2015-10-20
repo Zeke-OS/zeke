@@ -739,7 +739,6 @@ int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
 {
     struct fatfs_inode * in = get_inode_of_vnode(dir);
     FILINFO fno;
-    int err;
 
     if (!S_ISDIR(dir->vn_mode))
         return -ENOTDIR;
@@ -757,6 +756,8 @@ int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
         d->d_type = DT_DIR;
         *off = DIRENT_SEEK_START + 2;
     } else { /* Normal dir entry */
+        int err;
+
 #if configFATFS_LFN
         fno.lfname = d->d_name;
         fno.lfsize = NAME_MAX + 1;
