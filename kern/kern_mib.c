@@ -34,6 +34,7 @@
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/types_pthread.h>
+#include <host.h>
 #include <kactype.h>
 #include <kstring.h>
 

@@ -34,7 +34,10 @@
 #ifndef CORE_H
 #define CORE_H
 
+#include <sys/sysctl.h>
 #include <fs/fs.h>
+
+SYSCTL_DECL(_kern_core);
 
 struct proc;
 

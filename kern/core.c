@@ -32,18 +32,93 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <core.h>
+#include <host.h>
 #include <kerror.h>
 #include <kmalloc.h>
 #include <kstring.h>
 #include <libkern.h>
 #include <proc.h>
 
+SYSCTL_NODE(_kern, OID_AUTO, core, CTLFLAG_RW, 0,
+            "Core dump configuration");
+
+static char core_file_pattern[NAME_MAX] = "/tmp/%N.core";
+SYSCTL_STRING(_kern_core, OID_AUTO, corefile, CTLFLAG_RW,
+              core_file_pattern, 0, "Core file name pattern");
+
+static int core_snprintf(char * str, size_t maxlen, const char * format,
+                         struct proc_info * proc)
+{
+    size_t i = 0, n = 0;
+    char c;
+
+    maxlen--;
+    while ((c = format[i++]) != '\0' && n <= maxlen) {
+        switch (c) {
+        case '%':
+            c = format[i++];
+
+            if (c == '\0')
+                break;
+
+            switch (c) {
+            case 'H': /* Hostname */
+                strlcpy(str + n, hostname, maxlen - n);
+                n = min(n + strlenn(hostname, maxlen), maxlen);
+                break;
+            case 'N': /* Process name */
+                {
+                    char * fname;
+
+                    /* It's usually a path. */
+                    parsenames(proc->name, NULL, &fname);
+
+                    strlcpy(str + n, fname, maxlen - n);
+                    n = min(n + strlenn(fname, maxlen), maxlen);
+                    kfree(fname);
+
+                    break;
+                }
+            case 'P': /* Process ID */
+                n += uitoa32(str + n, (uint32_t)proc->pid);
+                break;
+            case 'U': /* Process UID */
+                n += uitoa32(str + n, (uint32_t)proc->cred.uid);
+                break;
+            case '%':
+                str[n++] = c;
+                break;
+            default:
+                break;
+            }
+            break;
+        default:
+            str[n++] = c;
+            break;
+        }
+    }
+
+    str[n] = '\0';
+
+    return n + 1;
+}
+
+static char * generate_core_name(struct proc_info * proc)
+{
+    char * str;
+
+    str = kmalloc(NAME_MAX);
+    core_snprintf(str, NAME_MAX, core_file_pattern, proc);
+
+    return str;
+}
+
 int core_dump_by_curproc(struct proc_info * proc)
 {
     char msghead[40];
-    char core_path[80]; /* TODO get this from somewhere maybe? */
-    char * fname;
+    char * core_path;
     vnode_t * vn = NULL;
     int fd = -1;
     file_t * file = NULL;
@@ -54,10 +129,7 @@ int core_dump_by_curproc(struct proc_info * proc)
 
     KERROR(KERROR_DEBUG, "%s Core dump requested\n", msghead);
 
-    parsenames(proc->name, NULL, &fname); /* It's usually a path. */
-    ksprintf(core_path, sizeof(core_path), "/tmp/%s.core", fname);
-    kfree(fname);
-
+    core_path = generate_core_name(proc);
     err = fs_creat_curproc(core_path, curproc->files->umask, &vn);
     if (err) {
         KERROR(KERROR_ERR,
@@ -65,6 +137,7 @@ int core_dump_by_curproc(struct proc_info * proc)
                msghead, core_path);
         goto out;
     }
+    kfree(core_path);
 
     fd = fs_fildes_create_curproc(vn, O_RDWR);
     if (fd < 0) {
