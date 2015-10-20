@@ -150,13 +150,27 @@ static int fatfs_mount(const char * source, uint32_t mode,
 #endif
         return err;
     }
-    if (!S_ISBLK(vndev->vn_mode))
-        return -ENOTBLK;
+    if (!S_ISBLK(vndev->vn_mode)) {
+        retval = -ENOTBLK;
+        goto fail;
+    }
+
+    /*
+     * Fail if mouting a read-only device but
+     * mount mode is not MNT_READONLY.
+     */
+    if (!((mode & MNT_RDONLY) == MNT_RDONLY) &&
+        !((vndev->vn_mode & S_IWUSR) == S_IWUSR)) {
+        retval = -EROFS;
+        goto fail;
+    }
 
     /* Allocate superblock */
     fatfs_sb = kzalloc(sizeof(struct fatfs_sb));
-    if (!fatfs_sb)
-        return -ENOMEM;
+    if (!fatfs_sb) {
+        retval = -ENOMEM;
+        goto fail;
+    }
 
     fs_fildes_set(&fatfs_sb->ff_devfile, vndev, O_RDWR);
     fatfs_sb->sb.vdev_id = DEV_MMTODEV(VDEV_MJNR_FATFS, fatfs_vdev_minor++);
@@ -186,7 +200,6 @@ static int fatfs_mount(const char * source, uint32_t mode,
 
     /* Init super block */
     fs_init_superblock(&fatfs_sb->sb, &fatfs_fs);
-    /* TODO Detect if target dev is rdonly */
     fatfs_sb->sb.mode_flags = mode;
     fatfs_sb->sb.root = create_root(fatfs_sb);
     fatfs_sb->sb.sb_dev = vndev;
@@ -198,8 +211,8 @@ static int fatfs_mount(const char * source, uint32_t mode,
 
     if (!fatfs_sb->sb.root) {
         KERROR(KERROR_ERR, "Root of fatfs not found\n");
-
-        return -EIO;
+        retval = -EIO;
+        goto fail;
     }
     fs_insert_superblock(&fatfs_fs, &fatfs_sb->sb);
 
@@ -210,6 +223,8 @@ fail:
     }
 
     *sb = &fatfs_sb->sb;
+    if (retval)
+        vrele(vndev);
     return retval;
 }
 
@@ -729,44 +744,38 @@ int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
     if (!S_ISDIR(dir->vn_mode))
         return -ENOTDIR;
 
-    /* Emulate . and .. */
-    if (*off == DIRENT_SEEK_START) {
+    if (*off == DIRENT_SEEK_START) { /* Emulate . */
         f_readdir(&in->dp, NULL); /* Rewind */
 
         strlcpy(d->d_name, ".", sizeof(d->d_name));
         d->d_ino = dir->vn_num;
         d->d_type = DT_DIR;
         *off = DIRENT_SEEK_START + 1;
-
-        return 0;
-    } else if (*off == DIRENT_SEEK_START + 1) {
+    } else if (*off == DIRENT_SEEK_START + 1) { /* Emulate .. */
         strlcpy(d->d_name, "..", sizeof(d->d_name));
-        /* TODO Set d members to proper values */
         d->d_ino = 0; /* TODO ino should be properly set */
         d->d_type = DT_DIR;
         *off = DIRENT_SEEK_START + 2;
+    } else { /* Normal dir entry */
+#if configFATFS_LFN
+        fno.lfname = d->d_name;
+        fno.lfsize = NAME_MAX + 1;
+#endif
 
-        return 0;
+        err = f_readdir(&in->dp, &fno);
+        if (err)
+            return fresult2errno(err);
+
+        if (fno.fname[0] == '\0')
+            return -ESPIPE;
+
+        d->d_ino = fno.ino;
+        d->d_type = (fno.fattrib & AM_DIR) ? DT_DIR : DT_REG;
+#if configFATFS_LFN
+        if (!*fno.lfname)
+#endif
+            strlcpy(d->d_name, fno.fname, sizeof(d->d_name));
     }
-
-#if configFATFS_LFN
-    fno.lfname = d->d_name;
-    fno.lfsize = NAME_MAX + 1;
-#endif
-
-    err = f_readdir(&in->dp, &fno);
-    if (err)
-        return fresult2errno(err);
-
-    if (fno.fname[0] == '\0')
-        return -ESPIPE;
-
-    d->d_ino = fno.ino;
-    d->d_type = (fno.fattrib & AM_DIR) ? DT_DIR : DT_REG;
-#if configFATFS_LFN
-    if (!*fno.lfname)
-#endif
-        strlcpy(d->d_name, fno.fname, sizeof(d->d_name));
 
     return 0;
 }
