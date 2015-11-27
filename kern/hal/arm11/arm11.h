@@ -37,7 +37,8 @@
  * @{
  */
 
-/** @addtogroup ARM11
+/**
+ * @addtogroup ARM11
  * @{
  */
 
@@ -104,11 +105,11 @@
  */
 #define ABO_WAS_USERMODE(psr)   (((psr) & PSR_MODE_MASK) == PSR_MODE_USER)
 
-/** Stack frame saved by the hardware (Left here for compatibility reasons) */
+/** Stack frame saved by the hardware. (Left here for compatibility reasons) */
 typedef struct {
 } hw_stack_frame_t;
 
-/** Stack frame save by the software */
+/** Stack frame save by the software. */
 typedef struct {
     uint32_t psr;   /*!< PSR */
     uint32_t r0;
@@ -148,8 +149,16 @@ typedef struct thread_stack_frames {
 
 /** Other registers requiring sw backups */
 struct tls_regs {
-    /* TODO Add floating-point registers */
-    uint32_t utls; /* User rw: cp15 c13 2 */
+    uint32_t utls; /*!< User rw: cp15 c13 2 */
+#ifdef configUSE_HFP
+    /* VFP system registers */
+    uint32_t fpscr;     /*!< Floating-Point Status and Control Register. */
+    uint32_t fpexc;     /*!< Floating-Point Exception Register. */
+    uint32_t fpinst;    /*!< Floating-Point Instruction Register. */
+    uint32_t fpinst2;   /*!< Floating-Point Instruction Register 2. */
+    /* VFP register file */
+    uint32_t dreg[64];
+#endif
 };
 
 void cpu_invalidate_caches(void);

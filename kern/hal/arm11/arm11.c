@@ -264,6 +264,48 @@ void core_set_tls_addr(__user struct _sched_tls_desc * tls)
         : : [tls]"r" (tls));
 }
 
+static void fork_init_tls(struct thread_info * th)
+{
+    const uint32_t reg = 0;
+
+    th->tls_regs = (struct tls_regs){
+#ifdef configUSE_HFP
+        .fpscr = 0,
+        .fpexc = 0,
+        .fpinst = 0xEE000A00,
+        .fpinst2 = 0,
+#endif
+    };
+
+#ifdef configUSE_HFP
+#define INIT_VFP_REG(i) do {        \
+    __asm__ volatile (              \
+        "FMDLR  d" #i ", %[r]\n\t"  \
+        "FMDHR  d" #i ", %[r]" :    \
+        [r]"=r" (reg));             \
+} while (0)
+
+    INIT_VFP_REG(0);
+    INIT_VFP_REG(1);
+    INIT_VFP_REG(2);
+    INIT_VFP_REG(3);
+    INIT_VFP_REG(4);
+    INIT_VFP_REG(5);
+    INIT_VFP_REG(6);
+    INIT_VFP_REG(7);
+    INIT_VFP_REG(8);
+    INIT_VFP_REG(9);
+    INIT_VFP_REG(10);
+    INIT_VFP_REG(11);
+    INIT_VFP_REG(12);
+    INIT_VFP_REG(13);
+    INIT_VFP_REG(14);
+    INIT_VFP_REG(15);
+#undef INIT_VFP_REG
+#endif
+}
+DATA_SET(thread_fork_handlers, fork_init_tls);
+
 /*
  * HW TLS in this context means anything that needs to be thread local and
  * is stored in any of the ARM11 hardware registers like floating-point
@@ -273,6 +315,43 @@ void core_set_tls_addr(__user struct _sched_tls_desc * tls)
 static void arm11_sched_push_hw_tls(void)
 {
     current_thread->tls_regs.utls = core_get_user_tls();
+
+#ifdef configUSE_HFP
+    __asm__ volatile (
+        "FMRX   %[fpscr], FPSCR\n\t"
+        "FMRX   %[fpexc], FPEXC\n\t"
+        "FMRX   %[fpinst], FPINST\n\t"
+        "FMRX   %[fpinst2], FPINST2" : :
+        [fpscr]"r" (current_thread->tls_regs.fpscr),
+        [fpexc]"r" (current_thread->tls_regs.fpexc),
+        [fpinst]"r" (current_thread->tls_regs.fpinst),
+        [fpinst2]"r" (current_thread->tls_regs.fpinst2));
+
+#define SAVE_VFP_REG(i) do {                            \
+    __asm__ volatile (                                  \
+        "FMRRD  %[l], %[h], d" #i : :                   \
+        [l]"r" (current_thread->tls_regs.dreg[i]),      \
+        [h]"r" (current_thread->tls_regs.dreg[i + 1])); \
+} while (0)
+
+    SAVE_VFP_REG(0);
+    SAVE_VFP_REG(1);
+    SAVE_VFP_REG(2);
+    SAVE_VFP_REG(3);
+    SAVE_VFP_REG(4);
+    SAVE_VFP_REG(5);
+    SAVE_VFP_REG(6);
+    SAVE_VFP_REG(7);
+    SAVE_VFP_REG(8);
+    SAVE_VFP_REG(9);
+    SAVE_VFP_REG(10);
+    SAVE_VFP_REG(11);
+    SAVE_VFP_REG(12);
+    SAVE_VFP_REG(13);
+    SAVE_VFP_REG(14);
+    SAVE_VFP_REG(15);
+#undef SAVE_VFP_REG
+#endif
 }
 DATA_SET(pre_sched_tasks, arm11_sched_push_hw_tls);
 
@@ -280,6 +359,43 @@ static void arm11_sched_pop_hw_tls(void)
 {
     core_set_user_tls(current_thread->tls_regs.utls);
     core_set_tls_addr(current_thread->tls_uaddr);
+
+#ifdef configUSE_HFP
+    __asm__ volatile (
+        "FMXR   FPSCR, %[fpscr]\n\t"
+        "FMXR   FPEXC, %[fpexc]\n\t"
+        "FMXR   FPINST, %[fpinst]\n\t"
+        "FMXR   FPINST2, %[fpinst2]" :
+        [fpscr]"=r" (current_thread->tls_regs.fpscr),
+        [fpexc]"=r" (current_thread->tls_regs.fpexc),
+        [fpinst]"=r" (current_thread->tls_regs.fpinst),
+        [fpinst2]"=r" (current_thread->tls_regs.fpinst2));
+
+#define LOAD_VFP_REG(i) do {                                \
+    __asm__ volatile (                                      \
+        "FMDRR d" #i ", %[l], %[h]" :                        \
+        [l]"=r" (current_thread->tls_regs.dreg[i]),         \
+        [h]"=r" (current_thread->tls_regs.dreg[i + 1]));    \
+} while (0)
+
+    LOAD_VFP_REG(0);
+    LOAD_VFP_REG(1);
+    LOAD_VFP_REG(2);
+    LOAD_VFP_REG(3);
+    LOAD_VFP_REG(4);
+    LOAD_VFP_REG(5);
+    LOAD_VFP_REG(6);
+    LOAD_VFP_REG(7);
+    LOAD_VFP_REG(8);
+    LOAD_VFP_REG(9);
+    LOAD_VFP_REG(10);
+    LOAD_VFP_REG(11);
+    LOAD_VFP_REG(12);
+    LOAD_VFP_REG(13);
+    LOAD_VFP_REG(14);
+    LOAD_VFP_REG(15);
+#undef LOAD_VFP_REG
+#endif
 }
 DATA_SET(post_sched_tasks, arm11_sched_pop_hw_tls);
 
