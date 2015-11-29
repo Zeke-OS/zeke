@@ -28,6 +28,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+extern void __init_stdio(void);
 extern int main(int, char **, char **);
 
 extern void (*__preinit_array_start[])(int, char **, char **) __hidden;
@@ -71,6 +72,8 @@ handle_static_init(int argc, char ** argv, char ** env)
     if (&_DYNAMIC != NULL)
         return;
 #endif
+
+    __init_stdio();
 
     atexit(finalizer);
 

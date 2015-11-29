@@ -464,13 +464,17 @@ struct _PDCLIB_locale _PDCLIB_global_locale = {
     },
 };
 
-/* TODO: Better solution than this! */
-__attribute__((constructor)) void init_stdio(void)
+/**
+ * Initialize stdio/libc.
+ */
+void __init_stdio(void)
 {
     _PDCLIB_initclocale(&_PDCLIB_global_locale);
     tss_create(&_PDCLIB_locale_tss, (tss_dtor_t)freelocale);
     mtx_init(&stdin->lock,  mtx_recursive);
     mtx_init(&stdout->lock, mtx_recursive);
     mtx_init(&stderr->lock, mtx_recursive);
+
+    /* Give kernel a pointer to sigreturn() function. */
     syscall(SYSCALL_SIGNAL_SETRETURN, sigreturn);
 }
