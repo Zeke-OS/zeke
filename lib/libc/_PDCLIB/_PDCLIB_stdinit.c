@@ -5,17 +5,11 @@
  * Permission is granted to use, modify, and / or redistribute at will.
  */
 
-/*
- * This is an example initialization of stdin, stdout and stderr to the integer
- * file descriptors 0, 1, and 2, respectively. This applies for a great variety
- * of operating systems, including POSIX compliant ones.
- */
-
 #include <stdio.h>
 #include <locale.h>
 #include <limits.h>
 #include <unistd.h>
-#include <syscall.h> /* for sireturn init */
+#include <syscall.h> /* for sigreturn init */
 
 #include <sys/_PDCLIB_io.h>
 #include <sys/_PDCLIB_locale.h>
@@ -469,6 +463,8 @@ struct _PDCLIB_locale _PDCLIB_global_locale = {
  */
 void __init_stdio(void)
 {
+    extern void __pthread_init(void);
+
     _PDCLIB_initclocale(&_PDCLIB_global_locale);
     tss_create(&_PDCLIB_locale_tss, (tss_dtor_t)freelocale);
     mtx_init(&stdin->lock,  mtx_recursive);
@@ -477,4 +473,6 @@ void __init_stdio(void)
 
     /* Give kernel a pointer to sigreturn() function. */
     syscall(SYSCALL_SIGNAL_SETRETURN, sigreturn);
+
+    __pthread_init();
 }

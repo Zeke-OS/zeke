@@ -1438,6 +1438,10 @@ static int sys_signal_action(__user void * user_args)
     struct ksigaction old_ksigaction;
     int err;
 
+    /*
+     * RFE How should a process get a priviledge to set signal handlers needed
+     * by libc?
+     */
     if (priv_check(&curproc->cred, PRIV_SIGNAL_ACTION)) {
         set_errno(ENOTSUP);
         return -1;

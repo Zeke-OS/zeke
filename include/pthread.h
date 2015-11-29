@@ -173,12 +173,15 @@ enum pthread_mutextype {
 
 #define PTHREAD_MUTEX_DEFAULT    PTHREAD_MUTEX_NORMAL
 
-struct _pthread_cleanup_info {
-    uintptr_t pthread_cleanup_pad[8];
-};
-
 typedef int pthread_key_t;
 typedef struct pthread_once pthread_once_t;
+
+struct _pthread_cleanup_info {
+    void (*rtn)(void *);
+    void * arg;
+    struct _pthread_cleanup_info * next;
+};
+extern pthread_key_t _pthread_cleanup_handler_key;
 
 /**
  * A struct for thread local storage.
@@ -248,8 +251,32 @@ int     pthread_barrierattr_getpshared(const pthread_barrierattr_t *,
             int *);
 int     pthread_barrierattr_init(pthread_barrierattr_t *);
 int     pthread_barrierattr_setpshared(pthread_barrierattr_t *, int);
-void  pthread_cleanup_push(void (*)(void*), void *);
-void  pthread_cleanup_pop(int);
+*/
+
+/**
+ * Establish cancellation handlers.
+ * @{
+ */
+
+#define pthread_cleanup_push(rtn, arg) {                        \
+    Struct _pthread_cleanup_info * __head, __cleanup_handler =  \
+        {.rtn = (rtn), .arg = (arg)};                           \
+    __head = pthread_getspecific(_pthread_cleanup_handler_key); \
+    __cleanup_handler.next = __head;                            \
+    __head = &__cleanup_handler;                                \
+    pthread_setspecific(_pthread_cleanup_handler_key, __head)
+
+#define pthread_cleanup_pop(ex)                                 \
+    pthread_setspecific(_pthread_cleanup_handler_key,           \
+                        __cleanup_handler.next);                \
+    if (ex && __cleanup_handler.rtn) {                          \
+        __cleanup_handler.rtn(__cleanup_handler.arg); } }
+
+/**
+ * @}
+ */
+
+/*
 int     pthread_condattr_destroy(pthread_condattr_t *);
 int     pthread_condattr_getclock(const pthread_condattr_t *,
             clockid_t *);
