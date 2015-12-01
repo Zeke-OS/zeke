@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Thread-specific data key management.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -103,7 +103,7 @@ int pthread_key_create(pthread_key_t * key, void (*destructor)(void *))
 
     for (i = 0; i < PTHREAD_KEYS_MAX; i++) {
         if (keys[i] == NULL) {
-            if (atomic_cmpxchg_ptr(&keys[i], NULL, destructor) == NULL) {
+            if (!atomic_cmpxchg_ptr((void **)(&keys[i]), NULL, destructor)) {
                 /* Succeed. */
                 *key = i;
                 return 0;

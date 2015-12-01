@@ -130,7 +130,7 @@
 /*
  * Static once initialization values.
  */
-#define PTHREAD_ONCE_INIT           { PTHREAD_NEEDS_INIT, NULL }
+#define PTHREAD_ONCE_INIT           { PTHREAD_NEEDS_INIT }
 
 /*
  * Static initialization values.
@@ -174,7 +174,10 @@ enum pthread_mutextype {
 #define PTHREAD_MUTEX_DEFAULT    PTHREAD_MUTEX_NORMAL
 
 typedef int pthread_key_t;
-typedef struct pthread_once pthread_once_t;
+typedef struct _pthread_once {
+    int state;
+    pthread_key_t key;
+} pthread_once_t;
 
 struct _pthread_cleanup_info {
     void (*rtn)(void *);
@@ -323,8 +326,12 @@ int     pthread_mutexattr_setpshared(pthread_mutexattr_t *, int);
 int     pthread_mutex_destroy(pthread_mutex_t *__mutex);
 int     pthread_mutex_timedlock(pthread_mutex_t *__mutex,
             const struct timespec *);
-/*
+/**
+ * Dynamic package initialization.
+ */
 int     pthread_once(pthread_once_t *, void (*) (void));
+
+/*
 int     pthread_rwlock_destroy(pthread_rwlock_t *__rwlock);
 int     pthread_rwlock_init(pthread_rwlock_t *__rwlock,
             const pthread_rwlockattr_t *);
