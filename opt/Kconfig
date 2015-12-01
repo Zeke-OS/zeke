@@ -31,8 +31,8 @@ config configTESTS_TTY
     bool "TTY tests"
     default n
 
-config configTESTS_PTHREADS
-    bool "Pthreds tests"
+config configTESTS_PTHREAD
+    bool "Pthread tests"
     default n
 
 config configTESTS_UNISTD

@@ -64,7 +64,7 @@ static char * test_join(void)
     return NULL;
 }
 
-static void all_tests()
+static void all_tests(void)
 {
     pu_def_test(test_create, PU_RUN);
     pu_def_test(test_join, PU_RUN);
