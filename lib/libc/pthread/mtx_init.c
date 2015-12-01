@@ -4,8 +4,8 @@
 
 int mtx_init(mtx_t *mtx, int type)
 {
-    if(type == mtx_plain || type == mtx_timed) {
-        if(pthread_mutex_init(mtx, NULL) == 0)
+    if (type == mtx_plain || type == mtx_timed) {
+        if (pthread_mutex_init(mtx, NULL) == 0)
             return thrd_success;
         else
             return thrd_error;
@@ -14,13 +14,13 @@ int mtx_init(mtx_t *mtx, int type)
         int rc = thrd_error;
         pthread_mutexattr_t attr;
 
-        if(pthread_mutexattr_init(&attr))
+        if (pthread_mutexattr_init(&attr))
             goto cleanup1;
 
-        if(pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE))
+        if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE))
             goto cleanup2;
 
-        if(pthread_mutex_init(mtx, &attr) == 0)
+        if (pthread_mutex_init(mtx, &attr) == 0)
             rc = thrd_success;
 
     cleanup2:

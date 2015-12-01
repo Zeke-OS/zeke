@@ -89,7 +89,7 @@ static struct ptkey_arr * get_ptkey_arr(void)
     return elm;
 }
 
-int pthread_key_create(pthread_key_t * key, void (*destructor)(void*))
+int pthread_key_create(pthread_key_t * key, void (*destructor)(void *))
 {
     size_t i;
     struct ptkey_arr * ptkey_arr;

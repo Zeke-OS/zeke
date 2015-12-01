@@ -20,7 +20,7 @@ $(wildcard libc/malloc/*.c) \
 $(wildcard libc/math/*.c) \
 $(wildcard libc/mman/*.c) \
 $(wildcard libc/priv/*.c) \
-$(wildcard libc/pthreads/*.c) \
+$(wildcard libc/pthread/*.c) \
 $(wildcard libc/pwd/*.c) \
 $(wildcard libc/regexp/*.c) \
 $(wildcard libc/resource/*.c) \

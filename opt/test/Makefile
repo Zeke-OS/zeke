@@ -5,7 +5,7 @@ DIRS-$(configTESTS_FB) += fb
 DIRS-$(configTESTS_LIBC) += libc
 DIRS-$(configTESTS_MMAN) += mman
 DIRS-$(configTESTS_TTY) += tty
-DIRS-$(configTESTS_PTHREADS) += pthreads
+DIRS-$(configTESTS_PTHREAD) += pthread
 DIRS-$(configTESTS_UNISTD) += unistd
 
 CLEANDIRS := $(patsubst %,%.clean,$(subst :, ,$(DIRS-y)))
@@ -36,7 +36,7 @@ clean: $(CLEANDIRS)
 	$(RM) libc/manifest
 	$(RM) mman/manifest
 	$(RM) tty/manifest
-	$(RM) pthreads/manifest
+	$(RM) pthread/manifest
 	$(RM) unistd/manifest
 	$(RM) manifest
 
