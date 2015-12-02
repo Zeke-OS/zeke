@@ -1,11 +1,21 @@
-# Common user space build commands
+# Common build commands
 
+# AS
+# AIDIR := Assembler include dirs in -I format
+# ASFLAGS := Assembler flags
 define as-command
 	@echo "AS $@"
-	@$(CC) -E $(IDIR) $*.S | grep -Ev "^#" | \
-		$(GNUARCH)-as $(ASFLAGS) -am $(IDIR) -o $@
+	@$(CC) -E $(AIDIR) $*.S | grep -Ev "^#" | \
+		$(GNUARCH)-as $(ASFLAGS) -am $(AIDIR) -o $@
 endef
 
+# CC
+# CCFLAGS := Common cflags
+# NAME-CCFLAGS := Per c file cflags
+# IDIR := Include dirs in -I format
+# OFLAGS := Optimizer flags
+# LLCFLAGS := Linker flags
+# ASFLAGS := Assembler flags
 define cc-command
 	@echo "CC $@"
 	$(eval NAME := $(basename $(notdir $@)))

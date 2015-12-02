@@ -12,6 +12,7 @@ include $(ROOT_DIR)/makefiles/commands.mk
 all: $(BIN-y) manifest
 
 $(ASOBJS): $(ASRC-y) $(AUTOCONF_H)
+	$(eval AIDIR := $(IDIR))
 	$(as-command)
 
 $(OBJS): %.o: %.c $(AUTOCONF_H)

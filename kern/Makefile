@@ -27,6 +27,7 @@
 # Configuration files ##########################################################
 # Generic config
 include $(ROOT_DIR)/genconfig/buildconf.mk
+include $(ROOT_DIR)/makefiles/commands.mk
 ################################################################################
 # We use suffixes because it's fun
 .SUFFIXES:                      # Delete the default suffixes
@@ -106,17 +107,10 @@ $(STARTUP_O): $(STARTUP) $(AUTOCONF_H)
 	@$(CC) -E $(AIDIR) $< | grep -Ev "^#" | $(GNUARCH)-as -o $(STARTUP_O)
 
 $(ASOBJS): $(ASRC-y) $(UNIFDEF) $(AUTOCONF_H)
-	@echo "AS $@"
-	@$(CC) -E $(AIDIR) $*.S | grep -Ev "^#" | $(GNUARCH)-as -am $(AIDIR) -o $@
+	$(as-command)
 
 $(OBJS): %.o: %.c $(AUTOCONF_H)
-	@echo "CC $@"
-	$(eval CUR_BC := $*.bc)
-	$(eval SP := s|\(^.*\)\.bc|$@|)
-	@$(CC) $(CCFLAGS) $(IDIR) -c $*.c -o $(CUR_BC)
-	@sed -i "$(SP)" "$*.d"
-	@$(OPT) $(OFLAGS) $(CUR_BC) -o - | $(LLC) $(LLCFLAGS) - -o - \
-		| $(GNUARCH)-as - -o $@ $(ASFLAGS)
+	$(cc-command)
 
 -include $(DEPS)
 

@@ -83,6 +83,7 @@ lib_idir.gen.mk:
 	echo "LIB_IDIR += $(LIB_IDIR)" > lib_idir.gen.mk
 
 $(ASOBJS): %.o: %.S $(AUTOCONF_H)
+	$(eval AIDIR := $(IDIR))
 	$(as-command)
 
 $(OBJS): %.o: %.c $(AUTOCONF_H)
