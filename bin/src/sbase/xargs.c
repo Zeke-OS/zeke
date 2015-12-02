@@ -161,10 +161,11 @@ static void
 spawn(void)
 {
     int savederrno;
-    int first = 1;
-    char **p;
 
     if (tflag) {
+        char **p;
+        int first = 1;
+
         for (p = cmd; *p; p++) {
             if (!first)
                 fputc(' ', stderr);
@@ -189,15 +190,15 @@ spawn(void)
 static void
 usage(void)
 {
-    eprintf("usage: %s [-rtx] [-E eofstr] [-n num] [-s num] [cmd [arg ...]]\n", argv0);
+    eprintf("usage: %s [-rtx] [-E eofstr] [-n num] [-s num] [cmd [arg ...]]\n",
+            argv0);
 }
 
 int
 main(int argc, char *argv[])
 {
-    int ret = 0, leftover = 0, i;
-    size_t argsz, argmaxsz;
-    size_t arglen, a;
+    int ret = 0, leftover = 0;
+    size_t argmaxsz, arglen, a;
     char *arg = "";
 
     if ((argmaxsz = sysconf(_SC_ARG_MAX)) == (size_t)-1)
@@ -230,6 +231,9 @@ main(int argc, char *argv[])
     } ARGEND;
 
     do {
+        int i;
+        size_t argsz;
+
         argsz = 0; i = 0; a = 0;
         if (argc) {
             for (; i < argc; i++) {

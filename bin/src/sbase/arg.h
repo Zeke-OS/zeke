@@ -13,7 +13,6 @@ extern char *argv0;
                     argv[0] && argv[0][1]\
                     && argv[0][0] == '-';\
                     argc--, argv++) {\
-                char argc_;\
                 char **argv_;\
                 int brk_;\
                 if (argv[0][1] == '-' && argv[0][2] == '\0') {\
@@ -22,8 +21,9 @@ extern char *argv0;
                     break;\
                 }\
                 for (brk_ = 0, argv[0]++, argv_ = argv;\
-                        argv[0][0] && !brk_;\
-                        argv[0]++) {\
+                     argv[0][0] && !brk_;\
+                     argv[0]++) {\
+                    char argc_;\
                     if (argv_ != argv)\
                         break;\
                     argc_ = argv[0][0];\

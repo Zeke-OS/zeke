@@ -111,6 +111,7 @@ int pthread_key_create(pthread_key_t * key, void (*destructor)(void *))
         }
     }
 
+    /* No memory leak here, ptkey_arr shouldn't be freed. */
     errno = EAGAIN;
     return EAGAIN;
 }
@@ -156,6 +157,7 @@ int pthread_setspecific(pthread_key_t key, const void * value)
 
     elm->values[key] = value;
 
+    /* No leak here, elm is never returned. */
     return 0;
 }
 
