@@ -7,21 +7,15 @@ DEPS := $(patsubst %.c, %.d, $(SRC-y))
 
 FILES += $(FILES-y)
 
+include $(ROOT_DIR)/makefiles/commands.mk
+
 all: $(BIN-y) manifest
 
 $(ASOBJS): $(ASRC-y) $(AUTOCONF_H)
-	@echo "AS $@"
-	@$(CC) -E $(IDIR) $*.S | grep -Ev "^#" | $(GNUARCH)-as -am $(IDIR) -o $@
+	$(as-command)
 
 $(OBJS): %.o: %.c $(AUTOCONF_H)
-	@echo "CC $@"
-	$(eval NAME := $(basename $(notdir $@)))
-	$(eval CUR_BC := $*.bc)
-	$(eval SP := s|\(^.*\)\.bc|$@|)
-	@$(CC) $(CCFLAGS) $($(NAME)-CCFLAGS) $(IDIR) -c $*.c -o $(CUR_BC)
-	@sed -i "$(SP)" "$*.d"
-	@$(OPT) $(OFLAGS) $(CUR_BC) -o - | $(LLC) $(LLCFLAGS) - -o - | \
-		$(GNUARCH)-as - -o $@ $(ASFLAGS)
+	$(cc-command)
 
 $(BIN-y): $(OBJS)
 	@echo "LD $@"

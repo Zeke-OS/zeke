@@ -27,6 +27,7 @@
 # Generic config
 include $(ROOT_DIR)/genconfig/buildconf.mk
 include $(ROOT_DIR)/genconfig/dist.mk
+include $(ROOT_DIR)/makefiles/commands.mk
 ################################################################################
 # We use suffixes because it's fun
 .SUFFIXES:                  	# Delete the default suffixes
@@ -82,18 +83,10 @@ lib_idir.gen.mk:
 	echo "LIB_IDIR += $(LIB_IDIR)" > lib_idir.gen.mk
 
 $(ASOBJS): %.o: %.S $(AUTOCONF_H)
-	@echo "AS $@"
-	@$(CC) -E $(IDIR) $*.S | grep -Ev "^#" | \
-		$(GNUARCH)-as $(ASFLAGS) -am $(IDIR) -o $@
+	$(as-command)
 
 $(OBJS): %.o: %.c $(AUTOCONF_H)
-	@echo "CC $@"
-	$(eval CUR_BC := $*.bc)
-	$(eval SP := s|\(^.*\)\.bc|$@|)
-	@$(CC) $(CCFLAGS) $(IDIR) -c $*.c -o $(CUR_BC)
-	@sed -i "$(SP)" "$*.d"
-	@$(OPT) $(OFLAGS) $(CUR_BC) -o - | $(LLC) $(LLCFLAGS) - -o - | \
-		$(GNUARCH)-as - -o $@ $(ASFLAGS)
+	$(cc-command)
 
 -include $(DEPS)
 
