@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    pthreads_keys.c
+ * @file    pthread_keys.c
  * @author  Olli Vanhoja
  * @brief   Thread-specific data key management.
  * @section LICENSE
