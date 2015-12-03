@@ -10,9 +10,7 @@ to the corresponding variable in MIB. While test is executing the user thread
 is blocked until test tests have been run. Test results are written at
 "realtime" to the kernel logger.
 
-PUnit was originally inspired by: http://www.jera.com/techinfo/jtns/jtn002.html
-
-Complete documentation: http://ninjaware.github.com/punit/
+KUnit was originally inspired by: http://www.jera.com/techinfo/jtns/jtn002.html
 
 
 How to implement a new test group
@@ -24,25 +22,25 @@ TODO
 Assertions
 ----------
 
-+ `pu_assert(message, test)` - Checks if boolean value of test is true
-+ `pu_assert_equal(message, left, right)` - Checks if `left == right` is true
-+ `pu_assert_ptr_equal(message, left, right)` - Checks if left and right
++ `ku_assert(message, test)` - Checks if boolean value of test is true
++ `ku_assert_equal(message, left, right)` - Checks if `left == right` is true
++ `ku_assert_ptr_equal(message, left, right)` - Checks if left and right
   pointers are equal
-+ `pu_assert_str_equal(message, left, right)` - Checks if left and right
++ `ku_assert_str_equal(message, left, right)` - Checks if left and right
   strings are equal (strcmp)
-+ `pu_assert_array_equal(message, left, right, size)` - Asserts that each
++ `ku_assert_array_equal(message, left, right, size)` - Asserts that each
   integer element i of two arrays are equal (strcmp).
-+ `pu_assert_str_array_equal(message, left, right, size)` - Asserts that each
++ `ku_assert_str_array_equal(message, left, right, size)` - Asserts that each
   string element i of two arrays are equal (==).
-+ `pu_assert_null(message, ptr)` - Asserts that a pointer is null.
-+ `pu_assert_not_null(message, ptr)` - Asserts that a pointer isn't null.
-+ `pu_assert_fail(message)` - Always fails
++ `ku_assert_null(message, ptr)` - Asserts that a pointer is null.
++ `ku_assert_not_null(message, ptr)` - Asserts that a pointer isn't null.
++ `ku_assert_fail(message)` - Always fails
 
 
 License 
 -------
 
-Copyright (c) 2013, 2014, Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+Copyright (c) 2013 - 2015, Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
 Copyright (c) 2012, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
 All rights reserved.
 
