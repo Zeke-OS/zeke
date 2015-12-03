@@ -444,7 +444,7 @@ struct proc_info * proc_ref(pid_t pid, enum proc_lock_mode lmode)
     struct proc_info * retval;
 
     /*
-     * TODO mm protection is not perfect
+     * RFE mm protection is not perfect
      * Something bad might happen if there is an on going mem transfer op and
      * the process is removed.
      */
@@ -525,11 +525,6 @@ void proc_thread_removed(pid_t pid, pthread_t thread_id)
 
 void proc_update_times(void)
 {
-    /*
-     * TODO Inaccurate proc times calculation
-     * A thread is sometimes also blocked in a actual syscall waiting for some
-     * event causing a tick to fall in utime.
-     */
     if (thread_flags_is_set(current_thread, SCHED_INSYS_FLAG) &&
         thread_state_get(current_thread) != THREAD_STATE_BLOCKED)
         curproc->tms.tms_stime++;

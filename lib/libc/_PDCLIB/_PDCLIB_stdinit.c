@@ -18,7 +18,6 @@
 
 extern void sigreturn(void); /* for init */
 
-/* TODO: This is proof-of-concept, requires finetuning. */
 static char _PDCLIB_sin_buffer[BUFSIZ];
 static char _PDCLIB_sout_buffer[BUFSIZ];
 static char _PDCLIB_serr_buffer[BUFSIZ];
@@ -78,10 +77,11 @@ tss_t _PDCLIB_locale_tss;
 /* FIXME: This approach is a possible attack vector. */
 FILE * _PDCLIB_filelist = &_PDCLIB_sin;
 
-/* "C" locale - defaulting to ASCII-7.
-   1 kByte (+ 4 byte) of <ctype.h> data.
-   Each line: flags, lowercase, uppercase, collation.
-*/
+/*
+ * "C" locale - defaulting to ASCII-7.
+ * 1 kByte (+ 4 byte) of <ctype.h> data.
+ * Each line: flags, lowercase, uppercase, collation.
+ */
 static const _PDCLIB_ctype_t global_ctype[] = {
     { /* EOF */    0,    0,    0,    0 },
     { /* NUL */ _PDCLIB_CTYPE_CNTRL,                                             0x00, 0x00, 0x00 },
