@@ -1051,11 +1051,6 @@ out:
     return retval;
 }
 
-#define KERROR_VREF_FMT(_STR_) "%s(%s:%u): " _STR_
-#define KERROR_VREF(_LVL_, _FMT_, ...) \
-    KERROR(_LVL_, KERROR_VREF_FMT(_FMT_), __func__, \
-           vnode->sb->fs->fsname, (uint32_t)(vnode->vn_num), ##__VA_ARGS__)
-
 int vrefcnt(struct vnode * vnode)
 {
     int retval;
@@ -1077,9 +1072,9 @@ int vref(vnode_t * vnode)
     prev = atomic_read(&vnode->vn_refcount);
     if (prev < 0) {
 #ifdef configFS_VREF_DEBUG
-        KERROR_VREF(KERROR_ERR,
-                    "Failed, vnode will be freed soon or it's orphan (%d)\n",
-                    prev);
+        FS_KERROR_VNODE(KERROR_ERR, vnode,
+                        "Failed, vnode will be freed soon or it's orphan (%d)\n",
+                        prev);
 #endif
         return -ENOLINK;
     }
@@ -1087,7 +1082,7 @@ int vref(vnode_t * vnode)
     prev = atomic_inc(&vnode->vn_refcount);
 
 #ifdef configFS_VREF_DEBUG
-    KERROR_VREF(KERROR_DEBUG, "%d\n", prev);
+    FS_KERROR_VNODE(KERROR_DEBUG, vnode, "%d\n", prev);
 #endif
 
     return 0;
@@ -1100,7 +1095,7 @@ void vrele(vnode_t * vnode)
     prev = atomic_dec(&vnode->vn_refcount);
 
 #ifdef configFS_VREF_DEBUG
-    KERROR_VREF(KERROR_DEBUG, "%d\n", prev);
+    FS_KERROR_VNODE(KERROR_DEBUG, vnode, "%d\n", prev);
 #endif
 
     if (prev <= 1)
