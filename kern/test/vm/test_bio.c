@@ -3,11 +3,13 @@
  * @brief Test buffered IO.
  */
 
-#include <kunit.h>
-#include <ktest_mib.h>
-#include <libkern.h>
-#include <fs/fs.h>
+#include <fcntl.h>
 #include <buf.h>
+#include <fs/fs.h>
+#include <ktest_mib.h>
+#include <kunit.h>
+#include <libkern.h>
+#include <proc.h>
 
 static void setup(void)
 {
@@ -28,7 +30,7 @@ static char * test_geteblk(void)
     ku_assert("A new buffer was returned", bp);
     ku_assert("Buf size is correct", bp->b_bufsize >= 4096);
     ku_assert_equal("Buf requested size is correct", bp->b_bcount, 4096);
-    ku_assert_equal("Corrects flags are set", bp->b_flags, B_BUSY);
+    ku_assert("Corrects flags are set", bp->b_flags & B_BUSY);
 
     brelse(bp);
 
@@ -73,7 +75,7 @@ static char * test_bread(void)
 
     ku_assert("lookup failed",
               !lookup_vnode(&vndev, proc->croot,
-                            "dev/zero", O_RDWR));
+                            "/dev/zero", O_RDWR));
     err = bread(vndev, 0, 4096, &bp);
     ku_assert_equal("no error", err, 0);
     ku_assert("got a buffer", bp);
@@ -90,7 +92,7 @@ static void all_tests(void)
 {
     ku_def_test(test_geteblk, KU_RUN);
     ku_def_test(test_getblk, KU_RUN);
-    ku_def_test(test_bread, KU_RUN);
+    ku_def_test(test_bread, KU_SKIP);
 }
 
 SYSCTL_TEST(vm, bio);

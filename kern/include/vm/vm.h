@@ -39,10 +39,17 @@
 #include <klocks.h>
 #include <sys/tree.h>
 
+/**
+ * VM permissions.
+ * @{
+ */
 #define VM_PROT_READ    0x1 /*!< Read. */
 #define VM_PROT_WRITE   0x2 /*!< Write. */
 #define VM_PROT_EXECUTE 0x4 /*!< Execute. */
 #define VM_PROT_COW     0x8 /*!< Copy-on-write. */
+/**
+ * @}
+ */
 
 struct proc_info;
 
