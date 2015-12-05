@@ -52,7 +52,7 @@
 #include <fs/fs.h>
 #include <fs/devfs.h>
 
-static int sys_read(__user void * user_args)
+static int sys_readwrite(__user void * user_args, int write)
 {
     struct _fs_readwrite_args args;
     int err, retval;
@@ -60,7 +60,7 @@ static int sys_read(__user void * user_args)
     file_t * file;
     struct uio uio;
 
-    err = priv_check(&curproc->cred, PRIV_VFS_READ);
+    err = priv_check(&curproc->cred, (write) ? PRIV_VFS_WRITE : PRIV_VFS_READ);
     if (err) {
         set_errno(EPERM);
         return -1;
@@ -75,7 +75,7 @@ static int sys_read(__user void * user_args)
 
     /* Init uio struct. */
     err = uio_init_ubuf(&uio, (__user void *)args.buf, args.nbytes,
-                           VM_PROT_READ);
+                        (write) ? VM_PROT_WRITE : VM_PROT_READ);
     if (err) {
         set_errno(EFAULT);
         return -1;
@@ -91,13 +91,14 @@ static int sys_read(__user void * user_args)
     /*
      * Check that file is opened with a correct mode and the vnode exist.
      */
-    if (!((file->oflags & O_RDONLY) && vnode)) {
+    if (!((file->oflags & ((write) ? O_WRONLY : O_RDONLY)) && vnode)) {
         set_errno(EBADF);
         retval = -1;
         goto out;
     }
 
-    retval = vnode->vnode_ops->read(file, &uio, args.nbytes);
+    retval = (write) ? vnode->vnode_ops->write(file, &uio, args.nbytes) :
+                       vnode->vnode_ops->read(file, &uio, args.nbytes);
     if (retval < 0) {
         set_errno(-retval);
         retval = -1;
@@ -108,59 +109,14 @@ out:
     return retval;
 }
 
+static int sys_read(__user void * user_args)
+{
+    return sys_readwrite(user_args, 0);
+}
+
 static int sys_write(__user void * user_args)
 {
-    struct _fs_readwrite_args args;
-    int err, retval;
-    vnode_t * vnode;
-    file_t * file;
-    struct uio uio;
-
-    err = priv_check(&curproc->cred, PRIV_VFS_WRITE);
-    if (err) {
-        set_errno(EPERM);
-        return -1;
-    }
-
-    /* Copyin args. */
-    err = copyin(user_args, &args, sizeof(args));
-    if (err) {
-        set_errno(EFAULT);
-        return -1;
-    }
-
-    err = uio_init_ubuf(&uio, (__user void *)args.buf, args.nbytes,
-                           VM_PROT_WRITE);
-    if (err) {
-        set_errno(EFAULT);
-        return -1;
-    }
-
-    file = fs_fildes_ref(curproc->files, args.fildes, 1);
-    if (!file) {
-        set_errno(EBADF);
-        return -1;
-    }
-    vnode = file->vnode;
-
-    /*
-     * Check that file is opened with a correct mode and the vnode exist.
-     */
-    if (!((file->oflags & O_WRONLY) && vnode)) {
-        set_errno(EBADF);
-        retval = -1;
-        goto out;
-    }
-
-    retval = vnode->vnode_ops->write(file, &uio, args.nbytes);
-    if (retval < 0) {
-        set_errno(-err);
-        retval = -1;
-    }
-
-out:
-    fs_fildes_ref(curproc->files, args.fildes, -1);
-    return retval;
+    return sys_readwrite(user_args, !0);
 }
 
 static int sys_lseek(__user void * user_args)
