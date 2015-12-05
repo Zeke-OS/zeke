@@ -1280,7 +1280,7 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
     udelay(2000);
 
     /* Prepare the device structure */
-    struct emmc_block_dev * ret;
+    kmalloc_autofree struct emmc_block_dev * ret;
     if (*edev == NULL)
         ret = kmalloc(sizeof(struct emmc_block_dev));
     else
@@ -1582,7 +1582,6 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
     if (FAIL(ret)) {
         KERROR(KERROR_ERR, "SD: error sending SEND_RELATIVE_ADDR\n");
 
-        kfree(ret);
         return -EIO;
     }
 
@@ -1601,7 +1600,6 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
     if (crc_error) {
         KERROR(KERROR_ERR, "SD: CRC error\n");
 
-        kfree(ret);
         kfree(dev_id);
         return -EIO;
     }
@@ -1609,7 +1607,6 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
     if (illegal_cmd) {
         KERROR(KERROR_ERR, "SD: illegal command\n");
 
-        kfree(ret);
         kfree(dev_id);
         return -EIO;
     }
@@ -1617,7 +1614,6 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
     if (error) {
         KERROR(KERROR_ERR, "SD: generic error\n");
 
-        kfree(ret);
         kfree(dev_id);
         return -EIO;
     }
@@ -1625,7 +1621,6 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
     if (!ready) {
         KERROR(KERROR_ERR, "SD: not ready for data\n");
 
-        kfree(ret);
         kfree(dev_id);
         return -EIO;
     }
@@ -1640,7 +1635,6 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
     if (FAIL(ret)) {
         KERROR(KERROR_ERR, "SD: error sending CMD7\n");
 
-        kfree(ret);
         return -EIO;
     }
 
@@ -1650,7 +1644,6 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
     if ((status != 3) && (status != 4)) {
         KERROR(KERROR_ERR, "SD: invalid status (%u)\n", status);
 
-        kfree(ret);
         kfree(dev_id);
         return -EIO;
     }
@@ -1661,7 +1654,6 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
         if (FAIL(ret)) {
             KERROR(KERROR_ERR, "SD: error sending SET_BLOCKLEN\n");
 
-            kfree(ret);
             return -EIO;
         }
     }
@@ -1687,8 +1679,6 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
         KERROR(KERROR_ERR, "SD: error sending SEND_SCR\n");
 
         kfree(ret->scr);
-        kfree(ret);
-
         return -EIO;
     }
 
@@ -1787,6 +1777,7 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
     mmio_end(&s_entry);
 
     *edev = ret;
+    ret = NULL; /* To prevent autofree. */
 
     return 0;
 }

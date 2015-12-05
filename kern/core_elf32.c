@@ -398,8 +398,8 @@ int core_dump2file(struct proc_info * proc, file_t * file)
 {
     vnode_t * vn = file->vnode;
     struct vm_mm_struct * mm;
-    struct elf32_phdr * phdr = NULL;
-    void * notes = NULL;
+    kmalloc_autofree struct elf32_phdr * phdr = NULL;
+    kmalloc_autofree void * notes = NULL;
     int phnum, retval;
     off_t err;
     size_t phsize, notes_size;
@@ -425,8 +425,6 @@ int core_dump2file(struct proc_info * proc, file_t * file)
 
     retval = 0;
 out:
-    kfree(phdr);
-    kfree(notes);
     mtx_unlock(&mm->regions_lock);
     return retval;
 }
