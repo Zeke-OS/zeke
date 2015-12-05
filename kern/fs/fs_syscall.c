@@ -217,8 +217,7 @@ static int sys_open(__user void * user_args)
     }
 
 out:
-    if (vn_file)
-        vrele(vn_file);
+    vrele(vn_file);
     freecpystruct(args);
     return retval;
 }
@@ -249,7 +248,7 @@ static int sys_close_all(__user void * p)
 static int sys_getdents(__user void * user_args)
 {
     struct _fs_getdents_args args;
-    struct dirent * dents;
+    kmalloc_autofree struct dirent * dents = NULL;
     size_t bytes_left;
     file_t * fildes;
     vnode_t * vnode;
@@ -301,7 +300,6 @@ static int sys_getdents(__user void * user_args)
 
     if (count > 0)
         copyout(dents, (__user void *)args.buf, count * sizeof(struct dirent));
-    kfree(dents);
 
 out:
     fs_fildes_ref(curproc->files, args.fd, -1);
@@ -631,8 +629,7 @@ static int sys_filestat(__user void * user_args)
 out:
     if (filref)
         fs_fildes_ref(curproc->files, args->fd, -1);
-    if (vnref)
-        vrele(vnode);
+    vrele(vnode);
     copyout(&stat_buf, (__user struct stat *)args->buf, sizeof(struct stat));
     freecpystruct(args);
 
@@ -642,9 +639,9 @@ out:
 static int sys_access(__user void * user_args)
 {
     struct _fs_access_args * args = 0;
-    vnode_t * vnode = NULL;
+    vnode_autorele vnode_t * vnode = NULL;
     struct cred tmp_cred;
-    int err, retval = -1;
+    int err;
 
     err = copyinstruct(user_args, (void **)(&args),
             sizeof(struct _fs_access_args),
@@ -652,18 +649,18 @@ static int sys_access(__user void * user_args)
                 path, path_len));
     if (err) {
         set_errno(-err);
-        goto out;
+        return -1;
     }
 
     if (!strvalid(args->path, args->path_len)) {
         set_errno(ENAMETOOLONG);
-        goto out;
+        return -1;
     }
 
     fs_namei_proc(&vnode, args->fd, args->path, AT_FDARG);
     if (err) {
         set_errno(-err);
-        goto out;
+        return -1;
     }
 
     tmp_cred = curproc->cred;
@@ -673,15 +670,9 @@ static int sys_access(__user void * user_args)
     }
 
     if (args->amode & F_OK) {
-        retval = 0;
-        goto out;
+        return 0;
     }
-    retval = chkperm_vnode(vnode, &tmp_cred, args->amode);
-
-out:
-    if (vnode)
-        vrele(vnode);
-    return retval;
+    return chkperm_vnode(vnode, &tmp_cred, args->amode);
 }
 
 static int sys_utimes(__user void * user_args)
@@ -778,7 +769,7 @@ static int sys_umask(__user void * user_args)
 static int sys_mount(__user void * user_args)
 {
     struct _fs_mount_args * args = NULL;
-    vnode_t * mpt = NULL;
+    vnode_autorele vnode_t * mpt = NULL;
     int err;
     int retval = -1;
 
@@ -821,8 +812,6 @@ static int sys_mount(__user void * user_args)
 
     retval = 0;
 out:
-    if (mpt)
-        vrele(mpt);
     freecpystruct(args);
     return retval;
 }

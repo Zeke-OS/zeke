@@ -47,6 +47,14 @@
 #include <stddef.h>
 
 /**
+ * Automatically free a kmalloc'd buffer when a pointer variable to the buffer
+ * goes out of scope.
+ * This is used as an attribute for a pointer variable.
+ */
+#define kmalloc_autofree \
+    __attribute__((cleanup(_kfree_cleanup)))
+
+/**
  * Allocate a memory block.
  * @param size is the size of the new memory block in bytes.
  * @return A pointer to the memory block allocated; NULL if failed to allocate.
@@ -83,6 +91,13 @@ void kfree(void * p);
  * call to kfree() must be done in interrupt handler (or scheduler).
  */
 void kfree_lazy(void * p);
+
+static inline void _kfree_cleanup(void * p)
+{
+    void ** pp = (void **)p;
+
+    kfree(*pp);
+}
 
 /**
  * Reallocate a memory block.

@@ -423,7 +423,7 @@ static int fatfs_delete_vnode(vnode_t * vnode)
     FS_KERROR_VNODE(KERROR_DEBUG, vnode, "%s\n", in->in_fpath);
 #endif
 
-    /* TODO We'd like to do the followning */
+    /* TODO We'd like to do the following */
 #if 0
     vfs_hash_remove(vnode);
     f_close(&in->fp);

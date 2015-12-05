@@ -713,13 +713,12 @@ static int getvndir(const char * pathname, vnode_t ** dir, char ** filename,
                     int flag)
 {
     vnode_t * vn_file;
-    char * path = NULL;
-    char * name = NULL;
+    kmalloc_autofree char * path = NULL;
+    kmalloc_autofree char * name = NULL;
     int err;
 
     if (pathname[0] == '\0') {
-        err = -EINVAL;
-        goto out;
+        return -EINVAL;
     }
 
     err = fs_namei_proc(&vn_file, -1, pathname, AT_FDCWD);
@@ -727,37 +726,29 @@ static int getvndir(const char * pathname, vnode_t ** dir, char ** filename,
         vrele(vn_file);
     if (flag & O_CREAT) { /* File should not exist */
         if (err == 0) {
-            err = -EEXIST;
-            goto out;
+            return -EEXIST;
         } else if (err != -ENOENT) {
-            goto out;
+            return err;
         }
     } else if (err) { /* File should exist */
-        goto out;
+        return err;
     }
 
     err = parsenames(pathname, &path, &name);
-    if (err)
-        goto out;
+    if (err) {
+        return err;
+    }
 
     kpalloc(name); /* Incr ref count */
     *filename = name;
 
-    err = fs_namei_proc(dir, -1, path, AT_FDCWD);
-    if (err)
-        goto out;
-
-out:
-    kfree(path);
-    kfree(name);
-
-    return err;
+    return fs_namei_proc(dir, -1, path, AT_FDCWD);
 }
 
 int fs_creat_curproc(const char * pathname, mode_t mode, vnode_t ** result)
 {
-    char * name = NULL;
-    vnode_t * dir = NULL;
+    kmalloc_autofree char * name = NULL;
+    vnode_autorele vnode_t * dir = NULL;
     int retval = 0;
 
 #ifdef configFS_DEBUG
@@ -767,7 +758,7 @@ int fs_creat_curproc(const char * pathname, mode_t mode, vnode_t ** result)
 
     retval = getvndir(pathname, &dir, &name, O_CREAT);
     if (retval)
-        goto out;
+        return retval;
 
     /* We know that the returned vnode is a dir so we can just call mknod() */
     *result = NULL;
@@ -779,11 +770,6 @@ int fs_creat_curproc(const char * pathname, mode_t mode, vnode_t ** result)
     KERROR(KERROR_DEBUG, "%s() result: %p\n", __func__, *result);
 #endif
 
-out:
-    if (dir)
-        vrele(dir);
-    kfree(name);
-
     return retval;
 }
 
@@ -791,91 +777,85 @@ int fs_link_curproc(int fd1, const char * path1,
                     int fd2, const char * path2,
                     int atflags)
 {
-    char * targetname = NULL;
-    vnode_t * vn_src = NULL;
-    vnode_t * vndir_dst = NULL;
+    kmalloc_autofree char * targetname = NULL;
+    vnode_autorele vnode_t * vn_src = NULL;
+    vnode_autorele vnode_t * vndir_dst = NULL;
     int err;
 
     /* Get the source vnode */
     err = fs_namei_proc(&vn_src, fd1, path1, AT_FDARG);
-    if (err)
+    if (err) {
         return err;
+    }
 
     /* Check write access to the source vnode */
     err = chkperm_vnode_curproc(vn_src, O_WRONLY);
-    if (err)
-        goto out;
+    if (err) {
+        return err;
+    }
 
      /* TODO fd2 and atflags support for link */
     if (fd2 != AT_FDCWD) {
-        err = -ENOTSUP;
-        goto out;
+        return -ENOTSUP;
     }
 
     /* Get vnode of the target directory */
     err = getvndir(path2, &vndir_dst, &targetname, O_CREAT);
-    if (err)
-        goto out;
+    if (err) {
+        return err;
+    }
 
     if (vn_src->sb->vdev_id != vndir_dst->sb->vdev_id) {
         /*
          * The link named by path2 and the file named by path1 are
          * on different file systems.
          */
-        err = -EXDEV;
-        goto out;
+        return -EXDEV;
     }
 
     err = chkperm_vnode_curproc(vndir_dst, O_WRONLY);
-    if (err)
-        goto out;
+    if (err) {
+        return err;
+    }
 
-    err = vndir_dst->vnode_ops->link(vndir_dst, vn_src, targetname);
-
-out:
-    if (vn_src)
-        vrele(vn_src);
-    if (vndir_dst)
-        vrele(vndir_dst);
-    kfree(targetname);
-
-    return err;
+    return vndir_dst->vnode_ops->link(vndir_dst, vn_src, targetname);
 }
 
 int fs_unlink_curproc(int fd, const char * path, int atflags)
 {
-    char * dirpath = NULL;
-    char * filename = NULL;
+    kmalloc_autofree char * dirpath = NULL;
+    kmalloc_autofree char * filename = NULL;
     struct stat stat;
-    vnode_t * dir = NULL;
+    vnode_autorele vnode_t * dir = NULL;
     int err;
 
     {
         vnode_t * fnode;
 
         err = fs_namei_proc(&fnode, fd, path, atflags);
-        if (err)
+        if (err) {
             return err;
+        }
 
         /* unlink() is prohibited on directories for non-root users. */
         err = fnode->vnode_ops->stat(fnode, &stat);
         vrele(fnode);
-        if (err)
-            goto out;
+        if (err) {
+            return err;
+        }
         if (S_ISDIR(stat.st_mode) && curproc->cred.euid != 0) {
-            err = -EPERM;
-            goto out;
+            return -EPERM;
         }
     }
 
     err = parsenames(path, &dirpath, &filename);
-    if (err)
-        goto out;
+    if (err) {
+        return err;
+    }
 
     /* Get the vnode of the containing directory */
     if (fs_namei_proc(&dir, fd, dirpath, atflags)) {
-        err = -ENOENT;
-        goto out;
+        return -ENOENT;
     }
 
     /*
@@ -886,70 +866,52 @@ int fs_unlink_curproc(int fd, const char * path, int atflags)
     if (err) {
         if (err == -EPERM)
             err = -EACCES;
-        goto out;
+        return err;
     }
 
-    err = dir->vnode_ops->unlink(dir, filename);
-
-out:
-    if (dir)
-        vrele(dir);
-    kfree(dirpath);
-    kfree(filename);
-
-    return err;
+    return dir->vnode_ops->unlink(dir, filename);
 }
 
 int fs_mkdir_curproc(const char * pathname, mode_t mode)
 {
-    char * name = 0;
-    vnode_t * dir = NULL;
-    int retval = 0;
+    kmalloc_autofree char * name = 0;
+    vnode_autorele vnode_t * dir = NULL;
+    int err = 0;
 
-    retval = getvndir(pathname, &dir, &name, O_CREAT);
-    if (retval)
-        goto out;
+    err = getvndir(pathname, &dir, &name, O_CREAT);
+    if (err) {
+        return err;
+    }
 
     /* Check that we have a permission to write this dir. */
-    retval = chkperm_vnode_curproc(dir, O_WRONLY);
-    if (retval)
-        goto out;
+    err = chkperm_vnode_curproc(dir, O_WRONLY);
+    if (err) {
+        return err;
+    }
 
     mode &= ~S_IFMT; /* Filter out file type bits */
     mode &= ~curproc->files->umask;
-    retval = dir->vnode_ops->mkdir(dir, name, mode);
-
-out:
-    if (dir)
-        vrele(dir);
-    kfree(name);
-
-    return retval;
+    return dir->vnode_ops->mkdir(dir, name, mode);
 }
 
 int fs_rmdir_curproc(const char * pathname)
 {
-    char * name = 0;
-    vnode_t * dir = NULL;
-    int retval;
+    kmalloc_autofree char * name = NULL;
+    vnode_autorele vnode_t * dir = NULL;
+    int err;
 
-    retval = getvndir(pathname, &dir, &name, 0);
-    if (retval)
-        goto out;
+    err = getvndir(pathname, &dir, &name, 0);
+    if (err) {
+        return err;
+    }
 
     /* Check that we have a permission to write this dir. */
-    retval = chkperm_vnode_curproc(dir, O_WRONLY);
-    if (retval)
-        goto out;
+    err = chkperm_vnode_curproc(dir, O_WRONLY);
+    if (err) {
+        return err;
+    }
 
-    retval = dir->vnode_ops->rmdir(dir, name);
-
-out:
-    if (dir)
-        vrele(dir);
-    kfree(name);
-
-    return retval;
+    return dir->vnode_ops->rmdir(dir, name);
 }
 
 int fs_utimes_curproc(int fildes, const struct timespec times[2])
@@ -1092,6 +1054,9 @@ void vrele(vnode_t * vnode)
 {
     int prev;
 
+    if (!vnode)
+        return;
+
     prev = atomic_dec(&vnode->vn_refcount);
 
 #ifdef configFS_VREF_DEBUG
@@ -1104,12 +1069,18 @@ void vrele(vnode_t * vnode)
 
 void vrele_nunlink(vnode_t * vnode)
 {
+    if (!vnode)
+        return;
+
     atomic_dec(&vnode->vn_refcount);
 }
 
 void vput(vnode_t * vnode)
 {
     int prev;
+
+    if (!vnode)
+        return;
 
     KASSERT(mtx_test(&vnode->vn_lock), "vnode should be locked");
 
@@ -1122,6 +1093,9 @@ void vput(vnode_t * vnode)
 void vunref(vnode_t * vnode)
 {
     int prev;
+
+    if (!vnode)
+        return;
 
     KASSERT(mtx_test(&vnode->vn_lock), "vnode should be locked");
 
