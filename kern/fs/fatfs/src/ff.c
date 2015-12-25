@@ -330,8 +330,6 @@
 #define FSI_StrucSig        484     /*!< FSI: Structure signature (4) */
 #define FSI_Free_Count      488     /*!< FSI: Number of free clusters (4) */
 #define FSI_Nxt_Free        492     /*!< FSI: Last allocated cluster (4) */
-#define MBR_Table           446     /*!< MBR: Partition table offset (2) */
-#define SZ_PTE              16      /*!< MBR: Size of a partition table entry */
 #define BS_55AA             510     /*!< Signature word (2) */
 
 #define DIR_Name            0       /*!< Short file name (11) */
