@@ -86,7 +86,6 @@ typedef struct {
     DWORD   free_clust;     /* Number of free clusters */
     DWORD   n_fatent;       /* Number of FAT entries, = number of clusters + 2 */
     DWORD   fsize;          /* Sectors per FAT */
-    DWORD   volbase;        /* Volume start sector */
     DWORD   fatbase;        /* FAT start sector */
     DWORD   dirbase;        /* Root directory start sector (FAT32:Cluster#) */
     DWORD   database;       /* Data start sector */

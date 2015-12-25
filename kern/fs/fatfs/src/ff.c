@@ -641,7 +641,7 @@ static FRESULT sync_fs(FATFS * fs)
             ST_DWORD(fs->win + FSI_Free_Count, fs->free_clust);
             ST_DWORD(fs->win + FSI_Nxt_Free, fs->last_clust);
             /* Write it into the FSINFO sector */
-            fs->winsect = fs->volbase + 1;
+            fs->winsect = 1;
             fatfs_disk_write(fs->drv, fs->win, fs->winsect, SS(fs));
             fs->fsi_flag = 0;
         }
@@ -1932,16 +1932,15 @@ static FRESULT follow_path(FF_DIR * dp, const TCHAR * path)
 /**
  * Load a sector and check if it is an FAT boot sector.
  * @param fs File system object.
- * @param sect Sector# (lba) to check if it is an FAT boot record or not.
  * @return 0:FAT boor sector;
  *         1:Valid boor sector but not FAT;
  *         2:Not a boot sector;
  *         3:Disk error.
  */
-static FRESULT check_fs(FATFS * fs, DWORD sect)
+static FRESULT check_fs(FATFS * fs)
 {
-    fs->wflag = 0; fs->winsect = 0xFFFFFFFF;    /* Invalidate window */
-    if (move_window(fs, sect) != FR_OK)         /* Load boot record */
+    fs->wflag = 0; fs->winsect = 0xFFFFFFFF; /* Invalidate window */
+    if (move_window(fs, 0) != FR_OK)         /* Load boot record */
         return FR_DISK_ERR;
 
     /*
@@ -1993,14 +1992,13 @@ static FRESULT access_volume(FATFS * fs, uint8_t wmode)
 static FRESULT prepare_volume(FATFS * fs, int vol)
 {
     uint8_t fmt;
-    DWORD bsect, fasize, tsect, sysect, nclst, szbfat;
+    DWORD fasize, tsect, sysect, nclst, szbfat;
     WORD nrsv;
     FRESULT ferr;
     DRESULT derr;
 
-    /* The file system object is not valid. */
     /*
-     * Following code attempts to mount the volume.
+     * Attempt to mount the volume.
      * (analyze BPB and initialize the fs object)
      */
 
@@ -2019,13 +2017,8 @@ static FRESULT prepare_volume(FATFS * fs, int vol)
         return FR_DISK_ERR;
     }
 
-    /*
-     * Find an FAT partition on the drive. Supports only generic partitioning,
-     * FDISK and SFD.
-     */
-    bsect = 0;
     /* Load sector 0 and check if it is an FAT boot sector as SFD */
-    ferr = check_fs(fs, bsect);
+    ferr = check_fs(fs);
     if (ferr != FR_OK) {
         return ferr;
     }
@@ -2083,9 +2076,8 @@ static FRESULT prepare_volume(FATFS * fs, int vol)
 
     /* Boundaries and Limits */
     fs->n_fatent = nclst + 2;       /* Number of FAT entries */
-    fs->volbase = bsect;            /* Volume start sector */
-    fs->fatbase = bsect + nrsv;     /* FAT start sector */
-    fs->database = bsect + sysect;  /* Data start sector */
+    fs->fatbase = nrsv;             /* FAT start sector */
+    fs->database = sysect;          /* Data start sector */
     if (fmt == FS_FAT32) {
         if (fs->n_rootdir)
             return FR_NO_FILESYSTEM; /* (BPB_RootEntCnt must be 0) */
@@ -2115,7 +2107,7 @@ static FRESULT prepare_volume(FATFS * fs, int vol)
 #if (_FS_NOFSINFO & 3) != 3
         /* Enable FSINFO only if FAT32 and BPB_FSInfo is 1 */
         if (fmt == FS_FAT32 && LD_WORD(fs->win+BPB_FSInfo) == 1 &&
-            move_window(fs, bsect + 1) == FR_OK) {
+            move_window(fs, 1) == FR_OK) {
             fs->fsi_flag = 0;
             /* Load FSINFO data if available */
             if (LD_WORD(fs->win+BS_55AA) == 0xAA55 &&
@@ -2277,18 +2269,11 @@ FRESULT f_open(FF_FIL * fp, FATFS * fs, const TCHAR * path, uint8_t mode)
                 /* Open an existing file if follow succeeded */
                 if (dir[DIR_Attr] & AM_DIR) {   /* It is a directory */
                     res = FR_NO_FILE;
-                } else {
-                    /*
-                     * NO RO check is needed because the actual check is done
-                     * elsewhere.
-                     */
-#if 0
-                    if ((mode & FA_WRITE) && (dir[DIR_Attr] & AM_RDO)) {
-                        /* R/O violation */
-                        res = FR_DENIED;
-                    }
-#endif
                 }
+                /*
+                 * NO RO check is needed because the actual check is done
+                 * elsewhere.
+                 */
             }
 
             if (res == FR_OK) {
@@ -2853,19 +2838,12 @@ FRESULT f_opendir(FF_DIR * dp, FATFS * fs, const TCHAR * path)
     /* Follow completed */
     if (dp->dir) { /* It is not the origin directory itself */
         /*
-         * The following check is unfortunately ambiguous because AM_DIR
-         * is actually meant to mark a subdirectory but eg. the root is not
-         * a subdirectory.
+         * We should probably check if (dp->dir[DIR_Attr] & AM_DIR)
+         * holds but unfortunately AM_DIR is not always set for the root dir
+         * as the flag is meannt to mark subdirectories only.
          */
-#if 0
-        if ((dp->dir[DIR_Attr] & AM_DIR) == 0) /* The object is a file */
-            res = FR_NO_PATH;
-        else
-#endif
         dp->sclust = ld_clust(fs, dp->dir);
     }
-    if (res != FR_OK)
-        goto fail;
 
     dp->id = fs->id;
     res = dir_sdi(dp, 0); /* Rewind directory */
@@ -3068,7 +3046,6 @@ FRESULT f_truncate(FF_FIL * fp)
 {
     FRESULT res;
     DWORD ncl;
-
 
     res = validate(fp);                     /* Check validity of the object */
     if (res == FR_OK) {
@@ -3479,7 +3456,7 @@ FRESULT f_getlabel(FATFS * fs, const TCHAR * path, TCHAR * label, DWORD * vsn)
 
     /* Get volume serial number */
     if (res == FR_OK && vsn) {
-        res = move_window(dj.fs, dj.fs->volbase);
+        res = move_window(dj.fs, 0);
         if (res == FR_OK) {
             i = dj.fs->fs_type == FS_FAT32 ? BS_VolID32 : BS_VolID;
             *vsn = LD_DWORD(&dj.fs->win[i]);
