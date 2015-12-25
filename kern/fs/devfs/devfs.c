@@ -330,6 +330,17 @@ static int dev_ioctl(file_t * file, unsigned request, void * arg, size_t arg_len
     if (!devnfo)
         return -ENOTTY;
 
+    if (devnfo->ioctl) {
+        int err;
+
+        err = devnfo->ioctl(devnfo, request, arg, arg_len);
+        if (err == 0 || err != -EINVAL)
+            return err;
+    }
+
+    /*
+     * Default handlers.
+     */
     switch (request) {
     case IOCTL_GETBLKSIZE:
         if (!arg)
@@ -345,10 +356,9 @@ static int dev_ioctl(file_t * file, unsigned request, void * arg, size_t arg_len
         sizetto(devnfo->num_blocks, arg, arg_len);
 
         return 0;
-    }
-
-    if (!devnfo->ioctl)
+    case IOCTL_FLSBLKBUF: /* Don't care if the dev doesn't support sync. */
+        return 0;
+    default:
         return -EINVAL;
-
-    return devnfo->ioctl(devnfo, request, arg, arg_len);
+    }
 }

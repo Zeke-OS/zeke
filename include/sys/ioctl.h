@@ -60,6 +60,7 @@
 /* dev */
 #define IOCTL_GETBLKSIZE     11 /*!< Get device block size. */
 #define IOCTL_GETBLKCNT      13 /*!< Get device block count. */
+#define IOCTL_FLSBLKBUF      14 /*1< Flush block device buffers. */
 /* pty */
 #define IOCTL_PTY_CREAT      50 /*!< Create a new pty master-slave pair. */
 /* dev/fb */
