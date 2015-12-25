@@ -1808,19 +1808,17 @@ static FRESULT check_fs(FATFS * fs)
 
 /**
  * Lock the logical drive and check access permissions.
- * @param vol is the volume number. RFE Is this actually needed?
  * @param wmode !=0: Check write protection for write access.
  * @return FR_OK(0): successful, !=0: any error occurred.
  */
 static FRESULT access_volume(FATFS * fs, uint8_t wmode)
 {
-    int vol = get_ldnumber(fs);
-
-    if (vol < 0)
-        return FR_INVALID_DRIVE;
+    int vol;
 
     if (!fs)
         return FR_NOT_ENABLED;
+
+    vol = fs->drv;
 
     ENTER_FF(fs); /* Lock the volume */
 
@@ -1848,7 +1846,7 @@ static FRESULT prepare_volume(FATFS * fs, int vol)
      */
 
     fs->fs_type = 0; /* Clear the file system object */
-    fs->drv = LD2PD(vol); /* Bind the logical drive and a physical drive */
+    fs->drv = vol;
 
     /*
      * Get sector size
@@ -2002,14 +2000,9 @@ static FRESULT validate(void * obj)
 /**
  * Mount a Logical Drive
  */
-FRESULT f_mount(FATFS * fs, uint8_t opt)
+FRESULT f_mount(FATFS * fs, int vol, uint8_t opt)
 {
-    int vol;
     FRESULT res;
-
-    vol = get_ldnumber(fs);
-    if (vol < 0)
-        return FR_INVALID_DRIVE;
 
     fs->fs_type = 0;
     fs->readonly = (opt & FATFS_READONLY) == FATFS_READONLY;

@@ -174,7 +174,7 @@ static int fatfs_mount(const char * source, uint32_t mode,
 
     /* Mount */
     pdrv = (char)DEV_MINOR(fatfs_sb->sb.vdev_id);
-    err = f_mount(&fatfs_sb->ff_fs, 0);
+    err = f_mount(&fatfs_sb->ff_fs, DEV_MINOR(fatfs_sb->sb.vdev_id), 0);
     if (err) {
 #ifdef configFATFS_DEBUG
         KERROR(KERROR_DEBUG, "Can't init a work area for FAT (%d)\n", err);
