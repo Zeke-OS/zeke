@@ -50,23 +50,6 @@
 #endif
 #define SS(fs)  ((fs)->ssize)   /* Variable sector size */
 
-
-/*
- * File access control feature
- */
-#if _FS_LOCK
-typedef struct {
-    FATFS * fs; /*!< Object ID 1, volume (NULL:blank entry) */
-    DWORD clu;  /*!< Object ID 2, directory (0:root) */
-    WORD idx;   /*!< Object ID 3, directory index */
-    WORD ctr;   /*!< Object open counter;
-                 *   0:none, 0x01..0xFF:read mode open count, 0x100:write mode
-                 */
-} FILESEM;
-#endif
-
-
-
 /*
  * DBCS code ranges and SBCS extend character conversion table
  */
@@ -387,10 +370,6 @@ typedef struct {
 
 static WORD Fsid;           /* File system mount ID */
 
-#if _FS_LOCK
-static FILESEM * Files;     /* Open object lock semaphores */
-#endif
-
 #if configFATFS_LFN     /*
                          * LFN feature with dynamic working buffer on
                          * the heap.
@@ -412,17 +391,6 @@ static FILESEM * Files;     /* Open object lock semaphores */
 /* Upper conversion table for extended characters */
 static const uint8_t ExCvt[] = _EXCVT;
 #endif
-
-int ff_init(void)
-{
-#if _FS_LOCK
-    Files = kcalloc(_FS_LOCK, sizeof(FILESEM));
-    if (!Files)
-        return -ENOMEM;
-#endif
-    return 0;
-}
-
 
 /*
  * Module Private Functions
@@ -453,129 +421,6 @@ static void unlock_fs(FATFS * fs, FRESULT res)
         mtx_unlock(&fs->sobj);
     }
 }
-
-/*
- * File lock control functions
- * ---------------------------
- */
-#if _FS_LOCK
-
-/**
- * Check if the file can be accessed.
- * @param dp Directory object pointing the file to be checked.
- * @param acc Desired access type (0:Read, 1:Write, 2:Delete/Rename).
- */
-static FRESULT chk_lock(FF_DIR * dp, int acc)
-{
-    unsigned int i, be;
-
-    /* Search file semaphore table */
-    for (i = be = 0; i < _FS_LOCK; i++) {
-        if (Files[i].fs) {  /* Existing entry */
-            /* Check if the object matched with an open object */
-            if (Files[i].fs == dp->fs &&
-                Files[i].clu == dp->sclust &&
-                Files[i].idx == dp->index) break;
-        } else { /* Blank entry */
-            be = 1;
-        }
-    }
-    if (i == _FS_LOCK) { /* The object is not opened */
-        /* Is there a blank entry for new object? */
-        return (be || acc == 2) ? FR_OK : FR_TOO_MANY_OPEN_FILES;
-    }
-
-    /*
-     * The object has been opened. Reject any open against writing file and all
-     * write mode open.
-     */
-    return (acc || Files[i].ctr == 0x100) ? FR_LOCKED : FR_OK;
-}
-
-/**
- * Check if an entry is available for a new object.
- */
-static int enq_lock(void)
-{
-    unsigned int i;
-
-    for (i = 0; i < _FS_LOCK && Files[i].fs; i++) ;
-    return i != _FS_LOCK;
-}
-
-/**
- * Increment object open counter and returns its index (0:Internal error).
- * @param dp Directory object pointing the file to register or increment.
- * @param acc Desired access (0:Read, 1:Write, 2:Delete/Rename).
- */
-static unsigned int inc_lock(FF_DIR * dp, int acc)
-{
-    unsigned int i;
-
-    for (i = 0; i < _FS_LOCK; i++) { /* Find the object */
-        if (Files[i].fs == dp->fs &&
-            Files[i].clu == dp->sclust &&
-            Files[i].idx == dp->index)
-            break;
-    }
-
-    if (i == _FS_LOCK) { /* Not opened. Register it as new. */
-        for (i = 0; i < _FS_LOCK && Files[i].fs; i++) ;
-        if (i == _FS_LOCK)
-            return 0; /* No free entry to register (int err) */
-        Files[i].fs = dp->fs;
-        Files[i].clu = dp->sclust;
-        Files[i].idx = dp->index;
-        Files[i].ctr = 0;
-    }
-
-    if (acc && Files[i].ctr)
-        return 0; /* Access violation (int err) */
-
-    Files[i].ctr = acc ? 0x100 : Files[i].ctr + 1;  /* Set semaphore value */
-
-    return i + 1;
-}
-
-/**
- * Decrement object open counter.
- * @param i Semaphore index (1..).
- */
-static FRESULT dec_lock(unsigned int i)
-{
-    FRESULT res;
-
-    if (--i < _FS_LOCK) {   /* Shift index number origin from 0 */
-        WORD n = Files[i].ctr;
-
-        if (n == 0x100)
-            n = 0; /* If write mode open, delete the entry */
-        if (n)
-            n--; /* Decrement read mode open count */
-        Files[i].ctr = n;
-        if (!n)
-            Files[i].fs = NULL; /* Delete the entry if open count gets zero */
-        res = FR_OK;
-    } else {
-        res = FR_INT_ERR; /* Invalid index nunber */
-    }
-
-    return res;
-}
-
-/**
- * Clear lock entries of the volume.
- */
-static void clear_lock(FATFS * fs)
-{
-    unsigned int i;
-
-    for (i = 0; i < _FS_LOCK; i++) {
-        if (Files[i].fs == fs)
-            Files[i].fs = NULL;
-    }
-}
-#endif
 
 /**
  * Move/Flush disk access window in the file system object.
@@ -2125,9 +1970,6 @@ static FRESULT prepare_volume(FATFS * fs, int vol)
     }
     fs->fs_type = fmt;  /* FAT sub-type */
     fs->id = ++Fsid;    /* File system mount ID */
-#if _FS_LOCK            /* Clear file lock semaphores */
-    clear_lock(fs);
-#endif
 
     return FR_OK;
 }
@@ -2212,10 +2054,6 @@ FRESULT f_open(FF_FIL * fp, FATFS * fs, const TCHAR * path, uint8_t mode)
             if (res == FR_OK) {
                 if (!dir) { /* Default directory itself */
                     res = FR_INVALID_NAME;
-                } else {
-#if _FS_LOCK
-                    res = chk_lock(&dj, (mode & ~FA_READ) ? 1 : 0);
-#endif
                 }
             }
             /* Create or Open a file */
@@ -2225,12 +2063,7 @@ FRESULT f_open(FF_FIL * fp, FATFS * fs, const TCHAR * path, uint8_t mode)
                 if (res != FR_OK) { /* No file, create new */
                     if (res == FR_NO_FILE) {
                         /* There is no file to open, create a new entry */
-#if _FS_LOCK
-                        res = enq_lock() ? dir_register(&dj) :
-                                           FR_TOO_MANY_OPEN_FILES;
-#else
                         res = dir_register(&dj);
-#endif
                     }
                     mode |= FA_CREATE_ALWAYS;       /* File is created */
                     dir = dj.dir;                   /* New entry */
@@ -2284,11 +2117,6 @@ FRESULT f_open(FF_FIL * fp, FATFS * fs, const TCHAR * path, uint8_t mode)
                 /* Pointer to the directory entry */
                 fp->dir_sect = dj.fs->winsect;
                 fp->dir_ptr = dir;
-#if _FS_LOCK
-                fp->lockid = inc_lock(&dj, (mode & ~FA_READ) ? 1 : 0);
-                if (!fp->lockid)
-                    res = FR_INT_ERR;
-#endif
             }
         } else { /* RO fs */
             if (res == FR_OK) {
@@ -2616,12 +2444,7 @@ FRESULT f_close(FF_FIL * fp)
             LEAVE_FF(fs, res);
     }
 
-
-#if _FS_LOCK
-    res = dec_lock(fp->lockid); /* Decrement file open counter */
-    if (res == FR_OK)
-#endif
-        fp->fs = NULL;          /* Invalidate file object */
+    fp->fs = NULL;          /* Invalidate file object */
 
     LEAVE_FF(fs, FR_OK);
 }
@@ -2848,19 +2671,6 @@ FRESULT f_opendir(FF_DIR * dp, FATFS * fs, const TCHAR * path)
     dp->id = fs->id;
     res = dir_sdi(dp, 0); /* Rewind directory */
 
-#if _FS_LOCK
-    if (res != FR_OK)
-        goto fail;
-
-    if (dp->sclust) {
-        dp->lockid = inc_lock(dp, 0);   /* Lock the sub directory */
-        if (!dp->lockid)
-            res = FR_TOO_MANY_OPEN_FILES;
-    } else {
-        dp->lockid = 0; /* Root directory need not to be locked */
-    }
-#endif
-
     if (res == FR_NO_FILE)
         res = FR_NO_PATH;
 fail:
@@ -2884,12 +2694,7 @@ FRESULT f_closedir(FF_DIR * dp)
         return res;
 
     fs = dp->fs;
-#if _FS_LOCK
-    if (dp->lockid)             /* Decrement sub-directory open counter */
-        res = dec_lock(dp->lockid);
-    if (res == FR_OK)
-#endif
-        dp->fs = NULL;          /* Invalidate directory object */
+    dp->fs = NULL;          /* Invalidate directory object */
 
     LEAVE_FF(fs, FR_OK);
 }
@@ -3115,10 +2920,6 @@ FRESULT f_unlink(FATFS * fs, const TCHAR * path)
     if (res == FR_OK) {
         INIT_BUF(dj);
         res = follow_path(&dj, path);       /* Follow the file path */
-#if _FS_LOCK
-        if (res == FR_OK)
-            res = chk_lock(&dj, 2);   /* Cannot remove open file */
-#endif
         if (res == FR_OK) {                 /* The object is accessible */
             dir = dj.dir;
             if (!dir) {
@@ -3338,11 +3139,6 @@ FRESULT f_rename(FATFS * fs, const TCHAR * path_old, const TCHAR * path_new)
         djn.fs = djo.fs;
         INIT_BUF(djo);
         res = follow_path(&djo, path_old);      /* Check old object */
-#if _FS_LOCK
-        if (res == FR_OK) {
-            res = chk_lock(&djo, 2);
-        }
-#endif
         if (res == FR_OK) {                     /* Old object is found */
             if (!djo.dir) {                     /* Is root dir? */
                 res = FR_NO_FILE;

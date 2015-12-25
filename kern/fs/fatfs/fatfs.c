@@ -91,8 +91,6 @@ vnode_ops_t fatfs_vnode_ops = {
 
 int __kinit__ fatfs_init(void)
 {
-    int err;
-
     SUBSYS_DEP(fs_init);
     SUBSYS_DEP(proc_init);
     SUBSYS_INIT("fatfs");
@@ -102,10 +100,6 @@ int __kinit__ fatfs_init(void)
         return -ENOMEM;
 
     fs_inherit_vnops(&fatfs_vnode_ops, &nofs_vnode_ops);
-
-    err = ff_init();
-    if (err)
-        return err;
 
     FS_GIANT_INIT(&fatfs_fs.fs_giant);
     fs_register(&fatfs_fs);

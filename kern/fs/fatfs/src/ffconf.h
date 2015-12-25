@@ -142,13 +142,6 @@
 /*---------------------------------------------------------------------------/
 / System Configurations
 /---------------------------------------------------------------------------*/
-/* RFE: I don't think we'll ever need this feature */
-#define _FS_LOCK    0  /* 0:Disable or >=1:Enable */
-/*
- * To enable file lock control feature, set _FS_LOCK to non-zero value.
- * The value defines how many files/sub-directories can be opened simultaneously
- * with file lock control. This feature uses bss _FS_LOCK * 12 bytes.
- */
 
 /*
  * Fatfs reentrancy timeout.

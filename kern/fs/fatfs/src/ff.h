@@ -113,10 +113,6 @@ typedef struct {
 #if _USE_FASTSEEK
     DWORD * cltbl;          /* Pointer to the cluster link map table (Nulled on file open) */
 #endif
-#if _FS_LOCK
-    unsigned int lockid;    /* File lock ID origin from 1 (index of file
-                             *  semaphore table Files[]) */
-#endif
     uint8_t buf[_MAX_SS];   /* File private data read/write window */
 } FF_FIL;
 
@@ -134,9 +130,6 @@ typedef struct {
     DWORD   sect;           /* Current sector */
     uint8_t * dir;          /* Pointer to the current SFN entry in the win[] */
     uint8_t * fn;           /* Pointer to the SFN (in/out) {file[8],ext[3],status[1]} */
-#if _FS_LOCK
-    unsigned int lockid;    /* File lock ID (index of file semaphore table Files[]) */
-#endif
 #if configFATFS_LFN
     WCHAR * lfn;            /* Pointer to the LFN working buffer */
     WORD    lfn_idx;        /* Last matched LFN index number (0xFFFF:No LFN) */
@@ -189,8 +182,6 @@ typedef enum {
 
 /*--------------------------------------------------------------*/
 /* FatFs module application interface                           */
-
-int ff_init(void);
 
 FRESULT f_open(FF_FIL * fp, FATFS * fs, const TCHAR * path, uint8_t mode);
 FRESULT f_close(FF_FIL * fp);
