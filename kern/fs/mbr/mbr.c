@@ -60,7 +60,12 @@
 #include <proc.h>
 #include <fs/mbr.h>
 
-#define MBR_SIZE 512
+#define MBR_SIZE            512
+#define MBR_NR_ENTRIES      4
+#define MBR_ENTRY_SIZE      0x10
+
+#define MBR_OFF_SIGNATURE   0x1fe
+#define MBR_OFF_FIRST_ENTRY 0x1be
 
 struct mbr_dev {
     struct dev_info dev;
@@ -70,6 +75,15 @@ struct mbr_dev {
     uint32_t blocks;
     uint8_t part_id; /* Partition type */
 };
+
+struct mbr_part_entry {
+    uint8_t stat;
+    uint8_t chs_start[3];
+    uint8_t type;
+    uint8_t chs_end[3];
+    uint32_t lba_start;
+    uint32_t nr_sect;
+} __attribute__((packed));
 
 static char driver_name[] = "mbr";
 static size_t mbr_dev_count;
@@ -109,7 +123,7 @@ static int check_signature(uint8_t * block_0)
 {
     uint16_t signature;
 
-    signature = read_halfword(block_0, 0x1fe);
+    signature = read_halfword(block_0, MBR_OFF_SIGNATURE);
     if (signature != 0xAA55) {
         KERROR(KERROR_ERR, "MBR: Invalid signature (%x)\n", signature);
 
@@ -126,11 +140,12 @@ int mbr_register(int fd, int * part_count)
     struct dev_info * parent;
     uint8_t * block_0 = NULL;
     int parts = 0;
+    uint32_t block_size_adjust;
     int retval = 0;
 
 #ifdef configMBR_DEBUG
-    KERROR(KERROR_DEBUG, "%s(fd: %d, part_count: %p)\n", __func__,
-           fd, part_count);
+    KERROR(KERROR_DEBUG, "%s(fd: %d, part_count: %p)\n",
+           __func__, fd, part_count);
 #endif
 
     file = fs_fildes_ref(curproc->files, fd, 1);
@@ -181,24 +196,23 @@ int mbr_register(int fd, int * part_count)
      * and blocks to fit.
      */
     if (parent->block_size < MBR_SIZE) {
-        /* We do not support parent device block sizes < 512 */
-        KERROR(KERROR_ERR,
-                 "MBR: block size of %s is too small (%i)\n",
-                 parent->dev_name, parent->block_size);
+        /* We do not support parent device block sizes < MBR_SIZE */
+        KERROR(KERROR_ERR, "MBR: block size of %s is too small (%i)\n",
+               parent->dev_name, parent->block_size);
 
         retval = -ENOTSUP;
         goto fail;
     }
 
-    uint32_t block_size_adjust = parent->block_size / MBR_SIZE;
+    block_size_adjust = parent->block_size / MBR_SIZE;
     if (parent->block_size % MBR_SIZE) {
         /*
          * We do not support parent device block sizes that are not
-         * multiples of 512.
+         * multiples of MBR_SIZE.
          */
         KERROR(KERROR_ERR,
-               "MBR: block size of %s is not a multiple of 512 (%i)\n",
-               parent->dev_name, parent->block_size);
+               "MBR: block size of %s is not a multiple of %d (%i)\n",
+               parent->dev_name, MBR_SIZE, parent->block_size);
 
         retval = -ENOTSUP;
         goto fail;
@@ -206,19 +220,35 @@ int mbr_register(int fd, int * part_count)
 
 #ifdef configMBR_DEBUG
     if (block_size_adjust > 1) {
-        KERROR(KERROR_DEBUG, "MBR: block_size_adjust: %i\n",
-                 block_size_adjust);
+        KERROR(KERROR_DEBUG, "MBR: block_size_adjust: %i\n", block_size_adjust);
     }
 #endif
 
     int major_num = DEV_MAJOR(parent->dev_id) + 1;
-    for (size_t i = 0; i < 4; i++) {
-        size_t p_offset = 0x1be + (i * 0x10);
+    for (size_t i = 0; i < MBR_NR_ENTRIES; i++) {
+        struct mbr_part_entry part;
+        size_t p_offset = MBR_OFF_FIRST_ENTRY + (i * MBR_ENTRY_SIZE);
         struct mbr_dev * d;
 
-        if (block_0[p_offset + 4] == 0x00) {
+        memcpy(&part, block_0 + p_offset, sizeof(part));
+
+        if (part.type == 0x00) {
             /* Invalid partition */
             continue;
+        }
+
+        if (part.lba_start % block_size_adjust) {
+            KERROR(KERROR_ERR,
+                   "MBR: partition number %i on %s does not start on a block boundary (%i).\n",
+                   i, parent->dev_name, part.lba_start);
+            continue;
+        }
+
+        if (part.nr_sect % block_size_adjust) {
+            KERROR(KERROR_ERR,
+                   "MBR: partition number %i on %s does not have a length "
+                   "that is an exact multiple of the block length (%i).\n",
+                   i, parent->dev_name, part.lba_start);
         }
 
         d = kzalloc(sizeof(struct mbr_dev));
@@ -238,34 +268,11 @@ int mbr_register(int fd, int * part_count)
         d->dev.block_size = parent->block_size;
         d->dev.flags = parent->flags;
         d->part_no = i;
-        d->part_id = block_0[p_offset + 4];
-        d->start_block = read_word(block_0, p_offset + 8);
-        d->blocks = read_word(block_0, p_offset + 12);
-        d->parent = parent;
-
-        /* Adjust start_block and blocks to the parent block size */
-        if (d->start_block % block_size_adjust) {
-            KERROR(KERROR_ERR,
-                   "MBR: partition number %i on %s does not start on a block "
-                   "boundary (%i).\n",
-                   d->part_no, parent->dev_name, d->start_block);
-
-            retval = -EFAULT;
-            goto fail;
-        }
-        d->start_block /= block_size_adjust;
-
-        if (d->blocks % block_size_adjust) {
-            KERROR(KERROR_ERR,
-                   "MBR: partition number %i on %s does not have a length "
-                   "that is an exact multiple of the block length (%i).\n",
-                   d->part_no, parent->dev_name, d->start_block);
-
-            retval = -EFAULT;
-            goto fail;
-        }
-        d->blocks /= block_size_adjust;
+        d->part_id = part.type;
+        d->start_block = part.lba_start / block_size_adjust;
+        d->blocks = part.nr_sect / block_size_adjust;
         d->dev.num_blocks = d->blocks;
+        d->parent = parent;
 
 #ifdef configMBR_DEBUG
         KERROR(KERROR_DEBUG,
