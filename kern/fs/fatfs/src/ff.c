@@ -1938,28 +1938,28 @@ static FRESULT follow_path(FF_DIR * dp, const TCHAR * path)
  *         2:Not a boot sector;
  *         3:Disk error.
  */
-static uint8_t check_fs(FATFS * fs, DWORD sect)
+static FRESULT check_fs(FATFS * fs, DWORD sect)
 {
     fs->wflag = 0; fs->winsect = 0xFFFFFFFF;    /* Invalidate window */
     if (move_window(fs, sect) != FR_OK)         /* Load boot record */
-        return 3;
+        return FR_DISK_ERR;
 
     /*
      * Check boot record signature (always placed at offset 510 even if
      * the sector size is >512)
      */
     if (LD_WORD(&fs->win[BS_55AA]) != 0xAA55)
-        return 2;
+        return FR_NO_FILESYSTEM;
 
     /* Check "FAT" string */
     if ((LD_DWORD(&fs->win[BS_FilSysType]) & 0xFFFFFF) == 0x544146)
-        return 0;
+        return FR_OK;
 
     /* Check "FAT" string */
     if ((LD_DWORD(&fs->win[BS_FilSysType32]) & 0xFFFFFF) == 0x544146)
-        return 0;
+        return FR_OK;
 
-    return 1;
+    return FR_NO_FILESYSTEM;
 }
 
 /**
@@ -1995,6 +1995,7 @@ static FRESULT prepare_volume(FATFS * fs, int vol)
     uint8_t fmt;
     DWORD bsect, fasize, tsect, sysect, nclst, szbfat;
     WORD nrsv;
+    FRESULT ferr;
     DRESULT derr;
 
     /* The file system object is not valid. */
@@ -2024,29 +2025,10 @@ static FRESULT prepare_volume(FATFS * fs, int vol)
      */
     bsect = 0;
     /* Load sector 0 and check if it is an FAT boot sector as SFD */
-    fmt = check_fs(fs, bsect);
-    if (fmt == 1 || (!fmt && (LD2PT(vol)))) {
-        /* Not a FAT boot sector or forced partition number */
-        unsigned int i;
-        DWORD br[4];
-
-        for (i = 0; i < 4; i++) {           /* Get partition offset */
-            uint8_t *pt = fs->win + MBR_Table + i * SZ_PTE;
-            br[i] = pt[4] ? LD_DWORD(&pt[8]) : 0;
-        }
-        i = LD2PT(vol); /* Partition number: 0:auto, 1-4:forced */
-        if (i)
-            i--;
-        do {                                /* Find an FAT volume */
-            bsect = br[i];
-            fmt = bsect ? check_fs(fs, bsect) : 2; /* Check the partition */
-        } while (!LD2PT(vol) && fmt && ++i < 4);
+    ferr = check_fs(fs, bsect);
+    if (ferr != FR_OK) {
+        return ferr;
     }
-    if (fmt == 3) {
-        return FR_DISK_ERR;       /* An error occured in the disk I/O layer */
-    }
-    if (fmt)
-        return FR_NO_FILESYSTEM;       /* No FAT volume is found */
 
     /* An FAT volume is found. Following code initializes the file system object */
 
