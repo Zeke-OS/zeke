@@ -31,7 +31,7 @@ config configFS_VREF_DEBUG
 
 menuconfig configMBR
     bool "MBR Support"
-    default n
+    default y
     depends on configDEVFS
     ---help---
     Read MBR and populate devices for drive partitions accordingly.
