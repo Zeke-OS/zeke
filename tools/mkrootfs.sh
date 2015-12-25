@@ -2,6 +2,8 @@
 
 IMG=zeke-rootfs.img
 
+export MTOOLSRC=tools/mtools.conf
+
 function dir2img {
     local manifest="$(cat "$1/manifest")"
     if [ -z "$manifest" ]; then
@@ -9,41 +11,43 @@ function dir2img {
     fi
     local files=$(echo "$manifest" | sed "s|[^ ]*|$1/\0|g")
 
-    mmd -i "$IMG" "$1"
+    mmd -D sS "C:$(echo $1 | sed 's|^\./||')"
     for file in $files; do
         local d=$(dirname $file | sed 's|^\./||')
-        mmd -i "$IMG" -D sS "$d"
-        echo "INSTALL $d/$(basename $file)"
-        mcopy -i "$IMG" -s $file "::$d"
+        local destname="$d/$(basename $file)"
+        mmd -D sS "C:$d"
+        echo "INSTALL $destname"
+        mcopy -s $file "C:$destname"
     done
 }
 
-mkfs.msdos -C "$IMG" -F 16 16384
-if [ $? -ne 0 ]; then
-    exit 1
-fi
+dd if=/dev/zero of="$IMG" bs=1M count=10
+mpartition -I -s 63 -t 20 -h 16 c:
+mpartition -cpv -s 63 -t 20 -h 16 c:
+mformat c:
 
-# Copy bootloader and kernel image
+# Copy the bootloader and kernel image
 # TODO Get bootloader as an argument
 BOOT="boot/rpi/bootcode.bin boot/rpi/config.txt boot/rpi/fixup.dat
     boot/rpi/start.elf boot/rpi/LICENSE.broadcom boot/rpi/cmdline.txt \
     kernel.img"
 for file in $BOOT; do
-    mcopy -i "$IMG" -s "$file" "::"
+    mcopy -s "$file" C:
     basename "$file"
 done
 
-# Copy binaries
-mmd -i "$IMG" dev
-mmd -i "$IMG" mnt
-mmd -i "$IMG" opt
-mmd -i "$IMG" opt/test
-mmd -i "$IMG" proc
-mmd -i "$IMG" tmp
-mmd -i "$IMG" root
-mcopy -i "$IMG" -s README.markdown "::root"
+# Create dirs
+mmd C:dev
+mmd C:mnt
+mmd C:opt
+mmd C:opt/test
+mmd C:proc
+mmd C:tmp
+mmd C:root
+mcopy README.markdown C:
 
+# Copy binaries
 MANIFEST=$(find . -name manifest -exec dirname {} \;)
 for dir in $MANIFEST; do
-    dir2img $dir
+    dir2img "$dir"
 done

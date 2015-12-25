@@ -6,7 +6,7 @@ menu "Rootfs"
 
 config configROOTFS_PATH
     string "FS path"
-    default "/dev/emmc0"
+    default "/dev/emmc0p0"
 
 config configROOTFS_NAME
     string "FS name"

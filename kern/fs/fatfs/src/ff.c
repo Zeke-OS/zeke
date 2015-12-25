@@ -1443,8 +1443,9 @@ static FRESULT dir_read(FF_DIR * dp, int vol)
 /**
  * Register an object to the directory.
  * @param dp Target directory with object name to be created.
- * @return FR_OK:Successful, FR_DENIED:No free entry or too many SFN collision,
- *         FR_DISK_ERR:Disk error.
+ * @retval FR_OK:Successful;
+ * @retval FR_DENIED:No free entry or too many SFN collision;
+ * @retval FR_DISK_ERR:Disk error.
  */
 static FRESULT dir_register(FF_DIR * dp)
 {
@@ -1755,13 +1756,15 @@ static FRESULT create_name (FF_DIR * dp, const TCHAR ** path)
             dp->fn[i++] = (uint8_t)(w >> 8);
         } else {                        /* Single byte character */
             if (!w || kstrchr("+,;=[]", w)) {   /* Replace illegal characters for SFN */
-                w = '_'; cf |= NS_LOSS | NS_LFN;/* Lossy conversion */
+                w = '_';
+                cf |= NS_LOSS | NS_LFN;     /* Lossy conversion */
             } else {
-                if (ka_isupper(w)) {       /* ASCII large capital */
+                if (ka_isupper(w)) {        /* ASCII large capital */
                     b |= 2;
                 } else {
-                    if (ka_islower(w)) {   /* ASCII small capital */
-                        b |= 1; w -= 0x20;
+                    if (ka_islower(w)) {    /* ASCII small capital */
+                        b |= 1;
+                        w -= 0x20;
                     }
                 }
             }
@@ -1937,7 +1940,7 @@ static FRESULT follow_path(FF_DIR * dp, const TCHAR * path)
  */
 static uint8_t check_fs(FATFS * fs, DWORD sect)
 {
-    fs->wflag = 0; fs->winsect = 0xFFFFFFFF;    /* Invaidate window */
+    fs->wflag = 0; fs->winsect = 0xFFFFFFFF;    /* Invalidate window */
     if (move_window(fs, sect) != FR_OK)         /* Load boot record */
         return 3;
 

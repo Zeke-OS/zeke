@@ -68,7 +68,7 @@ struct mbr_dev {
     int part_no;
     uint32_t start_block;
     uint32_t blocks;
-    uint8_t part_id;
+    uint8_t part_id; /* Partition type */
 };
 
 static char driver_name[] = "mbr";
@@ -107,10 +107,11 @@ static int read_block_0(uint8_t * block_0, file_t * file)
  */
 static int check_signature(uint8_t * block_0)
 {
-    if ((block_0[0x1fe] != 0x55) || (block_0[0x1ff] != 0xaa)) {
-        KERROR(KERROR_ERR,
-               "MBR: Invalid signature (%x %x)\n",
-               block_0[0x1fe], block_0[0x1ff]);
+    uint16_t signature;
+
+    signature = read_halfword(block_0, 0x1fe);
+    if (signature != 0xAA55) {
+        KERROR(KERROR_ERR, "MBR: Invalid signature (%x)\n", signature);
 
         return -ENOENT;
     }
@@ -172,7 +173,7 @@ int mbr_register(int fd, int * part_count)
 
 #ifdef configMBR_DEBUG
     KERROR(KERROR_DEBUG,
-             "MBR: found valid MBR on device %s\n", parent->dev_name);
+             "MBR: found a valid MBR on device %s\n", parent->dev_name);
 #endif
 
     /*
@@ -269,7 +270,7 @@ int mbr_register(int fd, int * part_count)
 #ifdef configMBR_DEBUG
         KERROR(KERROR_DEBUG,
                "MBR: partition number %i (%s) of type %x, "
-               "start sector %u, sector count %u, p_offset %03x\n",
+               "start sector %u, sector count %u, p_offset %d\n",
                d->part_no, d->dev.dev_name, d->part_id,
                d->start_block, d->blocks, p_offset);
 #endif
@@ -277,14 +278,9 @@ int mbr_register(int fd, int * part_count)
         make_dev(&d->dev, 0, 0, 0666, NULL);
         mbr_dev_count++;
         parts++;
-
-        /* Register the fs */
-        //register_fs__((struct dev_info *)d, d->part_id);
-        /* TODO Register the fs dev with devfs */
     }
 
-    KERROR(KERROR_INFO, "MBR: found total of %i partition(s)\n",
-           parts);
+    KERROR(KERROR_INFO, "MBR: found total of %i partition(s)\n", parts);
 
 fail:
     kfree(block_0);
