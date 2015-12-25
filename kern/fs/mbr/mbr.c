@@ -86,7 +86,6 @@ struct mbr_part_entry {
 } __attribute__((packed));
 
 static char driver_name[] = "mbr";
-static size_t mbr_dev_count;
 
 static int mbr_read(struct dev_info * devnfo, off_t offset,
                     uint8_t * buf, size_t count, int oflags);
@@ -133,15 +132,56 @@ static int check_signature(uint8_t * block_0)
     return 0;
 }
 
+static int make_dev_mbr(struct dev_info * parent,
+                        const struct mbr_part_entry * part,
+                        int part_no)
+{
+    static size_t mbr_dev_count;
+    struct mbr_dev * d;
+    int major_num = DEV_MAJOR(parent->dev_id) + 1;
+
+    d = kzalloc(sizeof(struct mbr_dev));
+    if (!d) {
+        KERROR(KERROR_ERR, "MBR: Out of memory");
+        return -ENOMEM;
+    }
+
+    d->dev.dev_id = DEV_MMTODEV(major_num, mbr_dev_count);
+    d->dev.drv_name = driver_name;
+    ksprintf(d->dev.dev_name, sizeof(d->dev.dev_name), "%sp%u",
+             parent->dev_name, part_no);
+    d->dev.read = mbr_read;
+    d->dev.write = (parent->write) ? mbr_write : NULL;
+    d->dev.block_size = parent->block_size;
+    d->dev.flags = parent->flags;
+    d->part_no = part_no;
+    d->part_id = part->type;
+    d->start_block = part->lba_start;
+    d->blocks = part->nr_sect;
+    d->dev.num_blocks = d->blocks;
+    d->parent = parent;
+
+#ifdef configMBR_DEBUG
+    KERROR(KERROR_DEBUG,
+           "MBR: partition number %i (%s) of type %x, start sector %u, sector count %u\n",
+           d->part_no, d->dev.dev_name, d->part_id,
+           d->start_block, d->blocks);
+#endif
+
+    make_dev(&d->dev, 0, 0, 0666, NULL);
+    mbr_dev_count++;
+
+    return 0;
+}
+
 int mbr_register(int fd, int * part_count)
 {
     file_t * file;
     vnode_t * parent_vnode;
     struct dev_info * parent;
     uint8_t * block_0 = NULL;
-    int parts = 0;
     uint32_t block_size_adjust;
-    int retval = 0;
+    int parts = 0, retval = 0;
 
 #ifdef configMBR_DEBUG
     KERROR(KERROR_DEBUG, "%s(fd: %d, part_count: %p)\n",
@@ -224,11 +264,9 @@ int mbr_register(int fd, int * part_count)
     }
 #endif
 
-    int major_num = DEV_MAJOR(parent->dev_id) + 1;
     for (size_t i = 0; i < MBR_NR_ENTRIES; i++) {
         struct mbr_part_entry part;
         size_t p_offset = MBR_OFF_FIRST_ENTRY + (i * MBR_ENTRY_SIZE);
-        struct mbr_dev * d;
 
         memcpy(&part, block_0 + p_offset, sizeof(part));
 
@@ -245,45 +283,20 @@ int mbr_register(int fd, int * part_count)
         }
 
         if (part.nr_sect % block_size_adjust) {
+            /*
+             * Partition number i on parent device doesn't have a length that is
+             * an exact multiple of the block length part.lba_start.
+             */
             KERROR(KERROR_ERR,
-                   "MBR: partition number %i on %s does not have a length "
-                   "that is an exact multiple of the block length (%i).\n",
+                   "MBR: Size of part %i on %s isn't an exact multiple of the block length (%i)\n",
                    i, parent->dev_name, part.lba_start);
+            continue;
         }
 
-        d = kzalloc(sizeof(struct mbr_dev));
-        if (!d) {
-            KERROR(KERROR_ERR, "MBR: Out of memory");
-
-            retval = -ENOMEM;
-            break;
-        }
-
-        d->dev.dev_id = DEV_MMTODEV(major_num, mbr_dev_count);
-        d->dev.drv_name = driver_name;
-        ksprintf(d->dev.dev_name, sizeof(d->dev.dev_name), "%sp%u",
-                 parent->dev_name, i);
-        d->dev.read = mbr_read;
-        d->dev.write = (parent->write) ? mbr_write : NULL;
-        d->dev.block_size = parent->block_size;
-        d->dev.flags = parent->flags;
-        d->part_no = i;
-        d->part_id = part.type;
-        d->start_block = part.lba_start / block_size_adjust;
-        d->blocks = part.nr_sect / block_size_adjust;
-        d->dev.num_blocks = d->blocks;
-        d->parent = parent;
-
-#ifdef configMBR_DEBUG
-        KERROR(KERROR_DEBUG,
-               "MBR: partition number %i (%s) of type %x, "
-               "start sector %u, sector count %u, p_offset %d\n",
-               d->part_no, d->dev.dev_name, d->part_id,
-               d->start_block, d->blocks, p_offset);
-#endif
-
-        make_dev(&d->dev, 0, 0, 0666, NULL);
-        mbr_dev_count++;
+        part.lba_start /= block_size_adjust;
+        part.nr_sect /= block_size_adjust;
+        if (make_dev_mbr(parent, &part, i))
+            continue;
         parts++;
     }
 
