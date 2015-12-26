@@ -115,6 +115,7 @@ void bio_readin(struct buf * bp)
 static void _bio_readin(struct buf * bp)
 {
     file_t * file;
+    vnode_t * vnode;
     struct uio uio;
 
     KASSERT(mtx_test(&bp->lock), "bp should be locked\n");
@@ -128,6 +129,7 @@ static void _bio_readin(struct buf * bp)
     } else {
         file = &bp->b_file;
     }
+    vnode = file->vnode;
 
     bp->b_flags &= ~B_DONE;
 
@@ -135,8 +137,8 @@ static void _bio_readin(struct buf * bp)
         /* TODO Error handling */
         return;
     }
-    file->seek_pos = bp->b_blkno;
-    file->vnode->vnode_ops->read(file, &uio, bp->b_bcount);
+    vnode->vnode_ops->lseek(file, bp->b_blkno, SEEK_SET);
+    vnode->vnode_ops->read(file, &uio, bp->b_bcount);
 
     bp->b_flags |= B_DONE;
 }
@@ -154,6 +156,7 @@ void bio_writeout(struct buf * bp)
 static void _bio_writeout(struct buf * bp)
 {
     file_t * file;
+    vnode_t * vnode;
     struct uio uio;
 
     KASSERT(mtx_test(&bp->lock), "bp should be locked\n");
@@ -170,13 +173,14 @@ static void _bio_writeout(struct buf * bp)
     } else {
         file = &bp->b_file;
     }
+    vnode = file->vnode;
 
     if (uio_buf2kuio(bp, &uio)) {
         /* TODO Error handling */
         return;
     }
-    file->seek_pos = bp->b_blkno;
-    file->vnode->vnode_ops->write(file, &uio, bp->b_bcount);
+    vnode->vnode_ops->lseek(file, bp->b_blkno, SEEK_SET);
+    vnode->vnode_ops->write(file, &uio, bp->b_bcount);
 
 out:
     bp->b_flags |= B_DONE;
