@@ -54,6 +54,7 @@ DRESULT fatfs_disk_read(uint8_t pdrv, uint8_t * buff, DWORD sector,
                         unsigned int count)
 {
     file_t * file;
+    vnode_t * vnode;
     struct uio uio;
     ssize_t retval;
 
@@ -61,7 +62,15 @@ DRESULT fatfs_disk_read(uint8_t pdrv, uint8_t * buff, DWORD sector,
         return RES_PARERR;
 
     file = &fatfs_sb_arr[pdrv]->ff_devfile;
-    file->seek_pos = sector;
+    vnode = file->vnode;
+
+    retval = vnode->vnode_ops->lseek(file, sector, SEEK_SET);
+    if (retval < 0) {
+#ifdef configFATFS_DEBUG
+        KERROR(KERROR_ERR, "%s(): err %i\n", __func__, retval);
+#endif
+        return RES_ERROR;
+    }
 
     uio_init_kbuf(&uio, buff, count);
     retval = file->vnode->vnode_ops->read(file, &uio, count);
@@ -94,6 +103,7 @@ DRESULT fatfs_disk_write(uint8_t pdrv, const uint8_t * buff, DWORD sector,
                          unsigned int count)
 {
     file_t * file;
+    vnode_t * vnode;
     struct uio uio;
     ssize_t retval;
 
@@ -101,7 +111,15 @@ DRESULT fatfs_disk_write(uint8_t pdrv, const uint8_t * buff, DWORD sector,
         return RES_PARERR;
 
     file = &fatfs_sb_arr[pdrv]->ff_devfile;
-    file->seek_pos = sector;
+    vnode = file->vnode;
+
+    retval = vnode->vnode_ops->lseek(file, sector, SEEK_SET);
+    if (retval < 0) {
+#ifdef configFATFS_DEBUG
+        KERROR(KERROR_ERR, "%s(): err %i\n", __func__, retval);
+#endif
+        return RES_ERROR;
+    }
 
     uio_init_kbuf(&uio, (void *)buff, count);
     retval = file->vnode->vnode_ops->write(file, &uio, count);
@@ -109,7 +127,6 @@ DRESULT fatfs_disk_write(uint8_t pdrv, const uint8_t * buff, DWORD sector,
 #ifdef configFATFS_DEBUG
         KERROR(KERROR_ERR, "%s(): err %i\n", __func__, retval);
 #endif
-
         return RES_ERROR;
     }
 
