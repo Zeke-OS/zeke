@@ -105,7 +105,6 @@ KMEM_FIXED_REGION(mmu_region_kdata);
 
 int kmem_init(void)
 {
-    SUBSYS_DEP(ptmapper_init);
     SUBSYS_INIT("kmem");
 #if defined(configKMEM_DEBUG)
     kputs("\n");
@@ -170,14 +169,8 @@ int kmem_init(void)
     }
 
     /* Activate page tables */
-    mmu_attach_pagetable(&mmu_pagetable_master); /* Load L1 TTB */
-#if defined(configKMEM_DEBUG)
-    KERROR(KERROR_DEBUG, "Attached TTB mmu_pagetable_master\n");
-#endif
     mmu_attach_pagetable(&vm_pagetable_system.pt); /* Add L2 pte into L1 mpt */
-#if defined(configKMEM_DEBUG)
-    KERROR(KERROR_DEBUG, "Attached vm_pagetable_system.pt\n");
-#endif
+    mmu_attach_pagetable(&mmu_pagetable_master); /* Load L1 TTB */
 
     return 0;
 }

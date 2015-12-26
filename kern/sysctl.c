@@ -74,11 +74,10 @@ SYSCTL_DECL(_sysctl);
  * need to use that API rather than using the dynamic API. Use of the dynamic
  * API is strongly encouraged for most code.
  */
-static mtx_t sysctllock;
+static mtx_t sysctllock = MTX_INITIALIZER(MTX_TYPE_SPIN, 0);
 
 #define SYSCTL_LOCK()       mtx_lock(&sysctllock)
 #define SYSCTL_UNLOCK()     mtx_unlock(&sysctllock)
-#define SYSCTL_LOCK_INIT()  mtx_init(&sysctllock, MTX_TYPE_SPIN, 0)
 
 
 static struct sysctl_oid * sysctl_find_oidname(const char * name,
@@ -106,9 +105,9 @@ static int userland_sysctl(const struct proc_info * proc, int * name,
 int __kinit__ sysctl_init(void)
 {
     struct sysctl_oid ** oidp;
+
     SUBSYS_INIT("sysctl");
 
-    SYSCTL_LOCK_INIT();
     SYSCTL_LOCK();
     SET_FOREACH(oidp, sysctl_set)
             sysctl_register_oid(*oidp);

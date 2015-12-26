@@ -124,7 +124,7 @@ struct ramfs_dp {
 };
 
 
-static atomic_t ramfs_vdev_minor;
+static atomic_t ramfs_vdev_minor = ATOMIC_INIT(0);
 
 /* Private */
 static void ramfs_init_sb(ramfs_sb_t * ramfs_sb, uint32_t mode);
@@ -194,11 +194,9 @@ vnode_ops_t ramfs_vnode_ops = {
 
 int __kinit__ ramfs_init(void)
 {
-    SUBSYS_DEP(fs_init);
     SUBSYS_DEP(proc_init);
     SUBSYS_INIT("ramfs");
 
-    ramfs_vdev_minor = ATOMIC_INIT(0);
     fs_inherit_vnops(&ramfs_vnode_ops, &nofs_vnode_ops);
     FS_GIANT_INIT(&ramfs_fs.fs_giant);
     fs_register(&ramfs_fs);
@@ -364,7 +362,7 @@ int ramfs_get_vnode(struct fs_superblock * sb, ino_t * vnode_num,
         in = ramfs_sb->ramfs_iarr[vnnum];
         if (!in) {
 #ifdef configRAMFS_DEBUG
-            FS_KERROR_VNODE(KERROR_DEBUG, vn, "inode's NULL\n");
+            FS_KERROR_VNODE(KERROR_DEBUG, NULL, "inode's NULL\n");
 #endif
             return -ENOENT;
         }

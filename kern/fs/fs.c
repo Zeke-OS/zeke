@@ -51,11 +51,10 @@
 /*
  * File system global locking.
  */
-static mtx_t fslock;
+static mtx_t fslock = MTX_INITIALIZER(MTX_TYPE_SPIN, 0);
 #define FS_LOCK()       mtx_lock(&fslock)
 #define FS_UNLOCK()     mtx_unlock(&fslock)
 #define FS_TESTLOCK()   mtx_test(&fslock)
-#define FS_LOCK_INIT()  mtx_init(&fslock, MTX_TYPE_SPIN, 0)
 
 SYSCTL_NODE(, CTL_VFS, vfs, CTLFLAG_RW, 0,
             "File system");
@@ -75,15 +74,6 @@ SYSCTL_INT(_vfs_limits, OID_AUTO, path_max, CTLFLAG_RD, 0, PATH_MAX,
 static SLIST_HEAD(fs_list, fs) fs_list_head =
     SLIST_HEAD_INITIALIZER(fs_list_head);
 
-
-int __kinit__ fs_init(void)
-{
-    SUBSYS_INIT("fs");
-
-    FS_LOCK_INIT();
-
-    return 0;
-}
 
 int fs_register(fs_t * fs)
 {
@@ -874,7 +864,7 @@ int fs_unlink_curproc(int fd, const char * path, int atflags)
 
 int fs_mkdir_curproc(const char * pathname, mode_t mode)
 {
-    kmalloc_autofree char * name = 0;
+    kmalloc_autofree char * name = NULL;
     vnode_autorele vnode_t * dir = NULL;
     int err = 0;
 

@@ -33,15 +33,16 @@
 #include <subr_hash.h>
 #include <mount.h>
 #include <errno.h>
-#include <kmalloc.h>
-#include <kinit.h>
 #include <fs/fs.h>
 #include <fs/vfs_hash.h>
+#include <kinit.h>
+#include <klocks.h>
+#include <kmalloc.h>
 
 static LIST_HEAD(vfs_hash_head, vnode)  * vfs_hash_tbl;
-static LIST_HEAD(,vnode)        vfs_hash_side;
-static unsigned long            vfs_hash_mask;
-static struct mtx               vfs_hash_mtx;
+static LIST_HEAD(,vnode) vfs_hash_side;
+static unsigned long vfs_hash_mask;
+static mtx_t vfs_hash_mtx = MTX_INITIALIZER(MTX_TYPE_SPIN, MTX_OPT_DEFAULT);
 
 static int desiredvnodes = configVFS_HASH_DESIREDVNODES;
 
@@ -51,7 +52,6 @@ int __kinit__ vfs_hashinit(void)
     SUBSYS_INIT("vfs_hash");
 
     vfs_hash_tbl = hashinit(desiredvnodes, &vfs_hash_mask);
-    mtx_init(&vfs_hash_mtx, MTX_TYPE_SPIN, 0);
     LIST_INIT(&vfs_hash_side);
 
     return 0;

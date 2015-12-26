@@ -102,7 +102,7 @@ static mmu_region_t dynmem_region;
  * Lock used to protect dynmem_region struct, dynmem_bitmap and dynmemmap
  * access.
  */
-static mtx_t dynmem_region_lock;
+static mtx_t dynmem_region_lock = MTX_INITIALIZER(MTX_TYPE_SPIN, 0);
 
 /*
  * Memory areas reserved for some other use and shall not be touched by dynmem.
@@ -162,7 +162,7 @@ static void mark_reserved_areas(void)
 
 static int dynmem_init(void)
 {
-    SUBSYS_DEP(mmu_init);
+    SUBSYS_DEP(kmem_init);
     SUBSYS_INIT("dynmem");
 
     /*
@@ -174,8 +174,6 @@ static int dynmem_init(void)
         dynmem_end = sysinfo.mem.start + sysinfo.mem.size - 1;
 
     mark_reserved_areas();
-
-    mtx_init(&dynmem_region_lock, MTX_TYPE_SPIN, 0);
 
     return 0;
 }

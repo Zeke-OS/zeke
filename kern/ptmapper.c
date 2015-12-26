@@ -82,7 +82,7 @@ SYSCTL_UINT(_vm_ptmapper, OID_AUTO, mem_tot, CTLFLAG_RD,
     (unsigned int *)(&ptm_mem_tot), 0,
     "Total size of the page table region.");
 
-mtx_t ptmapper_lock;
+mtx_t ptmapper_lock = MTX_INITIALIZER(MTX_TYPE_SPIN, MTX_OPT_DEFAULT);
 
 #define PTM_SIZEOF_MAP sizeof(ptm_alloc_map)
 
@@ -125,16 +125,15 @@ mtx_t ptmapper_lock;
 #define PTM_FREE(block, len) \
     bitmap_block_update(ptm_alloc_map, 0, block, len)
 
+int kmem_ready; /*!< can't use locks before kmem is ready. */
 
-int ptmapper_init(void)
+int __kinit__ ptmapper_init(void)
 {
     SUBSYS_INIT("ptmapper");
-
-    mtx_init(&ptmapper_lock, MTX_TYPE_SPIN, MTX_OPT_DEFAULT);
+    kmem_ready = 1;
 
     return 0;
 }
-
 
 int ptmapper_alloc(mmu_pagetable_t * pt)
 {
@@ -145,8 +144,10 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
     int retval = 0;
 
     /* TODO Transitional fix */
-    if (pt->nr_tables == 0)
+    if (pt->nr_tables == 0) {
+        KERROR(KERROR_WARN, "Transitional fix\n");
         pt->nr_tables = 1;
+    }
 
     switch (pt->pt_type) {
     case MMU_PTT_MASTER:
@@ -165,12 +166,14 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
     }
 
     /* Try to allocate a new page table */
-    mtx_lock(&ptmapper_lock);
+    if (kmem_ready)
+        mtx_lock(&ptmapper_lock);
     if (!PTM_ALLOC(&block, size, balign)) {
         uintptr_t addr = PTM_BLOCK2ADDR(block);
+
 #if defined(configPTMAPPER_DEBUG)
         KERROR(KERROR_DEBUG,
-                "Alloc pt %u bytes @ %x\n", bsize, addr);
+               "Alloc pt %u bytes @ %x\n", bsize, addr);
 #endif
 
         pt->pt_addr = addr;
@@ -186,7 +189,8 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
         KERROR(KERROR_ERR, "Out of pt memory\n");
         retval = -ENOMEM;
     }
-    mtx_unlock(&ptmapper_lock);
+    if (kmem_ready)
+        mtx_unlock(&ptmapper_lock);
 
     return retval;
 }

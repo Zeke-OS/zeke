@@ -38,6 +38,7 @@
 #include <kerror.h>
 #include <kinit.h>
 #include <kmalloc.h>
+#include <kmem.h>
 #include <kstring.h>
 #include <libkern.h>
 #include <ptmapper.h>

@@ -1,6 +1,7 @@
 #!/bin/bash
 
 IMG=zeke-rootfs.img
+SECTORS=114688
 
 export MTOOLSRC=tools/mtools.conf
 
@@ -21,9 +22,9 @@ function dir2img {
     done
 }
 
-dd if=/dev/zero of="$IMG" bs=1M count=10
-mpartition -I -s 63 -t 20 -h 16 c:
-mpartition -cpv -s 63 -t 20 -h 16 c:
+dd if=/dev/zero of="$IMG" bs=512 count=$SECTORS
+mpartition -I c:
+mpartition -c -b 8192 -l $(echo $SECTORS-8192 | bc) c:
 mformat c:
 
 # Copy the bootloader and kernel image

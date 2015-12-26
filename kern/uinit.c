@@ -177,12 +177,12 @@ void * uinit(void * arg)
 
     _mkdir("/dev", S_IRWXU | S_IRGRP | S_IXGRP);
     if (_mount("", "/dev", "devfs"))
-        fail("can't mount /dev");
+        fail("Failed to mount /dev");
 
     _mkdir("/mnt", S_IRWXU | S_IRGRP | S_IXGRP);
     get_rootfs(root, fsname, (char *)arg);
     if (_mount(root, "/mnt", fsname))
-        fail("can't mount sd card");
+        fail("Failed to mount rootfs");
 
     _chdir("/mnt");
     _chrootcwd();

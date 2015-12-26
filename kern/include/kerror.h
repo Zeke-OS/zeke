@@ -74,7 +74,8 @@ void _kerror_release_buf(size_t index);
 #endif
 
 #define _KERROR_WHERESTR (__FILE__ ":" S__LINE__ ": ")
-#define _KERROR2(level, where, fmt, ...) _KERROR_FN(level, where, fmt, ##__VA_ARGS__)
+#define _KERROR2(level, where, fmt, ...) \
+    _KERROR_FN(level, where, fmt, ##__VA_ARGS__)
 
 /**
  * KERROR macro for logging kernel errors.
@@ -83,7 +84,8 @@ void _kerror_release_buf(size_t index);
  * @param level Log level: KERROR_LOG, KERROR_WARN or KERROR_ERR.
  * @param msg Message to be logged.
  */
-#define KERROR(level, fmt, ...) _KERROR2(level, _KERROR_WHERESTR, fmt, ##__VA_ARGS__)
+#define KERROR(level, fmt, ...) \
+    _KERROR2(level, _KERROR_WHERESTR, fmt, ##__VA_ARGS__)
 
 #if configKLOGGER != 0
 extern const char * const _kernel_panic_msg;

@@ -1,1 +1,1 @@
-console=ttyS0,115200 root=/dev/emmc0p1 rootfstype=fatfs
+console=ttyS0,115200 root=/dev/emmc0p0 rootfstype=fatfs

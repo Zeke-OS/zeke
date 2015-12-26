@@ -39,7 +39,7 @@
 #include <hal/mmu.h>
 
 #ifdef configMP
-static mtx_t mmu_lock;
+static mtx_t mmu_lock = MTX_INITIALIZER(MTX_TYPE_SPIN, MTX_OPT_DEFAULT);
 #define MMU_LOCK() mtx_spinlock(&mmu_lock)
 #define MMU_UNLOCK() mtx_unlock(&mmu_lock)
 #else /* !configMP */
@@ -49,14 +49,39 @@ static mtx_t mmu_lock;
 
 #define mmu_disable_ints() __asm__ volatile ("cpsid if")
 
-#ifdef configMP
-void mmu_lock_init(void);
-
-void mmu_lock_init(void)
+/**
+ * MMU must be enabled early in the init to make atomic operations work
+ * and to speed up the boot as caching can be enabled.
+ */
+void mmu_preinit(void)
 {
-    mtx_init(&mmu_lock, MTX_TYPE_SPIN, 0);
+    static uint32_t mpt[MMU_PTSZ_MASTER / sizeof(uint32_t)] __aligned(1048576);
+    uint32_t value, mask;
+
+    for (size_t i = 0; i < 16; i++) {
+        /*       addr      | priv wr    | normal wt | section */
+        mpt[i] = (i << 20) | 0x400      | 8         | 2;
+    }
+    for (size_t i = 0; i < num_elem(mpt) - 16; i++) {
+        /*       addr      | priv wr    | device    | section */
+        mpt[i] = (i << 20) | 0x400      | 4         | 2;
+    }
+
+    __asm__ volatile (
+        "MCR p15, 0, %[ttb], c2, c0, 0\n\t" /* set ttbr0 addr */
+        "MCR p15, 0, %[n], c2, c0, 2"       /* use ttbr0 for all acccess */
+        :
+        : [ttb]"r" (mpt), [n]"r" (0));
+
+    /* Set MMU_DOM_KERNEL as client and others to generate an error. */
+    value = MMU_DOMAC_TO(MMU_DOM_KERNEL, MMU_DOMAC_CL);
+    mask = MMU_DOMAC_ALL;
+    mmu_domain_access_set(value, mask);
+
+    value = MMU_ZEKE_C1_DEFAULTS;
+    mask = MMU_ZEKE_C1_DEFAULTS;
+    mmu_control_set(value, mask);
 }
-#endif
 
 /**
  * Initialize the page table pt by filling it with FAULT entries.

@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Startup code for ARM11.
  * @section LICENSE
- * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,11 +37,12 @@
 
 .globl Start
 
-/* Entry point for the kernel.
+/* 
+ * Entry point for the kernel.
  */
 Start:
     /* Init stack pointers */
-    mov     r4, #0x0 /* Can be changed to something else if memmap is changed. */
+    mov     r4, #0x0 /* Can be changed to smthing else if memmap is changed. */
     cps     #0x13   /* Change to supervisor (SVC) mode */
     ldr     r5, =0x3000
     add     sp, r4, r5
@@ -58,9 +59,11 @@ Start:
     ldr     r5, =0x8000
     add     sp, r4, r5
  
-    /* System mode stack is also technically used for user mode but we'll soon
+    /* 
+     * System mode stack is also technically used for user mode but we'll soon
      * have new per thread stacks. Additionally some of the stacks will overlap
-     * with ATAGs so we must read ATAGs out before using those stacks. */
+     * with ATAGs so we must read ATAGs out before using those stacks.
+     */
     /* Stay in system mode for now. */
 
     /* Clear the bss. */
@@ -78,13 +81,22 @@ Start:
     blo     1b
     /* End of Clear the bss. */
 
+#if configMMU
+    push {r0, r1, r2}
+    ldr     r3, =mmu_preinit
+    blx     r3
+    pop {r0, r1, r2}
+#endif
+
 #if configATAG
-    /* Read information given by the bootloader
+    /* 
+     * Read information given by the bootloader
      *
      * In the future we may want to have this information as it tells some
      * things about the system we are booting on.
      * r0 : rpi model/type/fw version?
-     * r1 : ARM Linux Machine Type (rpi is 3138 (0xc42) identifying the bcm2708 cpu)
+     * r1 : ARM Linux Machine Type (rpi is 3138 (0xc42) identifying the bcm2708
+            cpu)
      *      http://www.arm.linux.org.uk/developer/machines/
      * r2 : address of the ATAGs
      *      ATAGs are especially iteresting because this data may change

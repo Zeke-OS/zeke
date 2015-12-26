@@ -34,7 +34,6 @@
 #include <sys/linker_set.h>
 #include <hal/mmu.h>
 #include <kerror.h>
-#include <kinit.h>
 #include <klocks.h>
 #include <kstring.h>
 #include <proc.h>
@@ -55,40 +54,13 @@
 
 static unsigned long _pf_raw_count; /*!< Raw page fault counter. */
 #ifdef configMP
-static mtx_t _pfrc_lock; /*!< Mutex for _pf_raw_count */
+/** Mutex for _pf_raw_count */
+static mtx_t _pfrc_lock = MTX_INITIALIZER(MTX_TYPE_SPIN, MTX_OPT_DEFAULT);
 #endif
 unsigned long mmu_pfps; /*!< Page faults per second average. Fixed point, 11
                          *   bits. */
 SYSCTL_UINT(_vm, OID_AUTO, pfps, CTLFLAG_RD, (&mmu_pfps), 0,
     "Page faults per second average.");
-
-extern void mmu_lock_init();
-
-int mmu_init(void)
-{
-    SUBSYS_DEP(arm_interrupt_preinit);
-    SUBSYS_DEP(kmem_init);
-    SUBSYS_INIT("MMU");
-
-    uint32_t value, mask;
-
-#ifdef configMP
-    mmu_lock_init();
-    mtx_init(&_pfrc_lock, MTX_TYPE_SPIN, 0);
-#endif
-
-    /* Set MMU_DOM_KERNEL as client and others to generate error. */
-    value = MMU_DOMAC_TO(MMU_DOM_KERNEL, MMU_DOMAC_CL);
-    mask = MMU_DOMAC_ALL;
-    mmu_domain_access_set(value, mask);
-
-    value = MMU_ZEKE_C1_DEFAULTS;
-    mask = MMU_ZEKE_C1_DEFAULTS;
-    mmu_control_set(value, mask);
-
-    return 0;
-}
-HW_PREINIT_ENTRY(mmu_init);
 
 size_t mmu_sizeof_pt(const mmu_pagetable_t * pt)
 {

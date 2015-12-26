@@ -49,21 +49,12 @@
  * Current system time.
  */
 static struct timespec realtime;
-static mtx_t timelock;
+static mtx_t timelock = MTX_INITIALIZER(MTX_TYPE_SPIN, 0);
 
 static uint64_t utime_last;
 static uint64_t sec_next;
 
 static void _update_realtime(void);
-
-int __kinit__ clock_init(void)
-{
-    SUBSYS_INIT("clock");
-
-    mtx_init(&timelock, MTX_TYPE_SPIN, 0);
-
-    return 0;
-}
 
 void update_realtime(void)
 {

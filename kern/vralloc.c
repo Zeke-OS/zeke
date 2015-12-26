@@ -86,7 +86,7 @@ static struct buf * vr_rclone(struct buf * old_region);
 /** List of all allocations done by vralloc. */
 static LIST_HEAD(vrlisthead, vregion) vrlist_head =
     LIST_HEAD_INITIALIZER(vrlisthead);
-static mtx_t vr_big_lock;
+static mtx_t vr_big_lock = MTX_INITIALIZER(MTX_TYPE_TICKET, MTX_OPT_DINT);
 
 SYSCTL_DECL(_vm_vralloc);
 SYSCTL_NODE(_vm, OID_AUTO, vralloc, CTLFLAG_RW, 0,
@@ -116,10 +116,9 @@ static const vm_ops_t vra_ops = {
 int __kinit__ vralloc_init(void)
 {
     extern void _bio_init(void);
-    SUBSYS_INIT("vralloc");
     struct vregion * vreg;
 
-    mtx_init(&vr_big_lock, MTX_TYPE_TICKET, MTX_OPT_DINT);
+    SUBSYS_INIT("vralloc");
 
     mtx_lock(&vr_big_lock);
     vreg = vreg_alloc_node(DMEM_BLOCK_SIZE);
@@ -127,7 +126,6 @@ int __kinit__ vralloc_init(void)
         /* No need to unlock big lock */
         return -ENOMEM;
     }
-
     mtx_unlock(&vr_big_lock);
 
     _bio_init();

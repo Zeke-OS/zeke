@@ -490,7 +490,8 @@ static int sys_mkdir(__user void * user_args)
 
     /* Validate path string */
     if (!strvalid(args->path, args->path_len)) {
-        set_errno(ENAMETOOLONG);
+        err = ENAMETOOLONG;
+        set_errno(err);
         goto out;
     }
 
@@ -502,6 +503,9 @@ static int sys_mkdir(__user void * user_args)
 
     retval = 0;
 out:
+#ifdef configFS_DEBUG
+    KERROR(KERROR_DEBUG, "%s: %s returned %d\n", __func__, args->path, err);
+#endif
     freecpystruct(args);
     return retval;
 }

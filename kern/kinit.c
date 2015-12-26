@@ -71,16 +71,17 @@ int exec_init_array(void)
 {
     int n;
 
-    KERROR(KERROR_INFO, "ZeKe PreInit\n");
-
+    kputs("\n\nZeKe PreInit\n");
     n = __hw_preinit_array_end - __hw_preinit_array_start;
     exec_array(__hw_preinit_array_start, n);
 
     kmalloc_init();
 
+    kputs("SubsysInit\n");
     n  = __init_array_end - __init_array_start;
     exec_array(__init_array_start, n);
 
+    kputs("PostInit\n");
     disable_interrupt();
     n = __hw_postinit_array_end - __hw_postinit_array_start;
     exec_array(__hw_postinit_array_start, n);
@@ -302,8 +303,10 @@ void exec_initfn(int (*fn)(void))
 
     err = fn();
 
-    if (err == 0)
+    if (err == 0) {
         kputs("\r\t\t\t\tOK\n");
-    else if (err != -EAGAIN)
+    } else if (err != -EAGAIN) {
         kputs("\r\t\t\t\tFAILED\n");
+        panic("Halt");
+    }
 }

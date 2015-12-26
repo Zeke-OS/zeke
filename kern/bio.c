@@ -42,9 +42,15 @@
 #include <kerror.h>
 #include <kmalloc.h>
 
-static mtx_t cache_lock;            /* Used to protect access caching data
-                                     * structures and synchronizing access
-                                     * to some functions. */
+/*
+ * Used to protect access caching data structures and synchronizing access
+ * to some functions.
+ *
+ * TODO We'd like to use MTX_TYPE_TICKET here but bio_clean() makes it
+ * impossible right now.
+ */
+static mtx_t cache_lock = MTX_INITIALIZER(MTX_TYPE_SPIN, MTX_OPT_SLEEP |
+                                                         MTX_OPT_PRICEIL);
 static TAILQ_HEAD(bio_relse_list_head, buf) relse_list =
      TAILQ_HEAD_INITIALIZER(relse_list);
 
@@ -59,11 +65,6 @@ SPLAY_GENERATE(bufhd_splay, buf, sentry_, biobuf_compar);
 /* Init bio, called by vralloc_init() */
 void _bio_init(void)
 {
-    /*
-     * TODO We'd like to use MTX_TYPE_TICKET here but bio_clean() makes it
-     * impossible right now.
-     */
-    mtx_init(&cache_lock, MTX_TYPE_SPIN, MTX_OPT_SLEEP | MTX_OPT_PRICEIL);
     cache_lock.pri.p_lock = NICE_MIN;
 }
 

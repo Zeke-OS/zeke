@@ -319,7 +319,6 @@ int __kinit__ emmc_init(void)
 #ifdef configBCM2835
     SUBSYS_DEP(bcm2835_prop_init);
 #endif
-    SUBSYS_DEP(fs_init);
     SUBSYS_INIT("emmc");
 
     vnode_t * vnode;

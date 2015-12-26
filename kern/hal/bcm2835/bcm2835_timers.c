@@ -97,8 +97,10 @@ static int enable_arm_timer(void)
     istate_t s_entry;
     int retval = 0;
 
-    /* Use the ARM timer - BCM 2832 peripherals doc, p.196 */
-    /* Enable ARM timer IRQ */
+    /*
+     * Use the ARM timer - BCM 2832 peripherals doc, p.196
+     * Enable ARM timer IRQ
+     */
     mmio_start(&s_entry);
 
     if (mmio_read(ARM_TIMER_IRQ_CLEAR) != 0x544D5241) {
@@ -113,8 +115,8 @@ static int enable_arm_timer(void)
     mmio_write(ARM_TIMER_RELOAD, (SYS_CLOCK / (ARM_TIMER_FREQ * 16)));
     mmio_write(ARM_TIMER_IRQ_CLEAR, 0);
     mmio_write(ARM_TIMER_CONTROL,
-            (ARM_TIMER_PRESCALE_16 | ARM_TIMER_EN |
-             ARM_TIMER_INT_EN | ARM_TIMER_23BIT));
+               (ARM_TIMER_PRESCALE_16 | ARM_TIMER_EN |
+               ARM_TIMER_INT_EN | ARM_TIMER_23BIT));
 
     /* Enable ARM timer IRQ */
     mmio_write(BCMIRQ_ENABLE_BASIC, 0x1);

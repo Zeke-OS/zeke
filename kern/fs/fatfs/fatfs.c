@@ -91,7 +91,6 @@ vnode_ops_t fatfs_vnode_ops = {
 
 int __kinit__ fatfs_init(void)
 {
-    SUBSYS_DEP(fs_init);
     SUBSYS_DEP(proc_init);
     SUBSYS_INIT("fatfs");
 

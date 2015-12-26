@@ -83,7 +83,10 @@ static const char dev_name[] = "ptmx";
 static struct tty * dev_ptmx; /*!< PTY mux device. */
 static atomic_t _next_pty_id; /*!< Next PTY id. */
 RB_HEAD(ptytree, pty_device) ptys_head = RB_INITIALIZER(_head);
-mtx_t pty_lock; /*!< Lock for protecting global PTY data. */
+/**
+ * Lock for protecting global PTY data.
+ */
+mtx_t pty_lock = MTX_INITIALIZER(MTX_TYPE_TICKET, 0);
 
 static int ptydev_comp(struct pty_device * a, struct pty_device * b)
 {
@@ -323,7 +326,6 @@ int __kinit__ pty_init(void)
 
     _next_pty_id = ATOMIC_INIT(0);
     RB_INIT(&ptys_head);
-    mtx_init(&pty_lock, MTX_TYPE_TICKET, 0);
 
     return make_ptmx();
 }

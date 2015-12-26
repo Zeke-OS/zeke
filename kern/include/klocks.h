@@ -112,7 +112,6 @@ enum mtx_type {
  * Sleep/spin mutex.
  */
 typedef struct mtx {
-    intptr_t _alignment;
     enum mtx_type mtx_type;     /*!< Lock type. */
     unsigned int mtx_flags;     /*!< Option flags. */
     atomic_t mtx_lock;          /*!< Lock value for regular (spin)lock. */
@@ -134,6 +133,14 @@ typedef struct mtx {
  * @param mtx is a pointer to a mutex struct.
  */
 void mtx_init(mtx_t * mtx, enum mtx_type type, unsigned int opt);
+
+#define MTX_INITIALIZER(type, opt) (mtx_t){ \
+    .mtx_type = (type),                     \
+    .mtx_flags = (opt),                     \
+    .mtx_lock = ATOMIC_INIT(0),             \
+    .ticket.queue = ATOMIC_INIT(0),         \
+    .ticket.dequeue = ATOMIC_INIT(0),       \
+}
 
 /* Mutex functions */
 #ifndef configLOCK_DEBUG
