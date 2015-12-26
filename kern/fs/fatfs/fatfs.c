@@ -754,7 +754,6 @@ int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
 
 #if configFATFS_LFN
         fno.lfname = d->d_name;
-        fno.lfsize = NAME_MAX + 1;
 #endif
 
         err = f_readdir(&in->dp, &fno);

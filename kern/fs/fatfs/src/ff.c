@@ -373,14 +373,14 @@ static WORD Fsid;           /* File system mount ID */
                          * the heap.
                          */
 #define DEF_NAMEBUF     uint8_t sfn[12]; WCHAR *lfn
-#define INIT_BUF(dobj)  { lfn = kmalloc((_MAX_LFN + 1) * 2); \
+#define INIT_NAMEBUF(dobj)  { lfn = kmalloc((_MAX_LFN + 1) * 2); \
                           if (!lfn) LEAVE_FF((dobj).fs, FR_NOT_ENOUGH_CORE); \
                             (dobj).lfn = lfn; (dobj).fn = sfn; }
 #define FREE_BUF()      kfree(lfn)
 
 #else                   /* No LFN feature */
 #define DEF_NAMEBUF     uint8_t sfn[12]
-#define INIT_BUF(dobj)  (dobj).fn = sfn
+#define INIT_NAMEBUF(dobj)  (dobj).fn = sfn
 #define FREE_BUF()
 #endif
 
@@ -389,11 +389,6 @@ static WORD Fsid;           /* File system mount ID */
 /* Upper conversion table for extended characters */
 static const uint8_t ExCvt[] = _EXCVT;
 #endif
-
-/*
- * Module Private Functions
- * ------------------------
- */
 
 /*
  * Request/Release grant to access the volume
@@ -453,10 +448,10 @@ static FRESULT sync_window(FATFS * fs)
 static FRESULT move_window(FATFS * fs, DWORD sector)
 {
     if (sector != fs->winsect) {    /* Changed current window */
-        if (!fs->readonly && sync_window(fs) != FR_OK)
+        if ((!fs->readonly && sync_window(fs) != FR_OK) ||
+            fatfs_disk_read(fs->drv, fs->win, sector, SS(fs))) {
             return FR_DISK_ERR;
-        if (fatfs_disk_read(fs->drv, fs->win, sector, SS(fs)))
-            return FR_DISK_ERR;
+        }
         fs->winsect = sector;
     }
 
@@ -489,7 +484,7 @@ static FRESULT sync_fs(FATFS * fs)
             fs->fsi_flag = 0;
         }
         /* Make sure that no pending write process in the physical drive */
-        if (fatfs_disk_ioctl(fs->drv, CTRL_SYNC, NULL, 0) != RES_OK)
+        if (fatfs_disk_ioctl(fs->drv, IOCTL_FLSBLKBUF, NULL, 0) != RES_OK)
             res = FR_DISK_ERR;
     }
 
@@ -1065,9 +1060,6 @@ static void fit_lfn(const WCHAR * lfnbuf, uint8_t * dir, uint8_t ord,
 
 #endif /* configFATFS_LFN */
 
-/*-----------------------------------------------------------------------*/
-/* Create numbered name                                                  */
-/*-----------------------------------------------------------------------*/
 #if configFATFS_LFN
 /**
  * Generate a numbered name.
@@ -1463,7 +1455,7 @@ static void get_fileinfo(FF_DIR * dp, FILINFO * fno)
         WCHAR w, *lfn;
 
         i = 0; p = fno->lfname;
-        if (dp->sect && fno->lfsize && dp->lfn_idx != 0xFFFF) {
+        if (dp->sect && dp->lfn_idx != 0xFFFF) {
             /* Get LFN if available */
             lfn = dp->lfn;
             while ((w = *lfn++) != 0) {     /* Get an LFN character */
@@ -1478,7 +1470,7 @@ static void get_fileinfo(FF_DIR * dp, FILINFO * fno)
                     p[i++] = (TCHAR)(w >> 8);
                 }
 #endif
-                if (i >= fno->lfsize - 1) {
+                if (i >= LFN_SIZE - 1) {
                     i = 0;
                     break;
                 } /* No LFN if buffer overflow */
@@ -1990,11 +1982,6 @@ static FRESULT validate(void * obj)
 }
 
 
-/*
- * Public Functions
- * ----------------
- */
-
 /**
  * Mount a Logical Drive
  */
@@ -2038,7 +2025,7 @@ FRESULT f_open(FF_FIL * fp, FATFS * fs, const TCHAR * path, uint8_t mode)
         res = access_volume(dj.fs, 0);
     }
     if (res == FR_OK) {
-        INIT_BUF(dj);
+        INIT_NAMEBUF(dj);
         res = follow_path(&dj, path);   /* Follow the file path */
         dir = dj.dir;
         if (!fs->readonly) {
@@ -2641,7 +2628,7 @@ FRESULT f_opendir(FF_DIR * dp, FATFS * fs, const TCHAR * path)
         goto fail;
 
     dp->fs = fs;
-    INIT_BUF(*dp);
+    INIT_NAMEBUF(*dp);
     res = follow_path(dp, path); /* Follow the path to the directory */
     FREE_BUF();
     if (res != FR_OK)
@@ -2707,7 +2694,7 @@ FRESULT f_readdir(FF_DIR * dp, FILINFO * fno)
     if (!fno) {
         res = dir_sdi(dp, 0);           /* Rewind the directory object */
     } else {
-        INIT_BUF(*dp);
+        INIT_NAMEBUF(*dp);
         res = dir_read(dp, 0);          /* Read an item */
         if (res == FR_NO_FILE) {        /* Reached end of directory */
             dp->sect = 0;
@@ -2746,7 +2733,7 @@ FRESULT f_stat(FATFS * fs, const TCHAR * path, FILINFO * fno)
     if (res != FR_OK)
         goto fail;
 
-    INIT_BUF(dj);
+    INIT_NAMEBUF(dj);
     res = follow_path(&dj, path);   /* Follow the file path */
     if (res == FR_OK) {             /* Follow completed */
         if (dj.dir) {       /* Found an object */
@@ -2909,7 +2896,7 @@ FRESULT f_unlink(FATFS * fs, const TCHAR * path)
 
     res = access_volume(dj.fs, 1);
     if (res == FR_OK) {
-        INIT_BUF(dj);
+        INIT_NAMEBUF(dj);
         res = follow_path(&dj, path);       /* Follow the file path */
         if (res == FR_OK) {                 /* The object is accessible */
             dir = dj.dir;
@@ -2971,7 +2958,7 @@ FRESULT f_mkdir(FATFS * fs, const TCHAR * path)
 
     res = access_volume(dj.fs, 1);
     if (res == FR_OK) {
-        INIT_BUF(dj);
+        INIT_NAMEBUF(dj);
         res = follow_path(&dj, path); /* Follow the file path */
         if (res == FR_OK) {
             /* Any object with same name is already existing */
@@ -3052,7 +3039,7 @@ FRESULT f_chmod(FATFS * fs, const TCHAR * path, uint8_t value, uint8_t mask)
 
     res = access_volume(dj.fs, 1);
     if (res == FR_OK) {
-        INIT_BUF(dj);
+        INIT_NAMEBUF(dj);
         res = follow_path(&dj, path); /* Follow the file path */
         FREE_BUF();
         if (res == FR_OK) {
@@ -3091,7 +3078,7 @@ FRESULT f_utime(FATFS * fs, const TCHAR * path, const FILINFO * fno)
 
     res = access_volume(dj.fs, 1);
     if (res == FR_OK) {
-        INIT_BUF(dj);
+        INIT_NAMEBUF(dj);
         res = follow_path(&dj, path);   /* Follow the file path */
         FREE_BUF();
         if (res == FR_OK) {
@@ -3128,7 +3115,7 @@ FRESULT f_rename(FATFS * fs, const TCHAR * path_old, const TCHAR * path_new)
     res = access_volume(djo.fs, 1);
     if (res == FR_OK) {
         djn.fs = djo.fs;
-        INIT_BUF(djo);
+        INIT_NAMEBUF(djo);
         res = follow_path(&djo, path_old);      /* Check old object */
         if (res == FR_OK) {                     /* Old object is found */
             if (!djo.dir) {                     /* Is root dir? */

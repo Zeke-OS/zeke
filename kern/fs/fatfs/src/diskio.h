@@ -29,7 +29,6 @@ DRESULT fatfs_disk_ioctl(uint8_t pdrv, unsigned cmd, void * buff, size_t bsize);
 
 /* Generic command (used by FatFs) */
 #define CTRL_SYNC           0 /*!< Flush disk cache (for write functions) */
-#define GET_BLOCK_SIZE      3 /*!< Get erase block size (for only f_mkfs()) */
 #define CTRL_ERASE_SECTOR   4 /*!< Force erased a block of sectors
                                *   (for only _USE_ERASE) */
 

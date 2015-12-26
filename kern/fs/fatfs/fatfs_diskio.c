@@ -138,11 +138,10 @@ DRESULT fatfs_disk_ioctl(uint8_t pdrv, unsigned cmd, void * buff, size_t bsize)
 
     switch (cmd) {
     case CTRL_SYNC:
+    case CTRL_ERASE_SECTOR:
         /* TODO Not implemented yet. */
         return 0;
         break;
-    case GET_BLOCK_SIZE:
-    case CTRL_ERASE_SECTOR:
     default:
         break;
     }

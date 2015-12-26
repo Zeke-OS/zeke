@@ -47,10 +47,13 @@ typedef char TCHAR;
 
 #endif
 
-#define FATFS_READONLY 0x01
+#define FATFS_READONLY  0x01
 
-/* File system object structure (FATFS) */
+#define LFN_SIZE        (NAME_MAX + 1)
 
+/**
+ * File system object structure (FATFS)
+ */
 typedef struct {
     uint8_t fs_type;        /* FAT sub-type (0:Not mounted) */
     uint8_t drv;            /* Physical drive number */
@@ -130,7 +133,6 @@ typedef struct {
     TCHAR   fname[13];      /* Short file name (8.3 format) */
 #if configFATFS_LFN
     TCHAR * lfname;         /* Pointer to the LFN buffer */
-    unsigned int lfsize;    /* Size of LFN buffer in TCHAR */
 #endif
 } FILINFO;
 
