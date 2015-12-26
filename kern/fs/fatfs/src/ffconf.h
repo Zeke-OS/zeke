@@ -12,15 +12,17 @@
 / Functions and Buffer Configurations
 /---------------------------------------------------------------------------*/
 
-#define _USE_FASTSEEK   0   /* 0:Disable or 1:Enable */
-/* To enable fast seek feature, set _USE_FASTSEEK to 1. */
+/**
+ * To enable fast seek feature, set _USE_FASTSEEK to 1.
+ * 0:Disable or 1:Enable
+ */
+#define _USE_FASTSEEK   0
 
 /*---------------------------------------------------------------------------/
 / Locale and Namespace Configurations
 /---------------------------------------------------------------------------*/
 
-#define _CODE_PAGE configFATFS_CODEPAGE
-/*
+/**
  * The _CODE_PAGE specifies the OEM code page to be used on the target system.
  * Incorrect setting of the code page can cause a file open failure.
  *
@@ -51,63 +53,63 @@
  *  874  - Thai (OEM, Windows)
  *  1    - ASCII (Valid for only non-LFN configuration)
  */
+#define _CODE_PAGE configFATFS_CODEPAGE
 
 
-#define _MAX_LFN 255     /* Maximum LFN length to handle (12 to 255) */
-/*
+/**
+ * Maximum LFN length to handle (12 to 255)
  * When LFN feature is enabled, Unicode handling functions ff_convert() and
  * ff_wtoupper() function must be added to the project.
- * The LFN working buffer occupies (_MAX_LFN + 1) * 2 bytes. When use stack for
- * the working buffer, take care on stack overflow. When use heap memory for
- * the working buffer, memory management functions, ff_memalloc() and
- * ff_memfree(), must be added to the project.
  */
+#define _MAX_LFN 255
 
 
-#ifdef configFATFS_UNICODE
-#define _LFN_UNICODE 1
-#else
-#define _LFN_UNICODE 0
-#endif
-/*
+/**
  * 0:ANSI/OEM or 1:Unicode
  * To switch the character encoding on the FatFs API (TCHAR) to Unicode,
  * enable LFN feature and set _LFN_UNICODE to 1. This option affects behavior
  * of string I/O functions. This option must be 0 when LFN feature is not
  * enabled.
  */
+#ifdef configFATFS_UNICODE
+#define _LFN_UNICODE 1
+#else
+#define _LFN_UNICODE 0
+#endif
 
 
-#define _STRF_ENCODE    3   /* 0:ANSI/OEM, 1:UTF-16LE, 2:UTF-16BE, 3:UTF-8 */
-/*
+/**
  * When Unicode API is enabled by _LFN_UNICODE option, this option selects the
  * character encoding on the file to be read/written via string I/O functions,
  * f_gets(), f_putc(), f_puts and f_printf(). This option has no effect when
  * _LFN_UNICODE == 0. Note that FatFs supports only BMP.
+ * 0:ANSI/OEM, 1:UTF-16LE, 2:UTF-16BE, 3:UTF-8
  */
+#define _STRF_ENCODE    3
 
 
 /*---------------------------------------------------------------------------/
  * Drive/Volume Configurations
  *--------------------------------------------------------------------------*/
 
+/**
+ * Number of volumes (logical drives) to be used.
+ */
 #define _VOLUMES configFATFS_MAX_MOUNTS
-/* Number of volumes (logical drives) to be used. */
 
 
-#define _MULTI_PARTITION 0 /* 0:Single partition, 1:Enable multiple partition */
-/*
+/**
  * By default(0), each logical drive number is bound to the same physical drive
  * number and only a FAT volume found on the physical drive is mounted. When it
  * is set to 1,
  * each logical drive number is bound to arbitrary drive/partition listed in
  * VolToPart[].
+ * 0:Single partition, 1:Enable multiple partition
  */
+#define _MULTI_PARTITION 0
 
 
-#define _MIN_SS     512
-#define _MAX_SS     4096
-/*
+/**
  * These options configure the range of sector size to be supported. (512, 1024,
  * 2048 or 4096) Always set both 512 for most systems, all memory card and
  * harddisk. But a larger value may be required for on-board flash memory and
@@ -115,27 +117,32 @@
  * configured to variable sector size and GET_SECTOR_SIZE command must be
  * implemented to the disk_ioctl() function.
  */
+#define _MIN_SS     512
+#define _MAX_SS     4096
 
 
-#define _USE_ERASE 0 /* 0:Disable or 1:Enable */
-/*
+/**
  * To enable sector erase feature, set _USE_ERASE to 1. Also CTRL_ERASE_SECTOR
  * command should be added to the disk_ioctl() function.
+ * 0:Disable or 1:Enable
  */
+#define _USE_ERASE 0
 
 
-#define _FS_NOFSINFO 0 /* 0 to 3 */
-/*
+/**
  * If you need to know correct free space on the FAT32 volume, set bit 0
  * of this option and f_getfree() function at first time after volume mount
  * will force a full FAT scan. Bit 1 controls the last allocated cluster number
  * as bit 0.
+ *
+ * 0 to 3
  *
  * bit0=0: Use free cluster count in the FSINFO if available.
  * bit0=1: Do not trust free cluster count in the FSINFO.
  * bit1=0: Use last allocated cluster number in the FSINFO if available.
  * bit1=1: Do not trust last allocated cluster number in the FSINFO.
  */
+#define _FS_NOFSINFO 0
 
 
 
@@ -143,13 +150,13 @@
 / System Configurations
 /---------------------------------------------------------------------------*/
 
-/*
+/**
  * Fatfs reentrancy timeout.
+ * Timeout period in unit of time tick
  */
-#define _FS_TIMEOUT     1000    /* Timeout period in unit of time tick */
+#define _FS_TIMEOUT     1000
 
-#define _WORD_ACCESS    0   /* 0 or 1 */
-/*
+/**
  * The _WORD_ACCESS option is an only platform dependent option. It defines
  * which access method is used to the word data on the FAT volume.
  *
@@ -164,6 +171,8 @@
  * and reduce code size. Following table shows an example of some processor
  * types.
  *
+ * 0 or 1
+ *
  *  ARM7TDMI    0           ColdFire    0           V850E       0
  *  Cortex-M3   0           Z80         0/1         V850ES      0/1
  *  Cortex-M0   0           RX600(LE)   0/1         TLCS-870    0/1
@@ -173,5 +182,6 @@
  *  PIC24       0           H8S         0           MSP430      0
  *  PIC32       0           H8/300H     0           x86         0/1
  */
+#define _WORD_ACCESS    0
 
 #endif /* _FFCONF */
