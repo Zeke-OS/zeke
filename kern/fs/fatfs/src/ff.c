@@ -667,7 +667,10 @@ static FRESULT remove_chain(FATFS * fs, DWORD clst)
  * FAT handling - Stretch or Create a cluster chain.
  * @param fs File system object.
  * @param clst Cluster# to stretch. 0 means create a new chain.
- * @return 0:No free cluster, 1:Internal error, 0xFFFFFFFF:Disk error, >=2:New cluster#
+ * @retval 0:No free cluster;
+ * @retval 1:Internal error;
+ * @retval 0xFFFFFFFF:Disk error;
+ * @retval >=2:New cluster#
  */
 static DWORD create_chain(FATFS * fs, DWORD clst)
 {
@@ -812,8 +815,10 @@ static FRESULT dir_next(FF_DIR * dp, int stretch)
     unsigned int i;
 
     i = dp->index + 1;
-    if (!(i & 0xFFFF) || !dp->sect) /* Report EOT when index has reached 65535 */
+    if (!(i & 0xFFFF) || !dp->sect) {
+        /* Report EOT when index has reached 65535 */
         return FR_NO_FILE;
+    }
 
     if (!(i % (SS(dp->fs) / SZ_DIR))) { /* Sector changed? */
         dp->sect++; /* Next sector */
@@ -823,8 +828,7 @@ static FRESULT dir_next(FF_DIR * dp, int stretch)
                 /* Report EOT if it reached end of static table */
                 return FR_NO_FILE;
             }
-        }
-        else { /* Dynamic table */
+        } else { /* Dynamic table */
             if (((i / (SS(dp->fs) / SZ_DIR)) & (dp->fs->csize - 1)) == 0) {
                 /* Cluster changed? */
                 clst = get_fat(dp->fs, dp->clust); /* Get next cluster */
@@ -833,48 +837,38 @@ static FRESULT dir_next(FF_DIR * dp, int stretch)
                 if (clst == 0xFFFFFFFF)
                     return FR_DISK_ERR;
                 if (clst >= dp->fs->n_fatent) {
-                    /* If it reached end of dynamic table, */
-                    if (!dp->fs->readonly) {
-                        unsigned int c;
-                        if (!stretch) {
-                            /* If do not stretch, report EOT */
-                            return FR_NO_FILE;
-                        }
+                    unsigned int c;
 
-                        /* Stretch cluster chain */
-                        clst = create_chain(dp->fs, dp->clust);
-                        if (clst == 0)
-                            return FR_DENIED; /* No free cluster */
-                        if (clst == 1)
-                            return FR_INT_ERR;
-                        if (clst == 0xFFFFFFFF)
-                            return FR_DISK_ERR;
-
-                        /* Clean-up stretched table */
-                        if (sync_window(dp->fs))
-                            return FR_DISK_ERR;/* Flush disk access window */
-                        /* Clear window buffer */
-                        memset(dp->fs->win, 0, SS(dp->fs));
-                        /* Cluster start sector */
-                        dp->fs->winsect = clust2sect(dp->fs, clst);
-                        for (c = 0; c < dp->fs->csize; c++) {
-                            /* Fill the new cluster with 0 */
-                            dp->fs->wflag = 1;
-                            if (sync_window(dp->fs))
-                                return FR_DISK_ERR;
-                            dp->fs->winsect++;
-                        }
-                        dp->fs->winsect -= c; /* Rewind window offset */
-                    } else {
-                        if (!stretch) {
-                            /*
-                             * If do not stretch, report EOT
-                             * (this is to suppress a warning)
-                             */
-                            return FR_NO_FILE;
-                        }
+                    if (dp->fs->readonly || !stretch) {
                         return FR_NO_FILE; /* Report EOT */
                     }
+
+                    /* Stretch cluster chain */
+                    clst = create_chain(dp->fs, dp->clust);
+                    if (clst == 0)
+                        return FR_DENIED; /* No free cluster */
+                    if (clst == 1)
+                        return FR_INT_ERR;
+                    if (clst == 0xFFFFFFFF)
+                        return FR_DISK_ERR;
+
+                    /* Clean-up stretched table */
+                    if (sync_window(dp->fs)) {
+                        /* Flush disk access window */
+                        return FR_DISK_ERR;
+                    }
+                    /* Clear window buffer */
+                    memset(dp->fs->win, 0, SS(dp->fs));
+                    /* Cluster start sector */
+                    dp->fs->winsect = clust2sect(dp->fs, clst);
+                    for (c = 0; c < dp->fs->csize; c++) {
+                        /* Fill the new cluster with 0 */
+                        dp->fs->wflag = 1;
+                        if (sync_window(dp->fs))
+                            return FR_DISK_ERR;
+                        dp->fs->winsect++;
+                    }
+                    dp->fs->winsect -= c; /* Rewind window offset */
                 }
                 dp->clust = clst; /* Initialize data for new cluster */
                 dp->sect = clust2sect(dp->fs, clst);
@@ -897,11 +891,11 @@ static FRESULT dir_next(FF_DIR * dp, int stretch)
 static FRESULT dir_alloc(FF_DIR * dp, unsigned int nent)
 {
     FRESULT res;
-    unsigned int n;
 
     res = dir_sdi(dp, 0);
     if (res == FR_OK) {
-        n = 0;
+        unsigned int n = 0;
+
         do {
             res = move_window(dp->fs, dp->sect);
             if (res != FR_OK)
@@ -1299,7 +1293,9 @@ static FRESULT dir_register(FF_DIR * dp)
         fn[NS] = 0; dp->lfn = 0; /* Find only SFN */
         for (n = 1; n < 100; n++) {
             gen_numname(fn, sn, lfn, n); /* Generate a numbered name */
-            res = dir_find(dp); /* Check if the name collides with existing SFN */
+
+            /* Check if the name collides with existing SFN */
+            res = dir_find(dp);
             if (res != FR_OK)
                 break;
         }
@@ -1495,8 +1491,12 @@ static FRESULT create_name (FF_DIR * dp, const TCHAR ** path)
     unsigned int i, ni, si, di;
     const TCHAR * p;
 
-    /* Create LFN in Unicode */
-    for (p = *path; *p == '/' || *p == '\\'; p++) ; /* Strip duplicated separator */
+    /*
+     * Create LFN in Unicode
+     */
+
+    /* Strip duplicated separator */
+    for (p = *path; *p == '/' || *p == '\\'; p++);
     lfn = dp->lfn;
     si = di = 0;
     for (;;) {
