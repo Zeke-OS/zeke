@@ -182,7 +182,6 @@ ssize_t fs_queue_write(struct fs_queue * fsq, uint8_t * buf, size_t count,
 
     mtx_lock(&fsq->wr_lock);
     if (flags & FS_QUEUE_FLAGS_PACKET) {
-        p = NULL;
         offset = 0;
     } else {
         /*
@@ -195,7 +194,7 @@ ssize_t fs_queue_write(struct fs_queue * fsq, uint8_t * buf, size_t count,
     while (left > 0) {
         if (offset == 0) {
             if ((flags & FS_QUEUE_FLAGS_NONBLOCK) &&
-                !queue_alloc_get(&fsq->qcb)) {
+                !(p = queue_alloc_get(&fsq->qcb))) {
                 goto out;
             } else { /* Blocking IO */
                 sigset_t oldset;
