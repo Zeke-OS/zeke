@@ -61,7 +61,7 @@ void (*kputs)(const char *);
         __subsys_init = '\x01';         \
         kputs((name));                  \
     }                                   \
-} while (0)                             \
+} while (0)
 
 /**
  * Subsystem initializer dependency.
