@@ -60,6 +60,8 @@ extern const mmu_region_t mmu_region_kstack;
 extern mmu_region_t mmu_region_kernel;
 extern mmu_region_t mmu_region_kdata;
 
+extern int _kmem_ready;
+
 #endif /* KMEM_H */
 
 /**

@@ -30,6 +30,7 @@
  *******************************************************************************
  */
 
+#include <errno.h>
 #include <sys/queue.h>
 #include <sys/sysctl.h>
 #include <bitmap.h>
@@ -37,7 +38,6 @@
 #include <dynmem.h>
 #include <errno.h>
 #include <kerror.h>
-#include <kinit.h>
 #include <kmalloc.h>
 #include <kstring.h>
 #include <libkern.h>
@@ -112,25 +112,21 @@ static const vm_ops_t vra_ops = {
 
 /**
  * Initializes vregion allocator data structures.
+ * Called from kinit.c
  */
-int __kinit__ vralloc_init(void)
+void vralloc_init(void)
 {
     extern void _bio_init(void);
     struct vregion * vreg;
 
-    SUBSYS_INIT("vralloc");
-
     mtx_lock(&vr_big_lock);
     vreg = vreg_alloc_node(DMEM_BLOCK_SIZE);
     if (!vreg) {
-        /* No need to unlock big lock */
-        return -ENOMEM;
+        panic("vralloc initialization failed");
     }
     mtx_unlock(&vr_big_lock);
 
     _bio_init();
-
-    return 0;
 }
 
 /**

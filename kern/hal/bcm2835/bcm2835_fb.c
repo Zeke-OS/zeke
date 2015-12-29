@@ -91,7 +91,6 @@ static int set_cursor_info(void);
 
 static int __kinit__ bcm2835_fb_init(void)
 {
-    SUBSYS_DEP(vralloc_init);
     SUBSYS_INIT("BCM2835_fb");
 
     struct bcm2835_fb_config bcm_fb;

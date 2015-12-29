@@ -125,16 +125,6 @@ mtx_t ptmapper_lock = MTX_INITIALIZER(MTX_TYPE_SPIN, MTX_OPT_DEFAULT);
 #define PTM_FREE(block, len) \
     bitmap_block_update(ptm_alloc_map, 0, block, len)
 
-int kmem_ready; /*!< can't use locks before kmem is ready. */
-
-int __kinit__ ptmapper_init(void)
-{
-    SUBSYS_INIT("ptmapper");
-    kmem_ready = 1;
-
-    return 0;
-}
-
 int ptmapper_alloc(mmu_pagetable_t * pt)
 {
     size_t block;
@@ -166,7 +156,7 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
     }
 
     /* Try to allocate a new page table */
-    if (kmem_ready)
+    if (_kmem_ready)
         mtx_lock(&ptmapper_lock);
     if (!PTM_ALLOC(&block, size, balign)) {
         uintptr_t addr = PTM_BLOCK2ADDR(block);
@@ -189,7 +179,7 @@ int ptmapper_alloc(mmu_pagetable_t * pt)
         KERROR(KERROR_ERR, "Out of pt memory\n");
         retval = -ENOMEM;
     }
-    if (kmem_ready)
+    if (_kmem_ready)
         mtx_unlock(&ptmapper_lock);
 
     return retval;

@@ -30,12 +30,12 @@
  *******************************************************************************
  */
 
+#include <errno.h>
 #include <sys/sysctl.h>
 #include <bitmap.h>
 #include <dynmem.h>
 #include <hal/sysinfo.h>
 #include <kerror.h>
-#include <kinit.h>
 #include <klocks.h>
 #include <kmem.h>
 #include <kstring.h>
@@ -160,11 +160,11 @@ static void mark_reserved_areas(void)
     }
 }
 
-static int dynmem_init(void)
+/**
+ * Called from kinit.c
+ */
+void dynmem_init(void)
 {
-    SUBSYS_DEP(kmem_init);
-    SUBSYS_INIT("dynmem");
-
     /*
      * Set dynmem end address.
      */
@@ -174,10 +174,7 @@ static int dynmem_init(void)
         dynmem_end = sysinfo.mem.start + sysinfo.mem.size - 1;
 
     mark_reserved_areas();
-
-    return 0;
 }
-HW_PREINIT_ENTRY(dynmem_init);
 
 /**
  * Check that the given address is in dynmem range.

@@ -31,7 +31,6 @@
  */
 
 #include <kerror.h>
-#include <kinit.h>
 #include <kmem.h>
 #include <kstring.h>
 #include <ptmapper.h>
@@ -103,13 +102,14 @@ mmu_region_t mmu_region_kdata = {
 };
 KMEM_FIXED_REGION(mmu_region_kdata);
 
-int kmem_init(void)
-{
-    SUBSYS_INIT("kmem");
-#if defined(configKMEM_DEBUG)
-    kputs("\n");
-#endif
+int _kmem_ready; /* Atomic operations can be safely used after this is set. */
 
+/**
+ * Initialize the kernel memory map.
+ * This function is called from kinit.c
+ */
+void kmem_init(void)
+{
     /* Allocate memory for mmu_pagetable_master */
     if (ptmapper_alloc(&mmu_pagetable_master)) {
         /* Critical failure */
@@ -172,6 +172,5 @@ int kmem_init(void)
     mmu_attach_pagetable(&vm_pagetable_system.pt); /* Add L2 pte into L1 mpt */
     mmu_attach_pagetable(&mmu_pagetable_master); /* Load L1 TTB */
 
-    return 0;
+    _kmem_ready = 1;
 }
-HW_PREINIT_ENTRY(kmem_init);

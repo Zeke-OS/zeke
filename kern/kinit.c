@@ -32,14 +32,14 @@
 
 #include <sys/sysctl.h>
 #include <sys/types.h>
+#include <buf.h>
 #include <kerror.h>
+#include <kinit.h>
+#include <kmalloc.h>
+#include <kstring.h>
+#include <libkern.h>
 #include <proc.h>
 #include <thread.h>
-#include <libkern.h>
-#include <kstring.h>
-#include <kmalloc.h>
-#include <buf.h>
-#include <kinit.h>
 #include "uinit.h"
 
 extern int (*__hw_preinit_array_start[]) (void) __attribute__((weak));
@@ -54,7 +54,6 @@ extern int (*__init_array_end []) (void) __attribute__((weak));
 extern int (*__fini_array_start []) (void) __attribute__((weak));
 extern int (*__fini_array_end []) (void) __attribute__((weak));
 
-extern void kmalloc_init(void);
 static void exec_array(int (*a []) (void), int n);
 
 /*
@@ -69,13 +68,23 @@ static char kinit_rootfs[40] = configROOTFS_PATH " " configROOTFS_NAME;
  */
 int exec_init_array(void)
 {
+    extern void kmem_init(void);
+    extern void dynmem_init(void);
+    extern void kmalloc_init(void);
+    extern void vralloc_init(void);
     int n;
 
     kputs("\n\nZeKe PreInit\n");
     n = __hw_preinit_array_end - __hw_preinit_array_start;
     exec_array(__hw_preinit_array_start, n);
 
+    /*
+     * Memory allocator initializers.
+     */
+    kmem_init();
+    dynmem_init();
     kmalloc_init();
+    vralloc_init();
 
     kputs("SubsysInit\n");
     n  = __init_array_end - __init_array_start;

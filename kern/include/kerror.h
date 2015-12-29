@@ -35,6 +35,7 @@
 #define KERROR_H
 
 #include <stddef.h>
+#include <hal/core.h>
 #include <kstring.h>
 
 #define KERROR_NOLOG    0

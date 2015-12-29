@@ -52,7 +52,6 @@ static struct buf * mbuf;
 
 int __kinit__ bcm2835_prop_init(void)
 {
-    SUBSYS_DEP(vralloc_init);
     SUBSYS_INIT("BCM2835_prop");
 
     mbuf = geteblk_special(MMU_PGSIZE_COARSE, MMU_CTRL_MEMTYPE_SO);

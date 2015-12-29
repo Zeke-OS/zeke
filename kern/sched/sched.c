@@ -192,7 +192,6 @@ RB_GENERATE_STATIC(threadmap, thread_info, sched.ttentry_, thread_id_compare);
 
 int __kinit__ sched_init(void)
 {
-    SUBSYS_DEP(vralloc_init);
     SUBSYS_INIT("sched");
 
     /* Initialize locks. */

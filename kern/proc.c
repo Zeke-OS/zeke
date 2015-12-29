@@ -93,7 +93,6 @@ pid_t proc_update(void); /* Used in HAL, so not static but not in headeaders. */
 
 int __kinit__ proc_init(void)
 {
-    SUBSYS_DEP(vralloc_init);
     SUBSYS_INIT("proc");
 
     int err;
