@@ -224,8 +224,8 @@ int __kinit__ kinit(void)
     /*
      * Get params for the actual root file systems.
      */
-    if (kernel_sysctlbyname(0, "kern.root", kinit_rootfs, &rootfs_len, NULL, 0,
-                            NULL, 0)) {
+    if (kernel_sysctlbyname(NULL, "kern.root", kinit_rootfs, &rootfs_len,
+                            NULL, 0, NULL, 0)) {
         KERROR(KERROR_ERR,
                "Unable to get rootfs params, fallback to defaults\n");
     }

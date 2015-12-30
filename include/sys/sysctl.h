@@ -563,12 +563,22 @@ void sysctl_register_oid(struct sysctl_oid * oidp);
 void sysctl_unregister_oid(struct sysctl_oid * oidp);
 int sysctl_find_oid(int * name, unsigned int namelen, struct sysctl_oid ** noid,
         int * nindx, struct sysctl_req * req);
+
+/*
+ * In-kernel sysctl by name.
+ * @aram cred if NULL a default set of credentials is used.
+ */
 int kernel_sysctlbyname(struct cred * cred, char * name, void * old,
                         size_t * oldlenp, void * new, size_t newlen,
                         size_t * retval, int flags);
+/*
+ * In-kernel sysctl.
+ * @aram cred if NULL a default set of credentials is used.
+ */
 int kernel_sysctl(struct cred * cred, int * name, unsigned int namelen,
         void * old, size_t * oldlenp, void * new, size_t newlen,
         size_t * retval, int flags);
+
 int sys___sysctl(struct cred * cred, struct _sysctl_args * uap);
 
 #endif /* KERNEL_INTERNAL */

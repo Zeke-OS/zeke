@@ -814,8 +814,14 @@ int kernel_sysctl(struct cred * cred, int * name, unsigned int namelen,
                   void * old, size_t * oldlenp, void * new, size_t newlen,
                   size_t * retval, int flags)
 {
+    struct cred default_cred;
     int error = 0;
     struct sysctl_req req;
+
+    if (!cred) {
+        priv_cred_init(&default_cred);
+        cred = &default_cred;
+    }
 
     memset(&req, 0, sizeof(req));
 
