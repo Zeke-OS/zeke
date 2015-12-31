@@ -30,16 +30,17 @@
  *******************************************************************************
  */
 
+#include <errno.h>
+#include <sys/linker_set.h>
+#include <sys/sysctl.h>
+#include <fs/fs.h>
+#include <fs/fs_util.h>
+#include <hal/core.h>
+#include <hal/uart.h>
+#include <kerror.h>
 #include <kinit.h>
 #include <kstring.h>
 #include <libkern.h>
-#include <fs/fs.h>
-#include <fs/fs_util.h>
-#include <sys/sysctl.h>
-#include <errno.h>
-#include <hal/uart.h>
-#include <sys/linker_set.h>
-#include <kerror.h>
 
 #ifdef configKLOGGER
 const char * const _kernel_panic_msg = "Oops, Kernel panic\n";
@@ -126,6 +127,18 @@ size_t _kerror_acquire_buf(char ** buf)
 void _kerror_release_buf(size_t index)
 {
     isema_release(kerror_printbuf_sema, index);
+}
+
+void _kerror_panic(const char * where, const char * msg)
+{
+    char * buf;
+
+    disable_interrupt();
+    _kerror_acquire_buf(&buf);
+    ksprintf(buf, configKERROR_MAXLEN, "Oops, Kernel panic\n%s %s\n",
+             where, msg);
+    kputs(buf);
+    panic_halt();
 }
 
 /**

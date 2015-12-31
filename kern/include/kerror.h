@@ -35,7 +35,6 @@
 #define KERROR_H
 
 #include <stddef.h>
-#include <hal/core.h>
 #include <kstring.h>
 
 #define KERROR_NOLOG    0
@@ -88,10 +87,6 @@ void _kerror_release_buf(size_t index);
 #define KERROR(level, fmt, ...) \
     _KERROR2(level, _KERROR_WHERESTR, fmt, ##__VA_ARGS__)
 
-#if configKLOGGER != 0
-extern const char * const _kernel_panic_msg;
-#endif
-
 /**
  * Print return address of the current function.
  */
@@ -99,15 +94,15 @@ extern const char * const _kernel_panic_msg;
         KERROR(KERROR_DEBUG, "ret_addr = %p\n", __builtin_return_address(0)); \
 } while (0)
 
+void __attribute__((noreturn))
+_kerror_panic(const char * where, const char * msg);
+
 /**
  * Kernel panic with message.
  * @param msg is a message to be logged before halt.
  */
-#define panic(msg) do {                             \
-    disable_interrupt();                            \
-    KERROR(KERROR_CRIT, "%s", _kernel_panic_msg);   \
-    KERROR(KERROR_CRIT, "%s", msg);                 \
-    panic_halt();                                   \
+#define panic(msg) do {                     \
+    _kerror_panic(_KERROR_WHERESTR, msg);   \
 } while(0)
 
 #ifdef configKASSERT
