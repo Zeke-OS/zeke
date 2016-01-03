@@ -372,7 +372,7 @@ static WORD Fsid;           /* File system mount ID */
                          * LFN feature with dynamic working buffer on
                          * the heap.
                          */
-#define DEF_NAMEBUF     uint8_t sfn[12]; WCHAR *lfn
+#define DEF_NAMEBUF     uint8_t sfn[12]; WCHAR * lfn = NULL
 #define INIT_NAMEBUF(dobj)  { lfn = kmalloc((_MAX_LFN + 1) * 2); \
                           if (!lfn) LEAVE_FF((dobj).fs, FR_NOT_ENOUGH_CORE); \
                             (dobj).lfn = lfn; (dobj).fn = sfn; }
@@ -2888,58 +2888,61 @@ FRESULT f_unlink(FATFS * fs, const TCHAR * path)
 {
     FRESULT res;
     FF_DIR dj;
-    uint8_t *dir;
+    uint8_t * dir;
     DWORD dclst;
     DEF_NAMEBUF;
 
     dj.fs = fs;
 
     res = access_volume(dj.fs, 1);
-    if (res == FR_OK) {
-        INIT_NAMEBUF(dj);
-        res = follow_path(&dj, path);       /* Follow the file path */
-        if (res == FR_OK) {                 /* The object is accessible */
-            dir = dj.dir;
-            if (!dir) {
-                res = FR_INVALID_NAME; /* Cannot remove the start directory */
-            } else {
-                if (dir[DIR_Attr] & AM_RDO)
-                    res = FR_DENIED; /* Cannot remove R/O object */
-            }
-            dclst = ld_clust(dj.fs, dir);
+    if (res != FR_OK)
+        goto fail;
 
-            /* Is it a sub-dir? */
-            if (res == FR_OK && (dir[DIR_Attr] & AM_DIR)) {
-                if (dclst < 2) {
-                    res = FR_INT_ERR;
-                } else { /* Check if the sub-directory is empty or not */
-                    FF_DIR sdj;
+    INIT_NAMEBUF(dj);
+    res = follow_path(&dj, path); /* Follow the file path */
+    if (res != FR_OK) /* The object is accessible */
+        goto fail;
 
-                    memcpy(&sdj, &dj, sizeof(FF_DIR));
-                    sdj.sclust = dclst;
-                    res = dir_sdi(&sdj, 2);     /* Exclude dot entries */
-                    if (res == FR_OK) {
-                        res = dir_read(&sdj, 0);    /* Read an item */
-                        if (res == FR_OK) /* Not empty directory */
-                            res = FR_DENIED;
-                        if (res == FR_NO_FILE)
-                            res = FR_OK; /* Empty */
-                    }
-                }
-            }
+    dir = dj.dir;
+    if (!dir) {
+        res = FR_INVALID_NAME; /* Cannot remove the start directory */
+    } else {
+        if (dir[DIR_Attr] & AM_RDO)
+            res = FR_DENIED; /* Cannot remove R/O object */
+    }
+    dclst = ld_clust(dj.fs, dir);
+
+    /* Is it a sub-dir? */
+    if (res == FR_OK && (dir[DIR_Attr] & AM_DIR)) {
+        if (dclst < 2) {
+            res = FR_INT_ERR;
+        } else { /* Check if the sub-directory is empty or not */
+            FF_DIR sdj;
+
+            memcpy(&sdj, &dj, sizeof(FF_DIR));
+            sdj.sclust = dclst;
+            res = dir_sdi(&sdj, 2); /* Exclude dot entries */
             if (res == FR_OK) {
-                res = dir_remove(&dj); /* Remove the directory entry */
-                if (res == FR_OK) {
-                    if (dclst) /* Remove the cluster chain if exist */
-                        res = remove_chain(dj.fs, dclst);
-                    if (res == FR_OK)
-                        res = sync_fs(dj.fs);
-                }
+                res = dir_read(&sdj, 0); /* Read an item */
+                if (res == FR_OK) /* Not empty directory */
+                    res = FR_DENIED;
+                if (res == FR_NO_FILE)
+                    res = FR_OK; /* Empty */
             }
         }
-        FREE_BUF();
+    }
+    if (res == FR_OK) {
+        res = dir_remove(&dj); /* Remove the directory entry */
+        if (res == FR_OK) {
+            if (dclst) /* Remove the cluster chain if exist */
+                res = remove_chain(dj.fs, dclst);
+            if (res == FR_OK)
+                res = sync_fs(dj.fs);
+        }
     }
 
+fail:
+    FREE_BUF();
     LEAVE_FF(dj.fs, res);
 }
 
