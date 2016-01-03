@@ -369,7 +369,7 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
 #endif
 
     *result = in;
-    vrefset(vn, 1); /* Make ref for the caller. */
+    vrefset(vn, 2);
     return 0;
 fail:
 #ifdef configFATFS_DEBUG
@@ -408,22 +408,31 @@ static vnode_t * create_root(struct fatfs_sb * fatfs_sb)
 static int fatfs_delete_vnode(vnode_t * vnode)
 {
     struct fatfs_inode * in = get_inode_of_vnode(vnode);
-
-    if (S_ISDIR(vnode->vn_mode))
-        return 0;
+    int isdir = S_ISDIR(vnode->vn_mode);
 
 #ifdef configFATFS_DEBUG
     FS_KERROR_VNODE(KERROR_DEBUG, vnode, "%s\n", in->in_fpath);
 #endif
 
-    /* TODO We'd like to do the following */
-#if 0
-    vfs_hash_remove(vnode);
-    f_close(&in->fp);
-    kfree(in->in_fpath);
-#endif
-    /* but since it's not possible atm nor feasible, we do */
-    f_sync(&in->fp, 0);
+    if (vrefcnt(vnode) > 0) {
+        if (!isdir)
+            f_sync(&in->fp, 0);
+    } else {
+        vfs_hash_remove(vnode);
+
+        /*
+         * We use a negative value of vn_len to mark a deleted directory entry,
+         * if the entry is already deleted it's also properly closed.
+         */
+        if (vnode->vn_len >= 0) {
+            if (isdir)
+                f_closedir(&in->dp);
+            else
+                f_close(&in->fp);
+        }
+
+        kfree(in->in_fpath);
+    }
 
     return 0;
 }
@@ -608,15 +617,15 @@ int fatfs_create(vnode_t * dir, const char * name, mode_t mode,
 
 int fatfs_unlink(vnode_t * dir, const char * name)
 {
-    struct fatfs_sb * ffsb = get_ffsb_of_sb(dir->sb);
     struct fatfs_inode * indir = get_inode_of_vnode(dir);
     kmalloc_autofree char * in_fpath = NULL;
-    vnode_t * vnode;
-    FRESULT err;
+    vnode_autorele vnode_t * vnode = NULL;
+    struct fatfs_inode * in;
+    FATFS * fs;
+    int err;
 
     if (!S_ISDIR(dir->vn_mode))
         return -ENOTDIR;
-
 
     in_fpath = format_fpath(indir, name);
     if (!in_fpath)
@@ -625,20 +634,29 @@ int fatfs_unlink(vnode_t * dir, const char * name)
     if (fatfs_lookup(dir, name, &vnode))
         return -ENOTDIR;
 
-    /* TODO May need checks if file/dir is opened */
-
-    err = f_unlink(&ffsb->ff_fs, in_fpath);
-    if (!err) {
-        /*
-         * Not sure about the call order but this seems easy. The vnode
-         * shouldn't be remove twice from vfs_hash so if the vnode beign removed
-         * in vnode_delete function then it shouldn't be done here at all.
-         */
-        vfs_hash_remove(vnode);
+    if (atomic_read(&get_inode_of_vnode(vnode)->open_count) != 0) {
+        return -EBUSY;
     }
+
+    in = get_inode_of_vnode(vnode);
+    if (S_ISDIR(vnode->vn_mode)) {
+        fs = in->dp.fs;
+        f_closedir(&in->dp);
+    } else {
+        fs = in->fp.fs;
+        /* TODO f_close() ends up in a deadlock */
+#if 0
+        f_close(&in->fp);
+#endif
+    }
+    err = fresult2errno(f_unlink(fs, in->in_fpath));
+    if (err)
+        return err;
+
+    vnode->vn_len = -1; /* Mark deleted by setting len to a negative value. */
     vrele_nunlink(vnode);
 
-    return fresult2errno(err);
+    return 0;
 }
 
 int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
@@ -714,7 +732,6 @@ int fatfs_rmdir(vnode_t * dir,  const char * name)
     int err;
     vnode_t * result;
     mode_t mode;
-    FRESULT ferr;
 
     /* TODO Should fail if name is a mount point */
 
@@ -729,9 +746,7 @@ int fatfs_rmdir(vnode_t * dir,  const char * name)
     if (!S_ISDIR(mode))
         return -ENOTDIR;
 
-    ferr = fatfs_unlink(dir, name);
-
-    return fresult2errno(ferr);
+    return fatfs_unlink(dir, name);
 }
 
 int fatfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
