@@ -792,7 +792,7 @@ static inline void _vrele_auto(vnode_t ** vnode)
  * Decrement the vn_refcount field of a vnode.
  * The function takes an unlocked vnode and returns with the vnode
  * unlocked.
- * The function doesn't call unlink if ref is zero or less.
+ * The function doesn't call delete_vnode() if ref is zero or less.
  */
 void vrele_nunlink(vnode_t * vnode);
 

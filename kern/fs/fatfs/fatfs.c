@@ -610,13 +610,13 @@ int fatfs_unlink(vnode_t * dir, const char * name)
 {
     struct fatfs_sb * ffsb = get_ffsb_of_sb(dir->sb);
     struct fatfs_inode * indir = get_inode_of_vnode(dir);
-    char * in_fpath;
+    kmalloc_autofree char * in_fpath = NULL;
     vnode_t * vnode;
     FRESULT err;
-    int retval;
 
     if (!S_ISDIR(dir->vn_mode))
         return -ENOTDIR;
+
 
     in_fpath = format_fpath(indir, name);
     if (!in_fpath)
@@ -628,20 +628,17 @@ int fatfs_unlink(vnode_t * dir, const char * name)
     /* TODO May need checks if file/dir is opened */
 
     err = f_unlink(&ffsb->ff_fs, in_fpath);
-    if (err)
-        retval = fresult2errno(err);
-    else {
+    if (!err) {
         /*
          * Not sure about the call order but this seems easy. The vnode
          * shouldn't be remove twice from vfs_hash so if the vnode beign removed
          * in vnode_delete function then it shouldn't be done here at all.
          */
         vfs_hash_remove(vnode);
-        retval = 0;
     }
+    vrele_nunlink(vnode);
 
-    kfree(in_fpath);
-    return retval;
+    return fresult2errno(err);
 }
 
 int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
