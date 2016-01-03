@@ -2887,7 +2887,7 @@ FRESULT f_truncate(FF_FIL * fp)
 FRESULT f_unlink(FATFS * fs, const TCHAR * path)
 {
     FRESULT res;
-    FF_DIR dj, sdj;
+    FF_DIR dj;
     uint8_t *dir;
     DWORD dclst;
     DEF_NAMEBUF;
@@ -2912,9 +2912,10 @@ FRESULT f_unlink(FATFS * fs, const TCHAR * path)
             if (res == FR_OK && (dir[DIR_Attr] & AM_DIR)) {
                 if (dclst < 2) {
                     res = FR_INT_ERR;
-                } else {
-                    /* Check if the sub-directory is empty or not */
-                    memcpy(&sdj, &dj, sizeof(DIR));
+                } else { /* Check if the sub-directory is empty or not */
+                    FF_DIR sdj;
+
+                    memcpy(&sdj, &dj, sizeof(FF_DIR));
                     sdj.sclust = dclst;
                     res = dir_sdi(&sdj, 2);     /* Exclude dot entries */
                     if (res == FR_OK) {
@@ -3125,7 +3126,7 @@ FRESULT f_rename(FATFS * fs, const TCHAR * path_old, const TCHAR * path_new)
                 memcpy(buf, djo.dir + DIR_Attr, 21);
 
                 /* Duplicate the directory object */
-                memcpy(&djn, &djo, sizeof(DIR));
+                memcpy(&djn, &djo, sizeof(FF_DIR));
 
                 /* check if new object is exist */
                 res = follow_path(&djn, path_new);

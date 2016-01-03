@@ -460,7 +460,7 @@ static int fatfs_lookup(vnode_t * dir, const char * name, vnode_t ** result)
     char * in_fpath;
     long vn_hash;
     struct vnode * vn = NULL;
-    int err, retval = 0;
+    int retval = 0;
 
     KASSERT(dir != NULL, "dir must be set");
 
@@ -501,21 +501,24 @@ static int fatfs_lookup(vnode_t * dir, const char * name, vnode_t ** result)
     }
 
     /*
-     * Lookup from vfs_hash
+     * Lookup from vfs_hash cache
      */
     vn_hash = hash32_str(in_fpath, 0);
-    err = vfs_hash_get(
-            dir->sb,        /* FS superblock */
-            vn_hash,        /* Hash */
-            &vn,            /* Retval */
-            fatfs_vncmp,    /* Comparator */
-            in_fpath        /* Compared fpath */
-          );
-    if (err) {
+    retval = vfs_hash_get(
+                          dir->sb,      /* FS superblock */
+                          vn_hash,      /* Hash */
+                          &vn,          /* Retval */
+                          fatfs_vncmp,  /* Comparator */
+                          in_fpath      /* Compared fpath */
+                         );
+    if (retval) {
+#ifdef configFATFS_DEBUG
+        FS_KERROR_VNODE(KERROR_DEBUG, NULL,
+                        "Call to vfs_hash_get() failed (%d)\n",
+                        retval);
+#endif
         retval = -EIO;
-        goto fail;
-    }
-    if (vn) { /* found it in vfs_hash */
+    } else if (vn) { /* vnode found in vfs_hash */
 #ifdef configFATFS_DEBUG
         FS_KERROR_VNODE(KERROR_DEBUG, vn, "vn found in vfs_hash (%p)\n", vn);
 #endif
@@ -533,18 +536,13 @@ static int fatfs_lookup(vnode_t * dir, const char * name, vnode_t ** result)
          * Create a inode and fetch data from the device.
          * This also vrefs.
          */
-        err = create_inode(&in, sb, in_fpath, vn_hash, O_RDWR);
-        if (err) {
-            retval = err;
-            goto fail;
+        retval = create_inode(&in, sb, in_fpath, vn_hash, O_RDWR);
+        if (!retval) {
+            in_fpath = NULL; /* shall not be freed. */
+            *result = &in->in_vnode;
         }
-
-        in_fpath = NULL; /* shall not be freed. */
-        *result = &in->in_vnode;
-        retval = 0;
     }
 
-fail:
     kfree(in_fpath);
     return retval;
 }
@@ -613,6 +611,7 @@ int fatfs_unlink(vnode_t * dir, const char * name)
     struct fatfs_sb * ffsb = get_ffsb_of_sb(dir->sb);
     struct fatfs_inode * indir = get_inode_of_vnode(dir);
     char * in_fpath;
+    vnode_t * vnode;
     FRESULT err;
     int retval;
 
@@ -623,13 +622,23 @@ int fatfs_unlink(vnode_t * dir, const char * name)
     if (!in_fpath)
         return -ENOMEM;
 
+    if (fatfs_lookup(dir, name, &vnode))
+        return -ENOTDIR;
+
     /* TODO May need checks if file/dir is opened */
 
     err = f_unlink(&ffsb->ff_fs, in_fpath);
     if (err)
         retval = fresult2errno(err);
-    else
+    else {
+        /*
+         * Not sure about the call order but this seems easy. The vnode
+         * shouldn't be remove twice from vfs_hash so if the vnode beign removed
+         * in vnode_delete function then it shouldn't be done here at all.
+         */
+        vfs_hash_remove(vnode);
         retval = 0;
+    }
 
     kfree(in_fpath);
     return retval;
