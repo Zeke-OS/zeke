@@ -731,9 +731,8 @@ int fatfs_rmdir(vnode_t * dir,  const char * name)
 {
     int err;
     vnode_t * result;
+    vnode_t * nmp;
     mode_t mode;
-
-    /* TODO Should fail if name is a mount point */
 
     if (!S_ISDIR(dir->vn_mode))
         return -ENOTDIR;
@@ -742,9 +741,13 @@ int fatfs_rmdir(vnode_t * dir,  const char * name)
     if (err)
         return err;
     mode = result->vn_mode;
+    nmp = result->vn_next_mountpoint;
     vrele_nunlink(result);
+
     if (!S_ISDIR(mode))
         return -ENOTDIR;
+    if (nmp != result)
+        return -EBUSY;
 
     return fatfs_unlink(dir, name);
 }
