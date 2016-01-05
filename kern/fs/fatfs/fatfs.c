@@ -931,8 +931,8 @@ static void init_fatfs_vnode(vnode_t * vnode, ino_t inum, mode_t mode,
 
 #ifdef configFATFS_DEBUG
     KERROR(KERROR_DEBUG,
-           "%s(vnode %p, inum %l, mode %o, vn_hash %u, sb %p)\n",
-           __func__, vnode, (uint64_t)inum, mode, (uint32_t)vn_hash, sb);
+           "%s(vnode %p, inum %llu, mode %o, vn_hash %lu, sb %p)\n",
+           __func__, vnode, (long long)inum, mode, vn_hash, sb);
 #endif
 
     fs_vnode_init(vnode, inum, sb, &fatfs_vnode_ops);

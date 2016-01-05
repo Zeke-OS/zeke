@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    uitoah32.c
+ * @file    uitoa.c
  * @author  Olli Vanhoja
- * @brief   uitoah32 function.
+ * @brief   uitoa32 function.
  * @section LICENSE
- * Copyright (c) 2013, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,23 +32,74 @@
 
 #include <kstring.h>
 
-int uitoah32(char * str, uint32_t value)
+#define UITOA_TYPE(_type_) ({                       \
+    _type_ div = 1, digs = 1;                       \
+    size_t n = 0;                                   \
+    for (; value / div >= 10; div *= 10, digs++);   \
+    do {                                            \
+        str[n++] = ((value / div) % 10) + '0';      \
+    } while (div /= 10);                            \
+    str[n] = '\0';                                  \
+    (int)digs; })
+
+#define UITOA_BASE_TYPE(_type_) ({                      \
+    _type_ div = 1, digs = 1;                           \
+    size_t n = 0;                                       \
+    for (; value / div >= base; div *= base, digs++);   \
+    do {                                                \
+        str[n++] = ((value / div) % base) + '0';        \
+    } while (div /= base);                              \
+    str[n] = '\0';                                      \
+    (int)digs; })
+
+int uitoa32(char * str, uint32_t value)
 {
-    int i = 2, n;
-    uint32_t mask = 0xF0000000;
+    return UITOA_TYPE(uint32_t);
+}
+
+int uitoa64(char * str, uint64_t value)
+{
+    return UITOA_TYPE(uint64_t);
+}
+
+static int uitoah_nbits(char * str, uint64_t value, int nbits)
+{
+    size_t i = 2;
+    int n = nbits - 4;
+    uint64_t mask = (uint64_t)0xF << n;
 
     str[0] = '0';
     str[1] = 'x';
 
-    for (n = 28; n >= 0; n -= 4) {
+    for (; n >= 0; n -= 4) {
         char c;
 
         c = (char)((value & mask) >> n);
         c = (c < (char)10) ? '0' + c : 'a' + (c - (char)10);
         str[i++] = c;
-        mask = mask >> 4;
+        mask >>= 4;
     }
     str[i] = '\0';
 
     return i;
+}
+
+int uitoah32(char * str, uint32_t value)
+{
+    return uitoah_nbits(str, value, 32);
+}
+
+int uitoah64(char * str, uint64_t value)
+{
+    return uitoah_nbits(str, value, 64);
+}
+
+int uitoa32base(char * str, uint32_t value, uint32_t base)
+{
+    return UITOA_BASE_TYPE(uint32_t);
+}
+
+int uitoa64base(char * str, uint64_t value, uint64_t base)
+{
+    return UITOA_BASE_TYPE(uint64_t);
 }

@@ -22,6 +22,16 @@ static void teardown(void)
 {
 }
 
+static char * test_int(void)
+{
+    char actual[80] = JUNK;
+
+    ksprintf(actual, sizeof(actual), "b%ie", (int)10);
+    ku_assert_str_equal("String composed correctly.", actual, "b10e");
+
+    return NULL;
+}
+
 static char * test_uint(void)
 {
 #define TSTRING1    "string"
@@ -55,6 +65,17 @@ static char * test_hex(void)
 #undef TSTRING1
 #undef HEXVALUE
 #undef EXPECTED
+
+    return NULL;
+}
+
+static char * test_int64_t(void)
+{
+    char actual[80] = JUNK;
+
+    ksprintf(actual, sizeof(actual), "b%llie", (int64_t)10);
+
+    ku_assert_str_equal("String composed correctly.", actual, "b10e");
 
     return NULL;
 }
@@ -117,8 +138,10 @@ static char * test_percent(void)
 static void all_tests(void)
 {
     ku_mod_description("Test kstring functions.");
+    ku_def_test(test_int, KU_RUN);
     ku_def_test(test_uint, KU_RUN);
     ku_def_test(test_hex, KU_RUN);
+    ku_def_test(test_int64_t, KU_RUN);
     ku_def_test(test_char, KU_RUN);
     ku_def_test(test_string, KU_RUN);
     ku_def_test(test_percent, KU_RUN);

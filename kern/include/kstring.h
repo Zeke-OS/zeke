@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   String routines.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -201,6 +201,11 @@ int uitoa32(char * str, uint32_t value);
 int uitoa64(char * str, uint64_t value);
 
 /**
+ * Covert an unsigned integer to a hex string.
+ * @{
+ */
+
+/**
  * Convert uint32_t integer to a hex string.
  * @param str       is an array in memory where resulting null-terminated
  *                  string is written to.
@@ -210,7 +215,25 @@ int uitoa64(char * str, uint64_t value);
 int uitoah32(char * str, uint32_t value);
 
 /**
- * Convert uint32_t integer to a number string of a selected base.
+ * Convert uint64_t integer to a hex string.
+ * @param str       is an array in memory where resulting null-terminated
+ *                  string is written to.
+ * @param value     is the value to be converted to a string.
+ * @return number of characters inserted.
+ */
+int uitoah64(char * str, uint64_t value);
+
+/**
+ * @}
+ */
+
+/**
+ * Convert an integer to a digit string of a selected base.
+ * @{
+ */
+
+/**
+ * Convert uint32_t integer to a digit string of a selected base.
  * @param str       is an array in memory where resulting null-terminated
  *                  string is written to.
  * @param value     is the value to be converted to a string.
@@ -218,6 +241,20 @@ int uitoah32(char * str, uint32_t value);
  * @return number of characters inserted.
  */
 int uitoa32base(char * str, uint32_t value, uint32_t base);
+
+/**
+ * Convert uint63_t integer to a digit string of a selected base.
+ * @param str       is an array in memory where resulting null-terminated
+ *                  string is written to.
+ * @param value     is the value to be converted to a string.
+ * @param base      is the base used.
+ * @return number of characters inserted.
+ */
+int uitoa64base(char * str, uint64_t value, uint64_t base);
+
+/**
+ * @}
+ */
 
 /**
  * Duplicate a string.
