@@ -35,6 +35,7 @@
 #include <kstring.h>
 
 union value_buffer {
+    char value_char;
     short value_short;
     int value_int;
     long value_long;
@@ -70,6 +71,19 @@ int ksprintf(char * str, size_t maxlen, const char * format, ...)
 
             /* Length modifier */
             switch (c) {
+            case 'h':
+                if (format[i] == 'h') {
+                    flags = KSPRINTF_FMTFLAG_hh;
+                    value_size = sizeof(int);
+                    value.value_char = (char)va_arg(args, int);
+                    i++;
+                    c = format[i++];
+                } else {
+                    flags = KSPRINTF_FMTFLAG_h;
+                    value_size = sizeof(int);
+                    value.value_short = (short)va_arg(args, int);
+                }
+                break;
             case 'l':
                 if (format[i] == 'l') {
                     flags = KSPRINTF_FMTFLAG_ll;
@@ -104,7 +118,7 @@ int ksprintf(char * str, size_t maxlen, const char * format, ...)
                 if (format[i] != '%') {
                     flags = KSPRINTF_FMTFLAG_i;
                     value_size = sizeof(int);
-                    value.value_int = (long)va_arg(args, int);
+                    value.value_int = (int)va_arg(args, int);
                 } else {
                     flags = 0;
                     value_size = 0;
@@ -176,7 +190,8 @@ static int ksprintf_fmt_sdecimal(KSPRINTF_FMTFUN_ARGS)
 }
 
 struct ksprintf_formatter ksprintf_fmt_sdecimal_st = {
-    .flags = KSPRINTF_FMTFLAG_i | KSPRINTF_FMTFLAG_l | KSPRINTF_FMTFLAG_ll,
+    .flags = KSPRINTF_FMTFLAG_hh | KSPRINTF_FMTFLAG_h | KSPRINTF_FMTFLAG_i |
+             KSPRINTF_FMTFLAG_l | KSPRINTF_FMTFLAG_ll,
     .specifier = 'd',
     .alt_specifier = 'i',
     .func = ksprintf_fmt_sdecimal,
@@ -201,9 +216,10 @@ static int ksprintf_fmt_udecimal(KSPRINTF_FMTFUN_ARGS)
 }
 
 struct ksprintf_formatter ksprintf_fmt_udecimal_st = {
-    .flags = KSPRINTF_FMTFLAG_i | KSPRINTF_FMTFLAG_l | KSPRINTF_FMTFLAG_ll,
-        .specifier = 'u',
-        .func = ksprintf_fmt_udecimal,
+    .flags = KSPRINTF_FMTFLAG_hh | KSPRINTF_FMTFLAG_h | KSPRINTF_FMTFLAG_i |
+             KSPRINTF_FMTFLAG_l | KSPRINTF_FMTFLAG_ll,
+    .specifier = 'u',
+    .func = ksprintf_fmt_udecimal,
 };
 KSPRINTF_FORMATTER(ksprintf_fmt_udecimal_st);
 
@@ -220,9 +236,10 @@ static int ksprintf_fmt_octal(KSPRINTF_FMTFUN_ARGS)
 }
 
 struct ksprintf_formatter ksprintf_fmt_octal_st = {
-    .flags = KSPRINTF_FMTFLAG_i | KSPRINTF_FMTFLAG_l | KSPRINTF_FMTFLAG_ll,
-        .specifier = 'o',
-        .func = ksprintf_fmt_octal,
+    .flags = KSPRINTF_FMTFLAG_hh | KSPRINTF_FMTFLAG_h | KSPRINTF_FMTFLAG_i |
+             KSPRINTF_FMTFLAG_l | KSPRINTF_FMTFLAG_ll,
+    .specifier = 'o',
+    .func = ksprintf_fmt_octal,
 };
 KSPRINTF_FORMATTER(ksprintf_fmt_octal_st);
 
@@ -246,7 +263,8 @@ static int ksprintf_fmt_hex(KSPRINTF_FMTFUN_ARGS)
 }
 
 struct ksprintf_formatter ksprintf_fmt_hex_st = {
-    .flags = KSPRINTF_FMTFLAG_i | KSPRINTF_FMTFLAG_l | KSPRINTF_FMTFLAG_ll,
+    .flags = KSPRINTF_FMTFLAG_hh | KSPRINTF_FMTFLAG_h | KSPRINTF_FMTFLAG_i |
+             KSPRINTF_FMTFLAG_l | KSPRINTF_FMTFLAG_ll,
     .specifier = 'x',
     .func = ksprintf_fmt_hex,
 };
