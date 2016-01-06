@@ -64,12 +64,9 @@ int uitoa64(char * str, uint64_t value)
 
 static int uitoah_nbits(char * str, uint64_t value, int nbits)
 {
-    size_t i = 2;
+    size_t i = 0;
     int n = nbits - 4;
     uint64_t mask = (uint64_t)0xF << n;
-
-    str[0] = '0';
-    str[1] = 'x';
 
     for (; n >= 0; n -= 4) {
         char c;

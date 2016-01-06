@@ -25,8 +25,8 @@ static char * test_uitoa32(void)
 
     ku_assert_equal("Returned the number of printable characters.",
                     (int)retVal, (int)(sizeof(expected) - 1));
-    ku_assert_str_equal("Unsigned integer was converted to string.", actual,
-                        expected);
+    ku_assert_str_equal("Unsigned integer was converted to string.",
+                        actual, expected);
 
 #undef UINTVAL
 
@@ -35,19 +35,16 @@ static char * test_uitoa32(void)
 
 static char * test_uitoah32(void)
 {
-#define UINTHEXVAL 0x0000532a
     char actual[80];
-    char expected[] = NTOSTR(UINTHEXVAL);
+    char expected[] = "0000532a";
     size_t retVal;
 
-    retVal = uitoah32(actual, (uint32_t)UINTHEXVAL);
+    retVal = uitoah32(actual, 0x0000532a);
 
     ku_assert_equal("Returned the number of printable characters.",
                     (int)retVal, (int)(sizeof(expected) - 1));
     ku_assert_str_equal("Unsigned integer was converted to string.",
                         actual, expected);
-
-#undef UINTVAL
 
     return NULL;
 }

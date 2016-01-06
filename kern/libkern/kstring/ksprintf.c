@@ -229,12 +229,19 @@ KSPRINTF_FORMATTER(ksprintf_fmt_octal_st);
 
 static int ksprintf_fmt_hex(KSPRINTF_FMTFUN_ARGS)
 {
+    str[0] = '0';
+    str[1] = 'x';
+
     switch (value_size) {
     case sizeof(uint64_t):
-        return uitoah64(str, *((uint64_t *)value_p));
+        if (maxlen < 18)
+            return 0;
+        return  2 + uitoah64(str + 2, *((uint64_t *)value_p));
     case sizeof(uint32_t):
     default:
-        return uitoah32(str, *((uint32_t *)value_p));
+        if (maxlen < 10)
+            return 0;
+        return 2 + uitoah32(str + 2, *((uint32_t *)value_p));
     }
 }
 
