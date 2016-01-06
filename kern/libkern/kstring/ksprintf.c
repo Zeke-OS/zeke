@@ -31,7 +31,21 @@
  */
 
 #include <stdarg.h>
+#include <kactype.h>
 #include <kstring.h>
+
+union value_buffer {
+    short value_short;
+    int value_int;
+    long value_long;
+    long long value_2long;
+    unsigned short value_ushort;
+    unsigned int value_uint;
+    unsigned long value_ulong;
+    unsigned long long value_u2long;
+    size_t value_size;
+    void * value_p;
+};
 
 int ksprintf(char * str, size_t maxlen, const char * format, ...)
 {
@@ -42,8 +56,11 @@ int ksprintf(char * str, size_t maxlen, const char * format, ...)
     maxlen--;
     va_start(args, format);
     while ((c = format[i++]) != '\0' && n <= maxlen) {
+        uint16_t flags;
+        char p_specifier = '\0';
         size_t value_size;
-        int64_t value;
+        union value_buffer value;
+        struct ksprintf_formatter ** formatter;
 
         switch (c) {
         case '%':
@@ -55,98 +72,70 @@ int ksprintf(char * str, size_t maxlen, const char * format, ...)
             switch (c) {
             case 'l':
                 if (format[i] == 'l') {
+                    flags = KSPRINTF_FMTFLAG_ll;
                     value_size = sizeof(uint64_t);
+                    value.value_2long = (long long)va_arg(args, uint64_t);
                     i++;
                     c = format[i++];
                 } else {
+                    flags = KSPRINTF_FMTFLAG_ll;
                     value_size = sizeof(long);
+                    value.value_long = (long)va_arg(args, long);
                     c = format[i++];
                 }
                 break;
             case 'z':
+                flags = KSPRINTF_FMTFLAG_z;
                 value_size = sizeof(size_t);
+                value.value_size = (size_t)va_arg(args, size_t);
                 c = format[i++];
                 break;
+            case 'p':
+                if (ka_isupper(format[i + 1])) {
+                    /* Pointer format specifiers are always upper case */
+                    p_specifier = format[i++];
+                }
+            case 's':
+                flags = KSPRINTF_FMTFLAG_p;
+                value_size = sizeof(void *);
+                value.value_p = (void *)va_arg(args, void *);
+                break;
             default:
-                value_size = sizeof(uint32_t);
+                if (format[i] != '%') {
+                    flags = KSPRINTF_FMTFLAG_i;
+                    value_size = sizeof(int);
+                    value.value_int = (long)va_arg(args, int);
+                } else {
+                    flags = 0;
+                    value_size = 0;
+                }
+                break;
             }
             if (c == '\0')
                 goto out;
 
             /* Conversion specifier */
             switch (c) {
-            case 'd':
-            case 'i':
-                switch (value_size) {
-                case sizeof(int64_t):
-                    value = va_arg(args, int64_t);
-                    break;
-                case sizeof(int32_t):
-                default:
-                    value = va_arg(args, int);
-                }
-                if (value < 0) {
-                    value *= -1;
-                    str[n++] = '-';
-                }
-                n += uitoa64(str + n, (uint64_t)(value));
-                break;
-            case 'u':
-                switch (value_size) {
-                case sizeof(int64_t):
-                    value = va_arg(args, uint64_t);
-                    break;
-                case sizeof(int32_t):
-                default:
-                    value = va_arg(args, uint32_t);
-                }
-                n += uitoa64(str + n, (uint64_t)value);
-                break;
-            case 'o':
-                switch (value_size) {
-                case sizeof(uint64_t):
-                    value = va_arg(args, uint64_t);
-                    n += uitoa64base(str + n, value, 8);
-                    break;
-                case sizeof(uint32_t):
-                default:
-                    value = va_arg(args, uint32_t);
-                    n += uitoa32base(str + n, value, 8);
-                }
-                break;
-            case 'p':
-                str[n++] = 'b';
-                /*@fallthrough@*/
-            case 'x':
-                switch (value_size) {
-                case sizeof(uint64_t):
-                    value = va_arg(args, uint64_t);
-                    n += uitoah64(str + n, value);
-                    break;
-                case sizeof(uint32_t):
-                default:
-                    value = va_arg(args, uint32_t);
-                    n += uitoah32(str + n, value);
-                }
-                break;
             case 'c':
-                str[n++] = (char)(va_arg(args, int));
-                break;
-            case 's':
-                {
-                    size_t j = 0;
-                    char * buf = va_arg(args, char *);
-                    for (; n < maxlen; n++) {
-                        if (buf[j] == '\0')
-                            break;
-                        str[n] = buf[j++];
-                    }
-                }
+                str[n++] = (char)value.value_int;
                 break;
             case '%':
                 str[n++] = c;
                 break;
             default:
+                SET_FOREACH(formatter, ksprintf_formatters) {
+                    struct ksprintf_formatter * fmt = *formatter;
+
+                    if ((c == fmt->specifier ||
+                         c == fmt->alt_specifier) &&
+                        ((p_specifier != '\0') ||
+                         (p_specifier == '\0' &&
+                          p_specifier == fmt->p_specifier)) &&
+                        !!(fmt->flags & flags)) {
+                        n += fmt->func(str + n, &value, value_size, maxlen - n);
+                        break;
+                    }
+                }
                 break;
             }
             break;
@@ -162,3 +151,133 @@ out:
 
     return n + 1;
 }
+
+
+static int ksprintf_fmt_sdecimal(KSPRINTF_FMTFUN_ARGS)
+{
+    int64_t value;
+    int i = 0;
+
+    switch (value_size) {
+    case sizeof(int64_t):
+        value = *((int64_t *)value_p);
+        break;
+    case sizeof(int32_t):
+    default:
+        value = *((int32_t *)value_p);
+    }
+
+    if (value < 0) {
+        value *= -1;
+        str[i++] = '-';
+    }
+
+    return i + uitoa64(str + i, (uint64_t)(value));
+}
+
+struct ksprintf_formatter ksprintf_fmt_sdecimal_st = {
+    .flags = KSPRINTF_FMTFLAG_i | KSPRINTF_FMTFLAG_l | KSPRINTF_FMTFLAG_ll,
+    .specifier = 'd',
+    .alt_specifier = 'i',
+    .func = ksprintf_fmt_sdecimal,
+};
+KSPRINTF_FORMATTER(ksprintf_fmt_sdecimal_st);
+
+
+static int ksprintf_fmt_udecimal(KSPRINTF_FMTFUN_ARGS)
+{
+    uint64_t value;
+
+    switch (value_size) {
+    case sizeof(uint64_t):
+        value = *((uint64_t *)value_p);
+        break;
+    case sizeof(uint32_t):
+    default:
+        value = *((uint32_t *)value_p);
+    }
+
+    return uitoa64(str, value);
+}
+
+struct ksprintf_formatter ksprintf_fmt_udecimal_st = {
+    .flags = KSPRINTF_FMTFLAG_i | KSPRINTF_FMTFLAG_l | KSPRINTF_FMTFLAG_ll,
+        .specifier = 'u',
+        .func = ksprintf_fmt_udecimal,
+};
+KSPRINTF_FORMATTER(ksprintf_fmt_udecimal_st);
+
+
+static int ksprintf_fmt_octal(KSPRINTF_FMTFUN_ARGS)
+{
+    switch (value_size) {
+    case sizeof(uint64_t):
+        return uitoa64base(str, *((uint64_t *)value_p), 8);
+    case sizeof(uint32_t):
+    default:
+        return uitoa32base(str, *((uint32_t *)value_p), 8);
+    }
+}
+
+struct ksprintf_formatter ksprintf_fmt_octal_st = {
+    .flags = KSPRINTF_FMTFLAG_i | KSPRINTF_FMTFLAG_l | KSPRINTF_FMTFLAG_ll,
+        .specifier = 'o',
+        .func = ksprintf_fmt_octal,
+};
+KSPRINTF_FORMATTER(ksprintf_fmt_octal_st);
+
+
+static int ksprintf_fmt_hex(KSPRINTF_FMTFUN_ARGS)
+{
+    switch (value_size) {
+    case sizeof(uint64_t):
+        return uitoah64(str, *((uint64_t *)value_p));
+    case sizeof(uint32_t):
+    default:
+        return uitoah32(str, *((uint32_t *)value_p));
+    }
+}
+
+struct ksprintf_formatter ksprintf_fmt_hex_st = {
+    .flags = KSPRINTF_FMTFLAG_i | KSPRINTF_FMTFLAG_l | KSPRINTF_FMTFLAG_ll,
+    .specifier = 'x',
+    .func = ksprintf_fmt_hex,
+};
+KSPRINTF_FORMATTER(ksprintf_fmt_hex_st);
+
+
+static int ksprintf_fmt_paddr(KSPRINTF_FMTFUN_ARGS)
+{
+    str[0] = 'b';
+    return 1 + ksprintf_fmt_hex(str + 1, value_p, value_size, maxlen - 1);
+}
+
+struct ksprintf_formatter ksprintf_fmt_paddr_st = {
+    .flags = KSPRINTF_FMTFLAG_p,
+    .specifier = 'p',
+    .func = ksprintf_fmt_paddr,
+};
+KSPRINTF_FORMATTER(ksprintf_fmt_paddr_st);
+
+
+static int ksprintf_fmt_cstring(KSPRINTF_FMTFUN_ARGS)
+{
+    size_t j;
+    char * buf = *((char **)value_p);
+
+    for (j = 0; j < maxlen;) {
+        if (buf[j] == '\0')
+            break;
+        str[j] = buf[j];
+        j++;
+    }
+
+    return j;
+}
+
+struct ksprintf_formatter ksprintf_fmt_cstring_st = {
+    .flags = KSPRINTF_FMTFLAG_p,
+    .specifier = 's',
+    .func = ksprintf_fmt_cstring,
+};
+KSPRINTF_FORMATTER(ksprintf_fmt_cstring_st);

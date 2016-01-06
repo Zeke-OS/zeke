@@ -42,6 +42,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <sys/linker_set.h>
 
 #define _TO_STR(x) #x
 #define TO_STR(x) _TO_STR(x)
@@ -269,6 +270,41 @@ char * kstrdup(const char * src, size_t max);
  * Formated string composer.
  * @{
  */
+
+/**
+ * ksprintf formatter flags.
+ * @{
+ */
+
+#define KSPRINTF_FMTFLAG_i  0x0001 /*!< Default width supported. */
+#define KSPRINTF_FMTFLAG_p  0x0002 /*!< Pointers supported. */
+#define KSPRINTF_FMTFLAG_hh 0x0004 /*!< hh sub-specifier supported. */
+#define KSPRINTF_FMTFLAG_h  0x0008 /*!< h sub-specifier supported. */
+#define KSPRINTF_FMTFLAG_l  0x0010 /*!< l sub-specifier supported. */
+#define KSPRINTF_FMTFLAG_ll 0x0020 /*!< ll sub-specifier supported. */
+#define KSPRINTF_FMTFLAG_j  0x0040 /*!< j sub-specifier supported. */
+#define KSPRINTF_FMTFLAG_z  0x0080 /*!< z sub-specifier supported. */
+
+/**
+ * @}
+ */
+
+#define KSPRINTF_FMTFUN_ARGS \
+    char * str, void * value_p, size_t value_size, size_t maxlen
+
+struct ksprintf_formatter {
+    uint16_t flags;     /*!< Formatter compatibility flags. */
+    char specifier;     /*!< Specifier. */
+    char alt_specifier; /*!< Alternative specifier. */
+    char p_specifier;   /*!< Pointer type sub-specifier. Must be upper case. */
+    int (*func)(KSPRINTF_FMTFUN_ARGS);
+};
+
+SET_DECLARE(ksprintf_formatters, struct ksprintf_formatter);
+
+
+#define KSPRINTF_FORMATTER(_fmt_struct_) \
+    DATA_SET(ksprintf_formatters, _fmt_struct_)
 
 /**
  * Composes a string by using printf style format string and additional
