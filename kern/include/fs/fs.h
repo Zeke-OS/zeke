@@ -514,24 +514,22 @@ extern const vnode_ops_t nofs_vnode_ops;
  * @{
  */
 
-#define FS_KERROR_FS_FMT(_STR_) "%s::%s: " _STR_
-#define FS_KERROR_VNODE_FMT(_STR_) "%s:%i::%s: " _STR_
+#define FS_KERROR_FS_FMT(_STR_) "%pF::%s: " _STR_
+#define FS_KERROR_VNODE_FMT(_STR_) "%pV::%s: " _STR_
 
 /**
  * KERROR for fs.
  */
-#define FS_KERROR_FS(_LVL_, _fs_, _FMT_, ...)       \
-    KERROR(_LVL_, FS_KERROR_FS_FMT(_FMT_),          \
-            (_fs_)->fsname, __func__, ##__VA_ARGS__)
+#define FS_KERROR_FS(_LVL_, _fs_, _FMT_, ...)   \
+    KERROR(_LVL_, FS_KERROR_FS_FMT(_FMT_),      \
+           (_fs_), __func__, ##__VA_ARGS__)
 
 /**
  * KERROR for vnode.
  */
-#define FS_KERROR_VNODE(_LVL_, _vn_, _FMT_, ...)                        \
-    KERROR(_LVL_, FS_KERROR_VNODE_FMT(_FMT_),                           \
-            (_vn_) ? ((vnode_t *)(_vn_))->sb->fs->fsname : "(null)",    \
-            (int32_t)((_vn_) ? ((vnode_t *)(_vn_))->vn_num : -1),       \
-            __func__, ##__VA_ARGS__)
+#define FS_KERROR_VNODE(_LVL_, _vn_, _FMT_, ...)        \
+    KERROR(_LVL_, FS_KERROR_VNODE_FMT(_FMT_),           \
+           (_vn_), __func__, ##__VA_ARGS__)
 
 /**
  * @}

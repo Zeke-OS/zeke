@@ -1093,3 +1093,62 @@ void vunref(vnode_t * vnode)
     if (prev <= 1)
         vnode->sb->delete_vnode(vnode);
 }
+
+static int ksprintf_fmt_fs(KSPRINTF_FMTFUN_ARGS)
+{
+    int n;
+    const char null_str[] = {'(', 'n', 'u', 'l', 'l', ')'};
+    fs_t * fs = *(fs_t **)value_p;
+
+    if (fs) {
+        n = strlcpy(str, fs->fsname, min(maxlen, sizeof(fs->fsname)));
+    } else {
+        n = min(maxlen, sizeof(null_str));
+        memcpy(str, null_str, n);
+    }
+
+    return n;
+}
+
+static struct ksprintf_formatter ksprintf_fmt_fs_st = {
+    .flags = KSPRINTF_FMTFLAG_p,
+    .specifier = 'p',
+    .p_specifier = 'F',
+    .func = ksprintf_fmt_fs,
+};
+KSPRINTF_FORMATTER(ksprintf_fmt_fs_st);
+
+static int ksprintf_fmt_vnode(KSPRINTF_FMTFUN_ARGS)
+{
+    int n;
+    const char nil_str[] = {'(', 'n', 'u', 'l', 'l', ')', ':',  '-', '1'};
+    vnode_t * vnode = *(vnode_t **)value_p;
+
+    if (vnode) {
+        fs_t * fs = (vnode->sb) ? fs = vnode->sb->fs : NULL;
+
+        n = ksprintf_fmt_fs(str, &fs, sizeof(fs_t **), maxlen);
+        if (n == maxlen)
+            return n;
+        str += n;
+        n++;
+        maxlen -= n;
+        *str++ = ':';
+
+        /* TODO check maxlen */
+        n += uitoa64(str, vnode->vn_num);
+    } else {
+        n = min(maxlen, sizeof(nil_str));
+        memcpy(str, nil_str, n);
+    }
+
+    return n;
+}
+
+static struct ksprintf_formatter ksprintf_fmt_vnode_st = {
+    .flags = KSPRINTF_FMTFLAG_p,
+    .specifier = 'p',
+    .p_specifier = 'V',
+    .func = ksprintf_fmt_vnode,
+};
+KSPRINTF_FORMATTER(ksprintf_fmt_vnode_st);
