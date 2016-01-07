@@ -290,7 +290,7 @@ char * kstrdup(const char * src, size_t max);
  */
 
 #define KSPRINTF_FMTFUN_ARGS \
-    char * str, void * value_p, size_t value_size, size_t maxlen
+    char * str, void * value_p, size_t value_size, int maxlen
 
 struct ksprintf_formatter {
     uint16_t flags;     /*!< Formatter compatibility flags. */

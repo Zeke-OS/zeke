@@ -104,12 +104,12 @@ int ksprintf(char * str, size_t maxlen, const char * format, ...)
                 value.value_size = (size_t)va_arg(args, size_t);
                 c = format[i++];
                 break;
-            case 'p':
-                if (ka_isupper(format[i + 1])) {
+            case 'p': /* width and conversion specifier + p_specifier */
+                if (ka_isupper(format[i])) {
                     /* Pointer format specifiers are always upper case */
                     p_specifier = format[i++];
                 }
-            case 's':
+            case 's': /* width and conversion specifier */
                 flags = KSPRINTF_FMTFLAG_p;
                 value_size = sizeof(void *);
                 value.value_p = (void *)va_arg(args, void *);
@@ -142,9 +142,7 @@ int ksprintf(char * str, size_t maxlen, const char * format, ...)
 
                     if ((c == fmt->specifier ||
                          c == fmt->alt_specifier) &&
-                        ((p_specifier != '\0') ||
-                         (p_specifier == '\0' &&
-                          p_specifier == fmt->p_specifier)) &&
+                        p_specifier == fmt->p_specifier &&
                         !!(fmt->flags & flags)) {
                         n += fmt->func(str + n, &value, value_size, maxlen - n);
                         break;
@@ -189,7 +187,7 @@ static int ksprintf_fmt_sdecimal(KSPRINTF_FMTFUN_ARGS)
     return i + uitoa64(str + i, (uint64_t)(value));
 }
 
-struct ksprintf_formatter ksprintf_fmt_sdecimal_st = {
+static struct ksprintf_formatter ksprintf_fmt_sdecimal_st = {
     .flags = KSPRINTF_FMTFLAG_hh | KSPRINTF_FMTFLAG_h | KSPRINTF_FMTFLAG_i |
              KSPRINTF_FMTFLAG_l | KSPRINTF_FMTFLAG_ll,
     .specifier = 'd',
@@ -215,7 +213,7 @@ static int ksprintf_fmt_udecimal(KSPRINTF_FMTFUN_ARGS)
     return uitoa64(str, value);
 }
 
-struct ksprintf_formatter ksprintf_fmt_udecimal_st = {
+static struct ksprintf_formatter ksprintf_fmt_udecimal_st = {
     .flags = KSPRINTF_FMTFLAG_hh | KSPRINTF_FMTFLAG_h | KSPRINTF_FMTFLAG_i |
              KSPRINTF_FMTFLAG_l | KSPRINTF_FMTFLAG_ll,
     .specifier = 'u',
@@ -235,7 +233,7 @@ static int ksprintf_fmt_octal(KSPRINTF_FMTFUN_ARGS)
     }
 }
 
-struct ksprintf_formatter ksprintf_fmt_octal_st = {
+static struct ksprintf_formatter ksprintf_fmt_octal_st = {
     .flags = KSPRINTF_FMTFLAG_hh | KSPRINTF_FMTFLAG_h | KSPRINTF_FMTFLAG_i |
              KSPRINTF_FMTFLAG_l | KSPRINTF_FMTFLAG_ll,
     .specifier = 'o',
@@ -262,7 +260,7 @@ static int ksprintf_fmt_hex(KSPRINTF_FMTFUN_ARGS)
     }
 }
 
-struct ksprintf_formatter ksprintf_fmt_hex_st = {
+static struct ksprintf_formatter ksprintf_fmt_hex_st = {
     .flags = KSPRINTF_FMTFLAG_hh | KSPRINTF_FMTFLAG_h | KSPRINTF_FMTFLAG_i |
              KSPRINTF_FMTFLAG_l | KSPRINTF_FMTFLAG_ll,
     .specifier = 'x',
@@ -277,7 +275,7 @@ static int ksprintf_fmt_paddr(KSPRINTF_FMTFUN_ARGS)
     return 1 + ksprintf_fmt_hex(str + 1, value_p, value_size, maxlen - 1);
 }
 
-struct ksprintf_formatter ksprintf_fmt_paddr_st = {
+static struct ksprintf_formatter ksprintf_fmt_paddr_st = {
     .flags = KSPRINTF_FMTFLAG_p,
     .specifier = 'p',
     .func = ksprintf_fmt_paddr,
@@ -287,8 +285,8 @@ KSPRINTF_FORMATTER(ksprintf_fmt_paddr_st);
 
 static int ksprintf_fmt_cstring(KSPRINTF_FMTFUN_ARGS)
 {
-    size_t j;
-    char * buf = *((char **)value_p);
+    int j;
+    char * buf = *(char **)value_p;
 
     for (j = 0; j < maxlen;) {
         if (buf[j] == '\0')
@@ -300,7 +298,7 @@ static int ksprintf_fmt_cstring(KSPRINTF_FMTFUN_ARGS)
     return j;
 }
 
-struct ksprintf_formatter ksprintf_fmt_cstring_st = {
+static struct ksprintf_formatter ksprintf_fmt_cstring_st = {
     .flags = KSPRINTF_FMTFLAG_p,
     .specifier = 's',
     .func = ksprintf_fmt_cstring,
