@@ -266,8 +266,6 @@ void core_set_tls_addr(__user struct _sched_tls_desc * tls)
 
 static void fork_init_tls(struct thread_info * th)
 {
-    const uint32_t reg = 0;
-
     th->tls_regs = (struct tls_regs){
 #ifdef configUSE_HFP
         .fpscr = 0,
@@ -281,8 +279,8 @@ static void fork_init_tls(struct thread_info * th)
 #define INIT_VFP_REG(i) do {        \
     __asm__ volatile (              \
         "FMDLR  d" #i ", %[r]\n\t"  \
-        "FMDHR  d" #i ", %[r]" :    \
-        [r]"=r" (reg));             \
+        "FMDHR  d" #i ", %[r]" : :  \
+        [r]"r" (0));                \
 } while (0)
 
     INIT_VFP_REG(0);
