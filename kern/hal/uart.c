@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   UART HAL.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,18 +31,17 @@
  */
 
 #include <errno.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <termios.h>
+#include <thread.h>
+#include <fs/dev_major.h>
+#include <fs/devfs.h>
+#include <hal/uart.h>
 #include <kinit.h>
 #include <kstring.h>
-#include <kmalloc.h>
-#include <sys/types.h>
-#include <fcntl.h>
-#include <thread.h>
-#include <fs/devfs.h>
-#include <fs/dev_major.h>
-#include <sys/ioctl.h>
-#include <termios.h>
 #include <tty.h>
-#include <hal/uart.h>
 
 static const char drv_name[] = "UART";
 

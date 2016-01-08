@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Hardware Abstraction Layer for ARMv6/ARM11
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -251,7 +251,7 @@ __user struct _sched_tls_desc * core_get_tls_addr(void)
     /* Read User Read Only Thread and Proc. ID Register */
     __asm__ volatile (
         "MRC    p15, 0, %[tls], c13, c0, 3"
-        :  [tls]"=r" (tls));
+        : [tls]"=r" (tls));
 
     return tls;
 }
@@ -279,8 +279,8 @@ static void fork_init_tls(struct thread_info * th)
 #define INIT_VFP_REG(i) do {        \
     __asm__ volatile (              \
         "FMDLR  d" #i ", %[r]\n\t"  \
-        "FMDHR  d" #i ", %[r]" : :  \
-        [r]"r" (0));                \
+        "FMDHR  d" #i ", %[r]"      \
+        : : [r]"r" (0));            \
 } while (0)
 
     INIT_VFP_REG(0);
@@ -319,17 +319,17 @@ static void arm11_sched_push_hw_tls(void)
         "FMRX   %[fpscr], FPSCR\n\t"
         "FMRX   %[fpexc], FPEXC\n\t"
         "FMRX   %[fpinst], FPINST\n\t"
-        "FMRX   %[fpinst2], FPINST2" : :
-        [fpscr]"r" (current_thread->tls_regs.fpscr),
-        [fpexc]"r" (current_thread->tls_regs.fpexc),
-        [fpinst]"r" (current_thread->tls_regs.fpinst),
-        [fpinst2]"r" (current_thread->tls_regs.fpinst2));
+        "FMRX   %[fpinst2], FPINST2"
+        : : [fpscr]"r" (current_thread->tls_regs.fpscr),
+            [fpexc]"r" (current_thread->tls_regs.fpexc),
+            [fpinst]"r" (current_thread->tls_regs.fpinst),
+            [fpinst2]"r" (current_thread->tls_regs.fpinst2));
 
-#define SAVE_VFP_REG(i) do {                            \
-    __asm__ volatile (                                  \
-        "FMRRD  %[l], %[h], d" #i : :                   \
-        [l]"r" (current_thread->tls_regs.dreg[i]),      \
-        [h]"r" (current_thread->tls_regs.dreg[i + 1])); \
+#define SAVE_VFP_REG(i) do {                                \
+    __asm__ volatile (                                      \
+        "FMRRD  %[l], %[h], d" #i                           \
+        : : [l]"r" (current_thread->tls_regs.dreg[i]),      \
+            [h]"r" (current_thread->tls_regs.dreg[i + 1])); \
 } while (0)
 
     SAVE_VFP_REG(0);
@@ -371,9 +371,9 @@ static void arm11_sched_pop_hw_tls(void)
 
 #define LOAD_VFP_REG(i) do {                                \
     __asm__ volatile (                                      \
-        "FMDRR d" #i ", %[l], %[h]" :                        \
-        [l]"=r" (current_thread->tls_regs.dreg[i]),         \
-        [h]"=r" (current_thread->tls_regs.dreg[i + 1]));    \
+        "FMDRR d" #i ", %[l], %[h]"                         \
+        : [l]"=r" (current_thread->tls_regs.dreg[i]),       \
+          [h]"=r" (current_thread->tls_regs.dreg[i + 1]));  \
 } while (0)
 
     LOAD_VFP_REG(0);
