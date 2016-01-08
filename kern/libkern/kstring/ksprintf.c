@@ -40,10 +40,6 @@ union value_buffer {
     int value_int;
     long value_long;
     long long value_2long;
-    unsigned short value_ushort;
-    unsigned int value_uint;
-    unsigned long value_ulong;
-    unsigned long long value_u2long;
     size_t value_size;
     void * value_p;
 };
