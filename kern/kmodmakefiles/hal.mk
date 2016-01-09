@@ -11,8 +11,8 @@ hal-SRC-$(configEMMC_GENERIC) += hal/emmc/generic_emmc.c
 
 # Target model specific modules
 ifeq ($(configBCM2835),y)
-	MEMMAP = memmap_bcm2835.ld
-	STARTUP = hal/arm11/arm11_startup.S
+	MEMMAP := memmap_bcm2835.ld
+	STARTUP := hal/arm11/arm11_startup.S
 	hal-ASRC-y += $(wildcard hal/bcm2835/*.S)
 	hal-SRC-y += hal/bcm2835/bcm2835_mmio.c
 	hal-SRC-y += hal/bcm2835/bcm2835_gpio.c
