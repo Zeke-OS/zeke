@@ -226,7 +226,8 @@ static mblock_t * find_mblock(mblock_t ** last, size_t size)
     do {
 #ifdef configKMALLOC_DEBUG
         if (b->ptr == NULL) {
-            printf("Invalid mblock: p = %p sign = %x\n", b->ptr, b->signature);
+            KERROR(KERROR_DEBUG,
+                   "Invalid mblock: p = %p sign = %x\n", b->ptr, b->signature);
             b = NULL;
             break;
         }
