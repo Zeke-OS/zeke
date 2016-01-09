@@ -14,7 +14,7 @@ if configFATFS
 
 config configFATFS_MAX_MOUNTS
     int "Maximum number of mounts"
-    default 1
+    default 2
     range 1 10
 
 config configFATFS_CODEPAGE

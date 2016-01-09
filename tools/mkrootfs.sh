@@ -1,7 +1,20 @@
 #!/bin/bash
 
-IMG=zeke-rootfs.img
-SECTORS=114688
+if [ "$#" -ne 2 ]; then
+    echo "Illegal number of arguments"
+    exit 1
+fi
+
+# Sector size is 512
+IMG=$1
+BOOT_FILES=$(cat "$2")
+PADDING_SECTORS=8192
+BOOTFS_SECTORS=65536
+ROOTFS_SECTORS=114688
+
+SECTORS=$(echo "$PADDING_SECTORS + $BOOTFS_SECTORS + $ROOTFS_SECTORS" | bc)
+BOOTFS_BEGIN=$PADDING_SECTORS
+ROOTFS_BEGIN=$(echo "$PADDING_SECTORS + $BOOTFS_SECTORS" | bc)
 
 export MTOOLSRC=tools/mtools.conf
 
@@ -12,40 +25,40 @@ function dir2img {
     fi
     local files=$(echo "$manifest" | sed "s|[^ ]*|$1/\0|g")
 
-    mmd -D sS "C:$(echo $1 | sed 's|^\./||')"
+    mmd -D sS "D:$(echo $1 | sed 's|^\./||')"
     for file in $files; do
         local d=$(dirname $file | sed 's|^\./||')
         local destname="$d/$(basename $file)"
-        mmd -D sS "C:$d"
+        mmd -D sS "D:$d"
         echo "INSTALL $destname"
-        mcopy -s $file "C:$destname"
+        mcopy -s $file "D:$destname"
     done
 }
 
+# Create the file system image
 dd if=/dev/zero of="$IMG" bs=512 count=$SECTORS
-mpartition -I c:
-mpartition -c -b 8192 -l $(echo $SECTORS-8192 | bc) c:
-mformat c:
+mpartition -I C:
+mpartition -c -b $BOOTFS_BEGIN -l $BOOTFS_SECTORS C:
+mpartition -c -b $ROOTFS_BEGIN -l $ROOTFS_SECTORS D:
+mformat C:
+mformat D:
 
 # Copy the bootloader and kernel image
-# TODO Get bootloader as an argument
-BOOT="boot/rpi/bootcode.bin boot/rpi/config.txt boot/rpi/fixup.dat
-    boot/rpi/start.elf boot/rpi/LICENSE.broadcom boot/rpi/cmdline.txt \
-    kernel.img"
-for file in $BOOT; do
+for file in $BOOT_FILES; do
     mcopy -s "$file" C:
     basename "$file"
 done
 
 # Create dirs
-mmd C:dev
-mmd C:mnt
-mmd C:opt
-mmd C:opt/test
-mmd C:proc
-mmd C:tmp
-mmd C:root
-mcopy README.markdown C:
+mmd D:boot
+mmd D:dev
+mmd D:mnt
+mmd D:opt
+mmd D:opt/test
+mmd D:proc
+mmd D:root
+mmd D:tmp
+mcopy README.markdown D:
 
 # Copy binaries
 MANIFEST=$(find . -name manifest -exec dirname {} \;)

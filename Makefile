@@ -102,7 +102,7 @@ opttest: lib
 
 # target_comp: rootfs - Create an rootfs image.
 rootfs: all
-	./tools/mkrootfs.sh
+	./tools/mkrootfs.sh zeke-rootfs.img boot/rpi.files
 
 # target_doc: stats - Calculate some stats.
 stats: clean

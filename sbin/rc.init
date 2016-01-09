@@ -10,4 +10,7 @@ cd /bin
 ls | xargs chmod +x
 cd /
 
+# TODO Move to fstab when implemented
+mount -t fatfs /dev/emmc0p0 /boot
+
 /sbin/getty
