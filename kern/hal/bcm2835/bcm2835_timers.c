@@ -4,7 +4,7 @@
  * @author Olli Vanhoja
  * @brief Timer service routines.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -76,8 +76,6 @@
 
 extern volatile uint32_t flag_kernel_tick;
 
-static int enable_arm_timer(void);
-
 void bcm2835_timers_handler(void)
 {
     istate_t s_entry;
@@ -95,36 +93,37 @@ DECLARE_HAL_SCHEDTIMER_CLEAR(bcm2835_timers_handler);
 static int enable_arm_timer(void)
 {
     istate_t s_entry;
-    int retval = 0;
+    uint32_t model;
 
     /*
      * Use the ARM timer - BCM 2832 peripherals doc, p.196
      * Enable ARM timer IRQ
      */
     mmio_start(&s_entry);
+    model = mmio_read(ARM_TIMER_IRQ_CLEAR);
+    mmio_end(&s_entry);
 
-    if (mmio_read(ARM_TIMER_IRQ_CLEAR) != 0x544D5241) {
-        KERROR(KERROR_ERR, "No ARM timer found");
-        retval = -ENOTSUP;
-
-        goto fail;
+    if (model != 0x544D5241) {
+        KERROR(KERROR_ERR, "BCM2835: No ARM timer found");
+        return -ENOTSUP;
     }
+
+    mmio_start(&s_entry);
 
     /* Interrupt every (value * prescaler) timer ticks */
     mmio_write(ARM_TIMER_LOAD, (SYS_CLOCK / (ARM_TIMER_FREQ * 16)));
     mmio_write(ARM_TIMER_RELOAD, (SYS_CLOCK / (ARM_TIMER_FREQ * 16)));
     mmio_write(ARM_TIMER_IRQ_CLEAR, 0);
     mmio_write(ARM_TIMER_CONTROL,
-               (ARM_TIMER_PRESCALE_16 | ARM_TIMER_EN |
-               ARM_TIMER_INT_EN | ARM_TIMER_23BIT));
+               ARM_TIMER_PRESCALE_16 | ARM_TIMER_EN |
+               ARM_TIMER_INT_EN | ARM_TIMER_23BIT);
 
     /* Enable ARM timer IRQ */
     mmio_write(BCMIRQ_ENABLE_BASIC, 0x1);
 
-fail:
     mmio_end(&s_entry);
 
-    return retval;
+    return 0;
 }
 
 __weak_reference(bcm_udelay, udelay);
@@ -153,9 +152,6 @@ int bcm_interrupt_postinit(void)
 {
     SUBSYS_INIT("bcm2835_timers");
 
-    if (enable_arm_timer())
-        panic("No timer for kernel ticks");
-
-    return 0;
+    return enable_arm_timer();
 }
 HW_POSTINIT_ENTRY(bcm_interrupt_postinit);
