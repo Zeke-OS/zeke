@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   32bit ELF loading.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -238,7 +238,7 @@ static int load_section(struct elf_ctx * ctx, size_t sect_index,
 }
 
 #if defined(configEXEC_DEBUG)
-static void nt_version(struct struct elf_note * note, size_t align)
+static void nt_version(struct elf_note * note, size_t align)
 {
     char * vendor = (char *)note + sizeof(struct elf_note);
     char * value = vendor + note->n_namesz;

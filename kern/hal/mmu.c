@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   MMU control.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -175,7 +175,7 @@ void mmu_die_on_fatal_abort(void)
     idle_sleep();
 }
 
-static const char * get_abo_type_str(const struct mmu_abo_param * restrict abo)
+const char * mmu_abo_strtype(const struct mmu_abo_param * restrict abo)
 {
     switch (abo->abo_type) {
     case MMU_ABO_DATA:
@@ -210,7 +210,7 @@ void mmu_abo_dump(const struct mmu_abo_param * restrict abo)
            "tid: %i\n"
            "name: %s\n"
            "insys: %i\n",
-           get_abo_type_str(abo),
+           mmu_abo_strtype(abo),
            abo->lr,
            abo->fsr, mmu_abo_strerror(abo),
            abo->far,
