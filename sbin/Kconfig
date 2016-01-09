@@ -1,1 +1,3 @@
+# sbin/Kconfig
+
 comment "System binaries"

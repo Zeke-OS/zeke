@@ -1,3 +1,5 @@
+# etc/Kconfig
+
 config configETC_TESTING
     bool "Enable testing configs"
     default n

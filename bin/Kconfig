@@ -1,3 +1,5 @@
+# bin/Kconfig
+
 config configMINISED
     bool "minised"
     default y

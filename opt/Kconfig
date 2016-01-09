@@ -1,3 +1,5 @@
+# opt/Kconfig
+
 comment "Optional applications"
 
 menu "Testing"
