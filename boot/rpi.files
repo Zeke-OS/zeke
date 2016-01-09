@@ -1,0 +1,1 @@
+boot/rpi/bootcode.bin boot/rpi/config.txt boot/rpi/fixup.dat boot/rpi/start.elf boot/rpi/LICENSE.broadcom boot/rpi/cmdline.txt kernel.img

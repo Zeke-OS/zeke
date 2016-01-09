@@ -26,7 +26,11 @@ config configUSER_CCFLAGS
 endmenu
 
 menu "Kernel"
-source "kern/Kconfig"
+source kern/Kconfig
+endmenu
+
+menu "boot"
+source boot/Kconfig
 endmenu
 
 menu "bin"
@@ -38,7 +42,7 @@ source etc/Kconfig
 endmenu
 
 menu "lib"
-source "lib/Kconfig"
+source lib/Kconfig
 endmenu
 
 menu "sbin"

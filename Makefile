@@ -28,6 +28,7 @@
 export ROOT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
 include $(ROOT_DIR)/genconfig/buildconf.mk
+include $(ROOT_DIR)/boot/boot.mk
 ################################################################################
 
 # Targets ######################################################################
@@ -102,7 +103,7 @@ opttest: lib
 
 # target_comp: rootfs - Create an rootfs image.
 rootfs: all
-	./tools/mkrootfs.sh zeke-rootfs.img boot/rpi.files
+	./tools/mkrootfs.sh zeke-rootfs.img $(MKROOTFS_BOOTFILES)
 
 # target_doc: stats - Calculate some stats.
 stats: clean

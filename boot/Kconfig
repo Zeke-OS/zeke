@@ -1,0 +1,21 @@
+# boot/Kconfig
+
+comment "Boot loader configuration"
+
+choice
+    prompt "Boot loader selection"
+    default configBOOTLOADER_RPI if configBCM2835 && !configQEMU_GUEST
+    default configBOOTLOADER_NONE
+
+config configBOOTLOADER_NONE
+    bool "None"
+
+config configBOOTLOADER_RPI
+    bool "Raspberry Pi"
+    depends on configBCM2835
+
+config configBOOTLOADER_RPI0
+    bool "Raspberry Pi Zero"
+    depends on configBCM2835
+
+endchoice
