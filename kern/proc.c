@@ -231,12 +231,10 @@ static void init_kernel_proc(void)
      * We have a hard limit of 8 files here now but this is actually tunable
      * for child processes by using setrlimit().
      */
-    kernel_proc->files = kzalloc(SIZEOF_FILES(8));
+    kernel_proc->files = fs_alloc_files(8, CMASK);
     if (!kernel_proc->files) {
         panic(panic_msg);
     }
-    kernel_proc->files->count = 8;
-    kernel_proc->files->umask = CMASK; /* File creation mask. */
 
     kernel_proc->files->fd[STDIN_FILENO] = NULL;
     /* stderr */

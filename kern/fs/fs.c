@@ -665,10 +665,14 @@ int fs_fildes_close(struct proc_info * p, int fildes)
 
 void fs_fildes_close_all(struct proc_info * p, int fildes_begin)
 {
-    int start = p->files->count - 1;
-    int fdstop = fildes_begin;
+    int start;
+    int fdstop;
     int i;
 
+    KASSERT(p->files, "files is expected to always exist");
+
+    start = p->files->count - 1;
+    fdstop = fildes_begin;
     if (!fs_fildes_is_in_range(p->files, fdstop))
         return;
 
@@ -679,13 +683,20 @@ void fs_fildes_close_all(struct proc_info * p, int fildes_begin)
 
 void fs_fildes_close_exec(struct proc_info * p)
 {
-    const int end = p->files->count;
+    int end;
     int i;
 
+    KASSERT(p->files, "files is expected to always exist");
+
+    end =  p->files->count;
     for (i = 0; i < end; i++) {
         file_t * file = p->files->fd[i];
 
         if (file && file->oflags & O_CLOEXEC) {
+#ifdef configFS_DEBUG
+            KERROR(KERROR_DEBUG, "%s(%d): Close O_CLOEXEC fd %d\n",
+                   __func__, p->pid, i);
+#endif
             fs_fildes_close(p, i);
         }
     }
@@ -733,6 +744,20 @@ static int getvndir(const char * pathname, vnode_t ** dir, char ** filename,
     *filename = name;
 
     return fs_namei_proc(dir, -1, path, AT_FDCWD);
+}
+
+files_t * fs_alloc_files(size_t nr_files, mode_t umask)
+{
+    files_t * files;
+
+    files = kzalloc(SIZEOF_FILES(nr_files));
+    if (!files)
+        return NULL;
+
+    files->count = nr_files;
+    files->umask = umask;
+
+    return files;
 }
 
 int fs_creat_curproc(const char * pathname, mode_t mode, vnode_t ** result)

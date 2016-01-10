@@ -5,7 +5,7 @@
  * @brief   Kernel process management source file. This file is responsible for
  *          thread creation and management.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -386,7 +386,7 @@ pid_t proc_fork(void)
 #endif
         nofile_max = configRLIMIT_NOFILE;
     }
-    new_proc->files = kmalloc(SIZEOF_FILES(nofile_max));
+    new_proc->files = fs_alloc_files(nofile_max, nofile_max);
     if (!new_proc->files) {
 #ifdef configPROC_DEBUG
         KERROR(KERROR_DEBUG,
@@ -395,7 +395,6 @@ pid_t proc_fork(void)
         retval = -ENOMEM;
         goto out;
     }
-    new_proc->files->count = nofile_max;
     /* Copy and ref old file descriptors */
     for (int i = 0; i < old_proc->files->count; i++) {
         new_proc->files->fd[i] = old_proc->files->fd[i];
