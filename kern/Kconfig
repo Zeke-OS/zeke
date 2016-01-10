@@ -20,7 +20,8 @@ config configKSTACK_END
     default 0x00007fff
     range 0x00007fff 0x00007fff
     ---help---
-    Kernel interrupt stacks used at entry.
+    Kernel interrupt stacks used when the kernel enters to a kernel mode due to
+    a received interrupt.
 
 config configKERNEL_START
     hex "P kernel caddr start"
@@ -44,7 +45,10 @@ config configDYNMEM_START
     hex "P dynmem start"
     default 0x00800000
     ---help---
-    Dynmem is the memory area used to allocate memory dynamically.
+    Dynmem is the memory area used for dynamic memory allocations, for both
+    memory used inside the kernel as well as memory passed to the user space.
+    Though dynmem allocations are rarely used as such and some higher level
+    memory allocator us used instead, eg. vralloc (buf.h).
 
 config configDYNMEM_SAFE_SIZE
     hex "dynmem safe size"
