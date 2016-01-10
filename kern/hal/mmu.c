@@ -32,6 +32,7 @@
 
 #include <sys/sysctl.h>
 #include <sys/linker_set.h>
+#include <hal/hw_timers.h>
 #include <hal/mmu.h>
 #include <kerror.h>
 #include <klocks.h>

@@ -40,8 +40,6 @@
 #include <thread.h>
 #include <hal/core.h>
 
-volatile uint32_t flag_kernel_tick = 0;
-
 __user void * init_stack_frame(struct _sched_pthread_create_args * thread_def,
                                thread_stack_frames_t * tsf, int priv)
 {

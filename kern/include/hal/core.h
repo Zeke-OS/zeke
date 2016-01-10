@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Hardware Abstraction Layer for the CPU core
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -57,8 +57,6 @@
  * Type for storing interrupt state.
  */
 typedef size_t istate_t;
-
-extern volatile size_t flag_kernel_tick;
 
 /**
  * Init stack frame.

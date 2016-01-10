@@ -72,25 +72,8 @@
 #define ARM_TIMER_INT_EN        0x20
 
 #define SYS_CLOCK       700000 /* kHz */
-#define ARM_TIMER_FREQ  configSCHED_HZ
 
-extern volatile uint32_t flag_kernel_tick;
-
-void bcm2835_timers_handler(void)
-{
-    istate_t s_entry;
-
-    /* Handle scheduling timer */
-    mmio_start(&s_entry);
-    if (mmio_read(ARM_TIMER_MASK_IRQ)) {
-        mmio_write(ARM_TIMER_IRQ_CLEAR, 0);
-        flag_kernel_tick = 1;
-    }
-    mmio_end(&s_entry);
-}
-DECLARE_HAL_SCHEDTIMER_CLEAR(bcm2835_timers_handler);
-
-static int enable_arm_timer(void)
+static int enable_arm_timer(unsigned freq_hz)
 {
     istate_t s_entry;
     uint32_t model;
@@ -111,8 +94,8 @@ static int enable_arm_timer(void)
     mmio_start(&s_entry);
 
     /* Interrupt every (value * prescaler) timer ticks */
-    mmio_write(ARM_TIMER_LOAD, (SYS_CLOCK / (ARM_TIMER_FREQ * 16)));
-    mmio_write(ARM_TIMER_RELOAD, (SYS_CLOCK / (ARM_TIMER_FREQ * 16)));
+    mmio_write(ARM_TIMER_LOAD, (SYS_CLOCK / (freq_hz * 16)));
+    mmio_write(ARM_TIMER_RELOAD, (SYS_CLOCK / (freq_hz * 16)));
     mmio_write(ARM_TIMER_IRQ_CLEAR, 0);
     mmio_write(ARM_TIMER_CONTROL,
                ARM_TIMER_PRESCALE_16 | ARM_TIMER_EN |
@@ -125,6 +108,31 @@ static int enable_arm_timer(void)
 
     return 0;
 }
+
+static int arm_timer_clear_if_pend(void)
+{
+    istate_t s_entry;
+    int retval = 0;
+
+    /* Handle scheduling timer */
+    mmio_start(&s_entry);
+    if (mmio_read(ARM_TIMER_MASK_IRQ)) {
+        mmio_write(ARM_TIMER_IRQ_CLEAR, 0);
+        retval = 1;
+    }
+    mmio_end(&s_entry);
+
+    return retval;
+}
+
+/*
+ * Use ARM timer as a scheduling timer for the kernel.
+ */
+struct hal_schedtimer hal_schedtimer = {
+    .enable = enable_arm_timer,
+    .disable = NULL, /* TODO ARM timer disable() */
+    .reset_if_pending = arm_timer_clear_if_pend,
+};
 
 __weak_reference(bcm_udelay, udelay);
 void bcm_udelay(uint32_t delay)
@@ -147,11 +155,3 @@ uint64_t get_utime(void)
 
     return now;
 }
-
-int bcm_interrupt_postinit(void)
-{
-    SUBSYS_INIT("bcm2835_timers");
-
-    return enable_arm_timer();
-}
-HW_POSTINIT_ENTRY(bcm_interrupt_postinit);

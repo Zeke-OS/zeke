@@ -39,6 +39,7 @@
 #include <sys/tree.h>
 #include <syscall.h>
 #include <buf.h>
+#include <hal/hw_timers.h>
 #include <idle.h>
 #include <kerror.h>
 #include <kinit.h>
