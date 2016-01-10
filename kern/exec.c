@@ -111,7 +111,6 @@ static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp,
     struct buf * code_region = (*curproc->mm.regions)[MM_CODE_REGION];
     struct _sched_pthread_create_args args;
 
-    /* TODO min provided by the elf */
     stack_size = get_new_main_stack_size(stack_size);
     stack_region = vm_new_userstack_curproc(stack_size);
     if (!stack_region)
