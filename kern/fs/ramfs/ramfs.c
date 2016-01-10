@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   ramfs - a temporary file system stored in RAM.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -955,7 +955,7 @@ static vnode_t * ramfs_raw_create_inode(const struct fs_superblock * sb,
     if (!RAMFS_SB_IS_HEALTHY(ramfs_sb))
         return NULL;
 
-    inode = kmalloc(sizeof(ramfs_inode_t));
+    inode = kzalloc(sizeof(ramfs_inode_t));
     if (!inode)
         return NULL;
 
