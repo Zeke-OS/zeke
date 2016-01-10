@@ -137,6 +137,17 @@ config configCOW_ENABLED
     Selects whether process memory regions shall be copied on demand as COW
     (Copy-On-Write) or immediately when a process is forked.
 
+config configCORE_DUMPS
+    bool "Core dump support"
+    default y
+    ---help---
+    Add a core dump support for processes. If this feature is enabled a core
+    dump support is added to the kernel and certain signals will cause a core
+    dump to be stored by default.
+
+    This should be enable normally. It might be necessary to disable this to
+    get a minimal system or if a system has only read-only file systems.
+
 config configPROC_DEBUG
     bool "Proc debug"
     default n
