@@ -503,7 +503,6 @@ static void fs_fildes_dtor(struct kobj * obj)
 
     if (file->oflags & O_KFREEABLE)
         kfree(file);
-    file = NULL;
     vrele(vn);
 }
 
@@ -522,7 +521,7 @@ int fs_fildes_set(file_t * fildes, vnode_t * vnode, int oflags)
 int fs_fildes_create_curproc(vnode_t * vnode, int oflags)
 {
     file_t * new_fildes;
-    int err, retval;
+    int retval;
 
     if (!vnode)
         return -EINVAL;
@@ -532,11 +531,9 @@ int fs_fildes_create_curproc(vnode_t * vnode, int oflags)
         goto perms_ok;
 
     /* Check if user perms gives access */
-    err = chkperm_vnode_curproc(vnode, oflags);
-    if (err) {
-        retval = err;
+    retval = chkperm_vnode_curproc(vnode, oflags);
+    if (retval)
         goto out;
-    }
 
 perms_ok:
     /* Check other oflags */
@@ -665,9 +662,7 @@ int fs_fildes_close(struct proc_info * p, int fildes)
 
 void fs_fildes_close_all(struct proc_info * p, int fildes_begin)
 {
-    int start;
-    int fdstop;
-    int i;
+    int start, fdstop, i;
 
     KASSERT(p->files, "files is expected to always exist");
 
@@ -683,8 +678,7 @@ void fs_fildes_close_all(struct proc_info * p, int fildes_begin)
 
 void fs_fildes_close_exec(struct proc_info * p)
 {
-    int end;
-    int i;
+    int end, i;
 
     KASSERT(p->files, "files is expected to always exist");
 
