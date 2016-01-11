@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Virtual file system user io headers.
  * @section LICENSE
- * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,17 +31,13 @@
  */
 
 /**
- * @addtogroup fs
- * @{
- */
-
-/**
  * @addtogroup uio
  * @{
  */
 
-#ifndef uio_H
-#define uio_H
+#pragma once
+#ifndef UIO_H
+#define UIO_H
 
 #include <stddef.h>
 
@@ -49,7 +45,7 @@ struct buf;
 struct proc_info;
 
 /**
- * File system IO buffer descriptor.
+ * User IO buffer descriptor.
  */
 struct uio {
     __kernel void * kbuf;
@@ -69,7 +65,7 @@ int uio_init_kbuf(struct uio * uio, __kernel void * kbuf, size_t size);
 
 /**
  * Initialize a user IO buffer with a user address.
- * @param uio is a pointer to a IO descriptor struct.
+ * @param uio is a pointer to the UIO descriptor.
  * @param kbuf is a pointer to a user address.
  * @param size is the size of the buffer at ubuf.
  * @return Returns 0 if succeed; Otherwise a negative errno code.
@@ -80,32 +76,41 @@ int uio_init_ubuf(struct uio * uio, __user void * ubuf, size_t size,
 /**
  * INITIAlize a user IO buffer from struct buf.
  * @param[in] bp is a buffer allocated from core.
- * @param[out] uio is the target uio struct.
+ * @param[out] uio is a pointer to the target UIO buffer.
  * @return Returns 0 if succeed; Otherwise a negative errno code.
  */
 int uio_buf2kuio(struct buf * bp, struct uio * uio);
 
 /**
- * Copy from fs to uio buffer.
+ * Copy from a kernel address to a UIO buffer.
+ * @param src is the kernel source address.
+ * @param uio is a pointer to the UIO descriptor.
+ * @param offset is an offset for writing the UIO buffer.
+ * @return Returns 0 if succeed; Otherwise a negative errno code.
  */
 int uio_copyout(const void * src, struct uio * uio, size_t offset,
                    size_t size);
 
 /**
- * Copy form uio buffer to fs.
+ * Copy from a UIO buffer to a kernel address.
+ * @param uio is a pointer to the UIO descriptor.
+ * @param offset is an ofset for reading the UIO buffer.
+ * @param dst is the destination address in kernel space.
+ * @return Returns 0 if succeed; Otherwise a negative errno code.
  */
 int uio_copyin(struct uio * uio, void * dst, size_t offset, size_t size);
 
 /**
- * Get uio kernel address.
+ * Get UIO kernel address.
+ * @param uio is a pointer to the UIO descriptor.
+ * @param[out] addr returns a kernel mapped address of the UIO buffer.
+ * @return  Returns 0 if succeed;
+ *          Otherwise a negative errno is returned and the value of addr is
+ *          invalid.
  */
 int uio_get_kaddr(struct uio * uio, __kernel void ** addr);
 
-#endif /* uio_H */
-
-/**
- * @}
- */
+#endif /* UIO_H */
 
 /**
  * @}

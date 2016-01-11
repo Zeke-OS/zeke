@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Dynmem management.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -121,15 +121,26 @@ static size_t dynmem_free = configDYNMEM_SAFE_SIZE;
 SYSCTL_UINT(_vm_dynmem, OID_AUTO, free, CTLFLAG_RD, &dynmem_free, 0,
             "Amount of free dynmem");
 
+/**
+ * Total amount of dynmem in the system.
+ */
 static size_t dynmem_tot = configDYNMEM_SAFE_SIZE;
 SYSCTL_UINT(_vm_dynmem, OID_AUTO, tot, CTLFLAG_RD, &dynmem_tot, 0,
             "Total amount of dynmem");
 
+/**
+ * Number of memory regions reserved from the dynmem memory area.
+ * These regions are unusable for dynmem.
+ */
 static size_t dynmem_nr_reserved;
 SYSCTL_UINT(_vm_dynmem, OID_AUTO, nr_reserved, CTLFLAG_RD,
             &dynmem_nr_reserved, 0,
             "Number of reserved areas");
 
+/**
+ * The total number of bytes reserved for something else from the dynmem
+ * memory area.
+ */
 static size_t dynmem_reserved;
 SYSCTL_UINT(_vm_dynmem, OID_AUTO, reserved, CTLFLAG_RD, &dynmem_reserved, 0,
             "Amount of reserved dynmem");
@@ -242,8 +253,8 @@ static int update_dynmem_region_struct(void * base)
 }
 
 /**
- * Updates dynmem allocation table and intially maps the memory region to the
- * kernel memory space.
+ * Updates dynmem allocation table and initially maps the memory region to
+ * the kernel memory space.
  * @note dynmem_region_lock must be held before entering this function.
  * @param base      is the base address index.
  * @param size      is the size of the memory region in MB.

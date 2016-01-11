@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Host identifiers.
  * @section LICENSE
- * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,6 +36,9 @@
 
 #include <sys/param.h>
 
-char hostname[MAXHOSTNAMELEN + 1];
+/**
+ * System hostname.
+ */
+extern char hostname[MAXHOSTNAMELEN + 1];
 
 #endif /* HOST_H */

@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   32bit ELF loading.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -146,7 +146,7 @@ fail:
     return -ENOEXEC;
 }
 
-static int elf32_trans_prot(uint32_t flags)
+static int p_flags2b_uflags(uint32_t flags)
 {
     int prot = 0;
 
@@ -218,7 +218,7 @@ static int load_section(struct elf_ctx * ctx, size_t sect_index,
         return -ENOEXEC;
     }
 
-    prot = elf32_trans_prot(phdr->p_flags);
+    prot = p_flags2b_uflags(phdr->p_flags);
     sect = vm_newsect(phdr->p_vaddr + ctx->rbase, phdr->p_memsz, prot);
     if (!sect) {
         return -ENOMEM;

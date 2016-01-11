@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Core dump facility.
  * @section LICENSE
- * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,20 @@ SYSCTL_DECL(_kern_core);
 
 struct proc;
 
+/**
+ * Make a core dump of a process.
+ * @param proc is a pointer to the process.
+ * @returns Returns 0 if a core dump was succesfully written;
+ *          Otherwise a negative errno is returned.
+ */
 int core_dump_by_curproc(struct proc_info * proc);
+
+/**
+ * Make a core dump of a process to a specific file.
+ * @param proc is a pointer to the process.
+ * @returns Returns 0 if a core dump was succesfully written;
+ *          Otherwise a negative errno is returned.
+ */
 int core_dump2file(struct proc_info * proc, file_t * file);
 
 #endif /* CORE_H */

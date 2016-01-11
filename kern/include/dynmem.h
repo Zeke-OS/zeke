@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Dynmem management headers.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -59,6 +59,14 @@ struct dynmem_reserved_area {
     uintptr_t caddr_end;
 };
 
+/**
+ * Mark a physical memory range as reserved.
+ * A memory region marked as reserved will not be used by dynmem for any
+ * memory allocations.
+ * @param _name_ is the name of the allocation.
+ * @param _caddr_start_ is the start address of the reserved memory region.
+ * @param _caddr_end_ is the end address of the reserved memory region.
+ */
 #define DYNMEM_RESERVED_AREA(_name_, _caddr_start_, _caddr_end_)        \
     static struct dynmem_reserved_area _dynmem_reserved_##_name_ = {    \
         .caddr_start = _caddr_start_,                                   \

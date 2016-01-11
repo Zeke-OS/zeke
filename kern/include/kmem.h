@@ -2,9 +2,9 @@
  *******************************************************************************
  * @file    kmem.h
  * @author  Olli Vanhoja
- * @brief   Kernel memory mappings.
+ * @brief   Kernel static memory mappings.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,17 +43,32 @@
 #include <hal/mmu.h>
 #include <vm/vm.h>
 
+/**
+ * Declare a static kernel memory mapping.
+ * @param _region_name is the name of the mmu_region_t describing this
+ *                     memory mapping.
+ */
 #define KMEM_FIXED_REGION(_region_name) \
     DATA_SET(kmem_fixed_regions, _region_name)
 
 SET_DECLARE(kmem_fixed_regions, mmu_region_t);
 
+/**
+ * Loop through each static kernel memory mapping in the system.
+ */
 #define KMEM_FOREACH(_regionp) \
         SET_FOREACH(_regionp, kmem_fixed_regions)
 
 struct vm_pt;
 
+/**
+ * The kernel master page table.
+ */
 extern mmu_pagetable_t mmu_pagetable_master;
+
+/**
+ * The kernel system memory page table.
+ */
 extern struct vm_pt vm_pagetable_system;
 
 extern const mmu_region_t mmu_region_kstack;

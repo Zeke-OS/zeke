@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   32bit ELF core dumps.
  * @section LICENSE
- * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -122,7 +122,7 @@ static size_t put_note_header(void * note, size_t n_descsz, unsigned type)
 }
 
 /**
- * Build prstatus note.
+ * Build a prstatus note.
  * @param proc is a pointer to the process.
  * @param thread is a pointer to the thread.
  * @param note is a pointer to the current note slot.
@@ -216,6 +216,9 @@ static size_t build_note_prstatus(const struct proc_info * proc, void * note)
     return bytes;
 }
 
+/**
+ * GDB compatible process status info.
+ */
 static size_t build_note_prpsinfo(const struct proc_info * proc, void * note)
 {
     size_t bytes = 0;
@@ -262,6 +265,9 @@ static size_t build_note_siginfo(const struct proc_info * proc, void * note)
     return bytes;
 }
 
+/**
+ * Dump process credentials.
+ */
 static size_t build_note_prcred(const struct proc_info * proc, void * note)
 {
     size_t bytes;

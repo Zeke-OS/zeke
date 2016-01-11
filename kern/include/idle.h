@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    idle.c
+ * @file    idle.h
  * @author  Olli Vanhoja
  * @brief   Kernel idle thread and idle coroutine management.
  * @section LICENSE
- * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,10 +32,14 @@
 
 #pragma once
 #ifndef IDLE_H
+#define IDLE_H
 
 #include <stdint.h>
 #include <sys/linker_set.h>
 
+/**
+ * Function type for an idle task.
+ */
 typedef void idle_task_t(uintptr_t arg);
 
 struct _idle_task_desc {
@@ -43,6 +47,9 @@ struct _idle_task_desc {
     const uintptr_t arg;
 };
 
+/**
+ * Declare an idle task.
+ */
 #define IDLE_TASK(_fun_, _arg_)                 \
 struct _idle_task_desc _idle_task_##_fun_ = {   \
     .fn = _fun_,                                \
