@@ -86,9 +86,6 @@ static int clone_regions_from(struct proc_info * new_proc,
                               struct proc_info * old_proc,
                               int index)
 {
-    struct buf * vm_reg_tmp;
-    int err;
-
     /*
      * Copy other region pointers from index to nr_regions.
      * As an iteresting sidenote, what we are doing here and earlier when L1
@@ -104,6 +101,9 @@ static int clone_regions_from(struct proc_info * new_proc,
      * than one page table struct.
      */
     for (int i = index; i < old_proc->mm.nr_regions; i++) {
+        struct buf * vm_reg_tmp;
+        int err;
+
         vm_reg_tmp = (*old_proc->mm.regions)[i];
         if (!vm_reg_tmp || (vm_reg_tmp->b_flags & B_NOTSHARED))
             continue;
@@ -187,7 +187,7 @@ static struct proc_info * clone_proc_info(struct proc_info * const old_proc)
     struct proc_info * new_proc;
 
 #ifdef configPROC_DEBUG
-    KERROR(KERROR_DEBUG, "clone_proc_info of pid %u\n", old_proc->pid);
+    KERROR(KERROR_DEBUG, "clone proc info of pid %u\n", old_proc->pid);
 #endif
 
     new_proc = kmalloc(sizeof(struct proc_info));
@@ -207,7 +207,7 @@ static int clone_stack(struct proc_info * new_proc, struct proc_info * old_proc)
 
     if (unlikely(!old_region)) {
 #ifdef configPROC_DEBUG
-        KERROR(KERROR_DEBUG, "fork(): No stack created\n");
+        KERROR(KERROR_DEBUG, "No stack created\n");
 #endif
         return 0;
     }
@@ -241,12 +241,11 @@ static void set_proc_inher(struct proc_info * old_proc,
 pid_t proc_get_random_pid(void)
 {
 
-    pid_t last_maxproc;
-    pid_t newpid;
+    pid_t last_maxproc, newpid;
     int count = 0;
 
 #ifdef configPROC_DEBUG
-    KERROR(KERROR_DEBUG, "proc_get_random_pid()");
+    KERROR(KERROR_DEBUG, "%s()\n", __func__);
 #endif
 
     PROC_LOCK();
@@ -276,7 +275,7 @@ pid_t proc_get_random_pid(void)
     PROC_UNLOCK();
 
 #ifdef configPROC_DEBUG
-    kputs(" done\n");
+    KERROR(KERROR_DEBUG, "%s done\n", __func__);
 #endif
 
     return newpid;
@@ -289,43 +288,47 @@ pid_t proc_fork(void)
      */
 
 #ifdef configPROC_DEBUG
-    KERROR(KERROR_DEBUG, "fork(%u)\n", curproc->pid);
+    KERROR(KERROR_DEBUG, "%s(%u)\n", __func__, curproc->pid);
 #endif
 
     struct proc_info * const old_proc = curproc;
     struct proc_info * new_proc;
     pid_t retval = 0;
 
-    /* Check that the old PID was valid. */
-    if (!old_proc || (old_proc->state == PROC_STATE_INITIAL)) {
+    /* Check that the old process is in valid state. */
+    if (!old_proc || old_proc->state == PROC_STATE_INITIAL)
         return -EINVAL;
-    }
-
-    new_proc = clone_proc_info(old_proc);
-    if (!new_proc) {
-        return -ENOMEM;
-    }
-
-    new_proc->pgrp = NULL; /* Must be NULL so we don't free the old ref. */
-    PROC_LOCK();
-    proc_pgrp_insert(old_proc->pgrp, new_proc);
-    PROC_UNLOCK();
 
     retval = procarr_realloc();
     if (retval)
-        goto out;
+        return retval;
+
+    new_proc = clone_proc_info(old_proc);
+    if (!new_proc)
+        return -ENOMEM;
 
     /* Clear some things required to be zeroed at this point */
     new_proc->state = PROC_STATE_INITIAL;
     new_proc->files = NULL;
+    new_proc->pgrp = NULL; /* Must be NULL so we don't free the old ref. */
     /* ..and then start to fix things. */
 
-    /* Initialize the mm struct */
+    /*
+     * Process group.
+     */
+    PROC_LOCK();
+    proc_pgrp_insert(old_proc->pgrp, new_proc);
+    PROC_UNLOCK();
+
+    /*
+     *  Initialize the mm struct.
+     */
     retval = vm_mm_init(&new_proc->mm, old_proc->mm.nr_regions);
     if (retval)
         goto out;
 
-    /* Clone master page table.
+    /*
+     * Clone the master page table.
      * This is probably something we would like to get rid of but we are
      * stuck with because it's the easiest way to keep some static kernel
      * mappings valid between processes.
@@ -348,7 +351,9 @@ pid_t proc_fork(void)
     if (retval)
         goto out;
 
-    /* Clone stack region */
+    /*
+     * Clone stack region.
+     */
     retval = clone_stack(new_proc, old_proc);
     if (retval) {
 #ifdef configPROC_DEBUG
@@ -357,7 +362,9 @@ pid_t proc_fork(void)
         goto out;
     }
 
-    /* Clone other regions */
+    /*
+     *  Clone other regions.
+     */
     retval = clone_regions_from(new_proc, old_proc, MM_HEAP_REGION);
     if (retval)
         goto out;
@@ -375,7 +382,9 @@ pid_t proc_fork(void)
     /* fork() signals */
     ksignal_signals_fork_reinit(&new_proc->sigs);
 
-    /* Copy file descriptors */
+    /*
+     * Copy file descriptors.
+     */
 #ifdef configPROC_DEBUG
     KERROR(KERROR_DEBUG, "Copy file descriptors\n");
 #endif
@@ -404,7 +413,9 @@ pid_t proc_fork(void)
     KERROR(KERROR_DEBUG, "All file descriptors copied\n");
 #endif
 
-    /* Select PID */
+    /*
+     * Select PID.
+     */
     if (likely(nprocs != 1)) { /* Tecnically it would be good idea to have lock
                                 * on nprocs before reading it but I think this
                                 * should work fine... */
@@ -474,13 +485,15 @@ pid_t proc_fork(void)
 
     if (new_proc->main_thread) {
 #ifdef configPROC_DEBUG
-        KERROR(KERROR_DEBUG, "Run new_proc->main_thread\n");
+        KERROR(KERROR_DEBUG, "Exec new main_thread %d\n",
+               new_proc->main_thread->id);
 #endif
         thread_ready(new_proc->main_thread->id);
     }
 
 #ifdef configPROC_DEBUG
-    KERROR(KERROR_DEBUG, "Fork created.\n");
+    KERROR(KERROR_DEBUG, "Fork %d -> %d created.\n",
+           old_proc->pid, new_proc->pid);
 #endif
 
 out:

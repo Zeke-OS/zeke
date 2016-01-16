@@ -529,11 +529,15 @@ void proc_update_times(void)
         curproc->tms.tms_utime++;
 }
 
+#if defined(configPROC_DEBUG) || defined(configVM_DEBUG)
+#define PROC_ABO_DEBUG 1
+#endif
+
 int proc_abo_handler(const struct mmu_abo_param * restrict abo)
 {
     const uintptr_t vaddr = abo->far;
     struct vm_mm_struct * mm;
-#ifdef configPROC_DEBUG
+#ifdef PROC_ABO_DEBUG
     const char * abo_str = mmu_abo_strerror(abo);
 #endif
     int err;
@@ -542,7 +546,7 @@ int proc_abo_handler(const struct mmu_abo_param * restrict abo)
         return -ESRCH;
     }
 
-#ifdef configPROC_DEBUG
+#ifdef PROC_ABO_DEBUG
     KERROR(KERROR_DEBUG, "%s: MOO, (%s) %x @ %x by %d\n",
            __func__, abo_str, vaddr, abo->lr, abo->proc->pid);
 #endif
@@ -553,7 +557,7 @@ int proc_abo_handler(const struct mmu_abo_param * restrict abo)
     for (int i = 0; i < mm->nr_regions; i++) {
         struct buf * region = (*mm->regions)[i];
         uintptr_t reg_start, reg_end;
-#ifdef configPROC_DEBUG
+#ifdef PROC_ABO_DEBUG
         char uap[5];
 #endif
 
@@ -563,7 +567,7 @@ int proc_abo_handler(const struct mmu_abo_param * restrict abo)
         reg_start = region->b_mmu.vaddr;
         reg_end = region->b_mmu.vaddr + region->b_bufsize - 1;
 
-#ifdef configPROC_DEBUG
+#ifdef PROC_ABO_DEBUG
         vm_get_uapstring(uap, region);
         KERROR(KERROR_DEBUG, "sect %d: vaddr: %x - %x paddr: %x uap: %s\n",
                i, reg_start, reg_end, region->b_mmu.paddr, uap);
@@ -591,7 +595,7 @@ int proc_abo_handler(const struct mmu_abo_param * restrict abo)
             mtx_unlock(&mm->regions_lock);
             vm_mapproc_region(abo->proc, region);
 
-#ifdef configPROC_DEBUG
+#ifdef PROC_ABO_DEBUG
             KERROR(KERROR_DEBUG,
                    "%s \"%s\" of a valid memory region (%d) fixed by remapping the region\n",
                    mmu_abo_strtype(abo), abo_str, i);
@@ -624,7 +628,7 @@ int proc_abo_handler(const struct mmu_abo_param * restrict abo)
         mtx_unlock(&mm->regions_lock);
         err = vm_replace_region(abo->proc, region, i, VM_INSOP_MAP_REG);
 
-#ifdef configPROC_DEBUG
+#ifdef PROC_ABO_DEBUG
         KERROR(KERROR_DEBUG, "COW done (%d)\n", err);
 #endif
         return err; /* COW done. */
