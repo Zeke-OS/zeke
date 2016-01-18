@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Kernel thread scheduler header file.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -82,8 +82,15 @@ struct scheduler {
  */
 typedef struct scheduler * sched_constructor(void);
 
-/* Scheduler task type */
-typedef void (*sched_task_t)();
+/**
+ * Scheduler task type
+ */
+typedef void sched_task_t(void);
+
+/**
+ * Type for thread constructor and destructor functions.
+ */
+typedef void thread_cdtor_t(struct thread_info * td);
 
 #ifdef _SYS_SYSCTL_H_
 SYSCTL_DECL(_kern_sched);

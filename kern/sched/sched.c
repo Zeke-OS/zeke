@@ -332,7 +332,7 @@ void sched_handler(void)
      * Pre-scheduling tasks.
      */
     SET_FOREACH(task_p, pre_sched_tasks) {
-        sched_task_t task = *(sched_task_t *)task_p;
+        sched_task_t * task = *(sched_task_t **)task_p;
         task();
     }
 
@@ -382,7 +382,7 @@ void sched_handler(void)
      * Post-scheduling tasks
      */
     SET_FOREACH(task_p, post_sched_tasks) {
-        sched_task_t task = *(sched_task_t *)task_p;
+        sched_task_t * task = *(sched_task_t **)task_p;
         task();
     }
 }
@@ -577,7 +577,7 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
 
     /* Call thread constructors */
     SET_FOREACH(thread_ctor_p, thread_ctors) {
-        thread_cdtor_t ctor = *(thread_cdtor_t *)thread_ctor_p;
+        thread_cdtor_t * ctor = *(thread_cdtor_t **)thread_ctor_p;
         ctor(tp);
     }
 
@@ -636,7 +636,7 @@ pthread_t thread_fork(pid_t new_pid)
            sizeof(sw_stack_frame_t));
 
     SET_FOREACH(fork_handler_p, thread_fork_handlers) {
-        sched_task_t task = *(thread_cdtor_t *)fork_handler_p;
+        thread_cdtor_t * task = *(thread_cdtor_t **)fork_handler_p;
         task(new_thread);
     }
 
@@ -974,7 +974,7 @@ void thread_remove(pthread_t thread_id)
      * RFE Are these always interrupt handler safe?
      */
     SET_FOREACH(thread_dtor_p, thread_dtors) {
-        thread_cdtor_t dtor = *(thread_cdtor_t *)thread_dtor_p;
+        thread_cdtor_t * dtor = *(thread_cdtor_t **)thread_dtor_p;
         if (dtor)
             dtor(thread);
     }
