@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   emmc driver.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -1229,13 +1229,11 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
     control1 |= (7 << 16);        /* data timeout = TMCLK * 2^10 */
     mmio_start(&s_entry);
     mmio_write(EMMC_BASE + EMMC_CONTROL1, control1);
-    TIMEOUT_WAIT(d = (mmio_read(EMMC_BASE + EMMC_CONTROL1) & 0x2), 0x1000000);
+    TIMEOUT_WAIT(d = (mmio_read(EMMC_BASE + EMMC_CONTROL1) & 0x2), 1000000);
     mmio_end(&s_entry);
     if (d == 0) {
-        KERROR(KERROR_ERR,
+        KERROR(KERROR_WARN,
                "EMMC: controller's clock did not stabilise within 1 second\n");
-
-        return -EIO;
     }
 #ifdef configEMMC_DEBUG
     KERROR(KERROR_DEBUG, "EMMC: control0: %x, control1: %x\n",

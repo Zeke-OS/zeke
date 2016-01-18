@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Parse path and file name from a complete path.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -46,8 +46,8 @@ int parsenames(const char * pathname, char ** path, char ** name)
     KASSERT(pathname != NULL, "pathname should be set\n");
 
     path_act = kstrdup(pathname, PATH_MAX);
-    fname = kmalloc(NAME_MAX);
-    if (!path_act || !fname) {
+    fname = kzalloc(NAME_MAX);
+    if (!(path_act && fname)) {
         retval = -ENOMEM;
         goto fail;
     }

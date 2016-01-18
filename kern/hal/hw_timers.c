@@ -4,7 +4,7 @@
  * @author Olli Vanhoja
  * @brief HW timer services.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,13 +30,23 @@
  *******************************************************************************
  */
 
-#include <hal/core.h>
 #include <hal/hw_timers.h>
+#include <kinit.h>
 
-hal_schedtimer_clear_t * hal_schedtimer_clear;
+volatile uint32_t flag_kernel_tick;
 
-int schedtimer_clear(void)
+int schedtimer_test_and_clear(void)
 {
-    hal_schedtimer_clear();
+    if (hal_schedtimer.reset_if_pending()) {
+        flag_kernel_tick = 1;
+    }
     return flag_kernel_tick;
 }
+
+int bcm_interrupt_postinit(void)
+{
+    SUBSYS_INIT("schedtimer");
+
+    return hal_schedtimer.enable(configSCHED_HZ);
+}
+HW_POSTINIT_ENTRY(bcm_interrupt_postinit);

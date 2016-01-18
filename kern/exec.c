@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Execute a file.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -75,6 +75,9 @@ static int load_proc_image(file_t * file, uintptr_t * vaddr_base,
     (void)vm_unload_regions(curproc, MM_HEAP_REGION, -1);
 
     err = (*loader)->load(curproc, file, vaddr_base, stack_size);
+#if defined(configEXEC_DEBUG)
+    KERROR(KERROR_DEBUG, "Proc image loaded (err = %d)\n", err);
+#endif
 
     return err;
 }
@@ -108,7 +111,6 @@ static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp,
     struct buf * code_region = (*curproc->mm.regions)[MM_CODE_REGION];
     struct _sched_pthread_create_args args;
 
-    /* TODO min provided by the elf */
     stack_size = get_new_main_stack_size(stack_size);
     stack_region = vm_new_userstack_curproc(stack_size);
     if (!stack_region)
@@ -186,11 +188,19 @@ int exec_file(int fildes, char name[PROC_NAME_LEN], struct buf * env_bp,
     }
     vm_fixmemmap_proc(curproc);
 
+#if defined(configEXEC_DEBUG)
+        KERROR(KERROR_DEBUG, "Memory mapping done (pid = %d)\n", curproc->pid);
+#endif
+
     /* Close CLOEXEC files */
     fs_fildes_close_exec(curproc);
 
     /* Change proc name */
     strlcpy(curproc->name, name, sizeof(curproc->name));
+#if defined(configEXEC_DEBUG)
+    KERROR(KERROR_DEBUG, "New name \"%s\" set for PID %d\n",
+           curproc->name, curproc->pid);
+#endif
 
     /* Create a new main() thread */
     tid = new_main_thread(uargc - 1, uargv, uenvp, stack_size);

@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Directory Entry Hashtable.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -248,7 +248,7 @@ int dh_link(dh_table_t * dir, ino_t vnode_num, const char * name)
 
     dea = (*dir)[h];
     if (!dea) { /* Chain array not yet created. */
-        dea = kmalloc(entry_size);
+        dea = kzalloc(entry_size);
 
         chinfo.i_last = 0;
         chinfo.i_size = 0; /* Set size to 0 to fool the assignment code as

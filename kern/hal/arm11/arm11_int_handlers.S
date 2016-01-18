@@ -4,7 +4,7 @@
  * @author Olli Vanhoja
  * @brief Interrupt service routine handlers.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy
                             Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -86,13 +86,15 @@ interrupt_sys:
     bl      _thread_suspend
 
     /* Handler IRQ */
-    bl      schedtimer_clear /* if kernel_tick */
+    bl      schedtimer_test_and_clear /* if kernel_tick */
     cmp     r0, #0
     bne     1f
     /* TODO Other interrupts */
     b       2f
 
-    /* Set Context ID to 0 (as we need ASID to be 0 in kernel mode) */
+    /* kernel_tick
+     * Set Context ID to 0 (as we need ASID to be 0 in kernel mode)
+     */
 1:  mov     r0, #0
     bl      arm11_set_cid
 

@@ -4,7 +4,7 @@
  * @author Olli Vanhoja
  * @brief HW timer services.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,11 +34,32 @@
 #ifndef HW_TIMERS_H
 #define HW_TIMERS_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 typedef void hal_schedtimer_clear_t();
 
-extern hal_schedtimer_clear_t * hal_schedtimer_clear;
+volatile size_t flag_kernel_tick;
+
+struct hal_schedtimer {
+    /**
+     * Enable and start the scheduling timer.
+     */
+    int (*enable)(unsigned freq_hz);
+
+    /**
+     * Disable and stop the scheduling timer.
+     */
+    int (*disable)(void);
+
+    /**
+     * Reset timer if an interrupt is pending.
+     * @return Return value other than zero if the timer was reset;
+     *         gT
+     */
+    int (*reset_if_pending)(void);
+};
+extern struct hal_schedtimer hal_schedtimer;
 
 /**
  * Get us timestamp.
@@ -47,11 +68,6 @@ extern hal_schedtimer_clear_t * hal_schedtimer_clear;
 uint64_t get_utime(void);
 
 void udelay(uint32_t delay);
-
-int schedtimer_clear(void);
-
-#define DECLARE_HAL_SCHEDTIMER_CLEAR(fun)               \
-    hal_schedtimer_clear_t * hal_schedtimer_clear = fun
 
 #define TIMEOUT_WAIT(stop_if_true, usec)                \
 do {                                                    \

@@ -677,6 +677,13 @@ void fs_fildes_close_all(struct proc_info * p, int fildes_begin);
 void fs_fildes_close_exec(struct proc_info * p);
 
 /**
+ * Allocate a files_t struct for storing file descriptors.
+ * @param nrfiles is the maximum number of files open.
+ * @param umask is the default umask.
+ */
+files_t * fs_alloc_files(size_t nr_files, mode_t umask);
+
+/**
  * Create a new file by using fs specific create() function.
  * File will be created relative to the attributes of a current process.
  * @param[in]   path    is a path to the new file.

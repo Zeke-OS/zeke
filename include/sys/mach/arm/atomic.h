@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Atomic integer operations.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,7 +33,7 @@
 #ifndef HAL_ATOMIC_H_
 #define HAL_ATOMIC_H_
 
-typedef int atomic_t;
+typedef int atomic_t __aligned(4);
 
 #define __ATOMIC_DOP_FN(fn_name, opcode_str)                    \
 static inline int fn_name(atomic_t * v, int i) {                \

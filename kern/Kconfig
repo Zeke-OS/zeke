@@ -20,7 +20,8 @@ config configKSTACK_END
     default 0x00007fff
     range 0x00007fff 0x00007fff
     ---help---
-    Kernel interrupt stacks used at entry.
+    Kernel interrupt stacks used when the kernel enters to a kernel mode due to
+    a received interrupt.
 
 config configKERNEL_START
     hex "P kernel caddr start"
@@ -44,7 +45,10 @@ config configDYNMEM_START
     hex "P dynmem start"
     default 0x00800000
     ---help---
-    Dynmem is the memory area used to allocate memory dynamically.
+    Dynmem is the memory area used for dynamic memory allocations, for both
+    memory used inside the kernel as well as memory passed to the user space.
+    Though dynmem allocations are rarely used as such and some higher level
+    memory allocator us used instead, eg. vralloc (buf.h).
 
 config configDYNMEM_SAFE_SIZE
     hex "dynmem safe size"
@@ -136,6 +140,17 @@ config configCOW_ENABLED
     ---help---
     Selects whether process memory regions shall be copied on demand as COW
     (Copy-On-Write) or immediately when a process is forked.
+
+config configCORE_DUMPS
+    bool "Core dump support"
+    default y
+    ---help---
+    Add a core dump support for processes. If this feature is enabled a core
+    dump support is added to the kernel and certain signals will cause a core
+    dump to be stored by default.
+
+    This should be enable normally. It might be necessary to disable this to
+    get a minimal system or if a system has only read-only file systems.
 
 config configPROC_DEBUG
     bool "Proc debug"

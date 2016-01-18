@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   MMU headers.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -262,6 +262,8 @@ uint32_t mmu_domain_access_get(void);
 void mmu_domain_access_set(uint32_t value, uint32_t mask);
 void mmu_control_set(uint32_t value, uint32_t mask);
 void * mmu_translate_vaddr(const mmu_pagetable_t * pt, uintptr_t vaddr);
+
+const char * mmu_abo_strtype(const struct mmu_abo_param * restrict abo);
 
 /**
  * Get error string for a MMU abort.

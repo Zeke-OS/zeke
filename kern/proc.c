@@ -5,7 +5,7 @@
  * @brief   Kernel process management source file. This file is responsible for
  *          thread creation and management.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -231,12 +231,10 @@ static void init_kernel_proc(void)
      * We have a hard limit of 8 files here now but this is actually tunable
      * for child processes by using setrlimit().
      */
-    kernel_proc->files = kzalloc(SIZEOF_FILES(8));
+    kernel_proc->files = fs_alloc_files(8, CMASK);
     if (!kernel_proc->files) {
         panic(panic_msg);
     }
-    kernel_proc->files->count = 8;
-    kernel_proc->files->umask = CMASK; /* File creation mask. */
 
     kernel_proc->files->fd[STDIN_FILENO] = NULL;
     /* stderr */
@@ -596,7 +594,7 @@ int proc_abo_handler(const struct mmu_abo_param * restrict abo)
 #ifdef configPROC_DEBUG
             KERROR(KERROR_DEBUG,
                    "%s \"%s\" of a valid memory region (%d) fixed by remapping the region\n",
-                   mmu_abo_type_str(abo), abo_str, i);
+                   mmu_abo_strtype(abo), abo_str, i);
 #endif
 
             return 0;

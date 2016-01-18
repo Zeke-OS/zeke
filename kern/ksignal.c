@@ -5,7 +5,7 @@
  *
  * @brief   Source file for thread Signal Management in kernel.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -774,8 +774,10 @@ static int ksignal_queue_sig(struct signals * sigs, int signum,
         proc_unref(proc_owner); /* Won't be freed anyway. */
         if (proc_owner && (action.ks_action.sa_flags & SA_CORE) &&
             proc_owner->main_thread == thread) {
+#if defined(configCORE_DUMPS)
             if (core_dump_by_curproc(proc_owner) == 0)
                 ksiginfo->siginfo.si_code = CLD_DUMPED;
+#endif
         }
 
         /*

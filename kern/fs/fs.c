@@ -503,7 +503,6 @@ static void fs_fildes_dtor(struct kobj * obj)
 
     if (file->oflags & O_KFREEABLE)
         kfree(file);
-    file = NULL;
     vrele(vn);
 }
 
@@ -522,7 +521,7 @@ int fs_fildes_set(file_t * fildes, vnode_t * vnode, int oflags)
 int fs_fildes_create_curproc(vnode_t * vnode, int oflags)
 {
     file_t * new_fildes;
-    int err, retval;
+    int retval;
 
     if (!vnode)
         return -EINVAL;
@@ -532,11 +531,9 @@ int fs_fildes_create_curproc(vnode_t * vnode, int oflags)
         goto perms_ok;
 
     /* Check if user perms gives access */
-    err = chkperm_vnode_curproc(vnode, oflags);
-    if (err) {
-        retval = err;
+    retval = chkperm_vnode_curproc(vnode, oflags);
+    if (retval)
         goto out;
-    }
 
 perms_ok:
     /* Check other oflags */
@@ -665,10 +662,12 @@ int fs_fildes_close(struct proc_info * p, int fildes)
 
 void fs_fildes_close_all(struct proc_info * p, int fildes_begin)
 {
-    int start = p->files->count - 1;
-    int fdstop = fildes_begin;
-    int i;
+    int start, fdstop, i;
 
+    KASSERT(p->files, "files is expected to always exist");
+
+    start = p->files->count - 1;
+    fdstop = fildes_begin;
     if (!fs_fildes_is_in_range(p->files, fdstop))
         return;
 
@@ -679,13 +678,19 @@ void fs_fildes_close_all(struct proc_info * p, int fildes_begin)
 
 void fs_fildes_close_exec(struct proc_info * p)
 {
-    const int end = p->files->count;
-    int i;
+    int end, i;
 
+    KASSERT(p->files, "files is expected to always exist");
+
+    end =  p->files->count;
     for (i = 0; i < end; i++) {
         file_t * file = p->files->fd[i];
 
         if (file && file->oflags & O_CLOEXEC) {
+#ifdef configFS_DEBUG
+            KERROR(KERROR_DEBUG, "%s(%d): Close O_CLOEXEC fd %d\n",
+                   __func__, p->pid, i);
+#endif
             fs_fildes_close(p, i);
         }
     }
@@ -733,6 +738,20 @@ static int getvndir(const char * pathname, vnode_t ** dir, char ** filename,
     *filename = name;
 
     return fs_namei_proc(dir, -1, path, AT_FDCWD);
+}
+
+files_t * fs_alloc_files(size_t nr_files, mode_t umask)
+{
+    files_t * files;
+
+    files = kzalloc(SIZEOF_FILES(nr_files));
+    if (!files)
+        return NULL;
+
+    files->count = nr_files;
+    files->umask = umask;
+
+    return files;
 }
 
 int fs_creat_curproc(const char * pathname, mode_t mode, vnode_t ** result)

@@ -479,7 +479,7 @@ uint32_t dynmem_acc(const void * addr, size_t len)
 
     if (update_dynmem_region_struct((void *)addr)) { /* error */
 #ifdef configDYNEM_DEBUG
-        KERROR(KERROR_DEBUG, "%s(addr %p, len %p): Access check failed\n",
+        KERROR(KERROR_DEBUG, "%s(addr %p, len %zu): Access check failed\n",
                __func__, addr, len);
 #endif
         goto out;
