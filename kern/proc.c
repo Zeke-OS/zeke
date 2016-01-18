@@ -253,7 +253,7 @@ static void init_kernel_proc(void)
 
     init_rlims(&kernel_proc->rlim);
 
-    mtx_init(&kernel_proc->inh.lock, PROC_INH_LOCK_TYPE, 0);
+    mtx_init(&kernel_proc->inh.lock, PROC_INH_LOCK_TYPE, PROC_INH_LOCK_OPT);
 }
 
 int procarr_realloc(void)
@@ -344,7 +344,7 @@ static void proc_remove(struct proc_info * proc)
     /*
      * Adopt children to PID 1 if any.
      */
-    if (!PROC_INH_EMPTY(proc)) {
+    if (!PROC_INH_IS_EMPTY(proc)) {
         struct proc_info * init;
         struct proc_info * child;
         struct proc_info * child_tmp;

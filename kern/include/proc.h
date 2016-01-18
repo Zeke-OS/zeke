@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Kernel process management header file.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2014 Joni Hauhia <joni.hauhia@cs.helsinki.fi>
  * All rights reserved.
  *
@@ -157,11 +157,22 @@ struct proc_info {
     struct thread_info * main_thread; /*!< Main thread of this process. */
 };
 
+/**
+ * Get a pointer to the head of an inheritance list of a process.
+ * @param _proc is a pointer to the process.
+ */
 #define PROC_INH_HEAD(_proc) (&(_proc)->inh.child_list_head)
 
-#define PROC_INH_EMPTY(_proc) \
-    SLIST_EMPTY(PROC_INH_HEAD(_proc))
+/**
+ * Test if a process doesn't have any children.
+ * @param _proc is a pointer to the process.
+ */
+#define PROC_INH_IS_EMPTY(_proc) SLIST_EMPTY(PROC_INH_HEAD(_proc))
 
+/**
+ * Get a pointer to the first child of a process.
+ * @param _proc is a pointer to the process.
+ */
 #define PROC_INH_FIRST(_proc) SLIST_FIRST(PROC_INH_HEAD(_proc))
 
 #define PROC_INH_FOREACH(_var, _proc) \
@@ -202,8 +213,24 @@ struct proc_info {
     SLIST_SWAP(PROC_INH_HEAD(_proc1), PROC_INH_HEAD(_proc2), \
                inh.child_list_entry)
 
+/**
+ * Lock type used for a inheritance lsit synchronization.
+ * @{
+ */
+
+/**
+ * Type.
+ */
 #define PROC_INH_LOCK_TYPE (MTX_TYPE_SPIN)
 
+/**
+ * Options.
+ */
+#define PROC_INH_LOCK_OPT  (0)
+
+/**
+ * @}
+ */
 
 extern int maxproc;                 /*!< Maximum # of processes, set. */
 extern int act_maxproc;             /*!< Effective maxproc. */
