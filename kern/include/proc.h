@@ -157,7 +157,53 @@ struct proc_info {
     struct thread_info * main_thread; /*!< Main thread of this process. */
 };
 
+#define PROC_INH_HEAD(_proc) (&(_proc)->inh.child_list_head)
+
+#define PROC_INH_EMPTY(_proc) \
+    SLIST_EMPTY(PROC_INH_HEAD(_proc))
+
+#define PROC_INH_FIRST(_proc) SLIST_FIRST(PROC_INH_HEAD(_proc))
+
+#define PROC_INH_FOREACH(_var, _proc) \
+    SLIST_FOREACH((_var), PROC_INH_HEAD(_proc), inh.child_list_entry)
+
+#define PROC_INH_FOREACH_FROM(_var, _proc) \
+    SLIST_FOREACH_FROM((_var), PROC_INH_HEAD(_proc), inh.child_list_entry)
+
+#define PROC_INH_FOREACH_SAFE(_var, _tmp_var, _proc) \
+    SLIST_FOREACH_SAFE((_var), PROC_INH_HEAD(_proc), inh.child_list_entry, \
+                       (_tmp_var))
+
+#define PROC_INH_FOREACH_FROM_SAFE(_var, _tmp_var, _proc) \
+    SLIST_FOREACH_SAFE((_var), PROC_INH_HEAD(_proc), inh.child_list_entry, \
+                       (_tmp_var))
+
+#define PROC_INH_INIT(_proc) SLIST_INIT(PROC_INH_HEAD(_proc))
+
+#define PROC_INH_INSERT_AFTER(_elm1, _elm2) \
+    SLIST_INSERT_AFTER((_elm1), _elm2, inh.child_list_entry)
+
+#define PROC_INH_INSERT_HEAD(_proc, _elm) \
+    SLIST_INSERT_HEAD(PROC_INH_HEAD(_proc), (_elm), inh.child_list_entry)
+
+#define PROC_INH_NEXT(_elm) \
+    SLIST_NEXT((_elm), inh.child_list_entry)
+
+#define PROC_INH_REMOVE_AFTER(_elm) \
+    SLIST_REMOVE_AFTER((_elm), inh.child_list_entry)
+
+#define PROC_INH_REMOVE_HEAD(_proc) \
+    SLIST_REMOVE_HEAD(PROC_INH_HEAD(_proc), inh.child_list_entry)
+
+#define PROC_INH_REMOVE(_proc, _elm) \
+    SLIST_REMOVE(PROC_INH_HEAD(_proc), (_elm), proc_info, inh.child_list_entry)
+
+#define PROC_INH_SWAP(_proc1, _proc2) \
+    SLIST_SWAP(PROC_INH_HEAD(_proc1), PROC_INH_HEAD(_proc2), \
+               inh.child_list_entry)
+
 #define PROC_INH_LOCK_TYPE (MTX_TYPE_SPIN)
+
 
 extern int maxproc;                 /*!< Maximum # of processes, set. */
 extern int act_maxproc;             /*!< Effective maxproc. */

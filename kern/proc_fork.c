@@ -230,11 +230,10 @@ static void set_proc_inher(struct proc_info * old_proc,
 
     mtx_init(&new_proc->inh.lock, PROC_INH_LOCK_TYPE, 0);
     new_proc->inh.parent = old_proc;
-    SLIST_INIT(&new_proc->inh.child_list_head);
+    PROC_INH_INIT(new_proc);
 
     mtx_lock(&old_proc->inh.lock);
-    SLIST_INSERT_HEAD(&old_proc->inh.child_list_head, new_proc,
-                      inh.child_list_entry);
+    PROC_INH_INSERT_HEAD(old_proc, new_proc);
     mtx_unlock(&old_proc->inh.lock);
 }
 

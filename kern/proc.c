@@ -260,7 +260,7 @@ int procarr_realloc(void)
 {
     struct proc_info * (*tmp)[];
 
-    /* Skip if size is not changed */
+    /* Skip if the size is not changed */
     if (maxproc == act_maxproc)
         return 0;
 
@@ -271,7 +271,7 @@ int procarr_realloc(void)
 
     PROC_LOCK();
     tmp = krealloc(_procarr, SIZEOF_PROCARR());
-    if ((tmp == 0) && (_procarr == 0)) {
+    if (!tmp && !_procarr) {
         KERROR(KERROR_WARN, "Unable to allocate _procarr (%u bytes)",
                SIZEOF_PROCARR());
 
@@ -337,15 +337,14 @@ static void proc_remove(struct proc_info * proc)
     parent = proc->inh.parent;
     if (parent) {
         mtx_lock(&parent->inh.lock);
-        SLIST_REMOVE(&parent->inh.child_list_head, proc, proc_info,
-                     inh.child_list_entry);
+        PROC_INH_REMOVE(parent, proc);
         mtx_unlock(&parent->inh.lock);
     }
 
     /*
      * Adopt children to PID 1 if any.
      */
-    if (!SLIST_EMPTY(&proc->inh.child_list_head)) {
+    if (!PROC_INH_EMPTY(proc)) {
         struct proc_info * init;
         struct proc_info * child;
         struct proc_info * child_tmp;
@@ -355,16 +354,13 @@ static void proc_remove(struct proc_info * proc)
             panic("init not found\n");
 
         mtx_lock(&proc->inh.lock);
-        SLIST_FOREACH_SAFE(child, &proc->inh.child_list_head,
-                           inh.child_list_entry, child_tmp) {
-            SLIST_REMOVE(&proc->inh.child_list_head, child,
-                         proc_info, inh.child_list_entry);
+        PROC_INH_FOREACH_SAFE(child, child_tmp, proc) {
+            PROC_INH_REMOVE(proc, child);
 
             child->inh.parent = init; /* re-parent */
             mtx_lock(&init->inh.lock);
-            SLIST_INSERT_HEAD(&init->inh.child_list_head, child,
-                              inh.child_list_entry);
-           mtx_unlock(&init->inh.lock);
+            PROC_INH_INSERT_HEAD(init, child);
+            mtx_unlock(&init->inh.lock);
         }
         mtx_unlock(&proc->inh.lock);
         proc_unref(init);
@@ -474,15 +470,14 @@ const char * proc_state2str(enum proc_state state)
 struct thread_info * proc_iterate_threads(const struct proc_info * proc,
                                           struct thread_info ** thread_it)
 {
-    if (*thread_it == NULL) {
+    struct thread_info * tmp = *thread_it;
+
+    if (!tmp)
         *thread_it = proc->main_thread;
-    } else {
-        if (*thread_it == proc->main_thread) {
-            *thread_it = (*thread_it)->inh.first_child;
-        } else {
-            *thread_it = (*thread_it)->inh.next_child;
-        }
-    }
+    else if (tmp == proc->main_thread)
+        *thread_it = (*thread_it)->inh.first_child;
+    else
+        *thread_it = (*thread_it)->inh.next_child;
 
     return *thread_it;
 }
@@ -523,10 +518,11 @@ void proc_thread_removed(pid_t pid, pthread_t thread_id)
 void proc_update_times(void)
 {
     if (thread_flags_is_set(current_thread, SCHED_INSYS_FLAG) &&
-        thread_state_get(current_thread) != THREAD_STATE_BLOCKED)
+        thread_state_get(current_thread) != THREAD_STATE_BLOCKED) {
         curproc->tms.tms_stime++;
-    else
+    } else {
         curproc->tms.tms_utime++;
+    }
 }
 
 #if defined(configPROC_DEBUG) || defined(configVM_DEBUG)
@@ -713,7 +709,7 @@ static int sys_proc_wait(__user void * user_args)
         set_errno(ENOTSUP);
         return -1;
     } else if (args.pid == -1) {
-        child = SLIST_FIRST(&curproc->inh.child_list_head);
+        child = PROC_INH_FIRST(curproc);
     } else if (args.pid < -1) {
         /*
          * TODO
@@ -727,7 +723,7 @@ static int sys_proc_wait(__user void * user_args)
         struct proc_info * tmp;
 
         p = proc_ref(args.pid, PROC_NOT_LOCKED);
-        tmp = SLIST_FIRST(&curproc->inh.child_list_head);
+        tmp = PROC_INH_FIRST(curproc);
         if (!p || !tmp) {
             set_errno(ECHILD);
             return -1;
@@ -737,8 +733,7 @@ static int sys_proc_wait(__user void * user_args)
          * Check that p is a child of curproc.
          */
         mtx_lock(&curproc->inh.lock);
-        SLIST_FOREACH(tmp, &curproc->inh.child_list_head, inh.child_list_entry)
-        {
+        PROC_INH_FOREACH(tmp, curproc) {
             if (tmp->pid == p->pid) {
                 child = p;
                 break;
