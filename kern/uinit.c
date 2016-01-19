@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   System init for Zero Kernel.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,7 +54,7 @@ static int _mkdir(const char * path, mode_t mode)
         .mode = mode
     };
 
-    return syscall(SYSCALL_FS_MKDIR, &args);
+    return (int)syscall(SYSCALL_FS_MKDIR, &args);
 }
 
 static int _mount(const char * source, const char * target, const char * type)
@@ -71,7 +71,7 @@ static int _mount(const char * source, const char * target, const char * type)
 
     strcpy((char *)args.fsname, type);
 
-    return syscall(SYSCALL_FS_MOUNT, &args);
+    return (int)syscall(SYSCALL_FS_MOUNT, &args);
 }
 
 static int _chdir(char * path)
@@ -87,7 +87,7 @@ static int _chdir(char * path)
 
 static int _chrootcwd(void)
 {
-    return syscall(SYSCALL_PROC_CHROOT, NULL);
+    return (int)syscall(SYSCALL_PROC_CHROOT, NULL);
 }
 
 static int _execve(const char * path, char * const argv[], size_t nargv,
@@ -107,14 +107,14 @@ static int _execve(const char * path, char * const argv[], size_t nargv,
     };
     int retval = 0;
 
-    exec_args.fd = syscall(SYSCALL_FS_OPEN, &open_args);
+    exec_args.fd = (int)syscall(SYSCALL_FS_OPEN, &open_args);
     if (exec_args.fd >= 0) {
-        retval = syscall(SYSCALL_EXEC_EXEC, &exec_args);
+        retval = (int)syscall(SYSCALL_EXEC_EXEC, &exec_args);
     } else {
         return -1;
     }
 
-    syscall(SYSCALL_FS_CLOSE, (void *)exec_args.fd);
+    (void)syscall(SYSCALL_FS_CLOSE, (void *)exec_args.fd);
 
     return retval;
 }
@@ -139,7 +139,7 @@ static void init_errno(void)
     ep = &tls->errno_val;
 }
 
-static void get_rootfs(char * root, char * fsname, const char * rootfs)
+static void get_rootfs(char root[40], char fsname[10], const char * rootfs)
 {
     const char delim[] = " ";
     char str[40];
@@ -154,10 +154,10 @@ static void get_rootfs(char * root, char * fsname, const char * rootfs)
 
     token = strsep(&strp, delim);
     if (token)
-        strlcpy(root, token, 40);
+        strlcpy(root, token, sizeof(root));
     token = strsep(&strp, delim);
     if (token)
-        strlcpy(fsname, token, 10);
+        strlcpy(fsname, token, sizeof(fsname));
 }
 
 /**
@@ -171,7 +171,7 @@ void * uinit(void * arg)
     char root[40];
     char fsname[10];
     char * argv[] = { "/sbin/sinit", NULL };
-    char * env[] = {  NULL };
+    char * env[] = { NULL };
 
     init_errno();
 
