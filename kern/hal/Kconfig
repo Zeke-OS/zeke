@@ -5,6 +5,7 @@ menu "HW features"
 config configATAG
     bool "Support bootloader ATAGs"
     default y
+    depends on configHAVE_ATAGS
     ---help---
         Linux ATAGs support. ATAGs are used to describe the current hardware
         configuration on some systems where a Linux compatible bootloader is
@@ -29,11 +30,17 @@ config configMMU_DEBUG
     bool "MMU debugging"
     default n
     depends on configMMU
+    ---help---
+    Enable MMU debugging.
 
 config configUART
     bool "UART support"
     default y
     select configDEVFS
+    ---help---
+    Have a unix-style devfs for accessing device drivers.
+
+    If unsure, say Y.
 
 if configUART
 
@@ -41,6 +48,8 @@ config configUART_MAX_PORTS
     int "Maximum number of UART ports"
     default 2
     range 1 256
+    ---help---
+    Maximum number of generic UART ports supported.
 
 endif
 

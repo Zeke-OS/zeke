@@ -126,7 +126,7 @@ config configMAXPROC
     default 50
     ---help---
     Default maximum number of processes. This is a sysctl tunable variable
-    and thus can be changed on runtime.
+    and thus can be changed at runtime.
 
 config configPROC_STACK_DFL
     int "Stack default size"
@@ -231,7 +231,7 @@ config configTIMERS_MAX
     default 16
     range 15 65535
     ---help---
-    Maximum number of timers available.
+    Maximum number of kernel timers available.
 
 config configUSRINIT_SSIZE
     int "init stack size"
@@ -252,6 +252,9 @@ menu "Kernel debugging"
 config configKASSERT
     bool "Kernel asserts"
     default n
+    ---help---
+    Enable KASSERT asserts in the kernel. Selecting this option will slightly
+    slow down the kernel.
 
 config configBUF_DEBUG
     bool "buffers debugging"
@@ -311,6 +314,9 @@ config configKLOCK_DLTHRES
     int "Klock deadlock detection threshold"
     default 19
     depends on configLOCK_DEBUG
+    ---help---
+    Try to detect spinlock deadlocks by using a try counter. Setting this option
+    to zero disables the deadlock detection.
 
 config configKMALLOC_DEBUG
     bool "kmalloc debugging"

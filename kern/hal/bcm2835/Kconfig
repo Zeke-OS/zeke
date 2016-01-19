@@ -7,6 +7,8 @@ config configBCM_FB
     default n
     depends on configFB && configBCM2835 && configBCM_MB
     select configRPI_HW
+    ---help---
+    Support for BCM2835 videocore.
 
 config configBCM_INFO
     bool "BCM2835 info"
