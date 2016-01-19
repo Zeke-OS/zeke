@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Header file for sysinfo.
  * @section LICENSE
- * Copyright (c) 2013, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,13 +37,14 @@
 #include <hal/mmu.h> /* to get MMU_PGSIZE_COARSE */
 #include <hal/sysinfo.h>
 
-sysinfo_t sysinfo = {
-    .hfp =
 #ifdef configUSE_HFP
-        1,
+#define IS_HFP_PLAT 1
 #else
-        0,
+#define IS_HFP_PLAT 0
 #endif
+
+sysinfo_t sysinfo = {
+    .hfp = IS_HFP_PLAT,
     .mem.size = configDYNMEM_SAFE_SIZE,
     .console = "/dev/ttyS0",
     .root = configROOTFS_PATH " " configROOTFS_NAME,
@@ -51,7 +52,7 @@ sysinfo_t sysinfo = {
 
 /* TODO HW_MODEL */
 
-SYSCTL_INT(_hw, HW_BYTEORDER, byteorder, CTLFLAG_RD, 0, _BYTE_ORDER,
+SYSCTL_INT(_hw, HW_BYTEORDER, byteorder, CTLFLAG_RD, NULL, _BYTE_ORDER,
            "Byte order");
 
 /* TODO HW_NCPU */
@@ -61,7 +62,7 @@ SYSCTL_UINT(_hw, HW_PHYSMEM, physmem, CTLFLAG_RD, &sysinfo.mem.size, 0,
 
 /* TODO HW_USERMEM */
 
-SYSCTL_UINT(_hw, HW_PAGESIZE, pagesize, CTLFLAG_RD, 0, MMU_PGSIZE_COARSE,
+SYSCTL_UINT(_hw, HW_PAGESIZE, pagesize, CTLFLAG_RD, NULL, MMU_PGSIZE_COARSE,
             "Page size");
 
 SYSCTL_UINT(_hw, HW_FLOATINGPT, floatingpt, CTLFLAG_RD, &sysinfo.hfp, 0,
