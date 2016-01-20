@@ -154,10 +154,10 @@ static void get_rootfs(char root[40], char fsname[10], const char * rootfs)
 
     token = strsep(&strp, delim);
     if (token)
-        strlcpy(root, token, sizeof(root));
+        strlcpy(root, token, 40);
     token = strsep(&strp, delim);
     if (token)
-        strlcpy(fsname, token, sizeof(fsname));
+        strlcpy(fsname, token, 10);
 }
 
 /**
