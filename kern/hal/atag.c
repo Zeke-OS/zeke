@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   ATAG scanner.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,10 +30,11 @@
  *******************************************************************************
  */
 
-#include <kstring.h>
-#include <kerror.h>
-#include <hal/sysinfo.h>
+#include <sys/sysctl.h>
 #include <hal/atag.h>
+#include <kerror.h>
+#include <kinit.h>
+#include <kstring.h>
 
 /* ATAGs */
 #define ATAG_NONE       0x00000000 /*!< End of list. */
@@ -47,6 +48,29 @@
 #define ATAG_VIDEOLFB   0x54410008 /*!< vesafb-type framebuffers init vals. */
 #define ATAG_CMDLINE    0x54410009 /*!< Command line to pass to kernel. */
 
+static void mtype2mib(uint32_t mtype)
+{
+    char hw_model[8];
+    int ctl_name[] = { CTL_HW, HW_MODEL };
+
+    /* TODO Translate number to machine name */
+    ksprintf(hw_model, sizeof(hw_model), "%d", mtype);
+
+    kernel_sysctl_write(ctl_name, num_elem(ctl_name),
+                        hw_model, sizeof(hw_model));
+}
+
+static void setmem(size_t start, size_t size)
+{
+    int ctl_start[] = { CTL_HW, HW_PHYSMEM_START };
+    int ctl_size[] = { CTL_HW, HW_PHYSMEM };
+
+    kernel_sysctl_write(ctl_start, num_elem(ctl_start),
+                        &start, sizeof(start));
+    kernel_sysctl_write(ctl_size, num_elem(ctl_size),
+                        &size, sizeof(size));
+}
+
 /**
  * ATAG scanner.
  * @note This function is called before intializers.
@@ -55,7 +79,7 @@ void atag_scan(uint32_t fw, uint32_t mtype, uint32_t * atag_addr)
 {
     uint32_t * atags;
 
-    sysinfo.mtype = mtype;
+    mtype2mib(mtype);
 
     if (atag_addr[0] == 0 || atag_addr[1] != ATAG_CORE) {
         KERROR(KERROR_WARN, "No ATAGs!\n");
@@ -75,7 +99,7 @@ void atag_scan(uint32_t fw, uint32_t mtype, uint32_t * atag_addr)
             KERROR(KERROR_INFO, "[ATAG_MEM] size: %x, start: %x\n",
                    atags[2], atags[3]);
 
-            sysinfo_setmem((size_t)atags[3], (size_t)atags[2]);
+            setmem((size_t)atags[3], (size_t)atags[2]);
             atags += atags[0]-1;
             break;
         case ATAG_VIDEOTEXT:
@@ -100,7 +124,7 @@ void atag_scan(uint32_t fw, uint32_t mtype, uint32_t * atag_addr)
             atags += 2;
 
             KERROR(KERROR_INFO, "[ATAG_CMDLINE] : %s\n", (char *)atags);
-            sysinfo_cmdline((const char *)atags);
+            kinit_parse_cmdline((const char *)atags);
 
             atags += atags[0]-1;
             break;

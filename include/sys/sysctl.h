@@ -104,6 +104,7 @@ struct ctlname {
 #define CTLFLAG_CAPRD   0x00008000  /*!< Can be read in capability mode */
 #define CTLFLAG_CAPWR   0x00004000  /*!< Can be written in capability mode */
 #define CTLFLAG_CAPRW   (CTLFLAG_CAPRD | CTLFLAG_CAPWR)
+#define CTLFLAG_KERWR   0x00000800  /*!< Writable by a kernel request. */
 
 /*
  * Secure level.   Note that CTLFLAG_SECURE == CTLFLAG_SECURE1.
@@ -250,6 +251,8 @@ struct sysctl_req {
     size_t validlen;
     int flags;
 };
+
+#define SYSCTL_REQFLAG_KERNEL 0x01 /*!< Kernel request. */
 
 SLIST_HEAD(sysctl_oid_list, sysctl_oid);
 
@@ -536,12 +539,13 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
 #define HW_MODEL                2   /*!< string: specific machine model */
 #define HW_NCPU                 3   /*!< int: number of cpus */
 #define HW_BYTEORDER            4   /*!< int: machine byte order */
-#define HW_PHYSMEM              5   /*!< int: total memory */
-#define HW_USERMEM              6   /*!< int: non-kernel memory */
-#define HW_PAGESIZE             7   /*!< int: software page size */
-#define HW_FLOATINGPT           8   /*!< int: has HW floating point? */
-#define HW_MACHINE_ARCH         9   /*!< string: machine architecture */
-#define HW_REALMEM              10  /*!< int: 'real' memory */
+#define HW_PHYSMEM_START        5   /*!< int: phys mem start */
+#define HW_PHYSMEM              6   /*!< int: total memory */
+#define HW_USERMEM              7   /*!< int: non-kernel memory */
+#define HW_PAGESIZE             8   /*!< int: software page size */
+#define HW_FLOATINGPT           9   /*!< int: has HW floating point? */
+#define HW_MACHINE_ARCH         10  /*!< string: machine architecture */
+#define HW_REALMEM              11  /*!< int: 'real' memory */
 
 #ifdef KERNEL_INTERNAL
 
@@ -576,8 +580,14 @@ int kernel_sysctlbyname(struct cred * cred, char * name, void * old,
  * @aram cred if NULL a default set of credentials is used.
  */
 int kernel_sysctl(struct cred * cred, int * name, unsigned int namelen,
-        void * old, size_t * oldlenp, void * new, size_t newlen,
-        size_t * retval, int flags);
+                  void * old, size_t * oldlenp, void * new, size_t newlen,
+                  size_t * retval, int flags);
+
+int kernel_sysctl_read(int * name, unsigned int namelen,
+                       void * old, size_t oldlen);
+
+int kernel_sysctl_write(int * name, unsigned int namelen,
+                            void * new, size_t newlen);
 
 int sys___sysctl(struct cred * cred, struct _sysctl_args * uap);
 

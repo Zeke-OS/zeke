@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   BCM2835 Info.
  * @section LICENSE
- * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,9 +37,9 @@
 #include "bcm2835_prop.h"
 
 /*
- * TODO This should provide an alternative for atags, sysinfo data.
+ * TODO This should provide an alternative for atags, hal_mib data.
  *      Maybe we should somehow cause a compilation error
- *      if there is multiple sysinfo provides.
+ *      if there is multiple hal_mib provides.
  */
 
 /**

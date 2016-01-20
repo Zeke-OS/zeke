@@ -88,6 +88,8 @@ void (*kputs)(const char *);
 
 void exec_initfn(int (*fn)(void));
 
+void kinit_parse_cmdline(const char * cmdline);
+
 #endif /* KINIT_H */
 
 /**

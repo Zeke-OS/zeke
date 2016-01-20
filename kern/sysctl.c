@@ -5,7 +5,7 @@
  *
  * @brief   sysctl kernel code.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1982, 1986, 1989, 1993
  *        The Regents of the University of California.  All rights reserved.
  *
@@ -810,6 +810,26 @@ out:
     return retval;
 }
 
+int kernel_sysctl_read(int * name, unsigned int namelen,
+                       void * old, size_t oldlen)
+{
+    size_t oldlen_ret = oldlen;
+    int retval;
+
+    retval = kernel_sysctl(NULL, name, namelen, old, &oldlen_ret, NULL, 0,
+                           NULL, 0);
+    if (oldlen_ret != oldlen)
+        return -EINVAL;
+    return retval;
+}
+
+int kernel_sysctl_write(int * name, unsigned int namelen,
+                        void * new, size_t newlen)
+{
+    return kernel_sysctl(NULL, name, namelen, NULL, NULL, new, newlen,
+                         NULL, SYSCTL_REQFLAG_KERNEL);
+}
+
 int kernel_sysctl(struct cred * cred, int * name, unsigned int namelen,
                   void * old, size_t * oldlenp, void * new, size_t newlen,
                   size_t * retval, int flags)
@@ -835,12 +855,9 @@ int kernel_sysctl(struct cred * cred, int * name, unsigned int namelen,
         req.oldlen = *oldlenp;
     }
     req.validlen = req.oldlen;
+    req.oldptr = old;
 
-    if (old) {
-        req.oldptr = old;
-    }
-
-    if (new != NULL) {
+    if (!new) {
         req.newlen = newlen;
         req.newptr = new;
     }
@@ -959,11 +976,15 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
          */
         if (oid->oid_handler == NULL)
             return -EISDIR;
-        }
+    }
 
     /* Is this sysctl writable? */
-    if (req->newptr && !(oid->oid_kind & CTLFLAG_WR))
+    if (req->newptr &&
+        (!(oid->oid_kind & CTLFLAG_WR) ||
+         !(req->flags & SYSCTL_REQFLAG_KERNEL &&
+           oid->oid_kind & CTLFLAG_KERWR))) {
         return -EPERM;
+    }
 
     /* Is this sysctl sensitive to securelevels? */
     if (req->newptr && (oid->oid_kind & CTLFLAG_SECURE)) {
@@ -974,7 +995,8 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
     }
 
     /* Is this sysctl writable by only privileged users? */
-    if (req->newptr && !(oid->oid_kind & CTLFLAG_ANYBODY)) {
+    if (req->newptr && !(req->flags & SYSCTL_REQFLAG_KERNEL) &&
+        !(oid->oid_kind & CTLFLAG_ANYBODY)) {
         int priv;
 
         priv = PRIV_SYSCTL_WRITE;

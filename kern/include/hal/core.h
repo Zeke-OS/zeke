@@ -52,6 +52,11 @@
 #error Selected ARM profile/architecture is not supported
 #endif
 
+#ifdef configUSE_HFP
+#define IS_HFP_PLAT 1
+#else
+#define IS_HFP_PLAT 0
+#endif
 
 /**
  * Type for storing interrupt state.

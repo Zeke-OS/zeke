@@ -34,7 +34,6 @@
 #include <sys/sysctl.h>
 #include <bitmap.h>
 #include <dynmem.h>
-#include <hal/sysinfo.h>
 #include <kerror.h>
 #include <klocks.h>
 #include <kmem.h>
@@ -176,13 +175,22 @@ static void mark_reserved_areas(void)
  */
 void dynmem_init(void)
 {
+    int ctl_start[] = { CTL_HW, HW_PHYSMEM_START };
+    int ctl_size[] = { CTL_HW, HW_PHYSMEM };
+    size_t mem_start, mem_size;
+
+    kernel_sysctl_read(ctl_start, num_elem(ctl_start),
+                       &mem_start, sizeof(size_t));
+    kernel_sysctl_read(ctl_size, num_elem(ctl_size),
+                       &mem_size, sizeof(size_t));
+
     /*
      * Set dynmem end address.
      */
-    if (sysinfo.mem.size > configDYNMEM_MAX_SIZE)
-        dynmem_end = sysinfo.mem.start + configDYNMEM_MAX_SIZE - 1;
+    if (mem_size > configDYNMEM_MAX_SIZE)
+        dynmem_end = mem_start + configDYNMEM_MAX_SIZE - 1;
     else
-        dynmem_end = sysinfo.mem.start + sysinfo.mem.size - 1;
+        dynmem_end = mem_start + mem_size - 1;
 
     mark_reserved_areas();
 }

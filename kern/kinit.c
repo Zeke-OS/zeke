@@ -56,12 +56,13 @@ extern int (*__fini_array_end []) (void) __attribute__((weak));
 
 static void exec_array(int (*a []) (void), int n);
 
-/*
- * Root fs to be mounted by uinit.
- * Note that the default value might be needed in case of read from sysctl
- * fails.
- */
-static char kinit_rootfs[40] = configROOTFS_PATH " " configROOTFS_NAME;
+/* Default tty. */
+static char console[16] = "/dev/ttyS0"; /* TODO use console value */
+
+/* Path and type of the root partition. */
+static char rootfs[16 + 8] = configROOTFS_PATH " " configROOTFS_NAME;
+SYSCTL_STRING(_kern, OID_AUTO, root, CTLFLAG_RD, rootfs, 0,
+              "Root fs and type");
 
 /**
  * Run all kernel module initializers.
@@ -108,7 +109,28 @@ void exec_fini_array(void)
     exec_array(__fini_array_start, n);
 }
 
-static void mount_rootfs(void)
+void kinit_parse_cmdline(const char * cmdline)
+{
+    const char cmdline_console[] = "console=";
+    const char cmdline_root[] = "root=";
+    const char cmdline_rootfstype[] = "rootfstype=";
+    const char * s;
+    const char * root;
+    const char * rootfstype;
+
+    s = strstr(cmdline, cmdline_console);
+    if (s) {
+        strlcpy(console, s + sizeof(cmdline_console),
+                sizeof(console));
+    }
+
+    root = strstr(cmdline, cmdline_root);
+    rootfstype = strstr(cmdline, cmdline_rootfstype);
+    if (root && rootfstype)
+        ksprintf(rootfs, sizeof(rootfs), "%s %s", root, rootfstype);
+}
+
+static void mount_tmp_rootfs(void)
 {
     const char failed[] = "Failed to mount rootfs";
     vnode_t * tmp = NULL;
@@ -175,7 +197,7 @@ static pthread_t create_uinit_main(void * stack_addr)
         .start      = uinit, /* We have to first get into user space to use exec
                               * and mount the rootfs.
                               */
-        .arg1       = (uintptr_t)kinit_rootfs,
+        .arg1       = (uintptr_t)rootfs,
         .del_thread = (void (*)(void *))uinit_exit,
     };
 
@@ -217,18 +239,8 @@ int __kinit__ kinit(void)
     pid_t pid;
     struct thread_info * init_thread;
     struct proc_info * init_proc;
-    size_t rootfs_len = sizeof(kinit_rootfs);
 
-    mount_rootfs();
-
-    /*
-     * Get params for the actual root file systems.
-     */
-    if (kernel_sysctlbyname(NULL, "kern.root", kinit_rootfs, &rootfs_len,
-                            NULL, 0, NULL, 0)) {
-        KERROR(KERROR_ERR,
-               "Unable to get rootfs params, fallback to defaults\n");
-    }
+    mount_tmp_rootfs();
 
     /*
      * User stack for init
