@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   User io.
  * @section LICENSE
- * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,8 +32,10 @@
 
 #include <errno.h>
 #include <buf.h>
-#include <uio.h>
+#include <kerror.h>
+#include <kstring.h>
 #include <proc.h>
+#include <uio.h>
 #include <vm/vm.h>
 
 int uio_init_kbuf(struct uio * uio, __kernel void * kbuf, size_t size)

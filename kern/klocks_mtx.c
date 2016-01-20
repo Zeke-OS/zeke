@@ -107,7 +107,7 @@ int _mtx_lock(mtx_t * mtx, char * whr)
     }
 
     while (1) {
-#ifdef configLOCK_DEBUG && (configKLOCK_DLTHRES > 0)
+#if defined(configLOCK_DEBUG) && (configKLOCK_DLTHRES > 0)
         /*
          * TODO Deadlock detection threshold should depend on lock type and
          *      current priorities.

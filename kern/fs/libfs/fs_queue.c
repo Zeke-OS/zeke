@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Generic queue for fs implementations.
  * @section LICENSE
- * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,9 +31,10 @@
  */
 
 #include <errno.h>
-#include <fs/fs_queue.h>
-#include <libkern.h>
 #include <machine/atomic.h>
+#include <fs/fs_queue.h>
+#include <kerror.h>
+#include <libkern.h>
 
 /**
  * FSQ signaling end points.

@@ -37,7 +37,8 @@
 #include <sys/elf32.h>
 #include <buf.h>
 #include <fs/fs.h>
-#include <hal/sysinfo.h>
+#include <hal/core.h>
+#include <kerror.h>
 #include <kmalloc.h>
 #include <proc.h>
 
@@ -140,7 +141,7 @@ static size_t thread_prstatus(const struct proc_info * proc,
         .pr_pgrp = proc->pgrp->pg_id,
         .pr_sid = proc->pgrp->pg_session->s_leader,
         /* TODO set times */
-        .pr_fpvalid = (sysinfo.hfp) ? 1 : 0,
+        .pr_fpvalid = (IS_HFP_PLAT) ? 1 : 0,
     };
     const sw_stack_frame_t * sf = NULL;
 

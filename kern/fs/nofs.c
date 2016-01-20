@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Virtual file system, nofs.
  * @section LICENSE
- * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,8 +32,9 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#include <proc.h>
 #include <fs/fs.h>
+#include <kstring.h>
+#include <proc.h>
 
 const vnode_ops_t nofs_vnode_ops = {
     .lock = fs_enotsup_lock,
