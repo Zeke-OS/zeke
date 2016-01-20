@@ -980,8 +980,8 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
 
     /* Is this sysctl writable? */
     if (req->newptr &&
-        (!(oid->oid_kind & CTLFLAG_WR) ||
-         !(req->flags & SYSCTL_REQFLAG_KERNEL &&
+        !(oid->oid_kind & CTLFLAG_WR ||
+          (req->flags & SYSCTL_REQFLAG_KERNEL &&
            oid->oid_kind & CTLFLAG_KERWR))) {
         return -EPERM;
     }
