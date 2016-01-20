@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Kernel space locks.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -107,7 +107,7 @@ int _mtx_lock(mtx_t * mtx, char * whr)
     }
 
     while (1) {
-#ifdef configLOCK_DEBUG
+#ifdef configLOCK_DEBUG && (configKLOCK_DLTHRES > 0)
         /*
          * TODO Deadlock detection threshold should depend on lock type and
          *      current priorities.
