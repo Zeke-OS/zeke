@@ -587,7 +587,7 @@ int kernel_sysctl_read(int * name, unsigned int namelen,
                        void * old, size_t oldlen);
 
 int kernel_sysctl_write(int * name, unsigned int namelen,
-                            void * new, size_t newlen);
+                        const void * new, size_t newlen);
 
 int sys___sysctl(struct cred * cred, struct _sysctl_args * uap);
 

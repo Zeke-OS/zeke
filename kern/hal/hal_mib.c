@@ -45,7 +45,7 @@ SYSCTL_NODE(_hw, OID_AUTO, pm, CTLFLAG_RW, 0,
 
 /* TODO HW_MACHINE */
 
-static char hw_model[16];
+static char hw_model[40];
 SYSCTL_STRING(_hw, HW_MODEL, model, CTLFLAG_RD | CTLFLAG_KERWR,
               hw_model, sizeof(hw_model),
               "HW model");

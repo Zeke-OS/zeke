@@ -48,16 +48,30 @@
 #define ATAG_VIDEOLFB   0x54410008 /*!< vesafb-type framebuffers init vals. */
 #define ATAG_CMDLINE    0x54410009 /*!< Command line to pass to kernel. */
 
+struct mach_model {
+    int id;
+    const char * const name;
+};
+
+static const struct mach_model machs[] = {
+    { 3138, "Broadcom BCM2708 Video Coprocessor" },
+    { 4828, "bcm" },
+    { -1, "Unknown ARM" }
+};
+
 static void mtype2mib(uint32_t mtype)
 {
-    char hw_model[8];
+    const struct mach_model * mach = machs;
+    size_t len;
     int ctl_name[] = { CTL_HW, HW_MODEL };
 
-    /* TODO Translate number to machine name */
-    ksprintf(hw_model, sizeof(hw_model), "%d", mtype);
+    while (mach->id > 0 || mach->id != (int)mtype) {
+        mach++;
+    }
+    len = strlenn(mach->name, 40);
 
     kernel_sysctl_write(ctl_name, num_elem(ctl_name),
-                        hw_model, sizeof(hw_model));
+                        mach->name, len);
 }
 
 static void setmem(size_t start, size_t size)
@@ -93,32 +107,32 @@ void atag_scan(uint32_t fw, uint32_t mtype, uint32_t * atag_addr)
                     "[ATAG_CORE] flags: %x, page size: %u, rootdev: %u\n",
                     atags[2], atags[3], atags[4]);
 
-            atags += atags[0]-1;
+            atags += atags[0] - 1;
             break;
         case ATAG_MEM:
             KERROR(KERROR_INFO, "[ATAG_MEM] size: %x, start: %x\n",
                    atags[2], atags[3]);
 
             setmem((size_t)atags[3], (size_t)atags[2]);
-            atags += atags[0]-1;
+            atags += atags[0] - 1;
             break;
         case ATAG_VIDEOTEXT:
-            atags += atags[0]-1;
+            atags += atags[0] - 1;
             break;
         case ATAG_RAMDISK:
-            atags += atags[0]-1;
+            atags += atags[0] - 1;
             break;
         case ATAG_INITRD2:
-            atags += atags[0]-1;
+            atags += atags[0] - 1;
             break;
         case ATAG_SERIAL:
-            atags += atags[0]-1;
+            atags += atags[0] - 1;
             break;
         case ATAG_REVISION:
-            atags += atags[0]-1;
+            atags += atags[0] - 1;
             break;
         case ATAG_VIDEOLFB:
-            atags += atags[0]-1;
+            atags += atags[0] - 1;
             break;
         case ATAG_CMDLINE:
             atags += 2;
@@ -126,7 +140,7 @@ void atag_scan(uint32_t fw, uint32_t mtype, uint32_t * atag_addr)
             KERROR(KERROR_INFO, "[ATAG_CMDLINE] : %s\n", (char *)atags);
             kinit_parse_cmdline((const char *)atags);
 
-            atags += atags[0]-1;
+            atags += atags[0] - 1;
             break;
         default:
             break;

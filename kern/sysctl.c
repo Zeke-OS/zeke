@@ -824,9 +824,9 @@ int kernel_sysctl_read(int * name, unsigned int namelen,
 }
 
 int kernel_sysctl_write(int * name, unsigned int namelen,
-                        void * new, size_t newlen)
+                        const void * new, size_t newlen)
 {
-    return kernel_sysctl(NULL, name, namelen, NULL, NULL, new, newlen,
+    return kernel_sysctl(NULL, name, namelen, NULL, NULL, (void *)new, newlen,
                          NULL, SYSCTL_REQFLAG_KERNEL);
 }
 
