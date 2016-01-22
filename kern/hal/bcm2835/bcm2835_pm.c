@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   BCM2835 PM.
  * @section LICENSE
- * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,7 @@
 #include "bcm2835_prop.h"
 #include "bcm2835_pm.h"
 
-int bcm2835_pm_get_power_state(uint32_t devid)
+int bcm2835_pm_get_power_state(enum bcm2835_pm_devid devid)
 {
     /*
      * Doesn't necessarily need to be aligned but it may make memcpy faster
@@ -66,7 +66,7 @@ int bcm2835_pm_get_power_state(uint32_t devid)
     return (mbuf[6] & 1);
 }
 
-int bcm2835_pm_set_power_state(uint32_t devid, int state)
+int bcm2835_pm_set_power_state(enum bcm2835_pm_devid devid, int state)
 {
     uint32_t mbuf[8] __attribute__((aligned (16)));
 
@@ -100,7 +100,7 @@ int bcm2835_pm_set_power_state(uint32_t devid, int state)
  * @param devid is the id of the device.
  * @return Returns a wait time in usec.
  */
-int bcm2835_pm_get_timing(uint32_t devid)
+int bcm2835_pm_get_timing(enum bcm2835_pm_devid devid)
 {
     uint32_t mbuf[7] __attribute__((aligned (16)));
     int err;

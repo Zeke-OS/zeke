@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   BCM2835 PM.
  * @section LICENSE
- * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,15 +37,17 @@
 /*
  * BCM2835 Power Management Device IDs
  */
-#define BCM2835_SD      0x00000000 /*!< SD Card device id. */
-#define BCM2835_UART0   0x00000001 /*!< UART0 device id. */
-#define BCM2835_UART1   0x00000002 /*!< UART1 device id. */
-#define BCM2835_USB     0x00000003 /*!< USB HCD device id. */
-#define BCM2835_I2C0    0x00000004 /*!< I2C0 device id. */
-#define BCM2835_I2C1    0x00000005 /*!< I2C1 device id. */
-#define BCM2835_I2C2    0x00000006 /*!< I2C2 device id. */
-#define BCM2835_SPI     0x00000007 /*!< SPI device id. */
-#define BCM2835_CCP2TX  0x00000008 /*!< CCP2TX device id. */
+enum bcm2835_pm_devid {
+    BCM2835_SD      = 0x00000000, /*!< SD Card device id. */
+    BCM2835_UART0   = 0x00000001, /*!< UART0 device id. */
+    BCM2835_UART1   = 0x00000002, /*!< UART1 device id. */
+    BCM2835_USB     = 0x00000003, /*!< USB HCD device id. */
+    BCM2835_I2C0    = 0x00000004, /*!< I2C0 device id. */
+    BCM2835_I2C1    = 0x00000005, /*!< I2C1 device id. */
+    BCM2835_I2C2    = 0x00000006, /*!< I2C2 device id. */
+    BCM2835_SPI     = 0x00000007, /*!< SPI device id. */
+    BCM2835_CCP2TX  = 0x00000008, /*!< CCP2TX device id. */
+};
 
 /**
  * Get device power state.
@@ -53,12 +55,12 @@
  *          Otherwise a negative errno value is returned.
  *
  */
-int bcm2835_pm_get_power_state(uint32_t devid);
+int bcm2835_pm_get_power_state(enum bcm2835_pm_devid devid);
 
 /**
  * Set device power state.
  */
-int bcm2835_pm_set_power_state(uint32_t devid, int state);
+int bcm2835_pm_set_power_state(enum bcm2835_pm_devid devid, int state);
 
 /**
  * Get wait time required after turning on a device.
@@ -68,6 +70,6 @@ int bcm2835_pm_set_power_state(uint32_t devid, int state);
  * @param devid is the id of the device.
  * @return Returns a wait time in usec.
  */
-int bcm2835_pm_get_timing(uint32_t devid);
+int bcm2835_pm_get_timing(enum bcm2835_pm_devid devid);
 
 #endif /* BCM2835_PM_H */
