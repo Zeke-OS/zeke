@@ -848,16 +848,13 @@ int kernel_sysctl(struct cred * cred, int * name, unsigned int namelen,
     req.cred = cred;
     req.flags = flags;
 
-    if (!req.cred)
-        return -EINVAL;
-
     if (oldlenp) {
         req.oldlen = *oldlenp;
     }
     req.validlen = req.oldlen;
     req.oldptr = old;
 
-    if (!new) {
+    if (new) {
         req.newlen = newlen;
         req.newptr = new;
     }
