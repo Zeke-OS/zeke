@@ -31,48 +31,37 @@
  */
 
 #include <errno.h>
+#include <sys/sysctl.h>
 #include <kerror.h>
 #include <kinit.h>
+#include <kstring.h>
 #include <libkern.h>
 #include "bcm2835_prop.h"
 
-/*
- * TODO This should provide an alternative for atags, hal_mib data.
- *      Maybe we should somehow cause a compilation error
- *      if there is multiple hal_mib provides.
- */
-
-/**
- * @param name is prined before the tag value.
- * @param tag is the tag id.
- * @param wc is the size of the property in words.
- */
-static void print_prop(char * name, uint32_t tag, size_t wc)
+static int get_info_prop(uint32_t * value, size_t value_size, uint32_t tag)
 {
+    size_t wc = value_size / 4;
     uint32_t mbuf[6 + wc] __attribute__((aligned (16)));
     int err;
-    char buf[80];
-    char * s;
 
     mbuf[0] = sizeof(mbuf);         /* Size */
     mbuf[1] = BCM2835_PROP_REQUEST; /* Request */
     /* Tags */
     mbuf[2] = tag;
-    mbuf[3] = wc * 4;
+    mbuf[3] = value_size;
     mbuf[4] = 0; /* Request len always zero */
     mbuf[5 + wc] = BCM2835_PROP_TAG_END;
 
     err = bcm2835_prop_request(mbuf);
     if (err) {
-        KERROR(KERROR_INFO, "bcm2835_info %s: ERR %d\n", name, err);
-        return;
+        return err;
     }
 
-    s = buf;
-    for (size_t i = 0; i < wc; i++) {
-        s += ksprintf(s, buf + sizeof(buf) - s, "%x ", mbuf[5 + i]) - 1;
+    while (wc--) {
+        value[wc] = mbuf[5 + wc];
     }
-    KERROR(KERROR_INFO, "bcm2835_info %s: %s\n", name, buf);
+
+    return 0;
 }
 
 int __kinit__ bcm2835_info_init(void)
@@ -80,11 +69,37 @@ int __kinit__ bcm2835_info_init(void)
     SUBSYS_DEP(bcm2835_prop_init);
     SUBSYS_INIT("BCM2835_info");
 
-    kputs("\n");
-    print_prop("firmware", 0x00000001, 1);
-    print_prop("board model", 0x00010001, 1);
-    print_prop("board rev", 0x00010002, 1);
-    print_prop("board serial", 0x00010004, 2);
+    uint32_t value[2];
+
+    /*
+     * HW_MODEL
+     */
+    if (!get_info_prop(value, 4, BCM2835_PROP_TAG_GET_GET_BOARD_MODEL)) {
+        char hw_model[20];
+        int ctl_name[] = { CTL_HW, HW_MODEL };
+
+        ksprintf(hw_model, sizeof(hw_model), "BCM2835 model %d", value[0]);
+        kernel_sysctl_write(ctl_name, num_elem(ctl_name),
+                            hw_model, sizeof(hw_model));
+    } else {
+        KERROR(KERROR_WARN, "%s: Failed to get board model\n", __func__);
+    }
+
+    /*
+     * HW_PHYSMEM_START & HW_PHYSMEM
+     */
+    if (!get_info_prop(value, 8, BCM2835_PROP_TAG_GET_ARM_MEMORY)) {
+        int ctl_start[] = { CTL_HW, HW_PHYSMEM_START };
+        int ctl_size[] = { CTL_HW, HW_PHYSMEM };
+
+        kernel_sysctl_write(ctl_start, num_elem(ctl_start),
+                            &value[0], sizeof(uint32_t));
+        kernel_sysctl_write(ctl_size, num_elem(ctl_size),
+                            &value[1], sizeof(uint32_t));
+
+    } else {
+        KERROR(KERROR_WARN, "%s: Failed to get ARM memory info\n", __func__);
+    }
 
     return 0;
 }
