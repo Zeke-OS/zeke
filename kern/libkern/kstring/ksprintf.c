@@ -112,7 +112,7 @@ int ksprintf(char * str, size_t maxlen, const char * format, ...)
                 value.value_p = (void *)va_arg(args, void *);
                 break;
             default:
-                if (format[fmt_i] != '%') {
+                if (c != '%') {
                     flags = KSPRINTF_FMTFLAG_i;
                     value_size = sizeof(int);
                     value.value_int = (int)va_arg(args, int);
