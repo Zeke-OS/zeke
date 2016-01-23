@@ -67,6 +67,10 @@ int ksprintf(char * str, size_t maxlen, const char * format, ...)
             switch (c) {
             case '\0':
                 goto out;
+            case '%':
+                flags = 0;
+                value_size = 0;
+                break;
             case 'h':
                 if (format[fmt_i] == 'h') {
                     flags = KSPRINTF_FMTFLAG_hh;
@@ -112,14 +116,9 @@ int ksprintf(char * str, size_t maxlen, const char * format, ...)
                 value.value_p = (void *)va_arg(args, void *);
                 break;
             default:
-                if (c != '%') {
-                    flags = KSPRINTF_FMTFLAG_i;
-                    value_size = sizeof(int);
-                    value.value_int = (int)va_arg(args, int);
-                } else {
-                    flags = 0;
-                    value_size = 0;
-                }
+                flags = KSPRINTF_FMTFLAG_i;
+                value_size = sizeof(int);
+                value.value_int = (int)va_arg(args, int);
                 break;
             }
 
