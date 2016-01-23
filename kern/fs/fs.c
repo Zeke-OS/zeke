@@ -1130,7 +1130,7 @@ static int ksprintf_fmt_fs(KSPRINTF_FMTFUN_ARGS)
     return n;
 }
 
-static struct ksprintf_formatter ksprintf_fmt_fs_st = {
+static const struct ksprintf_formatter ksprintf_fmt_fs_st = {
     .flags = KSPRINTF_FMTFLAG_p,
     .specifier = 'p',
     .p_specifier = 'F',
@@ -1166,7 +1166,7 @@ static int ksprintf_fmt_vnode(KSPRINTF_FMTFUN_ARGS)
     return n;
 }
 
-static struct ksprintf_formatter ksprintf_fmt_vnode_st = {
+static const struct ksprintf_formatter ksprintf_fmt_vnode_st = {
     .flags = KSPRINTF_FMTFLAG_p,
     .specifier = 'p',
     .p_specifier = 'V',
