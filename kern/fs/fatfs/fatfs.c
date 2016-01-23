@@ -450,6 +450,11 @@ static void fatfs_event_file_closed(struct proc_info * p, file_t * file)
 {
     struct fatfs_inode * in = get_inode_of_vnode(file->vnode);
 
+    /*
+     * Sync on close.
+     */
+    f_sync(&in->fp, 0);
+
     atomic_dec(&in->open_count);
 }
 
