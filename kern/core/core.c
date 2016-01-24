@@ -117,23 +117,22 @@ static char * generate_core_name(struct proc_info * proc)
 
 int core_dump_by_curproc(struct proc_info * proc)
 {
-    char msghead[40];
+    char msghead[60];
     char * core_path;
     vnode_t * vn = NULL;
-    int fd = -1;
     file_t * file = NULL;
-    int err;
+    int fd = -1, err;
 
-    ksprintf(msghead, sizeof(msghead), "%s(%d) by %d:",
+    ksprintf(msghead, sizeof(msghead), "%s(%d) by PID %d: ",
              __func__, proc->pid, curproc->pid);
 
-    KERROR(KERROR_DEBUG, "%s Core dump requested\n", msghead);
+    KERROR(KERROR_DEBUG, "%sCore dump requested\n", msghead);
 
     core_path = generate_core_name(proc);
     err = fs_creat_curproc(core_path, curproc->files->umask, &vn);
     if (err) {
         KERROR(KERROR_ERR,
-               "%s Failed to create a core file: \"%s\"\n",
+               "%sFailed to create a core file: \"%s\"\n",
                msghead, core_path);
         goto out;
     }
@@ -142,7 +141,7 @@ int core_dump_by_curproc(struct proc_info * proc)
     fd = fs_fildes_create_curproc(vn, O_RDWR);
     if (fd < 0) {
         KERROR(KERROR_ERR,
-               "%s Failed to open a core file for write\n",
+               "%sFailed to open a core file for write\n",
                msghead);
         err = fd;
         goto out;
@@ -151,7 +150,7 @@ int core_dump_by_curproc(struct proc_info * proc)
     file = fs_fildes_ref(curproc->files, fd, 1);
     if (!file) {
         KERROR(KERROR_ERR,
-               "%s Failed to take a ref to a core file\n",
+               "%sFailed to take a ref to a core file\n",
                msghead);
         err = -EBADF;
         goto out;
