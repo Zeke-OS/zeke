@@ -57,7 +57,7 @@ static const char * const rpi_rev_name[] = {
 static int get_info_prop(uint32_t * value, size_t value_size, uint32_t tag)
 {
     size_t wc = value_size / 4;
-    uint32_t mbuf[6 + wc] __attribute__((aligned (16)));
+    uint32_t mbuf[6 + wc] __aligned(16);
     int err;
 
     mbuf[0] = sizeof(mbuf);         /* Size */
@@ -101,23 +101,14 @@ static void get_hw_model(void)
 
     ksprintf(hw_model, sizeof(hw_model), "BCM2835 board model %u%s",
              (unsigned)model, rev_str);
-    KERROR(KERROR_DEBUG, "%s\n", hw_model);
     kernel_sysctl_write(ctl_name, num_elem(ctl_name),
                         hw_model, strlenn(hw_model, sizeof(hw_model)));
 }
 
-int __kinit__ bcm2835_info_init(void)
+static void get_physmem(void)
 {
-    SUBSYS_DEP(bcm2835_prop_init);
-    SUBSYS_INIT("BCM2835_info");
-
     uint32_t value[2];
 
-    get_hw_model();
-
-    /*
-     * HW_PHYSMEM_START & HW_PHYSMEM
-     */
     if (!get_info_prop(value, sizeof(value),
                        BCM2835_PROP_TAG_GET_ARM_MEMORY)) {
         int ctl_start[] = { CTL_HW, HW_PHYSMEM_START };
@@ -131,6 +122,40 @@ int __kinit__ bcm2835_info_init(void)
     } else {
         KERROR(KERROR_WARN, "%s: Failed to get ARM memory info\n", __func__);
     }
+}
+
+static void get_cmdline(void)
+{
+    uint32_t buf[80 / sizeof(uint32_t)];
+    char * cmdline;
+    size_t len, cmdline_size = sizeof(buf) - sizeof(uint32_t);
+
+    if (get_info_prop(buf, sizeof(buf), BCM2835_PROP_TAG_GET_CMDLINE))
+        return;
+
+    len = buf[0];
+    cmdline = (char *)buf + sizeof(uint32_t);
+
+    if (len == 65535) /* (int16_t)-1, supposedly meaning invalid/empty. */
+        return;
+
+    if (len <= cmdline_size && cmdline[len - 1] != '\0')
+        cmdline[len - 1] = '\0';
+    else
+        cmdline[cmdline_size - 1] = '\0';
+
+    if (strlenn(cmdline, len) > 0)
+        kinit_parse_cmdline(cmdline);
+}
+
+int __kinit__ bcm2835_info_init(void)
+{
+    SUBSYS_DEP(bcm2835_prop_init);
+    SUBSYS_INIT("BCM2835_info");
+
+    get_hw_model();
+    get_physmem();
+    get_cmdline();
 
     return 0;
 }
