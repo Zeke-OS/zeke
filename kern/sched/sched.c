@@ -590,7 +590,7 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
     return thread_id;
 }
 
-pthread_t thread_fork(pid_t new_pid)
+struct thread_info * thread_fork(pid_t new_pid)
 {
     struct thread_info * const old_thread = current_thread;
     struct thread_info * new_thread;
@@ -603,12 +603,12 @@ pthread_t thread_fork(pid_t new_pid)
     new_id = atomic_inc(&next_thread_id);
     if (new_id < 0) {
         KERROR(KERROR_ERR, "Out of thread IDs");
-        return -EAGAIN;
+        return NULL;
     }
 
     new_thread = kmalloc(sizeof(struct thread_info));
     if (!new_thread)
-        return -EAGAIN;
+        return NULL;
 
     memcpy(new_thread, old_thread, sizeof(struct thread_info));
     new_thread->id       = new_id;
@@ -620,7 +620,7 @@ pthread_t thread_fork(pid_t new_pid)
     /* New thread kstack */
     if (!(new_thread->kstack_region = thread_alloc_kstack())) {
         kfree(new_thread);
-        return -EAGAIN;
+        return NULL;
     }
 
     mtx_lock(&CURRENT_CPU->lock);
@@ -643,7 +643,7 @@ pthread_t thread_fork(pid_t new_pid)
     /* The newly created thread shall remain in init state for now. */
 
     atomic_inc(&anr_threads);
-    return new_id;
+    return new_thread;
 }
 
 /* Thread state ***************************************************************/

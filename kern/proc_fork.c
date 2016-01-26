@@ -453,10 +453,9 @@ pid_t proc_fork(void)
         KERROR(KERROR_DEBUG,
                "Call thread_fork() to get a new main thread for the fork.\n");
 #endif
-        pthread_t new_tid = thread_fork(new_proc->pid);
-        if (new_tid <= 0) {
+        if (!(new_proc->main_thread = thread_fork(new_proc->pid))) {
 #ifdef configPROC_DEBUG
-            KERROR(KERROR_DEBUG, "thread_fork() failed\n");
+            KERROR(KERROR_DEBUG, "\tthread_fork() failed\n");
 #endif
             retval = -EAGAIN;
             goto out;
@@ -465,7 +464,6 @@ pid_t proc_fork(void)
 #ifdef configPROC_DEBUG
         KERROR(KERROR_DEBUG, "\tthread_fork() fork OK\n");
 #endif
-        new_proc->main_thread = thread_lookup(new_tid);
 
         /*
          * We set new proc's mpt as the current mpt because the new main thread

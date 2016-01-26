@@ -282,10 +282,11 @@ struct thread_info * thread_lookup(pthread_t thread_id);
  * as well. The new thread is exact clone of the current thread but with a new
  * kernel stack.
  * @param new_pid is the new process id, container of the thread.
- * @return  < 0 error;
- *          > 0 clone succeed and return value is the id of the new thread.
+ * @return If the current thread was forked succesfully the function returns
+ *         a pointer to the new thread_info struct;
+ *         Otherwise returns a NULL pointer.
  */
-pthread_t thread_fork(pid_t new_pid);
+struct thread_info * thread_fork(pid_t new_pid);
 
 /**
  * Mark a thread ready.
