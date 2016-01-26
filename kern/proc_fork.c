@@ -486,7 +486,7 @@ pid_t proc_fork(void)
 
     if (new_proc->main_thread) {
 #ifdef configPROC_DEBUG
-        KERROR(KERROR_DEBUG, "Exec new main_thread %d\n",
+        KERROR(KERROR_DEBUG, "Set the new main_thread (%d) ready\n",
                new_proc->main_thread->id);
 #endif
         thread_ready(new_proc->main_thread->id);
