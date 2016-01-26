@@ -525,7 +525,7 @@ void proc_update_times(void)
     }
 }
 
-#if defined(configPROC_DEBUG) || defined(configVM_DEBUG)
+#if defined(configPROC_DEBUG) && defined(configVM_DEBUG)
 #define PROC_ABO_DEBUG 1
 #endif
 
