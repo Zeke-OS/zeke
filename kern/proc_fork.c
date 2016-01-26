@@ -460,13 +460,18 @@ pid_t proc_fork(void)
 #endif
             retval = -EAGAIN;
             goto out;
-        } else if (new_tid > 0) { /* thread of the forking process returning */
-#ifdef configPROC_DEBUG
-            KERROR(KERROR_DEBUG, "\tthread_fork() fork OK\n");
-#endif
-            new_proc->main_thread = thread_lookup(new_tid);
-            new_proc->main_thread->curr_mpt = &new_proc->mm.mpt;
         }
+
+#ifdef configPROC_DEBUG
+        KERROR(KERROR_DEBUG, "\tthread_fork() fork OK\n");
+#endif
+        new_proc->main_thread = thread_lookup(new_tid);
+
+        /*
+         * We set new proc's mpt as the current mpt because the new main thread
+         * is going to return directly to the user space.
+         */
+        new_proc->main_thread->curr_mpt = &new_proc->mm.mpt;
     } else {
 #ifdef configPROC_DEBUG
         KERROR(KERROR_DEBUG, "No thread to fork.\n");
