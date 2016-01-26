@@ -465,7 +465,6 @@ pid_t proc_fork(void)
             KERROR(KERROR_DEBUG, "\tthread_fork() fork OK\n");
 #endif
             new_proc->main_thread = thread_lookup(new_tid);
-            new_proc->main_thread->pid_owner = new_proc->pid;
             new_proc->main_thread->curr_mpt = &new_proc->mm.mpt;
         }
     } else {
