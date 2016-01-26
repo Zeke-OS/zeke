@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   VM functions.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,6 @@
 #ifndef _VM_VM_H
 #define _VM_VM_H
 
-#include <fs/fs.h>
 #include <hal/mmu.h>
 #include <klocks.h>
 #include <sys/tree.h>
@@ -74,9 +73,6 @@ struct vm_mm_struct {
     mmu_pagetable_t mpt;        /*!< Process master page table. */
     /** RB tree of page tables */
     struct ptlist ptlist_head;
-#define MM_CODE_REGION  0
-#define MM_STACK_REGION 1
-#define MM_HEAP_REGION  2
     struct buf * (*regions)[]; /*!< Memory regions of a process.
                                  *   [0] = code         RORO
                                  *   [1] = stack        RWRW
@@ -86,6 +82,19 @@ struct vm_mm_struct {
     int nr_regions;             /*!< Number of regions allocated. */
     mtx_t regions_lock;
 };
+
+/**
+ * MM region indices.
+ * @{
+ */
+
+#define MM_CODE_REGION  0 /*!< Code region. */
+#define MM_STACK_REGION 1 /*!< Stack region. */
+#define MM_HEAP_REGION  2 /*!< Heap region. */
+
+/**
+ * @}
+ */
 
 /* Region insert operations */
 #define VM_INSOP_SET_PT  0x0001 /*!< Set default page tabe from process vpt. */

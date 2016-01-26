@@ -18,6 +18,7 @@
  */
 
 #include <errno.h>
+#include <limits.h>
 #include <sys/ioctl.h>
 #include <kactype.h>
 #include <kmalloc.h>

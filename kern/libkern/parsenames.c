@@ -31,6 +31,7 @@
  */
 
 #include <errno.h>
+#include <limits.h>
 #include <kstring.h>
 #include <kmalloc.h>
 #include <libkern.h>
