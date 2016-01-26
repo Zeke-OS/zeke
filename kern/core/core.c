@@ -126,7 +126,8 @@ int core_dump_by_curproc(struct proc_info * proc)
     ksprintf(msghead, sizeof(msghead), "%s(%d) by PID %d: ",
              __func__, proc->pid, curproc->pid);
 
-    KERROR(KERROR_DEBUG, "%sCore dump requested\n", msghead);
+    KERROR(KERROR_DEBUG, "%s\"%s\" Core dump requested\n",
+           msghead, curproc->name);
 
     core_path = generate_core_name(proc);
     err = fs_creat_curproc(core_path, curproc->files->umask, &vn);
