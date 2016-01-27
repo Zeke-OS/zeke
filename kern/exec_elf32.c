@@ -75,8 +75,9 @@ static int check_header(const struct elf32_header * hdr)
         hdr->e_ident[EI_DATA]       != elf_endian ||
         hdr->e_ident[EI_VERSION]    != EV_CURRENT ||
         hdr->e_phentsize            != sizeof(struct elf32_phdr) ||
-        hdr->e_version              != EV_CURRENT)
+        hdr->e_version              != EV_CURRENT) {
         return -ENOEXEC;
+    }
 
     /*
      * Make sure the machine type is supported.
@@ -87,8 +88,9 @@ static int check_header(const struct elf32_header * hdr)
 
     /* Other sanity checks */
     if (hdr->e_phentsize != sizeof(struct elf32_phdr) || hdr->e_phoff == 0 ||
-            hdr->e_phnum == 0)
+        hdr->e_phnum == 0) {
         return -ENOEXEC;
+    }
     if (hdr->e_shnum == 0 || hdr->e_shentsize != sizeof(struct elf32_shdr))
         return -ENOEXEC;
 
@@ -102,16 +104,25 @@ static int check_header(const struct elf32_header * hdr)
  */
 static int read_elf32_header(struct elf32_header * elfhdr, file_t * file)
 {
+    const size_t elf32_header_size = sizeof(struct elf32_header);
+    ssize_t bytes_read;
     vnode_t * vn = file->vnode;
     struct uio uio;
-    const size_t elf32_header_size = sizeof(struct elf32_header);
 
     /* Read elf header */
     if (vn->vnode_ops->lseek(file, 0, SEEK_SET) < 0)
         return -ENOEXEC;
+
     uio_init_kbuf(&uio, elfhdr, elf32_header_size);
-    if (vn->vnode_ops->read(file, &uio, elf32_header_size) != elf32_header_size)
+
+    bytes_read = vn->vnode_ops->read(file, &uio, elf32_header_size);
+    if (bytes_read != elf32_header_size) {
+#if defined(configEXEC_DEBUG)
+        KERROR(KERROR_DEBUG, "Reading elf failed (bytes_read = %d)\n",
+               (int)bytes_read);
+#endif
         return -ENOEXEC;
+    }
 
     /* Verify elf header */
     return check_header(elfhdr);

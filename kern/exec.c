@@ -68,8 +68,12 @@ static int load_proc_image(file_t * file, uintptr_t * vaddr_base,
             break;
     }
 
-    if (err)
+    if (err) {
+#if defined(configEXEC_DEBUG)
+        KERROR(KERROR_DEBUG, "Executable type not detected\n");
+#endif
         return err;
+    }
 
     /* Unload user regions before loading a new image. */
     (void)vm_unload_regions(curproc, MM_HEAP_REGION, -1);
@@ -163,12 +167,19 @@ int exec_file(int fildes, char name[PROC_NAME_LEN], struct buf * env_bp,
         goto fail;
     }
 
-    /* Load image and close the file */
     err = load_proc_image(file, &vaddr, &stack_size);
-    fs_fildes_ref(curproc->files, fildes, -1);
-    if (err || (err = fs_fildes_close(curproc, fildes))) {
+    if (err) {
+        fs_fildes_ref(curproc->files, fildes, -1);
 #if defined(configEXEC_DEBUG)
         KERROR(KERROR_DEBUG, "Failed to load a new process image (%d)\n", err);
+#endif
+        goto fail;
+    }
+
+    err = fs_fildes_close(curproc, fildes);
+    if (err) {
+#if defined(configEXEC_DEBUG)
+        KERROR(KERROR_DEBUG, "failed to close the file\n");
 #endif
         goto fail;
     }
