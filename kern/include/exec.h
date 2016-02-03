@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Execute a file.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -62,7 +62,7 @@ struct exec_loadfn {
  * Execute a file.
  * File can be elf binary, she-bang file, etc.
  */
-int exec_file(int fildes, char name[PROC_NAME_LEN], struct buf * env_bp,
-              int uargc, uintptr_t uargv, uintptr_t uenvp);
+int exec_file(struct exec_loadfn * loader, int fildes, char name[PROC_NAME_LEN],
+              struct buf * env_bp, int uargc, uintptr_t uargv, uintptr_t uenvp);
 
 #endif /* EXEC_H */

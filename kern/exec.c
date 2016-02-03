@@ -56,36 +56,6 @@ static int main_stack_max = 2 * configPROC_STACK_DFL;
 SYSCTL_INT(_kern, KERN_MAXSIZ, maxsiz, CTLFLAG_RW,
            &main_stack_max, 0, "Max main() stack size");
 
-static int load_proc_image(file_t * file, uintptr_t * vaddr_base,
-                           size_t * stack_size)
-{
-    struct exec_loadfn ** loader;
-    int err = 0;
-
-    SET_FOREACH(loader, exec_loader) {
-        err = (*loader)->test(file);
-        if (err == 0 || err != -ENOEXEC)
-            break;
-    }
-
-    if (err) {
-#if defined(configEXEC_DEBUG)
-        KERROR(KERROR_DEBUG, "Executable type not detected\n");
-#endif
-        return err;
-    }
-
-    /* Unload user regions before loading a new image. */
-    (void)vm_unload_regions(curproc, MM_HEAP_REGION, -1);
-
-    err = (*loader)->load(curproc, file, vaddr_base, stack_size);
-#if defined(configEXEC_DEBUG)
-    KERROR(KERROR_DEBUG, "Proc image loaded (err = %d)\n", err);
-#endif
-
-    return err;
-}
-
 /**
  * Calculate the stack size for main().
  * @param emin is the required stack size idicated by the executable.
@@ -140,8 +110,8 @@ static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp,
     return thread_create(&args, 0);
 }
 
-int exec_file(int fildes, char name[PROC_NAME_LEN], struct buf * env_bp,
-              int uargc, uintptr_t uargv, uintptr_t uenvp)
+int exec_file(struct exec_loadfn * loader, int fildes, char name[PROC_NAME_LEN],
+              struct buf * env_bp, int uargc, uintptr_t uargv, uintptr_t uenvp)
 {
     file_t * file;
     uintptr_t vaddr = 0; /* RFE Shouldn't matter if elf is not dyn? */
@@ -150,9 +120,10 @@ int exec_file(int fildes, char name[PROC_NAME_LEN], struct buf * env_bp,
     int err;
 
 #if defined(configEXEC_DEBUG)
-    KERROR(KERROR_DEBUG, "exec_file(fildes %d, name \"%s\", env_bp %p, "
-           "uargc %d, uargv %x,  uenvp %x)\n",
-           fildes, name, env_bp, uargc, (uint32_t)uargv, (uint32_t)uenvp);
+    KERROR(KERROR_DEBUG, "exec_file(loader \"%s\", fildes %d, name \"%s\", "
+           "env_bp %p, uargc %d, uargv %x,  uenvp %x)\n",
+           (loader) ? loader->name : "NULL", fildes, name, env_bp, uargc,
+           (uint32_t)uargv, (uint32_t)uenvp);
 #endif
 
     file = fs_fildes_ref(curproc->files, fildes, 1);
@@ -167,12 +138,23 @@ int exec_file(int fildes, char name[PROC_NAME_LEN], struct buf * env_bp,
         goto fail;
     }
 
-    err = load_proc_image(file, &vaddr, &stack_size);
+    /* Unload user regions before loading a new image. */
+    (void)vm_unload_regions(curproc, MM_HEAP_REGION, -1);
+
+    /* Load the image */
+    err = loader->load(curproc, file, &vaddr, &stack_size);
+#if defined(configEXEC_DEBUG)
+    KERROR(KERROR_DEBUG, "Proc image loaded (err = %d)\n", err);
+#endif
     if (err) {
+        const struct ksignal_param sigparm = { .si_code = SEGV_MAPERR };
+
         fs_fildes_ref(curproc->files, fildes, -1);
 #if defined(configEXEC_DEBUG)
         KERROR(KERROR_DEBUG, "Failed to load a new process image (%d)\n", err);
 #endif
+        ksignal_sendsig_fatal(curproc, SIGSEGV, &sigparm);
+
         goto fail;
     }
 
@@ -190,11 +172,6 @@ int exec_file(int fildes, char name[PROC_NAME_LEN], struct buf * env_bp,
 #if defined(configEXEC_DEBUG)
         KERROR(KERROR_DEBUG, "Unable to map a new env\n");
 #endif
-        if (env_bp->vm_ops->rfree)
-            env_bp->vm_ops->rfree(env_bp);
-        else {
-            KERROR(KERROR_ERR, "Can't free env_bp\n");
-        }
         goto fail;
     }
     vm_fixmemmap_proc(curproc);
@@ -310,13 +287,33 @@ static int clone_aa(struct buf * bp, __user char * uarr, size_t n_entries,
     return 0;
 }
 
+static int get_loader(int fildes, struct exec_loadfn ** loader)
+{
+    file_t * file;
+    struct exec_loadfn ** ldr;
+    int err = 0;
+
+    file = fs_fildes_ref(curproc->files, fildes, 1);
+    SET_FOREACH(ldr, exec_loader) {
+        err = (*ldr)->test(file);
+        if (err == 0)
+            *loader = *ldr;
+        if (err == 0 || err != -ENOEXEC)
+            break;
+    }
+    fs_fildes_ref(curproc->files, fildes, -1);
+
+    return err;
+}
+
 static int sys_exec(__user void * user_args)
 {
     struct _exec_args args;
     char name[PROC_NAME_LEN];
-    struct buf * env_bp;
+    struct buf * env_bp = NULL;
     size_t arg_offset = 0;
     uintptr_t envp;
+    struct exec_loadfn * loader;
     int err;
 
 #if defined(configEXEC_DEBUG)
@@ -325,22 +322,26 @@ static int sys_exec(__user void * user_args)
 
     err = copyin(user_args, &args, sizeof(args));
     if (err) {
-        set_errno(EFAULT);
-        return -1;
+        err = -EFAULT;
+        goto fail;
     }
 
     if (!args.argv || !args.env) {
-        set_errno(EINVAL);
-        return -1;
+        err = -EINVAL;
+        goto fail;
     }
+
+    err = get_loader(args.fd, &loader);
+    if (err)
+        goto fail;
 
     /*
      * Copy in & out arguments and environ.
      */
     env_bp = geteblk(MMU_PGSIZE_COARSE);
     if (!env_bp) {
-        set_errno(ENOMEM);
-        return -1;
+        err = -ENOMEM;
+        goto fail;
     }
 
     /* Currently copyin_aa() requires vaddr to be set. */
@@ -353,8 +354,7 @@ static int sys_exec(__user void * user_args)
 #if defined(configEXEC_DEBUG)
         KERROR(KERROR_DEBUG, "Failed to clone args (%d)\n", err);
 #endif
-        set_errno(-err);
-        return -1;
+        goto fail;
     }
     arg_offset = memalign(arg_offset);
     envp = env_bp->b_mmu.vaddr + arg_offset;
@@ -365,8 +365,7 @@ static int sys_exec(__user void * user_args)
 #if defined(configEXEC_DEBUG)
         KERROR(KERROR_DEBUG, "Failed to clone env (%d)\n", err);
 #endif
-        set_errno(-err);
-        return -1;
+        goto fail;
     }
 
     strlcpy(name, (char *)(env_bp->b_data) + (args.nargv + 1) * sizeof(char *),
@@ -375,9 +374,13 @@ static int sys_exec(__user void * user_args)
     /*
      * Execute.
      */
-    err = exec_file(args.fd, name, env_bp, args.nargv, env_bp->b_mmu.vaddr,
-                    envp);
+    err = exec_file(loader, args.fd, name, env_bp, args.nargv,
+                    env_bp->b_mmu.vaddr, envp);
+fail:
     if (err) {
+        if (env_bp && env_bp->vm_ops->rfree) {
+            env_bp->vm_ops->rfree(env_bp);
+        }
         set_errno(-err);
         return -1;
     }

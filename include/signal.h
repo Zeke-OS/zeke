@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Signals.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -196,7 +196,7 @@ struct sigevent {
 #define FPE_FLTRES      15 /*!< Floating-point inexact result. */
 #define FPE_FLTINV      16 /*!< Invalid floating-point operation. */
 #define FPE_FLTSUB      17 /*!< Subscript out of range. */
-/* SIGSEV */
+/* SIGSEGV */
 #define SEGV_MAPERR     18 /*!< Address not mapped to object. */
 #define SEGV_ACCERR     19 /*!< Invalid permissions for mapped object. */
 /* SIGBUS */
