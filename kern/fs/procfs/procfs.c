@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Process file system.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -68,7 +68,7 @@ static fs_t procfs_fs = {
 };
 
 /**
- * PRocfs root vnode.
+ * Procfs root vnode.
  * There is only one procfs, but it can be mounted multiple times.
  */
 static vnode_t * vn_procfs;
@@ -76,8 +76,6 @@ static vnode_t * vn_procfs;
 SET_DECLARE(procfs_files, struct procfs_file);
 static procfs_readfn_t ** procfs_read_funcs;
 static procfs_writefn_t ** procfs_write_funcs;
-
-#define PANIC_MSG "procfs_init(): "
 
 /**
  * Initialize procfs files.
@@ -123,8 +121,12 @@ int __kinit__ procfs_init(void)
     fs_inherit_vnops(&procfs_vnode_ops, &ramfs_vnode_ops);
 
     vn_procfs = fs_create_pseudofs_root(&procfs_fs, VDEV_MJNR_PROCFS);
+    if (!vn_procfs)
+        return -ENOMEM;
+
     vn_procfs->sb->umount = procfs_umount;
     fs_register(&procfs_fs);
+
     (void)init_files();
     procfs_updatedir(vn_procfs);
 
@@ -141,8 +143,8 @@ static int procfs_mount(const char * source, uint32_t mode,
 
 static int procfs_umount(struct fs_superblock * fs_sb)
 {
-    /* TODO implementation of procfs_umount() */
-    KERROR(KERROR_DEBUG, "procfs umount\n");
+    /* NOP, everything relevant is handled by the vfs. */
+
     return 0;
 }
 
@@ -223,7 +225,6 @@ static int procfs_updatedir(vnode_t * dir)
 {
     int err = 0;
 
-
     if (dir == vn_procfs) {
         PROC_LOCK();
 
@@ -240,23 +241,19 @@ static int procfs_updatedir(vnode_t * dir)
             if (proc) {
                 err = procfs_mkentry(proc);
                 proc_unref(proc);
-            }
-            else
+            } else {
                 procfs_rmentry(i);
+            }
         }
 
         PROC_UNLOCK();
     }
-
 
     return err;
 }
 
 int procfs_mkentry(const struct proc_info * proc)
 {
-#ifdef configPROCFS_DEBUG
-    const char fail[] = "Failed to create a procfs entry\n";
-#endif
     char name[PROCFS_NAMELEN_MAX];
     vnode_t * pdir = NULL;
     struct procfs_file ** file;
@@ -268,7 +265,7 @@ int procfs_mkentry(const struct proc_info * proc)
     uitoa32(name, proc->pid);
 
 #ifdef configPROCFS_DEBUG
-    KERROR(KERROR_DEBUG, "procfs_mkentry(pid = %s)\n", name);
+    KERROR(KERROR_DEBUG, "%s(pid = %s)\n", __func__, name);
 #endif
 
     err = vn_procfs->vnode_ops->mkdir(vn_procfs, name, PROCFS_PERMS);
@@ -301,7 +298,7 @@ fail:
         vrele(pdir);
 #ifdef configPROCFS_DEBUG
     if (err)
-        KERROR(KERROR_DEBUG, fail);
+        KERROR(KERROR_DEBUG, "Failed to create a procfs entry\n");
 #endif
     return err;
 }
@@ -318,7 +315,7 @@ void procfs_rmentry(pid_t pid)
     uitoa32(name, pid);
 
 #ifdef configPROCFS_DEBUG
-        KERROR(KERROR_DEBUG, "procfs_rmentry(pid = %s)\n", name);
+        KERROR(KERROR_DEBUG, "%s(pid = %s)\n", __func__, name);
 #endif
 
     vref(vn_procfs);
@@ -379,6 +376,5 @@ static int create_proc_file(vnode_t * pdir, pid_t pid, const char * filename,
     vn->vnode_ops = &procfs_vnode_ops;
 
     vrele(vn);
-
     return 0;
 }
