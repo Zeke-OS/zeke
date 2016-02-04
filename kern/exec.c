@@ -150,14 +150,14 @@ int exec_file(struct exec_loadfn * loader, int fildes, char name[PROC_NAME_LEN],
         const struct ksignal_param sigparm = { .si_code = SEGV_MAPERR };
 
         fs_fildes_ref(curproc->files, fildes, -1);
-#if defined(configEXEC_DEBUG)
-        KERROR(KERROR_DEBUG, "Failed to load a new process image (%d)\n", err);
-#endif
         ksignal_sendsig_fatal(curproc, SIGSEGV, &sigparm);
 
         goto fail;
     }
 
+    /*
+     * Clse the executable file.
+     */
     err = fs_fildes_close(curproc, fildes);
     if (err) {
 #if defined(configEXEC_DEBUG)
@@ -287,6 +287,9 @@ static int clone_aa(struct buf * bp, __user char * uarr, size_t n_entries,
     return 0;
 }
 
+/**
+ * Get a pointer to the executable loader for a given file.
+ */
 static int get_loader(int fildes, struct exec_loadfn ** loader)
 {
     file_t * file;
