@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Process file system.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,24 +36,24 @@
 #include <proc.h>
 #include <fs/procfs.h>
 
-static ssize_t procfs_read_status(struct procfs_info * spec, char ** retbuf)
+static struct procfs_stream * procfs_read_status(struct procfs_info * spec)
 {
+    struct procfs_stream * stream;
     ssize_t bytes;
     struct proc_info * proc;
-    char * tmpbuf;
     const size_t bufsz = 200;
 
-    tmpbuf = kcalloc(bufsz, sizeof(char));
-    if (!tmpbuf)
-        return -EIO;
+    stream = kzalloc(sizeof(struct procfs_stream) + bufsz);
+    if (!stream)
+        return NULL;
 
     proc = proc_ref(spec->pid, PROC_NOT_LOCKED);
     if (!proc) {
-        kfree(tmpbuf);
-        return -ENOLINK;
+        kfree(stream);
+        return NULL;
     }
 
-    bytes = ksprintf(tmpbuf, bufsz,
+    bytes = ksprintf(stream->buf, bufsz,
                      "Name: %s\n"
                      "State: %s\n"
                      "Pid: %u\n"
@@ -72,8 +72,8 @@ static ssize_t procfs_read_status(struct procfs_info * spec, char ** retbuf)
 
     proc_unref(proc);
 
-    *retbuf = tmpbuf;
-    return bytes;
+    stream->bytes = bytes;
+    return stream;
 }
 
 static struct procfs_file procfs_file_status = {

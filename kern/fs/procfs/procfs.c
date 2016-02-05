@@ -51,6 +51,8 @@ static int procfs_mount(const char * source, uint32_t mode,
 static int procfs_umount(struct fs_superblock * fs_sb);
 static ssize_t procfs_read(file_t * file, struct uio * uio, size_t bcount);
 static ssize_t procfs_write(file_t * file, struct uio * uio, size_t bcount);
+static void procfs_event_fd_created(struct proc_info * p, file_t * file);
+static void procfs_event_fd_closed(struct proc_info * p, file_t * file);
 static int procfs_updatedir(vnode_t * dir);
 static int create_proc_file(vnode_t * pdir, pid_t pid, const char * filename,
                             enum procfs_filetype ftype);
@@ -59,6 +61,8 @@ static int create_proc_file(vnode_t * pdir, pid_t pid, const char * filename,
 static vnode_ops_t procfs_vnode_ops = {
     .read = procfs_read,
     .write = procfs_write,
+    .event_fd_created = procfs_event_fd_created,
+    .event_fd_closed = procfs_event_fd_closed,
 };
 
 static fs_t procfs_fs = {
@@ -154,42 +158,34 @@ static int procfs_umount(struct fs_superblock * fs_sb)
 static ssize_t procfs_read(file_t * file, struct uio * uio, size_t bcount)
 {
     struct procfs_info * spec;
-    procfs_readfn_t * fn;
-    ssize_t bytes;
+    struct procfs_stream * stream;
     void * vbuf;
-    char * buf;
+    ssize_t bytes;
     int err;
 
     spec = (struct procfs_info *)file->vnode->vn_specinfo;
-    if (!spec)
+    if (!spec || spec->ftype > PROCFS_LAST || !file->stream)
         return -EIO;
-
-    if (spec->ftype > PROCFS_LAST)
-        return -ENOLINK;
-
-    fn = procfs_read_funcs[spec->ftype];
-    if (!fn)
-        return -ENOTSUP;
 
     err = uio_get_kaddr(uio, &vbuf);
     if (err)
         return err;
 
-    bytes = fn(spec, &buf);
+    stream = (struct procfs_stream *)file->stream;
+    bytes = stream->bytes;
     if (bytes > 0 && file->seek_pos <= bytes) {
         const ssize_t count = min(bcount, bytes - file->seek_pos);
 
         if (count <= bytes) {
             ssize_t sz;
 
-            sz = strlcpy((char *)vbuf, buf + file->seek_pos, count);
+            sz = strlcpy((char *)vbuf, stream->buf + file->seek_pos, count);
             sz++;
             bytes = (sz >= count) ? count : sz;
             file->seek_pos += bytes;
         }
     }
 
-    kfree(buf);
     return bytes;
 }
 
@@ -218,7 +214,28 @@ static ssize_t procfs_write(file_t * file, struct uio * uio, size_t bcount)
     if (err)
         return err;
 
-    return fn(spec, vbuf, bcount);
+    return fn(spec, (struct procfs_stream *)(file->stream));
+}
+
+static void procfs_event_fd_created(struct proc_info * p, file_t * file)
+{
+    struct procfs_info * spec;
+    procfs_readfn_t * fn;
+
+    spec = (struct procfs_info *)file->vnode->vn_specinfo;
+    if (!spec || spec->ftype > PROCFS_LAST)
+        return;
+
+    fn = procfs_read_funcs[spec->ftype];
+    if (!fn)
+        return;
+
+    file->stream = fn(spec);
+}
+
+static void procfs_event_fd_closed(struct proc_info * p, file_t * file)
+{
+    kfree(file->stream);
 }
 
 static int procfs_updatedir(vnode_t * dir)

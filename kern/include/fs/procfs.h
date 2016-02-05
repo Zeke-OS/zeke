@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Process file system headers.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -82,19 +82,22 @@ struct procfs_info {
     pid_t pid;
 };
 
+struct procfs_stream {
+    ssize_t bytes;
+    char buf[0];
+};
+
 #define PROCFS_NAMELEN_MAX 10
 
 /**
  * Procfs read file function.
  * One per file type.
  * @param[in] spec is the procfs specinfo for the file.
- * @param[out] retbuf is the returned kmalloc'd buffer.
- * @return Returns number of bytes in retbuf or negative errno if failed.
  */
-typedef ssize_t procfs_readfn_t(struct procfs_info * spec, char ** retbuf);
+typedef struct procfs_stream * procfs_readfn_t(struct procfs_info * spec);
 
 typedef ssize_t procfs_writefn_t(struct procfs_info * spec,
-                                 char * buf, size_t bufsize);
+                                 struct procfs_stream * stream);
 
 struct procfs_file {
     const enum procfs_filetype filetype;

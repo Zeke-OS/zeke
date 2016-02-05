@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Process file system.
  * @section LICENSE
- * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,27 +39,29 @@
 #include <fs/fs.h>
 #include <fs/procfs.h>
 
-static ssize_t procfs_read_regions(struct procfs_info * spec, char ** retbuf)
+static struct procfs_stream * procfs_read_regions(struct procfs_info * spec)
 {
-    char * buf = NULL;
+    struct procfs_stream * stream;
     const size_t maxline = 30;
     ssize_t bytes = 0;
     struct proc_info * proc;
     struct vm_mm_struct * mm;
 
-    buf = kcalloc(maxline, sizeof(char));
-    if (!buf)
-        return -ENOMEM;
+    stream = kzalloc(sizeof(struct procfs_stream) + maxline);
+    if (!stream)
+        return NULL;
 
     proc = proc_ref(spec->pid, PROC_NOT_LOCKED);
     if (!proc) {
-        bytes = -ENOLINK;
-        goto out;
+        kfree(stream);
+        return NULL;
     }
+
     mm = &proc->mm;
     mtx_lock(&mm->regions_lock);
 
     for (int i = 0; i < mm->nr_regions; i++) {
+        struct procfs_stream * tmp;
         struct buf * region = (*mm->regions)[i];
         uintptr_t reg_start, reg_end;
         char uap[5];
@@ -68,14 +70,15 @@ static ssize_t procfs_read_regions(struct procfs_info * spec, char ** retbuf)
         if (!region)
             continue;
 
-        p = krealloc(buf, bytes + maxline);
-        if (!p) {
+        tmp = krealloc(stream, bytes + maxline);
+        if (!tmp) {
             mtx_unlock(&mm->regions_lock);
-            bytes = -ENOMEM;
-            goto out;
+            proc_unref(proc);
+            kfree(stream);
+            return NULL;
         }
-        buf = p;
-        p = buf + bytes;
+        stream = tmp;
+        p = stream->buf + bytes;
 
         reg_start = region->b_mmu.vaddr;
         reg_end = region->b_mmu.vaddr + region->b_bufsize - 1;
@@ -85,12 +88,10 @@ static ssize_t procfs_read_regions(struct procfs_info * spec, char ** retbuf)
                           reg_start, reg_end, uap);
     }
     mtx_unlock(&mm->regions_lock);
-
-    *retbuf = buf;
-out:
     proc_unref(proc);
-    kfree(buf);
-    return bytes;
+
+    stream->bytes = bytes;
+    return stream;
 }
 
 static struct procfs_file procfs_file_regions = {

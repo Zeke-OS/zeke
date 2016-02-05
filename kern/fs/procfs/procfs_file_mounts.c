@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Process file system.
  * @section LICENSE
- * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,43 +38,44 @@
 #include <fs/fs_util.h>
 #include <fs/procfs.h>
 
-static ssize_t procfs_read_mounts(struct procfs_info * spec, char ** retbuf)
+static struct procfs_stream * procfs_read_mounts(struct procfs_info * spec)
 {
-    char * buf;
+    struct procfs_stream * stream;
     fs_t * fs;
     const size_t maxline = 80;
     ssize_t bytes = 0;
 
-    buf = kcalloc(maxline, sizeof(char));
-    if (!buf)
-        return -ENOMEM;
+    stream = kzalloc(sizeof(struct procfs_stream) + maxline);
+    if (!stream)
+        return NULL;
 
     fs = NULL;
     while ((fs = fs_iterate(fs))) {
-        char * p = buf + bytes;
+        struct procfs_stream * tmp;
+        char * p = stream->buf + bytes;
         struct fs_superblock * sb;
 
         bytes += ksprintf(p, bytes + maxline, "%s\n", fs->fsname);
 
         sb = NULL;
         while ((sb = fs_iterate_superblocks(fs, sb))) {
-            char * p = buf + bytes;
+            char * p = stream->buf + bytes;
 
             bytes += ksprintf(p, bytes + maxline, "  (%u,%u)\n",
                               DEV_MAJOR(sb->vdev_id),
                               DEV_MINOR(sb->vdev_id));
         }
 
-        p = krealloc(buf, bytes + maxline);
-        if (!p) {
-            kfree(buf);
-            return -ENOMEM;
+        tmp = krealloc(stream, bytes + maxline);
+        if (!tmp) {
+            kfree(stream);
+            return NULL;
         }
-        buf = p;
+        stream = tmp;
     }
 
-    *retbuf = buf;
-    return bytes;
+    stream->bytes = bytes;
+    return stream;
 }
 
 static struct procfs_file procfs_file_mounts = {
