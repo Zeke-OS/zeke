@@ -380,6 +380,10 @@ static int parse_pheaders(struct proc_info * proc, struct elf_ctx * ctx)
             break;
         case PT_NOTE:
             err = load_notes(ctx, i);
+            if (err) {
+                KERROR(KERROR_ERR, "Failed to read notes\n");
+                return -1;
+            }
             break;
         default:
             break;

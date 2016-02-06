@@ -156,7 +156,7 @@ int exec_file(struct exec_loadfn * loader, int fildes, char name[PROC_NAME_LEN],
     }
 
     /*
-     * Clse the executable file.
+     * Close the executable file.
      */
     err = fs_fildes_close(curproc, fildes);
     if (err) {
@@ -294,7 +294,7 @@ static int get_loader(int fildes, struct exec_loadfn ** loader)
 {
     file_t * file;
     struct exec_loadfn ** ldr;
-    int err = 0;
+    int err = -ENOEXEC;
 
     file = fs_fildes_ref(curproc->files, fildes, 1);
     SET_FOREACH(ldr, exec_loader) {
