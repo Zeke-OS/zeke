@@ -210,12 +210,12 @@ static int fatfs_mount(const char * source, uint32_t mode,
     fs_insert_superblock(&fatfs_fs, &fatfs_sb->sb);
 
 fail:
-    if (retval) {
+    if (retval && fatfs_sb) {
         fatfs_sb_arr[DEV_MINOR(fatfs_sb->sb.vdev_id)] = NULL;
         kfree(fatfs_sb);
+    } else {
+        *sb = &fatfs_sb->sb;
     }
-
-    *sb = &fatfs_sb->sb;
     if (retval)
         vrele(vndev);
     return retval;
