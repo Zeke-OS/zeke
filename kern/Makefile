@@ -1,6 +1,6 @@
 # Zeke - Kernel Makefile
 #
-# Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+# Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
 # Copyright (c) 2012, 2013 Olli Vanhoja <olli.vanhoja@ninjaware.fi>
 # All rights reserved.
 #
@@ -111,6 +111,9 @@ $(ASOBJS): $(ASRC-y) $(UNIFDEF) $(AUTOCONF_H)
 
 $(OBJS): %.o: %.c $(AUTOCONF_H)
 	$(cc-command)
+ifeq ($(ANAL),y)
+	$(anal-command)
+endif
 
 -include $(DEPS)
 
@@ -134,6 +137,7 @@ $(ROOT_DIR)/kernel.list: $(KERNEL_IMG)
 
 clean:
 	$(RM) $(ASOBJS) $(OBJS) $(DEPS) $(STARTUP_O)
+	find . -type f -name "*.xml" -exec rm -f {} \;
 	$(RM) *.bin
 	$(RM) *.img
 	$(RM) *.elf

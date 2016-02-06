@@ -26,3 +26,10 @@ define cc-command
 	@$(OPT) $(OFLAGS) $(CUR_BC) -o - | $(LLC) $(LLCFLAGS) - -o - | \
 		$(GNUARCH)-as - -o $@ $(ASFLAGS)
 endef
+
+define anal-command
+	@echo "anal $@"
+	$(eval NAME := $(basename $(notdir $@)))
+	$(eval CUR_XML := $*.xml)
+	@$(CC) --analyze $(CCFLAGS) $($(NAME)-CCFLAGS) $(IDIR) -c $*.c -o $(CUR_XML)
+endef
