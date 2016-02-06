@@ -137,7 +137,7 @@ $(ROOT_DIR)/kernel.list: $(KERNEL_IMG)
 
 clean:
 	$(RM) $(ASOBJS) $(OBJS) $(DEPS) $(STARTUP_O)
-	$(RM) anal
+	rm -rf anal
 	$(RM) *.bin
 	$(RM) *.img
 	$(RM) *.elf
