@@ -5,6 +5,8 @@ Build:
 [![Build Status](http://xstack.io:8080/buildStatus/icon?job=Zeke-Build)](http://xstack.io:8080/job/Zeke-Build)
 Testing:
 [![Build Status](http://xstack.io:8080/buildStatus/icon?job=Zeke-QEMU-RPI-tests)](http://xstack.io:8080/job/Zeke-QEMU-RPI-tests)
+Coverity:
+[![Coverity Scan Build Status](ttps://scan.coverity.com/projects/7854/badge.svg)](https://scan.coverity.com/projects/zeke-os-zeke)
 
     |'''''||
         .|'   ...'||
