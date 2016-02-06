@@ -30,6 +30,6 @@ endef
 define anal-command
 	@echo "anal $@"
 	$(eval NAME := $(basename $(notdir $@)))
-	$(eval CUR_XML := $*.xml)
-	@$(CC) --analyze $(CCFLAGS) $($(NAME)-CCFLAGS) $(IDIR) -c $*.c -o $(CUR_XML)
+	@$(CC) --analyze -Xanalyzer -analyzer-output=html -o anal \
+		$(CCFLAGS) $($(NAME)-CCFLAGS) $(IDIR) -c $*.c
 endef

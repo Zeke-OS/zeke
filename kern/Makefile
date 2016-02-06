@@ -137,7 +137,7 @@ $(ROOT_DIR)/kernel.list: $(KERNEL_IMG)
 
 clean:
 	$(RM) $(ASOBJS) $(OBJS) $(DEPS) $(STARTUP_O)
-	find . -type f -name "*.xml" -exec rm -f {} \;
+	$(RM) anal
 	$(RM) *.bin
 	$(RM) *.img
 	$(RM) *.elf
