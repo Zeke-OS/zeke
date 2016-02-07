@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    fz_fs.c
+ * @file    fatfs.c
  * @author  Olli Vanhoja
  * @brief   File System wrapper for FatFs.
  * @section LICENSE
@@ -947,10 +947,13 @@ static void init_fatfs_vnode(vnode_t * vnode, ino_t inum, mode_t mode,
     if (S_ISDIR(mode))
         mode |= S_IRWXU | S_IXGRP | S_IXOTH;
     vnode->vn_mode = mode | S_IRUSR | S_IRGRP | S_IROTH;
-    fatfs_stat(vnode, &stat);
-    vnode->vn_len = stat.st_size;
-    if ((stat.st_flags & UF_READONLY) == 0)
-        vnode->vn_mode |= S_IWUSR | S_IWGRP | S_IWOTH;
+    if (fatfs_stat(vnode, &stat) == 0) {
+        vnode->vn_len = stat.st_size;
+        if ((stat.st_flags & UF_READONLY) == 0)
+            vnode->vn_mode |= S_IWUSR | S_IWGRP | S_IWOTH;
+    } else {
+        KERROR(KERROR_ERR, "%s failed\n", __func__);
+    }
 }
 
 /**
