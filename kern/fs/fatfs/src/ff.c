@@ -2918,8 +2918,9 @@ FRESULT f_unlink(FATFS * fs, const TCHAR * path)
     } else {
         if (dir[DIR_Attr] & AM_RDO)
             res = FR_DENIED; /* Cannot remove R/O object */
+
+        dclst = ld_clust(dj.fs, dir);
     }
-    dclst = ld_clust(dj.fs, dir);
 
     /* Is it a sub-dir? */
     if (res == FR_OK && (dir[DIR_Attr] & AM_DIR)) {

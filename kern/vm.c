@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   VM functions.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -118,7 +118,7 @@ int copyinstr(__user const char * uaddr, __kernel char * kaddr, size_t len,
               size_t * done)
 {
     uintptr_t last_prefix = UINTPTR_MAX;
-    char * phys_uaddr;
+    char * phys_uaddr = NULL;
     size_t off = 0;
 
     KASSERT(uaddr != NULL, "uaddr shall be set");
@@ -137,6 +137,7 @@ int copyinstr(__user const char * uaddr, __kernel char * kaddr, size_t len,
                 return -EFAULT;
             }
         }
+        KASSERT(phys_uaddr != NULL, "phys_addr must be set");
 
         kaddr[off] = *phys_uaddr++;
         uaddr += ++off;
