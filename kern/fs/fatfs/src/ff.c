@@ -1806,12 +1806,8 @@ static FRESULT check_fs(FATFS * fs)
  */
 static FRESULT access_volume(FATFS * fs, uint8_t wmode)
 {
-    int vol;
-
     if (!fs)
         return FR_NOT_ENABLED;
-
-    vol = fs->drv;
 
     ENTER_FF(fs); /* Lock the volume */
 
