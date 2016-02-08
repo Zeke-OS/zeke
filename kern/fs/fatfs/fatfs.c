@@ -954,6 +954,7 @@ static void init_fatfs_vnode(vnode_t * vnode, ino_t inum, mode_t mode,
     if (S_ISDIR(mode))
         mode |= S_IRWXU | S_IXGRP | S_IXOTH;
     vnode->vn_mode = mode | S_IRUSR | S_IRGRP | S_IROTH;
+    memset(&stat, 0, sizeof(struct stat));
     if (fatfs_stat(vnode, &stat) == 0) {
         vnode->vn_len = stat.st_size;
         if ((stat.st_flags & UF_READONLY) == 0)
