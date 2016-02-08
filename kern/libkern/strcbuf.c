@@ -67,7 +67,7 @@ size_t strcbuf_getline(struct strcbuf * buf, char * dst, size_t len)
     size_t start = buf->start;
     const size_t end = buf->end;
     const size_t blen = buf->len;
-    size_t next;
+    size_t next = start; /* Make clang --analyze happy. */
 
     if (start == end)
         return 0;
