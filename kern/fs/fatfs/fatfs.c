@@ -394,7 +394,7 @@ static vnode_t * create_root(struct fatfs_sb * fatfs_sb)
     vn_hash = hash32_str(rootpath, 0);
     err = create_inode(&in, fatfs_sb, rootpath, vn_hash,
                        O_DIRECTORY | O_RDWR);
-    if (err) {
+    if (err || unlikely(!in)) {
         KERROR(KERROR_ERR, "Failed to init a root vnode for fatfs (%d)\n", err);
         return NULL;
     }
@@ -551,7 +551,7 @@ static int fatfs_lookup(vnode_t * dir, const char * name, vnode_t ** result)
          * This also vrefs.
          */
         retval = create_inode(&in, sb, in_fpath, vn_hash, O_RDWR);
-        if (!retval) {
+        if (!retval && likely(in)) {
             in_fpath = NULL; /* shall not be freed. */
             *result = &in->in_vnode;
         }
