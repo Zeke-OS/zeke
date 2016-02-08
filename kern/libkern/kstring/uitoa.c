@@ -32,34 +32,24 @@
 
 #include <kstring.h>
 
-#define UITOA_TYPE(_type_) ({                       \
-    _type_ div = 1, digs = 1;                       \
-    size_t n = 0;                                   \
-    for (; value / div >= 10; div *= 10, digs++);   \
-    do {                                            \
-        str[n++] = ((value / div) % 10) + '0';      \
-    } while (div /= 10);                            \
-    str[n] = '\0';                                  \
-    (int)digs; })
-
-#define UITOA_BASE_TYPE(_type_) ({                      \
-    _type_ div = 1, digs = 1;                           \
-    size_t n = 0;                                       \
-    for (; value / div >= base; div *= base, digs++);   \
-    do {                                                \
-        str[n++] = ((value / div) % base) + '0';        \
-    } while (div /= base);                              \
-    str[n] = '\0';                                      \
+#define UITOA_TYPE(_base_, _type_) ({                           \
+    _type_ div = 1, digs = 1;                                   \
+    size_t n = 0;                                               \
+    for (; value / div >= (_base_); div *= (_base_), digs++);   \
+    do {                                                        \
+        str[n++] = ((value / div) % (_base_)) + '0';            \
+    } while (div /= (_base_));                                  \
+    str[n] = '\0';                                              \
     (int)digs; })
 
 int uitoa32(char * str, uint32_t value)
 {
-    return UITOA_TYPE(uint32_t);
+    return UITOA_TYPE(10, uint32_t);
 }
 
 int uitoa64(char * str, uint64_t value)
 {
-    return UITOA_TYPE(uint64_t);
+    return UITOA_TYPE(10, uint64_t);
 }
 
 static int uitoah_nbits(char * str, uint64_t value, int nbits)
@@ -93,10 +83,10 @@ int uitoah64(char * str, uint64_t value)
 
 int uitoa32base(char * str, uint32_t value, uint32_t base)
 {
-    return UITOA_BASE_TYPE(uint32_t);
+    return UITOA_TYPE(base, uint32_t);
 }
 
 int uitoa64base(char * str, uint64_t value, uint64_t base)
 {
-    return UITOA_BASE_TYPE(uint64_t);
+    return UITOA_TYPE(base, uint64_t);
 }
