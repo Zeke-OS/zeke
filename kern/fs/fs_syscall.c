@@ -547,7 +547,7 @@ static int sys_filestat(__user void * user_args)
     struct _fs_stat_args * args = NULL;
     vnode_t * vnode = NULL;
     struct stat stat_buf;
-    int err, filref = 0, vnref = 0, retval = -1;
+    int err, filref = 0, retval = -1;
 
     err = priv_check(&curproc->cred, PRIV_VFS_STAT);
     if (err) {
@@ -619,7 +619,6 @@ static int sys_filestat(__user void * user_args)
             goto out;
         }
     }
-    vnref = 1;
 
     KASSERT(vnode, "vnode should be set");
     KASSERT(vnode->vnode_ops->stat, "stat() should be defined");

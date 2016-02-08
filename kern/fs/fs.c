@@ -1050,7 +1050,10 @@ int vref(vnode_t * vnode)
         return -ENOLINK;
     }
 
-    prev = atomic_inc(&vnode->vn_refcount);
+#ifdef configFS_VREF_DEBUG
+    prev =
+#endif
+           atomic_inc(&vnode->vn_refcount);
 
 #ifdef configFS_VREF_DEBUG
     FS_KERROR_VNODE(KERROR_DEBUG, vnode, "%d\n", prev);
