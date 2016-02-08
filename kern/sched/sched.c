@@ -369,11 +369,9 @@ void sched_handler(void)
         if (current_thread)
             break;
     }
-#ifdef configSCHED_DEBUG
-    if (!current_thread) {
+    if (unlikely(!current_thread)) {
         panic("Nothing to schedule");
     }
-#endif
     if (current_thread != prev_thread) {
         mmu_map_region(&(current_thread->kstack_region->b_mmu));
     }
