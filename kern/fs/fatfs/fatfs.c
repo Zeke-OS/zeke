@@ -846,13 +846,13 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
     if (vnode == vnode->sb->root) {
         /* Can't stat FAT root */
         memcpy(buf, &mp_stat, sizeof(struct stat));
-    } else {
+    } else if (in->in_fpath[0] != '\0') {
         err = f_stat(&ffsb->ff_fs, in->in_fpath, &fno);
         if (err) {
 #ifdef configFATFS_DEBUG
             KERROR(KERROR_DEBUG,
-                     "f_stat(fs %p, fpath \"%s\", fno %p) failed\n",
-                     &ffsb->ff_fs, in->in_fpath, &fno);
+                   "%s(fs %p, fpath \"%s\", fno %p) failed\n",
+                   __func__, &ffsb->ff_fs, in->in_fpath, &fno);
 #endif
             return fresult2errno(err);
         }
@@ -875,6 +875,10 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
         buf->st_flags = fattrib2uflags(fno.fattrib);
         buf->st_blksize = blksize;
         buf->st_blocks = fno.fsize / blksize + 1; /* Best guess. */
+    } else {
+#ifdef configFATFS_DEBUG
+        KERROR(KERROR_DEBUG, "%s: Invalid f_path\n", __func__);
+#endif
     }
 
     return 0;
@@ -951,7 +955,9 @@ static void init_fatfs_vnode(vnode_t * vnode, ino_t inum, mode_t mode,
         if ((stat.st_flags & UF_READONLY) == 0)
             vnode->vn_mode |= S_IWUSR | S_IWGRP | S_IWOTH;
     } else {
-        KERROR(KERROR_ERR, "%s failed\n", __func__);
+#ifdef configFATFS_DEBUG
+        KERROR(KERROR_DEBUG, "%s failed\n", __func__);
+#endif
     }
 }
 
