@@ -540,7 +540,7 @@ static int fatfs_lookup(vnode_t * dir, const char * name, vnode_t ** result)
         *result = vn;
         retval = 0;
     } else { /* not cached */
-        struct fatfs_inode * in;
+        struct fatfs_inode * in = NULL;
 
 #ifdef configFATFS_DEBUG
         KERROR(KERROR_DEBUG, "%s: vn not in vfs_hash\n", __func__);
@@ -823,10 +823,11 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
     struct fatfs_sb * ffsb = get_ffsb_of_sb(vnode->sb);
     struct fatfs_inode * in = get_inode_of_vnode(vnode);
     FILINFO fno;
-    struct stat mp_stat = { .st_uid = 0, .st_gid = 0 };
+    struct stat mp_stat;
     size_t blksize = ffsb->ff_fs.ssize;
     int err;
 
+    memset(&mp_stat, 0, sizeof(struct stat));
     memset(&fno, 0, sizeof(fno));
 
     err = get_mp_stat(vnode, &mp_stat);
