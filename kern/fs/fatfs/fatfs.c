@@ -384,7 +384,7 @@ static vnode_t * create_root(struct fatfs_sb * fatfs_sb)
 {
     char * rootpath;
     long vn_hash;
-    struct fatfs_inode * in;
+    struct fatfs_inode * in = NULL;
     int err;
 
     rootpath = kzalloc(2);
@@ -551,9 +551,13 @@ static int fatfs_lookup(vnode_t * dir, const char * name, vnode_t ** result)
          * This also vrefs.
          */
         retval = create_inode(&in, sb, in_fpath, vn_hash, O_RDWR);
-        if (!retval && likely(in)) {
-            in_fpath = NULL; /* shall not be freed. */
-            *result = &in->in_vnode;
+        if (!retval) {
+            if (likely(in)) {
+                in_fpath = NULL; /* shall not be freed. */
+                *result = &in->in_vnode;
+            } else {
+                retval = -EIO;
+            }
         }
     }
 
