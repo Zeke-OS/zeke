@@ -42,6 +42,12 @@
     str[n] = '\0';                                              \
     (int)digs; })
 
+#define UI_CHCNT_TYPE(_base_, _type_) ({                        \
+    _type_ div = 1, digs = 1;                                   \
+    for (; value / div >= (_base_); div *= (_base_), digs++);   \
+    while (div /= (_base_));                                    \
+    (int)digs; })
+
 int uitoa32(char * str, uint32_t value)
 {
     return UITOA_TYPE(10, uint32_t);
@@ -50,6 +56,11 @@ int uitoa32(char * str, uint32_t value)
 int uitoa64(char * str, uint64_t value)
 {
     return UITOA_TYPE(10, uint64_t);
+}
+
+int ui64_chcnt(uint64_t value)
+{
+    return UI_CHCNT_TYPE(10, uint64_t);
 }
 
 static int uitoah_nbits(char * str, uint64_t value, int nbits)

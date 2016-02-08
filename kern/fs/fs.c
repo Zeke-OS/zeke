@@ -1154,7 +1154,8 @@ static int ksprintf_fmt_vnode(KSPRINTF_FMTFUN_ARGS)
         maxlen -= n;
         *str++ = ':';
 
-        /* TODO check maxlen */
+        if (maxlen < ui64_chcnt(vnode->vn_num))
+            return n;
         n += uitoa64(str, vnode->vn_num);
     } else {
         const char nil_str[] = {'(', 'n', 'u', 'l', 'l', ')', ':',  '-', '1'};

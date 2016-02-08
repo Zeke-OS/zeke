@@ -202,6 +202,12 @@ int uitoa32(char * str, uint32_t value);
 int uitoa64(char * str, uint64_t value);
 
 /**
+ * Compute the number of characters needed to print an integer.
+ * @return Returns the number of characters needed to print value.
+ */
+int ui64_chcnt(uint64_t value);
+
+/**
  * Covert an unsigned integer to a hex string.
  * @{
  */
