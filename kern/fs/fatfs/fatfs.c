@@ -838,7 +838,6 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
             FS_KERROR_VNODE(KERROR_WARN, vnode,
                             "vnode->sb->mountpoint should be set\n");
 #endif
-            memset(buf, 0, sizeof(struct stat)); /* Just in case */
         } else {
 #ifdef configFATFS_DEBUG
             KERROR(KERROR_WARN,
@@ -883,9 +882,7 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
         buf->st_blksize = blksize;
         buf->st_blocks = fno.fsize / blksize + 1; /* Best guess. */
     } else {
-#ifdef configFATFS_DEBUG
-        KERROR(KERROR_DEBUG, "%s: Invalid f_path\n", __func__);
-#endif
+        return -EINVAL;
     }
 
     return 0;
