@@ -843,40 +843,39 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
         }
     }
 
-    /* Can't stat FAT root */
     if (vnode == vnode->sb->root) {
+        /* Can't stat FAT root */
         memcpy(buf, &mp_stat, sizeof(struct stat));
-
-        return 0;
-    }
-
-    err = f_stat(&ffsb->ff_fs, in->in_fpath, &fno);
-    if (err) {
+    } else {
+        err = f_stat(&ffsb->ff_fs, in->in_fpath, &fno);
+        if (err) {
 #ifdef configFATFS_DEBUG
-        KERROR(KERROR_DEBUG,
-                 "f_stat(fs %p, fpath \"%s\", fno %p) failed\n",
-                 &ffsb->ff_fs, in->in_fpath, &fno);
+            KERROR(KERROR_DEBUG,
+                     "f_stat(fs %p, fpath \"%s\", fno %p) failed\n",
+                     &ffsb->ff_fs, in->in_fpath, &fno);
 #endif
-        return fresult2errno(err);
-    }
+            return fresult2errno(err);
+        }
 
-    buf->st_dev = vnode->sb->vdev_id;
-    buf->st_ino = vnode->vn_num;
-    buf->st_mode = vnode->vn_mode;
-    buf->st_nlink = 1; /* Always one link on FAT. */
-    buf->st_uid = mp_stat.st_uid;
-    buf->st_gid = mp_stat.st_gid;
-    buf->st_size = fno.fsize;
-    /* TODO Times */
+        memset(buf, 0, sizeof(struct stat));
+        buf->st_dev = vnode->sb->vdev_id;
+        buf->st_ino = vnode->vn_num;
+        buf->st_mode = vnode->vn_mode;
+        buf->st_nlink = 1; /* Always one link on FAT. */
+        buf->st_uid = mp_stat.st_uid;
+        buf->st_gid = mp_stat.st_gid;
+        buf->st_size = fno.fsize;
+        /* TODO Times */
 #if 0
-    buf->st_atim;
-    buf->st_mtim;
-    buf->st_ctim;
-    buf->st_birthtime;
+        buf->st_atim;
+        buf->st_mtim;
+        buf->st_ctim;
+        buf->st_birthtime;
 #endif
-    buf->st_flags = fattrib2uflags(fno.fattrib);
-    buf->st_blksize = blksize;
-    buf->st_blocks = fno.fsize / blksize + 1; /* Best guess. */
+        buf->st_flags = fattrib2uflags(fno.fattrib);
+        buf->st_blksize = blksize;
+        buf->st_blocks = fno.fsize / blksize + 1; /* Best guess. */
+    }
 
     return 0;
 }
