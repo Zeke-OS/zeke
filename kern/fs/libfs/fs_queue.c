@@ -250,7 +250,7 @@ ssize_t fs_queue_read(struct fs_queue * fsq, uint8_t * buf, size_t count,
                       int flags)
 {
     ssize_t rd = 0;
-    size_t offset, bytes, left = count;
+    size_t offset, bytes = 0, left = count;
 
     /*
      * Freeze last_wr_packet because we might be reading it next,
