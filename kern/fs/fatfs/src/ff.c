@@ -2366,7 +2366,7 @@ FRESULT f_write(FF_FIL * fp, const void * buff, unsigned int btw,
  */
 FRESULT f_sync(FF_FIL * fp, int validated)
 {
-    FRESULT res;
+    FRESULT res = FR_OK;
     DWORD tm;
     uint8_t * dir;
 
