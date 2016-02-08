@@ -827,6 +827,7 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
     size_t blksize = ffsb->ff_fs.ssize;
     int err;
 
+    KASSERT(buf != NULL, "buf should be set");
     memset(&mp_stat, 0, sizeof(struct stat));
     memset(&fno, 0, sizeof(fno));
 
@@ -837,6 +838,7 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
             FS_KERROR_VNODE(KERROR_WARN, vnode,
                             "vnode->sb->mountpoint should be set\n");
 #endif
+            memset(buf, 0, sizeof(struct stat)); /* Just in case */
         } else {
 #ifdef configFATFS_DEBUG
             KERROR(KERROR_WARN,
