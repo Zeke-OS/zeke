@@ -161,7 +161,7 @@ int copyoutstr(__kernel char * kaddr, __user const char * uaddr, size_t len,
                size_t * done)
 {
     uintptr_t last_prefix = UINTPTR_MAX;
-    char * phys_uaddr;
+    char * phys_uaddr = NULL; /* Make clang --analyze happy. */
     size_t off = 0;
 
     KASSERT(uaddr != NULL, "uaddr shall be set");
@@ -181,6 +181,7 @@ int copyoutstr(__kernel char * kaddr, __user const char * uaddr, size_t len,
             }
         }
 
+        KASSERT(phys_uaddr != NULL, "phys_uaddr should be set");
         *phys_uaddr++ = kaddr[off];
         uaddr += ++off;
 
