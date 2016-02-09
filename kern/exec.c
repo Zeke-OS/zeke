@@ -242,7 +242,7 @@ static int clone_aa(struct buf * bp, __user char * uarr, size_t n_entries,
     char ** arg = (char **)(bp->b_data + *doffset);
     char * val  = (char *)(bp->b_data + *doffset);
     size_t bytesleft = bp->b_bcount - *doffset;
-    size_t offset = *doffset;
+    size_t offset;
     int err;
 
 #if defined(configEXEC_DEBUG)
