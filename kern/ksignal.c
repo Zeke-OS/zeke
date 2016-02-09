@@ -1036,6 +1036,7 @@ int ksignal_sigsmask(struct signals * sigs, int how,
     if (oldset)
         memcpy(oldset, cursigset, sizeof(sigset_t));
 
+    /* Caller only requested to read the old set. */
     if (!set)
         goto out;
 
@@ -1044,7 +1045,7 @@ int ksignal_sigsmask(struct signals * sigs, int how,
     case SIG_BLOCK:
         /*
          * The resulting set is the union of the current set and the signal set
-         * pointed by 'set'
+         * pointed by 'set'.
          */
         sigunion(cursigset, cursigset, set);
         break;
@@ -1073,7 +1074,7 @@ out:
     ksig_unlock(&sigs->s_lock);
     kobj_unref(&sigs->s_obj);
 
-    return 0;
+    return retval;
 }
 
 void ksignal_get_ksigaction(struct ksigaction * action,
