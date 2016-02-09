@@ -552,12 +552,9 @@ static int fatfs_lookup(vnode_t * dir, const char * name, vnode_t ** result)
          */
         retval = create_inode(&in, sb, in_fpath, vn_hash, O_RDWR);
         if (!retval) {
-            if (likely(in)) {
-                in_fpath = NULL; /* shall not be freed. */
-                *result = &in->in_vnode;
-            } else {
-                retval = -EIO;
-            }
+            KASSERT(in != NULL, "in must be set");
+            in_fpath = NULL; /* shall not be freed. */
+            *result = &in->in_vnode;
         }
     }
 
@@ -701,6 +698,7 @@ int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
         kfree(in_fpath);
         return fresult2errno(err);
     }
+    KASSERT(res != NULL, "res must be set");
 
     if (result)
         *result = &res->in_vnode;
