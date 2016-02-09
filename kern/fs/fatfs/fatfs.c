@@ -132,7 +132,6 @@ static int fatfs_mount(const char * source, uint32_t mode,
     static dev_t fatfs_vdev_minor;
     struct fatfs_sb * fatfs_sb = NULL;
     vnode_t * vndev;
-    char pdrv;
     int err, retval = 0;
 
     /* Get device vnode */
@@ -172,7 +171,6 @@ static int fatfs_mount(const char * source, uint32_t mode,
     fatfs_sb_arr[DEV_MINOR(fatfs_sb->sb.vdev_id)] = fatfs_sb;
 
     /* Mount */
-    pdrv = (char)DEV_MINOR(fatfs_sb->sb.vdev_id);
     err = f_mount(&fatfs_sb->ff_fs, DEV_MINOR(fatfs_sb->sb.vdev_id), 0);
     if (err) {
 #ifdef configFATFS_DEBUG
