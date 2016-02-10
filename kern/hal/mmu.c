@@ -38,6 +38,7 @@
 #include <klocks.h>
 #include <kstring.h>
 #include <proc.h>
+#include <thread.h>
 
 /* Definitions for Page fault counter *****************************************/
 #define PFC_FREQ    (int)configSCHED_HZ /* We wan't to compute pf/s once per

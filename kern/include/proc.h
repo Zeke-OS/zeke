@@ -57,12 +57,10 @@
 #include <sys/priv.h>
 #include <sys/resource.h>
 #include <sys/times.h>
-#include <bitmap.h>
 #include <fs/fs.h>
-#include <hal/mmu.h>
 #include <klocks.h>
 #include <kobj.h>
-#include <thread.h>
+#include <ksignal.h>
 #include <vm/vm.h>
 
 enum proc_state {
@@ -82,6 +80,7 @@ enum proc_state {
 
 #define PROC_NAME_LEN       16
 
+struct mmu_abo_param;
 struct thread_info;
 
 /**

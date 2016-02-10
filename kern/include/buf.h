@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Buffer Cache.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,6 @@
 #include <fs/fs.h>
 #include <hal/mmu.h>
 #include <kobj.h>
-#include <vm/vm.h>
 
 /**
  * @addtogroup buffercache vralloc bread breadn bwrite bawrite bdwrite getblk geteblk incore allocbuf brelse biodone biowait

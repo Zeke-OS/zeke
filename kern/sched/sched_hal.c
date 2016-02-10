@@ -35,6 +35,7 @@
 #include <kmem.h>
 #include <ksched.h>
 #include <proc.h>
+#include <thread.h>
 
 /*
  * These functions are wrappers that should be called from HAL, probably from

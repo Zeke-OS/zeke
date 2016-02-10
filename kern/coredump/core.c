@@ -33,7 +33,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
-#include <core.h>
+#include <coredump.h>
 #include <host.h>
 #include <kerror.h>
 #include <kmalloc.h>

@@ -42,7 +42,8 @@
 #define KSCHED_H
 
 #include <sched.h>
-#include <thread.h>
+
+struct thread_info;
 
 /**
  * Struct describing a generic thread scheduler.

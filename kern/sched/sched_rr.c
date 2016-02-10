@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   RR scheduler.
  * @section LICENSE
- * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,8 +33,9 @@
 #include <stddef.h>
 #include <kerror.h>
 #include <kmalloc.h>
-#include <libkern.h>
 #include <ksched.h>
+#include <libkern.h>
+#include <thread.h>
 
 #define SCHED_POLFLAG_INRRRQ  0x01 /*!< Thread in run queue. */
 
