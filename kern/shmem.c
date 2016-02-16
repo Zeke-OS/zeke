@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Process shared memory.
  * @section LICENSE
- * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -87,7 +87,7 @@ int __kinit__ shmem_init(void)
         .arg1       = 0,
     };
 
-    sync_thread_tid = thread_create(&tdef_shmem, 1);
+    sync_thread_tid = thread_create(&tdef_shmem, THREAD_MODE_PRIV);
     if (sync_thread_tid < 0) {
         KERROR(KERROR_ERR, "Failed to create a thread for shmem sync");
         return sync_thread_tid;

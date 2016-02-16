@@ -257,6 +257,14 @@ enum thread_state thread_state_set(struct thread_info * thread,
  */
 
 /**
+ * Thread mode.
+ */
+enum thread_mode {
+    THREAD_MODE_USER,
+    THREAD_MODE_PRIV,
+};
+
+/**
  * Create a new thread.
  * @param thread_def    Thread definitions.
  * @param priv          If set thread is created as a kernel mode thread aka
@@ -265,7 +273,7 @@ enum thread_state thread_state_set(struct thread_info * thread,
  *           < 0 Otherwise a negative errno code is returned.
  */
 pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
-                        int priv);
+                        enum thread_mode thread_mode);
 
 /**
  * Get pointer to a thread_info structure.

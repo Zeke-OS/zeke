@@ -501,7 +501,7 @@ DATA_SET(thread_ctors, thread_init_tls);
 DATA_SET(thread_fork_handlers, thread_init_tls);
 
 pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
-                        int priv)
+                        enum thread_mode thread_mode)
 {
     pthread_t thread_id;
     struct thread_info * parent = current_thread;
@@ -523,7 +523,8 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
     }
 
     /* Init core specific stack frame for user space */
-    tp->tls_uaddr = init_stack_frame(thread_def, &tp->sframe, priv);
+    tp->tls_uaddr = init_stack_frame(thread_def, &tp->sframe,
+                                     (thread_mode == THREAD_MODE_PRIV));
 
     /*
      * Mark this thread as used.
@@ -541,7 +542,7 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
         tp->flags |= SCHED_DETACH_FLAG;
     }
 
-    if (priv) {
+    if (thread_mode == THREAD_MODE_PRIV) {
         /*
          * Just that user can see that this is a kworker, no functional
          * difference other than privileged mode.
@@ -1096,7 +1097,7 @@ static int sys_thread_create(__user void * user_args)
         goto fail;
     }
 
-    tid = thread_create(&args, 0);
+    tid = thread_create(&args, THREAD_MODE_USER);
     if (tid < 0) {
         err = tid;
         goto fail;

@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   System init for Zero Kernel.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -201,7 +201,7 @@ static pthread_t create_uinit_main(void * stack_addr)
         .del_thread = (void (*)(void *))uinit_exit,
     };
 
-    return thread_create(&init_ds, 1);
+    return thread_create(&init_ds, THREAD_MODE_PRIV);
 }
 
 /**

@@ -57,10 +57,10 @@ SYSCTL_INT(_kern, KERN_MAXSIZ, maxsiz, CTLFLAG_RW,
            &main_stack_max, 0, "Max main() stack size");
 
 /**
- * Calculate the stack size for main().
+ * Calculate the size of a new stack allocation for main().
  * @param emin is the required stack size idicated by the executable.
  */
-size_t get_new_main_stack_size(ssize_t emin)
+static size_t get_new_main_stack_size(ssize_t emin)
 {
     const ssize_t kmin = main_stack_dfl;
     const ssize_t kmax = main_stack_max;
@@ -86,6 +86,9 @@ static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp,
     struct _sched_pthread_create_args args;
 
     stack_size = get_new_main_stack_size(stack_size);
+    KASSERT(args.stack_size != 0,
+            "Size of the main stack must be greater than zero\n");
+
     stack_region = vm_new_userstack_curproc(stack_size);
     if (!stack_region)
         return -ENOMEM;
@@ -104,10 +107,7 @@ static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp,
         .del_thread = NULL /* Not needed for main(). */
     };
 
-    KASSERT(args.stack_size != 0,
-            "Size of the main stack must be greater than zero\n");
-
-    return thread_create(&args, 0);
+    return thread_create(&args, THREAD_MODE_USER);
 }
 
 int exec_file(struct exec_loadfn * loader, int fildes, char name[PROC_NAME_LEN],
@@ -210,11 +210,12 @@ int exec_file(struct exec_loadfn * loader, int fildes, char name[PROC_NAME_LEN],
     err = 0;
 fail:
     if (err == 0) {
+        /* Detach in case the current thread wasn't detached. */
         thread_flags_set(current_thread, SCHED_DETACH_FLAG);
 
         /*
-         * Mark main thread for deletion, it's up to user space to kill any
-         * children. If there however is any child threads those may or may
+         * Mark the old main thread for deletion, it's up to user space to kill
+         * any children. If there however is any child threads those may or may
          * not cause a segmentation fault depending on when the scheduler
          * starts removing stuff. This decission was made because we want to
          * keep disable_interrupt() time as short as possible and POSIX seems
@@ -225,7 +226,10 @@ fail:
         current_thread->inh.parent = NULL;
         curproc->main_thread = thread_lookup(tid);
 
-        /* Don't return but die. */
+        /*
+         * Don't return but die as the calling user space is wiped and this
+         * thread shouldn't exist anymore.
+         */
         thread_die(0);
     }
 

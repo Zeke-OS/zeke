@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Kernel idle thread and idle coroutine management.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -107,7 +107,7 @@ struct scheduler * sched_create_idle(void)
         .del_thread = NULL,
     };
 
-    thread_create(&tdef_idle, 1);
+    thread_create(&tdef_idle, THREAD_MODE_PRIV);
 
     return &sched_idle;
 }
