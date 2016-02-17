@@ -122,10 +122,10 @@ vnode_t * fs_create_pseudofs_root(fs_t * newfs, int majornum)
      * it would allow us for example printing error and debug messages with a
      * proper fsname.
      */
-#if 0
-    newfs->sbl_head = rootnode->sb->fs->sbl_head;
+
+    newfs->sblist_head = rootnode->sb->fs->sblist_head;
     rootnode->sb->fs = newfs;
-#endif
+
     rootnode->sb->vdev_id = DEV_MMTODEV(majornum, 0);
 
     return rootnode;

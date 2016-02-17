@@ -117,6 +117,8 @@ int __kinit__ procfs_init(void)
     SUBSYS_DEP(ramfs_init);
     SUBSYS_INIT("procfs");
 
+    int err;
+
     FS_GIANT_INIT(&procfs_fs.fs_giant);
 
     /*
@@ -131,7 +133,10 @@ int __kinit__ procfs_init(void)
     vn_procfs->sb->umount = procfs_umount;
     fs_register(&procfs_fs);
 
-    (void)init_files();
+    err = init_files();
+    if (err)
+        return err;
+
     procfs_updatedir(vn_procfs);
 
     return 0;

@@ -336,13 +336,6 @@ int ramfs_get_vnode(struct fs_superblock * sb, ino_t * vnode_num,
 {
     ramfs_sb_t * ramfs_sb;
 
-    if (strcmp(sb->fs->fsname, RAMFS_FSNAME)) {
-#ifdef configRAMFS_DEBUG
-        FS_KERROR_FS(KERROR_DEBUG, sb->fs, "Invalid fs\n");
-#endif
-        return -EINVAL;
-    }
-
     /* Get a pointer to the ramfs_sb from generic sb. */
     ramfs_sb = get_rfsb_of_sb(sb);
 
