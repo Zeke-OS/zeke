@@ -914,6 +914,11 @@ int fs_rmdir_curproc(const char * pathname)
         return err;
     }
 
+    /* Removing dot or dotdot is not ok. */
+    if (!strcmp(name, ".") || !strcmp(name, "..")) {
+        return -EINVAL;
+    }
+
     /* Check that we have a permission to write this dir. */
     err = chkperm_vnode_curproc(dir, O_WRONLY);
     if (err) {
