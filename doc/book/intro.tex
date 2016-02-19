@@ -1,19 +1,38 @@
 \part{Introduction}
 
-Zeke is a portable operating system for ARM processors.\footnote{Zeke is
-portable to at least in a sense of portability between different ARM cores
-and architectures.} Figure \ref{figure:zeke} illustrates architectural layers
-of the operating system. Scope of Zeke project is to implement a portable
+Zeke is a portable operating system mostly targetted for ARM
+processors.\footnote{Zeke is portable to at least in a sense of portability
+    between different ARM cores and architectures.}
+Zero Kernel, as it was originally known, is a tiny kernel implementation that
+was originally targeted for ARM Corex-M microcontrollers. The reason to start
+this project was that most of RTOSes available at the time for M0 feeled less
+or more bloated for very simple applications. Secondly I found architectures
+based on ARMv6-M to be quite challenging and interesting platforms for
+RTOS/kernel development, especially when ARMv6-M is compared to ARMv7-M used
+in M4 core or any Cortex-A cores using real ARM architectures.
+
+One of the original goals of Zero Kernel was to make it CMSIS-RTOS compliant
+where possible, as some concepts of Zeke were not actually CMSIS compliant
+from the begining. However the scope of the project shifted pretty early and
+the kernel is no longer CMSIS compatible at any level. Currently Zeke is
+moving towards POSIX-like system and its user space is taking a Unix-like
+shape. Nowadays Zeke is a bit bloatty when compared to the original standard
+of a bloated OS but I claim Zeke is still quite tightly integrated system,
+compared to any other Unix-like OS implementation.
+
+Figure \ref{figure:zeke} illustrates architectural layers of the operating
+system. Scope of Zeke project is to implement a portable
 Unix-like\footnote{The project is aiming to implement the core set of kernel
-features specified in \ac{POSIX} standard.} operating system from
+    features specified in \ac{POSIX} standard.} operating system from
 scratch\footnote{At least almost from scratch, some functionality is derived
 from BSD kernels as well as some libraries are taken from other sources.} that
 is optimized for ARM architectures and is free of legacy.
 
-In addition to portability another goal has been configurability and adjustable
-footprint of the kernel binary as well as the whole OS image. This is achieved
-by modular kernel architecture and static compile time configuration. Like for
-example \ac{HAL} selection is already almost fully locked at compilation time.
+In addition to portability another long standing goal has been configurability
+and adjustable footprint of the kernel binary as well as the whole OS image.
+This is achieved by modular kernel architecture and static compile time
+configuration. Like for example \ac{HAL} selection is already almost fully
+locked at compilation time.
 
 \begin{figure}
   \includegraphics[width=10cm]{pics/zeke}

@@ -15,21 +15,8 @@ Coverity:
     ||......|'|...||'|. || 
                  .||. ||.'|...'
 
-Zero Kernel is a tiny kernel implementation that was originally targeted for
-ARM Corex-M microcontrollers. The reason to start this project was that most of
-currently (or back then) available RTOSes for M0 were bit bloat and secondly I
-found architectures based on ARMv6-M to be quite challenging and interesting
-platforms for RTOS/kernel development, especially when ARMv6-M is compared to
-ARMv7-M used in M4 core or any Cortex-A cores using real ARM architectures.
-
-One of the original goals of Zero Kernel was to make it CMSIS-RTOS compliant
-where possible, as some concepts of Zeke were not actually CMSIS compliant from
-the begining. However the scope of the project shifted pretty early and the
-kernel is no longer CMSIS compatible at any level. Currently Zeke is no moving
-towards POSIX-like system and its user space is taking a very Unix-like shape.
-Nowadays Zeke is a bit bloatty when compared to the original standard of
-a bloated OS but I claim Zeke is still quite tightly integrated system,
-compared to any other Unix-like OS implementation.
+Zeke is a tiny Unix-like operating system implementation that has grown up from
+an even smaller CMSIS-like embedded system.
 
 Key Features
 ------------
