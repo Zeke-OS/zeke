@@ -1,3 +1,5 @@
+\chapter{ramfs}
+
 \section{Overall description}
 
 The purpose of the \acs{ramfs} is to provide a storage in RAM for temporary
@@ -61,7 +63,7 @@ directory inode containing some directory entries.
 \end{figure}
 
 
-\section{Time Complexity and Performance Analysis}
+\section{Time complexity and performance analysis}
 
 \subsection{Mount}
 
@@ -85,7 +87,7 @@ from mounted ramfs in $O(1)$ time as it's only a matter of array indexing.
 File lookup on ramfs level is implemented only on single directory vnode level
 and sub-directory lookup must be then implemented on \acs{vfs} level i.e. lookup
 function for a vnode can only lookup for entries in the current directory
-vnode. A file lookup is made by calling \verb+vnode->vnode_ops->lookup()+.    
+vnode. A file lookup is made by calling \verb+vnode->vnode_ops->lookup()+.
 
 Directory entries are stored in chained hash tables as shown in figure
 \ref{figure:dir}. It can be easily seen that usually a chain array contains only
@@ -151,12 +153,12 @@ $O(n)$.
 \end{table}
 
 
-\section{Performance Testing}
+\section{Performance testing}
 
 Automated performance tests were implemented the same way as unit tests.
 Ramfs performance tests are in \verb+test_ramfsperf.c+ file.
 
-\subsection{Test Results}
+\subsection{Test results}
 
 \subsection{Hard link operations}
 
@@ -229,9 +231,9 @@ to the allocated blocks of memory, although kmalloc it self is quite inefficient
 too.
 
 
-\section{Suggestions for Further Development}
+\section{Suggestions for further development}
 
-\subsubsection{Directories}
+\subsection{Directories}
 
 Directory entry lookup tables (hash tables) could be made variable in size.
 This would make use of directory entry chains less frequent and greatly improve

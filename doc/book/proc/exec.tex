@@ -1,20 +1,21 @@
-\part{Executable File Formats}
 
-\chapter{Introduction}
+\chapter{Executable File Formats}
+
+\section{Introduction to executables in Zeke}
 
 The kernel has a support for implementing loader functions for any new
-executable format but currently only 32bit \acf{elf} support exist. 
+executable format but currently only 32bit \acf{elf} support exist.
 Loading of a new process image is invoked by calling exec syscall call that
 calls \verb+load_image()+ function in \verb+kern/exec.c+ file.
 Process image loaders are advertised by using \verb+EXEC_LOADER+ macro.
 
-\section{Memory Map}
+\section{Memory map}
 
 Memory map of an executable loaded in Zeke is defined by the exec subsystem.
 
-TODO
+%TODO
 
-\chapter{ELF32}
+\section{ELF32}
 
 The \acs{elf} loader in Zeke can be used to load statically linked executables
 as well as anything linked dynamically. Currently only two loadable sections can

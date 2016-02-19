@@ -2,7 +2,7 @@
 
 \chapter{File System Abstraction}
 
-\section{General Principles}
+\section{General principles}
 
 During this part of the document terms \acs{vnode} and \acs{inode} are
 sometimes used interchangeably. Historically inode was a way to index files
@@ -33,7 +33,7 @@ In fact vnode number itself is pretty much redundant and legacy information for
 Zeke that is only provided for compatibility reasons, the actual access method
 is always by a pointer reference to an object.
 
-\section{Kernel Interface}
+\section{Kernel interface}
 
 Kernel interface to the actual file system drivers and file system superblocks
 is built around virtual function structs defined in \acs{vfs} header file
@@ -61,14 +61,7 @@ modifying file contents or adding new hard links to a directory node.
 slow file systems. VFS itself doesn't use this caching for any purpose so
 it is completely optional to insert anything into there.
 
-\chapter{fatfs}
 \input{fs/fatfs}
-
-\chapter{procfs}
 \input{fs/procfs}
-
-\chapter{ramfs}
 \input{fs/ramfs}
-
-\chapter{devfs}
 \input{fs/devfs}

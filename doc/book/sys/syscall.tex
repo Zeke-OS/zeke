@@ -1,8 +1,8 @@
 \part{System Calls}
 
-\chapter{Introduction}
+\chapter{Introduction to System Calls}
 
-\section{Syscall Flow Sequence}
+\section{Syscall flow sequence}
 
 \begin{enumerate}
 \item User scope thread makes a syscall by calling:
@@ -38,7 +38,7 @@ numbers are defined in \verb+syscall.h+ file.
 
 \chapter{Adding new syscalls and handlers}
 
-\section{A New syscall}
+\section{A new syscall}
 
 \begin{itemize}
 \item \verb+include/syscall.h+ contains syscall number definitions
@@ -47,7 +47,7 @@ numbers are defined in \verb+syscall.h+ file.
 \item Add the new syscall under a syscall group handler
 \end{itemize}
 
-\section{A New syscall handler}
+\section{A new syscall handler}
 
 \begin{itemize}
 \item Create a new syscall group into \verb+include/syscall.h+
