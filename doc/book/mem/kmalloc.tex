@@ -1,7 +1,16 @@
 \chapter{kmalloc}
 
 The current implementation of a generic kernel memory allocator is largely
-based on a tutorial written by Marwan Burrelle\cite{Burelle:malloc}.
+based on a tutorial written by Marwan Burrelle\cite{Burelle:malloc}. Figure
+\ref{figure:mm_layers} shows kmalloc's relation to the the memory management
+stack of the kernel.
+
+\begin{figure}
+  \input{pics/mm_layers}
+  \centering
+  \caption{Kernel layers from kmalloc to physical \acs{CPU} level.}
+  \label{figure:mm_layers}
+\end{figure}
 
 \section{The implementation}
 
@@ -26,6 +35,13 @@ will definitely suffer some fragmentation over time.
 When kmalloc is out of (large enough) memory blocks it will expand its memory
 space by allocating a new block of memory from dynmem. Allocation is commited in
 1 MB blocks (naturally) and always rounded to the next 1 MB.
+
+Kmalloc stores its linked list of reserved and free blocks in the same memory
+that is used to allocate memory for its clients. Listing \ref{list:mblockt}
+shows the \verb+mblock_t+ structure definition used internally in kmalloc for
+linking blocks of memory.
+
+\lstinputlisting[label=list:mblockt,caption=kmalloc mblock\_t struct definition.]{mem/mblock_t.c}
 
 \begin{figure}
 \begin{bytefield}{16}

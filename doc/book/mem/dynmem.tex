@@ -1,6 +1,17 @@
 \chapter{dynmem}
 
-Dynmem allocates 1MB sections from L1 kernel master page table and always
-returns a physically contiguous memory region. If dynmem is passed for a thread
-it can be mapped either as a section entry or via L2 page table.
+Dynmem is a memory block allocator that always allocates memory in
+$1 \:\textrm{MB}$ blocks. See fig. \ref{figure:dynmem_blocks}.
+Dynmem allocates its blocks as $1 \:\textrm{MB}$ sections from the L1 kernel
+master page table and always returns physically contiguous memory regions. If
+dynmem is passed for a thread it can be mapped either as a section entry or
+via L2 page table, though this is normally not done as the vm interface is
+used instead, though this is normally not done as the vm interface is
+used instead.
 
+\begin{figure}
+  \input{pics/dynmem_blocks}
+  \centering
+  \caption{An example of reserved regions in dynmem.}
+  \label{figure:dynmem_blocks}
+\end{figure}

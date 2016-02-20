@@ -2,49 +2,130 @@
 
 \chapter{An Overview to Memory Management in Zeke}
 
-This chapter briefly introduces the architectural layout of memory management
-in Zeke at very generic level. Specifically we do not cover memory map layout or
-anything hardware specific.
-
-Zeke as well as most of major operating systems divides its memory management
-and mapping to several layers. In Zeke these layers are \ac{MMU} abstraction,
-\verb+dynmem+ handling dynamic allocation of contiguous blocks of memory and
-\verb+kmalloc+ that allocates memory for the kernel itself, and probably most
-importantly \verb+vralloc/buf/bio+ system that's handling all allocations for
-processes and IO buffers.
-
-Figure \ref{figure:mm_layers} shows the memory management stacking from kmalloc's
-perspective.
+In this chapter we will briefly introduce the architectural layout of memory
+management in Zeke. Zeke as well as most of major operating systems divides
+its memory management and mapping to several layers to hide away any hardware
+differences and obscurities. In Zeke these layers are \ac{MMU} \acs{HAL} that
+abstracts the hardware, \verb+dynmem+ handling the dynamic allocation of
+contiguous blocks of memory and \verb+kmalloc+ that allocates memory for the
+kernel itself, and probably most importantly \verb+vralloc/buf/bio+ subsystem
+that's handling all allocations for processes and IO buffers. Relations between
+different kernel subsystems using and implementing memory management are shown
+in figure \ref{figure:vmsubsys}.
 
 \begin{figure}
-  \input{pics/mm_layers}
-  \centering
-  \caption{Kernel layers from kmalloc to physical \acs{CPU} level.}
-  \label{figure:mm_layers}
+\begin{verbatim}
+U                      +---------------+
+S                      |    malloc     |
+R                      +---------------+
+------------------------------ | -----------
+K   +---------------+  +---------------+
+E   |    kmalloc    |  |     proc      |
+R   +---------------+  +---------------+
+N           |     /\    |      |
+E           |     |    \/      |
+L  +-----+  |  +---------+   +----+
+   | bio |--|--| vralloc |---| vm |
+   +-----+  |  +---------+   +----+
+            |     |            |
+           \/    \/            \/
+    +---------------+     +----------+
+    |    dynmem     |-----| ptmapper |
+    +---------------+     +----------+
+            |                  |
+           \/                  |
+    +---------------+          |
+    |    mmu HAL    |<----------
+    +---------------+
+            |
+    +-----------------------+
+    | CPU specific MMU code |
+    +-----------------------+
+----------- | ------------------------------
+H   +-------------------+
+W   | MMU & coProcessor |
+    +-------------------+
+\end{verbatim}
+\caption{Memory management related subsystems and main users of the subsystems
+         in Zeke.}
+\label{figure:vmsubsys}
 \end{figure}
 
-\begin{description}
-\item[kmalloc] is a malloc-like interface for allocating arbitrary sized blocks
-  of memory.
-\item[dynmem] is a block allocator that always allocates memory in block size of
-  $1 \:\textrm{MB}$. See fig. \ref{figure:dynmem_blocks}.
-\end{description}
+\begin{itemize}
+  \item \verb+kmalloc+  - is a kernel level memory allocation service, used
+                        solely for memory allocations in kernel space.
+  \item \verb+vralloc+  - VRAlloc is a memory allocator targeted to allocate
+                        blocks of memory that will be mapped in virtual
+                        address space of a processes, but it's widely used
+                        as a generic allocator for medium size allocations,
+                        it returns a \verb+buf+ structs that are used to
+                        describe the allocation and its state.
+  \item \verb+bio+      - is a IO buffer system, mostly compatible with the
+                        corresponding interface in BSD kernels,
+                        utilizing vralloc and buf system.
+  \item \verb+dynmem+   - is a dynamic memory allocation system that allocates
+                        \& frees contiguous blocks of physical memory (1 MB).
+  \item \verb+ptmapper+ - owns all statically allocated page tables
+                        (particularly the master page table) and regions,
+                        and it is also used to allocate new page tables from
+                        the page table region.
+  \item \verb+vm+       - vm runs various checks on virtual memory access,
+                        copies data between user land, kernel space and
+                        allocates and maps memory for processes, and wraps
+                        memory mapping operations for proc and \acs{bio}.
+  \item mmu HAL -       is an interface to access MMU, provided by \verb+mmu.h+
+                        and \verb+mmu.c+.
+  \item CPU specific MMU code is the module responsible of configuring the
+        physical MMU layer and implementing the HW interface provided by
+        \verb+mmu.h+
+\end{itemize}
 
-kmalloc stores its linked list of reserved and free blocks in the same memory
-that is used to allocate memory for its clients. Listing \ref{list:mblockt}
-shows the \verb+mblock_t+ structure definition used internally in kmalloc for
-linking blocks of memory.
+\begin{table}
+\caption{The memory map of Zeke running on BCM2835.}
+\label{table:bcm_memmap}
+\begin{verbatim}
+Address             |   | Description
+-----------------------------------------------------
+Interrupt Vectors:  |   |
+0x0 - 0xff          |   | Not used by Zeke
+0x100  - 0x4000     | L | Typical placement of ATAGs
+Priv Stacks:        |   |
+0x1000 - 0x2fff     | Z | Supervisor (SWI/SVC) stack
+0x3000 - 0x4fff     | Z | Abort stack
+0x5000 - 0x5fff     | Z | IRQ stack
+0x6000 - 0x6fff     | Z | Undef stack
+0x7000 - 0x7fff     | Z | System stack
+0x8000 - 0x3fffff   | Z | Kernel area (boot address)
+0x00400000-         | Z | Page Table
+0x007FFFFF          |   | Area
+0x00800000          | Z | Dynmem
+0x00FFFFFF          |   | Area
+-                   |   |
+Peripherals:        |   |
+0x20000000 -        |   |
+ Interrupts         |   |
+0x2000b200          | B | IRQ basic pending
+0x2000b204          | B | IRQ pending 1
+0x2000b20c          | B | IRQ pending 2
+0x2000b210          | B | Enable IRQs 1
+0x2000b214          | B | Enable IRQs 2
+0x2000b218          | B | Enable Basic IRQs
+0x2000b21c          | B | Disable IRQs 1
+0x2000b220          | B | Disable IRQs 2
+0x2000b224          | B | Disable Basic IRQs
+- 0x20FFFFFF        | B | Peripherals
 
-\begin{figure}
-  \input{pics/dynmem_blocks}
-  \centering
-  \caption{Example of reserved dynmem regions.}
-  \label{figure:dynmem_blocks}
-\end{figure}
+Legends
+-------
 
-\lstinputlisting[label=list:mblockt,caption=kmalloc mblock\_t struct definition.]{mem/mblock_t.c}
+Z = Zeke specific
+L = Linux bootloader specific
+B = BCM2835 firmware specific mappings
+\end{verbatim}
+\end{table}
 
-
-\input{mem/vmem}
+\input{mem/mmuhal}
+\input{mem/dynmem}
 \input{mem/kmalloc}
 \input{mem/vralloc}
+\input{mem/vmem}
