@@ -1,4 +1,3 @@
-
 \chapter{Executable File Formats}
 
 \section{Introduction to executables in Zeke}
@@ -20,3 +19,14 @@ Memory map of an executable loaded in Zeke is defined by the exec subsystem.
 The \acs{elf} loader in Zeke can be used to load statically linked executables
 as well as anything linked dynamically. Currently only two loadable sections can
 be loaded, code region and heap region.
+
+\subsection{Suported \acs{elf} sections}
+\subsubsection{Load sections}
+
+The kernel reads process memory regions based on information provided by
+\verb+PT_LOAD+ sections in the \acs{elf} file.
+
+\subsubsection{Note sections}
+
+The kernel can read additional information needed for exec from note sections,
+currently supported note types are \verb+NT_VERSION+ and \verb+NT_STACKSIZE+.
