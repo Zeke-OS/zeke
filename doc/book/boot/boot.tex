@@ -1,0 +1,52 @@
+\part{Bootstrapping}
+\chapter{Bootloader}
+\chapter{Kernel Initialization}
+
+Kernel initialization order is defined as follows:
+\begin{itemize}
+    \item \verb+hw_preinit+
+    \item \verb+kmalloc_init()+
+    \item constructors
+    \item \verb+hw_postinit+
+    \item \verb+kinit()+
+\end{itemize}
+
+After kinit, scheduler will kick in and initialization continues in
+\verb+sinit(8)+ process.
+
+Every initializer function should contain \verb+SUBSYS_INIT("XXXX init");+ as
+the first line of the function and optionally single or multiple
+\verb+SUBSYS_DEP(YYYY_init);+ lines declaring subsystem initialization
+dependencies.
+
+\section{Kernel module/subsystem initializers}
+
+There are four kind of initializers supported at the moment:
+
+\begin{itemize}
+    \item \textbf{hw\_preinit} for mainly hardware related initializers
+    \item \textbf{hw\_postinit} for hardware related initializers
+    \item \textbf{constructor} (or init) for generic initialization
+\end{itemize}
+
+descturctors are not yet supported in Zeke but if there ever will be LKM
+support the destructors will be called when unloading the module.
+
+Listing \ref{list:kmodinit} shows the traditional constructor/intializer
+notation supported by Zeke.  
+
+\lstinputlisting[label=list:kmodinit,%
+caption=kmod.c]{boot/kmod.c}
+
+% TODO The new way of init
+
+Constructor prioritizing is not supported and \verb+SUBSYS_DEP+ should be used
+instead to indicate initialization dependecies.
+
+%\subsection{hw\_preinit and hw\_postinit}
+
+hw\_preinit and hw\_postinit can be used by including \verb+kinit.h+ header file
+and using the notation as shown in \ref{list:hwprepostinit}.
+
+\lstinputlisting[label=list:hwprepostinit,%
+caption=hwprepostinit.c]{boot/hwprepostinit.c}

@@ -2,7 +2,11 @@
 
 \chapter{Introduction to System Calls}
 
-\section{Syscall flow sequence}
+System calls are the main method of communication between the kernel and user
+space applications. The word syscall is usually used as a shorthand for system
+call in the context of Zeke and this book.
+
+\section{System call flow}
 
 \begin{enumerate}
 \item User scope thread makes a syscall by calling:
@@ -26,7 +30,6 @@
       in the architecture. Everything else shall be passed both ways by using
       args structs, thus unifying the return value.
 \end{enumerate}
-
 
 \section{Syscall Major and Minor codes}
 
