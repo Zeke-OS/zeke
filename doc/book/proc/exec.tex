@@ -8,12 +8,6 @@ Loading of a new process image is invoked by calling exec syscall call that
 calls \verb+load_image()+ function in \verb+kern/exec.c+ file.
 Process image loaders are advertised by using \verb+EXEC_LOADER+ macro.
 
-\section{Memory map}
-
-Memory map of an executable loaded in Zeke is defined by the exec subsystem.
-
-%TODO
-
 \section{ELF32}
 
 The \acs{elf} loader in Zeke can be used to load statically linked executables
@@ -30,3 +24,10 @@ The kernel reads process memory regions based on information provided by
 
 The kernel can read additional information needed for exec from note sections,
 currently supported note types are \verb+NT_VERSION+ and \verb+NT_STACKSIZE+.
+\verb+NT_STACKIZE+ note can be used to tell the kernel the preferred minimum
+size for the main thread stack. The note required for indicating the minimum
+stack size can be created with \verb+ELFNOTE_STACKSIZE+ macro provided by
+\verb+sys/elf_notes.h+ header file, see listing \ref{list:hugestack}.
+
+\lstinputlisting[label=list:hugestack,%
+caption=Changing the minimum stack size.]{../../usr/examples/hugestack.c}
