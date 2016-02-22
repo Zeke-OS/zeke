@@ -1,4 +1,5 @@
 \chapter{Executable File Formats}
+\label{chap:exec}
 
 \section{Introduction to executables in Zeke}
 
@@ -15,19 +16,12 @@ as well as anything linked dynamically. Currently only two loadable sections can
 be loaded, code region and heap region.
 
 \subsection{Suported \acs{elf} sections}
-\subsubsection{Load sections}
 
 The kernel reads process memory regions based on information provided by
 \verb+PT_LOAD+ sections in the \acs{elf} file.
 
-\subsubsection{Note sections}
-
 The kernel can read additional information needed for exec from note sections,
 currently supported note types are \verb+NT_VERSION+ and \verb+NT_STACKSIZE+.
 \verb+NT_STACKIZE+ note can be used to tell the kernel the preferred minimum
-size for the main thread stack. The note required for indicating the minimum
-stack size can be created with \verb+ELFNOTE_STACKSIZE+ macro provided by
-\verb+sys/elf_notes.h+ header file, see listing \ref{list:hugestack}.
-
-\lstinputlisting[label=list:hugestack,%
-caption=Changing the minimum stack size.]{../../usr/examples/hugestack.c}
+size for the main thread stack. The user space implementation is discussed in
+section \ref{sec:libc_elf}.

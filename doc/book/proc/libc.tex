@@ -1,0 +1,21 @@
+\chapter{Libc: Process and Thread Management}
+
+\section{\acs{elf} support}\label{sec:libc_elf}
+
+Zeke libc supports adding simple note sections to \acs{elf} files by using
+macros provided by \verb+sys/elf_notes.h+ header file. As discussed
+previously in chapter \ref{chap:exec}, some additional information about the
+runtime environment requirements can be passed via note sections. For example,
+a macro called \verb+ELFNOTE_STACKSIZE+ can be used for indicating the minimum
+stack size needed by the main tread of an executable, see listing
+\ref{list:hugestack}.
+
+\lstinputlisting[label=list:hugestack,%
+caption=hugestack.c]{../../usr/examples/hugestack.c}
+
+\section{Pthread}
+\subsection{Mutex}
+
+\epigraph{Tis in my memory lock'd,\newline
+          And you yourself shall keep the key of it.}{\textit{Hamlet}, 1, ii}
+

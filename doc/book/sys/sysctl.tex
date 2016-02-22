@@ -1,0 +1,61 @@
+\chapter{sysctl}
+
+The Zeke sysctl mechanism uses hierarchically organized \ac{MIB} tree as a
+debugging and online configuration interface to the kernel. This is extremely
+useful for example when testing scheduling parameters. Instead of recompiling
+after every parameter change it is possible to change kernel's internal
+parameters at run time by using sysctl interface.
+
+There is only one syscall for sysctl which handles both reading/writing a
+\ac{MIB} variable and queries to the MIB.
+
+\section{Magic names}
+
+There is some magic OID's that begins with \verb+{0,...}+ that are used for
+queries and other special purposes. Particularly all OID's begin with 0 are
+magic names. Currently allocated magic names are described in table
+\ref{table:sysctlmagic}.
+
+\begin{table}
+\caption{sysctl magic names.}
+\label{table:sysctlmagic}
+\begin{tabular}{lll}
+Name                & Internal function        & Purpose\\
+\hline
+\verb+{0,1,<iname>}+ & \verb+sysctl_sysctl_name()+     & Get the name of a MIB variable.\\
+\verb+{0,2,<iname>}+ & \verb+sysctl_sysctl_next()+     & Get the next variable from MIB tree.\\
+\verb+{0,3}+            & \verb+sysctl_sysctl_name2oid()+ & String name to integer name of the variable.\\
+\verb+{0,4,<iname>}+ & \verb+sysctl_sysctl_oidfmt()+   & Get format and type of a MIB variable.\\
+\verb+{0,5,<iname>}+ & \verb+sysctl_sysctl_oiddescr()+ & Get description string of a MIB variable.
+\end{tabular}
+\end{table}
+
+\section{Adding new sysctl entries}
+
+\subparagraph{Nodes}
+New nodes containing sub-entries can be created with \verb+SYSCTL_NODE+ macro
+like shown in listing \ref{list:sysctl_node}.
+
+\lstinputlisting[label=list:sysctl_node,caption=Sysctl node macro.]{sys/sysctl_node.c}
+
+In order to populate variables and nodes under newly created node the node
+should be declared with \verb+SYSCTL_DECL(<name>);+, this can be done either in
+\verb+sysctl.h+, in the header file of the subsystem/mode or locally in the
+source code file. In the latter case the new node won't be available in
+global scope.
+
+\subparagraph{Variables}
+\begin{itemize}
+\item \verb+SYSCTL_STRING+
+\item \verb+SYSCTL_INT+
+\item \verb+SYSCTL_UINT+
+\item \verb+SYSCTL_LONG+
+\item \verb+SYSCTL_ULONG+
+\item \verb+SYSCTL_COUNTER_U64+
+\end{itemize}
+
+\subparagraph{Procedures}
+\lstinputlisting[label=list:sysctl_proc,caption=Adding a sysctl prodedure.]{sys/sysctl_proc.c}
+
+\subparagraph{Feature test variables}
+\verb+FEATURE(name, desc)+
