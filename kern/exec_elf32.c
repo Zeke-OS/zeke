@@ -61,18 +61,9 @@ struct elf_ctx {
 
 static int check_header(const struct elf32_header * hdr)
 {
-    const uint8_t elf_endian =
-#if (_BYTE_ORDER == _LITTLE_ENDIAN)
-        ELFDATA2LSB;
-#elif (_BYTE_ORDER == BIG_ENDIAN)
-        ELFDATA2MSB;
-#else
-#error Unsuported endianess
-#endif
-
     if (!IS_ELF(hdr) ||
         hdr->e_ident[EI_CLASS]      != ELFCLASS32 ||
-        hdr->e_ident[EI_DATA]       != elf_endian ||
+        hdr->e_ident[EI_DATA]       != ELFDATA_MACH ||
         hdr->e_ident[EI_VERSION]    != EV_CURRENT ||
         hdr->e_phentsize            != sizeof(struct elf32_phdr) ||
         hdr->e_version              != EV_CURRENT) {

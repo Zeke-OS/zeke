@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Header file for common elf definitions.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2000, 2001, 2008, 2011, David E. O'Brien
  * Copyright (c) 1998 John D. Polstra.
  * All rights reserved.
@@ -35,6 +35,7 @@
 #ifndef _ELF_COMMON_H_
 #define _ELF_COMMON_H_ 1
 
+#include <machine/endian.h>
 #include <machine/regs.h>
 #include <stdint.h>
 #include <sys/types/_gid_t.h>
@@ -161,6 +162,14 @@ typedef struct elf_prpsinfo {
 #define ELFDATANONE 0   /* Unknown data format. */
 #define ELFDATA2LSB 1   /* 2's complement little-endian. */
 #define ELFDATA2MSB 2   /* 2's complement big-endian. */
+
+#if (_BYTE_ORDER == _LITTLE_ENDIAN)
+#define ELFDATA_MACH (ELFDATA2LSB)
+#elif (_BYTE_ORDER == BIG_ENDIAN)
+#define ELFDATA_MACH (ELFDATA2MSB)
+#else
+#error Unsuported endianess
+#endif
 
 /* Values for e_ident[EI_OSABI]. */
 #define ELFOSABI_NONE       0   /* UNIX System V ABI */

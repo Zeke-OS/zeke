@@ -58,14 +58,6 @@ static off_t write2file(file_t * file, void * p, size_t size)
 static off_t write_elf_header(file_t * file, int phnum)
 {
     const size_t elf32_header_size = sizeof(struct elf32_header);
-    const uint8_t elf_endian =
-#if (_BYTE_ORDER == _LITTLE_ENDIAN)
-        ELFDATA2LSB;
-#elif (_BYTE_ORDER == BIG_ENDIAN)
-        ELFDATA2MSB;
-#else
-#error Unsuported endianess
-#endif
     struct elf32_header hdr = {
         .e_type = ET_CORE,
         .e_machine = EM_ARM, /* TODO get it from somewhere. */
@@ -87,7 +79,7 @@ static off_t write_elf_header(file_t * file, int phnum)
     hdr.e_ident[EI_MAG3] = ELFMAG3;
     hdr.e_ident[EI_VERSION] = EV_CURRENT;
     hdr.e_ident[EI_CLASS] = ELFCLASS32;
-    hdr.e_ident[EI_DATA] = elf_endian;
+    hdr.e_ident[EI_DATA] = ELFDATA_MACH;
     hdr.e_ident[EI_OSABI] = ELFOSABI_NONE;
 
     /* Write the elf header. */
