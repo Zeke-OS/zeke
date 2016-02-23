@@ -1,11 +1,15 @@
-void mod_preinit(void)
+int mod_preinit(void)
 {
-    SUBSYS_INIT();
+    SUBSYS_INIT("hw driver");
     ...
-    SUBSYS_INITFINI("mod preinit OK");
+    return 0;
 }
 HW_PREINIT_ENTRY(mod_preinit);
 
-void mod_postinit(void)
-{ ... }
+int mod_postinit(void)
+{
+    SUBSYS_INIT("hw driver");
+    ...
+    return 0;
+}
 HW_POSTINIT_ENTRY(mod_postinit);

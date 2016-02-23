@@ -1,13 +1,10 @@
-void mod_init(void) __attribute__((constructor));
-void mod_deinit(void) __attribute__((destructor));
-
-void mod_init(void)
+int __kinit__ mod_init(void)
 {
-    SUBSYS_INIT();
     SUBSYS_DEP(modx_init); /* Module dependency */
+    SUBSYS_INIT("module name");
     ...
-    SUBSYS_INITFINI("mod OK");
+    return 0;
 }
 
-void mod_deinit(void)
+void mod_deinit(void) __attribute__((destructor))
 { ... }
