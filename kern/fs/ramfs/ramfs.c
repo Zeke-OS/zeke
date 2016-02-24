@@ -380,8 +380,8 @@ int ramfs_delete_vnode(vnode_t * vnode)
     KASSERT(inode != NULL, "inode should be set");
 
 #ifdef configRAMFS_DEBUG
-    KERROR(KERROR_DEBUG, "%s::%s(%u)\n", vnode->sb->fs->fsname, __func__,
-           (unsigned)vnode->vn_num);
+    FS_KERROR_VNODE(KERROR_DEBUG, vnode, "%s(%u)\n",
+                    __func__, (unsigned)vnode->vn_num);
 #endif
 
     if (inode->in_nlink > 0) {
@@ -482,8 +482,8 @@ int ramfs_create(vnode_t * dir, const char * name, mode_t mode,
     int err;
 
 #ifdef configRAMFS_DEBUG
-        KERROR(KERROR_DEBUG, "%s(name \"%s\", mode %u)\n",
-               __func__, name, mode);
+    FS_KERROR_VNODE(KERROR_DEBUG, dir, "%s(name \"%s\", mode %u)\n",
+                    __func__, name, mode);
 #endif
 
     if (!S_ISDIR(dir->vn_mode))
@@ -724,8 +724,8 @@ int ramfs_rmdir(vnode_t * dir,  const char * name)
     int err;
 
 #ifdef configRAMFS_DEBUG
-    KERROR(KERROR_DEBUG, "%s(dir %p, name \"%s\")\n",
-           __func__, dir, name);
+    FS_KERROR_VNODE(KERROR_DEBUG, dir, "%s(dir %p, name \"%s\")\n",
+                    __func__, dir, name);
 #endif
 
     if (!S_ISDIR(dir->vn_mode))
