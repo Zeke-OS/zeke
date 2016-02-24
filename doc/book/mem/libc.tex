@@ -1,1 +1,7 @@
 \chapter{Libc: Memory Management}
+
+Zeke libc supports the standard memory management features provided by
+most of Unices. The syscalls that can be used for memory allocation are
+\verb+brk()+/\verb+sbrk()+ and \verb+mmap()+/\verb+munmap()+, and the
+standard malloc interface is internally using these facilities to allocate
+and free memory.

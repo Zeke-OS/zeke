@@ -17,12 +17,23 @@ caption=hugestack.c]{../../usr/examples/hugestack.c}
 
 \subsection{Creating a daemon}
 
+Creating a daemon is probably one of the main features of operating systems
+like Zeke. The preferred way of creating a daemon in Zeke is forking once and
+creating a new session for the child process by calling \verb+setsid()+. The
+parent process may exit immediately after forking. Listing \ref{list:daemon}
+shows an example of a daemon creation procedure.
+
 \lstinputlisting[label=list:daemon,%
 caption=daemon.c]{../../usr/examples/daemon.c}
 
 \section{User credentials control}
 
 \section{Pthread}
+
+\subsection{Thread creation and destruction}
+
+\subsection{Thread local storage}
+
 \subsection{Mutex}
 
 \epigraph{Tis in my memory lock'd,\newline
