@@ -31,6 +31,12 @@ config configFATFS_UNICODE
     bool "FAT Unicode support"
     default n
 
+config configFATFS_DESIREDVNODES
+    int "desiredvnodes"
+    default 100
+    ---help---
+    Controls the VFS hash table size.
+
 config configFATFS_DEBUG
     bool "Debugging"
     default n

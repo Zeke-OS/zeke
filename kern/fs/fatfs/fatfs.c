@@ -67,6 +67,8 @@ static struct fs fatfs_fs = {
     .sblist_head = SLIST_HEAD_INITIALIZER(),
 };
 
+static id_t vfs_hash_ctx_id;
+
 /**
  * Array of all FAT mounts for faster access.
  */
@@ -89,10 +91,26 @@ vnode_ops_t fatfs_vnode_ops = {
     .chflags = fatfs_chflags,
 };
 
+/**
+ * Comparator function for vfs_hash.
+ */
+static int fatfs_vncmp(struct vnode * vp, void * arg)
+{
+    const struct fatfs_inode * const in = get_inode_of_vnode(vp);
+    const char * fpath = (char *)arg;
+
+    return strcmp(in->in_fpath, fpath);
+}
+
 int __kinit__ fatfs_init(void)
 {
     SUBSYS_DEP(proc_init);
     SUBSYS_INIT("fatfs");
+
+    vfs_hash_ctx_id = vfs_hash_new_ctx("fatfs", configFATFS_DESIREDVNODES,
+                                       fatfs_vncmp);
+    if (vfs_hash_ctx_id < 0)
+        return vfs_hash_ctx_id;
 
     fatfs_sb_arr = kcalloc(configFATFS_MAX_MOUNTS, sizeof(struct fatfs_sb *));
     if (!fatfs_sb_arr)
@@ -104,17 +122,6 @@ int __kinit__ fatfs_init(void)
     fs_register(&fatfs_fs);
 
     return 0;
-}
-
-/**
- * Comparer for vfs_hash.
- */
-static int fatfs_vncmp(struct vnode * vp, void * arg)
-{
-    const struct fatfs_inode * const in = get_inode_of_vnode(vp);
-    const char * fpath = (char *)arg;
-
-    return strcmp(in->in_fpath, fpath);
 }
 
 /**
@@ -350,7 +357,7 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
     init_fatfs_vnode(vn, inum, vn_mode, vn_hash, &(sb->sb));
 
     /* Insert to the cache */
-    err = vfs_hash_insert(vn, vn_hash, &xvp, fatfs_vncmp, fpath);
+    err = vfs_hash_insert(vfs_hash_ctx_id, vn, vn_hash, &xvp, fpath);
     if (err) {
         retval = -ENOMEM;
         goto fail;
@@ -416,7 +423,7 @@ static int fatfs_delete_vnode(vnode_t * vnode)
         if (!isdir)
             f_sync(&in->fp, 0);
     } else {
-        vfs_hash_remove(vnode);
+        vfs_hash_remove(vfs_hash_ctx_id, vnode);
 
         /*
          * We use a negative value of vn_len to mark a deleted directory entry,
@@ -516,11 +523,10 @@ static int fatfs_lookup(vnode_t * dir, const char * name, vnode_t ** result)
      * Lookup from vfs_hash cache
      */
     vn_hash = hash32_str(in_fpath, 0);
-    retval = vfs_hash_get(
+    retval = vfs_hash_get(vfs_hash_ctx_id,
                           dir->sb,      /* FS superblock */
                           vn_hash,      /* Hash */
                           &vn,          /* Retval */
-                          fatfs_vncmp,  /* Comparator */
                           in_fpath      /* Compared fpath */
                          );
     if (retval) {

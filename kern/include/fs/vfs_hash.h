@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2005 Poul-Henning Kamp
  * All rights reserved.
  *
@@ -30,16 +30,54 @@
 #ifndef VFS_HASH_H
 #define VFS_HASH_H
 
+#include <sys/types/_id_t.h>
+
 struct vnode;
 
+/**
+ * vnode comparator function type.
+ */
 typedef int vfs_hash_cmp_t(struct vnode * vp, void * arg);
 
-int vfs_hash_get(const struct fs_superblock * mp, unsigned hash,
-                 struct vnode ** vpp, vfs_hash_cmp_t * fn, void * arg);
+
+/**
+ * Get a new vfs_hash context.
+ * @note Not thread-safe.
+ * @return The id of the context.
+ */
+id_t vfs_hash_new_ctx(const char * fsname, int desiredvnodes,
+                      vfs_hash_cmp_t * cmp_fn);
+
+/**
+ * Get a vnode pointer from vfs_hash.
+ * @param cid is the vfs_hash context ID.
+ * @retval -EINVAL if cid is invalid.
+ */
+int vfs_hash_get(id_t cid, const struct fs_superblock * mp,
+                 unsigned hash, struct vnode ** vpp, void * cmp_arg);
+
 unsigned vfs_hash_index(struct vnode * vp);
-int vfs_hash_insert(struct vnode * vp, unsigned hash,
-                    struct vnode ** vpp, vfs_hash_cmp_t * fn, void * arg);
-void vfs_hash_rehash(struct vnode * vp, unsigned hash);
-void vfs_hash_remove(struct vnode * vp);
+
+/**
+ * Insert a vnode pointer to vfs_hash.
+ * @param cid is the vfs_hash context ID.
+ * @retval -EINVAL if cid is invalid.
+ */
+int vfs_hash_insert(id_t cid, struct vnode * vp, unsigned hash,
+                    struct vnode ** vpp, void * cmp_arg);
+
+/**
+ * Rehash.
+ * @param cid is the vfs_hash context ID.
+ * @retval -EINVAL if cid is invalid.
+ */
+int vfs_hash_rehash(id_t cid, struct vnode * vp, unsigned hash);
+
+/**
+ * Remove a vnode from the hashmap of a vfs_hash context.
+ * @param cid is the vfs_hash context ID.
+ * @retval -EINVAL if cid is invalid.
+ */
+int vfs_hash_remove(id_t cid, struct vnode * vp);
 
 #endif /* VFS_HASH_H */
