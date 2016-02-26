@@ -34,19 +34,15 @@ Descturctors are not currently supported in Zeke but if there ever will be LKM
 support the destructors will be called when unloading the module.
 
 Listing \ref{list:kmodinit} shows the constructor/intializer notation used by
-Zeke subsystems. The initializer function can return a negative errno code
-to indicate an error, but \verb+-EAGAIN+ is reserved to indicate that the
+Zeke subsystems. The initializer function can return a negative errno code to
+indicate an error, but \verb+-EAGAIN+ is reserved to indicate that the
 initializer was already executed.
 
 \lstinputlisting[label=list:kmodinit,%
 caption=kmod.c]{boot/kmod.c}
 
-% TODO The new way of init
-
 Constructor prioritizing is not supported and \verb+SUBSYS_DEP+ should be used
 instead to indicate initialization dependecies.
-
-%\subsection{hw\_preinit and hw\_postinit}
 
 hw\_preinit and hw\_postinit can be used by including \verb+kinit.h+ header file
 and using the notation as shown in \ref{list:hwprepostinit}. These should be
