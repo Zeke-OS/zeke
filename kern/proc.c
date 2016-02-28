@@ -289,7 +289,7 @@ void procarr_insert(struct proc_info * new_proc)
     KASSERT(new_proc, "new_proc can't be NULL");
 
 #ifdef configPROC_DEBUG
-    KERROR(KERROR_DEBUG, "procarr_insert(%d)\n", new_proc->pid);
+    KERROR(KERROR_DEBUG, "%s(%d)\n", __func__, new_proc->pid);
 #endif
 
     PROC_LOCK();
@@ -324,6 +324,9 @@ static void proc_remove(struct proc_info * proc)
     struct proc_info * parent;
 
     KASSERT(proc, "Attempt to remove NULL proc");
+#ifdef configPROC_DEBUG
+    KERROR(KERROR_DEBUG, "%s(%d)\n", __func__, proc->pid);
+#endif
 
     proc->state = PROC_STATE_DEFUNCT;
 
