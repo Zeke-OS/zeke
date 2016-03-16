@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    syscall.h
+ * @file    mach_syscall.h
  * @author  Olli Vanhoja
  * @brief   Header file for syscalls.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -37,8 +37,8 @@
  * @{
  */
 
-#ifndef MACHINE_SYSCALL_H
-#define MACHINE_SYSCALL_H
+#ifndef MACHINE_MACH_SYSCALL_H
+#define MACHINE_MACH_SYSCALL_H
 
 #include <autoconf.h>
 
@@ -69,7 +69,7 @@
 #endif
 #endif /* !KERNEL_INTERNAL */
 
-#endif /* MACHINE_SYSCALL_H */
+#endif /* MACHINE_MACH_SYSCALL_H */
 
 /**
  * @}
