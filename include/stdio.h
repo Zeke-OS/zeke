@@ -916,9 +916,50 @@ void perror( const char * s ) _PDCLIB_nothrow;
  * stream isn't locked by the calling thread is implementation defined.
  */
 #if _PDCLIB_POSIX_MIN(200112L) || _PDCLIB_BSD_SOURCE || _PDCLIB_SVID_SOURCE
+
+/**
+ * @addtogroup flockfile stdio file locking
+ * flockfile() locks the passed FILE stream for access by the calling thread,
+ * potentially blocking. ftrylockfile() attempts to lock the file for the
+ * calling thread, but will return failure if another thread has already
+ * locked the file.  funlockfile() releases the lock on the stream, allowing
+ * another thread in the process to access it.
+ *
+ *  _POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600 || _SVID_SOURCE ||
+ *  _BSD_SOURCE
+ *
+ * The same stream may be locked multiple times by the calling thread; the
+ * number of calls to flockfile() and ftrylockfile() on a file must be equal
+ * to the number of calls to funlockfile().
+ *
+ * No other thread may do I/O through the locked file while it is locked.
+ * @note PDCLib implements the file locking on top of the Mutex primitives
+ *       added by C11.
+ * @sa fopen(3) fclose(3) unlocked_stdio(3) mtx_t(3)
+ * @since The locked I/O routines were initially introduced in System V
+ *        Interface Definition, Fourth Edition ("SVID4"), and incorporated
+ *        into POSIX in IEEE Std 1003.1-2001 ("POSIX.1").
+ * @{
+ */
+
+/**
+ * Lock the file.
+ */
 void flockfile(FILE *file) _PDCLIB_nothrow;
+
+/**
+ * Attempt to lock the file.
+ */
 int ftrylockfile(FILE *file) _PDCLIB_nothrow;
+
+/**
+ * Unlock the file.
+ */
 void funlockfile(FILE *file) _PDCLIB_nothrow;
+
+/**
+ *@}
+ */
 
 int getc_unlocked(FILE *stream) _PDCLIB_nothrow;
 int getchar_unlocked(void) _PDCLIB_nothrow;
@@ -943,17 +984,99 @@ int fputs_unlocked(const char *s, FILE *stream) _PDCLIB_nothrow;
 #endif
 
 #if _PDCLIB_EXTENSIONS
+/**
+ * @addtogroup cbprintf formatted output conversion by callback
+ * These functions permit the printf() string formatting functionality to be
+ * reused outside the C standard library, without the limitation of using the
+ * sprintf() function for this process, that the whole formatted string must
+ * exist in memory at once.
+ *
+ * These functions shall exhibit the same behaviour and conversion specifiers
+ * as the printf(3) function, except they shall perform their output by calling
+ * the cb callback, passing the characters to be output as the buf parameter,
+ * and the count of such characters as size.
+ *
+ * The implementation is permitted to invoke cb with a non-zero number of
+ * characters as many times as it deems necessary necessary. That is, the
+ * implementation may decide to call it only once it has finished conversion of
+ * the entire string, or it may call it multiple times as it incrementally
+ * performs a conversion (it would be legal for an implementation to invoke the
+ * callback for every character produced).
+ *
+ * During all invocations, the callback will be passed as p the same value as
+ * was passed to the function.
+ *
+ * The callback shall return size on success, or any other value on failure.
+ *
+ * Return values
+ * =============
+ *
+ * The functions shall return the number of characters produced by the
+ * conversion on success, or a negative number on failure. If the number of
+ * characters converted exceeds INT_MAX, then INT_MAX shall be returned.
+ *
+ * Examples
+ * ========
+ *
+ * Using _vcbprintf() to reimplement printf
+ * @code{.c}
+ * static size_t do_output(void *p, const char *buf, size_t size)
+ * {
+ *     return fwrite(buf, 1, size, (FILE *) p);
+ * }
+ *
+ * int myprintf(const char *fmt, ...)
+ * {
+ *     va_list ap;
+ *     va_start(ap, fmt);
+ *     return _vcbprintf(stdout, do_output, ap);
+ *     va_end(ap);
+ * }
+ *
+ * Errors
+ * ======
+ *
+ * This function shall not affect errno, however the callbacks it invokes may
+ *
+ * @sa printf(3)
+ *
+ * Rationale
+ * =========
+ *
+ * Sensible implementations of the ISO C standard library implement an
+ * analogous system internally, permitting them to share their implementation
+ * of formatting between printf(3) and sprintf(3).  Therefore, implementing a
+ * callback based variant is not of substantial complexity.
+ *
+ * These functions permit the reuse of this functionality by applications and
+ * libraries (for example, a logging library) without the need to reimplement
+ * it, and without the aforementioned memory limitation imposed by sprintf(3).
+ *
+ * @since This nonstandard extension was first defined by PDCLib.
+ * @{
+ */
+
+/**
+ * _vcbprintf
+ */
 int _vcbprintf(
     void *p,
     _PDCLIB_size_t ( *cb ) ( void *p, const char *buf, _PDCLIB_size_t size ),
     const char *format,
     _PDCLIB_va_list arg );
 
+/**
+ * _cbprintf
+ */
 int _cbprintf(
     void *p,
     size_t ( *cb ) ( void *p, const char *buf, size_t size ),
     const char *format,
     ... );
+
+/**
+ * @}
+ */
 
 /**
  * @addtogroup unlocked_stdio

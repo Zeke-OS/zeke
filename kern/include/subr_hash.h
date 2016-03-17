@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2004 Joseph Koshy
  * Copyright (c) 1982, 1986, 1991, 1993
  *  The Regents of the University of California.  All rights reserved.
  * (c) UNIX System Laboratories, Inc.
@@ -39,7 +40,55 @@
  */
 
 /**
- * @addtogroup subr_hash
+ * @addtogroup subr_hash Subr_hash
+ * The hashinit(), hashinit_flags() and phashinit() functions allocate space
+ * for hash tables of size given by the argument nelements.
+ *
+ * The hashinit() function allocates hash tables that are sized to largest power
+ * of two less than or equal to argument nelements. The phashinit() function
+ * allocates hash tables that are sized to the largest prime number less than or
+ * equal to argument nelements. The hashinit_flags() function operates like
+ * hashinit() but also accepts an additional argument flags which control
+ * various options during allocation. Allocated hash tables are contiguous
+ * arrays of LIST_HEAD(3) entries, allocated using malloc(9), and initialized
+ * using LIST_INIT(3). The malloc arena to be used for allocation is pointed to
+ * by argument type.
+ *
+ * The hashdestroy() function frees the space occupied by the hash table pointed
+ * to by argument hashtbl. Argument type determines the malloc arena to use when
+ * freeing space. The argument hashmask should be the bit mask returned by the
+ * call to hashinit() that allocated the hash table. The argument flags must be
+ * used with one of the following values.
+ *
+ * @warning The hashinit() and phashinit() functions will panic if argument
+ *          nelements is less than or equal to zero.
+ * @warning The hashdestroy() function will panic if the hash table pointed
+ *          to by hashtbl is not empty.
+ * @bug     There is no phashdestroy() function, and using hashdestroy() to
+ *          free a hash table allocated by phashinit() usually has grave
+ *          consequences.
+ *
+ * Examples
+ * ========
+ *
+ * A typical example is shown below:
+ *
+ * @code{.c}
+ * ...
+ * static LIST_HEAD(foo, foo) *footable;
+ * static u_long foomask;
+ * ...
+ * footable = hashinit(32, M_FOO, &foomask);
+ * @endcode
+ *
+ * Here we allocate a hash table with 32 entries from the malloc arena pointed
+ * to by M_FOO. The mask for the allocated hash table is returned in foomask.
+ * A subsequent call to hashdestroy() uses the value in foomask:
+ *
+ * @code{.c}
+ * ...
+ * hashdestroy(footable, M_FOO, foomask);
+ * @endcode
  * @{
  */
 
@@ -51,9 +100,14 @@
  * Init a hash table.
  * The hashinit() function allocates hash tables that are sized to largest
  * power of two less than or equal to  argument nelements.
+ *
+ * The hashinit() function returns a pointer to an allocated hash table and
+ * sets the location pointed to by hashmask to the bit mask to be used for
+ * computing the correct slot in the hash table.
  */
 void * hashinit(int count, unsigned long * hashmask);
 void * hashinit_flags(int count, unsigned long * hashmask, int flags);
+
 /**
  * Any malloc performed by  the hashinit_flags() function
  * will not be allowed to wait, and therefore may fail.
@@ -70,10 +124,17 @@ void * hashinit_flags(int count, unsigned long * hashmask, int flags);
  * Destroy a hash table.
  * The hashdestroy() function frees the space occupied by the hash table
  * pointed to by argument hashtbl.
+ *
+ * The hashdestroy() function will panic if the hash table pointed to by
+ * hashtbl is not empty.
  */
 void hashdestroy(void *, unsigned long);
 
-
+/**
+ * The phashinit() function returns a pointer to an allocated hash table
+ * and sets the location pointed to by nentries to the number of rows in
+ * the hash table.
+ */
 void * phashinit(int count, unsigned long * nentries);
 
 #endif /* SUBR_HASH_H */

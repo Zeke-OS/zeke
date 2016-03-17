@@ -41,6 +41,34 @@ struct tm;
 #define WEOF ((wint_t) -1)
 #endif
 
+/**
+ * @addtogroup wchar.h wide character & wide character string manipulation
+ * The <wchar.h> header provides functions for manipulating wide character
+ * strings" "for converting between wide characters and multibyte character
+ * sets" "for manipulating wide character strings" "and for wide character
+ * oriented input and output.
+ *
+ * Types & Definitions
+ * -------------------
+ * The type size_t and macro NULL shall be defined as in <stddef.h>.
+ *
+ * The type wchar_t shall be defined as an integral type capable of
+ * representing any wide character in the implementation defined encoding.
+ * The type wint_t shall be defined as an integral type capable of
+ * representing any wide character in the implementation defined encoding" "plus
+ * the distinct value given by WEOF, which evaluates to a constant expression of
+ * type wint_t which does not correspond to any character in the implementation
+ * defined character set. The macros WCHAR_MIN and WCHAR_MAX shall be defined as
+ * in <stdint.h>.
+ *
+ * The type mbstate_t shall be a complete non-array object type used for the
+ * storage of the state of a  multibyte to wide character conversion.
+ *
+ * The type struct tm shall be defined as an incomplete type" "a full definition
+ * of wich can be found in <time.h>.
+ * @{
+ */
+
 /* Wide character string handling */
 wchar_t *wcscpy(wchar_t *_PDCLIB_restrict s1, const wchar_t *_PDCLIB_restrict s2);
 wchar_t *wcsncpy(wchar_t *_PDCLIB_restrict s1, const wchar_t *_PDCLIB_restrict s2, size_t n);
@@ -117,7 +145,38 @@ unsigned long long int wcstoull(const wchar_t *_PDCLIB_restrict nptr, wchar_t **
 /* Character set conversion */
 wint_t btowc(int c);
 int wctob(wint_t c);
+
+/**
+ * @}
+ */
+
+/**
+ * @addtogroup mbsinit determines multibyte conversion state
+ * mbsinit() and mbsinit_l() shall return a nonzero value if the multibyte
+ * converison state pointed to by ps corresponds to an initial conversion state.
+ * The interpretation of *ps is locale dependent; the only guarantee is that an
+ * mbstate_t object initialized to zero shall correspond to an initial
+ * conversion state. If ps is NULL, then a nonzero value shall be returned.
+ *
+ * The locale used for mbsinit() shall be the currently active locale; either
+ * the current thread locale as set by uselocale(3) if one has been specified,
+ * or otherwise the global locale controlled by setlocale(3). The locale used
+ * by mbsinit_l() is that specified by loc.
+ * @since mbsinit() is first defined in ISO/IEC 9899/AMD1:1995
+ *        ("ISO C90, Amendment 1"); mbsinit_l() is a nonstadard extension
+ *        originating in Darwin. See xlocale.h(3)
+ * @{
+ */
+
+/**
+ * Determine multibyte conversion state.
+ */
 int mbsinit(const mbstate_t *ps);
+
+/**
+ * @}
+ */
+
 size_t mbrlen(const char *_PDCLIB_restrict s, size_t n, mbstate_t *_PDCLIB_restrict ps);
 size_t mbrtowc(wchar_t *_PDCLIB_restrict pwc, const char *_PDCLIB_restrict s, size_t n, mbstate_t *_PDCLIB_restrict ps);
 size_t wcrtomb(char *_PDCLIB_restrict s, wchar_t wc, mbstate_t *_PDCLIB_restrict ps);
