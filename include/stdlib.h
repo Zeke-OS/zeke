@@ -139,36 +139,90 @@ void * realloc( void * ptr, size_t size ) _PDCLIB_nothrow;
 #define EXIT_SUCCESS _PDCLIB_SUCCESS
 #define EXIT_FAILURE _PDCLIB_FAILURE
 
-/* Initiate abnormal process termination, unless programm catches SIGABRT and
-   does not return from the signal handler.
-   This implementantion flushes all streams, closes all files, and removes any
-   temporary files before exiting with EXIT_FAILURE.
-   abort() does not return.
-*/
+/**
+ * @addtogroup abort
+ * Abnormal process termination
+ * @sa exit(3) quick_exit(3) _Exit(3) raise(3)
+ * @since ISO C90
+ * @{
+ */
+
+/**
+ * Initiate abnormal process termination, unless programm catches SIGABRT and
+ * does not return from the signal handler.
+ * This implementantion flushes all streams, closes all files, and removes any
+ * temporary files before exiting with EXIT_FAILURE.
+ * abort() does not return.
+ */
 _PDCLIB_noreturn void abort( void ) _PDCLIB_nothrow;
 
-/* Register a function that will be called on exit(), or when main() returns.
-   At least 32 functions can be registered this way, and will be called in
-   reverse order of registration (last-in, first-out).
-   Returns zero if registration is successfull, nonzero if it failed.
-*/
+/**
+ * @}
+ */
+
+/**
+ * @addtogroup atexit
+ * Registration of functions to be invoked before process termination.
+ * @sa abort(3) exit(3) quick_exit(3) _Exit(3)
+ * @since ISO C90
+ * @{
+ */
+
+/**
+ * Register a function that will be called on exit(), or when main() returns.
+ * At least 32 functions can be registered this way, and will be called in
+ * reverse order of registration (last-in, first-out).
+ * Returns zero if registration is successfull, nonzero if it failed.
+ */
 int atexit( void (*func)( void ) ) _PDCLIB_nothrow;
 
-/* Normal process termination. Functions registered by atexit() (see above) are
-   called, streams flushed, files closed and temporary files removed before the
-   program is terminated with the given status. (See comment for EXIT_SUCCESS
-   and EXIT_FAILURE above.)
-   exit() does not return.
-*/
+/**
+ * @}
+ */
+
+/**
+ * @addtogroup exit
+ * Calling any of these three functions terminates the current process,
+ * returning the exit code passed as a parameter. The interpretation of
+ * the exit code is undefined, except that 0 or EXIT_SUCCESS shall indicate
+ * successful completion and EXIT_FAILURE shall inidicate a non-successful
+ * completion.
+ *
+ * exit() first destroys all objects with C++ thread local storage duration
+ * (the C standard leaves whether or not thread local objects are destroyed
+ * or not undefined). Next, the destructors of all C++ objects of static
+ * storage duration are invoked along with all functions passed to atexit()
+ * in reverse order of registration (the time of registration for C++ objects
+ * of static storage duration is taken to be the time at which the constructor
+ * completes). It then flushes all open FILE streams with unwritten data and
+ * closes them. Finally, files created by tmpfile are removed, before handing
+ * control back to the host environment. Note in particular that functions
+ * registered with at_quick_exit are not called.
+ * @{
+ */
+
+/**
+ * Normal process termination. Functions registered by atexit() (see above) are
+ * called, streams flushed, files closed and temporary files removed before the
+ * program is terminated with the given status. (See comment for EXIT_SUCCESS
+ * and EXIT_FAILURE above.)
+ * exit() does not return.
+ */
 _PDCLIB_noreturn void exit( int status ) _PDCLIB_nothrow;
 
-/* Normal process termination. Functions registered by atexit() (see above) are
-   NOT CALLED. This implementation DOES flush streams, close files and removes
-   temporary files before the program is teminated with the given status. (See
-   comment for EXIT_SUCCESS and EXIT_FAILURE above.)
-   _Exit() does not return.
-*/
+
+/**
+ * Normal process termination. Functions registered by atexit() (see above) are
+ * NOT CALLED. This implementation DOES flush streams, close files and removes
+ * temporary files before the program is teminated with the given status. (See
+ * comment for EXIT_SUCCESS and EXIT_FAILURE above.)
+ * _Exit() does not return.
+ */
 _PDCLIB_noreturn void _Exit( int status ) _PDCLIB_nothrow;
+
+/**
+ * @}
+ */
 
 /* If string is a NULL pointer, system() returns nonzero if a command processor
    is available, and zero otherwise. If string is not a NULL pointer, it is

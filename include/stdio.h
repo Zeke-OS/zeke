@@ -955,6 +955,20 @@ int _cbprintf(
     const char *format,
     ... );
 
+/**
+ * @addtogroup unlocked_stdio
+ * Functions with analogous purposes to the same functions named without the
+ * unlocked prefix, excepting that they must be called with the stream already
+ * locked (they do not lock the stream themself). Before calling these
+ * functions, callers must lock the strea mupon which they wish to operate on
+ * with the flockfile or ftrylockfile function. Once they are done operating on
+ * the stream, they should unlock the stream using the funlockfile to allow
+ * other threads to use the stream. It is undefined behaviour to opreate on a
+ * sream using one of these functions without previously locking the stream
+ * appropriately, even in a single threaded application.
+ * @{
+ */
+
 int fgetpos_unlocked( FILE * _PDCLIB_restrict stream, fpos_t * _PDCLIB_restrict pos ) _PDCLIB_nothrow;
 int fsetpos_unlocked( FILE * stream, const fpos_t * pos ) _PDCLIB_nothrow;
 long int ftell_unlocked( FILE * stream ) _PDCLIB_nothrow;
@@ -974,6 +988,9 @@ int vscanf_unlocked( const char * _PDCLIB_restrict format, _PDCLIB_va_list arg )
 int fscanf_unlocked( FILE * _PDCLIB_restrict stream, const char * _PDCLIB_restrict format, ... ) _PDCLIB_nothrow;
 int vfscanf_unlocked( FILE * _PDCLIB_restrict stream, const char * _PDCLIB_restrict format, _PDCLIB_va_list arg ) _PDCLIB_nothrow;
 
+/**
+ * @}
+ */
 
 // Todo: remove prefix?
 _PDCLIB_uint_fast64_t _PDCLIB_ftell64( FILE * stream ) _PDCLIB_nothrow;

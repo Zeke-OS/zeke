@@ -19,6 +19,14 @@ __BEGIN_DECLS
 /**
  * @addtogroup assert
  * Abort the program if assertion is false.
+ * If NDEBUG was defined when assert.h was last included, the macro results in
+ * no code being generated. Otherwise, if the expression evaluates to false, an
+ * error message is printed to stderr and execution is terminated by invoking
+ * abort. The enclosing function of the call to assert will only be printed in
+ * the error message when compiling for C99, or a later revision of the C
+ * standard.
+ * @sa _Exit(3) quick_exit(3) exit(3) abort(3)
+ * @since C90, C99.
  * @{
  */
 

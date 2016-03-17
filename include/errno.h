@@ -5,7 +5,7 @@
  * @brief   System error numbers.
  *          IEEE Std 1003.1, 2013
  * @section LICENSE
- * Copyright (c) 2013, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2015 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,6 +39,7 @@
 /**
  * @addtogroup errno
  * Number of last error.
+ * @since IEEE Std 1003.1, 2013.
  * @{
  */
 
@@ -179,4 +180,3 @@ inline errno_t get_errno(void)
 /**
  * @}
  */
-
