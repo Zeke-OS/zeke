@@ -33,7 +33,7 @@
 #ifndef _EZTRIE_H_
 #define _EZTRIE_H_
 
-#ifdef __BSD_VISIBLE
+#ifdef __ZEKE__
 #include <sys/queue.h>
 #else
 #include "eztrie_queue.h"
