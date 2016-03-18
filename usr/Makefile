@@ -26,12 +26,16 @@
 include $(ROOT_DIR)/makefiles/user_head.mk
 
 # Binaries #####################################################################
-BIN-$(configUSR_EXAMPLES) := examples/daemon examples/hugestack \
-	examples/linenoise
+BIN-$(configUSR_EXAMPLES) := \
+examples/daemon \
+examples/eztrie \
+examples/hugestack \
+examples/linenoise
 BIN-$(configUSR_GAMES) := games/banner games/fbdemo games/plasma
 
 # Source Files #################################################################
 examples/daemon-SRC-$(configUSR_EXAMPLES) := examples/daemon.c
+examples/eztrie-SRC-$(configUSR_EXAMPLES) := examples/eztrie.c
 examples/hugestack-SRC-$(configUSR_EXAMPLES) := examples/hugestack.c
 examples/linenoise-SRC-$(configUSR_EXAMPLES) := examples/linenoise.c
 games/banner-SRC-$(configUSR_GAMES) := games/banner.c
@@ -46,6 +50,7 @@ FILES-$(configUSR_GAMES) := games/ball.bmp
 
 # LDFLAGS ######################################################################
 examples/linenoise-LDFLAGS := -llinenoise
+examples/eztrie-LDFLAGS := -leztrie
 
 # End
 
