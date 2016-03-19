@@ -63,6 +63,7 @@ SET_DECLARE(tish_cmd, struct tish_builtin);
     DATA_SET(tish_cmd, fun##_st)
 
 void tish_completion_init(void);
+void tish_completion_destroy(void);
 void tish_completion(const char * buf, linenoiseCompletions * lc);
 
 size_t split(char * buffer, char * argv[], size_t argc_max);

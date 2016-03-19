@@ -108,6 +108,11 @@ void tish_completion_init(void)
     init_path_completion();
 }
 
+void tish_completion_destroy(void)
+{
+    eztrie_destroy(&cmd_trie);
+}
+
 void tish_completion(const char * buf, linenoiseCompletions * lc)
 {
     struct eztrie_iterator it;
