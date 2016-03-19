@@ -118,7 +118,8 @@ static struct eztrie_node * ainsert(struct eztrie_node ** root, struct eztrie_no
     return *root;
 }
 
-static struct eztrie_node * eztrie_find_root(struct eztrie_node * root, char * key)
+static struct eztrie_node * eztrie_find_root(struct eztrie_node * root,
+                                             const char * key)
 {
     size_t i, n = strlen(key);
 
@@ -172,7 +173,7 @@ static struct eztrie_iterator eztrie_levelorder(struct eztrie_node * root,
     return it;
 }
 
-struct eztrie_iterator eztrie_find(struct eztrie * trie, char * key)
+struct eztrie_iterator eztrie_find(struct eztrie * trie, const char * key)
 {
     struct eztrie_node * t = trie->root;
 
@@ -191,7 +192,7 @@ struct eztrie_node_value * eztrie_remove_ithead(struct eztrie_iterator * it)
     return value;
 }
 
-void * eztrie_insert(struct eztrie * trie, char * key, void * p)
+void * eztrie_insert(struct eztrie * trie, const char * key, const void * p)
 {
     struct eztrie_node ** t = (struct eztrie_node **)(&trie->root);
     struct eztrie_node_value * value;
@@ -228,18 +229,18 @@ void * eztrie_insert(struct eztrie * trie, char * key, void * p)
     /* Create the value entry. */
     value = malloc(sizeof(struct eztrie_node_value) + n + 1);
     value->p = p;
-    memcpy(value->key, key, n + 1);
+    memcpy((char *)value->key, key, n + 1);
     (*t)->value = value;
 
-    return p;
+    return (void *)p;
 }
 
-void * eztrie_remove(struct eztrie * trie, char * key)
+void * eztrie_remove(struct eztrie * trie, const char * key)
 {
     struct eztrie_node * const root = trie->root;
     struct eztrie_node ** npp;
     struct eztrie_node * node = root;
-    void * p = NULL;
+    const void * p = NULL;
     size_t i, n = strlen(key);
 
     for (i = 0; i < n; i++) {
@@ -264,7 +265,7 @@ void * eztrie_remove(struct eztrie * trie, char * key)
         *npp = NULL;
     }
 
-    return p;
+    return (void *)p;
 }
 
 void eztrie_destroy(struct eztrie * trie)

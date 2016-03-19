@@ -52,8 +52,8 @@ struct eztrie {
 };
 
 struct eztrie_node_value {
-    void * p;
-    char key[0];
+    const void * p;
+    const char key[0];
 };
 
 STAILQ_HEAD(eztrie_iterator, eztrie_node);
@@ -69,7 +69,7 @@ struct eztrie eztrie_create(void);
  * @param key is the key as a c-string.
  * @returns Returns a trie iterator struct.
  */
-struct eztrie_iterator eztrie_find(struct eztrie * trie, char * key);
+struct eztrie_iterator eztrie_find(struct eztrie * trie, const char * key);
 
 /**
  * Remove the head of an interator.
@@ -88,7 +88,7 @@ struct eztrie_node_value * eztrie_remove_ithead(struct eztrie_iterator * it);
  *          NULL if the insertion failed;
  *          A pointer to the offending value.
  */
-void * eztrie_insert(struct eztrie * trie, char * key, void * p);
+void * eztrie_insert(struct eztrie * trie, const char * key, const void * p);
 
 /**
  * Remove a (key, p) from a trie.
@@ -96,7 +96,7 @@ void * eztrie_insert(struct eztrie * trie, char * key, void * p);
  * @param key is the key as a c-string.
  * @returns Returns a pointer to the removed value.
  */
-void * eztrie_remove(struct eztrie * trie, char * key);
+void * eztrie_remove(struct eztrie * trie, const char * key);
 
 /**
  * Destroy a trie.
