@@ -48,7 +48,6 @@ static void init_static_completion(void)
 {
     struct tish_builtin ** cmd;
 
-    cmd_trie = eztrie_create();
     SET_FOREACH(cmd, tish_cmd) {
         eztrie_insert(&cmd_trie, (*cmd)->name, NULL);
     }
@@ -104,6 +103,7 @@ static void init_path_completion(void)
 
 void tish_completion_init(void)
 {
+    cmd_trie = eztrie_create();
     init_static_completion();
     init_path_completion();
 }
