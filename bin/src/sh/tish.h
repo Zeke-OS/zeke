@@ -2,9 +2,9 @@
  *******************************************************************************
  * @file    tish.h
  * @author  Olli Vanhoja
- * @brief   Tiny Init Shell for debugging in init.
+ * @brief   Tiny Shell.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,7 @@
 #define TISH_H
 
 #include <sys/linker_set.h>
+#include <linenoise.h>
 
 #define TISH_NOFORK 0x1
 
@@ -60,6 +61,9 @@ SET_DECLARE(tish_cmd, struct tish_builtin);
         .fn = fun                                   \
     };                                              \
     DATA_SET(tish_cmd, fun##_st)
+
+void tish_completion_init(void);
+void tish_completion(const char * buf, linenoiseCompletions * lc);
 
 size_t split(char * buffer, char * argv[], size_t argc_max);
 void run_line(char * line);

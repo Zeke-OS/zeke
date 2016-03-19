@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Tiny shell.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -32,7 +32,6 @@
  *******************************************************************************
  */
 
-#include <autoconf.h> /* for KERNEL_VERSION */
 #include <fcntl.h>
 #include <libgen.h>
 #include <limits.h>
@@ -81,7 +80,6 @@ void init_hist(void)
 
     linenoiseHistoryLoad(histfilepath);
 }
-
 
 static char * get_prompt(void)
 {
@@ -194,6 +192,8 @@ int main(int argc, char * argv[], char * envp[])
         fclose(fp);
     } else {
         init_hist();
+        tish_completion_init();
+        linenoiseSetCompletionCallback(tish_completion);
 
         fflush(NULL);
         while ((line = linenoise(get_prompt())) != NULL) {
