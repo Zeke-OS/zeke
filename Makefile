@@ -105,6 +105,12 @@ opttest: lib
 rootfs: all
 	./tools/mkrootfs.sh zeke-rootfs.img $(MKROOTFS_BOOTFILES)
 
+# target: qemu - Run Zeke in QEMU.
+qemu: rootfs
+	qemu-system-arm -kernel kernel.elf -sd zeke-rootfs.img \
+		-cpu arm1176 -m 256 -M raspi -nographic -serial stdio \
+		-monitor telnet::4444,server,nowait -d unimp,guest_errors -s
+
 # target_doc: stats - Calculate some stats.
 stats: clean
 	cloc --exclude-dir=.git,doc,tools .
