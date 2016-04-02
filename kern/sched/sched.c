@@ -613,14 +613,15 @@ struct thread_info * thread_fork(pid_t new_pid)
     new_thread->id       = new_id;
     new_thread->flags   &= ~SCHED_INSYS_FLAG;
     new_thread->flags   |= SCHED_DETACH_FLAG; /* New main must be detached. */
-    init_sched_data(&new_thread->sched);
-    thread_set_inheritance(new_thread, NULL, new_pid);
 
     /* New thread kstack */
     if (!(new_thread->kstack_region = thread_alloc_kstack())) {
         kfree(new_thread);
         return NULL;
     }
+
+    init_sched_data(&new_thread->sched);
+    thread_set_inheritance(new_thread, NULL, new_pid);
 
     mtx_lock(&CURRENT_CPU->lock);
     RB_INSERT(threadmap, &CURRENT_CPU->threadmap_head, new_thread);
