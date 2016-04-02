@@ -487,7 +487,7 @@ static void thread_init_tls(struct thread_info * tp)
 
     proc = proc_ref(tp->pid_owner, PROC_NOT_LOCKED);
     if (!proc) {
-        panic("Thread must have a owner process");
+        panic("Thread must have an owner process");
     }
 
     /*
@@ -508,7 +508,7 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
     struct thread_info * tp;
     void ** thread_ctor_p;
 
-    /* TODO The following shouldn't never happen. */
+    /* TODO The following should never happen. */
     thread_id = atomic_inc(&next_thread_id);
     if (thread_id < 0)
         panic("Out of thread IDs");
@@ -544,15 +544,15 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
 
     if (thread_mode == THREAD_MODE_PRIV) {
         /*
-         * Just that user can see that this is a kworker, no functional
+         * Just that the user can see that this is a kworker, no functional
          * difference other than privileged mode.
          */
          tp->flags |= SCHED_KWORKER_FLAG;
     }
 
-    tp->wait_tim        = TMNOVAL;
+    tp->wait_tim = TMNOVAL;
 
-    /* Update parent and child pointers */
+    /* Update parent and child pointers. */
     thread_set_inheritance(tp, parent, (parent) ? parent->pid_owner : 0);
 
     /* Select master page table used on startup. */
@@ -598,7 +598,7 @@ struct thread_info * thread_fork(pid_t new_pid)
 
     KASSERT(old_thread, "current_thread not set, can't fork\n");
 
-    /* Get next free thread_id. */
+    /* Get the next free thread_id. */
     new_id = atomic_inc(&next_thread_id);
     if (new_id < 0) {
         KERROR(KERROR_ERR, "Out of thread IDs");

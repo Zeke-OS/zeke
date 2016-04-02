@@ -86,7 +86,7 @@ static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp,
     struct _sched_pthread_create_args args;
 
     stack_size = get_new_main_stack_size(stack_size);
-    KASSERT(args.stack_size != 0,
+    KASSERT(args.stack_size > 0,
             "Size of the main stack must be greater than zero\n");
 
     stack_region = vm_new_userstack_curproc(stack_size);
@@ -383,15 +383,16 @@ static int sys_exec(__user void * user_args)
      */
     err = exec_file(loader, args.fd, name, env_bp, args.nargv,
                     env_bp->b_mmu.vaddr, envp);
-fail:
-    if (err) {
-        if (env_bp && env_bp->vm_ops->rfree) {
-            env_bp->vm_ops->rfree(env_bp);
-        }
-        set_errno(-err);
-        return -1;
-    }
+    if (err)
+        goto fail;
+
     return 0;
+fail:
+    if (env_bp && env_bp->vm_ops->rfree) {
+        env_bp->vm_ops->rfree(env_bp);
+    }
+    set_errno(-err);
+    return -1;
 }
 
 static const syscall_handler_t exec_sysfnmap[] = {
