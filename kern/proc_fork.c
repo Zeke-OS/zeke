@@ -241,7 +241,7 @@ pid_t proc_get_random_pid(void)
 {
 
     pid_t last_maxproc, newpid;
-    int count = 0;
+    int count = 0, iterations;
 
 #ifdef configPROC_DEBUG
     KERROR(KERROR_DEBUG, "%s()\n", __func__);
@@ -253,7 +253,7 @@ pid_t proc_get_random_pid(void)
 
     /*
      * The new PID will be "randomly" selected between proc_lastpid and
-     * maxproc
+     * maxproc.
      */
     do {
         long d = last_maxproc - proc_lastpid - 1;
@@ -267,6 +267,17 @@ pid_t proc_get_random_pid(void)
             newpid = proc_lastpid + kunirand(d);
         newpid++;
         count++;
+
+        if (iterations++ > 10000) { /* Just try to find any sufficient PID. */
+            iterations = 0;
+
+            for (pid_t pid = 2; pid <= act_maxproc; pid++) {
+                if (!proc_exists(newpid, PROC_LOCKED)) {
+                    newpid = pid;
+                    break;
+                }
+            }
+        }
     } while (proc_exists(newpid, PROC_LOCKED));
 
     proc_lastpid = newpid;

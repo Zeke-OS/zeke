@@ -294,7 +294,8 @@ void procarr_insert(struct proc_info * new_proc)
 
     PROC_LOCK();
     if (new_proc->pid > act_maxproc || new_proc->pid < 0) {
-        KERROR(KERROR_ERR, "Inserted new_proc out of bounds");
+        KERROR(KERROR_ERR, "Inserted new_proc out of bounds (%d)\n",
+               new_proc->pid);
         return;
     }
 
@@ -307,7 +308,7 @@ static void procarr_remove(pid_t pid)
 {
     PROC_LOCK();
     if (pid > act_maxproc || pid < 0) {
-        KERROR(KERROR_ERR, "Attempt to remove a nonexistent process");
+        KERROR(KERROR_ERR, "Attempt to remove a nonexistent process\n");
         return;
     }
 
