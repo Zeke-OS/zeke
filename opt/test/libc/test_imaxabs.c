@@ -13,9 +13,16 @@ static void teardown(void)
 
 static char * test_imaxabs(void)
 {
-    pu_assert("", imaxabs((intmax_t)0) == 0);
-    pu_assert("", imaxabs(INTMAX_MAX) == INTMAX_MAX);
-    pu_assert("", imaxabs(INTMAX_MIN + 1) == -(INTMAX_MIN + 1));
+    int tst;
+
+    tst = imaxabs((intmax_t)0) == 0;
+    pu_assert("The absolute value of zero equals zero", tst);
+
+    tst = imaxabs(INTMAX_MAX) == INTMAX_MAX;
+    pu_assert("Int max absolute value equals to int max", tst);
+
+    tst = imaxabs(INTMAX_MIN + 1) == -(INTMAX_MIN + 1);
+    pu_assert("abs(min + 1) == -(min + 1)", tst);
 
     return NULL;
 }
