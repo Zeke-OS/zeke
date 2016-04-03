@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Execute a file.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Originally by the Regents of the University of California?
  * All rights reserved.
  *
@@ -73,6 +73,36 @@ static char * skipwhite(char * s)
     return s;
 }
 
+static size_t parse_shebang(char * argv[], char * fname, char * line)
+{
+    char * arg0 = skipwhite(line + 2);
+    char * arg1;
+    size_t skip;
+
+    arg1 = arg0;
+    while (arg1 < line + sizeof(line)) {
+        if (*arg1 == '\0' || isspace(*arg1)) {
+            *arg1 = '\0';
+            break;
+        }
+        arg1++;
+    }
+    arg1++;
+
+    if (arg1 < (line + sizeof(line)) && *arg1 != '\0') {
+        argv[0] = arg0;
+        argv[1] = arg1;
+        argv[2] = fname;
+        skip = 3;
+    } else {
+        argv[0] = arg0;
+        argv[1] = fname;
+        skip = 2;
+    }
+
+    return skip;
+}
+
 static int exec_script(char * const argv[], char * fname)
 {
     FILE * fp;
@@ -87,31 +117,9 @@ static int exec_script(char * const argv[], char * fname)
     fclose(fp);
 
     if (line[0] == '#' && line[1] == '!' && line[2] != '\0') {
-        /* Parse shebang line */
-        char * arg0 = skipwhite(line + 2);
-        char * arg1;
-
-        arg1 = arg0;
-        while (arg1 < line + sizeof(line)) {
-            if (*arg1 == '\0' || isspace(*arg1)) {
-                *arg1 = '\0';
-                break;
-            }
-            arg1++;
-        }
-        arg1++;
-        if (arg1 < (line + sizeof(line)) && *arg1 != '\0') {
-            newargs[0] = arg0;
-            newargs[1] = arg1;
-            newargs[2] = fname;
-            skip = 3;
-        } else {
-            newargs[0] = arg0;
-            newargs[1] = fname;
-            skip = 2;
-        }
+        skip = parse_shebang(newargs, fname, line) - 1;
     } else { /* Try fallback to sh */
-        newargs[0] = "sh";
+        newargs[0] = _PATH_BSHELL;
         newargs[1] = fname;
         skip = 1;
     }
@@ -124,9 +132,7 @@ static int exec_script(char * const argv[], char * fname)
         }
     }
 
-    execve(_PATH_BSHELL, newargs, environ);
-
-    return 0;
+    return execve(newargs[0], newargs, environ);
 }
 
 int execvp(const char * name, char * const argv[])

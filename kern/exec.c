@@ -261,8 +261,12 @@ static int clone_aa(struct buf * bp, __user char * uarr, size_t n_entries,
         return -ENOMEM;
 
     err = copyin(uarr, arg, n_entries * sizeof(char *));
-    if (err)
+    if (err) {
+#if defined(configEXEC_DEBUG)
+        KERROR(KERROR_DEBUG, "%s: Failed to copy the args array\n", __func__);
+#endif
         return err;
+    }
 
     offset = n_entries * sizeof(char *) + sizeof(char *);
     bytesleft -= offset;
@@ -275,8 +279,18 @@ static int clone_aa(struct buf * bp, __user char * uarr, size_t n_entries,
 
         err = copyinstr((__user char *)arg[i], val + offset, bytesleft,
                         &copied);
-        if (err)
+        if (err) {
+#if defined(configEXEC_DEBUG)
+        KERROR(KERROR_DEBUG, "%s: Failed to copy arg %i (%p)\n",
+               __func__, i, arg[i]);
+#endif
             return err;
+        }
+
+#if defined(configEXEC_DEBUG)
+        KERROR(KERROR_DEBUG, "%s: arg[%i] = \"%s\"\n",
+               __func__, i, val + offset);
+#endif
 
         /* new pointer from arg[i] to the string, valid in user space. */
         arg[i] = (char *)(bp->b_mmu.vaddr + *doffset + offset);

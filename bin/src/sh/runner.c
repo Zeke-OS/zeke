@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Tiny shell.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -51,7 +51,7 @@ enum runner_state {
 };
 
 static int fork_count; /*!< number of forks. */
-static char * args[512]; /*!< Args for exec. */
+static char * args[256]; /*!< Args for exec. */
 
 static struct tish_builtin * get_builtin(char * name)
 {
