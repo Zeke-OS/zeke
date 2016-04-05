@@ -86,9 +86,6 @@ static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp,
     struct _sched_pthread_create_args args;
 
     stack_size = get_new_main_stack_size(stack_size);
-    KASSERT(args.stack_size > 0,
-            "Size of the main stack must be greater than zero\n");
-
     stack_region = vm_new_userstack_curproc(stack_size);
     if (!stack_region)
         return -ENOMEM;
@@ -106,6 +103,9 @@ static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp,
         .arg4       = 0, /* Not used */
         .del_thread = NULL /* Not needed for main(). */
     };
+
+    KASSERT(args.stack_size > 0,
+            "Size of the main stack must be greater than zero\n");
 
     return thread_create(&args, THREAD_MODE_USER);
 }

@@ -241,7 +241,7 @@ pid_t proc_get_random_pid(void)
 {
 
     pid_t last_maxproc, newpid;
-    int count = 0, iterations;
+    int count = 0, iterations = 0;
 
 #ifdef configPROC_DEBUG
     KERROR(KERROR_DEBUG, "%s()\n", __func__);
