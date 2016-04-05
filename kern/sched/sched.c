@@ -52,6 +52,9 @@
 #include <queue_r.h>
 #include <timers.h>
 
+/* sysctl node for scheduler. */
+SYSCTL_NODE(_kern, OID_AUTO, sched, CTLFLAG_RW, 0, "Scheduler");
+
 /*
  * Scheduler constructors.
  */
@@ -105,7 +108,7 @@ struct cpu_sched {
      */
     struct scheduler * sched_arr[NR_SCHEDULERS];
 
-    /*
+    /**
      * A queue for freed thread_info structs that shall be freed in the idle
      * thread.
      * Dead threads are mainly removed in interrupt handling code but that
@@ -116,11 +119,23 @@ struct cpu_sched {
     queue_cb_t thread_free_queue;
     struct thread_info * thread_free_queue_data[configSCHED_FREEQ_SIZE];
 
+    /**
+     * Scheduling time average.
+     * Average time spend in the scheduler.
+     */
+    unsigned sched_time_avg;
+
     mtx_t lock;
 };
 
 static struct cpu_sched cpu[1];
 #define CURRENT_CPU (&cpu[get_cpu_index()])
+
+/*
+ * TODO Support MP.
+ */
+#define FOREACH_CPU(apply) \
+    apply((&cpu[0]), cpu0)
 
 #define TKSTACK_SIZE ((configTKSTACK_END - configTKSTACK_START) + 1)
 
@@ -171,8 +186,6 @@ SYSCTL_UINT(_kern_sched, OID_AUTO, nr_threads, CTLFLAG_RD,
 /** Scales fixed-point load average value to a integer format scaled to 100 */
 #define SCALE_LOAD(x) (((x + (FIXED_1 / 200)) * 100) >> FSHIFT)
 
-/* sysctl node for scheduler. */
-SYSCTL_NODE(_kern, OID_AUTO, sched, CTLFLAG_RW, 0, "Scheduler");
 
 /**
  * Pointer to the currently active thread.
@@ -304,6 +317,44 @@ void sched_get_loads(uint32_t loads[3])
     rwlock_rdunlock(&loadavg_lock);
 }
 
+#ifdef configSCHED_TIME_AVG
+#define SCHED_TIME_AVG_N 10
+
+static void calc_sched_time_avg(uint64_t start, uint64_t end)
+{
+    unsigned * sched_time_avg = &CURRENT_CPU->sched_time_avg;
+    uint64_t avg = *sched_time_avg;
+    uint64_t delta = end - start;
+
+    avg = (avg + delta - (avg >> SCHED_TIME_AVG_N));
+
+    *sched_time_avg = avg;
+}
+
+#define SYSCTL_CPU_SCHED_TIME_AVG(cpu, name)                    \
+static int sysctl_sched_time_avg_##name(SYSCTL_HANDLER_ARGS)    \
+{                                                               \
+    unsigned avg = cpu->sched_time_avg >> SCHED_TIME_AVG_N;     \
+    int error;                                                  \
+    error = sysctl_handle_int(oidp, &avg, sizeof(avg), req);    \
+    return error;                                               \
+}
+
+FOREACH_CPU(SYSCTL_CPU_SCHED_TIME_AVG)
+
+/*
+ * Export per CPU scheduling time averages to sysctl.
+ */
+#define CPU_SCHED_TIME_AVG(cpu, name)                       \
+SYSCTL_PROC(_kern_sched, OID_AUTO, sched_time_avg_##name,   \
+            CTLTYPE_INT | CTLFLAG_RD, NULL, 0,              \
+            sysctl_sched_time_avg_##name,                   \
+            "I", "Average scheduling time [us].");
+
+FOREACH_CPU(CPU_SCHED_TIME_AVG)
+
+#endif
+
 int sched_csw_ok(struct thread_info * thread)
 {
     if (thread_flags_not_set(thread, SCHED_IN_USE_FLAG) ||
@@ -318,6 +369,9 @@ void sched_handler(void)
 {
     struct thread_info * const prev_thread = current_thread;
     void ** task_p;
+    uint64_t sched_start_time;
+
+    sched_start_time = get_utime();
 
     if (!current_thread) {
         current_thread = thread_lookup(0);
@@ -383,6 +437,10 @@ void sched_handler(void)
         sched_task_t * task = *(sched_task_t **)task_p;
         task();
     }
+
+#ifdef configSCHED_TIME_AVG
+    calc_sched_time_avg(sched_start_time, get_utime());
+#endif
 }
 
 /* Thread creation ************************************************************/
