@@ -60,7 +60,7 @@ static int fifo_insert(struct scheduler * sobj, struct thread_info * thread)
 {
     struct sched_fifo * fifo = container_of(sobj, struct sched_fifo, sched);
 
-    if (!SCHED_TEST_POLFLAG(thread, SCHED_POLFLAG_INFIFORQ)) {
+    if (!sched_test_polflag(thread, SCHED_POLFLAG_INFIFORQ)) {
         RB_INSERT(fiforunq, &fifo->runq_head, thread);
         thread->sched.ts_counter = -1; /* Not used. */
 
@@ -86,7 +86,7 @@ static void fifo_remove(struct scheduler * sobj, struct thread_info * thread)
 {
     struct sched_fifo * fifo = container_of(sobj, struct sched_fifo, sched);
 
-    if (SCHED_TEST_POLFLAG(thread, SCHED_POLFLAG_INFIFORQ)) {
+    if (sched_test_polflag(thread, SCHED_POLFLAG_INFIFORQ)) {
         RB_REMOVE(fiforunq, &fifo->runq_head, thread);
         thread->sched.policy_flags &= ~SCHED_POLFLAG_INFIFORQ;
         fifo->nr_active--;

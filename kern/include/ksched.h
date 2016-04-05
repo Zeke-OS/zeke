@@ -104,20 +104,18 @@ SYSCTL_DECL(_kern_sched);
 void sched_get_loads(uint32_t loads[3]);
 
 /**
- * Test if policy flag is set.
+ * Test if a policy flag is set.
  */
-#define SCHED_TEST_POLFLAG(_thread_, _flag_) \
-    ((thread->sched.policy_flags & _flag_) == _flag_)
+int sched_test_polflag(struct thread_info * thread, unsigned flag);
 
 /**
- * Test if it is ok to terminate.
- * @param _x_ is the flags of the thread tested.
+ * Test if it is ok to terminate the thread.
+ * @param thread is a pointer to a thread to be tested.
  */
-#define SCHED_TEST_TERMINATE_OK(_x_) \
-    (((_x_) & (SCHED_IN_USE_FLAG | SCHED_INTERNAL_FLAG)) == SCHED_IN_USE_FLAG)
+int sched_test_terminate_ok(struct thread_info * thread);
 
 /**
- * Test if context switch a a given thread s ok.
+ * Test if context switch a given thread is ok.
  * @param thread is a pointer to a thread to be tested.
  */
 int sched_csw_ok(struct thread_info * thread);

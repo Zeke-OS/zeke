@@ -356,6 +356,19 @@ FOREACH_CPU(CPU_SCHED_TIME_AVG)
 
 #endif
 
+int sched_test_polflag(struct thread_info * thread, unsigned flag)
+{
+    return ((thread->sched.policy_flags & flag) == flag);
+}
+
+int sched_test_terminate_ok(struct thread_info * thread)
+{
+    uint32_t flags = thread_flags_get(thread);
+
+    return (((flags) & (SCHED_IN_USE_FLAG |
+                        SCHED_INTERNAL_FLAG)) == SCHED_IN_USE_FLAG);
+}
+
 int sched_csw_ok(struct thread_info * thread)
 {
     if (thread_flags_not_set(thread, SCHED_IN_USE_FLAG) ||
@@ -949,7 +962,7 @@ int thread_terminate(pthread_t thread_id)
     if (!thread)
         return -EINVAL;
 
-    if (!SCHED_TEST_TERMINATE_OK(thread_flags_get(thread)))
+    if (!sched_test_terminate_ok(thread))
         return -EPERM;
 
     parent = thread->inh.parent;
@@ -963,7 +976,7 @@ int thread_terminate(pthread_t thread_id)
 
         next_child = child->inh.next_child;
 
-        if (!SCHED_TEST_TERMINATE_OK(thread_flags_get(thread)) ||
+        if (!sched_test_terminate_ok(thread) ||
             ksignal_sendsig(&child->sigs, SIGKILL, &sigparm)) {
             /*
              * The child is now orphan, it was probably a kworker that

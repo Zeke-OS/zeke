@@ -53,7 +53,7 @@ static int rr_insert(struct scheduler * sobj, struct thread_info * thread)
 {
     struct sched_rr * rr = container_of(sobj, struct sched_rr, sched);
 
-    if (!SCHED_TEST_POLFLAG(thread, SCHED_POLFLAG_INRRRQ)) {
+    if (!sched_test_polflag(thread, SCHED_POLFLAG_INRRRQ)) {
         TAILQ_INSERT_TAIL(&rr->runq_head, thread, RRRUNQ_ENTRY);
         thread->sched.ts_counter = GET_TTS(thread);
         thread->sched.policy_flags |= SCHED_POLFLAG_INRRRQ;
@@ -67,7 +67,7 @@ static void rr_remove(struct scheduler * sobj, struct thread_info * thread)
 {
     struct sched_rr * rr = container_of(sobj, struct sched_rr, sched);
 
-    if (SCHED_TEST_POLFLAG(thread, SCHED_POLFLAG_INRRRQ)) {
+    if (sched_test_polflag(thread, SCHED_POLFLAG_INRRRQ)) {
         TAILQ_REMOVE(&rr->runq_head, thread, RRRUNQ_ENTRY);
         thread->sched.policy_flags &= ~SCHED_POLFLAG_INRRRQ;
         rr->nr_active--;
