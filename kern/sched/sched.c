@@ -320,13 +320,14 @@ void sched_get_loads(uint32_t loads[3])
 #ifdef configSCHED_TIME_AVG
 #define SCHED_TIME_AVG_N 10
 
-static void calc_sched_time_avg(uint64_t start, uint64_t end)
+static void calc_sched_time_avg(struct cpu_sched * cpu,
+                                uint64_t start, uint64_t end)
 {
-    unsigned * sched_time_avg = &CURRENT_CPU->sched_time_avg;
-    uint64_t avg = *sched_time_avg;
-    uint64_t delta = end - start;
+    unsigned * sched_time_avg = &cpu->sched_time_avg;
+    unsigned avg = *sched_time_avg;
+    unsigned delta = end - start;
 
-    avg = (avg + delta - (avg >> SCHED_TIME_AVG_N));
+    avg = avg + delta - (avg >> SCHED_TIME_AVG_N);
 
     *sched_time_avg = avg;
 }
@@ -439,7 +440,7 @@ void sched_handler(void)
     }
 
 #ifdef configSCHED_TIME_AVG
-    calc_sched_time_avg(sched_start_time, get_utime());
+    calc_sched_time_avg(CURRENT_CPU, sched_start_time, get_utime());
 #endif
 }
 
