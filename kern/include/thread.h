@@ -183,8 +183,8 @@ struct thread_info {
  * also return to the caller at first.
  */
 enum thread_eyield_strategy {
-    THREAD_YIELD_IMMEDIATE,
-    THREAD_YIELD_LAZY
+    THREAD_YIELD_IMMEDIATE, /*!< Immediate yield. */
+    THREAD_YIELD_LAZY       /*!< Yield when the next suitable tick occurs. */
 };
 
 /* External variables *********************************************************/
@@ -232,8 +232,14 @@ int thread_flags_clear(struct thread_info * thread, uint32_t flags_mask);
  */
 uint32_t thread_flags_get(struct thread_info * thread);
 
+/**
+ * Test that selected thread state flags are set.
+ */
 int thread_flags_is_set(struct thread_info * thread, uint32_t flags_mask);
 
+/**
+ * Test that none of the selected thread state flags are set.
+ */
 int thread_flags_not_set(struct thread_info * thread, uint32_t flags_mask);
 
 /**
@@ -257,11 +263,20 @@ enum thread_state thread_state_set(struct thread_info * thread,
  */
 
 /**
- * Thread mode.
+ * Test if a policy flag is set.
+ */
+static inline int thread_test_polflag(struct thread_info * thread,
+                                      unsigned flag)
+{
+    return ((thread->sched.policy_flags & flag) == flag);
+}
+
+/**
+ * Thread creation mode.
  */
 enum thread_mode {
-    THREAD_MODE_USER,
-    THREAD_MODE_PRIV,
+    THREAD_MODE_USER, /*!< Regular user thread. */
+    THREAD_MODE_PRIV, /*!< Privileged kernel thread. */
 };
 
 /**
@@ -297,7 +312,8 @@ struct thread_info * thread_lookup(pthread_t thread_id);
 struct thread_info * thread_fork(pid_t new_pid);
 
 /**
- * Mark a thread ready.
+ * Mark a thread ready for scheduling.
+ * Inserts the thread to a per CPU readyq.
  */
 int thread_ready(pthread_t thread_id);
 
@@ -325,13 +341,16 @@ void thread_release(pthread_t thread_id);
 void thread_sleep(long millisec);
 
 /**
- * Wake-up thread if still sleeping after millisec.
+ * Wake-up the current thread if it's sleeping after millisec.
  * The timer created with this function shall be relased by calling
  * thread_alarm_rele().
  * @returns Returns an id that shall be used to release the timer.
  */
 int thread_alarm(long millisec);
 
+/**
+ * Release the alarm timer created with thread_alarm().
+ */
 void thread_alarm_rele(int timer_id);
 
 /**

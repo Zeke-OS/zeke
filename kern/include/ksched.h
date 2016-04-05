@@ -84,7 +84,7 @@ struct scheduler {
 typedef struct scheduler * sched_constructor(void);
 
 /**
- * Scheduler task type
+ * Scheduler task type.
  */
 typedef void sched_task_t(void);
 
@@ -104,21 +104,10 @@ SYSCTL_DECL(_kern_sched);
 void sched_get_loads(uint32_t loads[3]);
 
 /**
- * Test if a policy flag is set.
- */
-int sched_test_polflag(struct thread_info * thread, unsigned flag);
-
-/**
- * Test if it is ok to terminate the thread.
- * @param thread is a pointer to a thread to be tested.
- */
-int sched_test_terminate_ok(struct thread_info * thread);
-
-/**
  * Test if context switch a given thread is ok.
  * @param thread is a pointer to a thread to be tested.
  */
-int sched_csw_ok(struct thread_info * thread);
+int sched_thread_csw_ok(struct thread_info * thread);
 
 #endif /* KSCHED_H */
 

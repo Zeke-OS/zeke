@@ -356,20 +356,7 @@ FOREACH_CPU(CPU_SCHED_TIME_AVG)
 
 #endif
 
-int sched_test_polflag(struct thread_info * thread, unsigned flag)
-{
-    return ((thread->sched.policy_flags & flag) == flag);
-}
-
-int sched_test_terminate_ok(struct thread_info * thread)
-{
-    uint32_t flags = thread_flags_get(thread);
-
-    return (((flags) & (SCHED_IN_USE_FLAG |
-                        SCHED_INTERNAL_FLAG)) == SCHED_IN_USE_FLAG);
-}
-
-int sched_csw_ok(struct thread_info * thread)
+int sched_thread_csw_ok(struct thread_info * thread)
 {
     if (thread_flags_not_set(thread, SCHED_IN_USE_FLAG) ||
         (thread_state_get(thread) != THREAD_STATE_EXEC) ||
@@ -833,7 +820,7 @@ int thread_alarm(long millisec)
     int timer_id;
 
     timer_id = timers_add(timer_event_alarm, current_thread,
-            TIMERS_FLAG_ONESHOT, millisec * 1000);
+                          TIMERS_FLAG_ONESHOT, millisec * 1000);
     if (timer_id < 0) {
         return -EAGAIN;
     }
@@ -952,6 +939,18 @@ int thread_join(pthread_t thread_id, intptr_t * retval)
     return 0;
 }
 
+/**
+ * Test if it is ok to terminate the thread.
+ * @param thread is a pointer to a thread to be tested.
+ */
+static int thread_test_terminate_ok(struct thread_info * thread)
+{
+    uint32_t flags = thread_flags_get(thread);
+
+    return (((flags) & (SCHED_IN_USE_FLAG |
+                        SCHED_INTERNAL_FLAG)) == SCHED_IN_USE_FLAG);
+}
+
 int thread_terminate(pthread_t thread_id)
 {
     struct thread_info * thread = thread_lookup(thread_id);
@@ -962,7 +961,7 @@ int thread_terminate(pthread_t thread_id)
     if (!thread)
         return -EINVAL;
 
-    if (!sched_test_terminate_ok(thread))
+    if (!thread_test_terminate_ok(thread))
         return -EPERM;
 
     parent = thread->inh.parent;
@@ -976,7 +975,7 @@ int thread_terminate(pthread_t thread_id)
 
         next_child = child->inh.next_child;
 
-        if (!sched_test_terminate_ok(thread) ||
+        if (!thread_test_terminate_ok(thread) ||
             ksignal_sendsig(&child->sigs, SIGKILL, &sigparm)) {
             /*
              * The child is now orphan, it was probably a kworker that
