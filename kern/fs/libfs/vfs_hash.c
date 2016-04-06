@@ -163,7 +163,7 @@ int vfs_hash_insert(id_t cid, struct vnode * vp, unsigned hash,
                 continue;
             if (vp2->sb != vp->sb)
                 continue;
-            if (!ctx->ctx_cmp_fn && ctx->ctx_cmp_fn(vp2, cmp_arg))
+            if (ctx->ctx_cmp_fn && ctx->ctx_cmp_fn(vp2, cmp_arg))
                 continue;
             //VN_LOCK(vp2);
             mtx_unlock(&ctx->ctx_lock);
