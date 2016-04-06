@@ -142,9 +142,9 @@ static struct cpu_sched cpu[1];
 /*
  * Linker sets for thread constructors and destructors.
  */
-SET_DECLARE(thread_ctors, void);
-SET_DECLARE(thread_dtors, void);
-SET_DECLARE(thread_fork_handlers, void);
+SET_DECLARE(thread_ctors, thread_cdtor_t);
+SET_DECLARE(thread_dtors, thread_cdtor_t);
+SET_DECLARE(thread_fork_handlers, thread_cdtor_t);
 
 /**
  * Next thread id.
@@ -535,16 +535,17 @@ static void thread_set_inheritance(struct thread_info * child,
     last_node->inh.next_child = child;
 }
 
-static void thread_init_tls(struct thread_info * tp)
+static void thread_init_tls(struct thread_info * new_thread,
+                            struct thread_info * old_thread)
 {
     struct proc_info * proc;
 
-    if (tp->pid_owner == 0) {
+    if (new_thread->pid_owner == 0) {
         /* Can't init a TLS for proc 0 nor it's needed. */
         return;
     }
 
-    proc = proc_ref(tp->pid_owner, PROC_NOT_LOCKED);
+    proc = proc_ref(new_thread->pid_owner, PROC_NOT_LOCKED);
     if (!proc) {
         panic("Thread must have an owner process");
     }
@@ -552,12 +553,12 @@ static void thread_init_tls(struct thread_info * tp)
     /*
      * Set thread local variables.
      */
-    copyout_proc(proc, &tp->id, &tp->tls_uaddr->thread_id,
+    copyout_proc(proc, &new_thread->id, &new_thread->tls_uaddr->thread_id,
                  sizeof(pthread_t));
     proc_unref(proc);
 }
-DATA_SET(thread_ctors, thread_init_tls);
-DATA_SET(thread_fork_handlers, thread_init_tls);
+SCHED_THREAD_CTOR(thread_init_tls);
+SCHED_THREAD_FORK_HANDLER(thread_init_tls);
 
 pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
                         enum thread_mode thread_mode)
@@ -565,7 +566,7 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
     pthread_t thread_id;
     struct thread_info * parent = current_thread;
     struct thread_info * tp;
-    void ** thread_ctor_p;
+    thread_cdtor_t ** thread_ctor_p;
 
     /* TODO The following should never happen. */
     thread_id = atomic_inc(&next_thread_id);
@@ -635,8 +636,8 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
 
     /* Call thread constructors */
     SET_FOREACH(thread_ctor_p, thread_ctors) {
-        thread_cdtor_t * ctor = *(thread_cdtor_t **)thread_ctor_p;
-        ctor(tp);
+        thread_cdtor_t * ctor = *thread_ctor_p;
+        ctor(tp, NULL);
     }
 
     /* Put thread into readyq */
@@ -653,7 +654,7 @@ struct thread_info * thread_fork(pid_t new_pid)
     struct thread_info * const old_thread = current_thread;
     struct thread_info * new_thread;
     pthread_t new_id;
-    void ** fork_handler_p;
+    thread_cdtor_t ** fork_handler_p;
 
     KASSERT(old_thread, "current_thread not set, can't fork\n");
 
@@ -686,14 +687,12 @@ struct thread_info * thread_fork(pid_t new_pid)
     RB_INSERT(threadmap, &CURRENT_CPU->threadmap_head, new_thread);
     mtx_unlock(&CURRENT_CPU->lock);
 
-    init_stack_frame_on_fork(new_thread, old_thread);
-
     /*
      * Run other fork handlers registered.
      */
     SET_FOREACH(fork_handler_p, thread_fork_handlers) {
-        thread_cdtor_t * task = *(thread_cdtor_t **)fork_handler_p;
-        task(new_thread);
+        thread_cdtor_t * task = *fork_handler_p;
+        task(new_thread, old_thread);
     }
 
     /* The newly created thread shall remain in init state for now. */
@@ -1013,7 +1012,7 @@ int thread_terminate(pthread_t thread_id)
 void thread_remove(pthread_t thread_id)
 {
     struct thread_info * thread = thread_lookup(thread_id);
-    void ** thread_dtor_p;
+    thread_cdtor_t ** thread_dtor_p;
 
     if (thread_flags_not_set(thread, SCHED_IN_USE_FLAG))
         return; /* Already freed */
@@ -1042,9 +1041,9 @@ void thread_remove(pthread_t thread_id)
      * RFE Are these always interrupt handler safe?
      */
     SET_FOREACH(thread_dtor_p, thread_dtors) {
-        thread_cdtor_t * dtor = *(thread_cdtor_t **)thread_dtor_p;
+        thread_cdtor_t * dtor = *thread_dtor_p;
         if (dtor)
-            dtor(thread);
+            dtor(thread, NULL);
     }
 
     mtx_lock(&CURRENT_CPU->lock);
@@ -1059,11 +1058,12 @@ void thread_remove(pthread_t thread_id)
     atomic_dec(&anr_threads);
 }
 
-static void dummycd(struct thread_info * th)
+static void dummycd(struct thread_info * new_thread,
+                    struct thread_info * old_thread)
 {
 }
-DATA_SET(thread_ctors, dummycd);
-DATA_SET(thread_dtors, dummycd);
+SCHED_THREAD_CTOR(dummycd);
+SCHED_THREAD_DTOR(dummycd);
 
 /* Automated tasks ************************************************************/
 

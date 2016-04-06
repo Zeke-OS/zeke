@@ -247,22 +247,24 @@ void ksignal_signals_ctor(struct signals * sigs, enum signals_owner owner_type)
     sigs->s_owner_type = owner_type;
 }
 
-static void ksignal_thread_ctor(struct thread_info * th)
+static void ksignal_thread_ctor(struct thread_info * new_thread,
+                                struct thread_info * old_thread)
 {
-    ksignal_signals_ctor(&th->sigs, SIGNALS_OWNER_THREAD);
+    ksignal_signals_ctor(&new_thread->sigs, SIGNALS_OWNER_THREAD);
 }
-DATA_SET(thread_ctors, ksignal_thread_ctor);
+SCHED_THREAD_CTOR(ksignal_thread_ctor);
 
 void ksignal_signals_dtor(struct signals * sigs)
 {
     kobj_unref(&sigs->s_obj);
 }
 
-static void ksignal_thread_dtor(struct thread_info * th)
+static void ksignal_thread_dtor(struct thread_info * new_thread,
+                                struct thread_info * old_thread)
 {
-    ksignal_signals_dtor(&th->sigs);
+    ksignal_signals_dtor(&new_thread->sigs);
 }
-DATA_SET(thread_dtors, ksignal_thread_dtor);
+SCHED_THREAD_DTOR(ksignal_thread_dtor);
 
 void ksignal_signals_fork_reinit(struct signals * sigs)
 {
@@ -293,11 +295,12 @@ void ksignal_signals_fork_reinit(struct signals * sigs)
     mtx_init(&sigs->s_lock.l, KSIG_LOCK_TYPE, KSIG_LOCK_FLAGS);
 }
 
-static void ksignal_fork_handler(struct thread_info * th)
+static void ksignal_fork_handler(struct thread_info * th,
+                                 struct thread_info * old)
 {
     ksignal_signals_fork_reinit(&th->sigs);
 }
-DATA_SET(thread_fork_handlers, ksignal_fork_handler);
+SCHED_THREAD_FORK_HANDLER(ksignal_fork_handler);
 
 /**
  * Forward signals pending in proc sigs struct to thread pendqueue.

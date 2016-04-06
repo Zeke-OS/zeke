@@ -34,11 +34,12 @@
 
 #include <stddef.h>
 #include <sys/linker_set.h>
-#include <kstring.h>
-#include <kerror.h>
 #include <errno.h>
-#include <thread.h>
 #include <hal/core.h>
+#include <kerror.h>
+#include <ksched.h>
+#include <kstring.h>
+#include <thread.h>
 
 __user void * init_stack_frame(struct _sched_pthread_create_args * thread_def,
                                thread_stack_frames_t * tsf, int priv)
@@ -68,8 +69,8 @@ __user void * init_stack_frame(struct _sched_pthread_create_args * thread_def,
 /**
  * Fix sys stack frame on fork.
  */
-void init_stack_frame_on_fork(struct thread_info * new_thread,
-                              struct thread_info * old_thread)
+static void init_stack_frame_on_fork(struct thread_info * new_thread,
+                                     struct thread_info * old_thread)
 {
     sw_stack_frame_t * sframe = &new_thread->sframe.s[SCHED_SFRAME_SYS];
 
@@ -82,6 +83,7 @@ void init_stack_frame_on_fork(struct thread_info * new_thread,
     sframe->r0  = 0; /* retval of fork(). */
     sframe->pc += 4; /* ctx switch will substract 4 from the PC. */
 }
+SCHED_THREAD_FORK_HANDLER(init_stack_frame_on_fork);
 
 static inline int is_psr_mode(uint32_t psr, uint32_t mode)
 {

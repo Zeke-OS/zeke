@@ -91,7 +91,28 @@ typedef void sched_task_t(void);
 /**
  * Type for thread constructor and destructor functions.
  */
-typedef void thread_cdtor_t(struct thread_info * td);
+typedef void thread_cdtor_t(struct thread_info * td, struct thread_info * old);
+
+/**
+ * Declare a thread constructor function.
+ */
+#define SCHED_THREAD_CTOR(fun)                              \
+    static thread_cdtor_t * __##fun##ctor __unused = fun;   \
+    DATA_SET(thread_ctors, fun)
+
+/**
+ * Declare a thread destructor function.
+ */
+#define SCHED_THREAD_DTOR(fun)                              \
+    static thread_cdtor_t * __##fun##dtor __unused = fun;   \
+    DATA_SET(thread_dtors, fun)
+
+/**
+ * Declare a thread fork handler function.
+ */
+#define SCHED_THREAD_FORK_HANDLER(fun)                      \
+    static thread_cdtor_t * __##fun##fork __unused = fun;   \
+    DATA_SET(thread_fork_handlers, fun)
 
 #ifdef _SYS_SYSCTL_H_
 SYSCTL_DECL(_kern_sched);
