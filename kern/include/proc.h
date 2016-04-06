@@ -304,7 +304,8 @@ int proc_exists(pid_t pid, enum proc_lock_mode lmode);
 /**
  * Get a reference to a proc_info struct.
  */
-struct proc_info * proc_ref(pid_t pid, enum proc_lock_mode lmode);
+struct proc_info * proc_ref(pid_t pid, enum proc_lock_mode lmode)
+    __attribute__((warn_unused_result));
 
 /**
  * Uref a proc.

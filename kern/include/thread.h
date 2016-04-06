@@ -296,7 +296,8 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
  * @return Pointer to a thread_info structure of a correspondig thread id
  *         or NULL if thread does not exist.
  */
-struct thread_info * thread_lookup(pthread_t thread_id);
+struct thread_info * thread_lookup(pthread_t thread_id)
+    __attribute__((warn_unused_result));
 
 /**
  * Fork the current thread.
@@ -309,7 +310,8 @@ struct thread_info * thread_lookup(pthread_t thread_id);
  *         a pointer to the new thread_info struct;
  *         Otherwise returns a NULL pointer.
  */
-struct thread_info * thread_fork(pid_t new_pid);
+struct thread_info * thread_fork(pid_t new_pid)
+    __attribute__((warn_unused_result));
 
 /**
  * Mark a thread ready for scheduling.

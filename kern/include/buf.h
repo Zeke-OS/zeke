@@ -213,14 +213,16 @@ void bio_clrbuf(struct buf * bp);
  * busy and return. Otherwise, return an empty block of the correct size.  It
  * is up to the caller to ensure that the cache blocks are of the correct size.
  */
-struct buf * getblk(vnode_t * vnode, size_t blkno, size_t size, int slptimeo);
+struct buf * getblk(vnode_t * vnode, size_t blkno, size_t size, int slptimeo)
+    __attribute__ ((warn_unused_result));
 
 /**
  * Allocate an empty, disassociated block of a given size size.
  * @param[in] size is the size of the new buffer.
  * @return  Returns the new buffer.
  */
-struct buf * geteblk(size_t size);
+struct buf * geteblk(size_t size)
+    __attribute__ ((warn_unused_result));
 
 /**
  * Get a special block that has a mapping in ksect area as well as regular
@@ -229,7 +231,8 @@ struct buf * geteblk(size_t size);
  * by setting strongly orderd access to control. Regular buffers may miss
  * newly written data due to CPU caching.
  */
-struct buf * geteblk_special(size_t size, uint32_t control);
+struct buf * geteblk_special(size_t size, uint32_t control)
+    __attribute__ ((warn_unused_result));
 
 /**
  * Determine if a block associated with a given vnode and block offset is in

@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Virtual Region Allocator.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -291,7 +291,8 @@ struct buf * geteblk(size_t size)
  */
 static void vrref(struct buf * bp)
 {
-    kobj_ref(&bp->b_obj);
+    if (kobj_ref(&bp->b_obj))
+        panic("vrref error");
 }
 
 /**

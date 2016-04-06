@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Generic kernel object interface.
  * @section LICENSE
- * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -68,7 +68,8 @@ int kobj_refcnt(struct kobj * p);
  * @param p is a pointer to the kobj object descriptor.
  * @return Returns zero if succeed; Otherwise a negative ernno is returned.
  */
-int kobj_ref(struct kobj * p);
+int kobj_ref(struct kobj * p)
+    __attribute__((warn_unused_result));
 
 /**
  * Decrement the refcount of a kobj object descriptor.
@@ -81,7 +82,8 @@ void kobj_unref(struct kobj * p);
  * @param p is a pointer to the kobj object descriptor.
  * @return Returns zero if succeed; Otherwise a negative ernno is returned.
  */
-int kobj_ref_v(struct kobj * p, unsigned count);
+int kobj_ref_v(struct kobj * p, unsigned count)
+    __attribute__((warn_unused_result));
 
 /**
  * Decrease the refcount of a kobj by count.

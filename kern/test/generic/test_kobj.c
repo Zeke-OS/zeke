@@ -34,7 +34,10 @@ static char * test_init(void)
 
 static char * test_ref(void)
 {
-    ku_assert("ref ok", kobj_ref(&o.ko) == 0);
+    int err;
+
+    err = kobj_ref(&o.ko);
+    ku_assert_equal("ref ok", err, 0);
     ku_assert_equal("refcount incremented", o.ko.ko_refcount, 2);
 
     return NULL;
@@ -42,7 +45,10 @@ static char * test_ref(void)
 
 static char * test_unref(void)
 {
-    kobj_ref(&o.ko);
+    int err;
+
+    err = kobj_ref(&o.ko);
+    ku_assert_equal("ref ok", err, 0);
     kobj_unref(&o.ko);
     ku_assert_equal("fast lock init", o.ko.ko_refcount, 1);
 
@@ -51,8 +57,11 @@ static char * test_unref(void)
 
 static char * test_refcnt(void)
 {
+    int err;
+
     ku_assert("refcnt ok", kobj_refcnt(&o.ko) == 1);
-    kobj_ref(&o.ko);
+    err = kobj_ref(&o.ko);
+    ku_assert_equal("ref ok", err, 0);
     ku_assert("refcnt incr", kobj_refcnt(&o.ko) == 2);
     kobj_unref(&o.ko);
     ku_assert("refcnt decr", kobj_refcnt(&o.ko) == 1);
@@ -62,8 +71,11 @@ static char * test_refcnt(void)
 
 static char * test_free(void)
 {
+    int err;
+
     kobj_unref(&o.ko);
-    ku_assert("ref fails", kobj_ref(&o.ko) < 0);
+    err = kobj_ref(&o.ko);
+    ku_assert("ref fails", err < 0);
 
     return NULL;
 }
@@ -72,7 +84,8 @@ static char * test_destroy(void)
 {
     int err;
 
-    kobj_ref(&o.ko);
+    err = kobj_ref(&o.ko);
+    ku_assert_equal("ref ok", err, 0);
     kobj_destroy(&o.ko);
     err = kobj_ref(&o.ko);
     ku_assert("ref failed", err != 0);

@@ -65,7 +65,8 @@ struct session * proc_session_create(struct proc_info * leader,
 
 static void proc_session_ref(struct session * s)
 {
-    kobj_ref(&s->s_obj);
+    if (kobj_ref(&s->s_obj))
+        panic("Session ref error");
 }
 
 static void proc_session_rele(struct session * s)
@@ -132,7 +133,8 @@ struct pgrp * proc_pgrp_create(struct session * s, struct proc_info * proc)
 
 static void proc_pgrp_ref(struct pgrp * pgrp)
 {
-    kobj_ref(&pgrp->pg_obj);
+    if (kobj_ref(&pgrp->pg_obj))
+        panic("Pgrp ref error");
 }
 
 static void proc_pgrp_rele(struct pgrp * pgrp)

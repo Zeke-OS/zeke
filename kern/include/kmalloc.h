@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Generic kernel memory allocator.
  * @section LICENSE
- * Copyright (c) 2013, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -110,7 +110,7 @@ static inline void _kfree_cleanup(void * p)
  *          either the same as p or a new location. NULL indicates that the
  *          function failed to allocate memory, and p was not modified.
  */
-void * krealloc(void * p, size_t size);
+void * krealloc(void * p, size_t size) __attribute__((warn_unused_result));
 
 /**
  * New memory block reference.
