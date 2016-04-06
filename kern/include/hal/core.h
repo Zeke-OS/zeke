@@ -58,6 +58,8 @@
 #define IS_HFP_PLAT 0
 #endif
 
+struct thread_info;
+
 /**
  * Type for storing interrupt state.
  */
@@ -72,6 +74,9 @@ typedef size_t istate_t;
  */
 __user void * init_stack_frame(struct _sched_pthread_create_args * thread_def,
                                thread_stack_frames_t * tsf, int priv);
+
+void init_stack_frame_on_fork(struct thread_info * new_thread,
+                              struct thread_info * old_thread);
 
 struct thread_info;
 /**

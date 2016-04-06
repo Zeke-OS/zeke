@@ -68,14 +68,20 @@ __user void * init_stack_frame(struct _sched_pthread_create_args * thread_def,
 /**
  * Fix sys stack frame on fork.
  */
-static void fork_init_stack_frame(struct thread_info * th)
+void init_stack_frame_on_fork(struct thread_info * new_thread,
+                              struct thread_info * old_thread)
 {
-    sw_stack_frame_t * sframe = &th->sframe.s[SCHED_SFRAME_SYS];
+    sw_stack_frame_t * sframe = &new_thread->sframe.s[SCHED_SFRAME_SYS];
 
-    sframe->r0  = 0; /* retval of fork() */
-    sframe->pc += 4; /* ctx switch will substract 4 */
+    /*
+     * We wan't to return directly to the user space.
+     */
+    memcpy(sframe, &old_thread->sframe.s[SCHED_SFRAME_SVC],
+           sizeof(sw_stack_frame_t));
+
+    sframe->r0  = 0; /* retval of fork(). */
+    sframe->pc += 4; /* ctx switch will substract 4 from the PC. */
 }
-DATA_SET(thread_fork_handlers, fork_init_stack_frame);
 
 static inline int is_psr_mode(uint32_t psr, uint32_t mode)
 {

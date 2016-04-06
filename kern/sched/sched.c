@@ -686,14 +686,11 @@ struct thread_info * thread_fork(pid_t new_pid)
     RB_INSERT(threadmap, &CURRENT_CPU->threadmap_head, new_thread);
     mtx_unlock(&CURRENT_CPU->lock);
 
-    /*
-     * We wan't to return directly to the user space.
-     * FIXME HW dependent.
-     */
-    memcpy(&new_thread->sframe.s[SCHED_SFRAME_SYS],
-           &old_thread->sframe.s[SCHED_SFRAME_SVC],
-           sizeof(sw_stack_frame_t));
+    init_stack_frame_on_fork(new_thread, old_thread);
 
+    /*
+     * Run other fork handlers registered.
+     */
     SET_FOREACH(fork_handler_p, thread_fork_handlers) {
         thread_cdtor_t * task = *(thread_cdtor_t **)fork_handler_p;
         task(new_thread);
