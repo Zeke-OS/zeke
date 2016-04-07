@@ -321,6 +321,7 @@ pid_t proc_fork(void)
     new_proc->state = PROC_STATE_INITIAL;
     new_proc->files = NULL;
     new_proc->pgrp = NULL; /* Must be NULL so we don't free the old ref. */
+    memset(&new_proc->tms, 0, sizeof(new_proc->tms));
     /* ..and then start to fix things. */
 
     /*
