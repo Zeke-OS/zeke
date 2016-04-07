@@ -27,7 +27,7 @@ include $(ROOT_DIR)/makefiles/user_head.mk
 
 # Binaries #####################################################################
 BIN-y := basename cat chgrp chmod chown cksum cmp cp dirname du echo env \
-	hostname id kill login logname ls mount sh stty umount uptime wc xargs
+	hostname id kill login logname ls mount ps sh stty umount uptime wc xargs
 BIN-$(configMINISED) += minised
 
 SBASELUTIL := src/sbase/libutil
@@ -68,6 +68,7 @@ logname-SRC-y := src/sbase/logname.c $(SBASELUTIL)/eprintf.c \
 ls-SRC-y := src/ls.c
 minised-SRC-$(configMINISED) := src/minised/sedcomp.c src/minised/sedexec.c
 mount-SRC-y := src/mount.c src/utils/opt.c
+ps-SRC-y := src/ps.c
 sh-SRC-y := $(wildcard src/sh/*.c) src/utils/gline.c
 stty-SRC-y := src/stty.c
 umount-SRC-y := src/umount.c src/utils/opt.c
