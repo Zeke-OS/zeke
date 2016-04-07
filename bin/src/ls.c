@@ -85,8 +85,8 @@ int main(int argc, char * argv[], char * envp[])
 
     fildes = open(path, O_DIRECTORY | O_RDONLY | O_SEARCH);
     if (fildes < 0) {
-        printf("Open failed\n");
-        return 1;
+        fprintf(stderr, "Open failed\n");
+        return EX_NOINPUT;
     }
 
     while ((count = getdents(fildes, (char *)dbuf, sizeof(dbuf))) > 0) {
