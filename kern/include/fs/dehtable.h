@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Directory Entry Hashtable.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,6 +48,7 @@
  */
 typedef struct dh_dirent {
     ino_t dh_ino; /*!< File serial number. */
+    uint8_t dh_type; /*!< Dirent type. */
     size_t dh_size; /*!< Size of this directory entry. */
     uint8_t dh_link; /*!< Internal link tag. If 0 chain ends here; otherwise
                       * chain linking continues. */
@@ -72,10 +73,12 @@ typedef struct dh_dir_iter {
  * Insert a new directory entry link.
  * @param dir       is a directory entry table.
  * @param vnode_num is the inode number.
+ * @param dt_type   is the dirent type as presented by dirent.h.
  * @param name      is the name of the hard link.
  * @return Returns 0 if succeed; Otherwise a negative errno code is returned.
  */
-int dh_link(dh_table_t * dir, ino_t vnode_num, const char * name);
+int dh_link(dh_table_t * dir, ino_t vnode_num, uint8_t d_type,
+            const char * name);
 
 /**
  * Remove a directory entry link.

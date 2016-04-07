@@ -32,7 +32,7 @@ static char * test_link(void)
     ku_test_description("Test that dh_link works correctly.");
 
     vnode.vn_num = 10;
-    dh_link(&table, vnode.vn_num, str);
+    dh_link(&table, vnode.vn_num, 0, str);
 
     for (i = 0; i < DEHTABLE_SIZE; i++) {
         if ((dea = table[i]) != 0) break;
@@ -62,9 +62,9 @@ static char * test_link_chain(void)
     vnode1.vn_num = 10;
     vnode2.vn_num = 11;
 
-    res = dh_link(&table, vnode1.vn_num, str1);
+    res = dh_link(&table, vnode1.vn_num, 0, str1);
     ku_assert_equal("Insert succeeded.", res, 0);
-    res = dh_link(&table, vnode2.vn_num, str2);
+    res = dh_link(&table, vnode2.vn_num, 0, str2);
     ku_assert_equal("Insert succeeded.", res, 0);
 
     for (i = 0; i < DEHTABLE_SIZE; i++) {
@@ -97,9 +97,9 @@ static char * test_lookup(void)
     vnode1.vn_num = 10;
     vnode2.vn_num = 11;
 
-    res = dh_link(&table, vnode1.vn_num, str1);
+    res = dh_link(&table, vnode1.vn_num, 0, str1);
     ku_assert_equal("Insert succeeded.", res, 0);
-    res = dh_link(&table, vnode2.vn_num, str2);
+    res = dh_link(&table, vnode2.vn_num, 0, str2);
     ku_assert_equal("Insert succeeded.", res, 0);
 
     ku_assert_equal("No error",
@@ -133,13 +133,13 @@ static char * test_iterator(void)
 
     /* Insert entries */
     ku_assert_equal("Insert OK.",
-            dh_link(&table, vnode1.vn_num, str1), 0);
+            dh_link(&table, vnode1.vn_num, 0, str1), 0);
     ku_assert_equal("Insert OK.",
-            dh_link(&table, vnode2.vn_num, str2), 0);
+            dh_link(&table, vnode2.vn_num, 0, str2), 0);
     ku_assert_equal("Insert OK.",
-            dh_link(&table, vnode3.vn_num, str3), 0);
+            dh_link(&table, vnode3.vn_num, 0, str3), 0);
     ku_assert_equal("Insert OK.",
-            dh_link(&table, vnode4.vn_num, str4), 0);
+            dh_link(&table, vnode4.vn_num, 0, str4), 0);
 
     /* Actual test */
     {

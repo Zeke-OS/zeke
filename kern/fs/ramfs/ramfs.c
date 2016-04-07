@@ -607,7 +607,8 @@ int ramfs_link(vnode_t * dir, vnode_t * vnode, const char * name)
     inode = get_inode_of_vnode(vnode);
 
     rwlock_rdlock(&inode_dir->in_lock);
-    err = dh_link(inode_dir->in.dir, vnode->vn_num, name);
+    err = dh_link(inode_dir->in.dir, vnode->vn_num,
+                  IFTODT(vnode->vn_mode), name);
     rwlock_rdunlock(&inode_dir->in_lock);
     if (err)
         return err;
@@ -806,6 +807,7 @@ int ramfs_readdir(vnode_t * dir, struct dirent * d, off_t * off)
     *off = ((((off_t)it.dea_ind) << 32) & dea_ind_mask) |
            (off_t)(it.ch_ind & ch_ind_mask);
     d->d_ino = dh->dh_ino;
+    d->d_type = dh->dh_type;
     strlcpy(d->d_name, dh->dh_name, member_size(struct dirent, d_name));
 
     return 0;

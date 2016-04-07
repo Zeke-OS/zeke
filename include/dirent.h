@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Format of directory entries.
  * @section LICENSE
- * Copyright (c) 2013, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -71,7 +71,15 @@ struct dirent {
 /*
  * Convert between stat structure types and directory types.
  */
+
+/**
+ * Convert from stat type to dirent type.
+ */
 #define IFTODT(mode)    (((mode) & 0170000) >> 12)
+
+/**
+ * Convert from dirent type to stat type.
+ */
 #define DTTOIF(dirtype) ((dirtype) << 12)
 
 /**

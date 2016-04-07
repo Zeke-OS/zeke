@@ -231,7 +231,8 @@ static int rm_node(dh_dirent_t ** chain, const char * name)
     return 0;
 }
 
-int dh_link(dh_table_t * dir, ino_t vnode_num, const char * name)
+int dh_link(dh_table_t * dir, ino_t vnode_num, uint8_t d_type,
+            const char * name)
 {
     size_t name_len = strlenn(name, NAME_MAX + 1) + 1;
     const size_t h = hash_fname(name);
@@ -269,6 +270,7 @@ int dh_link(dh_table_t * dir, ino_t vnode_num, const char * name)
     get_dirent(dea, chinfo.i_last)->dh_link = CH_LINK;
     /* New node */
     get_dirent(dea, chinfo.i_size)->dh_ino = vnode_num;
+    get_dirent(dea, chinfo.i_size)->dh_type = d_type;
     get_dirent(dea, chinfo.i_size)->dh_size = entry_size;
     get_dirent(dea, chinfo.i_size)->dh_link = CH_NOLINK;
     strlcpy(get_dirent(dea, chinfo.i_size)->dh_name, name, name_len + 1);
