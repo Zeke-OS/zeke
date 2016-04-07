@@ -1,5 +1,5 @@
 /*
- * Copyrigt (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyrigt (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1987, 1993
  *  The Regents of the University of California.  All rights reserved.
  *
@@ -47,9 +47,9 @@
  */
 
 /**
- *
+ * Successful termination.
  */
-#define EX_OK            0   /* successful termination */
+#define EX_OK            0
 
 /**
  * Base value for error messages.
@@ -68,8 +68,7 @@
 /**
  * Data format error.
  * The input data was incorrect in some way.
- * This should only be used for user's data & not
- * system files.
+ * This should only be used for user's data & not system files.
  */
 #define EX_DATAERR      65
 
