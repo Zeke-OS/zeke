@@ -40,6 +40,7 @@
 #include <sysexits.h>
 #include <time.h>
 #include <unistd.h>
+#include "utils.h"
 
 struct pstat {
     char name[16];
@@ -78,15 +79,6 @@ static char * get_next_line(FILE * fp)
     return NULL;
 }
 
-static char * skipwhite(char * s)
-{
-    while (isspace(*s)) {
-        ++s;
-    }
-
-    return s;
-}
-
 static int scan_proc(struct pstat * ps, FILE * fp)
 {
     char * line;
@@ -96,7 +88,7 @@ static int scan_proc(struct pstat * ps, FILE * fp)
         char * b;
 
         a = strsep(&line, ":");
-        b = skipwhite(line);
+        b = util_skipwhite(line);
 
         if (strcmp(a, "Name") == 0) {
             strlcpy(ps->name, b, sizeof(ps->name));
@@ -117,6 +109,9 @@ int main(int argc, char * argv[], char * envp[])
 {
     int fildes, count;
     struct dirent dbuf[10];
+    long clk_tck;
+
+    clk_tck = sysconf(_SC_CLK_TCK);
 
     fildes = open(PROC_PATH, O_DIRECTORY | O_RDONLY | O_SEARCH);
     if (fildes < 0) {
@@ -142,7 +137,7 @@ int main(int argc, char * argv[], char * envp[])
 
                 scan_proc(&ps, fp);
 
-                sutime = (ps.utime + ps.stime) / CLOCKS_PER_SEC;
+                sutime = (ps.utime + ps.stime) / clk_tck;
                 printf("%5s %-6s   %02u:%02u:%02u %s\n",
                        d->d_name,
                        "",

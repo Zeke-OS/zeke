@@ -67,8 +67,8 @@ static struct procfs_stream * procfs_read_status(struct procfs_info * spec)
                      proc->pid,
                      proc->cred.uid, proc->cred.euid, proc->cred.suid,
                      proc->cred.gid, proc->cred.egid, proc->cred.sgid,
-                     proc->tms.tms_utime / configSCHED_HZ * CLOCKS_PER_SEC,
-                     proc->tms.tms_stime / configSCHED_HZ * CLOCKS_PER_SEC,
+                     proc->tms.tms_utime,
+                     proc->tms.tms_stime,
                      proc->brk_start, proc->brk_stop);
 
     proc_unref(proc);

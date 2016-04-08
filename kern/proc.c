@@ -1438,15 +1438,7 @@ static int sys_proc_setrlim(__user void * user_args)
 
 static int sys_proc_times(__user void * user_args)
 {
-    struct tms tms;
-
-    tms = curproc->tms;
-    tms.tms_utime = tms.tms_utime / configSCHED_HZ * CLOCKS_PER_SEC;
-    tms.tms_stime = tms.tms_stime / configSCHED_HZ * CLOCKS_PER_SEC;
-    tms.tms_cutime = tms.tms_cutime / configSCHED_HZ * CLOCKS_PER_SEC;
-    tms.tms_cstime = tms.tms_cstime / configSCHED_HZ * CLOCKS_PER_SEC;
-
-    if (copyout(&tms, user_args, sizeof(struct tms))) {
+    if (copyout(&curproc->tms, user_args, sizeof(struct tms))) {
         set_errno(EFAULT);
         return -1;
     }
