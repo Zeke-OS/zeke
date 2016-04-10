@@ -30,6 +30,9 @@
  *******************************************************************************
  */
 
+#include <stdio.h>
+
+#include <ctype.h>
 #include <dirent.h>
 #include <eztrie.h>
 #include <fcntl.h>
@@ -41,6 +44,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "tish.h"
+#include "../utils.h"
 
 static struct eztrie cmd_trie;
 
@@ -113,7 +117,7 @@ void tish_completion_destroy(void)
     eztrie_destroy(&cmd_trie);
 }
 
-void tish_completion(const char * buf, linenoiseCompletions * lc)
+static void completion_cmd(const char * buf, linenoiseCompletions * lc)
 {
     struct eztrie_iterator it;
     struct eztrie_node_value * value;
@@ -122,4 +126,124 @@ void tish_completion(const char * buf, linenoiseCompletions * lc)
     while ((value = eztrie_remove_ithead(&it))) {
         linenoiseAddCompletion(lc, value->key);
     }
+}
+
+/**
+ * @param dir is the original dir.
+ * @param dst is the destination buffer.
+ * @returns The final search key.
+ */
+static char * get_bdir(char * dst, const char * dir)
+{
+    char * s = dst;
+
+    s = strrchr(dir, '/');
+    if (s == dir) { /* Begins with "/". */
+        dst[0] = '/';
+        dst[1] = '\0';
+        strcpy(dst + 2, dir + 1);
+
+        return dst + 2;
+    } else if (s) { /* Begins some actual path. */
+        size_t off = s - dir;
+        char * key = dst + off + 2;
+
+        memcpy(dst, dir, off + 1);
+        strcpy(key, dir + off + 1);
+
+        return key;
+    } else { /* Doesn't begin with any detectable path. */
+        char * key = dst + 3;
+
+        strcpy(key, dir);
+        dst[0] = '.';
+        dst[1] = '/';
+        dst[2] = '\0';
+
+        return key;
+    }
+}
+
+static void completion_dir(const char * buf, const char * d,
+                           linenoiseCompletions * lc)
+{
+    int fildes, count;
+    char * bdir = NULL;
+    struct eztrie dir_trie;
+    struct dirent dbuf[10];
+    struct eztrie_iterator it;
+    struct eztrie_node_value * value;
+
+    dir_trie = eztrie_create();
+    bdir = calloc(strlen(d) + 3, sizeof(char));
+
+    d = get_bdir(bdir, d);
+
+    fildes = open(bdir, O_DIRECTORY | O_RDONLY | O_SEARCH);
+    if (fildes < 0) {
+        goto out;
+    }
+
+    while ((count = getdents(fildes, (char *)dbuf, sizeof(dbuf))) > 0) {
+        for (int i = 0; i < count; i++) {
+            eztrie_insert(&dir_trie, dbuf[i].d_name, NULL);
+        }
+    }
+
+    close(fildes);
+
+    it = eztrie_find(&dir_trie, d);
+    while ((value = eztrie_remove_ithead(&it))) {
+        char * cbuf;
+
+        cbuf = malloc(strlen(buf) + strlen(bdir) + strlen(value->key) + 3);
+        if (!cbuf)
+            continue;
+
+        sprintf(cbuf, "%s %s%s", buf, bdir, value->key);
+        linenoiseAddCompletion(lc, cbuf);
+
+        free(cbuf);
+    }
+
+out:
+    eztrie_destroy(&dir_trie);
+    free(bdir);
+}
+
+static char * last_space(char * str)
+{
+    size_t j = strlen(str);
+    char * s = NULL;
+
+    for (int i = j; i >= 0; i--) {
+        if (isspace(str[i])) {
+            s = str + i;
+            break;
+        }
+    }
+
+    return s;
+}
+
+void tish_completion(const char * buf, linenoiseCompletions * lc)
+{
+    char * cmdbuf;
+    char * s;
+
+    cmdbuf = malloc(strlen(buf) + 1);
+    if (!cmdbuf)
+        return;
+    strcpy(cmdbuf, buf);
+    s = last_space(cmdbuf);
+
+    if (s) {
+        s[0] = '\0';
+        s++;
+        completion_dir(cmdbuf, s, lc);
+    } else {
+        completion_cmd(cmdbuf, lc);
+    }
+
+    free(cmdbuf);
 }
