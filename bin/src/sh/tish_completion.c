@@ -48,6 +48,9 @@
 
 static struct eztrie cmd_trie;
 
+/**
+ * Initialize command completion for internal commands of the shell.
+ */
 static void init_static_completion(void)
 {
     struct tish_builtin ** cmd;
@@ -57,34 +60,42 @@ static void init_static_completion(void)
     }
 }
 
-static const char * next_path(const char * cp, char * path)
+/**
+ * Get the next dirpath string in PATH.
+ */
+static const char * next_path(char * dst, const char * cp)
 {
-    char * s = path;
-
     while (*cp && *cp != ':') {
-        *s++ = *cp++;
+        *dst++ = *cp++;
     }
-    *s = '\0';
+    *dst = '\0';
 
     return *cp ? ++cp : NULL;
 }
 
+/**
+ * Initialize command completion for executables found in PATH.
+ */
 static void init_path_completion(void)
 {
-    static char dirpath[PATH_MAX];
-    const char * pathstr;
-    const char * cp;
+    char * dirpath; /* Current directory from PATH */
+    const char * cp; /* Pointer to the current position in PATH. */
 
-    pathstr = getenv("PATH");
-    if (!pathstr)
-        pathstr = _PATH_STDPATH;
-    cp = pathstr;
+    dirpath = malloc(PATH_MAX);
+    if (!dirpath) {
+        perror("Unable to initialize PATH completion");
+        return;
+    }
+
+    cp = getenv("PATH");
+    if (!cp)
+        cp = _PATH_STDPATH;
 
     do {
         int fildes, count;
         struct dirent dbuf[10];
 
-        cp = next_path(cp, dirpath);
+        cp = next_path(dirpath, cp);
 
         fildes = open(dirpath, O_DIRECTORY | O_RDONLY | O_SEARCH);
         if (fildes < 0)
@@ -103,6 +114,8 @@ static void init_path_completion(void)
 
         close(fildes);
     } while (cp);
+
+    free(dirpath);
 }
 
 void tish_completion_init(void)
@@ -117,6 +130,9 @@ void tish_completion_destroy(void)
     eztrie_destroy(&cmd_trie);
 }
 
+/**
+ * Completion for incomplete command names.
+ */
 static void completion_cmd(const char * buf, linenoiseCompletions * lc)
 {
     struct eztrie_iterator it;
@@ -129,8 +145,9 @@ static void completion_cmd(const char * buf, linenoiseCompletions * lc)
 }
 
 /**
- * @param dir is the original dir.
- * @param dst is the destination buffer.
+ * Get basedir of an incomplete path.
+ * @param[out] dst  is the destination buffer.
+ * @param[in] dir   is the original dir.
  * @returns The final search key.
  */
 static char * get_bdir(char * dst, const char * dir)
@@ -164,8 +181,17 @@ static char * get_bdir(char * dst, const char * dir)
     }
 }
 
-static void completion_dir(const char * buf, const char * d,
-                           linenoiseCompletions * lc)
+/**
+ * Completion for path names.
+ * @param buf   is a pointer the user input string preceeding the path to be
+ *              completed.
+ * @param d     is a pointer to the string expected to be an incomplete path to
+ *              a file or a directory.
+ * @param lc    is a pointer to the linenoiseCompletion object related to the
+ *              current line.
+ */
+static void completion_path(const char * buf, const char * d,
+                            linenoiseCompletions * lc)
 {
     int fildes, count;
     char * bdir = NULL;
@@ -197,8 +223,10 @@ static void completion_dir(const char * buf, const char * d,
         char * cbuf;
 
         cbuf = malloc(strlen(buf) + strlen(bdir) + strlen(value->key) + 3);
-        if (!cbuf)
+        if (!cbuf) {
+            perror("Path completion failed");
             continue;
+        }
 
         sprintf(cbuf, "%s %s%s", buf, bdir, value->key);
         linenoiseAddCompletion(lc, cbuf);
@@ -211,6 +239,12 @@ out:
     free(bdir);
 }
 
+/**
+ * Find the last space in a string.
+ * @param str is a pointer to the cstring.
+ * @returns Returns a pointer to the last space found in a string;
+ *          Otherwise a NULL pointer is returned.
+ */
 static char * last_space(char * str)
 {
     size_t j = strlen(str);
@@ -232,17 +266,19 @@ void tish_completion(const char * buf, linenoiseCompletions * lc)
     char * s;
 
     cmdbuf = malloc(strlen(buf) + 1);
-    if (!cmdbuf)
+    if (!cmdbuf) {
+        perror("Completion failed");
         return;
+    }
     strcpy(cmdbuf, buf);
     s = last_space(cmdbuf);
 
-    if (s) {
+    if (!s) { /* First we complete the command name... */
+        completion_cmd(cmdbuf, lc);
+    } else { /* and then any paths supplied */
         s[0] = '\0';
         s++;
-        completion_dir(cmdbuf, s, lc);
-    } else {
-        completion_cmd(cmdbuf, lc);
+        completion_path(cmdbuf, s, lc);
     }
 
     free(cmdbuf);
