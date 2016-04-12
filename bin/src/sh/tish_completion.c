@@ -161,7 +161,7 @@ static char * get_bdir(char * dst, const char * dir)
         strcpy(dst + 2, dir + 1);
 
         return dst + 2;
-    } else if (s) { /* Begins some actual path. */
+    } else if (s) { /* Begins with an actual path. */
         size_t off = s - dir;
         char * key = dst + off + 2;
 
@@ -228,7 +228,11 @@ static void completion_path(const char * buf, const char * d,
             continue;
         }
 
-        sprintf(cbuf, "%s %s%s", buf, bdir, value->key);
+        if (buf[0] == '\0') {
+            sprintf(cbuf, "%s%s", bdir, value->key);
+        } else {
+            sprintf(cbuf, "%s %s%s", buf, bdir, value->key);
+        }
         linenoiseAddCompletion(lc, cbuf);
 
         free(cbuf);
@@ -273,12 +277,17 @@ void tish_completion(const char * buf, linenoiseCompletions * lc)
     strcpy(cmdbuf, buf);
     s = last_space(cmdbuf);
 
-    if (!s) { /* First we complete the command name... */
-        completion_cmd(cmdbuf, lc);
-    } else { /* and then any paths supplied */
+    if (s) {
+        /* Entering the second word. */
         s[0] = '\0';
         s++;
         completion_path(cmdbuf, s, lc);
+    } else if (cmdbuf[0] == '/' || (cmdbuf[0] == '.' && cmdbuf[1] == '/')) {
+        /* Entering the first word and we assume it's a path. */
+        completion_path("", cmdbuf, lc);
+    } else {
+        /* Entering the first word and we assume it's a command. */
+        completion_cmd(cmdbuf, lc);
     }
 
     free(cmdbuf);
