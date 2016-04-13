@@ -48,10 +48,10 @@ struct tish_builtin {
     builtin_cmd_t * fn;
 };
 
-SET_DECLARE(tish_cmd, struct tish_builtin);
+SET_DECLARE(tish_cmd, const struct tish_builtin);
 
 #define TISH_CMD(fun, cmdnamestr, cmd_hint, cmd_flags)  \
-    static struct tish_builtin fun##_st = {             \
+    static const struct tish_builtin fun##_st = {       \
         .name = cmdnamestr,                             \
         .hint = cmd_hint,                               \
         .flags = cmd_flags,                             \

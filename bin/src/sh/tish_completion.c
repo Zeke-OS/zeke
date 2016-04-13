@@ -53,7 +53,7 @@ static struct eztrie cmd_trie;
  */
 static void init_static_completion(void)
 {
-    struct tish_builtin ** cmd;
+    const struct tish_builtin ** cmd;
 
     SET_FOREACH(cmd, tish_cmd) {
         eztrie_insert(&cmd_trie, (*cmd)->name, *cmd);

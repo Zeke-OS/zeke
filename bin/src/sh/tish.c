@@ -211,7 +211,7 @@ int main(int argc, char * argv[], char * envp[])
 
 static int help(char * argv[])
 {
-    struct tish_builtin ** cmd;
+    const struct tish_builtin ** cmd;
 
     SET_FOREACH(cmd, tish_cmd) {
         printf("%s ", (*cmd)->name);

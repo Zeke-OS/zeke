@@ -53,9 +53,9 @@ enum runner_state {
 static int fork_count; /*!< number of forks. */
 static char * args[256]; /*!< Args for exec. */
 
-static struct tish_builtin * get_builtin(char * name)
+static const struct tish_builtin * get_builtin(char * name)
 {
-    struct tish_builtin ** cmd;
+    const struct tish_builtin ** cmd;
 
     SET_FOREACH(cmd, tish_cmd) {
         if (!strcmp(name, (*cmd)->name))
@@ -73,7 +73,7 @@ static int command(int input_fd, enum runner_state state)
 {
     int pipettes[2];
     pid_t pid;
-    struct tish_builtin * builtin = get_builtin(args[0]);
+    const struct tish_builtin * builtin = get_builtin(args[0]);
 
     if (builtin && builtin->flags & TISH_NOFORK) {
         builtin->fn(args); /* TODO Handle return value and piping */
