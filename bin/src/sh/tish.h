@@ -43,28 +43,24 @@ typedef int builtin_cmd_t(char * argv[]);
 
 struct tish_builtin {
     char name[10];
+    char * hint;
     unsigned flags;
     builtin_cmd_t * fn;
 };
 
 SET_DECLARE(tish_cmd, struct tish_builtin);
 
-#define TISH_CMD(fun, cmdnamestr)                   \
-    static struct tish_builtin fun##_st = {         \
-        .name = cmdnamestr, .flags = 0, .fn = fun   \
-    };                                              \
-    DATA_SET(tish_cmd, fun##_st)
-
-#define TISH_NOFORK_CMD(fun, cmdnamestr)            \
-    static struct tish_builtin fun##_st = {         \
-        .name = cmdnamestr, .flags = TISH_NOFORK,   \
-        .fn = fun                                   \
-    };                                              \
+#define TISH_CMD(fun, cmdnamestr, cmd_hint, cmd_flags)  \
+    static struct tish_builtin fun##_st = {             \
+        .name = cmdnamestr,                             \
+        .hint = cmd_hint,                               \
+        .flags = cmd_flags,                             \
+        .fn = fun                                       \
+    };                                                  \
     DATA_SET(tish_cmd, fun##_st)
 
 void tish_completion_init(void);
 void tish_completion_destroy(void);
-void tish_completion(const char * buf, linenoiseCompletions * lc);
 
 size_t split(char * buffer, char * argv[], size_t argc_max);
 void run_line(char * line);

@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Various debug tools for tish/Zeke.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -90,7 +90,7 @@ fail:
     fprintf(stderr, "Invalid subcommand\n");
     return EXIT_FAILURE;
 }
-TISH_CMD(debug, "debug");
+TISH_CMD(debug, "debug", " <subcommand>", 0);
 
 static int create_debug_thread(void)
 {

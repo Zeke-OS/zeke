@@ -168,7 +168,7 @@ static int cd(char * argv[])
 
     return 0;
 }
-TISH_NOFORK_CMD(cd, "cd");
+TISH_CMD(cd, "cd", " <dir>", TISH_NOFORK);
 
 static int tish_exit(char * argv[])
 {
@@ -179,7 +179,7 @@ static int tish_exit(char * argv[])
 
     exit(code);
 }
-TISH_NOFORK_CMD(tish_exit, "exit");
+TISH_CMD(tish_exit, "exit", NULL, TISH_NOFORK);
 
 static void line_cleanup(char * line)
 {

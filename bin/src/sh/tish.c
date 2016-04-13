@@ -193,7 +193,6 @@ int main(int argc, char * argv[], char * envp[])
     } else {
         init_hist();
         tish_completion_init();
-        linenoiseSetCompletionCallback(tish_completion);
 
         fflush(NULL);
         while ((line = linenoise(get_prompt())) != NULL) {
@@ -222,4 +221,4 @@ static int help(char * argv[])
 
     return 0;
 }
-TISH_CMD(help, "help");
+TISH_CMD(help, "help", NULL, 0);

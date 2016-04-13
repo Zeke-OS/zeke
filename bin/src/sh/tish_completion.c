@@ -56,7 +56,7 @@ static void init_static_completion(void)
     struct tish_builtin ** cmd;
 
     SET_FOREACH(cmd, tish_cmd) {
-        eztrie_insert(&cmd_trie, (*cmd)->name, NULL);
+        eztrie_insert(&cmd_trie, (*cmd)->name, *cmd);
     }
 }
 
@@ -118,18 +118,6 @@ static void init_path_completion(void)
     free(dirpath);
 }
 
-void tish_completion_init(void)
-{
-    cmd_trie = eztrie_create();
-    init_static_completion();
-    init_path_completion();
-}
-
-void tish_completion_destroy(void)
-{
-    eztrie_destroy(&cmd_trie);
-}
-
 /**
  * Completion for incomplete command names.
  */
@@ -183,14 +171,14 @@ static char * get_bdir(char * dst, const char * dir)
 
 /**
  * Completion for path names.
- * @param buf   is a pointer the user input string preceeding the path to be
+ * @param cmd   is a pointer the user input string preceeding the path to be
  *              completed.
- * @param d     is a pointer to the string expected to be an incomplete path to
+ * @param dir   is a pointer to the string expected to be an incomplete path to
  *              a file or a directory.
  * @param lc    is a pointer to the linenoiseCompletion object related to the
  *              current line.
  */
-static void completion_path(const char * buf, const char * d,
+static void completion_path(const char * cmd, const char * dir,
                             linenoiseCompletions * lc)
 {
     int fildes, count;
@@ -201,9 +189,9 @@ static void completion_path(const char * buf, const char * d,
     struct eztrie_node_value * value;
 
     dir_trie = eztrie_create();
-    bdir = calloc(strlen(d) + 3, sizeof(char));
+    bdir = calloc(strlen(dir) + 3, sizeof(char));
 
-    d = get_bdir(bdir, d);
+    dir = get_bdir(bdir, dir);
 
     fildes = open(bdir, O_DIRECTORY | O_RDONLY | O_SEARCH);
     if (fildes < 0) {
@@ -218,20 +206,20 @@ static void completion_path(const char * buf, const char * d,
 
     close(fildes);
 
-    it = eztrie_find(&dir_trie, d);
+    it = eztrie_find(&dir_trie, dir);
     while ((value = eztrie_remove_ithead(&it))) {
         char * cbuf;
 
-        cbuf = malloc(strlen(buf) + strlen(bdir) + strlen(value->key) + 3);
+        cbuf = malloc(strlen(cmd) + strlen(bdir) + strlen(value->key) + 3);
         if (!cbuf) {
             perror("Path completion failed");
             continue;
         }
 
-        if (buf[0] == '\0') {
+        if (cmd[0] == '\0') {
             sprintf(cbuf, "%s%s", bdir, value->key);
         } else {
-            sprintf(cbuf, "%s %s%s", buf, bdir, value->key);
+            sprintf(cbuf, "%s %s%s", cmd, bdir, value->key);
         }
         linenoiseAddCompletion(lc, cbuf);
 
@@ -239,8 +227,8 @@ static void completion_path(const char * buf, const char * d,
     }
 
 out:
-    eztrie_destroy(&dir_trie);
     free(bdir);
+    eztrie_destroy(&dir_trie);
 }
 
 /**
@@ -264,7 +252,7 @@ static char * last_space(char * str)
     return s;
 }
 
-void tish_completion(const char * buf, linenoiseCompletions * lc)
+static void tish_completion(const char * buf, linenoiseCompletions * lc)
 {
     char * cmdbuf;
     char * s;
@@ -278,7 +266,7 @@ void tish_completion(const char * buf, linenoiseCompletions * lc)
     s = last_space(cmdbuf);
 
     if (s) {
-        /* Entering the second word. */
+        /* Entering the second or n'th word. */
         s[0] = '\0';
         s++;
         completion_path(cmdbuf, s, lc);
@@ -291,4 +279,42 @@ void tish_completion(const char * buf, linenoiseCompletions * lc)
     }
 
     free(cmdbuf);
+}
+
+static char * tish_hints(const char * buf, int * color, int * bold)
+{
+    struct eztrie_iterator it;
+    struct eztrie_node_value * tmp;
+    struct eztrie_node_value * value;
+    size_t count = 0;
+
+    it = eztrie_find(&cmd_trie, buf);
+    while ((tmp = eztrie_remove_ithead(&it))) {
+        value = tmp;
+        count++;
+    }
+    if (count == 1 && value && value->p) {
+        const struct tish_builtin * cmd = value->p;
+
+        *color = 35;
+        *bold = 0;
+        return cmd->hint;
+    }
+
+    return NULL;
+}
+
+void tish_completion_init(void)
+{
+    cmd_trie = eztrie_create();
+    init_static_completion();
+    init_path_completion();
+
+    linenoiseSetCompletionCallback(tish_completion);
+    linenoiseSetHintsCallback(tish_hints);
+}
+
+void tish_completion_destroy(void)
+{
+    eztrie_destroy(&cmd_trie);
 }

@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   File system manipulation commands for tish/Zeke.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,7 +54,7 @@ static int pwd(char * argv[])
 
     return 0;
 }
-TISH_CMD(pwd, "pwd");
+TISH_CMD(pwd, "pwd", NULL, 0);
 
 static int touch(char * argv[])
 {
@@ -70,7 +70,7 @@ static int touch(char * argv[])
 
     return close(fildes);
 }
-TISH_CMD(touch, "touch");
+TISH_CMD(touch, "touch", " <file>", 0);
 
 static int tish_mkdir(char * argv[])
 {
@@ -81,7 +81,7 @@ static int tish_mkdir(char * argv[])
 
     return mkdir(path, S_IRWXU | S_IRGRP | S_IXGRP);
 }
-TISH_CMD(tish_mkdir, "mkdir");
+TISH_CMD(tish_mkdir, "mkdir", " <dir>", 0);
 
 static int tish_rmdir(char * argv[])
 {
@@ -92,7 +92,7 @@ static int tish_rmdir(char * argv[])
 
     return rmdir(path);
 }
-TISH_CMD(tish_rmdir, "rmdir");
+TISH_CMD(tish_rmdir, "rmdir", " <dir>", 0);
 
 static int tish_unlink(char * argv[])
 {
@@ -103,4 +103,4 @@ static int tish_unlink(char * argv[])
 
     return unlink(path);
 }
-TISH_CMD(tish_unlink, "unlink");
+TISH_CMD(tish_unlink, "unlink", " <file>", 0);

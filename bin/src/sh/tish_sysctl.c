@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Tiny Init Shell for debugging in init.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -63,7 +63,7 @@ static int tish_sysctl_cmd(char * argv[])
 
     return retval;
 }
-TISH_CMD(tish_sysctl_cmd, "sysctl");
+TISH_CMD(tish_sysctl_cmd, "sysctl", " <ctlname>", 0);
 
 static int getset_parm(char * arg)
 {
@@ -210,7 +210,7 @@ static int tish_uname(char * argv[])
 
     return 0;
 }
-TISH_CMD(tish_uname, "uname");
+TISH_CMD(tish_uname, "uname", NULL, 0);
 
 static int tish_ikut(char * argv[])
 {
@@ -244,4 +244,4 @@ static int tish_ikut(char * argv[])
 
     return 0;
 }
-TISH_CMD(tish_ikut, "ikut");
+TISH_CMD(tish_ikut, "ikut", NULL, 0);
