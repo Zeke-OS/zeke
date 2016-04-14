@@ -153,17 +153,25 @@ static void get_base_vnode(vnode_t ** vnp)
 }
 
 /**
- * Get the top root vnode on a mountpoint.
- * If there is no mounts on this vnode vn is returned as is,
- * otherwise the top most root vnode on a mount stack is returned.
+ * Get the top root vnode of a mountpoint.
+ * If there is no mounts on this vnode nothing is changed;
+ * Otherwise the top most root vnode on a mount stack is returned.
  */
-static vnode_t * get_top_vnode(vnode_t * vn)
+static void get_top_vnode(vnode_t ** vnp)
 {
-    while (vn->vn_next_mountpoint != vn) {
-        vn = vn->vn_next_mountpoint;
-        KASSERT(vn != NULL, "next_mountpoint should be always valid");
+    vnode_t * vnode = *vnp;
+
+    while (vnode->vn_next_mountpoint != vnode) {
+        vnode_t * tmp;
+
+        tmp = vnode->vn_next_mountpoint;
+        KASSERT(tmp != NULL, "next_mountpoint should be always valid");
+        vref(tmp);
+        vrele(vnode);
+        vnode = tmp;
     }
-    return vn;
+
+    *vnp = vnode;
 }
 
 int fs_mount(vnode_t * target, const char * source, const char * fsname,
@@ -208,7 +216,8 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
     KASSERT((uintptr_t)sb > configKERNEL_START, "sb isn't a stack address");
     KASSERT(sb->root, "sb->root must be set");
 
-    target = get_top_vnode(target);
+    vref(target);
+    get_top_vnode(&target);
     root = sb->root;
 
     /* We test for int mask to avoid blocking in kinit. */
@@ -344,8 +353,6 @@ again:  /* Get vnode by name in this dir. */
             /* Restart from the begining to get the actual prev dir. */
             goto again;
         } else {
-            vnode_t * tmp = vnode;
-
             /*
              * TODO soft links and O_NOFOLLOW for lookup_vnode()
              * - soft links support
@@ -354,9 +361,7 @@ again:  /* Get vnode by name in this dir. */
              */
 
             /* Go to the last mountpoint. */
-            vnode = get_top_vnode(vnode);
-            vrele(tmp);
-            vref(vnode);
+            get_top_vnode(&vnode);
             *result = vnode;
         }
         retval = 0;
