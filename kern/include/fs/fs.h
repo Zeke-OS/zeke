@@ -405,6 +405,8 @@ typedef struct vnode_ops {
                  vnode_t ** result);
     /**
      * Lookup for a hard linked vnode in a directory vnode.
+     * The ref count of result should be incremented by the underlying fs
+     * implementation.
      * @param dir       is a directory in the file system.
      * @param name      is the filename to be searched for.
      * @param[out] result will be set to the result of the lookup.

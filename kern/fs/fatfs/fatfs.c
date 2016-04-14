@@ -505,7 +505,8 @@ static int fatfs_lookup(vnode_t * dir, const char * name, vnode_t ** result)
         FS_KERROR_VNODE(KERROR_DEBUG, dir, "Lookup emulating \"..\"\n");
 #endif
         if (VN_IS_FSROOT(dir)) {
-            *result = dir->sb->mountpoint;
+            vref(dir);
+            *result = dir;
 
             kfree(in_fpath);
             return -EDOM;

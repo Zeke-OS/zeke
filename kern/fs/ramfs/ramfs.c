@@ -167,7 +167,7 @@ static struct ramfs_dp get_dp_by_offset(ramfs_inode_t * inode, off_t offset);
  */
 fs_t ramfs_fs = {
     .fsname = RAMFS_FSNAME,
-    .mount = ramsfs_mount,
+    .mount = ramfs_mount,
     .sblist_head = SLIST_HEAD_INITIALIZER(),
 };
 
@@ -247,14 +247,14 @@ static void ramfs_vnode_changed(vnode_t * vnode)
     inode->in_ctime = ts;
 }
 
-int ramsfs_mount(const char * source, uint32_t mode,
-                 const char * parm, int parm_len, struct fs_superblock ** sb)
+int ramfs_mount(const char * source, uint32_t mode,
+                const char * parm, int parm_len, struct fs_superblock ** sb)
 {
     ramfs_sb_t * ramfs_sb;
     int err, retval;
 
 #ifdef configRAMFS_DEBUG
-    KERROR(KERROR_DEBUG, "ramfs_mount()\n");
+    KERROR(KERROR_DEBUG, "%s()\n", __func__);
 #endif
 
     ramfs_sb = kzalloc(sizeof(ramfs_sb_t));
@@ -278,7 +278,7 @@ int ramsfs_mount(const char * source, uint32_t mode,
 
     /* Initialize the inode pool. */
 #ifdef configRAMFS_DEBUG
-    KERROR(KERROR_DEBUG, "Initialize the inode pool.\n");
+    KERROR(KERROR_DEBUG, "Initialize the inode pool\n");
 #endif
     err = inpool_init(&ramfs_sb->ramfs_ipool, &ramfs_sb->sb,
             ramfs_raw_create_inode, destroy_vnode, RAMFS_INODE_POOL_SIZE);

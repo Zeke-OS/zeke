@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   ramfs headers.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -68,8 +68,8 @@ extern struct vnode_ops ramfs_vnode_ops;
  * @param[out] sb   Returns the superblock of the new mount.
  * @return error code, -errno.
  */
-int ramsfs_mount(const char * source, uint32_t mode,
-                 const char * parm, int parm_len, struct fs_superblock ** sb);
+int ramfs_mount(const char * source, uint32_t mode,
+                const char * parm, int parm_len, struct fs_superblock ** sb);
 
 /**
  * Unmount a ramfs.

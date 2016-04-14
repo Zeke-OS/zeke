@@ -127,21 +127,29 @@ fs_t * fs_iterate(fs_t * fsp)
 
 /**
  * Get base vnode of a mountpoint.
- * If vn is not a mountpoint nothing is done and vn is returned as is,
- * otherwise the first vnode in a mount stack is returned. The first vnode
+ * If vn is not a mountpoint nothing is changed;
+ * Otherwise the first vnode in a mount stack is returned. The first vnode
  * is the base mountpoint vnode.
  */
-static vnode_t * get_base_vnode(vnode_t * vn)
+static void get_base_vnode(vnode_t ** vnp)
 {
-    while (vn->vn_prev_mountpoint != vn) {
+    vnode_t * vnode = *vnp;
+
+    while (vnode->vn_prev_mountpoint != vnode) {
+        vnode_t * tmp;
+
         /*
          * We loop here to get to the first file system mounted on this
          * mountpoint.
          */
-        vn = vn->vn_prev_mountpoint;
-        KASSERT(vn != NULL, "prev_mountpoint should be always valid");
+        tmp = vnode->vn_prev_mountpoint;
+        KASSERT(tmp != NULL, "prev_mountpoint should be always valid");
+        vref(tmp);
+        vrele(vnode);
+        vnode = tmp;
     }
-    return vn;
+
+    *vnp = vnode;
 }
 
 /**
@@ -197,7 +205,7 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
     err = fs->mount(source, flags, parm, parm_len, &sb);
     if (err)
         return err;
-    KASSERT((uintptr_t)sb > configKERNEL_START, "sb is not a stack address");
+    KASSERT((uintptr_t)sb > configKERNEL_START, "sb isn't a stack address");
     KASSERT(sb->root, "sb->root must be set");
 
     target = get_top_vnode(target);
@@ -280,7 +288,7 @@ int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str, int oflags
     char * path;
     char * nodename;
     char * lasts;
-    struct vnode * orig_vn;
+    vnode_t * orig_vn;
     int retval = 0;
 
     if (!(result && root && root->vnode_ops && str))
@@ -330,14 +338,13 @@ again:  /* Get vnode by name in this dir. */
         if (retval == -EDOM && !strcmp(nodename, "..") &&
             vnode->vn_prev_mountpoint != vnode) {
             /* Get prev dir of prev fs sb from mount point. */
-            vnode = get_base_vnode(vnode);
+            get_base_vnode(&vnode);
             *result = vnode;
-            vref(vnode);
 
             /* Restart from the begining to get the actual prev dir. */
             goto again;
         } else {
-            orig_vn = vnode;
+            vnode_t * tmp = vnode;
 
             /*
              * TODO soft links and O_NOFOLLOW for lookup_vnode()
@@ -348,9 +355,9 @@ again:  /* Get vnode by name in this dir. */
 
             /* Go to the last mountpoint. */
             vnode = get_top_vnode(vnode);
-            *result = vnode;
-            vrele(orig_vn);
+            vrele(tmp);
             vref(vnode);
+            *result = vnode;
         }
         retval = 0;
 
