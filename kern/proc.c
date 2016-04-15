@@ -371,6 +371,7 @@ static void proc_remove(struct proc_info * proc)
     }
 
 
+    vrele(proc->cwd);
     _proc_free(proc);
     procarr_remove(proc->pid);
 }
