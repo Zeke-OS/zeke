@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Virtual file system syscalls.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -170,7 +170,7 @@ out:
 static int sys_open(__user void * user_args)
 {
     struct _fs_open_args * args = 0;
-    vnode_t * vn_file = NULL;
+    vnode_autorele vnode_t * vn_file = NULL;
     int err, retval = -1;
 
     /* Copyin args struct */
@@ -199,7 +199,7 @@ static int sys_open(__user void * user_args)
         if (args->oflags & O_CREAT) {
             /* Create a new file, umask is handled in fs_creat_curproc() */
             retval = fs_creat_curproc(args->name, S_IFREG | args->mode,
-                    &vn_file);
+                                      &vn_file);
             if (retval) {
                 set_errno(-retval);
                 goto out;
@@ -217,7 +217,6 @@ static int sys_open(__user void * user_args)
     }
 
 out:
-    vrele(vn_file);
     freecpystruct(args);
     return retval;
 }
@@ -545,7 +544,7 @@ out:
 static int sys_filestat(__user void * user_args)
 {
     struct _fs_stat_args * args = NULL;
-    vnode_t * vnode = NULL;
+    vnode_autorele vnode_t * vnode = NULL;
     struct stat stat_buf;
     int err, filref = 0, retval = -1;
 
@@ -632,7 +631,6 @@ static int sys_filestat(__user void * user_args)
 out:
     if (filref)
         fs_fildes_ref(curproc->files, args->fd, -1);
-    vrele(vnode);
     copyout(&stat_buf, (__user struct stat *)args->buf, sizeof(struct stat));
     freecpystruct(args);
 

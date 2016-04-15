@@ -297,8 +297,13 @@ int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str, int oflags
     char * path;
     char * nodename;
     char * lasts;
-    vnode_t * orig_vn;
     int retval = 0;
+
+#ifdef configFS_DEBUG
+    KERROR(KERROR_DEBUG,
+           "%s(result %p, root %pV, str \"%s\", oflags %x)\n",
+           __func__, result, root, str, oflags);
+#endif
 
     if (!(result && root && root->vnode_ops && str))
         return -EINVAL;
@@ -320,17 +325,17 @@ int lookup_vnode(vnode_t ** result, vnode_t * root, const char * str, int oflags
     vref(root);
     *result = root;
     do {
-        vnode_t * vnode = NULL;
+        vnode_t * vnode;
 
         if (!strcmp(nodename, "."))
             continue;
 
 again:  /* Get vnode by name in this dir. */
-        orig_vn = *result;
-        retval = orig_vn->vnode_ops->lookup(*result, nodename, &vnode);
+        vnode = NULL;
+        retval = (*result)->vnode_ops->lookup(*result, nodename, &vnode);
+        vrele(*result);
         if (!retval) {
             KASSERT(vnode != NULL, "vnode should be valid if !retval");
-            vrele(orig_vn);
         }
         if (retval != 0 && retval != -EDOM) {
             goto out;
@@ -373,12 +378,19 @@ again:  /* Get vnode by name in this dir. */
 
     if ((oflags & O_DIRECTORY) && !S_ISDIR((*result)->vn_mode)) {
         vrele(*result);
+        *result = NULL;
         retval = -ENOTDIR;
         goto out;
     }
 
 out:
-
+#ifdef configFS_DEBUG
+    KERROR(KERROR_DEBUG, "%s: result %pV\n", __func__,
+           (result) ? *result : NULL);
+#endif
+    if (retval && retval != -EDOM) {
+        *result = NULL;
+    }
     kfree(path);
     return retval;
 }
@@ -513,6 +525,11 @@ static void fs_fildes_dtor(struct kobj * obj)
     file_t * file = container_of(obj, struct file, f_obj);
     vnode_t * vn = file->vnode;
 
+#ifdef configFS_DEBUG
+    KERROR(KERROR_DEBUG, "%s(%p), vnode %pV\n",
+           __func__, obj, vn);
+#endif
+
     if (file->oflags & O_KFREEABLE)
         kfree(file);
     vrele(vn);
@@ -534,6 +551,11 @@ int fs_fildes_create_curproc(vnode_t * vnode, int oflags)
 {
     file_t * new_fildes;
     int retval;
+
+#ifdef configFS_DEBUG
+    KERROR(KERROR_DEBUG, "%s(vnode %pV, oflags %x)\n",
+           __func__, vnode, oflags);
+#endif
 
     if (!vnode)
         return -EINVAL;
