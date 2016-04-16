@@ -1966,7 +1966,7 @@ static FRESULT prepare_volume(FATFS * fs, int vol)
  * @param obj Pointer to the object FIL/DIR to check validity.
  * @return FR_OK(0): The object is valid, !=0: Invalid.
  */
-static FRESULT validate(void * obj)
+static FRESULT validate_and_lock(void * obj)
 {
 
    /* Assuming offset of .fs and .id in the FIL/DIR structure is identical */
@@ -1995,6 +1995,14 @@ FRESULT f_mount(FATFS * fs, int vol, uint8_t opt)
     ENTER_FF(fs); /* Lock the volume */
     res = prepare_volume(fs, vol);
     LEAVE_FF(fs, res);
+}
+
+FRESULT f_umount(FATFS * fs)
+{
+    fs->fs_type = 0;
+    memset(&fs->sobj, 0, sizeof(fs->sobj));
+
+    return FR_OK;
 }
 
 /**
@@ -2146,7 +2154,7 @@ FRESULT f_read(FF_FIL * fp, void * buff, unsigned int btr, unsigned int * br)
 
     *br = 0;    /* Clear read byte counter */
 
-    res = validate(fp);                         /* Check validity */
+    res = validate_and_lock(fp);
     if (res != FR_OK)
         LEAVE_FF(fp->fs, res);
     if (fp->err)                                /* Check error */
@@ -2253,7 +2261,7 @@ FRESULT f_write(FF_FIL * fp, const void * buff, unsigned int btw,
 
     *bw = 0;    /* Clear write byte counter */
 
-    res = validate(fp);                     /* Check validity */
+    res = validate_and_lock(fp);
     if (res != FR_OK)
         LEAVE_FF(fp->fs, res);
     if (fp->err)                            /* Check error */
@@ -2367,7 +2375,7 @@ FRESULT f_sync(FF_FIL * fp, int validated)
     uint8_t * dir;
 
     if (!validated) {
-        res = validate(fp); /* Check validity of the object */
+        res = validate_and_lock(fp);
         if (res != FR_OK)
             goto fail;
     }
@@ -2410,7 +2418,7 @@ FRESULT f_close(FF_FIL * fp)
     FATFS * fs;
     FRESULT res;
 
-    res = validate(fp);
+    res = validate_and_lock(fp);
     if (res != FR_OK)
         return res;
     fs = fp->fs;
@@ -2435,7 +2443,7 @@ FRESULT f_lseek(FF_FIL * fp, DWORD ofs)
 {
     FRESULT res;
 
-    res = validate(fp); /* Check validity of the object */
+    res = validate_and_lock(fp);
     if (res != FR_OK)
         goto fail;
     if (fp->err) { /* Check error */
@@ -2669,7 +2677,7 @@ FRESULT f_closedir(FF_DIR * dp)
     FATFS * fs;
     FRESULT res;
 
-    res = validate(dp);
+    res = validate_and_lock(dp);
     if (res != FR_OK)
         return res;
 
@@ -2689,7 +2697,7 @@ FRESULT f_readdir(FF_DIR * dp, FILINFO * fno)
     FRESULT res;
     DEF_NAMEBUF;
 
-    res = validate(dp);                 /* Check validity of the object */
+    res = validate_and_lock(dp);
     if (res != FR_OK)
         goto fail;
 
@@ -2833,7 +2841,7 @@ FRESULT f_truncate(FF_FIL * fp)
     FRESULT res;
     DWORD ncl;
 
-    res = validate(fp);                     /* Check validity of the object */
+    res = validate_and_lock(fp);
     if (res == FR_OK) {
         if (fp->err) {                      /* Check error */
             res = (FRESULT)fp->err;

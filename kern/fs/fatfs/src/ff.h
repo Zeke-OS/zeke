@@ -167,7 +167,6 @@ typedef enum {
 /* FatFs module application interface                           */
 
 FRESULT f_open(FF_FIL * fp, FATFS * fs, const TCHAR * path, uint8_t mode);
-FRESULT f_close(FF_FIL * fp);
 FRESULT f_read(FF_FIL * fp, void * buff, unsigned int btr, unsigned int * br);
 FRESULT f_write(FF_FIL * fp, const void * buff, unsigned int btw,
                 unsigned int * bw);
@@ -175,7 +174,6 @@ FRESULT f_lseek(FF_FIL * fp, DWORD ofs);
 FRESULT f_truncate(FF_FIL * fp);
 FRESULT f_sync(FF_FIL * fp, int validated);
 FRESULT f_opendir(FF_DIR * dp, FATFS * fs, const TCHAR * path);
-FRESULT f_closedir(FF_DIR * dp);
 FRESULT f_readdir(FF_DIR * dp, FILINFO * fno);
 FRESULT f_mkdir(FATFS * fs, const TCHAR * path);
 FRESULT f_unlink(FATFS * fs, const TCHAR * path);
@@ -189,6 +187,7 @@ FRESULT f_getfree(FATFS * fs, DWORD * nclst);
 FRESULT f_getlabel(FATFS * fs, const TCHAR * path, TCHAR * label, DWORD * vsn);
 FRESULT f_setlabel(FATFS * fs, const TCHAR * label);
 FRESULT f_mount(FATFS * fs, int vol, uint8_t opt);
+FRESULT f_umount(FATFS * fs);
 
 #define f_eof(fp) (((fp)->fptr == (fp)->fsize) ? 1 : 0)
 #define f_error(fp) ((fp)->err)

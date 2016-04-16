@@ -38,20 +38,23 @@
 #include <kerror.h>
 #include <kinit.h>
 #include <kstring.h>
+#include <fs/dev_major.h>
 #include <fs/fs.h>
 #include <fs/fs_util.h>
 #include <fs/vfs_hash.h>
-#include <fs/dev_major.h>
 #include <kmalloc.h>
 #include <proc.h>
 #include "fatfs.h"
 
 static int fatfs_mount(const char * source, uint32_t mode,
         const char * parm, int parm_len, struct fs_superblock ** sb);
+static int fatfs_umount(struct fs_superblock * fs_sb);
 static char * format_fpath(struct fatfs_inode * indir, const char * name);
 static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
                         char * fpath, long vn_hash, int oflags);
 static vnode_t * create_root(struct fatfs_sb * fatfs_sb);
+static void finalize_inode(vnode_t * vnode);
+static void destroy_vnode(vnode_t * vnode);
 static int fatfs_delete_vnode(vnode_t * vnode);
 static int fatfs_event_vnode_opened(struct proc_info * p, vnode_t * vnode);
 static void fatfs_event_file_closed(struct proc_info * p, file_t * file);
@@ -124,6 +127,12 @@ int __kinit__ fatfs_init(void)
     return 0;
 }
 
+static vnode_t * create_raw_inode(const struct fs_superblock * sb,
+                                  ino_t * num)
+{
+    return kzalloc(sizeof(struct fatfs_inode));
+}
+
 /**
  * Mount a new fatfs.
  * @param mode      mount flags.
@@ -177,13 +186,25 @@ static int fatfs_mount(const char * source, uint32_t mode,
     /* Insert sb to fatfs_sb_arr lookup array */
     fatfs_sb_arr[DEV_MINOR(fatfs_sb->sb.vdev_id)] = fatfs_sb;
 
+    /*
+     * We create initialize the inpool with the same number of desired vnodes
+     * as the vfs_hash hashmap even though latter one is system global and
+     * inpool is per super block.
+     */
+    retval = inpool_init(&fatfs_sb->inpool, &fatfs_sb->sb,
+                         create_raw_inode, destroy_vnode, finalize_inode,
+                         configFATFS_DESIREDVNODES);
+    if (retval) {
+        goto fail;
+    }
+
     /* Mount */
     err = f_mount(&fatfs_sb->ff_fs, DEV_MINOR(fatfs_sb->sb.vdev_id), 0);
     if (err) {
-#ifdef configFATFS_DEBUG
-        KERROR(KERROR_DEBUG, "Can't init a work area for FAT (%d)\n", err);
-#endif
         retval = fresult2errno(err);
+#ifdef configFATFS_DEBUG
+        KERROR(KERROR_DEBUG, "Can't init a work area for FAT (%d)\n", retval);
+#endif
         goto fail;
     }
 #ifdef configFATFS_DEBUG
@@ -205,13 +226,13 @@ static int fatfs_mount(const char * source, uint32_t mode,
     /* Function pointers to superblock methods */
     fatfs_sb->sb.get_vnode = NULL; /* Not implemented for FAT. */
     fatfs_sb->sb.delete_vnode = fatfs_delete_vnode;
-    fatfs_sb->sb.umount = NULL;
-
+    fatfs_sb->sb.umount = fatfs_umount;
     if (!fatfs_sb->sb.root) {
         KERROR(KERROR_ERR, "Root of fatfs not found\n");
         retval = -EIO;
         goto fail;
     }
+
     fs_insert_superblock(&fatfs_fs, &fatfs_sb->sb);
 
 fail:
@@ -224,6 +245,26 @@ fail:
     if (retval)
         vrele(vndev);
     return retval;
+}
+
+static int fatfs_umount(struct fs_superblock * fs_sb)
+{
+    struct fatfs_sb * fatfs_sb = get_ffsb_of_sb(fs_sb);
+
+    /* TODO sync open vnodes and release them */
+
+    /*
+     * TODO Check that there is no more references to any vnodes of
+     * this super block before destroying everything related to it.
+     */
+    fs_remove_superblock(&fatfs_fs, &fatfs_sb->sb);
+    f_umount(&fatfs_sb->ff_fs);
+    fatfs_sb_arr[DEV_MINOR(fatfs_sb->sb.vdev_id)] = NULL;
+    vrele(fatfs_sb->ff_devfile.vnode);
+    inpool_destroy(&fatfs_sb->inpool);
+    kfree(fatfs_sb);
+
+    return 0;
 }
 
 /**
@@ -280,13 +321,13 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
            __func__, fpath, (uint32_t)vn_hash);
 #endif
 
-    in = kzalloc(sizeof(struct fatfs_inode));
-    if (!in) {
+    vn = inpool_get_next(&sb->inpool);
+    if (!vn) {
         retval = -ENOMEM;
         goto fail;
     }
+    in = get_inode_of_vnode(vn);
     in->in_fpath = fpath;
-    vn = &in->in_vnode;
 
     in->open_count = ATOMIC_INIT(0);
 
@@ -373,15 +414,17 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
     FS_KERROR_FS(KERROR_DEBUG, sb->sb.fs, "ok\n");
 #endif
 
-    *result = in;
     vrefset(vn, 2);
+    inpool_insert_dirty(&sb->inpool, vn);
+
+    *result = in;
     return 0;
 fail:
 #ifdef configFATFS_DEBUG
     FS_KERROR_FS(KERROR_DEBUG, sb->sb.fs, "retval %i\n", retval);
 #endif
 
-    kfree(in);
+    inpool_insert_clean(&sb->inpool, vn); /* Return it back to the pool. */
     return retval;
 }
 
@@ -404,39 +447,80 @@ static vnode_t * create_root(struct fatfs_sb * fatfs_sb)
         return NULL;
     }
 
+    /*
+     * Note that the refcount +2 should remain so that the root vnode won't be
+     * ever freed from the dirty vnode list.
+     */
     in->in_fpath = rootpath;
-
-    vrefset(&in->in_vnode, 1);
     return &in->in_vnode;
 }
 
+/**
+ * Sync inode and destroy cached data linked to the inode.
+ */
+static void finalize_inode(vnode_t * vnode)
+{
+    struct fatfs_inode * in = get_inode_of_vnode(vnode);
+
+#ifdef configFATFS_DEBUG
+    KERROR(KERROR_DEBUG, "%s(in %p), %s\n", __func__, in, in->in_fpath);
+#endif
+
+    vrele_nunlink(vnode); /* If called by inpool */
+    vfs_hash_remove(vfs_hash_ctx_id, &in->in_vnode);
+
+    /*
+     * We use a negative value of vn_len to mark a deleted directory entry,
+     * if the entry is already deleted it's also properly closed.
+     */
+    if (vnode->vn_len >= 0) {
+        if (!S_ISDIR(vnode->vn_mode))
+            f_sync(&in->fp, 0);
+    }
+
+    kfree(in->in_fpath);
+    memset(in, 0, sizeof(*in));
+}
+
+/**
+ * This function is called when a pooled inode should be freed.
+ */
+static void destroy_vnode(vnode_t * vnode)
+{
+    struct fatfs_inode * in = get_inode_of_vnode(vnode);
+
+#ifdef configFATFS_DEBUG
+    KERROR(KERROR_DEBUG, "%s(vnode %pV), in: %p\n", __func__, vnode, in);
+#endif
+
+    /* TODO Free the inode */
+}
+
+/**
+ * Delete a vnode from the cache.
+ */
 static int fatfs_delete_vnode(vnode_t * vnode)
 {
     struct fatfs_inode * in = get_inode_of_vnode(vnode);
-    int isdir = S_ISDIR(vnode->vn_mode);
+    struct fatfs_sb * sb = get_ffsb_of_sb(vnode->sb);
 
 #ifdef configFATFS_DEBUG
     FS_KERROR_VNODE(KERROR_DEBUG, vnode, "%s\n", in->in_fpath);
 #endif
 
+    /*
+     * We need to decrement the refcount if the function was called in order to
+     * sync diry vnodes.
+     */
+    vrele_nunlink(vnode);
+
     if (vrefcnt(vnode) > 0) {
-        if (!isdir)
+        if (!S_ISDIR(vnode->vn_mode))
             f_sync(&in->fp, 0);
     } else {
-        vfs_hash_remove(vfs_hash_ctx_id, vnode);
-
-        /*
-         * We use a negative value of vn_len to mark a deleted directory entry,
-         * if the entry is already deleted it's also properly closed.
-         */
-        if (vnode->vn_len >= 0) {
-            if (isdir)
-                f_closedir(&in->dp);
-            else
-                f_close(&in->fp);
-        }
-
-        kfree(in->in_fpath);
+        finalize_inode(vnode);
+        /* Recycle the inode */
+        inpool_insert_clean(&sb->inpool, vnode);
     }
 
     return 0;
@@ -652,13 +736,8 @@ int fatfs_unlink(vnode_t * dir, const char * name)
     in = get_inode_of_vnode(vnode);
     if (S_ISDIR(vnode->vn_mode)) {
         fs = in->dp.fs;
-        f_closedir(&in->dp);
     } else {
         fs = in->fp.fs;
-        /* TODO f_close() ends up in a deadlock */
-#if 0
-        f_close(&in->fp);
-#endif
     }
     err = fresult2errno(f_unlink(fs, in->in_fpath));
     if (err)

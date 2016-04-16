@@ -281,7 +281,8 @@ int ramfs_mount(const char * source, uint32_t mode,
     KERROR(KERROR_DEBUG, "Initialize the inode pool\n");
 #endif
     err = inpool_init(&ramfs_sb->ramfs_ipool, &ramfs_sb->sb,
-            ramfs_raw_create_inode, destroy_vnode, RAMFS_INODE_POOL_SIZE);
+            ramfs_raw_create_inode, destroy_vnode, NULL,
+            RAMFS_INODE_POOL_SIZE);
     if (err) {
         retval = -ENOMEM;
         goto free_ramfs_sb;
@@ -406,7 +407,7 @@ int ramfs_delete_vnode(vnode_t * vnode)
     vn_tmp = &inode->in_vnode;
 
     /* Recycle this inode */
-    inpool_insert(&(get_rfsb_of_sb(vn_tmp->sb)->ramfs_ipool), vn_tmp);
+    inpool_insert_clean(&(get_rfsb_of_sb(vn_tmp->sb)->ramfs_ipool), vn_tmp);
 
     return 0;
 }

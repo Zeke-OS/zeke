@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Generic inode pool.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,8 +40,9 @@
 static size_t inpool_fill(inpool_t * pool, size_t count);
 
 int inpool_init(inpool_t * pool, struct fs_superblock * sb,
-                inpool_creatin_t create_inode,
-                inpool_destrin_t destroy_inode,
+                inpool_creatin_t * create_inode,
+                inpool_destrin_t * destroy_inode,
+                inpool_finalizein_t * finalize_inode,
                 size_t max)
 {
     int retval = 0;
@@ -55,6 +56,7 @@ int inpool_init(inpool_t * pool, struct fs_superblock * sb,
     pool->ip_sb = sb;
     pool->create_inode = create_inode;
     pool->destroy_inode = destroy_inode;
+    pool->finalize_inode = finalize_inode;
     TAILQ_INIT(&pool->ip_freelist);
     TAILQ_INIT(&pool->ip_dirtylist);
 
@@ -87,7 +89,36 @@ void inpool_destroy(inpool_t * pool)
     }
 }
 
-void inpool_insert(inpool_t * pool, vnode_t * vnode)
+/**
+ * @returns Returns 1 if vnode was insterted to the free list;
+ *          Returns 0 if the vnode was destroyed.
+ */
+static int inpool_insert_clean_locked(inpool_t * pool, vnode_t * vnode)
+{
+    if (pool->ip_count < pool->ip_max) {
+        /* Insert into the free list. */
+        TAILQ_INSERT_TAIL(&pool->ip_freelist, vnode, vn_inqueue);
+        pool->ip_count++;
+        pool->ip_next_inum++;
+        return 1;
+    } else {
+        /*
+         * Destroy the vnode as it's not needed anymore and can't fit into
+         * the free list.
+         */
+        pool->destroy_inode(vnode);
+        return 0;
+    }
+}
+
+void inpool_insert_clean(inpool_t * pool, vnode_t * vnode)
+{
+    mtx_lock(&pool->lock);
+    (void)inpool_insert_clean_locked(pool, vnode);
+    mtx_unlock(&pool->lock);
+}
+
+void inpool_insert_dirty(inpool_t * pool, vnode_t * vnode)
 {
     mtx_lock(&pool->lock);
     TAILQ_INSERT_TAIL(&pool->ip_dirtylist, vnode, vn_inqueue);
@@ -139,22 +170,15 @@ static size_t inpool_fill(inpool_t * pool, size_t count)
     TAILQ_FOREACH_SAFE(vnode, &pool->ip_dirtylist, vn_inqueue, vnode_temp) {
         if (vrefcnt(vnode) > 1)
             continue;
-        TAILQ_REMOVE(&pool->ip_dirtylist, vnode, vn_inqueue);
-
-        if (count > 0 && pool->ip_count < pool->ip_max) {
-            /* Insert into the free list. */
-            TAILQ_INSERT_TAIL(&pool->ip_freelist, vnode, vn_inqueue);
-            pool->ip_count++;
-            pool->ip_next_inum++;
-            i++;
-            count--;
-        } else {
-            /*
-             * Destroy it as it's not needed anymore and can't fit into
-             * the free list.
-             */
-            pool->destroy_inode(vnode);
+        if (count == 0) {
+            break;
         }
+        count--;
+
+        TAILQ_REMOVE(&pool->ip_dirtylist, vnode, vn_inqueue);
+        if (pool->finalize_inode)
+            pool->finalize_inode(vnode);
+        i += inpool_insert_clean_locked(pool, vnode);
     }
 
     /* Insert some new inodes if necessary. */

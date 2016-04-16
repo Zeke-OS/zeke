@@ -264,7 +264,7 @@ struct fs_superblock {
     /**
      * Delete a vnode reference.
      * Deletes a reference to a vnode and destroys the inode corresponding to
-     * the inode if there is no more links and references to it.
+     * the inode data in memory if there is no more links and references to it.
      * @param[in] vnode is the vnode.
      * @return Returns 0 if no error; Otherwise value other than zero.
      */

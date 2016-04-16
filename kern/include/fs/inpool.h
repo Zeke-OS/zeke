@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Generic inode pool.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,10 +44,15 @@
  * typedef for callback to the inode creation function.
  * @param sb is the superblock used.
  * @param num is the inode number used.
+ * TODO inpool shouldn't touch ino_t
  */
-typedef vnode_t *(*inpool_creatin_t)(const struct fs_superblock * sb,
-                                     ino_t * num);
-typedef void     (*inpool_destrin_t)(vnode_t * vnode);
+typedef vnode_t * inpool_creatin_t(const struct fs_superblock * sb,
+                                   ino_t * num);
+typedef void      inpool_destrin_t(vnode_t * vnode);
+/**
+ * Sync inode and destroy all cached data.
+ */
+typedef void      inpool_finalizein_t(vnode_t * vnode);
 
 TAILQ_HEAD(ip_listhead, vnode);
 
@@ -66,8 +71,13 @@ typedef struct inpool {
     struct fs_superblock * ip_sb; /*!< Default Super block of this pool. */
     mtx_t lock;
 
-    inpool_creatin_t create_inode; /*!< Create inode callback. */
-    inpool_destrin_t destroy_inode;
+    inpool_creatin_t * create_inode;        /*!< Create inode callback. */
+    inpool_destrin_t * destroy_inode;       /*!< Destroy inode callback. */
+    /**
+     * Sync and destroy all cached data linked to the inode, thus finalize.
+     * This callback is optional and can be set NULL.
+     */
+    inpool_finalizein_t * finalize_inode;
 } inpool_t;
 
 
@@ -83,18 +93,25 @@ typedef struct inpool {
 int inpool_init(inpool_t * pool, struct fs_superblock * sb,
                 inpool_creatin_t create_inode,
                 inpool_destrin_t destroy_inode,
+                inpool_finalizein_t * finalize_inode,
                 size_t max);
 
 /**
- * Insert inode to the inode pool.
+ * Insert a clean inode to the inode pool.
  * This function can be used for inode recycling.
  * @param pool  is the inode pool, vnode_num must be set and refcount should have
  *              sane value.
  * @param vnode is the inode that will be inserted to the pool.
- * @return  Returns null if vnode was inserted to the pool; Otherwise returns a
- *          vnode that could not be fitted to the pool.
  */
-void inpool_insert(inpool_t * pool, vnode_t * vnode);
+void inpool_insert_clean(inpool_t * pool, vnode_t * vnode);
+
+/**
+ * Insert a dirty inode to the inode pool.
+ * @param pool  is the inode pool, vnode_num must be set and refcount should have
+ *              sane value.
+ * @param vnode is the inode that will be inserted to the pool.
+ */
+void inpool_insert_dirty(inpool_t * pool, vnode_t * vnode);
 
 /**
  * Get the next free node from the inode pool.

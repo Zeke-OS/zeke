@@ -1,6 +1,7 @@
 menuconfig configFATFS
     bool "FatFs"
     default n
+    select configFS_INPOOL
     select configVFS_HASH
     ---help---
     The FatFs driver will permit the kernel to read and write MS-DOS based

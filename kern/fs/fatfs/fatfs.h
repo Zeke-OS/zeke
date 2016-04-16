@@ -45,6 +45,7 @@
 
 #include <libkern.h>
 #include <fs/fs.h>
+#include <fs/inpool.h>
 #include "src/ff.h"
 
 #define FATFS_FSNAME            "fatfs"
@@ -67,9 +68,10 @@ struct fatfs_inode {
  * FatFs superblock.
  */
 struct fatfs_sb {
-    struct fs_superblock sb; /*!< Superblock node. */
-    file_t ff_devfile;
-    FATFS ff_fs;
+    struct fs_superblock sb;    /*!< Superblock node. */
+    inpool_t inpool;            /*!< inode pool. */
+    file_t ff_devfile;          /*!< Fs device. */
+    FATFS ff_fs;                /*!< ff descriptor. */
 };
 
 /**
