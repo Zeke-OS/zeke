@@ -127,8 +127,7 @@ int __kinit__ fatfs_init(void)
     return 0;
 }
 
-static vnode_t * create_raw_inode(const struct fs_superblock * sb,
-                                  ino_t * num)
+static vnode_t * create_raw_inode(const struct fs_superblock * sb)
 {
     return kzalloc(sizeof(struct fatfs_inode));
 }

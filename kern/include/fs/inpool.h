@@ -44,10 +44,8 @@
  * typedef for callback to the inode creation function.
  * @param sb is the superblock used.
  * @param num is the inode number used.
- * TODO inpool shouldn't touch ino_t
  */
-typedef vnode_t * inpool_creatin_t(const struct fs_superblock * sb,
-                                   ino_t * num);
+typedef vnode_t * inpool_creatin_t(const struct fs_superblock * sb);
 typedef void      inpool_destrin_t(vnode_t * vnode);
 /**
  * Sync inode and destroy all cached data.
@@ -67,7 +65,6 @@ typedef struct inpool {
     struct ip_listhead ip_dirtylist;
     size_t ip_count;
     size_t ip_max;              /*!< Maximum size of the inode pool. */
-    ino_t ip_next_inum;         /*!< Next free in number after pool is empty. */
     struct fs_superblock * ip_sb; /*!< Default Super block of this pool. */
     mtx_t lock;
 

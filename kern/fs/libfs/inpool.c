@@ -52,7 +52,6 @@ int inpool_init(inpool_t * pool, struct fs_superblock * sb,
 
     pool->ip_max = max;
     pool->ip_count = 0;
-    pool->ip_next_inum = 0;
     pool->ip_sb = sb;
     pool->create_inode = create_inode;
     pool->destroy_inode = destroy_inode;
@@ -99,7 +98,6 @@ static int inpool_insert_clean_locked(inpool_t * pool, vnode_t * vnode)
         /* Insert into the free list. */
         TAILQ_INSERT_TAIL(&pool->ip_freelist, vnode, vn_inqueue);
         pool->ip_count++;
-        pool->ip_next_inum++;
         return 1;
     } else {
         /*
@@ -183,15 +181,12 @@ static size_t inpool_fill(inpool_t * pool, size_t count)
 
     /* Insert some new inodes if necessary. */
     while (count-- > 0 && pool->ip_count < pool->ip_max) {
-        ino_t * num = &(pool->ip_next_inum);
-
-        vnode = pool->create_inode(pool->ip_sb, num);
+        vnode = pool->create_inode(pool->ip_sb);
         if (!vnode)
             break;
 
         TAILQ_INSERT_TAIL(&pool->ip_freelist, vnode, vn_inqueue);
         pool->ip_count++;
-        pool->ip_next_inum++;
         i++;
     }
 
