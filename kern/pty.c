@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Pseudo terminal driver.
  * @section LICENSE
- * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,10 +33,10 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <sys/dev_major.h>
 #include <sys/ioctl.h>
 #include <sys/tree.h>
 #include <termios.h>
-#include <fs/dev_major.h>
 #include <fs/devfs.h>
 #include <fs/fs_queue.h>
 #include <fs/fs_util.h>

@@ -171,7 +171,7 @@ static int sys_open(__user void * user_args)
 {
     struct _fs_open_args * args = 0;
     vnode_autorele vnode_t * vn_file = NULL;
-    int err, retval = -1;
+    int err, fd, retval = -1;
 
     /* Copyin args struct */
     err = copyinstruct(user_args, (void **)(&args),
@@ -209,13 +209,30 @@ static int sys_open(__user void * user_args)
             goto out;
         }
     }
+    KASSERT(vn_file, "vnode is set");
 
-    retval = fs_fildes_create_curproc(vn_file, args->oflags);
-    if (retval < 0) {
-        set_errno(-retval);
-        retval = -1;
+    /* Create the file descriptor */
+    fd = fs_fildes_create_curproc(vn_file, args->oflags);
+    if (fd < 0) {
+        set_errno(-fd);
+        goto out;
     }
 
+    KASSERT(curproc->pgrp, "pgrp is set");
+    KASSERT(curproc->pgrp->pg_session, "session is set");
+    /*
+     * Check if opening this file should cause it to become a controlling
+     * terminal ie. if it's a terminal device and should become a controlling
+     * terminal according to POSIX rules.
+     */
+    if (!(args->oflags & O_NOCTTY) &&
+        fs_fildes_isatty(retval) &&
+        proc_is_session_leader(curproc) &&
+        curproc->pgrp->pg_session->s_ctty_fd == -1) {
+        curproc->pgrp->pg_session->s_ctty_fd = fd;
+    }
+
+    retval = fd;
 out:
     freecpystruct(args);
     return retval;

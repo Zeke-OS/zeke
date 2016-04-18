@@ -679,6 +679,13 @@ void fs_fildes_close_all(struct proc_info * p, int fildes_begin);
 void fs_fildes_close_exec(struct proc_info * p);
 
 /**
+ * Test if a file is a tty.
+ * @return  0 if the file is a TTY;
+ *          Otherwise -ENOTTY is returned.
+ */
+int fs_fildes_isatty(int fd);
+
+/**
  * Allocate a files_t struct for storing file descriptors.
  * @param nrfiles is the maximum number of files open.
  * @param umask is the default umask.

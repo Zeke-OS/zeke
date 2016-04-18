@@ -32,11 +32,11 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <sys/dev_major.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <termios.h>
 #include <thread.h>
-#include <fs/dev_major.h>
 #include <fs/devfs.h>
 #include <hal/uart.h>
 #include <kinit.h>

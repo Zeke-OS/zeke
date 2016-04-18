@@ -34,6 +34,7 @@
 #include <errno.h>
 #include <machine/atomic.h>
 #include <stdint.h>
+#include <sys/dev_major.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <time.h>
@@ -46,7 +47,6 @@
 #include <proc.h>
 #include <fs/dehtable.h>
 #include <fs/inpool.h>
-#include <fs/dev_major.h>
 #include <fs/fs.h>
 #include <fs/fs_util.h>
 #include <fs/ramfs.h>

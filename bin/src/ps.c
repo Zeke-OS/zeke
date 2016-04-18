@@ -33,8 +33,10 @@
 #include <ctype.h>
 #include <dirent.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sysexits.h>
@@ -45,6 +47,9 @@
 struct pstat {
     char name[16];
     pid_t pid;
+    pid_t pgrp;
+    pid_t sid;
+    dev_t ctty; /* Controlling TTY */
     uid_t ruid;
     uid_t euid;
     uid_t suid;
@@ -55,12 +60,14 @@ struct pstat {
     clock_t stime;
 };
 
-#define PROC_PATH "/proc"
-static char proc_file[40];
+#define PROC_PATH   "/proc"
+#define DEV_PATH    "/dev"
+
+static char pathbuf[PATH_MAX];
 
 static char * get_next_line(FILE * fp)
 {
-    static char line[256];
+    static char line[MAX_INPUT];
 
     while (fgets(line, sizeof(line), fp)) {
         char * cp;
@@ -93,7 +100,13 @@ static int scan_proc(struct pstat * ps, FILE * fp)
         if (strcmp(a, "Name") == 0) {
             strlcpy(ps->name, b, sizeof(ps->name));
         } else if (strcmp(a, "Pid") == 0) {
-            sscanf(b, "%d", &ps->pid);
+            sscanf(b, "%u", &ps->pid);
+        } else if (strcmp(a, "Pgrp") == 0) {
+            sscanf(b, "%u", &ps->pgrp);
+        } else if (strcmp(a, "Sid") == 0) {
+            sscanf(b, "%u", &ps->sid);
+        } else if (strcmp(a, "Ctty") == 0) {
+            sscanf(b, "%u", &ps->ctty);
         } else if (strcmp(a, "User") == 0) {
             sscanf(b, "%d", &ps->utime);
         } else if (strcmp(a, "Sys") == 0) {
@@ -103,6 +116,45 @@ static int scan_proc(struct pstat * ps, FILE * fp)
     }
 
     return 0;
+}
+
+char * devttytostr(char * str, size_t max, dev_t tty)
+{
+    int fildes, count;
+    struct dirent dbuf[10];
+
+    if (DEV_MAJOR(tty) == 0) {
+        strlcpy(str, "?", max);
+        return str;
+    }
+
+    fildes = open(DEV_PATH, O_DIRECTORY | O_RDONLY | O_SEARCH);
+    if (fildes < 0) {
+        perror("Getting CTTY failed");
+        return str;
+    }
+
+    while ((count = getdents(fildes, (char *)dbuf, sizeof(dbuf))) > 0) {
+        for (int i = 0; i < count; i++) {
+            struct dirent * d = dbuf + i;
+            struct stat statbuf;
+
+            if (d->d_name[0] == '.' || !(d->d_type & DT_CHR))
+                continue;
+
+            snprintf(pathbuf, sizeof(pathbuf), DEV_PATH "/%s", d->d_name);
+            stat(pathbuf, &statbuf);
+            if (statbuf.st_rdev == tty) {
+                strlcpy(str, d->d_name, max);
+                goto out;
+            }
+        }
+    }
+
+out:
+    close(fildes);
+
+    return str;
 }
 
 int main(int argc, char * argv[], char * envp[])
@@ -115,7 +167,7 @@ int main(int argc, char * argv[], char * envp[])
 
     fildes = open(PROC_PATH, O_DIRECTORY | O_RDONLY | O_SEARCH);
     if (fildes < 0) {
-        fprintf(stderr, "Open failed\n");
+        perror("Open failed");
         return EX_OSERR;
     }
 
@@ -123,15 +175,16 @@ int main(int argc, char * argv[], char * envp[])
     while ((count = getdents(fildes, (char *)dbuf, sizeof(dbuf))) > 0) {
         for (int i = 0; i < count; i++) {
             struct dirent * d = dbuf + i;
+            char ttystr[] = "/dev/tty000";
 
             if (d->d_type & DT_DIR && d->d_name[0] != '.') {
                 FILE * fp;
                 struct pstat ps;
                 clock_t sutime;
 
-                snprintf(proc_file, sizeof(proc_file), PROC_PATH "/%s/status",
+                snprintf(pathbuf, sizeof(pathbuf), PROC_PATH "/%s/status",
                          d->d_name);
-                fp = fopen(proc_file, "r");
+                fp = fopen(pathbuf, "r");
                 if (!fp)
                     continue;
 
@@ -140,7 +193,7 @@ int main(int argc, char * argv[], char * envp[])
                 sutime = (ps.utime + ps.stime) / clk_tck;
                 printf("%5s %-6s   %02u:%02u:%02u %s\n",
                        d->d_name,
-                       "",
+                       devttytostr(ttystr, sizeof(ttystr), ps.ctty),
                        sutime / 3600, (sutime % 3600) / 60, sutime % 60,
                        ps.name);
                 fclose(fp);

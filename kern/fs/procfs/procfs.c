@@ -31,19 +31,19 @@
  */
 
 #include <stddef.h>
+#include <sys/dev_major.h>
 #include <errno.h>
+#include <fs/fs.h>
+#include <fs/fs_util.h>
+#include <fs/procfs.h>
+#include <fs/ramfs.h>
 #include <hal/core.h>
+#include <kerror.h>
 #include <kinit.h>
 #include <kmalloc.h>
 #include <kstring.h>
 #include <libkern.h>
-#include <kerror.h>
 #include <proc.h>
-#include <fs/fs.h>
-#include <fs/fs_util.h>
-#include <fs/ramfs.h>
-#include <fs/dev_major.h>
-#include <fs/procfs.h>
 
 static int procfs_mount(const char * source, uint32_t mode,
                         const char * parm, int parm_len,

@@ -66,7 +66,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdint.h>
-#include <fs/dev_major.h>
+#include <sys/dev_major.h>
 #include <fs/mbr.h>
 #include <hal/hw_timers.h>
 #include <kerror.h>

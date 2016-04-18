@@ -30,23 +30,25 @@
  *******************************************************************************
  */
 
-#include <kinit.h>
-#include <libkern.h>
-#include <kerror.h>
-#include <kstring.h>
-#include <kmalloc.h>
-#include <vm/vm.h>
-#include <thread.h>
-#include <proc.h>
-#include <ksignal.h>
-#include <buf.h>
 #include <errno.h>
-#include <unistd.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
 #include <sys/sysctl.h>
-#include <fs/mbr.h>
+#include <termios.h>
+#include <unistd.h>
+#include <buf.h>
 #include <fs/fs.h>
 #include <fs/fs_util.h>
+#include <fs/mbr.h>
+#include <kerror.h>
+#include <kinit.h>
+#include <kmalloc.h>
+#include <ksignal.h>
+#include <kstring.h>
+#include <libkern.h>
+#include <proc.h>
+#include <thread.h>
+#include <vm/vm.h>
 
 /*
  * File system global locking.
@@ -730,6 +732,44 @@ void fs_fildes_close_exec(struct proc_info * p)
     }
 }
 
+int fs_fildes_isatty(int fd)
+{
+    file_t * file;
+    struct termios termios;
+    int err = 0;
+
+    file = fs_fildes_ref(curproc->files, fd, 1);
+    if (!file)
+        return -ENOTTY;
+
+    KASSERT(file->vnode, "vnode is set");
+    err = file->vnode->vnode_ops->ioctl(file, IOCTL_GTERMIOS,
+                                        &termios, sizeof(termios));
+    if (err) {
+        err = -ENOTTY;
+        goto out;
+    }
+    /* Otherwise the vnode must be a TTY. */
+
+out:
+    fs_fildes_ref(curproc->files, fd, -1);
+    return err;
+}
+
+files_t * fs_alloc_files(size_t nr_files, mode_t umask)
+{
+    files_t * files;
+
+    files = kzalloc(SIZEOF_FILES(nr_files));
+    if (!files)
+        return NULL;
+
+    files->count = nr_files;
+    files->umask = umask;
+
+    return files;
+}
+
 /**
  * Get directory vnode of a target file and the actual directory entry name.
  * @param[in]   pathname    is a path to the target.
@@ -772,20 +812,6 @@ static int getvndir(const char * pathname, vnode_t ** dir, char ** filename,
     *filename = name;
 
     return fs_namei_proc(dir, -1, path, AT_FDCWD);
-}
-
-files_t * fs_alloc_files(size_t nr_files, mode_t umask)
-{
-    files_t * files;
-
-    files = kzalloc(SIZEOF_FILES(nr_files));
-    if (!files)
-        return NULL;
-
-    files->count = nr_files;
-    files->umask = umask;
-
-    return files;
 }
 
 int fs_creat_curproc(const char * pathname, mode_t mode, vnode_t ** result)

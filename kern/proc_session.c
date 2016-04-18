@@ -57,6 +57,7 @@ struct session * proc_session_create(struct proc_info * leader,
 
     TAILQ_INIT(&s->s_pgrp_list_head);
     s->s_leader = leader->pid;
+    s->s_ctty_fd = -1;
     strlcpy(s->s_login, s_login, sizeof(s->s_login));
     kobj_init(&s->s_obj, proc_session_free_callback);
 

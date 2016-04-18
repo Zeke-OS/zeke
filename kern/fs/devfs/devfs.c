@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Device file system.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  */
 
 #include <errno.h>
+#include <sys/dev_major.h>
 #include <sys/ioctl.h>
-#include <fs/dev_major.h>
 #include <fs/devfs.h>
 #include <fs/fs.h>
 #include <fs/fs_util.h>
@@ -56,6 +56,7 @@ static int devfs_mount(const char * source, uint32_t mode,
 static int devfs_umount(struct fs_superblock * fs_sb);
 static void devfs_event_fd_created(struct proc_info * p, file_t * file);
 static void devfs_event_fd_closed(struct proc_info * p, file_t * file);
+static int devfs_stat(vnode_t * vnode, struct stat * buf);
 static int dev_ioctl(file_t * file, unsigned request,
                      void * arg, size_t arg_len);
 
@@ -66,6 +67,7 @@ vnode_ops_t devfs_vnode_ops = {
     .ioctl = dev_ioctl,
     .event_fd_created = devfs_event_fd_created,
     .event_fd_closed = devfs_event_fd_closed,
+    .stat = devfs_stat,
 };
 
 static fs_t devfs_fs = {
@@ -191,6 +193,18 @@ static void devfs_event_fd_closed(struct proc_info * p, file_t * file)
 
     if (devnfo->close_callback)
         devnfo->close_callback(p, file, devnfo);
+}
+
+static int devfs_stat(vnode_t * vnode, struct stat * buf)
+{
+    struct dev_info * devnfo = (struct dev_info *)vnode->vn_specinfo;
+    int retval;
+
+    retval = ramfs_stat(vnode, buf);
+    if (retval == 0)
+        buf->st_rdev = devnfo->dev_id;
+
+    return retval;
 }
 
 const char * devtoname(struct vnode * dev)

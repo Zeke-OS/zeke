@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Special pseudo devices.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,10 +30,10 @@
  *******************************************************************************
  */
 
+#include <sys/dev_major.h>
 #include <kinit.h>
 #include <kstring.h>
 #include <kerror.h>
-#include <fs/dev_major.h>
 #include <fs/devfs.h>
 #include <fs/devspecial.h>
 

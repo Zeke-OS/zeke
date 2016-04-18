@@ -31,10 +31,36 @@
  */
 
 #include <errno.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <fs/procfs.h>
 #include <kmalloc.h>
 #include <kstring.h>
 #include <proc.h>
-#include <fs/procfs.h>
+
+static dev_t get_ctty(struct proc_info * proc)
+{
+    int err, fd = proc->pgrp->pg_session->s_ctty_fd;
+    struct stat stat_buf;
+    file_t * file;
+    vnode_t * vnode;
+    dev_t ctty = 0;
+
+    file = fs_fildes_ref(proc->files, fd, 1);
+    if (!file)
+        return 0;
+
+    vnode = file->vnode;
+    err = vnode->vnode_ops->stat(vnode, &stat_buf);
+    if (err)
+        goto out;
+
+    ctty = stat_buf.st_rdev;
+
+out:
+    fs_fildes_ref(proc->files, fd, -1);
+    return ctty;
+}
 
 static struct procfs_stream * procfs_read_status(struct procfs_info * spec)
 {
@@ -57,6 +83,9 @@ static struct procfs_stream * procfs_read_status(struct procfs_info * spec)
                      "Name: %s\n"
                      "State: %s\n"
                      "Pid: %u\n"
+                     "Pgrp: %u\n"
+                     "Sid: %u\n"
+                     "Ctty: %u\n"
                      "Uid: %u %u %u\n"
                      "Gid: %u %u %u\n"
                      "User: %u\n"
@@ -65,6 +94,8 @@ static struct procfs_stream * procfs_read_status(struct procfs_info * spec)
                      proc->name,
                      proc_state2str(proc->state),
                      proc->pid,
+                     proc->pgrp->pg_id, proc->pgrp->pg_session->s_leader,
+                     get_ctty(proc),
                      proc->cred.uid, proc->cred.euid, proc->cred.suid,
                      proc->cred.gid, proc->cred.egid, proc->cred.sgid,
                      proc->tms.tms_utime,

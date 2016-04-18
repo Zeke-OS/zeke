@@ -32,12 +32,12 @@
 
 #define FB_INTERNAL
 
-#include <stddef.h>
-#include <termios.h>
-#include <sys/ioctl.h>
 #include <machine/atomic.h>
+#include <stddef.h>
+#include <sys/dev_major.h>
+#include <sys/ioctl.h>
+#include <termios.h>
 #include <buf.h>
-#include <fs/dev_major.h>
 #include <fs/devfs.h>
 #include <fs/devspecial.h>
 #include <hal/fb.h>

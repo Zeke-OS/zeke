@@ -88,7 +88,7 @@ struct thread_info;
  */
 struct session {
     pid_t s_leader;             /*!< Session leader. */
-    vnode_t * s_ttyvp;          /*!< Vnode of controlling terminal. */
+    int s_ctty_fd;              /*!< fd number of the controlling terminal. */
     char s_login[MAXLOGNAME];   /*!< Setlogin() name. */
     struct kobj s_obj;
     TAILQ_HEAD(pgrp_list, pgrp) s_pgrp_list_head;
@@ -276,6 +276,9 @@ struct thread_info * proc_iterate_threads(const struct proc_info * proc,
  */
 void proc_thread_removed(pid_t pid, pthread_t thread_id);
 
+/**
+ * @note This function should be only called by the scheduler.
+ */
 void proc_update_times(void);
 
 /**
@@ -317,6 +320,11 @@ void proc_unref(struct proc_info * proc);
  * Process state enum to string name of the state.
  */
 const char * proc_state2str(enum proc_state state);
+
+static inline int proc_is_session_leader(struct proc_info * p)
+{
+    return (p->pid == p->pgrp->pg_session->s_leader);
+}
 
 /* proc_fork.c */
 
