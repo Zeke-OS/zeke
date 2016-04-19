@@ -87,8 +87,10 @@ static int sys_ioctl(__user void * user_args)
     /* Actual ioctl call */
     retval = file->vnode->vnode_ops->ioctl(file, args.request,
                                            ioargs, args.arg_len);
-    if (retval < 0)
+    if (retval < 0) {
+        retval = -1;
         set_errno(-retval);
+    }
 
     /* Copyout if request type was get. */
     if (args.request & 1)
