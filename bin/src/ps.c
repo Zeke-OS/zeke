@@ -44,6 +44,9 @@
 #include <unistd.h>
 #include "utils.h"
 
+#define PROC_PATH   "/proc"
+#define DEV_PATH    "/dev"
+
 struct pstat {
     char name[16];
     pid_t pid;
@@ -60,10 +63,13 @@ struct pstat {
     clock_t stime;
 };
 
-#define PROC_PATH   "/proc"
-#define DEV_PATH    "/dev"
+struct ttydev {
+    dev_t dev;
+    char name[16];
+};
 
 static char pathbuf[PATH_MAX];
+static struct ttydev ttydev[10];
 
 static char * get_next_line(FILE * fp)
 {
@@ -118,90 +124,114 @@ static int scan_proc(struct pstat * ps, FILE * fp)
     return 0;
 }
 
-char * devttytostr(char * str, size_t max, dev_t tty)
+void init_ttydev_arr(void)
 {
-    int fildes, count;
-    struct dirent dbuf[10];
+    DIR * dirp;
+    struct dirent * d;
+    size_t i = 0;
 
-    if (DEV_MAJOR(tty) == 0) {
-        strlcpy(str, "?", max);
-        return str;
+    dirp = opendir(DEV_PATH);
+    if (!dirp) {
+        perror("Getting TTY list failed");
+        return;
     }
 
-    fildes = open(DEV_PATH, O_DIRECTORY | O_RDONLY | O_SEARCH);
-    if (fildes < 0) {
-        perror("Getting CTTY failed");
-        return str;
+    while ((d = readdir(dirp))) {
+        int fildes, istty;
+        struct stat statbuf;
+
+        if (d->d_name[0] == '.' || !(d->d_type & DT_CHR))
+            continue;
+
+        snprintf(pathbuf, sizeof(pathbuf), DEV_PATH "/%s", d->d_name);
+
+        fildes = open(pathbuf, O_RDONLY | O_NOCTTY);
+        if (fildes == -1) {
+            perror(pathbuf);
+            continue;
+        }
+
+        istty = isatty(fildes);
+        if (fstat(fildes, &statbuf)) {
+            perror(pathbuf);
+            continue;
+        }
+
+        close(fildes);
+
+        if (!istty)
+            continue;
+
+        if (i >= num_elem(ttydev)) {
+            fprintf(stderr, "Out of slots for TTYs");
+            goto out;
+        }
+        ttydev[i].dev = statbuf.st_rdev;
+        strlcpy(ttydev[i].name, d->d_name, sizeof(ttydev[0].name));
+        i++;
     }
 
-    while ((count = getdents(fildes, (char *)dbuf, sizeof(dbuf))) > 0) {
-        for (int i = 0; i < count; i++) {
-            struct dirent * d = dbuf + i;
-            struct stat statbuf;
+out:
+    closedir(dirp);
+}
 
-            if (d->d_name[0] == '.' || !(d->d_type & DT_CHR))
-                continue;
+char * devttytostr(dev_t tty)
+{
+    if (DEV_MAJOR(tty) == 0)
+        goto out;
 
-            snprintf(pathbuf, sizeof(pathbuf), DEV_PATH "/%s", d->d_name);
-            stat(pathbuf, &statbuf);
-            if (statbuf.st_rdev == tty) {
-                strlcpy(str, d->d_name, max);
-                goto out;
-            }
+    for (size_t i = 0; i < num_elem(ttydev); i++) {
+        if (ttydev[i].dev == tty) {
+            return ttydev[i].name;
         }
     }
 
 out:
-    close(fildes);
-
-    return str;
+    return "?";
 }
 
 int main(int argc, char * argv[], char * envp[])
 {
-    int fildes, count;
-    struct dirent dbuf[10];
+    DIR * dirp;
+    struct dirent * d;
     long clk_tck;
 
     clk_tck = sysconf(_SC_CLK_TCK);
+    init_ttydev_arr();
 
-    fildes = open(PROC_PATH, O_DIRECTORY | O_RDONLY | O_SEARCH);
-    if (fildes < 0) {
+    dirp = opendir(PROC_PATH);
+    if (!dirp) {
         perror("Open failed");
         return EX_OSERR;
     }
 
     printf("  PID TTY          TIME CMD\n");
-    while ((count = getdents(fildes, (char *)dbuf, sizeof(dbuf))) > 0) {
-        for (int i = 0; i < count; i++) {
-            struct dirent * d = dbuf + i;
-            char ttystr[] = "/dev/tty000";
+    while ((d = readdir(dirp))) {
+        FILE * fp;
+        struct pstat ps;
+        clock_t sutime;
 
-            if (d->d_type & DT_DIR && d->d_name[0] != '.') {
-                FILE * fp;
-                struct pstat ps;
-                clock_t sutime;
+        if (!(d->d_type & DT_DIR) || d->d_name[0] == '.')
+            continue;
 
-                snprintf(pathbuf, sizeof(pathbuf), PROC_PATH "/%s/status",
-                         d->d_name);
-                fp = fopen(pathbuf, "r");
-                if (!fp)
-                    continue;
+        snprintf(pathbuf, sizeof(pathbuf), PROC_PATH "/%s/status",
+                 d->d_name);
+        fp = fopen(pathbuf, "r");
+        if (!fp)
+            continue;
 
-                scan_proc(&ps, fp);
+        scan_proc(&ps, fp);
 
-                sutime = (ps.utime + ps.stime) / clk_tck;
-                printf("%5s %-6s   %02u:%02u:%02u %s\n",
-                       d->d_name,
-                       devttytostr(ttystr, sizeof(ttystr), ps.ctty),
-                       sutime / 3600, (sutime % 3600) / 60, sutime % 60,
-                       ps.name);
-                fclose(fp);
-            }
-        }
+        sutime = (ps.utime + ps.stime) / clk_tck;
+        printf("%5s %-6s   %02u:%02u:%02u %s\n",
+               d->d_name,
+               devttytostr(ps.ctty),
+               sutime / 3600, (sutime % 3600) / 60, sutime % 60,
+               ps.name);
+        fclose(fp);
     }
 
-    close(fildes);
+    closedir(dirp);
 
     return 0;
 }

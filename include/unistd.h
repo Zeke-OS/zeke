@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Standard symbolic constants and types.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -570,6 +570,11 @@ extern int optreset;
  * Parse command-line options.
  */
 int getopt(int nargc, char * const nargv[], const char * ostr);
+
+/**
+ * Test for a terminal device.
+ */
+int isatty(int fd);
 
 /**
  * @}
