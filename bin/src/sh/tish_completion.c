@@ -92,27 +92,25 @@ static void init_path_completion(void)
         cp = _PATH_STDPATH;
 
     do {
-        int fildes, count;
-        struct dirent dbuf[10];
+        DIR * dirp;
+        struct dirent * d;
 
         cp = next_path(dirpath, cp);
 
-        fildes = open(dirpath, O_DIRECTORY | O_RDONLY | O_SEARCH);
-        if (fildes < 0)
+        dirp = opendir(dirpath);
+        if (!dirp)
             continue;
 
-        while ((count = getdents(fildes, (char *)dbuf, sizeof(dbuf))) > 0) {
-            for (int i = 0; i < count; i++) {
-                struct stat stat;
+        while ((d = readdir(dirp))) {
+            struct stat stat;
 
-                fstatat(fildes, dbuf[i].d_name, &stat, 0);
-                if ((stat.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH)) != 0) {
-                     eztrie_insert(&cmd_trie, dbuf[i].d_name, NULL);
-                }
+            fstatat(dirfd(dirp), d->d_name, &stat, 0);
+            if ((stat.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH)) != 0) {
+                eztrie_insert(&cmd_trie, d->d_name, NULL);
             }
         }
 
-        close(fildes);
+        closedir(dirp);
     } while (cp);
 
     free(dirpath);
@@ -181,10 +179,10 @@ static char * get_bdir(char * dst, const char * dir)
 static void completion_path(const char * cmd, const char * dir,
                             linenoiseCompletions * lc)
 {
-    int fildes, count;
     char * bdir = NULL;
     struct eztrie dir_trie;
-    struct dirent dbuf[10];
+    DIR * dirp;
+    struct dirent * d;
     struct eztrie_iterator it;
     struct eztrie_node_value * value;
 
@@ -193,18 +191,15 @@ static void completion_path(const char * cmd, const char * dir,
 
     dir = get_bdir(bdir, dir);
 
-    fildes = open(bdir, O_DIRECTORY | O_RDONLY | O_SEARCH);
-    if (fildes < 0) {
+    dirp = opendir(bdir);
+    if (!dirp)
         goto out;
+
+    while ((d = readdir(dirp))) {
+        eztrie_insert(&dir_trie, d->d_name, NULL);
     }
 
-    while ((count = getdents(fildes, (char *)dbuf, sizeof(dbuf))) > 0) {
-        for (int i = 0; i < count; i++) {
-            eztrie_insert(&dir_trie, dbuf[i].d_name, NULL);
-        }
-    }
-
-    close(fildes);
+    closedir(dirp);
 
     it = eztrie_find(&dir_trie, dir);
     while ((value = eztrie_remove_ithead(&it))) {
