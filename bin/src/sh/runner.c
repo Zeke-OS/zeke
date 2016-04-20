@@ -155,6 +155,18 @@ static void cleanup(void)
     fork_count = 0;
 }
 
+static int exec(char * argv[])
+{
+    if (!argv[1])
+        return EXIT_FAILURE;
+
+    if (execvp(argv[1], argv + 1))
+        return EXIT_FAILURE;
+
+    return 0;
+}
+TISH_CMD(exec, "exec", " <command>", TISH_NOFORK);
+
 static int cd(char * argv[])
 {
     char * arg = (argv[1]) ? argv[1] : getenv("HOME");
