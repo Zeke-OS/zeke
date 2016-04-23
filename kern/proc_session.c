@@ -39,6 +39,10 @@
 
 /* TODO List of sessions? */
 
+/**
+ * Free a session struct.
+ * This function is called when the last reference to a session is freed.
+ */
 static void proc_session_free_callback(struct kobj * obj)
 {
     struct session * s = container_of(obj, struct session, s_obj);
@@ -46,8 +50,10 @@ static void proc_session_free_callback(struct kobj * obj)
     kfree(s);
 }
 
-struct session * proc_session_create(struct proc_info * leader,
-                                     char s_login[MAXLOGNAME])
+/**
+ * Create a new session.
+ */
+static struct session * proc_session_create(struct proc_info * leader)
 {
     struct session * s;
 
@@ -58,18 +64,26 @@ struct session * proc_session_create(struct proc_info * leader,
     TAILQ_INIT(&s->s_pgrp_list_head);
     s->s_leader = leader->pid;
     s->s_ctty_fd = -1;
-    strlcpy(s->s_login, s_login, sizeof(s->s_login));
     kobj_init(&s->s_obj, proc_session_free_callback);
 
     return s;
 }
 
+/**
+ * Increment the refcount of a session struct.
+ * This is only called internally by the session implementation. External
+ * users should never have references to sessions without having ref to a
+ * group in a session.
+ */
 static void proc_session_ref(struct session * s)
 {
     if (kobj_ref(&s->s_obj))
         panic("Session ref error");
 }
 
+/**
+ * Decrement the refcount of a session struct.
+ */
 static void proc_session_rele(struct session * s)
 {
     kobj_unref(&s->s_obj);
@@ -95,6 +109,15 @@ struct pgrp * proc_session_search_pg(struct session * s, pid_t pg_id)
     return NULL;
 }
 
+void proc_session_setlogin(struct session * s, char s_login[MAXLOGNAME])
+{
+    strlcpy(s->s_login, s_login, sizeof(s->s_login));
+}
+
+/**
+ * Free a pgrp struct.
+ * This function is called when the last reference to a pgrp is released.
+ */
 static void proc_pgrp_free_callback(struct kobj * obj)
 {
     struct pgrp * pgrp = container_of(obj, struct pgrp, pg_obj);
@@ -110,9 +133,12 @@ struct pgrp * proc_pgrp_create(struct session * s, struct proc_info * proc)
 {
     struct pgrp * pgrp;
 
-    /*
-     * RFE This might be racy.
-     */
+    if (!s) {
+        s = proc_session_create(proc);
+        if (!s)
+            return NULL;
+    }
+
     proc_session_ref(s);
 
     pgrp = kzalloc(sizeof(struct pgrp));

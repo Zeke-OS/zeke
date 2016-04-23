@@ -321,11 +321,6 @@ void proc_unref(struct proc_info * proc);
  */
 const char * proc_state2str(enum proc_state state);
 
-static inline int proc_is_session_leader(struct proc_info * p)
-{
-    return (p->pid == p->pgrp->pg_session->s_leader);
-}
-
 /* proc_fork.c */
 
 /**
@@ -357,34 +352,49 @@ void procarr_insert(struct proc_info * new_proc);
  */
 pid_t proc_get_random_pid(void);
 
-/*
- * Session management
- */
+#endif /* PROC_INTERNAL */
 
 /**
- * Create a new session.
+ * @addtogroup session
+ * Session management
+ * @{
  */
-struct session * proc_session_create(struct proc_info * leader,
-                                     char s_login[MAXLOGNAME]);
+
+static inline int proc_is_session_leader(struct proc_info * p)
+{
+    return (p->pid == p->pgrp->pg_session->s_leader);
+}
+
+#ifdef PROC_INTERNAL
+
 /**
  * Remove a reference to the session s.
  */
 void proc_session_remove(struct session * s);
+
+void proc_session_setlogin(struct session * s, char s_login[MAXLOGNAME]);
+
 /**
  * Search for a process group in a session.
  * @note Requires PROC_LOCK.
  */
 struct pgrp * proc_session_search_pg(struct session * s, pid_t pg_id);
+
 /**
  * Create a new process group.
+ * @param s is a pointer to the session that should contain the new process
+ *          group, if s is NULL then a new session is created.
+ * @param proc is a pointer to the process linked with the new process group.
  * @note Requires PROC_LOCK.
  */
 struct pgrp * proc_pgrp_create(struct session * s, struct proc_info * proc);
+
 /**
  * Insert a process into the process group pgrp.
  * @note Requires PROC_LOCK.
  */
 void proc_pgrp_insert(struct pgrp * pgrp, struct proc_info * proc);
+
 /**
  * Remove a process group reference.
  * @note Requires PROC_LOCK.
@@ -392,6 +402,10 @@ void proc_pgrp_insert(struct pgrp * pgrp, struct proc_info * proc);
 void proc_pgrp_remove(struct proc_info * proc);
 
 #endif /* PROC_INTERNAL */
+
+/**
+ * @}
+ */
 
 #endif /* PROC_H */
 

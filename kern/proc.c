@@ -86,7 +86,7 @@ SYSCTL_INT(_kern, OID_AUTO, nprocs, CTLFLAG_RD,
     &nprocs, 0, "Current number of processes");
 
 static void init_kernel_proc(void);
-static void procarr_remove(pid_t pid);
+static void procarr_clear(pid_t pid);
 static struct proc_info * proc_get_struct(pid_t pid);
 static void proc_remove(struct proc_info * proc);
 pid_t proc_update(void); /* Used in HAL, so not static but not in headeaders. */
@@ -140,7 +140,6 @@ static void init_kernel_proc(void)
 {
     const char panic_msg[] = "Can't init kernel process";
     struct proc_info * kernel_proc;
-    struct session * ses;
     int err;
 
     (*_procarr)[0] = kzalloc(sizeof(struct proc_info));
@@ -153,13 +152,13 @@ static void init_kernel_proc(void)
     /*
      * Initialize a session.
      */
-    ses = proc_session_create(kernel_proc, "root");
     PROC_LOCK();
-    proc_pgrp_create(ses, kernel_proc);
+    kernel_proc->pgrp = proc_pgrp_create(NULL, kernel_proc);
     PROC_UNLOCK();
     if (!kernel_proc->pgrp) {
         panic(panic_msg);
     }
+    proc_session_setlogin(kernel_proc->pgrp->pg_session, "root");
 
     priv_cred_init(&kernel_proc->cred);
 
@@ -304,7 +303,7 @@ void procarr_insert(struct proc_info * new_proc)
     PROC_UNLOCK();
 }
 
-static void procarr_remove(pid_t pid)
+static void procarr_clear(pid_t pid)
 {
     PROC_LOCK();
     if (pid > act_maxproc || pid < 0) {
@@ -373,7 +372,7 @@ static void proc_remove(struct proc_info * proc)
 
     vrele(proc->cwd);
     _proc_free(proc);
-    procarr_remove(proc->pid);
+    procarr_clear(proc->pid);
 }
 
 void _proc_free(struct proc_info * p)
@@ -1009,9 +1008,7 @@ static int sys_proc_getsid(__user void * user_args)
 static int sys_proc_setsid(__user void * user_args)
 {
     pid_t pid = curproc->pid;
-    char logname[MAXLOGNAME];
-    struct session * s = NULL;
-    struct pgrp * pg = NULL;
+    struct pgrp * pg;
 
     /*
      * RFE Technically not any process group id should match with this PID but
@@ -1023,21 +1020,14 @@ static int sys_proc_setsid(__user void * user_args)
         return -1;
     }
 
-    strlcpy(logname, curproc->pgrp->pg_session->s_login, sizeof(logname));
-    s = proc_session_create(curproc, logname);
-    if (!s) {
-        set_errno(ENOMEM);
-        return -1;
-    }
-
     PROC_LOCK();
-    pg = proc_pgrp_create(s, curproc);
+    pg = proc_pgrp_create(NULL, curproc);
     PROC_UNLOCK();
     if (!pg) {
-        proc_session_remove(s);
         set_errno(ENOMEM);
         return -1;
     }
+    proc_session_setlogin(pg->pg_session, curproc->pgrp->pg_session->s_login);
 
     return pid;
 }
