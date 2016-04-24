@@ -196,17 +196,17 @@ static int sys_open(__user void * user_args)
 
     err = fs_namei_proc(&vn_file, args->fd, args->name, args->atflags);
     if (err) {
-        if (args->oflags & O_CREAT) {
-            /* Create a new file, umask is handled in fs_creat_curproc() */
-            retval = fs_creat_curproc(args->name, S_IFREG | args->mode,
-                                      &vn_file);
-            if (retval) {
-                set_errno(-retval);
-                goto out;
-            }
-        } else {
+        if (!(args->oflags & O_CREAT)) {
             set_errno(ENOENT);
             goto out;
+        } else {
+            /* Create a new file, umask is handled in fs_creat_curproc() */
+            err = fs_creat_curproc(args->name, S_IFREG | args->mode,
+                                   &vn_file);
+            if (err) {
+                set_errno(-err);
+                goto out;
+            }
         }
     }
     KASSERT(vn_file, "vnode is set");

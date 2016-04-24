@@ -417,6 +417,8 @@ int fs_namei_proc(vnode_t ** result, int fd, const char * path, int atflags)
         start = curproc->croot;
         if (path[0] == '\0') {
             *result = start;
+            vref(start);
+
             return 0;
         }
     } else if (atflags & AT_FDARG && fd != AT_FDCWD) { /* AT_FDARG */
@@ -429,6 +431,8 @@ int fs_namei_proc(vnode_t ** result, int fd, const char * path, int atflags)
     } else { /* Implicit AT_FDCWD */
         start = curproc->cwd;
     }
+    KASSERT(start, "Start is set");
+    KASSERT(start->vnode_ops, "vnode ops of start is valid");
 
     if (path[strlenn(path, PATH_MAX)] == '/') {
         oflags |= O_DIRECTORY;
