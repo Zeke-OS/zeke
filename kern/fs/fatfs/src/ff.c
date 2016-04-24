@@ -1975,7 +1975,7 @@ static FRESULT validate_and_lock(void * obj)
     if (!fil || !fil->fs || !fil->fs->fs_type || fil->fs->id != fil->id)
         return FR_INVALID_OBJECT;
 
-    ENTER_FF(fil->fs);      /* Lock file system */
+    ENTER_FF(fil->fs); /* Lock file system */
 
     return FR_OK;
 }
@@ -2410,31 +2410,6 @@ fail:
 }
 
 /**
- * Close File.
- * @param fp Pointer to the file object to be closed.
- */
-FRESULT f_close(FF_FIL * fp)
-{
-    FATFS * fs;
-    FRESULT res;
-
-    res = validate_and_lock(fp);
-    if (res != FR_OK)
-        return res;
-    fs = fp->fs;
-
-    if (!fs->readonly) {
-        res = f_sync(fp, 1); /* Flush cached data */
-        if (res != FR_OK)
-            LEAVE_FF(fs, res);
-    }
-
-    fp->fs = NULL;          /* Invalidate file object */
-
-    LEAVE_FF(fs, FR_OK);
-}
-
-/**
  * Seek File R/W Pointer.
  * @param fp Pointer to the file object.
  * @param ofs File pointer from top of file.
@@ -2666,25 +2641,6 @@ fail:
         dp->fs = NULL; /* Invalidate the directory object if function faild */
 
     LEAVE_FF(fs, res);
-}
-
-/**
- * Close Directory.
- * @param dp Pointer to the directory object to be closed.
- */
-FRESULT f_closedir(FF_DIR * dp)
-{
-    FATFS * fs;
-    FRESULT res;
-
-    res = validate_and_lock(dp);
-    if (res != FR_OK)
-        return res;
-
-    fs = dp->fs;
-    dp->fs = NULL;          /* Invalidate directory object */
-
-    LEAVE_FF(fs, FR_OK);
 }
 
 /**
