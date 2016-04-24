@@ -129,7 +129,11 @@ int __kinit__ fatfs_init(void)
 
 static vnode_t * create_raw_inode(const struct fs_superblock * sb)
 {
-    return kzalloc(sizeof(struct fatfs_inode));
+    struct fatfs_inode * in;
+
+    in = kzalloc(sizeof(struct fatfs_inode));
+
+    return &in->in_vnode;
 }
 
 /**
@@ -492,7 +496,10 @@ static void destroy_vnode(vnode_t * vnode)
     KERROR(KERROR_DEBUG, "%s(vnode %pV), in: %p\n", __func__, vnode, in);
 #endif
 
-    /* TODO Free the inode */
+    /* TODO Free the inode, currently something fails and the kernel freezes. */
+#if 0
+    kfree(in);
+#endif
 }
 
 /**
@@ -588,7 +595,10 @@ static int fatfs_lookup(vnode_t * dir, const char * name, vnode_t ** result)
         FS_KERROR_VNODE(KERROR_DEBUG, dir, "Lookup emulating \"..\"\n");
 #endif
         if (VN_IS_FSROOT(dir)) {
-            vref(dir);
+            /*
+             * No ref is taken since we are returning an error and the caller
+             * has at least one ref anyway, so it's safe.
+             */
             *result = dir;
 
             kfree(in_fpath);

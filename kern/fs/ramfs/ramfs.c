@@ -335,32 +335,28 @@ int ramfs_umount(struct fs_superblock * fs_sb)
 int ramfs_get_vnode(struct fs_superblock * sb, ino_t * vnode_num,
                     vnode_t ** vnode)
 {
-    ramfs_sb_t * ramfs_sb;
-
-    /* Get a pointer to the ramfs_sb from generic sb. */
-    ramfs_sb = get_rfsb_of_sb(sb);
+    ramfs_sb_t * ramfs_sb = get_rfsb_of_sb(sb);
+    struct ramfs_inode * in;
+    struct vnode * vn;
+    const size_t vnnum = (size_t)(*vnode_num);
 
     if (*vnode_num >= (ino_t)(ramfs_sb->ramfs_iarr_size)) {
 #ifdef configRAMFS_DEBUG
         FS_KERROR_FS(KERROR_DEBUG, sb->fs, "invalid vnode num (%d)\n",
-               (unsigned)(*vnode_num));
+                     (unsigned)(*vnode_num));
 #endif
         return -ENOENT; /* inode can't exist. */
     }
 
-    if (vnode) {
-        struct ramfs_inode * in;
-        struct vnode * vn;
-        const size_t vnnum = (size_t)(*vnode_num);
-
-        in = ramfs_sb->ramfs_iarr[vnnum];
-        if (!in) {
+    in = ramfs_sb->ramfs_iarr[vnnum];
+    if (!in) {
 #ifdef configRAMFS_DEBUG
-            FS_KERROR_VNODE(KERROR_DEBUG, NULL, "inode's NULL\n");
+        FS_KERROR_VNODE(KERROR_DEBUG, NULL, "inode doesn't exist\n");
 #endif
-            return -ENOENT;
-        }
+        return -ENOENT;
+    }
 
+    if (vnode) {
         vn = &in->in_vnode;
         if (vref(vn))
             return -ENOENT; /* vnode was removed during the op. */

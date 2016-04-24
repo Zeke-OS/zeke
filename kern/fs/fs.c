@@ -137,6 +137,8 @@ static void get_base_vnode(vnode_t ** vnp)
 {
     vnode_t * vnode = *vnp;
 
+    vrele(vnode);
+
     while (vnode->vn_prev_mountpoint != vnode) {
         vnode_t * tmp;
 
@@ -146,11 +148,10 @@ static void get_base_vnode(vnode_t ** vnp)
          */
         tmp = vnode->vn_prev_mountpoint;
         KASSERT(tmp != NULL, "prev_mountpoint should be always valid");
-        vref(tmp);
-        vrele(vnode);
         vnode = tmp;
     }
 
+    vref(vnode);
     *vnp = vnode;
 }
 
@@ -163,16 +164,17 @@ static void get_top_vnode(vnode_t ** vnp)
 {
     vnode_t * vnode = *vnp;
 
+    vrele(vnode);
+
     while (vnode->vn_next_mountpoint != vnode) {
         vnode_t * tmp;
 
         tmp = vnode->vn_next_mountpoint;
         KASSERT(tmp != NULL, "next_mountpoint should be always valid");
-        vref(tmp);
-        vrele(vnode);
         vnode = tmp;
     }
 
+    vref(vnode);
     *vnp = vnode;
 }
 
@@ -336,9 +338,8 @@ again:  /* Get vnode by name in this dir. */
         vnode = NULL;
         retval = (*result)->vnode_ops->lookup(*result, nodename, &vnode);
         vrele(*result);
-        if (!retval) {
-            KASSERT(vnode != NULL, "vnode should be valid if !retval");
-        }
+        KASSERT((retval == 0 && vnode != NULL) || (retval != 0),
+                "vnode should be valid if !retval");
         if (retval != 0 && retval != -EDOM) {
             goto out;
         } else if (!vnode) {
@@ -354,6 +355,7 @@ again:  /* Get vnode by name in this dir. */
         if (retval == -EDOM && !strcmp(nodename, "..") &&
             vnode->vn_prev_mountpoint != vnode) {
             /* Get prev dir of prev fs sb from mount point. */
+            vref(vnode);
             get_base_vnode(&vnode);
             *result = vnode;
 
