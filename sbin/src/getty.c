@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Single process multi-tty get teletype.
  * @section LICENSE
- * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -134,7 +134,7 @@ static size_t read_gettytab(void)
 
     fp = fopen("/etc/gettytab", "r");
     if (!fp)
-        goto fail;
+        return 0;
 
     while (next_entry(fp, &entry)) {
         tty_arr = realloc(tty, (i + 1) * sizeof(struct gettytab_entry));
@@ -154,7 +154,7 @@ fail:
 }
 
 /**
- * Onpen and configure a tty.
+ * Open and configure a tty.
  */
 static int open_tty(struct gettytab_entry * entry)
 {
@@ -176,13 +176,16 @@ static int open_tty(struct gettytab_entry * entry)
     for (size_t i = 0; i < 3; i++) {
         struct termios termios;
 
+        if (fd[i] < 0)
+            return 1;
+
         tcgetattr(fd[i], &termios);
         cfsetispeed(&termios, entry->tty_bdrate);
         cfsetospeed(&termios, entry->tty_bdrate);
-        termios.c_cflag  = entry->tty_csize |
-                           (entry->tty_ctrl.cstopb) ? CSTOPB : 0 |
-                           (entry->tty_ctrl.parenb) ? PARENB : 0 |
-                           (entry->tty_ctrl.parodd) ? PARODD : 0;
+        termios.c_cflag = entry->tty_csize |
+                          (entry->tty_ctrl.cstopb) ? CSTOPB : 0 |
+                          (entry->tty_ctrl.parenb) ? PARENB : 0 |
+                          (entry->tty_ctrl.parodd) ? PARODD : 0;
 
         /* RFE Any optional actions needed? */
         if (tcsetattr(fd[i], 0, &termios)) {
@@ -206,6 +209,7 @@ static void setup_tty(struct gettytab_entry * tty)
                 exit(EX_IOERR);
 
             execle(tty->login, basename(tty->login), NULL, environ);
+            fprintf(stderr, "getty: exec %s failed\n", tty->login);
             exit(EX_OSERR);
         } else if (pid > 0) {
             tty->pid = pid;
@@ -241,7 +245,7 @@ static void reload_gettytab(void)
     if (tty_arr)
         free(tty_arr);
 
-    if (!read_gettytab())
+    if (read_gettytab() == 0)
         exit(EX_OSERR);
 
     for (i = 0; i < nr_tty; i++) {
