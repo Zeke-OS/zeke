@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   time types.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -72,20 +72,20 @@ void getnanotime(struct timespec * tsp);
 
 /* ctime */
 
-void ctime(char * result, time_t * t);
-void asctime(char * result, struct tm * timeptr);
+void ctime(char * result, const time_t * t);
+void asctime(char * result, const struct tm * timeptr);
 
 /**
  * Get GMT time.
  * @param[out] tm       is modified.
  * @param[in]  clock    is a unix time.
  */
-void gmtime(struct tm * tm, time_t * clock);
+void gmtime(struct tm * tm, const time_t * clock);
 
 /**
  * @param[out] tm
  */
-void offtime(struct tm * tm, time_t * clock, long offset);
+void offtime(struct tm * tm, const time_t * clock, long offset);
 
 #endif
 #endif /* SYS_TIME_H */

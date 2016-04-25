@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1987 Regents of the University of California.
  * This file may be freely redistributed provided that this
  * notice remains attached.
@@ -30,7 +30,7 @@ static char mon_name[MONS_PER_YEAR][3] = {
 
 
 void
-ctime(char * result, time_t * t)
+ctime(char * result, const time_t * t)
 {
     struct timespec ts;
     struct tm tm;
@@ -41,7 +41,7 @@ ctime(char * result, time_t * t)
 }
 
 void
-asctime(char * result, struct tm * timeptr)
+asctime(char * result, const struct tm * timeptr)
 {
     ksprintf(result, 26, "%.3s %.3s%3d %02d:%02d:%02d %d\n",
              wday_name[timeptr->tm_wday],
@@ -52,13 +52,13 @@ asctime(char * result, struct tm * timeptr)
 }
 
 void
-gmtime(struct tm * tm, time_t * clock)
+gmtime(struct tm * tm, const time_t * clock)
 {
     offtime(tm, clock, 0L);
 }
 
 void
-offtime(struct tm * tm, time_t * clock, long offset)
+offtime(struct tm * tm, const time_t * clock, long offset)
 {
     long       days;
     long       rem;
