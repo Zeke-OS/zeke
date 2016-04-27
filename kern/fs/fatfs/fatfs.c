@@ -962,13 +962,10 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
         buf->st_uid = mp_stat.st_uid;
         buf->st_gid = mp_stat.st_gid;
         buf->st_size = fno.fsize;
-        /* TODO Times */
-#if 0
-        buf->st_atim;
-        buf->st_mtim;
-        buf->st_ctim;
-        buf->st_birthtime;
-#endif
+        buf->st_atim = fno.fatime;
+        buf->st_mtim = fno.fmtime;
+        buf->st_ctim = fno.fmtime;
+        buf->st_birthtime = fno.fbtime;
         buf->st_flags = fattrib2uflags(fno.fattrib);
         buf->st_blksize = blksize;
         buf->st_blocks = fno.fsize / blksize + 1; /* Best guess. */

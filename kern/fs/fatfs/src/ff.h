@@ -5,7 +5,7 @@
 / This is a free software that opened for education, research and commercial
 / developments under license policy of following terms.
 /
-/  Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+/  Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
 /  Copyright (C) 2014, ChaN, all right reserved.
 /
 / * The FatFs module is a free software and there is NO WARRANTY.
@@ -21,6 +21,7 @@
 
 __BEGIN_DECLS
 
+#include <time.h>
 #include <klocks.h>
 #include "integer.h"    /* Basic integer types */
 #include "ffconf.h"     /* FatFs configuration options */
@@ -126,8 +127,9 @@ typedef struct {
 
 typedef struct {
     DWORD   fsize;          /* File size */
-    WORD    fdate;          /* Last modified date */
-    WORD    ftime;          /* Last modified time */
+    struct timespec fatime; /* Access time. */
+    struct timespec fmtime; /* Modification time. */
+    struct timespec fbtime; /* Creation time. */
     uint8_t fattrib;        /* Attribute */
     uint64_t ino;           /* Emulated ino */
     TCHAR   fname[13];      /* Short file name (8.3 format) */
@@ -180,7 +182,7 @@ FRESULT f_unlink(FATFS * fs, const TCHAR * path);
 FRESULT f_rename(FATFS * fs, const TCHAR * path_old, const TCHAR * path_new);
 FRESULT f_stat(FATFS * fs, const TCHAR * path, FILINFO * fno);
 FRESULT f_chmod(FATFS * fs, const TCHAR * path, uint8_t value, uint8_t mask);
-FRESULT f_utime(FATFS * fs, const TCHAR * path, const FILINFO * fno);
+FRESULT f_utime(FATFS * fs, const TCHAR * path, const struct timespec * ts);
 FRESULT f_chdir(const TCHAR * path);
 FRESULT f_chdrive(const TCHAR * path);
 FRESULT f_getfree(FATFS * fs, DWORD * nclst);
@@ -203,7 +205,9 @@ FRESULT f_umount(FATFS * fs);
 /* Additional user defined functions                            */
 
 /* RTC function */
-DWORD get_fattime(void);
+void fatfs_time_fat2unix(struct timespec * ts, uint32_t dt, int tenth);
+uint32_t fatfs_time_unix2fat(const struct timespec * ts);
+uint32_t fatfs_time_get_time(void);
 
 /* Unicode support functions */
 #if configFATFS_LFN                     /* Unicode - OEM code conversion */

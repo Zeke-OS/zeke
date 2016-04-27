@@ -1443,8 +1443,14 @@ static void get_fileinfo(FF_DIR * dp, FILINFO * fno)
         }
         fno->fattrib = dir[DIR_Attr];               /* Attribute */
         fno->fsize = LD_DWORD(dir + DIR_FileSize);  /* Size */
-        fno->fdate = LD_WORD(dir + DIR_WrtDate);    /* Date */
-        fno->ftime = LD_WORD(dir + DIR_WrtTime);    /* Time */
+        fatfs_time_fat2unix(&fno->fatime,
+                            LD_WORD(dir + DIR_LstAccDate) << 16, 0);
+        fatfs_time_fat2unix(&fno->fmtime,
+                            (LD_WORD(dir + DIR_WrtDate) << 16) |
+                            LD_WORD(dir + DIR_WrtTime), 0);
+        fatfs_time_fat2unix(&fno->fbtime,
+                            (LD_WORD(dir + DIR_CrtDate) << 16) |
+                            LD_WORD(dir + DIR_CrtTime), 0);
         fno->ino = GET_INO(dp);
     }
     *p = 0;     /* Terminate SFN string by a \0 */
@@ -2065,10 +2071,14 @@ FRESULT f_open(FF_FIL * fp, FATFS * fs, const TCHAR * path, uint8_t mode)
                 }
                 /* Truncate it if overwrite mode */
                 if (res == FR_OK && (mode & FA_CREATE_ALWAYS)) {
-                    dw = get_fattime();             /* Created time */
-                    ST_DWORD(dir+DIR_CrtTime, dw);
+                    uint32_t dt;
+
+                    dt = fatfs_time_get_time();     /* Created time */
+                    ST_WORD(dir + DIR_CrtTime, dt & 0xffff);
+                    ST_WORD(dir + DIR_CrtDate, dt >> 16);
+
                     dir[DIR_Attr] = 0;              /* Reset attribute */
-                    ST_DWORD(dir+DIR_FileSize, 0);  /* size = 0 */
+                    ST_DWORD(dir + DIR_FileSize, 0); /* size = 0 */
                     cl = ld_clust(dj.fs, dir);      /* Get start cluster */
                     st_clust(dir, 0);               /* cluster = 0 */
                     dj.fs->wflag = 1;
@@ -2397,9 +2407,10 @@ FRESULT f_sync(FF_FIL * fp, int validated)
         dir[DIR_Attr] |= AM_ARC;                    /* Set archive bit */
         ST_DWORD(dir+DIR_FileSize, fp->fsize);      /* Update file size */
         st_clust(dir, fp->sclust);                  /* Update start cluster */
-        tm = get_fattime();                         /* Update updated time */
-        ST_DWORD(dir+DIR_WrtTime, tm);
-        ST_WORD(dir+DIR_LstAccDate, 0);
+        tm = fatfs_time_get_time();                 /* Update updated time */
+        ST_WORD(dir + DIR_WrtTime, tm & 0xffff);
+        ST_WORD(dir + DIR_WrtDate, tm >> 16);
+        ST_WORD(dir + DIR_LstAccDate, 0);
         fp->flag &= ~FA__WRITTEN;
         fp->fs->wflag = 1;
         res = sync_fs(fp->fs);
@@ -2925,7 +2936,7 @@ FRESULT f_mkdir(FATFS * fs, const TCHAR * path)
     FRESULT res;
     FF_DIR dj;
     uint8_t * dir, n;
-    DWORD dsc, dcl, pcl, tm = get_fattime();
+    DWORD dsc, dcl, pcl, tm = fatfs_time_get_time();
     DEF_NAMEBUF;
 
     dj.fs = fs;
@@ -2959,7 +2970,8 @@ FRESULT f_mkdir(FATFS * fs, const TCHAR * path)
             memset(dir + DIR_Name, ' ', 11); /* Create "." entry */
             dir[DIR_Name] = '.';
             dir[DIR_Attr] = AM_DIR;
-            ST_DWORD(dir + DIR_WrtTime, tm);
+            ST_WORD(dir + DIR_WrtTime, tm & 0xffff);
+            ST_WORD(dir + DIR_WrtDate, tm >> 16);
             st_clust(dir, dcl);
             memcpy(dir + SZ_DIR, dir, SZ_DIR);   /* Create ".." entry */
             dir[SZ_DIR + 1] = '.'; pcl = dj.sclust;
@@ -2986,7 +2998,8 @@ FRESULT f_mkdir(FATFS * fs, const TCHAR * path)
         } else {
             dir = dj.dir;
             dir[DIR_Attr] = AM_DIR;             /* Attribute */
-            ST_DWORD(dir + DIR_WrtTime, tm);    /* Created time */
+            ST_WORD(dir + DIR_WrtTime, tm & 0xffff); /* Created time */
+            ST_WORD(dir + DIR_WrtDate, tm >> 16);
             st_clust(dir, dcl);                 /* Table start cluster */
             dj.fs->wflag = 1;
             res = sync_fs(dj.fs);
@@ -3046,7 +3059,7 @@ fail:
  * @param path Pointer to the file/directory name.
  * @param fno Pointer to the time stamp to be set.
  */
-FRESULT f_utime(FATFS * fs, const TCHAR * path, const FILINFO * fno)
+FRESULT f_utime(FATFS * fs, const TCHAR * path, const struct timespec * ts)
 {
     FRESULT res;
     FF_DIR dj;
@@ -3069,8 +3082,11 @@ FRESULT f_utime(FATFS * fs, const TCHAR * path, const FILINFO * fno)
     if (!dir) {                 /* Root directory */
         res = FR_INVALID_NAME;
     } else {                    /* File or sub-directory */
-        ST_WORD(dir+DIR_WrtTime, fno->ftime);
-        ST_WORD(dir+DIR_WrtDate, fno->fdate);
+        uint32_t dt = fatfs_time_unix2fat(ts);
+
+        ST_WORD(dir + DIR_WrtTime, dt & 0xffff);
+        ST_WORD(dir + DIR_WrtDate, dt >> 16);
+
         dj.fs->wflag = 1;
         res = sync_fs(dj.fs);
     }
@@ -3294,8 +3310,9 @@ FRESULT f_setlabel(FATFS * fs, const TCHAR * label)
         if (res == FR_OK) {         /* A volume label is found */
             if (vn[0]) {
                 memcpy(dj.dir, vn, 11);    /* Change the volume label name */
-                tm = get_fattime();
-                ST_DWORD(dj.dir+DIR_WrtTime, tm);
+                tm = fatfs_time_get_time();
+                ST_WORD(dj.dir + DIR_WrtTime, tm & 0xffff);
+                ST_WORD(dj.dir + DIR_WrtDate, tm >> 16);
             } else {
                 dj.dir[0] = DDE;            /* Remove the volume label */
             }
@@ -3311,8 +3328,9 @@ FRESULT f_setlabel(FATFS * fs, const TCHAR * label)
                         memset(dj.dir, 0, SZ_DIR); /* Set volume label */
                         memcpy(dj.dir, vn, 11);
                         dj.dir[DIR_Attr] = AM_VOL;
-                        tm = get_fattime();
-                        ST_DWORD(dj.dir+DIR_WrtTime, tm);
+                        tm = fatfs_time_get_time();
+                        ST_WORD(dj.dir + DIR_WrtTime, tm & 0xffff);
+                        ST_WORD(dj.dir + DIR_WrtDate, tm >> 16);
                         dj.fs->wflag = 1;
                         res = sync_fs(dj.fs);
                     }
