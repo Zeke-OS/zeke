@@ -50,7 +50,7 @@ struct itimerval {
 int utimes(const char * path, const struct timeval times[2]);
 
 
-#else
+#else /* KERNEL_INTERNAL */
 
 #include <time.h>
 
@@ -69,15 +69,9 @@ void nanotime(struct timespec * ts);
  */
 void getnanotime(struct timespec * tsp);
 
-
-/* ctime */
-
-void ctime(char * result, const time_t * t);
-void asctime(char * result, const struct tm * timeptr);
-
 /**
  * Get GMT time.
- * @param[out] tm       is modified.
+ * @param[out] tm       is is a pointer to the destination.
  * @param[in]  clock    is a unix time.
  */
 void gmtime(struct tm * tm, const time_t * clock);
@@ -87,5 +81,13 @@ void gmtime(struct tm * tm, const time_t * clock);
  */
 void offtime(struct tm * tm, const time_t * clock, long offset);
 
-#endif
+/**
+ * Get timespec from broken-down tm struct.
+ * @note Ignores wday, yday and dst.
+ * @param[out]  ts      is a pointer to the destination.
+ * @param[in]   tm      is a pointer to a tm struct.
+ */
+void mktimespec(struct timespec * ts, const struct tm * tm);
+
+#endif /* KERNEL_INTERNAL */
 #endif /* SYS_TIME_H */
