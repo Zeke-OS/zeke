@@ -52,6 +52,7 @@ int utimes(const char * path, const struct timeval times[2]);
 
 #else /* KERNEL_INTERNAL */
 
+#include <stdint.h>
 #include <time.h>
 
 /**
@@ -88,6 +89,58 @@ void offtime(struct tm * tm, const time_t * clock, long offset);
  * @param[in]   tm      is a pointer to a tm struct.
  */
 void mktimespec(struct timespec * ts, const struct tm * tm);
+
+/**
+ * Convert a nsec value to a timespec struct.
+ * @param[out]  ts      is a pointer to the destination struct.
+ * @param[in]   nsec    is the value in nano seconds.
+ */
+void nsec2timespec(struct timespec * ts, int64_t nsec);
+
+/**
+ * Calculate the sum of two timespec structs.
+ * @param[out]  sum     is a pointer to the destination struct.
+ * @param[in]   left    is a pointer to the left value.
+ * @param[in]   right   is a pointer to the right value.
+ */
+void timespec_add(struct timespec * sum, const struct timespec * left,
+                  const struct timespec * right);
+
+/**
+ * Calculate the difference of two timespec structs.
+ * @param[out]  sum     is a pointer to the destination struct.
+ * @param[in]   left    is a pointer to the left value.
+ * @param[in]   right   is a pointer to the right value.
+ */
+void timespec_sub(struct timespec * diff, const struct timespec * left,
+                  const struct timespec * right);
+
+/**
+ * Calculate the product of two timespec structs.
+ * @param[out]  sum     is a pointer to the destination struct.
+ * @param[in]   left    is a pointer to the left value.
+ * @param[in]   right   is a pointer to the right value.
+ */
+void timespec_mul(struct timespec * prod, const struct timespec * left,
+                 const struct timespec * right);
+
+/**
+ * Calculate the quotient of two timespec structs.
+ * @param[out]  sum     is a pointer to the destination struct.
+ * @param[in]   left    is a pointer to the left value.
+ * @param[in]   right   is a pointer to the right value.
+ */
+void timespec_div(struct timespec * quot, const struct timespec * left,
+                  const struct timespec * right);
+
+/**
+ * Calculate the modulo of two timespec structs.
+ * @param[out]  sum     is a pointer to the destination struct.
+ * @param[in]   left    is a pointer to the left value.
+ * @param[in]   right   is a pointer to the right value.
+ */
+void timespec_mod(struct timespec * rem, const struct timespec * left,
+                  const struct timespec * right);
 
 #endif /* KERNEL_INTERNAL */
 #endif /* SYS_TIME_H */
