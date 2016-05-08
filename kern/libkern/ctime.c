@@ -34,11 +34,6 @@ static const int year_lengths_sec[2] = {
     DAYS_PER_NYEAR * SECS_PER_DAY, DAYS_PER_LYEAR * SECS_PER_DAY
 };
 
-void gmtime(struct tm * tm, const time_t * clock)
-{
-    offtime(tm, clock, 0L);
-}
-
 void offtime(struct tm * tm, const time_t * clock, long offset)
 {
     long days;
@@ -87,6 +82,11 @@ void offtime(struct tm * tm, const time_t * clock, long offset)
     }
     tm->tm_mday = (int) (days + 1);
     tm->tm_isdst = 0;
+}
+
+void gmtime(struct tm * tm, const time_t * clock)
+{
+    offtime(tm, clock, 0L);
 }
 
 void mktimespec(struct timespec * ts, const struct tm * tm)
@@ -143,7 +143,6 @@ void timespec_sub(struct timespec * diff, const struct timespec * left,
     diff->tv_sec += ts.tv_sec;
     diff->tv_nsec = ts.tv_nsec;
 }
-
 
 void timespec_mul(struct timespec * prod, const struct timespec * left,
                   const struct timespec * right)

@@ -56,9 +56,9 @@ int utimes(const char * path, const struct timeval times[2]);
 #include <time.h>
 
 /**
- * Update realtime counters.
+ * Update time counters.
  */
-void update_realtime(void);
+void update_time(void);
 
 /**
  * Get realtime precise as possible by first updating the time counter.
@@ -71,16 +71,26 @@ void nanotime(struct timespec * ts);
 void getnanotime(struct timespec * tsp);
 
 /**
- * Get GMT time.
- * @param[out] tm       is is a pointer to the destination.
- * @param[in]  clock    is a unix time.
+ * Get realtime.
  */
-void gmtime(struct tm * tm, const time_t * clock);
+void getrealtime(struct timespec * tsp);
+
+/**
+ * Set realtime.
+ */
+void setrealtime(struct timespec * tsp);
 
 /**
  * @param[out] tm
  */
 void offtime(struct tm * tm, const time_t * clock, long offset);
+
+/**
+ * Get GMT time.
+ * @param[out] tm       is is a pointer to the destination.
+ * @param[in]  clock    is a unix time.
+ */
+void gmtime(struct tm * tm, const time_t * clock);
 
 /**
  * Get timespec from broken-down tm struct.

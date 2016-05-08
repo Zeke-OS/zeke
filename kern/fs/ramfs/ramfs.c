@@ -211,7 +211,7 @@ static void init_times(ramfs_inode_t * inode)
 {
     struct timespec ts;
 
-    nanotime(&ts);
+    getrealtime(&ts);
 
     inode->in_atime = ts;
     inode->in_mtime = ts;
@@ -224,7 +224,7 @@ static void ramfs_vnode_accessed(vnode_t * vnode)
     ramfs_inode_t * inode = get_inode_of_vnode(vnode);
 
     if (!((vnode->sb->mode_flags & MNT_NOATIME) == MNT_NOATIME)) {
-        nanotime(&inode->in_atime);
+        getrealtime(&inode->in_atime);
     }
 }
 
@@ -233,7 +233,7 @@ static void ramfs_vnode_modified(vnode_t * vnode)
     ramfs_inode_t * inode = get_inode_of_vnode(vnode);
     struct timespec ts;
 
-    nanotime(&ts);
+    getrealtime(&ts);
     inode->in_mtime = ts;
     inode->in_ctime = ts;
 }
@@ -243,7 +243,7 @@ static void ramfs_vnode_changed(vnode_t * vnode)
     ramfs_inode_t * inode = get_inode_of_vnode(vnode);
     struct timespec ts;
 
-    nanotime(&ts);
+    getrealtime(&ts);
     inode->in_ctime = ts;
 }
 

@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   IPC pipes.
  * @section LICENSE
- * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -134,7 +134,7 @@ static void init_times(struct stream_pipe * pipe)
 {
     struct timespec ts;
 
-    nanotime(&ts);
+    getrealtime(&ts);
     pipe->sp_atime = ts;
     pipe->sp_mtime = ts;
     pipe->sp_ctime = ts;

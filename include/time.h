@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   time types.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -65,6 +65,7 @@ struct itimerspec {
 };
 
 #define CLOCK_REALTIME              0
+#define CLOCK_MONOTONIC             4
 #define CLOCK_UPTIME                5
 #define CLOCK_PROCESS_CPUTIME_ID    14
 #define CLOCK_THREAD_CPUTIME_ID     15
@@ -72,6 +73,7 @@ struct itimerspec {
 #define CLOCKS_PER_SEC              1000000
 
 #if defined(__SYSCALL_DEFS__) || defined(KERNEL_INTERNAL)
+
 /**
  * Argument struct for SYSCALL_TIME_GETTIME
  */
@@ -79,6 +81,15 @@ struct _time_gettime_args {
     clockid_t clk_id;
     struct timespec * tp;
 };
+
+/**
+ * Argument struct for SYSCALL_TIME_SETTIME
+ */
+struct _time_settime_args {
+    clockid_t clk_id;
+    struct timespec ts;
+};
+
 #endif
 
 #ifndef KERNEL_INTERNAL

@@ -88,7 +88,7 @@ uint32_t fatfs_time_get_time(void)
 {
     struct timespec ts;
 
-    nanotime(&ts);
+    getrealtime(&ts);
 
     return fatfs_time_unix2fat(&ts);
 }

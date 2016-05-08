@@ -4,7 +4,7 @@
  * @author Olli Vanhoja
  * @brief Time functions.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,39 +45,20 @@
 #define SEC_US 1000000
 #define SEC_NS 1000000000
 
-/*
+/**
  * Current system time.
  */
-static struct timespec realtime;
+static struct timespec uptime;
+static struct timespec realtime_off;
 static mtx_t timelock = MTX_INITIALIZER(MTX_TYPE_SPIN, 0);
 
-static uint64_t utime_last;
-static uint64_t sec_next;
-
-static void _update_realtime(void);
-
-void update_realtime(void)
-{
-    mtx_lock(&timelock);
-    _update_realtime();
-    mtx_unlock(&timelock);
-}
-
-static void update_realtime_safe(void)
-{
-    if (mtx_trylock(&timelock))
-        return;
-    _update_realtime();
-    mtx_unlock(&timelock);
-}
-/* Calculate new realtime at least before scheduling anything. */
-DATA_SET(pre_sched_tasks, update_realtime_safe);
-
 /**
- * Update realtime counters.
+ * Update time counters.
  */
-static void _update_realtime(void)
+static void _update_time(void)
 {
+    static uint64_t utime_last;
+    static uint64_t sec_next;
     uint64_t utime = get_utime();
     uint64_t usecdiff;
 
@@ -85,7 +66,7 @@ static void _update_realtime(void)
 
     /* Update seconds */
     if (utime >= sec_next) {
-        realtime.tv_sec++;
+        uptime.tv_sec++;
         sec_next = utime + SEC_US;
     }
 
@@ -94,22 +75,54 @@ static void _update_realtime(void)
         usecdiff = (~0 - utime_last) + utime;
     else
         usecdiff = utime - utime_last;
-    realtime.tv_nsec = (realtime.tv_nsec + usecdiff * 1000);
-    realtime.tv_nsec = realtime.tv_nsec - (realtime.tv_nsec / SEC_NS) * SEC_NS;
+    uptime.tv_nsec = (uptime.tv_nsec + usecdiff * 1000);
+    uptime.tv_nsec = uptime.tv_nsec - (uptime.tv_nsec / SEC_NS) * SEC_NS;
 
     utime_last = utime;
 }
 
+void update_time(void)
+{
+    mtx_lock(&timelock);
+    _update_time();
+    mtx_unlock(&timelock);
+}
+
+static void update_time_nonblocking(void)
+{
+    if (mtx_trylock(&timelock))
+        return;
+    _update_time();
+    mtx_unlock(&timelock);
+}
+
+/* Calculate a new value for realtime at least before scheduling anything. */
+DATA_SET(pre_sched_tasks, update_time_nonblocking);
+
 void nanotime(struct timespec * ts)
 {
-    update_realtime();
+    update_time();
     getnanotime(ts);
 }
 
 void getnanotime(struct timespec * tsp)
 {
     mtx_lock(&timelock);
-    memcpy(tsp, &realtime, sizeof(struct timespec));
+    *tsp = uptime;
+    mtx_unlock(&timelock);
+}
+
+void getrealtime(struct timespec * tsp)
+{
+    mtx_lock(&timelock);
+    timespec_add(tsp, &uptime, &realtime_off);
+    mtx_unlock(&timelock);
+}
+
+void setrealtime(struct timespec * tsp)
+{
+    mtx_lock(&timelock);
+    timespec_sub(&realtime_off, tsp, &uptime);
     mtx_unlock(&timelock);
 }
 
@@ -129,15 +142,42 @@ static int sys_gettime(__user void * user_args)
 
     switch (args.clk_id) {
     case CLOCK_UPTIME:
-        /* TODO Currently same as CLOCK_REALTIME */
-    case CLOCK_REALTIME:
+    case CLOCK_MONOTONIC:
         nanotime(&ts);
-        err = copyout(&ts, (__user struct timespec *)args.tp,
-                      sizeof(struct timespec));
-        if (err) {
-            set_errno(EFAULT);
-            return -1;
-        }
+        break;
+    case CLOCK_REALTIME:
+        getrealtime(&ts);
+        break;
+    default:
+        set_errno(EINVAL);
+        return -1;
+    }
+
+    err = copyout(&ts, (__user struct timespec *)args.tp,
+                  sizeof(struct timespec));
+    if (err) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    return 0;
+}
+
+static int sys_settime(__user void * user_args)
+{
+    struct _time_settime_args args;
+    struct timespec ts;
+    int err;
+
+    err = copyin(user_args, &args, sizeof(args));
+    if (err) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    switch (args.clk_id) {
+    case CLOCK_REALTIME:
+        setrealtime(&ts);
         break;
     default:
         set_errno(EINVAL);
@@ -148,6 +188,7 @@ static int sys_gettime(__user void * user_args)
 }
 
 static const syscall_handler_t time_sysfnmap[] = {
-    ARRDECL_SYSCALL_HNDL(SYSCALL_TIME_GETTIME, sys_gettime)
+    ARRDECL_SYSCALL_HNDL(SYSCALL_TIME_GETTIME, sys_gettime),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_TIME_SETTIME, sys_settime),
 };
 SYSCALL_HANDLERDEF(time_syscall, time_sysfnmap)
