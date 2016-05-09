@@ -49,8 +49,12 @@ static char password[11];
 static struct  passwd * pwd;
 extern char ** environ;
 static char * envinit[1];
-static char shell[MAXPATHLEN + 2];
 
+static void usage(void)
+{
+    fprintf(stderr, "usage: %s [-fp] [username]\n", argv0);
+    exit(EX_USAGE);
+}
 
 void timedout(int sig)
 {
@@ -165,6 +169,54 @@ static int pwcmp(const char * str1, const char * str2)
     return !!retval;
 }
 
+static void authenticate(void)
+{
+    int failures = 0;
+    char * salt;
+    char * p;
+
+    for (int cnt = 0;; flags.ask = 1) {
+        if (flags.ask) {
+            flags.f = 0;
+            getloginname();
+        }
+
+        pwd = getpwnam(username);
+        if (!pwd) {
+            salt = "xx";
+            goto nouser;
+        }
+        salt = pwd->pw_passwd;
+
+        if (flags.f) {
+            uid_t uid = getuid();
+
+            flags.passwd_nreq = pwd->pw_uid != 0 || uid == pwd->pw_uid;
+        }
+
+        if (flags.passwd_nreq || !*pwd->pw_passwd) {
+            break;
+        }
+
+nouser:
+        getpass();
+        p = crypt(password, salt);
+        memset(password, '\0', sizeof(password));
+        if (pwd && !pwcmp(p, pwd->pw_passwd))
+            break;
+
+        printf("Login incorrect\n");
+        failures++;
+        if (++cnt > 3) {
+            if (cnt >= 10) {
+                sleep(5);
+                exit(EX_OSERR);
+            }
+            sleep((unsigned)((cnt - 3) * 5));
+        }
+    }
+}
+
 static int initgroups(char * uname, int agroup)
 {
     gid_t groups[NGROUPS_MAX];
@@ -195,6 +247,20 @@ toomany:
     return 0;
 }
 
+/**
+ * Protect the tty.
+ * We assume stdin and stdout are initiated to the same tty, and that the
+ * tty is the controlling terminal of the session as well.
+ */
+static void protect_tty(void)
+{
+    int fd = fileno(stdin);
+    struct group * gr = getgrnam("tty");
+
+    fchown(fd, pwd->pw_uid, (gr) ? gr->gr_gid : pwd->pw_gid);
+    fchmod(fd, 0620);
+}
+
 static void print_motd(void)
 {
     FILE * fp;
@@ -211,31 +277,19 @@ static void print_motd(void)
     fclose(fp);
 }
 
-static void usage(void)
+static char * parse_shellname(char * pw_shell)
 {
-    fprintf(stderr, "usage: %s [-fp] [username]\n", argv0);
-    exit(EX_USAGE);
-}
+    static char shell[MAXPATHLEN + 2];
+    char * p = strrchr(pw_shell, '/');
 
-/**
- * Protect the tty.
- * We assume stdin and stdout are initiated to the same tty, and that the
- * tty is the controlling terminal of the session as well.
- */
-static void protect_tty(void)
-{
-    int fd = fileno(stdin);
-    struct group * gr = getgrnam("tty");
+    strlcpy(shell, (p) ? p + 1 : pw_shell, sizeof(shell));
 
-    fchown(fd, pwd->pw_uid, (gr) ? gr->gr_gid : pwd->pw_gid);
-    fchmod(fd, 0620);
+    return shell;
 }
 
 int main(int argc, char * argv[])
 {
-    int ch, cnt, failures = 0;
-    char * p;
-    char * salt;
+    int ch;
 
     argv0 = argv[0];
 
@@ -280,47 +334,7 @@ int main(int argc, char * argv[])
     openlog("login", LOG_ODELAY, LOG_AUTH);
 #endif
 
-    for (cnt = 0;; flags.ask = 1) {
-        if (flags.ask) {
-            flags.f = 0;
-            getloginname();
-        }
-
-        pwd = getpwnam(username);
-        if (!pwd) {
-            salt = "xx";
-            goto nouser;
-        }
-        salt = pwd->pw_passwd;
-
-        if (flags.f) {
-            uid_t uid = getuid();
-
-            flags.passwd_nreq = pwd->pw_uid != 0 || uid == pwd->pw_uid;
-        }
-
-        if (flags.passwd_nreq || !*pwd->pw_passwd) {
-            break;
-        }
-
-nouser:
-        getpass();
-        p = crypt(password, salt);
-        memset(password, '\0', sizeof(password));
-        if (pwd && !pwcmp(p, pwd->pw_passwd))
-            break;
-
-        printf("Login incorrect\n");
-        failures++;
-        if (++cnt > 3) {
-            if (cnt >= 10) {
-                sleep(5);
-                exit(EX_OSERR);
-            }
-            sleep((unsigned)((cnt - 3) * 5));
-        }
-    }
-
+    authenticate();
     /* Login ok before timeout. */
     /* TODO Reset alarm */
 #if 0
@@ -363,11 +377,8 @@ nouser:
     if (setlogin(pwd->pw_name) < 0)
         fprintf(stderr, "%s: setlogin(): %s\n", argv0, strerror(errno));
 
-    strlcpy(shell, (p = strrchr(pwd->pw_shell, '/')) ? p + 1 : pwd->pw_shell,
-            sizeof(shell));
-
     setuid(pwd->pw_uid);
-    execlp(pwd->pw_shell, shell, NULL);
+    execlp(pwd->pw_shell, parse_shellname(pwd->pw_shell), NULL);
     fprintf(stderr, "%s: no shell: %s\n", argv0, strerror(errno));
 
     return EX_OSERR;
