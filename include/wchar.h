@@ -11,6 +11,7 @@
 
 #ifndef _PDCLIB_WCHAR_H
 #define _PDCLIB_WCHAR_H
+#ifndef KERNEL_INTERNAL
 
 #include <sys/_PDCLIB_int.h>
 #include <stddef.h>
@@ -184,6 +185,8 @@ size_t mbsrtowcs(wchar_t *_PDCLIB_restrict dst, const char **_PDCLIB_restrict sr
 size_t wcsrtombs(char *_PDCLIB_restrict dst, const wchar_t **_PDCLIB_restrict src, size_t len, mbstate_t *_PDCLIB_restrict ps);
 
 __END_DECLS
+
+#endif /* !KERNEL_INTERNAL */
 #endif
 
 /**

@@ -11,6 +11,7 @@
 
 #ifndef _PDCLIB_ASSERT_H
 #define _PDCLIB_ASSERT_H _PDCLIB_ASSERT_H
+#ifndef KERNEL_INTERNAL
 
 #include <sys/_PDCLIB_aux.h>
 #include <sys/_PDCLIB_config.h>
@@ -76,6 +77,7 @@ void _PDCLIB_assert89( char const * const );
  */
 
 __END_DECLS
+#endif /* !KERNEL_INTERNAL */
 #endif
 
 /**

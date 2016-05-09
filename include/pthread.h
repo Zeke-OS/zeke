@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Threads.
  * @section LICENSE
- * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2013 Joni Hauhia <joni.hauhia@cs.helsinki.fi>
  * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
@@ -221,6 +221,7 @@ struct _sched_pthread_join_args {
 };
 #endif
 
+#ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
 /*
 int     pthread_atfork(void (*)(void), void (*)(void), void (*)(void));
@@ -490,6 +491,7 @@ int pthread_mutexattr_init(pthread_mutexattr_t * attr);
 int pthread_kill(pthread_t thread, int sig);
 
 __END_DECLS
+#endif /* !KERNEL_INTERNAL */
 
 #endif /* PTHREAD_H */
 

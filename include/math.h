@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
@@ -39,6 +40,8 @@
 #define M_SQRT1_2   0.70710678118654752440  /* 1/sqrt(2) */
 #endif /* __BSD_VISIBLE || __XSI_VISIBLE */
 
+#ifndef KERNEL_INTERNAL
+__BEGIN_DECLS
 
 double acos(double arg);
 /* TODO acosf(), acosh(), acoshf(), acoshl(), acosl() */
@@ -127,6 +130,9 @@ float ldexpf(float x, int exp);
 double ldexp(double x, int exp);
 
 double fmod(double x, double y);
+
+__END_DECLS
+#endif /* KERNEL_INTERNAL */
 
 #endif /* _MATH_H_ */
 

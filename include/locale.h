@@ -1,4 +1,5 @@
-/* 7.11 Localization <locale.h>
+/*
+ * 7.11 Localization <locale.h>
  *
  * This file is part of the Public Domain C Library (PDCLib).
  * Permission is granted to use, modify, and / or redistribute at will.
@@ -11,6 +12,7 @@
 
 #ifndef _PDCLIB_LOCALE_H
 #define _PDCLIB_LOCALE_H _PDCLIB_LOCALE_H
+#ifndef KERNEL_INTERNAL
 
 #include <sys/_PDCLIB_int.h>
 __BEGIN_DECLS
@@ -225,6 +227,7 @@ void freelocale(locale_t loc);
 #endif
 
 __END_DECLS
+#endif /* !KERNEL_INTERNAL */
 #endif
 
 /**

@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Semaphore
  * @section LICENSE
- * Copyright (c) 2013, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -56,5 +56,5 @@ typedef struct os_semaphore_cb {
 #endif /* SEMAPHORE_H */
 
 /**
-  * @}
-  */
+ * @}
+ */

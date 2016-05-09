@@ -3,7 +3,7 @@
  * @author  Olli Vanhoja
  * @brief
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2002 Mike Barcroft <mike@FreeBSD.org>
  * All rights reserved.
  *
@@ -39,6 +39,7 @@
 
 #include <sys/types.h>
 
+#ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
 
 /**
@@ -129,6 +130,7 @@ int strncasecmp(const char *, const char *, size_t len) __pure;
  */
 
 __END_DECLS
+#endif /* !KERNEL_INTERNAL */
 
 #endif /* _STRINGS_H_ */
 

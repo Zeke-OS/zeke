@@ -3,7 +3,7 @@
  * @author  Olli Vanhoja
  * @brief   String functions.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1990, 1993
  *  The Regents of the University of California.  All rights reserved.
  *
@@ -46,6 +46,7 @@
 #include <sys/types.h>
 #include <stddef.h>
 
+#ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
 #if __XSI_VISIBLE >= 600
 void    *memccpy(void * __restrict, const void * __restrict, int, size_t);
@@ -127,6 +128,7 @@ void     swab(const void * __restrict, void * __restrict, ssize_t);
 #endif /* __BSD_VISIBLE */
 
 __END_DECLS
+#endif /* !KERNEL_INTERNAL */
 
 #endif /* _STRING_H_ */
 

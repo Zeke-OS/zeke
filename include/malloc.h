@@ -27,6 +27,7 @@
 
 #ifndef MALLOC_280_H
 #define MALLOC_280_H
+#ifndef KERNEL_INTERNAL
 
 #ifdef __cplusplus
 extern "C" {
@@ -622,6 +623,7 @@ void mspace_inspect_all(mspace msp,
 };  /* end of extern "C" */
 #endif
 
+#endif /* !KERNEL_INTERNAL */
 #endif /* MALLOC_280_H */
 
 /**

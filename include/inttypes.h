@@ -16,6 +16,7 @@
 #include <sys/_PDCLIB_int.h>
 #include <stdint.h>
 
+#ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
 
 typedef struct _PDCLIB_imaxdiv_t imaxdiv_t;
@@ -256,6 +257,7 @@ uintmax_t strtoumax( const char * _PDCLIB_restrict nptr, char * * _PDCLIB_restri
 /* TODO: wcstoimax(), wcstoumax() */
 
 __END_DECLS
+#endif /* !KERNEL_INTERNAL */
 #endif
 
 /**

@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1986 by University of Toronto.
  * Copyright (c) 1989, 1993
  *  The Regents of the University of California.  All rights reserved.
@@ -59,11 +60,13 @@ struct regexp {
 
 typedef struct regexp regex_t;
 
+#ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
 regex_t * regcomp __P((const char *));
 int regexec __P((const  regex_t *, const char *));
 void regsub __P((const  regex_t *, const char *, char *));
 void regerror __P((const char *));
 __END_DECLS
+#endif /* !KERNEL_INTERNAL */
 
 #endif /* !_REGEXP_H_ */

@@ -12,6 +12,7 @@
 
 #ifndef _PDCLIB_CTYPE_H
 #define _PDCLIB_CTYPE_H _PDCLIB_CTYPE_H
+#ifndef KERNEL_INTERNAL
 
 #include <sys/_PDCLIB_int.h>
 __BEGIN_DECLS
@@ -113,6 +114,7 @@ int toupper( int c ) _PDCLIB_nothrow;
  */
 
 __END_DECLS
+#endif /* !KERNEL_INTERNAL */
 #endif
 
 /**

@@ -1,4 +1,5 @@
 /*-
+ * Copyright (c) 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1990, 1993
  *  The Regents of the University of California.  All rights reserved.
  * (c) UNIX System Laboratories, Inc.
@@ -36,8 +37,7 @@
 
 #ifndef _SETJMP_H_
 #define _SETJMP_H_
-
-#include <sys/cdefs.h>
+#ifndef KERNEL_INTERNAL
 
 /* The size of the jmp_buf is machine dependent: */
 #include <machine/setjmp.h>
@@ -58,4 +58,5 @@ int sigsetjmp(sigjmp_buf, int) __returns_twice;
 #endif
 __END_DECLS
 
+#ifndef /* !KERNEL_INTERNAL */
 #endif /* !_SETJMP_H_ */

@@ -12,6 +12,7 @@
 
 #ifndef _PDCLIB_UCHAR_H
 #define _PDCLIB_UCHAR_H
+#ifndef KERNEL_INTERNAL
 
 #include <sys/_PDCLIB_int.h>
 
@@ -95,6 +96,7 @@ size_t _PDCLIB_c32srtombs(
 #endif
 
 __END_DECLS
+#endif /* !KERNEL_INTERNAL */
 #endif
 
 /**

@@ -213,7 +213,7 @@ int     tcsetattr(int, int, const struct termios *);
 int     isatty(int fd);
 
 __END_DECLS
-#endif
+#endif /* !KERNEL_INTERNAL */
 
 #endif /* TERMIOS_H */
 

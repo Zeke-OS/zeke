@@ -1,5 +1,6 @@
 #ifndef _PDCLIB_THREADS_H
 #define _PDCLIB_THREADS_H
+#ifndef KERNEL_INTERNAL
 
 #include <sys/_PDCLIB_int.h>
 #include <sys/_PDCLIB_threadconfig.h>
@@ -102,4 +103,6 @@ int tss_set(tss_t key, void *val) _PDCLIB_nothrow;
 #endif
 
 __END_DECLS
+
+#endif /* !KERNEL_INTERNAL */
 #endif

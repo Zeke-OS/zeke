@@ -1,4 +1,5 @@
-/* 7.30 Wide Character Classification and Mapping Utilities <wctype.h>
+/*
+ * 7.30 Wide Character Classification and Mapping Utilities <wctype.h>
  *
  * This file is part of the Public Domain C Library (PDCLib).
  * Permission is granted to use, modify, and / or redistribute at will.
@@ -11,8 +12,10 @@
 
 #ifndef _PDCLIB_WCTYPE_H
 #define _PDCLIB_WCTYPE_H _PDCLIB_WCTYPE_H
+#ifndef KERNEL_INTERNAL
 
 #include <sys/_PDCLIB_int.h>
+
 __BEGIN_DECLS
 
 #ifndef _PDCLIB_WINT_T_DEFINED
@@ -50,6 +53,8 @@ wint_t towctrans( wint_t _Wc, wctrans_t _Desc );
 wctrans_t wctrans( const char * _Property );
 
 __END_DECLS
+
+#endif /* !KERNEL_INTERNAL */
 #endif /* _PDCLIB_WCTYPE_H */
 
 /**

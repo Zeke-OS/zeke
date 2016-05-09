@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Scheduling header file.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -73,7 +73,7 @@ struct _setpolicy_args {
 };
 #endif
 
-#endif /* SCHED_H */
+#ifndef KERNEL_INTERNAL
 
 /**
  * Set scheduling policy and parameters.
@@ -82,6 +82,10 @@ struct _setpolicy_args {
  */
 int sched_setscheduler(pid_t pid, int policy, const struct sched_param * param);
 int sched_setparam(pid_t pid, const struct sched_param * param);
+
+#endif /* !KERNEL_INTERNAL */
+
+#endif /* SCHED_H */
 
 /**
  * @}
