@@ -143,7 +143,8 @@ void * realloc( void * ptr, size_t size ) _PDCLIB_nothrow;
  * @addtogroup abort
  * Abnormal process termination
  * @sa exit(3) quick_exit(3) _Exit(3) raise(3)
- * @since ISO C90
+ * @since ISO C90.
+ *        quick_exit() ISO/IEC 9899:2011 (ISO C11).
  * @{
  */
 
@@ -157,6 +158,12 @@ void * realloc( void * ptr, size_t size ) _PDCLIB_nothrow;
 _PDCLIB_noreturn void abort( void ) _PDCLIB_nothrow;
 
 /**
+ * Exits a program quickly, running minimal cleanup.
+ * @note Doesn't call any cleanup code registered with atexit(3).
+ */
+_Noreturn void quick_exit(int status);
+
+/**
  * @}
  */
 
@@ -164,7 +171,8 @@ _PDCLIB_noreturn void abort( void ) _PDCLIB_nothrow;
  * @addtogroup atexit
  * Registration of functions to be invoked before process termination.
  * @sa abort(3) exit(3) quick_exit(3) _Exit(3)
- * @since ISO C90
+ * @since ISO C90.
+ *        at_quick_exit() ISO/IEC 9899:2011 (ISO C11).
  * @{
  */
 
@@ -175,6 +183,13 @@ _PDCLIB_noreturn void abort( void ) _PDCLIB_nothrow;
  * Returns zero if registration is successfull, nonzero if it failed.
  */
 int atexit( void (*func)( void ) ) _PDCLIB_nothrow;
+
+/**
+ * Registers a cleanup function to run on quick exit.
+ * @return Returns the value 0 if successful;
+ *         and a non-zero value on failure.
+ */
+int at_quick_exit(void (*func)(void));
 
 /**
  * @}
