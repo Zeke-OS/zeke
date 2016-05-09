@@ -7,7 +7,6 @@
  * @{
  */
 
-#pragma once
 #ifndef TIMECONST_H
 #define TIMECONST_H
 

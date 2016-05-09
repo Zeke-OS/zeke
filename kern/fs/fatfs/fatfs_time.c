@@ -32,7 +32,7 @@
 
 #include <sys/time.h>
 #include <time.h>
-#include <timeconst.h>
+#include <sys/timeconst.h>
 #include "src/ff.h"
 
 #define FATTIME_EPOCH       1980

@@ -8,7 +8,7 @@
 #include <stdbool.h>
 #include <sys/time.h>
 #include <time.h>
-#include <timeconst.h>
+#include <sys/timeconst.h>
 #include <kstring.h>
 
 static const int mon_lengths[2][MONS_PER_YEAR] = {
@@ -34,12 +34,11 @@ static const int year_lengths_sec[2] = {
     DAYS_PER_NYEAR * SECS_PER_DAY, DAYS_PER_LYEAR * SECS_PER_DAY
 };
 
-void offtime(struct tm * tm, const time_t * clock, long offset)
+void offtime(struct tm * restrict tm, const time_t * restrict clock,
+             long offset)
 {
-    long days;
-    long rem;
-    int y;
-    int yleap;
+    long days, rem;
+    int y, yleap;
     const int * ip;
 
     days = *clock / SECS_PER_DAY;
@@ -55,36 +54,36 @@ void offtime(struct tm * tm, const time_t * clock, long offset)
     }
     tm->tm_hour = (int) (rem / SECS_PER_HOUR);
     rem = rem % SECS_PER_HOUR;
-    tm->tm_min = (int) (rem / SECS_PER_MIN);
-    tm->tm_sec = (int) (rem % SECS_PER_MIN);
-    tm->tm_wday = (int) ((EPOCH_WDAY + days) % DAYS_PER_WEEK);
+    tm->tm_min = (int)(rem / SECS_PER_MIN);
+    tm->tm_sec = (int)(rem % SECS_PER_MIN);
+    tm->tm_wday = (int)((EPOCH_WDAY + days) % DAYS_PER_WEEK);
     if (tm->tm_wday < 0)
         tm->tm_wday += DAYS_PER_WEEK;
     y = EPOCH_YEAR;
     if (days >= 0)
         for ( ; ; ) {
             yleap = isleap(y);
-            if (days < (long) year_lengths[yleap])
+            if (days < (long)year_lengths[yleap])
                 break;
             ++y;
-            days = days - (long) year_lengths[yleap];
+            days = days - (long)year_lengths[yleap];
         }
     else do {
         --y;
         yleap = isleap(y);
-        days = days + (long) year_lengths[yleap];
+        days = days + (long)year_lengths[yleap];
     } while (days < 0);
     tm->tm_year = y - TM_YEAR_BASE;
-    tm->tm_yday = (int) days;
+    tm->tm_yday = (int)days;
     ip = mon_lengths[yleap];
-    for (tm->tm_mon = 0; days >= (long) ip[tm->tm_mon]; ++(tm->tm_mon)) {
-        days = days - (long) ip[tm->tm_mon];
+    for (tm->tm_mon = 0; days >= (long)ip[tm->tm_mon]; ++(tm->tm_mon)) {
+        days = days - (long)ip[tm->tm_mon];
     }
-    tm->tm_mday = (int) (days + 1);
+    tm->tm_mday = (int)(days + 1);
     tm->tm_isdst = 0;
 }
 
-void gmtime(struct tm * tm, const time_t * clock)
+void gmtime(struct tm * restrict tm, const time_t * restrict clock)
 {
     offtime(tm, clock, 0L);
 }

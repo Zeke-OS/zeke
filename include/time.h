@@ -98,8 +98,18 @@ __BEGIN_DECLS
 int clock_gettime(clockid_t clk_id, struct timespec * tp);
 time_t time(time_t * t);
 
+/**
+ * Convert a time value to a broken-down UTC time.
+ */
+struct tm * gmtime(const time_t * timer);
+
+/**
+ * Convert a time value to a broken-down UTC time.
+ */
+void gmtime_r(const time_t * restrict timer, struct tm * restrict result);
+
 __END_DECLS
-#endif /* KERNEL_INTERNAL*/
+#endif /* !KERNEL_INTERNAL */
 
 /* TODO Add POSIX test macro:
  * http://pubs.opengroup.org/onlinepubs/9699919799/functions/V2_chap02.html#tag_15_02 */

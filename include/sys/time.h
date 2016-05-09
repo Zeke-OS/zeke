@@ -83,14 +83,15 @@ void setrealtime(struct timespec * tsp);
 /**
  * @param[out] tm
  */
-void offtime(struct tm * tm, const time_t * clock, long offset);
+void offtime(struct tm * restrict tm, const time_t * restrict clock,
+             long offset);
 
 /**
  * Get GMT time.
  * @param[out] tm       is is a pointer to the destination.
  * @param[in]  clock    is a unix time.
  */
-void gmtime(struct tm * tm, const time_t * clock);
+void gmtime(struct tm * restrict tm, const time_t * restrict clock);
 
 /**
  * Get timespec from broken-down tm struct.
