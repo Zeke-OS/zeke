@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1980, 1983, 1987, 1988
                  The Regents of the University of California.
  * All rights reserved.
@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/param.h>
+#include <sys/stat.h>
 #include <sysexits.h>
 #include <termios.h>
 #include <unistd.h>
@@ -45,13 +46,10 @@ struct flags {
 static char hostname[HOST_NAME_MAX];
 static char * username;
 static char password[11];
-#if 0
-static char * ttyn;
-#endif
-struct  passwd * pwd;
+static struct  passwd * pwd;
 extern char ** environ;
-char * envinit[1];
-char shell[MAXPATHLEN + 2];
+static char * envinit[1];
+static char shell[MAXPATHLEN + 2];
 
 
 void timedout(int sig)
@@ -219,6 +217,20 @@ static void usage(void)
     exit(EX_USAGE);
 }
 
+/**
+ * Protect the tty.
+ * We assume stdin and stdout are initiated to the same tty, and that the
+ * tty is the controlling terminal of the session as well.
+ */
+static void protect_tty(void)
+{
+    int fd = fileno(stdin);
+    struct group * gr = getgrnam("tty");
+
+    fchown(fd, pwd->pw_uid, (gr) ? gr->gr_gid : pwd->pw_gid);
+    fchmod(fd, 0620);
+}
+
 int main(int argc, char * argv[])
 {
     int ch, cnt, failures = 0;
@@ -262,13 +274,7 @@ int main(int argc, char * argv[])
     if (hostname[0] == '\0')
         gethostname(hostname, sizeof(hostname));
 
-    /* TODO Reset tty params? */
-
     closeall(2);
-    /* TODO Get tty name */
-#if 0
-    ttyn = ttyname();
-#endif
 
 #if 0
     openlog("login", LOG_ODELAY, LOG_AUTH);
@@ -333,12 +339,7 @@ nouser:
 
     /* TODO utmp? */
 
-    /* TODO chown & chmod tty */
-#if 0
-    chown(ttyn, pwd->pw_uid,
-          (gr = getgrnam("tty")) ? gr->gr_gid : pwd->pw_gid);
-    chmod(ttyn, 0620);
-#endif
+    protect_tty();
 
     setgid(pwd->pw_gid);
     initgroups(username, pwd->pw_gid);
