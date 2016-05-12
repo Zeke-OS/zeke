@@ -175,6 +175,8 @@ static void authenticate(void)
     char * salt;
     char * p;
 
+    setpwent();
+
     for (int cnt = 0;; flags.ask = 1) {
         if (flags.ask) {
             flags.f = 0;
@@ -215,36 +217,8 @@ nouser:
             sleep((unsigned)((cnt - 3) * 5));
         }
     }
-}
 
-static int initgroups(char * uname, int agroup)
-{
-    gid_t groups[NGROUPS_MAX];
-    struct group *grp;
-    int i, ngroups = 0;
-
-    if (agroup >= 0)
-        groups[ngroups++] = agroup;
-    setgrent();
-    while ((grp = getgrent())) {
-        if (grp->gr_gid == agroup)
-            continue;
-        for (i = 0; grp->gr_mem[i]; i++)
-            if (!strcmp(grp->gr_mem[i], uname)) {
-                if (ngroups == NGROUPS_MAX) {
-                        fprintf(stderr, "%s is in too many groups\n", uname);
-                    goto toomany;
-                }
-                groups[ngroups++] = grp->gr_gid;
-            }
-    }
-toomany:
-    endgrent();
-    if (setgroups(ngroups, groups) < 0) {
-        perror("setgroups");
-        return -1;
-    }
-    return 0;
+    endpwent();
 }
 
 /**
@@ -259,6 +233,54 @@ static void protect_tty(void)
 
     fchown(fd, pwd->pw_uid, (gr) ? gr->gr_gid : pwd->pw_gid);
     fchmod(fd, 0620);
+}
+
+/**
+ * Set suplementary groups.
+ */
+static int initgroups(char * uname, int agroup)
+{
+    gid_t groups[NGROUPS_MAX];
+    struct group *grp;
+    int ngroups = 0;
+
+    if (agroup >= 0)
+        groups[ngroups++] = agroup;
+    setgrent();
+    while ((grp = getgrent())) {
+        if (grp->gr_gid == agroup)
+            continue;
+
+        for (int i = 0; grp->gr_mem[i]; i++) {
+            if (!strcmp(grp->gr_mem[i], uname)) {
+                if (ngroups == NGROUPS_MAX) {
+                    fprintf(stderr, "%s is in too many groups\n", uname);
+                    goto toomany;
+                }
+                groups[ngroups++] = grp->gr_gid;
+            }
+        }
+    }
+toomany:
+    endgrent();
+    if (setgroups(ngroups, groups) < 0) {
+        perror("setgroups");
+        return -1;
+    }
+    return 0;
+}
+
+static void initenv(void)
+{
+    if (!flags.p)
+        environ = envinit;
+
+    setenv("HOME", pwd->pw_dir, 1);
+    setenv("SHELL", pwd->pw_shell, 1);
+    /* TODO (void)setenv("TERM", term, 0); */
+    setenv("TERM", "vt100", 1);
+    setenv("USER", pwd->pw_name, 1);
+    setenv("PATH", _PATH_STDPATH, 0);
 }
 
 static void print_motd(void)
@@ -341,8 +363,6 @@ int main(int argc, char * argv[])
     alarm(0);
 #endif
 
-    endpwent();
-
     if (chdir(pwd->pw_dir) < 0) {
         printf("No directory %s!\n", pwd->pw_dir);
         if (chdir("/") < 0)
@@ -351,27 +371,16 @@ int main(int argc, char * argv[])
         printf("Logging in with home = \"/\".\n");
     }
 
-    /* TODO utmp? */
-
-    protect_tty();
-
-    setgid(pwd->pw_gid);
-    initgroups(username, pwd->pw_gid);
-
     if (*pwd->pw_shell == '\0')
         pwd->pw_shell = _PATH_BSHELL;
 
-    if (!flags.p)
-        environ = envinit;
-    setenv("HOME", pwd->pw_dir, 1);
-    setenv("SHELL", pwd->pw_shell, 1);
-    /* TODO (void)setenv("TERM", term, 0); */
-    setenv("TERM", "vt100", 1);
-    (void)setenv("USER", pwd->pw_name, 1);
-    (void)setenv("PATH", _PATH_STDPATH, 0);
+    /* TODO utmp? */
 
+    protect_tty();
+    setgid(pwd->pw_gid);
+    initgroups(username, pwd->pw_gid);
+    initenv();
     print_motd();
-
     reset_sighandlers();
 
     if (setlogin(pwd->pw_name) < 0)
