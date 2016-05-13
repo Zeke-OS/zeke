@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Access to MMIO registers on BCM2835.
  * @section LICENSE
- * Copyright (c) 2013 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,15 +52,9 @@
  */
 static inline void mmio_start(istate_t * s_entry)
 {
-    const uint32_t rd = 0;
-
     *s_entry = get_interrupt_state();
     disable_interrupt();
-
-    __asm__ volatile (
-        "MCR    p15, 0, %[rd], c7, c10, 4\n\t" /* Drain write buffer. */
-        "MCR    p15, 0, %[rd], c7, c10, 5\n\t" /* DMB */
-        : : [rd]"r" (rd));
+    cpu_wmb();
 }
 
 /**
@@ -71,7 +65,7 @@ static inline void mmio_end(istate_t * s_entry)
     const uint32_t rd = 0;
 
     __asm__ volatile (
-        "MCR    p15, 0, %[rd], c7, c10, 5\n\t" /* DMB */
+        "MCR    p15, 0, %[rd], c7, c10, 5" /* DMB */
         : : [rd]"r" (rd));
 
     set_interrupt_state(*s_entry);

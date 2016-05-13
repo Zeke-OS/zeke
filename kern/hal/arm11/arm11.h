@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Hardware Abstraction Layer for ARMv6/ARM11
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -221,16 +221,18 @@ void core_set_tls_addr(__user struct _sched_tls_desc * tls);
 #endif /* configMP */
 
 /**
- * Data memory barrier.
- * The purpose of the DMB op is to ensure that all outstanding explicit memory
+ * Write memory barrier.
+ * Execute Drain write buffer and DMB operations.
+ * The purpose of the DMB is to ensure that all outstanding explicit memory
  * transactions are complete before following explicit memory transactions
  * begin.
  */
-#define cpu_dmb() do {                      \
-    int tmp = 0;                            \
+#define cpu_wmb() do {                      \
+    const uint32_t tmp = 0;                 \
     __asm__ volatile (                      \
-        "MCR p15, 0, %[tmp], c7, c10, 5"    \
-        : [tmp]"+r" (tmp));                 \
+        "MCR p15, 0, %[rd], c7, c10, 4\n\t" \
+        "MCR p15, 0, %[rd], c7, c10, 5"     \
+        : [rd]"+r" (tmp));                  \
 } while (0)
 
 /**
