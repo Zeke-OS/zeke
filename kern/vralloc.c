@@ -309,9 +309,6 @@ static struct buf * vr_rclone(struct buf * old_region)
     struct buf * new_region;
     const size_t rsize = old_region->b_bufsize;
 
-    /* "Lock", ensure that the region is not freed during the operation. */
-    vrref(old_region);
-
     new_region = geteblk(rsize);
     if (!new_region) {
         KERROR(KERROR_ERR, "%s: Out of memory, tried to allocate %d bytes\n",
@@ -337,9 +334,6 @@ static struct buf * vr_rclone(struct buf * old_region)
     /* paddr already set */
     new_region->b_mmu.pt = old_region->b_mmu.pt;
     vm_updateusr_ap(new_region);
-
-    /* Release the "lock". */
-    vrfree(old_region);
 
     return new_region;
 }
