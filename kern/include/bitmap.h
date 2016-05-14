@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Bitmap allocation functions.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -75,8 +75,8 @@ typedef uint32_t bitmap_t;
  * @return  Returns zero if a free block found; Value other than zero if there
  *          is no free contiguous block of requested length.
  */
-int bitmap_block_search(size_t * retval, size_t block_len, bitmap_t * bitmap,
-                        size_t size);
+int bitmap_block_search(size_t * retval, size_t block_len,
+                        const bitmap_t * bitmap, const size_t size);
 
 /**
  * Search for a contiguous block of block_len in bitmap.
@@ -90,7 +90,7 @@ int bitmap_block_search(size_t * retval, size_t block_len, bitmap_t * bitmap,
  *          is no free contiguous block of requested length.
  */
 int bitmap_block_search_s(size_t start, size_t * retval, size_t block_len,
-                          bitmap_t * bitmap, size_t size);
+                          const bitmap_t * bitmap, size_t size);
 
 /**
  * Check status of a bit in a bitmap pointed by bitmap.

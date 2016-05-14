@@ -139,7 +139,7 @@ static struct vregion * vreg_alloc_node(size_t count)
 {
     struct vregion * vreg;
 
-    KASSERT(mtx_test(&vr_big_lock), "vr_big_lock should be locked\n");
+    KASSERT(mtx_test(&vr_big_lock), "vr_big_lock should be locked");
 
     count = ROUND_UP(count, DMEM_BLOCK_SIZE);
 
@@ -174,13 +174,16 @@ static struct vregion * vreg_alloc_node(size_t count)
  */
 static struct vregion * get_iblocks(size_t * iblock, size_t pcount)
 {
-    struct vregion * vreg;
+    struct vregion * vreg_temp;
+    struct vregion * vreg = NULL;
 
     mtx_lock(&vr_big_lock);
 
 retry:
-    LIST_FOREACH(vreg, &vrlist_head, _entry) {
-        if (bitmap_block_search(iblock, pcount, vreg->map, vreg->size) == 0) {
+    LIST_FOREACH(vreg_temp, &vrlist_head, _entry) {
+        if (bitmap_block_search(iblock, pcount, vreg_temp->map,
+                                vreg_temp->size) == 0) {
+            vreg = vreg_temp;
             break; /* Found a block */
         }
     }
@@ -376,6 +379,7 @@ void allocbuf(struct buf * bp, size_t size)
                      * It's not nice to panic here but we don't have any
                      * method to inform the caller about OOM.
                      */
+                    /* TODO We should probably kill the caller */
                     panic("OOM during allocbuf()");
                 }
 

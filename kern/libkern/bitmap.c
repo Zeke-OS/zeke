@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   bitmap allocation functions.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,14 +38,14 @@
 #define BIT2WORDI(i)    ((i - (i & (SIZEOF_BITMAP_T - 1))) / SIZEOF_BITMAP_T)
 #define BIT2WBITOFF(i)  (i & (SIZEOF_BITMAP_T - 1))
 
-int bitmap_block_search(size_t * retval, size_t block_len, bitmap_t * bitmap,
-                        size_t size)
+int bitmap_block_search(size_t * retval, size_t block_len,
+                        const bitmap_t * bitmap, size_t size)
 {
     return bitmap_block_search_s(0, retval, block_len, bitmap, size);
 }
 
 int bitmap_block_search_s(size_t start, size_t * retval, size_t block_len,
-        bitmap_t * bitmap, size_t size)
+                          const bitmap_t * bitmap, size_t size)
 {
     size_t i, j;
     bitmap_t * cur;
