@@ -240,6 +240,23 @@ int __kinit__ kinit(void)
     struct thread_info * init_thread;
     struct proc_info * init_proc;
 
+
+    /*
+     * FIXME Memory allocation, protection or manipulation bug!
+     * There is a critical bug causing random crashes in userland. I suspect
+     * something is overwriting user space allocation from the kernel space.
+     * Allocating some memory before init is executed seems to fix this issue,
+     * however naturally this is not the proper way to fix the bug.
+     * Without the allocation here the issue is sometimes seen in init or
+     * usually after couple of fork + exec + exit cycles. The usual symptom is
+     * that the userland app first calls some 0:0 syscalls and then tries to
+     * execute undefined instruction, which probably means that either some
+     * jump table in the heap or some part of the executable code is modified
+     * by a bad access in kernel mode just before this happens.
+     */
+    (void)geteblk(MMU_PGSIZE_COARSE * 10);
+
+
     mount_tmp_rootfs();
 
     /*
