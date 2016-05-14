@@ -58,5 +58,5 @@ int sigsetjmp(sigjmp_buf, int) __returns_twice;
 #endif
 __END_DECLS
 
-#ifndef /* !KERNEL_INTERNAL */
+#endif /* !KERNEL_INTERNAL */
 #endif /* !_SETJMP_H_ */
