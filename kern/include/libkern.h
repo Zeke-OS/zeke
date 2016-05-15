@@ -266,22 +266,22 @@ int parsenames(const char * pathname, char ** path, char ** name);
  * changed by another thread or a interrupt handler.
  * Keeps execution order.
  */
-#define ACCESS_ONCE(_x) \
-    (*(volatile typeof(_x) *)&(_x))
+#define ACCESS_ONCE(_p_) \
+    (*(volatile __typeof(_p_) *)&(_p_))
 
 /**
  * Write to a pointer.
  * Keepts execution order.
  */
 #define WRITE_ONCE(_var, _val) \
-    (*((volatile typeof(_val) *)(&(_var))) = (_val))
+    (*((volatile __typeof(_val) *)(&(_var))) = (_val))
 
 /**
  * Read from a pointer.
  * Keeps execution order.
  */
-#define READ_ONCE(_var) \
-    (*((volatile typeof(_val) *)(&(_var))))
+#define READ_ONCE(_p_) \
+    (*((volatile __typeof(_p_) *)(&(_p_))))
 
 #endif /* LIBKERN_H */
 

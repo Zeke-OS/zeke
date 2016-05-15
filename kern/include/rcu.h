@@ -78,9 +78,9 @@ void rcu_read_unlock(struct rcu_lock_ctx * restrict ctx);
 /**
  * Dereference an RCU managed pointer.
  */
-#define rcu_dereference(p) ({           \
-    typeof(p) _value = ACCESS_ONCE(p);  \
-    (_value);                           \
+#define rcu_dereference(p) ({               \
+    __typeof(p) _value = ACCESS_ONCE(p);    \
+    (_value);                               \
 })
 
 
