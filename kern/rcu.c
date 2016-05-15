@@ -107,12 +107,10 @@ void rcu_synchronize(void)
     struct rcu_lock_ctx ctx;
 
     do {
-        int tick;
-
 retry:
         old = atomic_read(&rcu_ctrl);
         old_clock = RCU_CTRL_TO_CLOCK(old);
-        tick = (RCU_GET_CTR(old, old_clock) != 0);
+        const int tick = RCU_GET_CTR(old, old_clock ^ 1) == 0;
         if (!tick) {
             /*
              * We yield until we get a tick. A tick means that all readers on
@@ -148,6 +146,7 @@ static void * rcu_sync_thread(void * arg)
 {
     while (1) {
         rcu_synchronize();
+        thread_sleep(1000);
     }
 }
 
