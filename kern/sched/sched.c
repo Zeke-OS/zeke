@@ -260,17 +260,17 @@ static void update_nr_threads(uintptr_t arg)
 IDLE_TASK(update_nr_threads, 0);
 
 /**
- * Calculate load averages
+ * Calculate load averages.
  *
  * This function calculates unix-style load averages for the system.
- * Algorithm used here is similar to algorithm used in Linux.
+ * Algorithm used here is similar to the algorithm used in Linux.
  */
 static void sched_calc_loads(void)
 {
     static int count = LOAD_FREQ;
-    uint32_t active_threads = 0; /* Fixed-point */
+    uint32_t active_threads = 0; /* Fixed-point value. */
 
-    /* Run only on a kernel tick */
+    /* Run only on a kernel tick. */
     if (!flag_kernel_tick)
         return;
 
@@ -289,7 +289,7 @@ static void sched_calc_loads(void)
             active_threads += (uint32_t)nr * FIXED_1;
         }
 
-        /* Load averages */
+        /* Load averages. */
         CALC_LOAD(loadavg[0], FEXP_1, active_threads);
         CALC_LOAD(loadavg[1], FEXP_5, active_threads);
         CALC_LOAD(loadavg[2], FEXP_15, active_threads);
