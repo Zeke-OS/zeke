@@ -121,9 +121,12 @@ retry:
              * We yield until we get a tick. A tick means that all readers on
              * the current grace period are ready.
              */
+#if configRCU_SYNC_HZ > 0
             if (current_thread->id == rcu_sync_thread_tid) {
-                thread_sleep(1000);
-            } else {
+                thread_sleep(configRCU_SYNC_HZ);
+            } else
+#endif
+            {
                 thread_yield(THREAD_YIELD_IMMEDIATE);
             }
             goto retry;
@@ -143,18 +146,19 @@ retry:
     mtx_unlock(&rcu_sync_lock);
 }
 
+#if configRCU_SYNC_HZ > 0
 static void * rcu_sync_thread(void * arg)
 {
     while (1) {
         rcu_synchronize();
-        thread_sleep(1000);
+        thread_sleep(configRCU_SYNC_HZ);
     }
 }
 
 int __kinit__ rcu_init(void)
 {
     SUBSYS_DEP(proc_init);
-    SUBSYS_INIT("rcu");
+    SUBSYS_INIT("rcu sync");
 
     struct buf * bp_stack = geteblk(MMU_PGSIZE_COARSE);
     if (!bp_stack) {
@@ -180,3 +184,4 @@ int __kinit__ rcu_init(void)
 
     return 0;
 }
+#endif

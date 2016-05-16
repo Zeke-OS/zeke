@@ -245,6 +245,16 @@ config configUSRINIT_PRI
     ---help---
     Priority of usrinit thread.
 
+config configRCU_SYNC_HZ
+    int "RCU synchronization interval [ms]"
+    default 1000
+    ---help---
+    Automatic RCU synchronization runs once per interval set here, toggles the
+    clock and reclaims any unreclaimed garbage assigned to the previus reclaim
+    list.
+
+    Set to 0 to disable automatic synchronization.
+
 endmenu
 
 menu "Kernel debugging"
