@@ -104,13 +104,37 @@ void rcu_call(struct rcu_cb * cbd, void (*fn)(struct rcu_cb *))
     rcu_read_unlock(&ctx);
 }
 
-static mtx_t rcu_sync_lock = MTX_INITIALIZER(MTX_TYPE_TICKET, MTX_OPT_DEFAULT);
+static inline void rcu_yield(void)
+{
+#if configRCU_SYNC_HZ > 0
+    if (current_thread->id == rcu_sync_thread_tid) {
+        thread_sleep(configRCU_SYNC_HZ);
+    } else
+#endif
+    {
+        thread_yield(THREAD_YIELD_IMMEDIATE);
+    }
+}
+
+static void rcu_wait_for_readers(int old_clock)
+{
+    while (1) {
+        int ctrl = atomic_read(&rcu_ctrl);
+        if (RCU_GET_CTR(ctrl, old_clock) == 0)
+            return;
+        rcu_yield();
+    }
+}
 
 void rcu_synchronize(void)
 {
+    static mtx_t rcu_sync_lock = MTX_INITIALIZER(MTX_TYPE_TICKET,
+                                                 MTX_OPT_DEFAULT);
     int old, old_clock, new;
 
     mtx_lock(&rcu_sync_lock);
+
+    /* Stage 1: Advance the RCU clock. */
     do {
 retry:
         old = atomic_read(&rcu_ctrl);
@@ -121,19 +145,14 @@ retry:
              * We yield until we get a tick. A tick means that all readers on
              * the current grace period are ready.
              */
-#if configRCU_SYNC_HZ > 0
-            if (current_thread->id == rcu_sync_thread_tid) {
-                thread_sleep(configRCU_SYNC_HZ);
-            } else
-#endif
-            {
-                thread_yield(THREAD_YIELD_IMMEDIATE);
-            }
+            rcu_yield();
             goto retry;
         }
         new = old ^ (1 << RCU_CLOCK_OFFSET);
     } while (atomic_cmpxchg(&rcu_ctrl, old, new) != old);
 
+    /* Stage 2: Reclaim orphaned resources. */
+    rcu_wait_for_readers(old_clock);
     if (rcu_reclaim_list[old_clock]) {
         struct rcu_cb * cbd = rcu_reclaim_list[old_clock];
         struct rcu_cb * next;
@@ -143,6 +162,7 @@ retry:
         } while ((cbd = next));
     }
     rcu_reclaim_list[old_clock] = NULL;
+
     mtx_unlock(&rcu_sync_lock);
 }
 
