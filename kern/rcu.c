@@ -142,8 +142,8 @@ retry:
         const int tick = RCU_GET_CTR(old, old_clock ^ 1) == 0;
         if (!tick) {
             /*
-             * We yield until we get a tick. A tick means that all readers on
-             * the current grace period are ready.
+             * We yield until we get a tick. A tick means that all readers of
+             * the other counter on the current grace period are ready.
              */
             rcu_yield();
             goto retry;
@@ -151,7 +151,10 @@ retry:
         new = old ^ (1 << RCU_CLOCK_OFFSET);
     } while (atomic_cmpxchg(&rcu_ctrl, old, new) != old);
 
-    /* Stage 2: Reclaim orphaned resources. */
+    /*
+     * Stage 2: Reclaim orphaned resources.
+     * Wait until all the readers of the previous counter are ready.
+     */
     rcu_wait_for_readers(old_clock);
     if (rcu_reclaim_list[old_clock]) {
         struct rcu_cb * cbd = rcu_reclaim_list[old_clock];
