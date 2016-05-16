@@ -90,22 +90,27 @@ void rcu_read_unlock(struct rcu_lock_ctx * restrict ctx)
 void rcu_call(struct rcu_cb * cbd, void (*fn)(struct rcu_cb *))
 {
     struct rcu_lock_ctx ctx;
+    struct rcu_cb * old;
+    struct rcu_cb ** list_head;
 
     ctx = rcu_read_lock(); /* Use read lock to prevent a clock tick. */
+    list_head = &rcu_reclaim_list[ctx.selector];
     do {
         cbd->callback = fn;
         cbd->callback_arg = cbd;
-        cbd->next = rcu_reclaim_list[ctx.selector];
-    } while (atomic_cmpxchg_ptr((void **)(&rcu_reclaim_list[ctx.selector]),
-                                cbd->next, cbd) != cbd->next);
+        old = *list_head;
+        cbd->next = old;
+    } while (atomic_cmpxchg_ptr((void **)(list_head), old, cbd) != old);
     rcu_read_unlock(&ctx);
 }
+
+static mtx_t rcu_sync_lock = MTX_INITIALIZER(MTX_TYPE_TICKET, MTX_OPT_DEFAULT);
 
 void rcu_synchronize(void)
 {
     int old, old_clock, new;
-    struct rcu_lock_ctx ctx;
 
+    mtx_lock(&rcu_sync_lock);
     do {
 retry:
         old = atomic_read(&rcu_ctrl);
@@ -126,12 +131,7 @@ retry:
         new = old ^ (1 << RCU_CLOCK_OFFSET);
     } while (atomic_cmpxchg(&rcu_ctrl, old, new) != old);
 
-    ctx = rcu_read_lock(); /* Prevent a new clock tick while we are here. */
-    /*
-     * If we miss a window for callbacks now we should always get back here
-     * later on anyway, so it's not critical.
-     */
-    if (ctx.selector != old_clock && rcu_reclaim_list[old_clock]) {
+    if (rcu_reclaim_list[old_clock]) {
         struct rcu_cb * cbd = rcu_reclaim_list[old_clock];
         struct rcu_cb * next;
         do {
@@ -139,7 +139,8 @@ retry:
             cbd->callback(cbd->callback_arg);
         } while ((cbd = next));
     }
-    rcu_read_unlock(&ctx);
+    rcu_reclaim_list[old_clock] = NULL;
+    mtx_unlock(&rcu_sync_lock);
 }
 
 static void * rcu_sync_thread(void * arg)
@@ -157,7 +158,7 @@ int __kinit__ rcu_init(void)
 
     struct buf * bp_stack = geteblk(MMU_PGSIZE_COARSE);
     if (!bp_stack) {
-        KERROR(KERROR_ERR, "Can't allocate a stack for rcu sync thread.");
+        KERROR(KERROR_ERR, "Can't allocate a stack for rcu sync thread\n");
         return -ENOMEM;
     }
 
@@ -173,7 +174,7 @@ int __kinit__ rcu_init(void)
 
     rcu_sync_thread_tid = thread_create(&tdef, THREAD_MODE_PRIV);
     if (rcu_sync_thread_tid < 0) {
-        KERROR(KERROR_ERR, "Failed to create a thread for rcu sync");
+        KERROR(KERROR_ERR, "Failed to create a thread for rcu sync\n");
         return rcu_sync_thread_tid;
     }
 
