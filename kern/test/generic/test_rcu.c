@@ -3,6 +3,7 @@
  * @brief Test RCU.
  */
 
+#include <errno.h>
 #include <kunit.h>
 #include <ktest_mib.h>
 #include <libkern.h>
@@ -55,15 +56,23 @@ static void * rcu_reader_thread(void * arg)
         thread_yield(THREAD_YIELD_IMMEDIATE);
     }
     rcu_read_unlock(&ctx);
+
+    /*
+     * FIXME For some reason thread_die() as a del_thread for kernel threads
+     * fails.
+     */
+    while (1) {
+        thread_sleep(10000);
+    }
     return NULL;
 }
 
-static void create_rcu_reader_threads(void)
+static pthread_t create_rcu_reader_thread(void)
 {
     struct buf * bp_stack = geteblk(MMU_PGSIZE_COARSE);
     if (!bp_stack) {
-        KERROR(KERROR_ERR, "Failed to allocate a stack");
-        return;
+        KERROR(KERROR_ERR, "Failed to allocate a stack\n");
+        return -ENOMEM;
     }
 
     struct _sched_pthread_create_args tdef = {
@@ -74,17 +83,20 @@ static void create_rcu_reader_threads(void)
         .flags      = SCHED_DETACH_FLAG,
         .start      = rcu_reader_thread,
         .arg1       = 0,
+        .del_thread = (void (*)(void *))thread_die,
     };
 
     pthread_t tid = thread_create(&tdef, THREAD_MODE_PRIV);
     if (tid < 0) {
-        KERROR(KERROR_ERR, "Failed to create a thread");
-        return;
+        KERROR(KERROR_ERR, "Failed to create a thread\n");
     }
+    return tid;
 }
 
 static char * test_rcu_synchronize(void)
 {
+    pthread_t tid;
+
     struct data * const p1 = kmalloc(sizeof(struct data));
     struct data * const p2 = kmalloc(sizeof(struct data));
     if (!p1 || !p2) {
@@ -94,25 +106,28 @@ static char * test_rcu_synchronize(void)
     }
 
     rcu_assign_pointer(gptr, p1);
-    create_rcu_reader_threads();
+    tid = create_rcu_reader_thread();
+    ku_assert("tid is valid", tid > 0);
     rcu_assign_pointer(gptr, p2);
     rcu_synchronize();
     ku_assert_ptr_equal("gptr is valid", gptr, p2);
     kfree(p1);
-    thread_sleep(5000);
+    thread_terminate(tid);
 
     return NULL;
 }
 
 void rcu_test_callback(struct rcu_cb * cb)
 {
-    KERROR(KERROR_INFO, "RCU test callback called");
+    KERROR(KERROR_INFO, "RCU test callback called\n");
     kfree(container_of(cb, struct data, rcu));
-    KERROR(KERROR_INFO, "RCU test callback done");
+    KERROR(KERROR_INFO, "RCU test callback done\n");
 }
 
 static char * test_rcu_callback(void)
 {
+    pthread_t tid;
+
     struct data * const p1 = kmalloc(sizeof(struct data));
     struct data * const p2 = kmalloc(sizeof(struct data));
     if (!p1 || !p2) {
@@ -122,11 +137,13 @@ static char * test_rcu_callback(void)
     }
 
     rcu_assign_pointer(gptr, p1);
-    create_rcu_reader_threads();
+    tid = create_rcu_reader_thread();
+    ku_assert("tid is valid", tid > 0);
     rcu_assign_pointer(gptr, p2);
     rcu_call(&p1->rcu, rcu_test_callback);
     ku_assert_ptr_equal("gptr is valid", gptr, p2);
     thread_sleep(5000);
+    thread_terminate(tid);
 
     return NULL;
 }
@@ -135,7 +152,7 @@ static void all_tests(void)
 {
     ku_def_test(test_rcu_assign_pointer_and_deference, KU_RUN);
     ku_def_test(test_rcu_synchronize, KU_RUN);
-    ku_def_test(test_rcu_callback, KU_SKIP);
+    ku_def_test(test_rcu_callback, KU_RUN);
 }
 
 SYSCTL_TEST(generic, rcu);

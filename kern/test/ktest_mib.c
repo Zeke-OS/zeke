@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   MIB decls for unit tests.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,25 +35,25 @@
 
 #ifdef configKUNIT_FS
 SYSCTL_NODE(_debug_test, OID_AUTO, fs, CTLFLAG_RW, 0,
-        "fs unit tests");
+            "fs unit tests");
 #endif
 
 #ifdef configKUNIT_GENERIC
 SYSCTL_NODE(_debug_test, OID_AUTO, generic, CTLFLAG_RW, 0,
-        "generic unit tests");
+            "generic unit tests");
 #endif
 
 #ifdef configKUNIT_HAL
 SYSCTL_NODE(_debug_test, OID_AUTO, hal, CTLFLAG_RW, 0,
-        "hal unit tests");
+            "hal unit tests");
 #endif
 
 #ifdef configKUNIT_KSTRING
 SYSCTL_NODE(_debug_test, OID_AUTO, kstring, CTLFLAG_RW, 0,
-        "kstring unit tests");
+            "kstring unit tests");
 #endif
 
 #ifdef configKUNIT_VM
 SYSCTL_NODE(_debug_test, OID_AUTO, vm, CTLFLAG_RW, 0,
-        "vm unit tests");
+            "vm unit tests");
 #endif
