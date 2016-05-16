@@ -1,0 +1,7 @@
+\chapter{\acf{rcu}}
+
+\acf{rcu} is a low overhead synchronization method mainly used for
+synchronization between multiple readers and rarely occuring writers. The
+\ac{rcu} implementation in the Zeke kernel is not strictly time-based but a
+kind-of state machine that rougly swaps states when reclaiming resources is
+possible.
