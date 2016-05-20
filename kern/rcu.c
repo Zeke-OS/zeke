@@ -132,6 +132,10 @@ void rcu_synchronize(void)
                                                  MTX_OPT_DEFAULT);
     int old, old_clock, new;
 
+    /*
+     * Callers of this function will get thru this in call order since
+     * rcu_sync_lock is a ticket lock.
+     */
     mtx_lock(&rcu_sync_lock);
 
     /* Stage 1: Advance the RCU clock. */
@@ -159,6 +163,10 @@ retry:
     if (rcu_reclaim_list[old_clock]) {
         struct rcu_cb * cbd = rcu_reclaim_list[old_clock];
         struct rcu_cb * next;
+
+        /*
+         * Call reclaim callbacks for registered CBs.
+         */
         do {
             next = cbd->next;
             cbd->callback(cbd->callback_arg);
