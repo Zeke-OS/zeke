@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Generic functions and macros for use in kernel.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1992, 1993
  *      The Regents of the University of California.  All rights reserved.
  * All rights reserved.
@@ -44,6 +44,7 @@
 
 #include <stddef.h>
 #include <sys/types.h>
+#include <hal/core.h>
 
 /**
  * Returns a container of ptr, which is a element in some struct.

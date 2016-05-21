@@ -1,6 +1,6 @@
 /**
- * @file test_rcu.c
- * @brief Test RCU.
+ * @file test_basic.c
+ * @brief Test basic RCU functionality.
  */
 
 #include <errno.h>
@@ -117,7 +117,7 @@ static char * test_rcu_synchronize(void)
     return NULL;
 }
 
-void rcu_test_callback(struct rcu_cb * cb)
+static void rcu_test_callback(struct rcu_cb * cb)
 {
     KERROR(KERROR_INFO, "RCU test callback called\n");
     kfree(container_of(cb, struct data, rcu));
@@ -155,4 +155,4 @@ static void all_tests(void)
     ku_def_test(test_rcu_callback, KU_RUN);
 }
 
-SYSCTL_TEST(generic, rcu);
+SYSCTL_TEST(rcu, basic);

@@ -39,6 +39,8 @@
 #ifndef RCU_H
 #define RCU_H
 
+#include <libkern.h>
+
 /**
  * Opaque RCU reader lock context returned by rcu_read_lock().
  */
@@ -96,7 +98,73 @@ void rcu_call(struct rcu_cb * cb, void (*fn)(struct rcu_cb *));
  */
 void rcu_synchronize(void);
 
-/* TODO RCU list handling */
+/**
+ * @addtogroup rcu_slist
+ * RCU singly-linked list.
+ * @{
+ */
+
+/**
+ * RCU singly-linked list head.
+ */
+struct rcu_slist_head {
+    struct rcu_cb * head;
+};
+
+/**
+ * Test wheter an RCU slist is empty.
+ * @param head is a pointer to the slist head descriptor.
+ */
+static inline int rcu_slist_is_empty(struct rcu_slist_head * head)
+{
+    return !!(head->head);
+}
+
+/**
+ * Insert elem to the head of an RCU slist.
+ * O(1) operation.
+ * @param head is a pointer to the slist head descriptor.
+ */
+void rcu_slist_insert_head(struct rcu_slist_head * head, struct rcu_cb * elem);
+
+/**
+ * Insert elem2 after elem1 on an RCU list.
+ * O(1) operation.
+ */
+void rcu_slist_insert_after(struct rcu_cb * elem1, struct rcu_cb * elem2);
+
+/**
+ * Insert elem to the tail of an RCU list.
+ * O(n) operation.
+ * @param head is a pointer to the slist head descriptor.
+ */
+void rcu_slist_insert_tail(struct rcu_slist_head * head, struct rcu_cb * elem);
+
+/**
+ * Remove the head of an RCU list.
+ * O(1) operation.
+ * @param head is a pointer to the slist head descriptor.
+ */
+struct rcu_cb * rcu_slist_remove_head(struct rcu_slist_head * head);
+
+/**
+ * Remove elem from an RCU list.
+ * O(n) operation.
+ * @param head is a pointer to the slist head descriptor.
+ */
+struct rcu_cb * rcu_slist_remove(struct rcu_slist_head * head,
+                                 struct rcu_cb * elem);
+
+/**
+ * Remove the tail of an RCU list.
+ * O(n) operation.
+ * @param head is a pointer to the slist head descriptor.
+ */
+struct rcu_cb * rcu_slist_remove_tail(struct rcu_slist_head * head);
+
+/**
+ * @}
+ */
 
 #endif /* RCU_H */
 

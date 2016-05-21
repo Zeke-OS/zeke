@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   MIB decls for unit tests.
  * @section LICENSE
- * Copyright (c) 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,6 +47,9 @@ SYSCTL_DECL(_debug_test_hal);
 #endif
 #ifdef configKUNIT_KSTRING
 SYSCTL_DECL(_debug_test_kstring);
+#endif
+#ifdef configKUNIT_RCU
+SYSCTL_DECL(_debug_test_rcu);
 #endif
 #ifdef configKUNIT_VM
 SYSCTL_DECL(_debug_test_vm);

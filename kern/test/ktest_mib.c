@@ -53,6 +53,11 @@ SYSCTL_NODE(_debug_test, OID_AUTO, kstring, CTLFLAG_RW, 0,
             "kstring unit tests");
 #endif
 
+#ifdef configKUNIT_RCU
+SYSCTL_NODE(_debug_test, OID_AUTO, rcu, CTLFLAG_RW, 0,
+            "rcu unit tests");
+#endif
+
 #ifdef configKUNIT_VM
 SYSCTL_NODE(_debug_test, OID_AUTO, vm, CTLFLAG_RW, 0,
             "vm unit tests");
