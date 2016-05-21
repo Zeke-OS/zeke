@@ -209,7 +209,7 @@ out:
  */
 static void vreg_free_callback(struct kobj * obj)
 {
-    struct buf * bp = container_of(obj, struct buf, b_obj);
+    struct buf * bp = containerof(obj, struct buf, b_obj);
     struct vregion * vreg = (struct vregion *)(bp->allocator_data);
     const size_t bcount = VREG_PCOUNT(bp->b_bufsize);
     size_t iblock;

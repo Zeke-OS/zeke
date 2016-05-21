@@ -58,7 +58,7 @@ RB_GENERATE_STATIC(fiforunq, thread_info, FIFORUNQ_ENTRY, fifo_prio_compare);
 
 static int fifo_insert(struct scheduler * sobj, struct thread_info * thread)
 {
-    struct sched_fifo * fifo = container_of(sobj, struct sched_fifo, sched);
+    struct sched_fifo * fifo = containerof(sobj, struct sched_fifo, sched);
 
     if (!thread_test_polflag(thread, SCHED_POLFLAG_INFIFORQ)) {
         RB_INSERT(fiforunq, &fifo->runq_head, thread);
@@ -84,7 +84,7 @@ static int fifo_insert(struct scheduler * sobj, struct thread_info * thread)
 
 static void fifo_remove(struct scheduler * sobj, struct thread_info * thread)
 {
-    struct sched_fifo * fifo = container_of(sobj, struct sched_fifo, sched);
+    struct sched_fifo * fifo = containerof(sobj, struct sched_fifo, sched);
 
     if (thread_test_polflag(thread, SCHED_POLFLAG_INFIFORQ)) {
         RB_REMOVE(fiforunq, &fifo->runq_head, thread);
@@ -95,7 +95,7 @@ static void fifo_remove(struct scheduler * sobj, struct thread_info * thread)
 
 static struct thread_info * fifo_schedule(struct scheduler * sobj)
 {
-    struct sched_fifo * fifo = container_of(sobj, struct sched_fifo, sched);
+    struct sched_fifo * fifo = containerof(sobj, struct sched_fifo, sched);
     struct thread_info * thread;
 
     if (RB_EMPTY(&fifo->runq_head))
@@ -129,7 +129,7 @@ static struct thread_info * fifo_schedule(struct scheduler * sobj)
 
 static unsigned get_nr_active(struct scheduler * sobj)
 {
-    struct sched_fifo * fifo = container_of(sobj, struct sched_fifo, sched);
+    struct sched_fifo * fifo = containerof(sobj, struct sched_fifo, sched);
 
     return fifo->nr_active;
 }

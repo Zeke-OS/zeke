@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   MBR driver.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -317,7 +317,7 @@ fail:
 static int mbr_read(struct dev_info * devnfo, off_t offset,
                     uint8_t * buf, size_t count, int oflags)
 {
-    struct mbr_dev * mbr = container_of(devnfo, struct mbr_dev, dev);
+    struct mbr_dev * mbr = containerof(devnfo, struct mbr_dev, dev);
     struct dev_info * parent = mbr->parent;
 
     return parent->read(parent, offset + mbr->start_block, buf, count, oflags);
@@ -326,7 +326,7 @@ static int mbr_read(struct dev_info * devnfo, off_t offset,
 static int mbr_write(struct dev_info * devnfo, off_t offset,
                      uint8_t * buf, size_t count, int oflags)
 {
-    struct mbr_dev * mbr = container_of(devnfo, struct mbr_dev, dev);
+    struct mbr_dev * mbr = containerof(devnfo, struct mbr_dev, dev);
     struct dev_info * parent = mbr->parent;
 
     return parent->write(parent, offset + mbr->start_block, buf, count, oflags);

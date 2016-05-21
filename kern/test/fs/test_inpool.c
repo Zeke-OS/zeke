@@ -75,7 +75,7 @@ static char * test_inpool_get(void)
     vnode = inpool_get_next(&pool);
     ku_assert("Got vnode", vnode != 0);
 
-    inode = container_of(vnode, inode_t, in_vnode);
+    inode = containerof(vnode, inode_t, in_vnode);
     ku_assert_ptr_equal("sb is set", inode->in_vnode.sb, &sb_tst);
     ku_assert_equal("Preset data is ok", inode->data, 16);
 
@@ -110,5 +110,5 @@ static vnode_t * create_tst(const struct fs_superblock * sb, ino_t * num)
 
 static void delete_tst(vnode_t * vnode)
 {
-    kfree(container_of(vnode, inode_t, in_vnode));
+    kfree(containerof(vnode, inode_t, in_vnode));
 }

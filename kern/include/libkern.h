@@ -47,16 +47,6 @@
 #include <hal/core.h>
 
 /**
- * Returns a container of ptr, which is a element in some struct.
- * @param ptr       is a pointer to a element in struct.
- * @param type      is the type of the container struct.
- * @param member    is the name of the ptr in container struct.
- * @return Pointer to the container of ptr.
- */
-#define container_of(ptr, type, member) \
-    ((type *)((uint8_t *)(ptr) - offsetof(type, member)))
-
-/**
  * Returns the size of a member of type.
  * @param type      is a type.
  * @param member    is a member in type.

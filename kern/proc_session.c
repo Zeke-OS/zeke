@@ -45,7 +45,7 @@
  */
 static void proc_session_free_callback(struct kobj * obj)
 {
-    struct session * s = container_of(obj, struct session, s_obj);
+    struct session * s = containerof(obj, struct session, s_obj);
 
     kfree(s);
 }
@@ -120,7 +120,7 @@ void proc_session_setlogin(struct session * s, char s_login[MAXLOGNAME])
  */
 static void proc_pgrp_free_callback(struct kobj * obj)
 {
-    struct pgrp * pgrp = container_of(obj, struct pgrp, pg_obj);
+    struct pgrp * pgrp = containerof(obj, struct pgrp, pg_obj);
     struct session * s = pgrp->pg_session;
 
     TAILQ_REMOVE(&s->s_pgrp_list_head, pgrp, pg_pgrp_entry_);

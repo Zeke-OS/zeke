@@ -118,7 +118,7 @@ int fb_register(struct fb_conf * fb)
 
 static void fb_mm_free_callback(struct kobj * obj)
 {
-    struct buf * bp = container_of(obj, struct buf, b_obj);
+    struct buf * bp = containerof(obj, struct buf, b_obj);
 
     KERROR(KERROR_ERR, "FB buf object (%p) freed!\n", bp);
 }

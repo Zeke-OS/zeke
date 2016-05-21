@@ -80,7 +80,7 @@ struct fatfs_sb {
  * @return Returns a pointer to the ramfs_sb ob of the sb.
  */
 #define get_ffsb_of_sb(_sb_) \
-    (container_of(_sb_, struct fatfs_sb, sb))
+    (containerof(_sb_, struct fatfs_sb, sb))
 
 /**
  * Get corresponding inode of given vnode.
@@ -88,7 +88,7 @@ struct fatfs_sb {
  * @return Returns a pointer to the inode.
  */
 #define get_inode_of_vnode(vn) \
-    (container_of(vn, struct fatfs_inode, in_vnode))
+    (containerof(vn, struct fatfs_inode, in_vnode))
 
 struct fatfs_sb ** fatfs_sb_arr;
 

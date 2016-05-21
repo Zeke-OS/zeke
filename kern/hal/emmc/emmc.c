@@ -1973,7 +1973,7 @@ static ssize_t sd_read(struct dev_info * dev, off_t offset, uint8_t * buf,
     const uint32_t block_no = (uint32_t)offset;
     int err;
 
-    edev = container_of(dev, struct emmc_block_dev, dev);
+    edev = containerof(dev, struct emmc_block_dev, dev);
 
     /* Check the status of the card */
     err = sd_ensure_data_mode(edev);
@@ -1995,7 +1995,7 @@ static ssize_t sd_write(struct dev_info * dev, off_t offset, uint8_t * buf,
     const uint32_t block_no = (uint32_t)offset;
     int err;
 
-    edev = container_of(dev, struct emmc_block_dev, dev);;
+    edev = containerof(dev, struct emmc_block_dev, dev);;
 
     /* Check the status of the card */
     err = sd_ensure_data_mode(edev);

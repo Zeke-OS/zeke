@@ -1,4 +1,5 @@
 /*-
+ * Copyright (c) 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1991, 1993
  *        The Regents of the University of California.  All rights reserved.
  *
@@ -310,7 +311,7 @@ struct {                                                                \
 
 #define        STAILQ_LAST(head, type, field)                                        \
         (STAILQ_EMPTY((head)) ? NULL :                                        \
-            __containerof((head)->stqh_last, struct type, field.stqe_next))
+            containerof((head)->stqh_last, struct type, field.stqe_next))
 
 #define        STAILQ_NEXT(elm, field)        ((elm)->field.stqe_next)
 
@@ -457,7 +458,7 @@ struct {                                                                \
 
 #define        LIST_PREV(elm, head, type, field)                                \
         ((elm)->field.le_prev == &LIST_FIRST((head)) ? NULL :                \
-            __containerof((elm)->field.le_prev, struct type, field.le_next))
+            containerof((elm)->field.le_prev, struct type, field.le_next))
 
 #define        LIST_REMOVE(elm, field) do {                                        \
         QMD_SAVELINK(oldnext, (elm)->field.le_next);                        \

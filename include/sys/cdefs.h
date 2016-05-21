@@ -489,21 +489,21 @@
 #define        __rangeof(type, start, end) \
         (__offsetof(type, end) - __offsetof(type, start))
 
-/*
+/**
+ * Returns a container of ptr, which is a element in some struct.
  * Given the pointer x to the member m of the struct s, return
  * a pointer to the containing structure.  When using GCC, we first
  * assign pointer x to a local variable, to check that its type is
  * compatible with member m.
+ * @param x is a pointer to a element in struct.
+ * @param s is the type of the container struct.
+ * @param m is the name of the ptr in container struct.
+ * @return Pointer to the container of ptr.
  */
-#if __GNUC_PREREQ__(3, 1)
-#define        __containerof(x, s, m) ({                                        \
-        const volatile __typeof(((s *)0)->m) *__x = (x);                \
-        __DEQUALIFY(s *, (const volatile char *)__x - __offsetof(s, m));\
+#define containerof(x, s, m) ({                             \
+        const volatile __typeof(((s *)0)->m) *__x = (x);    \
+        ((s *)((uint8_t *)(x) - offsetof(s, m)));           \
 })
-#else
-#define        __containerof(x, s, m)                                                \
-        __DEQUALIFY(s *, (const volatile char *)(x) - __offsetof(s, m))
-#endif
 
 /*
  * Compiler-dependent macros to declare that functions take printf-like

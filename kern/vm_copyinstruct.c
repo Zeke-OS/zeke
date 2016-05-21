@@ -5,7 +5,7 @@
  * @brief   vm copyinstruct() for copying structs from user space to kernel
  *          space.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -123,7 +123,7 @@ void freecpystruct(void * p)
     if (!p)
         return;
 
-    token = container_of(p, struct _cpyin_struct, data);
+    token = containerof(p, struct _cpyin_struct, data);
     STAILQ_FOREACH_SAFE(node, &token->gc_list, _entry, node_tmp) {
         kfree(node);
     }

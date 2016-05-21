@@ -29,7 +29,7 @@ static void teardown(void)
     struct rcu_cb * n;
 
     while ((n = rcu_slist_remove_head(&list_head))) {
-        kfree(container_of(n, struct data, rcu));
+        kfree(containerof(n, struct data, rcu));
     }
 }
 
@@ -79,7 +79,7 @@ static char * test_rcu_slist_insert_head_multi(void)
         if (i == 2) {
             ku_assert_ptr_equal("Tail ptr is valid", rp, &tail->rcu);
         }
-        kfree(container_of(rp, struct data, rcu));
+        kfree(containerof(rp, struct data, rcu));
     }
 
     return NULL;
@@ -110,7 +110,7 @@ static char * test_rcu_slist_insert_after(void)
         if (i == 2) {
             ku_assert_ptr_equal("n2 is in correct position", rp, &n2->rcu);
         }
-        kfree(container_of(rp, struct data, rcu));
+        kfree(containerof(rp, struct data, rcu));
     }
 
     return NULL;

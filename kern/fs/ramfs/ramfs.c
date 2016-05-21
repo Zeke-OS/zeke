@@ -152,7 +152,7 @@ static struct ramfs_dp get_dp_by_offset(ramfs_inode_t * inode, off_t offset);
  * @return Returns a pointer to the ramfs_sb ob of the sb.
  */
 #define get_rfsb_of_sb(_sb_) \
-    (container_of(_sb_, ramfs_sb_t, sb))
+    (containerof(_sb_, ramfs_sb_t, sb))
 
 /**
  * Get corresponding inode of given vnode.
@@ -160,7 +160,7 @@ static struct ramfs_dp get_dp_by_offset(ramfs_inode_t * inode, off_t offset);
  * @return Returns a pointer to the inode.
  */
 #define get_inode_of_vnode(vn) \
-    (container_of(vn, ramfs_inode_t, in_vnode))
+    (containerof(vn, ramfs_inode_t, in_vnode))
 
 /**
  * fs struct for ramfs.

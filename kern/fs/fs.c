@@ -530,7 +530,7 @@ int chkperm_vnode(vnode_t * vnode, struct cred * cred, int oflags)
  */
 static void fs_fildes_dtor(struct kobj * obj)
 {
-    file_t * file = container_of(obj, struct file, f_obj);
+    file_t * file = containerof(obj, struct file, f_obj);
     vnode_t * vn = file->vnode;
 
 #ifdef configFS_DEBUG

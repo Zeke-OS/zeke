@@ -723,11 +723,13 @@ static int ksignal_queue_sig(struct signals * sigs, int signum,
      * Get the associated thread.
      */
     switch (sigs->s_owner_type) {
+        struct proc_info * tmp;
     case SIGNALS_OWNER_PROCESS:
-        thread = container_of(sigs, struct proc_info, sigs)->main_thread;
+        tmp = containerof(sigs, struct proc_info, sigs);
+        thread = tmp->main_thread;
         break;
     case SIGNALS_OWNER_THREAD:
-        thread = container_of(sigs, struct thread_info, sigs);
+        thread = containerof(sigs, struct thread_info, sigs);
         break;
     default:
         panic("Invalid sigs owner type");

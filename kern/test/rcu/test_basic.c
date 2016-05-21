@@ -120,7 +120,7 @@ static char * test_rcu_synchronize(void)
 static void rcu_test_callback(struct rcu_cb * cb)
 {
     KERROR(KERROR_INFO, "RCU test callback called\n");
-    kfree(container_of(cb, struct data, rcu));
+    kfree(containerof(cb, struct data, rcu));
     KERROR(KERROR_INFO, "RCU test callback done\n");
 }
 

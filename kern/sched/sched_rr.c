@@ -51,7 +51,7 @@ struct sched_rr {
 
 static int rr_insert(struct scheduler * sobj, struct thread_info * thread)
 {
-    struct sched_rr * rr = container_of(sobj, struct sched_rr, sched);
+    struct sched_rr * rr = containerof(sobj, struct sched_rr, sched);
 
     if (!thread_test_polflag(thread, SCHED_POLFLAG_INRRRQ)) {
         TAILQ_INSERT_TAIL(&rr->runq_head, thread, RRRUNQ_ENTRY);
@@ -65,7 +65,7 @@ static int rr_insert(struct scheduler * sobj, struct thread_info * thread)
 
 static void rr_remove(struct scheduler * sobj, struct thread_info * thread)
 {
-    struct sched_rr * rr = container_of(sobj, struct sched_rr, sched);
+    struct sched_rr * rr = containerof(sobj, struct sched_rr, sched);
 
     if (thread_test_polflag(thread, SCHED_POLFLAG_INRRRQ)) {
         TAILQ_REMOVE(&rr->runq_head, thread, RRRUNQ_ENTRY);
@@ -104,7 +104,7 @@ static void rr_thread_act(struct scheduler * sobj, struct thread_info * thread)
 
 static struct thread_info * rr_schedule(struct scheduler * sobj)
 {
-    struct sched_rr * rr = container_of(sobj, struct sched_rr, sched);
+    struct sched_rr * rr = containerof(sobj, struct sched_rr, sched);
     struct thread_info * next;
     struct thread_info * tmp;
 
@@ -121,7 +121,7 @@ static struct thread_info * rr_schedule(struct scheduler * sobj)
 
 static unsigned get_nr_active(struct scheduler * sobj)
 {
-    struct sched_rr * rr = container_of(sobj, struct sched_rr, sched);
+    struct sched_rr * rr = containerof(sobj, struct sched_rr, sched);
 
     return rr->nr_active;
 }
