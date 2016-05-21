@@ -54,15 +54,6 @@
  */
 #define member_size(type, member) (sizeof(((type *)0)->member))
 
-#ifndef num_elem
-/**
- * Get number of elements in an array that is known at compile time.
- * @param x         is an array.
- * @return The number of elements in array.
- */
-#define num_elem(x) (sizeof(x) / sizeof(*(x)))
-#endif
-
 /* log_2 */
 #define NBITS2(n) ((n & 2) ? 1 : 0)
 #define NBITS4(n) ((n & (0xC)) ? (2 + NBITS2(n >> 2)) : (NBITS2(n)))

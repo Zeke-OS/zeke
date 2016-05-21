@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1991, 1993
  *        The Regents of the University of California.  All rights reserved.
  *
@@ -161,7 +161,9 @@
 #endif
 
 /**
- * This is needed in so many places that it's better to put here...
+ * Get number of elements in an array that is known at compile time.
+ * @param x         is an array.
+ * @return The number of elements in array.
  */
 #define num_elem(x) (sizeof(x) / sizeof(*(x)))
 
@@ -500,9 +502,9 @@
  * @param m is the name of the ptr in container struct.
  * @return Pointer to the container of ptr.
  */
-#define containerof(x, s, m) ({                             \
-        const volatile __typeof(((s *)0)->m) *__x = (x);    \
-        ((s *)((uint8_t *)(x) - offsetof(s, m)));           \
+#define containerof(x, s, m) ({                     \
+        const __typeof(((s *)0)->m) *__x = (x);     \
+        ((s *)((uint8_t *)(__x) - offsetof(s, m))); \
 })
 
 /*
