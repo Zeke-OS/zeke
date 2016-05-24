@@ -402,11 +402,6 @@ int thread_get_priority(pthread_t thread_id);
 void thread_die(intptr_t retval);
 
 /**
- * Exit from a kthread.
- */
-void kthread_die(void * retval);
-
-/**
  * Wait for thread to die or to be terminated.
  * @param thread_id is the thread id.
  * @param[out] retval returns the thread return value.

@@ -1177,6 +1177,38 @@ fail:
     return -1;
 }
 
+pthread_t kthread_create(struct sched_param * param, size_t stack_size,
+                         void * (*kthread_start)(void *), void * arg)
+{
+    pthread_t tid;
+
+    if (stack_size == 0)
+        stack_size = MMU_PGSIZE_COARSE;
+
+    struct buf * bp_stack = geteblk(stack_size);
+    if (!bp_stack) {
+        KERROR(KERROR_ERR, "Unable to allocate a stack for a new kthread\n");
+        return -ENOMEM;
+    }
+
+    struct _sched_pthread_create_args tdef = {
+        .param      = *param,
+        .stack_addr = (void *)bp_stack->b_data,
+        .stack_size = bp_stack->b_bcount,
+        .flags      = PTHREAD_CREATE_DETACHED,
+        .start      = kthread_start,
+        .arg1       = (uintptr_t)arg,
+        .del_thread = (void (*)(void *))(thread_die),
+    };
+
+    tid = thread_create(&tdef, THREAD_MODE_PRIV);
+    if (tid < 0) {
+        KERROR(KERROR_ERR, "Failed to create a kthread\n");
+    }
+
+    return tid;
+}
+
 static int sys_thread_die(__user void * user_args)
 {
     thread_die((intptr_t)user_args);
