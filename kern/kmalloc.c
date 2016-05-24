@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Generic kernel memory allocator.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -110,14 +110,16 @@ typedef struct mblock {
  */
 void * kmalloc_base;
 
-static mtx_t kmalloc_giant_lock;
+static mtx_t kmalloc_giant_lock = MTX_INITIALIZER(MTX_TYPE_TICKET, 0);
 
 /*
  * CB and data pointer array for lazy freeing data.
  * Lazy in this context means freeing data where there is no risk of deadlock.
  */
-static struct queue_cb lazy_free_queue;
 static uintptr_t lazy_free_queue_data[100];
+static struct queue_cb lazy_free_queue = QUEUE_INITIALIZER(lazy_free_queue_data,
+                                                           sizeof(uintptr_t),
+                                                           sizeof(lazy_free_queue_data));
 
 /**
  * Get pointer to a memory block descriptor by memory block pointer.
@@ -144,16 +146,6 @@ static void update_stat_down(size_t * stat_act, size_t amount);
 #if 0
 static void update_stat_set(size_t * stat_act, size_t value);
 #endif
-
-/*
- * This will be called before any other initializers.
- */
-void kmalloc_init(void)
-{
-    mtx_init(&kmalloc_giant_lock, MTX_TYPE_TICKET, 0);
-    lazy_free_queue = queue_create(lazy_free_queue_data, sizeof(uintptr_t),
-                                   sizeof(lazy_free_queue_data));
-}
 
 /**
  * Allocate more memory for kmalloc.

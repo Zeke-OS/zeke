@@ -71,7 +71,6 @@ int exec_init_array(void)
 {
     extern void kmem_init(void);
     extern void dynmem_init(void);
-    extern void kmalloc_init(void);
     extern void vralloc_init(void);
     int n;
 
@@ -84,7 +83,6 @@ int exec_init_array(void)
      */
     kmem_init();
     dynmem_init();
-    kmalloc_init();
     vralloc_init();
 
     kputs("SubsysInit\n");
