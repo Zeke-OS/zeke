@@ -291,6 +291,14 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
                         enum thread_mode thread_mode);
 
 /**
+ * Create a simple detached kernel thread.
+ * @param stack_size    selects the allocated stack size; If the value is zero
+ *                      then the default size is selected.
+ */
+pthread_t kthread_create(struct sched_param * param, size_t stack_size,
+                         void * (*kthread_start)(void *), void * arg);
+
+/**
  * Get pointer to a thread_info structure.
  * @param thread_id id of a thread.
  * @return Pointer to a thread_info structure of a correspondig thread id
@@ -392,6 +400,11 @@ int thread_get_priority(pthread_t thread_id);
  * @param retval is a return value from the thread.
  */
 void thread_die(intptr_t retval);
+
+/**
+ * Exit from a kthread.
+ */
+void kthread_die(void * retval);
 
 /**
  * Wait for thread to die or to be terminated.
