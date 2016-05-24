@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Thread-safe queue
  * @section LICENSE
- * Copyright (c) 2013, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013, 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -58,6 +58,15 @@ typedef struct queue_cb {
     size_t m_write; /*!< Write index. */
     size_t m_read;  /*!< Read index. */
 } queue_cb_t;
+
+#define QUEUE_INITIALIZER(data_array, block_size, array_size)   \
+    (struct queue_cb){                                          \
+        .data = (data_array),                                   \
+        .b_size = (block_size),                                 \
+        .a_len = (array_size / block_size),                     \
+        .m_write = 0,                                           \
+        .m_read = 0,                                            \
+        }
 
 /**
  * Create a new queue control block.
