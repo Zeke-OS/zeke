@@ -70,24 +70,11 @@ int __kinit__ shmem_init(void)
     /*
      * Create a thread for periodic syncing of mmap buffers.
      */
-
-    struct buf * bp_stack = geteblk(MMU_PGSIZE_COARSE);
-    if (!bp_stack) {
-        KERROR(KERROR_ERR, "Can't allocate a stack for shmem sync thread.");
-        return -ENOMEM;
-    }
-
-    struct _sched_pthread_create_args tdef_shmem = {
-        .param.sched_policy = SCHED_FIFO,
-        .param.sched_priority = NICE_DEF,
-        .stack_addr = (void *)bp_stack->b_data,
-        .stack_size = bp_stack->b_bcount,
-        .flags      = 0,
-        .start      = shmem_sync_thread,
-        .arg1       = 0,
+    struct sched_param param = {
+        .sched_policy = SCHED_FIFO,
+        .sched_priority = NICE_DEF,
     };
-
-    sync_thread_tid = thread_create(&tdef_shmem, THREAD_MODE_PRIV);
+    sync_thread_tid = kthread_create(&param, 0, shmem_sync_thread, NULL);
     if (sync_thread_tid < 0) {
         KERROR(KERROR_ERR, "Failed to create a thread for shmem sync");
         return sync_thread_tid;

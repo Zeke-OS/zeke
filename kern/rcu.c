@@ -191,23 +191,12 @@ int __kinit__ rcu_init(void)
     SUBSYS_DEP(proc_init);
     SUBSYS_INIT("rcu sync");
 
-    struct buf * bp_stack = geteblk(MMU_PGSIZE_COARSE);
-    if (!bp_stack) {
-        KERROR(KERROR_ERR, "Can't allocate a stack for rcu sync thread\n");
-        return -ENOMEM;
-    }
-
-    struct _sched_pthread_create_args tdef = {
-        .param.sched_policy = SCHED_OTHER,
-        .param.sched_priority = NICE_MAX,
-        .stack_addr = (void *)bp_stack->b_data,
-        .stack_size = bp_stack->b_bcount,
-        .flags      = 0,
-        .start      = rcu_sync_thread,
-        .arg1       = 0,
+    struct sched_param param = {
+        .sched_policy = SCHED_OTHER,
+        .sched_priority = NICE_MAX,
     };
 
-    rcu_sync_thread_tid = thread_create(&tdef, THREAD_MODE_PRIV);
+    rcu_sync_thread_tid = kthread_create(&param, 0, rcu_sync_thread, NULL);
     if (rcu_sync_thread_tid < 0) {
         KERROR(KERROR_ERR, "Failed to create a thread for rcu sync\n");
         return rcu_sync_thread_tid;

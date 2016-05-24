@@ -57,36 +57,17 @@ static void * rcu_reader_thread(void * arg)
     }
     rcu_read_unlock(&ctx);
 
-    /*
-     * FIXME For some reason thread_die() as a del_thread for kernel threads
-     * fails.
-     */
-    while (1) {
-        thread_sleep(10000);
-    }
     return NULL;
 }
 
 static pthread_t create_rcu_reader_thread(void)
 {
-    struct buf * bp_stack = geteblk(MMU_PGSIZE_COARSE);
-    if (!bp_stack) {
-        KERROR(KERROR_ERR, "Failed to allocate a stack\n");
-        return -ENOMEM;
-    }
-
-    struct _sched_pthread_create_args tdef = {
-        .param.sched_policy = SCHED_OTHER,
-        .param.sched_priority = NICE_DEF,
-        .stack_addr = (void *)bp_stack->b_data,
-        .stack_size = bp_stack->b_bcount,
-        .flags      = SCHED_DETACH_FLAG,
-        .start      = rcu_reader_thread,
-        .arg1       = 0,
-        .del_thread = (void (*)(void *))thread_die,
+    struct sched_param param = {
+        .sched_policy = SCHED_OTHER,
+        .sched_priority = NICE_DEF,
     };
 
-    pthread_t tid = thread_create(&tdef, THREAD_MODE_PRIV);
+    pthread_t tid = kthread_create(&param, 0, rcu_reader_thread, NULL);
     if (tid < 0) {
         KERROR(KERROR_ERR, "Failed to create a thread\n");
     }
@@ -112,7 +93,7 @@ static char * test_rcu_synchronize(void)
     rcu_synchronize();
     ku_assert_ptr_equal("gptr is valid", gptr, p2);
     kfree(p1);
-    thread_terminate(tid);
+    thread_terminate(tid); /* We must kill the kernel thread before we exit. */
 
     return NULL;
 }
