@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Kernel timers
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -57,19 +57,15 @@ struct timer_cb {
     uint64_t start;             /*!< Timer start value. */
 };
 
-static struct timer_cb timers_array[configTIMERS_MAX];
-#define VALID_TIMER_ID(x) ((x) < configTIMERS_MAX && (x) >= 0)
-
-int __kinit__ timers_init(void)
-{
-    SUBSYS_INIT("timers");
-
-    for (size_t i = 0; i < configTIMERS_MAX; i++) {
-        timers_array[i].flags = ATOMIC_INIT(0);
+static struct timer_cb timers_array[configTIMERS_MAX] = {
+    [0 ... (configTIMERS_MAX - 1)] = {
+        .flags = ATOMIC_INIT(0),
+        .event_fn = NULL,
+        .interval = 0,
+        .start = 0,
     }
-
-    return 0;
-}
+};
+#define VALID_TIMER_ID(x) ((x) < configTIMERS_MAX && (x) >= 0)
 
 void timers_run(void)
 {
