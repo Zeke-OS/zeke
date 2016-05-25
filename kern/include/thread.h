@@ -300,6 +300,8 @@ pthread_t kthread_create(struct sched_param * param, size_t stack_size,
 
 /**
  * Get pointer to a thread_info structure.
+ * @note struct thread_info pointer is guaranteed to be valid until next sleep,
+ * therefore a thread taking a pointer by using this function should not sleep.
  * @param thread_id id of a thread.
  * @return Pointer to a thread_info structure of a correspondig thread id
  *         or NULL if thread does not exist.
