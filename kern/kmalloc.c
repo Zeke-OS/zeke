@@ -375,6 +375,19 @@ void * kzalloc(size_t size)
     return p;
 }
 
+void * kzalloc_crit(size_t size)
+{
+    size_t * p;
+
+    p = kmalloc(size);
+    if (p) {
+        memset(p, 0, memalign(size));
+    } else {
+        panic("Critical memory allocation failed");
+    }
+    return p;
+}
+
 void kfree(void * p)
 {
     mblock_t * b;

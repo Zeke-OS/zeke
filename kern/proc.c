@@ -142,7 +142,7 @@ static void init_kernel_proc(void)
     struct proc_info * kernel_proc;
     int err;
 
-    (*_procarr)[0] = kzalloc(sizeof(struct proc_info));
+    (*_procarr)[0] = kzalloc_crit(sizeof(struct proc_info));
     kernel_proc = (*_procarr)[0];
 
     kernel_proc->pid = 0;
@@ -179,11 +179,8 @@ static void init_kernel_proc(void)
     /*
      * Copy region descriptors
      */
-    struct buf * kprocvm_code = kzalloc(sizeof(struct buf));
-    struct buf * kprocvm_heap = kzalloc(sizeof(struct buf));
-    if (!(kprocvm_code && kprocvm_heap)) {
-        panic(panic_msg);
-    }
+    struct buf * kprocvm_code = kzalloc_crit(sizeof(struct buf));
+    struct buf * kprocvm_heap = kzalloc_crit(sizeof(struct buf));
 
     kprocvm_code->b_mmu = mmu_region_kernel;
     kprocvm_code->b_bufsize = mmu_sizeof_region(&mmu_region_kernel);
@@ -238,7 +235,7 @@ static void init_kernel_proc(void)
     kernel_proc->files->fd[STDIN_FILENO] = NULL;
     /* stderr */
 #ifdef configKLOGGER
-    kernel_proc->files->fd[STDERR_FILENO] = kzalloc(sizeof(file_t));
+    kernel_proc->files->fd[STDERR_FILENO] = kzalloc_crit(sizeof(file_t));
     if (fs_fildes_set(kernel_proc->files->fd[STDERR_FILENO],
                       &kerror_vnode, O_WRONLY)) {
         panic(panic_msg);

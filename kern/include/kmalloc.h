@@ -77,6 +77,16 @@ void * kcalloc(size_t nelem, size_t elsize);
 void * kzalloc(size_t size);
 
 /**
+ * Critical memory allocation.
+ * The allocated block is zero-initialized.
+ * If allocation fails the function will panic instead of returning a NULL
+ * pointer.
+ * @param size is the size of the new memory block in bytes.
+ * @return A pointer to the memory block allocated.
+ */
+void * kzalloc_crit(size_t size);
+
+/**
  * Deallocate a memory block.
  * Deallocates a memory block previously allocted with kmalloc, kcalloc or
  * krealloc.

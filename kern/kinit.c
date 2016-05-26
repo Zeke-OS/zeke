@@ -143,10 +143,7 @@ static void mount_tmp_rootfs(void)
     proc_unref(kernel_proc);
 
     /* Root dir */
-    tmp = kmalloc(sizeof(vnode_t));
-    if (!tmp) {
-        panic(failed);
-    }
+    tmp = kzalloc_crit(sizeof(vnode_t));
     kernel_proc->croot = tmp;
     kernel_proc->croot->vn_next_mountpoint = kernel_proc->croot;
     kernel_proc->croot->vn_prev_mountpoint = kernel_proc->croot;
