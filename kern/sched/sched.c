@@ -295,15 +295,10 @@ static void sched_calc_loads(void)
         CALC_LOAD(loadavg[2], FEXP_15, active_threads);
 
         rwlock_wrunlock(&loadavg_lock);
-
-        /*
-         * On the following lines we cheat a little bit to get the write lock
-         * faster. This should be ok as long as we know that this function is
-         * the only one trying to write.
-         */
-        loadavg_lock.wr_waiting = 0;
-    } else if (loadavg_lock.wr_waiting == 0) {
-        loadavg_lock.wr_waiting = 1;
+        rwlock_wrunwait(&loadavg_lock);
+    } else {
+        /* Mark that we are waiting for a write turn. */
+        rwlock_wrwait(&loadavg_lock);
     }
 }
 DATA_SET(post_sched_tasks, sched_calc_loads);

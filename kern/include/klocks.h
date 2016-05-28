@@ -5,7 +5,7 @@
  *
  * @brief   -
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1997 Berkeley Software Design, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -180,7 +180,7 @@ int mtx_test(mtx_t * mtx);
  */
 
 /**
- * RW Lock.
+ * RW Lock descriptor.
  */
 typedef struct rwlock {
     int state; /*!< Lock state. 0 = no lock, -1 = wrlock and 0 < rdlock. */
@@ -191,7 +191,7 @@ typedef struct rwlock {
 /* Rwlock functions */
 
 /**
- * Initialize rwlock object.
+ * Initialize an rwlock object.
  * @param l is the rwlock.
  */
 void rwlock_init(rwlock_t * l);
@@ -208,6 +208,19 @@ void rwlock_wrlock(rwlock_t * l);
  * @return Returns 0 if lock achieved; Otherwise value other than zero.
  */
 int rwlock_trywrlock(rwlock_t * l);
+
+/**
+ * Async wait for the write turn on an rwlock.
+ * Mark the rwlock as waiting for write lock.
+ * @note Only one writer can use this function properly.
+ */
+void rwlock_wrwait(rwlock_t * l);
+
+/**
+ * Remove the waiting status from an rwlock.
+ * @note Only one writer can use this function properly.
+ */
+void rwlock_wrunwait(rwlock_t * l);
 
 /**
  * Release write lock.

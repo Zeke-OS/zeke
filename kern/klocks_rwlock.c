@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Kernel space locks.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,10 +31,11 @@
  */
 
 #include <errno.h>
-#include <kstring.h>
+#include <hal/core.h>
 #include <kerror.h>
-#include <thread.h>
 #include <klocks.h>
+#include <kstring.h>
+#include <thread.h>
 
 void rwlock_init(rwlock_t * l)
 {
@@ -85,6 +86,19 @@ int rwlock_trywrlock(rwlock_t * l)
 
 out:
     return retval;
+}
+
+void rwlock_wrwait(rwlock_t * l)
+{
+    cpu_wmb();
+    if (l->wr_waiting == 0)
+        l->wr_waiting = 1;
+}
+
+void rwlock_wrunwait(rwlock_t * l)
+{
+    cpu_wmb();
+    l->wr_waiting = 0;
 }
 
 void rwlock_wrunlock(rwlock_t * l)
