@@ -70,7 +70,7 @@ extern void * __bss_break __attribute__((weak));
  * Protects proc array, data structures and variables in proc.
  * This should be only touched by using macros defined in proc.h file.
  */
-mtx_t proclock;
+mtx_t proclock = MTX_INITIALIZER(MTX_TYPE_SPIN, MTX_OPT_DINT);
 
 static const char * const proc_state_names[] = {
     "PROC_STATE_INITIAL",
@@ -97,7 +97,6 @@ int __kinit__ proc_init(void)
 
     int err;
 
-    PROC_LOCK_INIT();
     err = procarr_realloc();
     if (err) /* This is a critical failure so we just panic. */
         panic("proc initialization failed");
