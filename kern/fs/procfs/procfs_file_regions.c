@@ -39,7 +39,7 @@
 #include <fs/fs.h>
 #include <fs/procfs.h>
 
-static struct procfs_stream * procfs_read_regions(struct procfs_info * spec)
+static struct procfs_stream * read_regions(const struct procfs_info * spec)
 {
     struct procfs_stream * stream;
     const size_t maxline = 30;
@@ -97,7 +97,7 @@ static struct procfs_stream * procfs_read_regions(struct procfs_info * spec)
 static struct procfs_file procfs_file_regions = {
     .filetype = PROCFS_REGIONS,
     .filename = "regions",
-    .readfn = procfs_read_regions,
+    .readfn = read_regions,
     .writefn = NULL,
 };
 DATA_SET(procfs_files, procfs_file_regions);

@@ -45,6 +45,9 @@
 #include <libkern.h>
 #include <proc.h>
 
+#define PROCFS_GET_FILESPEC(_file_) \
+    ((struct procfs_info *)(_file_)->vnode->vn_specinfo)
+
 static int procfs_mount(const char * source, uint32_t mode,
                         const char * parm, int parm_len,
                         struct fs_superblock ** sb);
@@ -82,9 +85,9 @@ static procfs_readfn_t ** procfs_read_funcs;
 static procfs_writefn_t ** procfs_write_funcs;
 
 /**
- * Initialize procfs files.
+ * Initialize permanently existing procfs files.
  */
-static int init_files(void)
+static int init_permanent_files(void)
 {
     struct procfs_file ** file;
 
@@ -133,7 +136,7 @@ int __kinit__ procfs_init(void)
     vn_procfs->sb->umount = procfs_umount;
     fs_register(&procfs_fs);
 
-    err = init_files();
+    err = init_permanent_files();
     if (err)
         return err;
 
@@ -162,13 +165,12 @@ static int procfs_umount(struct fs_superblock * fs_sb)
  */
 static ssize_t procfs_read(file_t * file, struct uio * uio, size_t bcount)
 {
-    struct procfs_info * spec;
+    const struct procfs_info * spec = PROCFS_GET_FILESPEC(file);
     struct procfs_stream * stream;
     void * vbuf;
     ssize_t bytes;
     int err;
 
-    spec = (struct procfs_info *)file->vnode->vn_specinfo;
     if (!spec || spec->ftype > PROCFS_LAST || !file->stream)
         return -EIO;
 
@@ -199,12 +201,11 @@ static ssize_t procfs_read(file_t * file, struct uio * uio, size_t bcount)
  */
 static ssize_t procfs_write(file_t * file, struct uio * uio, size_t bcount)
 {
-    struct procfs_info * spec;
+    const struct procfs_info * spec = PROCFS_GET_FILESPEC(file);
     procfs_writefn_t * fn;
     void * vbuf;
     int err;
 
-    spec = (struct procfs_info *)file->vnode->vn_specinfo;
     if (!spec)
         return -EIO;
 
@@ -224,10 +225,9 @@ static ssize_t procfs_write(file_t * file, struct uio * uio, size_t bcount)
 
 static void procfs_event_fd_created(struct proc_info * p, file_t * file)
 {
-    struct procfs_info * spec;
+    const struct procfs_info * spec = PROCFS_GET_FILESPEC(file);
     procfs_readfn_t * fn;
 
-    spec = (struct procfs_info *)file->vnode->vn_specinfo;
     if (!spec || spec->ftype > PROCFS_LAST)
         return;
 

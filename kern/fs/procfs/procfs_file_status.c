@@ -62,7 +62,7 @@ out:
     return ctty;
 }
 
-static struct procfs_stream * procfs_read_status(struct procfs_info * spec)
+static struct procfs_stream * read_status(const struct procfs_info * spec)
 {
     struct procfs_stream * stream;
     ssize_t bytes;
@@ -111,7 +111,7 @@ static struct procfs_stream * procfs_read_status(struct procfs_info * spec)
 static struct procfs_file procfs_file_status = {
     .filetype = PROCFS_STATUS,
     .filename = "status",
-    .readfn = procfs_read_status,
+    .readfn = read_status,
     .writefn = NULL,
 };
 DATA_SET(procfs_files, procfs_file_status);

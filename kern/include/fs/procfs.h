@@ -94,9 +94,9 @@ struct procfs_stream {
  * One per file type.
  * @param[in] spec is the procfs specinfo for the file.
  */
-typedef struct procfs_stream * procfs_readfn_t(struct procfs_info * spec);
+typedef struct procfs_stream * procfs_readfn_t(const struct procfs_info * spec);
 
-typedef ssize_t procfs_writefn_t(struct procfs_info * spec,
+typedef ssize_t procfs_writefn_t(const struct procfs_info * spec,
                                  struct procfs_stream * stream);
 
 struct procfs_file {

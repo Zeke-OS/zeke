@@ -38,7 +38,7 @@
 #include <fs/fs_util.h>
 #include <fs/procfs.h>
 
-static struct procfs_stream * procfs_read_mounts(struct procfs_info * spec)
+static struct procfs_stream * read_mounts(const struct procfs_info * spec)
 {
     struct procfs_stream * stream;
     fs_t * fs;
@@ -81,7 +81,7 @@ static struct procfs_stream * procfs_read_mounts(struct procfs_info * spec)
 static struct procfs_file procfs_file_mounts = {
     .filetype = PROCFS_MOUNTS,
     .filename = "mounts",
-    .readfn = procfs_read_mounts,
+    .readfn = read_mounts,
     .writefn = NULL,
 };
 DATA_SET(procfs_files, procfs_file_mounts);
