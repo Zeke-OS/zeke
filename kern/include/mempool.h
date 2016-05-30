@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    procfs_specinfo_pool.h
+ * @file    mempool.h
  * @author  Olli Vanhoja
- * @brief   Pooling for per process procfs specinfo structs.
+ * @brief   A simple memory pooler.
  * @section LICENSE
  * Copyright (c) 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,7 +30,33 @@
  *******************************************************************************
  */
 
+/**
+ * @addtogroup mempool
+ * @{
+ */
 
-void procfs_specinfo_pool_init(void);
-struct procfs_info * procfs_specinfo_pool_get(void);
-void procfs_specinfo_pool_return(struct procfs_info * info);
+#pragma once
+#ifndef MEMPOOL_H
+#define MEMPOOL_H
+
+#include <stddef.h>
+#include <klocks.h>
+#include <queue_r.h>
+
+struct mempool {
+    size_t bsize;
+    struct queue_cb head;
+    mtx_t lock;
+    uint8_t pool[0];
+};
+
+struct mempool * mempool_init(size_t bsize, unsigned count);
+void mempool_destroy(struct mempool * mp);
+void * mempool_get(struct mempool * mp);
+void mempool_return(struct mempool * mp, void * p);
+
+#endif /* MEMPOOL_H */
+
+/**
+ * @}
+ */

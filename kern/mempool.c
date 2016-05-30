@@ -1,8 +1,8 @@
 /**
  *******************************************************************************
- * @file    procfs_specinfo_pool.c
+ * @file    mempool.c
  * @author  Olli Vanhoja
- * @brief   Pooling for per process procfs specinfo structs.
+ * @brief   A simple memory pooler.
  * @section LICENSE
  * Copyright (c) 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -30,59 +30,69 @@
  *******************************************************************************
  */
 
-#include <fs/procfs.h>
 #include <kmalloc.h>
-#include <queue_r.h>
-#include <klocks.h>
-#include "procfs_specinfo_pool.h"
+#include <mempool.h>
 
-#define SPECINFO_POOL_SIZE (configMAXPROC / 2)
-
-static struct procfs_info * pool;
-static struct queue_cb head;
-static mtx_t pool_lock = MTX_INITIALIZER(MTX_TYPE_TICKET, 0);
-
-void procfs_specinfo_pool_init(void)
+struct mempool * mempool_init(size_t bsize, unsigned count)
 {
-    const size_t pool_bsize = SPECINFO_POOL_SIZE * sizeof(struct procfs_info *);
+    struct mempool * mp;
+    const size_t pool_bsize = count * sizeof(void *);
 
-    pool = kzalloc_crit(pool_bsize);
-    head = queue_create(pool, sizeof(struct procfs_info *), pool_bsize);
+    mp = kzalloc(sizeof(struct mempool) + pool_bsize);
+    if (!mp)
+        return NULL;
 
-    for (int i = 0; i < SPECINFO_POOL_SIZE; i++) {
-        struct procfs_info * info;
+    mp->bsize = bsize;
+    mp->head = queue_create(&mp->pool, sizeof(void *), pool_bsize);
+    mtx_init(&mp->lock, MTX_TYPE_TICKET, 0);
 
-        info = kzalloc(sizeof(struct procfs_info));
-        if (!info)
-            return;
+    for (unsigned i = 0; i < count; i++) {
+        void * elem = kzalloc(bsize);
+        if (!elem) {
+            mempool_destroy(mp);
+            return NULL;
+        }
 
-        queue_push(&head, &info);
+        queue_push(&mp->head, &elem);
     }
+
+    return mp;
 }
 
-struct procfs_info * procfs_specinfo_pool_get(void)
+void mempool_destroy(struct mempool * mp)
 {
-    struct procfs_info * info;
+    void * elem;
+
+    /* No need to lock */
+    while (queue_pop(&mp->head, &elem)) {
+        kfree(elem);
+    }
+    kfree(mp);
+}
+
+void * mempool_get(struct mempool * mp)
+{
+    void * elem;
     int retval;
 
-    mtx_lock(&pool_lock);
-    retval = queue_pop(&head, &info);
-    mtx_unlock(&pool_lock);
+    mtx_lock(&mp->lock);
+    retval = queue_pop(&mp->head, &elem);
+    mtx_unlock(&mp->lock);
 
     if (retval == 0)
-        info = kzalloc(sizeof(struct procfs_info));
+        elem = kzalloc(mp->bsize);
 
-    return info;
+    return elem;
 }
 
-void procfs_specinfo_pool_return(struct procfs_info * info)
+void mempool_return(struct mempool * mp, void * p)
 {
     int retval;
 
-    mtx_lock(&pool_lock);
-    retval = queue_push(&head, &info);
-    mtx_unlock(&pool_lock);
+    mtx_lock(&mp->lock);
+    retval = queue_push(&mp->head, &p);
+    mtx_unlock(&mp->lock);
     if (retval == 0) {
-        kfree(info);
+        kfree(p);
     }
 }

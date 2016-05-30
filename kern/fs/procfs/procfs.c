@@ -43,8 +43,8 @@
 #include <kmalloc.h>
 #include <kstring.h>
 #include <libkern.h>
+#include <mempool.h>
 #include <proc.h>
-#include "procfs_specinfo_pool.h"
 
 #define PROCFS_GET_FILESPEC(_file_) \
     ((struct procfs_info *)(_file_)->vnode->vn_specinfo)
@@ -81,6 +81,8 @@ static fs_t procfs_fs = {
  * There is only one procfs, but it can be mounted multiple times.
  */
 static vnode_t * vn_procfs;
+
+static struct mempool * specinfo_pool;
 
 SET_DECLARE(procfs_files, struct procfs_file);
 static procfs_readfn_t ** procfs_read_funcs;
@@ -122,7 +124,9 @@ int __kinit__ procfs_init(void)
     SUBSYS_DEP(ramfs_init);
     SUBSYS_INIT("procfs");
 
-    procfs_specinfo_pool_init();
+    specinfo_pool = mempool_init(sizeof(struct procfs_info), configMAXPROC / 2);
+    if (!specinfo_pool)
+        return -ENOMEM;
 
     FS_GIANT_INIT(&procfs_fs.fs_giant);
 
@@ -250,7 +254,7 @@ static void procfs_event_fd_closed(struct proc_info * p, file_t * file)
 
 static int procfs_delete_vnode(vnode_t * vnode)
 {
-    procfs_specinfo_pool_return(vnode->vn_specinfo);
+    mempool_return(specinfo_pool, vnode->vn_specinfo);
     return ramfs_delete_vnode(vnode);
 }
 
@@ -390,7 +394,7 @@ static int create_proc_file(vnode_t * pdir, pid_t pid, const char * filename,
 
     KASSERT(pdir != NULL, "pdir must be set");
 
-    spec = procfs_specinfo_pool_get();
+    spec = mempool_get(specinfo_pool);
     if (!spec)
         return -ENOMEM;
 
@@ -401,7 +405,7 @@ static int create_proc_file(vnode_t * pdir, pid_t pid, const char * filename,
     err = pdir->vnode_ops->mknod(pdir, filename, S_IFREG | PROCFS_PERMS, spec,
                                  &vn);
     if (err) {
-        procfs_specinfo_pool_return(spec);
+        mempool_return(specinfo_pool, spec);
         return -ENOTDIR;
     }
 

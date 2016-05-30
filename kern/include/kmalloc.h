@@ -37,7 +37,7 @@
  * need to be directly accessible from used space at any point. This includes
  * eg. process control blocks, file system control blocks and cached data,
  * thread control etc.
- * @}
+ * @{
  */
 
 #pragma once
