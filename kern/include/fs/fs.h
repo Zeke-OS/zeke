@@ -375,17 +375,6 @@ typedef struct vnode_ops {
      * @param file  is the file that was closed by p.
      */
     void (*event_fd_closed)(struct proc_info * p, file_t * file);
-    /**
-     * Vnode delete callback.
-     * This function is called whenever a vnode is deleted from the filesystem.
-     * This callback must be called by the underlying file system implementation
-     * if the feature is supported. This callback is is only called on the final
-     * unlink in case there was multiple hard-links to the vnode, therefore
-     * it should be called by the superblock delete function.
-     *
-     * An example of the usage is freeing specinfo data on vnode deletion.
-     */
-    void (*event_vnode_delete)(vnode_t * vnode);
     /* Directory file operations
      * ------------------------- */
     /**
@@ -850,7 +839,6 @@ int fs_enotsup_ioctl(file_t * file, unsigned request, void * arg,
 int fs_enotsup_event_vnode_opened(struct proc_info * p, vnode_t * vnode);
 void fs_enotsup_event_fd_created(struct proc_info * p, file_t * file);
 void fs_enotsup_event_fd_closed(struct proc_info * p, file_t * file);
-void fs_enotsup_event_vnode_delete(vnode_t * vnode);
 int fs_enotsup_create(vnode_t * dir, const char * name, mode_t mode,
                       vnode_t ** result);
 int fs_enotsup_mknod(vnode_t * dir, const char * name, int mode,

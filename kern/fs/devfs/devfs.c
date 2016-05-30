@@ -83,8 +83,6 @@ static int devfs_delete_vnode(vnode_t * vnode);
 
 int __kinit__ devfs_init(void)
 {
-    struct fs_superblock * sb;
-
     SUBSYS_DEP(ramfs_init);
     SUBSYS_INIT("devfs");
 
@@ -103,7 +101,7 @@ int __kinit__ devfs_init(void)
      * as sb struct is always a fresh struct so altering it
      * doesn't really break functionality for anyone else than us.
      */
-    sb = vn_devfs->sb;
+    struct fs_superblock * sb = vn_devfs->sb;
     sb->delete_vnode = devfs_delete_vnode;
     sb->umount = devfs_umount;
 
@@ -169,13 +167,10 @@ void destroy_dev(vnode_t * vn)
 static int devfs_delete_vnode(vnode_t * vnode)
 {
     struct dev_info * devnfo = (struct dev_info *)vnode->vn_specinfo;
-    int err;
 
     if (devnfo->delete_vnode_callback)
         devnfo->delete_vnode_callback(devnfo);
-    err = ramfs_delete_vnode(vnode);
-
-    return err;
+    return ramfs_delete_vnode(vnode);
 }
 
 static void devfs_event_fd_created(struct proc_info * p, file_t * file)

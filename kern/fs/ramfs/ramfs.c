@@ -374,13 +374,6 @@ int ramfs_delete_vnode(vnode_t * vnode)
 
     KASSERT(inode != NULL, "inode should be set");
 
-    /*
-     * Call the vnode delete callback function, ramfs doesn't support it but
-     * file systems inheriting ramfs are allowed to use the callback for
-     * cleanup.
-     */
-    vnode->vnode_ops->event_vnode_delete(vnode);
-
 #ifdef configRAMFS_DEBUG
     FS_KERROR_VNODE(KERROR_DEBUG, vnode, "%s(%u)\n",
                     __func__, (unsigned)vnode->vn_num);
