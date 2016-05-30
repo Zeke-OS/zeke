@@ -657,7 +657,9 @@ int ramfs_unlink(vnode_t * dir, const char * name)
     rwlock_wrunlock(&inode_dir->in_lock);
     vrele_nunlink(vn);
     if (inode->in_nlink <= 0) {
-        ramfs_delete_vnode(vn);
+        struct fs_superblock * sb = vn->sb;
+
+        sb->delete_vnode(vn);
     }
 
     return 0;
