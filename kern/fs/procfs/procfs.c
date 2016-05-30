@@ -57,7 +57,7 @@ static ssize_t procfs_read(file_t * file, struct uio * uio, size_t bcount);
 static ssize_t procfs_write(file_t * file, struct uio * uio, size_t bcount);
 static void procfs_event_fd_created(struct proc_info * p, file_t * file);
 static void procfs_event_fd_closed(struct proc_info * p, file_t * file);
-static void procfs_event_vnode_unlink(vnode_t * vnode);
+static void procfs_event_vnode_delete(vnode_t * vnode);
 static int procfs_updatedir(vnode_t * dir);
 static int create_proc_file(vnode_t * pdir, pid_t pid, const char * filename,
                             enum procfs_filetype ftype);
@@ -68,7 +68,7 @@ static vnode_ops_t procfs_vnode_ops = {
     .write = procfs_write,
     .event_fd_created = procfs_event_fd_created,
     .event_fd_closed = procfs_event_fd_closed,
-    .event_vnode_unlink = procfs_event_vnode_unlink,
+    .event_vnode_delete = procfs_event_vnode_delete,
 };
 
 static fs_t procfs_fs = {
@@ -246,7 +246,7 @@ static void procfs_event_fd_closed(struct proc_info * p, file_t * file)
     kfree(file->stream);
 }
 
-static void procfs_event_vnode_unlink(vnode_t * vnode)
+static void procfs_event_vnode_delete(vnode_t * vnode)
 {
     procfs_specinfo_pool_return(vnode->vn_specinfo);
 }

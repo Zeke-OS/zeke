@@ -368,13 +368,18 @@ int ramfs_get_vnode(struct fs_superblock * sb, ino_t * vnode_num,
 
 int ramfs_delete_vnode(vnode_t * vnode)
 {
-    ramfs_inode_t * inode;
+    ramfs_inode_t * inode = get_inode_of_vnode(vnode);
     vnode_t * vn_tmp;
     int refcount;
 
-    inode = get_inode_of_vnode(vnode);
-
     KASSERT(inode != NULL, "inode should be set");
+
+    /*
+     * Call the vnode delete callback function, ramfs doesn't support it but
+     * file systems inheriting ramfs are allowed to use the callback for
+     * cleanup.
+     */
+    vnode->vnode_ops->event_vnode_delete(vnode);
 
 #ifdef configRAMFS_DEBUG
     FS_KERROR_VNODE(KERROR_DEBUG, vnode, "%s(%u)\n",
@@ -659,13 +664,6 @@ int ramfs_unlink(vnode_t * dir, const char * name)
     rwlock_wrunlock(&inode_dir->in_lock);
     vrele_nunlink(vn);
     if (inode->in_nlink <= 0) {
-        /*
-         * Call the vnode unlink callback function, ramfs doesn't support it but
-         * file systems inheriting ramfs are allowed to use the callback for
-         * cleanup.
-         */
-        vn->vnode_ops->event_vnode_unlink(vn);
-
         ramfs_delete_vnode(vn);
     }
 

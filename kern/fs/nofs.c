@@ -46,7 +46,7 @@ const vnode_ops_t nofs_vnode_ops = {
     .event_vnode_opened = fs_enotsup_event_vnode_opened,
     .event_fd_created = fs_enotsup_event_fd_created,
     .event_fd_closed = fs_enotsup_event_fd_closed,
-    .event_vnode_unlink = fs_enotsup_event_vnode_unlink,
+    .event_vnode_delete = fs_enotsup_event_vnode_delete,
     .create = fs_enotsup_create,
     .mknod = fs_enotsup_mknod,
     .lookup = fs_enotsup_lookup,
@@ -134,7 +134,7 @@ void fs_enotsup_event_fd_closed(struct proc_info * p, file_t * file)
 {
 }
 
-void fs_enotsup_event_vnode_unlink(vnode_t * vnode)
+void fs_enotsup_event_vnode_delete(vnode_t * vnode)
 {
 }
 
