@@ -38,13 +38,17 @@
 
 #define SPECINFO_POOL_SIZE (configMAXPROC / 2)
 
-struct procfs_info pool[SPECINFO_POOL_SIZE];
-struct queue_cb head = QUEUE_INITIALIZER(pool, sizeof(struct procfs_info *),
-                                         sizeof(pool));
-mtx_t pool_lock = MTX_INITIALIZER(MTX_TYPE_TICKET, 0);
+static struct procfs_info * pool;
+static struct queue_cb head;
+static mtx_t pool_lock = MTX_INITIALIZER(MTX_TYPE_TICKET, 0);
 
 void procfs_specinfo_pool_init(void)
 {
+    const size_t pool_bsize = SPECINFO_POOL_SIZE * sizeof(struct procfs_info *);
+
+    pool = kzalloc_crit(pool_bsize);
+    head = queue_create(pool, sizeof(struct procfs_info *), pool_bsize);
+
     for (int i = 0; i < SPECINFO_POOL_SIZE; i++) {
         struct procfs_info * info;
 
