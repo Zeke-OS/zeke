@@ -365,9 +365,9 @@ typedef struct vnode_ops {
      * is called before actual file descriptor close operation is commited,
      * allowing fs driver to access fd for the last time.
      *
-     * We don't likr file opening and closing because we believe a file system
-     * is a database like thing not a damn tape drive. Reason to have these
-     * functions is mainly to handle TTY connections nicely.
+     * We don't like file opening and closing because we believe a file system
+     * is a database like thing not a damn tape drive. Reason to have these fd
+     * event callback functions is mainly to handle TTY connections nicely.
      * @note Process closing a file might not be the only process helding
      *       a reference to the file.
      * @param p     is the process that called fs_fildes_close_curproc() for
@@ -375,6 +375,14 @@ typedef struct vnode_ops {
      * @param file  is the file that was closed by p.
      */
     void (*event_fd_closed)(struct proc_info * p, file_t * file);
+    /**
+     * Vnode unlink callback.
+     * This function is called whenever a vnode is unlinked from the filesystem.
+     * This callback must be called by the underlying file system implementation
+     * if the feature is supported. This callback is is only called on the final
+     * unlink in case there was multiple hard-links to the vnode.
+     */
+    void (*event_vnode_unlink)(vnode_t * vnode);
     /* Directory file operations
      * ------------------------- */
     /**
@@ -839,6 +847,7 @@ int fs_enotsup_ioctl(file_t * file, unsigned request, void * arg,
 int fs_enotsup_event_vnode_opened(struct proc_info * p, vnode_t * vnode);
 void fs_enotsup_event_fd_created(struct proc_info * p, file_t * file);
 void fs_enotsup_event_fd_closed(struct proc_info * p, file_t * file);
+void fs_enotsup_event_vnode_unlink(vnode_t * vnode);
 int fs_enotsup_create(vnode_t * dir, const char * name, mode_t mode,
                       vnode_t ** result);
 int fs_enotsup_mknod(vnode_t * dir, const char * name, int mode,

@@ -44,6 +44,7 @@
 #include <kstring.h>
 #include <libkern.h>
 #include <proc.h>
+#include "procfs_specinfo_pool.h"
 
 #define PROCFS_GET_FILESPEC(_file_) \
     ((struct procfs_info *)(_file_)->vnode->vn_specinfo)
@@ -56,6 +57,7 @@ static ssize_t procfs_read(file_t * file, struct uio * uio, size_t bcount);
 static ssize_t procfs_write(file_t * file, struct uio * uio, size_t bcount);
 static void procfs_event_fd_created(struct proc_info * p, file_t * file);
 static void procfs_event_fd_closed(struct proc_info * p, file_t * file);
+static void procfs_event_vnode_unlink(vnode_t * vnode);
 static int procfs_updatedir(vnode_t * dir);
 static int create_proc_file(vnode_t * pdir, pid_t pid, const char * filename,
                             enum procfs_filetype ftype);
@@ -66,6 +68,7 @@ static vnode_ops_t procfs_vnode_ops = {
     .write = procfs_write,
     .event_fd_created = procfs_event_fd_created,
     .event_fd_closed = procfs_event_fd_closed,
+    .event_vnode_unlink = procfs_event_vnode_unlink,
 };
 
 static fs_t procfs_fs = {
@@ -120,7 +123,7 @@ int __kinit__ procfs_init(void)
     SUBSYS_DEP(ramfs_init);
     SUBSYS_INIT("procfs");
 
-    int err;
+    procfs_specinfo_pool_init();
 
     FS_GIANT_INIT(&procfs_fs.fs_giant);
 
@@ -136,7 +139,7 @@ int __kinit__ procfs_init(void)
     vn_procfs->sb->umount = procfs_umount;
     fs_register(&procfs_fs);
 
-    err = init_permanent_files();
+    int err = init_permanent_files();
     if (err)
         return err;
 
@@ -241,6 +244,11 @@ static void procfs_event_fd_created(struct proc_info * p, file_t * file)
 static void procfs_event_fd_closed(struct proc_info * p, file_t * file)
 {
     kfree(file->stream);
+}
+
+static void procfs_event_vnode_unlink(vnode_t * vnode)
+{
+    procfs_specinfo_pool_return(vnode->vn_specinfo);
 }
 
 static int procfs_updatedir(vnode_t * dir)
@@ -379,7 +387,7 @@ static int create_proc_file(vnode_t * pdir, pid_t pid, const char * filename,
 
     KASSERT(pdir != NULL, "pdir must be set");
 
-    spec = kzalloc(sizeof(struct procfs_info));
+    spec = procfs_specinfo_pool_get();
     if (!spec)
         return -ENOMEM;
 
@@ -390,7 +398,7 @@ static int create_proc_file(vnode_t * pdir, pid_t pid, const char * filename,
     err = pdir->vnode_ops->mknod(pdir, filename, S_IFREG | PROCFS_PERMS, spec,
                                  &vn);
     if (err) {
-        kfree(spec);
+        procfs_specinfo_pool_return(spec);
         return -ENOTDIR;
     }
 

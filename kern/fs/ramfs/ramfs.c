@@ -658,8 +658,16 @@ int ramfs_unlink(vnode_t * dir, const char * name)
     inode->in_nlink--; /* Decrement the hard link count. */
     rwlock_wrunlock(&inode_dir->in_lock);
     vrele_nunlink(vn);
-    if (inode->in_nlink <= 0)
+    if (inode->in_nlink <= 0) {
+        /*
+         * Call the vnode unlink callback function, ramfs doesn't support it but
+         * file systems inheriting ramfs are allowed to use the callback for
+         * cleanup.
+         */
+        vn->vnode_ops->event_vnode_unlink(vn);
+
         ramfs_delete_vnode(vn);
+    }
 
     return 0;
 }
