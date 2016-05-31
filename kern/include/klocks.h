@@ -44,11 +44,9 @@
 
 #include <sys/types_pthread.h>
 #include <machine/atomic.h>
+#include <hal/core.h>
 #ifdef configLOCK_DEBUG
 #include <kerror.h>
-#endif
-#ifdef configMP
-#include <hal/core.h>
 #endif
 
 /**
@@ -169,7 +167,10 @@ void mtx_unlock(mtx_t * mtx);
  * Test if locked.
  * @param mtx is a mutex struct.
  */
-int mtx_test(mtx_t * mtx);
+static inline int mtx_test(mtx_t * mtx)
+{
+    return (atomic_read(&mtx->mtx_lock) != 0);
+}
 
 /**
  * @}

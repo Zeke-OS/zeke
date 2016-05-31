@@ -280,8 +280,3 @@ void mtx_unlock(mtx_t * mtx)
     cpu_sev(); /* Wakeup cores possibly waiting for lock. */
 #endif
 }
-
-int mtx_test(mtx_t * mtx)
-{
-    return atomic_read(&mtx->mtx_lock);
-}
