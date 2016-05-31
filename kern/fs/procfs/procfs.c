@@ -254,7 +254,10 @@ static void procfs_event_fd_closed(struct proc_info * p, file_t * file)
 
 static int procfs_delete_vnode(vnode_t * vnode)
 {
-    mempool_return(specinfo_pool, vnode->vn_specinfo);
+    const struct procfs_info * spec = vnode->vn_specinfo;
+
+    if (!spec || spec->ftype <= PROCFS_LAST)
+        mempool_return(specinfo_pool, vnode->vn_specinfo);
     return ramfs_delete_vnode(vnode);
 }
 
