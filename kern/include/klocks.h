@@ -83,7 +83,9 @@
 enum mtx_type {
     MTX_TYPE_UNDEF = 0,     /*!< mtx un-initialized. */
     MTX_TYPE_SPIN,          /*!< Spin lock. */
-    MTX_TYPE_TICKET,        /*!< Use ticket spin locking. */
+    MTX_TYPE_TICKET,        /*!< Use ticket spin locking. This will also use
+                             *   yield which may not be sufficient for blocking
+                             *   interrupt handlers and such. */
 };
 
 
@@ -322,7 +324,43 @@ static inline void isema_release(isema_t * isema, size_t index)
  */
 
 /**
+ * @addtogroup sema
+ * @{
+ */
+
+typedef atomic_t sema_t;
+
+/**
+ * Initialize a semaphore.
+ * @param s is a pointer to the semaphore.
+ * @param val is the number of resources available.
+ */
+static inline void sema_init(sema_t * s, int val)
+{
+    atomic_set(s, val - 1);
+}
+
+/**
+ * Decrement the semaphore counter.
+ * @param s is a pointer to the semaphore.
+ */
+void sema_down(sema_t * s);
+
+/**
+ * Increment the semaphore counter.
+ * @param s is a pointer to the semaphore.
+ */
+static inline void sema_up(sema_t * s)
+{
+    atomic_inc(s);
+}
+
+/**
  * @}
  */
 
 #endif /* !_KLOCKS_H_ */
+
+/**
+ * @}
+ */

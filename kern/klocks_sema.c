@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    klocks_isema.c
+ * @file    klocks_sema.c
  * @author  Olli Vanhoja
- * @brief   Kernel space index semaphore.
+ * @brief   Kernel space semaphore.
  * @section LICENSE
- * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,37 +30,21 @@
  *******************************************************************************
  */
 
+#include <thread.h>
 #include <klocks.h>
 
-void isema_init(isema_t * isema, size_t isema_n)
+void sema_down(sema_t * s)
 {
-    size_t i;
+    int old = atomic_dec(s);
 
-    for (i = 0; i < isema_n; i++) {
-        isema[i] = ATOMIC_INIT(0);
+    if (old >= 0)
+        return; /* OK */
+
+    /*
+     * If we end up waiting for semaphore we can proceed when the value is same
+     * as the old value or greater since it means someone has incremented it.
+     */
+    while (atomic_read(s) >= old) {
+        thread_yield(THREAD_YIELD_IMMEDIATE);
     }
-}
-
-size_t isema_acquire(isema_t * isema, size_t isema_n)
-{
-    size_t index = 0;
-
-    do {
-        size_t k;
-
-        for (k = 0; k < isema_n; k++) {
-            int old = atomic_set(&isema[k], 1);
-            if (old == 0) {
-                index = k;
-                break;
-            }
-        }
-#ifdef configMP
-        if (index != 0)
-            break;
-        cpu_wfe(); /* Sleep until an event is signaled. */
-#endif
-    } while (index == 0);
-
-    return index;
 }

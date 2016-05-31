@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    klocks.h
+ * @file    klocks_mtx.c
  * @author  Olli Vanhoja
  * @brief   Kernel space locks.
  * @section LICENSE
@@ -34,7 +34,6 @@
 #include <kstring.h>
 #include <kerror.h>
 #include <timers.h>
-#include <hal/core.h>
 #include <thread.h>
 #include <klocks.h>
 
