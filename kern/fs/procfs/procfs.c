@@ -124,7 +124,9 @@ int __kinit__ procfs_init(void)
     SUBSYS_DEP(ramfs_init);
     SUBSYS_INIT("procfs");
 
-    specinfo_pool = mempool_init(sizeof(struct procfs_info), configMAXPROC / 2);
+    specinfo_pool = mempool_init(MEMPOOL_TYPE_NONBLOCKING,
+                                 sizeof(struct procfs_info),
+                                 configMAXPROC / 2);
     if (!specinfo_pool)
         return -ENOMEM;
 

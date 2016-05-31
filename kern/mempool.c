@@ -33,7 +33,8 @@
 #include <kmalloc.h>
 #include <mempool.h>
 
-struct mempool * mempool_init(size_t bsize, unsigned count)
+struct mempool * mempool_init(enum mempool_type type, size_t bsize,
+                              unsigned count)
 {
     struct mempool * mp;
     const size_t pool_bsize = count * sizeof(void *);
@@ -44,7 +45,11 @@ struct mempool * mempool_init(size_t bsize, unsigned count)
 
     mp->bsize = bsize;
     mp->head = queue_create(&mp->pool, sizeof(void *), pool_bsize);
+
     mtx_init(&mp->lock, MTX_TYPE_TICKET, 0);
+    if (type == MEMPOOL_TYPE_BLOCKING) {
+        sema_init(&mp->sema, count);
+    }
 
     for (unsigned i = 0; i < count; i++) {
         void * elem = kzalloc(bsize);
@@ -73,14 +78,18 @@ void mempool_destroy(struct mempool ** mp)
 
 void * mempool_get(struct mempool * mp)
 {
-    void * elem;
+    void * elem = NULL;
+    enum mempool_type type = mp->type;
     int retval;
+
+    if (mp->type == MEMPOOL_TYPE_BLOCKING)
+        sema_down(&mp->sema);
 
     mtx_lock(&mp->lock);
     retval = queue_pop(&mp->head, &elem);
     mtx_unlock(&mp->lock);
 
-    if (retval == 0)
+    if (retval == 0 && type == MEMPOOL_TYPE_NONBLOCKING)
         elem = kzalloc(mp->bsize);
 
     return elem;
@@ -94,6 +103,8 @@ void mempool_return(struct mempool * mp, void * p)
         mtx_lock(&mp->lock);
         retval = queue_push(&mp->head, &p);
         mtx_unlock(&mp->lock);
+        if (mp->type == MEMPOOL_TYPE_BLOCKING)
+            sema_up(&mp->sema);
     }
     if (retval == 0) {
         kfree(p);

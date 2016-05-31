@@ -43,25 +43,35 @@
 #include <klocks.h>
 #include <queue_r.h>
 
+/**
+ * Mempool type.
+ */
+enum mempool_type {
+    MEMPOOL_TYPE_NONBLOCKING,   /*!< Non-blocing mempool and allow kmalloc. */
+    MEMPOOL_TYPE_BLOCKING,      /*!< Blocking mempool and disallow kmalloc. */
+};
+
+/**
+ * Mempool object.
+ */
 struct mempool {
     size_t bsize;
     struct queue_cb head;
+    enum mempool_type type;
     mtx_t lock;
+    sema_t sema;
     uint8_t pool[0];
 };
-
-/*
- * TODO Blocking semaphore pooling without malloc
- * TODO Lockless pool
- */
 
 /**
  * Initialize a memory pool.
  * @param bsize is the size of an element in the pool in bytes.
+ * @param type selects the type of the mempool.
  * @param count is the initial number of elements in the pool.
  * @return Returns a pointer to the newly initialized memory pool.
  */
-struct mempool * mempool_init(size_t bsize, unsigned count);
+struct mempool * mempool_init(enum mempool_type type, size_t bsize,
+                              unsigned count);
 
 /**
  * Destroy a memory pool and elements returned to it.
@@ -79,7 +89,7 @@ void * mempool_get(struct mempool * mp);
 /**
  * Return an element to the pool.
  * If mp is NULL the element is freed.
-* @param mp is a pointer to the memory pool.
+ * @param mp is a pointer to the memory pool.
  * @param p is a pointer to the element to be returned.
  */
 void mempool_return(struct mempool * mp, void * p);
