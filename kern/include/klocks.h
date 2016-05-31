@@ -47,6 +47,9 @@
 #ifdef configLOCK_DEBUG
 #include <kerror.h>
 #endif
+#ifdef configMP
+#include <hal/core.h>
+#endif
 
 /**
  * @addtogroup mtx mtx_init, mtx_lock, mtx_trylock
@@ -287,7 +290,7 @@ void cpulock_unlock(cpulock_t * lock);
 typedef atomic_t isema_t;
 
 /**
- * Initialize a index semaphore.
+ * Initialize an index semaphore.
  * @param isema is a pointer to a isema_t array.
  * @param isema_n num_elem() of isema.
  */
@@ -307,6 +310,9 @@ size_t isema_acquire(isema_t * isema, size_t isema_n);
  */
 static inline void isema_release(isema_t * isema, size_t index)
 {
+#ifdef configMP
+    cpu_sev(); /* Wakeup cores possibly waiting for an index. */
+#endif
     atomic_set(&isema[index], 0);
 }
 

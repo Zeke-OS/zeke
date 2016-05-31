@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Kernel space index semaphore.
  * @section LICENSE
- * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,6 +30,7 @@
  *******************************************************************************
  */
 
+#include <hal/core.h>
 #include <klocks.h>
 
 void isema_init(isema_t * isema, size_t isema_n)
@@ -55,6 +56,11 @@ size_t isema_acquire(isema_t * isema, size_t isema_n)
                 break;
             }
         }
+#ifdef configMP
+        if (index != 0)
+            break;
+        cpu_wfe(); /* Sleep until an event is signaled. */
+#endif
     } while (index == 0);
 
     return index;
