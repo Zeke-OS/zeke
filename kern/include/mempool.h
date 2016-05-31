@@ -50,9 +50,38 @@ struct mempool {
     uint8_t pool[0];
 };
 
+/*
+ * TODO Blocking semaphore pooling without malloc
+ * TODO Lockless pool
+ */
+
+/**
+ * Initialize a memory pool.
+ * @param bsize is the size of an element in the pool in bytes.
+ * @param count is the initial number of elements in the pool.
+ * @return Returns a pointer to the newly initialized memory pool.
+ */
 struct mempool * mempool_init(size_t bsize, unsigned count);
-void mempool_destroy(struct mempool * mp);
+
+/**
+ * Destroy a memory pool and elements returned to it.
+ * mp is set to NULL after it's destroyed.
+ * @param mp is a pointer to the memory pool to be destroyed.
+ */
+void mempool_destroy(struct mempool ** mp);
+
+/**
+ * Get an elemenent from the memory pool.
+ * @param mp is a pointer to the memory pool.
+ */
 void * mempool_get(struct mempool * mp);
+
+/**
+ * Return an element to the pool.
+ * If mp is NULL the element is freed.
+* @param mp is a pointer to the memory pool.
+ * @param p is a pointer to the element to be returned.
+ */
 void mempool_return(struct mempool * mp, void * p);
 
 #endif /* MEMPOOL_H */

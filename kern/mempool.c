@@ -49,7 +49,7 @@ struct mempool * mempool_init(size_t bsize, unsigned count)
     for (unsigned i = 0; i < count; i++) {
         void * elem = kzalloc(bsize);
         if (!elem) {
-            mempool_destroy(mp);
+            mempool_destroy(&mp);
             return NULL;
         }
 
@@ -59,15 +59,16 @@ struct mempool * mempool_init(size_t bsize, unsigned count)
     return mp;
 }
 
-void mempool_destroy(struct mempool * mp)
+void mempool_destroy(struct mempool ** mp)
 {
     void * elem;
 
     /* No need to lock */
-    while (queue_pop(&mp->head, &elem)) {
+    while (queue_pop(&(*mp)->head, &elem)) {
         kfree(elem);
     }
-    kfree(mp);
+    kfree(*mp);
+    *mp = NULL;
 }
 
 void * mempool_get(struct mempool * mp)
@@ -87,11 +88,13 @@ void * mempool_get(struct mempool * mp)
 
 void mempool_return(struct mempool * mp, void * p)
 {
-    int retval;
+    int retval = 0;
 
-    mtx_lock(&mp->lock);
-    retval = queue_push(&mp->head, &p);
-    mtx_unlock(&mp->lock);
+    if (mp) {
+        mtx_lock(&mp->lock);
+        retval = queue_push(&mp->head, &p);
+        mtx_unlock(&mp->lock);
+    }
     if (retval == 0) {
         kfree(p);
     }
