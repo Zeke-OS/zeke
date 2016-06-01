@@ -42,7 +42,6 @@
 #include <kerror.h>
 #include <libkern.h>
 #include <kstring.h>
-#include <kmalloc.h>
 #include <vm/vm.h>
 #include <vm/vm_copyinstruct.h>
 #include <thread.h>
@@ -264,11 +263,10 @@ static int sys_close_all(__user void * p)
 static int sys_getdents(__user void * user_args)
 {
     struct _fs_getdents_args args;
-    kmalloc_autofree struct dirent * dents = NULL;
+    struct uio dents;
     size_t bytes_left;
     file_t * fildes;
     vnode_t * vnode;
-    struct dirent d; /* Temp storage */
     int err, count = 0;
 
     err = copyin(user_args, &args, sizeof(args));
@@ -295,10 +293,11 @@ static int sys_getdents(__user void * user_args)
         goto out;
     }
 
-    dents = kmalloc(args.nbytes);
-    if (!dents) {
+    err = uio_init_ubuf(&dents, (__user void *)args.buf, args.nbytes,
+                        VM_PROT_WRITE);
+    if (err) {
         count = -1;
-        set_errno(ENOMEM);
+        set_errno(-err);
         goto out;
     }
 
@@ -307,15 +306,20 @@ static int sys_getdents(__user void * user_args)
 
     bytes_left = args.nbytes;
     while (bytes_left >= sizeof(struct dirent)) {
+        struct dirent d; /* Temp storage */
+
         if (vnode->vnode_ops->readdir(vnode, &d, &fildes->seek_pos))
             break;
-        dents[count++] = d;
+        err = uio_copyout(&d, &dents, count++ * sizeof(struct dirent),
+                          sizeof(struct dirent));
+        if (err) {
+            count = -1;
+            set_errno(-err);
+            goto out;
+        }
 
         bytes_left -= (sizeof(struct dirent));
     }
-
-    if (count > 0)
-        copyout(dents, (__user void *)args.buf, count * sizeof(struct dirent));
 
 out:
     fs_fildes_ref(curproc->files, args.fd, -1);
