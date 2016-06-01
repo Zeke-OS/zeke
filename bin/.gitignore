@@ -21,6 +21,7 @@
 /ps
 /sh 
 /stty 
+/type
 /umount 
 /uptime 
 /wc 
