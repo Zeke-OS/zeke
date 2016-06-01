@@ -36,11 +36,6 @@ menuconfig configMBR
     ---help---
     Read MBR and populate devices for drive partitions accordingly.
 
-config configMBR_DEBUG
-    bool "MBR debug"
-    default n
-    depends on configMBR
-
 menuconfig configRAMFS
     bool "ramfs"
     default y
@@ -71,12 +66,6 @@ menuconfig configPROCFS
     select configRAMFS
     ---help---
     Provides a Plan 9 -like process file system.
-
-if configPROCFS
-config configPROCFS_DEBUG
-    bool "Debugging"
-    default n
-endif
 
 source "kern/fs/fatfs/Kconfig"
 

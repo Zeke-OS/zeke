@@ -46,7 +46,7 @@ static struct procfs_stream * read_dyndebug(const struct procfs_info * spec)
     struct procfs_stream * stream;
     struct _kerror_debug_msg * msg_opt = &__start_set_debug_msg_sect;
     struct _kerror_debug_msg * stop = &__stop_set_debug_msg_sect;
-    const size_t bufsize = 400; /* FIXME */
+    const size_t bufsize = 4096; /* FIXME */
     size_t bytes = 0;
 
     if (msg_opt == stop)

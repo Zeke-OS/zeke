@@ -161,12 +161,9 @@ static int make_dev_mbr(struct dev_info * parent,
     d->dev.num_blocks = d->blocks;
     d->parent = parent;
 
-#ifdef configMBR_DEBUG
-    KERROR(KERROR_DEBUG,
-           "MBR: partition number %i (%s) of type %x, start sector %u, sector count %u\n",
-           d->part_no, d->dev.dev_name, d->part_id,
-           d->start_block, d->blocks);
-#endif
+    KERROR_DBG("MBR: partition number %i (%s) of type %x, start sector %u, sector count %u\n",
+               d->part_no, d->dev.dev_name, d->part_id,
+               d->start_block, d->blocks);
 
     make_dev(&d->dev, 0, 0, 0666, NULL);
     mbr_dev_count++;
@@ -183,10 +180,7 @@ int mbr_register(int fd, int * part_count)
     uint32_t block_size_adjust;
     int parts = 0, retval = 0;
 
-#ifdef configMBR_DEBUG
-    KERROR(KERROR_DEBUG, "%s(fd: %d, part_count: %p)\n",
-           __func__, fd, part_count);
-#endif
+    KERROR_DBG("%s(fd: %d, part_count: %p)\n", __func__, fd, part_count);
 
     file = fs_fildes_ref(curproc->files, fd, 1);
 
@@ -213,11 +207,7 @@ int mbr_register(int fd, int * part_count)
         goto fail;
     }
 
-#ifdef configMBR_DEBUG
-    KERROR(KERROR_DEBUG,
-           "MBR: reading block 0 from device %s\n",
-           parent->dev_name);
-#endif
+    KERROR_DBG("MBR: reading block 0 from device %s\n", parent->dev_name);
 
     retval = read_block_0(block_0, file);
     if (retval)
@@ -226,10 +216,7 @@ int mbr_register(int fd, int * part_count)
     if (retval)
         goto fail;
 
-#ifdef configMBR_DEBUG
-    KERROR(KERROR_DEBUG,
-             "MBR: found a valid MBR on device %s\n", parent->dev_name);
-#endif
+    KERROR_DBG("MBR: found a valid MBR on device %s\n", parent->dev_name);
 
     /*
      * If parent block size is not MBR_SIZE, we have to coerce start_block
@@ -258,11 +245,9 @@ int mbr_register(int fd, int * part_count)
         goto fail;
     }
 
-#ifdef configMBR_DEBUG
     if (block_size_adjust > 1) {
-        KERROR(KERROR_DEBUG, "MBR: block_size_adjust: %i\n", block_size_adjust);
+        KERROR_DBG("MBR: block_size_adjust: %i\n", block_size_adjust);
     }
-#endif
 
     for (size_t i = 0; i < MBR_NR_ENTRIES; i++) {
         struct mbr_part_entry part;

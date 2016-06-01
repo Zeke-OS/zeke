@@ -186,9 +186,7 @@ static struct proc_info * clone_proc_info(struct proc_info * const old_proc)
 {
     struct proc_info * new_proc;
 
-#ifdef configPROC_DEBUG
-    KERROR(KERROR_DEBUG, "clone proc info of pid %u\n", old_proc->pid);
-#endif
+    KERROR_DBG("clone proc info of pid %u\n", old_proc->pid);
 
     new_proc = kmalloc(sizeof(struct proc_info));
     if (!new_proc) {
@@ -206,9 +204,7 @@ static int clone_stack(struct proc_info * new_proc, struct proc_info * old_proc)
     int err;
 
     if (unlikely(!old_region)) {
-#ifdef configPROC_DEBUG
-        KERROR(KERROR_DEBUG, "No stack created\n");
-#endif
+        KERROR_DBG("No stack created\n");
         return 0;
     }
 
@@ -224,9 +220,7 @@ static int clone_stack(struct proc_info * new_proc, struct proc_info * old_proc)
 static void set_proc_inher(struct proc_info * old_proc,
                            struct proc_info * new_proc)
 {
-#ifdef configPROC_DEBUG
-    KERROR(KERROR_DEBUG, "Updating inheriance attributes of new_proc\n");
-#endif
+    KERROR_DBG("Updating inheriance attributes of new_proc\n");
 
     mtx_init(&new_proc->inh.lock, PROC_INH_LOCK_TYPE, PROC_INH_LOCK_OPT);
     new_proc->inh.parent = old_proc;
@@ -243,9 +237,7 @@ pid_t proc_get_random_pid(void)
     pid_t last_maxproc, newpid;
     int count = 0, iterations = 0;
 
-#ifdef configPROC_DEBUG
-    KERROR(KERROR_DEBUG, "%s()\n", __func__);
-#endif
+    KERROR_DBG("%s()\n", __func__);
 
     PROC_LOCK();
     last_maxproc = configMAXPROC;
@@ -284,9 +276,7 @@ pid_t proc_get_random_pid(void)
 
     PROC_UNLOCK();
 
-#ifdef configPROC_DEBUG
-    KERROR(KERROR_DEBUG, "%s done\n", __func__);
-#endif
+    KERROR_DBG("%s done\n", __func__);
 
     return newpid;
 }
@@ -297,9 +287,7 @@ pid_t proc_fork(void)
      * http://pubs.opengroup.org/onlinepubs/9699919799/functions/fork.html
      */
 
-#ifdef configPROC_DEBUG
-    KERROR(KERROR_DEBUG, "%s(%u)\n", __func__, curproc->pid);
-#endif
+    KERROR_DBG("%s(%u)\n", __func__, curproc->pid);
 
     struct proc_info * const old_proc = curproc;
     struct proc_info * new_proc;
@@ -363,9 +351,7 @@ pid_t proc_fork(void)
      */
     retval = clone_stack(new_proc, old_proc);
     if (retval) {
-#ifdef configPROC_DEBUG
-        KERROR(KERROR_DEBUG, "Cloning stack region failed.\n");
-#endif
+        KERROR_DBG("Cloning stack region failed.\n");
         goto out;
     }
 
@@ -392,9 +378,7 @@ pid_t proc_fork(void)
     /*
      * Copy file descriptors.
      */
-#ifdef configPROC_DEBUG
-    KERROR(KERROR_DEBUG, "Copy file descriptors\n");
-#endif
+    KERROR_DBG("Copy file descriptors\n");
     int nofile_max = old_proc->rlim[RLIMIT_NOFILE].rlim_max;
     if (nofile_max < 0) {
 #if configRLIMIT_NOFILE < 0
@@ -404,10 +388,8 @@ pid_t proc_fork(void)
     }
     new_proc->files = fs_alloc_files(nofile_max, nofile_max);
     if (!new_proc->files) {
-#ifdef configPROC_DEBUG
-        KERROR(KERROR_DEBUG,
+        KERROR_DBG(
                "\tENOMEM when tried to allocate memory for file descriptors\n");
-#endif
         retval = -ENOMEM;
         goto out;
     }
@@ -416,9 +398,7 @@ pid_t proc_fork(void)
         new_proc->files->fd[i] = old_proc->files->fd[i];
         fs_fildes_ref(new_proc->files, i, 1); /* null pointer safe */
     }
-#ifdef configPROC_DEBUG
-    KERROR(KERROR_DEBUG, "All file descriptors copied\n");
-#endif
+    KERROR_DBG("All file descriptors copied\n");
 
     /*
      * Select PID.
@@ -428,16 +408,12 @@ pid_t proc_fork(void)
                                 * should work fine... */
         new_proc->pid = proc_get_random_pid();
     } else { /* Proc is init */
-#ifdef configPROC_DEBUG
-        KERROR(KERROR_DEBUG, "Assuming this process to be init\n");
-#endif
+        KERROR_DBG("Assuming this process to be init\n");
         new_proc->pid = 1;
     }
 
     if (new_proc->cwd) {
-#ifdef configPROC_DEBUG
-        KERROR(KERROR_DEBUG, "Increment refcount for the cwd\n");
-#endif
+        KERROR_DBG("Increment refcount for the cwd\n");
         vref(new_proc->cwd); /* Increment refcount for the cwd */
     }
 
@@ -453,25 +429,16 @@ pid_t proc_fork(void)
      * calling thread.
      * We left main_thread null if calling process has no main thread.
      */
-#ifdef configPROC_DEBUG
-    KERROR(KERROR_DEBUG, "Handle main_thread\n");
-#endif
+    KERROR_DBG("Handle main_thread\n");
     if (old_proc->main_thread) {
-#ifdef configPROC_DEBUG
-        KERROR(KERROR_DEBUG,
-               "Call thread_fork() to get a new main thread for the fork.\n");
-#endif
+        KERROR_DBG("Call thread_fork() to get a new main thread for the fork.\n");
         if (!(new_proc->main_thread = thread_fork(new_proc->pid))) {
-#ifdef configPROC_DEBUG
-            KERROR(KERROR_DEBUG, "\tthread_fork() failed\n");
-#endif
+            KERROR_DBG("\tthread_fork() failed\n");
             retval = -EAGAIN;
             goto out;
         }
 
-#ifdef configPROC_DEBUG
-        KERROR(KERROR_DEBUG, "\tthread_fork() fork OK\n");
-#endif
+        KERROR_DBG("\tthread_fork() fork OK\n");
 
         /*
          * We set new proc's mpt as the current mpt because the new main thread
@@ -479,9 +446,7 @@ pid_t proc_fork(void)
          */
         new_proc->main_thread->curr_mpt = &new_proc->mm.mpt;
     } else {
-#ifdef configPROC_DEBUG
-        KERROR(KERROR_DEBUG, "No thread to fork.\n");
-#endif
+        KERROR_DBG("No thread to fork.\n");
         new_proc->main_thread = NULL;
     }
     retval = new_proc->pid;
@@ -493,17 +458,12 @@ pid_t proc_fork(void)
 #endif
 
     if (new_proc->main_thread) {
-#ifdef configPROC_DEBUG
-        KERROR(KERROR_DEBUG, "Set the new main_thread (%d) ready\n",
-               new_proc->main_thread->id);
-#endif
+        KERROR_DBG("Set the new main_thread (%d) ready\n",
+                   new_proc->main_thread->id);
         thread_ready(new_proc->main_thread->id);
     }
 
-#ifdef configPROC_DEBUG
-    KERROR(KERROR_DEBUG, "Fork %d -> %d created.\n",
-           old_proc->pid, new_proc->pid);
-#endif
+    KERROR_DBG("Fork %d -> %d created.\n", old_proc->pid, new_proc->pid);
 
 out:
     if (unlikely(retval < 0)) {
