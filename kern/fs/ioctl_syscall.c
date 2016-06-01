@@ -34,8 +34,6 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <proc.h>
-#include <vm/vm.h>
-#include <kmalloc.h>
 #include <fs/fs.h>
 #include <errno.h>
 #include <syscall.h>
@@ -44,9 +42,9 @@
 static int sys_ioctl(__user void * user_args)
 {
     struct _ioctl_get_args args;
-    file_t * file;
     void * ioargs = NULL;
-    int err, retval = -1;
+    file_t * file;
+    int err, retval;
 
     err = copyin(user_args, &args, sizeof(args));
     if (err) {
@@ -54,34 +52,25 @@ static int sys_ioctl(__user void * user_args)
         return -1;
     }
 
+    if (args.arg) {
+        struct uio uio;
+        __user void * user_buf = (__user void *)args.arg;
+
+        /* Get request needs wr and set request needs rd */
+        const int rw = (args.request & 1) ? VM_PROT_WRITE : VM_PROT_READ;
+
+
+        if ((err = uio_init_ubuf(&uio, user_buf, args.arg_len, rw)) ||
+            (err = uio_get_kaddr(&uio, &ioargs))) {
+            set_errno(-err);
+            return -1;
+        }
+    }
+
     file = fs_fildes_ref(curproc->files, args.fd, 1);
     if (!file) {
         set_errno(EBADF);
         return -1;
-    }
-
-    if (args.arg) {
-        ioargs = kzalloc(args.arg_len);
-        if (!ioargs) {
-            set_errno(ENOMEM);
-            goto out;
-        }
-
-        if (args.request & 1) { /* Get request */
-            if (!useracc((__user void *)args.arg, args.arg_len,
-                         VM_PROT_WRITE)) {
-                set_errno(EFAULT);
-                goto out;
-            }
-            /* Get request doesn't need copyin */
-        } else { /* Set request */
-            /* Set operation needs copyin */
-            err = copyin((__user void *)args.arg, ioargs, args.arg_len);
-            if (err) {
-                set_errno(EFAULT);
-                goto out;
-            }
-        }
     }
 
     /* Actual ioctl call */
@@ -92,20 +81,14 @@ static int sys_ioctl(__user void * user_args)
         set_errno(-retval);
     }
 
-    /* Copyout if request type was get. */
-    if (args.request & 1)
-        copyout(ioargs, (__user void *)args.arg, args.arg_len);
-
-out:
-    kfree(ioargs);
     fs_fildes_ref(curproc->files, args.fd, -1);
     return retval;
 }
 
 /**
- * Declarations of fs syscall functions.
+ * Declarations of syscall functions.
  */
-static const syscall_handler_t fs_sysfnmap[] = {
+static const syscall_handler_t ioctl_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_IOCTL_GETSET, sys_ioctl),
 };
-SYSCALL_HANDLERDEF(ioctl_syscall, fs_sysfnmap);
+SYSCALL_HANDLERDEF(ioctl_syscall, ioctl_sysfnmap);
