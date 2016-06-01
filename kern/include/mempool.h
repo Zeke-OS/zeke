@@ -47,8 +47,8 @@
  * Mempool type.
  */
 enum mempool_type {
-    MEMPOOL_TYPE_NONBLOCKING,   /*!< Non-blocing mempool and allow kmalloc. */
-    MEMPOOL_TYPE_BLOCKING,      /*!< Blocking mempool and disallow kmalloc. */
+    MEMPOOL_TYPE_NONBLOCKING,   /*!< Non-blocing mempool. */
+    MEMPOOL_TYPE_BLOCKING,      /*!< Blocking mempool. */
 };
 
 /**

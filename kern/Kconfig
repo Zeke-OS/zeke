@@ -125,8 +125,8 @@ config configMAXPROC
     int "maxproc"
     default 50
     ---help---
-    Default maximum number of processes. This is a sysctl tunable variable
-    and thus can be changed at runtime.
+    Maximum number of processes in the system. The value should be big enough
+    because it can't be changed on runtime.
 
 config configPROC_STACK_DFL
     int "Stack default size"
