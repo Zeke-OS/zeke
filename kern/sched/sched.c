@@ -128,7 +128,7 @@ struct cpu_sched {
     mtx_t lock;
 };
 
-static struct cpu_sched cpu[1];
+static struct cpu_sched cpu[KSCHED_CPU_COUNT];
 #define CURRENT_CPU (&cpu[get_cpu_index()])
 
 /*
@@ -241,11 +241,6 @@ int __kinit__ sched_init(void)
 int thread_id_compare(struct thread_info * a, struct thread_info * b)
 {
     return a->id - b->id;
-}
-
-int get_cpu_count(void)
-{
-    return num_elem(cpu);
 }
 
 int get_cpu_index(void)

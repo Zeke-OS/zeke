@@ -41,9 +41,12 @@
 #ifndef KSCHED_H
 #define KSCHED_H
 
+#include <stdint.h>
 #include <sched.h>
 
 struct thread_info;
+
+#define KSCHED_CPU_COUNT    1
 
 /**
  * Struct describing a generic thread scheduler.
@@ -117,6 +120,11 @@ typedef void thread_cdtor_t(struct thread_info * td, struct thread_info * old);
 #ifdef _SYS_SYSCTL_H_
 SYSCTL_DECL(_kern_sched);
 #endif
+
+/**
+ * Get index of the current CPU core.
+ */
+int get_cpu_index(void);
 
 /**
  * Return load averages in integer format scaled to 100.

@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Kernel space locks.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,23 +30,19 @@
  *******************************************************************************
  */
 
-#include <errno.h>
-#include <kerror.h>
 #include <kmalloc.h>
-#include <kstring.h>
-#include <thread.h>
+#include <ksched.h>
 #include <klocks.h>
 
 cpulock_t * cpulock_create(void)
 {
-    const int n = get_cpu_count();
     cpulock_t * lock;
 
-    lock = kzalloc(sizeof(cpulock_t) + n * sizeof(mtx_t));
+    lock = kzalloc(sizeof(cpulock_t) + KSCHED_CPU_COUNT * sizeof(mtx_t));
     if (!lock)
         return NULL;
 
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < KSCHED_CPU_COUNT; i++) {
         mtx_init(&lock->mtx[i], MTX_TYPE_TICKET, MTX_OPT_DEFAULT);
     }
 
