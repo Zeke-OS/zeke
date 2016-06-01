@@ -52,16 +52,25 @@
 #include <proc.h>
 #include <vm/vm_copyinstruct.h>
 
-static struct proc_info *(*_procarr)[]; /*!< processes indexed by pid */
-int nprocs = 1;                         /*!< Current # of procs. */
-struct proc_info * curproc;             /*!< PCB of the current process. */
+#define SIZEOF_PROCARR ((configMAXPROC + 1) * sizeof(struct proc_info *))
+
+/**
+ * Processes indexed by pid.
+ */
+static struct proc_info *procarr[SIZEOF_PROCARR];
+int nprocs = 1;             /*!< Current # of procs. */
+struct proc_info * curproc; /*!< PCB of the current process. */
+
+SYSCTL_INT(_kern, OID_AUTO, nprocs, CTLFLAG_RD,
+           &nprocs, 0, "Current number of processes");
+
+SYSCTL_INT(_kern, KERN_MAXPROC, maxproc, CTLFLAG_RD,
+            NULL, configMAXPROC, "Maximum number of processes");
 
 static const struct vm_ops sys_vm_ops; /* NOOP struct for system regions. */
 
 extern vnode_t kerror_vnode;
 extern void * __bss_break __attribute__((weak));
-
-#define SIZEOF_PROCARR    ((configMAXPROC + 1) * sizeof(struct proc_info *))
 
 /**
  * proclock.
@@ -80,12 +89,6 @@ static const char * const proc_state_names[] = {
     "PROC_STATE_DEFUNCT",
 };
 
-SYSCTL_INT(_kern, OID_AUTO, nprocs, CTLFLAG_RD,
-           &nprocs, 0, "Current number of processes");
-
-SYSCTL_INT(_kern, KERN_MAXPROC, maxproc, CTLFLAG_RD,
-            NULL, configMAXPROC, "Maximum number of processes");
-
 static void init_kernel_proc(void);
 static void procarr_clear(pid_t pid);
 static struct proc_info * proc_get_struct(pid_t pid);
@@ -96,10 +99,9 @@ int __kinit__ proc_init(void)
 {
     SUBSYS_INIT("proc");
 
-    _procarr = kzalloc_crit(SIZEOF_PROCARR);
     init_kernel_proc();
     /* Do here same as proc_update() would do when running. */
-    curproc = (*_procarr)[0];
+    curproc = procarr[0];
 
     return 0;
 }
@@ -135,8 +137,8 @@ static void init_kernel_proc(void)
     struct proc_info * kernel_proc;
     int err;
 
-    (*_procarr)[0] = kzalloc_crit(sizeof(struct proc_info));
-    kernel_proc = (*_procarr)[0];
+    procarr[0] = kzalloc_crit(sizeof(struct proc_info));
+    kernel_proc = procarr[0];
 
     kernel_proc->pid = 0;
     kernel_proc->state = PROC_STATE_READY;
@@ -260,7 +262,7 @@ void procarr_insert(struct proc_info * new_proc)
         return;
     }
 
-    (*_procarr)[new_proc->pid] = new_proc;
+    procarr[new_proc->pid] = new_proc;
     nprocs++;
     PROC_UNLOCK();
 }
@@ -273,7 +275,7 @@ static void procarr_clear(pid_t pid)
         return;
     }
 
-    (*_procarr)[pid] = NULL;
+    procarr[pid] = NULL;
     nprocs--;
     PROC_UNLOCK();
 }
@@ -384,7 +386,7 @@ static struct proc_info * proc_get_struct(pid_t pid)
 
         return NULL;
     }
-    return (*_procarr)[pid];
+    return procarr[pid];
 }
 
 int proc_exists(pid_t pid, enum proc_lock_mode lmode)
