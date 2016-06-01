@@ -231,7 +231,8 @@ static ssize_t procfs_write(file_t * file, struct uio * uio, size_t bcount)
     if (err)
         return err;
 
-    return fn(spec, (struct procfs_stream *)(file->stream));
+    return fn(spec, (struct procfs_stream *)(file->stream),
+              vbuf, bcount);
 }
 
 static void procfs_event_fd_created(struct proc_info * p, file_t * file)
@@ -306,9 +307,7 @@ int procfs_mkentry(const struct proc_info * proc)
 
     uitoa32(name, proc->pid);
 
-#ifdef configPROCFS_DEBUG
-    KERROR(KERROR_DEBUG, "%s(pid = %s)\n", __func__, name);
-#endif
+    KERROR_DBG("%s(pid = %s)\n", __func__, name);
 
     err = vn_procfs->vnode_ops->mkdir(vn_procfs, name, PROCFS_PERMS);
     if (err == -EEXIST) {
@@ -338,10 +337,8 @@ int procfs_mkentry(const struct proc_info * proc)
 fail:
     if (pdir)
         vrele(pdir);
-#ifdef configPROCFS_DEBUG
     if (err)
-        KERROR(KERROR_DEBUG, "Failed to create a procfs entry\n");
-#endif
+        KERROR_DBG("Failed to create a procfs entry\n");
     return err;
 }
 
@@ -356,16 +353,12 @@ void procfs_rmentry(pid_t pid)
 
     uitoa32(name, pid);
 
-#ifdef configPROCFS_DEBUG
-        KERROR(KERROR_DEBUG, "%s(pid = %s)\n", __func__, name);
-#endif
+    KERROR_DBG("%s(pid = %s)\n", __func__, name);
 
     vref(vn_procfs);
 
     if (vn_procfs->vnode_ops->lookup(vn_procfs, name, &pdir)) {
-#ifdef configPROCFS_DEBUG
-        KERROR(KERROR_DEBUG, "pid dir doesn't exist\n");
-#endif
+        KERROR_DBG("pid dir doesn't exist\n");
         goto out;
     }
 
@@ -378,9 +371,7 @@ void procfs_rmentry(pid_t pid)
 
     vrele(pdir);
     if (vn_procfs->vnode_ops->rmdir(vn_procfs, name)) {
-#ifdef configPROCFS_DEBUG
-        KERROR(KERROR_DEBUG, "Can't rmdir(%s)\n", name);
-#endif
+        KERROR_DBG("Can't rmdir(%s)\n", name);
     }
 
 out:

@@ -48,6 +48,15 @@
 #define KERROR_INFO     '3' /*!< Normal informational message. */
 #define KERROR_DEBUG    '4' /*!< Debug message. */
 
+/*
+ * Dynamic configuration of debug messages.
+ */
+struct _kerror_debug_msg {
+    char flags;
+    const char * file;
+    const char * msg;
+};
+
 /* Line number as a string */
 #define _KERROR_S(x) #x
 #define _KERROR_S2(x) _KERROR_S(x)
@@ -86,6 +95,15 @@ void _kerror_release_buf(size_t index);
  */
 #define KERROR(level, fmt, ...) \
     _KERROR2(level, _KERROR_WHERESTR, fmt, ##__VA_ARGS__)
+
+#define KERROR_DBG(fmt, ...) do {                                       \
+    static struct _kerror_debug_msg _dbg_msg                            \
+        __section("set_debug_msg_sect") __used =                        \
+        { .flags = 0, .file = __FILE__, .msg = fmt };                   \
+    if (_dbg_msg.flags & 1) {                                           \
+        _KERROR2(KERROR_DEBUG, _KERROR_WHERESTR, fmt, ##__VA_ARGS__);   \
+    }                                                                   \
+} while (0)
 
 /**
  * Print return address of the current function.

@@ -70,6 +70,7 @@ enum procfs_filetype {
     PROCFS_KERNEL_SEPARATOR,
     /* kernel files */
     PROCFS_MOUNTS,      /*!< /proc/mounts */
+    PROCFS_DYNDEBUG,    /*!< Dynamic debugging. */
     /* Last entry */
     PROCFS_LAST
 };
@@ -97,7 +98,8 @@ struct procfs_stream {
 typedef struct procfs_stream * procfs_readfn_t(const struct procfs_info * spec);
 
 typedef ssize_t procfs_writefn_t(const struct procfs_info * spec,
-                                 struct procfs_stream * stream);
+                                 struct procfs_stream * stream,
+                                 const uint8_t * buf, size_t bufsize);
 
 struct procfs_file {
     const enum procfs_filetype filetype;
