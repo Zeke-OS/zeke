@@ -37,10 +37,13 @@ struct mempool * mempool_init(enum mempool_type type, size_t bsize,
                               unsigned count)
 {
     struct mempool * mp;
+    uint8_t * elem;
+    const size_t  data_bsize = count * bsize;
     const size_t pool_bsize = count * sizeof(void *);
 
     mp = kzalloc(sizeof(struct mempool) + pool_bsize);
-    if (!mp)
+    elem = kzalloc(data_bsize);
+    if (!(mp && elem))
         return NULL;
 
     mp->bsize = bsize;
@@ -51,62 +54,45 @@ struct mempool * mempool_init(enum mempool_type type, size_t bsize,
         sema_init(&mp->sema, count);
     }
 
-    for (unsigned i = 0; i < count; i++) {
-        void * elem = kzalloc(bsize);
-        if (!elem) {
-            mempool_destroy(&mp);
-            return NULL;
-        }
-
+    mp->data = elem;
+    uint8_t * data_end = elem + data_bsize;
+    do {
         queue_push(&mp->head, &elem);
-    }
+        elem += bsize;
+    } while (elem != data_end);
 
     return mp;
 }
 
 void mempool_destroy(struct mempool ** mp)
 {
-    void * elem;
+    struct mempool * p = *mp;
 
     /* No need to lock */
-    while (queue_pop(&(*mp)->head, &elem)) {
-        kfree(elem);
-    }
-    kfree(*mp);
+    kfree(p->data);
+    kfree(p);
     *mp = NULL;
 }
 
 void * mempool_get(struct mempool * mp)
 {
     void * elem = NULL;
-    enum mempool_type type = mp->type;
-    int retval;
 
     if (mp->type == MEMPOOL_TYPE_BLOCKING)
         sema_down(&mp->sema);
 
     mtx_lock(&mp->lock);
-    retval = queue_pop(&mp->head, &elem);
+    (void)queue_pop(&mp->head, &elem);
     mtx_unlock(&mp->lock);
-
-    if (retval == 0 && type == MEMPOOL_TYPE_NONBLOCKING)
-        elem = kzalloc(mp->bsize);
 
     return elem;
 }
 
 void mempool_return(struct mempool * mp, void * p)
 {
-    int retval = 0;
-
-    if (mp) {
-        mtx_lock(&mp->lock);
-        retval = queue_push(&mp->head, &p);
-        mtx_unlock(&mp->lock);
-        if (mp->type == MEMPOOL_TYPE_BLOCKING)
-            sema_up(&mp->sema);
-    }
-    if (retval == 0) {
-        kfree(p);
-    }
+    mtx_lock(&mp->lock);
+    (void)queue_push(&mp->head, &p);
+    mtx_unlock(&mp->lock);
+    if (mp->type == MEMPOOL_TYPE_BLOCKING)
+        sema_up(&mp->sema);
 }

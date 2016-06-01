@@ -60,6 +60,7 @@ struct mempool {
     enum mempool_type type;
     mtx_t lock;
     sema_t sema;
+    void * data;
     uint8_t pool[0];
 };
 
@@ -88,7 +89,6 @@ void * mempool_get(struct mempool * mp);
 
 /**
  * Return an element to the pool.
- * If mp is NULL the element is freed.
  * @param mp is a pointer to the memory pool.
  * @param p is a pointer to the element to be returned.
  */

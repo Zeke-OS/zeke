@@ -248,7 +248,7 @@ pid_t proc_get_random_pid(void)
 #endif
 
     PROC_LOCK();
-    last_maxproc = act_maxproc;
+    last_maxproc = configMAXPROC;
     newpid = last_maxproc;
 
     /*
@@ -271,7 +271,7 @@ pid_t proc_get_random_pid(void)
         if (iterations++ > 10000) { /* Just try to find any sufficient PID. */
             iterations = 0;
 
-            for (pid_t pid = 2; pid <= act_maxproc; pid++) {
+            for (pid_t pid = 2; pid <= configMAXPROC; pid++) {
                 if (!proc_exists(newpid, PROC_LOCKED)) {
                     newpid = pid;
                     break;
@@ -308,10 +308,6 @@ pid_t proc_fork(void)
     /* Check that the old process is in valid state. */
     if (!old_proc || old_proc->state == PROC_STATE_INITIAL)
         return -EINVAL;
-
-    retval = procarr_realloc();
-    if (retval)
-        return retval;
 
     new_proc = clone_proc_info(old_proc);
     if (!new_proc)

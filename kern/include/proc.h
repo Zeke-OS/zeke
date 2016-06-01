@@ -231,8 +231,6 @@ struct proc_info {
  * @}
  */
 
-extern int maxproc;                 /*!< Maximum # of processes, set. */
-extern int act_maxproc;             /*!< Effective maxproc. */
 extern int nprocs;                  /*!< Current # of procs. */
 extern struct proc_info * curproc;  /*!< PCB of the current process. */
 
@@ -329,15 +327,6 @@ const char * proc_state2str(enum proc_state state);
 pid_t proc_fork(void);
 
 #ifdef PROC_INTERNAL
-
-/**
- * Realloc procarr.
- * Realloc _procarr based on maxproc sysctl variable if necessary.
- * @note    This should be generally called before selecting next pid
- *          from the array.
- * @return  Returns zero if succeed; Otherwise -ENOMEM.
- */
-int procarr_realloc(void);
 
 /**
  * Insert a new process to _procarr.

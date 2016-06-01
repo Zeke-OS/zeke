@@ -126,7 +126,7 @@ int __kinit__ procfs_init(void)
 
     specinfo_pool = mempool_init(MEMPOOL_TYPE_NONBLOCKING,
                                  sizeof(struct procfs_info),
-                                 configMAXPROC / 2);
+                                 configMAXPROC);
     if (!specinfo_pool)
         return -ENOMEM;
 
@@ -277,7 +277,7 @@ static int procfs_updatedir(vnode_t * dir)
          * regardless whether it already exist or not and try to remove
          * directories that should not exist anymore.
          */
-        for (int i = 0; i <= act_maxproc; i++) {
+        for (int i = 0; i <= configMAXPROC; i++) {
             struct proc_info * proc = proc_ref(i, PROC_LOCKED);
 
             if (proc) {

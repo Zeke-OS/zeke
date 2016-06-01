@@ -53,8 +53,6 @@
 #include <vm/vm_copyinstruct.h>
 
 static struct proc_info *(*_procarr)[]; /*!< processes indexed by pid */
-int maxproc = configMAXPROC;            /*!< Maximum # of processes, set. */
-int act_maxproc;                        /*!< Effective maxproc. */
 int nprocs = 1;                         /*!< Current # of procs. */
 struct proc_info * curproc;             /*!< PCB of the current process. */
 
@@ -63,7 +61,7 @@ static const struct vm_ops sys_vm_ops; /* NOOP struct for system regions. */
 extern vnode_t kerror_vnode;
 extern void * __bss_break __attribute__((weak));
 
-#define SIZEOF_PROCARR()    ((maxproc + 1) * sizeof(struct proc_info *))
+#define SIZEOF_PROCARR    ((configMAXPROC + 1) * sizeof(struct proc_info *))
 
 /**
  * proclock.
@@ -83,7 +81,10 @@ static const char * const proc_state_names[] = {
 };
 
 SYSCTL_INT(_kern, OID_AUTO, nprocs, CTLFLAG_RD,
-    &nprocs, 0, "Current number of processes");
+           &nprocs, 0, "Current number of processes");
+
+SYSCTL_INT(_kern, KERN_MAXPROC, maxproc, CTLFLAG_RD,
+            NULL, configMAXPROC, "Maximum number of processes");
 
 static void init_kernel_proc(void);
 static void procarr_clear(pid_t pid);
@@ -95,15 +96,8 @@ int __kinit__ proc_init(void)
 {
     SUBSYS_INIT("proc");
 
-    int err;
-
-    err = procarr_realloc();
-    if (err) /* This is a critical failure so we just panic. */
-        panic("proc initialization failed");
-    memset(_procarr, 0, SIZEOF_PROCARR());
-
+    _procarr = kzalloc_crit(SIZEOF_PROCARR);
     init_kernel_proc();
-
     /* Do here same as proc_update() would do when running. */
     curproc = (*_procarr)[0];
 
@@ -251,34 +245,6 @@ static void init_kernel_proc(void)
     mtx_init(&kernel_proc->inh.lock, PROC_INH_LOCK_TYPE, PROC_INH_LOCK_OPT);
 }
 
-int procarr_realloc(void)
-{
-    struct proc_info * (*tmp)[];
-
-    /* Skip if the size is not changed */
-    if (maxproc == act_maxproc)
-        return 0;
-
-#ifdef configPROC_DEBUG
-    KERROR(KERROR_DEBUG, "realloc procarr maxproc = %u, act_maxproc = %u\n",
-             maxproc, act_maxproc);
-#endif
-
-    PROC_LOCK();
-    tmp = krealloc(_procarr, SIZEOF_PROCARR());
-    if (!tmp && !_procarr) {
-        KERROR(KERROR_WARN, "Unable to allocate _procarr (%u bytes)",
-               SIZEOF_PROCARR());
-
-        return -ENOMEM;
-    }
-    _procarr = tmp;
-    act_maxproc = maxproc;
-    PROC_UNLOCK();
-
-    return 0;
-}
-
 void procarr_insert(struct proc_info * new_proc)
 {
     KASSERT(new_proc, "new_proc can't be NULL");
@@ -288,7 +254,7 @@ void procarr_insert(struct proc_info * new_proc)
 #endif
 
     PROC_LOCK();
-    if (new_proc->pid > act_maxproc || new_proc->pid < 0) {
+    if (new_proc->pid > configMAXPROC || new_proc->pid < 0) {
         KERROR(KERROR_ERR, "Inserted new_proc out of bounds (%d)\n",
                new_proc->pid);
         return;
@@ -302,7 +268,7 @@ void procarr_insert(struct proc_info * new_proc)
 static void procarr_clear(pid_t pid)
 {
     PROC_LOCK();
-    if (pid > act_maxproc || pid < 0) {
+    if (pid > configMAXPROC || pid < 0) {
         KERROR(KERROR_ERR, "Attempt to remove a nonexistent process\n");
         return;
     }
@@ -413,8 +379,8 @@ static struct proc_info * proc_get_struct(pid_t pid)
      * is used in places where the state is invalid and also because doing state
      * check here is jus overhead.
      */
-    if (0 > pid || pid > act_maxproc) {
-        KERROR(KERROR_ERR, "Invalid PID (%d, max: %d)\n", pid, act_maxproc);
+    if (0 > pid || pid > configMAXPROC) {
+        KERROR(KERROR_ERR, "Invalid PID (%d, max: %d)\n", pid, configMAXPROC);
 
         return NULL;
     }
@@ -650,29 +616,6 @@ pid_t proc_update(void)
 
     return current_pid;
 }
-
-/**
- * Get/Set maxproc value.
- * Note that setting the value doesn't cause procarr to be resized until
- * it's actually necessary.
- */
-static int sysctl_proc_maxproc(SYSCTL_HANDLER_ARGS)
-{
-    int new_maxproc = maxproc;
-    int error;
-
-    error = sysctl_handle_int(oidp, &new_maxproc, sizeof(new_maxproc), req);
-    if (!error && req->newptr) {
-        if (new_maxproc < nprocs)
-            error = -EINVAL;
-        else
-            maxproc = new_maxproc;
-    }
-
-    return error;
-}
-SYSCTL_PROC(_kern, KERN_MAXPROC, maxproc, CTLTYPE_INT | CTLFLAG_RW,
-            NULL, 0, sysctl_proc_maxproc, "I", "Maximum number of processes");
 
 /* Syscall handlers ***********************************************************/
 
