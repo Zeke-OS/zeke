@@ -31,10 +31,11 @@
  */
 
 #include <errno.h>
-#include <kerror.h>
+#include <buf.h>
 #include <fs/procfs.h>
-#include <kstring.h>
+#include <kerror.h>
 #include <kmalloc.h>
+#include <kstring.h>
 
 __GLOBL(__start_set_debug_msg_sect);
 __GLOBL(__stop_set_debug_msg_sect);
@@ -43,30 +44,47 @@ extern struct _kerror_debug_msg __stop_set_debug_msg_sect;
 
 static struct procfs_stream * read_dyndebug(const struct procfs_info * spec)
 {
-    struct procfs_stream * stream;
     struct _kerror_debug_msg * msg_opt = &__start_set_debug_msg_sect;
     struct _kerror_debug_msg * stop = &__stop_set_debug_msg_sect;
-    const size_t bufsize = 4096; /* FIXME */
+    size_t bufsize = 4096;
+    struct buf * streambuf;
+    struct procfs_stream * stream;
+    struct uio uio;
     size_t bytes = 0;
 
     if (msg_opt == stop)
         return NULL;
 
-    stream = kzalloc(sizeof(struct procfs_stream) + bufsize);
-    if (!stream)
+    streambuf = geteblk(bufsize);
+    if (!streambuf)
         return NULL;
 
-    while (msg_opt < stop) {
-        char * p = stream->buf + bytes;
+    struct buf * bp_back = (struct buf *)streambuf->b_data;
+    bp_back = streambuf;
+    bufsize -= sizeof(struct buf *);
+    stream = (struct procfs_stream *)streambuf->b_data + sizeof(struct buf *);
 
-        bytes += ksprintf(p, bufsize - bytes, ">%u:%s: %s",
-                          msg_opt->flags, msg_opt->file, msg_opt->msg);
+    uio_init_kbuf(&uio, &stream->buf, bufsize);
+    while (msg_opt < stop) {
+        int len;
+
+        len = ksprintf(stream->buf + bytes, bufsize - bytes,
+                       ">%u:%s: %s",
+                       msg_opt->flags, msg_opt->file, msg_opt->msg);
+        bytes += len;
 
         msg_opt++;
     }
-
     stream->bytes = bytes;
+
     return stream;
+}
+
+void release_dyndebug_data(struct procfs_stream * stream)
+{
+    struct buf * bp = (struct buf *)((uint8_t *)stream - sizeof(struct buf *));
+
+    vrfree(bp);
 }
 
 ssize_t write_dyndebug(const struct procfs_info * spec,
@@ -99,5 +117,6 @@ static struct procfs_file procfs_file_dyndebug = {
     .filename = "dyndebug",
     .readfn = read_dyndebug,
     .writefn = write_dyndebug,
+    .relefn = release_dyndebug_data,
 };
 DATA_SET(procfs_files, procfs_file_dyndebug);

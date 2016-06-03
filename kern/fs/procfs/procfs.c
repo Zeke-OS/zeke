@@ -87,6 +87,7 @@ static struct mempool * specinfo_pool;
 SET_DECLARE(procfs_files, struct procfs_file);
 static procfs_readfn_t ** procfs_read_funcs;
 static procfs_writefn_t ** procfs_write_funcs;
+static procfs_relefn_t ** procfs_rele_funcs;
 
 /**
  * Initialize permanently existing procfs files.
@@ -99,8 +100,10 @@ static int init_permanent_files(void)
             sizeof(procfs_readfn_t *));
     procfs_write_funcs = kcalloc(SET_COUNT(procfs_files),
             sizeof(procfs_writefn_t *));
+    procfs_rele_funcs = kcalloc(SET_COUNT(procfs_files),
+            sizeof(procfs_relefn_t *));
 
-    if (!(procfs_read_funcs && procfs_write_funcs))
+    if (!(procfs_read_funcs && procfs_write_funcs && procfs_rele_funcs))
         return -ENOMEM;
 
     SET_FOREACH(file, procfs_files) {
@@ -108,6 +111,7 @@ static int init_permanent_files(void)
 
         procfs_read_funcs[filetype] = (*file)->readfn;
         procfs_write_funcs[filetype] = (*file)->writefn;
+        procfs_rele_funcs[filetype] = (*file)->relefn;
 
         if (filetype > PROCFS_KERNEL_SEPARATOR) {
             const char * filename = (*file)->filename;
@@ -252,7 +256,17 @@ static void procfs_event_fd_created(struct proc_info * p, file_t * file)
 
 static void procfs_event_fd_closed(struct proc_info * p, file_t * file)
 {
-    kfree(file->stream);
+    const struct procfs_info * spec = PROCFS_GET_FILESPEC(file);
+    procfs_relefn_t * fn;
+
+    if (!spec || spec->ftype > PROCFS_LAST)
+        return;
+
+    fn = procfs_rele_funcs[spec->ftype];
+    if (!fn)
+        return;
+
+    fn(file->stream);
 }
 
 static int procfs_delete_vnode(vnode_t * vnode)
@@ -405,6 +419,7 @@ static int create_proc_file(vnode_t * pdir, pid_t pid, const char * filename,
         return -ENOTDIR;
     }
 
+    spec->vnode = vn;
     vn->vn_specinfo = spec;
     vn->vnode_ops = &procfs_vnode_ops;
 

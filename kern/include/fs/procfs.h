@@ -79,8 +79,10 @@ enum procfs_filetype {
  * Procfs specinfo descriptor.
  */
 struct procfs_info {
-    enum procfs_filetype ftype;
-    pid_t pid;
+    enum procfs_filetype ftype; /*!< Procfs file type. */
+    vnode_t * vnode;            /*!< Pointer back to the vnode. */
+    pid_t pid;                  /*!< PID of the process this file is
+                                 *   representing. */
 };
 
 struct procfs_stream {
@@ -101,11 +103,14 @@ typedef ssize_t procfs_writefn_t(const struct procfs_info * spec,
                                  struct procfs_stream * stream,
                                  const uint8_t * buf, size_t bufsize);
 
+typedef void procfs_relefn_t(struct procfs_stream * stream);
+
 struct procfs_file {
     const enum procfs_filetype filetype;
     const char * filename;
     procfs_readfn_t * const readfn;
     procfs_writefn_t * const writefn;
+    procfs_relefn_t * const relefn;
 };
 
 /**

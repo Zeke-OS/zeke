@@ -113,5 +113,6 @@ static struct procfs_file procfs_file_status = {
     .filename = "status",
     .readfn = read_status,
     .writefn = NULL,
+    .relefn = kfree,
 };
 DATA_SET(procfs_files, procfs_file_status);
