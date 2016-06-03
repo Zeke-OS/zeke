@@ -36,6 +36,7 @@
 #include <kerror.h>
 #include <kmalloc.h>
 #include <kstring.h>
+#include <libkern.h>
 
 __GLOBL(__start_set_debug_msg_sect);
 __GLOBL(__stop_set_debug_msg_sect);
@@ -93,21 +94,39 @@ ssize_t write_dyndebug(const struct procfs_info * spec,
 {
     struct _kerror_debug_msg * msg_opt = &__start_set_debug_msg_sect;
     struct _kerror_debug_msg * stop = &__stop_set_debug_msg_sect;
-    const char * file = (char *)buf;
 
     if (msg_opt == stop)
         return 0;
 
-    if (!strvalid(file, bufsize))
+    if (!strvalid((char *)buf, bufsize))
         return -EINVAL;
+
+    char * strbuf = kstrdup((char *)buf, bufsize);
+    char * file = strbuf;
+    char * line = kstrchr(strbuf, ':');
+
+    if (line) {
+        line[0] = '\0';
+        line++;
+    }
 
     while (msg_opt < stop) {
         if (strcmp(file, msg_opt->file) == 0) {
+            if (line && *line != '\0') {
+                char msgline[12];
+
+                uitoa32(msgline, msg_opt->line);
+                if (strcmp(line, msgline) != 0)
+                    goto next;
+            }
             msg_opt->flags ^= 1;
         }
 
+next:
         msg_opt++;
     }
+
+    kfree(strbuf);
 
     return stream->bytes;
 }
