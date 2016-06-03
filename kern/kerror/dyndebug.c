@@ -69,8 +69,8 @@ static struct procfs_stream * read_dyndebug(const struct procfs_info * spec)
         int len;
 
         len = ksprintf(stream->buf + bytes, bufsize - bytes,
-                       ">%u:%s: %s",
-                       msg_opt->flags, msg_opt->file, msg_opt->msg);
+                       "%u:%s:%d\n",
+                       msg_opt->flags, msg_opt->file, msg_opt->line);
         bytes += len;
 
         msg_opt++;

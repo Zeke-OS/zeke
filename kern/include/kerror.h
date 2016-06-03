@@ -54,7 +54,7 @@
 struct _kerror_debug_msg {
     char flags;
     const char * file;
-    const char * msg;
+    int line;
 };
 
 /* Line number as a string */
@@ -99,7 +99,7 @@ void _kerror_release_buf(size_t index);
 #define KERROR_DBG(fmt, ...) do {                                       \
     static struct _kerror_debug_msg _dbg_msg                            \
         __section("set_debug_msg_sect") __used =                        \
-        { .flags = 0, .file = __FILE__, .msg = fmt };                   \
+        { .flags = 0, .file = __FILE__, .line = __LINE__ };             \
     if (_dbg_msg.flags & 1) {                                           \
         _KERROR2(KERROR_DEBUG, _KERROR_WHERESTR, fmt, ##__VA_ARGS__);   \
     }                                                                   \
