@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   BCM2708 specific emmc driver functions.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -111,10 +111,7 @@ static uint32_t sd_get_base_clock_hz(struct emmc_capabilities * cap)
 
     base_clock = mb[6];
 
-#ifdef configEMMC_DEBUG
-    KERROR(KERROR_DEBUG, "EMMC: base clock rate is %u Hz\n",
-           base_clock);
-#endif
+    KERROR_DBG("EMMC: base clock rate is %u Hz\n", base_clock);
 
     return base_clock;
 }

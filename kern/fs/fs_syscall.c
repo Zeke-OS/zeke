@@ -523,9 +523,8 @@ static int sys_mkdir(__user void * user_args)
 
     retval = 0;
 out:
-#ifdef configFS_DEBUG
-    KERROR(KERROR_DEBUG, "%s: %s returned %d\n", __func__, args->path, err);
-#endif
+    KERROR_DBG("%s: %s returned %d\n", __func__, args->path, err);
+
     freecpystruct(args);
     return retval;
 }

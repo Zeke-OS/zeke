@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Virtual file system utils.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -159,9 +159,7 @@ void fs_vnode_cleanup(vnode_t * vnode)
 {
     struct buf * var, * nxt;
 
-#ifdef configFS_DEBUG
     KASSERT(vnode != NULL, "vnode can't be null.");
-#endif
 
     /* Release associated buffers. */
     if (!SPLAY_EMPTY(&vnode->vn_bpo.sroot)) {

@@ -216,14 +216,12 @@ static mblock_t * find_mblock(mblock_t ** last, size_t size)
     mblock_t * b = kmalloc_base;
 
     do {
-#ifdef configKMALLOC_DEBUG
         if (b->ptr == NULL) {
-            KERROR(KERROR_DEBUG,
+            KERROR(KERROR_ERR,
                    "Invalid mblock: p = %p sign = %x\n", b->ptr, b->signature);
             b = NULL;
             break;
         }
-#endif
         *last = b;
         if ((atomic_read(&b->refcount) == 0) && b->size >= size)
             break;

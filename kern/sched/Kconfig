@@ -29,12 +29,5 @@ config configSCHED_FREEQ_SIZE
         resources happens in the idle thread. This option controls the size of
         the queue to store garbage thread_info pointers.
 
-config configSCHED_DEBUG
-    bool "Thread scheduler debugging"
-    default n
-    ---help---
-        Enable debugging invariants and messages in thread scheduling related
-        functions.
-
 endmenu
 
