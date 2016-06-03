@@ -125,6 +125,12 @@ int procfs_mkentry(const struct proc_info * proc);
  */
 void procfs_rmentry(pid_t pid);
 
+/**
+ * Call kfree for stream.
+ * Can be used as relefn.
+ */
+void procfs_kfree_stream(struct procfs_stream * stream);
+
 #endif /* PROCFS_H */
 
 /**

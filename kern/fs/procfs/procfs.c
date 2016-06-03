@@ -269,6 +269,11 @@ static void procfs_event_fd_closed(struct proc_info * p, file_t * file)
     fn(file->stream);
 }
 
+void procfs_kfree_stream(struct procfs_stream * stream)
+{
+    kfree(stream);
+}
+
 static int procfs_delete_vnode(vnode_t * vnode)
 {
     const struct procfs_info * spec = vnode->vn_specinfo;

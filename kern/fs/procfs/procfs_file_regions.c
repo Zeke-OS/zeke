@@ -99,6 +99,6 @@ static struct procfs_file procfs_file_regions = {
     .filename = "regions",
     .readfn = read_regions,
     .writefn = NULL,
-    .relefn = kfree,
+    .relefn = procfs_kfree_stream,
 };
 DATA_SET(procfs_files, procfs_file_regions);

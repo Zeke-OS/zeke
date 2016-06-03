@@ -83,6 +83,6 @@ static struct procfs_file procfs_file_mounts = {
     .filename = "mounts",
     .readfn = read_mounts,
     .writefn = NULL,
-    .relefn = kfree,
+    .relefn = procfs_kfree_stream,
 };
 DATA_SET(procfs_files, procfs_file_mounts);
