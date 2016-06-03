@@ -43,6 +43,59 @@ __GLOBL(__stop_set_debug_msg_sect);
 extern struct _kerror_debug_msg __start_set_debug_msg_sect;
 extern struct _kerror_debug_msg __stop_set_debug_msg_sect;
 
+static int toggle_dbgmsg(char * cfg)
+{
+    struct _kerror_debug_msg * msg_opt = &__start_set_debug_msg_sect;
+    struct _kerror_debug_msg * stop = &__stop_set_debug_msg_sect;
+    char strbuf[40];
+    char * file = strbuf;
+    char * line;
+
+    if (msg_opt == stop)
+        return -EINVAL;
+
+    strlcpy(strbuf, cfg, sizeof(strbuf));
+    file = strbuf;
+    line = kstrchr(strbuf, ':');
+
+    if (line) {
+        line[0] = '\0';
+        line++;
+    }
+
+    while (msg_opt < stop) {
+        if (strcmp(file, msg_opt->file) == 0) {
+            if (line && *line != '\0') {
+                char msgline[12];
+
+                uitoa32(msgline, msg_opt->line);
+                if (strcmp(line, msgline) != 0)
+                    goto next;
+            }
+            msg_opt->flags ^= 1;
+        }
+
+next:
+        msg_opt++;
+    }
+
+    return 0;
+}
+
+/**
+ * Enable dyndbg messages configured in Kconfig.
+ */
+void dyndebug_early_boot_init(void)
+{
+    static char cfgs_str[] = configDYNDEBUG_BOOTPARMS;
+    char * cfgs = cfgs_str;
+    char * cfg;
+
+    while ((cfg = strsep(&cfgs, ";, "))) {
+        toggle_dbgmsg(cfg);
+    }
+}
+
 static struct procfs_stream * read_dyndebug(const struct procfs_info * spec)
 {
     struct _kerror_debug_msg * msg_opt = &__start_set_debug_msg_sect;
@@ -94,6 +147,7 @@ ssize_t write_dyndebug(const struct procfs_info * spec,
 {
     struct _kerror_debug_msg * msg_opt = &__start_set_debug_msg_sect;
     struct _kerror_debug_msg * stop = &__stop_set_debug_msg_sect;
+    int err;
 
     if (msg_opt == stop)
         return 0;
@@ -101,32 +155,9 @@ ssize_t write_dyndebug(const struct procfs_info * spec,
     if (!strvalid((char *)buf, bufsize))
         return -EINVAL;
 
-    char * strbuf = kstrdup((char *)buf, bufsize);
-    char * file = strbuf;
-    char * line = kstrchr(strbuf, ':');
-
-    if (line) {
-        line[0] = '\0';
-        line++;
-    }
-
-    while (msg_opt < stop) {
-        if (strcmp(file, msg_opt->file) == 0) {
-            if (line && *line != '\0') {
-                char msgline[12];
-
-                uitoa32(msgline, msg_opt->line);
-                if (strcmp(line, msgline) != 0)
-                    goto next;
-            }
-            msg_opt->flags ^= 1;
-        }
-
-next:
-        msg_opt++;
-    }
-
-    kfree(strbuf);
+    err = toggle_dbgmsg((char *)buf);
+    if (err)
+        return err;
 
     return stream->bytes;
 }

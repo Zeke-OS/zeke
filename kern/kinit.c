@@ -69,10 +69,13 @@ SYSCTL_STRING(_kern, OID_AUTO, root, CTLFLAG_RD, rootfs, 0,
  */
 int exec_init_array(void)
 {
+    extern void dyndebug_early_boot_init(void);
     extern void kmem_init(void);
     extern void dynmem_init(void);
     extern void vralloc_init(void);
     int n;
+
+    dyndebug_early_boot_init();
 
     kputs("\n\nZeKe PreInit\n");
     n = __hw_preinit_array_end - __hw_preinit_array_start;
