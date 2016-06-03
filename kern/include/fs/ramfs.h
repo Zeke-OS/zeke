@@ -101,6 +101,16 @@ int ramfs_get_vnode(struct fs_superblock * sb, ino_t * vnode_num,
  */
 int ramfs_delete_vnode(struct vnode * vnode);
 
+/**
+ * Resize the data section of a regular file.
+ */
+int ramfs_set_filesize(vnode_t * vnode, off_t new_size);
+
+ssize_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
+                         struct uio * uio, size_t count);
+ssize_t ramfs_rd_regular(vnode_t * file, const off_t * restrict offset,
+                         struct uio * uio, size_t count);
+
 /* vnode ops */
 ssize_t ramfs_read(struct file * file, struct uio * uio, size_t count);
 ssize_t ramfs_write(struct file * file, struct uio * uio, size_t count);

@@ -138,11 +138,6 @@ static void destroy_vnode(vnode_t * vnode);
 static void destroy_inode(ramfs_inode_t * inode);
 static void destroy_inode_data(ramfs_inode_t * inode);
 static int insert_inode(ramfs_inode_t * inode);
-static ssize_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
-                                struct uio * uio, size_t count);
-static ssize_t ramfs_rd_regular(vnode_t * file, const off_t * restrict offset,
-                                struct uio * uio, size_t count);
-static int ramfs_set_filesize(ramfs_inode_t * inode, off_t size);
 static struct ramfs_dp get_dp_by_offset(ramfs_inode_t * inode, off_t offset);
 
 
@@ -499,7 +494,7 @@ int ramfs_create(vnode_t * dir, const char * name, mode_t mode,
 
     /* Init the file data section. */
     init_inode_attr(inode, S_IFREG | mode);
-    err = ramfs_set_filesize(inode, 1 * MMU_PGSIZE_COARSE);
+    err = ramfs_set_filesize(&inode->in_vnode, 1 * MMU_PGSIZE_COARSE);
     if (err) {
 #ifdef configRAMFS_DEBUG
         FS_KERROR_VNODE(KERROR_DEBUG, dir,
@@ -999,8 +994,7 @@ static void destroy_inode_data(ramfs_inode_t * inode)
     switch (inode->in_vnode.vn_mode & S_IFMT) {
     case S_IFREG:
         /* Free all data blocks. */
-        ramfs_set_filesize(inode, 0);
-        inode->in.data = NULL;
+        ramfs_set_filesize(&inode->in_vnode, 0);
         break;
     case S_IFDIR:
         /* Free dhtable entries and dhtable. */
@@ -1066,8 +1060,8 @@ retry:
  * @param count     is the number of bytes buf contains.
  * @return Returns the number of bytes written.
  */
-static ssize_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
-                                struct uio * uio, size_t count)
+ssize_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
+                         struct uio * uio, size_t count)
 {
     ramfs_inode_t * inode = get_inode_of_vnode(file);
     const blksize_t blksize = inode->in_blksize;
@@ -1088,7 +1082,7 @@ static ssize_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
         dp = get_dp_by_offset(inode, *offset + bytes_wr);
         if (!dp.p) { /* Extend the file first. */
             /* Extend the file to the final size if possible. */
-            if (ramfs_set_filesize(inode, inode->in_blocks * blksize
+            if (ramfs_set_filesize(file, inode->in_blocks * blksize
                         + *offset + (off_t)count)) {
                 break; /* Failed to extend the file. */
             } else { /* Try again to get a block. */
@@ -1118,8 +1112,8 @@ static ssize_t ramfs_wr_regular(vnode_t * file, const off_t * restrict offset,
  * @param count     is the requested number of bytes to be read.
  * @return Returns the number of bytes read from the file.
  */
-static ssize_t ramfs_rd_regular(vnode_t * file, const off_t * restrict offset,
-                                struct uio * uio, size_t count)
+ssize_t ramfs_rd_regular(vnode_t * file, const off_t * restrict offset,
+                         struct uio * uio, size_t count)
 {
     ramfs_inode_t * inode = get_inode_of_vnode(file);
     struct ramfs_dp dp;
@@ -1163,8 +1157,9 @@ static ssize_t ramfs_rd_regular(vnode_t * file, const off_t * restrict offset,
  * @param new_size  is the new size of file.
  * @return Returns 0 if succeeded; Otherwise value other than zero.
  */
-static int ramfs_set_filesize(ramfs_inode_t * file, off_t new_size)
+int ramfs_set_filesize(vnode_t * vnode, off_t new_size)
 {
+    ramfs_inode_t * file = get_inode_of_vnode(vnode);
     const blksize_t blksize = file->in_blksize;
     const off_t old_size = (off_t)file->in_blocks * (off_t)blksize;
 
@@ -1188,6 +1183,8 @@ static int ramfs_set_filesize(ramfs_inode_t * file, off_t new_size)
                 if (bpp[i])
                     vrfree(bpp[i]);
             }
+            file->in.data = NULL;
+            file->in_blocks = 0;
         }
     } else { /* Extend */
         struct buf ** new_data;
