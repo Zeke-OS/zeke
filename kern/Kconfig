@@ -152,14 +152,6 @@ config configCORE_DUMPS
     This should be enable normally. It might be necessary to disable this to
     get a minimal system or if a system has only read-only file systems.
 
-config configPROC_DEBUG
-    bool "Proc debug"
-    default n
-    ---help---
-    Process subsystem debugging. This knob adds more invariants that cause
-    a performance hit as well as print a lot of useles debug messages to
-    the klogging facility.
-
 menu "Default hard limits"
 
 config configRLIMIT_CORE
@@ -272,23 +264,11 @@ config configKINIT_DEBUG
     ---help---
     Enable kinit debug messages.
 
-config configKSIGNAL_DEBUG
-    bool "Ksignal debugging"
-    default n
-    ---help---
-    Enable ksignal debug messages.
-
 config configKMEM_DEBUG
     bool "kmem debug"
     default n
     ---help---
     Enable kmem init debug messages.
-
-config configVM_DEBUG
-    bool "vm debug"
-    default n
-    ---help---
-    Enable vm debug messages.
 
 config configPTMAPPER_DEBUG
     bool "ptmapper debugging"

@@ -470,11 +470,8 @@ static int realloc_mm_regions_locked(struct vm_mm_struct * mm, int new_count)
     struct buf * (*new_regions)[];
     int i = mm->nr_regions;
 
-#ifdef configVM_DEBUG
-    KERROR(KERROR_DEBUG,
-           "realloc_mm_regions(mm %p, new_count %d), old %d\n",
-           mm, new_count, i);
-#endif
+    KERROR_DBG("realloc_mm_regions(mm %p, new_count %d), old %d\n",
+               mm, new_count, i);
 
     if (new_count <= i) {
         KERROR(KERROR_WARN,
@@ -626,16 +623,14 @@ int vm_replace_region(struct proc_info * proc, struct buf * region,
     (*mm->regions)[region_nr] = region;
     mtx_unlock(&mm->regions_lock);
 
-#ifdef configVM_DEBUG
     if (region) {
-        KERROR(KERROR_DEBUG, "%s: proc %d, mapped sect %d to %x (phys:%x)\n",
-               __func__, proc->pid, region_nr, region->b_mmu.vaddr,
-               region->b_mmu.paddr);
+        KERROR_DBG("%s: proc %d, mapped sect %d to %x (phys:%x)\n",
+                   __func__, proc->pid, region_nr, region->b_mmu.vaddr,
+                   region->b_mmu.paddr);
     } else {
-        KERROR(KERROR_DEBUG, "%s: proc %d, Clear region %d\n", __func__,
-               proc->pid, region_nr);
+        KERROR_DBG("%s: proc %d, Clear region %d\n", __func__,
+                   proc->pid, region_nr);
     }
-#endif
 
     return 0;
 }

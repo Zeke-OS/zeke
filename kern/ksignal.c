@@ -192,7 +192,6 @@ static int ksig_testlock(ksigmtx_t * lock)
     return mtx_test(&lock->l);
 }
 
-#if defined(configKSIGNAL_DEBUG)
 static char * ksignal_str_owner_type(struct signals * sigs)
 {
     switch (sigs->s_owner_type) {
@@ -204,7 +203,6 @@ static char * ksignal_str_owner_type(struct signals * sigs)
         return "unknown";
     }
 }
-#endif
 
 const char * ksignal_signum2str(int signum)
 {
@@ -352,10 +350,9 @@ static void forward_proc_signals(struct proc_info * proc)
                 ksignal_exec_cond(thread, ksiginfo->siginfo.si_signo);
             ksig_unlock(&thread_sigs->s_lock);
 
-#if defined(configKSIGNAL_DEBUG)
-            KERROR(KERROR_DEBUG, "Signal %s forwarded to thread %d\n",
-                   ksignal_signum2str(signum), thread->id);
-#endif
+            KERROR_DBG("Signal %s forwarded to thread %d\n",
+                       ksignal_signum2str(signum), thread->id);
+
             /*
              * We probably can't break and continue signal forwarding here
              * because otherwise we may give one tread signals that can't
@@ -578,10 +575,8 @@ static void ksignal_post_scheduling(void)
             KSIGNAL_PENDQUEUE_REMOVE(sigs, ksiginfo);
             KSIGFLAG_CLEAR(sigs, KSIGFLAG_INTERRUPTIBLE);
             ksig_unlock(&sigs->s_lock);
-#if defined(configKSIGNAL_DEBUG)
-            KERROR(KERROR_DEBUG, "Detected a sigwait() for %s, returning\n",
-                   ksignal_signum2str(signum));
-#endif
+            KERROR_DBG("Detected a sigwait() for %s, returning\n",
+                       ksignal_signum2str(signum));
             return; /* There is a sigwait() for this signum. */
         }
 
@@ -598,17 +593,13 @@ static void ksignal_post_scheduling(void)
             KSIGFLAG_CLEAR(sigs, KSIGFLAG_INTERRUPTIBLE);
             ksig_unlock(&sigs->s_lock);
             kfree_lazy(ksiginfo);
-#if defined(configKSIGNAL_DEBUG)
-            KERROR(KERROR_DEBUG, "Signal %s handled in kernel space\n",
-                   ksignal_signum2str(signum));
-#endif
+            KERROR_DBG("Signal %s handled in kernel space\n",
+                       ksignal_signum2str(signum));
             return;
         } else if (nxt_state < 0) {
             /* This signal can't be handled right now */
-#if defined(configKSIGNAL_DEBUG)
-            KERROR(KERROR_DEBUG, "Postponing handling of signal %s\n",
-                   ksignal_signum2str(signum));
-#endif
+            KERROR_DBG("Postponing handling of signal %s\n",
+                       ksignal_signum2str(signum));
             continue;
         }
         break;
@@ -623,10 +614,8 @@ static void ksignal_post_scheduling(void)
      */
     KSIGNAL_PENDQUEUE_REMOVE(sigs, ksiginfo);
 
-#if defined(configKSIGNAL_DEBUG)
-    KERROR(KERROR_DEBUG, "Pass a signal %s to the user space\n",
-           ksignal_signum2str(ksiginfo->siginfo.si_signo));
-#endif
+    KERROR_DBG("Pass a signal %s to the user space\n",
+               ksignal_signum2str(ksiginfo->siginfo.si_signo));
 
     /* Push data and set next stack frame. */
     if (push_stack_frame(signum, &action, &ksiginfo->siginfo)) {
@@ -636,10 +625,9 @@ static void ksignal_post_scheduling(void)
          * Thread has trashed its stack; Nothing we can do but give SIGILL.
          * RFE Should we punish only the thread or the whole process?
          */
-#if defined(configKSIGNAL_DEBUG)
-         KERROR(KERROR_DEBUG,
-                "Thread has trashed its stack, sending a fatal signal\n");
-#endif
+
+         KERROR_DBG("Thread has trashed its stack, sending a fatal signal\n");
+
         ksig_unlock(&sigs->s_lock);
         kfree_lazy(ksiginfo);
         /* RFE Possible deadlock? */
@@ -687,24 +675,18 @@ static int ksignal_queue_sig(struct signals * sigs, int signum,
 
     KASSERT(ksig_testlock(&sigs->s_lock), "sigs should be locked\n");
 
-#if defined(configKSIGNAL_DEBUG)
-    KERROR(KERROR_DEBUG, "Queuing a signum %s to sigs: %p (%s)\n",
-           ksignal_signum2str(signum), sigs, ksignal_str_owner_type(sigs));
-#endif
+    KERROR_DBG("Queuing a signum %s to sigs: %p (%s)\n",
+               ksignal_signum2str(signum), sigs, ksignal_str_owner_type(sigs));
 
     if (signum <= 0 || signum > _SIG_MAXSIG) {
-#if defined(configKSIGNAL_DEBUG)
-        KERROR(KERROR_DEBUG, "Invalid signum\n");
-#endif
+        KERROR_DBG("Invalid signum\n");
         return -EINVAL;
     }
 
     retval = sigismember(&sigs->s_running, signum);
     if (retval) {
         /* Already running a handler. */
-#if defined(configKSIGNAL_DEBUG)
-        KERROR(KERROR_DEBUG, "\tAlready running a handler for this signal\n");
-#endif
+        KERROR_DBG("\tAlready running a handler for this signal\n");
         return 0;
     }
 
@@ -713,9 +695,7 @@ static int ksignal_queue_sig(struct signals * sigs, int signum,
 
     /* Ignored? */
     if (action.ks_action.sa_handler == SIG_IGN) {
-#if defined(configKSIGNAL_DEBUG)
-        KERROR(KERROR_DEBUG, "\tSignal ignored\n");
-#endif
+        KERROR_DBG("\tSignal ignored\n");
         return 0;
     }
 
@@ -763,10 +743,8 @@ static int ksignal_queue_sig(struct signals * sigs, int signum,
             !sigismember(&sigs->s_wait, signum)) {
         struct proc_info * proc_owner;
 
-#if defined(configKSIGNAL_DEBUG)
-        KERROR(KERROR_DEBUG, "Thread %u will be terminated by signum %s\n",
-               thread->id, ksignal_signum2str(signum));
-#endif
+        KERROR_DBG("Thread %u will be terminated by signum %s\n",
+                   thread->id, ksignal_signum2str(signum));
 
         ksiginfo->siginfo.si_code = CLD_KILLED;
         thread->exit_ksiginfo = ksiginfo;
