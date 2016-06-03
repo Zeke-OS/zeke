@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Virtual Region Allocator.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -78,17 +78,13 @@ struct buf * geteblk_special(size_t size, uint32_t control)
     proc_unref(proc);
 
     if (kvaddr == 0) {
-#ifdef configBUF_DEBUG
-        KERROR(KERROR_DEBUG, "Returned kvaddr is NULL\n");
-#endif
+        KERROR_DBG("Returned kvaddr is NULL\n");
         return NULL;
     }
 
     buf = vm_newsect(kvaddr, size, VM_PROT_READ | VM_PROT_WRITE);
     if (!buf) {
-#ifdef configBUF_DEBUG
-        KERROR(KERROR_DEBUG, "vm_newsect() failed\n");
-#endif
+        KERROR_DBG("vm_newsect() failed\n");
         return NULL;
     }
 

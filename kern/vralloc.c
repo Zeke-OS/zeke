@@ -250,18 +250,14 @@ struct buf * geteblk(size_t size)
 
     bp = kzalloc(sizeof(struct buf));
     if (!bp) {
-#if defined(configBUF_DEBUG)
-        KERROR(KERROR_DEBUG, "%s: Can't allocate vm_region struct\n", __func__);
-#endif
+        KERROR_DBG("%s: Can't allocate vm_region struct\n", __func__);
         return NULL;
     }
 
     vreg = get_iblocks(&iblock, pcount);
     if (!vreg) {
-#if defined(configBUF_DEBUG)
-        KERROR(KERROR_DEBUG, "%s: Can't get vregion for a new buffer\n",
-               __func__);
-#endif
+        KERROR_DBG("%s: Can't get vregion for a new buffer\n",
+                   __func__);
         kfree(bp);
         return NULL;
     }
@@ -316,10 +312,8 @@ static struct buf * vr_rclone(struct buf * old_region)
         return NULL;
     }
 
-#if defined(configBUF_DEBUG)
-    KERROR(KERROR_DEBUG, "clone %x -> %x, %u bytes\n",
-           old_region->b_data, new_region->b_data, rsize);
-#endif
+    KERROR_DBG("clone %x -> %x, %u bytes\n", old_region->b_data,
+               new_region->b_data, rsize);
 
     /* Copy data */
     memcpy((void *)(new_region->b_data), (void *)(old_region->b_data),

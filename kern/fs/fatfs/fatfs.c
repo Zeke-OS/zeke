@@ -156,9 +156,7 @@ static int fatfs_mount(const char * source, uint32_t mode,
     /* Get device vnode */
     err = lookup_vnode(&vndev, curproc->croot, source, 0);
     if (err) {
-#ifdef configFATFS_DEBUG
-        KERROR(KERROR_DEBUG, "fatfs source not found\n");
-#endif
+        KERROR_DBG("fatfs source not found\n");
         return err;
     }
     if (!S_ISBLK(vndev->vn_mode)) {
@@ -205,14 +203,10 @@ static int fatfs_mount(const char * source, uint32_t mode,
     err = f_mount(&fatfs_sb->ff_fs, DEV_MINOR(fatfs_sb->sb.vdev_id), 0);
     if (err) {
         retval = fresult2errno(err);
-#ifdef configFATFS_DEBUG
-        KERROR(KERROR_DEBUG, "Can't init a work area for FAT (%d)\n", retval);
-#endif
+        KERROR_DBG("Can't init a work area for FAT (%d)\n", retval);
         goto fail;
     }
-#ifdef configFATFS_DEBUG
-    KERROR(KERROR_DEBUG, "Initialized a work area for FAT\n");
-#endif
+    KERROR_DBG("Initialized a work area for FAT\n");
 
 #if (_FS_NOFSINFO == 0) /* Commit full scan of free clusters */
     DWORD nclst;
@@ -278,11 +272,8 @@ static char * format_fpath(struct fatfs_inode * indir, const char * name)
     char * fpath;
     size_t fpath_size;
 
-#ifdef configFATFS_DEBUG
-    KERROR(KERROR_DEBUG,
-             "%s(indir \"%s\", name \"%s\")\n",
-             __func__, indir->in_fpath, name);
-#endif
+    KERROR_DBG("%s(indir \"%s\", name \"%s\")\n",
+               __func__, indir->in_fpath, name);
 
     fpath_size = strlenn(name, NAME_MAX + 1) +
                  strlenn(indir->in_fpath, NAME_MAX + 1) + 6;
@@ -292,10 +283,7 @@ static char * format_fpath(struct fatfs_inode * indir, const char * name)
 
     ksprintf(fpath, fpath_size, "%s/%s", indir->in_fpath, name);
 
-#ifdef configFATFS_DEBUG
-    KERROR(KERROR_DEBUG, "Formatted \"%s\" as \"%s\"\n",
-           name, fpath);
-#endif
+    KERROR_DBG("Formatted \"%s\" as \"%s\"\n", name, fpath);
 
     return fpath;
 }
@@ -319,10 +307,8 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
     ino_t inum;
     int err = 0, retval = 0;
 
-#ifdef configFATFS_DEBUG
-    KERROR(KERROR_DEBUG, "%s(fpath \"%s\", vn_hash %u)\n",
-           __func__, fpath, (uint32_t)vn_hash);
-#endif
+    KERROR_DBG("%s(fpath \"%s\", vn_hash %u)\n",
+               __func__, fpath, (uint32_t)vn_hash);
 
     vn = inpool_get_next(&sb->inpool);
     if (!vn) {
@@ -357,10 +343,8 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
         vn_mode = S_IFDIR;
         err = f_opendir(&in->dp, &sb->ff_fs, in->in_fpath);
         if (err) {
-#ifdef configFATFS_DEBUG
-            KERROR(KERROR_DEBUG, "%s: Can't open a dir (err: %d)\n",
-                   __func__, err);
-#endif
+            KERROR_DBG("%s: Can't open a dir (err: %d)\n",
+                       __func__, err);
             retval = fresult2errno(err);
             goto fail;
         }
@@ -465,9 +449,7 @@ static void finalize_inode(vnode_t * vnode)
 {
     struct fatfs_inode * in = get_inode_of_vnode(vnode);
 
-#ifdef configFATFS_DEBUG
-    KERROR(KERROR_DEBUG, "%s(in %p), %s\n", __func__, in, in->in_fpath);
-#endif
+    KERROR_DBG("%s(in %p), %s\n", __func__, in, in->in_fpath);
 
     vrele_nunlink(vnode); /* If called by inpool */
     vfs_hash_remove(vfs_hash_ctx_id, &in->in_vnode);
@@ -492,9 +474,7 @@ static void destroy_vnode(vnode_t * vnode)
 {
     struct fatfs_inode * in = get_inode_of_vnode(vnode);
 
-#ifdef configFATFS_DEBUG
-    KERROR(KERROR_DEBUG, "%s(vnode %pV), in: %p\n", __func__, vnode, in);
-#endif
+    KERROR_DBG("%s(vnode %pV), in: %p\n", __func__, vnode, in);
 
     /* TODO Free the inode, currently something fails and the kernel freezes. */
 #if 0
@@ -640,9 +620,7 @@ static int fatfs_lookup(vnode_t * dir, const char * name, vnode_t ** result)
     } else { /* not cached */
         struct fatfs_inode * in = NULL;
 
-#ifdef configFATFS_DEBUG
-        KERROR(KERROR_DEBUG, "%s: vn not in vfs_hash\n", __func__);
-#endif
+        KERROR_DBG("%s: vn not in vfs_hash\n", __func__);
 
         /*
          * Create a inode and fetch data from the device.
@@ -766,11 +744,8 @@ int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
     char * in_fpath;
     int err;
 
-#ifdef configFATFS_DEBUG
-    KERROR(KERROR_DEBUG,
-           "%s(dir %p, name \"%s\", mode %u, specinfo %p, result %p)\n",
-           __func__, dir, name, mode, specinfo, result);
-#endif
+    KERROR_DBG("%s(dir %p, name \"%s\", mode %u, specinfo %p, result %p)\n",
+               __func__, dir, name, mode, specinfo, result);
 
     if (!S_ISDIR(dir->vn_mode))
         return -ENOTDIR;
@@ -930,11 +905,7 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
                             "vnode->sb->mountpoint should be set\n");
 #endif
         } else {
-#ifdef configFATFS_DEBUG
-            KERROR(KERROR_WARN,
-                   "get_mp_stat() returned error (%d)\n",
-                   err);
-#endif
+            KERROR_DBG("get_mp_stat() returned error (%d)\n", err);
 
             return err;
         }
@@ -946,11 +917,8 @@ int fatfs_stat(vnode_t * vnode, struct stat * buf)
     } else if (in->in_fpath[0] != '\0') {
         err = f_stat(&ffsb->ff_fs, in->in_fpath, &fno);
         if (err) {
-#ifdef configFATFS_DEBUG
-            KERROR(KERROR_DEBUG,
-                   "%s(fs %p, fpath \"%s\", fno %p) failed\n",
-                   __func__, &ffsb->ff_fs, in->in_fpath, &fno);
-#endif
+            KERROR_DBG("%s(fs %p, fpath \"%s\", fno %p) failed\n",
+                       __func__, &ffsb->ff_fs, in->in_fpath, &fno);
             return fresult2errno(err);
         }
 
@@ -1029,11 +997,8 @@ static void init_fatfs_vnode(vnode_t * vnode, ino_t inum, mode_t mode,
 {
     struct stat stat;
 
-#ifdef configFATFS_DEBUG
-    KERROR(KERROR_DEBUG,
-           "%s(vnode %p, inum %llu, mode %o, vn_hash %lu, sb %p)\n",
-           __func__, vnode, (long long)inum, mode, vn_hash, sb);
-#endif
+    KERROR_DBG("%s(vnode %p, inum %llu, mode %o, vn_hash %lu, sb %p)\n",
+               __func__, vnode, (long long)inum, mode, vn_hash, sb);
 
     fs_vnode_init(vnode, inum, sb, &fatfs_vnode_ops);
 
@@ -1048,9 +1013,7 @@ static void init_fatfs_vnode(vnode_t * vnode, ino_t inum, mode_t mode,
         if ((stat.st_flags & UF_READONLY) == 0)
             vnode->vn_mode |= S_IWUSR | S_IWGRP | S_IWOTH;
     } else {
-#ifdef configFATFS_DEBUG
-        KERROR(KERROR_DEBUG, "%s failed\n", __func__);
-#endif
+        KERROR_DBG("%s failed\n", __func__);
     }
 }
 
@@ -1062,10 +1025,8 @@ static int get_mp_stat(vnode_t * vnode, struct stat * st)
      struct fs_superblock * sb;
      vnode_t * mp;
 
-#ifdef configFATFS_DEBUG
     KASSERT(vnode, "Vnode was given");
     KASSERT(vnode->sb, "Superblock is set");
-#endif
 
     sb = vnode->sb;
     mp = sb->mountpoint;
@@ -1078,9 +1039,7 @@ static int get_mp_stat(vnode_t * vnode, struct stat * st)
         return -EINPROGRESS;
     }
 
-#ifdef configFATFS_DEBUG
     KASSERT(mp->vnode_ops->stat, "stat() is defined");
-#endif
 
     return mp->vnode_ops->stat(mp, st);
 }

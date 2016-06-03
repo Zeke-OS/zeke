@@ -119,12 +119,10 @@ int exec_file(struct exec_loadfn * loader, int fildes, char name[PROC_NAME_LEN],
     pthread_t tid;
     int err;
 
-#if defined(configEXEC_DEBUG)
-    KERROR(KERROR_DEBUG, "exec_file(loader \"%s\", fildes %d, name \"%s\", "
-           "env_bp %p, uargc %d, uargv %x,  uenvp %x)\n",
-           (loader) ? loader->name : "NULL", fildes, name, env_bp, uargc,
-           (uint32_t)uargv, (uint32_t)uenvp);
-#endif
+    KERROR_DBG("exec_file(loader \"%s\", fildes %d, name \"%s\", "
+               "env_bp %p, uargc %d, uargv %x,  uenvp %x)\n",
+               (loader) ? loader->name : "NULL", fildes, name, env_bp, uargc,
+               (uint32_t)uargv, (uint32_t)uenvp);
 
     file = fs_fildes_ref(curproc->files, fildes, 1);
     if (!file) {
@@ -143,9 +141,7 @@ int exec_file(struct exec_loadfn * loader, int fildes, char name[PROC_NAME_LEN],
 
     /* Load the image */
     err = loader->load(curproc, file, &vaddr, &stack_size);
-#if defined(configEXEC_DEBUG)
-    KERROR(KERROR_DEBUG, "Proc image loaded (err = %d)\n", err);
-#endif
+    KERROR_DBG("Proc image loaded (err = %d)\n", err);
     if (err) {
         const struct ksignal_param sigparm = { .si_code = SEGV_MAPERR };
 
@@ -160,35 +156,26 @@ int exec_file(struct exec_loadfn * loader, int fildes, char name[PROC_NAME_LEN],
      */
     err = fs_fildes_close(curproc, fildes);
     if (err) {
-#if defined(configEXEC_DEBUG)
-        KERROR(KERROR_DEBUG, "failed to close the file\n");
-#endif
+        KERROR_DBG("failed to close the file\n");
         goto fail;
     }
 
     /* Map new environment */
     err = vm_insert_region(curproc, env_bp, VM_INSOP_MAP_REG);
     if (err < 0) {
-#if defined(configEXEC_DEBUG)
-        KERROR(KERROR_DEBUG, "Unable to map a new env\n");
-#endif
+        KERROR_DBG("Unable to map a new env\n");
         goto fail;
     }
     vm_fixmemmap_proc(curproc);
 
-#if defined(configEXEC_DEBUG)
-        KERROR(KERROR_DEBUG, "Memory mapping done (pid = %d)\n", curproc->pid);
-#endif
+        KERROR_DBG("Memory mapping done (pid = %d)\n", curproc->pid);
 
     /* Close CLOEXEC files */
     fs_fildes_close_exec(curproc);
 
     /* Change proc name */
     strlcpy(curproc->name, name, sizeof(curproc->name));
-#if defined(configEXEC_DEBUG)
-    KERROR(KERROR_DEBUG, "New name \"%s\" set for PID %d\n",
-           curproc->name, curproc->pid);
-#endif
+    KERROR_DBG("New name \"%s\" set for PID %d\n", curproc->name, curproc->pid);
 
     /* Create a new main() thread */
     tid = new_main_thread(uargc - 1, uargv, uenvp, stack_size);
@@ -197,15 +184,12 @@ int exec_file(struct exec_loadfn * loader, int fildes, char name[PROC_NAME_LEN],
            .si_code = SI_USER,
         };
 
-#if defined(configEXEC_DEBUG)
-        KERROR(KERROR_DEBUG, "Failed to create a new main() (%d)\n", tid);
-#endif
+        KERROR_DBG("Failed to create a new main() (%d)\n", tid);
+
         ksignal_sendsig_fatal(curproc, SIGKILL, &sigparm);
     }
 
-#if defined(configEXEC_DEBUG)
-    KERROR(KERROR_DEBUG, "Changing main()\n");
-#endif
+    KERROR_DBG("Changing main()\n");
 
     err = 0;
 fail:
@@ -249,10 +233,8 @@ static int clone_aa(struct buf * bp, __user char * uarr, size_t n_entries,
     size_t offset;
     int err;
 
-#if defined(configEXEC_DEBUG)
-    KERROR(KERROR_DEBUG, "%s(bp %p, uarr %p, n_entries %u, doffset %p)\n",
-           __func__, bp, uarr, n_entries, doffset);
-#endif
+    KERROR_DBG("%s(bp %p, uarr %p, n_entries %u, doffset %p)\n",
+               __func__, bp, uarr, n_entries, doffset);
 
     if (n_entries == 0)
         return 0;
@@ -262,9 +244,7 @@ static int clone_aa(struct buf * bp, __user char * uarr, size_t n_entries,
 
     err = copyin(uarr, arg, n_entries * sizeof(char *));
     if (err) {
-#if defined(configEXEC_DEBUG)
-        KERROR(KERROR_DEBUG, "%s: Failed to copy the args array\n", __func__);
-#endif
+        KERROR_DBG("%s: Failed to copy the args array\n", __func__);
         return err;
     }
 
@@ -280,17 +260,12 @@ static int clone_aa(struct buf * bp, __user char * uarr, size_t n_entries,
         err = copyinstr((__user char *)arg[i], val + offset, bytesleft,
                         &copied);
         if (err) {
-#if defined(configEXEC_DEBUG)
-        KERROR(KERROR_DEBUG, "%s: Failed to copy arg %i (%p)\n",
-               __func__, i, arg[i]);
-#endif
+            KERROR_DBG("%s: Failed to copy arg %i (%p)\n", __func__, i, arg[i]);
             return err;
         }
 
-#if defined(configEXEC_DEBUG)
-        KERROR(KERROR_DEBUG, "%s: arg[%i] = \"%s\"\n",
-               __func__, i, val + offset);
-#endif
+        KERROR_DBG("%s: arg[%i] = \"%s\"\n",
+                   __func__, i, val + offset);
 
         /* new pointer from arg[i] to the string, valid in user space. */
         arg[i] = (char *)(bp->b_mmu.vaddr + *doffset + offset);
@@ -337,9 +312,7 @@ static int sys_exec(__user void * user_args)
     struct exec_loadfn * loader;
     int err;
 
-#if defined(configEXEC_DEBUG)
-    KERROR(KERROR_DEBUG, "%s: curpid: %d\n", __func__, curproc->pid);
-#endif
+    KERROR_DBG("%s: curpid: %d\n", __func__, curproc->pid);
 
     err = copyin(user_args, &args, sizeof(args));
     if (err) {
@@ -372,9 +345,7 @@ static int sys_exec(__user void * user_args)
     /* Clone argv */
     err = clone_aa(env_bp, (__user char *)args.argv, args.nargv, &arg_offset);
     if (err) {
-#if defined(configEXEC_DEBUG)
-        KERROR(KERROR_DEBUG, "Failed to clone args (%d)\n", err);
-#endif
+        KERROR_DBG("Failed to clone args (%d)\n", err);
         goto fail;
     }
     arg_offset = memalign(arg_offset);
@@ -383,9 +354,7 @@ static int sys_exec(__user void * user_args)
     /* Clone env */
     err = clone_aa(env_bp, (__user char *)args.env, args.nenv, &arg_offset);
     if (err) {
-#if defined(configEXEC_DEBUG)
-        KERROR(KERROR_DEBUG, "Failed to clone env (%d)\n", err);
-#endif
+        KERROR_DBG("Failed to clone env (%d)\n", err);
         goto fail;
     }
 

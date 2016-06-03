@@ -233,14 +233,12 @@ static int update_dynmem_region_struct(void * base)
 
     KASSERT(mtx_test(&dynmem_region_lock), "dynmem must be locked");
 
-#ifdef configDYNEM_DEBUG
     if (!addr_is_valid(base, 1)) {
         KERROR(KERROR_ERR, "%s(base %p): Invalid dynmem region addr\n",
                __func__, base);
 
         return -EINVAL;
     }
-#endif
 
     num_pages = 1;
     dp = dynmemmap + reg_start;
@@ -433,10 +431,8 @@ void * dynmem_clone(void * addr)
      * dynmem_free_region() call.
      */
     if (dynmem_ref(addr)) {
-#ifdef configDYNEM_DEBUG
-        KERROR(KERROR_ERR, "%s(addr %p): Can't clone given dynmem area\n",
-               __func__, addr);
-#endif
+        KERROR_DBG("%s(addr %p): Can't clone given dynmem area\n",
+                   __func__, addr);
         return NULL;
     }
 
@@ -444,9 +440,7 @@ void * dynmem_clone(void * addr)
 
     /* Take a copy of dynmem_region struct for this region. */
     if (update_dynmem_region_struct(addr)) { /* error */
-#ifdef configDYNEM_DEBUG
-        KERROR(KERROR_ERR, "%s(addr %p): Clone failed\n", __func__, addr);
-#endif
+        KERROR_DBG("%s(addr %p): Clone failed\n", __func__, addr);
         mtx_unlock(&dynmem_region_lock);
 
         return NULL;
@@ -457,10 +451,8 @@ void * dynmem_clone(void * addr)
     /* Allocate a new region. */
     new_region = dynmem_alloc_region(cln.num_pages, cln.ap, cln.control);
     if (new_region == NULL) {
-#ifdef configDYNEM_DEBUG
-        KERROR(KERROR_ERR, "%s(addr %p): Out of dynmem while cloning\n",
-                __func__, addr);
-#endif
+        KERROR_DBG("%s(addr %p): Out of dynmem while cloning\n",
+                   __func__, addr);
         return NULL;
     }
 
@@ -486,10 +478,8 @@ uint32_t dynmem_acc(const void * addr, size_t len)
         goto out; /* Address out of bounds. */
 
     if (update_dynmem_region_struct((void *)addr)) { /* error */
-#ifdef configDYNEM_DEBUG
-        KERROR(KERROR_DEBUG, "%s(addr %p, len %zu): Access check failed\n",
-               __func__, addr, len);
-#endif
+        KERROR_DBG("%s(addr %p, len %zu): Access check failed\n",
+                   __func__, addr, len);
         goto out;
     }
 

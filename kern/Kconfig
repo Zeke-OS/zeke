@@ -266,24 +266,6 @@ config configKASSERT
     Enable KASSERT asserts in the kernel. Selecting this option will slightly
     slow down the kernel.
 
-config configBUF_DEBUG
-    bool "buffers debugging"
-    default n
-    ---help---
-    Enable buf and bio debug messages and additional asserts.
-
-config configDYNEM_DEBUG
-    bool "dynmem debugging"
-    default n
-    ---help---
-    Enable dynmem debug messages and asserts.
-
-config configEXEC_DEBUG
-    bool "Exec debugging"
-    default n
-    ---help---
-    Enable exec debug messages.
-
 config configKINIT_DEBUG
     bool "kinit debugging"
     default n

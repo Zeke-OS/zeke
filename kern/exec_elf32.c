@@ -108,10 +108,8 @@ static int read_elf32_header(struct elf32_header * elfhdr, file_t * file)
 
     bytes_read = vn->vnode_ops->read(file, &uio, elf32_header_size);
     if (bytes_read != elf32_header_size) {
-#if defined(configEXEC_DEBUG)
-        KERROR(KERROR_DEBUG, "Reading elf failed (bytes_read = %d)\n",
-               (int)bytes_read);
-#endif
+        KERROR_DBG("Reading elf failed (bytes_read = %d)\n",
+                   (int)bytes_read);
         return -ENOEXEC;
     }
 
@@ -239,24 +237,20 @@ static int load_section(struct elf_ctx * ctx, size_t sect_index,
     return 0;
 }
 
-#if defined(configEXEC_DEBUG)
 static void nt_version(struct elf_note * note, size_t align)
 {
     char * vendor = (char *)note + sizeof(struct elf_note);
     char * value = vendor + note->n_namesz;
 
-    KERROR(KERROR_DEBUG, "Vendor: %s, Value: %s\n", vendor, value);
+    KERROR_DBG("Vendor: %s, Value: %s\n", vendor, value);
 }
-#endif
 
 static size_t nt_stacksize(struct elf_note * note, size_t align)
 {
     char * vendor = (char *)note + sizeof(struct elf_note);
     uint32_t value = *(uint32_t *)(vendor + memalign_size(note->n_namesz,
                                                           align));
-#if defined(configEXEC_DEBUG)
-    KERROR(KERROR_DEBUG, "Vendor: %s, Value: %u\n", vendor, value);
-#endif
+    KERROR_DBG("Vendor: %s, Value: %u\n", vendor, value);
 
     if (strncmp(vendor, ELFNOTE_VENDOR_ZEKE, note->n_namesz))
         return 0; /* Not ours */
@@ -279,9 +273,7 @@ static int load_notes(struct elf_ctx * ctx, size_t sect_index)
     }
 
     if (read_section(ctx, sect_index, sect, phdr->p_memsz) < 0) {
-#if defined(configEXEC_DEBUG)
-        KERROR(KERROR_DEBUG, "Failed to read a notes\n");
-#endif
+        KERROR_DBG("Failed to read a notes\n");
         retval = -ENOEXEC;
         goto out;
     }
@@ -292,9 +284,7 @@ static int load_notes(struct elf_ctx * ctx, size_t sect_index)
 
         if ((uintptr_t)note & (align - 1)) {
             /* Incorrect alignment */
-#if defined(configEXEC_DEBUG)
-            KERROR(KERROR_DEBUG, "Aligment fault %p %p\n", note, sect);
-#endif
+            KERROR_DBG("Aligment fault %p %p\n", note, sect);
             retval = -ENOEXEC;
             goto out;
         }
@@ -308,9 +298,7 @@ static int load_notes(struct elf_ctx * ctx, size_t sect_index)
 
         switch (note->n_type) {
         case NT_VERSION:
-#if defined(configEXEC_DEBUG)
             nt_version(note, align);
-#endif
             break;
         case NT_STACKSIZE: /* Preferred minimum stack size */
             ctx->stack_size = nt_stacksize(note, align);

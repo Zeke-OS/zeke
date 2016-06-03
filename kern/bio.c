@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   IO Buffer Cache.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -73,10 +73,8 @@ void _bio_init(void)
  */
 int biobuf_compar(struct buf * a, struct buf * b)
 {
-#ifdef configBUF_DEBUG
     KASSERT(a->b_file.vnode == b->b_file.vnode,
             "vnodes differ in the same tree");
-#endif
 
     return (a->b_blkno - b->b_blkno);
 }
