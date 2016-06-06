@@ -51,10 +51,10 @@
 /*
  * Dynamic configuration of debug messages.
  */
-struct _kerror_debug_msg {
-    char flags;
+struct _kerror_dyndebug_msg {
+    uint32_t flags;
+    uint32_t line;
     const char * file;
-    int line;
 };
 
 /* Line number as a string */
@@ -97,7 +97,7 @@ void _kerror_release_buf(size_t index);
     _KERROR2(level, _KERROR_WHERESTR, fmt, ##__VA_ARGS__)
 
 #define KERROR_DBG(fmt, ...) do {                                       \
-    static struct _kerror_debug_msg _dbg_msg                            \
+    static struct _kerror_dyndebug_msg _dbg_msg                         \
         __section("set_debug_msg_sect") __used =                        \
         { .flags = 0, .file = __FILE__, .line = __LINE__ };             \
     if (_dbg_msg.flags & 1) {                                           \

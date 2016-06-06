@@ -40,13 +40,13 @@
 
 __GLOBL(__start_set_debug_msg_sect);
 __GLOBL(__stop_set_debug_msg_sect);
-extern struct _kerror_debug_msg __start_set_debug_msg_sect;
-extern struct _kerror_debug_msg __stop_set_debug_msg_sect;
+extern struct _kerror_dyndebug_msg __start_set_debug_msg_sect;
+extern struct _kerror_dyndebug_msg __stop_set_debug_msg_sect;
 
 static int toggle_dbgmsg(char * cfg)
 {
-    struct _kerror_debug_msg * msg_opt = &__start_set_debug_msg_sect;
-    struct _kerror_debug_msg * stop = &__stop_set_debug_msg_sect;
+    struct _kerror_dyndebug_msg * msg_opt = &__start_set_debug_msg_sect;
+    struct _kerror_dyndebug_msg * stop = &__stop_set_debug_msg_sect;
     char strbuf[40];
     char * file = strbuf;
     char * line;
@@ -98,8 +98,8 @@ void dyndebug_early_boot_init(void)
 
 static struct procfs_stream * read_dyndebug(const struct procfs_info * spec)
 {
-    struct _kerror_debug_msg * msg_opt = &__start_set_debug_msg_sect;
-    struct _kerror_debug_msg * stop = &__stop_set_debug_msg_sect;
+    struct _kerror_dyndebug_msg * msg_opt = &__start_set_debug_msg_sect;
+    struct _kerror_dyndebug_msg * stop = &__stop_set_debug_msg_sect;
     size_t bufsize = 4096;
     struct buf * streambuf;
     struct procfs_stream * stream;
@@ -145,8 +145,8 @@ ssize_t write_dyndebug(const struct procfs_info * spec,
                        struct procfs_stream * stream,
                        const uint8_t * buf, size_t bufsize)
 {
-    struct _kerror_debug_msg * msg_opt = &__start_set_debug_msg_sect;
-    struct _kerror_debug_msg * stop = &__stop_set_debug_msg_sect;
+    struct _kerror_dyndebug_msg * msg_opt = &__start_set_debug_msg_sect;
+    struct _kerror_dyndebug_msg * stop = &__stop_set_debug_msg_sect;
     int err;
 
     if (msg_opt == stop)
