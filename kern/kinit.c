@@ -75,7 +75,9 @@ int exec_init_array(void)
     extern void vralloc_init(void);
     int n;
 
+#ifdef configDYNDEBUG
     dyndebug_early_boot_init();
+#endif
 
     kputs("\n\nZeKe PreInit\n");
     n = __hw_preinit_array_end - __hw_preinit_array_start;

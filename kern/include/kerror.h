@@ -91,11 +91,20 @@ void _kerror_release_buf(size_t index);
  * Expect that storage space for messages may vary depending on selected logging
  * method and additional data stored like file and line number.
  * @param level Log level: KERROR_LOG, KERROR_WARN or KERROR_ERR.
- * @param msg Message to be logged.
+ * @param fmt message format string.
  */
 #define KERROR(level, fmt, ...) \
     _KERROR2(level, _KERROR_WHERESTR, fmt, ##__VA_ARGS__)
 
+#ifndef configDYNDEBUG
+#define KERROR_DBG(fmt, ...)
+#else
+/**
+ * Dynamic debug message.
+ * A message printed with this macro can be enabled by using the dyndebug
+ * interface.
+ * @param fmt message format string.
+ */
 #define KERROR_DBG(fmt, ...) do {                                       \
     static struct _kerror_dyndebug_msg _dbg_msg                         \
         __section("set_debug_msg_sect") __used =                        \
@@ -104,6 +113,7 @@ void _kerror_release_buf(size_t index);
         _KERROR2(KERROR_DEBUG, _KERROR_WHERESTR, fmt, ##__VA_ARGS__);   \
     }                                                                   \
 } while (0)
+#endif /* !__DBG__ */
 
 /**
  * Print return address of the current function.

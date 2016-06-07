@@ -258,12 +258,6 @@ config configKASSERT
     Enable KASSERT asserts in the kernel. Selecting this option will slightly
     slow down the kernel.
 
-config configDYNDEBUG_BOOTPARMS
-    string "Dyndebug boot params"
-    default ""
-    ---help---
-    Enable dynamic debug messages at boot time. List separators: ";, "
-
 config configKMEM_DEBUG
     bool "kmem debug"
     default n

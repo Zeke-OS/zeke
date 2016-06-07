@@ -48,4 +48,20 @@ config configDEBUG_DEBUG
         All debug messages and asserts.
 endchoice
 
+config configDYNDEBUG
+    bool "Dyndebug"
+    default y
+    depends on configKLOGGER
+    ---help---
+        Enable run-time configurable, dynamic debug, debug messages. Dyndebug
+        exposes an interface to /proc/dyndebug that can be controlled with
+        /sbin/dyndebug command.
+
+config configDYNDEBUG_BOOTPARMS
+    string "Dyndebug boot params"
+    default ""
+    depends on configDYNDEBUG
+    ---help---
+        Enable dynamic debug messages at boot time. List separators: ";, "
+
 endif

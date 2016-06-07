@@ -26,10 +26,11 @@
 include $(ROOT_DIR)/makefiles/user_head.mk
 
 # Binaries #####################################################################
-BIN-y := dyndebug getty sinit
+BIN-y := getty sinit
+BIN-$(configDYNDEBUG) += dyndebug
 
 # Source Files #################################################################
-dyndebug-SRC-y := src/dyndebug.c
+dyndebug-SRC-$(configDYNDEBUG) := src/dyndebug.c
 getty-SRC-y := src/getty.c
 sinit-SRC-y := src/sinit/sinit.c
 
