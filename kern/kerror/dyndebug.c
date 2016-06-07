@@ -38,6 +38,8 @@
 #include <kstring.h>
 #include <libkern.h>
 
+#define DD_MAX_LINE 40
+
 __GLOBL(__start_set_debug_msg_sect);
 __GLOBL(__stop_set_debug_msg_sect);
 extern struct _kerror_dyndebug_msg __start_set_debug_msg_sect;
@@ -47,7 +49,7 @@ static int toggle_dbgmsg(char * cfg)
 {
     struct _kerror_dyndebug_msg * msg_opt = &__start_set_debug_msg_sect;
     struct _kerror_dyndebug_msg * stop = &__stop_set_debug_msg_sect;
-    char strbuf[40];
+    char strbuf[DD_MAX_LINE];
     char * file = strbuf;
     char * line;
 
@@ -100,7 +102,9 @@ static struct procfs_stream * read_dyndebug(const struct procfs_info * spec)
 {
     struct _kerror_dyndebug_msg * msg_opt = &__start_set_debug_msg_sect;
     struct _kerror_dyndebug_msg * stop = &__stop_set_debug_msg_sect;
-    size_t bufsize = 4096;
+    const size_t nr_msg = ((size_t)stop - (size_t)msg_opt) /
+                          sizeof(struct _kerror_dyndebug_msg);
+    size_t bufsize = nr_msg * DD_MAX_LINE;
     struct buf * streambuf;
     struct procfs_stream * stream;
     struct uio uio;
