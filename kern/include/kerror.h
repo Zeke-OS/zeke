@@ -52,8 +52,8 @@
  * Dynamic configuration of debug messages.
  */
 struct _kerror_dyndebug_msg {
-    uint32_t flags;
-    uint32_t line;
+    uint16_t flags;
+    uint16_t line;
     const char * file;
 };
 
