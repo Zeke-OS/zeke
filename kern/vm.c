@@ -256,31 +256,29 @@ struct buf * vm_newsect(uintptr_t vaddr, size_t size, int prot)
  * Get a free random address in mem space of proc.
  * @note mm must be locked.
  */
-static uintptr_t rnd_addr(struct proc_info * proc, size_t size)
+static uintptr_t rnd_addr(struct vm_mm_struct * mm, size_t size)
 {
     size_t nr_regions;
     const size_t bits = NBITS(MMU_PGSIZE_SECTION);
     const uintptr_t addr_min = configEXEC_BASE_LIMIT;
-    uintptr_t addr_max = (~0) >> 1;
+    const uintptr_t addr_max = (~0) >> 1;
     uintptr_t vaddr;
 
-    KASSERT(mtx_test(&proc->mm.regions_lock), "mm should be locked\n");
+    KASSERT(mtx_test(&mm->regions_lock), "mm should be locked\n");
 
-    nr_regions = proc->mm.nr_regions;
+    nr_regions = mm->nr_regions;
     do {
-        int overlap;
         uintptr_t newreg_end;
 
+tryagain:
         vaddr = addr_min +
                 (kunirand((addr_max >> bits) - (addr_min >> bits)) << bits);
         vaddr &= ~(MMU_PGSIZE_COARSE - 1);
         newreg_end = vaddr + size - 1;
 
-        overlap = 0;
-
         for (size_t i = 0; i < nr_regions; i++) {
             uintptr_t reg_start, reg_end;
-            struct buf * bp = (*proc->mm.regions)[i];
+            struct buf * bp = (*mm->regions)[i];
             if (!bp)
                 continue;
 
@@ -289,14 +287,10 @@ static uintptr_t rnd_addr(struct proc_info * proc, size_t size)
 
             if (VM_RANGE_IS_OVERLAPPING(reg_start, reg_end,
                                         vaddr, newreg_end)) {
-                overlap = 1;
-                break;
+                goto tryagain;
             }
         }
-
-        if (overlap == 0)
-            break;
-    } while (1); /* TODO What if there is no space left? */
+    } while (0); /* TODO What if there is no space left? */
 
     return vaddr;
 }
@@ -313,7 +307,7 @@ struct buf * vm_rndsect(struct proc_info * proc, size_t size, int prot,
         size = old_bp->b_bufsize;
 
     mtx_lock(&proc->mm.regions_lock);
-    vaddr = rnd_addr(proc, size);
+    vaddr = rnd_addr(&proc->mm, size);
     mtx_unlock(&proc->mm.regions_lock);
 
     if (old_bp) {
@@ -345,7 +339,7 @@ struct buf * vm_new_userstack_curproc(size_t size)
         return NULL;
 
     mtx_lock(&curproc->mm.regions_lock);
-    vaddr = rnd_addr(curproc, vmstack->b_bufsize);
+    vaddr = rnd_addr(&curproc->mm, vmstack->b_bufsize);
 
     vmstack->b_uflags = VM_PROT_READ | VM_PROT_WRITE;
     vmstack->b_mmu.vaddr = vaddr;

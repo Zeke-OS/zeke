@@ -418,7 +418,7 @@ void sched_handler(void)
         panic("Nothing to schedule");
     }
     if (current_thread != prev_thread) {
-        mmu_map_region(&(current_thread->kstack_region->b_mmu));
+        mmu_map_region(&current_thread->kstack_region->b_mmu);
     }
 
     /*
