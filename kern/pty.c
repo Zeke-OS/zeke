@@ -96,12 +96,6 @@ static int ptydev_comp(struct pty_device * a, struct pty_device * b)
 RB_PROTOTYPE_STATIC(ptytree, pty_device, _entry, ptydev_comp);
 RB_GENERATE_STATIC(ptytree, pty_device, _entry, ptydev_comp);
 
-static unsigned next_ptyid(void)
-{
-    /* TODO Implement restart for ptyid */
-    return atomic_inc(&_next_pty_id);
-}
-
 /**
  * Get a pty device by id.
  */
@@ -200,21 +194,28 @@ static int ptyslave_write(struct tty * tty, off_t blkno,
  */
 static void creat_pty(file_t * file, struct tty * tty)
 {
-    int pty_id;
+    int pty_id, err;
     dev_t slave_dev_id;
-    char slave_dev_name[SPECNAMELEN];
     struct tty * slave_tty;
     struct pty_device * ptydev;
+    char slave_dev_name[SPECNAMELEN];
 
     file->stream = NULL; /* Just in case we fail to create a new pty device. */
 
-    pty_id = next_ptyid();
+    /* Find a pty name that's not reserved yet */
+    do {
+        pty_id = atomic_inc(&_next_pty_id);
+        ksprintf(slave_dev_name, sizeof(slave_dev_name), "pty%i", pty_id);
+    } while ((err = devfs_lookup(NULL, slave_dev_name)) != -ENOENT);
+    if (unlikely(err != -ENOENT)) {
+        KERROR(KERROR_ERR, "pty_id: %d, err: %d\n", pty_id, err);
+        panic("Failed to select a free pty index");
+    }
 
     /*
      * Slave device id and name.
      */
     slave_dev_id = DEV_MMTODEV(VDEV_MJNR_PTY, pty_id);
-    ksprintf(slave_dev_name, sizeof(slave_dev_name), "pty%i", pty_id);
 
     slave_tty = tty_alloc(drv_name, slave_dev_id, slave_dev_name,
                           sizeof(struct pty_device));

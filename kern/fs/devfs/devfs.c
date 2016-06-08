@@ -77,7 +77,7 @@ static fs_t devfs_fs = {
 };
 
 /* There is only one devfs, but it can be mounted multiple times */
-vnode_t * vn_devfs;
+static vnode_t * vn_devfs;
 
 static int devfs_delete_vnode(vnode_t * vnode);
 
@@ -210,6 +210,22 @@ const char * devtoname(struct vnode * dev)
         return NULL;
 
     return devnfo->dev_name;
+}
+
+int devfs_lookup(vnode_t ** result, char * str)
+{
+    vnode_t * vnode = NULL;
+    const int oflags = 0;
+    int err;
+
+    err = lookup_vnode(&vnode, vn_devfs, str, oflags);
+    if (err)
+        return err;
+    if (result)
+        *result = vnode;
+    else
+        vrele(vnode);
+    return 0;
 }
 
 ssize_t dev_read(file_t * file, struct uio * uio, size_t bcount)

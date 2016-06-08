@@ -137,6 +137,15 @@ void destroy_dev(vnode_t * vn);
 const char * devtoname(struct vnode * dev);
 
 /**
+ * Lookup for a device vnode in devfs.
+ * @param result is a pointer to a pointer where the result is stored, optional.
+ * @param str is a pointer to a string name of the device.
+ * @return  Returns zero if vnode was found;
+ *          error code -errno in case of an error.
+ */
+int devfs_lookup(vnode_t ** result, char * str);
+
+/**
  * Read from a device.
  * @param file      is a pointer to the device file.
  * @param count     is the byte count to read.
