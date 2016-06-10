@@ -39,9 +39,13 @@ int fflush(FILE * stream)
 {
     int res;
 
-    _PDCLIB_flockfile(stream);
-    res = _PDCLIB_fflush_unlocked(stream);
-    _PDCLIB_funlockfile(stream);
+    if (stream) {
+        _PDCLIB_flockfile(stream);
+        res = _PDCLIB_fflush_unlocked(stream);
+        _PDCLIB_funlockfile(stream);
+    } else {
+        res = _PDCLIB_fflush_unlocked(NULL);
+    }
 
     return res;
 }
