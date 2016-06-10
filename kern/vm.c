@@ -63,7 +63,7 @@ __kernel void * vm_uaddr2kaddr(struct proc_info * proc,
     if (!vpt)
         return NULL;
 
-    phys_uaddr = mmu_translate_vaddr(&(vpt->pt), (uintptr_t)uaddr);
+    phys_uaddr = mmu_translate_vaddr(&vpt->pt, (uintptr_t)uaddr);
 
     return phys_uaddr;
 }
@@ -433,17 +433,19 @@ int vm_mm_init(struct vm_mm_struct * mm, int nr_regions)
 void vm_mm_destroy(struct vm_mm_struct * mm)
 {
     /*
-     * Free regions
+     * Free all regions
      *
-     * We don't use lock here because the lock data is invalidated soon and any
-     * thread trying to wait for it will break anyway, so we just hope there
-     * is no-one trying to lock this process anymore. Technically there
-     * shouldn't be any threads locking this struct anymore.
+     * We don't use lock here because the lock descriptor data is invalidated
+     * soon and any thread trying to wait for it will break anyway, so we just
+     * hope there is no-one trying to lock this process anymore. Technically
+     * there shouldn't be any threads locking this struct anymore.
      */
     if (mm->regions) {
         for (int i = 0; i < mm->nr_regions; i++) {
-            if ((*mm->regions)[i]->vm_ops->rfree)
-                    (*mm->regions)[i]->vm_ops->rfree((*mm->regions)[i]);
+            struct buf ** regions = *mm->regions;
+
+            if (regions[i] && regions[i]->vm_ops->rfree)
+                regions[i]->vm_ops->rfree(regions[i]);
         }
         mm->nr_regions = 0;
 
@@ -452,9 +454,10 @@ void vm_mm_destroy(struct vm_mm_struct * mm)
 
         /* Free regions array. */
         kfree(mm->regions);
+        mm->regions = NULL;
     }
 
-    /* Free mpt. */
+    /* Free the mpt. */
     if (mm->mpt.pt_addr)
         ptmapper_free(&mm->mpt);
 }
