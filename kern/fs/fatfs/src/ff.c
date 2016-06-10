@@ -31,9 +31,6 @@
  * --------------------------
  */
 
-#define GET_INO(_dp_) \
-    ((_dp_)->index + ld_clust((_dp_)->fs, (_dp_)->dir))
-
 /*
  * Reentrancy related
  */
@@ -377,7 +374,10 @@ static WORD Fsid;           /* File system mount ID */
 #define INIT_NAMEBUF(dobj)  { lfn = kmalloc((_MAX_LFN + 1) * 2); \
                           if (!lfn) LEAVE_FF((dobj).fs, FR_NOT_ENOUGH_CORE); \
                             (dobj).lfn = lfn; (dobj).fn = sfn; }
-#define FREE_BUF()      kfree(lfn)
+#define FREE_BUF()      do { \
+    kfree(lfn); \
+    lfn = NULL; \
+} while (0)
 
 #else                   /* No LFN feature */
 #define DEF_NAMEBUF     uint8_t sfn[12]
@@ -924,13 +924,14 @@ static DWORD ld_clust(FATFS * fs, uint8_t * dir)
 {
     DWORD cl;
 
+    KASSERT(dir != NULL, "dir must be set");
+
     cl = LD_WORD(dir + DIR_FstClusLO);
     if (fs->fs_type == FS_FAT32)
         cl |= (DWORD)LD_WORD(dir + DIR_FstClusHI) << 16;
 
     return cl;
 }
-
 
 /**
  * @param dir Pointer to the directory entry.
@@ -940,6 +941,11 @@ static void st_clust(uint8_t * dir, DWORD cl)
 {
     ST_WORD(dir + DIR_FstClusLO, cl);
     ST_WORD(dir + DIR_FstClusHI, cl >> 16);
+}
+
+static inline DWORD get_ino(FF_DIR * dp)
+{
+    return dp->index + ld_clust(dp->fs, dp->dir);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1451,7 +1457,7 @@ static void get_fileinfo(FF_DIR * dp, FILINFO * fno)
         fatfs_time_fat2unix(&fno->fbtime,
                             (LD_WORD(dir + DIR_CrtDate) << 16) |
                             LD_WORD(dir + DIR_CrtTime), 0);
-        fno->ino = GET_INO(dp);
+        fno->ino = get_ino(dp);
     }
     *p = 0;     /* Terminate SFN string by a \0 */
 
@@ -2131,7 +2137,7 @@ FRESULT f_open(FF_FIL * fp, FATFS * fs, const TCHAR * path, uint8_t mode)
         if (res == FR_OK) {
             fp->flag = mode;                    /* File access mode */
             fp->err = 0;                        /* Clear error flag */
-            fp->ino = GET_INO(&dj);
+            fp->ino = get_ino(&dj);
             fp->sclust = ld_clust(dj.fs, dir);  /* File start cluster */
             fp->fsize = LD_DWORD(dir+DIR_FileSize); /* File size */
             fp->fptr = 0;                       /* File pointer */
@@ -2630,8 +2636,6 @@ FRESULT f_opendir(FF_DIR * dp, FATFS * fs, const TCHAR * path)
     if (res != FR_OK)
         goto fail;
 
-    dp->ino = GET_INO(dp);
-
     /* Follow completed */
     if (dp->dir) { /* It is not the origin directory itself */
         /*
@@ -2644,12 +2648,13 @@ FRESULT f_opendir(FF_DIR * dp, FATFS * fs, const TCHAR * path)
 
     dp->id = fs->id;
     res = dir_sdi(dp, 0); /* Rewind directory */
+    dp->ino = get_ino(dp);
 
     if (res == FR_NO_FILE)
         res = FR_NO_PATH;
 fail:
     if (res != FR_OK)
-        dp->fs = NULL; /* Invalidate the directory object if function faild */
+        dp->fs = NULL; /* Invalidate the directory object if function failed */
 
     LEAVE_FF(fs, res);
 }
