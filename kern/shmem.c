@@ -346,9 +346,11 @@ static int sys_mmap(__user void * user_args)
 
     retval = 0;
 fail:
-    err = copyout(&args, user_args, sizeof(args));
-    if (err) {
-        panic("mmap failed");
+    if (user_args) {
+        err = copyout(&args, user_args, sizeof(args));
+        if (err) {
+            panic("mmap failed");
+        }
     }
 
     return retval;
