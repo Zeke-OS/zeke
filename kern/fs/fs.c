@@ -647,7 +647,7 @@ int fs_fildes_curproc_next(file_t * new_file, int start)
  */
 static int fs_fildes_is_in_range(files_t * files, int fd)
 {
-    return (fd >= 0 || fd < files->count);
+    return (fd >= 0 && fd < files->count);
 }
 
 file_t * fs_fildes_ref(files_t * files, int fd, int count)
