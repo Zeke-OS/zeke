@@ -67,7 +67,7 @@ int main(int argc, char * argv[])
         switch (ch) {
         case 'o':
             if (*optarg)
-                options = catopt(options, optarg);
+                options = catopt(NULL, optarg);
             break;
         case 'r':
             flags |= MNT_RDONLY;

@@ -31,6 +31,8 @@ unsigned long opt2flags(struct optarr * optnames, size_t n_elem,
     char * remains = NULL;
     unsigned long flags = 0;
 
+    if (*options == NULL)
+        return 0;
     if ((*options)[0] == '\0') {
         *options = "";
         return 0;
