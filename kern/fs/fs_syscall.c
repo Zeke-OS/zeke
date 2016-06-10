@@ -496,13 +496,13 @@ out:
 
 static int sys_mkdir(__user void * user_args)
 {
-    struct _fs_mkdir_args * args = 0;
+    struct _fs_mkdir_args * args = NULL;
     int err, retval = -1;
 
     err = copyinstruct(user_args, (void **)(&args),
-            sizeof(struct _fs_mkdir_args),
-            GET_STRUCT_OFFSETS(struct _fs_mkdir_args,
-                path, path_len));
+                       sizeof(struct _fs_mkdir_args),
+                       GET_STRUCT_OFFSETS(struct _fs_mkdir_args,
+                                          path, path_len));
     if (err) {
         set_errno(-err);
         goto out;

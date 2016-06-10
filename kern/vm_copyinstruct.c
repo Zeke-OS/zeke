@@ -52,7 +52,8 @@ struct _cpyin_gc_node {
 };
 
 /**
- * Usage: copyinst(usr, &kern, sizeof(usr), GET_STRUCT_OFFSETS(struct x, a, a_len, c, c_len));
+ * Usage: copyinst(usr, &kern, sizeof(usr),
+ *                 GET_STRUCT_OFFSETS(struct x, a, a_len, c, c_len));
  */
 int copyinstruct(__user void * usr, __kernel void ** kern, size_t bytes, ...)
 {
