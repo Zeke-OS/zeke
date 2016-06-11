@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   MMU control functions for ARM11 ARMv6 instruction set.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -489,19 +489,25 @@ void mmu_control_set(uint32_t value, uint32_t mask)
  */
 void * mmu_translate_vaddr(const mmu_pagetable_t * pt, uintptr_t vaddr)
 {
-    void * retval = 0;
-    uint32_t * p_pte;
     uint32_t mask;
+    uintptr_t pte;
     size_t page_size;
     size_t offset = (size_t)(vaddr - (uintptr_t)(pt->vaddr));
 
     switch (pt->pt_type) {
+    uintptr_t * p_pte;
+
     case MMU_PTT_MASTER:
         page_size = MMU_PGSIZE_SECTION;
         mask    = 0xfff00000;
         offset &= 0x000fffff;
         p_pte   = (uint32_t *)pt->pt_addr; /* Page table base address */
         p_pte  += vaddr >> 20; /* Set to the corresponding pte */
+        pte     = *p_pte;
+
+        if (!((pte & MMU_PTE_SECTION) == MMU_PTE_SECTION)) {
+            return NULL;
+        }
         break;
     case MMU_PTT_COARSE:
         page_size = MMU_PGSIZE_COARSE;
@@ -509,20 +515,22 @@ void * mmu_translate_vaddr(const mmu_pagetable_t * pt, uintptr_t vaddr)
         offset &= 0x00000fff;
         p_pte   = (uint32_t *)pt->pt_addr;
         p_pte  += (vaddr & 0x000ff000) >> 12;
+        pte     = *p_pte;
+
+        if (!(pte & 2)) {
+            return NULL;
+        }
         break;
     default:
         KERROR(KERROR_ERR, "Invalid pt type.\n");
-        goto out;
+        return NULL;
     }
 
     if (offset > page_size) {
-        goto out;
-    } else {
-        retval = (void *)(((uintptr_t)(*p_pte) & mask) + offset);
+        return NULL;
     }
 
-out:
-    return retval;
+    return (void *)((pte & mask) + offset);
 }
 
 /* No reason to put these to a header file */
