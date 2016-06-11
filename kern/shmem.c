@@ -349,7 +349,12 @@ fail:
     if (user_args) {
         err = copyout(&args, user_args, sizeof(args));
         if (err) {
-            panic("mmap failed");
+            const struct ksignal_param sigparm = { .si_code = SEGV_ACCERR };
+
+            retval = -EFAULT;
+            KERROR_DBG("Unexpected EFAULT while copying return args to: %p\n",
+                       user_args);
+            ksignal_sendsig_fatal(curproc, SIGSEGV, &sigparm);
         }
     }
 
