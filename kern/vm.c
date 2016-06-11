@@ -107,8 +107,9 @@ int copyout_proc(struct proc_info * proc, __kernel const void * kaddr,
     }
 
     phys_uaddr = vm_uaddr2kaddr(proc, uaddr);
-    if (!phys_uaddr)
+    if (!phys_uaddr) {
         return -EFAULT;
+    }
 
     memcpy(phys_uaddr, kaddr, len);
     return 0;
@@ -854,8 +855,7 @@ int useracc_proc(__user const void * addr, size_t len, struct proc_info * proc,
         return 0;
 
     uaddr = (uintptr_t)addr;
-    (void)vm_find_reg(proc, uaddr, &region);
-    if (!region)
+    if (vm_find_reg(proc, uaddr, &region) == -1)
         return 0;
 
     start = region->b_mmu.vaddr;
@@ -871,7 +871,7 @@ int useracc_proc(__user const void * addr, size_t len, struct proc_info * proc,
     }
     end += region->b_mmu.vaddr - 1;
 
-    if (start <= uaddr && uaddr <= end)
+    if (VM_ADDR_IS_IN_RANGE(uaddr, start, end))
         return test_ap_user(rw, region);
     return 0;
 }

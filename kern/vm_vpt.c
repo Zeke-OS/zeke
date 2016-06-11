@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   VM functions.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -110,18 +110,8 @@ struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr,
                              size_t minsize)
 {
     struct ptlist * const ptlist_head = &mm->ptlist_head;
-    mmu_pagetable_t * const mpt = &mm->mpt;
-    struct vm_pt * vpt = NULL;
-    struct vm_pt filter = {
-        .pt.vaddr = MMU_CPT_VADDR(vaddr),
-        .pt.nr_tables = 1,
-        .flags = VM_PT_FLAG_FILTER,
-    }; /* Used as a search filter. */
-    size_t nr_tables;
-
-    KASSERT(mpt, "mpt can't be null");
-
-    nr_tables = bsize2nr_tables(minsize);
+    struct vm_pt * vpt;
+    size_t nr_tables = bsize2nr_tables(minsize);
 
     /*
      * Check if the requested page table is actually the system pagetable.
@@ -132,10 +122,20 @@ struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr,
         return &vm_pagetable_system;
     }
 
-    /* Look for existing page table. */
+    /* Look for an existing page table. */
     if (!RB_EMPTY(ptlist_head)) {
+        struct vm_pt filter = {
+            .pt.vaddr = MMU_CPT_VADDR(vaddr),
+            .pt.nr_tables = 1,
+            .flags = VM_PT_FLAG_FILTER,
+        };
+
         vpt = RB_FIND(ptlist, ptlist_head, &filter);
-        if (vpt && vpt->pt.nr_tables < nr_tables) {
+    } else {
+        vpt = NULL;
+    }
+    if (vpt) {
+        if (vpt->pt.nr_tables < nr_tables) {
             /*
              * FIXME If the returned vpt is too small then we need to do
              *       something.
@@ -144,15 +144,17 @@ struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr,
                    mmu_sizeof_pt_img(&vpt->pt), minsize);
             return NULL;
         }
-    }
-    if (!vpt) { /* Create a new pt if a sufficient pt not found. */
+    } else { /* Create a new pt if a sufficient pt not found. */
+        mmu_pagetable_t * const mpt = &mm->mpt;
         int err;
+
+        KASSERT(mpt, "mpt can't be null");
 
         vpt = vm_pt_alloc(nr_tables);
         if (!vpt)
             return NULL;
 
-        vpt->pt.vaddr = filter.pt.vaddr;
+        vpt->pt.vaddr = MMU_CPT_VADDR(vaddr);
         vpt->pt.master_pt_addr = mpt->pt_addr;
 
         /* Insert vpt (L2 page table) to the process. */
