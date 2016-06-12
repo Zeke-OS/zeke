@@ -135,6 +135,15 @@ struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr,
         vpt = NULL;
     }
     if (vpt) {
+        uintptr_t vpt_start = vpt->pt.vaddr;
+        uintptr_t vpt_end   = vpt_start + mmu_sizeof_pt_img(&vpt->pt) - 1;
+
+        if (!VM_ADDR_IS_IN_RANGE(vaddr, vpt_start, vpt_end)) {
+            KERROR(KERROR_ERR, "vaddr (%u) not in vpt (%p) %u - %u\n",
+                   (unsigned)vaddr, vpt,
+                   (unsigned)vpt_start, (unsigned)vpt_end);
+            return NULL;
+        }
         if (vpt->pt.nr_tables < nr_tables) {
             /*
              * FIXME If the returned vpt is too small then we need to do

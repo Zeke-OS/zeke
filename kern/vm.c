@@ -848,7 +848,7 @@ int useracc_proc(__user const void * addr, size_t len, struct proc_info * proc,
 {
     /* TODO Currently we don't allow addr + len to span over multiple regions */
 
-    struct buf * region = NULL;
+    struct buf * region;
     uintptr_t uaddr, start, end;
 
     if (addr == NULL)
@@ -871,6 +871,11 @@ int useracc_proc(__user const void * addr, size_t len, struct proc_info * proc,
     }
     end += region->b_mmu.vaddr - 1;
 
+    if ((rw & VM_PROT_WRITE) && (region->b_uflags & VM_PROT_COW)) {
+        /* FIXME We should inform the called */
+        KERROR(KERROR_WARN, "VMPROT_WRITE tested for COW region\n");
+    }
+
     if (VM_ADDR_IS_IN_RANGE(uaddr, start, end))
         return test_ap_user(rw, region);
     return 0;
@@ -880,9 +885,9 @@ void vm_get_uapstring(char str[5], struct buf * bp)
 {
     int uap = bp->b_uflags;
 
-    str[0] = (uap & VM_PROT_READ) ? 'r' : '-';
-    str[1] = (uap & VM_PROT_WRITE) ? 'w' : '-';
-    str[2] = (uap & VM_PROT_EXECUTE) ? 'x' : '-';
-    str[3] = (uap & VM_PROT_COW) ? 'c' : '-';
+    str[0] = (uap & VM_PROT_READ) ?     'r' : '-';
+    str[1] = (uap & VM_PROT_WRITE) ?    'w' : '-';
+    str[2] = (uap & VM_PROT_EXECUTE) ?  'x' : '-';
+    str[3] = (uap & VM_PROT_COW) ?      'c' : '-';
     str[4] = '\0';
 }
