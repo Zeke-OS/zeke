@@ -215,10 +215,9 @@ errout:
         if (!vm_rndsect(proc, 0 /* Ignored */, 0 /* Ignored */, bp))
             err = -ENOMEM;
     }
-    if (err && bp->vm_ops->rfree) {
-        bp->vm_ops->rfree(bp);
-        return err;
-    } else if (err) {
+    if (err) {
+        if (bp->vm_ops->rfree)
+            bp->vm_ops->rfree(bp);
         return err;
     }
 
@@ -320,13 +319,8 @@ static int sys_mmap(__user void * user_args)
     struct buf * bp = NULL;
     int err, retval;
 
-    if (!useracc(user_args, sizeof(args), VM_PROT_WRITE)) {
-        retval = -EFAULT;
-        goto fail;
-    }
-
-    err = copyin(user_args, &args, sizeof(args));
-    if (err) {
+    if (!useracc(user_args, sizeof(args), VM_PROT_WRITE) ||
+        (err = copyin(user_args, &args, sizeof(args)))) {
         retval = -EFAULT;
         goto fail;
     }
@@ -344,9 +338,16 @@ static int sys_mmap(__user void * user_args)
         goto fail;
     }
 
+    /*
+     * FIXME This shouldn't be needed here but it seems it sometimees fixes
+     * issues with missing page tables. Though sometimes it causes even worse
+     * behavior :(
+     */
+    vm_fixmemmap_proc(curproc);
+
     retval = 0;
 fail:
-    if (user_args) {
+    if (user_args && err != -EFAULT) {
         err = copyout(&args, user_args, sizeof(args));
         if (err) {
             const struct ksignal_param sigparm = { .si_code = SEGV_ACCERR };
