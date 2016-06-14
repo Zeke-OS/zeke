@@ -267,7 +267,7 @@ static int sys_getdents(__user void * user_args)
     size_t bytes_left;
     file_t * fildes;
     vnode_t * vnode;
-    int err, count = 0;
+    int err, count;
 
     err = copyin(user_args, &args, sizeof(args));
     if (err) {
@@ -275,9 +275,10 @@ static int sys_getdents(__user void * user_args)
         return -1;
     }
 
-    /* We must have a write access to the given buffer. */
-    if (!useracc((__user void *)args.buf, args.nbytes, VM_PROT_WRITE)) {
-        set_errno(EFAULT);
+    err = uio_init_ubuf(&dents, (__user void *)args.buf, args.nbytes,
+                        VM_PROT_WRITE);
+    if (err) {
+        set_errno(-err);
         return -1;
     }
 
@@ -293,17 +294,11 @@ static int sys_getdents(__user void * user_args)
         goto out;
     }
 
-    err = uio_init_ubuf(&dents, (__user void *)args.buf, args.nbytes,
-                        VM_PROT_WRITE);
-    if (err) {
-        count = -1;
-        set_errno(-err);
-        goto out;
-    }
 
     vnode = fildes->vnode;
     KASSERT(vnode->vnode_ops->readdir, "readdir() is defined");
 
+    count = 0;
     bytes_left = args.nbytes;
     while (bytes_left >= sizeof(struct dirent)) {
         struct dirent d; /* Temp storage */
@@ -494,6 +489,7 @@ out:
     return retval;
 }
 
+/* TODO Support fd and at_flags */
 static int sys_mkdir(__user void * user_args)
 {
     struct _fs_mkdir_args * args = NULL;
