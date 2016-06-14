@@ -406,16 +406,15 @@ void sched_handler(void)
     /*
      * Run schedulers until next runnable thread is found.
      */
-    current_thread = NULL;
     for (size_t i = 0; i < num_elem(CURRENT_CPU->sched_arr); i++) {
-        struct scheduler * sched = CURRENT_CPU->sched_arr[i];
+        struct scheduler * const sched = CURRENT_CPU->sched_arr[i];
+        struct thread_info * next_thread;
 
-        current_thread = sched->run(sched);
-        if (current_thread)
+        next_thread = sched->run(sched);
+        if (next_thread) {
+            current_thread = next_thread;
             break;
-    }
-    if (unlikely(!current_thread)) {
-        panic("Nothing to schedule");
+        }
     }
     if (current_thread != prev_thread) {
         mmu_map_region(&current_thread->kstack_region->b_mmu);
@@ -646,8 +645,6 @@ struct thread_info * thread_fork(pid_t new_pid)
     pthread_t new_id;
     thread_cdtor_t ** fork_handler_p;
 
-    KASSERT(old_thread, "current_thread not set, can't fork\n");
-
     /* Get the next free thread_id. */
     new_id = atomic_inc(&next_thread_id);
     if (new_id < 0) {
@@ -827,8 +824,6 @@ void thread_alarm_rele(int timer_id)
 
 void thread_yield(enum thread_eyield_strategy strategy)
 {
-    KASSERT(current_thread, "Current thread must be set");
-
     thread_ready(current_thread->id);
     if (strategy == THREAD_YIELD_IMMEDIATE)
         idle_sleep();
