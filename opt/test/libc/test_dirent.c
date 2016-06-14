@@ -32,6 +32,7 @@ static char * test_readdir(void)
     struct dirent * dep;
 
     dp = opendir("/bin");
+    pu_assert("dir opened", dp != NULL);
 
     dep = readdir(dp);
     pu_assert("got dirent", dep != NULL);
