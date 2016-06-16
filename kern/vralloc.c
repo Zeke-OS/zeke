@@ -56,6 +56,10 @@ struct vregion {
     LIST_ENTRY(vregion) _entry;
     uintptr_t kaddr;    /*!< Kernel address of the allocated dynmem block. */
     unsigned count;     /*!< Reserved pages count. */
+#ifdef configVRALLOC_DEBUG
+#define VREG_MAGIC_VALUE 0x6C542D55
+    unsigned magic;
+#endif
     size_t size;        /*!< Size of allocation bitmap in bytes. */
     bitmap_t map[0];    /*!< Bitmap of reserved pages. */
 };
@@ -156,6 +160,9 @@ static struct vregion * vreg_alloc_node(size_t count)
     }
 
     vreg->size = E2BITMAP_SIZE(count) * sizeof(bitmap_t);
+#ifdef configVRALLOC_DEBUG
+    vreg->magic = VREG_MAGIC_VALUE;
+#endif
 
     LIST_INSERT_HEAD(&vrlist_head, vreg, _entry);
 
@@ -215,6 +222,10 @@ static void vreg_free_callback(struct kobj * obj)
     size_t iblock;
 
     mtx_lock(&vr_big_lock);
+
+#ifdef configVRALLOC_DEBUG
+    KASSERT(vreg->magic == VREG_MAGIC_VALUE, "magic is correct");
+#endif
 
     /* Get the iblock no. */
     iblock = VREG_ADDR2I(vreg, bp->b_data);
