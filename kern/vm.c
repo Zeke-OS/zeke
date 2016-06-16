@@ -443,10 +443,11 @@ void vm_mm_destroy(struct vm_mm_struct * mm)
      */
     if (mm->regions) {
         for (int i = 0; i < mm->nr_regions; i++) {
-            struct buf ** regions = *mm->regions;
+            struct buf * region = (*mm->regions)[i];
 
-            if (regions[i] && regions[i]->vm_ops->rfree)
-                regions[i]->vm_ops->rfree(regions[i]);
+            if (region && region->vm_ops->rfree) {
+                region->vm_ops->rfree(region);
+            }
         }
         mm->nr_regions = 0;
 
