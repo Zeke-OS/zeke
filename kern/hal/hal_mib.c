@@ -60,7 +60,7 @@ SYSCTL_UINT(_hw, HW_PHYSMEM_START, physmem_start,
             CTLFLAG_RD | CTLFLAG_KERWR | CTLFLAG_SKIP, &physmem_start, 0,
             "");
 
-size_t physmem_size = configDYNMEM_SAFE_SIZE;
+size_t physmem_size = configDYNMEM_SIZE;
 SYSCTL_UINT(_hw, HW_PHYSMEM, physmem, CTLFLAG_RD | CTLFLAG_KERWR,
             &physmem_size, 0,
             "Total memory");

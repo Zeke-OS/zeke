@@ -39,16 +39,8 @@
 #include <kmem.h>
 #include <kstring.h>
 
-/**
- * Dynmem area starts.
- */
-#define DYNMEM_START        configDYNMEM_START
-
-/**
- * Dynmem area end.
- * Temporarily set to a safe value and overriden on init.
- */
-static size_t dynmem_end = (DYNMEM_START + configDYNMEM_SAFE_SIZE - 1);
+#define DYNMEM_START configDYNMEM_START
+#define DYNMEM_END   (configDYNMEM_START + configDYNMEM_SIZE)
 
 /**
  * Size of dynmem page table in pt region.
@@ -67,7 +59,7 @@ static size_t dynmem_end = (DYNMEM_START + configDYNMEM_SAFE_SIZE - 1);
  * Dynmemmap size.
  * Dynmem memory space is allocated in 1MB sections.
  */
-#define DYNMEM_MAPSIZE  ((configDYNMEM_MAX_SIZE) / DYNMEM_PAGE_SIZE)
+#define DYNMEM_MAPSIZE  ((configDYNMEM_SIZE) / DYNMEM_PAGE_SIZE)
 
 #if E2BITMAP_SIZE(DYNMEM_MAPSIZE) > 0
 #define DYNMEM_BITMAPSIZE       E2BITMAP_SIZE(DYNMEM_MAPSIZE)
@@ -116,15 +108,14 @@ SYSCTL_DECL(_vm_dynmem);
 SYSCTL_NODE(_vm, OID_AUTO, dynmem, CTLFLAG_RW, 0,
             "dynmem stats");
 
-static size_t dynmem_free = configDYNMEM_SAFE_SIZE;
+static size_t dynmem_free = configDYNMEM_SIZE;
 SYSCTL_UINT(_vm_dynmem, OID_AUTO, free, CTLFLAG_RD, &dynmem_free, 0,
             "Amount of free dynmem");
 
 /**
  * Total amount of dynmem in the system.
  */
-static size_t dynmem_tot = configDYNMEM_SAFE_SIZE;
-SYSCTL_UINT(_vm_dynmem, OID_AUTO, tot, CTLFLAG_RD, &dynmem_tot, 0,
+SYSCTL_UINT(_vm_dynmem, OID_AUTO, tot, CTLFLAG_RD, NULL, configDYNMEM_SIZE,
             "Total amount of dynmem");
 
 /**
@@ -144,6 +135,40 @@ static size_t dynmem_reserved;
 SYSCTL_UINT(_vm_dynmem, OID_AUTO, reserved, CTLFLAG_RD, &dynmem_reserved, 0,
             "Amount of reserved dynmem");
 
+static inline void * dindex2addr(size_t di)
+{
+    return (void *)(DYNMEM_START + di * DYNMEM_PAGE_SIZE);
+}
+
+static inline size_t addr2dindex(const void * addr)
+{
+    return (size_t)(addr - DYNMEM_START) / DYNMEM_PAGE_SIZE;
+}
+
+/**
+ * Check that the given address is in dynmem range.
+ * @param addr  is the address of the dynmem allocation.
+ * @param test  if 1 tests if actually allocated;
+ *              Otherwise only tests validity of addr.
+ * @return Boolean true if valid; Otherwise false/0.
+ */
+static int addr_is_valid(const void * addr, int test)
+{
+    const size_t i = addr2dindex(addr);
+
+    KASSERT(mtx_test(&dynmem_region_lock), "dynmem must be locked");
+
+    if ((size_t)addr < DYNMEM_START || (size_t)addr > DYNMEM_END) {
+        return 0; /* Not in range */
+    }
+
+    if (test && dynmemmap[i].refcount == 0) {
+        return 0; /* Not allocated */
+    }
+
+    return (1 == 1);
+}
+
 static void mark_reserved_areas(void)
 {
     struct dynmem_reserved_area ** areap;
@@ -152,15 +177,15 @@ static void mark_reserved_areas(void)
 
     SET_FOREACH(areap, dynmem_reserved) {
         struct dynmem_reserved_area * area = *areap;
-        const size_t pos = (size_t)area->caddr_start - DYNMEM_START;
+        const size_t pos = addr2dindex((void *)area->caddr_start);
         uintptr_t end_addr;
         size_t bytes;
         size_t blkcount;
 
-        if (area->caddr_start > dynmem_end)
+        if (area->caddr_start > DYNMEM_END)
             continue;
 
-        end_addr = (area->caddr_end > dynmem_end) ? dynmem_end :
+        end_addr = (area->caddr_end > DYNMEM_END) ? DYNMEM_END :
                                                     area->caddr_end;
         bytes = (end_addr - area->caddr_start + 1);
         blkcount = bytes / DYNMEM_PAGE_SIZE;
@@ -175,46 +200,7 @@ static void mark_reserved_areas(void)
  */
 void dynmem_init(void)
 {
-    int ctl_start[] = { CTL_HW, HW_PHYSMEM_START };
-    int ctl_size[] = { CTL_HW, HW_PHYSMEM };
-    size_t mem_start, mem_size;
-
-    kernel_sysctl_read(ctl_start, num_elem(ctl_start),
-                       &mem_start, sizeof(size_t));
-    kernel_sysctl_read(ctl_size, num_elem(ctl_size),
-                       &mem_size, sizeof(size_t));
-
-    /*
-     * Set dynmem end address.
-     */
-    if (mem_size > configDYNMEM_MAX_SIZE)
-        dynmem_end = mem_start + configDYNMEM_MAX_SIZE - 1;
-    else
-        dynmem_end = mem_start + mem_size - 1;
-
     mark_reserved_areas();
-}
-
-/**
- * Check that the given address is in dynmem range.
- * @param addr  is the address of the dynmem allocation.
- * @param test  if 1 tests if actually allocated;
- *              Otherwise only tests validity of addr.
- * @return Boolean true if valid; Otherwise false/0.
- */
-static int addr_is_valid(const void * addr, int test)
-{
-    const size_t i = (size_t)addr - DYNMEM_START;
-
-    KASSERT(mtx_test(&dynmem_region_lock), "dynmem must be locked");
-
-    if ((size_t)addr < DYNMEM_START || (size_t)addr > dynmem_end)
-        return 0; /* Not in range */
-
-    if (test && dynmemmap[i].refcount == 0)
-        return 0; /* Not allocated */
-
-    return (1 == 1);
 }
 
 /**
@@ -224,18 +210,18 @@ static int addr_is_valid(const void * addr, int test)
  * @param p Pointer to the begining of the allocated dynmem section (physical).
  * @return  0 or negative errno code.
  */
-static int update_dynmem_region_struct(void * base)
+static int update_dynmem_region_struct(void * base_addr)
 {
-    size_t reg_start = (size_t)base - DYNMEM_START;
+    size_t reg_start = addr2dindex(base_addr);
     uint32_t num_pages;
     struct dynmem_desc * dp;
     struct dynmem_desc flags;
 
     KASSERT(mtx_test(&dynmem_region_lock), "dynmem must be locked");
 
-    if (!addr_is_valid(base, 1)) {
+    if (!addr_is_valid(base_addr, 1)) {
         KERROR(KERROR_ERR, "%s(base %p): Invalid dynmem region addr\n",
-               __func__, base);
+               __func__, base_addr);
 
         return -EINVAL;
     }
@@ -248,8 +234,8 @@ static int update_dynmem_region_struct(void * base)
     }
     flags = dynmemmap[reg_start];
 
-    dynmem_region.vaddr = (uintptr_t)base; /* 1:1 mapping by default */
-    dynmem_region.paddr = (uintptr_t)base;
+    dynmem_region.vaddr = (uintptr_t)base_addr; /* 1:1 mapping by default */
+    dynmem_region.paddr = (uintptr_t)base_addr;
     dynmem_region.num_pages = num_pages;
     dynmem_region.ap = flags.ap;
     dynmem_region.control = flags.control;
@@ -271,7 +257,7 @@ static void * kmap_allocation(size_t base, size_t size, uint32_t ap,
                               uint32_t ctrl)
 {
     size_t i;
-    const size_t addr = DYNMEM_START + base * DYNMEM_PAGE_SIZE;
+    const uintptr_t addr = (uintptr_t)dindex2addr(base);
     const struct dynmem_desc desc = {
         .control = ctrl,
         .ap = ap,
@@ -314,7 +300,7 @@ void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t ctrl)
     if (bitmap_block_search(&pos, size, dynmemmap_bitmap,
                            SIZEOF_DYNMEMMAP_BITMAP)) {
         KERROR(KERROR_ERR, "%s(size %u): Out of dynmem, free %u/%u\n",
-               __func__, size, dynmem_free, configDYNMEM_SAFE_SIZE);
+               __func__, size, dynmem_free, configDYNMEM_SIZE);
         goto out;
     }
 
@@ -331,7 +317,7 @@ out:
 
 void * dynmem_alloc_force(void * addr, size_t size, uint32_t ap, uint32_t ctrl)
 {
-    size_t pos = (size_t)addr - DYNMEM_START;
+    size_t pos = addr2dindex(addr);
     void * retval = NULL;
 
     if (size == 0)
@@ -355,7 +341,7 @@ out:
 
 int dynmem_ref(void * addr)
 {
-    size_t i = (size_t)addr - DYNMEM_START;
+    size_t i = addr2dindex(addr);
     int retval;
 
     mtx_lock(&dynmem_region_lock);
@@ -381,8 +367,8 @@ out:
 
 void dynmem_free_region(void * addr)
 {
-    struct dynmem_desc * dp;
     size_t i;
+    struct dynmem_desc * dp;
 
     mtx_lock(&dynmem_region_lock);
 
@@ -392,7 +378,7 @@ void dynmem_free_region(void * addr)
         goto out;
     }
 
-    i = (size_t)addr - DYNMEM_START;
+    i = addr2dindex(addr);
     dp = dynmemmap + i;
 
     /* Check if there is any references */

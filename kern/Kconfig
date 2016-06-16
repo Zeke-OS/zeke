@@ -50,19 +50,12 @@ config configDYNMEM_START
     Though dynmem allocations are rarely used as such and some higher level
     memory allocator us used instead, eg. vralloc (buf.h).
 
-config configDYNMEM_SAFE_SIZE
-    hex "dynmem safe size"
+config configDYNMEM_SIZE
+    hex "dynmem size"
     default 0x800000
     ---help---
-    Safe size for dynmem if dynamic configuration fails (eg. no ATAGs).
-
-config configDYNMEM_MAX_SIZE
-    hex "dynmem max size"
-    default configDYNMEM_SAFE_SIZE
-    ---help---
-    Maximum size of the dynmem allocation area (excl. reserved regions).
-    This knob sets the absolute maximum size for memory area used for dynamic
-    memory allocations.
+    Size of the dynmem memory area, must be less than the total available memory
+    on the hardware.
 
 endmenu
 
@@ -263,6 +256,12 @@ config configKMEM_DEBUG
     default n
     ---help---
     Enable kmem init debug messages.
+
+config configVRALLOC_DEBUG
+    bool "vralloc debug"
+    default n
+    ---help---
+    Enable additional debugging assertions in vralloc.
 
 config configLOCK_DEBUG
     bool "klock debugging"
