@@ -106,27 +106,21 @@ void dynmem_free_region(void * addr);
  */
 void * dynmem_clone(void * addr);
 
-/*
- * Bit fields of the return value of dynmem_acc().
+/**
+ * Dynmem Access Permissions.
  */
-#define DYNMEM_XN       0x8 /*!< Dynmem execute never bit. */
-#define DYNMEM_AP_MASK  0x7 /*!< Dynmem mask for MMU AP bits. */
+struct dynmem_ap {
+    unsigned ap : 3; /*!< Same as AP in mmu.h */
+    unsigned xn : 1; /*!< Execute Never. */
+};
 
 /**
  * Test for dynmem access.
- * Return value format:
- *
- *     3 2   0
- *   +--+----+
- *   |XN| AP |
- *   +--+----+
- *
- * AP is in same format as in mmu.h and XN is DYNMEM_XN.
  * @param addr  is the physical base address.
  * @param len   is the size of block tested.
- * @returns Returns 0 if addr is invalid; Otherwise returns ap flags + xn bit.
+ * @returns Returns dynmem_ap struct.
  */
-uint32_t dynmem_acc(const void * addr, size_t len);
+struct dynmem_ap dynmem_acc(const void * addr, size_t len);
 
 #endif /* DYNMEM_H */
 

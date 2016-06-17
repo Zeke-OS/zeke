@@ -429,10 +429,10 @@ void * dynmem_clone(void * addr)
     return new_region;
 }
 
-uint32_t dynmem_acc(const void * addr, size_t len)
+struct dynmem_ap dynmem_acc(const void * addr, size_t len)
 {
     size_t size;
-    uint32_t retval = 0;
+    struct dynmem_ap ap = { .ap = 0, .xn = 0 };
 
     mtx_lock(&dynmem_region_lock);
 
@@ -456,15 +456,10 @@ uint32_t dynmem_acc(const void * addr, size_t len)
         goto out; /* Not in region range. */
     }
 
-    /*
-     * Access seems to be ok.
-     * Calc ap + xn as a return value for further testing.
-     */
-    retval  = dynmem_region.ap;
-    retval |= ((dynmem_region.control & MMU_CTRL_XN) == MMU_CTRL_XN) ?
-              DYNMEM_XN : 0;
+    ap.ap = dynmem_region.ap;
+    ap.xn = ((dynmem_region.control & MMU_CTRL_XN) == MMU_CTRL_XN);
 
 out:
     mtx_unlock(&dynmem_region_lock);
-    return retval;
+    return ap;
 }

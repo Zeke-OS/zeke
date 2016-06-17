@@ -740,16 +740,14 @@ void vm_fixmemmap_proc(struct proc_info * proc)
  * |XN| AP |
  * +--+----+
  */
-static int test_ap_priv(uint32_t rw, uint32_t ap)
+static int test_ap_priv(uint32_t rw, struct dynmem_ap ap)
 {
-    if (rw & VM_PROT_EXECUTE) {
-        if (ap & DYNMEM_XN)
-            return 0; /* XN bit set. */
+    if (rw & VM_PROT_EXECUTE && ap.xn) {
+        return 0; /* XN bit set. */
     }
-    ap &= DYNMEM_AP_MASK; /* Take only AP bits. */
 
     if (rw & VM_PROT_WRITE) { /* Test for RWxx */
-        switch (ap) {
+        switch (ap.ap) {
         case MMU_AP_RWNA:
         case MMU_AP_RWRO:
         case MMU_AP_RWRW:
@@ -758,7 +756,7 @@ static int test_ap_priv(uint32_t rw, uint32_t ap)
             return 0; /* No write access. */
         }
     } else if (rw & VM_PROT_READ) { /* Test for ROxx */
-        switch (ap) {
+        switch (ap.ap) {
         case MMU_AP_RWNA:
         case MMU_AP_RWRO:
         case MMU_AP_RWRW: /* I guess it's ok to accept if we have rw. */
@@ -776,7 +774,7 @@ static int test_ap_priv(uint32_t rw, uint32_t ap)
 int kernacc(__kernel const void * addr, int len, int rw)
 {
     mmu_region_t ** regp;
-    uint32_t ap;
+    struct dynmem_ap ap;
 
     KMEM_FOREACH(regp) {
         size_t reg_start, reg_size;
@@ -791,10 +789,9 @@ int kernacc(__kernel const void * addr, int len, int rw)
         }
     }
 
-    if ((ap = dynmem_acc(addr, len))) {
-        if (test_ap_priv(rw, ap)) {
-            return (1 == 1);
-        }
+    ap = dynmem_acc(addr, len);
+    if (ap.ap != 0 && test_ap_priv(rw, ap)) {
+        return (1 == 1);
     }
 
     KERROR(KERROR_WARN,
