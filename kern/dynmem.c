@@ -315,30 +315,6 @@ out:
     return retval;
 }
 
-void * dynmem_alloc_force(void * addr, size_t size, uint32_t ap, uint32_t ctrl)
-{
-    size_t pos = addr2dindex(addr);
-    void * retval = NULL;
-
-    if (size == 0)
-        return NULL;
-
-    mtx_lock(&dynmem_region_lock);
-
-    if (!addr_is_valid(addr, 0)) {
-        KERROR(KERROR_ERR, "%s(): Invalid address; %p\n", __func__, addr);
-
-        goto out;
-    }
-
-    bitmap_block_update(dynmemmap_bitmap, 1, pos, size);
-    retval = kmap_allocation(pos, size, ap, ctrl);
-
-out:
-    mtx_unlock(&dynmem_region_lock);
-    return retval;
-}
-
 int dynmem_ref(void * addr)
 {
     size_t i = addr2dindex(addr);

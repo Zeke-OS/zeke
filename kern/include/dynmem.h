@@ -84,20 +84,6 @@ struct dynmem_reserved_area {
 void * dynmem_alloc_region(size_t size, uint32_t ap, uint32_t control);
 
 /**
- * Forces a new memory region allocation from the given address even if it's
- * already reserved.
- * This function will never fail, and might be destructive and may even
- * corrupt the allocation table.
- * @param addr  Address.
- * @param size  Region size in 1MB blocks.
- * @param ap    Access permission.
- * @param control Control settings.
- * @returns address to the allocated region.
- */
-void * dynmem_alloc_force(void * addr, size_t size, uint32_t ap,
-                          uint32_t control);
-
-/**
  * Get a reference to an already allocated region.
  * @param addr is the address of the already allocated dynmem region.
  * @returns 0 if succeed.
