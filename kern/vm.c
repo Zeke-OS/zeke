@@ -685,36 +685,41 @@ int vm_unmapproc_region(struct proc_info * proc, struct buf * region)
 int vm_unload_regions(struct proc_info * proc, int start, int end)
 {
     struct vm_mm_struct * const mm = &proc->mm;
-    int locked = 0;
+    int locked, retval;
 
     mtx_lock(&mm->regions_lock);
+    locked = 1;
+
     if (start < 0 || start >= mm->nr_regions || end >= mm->nr_regions) {
-        mtx_unlock(&mm->regions_lock);
-        return -EINVAL;
+        retval = -EINVAL;
+        goto out;
     }
     if (end == -1) {
         end = mm->nr_regions - 1;
     }
-    mtx_unlock(&mm->regions_lock);
 
     for (int i = start; i < end; i++) {
         struct buf * region;
 
-        if (!locked)
+        if (!locked) {
             mtx_lock(&mm->regions_lock);
-        locked = 1;
-        region = (*mm->regions)[i];
-        if (!region)
-            continue;
+            locked = 1;
+        }
 
-        mtx_unlock(&mm->regions_lock);
-        locked = 0;
-        vm_replace_region(proc, NULL, i, 0);
+        region = (*mm->regions)[i];
+        if (region) {
+            mtx_unlock(&mm->regions_lock);
+            locked = 0;
+            vm_replace_region(proc, NULL, i, 0);
+        }
     }
+
+    retval = 0;
+out:
     if (locked)
         mtx_unlock(&mm->regions_lock);
 
-    return 0;
+    return retval;
 }
 
 void vm_fixmemmap_proc(struct proc_info * proc)
@@ -724,8 +729,10 @@ void vm_fixmemmap_proc(struct proc_info * proc)
 
     mtx_lock(&mm->regions_lock);
     for (size_t i = 0; i < nr_regions; i++) {
-        if ((*mm->regions)[i]) {
-            vm_mapproc_region(proc, (*mm->regions)[i]);
+        struct buf * region = (*mm->regions)[i];
+
+        if (region) {
+            vm_mapproc_region(proc, region);
         }
     }
     mtx_unlock(&mm->regions_lock);
