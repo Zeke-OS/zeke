@@ -1,10 +1,13 @@
 configUSE_HFP=y
 __ARM6K__=y
-configFB=y
-configBCM_FB=y
-configBCM_PM=y
+configUSER_CCFLAGS="-g"
 configEMMC=y
 configEMMC_WRITE_SUPPORT=y
+configFB=y
+configBCM_FB=y
+configBCM_INFO=y
+configBCM_JTAG=y
+configBCM_PM=y
 configMAXPROC=10
 configKASSERT=y
 configLOCK_DEBUG=y
@@ -13,7 +16,6 @@ configFATFS=y
 configFATFS_LFN=y
 configPROCCAP=y
 # configBUNDLE_STATIC is not set
-configTISH=y
-configSINIT_STDOUT="/dev/fb0"
+configUSR_EXAMPLES=y
 configUSR_GAMES=y
 configTESTS_FB=y
