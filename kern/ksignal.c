@@ -646,7 +646,7 @@ static void ksignal_post_scheduling(void)
     ksig_unlock(&sigs->s_lock);
     kfree_lazy(ksiginfo);
 }
-DATA_SET(post_sched_tasks, ksignal_post_scheduling);
+SCHED_POST_SCHED_TASK(ksignal_post_scheduling);
 
 int ksignal_sendsig(struct signals * sigs, int signum,
                     const struct ksignal_param * param)

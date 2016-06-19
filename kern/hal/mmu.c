@@ -36,6 +36,7 @@
 #include <hal/mmu.h>
 #include <kerror.h>
 #include <klocks.h>
+#include <ksched.h>
 #include <kstring.h>
 #include <proc.h>
 #include <thread.h>
@@ -275,4 +276,4 @@ static void mmu_calc_pfcps(void)
         _pf_raw_count = 0;
     }
 }
-DATA_SET(post_sched_tasks, mmu_calc_pfcps);
+SCHED_POST_SCHED_TASK(mmu_calc_pfcps);

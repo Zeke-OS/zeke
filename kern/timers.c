@@ -38,6 +38,7 @@
 #include <machine/atomic.h>
 #include <hal/hw_timers.h>
 #include <kinit.h>
+#include <ksched.h>
 #include <thread.h>
 #include <timers.h>
 
@@ -92,7 +93,7 @@ void timers_run(void)
         }
     } while (++i < configTIMERS_MAX);
 }
-DATA_SET(pre_sched_tasks, timers_run);
+SCHED_PRE_SCHED_TASK(timers_run);
 
 int timers_add(void (*event_fn)(void *), void * event_arg,
                timers_flags_t flags, uint64_t usec)

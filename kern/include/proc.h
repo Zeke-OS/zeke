@@ -274,11 +274,6 @@ struct thread_info * proc_iterate_threads(const struct proc_info * proc,
 void proc_thread_removed(pid_t pid, pthread_t thread_id);
 
 /**
- * @note This function should be only called by the scheduler.
- */
-void proc_update_times(void);
-
-/**
  * Handle page fault caused by a process.
  * Usually this handler is executed because of cow page table.
  */

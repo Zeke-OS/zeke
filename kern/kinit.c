@@ -67,7 +67,7 @@ SYSCTL_STRING(_kern, OID_AUTO, root, CTLFLAG_RD, rootfs, 0,
 /**
  * Run all kernel module initializers.
  */
-int exec_init_array(void)
+void exec_init_array(void)
 {
     extern void dyndebug_early_boot_init(void);
     extern void kmem_init(void);
@@ -99,8 +99,6 @@ int exec_init_array(void)
     n = __hw_postinit_array_end - __hw_postinit_array_start;
     exec_array(__hw_postinit_array_start, n);
     enable_interrupt();
-
-    return 0;
 }
 
 /**

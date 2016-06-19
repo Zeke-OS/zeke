@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file arm1176jzf_s_interrupt.c
+ * @file arm11_interrupt.c
  * @author Olli Vanhoja
  * @brief Interrupt service routines.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -65,35 +65,22 @@ __attribute__ ((naked, aligned(32))) static void interrupt_vectors(void)
 
 void arm11_undef_handler(void)
 {
-    uintptr_t addr;
-    uintptr_t lr;
-    char buf[80];
+    uintptr_t addr, lr;
+    char buf[120];
 
     if (!current_thread) {
         panic("current thread not set");
     }
 
-    /*
-     * RFE Verify these.
-     */
     addr = current_thread->sframe.s[SCHED_SFRAME_ABO].pc;
     lr = current_thread->sframe.s[SCHED_SFRAME_ABO].lr;
 
-    /*
-     * TODO Enable interrupts.
-     */
+    ksprintf(buf, sizeof(buf),
+             "Thread %d: Undefined instruction @ %x, lr: %x\n",
+             current_thread->id, addr, lr);
 
-    ksprintf(buf, sizeof(buf), "Undefined instruction @ %x, lr: %x\n",
-             addr, lr);
-
-    if (thread_flags_is_set(current_thread, SCHED_INSYS_FLAG)) {
-        /*
-         * TODO In some cases we could probably just kill the process/thread
-         * and still maintain a stable system even though the issue was in
-         * the kernel.
-         */
-        panic(buf);
-    } else {
+    if (current_thread->id != 0 &&
+        !thread_flags_is_set(current_thread, SCHED_INSYS_FLAG)) {
         const struct ksignal_param sigparm = { .si_code = ILL_ILLOPC };
 
         enable_interrupt();
@@ -105,6 +92,15 @@ void arm11_undef_handler(void)
          */
         ksignal_sendsig_fatal(curproc, SIGILL, &sigparm);
         thread_wait();
+    } else {
+        /*
+         * TODO In some cases we could probably just kill the process/thread
+         * and still maintain a stable system even though something happened
+         * inside the kernel.
+         */
+
+        stack_dump(current_thread->sframe.s[SCHED_SFRAME_ABO]);
+        panic(buf);
     }
 }
 
@@ -113,13 +109,12 @@ void arm11_undef_handler(void)
  */
 __attribute__ ((naked)) void bad_exception(void)
 {
-    panic("bad_exception.");
+    panic("bad_exception");
 }
 
 int arm_interrupt_preinit(void)
 {
     SUBSYS_INIT("arm_interrupt_preinit");
-    kputs(" ...enabling interrupts\n");
 
     /* Set interrupt base register */
     __asm__ volatile ("mcr p15, 0, %[addr], c12, c0, 0"

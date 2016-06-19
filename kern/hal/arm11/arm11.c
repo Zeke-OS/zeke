@@ -32,9 +32,8 @@
  *******************************************************************************
  */
 
-#include <stddef.h>
-#include <sys/linker_set.h>
 #include <errno.h>
+#include <stddef.h>
 #include <hal/core.h>
 #include <kerror.h>
 #include <ksched.h>
@@ -308,7 +307,7 @@ static void fork_init_tls(struct thread_info * th)
 #undef INIT_VFP_REG
 #endif
 }
-DATA_SET(thread_fork_handlers, fork_init_tls);
+SCHED_THREAD_FORK_HANDLER(fork_init_tls);
 
 /*
  * HW TLS in this context means anything that needs to be thread local and
@@ -357,7 +356,7 @@ static void arm11_sched_push_hw_tls(void)
 #undef SAVE_VFP_REG
 #endif
 }
-DATA_SET(pre_sched_tasks, arm11_sched_push_hw_tls);
+SCHED_PRE_SCHED_TASK(arm11_sched_push_hw_tls);
 
 static void arm11_sched_pop_hw_tls(void)
 {
@@ -401,7 +400,7 @@ static void arm11_sched_pop_hw_tls(void)
 #undef LOAD_VFP_REG
 #endif
 }
-DATA_SET(post_sched_tasks, arm11_sched_pop_hw_tls);
+SCHED_POST_SCHED_TASK(arm11_sched_pop_hw_tls);
 
 static char stack_dump_buf[400];
 void stack_dump(sw_stack_frame_t frame)

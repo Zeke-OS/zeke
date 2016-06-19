@@ -30,16 +30,16 @@
  *******************************************************************************
  */
 
-#include <sys/linker_set.h>
-#include <kinit.h>
 #include <errno.h>
-#include <hal/hw_timers.h>
-#include <libkern.h>
-#include <kstring.h>
-#include <klocks.h>
-#include <kerror.h>
-#include <syscall.h>
 #include <sys/time.h>
+#include <syscall.h>
+#include <hal/hw_timers.h>
+#include <kerror.h>
+#include <kinit.h>
+#include <klocks.h>
+#include <ksched.h>
+#include <kstring.h>
+#include <libkern.h>
 
 #define SEC_MS 1000
 #define SEC_US 1000000
@@ -97,7 +97,7 @@ static void update_time_nonblocking(void)
 }
 
 /* Calculate a new value for realtime at least before scheduling anything. */
-DATA_SET(pre_sched_tasks, update_time_nonblocking);
+SCHED_PRE_SCHED_TASK(update_time_nonblocking);
 
 void nanotime(struct timespec * ts)
 {

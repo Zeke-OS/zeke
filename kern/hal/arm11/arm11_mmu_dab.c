@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   MMU control functions for ARM11 ARMv6 instruction set.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -118,6 +118,11 @@ void mmu_data_abort_handler(void)
         panic("Thread not set on DAB");
     }
 
+    if (far <= 4096) {
+        KERROR(KERROR_DEBUG, "far: %d\n", far);
+        panic("invalid access");
+    }
+
     /*
      * RFE Block the thread owner
      * We may want to block the process owning this thread and possibly
@@ -213,8 +218,8 @@ static int dab_align(const struct mmu_abo_param * restrict abo)
         return -ESRCH;
 
     mmu_abo_dump(abo);
-    KERROR(KERROR_DEBUG, "%s: Send a fatal SIGBUS to %d\n",
-           __func__, abo->proc->pid);
+    KERROR_DBG("%s: Send a fatal SIGBUS to %d\n",
+               __func__, abo->proc->pid);
 
     /*
      * Deliver SIGBUS.

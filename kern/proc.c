@@ -488,6 +488,7 @@ void proc_update_times(void)
         curproc->tms.tms_utime++;
     }
 }
+SCHED_PRE_SCHED_TASK(proc_update_times);
 
 int proc_abo_handler(const struct mmu_abo_param * restrict abo)
 {

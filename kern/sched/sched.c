@@ -140,6 +140,12 @@ static struct cpu_sched cpu[KSCHED_CPU_COUNT];
 #define TKSTACK_SIZE ((configTKSTACK_END - configTKSTACK_START) + 1)
 
 /*
+ * Linker sets for pre- and post-scheduling tasks.
+ */
+SET_DECLARE(pre_sched_tasks, sched_task_t);
+SET_DECLARE(post_sched_tasks, sched_task_t);
+
+/*
  * Linker sets for thread constructors and destructors.
  */
 SET_DECLARE(thread_ctors, thread_cdtor_t);
@@ -194,12 +200,6 @@ struct thread_info * current_thread;
 
 static rwlock_t loadavg_lock;
 static uint32_t loadavg[3] = { 0, 0, 0 }; /*!< CPU load averages. */
-
-/*
- * Linker sets for pre- and post-scheduling tasks.
- */
-SET_DECLARE(pre_sched_tasks, void);
-SET_DECLARE(post_sched_tasks, void);
 
 RB_PROTOTYPE_STATIC(threadmap, thread_info, sched.ttentry_, thread_id_compare);
 RB_GENERATE_STATIC(threadmap, thread_info, sched.ttentry_, thread_id_compare);
@@ -359,19 +359,16 @@ int sched_thread_csw_ok(struct thread_info * thread)
 void sched_handler(void)
 {
     struct thread_info * const prev_thread = current_thread;
-    void ** task_p;
+    sched_task_t ** task_p;
     uint64_t sched_start_time;
 
     sched_start_time = get_utime();
 
-    if (!current_thread) {
+    if (unlikely(!current_thread)) {
         current_thread = thread_lookup(0);
         if (!current_thread)
             panic("No thread 0\n");
     }
-
-    /* Update process times struct now. */
-    proc_update_times();
 
     /*
      * Pre-scheduling tasks.
