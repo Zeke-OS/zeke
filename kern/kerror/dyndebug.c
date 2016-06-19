@@ -56,17 +56,25 @@ static int toggle_dbgmsg(char * cfg)
     if (msg_opt == stop)
         return -EINVAL;
 
-    strlcpy(strbuf, cfg, sizeof(strbuf));
-    file = strbuf;
-    line = kstrchr(strbuf, ':');
+    if (cfg[0] == '*') { /* Match all */
+        file = NULL;
+        line = NULL;
+    } else { /* Match specfic file */
+        strlcpy(strbuf, cfg, sizeof(strbuf));
+        file = strbuf;
+        line = kstrchr(strbuf, ':');
 
-    if (line) {
-        line[0] = '\0';
-        line++;
+        if (line) { /* Match line number */
+            line[0] = '\0';
+            line++;
+        }
     }
 
     while (msg_opt < stop) {
-        if (strcmp(file, msg_opt->file) == 0) {
+        if (file) {
+            if (strcmp(file, msg_opt->file) != 0)
+                goto next;
+
             if (line && *line != '\0') {
                 char msgline[12];
 
@@ -74,8 +82,10 @@ static int toggle_dbgmsg(char * cfg)
                 if (strcmp(line, msgline) != 0)
                     goto next;
             }
-            msg_opt->flags ^= 1;
         }
+
+        /* Toggle */
+        msg_opt->flags ^= 1;
 
 next:
         msg_opt++;
