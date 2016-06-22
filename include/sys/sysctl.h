@@ -65,18 +65,6 @@
 #define CTL_MAXSTRNAME  80 /*! Maximum length of a string name for a sysctl
                             *  node. */
 
-/*
- * Each subsystem defined by sysctl defines a list of variables
- * for that subsystem. Each name is either a node with further
- * levels defined below it, or it is a leaf of some particular
- * type given below. Each sysctl level defines a set of name/type
- * pairs to be used by sysctl(8) in manipulating the subsystem.
- */
-struct ctlname {
-    char * ctl_name;    /*!< subsystem name */
-    int ctl_type;       /*!< type of name */
-};
-
 /* CTL types */
 #define CTLTYPE         0xf /*!< Mask for the type. */
 #define CTLTYPE_NODE    1   /*!< Name is a node (parent for other nodes). */
@@ -230,8 +218,9 @@ int sysctltstmib(int * left, int * right, int len);
 #include <sys/types.h>
 #include <sys/priv.h>
 
-#define SYSCTL_HANDLER_ARGS struct sysctl_oid * oidp, void * arg1, \
-        intptr_t arg2, struct sysctl_req * req
+#define SYSCTL_HANDLER_ARGS \
+    struct sysctl_oid * oidp, void * arg1, \
+    intptr_t arg2, struct sysctl_req * req
 
 /**
  * Sysctl request.
@@ -588,8 +577,6 @@ int kernel_sysctl_read(int * name, unsigned int namelen,
 
 int kernel_sysctl_write(int * name, unsigned int namelen,
                         const void * new, size_t newlen);
-
-int sys___sysctl(struct cred * cred, struct _sysctl_args * uap);
 
 #endif /* KERNEL_INTERNAL */
 

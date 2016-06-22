@@ -78,6 +78,8 @@ static mtx_t sysctllock = MTX_INITIALIZER(MTX_TYPE_SPIN, 0);
 
 #define SYSCTL_LOCK()       mtx_lock(&sysctllock)
 #define SYSCTL_UNLOCK()     mtx_unlock(&sysctllock)
+#define SYSCTL_ASSERT_XLOCKED() \
+    KASSERT(mtx_test(&sysctllock), "sysctllock is required")
 
 
 static struct sysctl_oid * sysctl_find_oidname(const char * name,
@@ -126,9 +128,7 @@ void sysctl_register_oid(struct sysctl_oid * oidp)
      * First check if another oid with the same name already
      * exists in the parent's list.
      */
-#if 0
     SYSCTL_ASSERT_XLOCKED();
-#endif
     p = sysctl_find_oidname(oidp->oid_name, parent);
     if (p != NULL) {
         if ((p->oid_kind & CTLTYPE) == CTLTYPE_NODE) {
@@ -136,7 +136,7 @@ void sysctl_register_oid(struct sysctl_oid * oidp)
             return;
         } else {
             KERROR(KERROR_WARN,
-                    "can't re-use a leaf (%s)!\n", p->oid_name);
+                   "can't re-use a leaf (%s)!\n", p->oid_name);
             return;
         }
     }
@@ -181,9 +181,7 @@ void sysctl_unregister_oid(struct sysctl_oid * oidp)
 {
     struct sysctl_oid * p;
 
-#if 0
     SYSCTL_ASSERT_XLOCKED();
-#endif
     if (oidp->oid_number == OID_AUTO) {
         /*
          * This can happen when a module fails to register and is
@@ -210,9 +208,7 @@ int sysctl_find_oid(int * name, unsigned int namelen, struct sysctl_oid ** noid,
     struct sysctl_oid * oid;
     int indx;
 
-#if 0
     SYSCTL_ASSERT_XLOCKED();
-#endif
     lsp = &sysctl__children;
     indx = 0;
     while (indx < CTL_MAXNAME) {
@@ -257,9 +253,7 @@ static struct sysctl_oid * sysctl_find_oidname(const char * name,
 {
     struct sysctl_oid * oidp;
 
-#if 0
     SYSCTL_ASSERT_XLOCKED();
-#endif
     SLIST_FOREACH(oidp, list, oid_link) {
         if (strcmp(oidp->oid_name, name) == 0) {
             return oidp;
@@ -338,9 +332,7 @@ static int sysctl_sysctl_next_ls(struct sysctl_oid_list * lsp, int * name,
 {
     struct sysctl_oid * oidp;
 
-#if 0
     SYSCTL_ASSERT_XLOCKED();
-#endif
     *len = level;
     SLIST_FOREACH(oidp, lsp, oid_link) {
         *next = oidp->oid_number;
@@ -425,9 +417,7 @@ static int name2oid(char * name, int * oid, int * len,
     struct sysctl_oid * oidp;
     struct sysctl_oid_list * lsp = &sysctl__children;
 
-#if 0
     SYSCTL_ASSERT_XLOCKED();
-#endif
 
     for (*len = 0; *len < CTL_MAXNAME;) {
         char * p = strsep(&name, ".");
@@ -957,9 +947,7 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
     struct sysctl_oid * oid;
     int error, indx;
 
-#if 0
     SYSCTL_ASSERT_XLOCKED();
-#endif
 
     error = sysctl_find_oid(arg1, arg2, &oid, &indx, req);
     if (error)
