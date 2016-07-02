@@ -31,6 +31,9 @@ include $(ROOT_DIR)/genconfig/buildconf.mk
 include $(ROOT_DIR)/boot/boot.mk
 ################################################################################
 
+# Generate a list of all libraries
+ALL_LIBS := $(patsubst lib/%/,%,$(shell ls -d lib/*/))
+
 # Targets ######################################################################
 # Help lines
 # '# target: '		Generic target
@@ -40,7 +43,7 @@ include $(ROOT_DIR)/boot/boot.mk
 # '# target_doc'	Documentation target
 
 # target_comp: all - Make config and compile kernel.
-all: tools kernel.img world
+all: kernel.img world
 .PHONY: $(DIRS_TARGETS) kernel.img world \
 	bin sbin etc lib tools \
 	clean-all clean clean-doc clean-tools clean-man
@@ -67,12 +70,12 @@ tools/exec_qemu: tools/exec_qemu.c
 	$(CC) tools/exec_qemu.c -o tools/exec_qemu
 # End of Tools
 
-$(AUTOCONF_H): config
+$(AUTOCONF_H): config | tools
 	$(ROOT_DIR)/tools/aconf.sh $^ $@
-	cd include && rm machine; ln -s sys/mach/$(MACHIDIR) machine
+	cd include && rm -f machine; ln -s sys/mach/$(MACHIDIR) machine
 
 # target_comp: kernel.img - Compile kernel image.
-kernel.img: | tools $(AUTOCONF_H) lib
+kernel.img: | $(AUTOCONF_H) crt0
 	$(MAKE) -C kern all
 
 # target_comp: world - Compile user space stuff.
@@ -84,9 +87,15 @@ bin: lib
 etc:
 	$(MAKE) -C etc all
 
-lib: $(AUTOCONF_H)
-	$(MAKE) -C lib prepare
-	$(MAKE) -C lib all
+# For compiling invidual libraries
+$(ALL_LIBS): $(AUTOCONF_H)
+	$(if $(filter $@,libc),$(eval export LIBS := crt0 libc),$(eval export LIBS := $@))
+	@$(MAKE) -C lib
+	@echo MAKE $@
+
+lib: $(ALL_LIBS)
+	$(eval export LIBS := $(ALL_LIBS))
+	$(MAKE) -C lib gen_idir_mkfile
 
 sbin: lib
 	$(MAKE) -C sbin all

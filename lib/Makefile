@@ -37,7 +37,9 @@ include $(ROOT_DIR)/makefiles/commands.mk
 CCFLAGS += -Wno-c11-extensions
 
 # Generate a list of library names
-LIBS := $(patsubst %/,%,$(shell ls -d */))
+ifeq ($(origin LIBS), undefined)
+	LIBS := $(patsubst %/,%,$(shell ls -d */))
+endif
 # Include library makefiles
 include $(patsubst %,%/lib.mk,$(LIBS))
 # LIB_IDIRs to IDIR
@@ -70,17 +72,15 @@ DEPS := $(patsubst %.c, %.d, $(SRC-y))
 LIBSA = $(addsuffix .a, $(LIBS))
 
 
-all: $(LIBSA) lib_idir.gen.mk manifest
-.PHONY: prepare $(LIBS) clean
+all: | $(LIBS) $(LIBSA)
+.PHONY: $(LIBS) gen_idir clean
 
-# Make subdirs, should be called before making all
-prepare: $(LIBS)
 $(LIBS):
 	@if [ -f $@/Makefile ]; then $(MAKE) -C $@ all; fi
 
-# Generate list of include directories required by the libraries
-lib_idir.gen.mk:
-	echo "LIB_IDIR += $(LIB_IDIR)" > lib_idir.gen.mk
+# Generate a list of include directories required by the libraries
+gen_idir_mkfile:
+	echo "LIB_IDIR += $(LIB_IDIR)" >> lib_idir.gen.mk
 
 $(ASOBJS): %.o: %.S $(AUTOCONF_H)
 	$(eval AIDIR := $(IDIR))
@@ -99,13 +99,8 @@ $(LIBSA): $(OBJS) $(ASOBJS)
 	@echo "AR $@"
 	@ar rcs $@ $(CUR_OBJS) $(CUR_ARFLAGS)
 
-manifest: $(LIBSA)
-	@if [ "$(configBUNDLE_STATIC)" = "y" ]; then echo "$(LIBSA)" > manifest; \
-		else touch manifest; fi
-
 clean:
 	$(RM) $(ASOBJS) $(OBJS) $(DEPS)
 	$(RM) *.a
 	$(RM) lib_idir.gen.mk
-	$(RM) manifest
 	$(foreach dir,$(LIBS),if [ -f $(dir)/Makefile ]; then $(MAKE) -C $(dir) clean; fi;)
