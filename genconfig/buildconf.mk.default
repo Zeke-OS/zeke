@@ -31,8 +31,6 @@ OPT             = opt-3.4
 OFLAGS          =#
 LLC             = llc-3.4
 LLCFLAGS        =#
-UNIFDEF         = $(ROOT_DIR)/tools/unifdef/unifdef
-UNIFDEFALL      = $(ROOT_DIR)/tools/unifdef/zunifdefall.sh
 
 CONFIG_DIR      = $(ROOT_DIR)/genconfig
 

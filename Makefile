@@ -60,11 +60,8 @@ doc-book:
 
 
 # target_comp: tools - Build tools.
-tools: $(UNIFDEF) tools/exec_qemu
+tools: tools/exec_qemu
 #
-
-$(UNIFDEF):
-	$(MAKE) -C tools/unifdef unifdef
 
 tools/exec_qemu: tools/exec_qemu.c
 	$(CC) tools/exec_qemu.c -o tools/exec_qemu
@@ -144,7 +141,7 @@ clean:
 
 # target_clean: clean-tools - Clean all tools.
 clean-tools:
-	$(MAKE) -C tools/unifdef clean
+	$(RM) tools/exec_qemu
 
 # target_clean: clean-doc - Clean documenation targets.
 clean-doc:
@@ -152,4 +149,4 @@ clean-doc:
 
 # target_clean: clean-man - Clean man pages.
 clean-man:
-	rm -rf doc/man/*
+	$(RM) doc/man/*

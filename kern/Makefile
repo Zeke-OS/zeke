@@ -106,7 +106,7 @@ $(STARTUP_O): $(STARTUP) $(AUTOCONF_H)
 	@echo "AS $@"
 	@$(CC) -E $(AIDIR) $< | grep -Ev "^#" | $(GNUARCH)-as -o $(STARTUP_O)
 
-$(ASOBJS): $(ASRC-y) $(UNIFDEF) $(AUTOCONF_H)
+$(ASOBJS): $(ASRC-y) $(AUTOCONF_H)
 	$(as-command)
 
 $(OBJS): %.o: %.c $(AUTOCONF_H)
