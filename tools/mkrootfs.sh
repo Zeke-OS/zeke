@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export MTOOLSRC=tools/mtools.conf
+
 if [ "$#" -ne 2 ]; then
     echo "Illegal number of arguments"
     exit 1
@@ -15,8 +17,6 @@ ROOTFS_SECTORS=114688
 let "SECTORS =  PADDING_SECTORS + BOOTFS_SECTORS + ROOTFS_SECTORS"
 let "BOOTFS_BEGIN = PADDING_SECTORS"
 let "ROOTFS_BEGIN = PADDING_SECTORS + BOOTFS_SECTORS"
-
-export MTOOLSRC=tools/mtools.conf
 
 function dir2img {
     local manifest="$(cat "$1/manifest")"
