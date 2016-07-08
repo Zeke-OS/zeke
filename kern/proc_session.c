@@ -37,7 +37,8 @@
 #include <libkern.h>
 #include <proc.h>
 
-/* TODO List of sessions? */
+struct proc_session_list proc_session_list_head =
+    TAILQ_HEAD_INITIALIZER(proc_session_list_head);
 
 /**
  * Free a session struct.
@@ -46,6 +47,11 @@
 static void proc_session_free_callback(struct kobj * obj)
 {
     struct session * s = containerof(obj, struct session, s_obj);
+
+    KASSERT(PROC_TESTLOCK(), "proclock is required");
+
+    /* We expect proclock to protect us here. */
+    TAILQ_REMOVE(&proc_session_list_head, s, s_session_list_entry_);
 
     kfree(s);
 }
@@ -57,6 +63,8 @@ static struct session * proc_session_create(struct proc_info * leader)
 {
     struct session * s;
 
+    KASSERT(PROC_TESTLOCK(), "proclock is required");
+
     s = kzalloc(sizeof(struct session));
     if (!s)
         return NULL;
@@ -65,6 +73,9 @@ static struct session * proc_session_create(struct proc_info * leader)
     s->s_leader = leader->pid;
     s->s_ctty_fd = -1;
     kobj_init(&s->s_obj, proc_session_free_callback);
+
+    /* We expect proclock to protect us here. */
+    TAILQ_INSERT_TAIL(&proc_session_list_head, s, s_session_list_entry_);
 
     return s;
 }
@@ -89,17 +100,11 @@ static void proc_session_rele(struct session * s)
     kobj_unref(&s->s_obj);
 }
 
-void proc_session_remove(struct session * s)
-{
-    proc_session_rele(s);
-}
-
 struct pgrp * proc_session_search_pg(struct session * s, pid_t pg_id)
 {
     struct pgrp * pg;
 
-    KASSERT(PROC_TESTLOCK(),
-            "proc lock is needed before calling this function.");
+    KASSERT(PROC_TESTLOCK(), "proclock is required");
 
     TAILQ_FOREACH(pg, &s->s_pgrp_list_head, pg_pgrp_entry_) {
         if (pg->pg_id == pg_id)

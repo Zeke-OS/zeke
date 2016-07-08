@@ -91,7 +91,10 @@ struct session {
     int s_ctty_fd;              /*!< fd number of the controlling terminal. */
     char s_login[MAXLOGNAME];   /*!< Setlogin() name. */
     struct kobj s_obj;
-    TAILQ_HEAD(pgrp_list, pgrp) s_pgrp_list_head;
+    TAILQ_HEAD(pgrp_list, pgrp) s_pgrp_list_head; /*!< List of pgroups in this
+                                                   *   session. */
+    TAILQ_ENTRY(session) s_session_list_entry_; /*!< For the list of all
+                                                 *   sessions. */
 };
 
 /**
@@ -213,7 +216,7 @@ struct proc_info {
                inh.child_list_entry)
 
 /**
- * Lock type used for a inheritance lsit synchronization.
+ * Lock type used for a inheritance list synchronization.
  * @{
  */
 
@@ -234,7 +237,18 @@ struct proc_info {
 extern int nprocs;                  /*!< Current # of procs. */
 extern struct proc_info * curproc;  /*!< PCB of the current process. */
 
-/* proclock - Protects proc array, data structures and variables in proc. */
+/**
+ * List of sessions.
+ */
+TAILQ_HEAD(proc_session_list, session);
+struct proc_session_list proc_session_list_head;
+
+/**
+ * Giant lock for proc related things.
+ * Protects proc array, data structures and variables in proc.
+ * @{
+ */
+
 /**
  * proclock.
  * Protects proc array, data structures and variables in proc.
@@ -252,6 +266,10 @@ enum proc_lock_mode {
     PROC_NOT_LOCKED,
     PROC_LOCKED,
 };
+
+/**
+ * @}
+ */
 
 /*
  * proc.c
@@ -349,11 +367,6 @@ static inline int proc_is_session_leader(struct proc_info * p)
 }
 
 #ifdef PROC_INTERNAL
-
-/**
- * Remove a reference to the session s.
- */
-void proc_session_remove(struct session * s);
 
 void proc_session_setlogin(struct session * s, char s_login[MAXLOGNAME]);
 
