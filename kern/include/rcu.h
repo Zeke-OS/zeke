@@ -111,6 +111,8 @@ struct rcu_slist_head {
     struct rcu_cb * head;
 };
 
+#define RCU_SLIST_INITALIZER { .head = NULL, }
+
 /**
  * Test wheter an RCU slist is empty.
  * @param head is a pointer to the slist head descriptor.
