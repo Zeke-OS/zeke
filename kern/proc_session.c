@@ -37,6 +37,7 @@
 #include <libkern.h>
 #include <proc.h>
 
+int nr_sessions;
 struct proc_session_list proc_session_list_head =
     TAILQ_HEAD_INITIALIZER(proc_session_list_head);
 
@@ -52,6 +53,7 @@ static void proc_session_free_callback(struct kobj * obj)
 
     /* We expect proclock to protect us here. */
     TAILQ_REMOVE(&proc_session_list_head, s, s_session_list_entry_);
+    nr_sessions--;
 
     kfree(s);
 }
@@ -76,6 +78,7 @@ static struct session * proc_session_create(struct proc_info * leader)
 
     /* We expect proclock to protect us here. */
     TAILQ_INSERT_TAIL(&proc_session_list_head, s, s_session_list_entry_);
+    nr_sessions++;
 
     return s;
 }

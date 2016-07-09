@@ -241,6 +241,7 @@ extern struct proc_info * curproc;  /*!< PCB of the current process. */
  * List of sessions.
  */
 TAILQ_HEAD(proc_session_list, session);
+extern int nr_sessions;
 struct proc_session_list proc_session_list_head;
 
 /**

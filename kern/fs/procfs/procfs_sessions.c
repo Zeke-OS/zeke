@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    procfs_mounts.c
+ * @file    procfs_sessions.c
  * @author  Olli Vanhoja
  * @brief   Process file system.
  * @section LICENSE
- * Copyright (c) 2015 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,50 +38,37 @@
 #include <fs/fs_util.h>
 #include <fs/procfs.h>
 
-static struct procfs_stream * read_mounts(const struct procfs_info * spec)
+#define SESSION_LINE_MAX 40
+
+static struct procfs_stream * read_sessions(const struct procfs_info * spec)
 {
+    const size_t bufsize = nr_sessions * SESSION_LINE_MAX;
     struct procfs_stream * stream;
-    fs_t * fs;
-    const size_t maxline = 80;
     ssize_t bytes = 0;
 
-    stream = kzalloc(sizeof(struct procfs_stream) + maxline);
+    stream = kzalloc(sizeof(struct procfs_stream) + bufsize);
     if (!stream)
         return NULL;
 
-    fs = NULL;
-    while ((fs = fs_iterate(fs))) {
-        struct procfs_stream * tmp;
-        char * p = stream->buf + bytes;
-        struct fs_superblock * sb;
+    PROC_LOCK();
+    struct session * sp;
+    char * bpos = stream->buf;
 
-        bytes += ksprintf(p, bytes + maxline, "%s\n", fs->fsname);
-
-        sb = NULL;
-        while ((sb = fs_iterate_superblocks(fs, sb))) {
-            char * p = stream->buf + bytes;
-
-            bytes += ksprintf(p, bytes + maxline, "  (%u,%u)\n",
-                              DEV_MAJOR(sb->vdev_id),
-                              DEV_MINOR(sb->vdev_id));
-        }
-
-        tmp = krealloc(stream, bytes + maxline);
-        if (!tmp) {
-            kfree(stream);
-            return NULL;
-        }
-        stream = tmp;
+    TAILQ_FOREACH(sp, &proc_session_list_head, s_session_list_entry_) {
+        bpos += bytes;
+        bytes += ksprintf(bpos, bufsize - bytes, "%d %d %s\n",
+                          sp->s_leader, sp->s_ctty_fd, sp->s_login);
     }
+    PROC_UNLOCK();
 
     stream->bytes = bytes;
     return stream;
 }
 
-static struct procfs_file procfs_file_mounts = {
-    .filetype = PROCFS_MOUNTS,
-    .filename = "mounts",
-    .readfn = read_mounts,
+static struct procfs_file procfs_file_sessions = {
+    .filetype = PROCFS_SESSIONS,
+    .filename = "sessions",
+    .readfn = read_sessions,
     .relefn = procfs_kfree_stream,
 };
-DATA_SET(procfs_files, procfs_file_mounts);
+DATA_SET(procfs_files, procfs_file_sessions);

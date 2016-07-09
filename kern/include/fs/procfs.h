@@ -70,6 +70,7 @@ enum procfs_filetype {
     PROCFS_KERNEL_SEPARATOR,
     /* kernel files */
     PROCFS_MOUNTS,      /*!< /proc/mounts */
+    PROCFS_SESSIONS,
     PROCFS_DYNDEBUG,    /*!< Dynamic debugging. */
     /* Last entry */
     PROCFS_LAST
