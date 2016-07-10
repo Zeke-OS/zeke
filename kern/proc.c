@@ -90,7 +90,7 @@ static const char * const proc_state_names[] = {
 };
 
 static void init_kernel_proc(void);
-static void procarr_clear(pid_t pid);
+static void procarr_remove(pid_t pid);
 static void proc_remove(struct proc_info * proc);
 pid_t proc_update(void); /* Used in HAL, so not static but not in headeaders. */
 
@@ -252,26 +252,26 @@ void procarr_insert(struct proc_info * new_proc)
 
     KERROR_DBG("%s(%d)\n", __func__, new_proc->pid);
 
-    PROC_LOCK();
     if (new_proc->pid > configMAXPROC || new_proc->pid < 0) {
         KERROR(KERROR_ERR, "Inserted new_proc out of bounds (%d)\n",
                new_proc->pid);
         return;
     }
 
+    PROC_LOCK();
     procarr[new_proc->pid] = new_proc;
     nprocs++;
     PROC_UNLOCK();
 }
 
-static void procarr_clear(pid_t pid)
+static void procarr_remove(pid_t pid)
 {
-    PROC_LOCK();
     if (pid > configMAXPROC || pid < 0) {
         KERROR(KERROR_ERR, "Attempt to remove a nonexistent process\n");
         return;
     }
 
+    PROC_LOCK();
     procarr[pid] = NULL;
     nprocs--;
     PROC_UNLOCK();
@@ -331,7 +331,7 @@ static void proc_remove(struct proc_info * proc)
 
     vrele(proc->cwd);
     _proc_free(proc);
-    procarr_clear(proc->pid);
+    procarr_remove(proc->pid);
 }
 
 void _proc_free(struct proc_info * p)
@@ -425,9 +425,8 @@ void proc_unref(struct proc_info * proc)
 
 const char * proc_state2str(enum proc_state state)
 {
-    if ((unsigned)state > sizeof(proc_state_names))
-        return NULL;
-    return proc_state_names[state];
+    return ((unsigned)state > sizeof(proc_state_names)) ?
+        "PROC_STATE_INVALID" : proc_state_names[state];
 }
 
 struct thread_info * proc_iterate_threads(const struct proc_info * proc,
