@@ -37,9 +37,9 @@
 #include <libkern.h>
 #include <proc.h>
 
-int nr_sessions;
 struct proc_session_list proc_session_list_head =
     TAILQ_HEAD_INITIALIZER(proc_session_list_head);
+int nr_sessions;
 
 /**
  * Free a session struct.

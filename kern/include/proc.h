@@ -62,6 +62,9 @@
 #include <ksignal.h>
 #include <vm/vm.h>
 
+/**
+ * Process state.
+ */
 enum proc_state {
     PROC_STATE_INITIAL  = 0,
     #if 0
@@ -77,13 +80,16 @@ enum proc_state {
 
 };
 
-#define PROC_NAME_LEN       16
+/**
+ * Maximum size of the process name.
+ */
+#define PROC_NAME_SIZE 16
 
 struct mmu_abo_param;
 struct thread_info;
 
 /**
- * Session.
+ * Session descriptor.
  */
 struct session {
     pid_t s_leader;             /*!< Session leader. */
@@ -112,7 +118,7 @@ struct pgrp {
  */
 struct proc_info {
     pid_t pid;
-    char name[PROC_NAME_LEN];   /*!< Process name. */
+    char name[PROC_NAME_SIZE];  /*!< Process name. */
     enum proc_state state;      /*!< Process state. */
     int priority;               /*!< We may want to prioritize processes too. */
     int exit_code;
@@ -176,40 +182,76 @@ struct proc_info {
  */
 #define PROC_INH_FIRST(_proc) SLIST_FIRST(PROC_INH_HEAD(_proc))
 
+/**
+ * Traverse the list of child processes.
+ */
 #define PROC_INH_FOREACH(_var, _proc) \
     SLIST_FOREACH((_var), PROC_INH_HEAD(_proc), inh.child_list_entry)
 
+/**
+ * Traverse the list of child processes starting from _var.
+ */
 #define PROC_INH_FOREACH_FROM(_var, _proc) \
     SLIST_FOREACH_FROM((_var), PROC_INH_HEAD(_proc), inh.child_list_entry)
 
+/**
+ * Traverse the list of child processes.
+ */
 #define PROC_INH_FOREACH_SAFE(_var, _tmp_var, _proc) \
     SLIST_FOREACH_SAFE((_var), PROC_INH_HEAD(_proc), inh.child_list_entry, \
                        (_tmp_var))
 
+/**
+ * Traverse the list of child processes starting from _var.
+ */
 #define PROC_INH_FOREACH_FROM_SAFE(_var, _tmp_var, _proc) \
     SLIST_FOREACH_SAFE((_var), PROC_INH_HEAD(_proc), inh.child_list_entry, \
                        (_tmp_var))
 
+/**
+ * Iinitialize the list of child processes.
+ */
 #define PROC_INH_INIT(_proc) SLIST_INIT(PROC_INH_HEAD(_proc))
 
+/**
+ * Insert a child process after _elm1.
+ */
 #define PROC_INH_INSERT_AFTER(_elm1, _elm2) \
     SLIST_INSERT_AFTER((_elm1), _elm2, inh.child_list_entry)
 
+/**
+ * Insert a child process to the head of the list.
+ */
 #define PROC_INH_INSERT_HEAD(_proc, _elm) \
     SLIST_INSERT_HEAD(PROC_INH_HEAD(_proc), (_elm), inh.child_list_entry)
 
+/**
+ * Get the next child process.
+ */
 #define PROC_INH_NEXT(_elm) \
     SLIST_NEXT((_elm), inh.child_list_entry)
 
+/**
+ * Remove the child process after _elm.
+ */
 #define PROC_INH_REMOVE_AFTER(_elm) \
     SLIST_REMOVE_AFTER((_elm), inh.child_list_entry)
 
+/**
+ * Remove the first child process.
+ */
 #define PROC_INH_REMOVE_HEAD(_proc) \
     SLIST_REMOVE_HEAD(PROC_INH_HEAD(_proc), inh.child_list_entry)
 
+/**
+ * Remove a child process.
+ */
 #define PROC_INH_REMOVE(_proc, _elm) \
     SLIST_REMOVE(PROC_INH_HEAD(_proc), (_elm), proc_info, inh.child_list_entry)
 
+/**
+ * Swap the children of _proc1 with _proc2.
+ */
 #define PROC_INH_SWAP(_proc1, _proc2) \
     SLIST_SWAP(PROC_INH_HEAD(_proc1), PROC_INH_HEAD(_proc2), \
                inh.child_list_entry)
@@ -220,12 +262,12 @@ struct proc_info {
  */
 
 /**
- * Type.
+ * Type of the proc_inh lock.
  */
 #define PROC_INH_LOCK_TYPE (MTX_TYPE_SPIN)
 
 /**
- * Options.
+ * Options specified for inh_lock.
  */
 #define PROC_INH_LOCK_OPT  (0)
 
@@ -235,13 +277,6 @@ struct proc_info {
 
 extern int nprocs;                  /*!< Current # of procs. */
 extern struct proc_info * curproc;  /*!< PCB of the current process. */
-
-/**
- * List of sessions.
- */
-TAILQ_HEAD(proc_session_list, session);
-extern int nr_sessions;
-struct proc_session_list proc_session_list_head;
 
 /**
  * Giant lock for proc related things.
@@ -255,17 +290,24 @@ struct proc_session_list proc_session_list_head;
  * This should be only touched by using macros defined in proc.h file.
  */
 extern mtx_t proclock;
+
+/**
+ * Take a lock to proclock.
+ */
 #define PROC_LOCK()         mtx_lock(&proclock)
+
+/**
+ * Release the lock to proclock.
+ */
 #define PROC_UNLOCK()       mtx_unlock(&proclock)
+
+/**
+ * Test wheter proclock is locked.
+ */
 #define PROC_TESTLOCK()     mtx_test(&proclock)
 
 /**
  * @}
- */
-
-/*
- * proc.c
- * Process scheduling and sys level management
  */
 
 /**
@@ -330,10 +372,10 @@ void proc_unref(struct proc_info * proc);
 
 /**
  * Process state enum to string name of the state.
+ * @param state is the process state enum.
+ * @return A C-string describing the process state is returned.
  */
 const char * proc_state2str(enum proc_state state);
-
-/* proc_fork.c */
 
 /**
  * Create a new process by forking the current process.
@@ -363,6 +405,16 @@ pid_t proc_get_random_pid(void);
  * @{
  */
 
+TAILQ_HEAD(proc_session_list, session); /*!< Type of the session list. */
+struct proc_session_list proc_session_list_head; /*!< List of sessions. */
+extern int nr_sessions; /*!< Number of sessions. */
+
+/**
+ * Test if a process is the session leader.
+ * @param p is a pointer to the process.
+ * @return  A boolean true is returned if the process pointed by p is the
+ *          session leader; Otherwise a boolean false is returned.
+ */
 static inline int proc_is_session_leader(struct proc_info * p)
 {
     return (p->pid == p->pgrp->pg_session->s_leader);
@@ -370,11 +422,19 @@ static inline int proc_is_session_leader(struct proc_info * p)
 
 #ifdef PROC_INTERNAL
 
+/**
+ * Set login name of the session.
+ * @param s is a pointer to the session descriptor.
+ * @param[in] s_login is a pointer to the string to be used as a login name.
+ *                    The string is copied to the session struct.
+ */
 void proc_session_setlogin(struct session * s, char s_login[MAXLOGNAME]);
 
 /**
  * Search for a process group in a session.
  * @note Requires PROC_LOCK.
+ * @param s is a pointer to a session descriptor.
+ * @param pg_id is the process group number to be searched for.
  */
 struct pgrp * proc_session_search_pg(struct session * s, pid_t pg_id);
 
@@ -390,12 +450,14 @@ struct pgrp * proc_pgrp_create(struct session * s, struct proc_info * proc);
 /**
  * Insert a process into the process group pgrp.
  * @note Requires PROC_LOCK.
+ * @param proc is a pointer to the process.
  */
 void proc_pgrp_insert(struct pgrp * pgrp, struct proc_info * proc);
 
 /**
  * Remove a process group reference.
  * @note Requires PROC_LOCK.
+ * @param proc is a pointer to the process.
  */
 void proc_pgrp_remove(struct proc_info * proc);
 

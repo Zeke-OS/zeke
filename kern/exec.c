@@ -110,8 +110,9 @@ static pthread_t new_main_thread(int uargc, uintptr_t uargv, uintptr_t uenvp,
     return thread_create(&args, THREAD_MODE_USER);
 }
 
-int exec_file(struct exec_loadfn * loader, int fildes, char name[PROC_NAME_LEN],
-              struct buf * env_bp, int uargc, uintptr_t uargv, uintptr_t uenvp)
+int exec_file(struct exec_loadfn * loader, int fildes,
+              char name[PROC_NAME_SIZE], struct buf * env_bp,
+              int uargc, uintptr_t uargv, uintptr_t uenvp)
 {
     file_t * file;
     uintptr_t vaddr = 0; /* RFE Shouldn't matter if elf is not dyn? */
@@ -305,7 +306,7 @@ static int get_loader(int fildes, struct exec_loadfn ** loader)
 static int sys_exec(__user void * user_args)
 {
     struct _exec_args args;
-    char name[PROC_NAME_LEN];
+    char name[PROC_NAME_SIZE];
     struct buf * env_bp = NULL;
     size_t arg_offset = 0;
     uintptr_t envp;
