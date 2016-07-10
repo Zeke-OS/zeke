@@ -69,7 +69,7 @@ static uintptr_t get_ksect_addr(size_t region_size)
 
 struct buf * geteblk_special(size_t size, uint32_t control)
 {
-    struct proc_info * proc = proc_ref(0, PROC_NOT_LOCKED);
+    struct proc_info * proc = proc_ref(0);
     const uintptr_t kvaddr = get_ksect_addr(size);
     struct buf * buf;
     int err;

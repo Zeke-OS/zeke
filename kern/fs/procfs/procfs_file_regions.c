@@ -51,7 +51,7 @@ static struct procfs_stream * read_regions(const struct procfs_info * spec)
     if (!stream)
         return NULL;
 
-    proc = proc_ref(spec->pid, PROC_NOT_LOCKED);
+    proc = proc_ref(spec->pid);
     if (!proc) {
         kfree(stream);
         return NULL;

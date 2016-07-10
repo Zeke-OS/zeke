@@ -531,7 +531,7 @@ static void thread_init_tls(struct thread_info * new_thread,
         return;
     }
 
-    proc = proc_ref(new_thread->pid_owner, PROC_NOT_LOCKED);
+    proc = proc_ref(new_thread->pid_owner);
     if (!proc) {
         panic("Thread must have an owner process");
     }
@@ -611,7 +611,7 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
     } else {
         struct proc_info * proc;
 
-        proc = proc_ref(parent->pid_owner, PROC_NOT_LOCKED);
+        proc = proc_ref(parent->pid_owner);
         if (!proc) {
             panic("Parent thread must have a owner process");
         }

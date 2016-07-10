@@ -118,7 +118,7 @@ void mmu_prefetch_abort_handler(void)
         .far = ifar,
         .psr = spsr,
         .lr = lr,
-        .proc = proc_ref(thread->pid_owner, PROC_NOT_LOCKED), /* Can be NULL */
+        .proc = proc_ref(thread->pid_owner), /* Can be NULL */
         .thread = thread,
     };
 

@@ -91,7 +91,6 @@ static const char * const proc_state_names[] = {
 
 static void init_kernel_proc(void);
 static void procarr_clear(pid_t pid);
-static struct proc_info * proc_get_struct(pid_t pid);
 static void proc_remove(struct proc_info * proc);
 pid_t proc_update(void); /* Used in HAL, so not static but not in headeaders. */
 
@@ -312,7 +311,7 @@ static void proc_remove(struct proc_info * proc)
         struct proc_info * child;
         struct proc_info * child_tmp;
 
-        init = proc_ref(1, PROC_NOT_LOCKED);
+        init = proc_ref(1);
         if (!init)
             panic("init not found\n");
 
@@ -360,23 +359,11 @@ void _proc_free(struct proc_info * p)
 
 /**
  * Get pointer to a internal proc_info structure.
+ * This function must remain static, external users should call proc_ref().
  * @note Requires PROC_LOCK.
  */
 static struct proc_info * proc_get_struct(pid_t pid)
 {
-    istate_t s;
-
-    s = get_interrupt_state();
-    if (!(s & PSR_INT_I)) {
-        KASSERT(PROC_TESTLOCK(),
-                "proclock is required before entering proc_get_struct()\n");
-    }
-
-    /*
-     * Note that we don't do any process state checks here because this function
-     * is used in places where the state is invalid and also because doing state
-     * check here is jus overhead.
-     */
     if (0 > pid || pid > configMAXPROC) {
         KERROR(KERROR_ERR, "Invalid PID (%d, max: %d)\n", pid, configMAXPROC);
 
@@ -385,9 +372,9 @@ static struct proc_info * proc_get_struct(pid_t pid)
     return procarr[pid];
 }
 
-int proc_exists(pid_t pid, enum proc_lock_mode lmode)
+int proc_exists_locked(pid_t pid)
 {
-    struct proc_info * proc = proc_ref(pid, lmode);
+    struct proc_info * proc = proc_ref_locked(pid);
 
     if (proc) {
         proc_unref(proc);
@@ -396,9 +383,27 @@ int proc_exists(pid_t pid, enum proc_lock_mode lmode)
     return 0;
 }
 
-struct proc_info * proc_ref(pid_t pid, enum proc_lock_mode lmode)
+int proc_exists(pid_t pid)
 {
-    struct proc_info * retval;
+    struct proc_info * proc = proc_ref(pid);
+
+    if (proc) {
+        proc_unref(proc);
+        return (1 == 1);
+    }
+    return 0;
+}
+
+struct proc_info * proc_ref_locked(pid_t pid)
+{
+    KASSERT(PROC_TESTLOCK(), "proclock is required");
+
+    return kpalloc(proc_get_struct(pid));
+}
+
+struct proc_info * proc_ref(pid_t pid)
+{
+    struct proc_info * proc;
 
     /*
      * RFE mm protection is not perfect
@@ -406,17 +411,11 @@ struct proc_info * proc_ref(pid_t pid, enum proc_lock_mode lmode)
      * the process is removed.
      */
 
-    if (lmode == PROC_NOT_LOCKED) {
-        PROC_LOCK();
-    } else {
-        KASSERT(PROC_TESTLOCK(), "proclock is required");
-    }
-    retval = proc_get_struct(pid);
-    kpalloc(retval);
-    if (lmode == PROC_NOT_LOCKED)
-        PROC_UNLOCK();
+    PROC_LOCK();
+    proc = kpalloc(proc_get_struct(pid));
+    PROC_UNLOCK();
 
-    return retval;
+    return proc;
 }
 
 void proc_unref(struct proc_info * proc)
@@ -451,7 +450,7 @@ void proc_thread_removed(pid_t pid, pthread_t thread_id)
 {
     struct proc_info * p;
 
-    if (!(p = proc_ref(pid, PROC_NOT_LOCKED)))
+    if (!(p = proc_ref(pid)))
         return;
 
     /* Go zombie if removed thread was main() */
@@ -647,7 +646,7 @@ static int sys_proc_wait(__user void * user_args)
         struct proc_info * p;
         struct proc_info * tmp;
 
-        p = proc_ref(args.pid, PROC_NOT_LOCKED);
+        p = proc_ref(args.pid);
         tmp = PROC_INH_FIRST(curproc);
         if (!p || !tmp) {
             set_errno(ECHILD);
@@ -914,7 +913,7 @@ static int sys_proc_getsid(__user void * user_args)
     } else {
         struct proc_info * proc;
 
-        proc = proc_ref(pid, PROC_NOT_LOCKED);
+        proc = proc_ref(pid);
         if (proc) {
             sid = proc->pgrp->pg_session->s_leader;
             proc_unref(proc);
@@ -979,9 +978,9 @@ static int sys_prog_setpgid(__user void * user_args)
     PROC_LOCK();
 
     if (args.pid == 0 || args.pid == curproc->pid) {
-        proc = proc_ref(curproc->pid, PROC_LOCKED);
+        proc = proc_ref_locked(curproc->pid);
     } else {
-        proc = proc_ref(args.pid, PROC_LOCKED);
+        proc = proc_ref_locked(args.pid);
         if (proc) {
             if (proc->inh.parent != curproc) {
                 /*
@@ -1174,7 +1173,7 @@ static int sys_proc_setpolicy(__user void * user_args)
         return -1;
     }
 
-    p = proc_ref(args.id, PROC_NOT_LOCKED);
+    p = proc_ref(args.id);
     if (!p || !p->main_thread) {
         set_errno(ESRCH);
         return -1;
@@ -1204,7 +1203,7 @@ static int sys_proc_getpolicy(__user void * user_args)
         return -1;
     }
 
-    p = proc_ref(pid, PROC_NOT_LOCKED);
+    p = proc_ref(pid);
     if (!p || !p->main_thread ||
         (policy = thread_get_policy(p->main_thread->id)) < 0) {
         set_errno(ESRCH);
@@ -1235,7 +1234,7 @@ static int sys_proc_setpriority(__user void * user_args)
         return -1;
     }
 
-    p = proc_ref(args.id, PROC_NOT_LOCKED);
+    p = proc_ref(args.id);
     if (!p || !p->main_thread) {
         set_errno(ESRCH);
         PROC_UNLOCK();
@@ -1271,7 +1270,7 @@ static int sys_proc_getpriority(__user void * user_args)
         return -1;
     }
 
-    p = proc_ref(pid, PROC_NOT_LOCKED);
+    p = proc_ref(pid);
     if (!p || !p->main_thread ||
         (prio = thread_get_priority(p->main_thread->id)) == NICE_ERR) {
         set_errno(ESRCH);

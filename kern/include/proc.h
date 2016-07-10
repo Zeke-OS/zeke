@@ -260,14 +260,6 @@ extern mtx_t proclock;
 #define PROC_TESTLOCK()     mtx_test(&proclock)
 
 /**
- * Enum used by some functions to tell if the caller has locked proclock.
- */
-enum proc_lock_mode {
-    PROC_NOT_LOCKED,
-    PROC_LOCKED,
-};
-
-/**
  * @}
  */
 
@@ -312,12 +304,22 @@ void _proc_free(struct proc_info * p);
 /**
  * Test if process exists.
  */
-int proc_exists(pid_t pid, enum proc_lock_mode lmode);
+int proc_exists(pid_t pid);
+
+/**
+ * Test if process exists.
+ */
+int proc_exists_locked(pid_t pid);
 
 /**
  * Get a reference to a proc_info struct.
  */
-struct proc_info * proc_ref(pid_t pid, enum proc_lock_mode lmode)
+struct proc_info * proc_ref(pid_t pid) __attribute__((warn_unused_result));
+
+/**
+ * Get a reference to a proc_info struct.
+ */
+struct proc_info * proc_ref_locked(pid_t pid)
     __attribute__((warn_unused_result));
 
 /**

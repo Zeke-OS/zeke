@@ -753,7 +753,7 @@ static int ksignal_queue_sig(struct signals * sigs, int signum,
          * RFE Should we kill the process regardles of which thread it was?
          * RFE Should we block all threads?
          */
-        proc_owner = proc_ref(thread->pid_owner, PROC_NOT_LOCKED);
+        proc_owner = proc_ref(thread->pid_owner);
         proc_unref(proc_owner); /* Won't be freed anyway. */
         if (proc_owner && (action.ks_action.sa_flags & SA_CORE) &&
             proc_owner->main_thread == thread) {
@@ -1220,7 +1220,7 @@ static int sys_signal_pkill(__user void * user_args)
 
     /* TODO if pid == 0 send signal to all procs */
 
-    proc = proc_ref(args.pid, PROC_NOT_LOCKED);
+    proc = proc_ref(args.pid);
     if (!proc) {
         set_errno(ESRCH);
         return -1;
@@ -1304,7 +1304,7 @@ static int sys_signal_tkill(__user void * user_args)
         return -1;
     }
 
-    proc = proc_ref(thread->pid_owner, PROC_NOT_LOCKED);
+    proc = proc_ref(thread->pid_owner);
     if (!proc) {
         set_errno(ESRCH);
         return -1;

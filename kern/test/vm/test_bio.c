@@ -45,7 +45,7 @@ static char * test_getblk(void)
 
     ku_test_description("Test that getblk() returns a device backed buffer.");
 
-    proc = proc_ref(0, PROC_NOT_LOCKED);
+    proc = proc_ref(0);
     proc_unref(proc);
 
     ku_assert("lookup failed",
@@ -70,7 +70,7 @@ static char * test_bread(void)
 
     ku_test_description("Test that bread() reads.");
 
-    proc = proc_ref(0, PROC_NOT_LOCKED);
+    proc = proc_ref(0);
     proc_unref(proc);
 
     ku_assert("lookup failed",

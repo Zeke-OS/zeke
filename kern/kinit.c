@@ -138,7 +138,7 @@ static void mount_tmp_rootfs(void)
     struct proc_info * kernel_proc;
     int ret;
 
-    kernel_proc = proc_ref(0, PROC_NOT_LOCKED);
+    kernel_proc = proc_ref(0);
     if (!kernel_proc) {
         panic(failed);
     }
@@ -289,7 +289,7 @@ int __kinit__ kinit(void)
         panic("Can't get thread descriptor of init_thread!");
     }
 
-    init_proc = proc_ref(pid, PROC_NOT_LOCKED);
+    init_proc = proc_ref(pid);
     if (!init_proc || (init_proc->state == PROC_STATE_INITIAL)) {
         panic("Failed to get proc struct or invalid struct");
     }

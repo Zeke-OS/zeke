@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   User credentials.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2009 Robert N. M. Watson
  * Copyright (c) 2006 nCircle Network Security, Inc.
  * All rights reserved.
@@ -282,7 +282,7 @@ static int sys_priv_pcap(__user void * user_args)
         return -1;
     }
 
-    proc = proc_ref(args.pid, PROC_NOT_LOCKED);
+    proc = proc_ref(args.pid);
     if (!proc) {
         set_errno(ESRCH);
         return -1;

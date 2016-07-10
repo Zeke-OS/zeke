@@ -145,7 +145,7 @@ void mmu_data_abort_handler(void)
         .far = far,
         .psr = spsr,
         .lr = lr,
-        .proc = proc_ref(thread->pid_owner, PROC_NOT_LOCKED), /* Can be NULL */
+        .proc = proc_ref(thread->pid_owner), /* Can be NULL */
         .thread = thread,
     };
 

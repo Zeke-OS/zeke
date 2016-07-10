@@ -264,13 +264,13 @@ pid_t proc_get_random_pid(void)
             iterations = 0;
 
             for (pid_t pid = 2; pid <= configMAXPROC; pid++) {
-                if (!proc_exists(newpid, PROC_LOCKED)) {
+                if (!proc_exists_locked(newpid)) {
                     newpid = pid;
                     break;
                 }
             }
         }
-    } while (proc_exists(newpid, PROC_LOCKED));
+    } while (proc_exists_locked(newpid));
 
     proc_lastpid = newpid;
 

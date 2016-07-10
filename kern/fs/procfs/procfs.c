@@ -298,7 +298,7 @@ static int procfs_updatedir(vnode_t * dir)
          * directories that should not exist anymore.
          */
         for (int i = 0; i <= configMAXPROC; i++) {
-            struct proc_info * proc = proc_ref(i, PROC_LOCKED);
+            struct proc_info * proc = proc_ref_locked(i);
 
             if (proc) {
                 err = procfs_mkentry(proc);
