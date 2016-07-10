@@ -52,11 +52,11 @@ static struct procfs_stream * read_sessions(const struct procfs_info * spec)
 
     PROC_LOCK();
     struct session * sp;
-    char * bpos = stream->buf;
+    char * bpos;
 
     TAILQ_FOREACH(sp, &proc_session_list_head, s_session_list_entry_) {
-        bpos += bytes;
-        bytes += ksprintf(bpos, bufsize - bytes, "%d %d %s\n",
+        bpos = stream->buf + bytes;
+        bytes += ksprintf(bpos, SESSION_LINE_MAX, "%d %d %s\n",
                           sp->s_leader, sp->s_ctty_fd, sp->s_login);
     }
     PROC_UNLOCK();

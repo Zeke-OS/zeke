@@ -59,7 +59,6 @@
 #include <sys/times.h>
 #include <fs/fs.h>
 #include <klocks.h>
-#include <kobj.h>
 #include <ksignal.h>
 #include <vm/vm.h>
 
@@ -88,9 +87,9 @@ struct thread_info;
  */
 struct session {
     pid_t s_leader;             /*!< Session leader. */
+    int s_pgrp_count;
     int s_ctty_fd;              /*!< fd number of the controlling terminal. */
     char s_login[MAXLOGNAME];   /*!< Setlogin() name. */
-    struct kobj s_obj;
     TAILQ_HEAD(pgrp_list, pgrp) s_pgrp_list_head; /*!< List of pgroups in this
                                                    *   session. */
     TAILQ_ENTRY(session) s_session_list_entry_; /*!< For the list of all
@@ -102,9 +101,9 @@ struct session {
  */
 struct pgrp {
     pid_t pg_id;                /*!< Pgrp id. */
+    int pg_proc_count;
     struct session * pg_session; /*!< Pointer to the session. */
     TAILQ_HEAD(proc_list, proc_info) pg_proc_list_head;
-    struct kobj pg_obj;
     TAILQ_ENTRY(pgrp) pg_pgrp_entry_;
 };
 

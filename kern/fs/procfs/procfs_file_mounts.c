@@ -61,7 +61,7 @@ static struct procfs_stream * read_mounts(const struct procfs_info * spec)
         while ((sb = fs_iterate_superblocks(fs, sb))) {
             char * p = stream->buf + bytes;
 
-            bytes += ksprintf(p, bytes + maxline, "  (%u,%u)\n",
+            bytes += ksprintf(p, maxline, "  (%u,%u)\n",
                               DEV_MAJOR(sb->vdev_id),
                               DEV_MINOR(sb->vdev_id));
         }

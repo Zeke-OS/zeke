@@ -45,18 +45,6 @@ struct proc_session_list proc_session_list_head =
  * Free a session struct.
  * This function is called when the last reference to a session is freed.
  */
-static void proc_session_free_callback(struct kobj * obj)
-{
-    struct session * s = containerof(obj, struct session, s_obj);
-
-    KASSERT(PROC_TESTLOCK(), "proclock is required");
-
-    /* We expect proclock to protect us here. */
-    TAILQ_REMOVE(&proc_session_list_head, s, s_session_list_entry_);
-    nr_sessions--;
-
-    kfree(s);
-}
 
 /**
  * Create a new session.
@@ -65,8 +53,6 @@ static struct session * proc_session_create(struct proc_info * leader)
 {
     struct session * s;
 
-    KASSERT(PROC_TESTLOCK(), "proclock is required");
-
     s = kzalloc(sizeof(struct session));
     if (!s)
         return NULL;
@@ -74,7 +60,6 @@ static struct session * proc_session_create(struct proc_info * leader)
     TAILQ_INIT(&s->s_pgrp_list_head);
     s->s_leader = leader->pid;
     s->s_ctty_fd = -1;
-    kobj_init(&s->s_obj, proc_session_free_callback);
 
     /* We expect proclock to protect us here. */
     TAILQ_INSERT_TAIL(&proc_session_list_head, s, s_session_list_entry_);
@@ -83,31 +68,21 @@ static struct session * proc_session_create(struct proc_info * leader)
     return s;
 }
 
-/**
- * Increment the refcount of a session struct.
- * This is only called internally by the session implementation. External
- * users should never have references to sessions without having ref to a
- * group in a session.
- */
-static void proc_session_ref(struct session * s)
+static void proc_session_free(struct session * s)
 {
-    if (kobj_ref(&s->s_obj))
-        panic("Session ref error");
-}
+    /* We expect proclock to protect us here. */
+    TAILQ_REMOVE(&proc_session_list_head, s, s_session_list_entry_);
+    nr_sessions--;
 
-/**
- * Decrement the refcount of a session struct.
- */
-static void proc_session_rele(struct session * s)
-{
-    kobj_unref(&s->s_obj);
+    kfree(s);
 }
 
 struct pgrp * proc_session_search_pg(struct session * s, pid_t pg_id)
 {
     struct pgrp * pg;
 
-    KASSERT(PROC_TESTLOCK(), "proclock is required");
+    KASSERT(PROC_TESTLOCK(),
+            "proc lock is needed before calling this function.");
 
     TAILQ_FOREACH(pg, &s->s_pgrp_list_head, pg_pgrp_entry_) {
         if (pg->pg_id == pg_id)
@@ -122,24 +97,12 @@ void proc_session_setlogin(struct session * s, char s_login[MAXLOGNAME])
     strlcpy(s->s_login, s_login, sizeof(s->s_login));
 }
 
-/**
- * Free a pgrp struct.
- * This function is called when the last reference to a pgrp is released.
- */
-static void proc_pgrp_free_callback(struct kobj * obj)
-{
-    struct pgrp * pgrp = containerof(obj, struct pgrp, pg_obj);
-    struct session * s = pgrp->pg_session;
-
-    TAILQ_REMOVE(&s->s_pgrp_list_head, pgrp, pg_pgrp_entry_);
-    proc_session_rele(s);
-
-    kfree(pgrp);
-}
-
 struct pgrp * proc_pgrp_create(struct session * s, struct proc_info * proc)
 {
     struct pgrp * pgrp;
+
+    KASSERT(PROC_TESTLOCK(),
+            "proc lock is needed before calling this function.");
 
     if (!s) {
         s = proc_session_create(proc);
@@ -147,17 +110,14 @@ struct pgrp * proc_pgrp_create(struct session * s, struct proc_info * proc)
             return NULL;
     }
 
-    proc_session_ref(s);
-
     pgrp = kzalloc(sizeof(struct pgrp));
     if (!pgrp) {
-        proc_session_rele(s);
         return NULL;
     }
+    s->s_pgrp_count++;
 
     TAILQ_INIT(&pgrp->pg_proc_list_head);
     pgrp->pg_id = proc->pid;
-    kobj_init(&pgrp->pg_obj, proc_pgrp_free_callback);
 
     pgrp->pg_session = s;
     TAILQ_INSERT_TAIL(&s->s_pgrp_list_head, pgrp, pg_pgrp_entry_);
@@ -166,15 +126,16 @@ struct pgrp * proc_pgrp_create(struct session * s, struct proc_info * proc)
     return pgrp;
 }
 
-static void proc_pgrp_ref(struct pgrp * pgrp)
+static void proc_pgrp_free(struct pgrp * pgrp)
 {
-    if (kobj_ref(&pgrp->pg_obj))
-        panic("Pgrp ref error");
-}
+    struct session * s = pgrp->pg_session;
 
-static void proc_pgrp_rele(struct pgrp * pgrp)
-{
-    kobj_unref(&pgrp->pg_obj);
+    TAILQ_REMOVE(&s->s_pgrp_list_head, pgrp, pg_pgrp_entry_);
+    if (--s->s_pgrp_count == 0) {
+        proc_session_free(s);
+    }
+
+    kfree(pgrp);
 }
 
 void proc_pgrp_insert(struct pgrp * pgrp, struct proc_info * proc)
@@ -185,7 +146,7 @@ void proc_pgrp_insert(struct pgrp * pgrp, struct proc_info * proc)
     if (proc->pgrp)
         proc_pgrp_remove(proc);
 
-    proc_pgrp_ref(pgrp);
+    pgrp->pg_proc_count++;
     TAILQ_INSERT_TAIL(&pgrp->pg_proc_list_head, proc, pgrp_proc_entry_);
     proc->pgrp = pgrp;
 }
@@ -198,5 +159,7 @@ void proc_pgrp_remove(struct proc_info * proc)
             "proc lock is needed before calling this function.");
 
     TAILQ_REMOVE(&pgrp->pg_proc_list_head, proc, pgrp_proc_entry_);
-    proc_pgrp_rele(pgrp);
+    if (--pgrp->pg_proc_count == 0) {
+        proc_pgrp_free(pgrp);
+    }
 }

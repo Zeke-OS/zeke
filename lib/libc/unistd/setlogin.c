@@ -43,7 +43,7 @@ int setlogin(const char * name)
     memset(lname, '\0', sizeof(lname));
     strlcpy(lname, name, sizeof(lname));
 
-    err = syscall(SYSCALL_PROC_GETLOGIN, &lname);
+    err = syscall(SYSCALL_PROC_SETLOGIN, &lname);
     if (err)
         return err;
     return 0;
