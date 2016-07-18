@@ -72,7 +72,7 @@ int __kinit__ shmem_init(void)
      */
     struct sched_param param = {
         .sched_policy = SCHED_FIFO,
-        .sched_priority = NICE_DEF,
+        .sched_priority = NZERO,
     };
     sync_thread_tid = kthread_create(&param, 0, shmem_sync_thread, NULL);
     if (sync_thread_tid < 0) {

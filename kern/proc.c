@@ -141,6 +141,7 @@ static void init_kernel_proc(void)
 
     kernel_proc->pid = 0;
     kernel_proc->state = PROC_STATE_READY;
+    kernel_proc->nice = NZERO;
     strcpy(kernel_proc->name, "kernel");
 
     /*
@@ -1218,7 +1219,6 @@ static int sys_proc_setpriority(__user void * user_args)
     struct _set_priority_args args;
     struct proc_info * p;
     uid_t p_euid;
-    pthread_t tid;
     int err;
 
     err = copyin(user_args, &args, sizeof(args));
@@ -1227,33 +1227,27 @@ static int sys_proc_setpriority(__user void * user_args)
         return -1;
     }
 
-
     if (args.id == 0) {
         set_errno(ESRCH);
         return -1;
     }
 
     p = proc_ref(args.id);
-    if (!p || !p->main_thread) {
+    if (!p) {
         set_errno(ESRCH);
-        PROC_UNLOCK();
         return -1;
     }
     p_euid = p->cred.euid;
-    tid = p->main_thread->id;
-    proc_unref(p);
 
-    if ((args.priority < 0 || curproc->cred.euid != p_euid) &&
+    if ((args.priority < 0 || curproc->cred.euid != p->cred.euid) &&
         priv_check(&curproc->cred, PRIV_SCHED_SETPRIORITY)) {
+        proc_unref(p);
         set_errno(ESRCH);
         return -1;
     }
-
-    err = thread_set_priority(tid, args.priority);
-    if (err) {
-        set_errno(-err);
-        return -1;
-    }
+    /* TODO Limit the range */
+    p->nice = args.priority;
+    proc_unref(p);
 
     return 0;
 }
@@ -1270,11 +1264,11 @@ static int sys_proc_getpriority(__user void * user_args)
     }
 
     p = proc_ref(pid);
-    if (!p || !p->main_thread ||
-        (prio = thread_get_priority(p->main_thread->id)) == NICE_ERR) {
+    if (!p) {
         set_errno(ESRCH);
-        prio = -1;
+        return -1;
     }
+    prio = p->nice;
     proc_unref(p);
 
     return prio;

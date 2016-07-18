@@ -219,7 +219,7 @@ static size_t build_note_prpsinfo(const struct proc_info * proc, void * note)
         .pr_state = proc->state,
         .pr_sname = "IRRWSZD"[proc->state],
         .pr_zomb = (proc->state == PROC_STATE_ZOMBIE),
-        .pr_nice = proc->priority,
+        .pr_nice = proc->nice,
         .pr_flag = 0, /* We don't have process flags. */
         .pr_uid = proc->cred.uid, /* RFE or e? */
         .pr_gid = proc->cred.gid,

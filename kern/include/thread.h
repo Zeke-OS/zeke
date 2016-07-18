@@ -381,9 +381,18 @@ int thread_set_priority(pthread_t thread_id, int priority);
 /**
  * Get thread priority.
  * @param thread_id is the thread id.
- * @return Returns the thread priory value or NICE_ERR if thread doesn't exist.
+ * @return Returns the thread priory value;
+ *         Or NICE_ERR if the thread doesn't exist.
  */
 int thread_get_priority(pthread_t thread_id);
+
+/**
+ * Get thread effective scheduling priority.
+ * @param thread_id is the thread id.
+ * @return Returns the thread priory value;
+ *         Or NICE_ERR if the athread doesn't exist.
+ */
+int thread_get_scheduling_priority(pthread_t thread_id);
 
 /**
  * Terminate current thread.

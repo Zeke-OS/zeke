@@ -120,7 +120,7 @@ struct proc_info {
     pid_t pid;
     char name[PROC_NAME_SIZE];  /*!< Process name. */
     enum proc_state state;      /*!< Process state. */
-    int priority;               /*!< We may want to prioritize processes too. */
+    int nice;                   /*!< Niceness. */
     int exit_code;
     struct ksiginfo * exit_ksiginfo; /*!< Set if killed with a signal. */
     struct pgrp * pgrp;         /*!< Process group. */
@@ -136,7 +136,6 @@ struct proc_info {
     struct vnode * croot;       /*!< Current root dir. */
     struct vnode * cwd;         /*!< Current working dir. */
     files_t * files;            /*!< Open files */
-    struct tty_struct * tty;    /* NULL if no tty */
 
     /* Memory Management */
     struct vm_mm_struct mm;
@@ -153,7 +152,7 @@ struct proc_info {
      * inh : Parent and child process relations
      */
     struct proc_inh {
-        struct proc_info * parent;      /*!< A pointer to the parent process. */
+        struct proc_info * parent; /*!< A pointer to the parent process. */
         SLIST_HEAD(proc_child_list, proc_info) child_list_head;
         SLIST_ENTRY(proc_info) child_list_entry;
         mtx_t lock; /*!< Lock for children (child_list_entry) of this proc. */

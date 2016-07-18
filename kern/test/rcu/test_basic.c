@@ -64,7 +64,7 @@ static pthread_t create_rcu_reader_thread(void)
 {
     struct sched_param param = {
         .sched_policy = SCHED_OTHER,
-        .sched_priority = NICE_DEF,
+        .sched_priority = NZERO,
     };
 
     pthread_t tid = kthread_create(&param, 0, rcu_reader_thread, NULL);

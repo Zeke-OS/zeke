@@ -864,6 +864,7 @@ int thread_set_priority(pthread_t thread_id, int priority)
     if (!thread || thread_flags_not_set(thread, SCHED_IN_USE_FLAG))
         return -ESRCH;
 
+    /* TODO Limit the range */
     thread->param.sched_priority = priority;
 
     return 0;
@@ -877,6 +878,27 @@ int thread_get_priority(pthread_t thread_id)
         return NICE_ERR;
 
     return thread->param.sched_priority;
+}
+
+int thread_get_scheduling_priority(pthread_t thread_id)
+{
+    struct proc_info * p;
+    struct thread_info * thread;
+    int prio;
+
+    thread = thread_lookup(thread_id);
+    if (!thread || thread_flags_not_set(thread, SCHED_IN_USE_FLAG))
+        return NICE_ERR;
+
+    prio = thread->param.sched_priority;
+
+    p = proc_ref(thread->pid_owner);
+    if (!p)
+        return prio;
+    prio = NICE_RANGE(prio + p->nice);
+    proc_unref(p);
+
+    return prio;
 }
 
 void thread_die(intptr_t retval)

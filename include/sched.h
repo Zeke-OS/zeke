@@ -56,9 +56,16 @@ struct sched_param {
 #define SCHED_OTHER 1
 
 #define NICE_MAX    20
-#define NICE_DEF    0
+/* Default: NZERO */
 #define NICE_MIN    (-20)
 #define NICE_ERR    (-100) /*!< Thread doesn't exist or error */
+
+#ifdef KERNEL_INTERNAL
+/**
+ * Limit the range of a nice value.
+ */
+#define NICE_RANGE(_prio_) (min(max(_prio_, NICE_MAX), NICE_MIN))
+#endif
 
 #if defined(__SYSCALL_DEFS__) || defined(KERNEL_INTERNAL)
 #include <sys/types/_id_t.h>
