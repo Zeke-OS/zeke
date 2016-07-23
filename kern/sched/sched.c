@@ -864,7 +864,10 @@ int thread_set_priority(pthread_t thread_id, int priority)
     if (!thread || thread_flags_not_set(thread, SCHED_IN_USE_FLAG))
         return -ESRCH;
 
-    /* TODO Limit the range */
+    if (!(NICE_MIN <= priority && priority <= NICE_MAX)) {
+        return -EACCES;
+    }
+
     thread->param.sched_priority = priority;
 
     return 0;

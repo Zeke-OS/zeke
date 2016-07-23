@@ -1245,7 +1245,11 @@ static int sys_proc_setpriority(__user void * user_args)
         set_errno(ESRCH);
         return -1;
     }
-    /* TODO Limit the range */
+
+    if (!(NICE_MIN <= args.priority && args.priority <= NICE_MAX)) {
+        return -EACCES;
+    }
+
     p->nice = args.priority;
     proc_unref(p);
 
