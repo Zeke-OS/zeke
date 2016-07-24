@@ -68,14 +68,14 @@ static int fifo_insert(struct scheduler * sobj, struct thread_info * thread)
          * The priority of a process is static until it's removed from the queue
          * and it can only change on reinsert.
          */
-        thread->sched.fifo.prio = thread->param.sched_priority;
+        thread->sched.fifo.prio = thread_p_get_scheduling_priority(thread);
 
         thread->sched.policy_flags |= SCHED_POLFLAG_INFIFORQ;
         fifo->nr_active++;
     } else {
         /* Reinsert should update the priority. */
         RB_REMOVE(fiforunq, &fifo->runq_head, thread);
-        thread->sched.fifo.prio = thread->param.sched_priority;
+        thread->sched.fifo.prio = thread_p_get_scheduling_priority(thread);
         RB_INSERT(fiforunq, &fifo->runq_head, thread);
     }
 

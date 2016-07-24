@@ -388,11 +388,22 @@ int thread_get_priority(pthread_t thread_id);
 
 /**
  * Get thread effective scheduling priority.
+ * @param thread_id is a pointer to the thread descriptor.
+ * @return Returns the thread priory value;
+ *         Or NICE_ERR if the athread doesn't exist.
+ */
+int thread_p_get_scheduling_priority(struct thread_info * thread);
+
+/**
+ * Get thread effective scheduling priority.
  * @param thread_id is the thread id.
  * @return Returns the thread priory value;
  *         Or NICE_ERR if the athread doesn't exist.
  */
-int thread_get_scheduling_priority(pthread_t thread_id);
+static inline int thread_get_scheduling_priority(pthread_t thread_id)
+{
+    return thread_p_get_scheduling_priority(thread_lookup(thread_id));
+}
 
 /**
  * Terminate current thread.
