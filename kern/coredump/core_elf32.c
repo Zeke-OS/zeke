@@ -35,6 +35,7 @@
 #include <machine/endian.h>
 #include <stdint.h>
 #include <sys/elf32.h>
+#include <sys/time.h>
 #include <buf.h>
 #include <fs/fs.h>
 #include <hal/core.h>
@@ -114,6 +115,16 @@ static size_t put_note_header(void * note, size_t n_descsz, unsigned type)
     return sizeof(note_s) + sizeof(name);
 }
 
+static void clock_t_to_elf_timeval(struct elf_timeval * timeval, clock_t t)
+{
+   struct timespec ts;
+
+    nsec2timespec(&ts, (t * 1000) / configSCHED_HZ * 1000000);
+
+    timeval->tv_sec = ts.tv_sec;
+    timeval->tv_usec = ts.tv_nsec / 1000;
+}
+
 /**
  * Build a prstatus note.
  * @param proc is a pointer to the process.
@@ -132,10 +143,14 @@ static size_t thread_prstatus(const struct proc_info * proc,
         .pr_ppid = (proc->inh.parent) ? proc->inh.parent->pid : 0,
         .pr_pgrp = proc->pgrp->pg_id,
         .pr_sid = proc->pgrp->pg_session->s_leader,
-        /* TODO set times */
         .pr_fpvalid = (IS_HFP_PLAT) ? 1 : 0,
     };
     const sw_stack_frame_t * sf = NULL;
+
+    clock_t_to_elf_timeval(&prstatus.pr_utime, proc->tms.tms_utime);
+    clock_t_to_elf_timeval(&prstatus.pr_stime, proc->tms.tms_stime);
+    clock_t_to_elf_timeval(&prstatus.pr_cutime, proc->tms.tms_cutime);
+    clock_t_to_elf_timeval(&prstatus.pr_cstime, proc->tms.tms_cstime);
 
     /*
      * Restore the last stack frame and signal status.
