@@ -1219,10 +1219,8 @@ static int sys_proc_setpriority(__user void * user_args)
     struct _set_priority_args args;
     struct proc_info * p;
     uid_t p_euid;
-    int err;
 
-    err = copyin(user_args, &args, sizeof(args));
-    if (err) {
+    if (copyin(user_args, &args, sizeof(args))) {
         set_errno(ESRCH);
         return -1;
     }

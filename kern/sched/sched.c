@@ -1336,8 +1336,7 @@ static int sys_thread_setpriority(__user void * user_args)
     struct thread_info * thread;
     int err;
 
-    err = copyin(user_args, &args, sizeof(args));
-    if (err) {
+    if (copyin(user_args, &args, sizeof(args))) {
         set_errno(ESRCH);
         return -1;
     }
@@ -1354,7 +1353,7 @@ static int sys_thread_setpriority(__user void * user_args)
         return -1;
     }
 
-    err = (uintptr_t)thread_set_priority(args.id, args.priority);
+    err = thread_set_priority(args.id, args.priority);
     if (err) {
         set_errno(-err);
         return -1;
