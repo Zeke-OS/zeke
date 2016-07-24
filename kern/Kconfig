@@ -224,12 +224,6 @@ config configUSRINIT_SSIZE
     ---help---
     Stack size for init process main() thread.
 
-config configUSRINIT_PRI
-    int "init priority"
-    default 0
-    ---help---
-    Priority of usrinit thread.
-
 config configRCU_SYNC_HZ
     int "RCU synchronization interval [ms]"
     default 1000

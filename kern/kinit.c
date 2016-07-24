@@ -188,7 +188,7 @@ static pthread_t create_uinit_main(void * stack_addr)
 {
     struct _sched_pthread_create_args init_ds = {
         .param.sched_policy = SCHED_OTHER,
-        .param.sched_priority = configUSRINIT_PRI,
+        .param.sched_priority = NZERO,
         .stack_addr = stack_addr,
         .stack_size = configUSRINIT_SSIZE,
         .flags      = 0,
