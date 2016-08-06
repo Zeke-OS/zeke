@@ -43,6 +43,7 @@
 #include <hal/fb.h>
 #include <kerror.h>
 #include <kinit.h>
+#include <kmalloc.h>
 #include <kstring.h>
 #include <libkern.h>
 #include <proc.h>
@@ -92,15 +93,12 @@ int fb_register(struct fb_conf * fb)
     devid_tty = DEV_MMTODEV(VDEV_MJNR_FB, minor);
     devid_mm = DEV_MMTODEV(VDEV_MJNR_FBMM, minor);
 
-    /* FIXME FB TTY breaks the boot. */
-#if 0
     fb_console_init(fb);
     err = fb_console_maketty(fb, devid_tty);
     if (err) {
         KERROR(KERROR_ERR, "FB: maketty failed\n");
         return err;
     }
-#endif
 
     err = fb_makemmdev(fb, devid_mm);
     if (err) {
@@ -108,10 +106,8 @@ int fb_register(struct fb_conf * fb)
         return err;
     }
 
-#if 0
     draw_splash(fb);
     fb_console_write(fb, "FB ready\r\n");
-#endif
 
     return 0;
 }
@@ -220,7 +216,7 @@ static void draw_splash(struct fb_conf * fb)
     size_t col = 0;
     size_t row = 0;
 
-    for (int i = 0; i < splash_width * splash_height; i++) {
+    for (size_t i = 0; i < splash_width * splash_height; i++) {
         uint32_t pxl[3];
 
         if (i % splash_width == 0) {
