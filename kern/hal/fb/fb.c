@@ -163,7 +163,9 @@ void fb_mm_updatebuf(struct fb_conf * restrict fb,
  */
 static void fb_mm_ref(struct buf * this)
 {
+#if 0
     kobj_ref(&this->b_obj);
+#endif
 }
 
 /**
@@ -172,7 +174,9 @@ static void fb_mm_ref(struct buf * this)
  */
 static void fb_mm_rfree(struct buf * this)
 {
+#if 0
     kobj_unref(&this->b_obj);
+#endif
 }
 
 /**
