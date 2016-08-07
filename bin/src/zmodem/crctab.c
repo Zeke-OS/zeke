@@ -136,5 +136,3 @@ long c;
 
 #define UPDC32(b, c) (cr3tab[((int)c ^ b) & 0xff] ^ ((c >> 8) & 0x00FFFFFF))
 #endif
-
-/* End of crctab.c */

@@ -157,5 +157,3 @@ _PROTOTYPE(long rclhdr , (char *hdr ));
 
 void vfile();
 _PROTOTYPE(void bibi , (int n ));
-
-/* End of ZMODEM.H */

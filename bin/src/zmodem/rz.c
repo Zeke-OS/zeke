@@ -66,7 +66,6 @@
 #define LOGFILE "rzlog.tmp"
 #define OS "VMS"
 #define BUFREAD
-extern int errno;
 #define SS_NORMAL SS$_NORMAL
 #else
 /* Not vax11c */
@@ -92,39 +91,37 @@ extern int errno;
 #define ERROR (-1)
 
 
-_PROTOTYPE(long getfree , (void));
-_PROTOTYPE(void alrm , (int sig ));
-_PROTOTYPE(int main , (int argc , char *argv []));
-_PROTOTYPE(int usage , (void));
-_PROTOTYPE(int wcreceive , (int argc , char **argp ));
-_PROTOTYPE(int wcrxpn , (char *rpn ));
-_PROTOTYPE(int wcrx , (void));
-_PROTOTYPE(int wcgetsec , (char *rxbuf , int maxtime ));
-_PROTOTYPE(int readline , (int timeout ));
-_PROTOTYPE(void purgeline , (void));
-_PROTOTYPE(int procheader , (char *name ));
-_PROTOTYPE(int make_dirs , (char *pathname ));
-_PROTOTYPE(int makedir , (char *dpath , int dmode ));
-_PROTOTYPE(int putsec , (char *buf , int n ));
-_PROTOTYPE(void sendline , (int c ));
-_PROTOTYPE(void flushmo , (void));
-_PROTOTYPE(void uncaps , (char *s ));
-_PROTOTYPE(int IsAnyLower , (char *s ));
-_PROTOTYPE(char *substr , (char *s , char *t ));
-void zperr();
-_PROTOTYPE(void canit , (void));
-_PROTOTYPE(void report , (int sct ));
-_PROTOTYPE(void chkinvok , (char *s ));
-_PROTOTYPE(void checkpath , (char *name ));
-_PROTOTYPE(int tryz , (void));
-_PROTOTYPE(int rzfiles , (void));
-_PROTOTYPE(int rzfile , (void));
-_PROTOTYPE(void zmputs , (char *s ));
-_PROTOTYPE(int closeit , (void));
-_PROTOTYPE(void ackbibi , (void));
-_PROTOTYPE(void bttyout , (int c ));
-_PROTOTYPE(int sys2 , (char *s ));
-_PROTOTYPE(void exec2 , (char *s ));
+static long getfree(void);
+static void alrm(int sig);
+static int usage(void);
+static int wcreceive(int argc, char **argp);
+static int wcrxpn(char *rpn);
+static int wcrx(void);
+static int wcgetsec(char *rxbuf , int maxtime);
+static int readline(int timeout);
+static void purgeline(void);
+static int procheader(char *name);
+static int make_dirs(char *pathname);
+static int makedir(char *dpath , int dmode);
+static int putsec(char *buf , int n);
+static void sendline(int c);
+static void uncaps(char *s);
+static int IsAnyLower(char *s);
+static char *substr(char *s , char *t);
+static void zperr(char *s, char *p, char *u);
+static void canit(void);
+static void report(int sct);
+static void chkinvok(char *s);
+static void checkpath(char *name);
+static int tryz(void);
+static int rzfiles(void);
+static int rzfile(void);
+static void zmputs(char *s);
+static int closeit(void);
+static void ackbibi(void);
+static void bttyout(int c);
+static int sys2(char *s);
+static void exec2(char *s);
 
 /*
  * Max value for HOWMANY is 255.
@@ -155,8 +152,8 @@ _PROTOTYPE(void exec2 , (char *s ));
 #define PATHLEN 257 /* ready for 4.2 bsd ? */
 #define UNIXFILE 0xF000 /* The S_IFMT file mask bit for stat */
 
-int Zmodem=0;       /* ZMODEM protocol requested */
-int Nozmodem = 0;   /* If invoked as "rb" */
+int Zmodem;     /* ZMODEM protocol requested */
+int Nozmodem;   /* If invoked as "rb" */
 unsigned Baudrate = 2400;
 
 #ifdef vax11c
@@ -173,9 +170,9 @@ FILE *fout;
  * Routine to calculate the free bytes on the current file system
  *  ~0 means many free bytes (unknown)
  */
-long getfree()
+static long getfree(void)
 {
-    return(~0L);    /* many free bytes ... */
+    return ~0L;    /* many free bytes ... */
 }
 
 int Lastrx;
@@ -183,7 +180,7 @@ int Crcflg;
 int Firstsec;
 int Eofseen;        /* indicates cpm eof (^Z) has been received */
 int errors;
-int Restricted=0;   /* restricted; no /.. or ../ in filenames */
+int Restricted;   /* restricted; no /.. or ../ in filenames */
 #ifdef ONEREAD
 /* Sorry, Regulus and some others don't work right in raw mode! */
 int Readnum = 1;    /* Number of bytes to ask for in read() from modem */
@@ -198,28 +195,28 @@ int Filemode;       /* Unix style mode for incoming file */
 char Pathname[PATHLEN];
 char *Progname;     /* the name by which we were called */
 
-int Batch=0;
-int Topipe=0;
-int MakeLCPathname=TRUE;    /* make received pathname lower case */
-int Verbose=0;
-int Quiet=0;        /* overrides logic that would otherwise set verbose */
-int Nflag = 0;      /* Don't really transfer files */
-int Rxclob=FALSE;   /* Clobber existing file */
-int Rxbinary=FALSE; /* receive all files in bin mode */
-int Rxascii=FALSE;  /* receive files in ascii (translate) mode */
+int Batch;
+int Topipe;
+int MakeLCPathname = TRUE;    /* make received pathname lower case */
+int Verbose;
+int Quiet;        /* overrides logic that would otherwise set verbose */
+int Nflag;      /* Don't really transfer files */
+int Rxclob = FALSE;   /* Clobber existing file */
+int Rxbinary = FALSE; /* receive all files in bin mode */
+int Rxascii = FALSE;  /* receive files in ascii (translate) mode */
 int Thisbinary;     /* current file is to be received in bin mode */
 int Blklen;     /* record length of received packets */
 
 #ifdef SEGMENTS
-int chinseg = 0;    /* Number of characters received in this data seg */
-char secbuf[1+(SEGMENTS+1)*1024];
+int chinseg;    /* Number of characters received in this data seg */
+char secbuf[1 + (SEGMENTS + 1) * 1024];
 #else
 char secbuf[1025];
 #endif
 
 
 char linbuf[HOWMANY];
-int Lleft=0;        /* number of characters in linbuf */
+int Lleft;        /* number of characters in linbuf */
 time_t timep[2];
 char Lzmanag;       /* Local file management request */
 char zconv;     /* ZMODEM file conversion request */
@@ -233,78 +230,86 @@ jmp_buf tohere;     /* For the interrupt on RX timeout */
 #define xsendline(c) sendline(c)
 #include "zm.c"
 
-int tryzhdrtype=ZRINIT; /* Header type to send corresponding to Last rx close */
+/** Header type to send corresponding to Last rx close */
+int tryzhdrtype = ZRINIT;
 
-void alrm(sig)
-int sig;
+static void alrm(int sig)
 {
     longjmp(tohere, -1);
 }
 
 /* called by signal interrupt or terminate to clean things up */
-void bibi(n)
-int n;
+void bibi(int n)
 {
     if (Zmodem)
         zmputs(Attn);
-    canit(); mode(0);
+    canit();
+    mode(0);
     fprintf(stderr, "rz: caught signal %d; exiting\n", n);
     cucheck();
-    exit(128+n);
+    exit(128 + n);
 }
 
-int main(argc, argv)
-int argc;
-char *argv[];
+int main(int argc, char *argv[])
 {
-    register char *cp;
-    register npats;
+    char *cp;
+    int npats;
     char *virgin, **patts;
     int exitcode = 0;
 
     Rxtimeout = 100;
     setbuf(stderr, (char *)NULL);
-    if ((cp=getenv("SHELL")) && (substr(cp, "rsh") || substr(cp, "rksh")))
-        Restricted=TRUE;
+    if ((cp = getenv("SHELL")) && (substr(cp, "rsh") || substr(cp, "rksh")))
+        Restricted = TRUE;
 
     from_cu();
 #ifdef vax11c
     Progname = virgin = "rz";
 #else
-    chkinvok(virgin=argv[0]);   /* if called as [-]rzCOMMAND set flag */
+    chkinvok(virgin = argv[0]);   /* if called as [-]rzCOMMAND set flag */
 #endif
     npats = 0;
     while (--argc) {
         cp = *++argv;
         if (*cp == '-') {
-            while( *++cp) {
-                switch(*cp) {
+            while (*++cp) {
+                switch (*cp) {
                 case '\\':
-                     cp[1] = toupper(cp[1]);  continue;
+                     cp[1] = toupper(cp[1]);
+                     continue;
                 case '+':
-                    Lzmanag = ZMAPND; break;
+                    Lzmanag = ZMAPND;
+                    break;
                 case 'a':
-                    Rxascii=TRUE;  break;
+                    Rxascii = TRUE;
+                    break;
                 case 'b':
-                    Rxbinary=TRUE; break;
+                    Rxbinary = TRUE;
+                    break;
                 case 'c':
-                    Crcflg=TRUE; break;
+                    Crcflg = TRUE;
+                    break;
 #ifndef vax11c
                 case 'D':
-                    Nflag = TRUE; break;
+                    Nflag = TRUE;
+                    break;
 #endif
                 case 'e':
-                    Zctlesc = 1; break;
+                    Zctlesc = 1;
+                    break;
                 case 'p':
-                    Lzmanag = ZMPROT;  break;
+                    Lzmanag = ZMPROT;
+                    break;
                 case 'q':
-                    Quiet=TRUE; Verbose=0; break;
+                    Quiet = TRUE;
+                    Verbose = 0;
+                    break;
                 case 't':
                     if (--argc < 1) {
                         usage();
                     }
                     Rxtimeout = atoi(*++argv);
-                    if (Rxtimeout<10 || Rxtimeout>1000)
+                    if (Rxtimeout < 10 || Rxtimeout > 1000)
                         usage();
                     break;
                 case 'w':
@@ -314,20 +319,22 @@ char *argv[];
                     Zrwindow = atoi(*++argv);
                     break;
                 case 'u':
-                    MakeLCPathname=FALSE; break;
+                    MakeLCPathname = FALSE;
+                    break;
                 case 'v':
-                    ++Verbose; break;
+                    ++Verbose;
+                    break;
                 case 'y':
-                    Rxclob=TRUE; break;
+                    Rxclob = TRUE;
+                    break;
                 default:
                     usage();
                 }
             }
-        }
-        else if ( !npats && argc>0) {
+        } else if (!npats && argc > 0) {
             if (argv[0][0]) {
-                npats=argc;
-                patts=argv;
+                npats = argc;
+                patts = argv;
             }
         }
     }
@@ -336,8 +343,8 @@ char *argv[];
     if (Batch && npats)
         usage();
     if (Verbose) {
-        if (freopen(LOGFILE, "a", stderr)==NULL) {
-            printf("Can't open log file %s\n",LOGFILE);
+        if (freopen(LOGFILE, "a", stderr) == NULL) {
+            printf("Can't open log file %s\n", LOGFILE);
             exit(0200);
         }
         setbuf(stderr, (char *)NULL);
@@ -350,46 +357,48 @@ char *argv[];
     vfile("%s %s for %s\n", Progname, VERSION, OS);
     mode(1);
     if (signal(SIGINT, bibi) == SIG_IGN) {
-        signal(SIGINT, SIG_IGN); signal(SIGKILL, SIG_IGN);
-    }
-    else {
-        signal(SIGINT, bibi); signal(SIGKILL, bibi);
+        signal(SIGINT, SIG_IGN);
+        signal(SIGKILL, SIG_IGN);
+    } else {
+        signal(SIGINT, bibi);
+        signal(SIGKILL, bibi);
     }
     signal(SIGTERM, bibi);
-    if (wcreceive(npats, patts)==ERROR) {
-        exitcode=0200;
+    if (wcreceive(npats, patts) == ERROR) {
+        exitcode = 0200;
         canit();
     }
     mode(0);
-    vfile("exitcode = %d\n",exitcode);
+    vfile("exitcode = %d\n", exitcode);
     if (exitcode && !Zmodem)    /* bellow again with all thy might. */
         canit();
     if (exitcode)
         cucheck();
-    if (Verbose) putc('\n', stderr);
-    exit(exitcode ? exitcode:SS_NORMAL);
+    if (Verbose)
+        putc('\n', stderr);
+    exit(exitcode ? exitcode : SS_NORMAL);
 }
 
 
-int usage()
+static int usage(void)
 {
     cucheck();
 #ifdef vax11c
-    fprintf(stderr,"Usage:  rz [-abeuvy]\n");
+    fprintf(stderr, "Usage:  rz [-abeuvy]\n");
 #else
-    fprintf(stderr,"Usage:  rz [-abeuvy]        (ZMODEM)\n");
-    fprintf(stderr,"or  rb [-abuvy]     (YMODEM)\n");
-    fprintf(stderr,"or  rx [-abcv] file (XMODEM or XMODEM-1k)\n");
+    fprintf(stderr, "Usage:  rz [-abeuvy]        (ZMODEM)\n");
+    fprintf(stderr, "or  rb [-abuvy]     (YMODEM)\n");
+    fprintf(stderr, "or  rx [-abcv] file (XMODEM or XMODEM-1k)\n");
 #endif
-    fprintf(stderr,"      -a ASCII transfer (strip CR)\n");
-    fprintf(stderr,"      -b Binary transfer for all files\n");
+    fprintf(stderr, "      -a ASCII transfer (strip CR)\n");
+    fprintf(stderr, "      -b Binary transfer for all files\n");
 #ifndef vax11c
-    fprintf(stderr,"      -c Use 16 bit CRC (XMODEM)\n");
+    fprintf(stderr, "      -c Use 16 bit CRC (XMODEM)\n");
 #endif
-    fprintf(stderr,"      -e Escape control characters  (ZMODEM)\n");
-    fprintf(stderr,"      -v Verbose more v's give more info\n");
-    fprintf(stderr,"      -y Yes, clobber existing file if any\n");
-    fprintf(stderr,"%s %s for %s by Chuck Forsberg, Omen Technology INC\n",
+    fprintf(stderr, "      -e Escape control characters  (ZMODEM)\n");
+    fprintf(stderr, "      -v Verbose more v's give more info\n");
+    fprintf(stderr, "      -y Yes, clobber existing file if any\n");
+    fprintf(stderr, "%s %s for %s by Chuck Forsberg, Omen Technology INC\n",
       Progname, VERSION, OS);
     fprintf(stderr, "\t\t\042The High Reliability Software\042\n");
     exit(SS_NORMAL);
@@ -398,8 +407,7 @@ int usage()
  *  Debugging information output interface routine
  */
 /* VARARGS1 */
-void vfile(f, a, b, c)
-register char *f,*a,*b,*c;
+void vfile(char *f, char *a, char *b, char *c)
 
 {
     if (Verbose > 2) {
@@ -415,17 +423,15 @@ register char *f,*a,*b,*c;
 char *rbmsg =
 "%s ready. To begin transfer, type \"%s file ...\" to your modem program\r\n\n";
 
-int wcreceive(argc, argp)
-int argc;
-char **argp;
+static int wcreceive(int argc, char **argp)
 {
-    register c;
+    int c;
 
-    if (Batch || argc==0) {
-        Crcflg=1;
-        if ( !Quiet)
-            fprintf(stderr, rbmsg, Progname, Nozmodem?"sb":"sz");
-        if (c=tryz()) {
+    if (Batch || argc == 0) {
+        Crcflg = 1;
+        if (!Quiet)
+            fprintf(stderr, rbmsg, Progname, Nozmodem ? "sb" : "sz");
+        if (c = tryz()) {
             if (c == ZCOMPL)
                 return OK;
             if (c == ERROR)
@@ -435,24 +441,29 @@ char **argp;
                 goto fubar;
         } else {
             for (;;) {
-                if (wcrxpn(secbuf)== ERROR)
+                if (wcrxpn(secbuf) == ERROR)
                     goto fubar;
-                if (secbuf[0]==0)
+                if (secbuf[0] == 0)
                     return OK;
                 if (procheader(secbuf) == ERROR)
                     goto fubar;
-                if (wcrx()==ERROR)
+                if (wcrx() == ERROR)
                     goto fubar;
             }
         }
     } else {
-        Bytesleft = DEFBYTL; Filemode = 0; Modtime = 0L;
+        Bytesleft = DEFBYTL;
+        Filemode = 0;
+        Modtime = 0L;
 
-        procheader(""); strcpy(Pathname, *argp); checkpath(Pathname);
+        procheader("");
+        strcpy(Pathname, *argp);
+        checkpath(Pathname);
+
         fprintf(stderr, "\nrz: ready to receive %s\r\n", Pathname);
-        if ((fout=fopen(Pathname, "w")) == NULL)
+        if ((fout = fopen(Pathname, "w")) == NULL)
             return ERROR;
-        if (wcrx()==ERROR)
+        if (wcrx() == ERROR)
             goto fubar;
     }
     return OK;
@@ -479,11 +490,11 @@ fubar:
  * Fetch a pathname from the other end as a C ctyle ASCIZ string.
  * Length is indeterminate as long as less than Blklen
  * A null string represents no more files (YMODEM)
+ * @param rpn receive a pathname
  */
-int wcrxpn(rpn)
-char *rpn;  /* receive a pathname */
+static int wcrxpn(char *rpn)
 {
-    register c;
+    int c;
 
 #ifdef NFGVMIN
     readline(1);
@@ -492,14 +503,15 @@ char *rpn;  /* receive a pathname */
 #endif
 
 et_tu:
-    Firstsec=TRUE;  Eofseen=FALSE;
-    sendline(Crcflg?WANTCRC:NAK);
-    Lleft=0;    /* Do read next time ... */
+    Firstsec = TRUE;
+    Eofseen = FALSE;
+    sendline(Crcflg ? WANTCRC : NAK);
+    Lleft = 0;    /* Do read next time ... */
     while ((c = wcgetsec(rpn, 100)) != 0) {
         if (c == WCEOT) {
-            zperr( "Pathname fetch returned %d", c);
+            zperr("Pathname fetch returned %d", c);
             sendline(ACK);
-            Lleft=0;    /* Do read next time ... */
+            Lleft = 0;    /* Do read next time ... */
             readline(1);
             goto et_tu;
         }
@@ -514,44 +526,43 @@ et_tu:
  * Jack M. Wierda and Roderick W. Hart
  */
 
-int wcrx()
+int wcrx(void)
 {
-    register int sectnum, sectcurr;
-    register char sendchar;
+    int sectnum, sectcurr;
+    char sendchar;
     int cblklen;            /* bytes to dump this block */
 
-    Firstsec=TRUE;sectnum=0; Eofseen=FALSE;
-    sendchar=Crcflg?WANTCRC:NAK;
+    Firstsec = TRUE;
+    sectnum = 0;
+    Eofseen = FALSE;
+    sendchar = Crcflg ? WANTCRC : NAK;
 
     for (;;) {
         sendline(sendchar); /* send it now, we're ready! */
-        Lleft=0;    /* Do read next time ... */
-        sectcurr=wcgetsec(secbuf, (sectnum&0177)?50:130);
+        Lleft = 0;    /* Do read next time ... */
+        sectcurr = wcgetsec(secbuf, (sectnum & 0177) ? 50 : 130);
         report(sectcurr);
-        if (sectcurr==((sectnum+1) &0377)) {
+        if (sectcurr == ((sectnum + 1) & 0377)) {
             sectnum++;
-            cblklen = Bytesleft>Blklen ? Blklen:Bytesleft;
-            if (putsec(secbuf, cblklen)==ERROR)
+            cblklen = Bytesleft > Blklen ? Blklen : Bytesleft;
+            if (putsec(secbuf, cblklen) == ERROR)
                 return ERROR;
-            if ((Bytesleft-=cblklen) < 0)
+            if ((Bytesleft -= cblklen) < 0)
                 Bytesleft = 0;
-            sendchar=ACK;
-        }
-        else if (sectcurr==(sectnum&0377)) {
-            zperr( "Received dup Sector");
-            sendchar=ACK;
-        }
-        else if (sectcurr==WCEOT) {
+            sendchar = ACK;
+        } else if (sectcurr == (sectnum & 0377)) {
+            zperr("Received dup Sector");
+            sendchar = ACK;
+        } else if (sectcurr == WCEOT) {
             if (closeit())
                 return ERROR;
             sendline(ACK);
-            Lleft=0;    /* Do read next time ... */
+            Lleft = 0;    /* Do read next time ... */
             return OK;
-        }
-        else if (sectcurr==ERROR)
+        } else if (sectcurr == ERROR) {
             return ERROR;
-        else {
-            zperr( "Sync Error");
+        } else {
+            zperr("Sync Error");
             return ERROR;
         }
     }
@@ -567,92 +578,91 @@ int wcrx()
  *    (Caller must do that when he is good and ready to get next sector)
  */
 
-int wcgetsec(rxbuf, maxtime)
-char *rxbuf;
-int maxtime;
+static int wcgetsec(char *rxbuf, int maxtime)
 {
-    register checksum, wcj, firstch;
-    register unsigned short oldcrc;
-    register char *p;
+    int checksum, wcj, firstch;
+    unsigned short oldcrc;
+    char *p;
     int sectcurr;
 
-    for (Lastrx=errors=0; errors<RETRYMAX; errors++) {
+    for (Lastrx = errors = 0; errors < RETRYMAX; errors++) {
 
-        if ((firstch=readline(maxtime))==STX) {
-            Blklen=1024; goto get2;
+        if ((firstch = readline(maxtime)) == STX) {
+            Blklen = 1024;
+            goto get2;
         }
-        if (firstch==SOH) {
-            Blklen=128;
+        if (firstch == SOH) {
+            Blklen = 128;
 get2:
-            sectcurr=readline(1);
-            if ((sectcurr+(oldcrc=readline(1)))==0377) {
-                oldcrc=checksum=0;
-                for (p=rxbuf,wcj=Blklen; --wcj>=0; ) {
-                    if ((firstch=readline(1)) < 0)
+            sectcurr = readline(1);
+            if ((sectcurr + (oldcrc = readline(1))) == 0377) {
+                oldcrc = checksum = 0;
+                for (p = rxbuf, wcj = Blklen; --wcj >= 0;) {
+                    if ((firstch = readline(1)) < 0)
                         goto bilge;
-                    oldcrc=updcrc(firstch, oldcrc);
+                    oldcrc = updcrc(firstch, oldcrc);
                     checksum += (*p++ = firstch);
                 }
-                if ((firstch=readline(1)) < 0)
+                if ((firstch = readline(1)) < 0)
                     goto bilge;
                 if (Crcflg) {
-                    oldcrc=updcrc(firstch, oldcrc);
-                    if ((firstch=readline(1)) < 0)
+                    oldcrc = updcrc(firstch, oldcrc);
+                    if ((firstch = readline(1)) < 0)
                         goto bilge;
-                    oldcrc=updcrc(firstch, oldcrc);
-                    if (oldcrc & 0xFFFF)
-                        zperr( "CRC");
-                    else {
-                        Firstsec=FALSE;
+                    oldcrc = updcrc(firstch, oldcrc);
+                    if (oldcrc & 0xFFFF) {
+                        zperr("CRC");
+                    } else {
+                        Firstsec = FALSE;
                         return sectcurr;
                     }
-                }
-                else if (((checksum-firstch)&0377)==0) {
-                    Firstsec=FALSE;
+                } else if (((checksum - firstch) & 0377) == 0) {
+                    Firstsec = FALSE;
                     return sectcurr;
+                } else {
+                    zperr("Checksum");
                 }
-                else
-                    zperr( "Checksum");
-            }
-            else
+            } else {
                 zperr("Sector number garbled");
+            }
         }
         /* make sure eot really is eot and not just mixmash */
 #ifdef NFGVMIN
-        else if (firstch==EOT && readline(1)==TIMEOUT)
+        else if (firstch == EOT && readline(1) == TIMEOUT)
             return WCEOT;
 #else
-        else if (firstch==EOT && Lleft==0)
+        else if (firstch == EOT && Lleft == 0)
             return WCEOT;
 #endif
-        else if (firstch==CAN) {
-            if (Lastrx==CAN) {
-                zperr( "Sender CANcelled");
+        else if (firstch == CAN) {
+            if (Lastrx == CAN) {
+                zperr("Sender CANcelled");
                 return ERROR;
             } else {
-                Lastrx=CAN;
+                Lastrx = CAN;
                 continue;
             }
-        }
-        else if (firstch==TIMEOUT) {
+        } else if (firstch == TIMEOUT) {
             if (Firstsec)
                 goto humbug;
 bilge:
-            zperr( "TIMEOUT");
+            zperr("TIMEOUT");
+        } else {
+            zperr("Got 0%o sector header", firstch);
         }
-        else
-            zperr( "Got 0%o sector header", firstch);
 
 humbug:
-        Lastrx=0;
-        while(readline(1)!=TIMEOUT)
-            ;
+        Lastrx = 0;
+        while (1) {
+            if (readline(1) == TIMEOUT)
+                break;
+        }
         if (Firstsec) {
-            sendline(Crcflg?WANTCRC:NAK);
-            Lleft=0;    /* Do read next time ... */
+            sendline(Crcflg ? WANTCRC : NAK);
+            Lleft = 0;    /* Do read next time ... */
         } else {
-            maxtime=40; sendline(NAK);
-            Lleft=0;    /* Do read next time ... */
+            maxtime = 40; sendline(NAK);
+            Lleft = 0;    /* Do read next time ... */
         }
     }
     /* try to stop the bubble machine. */
@@ -668,35 +678,41 @@ humbug:
  *
  * timeout is in tenths of seconds
  */
-int readline(timeout)
-int timeout;
+static int readline(int timeout)
 {
-    register n;
+    int n;
     static char *cdq;   /* pointer for removing chars from linbuf */
 
     if (--Lleft >= 0) {
         if (Verbose > 8) {
-            fprintf(stderr, "%02x ", *cdq&0377);
+            fprintf(stderr, "%02x ", *cdq & 0377);
         }
-        return (*cdq++ & 0377);
+        return *cdq++ & 0377;
     }
-    n = timeout/10;
+
+    n = timeout / 10;
     if (n < 2)
         n = 3;
-    if (Verbose > 5)
+
+    if (Verbose > 5) {
         fprintf(stderr, "Calling read: alarm=%d  Readnum=%d ",
-          n, Readnum);
+                n, Readnum);
+    }
+
     if (setjmp(tohere)) {
 #ifdef TIOCFLUSH
-/*      ioctl(iofd, TIOCFLUSH, 0); */
+#if 0
+        ioctl(iofd, TIOCFLUSH, 0);
+#endif
 #endif
         Lleft = 0;
-        if (Verbose>1)
+        if (Verbose > 1)
             fprintf(stderr, "Readline:TIMEOUT\n");
         return TIMEOUT;
     }
-    signal(SIGALRM, alrm); alarm(n);
-    Lleft=read(iofd, cdq=linbuf, Readnum);
+    signal(SIGALRM, alrm);
+    alarm(n);
+    Lleft = read(iofd, cdq = linbuf, Readnum);
     alarm(0);
     if (Verbose > 5) {
         fprintf(stderr, "Read returned %d bytes\n", Lleft);
@@ -705,9 +721,9 @@ int timeout;
         return TIMEOUT;
     --Lleft;
     if (Verbose > 8) {
-        fprintf(stderr, "%02x ", *cdq&0377);
+        fprintf(stderr, "%02x ", *cdq & 0377);
     }
-    return (*cdq++ & 0377);
+    return *cdq++ & 0377;
 }
 
 
@@ -715,7 +731,7 @@ int timeout;
 /*
  * Purge the modem input queue of all characters
  */
-void purgeline()
+static void purgeline(void)
 {
     Lleft = 0;
 #ifdef USG
@@ -730,10 +746,9 @@ void purgeline()
 /*
  * Process incoming file information header
  */
-int procheader(name)
-char *name;
+static int procheader(char *name)
 {
-    register char *openmode, *p;
+    char *openmode, *p;
 
     /* set default parameters and overrides */
     openmode = "w";
@@ -753,7 +768,7 @@ char *name;
 
 #ifndef BIX
     /* Check for existing file */
-    if (!Rxclob && (zmanag&ZMMASK) != ZMCLOB && (fout=fopen(name, "r"))) {
+    if (!Rxclob && (zmanag&ZMMASK) != ZMCLOB && (fout = fopen(name, "r"))) {
         fclose(fout);  return ERROR;
     }
 #endif
@@ -774,17 +789,18 @@ char *name;
     }
 
 #ifdef BIX
-    if ((fout=fopen("scratchpad", openmode)) == NULL)
+    if ((fout = fopen("scratchpad", openmode)) == NULL)
         return ERROR;
     return OK;
 #else
 
     else {      /* File coming from CP/M system */
-        for (p=name; *p; ++p)       /* change / to _ */
-            if ( *p == '/')
+        for (p = name; *p; ++p) {     /* change / to _ */
+            if (*p == '/')
                 *p = '_';
+        }
 
-        if ( *--p == '.')       /* zap trailing period */
+        if (*--p == '.')       /* zap trailing period */
             *p = 0;
     }
 
@@ -794,19 +810,20 @@ char *name;
         uncaps(name);
 #endif
     if (Topipe > 0) {
-        sprintf(Pathname, "%s %s", Progname+2, name);
-        if (Verbose)
+        sprintf(Pathname, "%s %s", Progname + 2, name);
+        if (Verbose) {
             fprintf(stderr,  "Topipe: %s %s\n",
-              Pathname, Thisbinary?"BIN":"ASCII");
+              Pathname, Thisbinary ? "BIN" : "ASCII");
+        }
 #ifndef vax11c
-        if ((fout=popen(Pathname, "w")) == NULL)
+        if ((fout = popen(Pathname, "w")) == NULL)
             return ERROR;
 #endif
     } else {
         strcpy(Pathname, name);
         if (Verbose) {
             fprintf(stderr,  "Receiving %s %s %s\n",
-              name, Thisbinary?"BIN":"ASCII", openmode);
+              name, Thisbinary ? "BIN" : "ASCII", openmode);
         }
         checkpath(name);
         if (Nflag)
@@ -814,7 +831,7 @@ char *name;
 #ifndef vax11c
 #ifdef OMEN
         if (name[0] == '!' || name[0] == '|') {
-            if ( !(fout = popen(name+1, "w"))) {
+            if (!(fout = popen(name+1, "w"))) {
                 return ERROR;
             }
             Topipe = -1;  return(OK);
@@ -823,13 +840,13 @@ char *name;
 #endif
 #ifdef MD
         fout = fopen(name, openmode);
-        if ( !fout)
+        if (!fout)
             if (make_dirs(name))
                 fout = fopen(name, openmode);
 #else
         fout = fopen(name, openmode);
 #endif
-        if ( !fout)
+        if (!fout)
             return ERROR;
     }
     return OK;
@@ -846,10 +863,9 @@ char *name;
  * it's because some required directory was not present, and if
  * so, create all required dirs.
  */
-int make_dirs(pathname)
-register char *pathname;
+static int make_dirs(char *pathname)
 {
-    register char *p;       /* Points into path */
+    char *p;       /* Points into path */
     int madeone = 0;        /* Did we do anything yet? */
     int save_errno = errno;     /* Remember caller's errno */
     char *strchr();
@@ -865,7 +881,7 @@ register char *pathname;
         if (p[-1] == '.' && (p == pathname+1 || p[-2] == '/'))
             continue;
         *p = 0;             /* Truncate the path there */
-        if ( !makedir(pathname, 0777)) {    /* Try to create it as a dir */
+        if (!makedir(pathname, 0777)) {    /* Try to create it as a dir */
             vfile("Made directory %s\n", pathname);
             madeone++;      /* Remember if we made one */
             *p = '/';
@@ -890,25 +906,24 @@ register char *pathname;
 /*
  * Make a directory.  Compatible with the mkdir() system call on 4.2BSD.
  */
-int makedir(dpath, dmode)
-char *dpath;
-int dmode;
+static int makedir(char *dpath, int dmode)
 {
     int cpid, status;
     struct stat statbuf;
 
-    if (stat(dpath,&statbuf) == 0) {
+    if (stat(dpath, &statbuf) == 0) {
         errno = EEXIST;     /* Stat worked, so it already exists */
         return -1;
     }
 
     /* If stat fails for a reason other than non-existence, return error */
-    if (errno != ENOENT) return -1;
+    if (errno != ENOENT)
+        return -1;
 
     switch (cpid = fork()) {
 
     case -1:            /* Error in fork() */
-        return(-1);     /* Errno is set already */
+        return -1;      /* Errno is set already */
 
     case 0:             /* Child process */
         /*
@@ -923,7 +938,9 @@ int dmode;
         _exit(-1);      /* Can't exec /bin/mkdir */
 
     default:            /* Parent process */
-        while (cpid != wait(&status)) ; /* Wait for kid to finish */
+        while (cpid != wait(&status)) {
+            /* Wait for kid to finish */
+        }
     }
 
     if (TERM_SIGNAL(status) != 0 || TERM_VALUE(status) != 0) {
@@ -941,28 +958,27 @@ int dmode;
  *  If not in binary mode, carriage returns, and all characters
  *  starting with CPMEOF are discarded.
  */
-int putsec(buf, n)
-char *buf;
-register int n;
+static int putsec(char *buf, int n)
 {
-    register char *p;
+    char *p;
 
     if (n == 0)
         return OK;
     if (Thisbinary) {
-        for (p=buf; --n>=0; )
-            putc( *p++, fout);
-    }
-    else {
+        for (p = buf; --n >= 0;) {
+            putc(*p++, fout);
+        }
+    } else {
         if (Eofseen)
             return OK;
-        for (p=buf; --n>=0; ++p ) {
-            if ( *p == '\r')
+        for (p = buf; --n >= 0; ++p) {
+            if (*p == '\r')
                 continue;
             if (*p == CPMEOF) {
-                Eofseen=TRUE; return OK;
+                Eofseen = TRUE;
+                return OK;
             }
-            putc(*p ,fout);
+            putc(*p, fout);
         }
     }
     return OK;
@@ -972,41 +988,34 @@ register int n;
 /*
  *  Send a character to modem.  Small is beautiful.
  */
-void sendline(c)
-int c;
+static void sendline(int c)
 {
     char d;
 
     d = c;
-    if (Verbose>6)
+    if (Verbose > 6)
         fprintf(stderr, "Sendline: %x\n", c);
     write(1, &d, 1);
 }
-
-void flushmo() {}
 #endif
 
-
-
-
-
 /* make string s lower case */
-void uncaps(s)
-register char *s;
+static void uncaps(char *s)
 {
-    for ( ; *s; ++s)
+    for (; *s; ++s) {
         if (isupper(*s))
             *s = tolower(*s);
+    }
 }
 /*
  * IsAnyLower returns TRUE if string s has lower case letters.
  */
-int IsAnyLower(s)
-register char *s;
+static int IsAnyLower(char *s)
 {
-    for ( ; *s; ++s)
+    for (; *s; ++s) {
         if (islower(*s))
             return TRUE;
+    }
     return FALSE;
 }
 
@@ -1014,30 +1023,29 @@ register char *s;
  * substr(string, token) searches for token in string s
  * returns pointer to token within string if found, NULL otherwise
  */
-char *
-substr(s, t)
-register char *s,*t;
+static char * substr(char *s, char *t)
 {
-    register char *ss,*tt;
+    char *ss, *tt;
     /* search for first char of token */
-    for (ss=s; *s; s++)
-        if (*s == *t)
+    for (ss = s; *s; s++) {
+        if (*s == *t) {
             /* compare token with substring */
-            for (ss=s,tt=t; ;) {
+            for (ss = s, tt = t;;) {
                 if (*tt == 0)
                     return s;
                 if (*ss++ != *tt++)
                     break;
             }
-    return (char *)NULL;
+        }
+    }
+    return NULL;
 }
 
 /*
  * Log an error
  */
 /*VARARGS1*/
-void zperr(s,p,u)
-char *s, *p, *u;
+static void zperr(char *s, char *p, char *u)
 {
     if (Verbose <= 0)
         return;
@@ -1047,10 +1055,10 @@ char *s, *p, *u;
 }
 
 /* send cancel string to get the other end to shut up */
-void canit()
+static void canit(void)
 {
     static char canistr[] = {
-     24,24,24,24,24,24,24,24,24,24,8,8,8,8,8,8,8,8,8,8,0
+        24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 0
     };
 
 #ifdef vax11c
@@ -1058,17 +1066,16 @@ void canit()
     purgeline();
 #else
     printf(canistr);
-    Lleft=0;    /* Do read next time ... */
+    Lleft = 0;    /* Do read next time ... */
     fflush(stdout);
 #endif
 }
 
 
-void report(sct)
-int sct;
+static void report(int sct)
 {
-    if (Verbose>1)
-        fprintf(stderr,"%03d%c",sct,sct%10? ' ' : '\r');
+    if (Verbose > 1)
+        fprintf(stderr, "%03d%c", sct, sct % 10 ? ' ' : '\r');
 }
 
 #ifndef vax11c
@@ -1077,28 +1084,29 @@ int sct;
  * If called as [-][dir/../]rzCOMMAND set the pipe flag
  * If called as rb use YMODEM protocol
  */
-void chkinvok(s)
-char *s;
+static void chkinvok(char *s)
 {
-    register char *p;
+    char *p;
 
     p = s;
-    while (*p == '-')
+    while (*p == '-') {
         s = ++p;
-    while (*p)
+    while (*p) {
         if (*p++ == '/')
             s = p;
+    }
     if (*s == 'v') {
-        Verbose=1; ++s;
+        Verbose = 1;
+        ++s;
     }
     Progname = s;
-    if (s[0]=='r' && s[1]=='z')
+    if (s[0] == 'r' && s[1] == 'z')
         Batch = TRUE;
-    if (s[0]=='r' && s[1]=='b')
+    if (s[0] == 'r' && s[1] == 'b')
         Batch = Nozmodem = TRUE;
-    if (s[2] && s[0]=='r' && s[1]=='b')
+    if (s[2] && s[0] == 'r' && s[1] == 'b')
         Topipe = 1;
-    if (s[2] && s[0]=='r' && s[1]=='z')
+    if (s[2] && s[0] == 'r' && s[1] == 'z')
         Topipe = 1;
 }
 #endif
@@ -1106,8 +1114,7 @@ char *s;
 /*
  * Totalitarian Communist pathname processing
  */
-void checkpath(name)
-char *name;
+static void checkpath(char *name)
 {
     if (Restricted) {
         if (fopen(name, "r") != NULL) {
@@ -1116,10 +1123,10 @@ char *name;
             bibi(-1);
         }
         /* restrict pathnames to current tree or uucppublic */
-        if ( substr(name, "../")
-         || (name[0]== '/' && strncmp(name, PUBDIR, strlen(PUBDIR))) ) {
+        if (substr(name, "../")
+         || (name[0] == '/' && strncmp(name, PUBDIR, strlen(PUBDIR)))) {
             canit();
-            fprintf(stderr,"\r\nrz:\tSecurity Violation\r\n");
+            fprintf(stderr, "\r\nrz:\tSecurity Violation\r\n");
             bibi(-1);
         }
     }
@@ -1131,16 +1138,15 @@ char *name;
  *  Return ZFILE if Zmodem filename received, -1 on error,
  *   ZCOMPL if transaction finished,  else 0
  */
-int tryz()
+static int tryz(void)
 {
-    register c, n;
-    register cmdzack1flg;
+    int c, n, cmdzack1flg;
 
     if (Nozmodem)       /* Check for "rb" program name */
         return 0;
 
 
-    for (n=Zmodem?15:5; --n>=0; ) {
+    for (n = Zmodem ? 15 : 5; --n >= 0;) {
         /* Set buffer length (0) and capability flags */
 #ifdef SEGMENTS
         stohdr(SEGMENTS*1024L);
@@ -1203,7 +1209,7 @@ again:
                 do {
                     zshhdr(ZCOMPL, Txhdr);
                 }
-                while (++errors<20 && zgethdr(Rxhdr,1) != ZFIN);
+                while (++errors < 20 && zgethdr(Rxhdr, 1) != ZFIN) {}
                 ackbibi();
                 if (cmdzack1flg & ZCACK1)
                     exec2(secbuf);
@@ -1227,9 +1233,9 @@ again:
 /*
  * Receive 1 or more files with ZMODEM protocol
  */
-int rzfiles()
+static int rzfiles(void)
 {
-    register c;
+    int c;
 
     for (;;) {
         switch (c = rzfile()) {
@@ -1256,14 +1262,15 @@ int rzfiles()
  * Receive a file with ZMODEM protocol
  *  Assumes file name frame is in secbuf
  */
-int rzfile()
+static int rzfile(void)
 {
-    register c, n;
+    int c, n;
     long rxbytes;
 
-    Eofseen=FALSE;
+    Eofseen = FALSE;
     if (procheader(secbuf) == ERROR) {
-        return (tryzhdrtype = ZSKIP);
+        tryzhdrtype = ZSKIP;
+        return ZSKIP;
     }
 
     n = 20; rxbytes = 0l;
@@ -1285,7 +1292,7 @@ nxthdr:
             putsec(secbuf, chinseg);
             chinseg = 0;
 #endif
-            if ( --n < 0) {
+            if (--n < 0) {
                 vfile("rzfile: zgethdr returned %d", c);
                 return ERROR;
             }
@@ -1317,7 +1324,7 @@ nxthdr:
             putsec(secbuf, chinseg);
             chinseg = 0;
 #endif
-            if ( --n < 0) {
+            if (--n < 0) {
                 vfile("rzfile: zgethdr returned %d", c);
                 return ERROR;
             }
@@ -1333,7 +1340,7 @@ nxthdr:
             return c;
         case ZDATA:
             if (rclhdr(Rxhdr) != rxbytes) {
-                if ( --n < 0) {
+                if (--n < 0) {
                     return ERROR;
                 }
 #ifdef SEGMENTS
@@ -1343,9 +1350,10 @@ nxthdr:
                 zmputs(Attn);  continue;
             }
 moredata:
-            if (Verbose>1)
+            if (Verbose > 1) {
                 fprintf(stderr, "\r%7ld ZMODEM%s    ",
-                  rxbytes, Crc32?" CRC-32":"");
+                        rxbytes, Crc32 ? " CRC-32" : "");
+            }
 #ifdef SEGMENTS
             if (chinseg >= (1024 * SEGMENTS)) {
                 putsec(secbuf, chinseg);
@@ -1368,7 +1376,7 @@ moredata:
                 putsec(secbuf, chinseg);
                 chinseg = 0;
 #endif
-                if ( --n < 0) {
+                if (--n < 0) {
                     vfile("rzfile: zgethdr returned %d", c);
                     return ERROR;
                 }
@@ -1379,7 +1387,7 @@ moredata:
                 putsec(secbuf, chinseg);
                 chinseg = 0;
 #endif
-                if ( --n < 0) {
+                if (--n < 0) {
                     vfile("rzfile: zgethdr returned %d", c);
                     return ERROR;
                 }
@@ -1436,10 +1444,9 @@ moredata:
  * Send a string to the modem, processing for \336 (sleep 1 sec)
  *   and \335 (break signal)
  */
-void zmputs(s)
-char *s;
+static void zmputs(char *s)
 {
-    register c;
+    int c;
 
     while (*s) {
         switch (c = *s++) {
@@ -1456,7 +1463,7 @@ char *s;
 /*
  * Close the receive dataset, return OK or ERROR
  */
-int closeit()
+static int closeit(void)
 {
     time_t q;
 
@@ -1468,7 +1475,7 @@ int closeit()
         return OK;
     }
 #endif
-    if (fclose(fout)==ERROR) {
+    if (fclose(fout) == ERROR) {
         fprintf(stderr, "file close ERROR\n");
         return ERROR;
     }
@@ -1476,7 +1483,7 @@ int closeit()
     if (Modtime) {
         timep[0] = time(&q);
         timep[1] = Modtime;
-        utime(Pathname, (struct utimbuf *) timep);
+        utime(Pathname, (struct utimbuf *)timep);
     }
 #endif
     if ((Filemode&S_IFMT) == S_IFREG)
@@ -1487,14 +1494,14 @@ int closeit()
 /*
  * Ack a ZFIN packet, let byegones be byegones
  */
-void ackbibi()
+static void ackbibi(void)
 {
-    register n;
+    int n;
 
     vfile("ackbibi:");
     Readnum = 1;
     stohdr(0L);
-    for (n=3; --n>=0; ) {
+    for (n = 3; --n >= 0;) {
         purgeline();
         zshhdr(ZFIN, Txhdr);
         switch (readline(100)) {
@@ -1516,8 +1523,7 @@ void ackbibi()
 /*
  * Local console output simulation
  */
-void bttyout(c)
-int c;
+static void bttyout(int c)
 {
     if (Verbose || Fromcu)
         putc(c, stderr);
@@ -1527,8 +1533,7 @@ int c;
 /*
  * Strip leading ! if present, do shell escape.
  */
-int sys2(s)
-register char *s;
+static int sys2(char *s)
 {
     if (*s == '!')
         ++s;
@@ -1537,8 +1542,7 @@ register char *s;
 /*
  * Strip leading ! if present, do exec.
  */
-void exec2(s)
-register char *s;
+static void exec2(char *s)
 {
     if (*s == '!')
         ++s;
@@ -1546,4 +1550,3 @@ register char *s;
     execl("/bin/sh", "sh", "-c", s);
 }
 #endif
-/* End of rz.c */

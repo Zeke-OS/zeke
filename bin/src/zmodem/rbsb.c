@@ -49,10 +49,10 @@ long Locbit = LLITOUT;  /* Bit SUPPOSED to disable output translations */
 
 #include "zmodem.h"
 
-_PROTOTYPE(static unsigned getspeed , (int code ));
+static unsigned getspeed(int code);
 
 #if HOWMANY  > 255
-Howmany must be 255 or less
+#error Howmany must be 255 or less
 #endif
 
 /*
@@ -62,7 +62,7 @@ Howmany must be 255 or less
  */
 int Fromcu;     /* Were called from cu or yam */
 
-void from_cu()
+void from_cu(void)
 {
     struct stat a, b;
 
@@ -71,10 +71,10 @@ void from_cu()
     return;
 }
 
-void cucheck()
+void cucheck(void)
 {
     if (Fromcu)
-        fprintf(stderr,"Please read the manual page BUGS chapter!\r\n");
+        fprintf(stderr, "Please read the manual page BUGS chapter!\r\n");
 }
 
 
@@ -107,12 +107,12 @@ int Twostop;        /* Use two stop bits */
 /*
  *  Return non 0 iff something to read from io descriptor f
  */
-int rdchk(f)
+int rdchk(int f)
 {
     static long lf;
 
     ioctl(f, FIONREAD, &lf);
-    return ((int) lf);
+    return lf;
 }
 #endif
 #ifdef SV
@@ -123,7 +123,7 @@ char checked = '\0' ;
 /*
  * Nonblocking I/O is a bit different in System V, Release 2
  */
-int rdchk(f)
+int rdchk(int f)
 {
     int lf, savestat;
 
@@ -131,19 +131,15 @@ int rdchk(f)
     fcntl(f, F_SETFL, savestat | O_NDELAY) ;
     lf = read(f, &checked, 1) ;
     fcntl(f, F_SETFL, savestat) ;
-    return(lf) ;
+    return lf;
 }
 #endif
 #endif
 
 
-static unsigned
-getspeed(code)
-int code;
+static unsigned getspeed(int code)
 {
-    register n;
-
-    for (n=0; speeds[n].baudr; ++n)
+    for (int n = 0; speeds[n].baudr; ++n)
         if (speeds[n].speedcode == code)
             return speeds[n].baudr;
     return 38400;   /* Assume fifo if ioctl failed */
@@ -162,25 +158,24 @@ struct tchars oldtch, tch;
 #endif
 #endif
 
-int iofd = 0;       /* File descriptor for ioctls & reads */
+int iofd; /*!< File descriptor for ioctls & reads */
 
-/*
+/**
  * mode(n)
  *  3: save old tty stat, set raw mode with flow control
  *  2: set XON/XOFF for sb/sz with ZMODEM or YMODEM-g
  *  1: save old tty stat, set raw mode
  *  0: restore original tty mode
  */
-int mode(n)
-int n;
+int mode(int n)
 {
     static did0 = FALSE;
 
     vfile("mode:%d", n);
-    switch(n) {
+    switch (n) {
 #ifdef POSIX
     case 2:     /* Un-raw mode used by sz, sb when -g detected */
-        if(!did0)
+        if (!did0)
             (void) tcgetattr(iofd, &oldtty);
         tty = oldtty;
 
@@ -195,7 +190,7 @@ int n;
 
 
         tty.c_lflag = ISIG;
-        tty.c_cc[VINTR] = Zmodem ? 03:030;  /* Interrupt char */
+        tty.c_cc[VINTR] = Zmodem ? 03 : 030;  /* Interrupt char */
         tty.c_cc[VQUIT] = -1;           /* Quit char */
         tty.c_cc[VMIN] = 3;  /* This many chars satisfies reads */
         tty.c_cc[VTIME] = 1;    /* or in this many tenths of seconds */
@@ -205,11 +200,11 @@ int n;
         return OK;
     case 1:
     case 3:
-        if(!did0)
+        if (!did0)
             (void) tcgetattr(iofd, &oldtty);
         tty = oldtty;
 
-        tty.c_iflag = n==3 ? (IGNBRK|IXOFF) : IGNBRK;
+        tty.c_iflag = n == 3 ? (IGNBRK | IXOFF) : IGNBRK;
 
          /* No echo, crlf mapping, INTR, QUIT, delays, no erase/kill */
         tty.c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
@@ -229,7 +224,7 @@ int n;
 #endif
 #ifdef USG
     case 2:     /* Un-raw mode used by sz, sb when -g detected */
-        if(!did0)
+        if (!did0)
             (void) ioctl(iofd, TCGETA, &oldtty);
         tty = oldtty;
 
@@ -245,10 +240,10 @@ int n;
 
 #ifdef READCHECK
         tty.c_lflag = Zmodem ? 0 : ISIG;
-        tty.c_cc[VINTR] = Zmodem ? -1:030;  /* Interrupt char */
+        tty.c_cc[VINTR] = Zmodem ? -1 : 030;  /* Interrupt char */
 #else
         tty.c_lflag = ISIG;
-        tty.c_cc[VINTR] = Zmodem ? 03:030;  /* Interrupt char */
+        tty.c_cc[VINTR] = Zmodem ? 03 : 030;  /* Interrupt char */
 #endif
         tty.c_cc[VQUIT] = -1;           /* Quit char */
 #ifdef NFGVMIN
@@ -263,11 +258,11 @@ int n;
         return OK;
     case 1:
     case 3:
-        if(!did0)
+        if (!did0)
             (void) ioctl(iofd, TCGETA, &oldtty);
         tty = oldtty;
 
-        tty.c_iflag = n==3 ? (IGNBRK|IXOFF) : IGNBRK;
+        tty.c_iflag = n == 3 ? (IGNBRK|IXOFF) : IGNBRK;
 
          /* No echo, crlf mapping, INTR, QUIT, delays, no erase/kill */
         tty.c_lflag &= ~(ECHO | ICANON | ISIG);
@@ -298,7 +293,7 @@ int n;
      *   but LLITOUT was broken on the machine I tried it on.
      */
     case 2:     /* Un-raw mode used by sz, sb when -g detected */
-        if(!did0) {
+        if (!did0) {
 #ifdef TIOCEXCL
             ioctl(iofd, TIOCEXCL, 0);
 #endif
@@ -311,9 +306,9 @@ int n;
         tty = oldtty;
         tch = oldtch;
 #ifdef READCHECK
-        tch.t_intrc = Zmodem ? -1:030;  /* Interrupt char */
+        tch.t_intrc = Zmodem ? -1 : 030;  /* Interrupt char */
 #else
-        tch.t_intrc = Zmodem ? 03:030;  /* Interrupt char */
+        tch.t_intrc = Zmodem ? 03 : 030;  /* Interrupt char */
 #endif
 #ifdef ODDP
         tty.sg_flags |= ODDP;
@@ -347,7 +342,7 @@ int n;
         return OK;
     case 1:
     case 3:
-        if(!did0) {
+        if (!did0) {
 #ifdef TIOCEXCL
             ioctl(iofd, TIOCEXCL, 0);
 #endif
@@ -366,20 +361,20 @@ int n;
         return OK;
 #endif
     case 0:
-        if(!did0)
+        if (!did0)
             return ERROR;
 #ifdef POSIX
         /* Wait for output to drain, flush input queue, restore
          * modes and restart output.
          */
-        (void) tcsetattr(iofd, TCSAFLUSH, &oldtty);
-        (void) tcflow(iofd, TCOON);
+        (void)tcsetattr(iofd, TCSAFLUSH, &oldtty);
+        (void)tcflow(iofd, TCOON);
 #endif
 #ifdef USG
-        (void) ioctl(iofd, TCSBRK, 1);  /* Wait for output to drain */
-        (void) ioctl(iofd, TCFLSH, 1);  /* Flush input queue */
-        (void) ioctl(iofd, TCSETAW, &oldtty);   /* Restore modes */
-        (void) ioctl(iofd, TCXONC,1);   /* Restart output */
+        (void)ioctl(iofd, TCSBRK, 1);  /* Wait for output to drain */
+        (void)ioctl(iofd, TCFLSH, 1);  /* Flush input queue */
+        (void)ioctl(iofd, TCSETAW, &oldtty);   /* Restore modes */
+        (void)ioctl(iofd, TCXONC, 1);   /* Restart output */
 #endif
 #ifdef V7
         ioctl(iofd, TIOCSETP, &oldtty);
@@ -398,7 +393,7 @@ int n;
     }
 }
 
-void sendbrk()
+void sendbrk(void)
 {
 #ifdef POSIX
     tcsendbreak(iofd, 1);
@@ -417,5 +412,3 @@ void sendbrk()
     ioctl(iofd, TCSBRK, 0);
 #endif
 }
-
-/* End of rbsb.c */

@@ -279,13 +279,10 @@ int Zrwindow = 1400;    /* RX window size (controls garbage count) */
 #include "zm.c"
 
 
-int main(argc, argv)
-int argc;
-char *argv[];
+int main(int argc, char *argv[])
 {
-    register char *cp;
-    register npats;
-    int dm;
+    char *cp;
+    int npats, dm;
     char **patts;
     static char xXbuf[BUFSIZ];
 
@@ -490,11 +487,9 @@ char *argv[];
     /*NOTREACHED*/
 }
 
-int wcsend(argc, argp)
-int argc;
-char *argp[];
+int wcsend(int argc, char *argp[])
 {
-    register int n;
+    int n;
 
     Crcflg=FALSE;
     firstsec=TRUE;
@@ -530,11 +525,10 @@ char *argp[];
     return OK;
 }
 
-int wcs(oname)
-char *oname;
+int wcs(char *oname)
 {
-    register c;
-    register char *p;
+    int c;
+    char *p;
     struct stat f;
     char name[PATHLEN];
 
@@ -593,10 +587,9 @@ char *oname;
  *  as provided by the Unix fstat call.
  *  N.B.: modifies the passed name, may extend it!
  */
-int wctxpn(name)
-char *name;
+int wctxpn(char *name)
 {
-    register char *p, *q;
+    char *p, *q;
     char name2[PATHLEN];
     struct stat f;
 
@@ -659,9 +652,9 @@ char *name;
     return OK;
 }
 
-int getnak()
+int getnak(void)
 {
-    register firstch;
+    int firstch;
 
     Lastrx = 0;
     for (;;) {
@@ -695,11 +688,10 @@ int getnak()
 }
 
 
-int wctx(flen)
-long flen;
+int wctx(int flen)
 {
-    register int thisblklen;
-    register int sectnum, attempts, firstch;
+    int thisblklen;
+    int sectnum, attempts, firstch;
     long charssent;
 
     charssent = 0;  firstsec=TRUE;  thisblklen = blklen;
@@ -743,13 +735,13 @@ long flen;
         return OK;
 }
 
-int wcputsec(buf, sectnum, cseclen)
-char *buf;
-int sectnum;
-int cseclen;    /* data length of this sector to send */
+/**
+ * @param cseclen data length of this sector to send
+ */
+int wcputsec(char *buf, int sectnum, int cseclen)
 {
-    register checksum, wcj;
-    register char *cp;
+    int checksum, wcj;
+    char *cp;
     unsigned oldcrc;
     int firstch;
     int attempts;
@@ -822,11 +814,9 @@ cancan:
 }
 
 /* fill buf with count chars padding with ^Z for CPM */
-int filbuf(buf, count)
-register char *buf;
-int count;
+int filbuf(char *buf, int count)
 {
-    register c, m;
+    int c, m;
 
     if ( !Ascii) {
         m = read(fileno(in), buf, count);
@@ -949,8 +939,7 @@ long pos;
 
 
 /* VARARGS1 */
-void vfile(f, a, b, c)
-register char *f,*a,*b,*c;
+void vfile(char *f, char *a, char *b, char *c)
 {
     if (Verbose > 2) {
         fprintf(stderr, f, a, b, c);
@@ -971,10 +960,9 @@ int sig;
  * readline(timeout) reads character(s) from file descriptor 0
  * timeout is in tenths of seconds
  */
-int readline(timeout)
-int timeout;
+int readline(int timeout)
 {
-    register int c;
+    int c;
     static char byt[1];
 
     fflush(stdout);
@@ -1035,8 +1023,7 @@ void canit()
  * Log an error
  */
 /*VARARGS1*/
-void zperr(s,p,u)
-char *s, *p, *u;
+void zperr(char *s, char *p, char *u)
 {
     if (Verbose <= 0)
         return;
@@ -1049,11 +1036,11 @@ char *s, *p, *u;
  * substr(string, token) searches for token in string s
  * returns pointer to token within string if found, NULL otherwise
  */
-char *
-substr(s, t)
-register char *s,*t;
+char * substr(char *s, char *t)
 {
-    register char *ss,*tt;
+    char *ss;
+    char *tt;
+
     /* search for first char of token */
     for (ss=s; *s; s++)
         if (*s == *t)
@@ -1115,7 +1102,7 @@ char *babble[] = {
     ""
 };
 
-int usage()
+int usage(void)
 {
     char **pp;
 
@@ -1131,9 +1118,9 @@ int usage()
 /*
  * Get the receiver's init parameters
  */
-int getzrxinit()
+int getzrxinit(void)
 {
-    register n;
+    int n;
     struct stat f;
 
     for (n=10; --n>=0; ) {
@@ -1236,9 +1223,9 @@ int getzrxinit()
 }
 
 /* Send send-init information */
-int sendzsinit()
+int sendzsinit(void)
 {
-    register c;
+    int c;
 
     if (Myattn[0] == '\0' && (!Zctlesc || (Rxflags & TESCCTL)))
         return OK;
@@ -1266,12 +1253,10 @@ int sendzsinit()
 }
 
 /* Send file name and related info */
-int zsendfile(buf, blen)
-char *buf;
-int blen;
+int zsendfile(char *buf, int blen)
 {
-    register c;
-    register UNSL long crc;
+    int c;
+    long crc;
 
     for (;;) {
         Txhdr[ZF0] = Lzconv;    /* file conversion request */
@@ -1328,9 +1313,9 @@ again:
 /* Send the data in the file */
 int zsendfdata()
 {
-    register c, e, n;
-    register int newcnt;
-    register long tcount = 0;
+    int c, e, n;
+    int newcnt;
+    long tcount = 0;
     int junkcount;      /* Counts garbage chars received by TX */
     static int tleft = 6;   /* Counter for test mode */
 
@@ -1530,10 +1515,9 @@ gotack:
 /*
  * Respond to receiver's complaint, get back in sync with receiver
  */
-int getinsync(flag)
-int flag;
+int getinsync(int flag)
 {
-    register int c;
+    int c;
 
     for (;;) {
         if (Test) {
@@ -1607,11 +1591,9 @@ int c;
 }
 
 /* Send command and related info */
-int zsendcmd(buf, blen)
-char *buf;
-int blen;
+int zsendcmd(char *buf, int blen)
 {
-    register c;
+    int c;
     long cmdnum;
 
     cmdnum = getpid();
@@ -1663,13 +1645,12 @@ listen:
 /*
  * If called as sb use YMODEM protocol
  */
-void chkinvok(s)
-char *s;
+void chkinvok(char *s)
 {
 #ifdef vax11c
     Progname = "sz";
 #else
-    register char *p;
+    char *p;
 
     p = s;
     while (*p == '-')
@@ -1690,11 +1671,9 @@ char *s;
 #endif
 }
 
-void countem(argc, argv)
-int argc;
-register char **argv;
+void countem(int argc, char **argv)
 {
-    register c;
+    int c;
     struct stat f;
 
     for (Totalleft = 0, Filesleft = 0; --argc >=0; ++argv) {
@@ -1717,10 +1696,9 @@ register char **argv;
           Filesleft, Totalleft);
 }
 
-void chartest(m)
-int m;
+void chartest(int m)
 {
-    register int n;
+    int n;
 
     mode(m);
     printf("\r\n\nCharacter Transparency Test Mode %d\r\n", m);
@@ -1751,5 +1729,3 @@ int m;
     printf("\r\nMode %d character transparency test ends.\r\n", m);
     fflush(stdout);
 }
-
-/* End of sz.c */
