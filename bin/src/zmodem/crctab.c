@@ -3,7 +3,7 @@
  */
 
 /* crctab calculated by Mark G. Mendel, Network Systems Corporation */
-static unsigned short crctab[256] = {
+unsigned short crctab[256] = {
     0x0000,  0x1021,  0x2042,  0x3063,  0x4084,  0x50a5,  0x60c6,  0x70e7,
     0x8108,  0x9129,  0xa14a,  0xb16b,  0xc18c,  0xd1ad,  0xe1ce,  0xf1ef,
     0x1231,  0x0210,  0x3273,  0x2252,  0x52b5,  0x4294,  0x72f7,  0x62d6,
@@ -37,20 +37,6 @@ static unsigned short crctab[256] = {
     0xef1f,  0xff3e,  0xcf5d,  0xdf7c,  0xaf9b,  0xbfba,  0x8fd9,  0x9ff8,
     0x6e17,  0x7e36,  0x4e55,  0x5e74,  0x2e93,  0x3eb2,  0x0ed1,  0x1ef0
 };
-
-/*
- * updcrc macro derived from article Copyright (C) 1986 Stephen Satchell.
- *  NOTE: First srgument must be in range 0 to 255.
- *        Second argument is referenced twice.
- *
- * Programmers may incorporate any or all code into their programs,
- * giving proper credit within the source. Publication of the
- * source routines is permitted so long as proper credit is given
- * to Stephen Satchell, Satchell Evaluations and Chuck Forsberg,
- * Omen Technology.
- */
-
-#define updcrc(cp, crc) ( crctab[((crc >> 8) & 255)] ^ (crc << 8) ^ cp)
 
 /*
  * Copyright (C) 1986 Gary S. Brown.  You may use this program, or
@@ -89,7 +75,7 @@ static unsigned short crctab[256] = {
 /*     hardware you could probably optimize the shift in assembler by  */
 /*     using byte-swap instructions.                                   */
 
-static long cr3tab[] = { /* CRC polynomial 0xedb88320 */
+long cr3tab[] = { /* CRC polynomial 0xedb88320 */
 0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f, 0xe963a535, 0x9e6495a3,
 0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988, 0x09b64c2b, 0x7eb17cbd, 0xe7b82d07, 0x90bf1d91,
 0x1db71064, 0x6ab020f2, 0xf3b97148, 0x84be41de, 0x1adad47d, 0x6ddde4eb, 0xf4d4b551, 0x83d385c7,
@@ -123,16 +109,3 @@ static long cr3tab[] = { /* CRC polynomial 0xedb88320 */
 0xbdbdf21c, 0xcabac28a, 0x53b39330, 0x24b4a3a6, 0xbad03605, 0xcdd70693, 0x54de5729, 0x23d967bf,
 0xb3667a2e, 0xc4614ab8, 0x5d681b02, 0x2a6f2b94, 0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
 };
-
-#ifdef NFGM
-long
-UPDC32(b, c)
-long c;
-{
-    return (cr3tab[((int)c ^ b) & 0xff] ^ ((c >> 8) & 0x00FFFFFF));
-}
-
-#else
-
-#define UPDC32(b, c) (cr3tab[((int)c ^ b) & 0xff] ^ ((c >> 8) & 0x00FFFFFF))
-#endif

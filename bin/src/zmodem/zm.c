@@ -13,12 +13,17 @@
  *  long rclhdr(hdr) recover position offset from header
  */
 
-#ifndef CANFDX
+#include <stdio.h>
 #include "zmodem.h"
-#endif
-int Rxtimeout = 100;        /* Tenths of seconds to wait for something */
+
+int Rxtimeout = 100; /* Tenths of seconds to wait for something */
+int Readnum = 1;     /* Number of bytes to ask for in read() from modem */
+
+int Verbose;
+int Zmodem;     /* ZMODEM protocol requested */
 
 /* Globals used by ZMODEM functions */
+unsigned Baudrate = 2400; /* Default, should be set by first mode() call */
 int Rxframeind;     /* ZBIN ZBIN32, or ZHEX type of frame received */
 int Rxtype;     /* Type of header received */
 int Rxcount;        /* Count of data bytes received */
@@ -32,8 +37,10 @@ int Crc32;      /* Display flag indicating 32 bit CRC being received */
 int Znulls;     /* Number of nulls to send at beginning of ZDATA hdr */
 char Attn[ZATTNLEN + 1];  /* Attention string rx sends to tx on err */
 
-static lastsent;    /* Last char we sent */
-static Not8bit;     /* Seven bits seen on header */
+int errors;
+
+static int lastsent;    /* Last char we sent */
+static int Not8bit;     /* Seven bits seen on header */
 
 static char *frametypes[] = {
     "Carrier Lost",     /* -3 */
@@ -76,17 +83,20 @@ void zsbhdr(int type, char *hdr)
     vfile("zsbhdr: %s %lx", frametypes[type + FTOFFSET], rclhdr(hdr));
     if (type == ZDATA) {
         for (n = Znulls; --n >= 0;) {
-            xsendline(0);
+            putchar(0);
         }
     }
 
-    xsendline(ZPAD); xsendline(ZDLE);
+    putchar(ZPAD);
+    putchar(ZDLE);
 
     /* TODO Chekc if this is correct */
     if (Crc32t = Txfcs32)
         zsbh32(hdr, type);
     else {
-        xsendline(ZBIN); zsendline(type); crc = updcrc(type, 0);
+        putchar(ZBIN);
+        zsendline(type);
+        crc = updcrc(type, 0);
 
         for (n = 4; --n >= 0; ++hdr) {
             zsendline(*hdr);
@@ -107,7 +117,7 @@ void zsbh32(char *hdr, int type)
     int n;
     long crc;
 
-    xsendline(ZBIN32);  zsendline(type);
+    putchar(ZBIN32);  zsendline(type);
     crc = 0xFFFFFFFFL; crc = UPDC32(type, crc);
 
     for (n = 4; --n >= 0; ++hdr) {
@@ -172,7 +182,8 @@ void zsdata(char *buf, int length, int frameend)
         for (; --length >= 0; ++buf) {
             zsendline(*buf); crc = updcrc((0377 & *buf), crc);
         }
-        xsendline(ZDLE); xsendline(frameend);
+        putchar(ZDLE);
+        putchar(frameend);
         crc = updcrc(frameend, crc);
 
         crc = updcrc(0, updcrc(0, crc));
@@ -180,7 +191,8 @@ void zsdata(char *buf, int length, int frameend)
         zsendline(crc);
     }
     if (frameend == ZCRCW) {
-        xsendline(XON);  flushmo();
+        putchar(XON);
+        flushmo();
     }
 }
 
@@ -193,13 +205,13 @@ void zsda32(char *buf, int length, int frameend)
     for (; --length >= 0; ++buf) {
         c = *buf & 0377;
         if (c & 0140)
-            xsendline(lastsent = c);
+            putchar(lastsent = c);
         else
             zsendline(c);
         crc = UPDC32(c, crc);
     }
-    xsendline(ZDLE);
-    xsendline(frameend);
+    putchar(ZDLE);
+    putchar(frameend);
     crc = UPDC32(frameend, crc);
 
     crc = ~crc;
@@ -321,7 +333,6 @@ crcfoo:
     zperr("Data subpacket too long");
     return ERROR;
 }
-
 
 /*
  * Read a ZMODEM header to hdr, either binary or hex.
@@ -585,18 +596,17 @@ void zputhex(int c)
  * Send character c with ZMODEM escape sequence encoding.
  *  Escape XON, XOFF. Escape CR following @ (Telenet net escape)
  */
-void zsendline(c)
-int c;
+void zsendline(int c)
 {
 
     /* Quick check for non control characters */
     if (c & 0140) {
-        xsendline(lastsent = c);
+        putchar(lastsent = c);
     } else {
         switch (c &= 0377) {
         case ZDLE:
-            xsendline(ZDLE);
-            xsendline(lastsent = (c ^= 0100));
+            putchar(ZDLE);
+            putchar(lastsent = (c ^= 0100));
             break;
         case 015:
         case 0215:
@@ -609,17 +619,17 @@ int c;
         case 0220:
         case 0221:
         case 0223:
-            xsendline(ZDLE);
+            putchar(ZDLE);
             c ^= 0100;
     sendit:
-            xsendline(lastsent = c);
+            putchar(lastsent = c);
             break;
         default:
             if (Zctlesc && !(c & 0140)) {
-                xsendline(ZDLE);
+                putchar(ZDLE);
                 c ^= 0100;
             }
-            xsendline(lastsent = c);
+            putchar(lastsent = c);
         }
     }
 }

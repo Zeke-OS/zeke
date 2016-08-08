@@ -11,36 +11,6 @@
  * sz.c By Chuck Forsberg,  Omen Technology INC
  *
  ****************************************************************************
- *
- * Typical Unix/Xenix/Clone compiles:
- *
- *  cc -O sz.c -o sz        USG (SYS III/V) Unix
- *  cc -O -DSV sz.c -o sz       Sys V Release 2 with non-blocking input
- *                  Define to allow reverse channel checking
- *  cc -O -DV7  sz.c -o sz      Unix Version 7, 2.8 - 4.3 BSD
- *
- *  cc -O -K -i -DNFGVMIN -DREADCHECK sz.c -lx -o sz    Classic Xenix
- *
- *  ln sz sb            **** All versions ****
- *  ln sz sx            **** All versions ****
- *
- ****************************************************************************
- *
- * Typical VMS compile and install sequence:
- *
- *      define LNK$LIBRARY   SYS$LIBRARY:VAXCRTL.OLB
- *      cc sz.c
- *      cc vvmodem.c
- *      link sz,vvmodem
- *  sz :== $disk$user2:[username.subdir]sz.exe
- *
- *  If you feel adventureous, remove the #define BADSYNC line
- *  immediately following the #ifdef vax11c line!  Some VMS
- *  systems know how to fseek, some don't.
- *
- ****************************************************************************
- *
- *
  * A program for Unix to send files and commands to computers running
  *  Professional-YAM, PowerCom, YAM, IMP, or programs supporting Y/XMODEM.
  *
@@ -59,41 +29,18 @@
 
 #include <sys/types.h>
 
-#ifdef vax11c
-#define BADSEEK
-#define TXBSIZE 32768       /* Must be power of two, < MAXINT */
-#include <types.h>
-#include <stat.h>
-#define LOGFILE "szlog.tmp"
-#define OS "VMS"
-#define READCHECK
-#define BUFWRITE
-#define iofd
-extern int errno;
-#define SS_NORMAL SS$_NORMAL
-#define xsendline(c) sendline(c)
-
-
-#else   /* vax11c */
-
-
 #define SS_NORMAL 0
 #define LOGFILE "/tmp/szlog"
 
 #define sendline(c) putchar((c) & 0377)
-#define xsendline(c) putchar(c)
-
-#endif
 
 #include <signal.h>
-#include <setjmp.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <utime.h>
 #include <stdio.h>
 
 #define PATHLEN 256
@@ -119,22 +66,13 @@ extern int errno;
 #define RCDO (-3)
 #define RETRYMAX 10
 
-
-#define HOWMANY 2
-int Zmodem=0;       /* ZMODEM protocol requested by receiver */
-unsigned Baudrate=2400; /* Default, should be set by first mode() call */
 unsigned Txwindow;  /* Control the size of the transmitted window */
 unsigned Txwspac;   /* Spacing between zcrcq requests */
 unsigned Txwcnt;    /* Counter used to space ack requests */
 long Lrxpos;        /* Receiver's last reported offset */
 int errors;
 
-#ifdef vax11c
-#include "vrzsz.c"  /* most of the system dependent stuff here */
-#else
 #include "rbsb.c"   /* most of the system dependent stuff here */
-#endif
-#include "crctab.c"
 
 int Filesleft;
 long Totalleft;
@@ -172,31 +110,29 @@ char *txbuf = Txb;      /* Pointer to current file segment */
 #else
 char txbuf[1024];
 #endif
-long vpos = 0;          /* Number of bytes read from file */
+long vpos;          /* Number of bytes read from file */
 
 char Lastrx;
 char Crcflg;
-int Verbose=0;
-int Modem2=0;       /* XMODEM Protocol - don't send pathnames */
-int Restricted=0;   /* restricted; no /.. or ../ in filenames */
-int Quiet=0;        /* overrides logic that would otherwise set verbose */
-int Ascii=0;        /* Add CR's for brain damaged programs */
-int Fullname=0;     /* transmit full pathname */
-int Unlinkafter=0;  /* Unlink file after it is sent */
-int Dottoslash=0;   /* Change foo.bar.baz to foo/bar/baz */
+int Modem2;         /* XMODEM Protocol - don't send pathnames */
+int Restricted;     /* restricted; no /.. or ../ in filenames */
+int Ascii;          /* Add CR's for brain damaged programs */
+int Fullname;       /* transmit full pathname */
+int Unlinkafter;    /* Unlink file after it is sent */
+int Dottoslash;     /* Change foo.bar.baz to foo/bar/baz */
 int firstsec;
-int errcnt=0;       /* number of files unreadable */
-int blklen=128;     /* length of transmitted records */
+int errcnt;         /* number of files unreadable */
+int blklen = 128;   /* length of transmitted records */
 int Optiong;        /* Let it rip no wait for sector ACK's */
 int Eofseen;        /* EOF seen on input set by zfilbuf */
 int BEofseen;       /* EOF seen on input set by fooseek */
 int Totsecs;        /* total number of sectors this file */
-int Filcnt=0;       /* count of number of files opened */
-int Lfseen=0;
+int Filcnt;         /* count of number of files opened */
+int Lfseen;
 unsigned Rxbuflen = 16384;  /* Receiver's max buffer length */
-int Tframlen = 0;   /* Override for tx frame length */
-int blkopt=0;       /* Override value for zmodem blklen */
-int Rxflags = 0;
+int Tframlen;       /* Override for tx frame length */
+int blkopt;         /* Override value for zmodem blklen */
+int Rxflags;
 long bytcnt;
 int Wantfcs32 = TRUE;   /* want to send 32 bit FCS */
 char Lzconv;    /* Local ZMODEM file conversion request */
@@ -210,7 +146,7 @@ int Command;        /* Send a command, then exit. */
 char *Cmdstr;       /* Pointer to the command string */
 int Cmdtries = 11;
 int Cmdack1;        /* Rx ACKs command, then do it */
-int Exitcode = 0;
+int Exitcode;
 int Test;       /* 1= Force receiver to send Attn, etc with qbf. */
             /* 2= Character transparency test */
 char *qbf="The quick brown fox jumped over the lazy dog's back 1234567890\r\n";
@@ -236,7 +172,6 @@ _PROTOTYPE(int readline , (int timeout ));
 _PROTOTYPE(void flushmo , (void));
 _PROTOTYPE(void purgeline , (void));
 _PROTOTYPE(void canit , (void));
-void zperr();
 _PROTOTYPE(char *substr , (char *s , char *t ));
 _PROTOTYPE(int usage , (void));
 _PROTOTYPE(int getzrxinit , (void));
@@ -245,7 +180,6 @@ _PROTOTYPE(int zsendfile , (char *buf , int blen ));
 _PROTOTYPE(int zsendfdata , (void));
 _PROTOTYPE(int getinsync , (int flag ));
 _PROTOTYPE(void saybibi , (void));
-_PROTOTYPE(void bttyout , (int c ));
 _PROTOTYPE(int zsendcmd , (char *buf , int blen ));
 _PROTOTYPE(void chkinvok , (char *s ));
 _PROTOTYPE(void countem , (int argc , char **argv ));
@@ -368,7 +302,8 @@ int main(int argc, char *argv[])
                 case 'r':
                     Lzconv = ZCRESUM;
                 case 'q':
-                    Quiet=TRUE; Verbose=0; break;
+                    Verbose = 0;
+                    break;
                 case 't':
                     if (--argc < 1) {
                         usage();
@@ -383,10 +318,8 @@ int main(int argc, char *argv[])
                         mode(0);  exit(0);
                     }
                     break;
-#ifndef vax11c
                 case 'u':
                     ++Unlinkafter; break;
-#endif
                 case 'v':
                     ++Verbose; break;
                 case 'w':
@@ -418,10 +351,8 @@ int main(int argc, char *argv[])
             if (argv[0][0]) {
                 npats=argc;
                 patts=argv;
-#ifndef vax11c
                 if ( !strcmp(*patts, "-"))
                     iofd = 1;
-#endif
             }
         }
     }
@@ -433,10 +364,6 @@ int main(int argc, char *argv[])
             exit(0200);
         }
         setbuf(stderr, (char *)NULL);
-    }
-    if (Fromcu && !Quiet) {
-        if (Verbose == 0)
-            Verbose = 2;
     }
     vfile("%s %s for %s\n", Progname, VERSION, OS);
 
@@ -573,10 +500,8 @@ int wcs(char *oname)
     }
     if (!Zmodem && wctx(f.st_size)==ERROR)
         return ERROR;
-#ifndef vax11c
     if (Unlinkafter)
         unlink(oname);
-#endif
     return 0;
 }
 
@@ -947,51 +872,6 @@ void vfile(char *f, char *a, char *b, char *c)
     }
 }
 
-
-void alrm(sig)
-int sig;
-{
-    longjmp(tohere, -1);
-}
-
-
-#ifndef vax11c
-/*
- * readline(timeout) reads character(s) from file descriptor 0
- * timeout is in tenths of seconds
- */
-int readline(int timeout)
-{
-    int c;
-    static char byt[1];
-
-    fflush(stdout);
-    if (setjmp(tohere)) {
-        zperr("TIMEOUT");
-        return TIMEOUT;
-    }
-    c = timeout/10;
-    if (c<2)
-        c=2;
-    if (Verbose>5) {
-        fprintf(stderr, "Timeout=%d Calling alarm(%d) ", timeout, c);
-    }
-    signal(SIGALRM, alrm); alarm(c);
-    c=read(iofd, byt, 1);
-    alarm(0);
-    if (Verbose>5)
-        fprintf(stderr, "ret %x\n", byt[0]);
-    if (c<1)
-        return TIMEOUT;
-    return (byt[0]&0377);
-}
-
-void flushmo()
-{
-    fflush(stdout);
-}
-
-
 void purgeline()
 {
 #ifdef USG
@@ -1000,67 +880,19 @@ void purgeline()
     lseek(iofd, 0L, 2);
 #endif
 }
-#endif
 
 /* send cancel string to get the other end to shut up */
 void canit()
 {
     static char canistr[] = {
-     24,24,24,24,24,24,24,24,24,24,8,8,8,8,8,8,8,8,8,8,0
+     24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 0
     };
 
-#ifdef vax11c
-    raw_wbuf(strlen(canistr), canistr);
-    purgeline();
-#else
     printf(canistr);
     fflush(stdout);
-#endif
-}
-
-
-/*
- * Log an error
- */
-/*VARARGS1*/
-void zperr(char *s, char *p, char *u)
-{
-    if (Verbose <= 0)
-        return;
-    fprintf(stderr, "\nRetry %d: ", errors);
-    fprintf(stderr, s, p, u);
-    fprintf(stderr, "\n");
-}
-
-/*
- * substr(string, token) searches for token in string s
- * returns pointer to token within string if found, NULL otherwise
- */
-char * substr(char *s, char *t)
-{
-    char *ss;
-    char *tt;
-
-    /* search for first char of token */
-    for (ss=s; *s; s++)
-        if (*s == *t)
-            /* compare token with substring */
-            for (ss=s,tt=t; ;) {
-                if (*tt == 0)
-                    return s;
-                if (*ss++ != *tt++)
-                    break;
-            }
-    return (char *)NULL;
 }
 
 char *babble[] = {
-#ifdef vax11c
-    "   Send file(s) with ZMODEM Protocol",
-    "Usage: sz [-2+abdefkLlNnquvwYy] [-] file ...",
-    "   sz [-2Ceqv] -c COMMAND",
-    "   \\ Force next option letter to upper case",
-#else
     "Send file(s) with ZMODEM/YMODEM/XMODEM Protocol",
     "   (Y) = Option applies to YMODEM only",
     "   (Z) = Option applies to ZMODEM only",
@@ -1068,7 +900,6 @@ char *babble[] = {
     "   sz [-2Ceqv] -c COMMAND",
     "   sb [-2adfkquv] [-] file ...",
     "   sx [-2akquv] [-] file",
-#endif
 #ifdef CSTOPB
     "   2 Use 2 stop bits",
 #endif
@@ -1076,9 +907,7 @@ char *babble[] = {
     "   a (ASCII) change NL to CR/LF",
     "   b Binary file transfer override",
     "   c send COMMAND (Z)",
-#ifndef vax11c
     "   d Change '.' to '/' in pathnames (Y/Z)",
-#endif
     "   e Escape all control characters (Z)",
     "   f send Full pathname (Y/Z)",
     "   i send COMMAND, ack Immediately (Z)",
@@ -1091,9 +920,7 @@ char *babble[] = {
     "   p Protect existing destination file (Z)",
     "   r Resume/Recover interrupted file transfer (Z)",
     "   q Quiet (no progress reports)",
-#ifndef vax11c
     "   u Unlink file after transmission",
-#endif
     "   v Verbose - provide debugging information",
     "   w N Window is N bytes (Z)",
     "   Y Yes, overwrite existing file, skip if not present at rx (Z)",
@@ -1163,13 +990,11 @@ int getzrxinit(void)
                 Rxbuflen = Tframlen;
             vfile("Rxbuflen=%d", Rxbuflen);
 
-#ifndef vax11c
             /* If using a pipe for testing set lower buf len */
             fstat(iofd, &f);
             if ((f.st_mode & S_IFMT) != S_IFCHR) {
                 Rxbuflen = 1024;
             }
-#endif
 #ifdef BADSEEK
             Canseek = 0;
             Txwindow = TXBSIZE - 1024;
@@ -1574,20 +1399,14 @@ void saybibi()
         zshhdr(ZFIN, Txhdr);    /*  to make debugging easier */
         switch (zgethdr(Rxhdr, 0)) {
         case ZFIN:
-            sendline('O'); sendline('O'); flushmo();
+            sendline('O');
+            sendline('O');
+            flushmo();
         case ZCAN:
         case TIMEOUT:
             return;
         }
     }
-}
-
-/* Local screen character display function */
-void bttyout(c)
-int c;
-{
-    if (Verbose)
-        putc(c, stderr);
 }
 
 /* Send command and related info */
@@ -1630,14 +1449,10 @@ listen:
             saybibi();
             return OK;
         case ZRQINIT:
-#ifdef vax11c       /* YAMP :== Yet Another Missing Primitive */
-            return ERROR;
-#else
             vfile("******** RZ *******");
             system("rz");
             vfile("******** SZ *******");
             goto listen;
-#endif
         }
     }
 }
@@ -1647,9 +1462,6 @@ listen:
  */
 void chkinvok(char *s)
 {
-#ifdef vax11c
-    Progname = "sz";
-#else
     char *p;
 
     p = s;
@@ -1668,7 +1480,6 @@ void chkinvok(char *s)
     if (s[0]=='s' && s[1]=='x') {
         Modem2 = TRUE;
     }
-#endif
 }
 
 void countem(int argc, char **argv)

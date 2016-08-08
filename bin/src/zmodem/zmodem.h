@@ -3,6 +3,12 @@
  *    application to application file transfer protocol
  *    05-23-87  Chuck Forsberg Omen Technology Inc
  */
+
+#ifndef _ZMODEM_H_
+#define _ZMODEM_H_
+
+#include <stdint.h>
+
 #define ZPAD '*'    /* 052 Padding character begins frames */
 #define ZDLE 030    /* Ctrl-X Zmodem escape - `ala BISYNC DLE */
 #define ZDLEE (ZDLE^0100)   /* Escaped ZDLE as transmitted */
@@ -102,58 +108,140 @@
 /* Parameters for ZCOMMAND frame ZF0 (otherwise 0) */
 #define ZCACK1  1   /* Acknowledge, then do command */
 
+/* Ward Christensen / CP/M parameters - Don't change these! */
+#define ENQ 005
+#define CAN ('X'&037)
+#define XOFF ('s'&037)
+#define XON ('q'&037)
+#define SOH 1
+#define STX 2
+#define EOT 4
+#define ACK 6
+#define NAK 025
+#define CPMEOF 032
+#define WANTCRC 0103    /* send C not NAK to get crc not checksum */
+#define TIMEOUT (-2)
+#define RCDO (-3)
+#define ERRORMAX 5
+#define RETRYMAX 5
+#define WCEOT (-10)
+#define PATHLEN 257 /* ready for 4.2 bsd ? */
+#define UNIXFILE 0xF000 /* The S_IFMT file mask bit for stat */
+
+#define OK 0
+#define FALSE 0
+#define TRUE 1
+#undef ERROR
+#define ERROR (-1)
+
 /* Globals used by ZMODEM functions */
-extern Rxframeind;  /* ZBIN ZBIN32, or ZHEX type of frame received */
-extern Rxtype;      /* Type of header received */
-extern Rxcount;     /* Count of data bytes received */
-extern Zrwindow;    /* RX window size (controls garbage count) */
-extern Rxtimeout;   /* Tenths of seconds to wait for something */
+extern unsigned Baudrate; /* Default, should be set by first mode() call */
+extern int Rxframeind;  /* ZBIN ZBIN32, or ZHEX type of frame received */
+extern int Rxtype;      /* Type of header received */
+extern int Rxcount;     /* Count of data bytes received */
+extern int Zrwindow;    /* RX window size (controls garbage count) */
+extern int Zctlesc;     /* Encode control characters */
+extern int Rxtimeout;   /* Tenths of seconds to wait for something */
+extern int Readnum;     /* Number of bytes to ask for in read() from modem */
 extern char Rxhdr[4];   /* Received header */
 extern char Txhdr[4];   /* Transmitted header */
 extern long Rxpos;  /* Received file position */
 extern long Txpos;  /* Transmitted file position */
-extern Txfcs32;     /* TURE means send binary frames with 32 bit FCS */
-extern Crc32t;      /* Display flag indicating 32 bit CRC being sent */
-extern Crc32;       /* Display flag indicating 32 bit CRC being received */
-extern Znulls;      /* Number of nulls to send at beginning of ZDATA hdr */
+extern int Txfcs32;     /* TURE means send binary frames with 32 bit FCS */
+extern int Crc32t;      /* Display flag indicating 32 bit CRC being sent */
+extern int Crc32;       /* Display flag indicating 32 bit CRC being received */
+extern int Znulls;      /* Number of nulls to send at beginning of ZDATA hdr */
 extern char Attn[ZATTNLEN+1];   /* Attention string rx sends to tx on err */
+
+extern int Verbose;
+extern int Zmodem;
 
 /* crctab.c */
 
-_PROTOTYPE(long UPDC32 , (int b , long c ));
+unsigned short crctab[256];
+
+/*
+ * updcrc macro derived from article Copyright (C) 1986 Stephen Satchell.
+ *  NOTE: First srgument must be in range 0 to 255.
+ *        Second argument is referenced twice.
+ *
+ * Programmers may incorporate any or all code into their programs,
+ * giving proper credit within the source. Publication of the
+ * source routines is permitted so long as proper credit is given
+ * to Stephen Satchell, Satchell Evaluations and Chuck Forsberg,
+ * Omen Technology.
+ */
+static inline unsigned short updcrc(uint8_t cp, unsigned short crc)
+{
+    return crctab[((crc >> 8) & 255)] ^ (crc << 8) ^ cp;
+}
+
+extern long cr3tab[];
+static inline long UPDC32(int b, long c)
+{
+    return cr3tab[((int)c ^ b) & 0xff] ^ ((c >> 8) & 0x00FFFFFF);
+}
+
+/* ztring.c */
+
+int IsAnyLower(char *s);
+char * substr(char *s, char *t);
+void uncaps(char *s);
+
+/* io.c */
+
+extern char linbuf[255];
+extern int Lleft;        /* number of characters in linbuf */
+
+int readline(int timeout);
+void zperr(const char * format, ...);
+void bttyout(int c);
+void sendline(int c);
+void flushmo(void);
+
+/* crctab.c */
+
+long UPDC32(int b, long c);
 
 /* rbsb.c */
 
-_PROTOTYPE(void from_cu , (void));
-_PROTOTYPE(void cucheck , (void));
-_PROTOTYPE(int rdchk , (int f ));
-_PROTOTYPE(int rdchk , (int f ));
-_PROTOTYPE(int mode , (int n ));
-_PROTOTYPE(void sendbrk , (void));
+int iofd;
+extern int Fromcu;     /* Were called from cu or yam */
+
+void from_cu(void);
+void cucheck(void);
+int rdchk(int f);
+int rdchk(int f);
+int mode(int n);
+void sendbrk(void);
 
 /* zm.c */
 
-_PROTOTYPE(void zsbhdr , (int type , char *hdr ));
-_PROTOTYPE(void zsbh32 , (char *hdr , int type ));
-_PROTOTYPE(void zshhdr , (int type , char *hdr ));
-_PROTOTYPE(void zsdata , (char *buf , int length , int frameend ));
-_PROTOTYPE(void zsda32 , (char *buf , int length , int frameend ));
-_PROTOTYPE(int zrdata , (char *buf , int length ));
-_PROTOTYPE(int zrdat32 , (char *buf , int length ));
-_PROTOTYPE(int zgethdr , (char *hdr , int eflag ));
-_PROTOTYPE(int zrbhdr , (char *hdr ));
-_PROTOTYPE(int zrbhdr32 , (char *hdr ));
-_PROTOTYPE(int zrhhdr , (char *hdr ));
-_PROTOTYPE(void zputhex , (int c ));
-_PROTOTYPE(void zsendline , (int c ));
-_PROTOTYPE(int zgethex , (void));
-_PROTOTYPE(int zgeth1 , (void));
-_PROTOTYPE(int zdlread , (void));
-_PROTOTYPE(int noxrd7 , (void));
-_PROTOTYPE(void stohdr , (long pos ));
-_PROTOTYPE(long rclhdr , (char *hdr ));
+extern int errors;
+
+void zsbhdr(int type, char *hdr);
+void zsbh32(char *hdr, int type);
+void zshhdr(int type, char *hdr);
+void zsdata(char *buf, int length , int frameend);
+void zsda32(char *buf, int length , int frameend);
+int zrdata(char *buf, int length);
+int zrdat32(char *buf, int length);
+int zgethdr(char *hdr, int eflag);
+int zrbhdr(char *hdr);
+int zrbhdr32(char *hdr);
+int zrhhdr(char *hdr);
+void zputhex(int c);
+void zsendline(int c);
+int zgethex(void);
+int zgeth1(void);
+int zdlread(void);
+int noxrd7(void);
+void stohdr(long pos);
+long rclhdr(char *hdr);
 
 /* rz.c sz.c */
 
-void vfile();
-_PROTOTYPE(void bibi , (int n ));
+void vfile(const char * format, ...);
+void bibi(int n);
+
+#endif /* !_ZMODEM_H_ */

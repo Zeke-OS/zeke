@@ -24,32 +24,14 @@ long Locbit = LLITOUT;  /* Bit SUPPOSED to disable output translations */
 #endif
 #endif
 
-#ifdef POSIX
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <termios.h>
 #define OS "POSIX"
-#endif
 
-#ifndef OS
-#ifndef USG
-#define USG
-#endif
-#endif
-
-#ifdef USG
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <termio.h>
-#include <sys/ioctl.h>
-#define OS "SYS III/V"
-#define MODE2OK
-#include <string.h>
-#endif
+#include <stdio.h>
 
 #include "zmodem.h"
-
-static unsigned getspeed(int code);
 
 #if HOWMANY  > 255
 #error Howmany must be 255 or less
@@ -82,20 +64,20 @@ struct {
     unsigned baudr;
     int speedcode;
 } speeds[] = {
-    110,    B110,
-    300,    B300,
+    { 110,    B110 },
+    { 300,    B300 },
 #ifdef B600
-    600,    B600,
+    { 600,    B600 },
 #endif
-    1200,   B1200,
-    2400,   B2400,
-    4800,   B4800,
-    9600,   B9600,
+    { 1200,   B1200 },
+    { 2400,   B2400 },
+    { 4800,   B4800 },
+    { 9600,   B9600 },
 #ifdef EXTA
-    19200,  EXTA,
-    38400,  EXTB,
+    { 19200,  EXTA },
+    { 38400,  EXTB },
 #endif
-    0,
+    { 0, 0 }
 };
 
 int Twostop;        /* Use two stop bits */
@@ -145,18 +127,7 @@ static unsigned getspeed(int code)
     return 38400;   /* Assume fifo if ioctl failed */
 }
 
-
-
-#ifdef POSIX
 struct termios oldtty, tty;
-#else
-#ifdef ICANON
-struct termio oldtty, tty;
-#else
-struct sgttyb oldtty, tty;
-struct tchars oldtch, tch;
-#endif
-#endif
 
 int iofd; /*!< File descriptor for ioctls & reads */
 
@@ -169,11 +140,10 @@ int iofd; /*!< File descriptor for ioctls & reads */
  */
 int mode(int n)
 {
-    static did0 = FALSE;
+    static int did0 = FALSE;
 
     vfile("mode:%d", n);
     switch (n) {
-#ifdef POSIX
     case 2:     /* Un-raw mode used by sz, sb when -g detected */
         if (!did0)
             (void) tcgetattr(iofd, &oldtty);
@@ -221,172 +191,17 @@ int mode(int n)
         did0 = TRUE;
         Baudrate = cfgetospeed(&tty);
         return OK;
-#endif
-#ifdef USG
-    case 2:     /* Un-raw mode used by sz, sb when -g detected */
-        if (!did0)
-            (void) ioctl(iofd, TCGETA, &oldtty);
-        tty = oldtty;
-
-        tty.c_iflag = BRKINT|IXON;
-
-        tty.c_oflag = 0;    /* Transparent output */
-
-        tty.c_cflag &= ~PARENB; /* Disable parity */
-        tty.c_cflag |= CS8; /* Set character size = 8 */
-        if (Twostop)
-            tty.c_cflag |= CSTOPB;  /* Set two stop bits */
-
-
-#ifdef READCHECK
-        tty.c_lflag = Zmodem ? 0 : ISIG;
-        tty.c_cc[VINTR] = Zmodem ? -1 : 030;  /* Interrupt char */
-#else
-        tty.c_lflag = ISIG;
-        tty.c_cc[VINTR] = Zmodem ? 03 : 030;  /* Interrupt char */
-#endif
-        tty.c_cc[VQUIT] = -1;           /* Quit char */
-#ifdef NFGVMIN
-        tty.c_cc[VMIN] = 1;
-#else
-        tty.c_cc[VMIN] = 3;  /* This many chars satisfies reads */
-#endif
-        tty.c_cc[VTIME] = 1;    /* or in this many tenths of seconds */
-
-        (void) ioctl(iofd, TCSETAW, &tty);
-        did0 = TRUE;
-        return OK;
-    case 1:
-    case 3:
-        if (!did0)
-            (void) ioctl(iofd, TCGETA, &oldtty);
-        tty = oldtty;
-
-        tty.c_iflag = n == 3 ? (IGNBRK|IXOFF) : IGNBRK;
-
-         /* No echo, crlf mapping, INTR, QUIT, delays, no erase/kill */
-        tty.c_lflag &= ~(ECHO | ICANON | ISIG);
-
-        tty.c_oflag = 0;    /* Transparent output */
-
-        tty.c_cflag &= ~PARENB; /* Same baud rate, disable parity */
-        tty.c_cflag |= CS8; /* Set character size = 8 */
-        if (Twostop)
-            tty.c_cflag |= CSTOPB;  /* Set two stop bits */
-#ifdef NFGVMIN
-        tty.c_cc[VMIN] = 1; /* This many chars satisfies reads */
-#else
-        tty.c_cc[VMIN] = HOWMANY; /* This many chars satisfies reads */
-#endif
-        tty.c_cc[VTIME] = 1;    /* or in this many tenths of seconds */
-        (void) ioctl(iofd, TCSETAW, &tty);
-        did0 = TRUE;
-        Baudrate = getspeed(tty.c_cflag & CBAUD);
-        return OK;
-#endif
-#ifdef V7
-    /*
-     *  NOTE: this should transmit all 8 bits and at the same time
-     *   respond to XOFF/XON flow control.  If no FIONREAD or other
-     *   READCHECK alternative, also must respond to INTRRUPT char
-     *   This doesn't work with V7.  It should work with LLITOUT,
-     *   but LLITOUT was broken on the machine I tried it on.
-     */
-    case 2:     /* Un-raw mode used by sz, sb when -g detected */
-        if (!did0) {
-#ifdef TIOCEXCL
-            ioctl(iofd, TIOCEXCL, 0);
-#endif
-            ioctl(iofd, TIOCGETP, &oldtty);
-            ioctl(iofd, TIOCGETC, (struct sgttyb *) &oldtch);
-#ifdef LLITOUT
-            ioctl(iofd, TIOCLGET, &Locmode);
-#endif
-        }
-        tty = oldtty;
-        tch = oldtch;
-#ifdef READCHECK
-        tch.t_intrc = Zmodem ? -1 : 030;  /* Interrupt char */
-#else
-        tch.t_intrc = Zmodem ? 03 : 030;  /* Interrupt char */
-#endif
-#ifdef ODDP
-        tty.sg_flags |= ODDP;
-#endif
-#ifdef EVENP
-        tty.sg_flags |= EVENP;
-#endif
-#ifdef CBREAK
-        tty.sg_flags |= CBREAK;
-#endif
-#ifdef ALLDELAY
-        tty.sg_flags &= ~ALLDELAY;
-#endif
-#ifdef CRMOD
-        tty.sg_flags &= ~CRMOD;
-#endif
-#ifdef ECHO
-        tty.sg_flags &= ~ECHO;
-#endif
-#ifdef LCASE
-        tty.sg_flags &= ~LCASE;
-#endif
-
-        ioctl(iofd, TIOCSETP, &tty);
-        ioctl(iofd, TIOCSETC, (struct sgttyb *) &tch);
-#ifdef LLITOUT
-        ioctl(iofd, TIOCLBIS, &Locbit);
-#endif
-        bibi(99);   /* un-raw doesn't work w/o lit out */
-        did0 = TRUE;
-        return OK;
-    case 1:
-    case 3:
-        if (!did0) {
-#ifdef TIOCEXCL
-            ioctl(iofd, TIOCEXCL, 0);
-#endif
-            ioctl(iofd, TIOCGETP, &oldtty);
-            ioctl(iofd, TIOCGETC, (struct sgttyb *) &oldtch);
-#ifdef LLITOUT
-            ioctl(iofd, TIOCLGET, &Locmode);
-#endif
-        }
-        tty = oldtty;
-        tty.sg_flags |= RAW;
-        tty.sg_flags &= ~ECHO;
-        ioctl(iofd, TIOCSETP, &tty);
-        did0 = TRUE;
-        Baudrate = getspeed(tty.sg_ospeed);
-        return OK;
-#endif
     case 0:
         if (!did0)
             return ERROR;
-#ifdef POSIX
         /* Wait for output to drain, flush input queue, restore
          * modes and restart output.
          */
         (void)tcsetattr(iofd, TCSAFLUSH, &oldtty);
+        /* TODO Enable the following code when tcflow is implemented. */
+#if 0
         (void)tcflow(iofd, TCOON);
 #endif
-#ifdef USG
-        (void)ioctl(iofd, TCSBRK, 1);  /* Wait for output to drain */
-        (void)ioctl(iofd, TCFLSH, 1);  /* Flush input queue */
-        (void)ioctl(iofd, TCSETAW, &oldtty);   /* Restore modes */
-        (void)ioctl(iofd, TCXONC, 1);   /* Restart output */
-#endif
-#ifdef V7
-        ioctl(iofd, TIOCSETP, &oldtty);
-        ioctl(iofd, TIOCSETC, (struct sgttyb *) &oldtch);
-#ifdef TIOCNXCL
-        ioctl(iofd, TIOCNXCL, 0);
-#endif
-#ifdef LLITOUT
-        ioctl(iofd, TIOCLSET, &Locmode);
-#endif
-#endif
-
         return OK;
     default:
         return ERROR;
@@ -395,20 +210,5 @@ int mode(int n)
 
 void sendbrk(void)
 {
-#ifdef POSIX
     tcsendbreak(iofd, 1);
-#endif
-#ifdef V7
-#ifdef TIOCSBRK
-#define CANBREAK
-    sleep(1);
-    ioctl(iofd, TIOCSBRK, 0);
-    sleep(1);
-    ioctl(iofd, TIOCCBRK, 0);
-#endif
-#endif
-#ifdef USG
-#define CANBREAK
-    ioctl(iofd, TCSBRK, 0);
-#endif
 }
