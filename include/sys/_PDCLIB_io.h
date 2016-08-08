@@ -1,6 +1,7 @@
 #ifndef __PDCLIB_IO_H
 #define __PDCLIB_IO_H __PDCLIB_IO_H
 #include <pthread.h>
+#include <sys/types/_pid_t.h>
 #include "sys/_PDCLIB_int.h"
 //#include "sys/_PDCLIB_threadconfig.h"
 
@@ -186,6 +187,7 @@ struct _PDCLIB_file
     /* multibyte parsing status to be added later */
     _PDCLIB_fpos_t            pos;      /* Offset and multibyte parsing state */
     char *                    filename; /* Name the current stream has been opened with */
+    pid_t                     pid;      /* popen() PID */
     _PDCLIB_file_t *          next;     /* Pointer to next struct (internal) */
 };
 

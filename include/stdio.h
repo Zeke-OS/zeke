@@ -200,6 +200,10 @@ FILE * _PDCLIB_fvopen( _PDCLIB_fd_t fd, const _PDCLIB_fileops_t * ops,
  */
 FILE * freopen( const char * _PDCLIB_restrict filename, const char * _PDCLIB_restrict mode, FILE * _PDCLIB_restrict stream ) _PDCLIB_nothrow;
 
+
+FILE *popen(const char * command, const char * mode);
+int pclose(FILE *stream);
+
 /**
  * Map a stream pointer to a file descriptor.
  */
