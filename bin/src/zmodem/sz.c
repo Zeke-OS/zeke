@@ -1,11 +1,7 @@
 #define VERSION "sz 2.12 05-29-88"
 #define PUBDIR "/usr/spool/uucppublic"
 
-/*% cc -compat -M2 -Ox -K -i -DTXBSIZE=16384  -DNFGVMIN -DREADCHECK sz.c -lx -o sz; size sz
-
-    Following is used for testing, might not be reasonable for production
-<-xtx-*> cc -Osal -DTXBSIZE=32768  -DSV sz.c -lx -o $B/sz; size $B/sz
-
+/*
  ****************************************************************************
  *
  * sz.c By Chuck Forsberg,  Omen Technology INC
@@ -156,47 +152,45 @@ int Beenhereb4;     /* How many times we've been ZRPOS'd same place */
 jmp_buf tohere;     /* For the interrupt on RX timeout */
 jmp_buf intrjmp;    /* For the interrupt on RX CAN */
 
-_PROTOTYPE(void onintr , (int sig ));
-_PROTOTYPE(int main , (int argc , char *argv []));
-_PROTOTYPE(int wcsend , (int argc , char *argp []));
-_PROTOTYPE(int wcs , (char *oname ));
-_PROTOTYPE(int wctxpn , (char *name ));
-_PROTOTYPE(int getnak , (void));
-_PROTOTYPE(int wctx , (long flen ));
-_PROTOTYPE(int wcputsec , (char *buf , int sectnum , int cseclen ));
-_PROTOTYPE(int filbuf , (char *buf , int count ));
-_PROTOTYPE(int zfilbuf , (void));
-_PROTOTYPE(int fooseek , (FILE *fptr , long pos , int whence ));
-_PROTOTYPE(void alrm , (int sig ));
-_PROTOTYPE(int readline , (int timeout ));
-_PROTOTYPE(void flushmo , (void));
-_PROTOTYPE(void purgeline , (void));
-_PROTOTYPE(void canit , (void));
-_PROTOTYPE(char *substr , (char *s , char *t ));
-_PROTOTYPE(int usage , (void));
-_PROTOTYPE(int getzrxinit , (void));
-_PROTOTYPE(int sendzsinit , (void));
-_PROTOTYPE(int zsendfile , (char *buf , int blen ));
-_PROTOTYPE(int zsendfdata , (void));
-_PROTOTYPE(int getinsync , (int flag ));
-_PROTOTYPE(void saybibi , (void));
-_PROTOTYPE(int zsendcmd , (char *buf , int blen ));
-_PROTOTYPE(void chkinvok , (char *s ));
-_PROTOTYPE(void countem , (int argc , char **argv ));
-_PROTOTYPE(void chartest , (int m ));
+void onintr(int sig);
+int main(int argc, char *argv[]);
+int wcsend(int argc, char *argp[]);
+int wcs(char *oname);
+int wctxpn(char *name);
+int getnak(void);
+int wctx(long flen);
+int wcputsec(char *buf, int sectnum, int cseclen);
+int filbuf(char *buf, int count);
+int zfilbuf(void);
+int fooseek(FILE *fptr, long pos  int whence);
+void flushmo(void);
+void purgeline(void);
+void canit(void);
+int usage(void);
+int getzrxinit(void);
+int sendzsinit(void);
+int zsendfile(char *buf , int blen);
+int zsendfdata(void);
+int getinsync(int flag);
+void saybibi(void);
+int zsendcmd(char *buf, int blen);
+void chkinvok(char *s);
+void countem(int argc, char **argv);
+void chartest(int m);
 
 /* called by signal interrupt or terminate to clean things up */
-void bibi(n)
-int n;
+void bibi(int n)
 {
-    canit(); fflush(stdout); mode(0);
+    canit();
+    fflush(stdout);
+    mode(0);
     fprintf(stderr, "sz: caught signal %d; exiting\n", n);
     if (n == SIGQUIT)
         abort();
     if (n == 99)
         fprintf(stderr, "mode(2) in rbsb.c not implemented!!\n");
     cucheck();
-    exit(128+n);
+    exit(128 + n);
 }
 /* Called when ZMODEM gets an interrupt (^X) */
 void onintr(sig)
@@ -879,17 +873,6 @@ void purgeline()
 #else
     lseek(iofd, 0L, 2);
 #endif
-}
-
-/* send cancel string to get the other end to shut up */
-void canit()
-{
-    static char canistr[] = {
-     24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 0
-    };
-
-    printf(canistr);
-    fflush(stdout);
 }
 
 char *babble[] = {

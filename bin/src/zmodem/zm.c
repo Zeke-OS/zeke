@@ -258,7 +258,7 @@ crcfoo:
                 }
                 Rxcount = length - (end - buf);
                 vfile("zrdata: %d  %s", Rxcount,
-                 Zendnames[(d-GOTCRCE) & 3]);
+                      Zendnames[(d-GOTCRCE) & 3]);
                 return d;
             case GOTCAN:
                 zperr("Sender Canceled");
@@ -314,7 +314,7 @@ crcfoo:
                 }
                 Rxcount = length - (end - buf);
                 vfile("zrdat32: %d %s", Rxcount,
-                 Zendnames[(d-GOTCRCE)&3]);
+                      Zendnames[(d-GOTCRCE)&3]);
                 return d;
             case GOTCAN:
                 zperr("Sender Canceled");
@@ -362,7 +362,8 @@ again:
     case CAN:
 gotcan:
         if (--cancount <= 0) {
-            c = ZCAN; goto fifi;
+            c = ZCAN;
+            goto fifi;
         }
         switch (c = readline(1)) {
         case TIMEOUT:
@@ -376,7 +377,8 @@ gotcan:
             break;
         case CAN:
             if (--cancount <= 0) {
-                c = ZCAN; goto fifi;
+                c = ZCAN;
+                goto fifi;
             }
             goto again;
         }
@@ -419,7 +421,8 @@ splat:
     case TIMEOUT:
         goto fifi;
     case ZBIN:
-        Rxframeind = ZBIN;  Crc32 = FALSE;
+        Rxframeind = ZBIN;
+        Crc32 = FALSE;
         c =  zrbhdr(hdr);
         break;
     case ZBIN32:
@@ -762,9 +765,9 @@ int noxrd7(void)
 void stohdr(long pos)
 {
     Txhdr[ZP0] = pos;
-    Txhdr[ZP1] = pos>>8;
-    Txhdr[ZP2] = pos>>16;
-    Txhdr[ZP3] = pos>>24;
+    Txhdr[ZP1] = pos >> 8;
+    Txhdr[ZP2] = pos >> 16;
+    Txhdr[ZP3] = pos >> 24;
 }
 
 /* Recover a long integer from a header */

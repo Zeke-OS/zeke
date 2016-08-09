@@ -1,9 +1,6 @@
 #define VERSION "2.03 05-17-88"
-#define PUBDIR "/usr/spool/uucppublic"
 
-/*% cc -compat -M2 -Ox -K -i -DMD -DOMEN % -o rz; size rz;
-<-xtx-*> cc386 -Ox -DMD -DOMEN -DSEGMENTS=8 rz.c -o $B/rz;  size $B/rz
- *
+/*
  * rz.c By Chuck Forsberg
  *
  *  Unix is a trademark of Western Electric Company
@@ -15,22 +12,11 @@
  * Iff the program is invoked by rzCOMMAND, output is piped to
  * "COMMAND filename"  (Unix only)
  *
- *  Some systems (Venix, Coherent, Regulus) may not support tty raw mode
- *  read(2) the same way as Unix. ONEREAD must be defined to force one
- *  character reads for these systems. Added 7-01-84 CAF
- *
- *  Alarm signal handling changed to work with 4.2 BSD 7-15-84 CAF
- *
- *  BIX added 6-30-87 to support BIX(TM) upload protocol used by the
- *  Byte Information Exchange.
- *
  *  NFGVMIN Updated 2-18-87 CAF for Xenix systems where c_cc[VMIN]
  *  doesn't work properly (even though it compiles without error!),
  *
  *  SEGMENTS=n added 2-21-88 as a model for CP/M programs
  *    for CP/M-80 systems that cannot overlap modem and disk I/O.
- *
- *  VMS flavor hacks begin with rz version 2.00
  *
  *  -DMD may be added to compiler command line to compile in
  *    Directory-creating routines from Public Domain TAR by John Gilmore
@@ -47,13 +33,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
 
-#define SS_NORMAL 0
 #define LOGFILE "/tmp/rzlog"
+#define PUBDIR "/usr/spool/uucppublic"
 
 /*
  * Max value for HOWMANY is 255.
@@ -130,25 +117,15 @@ static void zmputs(char *s)
     while (*s) {
         switch (c = *s++) {
         case '\336':
-            sleep(1); continue;
+            sleep(1);
+            continue;
         case '\335':
-            sendbrk(); continue;
+            sendbrk();
+            continue;
         default:
             sendline(c);
         }
     }
-}
-
-/* send cancel string to get the other end to shut up */
-static void canit(void)
-{
-    static char canistr[] = {
-        24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 0
-    };
-
-    printf(canistr);
-    Lleft = 0;    /* Do read next time ... */
-    fflush(stdout);
 }
 
 /* called by signal interrupt or terminate to clean things up */
@@ -169,7 +146,9 @@ void bibi(int n)
 static void checkpath(char *name)
 {
     if (Restricted) {
-        if (fopen(name, "r") != NULL) {
+        struct stat buffer;
+
+        if (stat(name, &buffer) != -1) {
             canit();
             fprintf(stderr, "\r\nrz: %s exists\n", name);
             bibi(-1);
@@ -391,12 +370,11 @@ static int procheader(char *name)
     else if (zmanag == ZMAPND)
         openmode = "a";
 
-#ifndef BIX
     /* Check for existing file */
-    if (!Rxclob && (zmanag&ZMMASK) != ZMCLOB && (fout = fopen(name, "r"))) {
-        fclose(fout);  return ERROR;
+    struct stat statbuf;
+    if (!Rxclob && (zmanag&ZMMASK) != ZMCLOB && stat(name, &statbuf) == -1) {
+        return ERROR;
     }
-#endif
 
     Bytesleft = DEFBYTL;
     Filemode = 0;
@@ -411,15 +389,7 @@ static int procheader(char *name)
             fprintf(stderr,  "\nIncoming: %s %ld %lo %o\n",
               name, Bytesleft, modtime, Filemode);
         }
-    }
-
-#ifdef BIX
-    if ((fout = fopen("scratchpad", openmode)) == NULL)
-        return ERROR;
-    return OK;
-#else
-
-    else {      /* File coming from CP/M system */
+    } else {      /* File coming from CP/M system */
         for (p = name; *p; ++p) {     /* change / to _ */
             if (*p == '/')
                 *p = '_';
@@ -451,7 +421,7 @@ static int procheader(char *name)
             name = "/dev/null";
 #ifdef OMEN
         if (name[0] == '!' || name[0] == '|') {
-            if (!(fout = popen(name+1, "w"))) {
+            if (!(fout = popen(name + 1, "w"))) {
                 return ERROR;
             }
             Topipe = -1;  return(OK);
@@ -469,7 +439,6 @@ static int procheader(char *name)
             return ERROR;
     }
     return OK;
-#endif /* BIX */
 }
 
 /*
@@ -728,7 +697,7 @@ static int usage(void)
     fprintf(stderr, "%s %s for %s by Chuck Forsberg, Omen Technology INC\n",
       Progname, VERSION, OS);
     fprintf(stderr, "\t\t\042The High Reliability Software\042\n");
-    exit(SS_NORMAL);
+    exit(0);
 }
 
 /*
@@ -738,9 +707,8 @@ static int usage(void)
  */
 static void chkinvok(char *s)
 {
-    char *p;
+    char *p = s;
 
-    p = s;
     while (*p == '-') {
         s = ++p;
     }
@@ -1008,7 +976,8 @@ static int wcreceive(int argc, char **argp)
 fubar:
     canit();
     if (Topipe && fout) {
-        pclose(fout);  return ERROR;
+        pclose(fout);
+        return ERROR;
     }
     if (fout)
         fclose(fout);
@@ -1026,13 +995,10 @@ int main(int argc, char *argv[])
     char *virgin, **patts;
     int exitcode = 0;
 
-
     Rxtimeout = 100;
     Readnum = HOWMANY;
 
     setbuf(stderr, (char *)NULL);
-    if ((cp = getenv("SHELL")) && (substr(cp, "rsh") || substr(cp, "rksh")))
-        Restricted = TRUE;
 
     from_cu();
     chkinvok(virgin = argv[0]);   /* if called as [-]rzCOMMAND set flag */
@@ -1107,6 +1073,7 @@ int main(int argc, char *argv[])
         usage();
     if (Batch && npats)
         usage();
+    /* TODO only if asked to do so */
     if (Verbose) {
         if (freopen(LOGFILE, "a", stderr) == NULL) {
             printf("Can't open log file %s\n", LOGFILE);
@@ -1137,7 +1104,7 @@ int main(int argc, char *argv[])
         cucheck();
     if (Verbose)
         putc('\n', stderr);
-    exit(exitcode ? exitcode : SS_NORMAL);
+    exit(exitcode ? exitcode : 0);
 }
 
 /*
@@ -1201,9 +1168,6 @@ static int make_dirs(char *pathname)
 }
 
 #if (MD != 2)
-#define TERM_SIGNAL(status) ((status) & 0x7F)
-#define TERM_COREDUMP(status)   (((status) & 0x80) != 0)
-#define TERM_VALUE(status)  ((status) >> 8)
 /*
  * Make a directory.  Compatible with the mkdir() system call on 4.2BSD.
  */
@@ -1244,7 +1208,7 @@ static int makedir(char *dpath, int dmode)
         }
     }
 
-    if (TERM_SIGNAL(status) != 0 || TERM_VALUE(status) != 0) {
+    if (WIFSIGNALED(status) || WEXITSTATUS(status) != 0) {
         errno = EIO;        /* We don't know why, but */
         return -1;      /* /bin/mkdir failed */
     }

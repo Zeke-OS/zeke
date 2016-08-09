@@ -96,6 +96,18 @@ int readline(int timeout)
 }
 #endif
 
+/* send cancel string to get the other end to shut up */
+void canit(void)
+{
+    const char canistr[] = {
+        24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 0
+    };
+
+    printf(canistr);
+    Lleft = 0;    /* Do read next time ... */
+    fflush(stdout);
+}
+
 /*
  * Log an error
  */

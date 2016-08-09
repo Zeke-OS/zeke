@@ -33,8 +33,8 @@ char * substr(char *s, char *t)
     char *tt;
 
     /* search for first char of token */
-    for (ss = s; *s; s++)
-        if (*s == *t)
+    for (ss = s; *s; s++) {
+        if (*s == *t) {
             /* compare token with substring */
             for (ss = s, tt = t;;) {
                 if (*tt == 0)
@@ -42,5 +42,7 @@ char * substr(char *s, char *t)
                 if (*ss++ != *tt++)
                     break;
             }
+        }
+    }
     return NULL;
 }

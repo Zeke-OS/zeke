@@ -194,6 +194,7 @@ extern char linbuf[255];
 extern int Lleft;        /* number of characters in linbuf */
 
 int readline(int timeout);
+void canit(void);
 void zperr(const char * format, ...);
 void bttyout(int c);
 void sendline(int c);
