@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   ioctl libc functions.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -57,6 +57,10 @@ int ioctl(int fildes, int request, ... /* arg */)
     case IOCTL_FB_SETRES:
         arg = va_arg(ap, struct fb_resolution *);
         arg_len = sizeof(struct fb_resolution);
+        break;
+    case IOCTL_FB_SETPAGE:
+        arg = va_arg(ap, int *);
+        arg_len = sizeof(int);
         break;
     case TIOCGWINSZ:
     case TIOCSWINSZ:

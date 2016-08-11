@@ -265,6 +265,13 @@ static int fb_mm_ioctl(struct dev_info * devnfo, uint32_t request,
                                       fbres->depth);
         }
         break;
+    case IOCTL_FB_SETPAGE: /* Select FB page. */
+        if (arg_len != sizeof(int)) {
+            return -EINVAL;
+        } else {
+            return fb->set_page(fb, *((int *)arg));
+        }
+        break;
     default:
         return -EINVAL;
     }

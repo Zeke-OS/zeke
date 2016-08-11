@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Generic frame buffer driver.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -89,6 +89,7 @@ struct fb_conf {
      */
     int (*set_resolution)(struct fb_conf * fb, size_t width, size_t height,
                           size_t depth);
+    int (*set_page)(struct fb_conf * fb, int i);
     int (*set_hw_cursor_state)(int enable, int x, int y);
 };
 

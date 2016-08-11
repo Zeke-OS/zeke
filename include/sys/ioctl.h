@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Control devices.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -66,9 +66,10 @@
 /* dev/fb */
 #define IOCTL_FB_GETRES     101 /*!< Get the frame buffer resolution. */
 #define IOCTL_FB_SETRES     102 /*!< Change the framebuffer resolution. */
+#define IOCTL_FB_SETPAGE    103 /*!< Change the active framebuffer page. */
 /* Get and set window size */
-#define IOCTL_TIOCGWINSZ    103 /*!< Get window size. */
-#define IOCTL_TIOCSWINSZ    104 /*!< Set window size. */
+#define IOCTL_TIOCGWINSZ    104 /*!< Get window size. */
+#define IOCTL_TIOCSWINSZ    105 /*!< Set window size. */
 /**
  * @}
  */

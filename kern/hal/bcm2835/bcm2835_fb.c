@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   BCM2835 frame buffer driver.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -81,11 +81,15 @@ static mmu_region_t bcm2835_fb_region = {
 
 static int set_resolution(struct fb_conf * fb, size_t width, size_t height,
                           size_t depth);
+static int set_page(struct fb_conf * fb, int i);
 static void set_fb_config(struct bcm2835_fb_config * fb_config,
-                          uint32_t width, uint32_t height, size_t depth);
+                          uint32_t width, uint32_t height,
+                          uint32_t virt_width, uint32_t virt_height,
+                          size_t depth);
 static void update_fb_mm(struct fb_conf * fb,
                          struct bcm2835_fb_config * bcm_fb);
 static int commit_fb_config(struct bcm2835_fb_config * fb_config);
+static int set_virtual_offset(int x, int y);
 static int set_cursor_state(int enable, int x, int y);
 static int set_cursor_info(void);
 
@@ -105,7 +109,7 @@ static int __kinit__ bcm2835_fb_init(void)
         return -ENOMEM;
     }
 
-    set_fb_config(&bcm_fb, 640, 480, 24);
+    set_fb_config(&bcm_fb, 640, 480, 640, 2 * 480, 24);
     err = commit_fb_config(&bcm_fb);
     if (err)
         return err;
@@ -119,6 +123,7 @@ static int __kinit__ bcm2835_fb_init(void)
         .pitch  = bcm_fb.pitch,
         .depth  = bcm_fb.depth,
         .set_resolution = set_resolution,
+        .set_page = set_page,
         .set_hw_cursor_state = set_cursor_state,
     };
     fb_mm_initbuf(fb);
@@ -134,7 +139,8 @@ static int set_resolution(struct fb_conf * fb, size_t width, size_t height,
     struct bcm2835_fb_config bcm_fb;
     int err;
 
-    set_fb_config(&bcm_fb, width, height, depth);
+    set_fb_config(&bcm_fb, width, height, width, 2 * height,
+                  depth);
     err = commit_fb_config(&bcm_fb);
     if (err)
         return err;
@@ -144,14 +150,28 @@ static int set_resolution(struct fb_conf * fb, size_t width, size_t height,
     return 0;
 }
 
+static int set_page(struct fb_conf * fb, int i)
+{
+    unsigned y = i * fb->height;
+
+    if (y > fb->height)
+        return -EINVAL;
+
+    (void)set_virtual_offset(0, y);
+
+    return 0;
+}
+
 static void set_fb_config(struct bcm2835_fb_config * bcm_fb,
-                          uint32_t width, uint32_t height, size_t depth)
+                          uint32_t width, uint32_t height,
+                          uint32_t virt_width, uint32_t virt_height,
+                          size_t depth)
 {
     memset(bcm_fb, 0, sizeof(struct bcm2835_fb_config));
     bcm_fb->width = width;
     bcm_fb->height = height;
-    bcm_fb->virtual_width = width;
-    bcm_fb->virtual_height = height;
+    bcm_fb->virtual_width = virt_width;
+    bcm_fb->virtual_height = virt_height;
     bcm_fb->depth = depth;
     bcm_fb->x_offset = 0;
     bcm_fb->y_offset = 0;
@@ -203,8 +223,10 @@ static int commit_fb_config(struct bcm2835_fb_config * fb)
 
     KERROR(KERROR_INFO,
            "BCM_FB: addr = %p, width = %u, height = %u, "
+           "virtual width = %u, virtual height = %u, "
            "bpp = %u, pitch = %u, size = %u\n",
            (void *)fb->fb_paddr, fb->width, fb->height,
+           fb->virtual_width, fb->virtual_height,
            fb->depth, fb->pitch, fb->size);
 
     return 0;
@@ -230,6 +252,32 @@ static int blank_screen(int state)
         return err;
 
     return (mbuf[5] & 1);
+}
+
+static int set_virtual_offset(int x, int y)
+{
+    uint32_t mbuf[8] __attribute__((aligned (16)));
+    int err;
+
+    /* Format a message */
+    mbuf[0] = sizeof(mbuf); /* Size */
+    mbuf[1] = 0;            /* Request */
+    /* Tags */
+    /* Set virtual offset */
+    mbuf[2] = 0x00048009;
+    mbuf[3] = 8;           /* Value buf size and req/resp */
+    mbuf[4] = 8;           /* Value size */
+    mbuf[5] = x;
+    mbuf[6] = y;
+    mbuf[7] = BCM2835_PROP_TAG_END;
+
+    err = bcm2835_prop_request(mbuf);
+    if (err)
+        return err;
+
+    KERROR_DBG("Actual offset %dx%d\n", mbuf[5], mbuf[6]);
+
+    return (mbuf[5] & 1) ? -EINVAL : 0;
 }
 
 static int set_cursor_state(int enable, int x, int y)
