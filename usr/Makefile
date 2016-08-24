@@ -40,7 +40,7 @@ examples/hugestack-SRC-$(configUSR_EXAMPLES) := examples/hugestack.c
 examples/linenoise-SRC-$(configUSR_EXAMPLES) := examples/linenoise.c
 games/banner-SRC-$(configUSR_GAMES) := games/banner.c
 games/fbdemo-SRC-$(configUSR_GAMES) := games/fbdemo-src/main.c \
-	games/fbdemo-src/bitmap.c
+	games/fbdemo-src/bitmap.c games/fbdemo-src/fonteng.c
 games/plasma-SRC-$(configUSR_GAMES) := games/plasma.c
 
 # Other files ##################################################################
