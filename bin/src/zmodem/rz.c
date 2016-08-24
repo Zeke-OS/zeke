@@ -694,8 +694,8 @@ static int usage(void)
     fprintf(stderr, "      -e Escape control characters  (ZMODEM)\n");
     fprintf(stderr, "      -v Verbose more v's give more info\n");
     fprintf(stderr, "      -y Yes, clobber existing file if any\n");
-    fprintf(stderr, "%s %s for %s by Chuck Forsberg, Omen Technology INC\n",
-      Progname, VERSION, OS);
+    fprintf(stderr, "%s %s by Chuck Forsberg, Omen Technology INC\n",
+            Progname, VERSION);
     fprintf(stderr, "\t\t\042The High Reliability Software\042\n");
     exit(0);
 }
@@ -1082,7 +1082,7 @@ int main(int argc, char *argv[])
         setbuf(stderr, (char *)NULL);
         fprintf(stderr, "argv[0]=%s Progname=%s\n", virgin, Progname);
     }
-    vfile("%s %s for %s\n", Progname, VERSION, OS);
+    vfile("%s %s\n", Progname, VERSION);
     mode(1);
     if (signal(SIGINT, bibi) == SIG_IGN) {
         signal(SIGINT, SIG_IGN);
@@ -1105,20 +1105,6 @@ int main(int argc, char *argv[])
     if (Verbose)
         putc('\n', stderr);
     exit(exitcode ? exitcode : 0);
-}
-
-/*
- *  Debugging information output interface routine
- */
-void vfile(const char * format, ...)
-{
-    if (Verbose > 2) {
-        va_list args;
-        va_start(args, format);
-        vfprintf(stderr, format, args);
-        va_end(args);
-        fprintf(stderr, "\n");
-    }
 }
 
 #ifdef MD

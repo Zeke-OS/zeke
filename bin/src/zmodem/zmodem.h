@@ -120,12 +120,13 @@
 #define NAK 025
 #define CPMEOF 032
 #define WANTCRC 0103    /* send C not NAK to get crc not checksum */
+#define WANTG 0107      /* Send G not NAK to get nonstop batch xmsn */
 #define TIMEOUT (-2)
 #define RCDO (-3)
 #define ERRORMAX 5
 #define RETRYMAX 5
 #define WCEOT (-10)
-#define PATHLEN 257 /* ready for 4.2 bsd ? */
+#define PATHLEN 257     /* ready for 4.2 bsd ? */
 #define UNIXFILE 0xF000 /* The S_IFMT file mask bit for stat */
 
 #define OK 0
@@ -145,13 +146,13 @@ extern int Rxtimeout;   /* Tenths of seconds to wait for something */
 extern int Readnum;     /* Number of bytes to ask for in read() from modem */
 extern char Rxhdr[4];   /* Received header */
 extern char Txhdr[4];   /* Transmitted header */
-extern long Rxpos;  /* Received file position */
-extern long Txpos;  /* Transmitted file position */
+extern long Rxpos;      /* Received file position */
+extern long Txpos;      /* Transmitted file position */
 extern int Txfcs32;     /* TURE means send binary frames with 32 bit FCS */
 extern int Crc32t;      /* Display flag indicating 32 bit CRC being sent */
 extern int Crc32;       /* Display flag indicating 32 bit CRC being received */
 extern int Znulls;      /* Number of nulls to send at beginning of ZDATA hdr */
-extern char Attn[ZATTNLEN+1];   /* Attention string rx sends to tx on err */
+extern char Attn[ZATTNLEN + 1]; /* Attention string rx sends to tx on err */
 
 extern int Verbose;
 extern int Zmodem;
@@ -195,6 +196,7 @@ extern int Lleft;        /* number of characters in linbuf */
 
 int readline(int timeout);
 void canit(void);
+void vfile(const char * format, ...);
 void zperr(const char * format, ...);
 void bttyout(int c);
 void sendline(int c);

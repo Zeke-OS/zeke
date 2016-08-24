@@ -109,6 +109,20 @@ void canit(void)
 }
 
 /*
+ *  Debugging information output interface routine
+ */
+void vfile(const char * format, ...)
+{
+    if (Verbose > 2) {
+        va_list args;
+        va_start(args, format);
+        vfprintf(stderr, format, args);
+        va_end(args);
+        fprintf(stderr, "\n");
+    }
+}
+
+/*
  * Log an error
  */
 void zperr(const char * format, ...)

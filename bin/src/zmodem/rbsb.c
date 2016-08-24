@@ -12,25 +12,10 @@
  *   See the main files (rz.c/sz.c) for compile instructions.
  */
 
-#ifdef V7
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sgtty.h>
-#define OS "V7/BSD"
-#ifdef LLITOUT
-long Locmode;       /* Saved "local mode" for 4.x BSD "new driver" */
-long Locbit = LLITOUT;  /* Bit SUPPOSED to disable output translations */
-#include <strings.h>
-#endif
-#endif
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <termios.h>
-#define OS "POSIX"
-
 #include <stdio.h>
-
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <termios.h>
 #include "zmodem.h"
 
 #if HOWMANY  > 255
