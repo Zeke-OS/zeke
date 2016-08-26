@@ -120,6 +120,8 @@ static ssize_t sd_read(struct dev_info * dev, off_t offset, uint8_t * buf,
                        size_t count, int oflags);
 static ssize_t sd_write(struct dev_info * dev, off_t offset, uint8_t * buf,
                         size_t count, int oflags);
+static off_t sd_lseek(file_t * file, struct dev_info * devnfo, off_t offset,
+                      int whence);
 static int sd_ioctl(struct dev_info * devnfo, uint32_t request,
                     void * arg, size_t arg_len);
 
@@ -677,8 +679,7 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
     if ((irpts & 0xffff0001) != 0x1) {
 #ifdef configEMMC_DEBUG
         KERROR(KERROR_ERR,
-               "SD: error occured whilst waiting for command "
-               "complete interrupt\n");
+               "SD: error occured whilst waiting for command complete interrupt\n");
 #endif
         dev->last_error = irpts & 0xffff0000;
         dev->last_interrupt = irpts;
@@ -736,8 +737,7 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
             if ((irpts & (0xffff0000 | wr_irpt)) != wr_irpt) {
 #ifdef configEMMC_DEBUG
                 KERROR(KERROR_ERR,
-                       "SD: error occured whilst waiting for "
-                       "data ready interrupt\n");
+                       "SD: error occured whilst waiting for data ready interrupt\n");
 #endif
                 dev->last_error = irpts & 0xffff0000;
                 dev->last_interrupt = irpts;
@@ -792,8 +792,7 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
                     ((irpts & 0xffff0002) != 0x100002)) {
 #ifdef configEMMC_DEBUG
                 KERROR(KERROR_ERR,
-                       "SD: error occured whilst waiting for "
-                       "transfer complete interrupt\n");
+                       "SD: error occured whilst waiting for transfer complete interrupt\n");
 #endif
                 dev->last_error = irpts & 0xffff0000;
                 dev->last_interrupt = irpts;
@@ -825,8 +824,7 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
             if ((irpts & 0x8000) && ((irpts & 0x2) != 0x2)) {
 #ifdef configEMMC_DEBUG
                 KERROR(KERROR_ERR,
-                       "SD: error occured whilst waiting for transfer "
-                       "complete interrupt\n");
+                       "SD: error occured whilst waiting for transfer complete interrupt\n");
 #endif
                 dev->last_error = irpts & 0xffff0000;
                 dev->last_interrupt = irpts;
@@ -840,8 +838,8 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
              */
             if ((irpts & 0x8) && ((irpts & 0x2) != 0x2)) {
 #ifdef configEMMC_DEBUG
-                KERROR(KERROR_ERR, "SD: error: DMA interrupt occured"
-                       "without transfer complete\n");
+                KERROR(KERROR_ERR,
+                       "SD: error: DMA interrupt occured without transfer complete\n");
 #endif
                 dev->last_error = irpts & 0xffff0000;
                 dev->last_interrupt = irpts;
@@ -863,7 +861,7 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
 #ifdef configEMMC_DEBUG
                 if (irpts == 0) {
                     KERROR(KERROR_DEBUG,
-                        "SD: timeout waiting for SDMA transfer to complete\n");
+                           "SD: timeout waiting for SDMA transfer to complete\n");
                 } else {
                     KERROR(KERROR_ERR, "SD: unknown SDMA transfer error\n");
                 }
@@ -1288,10 +1286,12 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
     ret->dev.drv_name = driver_name;
     strlcpy(ret->dev.dev_name, device_name, sizeof(ret->dev.dev_name));
     ret->dev.block_size = 512;
+    ret->dev.num_blocks = 0; /* FIXME */
     ret->dev.read = sd_read;
 #ifdef configEMMC_WRITE_SUPPORT
     ret->dev.write = sd_write;
 #endif
+    ret->dev.lseek = sd_lseek;
     ret->dev.ioctl = sd_ioctl;
     ret->dev.flags = DEV_FLAGS_MB_READ | DEV_FLAGS_MB_WRITE;
     ret->base_clock = base_clock;
@@ -1995,7 +1995,7 @@ static ssize_t sd_write(struct dev_info * dev, off_t offset, uint8_t * buf,
     const uint32_t block_no = (uint32_t)offset;
     int err;
 
-    edev = containerof(dev, struct emmc_block_dev, dev);;
+    edev = containerof(dev, struct emmc_block_dev, dev);
 
     /* Check the status of the card */
     err = sd_ensure_data_mode(edev);
@@ -2009,6 +2009,31 @@ static ssize_t sd_write(struct dev_info * dev, off_t offset, uint8_t * buf,
     return bcount;
 }
 #endif
+
+static off_t sd_lseek(file_t * file, struct dev_info * dev, off_t offset,
+                   int whence)
+{
+    struct emmc_block_dev * edev;
+    uint32_t block_no;
+
+    edev = containerof(dev, struct emmc_block_dev, dev);
+    if (sd_ensure_data_mode(edev))
+        return -EIO;
+
+    if (whence == SEEK_SET) {
+        block_no = offset;
+    } else if (whence == SEEK_CUR) {
+        block_no = file->seek_pos + offset;
+    } else {
+        return -EINVAL;
+    }
+
+    if (block_no >= (uint32_t)dev->num_blocks)
+        return -EINVAL;
+
+    file->seek_pos = block_no;
+    return block_no;
+}
 
 static int sd_ioctl(struct dev_info * devnfo, uint32_t request,
         void * arg, size_t arg_len)

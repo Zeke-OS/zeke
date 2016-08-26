@@ -52,6 +52,7 @@
  */
 
 #include <errno.h>
+#include <fcntl.h>
 #include <stdint.h>
 #include <kstring.h>
 #include <libkern.h>
@@ -91,6 +92,8 @@ static int mbr_read(struct dev_info * devnfo, off_t offset,
                     uint8_t * buf, size_t count, int oflags);
 static int mbr_write(struct dev_info * devnfo, off_t offset,
                      uint8_t * buf, size_t count, int oflags);
+static off_t mbr_lseek(file_t * file, struct dev_info * dev, off_t offset,
+                       int whence);
 
 static int read_block_0(uint8_t * block_0, file_t * file)
 {
@@ -146,12 +149,15 @@ static int make_dev_mbr(struct dev_info * parent,
         return -ENOMEM;
     }
 
+    /* TODO MBR should support all dev ops */
     d->dev.dev_id = DEV_MMTODEV(major_num, mbr_dev_count);
     d->dev.drv_name = driver_name;
     ksprintf(d->dev.dev_name, sizeof(d->dev.dev_name), "%sp%u",
              parent->dev_name, part_no);
     d->dev.read = mbr_read;
     d->dev.write = (parent->write) ? mbr_write : NULL;
+    d->dev.lseek = mbr_lseek;
+    d->dev.ioctl = parent->ioctl;
     d->dev.block_size = parent->block_size;
     d->dev.flags = parent->flags;
     d->part_no = part_no;
@@ -315,4 +321,24 @@ static int mbr_write(struct dev_info * devnfo, off_t offset,
     struct dev_info * parent = mbr->parent;
 
     return parent->write(parent, offset + mbr->start_block, buf, count, oflags);
+}
+
+static off_t mbr_lseek(file_t * file, struct dev_info * devnfo, off_t offset,
+                       int whence)
+{
+    off_t final;
+
+    if (whence == SEEK_SET) {
+        final = offset;
+    } else if (whence == SEEK_CUR) {
+        final = file->seek_pos + offset;
+    } else {
+        return -EINVAL;
+    }
+
+    if (final >= devnfo->num_blocks)
+        return -EINVAL;
+
+    file->seek_pos = final;
+    return final;
 }

@@ -468,6 +468,10 @@ static FRESULT sync_fs(FATFS * fs)
 {
     FRESULT res;
 
+#ifdef configFATFS_DEBUG
+    KERROR(KERROR_DEBUG, "%s(fs %p)\n", __func__, fs);
+#endif
+
     res = sync_window(fs);
     if (res == FR_OK) {
         /* Update FSINFO sector if needed */
@@ -2393,6 +2397,10 @@ FRESULT f_sync(FF_FIL * fp, int validated)
     DWORD tm;
     uint8_t * dir;
 
+#ifdef configFATFS_DEBUG
+    KERROR(KERROR_DEBUG, "%s(fp %p, validated %d)\n", __func__, fp, validated);
+#endif
+
     if (!validated) {
         res = access_file(fp);
         if (res != FR_OK)
@@ -2416,7 +2424,7 @@ FRESULT f_sync(FF_FIL * fp, int validated)
 
         dir = fp->dir_ptr;
         dir[DIR_Attr] |= AM_ARC;                    /* Set archive bit */
-        ST_DWORD(dir+DIR_FileSize, fp->fsize);      /* Update file size */
+        ST_DWORD(dir + DIR_FileSize, fp->fsize);    /* Update file size */
         st_clust(dir, fp->sclust);                  /* Update start cluster */
         tm = fatfs_time_get_time();                 /* Update updated time */
         ST_WORD(dir + DIR_WrtTime, tm & 0xffff);

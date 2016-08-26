@@ -343,6 +343,7 @@ off_t dev_lseek(file_t * file, off_t offset, int whence)
     if (devnfo->lseek) {
         return devnfo->lseek(file, devnfo, offset, whence);
     } else {
+        /* RFE Should we check whence? */
         file->seek_pos = offset;
         return offset;
     }
