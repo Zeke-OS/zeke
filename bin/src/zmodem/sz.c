@@ -22,27 +22,26 @@
  * in accordance with the 7-31-87 ZMODEM Protocol Description
  */
 
-
-#include <sys/types.h>
-
 #define LOGFILE "/tmp/szlog"
 
-#include <signal.h>
 #include <ctype.h>
 #include <errno.h>
+#include <setjmp.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
-#include <stdio.h>
+#include "zmodem.h"
 
 unsigned Txwindow;  /* Control the size of the transmitted window */
 unsigned Txwspac;   /* Spacing between zcrcq requests */
 unsigned Txwcnt;    /* Counter used to space ack requests */
 long Lrxpos;        /* Receiver's last reported offset */
 int errors;
-
-#include "rbsb.c"   /* most of the system dependent stuff here */
 
 int Filesleft;
 long Totalleft;
@@ -204,8 +203,7 @@ void bibi(int n)
     exit(128 + n);
 }
 /* Called when ZMODEM gets an interrupt (^X) */
-void onintr(sig)
-int sig;
+void onintr(int sig)
 {
     signal(SIGINT, SIG_IGN);
     longjmp(intrjmp, -1);
@@ -518,6 +516,34 @@ int getinsync(int flag)
 void purgeline(void)
 {
     lseek(iofd, 0L, 2);
+}
+
+/* Fill buffer with blklen chars */
+int zfilbuf(void)
+{
+    int n;
+
+#ifdef TXBSIZE
+    /* We assume request is within buffer, or just beyond */
+    txbuf = Txb + (bytcnt & TXBMASK);
+    if (vpos <= bytcnt) {
+        n = fread(txbuf, 1, blklen, in);
+        vpos += n;
+        if (n < blklen)
+            Eofseen = 1;
+        return n;
+    }
+    if (vpos >= (bytcnt + blklen))
+        return blklen;
+    /* May be a short block if crash recovery etc. */
+    Eofseen = BEofseen;
+    return vpos - bytcnt;
+#else
+    n = fread(txbuf, 1, blklen, in);
+    if (n < blklen)
+        Eofseen = 1;
+    return n;
+#endif
 }
 
 /* Send the data in the file */
@@ -1469,37 +1495,10 @@ int main(int argc, char *argv[])
     mode(0);
     dm = ((errcnt != 0) | Exitcode);
     if (dm) {
-        cucheck();  exit(dm);
+        cucheck();
+        exit(dm);
     }
     putc('\n', stderr);
     exit(0);
     /*NOTREACHED*/
-}
-
-/* Fill buffer with blklen chars */
-int zfilbuf(void)
-{
-    int n;
-
-#ifdef TXBSIZE
-    /* We assume request is within buffer, or just beyond */
-    txbuf = Txb + (bytcnt & TXBMASK);
-    if (vpos <= bytcnt) {
-        n = fread(txbuf, 1, blklen, in);
-        vpos += n;
-        if (n < blklen)
-            Eofseen = 1;
-        return n;
-    }
-    if (vpos >= (bytcnt + blklen))
-        return blklen;
-    /* May be a short block if crash recovery etc. */
-    Eofseen = BEofseen;
-    return vpos - bytcnt;
-#else
-    n = fread(txbuf, 1, blklen, in);
-    if (n < blklen)
-        Eofseen = 1;
-    return n;
-#endif
 }

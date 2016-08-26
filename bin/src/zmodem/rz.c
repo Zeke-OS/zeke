@@ -21,8 +21,6 @@
  *  -DMD may be added to compiler command line to compile in
  *    Directory-creating routines from Public Domain TAR by John Gilmore
  *
- *  HOWMANY may be tuned for best performance
- *
  *  USG UNIX (3.0) ioctl conventions courtesy  Jeff Martin
  */
 
@@ -38,22 +36,12 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+#include "zmodem.h"
 
 #define LOGFILE "/tmp/rzlog"
 #define PUBDIR "/usr/spool/uucppublic"
 
-/*
- * Max value for HOWMANY is 255.
- *   A larger value reduces system overhead but may evoke kernel bugs.
- *   133 corresponds to an XMODEM/CRC sector
- */
-#ifndef HOWMANY
-#define HOWMANY 133
-#endif
-
 int Nozmodem;   /* If invoked as "rb" */
-
-#include "rbsb.c"   /* most of the system dependent stuff here */
 
 FILE *fout;
 
@@ -303,13 +291,15 @@ again:
                     exec2(secbuf);
                 return ZCOMPL;
             }
-            zshhdr(ZNAK, Txhdr); goto again;
+            zshhdr(ZNAK, Txhdr);
+            goto again;
         case ZCOMPL:
             goto again;
         default:
             continue;
         case ZFIN:
-            ackbibi(); return ZCOMPL;
+            ackbibi();
+            return ZCOMPL;
         case ZCAN:
             return ERROR;
         }
@@ -996,7 +986,6 @@ int main(int argc, char *argv[])
     int exitcode = 0;
 
     Rxtimeout = 100;
-    Readnum = HOWMANY;
 
     setbuf(stderr, (char *)NULL);
 

@@ -135,6 +135,9 @@
 #undef ERROR
 #define ERROR (-1)
 
+/* TODO We probably want to always enable this */
+#define READCHECK 1
+
 /* Globals used by ZMODEM functions */
 extern unsigned Baudrate; /* Default, should be set by first mode() call */
 extern int Rxframeind;  /* ZBIN ZBIN32, or ZHEX type of frame received */
@@ -191,8 +194,10 @@ void uncaps(char *s);
 
 /* io.c */
 
+extern int iofd;
 extern char linbuf[255];
 extern int Lleft;        /* number of characters in linbuf */
+extern int Fromcu;       /* Were called from cu or yam */
 
 int readline(int timeout);
 void canit(void);
@@ -201,22 +206,15 @@ void zperr(const char * format, ...);
 void bttyout(int c);
 void sendline(int c);
 void flushmo(void);
+void from_cu(void);
+void cucheck(void);
+int rdchk(int f);
+int mode(int n);
+void sendbrk(void);
 
 /* crctab.c */
 
 long UPDC32(int b, long c);
-
-/* rbsb.c */
-
-int iofd;
-extern int Fromcu;     /* Were called from cu or yam */
-
-void from_cu(void);
-void cucheck(void);
-int rdchk(int f);
-int rdchk(int f);
-int mode(int n);
-void sendbrk(void);
 
 /* zm.c */
 

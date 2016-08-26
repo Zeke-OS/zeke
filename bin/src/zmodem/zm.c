@@ -17,7 +17,6 @@
 #include "zmodem.h"
 
 int Rxtimeout = 100; /* Tenths of seconds to wait for something */
-int Readnum = 1;     /* Number of bytes to ask for in read() from modem */
 
 int Verbose;
 int Zmodem;     /* ZMODEM protocol requested */
