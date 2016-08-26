@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Control devices.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,23 +52,27 @@
  * be then used to optimize the syscall.
  * @{
  */
+/* generic */
+#define FIONREAD            1 /*!< Get the number of bytes ready for reading. */
+#define FIONWRITE           3 /*!< Get the number of bytes in send queue. */
+#define FIONSPACE           5 /*!< Get the number of bytes free in send queue. */
 /* termio */
-#define IOCTL_GTERMIOS        1 /*!< Get termios struct. */
-#define IOCTL_STERMIOS        2 /*!< Set termios struct. */
-#define IOCTL_TTYFLUSH        3 /*!< TTY flush controls. */
-#define IOCTL_TCSBRK          4 /*!< Send a break. */
+#define IOCTL_GTERMIOS     11 /*!< Get termios struct. */
+#define IOCTL_STERMIOS     12 /*!< Set termios struct. */
+#define IOCTL_TTYFLUSH     13 /*!< TTY flush controls. */
+#define IOCTL_TCSBRK       14 /*!< Send a break. */
 /* dev */
-#define IOCTL_GETBLKSIZE     11 /*!< Get device block size. */
-#define IOCTL_GETBLKCNT      13 /*!< Get device block count. */
-#define IOCTL_FLSBLKBUF      14 /*1< Flush block device buffers. */
+#define IOCTL_GETBLKSIZE   21 /*!< Get device block size. */
+#define IOCTL_GETBLKCNT    23 /*!< Get device block count. */
+#define IOCTL_FLSBLKBUF    24 /*1< Flush block device buffers. */
 /* pty */
-#define IOCTL_PTY_CREAT      50 /*!< Create a new pty master-slave pair. */
+#define IOCTL_PTY_CREAT    50 /*!< Create a new pty master-slave pair. */
 /* dev/fb */
-#define IOCTL_FB_GETRES     101 /*!< Get the frame buffer resolution. */
-#define IOCTL_FB_SETRES     102 /*!< Change the framebuffer resolution. */
+#define IOCTL_FB_GETRES   101 /*!< Get the frame buffer resolution. */
+#define IOCTL_FB_SETRES   102 /*!< Change the framebuffer resolution. */
 /* Get and set window size */
-#define IOCTL_TIOCGWINSZ    103 /*!< Get window size. */
-#define IOCTL_TIOCSWINSZ    104 /*!< Set window size. */
+#define IOCTL_TIOCGWINSZ  103 /*!< Get window size. */
+#define IOCTL_TIOCSWINSZ  104 /*!< Set window size. */
 /**
  * @}
  */

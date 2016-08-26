@@ -41,6 +41,7 @@
 #include <hal/uart.h>
 #include <kinit.h>
 #include <kstring.h>
+#include <libkern.h>
 #include <tty.h>
 
 static const char drv_name[] = "UART";
@@ -190,7 +191,26 @@ static ssize_t uart_write(struct tty * tty, off_t blkno,
 static int uart_ioctl(struct dev_info * devnfo, uint32_t request,
                       void * arg, size_t arg_len)
 {
+    struct tty * tty;
+    struct uart_port * port;
+
+    tty = (struct tty *)(devnfo->opt_data);
+    if (!tty)
+        return -EINVAL;
+
+    port = (struct uart_port *)tty->opt_data;
+    if (!port)
+        return -ENODEV;
+
+    /* TODO Support FIONWRITE and FIONSPACE */
     switch (request) {
+    case FIONREAD:
+        /*
+         * Currently we don't have a generic way to tell how many bytes are
+         * available but between 0 and 1 is a decent scale for most cases.
+         */
+        sizetto(port->peek(port) ? 1 : 0, arg, arg_len);
+        break;
     default:
         return -EINVAL;
     }
