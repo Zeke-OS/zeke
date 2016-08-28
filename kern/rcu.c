@@ -34,6 +34,7 @@
 #include <buf.h>
 #include <hal/core.h>
 #include <idle.h>
+#include <kerror.h>
 #include <kinit.h>
 #include <thread.h>
 #include <rcu.h>

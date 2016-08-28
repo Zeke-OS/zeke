@@ -21,6 +21,7 @@
 #include <limits.h>
 #include <sys/ioctl.h>
 #include <kactype.h>
+#include <kerror.h>
 #include <kmalloc.h>
 #include <kstring.h>
 #include "ff.h"         /* Declarations of FatFs API */
