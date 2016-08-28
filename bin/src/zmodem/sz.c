@@ -34,6 +34,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <termios.h>
 #include <unistd.h>
 #include "zmodem.h"
 
@@ -63,22 +64,9 @@ char Myattn[] = { 0 };
 
 FILE *in;
 
-#ifdef BADSEEK
-int Canseek;        /* 1: Can seek 0: only rewind -1: neither (pipe) */
-#ifndef TXBSIZE
-#define TXBSIZE 16384       /* Must be power of two, < MAXINT */
-#endif
-#else
 int Canseek = 1;    /* 1: Can seek 0: only rewind -1: neither (pipe) */
-#endif
 
-#ifdef TXBSIZE
-#define TXBMASK (TXBSIZE-1)
-char Txb[TXBSIZE];      /* Circular buffer for file reads */
-char *txbuf = Txb;      /* Pointer to current file segment */
-#else
 char txbuf[1024];
-#endif
 long vpos;          /* Number of bytes read from file */
 
 char Lastrx;
@@ -129,64 +117,6 @@ int Zctlesc;    /* Encode control characters */
 int Nozmodem;   /* If invoked as "sb" */
 char *Progname = "sz";
 int Zrwindow = 1400;    /* RX window size (controls garbage count) */
-
-#ifdef TXBSIZE
-int fooseek(FILE * fptr, long pos, int whence)
-{
-    int m, n;
-
-    vfile("fooseek: pos =%lu vpos=%lu Canseek=%d", pos, vpos, Canseek);
-    /* Seek offset < current buffer */
-    if (pos < (vpos - TXBSIZE + 1024)) {
-        BEofseen = 0;
-        if (Canseek > 0) {
-            vpos = pos & ~TXBMASK;
-            if (vpos >= pos)
-                vpos -= TXBSIZE;
-            if (fseek(fptr, vpos, 0))
-                return 1;
-        } else if (Canseek == 0) {
-            if (fseek(fptr, vpos = 0L, 0))
-                return 1;
-        } else {
-            return 1;
-        }
-        while (vpos <= pos) {
-            n = fread(Txb, 1, TXBSIZE, fptr);
-            vpos += n;
-            vfile("n=%d vpos=%ld", n, vpos);
-            if (n < TXBSIZE) {
-                BEofseen = 1;
-                break;
-            }
-        }
-        vfile("vpos=%ld", vpos);
-        return 0;
-    }
-    /* Seek offset > current buffer (crash recovery, etc.) */
-    if (pos > vpos) {
-        if (Canseek)
-            if (fseek(fptr, vpos = (pos & ~TXBMASK), 0))
-                return 1;
-        while (vpos <= pos) {
-            txbuf = Txb + (vpos & TXBMASK);
-            m = TXBSIZE - (vpos & TXBMASK);
-            n = fread(txbuf, 1, m, fptr);
-            vpos += n;
-            vfile("bo=%d n=%d vpos=%ld", txbuf-Txb, n, vpos);
-            if (m < n) {
-                BEofseen = 1;
-                break;
-            }
-        }
-        return 0;
-    }
-    /* Seek offset is within current buffer */
-    vfile("vpos=%ld", vpos);
-    return 0;
-}
-#define fseek fooseek
-#endif
 
 /* called by signal interrupt or terminate to clean things up */
 void bibi(int n)
@@ -293,11 +223,6 @@ int getzrxinit(void)
             if ((f.st_mode & S_IFMT) != S_IFCHR) {
                 Rxbuflen = 1024;
             }
-#ifdef BADSEEK
-            Canseek = 0;
-            Txwindow = TXBSIZE - 1024;
-            Txwspac = TXBSIZE / 4;
-#endif
             /*
              * If input is not a regular file, force ACK's to
              *  prevent running beyond the buffer limits
@@ -306,12 +231,7 @@ int getzrxinit(void)
                 fstat(fileno(in), &f);
                 if ((f.st_mode & S_IFMT) != S_IFREG) {
                     Canseek = -1;
-#ifdef TXBSIZE
-                    Txwindow = TXBSIZE - 1024;
-                    Txwspac = TXBSIZE / 4;
-#else
                     return ERROR;
-#endif
                 }
             }
             /* Set initial subpacket length */
@@ -513,37 +433,15 @@ int getinsync(int flag)
     }
 }
 
-void purgeline(void)
-{
-    lseek(iofd, 0L, 2);
-}
-
 /* Fill buffer with blklen chars */
 int zfilbuf(void)
 {
     int n;
 
-#ifdef TXBSIZE
-    /* We assume request is within buffer, or just beyond */
-    txbuf = Txb + (bytcnt & TXBMASK);
-    if (vpos <= bytcnt) {
-        n = fread(txbuf, 1, blklen, in);
-        vpos += n;
-        if (n < blklen)
-            Eofseen = 1;
-        return n;
-    }
-    if (vpos >= (bytcnt + blklen))
-        return blklen;
-    /* May be a short block if crash recovery etc. */
-    Eofseen = BEofseen;
-    return vpos - bytcnt;
-#else
     n = fread(txbuf, 1, blklen, in);
     if (n < blklen)
         Eofseen = 1;
     return n;
-#endif
 }
 
 /* Send the data in the file */
@@ -586,12 +484,7 @@ gotack:
          *  rdchk(fdes) returns non 0 if a character is available
          */
         while (rdchk(iofd)) {
-#ifdef SV
-            switch (checked)
-#else
-            switch (readline(1))
-#endif
-            {
+            switch (readline(1)) {
             case CAN:
             case ZPAD:
                 c = getinsync(1);
@@ -624,17 +517,10 @@ gotack:
                 tcount += strlen(qbf);
 #ifdef READCHECK
                 while (rdchk(iofd)) {
-#ifdef SV
-                    switch (checked)
-#else
-                    switch (readline(1))
-#endif
-                    {
+                    switch (readline(1)) {
                     case CAN:
                     case ZPAD:
-#ifdef TCFLSH
-                        ioctl(iofd, TCFLSH, 1);
-#endif
+                        tcflush(iofd, TCOFLUSH);
                         goto waitack;
                     case XOFF:  /* Wait for XON */
                     case XOFF | 0200:
@@ -689,20 +575,14 @@ gotack:
          */
         fflush(stdout);
         while (rdchk(iofd)) {
-#ifdef SV
-            switch (checked)
-#else
-            switch (readline(1))
-#endif
-            {
+            switch (readline(1)) {
             case CAN:
             case ZPAD:
                 c = getinsync(1);
                 if (c == ZACK)
                     break;
-#ifdef TCFLSH
-                ioctl(iofd, TCFLSH, 1);
-#endif
+
+                tcflush(iofd, TCOFLUSH);
                 /* zcrce - dinna wanna starta ping-pong game */
                 zsdata(txbuf, 0, ZCRCE);
                 goto gotack;
@@ -721,9 +601,7 @@ gotack:
                     zsdata(txbuf, 0, e = ZCRCQ);
                 c = getinsync(1);
                 if (c != ZACK) {
-#ifdef TCFLSH
-                    ioctl(iofd, TCFLSH, 1);
-#endif
+                    tcflush(iofd, TCOFLUSH);
                     zsdata(txbuf, 0, ZCRCE);
                     goto gotack;
                 }
@@ -1241,9 +1119,7 @@ int usage(void)
         "   sz [-2Ceqv] -c COMMAND",
         "   sb [-2adfkquv] [-] file ...",
         "   sx [-2akquv] [-] file",
-#ifdef CSTOPB
         "   2 Use 2 stop bits",
-#endif
         "   + Append to existing destination file (Z)",
         "   a (ASCII) change NL to CR/LF",
         "   b Binary file transfer override",
@@ -1311,11 +1187,9 @@ int main(int argc, char *argv[])
                 case '+':
                     Lzmanag = ZMAPND;
                     break;
-#ifdef CSTOPB
                 case '2':
                     Twostop = TRUE;
                     break;
-#endif
                 case 'a':
                     Lzconv = ZCNL;
                     Ascii = TRUE;

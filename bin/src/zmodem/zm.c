@@ -23,18 +23,18 @@ int Zmodem;     /* ZMODEM protocol requested */
 
 /* Globals used by ZMODEM functions */
 unsigned Baudrate = 2400; /* Default, should be set by first mode() call */
-int Rxframeind;     /* ZBIN ZBIN32, or ZHEX type of frame received */
+int Rxframeind; /* ZBIN ZBIN32, or ZHEX type of frame received */
 int Rxtype;     /* Type of header received */
-int Rxcount;        /* Count of data bytes received */
-char Rxhdr[4];      /* Received header */
-char Txhdr[4];      /* Transmitted header */
+int Rxcount;    /* Count of data bytes received */
+char Rxhdr[4];  /* Received header */
+char Txhdr[4];  /* Transmitted header */
 long Rxpos;     /* Received file position */
 long Txpos;     /* Transmitted file position */
-int Txfcs32;        /* TURE means send binary frames with 32 bit FCS */
+int Txfcs32;    /* TURE means send binary frames with 32 bit FCS */
 int Crc32t;     /* Display flag indicating 32 bit CRC being sent */
 int Crc32;      /* Display flag indicating 32 bit CRC being received */
 int Znulls;     /* Number of nulls to send at beginning of ZDATA hdr */
-char Attn[ZATTNLEN + 1];  /* Attention string rx sends to tx on err */
+char Attn[ZATTNLEN + 1]; /* Attention string rx sends to tx on err */
 
 int errors;
 
@@ -42,7 +42,7 @@ static int lastsent;    /* Last char we sent */
 static int Not8bit;     /* Seven bits seen on header */
 
 static char *frametypes[] = {
-    "Carrier Lost",     /* -3 */
+    "Carrier Lost", /* -3 */
     "TIMEOUT",      /* -2 */
     "ERROR",        /* -1 */
 #define FTOFFSET 3
@@ -68,7 +68,7 @@ static char *frametypes[] = {
     "ZSTDERR",
     "xxxxx"
 #define FRTYPES 22  /* Total number of frame types in this array */
-            /*  not including psuedo negative entries */
+                    /*  not including psuedo negative entries */
 };
 
 static char badcrc[] = "Bad CRC";

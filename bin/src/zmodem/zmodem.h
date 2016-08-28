@@ -198,7 +198,11 @@ extern int iofd;
 extern char linbuf[255];
 extern int Lleft;        /* number of characters in linbuf */
 extern int Fromcu;       /* Were called from cu or yam */
+extern int Twostop;     /* Use two stop bits */
 
+int mode(int n);
+void sendbrk(void);
+void purgeline(void);
 int readline(int timeout);
 void canit(void);
 void vfile(const char * format, ...);
@@ -209,8 +213,6 @@ void flushmo(void);
 void from_cu(void);
 void cucheck(void);
 int rdchk(int f);
-int mode(int n);
-void sendbrk(void);
 
 /* crctab.c */
 

@@ -20,6 +20,8 @@ int iofd;               /*!< File descriptor for ioctls & reads */
 char linbuf[255];
 int Lleft;              /* number of characters in linbuf */
 int Readnum = HOWMANY;  /* Number of bytes to ask for in read() from modem */
+int Fromcu;             /* Were called from cu or yam */
+int Twostop;            /* Use two stop bits */
 
 static void set_tty_read_timeout(int timeout, struct termios * orig)
 {
@@ -30,6 +32,98 @@ static void set_tty_read_timeout(int timeout, struct termios * orig)
     termios.c_lflag &= ~ICANON; /* Set non-canonical mode */
     termios.c_cc[VTIME] = timeout; /* Set timeout of 10.0 seconds */
     tcsetattr(iofd, TCSANOW, &termios);
+}
+
+/**
+ * mode(n)
+ *  3: save old tty stat, set raw mode with flow control
+ *  2: set XON/XOFF for sb/sz with ZMODEM or YMODEM-g
+ *  1: save old tty stat, set raw mode
+ *  0: restore original tty mode
+ */
+int mode(int n)
+{
+    static struct termios oldtty, tty;
+    static int did0 = FALSE;
+
+    vfile("mode:%d", n);
+    switch (n) {
+    case 2:     /* Un-raw mode used by sz, sb when -g detected */
+        if (!did0)
+            (void) tcgetattr(iofd, &oldtty);
+        tty = oldtty;
+
+        tty.c_iflag = BRKINT|IXON;
+
+        tty.c_oflag = 0;    /* Transparent output */
+
+        tty.c_cflag &= ~PARENB; /* Disable parity */
+        tty.c_cflag |= CS8; /* Set character size = 8 */
+        if (Twostop)
+            tty.c_cflag |= CSTOPB;  /* Set two stop bits */
+
+
+        tty.c_lflag = ISIG;
+        tty.c_cc[VINTR] = Zmodem ? 03 : 030;  /* Interrupt char */
+        tty.c_cc[VQUIT] = -1;           /* Quit char */
+        tty.c_cc[VMIN] = 3;  /* This many chars satisfies reads */
+        tty.c_cc[VTIME] = 1;    /* or in this many tenths of seconds */
+
+        (void) tcsetattr(iofd, TCSANOW, &tty);
+        did0 = TRUE;
+        return OK;
+    case 1:
+    case 3:
+        if (!did0)
+            (void) tcgetattr(iofd, &oldtty);
+        tty = oldtty;
+
+        tty.c_iflag = n == 3 ? (IGNBRK | IXOFF) : IGNBRK;
+
+         /* No echo, crlf mapping, INTR, QUIT, delays, no erase/kill */
+        tty.c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
+
+        tty.c_oflag = 0;    /* Transparent output */
+
+        tty.c_cflag &= ~PARENB; /* Same baud rate, disable parity */
+        tty.c_cflag |= CS8; /* Set character size = 8 */
+        if (Twostop)
+            tty.c_cflag |= CSTOPB;  /* Set two stop bits */
+        tty.c_cc[VMIN] = HOWMANY; /* This many chars satisfies reads */
+        tty.c_cc[VTIME] = 1;    /* or in this many tenths of seconds */
+        (void) tcsetattr(iofd, TCSANOW, &tty);
+        did0 = TRUE;
+        Baudrate = cfgetospeed(&tty);
+        return OK;
+    case 0:
+        if (!did0)
+            return ERROR;
+        /* Wait for output to drain, flush input queue, restore
+         * modes and restart output.
+         */
+        (void)tcsetattr(iofd, TCSAFLUSH, &oldtty);
+        /* TODO Enable the following code when tcflow is implemented. */
+#if 0
+        (void)tcflow(iofd, TCOON);
+#endif
+        return OK;
+    default:
+        return ERROR;
+    }
+}
+
+void sendbrk(void)
+{
+    tcsendbreak(iofd, 1);
+}
+
+/*
+ * Purge the modem input queue of all characters
+ */
+void purgeline(void)
+{
+    Lleft = 0;
+    tcflush(iofd, TCIFLUSH);
 }
 
 /*
@@ -145,18 +239,17 @@ void flushmo(void)
     fflush(stdout);
 }
 
-/*
+/**
  * return 1 iff stdout and stderr are different devices
  *  indicating this program operating with a modem on a
  *  different line
  */
-int Fromcu;     /* Were called from cu or yam */
-
 void from_cu(void)
 {
     struct stat a, b;
 
-    fstat(1, &a); fstat(2, &b);
+    fstat(1, &a);
+    fstat(2, &b);
     Fromcu = a.st_rdev != b.st_rdev;
     return;
 }
@@ -167,28 +260,6 @@ void cucheck(void)
         fprintf(stderr, "Please read the manual page BUGS chapter!\r\n");
 }
 
-struct {
-    unsigned baudr;
-    int speedcode;
-} speeds[] = {
-    { 110,    B110 },
-    { 300,    B300 },
-#ifdef B600
-    { 600,    B600 },
-#endif
-    { 1200,   B1200 },
-    { 2400,   B2400 },
-    { 4800,   B4800 },
-    { 9600,   B9600 },
-#ifdef EXTA
-    { 19200,  EXTA },
-    { 38400,  EXTB },
-#endif
-    { 0, 0 }
-};
-
-int Twostop;        /* Use two stop bits */
-
 /**
  *  Return non 0 iff something to read from io descriptor f.
  */
@@ -198,96 +269,4 @@ int rdchk(int f)
 
     ioctl(f, FIONREAD, &lf);
     return lf;
-}
-
-static unsigned getspeed(int code)
-{
-    for (int n = 0; speeds[n].baudr; ++n)
-        if (speeds[n].speedcode == code)
-            return speeds[n].baudr;
-    return 38400;   /* Assume fifo if ioctl failed */
-}
-
-struct termios oldtty, tty;
-
-/**
- * mode(n)
- *  3: save old tty stat, set raw mode with flow control
- *  2: set XON/XOFF for sb/sz with ZMODEM or YMODEM-g
- *  1: save old tty stat, set raw mode
- *  0: restore original tty mode
- */
-int mode(int n)
-{
-    static int did0 = FALSE;
-
-    vfile("mode:%d", n);
-    switch (n) {
-    case 2:     /* Un-raw mode used by sz, sb when -g detected */
-        if (!did0)
-            (void) tcgetattr(iofd, &oldtty);
-        tty = oldtty;
-
-        tty.c_iflag = BRKINT|IXON;
-
-        tty.c_oflag = 0;    /* Transparent output */
-
-        tty.c_cflag &= ~PARENB; /* Disable parity */
-        tty.c_cflag |= CS8; /* Set character size = 8 */
-        if (Twostop)
-            tty.c_cflag |= CSTOPB;  /* Set two stop bits */
-
-
-        tty.c_lflag = ISIG;
-        tty.c_cc[VINTR] = Zmodem ? 03 : 030;  /* Interrupt char */
-        tty.c_cc[VQUIT] = -1;           /* Quit char */
-        tty.c_cc[VMIN] = 3;  /* This many chars satisfies reads */
-        tty.c_cc[VTIME] = 1;    /* or in this many tenths of seconds */
-
-        (void) tcsetattr(iofd, TCSANOW, &tty);
-        did0 = TRUE;
-        return OK;
-    case 1:
-    case 3:
-        if (!did0)
-            (void) tcgetattr(iofd, &oldtty);
-        tty = oldtty;
-
-        tty.c_iflag = n == 3 ? (IGNBRK | IXOFF) : IGNBRK;
-
-         /* No echo, crlf mapping, INTR, QUIT, delays, no erase/kill */
-        tty.c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
-
-        tty.c_oflag = 0;    /* Transparent output */
-
-        tty.c_cflag &= ~PARENB; /* Same baud rate, disable parity */
-        tty.c_cflag |= CS8; /* Set character size = 8 */
-        if (Twostop)
-            tty.c_cflag |= CSTOPB;  /* Set two stop bits */
-        tty.c_cc[VMIN] = HOWMANY; /* This many chars satisfies reads */
-        tty.c_cc[VTIME] = 1;    /* or in this many tenths of seconds */
-        (void) tcsetattr(iofd, TCSANOW, &tty);
-        did0 = TRUE;
-        Baudrate = cfgetospeed(&tty);
-        return OK;
-    case 0:
-        if (!did0)
-            return ERROR;
-        /* Wait for output to drain, flush input queue, restore
-         * modes and restart output.
-         */
-        (void)tcsetattr(iofd, TCSAFLUSH, &oldtty);
-        /* TODO Enable the following code when tcflow is implemented. */
-#if 0
-        (void)tcflow(iofd, TCOON);
-#endif
-        return OK;
-    default:
-        return ERROR;
-    }
-}
-
-void sendbrk(void)
-{
-    tcsendbreak(iofd, 1);
 }

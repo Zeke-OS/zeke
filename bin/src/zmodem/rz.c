@@ -152,19 +152,6 @@ static void checkpath(char *name)
 }
 
 /*
- * Purge the modem input queue of all characters
- */
-static void purgeline(void)
-{
-    Lleft = 0;
-#ifdef USG
-    ioctl(iofd, TCFLSH, 0);
-#else
-    lseek(iofd, 0L, 2);
-#endif
-}
-
-/*
  * Ack a ZFIN packet, let byegones be byegones
  */
 static void ackbibi(void)
@@ -225,11 +212,10 @@ static int tryz(void)
     if (Nozmodem)       /* Check for "rb" program name */
         return 0;
 
-
     for (n = Zmodem ? 15 : 5; --n >= 0;) {
         /* Set buffer length (0) and capability flags */
 #ifdef SEGMENTS
-        stohdr(SEGMENTS*1024L);
+        stohdr(SEGMENTS * 1024L);
 #else
         stohdr(0L);
 #endif
@@ -304,6 +290,7 @@ again:
             return ERROR;
         }
     }
+
     return 0;
 }
 
@@ -334,6 +321,7 @@ static int closeit(void)
     }
     if ((Filemode & S_IFMT) == S_IFREG)
         chmod(Pathname, (07777 & Filemode));
+
     return OK;
 }
 
