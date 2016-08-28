@@ -127,8 +127,6 @@ static struct procfs_stream * read_dyndebug(const struct procfs_info * spec)
     if (!streambuf)
         return NULL;
 
-    struct buf * bp_back = (struct buf *)streambuf->b_data;
-    bp_back = streambuf;
     bufsize -= sizeof(struct buf *);
     stream = (struct procfs_stream *)streambuf->b_data + sizeof(struct buf *);
 
