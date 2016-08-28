@@ -1111,47 +1111,41 @@ void chartest(int m)
 
 int usage(void)
 {
-    const char *babble[] = {
-        "Send file(s) with ZMODEM/YMODEM/XMODEM Protocol",
-        "   (Y) = Option applies to YMODEM only",
-        "   (Z) = Option applies to ZMODEM only",
-        "Usage: sz [-2+abdefkLlNnquvwYy] [-] file ...",
-        "   sz [-2Ceqv] -c COMMAND",
-        "   sb [-2adfkquv] [-] file ...",
-        "   sx [-2akquv] [-] file",
-        "   2 Use 2 stop bits",
-        "   + Append to existing destination file (Z)",
-        "   a (ASCII) change NL to CR/LF",
-        "   b Binary file transfer override",
-        "   c send COMMAND (Z)",
-        "   d Change '.' to '/' in pathnames (Y/Z)",
-        "   e Escape all control characters (Z)",
-        "   f send Full pathname (Y/Z)",
-        "   i send COMMAND, ack Immediately (Z)",
-        "   k Send 1024 byte packets (Y)",
-        "   L N Limit subpacket length to N bytes (Z)",
-        "   l N Limit frame length to N bytes (l>=L) (Z)",
-        "   n send file if source newer (Z)",
-        "   N send file if source newer or longer (Z)",
-        "   o Use 16 bit CRC instead of 32 bit CRC (Z)",
-        "   p Protect existing destination file (Z)",
-        "   r Resume/Recover interrupted file transfer (Z)",
-        "   q Quiet (no progress reports)",
-        "   u Unlink file after transmission",
-        "   v Verbose - provide debugging information",
-        "   w N Window is N bytes (Z)",
-        "   Y Yes, overwrite existing file, skip if not present at rx (Z)",
-        "   y Yes, overwrite existing file (Z)",
-        "- as pathname sends standard input as sPID.sz or environment ONAME",
-        ""
-    };
-    const char **pp;
+    const char babble[] =
+        "Send file(s) with ZMODEM/YMODEM/XMODEM Protocol\n\
+   (Y) = Option applies to YMODEM only\n\
+   (Z) = Option applies to ZMODEM only\n\
+Usage: sz [-2+abdefkLlNnquvwYy] [-] file ...\n\
+  -sz [-2Ceqv] -c COMMAND\n\
+  -sb [-2adfkquv] [-] file ...\n\
+  -sx [-2akquv] [-] file\n\
+  -2 Use 2 stop bits\n\
+  -+ Append to existing destination file (Z)\n\
+  -a (ASCII) change NL to CR/LF\n\
+  -b Binary file transfer override\n\
+  -c send COMMAND (Z)\n\
+  -d Change '.' to '/' in pathnames (Y/Z)\n\
+  -e Escape all control characters (Z)\n\
+  -f send Full pathname (Y/Z)\n\
+  -i send COMMAND, ack Immediately (Z)\n\
+  -k Send 1024 byte packets (Y)\n\
+  -L N Limit subpacket length to N bytes (Z)\n\
+  -l N Limit frame length to N bytes (l>=L) (Z)\n\
+  -n send file if source newer (Z)\n\
+  -N send file if source newer or longer (Z)\n\
+  -o Use 16 bit CRC instead of 32 bit CRC (Z)\n\
+  -p Protect existing destination file (Z)\n\
+  -r Resume/Recover interrupted file transfer (Z)\n\
+  -q Quiet (no progress reports)\n\
+  -u Unlink file after transmission\n\
+  -v Verbose - provide debugging information\n\
+  -w N Window is N bytes (Z)\n\
+  -Y Yes, overwrite existing file, skip if not present at rx (Z)\n\
+  -y Yes, overwrite existing file (Z)\n\
+- as pathname sends standard input as sPID.sz or environment ONAME";
 
-    for (pp = babble; **pp; ++pp) {
-        fprintf(stderr, "%s\n", *pp);
-    }
-    fprintf(stderr, "%s by Chuck Forsberg, Omen Technology INC\n",
-            VERSION);
+    fprintf(stderr, "%s\n%s by Chuck Forsberg, Omen Technology INC\n",
+            babble, VERSION);
     fprintf(stderr, "\t\t\042The High Reliability Software\042\n");
     cucheck();
     exit(0);

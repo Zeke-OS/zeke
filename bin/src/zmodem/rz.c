@@ -662,19 +662,20 @@ static int rzfiles(void)
 
 static int usage(void)
 {
-    cucheck();
-    fprintf(stderr, "Usage:  rz [-abeuvy]        (ZMODEM)\n");
-    fprintf(stderr, "or  rb [-abuvy]     (YMODEM)\n");
-    fprintf(stderr, "or  rx [-abcv] file (XMODEM or XMODEM-1k)\n");
-    fprintf(stderr, "      -a ASCII transfer (strip CR)\n");
-    fprintf(stderr, "      -b Binary transfer for all files\n");
-    fprintf(stderr, "      -c Use 16 bit CRC (XMODEM)\n");
-    fprintf(stderr, "      -e Escape control characters  (ZMODEM)\n");
-    fprintf(stderr, "      -v Verbose more v's give more info\n");
-    fprintf(stderr, "      -y Yes, clobber existing file if any\n");
-    fprintf(stderr, "%s %s by Chuck Forsberg, Omen Technology INC\n",
-            Progname, VERSION);
+    const char babble[] = "Receive files with ZMODEM/YMODEM/XMODEM protocol\n\
+Usage:  rz [-abeuvy]        (ZMODEM)\n\
+or  rb [-abuvy]     (YMODEM)\n\
+or  rx [-abcv] file (XMODEM or XMODEM-1k)\n\
+  -a ASCII transfer (strip CR)\n\
+  -b Binary transfer for all files\n\
+  -c Use 16 bit CRC (XMODEM)\n\
+  -e Escape control characters  (ZMODEM)\n\
+  -v Verbose more v's give more info\n\
+  -y Yes, clobber existing file if any";
+    fprintf(stderr, "%s\n%s %s by Chuck Forsberg, Omen Technology INC\n",
+            babble, Progname, VERSION);
     fprintf(stderr, "\t\t\042The High Reliability Software\042\n");
+    cucheck();
     exit(0);
 }
 
