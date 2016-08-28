@@ -59,6 +59,9 @@ int ioctl(int fildes, int request, ... /* arg */)
         return tcsetattr(fildes, TCSADRAIN, va_arg(ap, struct termios *));
     case TCSETSF:
         return tcsetattr(fildes, TCSAFLUSH, va_arg(ap, struct termios *));
+    case TCFLSH:
+        arg = va_arg(ap, int *);
+        return tcflush(fildes, *((int *)arg));
     case IOCTL_FB_GETRES:
     case IOCTL_FB_SETRES:
         arg = va_arg(ap, struct fb_resolution *);

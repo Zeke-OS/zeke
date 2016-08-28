@@ -86,6 +86,10 @@
 #define TCSETSW             0x5403
 #define TCSETSF             0x5404
 
+/* Buffer count and flushing */
+#define TIOCINQ             FIONREAD
+#define TCFLSH              0x540B
+
 /* Get and set window size */
 #define TIOCGWINSZ IOCTL_TIOCGWINSZ /*!< Get window size. */
 #define TIOCSWINSZ IOCTL_TIOCSWINSZ /*!< Set window size. */
