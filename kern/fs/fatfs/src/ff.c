@@ -1817,7 +1817,7 @@ static FRESULT check_fs(FATFS * fs)
 }
 
 /**
- * Lock the logical drive and check access permissions.
+ * Check access permissions to a logical drive.
  * @param wmode !=0: Check write protection for write access.
  * @return FR_OK(0): successful, !=0: any error occurred.
  */
@@ -2027,14 +2027,13 @@ FRESULT f_umount(FATFS * fs)
 FRESULT f_open(FF_FIL * fp, FATFS * fs, const TCHAR * path, uint8_t mode)
 {
     FRESULT res;
-    FF_DIR dj;
+    FF_DIR dj = { .fs = fs };
     uint8_t * dir;
     DEF_NAMEBUF;
 
     if (!fp)
         return FR_INVALID_OBJECT;
     fp->fs = NULL;
-    dj.fs = fs;
 
     if (lock_fs(dj.fs))
         return FR_TIMEOUT;
@@ -2047,113 +2046,115 @@ FRESULT f_open(FF_FIL * fp, FATFS * fs, const TCHAR * path, uint8_t mode)
 
         res = access_volume(dj.fs, 0);
     }
-    if (res == FR_OK) {
-        INIT_NAMEBUF(dj);
-        res = follow_path(&dj, path);   /* Follow the file path */
-        dir = dj.dir;
-        if (!fs->readonly) {
-            if (res == FR_OK) {
-                if (!dir) { /* Default directory itself */
-                    res = FR_INVALID_NAME;
-                }
-            }
-            /* Create or Open a file */
-            if (mode & (FA_CREATE_ALWAYS | FA_OPEN_ALWAYS | FA_CREATE_NEW)) {
-                DWORD dw, cl;
+    if (res != FR_OK)
+        goto fail;
 
-                if (res != FR_OK) { /* No file, create new */
-                    if (res == FR_NO_FILE) {
-                        /* There is no file to open, create a new entry */
-                        res = dir_register(&dj);
-                    }
-                    mode |= FA_CREATE_ALWAYS;       /* File is created */
-                    dir = dj.dir;                   /* New entry */
-                } else { /* Any object is already existing */
-                    if (dir[DIR_Attr] & (AM_RDO | AM_DIR)) {
-                        /* Cannot overwrite it (R/O or DIR) */
-                        res = FR_DENIED;
-                    } else {
-                        if (mode & FA_CREATE_NEW) {
-                            /* Cannot create as new file */
-                            res = FR_EXIST;
-                        }
-                    }
-                }
-                /* Truncate it if overwrite mode */
-                if (res == FR_OK && (mode & FA_CREATE_ALWAYS)) {
-                    uint32_t dt;
-
-                    dt = fatfs_time_get_time();     /* Created time */
-                    ST_WORD(dir + DIR_CrtTime, dt & 0xffff);
-                    ST_WORD(dir + DIR_CrtDate, dt >> 16);
-
-                    dir[DIR_Attr] = 0;              /* Reset attribute */
-                    ST_DWORD(dir + DIR_FileSize, 0); /* size = 0 */
-                    cl = ld_clust(dj.fs, dir);      /* Get start cluster */
-                    st_clust(dir, 0);               /* cluster = 0 */
-                    dj.fs->wflag = 1;
-                    if (cl) {
-                        /* Remove the cluster chain if exist */
-                        dw = dj.fs->winsect;
-                        res = remove_chain(dj.fs, cl);
-                        if (res == FR_OK) {
-                            /* Reuse the cluster hole */
-                            dj.fs->last_clust = cl - 1;
-                            res = move_window(dj.fs, dw);
-                        }
-                    }
-                }
-            } else if (res == FR_OK) {
-                /* Open an existing file if follow succeeded */
-                if (dir[DIR_Attr] & AM_DIR) {   /* It is a directory */
-                    res = FR_NO_FILE;
-                }
-                /*
-                 * NO RO check is needed because the actual check is done
-                 * elsewhere.
-                 */
-            }
-
-            if (res == FR_OK) {
-                if (mode & FA_CREATE_ALWAYS) {
-                    /* Set file change flag if created or overwritten */
-                    mode |= FA__WRITTEN;
-                }
-                /* Pointer to the directory entry */
-                fp->dir_sect = dj.fs->winsect;
-                fp->dir_ptr = dir;
-            }
-        } else { /* RO fs */
-            if (res == FR_OK) {
-                /* Follow succeeded */
-                dir = dj.dir;
-                if (!dir) {                     /* Current directory itself */
-                    res = FR_INVALID_NAME;
-                } else {
-                    if (dir[DIR_Attr] & AM_DIR) /* It is a directory */
-                        res = FR_NO_FILE;
-                }
+    INIT_NAMEBUF(dj);
+    res = follow_path(&dj, path);   /* Follow the file path */
+    dir = dj.dir;
+    if (!fs->readonly) {
+        if (res == FR_OK) {
+            if (!dir) { /* Default directory itself */
+                res = FR_INVALID_NAME;
             }
         }
+        /* Create or Open a file */
+        if (mode & (FA_CREATE_ALWAYS | FA_OPEN_ALWAYS | FA_CREATE_NEW)) {
+            DWORD dw, cl;
 
-        FREE_BUF();
+            if (res != FR_OK) { /* No file, create new */
+                if (res == FR_NO_FILE) {
+                    /* There is no file to open, create a new entry */
+                    res = dir_register(&dj);
+                }
+                mode |= FA_CREATE_ALWAYS;       /* File is created */
+                dir = dj.dir;                   /* New entry */
+            } else { /* Any object is already existing */
+                if (dir[DIR_Attr] & (AM_RDO | AM_DIR)) {
+                    /* Cannot overwrite it (R/O or DIR) */
+                    res = FR_DENIED;
+                } else {
+                    if (mode & FA_CREATE_NEW) {
+                        /* Cannot create as new file */
+                        res = FR_EXIST;
+                    }
+                }
+            }
+            /* Truncate it if overwrite mode */
+            if (res == FR_OK && (mode & FA_CREATE_ALWAYS)) {
+                uint32_t dt;
+
+                dt = fatfs_time_get_time();     /* Created time */
+                ST_WORD(dir + DIR_CrtTime, dt & 0xffff);
+                ST_WORD(dir + DIR_CrtDate, dt >> 16);
+
+                dir[DIR_Attr] = 0;              /* Reset attribute */
+                ST_DWORD(dir + DIR_FileSize, 0); /* size = 0 */
+                cl = ld_clust(dj.fs, dir);      /* Get start cluster */
+                st_clust(dir, 0);               /* cluster = 0 */
+                dj.fs->wflag = 1;
+                if (cl) {
+                    /* Remove the cluster chain if exist */
+                    dw = dj.fs->winsect;
+                    res = remove_chain(dj.fs, cl);
+                    if (res == FR_OK) {
+                        /* Reuse the cluster hole */
+                        dj.fs->last_clust = cl - 1;
+                        res = move_window(dj.fs, dw);
+                    }
+                }
+            }
+        } else if (res == FR_OK) {
+            /* Open an existing file if follow succeeded */
+            if (dir[DIR_Attr] & AM_DIR) {   /* It is a directory */
+                res = FR_NO_FILE;
+            }
+            /*
+             * NO RO check is needed because the actual check is done
+             * elsewhere.
+             */
+        }
 
         if (res == FR_OK) {
-            fp->flag = mode;                    /* File access mode */
-            fp->err = 0;                        /* Clear error flag */
-            fp->ino = get_ino(&dj);
-            fp->sclust = ld_clust(dj.fs, dir);  /* File start cluster */
-            fp->fsize = LD_DWORD(dir+DIR_FileSize); /* File size */
-            fp->fptr = 0;                       /* File pointer */
-            fp->dsect = 0;
-#if _USE_FASTSEEK
-            fp->cltbl = 0;                      /* Normal seek mode */
-#endif
-            fp->fs = dj.fs;                     /* Validate file object */
-            fp->id = fp->fs->id;
+            if (mode & FA_CREATE_ALWAYS) {
+                /* Set file change flag if created or overwritten */
+                mode |= FA__WRITTEN;
+            }
+            /* Pointer to the directory entry */
+            fp->dir_sect = dj.fs->winsect;
+            fp->dir_ptr = dir;
+        }
+    } else { /* RO fs */
+        if (res == FR_OK) {
+            /* Follow succeeded */
+            dir = dj.dir;
+            if (!dir) {                     /* Current directory itself */
+                res = FR_INVALID_NAME;
+            } else {
+                if (dir[DIR_Attr] & AM_DIR) /* It is a directory */
+                    res = FR_NO_FILE;
+            }
         }
     }
 
+    FREE_BUF();
+
+    if (res == FR_OK) {
+        fp->flag = mode;                    /* File access mode */
+        fp->err = 0;                        /* Clear error flag */
+        fp->ino = get_ino(&dj);
+        fp->sclust = ld_clust(dj.fs, dir);  /* File start cluster */
+        fp->fsize = LD_DWORD(dir+DIR_FileSize); /* File size */
+        fp->fptr = 0;                       /* File pointer */
+        fp->dsect = 0;
+#if _USE_FASTSEEK
+        fp->cltbl = 0;                      /* Normal seek mode */
+#endif
+        fp->fs = dj.fs;                     /* Validate file object */
+        fp->id = fp->fs->id;
+    }
+
+fail:
     return LEAVE_FF(dj.fs, res);
 }
 
@@ -2724,10 +2725,8 @@ FRESULT f_readdir(FF_DIR * dp, FILINFO * fno)
 FRESULT f_stat(FATFS * fs, const TCHAR * path, FILINFO * fno)
 {
     FRESULT res;
-    FF_DIR dj;
+    FF_DIR dj = { .fs = fs };
     DEF_NAMEBUF;
-
-    dj.fs = fs;
 
     if (lock_fs(dj.fs))
         return FR_TIMEOUT;
@@ -2739,14 +2738,16 @@ FRESULT f_stat(FATFS * fs, const TCHAR * path, FILINFO * fno)
 
     INIT_NAMEBUF(dj);
     res = follow_path(&dj, path);   /* Follow the file path */
-    if (res == FR_OK) {             /* Follow completed */
-        if (dj.dir) {       /* Found an object */
-            if (fno)
-                get_fileinfo(&dj, fno);
-        } else {            /* It is root directory */
-            res = FR_INVALID_NAME;
-        }
+    if (res != FR_OK)
+        goto fail;
+
+    if (dj.dir) {       /* Found an object */
+        if (fno)
+            get_fileinfo(&dj, fno);
+    } else {            /* It is root directory */
+        res = FR_INVALID_NAME;
     }
+
 fail:
     FREE_BUF();
 
@@ -2899,12 +2900,10 @@ fail:
 FRESULT f_unlink(FATFS * fs, const TCHAR * path)
 {
     FRESULT res;
-    FF_DIR dj;
+    FF_DIR dj = { .fs = fs };
     uint8_t * dir;
     DWORD dclst;
     DEF_NAMEBUF;
-
-    dj.fs = fs;
 
     if (lock_fs(dj.fs))
         return FR_TIMEOUT;
@@ -2969,12 +2968,10 @@ fail:
 FRESULT f_mkdir(FATFS * fs, const TCHAR * path)
 {
     FRESULT res;
-    FF_DIR dj;
+    FF_DIR dj = { .fs = fs };
     uint8_t * dir, n;
     DWORD dsc, dcl, pcl, tm = fatfs_time_get_time();
     DEF_NAMEBUF;
-
-    dj.fs = fs;
 
     if (lock_fs(dj.fs))
         return FR_TIMEOUT;
@@ -3043,6 +3040,7 @@ FRESULT f_mkdir(FATFS * fs, const TCHAR * path)
             res = sync_fs(dj.fs);
         }
     }
+
 fail:
     FREE_BUF();
 
@@ -3058,11 +3056,9 @@ fail:
 FRESULT f_chmod(FATFS * fs, const TCHAR * path, uint8_t value, uint8_t mask)
 {
     FRESULT res;
-    FF_DIR dj;
+    FF_DIR dj = { .fs = fs };
     uint8_t * dir;
     DEF_NAMEBUF;
-
-    dj.fs = fs;
 
     if (lock_fs(dj.fs))
         return FR_TIMEOUT;
@@ -3103,11 +3099,9 @@ fail:
 FRESULT f_utime(FATFS * fs, const TCHAR * path, const struct timespec * ts)
 {
     FRESULT res;
-    FF_DIR dj;
+    FF_DIR dj = { .fs = fs };
     uint8_t * dir;
     DEF_NAMEBUF;
-
-    dj.fs = fs;
 
     if (lock_fs(dj.fs))
         return FR_TIMEOUT;
@@ -3153,7 +3147,6 @@ FRESULT f_rename(FATFS * fs, const TCHAR * path_old, const TCHAR * path_new)
     DEF_NAMEBUF;
 
     djo.fs = fs;
-
     if (lock_fs(djo.fs))
         return FR_TIMEOUT;
 
@@ -3164,61 +3157,63 @@ FRESULT f_rename(FATFS * fs, const TCHAR * path_old, const TCHAR * path_new)
     djn.fs = djo.fs;
     INIT_NAMEBUF(djo);
     res = follow_path(&djo, path_old);      /* Check old object */
-    if (res == FR_OK) {                     /* Old object is found */
-        if (!djo.dir) {                     /* Is root dir? */
-            res = FR_NO_FILE;
-        } else {
-            /* Save the object information except name */
-            memcpy(buf, djo.dir + DIR_Attr, 21);
+    if (res != FR_OK) /* Old object not found */
+        goto fail;
 
-            /* Duplicate the directory object */
-            memcpy(&djn, &djo, sizeof(FF_DIR));
+    if (!djo.dir) {                     /* Is root dir? */
+        res = FR_NO_FILE;
+    } else {
+        /* Save the object information except name */
+        memcpy(buf, djo.dir + DIR_Attr, 21);
 
-            /* check if new object is exist */
-            res = follow_path(&djn, path_new);
+        /* Duplicate the directory object */
+        memcpy(&djn, &djo, sizeof(FF_DIR));
+
+        /* check if new object is exist */
+        res = follow_path(&djn, path_new);
+        if (res == FR_OK) {
+            /* The new object name is already existing */
+            res = FR_EXIST;
+        } else if (res == FR_NO_FILE) {
+            /*
+             * Is it a valid path and no name collision?
+             * Start critical section that any interruption can cause
+             * a cross-link
+             */
+            res = dir_register(&djn); /* Register the new entry */
             if (res == FR_OK) {
-                /* The new object name is already existing */
-                res = FR_EXIST;
-            } else if (res == FR_NO_FILE) {
-                /*
-                 * Is it a valid path and no name collision?
-                 * Start critical section that any interruption can cause
-                 * a cross-link
-                 */
-                res = dir_register(&djn); /* Register the new entry */
-                if (res == FR_OK) {
-                    dir = djn.dir; /* Copy object information except name */
-                    memcpy(dir + 13, buf + 2, 19);
-                    dir[DIR_Attr] = buf[0] | AM_ARC;
-                    djo.fs->wflag = 1;
-                    if (djo.sclust != djn.sclust &&
-                        (dir[DIR_Attr] & AM_DIR)) {
-                        /* Update .. entry in the directory if needed */
-                        dw = clust2sect(djo.fs, ld_clust(djo.fs, dir));
-                        if (!dw) {
-                            res = FR_INT_ERR;
-                        } else {
-                            res = move_window(djo.fs, dw);
-                            dir = djo.fs->win+SZ_DIR;   /* .. entry */
-                            if (res == FR_OK && dir[1] == '.') {
-                                dw = (djo.fs->fs_type == FS_FAT32 &&
-                                      djn.sclust == djo.fs->dirbase) ?
-                                        0 : djn.sclust;
-                                st_clust(dir, dw);
-                                djo.fs->wflag = 1;
-                            }
+                dir = djn.dir; /* Copy object information except name */
+                memcpy(dir + 13, buf + 2, 19);
+                dir[DIR_Attr] = buf[0] | AM_ARC;
+                djo.fs->wflag = 1;
+                if (djo.sclust != djn.sclust &&
+                    (dir[DIR_Attr] & AM_DIR)) {
+                    /* Update .. entry in the directory if needed */
+                    dw = clust2sect(djo.fs, ld_clust(djo.fs, dir));
+                    if (!dw) {
+                        res = FR_INT_ERR;
+                    } else {
+                        res = move_window(djo.fs, dw);
+                        dir = djo.fs->win+SZ_DIR;   /* .. entry */
+                        if (res == FR_OK && dir[1] == '.') {
+                            dw = (djo.fs->fs_type == FS_FAT32 &&
+                                  djn.sclust == djo.fs->dirbase) ?
+                                    0 : djn.sclust;
+                            st_clust(dir, dw);
+                            djo.fs->wflag = 1;
                         }
                     }
-                    if (res == FR_OK) {
-                        res = dir_remove(&djo); /* Remove old entry */
-                        if (res == FR_OK)
-                            res = sync_fs(djo.fs);
-                    }
                 }
-/* End critical section */
+                if (res == FR_OK) {
+                    res = dir_remove(&djo); /* Remove old entry */
+                    if (res == FR_OK)
+                        res = sync_fs(djo.fs);
+                }
             }
+        /* End critical section */
         }
     }
+
 fail:
     FREE_BUF();
 
@@ -3234,10 +3229,8 @@ fail:
 FRESULT f_getlabel(FATFS * fs, const TCHAR * path, TCHAR * label, DWORD * vsn)
 {
     FRESULT res;
-    FF_DIR dj;
+    FF_DIR dj = { .fs = fs };
     unsigned int i, j;
-
-    dj.fs = fs;
 
     if (lock_fs(dj.fs))
         return FR_TIMEOUT;
@@ -3297,13 +3290,11 @@ FRESULT f_getlabel(FATFS * fs, const TCHAR * path, TCHAR * label, DWORD * vsn)
 FRESULT f_setlabel(FATFS * fs, const TCHAR * label)
 {
     FRESULT res;
-    FF_DIR dj;
+    FF_DIR dj = { .fs = fs };
     uint8_t vn[11] = { 0 };
     unsigned int i, j, sl;
     WCHAR w;
     DWORD tm;
-
-    dj.fs = fs;
 
     if (lock_fs(dj.fs))
         return FR_TIMEOUT;
