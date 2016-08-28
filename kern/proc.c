@@ -1218,7 +1218,6 @@ static int sys_proc_setpriority(__user void * user_args)
 {
     struct _set_priority_args args;
     struct proc_info * p;
-    uid_t p_euid;
 
     if (copyin(user_args, &args, sizeof(args))) {
         set_errno(ESRCH);
@@ -1235,7 +1234,6 @@ static int sys_proc_setpriority(__user void * user_args)
         set_errno(ESRCH);
         return -1;
     }
-    p_euid = p->cred.euid;
 
     if ((args.priority < 0 || curproc->cred.euid != p->cred.euid) &&
         priv_check(&curproc->cred, PRIV_SCHED_SETPRIORITY)) {
