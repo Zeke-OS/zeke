@@ -317,20 +317,19 @@ static int sys_mmap(__user void * user_args)
 {
     struct _shmem_mmap_args args;
     struct buf * bp = NULL;
-    int err, retval;
+    int retval;
 
     if (!useracc(user_args, sizeof(args), VM_PROT_WRITE) ||
-        (err = copyin(user_args, &args, sizeof(args)))) {
+        copyin(user_args, &args, sizeof(args))) {
         retval = -EFAULT;
         goto fail;
     }
 
-    err = shmem_mmap(curproc, (uintptr_t)args.addr, args.bsize, args.prot,
-                     args.flags, args.fildes, args.off, &bp,
-                     (char **)(&args.addr));
-    if (err) {
+    retval = shmem_mmap(curproc, (uintptr_t)args.addr, args.bsize, args.prot,
+                        args.flags, args.fildes, args.off, &bp,
+                        (char **)(&args.addr));
+    if (retval) {
         args.addr = MAP_FAILED;
-        retval = err;
         goto fail;
     }
     if (!bp) {
@@ -347,8 +346,8 @@ static int sys_mmap(__user void * user_args)
 
     retval = 0;
 fail:
-    if (user_args && err != -EFAULT) {
-        err = copyout(&args, user_args, sizeof(args));
+    if (user_args && retval != -EFAULT) {
+        int err = copyout(&args, user_args, sizeof(args));
         if (err) {
             const struct ksignal_param sigparm = { .si_code = SEGV_ACCERR };
 
