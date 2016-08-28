@@ -1,7 +1,7 @@
 /*
  * MIT/X Consortium License
  *
- * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2014 Dimitris Papastamos <sin@2f30.org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -103,13 +103,14 @@ spawn(char *const argv[])
 
     pid = fork();
     if (pid < 0) {
-        perror("fork");
+        perror("sinit:fork");
     } else if (pid == 0) {
         sigprocmask(SIG_UNBLOCK, &set, NULL);
 
         setsid();
         execvp(argv[0], argv);
-        perror("execvp");
+        perror("sinit:execvp");
+        fprintf(stderr, "sinit:exec: %s\n", argv[0]);
         _exit(1);
     }
 }
