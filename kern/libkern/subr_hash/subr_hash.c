@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1982, 1986, 1991, 1993
  *  The Regents of the University of California.  All rights reserved.
  * (c) UNIX System Laboratories, Inc.
@@ -51,10 +51,16 @@ void * hashinit_flags(int elements, unsigned long * hashmask, int flags)
     long hashsize;
     struct generic * hashtbl;
 
-    KASSERT(elements > 0, "bad elements");
+    if (elements <= 0) {
+        KERROR(KERROR_ERR, "%s: Invalid number of elements %d\n",
+               __func__, elements);
+        return NULL;
+    }
     /* Exactly one of HASH_WAITOK and HASH_NOWAIT must be set. */
-    KASSERT((flags & HASH_WAITOK) ^ (flags & HASH_NOWAIT),
-            "Bad flags passed to hashinit_flags");
+    if (!((flags & HASH_WAITOK) ^ (flags & HASH_NOWAIT))) {
+        KERROR(KERROR_ERR, "%s: Bad flags %u", __func__, flags);
+        return NULL;
+    }
 
     for (hashsize = 1; hashsize <= elements; hashsize <<= 1) {
         continue;
@@ -94,7 +100,9 @@ void hashdestroy(void * vhashtbl, unsigned long hashmask)
 
     hashtbl = vhashtbl;
     for (hp = hashtbl; hp <= &hashtbl[hashmask]; hp++) {
-        KASSERT(LIST_EMPTY(hp), "hash not empty");
+        if (!LIST_EMPTY(hp)) {
+            KERROR(KERROR_ERR, "%s: hash not empty", __func__);
+        }
     }
     kfree(hashtbl);
 }

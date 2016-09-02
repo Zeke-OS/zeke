@@ -60,10 +60,10 @@
  * call to hashinit() that allocated the hash table. The argument flags must be
  * used with one of the following values.
  *
- * @warning The hashinit() and phashinit() functions will panic if argument
- *          nelements is less than or equal to zero.
- * @warning The hashdestroy() function will panic if the hash table pointed
- *          to by hashtbl is not empty.
+ * @warning The hashinit() and phashinit() functions will return NULL if
+ *          argument nelements is less than or equal to zero.
+ * @warning The hashdestroy() function will return NULL if the hash table
+ *          pointed to by hashtbl is not empty.
  * @bug     There is no phashdestroy() function, and using hashdestroy() to
  *          free a hash table allocated by phashinit() usually has grave
  *          consequences.
@@ -124,9 +124,6 @@ void * hashinit_flags(int count, unsigned long * hashmask, int flags);
  * Destroy a hash table.
  * The hashdestroy() function frees the space occupied by the hash table
  * pointed to by argument hashtbl.
- *
- * The hashdestroy() function will panic if the hash table pointed to by
- * hashtbl is not empty.
  */
 void hashdestroy(void *, unsigned long);
 
