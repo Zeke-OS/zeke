@@ -2024,6 +2024,7 @@ FRESULT f_mount(FATFS * fs, int vol, uint8_t opt)
 {
     FRESULT res;
 
+    memset(fs, 0, sizeof(*fs));
     fs->fs_type = 0;
     fs->opt = opt;
     mtx_init(&fs->sobj, MTX_TYPE_TICKET, MTX_OPT_PRICEIL);
@@ -2037,8 +2038,7 @@ FRESULT f_mount(FATFS * fs, int vol, uint8_t opt)
 
 FRESULT f_umount(FATFS * fs)
 {
-    fs->fs_type = 0;
-    memset(&fs->sobj, 0, sizeof(fs->sobj));
+    memset(fs, 0, sizeof(*fs));
 
     return FR_OK;
 }
@@ -2383,7 +2383,7 @@ FRESULT f_write(FF_FIL * fp, const void * buff, unsigned int btw,
                            SS(fp->fs));
                     fp->flag &= ~FA__DIRTY;
                 }
-                wcnt = SS(fp->fs) * cc;     /* Number of bytes transferred */
+                wcnt = SS(fp->fs) * cc; /* Number of bytes transferred */
                 continue;
             }
 
