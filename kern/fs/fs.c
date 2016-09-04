@@ -96,7 +96,7 @@ fs_t * fs_by_name(const char * fsname)
 {
     struct fs * fs;
 
-    KASSERT(fsname != NULL, "fsname should be set\n");
+    KASSERT(fsname != NULL, "fsname should be set");
 
     FS_LOCK();
     SLIST_FOREACH(fs, &fs_list_head, _fs_list) {

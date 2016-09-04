@@ -1999,25 +1999,6 @@ static FRESULT prepare_volume(FATFS * fs, int vol)
 }
 
 /**
- * Check if the file/directory object is valid or not.
- * @param obj Pointer to the object FIL/DIR to check validity.
- * @return FR_OK(0): The object is valid, !=0: Invalid.
- */
-static FRESULT access_file(void * obj)
-{
-    KASSERT(obj != NULL, "obj should be non-null");
-
-   /* Assuming offset of .fs in the FIL/DIR structure is identical */
-   FF_FIL * fil = (FF_FIL *)obj;
-
-    if (!fil->fs || !fil->fs->fs_type)
-        return FR_INVALID_OBJECT;
-
-    return FR_OK;
-}
-
-
-/**
  * Mount a Logical Drive
  */
 FRESULT f_mount(FATFS * fs, int vol, uint8_t opt)
@@ -2191,7 +2172,6 @@ fail:
  */
 FRESULT f_read(FF_FIL * fp, void * buff, unsigned int btr, unsigned int * br)
 {
-    FRESULT res;
     DWORD clst, sect, remain;
     unsigned int rcnt, cc;
     uint8_t csect;
@@ -2199,9 +2179,7 @@ FRESULT f_read(FF_FIL * fp, void * buff, unsigned int btr, unsigned int * br)
 
     *br = 0;    /* Clear read byte counter */
 
-    res = access_file(fp);
-    if (res != FR_OK)
-        return res;
+    KASSERT(fp->fs, "fs should be set");
     if (lock_fs(fp->fs))
         return FR_TIMEOUT;
     if (fp->err)                                /* Check error */
@@ -2300,7 +2278,6 @@ FRESULT f_read(FF_FIL * fp, void * buff, unsigned int btr, unsigned int * br)
 FRESULT f_write(FF_FIL * fp, const void * buff, unsigned int btw,
                 unsigned int * bw)
 {
-    FRESULT res;
     DWORD clst, sect;
     unsigned int wcnt, cc;
     const uint8_t * wbuff = (const uint8_t *)buff;
@@ -2308,9 +2285,7 @@ FRESULT f_write(FF_FIL * fp, const void * buff, unsigned int btw,
 
     *bw = 0;    /* Clear write byte counter */
 
-    res = access_file(fp);
-    if (res != FR_OK)
-        return res;
+    KASSERT(fp->fs, "fs should be set");
     if (lock_fs(fp->fs))
         return FR_TIMEOUT;
     if (fp->err)                            /* Check error */
@@ -2428,9 +2403,7 @@ FRESULT f_sync(FF_FIL * fp, int validated)
 #endif
 
     if (!validated) {
-        res = access_file(fp);
-        if (res != FR_OK)
-            return res;
+        KASSERT(fp->fs, "fs should be set");
         if (lock_fs(fp->fs))
             return FR_TIMEOUT;
     }
@@ -2472,11 +2445,9 @@ fail:
  */
 FRESULT f_lseek(FF_FIL * fp, DWORD ofs)
 {
-    FRESULT res;
+    FRESULT res = FR_OK;
 
-    res = access_file(fp);
-    if (res != FR_OK)
-        return res;
+    KASSERT(fp->fs, "fs should be set");
     if (lock_fs(fp->fs))
         return FR_TIMEOUT;
     if (fp->err) { /* Check error */
@@ -2711,12 +2682,10 @@ fail:
  */
 FRESULT f_readdir(FF_DIR * dp, FILINFO * fno)
 {
-    FRESULT res;
+    FRESULT res = FR_OK;
     DEF_NAMEBUF;
 
-    res = access_file(dp);
-    if (res != FR_OK)
-        return res;
+    KASSERT(dp->fs, "fs should be set");
     if (lock_fs(dp->fs))
         return FR_TIMEOUT;
 
@@ -2861,14 +2830,12 @@ fail:
  */
 FRESULT f_truncate(FF_FIL * fp)
 {
-    FRESULT res;
+    FRESULT res = FR_OK;
     DWORD ncl;
 
-    res = access_file(fp);
-    if (res != FR_OK) {
-        if (lock_fs(fp->fs))
-            return FR_TIMEOUT;
-    }
+    KASSERT(fp->fs, "fs should be set");
+    if (lock_fs(fp->fs))
+        return FR_TIMEOUT;
     if (fp->err) { /* Check error */
         res = (FRESULT)fp->err;
     } else {
