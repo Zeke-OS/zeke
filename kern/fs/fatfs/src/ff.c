@@ -249,15 +249,23 @@
 #if _DF1S       /* Code page is DBCS */
 
 #ifdef _DF2S    /* Two 1st byte areas */
-#define IsDBCS1(c)  (((uint8_t)(c) >= _DF1S && (uint8_t)(c) <= _DF1E) || ((uint8_t)(c) >= _DF2S && (uint8_t)(c) <= _DF2E))
+#define IsDBCS1(c) \
+    (((uint8_t)(c) >= _DF1S && (uint8_t)(c) <= _DF1E) || \
+     ((uint8_t)(c) >= _DF2S && (uint8_t)(c) <= _DF2E))
 #else           /* One 1st byte area */
-#define IsDBCS1(c)  ((uint8_t)(c) >= _DF1S && (uint8_t)(c) <= _DF1E)
+#define IsDBCS1(c)  \
+    ((uint8_t)(c) >= _DF1S && (uint8_t)(c) <= _DF1E)
 #endif
 
 #ifdef _DS3S    /* Three 2nd byte areas */
-#define IsDBCS2(c)  (((uint8_t)(c) >= _DS1S && (uint8_t)(c) <= _DS1E) || ((uint8_t)(c) >= _DS2S && (uint8_t)(c) <= _DS2E) || ((uint8_t)(c) >= _DS3S && (uint8_t)(c) <= _DS3E))
+#define IsDBCS2(c)  \
+    (((uint8_t)(c) >= _DS1S && (uint8_t)(c) <= _DS1E) || \
+     ((uint8_t)(c) >= _DS2S && (uint8_t)(c) <= _DS2E) || \
+     ((uint8_t)(c) >= _DS3S && (uint8_t)(c) <= _DS3E))
 #else           /* Two 2nd byte areas */
-#define IsDBCS2(c)  (((uint8_t)(c) >= _DS1S && (uint8_t)(c) <= _DS1E) || ((uint8_t)(c) >= _DS2S && (uint8_t)(c) <= _DS2E))
+#define IsDBCS2(c)  \
+    (((uint8_t)(c) >= _DS1S && (uint8_t)(c) <= _DS1E) || \
+     ((uint8_t)(c) >= _DS2S && (uint8_t)(c) <= _DS2E))
 #endif
 
 #else           /* Code page is SBCS */
@@ -524,7 +532,7 @@ DWORD get_fat(FATFS * fs, DWORD clst)
         return 1;
 
     switch (fs->fs_type) {
-    case FS_FAT12 :
+    case FS_FAT12:
         bc = (unsigned int)clst; bc += bc / 2;
         if (move_window(fs, fs->fatbase + (bc / SS(fs))))
             break;
@@ -534,13 +542,13 @@ DWORD get_fat(FATFS * fs, DWORD clst)
         wc |= fs->win[bc % SS(fs)] << 8;
         return clst & 1 ? wc >> 4 : (wc & 0xFFF);
 
-    case FS_FAT16 :
+    case FS_FAT16:
         if (move_window(fs, fs->fatbase + (clst / (SS(fs) / 2))))
             break;
         p = &fs->win[clst * 2 % SS(fs)];
         return LD_WORD(p);
 
-    case FS_FAT32 :
+    case FS_FAT32:
         if (move_window(fs, fs->fatbase + (clst / (SS(fs) / 4))))
             break;
         p = &fs->win[clst * 4 % SS(fs)];
@@ -570,7 +578,7 @@ FRESULT put_fat(FATFS * fs, DWORD clst, DWORD val)
     }
 
     switch (fs->fs_type) {
-    case FS_FAT12 :
+    case FS_FAT12:
         bc = (unsigned int)clst; bc += bc / 2;
         res = move_window(fs, fs->fatbase + (bc / SS(fs)));
         if (res != FR_OK)
@@ -587,7 +595,7 @@ FRESULT put_fat(FATFS * fs, DWORD clst, DWORD val)
                           ((*p & 0xF0) | ((uint8_t)(val >> 8) & 0x0F));
         break;
 
-    case FS_FAT16 :
+    case FS_FAT16:
         res = move_window(fs, fs->fatbase + (clst / (SS(fs) / 2)));
         if (res != FR_OK)
             break;
@@ -595,7 +603,7 @@ FRESULT put_fat(FATFS * fs, DWORD clst, DWORD val)
         ST_WORD(p, (WORD)val);
         break;
 
-    case FS_FAT32 :
+    case FS_FAT32:
         res = move_window(fs, fs->fatbase + (clst / (SS(fs) / 4)));
         if (res != FR_OK)
             break;
@@ -604,7 +612,7 @@ FRESULT put_fat(FATFS * fs, DWORD clst, DWORD val)
         ST_DWORD(p, val);
         break;
 
-    default :
+    default:
         res = FR_INT_ERR;
     }
 
@@ -715,10 +723,11 @@ static DWORD create_chain(FATFS * fs, DWORD clst)
 
     res = put_fat(fs, ncl, 0x0FFFFFFF); /* Mark the new cluster "last link" */
     if (res == FR_OK && clst != 0) {
-        res = put_fat(fs, clst, ncl);   /* Link it to the previous one if needed */
+        /* Link it to the previous one if needed */
+        res = put_fat(fs, clst, ncl);
     }
     if (res == FR_OK) {
-        fs->last_clust = ncl;           /* Update FSINFO */
+        fs->last_clust = ncl; /* Update FSINFO */
         if (fs->free_clust != 0xFFFFFFFF) {
             fs->free_clust--;
             fs->fsi_flag |= 1;
@@ -742,14 +751,18 @@ static DWORD clmt_clust(FF_FIL * fp, DWORD ofs)
     DWORD cl, ncl;
     DWORD * tbl;
 
-    tbl = fp->cltbl + 1;    /* Top of CLMT */
-    cl = ofs / SS(fp->fs) / fp->fs->csize;  /* Cluster order from top of the file */
+    /* Top of CLMT */
+    tbl = fp->cltbl + 1;
+
+    /* Cluster order from top of the file */
+    cl = ofs / SS(fp->fs) / fp->fs->csize;
+
     for (;;) {
         ncl = *tbl++; /* Number of cluters in the fragment */
         if (!ncl)
             return 0; /* End of table? (error) */
         if (cl < ncl)
-            break;    /* In this fragment? */
+            break; /* In this fragment? */
         cl -= ncl; tbl++; /* Next fragment */
     }
     return cl + *tbl; /* Return the cluster number */
@@ -972,6 +985,7 @@ static int cmp_lfn(WCHAR * lfnbuf, uint8_t * dir)
 
     i = ((dir[LDIR_Ord] & ~LLE) - 1) * 13;  /* Get offset in the LFN buffer */
     s = 0; wc = 1;
+    /* Repeat until all characters in the entry are checked */
     do {
         /* Pick an LFN character from the entry */
         uc = LD_WORD(dir + LfnOfs[s]);
@@ -986,7 +1000,7 @@ static int cmp_lfn(WCHAR * lfnbuf, uint8_t * dir)
             if (uc != 0xFFFF)
                 return 0; /* Check filler */
         }
-    } while (++s < 13); /* Repeat until all characters in the entry are checked */
+    } while (++s < 13);
 
     if ((dir[LDIR_Ord] & LLE) && wc && lfnbuf[i]) {
         /* Last segment matched but different length */
@@ -1009,21 +1023,23 @@ static int pick_lfn(WCHAR * lfnbuf, uint8_t * dir)
 
     s = 0; wc = 1;
     do {
-        uc = LD_WORD(dir + LfnOfs[s]); /* Pick an LFN character from the entry */
-        if (wc) {   /* Last character has not been processed */
+        /* Pick an LFN character from the entry */
+        uc = LD_WORD(dir + LfnOfs[s]);
+
+        if (wc) { /* Last character has not been processed */
             if (i >= _MAX_LFN)
-                return 0;    /* Buffer overflow? */
-            lfnbuf[i++] = wc = uc;          /* Store it */
+                return 0; /* Buffer overflow? */
+            lfnbuf[i++] = wc = uc; /* Store it */
         } else {
             if (uc != 0xFFFF)
-                return 0;     /* Check filler */
+                return 0; /* Check filler */
         }
     } while (++s < 13); /* Read all character in the entry */
 
     if (dir[LDIR_Ord] & LLE) {
         /* Put terminator if it is the last LFN part */
         if (i >= _MAX_LFN)
-            return 0;        /* Buffer overflow? */
+            return 0; /* Buffer overflow? */
         lfnbuf[i] = 0;
     }
 
@@ -1317,7 +1333,7 @@ static FRESULT dir_register(FF_DIR * dp)
 
     if (sn[NS] & NS_LFN) {
         /* When LFN is to be created, allocate entries for an SFN + LFNs. */
-        for (n = 0; lfn[n]; n++) ;
+        for (n = 0; lfn[n]; n++);
         nent = (n + 25) / 13;
     } else {
         /* Otherwise allocate an entry for an SFN  */
@@ -1365,7 +1381,7 @@ static FRESULT dir_register(FF_DIR * dp)
  * @param dp Directory object pointing the entry to be removed.
  * @return FR_OK: Successful, FR_DISK_ERR: A disk error.
  */
-static FRESULT dir_remove (FF_DIR * dp)
+static FRESULT dir_remove(FF_DIR * dp)
 {
     FRESULT res;
 #if configFATFS_LFN    /* LFN configuration */
@@ -1501,11 +1517,12 @@ static void get_fileinfo(FF_DIR * dp, FILINFO * fno)
  * @param dp Pointer to the directory object.
  * @param path Pointer to pointer to the segment in the path string.
  */
-static FRESULT create_name (FF_DIR * dp, const TCHAR ** path)
+static FRESULT create_name(FF_DIR * dp, const TCHAR ** path)
 {
 #if configFATFS_LFN    /* LFN configuration */
     uint8_t b, cf;
-    WCHAR w, * lfn;
+    WCHAR w;
+    WCHAR * lfn;
     unsigned int i, ni, si, di;
     const TCHAR * p;
 
@@ -1540,12 +1557,13 @@ static FRESULT create_name (FF_DIR * dp, const TCHAR ** path)
         /* Reject illegal characters for LFN */
         if (w < 0x80 && kstrchr("\"*:<>\?|\x7F", w))
             return FR_INVALID_NAME;
-        lfn[di++] = w;                  /* Store the Unicode character */
+        lfn[di++] = w; /* Store the Unicode character */
     }
-    *path = &p[si];                     /* Return pointer to the next segment */
-    cf = (w < ' ') ? NS_LAST : 0;       /* Set last segment flag if end of path */
+    *path = &p[si]; /* Return pointer to the next segment */
+    cf = (w < ' ') ? NS_LAST : 0; /* Set last segment flag if end of path */
 
-    while (di) {                        /* Strip trailing spaces and dots */
+    /* Strip trailing spaces and dots */
+    while (di) {
         w = lfn[di-1];
         if (w != ' ' && w != '.')
             break;
@@ -1558,7 +1576,10 @@ static FRESULT create_name (FF_DIR * dp, const TCHAR ** path)
 
     /* Create SFN in directory form */
     memset(dp->fn, ' ', 11);
-    for (si = 0; lfn[si] == ' ' || lfn[si] == '.'; si++) ;  /* Strip leading spaces and dots */
+
+    /* Strip leading spaces and dots */
+    for (si = 0; lfn[si] == ' ' || lfn[si] == '.'; si++);
+
     if (si)
         cf |= NS_LOSS | NS_LFN;
     while (di && lfn[di - 1] != '.')
@@ -1591,10 +1612,11 @@ static FRESULT create_name (FF_DIR * dp, const TCHAR ** path)
         if (w >= 0x80) {                /* Non ASCII character */
 #ifdef _EXCVT
             w = ff_convert(w, 0);       /* Unicode -> OEM code */
-            if (w)
-                w = ExCvt[w - 0x80]; /* Convert extended character to upper (SBCS) */
+            if (w) /* Convert extended character to upper (SBCS) */
+                w = ExCvt[w - 0x80];
 #else
-            w = ff_convert(ff_wtoupper(w), 0);  /* Upper converted Unicode -> OEM code */
+            /* Upper converted Unicode -> OEM code */
+            w = ff_convert(ff_wtoupper(w), 0);
 #endif
             cf |= NS_LFN;               /* Force create LFN entry */
         }
@@ -1608,7 +1630,8 @@ static FRESULT create_name (FF_DIR * dp, const TCHAR ** path)
             }
             dp->fn[i++] = (uint8_t)(w >> 8);
         } else {                        /* Single byte character */
-            if (!w || kstrchr("+,;=[]", w)) {   /* Replace illegal characters for SFN */
+            /* Replace illegal characters for SFN */
+            if (!w || kstrchr("+,;=[]", w)) {
                 w = '_';
                 cf |= NS_LOSS | NS_LFN;     /* Lossy conversion */
             } else {
@@ -1640,7 +1663,10 @@ static FRESULT create_name (FF_DIR * dp, const TCHAR ** path)
         cf |= NS_LFN;
     }
     if (!(cf & NS_LFN)) {
-        /* When LFN is in 8.3 format without extended character, NT flags are created */
+        /*
+         * When LFN is in 8.3 format without extended character, NT flags are
+         * created.
+         */
         if ((b & 0x03) == 0x01)
             cf |= NS_EXT;   /* NT flag (Extension has only small capital) */
         if ((b & 0x0C) == 0x04)
@@ -1859,13 +1885,15 @@ static FRESULT prepare_volume(FATFS * fs, int vol)
         return FR_DISK_ERR;
     }
 
-    /* Load sector 0 and check if it is an FAT boot sector as SFD */
+    /* Load sector 0 and check if it is an FAT boot sector as SFD. */
     ferr = check_fs(fs);
     if (ferr != FR_OK) {
         return ferr;
     }
 
-    /* An FAT volume is found. Following code initializes the file system object */
+    /*
+     * A FAT volume is found. Following code initializes the file system object
+     */
 
     if (LD_WORD(fs->win + BPB_BytsPerSec) != SS(fs)) {
         /* (BPB_BytsPerSec must be equal to the physical sector size) */
@@ -2184,7 +2212,7 @@ FRESULT f_read(FF_FIL * fp, void * buff, unsigned int btr, unsigned int * br)
     if (btr > remain)
         btr = (unsigned int)remain;       /* Truncate btr by remaining bytes */
 
-    for ( ;  btr;                               /* Repeat until all data read */
+    for (; btr;                                 /* Repeat until all data read */
         rbuff += rcnt, fp->fptr += rcnt, *br += rcnt, btr -= rcnt) {
         if ((fp->fptr % SS(fp->fs)) == 0) {     /* On the sector boundary? */
             /* Sector offset in the cluster */
@@ -2292,8 +2320,8 @@ FRESULT f_write(FF_FIL * fp, const void * buff, unsigned int btw,
     if (fp->fptr + btw < fp->fptr)
         btw = 0; /* File size cannot reach 4GB */
 
-    for ( ;  btw;                           /* Repeat until all data written */
-        wbuff += wcnt, fp->fptr += wcnt, *bw += wcnt, btw -= wcnt) {
+    for (; btw;                             /* Repeat until all data written */
+         wbuff += wcnt, fp->fptr += wcnt, *bw += wcnt, btw -= wcnt) {
         if ((fp->fptr % SS(fp->fs)) == 0) { /* On the sector boundary? */
             /* Sector offset in the cluster */
             csect = (uint8_t)(fp->fptr / SS(fp->fs) & (fp->fs->csize - 1));
@@ -2349,7 +2377,7 @@ FRESULT f_write(FF_FIL * fp, const void * buff, unsigned int btw,
                 if (fp->dsect - sect < cc) {
                     /*
                      * Refill sector cache if it gets invalidated by the direct
-                     * write
+                     * write.
                      */
                     memcpy(fp->buf, wbuff + ((fp->dsect - sect) * SS(fp->fs)),
                            SS(fp->fs));

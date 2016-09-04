@@ -212,7 +212,7 @@ uint32_t fatfs_time_get_time(void);
 WCHAR ff_convert(WCHAR chr, unsigned int dir); /* OEM-Unicode bidirectional conversion */
 WCHAR ff_wtoupper(WCHAR chr);           /* Unicode upper-case conversion */
                                         /* Memory functions */
-void* ff_memalloc(unsigned int msize);          /* Allocate memory block */
+void * ff_memalloc(unsigned int msize); /* Allocate memory block */
 void ff_memfree(void* mblock);          /* Free memory block */
 #endif
 
