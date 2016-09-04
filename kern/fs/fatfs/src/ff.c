@@ -1840,18 +1840,23 @@ static FRESULT check_fs(FATFS * fs)
     return FR_NO_FILESYSTEM;
 }
 
+enum access_volume_mode {
+    ACCVOL_READ,
+    ACCVOL_WRITE
+};
+
 /**
  * Check access permissions to a logical drive.
  * @param wmode !=0: Check write protection for write access.
  * @return FR_OK(0): successful, !=0: any error occurred.
  */
-static FRESULT access_volume(FATFS * fs, uint8_t wmode)
+static FRESULT access_volume(FATFS * fs, enum access_volume_mode mode)
 {
     if (fs->fs_type == 0) /* If the volume has been mounted */
         return FR_DISK_ERR;
 
     /* Check write protection if needed */
-    if ((wmode & FA_WRITE) && (fs->opt & FATFS_READONLY))
+    if (mode == ACCVOL_WRITE && (fs->opt & FATFS_READONLY))
         return FR_WRITE_PROTECTED;
 
     return FR_OK; /* The file system object is valid */
@@ -2046,12 +2051,13 @@ FRESULT f_open(FF_FIL * fp, FATFS * fs, const TCHAR * path, uint8_t mode)
     if (!(fs->opt & FATFS_READONLY)) {
         mode &= FA_READ | FA_WRITE | FA_CREATE_ALWAYS | FA_OPEN_ALWAYS |
                 FA_CREATE_NEW;
-        res = access_volume(dj.fs, (uint8_t)(mode & ~FA_READ));
     } else {
         mode &= FA_READ;
-
-        res = access_volume(dj.fs, 0);
     }
+    res = access_volume(dj.fs,
+                        ((mode & (FA_WRITE | FA_CREATE_ALWAYS |
+                                            FA_CREATE_NEW)) != 0) ?
+                        ACCVOL_WRITE : ACCVOL_READ);
     if (res != FR_OK)
         goto fail;
 
@@ -2640,7 +2646,7 @@ FRESULT f_opendir(FF_DIR * dp, FATFS * fs, const TCHAR * path)
 
     if (lock_fs(fs))
         return FR_TIMEOUT;
-    res = access_volume(fs, 0);
+    res = access_volume(fs, ACCVOL_READ);
     if (res != FR_OK)
         goto fail;
 
@@ -2724,7 +2730,7 @@ FRESULT f_stat(FATFS * fs, const TCHAR * path, FILINFO * fno)
     if (lock_fs(dj.fs))
         return FR_TIMEOUT;
 
-    res = access_volume(dj.fs, 0);
+    res = access_volume(dj.fs, ACCVOL_READ);
     if (res != FR_OK)
         goto fail;
 
@@ -2764,7 +2770,7 @@ FRESULT f_getfree(FATFS * fs, DWORD * nclst)
         return FR_TIMEOUT;
 
     /* Get logical drive number */
-    res = access_volume(fs, 0);
+    res = access_volume(fs, ACCVOL_READ);
     if (res != FR_OK)
         goto fail;
 
@@ -2898,7 +2904,7 @@ FRESULT f_unlink(FATFS * fs, const TCHAR * path)
     if (lock_fs(dj.fs))
         return FR_TIMEOUT;
 
-    res = access_volume(dj.fs, 1);
+    res = access_volume(dj.fs, ACCVOL_WRITE);
     if (res != FR_OK)
         goto fail;
 
@@ -2966,7 +2972,7 @@ FRESULT f_mkdir(FATFS * fs, const TCHAR * path)
     if (lock_fs(dj.fs))
         return FR_TIMEOUT;
 
-    res = access_volume(dj.fs, 1);
+    res = access_volume(dj.fs, ACCVOL_WRITE);
     if (res != FR_OK)
         goto fail;
 
@@ -3053,7 +3059,7 @@ FRESULT f_chmod(FATFS * fs, const TCHAR * path, uint8_t value, uint8_t mask)
     if (lock_fs(dj.fs))
         return FR_TIMEOUT;
 
-    res = access_volume(dj.fs, 1);
+    res = access_volume(dj.fs, ACCVOL_WRITE);
     if (res != FR_OK)
         goto fail;
 
@@ -3096,7 +3102,7 @@ FRESULT f_utime(FATFS * fs, const TCHAR * path, const struct timespec * ts)
     if (lock_fs(dj.fs))
         return FR_TIMEOUT;
 
-    res = access_volume(dj.fs, 1);
+    res = access_volume(dj.fs, ACCVOL_WRITE);
     if (res != FR_OK)
         goto fail;
 
@@ -3140,7 +3146,7 @@ FRESULT f_rename(FATFS * fs, const TCHAR * path_old, const TCHAR * path_new)
     if (lock_fs(djo.fs))
         return FR_TIMEOUT;
 
-    res = access_volume(djo.fs, 1);
+    res = access_volume(djo.fs, ACCVOL_WRITE);
     if (res != FR_OK)
         goto fail;
 
@@ -3225,7 +3231,7 @@ FRESULT f_getlabel(FATFS * fs, const TCHAR * path, TCHAR * label, DWORD * vsn)
     if (lock_fs(dj.fs))
         return FR_TIMEOUT;
 
-    res = access_volume(dj.fs, 0);
+    res = access_volume(dj.fs, ACCVOL_READ);
 
     /* Get volume label */
     if (res == FR_OK && label) {
@@ -3289,7 +3295,7 @@ FRESULT f_setlabel(FATFS * fs, const TCHAR * label)
     if (lock_fs(dj.fs))
         return FR_TIMEOUT;
 
-    res = access_volume(dj.fs, 1);
+    res = access_volume(dj.fs, ACCVOL_WRITE);
     if (res)
         return LEAVE_FF(dj.fs, res);
 
