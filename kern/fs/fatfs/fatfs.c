@@ -460,7 +460,7 @@ static void finalize_inode(vnode_t * vnode)
      */
     if (vnode->vn_len >= 0) {
         if (!S_ISDIR(vnode->vn_mode))
-            f_sync(&in->fp, 0);
+            f_sync(&in->fp);
     }
 
     kfree(in->in_fpath);
@@ -502,7 +502,7 @@ static int fatfs_delete_vnode(vnode_t * vnode)
 
     if (vrefcnt(vnode) > 0) {
         if (!S_ISDIR(vnode->vn_mode))
-            f_sync(&in->fp, 0);
+            f_sync(&in->fp);
     } else {
         finalize_inode(vnode);
         /* Recycle the inode */
@@ -528,7 +528,7 @@ static void fatfs_event_file_closed(struct proc_info * p, file_t * file)
     /*
      * Sync on close.
      */
-    f_sync(&in->fp, 0);
+    f_sync(&in->fp);
 
     atomic_dec(&in->open_count);
 }

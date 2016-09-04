@@ -2130,16 +2130,13 @@ FRESULT f_open(FF_FIL * fp, FATFS * fs, const TCHAR * path, uint8_t mode)
             fp->dir_sect = dj.fs->winsect;
             fp->dir_ptr = dir;
         }
-    } else { /* RO fs */
-        if (res == FR_OK) {
-            /* Follow succeeded */
-            dir = dj.dir;
-            if (!dir) {                     /* Current directory itself */
-                res = FR_INVALID_NAME;
-            } else {
-                if (dir[DIR_Attr] & AM_DIR) /* It is a directory */
-                    res = FR_NO_FILE;
-            }
+    } else if (res == FR_OK) { /* RO fs */
+        /* Follow succeeded */
+        dir = dj.dir;
+        if (!dir) {                     /* Current directory itself */
+            res = FR_INVALID_NAME;
+        } else if (dir[DIR_Attr] & AM_DIR) { /* It is a directory */
+            res = FR_NO_FILE;
         }
     }
 
@@ -2392,27 +2389,27 @@ FRESULT f_write(FF_FIL * fp, const void * buff, unsigned int btw,
  * Synchronize the File.
  * @param fp Pointer to the file object.
  */
-FRESULT f_sync(FF_FIL * fp, int validated)
+FRESULT f_sync(FF_FIL * fp)
 {
-    FRESULT res = FR_OK;
+    FRESULT res;
     DWORD tm;
     uint8_t * dir;
 
 #ifdef configFATFS_DEBUG
-    KERROR(KERROR_DEBUG, "%s(fp %p, validated %d)\n", __func__, fp, validated);
+    KERROR(KERROR_DEBUG, "%s(fp %p)\n", __func__, fp);
 #endif
 
-    if (!validated) {
-        KASSERT(fp->fs, "fs should be set");
-        if (lock_fs(fp->fs))
-            return FR_TIMEOUT;
-    }
+    KASSERT(fp->fs, "fs should be set");
+    if (lock_fs(fp->fs))
+        return FR_TIMEOUT;
 
-    if (fp->flag & FA__WRITTEN) {   /* Has the file been written? */
+    if (fp->flag & FA__WRITTEN) { /* Has the file been written? */
         /* Write-back dirty buffer */
         if (fp->flag & FA__DIRTY) {
-            if (fatfs_disk_write(fp->fs->drv, fp->buf, fp->dsect, SS(fp->fs)))
-                return LEAVE_FF(fp->fs, FR_DISK_ERR);
+            if (fatfs_disk_write(fp->fs->drv, fp->buf, fp->dsect, SS(fp->fs))) {
+                res = FR_DISK_ERR;
+                goto fail;
+            }
             fp->flag &= ~FA__DIRTY;
         }
 
@@ -2434,6 +2431,7 @@ FRESULT f_sync(FF_FIL * fp, int validated)
         res = sync_fs(fp->fs);
     }
 
+    res = FR_OK;
 fail:
     return LEAVE_FF(fp->fs, res);
 }

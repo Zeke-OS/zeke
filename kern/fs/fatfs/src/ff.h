@@ -172,7 +172,7 @@ FRESULT f_write(FF_FIL * fp, const void * buff, unsigned int btw,
                 unsigned int * bw);
 FRESULT f_lseek(FF_FIL * fp, DWORD ofs);
 FRESULT f_truncate(FF_FIL * fp);
-FRESULT f_sync(FF_FIL * fp, int validated);
+FRESULT f_sync(FF_FIL * fp);
 FRESULT f_opendir(FF_DIR * dp, FATFS * fs, const TCHAR * path);
 FRESULT f_readdir(FF_DIR * dp, FILINFO * fno);
 FRESULT f_mkdir(FATFS * fs, const TCHAR * path);
