@@ -213,7 +213,7 @@ menu "Generic"
 
 config configTIMERS_MAX
     int "Maximum number of kernel timers"
-    default 16
+    default 128
     range 15 65535
     ---help---
     Maximum number of kernel timers available.

@@ -14,7 +14,7 @@ config configCOMMON_CCFLAGS
 
 config configKERNEL_CCFLAGS
     string "Kernel CCFLAGS"
-    default "-g -Wundef -Wextra -Wno-unused-parameter"
+    default "-ggdb -Wundef -Wextra -Wno-unused-parameter"
     ---help---
     CCFLAGS used for kernel build.
 
