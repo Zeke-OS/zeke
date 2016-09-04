@@ -66,7 +66,7 @@ typedef struct {
     WORD    n_rootdir;      /* Number of root directory entries (FAT12/16) */
     WORD    ssize;          /* uint8_ts per sector (512, 1024, 2048 or 4096) */
     mtx_t   sobj;           /* Identifier of sync object */
-    int     readonly;       /* Set if the file system is read-only */
+    unsigned opt;           /* fs mount options */
     DWORD   last_clust;     /* Last allocated cluster */
     DWORD   free_clust;     /* Number of free clusters */
     DWORD   n_fatent;       /* Number of FAT entries, = number of clusters + 2 */
@@ -84,12 +84,11 @@ typedef struct {
 
 typedef struct {
     FATFS*  fs;             /* Pointer to the related file system object (**do not change order**) */
-    WORD    id;             /* Owner file system mount ID (**do not change order**) */
+    uint64_t ino;           /* Emulated ino */
     uint8_t flag;           /* Status flags */
     uint8_t err;            /* Abort flag (error code) */
     DWORD   fptr;           /* File read/write pointer (Zeroed on file open) */
     DWORD   fsize;          /* File size */
-    uint64_t ino;           /* Emulated ino */
     DWORD   sclust;         /* File start cluster (0:no cluster chain, always 0 when fsize is 0) */
     DWORD   clust;          /* Current cluster of fpter (not valid when fprt is 0) */
     DWORD   dsect;          /* Sector number appearing in buf[] (0:invalid) */
@@ -107,9 +106,8 @@ typedef struct {
 
 typedef struct {
     FATFS*  fs;             /* Pointer to the owner file system object (**do not change order**) */
-    WORD    id;             /* Owner file system mount ID (**do not change order**) */
-    WORD    index;          /* Current read/write index number */
     uint64_t ino;           /* Emulated ino */
+    WORD    index;          /* Current read/write index number */
     DWORD   sclust;         /* Table start cluster (0:Root dir) */
     DWORD   clust;          /* Current cluster */
     DWORD   sect;           /* Current sector */
