@@ -417,6 +417,8 @@ int fs_namei_proc(vnode_t ** result, int fd, const char * path, int atflags)
     if (path[0] == '/') { /* Absolute path */
         path++;
         start = curproc->croot;
+
+        /* Short circuit: Caller requested '/' */
         if (path[0] == '\0') {
             *result = start;
             vref(start);
@@ -430,6 +432,15 @@ int fs_namei_proc(vnode_t ** result, int fd, const char * path, int atflags)
         if (!file)
             return -EBADF;
         start = file->vnode;
+
+        /* Short circuit: Caller requested '.' and AT_FDARG */
+        if (path[0] == '.' && path[1] == '\0') {
+            *result = start;
+            vref(start);
+            fs_fildes_ref(curproc->files, fd, -1);
+
+            return 0;
+        }
     } else { /* Implicit AT_FDCWD */
         start = curproc->cwd;
     }
