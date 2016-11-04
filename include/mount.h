@@ -38,6 +38,7 @@
 #ifndef MOUNT_H
 #define MOUNT_H
 
+/* These must be in sync with ST_ macros defined in sys/statvfs.h */
 #define MNT_RDONLY      0x0001 /*!< Read only. */
 #define MNT_SYNCHRONOUS 0x0002 /*!< Synchronous writes. */
 #define MNT_ASYNC       0x0040 /*!< Asynchronous writes. */

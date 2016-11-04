@@ -1,12 +1,10 @@
 /**
  *******************************************************************************
- * @file    types.h
+ * @file    statvfs.c
  * @author  Olli Vanhoja
- * @brief   Types.
+ * @brief   Filesystem status functions.
  * @section LICENSE
- * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2012, 2013 Ninjaware Oy,
- *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+ * Copyright (c) 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,47 +28,22 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************
- */
+*/
 
-#ifndef TYPES_H
-#define TYPES_H
+#define __SYSCALL_DEFS__
+#include <string.h>
+#include <sys/statvfs.h>
+#include <syscall.h>
 
-#include <stddef.h>
-#include <stdint.h>
+statvfs(const char * restrict path, struct statvfs * restrict buf)
+{
+    struct _fs_stat_args args = {
+        .fd = AT_FDCWD,
+        .path = path,
+        .path_len = strlen(path) + 1,
+        .buf = buf,
+        .flags = 0
+    };
 
-typedef size_t blkcnt_t; /*!< Used for file block counts. */
-typedef int blksize_t; /*!< Used for block sizes. */
-#include <sys/types/_clock_t.h>
-#include <sys/types/_clockid_t.h>
-typedef uint32_t dev_t; /*!< Device identifier */
-#include <sys/types/_fsblkcnt_t.h>
-#include <sys/types/_fsfilcnt_t.h>
-#include <sys/types/_uid_t.h>
-#include <sys/types/_gid_t.h>
-#include <sys/types/_id_t.h>
-typedef uint64_t ino_t; /*!< Used for file serial numbers.*/
-typedef uint32_t key_t; /*!< Used for XSI interprocess communication. */
-typedef uint32_t fflags_t;     /*!< file flags */
-#include <sys/types/_mode_t.h>
-typedef int nlink_t; /*!< Used for link counts. */
-#include <sys/types/_off_t.h>
-#ifndef _UOFF_T_DECLARED
-#define _UOFF_T_DECLARED
-typedef uint64_t uoff_t;
-#endif
-#include <sys/types/_pid_t.h>
-#include <sys/types/_ssize_t.h>
-#include <sys/types/_time_t.h>
-#include <sys/types/_useconds_t.h>
-#include <sys/types/_suseconds_t.h>
-#include <sys/types/_timer_t.h>
-
-/* TODO Missing types:
- * - trace_attr_t
- * - trace_event_id_t
- * - trace_event_set_t
- * - trace_id_t
- * -
- */
-
-#endif /* TYPES_H */
+    return syscall(SYSCALL_FS_STATFS, &args);
+}

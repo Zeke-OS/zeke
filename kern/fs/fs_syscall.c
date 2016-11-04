@@ -32,6 +32,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <sys/statvfs.h>
 #include <sys/types.h>
 #include <mount.h>
 #include <dirent.h>
@@ -557,7 +558,7 @@ out:
     return retval;
 }
 
-static int sys_filestat(__user void * user_args)
+static int sys_statfile(__user void * user_args)
 {
     struct _fs_stat_args * args = NULL;
     vnode_autorele vnode_t * vnode = NULL;
@@ -650,6 +651,53 @@ out:
     copyout(&stat_buf, (__user struct stat *)args->buf, sizeof(struct stat));
     freecpystruct(args);
 
+    return retval;
+}
+
+static int sys_statfs(__user void * user_args)
+{
+    struct _fs_statfs_args * args = NULL;
+    vnode_autorele vnode_t * vnode = NULL;
+    struct statvfs st;
+    int err, retval = -1;
+
+    err = copyinstruct(user_args, (void **)(&args),
+            sizeof(struct _fs_statfs_args),
+            GET_STRUCT_OFFSETS(struct _fs_statfs_args,
+                path, path_len));
+    if (err) {
+        set_errno(-err);
+        goto out;
+    }
+
+    if (!strvalid(args->path, args->path_len)) {
+        set_errno(ENAMETOOLONG);
+        goto out;
+    }
+
+    if (!useracc((__user void *)args->buf, sizeof(struct statvfs),
+                 VM_PROT_WRITE)) {
+        set_errno(EFAULT);
+        goto out;
+    }
+
+    err = fs_namei_proc(&vnode, args->fd, args->path, AT_FDARG);
+    if (err) {
+        set_errno(-err);
+        goto out;
+    }
+
+    /* TODO Populate statvfs struct */
+    memset(&st, 0, sizeof(st));
+    st = (struct statvfs){
+        .f_flag = vnode->sb->mode_flags,
+    };
+
+    copyout(&st, (__user void *)args->buf, sizeof(struct statvfs));
+
+    retval = 0;
+out:
+    freecpystruct(args);
     return retval;
 }
 
@@ -900,7 +948,8 @@ static const syscall_handler_t fs_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_UNLINK, sys_unlink),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_MKDIR, sys_mkdir),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_RMDIR, sys_rmdir),
-    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_STAT, sys_filestat),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_STAT, sys_statfile),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_STATFS, sys_statfs),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_ACCESS, sys_access),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_UTIMES, sys_utimes),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_CHMOD, sys_chmod),
