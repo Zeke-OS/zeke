@@ -168,7 +168,7 @@ out:
 
 static int sys_open(__user void * user_args)
 {
-    struct _fs_open_args * args = 0;
+    struct _fs_open_args * args = NULL;
     vnode_autorele vnode_t * vn_file = NULL;
     int err, fd, retval = -1;
 
@@ -655,10 +655,10 @@ out:
 
 static int sys_access(__user void * user_args)
 {
-    struct _fs_access_args * args = 0;
+    struct _fs_access_args * args = NULL;
     vnode_autorele vnode_t * vnode = NULL;
     struct cred tmp_cred;
-    int err;
+    int err, retval = -1;
 
     err = copyinstruct(user_args, (void **)(&args),
             sizeof(struct _fs_access_args),
@@ -666,18 +666,18 @@ static int sys_access(__user void * user_args)
                 path, path_len));
     if (err) {
         set_errno(-err);
-        return -1;
+        goto out;
     }
 
     if (!strvalid(args->path, args->path_len)) {
         set_errno(ENAMETOOLONG);
-        return -1;
+        goto out;
     }
 
-    fs_namei_proc(&vnode, args->fd, args->path, AT_FDARG);
+    err = fs_namei_proc(&vnode, args->fd, args->path, AT_FDARG);
     if (err) {
         set_errno(-err);
-        return -1;
+        goto out;
     }
 
     tmp_cred = curproc->cred;
@@ -687,9 +687,15 @@ static int sys_access(__user void * user_args)
     }
 
     if (args->amode & F_OK) {
-        return 0;
+        freecpystruct(args);
+        retval = 0;
+    } else {
+        retval = chkperm_vnode(vnode, &tmp_cred, args->amode);
     }
-    return chkperm_vnode(vnode, &tmp_cred, args->amode);
+
+out:
+    freecpystruct(args);
+    return retval;
 }
 
 static int sys_utimes(__user void * user_args)
