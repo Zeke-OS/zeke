@@ -31,13 +31,14 @@
 */
 
 #define __SYSCALL_DEFS__
+#include <fcntl.h>
 #include <string.h>
 #include <sys/statvfs.h>
 #include <syscall.h>
 
-statvfs(const char * restrict path, struct statvfs * restrict buf)
+int statvfs(const char * restrict path, struct statvfs * restrict buf)
 {
-    struct _fs_stat_args args = {
+    struct _fs_statfs_args args = {
         .fd = AT_FDCWD,
         .path = path,
         .path_len = strlen(path) + 1,

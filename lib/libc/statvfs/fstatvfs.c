@@ -31,16 +31,17 @@
 */
 
 #define __SYSCALL_DEFS__
+#include <fcntl.h>
 #include <string.h>
 #include <sys/statvfs.h>
 #include <syscall.h>
 
 int fstatvfs(int fildes, struct statvfs * buf)
 {
-    struct _fs_stat_args args = {
+    struct _fs_statfs_args args = {
         .fd = fildes,
-        .path = '.',
-        .path_len = strlen(path) + 1,
+        .path = ".",
+        .path_len = 2,
         .buf = buf,
         .flags = 0
     };

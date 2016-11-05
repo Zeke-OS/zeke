@@ -28,6 +28,7 @@ $(wildcard libc/sched/*.c) \
 $(wildcard libc/setjmp/*.c) \
 $(wildcard libc/signal/*.c) \
 $(wildcard libc/stat/*.c) \
+$(wildcard libc/statvfs/*.c) \
 $(wildcard libc/stdio/*.c) \
 $(wildcard libc/stdlib/*.c) \
 $(wildcard libc/string/*.c) \
