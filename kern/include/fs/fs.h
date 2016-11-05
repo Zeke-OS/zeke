@@ -638,7 +638,7 @@ int chkperm_vnode(vnode_t * vnode, struct cred * cred, int oflags);
 int fs_fildes_set(file_t * fildes, vnode_t * vnode, int oflags);
 
 /**
- * Create a new file descriptor to the first empty spot.
+ * Create a new file descriptor on the first empty slot.
  */
 int fs_fildes_create_curproc(vnode_t * vnode, int oflags);
 
