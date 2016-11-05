@@ -49,8 +49,9 @@
 #include <proc.h>
 #include <sys/priv.h>
 #include <ksignal.h>
-#include <fs/fs.h>
 #include <fs/devfs.h>
+#include <fs/fs.h>
+#include <fs/fs_util.h>
 
 static int sys_readwrite(__user void * user_args, int write)
 {
@@ -933,6 +934,46 @@ out:
 }
 
 /**
+ * Open the root dir of a mounted filesystem (sb->root by vdev_id).
+ */
+static int sys_open_root(__user void * user_args)
+{
+    dev_t vdev_id;
+    fs_t * fs;
+    vnode_t * root = NULL;
+    int fd;
+
+    if (copyin(user_args, &vdev_id, sizeof(vdev_id))) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    fs = NULL;
+    while ((fs = fs_iterate(fs))) {
+        struct fs_superblock * sb = NULL;
+
+        while ((sb = fs_iterate_superblocks(fs, sb))) {
+            if (sb->vdev_id == vdev_id) {
+                root = sb->root;
+                break;
+            }
+        }
+    }
+    if (!root) {
+        set_errno(ENOENT);
+        return -1;
+    }
+
+    fd = fs_fildes_create_curproc(root, O_RDONLY | O_DIRECTORY);
+    if (fd < 0) {
+        set_errno(-fd);
+        return -1;
+    }
+
+    return fd;
+}
+
+/**
  * Declarations of fs syscall functions.
  */
 static const syscall_handler_t fs_sysfnmap[] = {
@@ -958,5 +999,6 @@ static const syscall_handler_t fs_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_UMASK, sys_umask),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_MOUNT, sys_mount),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_UMOUNT, sys_umount),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_OPEN_ROOT, sys_open_root),
 };
 SYSCALL_HANDLERDEF(fs_syscall, fs_sysfnmap)
