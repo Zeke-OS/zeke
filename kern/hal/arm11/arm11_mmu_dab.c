@@ -118,11 +118,6 @@ void mmu_data_abort_handler(void)
         panic("Thread not set on DAB");
     }
 
-    if (far <= 4096) {
-        KERROR(KERROR_DEBUG, "far: %d\n", far);
-        panic("invalid access");
-    }
-
     /*
      * RFE Block the thread owner
      * We may want to block the process owning this thread and possibly
