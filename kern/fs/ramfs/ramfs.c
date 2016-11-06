@@ -108,6 +108,7 @@ typedef struct ramfs_sb {
     size_t ramfs_iarr_size;             /*!< Size of the iarr array. */
     inpool_t ramfs_ipool;               /*!< inode pool. */
     ino_t next_inum;                    /*!< Next free inode number. */
+    atomic_t nr_inodes;
     int ramfs_flags;
 } ramfs_sb_t;
 
@@ -331,10 +332,24 @@ int ramfs_umount(struct fs_superblock * fs_sb)
 
 int ramfs_statfs(struct fs_superblock * sb, struct statvfs * st)
 {
+    ramfs_sb_t * rsb = get_rfsb_of_sb(sb);
+    const ino_t inodes_max = 1 << sizeof(size_t) * 8;
+    const ino_t inodes_free = inodes_max - atomic_read(&rsb->nr_inodes);
+
     memset(st, 0, sizeof(struct statvfs));
 
     *st = (struct statvfs){
+        .f_bsize = MMU_PGSIZE_COARSE,
+        .f_frsize = MMU_PGSIZE_COARSE,
+        .f_blocks = 0,
+        .f_bfree = 0,
+        .f_bavail = 0,
+        .f_files = inodes_max,
+        .f_ffree = inodes_free,
+        .f_favail = inodes_free,
+        .f_fsid = 0,
         .f_flag = sb->mode_flags,
+        .f_namemax = NAME_MAX + 1,
     };
 
     return 0;
@@ -870,6 +885,7 @@ static void ramfs_init_sb(ramfs_sb_t * ramfs_sb, uint32_t mode)
 
     fs_init_superblock(sb, &ramfs_fs);
     sb->mode_flags = mode;
+    ramfs_sb->nr_inodes = ATOMIC_INIT(0);
 
     /* Function pointers to superblock methods: */
     sb->statfs = ramfs_statfs;
@@ -950,9 +966,8 @@ static void destroy_superblock(ramfs_sb_t * ramfs_sb)
 static vnode_t * ramfs_raw_create_inode(const struct fs_superblock * sb)
 {
     ramfs_inode_t * inode;
-    ramfs_sb_t * ramfs_sb;
+    ramfs_sb_t * ramfs_sb = get_rfsb_of_sb(sb);
 
-    ramfs_sb = get_rfsb_of_sb(sb);
     if (!RAMFS_SB_IS_HEALTHY(ramfs_sb))
         return NULL;
 
@@ -962,6 +977,7 @@ static vnode_t * ramfs_raw_create_inode(const struct fs_superblock * sb)
 
     init_inode(inode, ramfs_sb, &ramfs_sb->next_inum);
     ramfs_sb->next_inum++;
+    atomic_inc(&ramfs_sb->nr_inodes);
 
     return &inode->in_vnode;
 }
@@ -994,6 +1010,9 @@ static void destroy_vnode(vnode_t * vnode)
  */
 static void destroy_inode(ramfs_inode_t * inode)
 {
+    ramfs_sb_t * ramfs_sb = get_rfsb_of_sb(inode->in_vnode.sb);
+
+    atomic_dec(&ramfs_sb->nr_inodes);
     destroy_inode_data(inode);
     kfree(inode);
 }
