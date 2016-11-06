@@ -57,14 +57,28 @@ static struct procfs_stream * read_mounts(const struct procfs_info * spec)
         sb = NULL;
         while ((sb = fs_iterate_superblocks(fs, sb))) {
             char * p = stream->buf + bytes;
+            int rdev_major = -1, rdev_minor = -1;
 
-            bytes += ksprintf(p, maxline, "%s (%u,%u)\n",
+            if (sb->sb_dev) {
+                int err;
+                struct stat st;
+                vnode_t * sb_dev = sb->sb_dev;
+
+                err = sb_dev->vnode_ops->stat(sb_dev, &st);
+                if (!err && st.st_mode & (S_IFBLK | S_IFCHR)) {
+                    rdev_major = DEV_MAJOR(st.st_rdev);
+                    rdev_minor = DEV_MINOR(st.st_rdev);
+                }
+            }
+
+            bytes += ksprintf(p, maxline, "%s (%u,%u) (%d,%d)\n",
                               fs->fsname,
                               DEV_MAJOR(sb->vdev_id),
-                              DEV_MINOR(sb->vdev_id));
+                              DEV_MINOR(sb->vdev_id),
+                              rdev_major, rdev_minor);
         }
 
-        tmp = krealloc(stream, bytes + maxline);
+        tmp = krealloc(stream, sizeof(struct procfs_stream) + bytes + maxline);
         if (!tmp) {
             kfree(stream);
             return NULL;
