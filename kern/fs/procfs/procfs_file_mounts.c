@@ -75,10 +75,11 @@ static struct procfs_stream * read_mounts(const struct procfs_info * spec)
                               fs->fsname,
                               DEV_MAJOR(sb->vdev_id),
                               DEV_MINOR(sb->vdev_id),
-                              rdev_major, rdev_minor);
+                              rdev_major, rdev_minor) - 1;
         }
 
-        tmp = krealloc(stream, sizeof(struct procfs_stream) + bytes + maxline);
+        tmp = krealloc(stream, sizeof(struct procfs_stream) + bytes + 1 +
+                       maxline);
         if (!tmp) {
             kfree(stream);
             return NULL;
@@ -86,7 +87,7 @@ static struct procfs_stream * read_mounts(const struct procfs_info * spec)
         stream = tmp;
     }
 
-    stream->bytes = bytes;
+    stream->bytes = bytes + 1;
     return stream;
 }
 
