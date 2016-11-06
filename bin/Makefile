@@ -26,7 +26,7 @@
 include $(ROOT_DIR)/makefiles/user_head.mk
 
 # Binaries #####################################################################
-BIN-y := basename cat chgrp chmod chown cksum cmp cp dirname du echo env \
+BIN-y := basename cat chgrp chmod chown cksum cmp cp df dirname du echo env \
 	hostname id kill login logname ls mount ps sh type stty sz umount uptime \
 	rz wc xargs
 BIN-$(configMINISED) += minised
@@ -51,6 +51,7 @@ chown-SRC-y := src/sbase/chown.c \
 cksum-SRC-y := src/sbase/cksum.c $(SBASELUTIL)/eprintf.c $(SBASELUTIL)/fshut.c
 cmp-SRC-y := src/sbase/cmp.c $(SBASELUTIL)/eprintf.c $(SBASELUTIL)/fshut.c
 cp-SRC-y := src/cp.c
+df-SRC-y := src/df.c
 dirname-SRC-y := src/sbase/dirname.c $(SBASELUTIL)/eprintf.c \
 	$(SBASELUTIL)/fshut.c
 du-SRC-y := src/sbase/du.c $(SBASELUTIL)/eprintf.c $(SBASELUTIL)/fshut.c \

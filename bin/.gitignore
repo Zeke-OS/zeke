@@ -6,6 +6,7 @@
 /cksum 
 /cmp 
 /cp 
+/df
 /dirname 
 /du 
 /echo 
@@ -22,6 +23,7 @@
 /rz
 /sh 
 /stty 
+/sz
 /type
 /umount 
 /uptime 
