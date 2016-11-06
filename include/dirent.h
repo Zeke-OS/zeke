@@ -153,15 +153,15 @@ int dirfd(DIR * dirp);
  * @}
  */
 
-/*
-DIR * fdopendir(int);
-*/
-
 /**
  * @addtogroup opendir
  * Open a directory.
  * @{
  */
+/**
+ * Open fd as a directory.
+ */
+DIR * fdopendir(int);
 /**
  * Open a directory.
  */
