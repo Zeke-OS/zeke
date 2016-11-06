@@ -204,6 +204,8 @@ int main(int argc, char * argv[], char * envp[])
         while (fscanf(mounts, "%s (%d,%d) (%d,%d)\n",
                       fs, &major, &minor, &rdev_major, &rdev_minor) > 0) {
             int fd;
+            if (fs[0] == '\0')
+                break;
 
             fd = open_root(DEV_MMTODEV(major, minor));
             chdir_fd(fd);
@@ -214,8 +216,6 @@ int main(int argc, char * argv[], char * envp[])
 
             if (rdev_major >= 0 && rdev_minor >= 0) {
                 rdev2path(fs, DEV_MMTODEV(rdev_major, rdev_minor));
-            } else {
-                strcpy(fs, "-"); /* TODO Bug in fscanf */
             }
             print_df(fd, fs);
             close(fd);
