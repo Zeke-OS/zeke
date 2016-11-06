@@ -103,7 +103,7 @@ static int rdev2path(char buf[256], dev_t rdev)
             continue;
 
         if (st.st_mode & (S_IFBLK | S_IFCHR) && st.st_rdev == rdev) {
-            strlcpy(buf, dp->d_name, 256);
+            snprintf(buf, 256, "/dev/%s", dp->d_name);
             retval = 0;
             break;
         }
