@@ -51,9 +51,23 @@ struct {
     int P : 1;
 } flags;
 
+struct format_str {
+    const char header[80];
+    const char entry[80];
+} format_str[] = {
+    { /* Default */
+        .header = "%-14s %10s %10s %10s %8s %10s %10s %6s %s\n",
+        .entry = "%-14s %10d %10d %10d %7d%% %10d %10d %5d%% %s\n",
+    },
+    { /* P */
+        .header = "%-14s %10s %10s %10s %8s %s\n",
+        .entry = "%-14s %10d %10d %10d %7d%% %s\n",
+    },
+};
+
 static void usage(void)
 {
-    fprintf(stderr, "usage: %s [-la] [dir]\n", argv0);
+    fprintf(stderr, "usage: %s [-kP] <file>\n", argv0);
 
     exit(EX_USAGE);
 }
@@ -134,15 +148,13 @@ static void print_df(int fd, const char * fs)
 
     /* TODO Resolve the device */
     if (flags.P) {
-        printf("%s %d %d %d %d%% %s\n",
-               fs, blocks, used, avail, capacity, cwd);
+        printf(format_str[1].entry, fs, blocks, used, avail, capacity, cwd);
     } else {
         int iused = st.f_files - st.f_ffree;
         int piused = 100 * iused / st.f_files;
 
-        printf("%s %d %d %d %d%% %d %d %d%% %s\n",
-               fs, blocks, used, avail, capacity, iused, st.f_ffree, piused,
-               cwd);
+        printf(format_str[0].entry, fs, blocks, used, avail, capacity, iused,
+               st.f_ffree, piused, cwd);
     }
 }
 
@@ -168,18 +180,13 @@ int main(int argc, char * argv[], char * envp[])
     argc -= optind;
     argv += optind;
 
+    const char * blocks = flags.k ? "1024-blocks" : "512-blocks";
     if (flags.P) {
-        if (flags.k) {
-            printf("Filesystem  1024-blocks  Used  Available  Capacity  Mounted on\n");
-        } else {
-            printf("Filesystem  512-blocks  Used  Available  Capacity  Mounted on\n");
-        }
+        printf(format_str[1].header, "Filesystem", blocks, "Used",
+               "Available", "Capacity", "Mounted on");
     } else {
-        if (flags.k) {
-            printf("Filesystem  1024-blocks  Used  Available  Capacity  iused  ifree  %iused  Mounted on\n");
-        } else {
-            printf("Filesystem  512-blocks  Used  Available  Capacity  iused  ifree  %iused  Mounted on\n");
-        }
+        printf(format_str[0].header, "Filesystem", blocks, "Used", "Available",
+               "Capacity", "iused", "ifree", "%iused", "Mounted on");
     }
 
     if (*argv) {
@@ -194,8 +201,7 @@ int main(int argc, char * argv[], char * envp[])
             exit(EX_OSFILE);
         }
 
-        while (!!(fs[0] = '-') && !(fs[1] = '\0') &&
-               fscanf(mounts, "%s (%d,%d) (%d,%d)\n",
+        while (fscanf(mounts, "%s (%d,%d) (%d,%d)\n",
                       fs, &major, &minor, &rdev_major, &rdev_minor) > 0) {
             int fd;
 
@@ -208,6 +214,8 @@ int main(int argc, char * argv[], char * envp[])
 
             if (rdev_major >= 0 && rdev_minor >= 0) {
                 rdev2path(fs, DEV_MMTODEV(rdev_major, rdev_minor));
+            } else {
+                strcpy(fs, "-"); /* TODO Bug in fscanf */
             }
             print_df(fd, fs);
             close(fd);
