@@ -184,7 +184,7 @@ FRESULT f_utime(FATFS * fs, const TCHAR * path, const struct timespec * ts);
 FRESULT f_chdir(const TCHAR * path);
 FRESULT f_chdrive(const TCHAR * path);
 FRESULT f_getfree(FATFS * fs, DWORD * nclst);
-FRESULT f_getlabel(FATFS * fs, const TCHAR * path, TCHAR * label, DWORD * vsn);
+FRESULT f_getlabel(FATFS * fs, TCHAR * label, DWORD * vsn);
 FRESULT f_setlabel(FATFS * fs, const TCHAR * label);
 FRESULT f_mount(FATFS * fs, int vol, uint8_t opt);
 FRESULT f_umount(FATFS * fs);

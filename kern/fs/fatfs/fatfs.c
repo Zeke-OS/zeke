@@ -36,6 +36,7 @@
 #include <sys/hash.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
+#include <sys/statvfs.h>
 #include <kerror.h>
 #include <kinit.h>
 #include <kstring.h>
@@ -55,6 +56,7 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
 static vnode_t * create_root(struct fatfs_sb * fatfs_sb);
 static void finalize_inode(vnode_t * vnode);
 static void destroy_vnode(vnode_t * vnode);
+static int fatfs_statfs(struct fs_superblock * sb, struct statvfs * st);
 static int fatfs_delete_vnode(vnode_t * vnode);
 static int fatfs_event_vnode_opened(struct proc_info * p, vnode_t * vnode);
 static void fatfs_event_file_closed(struct proc_info * p, file_t * file);
@@ -222,6 +224,7 @@ static int fatfs_mount(const char * source, uint32_t mode,
     fatfs_sb->sb.sb_dev = vndev;
     fatfs_sb->sb.sb_hashseed = fatfs_sb->sb.vdev_id;
     /* Function pointers to superblock methods */
+    fatfs_sb->sb.statfs = fatfs_statfs;
     fatfs_sb->sb.get_vnode = NULL; /* Not implemented for FAT. */
     fatfs_sb->sb.delete_vnode = fatfs_delete_vnode;
     fatfs_sb->sb.umount = fatfs_umount;
@@ -481,6 +484,45 @@ static void destroy_vnode(vnode_t * vnode)
 #if 0
     kfree(in);
 #endif
+}
+
+/**
+ * Get fatfs statistics.
+ */
+static int fatfs_statfs(struct fs_superblock * sb, struct statvfs * st)
+{
+    struct fatfs_sb * ffsb = get_ffsb_of_sb(sb);
+    FATFS * fat = &ffsb->ff_fs;
+    DWORD nclst_free, vsn;
+    int err;
+
+    memset(st, 0, sizeof(struct statvfs));
+
+    err = fresult2errno(f_getfree(fat, &nclst_free));
+    if (err) {
+        return err;
+    }
+
+    err = f_getlabel(fat, NULL, &vsn);
+    if (err) {
+        return err;
+    }
+
+    *st = (struct statvfs){
+        .f_bsize = fat->ssize,
+        .f_frsize = fat->ssize * fat->csize,
+        .f_blocks = fat->n_fatent,
+        .f_bfree = nclst_free,
+        .f_bavail = nclst_free,
+        .f_files = 0,
+        .f_ffree = 0,
+        .f_favail = 0,
+        .f_fsid = vsn,
+        .f_flag = sb->mode_flags,
+        .f_namemax = NAME_MAX + 1,
+    };
+
+    return 0;
 }
 
 /**

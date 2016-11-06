@@ -91,6 +91,7 @@
 
 struct cred;
 struct proc_info;
+struct statvfs;
 
 /*
  * Types for buffer pointer storage object in vnode.
@@ -251,11 +252,19 @@ struct fs_superblock {
     vnode_t * sb_dev;       /*!< Device for the file system. */
 
     /**
+     * Get filesystem statistics.
+     * @param[in]   sb is a pointer to the superblock.
+     * @param[out]  st is a pointer to a destination buffer.
+     * @return Returns 0 if no error; Otherwise value other than zero.
+     */
+    int (*statfs)(struct fs_superblock * sb, struct statvfs * st);
+
+    /**
      * Get the vnode struct linked to a vnode number.
      * @note    This is an optional function and file systems are not required
      *          to implement this.
      * @param[in]  sb is the superblock.
-     * @param[in]  vnode_num is the vnode number.
+     * @param[in]  vnode_num is a pointer the vnode number.
      * @param[out] vnode is a pointer to the vnode.
      * @return Returns 0 if no error; Otherwise value other than zero.
      */

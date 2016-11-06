@@ -3218,11 +3218,10 @@ fail:
 
 /**
  * Get volume label.
- * @param path Path name of the logical drive number.
  * @param label Pointer to a buffer to return the volume label.
  * @param vsn Pointer to a variable to return the volume serial number.
  */
-FRESULT f_getlabel(FATFS * fs, const TCHAR * path, TCHAR * label, DWORD * vsn)
+FRESULT f_getlabel(FATFS * fs, TCHAR * label, DWORD * vsn)
 {
     FRESULT res;
     FF_DIR dj = { .fs = fs };

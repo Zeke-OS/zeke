@@ -659,6 +659,7 @@ static int sys_statfs(__user void * user_args)
 {
     struct _fs_statfs_args * args = NULL;
     vnode_autorele vnode_t * vnode = NULL;
+    struct fs_superblock * sb;
     struct statvfs st;
     int err, retval = -1;
 
@@ -688,12 +689,8 @@ static int sys_statfs(__user void * user_args)
         goto out;
     }
 
-    /* TODO Populate statvfs struct */
-    memset(&st, 0, sizeof(st));
-    st = (struct statvfs){
-        .f_flag = vnode->sb->mode_flags,
-    };
-
+    sb = vnode->sb;
+    sb->statfs(sb, &st);
     copyout(&st, (__user void *)args->buf, sizeof(struct statvfs));
 
     retval = 0;

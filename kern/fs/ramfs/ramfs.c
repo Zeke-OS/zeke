@@ -35,6 +35,7 @@
 #include <machine/atomic.h>
 #include <stdint.h>
 #include <sys/dev_major.h>
+#include <sys/statvfs.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <time.h>
@@ -324,6 +325,17 @@ int ramfs_umount(struct fs_superblock * fs_sb)
      */
     fs_remove_superblock(&ramfs_fs, &rsb->sb);
     destroy_superblock(rsb); /* Destroy all data. */
+
+    return 0;
+}
+
+int ramfs_statfs(struct fs_superblock * sb, struct statvfs * st)
+{
+    memset(st, 0, sizeof(struct statvfs));
+
+    *st = (struct statvfs){
+        .f_flag = sb->mode_flags,
+    };
 
     return 0;
 }
@@ -860,6 +872,7 @@ static void ramfs_init_sb(ramfs_sb_t * ramfs_sb, uint32_t mode)
     sb->mode_flags = mode;
 
     /* Function pointers to superblock methods: */
+    sb->statfs = ramfs_statfs;
     sb->get_vnode = ramfs_get_vnode;
     sb->delete_vnode = ramfs_delete_vnode;
     sb->umount = ramfs_umount;
