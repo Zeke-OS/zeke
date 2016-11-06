@@ -42,7 +42,7 @@ static struct procfs_stream * read_mounts(const struct procfs_info * spec)
 {
     struct procfs_stream * stream;
     fs_t * fs;
-    const size_t maxline = 80;
+    const size_t maxline = 200; /* TODO Figure out why do we have overflows */
     ssize_t bytes = 0;
 
     stream = kzalloc(sizeof(struct procfs_stream) + maxline);
