@@ -211,6 +211,7 @@ typedef struct files_struct {
  */
 typedef struct fs {
     char fsname[8];
+    unsigned fs_majornum; /*!< Virtual major device number of the filesystem. */
     mtx_t fs_giant;
 
     /**

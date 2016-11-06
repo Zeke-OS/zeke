@@ -76,10 +76,13 @@ fs_iterate_superblocks(fs_t * fs, struct fs_superblock * sb)
         return NULL;
     }
 
-    if (!sb)
-        sb = SLIST_FIRST(&fs->sblist_head);
-    else
-        sb = SLIST_NEXT(sb, _sblist);
+    /* Get the next sb and skip filesytems that are inherited for fs */
+    do {
+        if (!sb)
+            sb = SLIST_FIRST(&fs->sblist_head);
+        else
+            sb = SLIST_NEXT(sb, _sblist);
+    } while (sb && DEV_MAJOR(sb->vdev_id) != fs->fs_majornum);
 
     mtx_unlock(lock);
 
@@ -118,11 +121,7 @@ vnode_t * fs_create_pseudofs_root(fs_t * newfs, int majornum)
     rootnode->vn_prev_mountpoint = rootnode;
     rootnode->vn_next_mountpoint = rootnode;
 
-    /* TODO The following is something we'd like to do but can't at the moment,
-     * it would allow us for example printing error and debug messages with a
-     * proper fsname.
-     */
-
+    newfs->fs_majornum = majornum;
     newfs->sblist_head = rootnode->sb->fs->sblist_head;
     rootnode->sb->fs = newfs;
 

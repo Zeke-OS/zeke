@@ -66,6 +66,7 @@ static int fresult2errno(int fresult);
 
 static struct fs fatfs_fs = {
     .fsname = FATFS_FSNAME,
+    .fs_majornum = VDEV_MJNR_FATFS,
     .mount = fatfs_mount,
     .sblist_head = SLIST_HEAD_INITIALIZER(),
 };

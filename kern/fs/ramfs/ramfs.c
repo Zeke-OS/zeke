@@ -162,6 +162,7 @@ static struct ramfs_dp get_dp_by_offset(ramfs_inode_t * inode, off_t offset);
  */
 fs_t ramfs_fs = {
     .fsname = RAMFS_FSNAME,
+    .fs_majornum = VDEV_MJNR_RAMFS,
     .mount = ramfs_mount,
     .sblist_head = SLIST_HEAD_INITIALIZER(),
 };
