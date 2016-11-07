@@ -118,7 +118,7 @@ static char * generate_core_name(struct proc_info * proc)
 int core_dump_by_curproc(struct proc_info * proc)
 {
     char msghead[60];
-    char * core_path;
+    char * core_path = NULL;
     vnode_t * vn = NULL;
     file_t * file = NULL;
     int fd = -1, err;
@@ -137,7 +137,6 @@ int core_dump_by_curproc(struct proc_info * proc)
                msghead, core_path);
         goto out;
     }
-    kfree(core_path);
 
     fd = fs_fildes_create_curproc(vn, O_RDWR);
     if (fd < 0) {
@@ -161,6 +160,8 @@ int core_dump_by_curproc(struct proc_info * proc)
 
     err = 0;
 out:
+    kfree(core_path);
+
     if (fd >= 0)
         fs_fildes_ref(curproc->files, fd, -1);
     if (file)
