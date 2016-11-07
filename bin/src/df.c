@@ -80,7 +80,7 @@ static int fscan_fs(char * buf, size_t n, FILE * fp)
 
     while (1) {
         c = fgetc(fp);
-        if (c != EOF && c != ' ' && p != end) {
+        if (c != EOF && c != ' ' && c != '\0' && p != end) {
             *p++ = (char)c;
             continue;
         }
