@@ -72,6 +72,25 @@ static void usage(void)
     exit(EX_USAGE);
 }
 
+static int fscan_fs(char * buf, size_t n, FILE * fp)
+{
+    int c;
+    char * p = buf;
+    const char * end = buf + n - 1;
+
+    while (1) {
+        c = fgetc(fp);
+        if (c != EOF && c != ' ' && p != end) {
+            *p++ = (char)c;
+            continue;
+        }
+        break;
+    }
+    *p = '\0';
+
+    return p != buf;
+}
+
 static inline int open_root(dev_t dev)
 {
     return syscall(SYSCALL_FS_OPEN_ROOT, &dev);
@@ -182,8 +201,8 @@ int main(int argc, char * argv[], char * envp[])
 
     const char * blocks = flags.k ? "1024-blocks" : "512-blocks";
     if (flags.P) {
-        printf(format_str[1].header, "Filesystem", blocks, "Used",
-               "Available", "Capacity", "Mounted on");
+        printf(format_str[1].header, "Filesystem", blocks, "Used", "Available",
+               "Capacity", "Mounted on");
     } else {
         printf(format_str[0].header, "Filesystem", blocks, "Used", "Available",
                "Capacity", "iused", "ifree", "%iused", "Mounted on");
@@ -194,15 +213,16 @@ int main(int argc, char * argv[], char * envp[])
     } else {
         FILE * mounts;
         int major, minor, rdev_major, rdev_minor;
-        char fs[256];
+        char fs[14];
 
         if ((mounts = fopen("/proc/mounts", "r")) == NULL) {
             perror("Cannot open /proc/mounts");
             exit(EX_OSFILE);
         }
 
-        while (fscanf(mounts, "%s (%d,%d) (%d,%d)\n",
-                      fs, &major, &minor, &rdev_major, &rdev_minor) > 0) {
+        while (fscan_fs(fs, sizeof(fs), mounts) &&
+               fscanf(mounts, "(%d,%d) (%d,%d)\n",
+                      &major, &minor, &rdev_major, &rdev_minor) != EOF) {
             int fd;
             if (fs[0] == '\0')
                 break;
