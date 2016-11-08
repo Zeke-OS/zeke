@@ -68,7 +68,7 @@ extern struct vnode_ops ramfs_vnode_ops;
  * @param[out] sb   Returns the superblock of the new mount.
  * @return error code, -errno.
  */
-int ramfs_mount(const char * source, uint32_t mode,
+int ramfs_mount(fs_t * fs, const char * source, uint32_t mode,
                 const char * parm, int parm_len, struct fs_superblock ** sb);
 
 /**

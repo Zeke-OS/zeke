@@ -49,7 +49,7 @@
 #define PROCFS_GET_FILESPEC(_file_) \
     ((struct procfs_info *)(_file_)->vnode->vn_specinfo)
 
-static int procfs_mount(const char * source, uint32_t mode,
+static int procfs_mount(fs_t * fs, const char * source, uint32_t mode,
                         const char * parm, int parm_len,
                         struct fs_superblock ** sb);
 static int procfs_umount(struct fs_superblock * fs_sb);
@@ -160,7 +160,7 @@ int __kinit__ procfs_init(void)
     return 0;
 }
 
-static int procfs_mount(const char * source, uint32_t mode,
+static int procfs_mount(fs_t * fs, const char * source, uint32_t mode,
                         const char * parm, int parm_len,
                         struct fs_superblock ** sb)
 {

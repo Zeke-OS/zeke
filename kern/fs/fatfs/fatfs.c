@@ -47,7 +47,7 @@
 #include <proc.h>
 #include "fatfs.h"
 
-static int fatfs_mount(const char * source, uint32_t mode,
+static int fatfs_mount(fs_t * fs, const char * source, uint32_t mode,
         const char * parm, int parm_len, struct fs_superblock ** sb);
 static int fatfs_umount(struct fs_superblock * fs_sb);
 static char * format_fpath(struct fatfs_inode * indir, const char * name);
@@ -147,7 +147,7 @@ static vnode_t * create_raw_inode(const struct fs_superblock * sb)
  * @param[out] sb   Returns the superblock of the new mount.
  * @return error code, -errno.
  */
-static int fatfs_mount(const char * source, uint32_t mode,
+static int fatfs_mount(fs_t * fs, const char * source, uint32_t mode,
                        const char * parm, int parm_len,
                        struct fs_superblock ** sb)
 {
@@ -218,7 +218,7 @@ static int fatfs_mount(const char * source, uint32_t mode,
 #endif
 
     /* Init super block */
-    fs_init_superblock(&fatfs_sb->sb, &fatfs_fs);
+    fs_init_superblock(&fatfs_sb->sb, fs);
     fatfs_sb->sb.mode_flags = mode;
     fatfs_sb->sb.root = create_root(fatfs_sb);
     fatfs_sb->sb.sb_dev = vndev;
@@ -234,7 +234,7 @@ static int fatfs_mount(const char * source, uint32_t mode,
         goto fail;
     }
 
-    fs_insert_superblock(&fatfs_fs, &fatfs_sb->sb);
+    fs_insert_superblock(fs, &fatfs_sb->sb);
 
 fail:
     if (retval && fatfs_sb) {
@@ -258,7 +258,7 @@ static int fatfs_umount(struct fs_superblock * fs_sb)
      * TODO Check that there is no more references to any vnodes of
      * this super block before destroying everything related to it.
      */
-    fs_remove_superblock(&fatfs_fs, &fatfs_sb->sb);
+    fs_remove_superblock(fs_sb->fs, &fatfs_sb->sb);
     f_umount(&fatfs_sb->ff_fs);
     fatfs_sb_arr[DEV_MINOR(fatfs_sb->sb.vdev_id)] = NULL;
     vrele(fatfs_sb->ff_devfile.vnode);

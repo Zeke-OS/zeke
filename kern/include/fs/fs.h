@@ -226,7 +226,7 @@ typedef struct fs {
      * @param[out] sb   is a pointer to a pointer where a pointer to the
      *                  resulting super block will be returned.
      */
-    int (*mount)(const char * source, uint32_t mode,
+    int (*mount)(struct fs * fs, const char * source, uint32_t mode,
                  const char * parm, int parm_len, struct fs_superblock ** sb);
 
     /**

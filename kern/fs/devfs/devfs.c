@@ -50,7 +50,7 @@
  */
 #define RW_MAX_TRIES 3
 
-static int devfs_mount(const char * source, uint32_t mode,
+static int devfs_mount(fs_t * fs, const char * source, uint32_t mode,
                        const char * parm, int parm_len,
                        struct fs_superblock ** sb);
 static int devfs_umount(struct fs_superblock * fs_sb);
@@ -115,7 +115,7 @@ int __kinit__ devfs_init(void)
     return 0;
 }
 
-static int devfs_mount(const char * source, uint32_t mode,
+static int devfs_mount(fs_t * fs, const char * source, uint32_t mode,
                        const char * parm, int parm_len,
                        struct fs_superblock ** sb)
 {

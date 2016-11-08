@@ -130,7 +130,7 @@ struct ramfs_dp {
 static atomic_t ramfs_vdev_minor = ATOMIC_INIT(0);
 
 /* Private */
-static void ramfs_init_sb(ramfs_sb_t * ramfs_sb, uint32_t mode);
+static void ramfs_init_sb(fs_t * fs, ramfs_sb_t * ramfs_sb, uint32_t mode);
 static vnode_t * create_root(ramfs_sb_t * ramfs_sb);
 static void destroy_superblock(ramfs_sb_t * ramfs_sb);
 static vnode_t * ramfs_raw_create_inode(const struct fs_superblock * sb);
@@ -245,7 +245,7 @@ static void ramfs_vnode_changed(vnode_t * vnode)
     inode->in_ctime = ts;
 }
 
-int ramfs_mount(const char * source, uint32_t mode,
+int ramfs_mount(fs_t * fs, const char * source, uint32_t mode,
                 const char * parm, int parm_len, struct fs_superblock ** sb)
 {
     ramfs_sb_t * ramfs_sb;
@@ -260,7 +260,7 @@ int ramfs_mount(const char * source, uint32_t mode,
         retval = -ENOMEM;
         goto out;
     }
-    ramfs_init_sb(ramfs_sb, mode);
+    ramfs_init_sb(fs, ramfs_sb, mode);
 
     /*
      * Allocate memory for the inode lookup table.
@@ -296,7 +296,7 @@ int ramfs_mount(const char * source, uint32_t mode,
 #endif
     ramfs_sb->sb.root = create_root(ramfs_sb);
 
-    fs_insert_superblock(&ramfs_fs, &ramfs_sb->sb);
+    fs_insert_superblock(fs, &ramfs_sb->sb);
 
     retval = 0;
     goto out;
@@ -310,7 +310,8 @@ out:
 int ramfs_umount(struct fs_superblock * fs_sb)
 {
     ramfs_sb_t * rsb = get_rfsb_of_sb(fs_sb);
-    mtx_t * lock = &ramfs_fs.fs_giant;
+    fs_t * fs = fs_sb->fs;
+    mtx_t * lock = &fs->fs_giant;
 
     mtx_lock(lock);
     if (!RAMFS_SB_IS_HEALTHY(rsb)) {
@@ -324,7 +325,7 @@ int ramfs_umount(struct fs_superblock * fs_sb)
      * TODO Check that there is no more references to any vnodes of
      * this super block before destroying everything related to it.
      */
-    fs_remove_superblock(&ramfs_fs, &rsb->sb);
+    fs_remove_superblock(fs, &rsb->sb);
     destroy_superblock(rsb); /* Destroy all data. */
 
     return 0;
@@ -876,14 +877,15 @@ int ramfs_chown(vnode_t * vnode, uid_t owner, gid_t group)
 
 /**
  * Intializes a ramfs superblock node.
+ * @param fs        is a pointr to the file system initializing the sb.
  * @param ramfs_sb  is a pointer to a ramfs superblock.
  * @param mode      mount flags.
  */
-static void ramfs_init_sb(ramfs_sb_t * ramfs_sb, uint32_t mode)
+static void ramfs_init_sb(fs_t * fs, ramfs_sb_t * ramfs_sb, uint32_t mode)
 {
     struct fs_superblock * sb = &ramfs_sb->sb;
 
-    fs_init_superblock(sb, &ramfs_fs);
+    fs_init_superblock(sb, fs);
     sb->mode_flags = mode;
     ramfs_sb->nr_inodes = ATOMIC_INIT(0);
 

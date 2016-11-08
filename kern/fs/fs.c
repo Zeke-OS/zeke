@@ -214,7 +214,7 @@ int fs_mount(vnode_t * target, const char * source, const char * fsname,
         return -ENOTSUP; /* Not a mountable file system. */
     }
 
-    err = fs->mount(source, flags, parm, parm_len, &sb);
+    err = fs->mount(fs, source, flags, parm, parm_len, &sb);
     if (err)
         return err;
     KASSERT((uintptr_t)sb > configKERNEL_START, "sb isn't a stack address");
