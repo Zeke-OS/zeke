@@ -160,16 +160,6 @@ static struct ramfs_dp get_dp_by_offset(ramfs_inode_t * inode, off_t offset);
     (containerof(vn, ramfs_inode_t, in_vnode))
 
 /**
- * fs struct for ramfs.
- */
-fs_t ramfs_fs = {
-    .fsname = RAMFS_FSNAME,
-    .fs_majornum = VDEV_MJNR_RAMFS,
-    .mount = ramfs_mount,
-    .sblist_head = SLIST_HEAD_INITIALIZER(),
-};
-
-/**
  * Vnode operations implemented for ramfs.
  */
 vnode_ops_t ramfs_vnode_ops = {
@@ -194,6 +184,17 @@ int __kinit__ ramfs_init(void)
 {
     SUBSYS_DEP(proc_init);
     SUBSYS_INIT("ramfs");
+
+    /*
+     * This must be static as it's referenced and used in the file system via
+     * the fs object system.
+     */
+    static fs_t ramfs_fs = {
+        .fsname = RAMFS_FSNAME,
+        .fs_majornum = VDEV_MJNR_RAMFS,
+        .mount = ramfs_mount,
+        .sblist_head = SLIST_HEAD_INITIALIZER(),
+    };
 
     fs_inherit_vnops(&ramfs_vnode_ops, &nofs_vnode_ops);
     FS_GIANT_INIT(&ramfs_fs.fs_giant);

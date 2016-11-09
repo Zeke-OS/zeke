@@ -70,12 +70,6 @@ static vnode_ops_t procfs_vnode_ops = {
     .event_fd_closed = procfs_event_fd_closed,
 };
 
-static fs_t procfs_fs = {
-    .fsname = PROCFS_FSNAME,
-    .mount = procfs_mount,
-    .sblist_head = SLIST_HEAD_INITIALIZER(),
-};
-
 /**
  * Procfs root vnode.
  * There is only one procfs, but it can be mounted multiple times.
@@ -127,6 +121,16 @@ int __kinit__ procfs_init(void)
 {
     SUBSYS_DEP(ramfs_init);
     SUBSYS_INIT("procfs");
+
+    /*
+     * This must be static as it's referenced and used in the file system via
+     * the fs object system.
+     */
+    static fs_t procfs_fs = {
+        .fsname = PROCFS_FSNAME,
+        .mount = procfs_mount,
+        .sblist_head = SLIST_HEAD_INITIALIZER(),
+    };
 
     specinfo_pool = mempool_init(MEMPOOL_TYPE_NONBLOCKING,
                                  sizeof(struct procfs_info),

@@ -70,12 +70,6 @@ vnode_ops_t devfs_vnode_ops = {
     .stat = devfs_stat,
 };
 
-static fs_t devfs_fs = {
-    .fsname = DEVFS_FSNAME,
-    .mount = devfs_mount,
-    .sblist_head = SLIST_HEAD_INITIALIZER(),
-};
-
 /* There is only one devfs, but it can be mounted multiple times */
 static vnode_t * vn_devfs;
 
@@ -85,6 +79,16 @@ int __kinit__ devfs_init(void)
 {
     SUBSYS_DEP(ramfs_init);
     SUBSYS_INIT("devfs");
+
+    /*
+     * This must be static as it's referenced and used in the file system via
+     * the fs object system.
+     */
+    static fs_t devfs_fs = {
+        .fsname = DEVFS_FSNAME,
+        .mount = devfs_mount,
+        .sblist_head = SLIST_HEAD_INITIALIZER(),
+    };
 
     FS_GIANT_INIT(&devfs_fs.fs_giant);
 
