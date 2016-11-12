@@ -496,8 +496,6 @@ static int fatfs_statfs(struct fs_superblock * sb, struct statvfs * st)
     DWORD nclst_free, vsn;
     int err;
 
-    memset(st, 0, sizeof(struct statvfs));
-
     err = fresult2errno(f_getfree(fat, &nclst_free));
     if (err) {
         return err;

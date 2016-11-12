@@ -689,6 +689,7 @@ static int sys_statfs(__user void * user_args)
         goto out;
     }
 
+    memset(&st, 0, sizeof(st));
     sb = vnode->sb;
     sb->statfs(sb, &st);
     copyout(&st, (__user void *)args->buf, sizeof(struct statvfs));
