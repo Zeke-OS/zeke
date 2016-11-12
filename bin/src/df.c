@@ -147,33 +147,27 @@ static int rdev2path(char buf[256], dev_t rdev)
 }
 
 char cwd_buf[PATH_MAX];
-static void print_df(int fd, const char * fs)
+static void print_df(const struct statvfs * restrict st, const char * fs)
 {
-    struct statvfs st;
     char * cwd;
     const unsigned k = (flags.k ? 1024 : 512);
     int blocks, used, avail, capacity;
 
-    if (fstatvfs(fd, &st)) {
-        perror("Failed to stat a filesystem");
-        return;
-    }
-
-    blocks = (st.f_blocks * st.f_frsize) / k;
-    used = (st.f_blocks - st.f_bfree) * st.f_frsize / k;
-    avail = st.f_bfree * st.f_frsize / k;
-    capacity = 100 * (st.f_blocks - st.f_bfree) / st.f_blocks;
+    blocks = (st->f_blocks * st->f_frsize) / k;
+    used = (st->f_blocks - st->f_bfree) * st->f_frsize / k;
+    avail = st->f_bfree * st->f_frsize / k;
+    capacity = 100 * (st->f_blocks - st->f_bfree) / st->f_blocks;
     cwd = getcwd(cwd_buf, sizeof(cwd_buf));
 
     /* TODO Resolve the device */
     if (flags.P) {
         printf(format_str[1].entry, fs, blocks, used, avail, capacity, cwd);
     } else {
-        int iused = st.f_files - st.f_ffree;
-        int piused = 100 * iused / st.f_files;
+        int iused = st->f_files - st->f_ffree;
+        int piused = 100 * iused / st->f_files;
 
         printf(format_str[0].entry, fs, blocks, used, avail, capacity, iused,
-               st.f_ffree, piused, cwd);
+               st->f_ffree, piused, cwd);
     }
 }
 
@@ -223,22 +217,30 @@ int main(int argc, char * argv[], char * envp[])
         while (fscan_fs(fs, sizeof(fs), mounts) &&
                fscanf(mounts, "(%d,%d) (%d,%d)\n",
                       &major, &minor, &rdev_major, &rdev_minor) != EOF) {
-            int fd;
+            int err, fd;
+            struct statvfs st;
+
             if (fs[0] == '\0')
                 break;
 
             fd = open_root(DEV_MMTODEV(major, minor));
-            chdir_fd(fd);
             if (fd < 0) {
                 perror("Cannot open a filesystem root");
                 exit(EX_OSERR);
             }
+            chdir_fd(fd);
 
             if (rdev_major >= 0 && rdev_minor >= 0) {
                 rdev2path(fs, DEV_MMTODEV(rdev_major, rdev_minor));
             }
-            print_df(fd, fs);
+
+            err = fstatvfs(fd, &st);
             close(fd);
+            if (err) {
+                perror("Failed to stat a filesystem");
+                continue;
+            }
+            print_df(&st, fs);
         }
         fclose(mounts);
     }
