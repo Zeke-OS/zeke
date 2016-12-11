@@ -899,11 +899,6 @@ int ksignal_sigtimedwait(siginfo_t * retval, const sigset_t * restrict set,
     int timer_id, err;
     siginfo_t sigret = { .si_signo = -1 };
 
-    /*
-     * TODO If timeout == 0 and there is no signals pending we should
-     * immediately exit with an error.
-     */
-
     timer_id = thread_alarm(timeout->tv_sec * 1000 +
                             timeout->tv_nsec / 1000000);
     if (timer_id < 0)
@@ -916,6 +911,7 @@ int ksignal_sigtimedwait(siginfo_t * retval, const sigset_t * restrict set,
         return err;
     if (sigret.si_signo == -1)
         return -EAGAIN;
+
     *retval = sigret;
     return 0;
 }
