@@ -1198,37 +1198,54 @@ static int is_valid_usignum(int signum)
 
 /* System calls ***************************************************************/
 
+static int syshelper_signal_pkill(struct proc_info * proc, int sig)
+{
+    struct signals * sigs;
+    int err;
+
+    /*
+     * Check if the current process is privileged to send a signal to this
+     * process.
+     */
+    if (priv_check_cred(&curproc->cred, &proc->cred, PRIV_SIGNAL_OTHER)) {
+        return -EPERM;
+    }
+
+    sigs = &proc->sigs;
+    if ((err = kobj_ref(&sigs->s_obj)) || ksig_lock(&sigs->s_lock)) {
+        if (!err)
+            kobj_unref(&sigs->s_obj);
+        return -EAGAIN;
+    }
+
+    /* RFE Check errors? */
+    ksignal_queue_sig(sigs, sig,
+                      &(struct ksignal_param){ .si_code = SI_USER });
+
+    ksig_unlock(&sigs->s_lock);
+    kobj_unref(&sigs->s_obj);
+
+    /*
+     * It's a good idea to forward signals now if we sent a signal to ourself.
+     * This behaviour also matches with IEEE Std 1003.1-2008, 2016 Edition.
+     */
+    if (proc->pid == curproc->pid) {
+        forward_proc_signals_curproc();
+    }
+
+    return 0;
+}
+
 /**
  * Send a signal to a process or a group of processes.
  */
 static int sys_signal_pkill(__user void * user_args)
 {
     struct _pkill_args args;
-    struct proc_info * proc;
-    struct signals * sigs;
-    int err, retval = -1;
 
-    err = copyin(user_args, &args, sizeof(args));
-    if (err) {
+    if (copyin(user_args, &args, sizeof(args))) {
         set_errno(EFAULT);
         return -1;
-    }
-
-    /* TODO if pid == 0 send signal to all procs */
-
-    proc = proc_ref(args.pid);
-    if (!proc) {
-        set_errno(ESRCH);
-        return -1;
-    }
-
-    /*
-     * Check if process is privileged to signal other users.
-     */
-    if (priv_check_cred(&curproc->cred, &proc->cred, PRIV_SIGNAL_OTHER)) {
-        set_errno(EPERM);
-        retval = -1;
-        goto out;
     }
 
     /*
@@ -1237,42 +1254,81 @@ static int sys_signal_pkill(__user void * user_args)
      *
      * If sig == 0 we can return immediately.
      */
-    if (args.sig == 0) {
-        retval = 0;
-        goto out;
+    if (args.pid <= 0 && args.sig == 0) {
+        return 0;
     }
 
     if (!is_valid_usignum(args.sig)) {
         set_errno(EINVAL);
-        goto out;
+        return -1;
     }
 
-    sigs = &proc->sigs;
-    if ((err = kobj_ref(&sigs->s_obj)) || ksig_lock(&sigs->s_lock)) {
-        if (!err)
-            kobj_unref(&sigs->s_obj);
-        set_errno(EAGAIN);
-        goto out;
+    if (args.pid > 0) {
+        struct proc_info * proc;
+        int err = 0;
+
+        proc = proc_ref(args.pid);
+        if (!proc) {
+            set_errno(ESRCH);
+            return -1;
+        }
+        if (args.sig != 0) {
+            err = syshelper_signal_pkill(proc, args.sig);
+        }
+        proc_unref(proc);
+
+        if (err) {
+            set_errno(-err);
+            return -1;
+        }
+        return 0;
+    } else if (args.pid == 0) {
+        /*
+         * TODO sig pid == 0
+         * Quote from IEEE Std 1003.1, 2013 Edition
+         *
+         * If pid is 0, sig shall be sent to all processes (excluding an
+         * unspecified set of system processes) whose process group ID is
+         * equal to the process group ID of the sender, and for which the
+         * process has permission to send a signal.
+         */
+
+        set_errno(EINVAL);
+        return -1;
+    } else if (args.pid == -1) {
+        /*
+         * TODO sig pid == -1
+         * Quote from IEEE Std 1003.1, 2013 Edition
+         *
+         * If pid is -1, sig shall be sent to all processes (excluding an
+         * unspecified set of system processes) for which the process has
+         * permission to send that signal.
+         *
+         * EPERM The process does not have permission to send the signal to
+         *       any receiving process.
+         */
+
+        set_errno(EINVAL);
+        return -1;
+    } else {
+        /*
+         * TODO sig pid < -1
+         * Quote from IEEE Std 1003.1, 2013 Edition
+         *
+         * If pid is negative, but not -1, sig shall be sent to all processes
+         * (excluding an unspecified set of system processes) whose process
+         * group ID is equal to the absolute value of pid, and for which the
+         * process has permission to send a signal.
+         *
+         * EPERM The process does not have permission to send the signal to
+         *       any receiving process.
+         * ESRCH No process or process group can be found corresponding to that
+         *       specified by pid.
+         */
+
+        set_errno(EINVAL);
+        return -1;
     }
-
-    /* RFE Check errors? */
-    ksignal_queue_sig(sigs, args.sig,
-                      &(struct ksignal_param){ .si_code = SI_USER });
-
-    ksig_unlock(&sigs->s_lock);
-    kobj_unref(&sigs->s_obj);
-
-    /*
-     * It's a good idea to forward signals now if we sent a signal to ourself.
-     */
-    if (args.pid == curproc->pid) {
-        forward_proc_signals_curproc();
-    }
-
-    retval = 0;
-out:
-    proc_unref(proc);
-    return retval;
 }
 
 /**
