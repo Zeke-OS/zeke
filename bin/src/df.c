@@ -159,7 +159,6 @@ static void print_df(const struct statvfs * restrict st, const char * fs)
     capacity = 100 * (st->f_blocks - st->f_bfree) / st->f_blocks;
     cwd = getcwd(cwd_buf, sizeof(cwd_buf));
 
-    /* TODO Resolve the device */
     if (flags.P) {
         printf(format_str[1].entry, fs, blocks, used, avail, capacity, cwd);
     } else {
