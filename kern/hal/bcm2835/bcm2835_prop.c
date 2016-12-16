@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   BCM2835 Property interface.
  * @section LICENSE
- * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -46,7 +46,7 @@
  * small.
  */
 #define MB_SECSIZE 512
-isema_t mb_res[8];
+static isema_t mb_res[8];
 
 static struct buf * mbuf;
 
