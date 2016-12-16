@@ -397,7 +397,7 @@ int proc_exists(pid_t pid)
 
 struct proc_info * proc_ref_locked(pid_t pid)
 {
-    KASSERT(PROC_TESTLOCK(), "proclock is required");
+    PROC_KASSERT_LOCK();
 
     return kpalloc(proc_get_struct(pid));
 }

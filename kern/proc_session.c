@@ -81,8 +81,7 @@ struct pgrp * proc_session_search_pg(struct session * s, pid_t pg_id)
 {
     struct pgrp * pg;
 
-    KASSERT(PROC_TESTLOCK(),
-            "proc lock is needed before calling this function.");
+    PROC_KASSERT_LOCK();
 
     TAILQ_FOREACH(pg, &s->s_pgrp_list_head, pg_pgrp_entry_) {
         if (pg->pg_id == pg_id)
@@ -101,8 +100,7 @@ struct pgrp * proc_pgrp_create(struct session * s, struct proc_info * proc)
 {
     struct pgrp * pgrp;
 
-    KASSERT(PROC_TESTLOCK(),
-            "proc lock is needed before calling this function.");
+    PROC_KASSERT_LOCK();
 
     if (!s) {
         s = proc_session_create(proc);
@@ -140,8 +138,7 @@ static void proc_pgrp_free(struct pgrp * pgrp)
 
 void proc_pgrp_insert(struct pgrp * pgrp, struct proc_info * proc)
 {
-    KASSERT(PROC_TESTLOCK(),
-            "proc lock is needed before calling this function.");
+    PROC_KASSERT_LOCK();
 
     if (proc->pgrp)
         proc_pgrp_remove(proc);
@@ -155,8 +152,7 @@ void proc_pgrp_remove(struct proc_info * proc)
 {
     struct pgrp * pgrp = proc->pgrp;
 
-    KASSERT(PROC_TESTLOCK(),
-            "proc lock is needed before calling this function.");
+    PROC_KASSERT_LOCK();
 
     TAILQ_REMOVE(&pgrp->pg_proc_list_head, proc, pgrp_proc_entry_);
     if (--pgrp->pg_proc_count == 0) {

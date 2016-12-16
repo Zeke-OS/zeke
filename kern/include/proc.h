@@ -301,9 +301,14 @@ extern mtx_t proclock;
 #define PROC_UNLOCK()       mtx_unlock(&proclock)
 
 /**
- * Test wheter proclock is locked.
+ * Test whether proclock is locked.
  */
 #define PROC_TESTLOCK()     mtx_test(&proclock)
+
+/**
+ * Assert with PROC_TESTLOCK().
+ */
+#define PROC_KASSERT_LOCK() KASSERT(PROC_TESTLOCK(), "proclock required")
 
 /**
  * @}
