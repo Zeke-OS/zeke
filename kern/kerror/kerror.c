@@ -49,7 +49,8 @@ const char * const _kernel_panic_msg = "Oops, Kernel panic\n";
 #define NR_PRINTBUFS 8
 
 static char kerror_printbuf_str[configKERROR_MAXLEN * NR_PRINTBUFS];
-static isema_t kerror_printbuf_sema[NR_PRINTBUFS];
+static isema_t kerror_printbuf_sema[NR_PRINTBUFS] =
+    ISEMA_INITIALIZER(NR_PRINTBUFS);
 
 static ssize_t kerror_fdwrite(file_t * file, struct uio * uio, size_t count);
 
@@ -93,8 +94,6 @@ int __kinit__ kerror_init(void)
 #else
         KERROR_INFO;
 #endif
-
-    isema_init(kerror_printbuf_sema, num_elem(kerror_printbuf_sema));
 
     fs_inherit_vnops(&kerror_vops, &nofs_vnode_ops);
 

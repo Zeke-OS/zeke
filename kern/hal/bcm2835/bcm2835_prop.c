@@ -46,7 +46,7 @@
  * small.
  */
 #define MB_SECSIZE 512
-static isema_t mb_res[8];
+static isema_t mb_res[8] = ISEMA_INITIALIZER(8);
 
 static struct buf * mbuf;
 
@@ -60,8 +60,6 @@ int __kinit__ bcm2835_prop_init(void)
 
         return -ENOMEM;
     }
-
-    isema_init(mb_res, num_elem(mb_res));
 
     return 0;
 }

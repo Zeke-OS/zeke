@@ -293,6 +293,12 @@ void cpulock_unlock(cpulock_t * lock);
 typedef atomic_t isema_t;
 
 /**
+ * Index semaphore static initializer.
+ */
+#define ISEMA_INITIALIZER(_num_elems) \
+    { [0 ... _num_elems - 1] = ATOMIC_INIT(0), }
+
+/**
  * Initialize an index semaphore.
  * @param isema is a pointer to a isema_t array.
  * @param isema_n num_elem() of isema.
