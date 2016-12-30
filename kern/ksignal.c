@@ -1284,7 +1284,6 @@ static int sys_signal_pkill(__user void * user_args)
         return 0;
     } else if (args.pid == 0) {
         /*
-         * TODO sig pid == 0
          * Quote from IEEE Std 1003.1, 2013 Edition
          *
          * If pid is 0, sig shall be sent to all processes (excluding an
@@ -1292,9 +1291,66 @@ static int sys_signal_pkill(__user void * user_args)
          * equal to the process group ID of the sender, and for which the
          * process has permission to send a signal.
          */
+        pid_t * pgrp_arr;
+        size_t i = 0;
+        struct {
+            unsigned eperm : 1;
+            unsigned esrch : 1;
+        } errors = { 0, 0 };
 
-        set_errno(EINVAL);
-        return -1;
+        PROC_LOCK();
+        pgrp_arr = proc_pgrp_to_array(curproc);
+        PROC_UNLOCK();
+
+        do {
+            struct proc_info * proc;
+            int err = 0;
+
+            proc = proc_ref(pgrp_arr[i]);
+            if (!proc) {
+                errors.esrch = 1;
+                continue;
+            }
+            if (args.sig != 0) {
+                err = syshelper_signal_pkill(proc, args.sig);
+            }
+            proc_unref(proc);
+
+            if (err) {
+                switch (err) {
+                case -EPERM:
+                    errors.eperm = 1;
+                    break;
+                case -ESRCH:
+                    errors.esrch = 1;
+                    break;
+                default:
+                    PROC_LOCK();
+                    proc_pgrp_release_array(pgrp_arr);
+                    PROC_UNLOCK();
+
+                    set_errno(-err);
+                    return -1;
+                }
+            } else {
+                errors.eperm = 0;
+                errors.esrch = 0;
+            }
+        } while (pgrp_arr[++i] != -1);
+
+        PROC_LOCK();
+        proc_pgrp_release_array(pgrp_arr);
+        PROC_UNLOCK();
+
+        if (errors.esrch) {
+            set_errno(ESRCH);
+            return -1;
+        } else if (errors.eperm) {
+            set_errno(EPERM);
+            return -1;
+        }
+
+        return 0;
     } else if (args.pid == -1) {
         /*
          * TODO sig pid == -1

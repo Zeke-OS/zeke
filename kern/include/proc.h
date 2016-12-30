@@ -468,6 +468,21 @@ void proc_pgrp_remove(struct proc_info * proc);
 #endif /* PROC_INTERNAL */
 
 /**
+ * Get an array of PIDs in a process group of proc.
+ * @note Requires PROC_LOCK.
+ * @param proc is a pointer to the process.
+ * @returns A pointer to a buffer containing an array of PIDs.
+ */
+pid_t * proc_pgrp_to_array(struct proc_info * proc);
+
+/**
+ * Release the PID buffer acquired with proc_pgrp_to_array().
+ * @note Requires PROC_LOCK.
+ * @param buf Is a pointer to the buffer acquired with proc_pgrp_to_array().
+ */
+void proc_pgrp_release_array(pid_t * buf);
+
+/**
  * @}
  */
 
