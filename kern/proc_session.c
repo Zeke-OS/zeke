@@ -174,7 +174,6 @@ pid_t * proc_pgrp_to_array(struct proc_info * proc)
     PROC_KASSERT_LOCK();
 
     buf = pgrp_buf[isema_acquire(pgrp_buf_isema, num_elem(pgrp_buf_isema))];
-    memset(buf, 0, configMAXPROC * sizeof(pid_t));
 
     TAILQ_FOREACH(p, &pgrp->pg_proc_list_head, pgrp_proc_entry_) {
         buf[i++] = p->pid;
