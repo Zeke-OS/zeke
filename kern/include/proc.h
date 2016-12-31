@@ -465,19 +465,25 @@ void proc_pgrp_insert(struct pgrp * pgrp, struct proc_info * proc);
 void proc_pgrp_remove(struct proc_info * proc);
 
 /**
+ * Get a pgrp buffer.
+ * The function blocks until a sufficent buffer can be allocated.
+ */
+pid_t * proc_pgrp_get_buffer(void);
+
+/**
+ * Release the PID buffer acquired with proc_pgrp_get_buffer().
+ * @note Requires PROC_LOCK.
+ * @param buf Is a pointer to the buffer acquired with proc_pgrp_get_buffer().
+ */
+void proc_pgrp_release_buffer(pid_t * buf);
+
+/**
  * Get an array of PIDs in a process group.
  * @note Requires PROC_LOCK.
  * @param pgrp is a pointer to the process group.
  * @returns A pointer to a buffer containing an array of PIDs.
  */
-pid_t * proc_pgrp_to_array(struct pgrp * pgrp);
-
-/**
- * Release the PID buffer acquired with proc_pgrp_to_array().
- * @note Requires PROC_LOCK.
- * @param buf Is a pointer to the buffer acquired with proc_pgrp_to_array().
- */
-void proc_pgrp_release_array(pid_t * buf);
+void proc_pgrp_to_array(pid_t * buf, struct pgrp * pgrp);
 
 /**
  * @}

@@ -1238,21 +1238,21 @@ static int syshelper_signal_pkill(struct proc_info * proc, int sig)
 
 /**
  * Send a signal to a group of processes.
- * @param pgrp_arr is an array containging PIDs and terminated with -1.
+ * @param pgrp_arr is an array containging PIDs and terminated with 0.
  */
-static int syshelper_signal_pgrp(pid_t * pgrp_arr, int sig)
+static int syshelper_signal_pgrp(pid_t * pids, int sig)
 {
-    size_t i = 0;
+    pid_t pid;
     struct {
         unsigned eperm : 1;
         unsigned esrch : 1;
     } errors = { 0, 0 };
 
-    do {
+    while ((pid = *pids++) != 0) {
         struct proc_info * proc;
         int err = 0;
 
-        proc = proc_ref(pgrp_arr[i]);
+        proc = proc_ref(pid);
         if (!proc) {
             errors.esrch = 1;
             continue;
@@ -1271,17 +1271,13 @@ static int syshelper_signal_pgrp(pid_t * pgrp_arr, int sig)
                 errors.esrch = 1;
                 break;
             default:
-                PROC_LOCK();
-                proc_pgrp_release_array(pgrp_arr);
-                PROC_UNLOCK();
-
                 return err;
             }
         } else {
             errors.eperm = 0;
             errors.esrch = 0;
         }
-    } while (pgrp_arr[++i] != -1);
+    }
 
     if (errors.esrch) {
         return -ESRCH;
@@ -1347,18 +1343,16 @@ static int sys_signal_pkill(__user void * user_args)
          * equal to the process group ID of the sender, and for which the
          * process has permission to send a signal.
          */
-        pid_t * pgrp_arr;
+        pid_t * pids = proc_pgrp_get_buffer();
         int err;
 
         PROC_LOCK();
-        pgrp_arr = proc_pgrp_to_array(curproc->pgrp);
+        proc_pgrp_to_array(pids, curproc->pgrp);
         PROC_UNLOCK();
 
-        err = syshelper_signal_pgrp(pgrp_arr, args.sig);
+        err = syshelper_signal_pgrp(pids, args.sig);
 
-        PROC_LOCK();
-        proc_pgrp_release_array(pgrp_arr);
-        PROC_UNLOCK();
+        proc_pgrp_release_buffer(pids);
 
         if (err) {
             set_errno(-err);
@@ -1396,7 +1390,7 @@ static int sys_signal_pkill(__user void * user_args)
          */
         pid_t pg_id = -args.pid;
         struct pgrp * pgrp;
-        pid_t * pgrp_arr = NULL;
+        pid_t * pids = proc_pgrp_get_buffer();
         int err;
 
         /*
@@ -1406,19 +1400,18 @@ static int sys_signal_pkill(__user void * user_args)
         PROC_LOCK();
         pgrp = proc_session_search_pg(curproc->pgrp->pg_session, pg_id);
         if (pgrp) {
-            pgrp_arr = proc_pgrp_to_array(pgrp);
+            proc_pgrp_to_array(pids, pgrp);
         }
         PROC_UNLOCK();
-        if (pgrp_arr) {
+        if (pids[0] == -1) {
+            proc_pgrp_release_buffer(pids);
             set_errno(ESRCH);
             return -1;
         }
 
-        err = syshelper_signal_pgrp(pgrp_arr, args.sig);
+        err = syshelper_signal_pgrp(pids, args.sig);
 
-        PROC_LOCK();
-        proc_pgrp_release_array(pgrp_arr);
-        PROC_UNLOCK();
+        proc_pgrp_release_buffer(pids);
 
         if (err) {
             set_errno(-err);

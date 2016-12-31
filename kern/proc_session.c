@@ -163,26 +163,31 @@ void proc_pgrp_remove(struct proc_info * proc)
 static pid_t pgrp_buf[NR_PGRP_BUFS][configMAXPROC + 1];
 static isema_t pgrp_buf_isema[NR_PGRP_BUFS] = ISEMA_INITIALIZER(NR_PGRP_BUFS);
 
-pid_t * proc_pgrp_to_array(struct pgrp * pgrp)
+pid_t * proc_pgrp_get_buffer(void)
 {
-    struct proc_info * p;
     pid_t * buf;
-    size_t i = 0;
-
-    PROC_KASSERT_LOCK();
 
     buf = pgrp_buf[isema_acquire(pgrp_buf_isema, num_elem(pgrp_buf_isema))];
-
-    TAILQ_FOREACH(p, &pgrp->pg_proc_list_head, pgrp_proc_entry_) {
-        buf[i++] = p->pid;
-    }
-    buf[i] = -1;
+    memset(buf, 0, configMAXPROC + 1);
 
     return buf;
 }
 
-void proc_pgrp_release_array(pid_t * buf)
+void proc_pgrp_release_buffer(pid_t * buf)
 {
     uintptr_t i = ((uintptr_t)buf - (uintptr_t)pgrp_buf) / sizeof(pid_t);
     isema_release(pgrp_buf_isema, i);
+}
+
+void proc_pgrp_to_array(pid_t * buf, struct pgrp * pgrp)
+{
+    struct proc_info * p;
+    size_t i = 0;
+
+    PROC_KASSERT_LOCK();
+
+    TAILQ_FOREACH(p, &pgrp->pg_proc_list_head, pgrp_proc_entry_) {
+        buf[i++] = p->pid;
+    }
+    buf[i] = 0;
 }
