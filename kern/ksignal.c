@@ -1237,6 +1237,62 @@ static int syshelper_signal_pkill(struct proc_info * proc, int sig)
 }
 
 /**
+ * Send a signal to a group of processes.
+ * @param pgrp_arr is an array containging PIDs and terminated with -1.
+ */
+static int syshelper_signal_pgrp(pid_t * pgrp_arr, int sig)
+{
+    size_t i = 0;
+    struct {
+        unsigned eperm : 1;
+        unsigned esrch : 1;
+    } errors = { 0, 0 };
+
+    do {
+        struct proc_info * proc;
+        int err = 0;
+
+        proc = proc_ref(pgrp_arr[i]);
+        if (!proc) {
+            errors.esrch = 1;
+            continue;
+        }
+        if (sig != 0) {
+            err = syshelper_signal_pkill(proc, sig);
+        }
+        proc_unref(proc);
+
+        if (err) {
+            switch (err) {
+            case -EPERM:
+                errors.eperm = 1;
+                break;
+            case -ESRCH:
+                errors.esrch = 1;
+                break;
+            default:
+                PROC_LOCK();
+                proc_pgrp_release_array(pgrp_arr);
+                PROC_UNLOCK();
+
+                return err;
+            }
+        } else {
+            errors.eperm = 0;
+            errors.esrch = 0;
+        }
+    } while (pgrp_arr[++i] != -1);
+
+    if (errors.esrch) {
+        return -ESRCH;
+    } else if (errors.eperm) {
+        return -EPERM;
+    }
+
+    return 0;
+}
+
+/**
  * Send a signal to a process or a group of processes.
  */
 static int sys_signal_pkill(__user void * user_args)
@@ -1292,64 +1348,22 @@ static int sys_signal_pkill(__user void * user_args)
          * process has permission to send a signal.
          */
         pid_t * pgrp_arr;
-        size_t i = 0;
-        struct {
-            unsigned eperm : 1;
-            unsigned esrch : 1;
-        } errors = { 0, 0 };
+        int err;
 
         PROC_LOCK();
-        pgrp_arr = proc_pgrp_to_array(curproc);
+        pgrp_arr = proc_pgrp_to_array(curproc->pgrp);
         PROC_UNLOCK();
 
-        do {
-            struct proc_info * proc;
-            int err = 0;
-
-            proc = proc_ref(pgrp_arr[i]);
-            if (!proc) {
-                errors.esrch = 1;
-                continue;
-            }
-            if (args.sig != 0) {
-                err = syshelper_signal_pkill(proc, args.sig);
-            }
-            proc_unref(proc);
-
-            if (err) {
-                switch (err) {
-                case -EPERM:
-                    errors.eperm = 1;
-                    break;
-                case -ESRCH:
-                    errors.esrch = 1;
-                    break;
-                default:
-                    PROC_LOCK();
-                    proc_pgrp_release_array(pgrp_arr);
-                    PROC_UNLOCK();
-
-                    set_errno(-err);
-                    return -1;
-                }
-            } else {
-                errors.eperm = 0;
-                errors.esrch = 0;
-            }
-        } while (pgrp_arr[++i] != -1);
+        err = syshelper_signal_pgrp(pgrp_arr, args.sig);
 
         PROC_LOCK();
         proc_pgrp_release_array(pgrp_arr);
         PROC_UNLOCK();
 
-        if (errors.esrch) {
-            set_errno(ESRCH);
-            return -1;
-        } else if (errors.eperm) {
-            set_errno(EPERM);
+        if (err) {
+            set_errno(-err);
             return -1;
         }
-
         return 0;
     } else if (args.pid == -1) {
         /*
@@ -1368,7 +1382,6 @@ static int sys_signal_pkill(__user void * user_args)
         return -1;
     } else {
         /*
-         * TODO sig pid < -1
          * Quote from IEEE Std 1003.1, 2013 Edition
          *
          * If pid is negative, but not -1, sig shall be sent to all processes
@@ -1381,9 +1394,37 @@ static int sys_signal_pkill(__user void * user_args)
          * ESRCH No process or process group can be found corresponding to that
          *       specified by pid.
          */
+        pid_t pg_id = -args.pid;
+        struct pgrp * pgrp;
+        pid_t * pgrp_arr = NULL;
+        int err;
 
-        set_errno(EINVAL);
-        return -1;
+        /*
+         * Note that we only allow sending a signal inside the session the
+         * sending process belongs to.
+         */
+        PROC_LOCK();
+        pgrp = proc_session_search_pg(curproc->pgrp->pg_session, pg_id);
+        if (pgrp) {
+            pgrp_arr = proc_pgrp_to_array(pgrp);
+        }
+        PROC_UNLOCK();
+        if (pgrp_arr) {
+            set_errno(ESRCH);
+            return -1;
+        }
+
+        err = syshelper_signal_pgrp(pgrp_arr, args.sig);
+
+        PROC_LOCK();
+        proc_pgrp_release_array(pgrp_arr);
+        PROC_UNLOCK();
+
+        if (err) {
+            set_errno(-err);
+            return -1;
+        }
+        return 0;
     }
 }
 

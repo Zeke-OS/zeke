@@ -42,11 +42,6 @@ struct proc_session_list proc_session_list_head =
 int nr_sessions;
 
 /**
- * Free a session struct.
- * This function is called when the last reference to a session is freed.
- */
-
-/**
  * Create a new session.
  */
 static struct session * proc_session_create(struct proc_info * leader)
@@ -68,6 +63,10 @@ static struct session * proc_session_create(struct proc_info * leader)
     return s;
 }
 
+/**
+ * Free a session struct.
+ * This function is called when the last reference to a session is freed.
+ */
 static void proc_session_free(struct session * s)
 {
     /* We expect proclock to protect us here. */
@@ -164,9 +163,8 @@ void proc_pgrp_remove(struct proc_info * proc)
 static pid_t pgrp_buf[NR_PGRP_BUFS][configMAXPROC + 1];
 static isema_t pgrp_buf_isema[NR_PGRP_BUFS] = ISEMA_INITIALIZER(NR_PGRP_BUFS);
 
-pid_t * proc_pgrp_to_array(struct proc_info * proc)
+pid_t * proc_pgrp_to_array(struct pgrp * pgrp)
 {
-    struct pgrp * pgrp = proc->pgrp;
     struct proc_info * p;
     pid_t * buf;
     size_t i = 0;

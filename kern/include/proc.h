@@ -409,8 +409,9 @@ pid_t proc_get_random_pid(void);
  * @{
  */
 
-TAILQ_HEAD(proc_session_list, session); /*!< Type of the session list. */
-struct proc_session_list proc_session_list_head; /*!< List of sessions. */
+TAILQ_HEAD(proc_session_list, session); /*!< Session list type. */
+/** * List of sessions.  */
+extern struct proc_session_list proc_session_list_head;
 extern int nr_sessions; /*!< Number of sessions. */
 
 /**
@@ -423,8 +424,6 @@ static inline int proc_is_session_leader(struct proc_info * p)
 {
     return (p->pid == p->pgrp->pg_session->s_leader);
 }
-
-#ifdef PROC_INTERNAL
 
 /**
  * Set login name of the session.
@@ -465,15 +464,13 @@ void proc_pgrp_insert(struct pgrp * pgrp, struct proc_info * proc);
  */
 void proc_pgrp_remove(struct proc_info * proc);
 
-#endif /* PROC_INTERNAL */
-
 /**
- * Get an array of PIDs in a process group of proc.
+ * Get an array of PIDs in a process group.
  * @note Requires PROC_LOCK.
- * @param proc is a pointer to the process.
+ * @param pgrp is a pointer to the process group.
  * @returns A pointer to a buffer containing an array of PIDs.
  */
-pid_t * proc_pgrp_to_array(struct proc_info * proc);
+pid_t * proc_pgrp_to_array(struct pgrp * pgrp);
 
 /**
  * Release the PID buffer acquired with proc_pgrp_to_array().
