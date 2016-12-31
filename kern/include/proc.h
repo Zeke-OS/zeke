@@ -315,6 +315,26 @@ extern mtx_t proclock;
  */
 
 /**
+ * Get a pids buffer.
+ * The function blocks until a sufficent buffer can be allocated.
+ */
+pid_t * proc_get_pids_buffer(void);
+
+/**
+ * Release the PID buffer acquired with proc_get_pids_buffer().
+ * @param buf Is a pointer to the buffer acquired with proc_get_pids_buffer().
+ */
+void proc_release_pids_buffer(pid_t * buf);
+
+
+/**
+ * Copy a list of active PIDs to an array.
+ * @note Requires PROC_LOCK.
+ * @param pids is an array with a minimum size of configMAXPROC + 1.
+ */
+void proc_get_pids(pid_t * pids);
+
+/**
  * Iterate over threads owned by proc.
  * @param thread_it should be initialized to NULL.
  * @return next thread or NULL.
@@ -463,19 +483,6 @@ void proc_pgrp_insert(struct pgrp * pgrp, struct proc_info * proc);
  * @param proc is a pointer to the process.
  */
 void proc_pgrp_remove(struct proc_info * proc);
-
-/**
- * Get a pgrp buffer.
- * The function blocks until a sufficent buffer can be allocated.
- */
-pid_t * proc_pgrp_get_buffer(void);
-
-/**
- * Release the PID buffer acquired with proc_pgrp_get_buffer().
- * @note Requires PROC_LOCK.
- * @param buf Is a pointer to the buffer acquired with proc_pgrp_get_buffer().
- */
-void proc_pgrp_release_buffer(pid_t * buf);
 
 /**
  * Get an array of PIDs in a process group.

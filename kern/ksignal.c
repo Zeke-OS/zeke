@@ -1343,7 +1343,7 @@ static int sys_signal_pkill(__user void * user_args)
          * equal to the process group ID of the sender, and for which the
          * process has permission to send a signal.
          */
-        pid_t * pids = proc_pgrp_get_buffer();
+        pid_t * pids = proc_get_pids_buffer();
         int err;
 
         PROC_LOCK();
@@ -1352,7 +1352,7 @@ static int sys_signal_pkill(__user void * user_args)
 
         err = syshelper_signal_pgrp(pids, args.sig);
 
-        proc_pgrp_release_buffer(pids);
+        proc_release_pids_buffer(pids);
 
         if (err) {
             set_errno(-err);
@@ -1361,7 +1361,6 @@ static int sys_signal_pkill(__user void * user_args)
         return 0;
     } else if (args.pid == -1) {
         /*
-         * TODO sig pid == -1
          * Quote from IEEE Std 1003.1, 2013 Edition
          *
          * If pid is -1, sig shall be sent to all processes (excluding an
@@ -1371,9 +1370,22 @@ static int sys_signal_pkill(__user void * user_args)
          * EPERM The process does not have permission to send the signal to
          *       any receiving process.
          */
+        int err;
+        pid_t * pids = proc_get_pids_buffer();
 
-        set_errno(EINVAL);
-        return -1;
+        PROC_LOCK();
+        proc_get_pids(pids);
+        PROC_UNLOCK();
+
+        err = syshelper_signal_pgrp(pids, args.sig);
+
+        proc_release_pids_buffer(pids);
+
+        if (err) {
+            set_errno(-err);
+            return -1;
+        }
+        return 0;
     } else {
         /*
          * Quote from IEEE Std 1003.1, 2013 Edition
@@ -1390,7 +1402,7 @@ static int sys_signal_pkill(__user void * user_args)
          */
         pid_t pg_id = -args.pid;
         struct pgrp * pgrp;
-        pid_t * pids = proc_pgrp_get_buffer();
+        pid_t * pids = proc_get_pids_buffer();
         int err;
 
         /*
@@ -1404,14 +1416,14 @@ static int sys_signal_pkill(__user void * user_args)
         }
         PROC_UNLOCK();
         if (pids[0] == -1) {
-            proc_pgrp_release_buffer(pids);
+            proc_release_pids_buffer(pids);
             set_errno(ESRCH);
             return -1;
         }
 
         err = syshelper_signal_pgrp(pids, args.sig);
 
-        proc_pgrp_release_buffer(pids);
+        proc_release_pids_buffer(pids);
 
         if (err) {
             set_errno(-err);

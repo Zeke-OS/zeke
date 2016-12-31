@@ -159,26 +159,6 @@ void proc_pgrp_remove(struct proc_info * proc)
     }
 }
 
-#define NR_PGRP_BUFS 2
-static pid_t pgrp_buf[NR_PGRP_BUFS][configMAXPROC + 1];
-static isema_t pgrp_buf_isema[NR_PGRP_BUFS] = ISEMA_INITIALIZER(NR_PGRP_BUFS);
-
-pid_t * proc_pgrp_get_buffer(void)
-{
-    pid_t * buf;
-
-    buf = pgrp_buf[isema_acquire(pgrp_buf_isema, num_elem(pgrp_buf_isema))];
-    memset(buf, 0, configMAXPROC + 1);
-
-    return buf;
-}
-
-void proc_pgrp_release_buffer(pid_t * buf)
-{
-    uintptr_t i = ((uintptr_t)buf - (uintptr_t)pgrp_buf) / sizeof(pid_t);
-    isema_release(pgrp_buf_isema, i);
-}
-
 void proc_pgrp_to_array(pid_t * buf, struct pgrp * pgrp)
 {
     struct proc_info * p;

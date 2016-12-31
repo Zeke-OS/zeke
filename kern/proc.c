@@ -278,6 +278,41 @@ static void procarr_remove(pid_t pid)
     PROC_UNLOCK();
 }
 
+#define NR_PIDS_BUFS 4
+static pid_t pids_buf[NR_PIDS_BUFS][configMAXPROC + 1];
+static isema_t pids_buf_isema[NR_PIDS_BUFS] = ISEMA_INITIALIZER(NR_PIDS_BUFS);
+
+pid_t * proc_get_pids_buffer(void)
+{
+    pid_t * buf;
+
+    buf = pids_buf[isema_acquire(pids_buf_isema, num_elem(pids_buf_isema))];
+    memset(buf, 0, configMAXPROC + 1);
+
+    return buf;
+}
+
+void proc_release_pids_buffer(pid_t * buf)
+{
+    uintptr_t i = ((uintptr_t)buf - (uintptr_t)pids_buf) / sizeof(pid_t);
+    isema_release(pids_buf_isema, i);
+}
+
+void proc_get_pids(pid_t * pids)
+{
+    size_t i, j = 0;
+
+    PROC_KASSERT_LOCK();
+
+    for (i = 1; i < configMAXPROC + 1; i++) {
+        struct proc_info * proc = procarr[i];
+
+        if (proc) {
+            pids[j++] = proc->pid;
+        }
+    }
+}
+
 /**
  * Remove zombie process from the system.
  */
