@@ -89,6 +89,13 @@ static const char * const proc_state_names[] = {
     "PROC_STATE_DEFUNCT",
 };
 
+/*
+ * PID buffers.
+ */
+#define NR_PIDS_BUFS 4
+static pid_t pids_buf[NR_PIDS_BUFS][configMAXPROC + 1];
+static isema_t pids_buf_isema[NR_PIDS_BUFS] = ISEMA_INITIALIZER(NR_PIDS_BUFS);
+
 static void init_kernel_proc(void);
 static void procarr_remove(pid_t pid);
 static void proc_remove(struct proc_info * proc);
@@ -277,10 +284,6 @@ static void procarr_remove(pid_t pid)
     nprocs--;
     PROC_UNLOCK();
 }
-
-#define NR_PIDS_BUFS 4
-static pid_t pids_buf[NR_PIDS_BUFS][configMAXPROC + 1];
-static isema_t pids_buf_isema[NR_PIDS_BUFS] = ISEMA_INITIALIZER(NR_PIDS_BUFS);
 
 pid_t * proc_get_pids_buffer(void)
 {
