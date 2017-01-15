@@ -166,6 +166,7 @@ out:
     priceil_set(mtx);
 
 #ifdef configLOCK_DEBUG
+    KASSERT(whr, "whr should be non-null");
     mtx->mtx_ldebug = whr;
 #endif
 
@@ -264,6 +265,7 @@ int _mtx_trylock(mtx_t * mtx, char * whr)
     priceil_set(mtx);
 
 #ifdef configLOCK_DEBUG
+    KASSERT(whr, "whr should be non-null");
     mtx->mtx_ldebug = whr;
 #endif
 
