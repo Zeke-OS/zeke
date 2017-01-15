@@ -5,7 +5,7 @@
  *
  * @brief   -
  * @section LICENSE
- * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1997 Berkeley Software Design, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -64,8 +64,6 @@
  * @{
  */
 
-#define MTX_OPT(mtx, typ) (((mtx)->mtx_flags & (typ)) != 0)
-
 /*
  * Mutex types
  * ===========
@@ -115,14 +113,17 @@ enum mtx_type {
  * Sleep/spin mutex.
  */
 typedef struct mtx {
-    enum mtx_type mtx_type;     /*!< Lock type. */
-    unsigned int mtx_flags;     /*!< Option flags. */
+    struct mtx_mod {
+      unsigned int mtx_type : 8;        /*!< Lock type. */
+      unsigned int mtx_flags : 8;       /*!< Option flags. */
+      unsigned int mtx_modcsum : 16;    /*!< Checksum of mod struct. */
+    } mod;
     atomic_t mtx_lock;          /*!< Lock value for regular (spin)lock. */
-    struct ticket {
+    struct mtx_ticket {
         atomic_t queue;
         atomic_t dequeue;
     } ticket;                   /*!< Ticket lock. */
-    struct pri {
+    struct mtx_pri {
         int p_lock;
         int p_saved;
     } pri;
@@ -131,18 +132,32 @@ typedef struct mtx {
 #endif
 } mtx_t;
 
+#define MTX_OPT(mtx, typ) (((mtx)->mod.mtx_flags & (typ)) != 0)
+
+#define MTX_MODCSUM(_type, _flags)                                  \
+    ((((uint32_t)(_type) >> 1) + (((uint32_t)(_type) & 1) << 15) +  \
+      (uint32_t)(_flags)) & 0xffff)
+
 /**
  * Initialize a kernel mutex.
  * @param mtx is a pointer to a mutex struct.
+ * @param type is the lock type.
+ * @param opt OR'd lock options.
  */
 void mtx_init(mtx_t * mtx, enum mtx_type type, unsigned int opt);
 
-#define MTX_INITIALIZER(type, opt) (mtx_t){ \
-    .mtx_type = (type),                     \
-    .mtx_flags = (opt),                     \
-    .mtx_lock = ATOMIC_INIT(0),             \
-    .ticket.queue = ATOMIC_INIT(0),         \
-    .ticket.dequeue = ATOMIC_INIT(0),       \
+/**
+ * Static initializer for a kernel mutex.
+ * @param type is the lock type.
+ * @param opt OR'd lock options.
+ */
+#define MTX_INITIALIZER(type, opt) (mtx_t){     \
+    .mod.mtx_type = (type),                     \
+    .mod.mtx_flags = (opt),                     \
+    .mod.mtx_modcsum = MTX_MODCSUM(type, opt),  \
+    .mtx_lock = ATOMIC_INIT(0),                 \
+    .ticket.queue = ATOMIC_INIT(0),             \
+    .ticket.dequeue = ATOMIC_INIT(0),           \
 }
 
 /* Mutex functions */

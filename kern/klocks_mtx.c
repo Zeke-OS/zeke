@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Kernel space locks.
  * @section LICENSE
- * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,11 +40,16 @@
 #ifdef configLOCK_DEBUG
 #define MTX_TYPE_NOTSUP() do {                                       \
     KERROR(KERROR_ERR, "In %s%s not supported for lock type (%u)\n", \
-            whr, __func__, mtx->mtx_type);                           \
+            whr, __func__, mtx->mod.mtx_type);                       \
 } while (0)
 #else
 #define MTX_TYPE_NOTSUP()
 #endif
+
+#define MTX_MOD_ASSERT(mod)                                     \
+    KASSERT(MTX_MODCSUM((mod)->mtx_type, (mod)->mtx_flags) ==   \
+            (mod)->mtx_modcsum,                                 \
+            "mtx mod unmodified")
 
 /**
  * istate for MTX_OPT_DINT.
@@ -74,8 +79,9 @@ static void priceil_restore(mtx_t * mtx)
 
 void mtx_init(mtx_t * mtx, enum mtx_type type, unsigned int opt)
 {
-    mtx->mtx_type = type;
-    mtx->mtx_flags = opt;
+    mtx->mod.mtx_type = type;
+    mtx->mod.mtx_flags = opt;
+    mtx->mod.mtx_modcsum = MTX_MODCSUM(type, opt);
     mtx->mtx_lock = ATOMIC_INIT(0);
     mtx->ticket.queue = ATOMIC_INIT(0);
     mtx->ticket.dequeue = ATOMIC_INIT(0);
@@ -94,9 +100,11 @@ int _mtx_lock(mtx_t * mtx, char * whr)
     const int sleep_mode = MTX_OPT(mtx, MTX_OPT_SLEEP);
 #ifdef configLOCK_DEBUG
     unsigned deadlock_cnt = 0;
+
+    MTX_MOD_ASSERT(&mtx->mod);
 #endif
 
-    if (mtx->mtx_type == MTX_TYPE_TICKET) {
+    if (mtx->mod.mtx_type == MTX_TYPE_TICKET) {
         ticket = atomic_inc(&mtx->ticket.queue);
     }
 
@@ -125,7 +133,7 @@ int _mtx_lock(mtx_t * mtx, char * whr)
         if (sleep_mode && (current_thread->wait_tim == -2))
             return -EWOULDBLOCK;
 
-        switch (mtx->mtx_type) {
+        switch (mtx->mod.mtx_type) {
         case MTX_TYPE_SPIN:
             if (!atomic_test_and_set(&mtx->mtx_lock))
                 goto out;
@@ -178,6 +186,10 @@ int _mtx_sleep(mtx_t * mtx, long timeout, char * whr)
 {
     int retval;
 
+#ifndef configLOCK_DEBUG
+    MTX_MOD_ASSERT(&mtx->mod);
+#endif
+
     if (MTX_OPT(mtx, MTX_OPT_DINT))
         goto fail;
 
@@ -192,7 +204,7 @@ int _mtx_sleep(mtx_t * mtx, long timeout, char * whr)
         retval = mtx_lock(mtx);
         timers_release(current_thread->wait_tim);
         current_thread->wait_tim = TMNOVAL;
-    } else if (mtx->mtx_type == MTX_TYPE_SPIN) {
+    } else if (mtx->mod.mtx_type == MTX_TYPE_SPIN) {
         retval = mtx_lock(mtx);
     } else {
 fail:
@@ -212,12 +224,16 @@ int _mtx_trylock(mtx_t * mtx, char * whr)
     int ticket;
     int retval;
 
+#ifndef configLOCK_DEBUG
+    MTX_MOD_ASSERT(&mtx->mod);
+#endif
+
     if (MTX_OPT(mtx, MTX_OPT_DINT)) {
         cpu_istate = get_interrupt_state();
         disable_interrupt();
     }
 
-    switch (mtx->mtx_type) {
+    switch (mtx->mod.mtx_type) {
     case MTX_TYPE_SPIN:
         retval = atomic_test_and_set(&mtx->mtx_lock);
         break;
@@ -256,6 +272,10 @@ int _mtx_trylock(mtx_t * mtx, char * whr)
 
 void mtx_unlock(mtx_t * mtx)
 {
+#ifndef configLOCK_DEBUG
+    MTX_MOD_ASSERT(&mtx->mod);
+#endif
+
     if (MTX_OPT(mtx, MTX_OPT_SLEEP) && (current_thread->wait_tim >= 0)) {
         timers_release(current_thread->wait_tim);
         current_thread->wait_tim = TMNOVAL;
@@ -265,7 +285,7 @@ void mtx_unlock(mtx_t * mtx)
     mtx->mtx_ldebug = NULL;
 #endif
 
-    if (mtx->mtx_type == MTX_TYPE_TICKET)
+    if (mtx->mod.mtx_type == MTX_TYPE_TICKET)
         atomic_inc(&mtx->ticket.dequeue);
     atomic_set(&mtx->mtx_lock, 0);
 

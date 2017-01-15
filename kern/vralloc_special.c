@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Virtual Region Allocator.
  * @section LICENSE
- * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,15 +40,12 @@
 
 /* TODO We may want to use bitmaps */
 
-mtx_t l_ksect_next;
+mtx_t l_ksect_next = MTX_INITIALIZER(MTX_TYPE_SPIN, 0);
 static uintptr_t ksect_next = configKSECT_START;
 
 static uintptr_t get_ksect_addr(size_t region_size)
 {
     uintptr_t retval;
-
-    if (l_ksect_next.mtx_type == MTX_TYPE_UNDEF)
-        mtx_init(&l_ksect_next, MTX_TYPE_SPIN, 0);
 
     mtx_lock(&l_ksect_next);
 
