@@ -110,6 +110,11 @@ enum mtx_type {
                               */
 
 /**
+ * Specify a timeout for mtx_lock() in ms.
+ */
+#define MTX_OPT_TIMEOUT(x) (0xf & (x))
+
+/**
  * Sleep/spin mutex.
  */
 typedef struct mtx {
@@ -132,7 +137,7 @@ typedef struct mtx {
 #endif
 } mtx_t;
 
-#define MTX_OPT(mtx, typ) (((mtx)->mod.mtx_flags & (typ)) != 0)
+#define MTX_OPT(mtx, typ) (!!((mtx)->mod.mtx_flags & (typ)))
 
 #define MTX_MODCSUM(_type, _flags)                                  \
     ((((uint32_t)(_type) >> 1) + (((uint32_t)(_type) & 1) << 15) +  \

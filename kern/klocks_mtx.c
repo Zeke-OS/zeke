@@ -31,10 +31,11 @@
  */
 
 #include <errno.h>
-#include <kstring.h>
+#include <hal/hw_timers.h>
 #include <kerror.h>
-#include <timers.h>
+#include <kstring.h>
 #include <thread.h>
+#include <timers.h>
 #include <klocks.h>
 
 #ifdef configLOCK_DEBUG
@@ -98,6 +99,8 @@ int _mtx_lock(mtx_t * mtx, char * whr)
 {
     int ticket;
     const int sleep_mode = MTX_OPT(mtx, MTX_OPT_SLEEP);
+    const int opt_timeout = (mtx->mod.mtx_flags & 0xf) * 1000;
+    uint64_t start_time = (opt_timeout) ? get_utime() : 0;
 #ifdef configLOCK_DEBUG
     unsigned deadlock_cnt = 0;
 
@@ -129,6 +132,12 @@ int _mtx_lock(mtx_t * mtx, char * whr)
             deadlock_cnt = 0;
         }
 #endif
+
+        /* Handle timeout */
+        if (opt_timeout &&
+            (get_utime() - start_time) >= (uint64_t)opt_timeout) {
+            return -EWOULDBLOCK;
+        }
 
         if (sleep_mode && (current_thread->wait_tim == -2))
             return -EWOULDBLOCK;
