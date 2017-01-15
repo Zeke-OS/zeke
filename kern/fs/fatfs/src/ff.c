@@ -405,13 +405,12 @@ static const uint8_t ExCvt[] = _EXCVT;
  */
 static void unlock_fs(FATFS * fs, FRESULT res)
 {
-    if (fs &&
-        res != FR_NOT_ENABLED &&
-        res != FR_INVALID_DRIVE &&
-        res != FR_INVALID_OBJECT &&
-        res != FR_TIMEOUT) {
-        mtx_unlock(&fs->sobj);
-    }
+    KASSERT(fs &&
+            res != FR_NOT_ENABLED &&
+            res != FR_INVALID_DRIVE &&
+            res != FR_INVALID_OBJECT &&
+            res != FR_TIMEOUT, "fs is valid");
+    mtx_unlock(&fs->sobj);
 }
 
 /**
