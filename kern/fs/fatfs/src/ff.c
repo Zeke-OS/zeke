@@ -2739,8 +2739,7 @@ FRESULT f_stat(FATFS * fs, const TCHAR * path, FILINFO * fno)
         goto fail;
 
     if (dj.dir) {       /* Found an object */
-        if (fno)
-            get_fileinfo(&dj, fno);
+        get_fileinfo(&dj, fno);
     } else {            /* It is root directory */
         res = FR_INVALID_NAME;
     }
