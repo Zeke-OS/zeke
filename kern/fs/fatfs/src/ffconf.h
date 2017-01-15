@@ -108,19 +108,6 @@
  */
 #define _MULTI_PARTITION 0
 
-
-/**
- * These options configure the range of sector size to be supported. (512, 1024,
- * 2048 or 4096) Always set both 512 for most systems, all memory card and
- * harddisk. But a larger value may be required for on-board flash memory and
- * some type of optical media. When _MAX_SS is larger than _MIN_SS, FatFs is
- * configured to variable sector size and GET_SECTOR_SIZE command must be
- * implemented to the disk_ioctl() function.
- */
-#define _MIN_SS     512
-#define _MAX_SS     4096
-
-
 /**
  * To enable sector erase feature, set _USE_ERASE to 1. Also CTRL_ERASE_SECTOR
  * command should be added to the disk_ioctl() function.

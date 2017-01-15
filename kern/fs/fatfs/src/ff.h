@@ -5,7 +5,7 @@
 / This is a free software that opened for education, research and commercial
 / developments under license policy of following terms.
 /
-/  Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+/  Copyright (c) 2015 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
 /  Copyright (C) 2014, ChaN, all right reserved.
 /
 / * The FatFs module is a free software and there is NO WARRANTY.
@@ -53,6 +53,12 @@ typedef char TCHAR;
 #define LFN_SIZE        (NAME_MAX + 1)
 
 /**
+ * Sector size support (512, 1024, 2048 or 4096)
+ */
+#define MIN_SS 512
+#define MAX_SS 4096
+
+/**
  * File system object structure (FATFS)
  */
 typedef struct {
@@ -75,7 +81,9 @@ typedef struct {
     DWORD   dirbase;        /* Root directory start sector (FAT32:Cluster#) */
     DWORD   database;       /* Data start sector */
     DWORD   winsect;        /* Current sector appearing in the win[] */
-    uint8_t win[_MAX_SS];   /* Disk access window for Directory, FAT (and file data at tiny cfg) */
+    uint8_t win[MAX_SS];   /* Disk access window for Directory,
+                            * FAT (and file data at tiny cfg)
+                            */
 } FATFS;
 
 
@@ -97,7 +105,7 @@ typedef struct {
 #if _USE_FASTSEEK
     DWORD * cltbl;          /* Pointer to the cluster link map table (Nulled on file open) */
 #endif
-    uint8_t buf[_MAX_SS];   /* File private data read/write window */
+    uint8_t buf[MAX_SS];   /* File private data read/write window */
 } FF_FIL;
 
 
