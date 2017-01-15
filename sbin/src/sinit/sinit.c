@@ -1,7 +1,7 @@
 /*
  * MIT/X Consortium License
  *
- * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015, 2016, 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2014 Dimitris Papastamos <sin@2f30.org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -23,9 +23,11 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#include <errno.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -109,8 +111,7 @@ spawn(char *const argv[])
 
         setsid();
         execvp(argv[0], argv);
-        perror("sinit:execvp");
-        fprintf(stderr, "sinit:exec: %s\n", argv[0]);
+        fprintf(stderr, "sinit:exec: %s %s\n", strerror(errno), argv[0]);
         _exit(1);
     }
 }
