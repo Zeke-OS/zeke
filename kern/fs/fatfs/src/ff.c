@@ -6,7 +6,7 @@
  * This is a free software that opened for education, research and commercial
  * developments under license policy of following terms.
  *
- *  Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ *  Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  *  Copyright (C) 2014, ChaN, all right reserved.
  *
  * * The FatFs module is a free software and there is NO WARRANTY.
@@ -1905,7 +1905,7 @@ static FRESULT prepare_volume(FATFS * fs, int vol)
         return FR_NO_FILESYSTEM;
     }
 
-    fasize = LD_WORD(fs->win+BPB_FATSz16); /* Number of sectors per FAT */
+    fasize = LD_WORD(fs->win + BPB_FATSz16); /* Number of sectors per FAT */
     if (!fasize)
         fasize = LD_DWORD(fs->win + BPB_FATSz32);
     fs->fsize = fasize;
@@ -1958,7 +1958,7 @@ static FRESULT prepare_volume(FATFS * fs, int vol)
             return FR_NO_FILESYSTEM; /* (BPB_RootEntCnt must be 0) */
 
         /* Root directory start cluster */
-        fs->dirbase = LD_DWORD(fs->win+BPB_RootClus);
+        fs->dirbase = LD_DWORD(fs->win + BPB_RootClus);
         /* (Needed FAT size) */
         szbfat = fs->n_fatent * 4;
     } else {
@@ -1981,18 +1981,18 @@ static FRESULT prepare_volume(FATFS * fs, int vol)
         fs->fsi_flag = 0x80;
 #if (_FS_NOFSINFO & 3) != 3
         /* Enable FSINFO only if FAT32 and BPB_FSInfo is 1 */
-        if (fmt == FS_FAT32 && LD_WORD(fs->win+BPB_FSInfo) == 1 &&
+        if (fmt == FS_FAT32 && LD_WORD(fs->win + BPB_FSInfo) == 1 &&
             move_window(fs, 1) == FR_OK) {
             fs->fsi_flag = 0;
             /* Load FSINFO data if available */
-            if (LD_WORD(fs->win+BS_55AA) == 0xAA55 &&
-                LD_DWORD(fs->win+FSI_LeadSig) == 0x41615252 &&
-                LD_DWORD(fs->win+FSI_StrucSig) == 0x61417272) {
+            if (LD_WORD(fs->win + BS_55AA) == 0xAA55 &&
+                LD_DWORD(fs->win + FSI_LeadSig) == 0x41615252 &&
+                LD_DWORD(fs->win + FSI_StrucSig) == 0x61417272) {
 #if (_FS_NOFSINFO & 1) == 0
-                fs->free_clust = LD_DWORD(fs->win+FSI_Free_Count);
+                fs->free_clust = LD_DWORD(fs->win + FSI_Free_Count);
 #endif
 #if (_FS_NOFSINFO & 2) == 0
-                fs->last_clust = LD_DWORD(fs->win+FSI_Nxt_Free);
+                fs->last_clust = LD_DWORD(fs->win + FSI_Nxt_Free);
 #endif
             }
         }
