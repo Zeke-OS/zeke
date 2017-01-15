@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Dynamic kerror debug messages.
  * @section LICENSE
- * Copyright (c) 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2016, 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,7 +50,7 @@ static int toggle_dbgmsg(char * cfg)
     struct _kerror_dyndebug_msg * msg_opt = &__start_set_debug_msg_sect;
     struct _kerror_dyndebug_msg * stop = &__stop_set_debug_msg_sect;
     char strbuf[DD_MAX_LINE];
-    char * file = strbuf;
+    char * file;
     char * line;
 
     if (msg_opt == stop)

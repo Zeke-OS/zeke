@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   emmc driver.
  * @section LICENSE
- * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -1591,7 +1591,6 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
     uint32_t crc_error = (cmd3_resp >> 15) & 0x1;
     uint32_t illegal_cmd = (cmd3_resp >> 14) & 0x1;
     uint32_t error = (cmd3_resp >> 13) & 0x1;
-    uint32_t status = (cmd3_resp >> 9) & 0xf;
     uint32_t ready = (cmd3_resp >> 8) & 0x1;
 
     if (crc_error) {
@@ -1636,7 +1635,7 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
     }
 
     uint32_t cmd7_resp = ret->last_r0;
-    status = (cmd7_resp >> 9) & 0xf;
+    uint32_t status = (cmd7_resp >> 9) & 0xf;
 
     if ((status != 3) && (status != 4)) {
         KERROR(KERROR_ERR, "SD: invalid status (%u)\n", status);
