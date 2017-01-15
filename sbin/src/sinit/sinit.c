@@ -111,7 +111,7 @@ spawn(char *const argv[])
 
         setsid();
         execvp(argv[0], argv);
-        fprintf(stderr, "sinit:exec: %s %s\n", strerror(errno), argv[0]);
+        fprintf(stderr, "sinit:exec: %s %s\n", argv[0], strerror(errno));
         _exit(1);
     }
 }
