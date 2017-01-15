@@ -56,7 +56,7 @@ static const char * pab_fsr_strerr[] = {
     "Domain page fault",
     "Extrenal first-level abort",
     "Section permission fault",
-    "External second-evel abort",
+    "External second-level abort",
     "Page permission fault"
 };
 

@@ -56,7 +56,7 @@ static const char * dab_fsr_strerr[] = {
     "Domain page fault",            /* 0x00B */
     "Extrenal first-level abort",   /* 0x00C */
     "Section permission fault",     /* 0x00D */
-    "External second-evel abort",   /* 0x00E */
+    "External second-level abort",  /* 0x00E */
     "Page permission fault",        /* 0x00F */
     "",                             /* 0x010 */
     "",                             /* 0x011 */
