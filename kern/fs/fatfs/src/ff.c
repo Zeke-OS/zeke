@@ -1911,18 +1911,18 @@ static FRESULT prepare_volume(FATFS * fs, int vol)
         return FR_NO_FILESYSTEM;
 
     /* Number of root directory entries */
-    fs->n_rootdir = LD_WORD(fs->win+BPB_RootEntCnt);
+    fs->n_rootdir = LD_WORD(fs->win + BPB_RootEntCnt);
 
     if (fs->n_rootdir % (fs->ssize / SZ_DIR)) {
         /* (Must be sector aligned) */
         return FR_NO_FILESYSTEM;
     }
 
-    tsect = LD_WORD(fs->win+BPB_TotSec16); /* Number of sectors on the volume */
+    tsect = LD_WORD(fs->win + BPB_TotSec16); /* Number of sectors on the volume */
     if (!tsect)
-        tsect = LD_DWORD(fs->win+BPB_TotSec32);
+        tsect = LD_DWORD(fs->win + BPB_TotSec32);
 
-    nrsv = LD_WORD(fs->win+BPB_RsvdSecCnt); /* Number of reserved sectors */
+    nrsv = LD_WORD(fs->win + BPB_RsvdSecCnt); /* Number of reserved sectors */
     if (!nrsv)
         return FR_NO_FILESYSTEM; /* (Must not be 0) */
 
@@ -2047,8 +2047,7 @@ FRESULT f_open(FF_FIL * fp, FATFS * fs, const TCHAR * path, uint8_t mode)
     }
     res = access_volume(dj.fs,
                         ((mode & (FA_WRITE | FA_CREATE_ALWAYS |
-                                            FA_CREATE_NEW)) != 0) ?
-                        ACCVOL_WRITE : ACCVOL_READ);
+                          FA_CREATE_NEW)) != 0) ?  ACCVOL_WRITE : ACCVOL_READ);
     if (res != FR_OK)
         goto fail;
 
