@@ -577,7 +577,6 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
 {
     int is_sdma = 0;
     uint32_t blksizecnt, irpts;
-    const int sd_cmd_udelay = SD_CMD_UDELAY;
     istate_t s_entry;
 
     dev->last_cmd_reg = cmd_reg;
@@ -589,7 +588,7 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
     mmio_start(&s_entry);
     while (mmio_read(EMMC_BASE + EMMC_STATUS) & 0x1) {
         mmio_end(&s_entry);
-        udelay(sd_cmd_udelay);
+        udelay(SD_CMD_UDELAY);
         mmio_start(&s_entry);
     }
     mmio_end(&s_entry);
@@ -602,7 +601,7 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
         mmio_start(&s_entry);
         while (mmio_read(EMMC_BASE + EMMC_STATUS) & 0x2) {
             mmio_end(&s_entry);
-            udelay(sd_cmd_udelay);
+            udelay(SD_CMD_UDELAY);
             mmio_start(&s_entry);
         }
         mmio_end(&s_entry);
@@ -665,7 +664,7 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
     mmio_start(&s_entry);
     mmio_write(EMMC_BASE + EMMC_CMDTM, cmd_reg);
     mmio_end(&s_entry);
-    udelay(2 * sd_cmd_udelay);
+    udelay(2 * SD_CMD_UDELAY);
 
     /* Wait for command complete interrupt */
     mmio_start(&s_entry);
@@ -686,7 +685,7 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
         return;
     }
 
-    udelay(2 * sd_cmd_udelay);
+    udelay(2 * SD_CMD_UDELAY);
 
     /* Get response data */
     switch (cmd_reg & SD_CMD_RSPNS_TYPE_MASK) {
