@@ -1045,8 +1045,16 @@ static void init_fatfs_vnode(vnode_t * vnode, ino_t inum, mode_t mode,
 
     vnode->vn_hash = vn_hash;
 
+#if 0
     if (S_ISDIR(mode))
         mode |= S_IRWXU | S_IXGRP | S_IXOTH;
+#endif
+    /*
+     * TODO Set +x for all files as we don't have a way to store this
+     * information yet.
+     */
+    mode |= S_IXUSR | S_IXGRP | S_IXOTH;
+
     vnode->vn_mode = mode | S_IRUSR | S_IRGRP | S_IROTH;
     memset(&stat, 0, sizeof(struct stat));
     if (fatfs_stat(vnode, &stat) == 0) {
