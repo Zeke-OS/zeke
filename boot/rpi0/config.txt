@@ -39,8 +39,11 @@
 # uncomment for composite PAL
 #sdtv_mode=2
 
+boot_delay=10
+
 #uncomment to overclock the arm. 700 MHz is the default.
 #arm_freq=800
+arm_freq=250
 
 # Uncomment some or all of these to enable the optional hardware interfaces
 #dtparam=i2c_arm=on
@@ -53,4 +56,4 @@
 # Additional overlays and parameters are documented /boot/overlays/README
 
 # Enable audio (loads snd_bcm2835)
-dtparam=audio=on
+dtparam=audio=off
