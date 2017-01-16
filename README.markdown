@@ -24,6 +24,7 @@ Key Features
     - Per process capabilities
     - Unix-like fork and exec
     - elf32 support
+    - Linux-style elf32 core dumps
 - IPC
     - Signals
     - mmap
