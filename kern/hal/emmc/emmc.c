@@ -67,15 +67,16 @@
 #include <fcntl.h>
 #include <stdint.h>
 #include <sys/dev_major.h>
+#include <sys/ioctl.h>
+#include <sys/types.h>
 #include <fs/mbr.h>
 #include <hal/hw_timers.h>
 #include <kerror.h>
 #include <kinit.h>
+#include <klocks.h>
 #include <kmalloc.h>
 #include <kstring.h>
 #include <libkern.h>
-#include <sys/ioctl.h>
-#include <sys/types.h>
 #include <vm/vm.h>
 #ifdef configBCM2835
 #include "../bcm2835/bcm2835_mmio.h"
@@ -93,7 +94,7 @@
 static const char driver_name[] = "emmc";
 /** We use a single device name as there is only one card slot in the RPi */
 static const char device_name[] = "emmc0";
-struct emmc_capabilities emmccap;
+static struct emmc_capabilities emmccap;
 
 #define SD_VER_UNKNOWN      0
 #define SD_VER_1            1
@@ -115,6 +116,8 @@ static const char * err_irpts[] = {
 #endif
 
 #define DEFAULT_CMD_TIMEOUT 500000
+
+static mtx_t emmc_lock = MTX_INITIALIZER(MTX_TYPE_SPIN, MTX_OPT_DINT);
 
 static ssize_t sd_read(struct dev_info * dev, off_t offset, uint8_t * buf,
                        size_t count, int oflags);
@@ -364,13 +367,19 @@ int __kinit__ emmc_init(void)
 
 static void sd_power_off()
 {
+    istate_t s_entry;
     uint32_t control0;
 
     /* Power off the SD card */
+    mmio_start(&s_entry);
     control0 = mmio_read(EMMC_BASE + EMMC_CONTROL0);
+    mmio_end(&s_entry);
+
     /* Set SD Bus Power bit off in Power Control Register */
     control0 &= ~(1 << 8);
+    mmio_start(&s_entry);
     mmio_write(EMMC_BASE + EMMC_CONTROL0, control0);
+    mmio_end(&s_entry);
 }
 
 /**
@@ -478,7 +487,9 @@ static int sd_switch_clock_rate(uint32_t base_clock, uint32_t target_rate)
     } while (ret & 0x3);
 
     /* Set the SD clock off */
+    mmio_start(&s_entry);
     control1 = mmio_read(EMMC_BASE + EMMC_CONTROL1);
+    mmio_end(&s_entry);
     control1 &= ~(1 << 2);
 
     mmio_start(&s_entry);
@@ -865,9 +876,11 @@ static void sd_issue_command_int(struct emmc_block_dev *dev, uint32_t cmd_reg,
                     KERROR(KERROR_ERR, "SD: unknown SDMA transfer error\n");
                 }
 
+                mmio_start(&s_entry);
+                uint32_t emmc_status = mmio_read(EMMC_BASE + EMMC_STATUS);
+                mmio_end(&s_entry);
                 KERROR(KERROR_DEBUG, "SD: INTERRUPT: %x, STATUS %x\n",
-                       (uint32_t)irpts,
-                       (uint32_t)mmio_read(EMMC_BASE + EMMC_STATUS));
+                       (uint32_t)irpts, emmc_status);
 #endif
 
                 mmio_start(&s_entry);
@@ -1096,6 +1109,8 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
     uint32_t control1, d;
     istate_t s_entry;
 
+    /* TODO use emmc_lock */
+
     /* Power cycle the card to ensure its in its startup state */
     if (emmc_hw.emmc_power_cycle() != 0) {
         KERROR(KERROR_ERR,
@@ -1233,9 +1248,16 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
                "EMMC: controller's clock did not stabilise within 1 second\n");
     }
 #ifdef configEMMC_DEBUG
-    KERROR(KERROR_DEBUG, "EMMC: control0: %x, control1: %x\n",
-           (uint32_t)mmio_read(EMMC_BASE + EMMC_CONTROL0),
-           (uint32_t)mmio_read(EMMC_BASE + EMMC_CONTROL1));
+    {
+        uint32_t c0, c1;
+
+        mmio_start(&s_entry);
+        c0 = mmio_read(EMMC_BASE + EMMC_CONTROL0);
+        c1 = mmio_read(EMMC_BASE + EMMC_CONTROL1);
+        mmio_end(&s_entry);
+
+        KERROR(KERROR_DEBUG, "EMMC: control0: %x, control1: %x\n", c0, c1);
+    }
 #endif
 
     /* Enable the SD clock */
@@ -1243,7 +1265,9 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
     KERROR(KERROR_DEBUG, "EMMC: enabling SD clock\n");
 #endif
     udelay(2000);
+    mmio_start(&s_entry);
     control1 = mmio_read(EMMC_BASE + EMMC_CONTROL1);
+    mmio_end(&s_entry);
     control1 |= 4;
     mmio_start(&s_entry);
     mmio_write(EMMC_BASE + EMMC_CONTROL1, control1);
@@ -1275,10 +1299,7 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
 
     /* Prepare the device structure */
     kmalloc_autofree struct emmc_block_dev * ret;
-    if (*edev == NULL)
-        ret = kmalloc(sizeof(struct emmc_block_dev));
-    else
-        ret = *edev;
+    ret = (*edev == NULL) ? kmalloc(sizeof(struct emmc_block_dev)) : *edev;
 
     memset(ret, 0, sizeof(struct emmc_block_dev));
     ret->dev.dev_id = DEV_MMTODEV(VDEV_MJNR_EMMC, 0);
@@ -1500,7 +1521,9 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
         /* Set 1.8V signal enable to 1 */
         mmio_start(&s_entry);
         uint32_t control0 = mmio_read(EMMC_BASE + EMMC_CONTROL0);
+        mmio_end(&s_entry);
         control0 |= (1 << 8);
+        mmio_start(&s_entry);
         mmio_write(EMMC_BASE + EMMC_CONTROL0, control0);
         mmio_end(&s_entry);
 
@@ -1689,16 +1712,12 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
         ret->scr->sd_version = SD_VER_1;
     } else if (sd_spec == 1) {
         ret->scr->sd_version = SD_VER_1_1;
-    } else if (sd_spec == 2) {
-        if (sd_spec3 == 0) {
-            ret->scr->sd_version = SD_VER_2;
-        } else if (sd_spec3 == 1) {
-            if (sd_spec4 == 0) {
-                ret->scr->sd_version = SD_VER_3;
-            } else if (sd_spec4 == 1) {
-                ret->scr->sd_version = SD_VER_4;
-            }
-        }
+    } else if (sd_spec == 2 && sd_spec3 == 0) {
+        ret->scr->sd_version = SD_VER_2;
+    } else if (sd_spec == 2 && sd_spec3 == 1 && sd_spec4 == 0) {
+        ret->scr->sd_version = SD_VER_3;
+    } else if (sd_spec == 2 && sd_spec3 == 1 && sd_spec4 == 1) {
+        ret->scr->sd_version = SD_VER_4;
     }
 
 #ifdef configEMMC_DEBUG
@@ -1717,6 +1736,8 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
 #endif
 
     if (ret->scr->sd_bus_widths & 0x4) {
+        uint32_t old_irpt_mask, new_iprt_mask;
+
         /* Set 4-bit transfer mode (ACMD6) */
         /* See HCSS 3.4 for the algorithm */
 #ifdef configEMMC_SD_4BIT_DATA
@@ -1726,9 +1747,9 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
 
         /* Disable card interrupt in host */
         mmio_start(&s_entry);
-        uint32_t old_irpt_mask = mmio_read(EMMC_BASE + EMMC_IRPT_MASK);
+        old_irpt_mask = mmio_read(EMMC_BASE + EMMC_IRPT_MASK);
         mmio_end(&s_entry);
-        uint32_t new_iprt_mask = old_irpt_mask & ~(1 << 8);
+        new_iprt_mask = old_irpt_mask & ~(1 << 8);
         mmio_start(&s_entry);
         mmio_write(EMMC_BASE + EMMC_IRPT_MASK, new_iprt_mask);
         mmio_end(&s_entry);
@@ -1738,9 +1759,11 @@ static int emmc_card_init(struct emmc_block_dev ** edev)
         if (FAIL(ret)) {
             KERROR(KERROR_ERR, "SD: switch to 4-bit data mode failed\n");
         } else {
+            uint32_t control0;
+
             /* Change bit mode for Host */
             mmio_start(&s_entry);
-            uint32_t control0 = mmio_read(EMMC_BASE + EMMC_CONTROL0);
+            control0 = mmio_read(EMMC_BASE + EMMC_CONTROL0);
             mmio_end(&s_entry);
 
             control0 |= 0x2;
@@ -1883,10 +1906,7 @@ static int sd_ensure_data_mode(struct emmc_block_dev *edev)
 /* We only support DMA transfers to buffers aligned on a 4 kiB boundary */
 static inline int sd_suitable_for_dma(void *buf)
 {
-    if ((uintptr_t)buf & 0xfff)
-        return 0;
-    else
-        return 1;
+    return ((uintptr_t)buf & 0xfff) ? 0 : 1;
 }
 #endif
 
@@ -1967,70 +1987,96 @@ static int sd_do_data_command(struct emmc_block_dev * edev, int is_write,
 static ssize_t sd_read(struct dev_info * dev, off_t offset, uint8_t * buf,
                        size_t bcount, int oflags)
 {
-    struct emmc_block_dev * edev;
+    struct emmc_block_dev * edev = containerof(dev, struct emmc_block_dev, dev);
     const uint32_t block_no = (uint32_t)offset;
     int err;
+    ssize_t retval;
 
-    edev = containerof(dev, struct emmc_block_dev, dev);
+    mtx_lock(&emmc_lock);
 
     /* Check the status of the card */
     err = sd_ensure_data_mode(edev);
-    if (err)
-        return -EIO;
+    if (err) {
+        retval = -EIO;
+        goto out;
+    }
 
     err = sd_do_data_command(edev, 0, buf, bcount, block_no);
-    if (err)
-        return err;
+    if (err) {
+        retval = err;
+        goto out;
+    }
+    retval = bcount;
 
-    return bcount;
+out:
+    mtx_unlock(&emmc_lock);
+    return retval;
 }
 
 #ifdef configEMMC_WRITE_SUPPORT
 static ssize_t sd_write(struct dev_info * dev, off_t offset, uint8_t * buf,
                         size_t bcount, int oflags)
 {
-    struct emmc_block_dev * edev;
+    struct emmc_block_dev * edev = containerof(dev, struct emmc_block_dev, dev);
     const uint32_t block_no = (uint32_t)offset;
     int err;
+    ssize_t retval;
 
-    edev = containerof(dev, struct emmc_block_dev, dev);
+    mtx_lock(&emmc_lock);
 
     /* Check the status of the card */
     err = sd_ensure_data_mode(edev);
-    if (err)
-        return -EIO;
+    if (err) {
+        retval = -EIO;
+        goto out;
+    }
 
     err = sd_do_data_command(edev, 1, buf, bcount, block_no);
-    if (err)
-        return err;
+    if (err) {
+        retval = err;
+        goto out;
+    }
+    retval = bcount;
 
-    return bcount;
+out:
+    mtx_unlock(&emmc_lock);
+    return retval;
 }
 #endif
 
 static off_t sd_lseek(file_t * file, struct dev_info * dev, off_t offset,
                    int whence)
 {
-    struct emmc_block_dev * edev;
+    struct emmc_block_dev * edev = containerof(dev, struct emmc_block_dev, dev);
     uint32_t block_no;
+    off_t retval;
 
-    edev = containerof(dev, struct emmc_block_dev, dev);
-    if (sd_ensure_data_mode(edev))
-        return -EIO;
+    mtx_lock(&emmc_lock);
+
+    if (sd_ensure_data_mode(edev)) {
+        retval = -EIO;
+        goto out;
+    }
 
     if (whence == SEEK_SET) {
         block_no = offset;
     } else if (whence == SEEK_CUR) {
         block_no = file->seek_pos + offset;
     } else {
-        return -EINVAL;
+        retval = -EINVAL;
+        goto out;
     }
 
-    if (block_no >= (uint32_t)dev->num_blocks)
-        return -EINVAL;
+    if (block_no >= (uint32_t)dev->num_blocks) {
+        retval = -EINVAL;
+        goto out;
+    }
 
     file->seek_pos = block_no;
-    return block_no;
+    retval = block_no;
+out:
+    mtx_unlock(&emmc_lock);
+    return retval;
 }
 
 static int sd_ioctl(struct dev_info * devnfo, uint32_t request,
