@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   UART HAL.
  * @section LICENSE
- * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -150,7 +150,7 @@ static ssize_t uart_read(struct tty * tty, off_t blkno,
     if (!port)
         return -ENODEV;
 
-    if (!(oflags & O_NONBLOCK)) {
+    if ((oflags & O_NONBLOCK) != O_NONBLOCK) {
         /* TODO Block until new data event */
         while (!port->peek(port)) {
             thread_sleep(50);
@@ -162,7 +162,7 @@ static ssize_t uart_read(struct tty * tty, off_t blkno,
         if (ret == -1)
             break;
         buf[n++] = (char)ret;
-    };
+    }
     if (n == 0 && bcount != 0)
         return -EAGAIN;
 
@@ -173,7 +173,7 @@ static ssize_t uart_write(struct tty * tty, off_t blkno,
                           uint8_t * buf, size_t bcount, int oflags)
 {
     struct uart_port * port = (struct uart_port *)tty->opt_data;
-    const unsigned block = !(oflags & O_NONBLOCK);
+    const unsigned block = (oflags & O_NONBLOCK) != O_NONBLOCK;
     int err;
 
     if (!port)
