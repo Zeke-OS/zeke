@@ -39,7 +39,7 @@
 # uncomment for composite PAL
 #sdtv_mode=2
 
-boot_delay=10
+boot_delay=5
 
 #uncomment to overclock the arm. 700 MHz is the default.
 arm_freq=800
