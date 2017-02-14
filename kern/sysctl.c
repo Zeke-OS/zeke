@@ -5,7 +5,7 @@
  *
  * @brief   sysctl kernel code.
  * @section LICENSE
- * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1982, 1986, 1989, 1993
  *        The Regents of the University of California.  All rights reserved.
  *
@@ -277,9 +277,9 @@ static int sysctl_sysctl_name(SYSCTL_HANDLER_ARGS)
         if (!lsp) {
             ksprintf(buf, sizeof(buf), "%d", *name);
             if (req->oldidx)
-                error = SYSCTL_OUT(req, ".", 1);
+                error = req->oldfunc(req, ".", 1);
             if (!error)
-                error = SYSCTL_OUT(req, buf, strlenn(buf, CTL_MAXSTRNAME));
+                error = req->oldfunc(req, buf, strlenn(buf, CTL_MAXSTRNAME));
             if (error)
                 goto out;
             namelen--;
@@ -292,9 +292,9 @@ static int sysctl_sysctl_name(SYSCTL_HANDLER_ARGS)
                 continue;
 
             if (req->oldidx)
-                error = SYSCTL_OUT(req, ".", 1);
+                error = req->oldfunc(req, ".", 1);
             if (!error)
-                error = SYSCTL_OUT(req, oid->oid_name,
+                error = req->oldfunc(req, oid->oid_name,
                     strlenn(oid->oid_name, CTL_MAXSTRNAME));
             if (error)
                 goto out;
@@ -313,7 +313,7 @@ static int sysctl_sysctl_name(SYSCTL_HANDLER_ARGS)
         }
         lsp = lsp2;
     }
-    error = SYSCTL_OUT(req, "", 1);
+    error = req->oldfunc(req, "", 1);
  out:
     SYSCTL_UNLOCK();
     return error;
@@ -388,7 +388,7 @@ static int sysctl_sysctl_next_ls(struct sysctl_oid_list * lsp, int * name,
 
 static int sysctl_sysctl_next(SYSCTL_HANDLER_ARGS)
 {
-    int * name = (int *) arg1;
+    int * name = (int *)arg1;
     unsigned int namelen = arg2;
     int i, j, error;
     struct sysctl_oid * oid;
@@ -400,7 +400,7 @@ static int sysctl_sysctl_next(SYSCTL_HANDLER_ARGS)
     SYSCTL_UNLOCK();
     if (i)
         return -ENOENT;
-    error = SYSCTL_OUT(req, newoid, j * sizeof(int));
+    error = req->oldfunc(req, newoid, j * sizeof(int));
     return error;
 }
 
@@ -462,7 +462,7 @@ static int sysctl_sysctl_name2oid(SYSCTL_HANDLER_ARGS)
 
     p = kmalloc(req->newlen + 1);
 
-    error = SYSCTL_IN(req, p, req->newlen);
+    error = req->newfunc(req, p, req->newlen);
     if (error) {
         kfree(p);
         return error;
@@ -479,7 +479,7 @@ static int sysctl_sysctl_name2oid(SYSCTL_HANDLER_ARGS)
     if (error)
         return error;
 
-    error = SYSCTL_OUT(req, oid, len * sizeof(*oid));
+    error = req->oldfunc(req, oid, len * sizeof(*oid));
     return error;
 }
 
@@ -504,11 +504,11 @@ static int sysctl_sysctl_oidfmt(SYSCTL_HANDLER_ARGS)
         error = -ENOENT;
         goto out;
     }
-    error = SYSCTL_OUT(req, &oid->oid_kind, sizeof(oid->oid_kind));
+    error = req->oldfunc(req, &oid->oid_kind, sizeof(oid->oid_kind));
     if (error)
         goto out;
-    error = SYSCTL_OUT(req, oid->oid_fmt,
-                       strlenn(oid->oid_fmt, CTL_MAXSTRNAME) + 1);
+    error = req->oldfunc(req, oid->oid_fmt,
+                         strlenn(oid->oid_fmt, CTL_MAXSTRNAME) + 1);
  out:
     SYSCTL_UNLOCK();
     return error;
@@ -533,8 +533,8 @@ static int sysctl_sysctl_oiddescr(SYSCTL_HANDLER_ARGS)
         error = -ENOENT;
         goto out;
     }
-    error = SYSCTL_OUT(req, oid->oid_descr,
-                       strlenn(oid->oid_descr, CTL_MAXSTRNAME) + 1);
+    error = req->oldfunc(req, oid->oid_descr,
+                         strlenn(oid->oid_descr, CTL_MAXSTRNAME) + 1);
  out:
     SYSCTL_UNLOCK();
     return error;
@@ -561,7 +561,7 @@ int sysctl_handle_bool(SYSCTL_HANDLER_ARGS)
         tmpout = !!*(int *)arg1;
     else
         tmpout = !!arg2;
-    error = SYSCTL_OUT(req, &tmpout, sizeof(int));
+    error = req->oldfunc(req, &tmpout, sizeof(int));
 
     if (error || !req->newptr)
         goto out;
@@ -571,7 +571,7 @@ int sysctl_handle_bool(SYSCTL_HANDLER_ARGS)
     } else {
         int new_val;
 
-        error = SYSCTL_IN(req, &new_val, sizeof(int));
+        error = req->newfunc(req, &new_val, sizeof(int));
         if (!error) {
             *(int *)arg1 = !!new_val;
         }
@@ -599,15 +599,16 @@ int sysctl_handle_int(SYSCTL_HANDLER_ARGS)
         tmpout = *(int *)arg1;
     else
         tmpout = arg2;
-    error = SYSCTL_OUT(req, &tmpout, sizeof(int));
+    error = req->oldfunc(req, &tmpout, sizeof(int));
 
     if (error || !req->newptr)
         goto out;
 
-    if (!arg1)
+    if (!arg1) {
         error = -EPERM;
-    else
-        error = SYSCTL_IN(req, arg1, sizeof(int));
+    } else {
+        error = req->newfunc(req, arg1, sizeof(int));
+    }
 
 out:
     return error;
@@ -633,15 +634,16 @@ int sysctl_handle_long(SYSCTL_HANDLER_ARGS)
     else
         tmplong = arg2;
 
-    error = SYSCTL_OUT(req, &tmplong, sizeof(long));
+    error = req->oldfunc(req, &tmplong, sizeof(long));
 
     if (error || !req->newptr)
         goto out;
 
-    if (!arg1)
+    if (!arg1) {
         error = -EPERM;
-    else
-        error = SYSCTL_IN(req, arg1, sizeof(long));
+    } else {
+        error = req->newfunc(req, arg1, sizeof(long));
+    }
 
 out:
     return error;
@@ -666,15 +668,16 @@ int sysctl_handle_32(SYSCTL_HANDLER_ARGS)
         tmpout = *(uint32_t *)arg1;
     else
         tmpout = arg2;
-    error = SYSCTL_OUT(req, &tmpout, sizeof(uint32_t));
+    error = req->oldfunc(req, &tmpout, sizeof(uint32_t));
 
     if (error || !req->newptr)
         goto out;
 
-    if (!arg1)
+    if (!arg1) {
         error = -EPERM;
-    else
-        error = SYSCTL_IN(req, arg1, sizeof(uint32_t));
+    } else {
+        error = req->newfunc(req, arg1, sizeof(uint32_t));
+    }
 
 out:
     return error;
@@ -699,15 +702,16 @@ int sysctl_handle_64(SYSCTL_HANDLER_ARGS)
         tmpout = *(uint64_t *)arg1;
     else
         tmpout = arg2;
-    error = SYSCTL_OUT(req, &tmpout, sizeof(uint64_t));
+    error = req->oldfunc(req, &tmpout, sizeof(uint64_t));
 
     if (error || !req->newptr)
         goto out;
 
-    if (!arg1)
+    if (!arg1) {
         error = -EPERM;
-    else
-        error = SYSCTL_IN(req, arg1, sizeof(uint64_t));
+    } else {
+        error = req->newfunc(req, arg1, sizeof(uint64_t));
+    }
 
 out:
     return error;
@@ -740,7 +744,7 @@ retry:
         goto retry;
     }
 
-    error = SYSCTL_OUT(req, tmparg, outlen);
+    error = req->oldfunc(req, tmparg, outlen);
     kfree(tmparg);
 
     if (error || !req->newptr)
@@ -750,7 +754,7 @@ retry:
         error = -EINVAL;
     } else {
         arg2 = (req->newlen - req->newidx);
-        error = SYSCTL_IN(req, arg1, arg2);
+        error = req->newfunc(req, arg1, arg2);
         ((char *)arg1)[arg2] = '\0';
     }
 
@@ -1017,9 +1021,10 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
 }
 
 static int userland_sysctl(const struct proc_info * proc, int * name,
-                    unsigned int namelen, __user void * old,
-                    __user size_t * oldlenp, int inkernel, __user void * new,
-                    size_t newlen, size_t * retval, int flags)
+                           unsigned int namelen, __user void * old,
+                           __user size_t * oldlenp, int inkernel,
+                           __user void * new, size_t newlen,
+                           size_t * retval, int flags)
 {
     struct sysctl_req req;
     int error = 0;

@@ -5,7 +5,7 @@
  *
  * @brief   Sysctl headers.
  * @section LICENSE
- * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1989, 1993
  *        The Regents of the University of California.  All rights reserved.
  *
@@ -263,9 +263,6 @@ struct sysctl_oid {
     unsigned int oid_running;
     const char * oid_descr;
 };
-
-#define SYSCTL_IN(r, p, l)  (r->newfunc)(r, p, l)
-#define SYSCTL_OUT(r, p, l) (r->oldfunc)(r, p, l)
 
 int sysctl_handle_bool(SYSCTL_HANDLER_ARGS);
 int sysctl_handle_int(SYSCTL_HANDLER_ARGS);

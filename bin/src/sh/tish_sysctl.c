@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Tiny Init Shell for debugging in init.
  * @section LICENSE
- * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,99 +40,20 @@
 #include <errno.h>
 #include "tish.h"
 
-static void list_all(void);
-static int getset_parm(char * arg);
-static int getset_svalue(int * oid, int len, size_t oval_len,
-                         char * nval, size_t nval_len);
-static int getset_ivalue(int * oid, int len, size_t oval_len,
-                         char * nval, size_t nval_len);
-static void print_mib_name(int * mib, int len);
-
-static int tish_sysctl_cmd(char * argv[])
-{
-    char * arg = argv[1];
-    int retval = 0;
-
-    if (!strcmp(arg, "-a")) {
-        list_all();
-    } else {
-        /* TODO do this correctly */
-        /* We only support integer values by now */
-        retval = getset_parm(arg);
-    }
-
-    return retval;
-}
-TISH_CMD(tish_sysctl_cmd, "sysctl", " <ctlname>", 0);
-
-static int getset_parm(char * arg)
-{
-    char * name;
-    char * value;
-    char * rest;
-
-    int mib[CTL_MAXNAME];
-    char fmt[5];
-    unsigned int kind;
-    int ctltype;
-    size_t dlen;
-
-    name = strtok_r(arg, "=", &rest);
-    value = strtok_r(0, "=", &rest);
-    if (!name) {
-        printf("Invalid argument\n");
-
-        errno = EINVAL;
-        return -1;
-    }
-
-    const int mib_len = sysctlnametomib(name, mib, num_elem(mib));
-    if (mib_len < 0) {
-        printf("Node not found\n");
-
-        return -1;
-    }
-
-    printf("%s = ", name);
-
-    if (sysctloidfmt(mib, mib_len, fmt, &kind)) {
-        printf("Invalid node\n");
-
-        return -1;
-    }
-    if (sysctl(mib, mib_len, 0, &dlen, 0, 0)) {
-        printf("Invalid node\n");
-
-        return -1;
-    }
-
-    ctltype = (kind & CTLTYPE);
-    switch (ctltype) {
-    case CTLTYPE_STRING:
-        return getset_svalue(mib, mib_len, dlen, value, strnlen(value, 80));
-    case CTLTYPE_INT:
-    case CTLTYPE_UINT:
-        return getset_ivalue(mib, mib_len, dlen, value, sizeof(int));
-    case CTLTYPE_LONG:
-    case CTLTYPE_ULONG:
-    case CTLTYPE_S64:
-    case CTLTYPE_U64:
-        printf("Data type not supported yet\n");
-        break;
-    }
-
-    return 0;
-}
-
 static int getset_svalue(int * oid, int len, size_t oval_len,
                          char * nval, size_t nval_len)
 {
     char ovalbuf[oval_len + 1];
 
-    if (sysctl(oid, len, ovalbuf, &oval_len, (void *)nval, nval_len))
-        return -1; /* Failed, errno set */
+    if (sysctl(oid, len, ovalbuf, &oval_len, NULL, 0))
+        return 1;
 
     printf("%s\n", ovalbuf);
+
+    if (sysctl(oid, len, NULL, NULL, (void *)nval, nval_len)) {
+        fprintf(stderr, "Failed to write\n");
+        return 1;
+    }
 
     return 0;
 }
@@ -144,18 +65,29 @@ static int getset_ivalue(int * oid, int len, size_t oval_len,
     size_t x_len = sizeof(x);
 
     /* Get value */
-    if (sysctl(oid, len, &x, &x_len, 0, 0))
-        return -1; /* Failed, errno set */
+    if (sysctl(oid, len, &x, &x_len, NULL, 0))
+        return 1;
     printf("%i\n", x);
 
     /* Set value */
     if (nval) {
         x = atoi(nval);
-        if (sysctl(oid, len, 0, 0, (void *)(&x), sizeof(int)))
-            return -1;
+        if (sysctl(oid, len, NULL, NULL, (void *)(&x), sizeof(int))) {
+            fprintf(stderr, "Failed to write\n");
+            return 1;
+        }
     }
 
     return 0;
+}
+
+static void print_mib_name(int * mib, int len)
+{
+    char strname[40];
+    size_t strname_len = sizeof(strname);
+
+    sysctlmibtoname(mib, len, strname, &strname_len);
+    printf("%s\n", strname);
 }
 
 static void list_all(void)
@@ -173,14 +105,80 @@ static void list_all(void)
         errno = 0;
 }
 
-static void print_mib_name(int * mib, int len)
+static int getset_parm(char * arg)
 {
-    char strname[40];
-    size_t strname_len = sizeof(strname);
+    char * name;
+    char * value;
+    char * rest = NULL;
 
-    sysctlmibtoname(mib, len, strname, &strname_len);
-    printf("%s\n", strname);
+    name = strtok_r(arg, "=", &rest);
+    value = strtok_r(NULL, "=", &rest);
+    if (!name) {
+        fprintf(stderr, "Invalid argument\n");
+
+        return 1;
+    }
+
+    int mib[CTL_MAXNAME];
+    const int mib_len = sysctlnametomib(name, mib, num_elem(mib));
+    if (mib_len < 0) {
+        fprintf(stderr, "Node not found\n");
+
+        return 1;
+    }
+
+    printf("%s = ", name);
+
+    char fmt[5];
+    unsigned int kind;
+    if (sysctloidfmt(mib, mib_len, fmt, &kind)) {
+        fprintf(stderr, "Invalid node\n");
+
+        return 1;
+    }
+
+    size_t dlen;
+    if (sysctl(mib, mib_len, 0, &dlen, 0, 0)) {
+        fprintf(stderr, "Invalid node\n");
+
+        return 1;
+    }
+
+    const int ctltype = (kind & CTLTYPE);
+    switch (ctltype) {
+    case CTLTYPE_STRING:
+        return getset_svalue(mib, mib_len, dlen, value,
+                             value ? strlen(value) : 0);
+    case CTLTYPE_INT:
+    case CTLTYPE_UINT:
+        return getset_ivalue(mib, mib_len, dlen, value, sizeof(int));
+    case CTLTYPE_LONG:
+    case CTLTYPE_ULONG:
+    case CTLTYPE_S64:
+    case CTLTYPE_U64:
+        fprintf(stderr, "Data type not supported yet\n");
+        break;
+    }
+
+    return 0;
 }
+
+static int tish_sysctl_cmd(char * argv[])
+{
+    char * arg = argv[1];
+
+    if (arg && !strcmp(arg, "-a")) {
+        list_all();
+    } else if (arg) {
+        return getset_parm(arg);
+    } else {
+        fprintf(stderr, "usage: sysctl name[=value]\n"
+                        "       sysctl -a\n");
+        return 1;
+    }
+    return 0;
+}
+TISH_CMD(tish_sysctl_cmd, "sysctl", " <ctlname>", 0);
 
 static int tish_uname(char * argv[])
 {
