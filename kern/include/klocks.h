@@ -339,10 +339,10 @@ size_t isema_acquire(isema_t * isema, size_t isema_n);
  */
 static inline void isema_release(isema_t * isema, size_t index)
 {
+    atomic_set(isema + index, 0);
 #ifdef configMP
     cpu_sev(); /* Wakeup cores possibly waiting for an index. */
 #endif
-    atomic_set(&isema[index], 0);
 }
 
 /**
