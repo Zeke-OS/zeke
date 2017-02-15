@@ -130,7 +130,7 @@ int __kinit__ procfs_init(void)
 
     specinfo_pool = mempool_init(MEMPOOL_TYPE_NONBLOCKING,
                                  sizeof(struct procfs_info),
-                                 configMAXPROC);
+                                 10);
     if (!specinfo_pool)
         return -ENOMEM;
 
