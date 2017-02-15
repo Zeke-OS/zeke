@@ -96,6 +96,14 @@ static int print_tree(int * mib_start, int len_start)
     int err, len = len_start;
     size_t len_next;
 
+#if 0
+    printf("mib[%d]:", len_start);
+    for (size_t i = 0; i < len_start; i++) {
+        printf(" %d", mib_start[i]);
+    }
+    printf("\n");
+#endif
+
     memset(mib, 0, CTL_MAXNAME);
     memcpy(mib, mib_start, len_start);
 
@@ -103,32 +111,55 @@ static int print_tree(int * mib_start, int len_start)
             !(err = sysctlgetnext(mib, len, mib, &len_next))) {
         len = len_next;
 
-        /* Break when entering the next parent */
-        if (memcmp(mib, mib_start, len_start) != 0)
-            break;
+        if (memcmp(mib, mib_start, len_start * sizeof(int)) == 0) {
+            print_mib_name(mib, len);
+        }
 
-        print_mib_name(mib, len);
     }
     if (err && errno == ENOENT)
         errno = 0;
-    return errno ? 0 : 1;
+    return errno ? 1 : 0;
 }
 
-static void list_all(void)
+static int cmd_mib_value(char * name, int ctltype, int * mib, int mib_len,
+                         char * new_value)
 {
-    int mib[CTL_MAXNAME] = {0};
+    size_t dlen;
 
-    print_tree(mib, 0);
+    printf("%s = ", name);
+
+    if (sysctl(mib, mib_len, 0, &dlen, 0, 0)) {
+        fprintf(stderr, "Invalid node\n");
+
+        return 1;
+    }
+
+    switch (ctltype) {
+    case CTLTYPE_STRING:
+        return getset_svalue(mib, mib_len, dlen, new_value,
+                             new_value ? strlen(new_value) : 0);
+    case CTLTYPE_INT:
+    case CTLTYPE_UINT:
+        return getset_ivalue(mib, mib_len, dlen, new_value, sizeof(int));
+    case CTLTYPE_LONG:
+    case CTLTYPE_ULONG:
+    case CTLTYPE_S64:
+    case CTLTYPE_U64:
+        fprintf(stderr, "Data type not supported yet\n");
+        break;
+    }
+
+    return 0;
 }
 
 static int getset_parm(char * arg)
 {
     char * name;
-    char * value;
+    char * new_value;
     char * rest = NULL;
 
     name = strtok_r(arg, "=", &rest);
-    value = strtok_r(NULL, "=", &rest);
+    new_value = strtok_r(NULL, "=", &rest);
     if (!name) {
         fprintf(stderr, "Invalid argument\n");
         return 1;
@@ -150,36 +181,11 @@ static int getset_parm(char * arg)
     }
 
     const int ctltype = (kind & CTLTYPE);
-
     if (ctltype == CTLTYPE_NODE) {
         return print_tree(mib, mib_len);
+    } else {
+        return cmd_mib_value(name, ctltype, mib, mib_len, new_value);
     }
-
-    printf("%s = ", name);
-
-    size_t dlen;
-    if (sysctl(mib, mib_len, 0, &dlen, 0, 0)) {
-        fprintf(stderr, "Invalid node\n");
-
-        return 1;
-    }
-
-    switch (ctltype) {
-    case CTLTYPE_STRING:
-        return getset_svalue(mib, mib_len, dlen, value,
-                             value ? strlen(value) : 0);
-    case CTLTYPE_INT:
-    case CTLTYPE_UINT:
-        return getset_ivalue(mib, mib_len, dlen, value, sizeof(int));
-    case CTLTYPE_LONG:
-    case CTLTYPE_ULONG:
-    case CTLTYPE_S64:
-    case CTLTYPE_U64:
-        fprintf(stderr, "Data type not supported yet\n");
-        break;
-    }
-
-    return 0;
 }
 
 static int tish_sysctl_cmd(char * argv[])
@@ -187,7 +193,9 @@ static int tish_sysctl_cmd(char * argv[])
     char * arg = argv[1];
 
     if (arg && !strcmp(arg, "-a")) {
-        list_all();
+        int mib[CTL_MAXNAME] = {0};
+
+        print_tree(mib, 0);
     } else if (arg) {
         return getset_parm(arg);
     } else {
