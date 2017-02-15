@@ -72,7 +72,8 @@
 #define CTLTYPE_NODE    1   /*!< Name is a node (parent for other nodes). */
 #define CTLTYPE_INT     2   /*!< Name describes an signed integer */
 #define CTLTYPE_STRING  3   /*!< Name describes a string */
-#define CTLTYPE_S64     4   /*!< Name describes a signed 64-bit number */
+#define CTLTYPE_OPAQUE  4   /*!< name describes a structure */
+#define CTLTYPE_S64     5   /*!< Name describes a signed 64-bit number */
 #define CTLTYPE_UINT    6   /*!< Name describes an unsigned integer */
 #define CTLTYPE_LONG    7   /*!< Name describes a long */
 #define CTLTYPE_ULONG   8   /*!< Name describes an unsigned long */
@@ -273,6 +274,7 @@ int sysctl_handle_long(SYSCTL_HANDLER_ARGS);
 int sysctl_handle_32(SYSCTL_HANDLER_ARGS);
 int sysctl_handle_64(SYSCTL_HANDLER_ARGS);
 int sysctl_handle_string(SYSCTL_HANDLER_ARGS);
+int sysctl_handle_opaque(SYSCTL_HANDLER_ARGS);
 
 /* Declare a static oid to allow child oids to be added to it. */
 #define SYSCTL_DECL(name) \
@@ -432,6 +434,14 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
         SYSCTL_OID(parent, nbr, name,                                   \
             CTLTYPE_U64 | (access),                                     \
             ptr, val, sysctl_handle_counter_u64, "QU", descr)
+
+/**
+ * Oid for an opaque object. Specified by a pointer and a size.
+ */
+#define SYSCTL_OPAQUE(parent, nbr, name, access, arg, size, fmt, descr) \
+        CTASSERT(((access) & CTLTYPE) == CTLTYPE_OPAQUE);               \
+        SYSCTL_OID(parent, nbr, name, CTLTYPE_STRING|(access),          \
+                arg, size, sysctl_handle_opaque, fmt, descr)
 
 /**
  * Oid for a procedure.

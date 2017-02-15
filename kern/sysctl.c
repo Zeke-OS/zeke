@@ -927,6 +927,19 @@ out:
     return error;
 }
 
+int sysctl_handle_opaque(SYSCTL_HANDLER_ARGS)
+{
+    int error;
+
+    error = req->oldfunc(req, arg1, arg2);
+    if (error)
+        return error;
+
+    error = req->newfunc(req, arg1, arg2);
+
+    return error;
+}
+
 /**
  * Transfer functions to/from kernel space.
  */
