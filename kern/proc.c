@@ -40,7 +40,6 @@
 #include <unistd.h>
 #include <buf.h>
 #include <exec.h>
-#include <fs/procfs.h>
 #include <kerror.h>
 #include <kinit.h>
 #include <kmalloc.h>
@@ -320,10 +319,6 @@ static void proc_remove(struct proc_info * proc)
     KERROR_DBG("%s(%d)\n", __func__, proc->pid);
 
     proc->state = PROC_STATE_DEFUNCT;
-
-#ifdef configPROCFS
-    procfs_rmentry(proc->pid);
-#endif
 
     /*
      * Remove from parent's child list.

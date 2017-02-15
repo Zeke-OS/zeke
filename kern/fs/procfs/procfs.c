@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Process file system.
  * @section LICENSE
- * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,7 +58,6 @@ static ssize_t procfs_write(file_t * file, struct uio * uio, size_t bcount);
 static void procfs_event_fd_created(struct proc_info * p, file_t * file);
 static void procfs_event_fd_closed(struct proc_info * p, file_t * file);
 static int procfs_delete_vnode(vnode_t * vnode);
-static int procfs_updatedir(vnode_t * dir);
 static int create_proc_file(vnode_t * pdir, pid_t pid, const char * filename,
                             enum procfs_filetype ftype);
 
@@ -158,8 +157,6 @@ int __kinit__ procfs_init(void)
     int err = init_permanent_files();
     if (err)
         return err;
-
-    procfs_updatedir(vn_procfs);
 
     return 0;
 }
@@ -285,120 +282,6 @@ static int procfs_delete_vnode(vnode_t * vnode)
     if (!spec || spec->ftype <= PROCFS_LAST)
         mempool_return(specinfo_pool, vnode->vn_specinfo);
     return ramfs_delete_vnode(vnode);
-}
-
-static int procfs_updatedir(vnode_t * dir)
-{
-    int err = 0;
-
-    if (dir == vn_procfs) {
-        PROC_LOCK();
-
-        /*
-         * This is the procfs root.
-         *
-         * Now we just try to create a directory for every process in the system
-         * regardless whether it already exist or not and try to remove
-         * directories that should not exist anymore.
-         */
-        for (int i = 0; i <= configMAXPROC; i++) {
-            struct proc_info * proc = proc_ref_locked(i);
-
-            if (proc) {
-                err = procfs_mkentry(proc);
-                proc_unref(proc);
-            } else {
-                procfs_rmentry(i);
-            }
-        }
-
-        PROC_UNLOCK();
-    }
-
-    return err;
-}
-
-int procfs_mkentry(const struct proc_info * proc)
-{
-    char name[PROCFS_NAMELEN_MAX];
-    vnode_t * pdir = NULL;
-    struct procfs_file ** file;
-    int err;
-
-    if (!vn_procfs)
-        return 0; /* Not yet initialized. */
-
-    uitoa32(name, proc->pid);
-
-    KERROR_DBG("%s(pid = %s)\n", __func__, name);
-
-    err = vn_procfs->vnode_ops->mkdir(vn_procfs, name, PROCFS_PERMS);
-    if (err == -EEXIST) {
-        return 0;
-    } else if (err) {
-        goto fail;
-    }
-
-    err = vn_procfs->vnode_ops->lookup(vn_procfs, name, &pdir);
-    if (err) {
-        pdir = NULL;
-        goto fail;
-    }
-
-    SET_FOREACH(file, procfs_files) {
-        const enum procfs_filetype filetype = (*file)->filetype;
-
-        if (filetype < PROCFS_KERNEL_SEPARATOR) {
-            const char * filename = (*file)->filename;
-
-            err = create_proc_file(pdir, proc->pid, filename, filetype);
-            if (err)
-                goto fail;
-        }
-    }
-
-fail:
-    if (pdir)
-        vrele(pdir);
-    if (err)
-        KERROR_DBG("Failed to create a procfs entry\n");
-    return err;
-}
-
-void procfs_rmentry(pid_t pid)
-{
-    vnode_t * pdir;
-    char name[PROCFS_NAMELEN_MAX];
-    struct procfs_file ** file;
-
-    if (!vn_procfs)
-        return; /* Not yet initialized. */
-
-    uitoa32(name, pid);
-
-    KERROR_DBG("%s(pid = %s)\n", __func__, name);
-
-    vref(vn_procfs);
-
-    if (vn_procfs->vnode_ops->lookup(vn_procfs, name, &pdir)) {
-        KERROR_DBG("pid dir doesn't exist\n");
-        goto out;
-    }
-
-    SET_FOREACH(file, procfs_files) {
-        if ((*file)->filetype < PROCFS_KERNEL_SEPARATOR) {
-            pdir->vnode_ops->unlink(pdir, (*file)->filename);
-        }
-    }
-
-
-    vrele(pdir);
-    if (vn_procfs->vnode_ops->rmdir(vn_procfs, name)) {
-        KERROR_DBG("Can't rmdir(%s)\n", name);
-    }
-
-out:
-    vrele(vn_procfs);
 }
 
 /**

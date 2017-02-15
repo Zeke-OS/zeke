@@ -5,7 +5,7 @@
  * @brief   Kernel process management source file. This file is responsible for
  *          thread creation and management.
  * @section LICENSE
- * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,6 @@
 #include <errno.h>
 #include <sys/sysctl.h>
 #include <buf.h>
-#include <fs/procfs.h>
 #include <kerror.h>
 #include <kinit.h>
 #include <kmalloc.h>
@@ -452,10 +451,6 @@ pid_t proc_fork(void)
     retval = new_proc->pid;
 
     new_proc->state = PROC_STATE_READY;
-
-#ifdef configPROCFS
-    procfs_mkentry(new_proc);
-#endif
 
     if (new_proc->main_thread) {
         KERROR_DBG("Set the new main_thread (%d) ready\n",
