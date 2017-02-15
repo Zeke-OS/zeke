@@ -5,7 +5,7 @@
  * Inspired by: http://www.jera.com/techinfo/jtns/jtn002.html
  */
 
-/* Copyright (c) 2013, 2014, Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+/* Copyright (c) 2013, 2014, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
@@ -33,7 +33,7 @@
 
 #include "kunit.h"
 
-SYSCTL_NODE(_debug, CTL_DEBUG, test, CTLFLAG_RW, 0,
+SYSCTL_NODE(_debug, OID_AUTO, test, CTLFLAG_RW, 0,
         "In-Kernel Unit Testing");
 
 /* Variables below are documented in kunit.h */
