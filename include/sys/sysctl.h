@@ -534,7 +534,7 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
 /*
  * KERN_PROC_PID subtypes
  */
-#define KERN_PROC_PSTAT         1   /*!< Get struct pstat */
+#define KERN_PROC_PSTAT         1   /*!< Get process stats */
 #define KERN_PROC_VMMAP         2   /*!< VM map entries for process */
 #define KERN_PROC_FILEDESC      3   /*!< File descriptors for process */
 #define KERN_PROC_NFDS          4   /*!< number of open file descriptors */

@@ -33,12 +33,13 @@
 #ifndef _SYS_PROC_H_
 #define _SYS_PROC_H_
 
+#include <stddef.h>
 #include <sys/types.h>
 
 /**
  * Process stat returned by sysctl.
  */
-struct pstat {
+struct kinfo_proc {
     char name[16];
     pid_t pid;
     pid_t pgrp;
@@ -52,8 +53,14 @@ struct pstat {
     gid_t sgid;
     clock_t utime;
     clock_t stime;
-    void * brk_start;           /*!< Break start address. (end of heap data) */
-    void * brk_stop;            /*!< Break stop address. (end of heap region) */
+    void * brk_start; /*!< Break start address. (end of heap data) */
+    void * brk_stop; /*!< Break stop address. (end of heap region) */
+};
+
+struct kinfo_vmentry {
+    uintptr_t reg_start;
+    uintptr_t reg_end;
+    char uap[5];
 };
 
 #endif /* _SYS_PROC_H_ */

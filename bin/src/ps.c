@@ -77,7 +77,7 @@ static pid_t * get_pids(void)
     return pids;
 }
 
-static int pid2pstat(struct pstat * ps, pid_t pid)
+static int pid2pstat(struct kinfo_proc * ps, pid_t pid)
 {
     int mib[5];
     size_t size = sizeof(*ps);
@@ -177,7 +177,7 @@ int main(int argc, char * argv[], char * envp[])
     printf("  PID TTY          TIME CMD\n");
     pid_iter = pids;
     while ((pid = *pid_iter++) != 0) {
-        struct pstat ps;
+        struct kinfo_proc ps;
         clock_t sutime;
 
         pid2pstat(&ps, pid);

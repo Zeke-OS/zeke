@@ -36,7 +36,10 @@
 #include <errno.h>
 #include <sys/proc.h>
 #include <sys/sysctl.h>
+#include <buf.h>
+#include <kmalloc.h>
 #include <proc.h>
+#include <vm/vm.h>
 
 SYSCTL_INT(_kern, OID_AUTO, nprocs, CTLFLAG_RD,
            &nprocs, 0, "Current number of processes");
@@ -44,15 +47,10 @@ SYSCTL_INT(_kern, OID_AUTO, nprocs, CTLFLAG_RD,
 SYSCTL_INT(_kern, KERN_MAXPROC, maxproc, CTLFLAG_RD,
            NULL, configMAXPROC, "Maximum number of processes");
 
-static int proc2pstat(struct pstat * ps, pid_t pid)
+static int proc2pstat(struct kinfo_proc * ps, struct proc_info * proc)
 {
-    struct proc_info * proc = proc_ref(pid);
-    if (!proc) {
-        return -EINVAL;
-    }
-
-    *ps = (struct pstat){
-        .pid = pid,
+    *ps = (struct kinfo_proc){
+        .pid = proc->pid,
         .pgrp = proc->pgrp->pg_id,
         .sid = proc->pgrp->pg_session->s_leader,
         .ctty = get_ctty(proc),
@@ -69,57 +67,140 @@ static int proc2pstat(struct pstat * ps, pid_t pid)
     };
     strlcpy(ps->name, proc->name, sizeof(ps->name));
 
-    proc_unref(proc);
     return 0;
+}
+
+static int proc_sysctl_pids(struct sysctl_oid * oidp, struct sysctl_req * req)
+{
+    int retval;
+    pid_t * pids;
+
+    pids = proc_get_pids_buffer();
+
+    PROC_LOCK();
+    proc_get_pids(pids);
+    PROC_UNLOCK();
+
+    retval = sysctl_handle_opaque(oidp, pids, configMAXPROC + 1, req);
+    proc_release_pids_buffer(pids);
+
+    return retval;
+}
+
+static int sysctl_proc_vmmap(struct sysctl_oid * oidp,
+                             struct proc_info * proc,
+                             struct sysctl_req * req)
+{
+    struct kinfo_vmentry * vmmap;
+    struct vm_mm_struct * mm;
+    size_t vmmap_size = 0;
+    int retval;
+
+    mm = &proc->mm;
+    mtx_lock(&mm->regions_lock);
+
+    for (int i = 0; i < mm->nr_regions; i++) {
+        struct buf * region = (*mm->regions)[i];
+
+        if (region)
+            vmmap_size += sizeof(struct kinfo_vmentry);
+    }
+
+    vmmap = kzalloc(vmmap_size);
+    if (!vmmap) {
+        retval = -ENOMEM;
+        goto out;
+    }
+
+    struct kinfo_vmentry * entry = vmmap;
+    for (int i = 0; i < mm->nr_regions; i++) {
+        struct buf * region = (*mm->regions)[i];
+        uintptr_t reg_start, reg_end;
+        char uap[5];
+
+        if (!region)
+            continue;
+
+        reg_start = region->b_mmu.vaddr;
+        reg_end = region->b_mmu.vaddr + region->b_bufsize - 1;
+        vm_get_uapstring(uap, region);
+
+        *entry = (struct kinfo_vmentry){
+            .reg_start = reg_start,
+            .reg_end = reg_end,
+        };
+        memcpy(entry->uap, uap, sizeof(entry->uap));
+        entry++;
+    }
+
+    retval = sysctl_handle_opaque(oidp, vmmap, vmmap_size, req);
+
+    retval = 0;
+out:
+    mtx_unlock(&mm->regions_lock);
+    return retval;
 }
 
 static int proc_sysctl_pid(struct sysctl_oid * oidp, int * mib, int len,
                            struct sysctl_req * req)
 {
-    if (len == 0) { /* Get a list of all PIDs */
-        int retval;
-        pid_t * pids;
-
-        pids = proc_get_pids_buffer();
-
-        PROC_LOCK();
-        proc_get_pids(pids);
-        PROC_UNLOCK();
-
-        retval = sysctl_handle_opaque(oidp, pids, configMAXPROC + 1, req);
-        proc_release_pids_buffer(pids);
-
-        return retval;
-    }
-
-    /* Get single proc info */
-
     if (len < 2) {
         return -EINVAL;
     }
+
     pid_t pid = mib[0];
     int opt = mib[1];
 
-    switch (opt) {
-    case KERN_PROC_PSTAT: {
-        struct pstat ps;
-
-        if (proc2pstat(&ps, pid))
-            return -EINVAL;
-        return sysctl_handle_opaque(oidp, &ps, sizeof(struct pstat), req);
-    }
-    case KERN_PROC_VMMAP:
-    case KERN_PROC_FILEDESC:
-    case KERN_PROC_NFDS:
-    case KERN_PROC_GROUPS:
-    case KERN_PROC_ENV:
-    case KERN_PROC_ARGS:
-    case KERN_PROC_RLIMIT:
-    case KERN_PROC_SIGTRAMP:
-    case KERN_PROC_CWD:
-    default:
+    struct proc_info * proc = proc_ref(pid);
+    if (!proc) {
         return -EINVAL;
     }
+
+    int retval = 0;
+    switch (opt) {
+    case KERN_PROC_PSTAT: {
+        struct kinfo_proc ps;
+
+        if (proc2pstat(&ps, proc)) {
+            retval = -EINVAL;
+            goto out;
+        }
+        retval = sysctl_handle_opaque(oidp, &ps, sizeof(struct kinfo_proc),
+                                      req);
+    }
+    break;
+    case KERN_PROC_VMMAP:
+        retval = sysctl_proc_vmmap(oidp, proc, req);
+        break;
+    case KERN_PROC_FILEDESC:
+        /* TODO Implementation */
+    case KERN_PROC_NFDS:
+        /* TODO Implementation */
+        retval = -EINVAL;
+        break;
+    case KERN_PROC_GROUPS:
+        retval = sysctl_handle_opaque(oidp, &proc->cred.sup_gid,
+                                      NGROUPS_MAX * sizeof(gid_t),
+                                      req);
+        break;
+    case KERN_PROC_ENV:
+        /* TODO Implementation */
+    case KERN_PROC_ARGS:
+        /* TODO Implementation */
+    case KERN_PROC_RLIMIT:
+        /* TODO Implementation */
+    case KERN_PROC_SIGTRAMP:
+        /* TODO Implementation */
+    case KERN_PROC_CWD:
+        /* TODO Implementation */
+    default:
+        retval = -EINVAL;
+        break;
+    }
+
+out:
+    proc_unref(proc);
+    return retval;
 }
 
 static int proc_sysctl(SYSCTL_HANDLER_ARGS)
@@ -132,14 +213,25 @@ static int proc_sysctl(SYSCTL_HANDLER_ARGS)
 
     switch (mib[0]) {
     case KERN_PROC_PID:
-        return proc_sysctl_pid(oidp, mib + 1, len - 1, req);
+        if (len == 1) { /* Get the list of all PIDs */
+            return proc_sysctl_pids(oidp, req);
+        } else { /* Get a single proc info */
+            return proc_sysctl_pid(oidp, mib + 1, len - 1, req);
+        }
     case KERN_PROC_PGRP:
+        /* TODO Implementation */
     case KERN_PROC_SESSION:
+        /* TODO Implementation */
     case KERN_PROC_TTY:
+        /* TODO Implementation */
     case KERN_PROC_UID:
+        /* TODO Implementation */
     case KERN_PROC_RUID:
+        /* TODO Implementation */
     case KERN_PROC_RGID:
+        /* TODO Implementation */
     case KERN_PROC_GID:
+        /* TODO Implementation */
     default:
         return -EINVAL;
     }
