@@ -115,21 +115,17 @@ static int sysctl_proc_vmmap(struct sysctl_oid * oidp,
     struct kinfo_vmentry * entry = vmmap;
     for (int i = 0; i < mm->nr_regions; i++) {
         struct buf * region = (*mm->regions)[i];
-        uintptr_t reg_start, reg_end;
-        char uap[5];
 
         if (!region)
             continue;
 
-        reg_start = region->b_mmu.vaddr;
-        reg_end = region->b_mmu.vaddr + region->b_bufsize - 1;
-        vm_get_uapstring(uap, region);
-
         *entry = (struct kinfo_vmentry){
-            .reg_start = reg_start,
-            .reg_end = reg_end,
+            .paddr = region->b_data,
+            .reg_start = region->b_mmu.vaddr,
+            .reg_end = region->b_mmu.vaddr + region->b_bufsize - 1,
+            .flags = region->b_flags,
         };
-        memcpy(entry->uap, uap, sizeof(entry->uap));
+        vm_get_uapstring(entry->uap, region);
         entry++;
     }
 

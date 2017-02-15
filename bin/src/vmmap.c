@@ -73,6 +73,7 @@ int main(int argc, char * argv[], char * envp[])
 {
     pid_t pid;
     struct kinfo_vmentry * vmmap;
+    struct kinfo_vmentry * entry;
     size_t n;
 
     if (argc < 2 || sscanf(argv[1], "%d", &pid) != 1) {
@@ -88,11 +89,16 @@ int main(int argc, char * argv[], char * envp[])
         return EX_NOINPUT;
     }
 
+    printf("START      END        PADDR      FLAGS     UAP\n");
+    entry = vmmap;
     for (size_t i = 0; i < n; i++) {
-        printf("0x%08x 0x%08x %s\n",
-               vmmap[i].reg_start,
-               vmmap[i].reg_end,
-               vmmap[i].uap);
+        printf("0x%08x 0x%08x 0x%08x 0x%07x %s\n",
+               entry->reg_start,
+               entry->reg_end,
+               entry->paddr,
+               entry->flags,
+               entry->uap);
+        entry++;
     }
 
     free(vmmap);

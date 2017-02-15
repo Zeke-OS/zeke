@@ -58,8 +58,10 @@ struct kinfo_proc {
 };
 
 struct kinfo_vmentry {
+    uintptr_t paddr;
     uintptr_t reg_start;
     uintptr_t reg_end;
+    unsigned long flags;
     char uap[5];
 };
 
