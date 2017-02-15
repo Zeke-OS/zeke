@@ -27,6 +27,7 @@
 /type
 /umount 
 /uptime 
+/vmmap
 /wc 
 /whoami
 /xargs

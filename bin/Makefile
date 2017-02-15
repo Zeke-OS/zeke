@@ -1,6 +1,6 @@
 # Zeke - /bin Makefile
 #
-# Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+# Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,7 +28,7 @@ include $(ROOT_DIR)/makefiles/user_head.mk
 # Binaries #####################################################################
 BIN-y := basename cat chgrp chmod chown cksum cmp cp df dirname du echo env \
 	hostname id kill login logname ls mount ps sh type stty sz umount uptime \
-	rz wc xargs
+	rz vmmap wc xargs
 BIN-$(configMINISED) += minised
 
 SBASELUTIL := src/sbase/libutil
@@ -80,6 +80,7 @@ umount-SRC-y := src/umount.c src/utils/opt.c
 uptime-SRC-y := src/uptime.c
 rz-SRC-y := src/zmodem/rz.c src/zmodem/zm.c src/zmodem/io.c \
 	src/zmodem/zstring.c src/zmodem/crctab.c
+vmmap-SRC-y := src/vmmap.c
 wc-SRC-y := src/wc.c
 #xargs-SRC-y := src/xargs.c
 xargs-SRC-y := src/sbase/xargs.c $(SBASELUTIL)/eprintf.c $(SBASELUTIL)/fshut.c \
