@@ -90,19 +90,35 @@ static void print_mib_name(int * mib, int len)
     printf("%s\n", strname);
 }
 
-static void list_all(void)
+static int print_tree(int * mib_start, int len_start)
 {
-    int mib[CTL_MAXNAME] = {0};
-    size_t len = 0, len_next;
-    int  err;
+    int mib[CTL_MAXNAME];
+    int err, len = len_start;
+    size_t len_next;
+
+    memset(mib, 0, CTL_MAXNAME);
+    memcpy(mib, mib_start, len_start);
 
     while ((len_next = sizeof(mib)),
             !(err = sysctlgetnext(mib, len, mib, &len_next))) {
         len = len_next;
+
+        /* Break when entering the next parent */
+        if (memcmp(mib, mib_start, len_start) != 0)
+            break;
+
         print_mib_name(mib, len);
     }
     if (err && errno == ENOENT)
         errno = 0;
+    return errno ? 0 : 1;
+}
+
+static void list_all(void)
+{
+    int mib[CTL_MAXNAME] = {0};
+
+    print_tree(mib, 0);
 }
 
 static int getset_parm(char * arg)
@@ -115,7 +131,6 @@ static int getset_parm(char * arg)
     value = strtok_r(NULL, "=", &rest);
     if (!name) {
         fprintf(stderr, "Invalid argument\n");
-
         return 1;
     }
 
@@ -123,11 +138,8 @@ static int getset_parm(char * arg)
     const int mib_len = sysctlnametomib(name, mib, num_elem(mib));
     if (mib_len < 0) {
         fprintf(stderr, "Node not found\n");
-
         return 1;
     }
-
-    printf("%s = ", name);
 
     char fmt[5];
     unsigned int kind;
@@ -137,6 +149,14 @@ static int getset_parm(char * arg)
         return 1;
     }
 
+    const int ctltype = (kind & CTLTYPE);
+
+    if (ctltype == CTLTYPE_NODE) {
+        return print_tree(mib, mib_len);
+    }
+
+    printf("%s = ", name);
+
     size_t dlen;
     if (sysctl(mib, mib_len, 0, &dlen, 0, 0)) {
         fprintf(stderr, "Invalid node\n");
@@ -144,7 +164,6 @@ static int getset_parm(char * arg)
         return 1;
     }
 
-    const int ctltype = (kind & CTLTYPE);
     switch (ctltype) {
     case CTLTYPE_STRING:
         return getset_svalue(mib, mib_len, dlen, value,
