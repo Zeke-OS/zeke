@@ -38,9 +38,7 @@
 #include <kactype.h>
 #include <kstring.h>
 
-SYSCTL_NODE(, 0, sysctl, CTLFLAG_RW, 0,
-        "Sysctl internal magic");
-SYSCTL_NODE(, CTL_KERN, kern, CTLFLAG_RW|CTLFLAG_CAPRD, 0,
+SYSCTL_NODE(, CTL_KERN, kern, CTLFLAG_RW, 0,
         "High kernel, proc, limits &c");
 SYSCTL_NODE(, CTL_VM, vm, CTLFLAG_RW, 0,
         "Virtual memory");

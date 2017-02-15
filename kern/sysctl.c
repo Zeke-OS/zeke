@@ -65,6 +65,8 @@ struct sysctl_oid_list sysctl__children; /* root list */
 SET_DECLARE(sysctl_set, struct sysctl_oid);
 
 SYSCTL_DECL(_sysctl);
+SYSCTL_NODE(, 0, sysctl, CTLFLAG_RW, 0,
+        "Sysctl internal magic");
 
 /**
  * The sysctllock protects the MIB tree. It also protects sysctl contexts used
@@ -489,11 +491,7 @@ static int sysctl_sysctl_name(SYSCTL_HANDLER_ARGS)
     return error;
 }
 
-/*
- * RFE RW/JA: Shouldn't return name data for nodes that we don't permit in
- * capability mode.
- */
-static SYSCTL_NODE(_sysctl, _CTLMAGIC_NAME, name, CTLFLAG_RD | CTLFLAG_CAPRD,
+static SYSCTL_NODE(_sysctl, _CTLMAGIC_NAME, name, CTLFLAG_RD,
                    sysctl_sysctl_name, "");
 
 static int sysctl_sysctl_next_ls(struct sysctl_oid_list * lsp, int * name,
@@ -574,11 +572,7 @@ static int sysctl_sysctl_next(SYSCTL_HANDLER_ARGS)
     return error;
 }
 
-/*
- * RFE RW/JA: Shouldn't return next data for nodes that we don't permit in
- * capability mode.
- */
-static SYSCTL_NODE(_sysctl, _CTLMAGIC_NEXT, next, CTLFLAG_RD | CTLFLAG_CAPRD,
+static SYSCTL_NODE(_sysctl, _CTLMAGIC_NEXT, next, CTLFLAG_RD,
                    sysctl_sysctl_next, "");
 
 static int name2oid(char * name, int * oid, int * len,
@@ -653,11 +647,8 @@ static int sysctl_sysctl_name2oid(SYSCTL_HANDLER_ARGS)
     return error;
 }
 
-/*
- * TODO Shouldn't return name2oid data for nodes that we don't permit in capability mode.
- */
 SYSCTL_PROC(_sysctl, _CTLMAGIC_NAME2OID, name2oid,
-            CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_ANYBODY | CTLFLAG_CAPRW,
+            CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_ANYBODY,
             0, 0, sysctl_sysctl_name2oid, "I", "");
 
 static int sysctl_sysctl_oidfmt(SYSCTL_HANDLER_ARGS)
@@ -685,7 +676,7 @@ static int sysctl_sysctl_oidfmt(SYSCTL_HANDLER_ARGS)
 }
 
 static SYSCTL_NODE(_sysctl, _CTLMAGIC_OIDFMT, oidfmt,
-                   CTLFLAG_RD | CTLFLAG_CAPRD,
+                   CTLFLAG_RD,
                    sysctl_sysctl_oidfmt, "");
 
 static int sysctl_sysctl_oiddescr(SYSCTL_HANDLER_ARGS)
@@ -710,7 +701,7 @@ static int sysctl_sysctl_oiddescr(SYSCTL_HANDLER_ARGS)
 }
 
 static SYSCTL_NODE(_sysctl, _CTLMAGIC_OIDDESCR, oiddescr,
-                   CTLFLAG_RD | CTLFLAG_CAPRD,
+                   CTLFLAG_RD,
                    sysctl_sysctl_oiddescr, "");
 
 /**
