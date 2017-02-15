@@ -106,11 +106,8 @@ static int init_permanent_files(void)
         procfs_write_funcs[filetype] = (*file)->writefn;
         procfs_rele_funcs[filetype] = (*file)->relefn;
 
-        if (filetype > PROCFS_KERNEL_SEPARATOR) {
-            const char * filename = (*file)->filename;
-
-            create_proc_file(vn_procfs, 0, filename, filetype);
-        }
+        const char * filename = (*file)->filename;
+        create_proc_file(vn_procfs, 0, filename, filetype);
     }
 
     return 0;

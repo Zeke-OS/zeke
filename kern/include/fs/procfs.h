@@ -63,12 +63,6 @@ struct proc_info;
  * Procfs file types.
  */
 enum procfs_filetype {
-    /* process filess /proc/<num>/ */
-    PROCFS_REGIONS = 0, /*!< Process memory regions. */
-    PROCFS_STATUS,      /*!< Process status file. */
-    /* --- */
-    PROCFS_KERNEL_SEPARATOR,
-    /* kernel files */
     PROCFS_MOUNTS,      /*!< /proc/mounts */
     PROCFS_SESSIONS,
     PROCFS_DYNDEBUG,    /*!< Dynamic debugging. */
