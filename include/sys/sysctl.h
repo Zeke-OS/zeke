@@ -508,15 +508,42 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
 #define KERN_MAXFILES           8   /*!< int: max open files */
 #define KERN_ARGMAX             9   /*!< int: max arguments to exec */
 #define KERN_HOSTNAME           10  /*!< string: hostname */
-#define KERN_PROF               11  /*!< node: kernel profiling info */
-#define KERN_POSIX1             12  /*!< int: POSIX.1 version */
-#define KERN_OSRELDATE          13  /*!< int: kernel release date */
-#define KERN_NTP_PLL            14  /*!< node: NTP PLL control */
-#define KERN_BOOTFILE           15  /*!< string: name of booted kernel */
-#define KERN_MAXFILESPERPROC    16  /*!< int: max open files per proc */
-#define KERN_IPC                17  /*!< node: anything related to IPC */
-#define KERN_LOGSIGEXIT         18  /*!< int: do we log sigexit procs? */
-#define KERN_HOSTUUID           19  /*!< string: host UUID identifier */
+#define KERN_PROC               11  /*!< node: process entries */
+#define KERN_PROF               12  /*!< node: kernel profiling info */
+#define KERN_POSIX1             13  /*!< int: POSIX.1 version */
+#define KERN_OSRELDATE          14  /*!< int: kernel release date */
+#define KERN_NTP_PLL            15  /*!< node: NTP PLL control */
+#define KERN_BOOTFILE           16  /*!< string: name of booted kernel */
+#define KERN_MAXFILESPERPROC    17  /*!< int: max open files per proc */
+#define KERN_IPC                18  /*!< node: anything related to IPC */
+#define KERN_LOGSIGEXIT         19  /*!< int: do we log sigexit procs? */
+#define KERN_HOSTUUID           20  /*!< string: host UUID identifier */
+
+/*
+ * KERN_PROC subtypes
+ */
+#define KERN_PROC_PID           1   /*!< Get proc data by process id */
+#define KERN_PROC_PGRP          2   /*!< Get PIDSs by process group id */
+#define KERN_PROC_SESSION       3   /*!< Get PIDs session of pid */
+#define KERN_PROC_TTY           4   /*!< Get PIDs controlling tty */
+#define KERN_PROC_UID           5   /*!< Get PIDs effective uid */
+#define KERN_PROC_RUID          6   /*!< Get PIDs real uid */
+#define KERN_PROC_RGID          7   /*!< Get PIDs by real group id */
+#define KERN_PROC_GID           8   /*!< Get PIds by effective group id */
+
+/*
+ * KERN_PROC_PID subtypes
+ */
+#define KERN_PROC_PSTAT         1   /*!< Get struct pstat */
+#define KERN_PROC_VMMAP         2   /*!< VM map entries for process */
+#define KERN_PROC_FILEDESC      3   /*!< File descriptors for process */
+#define KERN_PROC_NFDS          4   /*!< number of open file descriptors */
+#define KERN_PROC_GROUPS        5   /*!< process groups */
+#define KERN_PROC_ENV           6   /*!< get environment */
+#define KERN_PROC_ARGS          7   /*!< get/set arguments/proctitle */
+#define KERN_PROC_RLIMIT        8   /*!< process resource limits */
+#define KERN_PROC_SIGTRAMP      9   /*!< signal trampoline location */
+#define KERN_PROC_CWD           10  /*!< process current working directory */
 
 /*
  * KERN_IPC identifiers
@@ -552,6 +579,7 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
 extern struct sysctl_oid_list sysctl__children;
 
 SYSCTL_DECL(_kern);
+SYSCTL_DECL(_kern_proc);
 SYSCTL_DECL(_vm);
 SYSCTL_DECL(_vfs);
 SYSCTL_DECL(_debug);

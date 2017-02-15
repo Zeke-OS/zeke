@@ -38,30 +38,6 @@
 #include <kstring.h>
 #include <proc.h>
 
-static dev_t get_ctty(struct proc_info * proc)
-{
-    int err, fd = proc->pgrp->pg_session->s_ctty_fd;
-    struct stat stat_buf;
-    file_t * file;
-    vnode_t * vnode;
-    dev_t ctty = 0;
-
-    file = fs_fildes_ref(proc->files, fd, 1);
-    if (!file)
-        return 0;
-
-    vnode = file->vnode;
-    err = vnode->vnode_ops->stat(vnode, &stat_buf);
-    if (err)
-        goto out;
-
-    ctty = stat_buf.st_rdev;
-
-out:
-    fs_fildes_ref(proc->files, fd, -1);
-    return ctty;
-}
-
 static struct procfs_stream * read_status(const struct procfs_info * spec)
 {
     struct procfs_stream * stream;

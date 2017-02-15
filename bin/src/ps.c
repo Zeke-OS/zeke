@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   ps.
  * @section LICENSE
- * Copyright (c) 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2016, 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,9 +35,12 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/param.h>
+#include <sys/proc.h>
 #include <sys/stat.h>
+#include <sys/sysctl.h>
 #include <sys/types.h>
 #include <sysexits.h>
 #include <time.h>
@@ -47,85 +50,50 @@
 #define PROC_PATH   "/proc"
 #define DEV_PATH    "/dev"
 
-struct pstat {
-    char name[16];
-    pid_t pid;
-    pid_t pgrp;
-    pid_t sid;
-    dev_t ctty; /* Controlling TTY */
-    uid_t ruid;
-    uid_t euid;
-    uid_t suid;
-    gid_t rgid;
-    gid_t egid;
-    gid_t sgid;
-    clock_t utime;
-    clock_t stime;
-};
-
 struct ttydev {
     dev_t dev;
     char name[16];
 };
 
-static char pathbuf[PATH_MAX];
 static struct ttydev ttydev[10];
 
-static char * get_next_line(FILE * fp)
+static pid_t * get_pids(void)
 {
-    static char line[MAX_INPUT];
+    int mib_maxproc[] = { CTL_KERN, KERN_MAXPROC };
+    int mib[] = { CTL_KERN, KERN_PROC, KERN_PROC_PID };
+    size_t size = sizeof(size_t), pids_size;
+    pid_t * pids;
 
-    while (fgets(line, sizeof(line), fp)) {
-        char * cp;
-        int ch;
+    if (sysctl(mib_maxproc, num_elem(mib_maxproc), &pids_size, &size, 0, 0))
+        return NULL;
 
-        cp = strchr(line, '\n');
-        if (cp) {
-            *cp = '\0';
-            return line;
-        }
+    pids = calloc(pids_size + 1, sizeof(pid_t));
+    if (!pids)
+        return NULL;
 
-        /* skip lines that are too long */
-        while ((ch = fgetc(fp)) != '\n' && ch != EOF);
-    }
+    if (sysctl(mib, num_elem(mib), pids, &pids_size, 0, 0))
+        return NULL;
 
-    return NULL;
+    return pids;
 }
 
-static int scan_proc(struct pstat * ps, FILE * fp)
+static int pid2pstat(struct pstat * ps, pid_t pid)
 {
-    char * line;
+    int mib[5];
+    size_t size = sizeof(*ps);
 
-    while ((line = get_next_line(fp))) {
-        char * a;
-        char * b;
+    mib[0] = CTL_KERN;
+    mib[1] = KERN_PROC;
+    mib[2] = KERN_PROC_PID;
+    mib[3] = pid;
+    mib[4] = KERN_PROC_PSTAT;
 
-        a = strsep(&line, ":");
-        b = util_skipwhite(line);
-
-        if (strcmp(a, "Name") == 0) {
-            strlcpy(ps->name, b, sizeof(ps->name));
-        } else if (strcmp(a, "Pid") == 0) {
-            sscanf(b, "%u", &ps->pid);
-        } else if (strcmp(a, "Pgrp") == 0) {
-            sscanf(b, "%u", &ps->pgrp);
-        } else if (strcmp(a, "Sid") == 0) {
-            sscanf(b, "%u", &ps->sid);
-        } else if (strcmp(a, "Ctty") == 0) {
-            sscanf(b, "%u", &ps->ctty);
-        } else if (strcmp(a, "User") == 0) {
-            sscanf(b, "%d", &ps->utime);
-        } else if (strcmp(a, "Sys") == 0) {
-            sscanf(b, "%d", &ps->stime);
-        }
-        /* TODO UID & GID */
-    }
-
-    return 0;
+    return sysctl(mib, num_elem(mib), ps, &size, 0, 0);
 }
 
 void init_ttydev_arr(void)
 {
+    static char pathbuf[PATH_MAX];
     DIR * dirp;
     struct dirent * d;
     size_t i = 0;
@@ -192,46 +160,35 @@ out:
 
 int main(int argc, char * argv[], char * envp[])
 {
-    DIR * dirp;
-    struct dirent * d;
+    pid_t pid;
+    pid_t * pids;
+    pid_t * pid_iter;
     long clk_tck;
 
     clk_tck = sysconf(_SC_CLK_TCK);
     init_ttydev_arr();
 
-    dirp = opendir(PROC_PATH);
-    if (!dirp) {
-        perror("Open failed");
+    pids = get_pids();
+    if (!pids) {
+        perror("Failed to get PIDs");
         return EX_OSERR;
     }
 
     printf("  PID TTY          TIME CMD\n");
-    while ((d = readdir(dirp))) {
-        FILE * fp;
+    pid_iter = pids;
+    while ((pid = *pid_iter++) != 0) {
         struct pstat ps;
         clock_t sutime;
 
-        if (!(d->d_type & DT_DIR) || d->d_name[0] == '.')
-            continue;
-
-        snprintf(pathbuf, sizeof(pathbuf), PROC_PATH "/%s/status",
-                 d->d_name);
-        fp = fopen(pathbuf, "r");
-        if (!fp)
-            continue;
-
-        scan_proc(&ps, fp);
-
+        pid2pstat(&ps, pid);
         sutime = (ps.utime + ps.stime) / clk_tck;
-        printf("%5s %-6s   %02u:%02u:%02u %s\n",
-               d->d_name,
+        printf("%5d %-6s   %02u:%02u:%02u %s\n",
+               ps.pid,
                devttytostr(ps.ctty),
                sutime / 3600, (sutime % 3600) / 60, sutime % 60,
                ps.name);
-        fclose(fp);
     }
 
-    closedir(dirp);
-
+    free(pids);
     return 0;
 }

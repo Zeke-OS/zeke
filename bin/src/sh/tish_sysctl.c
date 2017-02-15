@@ -58,8 +58,7 @@ static int getset_svalue(int * oid, int len, size_t oval_len,
     return 0;
 }
 
-static int getset_ivalue(int * oid, int len, size_t oval_len,
-                         char * nval, size_t nval_len)
+static int getset_ivalue(int * oid, int len, char * nval, size_t nval_len)
 {
     int x;
     size_t x_len = sizeof(x);
@@ -140,7 +139,7 @@ static int cmd_mib_value(char * name, int ctltype, int * mib, int mib_len,
                              new_value ? strlen(new_value) : 0);
     case CTLTYPE_INT:
     case CTLTYPE_UINT:
-        return getset_ivalue(mib, mib_len, dlen, new_value, sizeof(int));
+        return getset_ivalue(mib, mib_len, new_value, sizeof(int));
     case CTLTYPE_LONG:
     case CTLTYPE_ULONG:
     case CTLTYPE_S64:

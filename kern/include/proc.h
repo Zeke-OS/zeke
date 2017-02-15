@@ -402,6 +402,11 @@ void proc_unref(struct proc_info * proc);
 const char * proc_state2str(enum proc_state state);
 
 /**
+ * Get process ctty dev id.
+ */
+dev_t get_ctty(struct proc_info * proc);
+
+/**
  * Create a new process by forking the current process.
  * @return  New PID; 0 if returning fork; -1 if unable to fork.
  */

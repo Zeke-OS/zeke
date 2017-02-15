@@ -35,7 +35,6 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#include <sys/sysctl.h>
 #include <sys/wait.h>
 #include <syscall.h>
 #include <unistd.h>
@@ -60,12 +59,6 @@
 static struct proc_info *procarr[SIZEOF_PROCARR];
 int nprocs = 1;             /*!< Current # of procs. */
 struct proc_info * curproc; /*!< PCB of the current process. */
-
-SYSCTL_INT(_kern, OID_AUTO, nprocs, CTLFLAG_RD,
-           &nprocs, 0, "Current number of processes");
-
-SYSCTL_INT(_kern, KERN_MAXPROC, maxproc, CTLFLAG_RD,
-            NULL, configMAXPROC, "Maximum number of processes");
 
 static const struct vm_ops sys_vm_ops; /* NOOP struct for system regions. */
 
@@ -466,6 +459,30 @@ const char * proc_state2str(enum proc_state state)
 {
     return ((unsigned)state > sizeof(proc_state_names)) ?
         "PROC_STATE_INVALID" : proc_state_names[state];
+}
+
+dev_t get_ctty(struct proc_info * proc)
+{
+    int err, fd = proc->pgrp->pg_session->s_ctty_fd;
+    struct stat stat_buf;
+    file_t * file;
+    vnode_t * vnode;
+    dev_t ctty = 0;
+
+    file = fs_fildes_ref(proc->files, fd, 1);
+    if (!file)
+        return 0;
+
+    vnode = file->vnode;
+    err = vnode->vnode_ops->stat(vnode, &stat_buf);
+    if (err)
+        goto out;
+
+    ctty = stat_buf.st_rdev;
+
+out:
+    fs_fildes_ref(proc->files, fd, -1);
+    return ctty;
 }
 
 struct thread_info * proc_iterate_threads(const struct proc_info * proc,
