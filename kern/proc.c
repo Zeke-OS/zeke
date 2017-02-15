@@ -5,7 +5,7 @@
  * @brief   Kernel process management source file. This file is responsible for
  *          thread creation and management.
  * @section LICENSE
- * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -290,7 +290,7 @@ pid_t * proc_get_pids_buffer(void)
 
 void proc_release_pids_buffer(pid_t * buf)
 {
-    uintptr_t i = ((uintptr_t)buf - (uintptr_t)pids_buf) / sizeof(pid_t);
+    uintptr_t i = ((uintptr_t)buf - (uintptr_t)pids_buf) / sizeof(pids_buf[0]);
     isema_release(pids_buf_isema, i);
 }
 
