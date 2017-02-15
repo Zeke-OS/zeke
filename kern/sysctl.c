@@ -254,7 +254,7 @@ static int sysctl_remove_oid_locked(struct sysctl_oid * oidp,
              * sysctl lock was held across a handler invocation,
              * and is necessary for module unload correctness.
              */
-            while (oidp->oid_running > 0) {
+            while (atomic_read(&oidp->oid_running) > 0) {
                 oidp->oid_kind |= CTLFLAG_DYING;
                 /* FIXME Sleep until oid_running wakeup */
             }
@@ -304,15 +304,19 @@ struct sysctl_oid * sysctl_add_oid(struct sysctl_oid_list * parent,
         }
     }
     oidp = kmalloc(sizeof(struct sysctl_oid));
-    oidp->oid_parent = parent;
-    oidp->oid_number = OID_AUTO;
-    oidp->oid_refcnt = 1;
-    oidp->oid_name = kstrdup(name, CTL_MAXSTRNAME);
-    oidp->oid_handler = handler;
-    oidp->oid_kind = CTLFLAG_DYN | kind;
-    oidp->oid_arg1 = arg1;
-    oidp->oid_arg2 = arg2;
-    oidp->oid_fmt = fmt;
+    *oidp = (struct sysctl_oid){
+        .oid_parent = parent,
+        .oid_link = { NULL },
+        .oid_number = OID_AUTO,
+        .oid_kind = CTLFLAG_DYN | kind,
+        .oid_fmt = fmt,
+        .oid_name = kstrdup(name, CTL_MAXSTRNAME),
+        .oid_handler = handler,
+        .oid_arg1 = arg1,
+        .oid_arg2 = arg2,
+        .oid_refcnt = 1,
+        .oid_running = ATOMIC_INIT(0),
+    };
     if (descr != NULL)
         oidp->oid_descr = kstrdup(descr, CTL_MAXSTRNAME);
     /* Register this oid */
@@ -387,7 +391,7 @@ int sysctl_find_oid(int * name, unsigned int namelen, struct sysctl_oid ** noid,
 
         indx++;
         if ((oid->oid_kind & CTLTYPE) == CTLTYPE_NODE) {
-            if (oid->oid_handler != NULL || indx == (int)namelen) {
+            if (oid->oid_handler || indx == (int)namelen) {
                 *noid = oid;
                 if (nindx != NULL)
                     *nindx = indx;
@@ -679,7 +683,6 @@ static int sysctl_sysctl_oidfmt(SYSCTL_HANDLER_ARGS)
     SYSCTL_UNLOCK();
     return error;
 }
-
 
 static SYSCTL_NODE(_sysctl, _CTLMAGIC_OIDFMT, oidfmt,
                    CTLFLAG_RD | CTLFLAG_CAPRD,
@@ -1141,7 +1144,7 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
          * no handler.  Inform the user that it's a node.
          * The indx may or may not be the same as namelen.
          */
-        if (oid->oid_handler == NULL)
+        if (!oid->oid_handler)
             return -EISDIR;
     }
 
@@ -1183,13 +1186,14 @@ static int sysctl_root(SYSCTL_HANDLER_ARGS)
         arg2 = oid->oid_arg2;
     }
 
-    oid->oid_running++;
+    /* TODO atomic */
+    atomic_inc(&oid->oid_running);
     SYSCTL_UNLOCK();
 
     error = oid->oid_handler(oid, arg1, arg2, req);
 
     SYSCTL_LOCK();
-    oid->oid_running--;
+    atomic_dec(&oid->oid_running);
     /* TODO */
 #if 0
     if (oid->oid_running == 0 && (oid->oid_kind & CTLFLAG_DYING) != 0)

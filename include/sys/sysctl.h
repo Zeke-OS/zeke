@@ -42,6 +42,7 @@
 #ifndef _SYS_SYSCTL_H_
 #define _SYS_SYSCTL_H_
 
+#include <machine/atomic.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/queue.h>
@@ -264,7 +265,7 @@ struct sysctl_oid {
     int (*oid_handler)(SYSCTL_HANDLER_ARGS);
     const char * oid_fmt;
     int oid_refcnt;
-    unsigned int oid_running;
+    atomic_t oid_running;
     const char * oid_descr;
 };
 
