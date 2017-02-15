@@ -65,6 +65,8 @@
 #define CTL_MAXSTRNAME  80 /*! Maximum length of a string name for a sysctl
                             *  node. */
 
+#define CTLT_STRING_MAX 1024
+
 /* CTL types */
 #define CTLTYPE         0xf /*!< Mask for the type. */
 #define CTLTYPE_NODE    1   /*!< Name is a node (parent for other nodes). */
@@ -88,6 +90,7 @@
 #endif
 #define CTLFLAG_SKIP    0x01000000  /*!< Skip this sysctl when listing */
 #define CTLMASK_SECURE  0x00F00000  /*!< Secure level */
+#define CTLFLAG_DYN     0x02000000  /* Dynamic oid - can be freed */
 #define CTLFLAG_DYING   0x00010000  /*!< Oid is being removed */
 #define CTLFLAG_CAPRD   0x00008000  /*!< Can be read in capability mode */
 #define CTLFLAG_CAPWR   0x00004000  /*!< Can be written in capability mode */
@@ -281,8 +284,6 @@ int sysctl_handle_string(SYSCTL_HANDLER_ARGS);
 #define SYSCTL_CHILDREN_SET(oid_ptr, val) (oid_ptr)->oid_arg1 = (val)
 #define SYSCTL_STATIC_CHILDREN(oid_name) (&sysctl_##oid_name##_children)
 
-/* === Structs and macros related to context handling. === */
-
 #define SYSCTL_NODE_CHILDREN(parent, name) \
     sysctl_##parent##_##name##_children
 
@@ -342,22 +343,24 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
 /* This constructs a "raw" MIB oid. */
 #define SYSCTL_OID(parent, nbr, name, kind, a1, a2, handler, fmt, descr)    \
     static struct sysctl_oid sysctl__##parent##_##name = {                  \
-        &sysctl_##parent##_children,                                        \
-        { NULL },                                                           \
-        nbr,                                                                \
-        kind,                                                               \
-        a1,                                                                 \
-        a2,                                                                 \
-        #name,                                                              \
-        handler,                                                            \
-        fmt,                                                                \
-        0,                                                                  \
-        0,                                                                  \
-        __DESCR(descr)                                                      \
+        .oid_parent = &sysctl_##parent##_children,                          \
+        .oid_link = { NULL },                                               \
+        .oid_number = nbr,                                                  \
+        .oid_kind = kind,                                                   \
+        .oid_arg1 = a1,                                                     \
+        .oid_arg2 = a2,                                                     \
+        .oid_name = #name,                                                  \
+        .oid_handler = handler,                                             \
+        .oid_fmt = fmt,                                                     \
+        .oid_refcnt = 0,                                                    \
+        .oid_running = 0,                                                   \
+        .oid_descr = __DESCR(descr),                                        \
     };                                                                      \
     DATA_SET(sysctl_set, sysctl__##parent##_##name)
 
-/* This constructs a node from which other oids can hang. */
+/**
+ * This constructs a node from which other oids can hang.
+ */
 #define SYSCTL_NODE(parent, nbr, name, access, handler, descr)          \
     struct sysctl_oid_list SYSCTL_NODE_CHILDREN(parent, name);          \
     SYSCTL_OID(parent, nbr, name, CTLTYPE_NODE|(access),                \
@@ -553,6 +556,37 @@ void sysctl_register_oid(struct sysctl_oid * oidp);
 void sysctl_unregister_oid(struct sysctl_oid * oidp);
 int sysctl_find_oid(int * name, unsigned int namelen, struct sysctl_oid ** noid,
         int * nindx, struct sysctl_req * req);
+
+/* Dynamic */
+
+/**
+ * Remove dynamically created sysctl trees.
+ * @param oidp      top of the tree to be removed
+ * @param del       if 0 - just deregister, otherwise free up entries as well
+ * @param recurse   if != 0 traverse the subtree to be deleted
+ */
+int sysctl_remove_oid(struct sysctl_oid * oidp, int del, int recurse);
+
+/**
+ * Create new sysctls at run time.
+ */
+struct sysctl_oid * sysctl_add_oid(struct sysctl_oid_list * parent,
+                                   const char * name, int kind,
+                                   void * arg1, intmax_t arg2,
+                                   int (*handler)(SYSCTL_HANDLER_ARGS),
+                                   const char * fmt, const char * descr);
+
+/**
+ * Rename an existing oid.
+ */
+int sysctl_rename_oid(struct sysctl_oid * oidp, const char * name);
+
+/*
+ * Reparent an existing oid.
+ */
+int sysctl_move_oid(struct sysctl_oid * oid, struct sysctl_oid_list * parent);
+
+/* End of dynamic */
 
 /*
  * In-kernel sysctl by name.

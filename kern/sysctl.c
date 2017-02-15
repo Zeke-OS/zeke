@@ -201,6 +201,172 @@ void sysctl_unregister_oid(struct sysctl_oid * oidp)
     }
 }
 
+static int sysctl_remove_oid_locked(struct sysctl_oid * oidp,
+                                    int del, int recurse)
+{
+    struct sysctl_oid * p;
+    struct sysctl_oid * tmp;
+    int error;
+
+    SYSCTL_ASSERT_XLOCKED();
+    if (oidp == NULL)
+        return -EINVAL;
+    if ((oidp->oid_kind & CTLFLAG_DYN) == 0) {
+        KERROR(KERROR_ERR, "Can't remove non-dynamic nodes!\n");
+        return -EINVAL;
+    }
+
+    /*
+     * WARNING: normal method to do this should be through
+     * sysctl_ctx_free(). Use recursing as the last resort
+     * method to purge your sysctl tree of leftovers...
+     * However, if some other code still references these nodes,
+     * it will panic.
+     */
+    if ((oidp->oid_kind & CTLTYPE) == CTLTYPE_NODE) {
+        if (oidp->oid_refcnt == 1) {
+            SLIST_FOREACH_SAFE(p, SYSCTL_CHILDREN(oidp), oid_link, tmp) {
+                if (!recurse) {
+                    KERROR(KERROR_WARN,
+                           "Failed attempt to remove oid %s with child %s\n",
+                           oidp->oid_name, p->oid_name);
+                    return -ENOTEMPTY;
+                }
+                error = sysctl_remove_oid_locked(p, del, recurse);
+                if (error)
+                    return error;
+            }
+        }
+    }
+    if (oidp->oid_refcnt > 1) {
+        oidp->oid_refcnt--;
+    } else {
+        if (oidp->oid_refcnt == 0) {
+            KERROR(KERROR_WARN, "Bad oid_refcnt=%u (%s)!\n",
+                   oidp->oid_refcnt, oidp->oid_name);
+            return -EINVAL;
+        }
+        sysctl_unregister_oid(oidp);
+        if (del) {
+            /*
+             * Wait for all threads running the handler to drain.
+             * This preserves the previous behavior when the
+             * sysctl lock was held across a handler invocation,
+             * and is necessary for module unload correctness.
+             */
+            while (oidp->oid_running > 0) {
+                oidp->oid_kind |= CTLFLAG_DYING;
+                /* FIXME Sleep until oid_running wakeup */
+            }
+            if (oidp->oid_descr)
+                kfree(__DECONST(char *, oidp->oid_descr));
+            kfree(__DECONST(char *, oidp->oid_name));
+            kfree(oidp);
+        }
+    }
+    return 0;
+}
+
+int sysctl_remove_oid(struct sysctl_oid * oidp, int del, int recurse)
+{
+    int error;
+
+    SYSCTL_LOCK();
+    error = sysctl_remove_oid_locked(oidp, del, recurse);
+    SYSCTL_UNLOCK();
+    return error;
+}
+
+struct sysctl_oid * sysctl_add_oid(struct sysctl_oid_list * parent,
+                                   const char * name, int kind,
+                                   void * arg1, intmax_t arg2,
+                                   int (*handler)(SYSCTL_HANDLER_ARGS),
+                                   const char * fmt, const char * descr)
+{
+    struct sysctl_oid * oidp;
+
+    /* You have to hook up somewhere.. */
+    if (parent == NULL)
+        return NULL;
+
+    /* Check if the node already exists, otherwise create it */
+    SYSCTL_LOCK();
+    oidp = sysctl_find_oidname(name, parent);
+    if (oidp != NULL) {
+        if ((oidp->oid_kind & CTLTYPE) == CTLTYPE_NODE) {
+            oidp->oid_refcnt++;
+            SYSCTL_UNLOCK();
+            return oidp;
+        } else {
+            SYSCTL_UNLOCK();
+            KERROR(KERROR_ERR, "Can't re-use a leaf (%s)!\n", name);
+            return NULL;
+        }
+    }
+    oidp = kmalloc(sizeof(struct sysctl_oid));
+    oidp->oid_parent = parent;
+    oidp->oid_number = OID_AUTO;
+    oidp->oid_refcnt = 1;
+    oidp->oid_name = kstrdup(name, CTL_MAXSTRNAME);
+    oidp->oid_handler = handler;
+    oidp->oid_kind = CTLFLAG_DYN | kind;
+    oidp->oid_arg1 = arg1;
+    oidp->oid_arg2 = arg2;
+    oidp->oid_fmt = fmt;
+    if (descr != NULL)
+        oidp->oid_descr = kstrdup(descr, CTL_MAXSTRNAME);
+    /* Register this oid */
+    sysctl_register_oid(oidp);
+    SYSCTL_UNLOCK();
+
+    return oidp;
+}
+
+int sysctl_rename_oid(struct sysctl_oid * oidp, const char * name)
+{
+    char * newname;
+    char * oldname;
+
+    if ((oidp->oid_kind & CTLFLAG_DYN) == 0)
+        return -EROFS;
+
+    newname = kstrdup(name, CTL_MAXSTRNAME);
+    SYSCTL_LOCK();
+    oldname = __DECONST(char *, oidp->oid_name);
+    oidp->oid_name = newname;
+    SYSCTL_UNLOCK();
+    kfree(oldname);
+
+    return 0;
+}
+
+int sysctl_move_oid(struct sysctl_oid * oid, struct sysctl_oid_list * parent)
+{
+    struct sysctl_oid * oidp;
+
+    if ((oid->oid_kind & CTLFLAG_DYN) == 0)
+        return -EROFS;
+
+    SYSCTL_LOCK();
+    if (oid->oid_parent == parent) {
+        SYSCTL_UNLOCK();
+        return 0;
+    }
+
+    oidp = sysctl_find_oidname(oid->oid_name, parent);
+    if (oidp != NULL) {
+        SYSCTL_UNLOCK();
+        return -EEXIST;
+    }
+
+    sysctl_unregister_oid(oid);
+    oid->oid_parent = parent;
+    oid->oid_number = OID_AUTO;
+    sysctl_register_oid(oid);
+    SYSCTL_UNLOCK();
+    return 0;
+}
+
 int sysctl_find_oid(int * name, unsigned int namelen, struct sysctl_oid ** noid,
                     int * nindx, struct sysctl_req * req)
 {
@@ -265,7 +431,7 @@ static struct sysctl_oid * sysctl_find_oidname(const char * name,
 
 static int sysctl_sysctl_name(SYSCTL_HANDLER_ARGS)
 {
-    int * name = (int *) arg1;
+    int * name = (int *)arg1;
     unsigned int namelen = arg2;
     int error = 0;
     struct sysctl_oid *oid;
@@ -735,8 +901,7 @@ int sysctl_handle_string(SYSCTL_HANDLER_ARGS)
      * temporary kernel buffer.
      */
 retry:
-    outlen = strlenn((char *)arg1, CTL_MAXSTRNAME) + 1;
-
+    outlen = strlenn((char *)arg1, CTLT_STRING_MAX) + 1;
     tmparg = kmalloc(outlen);
 
     if (strlcpy(tmparg, (char *)arg1, outlen) >= outlen) {

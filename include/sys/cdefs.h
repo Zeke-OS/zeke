@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1991, 1993
  *        The Regents of the University of California.  All rights reserved.
  *
@@ -604,15 +604,15 @@
 #endif
 
 #ifndef        __DECONST
-#define        __DECONST(type, var)        ((type)(__uintptr_t)(const void *)(var))
+#define        __DECONST(type, var)        ((type)(uintptr_t)(const void *)(var))
 #endif
 
 #ifndef        __DEVOLATILE
-#define        __DEVOLATILE(type, var)        ((type)(__uintptr_t)(volatile void *)(var))
+#define        __DEVOLATILE(type, var)        ((type)(uintptr_t)(volatile void *)(var))
 #endif
 
 #ifndef        __DEQUALIFY
-#define        __DEQUALIFY(type, var)        ((type)(__uintptr_t)(const volatile void *)(var))
+#define        __DEQUALIFY(type, var)        ((type)(uintptr_t)(const volatile void *)(var))
 #endif
 
 /*-
