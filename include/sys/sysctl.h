@@ -87,10 +87,6 @@
 #define CTLFLAG_KERWR   0x40000000  /*!< Writable by a kernel request. */
 #define CTLFLAG_ANYBODY 0x80000000  /*!< All users can set this var */
 #define CTLFLAG_SECURE  0x02000000  /*!< Permit set only if securelevel<=0 */
-/* Dyn not supported atm */
-#if 0
-#define CTLFLAG_DYN     0x02000000  /*!< Dynamic oid - can be freed */
-#endif
 #define CTLFLAG_SKIP    0x01000000  /*!< Skip this sysctl when listing */
 #define CTLMASK_SECURE  0x00F00000  /*!< Secure level */
 #define CTLFLAG_DYN     0x04000000  /* Dynamic oid - can be freed */
