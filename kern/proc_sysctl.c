@@ -140,25 +140,31 @@ out:
 static int proc_sysctl_pid(struct sysctl_oid * oidp, int * mib, int len,
                            struct sysctl_req * req)
 {
+    int retval = 0;
+
     if (len < 2) {
         return -EINVAL;
     }
 
-    pid_t pid = mib[0];
+    pid_t pid = mib[0] == -1 ? curproc->pid : mib[0];
     int opt = mib[1];
 
     struct proc_info * proc = proc_ref(pid);
     if (!proc) {
-        return -EINVAL;
+        return -ESRCH;
     }
 
-    int retval = 0;
+    if (!(curproc->cred.euid == 0 || curproc->cred.euid == proc->cred.euid)) {
+        retval = -ESRCH;
+        goto out;
+    }
+
     switch (opt) {
     case KERN_PROC_PSTAT: {
         struct kinfo_proc ps;
 
         if (proc2pstat(&ps, proc)) {
-            retval = -EINVAL;
+            retval = -ESRCH;
             goto out;
         }
         retval = sysctl_handle_opaque(oidp, &ps, sizeof(struct kinfo_proc),
