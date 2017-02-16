@@ -34,6 +34,7 @@
 #define _SYS_PROC_H_
 
 #include <stddef.h>
+#include <sys/param.h>
 #include <sys/types.h>
 
 /**
@@ -55,6 +56,13 @@ struct kinfo_proc {
     clock_t stime;
     void * brk_start; /*!< Break start address. (end of heap data) */
     void * brk_stop; /*!< Break stop address. (end of heap region) */
+};
+
+struct kinfo_session {
+    pid_t s_leader;             /*!< Session leader. */
+    int s_pgrp_count;
+    int s_ctty_fd;              /*!< fd number of the controlling terminal. */
+    char s_login[MAXLOGNAME];   /*!< Setlogin() name. */
 };
 
 struct kinfo_vmentry {

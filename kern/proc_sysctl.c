@@ -205,6 +205,32 @@ out:
     return retval;
 }
 
+static int proc_sysctl_sesssions(struct sysctl_oid * oidp,
+                                 struct sysctl_req * req)
+{
+    int retval;
+
+    PROC_LOCK();
+    struct session * sp;
+
+    TAILQ_FOREACH(sp, &proc_session_list_head, s_session_list_entry_) {
+        struct kinfo_session s = {
+            .s_leader = sp->s_leader,
+            .s_ctty_fd = sp->s_ctty_fd,
+        };
+        strlcpy(s.s_login, sp->s_login, sizeof(s.s_login));
+
+        retval = req->oldfunc(req, &s, sizeof(struct kinfo_session));
+        if (retval < 0)
+            goto out;
+    }
+
+    retval = 0;
+out:
+    PROC_UNLOCK();
+    return retval;
+}
+
 static int proc_sysctl(SYSCTL_HANDLER_ARGS)
 {
     int * mib = arg1;
@@ -221,8 +247,15 @@ static int proc_sysctl(SYSCTL_HANDLER_ARGS)
             return proc_sysctl_pid(oidp, mib + 1, len - 1, req);
         }
     case KERN_PROC_PGRP:
+        if (len == 1) { /* Get the list of process groups */
+        } else { /* Get the list of PIDs in a process group */
+        }
         /* TODO Implementation */
     case KERN_PROC_SESSION:
+        if (len == 1) { /* Get the list of all sessions */
+            return proc_sysctl_sesssions(oidp, req);
+        } else { /* Get the list of pgrp identifiers in a session */
+        }
         /* TODO Implementation */
     case KERN_PROC_TTY:
         /* TODO Implementation */

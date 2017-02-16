@@ -519,7 +519,7 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
  * KERN_PROC subtypes
  */
 #define KERN_PROC_PID           1   /*!< Get proc data by process id */
-#define KERN_PROC_PGRP          2   /*!< Get PIDSs by process group id */
+#define KERN_PROC_PGRP          2   /*!< Get PIDs by process group id */
 #define KERN_PROC_SESSION       3   /*!< Get PIDs session of pid */
 #define KERN_PROC_TTY           4   /*!< Get PIDs controlling tty */
 #define KERN_PROC_UID           5   /*!< Get PIDs effective uid */
