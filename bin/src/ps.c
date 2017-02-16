@@ -180,7 +180,8 @@ int main(int argc, char * argv[], char * envp[])
         struct kinfo_proc ps;
         clock_t sutime;
 
-        pid2pstat(&ps, pid);
+        if (pid2pstat(&ps, pid) == -1)
+            continue;
         sutime = (ps.utime + ps.stime) / clk_tck;
         printf("%5d %-6s   %02u:%02u:%02u %s\n",
                ps.pid,
