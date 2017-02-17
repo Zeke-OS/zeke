@@ -41,8 +41,8 @@
  */
 
 #pragma once
-#ifndef PROCFS_H
-#define PROCFS_H
+#ifndef FS_PROCFS_H
+#define FS_PROCFS_H
 
 #include <stdint.h>
 #include <stddef.h>
@@ -83,6 +83,7 @@ struct procfs_file {
     procfs_relefn_t * const relefn;
     /* dynamic */
     vnode_t * vnode;            /*!< Pointer back to the vnode. */
+    void * opt;
     pid_t pid;                  /*!< PID of the process this file is
                                  *   representing. */
 };
@@ -112,7 +113,7 @@ void procfs_rmentry(pid_t pid);
  */
 void procfs_kfree_stream(struct procfs_stream * stream);
 
-#endif /* PROCFS_H */
+#endif /* FS_PROCFS_H */
 
 /**
  * @}

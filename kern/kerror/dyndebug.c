@@ -33,6 +33,7 @@
 #include <errno.h>
 #include <buf.h>
 #include <fs/procfs.h>
+#include <fs/procfs_dbgfile.h>
 #include <kerror.h>
 #include <kmalloc.h>
 #include <kstring.h>
@@ -108,61 +109,17 @@ void dyndebug_early_boot_init(void)
     }
 }
 
-static struct procfs_stream * read_dyndebug(const struct procfs_file * spec)
+static int read_dyndebug(void * buf, size_t max, void * elem)
 {
-    struct _kerror_dyndebug_msg * msg_opt = &__start_set_debug_msg_sect;
-    struct _kerror_dyndebug_msg * stop = &__stop_set_debug_msg_sect;
-    const size_t nr_msg = ((size_t)stop - (size_t)msg_opt) /
-                          sizeof(struct _kerror_dyndebug_msg);
-    size_t bufsize = nr_msg * DD_MAX_LINE;
-    struct buf * streambuf;
-    struct procfs_stream * stream;
-    struct uio uio;
-    size_t bytes = 0;
+    struct _kerror_dyndebug_msg * msg_opt = elem;
 
-    if (msg_opt == stop)
-        return NULL;
-
-    streambuf = geteblk(bufsize);
-    if (!streambuf)
-        return NULL;
-
-    bufsize -= sizeof(struct buf *);
-    stream = (struct procfs_stream *)streambuf->b_data + sizeof(struct buf *);
-
-    uio_init_kbuf(&uio, &stream->buf, bufsize);
-    while (msg_opt < stop) {
-        int len;
-
-        len = ksprintf(stream->buf + bytes, bufsize - bytes,
-                       "%u:%s:%d\n",
-                       msg_opt->flags, msg_opt->file, msg_opt->line);
-        bytes += len;
-
-        msg_opt++;
-    }
-    stream->bytes = bytes;
-
-    return stream;
+    return ksprintf(buf, max, "%u:%s:%d\n",
+                    msg_opt->flags, msg_opt->file, msg_opt->line);
 }
 
-void release_dyndebug_data(struct procfs_stream * stream)
+static ssize_t write_dyndebug(const void * buf, size_t bufsize)
 {
-    struct buf * bp = (struct buf *)((uint8_t *)stream - sizeof(struct buf *));
-
-    vrfree(bp);
-}
-
-ssize_t write_dyndebug(const struct procfs_file * spec,
-                       struct procfs_stream * stream,
-                       const uint8_t * buf, size_t bufsize)
-{
-    struct _kerror_dyndebug_msg * msg_opt = &__start_set_debug_msg_sect;
-    struct _kerror_dyndebug_msg * stop = &__stop_set_debug_msg_sect;
     int err;
-
-    if (msg_opt == stop)
-        return 0;
 
     if (!strvalid((char *)buf, bufsize))
         return -EINVAL;
@@ -171,13 +128,9 @@ ssize_t write_dyndebug(const struct procfs_file * spec,
     if (err)
         return err;
 
-    return stream->bytes;
+    return bufsize;
 }
 
-static struct procfs_file procfs_file_dyndebug = {
-    .filename = "dyndebug",
-    .readfn = read_dyndebug,
-    .writefn = write_dyndebug,
-    .relefn = release_dyndebug_data,
-};
-DATA_SET(procfs_files, procfs_file_dyndebug);
+PROCFS_DBGFILE(dyndebug,
+               &__start_set_debug_msg_sect, &__stop_set_debug_msg_sect,
+               read_dyndebug, write_dyndebug);
