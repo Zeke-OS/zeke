@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   A simple memory pooler.
  * @section LICENSE
- * Copyright (c) 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2016, 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,13 +55,12 @@ enum mempool_type {
  * Mempool object.
  */
 struct mempool {
-    size_t bsize;
     struct queue_cb head;
     enum mempool_type type;
     mtx_t lock;
     sema_t sema;
     void * data;
-    uint8_t pool[0];
+    uintptr_t pool[0];
 };
 
 /**

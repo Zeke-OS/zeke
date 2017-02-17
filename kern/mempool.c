@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   A simple memory pooler.
  * @section LICENSE
- * Copyright (c) 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2016, 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@ struct mempool * mempool_init(enum mempool_type type, size_t bsize,
 {
     struct mempool * mp;
     uint8_t * elem;
-    const size_t  data_bsize = count * bsize;
+    const size_t data_bsize = count * bsize;
     const size_t pool_bsize = count * sizeof(void *);
 
     mp = kzalloc(sizeof(struct mempool) + pool_bsize);
@@ -46,7 +46,6 @@ struct mempool * mempool_init(enum mempool_type type, size_t bsize,
     if (!(mp && elem))
         return NULL;
 
-    mp->bsize = bsize;
     mp->head = queue_create(&mp->pool, sizeof(void *), pool_bsize);
 
     mtx_init(&mp->lock, MTX_TYPE_TICKET, 0);
