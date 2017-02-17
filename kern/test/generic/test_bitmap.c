@@ -8,7 +8,6 @@
 #endif
 #include <libkern.h>
 #include <kunit.h>
-#include <ktest_mib.h>
 #include <bitmap.h>
 
 #if 0
@@ -123,4 +122,4 @@ static void all_tests(void)
 #endif
 }
 
-SYSCTL_TEST(generic, bitmap);
+TEST_MODULE(generic, bitmap);

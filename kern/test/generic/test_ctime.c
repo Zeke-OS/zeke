@@ -1,5 +1,4 @@
 #include <sys/time.h>
-#include <ktest_mib.h>
 #include <kunit.h>
 #include <libkern.h>
 
@@ -140,4 +139,4 @@ static void all_tests(void)
     ku_def_test(test_timespec_mod, KU_RUN);
 }
 
-SYSCTL_TEST(generic, ctime);
+TEST_MODULE(generic, ctime);

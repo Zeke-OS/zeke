@@ -4,7 +4,6 @@
  */
 
 #include <kunit.h>
-#include <ktest_mib.h>
 #include <libkern.h>
 #include <kmalloc.h>
 #include <fs/fs.h>
@@ -89,7 +88,7 @@ static void all_tests(void)
     ku_def_test(test_inpool_get, KU_RUN);
 }
 
-SYSCTL_TEST(fs, inpool);
+TEST_MODULE(fs, inpool);
 
 static vnode_t * create_tst(const struct fs_superblock * sb, ino_t * num)
 {

@@ -4,7 +4,6 @@
  */
 
 #include <kunit.h>
-#include <ktest_mib.h>
 #include <libkern.h>
 #include <vm/vm.h>
 
@@ -32,4 +31,4 @@ static void all_tests(void)
     ku_def_test(test_addr_is_in_range, KU_RUN);
 }
 
-SYSCTL_TEST(vm, range);
+TEST_MODULE(vm, range);

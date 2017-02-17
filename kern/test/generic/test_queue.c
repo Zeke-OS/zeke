@@ -4,7 +4,6 @@
  */
 
 #include <kunit.h>
-#include <ktest_mib.h>
 #include <queue_r.h>
 
 int tarr[5];
@@ -160,4 +159,4 @@ static void all_tests(void)
     ku_def_test(test_queue_is_not_empty, KU_RUN);
 }
 
-SYSCTL_TEST(generic, queue);
+TEST_MODULE(generic, queue);

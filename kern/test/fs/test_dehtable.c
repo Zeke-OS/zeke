@@ -4,7 +4,6 @@
  */
 
 #include <kunit.h>
-#include <ktest_mib.h>
 #include <kmalloc.h>
 #include <fs/fs.h>
 #include <fs/dehtable.h>
@@ -177,4 +176,4 @@ static void all_tests(void)
     ku_def_test(test_iterator, KU_RUN);
 }
 
-SYSCTL_TEST(fs, dehtable);
+TEST_MODULE(fs, dehtable);

@@ -1,5 +1,4 @@
 #include <kunit.h>
-#include <ktest_mib.h>
 #include <libkern.h>
 #include <kmalloc.h>
 
@@ -41,4 +40,4 @@ static void all_tests(void)
     ku_def_test(test_parsenames_ok, KU_RUN);
 }
 
-SYSCTL_TEST(generic, parsenames);
+TEST_MODULE(generic, parsenames);

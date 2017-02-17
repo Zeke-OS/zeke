@@ -6,7 +6,6 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include <kunit.h>
-#include <ktest_mib.h>
 #include <kstring.h>
 
 #define NTOSTR(s) _NTOSTR(s)
@@ -268,4 +267,4 @@ static void all_tests(void)
     ku_def_test(test_str_dec_combo, KU_RUN);
 }
 
-SYSCTL_TEST(kstring, ksprintf);
+TEST_MODULE(kstring, ksprintf);

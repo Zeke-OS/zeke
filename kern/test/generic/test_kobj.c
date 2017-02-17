@@ -1,5 +1,4 @@
 #include <kobj.h>
-#include <ktest_mib.h>
 #include <kunit.h>
 #include <libkern.h>
 
@@ -103,4 +102,4 @@ static void all_tests(void)
     ku_def_test(test_destroy, KU_RUN);
 }
 
-SYSCTL_TEST(generic, kobj);
+TEST_MODULE(generic, kobj);

@@ -1,5 +1,4 @@
 #include <sys/sysctl.h>
-#include <ktest_mib.h>
 #include <kunit.h>
 #include <libkern.h>
 
@@ -34,4 +33,4 @@ static void all_tests(void)
     ku_def_test(test_add_rem_oid, KU_RUN);
 }
 
-SYSCTL_TEST(generic, sysctl);
+TEST_MODULE(generic, sysctl);

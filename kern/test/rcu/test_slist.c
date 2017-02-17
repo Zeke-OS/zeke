@@ -5,7 +5,6 @@
 
 #include <errno.h>
 #include <kunit.h>
-#include <ktest_mib.h>
 #include <libkern.h>
 #include <buf.h>
 #include <kmalloc.h>
@@ -234,4 +233,4 @@ static void all_tests(void)
     ku_def_test(test_rcu_slist_remove_tail_null, KU_RUN);
 }
 
-SYSCTL_TEST(rcu, slist);
+TEST_MODULE(rcu, slist);

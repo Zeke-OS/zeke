@@ -4,7 +4,6 @@
  */
 
 #include <kunit.h>
-#include <ktest_mib.h>
 #include <kstring.h>
 
 static void setup(void)
@@ -64,4 +63,4 @@ static void all_tests(void)
     ku_def_test(test_strncpy_2, KU_RUN);
 }
 
-SYSCTL_TEST(kstring, strncpy);
+TEST_MODULE(kstring, strncpy);

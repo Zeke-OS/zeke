@@ -100,4 +100,3 @@ void procfs_dbgfile_rele(struct procfs_stream * stream)
 {
     vrfree(stream2buf(stream));
 }
-

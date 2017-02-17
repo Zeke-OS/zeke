@@ -5,7 +5,8 @@
  * Inspired by: http://www.jera.com/techinfo/jtns/jtn002.html
  */
 
-/* Copyright (c) 2013, 2014, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+/* Copyright (c) 2013, 2014, 2016, 2017
+ *               Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
@@ -31,10 +32,15 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <errno.h>
+#include <fs/procfs.h>
+#include <fs/procfs_dbgfile.h>
 #include "kunit.h"
 
-SYSCTL_NODE(_debug, OID_AUTO, test, CTLFLAG_RW, 0,
-        "In-Kernel Unit Testing");
+__GLOBL(__start_set_kunit_test_module_sect);
+__GLOBL(__stop_set_kunit_test_module_sect);
+extern struct _kunit_test_module __start_set_kunit_test_module_sect;
+extern struct _kunit_test_module __stop_set_kunit_test_module_sect;
 
 /* Variables below are documented in kunit.h */
 int ku_tests_passed;
@@ -84,3 +90,49 @@ int ku_run_tests(void (*all_tests)(void))
 
     return (ku_tests_passed + ku_tests_skipped) != ku_tests_count;
 }
+
+static int kunit_run(char * name)
+{
+    struct _kunit_test_module * mod = &__start_set_kunit_test_module_sect;
+    struct _kunit_test_module * stop = &__stop_set_kunit_test_module_sect;
+
+    if (mod == stop)
+        return -EINVAL;
+
+    while (mod < stop) {
+        if (strcmp(name, mod->name) == 0) {
+            mod->fn();
+            return 0;
+        }
+
+        mod++;
+    }
+
+    return -EINVAL;
+}
+
+static int read_kunit(void * buf, size_t max, void * elem)
+{
+    struct _kunit_test_module * mod = elem;
+
+    return ksprintf(buf, max, "%s\n", mod->name);
+}
+
+static ssize_t write_kunit(const void * buf, size_t bufsize)
+{
+    int err;
+
+    if (!strvalid((char *)buf, bufsize))
+        return -EINVAL;
+
+    err = kunit_run((char *)buf);
+    if (err)
+        return err;
+
+    return bufsize;
+}
+
+PROCFS_DBGFILE(kunit,
+               &__start_set_kunit_test_module_sect,
+               &__stop_set_kunit_test_module_sect,
+               read_kunit, write_kunit);

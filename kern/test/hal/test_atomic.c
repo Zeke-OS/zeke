@@ -4,7 +4,6 @@
  */
 
 #include <kunit.h>
-#include <ktest_mib.h>
 #include <libkern.h>
 #include <machine/atomic.h>
 
@@ -72,4 +71,4 @@ static void all_tests(void)
     ku_def_test(test_atomic_sub, KU_RUN);
 }
 
-SYSCTL_TEST(hal, atomic);
+TEST_MODULE(hal, atomic);

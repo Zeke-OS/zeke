@@ -6,7 +6,6 @@
 #include <fcntl.h>
 #include <buf.h>
 #include <fs/fs.h>
-#include <ktest_mib.h>
 #include <kunit.h>
 #include <libkern.h>
 #include <proc.h>
@@ -95,4 +94,4 @@ static void all_tests(void)
     ku_def_test(test_bread, KU_SKIP);
 }
 
-SYSCTL_TEST(vm, bio);
+TEST_MODULE(vm, bio);

@@ -5,7 +5,7 @@
  * Inspired by: http://www.jera.com/techinfo/jtns/jtn002.html
  */
 
-/* Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+/* Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012 Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
  *
@@ -46,7 +46,6 @@
 
 #include <kstring.h>
 #include <kerror.h>
-#include <sys/sysctl.h>
 
 #define printf(fmt, ...) do { char msgbuf[80];              \
     ksprintf(msgbuf, sizeof(msgbuf), (fmt), __VA_ARGS__);   \
@@ -237,19 +236,17 @@
  */
 #define ku_run_test(test) pu_def_test(test, KU_RUN)
 
-SYSCTL_DECL(_debug_test);
+struct _kunit_test_module {
+    char * name;
+    void (*fn)(void);
+};
 
-#define SYSCTL_TEST(group, tname) \
-    int sysctl_test_##group_##tname(SYSCTL_HANDLER_ARGS) {                  \
-    int ctl = 0, error;                                                     \
-    error = sysctl_handle_int(oidp, &ctl, sizeof(ctl), req);                \
-    if (!error && req->newptr && ctl) {                                     \
-        ku_run_tests(&all_tests);                                           \
-    }                                                                       \
-    return error;                                                           \
-}                                                                           \
-SYSCTL_PROC(_debug_test_##group, OID_AUTO, tname, CTLTYPE_INT | CTLFLAG_RW, \
-        NULL, 0, sysctl_test_##group_##tname, "I", "Unit test for " #tname ".")
+#define TEST_MODULE(group, tname)                           \
+    static struct _kunit_test_module _test_module           \
+        __section("set_kunit_test_module_sect") __used = {  \
+        .name = #group "_" #tname,                          \
+        .fn = all_tests,                                    \
+    }
 
 extern int ku_tests_passed; /*!< Global tests passed counter. */
 extern int ku_tests_skipped; /*! Global tests skipped counter */
