@@ -33,7 +33,7 @@
 #ifndef _SYS_PROC_H_
 #define _SYS_PROC_H_
 
-#include <stddef.h>
+#include <stdint.h>
 #include <sys/param.h>
 #include <sys/types.h>
 
