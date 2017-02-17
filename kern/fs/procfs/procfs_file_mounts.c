@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Process file system.
  * @section LICENSE
- * Copyright (c) 2015 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@
 #include <fs/fs_util.h>
 #include <fs/procfs.h>
 
-static struct procfs_stream * read_mounts(const struct procfs_info * spec)
+static struct procfs_stream * read_mounts(const struct procfs_file * spec)
 {
     struct procfs_stream * stream;
     fs_t * fs;
@@ -92,7 +92,6 @@ static struct procfs_stream * read_mounts(const struct procfs_info * spec)
 }
 
 static struct procfs_file procfs_file_mounts = {
-    .filetype = PROCFS_MOUNTS,
     .filename = "mounts",
     .readfn = read_mounts,
     .relefn = procfs_kfree_stream,

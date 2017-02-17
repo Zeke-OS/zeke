@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Process file system headers.
  * @section LICENSE
- * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,23 +58,30 @@
                                              */
 
 struct proc_info;
+struct procfs_file;
 
 /**
- * Procfs file types.
+ * Procfs read file function.
+ * One per file type.
+ * @param[in] spec is the procfs specinfo for the file.
  */
-enum procfs_filetype {
-    PROCFS_MOUNTS,      /*!< /proc/mounts */
-    PROCFS_SESSIONS,
-    PROCFS_DYNDEBUG,    /*!< Dynamic debugging. */
-    /* Last entry */
-    PROCFS_LAST
-};
+typedef struct procfs_stream * procfs_readfn_t(const struct procfs_file * spec);
+
+typedef ssize_t procfs_writefn_t(const struct procfs_file * spec,
+                                 struct procfs_stream * stream,
+                                 const uint8_t * buf, size_t bufsize);
+
+typedef void procfs_relefn_t(struct procfs_stream * stream);
 
 /**
  * Procfs specinfo descriptor.
  */
-struct procfs_info {
-    enum procfs_filetype ftype; /*!< Procfs file type. */
+struct procfs_file {
+    const char * filename;
+    procfs_readfn_t * const readfn;
+    procfs_writefn_t * const writefn;
+    procfs_relefn_t * const relefn;
+    /* dynamic */
     vnode_t * vnode;            /*!< Pointer back to the vnode. */
     pid_t pid;                  /*!< PID of the process this file is
                                  *   representing. */
@@ -86,27 +93,6 @@ struct procfs_stream {
 };
 
 #define PROCFS_NAMELEN_MAX 10
-
-/**
- * Procfs read file function.
- * One per file type.
- * @param[in] spec is the procfs specinfo for the file.
- */
-typedef struct procfs_stream * procfs_readfn_t(const struct procfs_info * spec);
-
-typedef ssize_t procfs_writefn_t(const struct procfs_info * spec,
-                                 struct procfs_stream * stream,
-                                 const uint8_t * buf, size_t bufsize);
-
-typedef void procfs_relefn_t(struct procfs_stream * stream);
-
-struct procfs_file {
-    const enum procfs_filetype filetype;
-    const char * filename;
-    procfs_readfn_t * const readfn;
-    procfs_writefn_t * const writefn;
-    procfs_relefn_t * const relefn;
-};
 
 /**
  * Create an entry for a process into procfs.

@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Process file system.
  * @section LICENSE
- * Copyright (c) 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2016, 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,7 +40,7 @@
 
 #define SESSION_LINE_MAX 40
 
-static struct procfs_stream * read_sessions(const struct procfs_info * spec)
+static struct procfs_stream * read_sessions(const struct procfs_file * spec)
 {
     const size_t bufsize = nr_sessions * SESSION_LINE_MAX;
     struct procfs_stream * stream;
@@ -66,7 +66,6 @@ static struct procfs_stream * read_sessions(const struct procfs_info * spec)
 }
 
 static struct procfs_file procfs_file_sessions = {
-    .filetype = PROCFS_SESSIONS,
     .filename = "sessions",
     .readfn = read_sessions,
     .relefn = procfs_kfree_stream,

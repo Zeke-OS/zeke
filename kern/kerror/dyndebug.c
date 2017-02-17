@@ -108,7 +108,7 @@ void dyndebug_early_boot_init(void)
     }
 }
 
-static struct procfs_stream * read_dyndebug(const struct procfs_info * spec)
+static struct procfs_stream * read_dyndebug(const struct procfs_file * spec)
 {
     struct _kerror_dyndebug_msg * msg_opt = &__start_set_debug_msg_sect;
     struct _kerror_dyndebug_msg * stop = &__stop_set_debug_msg_sect;
@@ -153,7 +153,7 @@ void release_dyndebug_data(struct procfs_stream * stream)
     vrfree(bp);
 }
 
-ssize_t write_dyndebug(const struct procfs_info * spec,
+ssize_t write_dyndebug(const struct procfs_file * spec,
                        struct procfs_stream * stream,
                        const uint8_t * buf, size_t bufsize)
 {
@@ -175,7 +175,6 @@ ssize_t write_dyndebug(const struct procfs_info * spec,
 }
 
 static struct procfs_file procfs_file_dyndebug = {
-    .filetype = PROCFS_DYNDEBUG,
     .filename = "dyndebug",
     .readfn = read_dyndebug,
     .writefn = write_dyndebug,

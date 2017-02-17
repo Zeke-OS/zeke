@@ -43,11 +43,10 @@
 #include <kmalloc.h>
 #include <kstring.h>
 #include <libkern.h>
-#include <mempool.h>
 #include <proc.h>
 
 #define PROCFS_GET_FILESPEC(_file_) \
-    ((struct procfs_info *)(_file_)->vnode->vn_specinfo)
+    ((struct procfs_file *)(_file_)->vnode->vn_specinfo)
 
 static int procfs_mount(fs_t * fs, const char * source, uint32_t mode,
                         const char * parm, int parm_len,
@@ -58,8 +57,7 @@ static ssize_t procfs_write(file_t * file, struct uio * uio, size_t bcount);
 static void procfs_event_fd_created(struct proc_info * p, file_t * file);
 static void procfs_event_fd_closed(struct proc_info * p, file_t * file);
 static int procfs_delete_vnode(vnode_t * vnode);
-static int create_proc_file(vnode_t * pdir, pid_t pid, const char * filename,
-                            enum procfs_filetype ftype);
+static int create_proc_file(vnode_t * pdir, struct procfs_file * spec);
 
 
 static vnode_ops_t procfs_vnode_ops = {
@@ -75,12 +73,7 @@ static vnode_ops_t procfs_vnode_ops = {
  */
 static vnode_t * vn_procfs;
 
-static struct mempool * specinfo_pool;
-
 SET_DECLARE(procfs_files, struct procfs_file);
-static procfs_readfn_t ** procfs_read_funcs;
-static procfs_writefn_t ** procfs_write_funcs;
-static procfs_relefn_t ** procfs_rele_funcs;
 
 /**
  * Initialize permanently existing procfs files.
@@ -89,25 +82,8 @@ static int init_permanent_files(void)
 {
     struct procfs_file ** file;
 
-    procfs_read_funcs = kcalloc(SET_COUNT(procfs_files),
-            sizeof(procfs_readfn_t *));
-    procfs_write_funcs = kcalloc(SET_COUNT(procfs_files),
-            sizeof(procfs_writefn_t *));
-    procfs_rele_funcs = kcalloc(SET_COUNT(procfs_files),
-            sizeof(procfs_relefn_t *));
-
-    if (!(procfs_read_funcs && procfs_write_funcs && procfs_rele_funcs))
-        return -ENOMEM;
-
     SET_FOREACH(file, procfs_files) {
-        enum procfs_filetype filetype = (*file)->filetype;
-
-        procfs_read_funcs[filetype] = (*file)->readfn;
-        procfs_write_funcs[filetype] = (*file)->writefn;
-        procfs_rele_funcs[filetype] = (*file)->relefn;
-
-        const char * filename = (*file)->filename;
-        create_proc_file(vn_procfs, 0, filename, filetype);
+        create_proc_file(vn_procfs, *file);
     }
 
     return 0;
@@ -127,12 +103,6 @@ int __kinit__ procfs_init(void)
         .mount = procfs_mount,
         .sblist_head = SLIST_HEAD_INITIALIZER(),
     };
-
-    specinfo_pool = mempool_init(MEMPOOL_TYPE_NONBLOCKING,
-                                 sizeof(struct procfs_info),
-                                 10);
-    if (!specinfo_pool)
-        return -ENOMEM;
 
     FS_GIANT_INIT(&procfs_fs.fs_giant);
 
@@ -178,13 +148,13 @@ static int procfs_umount(struct fs_superblock * fs_sb)
  */
 static ssize_t procfs_read(file_t * file, struct uio * uio, size_t bcount)
 {
-    const struct procfs_info * spec = PROCFS_GET_FILESPEC(file);
+    const struct procfs_file * spec = PROCFS_GET_FILESPEC(file);
     struct procfs_stream * stream;
     void * vbuf;
     ssize_t bytes;
     int err;
 
-    if (!spec || spec->ftype > PROCFS_LAST || !file->stream)
+    if (!spec || !file->stream)
         return -EIO;
 
     err = uio_get_kaddr(uio, &vbuf);
@@ -214,18 +184,15 @@ static ssize_t procfs_read(file_t * file, struct uio * uio, size_t bcount)
  */
 static ssize_t procfs_write(file_t * file, struct uio * uio, size_t bcount)
 {
-    const struct procfs_info * spec = PROCFS_GET_FILESPEC(file);
+    const struct procfs_file * spec = PROCFS_GET_FILESPEC(file);
     procfs_writefn_t * fn;
     void * vbuf;
     int err;
 
-    if (!spec)
+    if (!spec || !file->stream)
         return -EIO;
 
-    if (spec->ftype > PROCFS_LAST)
-        return -ENOLINK;
-
-    fn = procfs_write_funcs[spec->ftype];
+    fn = spec->writefn;
     if (!fn)
         return -ENOTSUP;
 
@@ -239,13 +206,13 @@ static ssize_t procfs_write(file_t * file, struct uio * uio, size_t bcount)
 
 static void procfs_event_fd_created(struct proc_info * p, file_t * file)
 {
-    const struct procfs_info * spec = PROCFS_GET_FILESPEC(file);
+    const struct procfs_file * spec = PROCFS_GET_FILESPEC(file);
     procfs_readfn_t * fn;
 
-    if (!spec || spec->ftype > PROCFS_LAST)
+    if (!spec)
         return;
 
-    fn = procfs_read_funcs[spec->ftype];
+    fn = spec->readfn;
     if (!fn)
         return;
 
@@ -254,13 +221,13 @@ static void procfs_event_fd_created(struct proc_info * p, file_t * file)
 
 static void procfs_event_fd_closed(struct proc_info * p, file_t * file)
 {
-    const struct procfs_info * spec = PROCFS_GET_FILESPEC(file);
+    const struct procfs_file * spec = PROCFS_GET_FILESPEC(file);
     procfs_relefn_t * fn;
 
-    if (!spec || spec->ftype > PROCFS_LAST)
+    if (!spec)
         return;
 
-    fn = procfs_rele_funcs[spec->ftype];
+    fn = spec->relefn;
     if (!fn)
         return;
 
@@ -274,37 +241,30 @@ void procfs_kfree_stream(struct procfs_stream * stream)
 
 static int procfs_delete_vnode(vnode_t * vnode)
 {
-    const struct procfs_info * spec = vnode->vn_specinfo;
+    /* FIXME free specinfo */
+#if 0
+    const struct procfs_file * spec = vnode->vn_specinfo;
 
     if (!spec || spec->ftype <= PROCFS_LAST)
         mempool_return(specinfo_pool, vnode->vn_specinfo);
+#endif
     return ramfs_delete_vnode(vnode);
 }
 
 /**
  * Create a process specific file.
+ * @parm spec a pointer to a memory allocated for spec info.
  */
-static int create_proc_file(vnode_t * pdir, pid_t pid, const char * filename,
-                            enum procfs_filetype ftype)
+static int create_proc_file(vnode_t * pdir, struct procfs_file * spec)
 {
     vnode_t * vn;
-    struct procfs_info * spec;
     int err;
 
     KASSERT(pdir != NULL, "pdir must be set");
 
-    spec = mempool_get(specinfo_pool);
-    if (!spec)
-        return -ENOMEM;
-
-    /* Create a specinfo */
-    spec->ftype = ftype;
-    spec->pid = pid;
-
-    err = pdir->vnode_ops->mknod(pdir, filename, S_IFREG | PROCFS_PERMS, spec,
-                                 &vn);
+    err = pdir->vnode_ops->mknod(pdir, spec->filename, S_IFREG | PROCFS_PERMS,
+                                 spec, &vn);
     if (err) {
-        mempool_return(specinfo_pool, spec);
         return -ENOTDIR;
     }
 
