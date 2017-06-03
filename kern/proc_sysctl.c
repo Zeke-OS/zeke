@@ -216,6 +216,7 @@ static int proc_sysctl_sesssions(struct sysctl_oid * oidp,
     TAILQ_FOREACH(sp, &proc_session_list_head, s_session_list_entry_) {
         struct kinfo_session s = {
             .s_leader = sp->s_leader,
+            .s_pgrp_count = 0, /* TODO Get pgrp count */
             .s_ctty_fd = sp->s_ctty_fd,
         };
         strlcpy(s.s_login, sp->s_login, sizeof(s.s_login));
