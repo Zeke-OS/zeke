@@ -129,7 +129,8 @@ static int sysctl_proc_vmmap(struct sysctl_oid * oidp,
         entry++;
     }
 
-    retval = sysctl_handle_opaque(oidp, vmmap, vmmap_size, req);
+    /* RFE Check if we'd actually need the return value */
+    sysctl_handle_opaque(oidp, vmmap, vmmap_size, req);
 
     retval = 0;
 out:
