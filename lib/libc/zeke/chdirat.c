@@ -1,10 +1,10 @@
 /**
  *******************************************************************************
- * @file    zeke.h
+ * @file    chdirat.c
  * @author  Olli Vanhoja
- * @brief   Zeke specific system functions.
+ * @brief   Chdir at fd.
  * @section LICENSE
- * Copyright (c) 2014, 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,54 +28,23 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************
- */
+*/
 
-/**
- * @addtogroup LIBC
- * @{
- */
+#define __SYSCALL_DEFS__
+#include <fcntl.h>
+#include <string.h>
+#include <syscall.h>
+#include <unistd.h>
+#include <zeke.h>
 
-#ifndef ZEKE_H
-#define ZEKE_H
+int chdirat(int fd, const char * path)
+{
+    struct _proc_chdir_args args = {
+        .fd = fd,
+        .name = path,
+        .name_len = strlen(path) + 1,
+        .atflags = AT_FDARG
+    };
 
-#ifndef KERNEL_INTERNAL
-__BEGIN_DECLS
-
-/**
- * Blocking sleep.
- * Sleeps time specified by seconds regardless of incoming signals.
- * Only a fatal signal may interrupt the sleep.
- */
-unsigned bsleep(unsigned seconds);
-
-/**
- * Blocking sleep.
- * Sleeps time specified by millisec regardless of incoming signals.
- * Only a fatal signal may interrupt the sleep.
- */
-unsigned bmsleep(unsigned seconds);
-
-unsigned msleep(unsigned millisec);
-
-/**
- * Change root directory.
- * Change root directory to current process working directory.
- * Requires root permission and/or PRIV_VFS_CHROOT depending on configuration.
- */
-int chrootcwd(void);
-
-int chdirat(int fd, const char * path);
-
-/**
- * Close all file descriptors above fildes.
- */
-int closeall(int fildes);
-
-__END_DECLS
-#endif /* !KERNEL_INTERNAL */
-
-#endif /* ZEKE_H */
-
-/**
- * @}
- */
+    return syscall(SYSCALL_PROC_CHDIR, &args);
+}
