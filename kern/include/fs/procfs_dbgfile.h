@@ -60,6 +60,14 @@ ssize_t procfs_dbgfile_write(const struct procfs_file * spec,
                              const uint8_t * buf, size_t bufsize);
 void procfs_dbgfile_rele(struct procfs_stream * stream);
 
+/**
+ * Create a static debug file under procfs.
+ * @param _filename_ is the name of the file in the procfs root.
+ * @param _sect_start_ is the start address of the file data.
+ * @param _sect_stop_ is the stop address of the file data.
+ * @param _read_ is a pointer to the read function for the data.
+ * @param _write_ is a pointer to the write function for the data.
+ */
 #define PROCFS_DBGFILE(_filename_, _sect_start_, _sect_stop_, _read_, _write_) \
     static struct procfs_file procfs_dbgfile_##_filename_ = {                  \
         .filename = __XSTRING(_filename_),                                     \
