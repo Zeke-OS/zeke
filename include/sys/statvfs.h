@@ -79,6 +79,7 @@ struct _fs_statfs_args {
 #ifndef KERNEL_INTERNAL
 __BEGIN_DECLS
 int fstatvfs(int fildes, struct statvfs * buf);
+int fstatvfsat(int fildes, const char * path, struct statvfs * buf);
 int statvfs(const char * restrict path, struct statvfs * restrict buf);
 __END_DECLS
 #endif /* !KERNEL_INTERNAL */
