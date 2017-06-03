@@ -190,7 +190,8 @@ static int sys_open(__user void * user_args)
     }
 
     /* Validate name string */
-    if (!strvalid(args->name, args->name_len)) {
+    if (args->name_len > PATH_MAX + 1 ||
+        !strvalid(args->name, args->name_len)) {
         set_errno(ENAMETOOLONG);
         goto out;
     }
@@ -439,7 +440,9 @@ static int sys_link(__user void * user_args)
     }
 
     /* Validate strings */
-    if (!strvalid(args->path1, args->path1_len) ||
+    if (args->path1_len > PATH_MAX + 1 ||
+        args->path2_len > PATH_MAX + 1 ||
+        !strvalid(args->path1, args->path1_len) ||
         !strvalid(args->path2, args->path2_len)) {
         set_errno(ENAMETOOLONG);
         goto out;
@@ -474,7 +477,8 @@ static int sys_unlink(__user void * user_args)
     }
 
     /* Validate path string */
-    if (!strvalid(args->path, args->path_len)) {
+    if (args->path_len > PATH_MAX + 1 ||
+        !strvalid(args->path, args->path_len)) {
         set_errno(ENAMETOOLONG);
         goto out;
     }
@@ -507,7 +511,8 @@ static int sys_mkdir(__user void * user_args)
     }
 
     /* Validate path string */
-    if (!strvalid(args->path, args->path_len)) {
+    if (args->path_len > PATH_MAX + 1 ||
+        !strvalid(args->path, args->path_len)) {
         err = ENAMETOOLONG;
         set_errno(err);
         goto out;
@@ -542,7 +547,8 @@ static int sys_rmdir(__user void * user_args)
     }
 
     /* Validate path string */
-    if (!strvalid(args->path, args->path_len)) {
+    if (args->path_len > PATH_MAX + 1 ||
+        !strvalid(args->path, args->path_len)) {
         set_errno(ENAMETOOLONG);
         goto out;
     }
@@ -588,7 +594,8 @@ static int sys_statfile(__user void * user_args)
     }
 
     /* Validate path string */
-    if (!strvalid(args->path, args->path_len)) {
+    if (args->path_len > PATH_MAX + 1 ||
+        !strvalid(args->path, args->path_len)) {
         set_errno(ENAMETOOLONG);
         goto out;
     }
@@ -672,7 +679,8 @@ static int sys_statfs(__user void * user_args)
         goto out;
     }
 
-    if (!strvalid(args->path, args->path_len)) {
+    if (args->path_len > PATH_MAX + 1 ||
+        !strvalid(args->path, args->path_len)) {
         set_errno(ENAMETOOLONG);
         goto out;
     }
@@ -759,7 +767,8 @@ static int sys_access(__user void * user_args)
         goto out;
     }
 
-    if (!strvalid(args->path, args->path_len)) {
+    if (args->path_len > PATH_MAX + 1 ||
+        !strvalid(args->path, args->path_len)) {
         set_errno(ENAMETOOLONG);
         goto out;
     }
@@ -904,7 +913,9 @@ static int sys_mount(__user void * user_args)
     }
 
     /* Validate path strings */
-    if (!strvalid(args->source, args->source_len) ||
+    if (args->source_len > PATH_MAX + 1 ||
+        args->target_len > PATH_MAX + 1 ||
+        !strvalid(args->source, args->source_len) ||
         !strvalid(args->target, args->target_len) ||
         !strvalid(args->fsname, sizeof(args->fsname))) {
         set_errno(ENAMETOOLONG);
@@ -951,7 +962,8 @@ static int sys_umount(__user void * user_args)
         goto out;
     }
 
-    if (!strvalid(args->target, args->target_len)) {
+    if (args->target_len > PATH_MAX + 1 ||
+        !strvalid(args->target, args->target_len)) {
         set_errno(ENAMETOOLONG);
         goto out;
     }
