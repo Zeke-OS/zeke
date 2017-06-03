@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   df.
  * @section LICENSE
- * Copyright (c) 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2016, 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,6 +32,7 @@
 
 #include <dirent.h>
 #include <fcntl.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -72,82 +73,8 @@ static void usage(void)
     exit(EX_USAGE);
 }
 
-static int fscan_fs(char * buf, size_t n, FILE * fp)
-{
-    int c;
-    char * p = buf;
-    const char * end = buf + n - 1;
-
-    while (1) {
-        c = fgetc(fp);
-        if (c != EOF && c != ' ' && c != '\0' && p != end) {
-            *p++ = (char)c;
-            continue;
-        }
-        break;
-    }
-    *p = '\0';
-
-    return p != buf;
-}
-
-static inline int open_root(dev_t dev)
-{
-    return syscall(SYSCALL_FS_OPEN_ROOT, &dev);
-}
-
-static inline int chdir_fd(int fd)
-{
-    struct _proc_chdir_args args = {
-        .fd = fd,
-        .name = ".",
-        .name_len = 2,
-        .atflags = AT_FDARG
-    };
-
-    return syscall(SYSCALL_PROC_CHDIR, &args);
-}
-
-static int rdev2path(char buf[256], dev_t rdev)
-{
-    DIR * dir;
-    struct dirent * dp;
-    int dfd, retval = -1;
-
-    if ((dir = fdopendir((dfd = open("/dev", O_RDONLY)))) == NULL) {
-        fprintf(stderr, "Cannot open /dev directory\n");
-        exit(EX_OSFILE);
-    }
-
-    while ((dp = readdir(dir)) != NULL) {
-        int ffd, err;
-        struct stat st;
-
-        if (dp->d_name[0] == '.')
-            continue;
-
-        if ((ffd = openat(dfd, dp->d_name, O_RDONLY)) == -1) {
-            perror(dp->d_name);
-            continue;
-        }
-        err = fstat(ffd, &st);
-        close(ffd);
-        if (err)
-            continue;
-
-        if (st.st_mode & (S_IFBLK | S_IFCHR) && st.st_rdev == rdev) {
-            snprintf(buf, 256, "/dev/%s", dp->d_name);
-            retval = 0;
-            break;
-        }
-    }
-    closedir(dir);
-
-    return retval;
-}
-
 char cwd_buf[PATH_MAX];
-static void print_df(const struct statvfs * restrict st, const char * fs)
+static void print_df(const struct statvfs * restrict st)
 {
     char * cwd;
     const unsigned k = (flags.k ? 1024 : 512);
@@ -160,13 +87,15 @@ static void print_df(const struct statvfs * restrict st, const char * fs)
     cwd = getcwd(cwd_buf, sizeof(cwd_buf));
 
     if (flags.P) {
-        printf(format_str[1].entry, fs, blocks, used, avail, capacity, cwd);
+        printf(format_str[1].entry,
+               st->fsname, blocks, used, avail, capacity, cwd);
     } else {
         int iused = st->f_files - st->f_ffree;
         int piused = 100 * iused / st->f_files;
 
-        printf(format_str[0].entry, fs, blocks, used, avail, capacity, iused,
-               st->f_ffree, piused, cwd);
+        printf(format_str[0].entry,
+               st->fsname, blocks, used, avail, capacity, iused, st->f_ffree,
+               piused, cwd);
     }
 }
 
@@ -203,45 +132,34 @@ int main(int argc, char * argv[], char * envp[])
 
     if (*argv) {
         /* TODO file arg support */
+#if 0
+        err = fstatvfs(fd, &st);
+#endif
     } else {
-        FILE * mounts;
-        int major, minor, rdev_major, rdev_minor;
-        char fs[14];
+        int size = 0;
+        struct statvfs * st = NULL;
+        struct statvfs * end;
 
-        if ((mounts = fopen("/proc/mounts", "r")) == NULL) {
-            perror("Cannot open /proc/mounts");
-            exit(EX_OSFILE);
-        }
-
-        while (fscan_fs(fs, sizeof(fs), mounts) &&
-               fscanf(mounts, "(%d,%d) (%d,%d)\n",
-                      &major, &minor, &rdev_major, &rdev_minor) != EOF) {
-            int err, fd;
-            struct statvfs st;
-
-            if (fs[0] == '\0')
+        do {
+retry:
+            size = getfsstat(st, size, 0);
+            if (size > 0 && !st) {
+                st = malloc(size);
+                goto retry;
+            } else if (size == -1) {
+                size = 0;
+                free(st);
+                st = NULL;
+            } else if (size == 0) {
                 break;
-
-            fd = open_root(DEV_MMTODEV(major, minor));
-            if (fd < 0) {
-                perror("Cannot open a filesystem root");
-                exit(EX_OSERR);
             }
-            chdir_fd(fd);
+        } while (!st);
 
-            if (rdev_major >= 0 && rdev_minor >= 0) {
-                rdev2path(fs, DEV_MMTODEV(rdev_major, rdev_minor));
-            }
-
-            err = fstatvfs(fd, &st);
-            close(fd);
-            if (err) {
-                perror("Failed to stat a filesystem");
-                continue;
-            }
-            print_df(&st, fs);
+        end = st + size / sizeof(struct statvfs);
+        while (st != end) {
+            print_df(st);
+            st++;
         }
-        fclose(mounts);
     }
 
     return 0;
