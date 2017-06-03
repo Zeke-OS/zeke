@@ -700,6 +700,49 @@ out:
     return retval;
 }
 
+static int sys_getfsstat(__user void * user_args)
+{
+    struct _fs_getfsstat_args args;
+    fs_t * fs;
+    size_t size;
+
+    if (copyin(user_args, &args, sizeof(struct _fs_getfsstat_args))) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    if (args.bufsize > 0 &&
+        (args.bufsize < sizeof(struct statvfs) ||
+        !useracc((__user void *)args.buf, args.bufsize, VM_PROT_WRITE))) {
+        set_errno(EFAULT);
+        return -1;
+    }
+
+    /* TODO superblocks are not well protected against race conditions */
+    size = 0;
+    fs = NULL;
+    while ((fs = fs_iterate(fs))) {
+        struct fs_superblock * sb = NULL;
+        while ((sb = fs_iterate_superblocks(fs, sb))) {
+            if (args.bufsize != 0) {
+                struct statvfs st;
+
+                if (args.bufsize <= size) {
+                    set_errno(EFAULT);
+                    return -1;
+                }
+
+                sb->statfs(sb, &st);
+                copyout(&st, (__user void *)((uintptr_t)args.buf + size),
+                        sizeof(struct statvfs));
+            }
+            size += sizeof(struct statvfs);
+        }
+    }
+
+    return (int)size;
+}
+
 static int sys_access(__user void * user_args)
 {
     struct _fs_access_args * args = NULL;
@@ -932,46 +975,6 @@ out:
 }
 
 /**
- * Open the root dir of a mounted filesystem (sb->root by vdev_id).
- */
-static int sys_open_root(__user void * user_args)
-{
-    dev_t vdev_id;
-    fs_t * fs;
-    vnode_t * root = NULL;
-    int fd;
-
-    if (copyin(user_args, &vdev_id, sizeof(vdev_id))) {
-        set_errno(EFAULT);
-        return -1;
-    }
-
-    fs = NULL;
-    while ((fs = fs_iterate(fs))) {
-        struct fs_superblock * sb = NULL;
-
-        while ((sb = fs_iterate_superblocks(fs, sb))) {
-            if (sb->vdev_id == vdev_id) {
-                root = sb->root;
-                break;
-            }
-        }
-    }
-    if (!root) {
-        set_errno(ENOENT);
-        return -1;
-    }
-
-    fd = fs_fildes_create_curproc(root, O_RDONLY | O_DIRECTORY);
-    if (fd < 0) {
-        set_errno(-fd);
-        return -1;
-    }
-
-    return fd;
-}
-
-/**
  * Declarations of fs syscall functions.
  */
 static const syscall_handler_t fs_sysfnmap[] = {
@@ -989,6 +992,7 @@ static const syscall_handler_t fs_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_RMDIR, sys_rmdir),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_STAT, sys_statfile),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_STATFS, sys_statfs),
+    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_GETFSSTAT, sys_getfsstat),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_ACCESS, sys_access),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_UTIMES, sys_utimes),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_CHMOD, sys_chmod),
@@ -997,6 +1001,5 @@ static const syscall_handler_t fs_sysfnmap[] = {
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_UMASK, sys_umask),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_MOUNT, sys_mount),
     ARRDECL_SYSCALL_HNDL(SYSCALL_FS_UMOUNT, sys_umount),
-    ARRDECL_SYSCALL_HNDL(SYSCALL_FS_OPEN_ROOT, sys_open_root),
 };
 SYSCALL_HANDLERDEF(fs_syscall, fs_sysfnmap)

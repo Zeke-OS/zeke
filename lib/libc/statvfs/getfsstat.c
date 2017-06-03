@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file    fstatvfs.c
+ * @file    getfsstat.c
  * @author  Olli Vanhoja
  * @brief   Filesystem status functions.
  * @section LICENSE
@@ -34,15 +34,13 @@
 #include <sys/statvfs.h>
 #include <syscall.h>
 
-int fstatvfs(int fildes, struct statvfs * buf)
+int getfsstat(struct statvfs * buf, long bufsize, int flags)
 {
-    struct _fs_statfs_args args = {
-        .fd = fildes,
-        .path = ".",
-        .path_len = 2,
+    struct _fs_getfsstat_args args = {
         .buf = buf,
-        .flags = 0
+        .bufsize = bufsize,
+        .flags = flags
     };
 
-    return syscall(SYSCALL_FS_STATFS, &args);
+    return syscall(SYSCALL_FS_GETFSSTAT, &args);
 }

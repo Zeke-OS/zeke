@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   File System wrapper for FatFs.
  * @section LICENSE
- * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -519,6 +519,7 @@ static int fatfs_statfs(struct fs_superblock * sb, struct statvfs * st)
         .f_flag = sb->mode_flags,
         .f_namemax = NAME_MAX + 1,
     };
+    strlcpy(st->fsname, sb->fs->fsname, sizeof(st->fsname));
 
     return 0;
 }

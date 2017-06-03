@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   File system information.
  * @section LICENSE
- * Copyright (c) 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2016, 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,6 +55,7 @@ struct statvfs {
     unsigned long   f_fsid;     /*!< Filesystem ID. */
     unsigned long   f_flag;     /*!< Mount flags. */
     unsigned long   f_namemax;  /*!< Maximum filename length. */
+    char            fsname[8];  /*!< File system name. */
 };
 
 /* These must be in sync with MNT_ macros defined in mount.h */
@@ -74,6 +75,13 @@ struct _fs_statfs_args {
     struct statvfs * buf;
     unsigned flags;
 };
+
+/** Arguments for SYSCALL_FS_GETFSSTAT */
+struct _fs_getfsstat_args {
+    struct statvfs * buf;
+    size_t bufsize;
+    unsigned flags;
+};
 #endif
 
 #ifndef KERNEL_INTERNAL
@@ -81,6 +89,14 @@ __BEGIN_DECLS
 int fstatvfs(int fildes, struct statvfs * buf);
 int fstatvfsat(int fildes, const char * path, struct statvfs * buf);
 int statvfs(const char * restrict path, struct statvfs * restrict buf);
+
+/**
+ * Get list of all mounted file systems.
+ * @param buf       is a pointer to the buffer; NULL if peeking the required buffer size.
+ * @param bufsize   is the buffer size; 0 if peeking the required buffer size.
+ * @param flags     No flags specified.
+ */
+int getfsstat(struct statvfs * buf, long bufsize, int flags);
 __END_DECLS
 #endif /* !KERNEL_INTERNAL */
 
