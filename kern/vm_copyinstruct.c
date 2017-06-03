@@ -5,7 +5,7 @@
  * @brief   vm copyinstruct() for copying structs from user space to kernel
  *          space.
  * @section LICENSE
- * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,7 +52,7 @@ struct _cpyin_gc_node {
 };
 
 /**
- * Usage: copyinst(usr, &kern, sizeof(usr),
+ * Usage: copinst(usr, &kern, sizeof(usr),
  *                 GET_STRUCT_OFFSETS(struct x, a, a_len, c, c_len));
  */
 int copyinstruct(__user void * usr, __kernel void ** kern, size_t bytes, ...)
@@ -88,17 +88,18 @@ int copyinstruct(__user void * usr, __kernel void ** kern, size_t bytes, ...)
 
         src = ((void **)((size_t)(*kern) + offset));
         len = *((size_t *)((size_t)(*kern) + len));
-
         if (len == 0) {
             *src = NULL;
             continue;
         }
 
+        /* Verify that the user has access to the data pointed. */
         if (!useracc((__user void *)(*src), len, VM_PROT_READ)) {
             retval = -EFAULT;
             break;
         }
 
+        /* Allocate a buffer that can be collected later. */
         gc_node = kmalloc(sizeof(struct _cpyin_gc_node) + len);
         if (!gc_node) {
             retval = -ENOMEM;
@@ -107,6 +108,7 @@ int copyinstruct(__user void * usr, __kernel void ** kern, size_t bytes, ...)
         STAILQ_INSERT_TAIL(&token->gc_list, gc_node, _entry);
         dst = gc_node->data;
 
+        /* Copyin the buffer pointed by a pointer in the args struct. */
         copyin((__user void *)(*src), dst, len);
         *src = dst;
     }
