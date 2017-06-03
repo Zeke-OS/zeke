@@ -57,7 +57,6 @@
                                              *   an procfs entry.
                                              */
 
-struct proc_info;
 struct procfs_file;
 
 /**
@@ -92,26 +91,6 @@ struct procfs_stream {
     ssize_t bytes;
     char buf[0];
 };
-
-#define PROCFS_NAMELEN_MAX 10
-
-/**
- * Create an entry for a process into procfs.
- * @param proc is a PCB to be described in procfs.
- */
-int procfs_mkentry(const struct proc_info * proc);
-
-/**
- * Remove a process entry strored in procfs.
- * @param pid is the process ID of the process to be removed.
- */
-void procfs_rmentry(pid_t pid);
-
-/**
- * Call kfree for stream.
- * Can be used as relefn.
- */
-void procfs_kfree_stream(struct procfs_stream * stream);
 
 #endif /* FS_PROCFS_H */
 

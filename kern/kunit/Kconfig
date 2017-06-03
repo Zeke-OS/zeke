@@ -2,6 +2,7 @@
 
 menuconfig configKUNIT
     bool "In-Kernel Unit Tests"
+    depends on configPROCFS
     ---help---
     KUnit is a port of PUnit for in-kernel testing. KUnit is only needed
     if you are willing to run those tests. In-kernel tests may cause
