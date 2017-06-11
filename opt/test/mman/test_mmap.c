@@ -84,11 +84,27 @@ static char * test_mmap_file(void)
     return NULL;
 }
 
+static char * test_mmap_anon_huge(void)
+{
+    const size_t size = 2097152;
+    errno = 0;
+    data = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANON, -1, 0);
+
+    pu_assert("a new memory region returned", data != MAP_FAILED);
+    pu_assert_equal("No errno was set", errno, 0);
+
+    memset(data, 0xff, size);
+    pu_assert("memory is accessible", data[50] == 0xff);
+
+    return NULL;
+}
+
 static void all_tests()
 {
     pu_def_test(test_mmap_anon, PU_RUN);
     pu_def_test(test_mmap_anon_fixed, PU_RUN);
     pu_def_test(test_mmap_file, PU_RUN);
+    pu_def_test(test_mmap_anon_huge, PU_RUN);
 }
 
 int main(int argc, char **argv)
