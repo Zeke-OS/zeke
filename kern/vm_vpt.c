@@ -149,7 +149,7 @@ struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr,
              * FIXME If the returned vpt is too small then we need to do
              *       something.
              */
-            KERROR(KERROR_ERR, "Too small vpt %d < %d\n",
+            KERROR(KERROR_ERR, "Too small vpt act=%d < minsize=%d\n",
                    mmu_sizeof_pt_img(&vpt->pt), minsize);
             return NULL;
         }

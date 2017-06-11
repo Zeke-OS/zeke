@@ -255,7 +255,7 @@ struct buf * vm_newsect(uintptr_t vaddr, size_t size, int prot)
 }
 
 /**
- * Get a free random address in mem space of proc.
+ * Get a free random address in mem space of proc and ensure it's mappable.
  * @note mm must be locked.
  */
 static uintptr_t rnd_addr(struct vm_mm_struct * mm, size_t size)
@@ -288,7 +288,12 @@ tryagain:
             reg_end = bp->b_mmu.vaddr + bp->b_bufsize - 1;
 
             if (VM_RANGE_IS_OVERLAPPING(reg_start, reg_end,
-                                        vaddr, newreg_end)) {
+                                        vaddr, newreg_end) ||
+                /*
+                 * Create the page tables early so we know it's possible to map
+                 * the selected address range.
+                 */
+                !ptlist_get_pt(mm, reg_start, bp->b_bufsize, VM_PT_CREAT)) {
                 goto tryagain;
             }
         }
