@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Kernel process management header file.
  * @section LICENSE
- * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2014 Joni Hauhia <joni.hauhia@cs.helsinki.fi>
  * All rights reserved.
  *
