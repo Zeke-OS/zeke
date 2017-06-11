@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   VM functions.
  * @section LICENSE
- * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -142,18 +142,26 @@ int ptlist_compare(struct vm_pt * a, struct vm_pt * b);
 RB_PROTOTYPE(ptlist, vm_pt, entry_, ptlist_compare);
 
 /**
+ * Create a page table list if one doesn't exist.
+ */
+#define VM_PT_CREAT 0x0002
+
+/**
  * Get a page table for a given virtual address.
  * @param vaddr         is the virtual address that will be mapped into
  *                      a returned page table.
  * @param minsize       is the minumum size in bytes that the returned
  *                      page table must be able to map.
+ * @param flags         optional flags:
+ *                      - VM_PT_CREAT: Create a page table list if one
+ *                        doesn't exist
  * @return  Returns a page table where vaddr can be mapped;
  *          Returns NULL if no sufficient page table is found nor can be
  *          allocated.
  *
  */
 struct vm_pt * ptlist_get_pt(struct vm_mm_struct * mm, uintptr_t vaddr,
-                             size_t minsize);
+                             size_t minsize, int flags);
 
 /**
  * Free ptlist and its page tables.

@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   VM functions.
  * @section LICENSE
- * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -59,7 +59,8 @@ __kernel void * vm_uaddr2kaddr(struct proc_info * proc,
     struct vm_pt * vpt;
     void * phys_uaddr;
 
-    vpt = ptlist_get_pt(&proc->mm, (uintptr_t)uaddr, MMU_PGSIZE_COARSE);
+    vpt = ptlist_get_pt(&proc->mm, (uintptr_t)uaddr,
+                        MMU_PGSIZE_COARSE, VM_PT_CREAT);
     if (!vpt)
         return NULL;
 
@@ -655,7 +656,8 @@ int vm_mapproc_region(struct proc_info * proc, struct buf * region)
 {
     struct vm_pt * vpt;
 
-    vpt = ptlist_get_pt(&proc->mm, region->b_mmu.vaddr, region->b_bufsize);
+    vpt = ptlist_get_pt(&proc->mm, region->b_mmu.vaddr,
+                        region->b_bufsize, VM_PT_CREAT);
     if (!vpt)
         return -ENOMEM;
 
@@ -668,7 +670,8 @@ int vm_unmapproc_region(struct proc_info * proc, struct buf * region)
     mmu_region_t mmu_region;
 
     mtx_lock(&region->lock);
-    vpt = ptlist_get_pt(&proc->mm, region->b_mmu.vaddr, region->b_bufsize);
+    vpt = ptlist_get_pt(&proc->mm, region->b_mmu.vaddr,
+                        region->b_bufsize, VM_PT_CREAT);
     if (!vpt) {
         KERROR(KERROR_ERR, "Can't unmap a region %p for pid %d\n",
                region, proc->pid);

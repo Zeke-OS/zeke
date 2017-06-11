@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   System init for Zero Kernel.
  * @section LICENSE
- * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -212,7 +212,8 @@ static void map_vmstack2proc(struct proc_info * proc, struct buf * vmstack)
     (*proc->mm.regions)[MM_STACK_REGION] = vmstack;
     vm_updateusr_ap(vmstack);
 
-    vpt = ptlist_get_pt(&proc->mm, vmstack->b_mmu.vaddr, MMU_PGSIZE_COARSE);
+    vpt = ptlist_get_pt(&proc->mm, vmstack->b_mmu.vaddr,
+                        MMU_PGSIZE_COARSE, VM_PT_CREAT);
     if (vpt == 0)
         panic("Couldn't get vpt for init stack");
 
