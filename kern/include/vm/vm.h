@@ -183,13 +183,17 @@ int vm_ptlist_clone(struct ptlist * new_head, mmu_pagetable_t * new_mpt,
 /**
  * Get kernel accessible address from user space address of a process.
  * @note This function doesn't check if the process has access to the address.
- * @param proc  is a pointer to the process.
- * @param uaddr is the user space address in context of proc.
+ * @param proc      is a pointer to the process.
+ * @param uaddr     is the user space address in context of proc.
+ * @param acc_size  is the intended size of the future memory access.
+ *                  uadd + acc_size must be greater than or equal to the
+ *                  last address that will be accessed.
  * @return Returns a pointer in kernel space that points to the same data as
  *         uaddr.
  */
 __kernel void * vm_uaddr2kaddr(struct proc_info * proc,
-                               __user const void * uaddr);
+                               __user const void * uaddr,
+                               size_t acc_size);
 
 /**
  * @addtogroup copy copyin, copyout, copyinstr

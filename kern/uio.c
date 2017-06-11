@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   User io.
  * @section LICENSE
- * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015, 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -130,7 +130,7 @@ int uio_get_kaddr(struct uio * uio, __kernel void ** addr)
     if (uio->kbuf) {
         *addr = uio->kbuf;
     } else if (uio->ubuf) {
-        *addr = vm_uaddr2kaddr(uio->proc, uio->ubuf);
+        *addr = vm_uaddr2kaddr(uio->proc, uio->ubuf, uio->bufsize);
     } else {
         retval = -EINVAL;
     }

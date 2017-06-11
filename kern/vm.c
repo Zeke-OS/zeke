@@ -54,13 +54,13 @@
 extern mmu_region_t mmu_region_kernel;
 
 __kernel void * vm_uaddr2kaddr(struct proc_info * proc,
-                               __user const void * uaddr)
+                               __user const void * uaddr,
+                               size_t acc_size)
 {
     struct vm_pt * vpt;
     void * phys_uaddr;
 
-    vpt = ptlist_get_pt(&proc->mm, (uintptr_t)uaddr,
-                        MMU_PGSIZE_COARSE, VM_PT_CREAT);
+    vpt = ptlist_get_pt(&proc->mm, (uintptr_t)uaddr, acc_size, VM_PT_CREAT);
     if (!vpt)
         return NULL;
 
@@ -83,7 +83,7 @@ int copyin_proc(struct proc_info * proc, __user const void * uaddr,
         return -EFAULT;
     }
 
-    phys_uaddr = vm_uaddr2kaddr(proc, uaddr);
+    phys_uaddr = vm_uaddr2kaddr(proc, uaddr, len);
     if (!phys_uaddr) {
         return -EFAULT;
     }
@@ -107,7 +107,7 @@ int copyout_proc(struct proc_info * proc, __kernel const void * kaddr,
         return -EFAULT;
     }
 
-    phys_uaddr = vm_uaddr2kaddr(proc, uaddr);
+    phys_uaddr = vm_uaddr2kaddr(proc, uaddr, len);
     if (!phys_uaddr) {
         return -EFAULT;
     }
@@ -134,7 +134,7 @@ int copyinstr(__user const char * uaddr, __kernel char * kaddr, size_t len,
 
             last_prefix = (uintptr_t)uaddr >> NBITS(MMU_PGSIZE_COARSE);
 
-            phys_uaddr = vm_uaddr2kaddr(curproc, uaddr);
+            phys_uaddr = vm_uaddr2kaddr(curproc, uaddr, MMU_PGSIZE_COARSE);
             if (!phys_uaddr) {
                 return -EFAULT;
             }
@@ -177,7 +177,7 @@ int copyoutstr(__kernel char * kaddr, __user const char * uaddr, size_t len,
 
             last_prefix = (uintptr_t)uaddr >> NBITS(MMU_PGSIZE_COARSE);
 
-            phys_uaddr = vm_uaddr2kaddr(curproc, uaddr);
+            phys_uaddr = vm_uaddr2kaddr(curproc, uaddr, MMU_PGSIZE_COARSE);
             if (!phys_uaddr) {
                 return -EFAULT;
             }
