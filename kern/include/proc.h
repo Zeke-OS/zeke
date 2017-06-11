@@ -420,12 +420,6 @@ pid_t proc_fork(void);
  */
 void procarr_insert(struct proc_info * new_proc);
 
-/**
- * Get a random PID for a new process.
- * @return Returns a random PID.
- */
-pid_t proc_get_random_pid(void);
-
 #endif /* PROC_INTERNAL */
 
 /**

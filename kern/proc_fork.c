@@ -230,47 +230,20 @@ static void set_proc_inher(struct proc_info * old_proc,
     mtx_unlock(&old_proc->inh.lock);
 }
 
-pid_t proc_get_random_pid(void)
+static pid_t proc_get_next_pid(void)
 {
-
-    pid_t last_maxproc, newpid;
-    int count = 0, iterations = 0;
+    pid_t newpid = (proc_lastpid >= configMAXPROC) ? 100 : proc_lastpid + 1;
 
     KERROR_DBG("%s()\n", __func__);
 
     PROC_LOCK();
-    last_maxproc = configMAXPROC;
-    newpid = last_maxproc;
 
-    /*
-     * The new PID will be "randomly" selected between proc_lastpid and
-     * maxproc.
-     */
-    do {
-        long d = last_maxproc - proc_lastpid - 1;
-
-        if (d <= 1 || count == 20) {
-            proc_lastpid = 2;
-            count = 0;
-            continue;
-        }
-        if (newpid + 1 > last_maxproc)
-            newpid = proc_lastpid + kunirand(d);
+    while (proc_exists_locked(newpid)) {
         newpid++;
-        count++;
-
-        if (iterations++ > 10000) { /* Just try to find any sufficient PID. */
-            iterations = 0;
-
-            for (pid_t pid = 2; pid <= configMAXPROC; pid++) {
-                if (!proc_exists_locked(newpid)) {
-                    newpid = pid;
-                    break;
-                }
-            }
+        if (newpid > configMAXPROC) {
+            newpid = 100;
         }
-    } while (proc_exists_locked(newpid));
-
+    }
     proc_lastpid = newpid;
 
     PROC_UNLOCK();
@@ -402,14 +375,7 @@ pid_t proc_fork(void)
     /*
      * Select PID.
      */
-    if (likely(nprocs != 1)) { /* Tecnically it would be good idea to have lock
-                                * on nprocs before reading it but I think this
-                                * should work fine... */
-        new_proc->pid = proc_get_random_pid();
-    } else { /* Proc is init */
-        KERROR_DBG("Assuming this process to be init\n");
-        new_proc->pid = 1;
-    }
+    new_proc->pid = proc_get_next_pid();
 
     if (new_proc->cwd) {
         KERROR_DBG("Increment refcount for the cwd\n");
