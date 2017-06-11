@@ -414,22 +414,19 @@ pid_t proc_fork(void)
          * is going to return directly to the user space.
          */
         new_proc->main_thread->curr_mpt = &new_proc->mm.mpt;
-    } else {
-        KERROR_DBG("No thread to fork.\n");
-        new_proc->main_thread = NULL;
-    }
-    retval = new_proc->pid;
+        new_proc->state = PROC_STATE_READY;
 
-    new_proc->state = PROC_STATE_READY;
-
-    if (new_proc->main_thread) {
         KERROR_DBG("Set the new main_thread (%d) ready\n",
                    new_proc->main_thread->id);
         thread_ready(new_proc->main_thread->id);
+    } else {
+        KERROR_DBG("No thread to fork.\n");
+        new_proc->main_thread = NULL;
+        new_proc->state = PROC_STATE_READY;
     }
 
     KERROR_DBG("Fork %d -> %d created.\n", old_proc->pid, new_proc->pid);
-
+    retval = new_proc->pid;
 out:
     if (unlikely(retval < 0)) {
         _proc_free(new_proc);
