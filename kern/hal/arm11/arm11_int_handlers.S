@@ -4,7 +4,7 @@
  * @author Olli Vanhoja
  * @brief Interrupt service routine handlers.
  * @section LICENSE
- * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy
                             Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -46,7 +46,7 @@
     .globl  interrupt_svc
     .type   interrupt_svc,%function
 interrupt_svc:
-    pushcontext #1          /* Push context to SCHED_SFRAME_SVC */
+    pushcontext 1           /* Push context to SCHED_SFRAME_SVC */
     clrex
 
     /* Attach kernel master page table */
@@ -70,7 +70,7 @@ interrupt_svc:
     cpsid   aif             /* Disable interrupts to prevent stack */
                             /* corruption */
     cps     #0x12           /* Back to IRQ mode */
-    popcontext #1           /* Pop context from SCHED_SFRAME_SVC */
+    popcontext 1            /* Pop context from SCHED_SFRAME_SVC */
     movs    pc, lr          /* Regular exit from svc */
 
 
@@ -80,7 +80,7 @@ interrupt_svc:
     .globl  interrupt_sys
     .type   interrupt_sys,%function
 interrupt_sys:
-    pushcontext #0          /* Push context to SCHED_SFRAME_SYS */
+    pushcontext 0           /* Push context to SCHED_SFRAME_SYS */
     clrex
 
     bl      _thread_suspend
@@ -120,7 +120,7 @@ interrupt_sys:
     bl      arm11_set_current_thread_stackframe
 
 /* Load/Restore context */
-2:  popcontext #0           /* Pop context from SCHED_SFRAME_SYS */
+2:  popcontext 0            /* Pop context from SCHED_SFRAME_SYS */
     subs    pc, lr, #4      /* Return back (return address is PC+4) */
 
 
@@ -128,7 +128,7 @@ interrupt_sys:
     .globl interrupt_undef
     .type  interrupt_undef,%function
 interrupt_undef:
-    pushcontext #2          /* A kind of abort too */
+    pushcontext 2           /* A kind of abort too */
     clrex
 
     enter_kernel
@@ -141,7 +141,7 @@ interrupt_undef:
     exit_kernel
 
     cps #0x1b               /* Back to UNDEF mode */
-    popcontext #2           /* Pop context from SCHED_SFRAME_ABO */
+    popcontext 2            /* Pop context from SCHED_SFRAME_ABO */
     subs    pc, lr, #0x4
 
 
@@ -149,7 +149,7 @@ interrupt_undef:
     .globl  interrupt_pabt
     .type   interrupt_pabt,%function
 interrupt_pabt:
-    pushcontext #2          /* Push context to SCHED_SFRAME_ABO */
+    pushcontext 2           /* Push context to SCHED_SFRAME_ABO */
     clrex
 
     enter_kernel
@@ -164,7 +164,7 @@ interrupt_pabt:
     exit_kernel
 
     cps     #0x17           /* Back to ABT mode */
-    popcontext #2           /* Pop context from SCHED_SFRAME_ABO */
+    popcontext 2            /* Pop context from SCHED_SFRAME_ABO */
     subs    pc, lr, #0x4
 
 
@@ -172,7 +172,7 @@ interrupt_pabt:
     .globl  interrupt_dabt
     .type   interrupt_dabt,%function
 interrupt_dabt:
-    pushcontext #2          /* Push context to SCHED_SFRAME_ABO */
+    pushcontext 2           /* Push context to SCHED_SFRAME_ABO */
     clrex
 
     enter_kernel
@@ -187,7 +187,7 @@ interrupt_dabt:
     exit_kernel
 
     cps     #0x17           /* Back to ABT mode */
-    popcontext #2           /* Pop context from SCHED_SFRAME_ABO */
+    popcontext 2            /* Pop context from SCHED_SFRAME_ABO */
     subs    pc, lr, #0x8
 
 .end

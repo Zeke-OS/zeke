@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Hardware Abstraction Layer for ARMv6/ARM11
  * @section LICENSE
- * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -126,24 +126,6 @@ void arm11_set_current_thread_stackframe(void)
         "MCR    p15, 0, %[sfarr], c13, c0, 4"
         : : [sfarr]"r" (sfarr)
     );
-}
-
-/**
- * Get a specific stack frame of the current thread.
- * @param ind is the stack frame index.
- * @return  Returns an address to the stack frame of the current thread;
- *          Or NULL if current_thread is not set.
- */
-void * arm11_get_current_thread_stackframe(size_t ind)
-{
-    sw_stack_frame_t * sfarr;
-
-    __asm__ volatile (
-        "MRC    p15, 0, %[sfarr], c13, c0, 4"
-        : [sfarr]"=r" (sfarr)
-    );
-
-    return (sfarr) ? &sfarr[ind] : NULL;
 }
 
 void svc_getargs(uint32_t * type, uintptr_t * p)

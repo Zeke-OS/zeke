@@ -4,7 +4,7 @@
  * @author Olli Vanhoja
  * @brief ARM11 macros.
  * @section LICENSE
- * Copyright (c) 2013 - 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2015, 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
                             Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -47,10 +47,15 @@
     ldr     r0, =mmu_pagetable_master
     bl      mmu_attach_pagetable
 
-    /* Get the stack frame */
-    mov     r0, \ind
-    bl      arm11_get_current_thread_stackframe
+    /*
+     * Get the stack frame
+     *
+     * A pointer to the stack frames is stored in a special privileged
+     * register.
+     */
+    mrc     p15, 0, r0, c13, c0, 4
     cmp     r0, #0
+    addne   r0, \ind * 68
     addeq   sp, sp, #60     /* Clear stack as we are skipping... */
     beq     1f              /* push if there is no stack frame. */
 
@@ -73,8 +78,12 @@
  * @return Returns original lr in lr.
  */
 .macro popcontext ind
-    mov     r0, \ind
-    bl      arm11_get_current_thread_stackframe
+    /*
+     * A pointer to the stack frames is stored in a special privileged
+     * register.
+     */
+    mrc     p15, 0, r0, c13, c0, 4
+    add     r0, \ind * 68
     mov     lr, r0
     add     lr, #4
 
