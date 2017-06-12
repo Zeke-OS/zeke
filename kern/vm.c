@@ -288,14 +288,17 @@ tryagain:
             reg_end = bp->b_mmu.vaddr + bp->b_bufsize - 1;
 
             if (VM_RANGE_IS_OVERLAPPING(reg_start, reg_end,
-                                        vaddr, newreg_end) ||
-                /*
-                 * Create the page tables early so we know it's possible to map
-                 * the selected address range.
-                 */
-                !ptlist_get_pt(mm, reg_start, bp->b_bufsize, VM_PT_CREAT)) {
+                                        vaddr, newreg_end)) {
                 goto tryagain;
             }
+        }
+
+        /*
+         * Create the page tables early so we know it's possible to map
+         * the selected address range.
+         */
+        if (!ptlist_get_pt(mm, vaddr, size, VM_PT_CREAT)) {
+            goto tryagain;
         }
     } while (0); /* TODO What if there is no space left? */
 
