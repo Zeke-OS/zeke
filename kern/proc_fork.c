@@ -236,7 +236,10 @@ static void set_proc_inher(struct proc_info * old_proc,
 
 static pid_t proc_get_next_pid(void)
 {
-    pid_t newpid = (proc_lastpid >= configMAXPROC) ? 100 : proc_lastpid + 1;
+    const pid_t pid_reset = (configMAXPROC < 20) ? 2 :
+                            (configMAXPROC < 200) ? configMAXPROC / 2 : 100;
+    pid_t newpid = (proc_lastpid >= configMAXPROC) ? pid_reset :
+                                                     proc_lastpid + 1;
 
     KERROR_DBG("%s()\n", __func__);
 
@@ -245,7 +248,7 @@ static pid_t proc_get_next_pid(void)
     while (proc_exists_locked(newpid)) {
         newpid++;
         if (newpid > configMAXPROC) {
-            newpid = 100;
+            newpid = pid_reset;
         }
     }
     proc_lastpid = newpid;
