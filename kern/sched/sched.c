@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Kernel scheduler, the generic part of thread scheduling.
  * @section LICENSE
- * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -550,7 +550,7 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
                         enum thread_mode thread_mode)
 {
     pthread_t thread_id;
-    struct thread_info * parent = current_thread;
+    struct thread_info * parent = (thread_mode == THREAD_MODE_PRIV) ? NULL : current_thread;
     struct thread_info * tp;
     thread_cdtor_t ** thread_ctor_p;
 
@@ -602,7 +602,7 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
     thread_set_inheritance(tp, parent, (parent) ? parent->pid_owner : 0);
 
     /* Select master page table used on startup. */
-    if (unlikely(!parent)) {
+    if (unlikely(!parent) || thread_mode == THREAD_MODE_PRIV) {
         /*
          * This branch is only taken during init or when a kernel mode thread
          * is created.
