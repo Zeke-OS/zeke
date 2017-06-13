@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Hardware Abstraction Layer for the CPU core
  * @section LICENSE
- * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -113,6 +113,14 @@ istate_t get_interrupt_state(void);
  * @param state is the interrupt state variable.
  */
 void set_interrupt_state(istate_t state);
+
+/**
+ * Yield from a thread.
+ * This function should be implemented similarly to the normal interrupt driven
+ * context switch, thus the thread must be able to resume normally on a next
+ * execution window.
+ */
+void hal_thread_yield(void);
 
 void stack_dump(sw_stack_frame_t frame);
 

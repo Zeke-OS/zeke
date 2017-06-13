@@ -822,14 +822,12 @@ void thread_alarm_rele(int timer_id)
 void thread_yield(enum thread_eyield_strategy strategy)
 {
     thread_ready(current_thread->id);
-    if (strategy == THREAD_YIELD_IMMEDIATE)
-        idle_sleep();
-
-    /*
-     * TODO
-     * User may expect this function to yield immediately which doesn't actually
-     * happen.
-     */
+    if (strategy == THREAD_YIELD_IMMEDIATE) {
+        istate_t state = get_interrupt_state();
+        disable_interrupt();
+        hal_thread_yield();
+        set_interrupt_state(state);
+    }
 }
 
 int thread_set_policy(pthread_t thread_id, unsigned policy)

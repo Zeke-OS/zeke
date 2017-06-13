@@ -40,6 +40,11 @@ config configKUNIT_RCU
     ---help---
     Tests for RCU subsystem.
 
+config configKUNIT_SCHED
+    bool "sched"
+    ---help---
+    Tests for schedulers.
+
 config configKUNIT_VM
     bool "vm"
     ---help---
