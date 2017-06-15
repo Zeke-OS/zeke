@@ -11,6 +11,10 @@ Zero Kernel    {#mainpage}
 Zeke is a tiny Unix-like operating system implementation that has grown up from
 an even smaller CMSIS-like embedded system.
 
+**Live Demo:**
+
+https://zeke.now.sh
+
 Key Features
 ------------
 - Kernel
