@@ -2,9 +2,9 @@
  *******************************************************************************
  * @file    pthread_attr_setdetachstate.c
  * @author  Olli Vanhoja
- * @brief   Zero Kernel user space code
+ * @brief   Set thread attribute detach state
  * @section LICENSE
- * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015, 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,11 @@ int pthread_attr_setdetachstate(pthread_attr_t * attr, int detachstate)
         return -EINVAL;
     }
 
-    attr->flags = detachstate;
+    if (detachstate == PTHREAD_CREATE_DETACHED) {
+        attr->flags |= PTHREAD_CREATE_DETACHED;
+    } else {
+        attr->flags &= ~PTHREAD_CREATE_DETACHED;
+    }
 
     return 0;
 }
