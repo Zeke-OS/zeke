@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Threads.
  * @section LICENSE
- * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2013 Joni Hauhia <joni.hauhia@cs.helsinki.fi>
  * Copyright (c) 2013, 2014 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
@@ -93,18 +93,31 @@
 #define PTHREAD_THREADS_MAX             __ULONG_MAX
 #define PTHREAD_BARRIER_SERIAL_THREAD   -1
 
-/*
+/**
+ * @addtogroup Thread_attributes
  * Flags for threads and thread attributes.
+ * @{
  */
-#define PTHREAD_DETACHED            0x1
-#define PTHREAD_SCOPE_SYSTEM        0x2
+/**
+ * The thread competes with all other threads in the system.
+ */
+#define PTHREAD_SCOPE_SYSTEM        0x0
+/**
+ * The thread competes with all other threads in the same process.
+ */
+#define PTHREAD_SCOPE_PROCESS       0x2
+/**
+ * Inherit scheduling parameters from the parent thread.
+ */
 #define PTHREAD_INHERIT_SCHED       0x4
-#define PTHREAD_NOFLOAT             0x8
 
-#define PTHREAD_CREATE_DETACHED     PTHREAD_DETACHED
+#define PTHREAD_CREATE_DETACHED     0x1
 #define PTHREAD_CREATE_JOINABLE     0
-#define PTHREAD_SCOPE_PROCESS       0
 #define PTHREAD_EXPLICIT_SCHED      0
+
+/**
+ * @}
+ */
 
 /*
  * Flags for read/write lock attributes
