@@ -567,7 +567,11 @@ pthread_t thread_create(struct _sched_pthread_create_args * thread_def,
      */
     tp->id      = thread_id;
     tp->flags   = SCHED_IN_USE_FLAG;
-    tp->param   = thread_def->param;
+    if (parent && (thread_def->flags & PTHREAD_INHERIT_SCHED)) {
+        tp->param = parent->param;
+    } else {
+        tp->param = thread_def->param;
+    }
     init_sched_data(&tp->sched);
 
     mtx_lock(&CURRENT_CPU->lock);
