@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Kernel thread scheduler header file.
  * @section LICENSE
- * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -134,12 +134,6 @@ int get_cpu_index(void);
  * @param[out] loads load averages.
  */
 void sched_get_loads(uint32_t loads[3]);
-
-/**
- * Test if context switch a given thread is ok.
- * @param thread is a pointer to a thread to be tested.
- */
-int sched_thread_csw_ok(struct thread_info * thread);
 
 #endif /* KSCHED_H */
 

@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   RR scheduler.
  * @section LICENSE
- * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -77,10 +77,9 @@ static void rr_remove(struct scheduler * sobj, struct thread_info * thread)
     }
 }
 
-static void rr_thread_act(struct scheduler * sobj, struct thread_info * thread)
+static void rr_thread_act(struct scheduler * sobj, struct thread_info * thread,
+                          enum thread_state state)
 {
-    const enum thread_state state = thread_state_get(thread);
-
     switch (state) {
     case THREAD_STATE_READY:
         /* Thread already in readyq */
@@ -112,10 +111,21 @@ static struct thread_info * rr_schedule(struct scheduler * sobj)
     struct thread_info * tmp;
 
     TAILQ_FOREACH_SAFE(next, &rr->runq_head, RRRUNQ_ENTRY, tmp) {
-        if (sched_thread_csw_ok(next)) {
-            return next;
+        const enum thread_state state = thread_state_get(next);
+        const int yield = thread_flags_is_set(next, SCHED_YIELD_FLAG);
+
+        if (thread_flags_not_set(next, SCHED_IN_USE_FLAG)) {
+            rr_thread_act(sobj, next, state);
+            continue;
+        }
+
+        if (!yield) {
+            if (state == THREAD_STATE_EXEC && next->sched.ts_counter > 0) {
+                return next;
+            }
+            rr_thread_act(sobj, next, state);
         } else {
-            rr_thread_act(sobj, next);
+            thread_flags_clear(next, SCHED_YIELD_FLAG);
         }
     }
 

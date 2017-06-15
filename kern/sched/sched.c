@@ -346,16 +346,6 @@ FOREACH_CPU(CPU_SCHED_TIME_AVG)
 
 #endif
 
-int sched_thread_csw_ok(struct thread_info * thread)
-{
-    if (thread_flags_not_set(thread, SCHED_IN_USE_FLAG) ||
-        (thread_state_get(thread) != THREAD_STATE_EXEC) ||
-        thread->sched.ts_counter == 0)
-        return 0;
-
-    return (1 == 1);
-}
-
 void sched_handler(void)
 {
     struct thread_info * const prev_thread = current_thread;
@@ -821,7 +811,7 @@ void thread_alarm_rele(int timer_id)
 
 void thread_yield(enum thread_eyield_strategy strategy)
 {
-    thread_ready(current_thread->id);
+    thread_flags_set(current_thread, SCHED_YIELD_FLAG);
     if (strategy == THREAD_YIELD_IMMEDIATE) {
         istate_t state = get_interrupt_state();
         disable_interrupt();

@@ -4,8 +4,16 @@
 #include <libkern.h>
 #include <thread.h>
 
+static char data[] = "0000000000";
+static int j;
+
 static void setup(void)
 {
+    for (size_t i = 0; i < num_elem(data); i++) {
+        data[i] = '0';
+    }
+    data[num_elem(data) - 1] = '\0';
+    j = 0;
 }
 
 static void teardown(void)
@@ -14,11 +22,16 @@ static void teardown(void)
 
 static void * test_thread_yield_thread(void * arg)
 {
-    KERROR(KERROR_DEBUG, "start\n");
-    for (int i = 0; i < 4; i++) {
-        KERROR(KERROR_DEBUG, "thread %d\n", (int)arg);
+    while (j == 0) {
         thread_yield(THREAD_YIELD_IMMEDIATE);
     }
+
+    KERROR(KERROR_DEBUG, "start\n");
+    for (int i = 0; i < 4; i++) {
+        data[j++] = '0' + (int)arg;
+        thread_yield(THREAD_YIELD_IMMEDIATE);
+    }
+    KERROR(KERROR_DEBUG, "%s\n", data);
 
     return NULL;
 }
@@ -26,7 +39,7 @@ static void * test_thread_yield_thread(void * arg)
 static char * test_thread_yield(void)
 {
     struct sched_param param = {
-        .sched_policy = SCHED_OTHER,
+        .sched_policy = SCHED_RR,
         .sched_priority = 0,
     };
 
@@ -34,6 +47,7 @@ static char * test_thread_yield(void)
     KERROR(KERROR_DEBUG, "thread 1 created\n");
     (void)kthread_create(&param, 0, test_thread_yield_thread, (void *)2);
     KERROR(KERROR_DEBUG, "thread 2 created\n");
+    j = 1;
 
     return NULL;
 }

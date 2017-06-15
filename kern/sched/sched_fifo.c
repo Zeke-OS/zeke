@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   FIFO scheduler.
  * @section LICENSE
- * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -103,13 +103,21 @@ static struct thread_info * fifo_schedule(struct scheduler * sobj)
 
     while ((thread = RB_MIN(fiforunq, &fifo->runq_head))) {
         const enum thread_state state = thread_state_get(thread);
+        const int yield = thread_flags_is_set(thread, SCHED_YIELD_FLAG);
 
         switch (state) {
         case THREAD_STATE_READY:
             fifo_remove(sobj, thread);
             break;
         case THREAD_STATE_EXEC:
-            return thread; /* select */
+            if (!yield) {
+                if (thread_flags_is_set(thread, SCHED_IN_USE_FLAG)) {
+                    return thread; /* select */
+                }
+            } else {
+                thread_flags_clear(thread, SCHED_YIELD_FLAG);
+            }
+            break;
         case THREAD_STATE_BLOCKED:
             fifo_remove(sobj, thread);
             break;

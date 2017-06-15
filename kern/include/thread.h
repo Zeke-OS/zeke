@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Public external thread management and scheduling functions.
  * @section LICENSE
- * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -93,6 +93,10 @@ enum {
      * A thread cannot be killed if this flag is set.
      */
     SCHED_INTERNAL_FLAG = 1 << 5,
+    /**
+     * Yield execution turn to the next thread.
+     */
+    SCHED_YIELD_FLAG = 1 << 6,
 };
 
 /**
