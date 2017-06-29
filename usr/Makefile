@@ -28,6 +28,7 @@ include $(ROOT_DIR)/makefiles/user_head.mk
 # Binaries #####################################################################
 BIN-$(configUSR_EXAMPLES) := \
 examples/daemon \
+examples/dump \
 examples/eztrie \
 examples/hugestack \
 examples/linenoise
@@ -35,6 +36,7 @@ BIN-$(configUSR_GAMES) := games/banner games/fbdemo games/plasma
 
 # Source Files #################################################################
 examples/daemon-SRC-$(configUSR_EXAMPLES) := examples/daemon.c
+examples/dump-SRC-$(configUSR_EXAMPLES) := examples/dump.c
 examples/eztrie-SRC-$(configUSR_EXAMPLES) := examples/eztrie.c
 examples/hugestack-SRC-$(configUSR_EXAMPLES) := examples/hugestack.c
 examples/linenoise-SRC-$(configUSR_EXAMPLES) := examples/linenoise.c

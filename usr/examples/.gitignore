@@ -1,4 +1,5 @@
 /daemon
+/dump
 /eztrie
 /hugestack
 /linenoise
