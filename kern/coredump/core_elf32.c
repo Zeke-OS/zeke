@@ -44,7 +44,7 @@
 #include <proc.h>
 
 #define SKIP_REGION(_region) \
-    ((_region)->b_flags & B_NOCORE || (_region)->b_data == 0 || \
+    ((!_region) || (_region)->b_flags & B_NOCORE || (_region)->b_data == 0 || \
      (_region)->b_mmu.vaddr == 0)
 
 static off_t write2file(file_t * file, void * p, size_t size)
