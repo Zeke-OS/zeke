@@ -38,9 +38,9 @@
 #include <buf.h>
 #include <kerror.h>
 #include <kinit.h>
-#include <kmalloc.h>
 #include <kstring.h>
 #include <libkern.h>
+#include <mempool.h>
 #include <proc.h>
 
 #ifdef configCOW_ENABLED
@@ -49,12 +49,23 @@
 #define COW_ENABLED_DEFAULT 0
 #endif
 
+struct mempool * proc_pool;
 /** Enable copy on write for processses. */
 static int cow_enabled = COW_ENABLED_DEFAULT;
 static pid_t proc_lastpid;  /*!< last allocated pid. */
 
 SYSCTL_BOOL(_kern, OID_AUTO, cow_enabled, CTLFLAG_RW,
             &cow_enabled, 0, "Enable copy on write for proc");
+
+int _proc_init_fork(void)
+{
+    proc_pool = mempool_init(MEMPOOL_TYPE_NONBLOCKING,
+                             sizeof(struct proc_info),
+                             configMAXPROC);
+    if (!proc_pool)
+        return -ENOMEM;
+    return 0;
+}
 
 static int clone_code_region(struct proc_info * new_proc,
                              struct proc_info * old_proc)
@@ -187,7 +198,7 @@ static struct proc_info * clone_proc_info(struct proc_info * const old_proc)
 
     KERROR_DBG("clone proc info of pid %u\n", old_proc->pid);
 
-    new_proc = kmalloc(sizeof(struct proc_info));
+    new_proc = mempool_get(proc_pool);
     if (!new_proc) {
         return NULL;
     }
@@ -282,6 +293,7 @@ pid_t proc_fork(void)
 
     /* Clear some things required to be zeroed at this point */
     new_proc->state = PROC_STATE_INITIAL;
+    new_proc->exit_ksiginfo = NULL;
     new_proc->files = NULL;
     new_proc->pgrp = NULL; /* Must be NULL so we don't free the old ref. */
     memset(&new_proc->tms, 0, sizeof(new_proc->tms));
@@ -432,7 +444,7 @@ pid_t proc_fork(void)
     retval = new_proc->pid;
 out:
     if (unlikely(retval < 0)) {
-        _proc_free(new_proc);
+        proc_free(new_proc);
     }
     return retval;
 }

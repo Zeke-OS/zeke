@@ -363,11 +363,6 @@ int proc_abo_handler(const struct mmu_abo_param * restrict abo);
 pid_t proc_update(void);
 
 /**
- * Free a process PCB and other related resources.
- */
-void _proc_free(struct proc_info * p);
-
-/**
  * Test if process exists.
  */
 int proc_exists(pid_t pid);
@@ -414,11 +409,18 @@ pid_t proc_fork(void);
 
 #ifdef PROC_INTERNAL
 
+extern struct mempool * proc_pool;
+
 /**
  * Insert a new process to _procarr.
  * @param proc is a pointer to the new process.
  */
 void procarr_insert(struct proc_info * new_proc);
+
+/**
+ * Free a process PCB and other related resources.
+ */
+void proc_free(struct proc_info * p);
 
 #endif /* PROC_INTERNAL */
 

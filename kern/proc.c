@@ -47,6 +47,7 @@
 #include <ksched.h>
 #include <kstring.h>
 #include <libkern.h>
+#include <mempool.h>
 #include <proc.h>
 #include <vm/vm_copyinstruct.h>
 
@@ -95,13 +96,14 @@ pid_t proc_update(void); /* Used in HAL, so not static but not in headeaders. */
 
 int __kinit__ proc_init(void)
 {
+    int _proc_init_fork(void);
     SUBSYS_INIT("proc");
 
     init_kernel_proc();
-    /* Do here same as proc_update() would do when running. */
+    /* Do here the same as proc_update() would do when running. */
     curproc = procarr[0];
 
-    return 0;
+    return _proc_init_fork();
 }
 
 static void init_rlims(struct rlimit (*rlim)[_RLIMIT_ARR_COUNT])
@@ -357,11 +359,11 @@ static void proc_remove(struct proc_info * proc)
 
 
     vrele(proc->cwd);
-    _proc_free(proc);
+    proc_free(proc);
     procarr_remove(proc->pid);
 }
 
-void _proc_free(struct proc_info * p)
+void proc_free(struct proc_info * p)
 {
     if (!p) {
         KERROR(KERROR_WARN, "Got NULL as a proc_info struct, double free?\n");
@@ -381,7 +383,7 @@ void _proc_free(struct proc_info * p)
     PROC_LOCK();
     proc_pgrp_remove(p);
     PROC_UNLOCK();
-    kfree(p);
+    mempool_return(proc_pool, p);
 }
 
 /**
