@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Generic functions and macros for use in kernel.
  * @section LICENSE
- * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1992, 1993
  *      The Regents of the University of California.  All rights reserved.
  * All rights reserved.
@@ -241,6 +241,36 @@ int flsll(long long mask);
  * @return 0 if succeed; Otherwise a negative errno is returned.
  */
 int parsenames(const char * pathname, char ** path, char ** name);
+
+/**
+ * @addtogroup siphash halfsiphash32, halfsiphash64, siphash, siphash
+ * @{
+ */
+
+/**
+ * HalfSipHash-2-4 32-bit
+ */
+uint32_t halfsiphash32(const uint8_t *in, const size_t inlen, uint32_t k[2]);
+
+/**
+ * HalfSipHash-2-4 64-bit
+ */
+uint32_t halfsiphash64(const uint8_t *in, const size_t inlen, uint32_t k[2]);
+
+/**
+ * SipHash-2-4 64-bit
+ */
+void siphash64(const uint8_t *in, const size_t inlen, uint64_t k[2]);
+
+/**
+ * SipHash-2-4 128-bit
+ */
+void siphash128(const uint8_t *in, const size_t inlen, uint64_t k[2],
+                uint8_t *out, const size_t outlen);
+
+/**
+ * @}
+ */
 
 /**
  * Access a pointer.
