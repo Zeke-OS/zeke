@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Directory Entry Hashtable.
  * @section LICENSE
- * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,7 +58,10 @@ typedef struct dh_dirent {
 /**
  * Directory entry hash table array type.
  */
-typedef dh_dirent_t * dh_table_t[DEHTABLE_SIZE];
+typedef struct dh_table {
+    uint32_t k[2];
+    struct dh_dirent * htable[DEHTABLE_SIZE];
+} dh_table_t;
 
 /**
  * Directory iterator.
@@ -68,6 +71,11 @@ typedef struct dh_dir_iter {
     size_t dea_ind;
     size_t ch_ind;
 } dh_dir_iter_t;
+
+/**
+ * Initialize a directory entry table.
+ */
+void dh_init(dh_table_t * dir);
 
 /**
  * Insert a new directory entry link.

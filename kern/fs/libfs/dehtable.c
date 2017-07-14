@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Directory Entry Hashtable.
  * @section LICENSE
- * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -92,16 +92,13 @@ typedef struct chain_info {
  * @param str is the string to be hashed.
  * @return Hash value.
  */
-static size_t hash_fname(const char * str)
+static size_t hash_fname(const char * str, uint32_t k[2])
 {
-    uint32_t hash = 5381, retval = 0;
-    int chunks = NBITS(DEHTABLE_SIZE);
-    int c, mask;
+    size_t len = strlenn(str, NAME_MAX + 1);
+    int mask, chunks = NBITS(DEHTABLE_SIZE);
+    uint32_t hash, retval = 0;
 
-    /* djb2 */
-    while ((c = *str++)) {
-        hash = ((hash << 5) + hash) + c;
-    }
+    hash = halfsiphash32((const uint8_t *)str, len, k);
 
     /* fold */
     mask = (DEHTABLE_SIZE - 1);
@@ -231,11 +228,18 @@ static int rm_node(dh_dirent_t ** chain, const char * name)
     return 0;
 }
 
+void dh_init(dh_table_t * dir)
+{
+    dir->k[0] = krandom();
+    dir->k[1] = krandom();
+    memset(dir, 0, sizeof(dir->htable));
+}
+
 int dh_link(dh_table_t * dir, ino_t vnode_num, uint8_t d_type,
             const char * name)
 {
     size_t name_len = strlenn(name, NAME_MAX + 1) + 1;
-    const size_t h = hash_fname(name);
+    const size_t h = hash_fname(name, dir->k);
     const size_t entry_size = memalign(DIRENT_SIZE + name_len);
     dh_dirent_t * dea;
     chain_info_t chinfo;
@@ -247,7 +251,7 @@ int dh_link(dh_table_t * dir, ino_t vnode_num, uint8_t d_type,
         goto out;
     }
 
-    dea = (*dir)[h];
+    dea = dir->htable[h];
     if (!dea) { /* Chain array not yet created. */
         dea = kzalloc(entry_size);
 
@@ -264,7 +268,7 @@ int dh_link(dh_table_t * dir, ino_t vnode_num, uint8_t d_type,
         retval = -ENOMEM;
         goto out;
     }
-    (*dir)[h] = dea;
+    dir->htable[h] = dea;
 
     /* Create a link */
     get_dirent(dea, chinfo.i_last)->dh_link = CH_LINK;
@@ -281,11 +285,11 @@ out:
 
 int dh_unlink(dh_table_t * dir, const char * name)
 {
-    const size_t h = hash_fname(name);
+    const size_t h = hash_fname(name, dir->k);
     dh_dirent_t ** dea;
     int err;
 
-    dea = &((*dir)[h]);
+    dea = &dir->htable[h];
     if (!dea)
         return -ENOENT;
 
@@ -302,20 +306,20 @@ void dh_destroy_all(dh_table_t * dir)
 
     /* Free all dir entry chains. */
     for (i = 0; i < DEHTABLE_SIZE; i++) {
-        if ((*dir)[i])
-            kfree((*dir)[i]);
+        /* No NuLL check needed. */
+        kfree(dir->htable[i]);
     }
 }
 
 
 int dh_lookup(dh_table_t * dir, const char * name, ino_t * vnode_num)
 {
-    const size_t h = hash_fname(name);
+    const size_t h = hash_fname(name, dir->k);
     dh_dirent_t * dea;
     dh_dirent_t * dent;
     int retval = -ENOENT;
 
-    dea = (*dir)[h];
+    dea = dir->htable[h];
     if (!dea)
         goto out;
 
@@ -377,13 +381,13 @@ dh_dirent_t * dh_iter_next(dh_dir_iter_t * it)
 
         /* Get a dir entry array */
         do {
-            dea = (*(it->dir))[i];
+            dea = it->dir->htable[i];
             i++;
         } while (!dea && i < DEHTABLE_SIZE);
 
         it->dea_ind = i - 1;
     } else { /* Still iterating the old chain. */
-        dea = (*(it->dir))[it->dea_ind];
+        dea = it->dir->htable[it->dea_ind];
     }
     if (!dea)
         return NULL; /* Empty hash table or No more entries. */
