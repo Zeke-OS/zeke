@@ -229,7 +229,6 @@ static int fatfs_mount(fs_t * fs, const char * source, uint32_t mode,
     fatfs_sb->sb.sb_hashseed = fatfs_sb->sb.vdev_id;
     /* Function pointers to superblock methods */
     fatfs_sb->sb.statfs = fatfs_statfs;
-    fatfs_sb->sb.get_vnode = NULL; /* Not implemented for FAT. */
     fatfs_sb->sb.delete_vnode = fatfs_delete_vnode;
     fatfs_sb->sb.umount = fatfs_umount;
     if (!fatfs_sb->sb.root) {

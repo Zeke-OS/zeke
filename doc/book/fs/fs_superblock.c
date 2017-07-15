@@ -9,15 +9,6 @@ typedef struct fs_superblock {
     char * mtpt_path; /*!< Mount point path */
 
     /**
-     * Get the vnode struct linked to a vnode number.
-     * @param[in]  sb is the superblock.
-     * @param[in]  vnode_num is the vnode number.
-     * @param[out] vnode is a pointer to the vnode.
-     * @return Returns 0 if no error; Otherwise value other than zero.
-     */
-    int (*get_vnode)(struct fs_superblock * sb, ino_t * vnode_num, vnode_t ** vnode);
-
-    /**
      * Delete a vnode reference.
      * Deletes a reference to a vnode and destroys the inode corresponding to the
      * inode if there is no more links and references to it.

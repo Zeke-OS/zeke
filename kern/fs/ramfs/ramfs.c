@@ -142,6 +142,16 @@ static void destroy_inode_data(ramfs_inode_t * inode);
 static int insert_inode(ramfs_inode_t * inode);
 static struct ramfs_dp get_dp_by_offset(ramfs_inode_t * inode, off_t offset);
 
+/**
+ * Get the vnode struct linked to a vnode number.
+ * @param[in] sb        is the superblock.
+ * @param[in] vnode_num is the vnode number.
+ * @param[out] vnode    is a pointer to the vnode, can be NULL.
+ * @return Returns 0 if no error; Otherwise value other than zero.
+ */
+static int ramfs_get_vnode(struct fs_superblock * sb, ino_t * vnode_num,
+                           struct vnode ** vnode);
+
 
 /**
  * Get ramfs_sb of a generic superblock that belongs to ramfs.
@@ -356,8 +366,8 @@ int ramfs_statfs(struct fs_superblock * sb, struct statvfs * st)
     return 0;
 }
 
-int ramfs_get_vnode(struct fs_superblock * sb, ino_t * vnode_num,
-                    vnode_t ** vnode)
+static int ramfs_get_vnode(struct fs_superblock * sb, ino_t * vnode_num,
+                           vnode_t ** vnode)
 {
     ramfs_sb_t * ramfs_sb = get_rfsb_of_sb(sb);
     struct ramfs_inode * in;
@@ -892,7 +902,6 @@ static void ramfs_init_sb(fs_t * fs, ramfs_sb_t * ramfs_sb, uint32_t mode)
 
     /* Function pointers to superblock methods: */
     sb->statfs = ramfs_statfs;
-    sb->get_vnode = ramfs_get_vnode;
     sb->delete_vnode = ramfs_delete_vnode;
     sb->umount = ramfs_umount;
 }

@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   IPC pipes.
  * @section LICENSE
- * Copyright (c) 2015, 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2015 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -86,8 +86,6 @@ static ssize_t fs_pipe_read(file_t * file, struct uio * uio, size_t count);
 static int fs_pipe_stat(vnode_t * vnode, struct stat * stat);
 static int fs_pipe_chmod(vnode_t * vnode, mode_t mode);
 static int fs_pipe_chown(vnode_t * vnode, uid_t owner, gid_t group);
-static int fs_pipe_get_vnode(struct fs_superblock * sb, ino_t * vnode_num,
-                             vnode_t ** vnode);
 
 static vnode_ops_t fs_pipe_ops = {
     .write = fs_pipe_write,
@@ -105,7 +103,6 @@ static struct fs fs_pipe_fs = {
 
 static struct fs_superblock fs_pipe_sb = {
     .fs = &fs_pipe_fs,
-    .get_vnode = fs_pipe_get_vnode,
     .delete_vnode = fs_pipe_destroy,
     .umount = NULL,
 };
@@ -353,10 +350,4 @@ int fs_pipe_chown(vnode_t * vnode, uid_t owner, gid_t group)
     pipe->group = group;
 
     return 0;
-}
-
-static int fs_pipe_get_vnode(struct fs_superblock * sb, ino_t * vnode_num,
-                             vnode_t ** vnode)
-{
-    return -ENOTSUP;
 }

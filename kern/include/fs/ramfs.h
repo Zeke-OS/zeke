@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   ramfs headers.
  * @section LICENSE
- * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -81,16 +81,6 @@ int ramfs_umount(struct fs_superblock * fs_sb);
 /*
  * sb ops
  */
-
-/**
- * Get the vnode struct linked to a vnode number.
- * @param[in] sb        is the superblock.
- * @param[in] vnode_num is the vnode number.
- * @param[out] vnode    is a pointer to the vnode, can be NULL.
- * @return Returns 0 if no error; Otherwise value other than zero.
- */
-int ramfs_get_vnode(struct fs_superblock * sb, ino_t * vnode_num,
-                    struct vnode ** vnode);
 
 /**
  * Delete a vnode reference.
