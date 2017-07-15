@@ -98,7 +98,7 @@ static size_t hash_fname(const char * str, uint32_t k[2])
     int mask, chunks = NBITS(DEHTABLE_SIZE);
     uint32_t hash, retval = 0;
 
-    hash = halfsiphash32((const uint8_t *)str, len, k);
+    hash = halfsiphash32(str, len, k);
 
     /* fold */
     mask = (DEHTABLE_SIZE - 1);

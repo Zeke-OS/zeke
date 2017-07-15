@@ -58,8 +58,9 @@
         v2 = ROTL(v2, 32);                                                     \
     } while (0)
 
-uint64_t siphash64(const uint8_t *in, const size_t inlen, uint64_t k[2])
+uint64_t siphash64(const void * _in, const size_t inlen, uint64_t k[2])
 {
+    const uint8_t * in = _in;
     uint64_t v0 = 0x736f6d6570736575ULL;
     uint64_t v1 = 0x646f72616e646f6dULL;
     uint64_t v2 = 0x6c7967656e657261ULL;
@@ -125,9 +126,10 @@ uint64_t siphash64(const uint8_t *in, const size_t inlen, uint64_t k[2])
     return out;
 }
 
-void siphash128(const uint8_t *in, const size_t inlen, uint64_t k[2],
-                uint8_t *out)
+void siphash128(const void * _in, const size_t inlen, uint64_t k[2],
+                uint8_t * out)
 {
+    const uint8_t * in = _in;
     uint64_t v0 = 0x736f6d6570736575ULL;
     uint64_t v1 = 0x646f72616e646f6dULL;
     uint64_t v2 = 0x6c7967656e657261ULL;

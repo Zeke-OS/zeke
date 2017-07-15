@@ -56,8 +56,9 @@
         v2 = ROTL(v2, 16);                                                     \
     } while (0)
 
-uint32_t halfsiphash32(const uint8_t *in, const size_t inlen, uint32_t k[2])
+uint32_t halfsiphash32(const void * _in, const size_t inlen, uint32_t k[2])
 {
+    const uint8_t * in = _in;
     uint32_t v0 = 0;
     uint32_t v1 = 0;
     uint32_t v2 = 0x6c796765;
@@ -115,8 +116,9 @@ uint32_t halfsiphash32(const uint8_t *in, const size_t inlen, uint32_t k[2])
     return out;
 }
 
-uint64_t halfsiphash64(const uint8_t *in, const size_t inlen, uint64_t k)
+uint64_t halfsiphash64(const void * _in, const size_t inlen, uint64_t k)
 {
+    const uint8_t * in = _in;
     uint32_t v0 = 0;
     uint32_t v1 = 0;
     uint32_t v2 = 0x6c796765;

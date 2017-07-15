@@ -250,23 +250,23 @@ int parsenames(const char * pathname, char ** path, char ** name);
 /**
  * HalfSipHash-2-4 32-bit
  */
-uint32_t halfsiphash32(const uint8_t *in, const size_t inlen, uint32_t k[2]);
+uint32_t halfsiphash32(const void * in, const size_t inlen, uint32_t k[2]);
 
 /**
  * HalfSipHash-2-4 64-bit
  */
-uint32_t halfsiphash64(const uint8_t *in, const size_t inlen, uint32_t k[2]);
+uint32_t halfsiphash64(const void * in, const size_t inlen, uint32_t k[2]);
 
 /**
  * SipHash-2-4 64-bit
  */
-void siphash64(const uint8_t *in, const size_t inlen, uint64_t k[2]);
+void siphash64(const void * in, const size_t inlen, uint64_t k[2]);
 
 /**
  * SipHash-2-4 128-bit
  */
-void siphash128(const uint8_t *in, const size_t inlen, uint64_t k[2],
-                uint8_t *out, const size_t outlen);
+void siphash128(const void * in, const size_t inlen, uint64_t k[2],
+                uint8_t * out, const size_t outlen);
 
 /**
  * @}
