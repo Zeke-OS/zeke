@@ -80,6 +80,8 @@ static id_t vfs_hash_ctx_id;
  */
 struct fatfs_sb ** fatfs_sb_arr;
 
+static uint32_t fatfs_siphash_key[2];
+
 vnode_ops_t fatfs_vnode_ops = {
     .write = fatfs_write,
     .read = fatfs_read,
@@ -113,6 +115,8 @@ int __kinit__ fatfs_init(void)
     SUBSYS_DEP(proc_init);
     SUBSYS_INIT("fatfs");
 
+    fatfs_siphash_key[0] = krandom();
+    fatfs_siphash_key[1] = krandom();
     vfs_hash_ctx_id = vfs_hash_new_ctx("fatfs", configFATFS_DESIREDVNODES,
                                        fatfs_vncmp);
     if (vfs_hash_ctx_id < 0)
@@ -430,7 +434,8 @@ static vnode_t * create_root(struct fatfs_sb * fatfs_sb)
     if (!rootpath)
         return NULL;
 
-    vn_hash = hash32_str(rootpath, 0);
+    rootpath[0] = '/';
+    vn_hash = halfsiphash32(rootpath, 1, fatfs_siphash_key);
     err = create_inode(&in, fatfs_sb, rootpath, vn_hash,
                        O_DIRECTORY | O_RDWR);
     if (err || unlikely(!in)) {
@@ -589,6 +594,7 @@ static int fatfs_lookup(vnode_t * dir, const char * name, vnode_t ** result)
     struct fatfs_inode * indir = get_inode_of_vnode(dir);
     struct fatfs_sb * sb = get_ffsb_of_sb(dir->sb);
     char * in_fpath;
+    size_t in_fpath_len;
     unsigned vn_hash;
     struct vnode * vn = NULL;
     int retval = 0;
@@ -599,6 +605,8 @@ static int fatfs_lookup(vnode_t * dir, const char * name, vnode_t ** result)
     in_fpath = format_fpath(indir, name);
     if (!in_fpath)
         return -ENOMEM;
+
+    in_fpath_len = strlenn(in_fpath, NAME_MAX + 1);
 
     /*
      * Emulate . and ..
@@ -626,7 +634,7 @@ static int fatfs_lookup(vnode_t * dir, const char * name, vnode_t ** result)
             kfree(in_fpath);
             return -EDOM;
         } else {
-            size_t i = strlenn(in_fpath, NAME_MAX) - 4;
+            size_t i = in_fpath_len - 4;
 
             while (in_fpath[i] != '/') {
                 i--;
@@ -638,7 +646,7 @@ static int fatfs_lookup(vnode_t * dir, const char * name, vnode_t ** result)
     /*
      * Lookup from vfs_hash cache
      */
-    vn_hash = hash32_str(in_fpath, 0);
+    vn_hash = halfsiphash32(in_fpath, in_fpath_len, fatfs_siphash_key);
     retval = vfs_hash_get(vfs_hash_ctx_id,
                           dir->sb,      /* FS superblock */
                           vn_hash,      /* Hash */
@@ -784,6 +792,7 @@ int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
     struct fatfs_inode * indir = get_inode_of_vnode(dir);
     struct fatfs_inode * res = NULL;
     char * in_fpath;
+    size_t in_fpath_len;
     int err;
 
     KERROR_DBG("%s(dir %p, name \"%s\", mode %u, specinfo %p, result %p)\n",
@@ -802,8 +811,10 @@ int fatfs_mknod(vnode_t * dir, const char * name, int mode, void * specinfo,
     if (!in_fpath)
         return -ENOMEM;
 
+    in_fpath_len = strlenn(in_fpath, NAME_MAX + 1);
     err = create_inode(&res, get_ffsb_of_sb(dir->sb), in_fpath,
-                       hash32_str(in_fpath, 0), O_CREAT);
+                       halfsiphash32(in_fpath, in_fpath_len, fatfs_siphash_key),
+                       O_CREAT);
     if (err) {
         kfree(in_fpath);
         return fresult2errno(err);
