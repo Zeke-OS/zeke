@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   Virtual file system headers.
  * @section LICENSE
- * Copyright (c) 2013 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2013 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2012, 2013 Ninjaware Oy,
  *                          Olli Vanhoja <olli.vanhoja@ninjaware.fi>
  * All rights reserved.
@@ -103,7 +103,7 @@ struct bufhd {
 
 typedef struct vnode {
     ino_t vn_num;               /*!< vnode number. */
-    unsigned vn_hash;           /*!< Hash for using vfs hashing. */
+    unsigned vn_hash;           /*!< Hash managed by vfs_hash */
     atomic_t vn_refcount;
 
     /**

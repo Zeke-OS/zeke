@@ -52,7 +52,7 @@ static int fatfs_mount(fs_t * fs, const char * source, uint32_t mode,
 static int fatfs_umount(struct fs_superblock * fs_sb);
 static char * format_fpath(struct fatfs_inode * indir, const char * name);
 static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
-                        char * fpath, long vn_hash, int oflags);
+                        char * fpath, unsigned vn_hash, int oflags);
 static vnode_t * create_root(struct fatfs_sb * fatfs_sb);
 static void finalize_inode(vnode_t * vnode);
 static void destroy_vnode(vnode_t * vnode);
@@ -62,7 +62,7 @@ static int fatfs_event_vnode_opened(struct proc_info * p, vnode_t * vnode);
 static void fatfs_event_file_closed(struct proc_info * p, file_t * file);
 static int fatfs_lookup(vnode_t * dir, const char * name, vnode_t ** result);
 static void init_fatfs_vnode(vnode_t * vnode, ino_t inum, mode_t mode,
-                             long vn_hash, struct fs_superblock * sb);
+                             struct fs_superblock * sb);
 static int get_mp_stat(vnode_t * vnode, struct stat * st);
 static int fresult2errno(int fresult);
 
@@ -301,7 +301,7 @@ static char * format_fpath(struct fatfs_inode * indir, const char * name)
  *               should be always verified with stat.
  */
 static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
-                        char * fpath, long vn_hash, int oflags)
+                        char * fpath, unsigned vn_hash, int oflags)
 {
     struct fatfs_inode * in = NULL;
     FILINFO fno;
@@ -386,7 +386,7 @@ static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
         FS_KERROR_FS(KERROR_DEBUG, sb->sb.fs, "Open ok\n");
 #endif
 
-    init_fatfs_vnode(vn, inum, vn_mode, vn_hash, &(sb->sb));
+    init_fatfs_vnode(vn, inum, vn_mode, &(sb->sb));
 
     /* Insert to the cache */
     err = vfs_hash_insert(vfs_hash_ctx_id, vn, vn_hash, &xvp, fpath);
@@ -422,7 +422,7 @@ fail:
 static vnode_t * create_root(struct fatfs_sb * fatfs_sb)
 {
     char * rootpath;
-    long vn_hash;
+    unsigned vn_hash;
     struct fatfs_inode * in = NULL;
     int err;
 
@@ -589,7 +589,7 @@ static int fatfs_lookup(vnode_t * dir, const char * name, vnode_t ** result)
     struct fatfs_inode * indir = get_inode_of_vnode(dir);
     struct fatfs_sb * sb = get_ffsb_of_sb(dir->sb);
     char * in_fpath;
-    long vn_hash;
+    unsigned vn_hash;
     struct vnode * vn = NULL;
     int retval = 0;
 
@@ -1035,16 +1035,14 @@ int fatfs_chflags(vnode_t * vnode, fflags_t flags)
  * @param vnode is the target vnode to be initialized.
  */
 static void init_fatfs_vnode(vnode_t * vnode, ino_t inum, mode_t mode,
-                             long vn_hash, struct fs_superblock * sb)
+                             struct fs_superblock * sb)
 {
     struct stat stat;
 
-    KERROR_DBG("%s(vnode %p, inum %llu, mode %o, vn_hash %lu, sb %p)\n",
-               __func__, vnode, (long long)inum, mode, vn_hash, sb);
+    KERROR_DBG("%s(vnode %p, inum %llu, mode %o, sb %p)\n",
+               __func__, vnode, (long long)inum, mode, sb);
 
     fs_vnode_init(vnode, inum, sb, &fatfs_vnode_ops);
-
-    vnode->vn_hash = vn_hash;
 
 #if 0
     if (S_ISDIR(mode))
