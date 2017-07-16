@@ -3,6 +3,7 @@ menuconfig configRAMFS
     default y
     select configFS_DEHTABLE
     select configFS_INPOOL
+    select configVFS_HASH
     ---help---
     Provides in-RAM file system that can be used before hardware backed
     file systems are mounted. It also provides a mountpoint for pseudo
