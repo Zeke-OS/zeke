@@ -58,7 +58,7 @@
  * Defines maximum (and initial) size of inode pool
  * and initial size of inode array.
  */
-#define RAMFS_INODE_POOL_SIZE   configRAMFS_DESIREDVNODES
+#define RAMFS_INODE_POOL_SIZE   ((configRAMFS_DESIREDVNODES >> 3) + 5)
 
 /**
  * Maximum number of files in a single ramfs mount.
