@@ -55,7 +55,8 @@ id_t vfs_hash_new_ctx(const char * fsname, int desiredvnodes,
  * @retval -EINVAL if cid is invalid.
  */
 int vfs_hash_get(id_t cid, const struct fs_superblock * mp,
-                 size_t hash, struct vnode ** vpp, void * cmp_arg);
+                 size_t hash, struct vnode ** vpp, void * cmp_arg)
+    __attribute__((nonnull(2, 4)));
 
 size_t vfs_hash_index(struct vnode * vp);
 
@@ -63,7 +64,8 @@ size_t vfs_hash_index(struct vnode * vp);
  * Walkthrough each vnode belonging to the given mp and call a callback cb.
  */
 int vfs_hash_foreach(id_t cid, const struct fs_superblock * mp,
-                     void (*cb)(struct vnode *));
+                     void (*cb)(struct vnode *))
+    __attribute__((nonnull(2, 3)));
 
 /**
  * Insert a vnode pointer to vfs_hash.
