@@ -52,7 +52,7 @@ static int fatfs_mount(fs_t * fs, const char * source, uint32_t mode,
 static int fatfs_umount(struct fs_superblock * fs_sb);
 static char * format_fpath(struct fatfs_inode * indir, const char * name);
 static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
-                        char * fpath, unsigned vn_hash, int oflags);
+                        char * fpath, size_t vn_hash, int oflags);
 static vnode_t * create_root(struct fatfs_sb * fatfs_sb);
 static void finalize_inode(vnode_t * vnode);
 static void destroy_vnode(vnode_t * vnode);
@@ -74,13 +74,12 @@ static struct fs fatfs_fs = {
 };
 
 static id_t vfs_hash_ctx_id;
+static uint32_t fatfs_siphash_key[2];
 
 /**
  * Array of all FAT mounts for faster access.
  */
 struct fatfs_sb ** fatfs_sb_arr;
-
-static uint32_t fatfs_siphash_key[2];
 
 vnode_ops_t fatfs_vnode_ops = {
     .write = fatfs_write,
@@ -304,7 +303,7 @@ static char * format_fpath(struct fatfs_inode * indir, const char * name)
  *               should be always verified with stat.
  */
 static int create_inode(struct fatfs_inode ** result, struct fatfs_sb * sb,
-                        char * fpath, unsigned vn_hash, int oflags)
+                        char * fpath, size_t vn_hash, int oflags)
 {
     struct fatfs_inode * in = NULL;
     FILINFO fno;
@@ -425,7 +424,7 @@ fail:
 static vnode_t * create_root(struct fatfs_sb * fatfs_sb)
 {
     char * rootpath;
-    unsigned vn_hash;
+    size_t vn_hash;
     struct fatfs_inode * in = NULL;
     int err;
 
@@ -594,7 +593,7 @@ static int fatfs_lookup(vnode_t * dir, const char * name, vnode_t ** result)
     struct fatfs_sb * sb = get_ffsb_of_sb(dir->sb);
     char * in_fpath;
     size_t in_fpath_len;
-    unsigned vn_hash;
+    size_t vn_hash;
     struct vnode * vn = NULL;
     int retval = 0;
 

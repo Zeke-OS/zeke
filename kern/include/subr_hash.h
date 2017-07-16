@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2004 Joseph Koshy
  * Copyright (c) 1982, 1986, 1991, 1993
  *  The Regents of the University of California.  All rights reserved.
@@ -105,8 +105,8 @@
  * sets the location pointed to by hashmask to the bit mask to be used for
  * computing the correct slot in the hash table.
  */
-void * hashinit(int count, unsigned long * hashmask);
-void * hashinit_flags(int count, unsigned long * hashmask, int flags);
+void * hashinit(size_t count, size_t * hashmask);
+void * hashinit_flags(size_t count, size_t * hashmask, int flags);
 
 /**
  * Any malloc performed by  the hashinit_flags() function
@@ -125,14 +125,14 @@ void * hashinit_flags(int count, unsigned long * hashmask, int flags);
  * The hashdestroy() function frees the space occupied by the hash table
  * pointed to by argument hashtbl.
  */
-void hashdestroy(void *, unsigned long);
+void hashdestroy(void * hashtbl, size_t hashmask);
 
 /**
  * The phashinit() function returns a pointer to an allocated hash table
  * and sets the location pointed to by nentries to the number of rows in
  * the hash table.
  */
-void * phashinit(int count, unsigned long * nentries);
+void * phashinit(size_t count, size_t * nentries);
 
 #endif /* SUBR_HASH_H */
 

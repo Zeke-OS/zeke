@@ -103,7 +103,7 @@ struct bufhd {
 
 typedef struct vnode {
     ino_t vn_num;               /*!< vnode number. */
-    unsigned vn_hash;           /*!< Hash managed by vfs_hash */
+    size_t vn_hash;             /*!< Hash managed by vfs_hash */
     atomic_t vn_refcount;
 
     /**
@@ -243,7 +243,7 @@ struct fs_superblock {
     fs_t * fs;              /*!< A pointer to the file system implementation. */
     dev_t vdev_id;          /*!< Virtual dev_id. */
 #ifdef configVFS_HASH
-    unsigned sb_hashseed;   /*!< Seed for using vfs hashing. */
+    size_t sb_hashseed;     /*!< Seed for using vfs hashing. */
 #endif
     uint32_t mode_flags;    /*!< Mount mode flags. */
     vnode_t * root;         /*!< Root of this fs mount. */

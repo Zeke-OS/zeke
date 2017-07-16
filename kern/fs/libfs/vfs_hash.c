@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 2005 Poul-Henning Kamp
  * All rights reserved.
  *
@@ -43,7 +43,7 @@ struct vfs_hash_ctx {
     const char * ctx_fsname;
     LIST_HEAD(vfs_hash_head, vnode) * ctx_hash_tbl;
     LIST_HEAD(,vnode) ctx_hash_side;
-    unsigned long ctx_hash_mask;
+    size_t ctx_hash_mask;
     vfs_hash_cmp_t * ctx_cmp_fn;
     mtx_t ctx_lock;
 };
@@ -69,7 +69,7 @@ id_t vfs_hash_new_ctx(const char * fsname, int desiredvnodes,
         return -EINVAL;
     }
 
-    if (next_ctx_id >= (int)num_elem(vfs_ctx)) {
+    if (next_ctx_id >= (id_t)num_elem(vfs_ctx)) {
         return -ENOBUFS;
     }
 
@@ -85,20 +85,20 @@ id_t vfs_hash_new_ctx(const char * fsname, int desiredvnodes,
     return id;
 }
 
-unsigned vfs_hash_index(struct vnode * vp)
+size_t vfs_hash_index(struct vnode * vp)
 {
     return vp->vn_hash + vp->sb->sb_hashseed;
 }
 
 static struct vfs_hash_head *
 vfs_hash_bucket(struct vfs_hash_ctx * ctx, const struct fs_superblock * mp,
-                unsigned hash)
+                size_t hash)
 {
     return &ctx->ctx_hash_tbl[(hash + mp->sb_hashseed) & ctx->ctx_hash_mask];
 }
 
 int vfs_hash_get(id_t cid, const struct fs_superblock * mp,
-                 unsigned hash, struct vnode ** vpp, void * cmp_arg)
+                 size_t hash, struct vnode ** vpp, void * cmp_arg)
 {
     struct vnode * vp;
     struct vfs_hash_ctx * ctx = vfs_hash_get_ctx(cid);
@@ -145,7 +145,7 @@ int vfs_hash_remove(id_t cid, struct vnode * vp)
     return 0;
 }
 
-int vfs_hash_insert(id_t cid, struct vnode * vp, unsigned hash,
+int vfs_hash_insert(id_t cid, struct vnode * vp, size_t hash,
                     struct vnode ** vpp, void * cmp_arg)
 {
     struct vnode * vp2;
@@ -186,7 +186,7 @@ int vfs_hash_insert(id_t cid, struct vnode * vp, unsigned hash,
     return 0;
 }
 
-int vfs_hash_rehash(id_t cid, struct vnode * vp, unsigned hash)
+int vfs_hash_rehash(id_t cid, struct vnode * vp, size_t hash)
 {
     struct vfs_hash_ctx * ctx = vfs_hash_get_ctx(cid);
 

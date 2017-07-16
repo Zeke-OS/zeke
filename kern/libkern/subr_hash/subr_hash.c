@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2014 - 2017 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1982, 1986, 1991, 1993
  *  The Regents of the University of California.  All rights reserved.
  * (c) UNIX System Laboratories, Inc.
@@ -46,16 +46,11 @@ LIST_HEAD(generic, generic);
 /**
  * General routine to allocate a hash table with control of memory flags.
  */
-void * hashinit_flags(int elements, unsigned long * hashmask, int flags)
+void * hashinit_flags(size_t elements, size_t * hashmask, int flags)
 {
-    long hashsize;
+    size_t hashsize;
     struct generic * hashtbl;
 
-    if (elements <= 0) {
-        KERROR(KERROR_ERR, "%s: Invalid number of elements %d\n",
-               __func__, elements);
-        return NULL;
-    }
     /* Exactly one of HASH_WAITOK and HASH_NOWAIT must be set. */
     if (!((flags & HASH_WAITOK) ^ (flags & HASH_NOWAIT))) {
         KERROR(KERROR_ERR, "%s: Bad flags %u", __func__, flags);
@@ -72,10 +67,10 @@ void * hashinit_flags(int elements, unsigned long * hashmask, int flags)
      * if (flags & HASH_NOWAIT)
      */
 
-    hashtbl = kmalloc((unsigned long)hashsize * sizeof(*hashtbl));
+    hashtbl = kmalloc((size_t)hashsize * sizeof(*hashtbl));
 
     if (hashtbl != NULL) {
-        for (long i = 0; i < hashsize; i++) {
+        for (size_t i = 0; i < hashsize; i++) {
             LIST_INIT(&hashtbl[i]);
         }
 
@@ -88,12 +83,12 @@ void * hashinit_flags(int elements, unsigned long * hashmask, int flags)
 /**
  * Allocate and initialize a hash table with default flag: may sleep.
  */
-void * hashinit(int elements, unsigned long * hashmask)
+void * hashinit(size_t elements, size_t * hashmask)
 {
     return hashinit_flags(elements, hashmask, HASH_WAITOK);
 }
 
-void hashdestroy(void * vhashtbl, unsigned long hashmask)
+void hashdestroy(void * vhashtbl, size_t hashmask)
 {
     struct generic * hashtbl;
     struct generic * hp;
@@ -117,13 +112,10 @@ static const int primes[] = {
 /**
  * General routine to allocate a prime number sized hash table.
  */
-void * phashinit(int elements, unsigned long * nentries)
+void * phashinit(size_t elements, size_t * nentries)
 {
-    long hashsize;
+    size_t hashsize, i;
     struct generic * hashtbl;
-    int i;
-
-    KASSERT(elements > 0, "bad elements");
 
     for (i = 1, hashsize = primes[1]; hashsize <= elements;) {
         i++;
