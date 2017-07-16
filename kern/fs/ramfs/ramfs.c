@@ -60,11 +60,6 @@
  */
 #define RAMFS_INODE_POOL_SIZE   ((configRAMFS_DESIREDVNODES >> 3) + 5)
 
-/**
- * Maximum number of files in a single ramfs mount.
- */
-#define RAMFS_MAX_FILES         SIZE_MAX
-
 #define RFS_DOT "."
 #define RFS_DOTDOT ".."
 
