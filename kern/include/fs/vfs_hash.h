@@ -60,12 +60,19 @@ int vfs_hash_get(id_t cid, const struct fs_superblock * mp,
 size_t vfs_hash_index(struct vnode * vp);
 
 /**
+ * Walkthrough each vnode belonging to the given mp and call a callback cb.
+ */
+int vfs_hash_foreach(id_t cid, const struct fs_superblock * mp,
+                     void (*cb)(struct vnode *));
+
+/**
  * Insert a vnode pointer to vfs_hash.
  * @param cid is the vfs_hash context ID.
  * @retval -EINVAL if cid is invalid.
  */
 int vfs_hash_insert(id_t cid, struct vnode * vp, size_t hash,
-                    struct vnode ** vpp, void * cmp_arg);
+                    struct vnode ** vpp, void * cmp_arg)
+    __attribute__((nonnull(2, 4)));
 
 /**
  * Rehash.

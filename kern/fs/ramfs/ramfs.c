@@ -50,6 +50,7 @@
 #include <fs/inpool.h>
 #include <fs/fs.h>
 #include <fs/fs_util.h>
+#include <fs/vfs_hash.h>
 #include <fs/ramfs.h>
 
 /**
@@ -57,7 +58,7 @@
  * Defines maximum (and initial) size of inode pool
  * and initial size of inode array.
  */
-#define RAMFS_INODE_POOL_SIZE   10
+#define RAMFS_INODE_POOL_SIZE   configRAMFS_DESIREDVNODES
 
 /**
  * Maximum number of files in a single ramfs mount.
@@ -104,8 +105,6 @@ typedef struct ramfs_inode {
  */
 typedef struct ramfs_sb {
     struct fs_superblock sb;            /*!< Superblock node. */
-    struct ramfs_inode ** ramfs_iarr;   /*!< inode lookup table. */
-    size_t ramfs_iarr_size;             /*!< Size of the iarr array. */
     inpool_t ramfs_ipool;               /*!< inode pool. */
     ino_t next_inum;                    /*!< Next free inode number. */
     atomic_t nr_inodes;
@@ -125,9 +124,6 @@ struct ramfs_dp {
     char * p;   /*!< Pointer to a data in file. */
     size_t len; /*!< Length of block pointed by p. */
 };
-
-
-static atomic_t ramfs_vdev_minor = ATOMIC_INIT(0);
 
 /* Private */
 static void ramfs_init_sb(fs_t * fs, ramfs_sb_t * ramfs_sb, uint32_t mode);
@@ -190,10 +186,21 @@ vnode_ops_t ramfs_vnode_ops = {
     .chown = ramfs_chown
 };
 
+static atomic_t ramfs_vdev_minor = ATOMIC_INIT(0);
+static id_t vfs_hash_cid; /*!< vfs_hash context ID. */
+static uint32_t ramfs_siphash_key[2];
+
 int __kinit__ ramfs_init(void)
 {
     SUBSYS_DEP(proc_init);
     SUBSYS_INIT("ramfs");
+
+    ramfs_siphash_key[0] = krandom();
+    ramfs_siphash_key[1] = krandom();
+    vfs_hash_cid = vfs_hash_new_ctx("ramfs", configRAMFS_DESIREDVNODES,
+                                    NULL /* No comparator needed */);
+    if (vfs_hash_cid < 0)
+        return vfs_hash_cid;
 
     /*
      * This must be static as it's referenced and used in the file system via
@@ -273,18 +280,6 @@ int ramfs_mount(fs_t * fs, const char * source, uint32_t mode,
     }
     ramfs_init_sb(fs, ramfs_sb, mode);
 
-    /*
-     * Allocate memory for the inode lookup table.
-     * kcalloc is used here to clear all inode pointers.
-     */
-    ramfs_sb->ramfs_iarr = kcalloc(RAMFS_INODE_POOL_SIZE,
-                                   sizeof(ramfs_inode_t *));
-    if (!ramfs_sb->ramfs_iarr) {
-        retval = -ENOMEM;
-        goto free_ramfs_sb;
-    }
-    ramfs_sb->ramfs_iarr_size = RAMFS_INODE_POOL_SIZE;
-
     /* Initialize the inode pool. */
 #ifdef configRAMFS_DEBUG
     KERROR(KERROR_DEBUG, "Initialize the inode pool\n");
@@ -298,8 +293,11 @@ int ramfs_mount(fs_t * fs, const char * source, uint32_t mode,
     }
 
     /* Set vdev number */
+    dev_t vdev_id = atomic_inc(&ramfs_vdev_minor);
     ramfs_sb->sb.vdev_id =
-        DEV_MMTODEV(VDEV_MJNR_RAMFS, atomic_inc(&ramfs_vdev_minor));
+        DEV_MMTODEV(VDEV_MJNR_RAMFS, vdev_id);
+    /* Optimally this should be done in ramfs_init_sb (). */
+    ramfs_sb->sb.sb_hashseed = vdev_id;
 
     /* Create the root inode */
 #ifdef configRAMFS_DEBUG
@@ -369,21 +367,13 @@ int ramfs_statfs(struct fs_superblock * sb, struct statvfs * st)
 static int ramfs_get_vnode(struct fs_superblock * sb, ino_t * vnode_num,
                            vnode_t ** vnode)
 {
-    ramfs_sb_t * ramfs_sb = get_rfsb_of_sb(sb);
-    struct ramfs_inode * in;
-    struct vnode * vn;
-    const size_t vnnum = (size_t)(*vnode_num);
+    size_t vn_hash;
+    struct vnode * vn = NULL;
+    int err;
 
-    if (*vnode_num >= (ino_t)(ramfs_sb->ramfs_iarr_size)) {
-#ifdef configRAMFS_DEBUG
-        FS_KERROR_FS(KERROR_DEBUG, sb->fs, "invalid vnode num (%d)\n",
-                     (unsigned)(*vnode_num));
-#endif
-        return -ENOENT; /* inode can't exist. */
-    }
-
-    in = ramfs_sb->ramfs_iarr[vnnum];
-    if (!in) {
+    vn_hash = halfsiphash32(vnode_num, sizeof(ino_t), ramfs_siphash_key);
+    err = vfs_hash_get(vfs_hash_cid, sb, vn_hash, &vn, NULL);
+    if (err || !vn) {
 #ifdef configRAMFS_DEBUG
         FS_KERROR_VNODE(KERROR_DEBUG, NULL, "inode doesn't exist\n");
 #endif
@@ -391,7 +381,6 @@ static int ramfs_get_vnode(struct fs_superblock * sb, ino_t * vnode_num,
     }
 
     if (vnode) {
-        vn = &in->in_vnode;
         if (vref(vn))
             return -ENOENT; /* vnode was removed during the op. */
         *vnode = vn;
@@ -405,8 +394,6 @@ int ramfs_delete_vnode(vnode_t * vnode)
     ramfs_inode_t * inode = get_inode_of_vnode(vnode);
     vnode_t * vn_tmp;
     int refcount;
-
-    KASSERT(inode != NULL, "inode should be set");
 
 #ifdef configRAMFS_DEBUG
     FS_KERROR_VNODE(KERROR_DEBUG, vnode, "%s(%u)\n",
@@ -433,6 +420,8 @@ int ramfs_delete_vnode(vnode_t * vnode)
 
     destroy_inode_data(inode);
     vn_tmp = &inode->in_vnode;
+
+    vfs_hash_remove(vfs_hash_cid, vn_tmp);
 
     /* Recycle this inode */
     inpool_insert_clean(&(get_rfsb_of_sb(vn_tmp->sb)->ramfs_ipool), vn_tmp);
@@ -933,7 +922,7 @@ static vnode_t * create_root(ramfs_sb_t * ramfs_sb)
     /* TODO Any other settings? */
 
     /* Insert inode to the inode lookup table of its superblock. */
-    insert_inode(inode); /* This can't fail on mount. */
+    (void)insert_inode(inode); /* This can't fail on mount. */
     ramfs_sb->sb.root = vn;
 
     /* Create links according to POSIX. */
@@ -952,22 +941,11 @@ static vnode_t * create_root(ramfs_sb_t * ramfs_sb)
  */
 static void destroy_superblock(ramfs_sb_t * ramfs_sb)
 {
-    if (ramfs_sb->ramfs_iarr) {
-        size_t i;
-
-        /* Destroy inodes in iarr */
-        for (i = 0; i < ramfs_sb->ramfs_iarr_size; i++) {
-            /*
-             * NOTE: There shouldn't be any references to vnodes in this fs
-             * anymore.
-             */
-            if (ramfs_sb->ramfs_iarr[i])
-                destroy_inode(ramfs_sb->ramfs_iarr[i]);
-        }
-
-        kfree(ramfs_sb->ramfs_iarr);
-        ramfs_sb->ramfs_iarr = NULL;
-    }
+    /*
+     * NOTE: There shouldn't be any references to vnodes in this fs
+     * anymore.
+     */
+    (void)vfs_hash_foreach(vfs_hash_cid, &ramfs_sb->sb, destroy_vnode);
 
     /* Destroy inode pool */
     inpool_destroy(&ramfs_sb->ramfs_ipool);
@@ -1065,38 +1043,20 @@ static void destroy_inode_data(ramfs_inode_t * inode)
  * @param inode is the inode to be inserted to the lookup table of its
  *              super block.
  * @return Returns 0 if inode was succesfully inserted to the lookup table;
- *         Otherwise value other than zero indicating that isert failed.
+ *         Otherwise value other than zero indicating an error occured.
  */
 static int insert_inode(ramfs_inode_t * inode)
 {
-    ramfs_sb_t * ramfs_sb = get_rfsb_of_sb(inode->in_vnode.sb);
-    const ino_t vnode_num = inode->in_vnode.vn_num;
+    size_t vn_hash;
+    vnode_t * vp = NULL;
+    int err;
 
-retry:
-    if (vnode_num >= (ino_t)(ramfs_sb->ramfs_iarr_size)) {
-        ramfs_inode_t ** tmp_iarr;
-        const size_t new_size = ramfs_sb->ramfs_iarr_size * 2;
-
-        /* TODO Lock */
-        /* Allocate more space for iarr. */
-        tmp_iarr = (ramfs_inode_t **)krealloc(ramfs_sb->ramfs_iarr,
-                new_size * sizeof(ramfs_inode_t *));
-        if (!tmp_iarr) {
-#ifdef configRAMFS_DEBUG
-            FS_KERROR_VNODE(KERROR_DEBUG, &inode->in_vnode, "ENOSPC\n");
-#endif
-            /* Can't allocate more memory for a inode lookup table */
-            return -ENOSPC;
-        }
-        ramfs_sb->ramfs_iarr = tmp_iarr; /* reallocate ok. */
-        ramfs_sb->ramfs_iarr_size = new_size;
-        goto retry;
-    }
-
-    /* Assign inode to the lookup table. */
-    ramfs_sb->ramfs_iarr[vnode_num] = inode;
-
-    return 0;
+    vn_hash = halfsiphash32(&inode->in_vnode.vn_num, sizeof(ino_t),
+                            ramfs_siphash_key);
+    err = vfs_hash_insert(vfs_hash_cid, &inode->in_vnode, vn_hash, &vp, NULL);
+    if (vp)
+        return -EEXIST;
+    return err;
 }
 
 /**

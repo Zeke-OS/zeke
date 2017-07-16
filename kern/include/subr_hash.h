@@ -61,7 +61,7 @@
  * used with one of the following values.
  *
  * @warning The hashinit() and phashinit() functions will return NULL if
- *          argument nelements is less than or equal to zero.
+ *          argument nelements is equal to zero.
  * @warning The hashdestroy() function will return NULL if the hash table
  *          pointed to by hashtbl is not empty.
  * @bug     There is no phashdestroy() function, and using hashdestroy() to
@@ -119,6 +119,29 @@ void * hashinit_flags(size_t count, size_t * hashmask, int flags);
  * is allowed to wait for memory.
  */
 #define HASH_WAITOK     0x00000002
+
+/**
+ * Foreach bucket in a hash table.
+ * @{
+ */
+
+/**
+ * Begin foreach bucket block.
+ */
+#define HASH_FOREACH_BUCKET_BEGIN(_HASHTBL_, _HASHMASK_, _BUCKETP_) {   \
+    (_BUCKETP_) = (_HASHTBL_);                                          \
+    for (size_t _hash_i_ = 0;                                           \
+         _hash_i_ < ((_HASHMASK_) + 1);                                 \
+         (_BUCKETP_) = &((_HASHTBL_)[_hash_i_++]))                      \
+
+/**
+ * End foreach bucket block.
+ */
+#define HASH_FOREACH_BUCKET_END() }
+
+/**
+ * @}
+ */
 
 /**
  * Destroy a hash table.

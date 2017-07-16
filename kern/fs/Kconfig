@@ -36,22 +36,7 @@ menuconfig configMBR
     ---help---
     Read MBR and populate devices for drive partitions accordingly.
 
-menuconfig configRAMFS
-    bool "ramfs"
-    default y
-    select configFS_DEHTABLE
-    select configFS_INPOOL
-    ---help---
-    Provides in-RAM file system that can be used before hardware backed
-    file systems are mounted. It also provides a mountpoint for pseudo
-    file systems during boot. Some file systems may also inherit ramfs
-    and thus auto select it.
-
-if configRAMFS
-config configRAMFS_DEBUG
-    bool "Debugging"
-    default n
-endif
+source "kern/fs/ramfs/Kconfig"
 
 config configDEVFS
     bool "devfs"
