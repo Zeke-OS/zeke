@@ -75,11 +75,6 @@ static struct fs fatfs_fs = {
 static id_t vfs_hash_ctx_id;
 static uint32_t fatfs_siphash_key[2];
 
-/**
- * Array of all FAT mounts for faster access.
- */
-struct fatfs_sb ** fatfs_sb_arr;
-
 vnode_ops_t fatfs_vnode_ops = {
     .write = fatfs_write,
     .read = fatfs_read,
@@ -119,10 +114,6 @@ int __kinit__ fatfs_init(void)
                                        fatfs_vncmp);
     if (vfs_hash_ctx_id < 0)
         return vfs_hash_ctx_id;
-
-    fatfs_sb_arr = kcalloc(configFATFS_MAX_MOUNTS, sizeof(struct fatfs_sb *));
-    if (!fatfs_sb_arr)
-        return -ENOMEM;
 
     fs_inherit_vnops(&fatfs_vnode_ops, &nofs_vnode_ops);
 
@@ -213,9 +204,6 @@ static int fatfs_mount(fs_t * fs, const char * source, uint32_t mode,
     fs_fildes_set(&fatfs_sb->ff_devfile, vndev, O_RDWR);
     fatfs_sb->sb.vdev_id = DEV_MMTODEV(VDEV_MJNR_FATFS, fatfs_vdev_minor++);
 
-    /* Insert sb to fatfs_sb_arr lookup array */
-    fatfs_sb_arr[DEV_MINOR(fatfs_sb->sb.vdev_id)] = fatfs_sb;
-
     /*
      * We create initialize the inpool with the same number of desired vnodes
      * as the vfs_hash hashmap even though latter one is system global and
@@ -263,7 +251,6 @@ static int fatfs_mount(fs_t * fs, const char * source, uint32_t mode,
 
 fail:
     if (retval && fatfs_sb) {
-        fatfs_sb_arr[DEV_MINOR(fatfs_sb->sb.vdev_id)] = NULL;
         kfree(fatfs_sb);
     } else {
         *sb = &fatfs_sb->sb;
@@ -285,7 +272,6 @@ static int fatfs_umount(struct fs_superblock * fs_sb)
      */
     fs_remove_superblock(fs_sb->fs, &fatfs_sb->sb);
     f_umount(&fatfs_sb->ff_fs);
-    fatfs_sb_arr[DEV_MINOR(fatfs_sb->sb.vdev_id)] = NULL;
     vrele(fatfs_sb->ff_devfile.vnode);
     inpool_destroy(&fatfs_sb->inpool);
     kfree(fatfs_sb);
