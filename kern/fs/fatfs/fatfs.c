@@ -217,7 +217,7 @@ static int fatfs_mount(fs_t * fs, const char * source, uint32_t mode,
     }
 
     /* Mount */
-    err = f_mount(&fatfs_sb->ff_fs, DEV_MINOR(fatfs_sb->sb.vdev_id), 0);
+    err = f_mount(&fatfs_sb->ff_fs, 0);
     if (err) {
         retval = fresult2errno(err);
         KERROR_DBG("Can't init a work area for FAT (%d)\n", retval);

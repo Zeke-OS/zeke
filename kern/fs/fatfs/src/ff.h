@@ -63,7 +63,6 @@ typedef char TCHAR;
  */
 typedef struct {
     uint8_t fs_type;        /* FAT sub-type (0:Not mounted) */
-    uint8_t drv;            /* Physical drive number */
     uint8_t csize;          /* Sectors per cluster (1,2,4...128) */
     uint8_t n_fats;         /* Number of FAT copies (1 or 2) */
     uint8_t wflag;          /* win[] flag (b0:dirty) */
@@ -86,10 +85,9 @@ typedef struct {
                             */
 } FATFS;
 
-
-
-/* File object structure (FIL) */
-
+/**
+ * File object structure (FIL)
+ */
 typedef struct {
     FATFS*  fs;             /* Pointer to the related file system object (**do not change order**) */
     uint64_t ino;           /* Emulated ino */
@@ -194,7 +192,7 @@ FRESULT f_chdrive(const TCHAR * path);
 FRESULT f_getfree(FATFS * fs, DWORD * nclst);
 FRESULT f_getlabel(FATFS * fs, TCHAR * label, DWORD * vsn);
 FRESULT f_setlabel(FATFS * fs, const TCHAR * label);
-FRESULT f_mount(FATFS * fs, int vol, uint8_t opt);
+FRESULT f_mount(FATFS * fs, uint8_t opt);
 FRESULT f_umount(FATFS * fs);
 
 #define f_eof(fp) (((fp)->fptr == (fp)->fsize) ? 1 : 0)

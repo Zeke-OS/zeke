@@ -13,13 +13,6 @@ menuconfig configFATFS
 
 if configFATFS
 
-config configFATFS_MAX_MOUNTS
-    int "Maximum number of mounts"
-    default 2
-    range 1 10
-    ---help---
-    The maximum number of FAT file systems mounted simultaneusly.
-
 config configFATFS_CODEPAGE
     int "Code page for FAT"
     default 437

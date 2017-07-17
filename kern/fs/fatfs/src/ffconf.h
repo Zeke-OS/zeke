@@ -93,12 +93,6 @@
  *--------------------------------------------------------------------------*/
 
 /**
- * Number of volumes (logical drives) to be used.
- */
-#define _VOLUMES configFATFS_MAX_MOUNTS
-
-
-/**
  * By default(0), each logical drive number is bound to the same physical drive
  * number and only a FAT volume found on the physical drive is mounted. When it
  * is set to 1,

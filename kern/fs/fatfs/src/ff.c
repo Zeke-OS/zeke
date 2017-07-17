@@ -1851,7 +1851,7 @@ static FRESULT access_volume(FATFS * fs, enum access_volume_mode mode)
     return FR_OK; /* The file system object is valid */
 }
 
-static FRESULT prepare_volume(FATFS * fs, int vol)
+static FRESULT prepare_volume(FATFS * fs)
 {
     uint8_t fmt;
     DWORD fasize, tsect, sysect, nclst, szbfat;
@@ -1865,7 +1865,6 @@ static FRESULT prepare_volume(FATFS * fs, int vol)
      */
 
     fs->fs_type = 0; /* Clear the file system object */
-    fs->drv = vol;
 
     /*
      * Get sector size
@@ -1996,7 +1995,7 @@ static FRESULT prepare_volume(FATFS * fs, int vol)
 /**
  * Mount a Logical Drive
  */
-FRESULT f_mount(FATFS * fs, int vol, uint8_t opt)
+FRESULT f_mount(FATFS * fs, uint8_t opt)
 {
     FRESULT res;
 
@@ -2008,7 +2007,7 @@ FRESULT f_mount(FATFS * fs, int vol, uint8_t opt)
     if (lock_fs(fs))
         return FR_TIMEOUT;
 
-    res = prepare_volume(fs, vol);
+    res = prepare_volume(fs);
     return LEAVE_FF(fs, res);
 }
 
